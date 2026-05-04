@@ -88,8 +88,11 @@ const socket = new SocketClient({
     controlPanel.setPhase(currentPhase);
   },
 
-  onWorldStateDelta: (data: WorldStateDelta, tick: number) => {
+  onWorldStateDelta: (data: WorldStateDelta & { timeOfDay?: number }, tick: number) => {
     currentTick = tick;
+    if (data.timeOfDay !== undefined) {
+      currentTimeOfDay = data.timeOfDay;
+    }
 
     for (const [id, partial] of Object.entries(data.agents)) {
       if (agents[id]) {

@@ -147,8 +147,10 @@ export class HUD {
     const phaseName = PHASE_NAMES[phase] || phase;
     const phaseColor = PHASE_COLORS[phase] || '#00ff41';
     this.phaseEl.innerHTML = `<span style="color:${phaseColor}">▸ ${phaseName}</span>`;
-    const hour = Math.floor((timeOfDay % 1) * 24);
-    const min = Math.floor(((timeOfDay % 1) * 24 - hour) * 60);
+    // timeOfDay: 0-24000 range (Minecraft-style), convert to HH:MM
+    const normalized = ((timeOfDay % 24000) + 24000) % 24000;
+    const hour = Math.floor(normalized / 1000);
+    const min = Math.floor((normalized % 1000) / 1000 * 60);
     this.timeEl.textContent = `TIME: ${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
     this.agentCountEl.textContent = `AGENTS: ${agentCount}`;
     this.conversationsEl.textContent = `CONVOS: ${activeConversations}`;

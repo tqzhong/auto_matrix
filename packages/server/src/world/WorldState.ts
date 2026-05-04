@@ -111,7 +111,9 @@ export class WorldState {
 
   advanceTick(): void {
     this.simulationTick += 1;
-    this.timeOfDay = (this.simulationTick % 86400) / 86400;
+    // 24000 ticks = 1 full day cycle (like Minecraft)
+    // At 1 tick/sec, that's ~6.67 hours per real minute at 1x speed
+    this.timeOfDay = this.simulationTick % 24000;
   }
 
   getCurrentPhase(): StoryPhaseId {

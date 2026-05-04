@@ -131,9 +131,14 @@ const simLoop = new SimulationLoop(
     // 4. Update all agents (movement, effects, cooldowns)
     agentManager.updateAllAgents(tick);
 
-    // 5. Sync to clients
+    // 5. Advance time of day (1 tick = 1 sim second, 24000 ticks = full day cycle)
+    worldState.advanceTick();
+
+    // 6. Sync to clients
     if (simLoop.shouldSync()) {
       const delta = stateSync.calculateDelta(worldState.agents);
+      // Attach timeOfDay to delta
+      (delta as any).timeOfDay = worldState.timeOfDay * 24000;
       socketServer.broadcastDelta(delta, tick);
     }
   }
