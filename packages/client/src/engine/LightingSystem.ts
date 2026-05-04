@@ -10,10 +10,10 @@ export class LightingSystem {
   private elapsed = 0;
 
   constructor(scene: THREE.Scene) {
-    this.ambientLight = new THREE.AmbientLight(0x0a1a0a, 0.3);
+    this.ambientLight = new THREE.AmbientLight(0x334433, 0.6);
     scene.add(this.ambientLight);
 
-    this.directionalLight = new THREE.DirectionalLight(0xffeedd, 0.5);
+    this.directionalLight = new THREE.DirectionalLight(0xffeedd, 0.8);
     this.directionalLight.position.set(100, 150, 80);
     this.directionalLight.castShadow = true;
     this.directionalLight.shadow.mapSize.width = 1024;

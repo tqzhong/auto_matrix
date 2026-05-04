@@ -137,8 +137,8 @@ const simLoop = new SimulationLoop(
     // 6. Sync to clients
     if (simLoop.shouldSync()) {
       const delta = stateSync.calculateDelta(worldState.agents);
-      // Attach timeOfDay to delta
-      (delta as any).timeOfDay = worldState.timeOfDay * 24000;
+      // Attach timeOfDay to delta (already in 0-24000 range)
+      (delta as any).timeOfDay = worldState.timeOfDay;
       socketServer.broadcastDelta(delta, tick);
     }
   }

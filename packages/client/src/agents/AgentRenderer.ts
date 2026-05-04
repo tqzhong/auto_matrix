@@ -220,23 +220,23 @@ export class AgentRenderer {
       entry.currentRotation = lerpAngle(entry.currentRotation, entry.targetRotation, delta);
       entry.group.rotation.y = entry.currentRotation;
 
-      // Name label position: 8 units above agent
+      // Name label position: above agent (characters are now ~20 units tall)
       entry.nameLabel.position.copy(entry.group.position);
-      entry.nameLabel.position.y += 8;
+      entry.nameLabel.position.y += 22;
 
       // Faction label: directly below name
       entry.factionLabel.position.copy(entry.group.position);
-      entry.factionLabel.position.y += 7;
+      entry.factionLabel.position.y += 20.5;
 
       // Health bar
       entry.healthBar.position.copy(entry.group.position);
-      entry.healthBar.position.y += 7;
+      entry.healthBar.position.y += 20;
       entry.healthBarBg.position.copy(entry.healthBar.position);
 
-      // Action indicator: between head (~5) and faction label (7)
+      // Action indicator: between head and faction label
       if (entry.actionIndicator) {
         entry.actionIndicator.position.copy(entry.group.position);
-        entry.actionIndicator.position.y += 6;
+        entry.actionIndicator.position.y += 19;
       }
 
       // Speech bubbles: stack above name label
@@ -246,7 +246,7 @@ export class AgentRenderer {
         bubble.age += delta;
 
         // Position: above name label, stacked
-        const baseY = 9.5;
+        const baseY = 24;
         const stackOffset = bubble.stackIndex * 4.5;
         bubble.sprite.position.copy(entry.group.position);
         bubble.sprite.position.y += baseY + stackOffset;
@@ -357,7 +357,7 @@ export class AgentRenderer {
       depthTest: false,
     });
     const sprite = new THREE.Sprite(material);
-    sprite.scale.set(8, 2, 1);
+    sprite.scale.set(14, 3.5, 1);
     return sprite;
   }
 
@@ -388,18 +388,18 @@ export class AgentRenderer {
       depthTest: false,
     });
     const sprite = new THREE.Sprite(material);
-    sprite.scale.set(4, 1, 1);
+    sprite.scale.set(7, 1.75, 1);
     return sprite;
   }
 
   // ── Health bar ───────────────────────────────────────────────────────
 
   private createHealthBar(): { bar: THREE.Mesh; bg: THREE.Mesh } {
-    const bgGeom = new THREE.PlaneGeometry(3, 0.4);
+    const bgGeom = new THREE.PlaneGeometry(6, 0.6);
     const bgMat = new THREE.MeshBasicMaterial({ color: 0x220000, side: THREE.DoubleSide });
     const bg = new THREE.Mesh(bgGeom, bgMat);
 
-    const barGeom = new THREE.PlaneGeometry(3, 0.4);
+    const barGeom = new THREE.PlaneGeometry(6, 0.6);
     const barMat = new THREE.MeshBasicMaterial({ color: 0x00ff41, side: THREE.DoubleSide });
     const bar = new THREE.Mesh(barGeom, barMat);
 
@@ -579,7 +579,7 @@ export class AgentRenderer {
       depthTest: false,
     });
     const sprite = new THREE.Sprite(material);
-    sprite.scale.set(2, 2, 1);
+    sprite.scale.set(4, 4, 1);
     return sprite;
   }
 

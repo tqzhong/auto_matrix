@@ -9,12 +9,14 @@ function hexColor(hex: string): number {
   return parseInt(hex.replace('#', ''), 16);
 }
 
+const SCALE = 2.5; // Make characters 2.5x bigger so they're visible
+
 function voxel(x: number, y: number, z: number, w: number, h: number, d: number, color: number, group: THREE.Group): void {
   const mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(w * V, h * V, d * V),
+    new THREE.BoxGeometry(w * SCALE, h * SCALE, d * SCALE),
     new THREE.MeshLambertMaterial({ color })
   );
-  mesh.position.set(x * V, y * V, z * V);
+  mesh.position.set(x * SCALE, y * SCALE, z * SCALE);
   mesh.castShadow = true;
   group.add(mesh);
 }
@@ -27,20 +29,18 @@ function buildFromPixelMap(
 ): THREE.Group {
   const group = new THREE.Group();
   const rows = pixels.length;
+  const cols = pixels[0]?.length ?? 0;
+  // Center offset: half width in voxel-space
+  const offsetX = (cols * scale) / 2;
   for (let row = 0; row < rows; row++) {
-    const cols = pixels[row].length;
     for (let col = 0; col < cols; col++) {
       const ch = pixels[row][col];
       if (ch === ' ' || ch === '.') continue;
       const color = palette[ch];
       if (color === undefined) continue;
-      // row 0 = bottom, so y = row
-      voxel(col * scale, row * scale, 0, scale, scale, 2 * scale, color, group);
+      voxel(col * scale - offsetX, row * scale, 0, scale, scale, 2 * scale, color, group);
     }
   }
-  // Center the model
-  const w = pixels[0]?.length ?? 0;
-  group.position.set(-(w * scale) / 2, 0, -scale);
   return group;
 }
 
