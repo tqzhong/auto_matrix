@@ -1,4 +1,5 @@
 import type { ConversationStartData, ConversationMessageData, AgentId } from '@auto_matrix/shared';
+import type { AgentRenderer } from '../agents/AgentRenderer.js';
 
 interface ConversationBubble {
   element: HTMLElement;
@@ -17,6 +18,8 @@ export class ConversationView {
   private agentNames: Map<AgentId, string> = new Map();
   private maxBubbles = 10;
   private maxPanelMessages = 50;
+
+  private agentRenderer: AgentRenderer | null = null;
 
   constructor(overlay: HTMLElement) {
     this.overlay = overlay;
@@ -44,6 +47,13 @@ export class ConversationView {
     this.panel.appendChild(this.panelMessages);
   }
 
+  /**
+   * Wire the 3D AgentRenderer so dialogue messages also create speech bubbles.
+   */
+  setAgentRenderer(renderer: AgentRenderer): void {
+    this.agentRenderer = renderer;
+  }
+
   registerAgentName(id: AgentId, name: string): void {
     this.agentNames.set(id, name);
   }
@@ -59,6 +69,12 @@ export class ConversationView {
     if (history) {
       history.push(msg);
       this.addPanelMessage(msg);
+    }
+
+    // Always trigger 3D speech bubble regardless of conversation tracking
+    if (this.agentRenderer) {
+      const speakerName = this.agentNames.get(msg.speaker) ?? msg.speaker;
+      this.agentRenderer.showSpeechBubble(msg.speaker, speakerName, msg.content);
     }
   }
 

@@ -43,6 +43,9 @@ const agentPanel = new AgentPanel(overlay, () => {
 
 const conversationView = new ConversationView(overlay);
 
+// Wire 3D speech bubble system into the conversation view
+conversationView.setAgentRenderer(engine.getAgentRenderer());
+
 const controlPanel = new ControlPanel(overlay, {
   onSpeedChange: (speed: number) => socket.setSpeed(speed),
   onPause: () => socket.pause(),
@@ -100,6 +103,8 @@ const socket = new SocketClient({
       }
     }
 
+    // updateAgents calls agentRenderer.updateAgent for each agent,
+    // which now automatically updates action indicators from currentAction
     engine.updateAgents(agents);
 
     if (selectedAgentId && agents[selectedAgentId]) {
@@ -125,6 +130,7 @@ const socket = new SocketClient({
   },
 
   onConversationMessage: (data: ConversationMessageData, _tick: number) => {
+    // addMessage now also triggers 3D speech bubbles via AgentRenderer
     conversationView.addMessage(data);
   },
 
@@ -148,12 +154,18 @@ const socket = new SocketClient({
   },
 
   onChatBubble: (data: { agentId: string; text: string }, _tick: number) => {
+    const name = agentNameMap.get(data.agentId) ?? data.agentId;
+
+    // Add to side-panel transcript
     conversationView.addMessage({
       conversationId: 'bubble',
       speaker: data.agentId,
       content: data.text,
       tone: 'normal',
     });
+
+    // Also explicitly spawn 3D speech bubble above the agent
+    engine.getAgentRenderer().showSpeechBubble(data.agentId, name, data.text);
   },
 
   onNotification: (data: { message: string; level: string }, _tick: number) => {
