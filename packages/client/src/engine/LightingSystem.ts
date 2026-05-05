@@ -10,10 +10,10 @@ export class LightingSystem {
   private elapsed = 0;
 
   constructor(scene: THREE.Scene) {
-    this.ambientLight = new THREE.AmbientLight(0x334433, 0.6);
+    this.ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
     scene.add(this.ambientLight);
 
-    this.directionalLight = new THREE.DirectionalLight(0xffeedd, 0.8);
+    this.directionalLight = new THREE.DirectionalLight(0xfff5e0, 1.2);
     this.directionalLight.position.set(100, 150, 80);
     this.directionalLight.castShadow = true;
     this.directionalLight.shadow.mapSize.width = 1024;
@@ -31,19 +31,19 @@ export class LightingSystem {
   }
 
   private addNeonLights(scene: THREE.Scene): void {
-    const neonPositions: [number, number, number][] = [
-      [100, 8, 100],
-      [200, 10, 200],
-      [300, 6, 150],
-      [150, 12, 300],
-      [400, 8, 400],
-      [50, 5, 250],
-      [350, 10, 50],
-      [450, 7, 300],
+    const neonConfigs: [number, number, number, number][] = [
+      [100, 8, 100, 0xff6600],   // warm orange
+      [200, 10, 200, 0x00ccff],   // cyan
+      [300, 6, 150, 0xff2244],    // red
+      [150, 12, 300, 0x4488ff],   // blue
+      [400, 8, 400, 0xffaa00],    // gold
+      [50, 5, 250, 0xff44aa],     // pink
+      [350, 10, 50, 0x00ff41],    // matrix green
+      [450, 7, 300, 0xffffff],    // white
     ];
 
-    for (const [x, y, z] of neonPositions) {
-      const light = new THREE.PointLight(0x00ff41, 2, 40, 2);
+    for (const [x, y, z, color] of neonConfigs) {
+      const light = new THREE.PointLight(color, 3, 50, 2);
       light.position.set(x, y, z);
       scene.add(light);
       this.neonLights.push(light);

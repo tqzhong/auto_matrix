@@ -25,8 +25,8 @@ export class Engine {
 
   constructor(container: HTMLElement) {
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x0a1a0a);
-    this.scene.fog = new THREE.FogExp2(0x0a1a0a, 0.003);
+    this.scene.background = new THREE.Color(0x87CEEB); // sky blue
+    this.scene.fog = new THREE.FogExp2(0xc0d8e8, 0.0015);
 
     this.camera = new THREE.PerspectiveCamera(
       60,

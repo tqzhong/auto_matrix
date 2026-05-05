@@ -11,7 +11,7 @@ export class PostProcessing {
     if (this.applied) return;
 
     this.canvas.style.filter =
-      'sepia(0.08) hue-rotate(75deg) saturate(1.15) brightness(1.05)';
+      'saturate(1.1) brightness(1.05) contrast(1.05)';
 
     if (!this.scanlineOverlay) {
       this.scanlineOverlay = document.createElement('div');
