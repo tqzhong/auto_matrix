@@ -1,6 +1,6 @@
 import { Server as SocketIOServer } from 'socket.io';
 import type { Server as HTTPServer } from 'http';
-import type { ServerMessage, WorldStateFull, WorldStateDelta, AgentState, StoryPhaseId, WorldEvent } from '@auto_matrix/shared';
+import type { ServerMessage, WorldStateFull, WorldStateDelta, AgentState, StoryPhaseId, WorldEvent, EvolutionUpdate } from '@auto_matrix/shared';
 
 export class SocketServer {
   private io: SocketIOServer;
@@ -87,6 +87,24 @@ export class SocketServer {
     this.io.emit('message', {
       type: 'chat_bubble',
       data: { agentId, text },
+      tick,
+      timestamp: Date.now(),
+    } satisfies ServerMessage);
+  }
+
+  broadcastEvolutionUpdate(update: EvolutionUpdate, tick: number): void {
+    this.io.emit('message', {
+      type: 'evolution_update',
+      data: update,
+      tick,
+      timestamp: Date.now(),
+    } satisfies ServerMessage);
+  }
+
+  broadcastEvolutionNarration(text: string, tick: number): void {
+    this.io.emit('message', {
+      type: 'evolution_narration',
+      data: { text },
       tick,
       timestamp: Date.now(),
     } satisfies ServerMessage);

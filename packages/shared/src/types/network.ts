@@ -1,6 +1,6 @@
 // WebSocket 消息类型
 import type { AgentId, AgentState } from './agent.js';
-import type { ChunkData, LocationData, StoryPhaseId, WorldEvent } from './world.js';
+import type { ChunkData, LocationData, StoryPhaseId, WorldEvent, EvolutionUpdate } from './world.js';
 
 // Server → Client
 export type ServerMessageType =
@@ -11,12 +11,15 @@ export type ServerMessageType =
   | 'conversation_start'
   | 'conversation_message'
   | 'conversation_end'
+  | 'conversation_summary'
   | 'story_event'
   | 'phase_change'
   | 'world_event'
   | 'chat_bubble'
   | 'effect'
-  | 'notification';
+  | 'notification'
+  | 'evolution_update'
+  | 'evolution_narration';
 
 export interface ServerMessage {
   type: ServerMessageType;
@@ -50,6 +53,18 @@ export interface ConversationMessageData {
   speaker: AgentId;
   content: string;
   tone: string;
+}
+
+export interface ConversationEndData {
+  conversationId: string;
+  participants: AgentId[];
+  summary: string;
+}
+
+export interface ConversationSummaryData {
+  conversationId: string;
+  participants: AgentId[];
+  summary: string;
 }
 
 export interface StoryEventData {

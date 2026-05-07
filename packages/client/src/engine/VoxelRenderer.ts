@@ -1,7 +1,9 @@
 import * as THREE from 'three';
-import { generateWorld, BLOCK_COLORS, CHUNK_SIZE } from '../voxel/WorldGenerator.js';
+import { generateWorldAround, BLOCK_COLORS, CHUNK_SIZE } from '../voxel/WorldGenerator.js';
 
 const MAX_INSTANCES_PER_TYPE = 50000;
+const LOAD_RADIUS = 12; // chunks around camera center
+const CULL_DISTANCE = 220; // hide chunks beyond this (in chunk units)
 const tempMatrix = new THREE.Matrix4();
 const tempColor = new THREE.Color();
 
@@ -15,6 +17,7 @@ export class VoxelRenderer {
   private chunks: Map<string, ChunkMeshes> = new Map();
   private geometry: THREE.BoxGeometry;
   private initialized = false;
+  private loadedRegions: Set<string> = new Set();
 
   constructor(scene: THREE.Scene) {
     this.scene = scene;
@@ -23,11 +26,54 @@ export class VoxelRenderer {
 
   init(): void {
     if (this.initialized) return;
-    const worldChunks = generateWorld();
-    for (const [key, blocks] of worldChunks) {
-      this.addChunk(key, blocks);
-    }
+    // Load initial area around world center (1280, 1280)
+    this.loadChunksAround(1280, 1280, LOAD_RADIUS);
     this.initialized = true;
+  }
+
+  /**
+   * Load chunks around a world position. Only loads chunks not already loaded.
+   */
+  loadChunksAround(worldX: number, worldZ: number, radiusChunks: number = LOAD_RADIUS): number {
+    const centerCX = Math.floor(worldX / CHUNK_SIZE);
+    const centerCZ = Math.floor(worldZ / CHUNK_SIZE);
+    const worldChunks = generateWorldAround(worldX, worldZ, radiusChunks);
+    let loaded = 0;
+
+    for (const [key, blocks] of worldChunks) {
+      if (!this.chunks.has(key)) {
+        this.addChunk(key, blocks);
+        loaded++;
+      }
+    }
+
+    return loaded;
+  }
+
+  /**
+   * Update which chunks are visible based on camera position.
+   * Unloads distant chunks and loads new ones as the camera moves.
+   */
+  updateVisibility(cameraWorldX: number, cameraWorldZ: number): void {
+    const camCX = Math.floor(cameraWorldX / CHUNK_SIZE);
+    const camCZ = Math.floor(cameraWorldZ / CHUNK_SIZE);
+
+    // Unload distant chunks
+    for (const [key, chunk] of this.chunks) {
+      const parts = key.split(',');
+      const cx = parseInt(parts[0]);
+      const cz = parseInt(parts[2]);
+      const dx = cx - camCX;
+      const dz = cz - camCZ;
+      const dist = Math.sqrt(dx * dx + dz * dz);
+
+      if (dist > CULL_DISTANCE) {
+        this.removeChunk(key);
+      }
+    }
+
+    // Load new chunks within radius
+    this.loadChunksAround(cameraWorldX, cameraWorldZ, LOAD_RADIUS);
   }
 
   addChunk(key: string, blocks: Uint8Array | number[]): void {
@@ -49,6 +95,10 @@ export class VoxelRenderer {
       mesh.dispose();
     }
     this.chunks.delete(key);
+  }
+
+  getLoadedChunkCount(): number {
+    return this.chunks.size;
   }
 
   private buildChunkMeshes(key: string, blocks: Uint8Array): ChunkMeshes {

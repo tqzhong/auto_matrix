@@ -5,9 +5,12 @@ import type {
   WorldStateDelta,
   ConversationStartData,
   ConversationMessageData,
+  ConversationEndData,
+  ConversationSummaryData,
   StoryEventData,
   EffectData,
   AgentState,
+  EvolutionUpdate,
 } from '@auto_matrix/shared';
 
 export type SocketCallbacks = {
@@ -16,12 +19,15 @@ export type SocketCallbacks = {
   onAgentUpdate: (data: { id: string; state: Partial<AgentState> }, tick: number) => void;
   onConversationStart: (data: ConversationStartData, tick: number) => void;
   onConversationMessage: (data: ConversationMessageData, tick: number) => void;
-  onConversationEnd: (data: { id: string }, tick: number) => void;
+  onConversationEnd: (data: ConversationEndData, tick: number) => void;
+  onConversationSummary: (data: ConversationSummaryData, tick: number) => void;
   onStoryEvent: (data: StoryEventData, tick: number) => void;
   onPhaseChange: (data: { phase: string; name: string; description: string }, tick: number) => void;
   onEffect: (data: EffectData, tick: number) => void;
   onChatBubble: (data: { agentId: string; text: string }, tick: number) => void;
   onNotification: (data: { message: string; level: string }, tick: number) => void;
+  onEvolutionUpdate: (data: EvolutionUpdate, tick: number) => void;
+  onEvolutionNarration: (data: { text: string; phase: string }, tick: number) => void;
 };
 
 export class SocketClient {
@@ -85,7 +91,10 @@ export class SocketClient {
         this.callbacks.onConversationMessage(data as ConversationMessageData, tick);
         break;
       case 'conversation_end':
-        this.callbacks.onConversationEnd(data as { id: string }, tick);
+        this.callbacks.onConversationEnd(data as ConversationEndData, tick);
+        break;
+      case 'conversation_summary':
+        this.callbacks.onConversationSummary(data as ConversationSummaryData, tick);
         break;
       case 'story_event':
         this.callbacks.onStoryEvent(data as StoryEventData, tick);
@@ -101,6 +110,12 @@ export class SocketClient {
         break;
       case 'notification':
         this.callbacks.onNotification(data as { message: string; level: string }, tick);
+        break;
+      case 'evolution_update':
+        this.callbacks.onEvolutionUpdate(data as EvolutionUpdate, tick);
+        break;
+      case 'evolution_narration':
+        this.callbacks.onEvolutionNarration(data as { text: string; phase: string }, tick);
         break;
     }
   }

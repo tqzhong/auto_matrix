@@ -55,10 +55,58 @@ export type WorldEventType =
   | 'code_rain'
   | 'building_destruction'
   | 'portal_open'
-  | 'smith_infection';
+  | 'smith_infection'
+  | 'cycle_reset'
+  | 'cycle_catastrophe'
+  | 'cycle_dawn'
+  | 'memory_fragment';
 
 export type StoryPhaseId =
   | 'phase1_normal_life'
   | 'phase2_awakening'
   | 'phase3_war'
   | 'phase4_resolution';
+
+// === Evolution Cycle Types ===
+export type CyclePhaseId =
+  | 'cycle_stable'       // 和平繁荣期
+  | 'cycle_anomaly'      // 异常开始出现
+  | 'cycle_discovery'    // 人类发现真相
+  | 'cycle_revolt'       // 觉醒者起义
+  | 'cycle_catastrophe'  // 机器大反攻
+  | 'cycle_extinction'   // 文明覆灭
+  | 'cycle_darkness'     // 黑暗期
+  | 'cycle_rebirth';     // 新文明重生
+
+export interface EvolutionCycle {
+  cycleNumber: number;
+  phase: CyclePhaseId;
+  phaseStartTick: number;
+  totalTicks: number;
+  awakenedCount: number;
+  deadCount: number;
+  populationPeak: number;
+  cyclesHistory: CycleRecord[];
+  narrative: string;
+  destructionCount: number;
+}
+
+export interface CycleRecord {
+  cycleNumber: number;
+  duration: number;
+  peakPopulation: number;
+  howEnded: string;
+  notableEvents: string[];
+}
+
+// Server → Client evolution update
+export interface EvolutionUpdate {
+  cycleNumber: number;
+  phase: CyclePhaseId;
+  phaseName: string;
+  narrative: string;
+  destructionCount: number;
+  population: number;
+  awakenedCount: number;
+  timeline: CycleRecord[];
+}

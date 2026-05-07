@@ -5,9 +5,13 @@ import type {
   WorldStateDelta,
   ConversationStartData,
   ConversationMessageData,
+  ConversationEndData,
+  ConversationSummaryData,
   StoryEventData,
   EffectData,
   StoryPhaseId,
+  EvolutionUpdate,
+  CyclePhaseId,
 } from '@auto_matrix/shared';
 import { Engine } from './engine/Engine.js';
 import { SocketClient } from './network/SocketClient.js';
@@ -15,12 +19,14 @@ import { HUD } from './ui/HUD.js';
 import { AgentPanel } from './ui/AgentPanel.js';
 import { ConversationView } from './ui/ConversationView.js';
 import { ControlPanel } from './ui/ControlPanel.js';
+import { EvolutionTimeline } from './ui/EvolutionTimeline.js';
 
 const overlay = document.getElementById('ui-overlay')!;
 const app = document.getElementById('app')!;
 
 const agents: Record<string, AgentState> = {};
 let currentPhase: StoryPhaseId = 'phase1_normal_life';
+let currentCyclePhase: CyclePhaseId = 'cycle_stable';
 let currentTick = 0;
 let currentTimeOfDay = 0;
 let activeConversations = 0;
@@ -45,6 +51,8 @@ const conversationView = new ConversationView(overlay);
 
 // Wire 3D speech bubble system into the conversation view
 conversationView.setAgentRenderer(engine.getAgentRenderer());
+
+const evolutionTimeline = new EvolutionTimeline(overlay);
 
 const controlPanel = new ControlPanel(overlay, {
   onSpeedChange: (speed: number) => socket.setSpeed(speed),
@@ -134,9 +142,13 @@ const socket = new SocketClient({
     conversationView.addMessage(data);
   },
 
-  onConversationEnd: (data: { id: string }, _tick: number) => {
+  onConversationEnd: (data: ConversationEndData, _tick: number) => {
     activeConversations = Math.max(0, activeConversations - 1);
-    conversationView.hideConversation(data.id);
+    conversationView.hideConversation(data.conversationId);
+  },
+
+  onConversationSummary: (data: ConversationSummaryData, _tick: number) => {
+    conversationView.showSummary(data);
   },
 
   onStoryEvent: (data: StoryEventData, _tick: number) => {
@@ -170,6 +182,18 @@ const socket = new SocketClient({
 
   onNotification: (data: { message: string; level: string }, _tick: number) => {
     controlPanel.addEventText(data.message);
+  },
+
+  onEvolutionUpdate: (data: EvolutionUpdate, _tick: number) => {
+    currentCyclePhase = data.phase;
+    evolutionTimeline.updateDisplay(data);
+    // Sync cycle info into HUD
+    hud.setCycleInfo(data.cycleNumber, data.phase, data.population, data.awakenedCount, data.destructionCount);
+  },
+
+  onEvolutionNarration: (data: { text: string; phase: string }, _tick: number) => {
+    evolutionTimeline.showNarration(data.text);
+    controlPanel.addEventText(`NARRATION: ${data.text.substring(0, 40)}…`);
   },
 });
 
@@ -242,6 +266,7 @@ function uiUpdateLoop(): void {
   );
   conversationView.update(delta);
   controlPanel.update(delta);
+  evolutionTimeline.update(delta);
 
   if (selectedAgentId && agents[selectedAgentId]) {
     agentPanel.update(agents[selectedAgentId]);

@@ -56,6 +56,13 @@ export class StoryEngine {
     return this.firedEvents.has(eventId);
   }
 
+  resetPhase(): void {
+    this.currentPhaseId = 'phase1_normal_life';
+    this.phaseStartTick = 0;
+    this.firedEvents.clear();
+    console.log('[Story] Phase reset to phase1_normal_life (evolution cycle reset)');
+  }
+
   private advancePhase(tick: number): void {
     const currentIdx = PHASE_ORDER.indexOf(this.currentPhaseId);
     if (currentIdx >= PHASE_ORDER.length - 1) return;

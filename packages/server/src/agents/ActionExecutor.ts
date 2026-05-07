@@ -1,6 +1,7 @@
 import type { AgentState, AgentAction, ActionType, Vector3 } from '@auto_matrix/shared';
 import { distance } from '@auto_matrix/shared';
 import type { RelationshipGraph } from './RelationshipGraph.js';
+import type { ConversationEngine } from './ConversationEngine.js';
 
 export interface ActionResult {
   success: boolean;
@@ -9,7 +10,10 @@ export interface ActionResult {
 }
 
 export class ActionExecutor {
-  constructor(private relationshipGraph: RelationshipGraph) {}
+  constructor(
+    private relationshipGraph: RelationshipGraph,
+    private conversationEngine: ConversationEngine,
+  ) {}
 
   execute(agent: AgentState, action: AgentAction, allAgents: Map<string, AgentState>, tick: number): ActionResult {
     switch (action.type) {
@@ -85,9 +89,38 @@ export class ActionExecutor {
       }, tick);
     }
 
+    // Check world separation
+    if (agent.isInMatrix !== target.isInMatrix) {
+      return {
+        success: false,
+        newState: { mood: 'frustrated' },
+        events: [`${agent.name} can't reach ${target.name} — they're in a different world`],
+      };
+    }
+
+    // Delegate to ConversationEngine for multi-turn dialogue
+    const conversationId = this.conversationEngine.startConversation(
+      agent.id,
+      targetId,
+      agent,
+      target,
+      action.parameters.dialogue as string | undefined,
+      tick,
+    );
+
+    if (conversationId) {
+      // Conversation started — it will be managed by ConversationEngine.tickConversations()
+      return {
+        success: true,
+        newState: { mood: 'engaged' },
+        events: [`${agent.name} starts a conversation with ${target.name}`],
+      };
+    }
+
+    // If conversation couldn't start (cooldown, already in one, etc.), do a simple greeting
     const dialogue = (action.parameters.dialogue as string) || `${agent.name} nods at ${target.name}.`;
 
-    // Improve relationship slightly from conversation
+    // Improve relationship slightly from brief interaction
     this.relationshipGraph.modifyRelationship(agent.id, targetId, { familiarity: 1 });
 
     return {

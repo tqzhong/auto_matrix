@@ -5,6 +5,7 @@ import type { StoryEngine } from '../story/StoryEngine.js';
 import type { LLMClient } from '../llm/LLMClient.js';
 import type { MemoryManager } from '../memory/MemoryManager.js';
 import type { RelationshipGraph } from './RelationshipGraph.js';
+import type { ConversationEngine } from './ConversationEngine.js';
 
 export class DecisionEngine {
   constructor(
@@ -12,6 +13,7 @@ export class DecisionEngine {
     private memoryManager: MemoryManager,
     private relationshipGraph: RelationshipGraph,
     private storyEngine: StoryEngine,
+    private conversationEngine: ConversationEngine,
   ) {}
 
   async batchDecide(agents: Agent[], allAgents: Map<string, AgentState>, tick: number): Promise<void> {
@@ -19,6 +21,8 @@ export class DecisionEngine {
 
     for (const [, group] of groups) {
       const needsDecision = group.filter(a => {
+        // Skip agents currently in an active conversation
+        if (this.conversationEngine.isAgentInConversation(a.id)) return false;
         const action = a.state.currentAction;
         return !action || action.progress >= 1;
       });
@@ -51,7 +55,7 @@ export class DecisionEngine {
       return this.ruleBasedDecision(state, nearby, tick);
     }
 
-    // Get memories as string
+    // Get memories as string for context
     const memories = this.memoryManager.getRecentContext(state.id, 10);
     const memoriesStr = memories.map(m => `[${m.type}] ${m.content}`).join('\n');
     const phase = this.storyEngine.getCurrentPhaseId();
@@ -107,16 +111,29 @@ export class DecisionEngine {
   }
 
   private buildDecisionPrompt(state: AgentState, nearby: AgentState[], memories: string, phase: string): string {
-    const nearbyDesc = nearby.map(a =>
-      `- ${a.name} (${a.faction}): ${distance(a.position, state.position).toFixed(1)}m, ${a.currentAction?.type || 'idle'}`
-    ).join('\n');
+    const nearbyDesc = nearby.map(a => {
+      const rel = this.relationshipGraph.getRelationship(state.id, a.id);
+      const relHint = rel
+        ? ` [trust:${rel.trust} fear:${rel.fear} respect:${rel.respect}]`
+        : '';
+      return `- ${a.name} (${a.faction}): ${distance(a.position, state.position).toFixed(1)}m, ${a.currentAction?.type || 'idle'}${relHint}`;
+    }).join('\n');
 
-    return `You are ${state.name}. Current state: health=${state.health}/100, mood=${state.mood}, goal="${state.currentGoal}", awakened=${state.isAwakened}, phase=${phase}.
+    // Include conversation memories specifically
+    const convMemories = this.memoryManager.getMemoriesByType(state.id, 'conversation');
+    const recentConvStr = convMemories.slice(-3).map(m => `[conversation] ${m.content}`).join('\n');
+    const reflectionStr = this.memoryManager.getMemoriesByType(state.id, 'reflection')
+      .slice(-2).map(m => `[reflection] ${m.content}`).join('\n');
+
+    return `You are ${state.name}. Current state: health=${state.health}/100, mood=${state.mood}, goal="${state.currentGoal}", awakened=${state.isAwakened}, inMatrix=${state.isInMatrix}, phase=${phase}.
 
 Nearby: ${nearbyDesc || '(nobody)'}
 Recent: ${memories || '(nothing)'}
+${recentConvStr ? `Past Conversations:\n${recentConvStr}` : ''}
+${reflectionStr ? `Reflections:\n${reflectionStr}` : ''}
 
 Choose ONE action: idle, move_to, talk_to, attack, observe, defend.
+If you choose talk_to, specify which nearby character and a brief reason.
 Reply: ACTION: <type> TARGET: <id or none> REASON: <brief>`;
   }
 
@@ -124,7 +141,17 @@ Reply: ACTION: <type> TARGET: <id or none> REASON: <brief>`;
     const lower = content.toLowerCase();
 
     if (lower.includes('talk') && nearby.length > 0) {
-      const target = nearby[Math.floor(Math.random() * nearby.length)];
+      // Try to find a specific target mentioned in the response
+      let target = this.findNamedTarget(content, nearby);
+      if (!target) {
+        target = nearby[Math.floor(Math.random() * nearby.length)];
+      }
+
+      // Don't start conversation if target is already in one
+      if (this.conversationEngine.isAgentInConversation(target.id)) {
+        return this.createIdleAction(tick);
+      }
+
       return {
         type: 'talk_to',
         target: target.id,
@@ -157,6 +184,19 @@ Reply: ACTION: <type> TARGET: <id or none> REASON: <brief>`;
     }
 
     return this.createIdleAction(tick);
+  }
+
+  /**
+   * Try to find a specific target mentioned by name in the LLM response.
+   */
+  private findNamedTarget(content: string, nearby: AgentState[]): AgentState | null {
+    const lower = content.toLowerCase();
+    for (const agent of nearby) {
+      if (lower.includes(agent.name.toLowerCase())) {
+        return agent;
+      }
+    }
+    return null;
   }
 
   private createIdleAction(tick: number): AgentAction {

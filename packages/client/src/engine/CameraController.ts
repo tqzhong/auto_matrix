@@ -2,13 +2,13 @@ import * as THREE from 'three';
 import type { Vector3 } from '@auto_matrix/shared';
 
 const MIN_DISTANCE = 30;
-const MAX_DISTANCE = 200;
-const DEFAULT_DISTANCE = 80;
+const MAX_DISTANCE = 800;
+const DEFAULT_DISTANCE = 120;
 const DEFAULT_ELEVATION = 1.1;
 const DEFAULT_AZIMUTH = Math.PI * 0.25;
 const ROTATE_SPEED = 0.005;
-const PAN_SPEED = 0.3;
-const ZOOM_SPEED = 5;
+const PAN_SPEED = 0.5;
+const ZOOM_SPEED = 8;
 const LERP_SPEED = 3;
 
 export class CameraController {
@@ -20,8 +20,8 @@ export class CameraController {
 
   private isRotating = false;
   private isPanning = false;
-  private lastMouseX = 0;
-  private lastMouseY = 0;
+  private lastPointerX = 0;
+  private lastPointerY = 0;
 
   private followTarget: THREE.Vector3 | null = null;
   private followLerp = 0;
@@ -30,7 +30,7 @@ export class CameraController {
   constructor(camera: THREE.PerspectiveCamera, domElement: HTMLElement) {
     this.camera = camera;
     this.domElement = domElement;
-    this.target = new THREE.Vector3(256, 0, 256);
+    this.target = new THREE.Vector3(1280, 0, 1280);
     this.distance = DEFAULT_DISTANCE;
     this.elevation = DEFAULT_ELEVATION;
     this.azimuth = DEFAULT_AZIMUTH;
@@ -56,17 +56,20 @@ export class CameraController {
 
   private onMouseDown = (e: MouseEvent): void => {
     if (e.button === 2) {
+      // Right click → rotate camera
       this.isRotating = true;
-    } else if (e.button === 1) {
+    } else if (e.button === 0 || e.button === 1) {
+      // Left click / middle click → pan camera
+      // Left click also covers macOS three-finger drag
       this.isPanning = true;
     }
-    this.lastMouseX = e.clientX;
-    this.lastMouseY = e.clientY;
+    this.lastPointerX = e.clientX;
+    this.lastPointerY = e.clientY;
   };
 
   private onMouseMove = (e: MouseEvent): void => {
-    const dx = e.clientX - this.lastMouseX;
-    const dy = e.clientY - this.lastMouseY;
+    const dx = e.clientX - this.lastPointerX;
+    const dy = e.clientY - this.lastPointerY;
 
     if (this.isRotating) {
       this.azimuth -= dx * ROTATE_SPEED;
@@ -86,18 +89,18 @@ export class CameraController {
         forward,
       ).normalize();
 
-      this.target.addScaledVector(right, dx * PAN_SPEED);
-      this.target.addScaledVector(forward, -dy * PAN_SPEED);
+      this.target.addScaledVector(right, -dx * PAN_SPEED);
+      this.target.addScaledVector(forward, dy * PAN_SPEED);
       this.followTarget = null;
     }
 
-    this.lastMouseX = e.clientX;
-    this.lastMouseY = e.clientY;
+    this.lastPointerX = e.clientX;
+    this.lastPointerY = e.clientY;
   };
 
   private onMouseUp = (e: MouseEvent): void => {
     if (e.button === 2) this.isRotating = false;
-    if (e.button === 1) this.isPanning = false;
+    if (e.button === 0 || e.button === 1) this.isPanning = false;
   };
 
   focusOnPosition(pos: Vector3): void {

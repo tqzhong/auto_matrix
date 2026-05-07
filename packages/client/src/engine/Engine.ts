@@ -26,13 +26,13 @@ export class Engine {
   constructor(container: HTMLElement) {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x87CEEB); // sky blue
-    this.scene.fog = new THREE.FogExp2(0xc0d8e8, 0.0015);
+    this.scene.fog = new THREE.FogExp2(0xc0d8e8, 0.0005);
 
     this.camera = new THREE.PerspectiveCamera(
       60,
       window.innerWidth / window.innerHeight,
-      0.5,
-      1000,
+      1,
+      5000,
     );
 
     this.renderer = new THREE.WebGLRenderer({
@@ -70,6 +70,8 @@ export class Engine {
     this.renderer.setSize(w, h);
   };
 
+  private chunkUpdateCounter = 0;
+
   animate = (): void => {
     this.animationId = requestAnimationFrame(this.animate);
 
@@ -80,6 +82,13 @@ export class Engine {
     this.agentRenderer.update(delta);
     this.lightingSystem.update(this.elapsed);
     this.particleSystem.update(delta);
+
+    // Update visible chunks every 60 frames (lazy loading for large world)
+    this.chunkUpdateCounter++;
+    if (this.chunkUpdateCounter % 60 === 0) {
+      const camPos = this.camera.position;
+      this.voxelRenderer.updateVisibility(camPos.x, camPos.z);
+    }
 
     this.renderer.render(this.scene, this.camera);
   };

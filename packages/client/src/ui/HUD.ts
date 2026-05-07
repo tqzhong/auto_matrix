@@ -1,4 +1,4 @@
-import type { StoryPhaseId } from '@auto_matrix/shared';
+import type { StoryPhaseId, CyclePhaseId } from '@auto_matrix/shared';
 
 const PHASE_NAMES: Record<string, string> = {
   phase1_normal_life: 'Phase I — Normal Life',
@@ -14,6 +14,28 @@ const PHASE_COLORS: Record<string, string> = {
   phase4_resolution: '#00ccff',
 };
 
+const CYCLE_PHASE_COLORS: Record<CyclePhaseId, string> = {
+  cycle_stable: '#00ff41',
+  cycle_anomaly: '#ffaa00',
+  cycle_discovery: '#ff6600',
+  cycle_revolt: '#ff2244',
+  cycle_catastrophe: '#ff0000',
+  cycle_extinction: '#660000',
+  cycle_darkness: '#222222',
+  cycle_rebirth: '#00ccff',
+};
+
+const CYCLE_PHASE_SHORT: Record<CyclePhaseId, string> = {
+  cycle_stable: 'STABLE',
+  cycle_anomaly: 'ANOMALY',
+  cycle_discovery: 'DISCOVERY',
+  cycle_revolt: 'REVOLT',
+  cycle_catastrophe: 'CATASTRO',
+  cycle_extinction: 'EXTINCT',
+  cycle_darkness: 'DARK',
+  cycle_rebirth: 'REBIRTH',
+};
+
 export class HUD {
   private container: HTMLElement;
   private tickEl: HTMLElement;
@@ -21,6 +43,9 @@ export class HUD {
   private timeEl: HTMLElement;
   private agentCountEl: HTMLElement;
   private conversationsEl: HTMLElement;
+  private cycleNumEl: HTMLElement;
+  private cyclePhaseEl: HTMLElement;
+  private cycleStatsEl: HTMLElement;
   private speedButtons: HTMLButtonElement[];
   private currentSpeed = 1;
 
@@ -63,7 +88,29 @@ export class HUD {
     this.tickEl = document.createElement('div');
     this.phaseEl = document.createElement('div');
     this.timeEl = document.createElement('div');
+
+    const cycleDivider = document.createElement('div');
+    cycleDivider.style.cssText = `
+      margin-top: 6px; padding-top: 6px; border-top: 1px solid #00ff4122;
+    `;
+
+    this.cycleNumEl = document.createElement('div');
+    this.cycleNumEl.style.cssText = `
+      font-size: 14px; font-weight: bold; letter-spacing: 2px;
+      color: #00ff41;
+    `;
+    this.cycleNumEl.textContent = 'CYCLE I';
+
+    this.cyclePhaseEl = document.createElement('div');
+    this.cyclePhaseEl.style.cssText = 'font-size: 11px; letter-spacing: 1px;';
+    this.cyclePhaseEl.innerHTML = '<span style="color:#00ff41">▸ STABLE</span>';
+
+    this.cycleStatsEl = document.createElement('div');
+    this.cycleStatsEl.style.cssText = 'font-size: 10px; color: #00aa2e;';
+    this.cycleStatsEl.textContent = 'POP 0 · AWAKE 0 · ☠ 0';
+
     topPanel.append(this.tickEl, this.phaseEl, this.timeEl);
+    topPanel.append(cycleDivider, this.cycleNumEl, this.cyclePhaseEl, this.cycleStatsEl);
 
     const rightPanel = document.createElement('div');
     rightPanel.style.cssText = `
@@ -154,6 +201,26 @@ export class HUD {
     this.timeEl.textContent = `TIME: ${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
     this.agentCountEl.textContent = `AGENTS: ${agentCount}`;
     this.conversationsEl.textContent = `CONVOS: ${activeConversations}`;
+  }
+
+  setCycleInfo(
+    cycleNumber: number,
+    phase: CyclePhaseId,
+    population: number,
+    awakened: number,
+    destructions: number,
+  ): void {
+    const ROMAN = ['O', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X',
+      'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX'];
+    const roman = cycleNumber <= 20 ? ROMAN[cycleNumber] : String(cycleNumber);
+
+    this.cycleNumEl.textContent = `CYCLE ${roman}`;
+
+    const phaseColor = CYCLE_PHASE_COLORS[phase] ?? '#00ff41';
+    const phaseShort = CYCLE_PHASE_SHORT[phase] ?? phase;
+    this.cyclePhaseEl.innerHTML = `<span style="color:${phaseColor}">▸ ${phaseShort}</span>`;
+
+    this.cycleStatsEl.textContent = `POP ${population} · AWAKE ${awakened} · ☠ ${destructions}`;
   }
 
   dispose(): void {
