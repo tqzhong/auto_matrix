@@ -1,0 +1,257 @@
+import { LOCATIONS, NEO_CAST, neoSkillUnlocked, insideLifeRoom, MELEE_COMBO, COMBO_WINDOW, COMBAT_SKILLS, playerSkills, dodgeDirection, combatDisplace, groundHeight, meleeReach, distance, locationEntrance, playerBlocked, stepPlayer, type AgentState, type PlayerInput, type SandboxCommand, type SkillCast, type Vector3, type CombatSkillId } from '@auto_matrix/shared';
+import type { SandboxSystem } from './SandboxSystem.js';
+import type { WorldState } from '../world/WorldState.js';
+import type { ConversationEngine } from '../agents/ConversationEngine.js';
+import type { ActionExecutor } from '../agents/ActionExecutor.js';
+import type { WorldDynamics } from '../story/WorldDynamics.js';
+
+interface PlayerSession {
+  agentId: string;
+  input: PlayerInput;
+  lastInput: number;
+  vy: number;
+  planar: { x: number; z: number };
+  lastAttack: number;
+  combo: number;
+  strike?: { age: number; resolved: boolean };
+  impulse?: { direction: Vector3; remaining: number; speed: number; strike: boolean };
+  palm?: { remaining: number; yaw: number };
+  stagger: number;
+}
+const idleInput = (): PlayerInput => ({ x: 0, z: 0, yaw: 0, sprint: false, jump: false, sequence: 0 });
+
+export class PlayerController {
+  private sessions = new Map<string, PlayerSession>();
+  private owners = new Map<string, string>();
+  onSkill?: (cast: SkillCast, tick: number) => void;
+  onReplaced?: (socketId: string, tick: number) => void;
+
+  constructor(private world: WorldState, private conversations: ConversationEngine, private actions: ActionExecutor, private dynamics: WorldDynamics, private sandbox?: SandboxSystem) {}
+
+  getAgent(socketId: string): AgentState | undefined {
+    const session = this.sessions.get(socketId);
+    return session ? this.world.agents.get(session.agentId) : undefined;
+  }
+
+  possess(socketId: string, id: string, tick: number, takeover = false): { agentId?: string; error?: string } {
+    const agent = this.world.agents.get(id);
+    if (!agent) return { error: '没有找到这个角色。' };
+    const owner = this.owners.get(id);
+    if (owner && owner !== socketId) {
+      if (!takeover) return { error: '这个角色已在其他页面游玩。点击角色，在当前页面继续原有进度。' };
+      this.release(socketId, tick);
+      const session = this.sessions.get(owner)!;
+      session.input = { ...idleInput(), yaw: agent.rotation }; session.lastInput = Date.now();
+      session.planar = { x: 0, z: 0 }; session.strike = undefined; session.impulse = undefined; session.palm = undefined;
+      agent.velocity = { x: 0, y: session.vy, z: 0 };
+      this.sessions.delete(owner); this.sessions.set(socketId, session); this.owners.set(id, socketId);
+      this.onReplaced?.(owner, tick);
+      if (agent.status === 'alive') return { agentId: id };
+    } else if (owner === socketId && agent.status === 'alive') return { agentId: id };
+    this.release(socketId, tick);
+    this.conversations.interrupt(id, this.world.agents, tick);
+    if (agent.status !== 'alive') {
+      agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
+      agent.currentLocation = agent.mind?.home ?? (agent.isInMatrix ? 'times_square' : 'nebuchadnezzar');
+      agent.isInMatrix = LOCATIONS[agent.currentLocation]?.world !== 'real';
+      agent.position = locationEntrance(agent.currentLocation);
+      if (agent.mind) { agent.mind.energy = 85; agent.mind.stress = 10; }
+      this.dynamics.record({ type: 'agent_spawn', title: `${agent.name} 的信号被重建`, description: '玩家选择重新接入这个角色，角色在归属地点恢复行动。',
+        cause: '玩家重建角色', consequence: '生命恢复，既有记忆、关系与觉醒状态被保留。', involvedAgents: [id], location: agent.currentLocation,
+        position: { ...agent.position }, tick, importance: 7 });
+    }
+    agent.controller = 'player';
+    this.sandbox?.enter(agent);
+    if (playerBlocked(agent.position, agent.isInMatrix)) agent.position = locationEntrance(agent.currentLocation);
+    agent.currentAction = null; agent.targetPosition = null; agent.currentPath = [];
+    agent.velocity = { x: 0, y: 0, z: 0 };
+    this.sessions.set(socketId, { agentId: id, input: { ...idleInput(), yaw: agent.rotation }, lastInput: Date.now(), vy: 0, planar: { x: 0, z: 0 }, lastAttack: 0, combo: 0, stagger: 0 });
+    this.owners.set(id, socketId);
+    if (agent.mind) agent.mind.thought = '由玩家决定下一步行动。';
+    return { agentId: id };
+  }
+
+  release(socketId: string, tick: number): void {
+    const session = this.sessions.get(socketId);
+    if (!session) return;
+    const agent = this.world.agents.get(session.agentId);
+    if (agent) {
+      this.conversations.interrupt(agent.id, this.world.agents, tick);
+      delete agent.controller;
+      agent.currentAction = null; agent.velocity = { x: 0, y: 0, z: 0 };
+      agent.activeEffects = agent.activeEffects.filter(effect => effect.remainingSeconds === undefined);
+      if (agent.mind) agent.mind.thought = '重新回到自己的生活，继续追寻尚未完成的目标。';
+    }
+    this.owners.delete(session.agentId); this.sessions.delete(socketId);
+  }
+
+  receiveInput(socketId: string, value: unknown): void {
+    const session = this.sessions.get(socketId);
+    if (!session || !value || typeof value !== 'object') return;
+    const input = value as PlayerInput;
+    if (![input.x, input.z, input.yaw, input.sequence].every(Number.isFinite) || Math.abs(input.x) > 1 || Math.abs(input.z) > 1 || input.sequence < session.input.sequence) return;
+    session.input = { x: input.x, z: input.z, yaw: input.yaw, sprint: input.sprint === true, jump: input.jump === true || session.input.jump, sequence: input.sequence };
+    session.lastInput = Date.now();
+  }
+
+  timeScale(): number {
+    return [...this.sessions.values()].some(session => {
+      const agent = this.world.agents.get(session.agentId)!;
+      return agent.status === 'alive' && agent.activeEffects.some(effect => effect.visualEffect === 'slow_motion' && (effect.remainingSeconds ?? 0) > 0);
+    }) ? .25 : 1;
+  }
+
+  takeHit(id: string): void {
+    const owner = this.owners.get(id); const session = owner ? this.sessions.get(owner) : undefined;
+    if (session) { session.strike = undefined; session.impulse = undefined; session.palm = undefined; session.stagger = .22; }
+  }
+
+  step(dt: number, running: boolean, tick: number, now = Date.now()): void {
+    dt = Math.min(dt, .1);
+    if (running) for (const agent of this.world.agents.values()) {
+      for (const id of Object.keys(agent.combatCooldowns ?? {})) agent.combatCooldowns![id] = Math.max(0, agent.combatCooldowns![id] - dt);
+      agent.activeEffects = agent.activeEffects.filter(effect => {
+        if (effect.remainingSeconds === undefined) return true;
+        effect.remainingSeconds -= dt; return effect.remainingSeconds > 0 && agent.status === 'alive';
+      });
+    }
+    for (const session of this.sessions.values()) {
+      const agent = this.world.agents.get(session.agentId)!;
+      if (!running || agent.status !== 'alive') { agent.velocity = { x: 0, y: 0, z: 0 }; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue; }
+      session.stagger = Math.max(0, session.stagger - dt);
+      const stale = now - session.lastInput > 300;
+      const input = stale ? { ...idleInput(), yaw: session.input.yaw } : session.input;
+      const previous = agent.position;
+      const boost = agent.activeEffects.some(effect => ['speed_blur', 'agent_dodge', 'phase_shift'].includes(effect.visualEffect)) ? 1.8 : 1;
+      const attackScale = session.impulse || session.stagger > 0 ? 0 : session.strike ? .4 : 1;
+      const movement = stepPlayer(previous, session.vy, { ...input, x: input.x * attackScale, z: input.z * attackScale }, Math.min(dt, 0.1), agent.isInMatrix, this.sandbox?.state.structures, stale ? undefined : session.planar, boost);
+      agent.position = movement.position; session.vy = movement.verticalVelocity; session.planar = movement.horizontalVelocity; session.input.jump = false;
+      agent.rotation = input.yaw;
+      if (session.impulse) {
+        const impulse = session.impulse;
+        agent.position = combatDisplace(agent.position, impulse.direction, impulse.speed * Math.min(dt, impulse.remaining), agent.isInMatrix, this.sandbox?.state.structures);
+        impulse.remaining -= dt;
+        if (impulse.remaining <= .0001) {
+          if (impulse.strike) { agent.rotation = Math.atan2(impulse.direction.x, impulse.direction.z); this.sandbox?.skill(agent, 'scorpion_dash', tick); }
+          session.impulse = undefined;
+        }
+      }
+      agent.velocity = { x: (agent.position.x - previous.x) / dt, y: session.vy, z: (agent.position.z - previous.z) / dt };
+      if (session.palm) {
+        session.palm.remaining -= dt;
+        if (session.palm.remaining <= 0) { agent.rotation = session.palm.yaw; this.sandbox?.skill(agent, 'crushing_palm', tick); session.palm = undefined; }
+      }
+      if (session.strike) {
+        session.strike.age += dt;
+        const strike = MELEE_COMBO[session.combo];
+        if (!session.strike.resolved && session.strike.age >= strike.contact) {
+          session.strike.resolved = true;
+          if (this.sandbox?.attack(agent, tick, session.combo) == null) {
+            const target = [...this.world.agents.values()].filter(other => !(this.sandbox?.state.neoLife && NEO_CAST.includes(other.id)) && other.id !== agent.id && other.status === 'alive' && other.isInMatrix === agent.isInMatrix
+              && meleeReach(agent.position, agent.rotation, other.position, strike.reach, agent.isInMatrix, this.sandbox?.state.structures))
+              .sort((a, b) => distance(a.position, agent.position) - distance(b.position, agent.position))[0];
+            if (target) {
+              const action = { type: 'attack' as const, target: target.id, parameters: { player: true, damage: strike.damage, combo: session.combo }, startedAt: tick, duration: 1, progress: 0 };
+              this.actions.execute(agent, action, this.world.agents, tick); agent.currentAction = action;
+            }
+          }
+        }
+        if (session.strike.age >= strike.duration) session.strike = undefined;
+      }
+      if (!this.conversations.isAgentInConversation(agent.id)) {
+        const moving = Math.hypot(input.x, input.z) > 0.05;
+        if (!session.strike) {
+          agent.currentAction = { type: moving ? 'move_to' : 'idle', parameters: { player: true, resolved: true }, startedAt: tick, duration: 1, progress: 0 };
+        }
+      }
+      const nearbyLocation = Object.values(LOCATIONS).filter(location => location.id !== 'downtown' && (location.world === 'matrix') === agent.isInMatrix)
+        .find(location => distance(locationEntrance(location.id), agent.position) < 42);
+      const room = agent.isInMatrix ? insideLifeRoom(agent.position) : undefined;
+      if (room) agent.currentLocation = room;
+      else if (nearbyLocation) agent.currentLocation = nearbyLocation.id;
+      else if (agent.isInMatrix) agent.currentLocation = 'downtown';
+    }
+  }
+
+  act(socketId: string, kind: string, tick: number): string {
+    const session = this.sessions.get(socketId);
+    const agent = this.getAgent(socketId);
+    if (!session || !agent || agent.status !== 'alive') return '请先接入一个存活角色。';
+    if (agent.id === 'neo' && this.sandbox?.state.neoLife) {
+      if (this.sandbox.state.neoLife.activity) return '先完成当前日常活动，或移动离开来中断它。';
+      if ((kind === 'ability' || kind === 'ability2') && !neoSkillUnlocked(this.sandbox.state.neoLife, kind === 'ability' ? 0 : 1)) return '这项能力会在 Neo 的训练与觉醒剧情中解锁。';
+      if (kind === 'talk' && !agent.isAwakened) return 'J 打开生活手记：可以和同事聊天，或预约与朋友见面。';
+    }
+    const nearby = [...this.world.agents.values()].filter(other => other.id !== agent.id && other.status === 'alive' && other.isInMatrix === agent.isInMatrix && distance(agent.position, other.position) < 14)
+      .sort((a, b) => distance(agent.position, a.position) - distance(agent.position, b.position));
+    if (kind === 'talk') {
+      const target = nearby[0];
+      if (!target) return '走近一个人物，然后按 E 交谈。';
+      return this.conversations.startConversation(agent.id, target.id, agent, target, undefined, tick) ? `正在与 ${target.name} 交谈。` : `${target.name} 暂时无法交谈，稍后再试。`;
+    }
+    if (kind === 'attack') {
+      const elapsed = (Date.now() - session.lastAttack) / 1000;
+      if (session.stagger > 0 || session.impulse || session.palm || session.strike && !session.strike.resolved || elapsed < MELEE_COMBO[session.combo].duration) return '';
+      session.combo = elapsed < COMBO_WINDOW ? (session.combo + 1) % MELEE_COMBO.length : 0;
+      session.lastAttack = Date.now(); session.strike = { age: 0, resolved: false };
+      agent.currentAction = { type: 'attack', parameters: { player: true, resolved: true, combo: session.combo }, startedAt: tick, duration: 1, progress: 0 };
+      return '';
+    }
+    if (kind === 'ability' || kind === 'ability2' || kind === 'dodge') {
+      return this.cast(agent, session, kind === 'dodge' ? 'dodge' : playerSkills(agent)[kind === 'ability' ? 0 : 1], tick);
+    }
+    if (kind === 'travel') {
+      const phone = locationEntrance(agent.isInMatrix ? 'subway_station' : 'nebuchadnezzar');
+      if (distance(agent.position, phone) > 24) return agent.isInMatrix ? '前往地铁站出口电话，靠近后按 R 拔出。' : '前往尼布甲尼撒号接入终端，靠近后按 R 进入 Matrix。';
+      if (agent.isInMatrix && !agent.isAwakened && agent.faction !== 'machines') return '尚未觉醒的角色无法使用出口。';
+      agent.isInMatrix = !agent.isInMatrix;
+      agent.currentLocation = agent.isInMatrix ? 'subway_station' : 'nebuchadnezzar';
+      agent.position = locationEntrance(agent.currentLocation);
+      session.vy = 0; session.planar = { x: 0, z: 0 }; session.input = idleInput();
+      session.strike = undefined;
+      session.impulse = undefined;
+      session.palm = undefined;
+      agent.activeEffects = agent.activeEffects.filter(effect => effect.remainingSeconds === undefined);
+      this.dynamics.record({ type: 'portal_open', title: `${agent.name} ${agent.isInMatrix ? '接入 Matrix' : '返回真实世界'}`, description: '玩家通过出口电话与接入终端切换世界。', cause: '玩家交互', consequence: '人物继续保留记忆与关系。', involvedAgents: [agent.id], location: agent.currentLocation, position: { ...agent.position }, tick, importance: 7 });
+      return agent.isInMatrix ? '接入成功。欢迎回到 Matrix。' : '已拔出，返回尼布甲尼撒号。';
+    }
+    return '';
+  }
+
+  private cast(agent: AgentState, session: PlayerSession, id: CombatSkillId, tick: number): string {
+    const skill = COMBAT_SKILLS[id];
+    if (skill.matrixOnly && !agent.isInMatrix) return '这项程序能力需要接入 Matrix。';
+    if ((agent.combatCooldowns?.[id] ?? 0) > 0) return `${skill.name}冷却中：${Math.ceil(agent.combatCooldowns![id])} 秒。`;
+    if (session.stagger > 0 || session.impulse || session.palm) return '';
+    if (['dodge', 'scorpion_dash'].includes(id) && agent.position.y > groundHeight(agent.position, agent.isInMatrix) + .15) return '落地后才能突进或闪避。';
+    agent.combatCooldowns ??= {}; agent.combatCooldowns[id] = skill.cooldown;
+    agent.rotation = session.input.yaw;
+    session.strike = undefined;
+    const direction = id === 'dodge' ? dodgeDirection(session.input.x, session.input.z, session.input.yaw)
+      : { x: Math.sin(agent.rotation), y: 0, z: Math.cos(agent.rotation) };
+    agent.activeEffects.push({ abilityId: `combat:${id}`, visualEffect: skill.effect, remainingTicks: 1, remainingSeconds: skill.duration });
+    if (id === 'dodge' || id === 'scorpion_dash') {
+      session.planar = { x: 0, z: 0 };
+      session.impulse = { direction, remaining: skill.duration, speed: id === 'dodge' ? 16 : 20, strike: id === 'scorpion_dash' };
+    } else if (id === 'crushing_palm') session.palm = { remaining: .18, yaw: agent.rotation };
+    else if (id === 'field_patch') {
+      for (const other of this.world.agents.values()) if (other.status === 'alive' && other.faction === agent.faction && other.isInMatrix === agent.isInMatrix && distance(other.position, agent.position) <= 10) other.health = Math.min(other.maxHealth, other.health + 25);
+    } else if (['force_push', 'system_hack', 'viral_overwrite', 'code_snare', 'escape'].includes(id)) this.sandbox?.skill(agent, id, tick);
+    this.onSkill?.({ source: agent.id, skill: id, position: { ...agent.position }, direction, matrix: agent.isInMatrix }, tick);
+    return id === 'dodge' ? '' : `${skill.name} · ${skill.description}`;
+  }
+
+  sandboxAction(socketId: string, command: SandboxCommand, tick: number): string {
+    const agent = this.getAgent(socketId);
+    if (!agent || !this.sandbox) return '请先接入角色。';
+    const result = this.sandbox.command(agent, command, tick);
+    if (command.kind === 'transit' || command.kind === 'life') {
+      const session = this.sessions.get(socketId)!;
+      session.vy = 0; session.planar = { x: 0, z: 0 }; session.input = { ...idleInput(), yaw: agent.rotation };
+      session.strike = undefined;
+      session.impulse = undefined;
+      session.palm = undefined;
+    }
+    return result;
+  }
+}

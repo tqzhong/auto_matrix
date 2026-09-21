@@ -1,0 +1,11 @@
+Use case: photorealistic-natural
+Asset type: A single 2048 by 2048 game facial texture atlas, exactly 2 by 2 perfectly equal square tiles, no margins or gutters.
+Primary request: Four photorealistic FRONT ORTHOGRAPHIC unlit human head diffuse / albedo references for 3D character texture projection, Matrix 1999 actors in their film appearance.
+Top left tile: Neo, young Keanu Reeves, light olive skin, narrow angular jaw, straight nose, clean shaven, short jet black slicked back hair with a soft center part.
+Top right tile: Trinity, Carrie-Anne Moss 1999, pale skin, feminine angular cheekbones, short slick black pixie hair tucked behind ears, no makeup.
+Bottom left tile: Agent Smith, Hugo Weaving 1999, broad forehead, long firm jaw, stern neutral mouth, short dark brown neatly combed back hair, clean shaven.
+Bottom right tile: Morpheus, Laurence Fishburne 1999, dark brown skin, broad strong face and nose, shaved bald head, neat narrow moustache and small dark goatee around mouth.
+Composition: ALL FOUR heads perfectly frontal, zero yaw/tilt, eyes looking straight at camera, neutral closed mouth. Whole scalp, ears, chin included. Head top at exactly 8% of each tile height, chin at exactly 92%. Head central axis at 50% of tile width, outer ears at 10% and 90%. Crop away shoulders and neck just under chin, each head isolated on flat neutral skin-tone beige background. Match head sizes and eye lines across tiles.
+Materials/textures: Natural fine pores and subtle skin color variation, realistic lips, eyebrows, facial detail. NO glasses or sunglasses (these are separate 3D geometry), no necklaces, no clothing, no green color grade.
+Lighting: Perfectly even shadowless diffuse frontal light, soft ambient illumination, no directional highlights, no cast shadows, no dramatic lighting. This will become a texture on a sculpted 3D face.
+Constraints: No text, labels, captions, tile borders or watermarks. Not a collage of scenes, only four isolated aligned frontal head textures. High detail crisp natural skin, not cartoon.

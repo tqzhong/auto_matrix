@@ -1,14 +1,15 @@
 import { LOCATIONS, distance, generateId, type AgentState, type AgentId, type Vector3, type ChunkData, type LocationData, type WorldEvent, type StoryPhaseId } from '@auto_matrix/shared';
 
 export class WorldState {
-  dimensions = { x: 1000, y: 100, z: 1000 };
+  dimensions = { x: 2560, y: 200, z: 2560 };
   chunks: Map<string, ChunkData> = new Map();
   locations: Map<string, LocationData> = new Map();
   agents: Map<AgentId, AgentState> = new Map();
   globalEvents: WorldEvent[] = [];
   currentPhase: StoryPhaseId = 'phase1_normal_life';
   simulationTick = 0;
-  timeOfDay = 0;
+  timeOfDay = 7500;
+  day = 1;
 
   private readonly chunkSize = 16;
 
@@ -38,7 +39,7 @@ export class WorldState {
   }
 
   registerAgent(agent: AgentState): void {
-    this.agents.set(agent.id, { ...agent });
+    this.agents.set(agent.id, agent);
   }
 
   removeAgent(agentId: AgentId): void {
@@ -57,7 +58,7 @@ export class WorldState {
   updateAgent(agentId: AgentId, updates: Partial<AgentState>): void {
     const existing = this.agents.get(agentId);
     if (!existing) return;
-    this.agents.set(agentId, { ...existing, ...updates });
+    Object.assign(existing, updates);
   }
 
   getAgentsNear(position: Vector3, radius: number): AgentState[] {
@@ -109,11 +110,16 @@ export class WorldState {
     return `${cx},${cy},${cz}`;
   }
 
-  advanceTick(): void {
+  advanceTick(minutes = .72): void {
     this.simulationTick += 1;
-    // 24000 ticks = 1 full day cycle (like Minecraft)
-    // At 1 tick/sec, that's ~6.67 hours per real minute at 1x speed
-    this.timeOfDay = this.simulationTick % 24000;
+    // A day is 2000 simulation ticks: 16m40s at the default 500ms tick rate.
+    this.advanceMinutes(minutes);
+  }
+
+  advanceMinutes(minutes: number): void {
+    const time = this.timeOfDay + minutes / 60 * 1000;
+    this.day += Math.floor(time / 24000);
+    this.timeOfDay = time % 24000;
   }
 
   getCurrentPhase(): StoryPhaseId {

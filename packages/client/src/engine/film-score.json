@@ -1,0 +1,147 @@
+{
+  "source": "https://www.dondavis.net/audio/",
+  "notice": "© 2026 Don Davis, For Promotional Use Only",
+  "retrieved": "2026-09-21",
+  "tracks": [
+    {
+      "title": "The Logos Location",
+      "film": "The Matrix Revolutions",
+      "url": "https://www.dondavis.net/media/matrixrevolutions/matrixrevolutions_1.mp3",
+      "file": "/assets/music/originals/matrixrevolutions_1.mp3",
+      "seconds": 58.510667,
+      "bytes": 702464,
+      "sha256": "fbc057f47589d1c773e7e7a12d00b4cb9e4e5048943741049cff8dde27704660",
+      "channels": 2
+    },
+    {
+      "title": "Das Banegold",
+      "film": "The Matrix Revolutions",
+      "url": "https://www.dondavis.net/media/matrixrevolutions/matrixrevolutions_2.mp3",
+      "file": "/assets/music/originals/matrixrevolutions_2.mp3",
+      "seconds": 59.878667,
+      "bytes": 718848,
+      "sha256": "f470347b0af99a5a3bc304b5b3e64520a1ef1e4e143044ecc785e445b7c43674",
+      "channels": 2
+    },
+    {
+      "title": "The Bane Revelation",
+      "film": "The Matrix Revolutions",
+      "url": "https://www.dondavis.net/media/matrixrevolutions/matrixrevolutions_3.mp3",
+      "file": "/assets/music/originals/matrixrevolutions_3.mp3",
+      "seconds": 66.934667,
+      "bytes": 804864,
+      "sha256": "27c6ba7db9a71ad78f83cd56f1c97d964dbeb9aef56bc0a49e167f7f381bb083",
+      "channels": 2
+    },
+    {
+      "title": "Neovision",
+      "film": "The Matrix Revolutions",
+      "url": "https://www.dondavis.net/media/matrixrevolutions/matrixrevolutions_4.mp3",
+      "file": "/assets/music/originals/matrixrevolutions_4.mp3",
+      "seconds": 54.442667,
+      "bytes": 655360,
+      "sha256": "dd0353efb01d3bf46f882731886fca784460e2c12e477c0d7322f0650806d0ef",
+      "channels": 2
+    },
+    {
+      "title": "Deus Ex Machina",
+      "film": "The Matrix Revolutions",
+      "url": "https://www.dondavis.net/media/matrixrevolutions/matrixrevolutions_5.mp3",
+      "file": "/assets/music/originals/matrixrevolutions_5.mp3",
+      "seconds": 47.386667,
+      "bytes": 569344,
+      "sha256": "b30956006bf83da1366cd0e62eb27f5a3d0f23553348f7630d3c5d2b2cdd1985",
+      "channels": 2
+    },
+    {
+      "title": "Neodämmerung",
+      "film": "The Matrix Revolutions",
+      "url": "https://www.dondavis.net/media/matrixrevolutions/matrixrevolutions_6.mp3",
+      "file": "/assets/music/originals/matrixrevolutions_6.mp3",
+      "seconds": 106.930667,
+      "bytes": 1283342,
+      "sha256": "d880b402fd1641dca9c2f6ab3d04e446ba3103952d498a5c64433aa72b426d87",
+      "channels": 2
+    },
+    {
+      "title": "Multiple Replication",
+      "film": "The Matrix Reloaded",
+      "url": "https://www.dondavis.net/media/matrixreloaded/matrixreloaded_1.mp3",
+      "file": "/assets/music/originals/matrixreloaded_1.mp3",
+      "seconds": 148.186667,
+      "bytes": 1779712,
+      "sha256": "48364e30688e3f467ea4b183aa71d3fbbcf8a5d9b5ae1ce90c000c46aa5f753c",
+      "channels": 2
+    },
+    {
+      "title": "Niaiserie",
+      "film": "The Matrix Reloaded",
+      "url": "https://www.dondavis.net/media/matrixreloaded/matrixreloaded_2.mp3",
+      "file": "/assets/music/originals/matrixreloaded_2.mp3",
+      "seconds": 129.430667,
+      "bytes": 1554432,
+      "sha256": "2612fc666e65693ef377e8abd3f8dbe8f6b47cdd7e6ee8f6546387b298083762",
+      "channels": 2
+    },
+    {
+      "title": "Chateau Swashbuckling",
+      "film": "The Matrix Reloaded",
+      "url": "https://www.dondavis.net/media/matrixreloaded/matrixreloaded_3.mp3",
+      "file": "/assets/music/originals/matrixreloaded_3.mp3",
+      "seconds": 87.778667,
+      "bytes": 1054720,
+      "sha256": "27413dfb60484476487a1fea1d37897cfb592ee7ca0b87dec78976b41d755b94",
+      "channels": 2
+    },
+    {
+      "title": "Trinity Infinity",
+      "film": "The Matrix",
+      "url": "https://www.dondavis.net/media/matrix/matrix_1.mp3",
+      "file": "/assets/music/originals/matrix_1.mp3",
+      "seconds": 97.447417,
+      "bytes": 1171456,
+      "sha256": "df43c8b9a9b9c8b8c3bd09b13b98aee717f3348074211c7cee2d11ba0dbbe96a",
+      "channels": 2
+    },
+    {
+      "title": "Unable to Speak",
+      "film": "The Matrix",
+      "url": "https://www.dondavis.net/media/matrix/matrix_2.mp3",
+      "file": "/assets/music/originals/matrix_2.mp3",
+      "seconds": 73.08,
+      "bytes": 878720,
+      "sha256": "1f077da3d5f38c0ed91c74b724b5021080f38e14c576237fd1ff2b33d041d638",
+      "channels": 2
+    },
+    {
+      "title": "The Lafayette Mirror",
+      "film": "The Matrix",
+      "url": "https://www.dondavis.net/media/matrix/matrix_3.mp3",
+      "file": "/assets/music/originals/matrix_3.mp3",
+      "seconds": 86.606583,
+      "bytes": 1040384,
+      "sha256": "721cebf1e1d8a92618746cf6a655675a9c51d3bfbc7ca2430ec5bab501d64766",
+      "channels": 2
+    },
+    {
+      "title": "The Subway Fight",
+      "film": "The Matrix",
+      "url": "https://www.dondavis.net/media/matrix/matrix_4.mp3",
+      "file": "/assets/music/originals/matrix_4.mp3",
+      "seconds": 114.454667,
+      "bytes": 1374208,
+      "sha256": "aaeacc12c359adaa94fb5fcdcadf4a73259b022362761d92516cc315c8697663",
+      "channels": 2
+    },
+    {
+      "title": "Anything is Possible",
+      "film": "The Matrix",
+      "url": "https://www.dondavis.net/media/matrix/matrix_5.mp3",
+      "file": "/assets/music/originals/matrix_5.mp3",
+      "seconds": 137.134667,
+      "bytes": 1646592,
+      "sha256": "f448c193453619c0000488e98af80e1029b552960391591da9b35e23f048ff30",
+      "channels": 2
+    }
+  ]
+}

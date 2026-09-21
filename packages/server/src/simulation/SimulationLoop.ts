@@ -4,6 +4,7 @@ export class SimulationLoop {
   private tick = 0;
   private intervalId: ReturnType<typeof setInterval> | null = null;
   private running = false;
+  private ticking = false;
 
   constructor(
     private tickRateMs: number,
@@ -11,7 +12,7 @@ export class SimulationLoop {
     private reflectionInterval: number,
     private stateSyncInterval: number,
     private eventBus: EventBus,
-    private onTick: (tick: number) => void,
+    private onTick: (tick: number) => void | Promise<void>,
   ) {}
 
   start(): void {
@@ -29,6 +30,11 @@ export class SimulationLoop {
 
   getTick(): number {
     return this.tick;
+  }
+
+  restoreTick(tick: number): void {
+    if (this.running) throw new Error('Stop the simulation before restoring its clock');
+    this.tick = tick;
   }
 
   isRunning(): boolean {
@@ -59,8 +65,16 @@ export class SimulationLoop {
     return this.tick % 60 === 0;
   }
 
-  private tickOnce(): void {
-    this.tick++;
-    this.onTick(this.tick);
+  private async tickOnce(): Promise<void> {
+    if (this.ticking || !this.running) return;
+    this.ticking = true;
+    try {
+      this.tick++;
+      await this.onTick(this.tick);
+    } catch (error) {
+      console.error('[SimulationLoop] Tick failed:', error);
+    } finally {
+      this.ticking = false;
+    }
   }
 }

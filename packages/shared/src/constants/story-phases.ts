@@ -6,7 +6,7 @@ export const STORY_PHASES: Record<StoryPhaseId, StoryPhase> = {
   phase1_normal_life: {
     id: 'phase1_normal_life',
     name: 'The Matrix',
-    description: '生活照常进行。大多数人不知道自己生活在模拟世界中。特工维持秩序。',
+    description: '城市照常运转。有人赶路，有人交谈，也有人开始怀疑眼前的现实。',
     entryConditions: [],
     exitConditions: [
       { type: 'event_occurred', parameters: { event: 'neo_awakened' } },
@@ -54,7 +54,7 @@ export const STORY_PHASES: Record<StoryPhaseId, StoryPhase> = {
   phase2_awakening: {
     id: 'phase2_awakening',
     name: 'The Awakening',
-    description: 'Neo 发现真相。Morpheus 揭示 Matrix。战争开始浮出水面。',
+    description: '亲历的异常与可信的交谈促成了新的觉醒。真相开始在人与人之间流动。',
     entryConditions: [
       { type: 'time_elapsed', parameters: { ticks: 60 } },
     ],
@@ -87,7 +87,7 @@ export const STORY_PHASES: Record<StoryPhaseId, StoryPhase> = {
   phase3_war: {
     id: 'phase3_war',
     name: 'The War',
-    description: 'Smith 变成病毒。机器进攻锡安。Matrix 开始崩溃。',
+    description: '追踪与抵抗演变成了连续冲突。有人选择保护同伴，有人开始寻找退路。',
     entryConditions: [
       { type: 'event_occurred', parameters: { event: 'smith_virus_active' } },
     ],
@@ -129,7 +129,7 @@ export const STORY_PHASES: Record<StoryPhaseId, StoryPhase> = {
   phase4_resolution: {
     id: 'phase4_resolution',
     name: 'The Source',
-    description: 'Neo 面对 Source。Smith 威胁一切。和平是唯一的答案。',
+    description: '冲突暂时平息。幸存者带着记忆重建关系，而下一个选择仍未确定。',
     entryConditions: [
       { type: 'event_occurred', parameters: { event: 'neo_reaches_machine_city' } },
     ],

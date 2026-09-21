@@ -1,4 +1,4 @@
-import { CHARACTERS, LOCATIONS, ABILITIES, FACTIONS, generateId, type AgentState, type AgentId, type Ability, type AppearanceConfig, type CharacterDef } from '@auto_matrix/shared';
+import { CHARACTERS, LOCATIONS, ABILITIES, locationEntrance, type AgentState, type AgentId, type Ability, type AppearanceConfig, type CharacterDef } from '@auto_matrix/shared';
 import { Agent } from './Agent.js';
 import { WorldState } from '../world/WorldState.js';
 
@@ -28,13 +28,9 @@ export class AgentManager {
 
   spawnAgent(charDef: CharacterDef): Agent {
     const location = LOCATIONS[charDef.initialLocation];
-    const pos = location
-      ? {
-          x: (location.bounds.min.x + location.bounds.max.x) / 2 + (Math.random() - 0.5) * 10,
-          y: (location.bounds.min.y + location.bounds.max.y) / 2,
-          z: (location.bounds.min.z + location.bounds.max.z) / 2 + (Math.random() - 0.5) * 10,
-        }
-      : { x: Math.random() * 100, y: 0, z: Math.random() * 100 };
+    const pos = locationEntrance(charDef.initialLocation);
+    pos.x += (Math.random() - 0.5) * 18;
+    pos.z += (Math.random() - 0.5) * 8;
 
     const factionColors = FACTION_COLORS[charDef.faction] ?? FACTION_COLORS.civilians;
     const appearance: AppearanceConfig = {
@@ -77,19 +73,29 @@ export class AgentManager {
       faction: charDef.faction,
       status: 'alive',
       position: pos,
-      rotation: Math.random() * 360,
+      rotation: Math.random() * Math.PI * 2,
       velocity: { x: 0, y: 0, z: 0 },
       targetPosition: null,
       currentPath: [],
       health: charDef.health,
       maxHealth: charDef.health,
       isAwakened: charDef.isAwakened,
-      isInMatrix: true,
+      isInMatrix: location?.world !== 'real',
       currentLocation: charDef.initialLocation,
       currentGoal: charDef.goals[0] ?? 'Exist',
       currentAction: null,
       mood: 'neutral',
       alertness: charDef.faction === 'machines' ? 8 : 3,
+      mind: {
+        energy: 65 + Math.random() * 30,
+        social: 40 + Math.random() * 40,
+        suspicion: charDef.isAwakened ? 100 : charDef.id === 'neo' ? 32 : 5 + Math.random() * 15,
+        stress: 0,
+        thought: charDef.id === 'neo' ? '昨晚的梦太真实了。我需要找到一个解释。' : '今晚，一切看起来和平常一样。',
+        source: 'rules',
+        memoryCount: 0,
+        home: charDef.initialLocation,
+      },
       abilities,
       activeEffects: [],
       appearance,
@@ -97,7 +103,7 @@ export class AgentManager {
 
     const agent = new Agent(state, charDef.personality);
     this.agents.set(charDef.id, agent);
-    this.worldState.registerAgent(state);
+    this.worldState.registerAgent(agent.state);
     return agent;
   }
 

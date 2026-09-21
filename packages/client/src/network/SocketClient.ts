@@ -14,6 +14,8 @@ import type {
 } from '@auto_matrix/shared';
 
 export type SocketCallbacks = {
+  onConnection?: (connected: boolean) => void;
+  onPlayerState?: (data: { agentId?: string | null; error?: string; message?: string }) => void;
   onWorldStateFull: (data: WorldStateFull, tick: number) => void;
   onWorldStateDelta: (data: WorldStateDelta, tick: number) => void;
   onAgentUpdate: (data: { id: string; state: Partial<AgentState> }, tick: number) => void;
@@ -34,6 +36,8 @@ export class SocketClient {
   private socket: Socket | null = null;
   private callbacks: SocketCallbacks;
   private connected = false;
+  private resumeAgent: string | null = null;
+  private restoreOnSnapshot = false;
 
   constructor(callbacks: SocketCallbacks) {
     this.callbacks = callbacks;
@@ -51,12 +55,16 @@ export class SocketClient {
 
     this.socket.on('connect', () => {
       this.connected = true;
-      this.socket!.emit('message', { type: 'request_full_state', data: {} });
+      this.restoreOnSnapshot = true;
+      this.callbacks.onConnection?.(true);
     });
 
     this.socket.on('disconnect', () => {
       this.connected = false;
+      this.callbacks.onConnection?.(false);
     });
+
+    this.socket.on('connect_error', () => this.callbacks.onConnection?.(false));
 
     this.socket.on('message', (msg: ServerMessage) => {
       this.handleMessage(msg);
@@ -75,8 +83,18 @@ export class SocketClient {
     const { type, data, tick } = msg;
 
     switch (type) {
+      case 'player_state': {
+        const state = data as { agentId?: string | null; error?: string; message?: string };
+        if (state.agentId !== undefined) this.resumeAgent = state.agentId;
+        this.callbacks.onPlayerState?.(state);
+        break;
+      }
       case 'world_state_full':
         this.callbacks.onWorldStateFull(data as WorldStateFull, tick);
+        if (this.restoreOnSnapshot) {
+          this.restoreOnSnapshot = false;
+          if (this.resumeAgent) this.send('play_as', { agentId: this.resumeAgent });
+        }
         break;
       case 'world_state_delta':
         this.callbacks.onWorldStateDelta(data as WorldStateDelta, tick);
@@ -121,6 +139,7 @@ export class SocketClient {
   }
 
   send(type: string, data: unknown = {}): void {
+    if (type === 'leave_character') this.resumeAgent = null;
     if (this.socket && this.connected) {
       this.socket.emit('message', { type, data });
     }

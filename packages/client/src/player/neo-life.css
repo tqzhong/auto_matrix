@@ -1,0 +1,109 @@
+.sandbox-panel.neo-panel { background: #111a22b0; backdrop-filter: blur(7px); }
+.neo-panel .sandbox-window { background: #ece8de; border: 1px solid #fff9; color: #303b3b; width: min(1060px, 95vw); padding: 24px 30px; }
+.neo-panel .sandbox-window > header h2 { color: #293635; font-size: 22px; letter-spacing: 0; margin: 5px 0; }
+.neo-panel .sandbox-window > header .eyebrow { color: #777665; }
+.neo-panel .sandbox-window > header p, .neo-panel .sandbox-window > footer { color: #6e736c; }
+.neo-panel .sandbox-window > nav { margin-top: 10px; border-color: #373b3625; }
+.neo-panel .sandbox-window > nav button { color: #69776c; }
+.neo-panel .sandbox-window > nav button.active { color: #273d33; box-shadow: 0 2px #526d5c; }
+.neo-panel .sandbox-window > header button { color: #45554a; }
+.neo-panel .sandbox-panel-body { padding-top: 16px; scrollbar-color: #a9ac9b transparent; }
+.neo-life-page { font-family: "PingFang SC", "Microsoft Yahei", sans-serif; }
+.neo-life-page button { color: #33483f; padding: 11px 14px; border: 1px solid #61796a4d; background: #f7f4ed; font-size: 12px; line-height: 1.6; text-align: left; transition: background .15s; }
+.neo-life-page button:hover:not(:disabled) { background: #dce5d9; border-color: #7c9380; }
+.neo-life-page button:disabled { opacity: .4; cursor: default; }
+.life-masthead { display: flex; justify-content: space-between; gap: 20px; padding: 12px 0 25px; border-bottom: 2px solid #4c6153; }
+.life-masthead > div > span, .life-kicker { color: #7b826c; font-size: 10px; letter-spacing: 1.5px; }
+.life-masthead h3 { font: 500 30px/1.6 "Songti SC", Georgia, serif; color: #253c35; margin: 8px 0; }
+.life-masthead p { font-size: 11px; color: #858774; }
+.life-cash { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex-shrink: 0; }
+.life-cash strong { font: 30px Georgia, serif; }
+.life-cash small { font-size: 10px; color: #7a826f; }
+.life-needs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 26px; margin: 23px 0; }
+.life-needs span { display: flex; justify-content: space-between; font-size: 11px; }
+.life-needs b { font-weight: 400; color: #809070; }
+.life-needs i { display: block; background: #c1c8b94d; height: 4px; margin-top: 10px; }
+.life-needs em { display: block; height: 100%; background: #829477; }
+.life-daily-intro { background: #e1e4d6; padding: 22px 26px; border-left: 3px solid #879476; }
+.neo-life-page h3 { font-weight: 500; }
+.life-daily-intro h3 { margin: 12px 0; font-size: 20px; }
+.neo-life-page p { font-size: 12px; line-height: 1.9; color: #70796c; }
+.life-daily-intro p + p { margin-top: 10px; }
+.life-anomaly { padding: 22px; background: #e4dbc8; border: 1px solid #bba47788; margin: 20px 0; }
+.life-anomaly > span { color: #917348; font-size: 10px; letter-spacing: 1px; }
+.life-anomaly h3 { margin: 10px 0; font-size: 20px; }
+.life-anomaly small { display: block; margin-top: 12px; font-size: 11px; }
+.life-buttons { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+.life-story { display: flex; gap: 24px; padding: 24px; background: #243c38; color: #e7e9d8; margin-bottom: 24px; }
+.life-story-index { font: 40px Georgia, serif; color: #bbc8a6; }
+.life-story-index span { display: block; font: 9px monospace; white-space: nowrap; margin-top: 10px; }
+.life-story-content { flex: 1; }
+.life-story .life-kicker { color: #a4b799; }
+.life-story h3 { font-size: 22px; margin: 12px 0; }
+.life-story p { color: #bdc8b6; }
+.life-story .life-objective { color: #d8dcbf; border-left: 2px solid #aaba89; padding: 0 12px; font-size: 12px; line-height: 1.8; margin: 18px 0; }
+.life-story button { background: #d6ddc6; border-color: #c3cfb1; }
+.life-dialogue-choices { display: flex; flex-direction: column; gap: 9px; margin-top: 18px; }
+.life-dialogue-choices small { display: block; font-size: 10px; margin-top: 5px; color: #6d7967; }
+.life-consequence { border: 1px solid #bcc79c55; padding: 12px; margin: 12px 0; }
+.life-columns { display: grid; grid-template-columns: 1.1fr 1fr; gap: 35px; margin: 30px 0; }
+.neo-life-page h4 { font-size: 12px; font-weight: 500; letter-spacing: 1px; color: #455846; margin: 0 0 16px; }
+.life-actions article { display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid #56604422; }
+.life-actions strong { font-size: 13px; font-weight: 500; }
+.life-actions p { font-size: 10px; margin-top: 7px; }
+.life-actions button { flex-shrink: 0; font-size: 11px; padding: 8px 10px; }
+.life-places { display: flex; flex-direction: column; gap: 7px; }
+.life-places button { display: flex; align-items: center; justify-content: space-between; }
+.life-places span { font-size: 9px; color: #859079; }
+.neo-life-page .life-footnote { font-size: 10px; color: #8b907c; margin-top: 13px; }
+.life-appointment { padding: 10px; background: #e1e3cf; margin-bottom: 8px; }
+.life-philosophy { border-top: 1px solid #5b674f33; padding: 24px 0; }
+.life-philosophy > div { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.life-philosophy article { padding: 16px; background: #e2e3d7; }
+.life-philosophy span { font-size: 12px; }
+.life-philosophy b { float: right; font: 24px Georgia, serif; color: #708268; }
+.life-philosophy p { font-size: 10px; margin-top: 15px; }
+.life-roadmap, .life-memory { border: 1px solid #73836444; padding: 15px 18px; font-size: 12px; margin: 10px 0 24px; }
+.life-roadmap summary, .life-memory summary { cursor: pointer; }
+.life-roadmap h4 { margin: 20px 0 8px; }
+.life-roadmap span { display: inline-block; color: #a6ab9b; font-size: 10px; margin: 7px 16px 7px 0; }
+.life-roadmap .visited { color: #536e55; }
+.life-memory p { margin-top: 14px; }
+.life-journal article { display: flex; gap: 22px; padding: 17px 0; border-bottom: 1px solid #8b92782f; }
+.life-journal time { font: 10px/1.8 monospace; color: #929982; min-width: 60px; }
+.life-journal strong { font-size: 12px; font-weight: 500; }
+.life-journal p { margin-top: 7px; font-size: 11px; }
+body.neo-daily .sandbox-hotbar, body.neo-daily .game-controls, body.neo-daily .game-event, body.neo-daily .game-vitals .player-ability, body.neo-daily .game-interaction { display: none; }
+body.neo-daily .game-vitals { bottom: 80px; }
+body.neo-daily .game-map { bottom: 80px; }
+body.neo-daily .game-objective { background: #152724ca; padding: 16px 20px; border-left: 2px solid #acb9a0; }
+body.neo-daily .sandbox-clock { background: #152724cf; padding: 7px 10px; top: 82px; color: #e0e2d0; }
+body.neo-daily .sandbox-nav { background: #152724cf; padding: 7px 12px; top: 82px; }
+body.neo-daily .sandbox-nav button { color: #dce1cc; }
+body.neo-daily .game-top { background: linear-gradient(#10211ac9, transparent); }
+body.neo-daily .mouse-hint { bottom: 28px; color: #e1e3d7; background: #142923bd; padding: 10px 18px; }
+body.neo-daily .sandbox-waypoint { display: none; }
+@media (max-width: 760px) {
+  .neo-panel .sandbox-window { padding: 17px; }
+  .life-masthead h3 { font-size: 22px; }
+  .life-masthead { gap: 12px; }
+  .life-cash strong { font-size: 23px; }
+  .life-needs { gap: 12px; }
+  .life-needs span { font-size: 10px; }
+  .life-columns { grid-template-columns: 1fr; gap: 24px; }
+  .life-story { padding: 18px; gap: 12px; }
+  .life-story-index { font-size: 25px; }
+  .life-story h3 { font-size: 19px; }
+  .life-philosophy > div { gap: 6px; }
+  .life-philosophy article { padding: 12px; }
+  .life-philosophy span { font-size: 10px; }
+  .life-philosophy b { font-size: 19px; }
+  body.neo-daily .sandbox-nav { top: auto; bottom: 25px; }
+  body.neo-daily .game-objective { max-width: 245px; padding: 10px 13px; }
+  body.neo-daily .game-objective > .eyebrow { display: none; }
+  body.neo-daily .game-objective h3 { font-size: 12px; margin: 3px 0 5px; }
+  body.neo-daily .game-objective p { font-size: 9px; }
+  body.neo-daily .game-map { width: 105px; }
+  body.neo-daily .game-vitals { width: 170px; }
+  body.neo-daily #game-sound, body.neo-daily #game-inspect { display: none; }
+}

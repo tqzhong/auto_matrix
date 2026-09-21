@@ -1,6 +1,12 @@
 node_modules/
 dist/
 data/*.db
+data/memories/
+data/world.json*
 *.log
 .env
 .DS_Store
+.omc/
+output/
+__pycache__/
+packages/client/public/assets/music/originals/*.download

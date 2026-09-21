@@ -14,6 +14,7 @@ export interface AgentState {
   name: string;
   faction: FactionId;
   status: AgentStatus;
+  controller?: 'player' | null;
 
   // 位置与移动
   position: Vector3;
@@ -34,13 +35,27 @@ export interface AgentState {
   currentAction: AgentAction | null;
   mood: string;
   alertness: number;
+  mind?: AgentMind;
 
   // 能力
   abilities: Ability[];
   activeEffects: ActiveEffect[];
+  combatCooldowns?: Record<string, number>;
 
   // 视觉
   appearance: AppearanceConfig;
+}
+
+export interface AgentMind {
+  energy: number;
+  social: number;
+  suspicion: number;
+  stress: number;
+  thought: string;
+  source: 'rules' | 'llm';
+  memoryCount: number;
+  home: string;
+  lastEventId?: string;
 }
 
 export interface AppearanceConfig {
@@ -90,6 +105,7 @@ export interface ActiveEffect {
   abilityId: string;
   remainingTicks: number;
   visualEffect: string;
+  remainingSeconds?: number;
 }
 
 // 记忆系统

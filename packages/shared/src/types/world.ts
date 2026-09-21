@@ -42,9 +42,19 @@ export interface WorldEvent {
   involvedAgents: AgentId[];
   tick: number;
   importance: number;
+  title?: string;
+  cause?: string;
+  consequence?: string;
+  causeEventId?: string;
+  position?: Vector3;
 }
 
 export type WorldEventType =
+  | 'anomaly'
+  | 'discovery'
+  | 'aid'
+  | 'arrival'
+  | 'ceasefire'
   | 'explosion'
   | 'gunfight'
   | 'chase'
@@ -60,6 +70,23 @@ export type WorldEventType =
   | 'cycle_catastrophe'
   | 'cycle_dawn'
   | 'memory_fragment';
+
+export interface SimulationState {
+  day?: number;
+  running: boolean;
+  speed: number;
+  timeScale?: number;
+  tick: number;
+  mode: 'rules' | 'llm';
+  llmStatus: 'offline' | 'ready' | 'degraded';
+  population: number;
+  awakened: number;
+  tension: number;
+  anomaly: number;
+  conversations: number;
+  chapter: string;
+  chapterDescription: string;
+}
 
 export type StoryPhaseId =
   | 'phase1_normal_life'

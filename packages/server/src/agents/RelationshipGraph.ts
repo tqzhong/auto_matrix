@@ -128,4 +128,12 @@ export class RelationshipGraph {
   getEnemies(agentId: AgentId, threshold = -20): Relationship[] {
     return this.getRelationshipsForAgent(agentId).filter((r) => r.trust <= threshold);
   }
+
+  restore(relationships: Relationship[]): void {
+    for (const relationship of relationships) {
+      if (CHARACTERS[relationship.fromAgent] && CHARACTERS[relationship.toAgent]) {
+        this.relationships.set(this.key(relationship.fromAgent, relationship.toAgent), { ...relationship });
+      }
+    }
+  }
 }

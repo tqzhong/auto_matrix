@@ -15,8 +15,11 @@ export class Agent {
   }
 
   update(tick: number): void {
-    this.updateAction(tick);
-    this.updateMovement();
+    if (this.state.status !== 'alive') return;
+    if (!this.state.controller) {
+      this.updateAction(tick);
+      this.updateMovement();
+    }
     this.updateEffects();
     this.updateCooldowns();
   }
@@ -50,7 +53,7 @@ export class Agent {
       nextTarget = this.state.targetPosition;
     }
 
-    const stepSize = 0.5; // blocks per tick
+    const stepSize = 4;
     const dir: Vector3 = {
       x: nextTarget.x - this.state.position.x,
       y: nextTarget.y - this.state.position.y,
@@ -66,7 +69,7 @@ export class Agent {
       return;
     }
 
-    const scale = stepSize / dirDist;
+    const scale = Math.min(stepSize, dirDist) / dirDist;
     this.state.position = {
       x: this.state.position.x + dir.x * scale,
       y: this.state.position.y + dir.y * scale,
@@ -79,12 +82,12 @@ export class Agent {
     };
 
     // Update rotation to face movement direction
-    this.state.rotation = Math.atan2(dir.x, dir.z) * (180 / Math.PI);
+    this.state.rotation = Math.atan2(dir.x, dir.z);
   }
 
   private updateEffects(): void {
     this.state.activeEffects = this.state.activeEffects
-      .map((e) => ({ ...e, remainingTicks: e.remainingTicks - 1 }))
+      .map((e) => e.remainingSeconds === undefined ? { ...e, remainingTicks: e.remainingTicks - 1 } : e)
       .filter((e) => e.remainingTicks > 0);
   }
 

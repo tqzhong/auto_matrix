@@ -1,7 +1,7 @@
 import type { AgentState, AgentId, WorldStateDelta, WorldEvent } from '@auto_matrix/shared';
 
 export class StateSync {
-  private lastSentPositions = new Map<AgentId, { x: number; y: number; z: number }>();
+  private lastSent = new Map<AgentId, string>();
   private pendingEvents: WorldEvent[] = [];
 
   addEvent(event: WorldEvent): void {
@@ -9,46 +9,17 @@ export class StateSync {
   }
 
   calculateDelta(agents: Map<AgentId, AgentState>): WorldStateDelta {
-    const agentDeltas: Record<string, Partial<AgentState>> = {};
-    let hasChanges = false;
-
+    const changed: Record<string, AgentState> = {};
     for (const [id, state] of agents) {
-      const lastPos = this.lastSentPositions.get(id);
-      const pos = state.position;
-
-      // Only send if position changed significantly (0.5 blocks)
-      if (!lastPos ||
-        Math.abs(lastPos.x - pos.x) > 0.5 ||
-        Math.abs(lastPos.y - pos.y) > 0.5 ||
-        Math.abs(lastPos.z - pos.z) > 0.5
-      ) {
-        agentDeltas[id] = {
-          position: { ...pos },
-          rotation: state.rotation,
-          health: state.health,
-          mood: state.mood,
-          currentAction: state.currentAction,
-          currentGoal: state.currentGoal,
-          status: state.status,
-          isAwakened: state.isAwakened,
-          activeEffects: state.activeEffects,
-        };
-        this.lastSentPositions.set(id, { ...pos });
-        hasChanges = true;
+      // Small population: compare complete states, including stationary changes.
+      const serialized = JSON.stringify(state);
+      if (serialized !== this.lastSent.get(id)) {
+        // A missing property is dropped by JSON and would leave the old client marker.
+        changed[id] = { ...structuredClone(state), controller: state.controller ?? null };
+        this.lastSent.set(id, serialized);
       }
     }
-
-    const events = [...this.pendingEvents];
-    this.pendingEvents = [];
-
-    if (!hasChanges && events.length === 0) {
-      return { agents: {}, dirtyChunks: {}, events: [] };
-    }
-
-    return {
-      agents: agentDeltas,
-      dirtyChunks: {},
-      events,
-    };
+    const events = this.pendingEvents.splice(0);
+    return { agents: changed, dirtyChunks: {}, events };
   }
 }

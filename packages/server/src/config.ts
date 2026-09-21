@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
 export interface ServerConfig {
   llm: {
@@ -45,10 +45,10 @@ export const config: ServerConfig = {
     host: process.env.HOST ?? '0.0.0.0',
   },
   simulation: {
-    tickRateMs: parseInt(process.env.TICK_RATE_MS ?? '1000', 10),
+    tickRateMs: parseInt(process.env.TICK_RATE_MS ?? '500', 10),
     agentDecisionIntervalTicks: parseInt(process.env.AGENT_DECISION_INTERVAL ?? '5', 10),
     reflectionIntervalTicks: parseInt(process.env.REFLECTION_INTERVAL ?? '300', 10),
-    stateSyncIntervalTicks: parseInt(process.env.STATE_SYNC_INTERVAL ?? '3', 10),
+    stateSyncIntervalTicks: parseInt(process.env.STATE_SYNC_INTERVAL ?? '1', 10),
   },
   database: {
     path: process.env.DATABASE_PATH ?? path.resolve(__dirname, '../../data/auto_matrix.db'),

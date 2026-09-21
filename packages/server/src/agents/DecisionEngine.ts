@@ -1,5 +1,4 @@
-import type { AgentState, AgentAction, Vector3 } from '@auto_matrix/shared';
-import { STORY_PHASES, CHARACTERS, distance } from '@auto_matrix/shared';
+import { CHARACTERS, LOCATIONS, distance, locationEntrance, type AgentState, type AgentAction } from '@auto_matrix/shared';
 import type { Agent } from './Agent.js';
 import type { StoryEngine } from '../story/StoryEngine.js';
 import type { LLMClient } from '../llm/LLMClient.js';
@@ -8,6 +7,12 @@ import type { RelationshipGraph } from './RelationshipGraph.js';
 import type { ConversationEngine } from './ConversationEngine.js';
 
 export class DecisionEngine {
+  reservedAgents = new Set<string>();
+  narrativeMode = false;
+  timeOfDay?: number;
+  private pending: { agent: Agent; expected: AgentAction | null; content: string }[] = [];
+  private thinking = false;
+
   constructor(
     private llmClient: LLMClient,
     private memoryManager: MemoryManager,
@@ -17,199 +22,129 @@ export class DecisionEngine {
   ) {}
 
   async batchDecide(agents: Agent[], allAgents: Map<string, AgentState>, tick: number): Promise<void> {
-    const groups = this.groupByLocation(agents);
-
-    for (const [, group] of groups) {
-      const needsDecision = group.filter(a => {
-        // Skip agents currently in an active conversation
-        if (this.conversationEngine.isAgentInConversation(a.id)) return false;
-        const action = a.state.currentAction;
-        return !action || action.progress >= 1;
-      });
-
-      if (needsDecision.length === 0) continue;
-
-      for (const agent of needsDecision) {
-        try {
-          const action = await this.decideForAgent(agent, allAgents, tick);
-          agent.setAction(action);
-        } catch {
-          agent.setAction(this.createIdleAction(tick));
-        }
-      }
+    // Async model responses are committed only on a simulation tick, never while paused.
+    for (const result of this.pending.splice(0)) {
+      if (result.agent.state.status !== 'alive' || result.agent.state.controller || this.reservedAgents.has(result.agent.id) || result.agent.state.currentAction !== result.expected) continue;
+      this.applyModelDecision(result.agent, result.content, allAgents, tick);
+    }
+    const eligible = agents.filter(a => a.state.status === 'alive' && !a.state.controller && !this.reservedAgents.has(a.id) && !this.conversationEngine.isAgentInConversation(a.id));
+    for (const agent of eligible) {
+      if (agent.state.currentAction && agent.state.currentAction.progress < 1) continue;
+      if (agent.state.targetPosition) continue;
+      agent.setAction(this.ruleBasedDecision(agent.state, allAgents, tick));
+    }
+    if (this.llmClient.enabled && !this.thinking && tick % 20 === 0 && eligible.length) {
+      const agent = eligible[Math.floor(tick / 20) % eligible.length];
+      const expected = agent.state.currentAction;
+      this.thinking = true;
+      const nearby = this.nearby(agent.state, allAgents);
+      void this.llmClient.complete({ messages: [
+        { role: 'system', content: `${CHARACTERS[agent.id]?.personality ?? ''} 你生活在 Matrix 世界中。只根据亲历的记忆和眼前人物决策，不要编造已发生的事件。用中文思考。` },
+        { role: 'user', content: JSON.stringify({ name: agent.state.name, mind: agent.state.mind, goal: agent.state.currentGoal,
+          memories: this.memoryManager.getRecentContext(agent.id, 5).map(m => m.content),
+          nearby: nearby.map(a => ({ id: a.id, name: a.name, trust: this.relationshipGraph.getRelationship(agent.id, a.id)?.trust })),
+          instruction: '返回 JSON: {"action":"talk_to 或 observe 或 idle","target":"附近人物 id","thought":"一句内心想法","goal":"当前目标"}。' }) },
+      ], maxTokens: 220, temperature: 0.7 }).then(response => {
+        if (response.content) this.pending.push({ agent, expected, content: response.content });
+      }).catch(() => {}).finally(() => { this.thinking = false; });
     }
   }
 
-  private async decideForAgent(agent: Agent, allAgents: Map<string, AgentState>, tick: number): Promise<AgentAction> {
-    const state = agent.state;
-    const character = CHARACTERS[state.id];
-    if (!character) return this.createIdleAction(tick);
+  private nearby(state: AgentState, all: Map<string, AgentState>): AgentState[] {
+    return [...all.values()].filter(a => a.id !== state.id && !this.reservedAgents.has(a.id) && a.status === 'alive' && a.isInMatrix === state.isInMatrix && distance(a.position, state.position) < 60);
+  }
 
-    const nearby = Array.from(allAgents.values()).filter(a =>
-      a.id !== state.id && distance(a.position, state.position) < 30 && a.status === 'alive'
-    );
-
-    const tier = this.determineTier(state, nearby);
-
-    if (tier === 'routine') {
-      return this.ruleBasedDecision(state, nearby, tick);
+  private ruleBasedDecision(state: AgentState, all: Map<string, AgentState>, tick: number): AgentAction {
+    const mind = state.mind!;
+    const nearby = this.nearby(state, all);
+    mind.source = 'rules';
+    const action = (type: AgentAction['type'], duration = 12, target?: string): AgentAction => ({ type, target, parameters: {}, startedAt: tick, duration, progress: 0 });
+    const move = (location: string, reason: string): AgentAction => {
+      mind.thought = reason;
+      state.currentGoal = `前往${LOCATIONS[location]?.nameCn ?? location}`;
+      return { ...action('move_to', 50), parameters: { location, destination: locationEntrance(location) } };
+    };
+    if (mind.stress > 55 || state.health < state.maxHealth * 0.35) {
+      mind.thought = '风险已经太高。我得先活下来，记住这里发生过什么。';
+      state.mood = '紧张';
+      if (state.isInMatrix && state.currentLocation !== 'oracles_apartment') return move('oracles_apartment', mind.thought);
+      return action('hide', 30);
     }
+    if (mind.energy < 30) {
+      mind.thought = '精力快耗尽了。休息之后再作打算。';
+      state.currentGoal = '恢复精力';
+      state.mood = '疲惫';
+      return action('idle', 45);
+    }
+    if (!this.narrativeMode && !this.storyEngine.isCeasefire(tick)) {
+      const threat = nearby.find(a => state.faction === 'machines' && a.faction === 'zion' && a.isAwakened && a.mind?.lastEventId && this.storyEngine.getCurrentPhaseId() !== 'phase1_normal_life');
+      if (threat) {
+        mind.thought = `已确认 ${threat.name} 与异常活动有关。执行追踪与拦截。`;
+        state.currentGoal = `拦截 ${threat.name}`;
+        return action('attack', 16, threat.id);
+      }
+      const attacker = nearby.find(a => a.currentAction?.type === 'attack' && (a.currentAction.target === state.id || (CHARACTERS[state.id]?.allies.includes(a.currentAction.target ?? '') && state.isAwakened)));
+      if (attacker && state.faction !== 'civilians') {
+        mind.thought = `${attacker.name} 正在攻击同伴，我决定介入。`;
+        return action('attack', 12, attacker.id);
+      }
+    }
+    const injured = nearby.find(a => a.health < a.maxHealth * 0.7 && a.faction === state.faction && distance(a.position, state.position) < 10);
+    if (injured && mind.energy > 50 && state.faction !== 'machines') {
+      mind.thought = `${injured.name} 受伤了，先帮他稳定下来。`;
+      return action('interact_object', 20, injured.id);
+    }
+    if (!this.conversationEngine.isOnCooldown(state.id, tick)) {
+      const partners = nearby.filter(a => !this.conversationEngine.isAgentInConversation(a.id) && !this.conversationEngine.isOnCooldown(a.id, tick)
+        && (this.relationshipGraph.getRelationship(state.id, a.id)?.trust ?? 0) > -30);
+      partners.sort((a, b) => {
+        const score = (p: AgentState) => Math.abs((p.mind?.suspicion ?? 0) - mind.suspicion) + (p.isAwakened !== state.isAwakened ? 30 : 0) - distance(state.position, p.position);
+        return score(b) - score(a);
+      });
+      if (partners[0]) {
+        const partner = partners[0];
+        mind.thought = mind.suspicion > 30 ? `我想听听 ${partner.name} 对这些异常的解释。` : `碰到了 ${partner.name}，聊聊各自最近的生活。`;
+        state.currentGoal = `与 ${partner.name} 交流`;
+        return action('talk_to', 22, partner.id);
+      }
+    }
+    if (!this.narrativeMode && state.faction === 'machines') {
+      const suspect = [...all.values()].filter(a => a.status === 'alive' && a.isInMatrix && a.faction !== 'machines' && a.mind && a.mind.suspicion > 50)
+        .sort((a, b) => distance(state.position, a.position) - distance(state.position, b.position))[0];
+      if (suspect && suspect.currentLocation !== state.currentLocation) return move(suspect.currentLocation, '监控系统发现了可疑活动，前往核实。');
+    }
+    if (!this.narrativeMode && state.isAwakened && state.faction === 'zion' && state.isInMatrix) {
+      const potential = [...all.values()].filter(a => a.status === 'alive' && a.isInMatrix && !a.isAwakened && a.faction !== 'machines' && (a.mind?.suspicion ?? 0) > 25)
+        .sort((a, b) => (b.mind?.suspicion ?? 0) - (a.mind?.suspicion ?? 0))[0];
+      if (potential && potential.currentLocation !== state.currentLocation) return move(potential.currentLocation, `收到 ${potential.name} 正在调查异常的消息，尝试建立联系。`);
+    }
+    const seed = [...state.id].reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
+    const home = LOCATIONS[mind.home]?.world === (state.isInMatrix ? 'matrix' : 'real')
+      ? mind.home : state.isInMatrix ? 'oracles_apartment' : 'nebuchadnezzar';
+    const hour = (this.timeOfDay ?? (21000 + tick * 12) % 24000) / 1000;
+    const destination = state.isInMatrix
+      ? hour < 6 ? home : hour < 17 ? ['metacortex_office', 'times_square', home][seed % 3] : hour < 20 ? 'central_park' : 'nightclub'
+      : hour < 7 ? home : hour < 18 ? 'zion_command' : 'zion_dock';
+    if (destination !== state.currentLocation) return move(destination, mind.suspicion > 35 ? '带着尚未解开的疑问走进人群，寻找新的线索。' : '沿着熟悉的街道继续今天的生活。');
+    mind.thought = mind.suspicion > 35 ? '这里看似正常，但我忘不了刚才的异常。' : '观察周围，等待一个值得交谈的人。';
+    state.currentGoal = mind.suspicion > 35 ? '观察异常，寻找证据' : '日常生活';
+    return action('observe', 10);
+  }
 
-    // Get memories as string for context
-    const memories = this.memoryManager.getRecentContext(state.id, 10);
-    const memoriesStr = memories.map(m => `[${m.type}] ${m.content}`).join('\n');
-    const phase = this.storyEngine.getCurrentPhaseId();
-
+  private applyModelDecision(agent: Agent, content: string, all: Map<string, AgentState>, tick: number): void {
     try {
-      const response = await this.llmClient.complete({
-        messages: [
-          { role: 'system', content: character.personality },
-          { role: 'user', content: this.buildDecisionPrompt(state, nearby, memoriesStr, phase) },
-        ],
-        maxTokens: 512,
-        temperature: 0.7,
-      });
-
-      return this.parseAction(response.content, state, nearby, tick);
-    } catch {
-      return this.ruleBasedDecision(state, nearby, tick);
-    }
-  }
-
-  private determineTier(state: AgentState, nearby: AgentState[]): 'routine' | 'awareness' | 'full' {
-    if (state.currentAction?.type === 'talk_to' || state.currentAction?.type === 'attack') return 'full';
-    if (nearby.length > 2) return 'awareness';
-    if (state.alertness > 7) return 'awareness';
-    return 'routine';
-  }
-
-  private ruleBasedDecision(state: AgentState, nearby: AgentState[], tick: number): AgentAction {
-    const phase = this.storyEngine.getCurrentPhaseId();
-    const behavior = STORY_PHASES[phase]?.npcBehaviors?.[state.faction];
-
-    if (!behavior) return this.createIdleAction(tick);
-
-    if (behavior.movementPattern === 'patrol' || behavior.movementPattern === 'wander') {
-      const angle = Math.random() * Math.PI * 2;
-      const dist = 5 + Math.random() * 10;
-      return {
-        type: 'move_to',
-        parameters: {
-          destination: {
-            x: state.position.x + Math.cos(angle) * dist,
-            y: state.position.y,
-            z: state.position.z + Math.sin(angle) * dist,
-          },
-        },
-        startedAt: tick,
-        duration: 10,
-        progress: 0,
-      };
-    }
-
-    return this.createIdleAction(tick);
-  }
-
-  private buildDecisionPrompt(state: AgentState, nearby: AgentState[], memories: string, phase: string): string {
-    const nearbyDesc = nearby.map(a => {
-      const rel = this.relationshipGraph.getRelationship(state.id, a.id);
-      const relHint = rel
-        ? ` [trust:${rel.trust} fear:${rel.fear} respect:${rel.respect}]`
-        : '';
-      return `- ${a.name} (${a.faction}): ${distance(a.position, state.position).toFixed(1)}m, ${a.currentAction?.type || 'idle'}${relHint}`;
-    }).join('\n');
-
-    // Include conversation memories specifically
-    const convMemories = this.memoryManager.getMemoriesByType(state.id, 'conversation');
-    const recentConvStr = convMemories.slice(-3).map(m => `[conversation] ${m.content}`).join('\n');
-    const reflectionStr = this.memoryManager.getMemoriesByType(state.id, 'reflection')
-      .slice(-2).map(m => `[reflection] ${m.content}`).join('\n');
-
-    return `You are ${state.name}. Current state: health=${state.health}/100, mood=${state.mood}, goal="${state.currentGoal}", awakened=${state.isAwakened}, inMatrix=${state.isInMatrix}, phase=${phase}.
-
-Nearby: ${nearbyDesc || '(nobody)'}
-Recent: ${memories || '(nothing)'}
-${recentConvStr ? `Past Conversations:\n${recentConvStr}` : ''}
-${reflectionStr ? `Reflections:\n${reflectionStr}` : ''}
-
-Choose ONE action: idle, move_to, talk_to, attack, observe, defend.
-If you choose talk_to, specify which nearby character and a brief reason.
-Reply: ACTION: <type> TARGET: <id or none> REASON: <brief>`;
-  }
-
-  private parseAction(content: string, state: AgentState, nearby: AgentState[], tick: number): AgentAction {
-    const lower = content.toLowerCase();
-
-    if (lower.includes('talk') && nearby.length > 0) {
-      // Try to find a specific target mentioned in the response
-      let target = this.findNamedTarget(content, nearby);
-      if (!target) {
-        target = nearby[Math.floor(Math.random() * nearby.length)];
+      const match = content.match(/\{[\s\S]*\}/);
+      if (!match) return;
+      const parsed = JSON.parse(match[0]);
+      if (!['talk_to', 'observe', 'idle'].includes(parsed.action) || typeof parsed.thought !== 'string') return;
+      if (parsed.action === 'talk_to' && !this.nearby(agent.state, all).some(a => a.id === parsed.target)) return;
+      if (agent.state.currentAction?.type === 'attack' || agent.state.targetPosition) return;
+      agent.setAction({ type: parsed.action, target: parsed.target, parameters: {}, startedAt: tick, duration: 15, progress: 0 });
+      if (agent.state.mind) {
+        agent.state.mind.thought = parsed.thought.slice(0, 180);
+        agent.state.mind.source = 'llm';
       }
-
-      // Don't start conversation if target is already in one
-      if (this.conversationEngine.isAgentInConversation(target.id)) {
-        return this.createIdleAction(tick);
-      }
-
-      return {
-        type: 'talk_to',
-        target: target.id,
-        parameters: { dialogue: content.substring(0, 200) },
-        startedAt: tick,
-        duration: 15,
-        progress: 0,
-      };
-    }
-
-    if (lower.includes('attack') && nearby.length > 0) {
-      const target = nearby[Math.floor(Math.random() * nearby.length)];
-      return { type: 'attack', target: target.id, parameters: {}, startedAt: tick, duration: 5, progress: 0 };
-    }
-
-    if (lower.includes('move')) {
-      const angle = Math.random() * Math.PI * 2;
-      const dist = 5 + Math.random() * 15;
-      return {
-        type: 'move_to',
-        parameters: { destination: { x: state.position.x + Math.cos(angle) * dist, y: state.position.y, z: state.position.z + Math.sin(angle) * dist } },
-        startedAt: tick,
-        duration: 10,
-        progress: 0,
-      };
-    }
-
-    if (lower.includes('observe')) {
-      return { type: 'observe', parameters: {}, startedAt: tick, duration: 5, progress: 0 };
-    }
-
-    return this.createIdleAction(tick);
-  }
-
-  /**
-   * Try to find a specific target mentioned by name in the LLM response.
-   */
-  private findNamedTarget(content: string, nearby: AgentState[]): AgentState | null {
-    const lower = content.toLowerCase();
-    for (const agent of nearby) {
-      if (lower.includes(agent.name.toLowerCase())) {
-        return agent;
-      }
-    }
-    return null;
-  }
-
-  private createIdleAction(tick: number): AgentAction {
-    return { type: 'idle', parameters: {}, startedAt: tick, duration: 5, progress: 0 };
-  }
-
-  private groupByLocation(agents: Agent[]): Map<string, Agent[]> {
-    const groups = new Map<string, Agent[]>();
-    for (const agent of agents) {
-      const loc = agent.state.currentLocation || 'unknown';
-      if (!groups.has(loc)) groups.set(loc, []);
-      groups.get(loc)!.push(agent);
-    }
-    return groups;
+      if (typeof parsed.goal === 'string') agent.state.currentGoal = parsed.goal.slice(0, 120);
+    } catch { /* Invalid model output leaves the local decision intact. */ }
   }
 }

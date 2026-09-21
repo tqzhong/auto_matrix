@@ -12,6 +12,30 @@ export interface LocationDef {
 }
 
 export const LOCATIONS: Record<string, LocationDef> = {
+  neo_apartment: {
+    id: 'neo_apartment', name: 'Anderson Residence', nameCn: 'Neo 的公寓 · 101 室',
+    description: '一间有电脑、唱片、厨房和晨光的小公寓。Thomas Anderson 每天从这里醒来。',
+    bounds: { min: { x: 1190, y: 0, z: 670 }, max: { x: 1230, y: 26, z: 710 } },
+    faction: 'civilians', isInterior: true, storyPhase: 'phase1_normal_life', world: 'matrix',
+  },
+  corner_cafe: {
+    id: 'corner_cafe', name: 'Aster Coffee', nameCn: '街角咖啡馆',
+    description: '白天卖咖啡和午餐，晚上是朋友见面的地方。',
+    bounds: { min: { x: 980, y: 0, z: 640 }, max: { x: 1020, y: 18, z: 680 } },
+    faction: 'civilians', isInterior: true, storyPhase: 'phase1_normal_life', world: 'matrix',
+  },
+  training_dojo: {
+    id: 'training_dojo', name: 'Construct Dojo', nameCn: '构造体训练场',
+    description: '接线员装载的武术训练场，任何角色都可下载战斗经验。',
+    bounds: { min: { x: 970, y: 0, z: 820 }, max: { x: 1020, y: 8, z: 855 } },
+    faction: 'zion', isInterior: false, storyPhase: 'phase1_normal_life', world: 'matrix',
+  },
+  freeway: {
+    id: 'freeway', name: 'Freeway 101', nameCn: '101 高速公路',
+    description: '钥匙匠的逃亡路线，追踪程序巡逻的快速公路。',
+    bounds: { min: { x: 1320, y: 0, z: 1070 }, max: { x: 1680, y: 8, z: 1090 } },
+    faction: null, isInterior: false, storyPhase: 'phase2_awakening', world: 'matrix',
+  },
   // === Matrix 城市 — NYC Locations ===
 
   // Metacortex: Midtown Manhattan, near Times Square

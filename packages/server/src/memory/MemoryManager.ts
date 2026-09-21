@@ -32,9 +32,10 @@ export class MemoryManager {
     const existing = this.memories.get(agentId) ?? [];
     existing.push(memory);
     if (existing.length > this.maxMemoriesPerAgent) {
-      // Keep the most important memories
-      existing.sort((a, b) => b.importance - a.importance);
-      existing.length = this.maxMemoriesPerAgent;
+      // Reserve room for new experiences while retaining important older ones.
+      const recent = existing.slice(-30);
+      const important = existing.slice(0, -30).sort((a, b) => b.importance - a.importance).slice(0, 20);
+      existing.splice(0, existing.length, ...important.sort((a, b) => a.timestamp - b.timestamp), ...recent);
     }
     this.memories.set(agentId, existing);
     return memory;
@@ -66,5 +67,9 @@ export class MemoryManager {
 
   getMemoryCount(agentId: AgentId): number {
     return this.memories.get(agentId)?.length ?? 0;
+  }
+
+  protected replaceMemories(agentId: AgentId, memories: Memory[]): void {
+    this.memories.set(agentId, memories.slice(-this.maxMemoriesPerAgent).sort((a, b) => a.timestamp - b.timestamp));
   }
 }

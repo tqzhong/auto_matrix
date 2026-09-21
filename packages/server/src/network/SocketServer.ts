@@ -4,7 +4,6 @@ import type { ServerMessage, WorldStateFull, WorldStateDelta, AgentState, StoryP
 
 export class SocketServer {
   private io: SocketIOServer;
-  private clientSpeeds = new Map<string, number>();
 
   constructor(httpServer: HTTPServer) {
     this.io = new SocketIOServer(httpServer, {
@@ -13,22 +12,7 @@ export class SocketServer {
 
     this.io.on('connection', (socket) => {
       console.log(`[Socket] Client connected: ${socket.id}`);
-      this.clientSpeeds.set(socket.id, 1);
-
-      socket.on('set_speed', (data: { multiplier: number }) => {
-        this.clientSpeeds.set(socket.id, data.multiplier ?? 1);
-      });
-
-      socket.on('pause', () => {
-        this.clientSpeeds.set(socket.id, 0);
-      });
-
-      socket.on('resume', () => {
-        this.clientSpeeds.set(socket.id, 1);
-      });
-
       socket.on('disconnect', () => {
-        this.clientSpeeds.delete(socket.id);
         console.log(`[Socket] Client disconnected: ${socket.id}`);
       });
     });
@@ -68,7 +52,7 @@ export class SocketServer {
   broadcastPhaseChange(from: StoryPhaseId, to: string, name: string, description: string, tick: number): void {
     this.io.emit('message', {
       type: 'phase_change',
-      data: { from, to, name, description },
+      data: { from, phase: to, name, description },
       tick,
       timestamp: Date.now(),
     } satisfies ServerMessage);
@@ -77,7 +61,7 @@ export class SocketServer {
   broadcastNarration(text: string, tick: number): void {
     this.io.emit('message', {
       type: 'notification',
-      data: { text, type: 'narration' },
+      data: { message: text, level: 'narration' },
       tick,
       timestamp: Date.now(),
     } satisfies ServerMessage);

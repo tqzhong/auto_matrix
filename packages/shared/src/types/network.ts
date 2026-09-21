@@ -1,6 +1,9 @@
 // WebSocket 消息类型
 import type { AgentId, AgentState } from './agent.js';
-import type { ChunkData, LocationData, StoryPhaseId, WorldEvent, EvolutionUpdate } from './world.js';
+import type { ChunkData, LocationData, StoryPhaseId, WorldEvent, EvolutionUpdate, SimulationState } from './world.js';
+import type { SandboxState } from './sandbox.js';
+import type { CombatImpact } from '../constants/combat.js';
+import type { SkillCast } from '../constants/combat-skills.js';
 
 // Server → Client
 export type ServerMessageType =
@@ -19,7 +22,8 @@ export type ServerMessageType =
   | 'effect'
   | 'notification'
   | 'evolution_update'
-  | 'evolution_narration';
+  | 'evolution_narration'
+  | 'player_state';
 
 export interface ServerMessage {
   type: ServerMessageType;
@@ -34,12 +38,18 @@ export interface WorldStateFull {
   locations: Record<string, LocationData>;
   phase: StoryPhaseId;
   timeOfDay: number;
+  events?: WorldEvent[];
+  simulation?: SimulationState;
+  sandbox?: SandboxState;
 }
 
 export interface WorldStateDelta {
   agents: Record<string, Partial<AgentState>>;
   dirtyChunks: Record<string, { blocks: number[] }>;
   events: WorldEvent[];
+  timeOfDay?: number;
+  simulation?: SimulationState;
+  sandbox?: SandboxState;
 }
 
 export interface ConversationStartData {
@@ -77,6 +87,8 @@ export interface EffectData {
   effectType: string;
   agents: AgentId[];
   duration: number;
+  impact?: CombatImpact;
+  skill?: SkillCast;
 }
 
 // Client → Server
@@ -88,7 +100,12 @@ export type ClientMessageType =
   | 'pause'
   | 'resume'
   | 'teleport_camera'
-  | 'debug_command';
+  | 'debug_command'
+  | 'play_as'
+  | 'leave_character'
+  | 'player_input'
+  | 'sandbox_action'
+  | 'player_action';
 
 export interface ClientMessage {
   type: ClientMessageType;

@@ -7,6 +7,10 @@ interface CacheEntry {
 }
 
 export class LLMClient {
+  readonly enabled: boolean;
+  status: 'offline' | 'ready' | 'degraded';
+  private retryAfter = 0;
+  private inFlight = 0;
   private client: OpenAI;
   private model: string;
   private maxTokens: number;
@@ -16,22 +20,30 @@ export class LLMClient {
   private minCallIntervalMs = 200; // 5 req/sec max
 
   constructor(config: LLMConfig) {
+    this.enabled = Boolean(config.apiKey && config.apiKey !== 'your-api-key-here');
+    this.status = this.enabled ? 'ready' : 'offline';
     this.client = new OpenAI({
       baseURL: config.baseUrl,
-      apiKey: config.apiKey,
+      apiKey: config.apiKey || 'offline',
+      timeout: 8000,
+      maxRetries: 0,
     });
     this.model = config.model;
     this.maxTokens = config.maxTokens;
+    this.minCallIntervalMs = Math.max(1000, 60000 / config.maxRequestsPerMinute);
   }
 
   async complete(request: LLMRequest): Promise<LLMResponse> {
+    const empty: LLMResponse = { content: '', usage: { promptTokens: 0, completionTokens: 0 } };
+    if (!this.enabled || Date.now() < this.retryAfter || this.inFlight >= 2 || Date.now() - this.lastCallTime < this.minCallIntervalMs) return empty;
     const cacheKey = this.generateCacheKey(request);
     const cached = this.cache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < this.cacheTtlMs) {
       return cached.result;
     }
 
-    await this.rateLimit();
+    this.lastCallTime = Date.now();
+    this.inFlight++;
 
     try {
       const response = await this.client.chat.completions.create({
@@ -54,16 +66,22 @@ export class LLMClient {
       };
 
       this.cache.set(cacheKey, { result, timestamp: Date.now() });
+      this.status = 'ready';
       this.pruneCache();
       return result;
 
     } catch (err: any) {
-      console.error('[LLM] Error:', err.message ?? err);
+      this.status = 'degraded';
+      const serverDelay = Number(err.headers?.['retry-after']);
+      this.retryAfter = Date.now() + Math.max(60000, Number.isFinite(serverDelay) ? serverDelay * 1000 : 0);
+      console.warn('[LLM] Request failed; using local behavior for at least 60 seconds.');
       // Fallback
       return {
         content: '',
         usage: { promptTokens: 0, completionTokens: 0 },
       };
+    } finally {
+      this.inFlight--;
     }
   }
 
@@ -95,8 +113,7 @@ export class LLMClient {
   }
 
   private generateCacheKey(request: LLMRequest): string {
-    const last = request.messages[request.messages.length - 1];
-    return `${last.role}:${last.content.substring(0, 100)}`;
+    return JSON.stringify(request);
   }
 
   private pruneCache(): void {

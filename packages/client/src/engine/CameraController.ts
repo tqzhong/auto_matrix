@@ -1,143 +1,89 @@
 import * as THREE from 'three';
-import type { Vector3 } from '@auto_matrix/shared';
-
-const MIN_DISTANCE = 30;
-const MAX_DISTANCE = 800;
-const DEFAULT_DISTANCE = 120;
-const DEFAULT_ELEVATION = 1.1;
-const DEFAULT_AZIMUTH = Math.PI * 0.25;
-const ROTATE_SPEED = 0.005;
-const PAN_SPEED = 0.5;
-const ZOOM_SPEED = 8;
-const LERP_SPEED = 3;
+import { CITY_CENTER, type Vector3 } from '@auto_matrix/shared';
 
 export class CameraController {
-  private camera: THREE.PerspectiveCamera;
-  private target: THREE.Vector3;
-  private distance: number;
-  private elevation: number;
-  private azimuth: number;
+  private target = new THREE.Vector3(CITY_CENTER.x, 25, CITY_CENTER.z);
+  private desiredTarget = this.target.clone();
+  private distance = 610;
+  private desiredDistance = 610;
+  private elevation = 0.62;
+  private azimuth = 0.82;
+  private drag: { x: number; y: number; button: number } | null = null;
+  private following = false;
+  director = false;
+  onManualControl?: () => void;
 
-  private isRotating = false;
-  private isPanning = false;
-  private lastPointerX = 0;
-  private lastPointerY = 0;
-
-  private followTarget: THREE.Vector3 | null = null;
-  private followLerp = 0;
-  private domElement: HTMLElement;
-
-  constructor(camera: THREE.PerspectiveCamera, domElement: HTMLElement) {
-    this.camera = camera;
-    this.domElement = domElement;
-    this.target = new THREE.Vector3(1280, 0, 1280);
-    this.distance = DEFAULT_DISTANCE;
-    this.elevation = DEFAULT_ELEVATION;
-    this.azimuth = DEFAULT_AZIMUTH;
-
-    this.bindEvents();
-    this.updateCameraPosition();
+  constructor(private camera: THREE.PerspectiveCamera, private element: HTMLElement) {
+    element.addEventListener('pointerdown', this.down);
+    element.addEventListener('pointermove', this.move);
+    element.addEventListener('pointerup', this.up);
+    element.addEventListener('pointercancel', this.up);
+    element.addEventListener('wheel', this.wheel, { passive: false });
+    element.addEventListener('contextmenu', this.context);
+    this.update(1);
   }
 
-  private bindEvents(): void {
-    this.domElement.addEventListener('wheel', this.onWheel, { passive: false });
-    this.domElement.addEventListener('mousedown', this.onMouseDown);
-    this.domElement.addEventListener('mousemove', this.onMouseMove);
-    this.domElement.addEventListener('mouseup', this.onMouseUp);
-    this.domElement.addEventListener('contextmenu', (e) => e.preventDefault());
-  }
-
-  private onWheel = (e: WheelEvent): void => {
-    e.preventDefault();
-    this.distance += e.deltaY * 0.01 * ZOOM_SPEED;
-    this.distance = Math.max(MIN_DISTANCE, Math.min(MAX_DISTANCE, this.distance));
-    this.followTarget = null;
+  private context = (event: Event): void => { event.preventDefault(); };
+  private down = (event: PointerEvent): void => {
+    this.drag = { x: event.clientX, y: event.clientY, button: event.button };
+    this.element.setPointerCapture(event.pointerId);
   };
-
-  private onMouseDown = (e: MouseEvent): void => {
-    if (e.button === 2) {
-      // Right click → rotate camera
-      this.isRotating = true;
-    } else if (e.button === 0 || e.button === 1) {
-      // Left click / middle click → pan camera
-      // Left click also covers macOS three-finger drag
-      this.isPanning = true;
+  private move = (event: PointerEvent): void => {
+    if (!this.drag) return;
+    const dx = event.clientX - this.drag.x;
+    const dy = event.clientY - this.drag.y;
+    if (Math.abs(dx) + Math.abs(dy) < 2) return;
+    this.following = false; this.director = false; this.onManualControl?.();
+    if (this.drag.button === 2 || event.shiftKey) {
+      this.azimuth -= dx * 0.006;
+      this.elevation = THREE.MathUtils.clamp(this.elevation + dy * 0.004, 0.16, 1.4);
+    } else {
+      const factor = this.distance * 0.0015;
+      this.desiredTarget.x += (-dx * Math.cos(this.azimuth) + dy * Math.sin(this.azimuth)) * factor;
+      this.desiredTarget.z += (dx * Math.sin(this.azimuth) + dy * Math.cos(this.azimuth)) * factor;
     }
-    this.lastPointerX = e.clientX;
-    this.lastPointerY = e.clientY;
+    this.drag.x = event.clientX; this.drag.y = event.clientY;
+  };
+  private up = (): void => { this.drag = null; };
+  private wheel = (event: WheelEvent): void => {
+    event.preventDefault();
+    this.desiredDistance = THREE.MathUtils.clamp(this.desiredDistance * Math.exp(event.deltaY * 0.001), 24, 1500);
   };
 
-  private onMouseMove = (e: MouseEvent): void => {
-    const dx = e.clientX - this.lastPointerX;
-    const dy = e.clientY - this.lastPointerY;
-
-    if (this.isRotating) {
-      this.azimuth -= dx * ROTATE_SPEED;
-      this.elevation += dy * ROTATE_SPEED;
-      this.elevation = Math.max(0.2, Math.min(Math.PI * 0.45, this.elevation));
-      this.followTarget = null;
-    }
-
-    if (this.isPanning) {
-      const forward = new THREE.Vector3(
-        -Math.sin(this.azimuth),
-        0,
-        -Math.cos(this.azimuth),
-      ).normalize();
-      const right = new THREE.Vector3().crossVectors(
-        new THREE.Vector3(0, 1, 0),
-        forward,
-      ).normalize();
-
-      this.target.addScaledVector(right, -dx * PAN_SPEED);
-      this.target.addScaledVector(forward, dy * PAN_SPEED);
-      this.followTarget = null;
-    }
-
-    this.lastPointerX = e.clientX;
-    this.lastPointerY = e.clientY;
-  };
-
-  private onMouseUp = (e: MouseEvent): void => {
-    if (e.button === 2) this.isRotating = false;
-    if (e.button === 0 || e.button === 1) this.isPanning = false;
-  };
-
-  focusOnPosition(pos: Vector3): void {
-    this.followTarget = new THREE.Vector3(pos.x, pos.y, pos.z);
-    this.followLerp = 0;
+  focusOnPosition(position: Vector3): void {
+    this.desiredTarget.set(position.x, position.y + 5, position.z);
+    this.desiredDistance = 190;
+    this.following = false;
   }
-
-  setFollowTarget(pos: Vector3): void {
-    this.followTarget = new THREE.Vector3(pos.x, pos.y, pos.z);
-    this.followLerp = 0;
+  setFollowTarget(position: Vector3): void {
+    this.desiredTarget.set(position.x, position.y + 3, position.z);
+    if (!this.following) this.desiredDistance = 105;
+    this.following = true;
   }
-
-  clearFollow(): void {
-    this.followTarget = null;
+  clearFollow(): void { this.following = false; }
+  overview(matrix = true): void {
+    this.following = false;
+    this.director = false;
+    this.desiredTarget.set(matrix ? CITY_CENTER.x : 2160, matrix ? 25 : -65, matrix ? CITY_CENTER.z : 2400);
+    this.desiredDistance = matrix ? 610 : 460;
+    this.elevation = 0.62;
   }
-
   update(delta: number): void {
-    if (this.followTarget) {
-      this.followLerp = Math.min(1, this.followLerp + delta * LERP_SPEED);
-      this.target.lerp(this.followTarget, this.followLerp * 0.05);
-    }
-    this.updateCameraPosition();
-  }
-
-  private updateCameraPosition(): void {
-    const x = this.target.x + Math.sin(this.azimuth) * Math.cos(this.elevation) * this.distance;
-    const y = this.target.y + Math.sin(this.elevation) * this.distance;
-    const z = this.target.z + Math.cos(this.azimuth) * Math.cos(this.elevation) * this.distance;
-
-    this.camera.position.set(x, y, z);
+    const smoothing = 1 - Math.exp(-3 * delta);
+    this.target.lerp(this.desiredTarget, smoothing);
+    this.distance += (this.desiredDistance - this.distance) * smoothing;
+    if (this.director && !this.drag) this.azimuth += delta * 0.022;
+    this.camera.position.set(this.target.x + Math.sin(this.azimuth) * Math.cos(this.elevation) * this.distance,
+      this.target.y + Math.sin(this.elevation) * this.distance,
+      this.target.z + Math.cos(this.azimuth) * Math.cos(this.elevation) * this.distance);
     this.camera.lookAt(this.target);
   }
-
   dispose(): void {
-    this.domElement.removeEventListener('wheel', this.onWheel);
-    this.domElement.removeEventListener('mousedown', this.onMouseDown);
-    this.domElement.removeEventListener('mousemove', this.onMouseMove);
-    this.domElement.removeEventListener('mouseup', this.onMouseUp);
+    this.element.removeEventListener('pointerdown', this.down);
+    this.element.removeEventListener('pointermove', this.move);
+    this.element.removeEventListener('pointerup', this.up);
+    this.element.removeEventListener('pointercancel', this.up);
+    this.element.removeEventListener('wheel', this.wheel);
+    this.element.removeEventListener('contextmenu', this.context);
   }
 }

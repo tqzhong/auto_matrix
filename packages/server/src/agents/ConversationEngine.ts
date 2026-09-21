@@ -1,29 +1,25 @@
-import { CHARACTERS, generateId, type AgentId, type AgentState, type ConversationRecord, type ConversationMessage, type Memory } from '@auto_matrix/shared';
+import { CHARACTERS, distance, generateId, type AgentId, type AgentState, type ConversationRecord, type Memory } from '@auto_matrix/shared';
 import type { LLMClient } from '../llm/LLMClient.js';
 import type { MemoryManager } from '../memory/MemoryManager.js';
 import type { RelationshipGraph } from './RelationshipGraph.js';
 import type { SocketServer } from '../network/SocketServer.js';
 import type { StoryEngine } from '../story/StoryEngine.js';
-import {
-  buildMultiTurnConversationPrompt,
-  buildConversationSummaryPrompt,
-  buildReflectionPrompt,
-} from '../llm/PromptTemplates.js';
 
 interface ActiveConversation {
+  ordinary: boolean;
   record: ConversationRecord;
-  totalTurns: number;
-  currentTurn: number;
-  speakerOrder: [AgentId, AgentId];
   topic: string;
+  nextTurn: number;
+  lines: string[];
+  modelLines?: string[];
+  awaitingModel: boolean;
 }
 
 export class ConversationEngine {
-  private activeConversations: Map<string, ActiveConversation> = new Map();
-  private agentConversationCooldowns: Map<AgentId, number> = new Map();
-  private readonly cooldownTicks = 20;
-  private readonly minTurns = 3;
-  private readonly maxTurns = 5;
+  ordinaryLife = false;
+  private active = new Map<string, ActiveConversation>();
+  private cooldowns = new Map<AgentId, number>();
+  onComplete?: (a: AgentState, b: AgentState, summary: string, tick: number) => void;
 
   constructor(
     private llmClient: LLMClient,
@@ -33,449 +29,101 @@ export class ConversationEngine {
     private storyEngine: StoryEngine,
   ) {}
 
-  /**
-   * Start a new multi-turn conversation between two agents.
-   * Returns the conversation id, or null if agents can't talk right now.
-   */
-  startConversation(
-    agent1Id: AgentId,
-    agent2Id: AgentId,
-    agent1State: AgentState,
-    agent2State: AgentState,
-    topic: string | undefined,
-    tick: number,
-  ): string | null {
-    // World separation: agents in different worlds can't talk
-    if (agent1State.isInMatrix !== agent2State.isInMatrix) {
-      return null;
+  startConversation(id1: string, id2: string, a: AgentState, b: AgentState, topic: string | undefined, tick: number): string | null {
+    if (id1 === id2 || a.status !== 'alive' || b.status !== 'alive' || a.isInMatrix !== b.isInMatrix || distance(a.position, b.position) > 12) return null;
+    if (this.active.size >= 5 || this.isAgentInConversation(id1) || this.isAgentInConversation(id2) || this.isOnCooldown(id1, tick) || this.isOnCooldown(id2, tick)) return null;
+    const id = generateId('conv');
+    const suspicious = !this.ordinaryLife && Math.max(a.mind?.suspicion ?? 0, b.mind?.suspicion ?? 0) > 35;
+    const resolvedTopic = topic ?? (suspicious ? '那些无法解释的异常' : '今天的生活');
+    const memory = this.memoryManager.getRecentContext(a.id, 1)[0];
+    const ordinaryLines = a.currentLocation === 'metacortex_office'
+      ? ['今天的报表终于跑完了。下班之后有什么安排？', '想去街角吃点东西，晚些时候再回家。', '那明天见。路上慢慢来。']
+      : a.currentLocation === 'nightclub'
+        ? ['今晚这首曲子不错，你常来这里吗？', '偶尔来，见见朋友，暂时把工作放一边。', '有空再约。今晚过得开心。']
+        : ['今天外面的街道很热闹。你吃过饭了吗？', '还没，想去咖啡馆坐一会儿。', '我也是。生活总要给自己留一点时间。'];
+    const lines = this.ordinaryLife ? ordinaryLines : suspicious ? [
+      a.isAwakened ? '你有没有发现，记忆和眼前的世界有时对不上？' : '有些事情不对劲。你也看到那些异常了吗？',
+      b.isAwakened ? '你看到的并不是幻觉。但信任之前，你应该自己验证。' : `我也开始怀疑了。${b.mind?.thought ?? '我们应该再找一些证据。'}`,
+      a.isAwakened ? '记住亲眼看见的事，和你信任的人核实。我会继续留意。' : '我会记住这次谈话。下次再遇到异常，我不会装作没看见。',
+    ] : [
+      memory ? `最近我一直在想：${memory.content.slice(0, 64)}` : `晚上好，${b.name}。今天过得怎么样？`,
+      b.mind && b.mind.energy < 50 ? '有点累，想找个安静的地方歇一会儿。' : '和往常差不多。有时候我会想，明天是不是还会一模一样。',
+      '有消息再联系。能遇到一个愿意听的人，总是好事。',
+    ];
+    const conv: ActiveConversation = { ordinary: this.ordinaryLife, record: { id, participants: [id1, id2], messages: [], location: a.currentLocation, startTick: tick, endTick: tick }, topic: resolvedTopic, nextTurn: tick + 1, lines, awaitingModel: this.llmClient.enabled && !this.ordinaryLife };
+    this.active.set(id, conv);
+    for (const person of [a, b]) {
+      person.targetPosition = null;
+      person.currentPath = [];
+      person.velocity = { x: 0, y: 0, z: 0 };
+      person.currentAction = { type: 'talk_to', target: person.id === id1 ? id2 : id1, parameters: { resolved: true }, startedAt: tick, duration: 14, progress: 0 };
+      person.mood = '交谈中';
     }
-
-    // Cooldown check
-    const cd1 = this.agentConversationCooldowns.get(agent1Id) ?? 0;
-    const cd2 = this.agentConversationCooldowns.get(agent2Id) ?? 0;
-    if (tick < cd1 || tick < cd2) {
-      return null;
+    this.socketServer.broadcastMessage({ type: 'conversation_start', data: { id, participants: [id1, id2], location: a.currentLocation }, tick, timestamp: Date.now() });
+    if (this.llmClient.enabled && !this.ordinaryLife) {
+      void this.llmClient.complete({ messages: [
+        { role: 'system', content: '为 Matrix 世界中的人物写简短自然的中文对话。只谈人物已知的经历，不预言剧情、不声称不存在的事件。返回 JSON 字符串数组，恰好三句，发言顺序 A、B、A，每句不超过 60 字。' },
+        { role: 'user', content: JSON.stringify({ A: { name: a.name, personality: CHARACTERS[id1]?.personality, mind: a.mind }, B: { name: b.name, personality: CHARACTERS[id2]?.personality, mind: b.mind }, topic: resolvedTopic, phase: this.storyEngine.getCurrentPhaseId(), memories: this.memoryManager.getRecentContext(id1, 3).map(m => m.content) }) },
+      ], maxTokens: 350, temperature: 0.8 }).then(response => {
+        try {
+          const match = response.content.match(/\[[\s\S]*\]/);
+          const parsed: unknown = match ? JSON.parse(match[0]) : null;
+          if (Array.isArray(parsed) && parsed.length === 3 && parsed.every(line => typeof line === 'string' && line.length > 0 && line.length < 200)) conv.modelLines = parsed;
+        } catch { /* Continue the local conversation. */ }
+      }).catch(() => {}).finally(() => { conv.awaitingModel = false; });
     }
-
-    // Already in a conversation
-    for (const conv of this.activeConversations.values()) {
-      if (conv.record.participants.includes(agent1Id) || conv.record.participants.includes(agent2Id)) {
-        return null;
-      }
-    }
-
-    const totalTurns = this.minTurns + Math.floor(Math.random() * (this.maxTurns - this.minTurns + 1));
-    const resolvedTopic = topic ?? this.inferTopic(agent1State, agent2State);
-
-    const conversationId = generateId('conv');
-    const record: ConversationRecord = {
-      id: conversationId,
-      participants: [agent1Id, agent2Id],
-      messages: [],
-      location: agent1State.currentLocation,
-      startTick: tick,
-      endTick: tick,
-    };
-
-    this.activeConversations.set(conversationId, {
-      record,
-      totalTurns,
-      currentTurn: 0,
-      speakerOrder: [agent1Id, agent2Id],
-      topic: resolvedTopic,
-    });
-
-    // Set cooldowns
-    this.agentConversationCooldowns.set(agent1Id, tick + this.cooldownTicks);
-    this.agentConversationCooldowns.set(agent2Id, tick + this.cooldownTicks);
-
-    // Broadcast conversation start
-    this.socketServer.broadcastMessage({
-      type: 'conversation_start',
-      data: {
-        id: conversationId,
-        participants: [agent1Id, agent2Id],
-        location: agent1State.currentLocation,
-      },
-      tick,
-      timestamp: Date.now(),
-    });
-
-    // Improve familiarity
-    this.relationshipGraph.modifyRelationship(agent1Id, agent2Id, { familiarity: 2 });
-    this.relationshipGraph.modifyRelationship(agent2Id, agent1Id, { familiarity: 2 });
-
-    return conversationId;
+    return id;
   }
 
-  /**
-   * Advance all active conversations by one turn.
-   * Called once per tick from the simulation loop.
-   */
-  async tickConversations(
-    allAgents: Map<string, AgentState>,
-    tick: number,
-  ): Promise<void> {
-    const completedIds: string[] = [];
-
-    for (const [convId, conv] of this.activeConversations) {
-      if (conv.currentTurn >= conv.totalTurns) {
-        completedIds.push(convId);
+  async tickConversations(all: Map<string, AgentState>, tick: number): Promise<void> {
+    for (const [id, conv] of this.active) {
+      const [a, b] = conv.record.participants.map(agentId => all.get(agentId));
+      if (conv.ordinary !== this.ordinaryLife || !a || !b || a.status !== 'alive' || b.status !== 'alive' || a.isInMatrix !== b.isInMatrix || distance(a.position, b.position) > 25) {
+        this.finish(id, conv, a, b, tick, true);
         continue;
       }
+      if (tick < conv.nextTurn) continue;
+      const turn = conv.record.messages.length;
+      if (turn === 0 && conv.awaitingModel && !conv.modelLines && tick < conv.record.startTick + 12) continue;
+      // Select a coherent script once, so a delayed response cannot replace half a dialogue.
+      if (turn === 0 && conv.modelLines) conv.lines = conv.modelLines;
+      const speaker = turn % 2 === 0 ? a : b;
+      const content = conv.lines[turn];
+      conv.record.messages.push({ speaker: speaker.id, content, tick, tone: 'thoughtful' });
+      this.socketServer.broadcastMessage({ type: 'conversation_message', data: { conversationId: id, speaker: speaker.id, content, tone: 'thoughtful' }, tick, timestamp: Date.now() });
+      conv.nextTurn = tick + 4;
+      if (conv.record.messages.length === 3) this.finish(id, conv, a, b, tick, false);
+    }
+  }
 
-      // Determine speaker and listener for this turn
-      const speakerIdx = conv.currentTurn % 2;
-      const speakerId = conv.speakerOrder[speakerIdx];
-      const listenerId = conv.speakerOrder[1 - speakerIdx];
-
-      const speakerState = allAgents.get(speakerId);
-      const listenerState = allAgents.get(listenerId);
-      if (!speakerState || !listenerState) {
-        completedIds.push(convId);
-        continue;
+  private finish(id: string, conv: ActiveConversation, a: AgentState | undefined, b: AgentState | undefined, tick: number, interrupted: boolean): void {
+    const summary = interrupted ? '谈话因距离或人物状态改变而中断。' : `${a!.name} 与 ${b!.name} 谈起${conv.topic}。${conv.record.messages[1]?.content ?? ''}`;
+    for (const person of [a, b]) if (person) {
+      this.cooldowns.set(person.id, tick + 35);
+      if (person.currentAction?.type === 'talk_to') person.currentAction = null;
+      person.mood = interrupted ? '警觉' : '思索';
+    }
+    if (!interrupted && a && b) {
+      for (const [from, to] of [[a, b], [b, a]]) {
+        this.relationshipGraph.adjustTrust(from.id, to.id, 6);
+        const familiarity = this.relationshipGraph.getRelationship(from.id, to.id)?.familiarity ?? 0;
+        this.relationshipGraph.modifyRelationship(from.id, to.id, { familiarity: Math.min(100, familiarity + 5) });
       }
-
-      try {
-        const line = await this.generateDialogueLine(
-          speakerState,
-          listenerState,
-          conv,
-          tick,
-        );
-
-        const message: ConversationMessage = {
-          speaker: speakerId,
-          content: line,
-          tick,
-          tone: this.inferTone(speakerState, listenerState),
-        };
-
-        conv.record.messages.push(message);
-        conv.currentTurn++;
-
-        // Broadcast the message
-        this.socketServer.broadcastMessage({
-          type: 'conversation_message',
-          data: {
-            conversationId: convId,
-            speaker: speakerId,
-            content: line,
-            tone: message.tone,
-          },
-          tick,
-          timestamp: Date.now(),
-        });
-
-        // Also broadcast as chat bubble for the 3D view
-        this.socketServer.broadcastChatBubble(speakerId, line, tick);
-
-        // Check if conversation is now complete
-        if (conv.currentTurn >= conv.totalTurns) {
-          completedIds.push(convId);
-        }
-      } catch {
-        // If LLM fails, end conversation early
-        completedIds.push(convId);
-      }
+      this.onComplete?.(a, b, summary, tick);
     }
+    this.socketServer.broadcastMessage({ type: 'conversation_end', data: { conversationId: id, participants: conv.record.participants, summary }, tick, timestamp: Date.now() });
+    this.active.delete(id);
+  }
 
-    // Finalize completed conversations
-    for (const convId of completedIds) {
-      const conv = this.activeConversations.get(convId);
-      if (conv) {
-        await this.finalizeConversation(conv, allAgents, tick);
-        this.activeConversations.delete(convId);
-      }
+  interrupt(id: string, all: Map<string, AgentState>, tick: number): void {
+    for (const [conversationId, conv] of this.active) if (conv.record.participants.includes(id)) {
+      const [a, b] = conv.record.participants.map(agentId => all.get(agentId));
+      this.finish(conversationId, conv, a, b, tick, true);
     }
   }
 
-  /**
-   * Check whether an agent is currently in an active conversation.
-   */
-  isAgentInConversation(agentId: AgentId): boolean {
-    for (const conv of this.activeConversations.values()) {
-      if (conv.record.participants.includes(agentId)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  /**
-   * Check whether an agent is on conversation cooldown.
-   */
-  isOnCooldown(agentId: AgentId, tick: number): boolean {
-    const cd = this.agentConversationCooldowns.get(agentId) ?? 0;
-    return tick < cd;
-  }
-
-  getActiveConversations(): ConversationRecord[] {
-    return Array.from(this.activeConversations.values()).map(c => ({ ...c.record }));
-  }
-
-  getConversationHistory(agent1Id: AgentId, agent2Id: AgentId): Memory[] {
-    return this.memoryManager.getMemoriesInvolvingAgent(agent1Id, agent2Id)
-      .filter(m => m.type === 'conversation');
-  }
-
-  // ─── Private helpers ──────────────────────────────────────────
-
-  private async generateDialogueLine(
-    speaker: AgentState,
-    listener: AgentState,
-    conv: ActiveConversation,
-    tick: number,
-  ): Promise<string> {
-    const speakerChar = CHARACTERS[speaker.id];
-    const listenerChar = CHARACTERS[listener.id];
-
-    const speakerMemories = this.memoryManager.getRecentContext(speaker.id, 5)
-      .map(m => m.content).join('\n');
-    const listenerMemories = this.memoryManager.getRecentContext(listener.id, 5)
-      .map(m => m.content).join('\n');
-
-    const rel = this.relationshipGraph.getRelationship(speaker.id, listener.id);
-    const previousConversationMemories = this.getConversationHistory(speaker.id, listener.id)
-      .slice(-3).map(m => m.content).join('\n');
-
-    const phase = this.storyEngine.getCurrentPhaseId();
-
-    const prompt = buildMultiTurnConversationPrompt(
-      speaker,
-      listener,
-      speakerChar?.personality ?? '',
-      listenerChar?.personality ?? '',
-      conv.topic,
-      speakerMemories,
-      listenerMemories,
-      rel ? `trust=${rel.trust}, fear=${rel.fear}, respect=${rel.respect}, familiarity=${rel.familiarity}` : 'unknown',
-      previousConversationMemories,
-      phase,
-      conv.record.messages,
-      speaker.id,
-    );
-
-    const response = await this.llmClient.complete({
-      messages: [
-        { role: 'system', content: `You are writing dialogue for ${speaker.name} in the Matrix universe. Stay strictly in character. Reply with ONLY the dialogue line — no stage directions, no speaker name prefix, no quotes around the whole thing.` },
-        { role: 'user', content: prompt },
-      ],
-      maxTokens: 256,
-      temperature: 0.85,
-    });
-
-    let line = response.content.trim();
-    // Strip any accidental "SpeakerName:" prefix the LLM might add
-    const namePrefix = `${speaker.name}:`;
-    if (line.toLowerCase().startsWith(namePrefix.toLowerCase())) {
-      line = line.substring(namePrefix.length).trim();
-    }
-    // Strip surrounding quotes
-    if ((line.startsWith('"') && line.endsWith('"')) || (line.startsWith('“') && line.endsWith('”'))) {
-      line = line.slice(1, -1).trim();
-    }
-
-    return line || `${speaker.name} nods thoughtfully.`;
-  }
-
-  private async finalizeConversation(
-    conv: ActiveConversation,
-    allAgents: Map<string, AgentState>,
-    tick: number,
-  ): Promise<void> {
-    conv.record.endTick = tick;
-
-    // Generate summary via LLM
-    const summary = await this.generateSummary(conv);
-
-    // Broadcast conversation end
-    this.socketServer.broadcastMessage({
-      type: 'conversation_end',
-      data: {
-        conversationId: conv.record.id,
-        participants: conv.record.participants,
-        summary,
-      },
-      tick,
-      timestamp: Date.now(),
-    });
-
-    // Store conversation memories for both participants
-    for (const agentId of conv.record.participants) {
-      const agentState = allAgents.get(agentId);
-      const otherIds = conv.record.participants.filter(id => id !== agentId);
-
-      this.memoryManager.record(agentId, 'conversation', summary, {
-        importance: 6,
-        relatedAgents: otherIds,
-        location: conv.record.location,
-        emotion: this.inferEmotionFromConversation(conv),
-        tags: ['conversation', conv.topic],
-      });
-    }
-
-    // Generate reflections for both agents
-    await this.generateReflections(conv, allAgents, tick);
-
-    // Adjust relationship based on conversation content
-    this.adjustRelationshipFromConversation(conv);
-  }
-
-  private async generateSummary(conv: ActiveConversation): Promise<string> {
-    const dialogueText = conv.record.messages
-      .map(m => `${m.speaker}: ${m.content}`)
-      .join('\n');
-
-    const prompt = buildConversationSummaryPrompt(
-      conv.record.participants,
-      conv.topic,
-      dialogueText,
-    );
-
-    const response = await this.llmClient.complete({
-      messages: [
-        { role: 'system', content: 'You are a narrative summarizer for the Matrix universe. Write a concise 1-2 sentence summary of the conversation.' },
-        { role: 'user', content: prompt },
-      ],
-      maxTokens: 200,
-      temperature: 0.5,
-    });
-
-    return response.content.trim() || `${conv.record.participants.join(' and ')} had a conversation about ${conv.topic}.`;
-  }
-
-  private async generateReflections(
-    conv: ActiveConversation,
-    allAgents: Map<string, AgentState>,
-    tick: number,
-  ): Promise<void> {
-    for (const agentId of conv.record.participants) {
-      const agentState = allAgents.get(agentId);
-      if (!agentState) continue;
-
-      const character = CHARACTERS[agentId];
-      const otherIds = conv.record.participants.filter(id => id !== agentId);
-      const otherState = allAgents.get(otherIds[0]);
-
-      const dialogueText = conv.record.messages
-        .map(m => `${m.speaker}: ${m.content}`)
-        .join('\n');
-
-      const prompt = buildReflectionPrompt(
-        agentState,
-        character?.personality ?? '',
-        dialogueText,
-        otherState?.name ?? 'someone',
-      );
-
-      try {
-        const response = await this.llmClient.complete({
-          messages: [
-            { role: 'system', content: `You are ${agentState.name}. Reflect on the conversation you just had. Reply in JSON format: {"insights": ["..."], "updatedGoals": ["..."], "moodChange": "new mood or empty string"}` },
-            { role: 'user', content: prompt },
-          ],
-          maxTokens: 300,
-          temperature: 0.6,
-        });
-
-        const parsed = this.safeParseReflection(response.content);
-        if (parsed) {
-          // Store reflection as a memory
-          if (parsed.insights.length > 0) {
-            this.memoryManager.record(agentId, 'reflection', parsed.insights.join('. '), {
-              importance: 7,
-              relatedAgents: otherIds,
-              location: conv.record.location,
-              emotion: 'contemplative',
-              tags: ['reflection', 'post-conversation'],
-            });
-          }
-        }
-      } catch {
-        // Reflection failure is non-critical
-      }
-    }
-  }
-
-  private safeParseReflection(content: string): { insights: string[]; updatedGoals: string[]; moodChange: string } | null {
-    try {
-      // Try to extract JSON from the response
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) return null;
-      const parsed = JSON.parse(jsonMatch[0]);
-      return {
-        insights: Array.isArray(parsed.insights) ? parsed.insights : [],
-        updatedGoals: Array.isArray(parsed.updatedGoals) ? parsed.updatedGoals : [],
-        moodChange: typeof parsed.moodChange === 'string' ? parsed.moodChange : '',
-      };
-    } catch {
-      return null;
-    }
-  }
-
-  private adjustRelationshipFromConversation(conv: ActiveConversation): void {
-    const [id1, id2] = conv.record.participants;
-
-    // Positive conversation (no hostile keywords) improves trust
-    const hostileKeywords = ['attack', 'kill', 'destroy', 'hate', 'enemy', 'threat'];
-    const fullText = conv.record.messages.map(m => m.content.toLowerCase()).join(' ');
-    const isHostile = hostileKeywords.some(kw => fullText.includes(kw));
-
-    if (isHostile) {
-      this.relationshipGraph.adjustTrust(id1, id2, -3);
-      this.relationshipGraph.adjustTrust(id2, id1, -3);
-      this.relationshipGraph.adjustFear(id1, id2, 2);
-      this.relationshipGraph.adjustFear(id2, id1, 2);
-    } else {
-      this.relationshipGraph.adjustTrust(id1, id2, 3);
-      this.relationshipGraph.adjustTrust(id2, id1, 3);
-      this.relationshipGraph.adjustRespect(id1, id2, 1);
-      this.relationshipGraph.adjustRespect(id2, id1, 1);
-    }
-
-    // Familiarity always increases from conversation
-    this.relationshipGraph.modifyRelationship(id1, id2, { familiarity: 5 });
-    this.relationshipGraph.modifyRelationship(id2, id1, { familiarity: 5 });
-  }
-
-  private inferTopic(agent1: AgentState, agent2: AgentState): string {
-    // Infer a plausible topic based on agent states
-    if (agent1.faction === agent2.faction) {
-      return 'discussing faction strategy and recent events';
-    }
-    if (agent1.faction === 'machines' || agent2.faction === 'machines') {
-      return 'confrontation between human and machine';
-    }
-    if (!agent1.isAwakened && !agent2.isAwakened) {
-      return 'everyday life in the Matrix';
-    }
-    if (agent1.isAwakened !== agent2.isAwakened) {
-      return 'the nature of reality and the truth about the Matrix';
-    }
-    return 'recent events and what lies ahead';
-  }
-
-  private inferTone(speaker: AgentState, listener: AgentState): string {
-    const rel = this.relationshipGraph.getRelationship(speaker.id, listener.id);
-    if (!rel) return 'neutral';
-
-    if (rel.fear > 50) return 'tense';
-    if (rel.trust > 50) return 'friendly';
-    if (rel.respect > 50) return 'respectful';
-    if (rel.trust < -30) return 'hostile';
-    return 'neutral';
-  }
-
-  private inferEmotionFromConversation(conv: ActiveConversation): string {
-    const fullText = conv.record.messages.map(m => m.content.toLowerCase()).join(' ');
-
-    if (fullText.includes('afraid') || fullText.includes('scared') || fullText.includes('fear')) return 'fearful';
-    if (fullText.includes('angry') || fullText.includes('hate')) return 'angry';
-    if (fullText.includes('happy') || fullText.includes('glad') || fullText.includes('wonderful')) return 'happy';
-    if (fullText.includes('sad') || fullText.includes('sorry') || fullText.includes('loss')) return 'sad';
-    if (fullText.includes('trust') || fullText.includes('friend') || fullText.includes('ally')) return 'trusting';
-    if (fullText.includes('suspicious') || fullText.includes('doubt')) return 'suspicious';
-    return 'thoughtful';
-  }
+  isAgentInConversation(id: string): boolean { return [...this.active.values()].some(c => c.record.participants.includes(id)); }
+  isOnCooldown(id: string, tick: number): boolean { return tick < (this.cooldowns.get(id) ?? 0); }
+  getActiveConversations(): ConversationRecord[] { return [...this.active.values()].map(c => structuredClone(c.record)); }
+  getConversationHistory(a: string, b: string): Memory[] { return this.memoryManager.getMemoriesInvolvingAgent(a, b).filter(m => m.type === 'conversation'); }
 }

@@ -6,11 +6,12 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev": "npm run build -w packages/shared && concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "dev:server": "npm run dev -w packages/server",
     "dev:client": "npm run dev -w packages/client",
     "build": "npm run build -w packages/shared && npm run build -w packages/server && npm run build -w packages/client",
-    "seed": "tsx scripts/seed-world.ts && tsx scripts/seed-characters.ts",
+    "test": "npm run build -w packages/shared && node --import tsx --test tests/*.test.mts",
+    "music:originals": "node --import tsx scripts/fetch-film-score.mts",
     "typecheck": "tsc --noEmit -p packages/shared && tsc --noEmit -p packages/server && tsc --noEmit -p packages/client"
   },
   "devDependencies": {

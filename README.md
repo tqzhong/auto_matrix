@@ -1,73 +1,172 @@
 # Auto Matrix
 
-A real-time Matrix simulation where AI agents live, talk, evolve, and die in a voxel-rendered NYC cityscape.
+可游玩的 Matrix 风格三维开放世界。接管任意一个初始角色，其他人物继续生活、移动、交谈和作出选择。游戏状态由服务器维护，人物的记忆、关系、伤害和觉醒会实际影响后续事件。
 
-74 autonomous agents powered by LLM inhabit a 2560x2560 world — making decisions, forming relationships, having conversations, and progressing through a multi-phase story cycle that can end in civilization's collapse and rebirth.
+Neo 现在从普通人的生活开始：吃饭、上班领薪、回家、逛街、酒吧和朋友约会；日常经历有概率出现异常，累积证据后才会遇到崔尼蒂与墨菲斯。生活序章与 28 个后续章节贯穿三部曲，包含先知的哲学对话、战斗、护送、破解与机器核心谈判；完成后带着循环记忆回到新的清晨。其他角色保留原有沙盒、背包、建造和 10 条共享任务。
 
-## Architecture
+## Neo 的生活与哲学
 
-```
-packages/
-├── server/     # Express + Socket.IO — simulation loop, agent AI, story engine
-├── client/     # Three.js voxel renderer — 3D city, agents, UI overlays
-└── shared/     # Types, constants, location definitions
-```
+首次接入 Neo 自动开始第 1 轮，早上 07:30 在公寓醒来。按 **J** 打开生活与故事手记，**G / E** 查看附近活动与当前剧情。房间可以步行进出；手记也提供公共交通（$2、10–40 游戏分钟），现金不足时走路会花两倍时间。没有增加 npm 依赖、外部建模或运行时素材服务。
 
-### Server
+- 公寓有电脑、床、厨房和餐桌；公司有工位；咖啡馆、酒吧与先知的厨房可以进入。晴天采用蓝灰天空、暖色日照、普通建筑材质，室内不下雨；白天、傍晚与夜间的光照不同，普通天气约 80% 晴、20% 雨，代码风暴不会打断普通生活。
+- 08:00–11:00 可开始七小时班次，每天结算一次 $95；错过上班会降低工作评价。食物、精力、现金、社交、朋友关系各自记录。日常活动需要在地点附近停留 3–5 秒，移动超过 3 米会中断，不扣费。睡觉到下一个 07:30；预约后 18:30–20:30 在咖啡馆见朋友，失约影响关系。
+- 活动与街头步行会触发七类异常：时钟、收据、重复对话、黑猫、电脑、倒影与行人。并非每次出现；每天最多一次，在连续没有发现时提供保底机会。精力、关系与已有怀疑影响注意概率。可以忽略、记录或花时间核对；至少三种证据、足够怀疑和两天生活后，才可能收到联系。红色药丸前不会自动觉醒、使用超能力或被随机特工袭击；蓝色药丸保留证据并返回日常，至少两天后才可能再次接触。
+- 先知有三次独立的对话，涉及预言与选择、程序的人格、无保证的未来。自主判断、关怀生命与相互信任记录的是实践；分支改变医疗包、EMP、解码器和锡安支援。公开真相并保护双方的方案需要自主、关怀各 4 点，停战与知情退出方案始终可选。
+- 训练后解锁 Q 子弹时间；第一部觉醒篇完成后解锁 C 代码震荡。第二、三部增加复制体围攻、站台 Smith 和真实世界 Bane 的遭遇。击败最终 Smith 后还需与矩阵本体讨论依赖、自由与协议，随后在清晨与先知结束本轮。循环保留最近 12 轮的结局、证据、哲学倾向与每次剧情选择，新一轮重置日常和 Neo 章节。
 
-- **SimulationLoop** — tick-based world updates (1s default)
-- **DecisionEngine** — LLM-driven agent decision-making
-- **ActionExecutor** — resolves agent actions against world state
-- **ConversationEngine** — dynamic multi-agent dialogues
-- **StoryEngine** — 4-phase narrative progression (normal life → awakening → war → resolution)
-- **EvolutionEngine** — civilization-wide cycles (stable → anomaly → revolt → catastrophe → extinction → rebirth)
-- **PersistentMemoryManager** — agent memories that survive across ticks
-- **RelationshipGraph** — inter-agent relationship tracking
+Neo 章节使用独立任务状态，不覆盖旧共享任务完成记录。普通生活时 NPC 聊工作、饮食与社交，避免旧存档的战争记忆提前透露真相。故事中的关键人物由章节安排位置；其他居民继续日常移动和交流，自动战争与文明灭绝推进暂时交给 Neo 的剧情与战斗触发。
 
-### Client
+这是可玩的剧情改编：日常活动通过短暂交互与时间推进表现，对话使用原创中文转述；尚未制作逐场电影演出、吃饭睡觉等专用动作捕捉、全部商店室内或电影级城市资产。电影内容参考发行方介绍（[《重装上阵》发行简介](https://tv.apple.com/us/movie/the-matrix-reloaded/umc.cmc.5b3qv27alugfj95rrag186slh)、[《矩阵革命》发行简介](https://tv.apple.com/us/movie/the-matrix-revolutions/umc.cmc.52it1gdofstjm0glh3upzjjz5)），游戏中的可选分支与循环为原创玩法。
 
-- **VoxelRenderer** — procedural NYC cityscape with buildings, streets, landmarks
-- **AgentRenderer** — voxel character models with animations
-- **LightingSystem** — dynamic time-of-day lighting
-- **ParticleSystem** — visual effects (code rain, explosions, portals)
-- **CameraController** — free camera + agent follow mode
-- **HUD** — real-time stats, story phase, controls
-- **ConversationView** — 3D speech bubbles + dialogue overlay
-- **EvolutionTimeline** — civilization cycle visualization
-
-### World
-
-Locations are mapped to a NYC grid — Metacortex Office (Midtown), Oracle's Apartment (Upper West Side), and more. Each location belongs to a faction and a world (matrix / real).
-
-## Getting Started
+## 启动
 
 ```bash
-# Install dependencies
 npm install
-
-# Seed world data and characters
-npm run seed
-
-# Start dev (server + client)
 npm run dev
 ```
 
-- Client: http://localhost:5173/
-- Server: http://localhost:3001/
-- API: http://localhost:3001/api/status
+- 游戏：<http://localhost:5173/>
+- 服务状态：<http://localhost:3001/api/status>
+- 首次启动自动创建 74 个角色，无需执行 seed 脚本。
+- 服务运行期间世界持续推进；暂停按钮可以停止世界和玩家移动。
 
-## API
+## 游玩
 
-| Endpoint | Description |
-|----------|-------------|
-| `GET /api/status` | Tick, phase, agent count, uptime |
-| `GET /api/agents` | All agent states |
-| `GET /api/agents/:id` | Single agent detail |
+入口可以选择尼奥、崔妮蒂、史密斯，或打开完整的角色列表。角色死亡后可以明确选择“重建并接入”：恢复生命与位置，保留记忆、关系和觉醒状态，并记录重建事件。离开角色或断开连接后，人物恢复自主行为。
 
-## Tech Stack
+| 操作 | 按键 |
+| --- | --- |
+| 移动、奔跑 | WASD / 方向键、Shift |
+| 跳跃 | Space，普通跳跃约 0.67 秒落地；觉醒和加速不会改变重力 |
+| 转动视角 | 点击画面锁定鼠标，或按住右键拖动 |
+| 第一 / 第三人称 | V |
+| 隐藏 / 显示游玩界面 | H |
+| 与近处人物交谈 | E |
+| 三段近战连击 | F / 锁定鼠标后的左键；刺拳 → 直拳 → 正蹬 |
+| 闪身 / 后撤 | X；有移动输入时沿移动方向，无输入时后撤 |
+| 两格角色技能 | Q / C，界面显示说明、可用状态和秒数冷却 |
+| 拾取物资、破解终端、启动任务 | G；任务有距离要求，破解时移动会中断 |
+| 背包、制作、技能下载 | B |
+| Neo 生活手记 / 其他角色的三部曲任务 | J |
+| 地图、信号标记、电话旅行 | M；旅行需要在电话或安全屋 18 米内 |
+| 医疗包 / EMP | 1 / 2 |
+| 建造安全屋 / 路障 | 3 / 4；设施放在面前 9 米处 |
+| Matrix / 真实世界接入 | 在地铁出口电话或尼布甲尼撒号终端附近按 R |
+| 释放鼠标、角色菜单 | Esc / Tab |
 
-- **Runtime** — Node.js + TypeScript
-- **Server** — Express, Socket.IO
-- **Client** — Three.js, Vite
-- **AI** — LLM API (configurable)
-- **Build** — npm workspaces, tsx, concurrently
+近战分为前摇、接触和收招，接触帧才判定伤害；可在收招末尾缓存下一击。正蹬具有更高伤害和击退。敌人攻击前会摆出架势并亮起地面预警环；离开范围、闪身或打断前摇可避免受伤。命中包含短暂动作停顿、受击反应、火花、轻微镜头震动和合成音效，右上角“♫ 声音”可分别调整音乐与动作音效。
+
+| 角色 | Q | C |
+| --- | --- | --- |
+| Neo | 子弹时间：世界减速，自己保持正常速度 | 代码震荡：范围击退与打断 |
+| Trinity | 蝎式突袭：突进后踢击 | 系统断路：范围瘫痪 |
+| Morpheus | 破阵重掌：高伤害、击退与硬直 | 宗师架势：短时格挡反击 |
+| Smith | 病毒同化：持续伤害并吸血 | 特工闪避：短时免伤与加速 |
+
+其他角色拥有按身份分配的两格技能，先知、赛拉夫、双子、钥匙匠等有不同组合，普通居民使用脱身与应急修复。角色选择卡可预览技能。Neo 的两格技能按章节解锁，其他角色接管即可使用；超常程序能力仍受 Matrix 世界限制。技能冷却以实际游戏秒数计算，暂停时冻结，切换角色不会重置。范围伤害针对遭遇中的敌对程序；普通 F 近战也可以攻击世界人物，但 Neo 故事的关键人物受保护。桌面键盘鼠标游玩为主。
+
+开源移植与设计参考、版本和许可证见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+
+## 动态配乐
+
+游戏内所有 BGM 仅使用 14 段 Don Davis 三部曲原版录音，覆盖 26 个音乐场景、Neo 全部 29 个章节，以及其他角色的共享任务。旧的 19 段合成 BGM、生成脚本、备用曲回退与本地导入覆盖入口已移除。浏览器之前保存的导入曲不再读取，也不会替换电影原声。
+
+| 情境 | 当前使用的电影原声 |
+| --- | --- |
+| 日常、办公室、咖啡馆、酒吧、餐厅交谈 | Niaiserie；各场景音量不同，共用曲目连续播放 |
+| 异常、初见崔尼蒂、红蓝药丸与觉醒 | Unable to Speak / Trinity Infinity / The Lafayette Mirror |
+| 训练、大堂营救、地铁决斗 | The Subway Fight |
+| 餐厅战斗、锡安防线 | Chateau Swashbuckling |
+| 高速公路追逐、Smith 复制体围攻 | Multiple Replication |
+| 深夜、Mobil 车站 | The Logos Location |
+| 潜入、锡安与飞船环境 | Das Banegold |
+| 先知对话、Trinity 告别 | Neovision，以低音量支撑对话 |
+| 贝恩遭遇 | The Bane Revelation |
+| 建筑师、机器核心、停战谈判 | Deus Ex Machina |
+| 最终 Smith 决战 | Neodämmerung |
+| 救世主觉醒、通关清晨 | Anything is Possible |
+
+音乐首次点击或按键后开启。“♫ 声音”可调整 BGM 与动作音效的独立音量、静音，并试听每个场景的实际原声。地点稳定两秒后切歌；战斗与章节变化及时响应，战斗结束保留八秒后淡出。餐厅交谈遇到战斗会从 Niaiserie 切为 Chateau Swashbuckling；贝恩遭遇不会被普通交战曲覆盖。同一录音在不同日常地点之间不从头播放，只平滑调整场景音量。阅读、对话与暂停压低音乐，后台静音；录像包含相同的音乐与音效混音。
+
+原声按实际文件时长循环，按需加载并只缓存两段解码音频。加载失败会淡出上一场景的音乐、显示重试提示，不播放替代配乐。音量设置保存在当前浏览器。
+
+音频来自[作曲家官网公开的原声片段](https://www.dondavis.net/audio/)，共约 21 分钟、每段约 48–148 秒，文件在 `packages/client/public/assets/music/originals/`。这是已取得的 14 段片段，不是三部完整专辑；场景分配是游戏适配，并非逐镜头复刻电影配乐。完整对应关系见 [原声场景安排](docs/original-soundtrack-plan.md)，来源与校验见 [素材说明](packages/client/public/assets/music/originals/README.md)。14 个游戏用 MP3（共约 15.23 MB）随仓库提交，新检出无需另外下载；`npm run music:originals` 可校验或恢复缺失文件。重复的试听合集、试玩录像与建模中间产物已清理，后续生成的 `output/` 不纳入版本控制。
+
+## 沙盒循环
+
+1. 走近发光物资箱按 G，获得代码与零件；蓝色数据终端可以破解，但会增加追踪。物资箱每 180 模拟秒、终端每 120 模拟秒恢复。
+2. B 中制作医疗包、解码器、EMP、安全屋信标与路障。材料由服务器扣除，不能远程领取资源或重复领取同一任务奖励。
+3. 安全屋会缓慢恢复生命、降低追踪，并成为可用的电话接入点。路障阻挡玩家与遭遇追兵，可以跳过、被摧毁或由建造者在附近拆回。世界最多保留 64 个设施。
+4. 击败敌对程序、破解和任务带来经验，每 50 经验可下载一级武术、解析或生存技能。背包与技能属于当前角色；设施、任务结果与世界局势由所有角色共享。
+5. 高追踪与高警戒会引来追兵。医疗包恢复生命，EMP 对同一世界 35 米内的遭遇敌人造成伤害并瘫痪；F 近战。失败的战斗可以回到任务终端重试，已完成章节保留。
+
+首次接入每个角色提供少量原料、两份医疗包、一座安全屋和一个路障。重复接入不会再次领取。Neo 从普通生活开始，程序物资和工具在觉醒后开放；其他角色可以直接探索沙盒。
+
+## 三部曲玩法
+
+| 章节 | 任务与机制 |
+| --- | --- |
+| 《黑客帝国》 | 追随白兔并选择红 / 蓝药丸；构造体训练场击败训练程序；突破守卫营救墨菲斯 |
+| 《重装上阵》 | 制作解码器解救钥匙匠；高速公路护送并保护他的生命；在架构师终端选择救 Trinity 或稳定系统 |
+| 《矩阵革命》 | 破解移动大道；用 EMP 开启锡安防守战，对抗乌贼；机器城谈判；击败 Smith 核心后选择停战、重载或公开真相 |
+
+任务需要亲自到达终端，不能从日志远程完成；所有角色均可参与。钥匙匠只在护送者 32 米以内前进，追兵会攻击他。剧情结果会改变警戒、感染、锡安防御和相关人物状态。停战会抑制主动进攻；重载会刷新资源与随机种子，保留人物、建筑和记忆。结局之后仍能继续沙盒游玩。
+
+## 人物与渲染
+
+- 尼奥、崔妮蒂、史密斯、墨菲斯有单独的脸型、面部贴图、墨镜、服装轮廓与材质。
+- 三维头部含鼻梁、颧骨和下颌；四肢使用连续蒙皮，手指可以握拳，服装增加腰胯连接、哑光布料与动态衣摆。
+- 移动具有加速、刹停和转向过渡；步幅由实际移动速度驱动，腿部逆向运动学控制抬脚与落脚。跳跃、收腿、落地缓冲、交替出拳和上身扭转分别混合。动画仍为程序生成，并非动作捕捉。
+- “检视三维人物”支持旋转、面部特写、待机、行走、奔跑、跳跃落地和连续出拳预览，并可直接接管对应角色。检视和开放世界使用同一套模型与动画。
+- 其他人物使用改进后的人体模型；远处角色切换为简化模型。
+- 城市使用本地 PBR 沥青与人行道贴图、统一楼层比例的窗户、店面、檐口、空调和带轮胎车窗的交通车辆；天气改变地面粗糙度。天空环境反射、跟随玩家的近景阴影、环境遮蔽与抗锯齿共同改善画面。第三人称镜头具有平滑跟随与建筑避让。
+
+目前是程序生成模型和 AI 面部贴图对电影造型的近似还原，并非官方模型、演员扫描或电影级数字人。三部曲内容以开放任务和遭遇改编呈现；尚未实现逐镜头电影关卡、所有建筑室内、完整武术动作库、载具驾驶、逐方块地形编辑或为全部 74 人分别制作独立的技能动画。
+
+贴图来源与生成说明见 [角色素材说明](packages/client/public/assets/characters/README.md)。
+路面贴图为 Poly Haven 的 CC0 素材，详见 [路面素材说明](packages/client/public/assets/surfaces/README.md)。增加约 4.6 MB 本地素材，不依赖运行时外部下载，也未增加 npm 依赖。
+
+## 自主世界与故事
+
+本地行为引擎可独立运行，包含精力、社交需求、怀疑、压力、关系、记忆和目标。异常需要被目击；可信的交流会传播线索；觉醒、追踪、冲突、援助和死亡构成因果事件链。故事阶段根据实际事件推进。
+
+原有沙盒默认一昼夜约 16 分 40 秒。Neo 生活开始后自然昼夜放缓至约 48 分钟，日常活动还会推进对应的游戏时间；NPC 日程读取同一个实际世界时钟。普通沙盒中晴天、雨与代码风暴改变城市气氛，感染越高，代码风暴越常见；Neo 日常使用前述普通天气，最终决战单独安排雨夜。随机补给、求救和特工封锁仍供其他角色参与。随机种子和下一次事件时间随存档保存。
+
+打开背包、地图、日志或角色选择时，世界不会自动暂停。服务运行时自然流逝；关闭服务器期间不补算离线时间。需要安全停下时使用 HUD 的暂停按钮。
+
+观察模式提供人物档案、记忆、关系、事件原因与后果、世界切换、镜头跟随、速度调整及明确记录来源的世界干预。
+
+可在项目根目录配置 `.env`，使用兼容 OpenAI Chat Completions 的提供方增强决策和中文对话：
+
+```dotenv
+LLM_BASE_URL=https://api.openai.com/v1
+LLM_API_KEY=your-api-key
+LLM_MODEL=your-model
+```
+
+不提供有效密钥时直接使用本地行为。模型请求有并发限制、超时和失败退避，不阻塞世界时钟。界面与 `/api/status` 会显示本地模式或模型状态。
+
+## 存档
+
+每 60 个模拟刻以及正常退出时保存 `data/world.json` 和 `data/memories/`。下次启动恢复独立的日期与时刻、人物状态、事件、关系、原始记忆、各角色背包与技能、建筑、任务分支、天气、遭遇和随机种子。Neo 的金钱、需求、预约、异常、章节、选择和循环记忆一并保存；旧存档补入新增地点，保留原有世界。退出时的玩家控制权不会被恢复，未完成的日常活动中止。上述运行数据已加入 Git 忽略。
+
+浏览器记住上次接入的角色，刷新后点击“继续角色的进度”接续服务器当前世界，不重开剧情。角色若仍在另一个页面游玩，明确点击角色会将控制权转到当前页面，原页面停止控制，位置、生命、背包和故事进度保留。临时断线会在重连并同步世界后自动接回角色；已经被其他页面接管时不会自动抢回，仍可手动点击继续。
+
+## 结构与验证
+
+```text
+packages/client/  Three.js、人物模型、玩家控制、检视与观察界面
+packages/server/ Express、Socket.IO、自主模拟、玩家权威状态、存档
+packages/shared/ 类型、角色、地标、公共移动与碰撞规则
+tests/           模拟因果、玩家控制、碰撞、模型延迟降级、记忆和存档
+```
+
+```bash
+npm test
+npm run typecheck
+npm run build
+```
+
+测试覆盖完整 1200 刻离线运行、真实伤害与状态同步、全角色接管及独占控制、断开释放、暂停、跳跃落地、建筑碰撞、角色重建、异步模拟不重叠、模型延迟降级和存档保真。沙盒测试还验证交互距离与世界限制、资源扣除、多人共享终端、路障碰撞、三部曲完整通关路径、失败重试、随机过程恢复，以及 NPC 不会步行穿入另一世界。
+
+常用只读接口：`/api/world`、`/api/sandbox`、`/api/agents/:id`、`/api/agents/:id/context`、`/api/events`、`/api/conversations`。

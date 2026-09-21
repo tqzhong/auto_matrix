@@ -1,595 +1,181 @@
 import * as THREE from 'three';
-import type { AgentState, AgentId, FactionId } from '@auto_matrix/shared';
-import { VoxelCharacterModel } from './VoxelCharacterModel.js';
-import { AnimationSystem, type AnimationState } from './AnimationSystem.js';
-import { lerpVector3, lerpAngle } from '../network/StateInterpolator.js';
+import { groundHeight, type AgentState, type CombatImpact } from '@auto_matrix/shared';
+import { CharacterModels, type CharacterRig } from './CharacterModel.js';
+import type { MotionInput } from './CharacterMotion.js';
 
-// ── Faction colours ──────────────────────────────────────────────────────
-
-const FACTION_COLORS: Record<string, string> = {
-  zion: '#00ccff',
-  machines: '#ffffff',
-  merovingian: '#ffcc00',
-  oracle: '#ff8844',
-  exiles: '#bb66ff',
-  civilians: '#888888',
+export const FACTION_COLORS: Record<string, string> = {
+  zion: '#90d7b1', civilians: '#d0c8a3', machines: '#ee8773', oracle: '#c6b1e7', merovingian: '#cda96c', exiles: '#88b5c5', smith_virus: '#f07565',
 };
-
-const FACTION_ABBR: Record<string, string> = {
-  zion: 'ZION',
-  machines: 'MCH',
-  merovingian: 'MRV',
-  oracle: 'ORC',
-  exiles: 'EXL',
-  civilians: 'CVL',
-};
-
-// ── Action indicator config ──────────────────────────────────────────────
-
-interface ActionIndicatorDef {
-  text: string;
-  color: string;
-  bgColor: string;
-}
-
-const ACTION_INDICATORS: Record<string, ActionIndicatorDef> = {
-  move_to: { text: '→', color: '#00ff41', bgColor: 'rgba(0,40,0,0.7)' },
-  talk_to: { text: '\u{1F4AC}', color: '#00ccff', bgColor: 'rgba(0,20,40,0.7)' },
-  attack: { text: '⚠', color: '#ff2200', bgColor: 'rgba(40,0,0,0.8)' },
-  defend: { text: '\u{1F6E1}', color: '#ffaa00', bgColor: 'rgba(40,30,0,0.7)' },
-  observe: { text: '…', color: '#888888', bgColor: 'rgba(20,20,20,0.6)' },
-  use_ability: { text: '⚡', color: '#bb66ff', bgColor: 'rgba(30,0,50,0.7)' },
-  hack: { text: '⌨', color: '#00ff41', bgColor: 'rgba(0,40,0,0.7)' },
-  train: { text: '\u{1F3CB}', color: '#00ccff', bgColor: 'rgba(0,20,40,0.6)' },
-  hide: { text: '\u{1F576}', color: '#555555', bgColor: 'rgba(20,20,20,0.6)' },
-};
-
-// ── Speech bubble tracking ───────────────────────────────────────────────
-
-interface SpeechBubble {
-  sprite: THREE.Sprite;
-  age: number;
-  stackIndex: number;
-}
-
-// ── Agent entry ──────────────────────────────────────────────────────────
-
-interface AgentEntry {
+interface Entry {
   group: THREE.Group;
-  targetPosition: THREE.Vector3;
-  currentRotation: number;
-  targetRotation: number;
-  nameLabel: THREE.Sprite;
-  factionLabel: THREE.Sprite;
-  healthBar: THREE.Mesh;
-  healthBarBg: THREE.Mesh;
-  lastState: AgentState;
-  faction: FactionId;
-  speechBubbles: SpeechBubble[];
-  actionIndicator: THREE.Sprite | null;
-  currentActionType: string | null;
+  body: THREE.Group;
+  rig: CharacterRig;
+  marker: THREE.Mesh;
+  label: THREE.Sprite;
+  state: AgentState;
+  time: number;
+  shadow: THREE.Mesh;
+  hit?: number;
+  impact?: number;
+  speech?: { sprite: THREE.Sprite; age: number };
 }
-
-// ── AgentRenderer ────────────────────────────────────────────────────────
 
 export class AgentRenderer {
-  private scene: THREE.Scene;
-  private agents: Map<AgentId, AgentEntry> = new Map();
-  private animationSystem: AnimationSystem;
+  private agents = new Map<string, Entry>();
+  private selected: string | null = null;
+  private playerId: string | null = null;
+  private firstPerson = false;
+  private matrix = true;
+  private playerMotion?: MotionInput;
+  private models = new CharacterModels();
+  private markerGeometry = new THREE.RingGeometry(2.1, 2.5, 32);
+  private shadowGeometry = new THREE.PlaneGeometry(3, 3);
+  private shadowTexture: THREE.CanvasTexture;
+  private shadowMaterial: THREE.MeshBasicMaterial;
 
-  constructor(scene: THREE.Scene) {
-    this.scene = scene;
-    this.animationSystem = new AnimationSystem();
+  constructor(private scene: THREE.Scene) {
+    const canvas = document.createElement('canvas'); canvas.width = canvas.height = 64;
+    const ctx = canvas.getContext('2d')!; const gradient = ctx.createRadialGradient(32, 32, 3, 32, 32, 32);
+    gradient.addColorStop(0, '#00000090'); gradient.addColorStop(.45, '#00000045'); gradient.addColorStop(1, '#00000000');
+    ctx.fillStyle = gradient; ctx.fillRect(0, 0, 64, 64);
+    this.shadowTexture = new THREE.CanvasTexture(canvas);
+    this.shadowMaterial = new THREE.MeshBasicMaterial({ map: this.shadowTexture, transparent: true, opacity: .55, depthWrite: false, toneMapped: false });
   }
 
-  // ── Public API ───────────────────────────────────────────────────────
-
-  updateAgent(id: AgentId, state: AgentState): void {
+  updateAgent(id: string, state: AgentState): void {
     let entry = this.agents.get(id);
-
     if (!entry) {
-      entry = this.createAgentEntry(id, state);
+      const group = new THREE.Group();
+      const rig = this.models.create(state);
+      const body = rig.root;
+      body.position.y = -1;
+      const shadow = new THREE.Mesh(this.shadowGeometry, this.shadowMaterial);
+      shadow.rotation.x = -Math.PI / 2; shadow.position.y = -.97;
+      const color = FACTION_COLORS[state.faction] ?? '#91cfb0';
+      const marker = new THREE.Mesh(this.markerGeometry, new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.85, side: THREE.DoubleSide, depthTest: false, depthWrite: false }));
+      marker.rotation.x = -Math.PI / 2;
+      marker.position.y = 0.1;
+      group.add(body, marker, shadow);
+      const label = this.label(state.name, color, false);
+      label.position.y = 7;
+      group.add(label);
+      group.position.set(state.position.x, state.position.y, state.position.z);
+      this.scene.add(group);
+      entry = { group, body, rig, marker, label, state, time: 0, shadow };
       this.agents.set(id, entry);
     }
+    entry.state = state;
+    entry.group.visible = state.isInMatrix === this.matrix && state.status !== 'disconnected';
+  }
 
-    entry.targetPosition.set(state.position.x, state.position.y, state.position.z);
-    entry.targetRotation = state.rotation;
-    entry.lastState = state;
+  setSelected(id: string | null): void { this.selected = id; }
+  setPlayer(id: string | null, firstPerson = false): void { this.playerId = id; this.firstPerson = firstPerson; }
+  setPlayerMotion(motion: MotionInput): void { this.playerMotion = motion; }
+  setWorld(matrix: boolean): void {
+    this.matrix = matrix;
+    for (const entry of this.agents.values()) entry.group.visible = entry.state.isInMatrix === matrix;
+  }
+  getAgent(id: string): THREE.Group | null { return this.agents.get(id)?.group ?? null; }
+  getAgentState(id: string): AgentState | null { return this.agents.get(id)?.state ?? null; }
+  getAgentIds(): string[] { return [...this.agents.keys()]; }
+  updateActionIndicator(_id: string, _type: string): void {}
+  impact(hit: CombatImpact): void {
+    const target = this.agents.get(hit.target); const source = this.agents.get(hit.source);
+    if (target) target.hit = performance.now();
+    if (source) source.impact = performance.now();
+  }
 
-    // Rebuild name label if faction changed
-    if (entry.faction !== state.faction) {
-      entry.faction = state.faction;
-      this.scene.remove(entry.nameLabel);
-      this.scene.remove(entry.factionLabel);
-      entry.nameLabel = this.createNameLabel(state.name, state.faction);
-      entry.factionLabel = this.createFactionLabel(state.faction);
-      this.scene.add(entry.nameLabel);
-      this.scene.add(entry.factionLabel);
-    }
-
-    this.updateHealthBar(entry, state);
-
-    let animState: AnimationState = 'idle';
-    if (state.currentAction) {
-      switch (state.currentAction.type) {
-        case 'move_to':
-          animState = 'walk';
-          break;
-        case 'attack':
-        case 'defend':
-          animState = 'fight';
-          break;
-        default:
-          animState = 'idle';
-          break;
+  update(delta: number, camera?: THREE.Camera, speed = 1, tick = 0): void {
+    for (const [id, entry] of this.agents) {
+      const state = entry.state;
+      entry.body.visible = id !== this.playerId || !this.firstPerson;
+      const warning = state.currentAction?.type === 'attack' && state.currentAction.target === this.playerId && Number(state.currentAction.parameters.contactTick ?? 0) > tick;
+      entry.marker.visible = warning || !this.playerId || id === this.selected;
+      (entry.marker.material as THREE.MeshBasicMaterial).color.set(warning ? '#f6b177' : FACTION_COLORS[state.faction] ?? '#91cfb0');
+      entry.marker.position.y = this.playerId ? -.94 : .1;
+      entry.time += delta * (id === this.playerId ? 1 : speed);
+      if (id !== this.playerId) {
+        const target = new THREE.Vector3(state.position.x, state.position.y, state.position.z);
+        if (entry.group.position.distanceTo(target) > 60) entry.group.position.copy(target);
+        else entry.group.position.lerp(target, 1 - Math.exp(-8 * delta));
       }
-    }
-    this.animationSystem.setState(id, animState);
-
-    // Update action indicator
-    const actionType = state.currentAction?.type ?? null;
-    if (actionType !== entry.currentActionType) {
-      this.updateActionIndicator(id, actionType ?? 'idle');
-      entry.currentActionType = actionType;
+      const moving = Math.hypot(state.velocity.x, state.velocity.z) > .1;
+      const heading = moving ? Math.atan2(state.velocity.x, state.velocity.z) : state.rotation;
+      let difference = heading - entry.body.rotation.y;
+      difference = Math.atan2(Math.sin(difference), Math.cos(difference));
+      if (id !== this.playerId) entry.body.rotation.y += difference * (1 - Math.exp(-10 * delta));
+      const velocity = state.status === 'alive' ? Math.hypot(state.velocity.x, state.velocity.z) : 0;
+      entry.body.rotation.z = THREE.MathUtils.lerp(entry.body.rotation.z, state.status === 'dead' ? Math.PI / 2 : 0, 1 - Math.exp(-7 * delta));
+      const dist = camera ? entry.group.position.distanceTo(camera.position) : 0;
+      const floor = groundHeight(state.position, state.isInMatrix);
+      const input = id === this.playerId && this.playerMotion ? this.playerMotion : {
+        speed: velocity, grounded: state.position.y <= floor + .12, verticalVelocity: state.velocity.y,
+        turn: difference * 8, attack: state.currentAction?.type === 'attack' ? Number(state.currentAction.parameters.contactTick ?? state.currentAction.startedAt) : undefined,
+        hit: entry.hit, impact: entry.impact, windingUp: warning,
+      };
+      this.models.animate(entry.rig, delta * (id === this.playerId && speed > 0 ? 1 : speed), input, dist);
+      entry.shadow.position.y = floor - entry.group.position.y - .97;
+      entry.shadow.scale.setScalar(1 + Math.max(0, entry.group.position.y - floor) * .04);
+      const selected = id === this.selected;
+      entry.label.visible = id !== this.playerId && state.status === 'alive' && (selected || (!this.playerId && dist < 90 && (['neo', 'trinity', 'smith', 'morpheus'].includes(id) || state.currentAction?.type === 'talk_to')));
+      const labelWidth = this.playerId ? Math.min(7, Math.max(2.5, dist * 0.13)) : 17;
+      entry.label.scale.set(labelWidth, labelWidth / 4, 1);
+      entry.label.position.y = this.playerId ? 4.4 : 7;
+      entry.label.material.depthTest = this.playerId !== null;
+      entry.marker.scale.setScalar((selected ? 1.8 : 1) * Math.max(1, dist / 180));
+      if (this.playerId) entry.marker.scale.setScalar(0.65);
+      (entry.marker.material as THREE.MeshBasicMaterial).opacity = state.status === 'dead' ? 0.2 : selected ? 1 : 0.65;
+      if (entry.speech) {
+        entry.speech.age += delta;
+        entry.speech.sprite.visible = !this.playerId && (dist < 240 || selected);
+        if (entry.speech.age > 8) { this.disposeSprite(entry.speech.sprite); entry.speech = undefined; }
+      }
     }
   }
 
-  removeAgent(id: AgentId): void {
+  showSpeechBubble(id: string, _name: string, text: string): void {
+    const entry = this.agents.get(id);
+    if (!entry) return;
+    if (entry.speech) this.disposeSprite(entry.speech.sprite);
+    const sprite = this.label(text, '#d7eadb', true);
+    sprite.position.y = 12;
+    entry.group.add(sprite);
+    entry.speech = { sprite, age: 0 };
+  }
+
+  private label(text: string, color: string, bubble: boolean): THREE.Sprite {
+    const canvas = document.createElement('canvas');
+    canvas.width = bubble ? 512 : 256; canvas.height = bubble ? 150 : 64;
+    const ctx = canvas.getContext('2d')!;
+    ctx.fillStyle = 'rgba(4, 15, 11, 0.86)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = bubble ? '#325244' : '#395e4b'; ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
+    ctx.fillStyle = color; ctx.font = bubble ? '22px sans-serif' : '22px monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    if (bubble) {
+      const characters = [...text.slice(0, 64)];
+      for (let i = 0; i < 3; i++) ctx.fillText(characters.slice(i * 20, i * 20 + 20).join(''), 256, 30 + i * 40, 480);
+    } else ctx.fillText(text, 128, 32, 240);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, depthTest: false, depthWrite: false, transparent: true }));
+    sprite.scale.set(bubble ? 30 : 17, bubble ? 9 : 4.25, 1);
+    return sprite;
+  }
+  private disposeSprite(sprite: THREE.Sprite): void {
+    sprite.removeFromParent(); sprite.material.map?.dispose(); sprite.material.dispose();
+  }
+  removeAgent(id: string): void {
     const entry = this.agents.get(id);
     if (!entry) return;
     this.scene.remove(entry.group);
-    this.scene.remove(entry.nameLabel);
-    this.scene.remove(entry.factionLabel);
-    this.scene.remove(entry.healthBar);
-    this.scene.remove(entry.healthBarBg);
-    for (const bubble of entry.speechBubbles) {
-      this.scene.remove(bubble.sprite);
-      this.disposeSprite(bubble.sprite);
-    }
-    if (entry.actionIndicator) {
-      this.scene.remove(entry.actionIndicator);
-      this.disposeSprite(entry.actionIndicator);
-    }
-    this.animationSystem.removeAgent(id);
+    this.disposeSprite(entry.label);
+    if (entry.speech) this.disposeSprite(entry.speech.sprite);
+    (entry.marker.material as THREE.Material).dispose();
     this.agents.delete(id);
   }
-
-  getAgent(id: AgentId): THREE.Group | null {
-    return this.agents.get(id)?.group ?? null;
-  }
-
-  getAgentState(id: AgentId): AgentState | null {
-    return this.agents.get(id)?.lastState ?? null;
-  }
-
-  getAgentIds(): AgentId[] {
-    return [...this.agents.keys()];
-  }
-
-  showSpeechBubble(agentId: AgentId, speakerName: string, text: string): void {
-    const entry = this.agents.get(agentId);
-    if (!entry) return;
-
-    // Determine max active bubbles per agent
-    const MAX_BUBBLES_PER_AGENT = 3;
-
-    // If at limit, remove oldest
-    if (entry.speechBubbles.length >= MAX_BUBBLES_PER_AGENT) {
-      const oldest = entry.speechBubbles.shift()!;
-      this.scene.remove(oldest.sprite);
-      this.disposeSprite(oldest.sprite);
-    }
-
-    const stackIndex = entry.speechBubbles.length;
-    const sprite = this.createSpeechBubbleSprite(speakerName, text);
-    this.scene.add(sprite);
-
-    entry.speechBubbles.push({
-      sprite,
-      age: 0,
-      stackIndex,
-    });
-  }
-
-  updateActionIndicator(agentId: AgentId, actionType: string): void {
-    const entry = this.agents.get(agentId);
-    if (!entry) return;
-
-    // Remove old indicator
-    if (entry.actionIndicator) {
-      this.scene.remove(entry.actionIndicator);
-      this.disposeSprite(entry.actionIndicator);
-      entry.actionIndicator = null;
-    }
-
-    // No indicator for idle
-    if (actionType === 'idle' || actionType === null) return;
-
-    const def = ACTION_INDICATORS[actionType];
-    if (!def) return;
-
-    const sprite = this.createActionIndicatorSprite(def);
-    this.scene.add(sprite);
-    entry.actionIndicator = sprite;
-  }
-
-  update(delta: number): void {
-    for (const [_id, entry] of this.agents) {
-      entry.group.position.lerp(entry.targetPosition, 1 - Math.exp(-8 * delta));
-
-      entry.currentRotation = lerpAngle(entry.currentRotation, entry.targetRotation, delta);
-      entry.group.rotation.y = entry.currentRotation;
-
-      // Name label position: above agent (characters are now ~20 units tall)
-      entry.nameLabel.position.copy(entry.group.position);
-      entry.nameLabel.position.y += 22;
-
-      // Faction label: directly below name
-      entry.factionLabel.position.copy(entry.group.position);
-      entry.factionLabel.position.y += 20.5;
-
-      // Health bar
-      entry.healthBar.position.copy(entry.group.position);
-      entry.healthBar.position.y += 20;
-      entry.healthBarBg.position.copy(entry.healthBar.position);
-
-      // Action indicator: between head and faction label
-      if (entry.actionIndicator) {
-        entry.actionIndicator.position.copy(entry.group.position);
-        entry.actionIndicator.position.y += 19;
-      }
-
-      // Speech bubbles: stack above name label
-      const bubblesToRemove: number[] = [];
-      for (let i = 0; i < entry.speechBubbles.length; i++) {
-        const bubble = entry.speechBubbles[i];
-        bubble.age += delta;
-
-        // Position: above name label, stacked
-        const baseY = 24;
-        const stackOffset = bubble.stackIndex * 4.5;
-        bubble.sprite.position.copy(entry.group.position);
-        bubble.sprite.position.y += baseY + stackOffset;
-
-        // Fade out between 8-10 seconds
-        const mat = bubble.sprite.material as THREE.SpriteMaterial;
-        if (bubble.age > 8) {
-          mat.opacity = Math.max(0, 1 - (bubble.age - 8) / 2);
-        }
-        if (bubble.age > 10) {
-          this.scene.remove(bubble.sprite);
-          this.disposeSprite(bubble.sprite);
-          bubblesToRemove.push(i);
-        }
-      }
-
-      // Remove expired bubbles and re-index the rest
-      for (let i = bubblesToRemove.length - 1; i >= 0; i--) {
-        entry.speechBubbles.splice(bubblesToRemove[i], 1);
-      }
-      for (let i = 0; i < entry.speechBubbles.length; i++) {
-        entry.speechBubbles[i].stackIndex = i;
-      }
-    }
-
-    this.animationSystem.update(delta);
-  }
-
   dispose(): void {
-    for (const [_id, entry] of this.agents) {
-      this.scene.remove(entry.group);
-      this.scene.remove(entry.nameLabel);
-      this.scene.remove(entry.factionLabel);
-      this.scene.remove(entry.healthBar);
-      this.scene.remove(entry.healthBarBg);
-      for (const bubble of entry.speechBubbles) {
-        this.scene.remove(bubble.sprite);
-        this.disposeSprite(bubble.sprite);
-      }
-      if (entry.actionIndicator) {
-        this.scene.remove(entry.actionIndicator);
-        this.disposeSprite(entry.actionIndicator);
-      }
-    }
-    this.agents.clear();
-  }
-
-  // ── Agent entry creation ─────────────────────────────────────────────
-
-  private createAgentEntry(id: AgentId, state: AgentState): AgentEntry {
-    const group = VoxelCharacterModel.buildFromConfig(state.appearance, id);
-    group.position.set(state.position.x, state.position.y, state.position.z);
-    this.scene.add(group);
-
-    const nameLabel = this.createNameLabel(state.name, state.faction);
-    this.scene.add(nameLabel);
-
-    const factionLabel = this.createFactionLabel(state.faction);
-    this.scene.add(factionLabel);
-
-    const { bar: healthBar, bg: healthBarBg } = this.createHealthBar();
-    this.scene.add(healthBarBg);
-    this.scene.add(healthBar);
-
-    this.animationSystem.registerAgent(id, group);
-
-    return {
-      group,
-      targetPosition: new THREE.Vector3(state.position.x, state.position.y, state.position.z),
-      currentRotation: state.rotation,
-      targetRotation: state.rotation,
-      nameLabel,
-      factionLabel,
-      healthBar,
-      healthBarBg,
-      lastState: state,
-      faction: state.faction,
-      speechBubbles: [],
-      actionIndicator: null,
-      currentActionType: null,
-    };
-  }
-
-  // ── Name label (faction-colored) ─────────────────────────────────────
-
-  private createNameLabel(name: string, faction: FactionId): THREE.Sprite {
-    const canvas = document.createElement('canvas');
-    canvas.width = 256;
-    canvas.height = 64;
-    const ctx = canvas.getContext('2d')!;
-    ctx.clearRect(0, 0, 256, 64);
-
-    const color = FACTION_COLORS[faction] ?? '#00ff41';
-
-    ctx.font = 'bold 28px Courier New';
-    ctx.fillStyle = color;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.shadowColor = color;
-    ctx.shadowBlur = 6;
-    ctx.fillText(name, 128, 32);
-
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.minFilter = THREE.LinearFilter;
-    const material = new THREE.SpriteMaterial({
-      map: texture,
-      transparent: true,
-      depthTest: false,
-    });
-    const sprite = new THREE.Sprite(material);
-    sprite.scale.set(14, 3.5, 1);
-    return sprite;
-  }
-
-  // ── Faction abbreviation label ───────────────────────────────────────
-
-  private createFactionLabel(faction: FactionId): THREE.Sprite {
-    const canvas = document.createElement('canvas');
-    canvas.width = 128;
-    canvas.height = 32;
-    const ctx = canvas.getContext('2d')!;
-    ctx.clearRect(0, 0, 128, 32);
-
-    const color = FACTION_COLORS[faction] ?? '#00ff41';
-    const abbr = FACTION_ABBR[faction] ?? faction.toUpperCase();
-
-    ctx.font = 'bold 16px Courier New';
-    ctx.fillStyle = color;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.globalAlpha = 0.7;
-    ctx.fillText(`[ ${abbr} ]`, 64, 16);
-
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.minFilter = THREE.LinearFilter;
-    const material = new THREE.SpriteMaterial({
-      map: texture,
-      transparent: true,
-      depthTest: false,
-    });
-    const sprite = new THREE.Sprite(material);
-    sprite.scale.set(7, 1.75, 1);
-    return sprite;
-  }
-
-  // ── Health bar ───────────────────────────────────────────────────────
-
-  private createHealthBar(): { bar: THREE.Mesh; bg: THREE.Mesh } {
-    const bgGeom = new THREE.PlaneGeometry(6, 0.6);
-    const bgMat = new THREE.MeshBasicMaterial({ color: 0x220000, side: THREE.DoubleSide });
-    const bg = new THREE.Mesh(bgGeom, bgMat);
-
-    const barGeom = new THREE.PlaneGeometry(6, 0.6);
-    const barMat = new THREE.MeshBasicMaterial({ color: 0x00ff41, side: THREE.DoubleSide });
-    const bar = new THREE.Mesh(barGeom, barMat);
-
-    return { bar, bg };
-  }
-
-  private updateHealthBar(entry: AgentEntry, state: AgentState): void {
-    const ratio = state.maxHealth > 0 ? state.health / state.maxHealth : 1;
-    entry.healthBar.scale.x = Math.max(0, ratio);
-    entry.healthBar.position.x -= (1 - ratio) * 1.5 * 0.5;
-
-    const mat = entry.healthBar.material as THREE.MeshBasicMaterial;
-    if (ratio > 0.6) {
-      mat.color.setHex(0x00ff41);
-    } else if (ratio > 0.3) {
-      mat.color.setHex(0xffaa00);
-    } else {
-      mat.color.setHex(0xff2200);
-    }
-  }
-
-  // ── Speech bubble sprite ─────────────────────────────────────────────
-
-  private createSpeechBubbleSprite(speakerName: string, text: string): THREE.Sprite {
-    const maxWidth = 280;
-    const padding = 12;
-    const lineHeight = 20;
-    const headerHeight = 22;
-    const cornerRadius = 8;
-
-    // Measure and word-wrap text
-    const measureCanvas = document.createElement('canvas');
-    const mCtx = measureCanvas.getContext('2d')!;
-    mCtx.font = '16px Courier New';
-
-    const wrappedLines = this.wordWrap(mCtx, text, maxWidth - padding * 2);
-    const totalHeight = headerHeight + wrappedLines.length * lineHeight + padding * 2;
-
-    const canvasWidth = maxWidth + 8; // small margin for border
-    const canvasHeight = totalHeight + 8;
-
-    const canvas = document.createElement('canvas');
-    canvas.width = canvasWidth;
-    canvas.height = canvasHeight;
-    const ctx = canvas.getContext('2d')!;
-
-    // Background with rounded rect
-    ctx.fillStyle = 'rgba(0,0,0,0.85)';
-    this.roundRect(ctx, 4, 4, maxWidth, totalHeight, cornerRadius);
-    ctx.fill();
-
-    // Green border
-    ctx.strokeStyle = '#00ff41';
-    ctx.lineWidth = 2;
-    this.roundRect(ctx, 4, 4, maxWidth, totalHeight, cornerRadius);
-    ctx.stroke();
-
-    // Speaker name (cyan)
-    ctx.font = 'bold 15px Courier New';
-    ctx.fillStyle = '#00ccff';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'top';
-    ctx.fillText(speakerName, padding + 4, padding + 4);
-
-    // Separator line
-    ctx.strokeStyle = 'rgba(0,255,65,0.3)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(padding + 4, padding + headerHeight);
-    ctx.lineTo(maxWidth - padding, padding + headerHeight);
-    ctx.stroke();
-
-    // Dialogue text (white)
-    ctx.font = '16px Courier New';
-    ctx.fillStyle = '#ffffff';
-    let y = padding + headerHeight + 6;
-    for (const line of wrappedLines) {
-      ctx.fillText(line, padding + 4, y);
-      y += lineHeight;
-    }
-
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.minFilter = THREE.LinearFilter;
-    const material = new THREE.SpriteMaterial({
-      map: texture,
-      transparent: true,
-      depthTest: false,
-      opacity: 1,
-    });
-    const sprite = new THREE.Sprite(material);
-
-    // Scale sprite to world units (roughly match visual size)
-    const aspect = canvasWidth / canvasHeight;
-    const spriteHeight = 3.5;
-    sprite.scale.set(spriteHeight * aspect, spriteHeight, 1);
-
-    return sprite;
-  }
-
-  private wordWrap(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
-    const words = text.split(/\s+/);
-    const lines: string[] = [];
-    let currentLine = '';
-
-    for (const word of words) {
-      const testLine = currentLine ? `${currentLine} ${word}` : word;
-      const metrics = ctx.measureText(testLine);
-      if (metrics.width > maxWidth && currentLine) {
-        lines.push(currentLine);
-        currentLine = word;
-      } else {
-        currentLine = testLine;
-      }
-    }
-    if (currentLine) {
-      lines.push(currentLine);
-    }
-
-    return lines.length > 0 ? lines : [''];
-  }
-
-  private roundRect(
-    ctx: CanvasRenderingContext2D,
-    x: number,
-    y: number,
-    w: number,
-    h: number,
-    r: number,
-  ): void {
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.lineTo(x + w - r, y);
-    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-    ctx.lineTo(x + w, y + h - r);
-    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-    ctx.lineTo(x + r, y + h);
-    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-    ctx.lineTo(x, y + r);
-    ctx.quadraticCurveTo(x, y, x + r, y);
-    ctx.closePath();
-  }
-
-  // ── Action indicator sprite ──────────────────────────────────────────
-
-  private createActionIndicatorSprite(def: ActionIndicatorDef): THREE.Sprite {
-    const canvasSize = 48;
-    const canvas = document.createElement('canvas');
-    canvas.width = canvasSize;
-    canvas.height = canvasSize;
-    const ctx = canvas.getContext('2d')!;
-
-    // Background circle
-    ctx.fillStyle = def.bgColor;
-    ctx.beginPath();
-    ctx.arc(canvasSize / 2, canvasSize / 2, canvasSize / 2 - 2, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Border
-    ctx.strokeStyle = def.color;
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.arc(canvasSize / 2, canvasSize / 2, canvasSize / 2 - 2, 0, Math.PI * 2);
-    ctx.stroke();
-
-    // Icon / text
-    ctx.font = '22px Courier New';
-    ctx.fillStyle = def.color;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(def.text, canvasSize / 2, canvasSize / 2 + 1);
-
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.minFilter = THREE.LinearFilter;
-    const material = new THREE.SpriteMaterial({
-      map: texture,
-      transparent: true,
-      depthTest: false,
-    });
-    const sprite = new THREE.Sprite(material);
-    sprite.scale.set(4, 4, 1);
-    return sprite;
-  }
-
-  // ── Utility ──────────────────────────────────────────────────────────
-
-  private disposeSprite(sprite: THREE.Sprite): void {
-    const mat = sprite.material as THREE.SpriteMaterial;
-    if (mat.map) {
-      mat.map.dispose();
-    }
-    mat.dispose();
+    for (const id of this.agents.keys()) this.removeAgent(id);
+    this.models.dispose(); this.markerGeometry.dispose(); this.shadowGeometry.dispose(); this.shadowMaterial.dispose(); this.shadowTexture.dispose();
   }
 }

@@ -1,0 +1,68 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { advanceMotion, footTrajectory, newMotion, solveLeg } from '../packages/client/src/agents/CharacterMotion.js';
+import { MELEE_COMBO } from '@auto_matrix/shared';
+
+test('stance keeps the sole planted and the return stroke lifts clear of the ground', () => {
+  const start = footTrajectory(.1, .8, .6); const end = footTrajectory(.3, .8, .6);
+  assert.equal(start.lift, 0); assert.equal(end.lift, 0);
+  assert.ok(end.z < start.z);
+  assert.ok(footTrajectory(.8, .8, .6).lift > .9);
+  for (const z of [-.6, 0, .6]) {
+    const leg = solveLeg(z, 1.68);
+    assert.ok(Math.abs(-.94 * Math.sin(leg.hip) - .9 * Math.sin(leg.hip + leg.knee) - z) < .001);
+    assert.ok(Math.abs(leg.hip + leg.knee + leg.ankle) < .001, 'sole stays level');
+  }
+});
+
+test('movement blends settle consistently at different frame rates and freeze when paused', () => {
+  const input = { speed: 14, grounded: true, verticalVelocity: 0, turn: 1 };
+  const a = newMotion(); const b = newMotion();
+  for (let i = 0; i < 120; i++) advanceMotion(a, input, 1 / 60);
+  for (let i = 0; i < 60; i++) advanceMotion(b, input, 1 / 30);
+  assert.ok(Math.abs(a.speed - b.speed) < .001);
+  assert.ok(Math.abs(a.phase - b.phase) < .05);
+  const frozen = structuredClone(a); advanceMotion(a, input, 0); assert.deepEqual(a, frozen);
+  advanceMotion(a, { ...input, grounded: false, attack: 37 }, 0); assert.deepEqual(a, frozen, 'paused input cannot start a new pose');
+});
+
+test('jump, landing recovery and chained strikes are separate finite poses', () => {
+  const motion = newMotion();
+  const input = { speed: 0, grounded: false, verticalVelocity: 19, turn: 0 };
+  const jump = advanceMotion(motion, input, .1);
+  assert.ok(jump.legs[0].knee > .8);
+  const landed = advanceMotion(motion, { ...input, grounded: true, verticalVelocity: 0 }, .02);
+  assert.ok(landed.hipHeight < jump.hipHeight);
+  advanceMotion(motion, { ...input, attack: 1 }, .01);
+  for (let i = 0; i < 40; i++) advanceMotion(motion, input, .016);
+  advanceMotion(motion, { ...input, attack: 2 }, .01);
+  assert.equal(motion.combo, 1);
+  assert.ok(Object.values(solveLeg(30, 30)).every(Number.isFinite));
+});
+
+test('each strike extends at its damage frame and the finisher is a kick', () => {
+  const idle = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 };
+  for (let combo = 0; combo < 3; combo++) {
+    const motion = newMotion(); const input = { ...idle, attack: combo, combo };
+    advanceMotion(motion, input, .001);
+    const windup = advanceMotion(motion, input, .03);
+    for (let i = 0; i < Math.round((MELEE_COMBO[combo].contact - .03) * 1000); i++) advanceMotion(motion, input, .001);
+    const contact = advanceMotion(motion, input, 0);
+    assert.ok(contact.impact > .98, 'visual contact matches authoritative damage timing');
+    assert.ok(contact.impact > windup.impact);
+    if (combo === 2) assert.ok(contact.legs[0].hip < -1 && contact.legs[0].knee < .3, 'finisher extends the leg');
+    else assert.ok(contact.arms[combo].elbow > -.3, 'punch opens the active elbow');
+  }
+});
+
+test('a confirmed hit adds a short recoil and then returns to locomotion', () => {
+  const motion = newMotion(); const idle = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 };
+  const rest = advanceMotion(motion, idle, .1);
+  advanceMotion(motion, { ...idle, hit: 1 }, .016);
+  for (let i = 0; i < 8; i++) advanceMotion(motion, { ...idle, hit: 1 }, .016);
+  const struck = advanceMotion(motion, { ...idle, hit: 1 }, .016);
+  assert.ok(struck.lean < rest.lean - .08, 'the torso recoils from contact');
+  for (let i = 0; i < 90; i++) advanceMotion(motion, { ...idle, hit: 1 }, .016);
+  const recovered = advanceMotion(motion, { ...idle, hit: 1 }, .016);
+  assert.ok(Math.abs(recovered.lean - rest.lean) < .01);
+});

@@ -36,16 +36,7 @@ export class PersistentMemoryManager extends MemoryManager {
           const data: PersistedMemories = JSON.parse(raw);
 
           if (data.agentId && Array.isArray(data.memories)) {
-            for (const memory of data.memories) {
-              // Re-record each memory to restore state
-              super.record(memory.agentId, memory.type, memory.content, {
-                importance: memory.importance,
-                relatedAgents: memory.relatedAgents,
-                location: memory.location,
-                emotion: memory.emotion,
-                tags: memory.tags,
-              });
-            }
+            this.replaceMemories(data.agentId, data.memories);
             totalLoaded += data.memories.length;
           }
         } catch {
@@ -205,10 +196,7 @@ export class PersistentMemoryManager extends MemoryManager {
 
     // If we made changes, replace the agent's memory store
     if (mergeCount > 0) {
-      // Clear and re-record
-      const agentMemories = this.getAllMemories(agentId);
-      // We can't directly clear, so we re-record the consolidated set
-      // by writing to disk and reloading
+      this.replaceMemories(agentId, merged);
       this.dirtyAgents.add(agentId);
     }
 

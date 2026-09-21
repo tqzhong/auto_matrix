@@ -1,93 +1,36 @@
-import type { StoryPhaseId } from '@auto_matrix/shared';
+import type { AgentState, StoryPhaseId, WorldEvent } from '@auto_matrix/shared';
 import { STORY_PHASES } from '@auto_matrix/shared';
 import { EventBus } from '../simulation/EventBus.js';
-import { ScriptedEvents } from './ScriptedEvents.js';
-
-const PHASE_ORDER: StoryPhaseId[] = [
-  'phase1_normal_life',
-  'phase2_awakening',
-  'phase3_war',
-  'phase4_resolution',
-];
 
 export class StoryEngine {
   private currentPhaseId: StoryPhaseId = 'phase1_normal_life';
-  private phaseStartTick = 0;
-  private scriptedEvents: ScriptedEvents;
   private firedEvents = new Set<string>();
+  private lastConflict = 0;
+  private ceasefireUntil = 0;
 
-  constructor(private eventBus: EventBus) {
-    this.scriptedEvents = new ScriptedEvents();
-  }
+  constructor(private eventBus: EventBus) {}
 
-  getCurrentPhaseId(): StoryPhaseId {
-    return this.currentPhaseId;
-  }
+  getCurrentPhaseId(): StoryPhaseId { return this.currentPhaseId; }
+  getCurrentPhase() { return STORY_PHASES[this.currentPhaseId]; }
+  restorePhase(phase: StoryPhaseId): void { if (STORY_PHASES[phase]) this.currentPhaseId = phase; }
+  isEventFired(id: string): boolean { return this.firedEvents.has(id); }
+  triggerEvent(id: string, _tick: number): void { this.firedEvents.add(id); }
+  resetPhase(): void { this.currentPhaseId = 'phase1_normal_life'; this.firedEvents.clear(); }
+  setCeasefire(tick: number): void { this.ceasefireUntil = tick + 180; }
+  isCeasefire(tick: number): boolean { return tick < this.ceasefireUntil; }
 
-  getCurrentPhase() {
-    return STORY_PHASES[this.currentPhaseId];
-  }
-
-  evaluate(tick: number): void {
-    // Check scripted events
-    const events = this.scriptedEvents.getReady(tick, this.currentPhaseId, this.firedEvents);
-    for (const event of events) {
-      this.executeEvent(event, tick);
-      this.firedEvents.add(event.id);
-    }
-
-    // Check phase duration
-    const phase = STORY_PHASES[this.currentPhaseId];
-    if (phase.duration && tick - this.phaseStartTick >= phase.duration) {
-      this.advancePhase(tick);
-    }
-  }
-
-  triggerEvent(eventId: string, tick: number): void {
-    if (this.firedEvents.has(eventId)) return;
-    const event = this.scriptedEvents.getById(eventId);
-    if (event) {
-      this.executeEvent(event, tick);
-      this.firedEvents.add(eventId);
-    }
-  }
-
-  isEventFired(eventId: string): boolean {
-    return this.firedEvents.has(eventId);
-  }
-
-  resetPhase(): void {
-    this.currentPhaseId = 'phase1_normal_life';
-    this.phaseStartTick = 0;
-    this.firedEvents.clear();
-    console.log('[Story] Phase reset to phase1_normal_life (evolution cycle reset)');
-  }
-
-  private advancePhase(tick: number): void {
-    const currentIdx = PHASE_ORDER.indexOf(this.currentPhaseId);
-    if (currentIdx >= PHASE_ORDER.length - 1) return;
-
-    const nextPhaseId = PHASE_ORDER[currentIdx + 1];
+  evaluate(tick: number, agents: AgentState[] = [], events: WorldEvent[] = []): void {
+    const awakenings = events.filter(e => e.type === 'awakening');
+    const conflicts = events.filter(e => e.type === 'gunfight' && tick - e.tick < 120);
+    if (conflicts.length) this.lastConflict = conflicts[conflicts.length - 1].tick;
+    let next = this.currentPhaseId;
+    if (this.currentPhaseId === 'phase1_normal_life' && awakenings.length) next = 'phase2_awakening';
+    else if (this.currentPhaseId !== 'phase3_war' && conflicts.length >= 3) next = 'phase3_war';
+    else if (this.currentPhaseId === 'phase3_war' && tick - this.lastConflict >= 100 && agents.some(a => a.status === 'alive' && a.faction === 'zion')) next = 'phase4_resolution';
+    if (next === this.currentPhaseId) return;
     const from = this.currentPhaseId;
-    this.currentPhaseId = nextPhaseId;
-    this.phaseStartTick = tick;
-
-    const phase = STORY_PHASES[nextPhaseId];
-    this.eventBus.emit('phase_change', {
-      from,
-      to: nextPhaseId,
-      name: phase.name,
-      description: phase.description,
-      tick,
-    });
-    console.log(`[Story] Phase changed: ${from} → ${nextPhaseId} (${phase.name})`);
-  }
-
-  private executeEvent(event: { id: string; name: string; actions: any[] }, tick: number): void {
-    console.log(`[Story] Event fired: ${event.name} (${event.id}) at tick ${tick}`);
-    for (const action of event.actions) {
-      this.eventBus.emit('story_action', { ...action, tick, eventId: event.id });
-    }
-    this.eventBus.emit('story_event', { id: event.id, name: event.name, tick });
+    this.currentPhaseId = next;
+    const phase = this.getCurrentPhase();
+    this.eventBus.emit('phase_change', { from, to: next, name: phase.name, description: phase.description, tick });
   }
 }
