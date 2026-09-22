@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import type { AgentState } from '@auto_matrix/shared';
+import { oracleVisitPose, type AgentState } from '@auto_matrix/shared';
 import { advanceMotion, newMotion, type MotionInput, type MotionState } from './CharacterMotion.js';
 import { HERO_IDS, HeroModels, type HeroId, type HeroRig } from './HeroModel.js';
 import { SpoonModel } from './SpoonModel.js';
@@ -26,6 +26,7 @@ const HERO_LOOKS: Record<string, Look> = {
   trinity: { face: 1, width: 0.9, shoulders: 0.53, waist: 0.31, hips: 0.45, skin: '#dcc0aa', cloth: '#141818', leather: true, coat: false, hair: 'pixie', glasses: 'narrow' },
   smith: { face: 2, width: 1.02, shoulders: 0.68, waist: 0.41, hips: 0.46, skin: '#d7b399', cloth: '#252b28', leather: false, coat: false, hair: 'short', glasses: 'square' },
   morpheus: { face: 3, width: 1.13, shoulders: 0.71, waist: 0.44, hips: 0.49, skin: '#89614b', cloth: '#201a18', leather: true, coat: true, hair: 'bald', glasses: 'round' },
+  oracle: { width: 1.05, shoulders: 0.62, waist: 0.43, hips: 0.52, skin: '#77513f', cloth: '#79534a', leather: false, coat: false, hair: 'short', glasses: 'none' },
 };
 
 export interface CharacterRig {
@@ -48,6 +49,7 @@ export interface CharacterRig {
   weapons?: THREE.Group[];
   spoon?: SpoonModel;
   phone?: PhoneModel;
+  cookie?: THREE.Group;
   rifle?: boolean;
   muzzleIndex?: number;
 }
@@ -221,6 +223,13 @@ export class CharacterModels {
       const skirt = this.mesh(detail, this.geometry(new THREE.CylinderGeometry(.49, .82, 2.35, 32, 4, true)), cloth, [0, 1.27, 0]);
       skirt.name = 'red-dress-skirt'; skirt.scale.z = .68;
     }
+    if (state.id === 'oracle') {
+      const apron = this.material(new THREE.MeshStandardMaterial({ color: '#d7c19a', roughness: .93, bumpMap: this.fabric, bumpScale: .002, side: THREE.DoubleSide }));
+      const skirt = this.mesh(torso, this.geometry(new THREE.CylinderGeometry(.43, .55, 1.2, 28, 3, true)), apron, [0, .68, 0], [1, 1, .62]);
+      skirt.name = 'oracle-apron';
+      this.surface(torso, [[-.28, 1.64, .28], [.28, 1.64, .28], [.38, .72, .34], [-.38, .72, .34]], apron);
+      for (const side of [-1, 1]) this.mesh(torso, this.cylinder, apron, [side * .22, 1.7, .22], [.018, .42, .018]).rotation.z = side * .16;
+    }
     this.mesh(torso, this.cylinder, skin, [0, 1.79, 0], [0.145, 0.25, 0.135]);
     // Raised collars, seams, belt and tailored panels are visible from all sides.
     if (state.faction !== 'machines') {
@@ -392,6 +401,19 @@ export class CharacterModels {
     if (rig.phone) {
       rig.phone.root.visible = Boolean(input.phone && (input.phone.phase !== 'pickup' || input.phone.elapsed >= .65));
       rig.phone.update(input.phone?.phase === 'answering' ? Math.min(1, input.phone.elapsed / .4) : input.phone?.phase === 'connected' ? 1 : 0);
+    }
+    if (input.oracleVisit && !rig.cookie) {
+      const biscuit = this.material(new THREE.MeshStandardMaterial({ color: '#c98945', roughness: .88 }));
+      const chocolate = this.material(new THREE.MeshStandardMaterial({ color: '#342017', roughness: .9 }));
+      rig.cookie = new THREE.Group(); rig.cookie.name = 'oracle-cookie';
+      const base = this.mesh(rig.cookie, this.cylinder, biscuit, [0, 0, 0], [.13, .025, .13]); base.rotation.x = Math.PI / 2;
+      for (const [x, y] of [[-.05, .03], [.035, .055], [.058, -.035], [-.02, -.06]]) this.mesh(rig.cookie, this.sphere, chocolate, [x, y, .029], [.018, .018, .009]);
+      const parent = rig.hero?.bones.get('wrist_R') ?? rig.elbows[0];
+      rig.cookie.position.set(.02, rig.hero ? -.13 : -.84, .08); rig.cookie.rotation.x = -.18; parent.add(rig.cookie);
+    }
+    if (rig.cookie) {
+      const visit = input.oracleVisit; const gesture = visit && oracleVisitPose(visit);
+      rig.cookie.visible = Boolean(visit && gesture && (visit.role === 'oracle' ? gesture.offer > .12 && gesture.receive < .72 : gesture.receive > .55));
     }
     const pose = advanceMotion(rig.motion, input, delta);
     if (rig.hero) { this.heroes.animate(rig.hero, pose, rig.motion, input, delta); return; }

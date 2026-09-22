@@ -155,8 +155,61 @@ test('the Oracle vase falls once, pauses and restores mid-fall, then leaves a pe
   for (let i = 0; i < 45; i++) h.players.step(.1, true, h.tick());
   assert.equal(h.sandbox.life.film.state!.step, 1); assert.equal(h.sandbox.life.state!.choices.oracle_vase, 'broken');
   h.actor().position = filmStepPosition(scene, scene.steps[1]);
-  assert.match(h.command('reflect:agency'), /花瓶/);
-  assert.ok(h.sandbox.life.state!.journal.some(entry => entry.text.includes('花瓶')));
+  assert.match(h.command('reflect:agency'), /花瓶|检查/);
+  assert.equal(h.sandbox.life.state!.choices['m1_oracle:1'], undefined, 'a reflection cannot bypass the in-person consultation');
+});
+
+test('the Oracle examines Neo and offers a cookie before waiting for his explicit answer', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  const scene = FILM_SCENE_BY_ID.m1_oracle; Object.assign(state, { scene: scene.id, actor: 'neo', step: 0 });
+  h.actor().position = filmStepPosition(scene, scene.steps[0]); h.actor().currentLocation = scene.set;
+  h.command('act');
+  for (let frame = 0; frame < 46; frame++) h.players.step(.1, true, h.tick());
+  const consultation = () => (h.sandbox.life.film.state!.oracle as { consultation?: { phase: string; elapsed: number; answer?: string } })?.consultation;
+  assert.equal(state.step, 1); assert.equal(consultation()?.phase, 'waiting');
+  for (let frame = 0; frame < 100; frame++) h.players.step(.1, true, h.tick());
+  assert.equal(consultation()?.phase, 'waiting', 'time alone cannot start the consultation');
+
+  h.actor().position = filmStepPosition(scene, scene.steps[1]);
+  h.players.possess('oracle-player', 'oracle', h.tick());
+  assert.match(h.command('act'), /另一位玩家/); assert.equal(consultation()?.phase, 'waiting');
+  h.players.release('oracle-player', h.tick()); h.command('act');
+  assert.equal(consultation()?.phase, 'examining');
+  for (let frame = 0; frame < 34; frame++) h.players.step(.1, true, h.tick());
+  const elapsed = consultation()!.elapsed; assert.ok(elapsed > 3 && elapsed < 3.5);
+  h.players.step(.1, false, h.tick()); assert.equal(consultation()!.elapsed, elapsed);
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); assert.equal(consultation()!.elapsed, elapsed);
+  h.players.release('film-player', h.tick()); h.advance(20); assert.equal(consultation()!.elapsed, elapsed);
+  h.players.possess('film-player', 'neo', h.tick());
+  for (let frame = 0; frame < 90; frame++) h.players.step(.1, true, h.tick());
+  assert.equal(consultation()?.phase, 'question'); assert.equal(h.sandbox.life.film.state!.step, 1);
+  for (let frame = 0; frame < 100; frame++) h.players.step(.1, true, h.tick());
+  assert.equal(consultation()?.phase, 'question', 'the Oracle cannot choose an answer for Neo');
+
+  assert.match(h.command('reflect:care'), /具体的人/); assert.equal(consultation()?.phase, 'responding');
+  assert.equal(h.sandbox.life.state!.choices.oracle_first, 'rescue');
+  assert.ok(h.sandbox.life.state!.journal.some(entry => entry.title.includes('厨房里的预言') && entry.text.includes('具体的人')));
+  for (let frame = 0; frame < 50; frame++) h.players.step(.1, true, h.tick());
+  assert.equal(consultation()?.phase, 'done'); assert.equal(h.sandbox.life.film.state!.step, 2);
+  assert.equal(h.sandbox.life.state!.choices['m1_oracle:1'], 'care');
+});
+
+test('the Oracle answer changes later rescue preparation exactly once', () => {
+  const outcomes = [
+    { answer: 'doubt', item: 'code', amount: 10 },
+    { answer: 'rescue', item: 'medkit', amount: 3 },
+    { answer: 'observe', item: 'beacon', amount: 1 },
+  ] as const;
+  for (const outcome of outcomes) {
+    const h = setup(); h.command('continue'); const life = h.sandbox.life.state!; const state = h.sandbox.life.film.state!;
+    life.choices.oracle_first = outcome.answer;
+    Object.assign(state, { scene: 'm1_unplugged', actor: 'neo', step: FILM_SCENE_BY_ID.m1_unplugged.steps.length });
+    const inventory = h.sandbox.state.profiles.neo.inventory; const before = inventory[outcome.item];
+    h.command('next'); assert.equal(state.scene, 'm1_rescue_decision');
+    assert.equal(inventory[outcome.item], before + outcome.amount); assert.equal(life.choices.oracle_prepared, outcome.answer);
+    Object.assign(state, { scene: 'm1_unplugged', actor: 'neo', step: FILM_SCENE_BY_ID.m1_unplugged.steps.length });
+    h.command('next'); assert.equal(inventory[outcome.item], before + outcome.amount, 're-entering cannot duplicate the preparation');
+  }
 });
 
 test('the repeated cat seals the old exit, leaves the service passage open and preserves the changed space after reconnect', () => {
@@ -626,7 +679,12 @@ test('the entire film route completes through interactions, driving and real com
       const step = scene.steps[index]; const actor = h.actor(); actor.position = filmStepPosition(scene, step);
       if (step.kind === 'reach') h.advance();
       else if (step.kind === 'reflect') {
-        h.command(scene.id === 'm1_wake_up' ? 'contact:follow' : scene.id === 'm1_ledge' ? 'escape:retreat' : scene.id === 'm1_pills' ? 'pill:red' : 'reflect:agency');
+        if (scene.id === 'm1_oracle') {
+          h.command('act');
+          for (let frame = 0; frame < 110; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.oracle?.consultation?.phase, 'question'); h.command('reflect:agency');
+          for (let frame = 0; frame < 50; frame++) h.players.step(.1, true, h.tick());
+        } else h.command(scene.id === 'm1_wake_up' ? 'contact:follow' : scene.id === 'm1_ledge' ? 'escape:retreat' : scene.id === 'm1_pills' ? 'pill:red' : 'reflect:agency');
         if (scene.id === 'm1_pills') for (let frame = 0; frame < 131; frame++) h.players.step(.1, true, h.tick());
         if (scene.id === 'm1_club') for (let frame = 0; frame < 61; frame++) h.players.step(.1, true, h.tick());
         if (scene.id === 'm1_cypher_console') for (let frame = 0; frame < 48; frame++) h.players.step(.1, true, h.tick());

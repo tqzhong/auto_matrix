@@ -12,6 +12,7 @@ import { APARTMENT, WAKE_CALL, apartmentAfter, apartmentDoor, apartmentLocked, a
 import { CLUB, clubLocked, clubRoot, clubText, type ClubPhase } from '@auto_matrix/shared';
 import { SENTINEL_CAST, SENTINEL_TIMING, sentinelActive, sentinelDanger, sentinelLocked, sentinelRoot, sentinelText, type SentinelRole } from '@auto_matrix/shared';
 import { INTERLUDE_CAST, interludeDuration, interludeKind, interludeLocked, interludeRoot, interludeSeated, interludeText, type InterludeEncounter, type InterludeRole } from '@auto_matrix/shared';
+import { ORACLE_VISIT, oracleLegacyChoice, oracleVisitDuration, oracleVisitLocked, oracleVisitRoot, oracleVisitText, type OracleVisitRole } from '@auto_matrix/shared';
 
 export class FilmStorySystem {
   // The controller owns socket sessions. It can refuse a handoff occupied by another player.
@@ -576,8 +577,70 @@ export class FilmStorySystem {
       agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, vase: oracle.vase }, startedAt: tick, duration: 1, progress: 0 };
       state.lastText = oracle.vase < 1.2 ? '先知看着烤箱，随口提醒你留意身后的花瓶。' : oracle.vase < 2.5 ? '你回头寻找花瓶，衣袖擦过它。' : '碎片落在脚边。先知说，真正值得想的是那句提醒如何改变了你的动作。';
       if (agent.currentAction) agent.currentAction.parameters.vase = oracle.vase;
-      if (oracle.vase >= 4.5) { this.sandbox().neoLife!.choices.oracle_vase = 'broken'; this.advance(this.step!.text!, agent, tick); }
+      if (oracle.vase >= 4.5) {
+        this.sandbox().neoLife!.choices.oracle_vase = 'broken';
+        oracle.consultation ??= { phase: 'waiting', elapsed: 0 };
+        this.advance(this.step!.text!, agent, tick); agent.currentAction = null;
+      }
+      return;
     }
+    const encounter = oracle.consultation;
+    if (state.scene !== 'm1_oracle' || state.step !== 1 || !encounter) return;
+    const oracleActor = this.world.agents.get('oracle')!;
+    const occupied = Boolean(oracleActor.controller);
+    const playing = oracleVisitLocked(state) && !occupied && ['examining', 'responding'].includes(encounter.phase);
+    if (playing) encounter.elapsed = Math.min(oracleVisitDuration(encounter), encounter.elapsed + Math.max(0, Math.min(.1, dt)));
+    for (const role of ['neo', 'oracle'] as const) {
+      const actor = role === 'neo' ? agent : oracleActor;
+      if (role === 'oracle' && actor.controller || role === 'neo' && !oracleVisitLocked(state)) continue;
+      const pose = oracleVisitRoot(encounter, role);
+      const before = { ...actor.position };
+      this.place(actor, this.scene!, filmPosition(this.scene!.set, pose.x, pose.z)); actor.rotation = pose.yaw;
+      actor.velocity = dt > 0 ? { x: (actor.position.x - before.x) / dt, y: 0, z: (actor.position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
+      actor.currentAction = { type: 'idle', parameters: { player: role === 'neo', resolved: true,
+        oracleVisit: { ...encounter, role } }, startedAt: tick, duration: 1, progress: 0 };
+    }
+    if (!oracleVisitLocked(state) && agent.currentAction?.parameters.oracleVisit) agent.currentAction = null;
+    if (oracleVisitLocked(state)) state.checkpoint = { ...agent.position };
+    state.lastText = occupied && oracleVisitLocked(state) ? '先知正由另一位玩家控制，检查和谈话停在当前动作。' : oracleVisitText(encounter);
+    if (playing && encounter.elapsed >= oracleVisitDuration(encounter)) {
+      if (encounter.phase === 'examining') { encounter.phase = 'question'; encounter.elapsed = 0; }
+      else {
+        const response = oracleVisitText(encounter); encounter.phase = 'done'; encounter.elapsed = ORACLE_VISIT.response;
+        this.advance(`${this.step!.text} ${response}`, agent, tick); agent.currentAction = null; oracleActor.currentAction = null;
+      }
+      this.oracleFrame(agent, false, 0, tick);
+    }
+  }
+
+  private oracleAct(agent: AgentState, target: string, tick: number): string {
+    const state = this.state!; const encounter = state.oracle!.consultation!;
+    this.oracleFrame(agent, false, 0, tick);
+    const oracleActor = this.world.agents.get('oracle')!;
+    if (oracleActor.controller) return '先知正由另一位玩家控制，等待对方结束后再继续谈话。';
+    if (encounter.phase === 'waiting') {
+      if (target !== 'act') return oracleVisitText(encounter);
+      if (!this.near(agent, this.step!)) return '走到厨房操作台旁，靠近先知后再按 G。';
+      const center = FILM_SETS[this.scene!.set].center;
+      encounter.approach = { x: agent.position.x - center.x, z: agent.position.z - center.z, yaw: agent.rotation };
+      encounter.phase = 'examining'; encounter.elapsed = 0; state.checkpoint = { ...agent.position };
+      this.oracleFrame(agent, false, 0, tick); return state.lastText;
+    }
+    if (encounter.phase === 'question') {
+      if (!target.startsWith('reflect:')) return '打开手记，选择你要如何回应先知。';
+      const choice = filmReflections(state.scene).find(item => item.id === target.slice(8));
+      if (!choice) return '请选择手记中的一种具体回答。';
+      const life = this.sandbox().neoLife!; const key = `${state.scene}:${state.step}`;
+      if (!state.reflections[key]) {
+        state.reflections[key] = choice.id; life.choices[key] = choice.id; life.philosophy[choice.id]++;
+        life.choices.oracle_first = oracleLegacyChoice(choice.id);
+        life.journal.unshift({ day: life.day, time: this.world.timeOfDay, title: `${this.scene!.title} · ${choice.label}`, text: choice.response });
+      }
+      encounter.answer = choice.id; encounter.phase = 'responding'; encounter.elapsed = 0;
+      this.oracleFrame(agent, false, 0, tick); return choice.response;
+    }
+    if (oracleVisitLocked(state)) return '谈话进行中。可以转动视角观察；暂停、断线与重新载入会保留当前动作。';
+    return state.lastText;
   }
   awakeningFrame(agent: AgentState, dt: number, tick: number): boolean {
     if (!this.controls(agent) || !awakeningLocked(this.state!)) return false;
@@ -934,6 +997,13 @@ export class FilmStorySystem {
         this.interludeFrame(agent, 0, tick);
         return '已接回当前片段，保留人物位置、动作、对话与选择进度。';
       }
+      if (state.scene === 'm1_oracle' && state.oracle?.consultation) {
+        delete state.visiting; delete state.returnPosition;
+        agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
+        agent.position = { ...state.checkpoint }; agent.velocity = { x: 0, y: 0, z: 0 };
+        this.oracleFrame(agent, false, 0, tick);
+        return '已接回先知厨房，保留花瓶、检查、饼干与回答进度。';
+      }
       if (state.scene === 'm1_club' && state.club) {
         delete state.visiting; delete state.returnPosition;
         agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
@@ -1089,6 +1159,7 @@ export class FilmStorySystem {
     if (state.scene === 'm1_club') return this.clubAct(agent, target, tick);
     if (state.scene === 'm1_sentinels') return this.sentinelAct(agent, target, tick);
     if (interludeKind(state.scene)) return this.interludeAct(agent, target, tick);
+    if (state.scene === 'm1_oracle' && state.step === 1 && state.oracle?.consultation) return this.oracleAct(agent, target, tick);
     if (interrogationLocked(state) && state.interrogation!.phase !== 'response') return '审讯正在进行。可以转动视角观察，暂停会保留当前进度。';
     if (target === 'escape:retreat' && state.scene === 'm1_ledge') {
       this.capture(agent, tick, '你退回办公室。特工将你带走；电话中的联系尚未结束。');
@@ -1246,6 +1317,22 @@ export class FilmStorySystem {
     agent.position = { ...position }; agent.isInMatrix = FILM_SETS[scene.set].world === 'matrix'; agent.currentLocation = scene.set;
     agent.rotation = Math.PI; agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentAction = null; agent.targetPosition = null; agent.currentPath = [];
   }
+  private prepareOracleRescue(): void {
+    const life = this.sandbox().neoLife!; const answer = life.choices.oracle_first;
+    if (!['doubt', 'rescue', 'observe'].includes(answer) || life.choices.oracle_prepared) return;
+    const inventory = this.sandbox().profiles.neo.inventory;
+    const text = answer === 'doubt'
+      ? '你没有把预言当作命令。Tank 根据你的核对习惯准备了额外破解代码。'
+      : answer === 'rescue'
+        ? '你曾把 Morpheus 当作一个具体的人。Trinity 提前把三份医疗补给装入营救装备。'
+        : '你保留了有限的信任。船员把一枚协作信标加入装备，让撤离路线能被彼此确认。';
+    if (answer === 'doubt') inventory.code += 10;
+    else if (answer === 'rescue') inventory.medkit += 3;
+    else inventory.beacon++;
+    life.choices.oracle_prepared = answer;
+    life.journal.unshift({ day: life.day, time: this.world.timeOfDay, title: '先知的提醒成为准备', text });
+    this.state!.lastText = `${this.state!.lastText} ${text}`;
+  }
   private enter(scene: FilmScene, tick: number, position?: AgentState['position']): void {
     const state = this.state!; const life = this.sandbox().neoLife!;
     this.clearThreats(); state.enteredAt = tick; state.checkpoint = position ?? filmEntry(scene); delete state.started; delete state.fighting;
@@ -1271,6 +1358,7 @@ export class FilmStorySystem {
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.interrogation) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.sentinel) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.interlude) other.currentAction = null;
+    for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.oracleVisit) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.riding) { other.currentAction = null; other.velocity = { x: 0, y: 0, z: 0 }; }
     if (scene.id === 'm1_lobby') this.lobby.reset();
     const actor = this.world.agents.get(state.actor)!;
@@ -1313,6 +1401,7 @@ export class FilmStorySystem {
       state.interlude = { kind: interlude, phase: 'ready', elapsed: 0 };
       this.interludeFrame(actor, 0, tick);
     }
+    if (scene.id === 'm1_rescue_decision') this.prepareOracleRescue();
     if (scene.id === 'm1_bug' && state.office?.outcome === 'escaped') state.lastText = '你没有被特工带走。Switch 仍要求做安全检查，确认没有追踪装置。';
   }
   private stageCast(): void {

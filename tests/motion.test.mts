@@ -88,3 +88,12 @@ test('the Lafayette greeting walks from saved time and settles Morpheus into the
   const seated = advanceMotion(motion, { ...idle, welcome: { phase: 'done', elapsed: 5.4, role: 'morpheus' as const } }, 0);
   assert.equal(motion.seated, 1); assert.ok(seated.legs.every(leg => leg.knee > 1.4));
 });
+
+test('the Oracle examines Neo and visibly passes the cookie into his hand', () => {
+  const idle = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 };
+  const inspecting = advanceMotion(newMotion(), { ...idle, oracleVisit: { phase: 'examining', elapsed: 3, role: 'oracle' as const } }, 0);
+  assert.ok(inspecting.arms[0].shoulder < -1.15 && inspecting.arms[0].elbow > -.35, 'the Oracle reaches toward Neo during the examination');
+  const offering = advanceMotion(newMotion(), { ...idle, oracleVisit: { phase: 'examining', elapsed: 8.1, role: 'oracle' as const } }, 0);
+  const receiving = advanceMotion(newMotion(), { ...idle, oracleVisit: { phase: 'examining', elapsed: 9.1, role: 'neo' as const } }, 0);
+  assert.ok(offering.arms[0].elbow < -1 && receiving.arms[0].elbow < -1.1, 'both hands meet during the cookie handoff');
+});

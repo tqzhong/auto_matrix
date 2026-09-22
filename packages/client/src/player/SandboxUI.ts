@@ -11,6 +11,7 @@ import { wakeCallLocked } from '@auto_matrix/shared';
 import { clubLocked } from '@auto_matrix/shared';
 import { sentinelDanger, sentinelLocked } from '@auto_matrix/shared';
 import { interludeDuration, interludeLocked } from '@auto_matrix/shared';
+import { oracleVisitDuration, oracleVisitLocked } from '@auto_matrix/shared';
 
 const escape = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const WEATHER = { clear: '晴朗', rain: '雨', code_storm: '代码风暴' };
@@ -388,6 +389,24 @@ export class SandboxUI {
       this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
       this.el('film-sequence-hint').textContent = '留意桌上的花瓶 · 事件进度自动保存';
       this.el('sandbox-interact').classList.add('hidden'); return;
+    }
+    if (!journey.visiting && scene.id === 'm1_oracle' && journey.oracle?.consultation) {
+      const encounter = journey.oracle.consultation; const close = !step || distance(player.position, filmStepPosition(scene, step)) <= 4;
+      const canAct = encounter.phase === 'waiting' && close || encounter.phase === 'done';
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = encounter.phase === 'waiting' ? '走到先知身边 · G 开始 · 等待不会自动推进'
+        : encounter.phase === 'question' ? 'J 打开手记回答 · 等待不会替你选择'
+        : encounter.phase === 'done' ? 'G 离开厨房，继续返回路线'
+        : '鼠标环顾 · V 切换主视角与场景镜头 · 暂停或重连会保留动作';
+      this.el('sandbox-interact').classList.toggle('hidden', !canAct);
+      this.el('sandbox-nearby').textContent = encounter.phase === 'done' ? '继续返回路线' : '接受先知的检查与谈话';
+      this.el('sandbox-job').style.width = oracleVisitLocked(journey) && encounter.phase !== 'question'
+        ? `${Math.min(100, encounter.elapsed / oracleVisitDuration(encounter) * 100)}%` : '0';
+      if (oracleVisitLocked(journey)) this.el('sandbox-waypoint').textContent = '';
+      if (encounter.phase === 'question' && document.pointerLockElement) document.exitPointerLock();
+      document.getElementById('game-objective-copy')!.textContent = encounter.phase === 'question' ? '先知正在等待你的回答；打开手记，决定如何面对预言与 Morpheus。'
+        : encounter.phase === 'done' ? '检查与饼干交接已记下；这个回答会改变后续营救准备。' : journey.lastText;
+      return;
     }
     if (!journey.visiting && scene.id === 'm1_dejavu' && journey.ambush && journey.step === 0) {
       this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;

@@ -35,7 +35,7 @@ export interface FilmJourney {
   wakeCall?: import('./apartment.js').WakeCall;
   club?: import('./club.js').ClubEncounter;
   dojo?: import('./training.js').DojoLesson;
-  oracle?: { spoon?: number; vase?: number };
+  oracle?: { spoon?: number; vase?: number; consultation?: import('./oracle.js').OracleVisitEncounter };
   pills?: import('./pills.js').PillEncounter;
   interrogation?: import('./interrogation.js').InterrogationEncounter;
   meeting?: import('./meeting.js').MeetingEncounter;
@@ -175,7 +175,9 @@ export const FILM_SCENE_BY_ID = Object.fromEntries(FILM_SCENES.map(s => [s.id, s
 export const FILM_CAST = [...new Set([...FILM_SCENES.flatMap(s => [s.actor, ...s.cast]), ...Object.values(FILM_CONSEQUENCES).flatMap(Object.keys)])];
 export const FILM_NAMES = { 1: '黑客帝国', 2: '重装上阵', 3: '矩阵革命' } as const;
 export function oracleActing(journey: FilmJourney): boolean {
-  return !journey.visiting && journey.scene === 'm1_oracle' && journey.step === 0 && journey.oracle?.vase !== undefined && journey.oracle.vase < 4.5;
+  return !journey.visiting && journey.scene === 'm1_oracle'
+    && (journey.step === 0 && journey.oracle?.vase !== undefined && journey.oracle.vase < 4.5
+      || Boolean(journey.oracle?.consultation && !['waiting', 'done'].includes(journey.oracle.consultation.phase)));
 }
 export function filmStepPosition(scene: FilmScene, step: FilmStep): Vector3 {
   const position = filmPosition(scene.set, step.x, step.z);

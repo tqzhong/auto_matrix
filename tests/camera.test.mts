@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import type { AgentState, PlayerInput } from '@auto_matrix/shared';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { CameraController } from '../packages/client/src/engine/CameraController.js';
-import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, pillRoot, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS } from '@auto_matrix/shared';
+import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, pillRoot, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, ORACLE_VISIT } from '@auto_matrix/shared';
 
 test('observer camera releases drag and ignores pointer capture while a character controls the view', () => {
   let captures = 0;
@@ -191,6 +191,29 @@ test('Cypher interludes use directed scene cameras while V keeps a freely steera
   assert.ok(Math.abs(table.x) < .8 && Math.abs(table.y) < .8, 'the restaurant reverse angle keeps the physical table in frame');
   game.key('KeyV'); game.key('KeyV', false); game.step(.1);
   assert.ok(game.camera.position.y > tablePosition.y + 2.55, 'the seated Smith view clears the table and chair back');
+});
+
+test('the Oracle consultation frames both speakers and V keeps a freely steerable player view', t => {
+  const game = setup(t, ORACLE_VISIT.neo.yaw); const center = FILM_SETS.film_oracle_home.center;
+  Object.assign(game.state, { position: filmPosition('film_oracle_home', ORACLE_VISIT.neo.x, ORACLE_VISIT.neo.z),
+    rotation: ORACLE_VISIT.neo.yaw, currentLocation: 'film_oracle_home',
+    currentAction: { type: 'idle', parameters: { oracleVisit: { phase: 'examining', elapsed: 3, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 } });
+  game.controls.possess(game.state); game.step(.5);
+  assert.equal(game.controls.performing, true, 'the consultation must lock ordinary movement while the examination plays');
+  const neoFace = new THREE.Vector3(center.x + ORACLE_VISIT.neo.x, center.y + 3.03, center.z + ORACLE_VISIT.neo.z).project(game.camera);
+  const oracleFace = new THREE.Vector3(center.x + ORACLE_VISIT.oracle.x, center.y + 3.03, center.z + ORACLE_VISIT.oracle.z).project(game.camera);
+  for (const face of [neoFace, oracleFace]) assert.ok(Math.abs(face.x) < .88 && Math.abs(face.y) < .82 && face.z > -1 && face.z < 1,
+    'the kitchen two-shot must keep both faces readable');
+  const locked = game.group.position.clone(); game.key('KeyW'); game.step(.25); game.key('KeyW', false);
+  assert.ok(game.group.position.distanceTo(locked) < .01, 'walking cannot pull Neo out of the examination');
+
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+  const eye = new THREE.Vector3(game.state.position.x, game.state.position.y + 2.99, game.state.position.z);
+  assert.ok(game.camera.position.distanceTo(eye) < .06, 'V places the camera at Neo eyes');
+  const initial = game.yaw(); game.event(game.canvas, 'mousedown', { button: 2 });
+  game.event(game.document, 'mousemove', { movementX: 85, movementY: 0 }); game.step(.1);
+  assert.ok(Math.abs(angle(game.yaw(), initial)) > .08, 'first-person consultation still allows looking around');
+  game.state.currentAction = null; game.step(.1); assert.equal(game.controls.performing, false);
 });
 
 test('arrival hands back a clear third-person view toward the alley entrance', t => {

@@ -203,7 +203,10 @@ export class NeoLifeSystem {
     state.choices[id] = value;
     for (const [axis, amount] of Object.entries(choice.effect ?? {})) state.philosophy[axis as Philosophy] += amount!;
     const profile = this.sandbox().profiles.neo;
-    if (id === 'oracle_first') { profile.inventory.medkit += value === 'rescue' ? 3 : 1; profile.inventory.code += value === 'doubt' ? 10 : 0; }
+    if (id === 'oracle_first') {
+      profile.inventory.medkit += value === 'rescue' ? 3 : 1; profile.inventory.code += value === 'doubt' ? 10 : 0;
+      state.choices.oracle_prepared = value;
+    }
     if (id === 'betrayal') profile.inventory[value === 'together' ? 'medkit' : 'emp'] += 2;
     if (id === 'zion') { profile.inventory[value === 'defense' ? 'emp' : 'decoder'] += 2; if (value === 'defense') this.sandbox().zion = clamp(this.sandbox().zion + 15); }
     if (id === 'oracle_second') profile.inventory.decoder++;

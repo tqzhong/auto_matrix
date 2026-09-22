@@ -8,6 +8,7 @@ import { wakeCallLocked } from '@auto_matrix/shared';
 import { clubLocked } from '@auto_matrix/shared';
 import { sentinelDanger, sentinelLocked } from '@auto_matrix/shared';
 import { interludeDuration, interludeLocked } from '@auto_matrix/shared';
+import { oracleVisitDuration, oracleVisitLocked } from '@auto_matrix/shared';
 
 const button = (target: string, label: string, disabled = false) => `<button data-action="life" data-target="film:${target}" ${disabled ? 'disabled' : ''}>${label}</button>`;
 export function renderFilmJourney(player: AgentState, sandbox: SandboxState): string {
@@ -65,6 +66,19 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
     else action = '<button disabled>演出进行中 · 合上手记观看</button>';
     const progress = interludeLocked(journey) ? `<div class="film-progress"><i style="width:${Math.min(100, encounter.elapsed / interludeDuration(encounter) * 100)}%"></i></div><small>鼠标可以环顾，V 可在主视角与场景镜头间切换；动作进度会自动保存。</small>` : '';
     return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>${names[0]}</h3><p>${names[2]}</p></header><article class="film-now"><div><h3>${names[1]}</h3><p>${journey.lastText}</p>${progress}<div class="film-controls">${action}${!current ? button('resume', `继续 ${journey.actor === 'smith' ? 'Smith' : 'Neo'} 的剧情视角`) : ''}</div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
+  }
+  if (!journey.visiting && journey.scene === 'm1_oracle' && journey.oracle?.consultation) {
+    const encounter = journey.oracle.consultation; const current = player.id === journey.actor; const step = scene.steps[journey.step];
+    const close = current && (!step || distance(player.position, filmStepPosition(scene, step)) <= 4);
+    const title = encounter.phase === 'waiting' ? '走近先知' : encounter.phase === 'examining' ? '认识你自己'
+      : encounter.phase === 'question' ? '预言不会替你选择' : encounter.phase === 'responding' ? 'Morpheus 与具体的人' : '带着疑问离开厨房';
+    const action = encounter.phase === 'waiting' ? button('act', '接受检查与谈话 · G', !close)
+      : encounter.phase === 'question' ? filmReflections(scene.id).map(choice => button(`reflect:${choice.id}`, choice.label, !current)).join('')
+      : encounter.phase === 'done' ? button('next', '离开厨房，继续返回路线 →', !current)
+      : '<button disabled>演出进行中 · 合上手记观看</button>';
+    const progress = oracleVisitLocked(journey) && encounter.phase !== 'question'
+      ? `<div class="film-progress"><i style="width:${Math.min(100, encounter.elapsed / oracleVisitDuration(encounter) * 100)}%"></i></div>` : '';
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>先知的厨房 · 花瓶之后</h3><p>Neo 视角 · 检查、回答与饼干交接自动保存</p></header><article class="film-now"><div><h3>${title}</h3><p>${journey.lastText}</p>${progress}<div class="film-controls">${action}${!current ? button('resume', '继续 Neo 的剧情视角') : ''}<small>${encounter.phase === 'question' ? '等待不会替你回答；选择会改变后续营救准备。' : oracleVisitLocked(journey) ? '鼠标可以环顾，V 可在主视角和场景镜头间切换。' : '走到操作台旁再继续。'}</small></div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
   }
   if (!journey.visiting && journey.scene === 'm1_boss' && journey.workday && !journey.phone) {
     const phase = journey.workday.phase; const step = scene.steps[journey.step];

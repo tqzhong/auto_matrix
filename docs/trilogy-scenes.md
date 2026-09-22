@@ -175,6 +175,8 @@
 
 命令 `node --import tsx scripts/film-review-fixture.mts m1_lobby` 会生成一个临时目录并打印路径。它开放其他场景的回访，仅用于验收；不要将其复制到用户的 data/world.json。构建后通过 `MATRIX_DATA_DIR=<打印的目录> PORT=3002 HOST=127.0.0.1 LLM_API_KEY= node packages/server/dist/index.js` 启动独立实例，在 http://localhost:3002/ 进入 Neo 即可检查。原服务和原存档可保持不变。
 
+先知局部镜头可在场景参数后使用 `oracle-exam`、`oracle-cookie` 或 `oracle-question`，例如 `node --import tsx scripts/film-review-fixture.mts m1_oracle oracle-question`。这些模式只建立对应动作检查点，不代表从候诊室连续游玩到了该位置。
+
 ## 本轮验证（2026-09-21）
 
 - 类型检查通过，生产构建通过；Vite 提示主包约 1.08 MB，需要后续按场景拆分以改善加载，这不是编译失败。

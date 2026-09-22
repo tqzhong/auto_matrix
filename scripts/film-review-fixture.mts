@@ -170,6 +170,15 @@ if (process.argv[3] === 'spoon' && scene.id === 'm1_spoon') {
   sandbox.life.film.command(actor, 'act', 0);
   for (let frame = 0; frame < 60; frame++) sandbox.life.film.oracleFrame(actor, true, .1, 0);
 }
+if (['oracle-exam', 'oracle-cookie', 'oracle-question'].includes(process.argv[3]) && scene.id === 'm1_oracle') {
+  actor.controller = 'player'; actor.position = filmStepPosition(scene, scene.steps[0]);
+  sandbox.life.film.command(actor, 'act', 0);
+  for (let frame = 0; frame < 46; frame++) sandbox.life.film.oracleFrame(actor, false, .1, 0);
+  actor.position = filmStepPosition(scene, scene.steps[1]); sandbox.life.film.command(actor, 'act', 0);
+  const frames = process.argv[3] === 'oracle-exam' ? 0 : process.argv[3] === 'oracle-cookie' ? 88 : 110;
+  for (let frame = 0; frame < frames; frame++) sandbox.life.film.oracleFrame(actor, false, .1, 0);
+  sandbox.life.film.state!.checkpoint = { ...actor.position };
+}
 for (const resident of world.agents.values()) delete resident.controller;
 neo.isAwakened = FILM_SCENES.indexOf(scene) >= FILM_SCENES.findIndex(s => s.id === 'm1_pod');
 await writeFile(path.join(directory, 'world.json'), JSON.stringify({ version: 1, tick: 0, timeOfDay: 12000, day: 1, phase: 'phase1_normal_life', agents: Object.fromEntries(world.agents), events: [], relationships: [], sandbox: sandbox.state }));

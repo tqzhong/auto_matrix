@@ -1,4 +1,4 @@
-import { MELEE_COMBO, COMBO_WINDOW, COMBAT_SKILLS, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED, type CombatSkillId, type AwakeningPose, type AwakeningReveal, type OfficePhone, pillPose, lafayetteWelcomePose, type PillGesture, type InterrogationGesture, type LafayetteWelcomeGesture, type TrainingGesture } from '@auto_matrix/shared';
+import { MELEE_COMBO, COMBO_WINDOW, COMBAT_SKILLS, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED, type CombatSkillId, type AwakeningPose, type AwakeningReveal, type OfficePhone, pillPose, lafayetteWelcomePose, oracleVisitPose, type PillGesture, type InterrogationGesture, type LafayetteWelcomeGesture, type TrainingGesture, type OracleVisitGesture } from '@auto_matrix/shared';
 
 export interface MotionInput {
   speed: number;
@@ -29,6 +29,7 @@ export interface MotionInput {
   club?: import('@auto_matrix/shared').ClubGesture;
   sentinel?: import('@auto_matrix/shared').SentinelGesture;
   interlude?: import('@auto_matrix/shared').InterludeGesture;
+  oracleVisit?: OracleVisitGesture;
   clubClothes?: boolean;
   mirror?: number;
   spoon?: number;
@@ -105,6 +106,7 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const pills = input.pills && pillPose(input.pills);
   const exiting = input.pills?.role === 'neo' && input.pills.phase === 'taking' && input.pills.elapsed > 11;
   const welcome = input.welcome && lafayetteWelcomePose(input.welcome);
+  const oracle = input.oracleVisit && oracleVisitPose(input.oracleVisit);
   const welcomeWalking = input.welcome?.phase === 'approach' || input.welcome?.phase === 'departing' && input.welcome.role !== 'neo';
   const welcomeSpeed = input.welcome?.role === 'morpheus' ? 2.6 : input.welcome?.role === 'neo' ? 2.3 : 1.8;
   const speed = input.pills ? exiting ? 1.7 : 0 : welcomeWalking ? welcomeSpeed : input.speed;
@@ -203,14 +205,34 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     const reach = Math.sin(clamp((input.vase - .6) / 1.8) * Math.PI);
     arms[1].shoulder = mix(arms[1].shoulder, -1.1, reach); arms[1].elbow = mix(arms[1].elbow, -.25, reach);
   }
+  if (oracle && input.oracleVisit) {
+    if (input.oracleVisit.role === 'oracle') {
+      arms[0].shoulder = mix(arms[0].shoulder, -1.34, oracle.inspect);
+      arms[0].elbow = mix(arms[0].elbow, -.18, oracle.inspect);
+      arms[0].outward = mix(arms[0].outward, -.08, oracle.inspect);
+      arms[0].shoulder = mix(arms[0].shoulder, -.76, oracle.offer);
+      arms[0].elbow = mix(arms[0].elbow, -1.28, oracle.offer);
+      arms[0].outward = mix(arms[0].outward, -.19, oracle.offer);
+      arms[0].grip = mix(arms[0].grip, .28, oracle.offer);
+      arms[1].shoulder = mix(arms[1].shoulder, -.42, oracle.listen);
+      arms[1].elbow = mix(arms[1].elbow, -1.02, oracle.listen);
+    } else {
+      arms[0].shoulder = mix(arms[0].shoulder, -.66, oracle.receive);
+      arms[0].elbow = mix(arms[0].elbow, -1.34, oracle.receive);
+      arms[0].outward = mix(arms[0].outward, -.14, oracle.receive);
+      arms[0].grip = mix(arms[0].grip, .38, oracle.receive);
+    }
+  }
   if (input.performance && !['touch', 'connect'].includes(input.performance)) for (let i = 0; i < 2; i++) {
     const afloat = input.performance === 'float'; const raised = input.performance === 'lift';
     arms[i].shoulder = raised ? -2 : -.5 + (afloat ? Math.sin(state.time * 2 + i) * .2 : 0);
     arms[i].elbow = -.7; arms[i].outward = (i ? 1 : -1) * (afloat ? .65 : .25); arms[i].grip = raised ? .8 : .1;
     legs[i].hip = -.2; legs[i].knee = .45 + (afloat ? Math.sin(state.time * 1.8 + i * Math.PI) * .15 : 0);
   }
-  return { legs, arms, hipHeight, twist, lean: run * .12 + state.landing * .12 + state.airborne * .04 + extension * .10 - kick * .27 - recoil * .35 + (input.crouching ? .26 : 0) + (input.riding ? .2 : 0),
+  const oracleLean = oracle && input.oracleVisit?.role === 'oracle' ? oracle.inspect * .07 : 0;
+  const oracleLook = oracle && input.oracleVisit ? (input.oracleVisit.role === 'oracle' ? oracle.listen * .12 : -oracle.listen * .09) : 0;
+  return { legs, arms, hipHeight, twist, lean: run * .12 + state.landing * .12 + state.airborne * .04 + extension * .10 - kick * .27 - recoil * .35 + (input.crouching ? .26 : 0) + (input.riding ? .2 : 0) + oracleLean,
     sway: Math.sin(cycle) * moving * .035, lunge: extension * .16 - kick * .25 - recoil * .22 - dodging * .35,
-    roll: -state.turn * run * .035 - dodging * .22, headTurn: -twist * .65 + glance, moving, run, airborne: state.airborne,
+    roll: -state.turn * run * .035 - dodging * .22, headTurn: -twist * .65 + glance + oracleLook, moving, run, airborne: state.airborne,
     coat: moving * (.10 + run * .3) + state.airborne * .18 + kick * .35, impact: extension, landing: state.landing };
 }
