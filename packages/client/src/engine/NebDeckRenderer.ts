@@ -18,6 +18,10 @@ export class NebDeckRenderer {
   private glass = this.material(new THREE.MeshPhysicalMaterial({ color: 0x879b94, transparent: true, opacity: .23, roughness: .18, metalness: .22, side: THREE.DoubleSide, depthWrite: false }));
   private gantry = new THREE.Group();
   private needles: THREE.Mesh[] = [];
+  private downloadRig = new THREE.Group();
+  private downloadConnector = new THREE.Group();
+  private downloadBars: THREE.Mesh[] = [];
+  private downloadPulse = this.material(new THREE.MeshBasicMaterial({ color: 0x8cf4b8, toneMapped: false }));
 
   constructor(private root: THREE.Group) {
     this.hull();
@@ -124,6 +128,27 @@ export class NebDeckRenderer {
       this.cylinder(this.root, i % 4 === 0 ? this.amber : this.screen, Math.sin(angle) * 9.5, .18, Math.cos(angle) * 9.5, .05, .22);
     }
     this.pointLight('neb-core-task-light', 0xb9d8cb, 210, 28, 0, 10, 0);
+    this.trainingUpload();
+  }
+
+  private trainingUpload(): void {
+    this.downloadRig.name = 'neb-training-upload-rig'; this.downloadRig.visible = false; this.root.add(this.downloadRig);
+    this.box(this.downloadRig, this.steel, 6.5, 8.8, -5, 5.6, .36, .55, 'neb-training-overhead-rail');
+    this.box(this.downloadRig, this.dark, 6.5, 7.25, -5, .48, 3.2, .48);
+    this.downloadConnector.name = 'neb-training-jack'; this.downloadConnector.position.set(6.5, 5.8, -5); this.downloadRig.add(this.downloadConnector);
+    const collar = this.cylinder(this.downloadConnector, this.steel, 0, 0, 0, .18, .65); collar.rotation.z = Math.PI / 2;
+    const plug = this.cylinder(this.downloadConnector, this.downloadPulse, 0, -.43, 0, .075, .38); plug.rotation.z = Math.PI / 2;
+    const cable = this.mesh(this.downloadRig, new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
+      new THREE.Vector3(6.5, 9, -5), new THREE.Vector3(8.6, 10.8, -5), new THREE.Vector3(11.5, 9.2, -5),
+    ]), 24, .11, 8), this.rubber, 'neb-training-cable'); cable.castShadow = true;
+    const panel = new THREE.Group(); panel.name = 'neb-training-progress'; panel.position.set(10.78, 4.5, -5); panel.rotation.y = -Math.PI / 2; this.downloadRig.add(panel);
+    this.box(panel, this.dark, 0, 0, 0, 2.2, 2.6, .22);
+    for (let i = 0; i < 10; i++) {
+      const bar = this.box(panel, this.downloadPulse, -.72 + i % 2 * .96, .85 - Math.floor(i / 2) * .42, .13, .7, .13, .035, `neb-training-bar-${i}`);
+      this.downloadBars.push(bar);
+    }
+    for (let i = 0; i < 4; i++) this.cylinder(panel, i === 3 ? this.amber : this.steel, -.75 + i * .5, -1.02, .14, .075, .05).rotation.x = Math.PI / 2;
+    const light = new THREE.PointLight(0x86e9ad, 0, 11, 2); light.name = 'neb-training-jack-light'; light.position.set(6.5, 5, -5); this.downloadRig.add(light); this.lights.add(light);
   }
 
   private mess(): void {
@@ -150,6 +175,18 @@ export class NebDeckRenderer {
       needle.position.y = Number(needle.userData.baseY) - descend * (.18 + (i % 3) * .07);
       needle.visible = Boolean(recovery);
     });
+    const training = journey?.scene === 'm1_download' && !journey.visiting && journey.training?.kind === 'download' ? journey.training : undefined;
+    this.downloadRig.visible = Boolean(training);
+    if (training) {
+      const contact = training.started ? THREE.MathUtils.smoothstep(training.elapsed, .25, 1.7) : 0;
+      this.downloadConnector.position.y = 5.8 - contact * 2.05;
+      this.downloadConnector.rotation.z = Math.sin(training.elapsed * 13) * .015 * contact;
+      const filled = Math.floor(training.elapsed / 10 * this.downloadBars.length);
+      this.downloadBars.forEach((bar, index) => { bar.visible = index < filled || training.started && index === filled && Math.sin(elapsed * 10) > 0; });
+      const jackLight = this.downloadRig.getObjectByName('neb-training-jack-light') as THREE.PointLight;
+      jackLight.intensity = training.started ? 130 + Math.sin(elapsed * 17) * 22 : 24;
+      this.downloadPulse.color.setHex(training.elapsed > 8.8 ? 0xd8ffd9 : 0x8cf4b8);
+    }
   }
 
   dispose(): void {
@@ -157,6 +194,6 @@ export class NebDeckRenderer {
     this.geometries.forEach(geometry => geometry.dispose());
     this.materials.forEach(material => material.dispose());
     this.lights.forEach(light => light.dispose());
-    this.geometries.clear(); this.materials.clear(); this.lights.clear(); this.needles = [];
+    this.geometries.clear(); this.materials.clear(); this.lights.clear(); this.needles = []; this.downloadBars = [];
   }
 }

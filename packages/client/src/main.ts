@@ -246,6 +246,8 @@ controls.onMenu = () => playerUI.openRoster();
 controls.onHUD = () => playerUI.toggleHUD();
 const sandboxUI = new SandboxUI(command => socket.send('sandbox_action', command), open => {
   controls.setEnabled(!open); engine.audio.setReading('sandbox', open);
+}, (kind, combo) => {
+  if (!controls.triggerCombat(kind, true, combo)) socket.send('player_action', { kind });
 });
 const audioPanel = new AudioPanel(engine.audio, open => {
   if (open) sandboxUI.close();

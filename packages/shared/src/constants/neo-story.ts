@@ -115,5 +115,6 @@ export const NEO_ANOMALIES = [
   { id: 'commute', title: '一样的乘客', places: ['subway_station', 'downtown', 'central_park', 'times_square'], text: '街上三位行人的步伐像是同一段动作。你停下时，他们同时看向了你。', inspect: '你改走另一条街，其中一人竟已经等在前面，继续读同一页报纸。' },
 ];
 export function neoSkillUnlocked(life: NeoLifeState | undefined, slot: number): boolean {
-  return !life || life.chapter > NEO_CHAPTERS.findIndex(c => c.id === (slot ? 'the_one' : 'training'));
+  const filmTraining = slot === 0 && Boolean(life?.journey?.dojo?.complete || life?.journey?.completed.includes('m1_dojo'));
+  return !life || filmTraining || life.chapter > NEO_CHAPTERS.findIndex(c => c.id === (slot ? 'the_one' : 'training'));
 }

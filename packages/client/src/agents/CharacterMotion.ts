@@ -1,4 +1,4 @@
-import { MELEE_COMBO, COMBO_WINDOW, COMBAT_SKILLS, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED, type CombatSkillId, type AwakeningPose, type AwakeningReveal, type OfficePhone, pillPose, lafayetteWelcomePose, type PillGesture, type InterrogationGesture, type LafayetteWelcomeGesture } from '@auto_matrix/shared';
+import { MELEE_COMBO, COMBO_WINDOW, COMBAT_SKILLS, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED, type CombatSkillId, type AwakeningPose, type AwakeningReveal, type OfficePhone, pillPose, lafayetteWelcomePose, type PillGesture, type InterrogationGesture, type LafayetteWelcomeGesture, type TrainingGesture } from '@auto_matrix/shared';
 
 export interface MotionInput {
   speed: number;
@@ -22,6 +22,7 @@ export interface MotionInput {
   performance?: AwakeningPose;
   recovery?: number;
   reveal?: AwakeningReveal;
+  training?: TrainingGesture;
   mirror?: number;
   spoon?: number;
   phone?: OfficePhone;

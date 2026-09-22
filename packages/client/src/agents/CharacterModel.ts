@@ -195,6 +195,7 @@ export class CharacterModels {
       cloth: state.appearance.clothing, leather: state.faction === 'zion', coat: false,
       hair: state.id === 'spoon_boy' ? 'bald' : 'short', glasses: state.faction === 'civilians' || state.faction === 'oracle' ? 'none' : 'square',
     };
+    if (state.id === 'citizen_2') look.cloth = '#a21722';
     const root = new THREE.Group(); const detail = this.joint(root, 0, 0);
     if (state.id === 'spoon_boy') { root.scale.setScalar(.73); look.cloth = '#d5c7ac'; look.skin = '#d8b99b'; }
     const torso = this.joint(detail, 0, 1.86); const smallDetails = this.joint(detail, 0, 0);
@@ -215,6 +216,10 @@ export class CharacterModels {
     const jacket = this.geometry(new THREE.LatheGeometry(bodyPoints, 40));
     this.mesh(torso, jacket, cloth, [0, 0, 0], [1, 1, 0.59]);
     this.mesh(torso, this.sphere, cloth, [0, .02, 0], [look.hips, .22, look.hips * .59]);
+    if (state.id === 'citizen_2') {
+      const skirt = this.mesh(detail, this.geometry(new THREE.CylinderGeometry(.49, .82, 2.35, 32, 4, true)), cloth, [0, 1.27, 0]);
+      skirt.name = 'red-dress-skirt'; skirt.scale.z = .68;
+    }
     this.mesh(torso, this.cylinder, skin, [0, 1.79, 0], [0.145, 0.25, 0.135]);
     // Raised collars, seams, belt and tailored panels are visible from all sides.
     if (state.faction !== 'machines') {
@@ -415,6 +420,15 @@ export class CharacterModels {
         vertices.setXYZ(v, clothX * Math.cos(angle) + clothZ * Math.sin(angle), y + hem * pose.coat * .18, clothZ * Math.cos(angle) - clothX * Math.sin(angle));
       }
       vertices.needsUpdate = true; panel.mesh.geometry.computeVertexNormals();
+    }
+    if (input.training?.kind === 'download' && input.training.role === 'tank') {
+      const engaged = input.training.elapsed > 0 ? 1 : .35;
+      for (let i = 0; i < 2; i++) {
+        rig.shoulders[i].rotation.x = -.72 * engaged; rig.shoulders[i].rotation.z = (i ? 1 : -1) * .24;
+        rig.elbows[i].rotation.x = -1.05 + Math.sin(input.training.elapsed * 11 + i * 2) * .08 * engaged;
+        for (const finger of rig.fingers[i]) finger.rotation.x = -.45 - Math.sin(input.training.elapsed * 15 + i) * .18 * engaged;
+      }
+      rig.head.rotation.y = Math.sin(input.training.elapsed * .8) * .12;
     }
   }
 

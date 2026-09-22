@@ -439,6 +439,38 @@ export class HeroModels {
         }
       }
     }
+    if (input.training) {
+      const { kind, elapsed: t, role } = input.training;
+      if (kind === 'download' && role === 'neo') {
+        const connected = THREE.MathUtils.smoothstep(t, .4, 1.8); const waking = THREE.MathUtils.smoothstep(t, 8.2, 9.7);
+        pelvis.rotation.x -= .2 * connected * (1 - waking); bone('spine').rotation.x += .12 * connected; bone('chest').rotation.x += .18 * connected;
+        bone('head').rotation.x += .08 * connected - .13 * waking;
+        const tremor = t > 2 && t < 7.4 ? Math.sin(t * 18) * .022 : 0;
+        for (const side of ['R', 'L']) { bone('shoulder_' + side).rotation.x -= .18 * connected + tremor; bone('elbow_' + side).rotation.x -= .42 * connected; }
+        bone('wrist_R').rotation.z += Math.sin(t * 11) * .025 * connected;
+      } else if (kind === 'jump' && role === 'morpheus') {
+        const launch = THREE.MathUtils.smoothstep(t, .65, 1.22); const land = THREE.MathUtils.smoothstep(t, 2.85, 3.35);
+        bone('spine').rotation.x -= .34 * launch * (1 - land); bone('chest').rotation.x -= .28 * launch * (1 - land);
+        for (const side of ['R', 'L']) {
+          bone('shoulder_' + side).rotation.x = THREE.MathUtils.lerp(bone('shoulder_' + side).rotation.x, .9, launch * (1 - land));
+          bone('elbow_' + side).rotation.x = THREE.MathUtils.lerp(bone('elbow_' + side).rotation.x, -.65, launch * (1 - land));
+          bone('hip_' + side).rotation.x -= .32 * launch * (1 - land); bone('knee_' + side).rotation.x += .58 * launch * (1 - land);
+        }
+      } else if (kind === 'red_dress') {
+        const freeze = THREE.MathUtils.smoothstep(t, 4.7, 5.35); const reveal = THREE.MathUtils.smoothstep(t, 6.1, 6.9);
+        if (role === 'neo') {
+          bone('head').rotation.y += THREE.MathUtils.lerp(-.22, .18, reveal) * freeze;
+          bone('spine').rotation.y -= .08 * reveal; bone('chest').rotation.y -= .12 * reveal;
+        } else if (role === 'morpheus') {
+          bone('shoulder_R').rotation.x -= .72 * freeze; bone('shoulder_R').rotation.z -= .35 * freeze;
+          bone('elbow_R').rotation.x -= .76 * freeze; bone('head').rotation.y += .16 * reveal;
+        } else if (role === 'smith') {
+          bone('shoulder_R').rotation.x = THREE.MathUtils.lerp(bone('shoulder_R').rotation.x, -1.16, reveal);
+          bone('shoulder_R').rotation.z -= .18 * reveal; bone('elbow_R').rotation.x = THREE.MathUtils.lerp(bone('elbow_R').rotation.x, -.34, reveal);
+          bone('shoulder_L').rotation.x -= .34 * reveal; bone('elbow_L').rotation.x -= .5 * reveal;
+        }
+      }
+    }
     rig.root.updateWorldMatrix(true, true);
     if (input.grounded && !input.meeting && !input.interrogation && !input.riding && input.climbing === undefined && (!input.performance || input.performance === 'connect')) {
       let lowest = Infinity;

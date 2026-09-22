@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, filmReflections, filmStepPosition, filmEntry, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, ambushCat, type AgentState, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, filmReflections, filmStepPosition, filmEntry, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -341,13 +341,127 @@ test('old saves at authored reveal checkpoints are upgraded into explicit player
   }
 });
 
+test('training download waits for Neo, pauses with the world, survives reconnect and finishes in the core chair', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  const desert = FILM_SCENE_BY_ID.m1_desert;
+  Object.assign(state, { scene: desert.id, actor: 'neo', step: desert.steps.length, awakening: undefined });
+  h.command('next');
+  assert.equal(state.scene, 'm1_download');
+  assert.deepEqual(state.training, { kind: 'download', elapsed: 0, started: false });
+  const chair = { ...h.actor().position }; h.advance(20);
+  assert.deepEqual(h.actor().position, chair, 'the program cannot load before Neo explicitly starts it');
+  h.players.possess('other-player', 'tank', h.tick());
+  assert.match(h.command('act'), /Tank|另一位玩家/); assert.equal(state.training!.started, false);
+  h.players.release('other-player', h.tick()); h.command('act');
+  assert.equal(state.training!.started, true);
+  for (let i = 0; i < 34; i++) h.players.step(.1, true, h.tick());
+  const elapsed = state.training!.elapsed; const saved = JSON.parse(JSON.stringify(h.sandbox.state));
+  h.players.step(.8, false, h.tick()); assert.equal(state.training!.elapsed, elapsed);
+  h.sandbox.restore(saved); h.players.release('film-player', h.tick()); h.advance(20);
+  assert.equal(h.sandbox.life.film.state!.training!.elapsed, elapsed, 'disconnecting cannot finish a knowledge upload');
+  h.players.possess('film-player', 'neo', h.tick());
+  for (let i = 0; i < 120 && h.sandbox.life.film.state!.step === 0; i++) h.players.step(.1, true, h.tick());
+  assert.equal(h.sandbox.life.film.state!.step, 1);
+  assert.equal(h.sandbox.life.film.state!.training!.elapsed, 10);
+});
+
+test('the dojo requires reading Morpheus attack, dodging it and landing an ordered three-hit counter', t => {
+  let now = 100_000; t.mock.method(Date, 'now', () => now);
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  const download = FILM_SCENE_BY_ID.m1_download;
+  Object.assign(state, { scene: download.id, actor: 'neo', step: download.steps.length, training: undefined });
+  h.command('next'); assert.equal(state.scene, 'm1_dojo');
+  h.actor().position = filmStepPosition(FILM_SCENE_BY_ID.m1_dojo, FILM_SCENE_BY_ID.m1_dojo.steps[0]);
+  h.actor().rotation = Math.PI;
+  h.command('act'); const threat = h.sandbox.state.threats[0];
+  assert.equal(threat.character, 'morpheus'); assert.equal(threat.health, 999);
+  const facing = { x: Math.sin(h.actor().rotation), z: Math.cos(h.actor().rotation) };
+  assert.ok((threat.position.x - h.actor().position.x) * facing.x + (threat.position.z - h.actor().position.z) * facing.z > 0,
+    'the duel opponent starts in front of the player camera');
+  h.actor().position = { ...threat.position, z: threat.position.z + 2 }; h.actor().rotation = Math.PI;
+  h.sandbox.attack(h.actor(), h.tick(), 2);
+  assert.equal(state.dojo?.combo, 0, 'kicks before observing the lesson cannot skip its first stage');
+  assert.equal(threat.health, 999, 'Morpheus blocks damage until Neo reads and dodges the lesson');
+  threat.stunUntil = h.tick();
+  threat.attackAt = h.tick() + 2; threat.lastStrike = h.tick();
+  const health = h.actor().health; h.players.act('film-player', 'dodge', h.tick());
+  assert.equal(state.dojo?.dodged, true);
+  assert.equal(threat.attackAt, undefined, 'pressing dodge during the visible windup cancels the lesson strike immediately');
+  h.players.step(.1, true, h.tick());
+  const targetYaw = Math.atan2(threat.position.x - h.actor().position.x, threat.position.z - h.actor().position.z);
+  assert.ok(Math.abs(Math.atan2(Math.sin(h.actor().rotation - targetYaw), Math.cos(h.actor().rotation - targetYaw))) < .01,
+    'the lesson keeps Neo facing Morpheus after the dodge so the counter can connect');
+  h.players.step(.1, true, h.tick()); h.players.step(.1, true, h.tick());
+  h.advance(20); assert.equal(h.actor().health, health, 'Morpheus holds his guard instead of repeatedly damaging Neo during the counter lesson');
+  h.actor().position = { ...threat.position, z: threat.position.z + 2 }; h.actor().rotation = 0;
+  h.players.receiveInput('film-player', { x: 0, z: 0, yaw: 0, jump: false, sprint: false, sequence: 1 });
+  h.players.act('film-player', 'attack', h.tick());
+  h.players.receiveInput('film-player', { x: 0, z: 0, yaw: 0, jump: false, sprint: false, sequence: 2 });
+  h.players.step(.1, true, h.tick()); h.players.step(.1, true, h.tick());
+  assert.equal(state.dojo?.combo, 1, 'the first real attack input locks back onto Morpheus and lands');
+  h.advance(20); assert.equal(h.actor().health, health, 'landing a counter does not release Morpheus from his guard');
+  now += 1_600;
+  h.actor().position = { ...threat.position, z: threat.position.z + 2 }; h.actor().rotation = 0;
+  h.players.receiveInput('film-player', { x: 0, z: 0, yaw: 0, jump: false, sprint: false, sequence: 3 });
+  h.players.act('film-player', 'attack', h.tick()); h.players.step(.1, true, h.tick()); h.players.step(.1, true, h.tick());
+  assert.equal(state.dojo?.combo, 2, 'the dojo leaves enough time to read the HUD and perform the straight punch');
+  const saved = JSON.parse(JSON.stringify(h.sandbox.state)); h.sandbox.restore(saved);
+  assert.equal(h.sandbox.life.film.state!.dojo?.combo, 2, 'counter sequence survives a reload');
+  h.players.release('film-player', h.tick()); h.players.possess('film-player', 'neo', h.tick()); now += 5_000;
+  const restored = h.sandbox.state.threats[0]; h.actor().position = { ...restored.position, z: restored.position.z + 2 }; h.actor().rotation = 0;
+  h.players.receiveInput('film-player', { x: 0, z: 0, yaw: 0, jump: false, sprint: false, sequence: 1 });
+  h.players.act('film-player', 'attack', h.tick()); h.players.step(.1, true, h.tick()); h.players.step(.1, true, h.tick()); h.players.step(.1, true, h.tick()); h.advance();
+  assert.equal(h.sandbox.life.film.state!.step, 1); assert.equal(h.sandbox.state.threats.length, 0);
+  assert.equal(h.world.agents.get('morpheus')!.status, 'alive');
+  assert.equal(neoSkillUnlocked(h.sandbox.state.neoLife, 0), true, 'the authored dojo unlocks Neo bullet time too');
+});
+
+test('Morpheus demonstrates the rooftop jump before Neo can attempt the recoverable gap', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  const dojo = FILM_SCENE_BY_ID.m1_dojo;
+  Object.assign(state, { scene: dojo.id, actor: 'neo', step: dojo.steps.length, fighting: undefined, dojo: undefined });
+  h.command('next'); const scene = FILM_SCENE_BY_ID.m1_jump; assert.equal(state.scene, scene.id);
+  h.actor().position = filmStepPosition(scene, scene.steps[0]); h.advance(); assert.equal(state.step, 1);
+  const morpheus = h.world.agents.get('morpheus')!; const before = { ...morpheus.position };
+  h.command('act'); assert.deepEqual(state.training, { kind: 'jump', elapsed: 0, started: true });
+  for (let i = 0; i < 18; i++) h.players.step(.1, true, h.tick());
+  assert.ok(morpheus.position.y > FILM_SETS[scene.set].center.y + 3, 'Morpheus follows a visible arc over the alley');
+  const elapsed = state.training!.elapsed; h.players.step(.5, false, h.tick()); assert.equal(state.training!.elapsed, elapsed);
+  for (let i = 0; i < 50; i++) h.players.step(.1, true, h.tick());
+  assert.equal(state.training!.elapsed, 4); assert.ok(morpheus.position.z < before.z - 18);
+  assert.equal(state.step, 1, 'the demonstration does not perform Neo jump for the player');
+});
+
+test('the red-dress attention test is player-started, freezes the crowd and replaces a civilian with Smith', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  const jump = FILM_SCENE_BY_ID.m1_jump;
+  Object.assign(state, { scene: jump.id, actor: 'neo', step: jump.steps.length, training: undefined });
+  h.command('next'); const scene = FILM_SCENE_BY_ID.m1_red_dress; assert.equal(state.scene, scene.id);
+  h.actor().position = filmStepPosition(scene, scene.steps[0]); h.advance(); assert.equal(state.step, 1);
+  assert.deepEqual(state.training, { kind: 'red_dress', elapsed: 0, started: false });
+  const woman = h.world.agents.get('citizen_2')!; const civilian = h.world.agents.get('citizen_1')!; const smith = h.world.agents.get('smith')!;
+  assert.equal(woman.status, 'alive'); assert.equal(civilian.status, 'alive'); assert.equal(smith.status, 'disconnected');
+  h.advance(20); assert.equal(state.training!.elapsed, 0);
+  h.command('act'); for (let i = 0; i < 70; i++) h.players.step(.1, true, h.tick());
+  assert.equal(civilian.status, 'disconnected'); assert.equal(smith.status, 'alive');
+  assert.ok(h.actor().rotation > -1 && h.actor().rotation < 1, 'Neo is turned back toward the agent reveal');
+  const saved = JSON.parse(JSON.stringify(h.sandbox.state)); const elapsed = state.training!.elapsed;
+  h.sandbox.restore(saved); h.players.release('film-player', h.tick()); h.advance(20);
+  assert.equal(h.sandbox.life.film.state!.training!.elapsed, elapsed);
+  h.players.possess('film-player', 'neo', h.tick());
+  for (let i = 0; i < 80 && h.sandbox.life.film.state!.step === 1; i++) h.players.step(.1, true, h.tick());
+  assert.equal(h.sandbox.life.film.state!.step, 2); assert.ok(h.sandbox.life.film.state!.completed.includes(scene.id));
+});
+
 test('the first rooftop jump uses gravity and a recoverable fall rather than a timer', () => {
   const h = setup(); h.command('start'); const state = h.sandbox.life.film.state!;
   const scene = FILM_SCENE_BY_ID.m1_jump; state.scene = scene.id; state.actor = scene.actor; state.step = 0;
   h.players.possess('film-player', 'neo', h.tick()); h.actor().isInMatrix = true; h.actor().currentLocation = scene.set;
   h.actor().position = filmStepPosition(scene, scene.steps[0]); h.advance();
   assert.equal(state.step, 1);
-  h.command('act'); h.advance(30); assert.equal(state.step, 1, 'waiting must not complete a jump');
+  h.command('act');
+  for (let frame = 0; frame < 41; frame++) h.players.step(.1, true, h.tick());
+  h.advance(30); assert.equal(state.step, 1, 'watching Morpheus must not complete Neo jump');
   let vy = 0; let falling = false;
   for (let frame = 0; frame < 180 && state.step === 1; frame++) {
     const move = stepPlayer(h.actor().position, vy, { x: 0, z: -1, yaw: Math.PI, sprint: true, jump: frame === 9, sequence: frame }, 1 / 60, true);
@@ -372,9 +486,17 @@ test('Morpheus and Seraph take part in their own nonlethal duels without cloning
     h.players.release('other-player', h.tick()); h.command('act');
     assert.equal(h.sandbox.state.threats.length, 1); const threat = h.sandbox.state.threats[0];
     assert.equal(threat.character, opponent);
-    for (let hits = 0; threat.health > 0 && hits < 20; hits++) {
-      h.actor().position = { ...threat.position, z: threat.position.z + 2 }; h.actor().rotation = Math.PI;
-      h.sandbox.attack(h.actor(), h.tick(), 2);
+    if (id === 'm1_dojo') {
+      h.sandbox.life.film.trainingDodge(h.actor(), threat, h.tick());
+      for (const combo of [0, 1, 2]) {
+        h.actor().position = { ...threat.position, z: threat.position.z + 2 }; h.actor().rotation = Math.PI;
+        h.sandbox.attack(h.actor(), h.tick(), combo);
+      }
+    } else {
+      for (let hits = 0; threat.health > 0 && hits < 20; hits++) {
+        h.actor().position = { ...threat.position, z: threat.position.z + 2 }; h.actor().rotation = Math.PI;
+        h.sandbox.attack(h.actor(), h.tick(), 2);
+      }
     }
     h.advance(); assert.equal(state.step, 1); assert.equal(h.world.agents.get(opponent)!.status, 'alive');
     assert.notEqual(h.world.agents.get(opponent)!.currentAction?.parameters.filmDuel, true);
@@ -503,6 +625,8 @@ test('the entire film route completes through interactions, driving and real com
       else if (step.kind === 'interact') {
         h.command('act');
         if (scene.id === 'm1_pills') for (let frame = 0; frame < 51; frame++) h.players.step(.1, true, h.tick());
+        else if (scene.id === 'm1_download') for (let frame = 0; frame < 101; frame++) h.players.step(.1, true, h.tick());
+        else if (scene.id === 'm1_red_dress') for (let frame = 0; frame < 121; frame++) h.players.step(.1, true, h.tick());
         else if (scene.id === 'm1_bridge') {
           for (let frame = 0; frame < 81; frame++) h.players.step(.1, true, h.tick());
           h.command('meeting:stay'); assert.equal(state.scene, 'm1_bug'); break;
@@ -537,6 +661,18 @@ test('the entire film route completes through interactions, driving and real com
       else if (step.kind === 'drive') { h.command('act'); rideToExit(h); }
       else {
         h.command('act'); h.advance(); assert.ok(h.sandbox.state.threats.length > 0, scene.id);
+        if (scene.id === 'm1_dojo') {
+          const target = h.sandbox.state.threats[0];
+          h.sandbox.life.film.trainingDodge(actor, target, h.tick());
+          for (const combo of [0, 1, 2]) {
+            actor.position = { ...target.position, z: target.position.z + 2 }; actor.rotation = Math.PI;
+            h.sandbox.attack(actor, h.tick(), combo);
+          }
+          h.advance();
+          assert.equal(target.health, 0, scene.id);
+          assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`);
+          continue;
+        }
         // Exercise the same hit, death and reward path as player melee, not direct removal.
         for (let round = 0; state.step === index && round < 20; round++) {
           for (const target of [...h.sandbox.state.threats]) {
@@ -550,6 +686,10 @@ test('the entire film route completes through interactions, driving and real com
         }
       }
       assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`);
+      if (scene.id === 'm1_jump' && index === 0) {
+        h.command('act');
+        for (let frame = 0; frame < 41; frame++) h.players.step(.1, true, h.tick());
+      }
     }
     assert.ok(state.completed.includes(scene.id)); if (!['m1_bridge', 'm1_bug'].includes(scene.id)) h.command('next');
     if (scene.id === 'm1_office_escape' && state.office?.crossing !== undefined) for (let frame = 0; frame < 65; frame++) h.players.step(.1, true, h.tick());

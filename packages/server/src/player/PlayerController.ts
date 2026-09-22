@@ -1,4 +1,4 @@
-import { LOCATIONS, heldPhone, pillLocked, filmSetAt, FILM_CAST, NEO_CAST, neoSkillUnlocked, insideLifeRoom, MELEE_COMBO, COMBO_WINDOW, LOBBY_FIRE_INTERVAL, COMBAT_SKILLS, playerSkills, dodgeDirection, combatDisplace, groundHeight, meleeReach, distance, locationEntrance, playerBlocked, stepPlayer, type AgentState, type PlayerInput, type SandboxCommand, type SkillCast, type Vector3, type CombatSkillId } from '@auto_matrix/shared';
+import { LOCATIONS, heldPhone, pillLocked, filmSetAt, FILM_CAST, NEO_CAST, neoSkillUnlocked, insideLifeRoom, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, LOBBY_FIRE_INTERVAL, COMBAT_SKILLS, playerSkills, dodgeDirection, combatDisplace, groundHeight, meleeReach, distance, locationEntrance, playerBlocked, stepPlayer, type AgentState, type PlayerInput, type SandboxCommand, type SkillCast, type Vector3, type CombatSkillId } from '@auto_matrix/shared';
 import type { SandboxSystem } from './SandboxSystem.js';
 import type { WorldState } from '../world/WorldState.js';
 import type { ConversationEngine } from '../agents/ConversationEngine.js';
@@ -154,9 +154,19 @@ export class PlayerController {
       if (!running || agent.status !== 'alive') { agent.velocity = { x: 0, y: 0, z: 0 }; this.sandbox?.life.film.hotelFrame(agent, 0, tick); session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue; }
       session.stagger = Math.max(0, session.stagger - dt);
       const stale = now - session.lastInput > 300;
-      const input = stale ? { ...idleInput(), yaw: session.input.yaw } : session.input;
+      let input = stale ? { ...idleInput(), yaw: session.input.yaw } : session.input;
+      const lesson = this.sandbox?.life.film.state;
+      const sparring = session.strike && lesson?.scene === 'm1_dojo' && lesson.dojo?.dodged
+        ? this.sandbox!.state.threats.find(threat => threat.scene === lesson.scene && threat.character === 'morpheus') : undefined;
+      if (sparring) {
+        const yaw = Math.atan2(sparring.position.x - agent.position.x, sparring.position.z - agent.position.z);
+        input = { ...input, yaw }; session.input.yaw = yaw;
+      }
       this.sandbox?.life.film.hotelFrame(agent, dt, tick);
       if (this.sandbox?.life.film.awakeningFrame(agent, dt, tick)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
+      if (this.sandbox?.life.film.trainingFrame(agent, dt, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
       if (this.sandbox?.life.film.performing(agent)) {
@@ -257,9 +267,14 @@ export class PlayerController {
       return this.conversations.startConversation(agent.id, target.id, agent, target, undefined, tick) ? `正在与 ${target.name} 交谈。` : `${target.name} 暂时无法交谈，稍后再试。`;
     }
     if (kind === 'attack') {
+      const lesson = this.sandbox?.life.film.state;
+      const sparring = lesson?.scene === 'm1_dojo' && lesson.dojo?.dodged
+        ? this.sandbox!.state.threats.find(threat => threat.scene === lesson.scene && threat.character === 'morpheus') : undefined;
+      if (sparring) session.input.yaw = agent.rotation = Math.atan2(sparring.position.x - agent.position.x, sparring.position.z - agent.position.z);
       const elapsed = (Date.now() - session.lastAttack) / 1000;
       if (session.stagger > 0 || session.impulse || session.palm || session.strike && !session.strike.resolved || elapsed < MELEE_COMBO[session.combo].duration) return '';
-      session.combo = elapsed < COMBO_WINDOW ? (session.combo + 1) % MELEE_COMBO.length : 0;
+      session.combo = sparring && (session.lastAttack === 0 || elapsed < DOJO_COMBO_WINDOW) ? lesson!.dojo!.combo
+        : elapsed < COMBO_WINDOW ? (session.combo + 1) % MELEE_COMBO.length : 0;
       session.lastAttack = Date.now(); session.strike = { age: 0, resolved: false };
       agent.currentAction = { type: 'attack', parameters: { player: true, resolved: true, combo: session.combo }, startedAt: tick, duration: 1, progress: 0 };
       return '';
@@ -307,6 +322,12 @@ export class PlayerController {
     if (id === 'dodge' || id === 'scorpion_dash') {
       session.planar = { x: 0, z: 0 };
       session.impulse = { direction, remaining: skill.duration, speed: id === 'dodge' ? 16 : 20, strike: id === 'scorpion_dash' };
+      if (id === 'dodge') {
+        const warning = this.sandbox?.state.threats.find(threat => threat.target === agent.id && threat.attackAt !== undefined);
+        if (warning && this.sandbox!.life.film.trainingDodge(agent, warning, tick)) {
+          warning.attackAt = undefined; warning.stunUntil = Math.max(warning.stunUntil, tick + 3);
+        }
+      }
     } else if (id === 'crushing_palm') session.palm = { remaining: .18, yaw: agent.rotation };
     else if (id === 'field_patch') {
       for (const other of this.world.agents.values()) if (other.status === 'alive' && other.faction === agent.faction && other.isInMatrix === agent.isInMatrix && distance(other.position, agent.position) <= 10) other.health = Math.min(other.maxHealth, other.health + 25);

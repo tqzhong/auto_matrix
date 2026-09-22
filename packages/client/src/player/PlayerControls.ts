@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { FILM_SETS, OFFICE_CONTACT, LOBBY_FIRE_INTERVAL, groundHeight, playerBlocked, stepPlayer, MELEE_COMBO, COMBO_WINDOW, COMBAT_SKILLS, combatDisplace, PLAYER_WALK_SPEED, meleeReach, type OfficePhone, type AwakeningPose, type FreewayRide, type AgentState, type PlayerInput, type Vector3, type WorldStructure, type CombatImpact, type SkillCast } from '@auto_matrix/shared';
+import { FILM_SETS, OFFICE_CONTACT, LOBBY_FIRE_INTERVAL, groundHeight, playerBlocked, stepPlayer, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, COMBAT_SKILLS, combatDisplace, PLAYER_WALK_SPEED, meleeReach, trainingRoot, type OfficePhone, type AwakeningPose, type FreewayRide, type AgentState, type PlayerInput, type Vector3, type WorldStructure, type CombatImpact, type SkillCast } from '@auto_matrix/shared';
 import { lafayetteWelcomeCamera } from './LafayetteWelcomeCamera.js';
 import type { MotionInput } from '../agents/CharacterMotion.js';
 import { interrogationPose, meetingPose, meetingCarPose } from '@auto_matrix/shared';
@@ -117,9 +117,10 @@ export class PlayerControls {
     if (!event.repeat) {
       if (event.code === 'Space') { this.localJump = true; this.networkJump = true; }
       if (event.code === 'KeyE') this.action('talk');
-      if (event.code === 'KeyF') this.requestAttack();
+      if (event.code === 'KeyF') this.triggerCombat('attack');
       if (event.code === 'KeyH') this.onHUD?.();
-      if (['KeyQ', 'KeyC', 'KeyX'].includes(event.code) && this.running && this.authoritative?.status === 'alive') {
+      if (event.code === 'KeyX') this.triggerCombat('dodge');
+      if (['KeyQ', 'KeyC'].includes(event.code) && this.running && this.authoritative?.status === 'alive') {
         this.send(this.input(false)); this.action(event.code === 'KeyQ' ? 'ability' : event.code === 'KeyC' ? 'ability2' : 'dodge');
       }
       if (event.code === 'KeyT' && this.firearm) { this.firing = true; this.requestShot(); }
@@ -160,20 +161,31 @@ export class PlayerControls {
   };
   private click = (): void => { if (this.id && this.enabled && document.pointerLockElement !== this.canvas) this.lockPointer(); };
 
-  private requestAttack(): void {
-    if (this.ride || this.climbing || this.performing || this.spoon !== undefined) return;
-    if (!this.running || !this.enabled || this.authoritative?.status !== 'alive' || this.impulse || performance.now() - (this.motion.hit ?? -1000) < 220) return;
+  triggerCombat(kind: 'attack' | 'dodge', guided = false, guidedCombo?: number): boolean {
+    if (kind === 'attack') return this.requestAttack(guided, guidedCombo);
+    if (!this.running || !this.enabled || this.authoritative?.status !== 'alive') return false;
+    this.send(this.input(false)); this.action('dodge');
+    return true;
+  }
+
+  private requestAttack(guided = false, guidedCombo?: number): boolean {
+    if (this.ride || this.climbing || !guided && (this.performing || this.spoon !== undefined)) return false;
+    if (!this.running || !this.enabled || this.authoritative?.status !== 'alive' || !guided && (this.impulse || performance.now() - (this.motion.hit ?? -1000) < 220)) return false;
     const now = performance.now(); const elapsed = (now - this.lastAttack) / 1000;
     if (elapsed < MELEE_COMBO[this.attackCombo].duration) {
       if (MELEE_COMBO[this.attackCombo].duration - elapsed < .18) this.attackQueuedUntil = now + 200;
-      return;
+      return false;
     }
-    this.attackCombo = elapsed < COMBO_WINDOW ? (this.attackCombo + 1) % 3 : 0;
-    const target = !this.firstPerson && this.authoritative ? this.targets.filter(position => meleeReach(this.position, this.yaw, position, MELEE_COMBO[this.attackCombo].reach, this.authoritative!.isInMatrix, this.structures))
+    this.attackCombo = guidedCombo === undefined ? elapsed < (guided ? DOJO_COMBO_WINDOW : COMBO_WINDOW) ? (this.attackCombo + 1) % 3 : 0
+      : Math.max(0, Math.min(2, Math.floor(guidedCombo)));
+    const target = !this.firstPerson && this.authoritative ? this.targets.filter(position => meleeReach(this.position,
+      guided ? Math.atan2(position.x - this.position.x, position.z - this.position.z) : this.yaw,
+      position, MELEE_COMBO[this.attackCombo].reach, this.authoritative!.isInMatrix, this.structures))
       .sort((a, b) => Math.hypot(a.x - this.position.x, a.z - this.position.z) - Math.hypot(b.x - this.position.x, b.z - this.position.z))[0] : undefined;
     this.attackYaw = target ? Math.atan2(target.x - this.position.x, target.z - this.position.z) : this.yaw;
     this.lastAttack = now; this.attackQueuedUntil = 0; this.motion.attack = now; this.motion.combo = this.attackCombo;
     this.send(this.input(false)); this.action('attack');
+    return true;
   }
 
   private requestShot(): void {
@@ -235,6 +247,8 @@ export class PlayerControls {
     if (state.currentAction?.parameters.knock !== undefined) this.performing = true;
     if (this.motion.reveal && !state.currentAction?.parameters.reveal) this.performing = false;
     if (state.currentAction?.parameters.reveal) this.performing = true;
+    if (this.motion.training && !state.currentAction?.parameters.training) this.performing = false;
+    if (state.currentAction?.parameters.training) this.performing = true;
     if (this.wasPerforming && !this.performing) this.yaw = this.movementYaw = this.facing;
     this.wasPerforming = this.performing;
     this.motion.armed = this.firearm;
@@ -243,6 +257,7 @@ export class PlayerControls {
     this.motion.performance = this.performing ? state.currentAction?.parameters.filmPose as AwakeningPose : undefined;
     this.motion.recovery = state.currentAction?.parameters.recovery as number | undefined;
     this.motion.reveal = state.currentAction?.parameters.reveal as MotionInput['reveal'];
+    this.motion.training = state.currentAction?.parameters.training as MotionInput['training'];
     this.motion.mirror = this.mirror;
     this.motion.spoon = this.spoon;
     this.motion.phone = this.phone;
@@ -264,6 +279,7 @@ export class PlayerControls {
     if (this.motion.welcome && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
     if (this.motion.knock !== undefined && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
     if (this.motion.reveal && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
+    if (this.motion.training && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
     this.motion.officeShirt = state.id === 'neo' && state.currentLocation === 'film_agent_interrogation';
     if (this.motion.interrogation && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
     if (this.motion.pills && (!this.firstPerson || this.motion.pills.phase === 'offering' || this.motion.pills.elapsed > 9.6)) this.yaw = this.movementYaw = state.rotation;
@@ -293,7 +309,7 @@ export class PlayerControls {
     }
     const previous = { ...this.position };
     if (this.ride || this.climbing || this.performing) {
-      const blend = this.motion.pills || this.motion.interrogation || this.motion.meeting ? 1 : 1 - Math.exp(-20 * delta);
+      const blend = this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.training ? 1 : 1 - Math.exp(-20 * delta);
       this.position.x += (state.position.x - this.position.x) * blend; this.position.y += (state.position.y - this.position.y) * blend; this.position.z += (state.position.z - this.position.z) * blend;
       this.vy = 0; this.planar = { x: 0, z: 0 }; this.localJump = false;
     } else if (running && this.enabled && state.status === 'alive') {
@@ -317,11 +333,11 @@ export class PlayerControls {
     this.motion.speed = this.ride || this.climbing || this.performing ? 0 : Math.hypot(dx, dz) / Math.max(delta, .001);
     this.motion.grounded = Boolean(this.ride) || this.climbing || this.performing || this.position.y <= groundHeight(this.position, state.isInMatrix) + .12;
     this.motion.verticalVelocity = this.vy;
-    this.motion.inspecting = Boolean((this.motion.pills || this.motion.interrogation || this.motion.welcome || this.motion.knock !== undefined || this.motion.recovery !== undefined || this.motion.reveal) && !this.firstPerson) || Boolean(this.phone && this.performing && this.motion.window === undefined && this.motion.crossing === undefined) || this.spoon !== undefined && this.enabled && this.motion.speed < .25 && this.motion.grounded;
+    this.motion.inspecting = Boolean((this.motion.pills || this.motion.interrogation || this.motion.welcome || this.motion.knock !== undefined || this.motion.recovery !== undefined || this.motion.reveal || this.motion.training) && !this.firstPerson) || Boolean(this.phone && this.performing && this.motion.window === undefined && this.motion.crossing === undefined) || this.spoon !== undefined && this.enabled && this.motion.speed < .25 && this.motion.grounded;
     const attacking = (now - this.lastAttack) / 1000 < MELEE_COMBO[this.attackCombo].duration;
     const heading = this.ride || this.climbing || this.performing ? state.rotation : attacking ? this.attackYaw : this.firearm ? this.yaw : this.motion.speed > .1 ? Math.atan2(dx, dz) : this.facing;
     const turn = Math.atan2(Math.sin(heading - this.facing), Math.cos(heading - this.facing));
-    this.facing += turn * (this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.welcome || this.motion.knock !== undefined ? 1 : 1 - Math.exp(-14 * delta)); this.motion.turn = turn * 8;
+    this.facing += turn * (this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.welcome || this.motion.knock !== undefined || this.motion.training ? 1 : 1 - Math.exp(-14 * delta)); this.motion.turn = turn * 8;
     if (running && this.enabled && (this.motion.speed > .1 || this.ride || this.climbing) && !this.dragging && performance.now() - this.lastLook > 900) {
       const cameraTurn = Math.atan2(Math.sin(this.facing - this.yaw), Math.cos(this.facing - this.yaw));
       this.yaw += cameraTurn * (1 - Math.exp(-5 * delta));
@@ -332,7 +348,8 @@ export class PlayerControls {
     const interviewWide = !this.firstPerson && this.motion.interrogation && (this.motion.interrogation.phase === 'file' || this.motion.interrogation.phase === 'coercion' && this.motion.interrogation.elapsed > 5.3 && this.motion.interrogation.elapsed < 14);
     const welcomeWide = !this.firstPerson && this.motion.welcome && ['approach', 'departing'].includes(this.motion.welcome.phase);
     const revealWide = !this.firstPerson && Boolean(this.motion.reveal && (this.motion.reveal.kind === 'desert' ? this.motion.reveal.elapsed < 10.2 : this.motion.reveal.elapsed < 2.4));
-    this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, interviewWide || welcomeWide || revealWide ? 58 : this.motion.inspecting ? 42 : this.firstPerson ? sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
+    const trainingWide = !this.firstPerson && Boolean(this.motion.training && (this.motion.training.kind === 'jump' || this.motion.training.kind === 'red_dress' && this.motion.training.elapsed < 4.8));
+    this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, interviewWide || welcomeWide || revealWide || trainingWide ? 58 : this.motion.inspecting ? 42 : this.firstPerson ? sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
     this.camera.updateProjectionMatrix();
     this.cameraStep += this.motion.speed * delta;
     const target = new THREE.Vector3(this.position.x, this.position.y + (this.firstPerson ? 2.99 : 2.05) - (this.motion.pills ? .9 : 0) - (this.motion.reveal?.kind === 'construct' ? .62 : 0) - (this.motion.crouching ? 1.1 : 0), this.position.z);
@@ -352,7 +369,33 @@ export class PlayerControls {
     const verticalTarget = THREE.MathUtils.lerp(this.cameraTarget.y, target.y, 1 - Math.exp(-8 * delta));
     this.cameraTarget.lerp(target, 1 - Math.exp(-22 * delta)); this.cameraTarget.y = verticalTarget;
     const spoon = this.motion.inspecting && group.getObjectByName('held-spoon');
-    if (this.motion.reveal) {
+    if (this.motion.training) {
+      const gesture = this.motion.training; const center = FILM_SETS[state.currentLocation].center;
+      if (this.firstPerson) {
+        const seated = gesture.kind === 'download';
+        const eye = new THREE.Vector3(this.position.x, this.position.y + (seated ? 2.15 : 3), this.position.z);
+        const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
+        this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
+      } else {
+        const origin = new THREE.Vector3(center.x, center.y - 1, center.z); let ideal: THREE.Vector3; let focus: THREE.Vector3;
+        if (gesture.kind === 'download') {
+          const close = THREE.MathUtils.smoothstep(gesture.elapsed, .4, 2.2); const wake = THREE.MathUtils.smoothstep(gesture.elapsed, 8.2, 9.8);
+          ideal = new THREE.Vector3(1.2, 5.4, .8).lerp(new THREE.Vector3(8.5, 4.15, .1), close).lerp(new THREE.Vector3(2.3, 4.9, -1), wake);
+          focus = new THREE.Vector3(6.5, 2.35, -5).lerp(new THREE.Vector3(8.6, 3.15, -5), wake);
+        } else if (gesture.kind === 'jump') {
+          const root = trainingRoot({ kind: 'jump', elapsed: gesture.elapsed, started: true }, 'morpheus');
+          ideal = new THREE.Vector3(12, 7.8, -17).lerp(new THREE.Vector3(9, 5.8, -28), THREE.MathUtils.smoothstep(gesture.elapsed, 1.1, 3.4));
+          focus = new THREE.Vector3(root.x, Math.max(2.4, root.y + 1.8), root.z);
+        } else {
+          const turn = THREE.MathUtils.smoothstep(gesture.elapsed, 5.2, 6.6); const reveal = THREE.MathUtils.smoothstep(gesture.elapsed, 6.15, 7.1);
+          ideal = new THREE.Vector3(12.5, 5.2, -6).lerp(new THREE.Vector3(1.2, 4.1, -5.5), turn).lerp(new THREE.Vector3(12.8, 4.3, 11), reveal);
+          focus = new THREE.Vector3(7, 2.7, -18).lerp(new THREE.Vector3(7, 2.8, 7), turn);
+        }
+        ideal.add(origin); focus.add(origin);
+        if (resetCamera || gesture.elapsed < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-7 * delta));
+        this.camera.lookAt(focus);
+      }
+    } else if (this.motion.reveal) {
       const gesture = this.motion.reveal; const center = FILM_SETS[gesture.kind === 'construct' ? 'film_white_construct' : 'film_real_desert'].center;
       if (this.firstPerson) {
         const eye = new THREE.Vector3(this.position.x, this.position.y + (gesture.kind === 'construct' ? 2.35 : 3.02), this.position.z);

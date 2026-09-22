@@ -1,5 +1,6 @@
 import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_CAST, filmReflections, CHARACTERS, LOCATIONS, NEO_CHAPTERS, filmCharacterFates, filmEntry, filmPosition, filmStepPosition, locationEntrance, distance, playerBlocked, newFreewayRide, stepFreeway, OFFICE_LADDER, awakeningLocked, awakeningPose, AWAKENING_SECONDS, CONSTRUCT_REVEAL, DESERT_REVEAL, oracleActing,
-  AMBUSH_REWRITE, AMBUSH_SECONDS, AMBUSH_SEALS, OFFICE_CONTACT, OFFICE_WINDOW, OFFICE_CROSSING_SECONDS, officeCrossingPose, windowCrossing, phoneLocked, heldPhone, windowOpening, pillLocked, pillRoot, PILL_ROOM, PILL_TIMING, type DriveInput, type AgentState, type FilmScene, type FilmStep, type SandboxState } from '@auto_matrix/shared';
+  AMBUSH_REWRITE, AMBUSH_SECONDS, AMBUSH_SEALS, OFFICE_CONTACT, OFFICE_WINDOW, OFFICE_CROSSING_SECONDS, officeCrossingPose, windowCrossing, phoneLocked, heldPhone, windowOpening, pillLocked, pillRoot, PILL_ROOM, PILL_TIMING, trainingLocked, trainingRoot, trainingText, TRAINING_SECONDS,
+  type DriveInput, type AgentState, type FilmScene, type FilmStep, type SandboxState, type SandboxThreat, type TrainingRole } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
 import { LobbyCombatSystem } from './LobbyCombatSystem.js';
 import { OfficeEscapeSystem } from './OfficeEscapeSystem.js';
@@ -17,7 +18,7 @@ export class FilmStorySystem {
   get scene(): FilmScene | undefined { return this.state && FILM_SCENE_BY_ID[this.state.scene]; }
   get step(): FilmStep | undefined { return this.scene?.steps[this.state!.step]; }
   controls(agent: AgentState): boolean { return Boolean(this.state && this.state.actor === agent.id); }
-  performing(agent: AgentState): boolean { return this.controls(agent) && (awakeningLocked(this.state!) || oracleActing(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
+  performing(agent: AgentState): boolean { return this.controls(agent) && (awakeningLocked(this.state!) || trainingLocked(this.state!) || oracleActing(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
   hotelFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state; const hotel = state?.hotel;
     if (!state || !hotel || state.visiting || !this.controls(agent) || !['m1_pills', 'm1_mirror'].includes(state.scene)) return;
@@ -136,6 +137,19 @@ export class FilmStorySystem {
     actor.currentLocation = scene.set; actor.isInMatrix = FILM_SETS[scene.set].world === 'matrix';
     this.stageCast();
     this.awakeningFrame(actor, 0, this.world.simulationTick);
+  }
+  restoreTrainingSpace(): void {
+    const state = this.state; const scene = this.scene;
+    if (!state || !scene || state.visiting) return;
+    if (!state.training) {
+      const kind = state.scene === 'm1_download' && state.step === 0 ? 'download'
+        : state.scene === 'm1_jump' && state.step === 1 ? 'jump'
+        : state.scene === 'm1_red_dress' && state.step === 1 ? 'red_dress' : undefined;
+      if (kind) state.training = { kind, elapsed: 0, started: false };
+    }
+    if (state.scene === 'm1_dojo' && state.step === 0) state.dojo ??= { dodged: false, combo: 0, hits: 0 };
+    const actor = this.world.agents.get(state.actor);
+    if (actor && state.training && trainingLocked(state)) this.trainingFrame(actor, 0, this.world.simulationTick);
   }
   meetingFrame(agent: AgentState, focus: boolean, dt: number, tick: number): void {
     const state = this.state;
@@ -374,6 +388,74 @@ export class FilmStorySystem {
     if (wasPlaying && beat.elapsed >= AWAKENING_SECONDS[beat.kind]) this.advance(this.step!.text!, agent, tick);
     return true;
   }
+  trainingFrame(agent: AgentState, dt: number, tick: number): boolean {
+    const state = this.state; const training = state?.training;
+    if (!state || !training || !this.controls(agent) || !trainingLocked(state)) return false;
+    const roles: TrainingRole[] = training.kind === 'download' ? ['neo', 'tank']
+      : training.kind === 'jump' ? ['neo', 'morpheus']
+      : ['neo', 'morpheus', 'citizen_1', 'citizen_2', 'smith'];
+    const occupied = roles.find(id => id !== agent.id && this.world.agents.get(id)?.controller);
+    const playing = training.started && !occupied;
+    if (playing) training.elapsed = Math.min(TRAINING_SECONDS[training.kind], training.elapsed + Math.min(.1, dt));
+    for (const role of roles) {
+      const actor = this.world.agents.get(role);
+      if (!actor || actor.controller && actor !== agent) continue;
+      const before = { ...actor.position }; const root = trainingRoot(training, role);
+      actor.position = filmPosition(this.scene!.set, root.x, root.z); actor.position.y += root.y; actor.rotation = root.yaw;
+      actor.velocity = dt > 0 ? { x: (actor.position.x - before.x) / dt, y: (actor.position.y - before.y) / dt, z: (actor.position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
+      actor.currentLocation = this.scene!.set; actor.isInMatrix = FILM_SETS[this.scene!.set].world === 'matrix';
+      if (training.kind === 'red_dress' && role === 'citizen_1') actor.status = training.elapsed >= 6.2 ? 'disconnected' : 'alive';
+      else if (training.kind === 'red_dress' && role === 'smith') actor.status = training.elapsed >= 6.2 ? 'alive' : 'disconnected';
+      else actor.status = 'alive';
+      actor.currentAction = { type: actor.velocity.x || actor.velocity.y || actor.velocity.z ? 'move_to' : 'idle', parameters: {
+        player: role === agent.id, resolved: true, seated: training.kind === 'download' && role === 'neo', armed: training.kind === 'red_dress' && role === 'smith' && training.elapsed >= 6.2,
+        training: { kind: training.kind, elapsed: training.elapsed, role },
+      }, startedAt: tick, duration: 1, progress: 0 };
+    }
+    state.checkpoint = { ...agent.position };
+    state.lastText = occupied ? `训练暂停在当前动作：${this.world.agents.get(occupied)?.name ?? occupied} 正由另一位玩家控制。` : trainingText(training);
+    if (playing && training.elapsed >= TRAINING_SECONDS[training.kind]) {
+      if (training.kind === 'jump') {
+        agent.currentAction = null; agent.velocity = { x: 0, y: 0, z: 0 };
+        state.lastText = trainingText(training);
+      } else this.advance(this.step!.text!, agent, tick);
+    }
+    return true;
+  }
+  trainingDodge(agent: AgentState, threat: SandboxThreat, tick: number): boolean {
+    const state = this.state;
+    if (!state || state.scene !== 'm1_dojo' || state.step !== 0 || threat.scene !== state.scene || threat.character !== 'morpheus') return false;
+    const dojo = state.dojo ??= { dodged: false, combo: 0, hits: 0 };
+    if (dojo.dodged) return true;
+    dojo.dodged = true; dojo.combo = 0;
+    threat.stunUntil = Number.MAX_SAFE_INTEGER;
+    state.lastText = '你看见了 Morpheus 的起手并闪到攻击线外。现在按 F 完成刺拳、直拳、正蹬三段反击。';
+    agent.currentAction = { type: 'defend', parameters: { player: true, resolved: true }, startedAt: tick, duration: 1, progress: 0 };
+    return true;
+  }
+  trainingHit(agent: AgentState, threat: SandboxThreat, combo: number): boolean {
+    const state = this.state;
+    if (!state || state.scene !== 'm1_dojo' || state.step !== 0 || threat.scene !== state.scene || threat.character !== 'morpheus') return false;
+    const dojo = state.dojo ??= { dodged: false, combo: 0, hits: 0 };
+    if (!dojo.dodged) {
+      dojo.combo = 0; state.lastText = 'Morpheus 挡开了进攻。先等红色起手提示出现，用 X 闪避一次，再组织反击。'; return true;
+    }
+    const expected = dojo.combo;
+    if (combo !== expected) dojo.combo = combo === 0 ? 1 : 0;
+    else dojo.combo++;
+    dojo.hits++;
+    if (dojo.combo < 3) {
+      state.lastText = dojo.combo === 1 ? '刺拳命中。保持距离，在连击窗口内继续第二击。'
+        : dojo.combo === 2 ? '直拳接上。最后用正蹬结束这一组反击。'
+        : '节奏断开了。从刺拳重新开始三段连击。';
+      return true;
+    }
+    dojo.complete = true; threat.health = 0;
+    this.sandbox().threats = this.sandbox().threats.filter(item => item !== threat);
+    const morpheus = this.world.agents.get('morpheus'); if (morpheus && !morpheus.controller) morpheus.currentAction = null;
+    state.lastText = '闪避与三段反击完成。Morpheus 收起架势：下载的知识终于变成了你自己的动作。';
+    return true;
+  }
   climbing(agent: AgentState): boolean { return this.controls(agent) && !this.state?.visiting && this.state?.scene === 'm1_ledge' && this.state.step === 1 && this.state.office?.climbed !== undefined; }
   climbFrame(agent: AgentState, direction: number, dt: number, tick: number): boolean {
     if (!this.climbing(agent)) return false;
@@ -498,6 +580,11 @@ export class FilmStorySystem {
         this.awakeningFrame(agent, 0, tick);
         return state.awakening.kind === 'recovery' ? '已经接回医疗舱恢复，保留针疗和起身进度。' : '已经接回真相揭示，保留电视、讲解与身体动作进度。';
       }
+      if (state.training && trainingLocked(state)) {
+        agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
+        this.trainingFrame(agent, 0, tick);
+        return '已经接回训练程序，保留人物位置与演出进度。';
+      }
       this.clearThreats();
       delete state.ride;
       if (state.scene === 'm1_spoon' && state.step === 0 && state.oracle) delete state.oracle.spoon;
@@ -507,6 +594,7 @@ export class FilmStorySystem {
       if (state.awakening) state.awakening = state.scene === 'm1_pod' && state.step > 0 ? { kind: 'disconnect', elapsed: 9 } : undefined;
       if (state.office) { delete state.office.climbed; delete state.office.crossing; }
       if (state.scene === 'm1_lobby') this.lobby.reset();
+      if (state.scene === 'm1_dojo' && state.step === 0) state.dojo = { dodged: false, combo: 0, hits: 0 };
       if (state.scene === 'm1_office_escape' && state.office?.outcome !== 'captured') {
         this.office.start(tick);
         if (state.step >= 3) state.office!.window = OFFICE_WINDOW.seconds;
@@ -600,6 +688,16 @@ export class FilmStorySystem {
     }
     if (this.climbing(agent)) return 'W 沿梯子向下，S 向上。到达下方维修平台才能完成逃脱；停手会抓住当前横档。';
     if (windowOpening(state)) return '正在转动把手、推开窗扇。可以转动视角观察；开窗进度会保存。';
+    if (state.training && trainingLocked(state)) {
+      if (!state.training.started) {
+        if (target !== 'act') return trainingText(state.training);
+        const required = state.training.kind === 'download' ? ['tank'] : state.training.kind === 'jump' ? ['morpheus'] : ['morpheus', 'citizen_1', 'citizen_2', 'smith'];
+        const occupied = required.find(id => this.world.agents.get(id)?.controller);
+        if (occupied) return `${this.world.agents.get(occupied)?.name ?? occupied} 正由另一位玩家控制，训练停在当前画面。`;
+        state.training.started = true; this.trainingFrame(agent, 0, tick); return state.lastText;
+      }
+      return '训练演出进行中，可以转动视角观察；进度会自动保存。';
+    }
     if (state.awakening?.started === false) {
       const prompt = state.awakening.kind === 'recovery' ? '身体仍躺在医疗床上。按 G 示意船员开始恢复肌肉。'
         : state.awakening.kind === 'construct' ? '电视仍然关闭。按 G 请 Morpheus 开始说明。' : '灰烬中的讲解正在等待。按 G 请 Morpheus 继续。';
@@ -693,7 +791,7 @@ export class FilmStorySystem {
       return state.lastText;
     }
     if (state.scene === 'm3_mobil' && state.step === 0) return '沿站台走进黑色隧道，亲自寻找出口。';
-    if (state.scene === 'm1_jump' && state.step === 1) return 'Shift 助跑，空格起跳。训练中跌落会恢复检查点。';
+    if (state.scene === 'm1_jump' && state.step === 1) return 'Morpheus 已经完成示范。Shift 助跑，空格起跳；跌落会恢复检查点。';
     if (step.kind === 'reflect') return 'J 打开手记，记录自己的理解。';
     if (step.kind === 'drive') {
       if (this.world.agents.get('keymaker')?.controller) return '钥匙匠正在由另一位玩家控制，等待对方结束后再开始护送。';
@@ -742,6 +840,8 @@ export class FilmStorySystem {
     delete state.lobby;
     delete state.ride;
     delete state.awakening;
+    delete state.training;
+    delete state.dojo;
     delete state.pills;
     delete state.interrogation;
     if (!['m1_pills', 'm1_mirror'].includes(scene.id)) { delete state.hotel; this.sealHotelDoor(); }
@@ -773,6 +873,11 @@ export class FilmStorySystem {
       state.awakening = { kind: 'construct', elapsed: 0, started: false };
       this.awakeningFrame(actor, 0, tick);
     }
+    if (scene.id === 'm1_download') {
+      state.training = { kind: 'download', elapsed: 0, started: false };
+      this.trainingFrame(actor, 0, tick);
+    }
+    if (scene.id === 'm1_dojo') state.dojo = { dodged: false, combo: 0, hits: 0 };
     if (scene.id === 'm1_bug') this.meetingFrame(actor, false, 0, tick);
     if (scene.id === 'm1_wake_again' && state.office?.outcome === 'escaped') state.lastText = '脱身后，Morpheus 再次来电。前往 Adams Street 桥下，与接应者见面。';
     if (scene.id === 'm1_bug' && state.office?.outcome === 'escaped') state.lastText = '你没有被特工带走。Switch 仍要求做安全检查，确认没有追踪装置。';
@@ -844,6 +949,14 @@ export class FilmStorySystem {
       state.awakening = { kind: 'desert', elapsed: 0, started: false };
       this.awakeningFrame(agent, 0, tick); return;
     }
+    if (state.scene === 'm1_jump' && state.step === 1) {
+      state.training = { kind: 'jump', elapsed: 0, started: false };
+      this.trainingFrame(agent, 0, tick); return;
+    }
+    if (state.scene === 'm1_red_dress' && state.step === 1) {
+      state.training = { kind: 'red_dress', elapsed: 0, started: false };
+      this.trainingFrame(agent, 0, tick); return;
+    }
     if (this.step) return;
     if (!state.completed.includes(state.scene)) {
       state.completed.push(state.scene);
@@ -859,10 +972,13 @@ export class FilmStorySystem {
     for (const actor of this.world.agents.values()) if (actor.currentAction?.parameters.filmDuel) actor.currentAction = null;
   }
   private spawn(agent: AgentState, step: FilmStep, tick: number): void {
-    const kind = step.enemy ?? 'agent'; const health = step.opponent === 'morpheus' ? 80 : step.opponent === 'seraph' ? 100 : kind === 'smith' ? 135 : kind === 'sentinel' ? 58 : kind === 'training' ? 36 : 48;
+    const kind = step.enemy ?? 'agent'; const health = this.state?.scene === 'm1_dojo' ? 999 : step.opponent === 'morpheus' ? 80 : step.opponent === 'seraph' ? 100 : kind === 'smith' ? 135 : kind === 'sentinel' ? 58 : kind === 'training' ? 36 : 48;
     for (let i = 0; i < (step.enemies ?? 2); i++) {
       const angle = i * Math.PI * 2 / (step.enemies ?? 2);
-      let position = filmPosition(this.scene!.set, step.x + Math.sin(angle) * 9, step.z + Math.cos(angle) * 9);
+      const facing = agent.rotation + ((step.enemies ?? 1) > 1 ? angle * .35 : 0);
+      let position = step.opponent
+        ? { ...agent.position, x: agent.position.x + Math.sin(facing) * 6, z: agent.position.z + Math.cos(facing) * 6 }
+        : filmPosition(this.scene!.set, step.x + Math.sin(angle) * 9, step.z + Math.cos(angle) * 9);
       if (playerBlocked(position, agent.isInMatrix)) position = filmPosition(this.scene!.set, step.x, step.z - 5 - i * 3);
       this.sandbox().threats.push({ id: `film:${++this.sandbox().serial}`, scene: this.state!.scene, kind, character: step.opponent, position, matrix: agent.isInMatrix,
         health, maxHealth: health, target: agent.id, stunUntil: tick + 4, lastStrike: tick });

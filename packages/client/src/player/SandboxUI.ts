@@ -1,4 +1,4 @@
-import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_NAMES, filmStepPosition, pillLocked, lafayetteWelcomeLocked, awakeningLocked, awakeningWaiting, AWAKENING_SECONDS, windowOpening, windowCrossing, ITEMS, RECIPES, SKILLS, FILMS, MISSIONS, LOCATIONS, CITY_BUILDINGS, NEO_CHAPTERS, LIFE_ACTIONS, lifeActionPosition, lifeRoomCenter, locationEntrance, distance, missionPosition, nearTransit, skillPoints,
+import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_NAMES, filmStepPosition, pillLocked, lafayetteWelcomeLocked, awakeningLocked, awakeningWaiting, AWAKENING_SECONDS, trainingLocked, trainingWaiting, TRAINING_SECONDS, DOJO_COMBO_WINDOW, windowOpening, windowCrossing, ITEMS, RECIPES, SKILLS, FILMS, MISSIONS, LOCATIONS, CITY_BUILDINGS, NEO_CHAPTERS, LIFE_ACTIONS, lifeActionPosition, lifeRoomCenter, locationEntrance, distance, missionPosition, nearTransit, skillPoints,
   type AgentState, type SandboxState, type SandboxCommand, type ItemId, type SkillId, type Vector3 } from '@auto_matrix/shared';
 import './sandbox.css';
 import { renderNeoLife } from './NeoLifePanel.js';
@@ -22,7 +22,8 @@ export class SandboxUI {
   private nearest = '';
   private waypoint: { position: Vector3; matrix: boolean; name: string } | null = null;
 
-  constructor(private send: (command: SandboxCommand) => void, private menu: (open: boolean) => void) {
+  constructor(private send: (command: SandboxCommand) => void, private menu: (open: boolean) => void,
+    private combat: (kind: 'attack' | 'dodge', combo?: number) => void) {
     this.root.id = 'sandbox-overlay'; this.root.className = 'hidden';
     this.root.innerHTML = `
       <div id="film-blackout" class="film-blackout" aria-hidden="true"></div>
@@ -31,6 +32,7 @@ export class SandboxUI {
       <div id="sandbox-waypoint" class="sandbox-waypoint"></div>
       <div id="film-phone" class="film-phone hidden"><span>SECURE LINE / MORPHEUS</span><p id="film-phone-line"></p><div><i id="film-alert"></i></div><small id="film-alert-label"></small></div>
       <div id="film-sequence" class="film-sequence hidden"><p id="film-sequence-line"></p><small id="film-sequence-hint">鼠标观察 · V 切换视角 · J 手记</small></div>
+      <div id="film-training-actions" class="film-training-actions hidden"><button data-combat="dodge"><kbd>X</kbd> 现在闪避</button><button data-combat="attack"><kbd>F</kbd> <span>刺拳</span></button></div>
       <div id="film-pills" class="film-pills hidden" role="group" aria-label="选择药丸"><p>选择仍然属于你</p><div class="film-pill-choices"><button data-action="life" data-target="film:pill:red">红色 · 继续追问</button><button data-action="life" data-target="film:blue">蓝色 · 回到日常</button></div></div>
       <div id="film-meeting" class="film-pills hidden" role="group" aria-label="接头决定"><p>你仍然可以离开</p><div class="film-pill-choices"><button data-action="life" data-target="film:meeting:stay">留在车内 · 接受检查</button><button data-action="life" data-target="film:meeting:leave">打开车门 · 暂时离开</button></div></div>
       <div id="film-ride" class="film-ride hidden" role="status"><span>TRINITY / KEYMAKER</span><strong id="film-ride-speed"></strong><p id="film-ride-health"></p><small>W 加速 · S 刹车 · A / D 转向</small></div>
@@ -49,6 +51,10 @@ export class SandboxUI {
       if (button.hasAttribute('data-close')) { this.close(); return; }
       if (button.dataset.panel) { this.open(button.dataset.panel as Panel); return; }
       if (button.dataset.film) { this.selectedFilm = Number(button.dataset.film); this.signature = ''; this.renderPanel(); return; }
+      if (button.dataset.combat) {
+        const kind = button.dataset.combat as 'attack' | 'dodge';
+        this.combat(kind, kind === 'attack' ? this.state?.neoLife?.journey?.dojo?.combo : undefined); return;
+      }
       if (button.dataset.waypoint) {
         const node = this.state?.nodes.find(n => n.id === button.dataset.waypoint) ?? this.state?.incidents.find(n => n.id === button.dataset.waypoint);
         if (node) this.waypoint = { position: node.position, matrix: node.matrix, name: node.name };
@@ -98,6 +104,8 @@ export class SandboxUI {
     this.root.classList.toggle('hidden', !player || !state || !profile);
     this.el('film-phone').classList.add('hidden');
     this.el('film-sequence').classList.add('hidden');
+    this.el('film-sequence').classList.remove('urgent');
+    this.el('film-training-actions').classList.add('hidden');
     this.el('film-ride').classList.add('hidden');
     this.el('film-pills').classList.add('hidden');
     this.el('film-meeting').classList.add('hidden');
@@ -181,6 +189,34 @@ export class SandboxUI {
       this.el('film-sequence-hint').textContent = waiting ? 'G 握住 Morpheus 的手 · 等待不会替你回应' : '鼠标观察 · V 切换视角 · 暂停或重连会保留动作';
       this.el('sandbox-interact').classList.toggle('hidden', !waiting); this.el('sandbox-nearby').textContent = '握住 Morpheus 的手';
       this.el('sandbox-waypoint').textContent = '';
+      return;
+    }
+    if (trainingLocked(journey)) {
+      const training = journey.training!; const waiting = trainingWaiting(journey);
+      const name = training.kind === 'download' ? '格斗程序下载' : training.kind === 'jump' ? 'Morpheus 跨楼示范' : '红衣女子注意力测试';
+      const action = training.kind === 'download' ? '请 Tank 开始上传' : training.kind === 'jump' ? '请 Morpheus 开始示范' : '开始注意力测试';
+      document.getElementById('game-objective-copy')!.textContent = waiting ? `${name} · 按 G 开始，等待不会替你决定`
+        : `${name} · ${Math.round(training.elapsed / TRAINING_SECONDS[training.kind] * 100)}% · 进度自动保存`;
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = waiting ? `G ${action} · 鼠标观察 · V 切换视角` : '鼠标观察 · V 切换视角 · 暂停或重连会从当前动作继续';
+      this.el('sandbox-job').style.width = `${training.elapsed / TRAINING_SECONDS[training.kind] * 100}%`;
+      this.el('sandbox-interact').classList.toggle('hidden', !waiting); this.el('sandbox-waypoint').textContent = '';
+      this.el('sandbox-nearby').textContent = action;
+      return;
+    }
+    if (!journey.visiting && scene.id === 'm1_dojo' && journey.dojo && journey.fighting) {
+      const lesson = journey.dojo;
+      const windup = state.threats.some(threat => threat.scene === scene.id && threat.character === 'morpheus' && threat.attackAt !== undefined && threat.attackAt > this.tick);
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence').classList.toggle('urgent', windup && !lesson.dodged);
+      const actions = this.el('film-training-actions'); const dodge = actions.querySelector<HTMLButtonElement>('[data-combat="dodge"]')!; const attack = actions.querySelector<HTMLButtonElement>('[data-combat="attack"]')!;
+      actions.classList.remove('hidden'); dodge.classList.toggle('hidden', lesson.dodged); dodge.disabled = !windup;
+      attack.classList.toggle('hidden', !lesson.dodged); attack.querySelector('span')!.textContent = ['刺拳', '直拳', '正蹬'][lesson.combo] ?? '连击';
+      this.el('film-sequence-hint').textContent = !lesson.dodged ? windup ? '现在！按 X 闪避' : '观察 Morpheus 的红色起手提示 · X 闪避' : `F 连击 · ${lesson.combo}/3 · ${DOJO_COMBO_WINDOW} 秒内接续，否则从刺拳重来`;
+      this.el('sandbox-job').style.width = `${(lesson.dodged ? 25 : 0) + lesson.combo * 25}%`;
+      this.el('sandbox-waypoint').textContent = !lesson.dodged ? '先读懂起手，再离开攻击线' : '刺拳 → 直拳 → 正蹬';
+      this.el('sandbox-interact').classList.add('hidden');
+      document.getElementById('game-objective-copy')!.textContent = !lesson.dodged ? windup ? '现在闪避 · X' : '等待 Morpheus 出手 · 看见红色提示后按 X 闪避' : `完成有顺序的三段反击 · ${lesson.combo}/3`;
       return;
     }
     if (awakeningLocked(journey)) {

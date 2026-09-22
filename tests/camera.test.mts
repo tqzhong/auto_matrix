@@ -129,6 +129,20 @@ test('spoon focus is a held input and is released when a panel opens or the wind
   assert.equal(game.sent.at(-1)!.focus, false);
 });
 
+test('the guided dojo attack turns toward a nearby sparring partner behind the current camera', t => {
+  const game = setup(t);
+  game.controls.targets = [{ x: game.state.position.x, y: game.state.position.y, z: game.state.position.z - 2 }];
+  assert.equal(game.controls.triggerCombat('attack', true), true);
+  assert.ok(Math.abs(angle(game.sent.at(-1)!.yaw, Math.PI)) < .01);
+  game.step(1.6);
+  assert.equal(game.controls.triggerCombat('attack', true), true);
+  assert.equal(game.controls.motion.combo, 1, 'the readable dojo timing keeps the second guided strike as a straight punch');
+  game.step(3.2);
+  assert.equal(game.controls.triggerCombat('attack', true, 2), true);
+  assert.equal(game.controls.motion.combo, 2, 'a saved lesson stage restores the correct kick animation after reconnecting');
+  assert.deepEqual(game.actions, ['attack', 'attack', 'attack']);
+});
+
 test('the pod descent camera stays outside the drain instead of collapsing against an obsolete floor', t => {
   const game = setup(t, Math.PI); const position = filmPosition('film_power_plant_pods', 0, 2); position.y -= 9;
   Object.assign(game.state, { position, isInMatrix: false, currentLocation: 'film_power_plant_pods' });

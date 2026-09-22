@@ -36,7 +36,7 @@ export class AgentManager {
     const appearance: AppearanceConfig = {
       bodyColor: factionColors.body,
       headColor: factionColors.head,
-      clothing: factionColors.clothing,
+      clothing: charDef.id === 'citizen_2' ? '#a21722' : factionColors.clothing,
       accessories: [],
       isAgent: charDef.faction === 'machines',
     };

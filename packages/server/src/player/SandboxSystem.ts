@@ -42,6 +42,7 @@ export class SandboxSystem {
     this.life.film.restoreHotelSpace();
     this.life.film.restoreAwakeningSpace();
     this.life.film.reconcileCast();
+    this.life.film.restoreTrainingSpace();
   }
   missionsFor(agent: AgentState) { return agent.id === 'neo' && this.state.neoLife ? this.state.neoLife.missions : this.state.missions; }
   private random(): number {
@@ -179,11 +180,14 @@ export class SandboxSystem {
     const direction = { x: Math.sin(agent.rotation), y: 0, z: Math.cos(agent.rotation) };
     const position = { ...target.position, y: target.position.y + 2 };
     const health = target.health;
-    this.hit(agent, target, damage, tick);
-    target.attackAt = undefined; target.stunUntil = tick + (combo === 2 ? 2 : 1);
+    const training = this.life.film.trainingHit(agent, target, combo);
+    if (!training) this.hit(agent, target, damage, tick);
+    target.attackAt = undefined;
+    target.stunUntil = training ? Math.max(target.stunUntil, tick + (combo === 2 ? 2 : 1)) : tick + (combo === 2 ? 2 : 1);
     target.position = combatDisplace(target.position, direction, strike.push, target.matrix, this.state.structures);
-    this.onImpact?.({ source: agent.id, target: target.id, position, direction, damage: health - target.health, combo,
+    this.onImpact?.({ source: agent.id, target: target.id, position, direction, damage: training ? target.health <= 0 ? damage : 0 : health - target.health, combo,
       matrix: agent.isInMatrix, downed: target.health <= 0 }, tick);
+    if (training) return this.life.film.state?.lastText ?? '训练动作已记录。';
     return targets[0].health <= 0 ? '敌对程序已清除。' : `命中，目标剩余 ${targets[0].health} 生命。`;
   }
 
@@ -424,7 +428,9 @@ export class SandboxSystem {
         const damage = threat.kind === 'training' ? threat.character ? threat.combo === 2 ? 5 : 3 : 2 : threat.kind === 'smith' ? 12 : 6;
         if (escort) escort.health = Math.max(0, escort.health - damage);
         else {
-          if (actor.activeEffects.some(e => ['dodge', 'agent_dodge', 'vision_flash', 'phase_shift'].includes(e.visualEffect))) continue;
+          if (actor.activeEffects.some(e => ['dodge', 'agent_dodge', 'vision_flash', 'phase_shift'].includes(e.visualEffect))) {
+            this.life.film.trainingDodge(actor, threat, tick); continue;
+          }
           if (actor.activeEffects.some(e => e.visualEffect === 'counter_guard')) {
             threat.stunUntil = tick + 3; this.skillHit(actor, threat, 20, tick, 1); continue;
           }

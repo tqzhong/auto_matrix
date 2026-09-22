@@ -21,6 +21,7 @@ export * from './constants/office.js';
 export * from './constants/lobby.js';
 export * from './constants/freeway.js';
 export * from './constants/awakening.js';
+export * from './constants/training.js';
 export * from './constants/pills.js';
 export * from './constants/ambush.js';
 export * from './constants/interrogation.js';

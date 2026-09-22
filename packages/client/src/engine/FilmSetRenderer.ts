@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
-import { FILM_SETS, FILM_SCENE_BY_ID, PILL_ROOM, pillLocked, pillPose, lafayetteWelcomeLocked, type PillGesture, FREEWAY_FINISH, ORACLE_FURNITURE, awakeningLocked, phoneLocked, windowOpening, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
+import { FILM_SETS, FILM_SCENE_BY_ID, PILL_ROOM, pillLocked, pillPose, lafayetteWelcomeLocked, type PillGesture, FREEWAY_FINISH, ORACLE_FURNITURE, awakeningLocked, trainingLocked, phoneLocked, windowOpening, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
 import { LobbySetRenderer } from './LobbySetRenderer.js';
 import { OfficeSetRenderer } from './OfficeSetRenderer.js';
 import { FreewaySetRenderer } from './FreewaySetRenderer.js';
@@ -10,6 +10,7 @@ import { PodSetRenderer } from './PodSetRenderer.js';
 import { NebDeckRenderer } from './NebDeckRenderer.js';
 import { ConstructRenderer } from './ConstructRenderer.js';
 import { DesertRenderer } from './DesertRenderer.js';
+import { TrainingSetRenderer } from './TrainingSetRenderer.js';
 import { OracleVase } from './OracleVase.js';
 import { AmbushSetRenderer } from './AmbushSetRenderer.js';
 import { createPillGlass } from '../agents/PillPerformance.js';
@@ -60,6 +61,7 @@ export class FilmSetRenderer {
   private neb?: NebDeckRenderer;
   private construct?: ConstructRenderer;
   private desert?: DesertRenderer;
+  private training?: TrainingSetRenderer;
   private currentScene?: string;
   private mirror?: Reflector;
   private mirrorCracks?: THREE.Group;
@@ -97,6 +99,7 @@ export class FilmSetRenderer {
         else if (set.id === 'film_neb_deck') this.neb = new NebDeckRenderer(this.root);
         else if (set.id === 'film_white_construct') this.construct = new ConstructRenderer(this.root, sceneId);
         else if (set.id === 'film_real_desert') this.desert = new DesertRenderer(this.root);
+        else if (['m1_dojo', 'm1_jump', 'm1_red_dress'].includes(sceneId ?? '')) this.training = new TrainingSetRenderer(this.root, sceneId!);
         else if (set.id === 'film_ambush_house') this.ambush = new AmbushSetRenderer(this.root);
         else if (set.id === 'film_agent_interrogation') this.interrogation = new InterrogationSetRenderer(this.root);
         else if (set.id === 'film_adams_bridge' || set.id === 'film_extraction_car') this.meeting = new MeetingSetRenderer(this.root);
@@ -140,6 +143,7 @@ export class FilmSetRenderer {
     this.neb?.update(journey, elapsed);
     this.construct?.update(journey);
     this.desert?.update(journey, elapsed);
+    this.training?.update(journey, elapsed);
     this.ambush?.update(journey, sandbox?.structures ?? [], elapsed);
     this.oracleVase?.update(sceneId === 'm1_oracle' ? journey?.visiting || journey!.step > 0 ? 4.5 : journey?.oracle?.vase : undefined);
     const scene = journey && FILM_SCENE_BY_ID[journey.scene]; const step = scene?.steps[journey!.step];
@@ -151,6 +155,7 @@ export class FilmSetRenderer {
     if (journey && lafayetteWelcomeLocked(journey)) this.marker.visible = false;
     if (journey?.hotel && !journey.hotel.entered) this.marker.visible = false;
     if (journey && awakeningLocked(journey)) this.marker.visible = false;
+    if (journey && trainingLocked(journey)) this.marker.visible = false;
     if (journey && phoneLocked(journey)) this.marker.visible = false;
     if (journey && windowOpening(journey)) this.marker.visible = false;
     if (journey?.scene === 'm1_dejavu' && journey.step === 0 && journey.ambush) this.marker.visible = false;
@@ -199,6 +204,18 @@ export class FilmSetRenderer {
       (this.scene.background as THREE.Color).setHex(0x303b3e); fog.color.setHex(0x303b3e); fog.density = .0055;
       this.scene.environmentIntensity = .55;
       return { color: 0xb4c7c6, ambient: .7, sun: .48 };
+    }
+    if (this.training) {
+      if (this.training.sceneId === 'm1_dojo') {
+        (this.scene.background as THREE.Color).setHex(0xb7c6bd); fog.color.setHex(0xb7c6bd); fog.density = .002;
+        this.scene.environmentIntensity = .78; return { color: 0xffe9c2, ambient: .88, sun: .58 };
+      }
+      if (this.training.sceneId === 'm1_jump') {
+        (this.scene.background as THREE.Color).setHex(0x9db2b5); fog.color.setHex(0x9db2b5); fog.density = .0042;
+        this.scene.environmentIntensity = .7; return { color: 0xf2dfbf, ambient: .78, sun: 1.05 };
+      }
+      (this.scene.background as THREE.Color).setHex(0xb8c3bd); fog.color.setHex(0xb8c3bd); fog.density = .0025;
+      this.scene.environmentIntensity = .74; return { color: 0xffead0, ambient: .9, sun: .9 };
     }
     return palette;
   }
@@ -858,6 +875,7 @@ export class FilmSetRenderer {
     this.neb?.dispose(); this.neb = undefined;
     this.construct?.dispose(); this.construct = undefined;
     this.desert?.dispose(); this.desert = undefined;
+    this.training?.dispose(); this.training = undefined;
     this.office?.dispose(); this.office = undefined;
     this.freeway?.dispose(); this.freeway = undefined;
     this.lobby?.dispose(); this.lobby = undefined;
