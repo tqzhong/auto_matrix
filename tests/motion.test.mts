@@ -122,3 +122,21 @@ test('rescue preparation points across the briefing and grips the chosen weapon 
     rescue: { phase: 'equipping', elapsed: 3, loadout: 'breacher' as const, role: 'neo' as const } }, 0);
   assert.ok(breacher.arms[0].grip > .85 && breacher.arms[1].grip < .6, 'the single long gun keeps one primary grip distinct from dual weapons');
 });
+
+test('the lobby entrance draws weapons after the alarm and leaves the checkpoint guard visibly down', () => {
+  const idle = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 };
+  const waiting = advanceMotion(newMotion(), { ...idle, lobbyEntry: { phase: 'checkpoint', elapsed: 1.4, role: 'neo' as const } }, 0);
+  assert.ok(waiting.arms.every(arm => arm.grip < .5), 'Neo does not aim a weapon before the checkpoint alarm');
+  const drawing = advanceMotion(newMotion(), { ...idle, armed: true, lobbyEntry: { phase: 'checkpoint', elapsed: 4.4, role: 'neo' as const } }, 0);
+  assert.ok(drawing.arms[0].grip > .85 && drawing.arms[0].shoulder < -.9, 'Neo visibly clears and raises the selected weapon');
+  const guard = advanceMotion(newMotion(), { ...idle, lobbyEntry: { phase: 'down', elapsed: 7.2, role: 'guard' as const } }, 0);
+  assert.ok(guard.hipHeight < .7 && guard.lean > 1.2 && Math.abs(guard.roll) > 1, 'the guard reaches the floor instead of remaining bent upright');
+});
+
+test('armed shoulders follow vertical aim while recoil remains finite', () => {
+  const idle = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, armed: true };
+  const level = advanceMotion(newMotion(), { ...idle, aimPitch: 0 }, 0);
+  const upward = advanceMotion(newMotion(), { ...idle, aimPitch: -.35 }, 0);
+  assert.ok(upward.arms[0].shoulder < level.arms[0].shoulder - .2, 'raising the camera raises the weapon arm');
+  assert.ok(Object.values(upward.arms[0]).every(Number.isFinite));
+});

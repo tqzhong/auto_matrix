@@ -1,5 +1,5 @@
-import { FILM_SETS, LOBBY_COLUMNS, RESCUE_LOADOUTS, rescueLoadout, filmPosition, lobbyCover, rayBox, combatDisplace, distance,
-  type AgentState, type SandboxState, type SandboxThreat, type CombatImpact, type Vector3, type RescueLoadoutSpec } from '@auto_matrix/shared';
+import { FILM_SETS, LOBBY_COLUMNS, LOBBY_ENTRY, RESCUE_LOADOUTS, rescueLoadout, filmPosition, lobbyCover, rayBox, combatDisplace, distance,
+  type AgentState, type SandboxState, type SandboxThreat, type CombatImpact, type Vector3, type RescueLoadoutSpec, type LobbyEncounter, type LobbyRole } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
 
 const SET = FILM_SETS.film_government_lobby;
@@ -18,9 +18,15 @@ export class LobbyCombatSystem {
     const journey = this.sandbox().neoLife?.journey; const selected = this.state?.loadout ?? journey?.rescue?.loadout;
     return selected ? RESCUE_LOADOUTS[selected] : rescueLoadout(journey);
   }
+  private normalize(state = this.state): LobbyEncounter | undefined {
+    if (!state) return;
+    state.phase ??= state.wave > 0 ? 'combat' : 'ready';
+    state.elapsed ??= 0;
+    return state;
+  }
   reset(): void {
     const loadout = rescueLoadout(this.sandbox().neoLife!.journey!);
-    this.sandbox().neoLife!.journey!.lobby = { loadout: loadout.id, ammo: loadout.magazine, wave: 0, columns: LOBBY_COLUMNS.map(() => 0), allyShotAt: -10, shots: 0, kills: 0 };
+    this.sandbox().neoLife!.journey!.lobby = { phase: 'ready', elapsed: 0, loadout: loadout.id, ammo: loadout.magazine, wave: 0, columns: LOBBY_COLUMNS.map(() => 0), allyShotAt: -10, shots: 0, kills: 0 };
   }
   active(actor: AgentState): boolean {
     const journey = this.sandbox().neoLife?.journey;
@@ -28,13 +34,56 @@ export class LobbyCombatSystem {
       && actor.controller && actor.status === 'alive' && actor.isInMatrix && actor.currentLocation === SET.id);
   }
   start(actor: AgentState, tick: number): void {
-    this.reset(); this.wave(actor, tick);
-    const ally = this.world.agents.get('trinity');
-    if (ally && !ally.controller) {
-      ally.position = filmPosition(SET.id, -4, 23); ally.currentLocation = SET.id; ally.isInMatrix = true;
-      ally.rotation = Math.PI; ally.velocity = { x: 0, y: 0, z: 0 };
-      ally.currentAction = { type: 'idle', parameters: { resolved: true, armed: true, weaponStyle: this.spec().id }, startedAt: tick, duration: 1, progress: 0 };
+    this.reset(); this.state!.phase = 'checkpoint'; this.stageEntry(actor, 0, tick);
+    this.sandbox().neoLife!.journey!.lastText = 'Neo 与 Trinity 走进安检区。警卫的目光移向装满武器的行李。';
+  }
+  occupied(): AgentState | undefined {
+    return ['trinity', 'citizen_12'].map(id => this.world.agents.get(id)).find(actor => actor?.controller);
+  }
+  private entryActor(role: LobbyRole): AgentState | undefined {
+    return this.world.agents.get(role === 'guard' ? 'citizen_12' : role);
+  }
+  private stageEntry(actor: AgentState, dt: number, tick: number): void {
+    const state = this.normalize()!; const elapsed = state.elapsed ?? 0;
+    for (const role of ['neo', 'trinity', 'guard'] as const) {
+      const performer = this.entryActor(role); if (!performer || performer.controller && performer !== actor) continue;
+      const root = LOBBY_ENTRY.roots[role]; const before = performer.position;
+      performer.position = filmPosition(SET.id, root.x, root.z); performer.rotation = root.yaw;
+      performer.velocity = dt > 0 ? { x: (performer.position.x - before.x) / dt, y: 0, z: (performer.position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
+      performer.currentLocation = SET.id; performer.isInMatrix = true;
+      const armed = role !== 'guard' && elapsed >= LOBBY_ENTRY.drawAt;
+      performer.currentAction = { type: 'idle', parameters: { player: performer === actor, resolved: true, armed, weaponStyle: armed ? this.spec().id : undefined,
+        lobbyEntry: { phase: 'checkpoint', elapsed, role } }, startedAt: tick, duration: 1, progress: 0 };
     }
+  }
+  private finishEntry(actor: AgentState, tick: number): void {
+    const state = this.normalize()!; state.phase = 'combat'; state.elapsed = LOBBY_ENTRY.duration;
+    for (const role of ['neo', 'trinity'] as const) {
+      const performer = this.world.agents.get(role); if (!performer || performer.controller && performer !== actor) continue;
+      performer.currentAction = { type: 'idle', parameters: { player: performer === actor, resolved: true, armed: true, weaponStyle: this.spec().id }, startedAt: tick, duration: 1, progress: 0 };
+      performer.velocity = { x: 0, y: 0, z: 0 };
+    }
+    const guard = this.world.agents.get('citizen_12');
+    if (guard && !guard.controller) {
+      const root = LOBBY_ENTRY.roots.guard; guard.position = filmPosition(SET.id, root.x, root.z); guard.rotation = root.yaw; guard.velocity = { x: 0, y: 0, z: 0 };
+      guard.currentLocation = SET.id; guard.isInMatrix = true;
+      guard.currentAction = { type: 'idle', parameters: { resolved: true, lobbyEntry: { phase: 'down', elapsed: LOBBY_ENTRY.duration, role: 'guard' } }, startedAt: tick, duration: 100000, progress: 0 };
+    }
+    this.wave(actor, tick);
+  }
+  frame(actor: AgentState, dt: number, tick: number): boolean {
+    const journey = this.sandbox().neoLife?.journey; const state = this.normalize();
+    if (!journey || journey.scene !== 'm1_lobby' || journey.visiting || journey.actor !== actor.id || !journey.fighting || !state || state.phase !== 'checkpoint') return false;
+    const occupied = this.occupied();
+    if (occupied) { journey.lastText = `${occupied.name} 正由另一位玩家控制；安检动作停在保存的位置。`; return true; }
+    state.elapsed = Math.min(LOBBY_ENTRY.duration, (state.elapsed ?? 0) + Math.max(0, Math.min(.1, dt)));
+    this.stageEntry(actor, dt, tick); journey.checkpoint = { ...actor.position };
+    journey.lastText = state.elapsed < LOBBY_ENTRY.alarmAt ? 'Neo 与 Trinity 走进安检区。警卫的目光移向装满武器的行李。'
+      : state.elapsed < LOBBY_ENTRY.drawAt ? '金属探测器发出警报。警卫伸手摸向报警按钮。'
+      : state.elapsed < LOBBY_ENTRY.duration ? 'Neo 与 Trinity 同时拔枪。入口警卫倒下，整座大厅进入警戒。'
+      : journey.lastText;
+    if (state.elapsed >= LOBBY_ENTRY.duration - .0001) { state.elapsed = LOBBY_ENTRY.duration; this.finishEntry(actor, tick); }
+    return state.phase === 'checkpoint';
   }
   private wave(actor: AgentState, tick: number): void {
     const state = this.state!; state.wave++; delete state.nextWaveAt;
@@ -53,16 +102,18 @@ export class LobbyCombatSystem {
     if (this.state.reloadAt !== undefined || this.state.ammo === spec.magazine) return '';
     this.state.reloadAt = tick + spec.reloadTicks; return `更换${spec.name}弹药，先退到石柱后。`;
   }
-  shoot(actor: AgentState, yaw: number, tick: number): string {
-    if (!this.active(actor) || !this.state || !Number.isFinite(yaw)) return '';
+  shoot(actor: AgentState, yaw: number, pitch: number, tick: number): string {
+    const phase = this.normalize()?.phase;
+    if (!this.active(actor) || !this.state || phase !== 'combat' || !Number.isFinite(yaw) || !Number.isFinite(pitch)) return '';
     const state = this.state; const spec = this.spec();
     if (state.reloadAt !== undefined) return '';
     if (state.ammo <= 0) return this.reload(actor, tick);
     state.ammo--; state.shots++; actor.rotation = yaw;
-    const from = muzzle(actor.position); let direction = { x: Math.sin(yaw), y: 0, z: Math.cos(yaw) };
-    // Modest horizontal aim assist for this ground-level encounter, never through cover.
+    const from = muzzle(actor.position); const elevation = Math.max(-1.35, Math.min(1.35, pitch)); const cosine = Math.cos(elevation);
+    let direction = { x: Math.sin(yaw) * cosine, y: -Math.sin(elevation), z: Math.cos(yaw) * cosine };
+    // Modest three-dimensional aim assist, never through cover.
     const target = this.enemies().map(enemy => ({ enemy, dir: directionTo(from, muzzle(enemy.position)) }))
-      .filter(({ enemy, dir }) => dir.x * direction.x + dir.z * direction.z > spec.aimDot && this.visible(from, muzzle(enemy.position)))
+      .filter(({ enemy, dir }) => dir.x * direction.x + dir.y * direction.y + dir.z * direction.z > spec.aimDot && this.visible(from, muzzle(enemy.position)))
       .sort((a, b) => distance(a.enemy.position, actor.position) - distance(b.enemy.position, actor.position))[0];
     if (target) direction = target.dir;
     this.fire(actor.id, from, direction, actor, spec.damage, tick);
@@ -91,11 +142,13 @@ export class LobbyCombatSystem {
     if (!this.active(actor)) return false;
     // Saves from the older melee-only lobby resume at the encounter entrance.
     if (!this.state) { this.sandbox().threats = this.sandbox().threats.filter(t => t.scene !== 'm1_lobby'); this.start(actor, tick); }
-    const state = this.state!;
+    const state = this.normalize()!;
+    if (state.phase === 'cleared') return true;
+    if (state.phase !== 'combat') return false;
     if (state.reloadAt !== undefined && tick >= state.reloadAt) { state.ammo = this.spec().magazine; delete state.reloadAt; }
     const enemies = this.enemies();
     if (!enemies.length) {
-      if (state.wave >= 3) return true;
+      if (state.wave >= 3) { state.phase = 'cleared'; return true; }
       state.nextWaveAt ??= tick + 3;
       if (tick >= state.nextWaveAt) this.wave(actor, tick);
     }

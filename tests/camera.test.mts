@@ -20,6 +20,25 @@ test('observer camera releases drag and ignores pointer capture while a characte
   observer.dispose();
 });
 
+test('mouse pitch is included in authoritative player input', t => {
+  const game = setup(t); game.controls.firearm = true;
+  game.document.pointerLockElement = game.canvas;
+  game.event(game.document, 'mousemove', { movementX: 0, movementY: -240 }); game.step(.1);
+  assert.ok((game.sent.at(-1)?.pitch ?? 0) < -.15, 'upward camera input must reach server-side ballistics');
+});
+
+test('the lobby checkpoint has a readable authored camera and V returns to Neo eye height', t => {
+  const game = setup(t, Math.PI); const center = FILM_SETS.film_government_lobby.center;
+  game.state.currentLocation = 'film_government_lobby'; game.state.position = filmPosition('film_government_lobby', 1.4, 25.5);
+  game.state.currentAction = { type: 'idle', parameters: { lobbyEntry: { phase: 'checkpoint', elapsed: 3.8, role: 'neo' }, armed: true }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.step(.5);
+  const guard = new THREE.Vector3(center.x, center.y + 2.8, center.z + 20.8).project(game.camera);
+  assert.ok(Math.abs(guard.x) < .85 && Math.abs(guard.y) < .85, 'the alarm shot keeps the checkpoint guard in frame');
+  const locked = game.group.position.clone(); game.key('KeyW'); game.step(.35); assert.deepEqual(game.group.position, locked, 'the entry performance owns movement until weapons are drawn');
+  game.key('KeyW', false); game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+  assert.ok(game.camera.position.distanceTo(new THREE.Vector3(game.state.position.x, game.state.position.y + 2.99, game.state.position.z)) < .06);
+});
+
 function setup(t: TestContext, rotation = 0) {
   class InputTarget extends EventTarget { matches() { return false; } }
   const window = new InputTarget(); const canvas = new InputTarget();

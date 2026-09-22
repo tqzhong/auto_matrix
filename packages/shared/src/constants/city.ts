@@ -82,6 +82,7 @@ export interface PlayerInput {
   x: number;
   z: number;
   yaw: number;
+  pitch?: number;
   sprint: boolean;
   jump: boolean;
   crouch?: boolean;

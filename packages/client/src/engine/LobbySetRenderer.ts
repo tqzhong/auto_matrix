@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { LOBBY_COLUMNS, type FilmJourney, type FilmSet, type CombatImpact } from '@auto_matrix/shared';
+import { LOBBY_COLUMNS, LOBBY_ENTRY, type FilmJourney, type FilmSet, type CombatImpact } from '@auto_matrix/shared';
 
 /** Authored from the ASC lobby reference frames in references/matrix/lobby. */
 export class LobbySetRenderer {
@@ -11,6 +11,9 @@ export class LobbySetRenderer {
   private rubble: THREE.Group[] = [];
   private doors: THREE.Mesh[] = [];
   private marks: THREE.Mesh[] = [];
+  private alarmLights: THREE.Mesh[] = [];
+  private weaponCase?: THREE.Group;
+  private debris: { group: THREE.Group; age: number }[] = [];
   private opening = 0;
   private lastTime = 0;
   private scar = new THREE.MeshBasicMaterial({ color: 0x17201c, transparent: true, opacity: .85, polygonOffset: true, polygonOffsetFactor: -2 });
@@ -95,6 +98,19 @@ export class LobbySetRenderer {
     this.box(steel, 7.4, 1.1, 33.2, 4.6, .25, 3); this.box(black, 7.4, 1.25, 33.2, 4.4, .05, 2.8);
     this.box(black, -7.4, 2.4, 31, 5, 4.8, 2.5); this.box(steel, -7.4, 4.85, 31, 5.2, .15, 2.8);
     this.box(black, -7.4, 5.65, 30.8, 1.9, 1.6, 1.4); this.box(led, -7.4, 5.65, 31.52, 1.5, 1.1, .02);
+    const checkpoint = new THREE.Group(); checkpoint.name = 'lobby-security-checkpoint'; checkpoint.userData.dynamic = true; this.root.add(checkpoint);
+    this.box(steel, 4.35, 1.12, 21.2, 2.8, 2.24, 1.25, checkpoint).name = 'lobby-security-console';
+    this.box(black, 4.35, 2.32, 21.1, 1.75, .17, .82, checkpoint);
+    const display = this.box(led, 4.35, 2.43, 21.05, 1.25, .08, .5, checkpoint); display.name = 'lobby-security-display';
+    this.weaponCase = new THREE.Group(); this.weaponCase.name = 'lobby-weapon-case'; this.weaponCase.position.set(-5.4, .14, 22.4); this.weaponCase.userData.dynamic = true; checkpoint.add(this.weaponCase);
+    this.box(black, 0, .28, 0, 3.7, .5, 1.5, this.weaponCase); const lid = this.box(black, 0, .62, -.72, 3.7, .12, 1.45, this.weaponCase);
+    lid.name = 'lobby-weapon-case-lid'; lid.geometry.translate(0, 0, .72);
+    for (const x of [-1.25, -.42, .42, 1.25]) { const weapon = this.box(steel, x, .63, .12, .16, .14, 1.05, this.weaponCase); weapon.rotation.z = x * .05; }
+    const alarm = this.material(0x2c0704, .34); alarm.emissive.setHex(0xff280c); alarm.emissiveIntensity = 0;
+    for (const x of [-2.35, 2.35]) {
+      const lightMesh = this.box(alarm.clone(), x, 6.95, 29.55, .32, .24, .12, checkpoint); this.materials.push(lightMesh.material as THREE.Material);
+      lightMesh.name = x < 0 ? 'lobby-alarm-left' : 'lobby-alarm-right'; this.alarmLights.push(lightMesh);
+    }
     for (const x of [-13.2, 13.2]) for (const z of [26, 34]) {
       this.box(black, x, 1.3, z, 2, .25, 1.8); this.box(black, x, 2.3, z + .8, 2, 2, .17);
       for (const dx of [-.8, .8]) for (const dz of [-.65, .65]) this.box(steel, x + dx, .65, z + dz, .08, 1.3, .08);
@@ -149,7 +165,23 @@ export class LobbySetRenderer {
       group.visible = damage < 50;
       this.rubble[i].visible = damage >= 30;
     });
-    const dt = this.lastTime ? Math.min(.1, time - this.lastTime) : 0; this.lastTime = time;
+    const dt = this.lastTime ? Math.max(0, Math.min(.1, time - this.lastTime)) : 0; this.lastTime = time;
+    const entry = lobby?.phase === 'checkpoint' ? lobby.elapsed ?? 0 : lobby?.phase === 'combat' || lobby?.phase === 'cleared' ? LOBBY_ENTRY.duration : 0;
+    const alarm = entry >= LOBBY_ENTRY.alarmAt;
+    this.alarmLights.forEach((mesh, index) => {
+      const material = mesh.material as THREE.MeshStandardMaterial;
+      material.emissiveIntensity = alarm && Math.sin(time * 16 + index * Math.PI) > -.1 ? 4.5 : 0;
+    });
+    const lid = this.weaponCase?.getObjectByName('lobby-weapon-case-lid');
+    if (lid) lid.rotation.x = -Math.PI * .42 * THREE.MathUtils.smoothstep(entry, LOBBY_ENTRY.drawAt - .5, LOBBY_ENTRY.drawAt + .8);
+    for (const burst of [...this.debris]) {
+      burst.age += dt;
+      for (const chunk of burst.group.children) {
+        const velocity = chunk.userData.velocity as THREE.Vector3; velocity.y -= 9 * dt; chunk.position.addScaledVector(velocity, dt); chunk.rotation.x += dt * 8; chunk.rotation.z += dt * 5;
+      }
+      burst.group.scale.setScalar(Math.max(0, 1 - Math.max(0, burst.age - .75) / .45));
+      if (burst.age > 1.2) { burst.group.traverse(object => { if (object instanceof THREE.Mesh) object.geometry.dispose(); }); burst.group.removeFromParent(); this.debris.splice(this.debris.indexOf(burst), 1); }
+    }
     const target = journey?.scene === 'm1_lobby' && journey.step >= 3 ? 1 : 0;
     this.opening = THREE.MathUtils.damp(this.opening, target, 3, dt);
     this.doors.forEach((door, i) => { door.position.x = (i ? 1 : -1) * (1.43 + this.opening * 2.8); });
@@ -161,6 +193,14 @@ export class LobbySetRenderer {
     mark.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), new THREE.Vector3(-hit.direction.x, -hit.direction.y, -hit.direction.z));
     mark.position.addScaledVector(new THREE.Vector3(hit.direction.x, hit.direction.y, hit.direction.z), -.025); this.root.add(mark); this.marks.push(mark);
     if (this.marks.length > 64) { const old = this.marks.shift()!; old.removeFromParent(); old.geometry.dispose(); }
+    const burst = new THREE.Group(); burst.name = 'lobby-impact-debris'; burst.position.copy(position); burst.userData.dynamic = true; this.root.add(burst);
+    for (let i = 0; i < 10; i++) {
+      const angle = i * 2.4; const chunk = new THREE.Mesh(new THREE.BoxGeometry(.035 + i % 3 * .025, .035 + i % 2 * .03, .06), this.scar);
+      chunk.userData.velocity = new THREE.Vector3(Math.cos(angle) * (.35 + i * .035) - hit.direction.x * .6, .35 + i % 4 * .16, Math.sin(angle) * (.35 + i * .035) - hit.direction.z * .6);
+      burst.add(chunk);
+    }
+    this.debris.push({ group: burst, age: 0 });
+    if (this.debris.length > 12) { const old = this.debris.shift()!; old.group.traverse(object => { if (object instanceof THREE.Mesh) object.geometry.dispose(); }); old.group.removeFromParent(); }
   }
   dispose(): void {
     this.root.traverse(object => { if (object instanceof THREE.Mesh) object.geometry.dispose(); if (object instanceof THREE.PointLight) object.dispose(); });

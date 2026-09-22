@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { OfficeWorkday } from '@auto_matrix/shared';
 import type { AgentState, WorldEvent, SimulationState, SandboxState, CombatImpact, SkillCast } from '@auto_matrix/shared';
-import { insideLifeRoom, meetingLocked, meetingCarPose, interrogationLocked, pillLocked, lafayetteKnocking, lafayetteWelcomeLocked, awakeningLocked, oracleActing, phoneLocked, heldPhone, wakeCallLocked, sentinelLocked, interludeLocked, rescueLocked, rescueLoadout, windowOpening, windowCrossing, OFFICE_CONTACT, FILM_SETS } from '@auto_matrix/shared';
+import { insideLifeRoom, meetingLocked, meetingCarPose, interrogationLocked, pillLocked, lafayetteKnocking, lafayetteWelcomeLocked, awakeningLocked, oracleActing, phoneLocked, heldPhone, wakeCallLocked, sentinelLocked, interludeLocked, rescueLocked, lobbyLocked, rescueLoadout, windowOpening, windowCrossing, OFFICE_CONTACT, LOBBY_ENTRY, FILM_SETS } from '@auto_matrix/shared';
 import { FilmSetRenderer } from './FilmSetRenderer.js';
 import { CombatEffects } from './CombatEffects.js';
 import { GameAudio } from './GameAudio.js';
@@ -261,6 +261,12 @@ export class Engine {
         else if (current.phase === 'equipping') this.audio.rescueSound('equip');
       }
     }
+    if (after?.scene === 'm1_lobby' && !after.visiting && after.actor === this.playerControls?.id && this.running && after.lobby?.phase === 'checkpoint') {
+      const previous = before?.scene === after.scene && before.lobby?.phase === 'checkpoint' ? before.lobby.elapsed ?? 0 : 0;
+      const current = after.lobby.elapsed ?? 0;
+      if (previous < LOBBY_ENTRY.alarmAt && current >= LOBBY_ENTRY.alarmAt) this.audio.lobbySound('alarm');
+      if (previous < LOBBY_ENTRY.drawAt && current >= LOBBY_ENTRY.drawAt) this.audio.lobbySound('draw');
+    }
     if (after?.scene === 'm1_office_escape' && !after.visiting && after.actor === this.playerControls?.id && before?.scene === after.scene && !after.office?.outcome && this.running) {
       const previous = before.office?.window ?? 0; const current = after.office?.window ?? 0;
       if (previous < .7 && current >= .7) this.audio.windowSound(false);
@@ -289,11 +295,11 @@ export class Engine {
       const loadout = rescueLoadout(journey);
       this.playerControls.spoon = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_spoon' ? journey.oracle?.spoon : undefined;
       this.playerControls.phone = journey?.actor === this.playerControls.id ? heldPhone(journey) : undefined;
-      this.playerControls.performing = Boolean(journey?.actor === this.playerControls.id && (meetingLocked(journey) || awakeningLocked(journey) || oracleActing(journey) || phoneLocked(journey) || wakeCallLocked(journey) || sentinelLocked(journey) || interludeLocked(journey) || rescueLocked(journey) || windowOpening(journey) || windowCrossing(journey) || pillLocked(journey) || interrogationLocked(journey) || lafayetteKnocking(journey) || lafayetteWelcomeLocked(journey)));
+      this.playerControls.performing = Boolean(journey?.actor === this.playerControls.id && (meetingLocked(journey) || awakeningLocked(journey) || oracleActing(journey) || phoneLocked(journey) || wakeCallLocked(journey) || sentinelLocked(journey) || interludeLocked(journey) || rescueLocked(journey) || lobbyLocked(journey) || windowOpening(journey) || windowCrossing(journey) || pillLocked(journey) || interrogationLocked(journey) || lafayetteKnocking(journey) || lafayetteWelcomeLocked(journey)));
       this.playerControls.mirror = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_mirror' ? journey.awakening?.kind === 'connect' ? 1 : (journey.awakening?.elapsed ?? 0) / 8 : 0;
       this.playerControls.climbing = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_ledge' && journey.step === 1 && journey.office?.climbed !== undefined;
       this.playerControls.ride = journey?.actor === this.playerControls.id && !journey.visiting && journey.ride?.phase === 'riding' ? journey.ride : undefined;
-      this.playerControls.firearm = Boolean(journey?.scene === 'm1_lobby' && !journey.visiting && journey.actor === this.playerControls.id && agents[journey.actor]?.currentLocation === 'film_government_lobby');
+      this.playerControls.firearm = Boolean(journey?.scene === 'm1_lobby' && !journey.visiting && !lobbyLocked(journey) && journey.actor === this.playerControls.id && agents[journey.actor]?.currentLocation === 'film_government_lobby');
       this.playerControls.weaponStyle = this.playerControls.firearm ? loadout.id : undefined;
       this.playerControls.fireInterval = loadout.fireInterval;
     }

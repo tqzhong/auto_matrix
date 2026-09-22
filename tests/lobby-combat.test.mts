@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { filmPosition, filmEntry, FILM_SCENE_BY_ID, FILM_SETS, LOBBY_MAGAZINE, RESCUE_LOADOUTS, lobbyCover, type CombatImpact, type RescueLoadout } from '@auto_matrix/shared';
+import { filmPosition, filmEntry, FILM_SCENE_BY_ID, FILM_SETS, LOBBY_ENTRY, LOBBY_MAGAZINE, RESCUE_LOADOUTS, lobbyCover, lobbyLocked, type CombatImpact, type RescueLoadout } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
+import { Agent } from '../packages/server/src/agents/Agent.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
 import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
 
-function setup(loadout?: RescueLoadout) {
+function setup(loadout?: RescueLoadout, finishEntrance = true) {
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
   const sandbox = new SandboxSystem(world, { record() {} } as unknown as WorldDynamics, 42);
   const neo = world.agents.get('neo')!; neo.controller = 'player'; sandbox.enter(neo); sandbox.life.begin(neo, 0);
@@ -15,8 +16,31 @@ function setup(loadout?: RescueLoadout) {
     rescue: loadout ? { phase: 'equipped', elapsed: 0, loadout } : undefined };
   const lobby = sandbox.life.film.lobby; lobby.start(neo, 0);
   const impacts: CombatImpact[] = []; sandbox.onImpact = impact => impacts.push(impact);
+  if (finishEntrance) for (let i = 0; i < Math.ceil(LOBBY_ENTRY.duration / .1); i++) lobby.frame(neo, .1, 0);
   return { world, sandbox, lobby, neo, impacts };
 }
+
+test('the security checkpoint is a saved two-person entrance before guards become a combat wave', () => {
+  const h = setup('compact', false); const journey = h.sandbox.life.film.state!;
+  assert.equal(journey.lobby!.phase, 'checkpoint'); assert.equal(journey.lobby!.wave, 0); assert.equal(h.sandbox.state.threats.length, 0);
+  assert.equal(lobbyLocked(journey), true);
+  for (const id of ['neo', 'trinity', 'citizen_12']) {
+    const actor = h.world.agents.get(id)!;
+    assert.equal(actor.currentLocation, 'film_government_lobby');
+    assert.equal(actor.currentAction?.parameters.lobbyEntry?.role, id === 'citizen_12' ? 'guard' : id);
+  }
+  h.lobby.frame(h.neo, 2.7, 3); const elapsed = journey.lobby!.elapsed;
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+  h.lobby.frame(h.neo, 0, 3); const restored = h.sandbox.life.film.state!;
+  assert.equal(restored.lobby!.elapsed, elapsed, 'restoring and pausing cannot skip the checkpoint performance');
+  assert.equal(h.world.agents.get('trinity')!.currentAction?.parameters.armed, false, 'weapons stay concealed before the alarm and draw');
+  for (let i = 0; i < 80; i++) h.lobby.frame(h.neo, .1, 3 + i / 10);
+  assert.equal(restored.lobby!.phase, 'combat'); assert.equal(restored.lobby!.wave, 1); assert.equal(h.sandbox.state.threats.length, 2);
+  assert.equal(lobbyLocked(restored), false);
+  const guard = new Agent(structuredClone(h.world.agents.get('citizen_12')!), '');
+  guard.update(guard.state.currentAction!.startedAt + 2); guard.update(guard.state.currentAction!.startedAt + 3);
+  assert.equal(guard.state.currentAction?.parameters.lobbyEntry?.phase, 'down', 'the checkpoint guard remains as a physical aftermath instead of disappearing');
+});
 
 test('the lobby begins outside the security gate so entering the hall remains playable', () => {
   const start = filmEntry(FILM_SCENE_BY_ID.m1_lobby); const center = FILM_SETS.film_government_lobby.center;
@@ -29,8 +53,8 @@ test('each physical Construct loadout keeps its own magazine, damage and reload 
     const h = setup(loadout); const spec = RESCUE_LOADOUTS[loadout]; const enemy = h.sandbox.state.threats[0];
     h.sandbox.state.threats = [enemy]; enemy.position = filmPosition('film_government_lobby', 0, 5);
     assert.equal(h.lobby.state!.loadout, loadout); assert.equal(h.lobby.state!.ammo, spec.magazine);
-    h.lobby.shoot(h.neo, Math.PI, 2); assert.equal(enemy.health, enemy.maxHealth - spec.damage);
-    h.lobby.state!.ammo = 0; h.lobby.shoot(h.neo, Math.PI, 10);
+    h.lobby.shoot(h.neo, Math.PI, 0, 2); assert.equal(enemy.health, enemy.maxHealth - spec.damage);
+    h.lobby.state!.ammo = 0; h.lobby.shoot(h.neo, Math.PI, 0, 10);
     assert.equal(h.lobby.state!.reloadAt, 10 + spec.reloadTicks);
     h.lobby.tick(h.neo, 9 + spec.reloadTicks); assert.equal(h.lobby.state!.ammo, 0);
     h.lobby.tick(h.neo, 10 + spec.reloadTicks); assert.equal(h.lobby.state!.ammo, spec.magazine);
@@ -44,11 +68,11 @@ test('lobby gunfire hits the first visible target, consumes ammunition, and cann
   const { sandbox, lobby, neo, impacts } = setup();
   const enemy = sandbox.state.threats[0]; sandbox.state.threats = [enemy];
   enemy.position = filmPosition('film_government_lobby', 0, 5);
-  lobby.shoot(neo, Math.PI, 1); assert.equal(enemy.health, 24); assert.equal(lobby.state!.ammo, LOBBY_MAGAZINE - 1);
+  lobby.shoot(neo, Math.PI, 0, 1); assert.equal(enemy.health, 24); assert.equal(lobby.state!.ammo, LOBBY_MAGAZINE - 1);
   neo.position = filmPosition('film_government_lobby', 10.2, 23); enemy.position = filmPosition('film_government_lobby', 10.2, 9);
-  lobby.shoot(neo, Math.PI, 2); assert.equal(enemy.health, 24); assert.equal(impacts.at(-1)!.shot!.surface, 'stone');
+  lobby.shoot(neo, Math.PI, 0, 2); assert.equal(enemy.health, 24); assert.equal(impacts.at(-1)!.shot!.surface, 'stone');
   assert.ok(lobby.state!.columns.some(damage => damage > 0));
-  for (let i = 0; i < 6; i++) lobby.shoot(neo, Math.PI, 3);
+  for (let i = 0; i < 6; i++) lobby.shoot(neo, Math.PI, 0, 3);
   assert.equal(enemy.health, 24, 'chipping the facing does not remove structural cover');
   const cover = lobbyCover({ ...neo.position, y: 3.3 }, { x: 0, y: 0, z: -1 }, FILM_SETS.film_government_lobby.center);
   assert.ok(cover.distance < 7);
@@ -56,13 +80,22 @@ test('lobby gunfire hits the first visible target, consumes ammunition, and cann
 
 test('empty magazines cannot damage targets; reload survives saving and finishes at its deadline', () => {
   const h = setup(); h.lobby.state!.ammo = 0; const health = h.sandbox.state.threats.map(t => t.health);
-  h.lobby.shoot(h.neo, Math.PI, 10); assert.deepEqual(h.sandbox.state.threats.map(t => t.health), health);
+  h.lobby.shoot(h.neo, Math.PI, 0, 10); assert.deepEqual(h.sandbox.state.threats.map(t => t.health), health);
   h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
   assert.equal(h.lobby.state!.reloadAt, 14);
   h.lobby.tick(h.neo, 13); assert.equal(h.lobby.state!.ammo, 0);
   h.lobby.tick(h.neo, 14); assert.equal(h.lobby.state!.ammo, LOBBY_MAGAZINE);
-  h.sandbox.state.neoLife!.journey!.visiting = 'm1_dojo'; h.lobby.shoot(h.neo, Math.PI, 15);
+  h.sandbox.state.neoLife!.journey!.visiting = 'm1_dojo'; h.lobby.shoot(h.neo, Math.PI, 0, 15);
   assert.equal(h.lobby.state!.ammo, LOBBY_MAGAZINE, 'a scene revisit cannot fire into the saved encounter');
+});
+
+test('server-authoritative gunfire follows vertical mouse aim instead of flattening every shot', () => {
+  const h = setup(); const enemy = h.sandbox.state.threats[0]; h.sandbox.state.threats = [enemy];
+  h.neo.position = filmPosition('film_government_lobby', 0, 19); enemy.position = filmPosition('film_government_lobby', 0, 5); enemy.position.y += 4;
+  h.lobby.shoot(h.neo, Math.PI, 0, 1); assert.equal(enemy.health, enemy.maxHealth, 'a level shot passes below an elevated target');
+  const horizontal = Math.abs(enemy.position.z - h.neo.position.z); const pitch = -Math.atan2(4, horizontal);
+  h.lobby.shoot(h.neo, Math.PI, pitch, 2); assert.ok(enemy.health < enemy.maxHealth, 'aiming upward reaches the elevated target');
+  assert.ok((h.impacts.at(-1)?.direction.y ?? 0) > .15, 'the replicated ballistic trace keeps its vertical direction');
 });
 
 test('soldiers announce a fixed aim before firing, so movement and cover avoid damage', () => {
@@ -97,6 +130,8 @@ test('three waves and the elevator form one encounter, with Trinity assisting an
   assert.equal(neo.health, 100); assert.equal(journey.step, 1); assert.equal(journey.lobby!.ammo, LOBBY_MAGAZINE);
   assert.match(journey.lastText, /检查点/, 'retry must clear stale battle instructions from the HUD');
   neo.position = filmPosition('film_government_lobby', 0, 19); sandbox.life.film.command(neo, 'act', ++tick);
+  assert.equal(journey.lobby!.phase, 'checkpoint'); assert.equal(journey.lobby!.wave, 0); assert.equal(sandbox.state.threats.length, 0);
+  for (let i = 0; i < Math.ceil(LOBBY_ENTRY.duration / .1); i++) lobby.frame(neo, .1, tick);
   assert.equal(journey.lobby!.wave, 1); assert.equal(sandbox.state.threats.length, 2);
 });
 
@@ -109,7 +144,7 @@ test('gunfire can clear all three waves, reload mid-encounter, and unlock the el
       neo.position = { ...enemy.position, z: enemy.position.z + 7 };
       while (enemy.health > 0) {
         if (!lobby.state!.ammo) { lobby.reload(neo, tick); tick += 4; lobby.tick(neo, tick); }
-        lobby.shoot(neo, Math.PI, ++tick);
+        lobby.shoot(neo, Math.PI, 0, ++tick);
       }
     }
     lobby.tick(neo, ++tick); tick += 3; lobby.tick(neo, tick);

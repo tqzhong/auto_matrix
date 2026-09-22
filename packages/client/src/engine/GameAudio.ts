@@ -264,6 +264,27 @@ export class GameAudio {
       source.connect(filter); filter.connect(gain); gain.connect(output); source.start(start); source.onended = () => { source.disconnect(); filter.disconnect(); gain.disconnect(); };
     }
   }
+  lobbySound(kind: 'alarm' | 'draw'): void {
+    const bus = this.effects(); if (!bus) return;
+    const { context: ctx, output } = bus; const at = ctx.currentTime;
+    if (kind === 'alarm') {
+      for (let i = 0; i < 5; i++) {
+        const tone = ctx.createOscillator(); const gain = ctx.createGain(); const start = at + i * .13;
+        tone.type = 'square'; tone.frequency.setValueAtTime(i % 2 ? 1180 : 880, start);
+        gain.gain.setValueAtTime(.0001, start); gain.gain.linearRampToValueAtTime(.026, start + .006); gain.gain.exponentialRampToValueAtTime(.0001, start + .1);
+        tone.connect(gain); gain.connect(output); tone.start(start); tone.stop(start + .12); tone.onended = () => { tone.disconnect(); gain.disconnect(); };
+      }
+      return;
+    }
+    for (let i = 0; i < 3; i++) {
+      const start = at + i * .075; const buffer = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * .16), ctx.sampleRate); const samples = buffer.getChannelData(0);
+      for (let sample = 0; sample < samples.length; sample++) samples[sample] = (Math.random() * 2 - 1) * Math.exp(-sample / ctx.sampleRate * 24);
+      const source = ctx.createBufferSource(); source.buffer = buffer;
+      const filter = ctx.createBiquadFilter(); filter.type = 'bandpass'; filter.frequency.value = 520 + i * 390; filter.Q.value = 3.8;
+      const gain = ctx.createGain(); gain.gain.setValueAtTime(.0001, start); gain.gain.linearRampToValueAtTime(.065, start + .006); gain.gain.exponentialRampToValueAtTime(.0001, start + .16);
+      source.connect(filter); filter.connect(gain); gain.connect(output); source.start(start); source.onended = () => { source.disconnect(); filter.disconnect(); gain.disconnect(); };
+    }
+  }
   lafayetteSound(kind: 'thunder' | 'knock' | 'handshake' | 'door'): void {
     const bus = this.effects(); if (!bus) return;
     const { context: ctx, output } = bus; const duration = kind === 'thunder' ? 2.8 : kind === 'door' ? 1.15 : kind === 'knock' ? .14 : .18;

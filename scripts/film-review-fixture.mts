@@ -223,6 +223,14 @@ if (['racks-arriving', 'racks-selecting', 'equip-compact'].includes(process.argv
   }
   sandbox.life.film.state!.checkpoint = { ...actor.position };
 }
+if (['lobby-checkpoint', 'lobby-combat'].includes(process.argv[3]) && scene.id === 'm1_lobby') {
+  const journey = sandbox.life.film.state!; actor.controller = 'player'; journey.step = 1;
+  actor.position = filmStepPosition(scene, scene.steps[1]); actor.rotation = Math.PI; journey.checkpoint = { ...actor.position };
+  sandbox.life.film.command(actor, 'act', 0);
+  const frames = process.argv[3] === 'lobby-checkpoint' ? 38 : 72;
+  for (let frame = 0; frame < frames; frame++) sandbox.life.film.lobby.frame(actor, .1, 0);
+  journey.checkpoint = { ...actor.position };
+}
 for (const resident of world.agents.values()) delete resident.controller;
 neo.isAwakened = FILM_SCENES.indexOf(scene) >= FILM_SCENES.findIndex(s => s.id === 'm1_pod');
 await writeFile(path.join(directory, 'world.json'), JSON.stringify({ version: 1, tick: 0, timeOfDay: 12000, day: 1, phase: 'phase1_normal_life', agents: Object.fromEntries(world.agents), events: [], relationships: [], sandbox: sandbox.state }));

@@ -14,6 +14,7 @@ import { interludeDuration, interludeLocked } from '@auto_matrix/shared';
 import { oracleVisitDuration, oracleVisitLocked } from '@auto_matrix/shared';
 import { BETRAYAL, betrayalDuration, betrayalLocked } from '@auto_matrix/shared';
 import { RESCUE, rescueDuration, rescueLoadout, rescueLocked } from '@auto_matrix/shared';
+import { LOBBY_ENTRY, lobbyLocked } from '@auto_matrix/shared';
 
 const escape = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const WEATHER = { clear: '晴朗', rain: '雨', code_storm: '代码风暴' };
@@ -472,6 +473,15 @@ export class SandboxUI {
     if (scene.id === 'm1_lobby' && !journey.visiting) {
       const combat = journey.lobby; const loadout = rescueLoadout(journey);
       this.el('sandbox-trace').textContent = combat?.reloadAt !== undefined ? `${loadout.name} · 换弹 ${Math.max(0, (combat.reloadAt - this.tick) / 2).toFixed(1)}s` : `${loadout.name} · 弹匣 ${combat?.ammo ?? loadout.magazine} / ${loadout.magazine}`;
+      if (lobbyLocked(journey)) {
+        const elapsed = combat?.elapsed ?? 0;
+        this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
+        this.el('film-sequence-hint').textContent = elapsed < LOBBY_ENTRY.alarmAt ? '安检入口 · 鼠标环顾 · V 切换视角 · 动作自动保存'
+          : elapsed < LOBBY_ENTRY.drawAt ? '警报触发 · 保持观察' : '武器已拔出 · 大厅警戒即将启动';
+        this.el('sandbox-job').style.width = `${Math.min(100, elapsed / LOBBY_ENTRY.duration * 100)}%`;
+        this.el('sandbox-interact').classList.add('hidden'); this.el('sandbox-waypoint').textContent = '';
+        document.getElementById('game-objective-copy')!.textContent = '与 Trinity 通过安检 · 当前动作和人物位置会保存'; return;
+      }
       if (journey.fighting) {
         document.getElementById('game-objective-copy')!.textContent = `警戒 ${combat?.wave ?? 1}/3 · 左键 / T 射击 · R 换弹 · Q 子弹时间 · X 闪避`;
         this.el('sandbox-waypoint').textContent = '柱列能阻挡枪火 · 瞄准后换位 · Trinity 掩护侧翼';

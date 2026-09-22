@@ -277,6 +277,8 @@ test('the Construct waits for Neo to load racks, saves the selected physical loa
   assert.equal(h.sandbox.life.film.state!.scene, 'm1_lobby');
   assert.equal(h.sandbox.life.film.state!.lobby?.loadout, 'compact');
   assert.equal(h.sandbox.life.film.state!.lobby?.ammo, RESCUE_LOADOUTS.compact.magazine);
+  assert.equal(h.world.agents.get('trinity')!.rotation, Math.PI, 'Trinity faces the checkpoint before the breach');
+  assert.equal(h.world.agents.get('citizen_12')!.rotation, 0, 'the guard faces the approaching players');
 });
 
 test('legacy rescue checkpoints migrate to a non-replaying rifle loadout', () => {
@@ -940,7 +942,9 @@ test('the entire film route completes through interactions, driving and real com
       }
       else if (step.kind === 'drive') { h.command('act'); rideToExit(h); }
       else {
-        h.command('act'); h.advance(); assert.ok(h.sandbox.state.threats.length > 0, scene.id);
+        h.command('act');
+        if (scene.id === 'm1_lobby') for (let frame = 0; frame < 80 && !h.sandbox.state.threats.length; frame++) h.players.step(.1, true, h.tick());
+        h.advance(); assert.ok(h.sandbox.state.threats.length > 0, scene.id);
         if (scene.id === 'm1_bathroom') {
           const target = h.sandbox.state.threats[0]; target.stunUntil = Number.MAX_SAFE_INTEGER;
           for (let frame = 0; frame < 130; frame++) h.players.step(.1, true, h.tick());

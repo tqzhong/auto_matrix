@@ -1,4 +1,4 @@
-import { MELEE_COMBO, COMBO_WINDOW, COMBAT_SKILLS, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED, type CombatSkillId, type AwakeningPose, type AwakeningReveal, type OfficePhone, pillPose, lafayetteWelcomePose, oracleVisitPose, betrayalPose, rescuePose, type PillGesture, type InterrogationGesture, type LafayetteWelcomeGesture, type TrainingGesture, type OracleVisitGesture, type BetrayalGesture, type RescueGesture, type RescueLoadout } from '@auto_matrix/shared';
+import { MELEE_COMBO, COMBO_WINDOW, COMBAT_SKILLS, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED, lobbyPose, type CombatSkillId, type AwakeningPose, type AwakeningReveal, type OfficePhone, pillPose, lafayetteWelcomePose, oracleVisitPose, betrayalPose, rescuePose, type PillGesture, type InterrogationGesture, type LafayetteWelcomeGesture, type TrainingGesture, type OracleVisitGesture, type BetrayalGesture, type RescueGesture, type RescueLoadout, type LobbyGesture } from '@auto_matrix/shared';
 
 export interface MotionInput {
   speed: number;
@@ -32,7 +32,9 @@ export interface MotionInput {
   oracleVisit?: OracleVisitGesture;
   betrayal?: BetrayalGesture;
   rescue?: RescueGesture;
+  lobbyEntry?: LobbyGesture;
   weaponStyle?: RescueLoadout;
+  aimPitch?: number;
   clubClothes?: boolean;
   mirror?: number;
   spoon?: number;
@@ -112,6 +114,7 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const oracle = input.oracleVisit && oracleVisitPose(input.oracleVisit);
   const betrayal = input.betrayal && betrayalPose(input.betrayal);
   const rescue = input.rescue && rescuePose(input.rescue);
+  const lobby = input.lobbyEntry && lobbyPose(input.lobbyEntry);
   const welcomeWalking = input.welcome?.phase === 'approach' || input.welcome?.phase === 'departing' && input.welcome.role !== 'neo';
   const welcomeSpeed = input.welcome?.role === 'morpheus' ? 2.6 : input.welcome?.role === 'neo' ? 2.3 : 1.8;
   const speed = input.pills ? exiting ? 1.7 : 0 : welcomeWalking ? welcomeSpeed : input.speed;
@@ -158,7 +161,8 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const windup = Math.sin(clamp(age / strike.contact) * Math.PI) * guard;
   const recoil = state.hitAge < .32 ? Math.sin(state.hitAge / .32 * Math.PI) * (1 - state.hitAge / .32) : 0;
   const kick = state.combo === 2 ? extension : 0;
-  const hipHeight = 1.98 - moving * .08 - run * .12 + bob - state.landing * .20 - guard * .08 - dodging * .3 - (input.crouching ? .9 : 0) - state.seated * .6 - (input.floorSeated ? .85 : 0);
+  const lobbyDown = lobby?.fall ?? 0;
+  const hipHeight = 1.98 - moving * .08 - run * .12 + bob - state.landing * .20 - guard * .08 - dodging * .3 - (input.crouching ? .9 : 0) - state.seated * .6 - (input.floorSeated ? .85 : 0) - lobbyDown * 1.5;
   const legs = [0, .5].map(offset => {
     const foot = footTrajectory(state.phase + offset, stride, stance);
     const lift = foot.lift * mix(.22, .55, run) * moving;
@@ -192,7 +196,7 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   if (casting) for (const arm of arms) { arm.shoulder = mix(arm.shoulder, -1.35, casting); arm.elbow = mix(arm.elbow, -.25, casting); arm.grip = 0; }
   if (input.armed && guard < .1 && !casting) for (const arm of arms) {
     const kickback = Math.max(0, 1 - state.shotAge / .18) ** 2;
-    arm.shoulder = -1.16 - recoil * .1 - kickback * .16; arm.elbow = -.4 - kickback * .12; arm.outward *= .4; arm.grip = .9;
+    arm.shoulder = -1.16 + clamp(input.aimPitch ?? 0, -.9, .9) * .82 - recoil * .1 - kickback * .16; arm.elbow = -.4 - kickback * .12; arm.outward *= .4; arm.grip = .9;
   }
   for (let i = 0; i < 2; i++) {
     legs[i].hip = mix(legs[i].hip, -1.36, state.seated); legs[i].knee = mix(legs[i].knee, 1.46, state.seated); legs[i].ankle = mix(legs[i].ankle, -.1, state.seated);
@@ -262,6 +266,20 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
       arms[i].grip = mix(arms[i].grip, active ? .95 : .45, rescue.equip);
     }
   }
+  if (lobby && input.lobbyEntry) {
+    if (input.lobbyEntry.role === 'guard') {
+      arms[0].shoulder = mix(arms[0].shoulder, -1.05, lobby.alarm * (1 - lobby.fall));
+      arms[0].elbow = mix(arms[0].elbow, -1.42, lobby.alarm * (1 - lobby.fall));
+      arms[0].grip = mix(arms[0].grip, .5, lobby.alarm * (1 - lobby.fall));
+      for (let i = 0; i < 2; i++) {
+        arms[i].shoulder = mix(arms[i].shoulder, i ? -.35 : .2, lobby.fall);
+        arms[i].elbow = mix(arms[i].elbow, -.18, lobby.fall); arms[i].grip = mix(arms[i].grip, 0, lobby.fall);
+      }
+    } else if (lobby.draw > 0) for (const arm of arms) {
+      arm.shoulder = mix(arm.shoulder, -1.16 + clamp(input.aimPitch ?? 0, -.9, .9) * .82, lobby.draw);
+      arm.elbow = mix(arm.elbow, -.4, lobby.draw); arm.outward *= mix(1, .4, lobby.draw); arm.grip = mix(arm.grip, .9, lobby.draw);
+    }
+  }
   if (input.performance && !['touch', 'connect'].includes(input.performance)) for (let i = 0; i < 2; i++) {
     const afloat = input.performance === 'float'; const raised = input.performance === 'lift';
     arms[i].shoulder = raised ? -2 : -.5 + (afloat ? Math.sin(state.time * 2 + i) * .2 : 0);
@@ -274,8 +292,10 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const betrayalRoll = betrayal?.fall ? (input.betrayal?.role === 'cypher' ? -.86 : .68) * betrayal.fall : 0;
   const rescueLean = rescue?.briefingLean ? rescue.briefingLean * .07 : 0;
   const rescueLook = rescue?.briefingPoint ? (input.rescue?.role === 'trinity' ? -.16 : .13) * rescue.briefingPoint : 0;
-  return { legs, arms, hipHeight, twist, lean: run * .12 + state.landing * .12 + state.airborne * .04 + extension * .10 - kick * .27 - recoil * .35 + (input.crouching ? .26 : 0) + (input.riding ? .2 : 0) + oracleLean + betrayalLean + rescueLean,
+  const lobbyLean = lobbyDown * 1.38;
+  const lobbyRoll = -1.18 * lobbyDown;
+  return { legs, arms, hipHeight, twist, lean: run * .12 + state.landing * .12 + state.airborne * .04 + extension * .10 - kick * .27 - recoil * .35 + (input.crouching ? .26 : 0) + (input.riding ? .2 : 0) + oracleLean + betrayalLean + rescueLean + lobbyLean,
     sway: Math.sin(cycle) * moving * .035, lunge: extension * .16 - kick * .25 - recoil * .22 - dodging * .35,
-    roll: -state.turn * run * .035 - dodging * .22 + betrayalRoll, headTurn: -twist * .65 + glance + oracleLook + rescueLook, moving, run, airborne: state.airborne,
+    roll: -state.turn * run * .035 - dodging * .22 + betrayalRoll + lobbyRoll, headTurn: -twist * .65 + glance + oracleLook + rescueLook, moving, run, airborne: state.airborne,
     coat: moving * (.10 + run * .3) + state.airborne * .18 + kick * .35, impact: extension, landing: state.landing };
 }
