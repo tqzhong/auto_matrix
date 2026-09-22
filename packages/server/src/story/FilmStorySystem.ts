@@ -8,7 +8,7 @@ import { INTERROGATION_CAST, INTERROGATION_TIMING, interrogationLocked, interrog
 import { MEETING_CAR, MEETING_CAST, MEETING_TIMING, meetingLocked, meetingRoot, type MeetingEncounter } from '@auto_matrix/shared';
 import { LAFAYETTE, LAFAYETTE_WELCOME, LAFAYETTE_KNOCK_SECONDS, HOTEL_ROUTE_LENGTH, HOTEL_DOOR_PROGRESS, hotelRoutePose, hotelRouteProgress, lafayetteKnocking, lafayetteKnockRoot, lafayetteWelcomeLocked, lafayetteWelcomeRoot, filmSetAt } from '@auto_matrix/shared';
 import { OFFICE_WORKDAY, OFFICE_DELIVERY_SECONDS, officeCourierRoot, officeRecipientRoot, workdayLocked, workdayText } from '@auto_matrix/shared';
-import { APARTMENT, apartmentAfter, apartmentDoor, apartmentLocked, apartmentText, lifeRoomCenter, type ApartmentPhase } from '@auto_matrix/shared';
+import { APARTMENT, WAKE_CALL, apartmentAfter, apartmentDoor, apartmentLocked, apartmentText, wakeCallLocked, wakeCallRoot, wakeCallText, lifeRoomCenter, type ApartmentPhase, type WakeCallPhase } from '@auto_matrix/shared';
 import { CLUB, clubLocked, clubRoot, clubText, type ClubPhase } from '@auto_matrix/shared';
 
 export class FilmStorySystem {
@@ -21,7 +21,7 @@ export class FilmStorySystem {
   get scene(): FilmScene | undefined { return this.state && FILM_SCENE_BY_ID[this.state.scene]; }
   get step(): FilmStep | undefined { return this.scene?.steps[this.state!.step]; }
   controls(agent: AgentState): boolean { return Boolean(this.state && this.state.actor === agent.id); }
-  performing(agent: AgentState): boolean { return this.controls(agent) && (clubLocked(this.state!) || apartmentLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || oracleActing(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
+  performing(agent: AgentState): boolean { return this.controls(agent) && (clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || oracleActing(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
   clubFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
     if (state?.scene !== 'm1_club' || state.visiting || !this.controls(agent)) return;
@@ -76,6 +76,10 @@ export class FilmStorySystem {
   }
   apartmentFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
+    if (state?.scene === 'm1_wake_again' && !state.visiting) {
+      this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== 'film:apartment:door');
+      this.wakeCallFrame(agent, dt, tick); return;
+    }
     if (state?.scene !== 'm1_wake_up' || state.visiting) {
       this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== 'film:apartment:door'); return;
     }
@@ -119,6 +123,43 @@ export class FilmStorySystem {
     else if (!this.sandbox().structures.some(s => s.id === seal)) this.sandbox().structures.push({ id: seal, kind: 'barricade', owner: 'matrix', position: filmPosition(this.scene!.set, 0, APARTMENT.doorZ), matrix: true, health: 1,
       film: { scene: state.scene, width: APARTMENT.doorWidth, depth: .28, height: 6.5 } });
     state.lastText = apartmentText(contact);
+  }
+  private wakeCallFrame(agent: AgentState, dt: number, tick: number): void {
+    const state = this.state;
+    if (!state || state.scene !== 'm1_wake_again' || state.visiting || !this.controls(agent)) return;
+    const call = state.wakeCall ??= { phase: state.step ? 'done' : 'ringing', elapsed: 0, nightmare: state.office?.outcome !== 'escaped' };
+    const duration = call.phase === 'waking' ? WAKE_CALL.waking : call.phase === 'pickup' ? WAKE_CALL.pickup
+      : call.phase === 'listening' ? WAKE_CALL.listening : call.phase === 'reply' ? WAKE_CALL.reply : 0;
+    if (duration) call.elapsed = Math.min(duration, call.elapsed + Math.max(0, Math.min(.1, dt)));
+    if (duration && call.elapsed >= duration) {
+      const previous = call.phase;
+      const next: Partial<Record<WakeCallPhase, WakeCallPhase>> = { waking: 'ringing', pickup: 'listening', listening: 'decision', reply: 'done' };
+      call.phase = next[previous]!; call.elapsed = 0;
+      if (previous === 'waking') {
+        agent.position = filmPosition(this.scene!.set, APARTMENT.bedside.x, APARTMENT.bedside.z); agent.rotation = APARTMENT.bedside.yaw;
+        agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentAction = null; state.checkpoint = { ...agent.position };
+      }
+      if (previous === 'reply') {
+        agent.currentAction = null; this.advance('Morpheus 约你到 Adams Street 桥下。接应车辆会在那里找到你。', agent, tick);
+      }
+    }
+    if (wakeCallLocked(state)) {
+      const before = { ...agent.position }; const root = wakeCallRoot(call);
+      agent.position = filmPosition(this.scene!.set, root.x, root.z); agent.rotation = root.yaw;
+      agent.velocity = dt > 0 ? { x: (agent.position.x - before.x) / dt, y: 0, z: (agent.position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
+      agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, wakeCall: { ...call } }, startedAt: tick, duration: 1, progress: 0 };
+      state.checkpoint = { ...agent.position };
+    } else if (call.phase === 'ringing' || call.phase === 'done') agent.currentAction = null;
+    state.lastText = wakeCallText(call);
+  }
+  private wakeCallAct(agent: AgentState, target: string, tick: number): string {
+    const state = this.state!; this.wakeCallFrame(agent, 0, tick); const call = state.wakeCall!;
+    if (target !== 'act') return state.lastText;
+    if (call.phase === 'ringing') {
+      if (!this.near(agent, this.step!)) return '先走到工作台旁正在响的座机前。';
+      call.phase = 'pickup'; call.elapsed = 0;
+    } else if (call.phase === 'decision') { call.phase = 'reply'; call.elapsed = 0; }
+    this.wakeCallFrame(agent, 0, tick); return state.lastText;
   }
   private apartmentAct(agent: AgentState, target: string, tick: number): string {
     const state = this.state!; this.apartmentFrame(agent, 0, tick); const contact = state.contact!;
@@ -747,6 +788,12 @@ export class FilmStorySystem {
         this.place(agent, this.scene, { ...state.checkpoint }); this.apartmentFrame(agent, 0, tick);
         return '已回到公寓当前目标，保留屏幕、房门、磁盘和交易进度。';
       }
+      if (state.scene === 'm1_wake_again' && state.wakeCall) {
+        delete state.visiting; delete state.returnPosition;
+        agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
+        this.place(agent, this.scene, { ...state.checkpoint }); this.wakeCallFrame(agent, 0, tick);
+        return '已接回公寓来电，保留惊醒、听筒和对话进度。';
+      }
       if (state.scene === 'm1_boss' && state.workday) {
         agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
         agent.position = { ...state.checkpoint }; this.workdayFrame(agent, 0, tick); this.phoneFrame(agent, 0, tick);
@@ -880,6 +927,7 @@ export class FilmStorySystem {
     const step = this.step;
     if (!step) return '本场景已完成。G 或 J 继续下一段。';
     if (state.scene === 'm1_wake_up') return this.apartmentAct(agent, target, tick);
+    if (state.scene === 'm1_wake_again' && state.step === 0) return this.wakeCallAct(agent, target, tick);
     if (state.scene === 'm1_club') return this.clubAct(agent, target, tick);
     if (interrogationLocked(state) && state.interrogation!.phase !== 'response') return '审讯正在进行。可以转动视角观察，暂停会保留当前进度。';
     if (target === 'escape:retreat' && state.scene === 'm1_ledge') {
@@ -1048,6 +1096,7 @@ export class FilmStorySystem {
     delete state.dojo;
     delete state.workday;
     delete state.contact;
+    delete state.wakeCall;
     delete state.club;
     this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== 'film:apartment:door');
     delete state.pills;
@@ -1072,6 +1121,7 @@ export class FilmStorySystem {
     this.stageCast();
     this.reconcileCast();
     if (scene.id === 'm1_wake_up') { state.contact = { phase: 'idle', elapsed: 0 }; this.apartmentFrame(actor, 0, tick); }
+    if (scene.id === 'm1_wake_again') { state.wakeCall = { phase: 'waking', elapsed: 0, nightmare: state.office?.outcome !== 'escaped' }; this.apartmentFrame(actor, 0, tick); }
     if (scene.id === 'm1_club') { state.club = { phase: 'crowd', elapsed: 0 }; this.clubFrame(actor, 0, tick); }
     if (scene.id === 'm1_boss') { state.workday = { phase: 'waiting', elapsed: 0 }; this.workdayFrame(actor, 0, tick); }
     if (scene.id === 'm1_office_escape') this.office.start(tick);
@@ -1090,7 +1140,6 @@ export class FilmStorySystem {
     }
     if (scene.id === 'm1_dojo') state.dojo = { dodged: false, combo: 0, hits: 0 };
     if (scene.id === 'm1_bug') this.meetingFrame(actor, false, 0, tick);
-    if (scene.id === 'm1_wake_again' && state.office?.outcome === 'escaped') state.lastText = '脱身后，Morpheus 再次来电。前往 Adams Street 桥下，与接应者见面。';
     if (scene.id === 'm1_bug' && state.office?.outcome === 'escaped') state.lastText = '你没有被特工带走。Switch 仍要求做安全检查，确认没有追踪装置。';
   }
   private stageCast(): void {

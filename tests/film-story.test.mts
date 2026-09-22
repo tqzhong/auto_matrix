@@ -35,7 +35,10 @@ test('all trilogy scenes have distinct stable IDs, existing cast, accessible obj
     const set = FILM_SETS[scene.set]; assert.ok(set, scene.id);
     assert.ok(set.film.includes(scene.film), scene.id);
     assert.ok(NEO_CHAPTERS.some(c => c.id === scene.chapter), scene.id);
-    assert.ok(!playerBlocked(filmEntry(scene), set.world === 'matrix'), `${scene.id}: entry`);
+    // The second apartment wake begins as a locked bed performance; its first
+    // walkable position is the bedside route verified in wake-call.test.
+    const stagedEntry = scene.id === 'm1_wake_again';
+    assert.equal(playerBlocked(filmEntry(scene), set.world === 'matrix'), stagedEntry, `${scene.id}: entry`);
     for (const step of scene.steps) {
       // These targets are seats inside a solid vehicle, reached by boarding.
       // meeting.test exercises that route and character-asset.test checks the seats.
@@ -615,6 +618,10 @@ test('the entire film route completes through interactions, driving and real com
       for (let frame = 0; frame < 90; frame++) h.players.step(.1, true, h.tick());
       assert.equal(state.hotel.welcome?.phase, 'done');
     }
+    if (scene.id === 'm1_wake_again') {
+      for (let frame = 0; frame < 61; frame++) h.players.step(.1, true, h.tick());
+      assert.equal(state.wakeCall?.phase, 'ringing');
+    }
     for (let index = 0; index < scene.steps.length; index++) {
       const step = scene.steps[index]; const actor = h.actor(); actor.position = filmStepPosition(scene, step);
       if (step.kind === 'reach') h.advance();
@@ -655,6 +662,12 @@ test('the entire film route completes through interactions, driving and real com
           }
         }
         else if (scene.id === 'm1_interrogation') for (let frame = 0; frame < (index === 0 ? 61 : 241); frame++) h.players.step(.1, true, h.tick());
+        else if (scene.id === 'm1_wake_again') {
+          for (let frame = 0; frame < 120; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.wakeCall?.phase, 'decision');
+          h.command('act');
+          for (let frame = 0; frame < 51; frame++) h.players.step(.1, true, h.tick());
+        }
         else if (scene.id === 'm1_boss' && index === 0) {
           for (let frame = 0; frame < 91; frame++) h.players.step(.1, true, h.tick());
           h.command('act');

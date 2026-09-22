@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
-import { OFFICE_WINDOW, officeWindowPose, officeCrossingPose, pillPose, lafayetteKnockPose, lafayetteWelcomePose } from '@auto_matrix/shared';
+import { APARTMENT, FILM_SETS, OFFICE_WINDOW, officeWindowPose, officeCrossingPose, pillPose, lafayetteKnockPose, lafayetteWelcomePose } from '@auto_matrix/shared';
 import type { advanceMotion, MotionInput, MotionState } from './CharacterMotion.js';
 
 import { PillPerformance } from './PillPerformance.js';
@@ -12,6 +12,7 @@ import { LafayetteKnockPerformance } from './LafayetteKnockPerformance.js';
 import { RecoveryPerformance } from './RecoveryPerformance.js';
 import { OfficeWorkdayPerformance } from './OfficeWorkdayPerformance.js';
 import { ApartmentPerformance } from './ApartmentPerformance.js';
+import { WakeCallPerformance } from './WakeCallPerformance.js';
 import { clubCloseness } from '@auto_matrix/shared';
 
 type Pose = ReturnType<typeof advanceMotion>;
@@ -44,6 +45,7 @@ export class HeroModels {
   private recoveries = new Map<HeroRig, RecoveryPerformance>();
   private workdays = new Map<HeroRig, OfficeWorkdayPerformance>();
   private apartments = new Map<HeroRig, ApartmentPerformance>();
+  private wakeCalls = new Map<HeroRig, WakeCallPerformance>();
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private textures = new Set<THREE.Texture>();
@@ -252,12 +254,12 @@ export class HeroModels {
     return { mesh, rest: Float32Array.from(positions), velocity: new Float32Array(positions.length) };
   }
 
-  private holdPhone(rig: HeroRig, phone: NonNullable<MotionInput['phone']>): void {
+  private holdPhone(rig: HeroRig, phone: NonNullable<MotionInput['phone']>, physicalPickup?: THREE.Vector3): void {
     const smooth = (value: number) => { const t = THREE.MathUtils.clamp(value, 0, 1); return t * t * (3 - 2 * t); };
     rig.root.updateWorldMatrix(true, true);
     const shoulder = rig.bones.get('shoulder_R')!; const elbow = rig.bones.get('elbow_R')!; const wrist = rig.bones.get('wrist_R')!;
     const head = rig.bones.get('head')!;
-    const ready = new THREE.Vector3(-.38, 2.98, .8); const pickup = new THREE.Vector3(-.5, 2.635, 1.2);
+    const ready = new THREE.Vector3(-.38, 2.98, .8); const pickup = physicalPickup?.clone() ?? new THREE.Vector3(-.5, 2.635, 1.2);
     const rest = rig.root.worldToLocal(wrist.getWorldPosition(new THREE.Vector3()));
     const ear = rig.root.worldToLocal(head.localToWorld(new THREE.Vector3(-.43, -.25, .17)));
     const target = phone.phase === 'pickup' ? phone.elapsed < .65 ? rest.lerp(pickup, smooth(phone.elapsed / .65)) : pickup.lerp(ready, smooth((phone.elapsed - .65) / 1.15))
@@ -356,7 +358,7 @@ export class HeroModels {
     const officeShirt = input.officeShirt || rig.officeRole === 'courier';
     const pod = input.performance && !['touch', 'connect'].includes(input.performance);
     for (const part of rig.wardrobe) {
-      part.mesh.visible = !(part.outer && (input.realWorld || input.clubClothes || input.pills?.role === 'neo' || input.meeting) || part.hair && pod);
+      part.mesh.visible = !(part.outer && (input.realWorld || input.clubClothes || input.pills?.role === 'neo' || input.meeting || input.wakeCall) || part.hair && pod);
       if (part.mesh.userData.office) part.mesh.visible = Boolean(officeShirt || input.meeting?.role === 'neo' && (part.mesh.material as THREE.Material).name === 'Office skin');
       else if (officeShirt && (part.outer || /Tailored.coat.upper|Black.crew.neck/i.test(part.mesh.name))) part.mesh.visible = false;
       const material = part.mesh.material as THREE.MeshStandardMaterial;
@@ -389,9 +391,12 @@ export class HeroModels {
       bone('spine').rotation.x += knock.raised * .035; bone('chest').rotation.x += knock.raised * .065;
       bone('head').rotation.y -= knock.raised * .1;
     }
-    if (input.phone?.phase === 'pickup') {
-      const reach = input.phone.elapsed < .65 ? Math.min(1, input.phone.elapsed / .65) : Math.max(0, 1 - (input.phone.elapsed - .65) / 1.15);
-      bone('spine').rotation.x += .3 * reach; bone('chest').rotation.x += .6 * reach; bone('head').rotation.x -= .45 * reach;
+    const phonePickup = input.phone?.phase === 'pickup' ? input.phone : input.wakeCall?.phase === 'pickup' ? input.wakeCall : undefined;
+    if (phonePickup) {
+      const reach = phonePickup.elapsed < .65 ? Math.min(1, phonePickup.elapsed / .65) : Math.max(0, 1 - (phonePickup.elapsed - .65) / 1.15);
+      const landline = input.wakeCall?.phase === 'pickup';
+      pelvis.position.y -= (landline ? .18 : 0) * reach;
+      bone('spine').rotation.x += (landline ? .36 : .3) * reach; bone('chest').rotation.x += (landline ? .7 : .6) * reach; bone('head').rotation.x -= .45 * reach;
     }
     if (input.window !== undefined) {
       const reach = officeWindowPose(input.window).reach;
@@ -435,6 +440,24 @@ export class HeroModels {
       const inspect = THREE.MathUtils.smoothstep(t, 6.8, 7.8) * (1 - THREE.MathUtils.smoothstep(t, 8.7, 9.3));
       bone('shoulder_R').rotation.x -= inspect * .72; bone('elbow_R').rotation.x -= inspect * 1.05;
       bone('head').rotation.y += inspect * .28;
+    }
+    if (input.wakeCall?.phase === 'waking') {
+      const t = input.wakeCall.elapsed; const smooth = THREE.MathUtils.smoothstep;
+      const lie = 1 - smooth(t, 1.3, 2.75); const sit = smooth(t, 1.15, 2.05) * (1 - smooth(t, 2.7, 3.45));
+      pelvis.position.y = THREE.MathUtils.lerp(pelvis.position.y, .62, lie);
+      pelvis.rotation.x = THREE.MathUtils.lerp(pelvis.rotation.x, -Math.PI / 2, lie);
+      bone('spine').rotation.x += .18 * sit; bone('chest').rotation.x += .28 * sit;
+      bone('head').rotation.x += (input.wakeCall.nightmare ? -.18 * Math.sin(Math.min(1, t / .55) * Math.PI) : .08) * lie - .16 * sit;
+      for (const side of ['R', 'L']) {
+        bone('hip_' + side).rotation.x = THREE.MathUtils.lerp(bone('hip_' + side).rotation.x, -1.28, sit);
+        bone('knee_' + side).rotation.x = THREE.MathUtils.lerp(bone('knee_' + side).rotation.x, 1.42, sit);
+      }
+      if (input.wakeCall.nightmare) {
+        const inspect = smooth(t, 1.45, 1.9) * (1 - smooth(t, 2.75, 3.25));
+        bone('shoulder_R').rotation.x -= .9 * inspect; bone('elbow_R').rotation.x -= 1.05 * inspect;
+        bone('shoulder_L').rotation.x -= .52 * inspect; bone('elbow_L').rotation.x -= .72 * inspect;
+        bone('head').rotation.y += .2 * inspect;
+      }
     }
     if (input.reveal) {
       const { kind, elapsed: t, role } = input.reveal;
@@ -506,7 +529,7 @@ export class HeroModels {
       }
     }
     rig.root.updateWorldMatrix(true, true);
-    if (input.grounded && !input.meeting && !input.interrogation && !input.riding && input.climbing === undefined && (!input.performance || input.performance === 'connect')) {
+    if (input.grounded && !input.meeting && !input.interrogation && !(input.wakeCall?.phase === 'waking' && input.wakeCall.elapsed < 3.2) && !input.riding && input.climbing === undefined && (!input.performance || input.performance === 'connect')) {
       let lowest = Infinity;
       for (const side of ['R', 'L']) {
         this.point.setFromMatrixPosition(bone('ankle_' + side).matrixWorld); rig.root.worldToLocal(this.point);
@@ -516,6 +539,14 @@ export class HeroModels {
       rig.root.updateWorldMatrix(true, true);
     }
     if (input.phone) this.holdPhone(rig, input.phone);
+    if (input.wakeCall && input.wakeCall.phase !== 'waking') {
+      if (input.wakeCall.phase === 'pickup') {
+        const center = FILM_SETS.film_anderson_flat.center; rig.root.updateWorldMatrix(true, true);
+        const handset = rig.root.worldToLocal(new THREE.Vector3(center.x + APARTMENT.phone.x, center.y - 1 + APARTMENT.phone.y + .48, center.z + APARTMENT.phone.z + .22));
+        this.holdPhone(rig, { phase: 'pickup', elapsed: Math.min(1.8, input.wakeCall.elapsed) }, handset);
+      }
+      else if (input.wakeCall.phase !== 'reply' || input.wakeCall.elapsed < 3.15) this.holdPhone(rig, { phase: 'connected', elapsed: 2 });
+    }
     if (input.window !== undefined) this.openWindow(rig, input.window);
     if (input.crossing !== undefined) this.crossWindow(rig, input.crossing);
     if (input.pills && !this.pills.has(rig)) this.pills.set(rig, new PillPerformance(rig));
@@ -534,6 +565,8 @@ export class HeroModels {
     this.workdays.get(rig)?.update(input.workday);
     if (input.contact && !this.apartments.has(rig)) this.apartments.set(rig, new ApartmentPerformance(rig));
     this.apartments.get(rig)?.update(input.contact);
+    if (input.wakeCall && !this.wakeCalls.has(rig)) this.wakeCalls.set(rig, new WakeCallPerformance(rig));
+    this.wakeCalls.get(rig)?.update(input.wakeCall);
     if (delta <= 0) return;
     const dt = Math.min(delta, 1 / 30);
     // Analytic wind target plus damped springs; the waist is pinned. Thigh and
@@ -580,6 +613,7 @@ export class HeroModels {
     this.recoveries.forEach(p => p.dispose()); this.recoveries.clear();
     this.workdays.forEach(p => p.dispose()); this.workdays.clear();
     this.apartments.forEach(p => p.dispose()); this.apartments.clear();
+    this.wakeCalls.forEach(p => p.dispose()); this.wakeCalls.clear();
     this.geometries.forEach(value => value.dispose()); this.materials.forEach(value => value.dispose());
     this.textures.forEach(value => value.dispose()); this.skeletons.forEach(value => value.dispose());
     this.geometries.clear(); this.materials.clear(); this.textures.clear(); this.skeletons.clear();

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { APARTMENT, apartmentAfter, apartmentDoor, type FilmJourney } from '@auto_matrix/shared';
+import { APARTMENT, apartmentAfter, apartmentDoor, wakeCallHandsetHeld, type FilmJourney } from '@auto_matrix/shared';
 
 /** Anderson's workroom and the shared landing. Props use the shared interaction layout. */
 export class ApartmentSetRenderer {
@@ -12,6 +12,9 @@ export class ApartmentSetRenderer {
   private door = new THREE.Group();
   private cover = new THREE.Group();
   private disk = new THREE.Group();
+  private phoneBase = new THREE.Group();
+  private phoneHandset = new THREE.Group();
+  private phoneCord: THREE.Line;
   private canvas = document.createElement('canvas');
   private screen: THREE.CanvasTexture;
   private screenKey = '';
@@ -86,7 +89,21 @@ export class ApartmentSetRenderer {
       this.box(i % 3 ? plastic : dark, -12.25, 2.45 + i * .06, -12, 1.15, .048, 1.03);
       this.box(paper, -12.25, 2.44 + i * .06, -11.478, .96, .018, .015);
     }
-    this.box(dark, -5.8, 2.62, -13.2, .8, .42, 1.2, .13);
+    // The corded apartment telephone is the physical bridge between the two office outcomes and Adams Street.
+    this.phoneBase.name = 'apartment-landline-base'; this.phoneBase.userData.dynamic = true;
+    this.phoneBase.position.set(APARTMENT.phone.x, APARTMENT.phone.y, APARTMENT.phone.z); this.root.add(this.phoneBase);
+    this.mesh(new RoundedBoxGeometry(1.7, .3, .78, 3, .12), dark, 0, 0, 0, this.phoneBase);
+    this.mesh(new THREE.BoxGeometry(1.28, .08, .48), plastic, 0, .18, .05, this.phoneBase).rotation.x = -.16;
+    for (let row = 0; row < 3; row++) for (let col = 0; col < 4; col++) this.mesh(new RoundedBoxGeometry(.18, .045, .12, 2, .018), paper,
+      -.3 + col * .2, .25 + row * .002, .28 - row * .16, this.phoneBase).rotation.x = -.16;
+    for (const x of [-.66, .66]) this.mesh(new RoundedBoxGeometry(.22, .16, .34, 2, .04), plastic, x, .3, -.24, this.phoneBase);
+    this.phoneHandset.name = 'apartment-landline-handset'; this.phoneHandset.userData.dynamic = true;
+    this.phoneHandset.position.set(APARTMENT.phone.x, APARTMENT.phone.y + .48, APARTMENT.phone.z + .22); this.root.add(this.phoneHandset);
+    this.mesh(new RoundedBoxGeometry(.94, .17, .22, 3, .07), dark, 0, 0, 0, this.phoneHandset);
+    for (const x of [-.56, .56]) this.mesh(new RoundedBoxGeometry(.34, .3, .38, 3, .1), dark, x, .01, 0, this.phoneHandset);
+    const cordGeometry = new THREE.BufferGeometry(); cordGeometry.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(25 * 3), 3)); this.geometries.add(cordGeometry);
+    const cordMaterial = new THREE.LineBasicMaterial({ color: 0x111716 }); this.materials.add(cordMaterial);
+    this.phoneCord = new THREE.Line(cordGeometry, cordMaterial); this.phoneCord.name = 'apartment-landline-cord'; this.phoneCord.frustumCulled = false; this.root.add(this.phoneCord);
     const chair = this.mat(0x292f2b, .92);
     this.box(chair, -9, 1.5, -8.4, 2, .3, 1.75, .14);
     this.box(chair, -9, 2.4, -7.6, 1.94, 1.5, .24, .13);
@@ -160,6 +177,21 @@ export class ApartmentSetRenderer {
     const opening = contact?.phase === 'retrieving' ? THREE.MathUtils.smoothstep(contact.elapsed, .3, 1.65) : contact && apartmentAfter(contact, 'disk') ? 1 : 0;
     this.cover.rotation.z = opening * 2.88;
     this.disk.visible = !(contact && (apartmentAfter(contact, 'disk') || contact.phase === 'retrieving' && contact.elapsed > 2.3));
+    const call = journey?.scene === 'm1_wake_again' && !journey.visiting ? journey.wakeCall : undefined;
+    const held = wakeCallHandsetHeld(call); this.phoneHandset.visible = !held;
+    this.phoneHandset.position.set(APARTMENT.phone.x, APARTMENT.phone.y + .48, APARTMENT.phone.z + .22);
+    this.phoneHandset.rotation.set(0, 0, call?.phase === 'ringing' ? Math.sin(call.elapsed * 52) * .045 : 0);
+    if (call?.phase === 'ringing') this.phoneHandset.position.y += Math.abs(Math.sin(call.elapsed * 26)) * .025;
+    const cord = this.phoneCord.geometry.attributes.position as THREE.BufferAttribute;
+    const start = new THREE.Vector3(APARTMENT.phone.x + .72, APARTMENT.phone.y + .08, APARTMENT.phone.z + .05);
+    const end = held ? new THREE.Vector3(APARTMENT.phone.approachX - .28, 3.62, APARTMENT.phone.approachZ - .08)
+      : new THREE.Vector3(APARTMENT.phone.x + .55, APARTMENT.phone.y + .47, APARTMENT.phone.z + .18);
+    for (let i = 0; i < cord.count; i++) {
+      const t = i / (cord.count - 1); const sag = Math.sin(t * Math.PI) * (held ? -.55 : -.18);
+      cord.setXYZ(i, THREE.MathUtils.lerp(start.x, end.x, t) + Math.sin(t * Math.PI * 12) * (held ? .06 : .025),
+        THREE.MathUtils.lerp(start.y, end.y, t) + sag, THREE.MathUtils.lerp(start.z, end.z, t));
+    }
+    cord.needsUpdate = true;
     let text = 'SEARCH: MORPHEUS\n\nconnection waiting_';
     if (contact?.phase === 'signal') {
       const t = contact.elapsed; const start = t < 2.8 ? 0 : t < 5.6 ? 2.8 : 5.6;

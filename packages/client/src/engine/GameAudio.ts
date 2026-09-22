@@ -144,6 +144,23 @@ export class GameAudio {
       tone.onended = () => { tone.disconnect(); gain.disconnect(); };
     }
   }
+  landlineSound(kind: 'ring' | 'pickup' | 'hangup'): void {
+    const bus = this.effects(); if (!bus) return;
+    const { context: ctx, output } = bus; const at = ctx.currentTime;
+    if (kind === 'ring') {
+      for (let i = 0; i < 8; i++) {
+        const tone = ctx.createOscillator(); const gain = ctx.createGain(); const start = at + i * .075;
+        tone.type = 'sine'; tone.frequency.setValueAtTime(i % 2 ? 610 : 470, start);
+        gain.gain.setValueAtTime(.0001, start); gain.gain.linearRampToValueAtTime(.032, start + .006); gain.gain.exponentialRampToValueAtTime(.0001, start + .065);
+        tone.connect(gain); gain.connect(output); tone.start(start); tone.stop(start + .075); tone.onended = () => { tone.disconnect(); gain.disconnect(); };
+      }
+      return;
+    }
+    const tone = ctx.createOscillator(); const gain = ctx.createGain(); tone.type = 'triangle'; tone.frequency.setValueAtTime(kind === 'pickup' ? 180 : 110, at);
+    tone.frequency.exponentialRampToValueAtTime(kind === 'pickup' ? 75 : 48, at + .085);
+    gain.gain.setValueAtTime(.07, at); gain.gain.exponentialRampToValueAtTime(.0001, at + .1);
+    tone.connect(gain); gain.connect(output); tone.start(at); tone.stop(at + .11); tone.onended = () => { tone.disconnect(); gain.disconnect(); };
+  }
   windowSound(wind: boolean): void {
     const bus = this.effects(); if (!bus) return;
     const { context: ctx, output } = bus; const duration = wind ? 3 : .16;

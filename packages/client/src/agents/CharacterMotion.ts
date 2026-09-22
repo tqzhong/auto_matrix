@@ -25,6 +25,7 @@ export interface MotionInput {
   training?: TrainingGesture;
   workday?: import('@auto_matrix/shared').OfficeWorkdayGesture;
   contact?: import('@auto_matrix/shared').ApartmentGesture;
+  wakeCall?: import('@auto_matrix/shared').WakeCall;
   club?: import('@auto_matrix/shared').ClubGesture;
   clubClothes?: boolean;
   mirror?: number;

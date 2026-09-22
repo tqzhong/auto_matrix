@@ -7,7 +7,7 @@ import { HeroModels, type HeroRig } from '../packages/client/src/agents/HeroMode
 import { advanceMotion, newMotion } from '../packages/client/src/agents/CharacterMotion.js';
 import { PhoneModel } from '../packages/client/src/agents/PhoneModel.js';
 import { OfficeSetRenderer } from '../packages/client/src/engine/OfficeSetRenderer.js';
-import { FILM_SETS, PILL_ROOM, PILL_TIMING, pillRoot, type PillGesture, OFFICE_WINDOW, OFFICE_LEDGE_OFFSET, officeWindowPose, officeCrossingPose, type FilmJourney } from '@auto_matrix/shared';
+import { APARTMENT, FILM_SETS, PILL_ROOM, PILL_TIMING, filmPosition, pillRoot, type PillGesture, OFFICE_WINDOW, OFFICE_LEDGE_OFFSET, officeWindowPose, officeCrossingPose, type FilmJourney } from '@auto_matrix/shared';
 import { INTERROGATION_ROOM, interrogationRoot } from '@auto_matrix/shared';
 import { MEETING_CAR, meetingRoot, meetingCarPose } from '@auto_matrix/shared';
 import { OFFICE_WORKDAY, officeRecipientRoot, officeCourierRoot, officeClipboardPoint, officePenPoint } from '@auto_matrix/shared';
@@ -349,6 +349,38 @@ test('Neo reaches the parcel and keeps the phone at his ear while walking and cr
   models.animate(rig, advanceMotion(state, idle, .05), state, idle, .05);
   assert.ok(wrist.quaternion.angleTo(new THREE.Quaternion()) < .0001, 'putting the phone away restores the wrist');
   models.dispose();
+});
+
+test('Neo takes the apartment handset from its physical cradle and returns it after the call', async () => {
+  const { scene } = await loadGeometry(); const bones = new Map<string, THREE.Bone>(); const rest = new Map<string, THREE.Vector3>();
+  scene.traverse(object => { if (object instanceof THREE.Bone) { bones.set(object.name, object); rest.set(object.name, object.position.clone()); } });
+  const position = filmPosition('film_anderson_flat', APARTMENT.phone.approachX, APARTMENT.phone.approachZ);
+  scene.position.set(position.x, position.y, position.z); scene.rotation.y = APARTMENT.phone.yaw; scene.updateMatrixWorld(true);
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  const rig: HeroRig = { root: scene, bones, rest, panels: [], footHeight: bones.get('ankle_L')!.getWorldPosition(new THREE.Vector3()).y - position.y,
+    glasses: new THREE.Group(), silver: { value: 0 }, wardrobe: [] };
+  const motion = newMotion();
+  try {
+    const pickup = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0,
+      wakeCall: { phase: 'pickup' as const, elapsed: .65, nightmare: true } };
+    models.animate(rig, advanceMotion(motion, pickup, .05), motion, pickup, .05); scene.updateMatrixWorld(true);
+    const center = FILM_SETS.film_anderson_flat.center;
+    const cradle = new THREE.Vector3(center.x + APARTMENT.phone.x, center.y - 1 + APARTMENT.phone.y + .48, center.z + APARTMENT.phone.z + .22);
+    const wrist = bones.get('wrist_R')!;
+    const held = scene.getObjectByName('neo-landline-handset')!; const heldAtPickup = held.getWorldPosition(new THREE.Vector3()); const pickupGap = heldAtPickup.distanceTo(cradle);
+    assert.ok(pickupGap < .06, `the held handset must replace the cradle handset without a jump; gap ${pickupGap}`);
+    assert.ok(wrist.getWorldPosition(new THREE.Vector3()).distanceTo(cradle) < .12, 'Neo hand must visibly meet the cradle during the transfer');
+    assert.equal(held.visible, true);
+
+    const listening = { ...pickup, wakeCall: { phase: 'listening' as const, elapsed: 2, nightmare: true } };
+    models.animate(rig, advanceMotion(motion, listening, .05), motion, listening, .05); scene.updateMatrixWorld(true);
+    const ear = bones.get('head')!.localToWorld(new THREE.Vector3(-.43, -.25, .17));
+    assert.ok(wrist.getWorldPosition(new THREE.Vector3()).distanceTo(ear) < .025, 'the handset must stay at Neo ear while Morpheus speaks');
+
+    const returned = { ...pickup, wakeCall: { phase: 'reply' as const, elapsed: 3.2, nightmare: true } };
+    models.animate(rig, advanceMotion(motion, returned, .05), motion, returned, .05);
+    assert.equal(scene.getObjectByName('neo-landline-handset')!.visible, false, 'the hand-held duplicate disappears when the physical handset returns to its base');
+  } finally { models.dispose(); }
 });
 
 test('the left hand reaches and turns the window handle while the right hand holds the phone', async () => {

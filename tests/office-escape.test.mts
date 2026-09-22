@@ -43,6 +43,8 @@ function setup() {
         command('act'); for (let f = 0; f < 40; f++) players.step(.1, true, tick);
       } else if (scene().id === 'm1_interrogation') {
         command('act'); for (let f = 0; f < 241; f++) players.step(.1, true, tick);
+      } else if (scene().id === 'm1_wake_again') {
+        frame(6); goal(); command('act'); frame(12); command('act'); frame(5);
       } else if (scene().id === 'm1_bridge') {
         command('act'); for (let f = 0; f < 81; f++) players.step(.1, true, tick);
         command('meeting:stay'); break;

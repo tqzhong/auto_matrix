@@ -138,6 +138,7 @@ export class AgentRenderer {
         training: state.currentAction?.parameters.training as MotionInput['training'],
         workday: state.currentAction?.parameters.workday as MotionInput['workday'],
         contact: state.currentAction?.parameters.contact as MotionInput['contact'],
+        wakeCall: state.currentAction?.parameters.wakeCall as MotionInput['wakeCall'],
         club: state.currentAction?.parameters.club as MotionInput['club'],
         vase: state.currentAction?.parameters.vase as number | undefined,
         riding: state.currentAction?.parameters.riding === true,

@@ -90,6 +90,17 @@ if (process.argv[3] === 'interrogation' && scene.id === 'm1_interrogation') {
   sandbox.life.film.command(actor, 'act', 0);
   for (let frame = 0; frame < 85; frame++) sandbox.life.film.interrogationFrame(actor, .1, 0);
 }
+if (scene.id === 'm1_wake_again' && ['wake-ringing', 'wake-listening', 'wake-decision'].includes(process.argv[3])) {
+  actor.controller = 'player';
+  for (let frame = 0; frame < 57; frame++) sandbox.life.film.apartmentFrame(actor, .1, 0);
+  if (process.argv[3] !== 'wake-ringing') {
+    actor.position = filmStepPosition(scene, scene.steps[0]); actor.rotation = Math.PI;
+    sandbox.life.film.command(actor, 'act', 0);
+    const frames = process.argv[3] === 'wake-listening' ? 45 : 110;
+    for (let frame = 0; frame < frames; frame++) sandbox.life.film.apartmentFrame(actor, .1, 0);
+  }
+  sandbox.life.film.state!.checkpoint = { ...actor.position };
+}
 if (['meeting', 'meeting-clear', 'meeting-scan', 'meeting-drive', 'meeting-driving', 'meeting-arrival'].includes(process.argv[3]) && scene.id === 'm1_bridge') {
   const journey = sandbox.state.neoLife!.journey!;
   journey.office = { alert: 0, suspicion: [], waypoints: [], lastTick: 0, guide: '', outcome: process.argv[3] === 'meeting-clear' ? 'escaped' : 'captured', bugged: process.argv[3] !== 'meeting-clear' };

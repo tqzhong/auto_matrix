@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { OfficeWorkday } from '@auto_matrix/shared';
 import type { AgentState, WorldEvent, SimulationState, SandboxState, CombatImpact, SkillCast } from '@auto_matrix/shared';
-import { insideLifeRoom, meetingLocked, meetingCarPose, interrogationLocked, pillLocked, lafayetteKnocking, lafayetteWelcomeLocked, awakeningLocked, oracleActing, phoneLocked, heldPhone, windowOpening, windowCrossing, OFFICE_CONTACT, FILM_SETS } from '@auto_matrix/shared';
+import { insideLifeRoom, meetingLocked, meetingCarPose, interrogationLocked, pillLocked, lafayetteKnocking, lafayetteWelcomeLocked, awakeningLocked, oracleActing, phoneLocked, heldPhone, wakeCallLocked, windowOpening, windowCrossing, OFFICE_CONTACT, FILM_SETS } from '@auto_matrix/shared';
 import { FilmSetRenderer } from './FilmSetRenderer.js';
 import { CombatEffects } from './CombatEffects.js';
 import { GameAudio } from './GameAudio.js';
@@ -225,6 +225,14 @@ export class Engine {
       }
       if (phone?.phase === 'answering' && before?.phone?.phase === 'ready') { this.audio.phoneSound(true); this.audio.dialogue(); }
     }
+    if (after?.scene === 'm1_wake_again' && !after.visiting && after.actor === this.playerControls?.id) {
+      const call = after.wakeCall; const previous = before?.scene === after.scene ? before.wakeCall : undefined;
+      const ringing = call?.phase === 'ringing' || call?.phase === 'waking' && call.elapsed > 3.1;
+      if (this.running && ringing && performance.now() - this.phoneRingAt > 3100) { this.phoneRingAt = performance.now(); this.audio.landlineSound('ring'); }
+      if (call?.phase === 'pickup' && previous?.phase === 'ringing') { this.audio.landlineSound('pickup'); this.audio.dialogue(); }
+      if (call?.phase === 'reply' && previous?.phase === 'decision') this.audio.dialogue();
+      if (call?.phase === 'reply' && previous?.phase === 'reply' && previous.elapsed < 3.15 && call.elapsed >= 3.15) this.audio.landlineSound('hangup');
+    }
     if (after?.scene === 'm1_office_escape' && !after.visiting && after.actor === this.playerControls?.id && before?.scene === after.scene && !after.office?.outcome && this.running) {
       const previous = before.office?.window ?? 0; const current = after.office?.window ?? 0;
       if (previous < .7 && current >= .7) this.audio.windowSound(false);
@@ -252,7 +260,7 @@ export class Engine {
       const journey = state.neoLife?.journey;
       this.playerControls.spoon = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_spoon' ? journey.oracle?.spoon : undefined;
       this.playerControls.phone = journey?.actor === this.playerControls.id ? heldPhone(journey) : undefined;
-      this.playerControls.performing = Boolean(journey?.actor === this.playerControls.id && (meetingLocked(journey) || awakeningLocked(journey) || oracleActing(journey) || phoneLocked(journey) || windowOpening(journey) || windowCrossing(journey) || pillLocked(journey) || interrogationLocked(journey) || lafayetteKnocking(journey) || lafayetteWelcomeLocked(journey)));
+      this.playerControls.performing = Boolean(journey?.actor === this.playerControls.id && (meetingLocked(journey) || awakeningLocked(journey) || oracleActing(journey) || phoneLocked(journey) || wakeCallLocked(journey) || windowOpening(journey) || windowCrossing(journey) || pillLocked(journey) || interrogationLocked(journey) || lafayetteKnocking(journey) || lafayetteWelcomeLocked(journey)));
       this.playerControls.mirror = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_mirror' ? journey.awakening?.kind === 'connect' ? 1 : (journey.awakening?.elapsed ?? 0) / 8 : 0;
       this.playerControls.climbing = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_ledge' && journey.step === 1 && journey.office?.climbed !== undefined;
       this.playerControls.ride = journey?.actor === this.playerControls.id && !journey.visiting && journey.ride?.phase === 'riding' ? journey.ride : undefined;

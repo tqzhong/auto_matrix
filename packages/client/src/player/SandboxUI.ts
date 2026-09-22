@@ -7,6 +7,7 @@ import { meetingLocked, MEETING_TIMING } from '@auto_matrix/shared';
 import { filmPosition, HOTEL_DOOR_PROGRESS } from '@auto_matrix/shared';
 import { workdayLocked } from '@auto_matrix/shared';
 import { apartmentLocked } from '@auto_matrix/shared';
+import { wakeCallLocked } from '@auto_matrix/shared';
 import { clubLocked } from '@auto_matrix/shared';
 
 const escape = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
@@ -215,6 +216,17 @@ export class SandboxUI {
       this.el('sandbox-nearby').textContent = phase === 'reply' ? '尝试用键盘退出' : phase === 'noticed' ? '决定是否接受邀请' : step?.label ?? '跟随白兔去夜店';
       if (locked) this.el('sandbox-waypoint').textContent = '';
       document.getElementById('game-objective-copy')!.textContent = phase === 'reply' ? 'G 尝试退出窗口' : step?.label ?? 'G 随他们出发';
+      return;
+    }
+    if (!journey.visiting && journey.scene === 'm1_wake_again' && journey.wakeCall) {
+      const phase = journey.wakeCall.phase; const close = !step || distance(player.position, filmStepPosition(scene, step)) <= 4;
+      const canAct = phase === 'decision' || phase === 'ringing' && close;
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = phase === 'ringing' ? '走到工作台旁 · G 拿起听筒 · V 切换视角' : phase === 'decision' ? 'G 明确答应 · 等待不会替你回答' : phase === 'done' ? 'WASD 走到 101 房门 · 途中自动保存' : '鼠标观察 · V 切换视角 · 暂停或重连会保留当前动作';
+      this.el('sandbox-interact').classList.toggle('hidden', !canAct);
+      this.el('sandbox-nearby').textContent = phase === 'ringing' ? '拿起有线座机听筒' : phase === 'decision' ? '回答仍然要见面' : phase === 'done' ? '前往 101 房门' : '来电演出进行中';
+      if (wakeCallLocked(journey)) this.el('sandbox-waypoint').textContent = '';
+      document.getElementById('game-objective-copy')!.textContent = phase === 'waking' ? 'Neo 正在床上醒来；被捕与逃脱路线会保留各自经历。' : phase === 'ringing' ? '走到工作台旁的实体座机前，按 G 接听。' : phase === 'decision' ? 'Morpheus 等待你亲自确认是否仍要见面。' : phase === 'done' ? '离开公寓，前往 Adams Street 桥下。' : '通话阶段与人物姿势自动保存。';
       return;
     }
     if (!journey.visiting && journey.scene === 'm1_boss' && journey.workday && !journey.phone) {

@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import type { AgentState, PlayerInput } from '@auto_matrix/shared';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { CameraController } from '../packages/client/src/engine/CameraController.js';
-import { newFreewayRide, filmPosition, officeCrossingPose, pillRoot, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS } from '@auto_matrix/shared';
+import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, pillRoot, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS } from '@auto_matrix/shared';
 
 test('observer camera releases drag and ignores pointer capture while a character controls the view', () => {
   let captures = 0;
@@ -94,6 +94,28 @@ test('the white-rabbit close-up clears the visitor beside the door and releases 
   game.state.currentAction = null; game.step(.1); assert.equal(game.controls.performing, false);
   const start = game.group.position.clone(); game.key('KeyS'); game.step(.3);
   assert.ok(game.group.position.distanceTo(start) > .2, 'finishing the inspection restores walking');
+});
+
+test('the apartment wake call frames the bed and the front of Neo at the physical telephone', t => {
+  const game = setup(t, APARTMENT.bed.yaw); const center = FILM_SETS.film_anderson_flat.center;
+  game.state.currentLocation = 'film_anderson_flat'; game.state.position = filmPosition('film_anderson_flat', APARTMENT.bed.x, APARTMENT.bed.z);
+  game.state.rotation = APARTMENT.bed.yaw;
+  game.state.currentAction = { type: 'idle', parameters: { wakeCall: { phase: 'waking', elapsed: .5, nightmare: true } }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.step(.5);
+  assert.ok(game.camera.position.x > center.x + 13 && game.camera.position.z < center.z - 3.5, 'the opening angle must show Neo across the bed');
+
+  game.state.position = filmPosition('film_anderson_flat', APARTMENT.phone.approachX, APARTMENT.phone.approachZ);
+  game.state.rotation = APARTMENT.phone.yaw;
+  game.state.currentAction = { type: 'idle', parameters: { wakeCall: { phase: 'decision', elapsed: 1, nightmare: true } }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.step(.5);
+  assert.ok(game.camera.position.z < game.state.position.z - 1.5, 'the call shot must see Neo from the front instead of filming the back of his head');
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).z > .45);
+  const face = new THREE.Vector3(game.state.position.x, game.state.position.y + 3.05, game.state.position.z).project(game.camera);
+  assert.ok(Math.abs(face.x) < .7 && Math.abs(face.y) < .75, 'Neo face must remain inside the readable frame');
+
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+  assert.ok(game.camera.position.distanceTo(new THREE.Vector3(game.state.position.x, game.state.position.y + 2.99, game.state.position.z)) < .06,
+    'first-person call view must start at Neo eyes');
 });
 
 test('office conversation and signing frame the performers and restore walking after the response', t => {
