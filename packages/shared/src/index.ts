@@ -27,6 +27,7 @@ export * from './constants/awakening.js';
 export * from './constants/training.js';
 export * from './constants/pills.js';
 export * from './constants/ambush.js';
+export * from './constants/betrayal.js';
 export * from './constants/interrogation.js';
 export * from './constants/meeting.js';
 export * from './constants/lafayette.js';

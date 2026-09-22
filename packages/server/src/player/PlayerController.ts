@@ -54,6 +54,9 @@ export class PlayerController {
     const interlude = this.sandbox?.life.film.state;
     const interludeScene = interlude && interludeKind(interlude.scene);
     if (interlude && interludeScene && id !== interlude.actor && (INTERLUDE_CAST[interludeScene] as readonly string[]).includes(id) && interludeLocked(interlude)) return { error: '这个角色正在参与当前电影片段，表演结束后可以接入。' };
+    const betrayalRoles = interlude?.betrayal?.kind === 'bathroom' ? ['neo', 'trinity', 'morpheus', 'smith', 'switch', 'apoc'] : ['neo', 'trinity', 'tank', 'cypher', 'dozer', 'switch', 'apoc'];
+    const betrayalActive = interlude?.betrayal && !['ready', 'failed', 'done'].includes(interlude.betrayal.phase);
+    if (betrayalActive && id !== interlude.actor && betrayalRoles.includes(id)) return { error: '这个角色正在参与背叛片段，动作结束后可以接入。' };
     if (INTERROGATION_CAST.includes(id as typeof INTERROGATION_CAST[number]) && this.sandbox?.life.film.state && interrogationLocked(this.sandbox.life.film.state)) return { error: '这个特工正在参与审讯，结束后可以接入。' };
     if (id === 'morpheus' && this.sandbox?.life.film.state && pillLocked(this.sandbox.life.film.state)) return { error: 'Morpheus 正在与 Neo 交谈递药，结束后可以接入。' };
     if (id === 'keymaker' && this.sandbox?.life.film.state?.ride?.phase === 'riding') return { error: '钥匙匠正在后座接受护送，抵达接应区后可以接入。' };
@@ -104,6 +107,7 @@ export class PlayerController {
     this.sandbox?.life.film.clubFrame(agent, 0, tick);
     this.sandbox?.life.film.sentinelFrame(agent, { movement: 0, sprint: false, jump: false }, 0, tick);
     this.sandbox?.life.film.interludeFrame(agent, 0, tick);
+    this.sandbox?.life.film.betrayalFrame(agent, 0, tick);
     if (agent.mind) agent.mind.thought = '由玩家决定下一步行动。';
     return { agentId: id };
   }
@@ -126,6 +130,7 @@ export class PlayerController {
       this.sandbox?.life.film.apartmentFrame(agent, 0, tick);
       this.sandbox?.life.film.clubFrame(agent, 0, tick);
       this.sandbox?.life.film.interludeFrame(agent, 0, tick);
+      this.sandbox?.life.film.betrayalFrame(agent, 0, tick);
       agent.activeEffects = agent.activeEffects.filter(effect => effect.remainingSeconds === undefined);
       if (agent.mind) agent.mind.thought = '重新回到自己的生活，继续追寻尚未完成的目标。';
     }
@@ -168,7 +173,7 @@ export class PlayerController {
     }
     for (const session of this.sessions.values()) {
       const agent = this.world.agents.get(session.agentId)!;
-      if (!running || agent.status !== 'alive') { agent.velocity = { x: 0, y: 0, z: 0 }; this.sandbox?.life.film.hotelFrame(agent, 0, tick); this.sandbox?.life.film.sentinelFrame(agent, { movement: 0, sprint: false, jump: false }, 0, tick); this.sandbox?.life.film.interludeFrame(agent, 0, tick); session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue; }
+      if (!running || agent.status !== 'alive') { agent.velocity = { x: 0, y: 0, z: 0 }; this.sandbox?.life.film.hotelFrame(agent, 0, tick); this.sandbox?.life.film.sentinelFrame(agent, { movement: 0, sprint: false, jump: false }, 0, tick); this.sandbox?.life.film.interludeFrame(agent, 0, tick); this.sandbox?.life.film.betrayalFrame(agent, 0, tick); session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue; }
       session.stagger = Math.max(0, session.stagger - dt);
       const stale = now - session.lastInput > 300;
       let input = stale ? { ...idleInput(), yaw: session.input.yaw } : session.input;
@@ -184,6 +189,9 @@ export class PlayerController {
       this.sandbox?.life.film.apartmentFrame(agent, dt, tick);
       this.sandbox?.life.film.clubFrame(agent, dt, tick);
       if (this.sandbox?.life.film.interludeFrame(agent, dt, tick)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
+      if (this.sandbox?.life.film.betrayalFrame(agent, dt, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
       if (this.sandbox?.life.film.sentinelFrame(agent, { movement: Math.hypot(input.x, input.z), sprint: input.sprint, jump: input.jump }, dt, tick)) {

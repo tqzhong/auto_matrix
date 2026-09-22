@@ -9,6 +9,7 @@ import { clubLocked } from '@auto_matrix/shared';
 import { sentinelDanger, sentinelLocked } from '@auto_matrix/shared';
 import { interludeDuration, interludeLocked } from '@auto_matrix/shared';
 import { oracleVisitDuration, oracleVisitLocked } from '@auto_matrix/shared';
+import { BETRAYAL, betrayalDuration, betrayalLocked } from '@auto_matrix/shared';
 
 const button = (target: string, label: string, disabled = false) => `<button data-action="life" data-target="film:${target}" ${disabled ? 'disabled' : ''}>${label}</button>`;
 export function renderFilmJourney(player: AgentState, sandbox: SandboxState): string {
@@ -79,6 +80,32 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
     const progress = oracleVisitLocked(journey) && encounter.phase !== 'question'
       ? `<div class="film-progress"><i style="width:${Math.min(100, encounter.elapsed / oracleVisitDuration(encounter) * 100)}%"></i></div>` : '';
     return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>先知的厨房 · 花瓶之后</h3><p>Neo 视角 · 检查、回答与饼干交接自动保存</p></header><article class="film-now"><div><h3>${title}</h3><p>${journey.lastText}</p>${progress}<div class="film-controls">${action}${!current ? button('resume', '继续 Neo 的剧情视角') : ''}<small>${encounter.phase === 'question' ? '等待不会替你回答；选择会改变后续营救准备。' : oracleVisitLocked(journey) ? '鼠标可以环顾，V 可在主视角和场景镜头间切换。' : '走到操作台旁再继续。'}</small></div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
+  }
+  if (!journey.visiting && journey.betrayal && ['m1_bathroom', 'm1_unplugged'].includes(journey.scene)) {
+    const encounter = journey.betrayal; const current = player.id === journey.actor; const step = scene.steps[journey.step];
+    const close = current && (!step || distance(player.position, filmStepPosition(scene, step)) <= 4);
+    const bathroom = encounter.kind === 'bathroom'; const phase = encounter.phase;
+    const title = bathroom ? phase === 'ready' ? '同伴进入墙内通道' : phase === 'defending' ? '守住浴室门线'
+      : phase === 'sacrifice_ready' ? '最后一次主动选择' : phase === 'sacrifice' ? '撞穿隔墙' : 'Morpheus 被捕'
+      : journey.step === 0 ? '抵达备用控制台' : phase === 'ready' ? '有人先回到了飞船' : phase === 'unplugging' ? '连接被逐一拔除'
+      : phase === 'aiming' ? '等待枪口偏转' : phase === 'window' ? '反击窗口' : phase === 'failed' ? '最后两路信号熄灭'
+      : phase === 'countering' ? 'Tank 的反击' : phase === 'reconnect' ? '接回幸存者' : '背叛结束';
+    let action = '';
+    if (!current) action = button('resume', `继续 ${bathroom ? 'Morpheus' : 'Tank'} 的剧情视角`);
+    else if (!bathroom && journey.step === 0) action = '<p>合上手记，走到备用控制台；到达后自动记录。</p>';
+    else if (phase === 'ready') action = button('act', bathroom ? '开始掩护撤离 · G' : '接通监视画面 · G', !close);
+    else if (phase === 'sacrifice_ready') action = button('act', '撞向 Smith · G', !close);
+    else if (phase === 'window') action = button('act', '抓起步枪反击 · G', !current);
+    else if (phase === 'failed') action = button('retry', '从备用控制台重试', !current);
+    else if (phase === 'reconnect') action = button('act', (encounter.rescued ?? 0) ? '接回 Trinity · G' : '稳住 Neo 的接线 · G', !current);
+    else if (phase === 'done') action = button('next', bathroom ? '转到飞船上的背叛 →' : '继续营救抉择 →', !current);
+    else action = '<button disabled>合上手记，观察当前动作</button>';
+    const duration = phase === 'defending' ? BETRAYAL.bathroom.hold : betrayalDuration(encounter);
+    const progress = duration > 0 && (phase === 'defending' || betrayalLocked(journey))
+      ? `<div class="film-progress"><i style="width:${Math.min(100, encounter.elapsed / duration * 100)}%"></i></div>` : '';
+    const status = phase === 'defending' ? `有效击退 ${encounter.repels ?? 0} / ${BETRAYAL.bathroom.requiredRepels} · 掩护 ${Math.floor(encounter.elapsed)} / ${BETRAYAL.bathroom.hold} 秒`
+      : phase === 'reconnect' ? `已接回 ${encounter.rescued ?? 0} / 2 路信号` : `尝试 ${encounter.attempt + 1}`;
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>${bathroom ? '旧楼浴室 · 撤离线' : '尼布甲尼撒号 · 备用控制台'}</h3><p>${bathroom ? 'Morpheus' : 'Tank'} 视角 · 失败与动作进度自动保存</p></header><article class="film-now"><div><h3>${title}</h3><p>${journey.lastText}</p><p>${status}</p>${progress}<div class="film-controls">${action}<small>${betrayalLocked(journey) ? '鼠标可以环顾，V 可切换主视角；暂停、断线和重新载入会保留当前动作。' : bathroom && phase === 'defending' ? 'F 近战 · X 闪避。等待不会代替三次有效击退。' : '必须亲自走近或按下操作，剧情不会自动替你完成。'}</small></div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
   }
   if (!journey.visiting && journey.scene === 'm1_boss' && journey.workday && !journey.phone) {
     const phase = journey.workday.phase; const step = scene.steps[journey.step];

@@ -12,6 +12,7 @@ import { clubLocked } from '@auto_matrix/shared';
 import { sentinelDanger, sentinelLocked } from '@auto_matrix/shared';
 import { interludeDuration, interludeLocked } from '@auto_matrix/shared';
 import { oracleVisitDuration, oracleVisitLocked } from '@auto_matrix/shared';
+import { BETRAYAL, betrayalDuration, betrayalLocked } from '@auto_matrix/shared';
 
 const escape = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const WEATHER = { clear: '晴朗', rain: '雨', code_storm: '代码风暴' };
@@ -406,6 +407,28 @@ export class SandboxUI {
       if (encounter.phase === 'question' && document.pointerLockElement) document.exitPointerLock();
       document.getElementById('game-objective-copy')!.textContent = encounter.phase === 'question' ? '先知正在等待你的回答；打开手记，决定如何面对预言与 Morpheus。'
         : encounter.phase === 'done' ? '检查与饼干交接已记下；这个回答会改变后续营救准备。' : journey.lastText;
+      return;
+    }
+    if (!journey.visiting && journey.betrayal && ['m1_bathroom', 'm1_unplugged'].includes(scene.id)) {
+      const encounter = journey.betrayal; const step = scene.steps[journey.step];
+      const close = !step || distance(player.position, filmStepPosition(scene, step)) <= 4;
+      const bathroom = encounter.kind === 'bathroom'; const phase = encounter.phase;
+      const canAct = close && (phase === 'ready' && (bathroom || journey.step === 1) || phase === 'sacrifice_ready')
+        || phase === 'window' || phase === 'reconnect' || phase === 'done';
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = phase === 'defending' ? `F 近战 · X 闪避 · 有效击退 ${encounter.repels ?? 0}/${BETRAYAL.bathroom.requiredRepels} · ${Math.floor(encounter.elapsed)}/${BETRAYAL.bathroom.hold} 秒`
+        : phase === 'window' ? '现在按 G 反击 · 错过会失败'
+        : phase === 'reconnect' ? `按 G 接回信号 · ${encounter.rescued ?? 0}/2`
+        : phase === 'failed' ? 'J 打开手记，从备用控制台重试'
+        : betrayalLocked(journey) ? '鼠标环顾 · V 切换视角 · 当前动作自动保存'
+        : journey.step === 0 && !bathroom ? '走到备用控制台 · 到达后自动记录' : '走近目标 · G 继续';
+      this.el('sandbox-interact').classList.toggle('hidden', !canAct);
+      this.el('sandbox-nearby').textContent = phase === 'window' ? '抓起脉冲步枪反击' : phase === 'reconnect' ? (encounter.rescued ? '接回 Trinity' : '稳住 Neo 的接线')
+        : phase === 'done' ? bathroom ? '转到飞船上的背叛' : '继续营救抉择' : bathroom && phase === 'sacrifice_ready' ? '撞向 Smith' : bathroom ? '开始掩护撤离' : '接通监视画面';
+      const duration = phase === 'defending' ? BETRAYAL.bathroom.hold : betrayalDuration(encounter);
+      this.el('sandbox-job').style.width = duration > 0 ? `${Math.min(100, encounter.elapsed / duration * 100)}%` : '0';
+      if (betrayalLocked(journey)) this.el('sandbox-waypoint').textContent = '';
+      document.getElementById('game-objective-copy')!.textContent = journey.lastText;
       return;
     }
     if (!journey.visiting && scene.id === 'm1_dejavu' && journey.ambush && journey.step === 0) {

@@ -4,6 +4,10 @@ import { FACTION_COLORS } from '../agents/AgentRenderer.js';
 const escape = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]!));
 const FACTIONS: Record<string, string> = { zion: '锡安反抗军', civilians: '城市居民', machines: '矩阵程序', oracle: '先知', merovingian: '梅罗文加', exiles: '流亡程序' };
 
+export function savedEntryCharacter(chosen: string | null, journeyActor: string | undefined, explicitChoice: boolean): string {
+  return !explicitChoice && journeyActor ? journeyActor : chosen ?? 'neo';
+}
+
 export interface PlayerExperienceActions {
   play: (id: string) => void;
   observe: () => void;
@@ -20,6 +24,8 @@ export class PlayerExperience {
   private agents: Record<string, AgentState> = {};
   private chosen = 'neo';
   private lastPlayed: string | null = null;
+  private storyActor: string | null = null;
+  private entryExplicit = false;
   private controlled: string | null = null;
   private search = '';
   private menuOpen = false;
@@ -65,6 +71,7 @@ export class PlayerExperience {
       const button = (event.target as HTMLElement).closest<HTMLElement>('button');
       if (!button) return;
       if (button.dataset.choose) {
+        this.entryExplicit = true;
         this.chosen = button.dataset.choose;
         this.root.querySelectorAll<HTMLElement>('[data-choose]').forEach(role => role.classList.toggle('active', role.dataset.choose === this.chosen));
         this.updateEntry();
@@ -121,10 +128,13 @@ export class PlayerExperience {
     const agent = this.agents[this.chosen];
     const button = this.el<HTMLButtonElement>('enter-world');
     button.disabled = !agent;
-    button.innerHTML = `${agent && agent.status !== 'alive' ? '重建并进入角色' : agent && this.lastPlayed === agent.id ? `继续 ${escape(agent.name)} 的进度` : agent?.controller ? '在此页面继续' : '进入角色'} <span>↗</span>`;
+    button.innerHTML = `${agent && agent.status !== 'alive' ? '重建并进入角色' : agent && this.storyActor === agent.id && !this.entryExplicit ? `继续 ${escape(agent.name)} 的剧情存档` : agent && this.lastPlayed === agent.id ? `继续 ${escape(agent.name)} 的进度` : agent?.controller ? '在此页面继续' : '进入角色'} <span>↗</span>`;
   }
   update(agents: Record<string, AgentState>, simulation: SimulationState, neoLife?: NeoLifeState): void {
     this.agents = agents;
+    this.storyActor = neoLife?.journey?.actor ?? null;
+    this.chosen = savedEntryCharacter(this.chosen, this.storyActor ?? undefined, this.entryExplicit || Boolean(this.controlled));
+    this.root.querySelectorAll<HTMLElement>('[data-choose]').forEach(role => role.classList.toggle('active', role.dataset.choose === this.chosen));
     this.updateEntry();
     this.el('landing-live').textContent = `${simulation.population} 个角色正在生活`;
     this.el('roster-count').textContent = String(Object.keys(agents).length);
@@ -132,7 +142,7 @@ export class PlayerExperience {
     if (this.menuOpen && performance.now() - this.lastRender > 1000) this.renderRoster();
     const player = this.controlled ? agents[this.controlled] : undefined;
     const driving = Boolean(player?.currentAction?.parameters.riding);
-    const performing = Boolean(player?.currentAction?.parameters.club || player?.currentAction?.parameters.workday || player?.currentAction?.parameters.meeting || player?.currentAction?.parameters.interrogation || player?.currentAction?.parameters.pills || player?.currentAction?.parameters.welcome || player?.currentAction?.parameters.sentinel || player?.currentAction?.parameters.interlude || player?.currentAction?.parameters.oracleVisit || player?.currentAction?.parameters.filmPose || player?.currentAction?.parameters.spoon !== undefined || player?.currentAction?.parameters.vase !== undefined);
+    const performing = Boolean(player?.currentAction?.parameters.club || player?.currentAction?.parameters.workday || player?.currentAction?.parameters.meeting || player?.currentAction?.parameters.interrogation || player?.currentAction?.parameters.pills || player?.currentAction?.parameters.welcome || player?.currentAction?.parameters.sentinel || player?.currentAction?.parameters.interlude || player?.currentAction?.parameters.oracleVisit || player?.currentAction?.parameters.betrayal || player?.currentAction?.parameters.filmPose || player?.currentAction?.parameters.spoon !== undefined || player?.currentAction?.parameters.vase !== undefined);
     document.body.classList.toggle('film-driving', driving);
     document.body.classList.toggle('film-performing', performing);
     document.body.classList.toggle('film-workday-scene', Boolean(player?.currentAction?.parameters.workday));
@@ -182,7 +192,8 @@ export class PlayerExperience {
     const sentinelScene = this.filmPlaying && neoLife?.journey?.scene === 'm1_sentinels' && !neoLife.journey.visiting;
     const interludeScene = this.filmPlaying && ['m1_cypher_console', 'm1_steak', 'm1_meal'].includes(neoLife?.journey?.scene ?? '') && !neoLife?.journey?.visiting;
     const oracleScene = this.filmPlaying && neoLife?.journey?.scene === 'm1_oracle' && Boolean(neoLife.journey.oracle?.consultation) && !neoLife.journey.visiting;
-    this.el('game-interaction').classList.toggle('hidden', nearby.length === 0 || player.status === 'dead' || Boolean(player.currentAction?.parameters.riding) || sentinelScene || interludeScene || oracleScene);
+    const betrayalScene = this.filmPlaying && Boolean(neoLife?.journey?.betrayal) && !neoLife?.journey?.visiting;
+    this.el('game-interaction').classList.toggle('hidden', nearby.length === 0 || player.status === 'dead' || Boolean(player.currentAction?.parameters.riding) || sentinelScene || interludeScene || oracleScene || betrayalScene);
     this.el('game-interaction').querySelector('span')!.textContent = nearby[0] ? `与 ${nearby[0].name} 交谈` : '';
     this.el('game-objective').textContent = player.isAwakened ? '你会怎样改变这个世界？' : '寻找现实背后的真相';
     this.el('game-objective-copy').textContent = player.isAwakened ? '结识同伴、探索城市，或前往地铁站寻找出口。' : `怀疑 ${Math.round(player.mind?.suspicion ?? 0)}% · 目击异常，与可信的觉醒者交谈。`;

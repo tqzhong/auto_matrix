@@ -43,6 +43,7 @@ export interface FilmJourney {
   ambush?: import('./ambush.js').AmbushEncounter;
   sentinel?: import('./sentinel.js').SentinelEncounter;
   interlude?: import('./interlude.js').InterludeEncounter;
+  betrayal?: import('./betrayal.js').BetrayalEncounter;
 }
 const walk = (label: string, x = 0, z = -12): FilmStep => ({ kind: 'reach', label, x, z });
 const use = (label: string, text: string, x = 0, z = -12, seconds = 3): FilmStep => ({ kind: 'interact', label, text, x, z, seconds });
@@ -94,8 +95,8 @@ export const FILM_SCENES: FilmScene[] = [
   scene('m1_spoon', 1, 'oracle_home', 'neo', '等候室的孩子们', 'oracle_first', 'oracle', '先知的客厅里，孩子们以不同方式试探矩阵的规则。靠近孩子拿起勺子，停下脚步，按住 G 专注；松开时它会恢复。', [use('拿起勺子，按住 G 专注', '你看见金属在手中弯曲，松开力气也不再恢复。对规则的认识开始动摇。', -7, 10), walk('走到厨房门口', 0, -8)], ['spoon_boy']),
   scene('m1_oracle', 1, 'oracle_home', 'neo', '厨房里的预言', 'oracle_first', 'oracle', '饼干和花瓶之间，先知让 Neo 面对自我认识、Morpheus 的信念和即将到来的抉择。', [use('听见提醒，回头看花瓶', '你的转身碰落了花瓶。先知留下的问题是：没有那句提醒，你还会做出同一个动作吗？', 7, -14), think('预言如何影响选择？', '你将如何行动，比得到一个称号更重要。', -5, -22)], ['oracle', 'morpheus']),
   scene('m1_dejavu', 1, 'ambush_house', 'neo', '重复经过的黑猫', 'betrayal', 'infiltration', '返回出口的旧楼里，一只黑猫从门前经过。留意它的动作，以及之后房间发生的变化。', [use('留意门前的黑猫', 'Trinity 认出系统被改动的迹象。原来的门与窗被砖墙封死，只能从左侧墙内通道撤退。', 0, -8), { ...fight('突破楼内封锁', 2), z: -8 }, walk('改走左侧墙内通道', -17, -27)], ['trinity', 'switch', 'apoc']),
-  scene('m1_bathroom', 1, 'ambush_house', 'morpheus', '为同伴争取时间', 'betrayal', 'combat', 'Morpheus 在浴室阻挡 Smith，其他人从墙内撤离。他最终被捕。', [fight('拖住追兵', 2), use('守住通道入口', '同伴撤离后，Morpheus 力竭被带走。战斗目标是争取时间，不能改写被捕的结果。', 0, -13)], ['smith']),
-  scene('m1_unplugged', 1, 'neb_deck', 'tank', '背叛发生在现实', 'betrayal', 'bane', 'Cypher 回到飞船袭击 Tank 与 Dozer，并拔除 Apoc、Switch 的连接。', [walk('抵达备用控制台', -7, -14), use('制止背叛，接回幸存者', '受伤的 Tank 反击，Neo 与 Trinity 幸存。Dozer、Apoc 与 Switch 已无法回来。', -7, -14, 5)], ['cypher', 'dozer']),
+  scene('m1_bathroom', 1, 'ambush_house', 'morpheus', '为同伴争取时间', 'betrayal', 'combat', 'Morpheus 在浴室门线阻挡 Smith，其他人从墙内通道撤离。他必须亲自撑住追击，再决定以被捕换取同伴离开。', [fight('在浴室门线击退 Smith 三次并撑到同伴撤离', 1, 'smith', 'smith'), use('撞向 Smith，把战斗带进浴室', '同伴越过墙内通道后，Morpheus 撞向 Smith 并被捕。争取到的时间没有改写被捕结果，却让其他人离开了旧楼。', 0, 0)], ['smith', 'neo', 'trinity', 'switch', 'apoc']),
+  scene('m1_unplugged', 1, 'neb_deck', 'tank', '背叛发生在现实', 'betrayal', 'bane', 'Cypher 回到飞船袭击 Tank 与 Dozer，并逐一拔除连接。Tank 必须抓住一次短暂的反击窗口，再亲手接回仍有生命信号的 Neo 与 Trinity。', [walk('抵达备用控制台', -7, -14), use('等待枪口偏转，反击并接回两路幸存信号', 'Tank 在短暂窗口内反击，再分别接回 Neo 与 Trinity。Dozer、Apoc 与 Switch 已无法回来。', -7, -14)], ['cypher', 'dozer', 'apoc', 'switch', 'neo', 'trinity']),
   scene('m1_rescue_decision', 1, 'neb_deck', 'neo', '仍然选择去救他', 'rescue', 'oracle', 'Morpheus 面临逼供。Neo 决定返回矩阵营救他，Trinity 坚持同行。', [think('在没有保证时承担责任', '这个决定来自对具体同伴的承诺，而不是已经证明的救世主身份。'), use('请 Tank 准备接入', '两人开始营救准备。', 0, 0)], ['trinity', 'tank']),
   scene('m1_guns', 1, 'white_construct', 'neo', '加载营救装备', 'rescue', 'combat', '构造体里排列着武器架。目标是政府大楼里的 Morpheus。', [use('检查装备架', 'Tank 把大楼入口和撤离路线送入连接。', -7, -12), walk('进入营救程序', 0, -26)], ['trinity']),
   scene('m1_lobby', 1, 'government_lobby', 'neo', '政府大楼的大堂', 'rescue', 'combat', '与 Trinity 突破大堂警戒，抵达后方电梯。石柱能挡住枪火；敌人瞄准后，及时换位。', [walk('穿过安检入口', 0, 23), { ...fight('与 Trinity 突破三道警戒', 2), z: 19 }, use('接通后方电梯', '电梯门打开。大堂通路已打通，可以继续营救 Morpheus。', 0, -35, 1)], ['trinity']),

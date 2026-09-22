@@ -434,6 +434,36 @@ test('awakening and speed abilities do not turn an ordinary space press into a s
   assert.ok(peak > 2.3 && peak < 2.9); assert.equal(game.group.position.y, 1);
 });
 
+test('the bathroom sacrifice owns a readable two-shot and still supports Morpheus first person', t => {
+  const game = setup(t, Math.PI); const center = FILM_SETS.film_ambush_house.center;
+  game.state.currentLocation = 'film_ambush_house'; game.state.position = filmPosition('film_ambush_house', 0, 0); game.state.rotation = Math.PI;
+  game.state.currentAction = { type: 'idle', parameters: { betrayal: { kind: 'bathroom', phase: 'sacrifice', elapsed: 1.2, attempt: 0, role: 'morpheus' } }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.step(.4);
+  assert.equal(game.controls.performing, true); assert.ok(game.camera.position.x > center.x + 7, 'the wide shot keeps Morpheus and Smith on the same axis');
+  const locked = game.group.position.clone(); game.key('KeyW'); game.step(.25); game.key('KeyW', false); assert.deepEqual(game.group.position, locked);
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+  assert.ok(game.camera.position.distanceTo(new THREE.Vector3(game.state.position.x, game.state.position.y + 2.99, game.state.position.z)) < .06);
+});
+
+test('Tank sees the short Cypher counter window from the deck and from his saved prone viewpoint', t => {
+  const game = setup(t); const center = FILM_SETS.film_neb_deck.center;
+  game.state.currentLocation = 'film_neb_deck'; game.state.position = filmPosition('film_neb_deck', -7, -14);
+  game.state.currentAction = { type: 'idle', parameters: { betrayal: { kind: 'unplugged', phase: 'window', elapsed: .4, attempt: 0, role: 'tank' } }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.step(.4);
+  assert.ok(game.camera.position.x < center.x - 8 && game.camera.position.z < center.z - 13, 'the counter angle sees Tank, the rifle and Cypher');
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+  assert.ok(Math.abs(game.camera.position.y - (game.state.position.y + 1.35)) < .06, 'Tank first person stays at his prone eye height');
+  game.key('KeyV'); game.key('KeyV', false);
+  game.state.currentAction = { type: 'idle', parameters: { betrayal: { kind: 'unplugged', phase: 'reconnect', elapsed: 0, attempt: 0, rescued: 1, role: 'tank' } }, startedAt: 0, duration: 1, progress: 0 };
+  game.step(.5);
+  assert.ok(Math.abs(game.camera.position.x - center.x) < 3 && game.camera.position.z < center.z - 16,
+    'the reconnect overview looks down the open center aisle instead of sitting behind a console');
+  for (const chair of [new THREE.Vector3(center.x + 6.5, center.y + 2.7, center.z - 5), new THREE.Vector3(center.x - 6.5, center.y + 2.7, center.z + 6)]) {
+    const screen = chair.project(game.camera); assert.ok(Math.abs(screen.x) < .92 && Math.abs(screen.y) < .92, 'both surviving chairs remain readable');
+  }
+  game.state.currentAction = null; game.step(.1); assert.equal(game.controls.performing, false);
+});
+
 for (const firstPerson of [false, true]) test(`armed ${firstPerson ? 'first' : 'third'}-person movement strafes without pulling the aim away`, t => {
   const game = setup(t); game.controls.firearm = true; if (firstPerson) game.key('KeyV');
   game.key('KeyD'); game.step(2);

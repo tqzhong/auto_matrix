@@ -370,14 +370,22 @@ export class CharacterModels {
     const near = distance < 100;
     rig.detail.visible = near; rig.distant.visible = !near;
     if (!near) return;
+    const pulseRifle = Boolean(input.betrayal && ['cypher', 'tank'].includes(input.betrayal.role));
+    if (pulseRifle) rig.rifle = true;
     if (input.armed && !rig.weapons) {
       const material = this.material(new THREE.MeshStandardMaterial({ color: 0x242b2c, metalness: .75, roughness: .28 }));
+      const charge = pulseRifle ? this.material(new THREE.MeshBasicMaterial({ color: 0x8fd8ba, toneMapped: false })) : material;
       rig.weapons = (rig.rifle ? [0] : [0, 1]).map(i => {
         const gun = new THREE.Group(); const length = rig.rifle ? 1.2 : .5;
+        gun.name = pulseRifle ? 'neb-pulse-rifle' : 'character-firearm';
         this.mesh(gun, this.box, material, [0, -length / 2, 0], [.12, length, .14]);
         this.mesh(gun, this.cylinder, material, [0, -length, 0], [.045, .23, .045]);
         this.mesh(gun, this.box, material, [0, -.09, .13], [.105, .18, .27]);
         this.mesh(gun, this.box, material, [0, -length * .5, .08], [.08, .1, rig.rifle ? .35 : .06]);
+        if (pulseRifle) {
+          this.mesh(gun, this.cylinder, charge, [0, -.62, .13], [.075, .34, .075]);
+          this.mesh(gun, this.box, material, [0, -.2, -.17], [.22, .48, .42]);
+        }
         gun.position.set(0, -.08, .03);
         const parent = rig.hero?.bones.get(i ? 'wrist_L' : 'wrist_R') ?? rig.elbows[i];
         if (!rig.hero) gun.position.y -= .69;

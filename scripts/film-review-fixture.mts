@@ -179,6 +179,32 @@ if (['oracle-exam', 'oracle-cookie', 'oracle-question'].includes(process.argv[3]
   for (let frame = 0; frame < frames; frame++) sandbox.life.film.oracleFrame(actor, false, .1, 0);
   sandbox.life.film.state!.checkpoint = { ...actor.position };
 }
+if (['bathroom-hold', 'bathroom-crash'].includes(process.argv[3]) && scene.id === 'm1_bathroom') {
+  actor.controller = 'player'; actor.position = filmStepPosition(scene, scene.steps[0]); actor.rotation = Math.PI;
+  sandbox.life.film.command(actor, 'act', 0);
+  const holdFrames = process.argv[3] === 'bathroom-hold' ? 70 : 125;
+  for (let frame = 0; frame < holdFrames; frame++) sandbox.life.film.betrayalFrame(actor, .1, 0);
+  if (process.argv[3] === 'bathroom-crash') {
+    const smith = sandbox.state.threats.find(threat => threat.scene === scene.id && threat.character === 'smith');
+    if (!smith) throw new Error('Bathroom review fixture has no Smith threat');
+    for (let hit = 0; hit < 3; hit++) sandbox.life.film.bathroomHit(actor, smith);
+    sandbox.life.film.betrayalFrame(actor, .1, 0); sandbox.life.film.command(actor, 'act', 0);
+    for (let frame = 0; frame < 32; frame++) sandbox.life.film.betrayalFrame(actor, .1, 0);
+  }
+  sandbox.life.film.state!.checkpoint = { ...actor.position };
+}
+if (['unplug-window', 'unplug-counter', 'unplug-reconnect'].includes(process.argv[3]) && scene.id === 'm1_unplugged') {
+  actor.controller = 'player'; actor.position = filmStepPosition(scene, scene.steps[0]); actor.rotation = 0;
+  sandbox.life.film.tick(0); actor.position = filmStepPosition(scene, scene.steps[1]); sandbox.life.film.command(actor, 'act', 0);
+  for (let frame = 0; frame < 92 && sandbox.life.film.state!.betrayal?.phase !== 'window'; frame++) sandbox.life.film.betrayalFrame(actor, .1, 0);
+  if (process.argv[3] !== 'unplug-window') {
+    sandbox.life.film.command(actor, 'act', 0);
+    const frames = process.argv[3] === 'unplug-counter' ? 23 : 56;
+    for (let frame = 0; frame < frames; frame++) sandbox.life.film.betrayalFrame(actor, .1, 0);
+    if (process.argv[3] === 'unplug-reconnect') sandbox.life.film.command(actor, 'act', 0);
+  }
+  sandbox.life.film.state!.checkpoint = { ...actor.position };
+}
 for (const resident of world.agents.values()) delete resident.controller;
 neo.isAwakened = FILM_SCENES.indexOf(scene) >= FILM_SCENES.findIndex(s => s.id === 'm1_pod');
 await writeFile(path.join(directory, 'world.json'), JSON.stringify({ version: 1, tick: 0, timeOfDay: 12000, day: 1, phase: 'phase1_normal_life', agents: Object.fromEntries(world.agents), events: [], relationships: [], sandbox: sandbox.state }));

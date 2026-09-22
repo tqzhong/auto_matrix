@@ -97,3 +97,16 @@ test('the Oracle examines Neo and visibly passes the cookie into his hand', () =
   const receiving = advanceMotion(newMotion(), { ...idle, oracleVisit: { phase: 'examining', elapsed: 9.1, role: 'neo' as const } }, 0);
   assert.ok(offering.arms[0].elbow < -1 && receiving.arms[0].elbow < -1.1, 'both hands meet during the cookie handoff');
 });
+
+test('betrayal performances visibly distinguish the charge, cable pull, collapse and counterattack', () => {
+  const idle = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 };
+  const morpheus = advanceMotion(newMotion(), { ...idle, betrayal: { kind: 'bathroom', phase: 'sacrifice', elapsed: 1.9, attempt: 0, role: 'morpheus' as const } }, 0);
+  assert.ok(morpheus.arms.every(arm => arm.shoulder < -.9), 'Morpheus drives both shoulders into the sacrificial charge');
+  assert.ok(morpheus.lean < -.12, 'the charge moves his weight forward');
+  const cypher = advanceMotion(newMotion(), { ...idle, betrayal: { kind: 'unplugged', phase: 'unplugging', elapsed: 2, attempt: 0, role: 'cypher' as const } }, 0);
+  assert.ok(cypher.arms[0].elbow < -1.45 && cypher.arms[0].grip > .85, 'Cypher visibly grips and yanks a jack');
+  const apoc = advanceMotion(newMotion(), { ...idle, betrayal: { kind: 'unplugged', phase: 'unplugging', elapsed: 3, attempt: 0, role: 'apoc' as const } }, 0);
+  assert.ok(apoc.lean > .55 && apoc.arms.every(arm => arm.grip === 0), 'the disconnected body slumps with released hands');
+  const tank = advanceMotion(newMotion(), { ...idle, betrayal: { kind: 'unplugged', phase: 'countering', elapsed: 2.1, attempt: 0, role: 'tank' as const } }, 0);
+  assert.ok(tank.arms[0].shoulder < -.75 && tank.arms[0].grip > .8, 'Tank raises the pulse rifle during the counterattack');
+});

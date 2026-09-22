@@ -212,6 +212,94 @@ test('the Oracle answer changes later rescue preparation exactly once', () => {
   }
 });
 
+test('Morpheus must actively hold the bathroom line before choosing the sacrificial tackle', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  const scene = FILM_SCENE_BY_ID.m1_bathroom;
+  Object.assign(state, { scene: scene.id, actor: 'morpheus', step: 0, betrayal: undefined });
+  h.players.release('film-player', h.tick()); h.players.possess('film-player', 'morpheus', h.tick());
+  h.actor().position = filmStepPosition(scene, scene.steps[0]); h.actor().currentLocation = scene.set; h.actor().isInMatrix = true;
+  h.command('act');
+  const encounter = () => h.sandbox.life.film.state!.betrayal!;
+  assert.equal(encounter().kind, 'bathroom'); assert.equal(encounter().phase, 'defending');
+  assert.match(h.players.possess('other-player', 'neo', h.tick()).error!, /背叛片段/, 'the escaping crew stays reserved once the holdout starts');
+  const smith = () => h.sandbox.state.threats.find(threat => threat.scene === scene.id && threat.character === 'smith')!;
+  assert.ok(smith()); smith().stunUntil = Number.MAX_SAFE_INTEGER;
+
+  for (let frame = 0; frame < 130; frame++) h.players.step(.1, true, h.tick());
+  assert.equal(encounter().elapsed, 12); assert.equal(state.step, 0, 'waiting out the timer cannot replace defending the crew');
+  for (const combo of [0, 1, 2]) {
+    smith().position = { ...h.actor().position, z: h.actor().position.z - 2 }; h.actor().rotation = Math.PI;
+    h.sandbox.attack(h.actor(), h.tick(), combo);
+  }
+  h.players.step(.1, true, h.tick());
+  assert.equal(encounter().repels, 3); assert.equal(encounter().phase, 'sacrifice_ready'); assert.equal(state.step, 1);
+
+  assert.match(h.players.possess('other-player', 'smith', h.tick()).error!, /背叛片段/);
+  h.command('act'); assert.equal(encounter().phase, 'sacrifice');
+  for (let frame = 0; frame < 24; frame++) h.players.step(.1, true, h.tick());
+  const elapsed = encounter().elapsed; h.players.step(.1, false, h.tick()); assert.equal(encounter().elapsed, elapsed);
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+  h.players.release('film-player', h.tick()); h.advance(20); assert.equal(encounter().elapsed, elapsed);
+  h.players.possess('film-player', 'morpheus', h.tick());
+  for (let frame = 0; frame < 70; frame++) h.players.step(.1, true, h.tick());
+  assert.equal(encounter().phase, 'done'); assert.equal(h.sandbox.life.film.state!.step, 2); assert.ok(h.sandbox.life.film.state!.completed.includes(scene.id));
+  assert.equal(h.sandbox.life.state!.choices.morpheus_captured, 'sacrifice');
+});
+
+test('legacy betrayal checkpoints migrate without replaying cleared or completed beats', () => {
+  const bathroom = setup(); bathroom.command('continue');
+  const bathroomState = bathroom.sandbox.life.film.state!; const bathroomScene = FILM_SCENE_BY_ID.m1_bathroom;
+  Object.assign(bathroomState, { scene: bathroomScene.id, actor: 'morpheus', step: 1, betrayal: undefined,
+    checkpoint: filmStepPosition(bathroomScene, bathroomScene.steps[1]) });
+  bathroom.players.release('film-player', bathroom.tick()); bathroom.players.possess('film-player', 'morpheus', bathroom.tick());
+  bathroom.actor().currentLocation = bathroomScene.set; bathroom.actor().isInMatrix = true;
+  bathroom.sandbox.restore(JSON.parse(JSON.stringify(bathroom.sandbox.state)));
+  assert.equal(bathroom.sandbox.life.film.state!.betrayal?.phase, 'sacrifice_ready', 'an old cleared fight resumes at the sacrificial choice');
+  assert.equal(bathroom.sandbox.state.threats.length, 0);
+
+  const unplugged = setup(); unplugged.command('continue');
+  const unpluggedState = unplugged.sandbox.life.film.state!; const unpluggedScene = FILM_SCENE_BY_ID.m1_unplugged;
+  Object.assign(unpluggedState, { scene: unpluggedScene.id, actor: 'tank', step: unpluggedScene.steps.length, betrayal: undefined,
+    completed: [...new Set([...unpluggedState.completed, unpluggedScene.id])], checkpoint: filmStepPosition(unpluggedScene, unpluggedScene.steps[1]) });
+  unplugged.players.release('film-player', unplugged.tick()); unplugged.players.possess('film-player', 'tank', unplugged.tick());
+  unplugged.actor().currentLocation = unpluggedScene.set; unplugged.actor().isInMatrix = false;
+  unplugged.sandbox.restore(JSON.parse(JSON.stringify(unplugged.sandbox.state)));
+  assert.equal(unplugged.sandbox.life.film.state!.betrayal?.phase, 'done', 'a completed old checkpoint remains complete');
+  assert.equal(unplugged.actor().currentAction?.parameters.betrayal, undefined, 'a completed checkpoint must not lock Tank in a finished pose');
+  assert.match(unplugged.command('next'), /仍然选择去救他/);
+});
+
+test('Tank can fail and retry Cypher aim, then explicitly reconnect both surviving signals', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  const scene = FILM_SCENE_BY_ID.m1_unplugged;
+  Object.assign(state, { scene: scene.id, actor: 'tank', step: 0, betrayal: undefined });
+  h.players.release('film-player', h.tick()); h.players.possess('film-player', 'tank', h.tick());
+  assert.equal(h.actor().currentAction?.parameters.betrayal, undefined, 'Tank must remain free to walk to the backup console');
+  h.actor().position = filmStepPosition(scene, scene.steps[0]); h.actor().currentLocation = scene.set; h.actor().isInMatrix = false;
+  h.advance(); assert.equal(state.step, 1);
+  const encounter = () => h.sandbox.life.film.state!.betrayal!;
+  h.players.possess('other-player', 'cypher', h.tick());
+  assert.match(h.command('act'), /另一位玩家/);
+  h.players.release('other-player', h.tick()); h.command('act');
+  assert.equal(encounter().kind, 'unplugged'); assert.equal(encounter().phase, 'unplugging');
+  for (let frame = 0; frame < 130 && h.actor().status === 'alive'; frame++) h.players.step(.1, true, h.tick());
+  assert.equal(encounter().phase, 'failed'); assert.equal(h.actor().status, 'dead'); assert.equal(state.step, 1);
+
+  h.command('retry'); assert.equal(h.actor().status, 'alive'); assert.equal(encounter().phase, 'ready');
+  h.command('act');
+  for (let frame = 0; frame < 100 && encounter().phase !== 'window'; frame++) h.players.step(.1, true, h.tick());
+  assert.equal(encounter().phase, 'window');
+  const saved = JSON.parse(JSON.stringify(h.sandbox.state)); h.sandbox.restore(saved);
+  assert.equal(encounter().phase, 'window'); h.command('act'); assert.equal(encounter().phase, 'countering');
+  for (let frame = 0; frame < 70 && encounter().phase !== 'reconnect'; frame++) h.players.step(.1, true, h.tick());
+  assert.equal(encounter().phase, 'reconnect');
+  h.command('act'); assert.equal(encounter().rescued, 1); assert.equal(state.step, 1);
+  h.command('act'); assert.equal(encounter().rescued, 2); assert.equal(encounter().phase, 'done');
+  assert.equal(h.sandbox.life.film.state!.step, 2); assert.ok(h.sandbox.life.film.state!.completed.includes(scene.id));
+  for (const id of ['cypher', 'dozer', 'apoc', 'switch']) assert.equal(h.world.agents.get(id)!.status, 'dead', id);
+  for (const id of ['neo', 'trinity', 'tank']) assert.equal(h.world.agents.get(id)!.status, 'alive', id);
+});
+
 test('the repeated cat seals the old exit, leaves the service passage open and preserves the changed space after reconnect', () => {
   for (const time of [.5, 1.5, 2, 3]) assert.deepEqual(ambushCat(time), ambushCat(time + 4.5), 'the second cat repeats the same path and movement');
   const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
@@ -260,7 +348,11 @@ test('canonical losses persist across scene transitions, loading and character s
   h.players.possess('film-player', scene.actor, h.tick());
   h.actor().isInMatrix = false; h.actor().currentLocation = scene.set;
   h.actor().position = filmStepPosition(scene, scene.steps[1]);
-  h.command('act'); h.advance(10);
+  h.command('act');
+  for (let frame = 0; frame < 100 && state.betrayal?.phase !== 'window'; frame++) h.players.step(.1, true, h.tick());
+  assert.equal(state.betrayal?.phase, 'window'); h.command('act');
+  for (let frame = 0; frame < 70 && state.betrayal?.phase !== 'reconnect'; frame++) h.players.step(.1, true, h.tick());
+  h.command('act'); h.command('act');
   for (const id of ['cypher', 'dozer', 'apoc', 'switch']) assert.equal(h.world.agents.get(id)!.status, 'dead', id);
   h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); h.command('next');
   h.sandbox.life.film.releaseCast();
@@ -734,6 +826,13 @@ test('the entire film route completes through interactions, driving and real com
         else if (scene.id === 'm1_cypher_console') for (let frame = 0; frame < 86; frame++) h.players.step(.1, true, h.tick());
         else if (scene.id === 'm1_steak') for (let frame = 0; frame < 147; frame++) h.players.step(.1, true, h.tick());
         else if (scene.id === 'm1_meal') for (let frame = 0; frame < 134; frame++) h.players.step(.1, true, h.tick());
+        else if (scene.id === 'm1_bathroom') for (let frame = 0; frame < 70 && state.step === index; frame++) h.players.step(.1, true, h.tick());
+        else if (scene.id === 'm1_unplugged') {
+          for (let frame = 0; frame < 100 && state.betrayal?.phase !== 'window'; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.betrayal?.phase, 'window'); h.command('act');
+          for (let frame = 0; frame < 70 && state.betrayal?.phase !== 'reconnect'; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.betrayal?.phase, 'reconnect'); h.command('act'); h.command('act');
+        }
         else if (scene.id === 'm1_boss' && index === 0) {
           for (let frame = 0; frame < 91; frame++) h.players.step(.1, true, h.tick());
           h.command('act');
@@ -756,6 +855,16 @@ test('the entire film route completes through interactions, driving and real com
       else if (step.kind === 'drive') { h.command('act'); rideToExit(h); }
       else {
         h.command('act'); h.advance(); assert.ok(h.sandbox.state.threats.length > 0, scene.id);
+        if (scene.id === 'm1_bathroom') {
+          const target = h.sandbox.state.threats[0]; target.stunUntil = Number.MAX_SAFE_INTEGER;
+          for (let frame = 0; frame < 130; frame++) h.players.step(.1, true, h.tick());
+          for (const combo of [0, 1, 2]) {
+            target.position = { ...actor.position, z: actor.position.z - 2 }; actor.rotation = Math.PI;
+            h.sandbox.attack(actor, h.tick(), combo);
+          }
+          h.players.step(.1, true, h.tick()); assert.equal(state.betrayal?.phase, 'sacrifice_ready');
+          assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`); continue;
+        }
         if (scene.id === 'm1_dojo') {
           const target = h.sandbox.state.threats[0];
           h.sandbox.life.film.trainingDodge(actor, target, h.tick());

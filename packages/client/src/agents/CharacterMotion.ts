@@ -1,4 +1,4 @@
-import { MELEE_COMBO, COMBO_WINDOW, COMBAT_SKILLS, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED, type CombatSkillId, type AwakeningPose, type AwakeningReveal, type OfficePhone, pillPose, lafayetteWelcomePose, oracleVisitPose, type PillGesture, type InterrogationGesture, type LafayetteWelcomeGesture, type TrainingGesture, type OracleVisitGesture } from '@auto_matrix/shared';
+import { MELEE_COMBO, COMBO_WINDOW, COMBAT_SKILLS, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED, type CombatSkillId, type AwakeningPose, type AwakeningReveal, type OfficePhone, pillPose, lafayetteWelcomePose, oracleVisitPose, betrayalPose, type PillGesture, type InterrogationGesture, type LafayetteWelcomeGesture, type TrainingGesture, type OracleVisitGesture, type BetrayalGesture } from '@auto_matrix/shared';
 
 export interface MotionInput {
   speed: number;
@@ -30,6 +30,7 @@ export interface MotionInput {
   sentinel?: import('@auto_matrix/shared').SentinelGesture;
   interlude?: import('@auto_matrix/shared').InterludeGesture;
   oracleVisit?: OracleVisitGesture;
+  betrayal?: BetrayalGesture;
   clubClothes?: boolean;
   mirror?: number;
   spoon?: number;
@@ -107,6 +108,7 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const exiting = input.pills?.role === 'neo' && input.pills.phase === 'taking' && input.pills.elapsed > 11;
   const welcome = input.welcome && lafayetteWelcomePose(input.welcome);
   const oracle = input.oracleVisit && oracleVisitPose(input.oracleVisit);
+  const betrayal = input.betrayal && betrayalPose(input.betrayal);
   const welcomeWalking = input.welcome?.phase === 'approach' || input.welcome?.phase === 'departing' && input.welcome.role !== 'neo';
   const welcomeSpeed = input.welcome?.role === 'morpheus' ? 2.6 : input.welcome?.role === 'neo' ? 2.3 : 1.8;
   const speed = input.pills ? exiting ? 1.7 : 0 : welcomeWalking ? welcomeSpeed : input.speed;
@@ -223,6 +225,24 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
       arms[0].grip = mix(arms[0].grip, .38, oracle.receive);
     }
   }
+  if (betrayal && input.betrayal) {
+    if (betrayal.charge) for (let i = 0; i < 2; i++) {
+      arms[i].shoulder = mix(arms[i].shoulder, -1.12, betrayal.charge); arms[i].elbow = mix(arms[i].elbow, -.38, betrayal.charge);
+      arms[i].outward = mix(arms[i].outward, (i ? 1 : -1) * .28, betrayal.charge); arms[i].grip = mix(arms[i].grip, .9, betrayal.charge);
+    }
+    if (betrayal.yank) {
+      arms[0].shoulder = mix(arms[0].shoulder, -.32, betrayal.yank); arms[0].elbow = mix(arms[0].elbow, -1.72, betrayal.yank);
+      arms[0].outward = mix(arms[0].outward, -.42, betrayal.yank); arms[0].grip = mix(arms[0].grip, 1, betrayal.yank);
+    }
+    if (betrayal.counter || betrayal.reconnect) {
+      const reach = Math.max(betrayal.counter, betrayal.reconnect);
+      arms[0].shoulder = mix(arms[0].shoulder, -.88, reach); arms[0].elbow = mix(arms[0].elbow, -1.08, reach); arms[0].grip = mix(arms[0].grip, .9, reach);
+      if (betrayal.reconnect) { arms[1].shoulder = -.72; arms[1].elbow = -1.34; arms[1].grip = .75; }
+    }
+    if (betrayal.unplugged) for (let i = 0; i < 2; i++) {
+      arms[i].shoulder = mix(arms[i].shoulder, .28, .92); arms[i].elbow = mix(arms[i].elbow, -.18, .92); arms[i].grip = 0;
+    }
+  }
   if (input.performance && !['touch', 'connect'].includes(input.performance)) for (let i = 0; i < 2; i++) {
     const afloat = input.performance === 'float'; const raised = input.performance === 'lift';
     arms[i].shoulder = raised ? -2 : -.5 + (afloat ? Math.sin(state.time * 2 + i) * .2 : 0);
@@ -231,8 +251,10 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   }
   const oracleLean = oracle && input.oracleVisit?.role === 'oracle' ? oracle.inspect * .07 : 0;
   const oracleLook = oracle && input.oracleVisit ? (input.oracleVisit.role === 'oracle' ? oracle.listen * .12 : -oracle.listen * .09) : 0;
-  return { legs, arms, hipHeight, twist, lean: run * .12 + state.landing * .12 + state.airborne * .04 + extension * .10 - kick * .27 - recoil * .35 + (input.crouching ? .26 : 0) + (input.riding ? .2 : 0) + oracleLean,
+  const betrayalLean = betrayal ? betrayal.fall * 1.15 + (betrayal.unplugged ? .62 : 0) - betrayal.charge * .2 : 0;
+  const betrayalRoll = betrayal?.fall ? (input.betrayal?.role === 'cypher' ? -.86 : .68) * betrayal.fall : 0;
+  return { legs, arms, hipHeight, twist, lean: run * .12 + state.landing * .12 + state.airborne * .04 + extension * .10 - kick * .27 - recoil * .35 + (input.crouching ? .26 : 0) + (input.riding ? .2 : 0) + oracleLean + betrayalLean,
     sway: Math.sin(cycle) * moving * .035, lunge: extension * .16 - kick * .25 - recoil * .22 - dodging * .35,
-    roll: -state.turn * run * .035 - dodging * .22, headTurn: -twist * .65 + glance + oracleLook, moving, run, airborne: state.airborne,
+    roll: -state.turn * run * .035 - dodging * .22 + betrayalRoll, headTurn: -twist * .65 + glance + oracleLook, moving, run, airborne: state.airborne,
     coat: moving * (.10 + run * .3) + state.airborne * .18 + kick * .35, impact: extension, landing: state.landing };
 }

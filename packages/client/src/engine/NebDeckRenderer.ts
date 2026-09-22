@@ -27,6 +27,12 @@ export class NebDeckRenderer {
   private mealRig = new THREE.Group();
   private neoBowl = new THREE.Group();
   private mealSteam: THREE.Mesh[] = [];
+  private betrayalRig = new THREE.Group();
+  private betrayalJacks = new Map<'neo' | 'trinity' | 'apoc' | 'switch', THREE.Group>();
+  private betrayalLoose = new Map<'apoc' | 'switch', THREE.Group>();
+  private betrayalSignals = new Map<'neo' | 'trinity' | 'apoc' | 'switch', THREE.Mesh>();
+  private betrayalFlash = new THREE.Group();
+  private betrayalAlarm!: THREE.PointLight;
 
   constructor(private root: THREE.Group) {
     this.hull();
@@ -136,6 +142,7 @@ export class NebDeckRenderer {
     this.pointLight('neb-core-task-light', 0xb9d8cb, 210, 28, 0, 10, 0);
     this.trainingUpload();
     this.cypherConsole();
+    this.betrayalScene();
   }
 
   private cypherConsole(): void {
@@ -173,6 +180,48 @@ export class NebDeckRenderer {
     }
     for (let i = 0; i < 4; i++) this.cylinder(panel, i === 3 ? this.amber : this.steel, -.75 + i * .5, -1.02, .14, .075, .05).rotation.x = Math.PI / 2;
     const light = new THREE.PointLight(0x86e9ad, 0, 11, 2); light.name = 'neb-training-jack-light'; light.position.set(6.5, 5, -5); this.downloadRig.add(light); this.lights.add(light);
+  }
+
+  private betrayalScene(): void {
+    this.betrayalRig.name = 'neb-betrayal-scene'; this.betrayalRig.visible = false; this.root.add(this.betrayalRig);
+    const console = new THREE.Group(); console.name = 'neb-betrayal-console'; console.position.set(-10.4, 0, -14.2); console.rotation.y = .08; this.betrayalRig.add(console);
+    this.box(console, this.dark, 0, 1.3, 0, 5.2, 2.6, 2.3); this.box(console, this.steel, 0, 2.7, -.3, 5.35, .28, 2.45);
+    const display = this.box(console, this.screen, 0, 3.7, .1, 4.6, 1.55, .08, 'neb-betrayal-life-display'); display.rotation.x = -.23;
+    for (let i = 0; i < 16; i++) {
+      const trace = this.box(console, this.rubber, -2 + i * .27, 3.71 + Math.sin(i * 1.8) * .22, .15, .19, .025, .025);
+      trace.rotation.x = -.23;
+    }
+    const roles = ['neo', 'trinity', 'apoc', 'switch'] as const;
+    roles.forEach((role, index) => {
+      const material = this.material(new THREE.MeshBasicMaterial({ color: 0x75e7a1, toneMapped: false }));
+      const signal = this.box(console, material, -1.72 + index * 1.15, 3.18, .2, .72, .12, .035, `neb-betrayal-signal-${role}`);
+      signal.userData.role = role; this.betrayalSignals.set(role, signal);
+      const label = this.box(console, this.worn, -1.72 + index * 1.15, 2.94, .18, .72, .11, .03); label.userData.role = role;
+    });
+    for (const [role, root] of Object.entries({ apoc: [-6.5, -5], neo: [6.5, -5], trinity: [-6.5, 6], switch: [6.5, 6] }) as ['apoc' | 'neo' | 'trinity' | 'switch', [number, number]][]) {
+      const jack = new THREE.Group(); jack.name = `neb-betrayal-jack-${role}`; jack.position.set(root[0], 3.25, root[1]); this.betrayalRig.add(jack); this.betrayalJacks.set(role, jack);
+      const collar = this.cylinder(jack, this.steel, 0, 0, 0, .16, .52); collar.rotation.z = Math.PI / 2;
+      const plug = this.cylinder(jack, this.amber, -.34, 0, 0, .075, .32); plug.rotation.z = Math.PI / 2;
+      const cable = this.mesh(jack, new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
+        new THREE.Vector3(-.42, 0, 0), new THREE.Vector3(-1.1, 1.55, .3), new THREE.Vector3(-1.8, 3.1, role === 'trinity' || role === 'switch' ? -.5 : .5),
+      ]), 20, .075, 8), this.rubber); cable.name = `neb-betrayal-cable-${role}`;
+      if (role === 'apoc' || role === 'switch') {
+        const loose = new THREE.Group(); loose.name = `neb-betrayal-loose-${role}`; loose.position.set(root[0], 0, root[1]); this.betrayalRig.add(loose); this.betrayalLoose.set(role, loose);
+        const fallenCable = this.mesh(loose, new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
+          new THREE.Vector3(-1.8, 6.35, role === 'switch' ? -.5 : .5), new THREE.Vector3(-1.1, 3.8, .3), new THREE.Vector3(-.5, 1.1, .15), new THREE.Vector3(.2, .35, 0),
+        ]), 28, .075, 8), this.rubber); fallenCable.name = `neb-betrayal-fallen-cable-${role}`;
+        const loosePlug = this.cylinder(loose, this.amber, .34, .35, 0, .075, .32); loosePlug.rotation.z = Math.PI / 2;
+      }
+    }
+    this.betrayalFlash.name = 'neb-betrayal-counter-flash'; this.betrayalFlash.position.set(-4.1, 2.5, -10.4); this.betrayalRig.add(this.betrayalFlash);
+    const flashMaterial = this.material(new THREE.MeshBasicMaterial({ color: 0xa8fff0, transparent: true, opacity: .88, toneMapped: false, depthWrite: false }));
+    const core = this.mesh(this.betrayalFlash, new THREE.SphereGeometry(.34, 16, 10), flashMaterial); core.scale.z = 2.8;
+    for (let i = 0; i < 3; i++) {
+      const ring = this.mesh(this.betrayalFlash, new THREE.TorusGeometry(.42 + i * .27, .035, 8, 24), flashMaterial); ring.rotation.y = Math.PI / 2; ring.position.z = i * .45;
+    }
+    const flashLight = new THREE.PointLight(0xa8fff0, 420, 15, 2); flashLight.name = 'neb-betrayal-discharge-light'; this.betrayalFlash.add(flashLight); this.lights.add(flashLight);
+    this.betrayalAlarm = new THREE.PointLight(0xbd382a, 0, 22, 2); this.betrayalAlarm.name = 'neb-betrayal-alarm'; this.betrayalAlarm.position.set(-3, 8.5, -5);
+    this.betrayalRig.add(this.betrayalAlarm); this.lights.add(this.betrayalAlarm);
   }
 
   private mess(): void {
@@ -256,6 +305,33 @@ export class NebDeckRenderer {
         ring.position.set(this.neoBowl.position.x, 2.1 + cycle * 1.1, 22); ring.scale.setScalar(.65 + cycle * .8); ring.visible = meal.phase === 'performing' && t < 9;
       });
     }
+    const betrayal = journey?.scene === 'm1_unplugged' && !journey.visiting && journey.betrayal?.kind === 'unplugged' ? journey.betrayal : undefined;
+    this.betrayalRig.visible = Boolean(betrayal);
+    if (betrayal) {
+      const afterPulls = ['aiming', 'window', 'failed', 'countering', 'reconnect', 'done'].includes(betrayal.phase);
+      const disconnected = {
+        apoc: afterPulls || betrayal.phase === 'unplugging' && betrayal.elapsed >= 2.25,
+        switch: afterPulls || betrayal.phase === 'unplugging' && betrayal.elapsed >= 4.55,
+      };
+      for (const role of ['apoc', 'switch'] as const) {
+        this.betrayalJacks.get(role)!.visible = !disconnected[role]; this.betrayalLoose.get(role)!.visible = disconnected[role];
+      }
+      for (const role of ['neo', 'trinity'] as const) this.betrayalJacks.get(role)!.visible = true;
+      for (const role of ['neo', 'trinity', 'apoc', 'switch'] as const) {
+        const signal = this.betrayalSignals.get(role)!; const dead = role === 'apoc' ? disconnected.apoc : role === 'switch' ? disconnected.switch : betrayal.phase === 'failed';
+        (signal.material as THREE.MeshBasicMaterial).color.setHex(dead ? 0x4c1815 : 0x75e7a1);
+        signal.scale.y = dead ? .55 : .8 + Math.sin(elapsed * 8 + role.length) * .2;
+      }
+      const discharge = betrayal.phase === 'countering' && betrayal.elapsed >= 2.16 && betrayal.elapsed <= 2.62;
+      this.betrayalFlash.visible = discharge;
+      if (discharge) {
+        const pulse = 1 + Math.sin((betrayal.elapsed - 2.16) * 28) * .24; this.betrayalFlash.scale.setScalar(pulse);
+        this.betrayalFlash.rotation.z = elapsed * 2.4;
+      }
+      this.betrayalAlarm.intensity = ['unplugging', 'aiming', 'window', 'countering'].includes(betrayal.phase) ? 72 + Math.sin(elapsed * 9) * 35 : 18;
+      const display = this.betrayalRig.getObjectByName('neb-betrayal-life-display') as THREE.Mesh;
+      display.scale.y = .96 + Math.sin(elapsed * 5) * .04;
+    } else this.betrayalFlash.visible = false;
   }
 
   dispose(): void {
@@ -264,5 +340,6 @@ export class NebDeckRenderer {
     this.materials.forEach(material => material.dispose());
     this.lights.forEach(light => light.dispose());
     this.geometries.clear(); this.materials.clear(); this.lights.clear(); this.needles = []; this.downloadBars = [];
+    this.betrayalJacks.clear(); this.betrayalLoose.clear(); this.betrayalSignals.clear();
   }
 }

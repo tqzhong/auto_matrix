@@ -10,6 +10,11 @@ export class AmbushSetRenderer {
   private body = new THREE.Group();
   private legs: THREE.Group[] = [];
   private tail = new THREE.Group();
+  private bathroom = new THREE.Group();
+  private bathroomIntact = new THREE.Group();
+  private bathroomDebris = new THREE.Group();
+  private bathroomDust = new THREE.Group();
+  private bathroomLight!: THREE.PointLight;
   private daylight: THREE.SpotLight;
   private window: THREE.Mesh;
   private materials: THREE.Material[] = [];
@@ -78,7 +83,7 @@ export class AmbushSetRenderer {
     }
     this.batch();
     this.root.add(this.seals, this.cat);
-    this.brickwork(); this.makeCat();
+    this.brickwork(); this.makeCat(); this.makeBathroom();
     this.daylight = new THREE.SpotLight(0xdce5c8, 1250, 58, .72, .35, 2);
     this.daylight.position.set(-24, 8, -17); this.daylight.target.position.set(3, .5, -10);
     this.daylight.castShadow = true; this.daylight.shadow.mapSize.set(1024, 1024); this.daylight.shadow.normalBias = .05;
@@ -141,6 +146,55 @@ export class AmbushSetRenderer {
     const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(0, 0, 0), new THREE.Vector3(-.4, .12, .08), new THREE.Vector3(-.8, .65, .12), new THREE.Vector3(-.84, 1.1, .1), new THREE.Vector3(-.63, 1.3, .06)]);
     const tail = new THREE.Mesh(new THREE.TubeGeometry(curve, 24, .065, 8, false), fur); tail.castShadow = true; this.tail.add(tail); this.tail.position.set(-.72, .85, 0); this.cat.add(this.tail);
   }
+  private makeBathroom(): void {
+    this.bathroom.name = 'ambush-bathroom-holdout'; this.root.add(this.bathroom);
+    const tile = this.mat(0xb6b7aa, .74); const grout = this.mat(0x666b61, .96); const porcelain = this.mat(0xd5d4c5, .42);
+    const enamel = this.mat(0xaaa99d, .32, .08); const pipe = this.mat(0x59605b, .38, .72); const plaster = this.mat(0x77796c, .94);
+    // A tiled strip and exposed plumbing establish the bathroom without narrowing the playable door line.
+    this.box(grout, 12.58, 4.15, -4, .12, 7.8, 18, this.bathroom);
+    for (let row = 0; row < 8; row++) for (let column = 0; column < 18; column++) {
+      const slab = this.box(tile, 12.5, .68 + row * .91, -12.05 + column * .91, .075, .82, .82, this.bathroom);
+      slab.name = row === 0 && column === 0 ? 'ambush-bathroom-wall-tiles' : '';
+    }
+    const tub = new THREE.Group(); tub.name = 'ambush-bathroom-tub'; tub.position.set(8.8, 0, 2.4); this.bathroom.add(tub);
+    this.box(enamel, 0, .74, 0, 5.5, 1.45, 2.8, tub);
+    this.box(grout, 0, 1.3, 0, 4.75, .82, 2.18, tub);
+    this.box(tile, 0, 1.42, 0, 4.35, .8, 1.78, tub);
+    for (const x of [-2.2, 2.2]) this.box(pipe, x, .27, 0, .15, .52, 2.3, tub);
+    const sink = new THREE.Group(); sink.name = 'ambush-bathroom-sink'; sink.position.set(10.65, 0, -10.4); this.bathroom.add(sink);
+    this.box(porcelain, 0, 2.25, 0, 2.8, .46, 1.45, sink); this.box(grout, 0, 2.37, -.02, 2.15, .32, .92, sink);
+    this.cylinder(pipe, 0, 1.12, .18, .08, 1.95, sink); this.cylinder(pipe, 0, 2.72, .18, .12, .45, sink);
+    for (const side of [-1, 1]) this.cylinder(pipe, side * .55, 2.64, 0, .1, .28, sink);
+    const mirror = new THREE.Mesh(new THREE.PlaneGeometry(2.65, 2.5), this.mat(0x8f9b93, .08, .25)); mirror.name = 'ambush-bathroom-mirror';
+    mirror.position.set(12.42, 4.25, -10.4); mirror.rotation.y = -Math.PI / 2; this.bathroom.add(mirror);
+
+    this.bathroomIntact.name = 'ambush-bathroom-partition-intact'; this.bathroom.add(this.bathroomIntact);
+    this.box(plaster, 3.35, 4.35, -8.25, 7.2, 8.1, .34, this.bathroomIntact);
+    for (let row = 0; row < 8; row++) for (let column = 0; column < 7; column++) {
+      const slab = this.box(tile, .45 + column * .94, .77 + row * .92, -8.03, .84, .82, .055, this.bathroomIntact);
+      slab.rotation.z = (column * 7 + row * 3) % 13 === 0 ? .012 : 0;
+    }
+    this.bathroomDebris.name = 'ambush-bathroom-breach-debris'; this.bathroom.add(this.bathroomDebris);
+    for (let i = 0; i < 42; i++) {
+      const material = i % 3 ? plaster : tile; const x = .3 + i * 17 % 68 / 10; const z = -11.7 + i * 23 % 68 / 10;
+      const piece = this.box(material, x, .12 + i % 5 * .055, z, .24 + i % 4 * .18, .14 + i % 3 * .09, .3 + i % 5 * .13, this.bathroomDebris);
+      piece.rotation.set((i % 5 - 2) * .13, i * .77, (i % 7 - 3) * .11);
+    }
+    for (const x of [.45, 6.25]) {
+      const stud = this.box(pipe, x, 3.7, -8.24, .18, 7.1, .19, this.bathroomDebris); stud.rotation.z = x < 1 ? -.12 : .16;
+    }
+    this.bathroomDust.name = 'ambush-bathroom-breach-dust'; this.bathroom.add(this.bathroomDust);
+    const dust = this.mat(0xbdb7a0, 1); dust.transparent = true; dust.opacity = .18; dust.depthWrite = false;
+    for (let i = 0; i < 14; i++) {
+      const cloud = new THREE.Mesh(new THREE.SphereGeometry(.55 + i % 4 * .22, 10, 7), dust); cloud.position.set(1 + i * 13 % 55 / 10, 1 + i % 5 * .55, -9.1 + (i % 4 - 1.5) * .65);
+      cloud.scale.set(1.35, .72, .8); cloud.userData.baseY = cloud.position.y; this.bathroomDust.add(cloud);
+    }
+    this.bathroomLight = new THREE.PointLight(0xe5e1c3, 95, 18, 2); this.bathroomLight.name = 'ambush-bathroom-light';
+    this.bathroomLight.position.set(6, 7.6, -4.5); this.bathroom.add(this.bathroomLight);
+  }
+  private cylinder(material: THREE.Material, x: number, y: number, z: number, radius: number, height: number, parent = this.root): THREE.Mesh {
+    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, height, 14), material); mesh.position.set(x, y, z); mesh.castShadow = mesh.receiveShadow = true; parent.add(mesh); return mesh;
+  }
   update(journey: FilmJourney | undefined, structures: WorldStructure[], elapsed: number): void {
     const sealed = structures.some(s => s.film?.scene === 'm1_dejavu');
     this.seals.visible = sealed; this.window.visible = !sealed; this.daylight.intensity = sealed ? 0 : 1250;
@@ -156,6 +210,18 @@ export class AmbushSetRenderer {
     this.body.position.y = .8 - stretch * .18; this.body.rotation.z = -stretch * .16; this.body.scale.x = 1 + stretch * .1;
     for (const [i, leg] of this.legs.entries()) leg.rotation.z = stretching ? (i % 2 ? -.1 : .7) * stretch : Math.sin(cat.phase * 15 + (i === 0 || i === 3 ? 0 : Math.PI)) * .42;
     this.tail.rotation.x = Math.sin(cat.phase * 3) * .18; this.tail.rotation.z = -stretch * .2;
+    const betrayal = journey?.betrayal?.kind === 'bathroom' ? journey.betrayal : undefined;
+    const breached = Boolean(journey?.completed.includes('m1_bathroom') || betrayal?.phase === 'done'
+      || betrayal?.phase === 'sacrifice' && betrayal.elapsed >= 2.1);
+    this.bathroomIntact.visible = !breached; this.bathroomDebris.visible = breached;
+    const crash = betrayal?.phase === 'sacrifice' && betrayal.elapsed >= 2.1 && betrayal.elapsed < 4.4;
+    this.bathroomDust.visible = Boolean(crash);
+    if (crash) for (const [i, cloud] of this.bathroomDust.children.entries()) {
+      const age = Math.min(1, (betrayal!.elapsed - 2.1) / 2.3); cloud.position.y = Number(cloud.userData.baseY) + age * (1.4 + i % 3 * .2);
+      cloud.scale.setScalar(.75 + age * 1.35); cloud.rotation.y = elapsed * (.08 + i * .005);
+    }
+    const struggle = betrayal?.phase === 'defending' || betrayal?.phase === 'sacrifice';
+    this.bathroomLight.intensity = struggle ? 68 + Math.sin(elapsed * 17) * 17 : 95;
   }
   private batch(): void {
     const batches = new Map<THREE.Material, THREE.BufferGeometry[]>();
