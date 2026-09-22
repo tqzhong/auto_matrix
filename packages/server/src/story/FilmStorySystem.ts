@@ -10,6 +10,7 @@ import { LAFAYETTE, LAFAYETTE_WELCOME, LAFAYETTE_KNOCK_SECONDS, HOTEL_ROUTE_LENG
 import { OFFICE_WORKDAY, OFFICE_DELIVERY_SECONDS, officeCourierRoot, officeRecipientRoot, workdayLocked, workdayText } from '@auto_matrix/shared';
 import { APARTMENT, WAKE_CALL, apartmentAfter, apartmentDoor, apartmentLocked, apartmentText, wakeCallLocked, wakeCallRoot, wakeCallText, lifeRoomCenter, type ApartmentPhase, type WakeCallPhase } from '@auto_matrix/shared';
 import { CLUB, clubLocked, clubRoot, clubText, type ClubPhase } from '@auto_matrix/shared';
+import { SENTINEL_CAST, SENTINEL_TIMING, sentinelActive, sentinelDanger, sentinelLocked, sentinelRoot, sentinelText, type SentinelRole } from '@auto_matrix/shared';
 
 export class FilmStorySystem {
   // The controller owns socket sessions. It can refuse a handoff occupied by another player.
@@ -21,7 +22,7 @@ export class FilmStorySystem {
   get scene(): FilmScene | undefined { return this.state && FILM_SCENE_BY_ID[this.state.scene]; }
   get step(): FilmStep | undefined { return this.scene?.steps[this.state!.step]; }
   controls(agent: AgentState): boolean { return Boolean(this.state && this.state.actor === agent.id); }
-  performing(agent: AgentState): boolean { return this.controls(agent) && (clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || oracleActing(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
+  performing(agent: AgentState): boolean { return this.controls(agent) && (clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || oracleActing(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
   clubFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
     if (state?.scene !== 'm1_club' || state.visiting || !this.controls(agent)) return;
@@ -637,6 +638,76 @@ export class FilmStorySystem {
     }
     return true;
   }
+  sentinelFrame(agent: AgentState, input: { movement: number; sprint: boolean; jump: boolean }, dt: number, tick: number): boolean {
+    const state = this.state;
+    if (!state || state.scene !== 'm1_sentinels' || state.visiting || !this.controls(agent)) return false;
+    const encounter = state.sentinel ??= { phase: state.step >= 2 ? 'done' : state.step === 1 ? 'verify' : 'ready', elapsed: 0, noise: 0, attempt: 0 };
+    const occupied = SENTINEL_CAST.find(id => this.world.agents.get(id)?.controller);
+    const active = sentinelActive(state) && encounter.phase !== 'ready';
+    const delta = Math.max(0, Math.min(.1, dt));
+    if (!occupied || !active) {
+      if (encounter.phase === 'shutdown') {
+        encounter.elapsed = Math.min(SENTINEL_TIMING.shutdown, encounter.elapsed + delta);
+        if (encounter.elapsed >= SENTINEL_TIMING.shutdown) { encounter.phase = 'sweep'; encounter.elapsed = 0; agent.currentAction = null; }
+      } else if (encounter.phase === 'sweep') {
+        encounter.elapsed = Math.min(SENTINEL_TIMING.sweep, encounter.elapsed + delta);
+        const danger = sentinelDanger(encounter.elapsed);
+        const moving = Math.max(0, Math.min(1, input.movement));
+        const added = moving * delta * (.3 + danger * 1.25) * (input.sprint ? 1.7 : 1) + (input.jump ? .32 : 0);
+        encounter.noise = Math.max(0, Math.min(1, encounter.noise + added - (moving < .05 && !input.jump ? delta * .11 : 0)));
+        if (encounter.noise >= 1) {
+          const center = FILM_SETS[this.scene!.set].center;
+          encounter.phase = 'detected'; encounter.elapsed = 0;
+          encounter.caughtAt = { x: agent.position.x - center.x, z: agent.position.z - center.z, yaw: agent.rotation };
+        } else if (encounter.elapsed >= SENTINEL_TIMING.sweep) { encounter.phase = 'clear'; encounter.elapsed = 0; }
+      } else if (encounter.phase === 'detected') {
+        encounter.elapsed = Math.min(SENTINEL_TIMING.detected, encounter.elapsed + delta);
+        if (encounter.elapsed >= SENTINEL_TIMING.detected) { encounter.phase = 'failed'; encounter.elapsed = 0; }
+      } else if (encounter.phase === 'clear') {
+        encounter.elapsed = Math.min(SENTINEL_TIMING.clear, encounter.elapsed + delta);
+        if (encounter.elapsed >= SENTINEL_TIMING.clear) {
+          encounter.phase = 'verify'; encounter.elapsed = 0; encounter.noise = 0;
+          this.advance(this.scene!.steps[0].text!, agent, tick);
+        }
+      } else if (encounter.phase === 'confirming') {
+        encounter.elapsed = Math.min(SENTINEL_TIMING.confirming, encounter.elapsed + delta);
+        if (encounter.elapsed >= SENTINEL_TIMING.confirming) {
+          encounter.phase = 'done'; encounter.elapsed = SENTINEL_TIMING.confirming;
+          this.advance(this.scene!.steps[1].text!, agent, tick);
+        }
+      }
+    }
+    if (encounter.phase !== 'done') for (const role of ['neo', ...SENTINEL_CAST] as SentinelRole[]) {
+      const actor = this.world.agents.get(role);
+      if (!actor || actor.controller && actor !== agent || role === 'neo' && !sentinelLocked(state)) continue;
+      const before = { ...actor.position }; const pose = sentinelRoot(encounter, role);
+      this.place(actor, this.scene!, filmPosition(this.scene!.set, pose.x, pose.z)); actor.rotation = pose.yaw;
+      actor.velocity = delta > 0 ? { x: (actor.position.x - before.x) / delta, y: 0, z: (actor.position.z - before.z) / delta } : { x: 0, y: 0, z: 0 };
+      actor.currentAction = { type: 'idle', parameters: { player: role === 'neo', resolved: true, sentinel: { ...encounter, role } }, startedAt: tick, duration: 1, progress: 0 };
+    }
+    if (!sentinelLocked(state) && agent.currentAction?.parameters.sentinel) agent.currentAction = null;
+    if (sentinelLocked(state) && encounter.phase !== 'detected' && encounter.phase !== 'failed') state.checkpoint = { ...agent.position };
+    state.lastText = occupied && active ? `${this.world.agents.get(occupied)?.name ?? occupied} 正由另一位玩家控制，静默场景停在当前画面。` : sentinelText(encounter);
+    return sentinelLocked(state);
+  }
+  private sentinelAct(agent: AgentState, target: string, tick: number): string {
+    const state = this.state!; this.sentinelFrame(agent, { movement: 0, sprint: false, jump: false }, 0, tick);
+    const encounter = state.sentinel!;
+    if (target !== 'act' && target !== 'retry') return state.lastText;
+    if (encounter.phase === 'failed') {
+      encounter.phase = 'shutdown'; encounter.elapsed = 0; encounter.noise = 0; encounter.attempt++;
+      delete encounter.caughtAt; agent.status = 'alive'; agent.health = agent.maxHealth;
+      agent.position = { ...state.checkpoint }; agent.velocity = { x: 0, y: 0, z: 0 };
+      this.sentinelFrame(agent, { movement: 0, sprint: false, jump: false }, 0, tick); return state.lastText;
+    }
+    if (!this.near(agent, this.step!)) return '先走到前舱当前目标旁，再按 G。';
+    if (SENTINEL_CAST.some(id => this.world.agents.get(id)?.controller)) return '一名船员正由另一位玩家控制，静默停机暂时无法开始。';
+    if (encounter.phase === 'ready') {
+      encounter.phase = 'shutdown'; encounter.elapsed = 0; encounter.noise = 0;
+      state.checkpoint = { ...agent.position };
+    } else if (encounter.phase === 'verify') { encounter.phase = 'confirming'; encounter.elapsed = 0; }
+    this.sentinelFrame(agent, { movement: 0, sprint: false, jump: false }, 0, tick); return state.lastText;
+  }
   trainingDodge(agent: AgentState, threat: SandboxThreat, tick: number): boolean {
     const state = this.state;
     if (!state || state.scene !== 'm1_dojo' || state.step !== 0 || threat.scene !== state.scene || threat.character !== 'morpheus') return false;
@@ -776,6 +847,12 @@ export class FilmStorySystem {
       return `回访${FILM_SETS[visited.set].name}。J 可返回当前剧情，回访不会改写进度。`;
     }
     if (target === 'retry') {
+      if (state.scene === 'm1_sentinels' && state.sentinel) {
+        if (state.sentinel.phase === 'failed') return this.sentinelAct(agent, target, tick);
+        agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
+        this.sentinelFrame(agent, { movement: 0, sprint: false, jump: false }, 0, tick);
+        return '已接回静默航行，保留断电、扫描、噪声与船员位置。';
+      }
       if (state.scene === 'm1_club' && state.club) {
         delete state.visiting; delete state.returnPosition;
         agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
@@ -929,6 +1006,7 @@ export class FilmStorySystem {
     if (state.scene === 'm1_wake_up') return this.apartmentAct(agent, target, tick);
     if (state.scene === 'm1_wake_again' && state.step === 0) return this.wakeCallAct(agent, target, tick);
     if (state.scene === 'm1_club') return this.clubAct(agent, target, tick);
+    if (state.scene === 'm1_sentinels') return this.sentinelAct(agent, target, tick);
     if (interrogationLocked(state) && state.interrogation!.phase !== 'response') return '审讯正在进行。可以转动视角观察，暂停会保留当前进度。';
     if (target === 'escape:retreat' && state.scene === 'm1_ledge') {
       this.capture(agent, tick, '你退回办公室。特工将你带走；电话中的联系尚未结束。');
@@ -1098,6 +1176,7 @@ export class FilmStorySystem {
     delete state.contact;
     delete state.wakeCall;
     delete state.club;
+    delete state.sentinel;
     this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== 'film:apartment:door');
     delete state.pills;
     delete state.interrogation;
@@ -1107,6 +1186,7 @@ export class FilmStorySystem {
       for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.meeting) other.currentAction = null;
     }
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.interrogation) other.currentAction = null;
+    for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.sentinel) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.riding) { other.currentAction = null; other.velocity = { x: 0, y: 0, z: 0 }; }
     if (scene.id === 'm1_lobby') this.lobby.reset();
     const actor = this.world.agents.get(state.actor)!;
@@ -1140,6 +1220,10 @@ export class FilmStorySystem {
     }
     if (scene.id === 'm1_dojo') state.dojo = { dodged: false, combo: 0, hits: 0 };
     if (scene.id === 'm1_bug') this.meetingFrame(actor, false, 0, tick);
+    if (scene.id === 'm1_sentinels') {
+      state.sentinel = { phase: 'ready', elapsed: 0, noise: 0, attempt: 0 };
+      this.sentinelFrame(actor, { movement: 0, sprint: false, jump: false }, 0, tick);
+    }
     if (scene.id === 'm1_bug' && state.office?.outcome === 'escaped') state.lastText = '你没有被特工带走。Switch 仍要求做安全检查，确认没有追踪装置。';
   }
   private stageCast(): void {

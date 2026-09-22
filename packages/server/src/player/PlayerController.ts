@@ -6,6 +6,7 @@ import type { ActionExecutor } from '../agents/ActionExecutor.js';
 import type { WorldDynamics } from '../story/WorldDynamics.js';
 import { INTERROGATION_CAST, interrogationLocked } from '@auto_matrix/shared';
 import { MEETING_CAST, meetingLocked } from '@auto_matrix/shared';
+import { SENTINEL_CAST, sentinelActive } from '@auto_matrix/shared';
 
 interface PlayerSession {
   agentId: string;
@@ -48,6 +49,7 @@ export class PlayerController {
     const hotel = this.sandbox?.life.film.state?.hotel;
     if ((id === 'trinity' || id === 'morpheus') && hotel && hotel.welcome?.phase !== 'done') return { error: id === 'trinity' ? 'Trinity 正在带路并参与迎接，离开相邻房间后可以接入。' : 'Morpheus 正在窗前等待并迎接 Neo，交谈结束后可以接入。' };
     if (MEETING_CAST.includes(id as typeof MEETING_CAST[number]) && this.sandbox?.life.film.state && meetingLocked(this.sandbox.life.film.state)) return { error: '这个角色正在参与接头检查，结束后可以接入。' };
+    if (SENTINEL_CAST.includes(id as typeof SENTINEL_CAST[number]) && this.sandbox?.life.film.state && sentinelActive(this.sandbox.life.film.state) && this.sandbox.life.film.state.sentinel?.phase !== 'ready') return { error: '这个角色正在参与静默潜航，哨兵离开后可以接入。' };
     if (INTERROGATION_CAST.includes(id as typeof INTERROGATION_CAST[number]) && this.sandbox?.life.film.state && interrogationLocked(this.sandbox.life.film.state)) return { error: '这个特工正在参与审讯，结束后可以接入。' };
     if (id === 'morpheus' && this.sandbox?.life.film.state && pillLocked(this.sandbox.life.film.state)) return { error: 'Morpheus 正在与 Neo 交谈递药，结束后可以接入。' };
     if (id === 'keymaker' && this.sandbox?.life.film.state?.ride?.phase === 'riding') return { error: '钥匙匠正在后座接受护送，抵达接应区后可以接入。' };
@@ -96,6 +98,7 @@ export class PlayerController {
     this.sandbox?.life.film.workdayFrame(agent, 0, tick);
     this.sandbox?.life.film.apartmentFrame(agent, 0, tick);
     this.sandbox?.life.film.clubFrame(agent, 0, tick);
+    this.sandbox?.life.film.sentinelFrame(agent, { movement: 0, sprint: false, jump: false }, 0, tick);
     if (agent.mind) agent.mind.thought = '由玩家决定下一步行动。';
     return { agentId: id };
   }
@@ -122,6 +125,7 @@ export class PlayerController {
     }
     this.owners.delete(session.agentId); this.sessions.delete(socketId);
     this.sandbox?.life.film.reconcileCast();
+    if (agent) this.sandbox?.life.film.sentinelFrame(agent, { movement: 0, sprint: false, jump: false }, 0, tick);
   }
 
   receiveInput(socketId: string, value: unknown): void {
@@ -157,7 +161,7 @@ export class PlayerController {
     }
     for (const session of this.sessions.values()) {
       const agent = this.world.agents.get(session.agentId)!;
-      if (!running || agent.status !== 'alive') { agent.velocity = { x: 0, y: 0, z: 0 }; this.sandbox?.life.film.hotelFrame(agent, 0, tick); session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue; }
+      if (!running || agent.status !== 'alive') { agent.velocity = { x: 0, y: 0, z: 0 }; this.sandbox?.life.film.hotelFrame(agent, 0, tick); this.sandbox?.life.film.sentinelFrame(agent, { movement: 0, sprint: false, jump: false }, 0, tick); session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue; }
       session.stagger = Math.max(0, session.stagger - dt);
       const stale = now - session.lastInput > 300;
       let input = stale ? { ...idleInput(), yaw: session.input.yaw } : session.input;
@@ -172,6 +176,9 @@ export class PlayerController {
       this.sandbox?.life.film.workdayFrame(agent, dt, tick);
       this.sandbox?.life.film.apartmentFrame(agent, dt, tick);
       this.sandbox?.life.film.clubFrame(agent, dt, tick);
+      if (this.sandbox?.life.film.sentinelFrame(agent, { movement: Math.hypot(input.x, input.z), sprint: input.sprint, jump: input.jump }, dt, tick)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
       if (this.sandbox?.life.film.awakeningFrame(agent, dt, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
@@ -260,6 +267,7 @@ export class PlayerController {
     const agent = this.getAgent(socketId);
     if (!session || !agent || agent.status !== 'alive') return '请先接入一个存活角色。';
     if (this.sandbox?.life.film.performing(agent) && kind !== 'interact') return '演出进行中，可以转动视角观察；进度会自动保存。';
+    if (this.sandbox?.life.film.state && sentinelActive(this.sandbox.life.film.state) && ['attack', 'shoot', 'ability', 'ability2', 'dodge', 'travel'].includes(kind)) return '哨兵正在附近扫描。保持安静，武器和能力会暴露整艘船。';
     if (this.sandbox?.life.film.driving(agent) && ['attack', 'shoot', 'ability', 'ability2', 'dodge', 'travel'].includes(kind)) return '正在护送钥匙匠。W 加速，S 刹车，A / D 转向。';
     if (this.sandbox?.life.film.controls(agent) && ['m1_office_escape', 'm1_ledge'].includes(this.sandbox.life.film.state!.scene)
       && ['attack', 'shoot', 'ability', 'ability2', 'dodge'].includes(kind)) return '你仍是普通的 Anderson。按住 Z 潜行，利用遮挡避开特工。';

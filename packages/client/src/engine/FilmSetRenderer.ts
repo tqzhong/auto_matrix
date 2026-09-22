@@ -25,6 +25,7 @@ import { ApartmentSetRenderer } from './ApartmentSetRenderer.js';
 import { apartmentLocked } from '@auto_matrix/shared';
 import { clubLocked } from '@auto_matrix/shared';
 import { ClubSetRenderer } from './ClubSetRenderer.js';
+import { SentinelSetRenderer } from './SentinelSetRenderer.js';
 
 const outdoor = new Set(['rooftop', 'plaza', 'bridge', 'street', 'courtyard', 'freeway', 'machine', 'rain', 'garden', 'desert', 'pods']);
 const palettes = {
@@ -79,6 +80,7 @@ export class FilmSetRenderer {
   private meeting?: MeetingSetRenderer;
   private hotel?: LafayetteApproachRenderer;
   private approach?: { root: THREE.Group; renderer: MeetingSetRenderer };
+  private sentinel?: SentinelSetRenderer;
 
   constructor(private scene: THREE.Scene) {
     scene.add(this.root);
@@ -109,6 +111,7 @@ export class FilmSetRenderer {
         else if (set.id === 'film_white_construct') this.construct = new ConstructRenderer(this.root, sceneId);
         else if (set.id === 'film_real_desert') this.desert = new DesertRenderer(this.root);
         else if (['m1_dojo', 'm1_jump', 'm1_red_dress'].includes(sceneId ?? '')) this.training = new TrainingSetRenderer(this.root, sceneId!);
+        else if (sceneId === 'm1_sentinels') this.sentinel = new SentinelSetRenderer(this.root);
         else if (set.id === 'film_ambush_house') this.ambush = new AmbushSetRenderer(this.root);
         else if (set.id === 'film_agent_interrogation') this.interrogation = new InterrogationSetRenderer(this.root);
         else if (set.id === 'film_adams_bridge' || set.id === 'film_extraction_car') this.meeting = new MeetingSetRenderer(this.root);
@@ -155,6 +158,7 @@ export class FilmSetRenderer {
     this.construct?.update(journey);
     this.desert?.update(journey, elapsed);
     this.training?.update(journey, elapsed);
+    this.sentinel?.update(journey, elapsed);
     this.ambush?.update(journey, sandbox?.structures ?? [], elapsed);
     this.oracleVase?.update(sceneId === 'm1_oracle' ? journey?.visiting || journey!.step > 0 ? 4.5 : journey?.oracle?.vase : undefined);
     const scene = journey && FILM_SCENE_BY_ID[journey.scene]; const step = scene?.steps[journey!.step];
@@ -170,6 +174,7 @@ export class FilmSetRenderer {
     if (journey && workdayLocked(journey)) this.marker.visible = false;
     if (journey && apartmentLocked(journey)) this.marker.visible = false;
     if (journey && clubLocked(journey)) this.marker.visible = false;
+    if (journey?.scene === 'm1_sentinels' && journey.sentinel && !['ready', 'verify', 'done'].includes(journey.sentinel.phase)) this.marker.visible = false;
     if (journey && phoneLocked(journey)) this.marker.visible = false;
     if (journey && windowOpening(journey)) this.marker.visible = false;
     if (journey?.scene === 'm1_dejavu' && journey.step === 0 && journey.ambush) this.marker.visible = false;
@@ -232,6 +237,10 @@ export class FilmSetRenderer {
       }
       (this.scene.background as THREE.Color).setHex(0xb8c3bd); fog.color.setHex(0xb8c3bd); fog.density = .0025;
       this.scene.environmentIntensity = .74; return { color: 0xffead0, ambient: .9, sun: .9 };
+    }
+    if (this.sentinel) {
+      (this.scene.background as THREE.Color).setHex(0x07100f); fog.color.setHex(0x07100f); fog.density = .008;
+      this.scene.environmentIntensity = .28; return { color: 0xa9c9bc, ambient: .34, sun: .04 };
     }
     return palette;
   }
@@ -894,6 +903,7 @@ export class FilmSetRenderer {
     this.construct?.dispose(); this.construct = undefined;
     this.desert?.dispose(); this.desert = undefined;
     this.training?.dispose(); this.training = undefined;
+    this.sentinel?.dispose(); this.sentinel = undefined;
     this.office?.dispose(); this.office = undefined;
     this.freeway?.dispose(); this.freeway = undefined;
     this.lobby?.dispose(); this.lobby = undefined;

@@ -668,6 +668,10 @@ test('the entire film route completes through interactions, driving and real com
           h.command('act');
           for (let frame = 0; frame < 51; frame++) h.players.step(.1, true, h.tick());
         }
+        else if (scene.id === 'm1_sentinels') {
+          const frames = index === 0 ? 210 : 36;
+          for (let frame = 0; frame < frames; frame++) h.players.step(.1, true, h.tick());
+        }
         else if (scene.id === 'm1_boss' && index === 0) {
           for (let frame = 0; frame < 91; frame++) h.players.step(.1, true, h.tick());
           h.command('act');

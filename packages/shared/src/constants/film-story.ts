@@ -41,6 +41,7 @@ export interface FilmJourney {
   meeting?: import('./meeting.js').MeetingEncounter;
   hotel?: import('./lafayette.js').HotelApproach;
   ambush?: import('./ambush.js').AmbushEncounter;
+  sentinel?: import('./sentinel.js').SentinelEncounter;
 }
 const walk = (label: string, x = 0, z = -12): FilmStep => ({ kind: 'reach', label, x, z });
 const use = (label: string, text: string, x = 0, z = -12, seconds = 3): FilmStep => ({ kind: 'interact', label, text, x, z, seconds });
@@ -85,7 +86,7 @@ export const FILM_SCENES: FilmScene[] = [
   scene('m1_dojo', 1, 'kungfu_dojo', 'neo', '不要只计算速度', 'training', 'training', '与 Morpheus 本人对练。F 连击，X 闪避；观察起手提示，拉开距离后再反击。对练不会致死。', [fight('完成与 Morpheus 的对练', 1, 'training', 'morpheus'), think('重新理解身体的限制', '规则可以被认识，也可以被改写；能力并非一开始就属于你。')], ['morpheus']),
   scene('m1_jump', 1, 'jump_roofs', 'neo', '第一次跳跃', 'training', 'training', '前方楼间没有地面。Shift 助跑、空格起跳；Neo 此时还无法跨越这段距离，跌落后会从训练检查点恢复。', [walk('走到起跳线', 0, -10), walk('助跑，尝试跃向另一栋楼', 0, -35)], ['morpheus']),
   scene('m1_red_dress', 1, 'red_dress_plaza', 'neo', '红衣女子', 'training', 'infiltration', '人群中的一个身影分散了注意力，身后出现的却是特工。', [walk('穿过喷泉广场', 7, -12), use('检查身后的动静', 'Morpheus 暂停训练：仍被系统控制的任何人都可能成为特工的入口。', 7, -12)], ['morpheus', 'mouse', 'citizen_1', 'citizen_2', 'smith']),
-  scene('m1_sentinels', 1, 'service_tunnels', 'morpheus', '静默的飞船', 'oracle_first', 'infiltration', '尼布甲尼撒号停机隐藏。哨兵从船体附近掠过。', [use('关闭外部供电', '船员保持安静，EMP 作为最后防线待命。', -7, -14), use('等候哨兵远离', '红色扫描灯从管道另一端消失，航行可以继续。', 0, 0, 8)], ['trinity', 'tank']),
+  scene('m1_sentinels', 1, 'service_tunnels', 'neo', '静默的飞船', 'oracle_first', 'infiltration', '警报响起后，尼布甲尼撒号躲进废弃管道。Neo 跟随船员进入前舱，在断电的黑暗里避开哨兵扫描。', [use('进入前舱，听取静默停机指令', 'Tank 切断非必要供电。Morpheus 示意所有人保持安静，EMP 只作为最后防线。', 0, -38), use('到舷窗旁确认哨兵离开', '红色扫描从管道另一端消失，飞船恢复必要系统并继续航行。', 0, -43, 3.5)], ['morpheus', 'trinity', 'tank', 'dozer']),
   scene('m1_cypher_console', 1, 'neb_deck', 'neo', '屏幕旁的一杯酒', 'oracle_first', 'night', 'Neo 在值班控制台旁谈起自己醒来后的困惑。', [use('查看滚动代码', '接线员解释如何从代码中读出城市。旁边的人却怀念从前的生活。', 7, -20), think('知道真相之后还会后悔吗？', '真相无法自动使人幸福；问题在于谁为遗忘付出代价。')], ['cypher']),
   scene('m1_steak', 1, 'cypher_restaurant', 'smith', '舒适的代价', 'oracle_first', 'restaurant', '另一条叙事线：餐厅里的交易决定了同伴接下来面对的危险。', [walk('靠近窗边餐桌', 0, -13), use('确认交易条件', 'Cypher 以出卖 Morpheus 换取重返矩阵并遗忘现实。此段为旁观既定事件。', 0, -13, 5)], ['cypher']),
   scene('m1_meal', 1, 'neb_deck', 'neo', '真实世界的一顿饭', 'oracle_first', 'zion', '船员吃着营养糊，谈论味觉、需求和接下来对先知的拜访。', [use('到餐桌领取食物', '平凡的吃饭与玩笑让这艘船不只是战争机器。', -1.5, 22), walk('准备接入矩阵', 0, 0)], ['mouse', 'dozer', 'tank']),

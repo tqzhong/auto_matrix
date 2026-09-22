@@ -30,3 +30,4 @@ export * from './constants/ambush.js';
 export * from './constants/interrogation.js';
 export * from './constants/meeting.js';
 export * from './constants/lafayette.js';
+export * from './constants/sentinel.js';

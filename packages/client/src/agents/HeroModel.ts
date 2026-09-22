@@ -515,6 +515,31 @@ export class HeroModels {
         }
       }
     }
+    if (input.sentinel) {
+      const { role, phase, elapsed: t } = input.sentinel;
+      const alarm = phase === 'shutdown' ? THREE.MathUtils.smoothstep(t, .3, 1.5) : 1;
+      const danger = phase === 'detected' || phase === 'failed';
+      if (role === 'tank') {
+        bone('spine').rotation.x += .16 * alarm; bone('head').rotation.x -= .12 * alarm;
+        bone('shoulder_R').rotation.x -= 1.05 * alarm; bone('elbow_R').rotation.x -= .72 * alarm;
+        bone('shoulder_L').rotation.x -= .72 * alarm; bone('elbow_L').rotation.x -= 1.08 * alarm;
+      } else if (role === 'dozer') {
+        bone('spine').rotation.x += .12 * alarm; bone('head').rotation.y -= .18 * alarm;
+        bone('shoulder_L').rotation.x -= .82 * alarm; bone('elbow_L').rotation.x -= .66 * alarm;
+      } else if (role === 'morpheus') {
+        const halt = ['sweep', 'detected', 'failed', 'clear'].includes(phase) ? 1 : THREE.MathUtils.smoothstep(t, 1.4, 2.8);
+        bone('shoulder_L').rotation.x -= .78 * halt; bone('shoulder_L').rotation.z += .42 * halt; bone('elbow_L').rotation.x -= 1.12 * halt;
+        bone('head').rotation.y -= .14 * halt;
+      } else if (role === 'trinity') {
+        bone('head').rotation.y += .25 * alarm; bone('spine').rotation.x += .06 * alarm;
+        bone('shoulder_R').rotation.x -= .18 * alarm; bone('elbow_R').rotation.x -= .36 * alarm;
+      } else {
+        bone('head').rotation.y -= .16 * alarm; bone('spine').rotation.x += (danger ? .22 : .07) * alarm;
+        bone('chest').rotation.x += (danger ? .16 : .04) * alarm;
+        if (danger) for (const side of ['R', 'L']) { bone('shoulder_' + side).rotation.x -= .42; bone('elbow_' + side).rotation.x -= .7; }
+      }
+      if (phase === 'sweep' || phase === 'clear') bone('head').rotation.x += Math.sin(t * 1.4 + role.length) * .012;
+    }
     if (input.club) {
       const close = clubCloseness(input.club); const { role, phase, elapsed: t } = input.club;
       if (role === 'neo') {

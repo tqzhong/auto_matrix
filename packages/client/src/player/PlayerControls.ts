@@ -260,6 +260,8 @@ export class PlayerControls {
     if (state.currentAction?.parameters.wakeCall) this.performing = true;
     if (this.motion.club && !state.currentAction?.parameters.club) this.performing = false;
     if (state.currentAction?.parameters.club) this.performing = true;
+    if (this.motion.sentinel && !state.currentAction?.parameters.sentinel) this.performing = false;
+    if (state.currentAction?.parameters.sentinel) this.performing = true;
     if (this.wasPerforming && !this.performing) this.yaw = this.movementYaw = this.facing;
     this.wasPerforming = this.performing;
     this.motion.armed = this.firearm;
@@ -273,6 +275,7 @@ export class PlayerControls {
     this.motion.contact = state.currentAction?.parameters.contact as MotionInput['contact'];
     this.motion.wakeCall = state.currentAction?.parameters.wakeCall as MotionInput['wakeCall'];
     this.motion.club = state.currentAction?.parameters.club as MotionInput['club'];
+    this.motion.sentinel = state.currentAction?.parameters.sentinel as MotionInput['sentinel'];
     this.motion.mirror = this.mirror;
     this.motion.spoon = this.spoon;
     this.motion.phone = this.phone;
@@ -299,6 +302,7 @@ export class PlayerControls {
     if (this.motion.contact && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
     if (this.motion.wakeCall && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
     if (this.motion.club && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
+    if (this.motion.sentinel && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
     this.motion.officeShirt = officeClothing(state.id, state.currentLocation);
     if (this.motion.interrogation && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
     if (this.motion.pills && (!this.firstPerson || this.motion.pills.phase === 'offering' || this.motion.pills.elapsed > 9.6)) this.yaw = this.movementYaw = state.rotation;
@@ -354,11 +358,11 @@ export class PlayerControls {
     if (this.motion.wakeCall?.phase === 'waking' && this.motion.wakeCall.elapsed > 2.7) this.motion.speed = 1.45;
     this.motion.grounded = Boolean(this.ride) || this.climbing || this.performing || this.position.y <= groundHeight(this.position, state.isInMatrix) + .12;
     this.motion.verticalVelocity = this.vy;
-    this.motion.inspecting = Boolean((this.motion.pills || this.motion.interrogation || this.motion.welcome || this.motion.knock !== undefined || this.motion.recovery !== undefined || this.motion.reveal || this.motion.training || this.motion.workday || this.motion.wakeCall) && !this.firstPerson) || Boolean(this.phone && this.performing && this.motion.window === undefined && this.motion.crossing === undefined) || this.spoon !== undefined && this.enabled && this.motion.speed < .25 && this.motion.grounded;
+    this.motion.inspecting = Boolean((this.motion.pills || this.motion.interrogation || this.motion.welcome || this.motion.knock !== undefined || this.motion.recovery !== undefined || this.motion.reveal || this.motion.training || this.motion.workday || this.motion.wakeCall || this.motion.sentinel) && !this.firstPerson) || Boolean(this.phone && this.performing && this.motion.window === undefined && this.motion.crossing === undefined) || this.spoon !== undefined && this.enabled && this.motion.speed < .25 && this.motion.grounded;
     const attacking = (now - this.lastAttack) / 1000 < MELEE_COMBO[this.attackCombo].duration;
     const heading = this.ride || this.climbing || this.performing ? state.rotation : attacking ? this.attackYaw : this.firearm ? this.yaw : this.motion.speed > .1 ? Math.atan2(dx, dz) : this.facing;
     const turn = Math.atan2(Math.sin(heading - this.facing), Math.cos(heading - this.facing));
-    this.facing += turn * (this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.welcome || this.motion.knock !== undefined || this.motion.training || this.motion.workday || this.motion.wakeCall ? 1 : 1 - Math.exp(-14 * delta)); this.motion.turn = turn * 8;
+    this.facing += turn * (this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.welcome || this.motion.knock !== undefined || this.motion.training || this.motion.workday || this.motion.wakeCall || this.motion.sentinel ? 1 : 1 - Math.exp(-14 * delta)); this.motion.turn = turn * 8;
     if (running && this.enabled && (this.motion.speed > .1 || this.ride || this.climbing) && !this.dragging && performance.now() - this.lastLook > 900) {
       const cameraTurn = Math.atan2(Math.sin(this.facing - this.yaw), Math.cos(this.facing - this.yaw));
       this.yaw += cameraTurn * (1 - Math.exp(-5 * delta));
@@ -372,7 +376,8 @@ export class PlayerControls {
     const trainingWide = !this.firstPerson && Boolean(this.motion.training && (this.motion.training.kind === 'jump' || this.motion.training.kind === 'red_dress' && this.motion.training.elapsed < 4.8));
     const officeWide = !this.firstPerson && this.motion.workday && this.motion.workday.phase !== 'signing';
     const wakeWide = !this.firstPerson && this.motion.wakeCall?.phase === 'waking';
-    this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide ? 58 : this.motion.inspecting ? 42 : this.firstPerson ? sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
+    const sentinelWide = !this.firstPerson && Boolean(this.motion.sentinel && ['shutdown', 'detected', 'clear'].includes(this.motion.sentinel.phase));
+    this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide || sentinelWide ? 58 : this.motion.inspecting ? 42 : this.firstPerson ? sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
     this.camera.near = this.firstPerson && this.motion.club ? .08 : this.defaultNear;
     this.camera.updateProjectionMatrix();
     this.cameraStep += this.motion.speed * delta;
@@ -455,6 +460,13 @@ export class PlayerControls {
         if (resetCamera || gesture.elapsed < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-7 * delta));
         this.camera.lookAt(focus);
       }
+    } else if (this.motion.sentinel && !this.firstPerson) {
+      const gesture = this.motion.sentinel; const center = FILM_SETS.film_service_tunnels.center; const origin = new THREE.Vector3(center.x, center.y - 1, center.z);
+      const detected = gesture.phase === 'detected' || gesture.phase === 'failed'; const window = ['clear', 'confirming'].includes(gesture.phase);
+      const ideal = (detected ? new THREE.Vector3(9.5, 5.6, -35.5) : window ? new THREE.Vector3(10.5, 5.2, -38.5) : new THREE.Vector3(-11.5, 6.2, -31.5)).add(origin);
+      const focus = (detected ? new THREE.Vector3(0, 5.4, -52) : window ? new THREE.Vector3(0, 5, -55) : new THREE.Vector3(0, 3.1, -39)).add(origin);
+      if (resetCamera || gesture.elapsed < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-7 * delta));
+      this.camera.lookAt(focus);
     } else if (this.motion.reveal) {
       const gesture = this.motion.reveal; const center = FILM_SETS[gesture.kind === 'construct' ? 'film_white_construct' : 'film_real_desert'].center;
       if (this.firstPerson) {

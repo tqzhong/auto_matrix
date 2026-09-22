@@ -198,6 +198,35 @@ export class GameAudio {
     source.connect(filter); filter.connect(gain); gain.connect(output); source.start(at);
     source.onended = () => { source.disconnect(); filter.disconnect(); gain.disconnect(); };
   }
+  sentinelSound(kind: 'alarm' | 'powerDown' | 'scan' | 'detected' | 'clear' | 'powerUp'): void {
+    const bus = this.effects(); if (!bus) return;
+    const { context: ctx, output } = bus; const at = ctx.currentTime;
+    if (kind === 'alarm' || kind === 'scan') {
+      const count = kind === 'alarm' ? 4 : 1;
+      for (let i = 0; i < count; i++) {
+        const tone = ctx.createOscillator(); const gain = ctx.createGain(); const start = at + i * .19;
+        tone.type = kind === 'alarm' ? 'square' : 'sine'; tone.frequency.setValueAtTime(kind === 'alarm' ? (i % 2 ? 690 : 520) : 1260, start);
+        if (kind === 'scan') tone.frequency.exponentialRampToValueAtTime(380, start + .18);
+        gain.gain.setValueAtTime(.0001, start); gain.gain.linearRampToValueAtTime(kind === 'alarm' ? .035 : .022, start + .008); gain.gain.exponentialRampToValueAtTime(.0001, start + (kind === 'alarm' ? .15 : .2));
+        tone.connect(gain); gain.connect(output); tone.start(start); tone.stop(start + .22); tone.onended = () => { tone.disconnect(); gain.disconnect(); };
+      }
+      return;
+    }
+    const duration = kind === 'detected' ? 1.1 : kind === 'clear' ? .7 : 1.4;
+    const buffer = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * duration), ctx.sampleRate); const samples = buffer.getChannelData(0);
+    for (let i = 0; i < samples.length; i++) samples[i] = (Math.random() * 2 - 1) * Math.exp(-i / ctx.sampleRate * (kind === 'detected' ? 1.4 : 2.2));
+    const source = ctx.createBufferSource(); source.buffer = buffer;
+    const filter = ctx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.setValueAtTime(kind === 'detected' ? 310 : kind === 'clear' ? 720 : 190, at);
+    const gain = ctx.createGain(); gain.gain.setValueAtTime(.0001, at); gain.gain.linearRampToValueAtTime(kind === 'detected' ? .17 : .08, at + .025); gain.gain.exponentialRampToValueAtTime(.0001, at + duration);
+    source.connect(filter); filter.connect(gain); gain.connect(output); source.start(at);
+    const tone = ctx.createOscillator(); const toneGain = ctx.createGain(); tone.type = kind === 'detected' ? 'sawtooth' : 'triangle';
+    const from = kind === 'powerDown' ? 118 : kind === 'powerUp' ? 42 : kind === 'clear' ? 190 : 74; const to = kind === 'powerDown' ? 27 : kind === 'powerUp' ? 132 : kind === 'clear' ? 430 : 48;
+    tone.frequency.setValueAtTime(from, at); tone.frequency.exponentialRampToValueAtTime(to, at + duration);
+    toneGain.gain.setValueAtTime(.0001, at); toneGain.gain.linearRampToValueAtTime(kind === 'detected' ? .055 : .026, at + .04); toneGain.gain.exponentialRampToValueAtTime(.0001, at + duration);
+    tone.connect(toneGain); toneGain.connect(output); tone.start(at); tone.stop(at + duration);
+    source.onended = () => { source.disconnect(); filter.disconnect(); gain.disconnect(); };
+    tone.onended = () => { tone.disconnect(); toneGain.disconnect(); };
+  }
   lafayetteSound(kind: 'thunder' | 'knock' | 'handshake' | 'door'): void {
     const bus = this.effects(); if (!bus) return;
     const { context: ctx, output } = bus; const duration = kind === 'thunder' ? 2.8 : kind === 'door' ? 1.15 : kind === 'knock' ? .14 : .18;
