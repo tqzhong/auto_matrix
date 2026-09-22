@@ -3,6 +3,7 @@ import { mkdir, appendFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 const recordingDirectory = fileURLToPath(new URL('../../output/gameplay/neo-longplay-2026-09-20/', import.meta.url));
+const backend = process.env.MATRIX_SERVER_URL ?? 'http://localhost:3001';
 
 export default defineConfig({
   plugins: [{ name: 'local-gameplay-recording', apply: 'serve', configureServer(server) {
@@ -32,11 +33,11 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/socket.io': {
-        target: 'http://localhost:3001',
+        target: backend,
         ws: true,
       },
       '/api': {
-        target: 'http://localhost:3001',
+        target: backend,
       },
     },
   },

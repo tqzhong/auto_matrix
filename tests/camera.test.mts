@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import type { AgentState, PlayerInput } from '@auto_matrix/shared';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { CameraController } from '../packages/client/src/engine/CameraController.js';
-import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, pillRoot, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, ORACLE_VISIT } from '@auto_matrix/shared';
+import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, pillRoot, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, ORACLE_VISIT, RESCUE } from '@auto_matrix/shared';
 
 test('observer camera releases drag and ignores pointer capture while a character controls the view', () => {
   let captures = 0;
@@ -462,6 +462,37 @@ test('Tank sees the short Cypher counter window from the deck and from his saved
     const screen = chair.project(game.camera); assert.ok(Math.abs(screen.x) < .92 && Math.abs(screen.y) < .92, 'both surviving chairs remain readable');
   }
   game.state.currentAction = null; game.step(.1); assert.equal(game.controls.performing, false);
+});
+
+test('the rescue briefing, arriving racks and selected weapon each own a readable camera while V remains playable', t => {
+  const game = setup(t); const deck = FILM_SETS.film_neb_deck.center;
+  game.state.currentLocation = 'film_neb_deck';
+  game.state.position = filmPosition('film_neb_deck', RESCUE.briefingRoots.neo.x, RESCUE.briefingRoots.neo.z);
+  game.state.rotation = RESCUE.briefingRoots.neo.yaw;
+  game.state.currentAction = { type: 'idle', parameters: { rescue: { phase: 'briefing', elapsed: 2.2, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.step(.4);
+  assert.equal(game.controls.performing, true); assert.ok(game.camera.position.x < deck.x - 9 && game.camera.position.z > deck.z + 6,
+    'the briefing opens wide enough to read Neo, both partners and the central projection');
+  const locked = game.group.position.clone(); game.key('KeyW'); game.step(.25); game.key('KeyW', false); assert.deepEqual(game.group.position, locked);
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+  assert.ok(game.camera.position.distanceTo(new THREE.Vector3(game.state.position.x, game.state.position.y + 2.99, game.state.position.z)) < .06);
+
+  game.key('KeyV'); game.key('KeyV', false); const construct = FILM_SETS.film_white_construct.center;
+  game.state.currentLocation = 'film_white_construct'; game.state.position = filmPosition('film_white_construct', 0, -10.3);
+  game.state.currentAction = { type: 'idle', parameters: { rescue: { phase: 'racks_arriving', elapsed: 3.4, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.step(.4);
+  assert.ok(game.camera.position.y > construct.y + 3.5 && game.camera.position.z > construct.z,
+    'the rack arrival uses an elevated long-axis view instead of clipping into the props');
+
+  const choice = RESCUE.loadoutRoots.compact;
+  game.state.position = filmPosition('film_white_construct', choice.x, choice.z + 1.7);
+  game.state.currentAction = { type: 'idle', parameters: { weaponStyle: 'compact', armed: true,
+    rescue: { phase: 'equipping', elapsed: 3.2, loadout: 'compact', role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.step(.4);
+  const weapon = new THREE.Vector3(construct.x + choice.x, construct.y + 1.65, construct.z + choice.z + .4).project(game.camera);
+  assert.ok(Math.abs(weapon.x) < .72 && Math.abs(weapon.y) < .72, 'the chosen physical weapon stays in the equip frame');
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+  assert.ok(game.camera.position.distanceTo(new THREE.Vector3(game.state.position.x, game.state.position.y + 2.99, game.state.position.z)) < .06);
 });
 
 for (const firstPerson of [false, true]) test(`armed ${firstPerson ? 'first' : 'third'}-person movement strafes without pulling the aim away`, t => {

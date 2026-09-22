@@ -44,6 +44,7 @@ export interface FilmJourney {
   sentinel?: import('./sentinel.js').SentinelEncounter;
   interlude?: import('./interlude.js').InterludeEncounter;
   betrayal?: import('./betrayal.js').BetrayalEncounter;
+  rescue?: import('./rescue.js').RescuePreparation;
 }
 const walk = (label: string, x = 0, z = -12): FilmStep => ({ kind: 'reach', label, x, z });
 const use = (label: string, text: string, x = 0, z = -12, seconds = 3): FilmStep => ({ kind: 'interact', label, text, x, z, seconds });

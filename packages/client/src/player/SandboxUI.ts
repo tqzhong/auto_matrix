@@ -13,6 +13,7 @@ import { sentinelDanger, sentinelLocked } from '@auto_matrix/shared';
 import { interludeDuration, interludeLocked } from '@auto_matrix/shared';
 import { oracleVisitDuration, oracleVisitLocked } from '@auto_matrix/shared';
 import { BETRAYAL, betrayalDuration, betrayalLocked } from '@auto_matrix/shared';
+import { RESCUE, rescueDuration, rescueLoadout, rescueLocked } from '@auto_matrix/shared';
 
 const escape = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const WEATHER = { clear: '晴朗', rain: '雨', code_storm: '代码风暴' };
@@ -409,6 +410,37 @@ export class SandboxUI {
         : encounter.phase === 'done' ? '检查与饼干交接已记下；这个回答会改变后续营救准备。' : journey.lastText;
       return;
     }
+    if (!journey.visiting && journey.rescue && ['m1_rescue_decision', 'm1_guns'].includes(scene.id)) {
+      const preparation = journey.rescue; const loadout = rescueLoadout(preparation);
+      const nearest = Object.entries(RESCUE.loadoutRoots).map(([id, root]) => ({ id, distance: distance(player.position, filmPosition(scene.set, root.x, root.z)) }))
+        .sort((a, b) => a.distance - b.distance)[0];
+      const close = preparation.phase === 'selecting' ? Boolean(nearest && nearest.distance <= 4) : !step || distance(player.position, filmStepPosition(scene, step)) <= 4;
+      const canAct = preparation.phase === 'briefing_ready' && journey.step === 1 && close || preparation.phase === 'racks_ready' && close
+        || preparation.phase === 'selecting' && close || preparation.phase === 'briefing_done' || preparation.phase === 'equipped' && !step;
+      const reflection = scene.id === 'm1_rescue_decision' && journey.step === 0;
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = reflection ? 'J 记录为什么仍然选择营救 · 等待不会替你回答'
+        : preparation.phase === 'briefing_ready' ? '走到核心投影 · G 与 Tank、Trinity 核对方案'
+        : preparation.phase === 'briefing' ? '鼠标环顾任务投影 · V 切换主视角 · 当前一拍自动保存'
+        : preparation.phase === 'briefing_done' ? 'G 进入白色构造体'
+        : preparation.phase === 'racks_ready' ? '走到装载标记 · G 请求武器架'
+        : preparation.phase === 'racks_arriving' ? '武器架正在接近 · V 切换视角 · 进度自动保存'
+        : preparation.phase === 'selecting' ? `走近左、中、右配置 · 最近 ${Math.round(nearest?.distance ?? 0)} m · G 选择`
+        : preparation.phase === 'equipping' ? `正在装配${loadout.name} · 暂停或读档保留动作`
+        : step ? '带着装备走向构造体出口' : 'G 载入政府大楼大厅';
+      this.el('sandbox-interact').classList.toggle('hidden', !canAct || reflection);
+      this.el('sandbox-nearby').textContent = preparation.phase === 'briefing_ready' ? '核对营救方案' : preparation.phase === 'briefing_done' ? '进入白色构造体'
+        : preparation.phase === 'racks_ready' ? '载入武器架' : preparation.phase === 'selecting' ? '选择眼前的武器配置'
+        : preparation.phase === 'equipped' ? '载入政府大楼大厅' : '营救准备进行中';
+      const duration = rescueDuration(preparation);
+      this.el('sandbox-job').style.width = duration ? `${Math.min(100, preparation.elapsed / duration * 100)}%` : '0';
+      if (rescueLocked(journey) || preparation.phase === 'selecting') this.el('sandbox-waypoint').textContent = '';
+      document.getElementById('game-objective')!.textContent = scene.id === 'm1_rescue_decision' ? '营救 Morpheus · 任务简报' : '构造体 · 武器装载';
+      document.getElementById('game-objective-copy')!.textContent = preparation.loadout
+        ? `${loadout.name} · ${loadout.magazine} 发 · 单发 ${loadout.damage} · 换弹 ${loadout.reloadTicks} 拍`
+        : journey.lastText;
+      return;
+    }
     if (!journey.visiting && journey.betrayal && ['m1_bathroom', 'm1_unplugged'].includes(scene.id)) {
       const encounter = journey.betrayal; const step = scene.steps[journey.step];
       const close = !step || distance(player.position, filmStepPosition(scene, step)) <= 4;
@@ -438,8 +470,8 @@ export class SandboxUI {
       document.getElementById('game-objective-copy')!.textContent = '看着猫经过的地方，留意周围的变化。'; return;
     }
     if (scene.id === 'm1_lobby' && !journey.visiting) {
-      const combat = journey.lobby;
-      this.el('sandbox-trace').textContent = combat?.reloadAt !== undefined ? `换弹 ${Math.max(0, (combat.reloadAt - this.tick) / 2).toFixed(1)}s` : `弹匣 ${combat?.ammo ?? 16} / 16`;
+      const combat = journey.lobby; const loadout = rescueLoadout(journey);
+      this.el('sandbox-trace').textContent = combat?.reloadAt !== undefined ? `${loadout.name} · 换弹 ${Math.max(0, (combat.reloadAt - this.tick) / 2).toFixed(1)}s` : `${loadout.name} · 弹匣 ${combat?.ammo ?? loadout.magazine} / ${loadout.magazine}`;
       if (journey.fighting) {
         document.getElementById('game-objective-copy')!.textContent = `警戒 ${combat?.wave ?? 1}/3 · 左键 / T 射击 · R 换弹 · Q 子弹时间 · X 闪避`;
         this.el('sandbox-waypoint').textContent = '柱列能阻挡枪火 · 瞄准后换位 · Trinity 掩护侧翼';

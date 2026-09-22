@@ -110,3 +110,15 @@ test('betrayal performances visibly distinguish the charge, cable pull, collapse
   const tank = advanceMotion(newMotion(), { ...idle, betrayal: { kind: 'unplugged', phase: 'countering', elapsed: 2.1, attempt: 0, role: 'tank' as const } }, 0);
   assert.ok(tank.arms[0].shoulder < -.75 && tank.arms[0].grip > .8, 'Tank raises the pulse rifle during the counterattack');
 });
+
+test('rescue preparation points across the briefing and grips the chosen weapon with the correct hands', () => {
+  const idle = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 };
+  const tank = advanceMotion(newMotion(), { ...idle, rescue: { phase: 'briefing', elapsed: 2.2, role: 'tank' as const } }, 0);
+  assert.ok(tank.arms[0].shoulder < -1 && tank.arms[0].grip > .1, 'Tank points out the projected route instead of standing idle');
+  const compact = advanceMotion(newMotion(), { ...idle, armed: true, weaponStyle: 'compact' as const,
+    rescue: { phase: 'equipping', elapsed: 3, loadout: 'compact' as const, role: 'neo' as const } }, 0);
+  assert.ok(compact.arms.every(arm => arm.grip > .85), 'the dual compact loadout occupies both hands');
+  const breacher = advanceMotion(newMotion(), { ...idle, armed: true, weaponStyle: 'breacher' as const,
+    rescue: { phase: 'equipping', elapsed: 3, loadout: 'breacher' as const, role: 'neo' as const } }, 0);
+  assert.ok(breacher.arms[0].grip > .85 && breacher.arms[1].grip < .6, 'the single long gun keeps one primary grip distinct from dual weapons');
+});

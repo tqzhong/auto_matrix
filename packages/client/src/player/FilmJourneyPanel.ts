@@ -10,6 +10,7 @@ import { sentinelDanger, sentinelLocked } from '@auto_matrix/shared';
 import { interludeDuration, interludeLocked } from '@auto_matrix/shared';
 import { oracleVisitDuration, oracleVisitLocked } from '@auto_matrix/shared';
 import { BETRAYAL, betrayalDuration, betrayalLocked } from '@auto_matrix/shared';
+import { RESCUE, rescueDuration, rescueLoadout, rescueLocked } from '@auto_matrix/shared';
 
 const button = (target: string, label: string, disabled = false) => `<button data-action="life" data-target="film:${target}" ${disabled ? 'disabled' : ''}>${label}</button>`;
 export function renderFilmJourney(player: AgentState, sandbox: SandboxState): string {
@@ -81,6 +82,31 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
       ? `<div class="film-progress"><i style="width:${Math.min(100, encounter.elapsed / oracleVisitDuration(encounter) * 100)}%"></i></div>` : '';
     return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>先知的厨房 · 花瓶之后</h3><p>Neo 视角 · 检查、回答与饼干交接自动保存</p></header><article class="film-now"><div><h3>${title}</h3><p>${journey.lastText}</p>${progress}<div class="film-controls">${action}${!current ? button('resume', '继续 Neo 的剧情视角') : ''}<small>${encounter.phase === 'question' ? '等待不会替你回答；选择会改变后续营救准备。' : oracleVisitLocked(journey) ? '鼠标可以环顾，V 可在主视角和场景镜头间切换。' : '走到操作台旁再继续。'}</small></div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
   }
+  if (!journey.visiting && journey.rescue && ['m1_rescue_decision', 'm1_guns'].includes(journey.scene)) {
+    const preparation = journey.rescue; const current = player.id === journey.actor; const step = scene.steps[journey.step];
+    const briefing = journey.scene === 'm1_rescue_decision'; const loadout = rescueLoadout(preparation);
+    const nearest = Object.entries(RESCUE.loadoutRoots).map(([id, root]) => ({ id, distance: distance(player.position, filmPosition(scene.set, root.x, root.z)) }))
+      .sort((a, b) => a.distance - b.distance)[0];
+    const close = current && (preparation.phase === 'selecting' ? Boolean(nearest && nearest.distance <= 4) : !step || distance(player.position, filmStepPosition(scene, step)) <= 4);
+    const title = preparation.phase === 'briefing_ready' ? journey.step === 0 ? '决定为何回去' : '把选择变成营救方案'
+      : preparation.phase === 'briefing' ? '入口、审讯层与屋顶撤离线' : preparation.phase === 'briefing_done' ? '方案已经确认'
+      : preparation.phase === 'racks_ready' ? '空白构造体等待装载' : preparation.phase === 'racks_arriving' ? '武器架正在接近'
+      : preparation.phase === 'selecting' ? '亲自选择携带配置' : preparation.phase === 'equipping' ? `装配${loadout.name}` : `${loadout.name}已写入检查点`;
+    let action = '';
+    if (briefing && journey.step === 0) action = `<p>${step?.text ?? ''}</p>${filmReflections(scene.id).map(choice => button(`reflect:${choice.id}`, choice.label, !close)).join('')}`;
+    else if (preparation.phase === 'briefing_ready') action = button('act', '与 Tank、Trinity 核对方案 · G', !close);
+    else if (preparation.phase === 'briefing') action = '<button disabled>合上手记，观察任务投影</button>';
+    else if (preparation.phase === 'briefing_done') action = button('next', '进入白色构造体 →', !current);
+    else if (preparation.phase === 'racks_ready') action = button('act', '请求 Tank 载入武器架 · G', !close);
+    else if (preparation.phase === 'racks_arriving') action = '<button disabled>武器架正在实体化</button>';
+    else if (preparation.phase === 'selecting') action = `${button('act', nearest ? `选择${({ compact: '双持冲锋枪', breacher: '霰弹枪', rifle: '突击步枪' } as const)[nearest.id as keyof typeof RESCUE.loadoutRoots]} · G` : '选择武器 · G', !close)}<small>左：24 发快速压制 · 中：8 发近距重击 · 右：16 发均衡射击</small>`;
+    else if (preparation.phase === 'equipping') action = '<button disabled>检查枪机、弹匣与侧翼分工</button>';
+    else if (step) action = '<p>合上手记，带着实际选择走向构造体出口；大厅战斗会使用这套弹匣、伤害与射速。</p>';
+    else action = button('next', '载入政府大楼大厅 →', !current);
+    const duration = rescueDuration(preparation); const progress = duration ? `<div class="film-progress"><i style="width:${Math.min(100, preparation.elapsed / duration * 100)}%"></i></div>` : '';
+    const stats = preparation.loadout ? `<p>${loadout.name} · ${loadout.magazine} 发 · 单发 ${loadout.damage} · 换弹 ${loadout.reloadTicks} 拍</p>` : '';
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>${briefing ? '尼布甲尼撒号 · 营救简报' : '白色构造体 · 武器装载'}</h3><p>Neo 视角 · 方案、装备与大厅战斗规则自动保存</p></header><article class="film-now"><div><h3>${title}</h3><p>${journey.lastText}</p>${stats}${progress}<div class="film-controls">${action}${!current ? button('resume', '继续 Neo 的剧情视角') : ''}<small>${rescueLocked(journey) ? '鼠标可以环顾，V 可在主视角和场景镜头间切换；暂停、断线与读档保留当前一拍。' : preparation.phase === 'selecting' ? `最近配置距离 ${Math.round(nearest?.distance ?? 0)} m；等待不会替你选择。` : '必须亲自走近并确认，剧情不会自动完成。'}</small></div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
+  }
   if (!journey.visiting && journey.betrayal && ['m1_bathroom', 'm1_unplugged'].includes(journey.scene)) {
     const encounter = journey.betrayal; const current = player.id === journey.actor; const step = scene.steps[journey.step];
     const close = current && (!step || distance(player.position, filmStepPosition(scene, step)) <= 4);
@@ -128,7 +154,7 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
   const actionLabel = meetingAction ? journey.meeting?.phase === 'parked' ? '打开车门下车' : '启程前往 Lafayette' : step?.label;
   const close = meetingAction || trainingWaiting(journey) || Boolean(step && player.isInMatrix === (set.world === 'matrix') && distance(player.position, filmStepPosition(scene, step)) <= 4);
   const current = player.id === journey.actor;
-  const performing = meetingLocked(journey) && !['ready', 'done', 'parked'].includes(journey.meeting?.phase ?? 'ready') || trainingLocked(journey) || sentinelLocked(journey) || interludeLocked(journey) || Boolean(journey.awakening && journey.awakening.elapsed < AWAKENING_SECONDS[journey.awakening.kind]) || oracleActing(journey) || phoneLocked(journey) || wakeCallLocked(journey) || windowOpening(journey) || windowCrossing(journey) || pillLocked(journey) || lafayetteWelcomeLocked(journey) || interrogationLocked(journey) && journey.interrogation?.phase !== 'done';
+  const performing = meetingLocked(journey) && !['ready', 'done', 'parked'].includes(journey.meeting?.phase ?? 'ready') || trainingLocked(journey) || sentinelLocked(journey) || interludeLocked(journey) || rescueLocked(journey) || Boolean(journey.awakening && journey.awakening.elapsed < AWAKENING_SECONDS[journey.awakening.kind]) || oracleActing(journey) || phoneLocked(journey) || wakeCallLocked(journey) || windowOpening(journey) || windowCrossing(journey) || pillLocked(journey) || lafayetteWelcomeLocked(journey) || interrogationLocked(journey) && journey.interrogation?.phase !== 'done';
   const answerPhone = phoneLocked(journey) && journey.phone?.phase === 'ready';
   const answer = answerPhone || awakeningWaiting(journey) || trainingWaiting(journey) || interrogationLocked(journey) && journey.interrogation?.phase === 'response';
   const awakeningAction = journey.awakening?.kind === 'recovery' ? '示意开始恢复肌肉 · G'

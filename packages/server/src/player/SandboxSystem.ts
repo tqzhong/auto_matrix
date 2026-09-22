@@ -51,6 +51,7 @@ export class SandboxSystem {
       this.life.film.workdayFrame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);
     }
     if (journey) this.life.film.betrayalFrame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);
+    if (journey) this.life.film.rescueFrame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);
   }
   missionsFor(agent: AgentState) { return agent.id === 'neo' && this.state.neoLife ? this.state.neoLife.missions : this.state.missions; }
   private random(): number {

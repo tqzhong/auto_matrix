@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, filmReflections, filmStepPosition, filmEntry, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, RESCUE, RESCUE_LOADOUTS, filmReflections, filmStepPosition, filmEntry, filmPosition, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -210,6 +210,82 @@ test('the Oracle answer changes later rescue preparation exactly once', () => {
     Object.assign(state, { scene: 'm1_unplugged', actor: 'neo', step: FILM_SCENE_BY_ID.m1_unplugged.steps.length });
     h.command('next'); assert.equal(inventory[outcome.item], before + outcome.amount, 're-entering cannot duplicate the preparation');
   }
+});
+
+test('Neo turns the rescue decision into a saved three-person briefing before entering the Construct', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  const scene = FILM_SCENE_BY_ID.m1_rescue_decision;
+  Object.assign(state, { scene: scene.id, actor: 'neo', step: 0, rescue: undefined, checkpoint: filmEntry(scene) });
+  h.actor().currentLocation = scene.set; h.actor().isInMatrix = false;
+  h.actor().position = filmStepPosition(scene, scene.steps[0]); h.command('reflect:care');
+  assert.equal(state.step, 1); assert.equal(state.rescue, undefined, 'the reflection does not silently start the physical briefing');
+
+  h.actor().position = filmStepPosition(scene, scene.steps[1]);
+  h.players.possess('other-player', 'tank', h.tick());
+  assert.match(h.command('act'), /另一位玩家/); assert.equal(state.rescue?.phase, 'briefing_ready');
+  h.players.release('other-player', h.tick()); h.command('act');
+  assert.equal(state.rescue?.phase, 'briefing');
+  assert.ok(h.world.agents.get('trinity')!.currentAction?.parameters.rescue);
+  assert.ok(h.world.agents.get('tank')!.currentAction?.parameters.rescue);
+  assert.match(h.players.possess('other-player', 'trinity', h.tick()).error!, /营救准备/);
+
+  for (let frame = 0; frame < 31; frame++) h.players.step(.1, true, h.tick());
+  const elapsed = state.rescue!.elapsed; h.players.step(.5, false, h.tick()); assert.equal(state.rescue!.elapsed, elapsed);
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+  assert.equal(h.sandbox.life.film.state!.rescue!.elapsed, elapsed);
+  h.players.release('film-player', h.tick()); h.advance(20);
+  assert.equal(h.sandbox.life.film.state!.rescue!.elapsed, elapsed, 'disconnecting cannot finish the briefing');
+  h.players.possess('film-player', 'neo', h.tick());
+  for (let frame = 0; frame < 70 && h.sandbox.life.film.state!.step === 1; frame++) h.players.step(.1, true, h.tick());
+  assert.equal(h.sandbox.life.film.state!.rescue?.phase, 'briefing_done');
+  assert.equal(h.sandbox.life.film.state!.step, scene.steps.length); assert.ok(h.sandbox.life.film.state!.completed.includes(scene.id));
+});
+
+test('the Construct waits for Neo to load racks, saves the selected physical loadout and carries its rules into the lobby', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  const scene = FILM_SCENE_BY_ID.m1_guns;
+  Object.assign(state, { scene: scene.id, actor: 'neo', step: 0, rescue: undefined, checkpoint: filmEntry(scene) });
+  h.actor().currentLocation = scene.set; h.actor().isInMatrix = true; h.actor().position = filmStepPosition(scene, scene.steps[0]);
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+  assert.equal(h.sandbox.life.film.state!.rescue?.phase, 'racks_ready');
+  h.advance(20); assert.equal(h.sandbox.life.film.state!.rescue?.elapsed, 0, 'the racks do not arrive until Neo requests them');
+
+  h.players.possess('other-player', 'trinity', h.tick()); assert.match(h.command('act'), /另一位玩家/);
+  h.players.release('other-player', h.tick()); h.command('act');
+  assert.equal(h.sandbox.life.film.state!.rescue?.phase, 'racks_arriving');
+  for (let frame = 0; frame < 25; frame++) h.players.step(.1, true, h.tick());
+  const saved = JSON.parse(JSON.stringify(h.sandbox.state)); h.sandbox.restore(saved);
+  assert.ok(h.sandbox.life.film.state!.rescue!.elapsed > 2.4);
+  for (let frame = 0; frame < 30; frame++) h.players.step(.1, true, h.tick());
+  assert.equal(h.sandbox.life.film.state!.rescue?.phase, 'selecting');
+  const nearestDistance = Math.min(...Object.values(RESCUE.loadoutRoots).map(root => {
+    const position = filmPosition(scene.set, root.x, root.z); return Math.hypot(h.actor().position.x - position.x, h.actor().position.z - position.z);
+  }));
+  assert.ok(nearestDistance > 4, 'the rack reveal must return Neo to a neutral viewing point instead of preselecting the middle weapon');
+  assert.match(h.command('act'), /走近/); assert.equal(h.sandbox.life.film.state!.rescue?.phase, 'selecting');
+  h.advance(30); assert.equal(h.sandbox.life.film.state!.rescue?.phase, 'selecting', 'waiting cannot pick a weapon for the player');
+
+  const compact = RESCUE.loadoutRoots.compact;
+  h.actor().position = filmPosition(scene.set, compact.x, compact.z); h.command('act');
+  assert.equal(h.sandbox.life.film.state!.rescue?.phase, 'equipping'); assert.equal(h.sandbox.life.film.state!.rescue?.loadout, 'compact');
+  for (let frame = 0; frame < 60 && h.sandbox.life.film.state!.step === 0; frame++) h.players.step(.1, true, h.tick());
+  assert.equal(h.sandbox.life.film.state!.rescue?.phase, 'equipped'); assert.equal(h.sandbox.life.state!.choices.rescue_loadout, 'compact');
+  assert.equal(h.sandbox.life.film.state!.step, 1);
+
+  h.actor().position = filmStepPosition(scene, scene.steps[1]); h.advance();
+  assert.ok(h.sandbox.life.film.state!.completed.includes(scene.id)); h.command('next');
+  assert.equal(h.sandbox.life.film.state!.scene, 'm1_lobby');
+  assert.equal(h.sandbox.life.film.state!.lobby?.loadout, 'compact');
+  assert.equal(h.sandbox.life.film.state!.lobby?.ammo, RESCUE_LOADOUTS.compact.magazine);
+});
+
+test('legacy rescue checkpoints migrate to a non-replaying rifle loadout', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!; const scene = FILM_SCENE_BY_ID.m1_guns;
+  Object.assign(state, { scene: scene.id, actor: 'neo', step: 1, rescue: undefined, checkpoint: filmStepPosition(scene, scene.steps[1]) });
+  h.actor().currentLocation = scene.set; h.actor().isInMatrix = true; h.actor().position = { ...state.checkpoint };
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+  assert.deepEqual(h.sandbox.life.film.state!.rescue, { phase: 'equipped', elapsed: 0, loadout: 'rifle' });
+  assert.equal(h.actor().currentAction?.parameters.rescue, undefined, 'a migrated save remains walkable instead of replaying the equip animation');
 });
 
 test('Morpheus must actively hold the bathroom line before choosing the sacrificial tackle', () => {
@@ -832,6 +908,16 @@ test('the entire film route completes through interactions, driving and real com
           assert.equal(state.betrayal?.phase, 'window'); h.command('act');
           for (let frame = 0; frame < 70 && state.betrayal?.phase !== 'reconnect'; frame++) h.players.step(.1, true, h.tick());
           assert.equal(state.betrayal?.phase, 'reconnect'); h.command('act'); h.command('act');
+        }
+        else if (scene.id === 'm1_rescue_decision') {
+          for (let frame = 0; frame < 90 && state.step === index; frame++) h.players.step(.1, true, h.tick());
+        }
+        else if (scene.id === 'm1_guns') {
+          for (let frame = 0; frame < 50 && state.rescue?.phase === 'racks_arriving'; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.rescue?.phase, 'selecting');
+          const loadout = RESCUE.loadoutRoots.rifle;
+          actor.position = filmPosition(scene.set, loadout.x, loadout.z); h.command('act');
+          for (let frame = 0; frame < 55 && state.step === index; frame++) h.players.step(.1, true, h.tick());
         }
         else if (scene.id === 'm1_boss' && index === 0) {
           for (let frame = 0; frame < 91; frame++) h.players.step(.1, true, h.tick());

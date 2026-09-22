@@ -27,7 +27,7 @@ import { clubLocked } from '@auto_matrix/shared';
 import { ClubSetRenderer } from './ClubSetRenderer.js';
 import { SentinelSetRenderer } from './SentinelSetRenderer.js';
 import { CypherRestaurantRenderer } from './CypherRestaurantRenderer.js';
-import { betrayalLocked } from '@auto_matrix/shared';
+import { betrayalLocked, rescueLocked } from '@auto_matrix/shared';
 
 const outdoor = new Set(['rooftop', 'plaza', 'bridge', 'street', 'courtyard', 'freeway', 'machine', 'rain', 'garden', 'desert', 'pods']);
 const palettes = {
@@ -182,6 +182,7 @@ export class FilmSetRenderer {
     if (journey?.scene === 'm1_sentinels' && journey.sentinel && !['ready', 'verify', 'done'].includes(journey.sentinel.phase)) this.marker.visible = false;
     if (journey && interludeLocked(journey)) this.marker.visible = false;
     if (journey && betrayalLocked(journey)) this.marker.visible = false;
+    if (journey && (rescueLocked(journey) || journey.scene === 'm1_guns' && journey.rescue?.phase === 'selecting')) this.marker.visible = false;
     if (journey && phoneLocked(journey)) this.marker.visible = false;
     if (journey && windowOpening(journey)) this.marker.visible = false;
     if (journey?.scene === 'm1_dejavu' && journey.step === 0 && journey.ambush) this.marker.visible = false;

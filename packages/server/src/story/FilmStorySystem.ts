@@ -14,6 +14,7 @@ import { SENTINEL_CAST, SENTINEL_TIMING, sentinelActive, sentinelDanger, sentine
 import { INTERLUDE_CAST, interludeDuration, interludeKind, interludeLocked, interludeRoot, interludeSeated, interludeText, type InterludeEncounter, type InterludeRole } from '@auto_matrix/shared';
 import { ORACLE_VISIT, oracleLegacyChoice, oracleVisitDuration, oracleVisitLocked, oracleVisitRoot, oracleVisitText, type OracleVisitRole } from '@auto_matrix/shared';
 import { BETRAYAL, betrayalDuration, betrayalLocked, betrayalRoot, betrayalText, type BetrayalEncounter, type BetrayalRole } from '@auto_matrix/shared';
+import { RESCUE, rescueDuration, rescueLocked, rescueRoot, rescueText, type RescueLoadout, type RescuePreparation, type RescueRole } from '@auto_matrix/shared';
 
 const BATHROOM_ROLES = ['neo', 'trinity', 'switch', 'apoc'] as const;
 const UNPLUGGED_ROLES = ['tank', 'cypher', 'dozer', 'apoc', 'switch', 'neo', 'trinity'] as const;
@@ -28,7 +29,7 @@ export class FilmStorySystem {
   get scene(): FilmScene | undefined { return this.state && FILM_SCENE_BY_ID[this.state.scene]; }
   get step(): FilmStep | undefined { return this.scene?.steps[this.state!.step]; }
   controls(agent: AgentState): boolean { return Boolean(this.state && this.state.actor === agent.id); }
-  performing(agent: AgentState): boolean { return this.controls(agent) && (clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
+  performing(agent: AgentState): boolean { return this.controls(agent) && (clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
   clubFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
     if (state?.scene !== 'm1_club' || state.visiting || !this.controls(agent)) return;
@@ -665,6 +666,90 @@ export class FilmStorySystem {
     }
     this.betrayalFrame(agent, 0, tick); return state.lastText;
   }
+  private ensureRescue(): RescuePreparation {
+    const state = this.state!;
+    if (!state.rescue) {
+      if (state.scene === 'm1_rescue_decision') {
+        const done = state.completed.includes(state.scene) || state.step >= this.scene!.steps.length;
+        state.rescue = { phase: done ? 'briefing_done' : 'briefing_ready', elapsed: 0 };
+      } else {
+        const done = state.completed.includes('m1_guns') || state.scene !== 'm1_guns' || state.step > 0;
+        state.rescue = { phase: done ? 'equipped' : 'racks_ready', elapsed: 0, loadout: done ? 'rifle' : undefined };
+      }
+    }
+    return state.rescue;
+  }
+  private rescueOccupied(preparation: RescuePreparation): AgentState | undefined {
+    const roles = ['briefing_ready', 'briefing', 'briefing_done'].includes(preparation.phase) ? ['trinity', 'tank'] : ['trinity'];
+    return roles.map(id => this.world.agents.get(id)).find(actor => actor?.controller);
+  }
+  private stageRescueActor(role: RescueRole, preparation: RescuePreparation, dt: number, tick: number): void {
+    const actor = this.world.agents.get(role); if (!actor || actor.controller && actor.id !== this.state!.actor) return;
+    const root = rescueRoot(preparation, role); const before = { ...actor.position };
+    actor.position = filmPosition(this.scene!.set, root.x, root.z); actor.rotation = root.yaw;
+    actor.velocity = dt > 0 ? { x: (actor.position.x - before.x) / dt, y: 0, z: (actor.position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
+    actor.currentLocation = this.scene!.set; actor.isInMatrix = FILM_SETS[this.scene!.set].world === 'matrix';
+    const armed = preparation.phase === 'equipping' && Boolean(preparation.loadout) && role !== 'tank';
+    actor.currentAction = { type: 'idle', parameters: { player: role === this.state!.actor, resolved: true, armed,
+      weaponStyle: preparation.loadout, rescue: { ...preparation, role } }, startedAt: tick, duration: 1, progress: 0 };
+  }
+  private clearRescueActions(): void {
+    for (const actor of this.world.agents.values()) if (actor.currentAction?.parameters.rescue) {
+      actor.currentAction = null; actor.velocity = { x: 0, y: 0, z: 0 };
+    }
+  }
+  rescueFrame(agent: AgentState, dt: number, tick: number): boolean {
+    const state = this.state;
+    if (!state || !this.controls(agent) || state.visiting || !['m1_rescue_decision', 'm1_guns'].includes(state.scene)) return false;
+    const preparation = this.ensureRescue(); const locked = rescueLocked(state);
+    if (preparation.phase === 'briefing' || preparation.phase === 'racks_arriving' || preparation.phase === 'equipping') {
+      const occupied = this.rescueOccupied(preparation);
+      if (occupied) { state.lastText = `${occupied.name} 正由另一位玩家控制，营救准备停在保存的位置。`; return locked; }
+      preparation.elapsed = Math.min(rescueDuration(preparation), preparation.elapsed + Math.max(0, Math.min(.1, dt)));
+      const roles: RescueRole[] = preparation.phase === 'briefing' ? ['neo', 'trinity', 'tank'] : ['neo', 'trinity'];
+      for (const role of roles) this.stageRescueActor(role, preparation, dt, tick);
+      state.checkpoint = { ...agent.position };
+      if (preparation.elapsed >= rescueDuration(preparation)) {
+        if (preparation.phase === 'briefing') {
+          preparation.phase = 'briefing_done'; preparation.elapsed = 0; this.clearRescueActions();
+          this.advance(this.step!.text!, agent, tick);
+        } else if (preparation.phase === 'racks_arriving') {
+          preparation.phase = 'selecting'; preparation.elapsed = 0; this.clearRescueActions();
+        } else {
+          preparation.phase = 'equipped'; preparation.elapsed = 0; this.clearRescueActions();
+          this.sandbox().neoLife!.choices.rescue_loadout = preparation.loadout ?? 'rifle';
+          this.advance(this.step!.text!, agent, tick);
+        }
+      }
+    } else this.clearRescueActions();
+    state.lastText = rescueText(preparation); return rescueLocked(state);
+  }
+  private rescueAct(agent: AgentState, target: string, tick: number): string {
+    const state = this.state!; const preparation = this.ensureRescue();
+    if (target !== 'act') return state.lastText;
+    const occupied = this.rescueOccupied(preparation);
+    if (occupied) return `${occupied.name} 正由另一位玩家控制，等待对方结束后再继续。`;
+    if (state.scene === 'm1_rescue_decision') {
+      if (state.step !== 1 || preparation.phase !== 'briefing_ready') return state.lastText;
+      if (!this.near(agent, this.step!)) return '先走到核心投影旁，再按 G 核对营救方案。';
+      preparation.phase = 'briefing'; preparation.elapsed = 0; state.checkpoint = { ...agent.position };
+      this.rescueFrame(agent, 0, tick); return state.lastText;
+    }
+    if (preparation.phase === 'racks_ready') {
+      if (!this.near(agent, this.step!)) return '先走到构造体的装载标记旁，再按 G 载入武器架。';
+      preparation.phase = 'racks_arriving'; preparation.elapsed = 0; state.checkpoint = { ...agent.position };
+      this.rescueFrame(agent, 0, tick); return state.lastText;
+    }
+    if (preparation.phase === 'selecting') {
+      const options = Object.entries(RESCUE.loadoutRoots) as [RescueLoadout, { x: number; z: number; yaw: number }][];
+      const nearest = options.map(([loadout, root]) => ({ loadout, distance: distance(agent.position, filmPosition(this.scene!.set, root.x, root.z)) }))
+        .sort((a, b) => a.distance - b.distance)[0];
+      if (!nearest || nearest.distance > 4) return '走近左、中、右其中一套武器，进入 4 米内再按 G。';
+      preparation.loadout = nearest.loadout; preparation.phase = 'equipping'; preparation.elapsed = 0; state.checkpoint = { ...agent.position };
+      this.rescueFrame(agent, 0, tick); return state.lastText;
+    }
+    return state.lastText;
+  }
   private sealAmbush(): void {
     const state = this.state;
     const sealed = (state?.ambush?.elapsed ?? 0) >= AMBUSH_REWRITE || state?.completed.includes('m1_dejavu') || state?.scene === 'm1_dejavu' && state.step > 0;
@@ -1135,6 +1220,13 @@ export class FilmStorySystem {
         this.betrayalFrame(agent, 0, tick);
         return state.scene === 'm1_bathroom' ? '已从浴室门线重试；撤离目标仍在，重新按 G 开始掩护。' : '已从备用控制台重试；拔线结果尚未结算，重新按 G 等待反击窗口。';
       }
+      if (state.rescue && ['m1_rescue_decision', 'm1_guns'].includes(state.scene)) {
+        delete state.visiting; delete state.returnPosition;
+        agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
+        agent.position = { ...state.checkpoint }; agent.velocity = { x: 0, y: 0, z: 0 };
+        this.rescueFrame(agent, 0, tick);
+        return '已接回营救准备，保留方案核对、武器架和装备选择进度。';
+      }
       if (state.scene === 'm1_club' && state.club) {
         delete state.visiting; delete state.returnPosition;
         agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
@@ -1292,6 +1384,7 @@ export class FilmStorySystem {
     if (interludeKind(state.scene)) return this.interludeAct(agent, target, tick);
     if (state.scene === 'm1_oracle' && state.step === 1 && state.oracle?.consultation) return this.oracleAct(agent, target, tick);
     if (state.scene === 'm1_bathroom' || state.scene === 'm1_unplugged' && state.step === 1) return this.betrayalAct(agent, target, tick);
+    if ((state.scene === 'm1_rescue_decision' && state.step === 1) || state.scene === 'm1_guns') return this.rescueAct(agent, target, tick);
     if (interrogationLocked(state) && state.interrogation!.phase !== 'response') return '审讯正在进行。可以转动视角观察，暂停会保留当前进度。';
     if (target === 'escape:retreat' && state.scene === 'm1_ledge') {
       this.capture(agent, tick, '你退回办公室。特工将你带走；电话中的联系尚未结束。');
@@ -1493,6 +1586,7 @@ export class FilmStorySystem {
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.interlude) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.oracleVisit) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.betrayal) other.currentAction = null;
+    for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.rescue) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.riding) { other.currentAction = null; other.velocity = { x: 0, y: 0, z: 0 }; }
     if (scene.id === 'm1_lobby') this.lobby.reset();
     const actor = this.world.agents.get(state.actor)!;
@@ -1539,7 +1633,18 @@ export class FilmStorySystem {
       state.betrayal = { kind: scene.id === 'm1_bathroom' ? 'bathroom' : 'unplugged', phase: 'ready', elapsed: 0, attempt: 0, repels: 0, rescued: 0 };
       this.betrayalFrame(actor, 0, tick);
     }
-    if (scene.id === 'm1_rescue_decision') this.prepareOracleRescue();
+    if (scene.id === 'm1_rescue_decision') {
+      state.rescue = { phase: 'briefing_ready', elapsed: 0 };
+      this.prepareOracleRescue(); this.rescueFrame(actor, 0, tick);
+    }
+    if (scene.id === 'm1_guns') {
+      state.rescue = { phase: 'racks_ready', elapsed: 0 };
+      this.rescueFrame(actor, 0, tick);
+    }
+    if (scene.id === 'm1_lobby') {
+      state.rescue ??= { phase: 'equipped', elapsed: 0, loadout: 'rifle' };
+      state.rescue.phase = 'equipped'; state.rescue.elapsed = 0; state.rescue.loadout ??= 'rifle';
+    }
     if (scene.id === 'm1_bug' && state.office?.outcome === 'escaped') state.lastText = '你没有被特工带走。Switch 仍要求做安全检查，确认没有追踪装置。';
   }
   private stageCast(): void {

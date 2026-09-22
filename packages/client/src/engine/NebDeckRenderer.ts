@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { RECOVERY_BED, type FilmJourney } from '@auto_matrix/shared';
+import { RECOVERY_BED, RESCUE, type FilmJourney } from '@auto_matrix/shared';
 
 /** The Nebuchadnezzar is one continuous deck: medical bay, operator core and mess.
  * The central aisle remains open so recovery hands control back to the player. */
@@ -33,6 +33,11 @@ export class NebDeckRenderer {
   private betrayalSignals = new Map<'neo' | 'trinity' | 'apoc' | 'switch', THREE.Mesh>();
   private betrayalFlash = new THREE.Group();
   private betrayalAlarm!: THREE.PointLight;
+  private rescueRig = new THREE.Group();
+  private rescueRoute: THREE.Mesh[] = [];
+  private rescueSignal!: THREE.Mesh;
+  private rescueBuilding!: THREE.Group;
+  private rescueLight!: THREE.PointLight;
 
   constructor(private root: THREE.Group) {
     this.hull();
@@ -143,6 +148,40 @@ export class NebDeckRenderer {
     this.trainingUpload();
     this.cypherConsole();
     this.betrayalScene();
+    this.rescueBriefing();
+  }
+
+  private rescueBriefing(): void {
+    this.rescueRig.name = 'neb-rescue-briefing'; this.rescueRig.visible = false; this.root.add(this.rescueRig);
+    const green = this.material(new THREE.MeshBasicMaterial({ color: 0x8fffb7, transparent: true, opacity: .55, depthWrite: false, toneMapped: false }));
+    const dim = this.material(new THREE.MeshBasicMaterial({ color: 0x4b9b72, transparent: true, opacity: .23, depthWrite: false, toneMapped: false }));
+    const danger = this.material(new THREE.MeshBasicMaterial({ color: 0xff6659, transparent: true, opacity: .8, depthWrite: false, toneMapped: false }));
+    for (const radius of [1.9, 3.1, 4.25]) {
+      const ring = this.mesh(this.rescueRig, new THREE.RingGeometry(radius, radius + .045, 64), green, `neb-rescue-ring-${radius}`);
+      ring.rotation.x = -Math.PI / 2; ring.position.y = .095;
+    }
+    this.rescueBuilding = new THREE.Group(); this.rescueBuilding.name = 'neb-rescue-building'; this.rescueBuilding.position.set(0, .18, -1.35); this.rescueRig.add(this.rescueBuilding);
+    for (let floor = 0; floor < 6; floor++) {
+      const slab = this.box(this.rescueBuilding, dim, 0, .24 + floor * .38, 0, 3.4 - floor * .12, .035, 2.35 - floor * .07, `neb-rescue-floor-${floor}`);
+      slab.castShadow = slab.receiveShadow = false;
+      for (const side of [-1, 1]) this.box(this.rescueBuilding, green, side * (1.55 - floor * .045), .42 + floor * .38, 0, .025, .34, 2.15 - floor * .07);
+    }
+    const lift = this.box(this.rescueBuilding, green, .72, 1.35, -.2, .16, 2.65, .16, 'neb-rescue-elevator'); lift.castShadow = false;
+    const points = [new THREE.Vector3(0, .13, 3.05), new THREE.Vector3(-1.8, .13, 1.55), new THREE.Vector3(-1.25, .13, -.2),
+      new THREE.Vector3(.72, .13, -1.45), new THREE.Vector3(.72, 2.75, -1.45)];
+    for (let i = 0; i < points.length - 1; i++) {
+      const from = points[i]; const to = points[i + 1]; const middle = from.clone().add(to).multiplyScalar(.5); const length = from.distanceTo(to);
+      const segment = this.box(this.rescueRig, green, middle.x, middle.y, middle.z, .095, .095, length, `neb-rescue-route-${i}`);
+      segment.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), to.clone().sub(from).normalize()); segment.castShadow = false;
+      this.rescueRoute.push(segment);
+    }
+    this.rescueSignal = this.mesh(this.rescueRig, new THREE.IcosahedronGeometry(.22, 1), danger, 'neb-rescue-morpheus-signal');
+    this.rescueSignal.position.set(.72, 2.72, -1.45);
+    for (let i = 0; i < 2; i++) {
+      const ring = this.mesh(this.rescueSignal, new THREE.TorusGeometry(.38 + i * .2, .025, 8, 24), danger); ring.rotation.x = Math.PI / 2;
+    }
+    this.rescueLight = new THREE.PointLight(0x79e7a1, 0, 13, 2); this.rescueLight.name = 'neb-rescue-projection-light'; this.rescueLight.position.set(0, 4.4, 0);
+    this.rescueRig.add(this.rescueLight); this.lights.add(this.rescueLight);
   }
 
   private cypherConsole(): void {
@@ -332,6 +371,17 @@ export class NebDeckRenderer {
       const display = this.betrayalRig.getObjectByName('neb-betrayal-life-display') as THREE.Mesh;
       display.scale.y = .96 + Math.sin(elapsed * 5) * .04;
     } else this.betrayalFlash.visible = false;
+    const rescue = journey?.scene === 'm1_rescue_decision' && !journey.visiting ? journey.rescue : undefined;
+    this.rescueRig.visible = Boolean(rescue);
+    if (rescue) {
+      const progress = rescue.phase === 'briefing' ? Math.min(1, rescue.elapsed / RESCUE.briefing) : rescue.phase === 'briefing_done' ? 1 : 0;
+      this.rescueBuilding.rotation.y = -.16 + Math.sin(elapsed * .28) * .08;
+      this.rescueBuilding.scale.y = .82 + progress * .18;
+      this.rescueRoute.forEach((segment, index) => { segment.visible = progress >= index / this.rescueRoute.length || rescue.phase === 'briefing_done'; });
+      const pulse = 1 + Math.sin(elapsed * 6.5) * .18; this.rescueSignal.scale.setScalar(pulse);
+      this.rescueSignal.visible = rescue.phase !== 'briefing_ready' || Math.sin(elapsed * 4) > -.35;
+      this.rescueLight.intensity = rescue.phase === 'briefing' ? 95 + Math.sin(elapsed * 5) * 18 : rescue.phase === 'briefing_done' ? 72 : 35;
+    }
   }
 
   dispose(): void {

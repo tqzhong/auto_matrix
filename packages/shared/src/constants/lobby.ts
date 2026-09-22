@@ -1,10 +1,12 @@
 import type { Vector3 } from '../types/agent.js';
+import type { RescueLoadout } from './rescue.js';
 
 // Shared footprints: the renderer, movement and ballistic cover use the same columns.
 export const LOBBY_COLUMNS = [-26, -12, 2, 16, 30].flatMap(z => [-1, 1].map(side => ({ x: side * 10.2, z, width: 2.6, depth: 3.2, height: 16 })));
 export const LOBBY_MAGAZINE = 16;
 export const LOBBY_FIRE_INTERVAL = .24;
 export interface LobbyEncounter {
+  loadout?: RescueLoadout;
   ammo: number;
   reloadAt?: number;
   wave: number;

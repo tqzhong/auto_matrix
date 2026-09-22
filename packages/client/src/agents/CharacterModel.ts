@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { oracleVisitPose, type AgentState } from '@auto_matrix/shared';
+import { oracleVisitPose, type AgentState, type RescueLoadout } from '@auto_matrix/shared';
 import { advanceMotion, newMotion, type MotionInput, type MotionState } from './CharacterMotion.js';
 import { HERO_IDS, HeroModels, type HeroId, type HeroRig } from './HeroModel.js';
 import { SpoonModel } from './SpoonModel.js';
@@ -51,6 +51,7 @@ export interface CharacterRig {
   phone?: PhoneModel;
   cookie?: THREE.Group;
   rifle?: boolean;
+  weaponStyle?: RescueLoadout | 'pistol' | 'pulse';
   muzzleIndex?: number;
 }
 
@@ -58,7 +59,8 @@ export function weaponMuzzle(rig: CharacterRig): THREE.Vector3 | undefined {
   if (!rig.weapons?.length) return;
   const gun = rig.weapons[(rig.muzzleIndex ?? 0) % rig.weapons.length]; rig.muzzleIndex = (rig.muzzleIndex ?? 0) + 1;
   gun.updateWorldMatrix(true, false);
-  return gun.localToWorld(new THREE.Vector3(0, -(rig.rifle ? 1.2 : .5) - .115, 0));
+  const length = rig.weaponStyle === 'compact' ? .72 : rig.weaponStyle === 'breacher' ? 1.34 : ['rifle', 'pulse'].includes(rig.weaponStyle ?? '') ? 1.2 : .5;
+  return gun.localToWorld(new THREE.Vector3(0, -length - .115, 0));
 }
 
 // All residents share anatomical proportions and joint animation. The four
@@ -311,7 +313,7 @@ export class CharacterModels {
     if (HERO_IDS.includes(state.id as HeroId) || guard || support) {
       this.heroes.create(guard || support === 'rhineheart' ? 'smith' : support === 'switch' || support === 'dujour' ? 'trinity' : support === 'apoc' || support === 'courier' || support === 'choi' ? 'neo' : state.id as HeroId, guard, support).then(model => {
         if (!model) return;
-        rig.weapons?.forEach(gun => gun.removeFromParent()); rig.weapons = undefined;
+        rig.weapons?.forEach(gun => gun.removeFromParent()); rig.weapons = undefined; rig.weaponStyle = undefined;
         for (const child of detail.children) child.visible = false;
         detail.add(model.root); rig.hero = model;
       }).catch(error => console.warn(`${state.id} asset could not load; retaining the procedural character.`, error));
@@ -371,17 +373,27 @@ export class CharacterModels {
     rig.detail.visible = near; rig.distant.visible = !near;
     if (!near) return;
     const pulseRifle = Boolean(input.betrayal && ['cypher', 'tank'].includes(input.betrayal.role));
-    if (pulseRifle) rig.rifle = true;
+    const weaponStyle: CharacterRig['weaponStyle'] = pulseRifle ? 'pulse' : input.weaponStyle ?? (rig.rifle ? 'rifle' : 'pistol');
+    if (input.armed && rig.weapons && rig.weaponStyle !== weaponStyle) {
+      rig.weapons.forEach(gun => gun.removeFromParent()); rig.weapons = undefined;
+    }
     if (input.armed && !rig.weapons) {
       const material = this.material(new THREE.MeshStandardMaterial({ color: 0x242b2c, metalness: .75, roughness: .28 }));
       const charge = pulseRifle ? this.material(new THREE.MeshBasicMaterial({ color: 0x8fd8ba, toneMapped: false })) : material;
-      rig.weapons = (rig.rifle ? [0] : [0, 1]).map(i => {
-        const gun = new THREE.Group(); const length = rig.rifle ? 1.2 : .5;
-        gun.name = pulseRifle ? 'neb-pulse-rifle' : 'character-firearm';
+      const dual = weaponStyle === 'pistol' || weaponStyle === 'compact';
+      rig.weaponStyle = weaponStyle;
+      rig.weapons = (dual ? [0, 1] : [0]).map(i => {
+        const gun = new THREE.Group(); const length = weaponStyle === 'compact' ? .72 : weaponStyle === 'breacher' ? 1.34 : ['rifle', 'pulse'].includes(weaponStyle) ? 1.2 : .5;
+        gun.name = pulseRifle ? 'neb-pulse-rifle' : `character-${weaponStyle}`;
         this.mesh(gun, this.box, material, [0, -length / 2, 0], [.12, length, .14]);
         this.mesh(gun, this.cylinder, material, [0, -length, 0], [.045, .23, .045]);
         this.mesh(gun, this.box, material, [0, -.09, .13], [.105, .18, .27]);
-        this.mesh(gun, this.box, material, [0, -length * .5, .08], [.08, .1, rig.rifle ? .35 : .06]);
+        this.mesh(gun, this.box, material, [0, -length * .5, .08], [.08, .1, dual ? weaponStyle === 'compact' ? .22 : .06 : .35]);
+        if (weaponStyle === 'breacher') {
+          this.mesh(gun, this.cylinder, material, [0, -1.02, 0], [.075, .52, .075]);
+          this.mesh(gun, this.box, material, [0, -.62, .11], [.18, .42, .24]);
+        }
+        if (weaponStyle === 'rifle') this.mesh(gun, this.box, material, [0, -.48, -.14], [.17, .58, .34]);
         if (pulseRifle) {
           this.mesh(gun, this.cylinder, charge, [0, -.62, .13], [.075, .34, .075]);
           this.mesh(gun, this.box, material, [0, -.2, -.17], [.22, .48, .42]);

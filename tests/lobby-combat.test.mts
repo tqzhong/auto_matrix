@@ -1,17 +1,18 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { filmPosition, filmEntry, FILM_SCENE_BY_ID, FILM_SETS, LOBBY_MAGAZINE, lobbyCover, type CombatImpact } from '@auto_matrix/shared';
+import { filmPosition, filmEntry, FILM_SCENE_BY_ID, FILM_SETS, LOBBY_MAGAZINE, RESCUE_LOADOUTS, lobbyCover, type CombatImpact, type RescueLoadout } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
 import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
 
-function setup() {
+function setup(loadout?: RescueLoadout) {
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
   const sandbox = new SandboxSystem(world, { record() {} } as unknown as WorldDynamics, 42);
   const neo = world.agents.get('neo')!; neo.controller = 'player'; sandbox.enter(neo); sandbox.life.begin(neo, 0);
   neo.position = filmPosition('film_government_lobby', 0, 19); neo.currentLocation = 'film_government_lobby'; neo.isInMatrix = true;
-  sandbox.state.neoLife!.journey = { version: 1, scene: 'm1_lobby', step: 1, actor: 'neo', completed: [], enteredAt: 0, checkpoint: { ...neo.position }, reflections: {}, lastText: '', fighting: true };
+  sandbox.state.neoLife!.journey = { version: 1, scene: 'm1_lobby', step: 1, actor: 'neo', completed: [], enteredAt: 0, checkpoint: { ...neo.position }, reflections: {}, lastText: '', fighting: true,
+    rescue: loadout ? { phase: 'equipped', elapsed: 0, loadout } : undefined };
   const lobby = sandbox.life.film.lobby; lobby.start(neo, 0);
   const impacts: CombatImpact[] = []; sandbox.onImpact = impact => impacts.push(impact);
   return { world, sandbox, lobby, neo, impacts };
@@ -21,6 +22,22 @@ test('the lobby begins outside the security gate so entering the hall remains pl
   const start = filmEntry(FILM_SCENE_BY_ID.m1_lobby); const center = FILM_SETS.film_government_lobby.center;
   assert.ok(start.z - center.z > 30, 'entry must be behind the gate at local z=29');
   assert.ok(Math.abs(start.z - filmPosition('film_government_lobby', 0, 23).z) > 4, 'the first objective must not complete on spawn');
+});
+
+test('each physical Construct loadout keeps its own magazine, damage and reload timing in the lobby', () => {
+  for (const loadout of Object.keys(RESCUE_LOADOUTS) as RescueLoadout[]) {
+    const h = setup(loadout); const spec = RESCUE_LOADOUTS[loadout]; const enemy = h.sandbox.state.threats[0];
+    h.sandbox.state.threats = [enemy]; enemy.position = filmPosition('film_government_lobby', 0, 5);
+    assert.equal(h.lobby.state!.loadout, loadout); assert.equal(h.lobby.state!.ammo, spec.magazine);
+    h.lobby.shoot(h.neo, Math.PI, 2); assert.equal(enemy.health, enemy.maxHealth - spec.damage);
+    h.lobby.state!.ammo = 0; h.lobby.shoot(h.neo, Math.PI, 10);
+    assert.equal(h.lobby.state!.reloadAt, 10 + spec.reloadTicks);
+    h.lobby.tick(h.neo, 9 + spec.reloadTicks); assert.equal(h.lobby.state!.ammo, 0);
+    h.lobby.tick(h.neo, 10 + spec.reloadTicks); assert.equal(h.lobby.state!.ammo, spec.magazine);
+    const ally = h.world.agents.get('trinity')!;
+    ally.currentAction = { type: 'idle', parameters: { resolved: true, armed: true, weaponStyle: loadout === 'rifle' ? 'compact' : 'rifle' }, startedAt: 0, duration: 1, progress: 0 };
+    h.lobby.tick(h.neo, 30); assert.equal(ally.currentAction.parameters.weaponStyle, loadout, 'the saved ally model must match Neo loadout after reconnect');
+  }
 });
 
 test('lobby gunfire hits the first visible target, consumes ammunition, and cannot penetrate a column', () => {

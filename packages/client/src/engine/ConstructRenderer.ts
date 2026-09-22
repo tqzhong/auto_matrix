@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { CONSTRUCT_REVEAL, type FilmJourney } from '@auto_matrix/shared';
+import { CONSTRUCT_REVEAL, RESCUE, type FilmJourney, type RescueLoadout } from '@auto_matrix/shared';
 
 /** Horizonless loading program used for the first truth lesson and the later
  * armoury. Props remain sparse so their physical scale is unmistakable. */
@@ -18,6 +18,8 @@ export class ConstructRenderer {
   private darkLeather = this.material(new THREE.MeshStandardMaterial({ color: 0x2d0b0a, roughness: .56 }));
   private black = this.material(new THREE.MeshStandardMaterial({ color: 0x111313, roughness: .36, metalness: .4 }));
   private steel = this.material(new THREE.MeshStandardMaterial({ color: 0x575d5b, roughness: .28, metalness: .86 }));
+  private rackRows: { group: THREE.Group; x: number; z: number; index: number }[] = [];
+  private loadouts = new Map<RescueLoadout, { group: THREE.Group; ring: THREE.Mesh; light: THREE.PointLight }>();
 
   constructor(private root: THREE.Group, private sceneId?: string) {
     this.canvas.width = 768; this.canvas.height = 512;
@@ -103,12 +105,68 @@ export class ConstructRenderer {
 
   private armoury(): void {
     const racks = new THREE.Group(); racks.name = 'construct-weapon-racks'; this.root.add(racks);
+    let index = 0;
     for (const side of [-1, 1]) for (const z of [-24, -8, 8, 24]) {
-      const rack = new THREE.Group(); rack.position.set(side * 19, 0, z); rack.rotation.y = side * Math.PI / 2; racks.add(rack);
+      const rack = new THREE.Group(); rack.name = `construct-rack-row-${index}`; rack.position.set(side * 19, 0, z); rack.rotation.y = side * Math.PI / 2; racks.add(rack);
       this.box(rack, this.steel, 0, 3.4, 0, 8.5, 6.8, .48, .12);
       for (let i = 0; i < 7; i++) this.weapon(rack, -3.1 + i * 1.05, 4.2 - i % 2 * 2.2, .5, i % 3 === 0);
+      this.rackRows.push({ group: rack, x: side * 19, z, index: index++ });
     }
     this.box(this.root, this.black, 0, .04, -31, 16, .08, .22);
+    for (const style of ['compact', 'breacher', 'rifle'] as const) this.loadout(style);
+  }
+
+  private loadout(style: RescueLoadout): void {
+    const root = RESCUE.loadoutRoots[style]; const group = new THREE.Group(); group.name = `construct-loadout-${style}`;
+    group.position.set(root.x, 0, root.z); this.root.add(group);
+    this.cylinder(group, this.black, 0, .16, 0, 1.75, .28);
+    this.cylinder(group, this.steel, 0, .36, 0, 1.3, .16);
+    const ringMaterial = this.material(new THREE.MeshBasicMaterial({ color: style === 'compact' ? 0x91d7ff : style === 'breacher' ? 0xffb36c : 0x9df3bc,
+      transparent: true, opacity: .28, depthWrite: false, toneMapped: false }));
+    const ring = this.mesh(group, new THREE.RingGeometry(1.7, 1.88, 48), ringMaterial, `construct-loadout-ring-${style}`);
+    ring.rotation.x = -Math.PI / 2; ring.position.y = .04;
+    const cradle = new THREE.Group(); cradle.position.y = 2.3; cradle.rotation.x = -.13; group.add(cradle);
+    if (style === 'compact') {
+      this.displayWeapon(cradle, -.42, 0, 0, style); this.displayWeapon(cradle, .42, 0, 0, style);
+    } else this.displayWeapon(cradle, 0, 0, 0, style);
+    const plate = this.box(group, this.black, 0, .68, 1.18, 2.25, .56, .18, .06, `construct-loadout-plate-${style}`);
+    const stripe = this.box(group, ringMaterial, 0, .7, 1.285, style === 'compact' ? 1.55 : style === 'breacher' ? 1.05 : 1.3, .1, .03);
+    stripe.castShadow = false;
+    const light = new THREE.PointLight((ringMaterial.color as THREE.Color).getHex(), 0, 8, 2); light.name = `construct-loadout-light-${style}`;
+    light.position.set(0, 2.5, .5); group.add(light); this.lights.add(light);
+    this.loadouts.set(style, { group, ring, light });
+  }
+
+  private displayWeapon(parent: THREE.Object3D, x: number, y: number, z: number, style: RescueLoadout): void {
+    const gun = new THREE.Group(); gun.name = `construct-${style}-weapon`; gun.position.set(x, y, z); parent.add(gun);
+    const length = style === 'compact' ? 1.7 : style === 'breacher' ? 3.5 : 3.1;
+    this.box(gun, this.black, 0, 0, 0, .34, .42, length, .08);
+    this.box(gun, this.black, 0, -.5, .45, .58, 1, .4, .08);
+    this.cylinder(gun, this.steel, 0, 0, -length / 2 - .35, .075, style === 'compact' ? .55 : 1.1).rotation.x = Math.PI / 2;
+    if (style === 'breacher') this.cylinder(gun, this.black, 0, -.04, -.45, .13, 1.15).rotation.x = Math.PI / 2;
+    if (style === 'rifle') this.box(gun, this.black, 0, -.12, 1.82, .38, .62, .92, .08);
+  }
+
+  private updateArmoury(journey: FilmJourney | undefined): void {
+    const preparation = journey?.scene === 'm1_guns' && !journey.visiting ? journey.rescue : undefined;
+    const arrived = preparation && ['selecting', 'equipping', 'equipped'].includes(preparation.phase);
+    const elapsed = arrived ? RESCUE.racksArrival : preparation?.phase === 'racks_arriving' ? preparation.elapsed : preparation ? 0 : RESCUE.racksArrival;
+    for (const row of this.rackRows) {
+      const progress = THREE.MathUtils.smoothstep(elapsed, row.index * .28, row.index * .28 + 2.35);
+      row.group.position.set(row.x + Math.sign(row.x) * (1 - progress) * 34, 0, row.z - (1 - progress) * 65);
+      row.group.visible = progress > .015;
+    }
+    const selectable = preparation && ['selecting', 'equipping', 'equipped'].includes(preparation.phase);
+    for (const [style, display] of this.loadouts) {
+      const selected = preparation?.loadout === style; const equipping = preparation?.phase === 'equipping';
+      const reveal = selectable ? 1 : THREE.MathUtils.smoothstep(elapsed, 2.5, RESCUE.racksArrival);
+      const emphasis = selectable && preparation?.loadout && !selected ? .88 : 1;
+      display.group.visible = reveal > .01; display.group.scale.setScalar(Math.max(.001, reveal * emphasis));
+      display.group.position.y = selected && equipping ? Math.sin(Math.min(1, preparation.elapsed / RESCUE.equip) * Math.PI) * .24 : 0;
+      const material = display.ring.material as THREE.MeshBasicMaterial;
+      material.opacity = !selectable ? reveal * .12 : selected ? .78 : preparation?.phase === 'selecting' ? .28 + Math.sin(performance.now() * .004 + display.group.position.x) * .12 : .08;
+      display.light.intensity = !selectable ? reveal * 20 : selected ? 115 : preparation?.phase === 'selecting' ? 42 : 10;
+    }
   }
 
   private draw(elapsed: number, waiting: boolean): void {
@@ -145,9 +203,14 @@ export class ConstructRenderer {
 
   update(journey: FilmJourney | undefined): void {
     const beat = journey?.scene === 'm1_construct' && !journey.visiting && journey.awakening?.kind === 'construct' ? journey.awakening : undefined;
-    const frame = beat ? Math.floor(beat.elapsed * 8) : -1;
-    if (frame === this.lastFrame) return; this.lastFrame = frame;
-    this.draw(beat?.elapsed ?? (this.sceneId === 'm1_guns' ? 9.3 : 4), beat?.started === false);
+    const rescue = this.sceneId === 'm1_guns' && journey?.scene === 'm1_guns' && !journey.visiting ? journey.rescue : undefined;
+    const phase = rescue ? ['briefing_ready', 'briefing', 'briefing_done', 'racks_ready', 'racks_arriving', 'selecting', 'equipping', 'equipped'].indexOf(rescue.phase) : -1;
+    const frame = beat ? Math.floor(beat.elapsed * 8) : rescue ? phase * 1000 + Math.floor(rescue.elapsed * 12) : -1;
+    if (frame !== this.lastFrame) {
+      this.lastFrame = frame;
+      this.draw(beat?.elapsed ?? (this.sceneId === 'm1_guns' ? 9.3 : 4), beat?.started === false);
+    }
+    if (this.sceneId === 'm1_guns') this.updateArmoury(journey);
   }
 
   dispose(): void {

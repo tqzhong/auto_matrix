@@ -243,6 +243,27 @@ export class GameAudio {
       tone.onended = () => { tone.disconnect(); gain.disconnect(); };
     }
   }
+  rescueSound(kind: 'hologram' | 'racks' | 'equip'): void {
+    const bus = this.effects(); if (!bus) return;
+    const { context: ctx, output } = bus; const at = ctx.currentTime;
+    if (kind === 'hologram') {
+      const tone = ctx.createOscillator(); const gain = ctx.createGain(); tone.type = 'sine';
+      tone.frequency.setValueAtTime(145, at); tone.frequency.exponentialRampToValueAtTime(980, at + .62);
+      gain.gain.setValueAtTime(.0001, at); gain.gain.linearRampToValueAtTime(.035, at + .08); gain.gain.exponentialRampToValueAtTime(.0001, at + .75);
+      tone.connect(gain); gain.connect(output); tone.start(at); tone.stop(at + .78); tone.onended = () => { tone.disconnect(); gain.disconnect(); };
+      return;
+    }
+    const count = kind === 'racks' ? 7 : 3;
+    for (let i = 0; i < count; i++) {
+      const start = at + i * (kind === 'racks' ? .095 : .16); const duration = kind === 'racks' ? .22 : .13;
+      const buffer = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * duration), ctx.sampleRate); const samples = buffer.getChannelData(0);
+      for (let sample = 0; sample < samples.length; sample++) samples[sample] = (Math.random() * 2 - 1) * Math.exp(-sample / ctx.sampleRate * (kind === 'racks' ? 15 : 28));
+      const source = ctx.createBufferSource(); source.buffer = buffer;
+      const filter = ctx.createBiquadFilter(); filter.type = 'bandpass'; filter.frequency.value = kind === 'racks' ? 180 + i * 55 : 720 + i * 430; filter.Q.value = kind === 'racks' ? 3.4 : 5;
+      const gain = ctx.createGain(); gain.gain.setValueAtTime(.0001, start); gain.gain.linearRampToValueAtTime(kind === 'racks' ? .075 : .09, start + .008); gain.gain.exponentialRampToValueAtTime(.0001, start + duration);
+      source.connect(filter); filter.connect(gain); gain.connect(output); source.start(start); source.onended = () => { source.disconnect(); filter.disconnect(); gain.disconnect(); };
+    }
+  }
   lafayetteSound(kind: 'thunder' | 'knock' | 'handshake' | 'door'): void {
     const bus = this.effects(); if (!bus) return;
     const { context: ctx, output } = bus; const duration = kind === 'thunder' ? 2.8 : kind === 'door' ? 1.15 : kind === 'knock' ? .14 : .18;

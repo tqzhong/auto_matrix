@@ -2,7 +2,7 @@
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { FILM_SCENES, FILM_SETS, filmEntry, filmStepPosition, filmPosition, playerBlocked, NEO_CHAPTERS, MEETING_DRIVE_SECONDS, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENES, FILM_SETS, RESCUE, filmEntry, filmStepPosition, filmPosition, playerBlocked, NEO_CHAPTERS, MEETING_DRIVE_SECONDS, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -202,6 +202,24 @@ if (['unplug-window', 'unplug-counter', 'unplug-reconnect'].includes(process.arg
     const frames = process.argv[3] === 'unplug-counter' ? 23 : 56;
     for (let frame = 0; frame < frames; frame++) sandbox.life.film.betrayalFrame(actor, .1, 0);
     if (process.argv[3] === 'unplug-reconnect') sandbox.life.film.command(actor, 'act', 0);
+  }
+  sandbox.life.film.state!.checkpoint = { ...actor.position };
+}
+if (process.argv[3] === 'rescue-briefing' && scene.id === 'm1_rescue_decision') {
+  actor.controller = 'player'; actor.position = filmStepPosition(scene, scene.steps[0]);
+  sandbox.life.film.command(actor, 'reflect:care', 0); actor.position = filmStepPosition(scene, scene.steps[1]);
+  sandbox.life.film.command(actor, 'act', 0);
+  for (let frame = 0; frame < 24; frame++) sandbox.life.film.rescueFrame(actor, .1, 0);
+  sandbox.life.film.state!.checkpoint = { ...actor.position };
+}
+if (['racks-arriving', 'racks-selecting', 'equip-compact'].includes(process.argv[3]) && scene.id === 'm1_guns') {
+  actor.controller = 'player'; actor.position = filmStepPosition(scene, scene.steps[0]); sandbox.life.film.command(actor, 'act', 0);
+  const frames = process.argv[3] === 'racks-arriving' ? 24 : 50;
+  for (let frame = 0; frame < frames; frame++) sandbox.life.film.rescueFrame(actor, .1, 0);
+  if (process.argv[3] === 'equip-compact') {
+    const root = RESCUE.loadoutRoots.compact; actor.position = filmPosition(scene.set, root.x, root.z);
+    sandbox.life.film.command(actor, 'act', 0);
+    for (let frame = 0; frame < 30; frame++) sandbox.life.film.rescueFrame(actor, .1, 0);
   }
   sandbox.life.film.state!.checkpoint = { ...actor.position };
 }
