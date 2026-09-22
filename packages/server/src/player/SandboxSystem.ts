@@ -1,4 +1,4 @@
-import { ITEMS, RECIPES, SKILLS, MISSIONS, NEO_MISSIONS, LOCATIONS, MELEE_COMBO, meleeReach, combatDisplace, distance, locationEntrance, missionPosition, nearTransit, playerBlocked, groundHeight, skillPoints,
+import { FILM_SETS, ITEMS, RECIPES, SKILLS, MISSIONS, NEO_MISSIONS, LOCATIONS, MELEE_COMBO, meleeReach, combatDisplace, distance, locationEntrance, missionPosition, nearTransit, playerBlocked, groundHeight, skillPoints,
   type AgentState, type ItemId, type SkillId, type SandboxState, type SandboxCommand, type SandboxThreat, type Vector3, type MissionDef, type CombatImpact, type CombatSkillId } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
 import type { WorldDynamics } from '../story/WorldDynamics.js';
@@ -11,10 +11,12 @@ export class SandboxSystem {
 
   constructor(private world: WorldState, private dynamics: WorldDynamics, seed = Date.now() >>> 0) {
     this.life = new NeoLifeSystem(world, dynamics, () => this.state);
+    this.life.film.lobby.onImpact = (impact, tick) => this.onImpact?.(impact, tick);
+    this.life.film.lobby.onHit = (actor, target, damage, tick) => { this.enterIfNeeded(actor); this.hit(actor, target, damage, tick); };
     this.state = { version: 1, seed, serial: 0, weather: 'clear', weatherUntil: world.simulationTick + 600,
       nextIncidentAt: world.simulationTick + 20, security: 25, corruption: 10, zion: 80, ending: 'open',
       profiles: {}, nodes: [], structures: [], threats: [], incidents: [], missions: {} };
-    for (const location of Object.values(LOCATIONS).filter(l => l.id !== 'downtown')) {
+    for (const location of Object.values(LOCATIONS).filter(l => l.id !== 'downtown' && !FILM_SETS[l.id])) {
       const entry = locationEntrance(location.id);
       for (const [kind, offset, name] of [['cache', 9, '物资箱'], ['terminal', -22, '数据终端'], ['phone', 18, '接入电话']] as const) {
         const position = { ...entry, x: entry.x + offset, z: entry.z + 8 };
@@ -36,6 +38,9 @@ export class SandboxSystem {
     this.state = structuredClone(saved);
     for (const node of defaults.nodes) if (!this.state.nodes.some(n => n.id === node.id)) this.state.nodes.push(node);
     for (const [id, progress] of Object.entries(defaults.missions)) this.state.missions[id] ??= progress;
+    this.life.film.restoreOfficeSpace();
+    this.life.film.restoreHotelSpace();
+    this.life.film.reconcileCast();
   }
   missionsFor(agent: AgentState) { return agent.id === 'neo' && this.state.neoLife ? this.state.neoLife.missions : this.state.missions; }
   private random(): number {
@@ -65,6 +70,7 @@ export class SandboxSystem {
   }
 
   command(agent: AgentState, command: SandboxCommand, tick: number): string {
+    if (agent.controller && command.kind === 'life' && command.target === 'film:retry') return this.life.film.command(agent, 'retry', tick);
     if (agent.status !== 'alive' || !agent.controller) return '先接入一个存活角色。';
     this.enterIfNeeded(agent);
     const profile = this.state.profiles[agent.id];
@@ -341,7 +347,7 @@ export class SandboxSystem {
         profile.trace = Math.max(0, profile.trace - (shelter ? 5 : 1));
         if (shelter) { agent.health = Math.min(agent.maxHealth, agent.health + (agent.isInMatrix || this.state.zion >= 30 ? 2 : 1) + profile.skills.survival); if (agent.mind) agent.mind.energy = Math.min(100, agent.mind.energy + 3); }
       }
-      if (!(agent.id === 'neo' && this.state.neoLife) && profile.trace >= 35 && profile.trace + this.state.security / 2 >= 80 && tick % 100 === 0 && !shelter && !this.state.threats.some(t => t.target === agent.id && !t.mission)) this.spawnThreat(agent, agent.isInMatrix ? this.state.corruption >= 65 ? 'smith' : 'agent' : 'sentinel', tick, 0);
+      if (!this.life.film.controls(agent) && !(agent.id === 'neo' && this.state.neoLife) && profile.trace >= 35 && profile.trace + this.state.security / 2 >= 80 && tick % 100 === 0 && !shelter && !this.state.threats.some(t => t.target === agent.id && !t.mission)) this.spawnThreat(agent, agent.isInMatrix ? this.state.corruption >= 65 ? 'smith' : 'agent' : 'sentinel', tick, 0);
       if (!profile.job) continue;
       if (distance(profile.job.position, agent.position) > 3) { delete profile.job; continue; }
       if (tick < profile.job.endsAt) continue;
@@ -392,6 +398,7 @@ export class SandboxSystem {
 
   private updateThreats(tick: number): void {
     for (const threat of [...this.state.threats]) {
+      if (threat.scene === 'm1_lobby' || threat.patrol) continue;
       if (threat.infection && tick >= threat.infection.nextAt) {
         const source = this.world.agents.get(threat.infection.source);
         if (tick > threat.infection.until || !source || source.status !== 'alive' || source.isInMatrix !== threat.matrix) delete threat.infection;
@@ -413,7 +420,7 @@ export class SandboxSystem {
         if (tick < threat.attackAt) continue;
         threat.attackAt = undefined;
         if (!meleeReach(threat.position, Math.atan2(dx, dz), target, 3.8, threat.matrix, this.state.structures)) continue;
-        const damage = threat.kind === 'training' ? 2 : threat.kind === 'smith' ? 12 : 6;
+        const damage = threat.kind === 'training' ? threat.character ? threat.combo === 2 ? 5 : 3 : 2 : threat.kind === 'smith' ? 12 : 6;
         if (escort) escort.health = Math.max(0, escort.health - damage);
         else {
           if (actor.activeEffects.some(e => ['dodge', 'agent_dodge', 'vision_flash', 'phase_shift'].includes(e.visualEffect))) continue;
@@ -425,34 +432,35 @@ export class SandboxSystem {
           actor.health = Math.max(threat.kind === 'training' ? 1 : 0, actor.health - (defended ? Math.ceil(damage / 3) : damage));
           this.onImpact?.({ source: threat.id, target: actor.id, position: { ...actor.position, y: actor.position.y + 2 },
             direction: { x: dx / Math.max(.01, length), y: 0, z: dz / Math.max(.01, length) }, damage: health - actor.health,
-            combo: 0, matrix: threat.matrix, downed: actor.health <= 0 }, tick);
+            combo: threat.combo ?? 0, matrix: threat.matrix, downed: actor.health <= 0 }, tick);
           delete this.state.profiles[actor.id].job;
           if (actor.health === 0) { actor.status = 'dead'; actor.velocity = { x: 0, y: 0, z: 0 }; actor.currentAction = null; }
         }
         continue;
       }
-      const step = threat.kind === 'smith' ? 4.5 : threat.kind === 'training' ? 2 : 3;
+      const step = threat.character === 'seraph' ? 3.4 : threat.kind === 'smith' ? 4.5 : threat.kind === 'training' ? 2 : 3;
       const approach = Math.min(step, Math.max(0, length - 2.7));
       const next = { ...threat.position, x: threat.position.x + dx / Math.max(1, length) * approach, z: threat.position.z + dz / Math.max(1, length) * approach };
-      const barrier = this.state.structures.find(s => s.kind === 'barricade' && s.matrix === threat.matrix && distance(s.position, next) < 8);
+      const barrier = this.state.structures.find(s => s.kind === 'barricade' && !s.film && s.matrix === threat.matrix && distance(s.position, next) < 8);
       if (barrier) { if (tick % 4 === 0) barrier.health -= 8; }
       else if (length > 2.7) {
-        if (!playerBlocked(next, threat.matrix)) threat.position = next;
+        if (!playerBlocked(next, threat.matrix, 1.1, this.state.structures)) threat.position = next;
         else {
           const sideX = { ...threat.position, x: next.x }; const sideZ = { ...threat.position, z: next.z };
-          if (!playerBlocked(sideX, threat.matrix)) threat.position = sideX;
-          if (!playerBlocked(sideZ, threat.matrix)) threat.position = { ...threat.position, z: sideZ.z };
+          if (!playerBlocked(sideX, threat.matrix, 1.1, this.state.structures)) threat.position = sideX;
+          if (!playerBlocked(sideZ, threat.matrix, 1.1, this.state.structures)) threat.position = { ...threat.position, z: sideZ.z };
         }
       }
-      if (distance(threat.position, target) > 3.3 || tick - threat.lastStrike < 5 || barrier) continue;
+      if (distance(threat.position, target) > 3.3 || tick - threat.lastStrike < (threat.character === 'seraph' ? 4 : threat.character === 'morpheus' ? 7 : 5) || barrier) continue;
       threat.lastStrike = tick;
-      threat.attackAt = tick + 1;
+      threat.combo = threat.character ? ((threat.combo ?? -1) + 1) % 3 : 0;
+      threat.attackAt = tick + (threat.character === 'morpheus' ? 2 : 1);
     }
     this.state.structures = this.state.structures.filter(s => s.health > 0);
-    this.state.threats = this.state.threats.filter(t => t.mission || t.incident || this.world.agents.get(t.target)?.controller && (this.state.profiles[t.target]?.trace ?? 0) > 20);
+    this.state.threats = this.state.threats.filter(t => t.scene || t.mission || t.incident || this.world.agents.get(t.target)?.controller && (this.state.profiles[t.target]?.trace ?? 0) > 20);
   }
   private spawnIncident(tick: number): void {
-    if (this.state.neoLife && this.world.agents.get('neo')?.controller) return;
+    if (this.state.neoLife?.journey || this.state.neoLife && this.world.agents.get('neo')?.controller) return;
     if (this.state.incidents.length >= 4) return;
     const living = [...this.world.agents.values()].filter(a => a.status === 'alive');
     const players = living.filter(a => a.controller);

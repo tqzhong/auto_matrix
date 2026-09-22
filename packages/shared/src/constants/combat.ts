@@ -30,6 +30,7 @@ export function combatDisplace(position: Vector3, direction: Vector3, amount: nu
 }
 
 export interface CombatImpact {
+  shot?: { from: Vector3; column?: number; surface: 'stone' | 'body' };
   source: string;
   target: string;
   position: Vector3;

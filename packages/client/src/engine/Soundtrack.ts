@@ -1,4 +1,4 @@
-import { NEO_CHAPTERS, NEO_MISSIONS, distance, type AgentState, type SandboxState } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, NEO_CHAPTERS, NEO_MISSIONS, distance, type AgentState, type SandboxState } from '@auto_matrix/shared';
 
 export const MUSIC = {
   ordinary: { mood: '日常生活 · 让城市和生活保持轻松', level: .55 },
@@ -57,6 +57,11 @@ export function isActionMusic(cue: MusicCue): boolean {
 export function musicForScene({ player, sandbox, time, matrix }: MusicScene): MusicCue {
   if (!player) return matrix ? 'matrix' : 'zion';
   if (player.status !== 'alive') return 'oracle';
+  const journey = sandbox?.neoLife?.journey;
+  if (journey?.actor === player.id) {
+    const scene = FILM_SCENE_BY_ID[journey.visiting ?? journey.scene];
+    if (scene?.set === player.currentLocation) return scene.music;
+  }
   const life = player.id === 'neo' ? sandbox?.neoLife : undefined;
   const chapter = life && NEO_CHAPTERS[life.chapter];
   const threats = sandbox?.threats.filter(threat =>
@@ -106,7 +111,7 @@ export class MusicDirector {
   }
   update(scene: MusicScene, now: number): MusicCue {
     const life = scene.player?.id === 'neo' ? scene.sandbox?.neoLife : undefined;
-    const identity = `${scene.player?.id ?? 'observer'}:${scene.player?.isInMatrix ?? scene.matrix}:${scene.player?.status ?? ''}:${life?.cycle}:${life?.chapter}`;
+    const identity = `${scene.player?.id ?? 'observer'}:${scene.player?.isInMatrix ?? scene.matrix}:${scene.player?.status ?? ''}:${life?.cycle}:${life?.chapter}:${scene.sandbox?.neoLife?.journey?.scene}:${scene.sandbox?.neoLife?.journey?.visiting}`;
     const changed = identity !== this.identity;
     if (changed) { this.identity = identity; this.combatUntil = 0; }
     let next = musicForScene(scene);

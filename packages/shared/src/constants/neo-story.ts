@@ -83,14 +83,14 @@ export const NEO_CHAPTERS: NeoChapter[] = [
       { id: 'remember', label: '记住她，让这段关系继续影响行动', response: '你带着失去继续向前，决定争取一个不再重复牺牲的明天。', effect: { care: 2 } },
       { id: 'promise', label: '把未完成的承诺带到谈判桌上', response: '承诺无法抹去伤痛，却能指引接下来的一步。机器的核心在面前亮起。', effect: { trust: 1, agency: 1 } },
     ] },
-  { id: 'pact', film: 3, title: '共同的威胁', location: 'machine_city', speaker: 'architect', theme: '敌人能否成为对话者？', text: '你向机器核心指出 Smith 已超出双方控制。机器可以把你接回矩阵，你则提出结束战争的可能。', objective: '与机器核心建立临时协议。', mission: 'machine_pact' },
+  { id: 'pact', film: 3, title: '共同的威胁', location: 'machine_city', speaker: 'deus_ex_machina', theme: '敌人能否成为对话者？', text: '你向机器核心指出 Smith 已超出双方控制。机器可以把你接回矩阵，你则提出结束战争的可能。', objective: '与机器核心建立临时协议。', mission: 'machine_pact' },
   { id: 'final', film: 3, title: '雨中的最后一战', location: 'times_square', speaker: 'smith', theme: '胜利一定是压倒对方吗？', text: '此刻才是漫天暴雨。整个街区都是 Smith，先知也已被他同化。你必须走到这场冲突的尽头。', objective: '击败 Smith 核心与复制体，然后在终端确认最后的行动。', mission: 'smith_final' },
-  { id: 'source', film: 3, title: '与矩阵本体对话', location: 'machine_city', speaker: 'architect', theme: '相互依赖是否排除自由？',
+  { id: 'source', film: 3, title: '与矩阵本体对话 · 游戏延伸', location: 'machine_city', speaker: 'deus_ex_machina', theme: '相互依赖是否排除自由？',
     text: '你允许连接抵达 Smith 的内部，机器清除了失控的复制。矩阵本体问：若人类与机器依然彼此依赖，新的和平应当以什么为基础？战斗的结果不能代替这个回答。', objective: '回到机器核心，讨论和平的基础。', choices: [
       { id: 'consent', label: '依赖可以存在，留下必须出于知情选择', response: '核心同意继续讨论退出机制，但要求你说明怎样保护选择留下的人与程序。', effect: { agency: 2, care: 1 } },
       { id: 'reciprocity', label: '承认彼此的生存，建立互相约束的协议', response: '核心承认消灭对方并不能解决依赖。它等待你提出可持续的规则。', effect: { trust: 2, care: 1 } },
     ] },
-  { id: 'terms', film: 3, title: '谁有权选择醒来', location: 'machine_city', speaker: 'architect', theme: '自由不是替所有人作同一个选择',
+  { id: 'terms', film: 3, title: '谁有权选择醒来 · 游戏延伸', location: 'machine_city', speaker: 'deus_ex_machina', theme: '自由不是替所有人作同一个选择',
     text: '机器核心把规则交到你面前。你要面对工作过的城市、尚在其中的朋友，以及那些拥有关系与愿望的程序。你之前对先知、Sati 和同伴的回答，也成为这次谈判的一部分。', objective: '确认完整协议。此处决定本轮结局。', choices: [
       { id: 'peace', label: '停战；让知情的人自由选择留下或离开', response: '机器撤出锡安。退出权和程序的生存边界被写入协议，和平需要双方继续维护。', effect: { care: 1, trust: 1 } },
       { id: 'reboot', label: '分阶段重载，以稳定换取受监督的开放', response: '系统重载并保留退出试点。秩序较稳，但尚未获得退出机会的人仍在等待。', effect: { trust: 1 } },
@@ -103,7 +103,7 @@ export const NEO_CHAPTERS: NeoChapter[] = [
 ];
 
 export const NEO_MISSIONS = [...MISSIONS, ...NEO_ENCOUNTERS];
-export const NEO_CAST = ['neo', 'trinity', 'morpheus', 'oracle', 'architect', 'smith', 'sati', 'seraph', 'keymaker', 'merovingian'];
+export const NEO_CAST = ['neo', 'trinity', 'morpheus', 'oracle', 'architect', 'deus_ex_machina', 'smith', 'sati', 'seraph', 'keymaker', 'merovingian'];
 export const PHILOSOPHY_NAMES: Record<Philosophy, string> = { agency: '自主判断', care: '关怀生命', trust: '相互信任' };
 export const NEO_ANOMALIES = [
   { id: 'clock', title: '慢了三秒的时钟', places: ['metacortex_office', 'neo_apartment'], text: '墙上的秒针连续走过同一个位置，电脑时间却没有回退。可能只是你太累，也可能值得记下来。', inspect: '你把两只时钟放在一起。下一次回退时，桌面程序的日志也少了一行。' },

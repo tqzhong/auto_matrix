@@ -3,6 +3,8 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { AgentState } from '@auto_matrix/shared';
 import { advanceMotion, newMotion, type MotionInput, type MotionState } from './CharacterMotion.js';
 import { HERO_IDS, HeroModels, type HeroId, type HeroRig } from './HeroModel.js';
+import { SpoonModel } from './SpoonModel.js';
+import { PhoneModel } from './PhoneModel.js';
 
 interface Look {
   face?: number;
@@ -42,6 +44,18 @@ export interface CharacterRig {
   motion: MotionState;
   smallDetails: THREE.Group;
   hero?: HeroRig;
+  weapons?: THREE.Group[];
+  spoon?: SpoonModel;
+  phone?: PhoneModel;
+  rifle?: boolean;
+  muzzleIndex?: number;
+}
+
+export function weaponMuzzle(rig: CharacterRig): THREE.Vector3 | undefined {
+  if (!rig.weapons?.length) return;
+  const gun = rig.weapons[(rig.muzzleIndex ?? 0) % rig.weapons.length]; rig.muzzleIndex = (rig.muzzleIndex ?? 0) + 1;
+  gun.updateWorldMatrix(true, false);
+  return gun.localToWorld(new THREE.Vector3(0, -(rig.rifle ? 1.2 : .5) - .115, 0));
 }
 
 // All residents share anatomical proportions and joint animation. The four
@@ -51,6 +65,8 @@ export class CharacterModels {
   private materials = new Set<THREE.Material>();
   private textures = new Set<THREE.Texture>();
   private skeletons = new Set<THREE.Skeleton>();
+  private spoons = new Set<SpoonModel>();
+  private phones = new Set<PhoneModel>();
   private sphere = this.geometry(new THREE.SphereGeometry(1, 16, 12));
   private cylinder = this.geometry(new THREE.CylinderGeometry(1, 1, 1, 12));
   private box = this.geometry(new THREE.BoxGeometry(1, 1, 1));
@@ -177,9 +193,10 @@ export class CharacterModels {
     const look: Look = HERO_LOOKS[state.id] ?? {
       width: 1, shoulders: 0.6, waist: 0.39, hips: 0.43, skin: state.appearance.headColor,
       cloth: state.appearance.clothing, leather: state.faction === 'zion', coat: false,
-      hair: 'short', glasses: state.faction === 'civilians' || state.faction === 'oracle' ? 'none' : 'square',
+      hair: state.id === 'spoon_boy' ? 'bald' : 'short', glasses: state.faction === 'civilians' || state.faction === 'oracle' ? 'none' : 'square',
     };
     const root = new THREE.Group(); const detail = this.joint(root, 0, 0);
+    if (state.id === 'spoon_boy') { root.scale.setScalar(.73); look.cloth = '#d5c7ac'; look.skin = '#d8b99b'; }
     const torso = this.joint(detail, 0, 1.86); const smallDetails = this.joint(detail, 0, 0);
     const skin = this.material(new THREE.MeshStandardMaterial({ color: look.skin, roughness: 0.64, metalness: 0, bumpMap: this.fabric, bumpScale: 0.0012 }));
     if (look.face !== undefined) {
@@ -273,10 +290,13 @@ export class CharacterModels {
       }
     }
     const distant = this.makeDistant(look, root);
-    const rig: CharacterRig = { root, detail, distant, torso, head, shoulders, elbows, fingers, hips, knees, ankles, tails, cloth: clothPanels, motion: newMotion(), smallDetails };
-    if (HERO_IDS.includes(state.id as HeroId)) {
-      this.heroes.create(state.id as HeroId).then(model => {
+    const rig: CharacterRig = { root, detail, distant, torso, head, shoulders, elbows, fingers, hips, knees, ankles, tails, cloth: clothPanels, motion: newMotion(), smallDetails, rifle: state.id === 'film_soldier' };
+    const guard = state.id === 'agent_jones' || state.id === 'agent_brown' ? state.id : undefined;
+    const support = state.id === 'switch' || state.id === 'apoc' ? state.id : undefined;
+    if (HERO_IDS.includes(state.id as HeroId) || guard || support) {
+      this.heroes.create(guard ? 'smith' : support === 'switch' ? 'trinity' : support === 'apoc' ? 'neo' : state.id as HeroId, guard, support).then(model => {
         if (!model) return;
+        rig.weapons?.forEach(gun => gun.removeFromParent()); rig.weapons = undefined;
         for (const child of detail.children) child.visible = false;
         detail.add(model.root); rig.hero = model;
       }).catch(error => console.warn(`${state.id} asset could not load; retaining the procedural character.`, error));
@@ -335,6 +355,38 @@ export class CharacterModels {
     const near = distance < 100;
     rig.detail.visible = near; rig.distant.visible = !near;
     if (!near) return;
+    if (input.armed && !rig.weapons) {
+      const material = this.material(new THREE.MeshStandardMaterial({ color: 0x242b2c, metalness: .75, roughness: .28 }));
+      rig.weapons = (rig.rifle ? [0] : [0, 1]).map(i => {
+        const gun = new THREE.Group(); const length = rig.rifle ? 1.2 : .5;
+        this.mesh(gun, this.box, material, [0, -length / 2, 0], [.12, length, .14]);
+        this.mesh(gun, this.cylinder, material, [0, -length, 0], [.045, .23, .045]);
+        this.mesh(gun, this.box, material, [0, -.09, .13], [.105, .18, .27]);
+        this.mesh(gun, this.box, material, [0, -length * .5, .08], [.08, .1, rig.rifle ? .35 : .06]);
+        gun.position.set(0, -.08, .03);
+        const parent = rig.hero?.bones.get(i ? 'wrist_L' : 'wrist_R') ?? rig.elbows[i];
+        if (!rig.hero) gun.position.y -= .69;
+        parent.add(gun); return gun;
+      });
+    }
+    rig.weapons?.forEach(gun => { gun.visible = Boolean(input.armed); });
+    if (input.spoon !== undefined && !rig.spoon) {
+      rig.spoon = new SpoonModel(); this.spoons.add(rig.spoon);
+      rig.spoon.root.name = 'held-spoon';
+      rig.spoon.root.scale.setScalar(.55);
+      const parent = rig.hero?.bones.get('wrist_R') ?? rig.elbows[0];
+      rig.spoon.root.position.set(0, rig.hero ? -.15 : -.84, .05); rig.spoon.root.rotation.x = 2.17;
+      parent.add(rig.spoon.root);
+    }
+    if (rig.spoon) { rig.spoon.root.visible = input.spoon !== undefined; rig.spoon.setBend(input.spoon ?? 0); }
+    if (input.phone && rig.hero && !rig.phone) {
+      rig.phone = new PhoneModel(); this.phones.add(rig.phone);
+      rig.phone.root.position.set(.09, -.19, 0); rig.phone.root.rotation.set(0, Math.PI / 2, Math.PI); rig.hero.bones.get('wrist_R')!.add(rig.phone.root);
+    }
+    if (rig.phone) {
+      rig.phone.root.visible = Boolean(input.phone && (input.phone.phase !== 'pickup' || input.phone.elapsed >= .65));
+      rig.phone.update(input.phone?.phase === 'answering' ? Math.min(1, input.phone.elapsed / .4) : input.phone?.phase === 'connected' ? 1 : 0);
+    }
     const pose = advanceMotion(rig.motion, input, delta);
     if (rig.hero) { this.heroes.animate(rig.hero, pose, rig.motion, input, delta); return; }
     rig.torso.position.y = pose.hipHeight;
@@ -343,8 +395,8 @@ export class CharacterModels {
     rig.head.rotation.set(-pose.lean * .6, pose.headTurn, -pose.roll * .5);
     for (let i = 0; i < 2; i++) {
       rig.hips[i].position.y = pose.hipHeight;
-      rig.hips[i].rotation.x = pose.legs[i].hip;
-      rig.knees[i].rotation.x = pose.legs[i].knee;
+      rig.hips[i].rotation.set(input.floorSeated ? -1.2 : pose.legs[i].hip, input.floorSeated ? (i ? 1 : -1) * .4 : 0, input.floorSeated ? (i ? 1 : -1) * .6 : 0);
+      rig.knees[i].rotation.x = input.floorSeated ? 2.4 : pose.legs[i].knee;
       rig.ankles[i].rotation.x = pose.legs[i].ankle;
       rig.shoulders[i].rotation.set(pose.arms[i].shoulder, 0, pose.arms[i].outward);
       rig.elbows[i].rotation.x = pose.arms[i].elbow;
@@ -367,6 +419,8 @@ export class CharacterModels {
   }
 
   dispose(): void {
+    this.phones.forEach(phone => phone.dispose());
+    this.spoons.forEach(spoon => spoon.dispose());
     this.heroes.dispose();
     this.geometries.forEach(geometry => geometry.dispose()); this.materials.forEach(material => material.dispose()); this.textures.forEach(texture => texture.dispose()); this.skeletons.forEach(skeleton => skeleton.dispose());
   }

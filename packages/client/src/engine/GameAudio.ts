@@ -37,6 +37,7 @@ export class GameAudio {
   private playing = false;
   private mixValues = new Map<GainNode, number>();
   private dialogueTimer = 0;
+  private engineSound?: { source: OscillatorNode; noise: AudioBufferSourceNode; filter: BiquadFilterNode; gain: GainNode };
   readonly settings: AudioSettings;
   onChange?: () => void;
 
@@ -116,6 +117,109 @@ export class GameAudio {
   retry(): void { this.failed = false; void this.resume(); }
   effects(): { context: AudioContext; output: GainNode } | undefined {
     if (this.context?.state === 'running' && this.effectsBus && !document.hidden && !this.settings.effectsMuted && this.settings.effects > 0) return { context: this.context, output: this.effectsBus };
+  }
+  ceramicBreak(): void {
+    const bus = this.effects(); if (!bus) return;
+    const { context: ctx, output } = bus;
+    for (const [i, frequency] of [760, 1310, 2290, 3580, 4910].entries()) {
+      const tone = ctx.createOscillator(); const gain = ctx.createGain(); const start = ctx.currentTime + i * .018;
+      tone.type = 'triangle'; tone.frequency.setValueAtTime(frequency, start); tone.frequency.exponentialRampToValueAtTime(frequency * .77, start + .16);
+      gain.gain.setValueAtTime(.018 / (1 + i * .3), start); gain.gain.exponentialRampToValueAtTime(.0001, start + .16 + i * .035);
+      tone.connect(gain); gain.connect(output); tone.start(start); tone.stop(start + .38);
+      tone.onended = () => { tone.disconnect(); gain.disconnect(); };
+    }
+  }
+  phoneSound(slider: boolean): void {
+    const bus = this.effects(); if (!bus) return;
+    const { context: ctx, output } = bus;
+    for (let i = 0; i < (slider ? 1 : 6); i++) {
+      const tone = ctx.createOscillator(); const gain = ctx.createGain(); const at = ctx.currentTime + i * .105;
+      tone.type = slider ? 'triangle' : 'square'; tone.frequency.setValueAtTime(slider ? 2300 : i % 2 ? 880 : 660, at);
+      if (slider) tone.frequency.exponentialRampToValueAtTime(120, at + .06);
+      gain.gain.setValueAtTime(.0001, at); gain.gain.linearRampToValueAtTime(slider ? .035 : .016, at + .006);
+      gain.gain.exponentialRampToValueAtTime(.0001, at + (slider ? .07 : .085));
+      tone.connect(gain); gain.connect(output); tone.start(at); tone.stop(at + .1);
+      tone.onended = () => { tone.disconnect(); gain.disconnect(); };
+    }
+  }
+  windowSound(wind: boolean): void {
+    const bus = this.effects(); if (!bus) return;
+    const { context: ctx, output } = bus; const duration = wind ? 3 : .16;
+    const buffer = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * duration), ctx.sampleRate); const data = buffer.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    const source = ctx.createBufferSource(); source.buffer = buffer;
+    const filter = ctx.createBiquadFilter(); filter.type = wind ? 'lowpass' : 'bandpass'; filter.frequency.value = wind ? 720 : 2100; filter.Q.value = wind ? .6 : 3;
+    const gain = ctx.createGain(); const at = ctx.currentTime;
+    gain.gain.setValueAtTime(.0001, at); gain.gain.linearRampToValueAtTime(wind ? .13 : .08, at + (wind ? .35 : .008));
+    gain.gain.exponentialRampToValueAtTime(.0001, at + duration);
+    source.connect(filter); filter.connect(gain); gain.connect(output); source.start(at);
+    source.onended = () => { source.disconnect(); filter.disconnect(); gain.disconnect(); };
+  }
+  interrogationSound(kind: 'file' | 'seal' | 'table' | 'tracker'): void {
+    const bus = this.effects(); if (!bus) return;
+    const { context: ctx, output } = bus; const duration = kind === 'seal' ? 1.9 : kind === 'tracker' ? 2.4 : .48;
+    const buffer = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * duration), ctx.sampleRate); const data = buffer.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (kind === 'tracker' ? .5 + Math.sin(i / ctx.sampleRate * 90) * .5 : 1);
+    const source = ctx.createBufferSource(); source.buffer = buffer;
+    const filter = ctx.createBiquadFilter(); filter.type = 'bandpass'; filter.frequency.value = kind === 'file' ? 2400 : kind === 'table' ? 420 : kind === 'seal' ? 220 : 1300; filter.Q.value = kind === 'table' ? 9 : 1.2;
+    const gain = ctx.createGain(); const at = ctx.currentTime;
+    gain.gain.setValueAtTime(.0001, at); gain.gain.linearRampToValueAtTime(kind === 'table' ? .2 : .075, at + (kind === 'seal' ? .4 : .015)); gain.gain.exponentialRampToValueAtTime(.0001, at + duration);
+    source.connect(filter); filter.connect(gain); gain.connect(output); source.start(at);
+    source.onended = () => { source.disconnect(); filter.disconnect(); gain.disconnect(); };
+  }
+  meetingSound(kind: 'door' | 'pump' | 'release' | 'wiper'): void {
+    const bus = this.effects(); if (!bus) return;
+    const { context: ctx, output } = bus; const duration = kind === 'pump' ? .42 : .28;
+    const buffer = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * duration), ctx.sampleRate); const samples = buffer.getChannelData(0);
+    for (let i = 0; i < samples.length; i++) samples[i] = Math.random() * 2 - 1;
+    const source = ctx.createBufferSource(); source.buffer = buffer;
+    const filter = ctx.createBiquadFilter(); filter.type = 'bandpass'; filter.frequency.value = kind === 'door' ? 230 : kind === 'pump' ? 850 : kind === 'wiper' ? 1600 : 2100; filter.Q.value = kind === 'door' ? 4 : .9;
+    const gain = ctx.createGain(); const at = ctx.currentTime;
+    gain.gain.setValueAtTime(.0001, at); gain.gain.linearRampToValueAtTime(kind === 'door' ? .18 : kind === 'wiper' ? .025 : .085, at + .015); gain.gain.exponentialRampToValueAtTime(.0001, at + duration);
+    source.connect(filter); filter.connect(gain); gain.connect(output); source.start(at);
+    source.onended = () => { source.disconnect(); filter.disconnect(); gain.disconnect(); };
+  }
+  lafayetteSound(kind: 'thunder' | 'knock' | 'handshake' | 'door'): void {
+    const bus = this.effects(); if (!bus) return;
+    const { context: ctx, output } = bus; const duration = kind === 'thunder' ? 2.8 : kind === 'door' ? 1.15 : kind === 'knock' ? .14 : .18;
+    const buffer = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * duration), ctx.sampleRate); const samples = buffer.getChannelData(0);
+    for (let i = 0; i < samples.length; i++) {
+      const t = i / ctx.sampleRate;
+      const envelope = kind === 'thunder' ? Math.exp(-t * 1.35) * (.55 + .45 * Math.sin(t * 19) ** 2) : Math.exp(-t * (kind === 'door' ? 2.2 : kind === 'knock' ? 30 : 18));
+      samples[i] = (Math.random() * 2 - 1) * envelope;
+    }
+    const source = ctx.createBufferSource(); source.buffer = buffer;
+    const filter = ctx.createBiquadFilter(); filter.type = kind === 'thunder' ? 'lowpass' : 'bandpass';
+    filter.frequency.value = kind === 'thunder' ? 190 : kind === 'door' ? 420 : kind === 'knock' ? 260 : 680; filter.Q.value = kind === 'handshake' ? 2.8 : kind === 'knock' ? 3.2 : .75;
+    const gain = ctx.createGain(); const at = ctx.currentTime;
+    gain.gain.setValueAtTime(.0001, at); gain.gain.linearRampToValueAtTime(kind === 'thunder' ? .24 : kind === 'door' ? .12 : kind === 'knock' ? .2 : .16, at + .012); gain.gain.exponentialRampToValueAtTime(.0001, at + duration);
+    source.connect(filter); filter.connect(gain); gain.connect(output); source.start(at);
+    if (kind === 'door') {
+      const creak = ctx.createOscillator(); const creakGain = ctx.createGain(); creak.type = 'sawtooth'; creak.frequency.setValueAtTime(92, at); creak.frequency.exponentialRampToValueAtTime(48, at + .85);
+      creakGain.gain.setValueAtTime(.0001, at); creakGain.gain.linearRampToValueAtTime(.018, at + .12); creakGain.gain.exponentialRampToValueAtTime(.0001, at + 1);
+      creak.connect(creakGain); creakGain.connect(output); creak.start(at); creak.stop(at + 1.02); creak.onended = () => { creak.disconnect(); creakGain.disconnect(); };
+    }
+    source.onended = () => { source.disconnect(); filter.disconnect(); gain.disconnect(); };
+  }
+  carEngine(speed?: number): void {
+    const bus = this.effects();
+    if (speed === undefined || !bus) {
+      if (this.engineSound) { const sound = this.engineSound; sound.source.stop(); sound.noise.stop(); sound.source.disconnect(); sound.noise.disconnect(); sound.filter.disconnect(); sound.gain.disconnect(); this.engineSound = undefined; }
+      return;
+    }
+    const { context: ctx, output } = bus;
+    if (!this.engineSound) {
+      const source = ctx.createOscillator(); source.type = 'triangle';
+      const filter = ctx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 210;
+      const gain = ctx.createGain(); gain.gain.value = 0;
+      const buffer = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate); const samples = buffer.getChannelData(0);
+      for (let i = 0; i < samples.length; i++) samples[i] = (Math.random() * 2 - 1) * .32;
+      const noise = ctx.createBufferSource(); noise.buffer = buffer; noise.loop = true;
+      source.connect(filter); noise.connect(filter); filter.connect(gain); gain.connect(output); source.start(); noise.start();
+      this.engineSound = { source, noise, filter, gain };
+    }
+    this.engineSound.source.frequency.setTargetAtTime(42 + speed * 1.15, ctx.currentTime, .12);
+    this.engineSound.gain.gain.setTargetAtTime(.025 + speed * .0012, ctx.currentTime, .12);
   }
   async recordingAudio(): Promise<MediaStream | undefined> {
     await this.resume(); return this.context?.state === 'running' ? this.recording?.stream : undefined;
@@ -223,7 +327,7 @@ export class GameAudio {
   }
   dispose(): void {
     if (this.disposed) return;
-    this.disposed = true; this.request++; this.abort?.abort(); window.clearTimeout(this.dialogueTimer);
+    this.disposed = true; this.request++; this.abort?.abort(); window.clearTimeout(this.dialogueTimer); this.carEngine();
     window.removeEventListener('pointerdown', this.unlock); window.removeEventListener('keydown', this.unlock);
     document.removeEventListener('visibilitychange', this.visibility);
     for (const voice of this.voices) voice.dispose();

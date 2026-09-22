@@ -1,4 +1,4 @@
-import { COMBAT_SKILLS, playerSkills, neoSkillUnlocked, CHARACTERS, LOCATIONS, distance, type AgentState, type SimulationState, type WorldEvent, type NeoLifeState } from '@auto_matrix/shared';
+import { COMBAT_SKILLS, playerSkills, neoSkillUnlocked, CHARACTERS, LOCATIONS, filmSetAt, filmObstacles, distance, type AgentState, type SimulationState, type WorldEvent, type NeoLifeState } from '@auto_matrix/shared';
 import { FACTION_COLORS } from '../agents/AgentRenderer.js';
 
 const escape = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]!));
@@ -25,6 +25,7 @@ export class PlayerExperience {
   private menuOpen = false;
   private lastRender = 0;
   private lastEvent = '';
+  private filmPlaying = false;
   private tipUntil = 0;
 
   constructor(private actions: PlayerExperienceActions) {
@@ -54,7 +55,7 @@ export class PlayerExperience {
         <div id="game-dialogue" class="game-dialogue hidden"><span></span><p></p></div>
         <div class="game-vitals"><div class="player-name"><span id="player-initial">N</span><div><h2 id="player-name">NEO</h2><small id="player-identity">尼奥 / 尚未觉醒</small></div><span class="vital-world">CONNECTED</span></div><div class="player-health"><span>生命</span><div><i id="player-health"></i></div><b id="player-health-value">100</b></div><div class="player-energy"><span>精力</span><div><i id="player-energy"></i></div></div>${[0, 1].map(slot => `<button class="player-ability" data-skill="${slot}"><kbd>${slot ? 'C' : 'Q'}</kbd><span><b id="player-skill-${slot}">角色技能</b><em id="skill-detail-${slot}"></em></span><small id="skill-status-${slot}">就绪</small></button>`).join('')}</div>
         <div class="game-map"><div><span>LOCAL SCAN</span><span id="game-population">74 SIGNALS</span></div><canvas id="game-minimap" width="360" height="230" aria-label="角色附近地图"></canvas><p id="game-map-caption">↑ 当前朝向 <span>• 锡安　• 居民　• 特工</span></p></div>
-        <div class="game-controls"><span><kbd>W A S D</kbd> 移动</span><span><kbd>Shift</kbd> 奔跑</span><span><kbd>Space</kbd> 跳跃</span><span><kbd>E</kbd> 交谈</span><span><kbd>F / 左键</kbd> 连击</span><span><kbd>X</kbd> 闪避</span><span><kbd>Q / C</kbd> 技能</span><span><kbd>V</kbd> <span id="view-label">第一人称</span></span><span><kbd>R</kbd> 出口接入</span></div>
+        <div class="game-controls"><span><kbd>W A S D</kbd> 移动</span><span><kbd>Shift</kbd> 奔跑</span><span><kbd>Space</kbd> 跳跃</span><span><kbd>E</kbd> 交谈</span><span><kbd id="attack-keys">F / 左键</kbd> <span id="attack-label">连击</span></span><span><kbd>X</kbd> 闪避</span><span><kbd>Q / C</kbd> 技能</span><span><kbd>V</kbd> <span id="view-label">第一人称</span></span><span><kbd>R</kbd> <span id="r-label">出口接入</span></span></div>
         <div id="mouse-hint" class="mouse-hint">点击画面锁定鼠标 · F 连击，锁定后也可用左键 · 右键观察 · Esc 释放</div>
         <div id="player-death" class="player-death hidden"><span>SIGNAL LOST</span><h2>连接已中断。</h2><p>重建角色会恢复生命，并保留已有的记忆与关系。</p><button id="death-rebuild" class="enter-world">重建这个角色 ↗</button><button id="death-choose" class="observe-link">选择另一条故事线 ↗</button></div>
       </section>
@@ -130,6 +131,20 @@ export class PlayerExperience {
     if (performance.now() > this.tipUntil) this.el('play-tip').classList.add('hidden');
     if (this.menuOpen && performance.now() - this.lastRender > 1000) this.renderRoster();
     const player = this.controlled ? agents[this.controlled] : undefined;
+    const driving = Boolean(player?.currentAction?.parameters.riding);
+    const performing = Boolean(player?.currentAction?.parameters.meeting || player?.currentAction?.parameters.interrogation || player?.currentAction?.parameters.pills || player?.currentAction?.parameters.welcome || player?.currentAction?.parameters.filmPose || player?.currentAction?.parameters.spoon !== undefined || player?.currentAction?.parameters.vase !== undefined);
+    document.body.classList.toggle('film-driving', driving);
+    document.body.classList.toggle('film-performing', performing);
+    document.body.classList.toggle('film-pill-scene', Boolean(player?.currentAction?.parameters.pills));
+    document.body.classList.toggle('film-interrogation-scene', Boolean(player?.currentAction?.parameters.interrogation));
+    document.body.classList.toggle('film-meeting-scene', Boolean(player?.currentAction?.parameters.meeting));
+    this.filmPlaying = Boolean(player && neoLife?.journey?.actor === player.id);
+    const armed = Boolean(this.filmPlaying && neoLife?.journey?.scene === 'm1_lobby' && !neoLife.journey.visiting);
+    this.el('attack-keys').textContent = armed ? '左键 / T' : 'F / 左键';
+    this.el('attack-label').textContent = armed ? '射击 · F 近战' : '连击';
+    this.el('r-label').textContent = armed ? '换弹' : '出口接入';
+    this.el('mouse-hint').textContent = armed ? '点击锁定鼠标 · 朝向辅助瞄准 · 左键 / T 射击 · R 换弹 · 右键观察' : '点击画面锁定鼠标 · F 连击，锁定后也可用左键 · 右键观察 · Esc 释放';
+    if (driving) this.el('mouse-hint').textContent = 'W 加速 · S 刹车 · A / D 转向 · V 切换视角 · J 手记';
     document.body.classList.toggle('neo-daily', Boolean(player?.id === 'neo' && neoLife && !player.isAwakened));
     if (!player) return;
     this.el('player-name').textContent = player.name.toUpperCase();
@@ -143,6 +158,10 @@ export class PlayerExperience {
     this.el('game-population').textContent = `${simulation.population} SIGNALS`;
     this.el('game-pause').textContent = simulation.running ? 'Ⅱ' : '▶';
     this.el('player-death').classList.toggle('hidden', player.status !== 'dead');
+    this.el('death-rebuild').textContent = this.filmPlaying ? '从剧情检查点重试 ↗' : '重建这个角色 ↗';
+    this.el('player-death').querySelector('p')!.textContent = this.filmPlaying ? '恢复生命并返回当前目标，已完成的剧情会保留。' : '重建角色会恢复生命，并保留已有的记忆与关系。';
+    this.el('game-event').querySelector('.eyebrow')!.textContent = this.filmPlaying ? 'SCENE MEMORY' : 'SOMEWHERE IN THE CITY';
+    if (this.filmPlaying) this.el('game-event').querySelector('p')!.textContent = neoLife!.journey!.lastText;
     playerSkills(player).forEach((id, slot) => {
       const skill = COMBAT_SKILLS[id]; const cooldown = player.combatCooldowns?.[id] ?? 0;
       const locked = player.id === 'neo' && !neoSkillUnlocked(neoLife, slot);
@@ -150,7 +169,7 @@ export class PlayerExperience {
       this.el(`skill-detail-${slot}`).textContent = skill.description;
       this.el(`skill-status-${slot}`).textContent = locked ? '剧情解锁' : skill.matrixOnly && !player.isInMatrix ? '矩阵内' : cooldown > 0 ? `${Math.ceil(cooldown)}s` : '就绪';
       const button = this.root.querySelector<HTMLButtonElement>(`[data-skill="${slot}"]`)!;
-      button.disabled = locked || cooldown > 0 || !simulation.running || player.status !== 'alive' || skill.matrixOnly && !player.isInMatrix;
+      button.disabled = driving || locked || cooldown > 0 || !simulation.running || player.status !== 'alive' || skill.matrixOnly && !player.isInMatrix;
       button.title = skill.description;
       button.style.setProperty('--cooldown', `${cooldown / skill.cooldown * 100}%`);
     });
@@ -158,7 +177,7 @@ export class PlayerExperience {
     document.body.classList.toggle('bullet-time', player.activeEffects.some(e => e.visualEffect === 'slow_motion'));
     const nearby = Object.values(agents).filter(a => a.id !== player.id && a.status === 'alive' && a.isInMatrix === player.isInMatrix && distance(a.position, player.position) < 14)
       .sort((a, b) => distance(a.position, player.position) - distance(b.position, player.position));
-    this.el('game-interaction').classList.toggle('hidden', nearby.length === 0 || player.status === 'dead');
+    this.el('game-interaction').classList.toggle('hidden', nearby.length === 0 || player.status === 'dead' || Boolean(player.currentAction?.parameters.riding));
     this.el('game-interaction').querySelector('span')!.textContent = nearby[0] ? `与 ${nearby[0].name} 交谈` : '';
     this.el('game-objective').textContent = player.isAwakened ? '你会怎样改变这个世界？' : '寻找现实背后的真相';
     this.el('game-objective-copy').textContent = player.isAwakened ? '结识同伴、探索城市，或前往地铁站寻找出口。' : `怀疑 ${Math.round(player.mind?.suspicion ?? 0)}% · 目击异常，与可信的觉醒者交谈。`;
@@ -171,6 +190,7 @@ export class PlayerExperience {
     this.el('character-grid').innerHTML = agents.map(agent => `<button class="character-card" data-play="${escape(agent.id)}" style="--role-color:${FACTION_COLORS[agent.faction] ?? '#b1ccab'}"><div class="character-card-top"><span>${escape(agent.name[0])}</span><small>${agent.isInMatrix ? 'MATRIX' : 'REAL WORLD'}</small><b>↗</b></div><h3>${escape(agent.name)}</h3><p class="roster-skills">${playerSkills(agent).map(id => COMBAT_SKILLS[id].name).join(' / ')}</p><p>${escape(CHARACTERS[agent.id]?.nameCn ?? '')} · ${escape(FACTIONS[agent.faction] ?? agent.faction)}</p><div class="character-card-bottom"><span>${agent.status !== 'alive' ? '重建并接入' : agent.id === this.controlled ? '返回当前角色' : agent.controller ? '在此页面继续' : agent.id === this.lastPlayed ? '继续上次进度' : agent.isAwakened ? '已觉醒' : '未觉醒'}</span><span>${escape(LOCATIONS[agent.currentLocation]?.nameCn ?? '')}</span></div></button>`).join('') || '<p>没有匹配的角色。</p>';
   }
   event(event: WorldEvent): void {
+    if (this.filmPlaying) return;
     if (event.id === this.lastEvent || event.importance < 7) return;
     this.lastEvent = event.id;
     this.el('game-event').querySelector('p')!.textContent = `${event.title ?? event.description} · ${LOCATIONS[event.location]?.nameCn ?? event.location}`;
@@ -191,6 +211,15 @@ export class PlayerExperience {
     const canvas = this.el<HTMLCanvasElement>('game-minimap'); const ctx = canvas.getContext('2d')!;
     ctx.clearRect(0, 0, 360, 230); ctx.strokeStyle = '#3b5c453b'; ctx.lineWidth = 1;
     const scale = 0.75;
+    const set = filmSetAt(player.position, player.isInMatrix);
+    if (set) {
+      const x = 180 + (set.center.x - player.position.x) * scale; const z = 115 + (set.center.z - player.position.z) * scale;
+      ctx.fillStyle = '#526c483b'; ctx.strokeStyle = '#a4b79a';
+      ctx.fillRect(x - set.width * scale / 2, z - set.depth * scale / 2, set.width * scale, set.depth * scale);
+      ctx.strokeRect(x - set.width * scale / 2, z - set.depth * scale / 2, set.width * scale, set.depth * scale);
+      ctx.fillStyle = '#bbcaad'; for (const o of filmObstacles(set)) ctx.fillRect(x + (o.x - o.width / 2) * scale, z + (o.z - o.depth / 2) * scale, o.width * scale, o.depth * scale);
+      ctx.strokeStyle = '#3b5c453b';
+    }
     for (let n = -8; n < 8; n++) {
       const x = 180 + (Math.round(player.position.x / 80) * 80 + n * 80 - player.position.x) * scale;
       const z = 115 + (Math.round(player.position.z / 80) * 80 + n * 80 - player.position.z) * scale;

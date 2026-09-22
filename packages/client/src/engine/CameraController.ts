@@ -10,6 +10,7 @@ export class CameraController {
   private azimuth = 0.82;
   private drag: { x: number; y: number; button: number } | null = null;
   private following = false;
+  private enabled = true;
   director = false;
   onManualControl?: () => void;
 
@@ -25,6 +26,7 @@ export class CameraController {
 
   private context = (event: Event): void => { event.preventDefault(); };
   private down = (event: PointerEvent): void => {
+    if (!this.enabled) return;
     this.drag = { x: event.clientX, y: event.clientY, button: event.button };
     this.element.setPointerCapture(event.pointerId);
   };
@@ -46,9 +48,12 @@ export class CameraController {
   };
   private up = (): void => { this.drag = null; };
   private wheel = (event: WheelEvent): void => {
+    if (!this.enabled) return;
     event.preventDefault();
     this.desiredDistance = THREE.MathUtils.clamp(this.desiredDistance * Math.exp(event.deltaY * 0.001), 24, 1500);
   };
+
+  setEnabled(enabled: boolean): void { this.enabled = enabled; if (!enabled) this.drag = null; }
 
   focusOnPosition(position: Vector3): void {
     this.desiredTarget.set(position.x, position.y + 5, position.z);

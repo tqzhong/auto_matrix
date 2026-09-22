@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { groundHeight, type AgentState, type CombatImpact } from '@auto_matrix/shared';
-import { CharacterModels, type CharacterRig } from './CharacterModel.js';
+import { CharacterModels, weaponMuzzle, type CharacterRig } from './CharacterModel.js';
 import type { MotionInput } from './CharacterMotion.js';
 
 export const FACTION_COLORS: Record<string, string> = {
@@ -17,6 +17,7 @@ interface Entry {
   shadow: THREE.Mesh;
   hit?: number;
   impact?: number;
+  shot?: number;
   speech?: { sprite: THREE.Sprite; age: number };
 }
 
@@ -78,17 +79,19 @@ export class AgentRenderer {
   getAgent(id: string): THREE.Group | null { return this.agents.get(id)?.group ?? null; }
   getAgentState(id: string): AgentState | null { return this.agents.get(id)?.state ?? null; }
   getAgentIds(): string[] { return [...this.agents.keys()]; }
+  muzzle(id: string): THREE.Vector3 | undefined { const entry = this.agents.get(id); return entry ? weaponMuzzle(entry.rig) : undefined; }
   updateActionIndicator(_id: string, _type: string): void {}
   impact(hit: CombatImpact): void {
     const target = this.agents.get(hit.target); const source = this.agents.get(hit.source);
     if (target) target.hit = performance.now();
     if (source) source.impact = performance.now();
+    if (source && hit.shot) source.shot = performance.now();
   }
 
   update(delta: number, camera?: THREE.Camera, speed = 1, tick = 0): void {
     for (const [id, entry] of this.agents) {
       const state = entry.state;
-      entry.body.visible = id !== this.playerId || !this.firstPerson;
+      entry.body.visible = (id !== this.playerId || !this.firstPerson || this.playerMotion?.inspecting === true) && state.status !== 'disconnected' && !state.currentAction?.parameters.filmDuel;
       const warning = state.currentAction?.type === 'attack' && state.currentAction.target === this.playerId && Number(state.currentAction.parameters.contactTick ?? 0) > tick;
       entry.marker.visible = warning || !this.playerId || id === this.selected;
       (entry.marker.material as THREE.MeshBasicMaterial).color.set(warning ? '#f6b177' : FACTION_COLORS[state.faction] ?? '#91cfb0');
@@ -96,28 +99,52 @@ export class AgentRenderer {
       entry.time += delta * (id === this.playerId ? 1 : speed);
       if (id !== this.playerId) {
         const target = new THREE.Vector3(state.position.x, state.position.y, state.position.z);
-        if (entry.group.position.distanceTo(target) > 60) entry.group.position.copy(target);
+        const driver = this.playerId ? this.agents.get(this.playerId) : undefined;
+        if (state.currentAction?.parameters.passenger && driver?.state.currentAction?.parameters.riding) {
+          target.sub(new THREE.Vector3(driver.state.position.x, driver.state.position.y, driver.state.position.z)).add(driver.group.position);
+          entry.group.position.copy(target);
+        } else if (state.currentAction?.parameters.meeting || state.currentAction?.parameters.pills || state.currentAction?.parameters.interrogation || state.currentAction?.parameters.welcome || entry.group.position.distanceTo(target) > 60) entry.group.position.copy(target);
         else entry.group.position.lerp(target, 1 - Math.exp(-8 * delta));
       }
       const moving = Math.hypot(state.velocity.x, state.velocity.z) > .1;
-      const heading = moving ? Math.atan2(state.velocity.x, state.velocity.z) : state.rotation;
+      const heading = moving && state.currentLocation !== 'film_government_lobby' ? Math.atan2(state.velocity.x, state.velocity.z) : state.rotation;
       let difference = heading - entry.body.rotation.y;
       difference = Math.atan2(Math.sin(difference), Math.cos(difference));
-      if (id !== this.playerId) entry.body.rotation.y += difference * (1 - Math.exp(-10 * delta));
+      if (id !== this.playerId) entry.body.rotation.y += difference * (state.currentAction?.parameters.meeting || state.currentAction?.parameters.pills || state.currentAction?.parameters.interrogation || state.currentAction?.parameters.welcome ? 1 : 1 - Math.exp(-10 * delta));
       const velocity = state.status === 'alive' ? Math.hypot(state.velocity.x, state.velocity.z) : 0;
       entry.body.rotation.z = THREE.MathUtils.lerp(entry.body.rotation.z, state.status === 'dead' ? Math.PI / 2 : 0, 1 - Math.exp(-7 * delta));
       const dist = camera ? entry.group.position.distanceTo(camera.position) : 0;
       const floor = groundHeight(state.position, state.isInMatrix);
-      const input = id === this.playerId && this.playerMotion ? this.playerMotion : {
-        speed: velocity, grounded: state.position.y <= floor + .12, verticalVelocity: state.velocity.y,
+      const input: MotionInput = id === this.playerId && this.playerMotion ? this.playerMotion : {
+        speed: velocity, grounded: Boolean(state.currentAction?.parameters.riding || state.currentAction?.parameters.climbing) || state.position.y <= floor + .12, verticalVelocity: state.velocity.y,
         turn: difference * 8, attack: state.currentAction?.type === 'attack' ? Number(state.currentAction.parameters.contactTick ?? state.currentAction.startedAt) : undefined,
-        hit: entry.hit, impact: entry.impact, windingUp: warning,
+        hit: entry.hit, impact: entry.impact, shot: entry.shot, windingUp: warning,
+        armed: state.currentLocation === 'film_government_lobby' && ['neo', 'trinity'].includes(id),
+        crouching: state.currentAction?.parameters.crouching === true,
+        seated: state.currentAction?.parameters.seated === true,
+        floorSeated: state.currentAction?.parameters.floorSeated === true,
+        spoon: state.currentAction?.parameters.spoon as number | undefined,
+        phone: state.currentAction?.parameters.phone as MotionInput['phone'],
+        window: state.currentAction?.parameters.window as number | undefined,
+        crossing: state.currentAction?.parameters.crossing as number | undefined,
+        pills: state.currentAction?.parameters.pills as MotionInput['pills'],
+        interrogation: state.currentAction?.parameters.interrogation as MotionInput['interrogation'],
+        meeting: state.currentAction?.parameters.meeting as MotionInput['meeting'],
+        welcome: state.currentAction?.parameters.welcome as MotionInput['welcome'],
+        knock: state.currentAction?.parameters.knock as number | undefined,
+        vase: state.currentAction?.parameters.vase as number | undefined,
+        riding: state.currentAction?.parameters.riding === true,
+        climbing: state.currentAction?.parameters.climbing ? Number(state.currentAction.parameters.climbDirection ?? 0) : undefined,
       };
+      input.realWorld = !state.isInMatrix;
+      input.officeShirt = state.id === 'neo' && state.currentLocation === 'film_agent_interrogation';
+      input.glasses = state.id !== 'neo' || state.isAwakened && state.currentLocation !== 'film_oracle_home';
       this.models.animate(entry.rig, delta * (id === this.playerId && speed > 0 ? 1 : speed), input, dist);
       entry.shadow.position.y = floor - entry.group.position.y - .97;
+      entry.shadow.visible = state.status !== 'disconnected' && !state.currentAction?.parameters.filmDuel;
       entry.shadow.scale.setScalar(1 + Math.max(0, entry.group.position.y - floor) * .04);
       const selected = id === this.selected;
-      entry.label.visible = id !== this.playerId && state.status === 'alive' && (selected || (!this.playerId && dist < 90 && (['neo', 'trinity', 'smith', 'morpheus'].includes(id) || state.currentAction?.type === 'talk_to')));
+      entry.label.visible = id !== this.playerId && state.status === 'alive' && !state.currentAction?.parameters.filmDuel && (selected || (!this.playerId && dist < 90 && (['neo', 'trinity', 'smith', 'morpheus'].includes(id) || state.currentAction?.type === 'talk_to')));
       const labelWidth = this.playerId ? Math.min(7, Math.max(2.5, dist * 0.13)) : 17;
       entry.label.scale.set(labelWidth, labelWidth / 4, 1);
       entry.label.position.y = this.playerId ? 4.4 : 7;

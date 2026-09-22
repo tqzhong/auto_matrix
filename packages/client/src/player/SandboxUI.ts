@@ -1,7 +1,10 @@
-import { ITEMS, RECIPES, SKILLS, FILMS, MISSIONS, LOCATIONS, CITY_BUILDINGS, NEO_CHAPTERS, LIFE_ACTIONS, lifeActionPosition, lifeRoomCenter, locationEntrance, distance, missionPosition, nearTransit, skillPoints,
+import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_NAMES, filmStepPosition, pillLocked, lafayetteWelcomeLocked, awakeningLocked, windowOpening, windowCrossing, ITEMS, RECIPES, SKILLS, FILMS, MISSIONS, LOCATIONS, CITY_BUILDINGS, NEO_CHAPTERS, LIFE_ACTIONS, lifeActionPosition, lifeRoomCenter, locationEntrance, distance, missionPosition, nearTransit, skillPoints,
   type AgentState, type SandboxState, type SandboxCommand, type ItemId, type SkillId, type Vector3 } from '@auto_matrix/shared';
 import './sandbox.css';
 import { renderNeoLife } from './NeoLifePanel.js';
+import { interrogationLocked, interrogationPose } from '@auto_matrix/shared';
+import { meetingLocked, MEETING_TIMING } from '@auto_matrix/shared';
+import { filmPosition, HOTEL_DOOR_PROGRESS } from '@auto_matrix/shared';
 
 const escape = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const WEATHER = { clear: '晴朗', rain: '雨', code_storm: '代码风暴' };
@@ -22,9 +25,15 @@ export class SandboxUI {
   constructor(private send: (command: SandboxCommand) => void, private menu: (open: boolean) => void) {
     this.root.id = 'sandbox-overlay'; this.root.className = 'hidden';
     this.root.innerHTML = `
+      <div id="film-blackout" class="film-blackout" aria-hidden="true"></div>
       <div class="sandbox-clock"><span id="sandbox-clock"></span><span id="sandbox-weather"></span><span id="sandbox-trace"></span></div>
       <nav class="sandbox-nav" aria-label="沙盒玩法"><button data-panel="inventory"><kbd>B</kbd> 背包与制作</button><button data-panel="journal"><kbd>J</kbd> 三部曲日志</button><button data-panel="map"><kbd>M</kbd> 世界地图</button></nav>
       <div id="sandbox-waypoint" class="sandbox-waypoint"></div>
+      <div id="film-phone" class="film-phone hidden"><span>SECURE LINE / MORPHEUS</span><p id="film-phone-line"></p><div><i id="film-alert"></i></div><small id="film-alert-label"></small></div>
+      <div id="film-sequence" class="film-sequence hidden"><p id="film-sequence-line"></p><small id="film-sequence-hint">鼠标观察 · V 切换视角 · J 手记</small></div>
+      <div id="film-pills" class="film-pills hidden" role="group" aria-label="选择药丸"><p>选择仍然属于你</p><div class="film-pill-choices"><button data-action="life" data-target="film:pill:red">红色 · 继续追问</button><button data-action="life" data-target="film:blue">蓝色 · 回到日常</button></div></div>
+      <div id="film-meeting" class="film-pills hidden" role="group" aria-label="接头决定"><p>你仍然可以离开</p><div class="film-pill-choices"><button data-action="life" data-target="film:meeting:stay">留在车内 · 接受检查</button><button data-action="life" data-target="film:meeting:leave">打开车门 · 暂时离开</button></div></div>
+      <div id="film-ride" class="film-ride hidden" role="status"><span>TRINITY / KEYMAKER</span><strong id="film-ride-speed"></strong><p id="film-ride-health"></p><small>W 加速 · S 刹车 · A / D 转向</small></div>
       <div id="sandbox-interact" class="sandbox-interact hidden"><button data-action="interact"><kbd>G</kbd> <span id="sandbox-nearby"></span></button><div id="sandbox-job"></div></div>
       <div class="sandbox-hotbar" aria-label="物品快捷栏">${(['medkit', 'emp', 'beacon', 'barricade'] as const).map((id, i) => `<button data-action="${i < 2 ? 'use' : 'build'}" data-target="${id}" title="${ITEMS[id].description}"><kbd>${i + 1}</kbd><span class="slot-symbol">${ITEMS[id].symbol}</span><span>${ITEMS[id].name}</span><b id="count-${id}">0</b></button>`).join('')}</div>
       <section id="sandbox-panel" class="sandbox-panel hidden" role="dialog" aria-modal="true" aria-label="沙盒菜单"><div class="sandbox-window">
@@ -46,11 +55,11 @@ export class SandboxUI {
         this.close(); return;
       }
       if (!button.dataset.action) return;
-      if (button.dataset.action === 'interact' && !button.dataset.target && this.player?.id === 'neo' && this.state?.neoLife) { this.interact(); return; }
+      if (button.dataset.action === 'interact' && !button.dataset.target && (this.player?.id === 'neo' || this.player?.id === this.state?.neoLife?.journey?.actor) && this.state?.neoLife) { this.interact(); return; }
       if (button.dataset.action === 'track') this.waypoint = null;
       this.send({ kind: button.dataset.action as SandboxCommand['kind'], target: button.dataset.target ?? (button.dataset.action === 'interact' ? this.nearest : undefined) });
-      if (button.dataset.action === 'life' && (button.dataset.target?.startsWith('go:') || LIFE_ACTIONS.some(a => a.id === button.dataset.target))) this.close();
-      if (button.dataset.action === 'interact' && this.player?.id === 'neo' && this.state?.neoLife) this.close();
+      if (button.dataset.action === 'life' && (button.dataset.target?.startsWith('film:') || button.dataset.target?.startsWith('go:') || LIFE_ACTIONS.some(a => a.id === button.dataset.target))) this.close();
+      if (button.dataset.action === 'interact' && (this.player?.id === 'neo' || this.player?.id === this.state?.neoLife?.journey?.actor) && this.state?.neoLife) this.close();
       if (['build', 'transit', 'track'].includes(button.dataset.action)) this.close();
     });
   }
@@ -65,7 +74,14 @@ export class SandboxUI {
   }
   toggle(panel: Panel): void { if (this.panel === panel) this.close(); else this.open(panel); }
   interact(): void {
-    if (this.player?.id === 'neo' && this.state?.neoLife) { this.open('journal'); return; }
+    const journey = this.state?.neoLife?.journey;
+    if (journey && journey.actor === this.player?.id) {
+      const step = FILM_SCENE_BY_ID[journey.scene].steps[journey.step];
+      if (journey.visiting || step?.kind === 'reflect' || journey.finished) this.open('journal');
+      else this.send({ kind: 'life', target: `film:${step ? 'act' : 'next'}` });
+      return;
+    }
+    if ((this.player?.id === 'neo' || this.player?.id === this.state?.neoLife?.journey?.actor) && this.state?.neoLife) { this.open('journal'); return; }
     const node = this.state?.nodes.find(n => n.id === this.nearest);
     if (node?.kind === 'phone') { this.open('map'); return; }
     this.send({ kind: 'interact', target: this.nearest || undefined });
@@ -80,8 +96,14 @@ export class SandboxUI {
     this.player = player; this.state = state; this.tick = tick; this.time = time;
     const profile = player ? state?.profiles[player.id] : undefined;
     this.root.classList.toggle('hidden', !player || !state || !profile);
+    this.el('film-phone').classList.add('hidden');
+    this.el('film-sequence').classList.add('hidden');
+    this.el('film-ride').classList.add('hidden');
+    this.el('film-pills').classList.add('hidden');
+    this.el('film-meeting').classList.add('hidden');
+    this.el('film-blackout').style.opacity = '0';
     if (!player || !state || !profile) return;
-    const life = player.id === 'neo' ? state.neoLife : undefined;
+    const life = player.id === 'neo' || player.id === state.neoLife?.journey?.actor ? state.neoLife : undefined;
     const chapter = life ? NEO_CHAPTERS[life.chapter] : undefined;
     this.root.querySelectorAll<HTMLButtonElement>('[data-panel="journal"]').forEach(button => { button.innerHTML = `<kbd>J</kbd> ${life ? '生活与故事手记' : '三部曲日志'}`; });
     const hour = Math.floor(time / 1000); const minute = Math.floor(time % 1000 * .06);
@@ -100,6 +122,7 @@ export class SandboxUI {
     this.el('sandbox-interact').classList.toggle('hidden', !nearest && !profile.job);
     this.el('sandbox-nearby').textContent = profile.job ? '正在破解 · 移动将中断' : nearest ? `${nearest.name}${'availableAt' in nearest && nearest.availableAt > tick ? ` · ${Math.ceil((nearest.availableAt - tick) / 2)} 秒后恢复` : ''}` : '';
     this.el('sandbox-job').style.width = profile.job ? `${Math.min(100, (tick - profile.job.startedAt) / (profile.job.endsAt - profile.job.startedAt) * 100)}%` : '0';
+    if (life?.journey) { this.updateFilm(player, state); this.drawMinimap(); this.renderPanel(); return; }
     if (life && chapter) {
       const nearbyLife = LIFE_ACTIONS.find(a => a.location && player.isInMatrix && distance(player.position, lifeActionPosition(a)) < 10);
       const storyPosition = chapter.mission ? missionPosition(chapter.mission) : lifeRoomCenter(chapter.location) ?? locationEntrance(chapter.location);
@@ -128,22 +151,185 @@ export class SandboxUI {
     this.drawMinimap(); this.renderPanel();
   }
 
+  private updateFilm(player: AgentState, state: SandboxState): void {
+    const journey = state.neoLife!.journey!; const scene = FILM_SCENE_BY_ID[journey.scene]; const step = scene.steps[journey.step];
+    const set = FILM_SETS[journey.visiting ? FILM_SCENE_BY_ID[journey.visiting].set : scene.set];
+    const shown = journey.visiting ? FILM_SCENE_BY_ID[journey.visiting] : scene;
+    this.el('sandbox-clock').textContent = `${FILM_NAMES[shown.film]} · 第 ${FILM_SCENES.indexOf(shown) + 1} 段`;
+    this.el('sandbox-weather').textContent = set.world === 'real' ? '真实世界' : ({ day: '日间', night: '夜间', warm: '室内', cold: '室内', white: '程序空间', storm: '暴雨', sunrise: '日出' })[set.light];
+    this.el('sandbox-interact').classList.remove('hidden');
+    this.el('sandbox-nearby').textContent = journey.visiting ? '回访场景 · J 返回剧情' : journey.finished ? '三部曲已完成 · 查看手记' : !step ? '场景完成 · 继续下一段' : step.kind === 'reflect' ? '打开手记，记录反思' : journey.fighting ? `战斗中 · 剩余 ${state.threats.filter(t => t.scene === scene.id).length}` : step.label;
+    this.el('sandbox-job').style.width = journey.started !== undefined && step ? `${Math.min(100, (this.tick - journey.started) / ((step.seconds ?? 3) * 2) * 100)}%` : '0';
+    document.getElementById('game-objective')!.textContent = journey.visiting ? set.name : scene.title;
+    document.getElementById('game-objective-copy')!.textContent = journey.visiting ? '自由走动，J 返回保存的剧情位置。' : journey.fighting ? 'F 连击 · X 闪避 · 1 治疗 · 击败追兵后继续' : step ? `${journey.step + 1}/${scene.steps.length} · ${step.label} · ${step.kind === 'reach' ? '走到标记旁' : step.kind === 'reflect' ? '靠近后按 J 记录反思' : '靠近后按 G'}` : 'G 继续下一段，J 查看刚刚发生的事。';
+    if (journey.hotel && !journey.hotel.entered && !journey.visiting) {
+      const ready = journey.hotel.progress >= HOTEL_DOOR_PROGRESS - .01 && distance(player.position, filmPosition('film_lafayette', 24, 0)) < 4;
+      const knocking = journey.hotel.knock !== undefined;
+      document.getElementById('game-objective')!.textContent = '前往十三层 · 1313';
+      document.getElementById('game-objective-copy')!.textContent = knocking ? 'Neo 正在敲门 · 动作与位置自动保存' : journey.hotel.door !== undefined ? '门已打开 · 亲自跨过门槛' : '跟随 Trinity 上楼。可以停留观察，她会等你。';
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = knocking ? '三下敲门 · 暂停或重新载入会保留动作' : 'WASD 移动 · Shift 快步 · V 切换视角 · 途中自动保存';
+      this.el('sandbox-interact').classList.toggle('hidden', !ready || knocking || journey.hotel.door !== undefined);
+      this.el('sandbox-nearby').textContent = knocking ? '正在敲门' : '敲响 1313 房门'; this.el('sandbox-waypoint').textContent = '';
+      return;
+    }
+    if (lafayetteWelcomeLocked(journey)) {
+      const welcome = journey.hotel!.welcome!; const waiting = welcome.phase === 'ready';
+      document.getElementById('game-objective')!.textContent = '1313 · 初次见面';
+      document.getElementById('game-objective-copy')!.textContent = waiting ? 'Morpheus 正向你伸出右手 · 按 G 回应' : welcome.phase === 'handshake' ? '握手动作与人物位置正在保存' : welcome.phase === 'departing' ? 'Trinity 离开相邻房间 · Morpheus 请你落座' : '窗前的人影转身向你走来';
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = waiting ? 'G 握住 Morpheus 的手 · 等待不会替你回应' : '鼠标观察 · V 切换视角 · 暂停或重连会保留动作';
+      this.el('sandbox-interact').classList.toggle('hidden', !waiting); this.el('sandbox-nearby').textContent = '握住 Morpheus 的手';
+      this.el('sandbox-waypoint').textContent = '';
+      return;
+    }
+    if (awakeningLocked(journey)) {
+      this.el('film-sequence-hint').textContent = '鼠标观察 · V 切换视角 · J 手记';
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('sandbox-waypoint').textContent = '';
+      this.el('sandbox-interact').classList.add('hidden'); return;
+    }
+    if (!journey.visiting && scene.id === 'm1_spoon' && journey.oracle?.spoon !== undefined) {
+      const bend = journey.oracle.spoon;
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = step?.kind === 'reach' ? '把这次经验带进厨房 · WASD 移动' : '停下脚步，按住 G 专注并近看 · 松开 G 恢复观察';
+      this.el('sandbox-job').style.width = `${bend * 100}%`;
+      if (journey.step === 0) {
+        document.getElementById('game-objective-copy')!.textContent = `握住勺子 · 专注 ${Math.round(bend * 100)}% · 按住 G，走动会中断`;
+        this.el('sandbox-nearby').textContent = '按住 G 专注'; this.el('sandbox-waypoint').textContent = '这里的规则，是否一定需要服从？'; return;
+      }
+    }
+    if (meetingLocked(journey) && journey.meeting) {
+      const encounter = journey.meeting; const choosing = encounter.phase === 'choice';
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = choosing ? '留下接受检查，或现在下车 · 等待不会替你决定'
+        : encounter.phase === 'located' || encounter.phase === 'removing' ? '按住 G 保持稳定 · 松开暂停抽取'
+        : encounter.phase === 'done' ? journey.step === 1 ? 'J 记录反思，再继续赴约' : 'G 启程前往 Lafayette'
+        : encounter.phase === 'parked' ? 'G 打开车门下车 · 等待不会替你决定'
+        : encounter.phase === 'driving' ? 'Apoc 正在驾驶 · V 切换车内视角后可用鼠标观察' : 'V 切换视角 · 暂停或重连会保留动作';
+      this.el('film-meeting').classList.toggle('hidden', !choosing);
+      if (choosing && document.pointerLockElement) document.exitPointerLock();
+      this.el('sandbox-interact').classList.toggle('hidden', !['ready', 'located', 'removing', 'done', 'parked'].includes(encounter.phase));
+      this.el('sandbox-waypoint').textContent = '';
+      if (encounter.phase === 'done' && journey.step >= 2) this.el('sandbox-nearby').textContent = '启程前往 Lafayette';
+      if (encounter.phase === 'parked') this.el('sandbox-nearby').textContent = '打开车门下车';
+      if (encounter.phase === 'located' || encounter.phase === 'removing') {
+        this.el('sandbox-nearby').textContent = '按住 G 配合抽取';
+        this.el('sandbox-job').style.width = `${encounter.elapsed / MEETING_TIMING.removing * 100}%`;
+      }
+      return;
+    }
+    if (interrogationLocked(journey)) {
+      const encounter = journey.interrogation!; const ready = encounter.phase === 'response' || encounter.phase === 'done';
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = encounter.phase === 'response' ? 'G 拒绝合作，要求打电话 · 决定前，特工会等待' : encounter.phase === 'done' ? 'G 从公寓中醒来' : 'V 切换视角 · 暂停或重连会保留动作进度';
+      this.el('sandbox-interact').classList.toggle('hidden', !ready); this.el('sandbox-waypoint').textContent = '';
+      this.el('sandbox-nearby').textContent = encounter.phase === 'done' ? '醒来' : '拒绝合作，要求通话';
+      this.el('film-blackout').style.opacity = String(interrogationPose({ ...encounter, role: 'neo' }).fade);
+      return;
+    }
+    if (pillLocked(journey)) {
+      const choosing = journey.pills!.phase === 'choice';
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = choosing ? '红色继续追问；蓝色回到日常。你可以慢慢决定。' : journey.lastText;
+      this.el('film-sequence-hint').textContent = choosing ? '两种选择都会保存 · 等待不会自动作出决定' : 'V 切换视角 · 暂停、重连会保留动作进度';
+      this.el('film-pills').classList.toggle('hidden', !choosing);
+      if (choosing && document.pointerLockElement) document.exitPointerLock();
+      this.el('sandbox-interact').classList.add('hidden'); this.el('sandbox-waypoint').textContent = '';
+      document.getElementById('game-objective-copy')!.textContent = choosing ? '看着 Morpheus 的双手，作出自己的选择。' : journey.pills!.phase === 'offering' ? '与 Morpheus 交谈' : '拿取药丸，用水吞服';
+      return;
+    }
+    if (!journey.visiting && scene.id === 'm1_boss' && journey.phone) {
+      const phase = journey.phone.phase;
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = phase === 'ready' ? 'G 滑开手机接听' : phase === 'connected' ? 'G 按电话指引离开工位 · Z 潜行' : '留意手中的手机 · 接听进度自动保存';
+      this.el('sandbox-interact').classList.toggle('hidden', phase !== 'connected');
+      this.el('sandbox-nearby').textContent = phase === 'ready' ? '滑开手机接听' : '按电话指引离开工位';
+      this.el('sandbox-waypoint').textContent = '';
+      document.getElementById('game-objective-copy')!.textContent = phase === 'ready' ? '来电号码未知 · 按 G 接听' : phase === 'connected' ? '保持通话，准备躲避特工。' : '接听来自未知号码的电话'; return;
+    }
+    if (!journey.visiting && scene.id === 'm1_oracle' && journey.oracle?.vase !== undefined && journey.step === 0) {
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = '留意桌上的花瓶 · 事件进度自动保存';
+      this.el('sandbox-interact').classList.add('hidden'); return;
+    }
+    if (!journey.visiting && scene.id === 'm1_dejavu' && journey.ambush && journey.step === 0) {
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = '留意前方门洞 · 走远会暂停观察';
+      this.el('sandbox-interact').classList.add('hidden'); this.el('sandbox-waypoint').textContent = '';
+      document.getElementById('game-objective-copy')!.textContent = '看着猫经过的地方，留意周围的变化。'; return;
+    }
+    if (scene.id === 'm1_lobby' && !journey.visiting) {
+      const combat = journey.lobby;
+      this.el('sandbox-trace').textContent = combat?.reloadAt !== undefined ? `换弹 ${Math.max(0, (combat.reloadAt - this.tick) / 2).toFixed(1)}s` : `弹匣 ${combat?.ammo ?? 16} / 16`;
+      if (journey.fighting) {
+        document.getElementById('game-objective-copy')!.textContent = `警戒 ${combat?.wave ?? 1}/3 · 左键 / T 射击 · R 换弹 · Q 子弹时间 · X 闪避`;
+        this.el('sandbox-waypoint').textContent = '柱列能阻挡枪火 · 瞄准后换位 · Trinity 掩护侧翼';
+        this.el('sandbox-interact').classList.add('hidden'); return;
+      }
+    }
+    if (scene.id === 'm1_office_escape' && journey.office && !journey.office.outcome && !journey.visiting) {
+      if (windowCrossing(journey)) {
+        this.el('film-phone').classList.remove('hidden'); this.el('film-phone-line').textContent = journey.lastText;
+        this.el('film-alert').style.width = `${journey.office.alert}%`; this.el('film-alert-label').textContent = '撑稳窗沿 · 跨腿后落到外侧窄台';
+        this.el('sandbox-interact').classList.add('hidden'); this.el('sandbox-waypoint').textContent = '';
+        document.getElementById('game-objective-copy')!.textContent = '正在跨窗 · 动作进度自动保存'; return;
+      }
+      const opening = windowOpening(journey);
+      this.el('sandbox-interact').classList.toggle('hidden', opening || step?.kind === 'reach' || distance(player.position, filmStepPosition(scene, step ?? scene.steps[2])) > 4);
+      this.el('film-phone').classList.remove('hidden');
+      this.el('film-phone-line').textContent = opening && !journey.office.spotted ? journey.lastText : journey.office.guide.replace('MORPHEUS · ', '');
+      this.el('film-alert').style.width = `${journey.office.alert}%`;
+      this.el('film-alert-label').textContent = `${journey.office.spotted && journey.office.alert >= 65 ? '已被认出 · 拉开距离，绕到遮挡后' : `警觉 ${Math.round(journey.office.alert)}% · ${opening ? '转动把手、推开窗扇' : '按住 Z 潜行'}`} · 特工靠近才会被捕`;
+      this.el('sandbox-trace').textContent = journey.office.spotted ? '特工看到了你 · 立即换位' : journey.office.searches?.some(Boolean) ? '检查最后踪迹 · 避开原位置' : '特工巡逻中 · 留意朝向';
+    }
+    if (['m1_office_escape', 'm1_ledge'].includes(scene.id) && journey.office?.outcome === 'captured' && !step && !journey.visiting) {
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = 'G 继续审讯后的故事 · 已完成的生活与调查仍然保留';
+      this.el('sandbox-nearby').textContent = '被特工带走 · 继续故事';
+      document.getElementById('game-objective-copy')!.textContent = '你被捕了，故事仍会继续 · G 进入审讯';
+    }
+    if (scene.id === 'm1_pills' && step?.kind === 'reflect') this.el('sandbox-nearby').textContent = '选择红色或蓝色药丸';
+    if (scene.id === 'm1_ledge' && step?.kind === 'reach' && !journey.visiting) this.el('sandbox-interact').classList.add('hidden');
+    if (scene.id === 'm1_ledge' && journey.office?.climbed !== undefined && !journey.visiting) {
+      this.el('film-phone').classList.remove('hidden');
+      this.el('film-phone-line').textContent = '抓稳横档，慢慢往下。维修平台就在下面。';
+      this.el('film-alert').style.width = `${journey.office.climbed / 32 * 100}%`;
+      this.el('film-alert-label').textContent = `已下降 ${Math.round(journey.office.climbed / 2)} / 16 m · W 向下 · S 向上 · 松手停留`;
+      document.getElementById('game-objective-copy')!.textContent = '沿维修梯抵达下方平台 · 可停在横档上观察';
+      this.el('sandbox-waypoint').textContent = '↓ 维修平台'; this.el('sandbox-interact').classList.add('hidden'); return;
+    }
+    if (scene.id === 'm2_freeway' && journey.ride?.phase === 'riding' && !journey.visiting) {
+      const ride = journey.ride;
+      this.el('film-ride').classList.remove('hidden');
+      this.el('film-ride-speed').textContent = `${Math.round(ride.speed * 1.8)} km/h`;
+      this.el('film-ride-health').textContent = `车况 ${Math.ceil(ride.hull)}% · 钥匙匠 ${Math.ceil(ride.passenger)}%`;
+      this.el('sandbox-waypoint').textContent = `接应区 ↑ ${Math.max(0, Math.round((ride.z + 660) / 2))} m`;
+      document.getElementById('game-objective-copy')!.textContent = '在逆向车流中护送钥匙匠 · 留意大型卡车 · 碰撞后先刹车';
+      this.el('sandbox-interact').classList.add('hidden'); return;
+    }
+    if (scene.id === 'm1_ledge' && step?.kind === 'reflect') this.el('sandbox-nearby').textContent = '沿维修架脱身，或退回办公室';
+    if (step && !journey.visiting) {
+      const target = filmStepPosition(scene, step); const direction = Math.atan2(target.x - player.position.x, target.z - player.position.z) - player.rotation;
+      this.el('sandbox-waypoint').innerHTML = `<span style="transform:rotate(${-direction}rad)">↑</span>${step.label} <b>${Math.round(distance(target, player.position))} m</b>`;
+    } else this.el('sandbox-waypoint').textContent = journey.visiting ? '回访不会改变剧情进度' : '本场景已记录';
+  }
+
   private renderPanel(): void {
     if (!this.panel || !this.player || !this.state) return;
     const player = this.player; const state = this.state; const profile = state.profiles[player.id];
-    const life = player.id === 'neo' ? state.neoLife : undefined;
+    const life = player.id === 'neo' || player.id === state.neoLife?.journey?.actor ? state.neoLife : undefined;
     const signature = JSON.stringify([this.panel, this.selectedFilm, profile.inventory, profile.xp, profile.skills, profile.trackedMission, profile.visited, state.missions, state.structures, state.incidents, Math.round(player.position.x), Math.round(player.position.z), state.ending,
-      life && [life.chapter, life.day, life.money, life.cycle, Math.floor(this.time / 500), life.anomaly, life.activity, life.journal[0], life.appointment]]);
+      life && [life.chapter, life.day, life.money, life.cycle, Math.floor(this.time / 500), life.anomaly, life.activity, life.journal[0], life.appointment, life.journey, player.status, state.threats.length]]);
     if (signature === this.signature) return;
     this.signature = signature;
     const body = this.el('sandbox-panel-body'); const scroll = body.scrollTop;
     const expanded = [...body.querySelectorAll('details')].map(detail => detail.open);
-    const neoPanel = Boolean(life && this.panel === 'journal');
+    const neoPanel = Boolean(life && (this.panel === 'journal' || life.journey && this.panel === 'map'));
     this.el('sandbox-panel').classList.toggle('neo-panel', neoPanel);
     this.el('sandbox-panel-title').textContent = neoPanel ? '生活与故事手记' : this.panel === 'inventory' ? '生存，是你的第一段故事。' : this.panel === 'journal' ? '三部曲，你来改变走向。' : '一座持续运转的世界。';
-    this.root.querySelector('.sandbox-window > header p')!.textContent = neoPanel ? '生活继续，选择留下痕迹。你可以随时合上手记，走进城市。' : '世界仍在运行。附近有追兵时，请先寻找安全位置。';
+    this.root.querySelector('.sandbox-window > header p')!.textContent = life?.journey ? '沿电影事件前进。走到目标旁按 G，完成后继续下一段。' : neoPanel ? '生活继续，选择留下痕迹。你可以随时合上手记，走进城市。' : '世界仍在运行。附近有追兵时，请先寻找安全位置。';
     this.root.querySelectorAll<HTMLElement>('.sandbox-window [data-panel]').forEach(button => button.classList.toggle('active', button.dataset.panel === this.panel));
-    this.el('sandbox-profile').textContent = neoPanel ? `Thomas Anderson · 第 ${life!.cycle} 轮 · 自动保存生活、证据和选择` : `${player.name} · 等级 ${1 + Math.floor(profile.xp / 50)} · ${profile.xp} XP · 可用技能点 ${skillPoints(profile)}`;
+    this.el('sandbox-profile').textContent = neoPanel ? `${player.name} · 第 ${life!.cycle} 轮 · 自动保存生活、证据和选择` : `${player.name} · 等级 ${1 + Math.floor(profile.xp / 50)} · ${profile.xp} XP · 可用技能点 ${skillPoints(profile)}`;
     if (neoPanel) {
       body.innerHTML = renderNeoLife(player, state, this.time);
     } else if (this.panel === 'inventory') {
@@ -176,13 +362,18 @@ export class SandboxUI {
         <h3 class="sandbox-section-label">正在发生</h3><div class="incident-list">${state.incidents.map(incident => `<article><div><h3>${incident.name}</h3><p>${incident.description}</p><small>${LOCATIONS[incident.location]?.nameCn ?? incident.location} · 信号剩余约 ${Math.max(0, Math.ceil((incident.expiresAt - this.tick) / 2))} 秒</small></div><button data-waypoint="${incident.id}">标记 ↗</button></article>`).join('') || '<p>暂时没有新信号。世界会在自然运行中产生遭遇。</p>'}</div>`;
       this.drawWorldMap();
     }
-    body.querySelectorAll('details').forEach((detail, index) => { detail.open = expanded[index] ?? false; });
+    body.querySelectorAll('details').forEach((detail, index) => { detail.open = expanded[index] ?? detail.open; });
     body.scrollTop = scroll;
   }
   private drawMinimap(): void {
     if (!this.player || !this.state) return;
     const canvas = document.getElementById('game-minimap') as HTMLCanvasElement;
     const ctx = canvas.getContext('2d')!; const player = this.player;
+    const journey = this.state.neoLife?.journey; const scene = journey && FILM_SCENE_BY_ID[journey.scene]; const step = scene?.steps[journey!.step];
+    if (journey?.actor === player.id && !journey.visiting && scene && step) {
+      const position = filmStepPosition(scene, step);
+      ctx.strokeStyle = '#eac987'; ctx.beginPath(); ctx.arc(180 + (position.x - player.position.x) * .75, 115 + (position.z - player.position.z) * .75, 4, 0, Math.PI * 2); ctx.stroke();
+    }
     for (const node of [...this.state.nodes, ...this.state.incidents, ...this.state.structures]) {
       if (node.matrix !== player.isInMatrix || distance(node.position, player.position) > 230) continue;
       if (node.kind === 'mission' && ['locked', 'complete'].includes(this.state.missions[node.id.slice(8)]?.status)) continue;

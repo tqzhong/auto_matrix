@@ -174,7 +174,7 @@ def subdivide(vertices, uv, faces, influence):
     return result[:, :3], np.array(texcoords), new_faces, result[:, 3:]
 
 
-def trim_neckline(vertices, uv, faces, influence, height):
+def trim_neckline(vertices, uv, faces, influence, height, above=False, preserve=None):
     """Cut a level garment opening instead of exposing a stair-step face edge."""
     points, texcoords, weights = list(vertices), list(uv), list(influence)
     clipped_faces = []; edge_vertices = {}
@@ -183,6 +183,10 @@ def trim_neckline(vertices, uv, faces, influence, height):
         for current, previous in zip(face, face[-1:] + face[:-1]):
             i, u = current; j, v = previous
             a = height - vertices[i, 1]; b = height - vertices[j, 1]
+            if above: a, b = -a, -b
+            if preserve is not None:
+                if preserve[i]: a = abs(a)
+                if preserve[j]: b = abs(b)
             if (a >= 0) != (b >= 0):
                 t = b / (b - a); edge = tuple(sorted((i, j)))
                 if edge not in edge_vertices:
@@ -196,7 +200,7 @@ def trim_neckline(vertices, uv, faces, influence, height):
     return np.array(points), np.array(texcoords), clipped_faces, np.array(weights)
 
 
-def main(source, character):
+def main(source, character, office=False):
     spec = CHARACTERS[character]
     original, skin_uv, body_faces, groups = obj(source / 'base.obj')
     base = original.copy()
@@ -330,6 +334,11 @@ def main(source, character):
         return len(doc['materials']) - 1
 
     system = source / 'system'
+    if office:
+        with zipfile.ZipFile(source / 'system-assets.zip') as assets:
+            for name in assets.namelist():
+                if name.startswith('clothes/male_casualsuit01/') and not name.endswith('/') and '..' not in Path(name).parts:
+                    dest = system / name; dest.parent.mkdir(parents=True, exist_ok=True); dest.write_bytes(assets.read(name))
     skin_folder = system / 'skins' / spec['skin']
     skin_map = next(skin_folder.glob('*diffuse.png'))
     skin = material('Skin', [.94, .9, .87, 1], .63, skin_map, character + '-skin.png')
@@ -434,8 +443,13 @@ def main(source, character):
     exposed = [f for f in body_faces if np.mean(base[[i for i, _ in f], 1]) > neckline - .85 or
                np.mean(weights[[i for i, _ in f]][:, hand_bones].sum(axis=1)) > .85]
     v, uv, faces, w = subdivide(base, skin_uv, exposed, weights)
-    export_mesh('Anatomical head and hands', v, uv, faces, w, skin, True)
-    if character != 'smith':
+    if not office:
+        export_mesh('Anatomical head and hands', v, uv, faces, w, skin, True)
+    else:
+        torso = [f for f in body_faces if waistline - 1.8 < np.mean(base[[i for i, _ in f], 1]) < neckline - .8 and np.mean(weights[[i for i, _ in f]][:, :3].sum(axis=1)) > .9]
+        v, uv, faces, w = subdivide(base, skin_uv, torso, weights)
+        export_mesh('Office torso', v, uv, faces, w, skin)
+    if character != 'smith' and not office:
         arm_bones = [i for i, name in enumerate(names) if name.startswith(('shoulder', 'elbow'))]
         undershirt = [f for f in body_faces if (np.mean(base[[i for i, _ in f], 1]) > waistline - .3
                      or character == 'trinity' and np.mean(weights[[i for i, _ in f]][:, arm_bones].sum(axis=1)) > .5)
@@ -477,8 +491,18 @@ def main(source, character):
         influence /= np.maximum(influence.sum(axis=1, keepdims=True), 1e-8)
         return vertices, uv, faces, influence
 
-    clothing_name = 'female_casualsuit01' if character == 'trinity' else 'male_elegantsuit01'
+    clothing_name = 'male_casualsuit01' if office else 'female_casualsuit01' if character == 'trinity' else 'male_elegantsuit01'
     v, uv, faces, w = clothing('clothes/' + clothing_name, clothing_name)
+    if office:
+        # The casual shirt and jeans are connected. Remove the jeans, then
+        # lengthen the shirt to overlap Neo's lower-rise tailored trousers.
+        arm_bones = [i for i, name in enumerate(names) if name.startswith(('shoulder', 'elbow', 'wrist', 'finger'))]
+        cut = waistline + .15
+        v, uv, faces, w = trim_neckline(v, uv, faces, w, cut, above=True, preserve=w[:, arm_bones].sum(axis=1) > .2)
+        hem = floor + spec['height'] * .57 / scale
+        drape = np.clip((cut + .9 - v[:, 1]) / .9, 0, 1) * np.clip((w[:, :3].sum(axis=1) - .3) / .6, 0, 1)
+        v[:, 1] -= (cut - hem) * drape
+        v[:, [0, 2]] *= (1 - .05 * drape)[:, None]
     # The lower connected component is trousers; keep that topology and its
     # knee folds. The tailored jacket supplies shoulders, sleeves and lapels.
     adjacency = [set() for _ in v]
@@ -491,10 +515,11 @@ def main(source, character):
         i = queue.pop()
         if i not in trousers:
             trousers.add(i); queue.extend(adjacency[i] - trousers)
-    export_mesh('Tailored trousers', v, uv, [f for f in faces if f[0][0] in trousers], w, suit if character == 'trinity' else pants)
+    if not office:
+        export_mesh('Tailored trousers', v, uv, [f for f in faces if f[0][0] in trousers], w, suit if character == 'trinity' else pants)
     coat_faces = []; extra_v = list(v); extra_uv = list(uv); extra_w = list(w)
     for f in faces:
-        if f[0][0] in trousers:
+        if f[0][0] in trousers and not office:
             continue
         if character == 'trinity':
             continue
@@ -502,7 +527,7 @@ def main(source, character):
         # Open the formal jacket over Neo's black shirt, removing the stock tie
         # and shirt collar. Clip at the V opening instead of deleting whole
         # faces: selecting by centroid left a visible stair-step neckline.
-        if character != 'smith' and waistline < center[1] < neckline + .5 and center[2] > .90:
+        if character != 'smith' and not office and waistline < center[1] < neckline + .5 and center[2] > .90:
             polygon = [(v[i], uv[u], w[i]) for i, u in f]
             for side in [-1, 1]:
                 clipped = []
@@ -522,9 +547,11 @@ def main(source, character):
                     coat_faces.append(face)
         else:
             coat_faces.append(f)
-    export_mesh('Tailored coat upper', np.array(extra_v), np.array(extra_uv), coat_faces, np.array(extra_w), formal if character == 'smith' else suit)
-    accessories = [('clothes/shoes01', 'shoes01', shoes), ('eyes/high-poly', 'high-poly', sclera)]
-    if spec['hair']:
+    if office:
+        suit = material('Office cotton', [.56, .56, .52, 1], .92)
+    export_mesh('Office shirt' if office else 'Tailored coat upper', np.array(extra_v), np.array(extra_uv), coat_faces, np.array(extra_w), suit if office else formal if character == 'smith' else suit)
+    accessories = [] if office else [('clothes/shoes01', 'shoes01', shoes), ('eyes/high-poly', 'high-poly', sclera)]
+    if spec['hair'] and not office:
         accessories.append(('hair/' + spec['hair'], spec['hair'], hair))
     for folder, name, mat in accessories:
         v, uv, faces, w = clothing(folder, name)
@@ -551,14 +578,26 @@ def main(source, character):
                      'head': posed[3].tolist(), 'floor': float(floor), 'sourceScale': float(scale),
                      'waist': [0, spec['height'] * .55, 0],
                      'targets': spec['targets'], 'sourceRevision': REVISION}
+    if office:
+        for mesh in doc['meshes']:
+            mesh['primitives'][0]['material'] = 0 if mesh['primitives'][0]['material'] == skin else 1
+        doc['materials'] = [doc['materials'][skin], doc['materials'][suit]]
+        doc['materials'][0]['name'] = 'Office skin'
+        doc['materials'][0]['pbrMetallicRoughness']['baseColorFactor'] = [.8, .75, .7, 1]
+        filename = character + '-office-skin.png'
+        (OUT / filename).write_bytes(skin_map.read_bytes())
+        doc['images'] = [{'uri': filename}]
+        doc['textures'] = [{'source': 0, 'sampler': 0}]
+        doc['extras']['skinBaked'] = True
     doc['buffers'] = [{'byteLength': len(binaries)}]
     js = json.dumps(doc, separators=(',', ':')).encode()
     js += b' ' * ((-len(js)) % 4)
     binaries += b'\x00' * ((-len(binaries)) % 4)
     glb = struct.pack('<III', 0x46546C67, 2, 12 + 8 + len(js) + 8 + len(binaries))
     glb += struct.pack('<II', len(js), 0x4E4F534A) + js + struct.pack('<II', len(binaries), 0x004E4942) + binaries
-    (OUT / (character + '.glb')).write_bytes(glb)
-    print('Written', OUT / (character + '.glb'), len(glb), 'bytes')
+    filename = character + ('-office' if office else '') + '.glb'
+    (OUT / filename).write_bytes(glb)
+    print('Written', OUT / filename, len(glb), 'bytes')
 
 
 if __name__ == '__main__':
@@ -566,10 +605,11 @@ if __name__ == '__main__':
     parser.add_argument('--source', type=Path, default=Path(tempfile.gettempdir()) / 'matrix-character-source')
     parser.add_argument('--fetch', action='store_true', help='Download the pinned CC0 source assets into the cache')
     parser.add_argument('--character', choices=list(CHARACTERS), help='Rebuild only one character')
+    parser.add_argument('--office', action='store_true', help='Build only Neo’s CC0 shirt and torso for the interrogation; use a staging output directory')
     parser.add_argument('--output', type=Path, default=OUT, help='Asset directory; use a staging directory to review before replacing the game assets')
     args = parser.parse_args()
     OUT = args.output; OUT.mkdir(parents=True, exist_ok=True)
     if args.fetch:
         fetch_source(args.source)
-    for character in [args.character] if args.character else CHARACTERS:
-        main(args.source, character)
+    for character in ['neo'] if args.office else [args.character] if args.character else CHARACTERS:
+        main(args.source, character, args.office)

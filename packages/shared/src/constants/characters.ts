@@ -17,6 +17,14 @@ export interface CharacterDef {
 }
 
 export const CHARACTERS: Record<string, CharacterDef> = {
+  cypher: {
+    id: 'cypher', name: 'Cypher', nameCn: '塞弗', faction: 'zion',
+    description: 'Nebuchadnezzar crew member who secretly bargains with Smith to return to the Matrix.',
+    initialLocation: 'nebuchadnezzar', abilities: ['hacking'],
+    personality: 'Cynical and exhausted by the real world. Longs for comfort and resents the choice that awakened him.',
+    goals: ['Return to a comfortable life inside the Matrix', 'Conceal his bargain with Smith'],
+    isAwakened: true, health: 100, allies: ['smith'], enemies: ['morpheus', 'tank'],
+  },
   neo: {
     id: 'neo',
     name: 'Neo',

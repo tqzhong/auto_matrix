@@ -1,13 +1,17 @@
 import { LIFE_ACTIONS, LIFE_DESTINATIONS, NEO_ANOMALIES, NEO_CAST, NEO_CHAPTERS, NEO_MISSIONS, LOCATIONS,
   distance, insideLifeRoom, lifeActionPosition, lifeRoomCenter, locationEntrance, missionPosition,
   type AgentState, type NeoLifeState, type SandboxState, type Vector3, type Philosophy } from '@auto_matrix/shared';
+import { FilmStorySystem } from './FilmStorySystem.js';
 import type { WorldState } from '../world/WorldState.js';
 import type { WorldDynamics } from './WorldDynamics.js';
 
 const clamp = (n: number): number => Math.max(0, Math.min(100, n));
 
 export class NeoLifeSystem {
-  constructor(private world: WorldState, private dynamics: WorldDynamics, private sandbox: () => SandboxState) {}
+  readonly film: FilmStorySystem;
+  constructor(private world: WorldState, private dynamics: WorldDynamics, private sandbox: () => SandboxState) {
+    this.film = new FilmStorySystem(world, sandbox, tick => this.bluePill(tick));
+  }
   get state(): NeoLifeState | undefined { return this.sandbox().neoLife; }
   get chapter() { return this.state ? NEO_CHAPTERS[this.state.chapter] : undefined; }
   private get now(): number { return (this.world.day - 1) * 1440 + this.world.timeOfDay * .06; }
@@ -15,6 +19,7 @@ export class NeoLifeSystem {
   begin(agent: AgentState, tick: number, next = false): void {
     if (agent.id !== 'neo' || this.state && !next) return;
     const previous = this.state;
+    if (previous?.journey) this.film.releaseCast(true);
     this.world.timeOfDay = 7500;
     this.sandbox().neoLife = {
       version: 1, cycle: (previous?.cycle ?? 0) + 1, startedDay: this.world.day, day: 1, lastMinute: this.now,
@@ -92,6 +97,19 @@ export class NeoLifeSystem {
   }
 
   command(agent: AgentState, target: string, tick: number): string {
+    if (target.startsWith('film:')) {
+      if (target === 'film:cycle' && this.state?.journey?.finished && this.film.controls(agent)) {
+        if (agent.id !== 'neo' && !this.film.handoff?.(agent, 'neo', tick, true)) return 'Neo 正由另一位玩家控制，暂时无法开始下一轮。';
+        const state = this.state;
+        state.cycles.push({ cycle: state.cycle, days: state.day, ending: 'peace', philosophy: { ...state.philosophy }, choices: { ...state.choices }, evidence: [...state.evidence] });
+        state.cycles = state.cycles.slice(-12);
+        this.sandbox().ending = 'open';
+        this.begin(this.world.agents.get('neo')!, tick, true);
+        return '本轮已保存。新一天从 Neo 的公寓开始。';
+      }
+      return this.film.command(agent, target.slice(5), tick);
+    }
+    if (this.state?.journey) return 'J 打开电影故事手记，继续当前场景。';
     if (agent.id !== 'neo') return '这本生活手记属于 Neo。';
     if (!this.state) { this.begin(agent, tick); return '07:30，新的一天从家中开始。J 打开生活手记。'; }
     const state = this.state; this.updateNeeds(tick);
@@ -247,6 +265,7 @@ export class NeoLifeSystem {
   tick(tick: number): void {
     const state = this.state; if (!state) return;
     this.updateNeeds(tick);
+    if (state.journey) { this.film.tick(tick); return; }
     const neo = this.world.agents.get('neo')!;
     if (!neo.controller || neo.status !== 'alive') { delete state.activity; return; }
     if (state.activity) {

@@ -10,3 +10,7 @@ data/world.json*
 output/
 __pycache__/
 packages/client/public/assets/music/originals/*.download
+references/**/*.jpg
+references/**/*.mp4
+references/**/*.mov
+references/**/*.mkv

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { LOCATIONS, LIFE_ROOMS, STREET_SPACING, locationEntrance, CITY_BUILDINGS, cityNoise as noise } from '@auto_matrix/shared';
+import { FILM_SETS, LOCATIONS, LIFE_ROOMS, STREET_SPACING, locationEntrance, CITY_BUILDINGS, cityNoise as noise } from '@auto_matrix/shared';
 import { UrbanMaterials } from './UrbanMaterials.js';
 import { LifeInteriors } from './LifeInteriors.js';
 
@@ -168,7 +168,7 @@ export class VoxelRenderer {
 
   private buildLandmarks(): void {
     for (const location of Object.values(LOCATIONS)) {
-      if (location.world !== 'matrix' || location.id === 'downtown') continue;
+      if (location.world !== 'matrix' || location.id === 'downtown' || FILM_SETS[location.id]) continue;
       const { min, max } = location.bounds;
       const centerX = (min.x + max.x) / 2;
       const centerZ = (min.z + max.z) / 2;
@@ -335,7 +335,7 @@ export class VoxelRenderer {
     const grid = new THREE.GridHelper(900, 45, 0x8b7250, 0x403e30);
     grid.position.set(2170, -101, 2390);
     this.real.add(grid);
-    for (const location of Object.values(LOCATIONS).filter(l => l.world === 'real')) {
+    for (const location of Object.values(LOCATIONS).filter(l => l.world === 'real' && !FILM_SETS[l.id])) {
       const entry = locationEntrance(location.id);
       const platform = new THREE.Mesh(new THREE.BoxGeometry(64, 3, 52), new THREE.MeshStandardMaterial({ color: 0x4b4937, metalness: 0.65, roughness: 0.5 }));
       platform.position.set(entry.x, entry.y - 2.5, entry.z - 8);

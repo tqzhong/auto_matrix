@@ -66,3 +66,25 @@ test('a confirmed hit adds a short recoil and then returns to locomotion', () =>
   const recovered = advanceMotion(motion, { ...idle, hit: 1 }, .016);
   assert.ok(Math.abs(recovered.lean - rest.lean) < .01);
 });
+
+test('gunfire adds a short arm recoil, recovers, and cannot restart while paused', () => {
+  const motion = newMotion(); const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, armed: true };
+  const idle = advanceMotion(motion, input, .016);
+  const fired = advanceMotion(motion, { ...input, shot: 1 }, .016);
+  assert.ok(fired.arms[0].shoulder < idle.arms[0].shoulder - .1);
+  for (let i = 0; i < 30; i++) advanceMotion(motion, { ...input, shot: 1 }, .016);
+  assert.equal(advanceMotion(motion, input, .016).arms[0].shoulder, idle.arms[0].shoulder);
+  const frozen = structuredClone(motion); advanceMotion(motion, { ...input, shot: 2 }, 0);
+  assert.deepEqual(motion, frozen);
+});
+
+test('the Lafayette greeting walks from saved time and settles Morpheus into the chair', () => {
+  const motion = newMotion(); const idle = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 };
+  advanceMotion(motion, { ...idle, welcome: { phase: 'approach', elapsed: 3, role: 'morpheus' as const } }, .1);
+  assert.ok(motion.speed > 1.7, 'Morpheus walks away from the window instead of gliding');
+  const phase = motion.phase;
+  advanceMotion(motion, { ...idle, welcome: { phase: 'approach', elapsed: 3, role: 'morpheus' as const } }, 0);
+  assert.equal(motion.phase, phase, 'a paused saved frame does not advance the gait');
+  const seated = advanceMotion(motion, { ...idle, welcome: { phase: 'done', elapsed: 5.4, role: 'morpheus' as const } }, 0);
+  assert.equal(motion.seated, 1); assert.ok(seated.legs.every(leg => leg.knee > 1.4));
+});

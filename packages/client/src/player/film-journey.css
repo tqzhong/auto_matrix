@@ -1,0 +1,48 @@
+.film-journal { color:#d8dccf; max-width:1240px; margin:auto; }
+body.film-driving .game-controls,body.film-driving .player-ability,body.film-driving .sandbox-hotbar,body.film-driving .game-map { display:none; }
+body.film-performing .game-controls,body.film-performing .player-ability,body.film-performing .sandbox-hotbar,body.film-performing .game-map { display:none; }
+.film-sequence { position:fixed; bottom:90px; left:50%; transform:translateX(-50%); width:min(600px,85vw); padding:12px 22px; background:#090f17d9; border-top:1px solid #adbed14d; text-align:center; pointer-events:none; color:#e2e4e3; }.film-sequence p { margin:6px 0 12px; font-size:15px; line-height:1.8; }.film-sequence small { font-size:11px; color:#9cabb5; }
+.film-ride { position:fixed; right:24px; bottom:100px; width:235px; padding:18px 20px; background:#111d1eef; border:1px solid #abbca550; pointer-events:none; color:#dfe5d3; }.film-ride>span {display:block;font:10px monospace;letter-spacing:.15em;color:#afc3b0}.film-ride strong {display:block;font:30px monospace;margin:8px 0}.film-ride p,.film-ride small {font-size:12px;line-height:1.6;margin:6px 0}
+.film-phone { position:fixed; bottom:85px; left:50%; transform:translateX(-50%); width:min(620px,calc(100vw - 36px)); box-sizing:border-box; padding:10px 16px; background:#101c1ce8; border:1px solid #abc0ad50; pointer-events:none; }
+.film-phone>span { font:9px monospace; letter-spacing:.2em; color:#a4c7bb; }.film-phone p { margin:8px 0; font-size:13px; line-height:1.6; color:#eef0df; }.film-phone>div { height:2px; background:#65847740; }.film-phone i { display:block; height:100%; background:#e6a26d; transition:width .3s; }.film-phone small { display:block; margin-top:7px; font-size:10px; color:#a5b2a9; }
+body:has(#film-phone:not(.hidden)) .game-vitals,body:has(#film-phone:not(.hidden)) .game-map { display:none; }
+.film-pill-choices { display:grid; grid-template-columns:1fr 1fr; gap:14px; }.film-pill-choices button:first-child { border-color:#b96b62; background:#9b3d3624; }.film-pill-choices button:last-child { border-color:#5a91b5; background:#34638524; }
+.film-heading { padding:18px 0 32px; border-bottom:1px solid #74836944; }
+.film-heading>span,.film-now>div>span { color:#b0bc9d; font:11px/1.7 monospace; letter-spacing:.12em; }
+.film-heading h3 { font-size:38px; font-weight:400; margin:10px 0; }
+.film-heading p,.film-atlas>p { color:#9ba78c; font-size:13px; line-height:1.8; }
+.film-progress { height:3px; background:#83967b22; margin-top:24px; }.film-progress i { display:block; height:100%; background:#cab984; transition:width .4s; }
+.film-now { display:grid; grid-template-columns:80px 1fr; gap:28px; padding:34px 0; }.film-scene-number { color:#c5b485; font:32px/1.5 monospace; border-top:2px solid; padding-top:5px; }
+.film-now h3 { font-weight:400; font-size:28px; margin:8px 0 16px; }.film-now p { font-size:15px; line-height:1.9; max-width:850px; }
+.film-objectives { list-style:none; padding:12px 0; margin:16px 0; }.film-objectives li { display:flex; gap:18px; align-items:center; color:#788575; padding:14px 8px; border-bottom:1px solid #92a28022; }.film-objectives b { font:12px monospace; }.film-objectives .done { color:#9da88e; }.film-objectives .current { color:#e8d49d; background:#b3a17b0a; }.film-objectives small { margin-left:auto; }
+.film-journal .film-memory { border-left:2px solid #c0a977; padding:10px 20px; background:#c8b77c08; color:#c7c7ae; }
+.film-journal button { color:#d6dcc6; background:#a0b28a12; border:1px solid #9baa794d; padding:12px 20px; text-align:left; cursor:pointer; transition:background .2s; }.film-journal button:hover:not(:disabled) { background:#b8c3a42b; }.film-journal button:disabled { opacity:.38; cursor:default; }
+.film-controls { display:flex; flex-direction:column; gap:10px; align-items:stretch; max-width:760px; margin:24px 0; }.film-controls small { color:#c5b78e; }.film-now details { margin:22px 0; font-size:13px; color:#adb399; }.film-now summary { cursor:pointer; }
+.film-atlas { border-top:1px solid #7f8a6f55; padding-top:22px; }.film-atlas h4 { font-size:20px; font-weight:400; }.film-atlas details { border-top:1px solid #7f8a6f33; padding:18px 0; }.film-atlas summary { cursor:pointer; font-size:18px; color:#d4ccb1; }.film-atlas summary small { float:right; color:#9aa88a; font:12px monospace; }.film-atlas-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; padding-top:20px; }.film-atlas-grid article { display:flex; flex-direction:column; align-items:flex-start; border:1px solid #65745933; padding:18px; }.film-atlas-grid article.current { border-color:#d7bf80; }.film-atlas-grid strong { font-weight:400; margin-top:12px; }.film-atlas-grid small,.film-atlas-grid p { font-size:11px; color:#8f9d7f; line-height:1.8; }.film-atlas-grid button { margin-top:auto; font-size:12px; padding:7px 13px; }
+@media(max-width:800px) { .film-atlas-grid {grid-template-columns:1fr 1fr}.film-now {grid-template-columns:1fr;gap:6px}.film-scene-number {font-size:20px}.film-heading h3 {font-size:30px} }
+@media(max-width:900px) { body:has(#film-sequence:not(.hidden)) .game-vitals,body:has(#film-sequence:not(.hidden)) .game-map { display:none; } .film-sequence { width:calc(100vw - 36px); box-sizing:border-box; } }
+
+.film-pills { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); width:min(520px,calc(100vw - 36px)); color:#e2dfca; pointer-events:auto; text-align:center; }
+.film-pills p { font:11px monospace; letter-spacing:.2em; margin:0 0 10px; }
+.film-pills button { padding:15px 12px; border:1px solid; border-radius:3px; background:#111713f5; color:#eee9db; cursor:pointer; font-size:14px; font-family:inherit; }
+.film-pills button:hover { filter:brightness(1.4); }.film-pills button:focus-visible { outline:2px solid #e2d9ab; outline-offset:3px; }
+body:has(#film-pills:not(.hidden)) .film-sequence { bottom:125px; }
+body:has(#film-pills:not(.hidden)) .game-vitals { display:none; }
+
+body:has(#gameplay-recorder) .film-pills { bottom:66px; }
+body:has(#gameplay-recorder):has(#film-pills:not(.hidden)) .film-sequence { bottom:150px; }
+
+body.film-pill-scene .game-objective,body.film-pill-scene .game-vitals,body.film-pill-scene .game-crosshair,body.film-pill-scene .play-tip,body.film-pill-scene .sandbox-clock,body.film-pill-scene .sandbox-nav { display:none; }
+
+.film-blackout { position:absolute; inset:0; background:#000; opacity:0; pointer-events:none; z-index:-1; }
+body.film-interrogation-scene .game-objective,body.film-interrogation-scene .game-vitals,body.film-interrogation-scene .game-crosshair,body.film-interrogation-scene .play-tip,body.film-interrogation-scene .sandbox-clock,body.film-interrogation-scene .sandbox-nav { display:none; }
+body.film-interrogation-scene .sandbox-interact { top:auto; bottom:36px; }
+body.film-interrogation-scene:has(#gameplay-recorder) .sandbox-interact { bottom:64px; }
+body.film-interrogation-scene:has(#gameplay-recorder) .film-sequence { bottom:125px; }
+
+body.film-meeting-scene .game-objective,body.film-meeting-scene .game-vitals,body.film-meeting-scene .game-crosshair,body.film-meeting-scene .play-tip,body.film-meeting-scene .sandbox-clock,body.film-meeting-scene .sandbox-nav { display:none; }
+body.film-meeting-scene .sandbox-interact { top:auto; bottom:36px; }
+body.film-meeting-scene:has(#gameplay-recorder) .sandbox-interact { bottom:64px; }
+body.film-meeting-scene:has(#gameplay-recorder) .film-sequence { bottom:125px; }
+body:has(#film-meeting:not(.hidden)) .film-sequence { bottom:155px; }
+#film-meeting button { border-color:#86947a; }

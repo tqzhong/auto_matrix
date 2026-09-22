@@ -1,0 +1,164 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { FILM_SCENE_BY_ID, FILM_SETS, filmStepPosition, filmPosition, filmSetAt, meetingDrive, meetingRoadContains, MEETING_DRIVE_SECONDS, MEETING_DESTINATION, type WorldEvent } from '@auto_matrix/shared';
+import { WorldState } from '../packages/server/src/world/WorldState.js';
+import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
+import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
+import { PlayerController } from '../packages/server/src/player/PlayerController.js';
+import type { ConversationEngine } from '../packages/server/src/agents/ConversationEngine.js';
+import type { ActionExecutor } from '../packages/server/src/agents/ActionExecutor.js';
+import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
+
+function setup(bugged = true) {
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const dynamics = { record: (e: Omit<WorldEvent, 'id'>) => world.addWorldEvent(e) } as WorldDynamics;
+  const sandbox = new SandboxSystem(world, dynamics, 42);
+  const players = new PlayerController(world, { interrupt() {}, isAgentInConversation: () => false } as unknown as ConversationEngine, {} as ActionExecutor, dynamics, sandbox);
+  players.possess('player', 'neo', 0); const neo = world.agents.get('neo')!; sandbox.life.begin(neo, 0);
+  const scene = FILM_SCENE_BY_ID.m1_bridge;
+  sandbox.state.neoLife!.journey = { version: 1, scene: scene.id, actor: 'neo', step: 1, completed: [], enteredAt: 0, reflections: {}, lastText: '', checkpoint: filmStepPosition(scene, scene.steps[1]),
+    office: { alert: 0, suspicion: [], waypoints: [], lastTick: 0, guide: '', outcome: bugged ? 'captured' : 'escaped', bugged } };
+  let tick = 0; let sequence = 0;
+  const command = (target: string) => players.sandboxAction('player', { kind: 'life', target: `film:${target}` }, ++tick);
+  const frames = (seconds: number, focus = false, running = true) => { for (let i = 0; i < Math.round(seconds / .05); i++) {
+    players.receiveInput('player', { x: 0, z: 0, yaw: neo.rotation, jump: false, sprint: false, sequence: ++sequence, focus });
+    players.step(.05, running, tick); if (running && i % 10 === 0) sandbox.tick(++tick);
+  } };
+  command('retry');
+  const board = () => { command('act'); frames(9); };
+  const state = () => sandbox.life.film.state!;
+  const poses = () => ['neo', 'trinity', 'switch', 'apoc'].map(id => {
+    const a = world.agents.get(id)!;
+    return { position: { ...a.position }, rotation: a.rotation, gesture: structuredClone(a.currentAction?.parameters.meeting) };
+  });
+  const walkTo = (x: number, z: number) => {
+    for (let i = 0; i < 300; i++) {
+      const dx = x - neo.position.x; const dz = z - neo.position.z; const length = Math.hypot(dx, dz);
+      if (length < .5) return true;
+      players.receiveInput('player', { x: dx / length, z: dz / length, yaw: Math.atan2(dx, dz), jump: false, sprint: false, sequence: ++sequence });
+      players.step(.05, true, tick); if (i % 10 === 0) sandbox.tick(++tick);
+    }
+    return false;
+  };
+  return { world, sandbox, players, neo, command, frames, board, state, poses, walkTo, tick: () => tick };
+}
+
+test('boarding uses one car and waits for an explicit decision; accepting keeps all four seats continuous', () => {
+  const h = setup(); h.board();
+  assert.equal(h.state().meeting?.phase, 'choice');
+  h.frames(20); assert.equal(h.state().scene, 'm1_bridge'); assert.equal(h.state().step, 1);
+  h.command('next'); assert.equal(h.state().scene, 'm1_bridge');
+  const before = h.poses(); assert.ok(before.every(p => p.gesture));
+  h.command('meeting:stay');
+  assert.equal(h.state().scene, 'm1_bug');
+  assert.deepEqual(h.poses().map(p => p.position), before.map(p => p.position));
+  assert.deepEqual(FILM_SETS.film_adams_bridge.center, FILM_SETS.film_extraction_car.center);
+});
+
+test('a positive scan requires holding still and only clears the tracker after physical extraction', () => {
+  const h = setup(); h.board(); h.command('meeting:stay'); h.frames(10);
+  assert.equal(h.state().meeting?.phase, 'located'); assert.equal(h.state().office?.bugged, true);
+  h.frames(20); assert.equal(h.state().meeting?.phase, 'located'); assert.equal(h.state().step, 0);
+  h.frames(2, true); const elapsed = h.state().meeting!.elapsed;
+  h.frames(3); assert.equal(h.state().meeting!.elapsed, elapsed); assert.equal(h.state().office?.bugged, true);
+  h.frames(12, true); assert.equal(h.state().office?.bugged, false); assert.equal(h.state().step, 1);
+  assert.equal(h.state().meeting?.phase, 'done');
+  h.command('reflect:trust'); h.command('next');
+  assert.equal(h.state().meeting?.phase, 'driving');
+  h.frames(80); h.command('act'); h.frames(9);
+  const goal = filmStepPosition(FILM_SCENE_BY_ID.m1_bug, FILM_SCENE_BY_ID.m1_bug.steps[2]);
+  assert.ok(h.walkTo(goal.x, goal.z)); h.command('act');
+  assert.equal(h.state().scene, 'm1_pills'); assert.equal(h.neo.currentAction?.parameters.meeting, undefined);
+});
+
+test('successful office escape produces a negative scan without inventing a parasite or requiring extraction', () => {
+  const h = setup(false); h.board(); h.command('meeting:stay'); h.frames(10);
+  assert.equal(h.state().meeting?.bugged, false); assert.equal(h.state().meeting?.phase, 'done');
+  assert.equal(h.state().step, 1); assert.equal(h.state().office?.bugged, false);
+  assert.match(h.state().lastText, /没有发现/);
+});
+
+test('leaving the car returns control outside and permits reentry without erasing the implanted tracker', () => {
+  const h = setup(); const outside = { ...h.neo.position }; h.board(); h.command('meeting:leave'); h.frames(9);
+  assert.equal(h.state().meeting, undefined); assert.equal(h.state().step, 1); assert.equal(h.state().scene, 'm1_bridge');
+  assert.deepEqual(h.neo.position, outside); assert.equal(h.state().office?.bugged, true);
+  h.board(); assert.equal(h.state().meeting?.phase, 'choice');
+});
+
+test('door, passengers and pump retain the same clock across pause, disconnect, save restore and retry', () => {
+  const h = setup(); h.board(); h.command('meeting:stay'); h.frames(10); h.frames(2.4, true);
+  const before = h.poses(); const saved = structuredClone(h.state().meeting);
+  h.frames(3, true, false); assert.deepEqual(h.poses(), before);
+  h.players.release('player', h.tick()); h.frames(3); assert.deepEqual(h.poses(), before);
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); h.players.possess('player', 'neo', h.tick());
+  h.command('retry'); assert.deepEqual(h.state().meeting, saved); assert.deepEqual(h.poses(), before);
+  h.frames(12, true); assert.equal(h.state().step, 1);
+});
+
+test('occupied passengers and remote actions cannot start boarding; passengers are reserved during the encounter', () => {
+  const h = setup(); const outside = { ...h.neo.position };
+  h.neo.position.x += 20; h.command('act'); assert.equal(h.state().meeting, undefined);
+  h.neo.position = outside; h.players.possess('other', 'trinity', h.tick());
+  assert.match(h.command('act'), /另一位玩家/); assert.equal(h.state().meeting, undefined);
+  h.players.release('other', h.tick()); h.board();
+  for (const id of ['trinity', 'switch', 'apoc']) assert.match(h.players.possess('other', id, h.tick()).error!, /接头/);
+  assert.match(h.players.act('player', 'attack', h.tick()), /演出/);
+});
+
+test('leaving the bridge is a moving four-person journey and cannot skip straight into the pill room', () => {
+  const h = setup(false); h.board(); h.command('meeting:stay'); h.frames(10); h.command('reflect:trust');
+  const before = h.poses(); h.command('next');
+  assert.equal(h.state().scene, 'm1_bug'); assert.equal(h.state().meeting?.phase, 'driving');
+  assert.deepEqual(h.poses().map(p => p.position), before.map(p => p.position));
+  h.frames(3); const moved = h.poses();
+  assert.ok(Math.hypot(moved[0].position.x - before[0].position.x, moved[0].position.z - before[0].position.z) > 5);
+  const separation = (a: typeof moved[0], b: typeof moved[0]) => Math.hypot(a.position.x - b.position.x, a.position.z - b.position.z);
+  assert.ok(Math.abs(separation(moved[0], moved[1]) - separation(before[0], before[1])) < .001);
+  h.command('act'); h.command('next'); assert.equal(h.state().scene, 'm1_bug');
+  assert.match(h.players.possess('other', 'apoc', h.tick()).error!, /接头/);
+});
+
+test('travel survives pause, disconnect and retry without returning the car or passengers to the bridge', () => {
+  const h = setup(false); h.board(); h.command('meeting:stay'); h.frames(10); h.command('reflect:trust'); h.command('next'); h.frames(23);
+  const before = h.poses(); const saved = structuredClone(h.state().meeting);
+  assert.equal(saved?.phase, 'driving');
+  h.frames(3, false, false); assert.deepEqual(h.poses(), before);
+  h.players.release('player', h.tick()); h.frames(3); assert.deepEqual(h.poses(), before);
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); h.players.possess('player', 'neo', h.tick()); h.command('retry');
+  assert.deepEqual(h.state().meeting, saved); assert.deepEqual(h.poses(), before);
+  h.frames(1); assert.notDeepEqual(h.neo.position, before[0].position);
+});
+
+test('arrival waits for the player to get out, then requires walking to the hotel entrance', () => {
+  const h = setup(false); h.board(); h.command('meeting:stay'); h.frames(10); h.command('reflect:trust'); h.command('next'); h.frames(80);
+  assert.equal(h.state().meeting?.phase, 'parked'); assert.equal(h.state().scene, 'm1_bug');
+  const parked = { ...h.neo.position }; h.frames(10); assert.deepEqual(h.neo.position, parked);
+  h.command('act'); h.frames(9); assert.equal(h.state().meeting?.phase, 'outside');
+  assert.equal(h.neo.currentAction?.parameters.meeting, undefined);
+  h.command('act'); h.command('next'); assert.equal(h.state().scene, 'm1_bug', 'cannot enter from the curb');
+  const goal = filmStepPosition(FILM_SCENE_BY_ID.m1_bug, FILM_SCENE_BY_ID.m1_bug.steps[2]);
+  assert.ok(h.walkTo(goal.x, goal.z), 'the sidewalk route must be physically walkable');
+  const trinity = { ...h.world.agents.get('trinity')!.position }; const entrance = { ...h.neo.position };
+  h.command('act');
+  assert.equal(h.state().scene, 'm1_pills'); assert.equal(h.state().office?.bugged, false);
+  assert.equal(h.state().meeting, undefined);
+  assert.deepEqual(h.neo.position, entrance, 'entering the hotel cannot move Neo to the chair');
+  assert.deepEqual(h.world.agents.get('trinity')!.position, trinity, 'Trinity begins walking where she got out of the car');
+});
+
+test('the route uses continuous speed and heading and stays inside its streamed street', () => {
+  let before = meetingDrive(0);
+  assert.equal(before.speed, 0);
+  for (let seconds = .05; seconds <= MEETING_DRIVE_SECONDS; seconds += .05) {
+    const car = meetingDrive(seconds);
+    assert.ok(Math.hypot(car.x - before.x, car.z - before.z) < 1.5, 'no hidden scene teleport');
+    assert.ok(Math.abs(car.speed - before.speed) < .7, 'no discontinuous acceleration at corners');
+    assert.ok(Math.abs(Math.atan2(Math.sin(car.yaw - before.yaw), Math.cos(car.yaw - before.yaw))) < .04, 'no snap turn');
+    assert.ok(meetingRoadContains(car.x, car.z, 3));
+    assert.equal(filmSetAt(filmPosition('film_extraction_car', car.x, car.z), true)?.id, 'film_extraction_car');
+    before = car;
+  }
+  const end = meetingDrive(MEETING_DRIVE_SECONDS); assert.ok(end.speed < .0001);
+  assert.equal(FILM_SETS.film_lafayette.center.x - FILM_SETS.film_adams_bridge.center.x, MEETING_DESTINATION.x);
+  assert.ok(MEETING_DESTINATION.z > FILM_SETS.film_lafayette.depth / 2);
+});

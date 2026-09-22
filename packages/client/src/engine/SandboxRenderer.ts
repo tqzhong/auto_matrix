@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 import type { AgentState, SandboxState, SandboxThreat, WorldNode, WorldStructure, WorldIncident, Vector3, CombatImpact } from '@auto_matrix/shared';
-import { CharacterModels, type CharacterRig } from '../agents/CharacterModel.js';
+import { CharacterModels, weaponMuzzle, type CharacterRig } from '../agents/CharacterModel.js';
 import { newMotion } from '../agents/CharacterMotion.js';
 
 type WorldObject = WorldNode | WorldStructure | WorldIncident;
 interface Prop { group: THREE.Group; label: THREE.Sprite; data: WorldObject; accent: THREE.Mesh; }
-interface Enemy { group: THREE.Group; rig?: CharacterRig; kind: SandboxThreat['kind'] | 'escort'; health: THREE.Mesh; label: THREE.Sprite; target: THREE.Vector3; telegraph: THREE.Mesh; hit?: number; impact?: number; fallen?: number; facing: number; }
+interface Enemy { group: THREE.Group; rig?: CharacterRig; kind: SandboxThreat['kind'] | 'escort'; character?: string; health: THREE.Mesh; label: THREE.Sprite; target: THREE.Vector3; telegraph: THREE.Mesh; aimLine: THREE.Line; hit?: number; impact?: number; shot?: number; fallen?: number; facing: number; }
 
 export class SandboxRenderer {
   private state?: SandboxState;
@@ -27,6 +27,7 @@ export class SandboxRenderer {
   private blue = new THREE.MeshBasicMaterial({ color: 0x81cfdd });
   private warning = new THREE.MeshBasicMaterial({ color: 0xf6b177, transparent: true, opacity: .5, depthWrite: false, side: THREE.DoubleSide, toneMapped: false });
   private warningRing = this.geometry(new THREE.RingGeometry(.94, 1, 48));
+  private aimMaterial = new THREE.LineBasicMaterial({ color: 0xda9975, transparent: true, opacity: .3, depthWrite: false });
   private elapsed = 0;
   private fallen: Enemy[] = [];
   private actors: Record<string, AgentState> = {};
@@ -91,7 +92,7 @@ export class SandboxRenderer {
     if (state === this.state) return;
     this.state = state;
     this.actors = agents;
-    const objects = [...state.nodes, ...state.structures, ...state.incidents]; const ids = new Set(objects.map(object => object.id));
+    const objects = [...state.nodes, ...state.structures.filter(s => !s.film), ...state.incidents]; const ids = new Set(objects.map(object => object.id));
     for (const [id, prop] of this.props) if (!ids.has(id)) { this.scene.remove(prop.group); this.disposeLabel(prop.label); this.props.delete(id); }
     for (const object of objects) {
       if (!this.props.has(object.id)) this.props.set(object.id, this.prop(object));
@@ -104,13 +105,13 @@ export class SandboxRenderer {
       if (enemy.fallen !== undefined) this.fallen.push(enemy);
       else { this.scene.remove(enemy.group); this.pool.push(enemy); }
     }
-    for (const threat of state.threats) this.updateEnemy(threat.id, threat.kind, threat.position, threat.health / threat.maxHealth, agents);
+    for (const threat of state.threats) this.updateEnemy(threat.id, threat.kind, threat.position, threat.health / threat.maxHealth, agents, threat.character);
     for (const [id, mission] of Object.entries(state.missions)) if (mission.escort) this.updateEnemy(`escort:${id}`, 'escort', mission.escort.position, mission.escort.health / 100, agents);
   }
-  private updateEnemy(id: string, kind: Enemy['kind'], position: Vector3, health: number, agents: Record<string, AgentState>): void {
+  private updateEnemy(id: string, kind: Enemy['kind'], position: Vector3, health: number, agents: Record<string, AgentState>, character?: string): void {
     let enemy = this.enemies.get(id);
     if (!enemy) {
-      const reuse = this.pool.findIndex(entry => entry.kind === kind);
+      const reuse = this.pool.findIndex(entry => entry.kind === kind && entry.character === character);
       if (reuse >= 0) enemy = this.pool.splice(reuse, 1)[0];
       else {
         const group = new THREE.Group(); let rig: CharacterRig | undefined;
@@ -123,29 +124,39 @@ export class SandboxRenderer {
             this.mesh(group, this.geometry(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 8, .13, 5, false)), this.metal, [0, 0, 0], [1, 1, 1]);
           }
         } else {
-          const base = agents[kind === 'escort' ? 'keymaker' : 'smith'] ?? agents.neo;
+          const base = agents[character ?? (kind === 'escort' ? 'keymaker' : 'smith')] ?? agents.neo;
           if (!base) return;
-          rig = this.models.create({ ...base, id: kind === 'escort' ? 'keymaker' : 'smith' }); rig.root.position.y = -1; group.add(rig.root);
-          if (kind === 'smith') rig.root.scale.multiplyScalar(1.18);
+          rig = this.models.create({ ...base, id: character ?? (kind === 'soldier' ? 'film_soldier' : kind === 'escort' ? 'keymaker' : 'smith'),
+            appearance: kind === 'soldier' ? { ...base.appearance, clothing: '#172121' } : base.appearance }); rig.root.position.y = -1; group.add(rig.root);
+          if (kind === 'soldier') {
+            this.mesh(rig.head, this.orb, this.dark, [0, .12, -.03], [.32, .3, .28]);
+            this.mesh(rig.head, this.orb, this.dark, [0, -.18, .20], [.22, .13, .08]);
+            this.mesh(rig.torso, this.box, this.dark, [0, .8, .29], [.9, .95, .25]);
+            for (const x of [-.28, 0, .28]) this.mesh(rig.torso, this.box, this.metal, [x, .58, .44], [.2, .34, .09]);
+          }
+          if (kind === 'smith' && !character) rig.root.scale.multiplyScalar(1.18);
         }
         const bar = this.mesh(group, this.box, kind === 'escort' ? this.green : this.red, [0, 6.4, 0], [4, .15, .15]);
-        const label = this.label(({ agent: '追踪特工', sentinel: '乌贼', smith: 'SMITH / 病毒核心', training: '武术训练程序', escort: '钥匙匠 · 留在附近护送' })[kind], kind === 'escort' ? '#c9e8ad' : '#f2aa99');
+        const label = this.label(character ? `${agents[character]?.name ?? character}${kind === 'training' ? ' · 对练' : ''}` : ({ agent: '追踪特工', sentinel: '乌贼', smith: 'SMITH / 病毒核心', training: '武术训练程序', soldier: '武装警卫', escort: '钥匙匠 · 留在附近护送' })[kind], kind === 'escort' ? '#c9e8ad' : '#f2aa99');
         label.position.y = 7.1; group.add(label);
         const telegraph = this.mesh(group, this.warningRing, this.warning, [0, -.94, 0], [2.8, 2.8, 2.8]); telegraph.rotation.x = -Math.PI / 2; telegraph.visible = false;
-        enemy = { group, rig, kind, health: bar, label, target: new THREE.Vector3(), telegraph, facing: 0 };
+        const aimLine = new THREE.Line(this.geometry(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()])), this.aimMaterial); aimLine.visible = false; group.add(aimLine);
+        enemy = { group, rig, kind, character, health: bar, label, target: new THREE.Vector3(), telegraph, aimLine, facing: 0 };
       }
       enemy.group.position.set(position.x, position.y, position.z); enemy.group.rotation.set(0, 0, 0); enemy.group.scale.setScalar(1);
-      enemy.fallen = undefined; enemy.hit = enemy.impact = undefined; enemy.health.visible = true;
+      enemy.fallen = undefined; enemy.hit = enemy.impact = enemy.shot = undefined; enemy.health.visible = true;
       if (enemy.rig) { enemy.rig.motion = newMotion(); enemy.rig.root.rotation.set(0, 0, 0); }
       this.scene.add(enemy.group); this.enemies.set(id, enemy);
     }
     enemy.target.set(position.x, position.y, position.z);
     enemy.health.scale.x = Math.max(.01, health) * 4;
   }
+  muzzle(id: string): THREE.Vector3 | undefined { const rig = this.enemies.get(id)?.rig; return rig ? weaponMuzzle(rig) : undefined; }
   impact(hit: CombatImpact): void {
     const enemy = this.enemies.get(hit.target); const source = this.enemies.get(hit.source);
     if (enemy) { enemy.hit = performance.now(); if (hit.downed) enemy.fallen = 0; }
     if (source) source.impact = performance.now();
+    if (source && hit.shot) source.shot = performance.now();
   }
   update(delta: number, camera: THREE.Camera, matrix: boolean, tick: number, running: boolean): void {
     if (running) this.elapsed += delta;
@@ -165,8 +176,10 @@ export class SandboxRenderer {
       enemy.group.visible = (threat?.matrix ?? true) === matrix;
       const difference = enemy.target.clone().sub(enemy.group.position);
       const actor = threat ? this.actors[threat.target] : undefined;
-      const toward = actor ? new THREE.Vector3(actor.position.x, actor.position.y, actor.position.z).sub(enemy.group.position) : difference;
+      const aim = threat?.aim ?? actor?.position;
+      const toward = aim ? new THREE.Vector3(aim.x, aim.y, aim.z).sub(enemy.group.position) : difference;
       if (toward.lengthSq() > .01) enemy.facing = Math.atan2(toward.x, toward.z);
+      if (threat?.patrol) enemy.facing = threat.yaw ?? 0;
       if (enemy.rig) {
         const turn = Math.atan2(Math.sin(enemy.facing - enemy.rig.root.rotation.y), Math.cos(enemy.facing - enemy.rig.root.rotation.y));
         enemy.rig.root.rotation.y += turn * (1 - Math.exp(-12 * delta));
@@ -175,17 +188,24 @@ export class SandboxRenderer {
       enemy.group.position.lerp(enemy.target, running ? 1 - Math.exp(-8 * delta) : 0);
       const dist = enemy.group.position.distanceTo(camera.position);
       if (enemy.rig) this.models.animate(enemy.rig, running ? delta : 0, { speed: Math.min(8.4, previous.distanceTo(enemy.group.position) / Math.max(.001, delta)), grounded: true, verticalVelocity: 0, turn: 0,
-        attack: threat && tick - threat.lastStrike < 2 ? threat.lastStrike : undefined, combo: 0, windingUp: threat?.attackAt !== undefined, hit: enemy.hit, impact: enemy.impact }, dist);
-      enemy.label.visible = dist < 65; enemy.label.scale.set(5, .94, 1);
+        attack: enemy.kind !== 'soldier' && threat && tick - threat.lastStrike < 3 ? threat.lastStrike : undefined, armed: enemy.kind === 'soldier', shot: enemy.shot, combo: threat?.combo ?? 0, windingUp: threat?.attackAt !== undefined, hit: enemy.hit, impact: enemy.impact }, dist);
+      enemy.label.visible = !threat?.patrol && dist < (enemy.kind === 'soldier' ? 30 : 65); enemy.label.scale.set(enemy.kind === 'soldier' ? 3 : 5, enemy.kind === 'soldier' ? .56 : .94, 1);
+      enemy.health.visible = !threat?.patrol;
       enemy.health.quaternion.copy(camera.quaternion);
       enemy.health.scale.y = threat?.attackAt !== undefined ? .28 + Math.sin(this.elapsed * 22) * .06 : .15;
       enemy.health.material = threat?.infection ? this.green : threat && threat.stunUntil > tick ? this.blue : enemy.kind === 'escort' ? this.green : this.red;
       enemy.telegraph.visible = threat?.attackAt !== undefined;
+      enemy.aimLine.visible = Boolean(threat?.aim && threat.attackAt !== undefined);
+      if (threat?.aim) {
+        const points = enemy.aimLine.geometry.attributes.position;
+        points.setXYZ(0, 0, 2.3, 0); points.setXYZ(1, threat.aim.x - enemy.group.position.x, threat.aim.y - enemy.group.position.y, threat.aim.z - enemy.group.position.z); points.needsUpdate = true;
+        enemy.aimLine.geometry.computeBoundingSphere();
+      }
       enemy.telegraph.scale.setScalar(2.8 + Math.sin(this.elapsed * 20) * .15);
     }
     for (let i = this.fallen.length - 1; i >= 0; i--) {
       const enemy = this.fallen[i]; enemy.fallen! += running ? delta : 0;
-      const age = enemy.fallen!; enemy.health.visible = enemy.label.visible = enemy.telegraph.visible = false;
+      const age = enemy.fallen!; enemy.health.visible = enemy.label.visible = enemy.telegraph.visible = enemy.aimLine.visible = false;
       enemy.group.rotation.y = enemy.facing;
       if (enemy.rig) enemy.rig.root.rotation.y = 0;
       enemy.group.rotation.x = -Math.min(Math.PI / 2, age * 4);
@@ -199,7 +219,7 @@ export class SandboxRenderer {
     for (const prop of this.props.values()) { this.scene.remove(prop.group); this.disposeLabel(prop.label); }
     for (const enemy of [...this.enemies.values(), ...this.pool, ...this.fallen]) { this.scene.remove(enemy.group); this.disposeLabel(enemy.label); }
     this.geometries.forEach(geometry => geometry.dispose());
-    [this.metal, this.dark, this.green, this.amber, this.red, this.blue, this.warning].forEach(material => material.dispose());
+    [this.metal, this.dark, this.green, this.amber, this.red, this.blue, this.warning, this.aimMaterial].forEach(material => material.dispose());
     this.models.dispose(); this.props.clear(); this.enemies.clear(); this.pool = [];
   }
 }

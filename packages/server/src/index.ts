@@ -3,7 +3,7 @@ import { createServer } from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { SimulationState, WorldStateFull, SandboxCommand } from '@auto_matrix/shared';
-import { NEO_CAST } from '@auto_matrix/shared';
+import { NEO_CAST, FILM_CAST } from '@auto_matrix/shared';
 import { config } from './config.js';
 import { EventBus } from './simulation/EventBus.js';
 import { SimulationLoop } from './simulation/SimulationLoop.js';
@@ -27,8 +27,9 @@ import { SandboxSystem } from './player/SandboxSystem.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const eventBus = new EventBus();
 const world = new WorldState();
-const memory = new PersistentMemoryManager(path.resolve(__dirname, '../../../data/memories'));
-const checkpoints = new CheckpointStore(path.resolve(__dirname, '../../../data/world.json'));
+const dataDirectory = process.env.MATRIX_DATA_DIR ?? path.resolve(__dirname, '../../../data');
+const memory = new PersistentMemoryManager(path.join(dataDirectory, 'memories'));
+const checkpoints = new CheckpointStore(path.join(dataDirectory, 'world.json'));
 const relationships = new RelationshipGraph();
 const llm = new LLMClient(config.llm);
 const story = new StoryEngine(eventBus);
@@ -72,7 +73,8 @@ function simulationState(): SimulationState {
     anomaly: Math.round(humans.reduce((sum, a) => sum + (a.mind?.suspicion ?? 0), 0) / Math.max(1, humans.length)),
     conversations: conversations.getActiveConversations().length,
     day: world.day,
-    chapter: sandbox.life.chapter?.title ?? story.getCurrentPhase().name, chapterDescription: sandbox.life.chapter?.objective ?? story.getCurrentPhase().description,
+    chapter: sandbox.life.film.scene?.title ?? sandbox.life.chapter?.title ?? story.getCurrentPhase().name,
+    chapterDescription: sandbox.life.film.scene?.context ?? sandbox.life.chapter?.objective ?? story.getCurrentPhase().description,
   };
 }
 
@@ -92,7 +94,7 @@ const simLoop = new SimulationLoop(config.simulation.tickRateMs, config.simulati
   config.simulation.reflectionIntervalTicks, config.simulation.stateSyncIntervalTicks, eventBus, async tick => {
     dynamics.neoStory = decisions.narrativeMode = Boolean(sandbox.state.neoLife);
     conversations.ordinaryLife = Boolean(sandbox.state.neoLife && !world.agents.get('neo')?.isAwakened);
-    decisions.reservedAgents = new Set(sandbox.state.neoLife ? NEO_CAST : []);
+    decisions.reservedAgents = new Set(sandbox.state.neoLife?.journey ? FILM_CAST : sandbox.state.neoLife ? NEO_CAST : []);
     decisions.timeOfDay = world.timeOfDay;
     await conversations.tickConversations(world.agents, tick);
     if (simLoop.shouldDecide()) await decisions.batchDecide(manager.getAllAgents(), world.agents, tick);
@@ -141,13 +143,18 @@ app.get('/api/evolution', (_req, res) => res.json(evolution.getUpdate()));
 app.get('/api/conversations', (_req, res) => res.json({ active: conversations.getActiveConversations() }));
 app.get('/api/memories/:agentId', (req, res) => res.json({ recent: memory.getRecentContext(req.params.agentId, 20), total: memory.getMemoryCount(req.params.agentId) }));
 
+players.onStoryRole = (socketId, agentId, tick) => {
+  sockets.getIO().to(socketId).emit('message', { type: 'player_state', data: { agentId }, tick, timestamp: Date.now() });
+};
+
 sockets.getIO().on('connection', socket => {
   sockets.sendFullState(socket.id, snapshot(), simLoop.getTick());
   socket.on('message', (message: unknown) => {
     if (!message || typeof message !== 'object') return;
     const { type, data } = message as { type?: string; data?: { speed?: number; kind?: string; agentId?: string; target?: string; takeover?: boolean } };
     if (type === 'play_as' && typeof data?.agentId === 'string') {
-      const result = players.possess(socket.id, data.agentId, simLoop.getTick(), data.takeover === true);
+      const requested = data.agentId === 'neo' && sandbox.state.neoLife?.journey ? sandbox.state.neoLife.journey.actor : data.agentId;
+      const result = players.possess(socket.id, requested, simLoop.getTick(), data.takeover === true);
       if (result.agentId === 'neo') sandbox.life.begin(world.agents.get('neo')!, simLoop.getTick());
       sockets.broadcastDelta({ ...sync.calculateDelta(world.agents), timeOfDay: world.timeOfDay, simulation: simulationState(), sandbox: sandbox.state }, simLoop.getTick());
       socket.emit('message', { type: 'player_state', data: result, tick: simLoop.getTick(), timestamp: Date.now() });
@@ -221,7 +228,7 @@ const playerTimer = setInterval(() => {
     simLoop.setTickRate(config.simulation.tickRateMs / speed / scale);
     sockets.broadcastDelta({ agents: {}, dirtyChunks: {}, events: [], simulation: simulationState() }, simLoop.getTick());
   }
-  const controlled = [...world.agents.entries()].filter(([, agent]) => agent.controller);
+  const controlled = [...world.agents.entries()].filter(([, agent]) => agent.controller || agent.currentAction?.parameters.hotelGuide && sandbox.life.film.state?.hotel || agent.currentAction?.parameters.welcome && sandbox.life.film.state?.scene === 'm1_pills' || agent.currentAction?.parameters.meeting && ['m1_bridge', 'm1_bug'].includes(sandbox.life.film.state?.scene ?? '') || agent.currentAction?.parameters.pills && sandbox.life.film.state?.scene === 'm1_pills' || agent.currentAction?.parameters.interrogation && sandbox.life.film.state?.scene === 'm1_interrogation' || sandbox.life.film.state?.ride?.phase === 'riding' && agent.currentAction?.parameters.passenger);
   if (controlled.length) sockets.broadcastDelta({ agents: Object.fromEntries(controlled), dirtyChunks: {}, events: [] }, simLoop.getTick());
 }, 50);
 

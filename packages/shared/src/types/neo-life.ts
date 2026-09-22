@@ -8,6 +8,7 @@ export interface NeoCycle {
   choices: Record<string, string>; evidence: string[];
 }
 export interface NeoLifeState {
+  journey?: import('../constants/film-story.js').FilmJourney;
   version: 1;
   cycle: number;
   startedDay: number;

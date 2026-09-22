@@ -1,4 +1,4 @@
-import { MELEE_COMBO, COMBO_WINDOW, COMBAT_SKILLS, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED, type CombatSkillId } from '@auto_matrix/shared';
+import { MELEE_COMBO, COMBO_WINDOW, COMBAT_SKILLS, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED, type CombatSkillId, type AwakeningPose, type OfficePhone, pillPose, lafayetteWelcomePose, type PillGesture, type InterrogationGesture, type LafayetteWelcomeGesture } from '@auto_matrix/shared';
 
 export interface MotionInput {
   speed: number;
@@ -12,6 +12,29 @@ export interface MotionInput {
   windingUp?: boolean;
   cast?: number;
   skill?: CombatSkillId;
+  armed?: boolean;
+  shot?: number;
+  crouching?: boolean;
+  seated?: boolean;
+  floorSeated?: boolean;
+  riding?: boolean;
+  climbing?: number;
+  performance?: AwakeningPose;
+  mirror?: number;
+  spoon?: number;
+  phone?: OfficePhone;
+  window?: number;
+  crossing?: number;
+  pills?: PillGesture;
+  interrogation?: InterrogationGesture;
+  meeting?: import('@auto_matrix/shared').MeetingGesture;
+  welcome?: LafayetteWelcomeGesture;
+  knock?: number;
+  officeShirt?: boolean;
+  inspecting?: boolean;
+  vase?: number;
+  realWorld?: boolean;
+  glasses?: boolean;
 }
 
 export interface MotionState {
@@ -33,9 +56,13 @@ export interface MotionState {
   castId?: number;
   skill?: CombatSkillId;
   skillAge: number;
+  shotId?: number;
+  shotAge: number;
+  seated: number;
+  climbPhase: number;
 }
 
-export const newMotion = (): MotionState => ({ time: 0, phase: 0, speed: 0, turn: 0, airborne: 0, wasGrounded: true, landing: 0, attackAge: 10, combo: 0, hitAge: 10, hitPause: 0, verticalVelocity: 0, skillAge: 10 });
+export const newMotion = (): MotionState => ({ time: 0, phase: 0, speed: 0, turn: 0, airborne: 0, wasGrounded: true, landing: 0, attackAge: 10, combo: 0, hitAge: 10, hitPause: 0, verticalVelocity: 0, skillAge: 10, shotAge: 10, seated: 0, climbPhase: 0 });
 const clamp = (x: number, low = 0, high = 1) => Math.min(high, Math.max(low, x));
 const mix = (a: number, b: number, t: number) => a + (b - a) * t;
 const smooth = (x: number) => x * x * (3 - 2 * x);
@@ -65,8 +92,16 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     const hold = Math.min(dt, state.hitPause); state.hitPause -= hold; dt -= hold;
   }
   const blend = 1 - Math.exp(-12 * dt);
+  const pills = input.pills && pillPose(input.pills);
+  const exiting = input.pills?.role === 'neo' && input.pills.phase === 'taking' && input.pills.elapsed > 11;
+  const welcome = input.welcome && lafayetteWelcomePose(input.welcome);
+  const welcomeWalking = input.welcome?.phase === 'approach' || input.welcome?.phase === 'departing' && input.welcome.role !== 'neo';
+  const welcomeSpeed = input.welcome?.role === 'morpheus' ? 2.6 : input.welcome?.role === 'neo' ? 2.3 : 1.8;
+  const speed = input.pills ? exiting ? 1.7 : 0 : welcomeWalking ? welcomeSpeed : input.speed;
   state.time += dt;
-  state.speed = mix(state.speed, input.speed, blend);
+  state.speed = mix(state.speed, input.riding || input.climbing !== undefined ? 0 : speed, blend);
+  state.climbPhase += (input.climbing ?? 0) * dt * 5;
+  state.seated = pills ? pills.seat : welcome ? welcome.seated : mix(state.seated, input.seated || input.riding || input.performance === 'connect' ? 1 : 0, blend);
   state.turn = mix(state.turn, clamp(input.turn, -3, 3), blend);
   state.airborne = mix(state.airborne, input.grounded ? 0 : 1, 1 - Math.exp(-18 * dt));
   if (dt > 0) {
@@ -76,6 +111,8 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     state.landing *= Math.exp(-8 * dt);
     state.hitAge += dt;
     state.skillAge += dt;
+    state.shotAge += dt;
+    if (input.shot !== undefined && input.shot !== state.shotId) { state.shotId = input.shot; state.shotAge = 0; }
     if (input.cast !== undefined && input.cast !== state.castId) { state.castId = input.cast; state.skill = input.skill; state.skillAge = 0; }
     if (input.attack !== undefined && input.attack !== state.attackId) {
       state.combo = input.combo ?? (state.attackAge < COMBO_WINDOW ? (state.combo + 1) % 3 : 0);
@@ -85,7 +122,9 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const run = smooth(clamp((state.speed - PLAYER_WALK_SPEED) / (PLAYER_RUN_SPEED - PLAYER_WALK_SPEED)));
   const stride = mix(.84, 1.22, run);
   const stance = mix(.6, .42, run);
-  if (input.grounded) state.phase += input.speed * dt / (2 * stride / stance);
+  if (input.grounded) state.phase += speed * dt / (2 * stride / stance);
+  if (welcomeWalking && input.welcome) state.phase = input.welcome.elapsed * welcomeSpeed / (2 * stride / stance);
+  if (exiting) state.phase = (input.pills!.elapsed - 11) * 1.1;
   const moving = smooth(clamp(state.speed / 2.2));
   const cycle = state.phase * Math.PI * 2;
   const bob = Math.cos(cycle * 2) * mix(.025, .045, run) * moving + Math.sin(state.time * 1.7) * .009 * (1 - moving);
@@ -102,7 +141,7 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const windup = Math.sin(clamp(age / strike.contact) * Math.PI) * guard;
   const recoil = state.hitAge < .32 ? Math.sin(state.hitAge / .32 * Math.PI) * (1 - state.hitAge / .32) : 0;
   const kick = state.combo === 2 ? extension : 0;
-  const hipHeight = 1.98 - moving * .08 - run * .12 + bob - state.landing * .20 - guard * .08 - dodging * .3;
+  const hipHeight = 1.98 - moving * .08 - run * .12 + bob - state.landing * .20 - guard * .08 - dodging * .3 - (input.crouching ? .9 : 0) - state.seated * .6 - (input.floorSeated ? .85 : 0);
   const legs = [0, .5].map(offset => {
     const foot = footTrajectory(state.phase + offset, stride, stance);
     const lift = foot.lift * mix(.22, .55, run) * moving;
@@ -131,10 +170,37 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
       grip: Math.max(run * .6, guard),
     };
   });
-  const twist = Math.cos(cycle) * moving * mix(.055, .10, run) + (extension * .3 - windup * .16) * (activeArm ? -1 : 1) * guard;
+  const glance = input.vase === undefined ? 0 : Math.sin(clamp((input.vase - .5) / 2.5) * Math.PI) * .15;
+  const twist = Math.cos(cycle) * moving * mix(.055, .10, run) + (extension * .3 - windup * .16) * (activeArm ? -1 : 1) * guard + glance;
   if (casting) for (const arm of arms) { arm.shoulder = mix(arm.shoulder, -1.35, casting); arm.elbow = mix(arm.elbow, -.25, casting); arm.grip = 0; }
-  return { legs, arms, hipHeight, twist, lean: run * .12 + state.landing * .12 + state.airborne * .04 + extension * .10 - kick * .27 - recoil * .35,
+  if (input.armed && guard < .1 && !casting) for (const arm of arms) {
+    const kickback = Math.max(0, 1 - state.shotAge / .18) ** 2;
+    arm.shoulder = -1.16 - recoil * .1 - kickback * .16; arm.elbow = -.4 - kickback * .12; arm.outward *= .4; arm.grip = .9;
+  }
+  for (let i = 0; i < 2; i++) {
+    legs[i].hip = mix(legs[i].hip, -1.36, state.seated); legs[i].knee = mix(legs[i].knee, 1.46, state.seated); legs[i].ankle = mix(legs[i].ankle, -.1, state.seated);
+    arms[i].shoulder = mix(arms[i].shoulder, -.32, state.seated); arms[i].elbow = mix(arms[i].elbow, -1.1, state.seated); arms[i].outward = mix(arms[i].outward, (i ? 1 : -1) * .16, state.seated);
+  }
+  if (input.riding) for (const arm of arms) { arm.shoulder = -.9; arm.elbow = -.65; arm.grip = .8; }
+  if (input.climbing !== undefined) for (let i = 0; i < 2; i++) {
+    const pull = Math.sin(state.climbPhase + i * Math.PI);
+    legs[i].hip = -.75 + pull * .4; legs[i].knee = 1.1 - pull * .6; legs[i].ankle = -.2;
+    arms[i].shoulder = -2.2 - pull * .55; arms[i].elbow = -.65 + pull * .5; arms[i].grip = 1;
+  }
+  if (input.performance === 'touch') { arms[0].shoulder = -1.5; arms[0].elbow = -.06; arms[0].grip = 0; }
+  if (input.spoon !== undefined) { arms[0].shoulder = -.72; arms[0].elbow = -1.45; arms[0].outward = -.2; arms[0].grip = .65; }
+  if (input.vase !== undefined) {
+    const reach = Math.sin(clamp((input.vase - .6) / 1.8) * Math.PI);
+    arms[1].shoulder = mix(arms[1].shoulder, -1.1, reach); arms[1].elbow = mix(arms[1].elbow, -.25, reach);
+  }
+  if (input.performance && !['touch', 'connect'].includes(input.performance)) for (let i = 0; i < 2; i++) {
+    const afloat = input.performance === 'float'; const raised = input.performance === 'lift';
+    arms[i].shoulder = raised ? -2 : -.5 + (afloat ? Math.sin(state.time * 2 + i) * .2 : 0);
+    arms[i].elbow = -.7; arms[i].outward = (i ? 1 : -1) * (afloat ? .65 : .25); arms[i].grip = raised ? .8 : .1;
+    legs[i].hip = -.2; legs[i].knee = .45 + (afloat ? Math.sin(state.time * 1.8 + i * Math.PI) * .15 : 0);
+  }
+  return { legs, arms, hipHeight, twist, lean: run * .12 + state.landing * .12 + state.airborne * .04 + extension * .10 - kick * .27 - recoil * .35 + (input.crouching ? .26 : 0) + (input.riding ? .2 : 0),
     sway: Math.sin(cycle) * moving * .035, lunge: extension * .16 - kick * .25 - recoil * .22 - dodging * .35,
-    roll: -state.turn * run * .035 - dodging * .22, headTurn: -twist * .65, moving, run, airborne: state.airborne,
+    roll: -state.turn * run * .035 - dodging * .22, headTurn: -twist * .65 + glance, moving, run, airborne: state.airborne,
     coat: moving * (.10 + run * .3) + state.airborne * .18 + kick * .35, impact: extension, landing: state.landing };
 }

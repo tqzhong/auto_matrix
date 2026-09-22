@@ -1,0 +1,32 @@
+{
+  "source": "https://theasc.com/article/flashback-the-matrix-cinematography/",
+  "credit": "Unit photography by Jason Boland, courtesy of Warner Bros. / American Cinematographer",
+  "purpose": "Local visual reference; not a runtime game texture or redistribution license",
+  "downloadedAt": "2026-09-21",
+  "assets": [
+    {
+      "file": "Matrix-Lobby-1.jpg",
+      "url": "https://theasc.com/wp-content/uploads/2026/04/Matrix-Lobby-1.jpg",
+      "bytes": 158244,
+      "sha256": "ac85cb85d9b9a9d97448ca188671c98558a66ac0a80b1532b2dbb94f858ec386"
+    },
+    {
+      "file": "Matrix-Lobby-2.jpg",
+      "url": "https://theasc.com/wp-content/uploads/2026/04/Matrix-Lobby-2.jpg",
+      "bytes": 236185,
+      "sha256": "073ad843a354347e6dcbc26d5a70b346629c3ee20624862fa61f2a898d421fb3"
+    },
+    {
+      "file": "Matrix-Lobby-3.jpg",
+      "url": "https://theasc.com/wp-content/uploads/2026/04/Matrix-Lobby-3.jpg",
+      "bytes": 125118,
+      "sha256": "e54b93885984ae77becd166ba8392e4406551c2e0f0bdf0327dacbba00fb8d32"
+    },
+    {
+      "file": "Matrix-Lobby-4.jpg",
+      "url": "https://theasc.com/wp-content/uploads/2026/04/Matrix-Lobby-4.jpg",
+      "bytes": 360779,
+      "sha256": "e5740eb2ecd7260c1d2c7a63c82d81036e64ec9b5ded0c757e4fc3055a18391b"
+    }
+  ]
+}

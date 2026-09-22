@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { CombatImpact, SkillCast } from '@auto_matrix/shared';
 import type { GameAudio } from './GameAudio.js';
+import { GunfireEffects } from './GunfireEffects.js';
 
 interface Burst {
   group: THREE.Group;
@@ -17,8 +18,10 @@ export class CombatEffects {
   private pulses: { group: THREE.Group; material: THREE.MeshBasicMaterial; age: number; radius: number; duration: number; direction: THREE.Vector3 }[] = [];
   private ring = new THREE.RingGeometry(.94, 1, 64);
   private flashTexture: THREE.CanvasTexture;
+  private gunfire: GunfireEffects;
 
   constructor(private scene: THREE.Scene, private audio: GameAudio) {
+    this.gunfire = new GunfireEffects(scene, audio);
     const canvas = document.createElement('canvas'); canvas.width = canvas.height = 64;
     const ctx = canvas.getContext('2d')!;
     const glow = ctx.createRadialGradient(32, 32, 0, 32, 32, 31);
@@ -66,10 +69,11 @@ export class CombatEffects {
     this.playSound(false, true);
   }
 
-  impact(hit: CombatImpact, hurtPlayer: boolean): void {
+  impact(hit: CombatImpact, hurtPlayer: boolean, muzzle?: THREE.Vector3): void {
+    if (hit.shot) { this.gunfire.shot(hit, muzzle); if (!hit.damage) return; }
     if (this.bursts.length >= 20) this.remove(this.bursts.shift()!);
     const heavy = hit.combo === 2; const count = heavy ? 20 : 12;
-    if (hit.damage > 0) this.playSound(heavy);
+    if (hit.damage > 0 && !hit.shot) this.playSound(heavy);
     const group = new THREE.Group(); group.position.set(hit.position.x, hit.position.y, hit.position.z);
     const positions = new Float32Array(count * 6);
     const velocities = Array.from({ length: count }, () => new THREE.Vector3(
@@ -90,6 +94,7 @@ export class CombatEffects {
   }
 
   update(delta: number): void {
+    this.gunfire.update(delta);
     for (let i = this.pulses.length - 1; i >= 0; i--) {
       const pulse = this.pulses[i]; pulse.age += delta;
       if (pulse.age > pulse.duration) { this.removePulse(pulse); this.pulses.splice(i, 1); continue; }
@@ -123,6 +128,7 @@ export class CombatEffects {
   }
   private removePulse(pulse: typeof this.pulses[number]): void { this.scene.remove(pulse.group); pulse.material.dispose(); }
   dispose(): void {
+    this.gunfire.dispose();
     this.bursts.forEach(burst => this.remove(burst)); this.bursts = []; this.flashTexture.dispose();
     this.pulses.forEach(pulse => this.removePulse(pulse)); this.pulses = []; this.ring.dispose();
   }

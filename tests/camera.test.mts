@@ -3,6 +3,22 @@ import { test, type TestContext } from 'node:test';
 import * as THREE from 'three';
 import type { AgentState, PlayerInput } from '@auto_matrix/shared';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
+import { CameraController } from '../packages/client/src/engine/CameraController.js';
+import { newFreewayRide, filmPosition, officeCrossingPose, pillRoot, meetingRoot, meetingCarPose, MEETING_CAR } from '@auto_matrix/shared';
+
+test('observer camera releases drag and ignores pointer capture while a character controls the view', () => {
+  let captures = 0;
+  const element = Object.assign(new EventTarget(), { setPointerCapture() { captures++; } });
+  const camera = new THREE.PerspectiveCamera();
+  const observer = new CameraController(camera, element as unknown as HTMLElement);
+  observer.setEnabled(false);
+  element.dispatchEvent(Object.assign(new Event('pointerdown'), { pointerId: 1, clientX: 0, clientY: 0, button: 0 }));
+  assert.equal(captures, 0);
+  observer.setEnabled(true);
+  element.dispatchEvent(Object.assign(new Event('pointerdown'), { pointerId: 1, clientX: 0, clientY: 0, button: 0 }));
+  assert.equal(captures, 1);
+  observer.dispose();
+});
 
 function setup(t: TestContext, rotation = 0) {
   class InputTarget extends EventTarget { matches() { return false; } }
@@ -41,6 +57,88 @@ function setup(t: TestContext, rotation = 0) {
 }
 
 const angle = (a: number, b: number) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
+
+test('passenger first-person look follows a car turn while preserving the chosen look offset', t => {
+  const game = setup(t, Math.PI); game.state.currentLocation = 'film_extraction_car';
+  const pose = (elapsed: number) => {
+    const gesture = { phase: 'driving' as const, elapsed, role: 'neo' as const, bugged: false };
+    const root = meetingRoot({ ...gesture, approach: { ...MEETING_CAR.approach, yaw: Math.PI } }, 'neo');
+    game.state.position = filmPosition('film_extraction_car', root.x, root.z); game.state.rotation = root.yaw;
+    game.state.currentAction = { type: 'idle', parameters: { meeting: gesture }, startedAt: 0, duration: 1, progress: 0 };
+    return meetingCarPose(gesture).yaw;
+  };
+  const initial = pose(5); game.controls.possess(game.state); game.step(.1); game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+  game.event(game.canvas, 'mousedown', { button: 2 });
+  game.event(game.document, 'mousemove', { movementX: 75, movementY: 0 }); game.step(.1);
+  const offset = angle(game.yaw(), Math.PI + initial);
+  assert.ok(Math.abs(offset) > .05, 'the passenger actually looked away from forward');
+  const turned = pose(10); game.step(.5);
+  assert.ok(Math.abs(angle(game.yaw(), Math.PI + turned) - offset) < .01, 'the car turn preserves relative free look');
+  assert.ok(game.camera.position.distanceTo(new THREE.Vector3(game.state.position.x, game.state.position.y + 2.1, game.state.position.z)) < 2);
+});
+
+test('arrival hands back a clear third-person view toward the alley entrance', t => {
+  const game = setup(t); game.state.currentLocation = 'film_extraction_car';
+  const encounter = { phase: 'outside' as const, elapsed: 0, bugged: false, approach: { ...MEETING_CAR.approach, yaw: Math.PI } };
+  const root = meetingRoot(encounter, 'neo');
+  game.state.position = filmPosition('film_extraction_car', root.x, root.z); game.state.rotation = root.yaw;
+  game.controls.possess(game.state); game.step(.5);
+  assert.ok(game.camera.position.distanceTo(game.group.position) > 6, 'the parked car must not squeeze the camera against Neo');
+  const doorway = filmPosition('film_extraction_car', 640, 29);
+  const targetYaw = Math.atan2(doorway.x - game.state.position.x, doorway.z - game.state.position.z);
+  assert.ok(Math.abs(angle(game.yaw(), targetYaw)) < .2, 'the entrance is ahead when control returns');
+});
+
+test('crossing a window synchronizes the exit heading and does not fall back to the phone camera between updates', t => {
+  const game = setup(t, -Math.PI / 2);
+  game.state.position = filmPosition('film_metacortex_floor', -25.25, -27.65); game.state.currentLocation = 'film_metacortex_floor';
+  game.controls.possess(game.state); game.controls.performing = true; game.controls.phone = { phase: 'connected', elapsed: 11 };
+  for (let frame = 0; frame < 64; frame++) {
+    const elapsed = frame / 10; const pose = officeCrossingPose(elapsed);
+    game.state.position = { ...filmPosition('film_metacortex_floor', pose.x, pose.z), y: 1 + pose.y }; game.state.rotation = pose.yaw;
+    game.state.currentAction = { type: 'idle', parameters: { crossing: elapsed }, startedAt: 0, duration: 1, progress: 0 };
+    game.step(.1);
+    assert.ok(Math.abs(angle(game.sent.at(-1)!.yaw, pose.yaw)) < .001, 'stale pre-crossing aim must not overwrite the exit orientation');
+  }
+  game.state.currentLocation = 'film_office_ledge'; game.state.position = filmPosition('film_office_ledge', 0, -27); game.state.rotation = 0; game.state.currentAction = null;
+  // Actor updates arrive more frequently than the journey snapshot.
+  game.step(.1); assert.equal(game.controls.performing, false);
+  game.step(.5);
+  assert.ok(Math.abs(angle(game.yaw(), 0)) < .1);
+  assert.ok(game.camera.position.distanceTo(game.group.position) < 14, 'the camera stays on the ledge, not at the parcel');
+});
+
+test('motorcycle throttle and steering are independent of the view, and opening a panel brakes', t => {
+  const game = setup(t, Math.PI); game.controls.ride = newFreewayRide();
+  game.key('KeyW'); game.key('KeyD'); game.step(.2);
+  assert.deepEqual(game.sent.at(-1)!.drive, { throttle: 1, steer: 1, brake: false });
+  game.key('KeyV'); game.document.pointerLockElement = game.canvas;
+  game.event(game.document, 'mousemove', { movementX: 450, movementY: 0 }); game.step(.2);
+  assert.deepEqual(game.sent.at(-1)!.drive, { throttle: 1, steer: 1, brake: false });
+  assert.equal(game.controls.motion.riding, true); assert.equal(game.controls.motion.speed, 0, 'the rider must not run on the saddle');
+  game.controls.setEnabled(false); game.step(.1);
+  assert.deepEqual(game.sent.at(-1)!.drive, { throttle: 0, steer: 0, brake: true });
+});
+
+test('spoon focus is a held input and is released when a panel opens or the window loses focus', t => {
+  const game = setup(t);
+  game.key('KeyG'); game.step(.2); assert.equal(game.sent.at(-1)!.focus, true);
+  game.key('KeyG', false); game.step(.1); assert.equal(game.sent.at(-1)!.focus, false);
+  game.key('KeyG'); game.controls.setEnabled(false); game.step(.1); assert.equal(game.sent.at(-1)!.focus, false);
+  game.controls.setEnabled(true); game.key('KeyG'); game.event(game.window, 'blur'); game.step(.1);
+  assert.equal(game.sent.at(-1)!.focus, false);
+});
+
+test('the pod descent camera stays outside the drain instead of collapsing against an obsolete floor', t => {
+  const game = setup(t, Math.PI); const position = filmPosition('film_power_plant_pods', 0, 2); position.y -= 9;
+  Object.assign(game.state, { position, isInMatrix: false, currentLocation: 'film_power_plant_pods' });
+  game.controls.possess(game.state); game.controls.performing = true; game.step(.5);
+  assert.ok(game.camera.position.z > position.z + 8, 'the authored descent needs a clear follow distance below the tank floor');
+  assert.ok(game.camera.position.y > position.y + 4);
+  game.key('KeyW'); game.key('Space'); game.key('KeyF'); game.step(.5);
+  assert.deepEqual(game.group.position.toArray(), [position.x, position.y, position.z]);
+  assert.equal(game.actions.length, 0);
+});
 
 for (const view of ['third-person', 'first-person']) for (const [key, heading] of [['KeyD', -Math.PI / 2], ['KeyA', Math.PI / 2], ['KeyS', Math.PI]] as const) {
   test(`${view} camera follows ${key} without steering a held direction into circles`, t => {
@@ -103,6 +201,14 @@ test('V switches perspective mid-turn without redirecting a held movement key', 
   }
 });
 
+for (const firstPerson of [false, true]) test(`film scene entry aligns the ${firstPerson ? 'first' : 'third'}-person view with the new entrance`, t => {
+  const game = setup(t, .7); if (firstPerson) game.key('KeyV');
+  const next = { ...game.state, position: { x: 4416, y: 1, z: 4110 }, rotation: Math.PI, currentLocation: 'film_hotel_roofs' };
+  game.controls.update(1 / 60, next, game.group, true);
+  assert.ok(Math.abs(angle(game.yaw(), Math.PI)) < .01);
+  assert.equal(game.controls.firstPerson, firstPerson);
+});
+
 test('first-person mouse steering turns the view and movement together after keyboard follow', t => {
   const game = setup(t); game.key('KeyV'); game.key('KeyD'); game.step(2);
   const beforeLook = game.yaw();
@@ -133,4 +239,41 @@ test('awakening and speed abilities do not turn an ordinary space press into a s
   game.key('Space'); let peak = 1;
   for (let i = 0; i < 60; i++) { game.step(1 / 60); peak = Math.max(peak, game.group.position.y); }
   assert.ok(peak > 2.3 && peak < 2.9); assert.equal(game.group.position.y, 1);
+});
+
+for (const firstPerson of [false, true]) test(`armed ${firstPerson ? 'first' : 'third'}-person movement strafes without pulling the aim away`, t => {
+  const game = setup(t); game.controls.firearm = true; if (firstPerson) game.key('KeyV');
+  game.key('KeyD'); game.step(2);
+  assert.ok(game.sent.filter(input => input.x < -.1).every(input => Math.abs(input.yaw) < .01));
+  game.key('KeyD', false); game.step(.5); // Let the following camera settle at the stopped position.
+  assert.ok(Math.abs(game.yaw()) < .01);
+  assert.ok(Math.abs(game.group.children[0].rotation.y) < .01);
+  game.key('KeyT'); game.step(1); game.key('KeyT', false);
+  const shots = game.actions.filter(action => action === 'shoot').length;
+  assert.ok(shots >= 4 && shots <= 5);
+  game.step(1); assert.equal(game.actions.filter(action => action === 'shoot').length, shots);
+  game.key('KeyR'); assert.equal(game.actions.at(-1), 'reload');
+  game.controls.setEnabled(false); game.key('KeyT'); game.step(.5);
+  assert.equal(game.actions.filter(action => action === 'shoot').length, shots);
+});
+
+
+test('the pill camera supports seated first person and releases movement when the actor finishes before the journey snapshot', t => {
+  const game = setup(t, Math.PI);
+  game.state.currentLocation = 'film_lafayette'; game.state.position = filmPosition('film_lafayette', 0, -3.3);
+  game.controls.possess(game.state);
+  const draw = (elapsed: number) => {
+    const gesture = { phase: 'taking' as const, elapsed, choice: 'red' as const, role: 'neo' as const };
+    const root = pillRoot({ ...gesture, approach: { x: 0, z: -3.3, yaw: Math.PI } });
+    game.state.position = filmPosition('film_lafayette', root.x, root.z); game.state.rotation = root.yaw;
+    game.state.currentAction = { type: 'idle', parameters: { pills: gesture }, startedAt: 0, duration: 1, progress: 0 }; game.step(.15);
+  };
+  draw(0); game.key('KeyV'); game.key('KeyV', false); draw(1);
+  assert.equal(game.controls.firstPerson, true); assert.ok(Math.abs(angle(game.yaw(), -Math.PI / 2)) < .02);
+  assert.ok(Math.abs(game.camera.position.y - game.group.position.y - 2.09) < .02, 'first-person eyes sit at the seated height');
+  game.key('KeyV'); game.key('KeyV', false); draw(13);
+  game.state.currentAction = null; game.step(.1); assert.equal(game.controls.performing, false);
+  assert.equal(game.controls.motion.pills, undefined);
+  game.key('KeyW'); game.step(.5); game.key('KeyW', false);
+  assert.ok(game.group.position.z > game.state.position.z + .4, 'ordinary movement must resume clear of the chair');
 });

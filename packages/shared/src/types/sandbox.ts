@@ -29,11 +29,17 @@ export interface WorldStructure {
   position: Vector3;
   matrix: boolean;
   health: number;
+  film?: { scene: string; width: number; depth: number; height: number };
 }
 export interface SandboxThreat {
+  character?: string;
+  combo?: number;
+  patrol?: boolean;
+  yaw?: number;
+  scene?: string;
   campaign?: 'neo';
   id: string;
-  kind: 'agent' | 'sentinel' | 'smith' | 'training';
+  kind: 'agent' | 'sentinel' | 'smith' | 'training' | 'soldier';
   position: Vector3;
   matrix: boolean;
   health: number;
@@ -44,6 +50,7 @@ export interface SandboxThreat {
   stunUntil: number;
   lastStrike: number;
   attackAt?: number;
+  aim?: Vector3;
   infection?: { source: string; until: number; nextAt: number };
 }
 export interface WorldIncident {

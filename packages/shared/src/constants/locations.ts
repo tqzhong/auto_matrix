@@ -1,4 +1,5 @@
-// 世界位置定义 — scaled to 2560×2560 world (NYC)
+import { FILM_SETS } from './film-sets.js';
+// The everyday city and the trilogy's distinct narrative destinations.
 export interface LocationDef {
   id: string;
   name: string;
@@ -12,6 +13,12 @@ export interface LocationDef {
 }
 
 export const LOCATIONS: Record<string, LocationDef> = {
+  ...Object.fromEntries(Object.values(FILM_SETS).map(set => [set.id, {
+    id: set.id, name: set.name, nameCn: set.name, description: set.detail,
+    bounds: { min: { x: set.center.x - set.width / 2, y: set.center.y - 1, z: set.center.z - set.depth / 2 },
+      max: { x: set.center.x + set.width / 2, y: set.center.y + set.height, z: set.center.z + set.depth / 2 } },
+    faction: null, isInterior: true, storyPhase: null, world: set.world,
+  }])),
   neo_apartment: {
     id: 'neo_apartment', name: 'Anderson Residence', nameCn: 'Neo 的公寓 · 101 室',
     description: '一间有电脑、唱片、厨房和晨光的小公寓。Thomas Anderson 每天从这里醒来。',

@@ -1,6 +1,8 @@
 import * as THREE from 'three';
-import { groundHeight, playerBlocked, stepPlayer, MELEE_COMBO, COMBO_WINDOW, COMBAT_SKILLS, combatDisplace, PLAYER_WALK_SPEED, meleeReach, type AgentState, type PlayerInput, type Vector3, type WorldStructure, type CombatImpact, type SkillCast } from '@auto_matrix/shared';
+import { FILM_SETS, OFFICE_CONTACT, LOBBY_FIRE_INTERVAL, groundHeight, playerBlocked, stepPlayer, MELEE_COMBO, COMBO_WINDOW, COMBAT_SKILLS, combatDisplace, PLAYER_WALK_SPEED, meleeReach, type OfficePhone, type AwakeningPose, type FreewayRide, type AgentState, type PlayerInput, type Vector3, type WorldStructure, type CombatImpact, type SkillCast } from '@auto_matrix/shared';
+import { lafayetteWelcomeCamera } from './LafayetteWelcomeCamera.js';
 import type { MotionInput } from '../agents/CharacterMotion.js';
+import { interrogationPose, meetingPose, meetingCarPose } from '@auto_matrix/shared';
 
 export class PlayerControls {
   id: string | null = null;
@@ -34,6 +36,7 @@ export class PlayerControls {
   private cameraReady = false;
   private cameraTarget = new THREE.Vector3();
   private cameraStep = 0;
+  private welcomeShot?: ReturnType<typeof lafayetteWelcomeCamera>['name'];
   readonly motion: MotionInput = { speed: 0, verticalVelocity: 0, grounded: true, turn: 0 };
   onViewChange?: (firstPerson: boolean) => void;
   onMenu?: () => void;
@@ -42,6 +45,17 @@ export class PlayerControls {
   onHUD?: () => void;
   structures: WorldStructure[] = [];
   targets: Vector3[] = [];
+  firearm = false;
+  ride?: FreewayRide;
+  climbing = false;
+  performing = false;
+  private wasPerforming = false;
+  private meetingYaw?: number;
+  mirror = 0;
+  spoon?: number;
+  phone?: OfficePhone;
+  private firing = false;
+  private lastShot = -1000;
 
   constructor(private canvas: HTMLCanvasElement, private camera: THREE.PerspectiveCamera,
     private send: (input: PlayerInput) => void, private action: (kind: string) => void) {
@@ -56,6 +70,7 @@ export class PlayerControls {
   }
 
   possess(state: AgentState): void {
+    this.meetingYaw = undefined; this.welcomeShot = undefined;
     this.id = state.id; this.position = { ...state.position }; this.yaw = state.rotation;
     this.movementYaw = this.yaw; this.movementForward = 0; this.movementRight = 0;
     this.lastLook = -1000; this.dragging = false;
@@ -63,13 +78,15 @@ export class PlayerControls {
     this.lastAttack = -1000; this.attackQueuedUntil = 0; this.attackCombo = 0;
     this.motion.hit = this.motion.impact = undefined; this.impactAge = 10;
     this.motion.cast = undefined; this.motion.skill = undefined; this.impulse = undefined;
+    this.motion.shot = undefined;
     this.vy = 0; this.planar = { x: 0, z: 0 }; this.authoritative = state; this.firstPerson = false; this.enabled = true;
     this.keys.clear(); this.lastSent = 0; this.sequence = 0;
+    this.firing = false; this.lastShot = -1000;
     this.camera.fov = 57; this.camera.updateProjectionMatrix();
     this.onViewChange?.(false);
   }
   release(): void {
-    this.id = null; this.keys.clear(); this.enabled = true;
+    this.id = null; this.keys.clear(); this.enabled = true; this.firing = false; this.firearm = false; this.ride = undefined; this.climbing = false; this.performing = false; this.mirror = 0; this.spoon = undefined; this.phone = undefined; this.welcomeShot = undefined;
     this.camera.fov = 48; this.camera.updateProjectionMatrix();
     if (document.pointerLockElement === this.canvas) document.exitPointerLock();
   }
@@ -94,7 +111,7 @@ export class PlayerControls {
       event.preventDefault(); this.onPanel?.(event.code === 'KeyB' ? 'inventory' : event.code === 'KeyJ' ? 'journal' : 'map'); return;
     }
     if (!this.enabled) return;
-    if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'Space', 'ShiftLeft', 'ShiftRight', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.code)) {
+    if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyZ', 'KeyG', 'Space', 'ShiftLeft', 'ShiftRight', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.code)) {
       event.preventDefault(); this.keys.add(event.code);
     }
     if (!event.repeat) {
@@ -105,7 +122,8 @@ export class PlayerControls {
       if (['KeyQ', 'KeyC', 'KeyX'].includes(event.code) && this.running && this.authoritative?.status === 'alive') {
         this.send(this.input(false)); this.action(event.code === 'KeyQ' ? 'ability' : event.code === 'KeyC' ? 'ability2' : 'dodge');
       }
-      if (event.code === 'KeyR') this.action('travel');
+      if (event.code === 'KeyT' && this.firearm) { this.firing = true; this.requestShot(); }
+      if (event.code === 'KeyR') this.action(this.firearm ? 'reload' : 'travel');
       if (event.code === 'KeyG') this.action('interact');
       if (event.code === 'Digit1') this.action('medkit');
       if (event.code === 'Digit2') this.action('emp');
@@ -117,15 +135,18 @@ export class PlayerControls {
       }
     }
   };
-  private keyUp = (event: KeyboardEvent): void => { this.keys.delete(event.code); };
-  private blur = (): void => { this.keys.clear(); this.dragging = false; this.localJump = false; this.networkJump = false; this.attackQueuedUntil = 0; if (this.id) this.send(this.input(false)); };
+  private keyUp = (event: KeyboardEvent): void => { this.keys.delete(event.code); if (event.code === 'KeyT') this.firing = false; };
+  private blur = (): void => { this.keys.clear(); this.firing = false; this.dragging = false; this.localJump = false; this.networkJump = false; this.attackQueuedUntil = 0; if (this.id) this.send(this.input(false)); };
   private visibility = (): void => { if (document.hidden) this.blur(); };
   private mouseDown = (event: MouseEvent): void => {
     if (!this.id || !this.enabled) return;
     if (event.button === 2) this.dragging = true;
-    if (event.button === 0 && document.pointerLockElement === this.canvas) this.requestAttack();
+    if (event.button === 0 && document.pointerLockElement === this.canvas) {
+      if (this.firearm) { this.firing = true; this.requestShot(); } else this.requestAttack();
+    }
   };
   private mouseUp = (): void => {
+    this.firing = false;
     if (this.dragging) this.lastLook = performance.now();
     this.dragging = false;
   };
@@ -140,6 +161,7 @@ export class PlayerControls {
   private click = (): void => { if (this.id && this.enabled && document.pointerLockElement !== this.canvas) this.lockPointer(); };
 
   private requestAttack(): void {
+    if (this.ride || this.climbing || this.performing || this.spoon !== undefined) return;
     if (!this.running || !this.enabled || this.authoritative?.status !== 'alive' || this.impulse || performance.now() - (this.motion.hit ?? -1000) < 220) return;
     const now = performance.now(); const elapsed = (now - this.lastAttack) / 1000;
     if (elapsed < MELEE_COMBO[this.attackCombo].duration) {
@@ -154,11 +176,17 @@ export class PlayerControls {
     this.send(this.input(false)); this.action('attack');
   }
 
+  private requestShot(): void {
+    if (!this.firearm || !this.enabled || !this.running || this.authoritative?.status !== 'alive' || performance.now() - this.lastShot < LOBBY_FIRE_INTERVAL * 1000) return;
+    this.lastShot = performance.now(); this.send(this.input(false)); this.action('shoot');
+  }
+
   impact(hit: CombatImpact): void {
     if (hit.source !== this.id && hit.target !== this.id) return;
     this.impactAge = 0; this.impactStrength = hit.combo === 2 ? .10 : .055;
     if (hit.target === this.id) { this.motion.hit = performance.now(); this.attackQueuedUntil = 0; this.impulse = undefined; }
     else this.motion.impact = performance.now();
+    if (hit.shot && hit.source === this.id) this.motion.shot = performance.now();
   }
 
   skill(cast: SkillCast): void {
@@ -186,12 +214,59 @@ export class PlayerControls {
     const length = Math.hypot(x, z);
     if (length > 1) { x /= length; z /= length; }
     const attacking = (performance.now() - this.lastAttack) / 1000 < MELEE_COMBO[this.attackCombo].duration;
-    return { x, z, yaw: attacking ? this.attackYaw : this.yaw, sprint: this.keys.has('ShiftLeft') || this.keys.has('ShiftRight'), jump, sequence: ++this.sequence };
+    return { x, z, yaw: attacking ? this.attackYaw : this.yaw, sprint: this.keys.has('ShiftLeft') || this.keys.has('ShiftRight'), crouch: this.keys.has('KeyZ'), jump,
+      drive: this.ride ? { throttle: this.enabled ? Math.max(0, forward) : 0, steer: this.enabled ? right : 0, brake: forward < 0 || !this.enabled } : undefined,
+      climb: this.climbing && this.enabled ? forward : 0, focus: this.enabled && this.running && this.keys.has('KeyG'), sequence: ++this.sequence };
   }
 
   update(delta: number, state: AgentState, group: THREE.Group, running: boolean): void {
     if (!this.id) return;
     this.running = running;
+    if (this.motion.crossing !== undefined && state.currentLocation === 'film_office_ledge' && state.currentAction?.parameters.crossing === undefined) this.performing = false;
+    if (this.motion.pills && !state.currentAction?.parameters.pills) this.performing = false;
+    if (state.currentAction?.parameters.pills) this.performing = true;
+    if (this.motion.interrogation && !state.currentAction?.parameters.interrogation) this.performing = false;
+    if (state.currentAction?.parameters.interrogation) this.performing = true;
+    if (this.motion.meeting && !state.currentAction?.parameters.meeting) this.performing = false;
+    if (state.currentAction?.parameters.meeting) this.performing = true;
+    if (this.motion.welcome && !state.currentAction?.parameters.welcome) this.performing = false;
+    if (state.currentAction?.parameters.welcome) this.performing = true;
+    if (this.motion.knock !== undefined && state.currentAction?.parameters.knock === undefined) this.performing = false;
+    if (state.currentAction?.parameters.knock !== undefined) this.performing = true;
+    if (this.wasPerforming && !this.performing) this.yaw = this.movementYaw = this.facing;
+    this.wasPerforming = this.performing;
+    this.motion.armed = this.firearm;
+    this.motion.crouching = this.enabled && !this.performing && this.keys.has('KeyZ');
+    this.motion.riding = Boolean(this.ride);
+    this.motion.performance = this.performing ? state.currentAction?.parameters.filmPose as AwakeningPose : undefined;
+    this.motion.mirror = this.mirror;
+    this.motion.spoon = this.spoon;
+    this.motion.phone = this.phone;
+    this.motion.window = this.performing ? state.currentAction?.parameters.window as number | undefined : undefined;
+    this.motion.crossing = this.performing ? state.currentAction?.parameters.crossing as number | undefined : undefined;
+    if (this.motion.crossing !== undefined && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
+    this.motion.pills = state.currentAction?.parameters.pills as MotionInput['pills'];
+    this.motion.interrogation = state.currentAction?.parameters.interrogation as MotionInput['interrogation'];
+    this.motion.meeting = state.currentAction?.parameters.meeting as MotionInput['meeting'];
+    this.motion.welcome = state.currentAction?.parameters.welcome as MotionInput['welcome'];
+    this.motion.knock = state.currentAction?.parameters.knock as number | undefined;
+    const vehicleYaw = this.motion.meeting && meetingCarPose(this.motion.meeting).yaw;
+    if (vehicleYaw !== undefined && this.meetingYaw !== undefined && this.firstPerson) {
+      const turn = Math.atan2(Math.sin(vehicleYaw - this.meetingYaw), Math.cos(vehicleYaw - this.meetingYaw));
+      this.yaw += turn; this.movementYaw += turn;
+    }
+    this.meetingYaw = vehicleYaw;
+    if (this.motion.meeting && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
+    if (this.motion.welcome && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
+    if (this.motion.knock !== undefined && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
+    this.motion.officeShirt = state.id === 'neo' && state.currentLocation === 'film_agent_interrogation';
+    if (this.motion.interrogation && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
+    if (this.motion.pills && (!this.firstPerson || this.motion.pills.phase === 'offering' || this.motion.pills.elapsed > 9.6)) this.yaw = this.movementYaw = state.rotation;
+    this.motion.vase = state.currentAction?.parameters.vase as number | undefined;
+    this.motion.realWorld = !state.isInMatrix;
+    this.motion.glasses = state.id !== 'neo' || state.isAwakened && state.currentLocation !== 'film_oracle_home';
+    this.motion.climbing = this.climbing ? Number(this.keys.has('KeyW') || this.keys.has('ArrowUp')) - Number(this.keys.has('KeyS') || this.keys.has('ArrowDown')) : undefined;
+    if (this.firing) this.requestShot();
     const now = performance.now();
     if (!running || !this.enabled || state.status !== 'alive') { this.attackQueuedUntil = 0; this.localJump = false; this.networkJump = false; this.impulse = undefined; }
     else if (this.attackQueuedUntil > now && (now - this.lastAttack) / 1000 >= MELEE_COMBO[this.attackCombo].duration) this.requestAttack();
@@ -199,6 +274,11 @@ export class PlayerControls {
       const difference = Math.hypot(state.position.x - this.position.x, state.position.z - this.position.z);
       if (difference > 12 || state.isInMatrix !== this.authoritative?.isInMatrix || state.status === 'dead') {
         this.position = { ...state.position }; this.vy = 0; this.planar = { x: 0, z: 0 }; this.cameraReady = false;
+        if (state.currentLocation !== this.authoritative?.currentLocation && (FILM_SETS[state.currentLocation] || FILM_SETS[this.authoritative?.currentLocation ?? ''])) {
+          this.yaw = this.facing = this.movementYaw = state.rotation;
+          this.keys.clear(); this.movementForward = this.movementRight = 0; this.lastLook = -1000;
+          this.lastAttack = -1000; this.attackQueuedUntil = 0; this.localJump = this.networkJump = false; this.impulse = undefined;
+        }
       } else {
         this.position.x += (state.position.x - this.position.x) * 0.16;
         this.position.z += (state.position.z - this.position.z) * 0.16;
@@ -207,7 +287,11 @@ export class PlayerControls {
       this.authoritative = state;
     }
     const previous = { ...this.position };
-    if (running && this.enabled && state.status === 'alive') {
+    if (this.ride || this.climbing || this.performing) {
+      const blend = this.motion.pills || this.motion.interrogation || this.motion.meeting ? 1 : 1 - Math.exp(-20 * delta);
+      this.position.x += (state.position.x - this.position.x) * blend; this.position.y += (state.position.y - this.position.y) * blend; this.position.z += (state.position.z - this.position.z) * blend;
+      this.vy = 0; this.planar = { x: 0, z: 0 }; this.localJump = false;
+    } else if (running && this.enabled && state.status === 'alive') {
       const boost = state.activeEffects.some(effect => ['speed_blur', 'agent_dodge', 'phase_shift'].includes(effect.visualEffect)) ? 1.8 : 1;
       const input = this.input(this.localJump);
       const attackScale = this.impulse || now - (this.motion.hit ?? -1000) < 220 ? 0 : (now - this.lastAttack) / 1000 < MELEE_COMBO[this.attackCombo].duration ? .4 : 1;
@@ -225,43 +309,148 @@ export class PlayerControls {
     }
     group.position.set(this.position.x, this.position.y, this.position.z);
     const dx = this.position.x - previous.x; const dz = this.position.z - previous.z;
-    this.motion.speed = Math.hypot(dx, dz) / Math.max(delta, .001);
-    this.motion.grounded = this.position.y <= groundHeight(this.position, state.isInMatrix) + .12;
+    this.motion.speed = this.ride || this.climbing || this.performing ? 0 : Math.hypot(dx, dz) / Math.max(delta, .001);
+    this.motion.grounded = Boolean(this.ride) || this.climbing || this.performing || this.position.y <= groundHeight(this.position, state.isInMatrix) + .12;
     this.motion.verticalVelocity = this.vy;
+    this.motion.inspecting = Boolean((this.motion.pills || this.motion.interrogation || this.motion.welcome || this.motion.knock !== undefined) && !this.firstPerson) || Boolean(this.phone && this.performing && this.motion.window === undefined && this.motion.crossing === undefined) || this.spoon !== undefined && this.enabled && this.motion.speed < .25 && this.motion.grounded;
     const attacking = (now - this.lastAttack) / 1000 < MELEE_COMBO[this.attackCombo].duration;
-    const heading = attacking ? this.attackYaw : this.motion.speed > .1 ? Math.atan2(dx, dz) : this.facing;
+    const heading = this.ride || this.climbing || this.performing ? state.rotation : attacking ? this.attackYaw : this.firearm ? this.yaw : this.motion.speed > .1 ? Math.atan2(dx, dz) : this.facing;
     const turn = Math.atan2(Math.sin(heading - this.facing), Math.cos(heading - this.facing));
-    this.facing += turn * (1 - Math.exp(-14 * delta)); this.motion.turn = turn * 8;
-    if (running && this.enabled && this.motion.speed > .1 && !this.dragging && performance.now() - this.lastLook > 900) {
+    this.facing += turn * (this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.welcome || this.motion.knock !== undefined ? 1 : 1 - Math.exp(-14 * delta)); this.motion.turn = turn * 8;
+    if (running && this.enabled && (this.motion.speed > .1 || this.ride || this.climbing) && !this.dragging && performance.now() - this.lastLook > 900) {
       const cameraTurn = Math.atan2(Math.sin(this.facing - this.yaw), Math.cos(this.facing - this.yaw));
       this.yaw += cameraTurn * (1 - Math.exp(-5 * delta));
     }
     const body = group.children[0];
-    if (body) body.rotation.y = this.firstPerson ? this.yaw : this.facing;
-    const sprint = this.motion.speed > PLAYER_WALK_SPEED * 1.6;
-    this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, this.firstPerson ? sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
+    if (body) body.rotation.y = this.firstPerson && !this.performing ? this.yaw : this.facing;
+    const sprint = this.motion.speed > PLAYER_WALK_SPEED * 1.6 || Boolean(this.ride && this.ride.speed > 20);
+    const interviewWide = !this.firstPerson && this.motion.interrogation && (this.motion.interrogation.phase === 'file' || this.motion.interrogation.phase === 'coercion' && this.motion.interrogation.elapsed > 5.3 && this.motion.interrogation.elapsed < 14);
+    const welcomeWide = !this.firstPerson && this.motion.welcome && ['approach', 'departing'].includes(this.motion.welcome.phase);
+    this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, interviewWide || welcomeWide ? 58 : this.motion.inspecting ? 42 : this.firstPerson ? sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
     this.camera.updateProjectionMatrix();
     this.cameraStep += this.motion.speed * delta;
-    const target = new THREE.Vector3(this.position.x, this.position.y + (this.firstPerson ? 2.99 : 2.05), this.position.z);
+    const target = new THREE.Vector3(this.position.x, this.position.y + (this.firstPerson ? 2.99 : 2.05) - (this.motion.pills ? .9 : 0) - (this.motion.crouching ? 1.1 : 0), this.position.z);
+    const meeting = this.motion.meeting && meetingPose(this.motion.meeting);
+    if (meeting) { target.y -= meeting.seat * .87; target.x += Math.sin(vehicleYaw!) * meeting.recline * .52; target.z += Math.cos(vehicleYaw!) * meeting.recline * .52; }
+    const interview = this.motion.interrogation && interrogationPose(this.motion.interrogation);
+    if (interview) {
+      target.y -= interview.seated * .79;
+      if (this.firstPerson && interview.pinned) {
+        const center = FILM_SETS.film_agent_interrogation.center;
+        target.lerp(new THREE.Vector3(center.x + .6, center.y + 1.78, center.z), interview.pinned);
+      }
+    }
+    const resetCamera = !this.cameraReady;
+    if (!this.motion.welcome) this.welcomeShot = undefined;
     if (!this.cameraReady) { this.cameraTarget.copy(target); this.cameraReady = true; }
     const verticalTarget = THREE.MathUtils.lerp(this.cameraTarget.y, target.y, 1 - Math.exp(-8 * delta));
     this.cameraTarget.lerp(target, 1 - Math.exp(-22 * delta)); this.cameraTarget.y = verticalTarget;
-    if (this.firstPerson) {
+    const spoon = this.motion.inspecting && group.getObjectByName('held-spoon');
+    if (this.motion.meeting && !this.firstPerson) {
+      const gesture = this.motion.meeting; const pose = meeting!; const center = FILM_SETS.film_adams_bridge.center;
+      const car = meetingCarPose(gesture); const origin = new THREE.Vector3(center.x + car.x, center.y - 1, center.z + car.z);
+      const entering = gesture.phase === 'boarding' || gesture.phase === 'leaving' || gesture.phase === 'exiting';
+      const travelling = gesture.phase === 'driving' || gesture.phase === 'parked';
+      const ideal = travelling ? new THREE.Vector3(14, 8, 19) : entering ? new THREE.Vector3(9, 4.4, 7) : new THREE.Vector3(.1, 3.65, -2.85);
+      const focus = travelling ? new THREE.Vector3(0, 2.1, 0) : entering ? new THREE.Vector3(2.6, 2.3, 1.5) : new THREE.Vector3(.12, 2.95, 1.85);
+      if (!entering && pose.probe > 0) { ideal.lerp(new THREE.Vector3(1.1, 3.65, -1.25), pose.probe); focus.lerp(new THREE.Vector3(.65, 2.65, 1.65), pose.probe); }
+      if (!entering && pose.discard > 0) { ideal.lerp(new THREE.Vector3(.1, 3.55, -.8), pose.discard); focus.lerp(new THREE.Vector3(-1.8, 2.9, .65), pose.discard); }
+      const rotation = new THREE.Euler(0, car.yaw, 0); ideal.applyEuler(rotation).add(origin); focus.applyEuler(rotation).add(origin);
+      if (resetCamera || entering && gesture.elapsed < .15) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
+      this.camera.lookAt(focus);
+    } else if (this.motion.interrogation && !this.firstPerson) {
+      const gesture = this.motion.interrogation; const center = FILM_SETS.film_agent_interrogation.center; const origin = new THREE.Vector3(center.x, center.y - 1, center.z);
+      const action = gesture.phase === 'coercion' || gesture.phase === 'done'; const t = gesture.elapsed;
+      let ideal = new THREE.Vector3(2, 4.7, 9.6); let focus = new THREE.Vector3(.1, 2.5, 0);
+      if (gesture.phase === 'response' || action && t < 5.3) {
+        ideal.set(.9, 3.4, 3.5); focus.set(4, 3.15, 0);
+        const mouth = action ? THREE.MathUtils.smoothstep(t, 1.8, 3.1) : 0;
+        ideal.lerp(new THREE.Vector3(2.35, 3.25, .48), mouth); focus.lerp(new THREE.Vector3(3.85, 3.12, 0), mouth);
+      } else if (action && t < 12.7) {
+        const pin = THREE.MathUtils.smoothstep(t, 9.8, 12.7);
+        ideal.set(2.2, 5.8, 7.5).lerp(new THREE.Vector3(3.5, 5.5, 7.5), pin); focus.set(4.8, 3, 0).lerp(new THREE.Vector3(0, 2.6, 0), pin);
+      }
+      else if (action) {
+        ideal.set(4.8, 5.8, 6.2); focus.set(.3, 2.75, 0);
+        const device = THREE.MathUtils.smoothstep(t, 14, 15.2); const implant = THREE.MathUtils.smoothstep(t, 17.7, 19);
+        ideal.lerp(new THREE.Vector3(.3, 4.55, 3), device).lerp(new THREE.Vector3(-.2, 4.8, 1.6), implant);
+        focus.lerp(new THREE.Vector3(-.35, 3.25, -.55), device).lerp(new THREE.Vector3(-.43, 2.94, .01), implant);
+      }
+      ideal.add(origin); focus.add(origin);
+      if (resetCamera) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-7 * delta));
+      this.camera.lookAt(focus);
+    } else if (this.motion.knock !== undefined && !this.firstPerson) {
+      const center = FILM_SETS.film_lafayette.center;
+      const ideal = new THREE.Vector3(center.x + 26.2, center.y + 4.45, center.z + 5.3);
+      const focus = new THREE.Vector3(center.x + 21.55, center.y + 2.55, center.z + .2);
+      if (resetCamera || this.motion.knock < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
+      this.camera.lookAt(focus);
+    } else if (this.motion.welcome && !this.firstPerson) {
+      const gesture = this.motion.welcome; const center = FILM_SETS.film_lafayette.center;
+      const origin = new THREE.Vector3(center.x, center.y - 1, center.z);
+      const shot = lafayetteWelcomeCamera(gesture); const ideal = shot.ideal; const focus = shot.focus;
+      ideal.add(origin); focus.add(origin);
+      const changed = this.welcomeShot !== shot.name; this.welcomeShot = shot.name;
+      if (resetCamera || changed) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-7 * delta));
+      this.camera.lookAt(focus);
+    } else if (this.motion.pills && !this.firstPerson) {
+      const center = FILM_SETS.film_lafayette.center;
+      const taking = this.motion.pills.phase === 'taking';
+      const close = taking ? THREE.MathUtils.smoothstep(this.motion.pills.elapsed, .1, 1.2) * (1 - THREE.MathUtils.smoothstep(this.motion.pills.elapsed, 3.65, 4.3)) : 0;
+      const mouth = taking ? THREE.MathUtils.smoothstep(this.motion.pills.elapsed, 2.15, 2.85) * (1 - THREE.MathUtils.smoothstep(this.motion.pills.elapsed, 3.85, 4.3)) : 0;
+      const ideal = new THREE.Vector3(.1, 3.85, 1.1).lerp(new THREE.Vector3(.6, 3.05, -2.1), close).lerp(new THREE.Vector3(-.3, 3.85, -2.8), mouth).add(new THREE.Vector3(center.x, center.y - 1, center.z));
+      const focus = new THREE.Vector3(0, 2.6, -6).lerp(new THREE.Vector3(-.2, 2.5, -5.8), close).lerp(new THREE.Vector3(1.3, 3.2, -6), mouth).add(new THREE.Vector3(center.x, center.y - 1, center.z));
+      if (resetCamera) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-6 * delta));
+      this.camera.lookAt(focus);
+    } else if (this.performing && this.motion.crossing !== undefined && !this.firstPerson) {
+      const center = FILM_SETS.film_metacortex_floor.center;
+      const outside = THREE.MathUtils.smoothstep(this.motion.crossing, 1.7, 5.4);
+      const ideal = new THREE.Vector3(center.x - 29.4, center.y + 3.8, center.z - 31 - outside * 4.5);
+      if (this.motion.crossing < .15 || resetCamera) this.camera.position.copy(ideal);
+      else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
+      this.camera.lookAt(this.position.x, this.position.y + 1.9, this.position.z);
+    } else if (this.performing && this.motion.window !== undefined && !this.firstPerson) {
+      const center = FILM_SETS.film_metacortex_floor.center;
+      const reveal = THREE.MathUtils.smoothstep(this.motion.window, 2, 3.2);
+      const ideal = new THREE.Vector3(-20, 6.6, -22.5).lerp(new THREE.Vector3(-24, 6.8, -25), reveal).add(new THREE.Vector3(center.x, center.y - 1, center.z));
+      const focus = new THREE.Vector3(-28.5, 3.8, -27).lerp(new THREE.Vector3(-42, -8, -36), reveal).add(new THREE.Vector3(center.x, center.y - 1, center.z));
+      this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta)); this.camera.lookAt(focus);
+    } else if (this.performing && this.phone && this.motion.window === undefined && this.motion.crossing === undefined) {
+      const center = FILM_SETS.film_metacortex_floor.center;
+      const call = this.phone.phase === 'answering' ? THREE.MathUtils.smoothstep(this.phone.elapsed, .4, 2) : 0;
+      const lift = this.phone.phase === 'pickup' ? THREE.MathUtils.smoothstep(this.phone.elapsed, .65, 1.8) : 1;
+      const origin = new THREE.Vector3(center.x + OFFICE_CONTACT.x, center.y - 1, center.z + OFFICE_CONTACT.z);
+      const ideal = origin.clone().add(new THREE.Vector3(.7, 4.25, .5).lerp(new THREE.Vector3(2.35, 4.35, -2.5), call));
+      const target = origin.clone().add(new THREE.Vector3(.5, 2.725, -1.39).lerp(new THREE.Vector3(.38, 3.255, -.66), lift).lerp(new THREE.Vector3(.15, 3.65, -.1), call));
+      this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta)); this.camera.lookAt(target);
+    } else if (this.performing && this.motion.vase !== undefined) {
+      const center = FILM_SETS.film_oracle_home.center;
+      const ideal = new THREE.Vector3(center.x + 1.8, center.y + 4.8, center.z - 8.8);
+      this.camera.position.lerp(ideal, 1 - Math.exp(-7 * delta));
+      this.camera.lookAt(center.x + 7.6, center.y + 1.7, center.z - 11.7);
+    } else if (spoon) {
+      spoon.updateWorldMatrix(true, false);
+      const focus = spoon.localToWorld(new THREE.Vector3(.1, .55, 0));
+      const ideal = focus.clone().add(new THREE.Vector3(Math.sin(this.yaw + .45) * 2.1, .35 + Math.sin(this.pitch), Math.cos(this.yaw + .45) * 2.1));
+      this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta)); this.camera.lookAt(focus);
+    } else if (this.firstPerson) {
       this.camera.position.copy(target);
       if (this.motion.grounded && this.motion.speed > .1) this.camera.position.y += Math.sin(this.cameraStep * 2) * .018;
-      this.camera.lookAt(target.x + Math.sin(this.yaw) * Math.cos(this.pitch), target.y - Math.sin(this.pitch), target.z + Math.cos(this.yaw) * Math.cos(this.pitch));
+      const pitch = interview?.pinned ? THREE.MathUtils.lerp(this.pitch, -Math.PI / 2 + this.pitch * .6, interview.pinned) : this.pitch;
+      this.camera.lookAt(target.x + Math.sin(this.yaw) * Math.cos(pitch), target.y - Math.sin(pitch), target.z + Math.cos(this.yaw) * Math.cos(pitch));
     } else {
       const offset = new THREE.Vector3(-Math.sin(this.yaw) * Math.cos(this.pitch), Math.sin(this.pitch) + 0.1, -Math.cos(this.yaw) * Math.cos(this.pitch));
       const shoulder = new THREE.Vector3(-Math.cos(this.yaw), 0, Math.sin(this.yaw)).multiplyScalar(this.camera.aspect < .8 ? .3 : .8);
       const pivot = this.cameraTarget.clone().add(shoulder);
-      const followDistance = this.camera.aspect < .8 ? 13 : 11.5;
+      const followDistance = this.ride ? 22 : this.camera.aspect < .8 ? 13 : 11.5;
       let cameraDistance = followDistance;
-      for (let distance = 1; distance <= followDistance; distance += .5) {
+      for (let distance = 1; !(this.performing && state.currentLocation === 'film_power_plant_pods') && distance <= followDistance; distance += .5) {
         const point = pivot.clone().addScaledVector(offset, distance);
         if (playerBlocked(point, state.isInMatrix, 0.5, this.structures)) { cameraDistance = Math.max(2, distance - 1); break; }
       }
       const ideal = pivot.clone().addScaledVector(offset, cameraDistance);
-      this.camera.position.lerp(ideal, 1 - Math.exp(-20 * delta));
+      if (resetCamera) this.camera.position.copy(ideal);
+      else this.camera.position.lerp(ideal, 1 - Math.exp(-20 * delta));
       this.camera.lookAt(pivot.clone().add(new THREE.Vector3(Math.sin(this.yaw) * 2, -.08, Math.cos(this.yaw) * 2)));
     }
     this.impactAge += delta;

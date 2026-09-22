@@ -1,9 +1,11 @@
-import { LOCATIONS, NEO_CAST, neoSkillUnlocked, insideLifeRoom, MELEE_COMBO, COMBO_WINDOW, COMBAT_SKILLS, playerSkills, dodgeDirection, combatDisplace, groundHeight, meleeReach, distance, locationEntrance, playerBlocked, stepPlayer, type AgentState, type PlayerInput, type SandboxCommand, type SkillCast, type Vector3, type CombatSkillId } from '@auto_matrix/shared';
+import { LOCATIONS, heldPhone, pillLocked, filmSetAt, FILM_CAST, NEO_CAST, neoSkillUnlocked, insideLifeRoom, MELEE_COMBO, COMBO_WINDOW, LOBBY_FIRE_INTERVAL, COMBAT_SKILLS, playerSkills, dodgeDirection, combatDisplace, groundHeight, meleeReach, distance, locationEntrance, playerBlocked, stepPlayer, type AgentState, type PlayerInput, type SandboxCommand, type SkillCast, type Vector3, type CombatSkillId } from '@auto_matrix/shared';
 import type { SandboxSystem } from './SandboxSystem.js';
 import type { WorldState } from '../world/WorldState.js';
 import type { ConversationEngine } from '../agents/ConversationEngine.js';
 import type { ActionExecutor } from '../agents/ActionExecutor.js';
 import type { WorldDynamics } from '../story/WorldDynamics.js';
+import { INTERROGATION_CAST, interrogationLocked } from '@auto_matrix/shared';
+import { MEETING_CAST, meetingLocked } from '@auto_matrix/shared';
 
 interface PlayerSession {
   agentId: string;
@@ -12,6 +14,7 @@ interface PlayerSession {
   vy: number;
   planar: { x: number; z: number };
   lastAttack: number;
+  lastShot?: number;
   combo: number;
   strike?: { age: number; resolved: boolean };
   impulse?: { direction: Vector3; remaining: number; speed: number; strike: boolean };
@@ -23,19 +26,34 @@ const idleInput = (): PlayerInput => ({ x: 0, z: 0, yaw: 0, sprint: false, jump:
 export class PlayerController {
   private sessions = new Map<string, PlayerSession>();
   private owners = new Map<string, string>();
+  onStoryRole?: (socketId: string, agentId: string, tick: number) => void;
   onSkill?: (cast: SkillCast, tick: number) => void;
   onReplaced?: (socketId: string, tick: number) => void;
 
-  constructor(private world: WorldState, private conversations: ConversationEngine, private actions: ActionExecutor, private dynamics: WorldDynamics, private sandbox?: SandboxSystem) {}
+  constructor(private world: WorldState, private conversations: ConversationEngine, private actions: ActionExecutor, private dynamics: WorldDynamics, private sandbox?: SandboxSystem) {
+    if (sandbox) sandbox.life.film.handoff = (from, id, tick, newCycle) => {
+      const owner = this.owners.get(from.id);
+      return Boolean(owner && this.possess(owner, id, tick, false, newCycle).agentId === id);
+    };
+  }
 
   getAgent(socketId: string): AgentState | undefined {
     const session = this.sessions.get(socketId);
     return session ? this.world.agents.get(session.agentId) : undefined;
   }
 
-  possess(socketId: string, id: string, tick: number, takeover = false): { agentId?: string; error?: string } {
+  possess(socketId: string, id: string, tick: number, takeover = false, newCycle = false): { agentId?: string; error?: string } {
     const agent = this.world.agents.get(id);
     if (!agent) return { error: '没有找到这个角色。' };
+    const hotel = this.sandbox?.life.film.state?.hotel;
+    if ((id === 'trinity' || id === 'morpheus') && hotel && hotel.welcome?.phase !== 'done') return { error: id === 'trinity' ? 'Trinity 正在带路并参与迎接，离开相邻房间后可以接入。' : 'Morpheus 正在窗前等待并迎接 Neo，交谈结束后可以接入。' };
+    if (MEETING_CAST.includes(id as typeof MEETING_CAST[number]) && this.sandbox?.life.film.state && meetingLocked(this.sandbox.life.film.state)) return { error: '这个角色正在参与接头检查，结束后可以接入。' };
+    if (INTERROGATION_CAST.includes(id as typeof INTERROGATION_CAST[number]) && this.sandbox?.life.film.state && interrogationLocked(this.sandbox.life.film.state)) return { error: '这个特工正在参与审讯，结束后可以接入。' };
+    if (id === 'morpheus' && this.sandbox?.life.film.state && pillLocked(this.sandbox.life.film.state)) return { error: 'Morpheus 正在与 Neo 交谈递药，结束后可以接入。' };
+    if (id === 'keymaker' && this.sandbox?.life.film.state?.ride?.phase === 'riding') return { error: '钥匙匠正在后座接受护送，抵达接应区后可以接入。' };
+    if (this.sandbox?.state.threats.some(t => t.character === id)) return { error: '这个角色正在剧情交手，结束后可以接入。' };
+    const restarting = newCycle && id === 'neo' && this.sandbox?.life.film.state?.finished;
+    if (!restarting && this.sandbox?.life.film.unavailable(id) && !this.sandbox.life.film.controls(agent)) return { error: '这个角色在本轮故事中已无法接入；新循环会恢复。' };
     const owner = this.owners.get(id);
     if (owner && owner !== socketId) {
       if (!takeover) return { error: '这个角色已在其他页面游玩。点击角色，在当前页面继续原有进度。' };
@@ -50,7 +68,9 @@ export class PlayerController {
     } else if (owner === socketId && agent.status === 'alive') return { agentId: id };
     this.release(socketId, tick);
     this.conversations.interrupt(id, this.world.agents, tick);
-    if (agent.status !== 'alive') {
+    if (agent.status !== 'alive' && this.sandbox?.life.film.controls(agent)) {
+      this.sandbox.life.film.command(agent, 'retry', tick);
+    } else if (agent.status !== 'alive') {
       agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
       agent.currentLocation = agent.mind?.home ?? (agent.isInMatrix ? 'times_square' : 'nebuchadnezzar');
       agent.isInMatrix = LOCATIONS[agent.currentLocation]?.world !== 'real';
@@ -62,11 +82,17 @@ export class PlayerController {
     }
     agent.controller = 'player';
     this.sandbox?.enter(agent);
-    if (playerBlocked(agent.position, agent.isInMatrix)) agent.position = locationEntrance(agent.currentLocation);
+    if (!this.sandbox?.life.film.performing(agent) && playerBlocked(agent.position, agent.isInMatrix)) agent.position = locationEntrance(agent.currentLocation);
     agent.currentAction = null; agent.targetPosition = null; agent.currentPath = [];
     agent.velocity = { x: 0, y: 0, z: 0 };
     this.sessions.set(socketId, { agentId: id, input: { ...idleInput(), yaw: agent.rotation }, lastInput: Date.now(), vy: 0, planar: { x: 0, z: 0 }, lastAttack: 0, combo: 0, stagger: 0 });
     this.owners.set(id, socketId);
+    this.sandbox?.life.film.windowFrame(agent, 0, tick);
+    this.sandbox?.life.film.crossingFrame(agent, 0, tick);
+    this.sandbox?.life.film.pillFrame(agent, 0, tick);
+    this.sandbox?.life.film.interrogationFrame(agent, 0, tick);
+    this.sandbox?.life.film.meetingFrame(agent, false, 0, tick);
+    this.sandbox?.life.film.hotelFrame(agent, 0, tick);
     if (agent.mind) agent.mind.thought = '由玩家决定下一步行动。';
     return { agentId: id };
   }
@@ -79,10 +105,17 @@ export class PlayerController {
       this.conversations.interrupt(agent.id, this.world.agents, tick);
       delete agent.controller;
       agent.currentAction = null; agent.velocity = { x: 0, y: 0, z: 0 };
+      this.sandbox?.life.film.windowFrame(agent, 0, tick);
+      this.sandbox?.life.film.crossingFrame(agent, 0, tick);
+      this.sandbox?.life.film.pillFrame(agent, 0, tick);
+      this.sandbox?.life.film.interrogationFrame(agent, 0, tick);
+      this.sandbox?.life.film.meetingFrame(agent, false, 0, tick);
+      this.sandbox?.life.film.hotelFrame(agent, 0, tick);
       agent.activeEffects = agent.activeEffects.filter(effect => effect.remainingSeconds === undefined);
       if (agent.mind) agent.mind.thought = '重新回到自己的生活，继续追寻尚未完成的目标。';
     }
     this.owners.delete(session.agentId); this.sessions.delete(socketId);
+    this.sandbox?.life.film.reconcileCast();
   }
 
   receiveInput(socketId: string, value: unknown): void {
@@ -90,7 +123,8 @@ export class PlayerController {
     if (!session || !value || typeof value !== 'object') return;
     const input = value as PlayerInput;
     if (![input.x, input.z, input.yaw, input.sequence].every(Number.isFinite) || Math.abs(input.x) > 1 || Math.abs(input.z) > 1 || input.sequence < session.input.sequence) return;
-    session.input = { x: input.x, z: input.z, yaw: input.yaw, sprint: input.sprint === true, jump: input.jump === true || session.input.jump, sequence: input.sequence };
+    const drive = input.drive && Number.isFinite(input.drive.throttle) && Number.isFinite(input.drive.steer) ? { throttle: Math.max(0, Math.min(1, input.drive.throttle)), steer: Math.max(-1, Math.min(1, input.drive.steer)), brake: input.drive.brake === true } : undefined;
+    session.input = { x: input.x, z: input.z, yaw: input.yaw, sprint: input.sprint === true, crouch: input.crouch === true, jump: input.jump === true || session.input.jump, drive, climb: Number.isFinite(input.climb) ? Math.max(-1, Math.min(1, input.climb!)) : 0, focus: input.focus === true, sequence: input.sequence };
     session.lastInput = Date.now();
   }
 
@@ -117,10 +151,32 @@ export class PlayerController {
     }
     for (const session of this.sessions.values()) {
       const agent = this.world.agents.get(session.agentId)!;
-      if (!running || agent.status !== 'alive') { agent.velocity = { x: 0, y: 0, z: 0 }; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue; }
+      if (!running || agent.status !== 'alive') { agent.velocity = { x: 0, y: 0, z: 0 }; this.sandbox?.life.film.hotelFrame(agent, 0, tick); session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue; }
       session.stagger = Math.max(0, session.stagger - dt);
       const stale = now - session.lastInput > 300;
       const input = stale ? { ...idleInput(), yaw: session.input.yaw } : session.input;
+      this.sandbox?.life.film.hotelFrame(agent, dt, tick);
+      if (this.sandbox?.life.film.awakeningFrame(agent, dt, tick)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
+      if (this.sandbox?.life.film.performing(agent)) {
+        this.sandbox.life.film.windowFrame(agent, dt, tick);
+        this.sandbox.life.film.crossingFrame(agent, dt, tick);
+        this.sandbox.life.film.phoneFrame(agent, dt, tick);
+        this.sandbox.life.film.pillFrame(agent, dt, tick);
+        this.sandbox.life.film.interrogationFrame(agent, dt, tick);
+        this.sandbox.life.film.meetingFrame(agent, Boolean(input.focus), dt, tick);
+        session.input.yaw = agent.rotation;
+        this.sandbox.life.film.oracleFrame(agent, false, dt, tick);
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
+      if (this.sandbox?.life.film.climbFrame(agent, input.climb ?? 0, dt, tick)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; continue;
+      }
+      if (this.sandbox?.life.film.driveFrame(agent, input.drive ?? { throttle: 0, steer: 0, brake: true }, dt, tick)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.strike = undefined; session.impulse = undefined; session.palm = undefined; session.input.jump = false;
+        continue;
+      }
       const previous = agent.position;
       const boost = agent.activeEffects.some(effect => ['speed_blur', 'agent_dodge', 'phase_shift'].includes(effect.visualEffect)) ? 1.8 : 1;
       const attackScale = session.impulse || session.stagger > 0 ? 0 : session.strike ? .4 : 1;
@@ -147,7 +203,8 @@ export class PlayerController {
         if (!session.strike.resolved && session.strike.age >= strike.contact) {
           session.strike.resolved = true;
           if (this.sandbox?.attack(agent, tick, session.combo) == null) {
-            const target = [...this.world.agents.values()].filter(other => !(this.sandbox?.state.neoLife && NEO_CAST.includes(other.id)) && other.id !== agent.id && other.status === 'alive' && other.isInMatrix === agent.isInMatrix
+            const cast = this.sandbox?.state.neoLife?.journey ? FILM_CAST : this.sandbox?.state.neoLife ? NEO_CAST : [];
+            const target = [...this.world.agents.values()].filter(other => !cast.includes(other.id) && other.id !== agent.id && other.status === 'alive' && other.isInMatrix === agent.isInMatrix
               && meleeReach(agent.position, agent.rotation, other.position, strike.reach, agent.isInMatrix, this.sandbox?.state.structures))
               .sort((a, b) => distance(a.position, agent.position) - distance(b.position, agent.position))[0];
             if (target) {
@@ -161,13 +218,19 @@ export class PlayerController {
       if (!this.conversations.isAgentInConversation(agent.id)) {
         const moving = Math.hypot(input.x, input.z) > 0.05;
         if (!session.strike) {
-          agent.currentAction = { type: moving ? 'move_to' : 'idle', parameters: { player: true, resolved: true }, startedAt: tick, duration: 1, progress: 0 };
+          agent.currentAction = { type: moving ? 'move_to' : 'idle', parameters: { player: true, resolved: true, crouching: input.crouch === true }, startedAt: tick, duration: 1, progress: 0 };
         }
       }
+      this.sandbox?.life.film.oracleFrame(agent, input.focus === true, dt, tick);
+      this.sandbox?.life.film.ambushFrame(agent, dt, tick);
+      const journey = this.sandbox?.life.film.state;
+      if (journey?.actor === agent.id && agent.currentAction && heldPhone(journey)) agent.currentAction.parameters.phone = { ...heldPhone(journey)! };
       const nearbyLocation = Object.values(LOCATIONS).filter(location => location.id !== 'downtown' && (location.world === 'matrix') === agent.isInMatrix)
         .find(location => distance(locationEntrance(location.id), agent.position) < 42);
       const room = agent.isInMatrix ? insideLifeRoom(agent.position) : undefined;
-      if (room) agent.currentLocation = room;
+      const set = filmSetAt(agent.position, agent.isInMatrix);
+      if (set) agent.currentLocation = set.id;
+      else if (room) agent.currentLocation = room;
       else if (nearbyLocation) agent.currentLocation = nearbyLocation.id;
       else if (agent.isInMatrix) agent.currentLocation = 'downtown';
     }
@@ -177,6 +240,10 @@ export class PlayerController {
     const session = this.sessions.get(socketId);
     const agent = this.getAgent(socketId);
     if (!session || !agent || agent.status !== 'alive') return '请先接入一个存活角色。';
+    if (this.sandbox?.life.film.performing(agent) && kind !== 'interact') return '演出进行中，可以转动视角观察；进度会自动保存。';
+    if (this.sandbox?.life.film.driving(agent) && ['attack', 'shoot', 'ability', 'ability2', 'dodge', 'travel'].includes(kind)) return '正在护送钥匙匠。W 加速，S 刹车，A / D 转向。';
+    if (this.sandbox?.life.film.controls(agent) && ['m1_office_escape', 'm1_ledge'].includes(this.sandbox.life.film.state!.scene)
+      && ['attack', 'shoot', 'ability', 'ability2', 'dodge'].includes(kind)) return '你仍是普通的 Anderson。按住 Z 潜行，利用遮挡避开特工。';
     if (agent.id === 'neo' && this.sandbox?.state.neoLife) {
       if (this.sandbox.state.neoLife.activity) return '先完成当前日常活动，或移动离开来中断它。';
       if ((kind === 'ability' || kind === 'ability2') && !neoSkillUnlocked(this.sandbox.state.neoLife, kind === 'ability' ? 0 : 1)) return '这项能力会在 Neo 的训练与觉醒剧情中解锁。';
@@ -197,9 +264,16 @@ export class PlayerController {
       agent.currentAction = { type: 'attack', parameters: { player: true, resolved: true, combo: session.combo }, startedAt: tick, duration: 1, progress: 0 };
       return '';
     }
+    if (kind === 'shoot') {
+      if (!this.sandbox?.life.film.lobby.active(agent) || session.strike || session.impulse || session.stagger > 0 || Date.now() - (session.lastShot ?? 0) < LOBBY_FIRE_INTERVAL * 1000) return '';
+      session.lastShot = Date.now();
+      return this.sandbox.life.film.lobby.shoot(agent, session.input.yaw, tick);
+    }
+    if (kind === 'reload') return this.sandbox?.life.film.lobby.reload(agent, tick) ?? '';
     if (kind === 'ability' || kind === 'ability2' || kind === 'dodge') {
       return this.cast(agent, session, kind === 'dodge' ? 'dodge' : playerSkills(agent)[kind === 'ability' ? 0 : 1], tick);
     }
+    if (kind === 'travel' && this.sandbox?.life.film.controls(agent)) return '电影路线通过 J 手记继续，完成的场景可随时回访。';
     if (kind === 'travel') {
       const phone = locationEntrance(agent.isInMatrix ? 'subway_station' : 'nebuchadnezzar');
       if (distance(agent.position, phone) > 24) return agent.isInMatrix ? '前往地铁站出口电话，靠近后按 R 拔出。' : '前往尼布甲尼撒号接入终端，靠近后按 R 进入 Matrix。';
@@ -247,11 +321,13 @@ export class PlayerController {
     const result = this.sandbox.command(agent, command, tick);
     if (command.kind === 'transit' || command.kind === 'life') {
       const session = this.sessions.get(socketId)!;
-      session.vy = 0; session.planar = { x: 0, z: 0 }; session.input = { ...idleInput(), yaw: agent.rotation };
+      session.vy = 0; session.planar = { x: 0, z: 0 }; session.input = { ...idleInput(), yaw: this.getAgent(socketId)!.rotation };
       session.strike = undefined;
       session.impulse = undefined;
       session.palm = undefined;
     }
+    const current = this.getAgent(socketId);
+    if (current && current.id !== agent.id) this.onStoryRole?.(socketId, current.id, tick);
     return result;
   }
 }
