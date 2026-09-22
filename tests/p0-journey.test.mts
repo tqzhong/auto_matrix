@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  APARTMENT,
+  CLUB,
   FILM_SETS,
   FILM_SCENE_BY_ID,
   HOTEL_DOOR_PROGRESS,
@@ -10,6 +12,7 @@ import {
   WAKE_CALL,
   filmPosition,
   filmStepPosition,
+  lifeRoomCenter,
   type Vector3,
   type WorldEvent,
 } from '@auto_matrix/shared';
@@ -28,8 +31,13 @@ function setup() {
   const players = new PlayerController(world, { interrupt() {}, isAgentInConversation: () => false } as unknown as ConversationEngine,
     {} as ActionExecutor, dynamics, sandbox);
   players.possess('player', 'neo', 0); const neo = world.agents.get('neo')!;
-  sandbox.life.begin(neo, 0); sandbox.state.neoLife!.chapter = 2;
   let tick = 0; let sequence = 0;
+  sandbox.life.begin(neo, 0);
+  const life = sandbox.state.neoLife!;
+  life.evidence = ['commute', 'clock', 'receipt']; life.doubt = 60; life.contactAfterDay = 1;
+  sandbox.tick(++tick);
+  assert.equal(life.chapter, 1); assert.equal(life.contactSignal, true);
+  assert.equal(neo.currentLocation, 'neo_apartment'); assert.deepEqual(neo.position, lifeRoomCenter('neo_apartment'));
   const state = () => sandbox.life.film.state!;
   const command = (target: string) => players.sandboxAction('player', { kind: 'life', target: `film:${target}` }, ++tick);
   const frame = (input: Partial<{ x: number; z: number; yaw: number; sprint: boolean; crouch: boolean; focus: boolean; climb: number }> = {}, running = true) => {
@@ -60,6 +68,34 @@ function setup() {
 }
 
 type Harness = ReturnType<typeof setup>;
+
+function completeContactAndClub(h: Harness) {
+  assert.equal(h.state().scene, 'm1_wake_up');
+  h.walkLocal('film_anderson_flat', APARTMENT.computer.x, APARTMENT.computer.z);
+  h.command('act'); h.frames(9); assert.equal(h.state().contact?.phase, 'reply');
+  h.command('act'); h.frames(5); assert.equal(h.state().contact?.phase, 'door');
+  h.walkLocal('film_anderson_flat', APARTMENT.door.x, APARTMENT.door.z);
+  h.command('act'); h.frames(3); assert.equal(h.state().contact?.phase, 'book');
+  h.walkLocal('film_anderson_flat', 3, 3); h.walkLocal('film_anderson_flat', APARTMENT.book.x, APARTMENT.book.z);
+  h.command('act'); h.frames(4); assert.equal(h.state().contact?.phase, 'disk');
+  h.walkLocal('film_anderson_flat', 3, 3); h.walkLocal('film_anderson_flat', APARTMENT.door.x, APARTMENT.door.z);
+  const cash = h.sandbox.state.neoLife!.money;
+  h.command('act'); h.frames(5); assert.equal(h.state().contact?.phase, 'invitation');
+  assert.equal(h.sandbox.state.neoLife!.money, cash + 2000);
+  h.command('act'); h.frames(4); assert.equal(h.state().contact?.phase, 'noticed');
+  h.command('contact:follow'); h.command('next'); assert.equal(h.state().scene, 'm1_club');
+  h.walkLocal('film_white_rabbit_club', CLUB.neo.x, CLUB.neo.z); h.frames(10);
+  assert.equal(h.state().club?.phase, 'ready'); h.command('act'); h.frames(7);
+  assert.equal(h.state().club?.phase, 'listen'); h.command('act'); h.frames(15);
+  assert.equal(h.state().club?.phase, 'question'); h.command('reflect:trust'); h.frames(7);
+  assert.equal(h.state().club?.phase, 'departing');
+  h.walkLocal('film_white_rabbit_club', CLUB.exit.x, CLUB.exit.z); h.frames(.2);
+  assert.ok(h.state().completed.includes('m1_club')); h.command('next');
+  assert.equal(h.state().scene, 'm1_boss'); h.reload(); assert.equal(h.state().scene, 'm1_boss');
+  assert.equal(h.sandbox.state.neoLife!.choices.white_rabbit, 'follow');
+  assert.equal(h.sandbox.state.neoLife!.choices['m1_club:2'], 'trust');
+  assert.equal(h.sandbox.state.neoLife!.money, cash + 2000);
+}
 
 function completeWorkday(h: Harness) {
   assert.equal(h.state().scene, 'm1_boss');
@@ -117,8 +153,8 @@ function reachPillChoice(h: Harness) {
   h.command('act'); h.frames(6); assert.equal(h.state().pills?.phase, 'choice');
 }
 
-test('P0 runs continuously from the office phone through a clean escape and the red pill', () => {
-  const h = setup(); completeWorkday(h);
+test('P0 runs continuously from daily contact through a clean escape and the red pill', () => {
+  const h = setup(); completeContactAndClub(h); completeWorkday(h);
   for (const [x, z] of [[-16, 11], [-24, 11], [-24, -13], [-16, -13], [-24, -13], [-24, -27]])
     assert.ok(h.walkLocal('film_metacortex_floor', x, z, undefined, { crouch: true }));
   assert.equal(h.state().step, 2); h.command('act'); h.frames(4); assert.equal(h.state().step, 3);
@@ -132,8 +168,8 @@ test('P0 runs continuously from the office phone through a clean escape and the 
   assert.deepEqual(h.state().completed.slice(-5), ['m1_ledge', 'm1_wake_again', 'm1_bridge', 'm1_bug', 'm1_pills']);
 });
 
-test('P0 runs continuously through capture, interrogation, tracker removal and the blue pill', () => {
-  const h = setup(); completeWorkday(h);
+test('P0 runs continuously from daily contact through capture, tracker removal and the blue pill', () => {
+  const h = setup(); completeContactAndClub(h); completeWorkday(h);
   for (const [x, z] of [[-16, 11], [-8, 11], [-8, -13], [-16, -13], [-8, -13], [-8, -24], [-24, -27]]) {
     if (!h.walkLocal('film_metacortex_floor', x, z, undefined, { sprint: true, stopOnCapture: true })) break;
   }
