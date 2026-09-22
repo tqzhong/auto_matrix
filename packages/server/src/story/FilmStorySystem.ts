@@ -11,6 +11,7 @@ import { OFFICE_WORKDAY, OFFICE_DELIVERY_SECONDS, officeCourierRoot, officeRecip
 import { APARTMENT, WAKE_CALL, apartmentAfter, apartmentDoor, apartmentLocked, apartmentText, wakeCallLocked, wakeCallRoot, wakeCallText, lifeRoomCenter, type ApartmentPhase, type WakeCallPhase } from '@auto_matrix/shared';
 import { CLUB, clubLocked, clubRoot, clubText, type ClubPhase } from '@auto_matrix/shared';
 import { SENTINEL_CAST, SENTINEL_TIMING, sentinelActive, sentinelDanger, sentinelLocked, sentinelRoot, sentinelText, type SentinelRole } from '@auto_matrix/shared';
+import { INTERLUDE_CAST, interludeDuration, interludeKind, interludeLocked, interludeRoot, interludeSeated, interludeText, type InterludeEncounter, type InterludeRole } from '@auto_matrix/shared';
 
 export class FilmStorySystem {
   // The controller owns socket sessions. It can refuse a handoff occupied by another player.
@@ -22,7 +23,7 @@ export class FilmStorySystem {
   get scene(): FilmScene | undefined { return this.state && FILM_SCENE_BY_ID[this.state.scene]; }
   get step(): FilmStep | undefined { return this.scene?.steps[this.state!.step]; }
   controls(agent: AgentState): boolean { return Boolean(this.state && this.state.actor === agent.id); }
-  performing(agent: AgentState): boolean { return this.controls(agent) && (clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || oracleActing(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
+  performing(agent: AgentState): boolean { return this.controls(agent) && (clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
   clubFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
     if (state?.scene !== 'm1_club' || state.visiting || !this.controls(agent)) return;
@@ -708,6 +709,79 @@ export class FilmStorySystem {
     } else if (encounter.phase === 'verify') { encounter.phase = 'confirming'; encounter.elapsed = 0; }
     this.sentinelFrame(agent, { movement: 0, sprint: false, jump: false }, 0, tick); return state.lastText;
   }
+  interludeFrame(agent: AgentState, dt: number, tick: number): boolean {
+    const state = this.state; const kind = state && interludeKind(state.scene);
+    if (!state || !kind || state.visiting || !this.controls(agent)) return false;
+    const completed = state.step >= this.scene!.steps.length;
+    const fallback: InterludeEncounter = { kind, phase: completed ? 'done' : kind === 'console' && state.step > 0 ? 'choice' : kind === 'meal' && state.step > 0 ? 'done' : 'ready', elapsed: 0 };
+    const encounter = state.interlude?.kind === kind ? state.interlude : (state.interlude = fallback);
+    const roles = INTERLUDE_CAST[kind];
+    const occupied = roles.find(id => id !== agent.id && this.world.agents.get(id)?.controller);
+    const locked = interludeLocked(state);
+    const playing = locked && !occupied;
+    if (playing) encounter.elapsed = Math.min(interludeDuration(encounter), encounter.elapsed + Math.max(0, Math.min(.1, dt)));
+
+    for (const role of roles) {
+      const actor = this.world.agents.get(role);
+      if (!actor || actor.controller && actor !== agent || role === agent.id && !locked) continue;
+      const pose = interludeRoot(kind, role as InterludeRole); if (!pose) continue;
+      const before = { ...actor.position };
+      this.place(actor, this.scene!, filmPosition(this.scene!.set, pose.x, pose.z)); actor.rotation = pose.yaw;
+      actor.velocity = dt > 0 ? { x: (actor.position.x - before.x) / dt, y: 0, z: (actor.position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
+      const gesture = { ...encounter, role: role as InterludeRole };
+      actor.currentAction = { type: 'idle', parameters: { player: role === agent.id, resolved: true, seated: interludeSeated(gesture), interlude: gesture }, startedAt: tick, duration: 1, progress: 0 };
+    }
+    if (!locked && agent.currentAction?.parameters.interlude) agent.currentAction = null;
+    if (locked) state.checkpoint = { ...agent.position };
+    if (occupied && locked) state.lastText = `${this.world.agents.get(occupied)?.name ?? occupied} 正由另一位玩家控制，这段表演停在当前动作。`;
+    else if (encounter.phase !== 'responding') state.lastText = interludeText(encounter);
+
+    if (playing && encounter.elapsed >= interludeDuration(encounter)) {
+      if (kind === 'console' && encounter.phase === 'performing') {
+        encounter.phase = 'choice'; encounter.elapsed = 0;
+        this.advance(this.scene!.steps[0].text!, agent, tick);
+      } else if (kind === 'console' && encounter.phase === 'responding') {
+        const response = state.lastText; const duration = interludeDuration(encounter); encounter.phase = 'done'; encounter.elapsed = duration;
+        this.advance(`${this.scene!.steps[1].text} ${response}`, agent, tick);
+      } else if (kind === 'steak') {
+        const duration = interludeDuration(encounter); encounter.phase = 'done'; encounter.elapsed = duration;
+        this.advance(this.scene!.steps[1].text!, agent, tick);
+      } else {
+        const duration = interludeDuration(encounter); encounter.phase = 'done'; encounter.elapsed = duration;
+        this.advance(this.scene!.steps[0].text!, agent, tick);
+      }
+      agent.currentAction = null; agent.velocity = { x: 0, y: 0, z: 0 };
+    }
+    return interludeLocked(state);
+  }
+  private interludeAct(agent: AgentState, target: string, tick: number): string {
+    const state = this.state!; const kind = interludeKind(state.scene)!;
+    this.interludeFrame(agent, 0, tick); const encounter = state.interlude!;
+    if (interludeLocked(state)) return '演出进行中。可以转动视角观察；暂停、断线与重新载入会保留当前动作。';
+    const occupied = INTERLUDE_CAST[kind].find(id => id !== agent.id && this.world.agents.get(id)?.controller);
+    if (occupied) return `${this.world.agents.get(occupied)?.name ?? occupied} 正由另一位玩家控制，当前片段无法开始。`;
+    if (kind === 'steak' && state.step === 0) {
+      if (!this.near(agent, this.step!)) return '先走近窗边餐桌的空座。';
+      this.advance(this.step!.label, agent, tick); return 'Smith 在 Cypher 对面落座。按 G 见证这场既定交易。';
+    }
+    if (!this.near(agent, this.step!)) return kind === 'meal' ? '先走到餐桌尽头，靠近 Tank 递来的食物。' : '先走到滚动代码或窗边餐桌旁。';
+    if (kind === 'console' && encounter.phase === 'choice') {
+      if (!target.startsWith('reflect:')) return '打开手记，选择你要如何回应 Cypher。';
+      const choice = filmReflections(state.scene).find(item => item.id === target.slice(8));
+      if (!choice) return '请选择手记中的一种具体回应。';
+      const life = this.sandbox().neoLife!; const key = `${state.scene}:${state.step}`;
+      if (!state.reflections[key]) {
+        state.reflections[key] = choice.id; life.choices[key] = choice.id; life.philosophy[choice.id]++;
+        life.journal.unshift({ day: life.day, time: this.world.timeOfDay, title: `${this.scene!.title} · ${choice.label}`, text: choice.response });
+      }
+      encounter.answer = choice.id; encounter.phase = 'responding'; encounter.elapsed = 0; state.lastText = choice.response;
+      this.interludeFrame(agent, 0, tick); return state.lastText;
+    }
+    if (target !== 'act') return state.lastText;
+    if (encounter.phase !== 'ready') return state.lastText;
+    encounter.phase = 'performing'; encounter.elapsed = 0; state.checkpoint = { ...agent.position };
+    this.interludeFrame(agent, 0, tick); return state.lastText;
+  }
   trainingDodge(agent: AgentState, threat: SandboxThreat, tick: number): boolean {
     const state = this.state;
     if (!state || state.scene !== 'm1_dojo' || state.step !== 0 || threat.scene !== state.scene || threat.character !== 'morpheus') return false;
@@ -852,6 +926,13 @@ export class FilmStorySystem {
         agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
         this.sentinelFrame(agent, { movement: 0, sprint: false, jump: false }, 0, tick);
         return '已接回静默航行，保留断电、扫描、噪声与船员位置。';
+      }
+      if (interludeKind(state.scene) && state.interlude) {
+        delete state.visiting; delete state.returnPosition;
+        agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
+        agent.position = { ...state.checkpoint }; agent.velocity = { x: 0, y: 0, z: 0 };
+        this.interludeFrame(agent, 0, tick);
+        return '已接回当前片段，保留人物位置、动作、对话与选择进度。';
       }
       if (state.scene === 'm1_club' && state.club) {
         delete state.visiting; delete state.returnPosition;
@@ -1007,6 +1088,7 @@ export class FilmStorySystem {
     if (state.scene === 'm1_wake_again' && state.step === 0) return this.wakeCallAct(agent, target, tick);
     if (state.scene === 'm1_club') return this.clubAct(agent, target, tick);
     if (state.scene === 'm1_sentinels') return this.sentinelAct(agent, target, tick);
+    if (interludeKind(state.scene)) return this.interludeAct(agent, target, tick);
     if (interrogationLocked(state) && state.interrogation!.phase !== 'response') return '审讯正在进行。可以转动视角观察，暂停会保留当前进度。';
     if (target === 'escape:retreat' && state.scene === 'm1_ledge') {
       this.capture(agent, tick, '你退回办公室。特工将你带走；电话中的联系尚未结束。');
@@ -1177,6 +1259,7 @@ export class FilmStorySystem {
     delete state.wakeCall;
     delete state.club;
     delete state.sentinel;
+    delete state.interlude;
     this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== 'film:apartment:door');
     delete state.pills;
     delete state.interrogation;
@@ -1187,6 +1270,7 @@ export class FilmStorySystem {
     }
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.interrogation) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.sentinel) other.currentAction = null;
+    for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.interlude) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.riding) { other.currentAction = null; other.velocity = { x: 0, y: 0, z: 0 }; }
     if (scene.id === 'm1_lobby') this.lobby.reset();
     const actor = this.world.agents.get(state.actor)!;
@@ -1223,6 +1307,11 @@ export class FilmStorySystem {
     if (scene.id === 'm1_sentinels') {
       state.sentinel = { phase: 'ready', elapsed: 0, noise: 0, attempt: 0 };
       this.sentinelFrame(actor, { movement: 0, sprint: false, jump: false }, 0, tick);
+    }
+    const interlude = interludeKind(scene.id);
+    if (interlude) {
+      state.interlude = { kind: interlude, phase: 'ready', elapsed: 0 };
+      this.interludeFrame(actor, 0, tick);
     }
     if (scene.id === 'm1_bug' && state.office?.outcome === 'escaped') state.lastText = '你没有被特工带走。Switch 仍要求做安全检查，确认没有追踪装置。';
   }
@@ -1305,7 +1394,9 @@ export class FilmStorySystem {
     if (!state.completed.includes(state.scene)) {
       state.completed.push(state.scene);
       this.reconcileCast();
-      life.journal.unshift({ day: life.day, time: this.world.timeOfDay, title: this.scene!.title, text });
+      const observing = state.scene === 'm1_steak';
+      life.journal.unshift({ day: life.day, time: this.world.timeOfDay, title: observing ? `旁观片段 · ${this.scene!.title}` : this.scene!.title,
+        text: observing ? `这不是 Neo 此时拥有的角色知识。${text}` : text });
       life.journal = life.journal.slice(0, 120);
       const profile = this.sandbox().profiles[agent.id]; if (profile) profile.xp += 15;
     }

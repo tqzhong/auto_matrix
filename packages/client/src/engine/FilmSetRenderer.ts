@@ -3,7 +3,7 @@ import { workdayLocked, type OfficeWorkday } from '@auto_matrix/shared';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
-import { FILM_SETS, FILM_SCENE_BY_ID, PILL_ROOM, pillLocked, pillPose, lafayetteWelcomeLocked, type PillGesture, FREEWAY_FINISH, ORACLE_FURNITURE, awakeningLocked, trainingLocked, phoneLocked, windowOpening, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
+import { FILM_SETS, FILM_SCENE_BY_ID, PILL_ROOM, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, ORACLE_FURNITURE, awakeningLocked, trainingLocked, phoneLocked, windowOpening, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
 import { LobbySetRenderer } from './LobbySetRenderer.js';
 import { OfficeSetRenderer } from './OfficeSetRenderer.js';
 import { FreewaySetRenderer } from './FreewaySetRenderer.js';
@@ -26,6 +26,7 @@ import { apartmentLocked } from '@auto_matrix/shared';
 import { clubLocked } from '@auto_matrix/shared';
 import { ClubSetRenderer } from './ClubSetRenderer.js';
 import { SentinelSetRenderer } from './SentinelSetRenderer.js';
+import { CypherRestaurantRenderer } from './CypherRestaurantRenderer.js';
 
 const outdoor = new Set(['rooftop', 'plaza', 'bridge', 'street', 'courtyard', 'freeway', 'machine', 'rain', 'garden', 'desert', 'pods']);
 const palettes = {
@@ -81,6 +82,7 @@ export class FilmSetRenderer {
   private hotel?: LafayetteApproachRenderer;
   private approach?: { root: THREE.Group; renderer: MeetingSetRenderer };
   private sentinel?: SentinelSetRenderer;
+  private restaurant?: CypherRestaurantRenderer;
 
   constructor(private scene: THREE.Scene) {
     scene.add(this.root);
@@ -108,6 +110,7 @@ export class FilmSetRenderer {
         else if (set.architecture === 'freeway') this.freeway = new FreewaySetRenderer(this.root, set);
         else if (set.architecture === 'pods') this.pods = new PodSetRenderer(this.root);
         else if (set.id === 'film_neb_deck') this.neb = new NebDeckRenderer(this.root);
+        else if (set.id === 'film_cypher_restaurant') this.restaurant = new CypherRestaurantRenderer(this.root);
         else if (set.id === 'film_white_construct') this.construct = new ConstructRenderer(this.root, sceneId);
         else if (set.id === 'film_real_desert') this.desert = new DesertRenderer(this.root);
         else if (['m1_dojo', 'm1_jump', 'm1_red_dress'].includes(sceneId ?? '')) this.training = new TrainingSetRenderer(this.root, sceneId!);
@@ -159,6 +162,7 @@ export class FilmSetRenderer {
     this.desert?.update(journey, elapsed);
     this.training?.update(journey, elapsed);
     this.sentinel?.update(journey, elapsed);
+    this.restaurant?.update(journey, elapsed);
     this.ambush?.update(journey, sandbox?.structures ?? [], elapsed);
     this.oracleVase?.update(sceneId === 'm1_oracle' ? journey?.visiting || journey!.step > 0 ? 4.5 : journey?.oracle?.vase : undefined);
     const scene = journey && FILM_SCENE_BY_ID[journey.scene]; const step = scene?.steps[journey!.step];
@@ -175,6 +179,7 @@ export class FilmSetRenderer {
     if (journey && apartmentLocked(journey)) this.marker.visible = false;
     if (journey && clubLocked(journey)) this.marker.visible = false;
     if (journey?.scene === 'm1_sentinels' && journey.sentinel && !['ready', 'verify', 'done'].includes(journey.sentinel.phase)) this.marker.visible = false;
+    if (journey && interludeLocked(journey)) this.marker.visible = false;
     if (journey && phoneLocked(journey)) this.marker.visible = false;
     if (journey && windowOpening(journey)) this.marker.visible = false;
     if (journey?.scene === 'm1_dejavu' && journey.step === 0 && journey.ambush) this.marker.visible = false;
@@ -241,6 +246,10 @@ export class FilmSetRenderer {
     if (this.sentinel) {
       (this.scene.background as THREE.Color).setHex(0x07100f); fog.color.setHex(0x07100f); fog.density = .008;
       this.scene.environmentIntensity = .28; return { color: 0xa9c9bc, ambient: .34, sun: .04 };
+    }
+    if (this.restaurant) {
+      (this.scene.background as THREE.Color).setHex(0x090d12); fog.color.setHex(0x090d12); fog.density = .0018;
+      this.scene.environmentIntensity = .32; return { color: 0xffd5a8, ambient: .38, sun: .05 };
     }
     return palette;
   }
@@ -904,6 +913,7 @@ export class FilmSetRenderer {
     this.desert?.dispose(); this.desert = undefined;
     this.training?.dispose(); this.training = undefined;
     this.sentinel?.dispose(); this.sentinel = undefined;
+    this.restaurant?.dispose(); this.restaurant = undefined;
     this.office?.dispose(); this.office = undefined;
     this.freeway?.dispose(); this.freeway = undefined;
     this.lobby?.dispose(); this.lobby = undefined;

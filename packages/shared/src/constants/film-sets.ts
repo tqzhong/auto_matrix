@@ -126,6 +126,7 @@ export function filmObstacles(set: FilmSet): FilmObstacle[] {
   }
   if (set.id === 'film_agent_interrogation') return [INTERROGATION_ROOM.table, ...[-1, 1].map(side => ({ x: side * INTERROGATION_ROOM.seat, z: 0, width: 1.3, depth: 1.5, height: 2.8 }))];
   if (set.id === 'film_ambush_house') return AMBUSH_WALLS;
+  if (set.id === 'film_cypher_restaurant') return [{ x: 0, z: -13, width: 12, depth: 5.6, height: 3.1 }];
   if (set.id === 'film_metacortex_floor') return [...OFFICE_OBSTACLES, ...OFFICE_MANAGER_WALLS, ...OFFICE_MANAGER_FURNITURE];
   if (set.id === 'film_office_ledge') return [{ x: 4, z: 0, width: 2, depth: 76, height: 40 }];
   if (set.architecture === 'freeway') return [-28, 0, 28].map(x => ({ x, z: 0, width: 1.5, depth: set.depth, height: 2.2 }));

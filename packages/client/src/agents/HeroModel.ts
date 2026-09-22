@@ -540,6 +540,62 @@ export class HeroModels {
       }
       if (phase === 'sweep' || phase === 'clear') bone('head').rotation.x += Math.sin(t * 1.4 + role.length) * .012;
     }
+    if (input.interlude) {
+      const { kind, role, phase, elapsed: t } = input.interlude;
+      const playing = phase === 'performing' || phase === 'responding' || phase === 'done';
+      if (kind === 'console') {
+        if (role === 'cypher') {
+          const typing = phase === 'performing' ? 1 - THREE.MathUtils.smoothstep(t, .55, 1.35) : 0;
+          const startled = phase === 'performing' ? Math.sin(THREE.MathUtils.clamp(t / 1.35, 0, 1) * Math.PI) : 0;
+          const offering = phase === 'performing' ? THREE.MathUtils.smoothstep(t, 4.35, 5.2) * (1 - THREE.MathUtils.smoothstep(t, 7.25, 8.15))
+            : phase === 'responding' ? THREE.MathUtils.smoothstep(t, .35, 1.1) * (1 - THREE.MathUtils.smoothstep(t, 3.25, 4.4)) : 0;
+          bone('spine').rotation.x += typing * .16 + startled * .08; bone('head').rotation.y += startled * .42 - offering * .16;
+          for (const side of ['R', 'L']) {
+            const alternate = side === 'R' ? 1 : -1;
+            bone('shoulder_' + side).rotation.x -= typing * (.72 + Math.sin(t * 13 + alternate) * .08) + offering * .44;
+            bone('elbow_' + side).rotation.x -= typing * (.88 - Math.sin(t * 11 + alternate) * .07) + offering * (side === 'R' ? 1.16 : .38);
+          }
+        } else {
+          const sip = phase === 'performing' ? THREE.MathUtils.smoothstep(t, 5.1, 5.9) * (1 - THREE.MathUtils.smoothstep(t, 6.75, 7.45)) : 0;
+          bone('head').rotation.y -= playing ? .2 : 0; bone('head').rotation.x -= sip * .08;
+          bone('shoulder_R').rotation.x -= sip * .82; bone('elbow_R').rotation.x -= sip * 1.35; bone('wrist_R').rotation.z -= sip * .24;
+        }
+      } else if (kind === 'steak') {
+        if (role === 'cypher') {
+          const cutting = phase === 'performing' ? 1 - THREE.MathUtils.smoothstep(t, 1.75, 2.7) : 0;
+          const bite = phase === 'performing' ? THREE.MathUtils.smoothstep(t, 2.45, 3.25) * (1 - THREE.MathUtils.smoothstep(t, 4.45, 5.25)) : 0;
+          const bargain = phase === 'performing' ? THREE.MathUtils.smoothstep(t, 5, 6.2) : 0;
+          bone('spine').rotation.x += .08; bone('head').rotation.x += bite * .1; bone('head').rotation.y -= bargain * .1;
+          bone('shoulder_R').rotation.x -= cutting * (.72 + Math.sin(t * 13) * .08) + bargain * .24;
+          bone('elbow_R').rotation.x -= cutting * 1.05 + bargain * .52;
+          bone('shoulder_L').rotation.x -= cutting * .48 + bite * .95; bone('elbow_L').rotation.x -= cutting * .82 + bite * 1.28;
+        } else {
+          const reply = phase === 'performing' ? THREE.MathUtils.smoothstep(t, 7.4, 8.5) : 0;
+          bone('spine').rotation.x += .05; bone('head').rotation.y += .11 - reply * .2;
+          for (const side of ['R', 'L']) {
+            bone('shoulder_' + side).rotation.x -= .28 + reply * .16;
+            bone('elbow_' + side).rotation.x -= .82 + reply * .25;
+          }
+        }
+      } else if (kind === 'meal') {
+        if (role === 'tank') {
+          const serving = phase === 'performing' ? 1 - THREE.MathUtils.smoothstep(t, 1.7, 2.5) : 0;
+          bone('spine').rotation.x += serving * .18; bone('shoulder_R').rotation.x -= serving * .78; bone('elbow_R').rotation.x -= serving * .62;
+          bone('shoulder_L').rotation.x -= serving * .68; bone('elbow_L').rotation.x -= serving * .72;
+        } else if (role === 'mouse') {
+          const talking = phase === 'performing' ? THREE.MathUtils.smoothstep(t, 3.1, 4) * (1 - THREE.MathUtils.smoothstep(t, 9.8, 10.7)) : 0;
+          bone('head').rotation.y += Math.sin(t * 1.25) * .12 * talking;
+          bone('shoulder_R').rotation.x -= (.38 + Math.sin(t * 2.2) * .18) * talking; bone('elbow_R').rotation.x -= .82 * talking;
+          bone('shoulder_L').rotation.x -= (.24 - Math.sin(t * 1.7) * .14) * talking; bone('elbow_L').rotation.x -= .52 * talking;
+        } else if (role === 'neo') {
+          const tasting = phase === 'performing' ? THREE.MathUtils.smoothstep(t, 8.15, 8.9) * (1 - THREE.MathUtils.smoothstep(t, 10, 10.7)) : 0;
+          bone('head').rotation.x += tasting * .12; bone('shoulder_R').rotation.x -= tasting * .88; bone('elbow_R').rotation.x -= tasting * 1.38;
+        } else {
+          const listening = phase === 'performing' ? THREE.MathUtils.smoothstep(t, 2.2, 3.1) : 0;
+          bone('head').rotation.y += Math.sin(t * .8 + role.length) * .08 * listening;
+        }
+      }
+    }
     if (input.club) {
       const close = clubCloseness(input.club); const { role, phase, elapsed: t } = input.club;
       if (role === 'neo') {

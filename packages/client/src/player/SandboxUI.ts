@@ -10,6 +10,7 @@ import { apartmentLocked } from '@auto_matrix/shared';
 import { wakeCallLocked } from '@auto_matrix/shared';
 import { clubLocked } from '@auto_matrix/shared';
 import { sentinelDanger, sentinelLocked } from '@auto_matrix/shared';
+import { interludeDuration, interludeLocked } from '@auto_matrix/shared';
 
 const escape = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const WEATHER = { clear: '晴朗', rain: '雨', code_storm: '代码风暴' };
@@ -248,6 +249,28 @@ export class SandboxUI {
       document.getElementById('game-objective-copy')!.textContent = phase === 'sweep' ? '不要移动、奔跑或跳跃；让船内噪声保持在暴露阈值以下。'
         : phase === 'failed' ? `第 ${encounter.attempt + 1} 次静默失败。主动重试后会重新经历停机。`
         : phase === 'verify' ? '扫描已经远去；亲自走到前窗确认，再恢复航行。' : journey.lastText;
+      return;
+    }
+    if (!journey.visiting && journey.interlude && ['m1_cypher_console', 'm1_steak', 'm1_meal'].includes(journey.scene)) {
+      const encounter = journey.interlude; const phase = encounter.phase;
+      const close = !step || distance(player.position, filmStepPosition(scene, step)) <= 4;
+      const walking = encounter.kind === 'steak' && phase === 'ready' && journey.step === 0 || encounter.kind === 'meal' && phase === 'done' && Boolean(step);
+      const canAct = phase === 'ready' && close && !walking || phase === 'done' && !step;
+      const title = encounter.kind === 'console' ? '屏幕旁的一杯酒' : encounter.kind === 'steak' ? '舒适的代价' : '真实世界的一顿饭';
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = phase === 'choice' ? 'J 回应 Cypher 对真相与后悔的试探 · 等待不会替你选择'
+        : interludeLocked(journey) ? '鼠标环顾 · V 切换主视角与场景镜头 · 暂停或重连会保留动作'
+        : walking ? 'WASD 移动到金色目标 · 途中可以自由观察'
+        : phase === 'ready' ? '靠近后按 G 开始 · 等待不会自动推进'
+        : 'G 继续下一段 · 这段经历已经写入手记';
+      this.el('sandbox-interact').classList.toggle('hidden', !canAct);
+      this.el('sandbox-nearby').textContent = phase === 'done' ? '继续下一段' : encounter.kind === 'console' ? '打断 Cypher 的夜班' : encounter.kind === 'steak' ? '落座见证交易' : '接过 Tank 递来的食物';
+      this.el('sandbox-job').style.width = interludeLocked(journey) ? `${Math.min(100, encounter.elapsed / interludeDuration(encounter) * 100)}%` : '0';
+      if (interludeLocked(journey)) this.el('sandbox-waypoint').textContent = '';
+      document.getElementById('game-objective')!.textContent = title;
+      document.getElementById('game-objective-copy')!.textContent = phase === 'choice' ? '打开手记，决定 Neo 如何回应；选择将影响本轮哲学倾向。'
+        : encounter.kind === 'steak' ? phase === 'done' ? '这段旁观事件不会成为 Neo 此时拥有的角色知识。' : walking ? '以 Smith 视角走近窗边餐桌。' : journey.lastText
+        : encounter.kind === 'meal' && phase === 'done' ? '回到核心连接区，准备下一次进入矩阵。' : journey.lastText;
       return;
     }
     if (!journey.visiting && journey.scene === 'm1_boss' && journey.workday && !journey.phone) {

@@ -152,6 +152,31 @@ test('passenger first-person look follows a car turn while preserving the chosen
   assert.ok(game.camera.position.distanceTo(new THREE.Vector3(game.state.position.x, game.state.position.y + 2.1, game.state.position.z)) < 2);
 });
 
+test('Cypher interludes use directed scene cameras while V keeps a freely steerable player view', t => {
+  const game = setup(t, Math.PI / 2); const console = filmPosition('film_neb_deck', 3.4, 7.2);
+  Object.assign(game.state, { position: console, rotation: Math.PI / 2, isInMatrix: false, currentLocation: 'film_neb_deck',
+    currentAction: { type: 'idle', parameters: { seated: false, interlude: { kind: 'console', phase: 'performing', elapsed: 2, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 } });
+  game.controls.possess(game.state); game.step(.5);
+  assert.ok(game.camera.position.distanceTo(game.group.position) > 6, 'the console scene uses a readable two-person shot');
+  const directed = game.yaw();
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+  assert.ok(game.camera.position.distanceTo(new THREE.Vector3(console.x, console.y + 3, console.z)) < .06, 'V moves the camera to Neo eyes');
+  game.event(game.canvas, 'mousedown', { button: 2 }); game.event(game.document, 'mousemove', { movementX: 90, movementY: 0 }); game.step(.1);
+  assert.ok(Math.abs(angle(game.yaw(), directed)) > .08, 'the player view can turn instead of staying fixed forward');
+  game.key('KeyV'); game.key('KeyV', false); game.step(.5);
+  assert.ok(game.camera.position.distanceTo(game.group.position) > 5, 'V returns to the authored scene angle');
+
+  const seat = filmPosition('film_cypher_restaurant', 0, -8.7);
+  Object.assign(game.state, { position: seat, rotation: Math.PI, isInMatrix: true, currentLocation: 'film_cypher_restaurant',
+    currentAction: { type: 'idle', parameters: { seated: true, interlude: { kind: 'steak', phase: 'performing', elapsed: 8, role: 'smith' } }, startedAt: 0, duration: 1, progress: 0 } });
+  game.controls.possess(game.state); game.step(.5);
+  const tablePosition = filmPosition('film_cypher_restaurant', 0, -13);
+  const table = new THREE.Vector3(tablePosition.x, tablePosition.y + 2.6, tablePosition.z).project(game.camera);
+  assert.ok(Math.abs(table.x) < .8 && Math.abs(table.y) < .8, 'the restaurant reverse angle keeps the physical table in frame');
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+  assert.ok(game.camera.position.y > tablePosition.y + 2.55, 'the seated Smith view clears the table and chair back');
+});
+
 test('arrival hands back a clear third-person view toward the alley entrance', t => {
   const game = setup(t); game.state.currentLocation = 'film_extraction_car';
   const encounter = { phase: 'outside' as const, elapsed: 0, bugged: false, approach: { ...MEETING_CAR.approach, yaw: Math.PI } };

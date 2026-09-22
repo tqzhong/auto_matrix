@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { OfficeWorkday } from '@auto_matrix/shared';
 import type { AgentState, WorldEvent, SimulationState, SandboxState, CombatImpact, SkillCast } from '@auto_matrix/shared';
-import { insideLifeRoom, meetingLocked, meetingCarPose, interrogationLocked, pillLocked, lafayetteKnocking, lafayetteWelcomeLocked, awakeningLocked, oracleActing, phoneLocked, heldPhone, wakeCallLocked, sentinelLocked, windowOpening, windowCrossing, OFFICE_CONTACT, FILM_SETS } from '@auto_matrix/shared';
+import { insideLifeRoom, meetingLocked, meetingCarPose, interrogationLocked, pillLocked, lafayetteKnocking, lafayetteWelcomeLocked, awakeningLocked, oracleActing, phoneLocked, heldPhone, wakeCallLocked, sentinelLocked, interludeLocked, windowOpening, windowCrossing, OFFICE_CONTACT, FILM_SETS } from '@auto_matrix/shared';
 import { FilmSetRenderer } from './FilmSetRenderer.js';
 import { CombatEffects } from './CombatEffects.js';
 import { GameAudio } from './GameAudio.js';
@@ -243,6 +243,16 @@ export class Engine {
         else if (current.phase === 'done') this.audio.sentinelSound('powerUp');
       } else if (current?.phase === 'sweep' && previous?.phase === 'sweep' && Math.floor(current.elapsed * 1.5) > Math.floor(previous.elapsed * 1.5)) this.audio.sentinelSound('scan');
     }
+    if (after?.interlude && ['m1_cypher_console', 'm1_steak', 'm1_meal'].includes(after.scene) && !after.visiting && after.actor === this.playerControls?.id && this.running) {
+      const previous = before?.scene === after.scene ? before.interlude : undefined; const current = after.interlude;
+      if (current.phase !== previous?.phase && (current.phase === 'performing' || current.phase === 'responding')) {
+        this.audio.dialogue();
+        this.audio.interludeSound(current.kind === 'console' ? 'keys' : current.kind === 'steak' ? 'cutlery' : 'bowl');
+      } else if (previous?.phase === current.phase && current.phase === 'performing') {
+        const beat = current.kind === 'console' ? 4.6 : current.kind === 'steak' ? 3.2 : 8.5;
+        if (previous.elapsed < beat && current.elapsed >= beat) this.audio.interludeSound(current.kind === 'console' ? 'glass' : 'cutlery');
+      }
+    }
     if (after?.scene === 'm1_office_escape' && !after.visiting && after.actor === this.playerControls?.id && before?.scene === after.scene && !after.office?.outcome && this.running) {
       const previous = before.office?.window ?? 0; const current = after.office?.window ?? 0;
       if (previous < .7 && current >= .7) this.audio.windowSound(false);
@@ -270,7 +280,7 @@ export class Engine {
       const journey = state.neoLife?.journey;
       this.playerControls.spoon = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_spoon' ? journey.oracle?.spoon : undefined;
       this.playerControls.phone = journey?.actor === this.playerControls.id ? heldPhone(journey) : undefined;
-      this.playerControls.performing = Boolean(journey?.actor === this.playerControls.id && (meetingLocked(journey) || awakeningLocked(journey) || oracleActing(journey) || phoneLocked(journey) || wakeCallLocked(journey) || sentinelLocked(journey) || windowOpening(journey) || windowCrossing(journey) || pillLocked(journey) || interrogationLocked(journey) || lafayetteKnocking(journey) || lafayetteWelcomeLocked(journey)));
+      this.playerControls.performing = Boolean(journey?.actor === this.playerControls.id && (meetingLocked(journey) || awakeningLocked(journey) || oracleActing(journey) || phoneLocked(journey) || wakeCallLocked(journey) || sentinelLocked(journey) || interludeLocked(journey) || windowOpening(journey) || windowCrossing(journey) || pillLocked(journey) || interrogationLocked(journey) || lafayetteKnocking(journey) || lafayetteWelcomeLocked(journey)));
       this.playerControls.mirror = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_mirror' ? journey.awakening?.kind === 'connect' ? 1 : (journey.awakening?.elapsed ?? 0) / 8 : 0;
       this.playerControls.climbing = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_ledge' && journey.step === 1 && journey.office?.climbed !== undefined;
       this.playerControls.ride = journey?.actor === this.playerControls.id && !journey.visiting && journey.ride?.phase === 'riding' ? journey.ride : undefined;

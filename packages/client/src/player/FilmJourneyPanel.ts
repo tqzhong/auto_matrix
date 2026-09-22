@@ -7,6 +7,7 @@ import { apartmentLocked } from '@auto_matrix/shared';
 import { wakeCallLocked } from '@auto_matrix/shared';
 import { clubLocked } from '@auto_matrix/shared';
 import { sentinelDanger, sentinelLocked } from '@auto_matrix/shared';
+import { interludeDuration, interludeLocked } from '@auto_matrix/shared';
 
 const button = (target: string, label: string, disabled = false) => `<button data-action="life" data-target="film:${target}" ${disabled ? 'disabled' : ''}>${label}</button>`;
 export function renderFilmJourney(player: AgentState, sandbox: SandboxState): string {
@@ -49,6 +50,22 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
       : '<button disabled>合上手记观察当前动作</button>';
     return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>尼布甲尼撒号 · 静默潜航</h3><p>Neo 视角 · 船员位置、扫描与噪声自动保存</p></header><article class="film-now"><div><h3>${title}</h3><p>${journey.lastText}</p>${scanning ? `<p>红色扫描强度 ${Math.round(sentinelDanger(encounter.elapsed) * 100)}% · 船内噪声 ${Math.round(encounter.noise * 100)}%</p><div class="film-progress"><i style="width:${encounter.noise * 100}%"></i></div><small>松开移动键。WASD、Shift 和空格都会把振动传到船壳。</small>` : ''}<div class="film-controls">${action}${!current ? button('resume', '继续 Neo 的剧情视角') : ''}${sentinelLocked(journey) ? '<small>可以转动镜头或按 V 换视角；暂停、断线与重新载入会保留这一拍。</small>' : ''}</div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
   }
+  if (!journey.visiting && journey.interlude && ['m1_cypher_console', 'm1_steak', 'm1_meal'].includes(journey.scene)) {
+    const encounter = journey.interlude; const phase = encounter.phase; const step = scene.steps[journey.step]; const current = player.id === journey.actor;
+    const close = current && (!step || distance(player.position, filmStepPosition(scene, step)) <= 4);
+    const names = encounter.kind === 'console' ? ['尼布甲尼撒号 · 值班控制台', '屏幕旁的一杯酒', 'Neo 视角 · 你能看出 Cypher 的动摇，但不会提前知道他的交易']
+      : encounter.kind === 'steak' ? ['矩阵高层餐厅 · 窗边桌', '舒适的代价', 'Smith 旁观视角 · 此段不会写入 Neo 当时的角色知识']
+      : ['尼布甲尼撒号 · 船员餐桌', '真实世界的一顿饭', 'Neo 视角 · 一顿普通早餐也在讨论何为真实'];
+    let action = '';
+    if (phase === 'choice') action = filmReflections(scene.id).map(choice => button(`reflect:${choice.id}`, choice.label, !current)).join('');
+    else if (phase === 'ready' && encounter.kind === 'steak' && journey.step === 0) action = `<p>合上手记，走到窗边餐桌的空座。还没落座前，交易不会自行开始。</p>${!close && step ? `<small>距离座位 ${Math.round(distance(player.position, filmStepPosition(scene, step)))} m</small>` : ''}`;
+    else if (phase === 'ready') action = button('act', encounter.kind === 'console' ? '打断 Cypher 的夜班 · G' : encounter.kind === 'steak' ? '落座见证交易 · G' : '接过 Tank 递来的食物 · G', !close);
+    else if (phase === 'done' && encounter.kind === 'meal' && step) action = '<p>合上手记，用 WASD 回到核心连接区；抵达目标后自动记录。</p>';
+    else if (phase === 'done') action = button('next', '继续下一段 →', !current);
+    else action = '<button disabled>演出进行中 · 合上手记观看</button>';
+    const progress = interludeLocked(journey) ? `<div class="film-progress"><i style="width:${Math.min(100, encounter.elapsed / interludeDuration(encounter) * 100)}%"></i></div><small>鼠标可以环顾，V 可在主视角与场景镜头间切换；动作进度会自动保存。</small>` : '';
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>${names[0]}</h3><p>${names[2]}</p></header><article class="film-now"><div><h3>${names[1]}</h3><p>${journey.lastText}</p>${progress}<div class="film-controls">${action}${!current ? button('resume', `继续 ${journey.actor === 'smith' ? 'Smith' : 'Neo'} 的剧情视角`) : ''}</div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
+  }
   if (!journey.visiting && journey.scene === 'm1_boss' && journey.workday && !journey.phone) {
     const phase = journey.workday.phase; const step = scene.steps[journey.step];
     const active = ['waiting', 'answer', 'signature', 'delivered'].includes(phase);
@@ -70,7 +87,7 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
   const actionLabel = meetingAction ? journey.meeting?.phase === 'parked' ? '打开车门下车' : '启程前往 Lafayette' : step?.label;
   const close = meetingAction || trainingWaiting(journey) || Boolean(step && player.isInMatrix === (set.world === 'matrix') && distance(player.position, filmStepPosition(scene, step)) <= 4);
   const current = player.id === journey.actor;
-  const performing = meetingLocked(journey) && !['ready', 'done', 'parked'].includes(journey.meeting?.phase ?? 'ready') || trainingLocked(journey) || sentinelLocked(journey) || Boolean(journey.awakening && journey.awakening.elapsed < AWAKENING_SECONDS[journey.awakening.kind]) || oracleActing(journey) || phoneLocked(journey) || wakeCallLocked(journey) || windowOpening(journey) || windowCrossing(journey) || pillLocked(journey) || lafayetteWelcomeLocked(journey) || interrogationLocked(journey) && journey.interrogation?.phase !== 'done';
+  const performing = meetingLocked(journey) && !['ready', 'done', 'parked'].includes(journey.meeting?.phase ?? 'ready') || trainingLocked(journey) || sentinelLocked(journey) || interludeLocked(journey) || Boolean(journey.awakening && journey.awakening.elapsed < AWAKENING_SECONDS[journey.awakening.kind]) || oracleActing(journey) || phoneLocked(journey) || wakeCallLocked(journey) || windowOpening(journey) || windowCrossing(journey) || pillLocked(journey) || lafayetteWelcomeLocked(journey) || interrogationLocked(journey) && journey.interrogation?.phase !== 'done';
   const answerPhone = phoneLocked(journey) && journey.phone?.phase === 'ready';
   const answer = answerPhone || awakeningWaiting(journey) || trainingWaiting(journey) || interrogationLocked(journey) && journey.interrogation?.phase === 'response';
   const awakeningAction = journey.awakening?.kind === 'recovery' ? '示意开始恢复肌肉 · G'

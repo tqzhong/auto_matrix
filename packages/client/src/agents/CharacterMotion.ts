@@ -28,6 +28,7 @@ export interface MotionInput {
   wakeCall?: import('@auto_matrix/shared').WakeCall;
   club?: import('@auto_matrix/shared').ClubGesture;
   sentinel?: import('@auto_matrix/shared').SentinelGesture;
+  interlude?: import('@auto_matrix/shared').InterludeGesture;
   clubClothes?: boolean;
   mirror?: number;
   spoon?: number;

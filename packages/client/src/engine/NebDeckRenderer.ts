@@ -22,6 +22,11 @@ export class NebDeckRenderer {
   private downloadConnector = new THREE.Group();
   private downloadBars: THREE.Mesh[] = [];
   private downloadPulse = this.material(new THREE.MeshBasicMaterial({ color: 0x8cf4b8, toneMapped: false }));
+  private consoleRig = new THREE.Group();
+  private codeBars: THREE.Mesh[] = [];
+  private mealRig = new THREE.Group();
+  private neoBowl = new THREE.Group();
+  private mealSteam: THREE.Mesh[] = [];
 
   constructor(private root: THREE.Group) {
     this.hull();
@@ -53,10 +58,11 @@ export class NebDeckRenderer {
     const chair = new THREE.Group(); chair.name = name; chair.position.set(x, 0, z); chair.rotation.y = yaw; this.root.add(chair);
     this.box(chair, this.dark, 0, .65, 0, 2.7, 1.1, 3.2);
     const cushion = this.box(chair, this.leather, 0, 1.25, .1, 2.35, .3, 2.55); cushion.rotation.x = -.1;
-    const back = this.box(chair, this.leather, 0, 2.15, 1.22, 2.35, 2.2, .32); back.rotation.x = -.28;
+    const back = this.box(chair, this.leather, 0, 2.15, -1.22, 2.35, 2.2, .32); back.rotation.x = .28;
     for (const side of [-1, 1]) {
       this.box(chair, this.dark, side * 1.3, 1.35, .1, .22, 1.7, 2.7);
-      this.pipe([new THREE.Vector3(x + side * 1.05, 2.9, z + .8), new THREE.Vector3(x + side * 1.2, 5, z + 1.8), new THREE.Vector3(x + side * 2, 7, z + 2.4)], .07, this.rubber);
+      const cable = this.pipe([new THREE.Vector3(x + side * 1.05, 2.9, z + .8), new THREE.Vector3(x + side * 1.2, 5, z + 1.8), new THREE.Vector3(x + side * 2, 7, z + 2.4)], .07, this.rubber);
+      cable.name = `${name}-cable-${side}`;
     }
   }
   private crt(x: number, y: number, z: number, yaw = 0, amber = false): void {
@@ -129,6 +135,24 @@ export class NebDeckRenderer {
     }
     this.pointLight('neb-core-task-light', 0xb9d8cb, 210, 28, 0, 10, 0);
     this.trainingUpload();
+    this.cypherConsole();
+  }
+
+  private cypherConsole(): void {
+    this.consoleRig.name = 'neb-cypher-console-scene'; this.consoleRig.visible = false; this.root.add(this.consoleRig);
+    const code = this.material(new THREE.MeshBasicMaterial({ color: 0x8dffac, toneMapped: false }));
+    for (let row = 0; row < 17; row++) {
+      const bar = this.box(this.consoleRig, code, 9.965, 2.55 + row * .16, 4.95 + (row * 7 % 18) * .12, .025, .035, .35 + (row * 11 % 9) * .13, `neb-cypher-code-${row}`);
+      bar.userData.baseY = bar.position.y; this.codeBars.push(bar);
+    }
+    const glass = this.material(new THREE.MeshPhysicalMaterial({ color: 0xa8b9af, transparent: true, opacity: .32, roughness: .12, depthWrite: false }));
+    const liquor = this.material(new THREE.MeshPhysicalMaterial({ color: 0x9a6b33, transparent: true, opacity: .72, roughness: .2 }));
+    const bottle = new THREE.Group(); bottle.name = 'neb-cypher-liquor-bottle'; bottle.position.set(4.9, 1.75, 7.15); this.consoleRig.add(bottle);
+    this.cylinder(bottle, glass, 0, .55, 0, .28, 1.1); this.cylinder(bottle, glass, 0, 1.3, 0, .12, .55); this.cylinder(bottle, this.rubber, 0, 1.62, 0, .13, .12);
+    this.cylinder(bottle, liquor, 0, .38, 0, .23, .55);
+    const cup = new THREE.Group(); cup.name = 'neb-cypher-shot-glass'; cup.position.set(4.15, 1.63, 6.55); this.consoleRig.add(cup);
+    this.mesh(cup, new THREE.CylinderGeometry(.2, .15, .42, 16, 1, true), glass); this.cylinder(cup, liquor, 0, -.12, 0, .13, .14);
+    const lamp = new THREE.PointLight(0x88cda4, 0, 9, 2); lamp.name = 'neb-cypher-code-light'; lamp.position.set(8.9, 4, 6); this.consoleRig.add(lamp); this.lights.add(lamp);
   }
 
   private trainingUpload(): void {
@@ -163,11 +187,36 @@ export class NebDeckRenderer {
     }
     this.crt(11, 10.8, 23.5, Math.PI, true);
     this.pointLight('neb-mess-task-light', 0xe4c995, 160, 23, -6, 9, 22);
+    this.mealScene();
+  }
+
+  private mealScene(): void {
+    this.mealRig.name = 'neb-crew-meal-scene'; this.mealRig.visible = false; this.root.add(this.mealRig);
+    const bowl = this.material(new THREE.MeshStandardMaterial({ color: 0x767a70, metalness: .28, roughness: .68 }));
+    const food = this.material(new THREE.MeshStandardMaterial({ color: 0xb1a992, roughness: .92 }));
+    const spoon = this.material(new THREE.MeshStandardMaterial({ color: 0x8e9995, metalness: .82, roughness: .25 }));
+    const steam = this.material(new THREE.MeshBasicMaterial({ color: 0xdce3d5, transparent: true, opacity: .2, depthWrite: false, toneMapped: false }));
+    this.neoBowl.name = 'neb-neo-protein-bowl'; this.neoBowl.position.set(-5.7, 1.62, 22); this.mealRig.add(this.neoBowl);
+    const shell = this.mesh(this.neoBowl, new THREE.CylinderGeometry(.42, .28, .32, 20, 1, true), bowl); shell.position.y = .02;
+    const contents = this.cylinder(this.neoBowl, food, 0, .16, 0, .31, .05); contents.scale.z = .92;
+    const utensil = this.box(this.neoBowl, spoon, .42, .32, 0, .08, .05, 1.15, 'neb-neo-spoon'); utensil.rotation.y = -.25;
+    for (let i = 0; i < 3; i++) {
+      const ring = this.mesh(this.mealRig, new THREE.TorusGeometry(.14 + i * .04, .012, 6, 18), steam, `neb-meal-steam-${i}`);
+      ring.rotation.x = Math.PI / 2; ring.userData.offset = i * .7; this.mealSteam.push(ring);
+    }
+    const tray = new THREE.Group(); tray.name = 'neb-protein-serving-tray'; tray.position.set(8.8, 1.7, 22); this.mealRig.add(tray);
+    this.box(tray, this.steel, 0, 0, 0, 4.2, .16, 2.5);
+    for (let i = 0; i < 4; i++) this.cylinder(tray, bowl, -1.35 + i * .9, .24, 0, .32, .27);
   }
 
   update(journey: FilmJourney | undefined, elapsed: number): void {
     const recovery = journey?.scene === 'm1_recovery' && !journey.visiting && journey.awakening?.kind === 'recovery' ? journey.awakening : undefined;
     const t = recovery?.elapsed ?? 0; const active = recovery?.started === true;
+    const consoleActive = journey?.scene === 'm1_cypher_console' && !journey.visiting;
+    for (const side of [-1, 1]) {
+      const cable = this.root.getObjectByName(`neb-core-chair-four-cable-${side}`);
+      if (cable) cable.visible = !consoleActive;
+    }
     const descend = active ? THREE.MathUtils.smoothstep(t, 1.8, 3.8) * (1 - THREE.MathUtils.smoothstep(t, 7, 8.2)) : 0;
     this.gantry.position.y = 6.2 - descend * 1.15;
     this.gantry.rotation.z = Math.sin(elapsed * 2.1) * .004 * descend;
@@ -186,6 +235,26 @@ export class NebDeckRenderer {
       const jackLight = this.downloadRig.getObjectByName('neb-training-jack-light') as THREE.PointLight;
       jackLight.intensity = training.started ? 130 + Math.sin(elapsed * 17) * 22 : 24;
       this.downloadPulse.color.setHex(training.elapsed > 8.8 ? 0xd8ffd9 : 0x8cf4b8);
+    }
+    const consoleBeat = journey?.scene === 'm1_cypher_console' && !journey.visiting && journey.interlude?.kind === 'console' ? journey.interlude : undefined;
+    this.consoleRig.visible = Boolean(consoleBeat);
+    if (consoleBeat) {
+      const t = consoleBeat.elapsed;
+      this.codeBars.forEach((bar, index) => { bar.position.y = Number(bar.userData.baseY) + ((elapsed * .38 + index * .11) % 2.7) - 1.35; bar.visible = consoleBeat.phase !== 'performing' || t < 1.15 || index % 4 !== 0; });
+      const light = this.consoleRig.getObjectByName('neb-cypher-code-light') as THREE.PointLight; light.intensity = 75 + Math.sin(elapsed * 7) * 15;
+      const cup = this.consoleRig.getObjectByName('neb-cypher-shot-glass')!;
+      const lift = consoleBeat.phase === 'responding' ? Math.sin(Math.min(1, t / 3.8) * Math.PI) : consoleBeat.phase === 'performing' ? Math.sin(THREE.MathUtils.clamp((t - 4.6) / 3, 0, 1) * Math.PI) : 0;
+      cup.position.y = 1.63 + lift * 1.15; cup.rotation.z = -lift * .22;
+    }
+    const meal = journey?.scene === 'm1_meal' && !journey.visiting && journey.interlude?.kind === 'meal' ? journey.interlude : undefined;
+    this.mealRig.visible = Boolean(meal);
+    if (meal) {
+      const t = meal.phase === 'performing' ? meal.elapsed : meal.phase === 'done' ? 13.2 : 0;
+      const slide = THREE.MathUtils.smoothstep(t, .35, 2.1); this.neoBowl.position.x = THREE.MathUtils.lerp(-5.7, -3.25, slide);
+      this.mealSteam.forEach((ring, index) => {
+        const cycle = (elapsed * .35 + Number(ring.userData.offset)) % 1;
+        ring.position.set(this.neoBowl.position.x, 2.1 + cycle * 1.1, 22); ring.scale.setScalar(.65 + cycle * .8); ring.visible = meal.phase === 'performing' && t < 9;
+      });
     }
   }
 

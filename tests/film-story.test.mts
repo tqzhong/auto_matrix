@@ -629,6 +629,7 @@ test('the entire film route completes through interactions, driving and real com
         h.command(scene.id === 'm1_wake_up' ? 'contact:follow' : scene.id === 'm1_ledge' ? 'escape:retreat' : scene.id === 'm1_pills' ? 'pill:red' : 'reflect:agency');
         if (scene.id === 'm1_pills') for (let frame = 0; frame < 131; frame++) h.players.step(.1, true, h.tick());
         if (scene.id === 'm1_club') for (let frame = 0; frame < 61; frame++) h.players.step(.1, true, h.tick());
+        if (scene.id === 'm1_cypher_console') for (let frame = 0; frame < 48; frame++) h.players.step(.1, true, h.tick());
       }
       else if (step.kind === 'interact') {
         h.command('act');
@@ -672,6 +673,9 @@ test('the entire film route completes through interactions, driving and real com
           const frames = index === 0 ? 210 : 36;
           for (let frame = 0; frame < frames; frame++) h.players.step(.1, true, h.tick());
         }
+        else if (scene.id === 'm1_cypher_console') for (let frame = 0; frame < 86; frame++) h.players.step(.1, true, h.tick());
+        else if (scene.id === 'm1_steak') for (let frame = 0; frame < 147; frame++) h.players.step(.1, true, h.tick());
+        else if (scene.id === 'm1_meal') for (let frame = 0; frame < 134; frame++) h.players.step(.1, true, h.tick());
         else if (scene.id === 'm1_boss' && index === 0) {
           for (let frame = 0; frame < 91; frame++) h.players.step(.1, true, h.tick());
           h.command('act');

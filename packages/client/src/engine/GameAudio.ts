@@ -227,6 +227,22 @@ export class GameAudio {
     source.onended = () => { source.disconnect(); filter.disconnect(); gain.disconnect(); };
     tone.onended = () => { tone.disconnect(); toneGain.disconnect(); };
   }
+  interludeSound(kind: 'keys' | 'glass' | 'cutlery' | 'bowl'): void {
+    const bus = this.effects(); if (!bus) return;
+    const { context: ctx, output } = bus; const at = ctx.currentTime;
+    const count = kind === 'keys' ? 9 : kind === 'cutlery' ? 3 : 1;
+    for (let i = 0; i < count; i++) {
+      const start = at + i * (kind === 'keys' ? .055 : .07);
+      const tone = ctx.createOscillator(); const gain = ctx.createGain();
+      tone.type = kind === 'glass' ? 'sine' : kind === 'bowl' ? 'triangle' : 'square';
+      const frequency = kind === 'keys' ? 1250 + (i % 3) * 260 : kind === 'glass' ? 2350 : kind === 'cutlery' ? 3100 - i * 430 : 240;
+      tone.frequency.setValueAtTime(frequency, start); tone.frequency.exponentialRampToValueAtTime(kind === 'bowl' ? 105 : frequency * .72, start + (kind === 'glass' ? .55 : .09));
+      gain.gain.setValueAtTime(.0001, start); gain.gain.linearRampToValueAtTime(kind === 'keys' ? .012 : kind === 'glass' ? .024 : kind === 'cutlery' ? .018 : .055, start + .004);
+      gain.gain.exponentialRampToValueAtTime(.0001, start + (kind === 'glass' ? .65 : kind === 'bowl' ? .28 : .11));
+      tone.connect(gain); gain.connect(output); tone.start(start); tone.stop(start + (kind === 'glass' ? .68 : kind === 'bowl' ? .3 : .13));
+      tone.onended = () => { tone.disconnect(); gain.disconnect(); };
+    }
+  }
   lafayetteSound(kind: 'thunder' | 'knock' | 'handshake' | 'door'): void {
     const bus = this.effects(); if (!bus) return;
     const { context: ctx, output } = bus; const duration = kind === 'thunder' ? 2.8 : kind === 'door' ? 1.15 : kind === 'knock' ? .14 : .18;
