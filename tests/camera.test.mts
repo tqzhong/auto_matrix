@@ -149,7 +149,23 @@ test('passenger first-person look follows a car turn while preserving the chosen
   assert.ok(Math.abs(offset) > .05, 'the passenger actually looked away from forward');
   const turned = pose(10); game.step(.5);
   assert.ok(Math.abs(angle(game.yaw(), Math.PI + turned) - offset) < .01, 'the car turn preserves relative free look');
-  assert.ok(game.camera.position.distanceTo(new THREE.Vector3(game.state.position.x, game.state.position.y + 2.1, game.state.position.z)) < 2);
+  const dx = game.camera.position.x - game.state.position.x; const dz = game.camera.position.z - game.state.position.z;
+  const localX = Math.cos(turned) * dx - Math.sin(turned) * dz;
+  const localZ = Math.sin(turned) * dx + Math.cos(turned) * dz;
+  assert.ok(localX < -.8 && localX > -1.3, 'the interior view moves toward the gap between the front seats');
+  assert.ok(localZ < -.55 && localZ > -1.05, 'the interior view moves forward enough to clear the rear seat back');
+  assert.ok(game.camera.position.y > game.state.position.y + 2.7, 'the passenger eye line clears the front seat instead of staring into its back');
+});
+
+test('the portrait driving shot keeps the moving car large enough to read', t => {
+  const game = setup(t, Math.PI); const gesture = { phase: 'driving' as const, elapsed: 24, role: 'neo' as const, bugged: false };
+  const root = meetingRoot({ ...gesture, approach: { ...MEETING_CAR.approach, yaw: Math.PI } }, 'neo');
+  game.state.currentLocation = 'film_extraction_car'; game.state.position = filmPosition('film_extraction_car', root.x, root.z); game.state.rotation = root.yaw;
+  game.state.currentAction = { type: 'idle', parameters: { meeting: gesture }, startedAt: 0, duration: 1, progress: 0 };
+  game.camera.aspect = 426 / 680; game.camera.updateProjectionMatrix(); game.controls.possess(game.state); game.step(.5);
+  const car = meetingCarPose(gesture); const center = filmPosition('film_extraction_car', car.x, car.z);
+  assert.ok(game.camera.position.distanceTo(new THREE.Vector3(center.x, center.y + 2.1, center.z)) < 20,
+    'portrait framing must not reduce the car and four occupants to a distant silhouette');
 });
 
 test('Cypher interludes use directed scene cameras while V keeps a freely steerable player view', t => {

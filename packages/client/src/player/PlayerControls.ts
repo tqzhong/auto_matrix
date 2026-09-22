@@ -539,13 +539,21 @@ export class PlayerControls {
       const car = meetingCarPose(gesture); const origin = new THREE.Vector3(center.x + car.x, center.y - 1, center.z + car.z);
       const entering = gesture.phase === 'boarding' || gesture.phase === 'leaving' || gesture.phase === 'exiting';
       const travelling = gesture.phase === 'driving' || gesture.phase === 'parked';
-      const ideal = travelling ? new THREE.Vector3(14, 8, 19) : entering ? new THREE.Vector3(9, 4.4, 7) : new THREE.Vector3(.1, 3.65, -2.85);
+      const portrait = this.camera.aspect < .8;
+      const ideal = travelling ? portrait ? new THREE.Vector3(9, 6.2, 13) : new THREE.Vector3(14, 8, 19)
+        : entering ? new THREE.Vector3(9, 4.4, 7) : new THREE.Vector3(.1, 3.65, -2.85);
       const focus = travelling ? new THREE.Vector3(0, 2.1, 0) : entering ? new THREE.Vector3(2.6, 2.3, 1.5) : new THREE.Vector3(.12, 2.95, 1.85);
       if (!entering && pose.probe > 0) { ideal.lerp(new THREE.Vector3(1.1, 3.65, -1.25), pose.probe); focus.lerp(new THREE.Vector3(.65, 2.65, 1.65), pose.probe); }
       if (!entering && pose.discard > 0) { ideal.lerp(new THREE.Vector3(.1, 3.55, -.8), pose.discard); focus.lerp(new THREE.Vector3(-1.8, 2.9, .65), pose.discard); }
       const rotation = new THREE.Euler(0, car.yaw, 0); ideal.applyEuler(rotation).add(origin); focus.applyEuler(rotation).add(origin);
       if (resetCamera || entering && gesture.elapsed < .15) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
       this.camera.lookAt(focus);
+    } else if (this.motion.meeting && this.firstPerson) {
+      const car = meetingCarPose(this.motion.meeting);
+      const eye = new THREE.Vector3(-1.05, 2.86, -.8).applyEuler(new THREE.Euler(0, car.yaw, 0))
+        .add(new THREE.Vector3(this.position.x, this.position.y, this.position.z));
+      const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
+      this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
     } else if (this.motion.interrogation && !this.firstPerson) {
       const gesture = this.motion.interrogation; const center = FILM_SETS.film_agent_interrogation.center; const origin = new THREE.Vector3(center.x, center.y - 1, center.z);
       const action = gesture.phase === 'coercion' || gesture.phase === 'done'; const t = gesture.elapsed;

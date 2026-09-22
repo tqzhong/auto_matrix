@@ -150,8 +150,8 @@ export class MeetingSetRenderer {
     this.box(0, 3.89, -2.74, .52, .15, .012, black, car);
     this.box(0, 4.055, .1, .48, .08, .7, black, car, .03);
     this.box(0, 4.005, .1, .36, .028, .56, new THREE.MeshStandardMaterial({ color: 0xa2ae88, emissive: 0x88976a, emissiveIntensity: .14, roughness: .65 }), car, .02);
-    const cabin = new THREE.PointLight(0xbed3b6, 4, 7, 2); cabin.position.set(0, 3.95, .2); this.vehicle.add(cabin);
-    const windowFill = new THREE.PointLight(0xb9d2d1, 20, 12, 2); windowFill.position.set(4.8, 4, 2); this.vehicle.add(windowFill);
+    const cabin = new THREE.PointLight(0xbed3b6, 6, 7, 2); cabin.position.set(0, 3.95, .2); this.vehicle.add(cabin);
+    const windowFill = new THREE.PointLight(0xb9d2d1, 28, 12, 2); windowFill.position.set(4.8, 4, 2); this.vehicle.add(windowFill);
     const rain = new Float32Array(1500 * 6);
     for (let i = 0; i < 1500; i++) {
       this.rainBase.set([((i * 7.919) % 1) * 70 - 35, ((i * 5.317) % 1) * 28, ((i * 3.713) % 1) * 100 - 50], i * 3);
