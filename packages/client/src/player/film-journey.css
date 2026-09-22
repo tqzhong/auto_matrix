@@ -1,4 +1,8 @@
 .film-journal { color:#d8dccf; max-width:1240px; margin:auto; }
+.film-contact { background:#15221c; padding:22px; box-sizing:border-box; }
+.film-contact .film-heading { padding:0 0 12px; }.film-contact .film-heading h3 { font-size:24px; }
+.film-contact .film-now { grid-template-columns:minmax(0,1fr); padding:16px 0 0; }.film-contact .film-now h3 { font-size:22px; }
+.film-contact .film-controls { margin:16px 0; }.film-contact .film-controls button { background:#263d2e; color:#eef1e7; }
 body.film-driving .game-controls,body.film-driving .player-ability,body.film-driving .sandbox-hotbar,body.film-driving .game-map { display:none; }
 body.film-performing .game-controls,body.film-performing .player-ability,body.film-performing .sandbox-hotbar,body.film-performing .game-map { display:none; }
 .film-sequence { position:fixed; bottom:90px; left:50%; transform:translateX(-50%); width:min(600px,85vw); padding:12px 22px; background:#090f17d9; border-top:1px solid #adbed14d; text-align:center; pointer-events:none; color:#e2e4e3; }.film-sequence p { margin:6px 0 12px; font-size:15px; line-height:1.8; }.film-sequence small { font-size:11px; color:#9cabb5; }

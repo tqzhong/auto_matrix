@@ -297,9 +297,9 @@ export class CharacterModels {
     const distant = this.makeDistant(look, root);
     const rig: CharacterRig = { root, detail, distant, torso, head, shoulders, elbows, fingers, hips, knees, ankles, tails, cloth: clothPanels, motion: newMotion(), smallDetails, rifle: state.id === 'film_soldier' };
     const guard = state.id === 'agent_jones' || state.id === 'agent_brown' ? state.id : undefined;
-    const support = state.id === 'switch' || state.id === 'apoc' || state.id === 'rhineheart' || state.id === 'courier' ? state.id : undefined;
+    const support = state.id === 'switch' || state.id === 'apoc' || state.id === 'rhineheart' || state.id === 'courier' || state.id === 'choi' || state.id === 'dujour' ? state.id : undefined;
     if (HERO_IDS.includes(state.id as HeroId) || guard || support) {
-      this.heroes.create(guard || support === 'rhineheart' ? 'smith' : support === 'switch' ? 'trinity' : support === 'apoc' || support === 'courier' ? 'neo' : state.id as HeroId, guard, support).then(model => {
+      this.heroes.create(guard || support === 'rhineheart' ? 'smith' : support === 'switch' || support === 'dujour' ? 'trinity' : support === 'apoc' || support === 'courier' || support === 'choi' ? 'neo' : state.id as HeroId, guard, support).then(model => {
         if (!model) return;
         rig.weapons?.forEach(gun => gun.removeFromParent()); rig.weapons = undefined;
         for (const child of detail.children) child.visible = false;

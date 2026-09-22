@@ -42,7 +42,7 @@ test('all trilogy scenes have distinct stable IDs, existing cast, accessible obj
       const stagedInsideProp = scene.id === 'm1_bug' && scene.steps.indexOf(step) < 2 || scene.id === 'm1_recovery' && scene.steps.indexOf(step) === 0;
       assert.equal(playerBlocked(filmStepPosition(scene, step), set.world === 'matrix'), stagedInsideProp, `${scene.id}: ${step.label}`);
     }
-    if (scene.steps.some(s => s.kind === 'reflect') && !['m1_pills', 'm1_ledge'].includes(scene.id)) assert.equal(filmReflections(scene.id).length, 3, `${scene.id}: dialogue must be playable`);
+    if (scene.steps.some(s => s.kind === 'reflect') && !['m1_pills', 'm1_ledge', 'm1_wake_up'].includes(scene.id)) assert.equal(filmReflections(scene.id).length, 3, `${scene.id}: dialogue must be playable`);
   }
   assert.equal(FILM_SCENE_BY_ID.m1_pills.set, 'film_lafayette');
   assert.equal(FILM_SCENE_BY_ID.m1_dejavu.set, 'film_ambush_house');
@@ -619,12 +619,16 @@ test('the entire film route completes through interactions, driving and real com
       const step = scene.steps[index]; const actor = h.actor(); actor.position = filmStepPosition(scene, step);
       if (step.kind === 'reach') h.advance();
       else if (step.kind === 'reflect') {
-        h.command(scene.id === 'm1_ledge' ? 'escape:retreat' : scene.id === 'm1_pills' ? 'pill:red' : 'reflect:agency');
+        h.command(scene.id === 'm1_wake_up' ? 'contact:follow' : scene.id === 'm1_ledge' ? 'escape:retreat' : scene.id === 'm1_pills' ? 'pill:red' : 'reflect:agency');
         if (scene.id === 'm1_pills') for (let frame = 0; frame < 131; frame++) h.players.step(.1, true, h.tick());
       }
       else if (step.kind === 'interact') {
         h.command('act');
-        if (scene.id === 'm1_pills') for (let frame = 0; frame < 51; frame++) h.players.step(.1, true, h.tick());
+        if (scene.id === 'm1_wake_up') {
+          for (let frame = 0; frame < 91; frame++) h.players.step(.1, true, h.tick());
+          if (index === 0) { h.command('act'); for (let frame = 0; frame < 41; frame++) h.players.step(.1, true, h.tick()); }
+        }
+        else if (scene.id === 'm1_pills') for (let frame = 0; frame < 51; frame++) h.players.step(.1, true, h.tick());
         else if (scene.id === 'm1_download') for (let frame = 0; frame < 101; frame++) h.players.step(.1, true, h.tick());
         else if (scene.id === 'm1_red_dress') for (let frame = 0; frame < 121; frame++) h.players.step(.1, true, h.tick());
         else if (scene.id === 'm1_bridge') {

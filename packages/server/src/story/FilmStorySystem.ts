@@ -8,6 +8,7 @@ import { INTERROGATION_CAST, INTERROGATION_TIMING, interrogationLocked, interrog
 import { MEETING_CAR, MEETING_CAST, MEETING_TIMING, meetingLocked, meetingRoot, type MeetingEncounter } from '@auto_matrix/shared';
 import { LAFAYETTE, LAFAYETTE_WELCOME, LAFAYETTE_KNOCK_SECONDS, HOTEL_ROUTE_LENGTH, HOTEL_DOOR_PROGRESS, hotelRoutePose, hotelRouteProgress, lafayetteKnocking, lafayetteKnockRoot, lafayetteWelcomeLocked, lafayetteWelcomeRoot, filmSetAt } from '@auto_matrix/shared';
 import { OFFICE_WORKDAY, OFFICE_DELIVERY_SECONDS, officeCourierRoot, officeRecipientRoot, workdayLocked, workdayText } from '@auto_matrix/shared';
+import { APARTMENT, apartmentAfter, apartmentDoor, apartmentLocked, apartmentText, lifeRoomCenter, type ApartmentPhase } from '@auto_matrix/shared';
 
 export class FilmStorySystem {
   // The controller owns socket sessions. It can refuse a handoff occupied by another player.
@@ -19,7 +20,82 @@ export class FilmStorySystem {
   get scene(): FilmScene | undefined { return this.state && FILM_SCENE_BY_ID[this.state.scene]; }
   get step(): FilmStep | undefined { return this.scene?.steps[this.state!.step]; }
   controls(agent: AgentState): boolean { return Boolean(this.state && this.state.actor === agent.id); }
-  performing(agent: AgentState): boolean { return this.controls(agent) && (workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || oracleActing(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
+  performing(agent: AgentState): boolean { return this.controls(agent) && (apartmentLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || oracleActing(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
+  apartmentFrame(agent: AgentState, dt: number, tick: number): void {
+    const state = this.state;
+    if (state?.scene !== 'm1_wake_up' || state.visiting) {
+      this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== 'film:apartment:door'); return;
+    }
+    if (!state || state.scene !== 'm1_wake_up' || state.visiting || !this.controls(agent)) return;
+    if (!state.contact) {
+      // Old saves had only computer and delivery objectives. Keep their completed history.
+      if (state.completed.includes(state.scene)) state.step = this.scene!.steps.length;
+      state.contact = { phase: state.completed.includes(state.scene) ? 'accepted' : state.step ? 'door' : 'idle', elapsed: 0 };
+      delete state.started;
+    }
+    const contact = state.contact;
+    const guests = [this.world.agents.get('choi')!, this.world.agents.get('dujour')!];
+    if (guests.some(actor => actor.controller) && apartmentAfter(contact, 'door') && contact.phase !== 'accepted') {
+      state.lastText = '门外的人物正由另一位玩家控制，来访停在当前进度。'; return;
+    }
+    const timed: Partial<Record<ApartmentPhase, number>> = { signal: APARTMENT.signal, knocking: APARTMENT.knocking,
+      opening: APARTMENT.opening, retrieving: APARTMENT.retrieving, handover: APARTMENT.handover, invitation: 2, inspecting: 3 };
+    const duration = timed[contact.phase];
+    if (duration) contact.elapsed = Math.min(duration, contact.elapsed + Math.max(0, Math.min(.1, dt)));
+    if (duration && contact.elapsed >= duration && contact.phase !== 'invitation') {
+      const next: Partial<Record<ApartmentPhase, ApartmentPhase>> = { signal: 'reply', knocking: 'door', opening: 'book', retrieving: 'disk', handover: 'invitation', inspecting: 'noticed' };
+      const previous = contact.phase; contact.phase = next[previous]!; contact.elapsed = 0; agent.currentAction = null;
+      if (previous === 'handover' && !contact.paid) { this.sandbox().neoLife!.money += 2000; contact.paid = true; }
+      if (previous !== 'signal') this.advance(apartmentText(contact), agent, tick);
+    }
+    for (const actor of guests) {
+      if (actor.controller) continue;
+      const pose = actor.id === 'choi' ? APARTMENT.choi : APARTMENT.dujour;
+      this.place(actor, this.scene!, filmPosition(this.scene!.set, pose.x, pose.z)); actor.rotation = pose.yaw;
+      if (actor.id === 'dujour' && apartmentAfter(contact, 'invitation')) actor.rotation = pose.yaw + (.35 - pose.yaw) * (contact.phase === 'invitation' ? Math.min(1, contact.elapsed / 2) : 1);
+      actor.currentAction = { type: 'idle', parameters: { resolved: true, contact: { ...contact, role: actor.id } }, startedAt: tick, duration: 1, progress: 0 };
+    }
+    if (apartmentLocked(state)) {
+      const pose = ['signal', 'reply', 'knocking'].includes(contact.phase) ? APARTMENT.computer : contact.phase === 'retrieving' ? { x: 6, z: 3.95, yaw: 0 } : contact.phase === 'opening' ? { x: 1.4, z: 10.6, yaw: 0 } : APARTMENT.door;
+      agent.position = filmPosition(this.scene!.set, pose.x, pose.z); agent.rotation = pose.yaw; agent.velocity = { x: 0, y: 0, z: 0 };
+      agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, contact: { ...contact, role: 'neo' } }, startedAt: tick, duration: 1, progress: 0 };
+      state.checkpoint = { ...agent.position };
+    }
+    const seal = 'film:apartment:door';
+    if (apartmentDoor(contact) >= .8) this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== seal);
+    else if (!this.sandbox().structures.some(s => s.id === seal)) this.sandbox().structures.push({ id: seal, kind: 'barricade', owner: 'matrix', position: filmPosition(this.scene!.set, 0, APARTMENT.doorZ), matrix: true, health: 1,
+      film: { scene: state.scene, width: APARTMENT.doorWidth, depth: .28, height: 6.5 } });
+    state.lastText = apartmentText(contact);
+  }
+  private apartmentAct(agent: AgentState, target: string, tick: number): string {
+    const state = this.state!; this.apartmentFrame(agent, 0, tick); const contact = state.contact!;
+    if (!this.near(agent, this.step!)) return '走近当前目标，再与眼前的物品或来客互动。';
+    if (apartmentAfter(contact, 'door') && ['choi', 'dujour'].some(id => this.world.agents.get(id)!.controller)) return state.lastText;
+    if (target === 'contact:wait' && contact.phase === 'noticed') {
+      const life = this.sandbox().neoLife!; state.checkpoint = { ...agent.position };
+      life.deferredContact = state; life.contactSignal = true; life.choices.white_rabbit = 'wait';
+      this.releaseCast(); delete life.journey;
+      agent.currentLocation = 'neo_apartment'; agent.position = lifeRoomCenter('neo_apartment')!; agent.rotation = Math.PI;
+      agent.currentAction = null; agent.velocity = { x: 0, y: 0, z: 0 };
+      life.journal.unshift({ day: life.day, time: this.world.timeOfDay, title: '先过完今天', text: '白兔线索和交易已记下。你暂时没有接受邀请；回到家后仍可继续这条联系。' });
+      return '你暂时回到日常生活。线索、交易与门口的决定已保存。';
+    }
+    if (target === 'contact:follow' && contact.phase === 'noticed') {
+      contact.phase = 'accepted'; contact.elapsed = 0; this.sandbox().neoLife!.choices.white_rabbit = 'follow';
+      this.sandbox().neoLife!.philosophy.agency++; this.advance(apartmentText(contact), agent, tick); return state.lastText;
+    }
+    if (target !== 'act') return state.lastText;
+    const next: Partial<Record<ApartmentPhase, ApartmentPhase>> = { idle: 'signal', reply: 'knocking', door: 'opening', book: 'retrieving', disk: 'handover', invitation: 'inspecting' };
+    const phase = next[contact.phase];
+    if (phase) {
+      contact.phase = phase; contact.elapsed = 0;
+      if (phase === 'inspecting') {
+        const life = this.sandbox().neoLife!; if (!life.evidence.includes('white_rabbit')) life.evidence.push('white_rabbit');
+      }
+      this.apartmentFrame(agent, 0, tick);
+    }
+    return state.lastText;
+  }
   workdayFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
     if (!state || state.scene !== 'm1_boss' || state.visiting || !this.controls(agent)) return;
@@ -569,8 +645,15 @@ export class FilmStorySystem {
     if (!life) return '先以 Neo 开始生活，再追查异常。';
     if (target === 'start' || target === 'continue') {
       if (agent.id !== 'neo' || this.state) return '电影进度已经存在，请继续当前场景。';
+      if (target === 'start' && life.deferredContact) return '已经保留了白兔的邀请，请继续这段联系，或继续日常生活。';
       if (!life.chapter) return '先在日常生活中调查异常，与 Trinity 建立联系。';
       if (life.activity || this.sandbox().threats.some(t => t.target === agent.id)) return '先结束当前活动或战斗。';
+      if (target === 'continue' && life.chapter === 1 && life.contactSignal && (!agent.isInMatrix || distance(agent.position, lifeRoomCenter('neo_apartment')!) > 12)) return '线索留在家里的电脑上。先回公寓，再决定继续调查。';
+      if (target === 'continue' && life.deferredContact) {
+        life.journey = life.deferredContact; delete life.deferredContact;
+        this.place(agent, this.scene!, { ...life.journey.checkpoint }); this.apartmentFrame(agent, 0, tick);
+        return '回到已经核对的白兔线索。先前的交易与选择都保留。';
+      }
       const first = target === 'start' ? FILM_SCENES[0] : FILM_SCENES.find(s => s.actor === 'neo' && s.chapter === NEO_CHAPTERS[life.chapter].id) ?? FILM_SCENE_BY_ID.m1_wake_up;
       if (!this.changeActor(agent, first.actor, tick)) return 'Trinity 正在由另一位玩家控制，稍后再接入序幕。';
       life.journey = { version: 1, scene: first.id, step: 0, actor: first.actor, completed: [], enteredAt: tick, reflections: {}, lastText: first.context, checkpoint: filmEntry(first) };
@@ -599,6 +682,12 @@ export class FilmStorySystem {
       return `回访${FILM_SETS[visited.set].name}。J 可返回当前剧情，回访不会改写进度。`;
     }
     if (target === 'retry') {
+      if (state.scene === 'm1_wake_up' && state.contact) {
+        delete state.visiting; delete state.returnPosition;
+        agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
+        this.place(agent, this.scene, { ...state.checkpoint }); this.apartmentFrame(agent, 0, tick);
+        return '已回到公寓当前目标，保留屏幕、房门、磁盘和交易进度。';
+      }
       if (state.scene === 'm1_boss' && state.workday) {
         agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
         agent.position = { ...state.checkpoint }; this.workdayFrame(agent, 0, tick); this.phoneFrame(agent, 0, tick);
@@ -731,6 +820,7 @@ export class FilmStorySystem {
     }
     const step = this.step;
     if (!step) return '本场景已完成。G 或 J 继续下一段。';
+    if (state.scene === 'm1_wake_up') return this.apartmentAct(agent, target, tick);
     if (interrogationLocked(state) && state.interrogation!.phase !== 'response') return '审讯正在进行。可以转动视角观察，暂停会保留当前进度。';
     if (target === 'escape:retreat' && state.scene === 'm1_ledge') {
       this.capture(agent, tick, '你退回办公室。特工将你带走；电话中的联系尚未结束。');
@@ -897,6 +987,8 @@ export class FilmStorySystem {
     delete state.training;
     delete state.dojo;
     delete state.workday;
+    delete state.contact;
+    this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== 'film:apartment:door');
     delete state.pills;
     delete state.interrogation;
     if (!['m1_pills', 'm1_mirror'].includes(scene.id)) { delete state.hotel; this.sealHotelDoor(); }
@@ -918,6 +1010,7 @@ export class FilmStorySystem {
     this.sandbox().weatherUntil = tick + 100000;
     this.stageCast();
     this.reconcileCast();
+    if (scene.id === 'm1_wake_up') { state.contact = { phase: 'idle', elapsed: 0 }; this.apartmentFrame(actor, 0, tick); }
     if (scene.id === 'm1_boss') { state.workday = { phase: 'waiting', elapsed: 0 }; this.workdayFrame(actor, 0, tick); }
     if (scene.id === 'm1_office_escape') this.office.start(tick);
     if (scene.id === 'm1_pod') this.awakeningFrame(actor, 0, tick);
@@ -1053,6 +1146,7 @@ export class FilmStorySystem {
       if (state.step === 2) { delete state.started; return; }
     }
     const step = this.step; if (!step) return;
+    if (state.scene === 'm1_wake_up') { delete state.started; return; }
     if (state.scene === 'm1_boss' && state.step === 1) { delete state.started; return; }
     if (this.performing(actor)) return;
     if (this.climbing(actor)) return;

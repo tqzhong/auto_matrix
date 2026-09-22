@@ -58,6 +58,21 @@ function setup(t: TestContext, rotation = 0) {
 
 const angle = (a: number, b: number) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
 
+test('the white-rabbit close-up clears the visitor beside the door and releases control afterwards', t => {
+  const game = setup(t); const center = FILM_SETS.film_anderson_flat.center;
+  game.state.currentLocation = 'film_anderson_flat'; game.state.position = filmPosition('film_anderson_flat', 0, 10.2);
+  game.controls.possess(game.state);
+  game.state.currentAction = { type: 'idle', parameters: { contact: { phase: 'inspecting', elapsed: 1, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
+  game.step(.5);
+  const visitor = new THREE.Box3(new THREE.Vector3(center.x - .75, center.y + 2, center.z + 12.35), new THREE.Vector3(center.x + .75, center.y + 3.6, center.z + 13.65));
+  assert.ok(visitor.distanceToPoint(game.camera.position) > game.camera.near, 'the near plane cannot cut into Choi’s head');
+  const sightline = new THREE.Ray(game.camera.position, game.camera.getWorldDirection(new THREE.Vector3()));
+  assert.equal(sightline.intersectsBox(visitor), false, 'Choi cannot block the shoulder being inspected');
+  game.state.currentAction = null; game.step(.1); assert.equal(game.controls.performing, false);
+  const start = game.group.position.clone(); game.key('KeyS'); game.step(.3);
+  assert.ok(game.group.position.distanceTo(start) > .2, 'finishing the inspection restores walking');
+});
+
 test('office conversation and signing frame the performers and restore walking after the response', t => {
   const game = setup(t, -Math.PI / 2); game.state.currentLocation = 'film_metacortex_floor';
   game.state.position = filmPosition('film_metacortex_floor', -17, 27.4); game.controls.possess(game.state);

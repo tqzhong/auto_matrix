@@ -6,6 +6,7 @@ import { interrogationLocked, interrogationPose } from '@auto_matrix/shared';
 import { meetingLocked, MEETING_TIMING } from '@auto_matrix/shared';
 import { filmPosition, HOTEL_DOOR_PROGRESS } from '@auto_matrix/shared';
 import { workdayLocked } from '@auto_matrix/shared';
+import { apartmentLocked } from '@auto_matrix/shared';
 
 const escape = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const WEATHER = { clear: '晴朗', rain: '雨', code_storm: '代码风暴' };
@@ -113,7 +114,10 @@ export class SandboxUI {
     this.el('film-blackout').style.opacity = '0';
     if (!player || !state || !profile) return;
     const life = player.id === 'neo' || player.id === state.neoLife?.journey?.actor ? state.neoLife : undefined;
-    const chapter = life ? NEO_CHAPTERS[life.chapter] : undefined;
+    const baseChapter = life ? NEO_CHAPTERS[life.chapter] : undefined;
+    const chapter = life?.chapter === 1 && life.contactSignal ? { ...baseChapter!, location: 'neo_apartment',
+      title: life.deferredContact ? '白兔的邀请还在' : '电脑中的陌生信号',
+      objective: life.deferredContact ? '可以继续普通生活，或回家打开 J 手记，继续已保存的邀请。' : '回家核对电脑上的匿名信号。J 查看生活手记。' } : baseChapter;
     this.root.querySelectorAll<HTMLButtonElement>('[data-panel="journal"]').forEach(button => { button.innerHTML = `<kbd>J</kbd> ${life ? '生活与故事手记' : '三部曲日志'}`; });
     const hour = Math.floor(time / 1000); const minute = Math.floor(time % 1000 * .06);
     const clock = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
@@ -190,6 +194,16 @@ export class SandboxUI {
       this.el('film-sequence-hint').textContent = waiting ? 'G 握住 Morpheus 的手 · 等待不会替你回应' : '鼠标观察 · V 切换视角 · 暂停或重连会保留动作';
       this.el('sandbox-interact').classList.toggle('hidden', !waiting); this.el('sandbox-nearby').textContent = '握住 Morpheus 的手';
       this.el('sandbox-waypoint').textContent = '';
+      return;
+    }
+    if (!journey.visiting && journey.scene === 'm1_wake_up' && journey.contact) {
+      const phase = journey.contact.phase; const locked = apartmentLocked(journey);
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = phase === 'noticed' ? 'J 决定是否赴约 · 可以暂时回到生活' : locked && phase !== 'reply' ? 'V 切换视角 · 暂停或重连会保留当前动作' : 'WASD 移动 · 靠近后按 G · J 查看手记';
+      this.el('sandbox-interact').classList.toggle('hidden', locked && phase !== 'reply');
+      this.el('sandbox-nearby').textContent = phase === 'reply' ? '尝试用键盘退出' : phase === 'noticed' ? '决定是否接受邀请' : step?.label ?? '跟随白兔去夜店';
+      if (locked) this.el('sandbox-waypoint').textContent = '';
+      document.getElementById('game-objective-copy')!.textContent = phase === 'reply' ? 'G 尝试退出窗口' : step?.label ?? 'G 随他们出发';
       return;
     }
     if (!journey.visiting && journey.scene === 'm1_boss' && journey.workday && !journey.phone) {

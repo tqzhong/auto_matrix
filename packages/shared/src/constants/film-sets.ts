@@ -2,6 +2,7 @@ import type { Vector3 } from '../types/agent.js';
 import { LOBBY_COLUMNS } from './lobby.js';
 import { OFFICE_OBSTACLES, OFFICE_LADDER, OFFICE_LEDGE_OFFSET } from './office.js';
 import { OFFICE_MANAGER_WALLS, OFFICE_MANAGER_FURNITURE } from './office-workday.js';
+import { APARTMENT_FURNITURE } from './apartment.js';
 import { PILL_ROOM } from './pills.js';
 import { INTERROGATION_ROOM } from './interrogation.js';
 import { POD_WATER_DROP, RECOVERY_BED } from './awakening.js';
@@ -113,6 +114,7 @@ export const ORACLE_FURNITURE: FilmObstacle[] = [
   { x: 8, z: -11, width: 2.7, depth: 2.2, height: 1.95 },
 ];
 export function filmObstacles(set: FilmSet): FilmObstacle[] {
+  if (set.id === 'film_anderson_flat') return APARTMENT_FURNITURE;
   if (set.id === 'film_adams_bridge' || set.id === 'film_extraction_car') {
     const parked = meetingCarPose({ phase: 'parked', elapsed: 0 });
     return [MEETING_CAR, { x: parked.x, z: parked.z, width: MEETING_CAR.depth, depth: MEETING_CAR.width, height: MEETING_CAR.height },

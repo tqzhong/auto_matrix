@@ -9,6 +9,8 @@ export interface NeoCycle {
 }
 export interface NeoLifeState {
   journey?: import('../constants/film-story.js').FilmJourney;
+  contactSignal?: boolean;
+  deferredContact?: import('../constants/film-story.js').FilmJourney;
   version: 1;
   cycle: number;
   startedDay: number;

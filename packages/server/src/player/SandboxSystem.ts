@@ -44,6 +44,7 @@ export class SandboxSystem {
     this.life.film.reconcileCast();
     this.life.film.restoreTrainingSpace();
     const journey = this.life.film.state;
+    if (journey) this.life.film.apartmentFrame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);
     if (journey?.scene === 'm1_boss') {
       delete journey.started;
       this.life.film.workdayFrame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);

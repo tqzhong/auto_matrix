@@ -76,6 +76,12 @@ CHARACTERS = {
     },
 }
 
+# Supporting cast keeps CC0 skin rather than reusing a principal actor's portrait.
+CHARACTERS['choi'] = {**CHARACTERS['neo'], 'height': 4.35, 'support': True,
+    'targets': {**CHARACTERS['neo']['targets'], 'head/head-rectangular': .08, 'chin/chin-width-incr': .1}}
+CHARACTERS['dujour'] = {**CHARACTERS['trinity'], 'height': 4.2, 'support': True,
+    'targets': {**CHARACTERS['trinity']['targets'], 'head/head-rectangular': .08, 'chin/chin-width-incr': .08}}
+
 
 def fetch_source(source):
     def download(url, dest):
@@ -440,11 +446,11 @@ def main(source, character, office=False):
     hand_bones = [i for i, name in enumerate(names) if name.startswith(('wrist', 'finger'))]
     neckline = pivot('neck01')[1] - .08
     waistline = pivot('spine03')[1] + .9
-    exposed = [f for f in body_faces if np.mean(base[[i for i, _ in f], 1]) > neckline - .85 or
+    exposed = [f for f in body_faces if character == 'dujour' and np.mean(base[[i for i, _ in f], 1]) > waistline or np.mean(base[[i for i, _ in f], 1]) > neckline - .85 or
                np.mean(weights[[i for i, _ in f]][:, hand_bones].sum(axis=1)) > .85]
     v, uv, faces, w = subdivide(base, skin_uv, exposed, weights)
     if not office:
-        export_mesh('Anatomical head and hands', v, uv, faces, w, skin, True)
+        export_mesh('Anatomical head and hands', v, uv, faces, w, skin, not spec.get('support'))
     else:
         torso = [f for f in body_faces if waistline - 1.8 < np.mean(base[[i for i, _ in f], 1]) < neckline - .8 and np.mean(weights[[i for i, _ in f]][:, :3].sum(axis=1)) > .9]
         v, uv, faces, w = subdivide(base, skin_uv, torso, weights)
@@ -459,6 +465,11 @@ def main(source, character, office=False):
         shirt_vertices = base.copy(); shirt_vertices[:, [0, 2]] *= 1.025
         v, uv, faces, w = trim_neckline(shirt_vertices, skin_uv, undershirt, weights, neckline)
         v, uv, faces, w = subdivide(v, uv, faces, w)
+        if character == 'dujour':
+            # A sleeveless top leaves the upper back and shoulder available for
+            # the story clue. The anatomical skin remains continuous underneath.
+            faces = [f for f in faces if np.mean(v[[i for i, _ in f], 1]) < neckline - .85 and
+                     np.mean(w[[i for i, _ in f]][:, arm_bones].sum(axis=1)) < .25]
         export_mesh('Fitted leather jacket' if character == 'trinity' else 'Black crew neck', v, uv, faces, w, suit if character == 'trinity' else pants)
 
     def clothing(folder, name):
@@ -491,7 +502,7 @@ def main(source, character, office=False):
         influence /= np.maximum(influence.sum(axis=1, keepdims=True), 1e-8)
         return vertices, uv, faces, influence
 
-    clothing_name = 'male_casualsuit01' if office else 'female_casualsuit01' if character == 'trinity' else 'male_elegantsuit01'
+    clothing_name = 'male_casualsuit01' if office else 'female_casualsuit01' if character in ('trinity', 'dujour') else 'male_elegantsuit01'
     v, uv, faces, w = clothing('clothes/' + clothing_name, clothing_name)
     if office:
         # The casual shirt and jeans are connected. Remove the jeans, then
@@ -527,7 +538,7 @@ def main(source, character, office=False):
     for f in faces:
         if f[0][0] in trousers and not office:
             continue
-        if character == 'trinity':
+        if character in ('trinity', 'dujour'):
             continue
         center = v[[i for i, _ in f]].mean(axis=0)
         # Open the formal jacket over Neo's black shirt, removing the stock tie
@@ -584,6 +595,8 @@ def main(source, character, office=False):
                      'head': posed[3].tolist(), 'floor': float(floor), 'sourceScale': float(scale),
                      'waist': [0, spec['height'] * .55, 0],
                      'targets': spec['targets'], 'sourceRevision': REVISION}
+    if spec.get('support'):
+        doc['extras']['skinBaked'] = True
     if office:
         for mesh in doc['meshes']:
             mesh['primitives'][0]['material'] = 0 if mesh['primitives'][0]['material'] == skin else 1
@@ -617,5 +630,5 @@ if __name__ == '__main__':
     OUT = args.output; OUT.mkdir(parents=True, exist_ok=True)
     if args.fetch:
         fetch_source(args.source)
-    for character in ['neo'] if args.office else [args.character] if args.character else CHARACTERS:
+    for character in ['neo'] if args.office else [args.character] if args.character else ['neo', 'trinity', 'smith', 'morpheus']:
         main(args.source, character, args.office)

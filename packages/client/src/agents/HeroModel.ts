@@ -11,6 +11,7 @@ import { LafayetteWelcomePerformance } from './LafayetteWelcomePerformance.js';
 import { LafayetteKnockPerformance } from './LafayetteKnockPerformance.js';
 import { RecoveryPerformance } from './RecoveryPerformance.js';
 import { OfficeWorkdayPerformance } from './OfficeWorkdayPerformance.js';
+import { ApartmentPerformance } from './ApartmentPerformance.js';
 
 type Pose = ReturnType<typeof advanceMotion>;
 interface CoatPanel { mesh: THREE.Mesh; rest: Float32Array; velocity: Float32Array }
@@ -24,6 +25,7 @@ export interface HeroRig {
   silver: { value: number };
   wardrobe: { mesh: THREE.Mesh; color: THREE.Color; outer: boolean; hair: boolean; cloth: boolean }[];
   officeRole?: 'rhineheart' | 'courier';
+  apartmentRole?: 'choi' | 'dujour';
 }
 
 export const HERO_IDS = ['neo', 'trinity', 'smith', 'morpheus'] as const;
@@ -31,7 +33,7 @@ export type HeroId = typeof HERO_IDS[number];
 
 // The inspector and world share these exact skinned assets and motion solver.
 export class HeroModels {
-  private assets = new Map<HeroId | 'neo-office', Promise<GLTF>>();
+  private assets = new Map<HeroId | 'neo-office' | 'choi' | 'dujour', Promise<GLTF>>();
   private disposed = false;
   private pills = new Map<HeroRig, PillPerformance>();
   private interrogations = new Map<HeroRig, InterrogationPerformance>();
@@ -40,6 +42,7 @@ export class HeroModels {
   private knocks = new Map<HeroRig, LafayetteKnockPerformance>();
   private recoveries = new Map<HeroRig, RecoveryPerformance>();
   private workdays = new Map<HeroRig, OfficeWorkdayPerformance>();
+  private apartments = new Map<HeroRig, ApartmentPerformance>();
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private textures = new Set<THREE.Texture>();
@@ -51,7 +54,7 @@ export class HeroModels {
 
   constructor(private portrait: THREE.Texture, private fabric: THREE.Texture) {}
 
-  private load(id: HeroId | 'neo-office'): Promise<GLTF> {
+  private load(id: HeroId | 'neo-office' | 'choi' | 'dujour'): Promise<GLTF> {
     const existing = this.assets.get(id); if (existing) return existing;
     const promise = new GLTFLoader().loadAsync(`/assets/characters/${id}.glb`).then(asset => {
       asset.scene.traverse(object => {
@@ -96,8 +99,9 @@ export class HeroModels {
     this.assets.set(id, promise); return promise;
   }
 
-  async create(id: HeroId, guard?: 'agent_jones' | 'agent_brown', support?: 'switch' | 'apoc' | 'rhineheart' | 'courier'): Promise<HeroRig | undefined> {
-    const [asset, office] = await Promise.all([this.load(id), id === 'neo' ? this.load('neo-office') : undefined]);
+  async create(id: HeroId, guard?: 'agent_jones' | 'agent_brown', support?: 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour'): Promise<HeroRig | undefined> {
+    const apartmentRole = support === 'choi' || support === 'dujour' ? support : undefined;
+    const [asset, office] = await Promise.all([this.load(apartmentRole ?? id), id === 'neo' && !apartmentRole ? this.load('neo-office') : undefined]);
     if (this.disposed) return;
     const root = clone(asset.scene) as THREE.Group;
     const bones = new Map<string, THREE.Bone>(); const rest = new Map<string, THREE.Vector3>();
@@ -152,7 +156,7 @@ export class HeroModels {
         material.onBeforeCompile = shader => { shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', '#include <map_fragment>\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.23, 0.24, 0.21), 0.55);'); };
         material.customProgramCacheKey = () => 'manager-hair-standin';
       }
-      if (support === 'switch' && /Hair|hair|Groom|groom/.test(material.name)) {
+      if ((support === 'switch' || support === 'dujour') && /Hair|hair|Groom|groom/.test(material.name)) {
         material.onBeforeCompile = shader => {
           shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', '#include <map_fragment>\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.61, 0.56, 0.41), 0.78);');
         };
@@ -178,7 +182,8 @@ export class HeroModels {
       };
       material.customProgramCacheKey = () => source.customProgramCacheKey() + '-liquid-mirror-v1';
     });
-    const rig: HeroRig = { root, bones, rest, panels, footHeight, glasses, silver, wardrobe, officeRole: support === 'rhineheart' || support === 'courier' ? support : undefined };
+    const rig: HeroRig = { root, bones, rest, panels, footHeight, glasses, silver, wardrobe, officeRole: support === 'rhineheart' || support === 'courier' ? support : undefined, apartmentRole };
+    if (apartmentRole) this.apartments.set(rig, new ApartmentPerformance(rig));
     if (id === 'neo' && !support) this.recoveries.set(rig, new RecoveryPerformance(rig));
     return rig;
   }
@@ -346,7 +351,7 @@ export class HeroModels {
 
   animate(rig: HeroRig, pose: Pose, motion: MotionState, input: MotionInput, delta: number): void {
     rig.silver.value = input.mirror ?? 0;
-    rig.glasses.visible = !rig.officeRole && input.glasses !== false && !input.realWorld;
+    rig.glasses.visible = !rig.officeRole && !rig.apartmentRole && input.glasses !== false && !input.realWorld;
     const officeShirt = input.officeShirt || rig.officeRole === 'courier';
     const pod = input.performance && !['touch', 'connect'].includes(input.performance);
     for (const part of rig.wardrobe) {
@@ -513,6 +518,8 @@ export class HeroModels {
     this.recoveries.get(rig)?.update(input.recovery, input.realWorld);
     if (input.workday && !this.workdays.has(rig)) this.workdays.set(rig, new OfficeWorkdayPerformance(rig));
     this.workdays.get(rig)?.update(input.workday);
+    if (input.contact && !this.apartments.has(rig)) this.apartments.set(rig, new ApartmentPerformance(rig));
+    this.apartments.get(rig)?.update(input.contact);
     if (delta <= 0) return;
     const dt = Math.min(delta, 1 / 30);
     // Analytic wind target plus damped springs; the waist is pinned. Thigh and
@@ -558,6 +565,7 @@ export class HeroModels {
     this.welcomes.forEach(p => p.dispose()); this.welcomes.clear(); this.knocks.forEach(p => p.dispose()); this.knocks.clear();
     this.recoveries.forEach(p => p.dispose()); this.recoveries.clear();
     this.workdays.forEach(p => p.dispose()); this.workdays.clear();
+    this.apartments.forEach(p => p.dispose()); this.apartments.clear();
     this.geometries.forEach(value => value.dispose()); this.materials.forEach(value => value.dispose());
     this.textures.forEach(value => value.dispose()); this.skeletons.forEach(value => value.dispose());
     this.geometries.clear(); this.materials.clear(); this.textures.clear(); this.skeletons.clear();

@@ -35,6 +35,17 @@ if (process.argv[3] === 'near') {
   if (playerBlocked(actor.position, actor.isInMatrix)) actor.position = filmStepPosition(scene, scene.steps[0]);
   sandbox.state.neoLife!.journey!.checkpoint = { ...actor.position };
 }
+if (scene.id === 'm1_wake_up' && ['contact-door', 'contact-book', 'contact-trade', 'contact-rabbit'].includes(process.argv[3])) {
+  actor.controller = 'player';
+  const act = () => { actor.position = filmStepPosition(scene, scene.steps[sandbox.life.film.state!.step]); sandbox.life.film.command(actor, 'act', 0); };
+  const frames = (count: number) => { for (let i = 0; i < count; i++) sandbox.life.film.apartmentFrame(actor, .1, 0); };
+  act(); frames(81); act(); frames(41);
+  if (process.argv[3] !== 'contact-door') { act(); frames(25); }
+  if (['contact-trade', 'contact-rabbit'].includes(process.argv[3])) { act(); frames(33); }
+  if (process.argv[3] === 'contact-rabbit') { act(); frames(66); }
+  actor.position = filmStepPosition(scene, scene.steps[sandbox.life.film.state!.step]); actor.rotation = 0;
+  sandbox.life.film.state!.checkpoint = { ...actor.position };
+}
 if (process.argv[3] === 'pills' && scene.id === 'm1_pills') {
   actor.position = filmStepPosition(scene, scene.steps[0]);
   sandbox.state.neoLife!.journey!.checkpoint = { ...actor.position };

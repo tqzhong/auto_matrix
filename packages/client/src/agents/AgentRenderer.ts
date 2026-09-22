@@ -137,6 +137,7 @@ export class AgentRenderer {
         reveal: state.currentAction?.parameters.reveal as MotionInput['reveal'],
         training: state.currentAction?.parameters.training as MotionInput['training'],
         workday: state.currentAction?.parameters.workday as MotionInput['workday'],
+        contact: state.currentAction?.parameters.contact as MotionInput['contact'],
         vase: state.currentAction?.parameters.vase as number | undefined,
         riding: state.currentAction?.parameters.riding === true,
         climbing: state.currentAction?.parameters.climbing ? Number(state.currentAction.parameters.climbDirection ?? 0) : undefined,

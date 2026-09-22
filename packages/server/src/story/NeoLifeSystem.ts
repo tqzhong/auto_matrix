@@ -185,8 +185,9 @@ export class NeoLifeSystem {
   private checkContact(tick: number): void {
     const state = this.state!;
     if (state.chapter || state.day < state.contactAfterDay || state.evidence.length < 3 || state.doubt < 42) return;
+    state.contactSignal = true;
     this.advance(tick);
-    this.note('一条私人消息', '有人注意到你在追查同样的问题。署名 Trinity 的人约你晚上在酒吧见面。你仍可以先过完今天。', tick);
+    this.note('电脑里的陌生信号', '有人注意到你在追查同样的问题。家里的电脑留下了没有署名的连接痕迹；你可以先过完今天，再回家核对。', tick);
   }
 
   private choose(agent: AgentState, token: string, tick: number): string {
@@ -255,6 +256,7 @@ export class NeoLifeSystem {
   private stageCast(): void {
     const chapter = this.chapter!;
     if (!chapter || chapter.id === 'ordinary' || chapter.mission) return;
+    if (chapter.id === 'contact' && this.state!.contactSignal) return;
     const actor = this.world.agents.get(chapter.speaker);
     if (!actor || actor.id === 'neo' || actor.controller) return;
     const center = lifeRoomCenter(chapter.location) ?? locationEntrance(chapter.location);

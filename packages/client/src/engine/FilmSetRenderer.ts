@@ -21,6 +21,8 @@ import { MEETING_DESTINATION, meetingLocked, type MeetingGesture } from '@auto_m
 import { MeetingSetRenderer } from './MeetingSetRenderer.js';
 import { LafayetteApproachRenderer } from './LafayetteApproachRenderer.js';
 import { LAFAYETTE } from '@auto_matrix/shared';
+import { ApartmentSetRenderer } from './ApartmentSetRenderer.js';
+import { apartmentLocked } from '@auto_matrix/shared';
 
 const outdoor = new Set(['rooftop', 'plaza', 'bridge', 'street', 'courtyard', 'freeway', 'machine', 'rain', 'garden', 'desert', 'pods']);
 const palettes = {
@@ -57,6 +59,7 @@ export class FilmSetRenderer {
   private glow!: THREE.MeshBasicMaterial;
   private lobby?: LobbySetRenderer;
   private office?: OfficeSetRenderer;
+  private apartment?: ApartmentSetRenderer;
   private freeway?: FreewaySetRenderer;
   private pods?: PodSetRenderer;
   private neb?: NebDeckRenderer;
@@ -94,6 +97,7 @@ export class FilmSetRenderer {
       if (set) {
         this.root.position.set(set.center.x, set.center.y - 1, set.center.z);
         if (['film_metacortex_floor', 'film_office_ledge'].includes(set.id)) this.office = new OfficeSetRenderer(this.root, set);
+        else if (set.id === 'film_anderson_flat') this.apartment = new ApartmentSetRenderer(this.root);
         else if (set.architecture === 'lobby') this.lobby = new LobbySetRenderer(this.root, set);
         else if (set.architecture === 'freeway') this.freeway = new FreewaySetRenderer(this.root, set);
         else if (set.architecture === 'pods') this.pods = new PodSetRenderer(this.root);
@@ -139,6 +143,7 @@ export class FilmSetRenderer {
       if (this.approach.root.visible) this.approach.renderer.update(journey, elapsed, { phase: 'parked', elapsed: 0, role: 'neo', bugged: false });
     }
     this.office?.update(journey, cameraPosition, playerPosition, workday);
+    this.apartment?.update(journey);
     this.freeway?.update(journey, elapsed, playerPosition);
     this.pods?.update(journey, elapsed);
     this.neb?.update(journey, elapsed);
@@ -158,6 +163,7 @@ export class FilmSetRenderer {
     if (journey && awakeningLocked(journey)) this.marker.visible = false;
     if (journey && trainingLocked(journey)) this.marker.visible = false;
     if (journey && workdayLocked(journey)) this.marker.visible = false;
+    if (journey && apartmentLocked(journey)) this.marker.visible = false;
     if (journey && phoneLocked(journey)) this.marker.visible = false;
     if (journey && windowOpening(journey)) this.marker.visible = false;
     if (journey?.scene === 'm1_dejavu' && journey.step === 0 && journey.ambush) this.marker.visible = false;
@@ -183,6 +189,7 @@ export class FilmSetRenderer {
       return { color: 0xdce7d2, ambient: .6, sun: .2 };
     }
     if (this.office) return { color: 0xe8e8d7, ambient: .65, sun: .3 };
+    if (this.apartment) { fog.density = .001; this.scene.environmentIntensity = .42; return { color: 0xcbd2b8, ambient: .52, sun: .06 }; }
     if (this.interrogation) { fog.density = .001; this.scene.environmentIntensity = .38; return { color: 0xdce4ce, ambient: .48, sun: .08 }; }
     if (this.meeting) { fog.density = .007; fog.color.setHex(0x111b1d); (this.scene.background as THREE.Color).copy(fog.color); this.scene.environmentIntensity = .7; return { color: 0xb8cdc6, ambient: .62, sun: .15 }; }
     if (this.hotel) { fog.density = .001; this.scene.environmentIntensity = .42; return { color: 0xd4d1b2, ambient: .62, sun: .12 }; }
@@ -865,6 +872,7 @@ export class FilmSetRenderer {
     for (const geometry of this.geometries) if (!live.has(geometry)) { geometry.dispose(); this.geometries.delete(geometry); }
   }
   private clear(): void {
+    this.apartment?.dispose(); this.apartment = undefined;
     this.approach?.renderer.dispose(); this.approach = undefined;
     this.hotel?.dispose(); this.hotel = undefined;
     this.meeting?.dispose(); this.meeting = undefined;
