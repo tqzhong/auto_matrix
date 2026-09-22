@@ -133,6 +133,24 @@ test('the lobby entrance draws weapons after the alarm and leaves the checkpoint
   assert.ok(guard.hipHeight < .7 && guard.lean > 1.2 && Math.abs(guard.roll) > 1, 'the guard reaches the floor instead of remaining bent upright');
 });
 
+test('government rescue performances visibly restrain Morpheus and form Neo bullet-time bend', () => {
+  const idle = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 };
+  const morpheus = advanceMotion(newMotion(), { ...idle, seated: true,
+    government: { kind: 'questioning', phase: 'monologue', elapsed: 7.8, attempt: 0, resolve: .45, role: 'morpheus' as const } }, 0);
+  assert.ok(morpheus.arms.every(arm => arm.elbow < -1.2 && arm.grip > .65), 'both restrained wrists stay planted on the chair arms');
+  assert.ok(morpheus.lean > .15, 'drug pressure visibly pulls Morpheus forward');
+  const smith = advanceMotion(newMotion(), { ...idle,
+    government: { kind: 'questioning', phase: 'monologue', elapsed: 3.2, attempt: 0, resolve: .8, role: 'smith' as const } }, 0);
+  assert.ok(smith.arms[1].shoulder < -1.25 && smith.arms[1].elbow < -1.1, 'Smith reaches to the earpiece before speaking privately');
+  const neo = advanceMotion(newMotion(), { ...idle, armed: true,
+    government: { kind: 'rooftop', phase: 'bullet_time', elapsed: 2.65, attempt: 0, dodges: 1, wounds: 0, resolved: [0], role: 'neo' as const } }, 0);
+  assert.ok(neo.hipHeight < 1.15 && neo.lean < -.75, 'Neo drops his hips and arches under the firing line');
+  assert.ok(Math.abs(neo.roll) > .2 && neo.arms.every(arm => arm.grip > .7), 'the dodge twists the torso while keeping empty pistols in hand');
+  const trinity = advanceMotion(newMotion(), { ...idle, armed: true,
+    government: { kind: 'rooftop', phase: 'trinity', elapsed: 1.4, attempt: 0, dodges: 2, wounds: 1, resolved: [0, 1, 2], role: 'trinity' as const } }, 0);
+  assert.ok(trinity.arms[0].shoulder < -1 && trinity.arms[0].grip > .85, 'Trinity holds the close-range firing pose');
+});
+
 test('armed shoulders follow vertical aim while recoil remains finite', () => {
   const idle = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, armed: true };
   const level = advanceMotion(newMotion(), { ...idle, aimPitch: 0 }, 0);

@@ -28,6 +28,8 @@ import { ClubSetRenderer } from './ClubSetRenderer.js';
 import { SentinelSetRenderer } from './SentinelSetRenderer.js';
 import { CypherRestaurantRenderer } from './CypherRestaurantRenderer.js';
 import { betrayalLocked, rescueLocked } from '@auto_matrix/shared';
+import { governmentLocked } from '@auto_matrix/shared';
+import { GovernmentSetRenderer } from './GovernmentSetRenderer.js';
 
 const outdoor = new Set(['rooftop', 'plaza', 'bridge', 'street', 'courtyard', 'freeway', 'machine', 'rain', 'garden', 'desert', 'pods']);
 const palettes = {
@@ -84,6 +86,7 @@ export class FilmSetRenderer {
   private approach?: { root: THREE.Group; renderer: MeetingSetRenderer };
   private sentinel?: SentinelSetRenderer;
   private restaurant?: CypherRestaurantRenderer;
+  private government?: GovernmentSetRenderer;
 
   constructor(private scene: THREE.Scene) {
     scene.add(this.root);
@@ -107,6 +110,7 @@ export class FilmSetRenderer {
         if (['film_metacortex_floor', 'film_office_ledge'].includes(set.id)) this.office = new OfficeSetRenderer(this.root, set);
         else if (set.id === 'film_anderson_flat') this.apartment = new ApartmentSetRenderer(this.root);
         else if (set.id === 'film_white_rabbit_club') { this.club = new ClubSetRenderer(this.root); void this.club.ready.catch(error => console.error('夜店人群加载失败', error)); }
+        else if (set.id === 'film_government_office' || set.id === 'film_government_roof') this.government = new GovernmentSetRenderer(this.root, set.id);
         else if (set.architecture === 'lobby') this.lobby = new LobbySetRenderer(this.root, set);
         else if (set.architecture === 'freeway') this.freeway = new FreewaySetRenderer(this.root, set);
         else if (set.architecture === 'pods') this.pods = new PodSetRenderer(this.root);
@@ -165,6 +169,7 @@ export class FilmSetRenderer {
     this.sentinel?.update(journey, elapsed);
     this.restaurant?.update(journey, elapsed);
     this.ambush?.update(journey, sandbox?.structures ?? [], elapsed);
+    this.government?.update(journey, elapsed);
     this.oracleVase?.update(sceneId === 'm1_oracle' ? journey?.visiting || journey!.step > 0 ? 4.5 : journey?.oracle?.vase : undefined);
     const scene = journey && FILM_SCENE_BY_ID[journey.scene]; const step = scene?.steps[journey!.step];
     this.marker.visible = Boolean(set && scene?.set === set.id && step && !journey?.visiting && journey?.actor === player?.id);
@@ -183,6 +188,7 @@ export class FilmSetRenderer {
     if (journey && interludeLocked(journey)) this.marker.visible = false;
     if (journey && betrayalLocked(journey)) this.marker.visible = false;
     if (journey && (rescueLocked(journey) || journey.scene === 'm1_guns' && journey.rescue?.phase === 'selecting')) this.marker.visible = false;
+    if (journey && governmentLocked(journey)) this.marker.visible = false;
     if (journey && phoneLocked(journey)) this.marker.visible = false;
     if (journey && windowOpening(journey)) this.marker.visible = false;
     if (journey?.scene === 'm1_dejavu' && journey.step === 0 && journey.ambush) this.marker.visible = false;
@@ -253,6 +259,14 @@ export class FilmSetRenderer {
     if (this.restaurant) {
       (this.scene.background as THREE.Color).setHex(0x090d12); fog.color.setHex(0x090d12); fog.density = .0018;
       this.scene.environmentIntensity = .32; return { color: 0xffd5a8, ambient: .38, sun: .05 };
+    }
+    if (this.government) {
+      if (this.government.setId === 'film_government_office') {
+        (this.scene.background as THREE.Color).setHex(0x87989a); fog.color.setHex(0x87989a); fog.density = .0012;
+        this.scene.environmentIntensity = .48; return { color: 0xd7e2db, ambient: .54, sun: .22 };
+      }
+      (this.scene.background as THREE.Color).setHex(0x9eafb2); fog.color.setHex(0x9eafb2); fog.density = .0024;
+      this.scene.environmentIntensity = .62; return { color: 0xdde8e1, ambient: .58, sun: .72 };
     }
     return palette;
   }
@@ -917,6 +931,7 @@ export class FilmSetRenderer {
     this.training?.dispose(); this.training = undefined;
     this.sentinel?.dispose(); this.sentinel = undefined;
     this.restaurant?.dispose(); this.restaurant = undefined;
+    this.government?.dispose(); this.government = undefined;
     this.office?.dispose(); this.office = undefined;
     this.freeway?.dispose(); this.freeway = undefined;
     this.lobby?.dispose(); this.lobby = undefined;

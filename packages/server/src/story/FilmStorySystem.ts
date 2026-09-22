@@ -1,6 +1,6 @@
 import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_CAST, filmReflections, CHARACTERS, LOCATIONS, NEO_CHAPTERS, filmCharacterFates, filmEntry, filmPosition, filmStepPosition, locationEntrance, distance, playerBlocked, newFreewayRide, stepFreeway, OFFICE_LADDER, awakeningLocked, awakeningPose, AWAKENING_SECONDS, CONSTRUCT_REVEAL, DESERT_REVEAL, oracleActing,
   AMBUSH_REWRITE, AMBUSH_SECONDS, AMBUSH_SEALS, OFFICE_CONTACT, OFFICE_WINDOW, OFFICE_CROSSING_SECONDS, officeCrossingPose, windowCrossing, phoneLocked, heldPhone, windowOpening, pillLocked, pillRoot, PILL_ROOM, PILL_TIMING, trainingLocked, trainingRoot, trainingText, TRAINING_SECONDS,
-  lobbyLocked, type DriveInput, type AgentState, type FilmScene, type FilmStep, type SandboxState, type SandboxThreat, type TrainingRole } from '@auto_matrix/shared';
+  lobbyLocked, type DriveInput, type AgentState, type FilmScene, type FilmStep, type SandboxState, type SandboxThreat, type TrainingRole, type CombatImpact } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
 import { LobbyCombatSystem } from './LobbyCombatSystem.js';
 import { OfficeEscapeSystem } from './OfficeEscapeSystem.js';
@@ -15,6 +15,7 @@ import { INTERLUDE_CAST, interludeDuration, interludeKind, interludeLocked, inte
 import { ORACLE_VISIT, oracleLegacyChoice, oracleVisitDuration, oracleVisitLocked, oracleVisitRoot, oracleVisitText, type OracleVisitRole } from '@auto_matrix/shared';
 import { BETRAYAL, betrayalDuration, betrayalLocked, betrayalRoot, betrayalText, type BetrayalEncounter, type BetrayalRole } from '@auto_matrix/shared';
 import { RESCUE, rescueDuration, rescueLocked, rescueRoot, rescueText, type RescueLoadout, type RescuePreparation, type RescueRole } from '@auto_matrix/shared';
+import { GOVERNMENT_RESCUE, governmentLocked, governmentRoot, governmentText, type GovernmentRescueEncounter, type GovernmentRescueRole } from '@auto_matrix/shared';
 
 const BATHROOM_ROLES = ['neo', 'trinity', 'switch', 'apoc'] as const;
 const UNPLUGGED_ROLES = ['tank', 'cypher', 'dozer', 'apoc', 'switch', 'neo', 'trinity'] as const;
@@ -22,6 +23,7 @@ const UNPLUGGED_ROLES = ['tank', 'cypher', 'dozer', 'apoc', 'switch', 'neo', 'tr
 export class FilmStorySystem {
   // The controller owns socket sessions. It can refuse a handoff occupied by another player.
   handoff?: (from: AgentState, to: string, tick: number, newCycle?: boolean) => boolean;
+  onImpact?: (impact: CombatImpact, tick: number) => void;
   readonly lobby: LobbyCombatSystem;
   readonly office: OfficeEscapeSystem;
   constructor(private world: WorldState, private sandbox: () => SandboxState, private returnToLife: (tick: number) => void) { this.lobby = new LobbyCombatSystem(world, sandbox); this.office = new OfficeEscapeSystem(sandbox); }
@@ -29,7 +31,7 @@ export class FilmStorySystem {
   get scene(): FilmScene | undefined { return this.state && FILM_SCENE_BY_ID[this.state.scene]; }
   get step(): FilmStep | undefined { return this.scene?.steps[this.state!.step]; }
   controls(agent: AgentState): boolean { return Boolean(this.state && this.state.actor === agent.id); }
-  performing(agent: AgentState): boolean { return this.controls(agent) && (clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
+  performing(agent: AgentState): boolean { return this.controls(agent) && (clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
   clubFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
     if (state?.scene !== 'm1_club' || state.visiting || !this.controls(agent)) return;
@@ -750,6 +752,196 @@ export class FilmStorySystem {
     }
     return state.lastText;
   }
+  private ensureGovernment(): GovernmentRescueEncounter {
+    const state = this.state!;
+    if (!state.government) {
+      const kind = state.scene === 'm1_smith_question' ? 'questioning' : 'rooftop';
+      const done = state.completed.includes(state.scene) || state.step >= this.scene!.steps.length;
+      state.government = kind === 'questioning'
+        ? { kind, phase: done ? 'done' : state.step ? 'alarm_ready' : 'ready', elapsed: 0, attempt: 0, resolve: 1 }
+        : { kind, phase: done ? 'done' : state.step ? 'download_ready' : 'ready', elapsed: 0, attempt: 0, dodges: 0, wounds: 0, resolved: [] };
+    }
+    return state.government;
+  }
+  private governmentOccupied(encounter: GovernmentRescueEncounter): AgentState | undefined {
+    const ids = encounter.kind === 'questioning' ? ['smith', 'agent_brown', 'agent_jones'] : ['trinity', 'agent_jones', 'citizen_11'];
+    return ids.map(id => this.world.agents.get(id)).find(actor => actor?.controller);
+  }
+  private stageGovernmentActor(role: GovernmentRescueRole, encounter: GovernmentRescueEncounter, dt: number, tick: number): void {
+    const id = role === 'pilot' ? 'citizen_11' : role; const actor = this.world.agents.get(id);
+    if (!actor || actor.controller && actor.id !== this.state!.actor) return;
+    const root = governmentRoot(encounter, role); const before = { ...actor.position };
+    actor.position = filmPosition(this.scene!.set, root.x, root.z); actor.rotation = root.yaw;
+    actor.velocity = dt > 0 ? { x: (actor.position.x - before.x) / dt, y: 0, z: (actor.position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
+    actor.currentLocation = this.scene!.set; actor.isInMatrix = true;
+    const armed = encounter.kind === 'rooftop' && (role === 'neo' && ['opening', 'bullet_time'].includes(encounter.phase)
+      || role === 'agent_jones' && encounter.phase === 'bullet_time' || role === 'trinity' && encounter.phase === 'trinity');
+    actor.currentAction = { type: 'idle', parameters: { player: actor.id === this.state!.actor, resolved: true,
+      seated: encounter.kind === 'questioning' && role === 'morpheus', armed,
+      government: { ...encounter, resolved: encounter.resolved ? [...encounter.resolved] : undefined, role } }, startedAt: tick, duration: 1, progress: 0 };
+  }
+  private clearGovernmentActions(): void {
+    for (const actor of this.world.agents.values()) if (actor.currentAction?.parameters.government) {
+      actor.currentAction = null; actor.velocity = { x: 0, y: 0, z: 0 };
+    }
+  }
+  private governmentFailure(agent: AgentState, encounter: GovernmentRescueEncounter): void {
+    encounter.phase = 'failed'; agent.health = 0; agent.status = 'dead'; agent.currentAction = null; agent.velocity = { x: 0, y: 0, z: 0 };
+    agent.activeEffects = agent.activeEffects.filter(effect => effect.visualEffect !== 'slow_motion');
+    this.clearGovernmentActions(); this.state!.lastText = governmentText(encounter);
+  }
+  private governmentShot(encounter: GovernmentRescueEncounter, source: 'neo' | 'trinity' | 'agent_jones', target: 'neo' | 'agent_jones' | undefined, damage: number, tick: number, offset = 0): void {
+    const fromRoot = governmentRoot(encounter, source); const toRoot = governmentRoot(encounter, target ?? 'neo');
+    const from = filmPosition(this.scene!.set, fromRoot.x, fromRoot.z); from.y += 2.25;
+    const position = filmPosition(this.scene!.set, toRoot.x + (target ? 0 : offset), toRoot.z - (target ? 0 : 1.5)); position.y += target ? 1.8 : .15;
+    const length = Math.max(.001, distance(from, position)); const direction = { x: (position.x - from.x) / length, y: (position.y - from.y) / length, z: (position.z - from.z) / length };
+    this.onImpact?.({ source, target: target ?? 'government-roof', position, direction, damage, combo: 0, matrix: true,
+      downed: source === 'trinity' && target === 'agent_jones', shot: { from, surface: target ? 'body' : 'stone' } }, tick);
+  }
+  governmentFrame(agent: AgentState, focus: boolean, dt: number, tick: number): boolean {
+    const state = this.state;
+    if (!state || !this.controls(agent) || state.visiting || !['m1_smith_question', 'm1_bullet_dodge'].includes(state.scene)) return false;
+    const encounter = this.ensureGovernment();
+    if (encounter.phase === 'done') {
+      const roles: GovernmentRescueRole[] = encounter.kind === 'questioning'
+        ? ['morpheus', 'smith', 'agent_brown', 'agent_jones'] : ['neo', 'trinity'];
+      for (const role of roles) this.stageGovernmentActor(role, encounter, 0, tick);
+      state.checkpoint = { ...agent.position }; state.lastText = governmentText(encounter); return true;
+    }
+    if (encounter.phase === 'failed' || encounter.phase === 'alarm_ready' || encounter.phase === 'download_ready') {
+      this.clearGovernmentActions(); state.lastText = governmentText(encounter); return false;
+    }
+    const occupied = this.governmentOccupied(encounter);
+    if (occupied) {
+      state.lastText = `${occupied.name} 正由另一位玩家控制，当前片段停在保存的位置。`;
+      return governmentLocked(state);
+    }
+    const delta = Math.max(0, Math.min(.1, dt));
+    if (encounter.kind === 'questioning') {
+      if (encounter.phase === 'monologue') {
+        encounter.elapsed = Math.min(GOVERNMENT_RESCUE.questioning.monologue, encounter.elapsed + delta);
+        encounter.resolve = Math.max(0, Math.min(1, (encounter.resolve ?? 1) + delta * (focus ? .12 : -1 / GOVERNMENT_RESCUE.questioning.failure)));
+        if ((encounter.resolve ?? 0) <= 0) { this.governmentFailure(agent, encounter); return false; }
+        if (encounter.elapsed >= GOVERNMENT_RESCUE.questioning.monologue) {
+          encounter.phase = 'alarm_ready'; encounter.elapsed = 0; this.clearGovernmentActions();
+          this.advance('Morpheus 没有交出锡安接入密码。远处的枪声打断了 Smith 的逼问。', agent, tick);
+          state.lastText = governmentText(encounter); return false;
+        }
+      } else if (encounter.phase === 'alarm') {
+        encounter.elapsed = Math.min(GOVERNMENT_RESCUE.questioning.alarm, encounter.elapsed + delta);
+        if (encounter.elapsed >= GOVERNMENT_RESCUE.questioning.alarm) {
+          encounter.phase = 'done'; this.clearGovernmentActions();
+          this.advance(this.step!.text ?? '特工中断审讯，转向楼内的营救者。', agent, tick);
+          this.governmentFrame(agent, false, 0, tick); return false;
+        }
+      }
+      for (const role of ['morpheus', 'smith', 'agent_brown', 'agent_jones'] as GovernmentRescueRole[]) this.stageGovernmentActor(role, encounter, dt, tick);
+      state.checkpoint = { ...agent.position }; state.lastText = governmentText(encounter); return governmentLocked(state);
+    }
+
+    if (encounter.phase === 'opening') {
+      encounter.elapsed = Math.min(GOVERNMENT_RESCUE.rooftop.opening, encounter.elapsed + delta);
+      if (encounter.elapsed >= GOVERNMENT_RESCUE.rooftop.opening) {
+        encounter.phase = 'bullet_time'; encounter.elapsed = 0; encounter.resolved = []; encounter.dodges = 0; encounter.wounds = 0;
+        agent.activeEffects = agent.activeEffects.filter(effect => effect.visualEffect !== 'slow_motion');
+        agent.activeEffects.push({ abilityId: 'film:bullet-dodge', visualEffect: 'slow_motion', remainingTicks: 1,
+          remainingSeconds: GOVERNMENT_RESCUE.rooftop.finish + 1 });
+      }
+    } else if (encounter.phase === 'bullet_time') {
+      encounter.elapsed = Math.min(GOVERNMENT_RESCUE.rooftop.finish, encounter.elapsed + delta);
+      encounter.resolved ??= [];
+      for (const [index, beat] of GOVERNMENT_RESCUE.rooftop.beats.entries()) {
+        if (encounter.resolved.includes(index) || encounter.elapsed <= beat + GOVERNMENT_RESCUE.rooftop.window) continue;
+        encounter.resolved.push(index); encounter.wounds = (encounter.wounds ?? 0) + 1; agent.health = Math.max(1, agent.health - 28);
+        this.governmentShot(encounter, 'agent_jones', 'neo', 28, tick);
+        if ((encounter.wounds ?? 0) >= 2) { this.governmentFailure(agent, encounter); return false; }
+      }
+      if (encounter.elapsed >= GOVERNMENT_RESCUE.rooftop.finish) {
+        if ((encounter.dodges ?? 0) < 2) { this.governmentFailure(agent, encounter); return false; }
+        encounter.phase = 'trinity'; encounter.elapsed = 0;
+        agent.activeEffects = agent.activeEffects.filter(effect => effect.visualEffect !== 'slow_motion');
+      }
+    } else if (encounter.phase === 'trinity') {
+      encounter.elapsed = Math.min(GOVERNMENT_RESCUE.rooftop.trinity, encounter.elapsed + delta);
+      if (!encounter.trinityShot && encounter.elapsed >= 1.35) { encounter.trinityShot = true; this.governmentShot(encounter, 'trinity', 'agent_jones', 100, tick); }
+      if (encounter.elapsed >= GOVERNMENT_RESCUE.rooftop.trinity) {
+        encounter.phase = 'download_ready'; encounter.elapsed = 0; this.clearGovernmentActions();
+        this.advance('Trinity 在 Jones 身后近距离开火。特工代码退出飞行员身体，她随后把 Neo 拉起来。', agent, tick);
+        state.lastText = governmentText(encounter); return false;
+      }
+    } else if (encounter.phase === 'downloading') {
+      encounter.elapsed = Math.min(GOVERNMENT_RESCUE.rooftop.download, encounter.elapsed + delta);
+      if (encounter.elapsed >= GOVERNMENT_RESCUE.rooftop.download) {
+        encounter.phase = 'done'; this.clearGovernmentActions();
+        this.advance(this.step!.text ?? 'Trinity 完成 B-212 驾驶程序下载。', agent, tick);
+        this.governmentFrame(agent, false, 0, tick); return false;
+      }
+    }
+    const roles: GovernmentRescueRole[] = encounter.phase === 'trinity'
+      ? ['neo', 'trinity', encounter.elapsed >= 2.4 ? 'pilot' : 'agent_jones']
+      : encounter.phase === 'downloading' ? ['neo', 'trinity'] : ['neo', 'trinity', 'agent_jones'];
+    for (const role of roles) this.stageGovernmentActor(role, encounter, dt, tick);
+    state.checkpoint = { ...agent.position }; state.lastText = governmentText(encounter); return governmentLocked(state);
+  }
+  governmentDodge(agent: AgentState, tick: number): string | undefined {
+    const state = this.state; const encounter = state?.government;
+    if (!state || state.scene !== 'm1_bullet_dodge' || !this.controls(agent) || encounter?.kind !== 'rooftop' || encounter.phase !== 'bullet_time') return undefined;
+    encounter.resolved ??= [];
+    const match = GOVERNMENT_RESCUE.rooftop.beats.map((beat, index) => ({ beat, index, distance: Math.abs(encounter.elapsed - beat) }))
+      .filter(candidate => !encounter.resolved!.includes(candidate.index) && candidate.distance <= GOVERNMENT_RESCUE.rooftop.window)
+      .sort((a, b) => a.distance - b.distance)[0];
+    if (!match) return '弹道尚未进入闪避窗口。观察时间收缩，在子弹贴近时按 X。';
+    encounter.resolved.push(match.index); encounter.dodges = (encounter.dodges ?? 0) + 1;
+    this.governmentShot(encounter, 'agent_jones', undefined, 0, tick, [-2.4, 2.1, -1.4][match.index] ?? 0);
+    agent.activeEffects = agent.activeEffects.filter(effect => effect.visualEffect !== 'slow_motion');
+    agent.activeEffects.push({ abilityId: 'film:bullet-dodge', visualEffect: 'slow_motion', remainingTicks: 1,
+      remainingSeconds: Math.max(.8, GOVERNMENT_RESCUE.rooftop.finish - encounter.elapsed + .5) });
+    this.governmentFrame(agent, false, 0, tick); return match.distance < GOVERNMENT_RESCUE.rooftop.window * .45
+      ? 'Neo 在弹道闭合前折身闪过。' : '子弹贴身掠过，闪避仍然有效。';
+  }
+  private retryGovernment(agent: AgentState, tick: number): string {
+    const state = this.state!; const previous = this.ensureGovernment(); const attempt = previous.attempt + 1;
+    this.clearGovernmentActions(); agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
+    agent.position = { ...state.checkpoint }; agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentAction = null;
+    state.government = previous.kind === 'questioning'
+      ? { kind: 'questioning', phase: 'ready', elapsed: 0, attempt, resolve: 1, answer: previous.answer }
+      : { kind: 'rooftop', phase: 'ready', elapsed: 0, attempt, dodges: 0, wounds: 0, resolved: [] };
+    delete state.fighting; delete state.started; this.governmentFrame(agent, false, 0, tick);
+    return previous.kind === 'questioning'
+      ? '已从审讯椅重试；你的反思仍被保留，重新在手记中确认后按住 G 抵抗。'
+      : '已从屋顶交火检查点重试；按 G 重新开火，再在弹道贴近时按 X。';
+  }
+  private governmentAct(agent: AgentState, target: string, tick: number): string {
+    const state = this.state!; const encounter = this.ensureGovernment(); const occupied = this.governmentOccupied(encounter);
+    if (occupied) return `${occupied.name} 正由另一位玩家控制，等待对方结束后再继续。`;
+    if (encounter.phase === 'failed' && target === 'act') return this.retryGovernment(agent, tick);
+    if (encounter.kind === 'questioning') {
+      if (encounter.phase === 'ready' && target.startsWith('reflect:')) {
+        const choice = filmReflections(state.scene).find(candidate => candidate.id === target.slice(8));
+        if (!choice) return '请在手记中选择一种具体回应。';
+        const life = this.sandbox().neoLife!; const key = `${state.scene}:${state.step}`;
+        if (!state.reflections[key]) {
+          state.reflections[key] = choice.id; life.choices[key] = choice.id; life.philosophy[choice.id]++;
+          life.journal.unshift({ day: life.day, time: this.world.timeOfDay, title: `${this.scene!.title} · ${choice.label}`, text: choice.response });
+        }
+        encounter.answer = choice.id; encounter.phase = 'monologue'; encounter.elapsed = 0; encounter.resolve = 1;
+        this.governmentFrame(agent, false, 0, tick); return `${choice.response} 现在按住 G，让 Morpheus 在 Smith 的逼问中保持清醒。`;
+      }
+      if (encounter.phase === 'alarm_ready' && target === 'act') {
+        encounter.phase = 'alarm'; encounter.elapsed = 0; this.governmentFrame(agent, false, 0, tick); return state.lastText;
+      }
+      return governmentText(encounter);
+    }
+    if (encounter.phase === 'ready' && target === 'act') {
+      encounter.phase = 'opening'; encounter.elapsed = 0; this.governmentShot(encounter, 'neo', 'agent_jones', 0, tick);
+      this.governmentFrame(agent, false, 0, tick); return 'Neo 举枪开火。Jones 接管飞行员并开始避开弹道。';
+    }
+    if (encounter.phase === 'download_ready' && target === 'act') {
+      if (!this.near(agent, this.step!)) return '先走到屋顶直升机驾驶舱旁，再按 G 请求驾驶程序。';
+      encounter.phase = 'downloading'; encounter.elapsed = 0; this.governmentFrame(agent, false, 0, tick); return state.lastText;
+    }
+    return governmentText(encounter);
+  }
   private sealAmbush(): void {
     const state = this.state;
     const sealed = (state?.ambush?.elapsed ?? 0) >= AMBUSH_REWRITE || state?.completed.includes('m1_dejavu') || state?.scene === 'm1_dejavu' && state.step > 0;
@@ -1188,6 +1380,7 @@ export class FilmStorySystem {
       return `回访${FILM_SETS[visited.set].name}。J 可返回当前剧情，回访不会改写进度。`;
     }
     if (target === 'retry') {
+      if (state.government && ['m1_smith_question', 'm1_bullet_dodge'].includes(state.scene)) return this.retryGovernment(agent, tick);
       if (state.scene === 'm1_sentinels' && state.sentinel) {
         if (state.sentinel.phase === 'failed') return this.sentinelAct(agent, target, tick);
         agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
@@ -1385,6 +1578,7 @@ export class FilmStorySystem {
     if (state.scene === 'm1_oracle' && state.step === 1 && state.oracle?.consultation) return this.oracleAct(agent, target, tick);
     if (state.scene === 'm1_bathroom' || state.scene === 'm1_unplugged' && state.step === 1) return this.betrayalAct(agent, target, tick);
     if ((state.scene === 'm1_rescue_decision' && state.step === 1) || state.scene === 'm1_guns') return this.rescueAct(agent, target, tick);
+    if (state.scene === 'm1_smith_question' || state.scene === 'm1_bullet_dodge') return this.governmentAct(agent, target, tick);
     if (interrogationLocked(state) && state.interrogation!.phase !== 'response') return '审讯正在进行。可以转动视角观察，暂停会保留当前进度。';
     if (target === 'escape:retreat' && state.scene === 'm1_ledge') {
       this.capture(agent, tick, '你退回办公室。特工将你带走；电话中的联系尚未结束。');
@@ -1575,6 +1769,7 @@ export class FilmStorySystem {
     delete state.sentinel;
     delete state.interlude;
     delete state.betrayal;
+    delete state.government;
     this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== 'film:apartment:door');
     delete state.pills;
     delete state.interrogation;
@@ -1589,6 +1784,7 @@ export class FilmStorySystem {
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.oracleVisit) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.betrayal) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.rescue) other.currentAction = null;
+    for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.government) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.lobbyEntry) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.riding) { other.currentAction = null; other.velocity = { x: 0, y: 0, z: 0 }; }
     if (scene.id === 'm1_lobby') this.lobby.reset();
@@ -1647,6 +1843,14 @@ export class FilmStorySystem {
     if (scene.id === 'm1_lobby') {
       state.rescue ??= { phase: 'equipped', elapsed: 0, loadout: 'rifle' };
       state.rescue.phase = 'equipped'; state.rescue.elapsed = 0; state.rescue.loadout ??= 'rifle';
+    }
+    if (scene.id === 'm1_smith_question') {
+      state.government = { kind: 'questioning', phase: 'ready', elapsed: 0, attempt: 0, resolve: 1 };
+      this.governmentFrame(actor, false, 0, tick);
+    }
+    if (scene.id === 'm1_bullet_dodge') {
+      state.government = { kind: 'rooftop', phase: 'ready', elapsed: 0, attempt: 0, dodges: 0, wounds: 0, resolved: [] };
+      this.governmentFrame(actor, false, 0, tick);
     }
     if (scene.id === 'm1_bug' && state.office?.outcome === 'escaped') state.lastText = '你没有被特工带走。Switch 仍要求做安全检查，确认没有追踪装置。';
   }

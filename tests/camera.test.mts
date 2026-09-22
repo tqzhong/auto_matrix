@@ -39,6 +39,69 @@ test('the lobby checkpoint has a readable authored camera and V returns to Neo e
   assert.ok(game.camera.position.distanceTo(new THREE.Vector3(game.state.position.x, game.state.position.y + 2.99, game.state.position.z)) < .06);
 });
 
+test('Smith questioning keeps both faces readable and V uses Morpheus seated eye line', t => {
+  const game = setup(t, Math.PI); const center = FILM_SETS.film_government_office.center;
+  game.camera.aspect = .72; game.camera.updateProjectionMatrix();
+  Object.assign(game.state, { id: 'morpheus', name: 'Morpheus', currentLocation: 'film_government_office',
+    position: filmPosition('film_government_office', 0, -2.2), rotation: Math.PI });
+  game.state.currentAction = { type: 'idle', parameters: { seated: true,
+    government: { kind: 'questioning', phase: 'monologue', elapsed: 7.8, attempt: 0, resolve: .55, role: 'morpheus' } }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.step(.5);
+  const morpheus = new THREE.Vector3(center.x, center.y + 2.8, center.z - 2.2).project(game.camera);
+  const smith = new THREE.Vector3(center.x, center.y + 3, center.z - 6.2).project(game.camera);
+  for (const face of [morpheus, smith]) assert.ok(Math.abs(face.x) < .9 && Math.abs(face.y) < .9 && face.z > -1 && face.z < 1);
+  assert.ok(game.camera.position.x < center.x - 5, 'the portrait two-shot must clear the serum stand and exterior mullions');
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+  assert.ok(Math.abs(game.camera.position.y - (game.state.position.y + 2.18)) < .08, 'the chair view cannot float at standing height');
+});
+
+test('rooftop bullet time keeps Jones and bent Neo in frame while V follows the lowered body', t => {
+  const game = setup(t, Math.PI); const center = FILM_SETS.film_government_roof.center;
+  game.camera.aspect = .72; game.camera.updateProjectionMatrix();
+  game.state.currentLocation = 'film_government_roof'; game.state.position = filmPosition('film_government_roof', 0, 2.5); game.state.rotation = Math.PI;
+  game.state.currentAction = { type: 'idle', parameters: { armed: true,
+    government: { kind: 'rooftop', phase: 'bullet_time', elapsed: 2.65, attempt: 0, dodges: 1, wounds: 0, resolved: [0], role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.step(.5);
+  for (const point of [new THREE.Vector3(center.x, center.y + 2.1, center.z + 2.5), new THREE.Vector3(center.x, center.y + 3, center.z - 8.8)]) {
+    const screen = point.project(game.camera); assert.ok(Math.abs(screen.x) < .72 && Math.abs(screen.y) < .9 && screen.z > -1 && screen.z < 1);
+  }
+  assert.ok(game.camera.position.x > center.x + 15, 'the portrait bullet-time shot keeps both complete bodies away from the crop');
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+  assert.ok(game.camera.position.y < game.state.position.y + 2.2, 'first person follows Neo under the bullets');
+});
+
+test('the portrait Trinity finish keeps the shooter, Jones and fallen Neo inside the action frame', t => {
+  const game = setup(t, Math.PI); const center = FILM_SETS.film_government_roof.center;
+  game.camera.aspect = .72; game.camera.updateProjectionMatrix();
+  game.state.currentLocation = 'film_government_roof'; game.state.position = filmPosition('film_government_roof', 0, 2.5); game.state.rotation = Math.PI;
+  game.state.currentAction = { type: 'idle', parameters: { armed: true,
+    government: { kind: 'rooftop', phase: 'trinity', elapsed: 2.1, attempt: 0, dodges: 3, wounds: 0, resolved: [0, 1, 2], role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state);
+  for (const elapsed of [2.1, 2.8, 3.6]) {
+    (game.state.currentAction.parameters.government as { elapsed: number }).elapsed = elapsed; game.step(.5);
+    for (const point of [new THREE.Vector3(center.x, center.y + 1.6, center.z + 2.5), new THREE.Vector3(center.x - 4.2, center.y + 3, center.z + 5.5), new THREE.Vector3(center.x, center.y + 3, center.z - 8.8)]) {
+      const screen = point.project(game.camera); assert.ok(Math.abs(screen.x) < .8 && Math.abs(screen.y) < .82 && screen.z > -1 && screen.z < 1, `portrait finish crop at ${elapsed}s: ${screen.toArray().join(',')}`);
+    }
+  }
+  assert.ok(game.camera.position.distanceTo(new THREE.Vector3(center.x, center.y + 3, center.z - 8.8)) > 16, 'the finish cannot crop the target at Codex sidebar width');
+});
+
+test('the B-212 download uses a wide portrait establishing shot instead of filling the view with its hull', t => {
+  const game = setup(t, -Math.PI * .75); const center = FILM_SETS.film_government_roof.center;
+  game.camera.aspect = .72; game.camera.updateProjectionMatrix();
+  game.state.currentLocation = 'film_government_roof'; game.state.position = filmPosition('film_government_roof', 11.5, -15.5);
+  game.state.currentAction = { type: 'idle', parameters: { government: { kind: 'rooftop', phase: 'downloading', elapsed: 2.2,
+    attempt: 0, dodges: 3, wounds: 0, resolved: [0, 1, 2], role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.step(.5);
+  const helicopter = new THREE.Vector3(center.x + 7, center.y + 4, center.z - 20); const screen = helicopter.clone().project(game.camera);
+  assert.ok(game.camera.position.distanceTo(helicopter) > 25, 'the camera needs enough distance to show the whole aircraft');
+  assert.ok(Math.abs(screen.x) < .55 && Math.abs(screen.y) < .65 && screen.z > -1 && screen.z < 1);
+  for (const point of [new THREE.Vector3(center.x - 6.4, center.y + 7.3, center.z - 20), new THREE.Vector3(center.x + 20.4, center.y + 7.3, center.z - 20),
+    new THREE.Vector3(center.x + 7, center.y + 7.3, center.z - 6.6), new THREE.Vector3(center.x + 7, center.y + 7.3, center.z - 33.4)]) {
+    const tip = point.project(game.camera); assert.ok(Math.abs(tip.x) < .72 && Math.abs(tip.y) < .72, `B-212 rotor crop: ${tip.toArray().join(',')}`);
+  }
+});
+
 function setup(t: TestContext, rotation = 0) {
   class InputTarget extends EventTarget { matches() { return false; } }
   const window = new InputTarget(); const canvas = new InputTarget();

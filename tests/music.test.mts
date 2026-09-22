@@ -142,6 +142,7 @@ function audioHarness(t: TestContext, saved?: string) {
     setTargetAtTime(value: number, time: number) { this.value = value; this.events.push({ value, time }); }
     setValueAtTime(value: number, time: number) { this.setTargetAtTime(value, time); }
     linearRampToValueAtTime(value: number, time: number) { this.setTargetAtTime(value, time); }
+    exponentialRampToValueAtTime(value: number, time: number) { this.setTargetAtTime(value, time); }
     cancelAndHoldAtTime() {}
   }
   class Node {
@@ -155,10 +156,12 @@ function audioHarness(t: TestContext, saved?: string) {
     start() { this.starts++; }
     stop(time = 0) { this.stopAt = time; if (!time) this.onended?.(); }
   }
+  class Oscillator extends Source { type = 'sine'; frequency = new Param(); }
+  class Filter extends Node { type = 'lowpass'; frequency = new Param(); Q = new Param(); }
   const contexts: Context[] = [];
   const legacyStorage = { reads: 0 };
   class Context {
-    state = 'suspended'; currentTime = 10; destination = new Node(); gains: Gain[] = []; sources: Source[] = [];
+    state = 'suspended'; currentTime = 10; sampleRate = 48000; destination = new Node(); gains: Gain[] = []; sources: Source[] = []; oscillators: Oscillator[] = [];
     onstatechange?: () => void;
     recording = Object.assign(new Node(), { stream: { id: 'mixed-audio' } });
     compressor = Object.assign(new Node(), { threshold: new Param(), knee: new Param(), ratio: new Param(), attack: new Param(), release: new Param() });
@@ -167,6 +170,9 @@ function audioHarness(t: TestContext, saved?: string) {
     createDynamicsCompressor() { return this.compressor; }
     createMediaStreamDestination() { return this.recording; }
     createBufferSource() { const source = new Source(); this.sources.push(source); return source; }
+    createOscillator() { const oscillator = new Oscillator(); this.oscillators.push(oscillator); return oscillator; }
+    createBiquadFilter() { return new Filter(); }
+    createBuffer(_channels: number, length: number) { const data = new Float32Array(length); return { getChannelData: () => data }; }
     async decodeAudioData() { return { duration: 90 }; }
     async resume() { this.state = 'running'; this.onstatechange?.(); }
     async close() { this.state = 'closed'; }
@@ -209,6 +215,14 @@ test('audio waits for a gesture, loops a cue once, ducks dialogue, and sends the
   assert.ok(ctx.compressor.connections.includes(ctx.recording)); assert.ok(ctx.compressor.connections.includes(ctx.destination));
   assert.equal(h.audio.effects()!.output.connections[0], ctx.gains[2]);
   assert.equal(ctx.gains[0].connections[0], ctx.gains[2], 'effects and music use one master');
+});
+
+test('government rescue effects cover interrogation machinery, bullets, the phone upload and helicopter rotors', async t => {
+  const h = audioHarness(t); await h.audio.resume(); const ctx = h.contexts[0];
+  for (const sound of ['earpiece', 'serum', 'alarm', 'gunfire', 'bullet', 'body', 'phone', 'upload', 'rotor'] as const) h.audio.governmentSound(sound);
+  assert.ok(ctx.oscillators.length >= 4, 'electronic cues use pitched layers');
+  assert.ok(ctx.sources.length >= 12, 'weapons, water, body fall and rotor beats use shaped noise');
+  assert.ok([...ctx.oscillators, ...ctx.sources].every(source => source.starts > 0), 'every cue is scheduled immediately');
 });
 
 test('music mute persists independently from effects; backgrounding silences the shared output', async t => {

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, RESCUE, RESCUE_LOADOUTS, filmReflections, filmStepPosition, filmEntry, filmPosition, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, RESCUE, RESCUE_LOADOUTS, GOVERNMENT_RESCUE, filmReflections, filmStepPosition, filmEntry, filmPosition, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -855,6 +855,10 @@ test('the entire film route completes through interactions, driving and real com
           assert.equal(state.oracle?.consultation?.phase, 'question'); h.command('reflect:agency');
           for (let frame = 0; frame < 50; frame++) h.players.step(.1, true, h.tick());
         } else h.command(scene.id === 'm1_wake_up' ? 'contact:follow' : scene.id === 'm1_ledge' ? 'escape:retreat' : scene.id === 'm1_pills' ? 'pill:red' : 'reflect:agency');
+        if (scene.id === 'm1_smith_question') for (let frame = 0; frame < 130 && state.step === index; frame++) {
+          h.players.receiveInput('film-player', { x: 0, z: 0, yaw: h.actor().rotation, jump: false, sprint: false, focus: true, sequence: ++sequence });
+          h.players.step(.1, true, h.tick());
+        }
         if (scene.id === 'm1_pills') for (let frame = 0; frame < 131; frame++) h.players.step(.1, true, h.tick());
         if (scene.id === 'm1_club') for (let frame = 0; frame < 61; frame++) h.players.step(.1, true, h.tick());
         if (scene.id === 'm1_cypher_console') for (let frame = 0; frame < 48; frame++) h.players.step(.1, true, h.tick());
@@ -921,6 +925,8 @@ test('the entire film route completes through interactions, driving and real com
           actor.position = filmPosition(scene.set, loadout.x, loadout.z); h.command('act');
           for (let frame = 0; frame < 55 && state.step === index; frame++) h.players.step(.1, true, h.tick());
         }
+        else if (scene.id === 'm1_smith_question') for (let frame = 0; frame < 75 && state.step === index; frame++) h.players.step(.1, true, h.tick());
+        else if (scene.id === 'm1_bullet_dodge') for (let frame = 0; frame < 55 && state.step === index; frame++) h.players.step(.1, true, h.tick());
         else if (scene.id === 'm1_boss' && index === 0) {
           for (let frame = 0; frame < 91; frame++) h.players.step(.1, true, h.tick());
           h.command('act');
@@ -942,6 +948,16 @@ test('the entire film route completes through interactions, driving and real com
       }
       else if (step.kind === 'drive') { h.command('act'); rideToExit(h); }
       else {
+        if (scene.id === 'm1_bullet_dodge') {
+          h.command('act');
+          for (let frame = 0; frame < 36; frame++) h.players.step(.1, true, h.tick());
+          for (const beat of GOVERNMENT_RESCUE.rooftop.beats) {
+            while (state.government!.phase === 'bullet_time' && state.government!.elapsed < beat) h.players.step(.1, true, h.tick());
+            h.players.act('film-player', 'dodge', h.tick());
+          }
+          for (let frame = 0; frame < 110 && state.step === index; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`); continue;
+        }
         h.command('act');
         if (scene.id === 'm1_lobby') for (let frame = 0; frame < 80 && !h.sandbox.state.threats.length; frame++) h.players.step(.1, true, h.tick());
         h.advance(); assert.ok(h.sandbox.state.threats.length > 0, scene.id);

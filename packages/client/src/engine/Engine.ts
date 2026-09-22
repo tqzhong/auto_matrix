@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { OfficeWorkday } from '@auto_matrix/shared';
 import type { AgentState, WorldEvent, SimulationState, SandboxState, CombatImpact, SkillCast } from '@auto_matrix/shared';
-import { insideLifeRoom, meetingLocked, meetingCarPose, interrogationLocked, pillLocked, lafayetteKnocking, lafayetteWelcomeLocked, awakeningLocked, oracleActing, phoneLocked, heldPhone, wakeCallLocked, sentinelLocked, interludeLocked, rescueLocked, lobbyLocked, rescueLoadout, windowOpening, windowCrossing, OFFICE_CONTACT, LOBBY_ENTRY, FILM_SETS } from '@auto_matrix/shared';
+import { insideLifeRoom, meetingLocked, meetingCarPose, interrogationLocked, pillLocked, lafayetteKnocking, lafayetteWelcomeLocked, awakeningLocked, oracleActing, phoneLocked, heldPhone, wakeCallLocked, sentinelLocked, interludeLocked, rescueLocked, lobbyLocked, governmentLocked, rescueLoadout, windowOpening, windowCrossing, OFFICE_CONTACT, LOBBY_ENTRY, GOVERNMENT_RESCUE, FILM_SETS } from '@auto_matrix/shared';
 import { FilmSetRenderer } from './FilmSetRenderer.js';
 import { CombatEffects } from './CombatEffects.js';
 import { GameAudio } from './GameAudio.js';
@@ -267,6 +267,26 @@ export class Engine {
       if (previous < LOBBY_ENTRY.alarmAt && current >= LOBBY_ENTRY.alarmAt) this.audio.lobbySound('alarm');
       if (previous < LOBBY_ENTRY.drawAt && current >= LOBBY_ENTRY.drawAt) this.audio.lobbySound('draw');
     }
+    if (after?.government && ['m1_smith_question', 'm1_bullet_dodge'].includes(after.scene) && !after.visiting && after.actor === this.playerControls?.id && this.running) {
+      const previous = before?.scene === after.scene ? before.government : undefined; const current = after.government;
+      if (current.phase !== previous?.phase) {
+        if (current.phase === 'monologue') { this.audio.governmentSound('earpiece'); this.audio.dialogue(); }
+        else if (current.phase === 'alarm') { this.audio.governmentSound('alarm'); this.audio.dialogue(); }
+        else if (current.phase === 'opening') this.audio.governmentSound('gunfire');
+        else if (current.phase === 'bullet_time') this.audio.governmentSound('bullet');
+        else if (current.phase === 'trinity') this.audio.governmentSound('body');
+        else if (current.phase === 'downloading') { this.audio.governmentSound('phone'); this.audio.dialogue(); }
+      }
+      if (previous?.phase === current.phase) {
+        if (current.phase === 'monologue' && previous.elapsed < 8.2 && current.elapsed >= 8.2) this.audio.governmentSound('serum');
+        if (current.phase === 'bullet_time') for (const beat of GOVERNMENT_RESCUE.rooftop.beats) {
+          if (previous.elapsed < beat && current.elapsed >= beat) this.audio.governmentSound('bullet');
+        }
+        if (current.phase === 'trinity' && previous.elapsed < 1.35 && current.elapsed >= 1.35) this.audio.governmentSound('gunfire');
+        if (current.phase === 'downloading' && previous.elapsed < 1.6 && current.elapsed >= 1.6) this.audio.governmentSound('upload');
+        if (current.phase === 'downloading' && previous.elapsed < 3.8 && current.elapsed >= 3.8) this.audio.governmentSound('rotor');
+      }
+    }
     if (after?.scene === 'm1_office_escape' && !after.visiting && after.actor === this.playerControls?.id && before?.scene === after.scene && !after.office?.outcome && this.running) {
       const previous = before.office?.window ?? 0; const current = after.office?.window ?? 0;
       if (previous < .7 && current >= .7) this.audio.windowSound(false);
@@ -295,7 +315,7 @@ export class Engine {
       const loadout = rescueLoadout(journey);
       this.playerControls.spoon = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_spoon' ? journey.oracle?.spoon : undefined;
       this.playerControls.phone = journey?.actor === this.playerControls.id ? heldPhone(journey) : undefined;
-      this.playerControls.performing = Boolean(journey?.actor === this.playerControls.id && (meetingLocked(journey) || awakeningLocked(journey) || oracleActing(journey) || phoneLocked(journey) || wakeCallLocked(journey) || sentinelLocked(journey) || interludeLocked(journey) || rescueLocked(journey) || lobbyLocked(journey) || windowOpening(journey) || windowCrossing(journey) || pillLocked(journey) || interrogationLocked(journey) || lafayetteKnocking(journey) || lafayetteWelcomeLocked(journey)));
+      this.playerControls.performing = Boolean(journey?.actor === this.playerControls.id && (meetingLocked(journey) || awakeningLocked(journey) || oracleActing(journey) || phoneLocked(journey) || wakeCallLocked(journey) || sentinelLocked(journey) || interludeLocked(journey) || rescueLocked(journey) || lobbyLocked(journey) || governmentLocked(journey) || windowOpening(journey) || windowCrossing(journey) || pillLocked(journey) || interrogationLocked(journey) || lafayetteKnocking(journey) || lafayetteWelcomeLocked(journey)));
       this.playerControls.mirror = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_mirror' ? journey.awakening?.kind === 'connect' ? 1 : (journey.awakening?.elapsed ?? 0) / 8 : 0;
       this.playerControls.climbing = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_ledge' && journey.step === 1 && journey.office?.climbed !== undefined;
       this.playerControls.ride = journey?.actor === this.playerControls.id && !journey.visiting && journey.ride?.phase === 'riding' ? journey.ride : undefined;

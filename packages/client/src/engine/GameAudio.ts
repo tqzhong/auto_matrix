@@ -285,6 +285,44 @@ export class GameAudio {
       source.connect(filter); filter.connect(gain); gain.connect(output); source.start(start); source.onended = () => { source.disconnect(); filter.disconnect(); gain.disconnect(); };
     }
   }
+  governmentSound(kind: 'earpiece' | 'serum' | 'alarm' | 'gunfire' | 'bullet' | 'body' | 'phone' | 'upload' | 'rotor'): void {
+    const bus = this.effects(); if (!bus) return;
+    const { context: ctx, output } = bus; const at = ctx.currentTime;
+    const tone = (start: number, from: number, to: number, duration: number, level: number, type: OscillatorType = 'sine') => {
+      const oscillator = ctx.createOscillator(); const gain = ctx.createGain(); oscillator.type = type;
+      oscillator.frequency.setValueAtTime(from, start); oscillator.frequency.exponentialRampToValueAtTime(to, start + duration);
+      gain.gain.setValueAtTime(.0001, start); gain.gain.linearRampToValueAtTime(level, start + .008); gain.gain.exponentialRampToValueAtTime(.0001, start + duration);
+      oscillator.connect(gain); gain.connect(output); oscillator.start(start); oscillator.stop(start + duration + .01);
+      oscillator.onended = () => { oscillator.disconnect(); gain.disconnect(); };
+    };
+    const noise = (start: number, duration: number, frequency: number, level: number, q = 1, filterType: BiquadFilterType = 'bandpass') => {
+      const buffer = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * duration), ctx.sampleRate); const samples = buffer.getChannelData(0);
+      for (let i = 0; i < samples.length; i++) samples[i] = (Math.random() * 2 - 1) * Math.exp(-i / ctx.sampleRate * (kind === 'alarm' || kind === 'rotor' ? 1.2 : 18));
+      const source = ctx.createBufferSource(); source.buffer = buffer;
+      const filter = ctx.createBiquadFilter(); filter.type = filterType; filter.frequency.value = frequency; filter.Q.value = q;
+      const gain = ctx.createGain(); gain.gain.setValueAtTime(.0001, start); gain.gain.linearRampToValueAtTime(level, start + .008); gain.gain.exponentialRampToValueAtTime(.0001, start + duration);
+      source.connect(filter); filter.connect(gain); gain.connect(output); source.start(start);
+      source.onended = () => { source.disconnect(); filter.disconnect(); gain.disconnect(); };
+    };
+    if (kind === 'earpiece') { tone(at, 2300, 260, .11, .045, 'triangle'); return; }
+    if (kind === 'serum') { noise(at, 1.35, 760, .055, 1.3); tone(at, 82, 48, 1.4, .028, 'sawtooth'); return; }
+    if (kind === 'alarm') {
+      this.lobbySound('alarm');
+      noise(at, 1.4, 6200, .035, .55, 'highpass'); noise(at + .18, 1.2, 4700, .025, .7, 'highpass'); return;
+    }
+    if (kind === 'gunfire') {
+      for (let i = 0; i < 4; i++) { const start = at + i * .095; noise(start, .18, 520 + i * 75, .13, 2.8); tone(start, 150, 52, .14, .032, 'square'); }
+      return;
+    }
+    if (kind === 'bullet') { noise(at, .34, 4300, .075, 1.8, 'highpass'); tone(at, 4100, 620, .31, .038, 'sawtooth'); return; }
+    if (kind === 'body') { noise(at, .48, 145, .16, 2.4, 'lowpass'); tone(at, 94, 35, .42, .045, 'triangle'); return; }
+    if (kind === 'phone') { tone(at, 780, 1120, .12, .026, 'sine'); tone(at + .15, 1120, 780, .14, .023, 'sine'); return; }
+    if (kind === 'upload') {
+      for (let i = 0; i < 5; i++) tone(at + i * .095, 230 + i * 120, 540 + i * 180, .16, .018, 'square');
+      return;
+    }
+    for (let i = 0; i < 8; i++) { const start = at + i * .085; noise(start, .15, 82 + i % 2 * 35, .085, 2.6, 'lowpass'); tone(start, 58, 42, .12, .018, 'triangle'); }
+  }
   lafayetteSound(kind: 'thunder' | 'knock' | 'handshake' | 'door'): void {
     const bus = this.effects(); if (!bus) return;
     const { context: ctx, output } = bus; const duration = kind === 'thunder' ? 2.8 : kind === 'door' ? 1.15 : kind === 'knock' ? .14 : .18;

@@ -2,7 +2,7 @@
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { FILM_SCENES, FILM_SETS, RESCUE, filmEntry, filmStepPosition, filmPosition, playerBlocked, NEO_CHAPTERS, MEETING_DRIVE_SECONDS, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENES, FILM_SETS, RESCUE, GOVERNMENT_RESCUE, filmEntry, filmStepPosition, filmPosition, playerBlocked, NEO_CHAPTERS, MEETING_DRIVE_SECONDS, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -230,6 +230,44 @@ if (['lobby-checkpoint', 'lobby-combat'].includes(process.argv[3]) && scene.id =
   const frames = process.argv[3] === 'lobby-checkpoint' ? 38 : 72;
   for (let frame = 0; frame < frames; frame++) sandbox.life.film.lobby.frame(actor, .1, 0);
   journey.checkpoint = { ...actor.position };
+}
+if (['question-ready', 'question-monologue', 'question-alarm'].includes(process.argv[3]) && scene.id === 'm1_smith_question') {
+  actor.controller = 'player'; actor.position = filmStepPosition(scene, scene.steps[0]); actor.rotation = Math.PI;
+  sandbox.life.film.governmentFrame(actor, false, 0, 0);
+  if (process.argv[3] !== 'question-ready') {
+    sandbox.life.film.command(actor, 'reflect:care', 0);
+    const frames = process.argv[3] === 'question-monologue' ? 74 : Math.ceil(GOVERNMENT_RESCUE.questioning.monologue * 10) + 1;
+    for (let frame = 0; frame < frames; frame++) sandbox.life.film.governmentFrame(actor, true, .1, 0);
+    if (process.argv[3] === 'question-alarm') {
+      actor.position = filmStepPosition(scene, scene.steps[1]); sandbox.life.film.command(actor, 'act', 0);
+      for (let frame = 0; frame < 28; frame++) sandbox.life.film.governmentFrame(actor, false, .1, 0);
+    }
+  }
+  sandbox.life.film.state!.checkpoint = { ...actor.position };
+}
+if (['roof-ready', 'roof-bullet', 'roof-trinity', 'roof-download'].includes(process.argv[3]) && scene.id === 'm1_bullet_dodge') {
+  actor.controller = 'player'; actor.position = filmStepPosition(scene, scene.steps[0]); actor.rotation = Math.PI;
+  sandbox.life.film.governmentFrame(actor, false, 0, 0);
+  if (process.argv[3] !== 'roof-ready') {
+    sandbox.life.film.command(actor, 'act', 0);
+    for (let frame = 0; frame < Math.ceil(GOVERNMENT_RESCUE.rooftop.opening * 10) + 1; frame++) sandbox.life.film.governmentFrame(actor, false, .1, 0);
+    if (process.argv[3] === 'roof-bullet') {
+      for (let frame = 0; frame < 8; frame++) sandbox.life.film.governmentFrame(actor, false, .1, 0);
+    } else {
+      for (const beat of GOVERNMENT_RESCUE.rooftop.beats) {
+        while (sandbox.life.film.state!.government!.phase === 'bullet_time' && sandbox.life.film.state!.government!.elapsed < beat) sandbox.life.film.governmentFrame(actor, false, .1, 0);
+        sandbox.life.film.governmentDodge(actor, 0);
+      }
+      while (sandbox.life.film.state!.government!.phase === 'bullet_time') sandbox.life.film.governmentFrame(actor, false, .1, 0);
+      const frames = process.argv[3] === 'roof-trinity' ? 21 : Math.ceil(GOVERNMENT_RESCUE.rooftop.trinity * 10) + 1;
+      for (let frame = 0; frame < frames; frame++) sandbox.life.film.governmentFrame(actor, false, .1, 0);
+      if (process.argv[3] === 'roof-download') {
+        actor.position = filmStepPosition(scene, scene.steps[1]); sandbox.life.film.command(actor, 'act', 0);
+        for (let frame = 0; frame < 22; frame++) sandbox.life.film.governmentFrame(actor, false, .1, 0);
+      }
+    }
+  }
+  sandbox.life.film.state!.checkpoint = { ...actor.position };
 }
 for (const resident of world.agents.values()) delete resident.controller;
 neo.isAwakened = FILM_SCENES.indexOf(scene) >= FILM_SCENES.findIndex(s => s.id === 'm1_pod');

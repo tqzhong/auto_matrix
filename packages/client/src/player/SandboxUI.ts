@@ -15,6 +15,7 @@ import { oracleVisitDuration, oracleVisitLocked } from '@auto_matrix/shared';
 import { BETRAYAL, betrayalDuration, betrayalLocked } from '@auto_matrix/shared';
 import { RESCUE, rescueDuration, rescueLoadout, rescueLocked } from '@auto_matrix/shared';
 import { LOBBY_ENTRY, lobbyLocked } from '@auto_matrix/shared';
+import { GOVERNMENT_RESCUE, governmentLocked, governmentText } from '@auto_matrix/shared';
 
 const escape = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const WEATHER = { clear: '晴朗', rain: '雨', code_storm: '代码风暴' };
@@ -487,6 +488,35 @@ export class SandboxUI {
         this.el('sandbox-waypoint').textContent = '柱列能阻挡枪火 · 瞄准后换位 · Trinity 掩护侧翼';
         this.el('sandbox-interact').classList.add('hidden'); return;
       }
+    }
+    if (!journey.visiting && journey.government && ['m1_smith_question', 'm1_bullet_dodge'].includes(scene.id)) {
+      const encounter = journey.government; const questioning = encounter.kind === 'questioning'; const phase = encounter.phase;
+      const close = !step || distance(player.position, filmStepPosition(scene, step)) <= 4;
+      const canAct = phase === 'failed' || phase === 'alarm_ready' || phase === 'ready' && !questioning || phase === 'download_ready' && close || phase === 'done';
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.toggle('urgent', phase === 'bullet_time' || phase === 'failed');
+      this.el('film-sequence-line').textContent = governmentText(encounter);
+      this.el('film-sequence-hint').textContent = phase === 'ready' && questioning ? 'J 打开手记，选择 Morpheus 如何守住锡安密码 · 等待不会替你回答'
+        : phase === 'monologue' ? `按住 G 保持清醒 · 意志 ${Math.round((encounter.resolve ?? 0) * 100)}% · 松开会持续下降`
+        : phase === 'alarm_ready' ? '走到落地窗前 · G 继续 · 暂停或重连会保留审讯结果'
+        : phase === 'ready' ? 'G 举枪开火 · V 切换视角 · 当前检查点自动保存'
+        : phase === 'opening' ? 'Jones 正在闪过 Neo 的弹道 · 准备按 X'
+        : phase === 'bullet_time' ? '弹道贴近时按 X · 可以承受一次擦伤，第二次会从屋顶检查点重试'
+        : phase === 'download_ready' ? '走到 B-212 驾驶舱旁 · G 呼叫 Tank 下载驾驶程序'
+        : phase === 'failed' ? 'G 从本段检查点重试 · 已完成剧情与哲学选择仍然保留'
+        : governmentLocked(journey) ? '鼠标环顾 · V 切换主视角与场景镜头 · 当前一拍自动保存' : 'G 继续下一段 · J 查看手记';
+      this.el('sandbox-interact').classList.toggle('hidden', !canAct);
+      this.el('sandbox-nearby').textContent = phase === 'failed' ? '从检查点重试' : phase === 'alarm_ready' ? '见证警报打断审讯'
+        : phase === 'ready' ? '向屋顶飞行员开火' : phase === 'download_ready' ? '请求 B-212 驾驶程序' : '继续营救';
+      if (governmentLocked(journey)) this.el('sandbox-waypoint').textContent = '';
+      const duration = phase === 'monologue' ? GOVERNMENT_RESCUE.questioning.monologue : phase === 'alarm' ? GOVERNMENT_RESCUE.questioning.alarm
+        : phase === 'opening' ? GOVERNMENT_RESCUE.rooftop.opening : phase === 'bullet_time' ? GOVERNMENT_RESCUE.rooftop.finish
+        : phase === 'trinity' ? GOVERNMENT_RESCUE.rooftop.trinity : phase === 'downloading' ? GOVERNMENT_RESCUE.rooftop.download : 0;
+      this.el('sandbox-job').style.width = duration ? `${Math.min(100, encounter.elapsed / duration * 100)}%` : '0';
+      document.getElementById('game-objective')!.textContent = questioning ? '政府大楼 · Smith 的审讯' : '政府大楼 · 屋顶交火';
+      document.getElementById('game-objective-copy')!.textContent = questioning ? phase === 'monologue' ? `守住接入密码 · 意志 ${Math.round((encounter.resolve ?? 0) * 100)}%` : governmentText(encounter)
+        : phase === 'bullet_time' ? `躲避 ${encounter.dodges ?? 0}/3 · 擦伤 ${encounter.wounds ?? 0}/1 · X 闪避` : governmentText(encounter);
+      if (!questioning) this.el('sandbox-trace').textContent = `弹道躲避 ${encounter.dodges ?? 0}/3 · 擦伤 ${encounter.wounds ?? 0}/1`;
+      return;
     }
     if (scene.id === 'm1_office_escape' && journey.office && !journey.office.outcome && !journey.visiting) {
       if (windowCrossing(journey)) {

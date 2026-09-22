@@ -118,7 +118,8 @@ export class PlayerExperience {
     this.el('landing-screen').classList.add('hidden'); this.el('game-hud').classList.remove('hidden'); this.el('character-select').classList.add('hidden');
     this.actions.menu(false);
     this.el('game-dialogue').classList.add('hidden');
-    this.message(id === 'neo' ? 'J 生活与故事手记 · WASD 走动 · G 查看附近活动 · 先过好普通的一天' : 'F 连按：刺拳 → 直拳 → 正蹬 · X 闪避 · Q / C 角色技能 · H 隐藏界面');
+    this.message(id === this.storyActor ? '剧情检查点已恢复 · 按当前目标操作 · V 切换视角 · J 查看手记'
+      : id === 'neo' ? 'J 生活与故事手记 · WASD 走动 · G 查看附近活动 · 先过好普通的一天' : 'F 连按：刺拳 → 直拳 → 正蹬 · X 闪避 · Q / C 角色技能 · H 隐藏界面');
   }
   viewChanged(firstPerson: boolean): void { this.el('view-label').textContent = firstPerson ? '第三人称' : '第一人称'; }
   message(text: string): void {
@@ -142,7 +143,7 @@ export class PlayerExperience {
     if (this.menuOpen && performance.now() - this.lastRender > 1000) this.renderRoster();
     const player = this.controlled ? agents[this.controlled] : undefined;
     const driving = Boolean(player?.currentAction?.parameters.riding);
-    const performing = Boolean(player?.currentAction?.parameters.club || player?.currentAction?.parameters.workday || player?.currentAction?.parameters.meeting || player?.currentAction?.parameters.interrogation || player?.currentAction?.parameters.pills || player?.currentAction?.parameters.welcome || player?.currentAction?.parameters.sentinel || player?.currentAction?.parameters.interlude || player?.currentAction?.parameters.oracleVisit || player?.currentAction?.parameters.betrayal || player?.currentAction?.parameters.rescue || player?.currentAction?.parameters.lobbyEntry || player?.currentAction?.parameters.filmPose || player?.currentAction?.parameters.spoon !== undefined || player?.currentAction?.parameters.vase !== undefined);
+    const performing = Boolean(player?.currentAction?.parameters.club || player?.currentAction?.parameters.workday || player?.currentAction?.parameters.meeting || player?.currentAction?.parameters.interrogation || player?.currentAction?.parameters.pills || player?.currentAction?.parameters.welcome || player?.currentAction?.parameters.sentinel || player?.currentAction?.parameters.interlude || player?.currentAction?.parameters.oracleVisit || player?.currentAction?.parameters.betrayal || player?.currentAction?.parameters.rescue || player?.currentAction?.parameters.government || player?.currentAction?.parameters.lobbyEntry || player?.currentAction?.parameters.filmPose || player?.currentAction?.parameters.spoon !== undefined || player?.currentAction?.parameters.vase !== undefined);
     document.body.classList.toggle('film-driving', driving);
     document.body.classList.toggle('film-performing', performing);
     document.body.classList.toggle('film-workday-scene', Boolean(player?.currentAction?.parameters.workday));
@@ -196,7 +197,8 @@ export class PlayerExperience {
     const oracleScene = this.filmPlaying && neoLife?.journey?.scene === 'm1_oracle' && Boolean(neoLife.journey.oracle?.consultation) && !neoLife.journey.visiting;
     const betrayalScene = this.filmPlaying && Boolean(neoLife?.journey?.betrayal) && !neoLife?.journey?.visiting;
     const lobbyScene = this.filmPlaying && neoLife?.journey?.scene === 'm1_lobby' && Boolean(neoLife.journey.fighting) && !neoLife.journey.visiting;
-    this.el('game-interaction').classList.toggle('hidden', nearby.length === 0 || player.status === 'dead' || Boolean(player.currentAction?.parameters.riding || player.currentAction?.parameters.lobbyEntry) || sentinelScene || interludeScene || oracleScene || betrayalScene || rescueScene || lobbyScene);
+    const governmentScene = this.filmPlaying && Boolean(neoLife?.journey?.government) && !neoLife?.journey?.visiting;
+    this.el('game-interaction').classList.toggle('hidden', nearby.length === 0 || player.status === 'dead' || Boolean(player.currentAction?.parameters.riding || player.currentAction?.parameters.lobbyEntry) || sentinelScene || interludeScene || oracleScene || betrayalScene || rescueScene || lobbyScene || governmentScene);
     this.el('game-interaction').querySelector('span')!.textContent = nearby[0] ? `与 ${nearby[0].name} 交谈` : '';
     this.el('game-objective').textContent = player.isAwakened ? '你会怎样改变这个世界？' : '寻找现实背后的真相';
     this.el('game-objective-copy').textContent = player.isAwakened ? '结识同伴、探索城市，或前往地铁站寻找出口。' : `怀疑 ${Math.round(player.mind?.suspicion ?? 0)}% · 目击异常，与可信的觉醒者交谈。`;
