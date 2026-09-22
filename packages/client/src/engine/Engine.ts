@@ -13,6 +13,15 @@ import { LightingSystem } from './LightingSystem.js';
 import { ParticleSystem } from './ParticleSystem.js';
 import { PostProcessing } from './PostProcessing.js';
 import type { PlayerControls } from '../player/PlayerControls.js';
+import { FrameRate } from './FrameRate.js';
+
+export interface FrameProfile {
+  at: number;
+  sections: Record<string, number>;
+  calls: number;
+  triangles: number;
+  scene: string;
+}
 
 export class Engine {
   readonly scene = new THREE.Scene();
@@ -37,7 +46,8 @@ export class Engine {
   private matrix = true;
   private eventRing: THREE.Mesh;
   private eventAge = 10;
-  fps = 60;
+  private frameRate = new FrameRate();
+  get fps(): number { return this.frameRate.fps; }
   playerControls?: PlayerControls;
   private running = true;
   private tick = 0;
@@ -47,6 +57,7 @@ export class Engine {
   private sandboxPlayer?: string | null;
   suspended = false;
   onRendered?: () => void;
+  onProfile?: (frame: FrameProfile) => void;
   private environment: THREE.WebGLRenderTarget;
 
   constructor(container: HTMLElement) {
@@ -114,8 +125,13 @@ export class Engine {
   private animate = (): void => {
     this.animationId = requestAnimationFrame(this.animate);
     if (this.suspended) return;
-    const delta = Math.min(this.clock.getDelta(), 0.1);
-    this.fps += ((1 / Math.max(delta, 0.001)) - this.fps) * 0.03;
+    const sections: Record<string, number> | undefined = this.onProfile ? {} : undefined;
+    let measuredAt = this.onProfile ? performance.now() : 0;
+    const measure = this.onProfile ? (name: string) => { const now = performance.now(); sections![name] = now - measuredAt; measuredAt = now; } : undefined;
+    if (measure) this.renderer.info.reset();
+    const frameDelta = this.clock.getDelta();
+    const delta = Math.min(frameDelta, 0.1);
+    this.frameRate.update(frameDelta);
     this.elapsed += delta * this.simulationSpeed;
     this.cameraController.setEnabled(!this.playerControls?.id);
     if (!this.playerControls?.id) this.cameraController.update(delta);
@@ -126,15 +142,19 @@ export class Engine {
       this.agentRenderer.setPlayer(this.playerControls.id, this.playerControls.firstPerson);
       this.agentRenderer.setPlayerMotion(this.playerControls.motion);
     }
+    measure?.('controls');
     this.agentRenderer.update(delta, this.camera, this.simulationSpeed, this.tick);
+    measure?.('agents');
     this.voxelRenderer.update(this.elapsed, this.playerControls?.id ? this.camera : undefined);
     const player = this.playerControls?.id ? this.agentRenderer.getAgentState(this.playerControls.id) : undefined;
     const meeting = this.sandbox?.neoLife?.journey;
     this.audio.carEngine(this.running && player?.id === meeting?.actor && !meeting?.visiting && meeting?.meeting?.phase === 'driving' ? meetingCarPose(meeting.meeting).speed : undefined);
     this.voxelRenderer.interiors.update(this.timeOfDay, player?.position, this.sandbox?.neoLife);
+    measure?.('city');
     const workday = this.agentRenderer.getAgentState('courier')?.currentAction?.parameters.workday as OfficeWorkday | undefined;
     const filmSet = this.filmSets.update(player ?? undefined, this.sandbox, this.elapsed, player ? this.agentRenderer.getAgent(player.id)?.position : undefined, this.camera.position, workday);
     this.voxelRenderer.matrix.visible = this.matrix && !filmSet; this.voxelRenderer.real.visible = !this.matrix && !filmSet;
+    measure?.('film');
     this.rain.visible = filmSet ? filmSet.light === 'storm' : this.matrix && this.weather !== 'clear' && !(player && insideLifeRoom(player.position));
     this.sandboxRenderer.update(delta, this.camera, this.matrix, this.tick, this.running);
     this.lightingSystem.setTime(filmSet ? ({ day: 12000, night: 22000, warm: 11000, cold: 10000, white: 12000, storm: 19000, sunrise: 7000 })[filmSet.light] : this.timeOfDay);
@@ -162,8 +182,12 @@ export class Engine {
     this.eventAge += delta;
     this.eventRing.scale.setScalar(1 + this.eventAge * 3);
     (this.eventRing.material as THREE.MeshBasicMaterial).opacity = Math.max(0, 0.7 - this.eventAge * 0.15);
+    measure?.('effects');
     this.postProcessing.render();
+    measure?.('render');
     this.onRendered?.();
+    measure?.('capture');
+    if (sections) this.onProfile?.({ at: performance.now(), sections, calls: this.renderer.info.render.calls, triangles: this.renderer.info.render.triangles, scene: player?.currentLocation ?? 'overview' });
   };
   setSimulation(state: SimulationState, time?: number): void {
     this.running = state.running;

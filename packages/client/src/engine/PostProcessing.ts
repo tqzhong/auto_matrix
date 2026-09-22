@@ -7,16 +7,35 @@ import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
 
-class WorldOcclusionPass extends GTAOPass {
+export class WorldOcclusionPass extends GTAOPass {
+  private suppressed: THREE.Object3D[] = [];
   overrideVisibility(): void {
-    super.overrideVisibility();
-    this.scene.traverse(object => {
-      if (object instanceof THREE.Sprite || (object instanceof THREE.Mesh && !Array.isArray(object.material) && !object.material.depthWrite)) object.visible = false;
+    // The city remains loaded behind film interiors. Hidden branches cannot
+    // contribute normals, so don't traverse or cache their individual objects.
+    this.scene.traverseVisible(object => {
+      if (object instanceof THREE.Points || object instanceof THREE.Line || object instanceof THREE.Sprite || (object instanceof THREE.Mesh && !Array.isArray(object.material) && !object.material.depthWrite)) {
+        object.visible = false; this.suppressed.push(object);
+      }
     });
+  }
+  restoreVisibility(): void {
+    for (const object of this.suppressed) object.visible = true;
+    this.suppressed.length = 0;
+  }
+  renderOverride(...args: Parameters<GTAOPass['renderOverride']>): void {
+    const shadows = args[0].shadowMap;
+    const autoUpdate = shadows.autoUpdate; const needsUpdate = shadows.needsUpdate;
+    const matrices = this.scene.matrixWorldAutoUpdate;
+    // RenderPass immediately precedes this pass. Reuse its transforms; the
+    // normal material does not sample shadows and must not redraw their maps.
+    shadows.autoUpdate = false; shadows.needsUpdate = false; this.scene.matrixWorldAutoUpdate = false;
+    try { super.renderOverride(...args); }
+    finally { shadows.autoUpdate = autoUpdate; shadows.needsUpdate = needsUpdate; this.scene.matrixWorldAutoUpdate = matrices; }
   }
 }
 
 export class PostProcessing {
+  onMeasure?: (name: string, milliseconds: number) => void;
   private composer: EffectComposer;
   private bloom: UnrealBloomPass;
   private output: OutputPass;
@@ -35,6 +54,25 @@ export class PostProcessing {
     this.output = new OutputPass();
     this.composer.addPass(this.output);
     this.antialias = new ShaderPass(FXAAShader); this.composer.addPass(this.antialias);
+    for (const [i, name] of ['scene', 'occlusion', 'bloom', 'output', 'antialias'].entries()) {
+      const pass = this.composer.passes[i]; const render = pass.render.bind(pass);
+      pass.render = (...args) => {
+        if (!this.onMeasure) return render(...args);
+        const start = performance.now(); render(...args); this.onMeasure(name, performance.now() - start);
+      };
+    }
+    const normals = this.occlusion.renderOverride.bind(this.occlusion);
+    this.occlusion.renderOverride = (...args) => {
+      if (!this.onMeasure) return normals(...args);
+      const start = performance.now(); normals(...args); this.onMeasure('occlusion.normals', performance.now() - start);
+    };
+    for (const name of ['overrideVisibility', 'restoreVisibility'] as const) {
+      const operation = this.occlusion[name].bind(this.occlusion);
+      this.occlusion[name] = () => {
+        if (!this.onMeasure) return operation();
+        const start = performance.now(); operation(); this.onMeasure(`occlusion.${name}`, performance.now() - start);
+      };
+    }
     this.pixelRatio = renderer.getPixelRatio(); this.resize(window.innerWidth, window.innerHeight);
   }
   render(): void { this.composer.render(); }

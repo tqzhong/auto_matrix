@@ -294,6 +294,9 @@ socket.connect(); engine.start();
 if (import.meta.env.DEV && new URLSearchParams(location.search).has('record')) {
   void import('./player/GameplayRecorder.js').then(({ GameplayRecorder }) => new GameplayRecorder(engine));
 }
+if (import.meta.env.DEV && new URLSearchParams(location.search).has('profile')) {
+  void import('./player/PerformancePanel.js').then(({ PerformancePanel }) => new PerformancePanel(engine));
+}
 window.addEventListener('beforeunload', () => {
   window.clearInterval(uiTimer); window.clearTimeout(connectionTimer);
   audioPanel.dispose(); sandboxUI.dispose(); characterViewer.dispose(); controls.dispose(); socket.dispose(); engine.dispose();

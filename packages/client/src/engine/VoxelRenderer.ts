@@ -3,10 +3,11 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { FILM_SETS, LOCATIONS, LIFE_ROOMS, STREET_SPACING, locationEntrance, CITY_BUILDINGS, cityNoise as noise } from '@auto_matrix/shared';
 import { UrbanMaterials } from './UrbanMaterials.js';
 import { LifeInteriors } from './LifeInteriors.js';
+import { VisibleGroup } from './VisibleGroup.js';
 
 export class VoxelRenderer {
-  readonly matrix = new THREE.Group();
-  readonly real = new THREE.Group();
+  readonly matrix = new VisibleGroup();
+  readonly real = new VisibleGroup();
   interiors!: LifeInteriors;
   private textures: THREE.Texture[] = [];
   private traffic: THREE.InstancedMesh | null = null;

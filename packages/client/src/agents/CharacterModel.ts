@@ -5,6 +5,7 @@ import { advanceMotion, newMotion, type MotionInput, type MotionState } from './
 import { HERO_IDS, HeroModels, type HeroId, type HeroRig } from './HeroModel.js';
 import { SpoonModel } from './SpoonModel.js';
 import { PhoneModel } from './PhoneModel.js';
+import { VisibleGroup } from '../engine/VisibleGroup.js';
 
 interface Look {
   face?: number;
@@ -196,7 +197,7 @@ export class CharacterModels {
       hair: state.id === 'spoon_boy' ? 'bald' : 'short', glasses: state.faction === 'civilians' || state.faction === 'oracle' ? 'none' : 'square',
     };
     if (state.id === 'citizen_2') look.cloth = '#a21722';
-    const root = new THREE.Group(); const detail = this.joint(root, 0, 0);
+    const root = new THREE.Group(); const detail = new VisibleGroup(); root.add(detail);
     if (state.id === 'spoon_boy') { root.scale.setScalar(.73); look.cloth = '#d5c7ac'; look.skin = '#d8b99b'; }
     const torso = this.joint(detail, 0, 1.86); const smallDetails = this.joint(detail, 0, 0);
     const skin = this.material(new THREE.MeshStandardMaterial({ color: look.skin, roughness: 0.64, metalness: 0, bumpMap: this.fabric, bumpScale: 0.0012 }));
