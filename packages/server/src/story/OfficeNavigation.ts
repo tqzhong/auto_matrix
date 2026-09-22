@@ -1,7 +1,8 @@
-import { FILM_SETS, OFFICE_OBSTACLES, filmPosition, playerBlocked, rayBox, type Vector3 } from '@auto_matrix/shared';
+import { FILM_SETS, OFFICE_OBSTACLES, OFFICE_MANAGER_WALLS, OFFICE_MANAGER_FURNITURE, filmPosition, playerBlocked, rayBox, type Vector3 } from '@auto_matrix/shared';
 
 const center = FILM_SETS.film_metacortex_floor.center;
 const distance = (a: Vector3, b: Vector3) => Math.hypot(a.x - b.x, a.z - b.z);
+const obstacles = [...OFFICE_OBSTACLES, ...OFFICE_MANAGER_WALLS, ...OFFICE_MANAGER_FURNITURE];
 
 // The same furniture footprints as player collision, expanded for a guard's body.
 // Corner links are static; only the observed destination changes during a search.
@@ -9,14 +10,14 @@ function clear(from: Vector3, to: Vector3): boolean {
   const length = distance(from, to);
   if (length < .001) return true;
   const direction = { x: (to.x - from.x) / length, y: 0, z: (to.z - from.z) / length };
-  return !OFFICE_OBSTACLES.some(o => {
+  return !obstacles.some(o => {
     const hit = rayBox({ x: from.x - center.x, y: .5, z: from.z - center.z }, direction,
       { x: o.x - o.width / 2 - .71, y: 0, z: o.z - o.depth / 2 - .71 },
       { x: o.x + o.width / 2 + .71, y: 1, z: o.z + o.depth / 2 + .71 });
     return hit !== undefined && hit <= length;
   });
 }
-const corners = OFFICE_OBSTACLES.flatMap(o => [-1, 1].flatMap(x => [-1, 1].map(z =>
+const corners = obstacles.flatMap(o => [-1, 1].flatMap(x => [-1, 1].map(z =>
   filmPosition('film_metacortex_floor', o.x + x * (o.width / 2 + .75), o.z + z * (o.depth / 2 + .75)),
 ))).filter(point => !playerBlocked(point, true, .72));
 const links = corners.map((from, i) => corners.flatMap((to, j) => i !== j && clear(from, to) ? [{ index: j, length: distance(from, to) }] : []));

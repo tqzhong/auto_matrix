@@ -503,6 +503,12 @@ def main(source, character, office=False):
         drape = np.clip((cut + .9 - v[:, 1]) / .9, 0, 1) * np.clip((w[:, :3].sum(axis=1) - .3) / .6, 0, 1)
         v[:, 1] -= (cut - hem) * drape
         v[:, [0, 2]] *= (1 - .05 * drape)[:, None]
+        # The lowered hem must follow the abdomen rather than the original
+        # upper-shirt weights, which pull it through the body when bending.
+        trunk = body_indices[weights[body_indices, :3].sum(axis=1) > .9]
+        for i in np.flatnonzero(drape > 0):
+            nearest = trunk[np.argmin(((base[trunk] - v[i]) ** 2).sum(axis=1))]
+            w[i] = weights[nearest]
     # The lower connected component is trousers; keep that topology and its
     # knee folds. The tailored jacket supplies shoulders, sleeves and lapels.
     adjacency = [set() for _ in v]

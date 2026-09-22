@@ -1,6 +1,7 @@
 import type { Vector3 } from '../types/agent.js';
 import { LOBBY_COLUMNS } from './lobby.js';
 import { OFFICE_OBSTACLES, OFFICE_LADDER, OFFICE_LEDGE_OFFSET } from './office.js';
+import { OFFICE_MANAGER_WALLS, OFFICE_MANAGER_FURNITURE } from './office-workday.js';
 import { PILL_ROOM } from './pills.js';
 import { INTERROGATION_ROOM } from './interrogation.js';
 import { POD_WATER_DROP, RECOVERY_BED } from './awakening.js';
@@ -121,7 +122,7 @@ export function filmObstacles(set: FilmSet): FilmObstacle[] {
   }
   if (set.id === 'film_agent_interrogation') return [INTERROGATION_ROOM.table, ...[-1, 1].map(side => ({ x: side * INTERROGATION_ROOM.seat, z: 0, width: 1.3, depth: 1.5, height: 2.8 }))];
   if (set.id === 'film_ambush_house') return AMBUSH_WALLS;
-  if (set.id === 'film_metacortex_floor') return OFFICE_OBSTACLES;
+  if (set.id === 'film_metacortex_floor') return [...OFFICE_OBSTACLES, ...OFFICE_MANAGER_WALLS, ...OFFICE_MANAGER_FURNITURE];
   if (set.id === 'film_office_ledge') return [{ x: 4, z: 0, width: 2, depth: 76, height: 40 }];
   if (set.architecture === 'freeway') return [-28, 0, 28].map(x => ({ x, z: 0, width: 1.5, depth: set.depth, height: 2.2 }));
   if (set.id === 'film_lafayette') return [

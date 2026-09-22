@@ -645,7 +645,13 @@ test('the entire film route completes through interactions, driving and real com
           }
         }
         else if (scene.id === 'm1_interrogation') for (let frame = 0; frame < (index === 0 ? 61 : 241); frame++) h.players.step(.1, true, h.tick());
-        else if (scene.id === 'm1_boss' && index === 1) {
+        else if (scene.id === 'm1_boss' && index === 0) {
+          for (let frame = 0; frame < 91; frame++) h.players.step(.1, true, h.tick());
+          h.command('act');
+        } else if (scene.id === 'm1_boss' && index === 1) {
+          for (let frame = 0; frame < 111; frame++) h.players.step(.1, true, h.tick());
+          h.command('act'); for (let frame = 0; frame < 41; frame++) h.players.step(.1, true, h.tick());
+          h.command('act');
           for (let frame = 0; frame < 30; frame++) h.players.step(.1, true, h.tick());
           h.command('act'); for (let frame = 0; frame < 120; frame++) h.players.step(.1, true, h.tick());
         } else if (scene.id === 'm1_office_escape' && index === 2) for (let frame = 0; frame < 40; frame++) h.players.step(.1, true, h.tick());

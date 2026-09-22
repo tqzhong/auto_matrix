@@ -42,6 +42,11 @@ body.film-interrogation-scene .sandbox-interact { top:auto; bottom:36px; }
 body.film-interrogation-scene:has(#gameplay-recorder) .sandbox-interact { bottom:64px; }
 body.film-interrogation-scene:has(#gameplay-recorder) .film-sequence { bottom:125px; }
 
+body.film-workday-scene .game-objective,body.film-workday-scene .game-vitals,body.film-workday-scene .game-crosshair,body.film-workday-scene .play-tip,body.film-workday-scene .sandbox-clock,body.film-workday-scene .sandbox-nav { display:none; }
+body.film-workday-scene .sandbox-interact { top:auto; bottom:36px; }
+body.film-workday-scene:has(#gameplay-recorder) .sandbox-interact { bottom:64px; }
+body.film-workday-scene:has(#gameplay-recorder) .film-sequence { bottom:125px; }
+
 body.film-meeting-scene .game-objective,body.film-meeting-scene .game-vitals,body.film-meeting-scene .game-crosshair,body.film-meeting-scene .play-tip,body.film-meeting-scene .sandbox-clock,body.film-meeting-scene .sandbox-nav { display:none; }
 body.film-meeting-scene .sandbox-interact { top:auto; bottom:36px; }
 body.film-meeting-scene:has(#gameplay-recorder) .sandbox-interact { bottom:64px; }

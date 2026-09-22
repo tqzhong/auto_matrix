@@ -132,9 +132,10 @@ export class PlayerExperience {
     if (this.menuOpen && performance.now() - this.lastRender > 1000) this.renderRoster();
     const player = this.controlled ? agents[this.controlled] : undefined;
     const driving = Boolean(player?.currentAction?.parameters.riding);
-    const performing = Boolean(player?.currentAction?.parameters.meeting || player?.currentAction?.parameters.interrogation || player?.currentAction?.parameters.pills || player?.currentAction?.parameters.welcome || player?.currentAction?.parameters.filmPose || player?.currentAction?.parameters.spoon !== undefined || player?.currentAction?.parameters.vase !== undefined);
+    const performing = Boolean(player?.currentAction?.parameters.workday || player?.currentAction?.parameters.meeting || player?.currentAction?.parameters.interrogation || player?.currentAction?.parameters.pills || player?.currentAction?.parameters.welcome || player?.currentAction?.parameters.filmPose || player?.currentAction?.parameters.spoon !== undefined || player?.currentAction?.parameters.vase !== undefined);
     document.body.classList.toggle('film-driving', driving);
     document.body.classList.toggle('film-performing', performing);
+    document.body.classList.toggle('film-workday-scene', Boolean(player?.currentAction?.parameters.workday));
     document.body.classList.toggle('film-pill-scene', Boolean(player?.currentAction?.parameters.pills));
     document.body.classList.toggle('film-interrogation-scene', Boolean(player?.currentAction?.parameters.interrogation));
     document.body.classList.toggle('film-meeting-scene', Boolean(player?.currentAction?.parameters.meeting));

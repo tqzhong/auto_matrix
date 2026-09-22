@@ -2,10 +2,18 @@ import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_NAMES, filmReflections, 
 import './film-journey.css';
 import { meetingLocked } from '@auto_matrix/shared';
 import { filmPosition, HOTEL_DOOR_PROGRESS } from '@auto_matrix/shared';
+import { workdayLocked } from '@auto_matrix/shared';
 
 const button = (target: string, label: string, disabled = false) => `<button data-action="life" data-target="film:${target}" ${disabled ? 'disabled' : ''}>${label}</button>`;
 export function renderFilmJourney(player: AgentState, sandbox: SandboxState): string {
   const life = sandbox.neoLife!; const journey = life.journey!; const scene = FILM_SCENE_BY_ID[journey.scene];
+  if (!journey.visiting && journey.scene === 'm1_boss' && journey.workday && !journey.phone) {
+    const phase = journey.workday.phase; const step = scene.steps[journey.step];
+    const active = ['waiting', 'answer', 'signature', 'delivered'].includes(phase);
+    const label = phase === 'answer' ? '回应主管，回到工位' : phase === 'signature' ? '签收快递' : phase === 'delivered' ? '拆开包裹，取出手机' : '与 Rhineheart 交谈';
+    const close = player.id === journey.actor && step && distance(player.position, filmStepPosition(scene, step)) <= 4;
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>Metacortex · Anderson 的工作日</h3><p>人物动作与签收进度自动保存</p></header><article class="film-now"><div><h3>${journey.step === 0 ? '主管办公室' : '一件没有寄件人的快递'}</h3><p>${journey.lastText}</p><p>${workdayLocked(journey) ? 'V 切换视角，可以停下观察；等待不会替你作出回应。' : '合上手记，沿通道走到目标旁。主管办公室的玻璃门已经打开。'}</p>${active ? button('act', `${label} · G`, !close) : '<button disabled>合上手记观看</button>'}${player.id !== journey.actor ? button('resume', '继续 Neo 的剧情视角') : ''}</div></article></div>`;
+  }
   if (journey.hotel && !journey.hotel.entered && !journey.visiting) {
     const ready = journey.hotel.progress >= HOTEL_DOOR_PROGRESS - .01 && distance(player.position, filmPosition('film_lafayette', 24, 0)) < 4;
     const knocking = journey.hotel.knock !== undefined;

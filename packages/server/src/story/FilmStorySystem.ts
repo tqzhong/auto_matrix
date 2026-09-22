@@ -7,6 +7,7 @@ import { OfficeEscapeSystem } from './OfficeEscapeSystem.js';
 import { INTERROGATION_CAST, INTERROGATION_TIMING, interrogationLocked, interrogationRoot } from '@auto_matrix/shared';
 import { MEETING_CAR, MEETING_CAST, MEETING_TIMING, meetingLocked, meetingRoot, type MeetingEncounter } from '@auto_matrix/shared';
 import { LAFAYETTE, LAFAYETTE_WELCOME, LAFAYETTE_KNOCK_SECONDS, HOTEL_ROUTE_LENGTH, HOTEL_DOOR_PROGRESS, hotelRoutePose, hotelRouteProgress, lafayetteKnocking, lafayetteKnockRoot, lafayetteWelcomeLocked, lafayetteWelcomeRoot, filmSetAt } from '@auto_matrix/shared';
+import { OFFICE_WORKDAY, OFFICE_DELIVERY_SECONDS, officeCourierRoot, officeRecipientRoot, workdayLocked, workdayText } from '@auto_matrix/shared';
 
 export class FilmStorySystem {
   // The controller owns socket sessions. It can refuse a handoff occupied by another player.
@@ -18,7 +19,51 @@ export class FilmStorySystem {
   get scene(): FilmScene | undefined { return this.state && FILM_SCENE_BY_ID[this.state.scene]; }
   get step(): FilmStep | undefined { return this.scene?.steps[this.state!.step]; }
   controls(agent: AgentState): boolean { return Boolean(this.state && this.state.actor === agent.id); }
-  performing(agent: AgentState): boolean { return this.controls(agent) && (awakeningLocked(this.state!) || trainingLocked(this.state!) || oracleActing(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
+  performing(agent: AgentState): boolean { return this.controls(agent) && (workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || oracleActing(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
+  workdayFrame(agent: AgentState, dt: number, tick: number): void {
+    const state = this.state;
+    if (!state || state.scene !== 'm1_boss' || state.visiting || !this.controls(agent)) return;
+    const workday = state.workday ??= { phase: state.step === 0 ? 'waiting' : 'delivered', elapsed: 0 };
+    const manager = this.world.agents.get('rhineheart')!; const courier = this.world.agents.get('courier')!;
+    const busy = ['waiting', 'briefing', 'answer'].includes(workday.phase) ? manager.controller : courier.controller;
+    if (busy) { state.lastText = '当前人物正由另一位玩家控制；交谈和快递停在原处，等待对方结束。'; return; }
+    if (workday.phase === 'released' && this.near(agent, this.step!) && dt > 0) { workday.phase = 'delivery'; workday.elapsed = 0; }
+    const duration = workday.phase === 'briefing' ? OFFICE_WORKDAY.briefing : workday.phase === 'signing' ? OFFICE_WORKDAY.signing
+      : ['delivery', 'delivered'].includes(workday.phase) ? OFFICE_DELIVERY_SECONDS : 0;
+    if (duration) workday.elapsed = Math.min(duration, workday.elapsed + Math.min(.1, dt));
+    if (workday.phase === 'briefing' && workday.elapsed >= duration) { workday.phase = 'answer'; workday.elapsed = 0; }
+    if (workday.phase === 'delivery' && workday.elapsed >= duration) { workday.phase = 'signature'; workday.elapsed = 0; }
+    if (workday.phase === 'signing' && workday.elapsed >= duration) { workday.phase = 'delivered'; workday.elapsed = 0; agent.currentAction = null; }
+    for (const actor of [manager, courier]) {
+      if (actor.controller) continue;
+      const root = actor === manager ? OFFICE_WORKDAY.manager : officeCourierRoot(workday);
+      const previous = actor.position; actor.position = filmPosition('film_metacortex_floor', root.x, root.z); actor.rotation = root.yaw;
+      actor.velocity = dt > 0 ? { x: (actor.position.x - previous.x) / dt, y: 0, z: (actor.position.z - previous.z) / dt } : { x: 0, y: 0, z: 0 };
+      actor.currentLocation = 'film_metacortex_floor'; actor.isInMatrix = true;
+      actor.currentAction = { type: 'idle', parameters: { resolved: true, seated: actor === manager,
+        workday: { ...workday, role: actor.id } }, startedAt: tick, duration: 1, progress: 0 };
+    }
+    if (workdayLocked(state)) {
+      const root = workday.phase === 'signing' ? officeRecipientRoot(workday) : OFFICE_WORKDAY.neo;
+      agent.position = filmPosition('film_metacortex_floor', root.x, root.z); agent.rotation = root.yaw; agent.velocity = { x: 0, y: 0, z: 0 };
+      agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, workday: { ...workday, role: 'neo' } }, startedAt: tick, duration: 1, progress: 0 };
+      state.checkpoint = { ...agent.position };
+    }
+    if (!state.phone) state.lastText = workdayText(workday);
+  }
+  private workdayAct(agent: AgentState, tick: number): string {
+    const state = this.state!; this.workdayFrame(agent, 0, tick); const workday = state.workday!;
+    if (!this.near(agent, this.step!)) return state.step === 0 ? '走进玻璃主管办公室，到桌前再交谈。' : '回到自己的隔间后才能签收这份快递。';
+    const actor = this.world.agents.get(state.step === 0 ? 'rhineheart' : 'courier')!;
+    if (actor.controller) return state.lastText;
+    if (workday.phase === 'waiting') { workday.phase = 'briefing'; workday.elapsed = 0; }
+    else if (workday.phase === 'answer') {
+      workday.phase = 'released'; workday.elapsed = 0; agent.currentAction = null;
+      this.advance('你向 Rhineheart 表示明白，转身回自己的隔间。', agent, tick);
+    } else if (workday.phase === 'released') { workday.phase = 'delivery'; workday.elapsed = 0; }
+    else if (workday.phase === 'signature') { workday.phase = 'signing'; workday.elapsed = 0; }
+    this.workdayFrame(agent, 0, tick); return state.lastText;
+  }
   hotelFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state; const hotel = state?.hotel;
     if (!state || !hotel || state.visiting || !this.controls(agent) || !['m1_pills', 'm1_mirror'].includes(state.scene)) return;
@@ -554,6 +599,11 @@ export class FilmStorySystem {
       return `回访${FILM_SETS[visited.set].name}。J 可返回当前剧情，回访不会改写进度。`;
     }
     if (target === 'retry') {
+      if (state.scene === 'm1_boss' && state.workday) {
+        agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
+        agent.position = { ...state.checkpoint }; this.workdayFrame(agent, 0, tick); this.phoneFrame(agent, 0, tick);
+        return '已接回办公室，保留交谈、签收与来电进度。';
+      }
       if (state.hotel && !state.hotel.entered) {
         agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
         agent.position = { ...state.checkpoint }; agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentAction = null;
@@ -688,6 +738,10 @@ export class FilmStorySystem {
     }
     if (this.climbing(agent)) return 'W 沿梯子向下，S 向上。到达下方维修平台才能完成逃脱；停手会抓住当前横档。';
     if (windowOpening(state)) return '正在转动把手、推开窗扇。可以转动视角观察；开窗进度会保存。';
+    if (state.scene === 'm1_boss' && (state.step === 0 || state.workday && state.workday.phase !== 'delivered')) {
+      if (target !== 'act') return state.lastText;
+      return this.workdayAct(agent, tick);
+    }
     if (state.training && trainingLocked(state)) {
       if (!state.training.started) {
         if (target !== 'act') return trainingText(state.training);
@@ -842,6 +896,7 @@ export class FilmStorySystem {
     delete state.awakening;
     delete state.training;
     delete state.dojo;
+    delete state.workday;
     delete state.pills;
     delete state.interrogation;
     if (!['m1_pills', 'm1_mirror'].includes(scene.id)) { delete state.hotel; this.sealHotelDoor(); }
@@ -863,6 +918,7 @@ export class FilmStorySystem {
     this.sandbox().weatherUntil = tick + 100000;
     this.stageCast();
     this.reconcileCast();
+    if (scene.id === 'm1_boss') { state.workday = { phase: 'waiting', elapsed: 0 }; this.workdayFrame(actor, 0, tick); }
     if (scene.id === 'm1_office_escape') this.office.start(tick);
     if (scene.id === 'm1_pod') this.awakeningFrame(actor, 0, tick);
     if (scene.id === 'm1_recovery') {

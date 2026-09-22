@@ -89,10 +89,22 @@ if (['meeting', 'meeting-clear', 'meeting-scan', 'meeting-drive', 'meeting-drivi
     }
   }
 }
-if (process.argv[3] === 'phone' && scene.id === 'm1_boss') {
+if (['workday', 'delivery', 'signature', 'phone'].includes(process.argv[3]) && scene.id === 'm1_boss') {
   actor.controller = 'player'; actor.position = filmStepPosition(scene, scene.steps[0]);
-  sandbox.life.film.command(actor, 'act', 0); sandbox.life.film.tick(6);
-  actor.position = filmStepPosition(scene, scene.steps[1]); actor.position.z += .8;
+  actor.rotation = -Math.PI / 2;
+  if (process.argv[3] !== 'workday') {
+    sandbox.life.film.command(actor, 'act', 0);
+    for (let frame = 0; frame < 91; frame++) sandbox.life.film.workdayFrame(actor, .1, 0);
+    sandbox.life.film.command(actor, 'act', 0); actor.position = filmStepPosition(scene, scene.steps[1]);
+    sandbox.life.film.command(actor, 'act', 0);
+    if (process.argv[3] !== 'delivery') {
+      for (let frame = 0; frame < 111; frame++) sandbox.life.film.workdayFrame(actor, .1, 0);
+      if (process.argv[3] === 'phone') {
+        sandbox.life.film.command(actor, 'act', 0);
+        for (let frame = 0; frame < 41; frame++) sandbox.life.film.workdayFrame(actor, .1, 0);
+      }
+    }
+  }
   sandbox.state.neoLife!.journey!.checkpoint = { ...actor.position };
 }
 if (process.argv[3] === 'pursuit' && scene.id === 'm1_office_escape') {

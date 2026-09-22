@@ -93,6 +93,7 @@ export class PlayerController {
     this.sandbox?.life.film.interrogationFrame(agent, 0, tick);
     this.sandbox?.life.film.meetingFrame(agent, false, 0, tick);
     this.sandbox?.life.film.hotelFrame(agent, 0, tick);
+    this.sandbox?.life.film.workdayFrame(agent, 0, tick);
     if (agent.mind) agent.mind.thought = '由玩家决定下一步行动。';
     return { agentId: id };
   }
@@ -111,6 +112,7 @@ export class PlayerController {
       this.sandbox?.life.film.interrogationFrame(agent, 0, tick);
       this.sandbox?.life.film.meetingFrame(agent, false, 0, tick);
       this.sandbox?.life.film.hotelFrame(agent, 0, tick);
+      this.sandbox?.life.film.workdayFrame(agent, 0, tick);
       agent.activeEffects = agent.activeEffects.filter(effect => effect.remainingSeconds === undefined);
       if (agent.mind) agent.mind.thought = '重新回到自己的生活，继续追寻尚未完成的目标。';
     }
@@ -163,6 +165,7 @@ export class PlayerController {
         input = { ...input, yaw }; session.input.yaw = yaw;
       }
       this.sandbox?.life.film.hotelFrame(agent, dt, tick);
+      this.sandbox?.life.film.workdayFrame(agent, dt, tick);
       if (this.sandbox?.life.film.awakeningFrame(agent, dt, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }

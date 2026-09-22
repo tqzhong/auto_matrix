@@ -25,11 +25,17 @@ function setup() {
   const neo = () => players.getAgent('neo-player')!;
   const scene = () => sandbox.life.film.scene!;
   const goal = () => { neo().position = filmStepPosition(scene(), sandbox.life.film.step!); };
+  const frame = (seconds: number, running = true) => { for (let i = 0; i < seconds * 10; i++) players.step(.1, running, tick); };
+  const delivery = () => {
+    goal(); command('act'); frame(10); command('act');
+    goal(); command('act'); frame(11); command('act'); frame(4.1);
+  };
   const finish = () => {
     while (sandbox.life.film.step) {
       const step = sandbox.life.film.step; goal();
       if (step.kind === 'reach') advance();
       else if (step.kind === 'reflect') command('reflect:agency');
+      else if (scene().id === 'm1_boss' && sandbox.life.film.state!.step === 0) delivery();
       else if (scene().id === 'm1_boss' && sandbox.life.film.state!.step === 1) {
         command('act'); for (let f = 0; f < 30; f++) players.step(.1, true, tick);
         command('act'); for (let f = 0; f < 120; f++) players.step(.1, true, tick);
@@ -62,11 +68,11 @@ function setup() {
     }
     assert.fail(`could not walk to ${x}, ${z} from ${JSON.stringify(neo().position)}`);
   };
-  return { world, sandbox, players, command, advance, neo, scene, goal, finish, office, crossWindow, climb, move, maximumAlert: () => maximumAlert, state: () => sandbox.life.film.state!, tick: () => tick };
+  return { world, sandbox, players, command, advance, neo, scene, goal, finish, office, delivery, crossWindow, climb, move, maximumAlert: () => maximumAlert, state: () => sandbox.life.film.state!, tick: () => tick };
 }
 
 test('the delivered phone requires picking up and answering; waiting cannot skip the call', () => {
-  const h = setup(); h.command('continue'); h.goal(); h.command('act'); h.advance(6);
+  const h = setup(); h.command('continue'); h.delivery();
   h.goal(); h.command('act'); h.advance(60);
   assert.equal(h.state().step, 1, 'ordinary story ticks cannot complete a physical phone interaction');
   const frame = (seconds: number, running = true) => { for (let i = 0; i < seconds * 20; i++) h.players.step(.05, running, h.tick()); };

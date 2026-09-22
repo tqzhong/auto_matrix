@@ -903,6 +903,12 @@ export const CHARACTERS: Record<string, CharacterDef> = {
     allies: [],
     enemies: [],
   },
+  courier: {
+    id: 'courier', name: 'Courier', nameCn: '快递员', faction: 'civilians',
+    description: 'The courier delivering a personal parcel to Thomas Anderson at Metacortex.',
+    initialLocation: 'metacortex_office', abilities: [], personality: 'Polite, practical, follows the delivery route.',
+    goals: ['Deliver the parcel', 'Collect the recipient signature'], isAwakened: false, health: 50, allies: [], enemies: [],
+  },
 
   // === Minor Characters (Movie 2, 3) ===
   binary: {

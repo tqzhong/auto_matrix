@@ -1,7 +1,9 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { OFFICE_DESKS, OFFICE_OBSTACLES, OFFICE_LADDER, OFFICE_CONTACT, OFFICE_WINDOW, OFFICE_LEDGE_OFFSET, officeWindowPose, type FilmSet, type FilmJourney, type Vector3 } from '@auto_matrix/shared';
+import { OFFICE_DESKS, OFFICE_OBSTACLES, OFFICE_LADDER, OFFICE_CONTACT, OFFICE_WINDOW, OFFICE_LEDGE_OFFSET, officeWindowPose, officeParcelPoint, type FilmSet, type FilmJourney, type Vector3 } from '@auto_matrix/shared';
 import { PhoneModel } from '../agents/PhoneModel.js';
+import { OfficeWorkdayRenderer } from './OfficeWorkdayRenderer.js';
+import type { OfficeWorkday } from '@auto_matrix/shared';
 
 /** Office cover is drawn from the same dimensions used by movement and guard sight. */
 export class OfficeSetRenderer {
@@ -12,6 +14,7 @@ export class OfficeSetRenderer {
   private delivery?: THREE.Group;
   private flap?: THREE.Group;
   private phone?: PhoneModel;
+  private workday: OfficeWorkdayRenderer;
   private sash?: THREE.Group;
   private latch?: THREE.Group;
   private windowMaterials: { material: THREE.MeshStandardMaterial; opacity: number; depthWrite: boolean }[] = [];
@@ -20,6 +23,7 @@ export class OfficeSetRenderer {
     if (set.id === 'film_office_ledge') this.root.position.x = -OFFICE_LEDGE_OFFSET;
     this.office(); this.ledge();
     this.batch();
+    this.workday = new OfficeWorkdayRenderer(this.root);
     this.parcel(); this.openingWindow();
   }
   private openingWindow(): void {
@@ -64,7 +68,9 @@ export class OfficeSetRenderer {
     const label = new THREE.Mesh(new THREE.PlaneGeometry(.72, .85), ink); label.rotation.x = -Math.PI / 2; label.position.set(0, .012, .62); flap.add(label);
     this.phone = new PhoneModel(); this.phone.root.name = 'parcel-phone'; this.phone.root.position.set(0, .215, 0); this.phone.root.rotation.x = -Math.PI / 2; group.add(this.phone.root);
   }
-  update(journey: FilmJourney | undefined, cameraPosition?: Vector3, playerPosition?: Vector3): void {
+  update(journey: FilmJourney | undefined, cameraPosition?: Vector3, playerPosition?: Vector3, clock?: OfficeWorkday): void {
+    if (journey?.scene === 'm1_boss' && !journey.visiting && clock) journey = { ...journey, workday: clock };
+    this.workday.update(journey);
     if (this.sash && this.latch) {
       const time = journey?.office?.window ?? (journey?.completed.includes('m1_office_escape') && journey.office?.outcome !== 'captured' ? OFFICE_WINDOW.seconds : 0);
       const pose = officeWindowPose(time); this.sash.rotation.z = pose.angle; this.latch.rotation.x = pose.latch;
@@ -86,7 +92,10 @@ export class OfficeSetRenderer {
       material.opacity = opacity * (obscured ? .12 : 1); material.depthWrite = !obscured && depthWrite;
     }
     if (!this.delivery || !this.flap || !this.phone) return;
-    this.delivery.visible = Boolean(journey && (journey.scene === 'm1_boss' && journey.step > 0 || journey.completed.includes('m1_boss') || journey.scene === 'm1_office_escape'));
+    const workday = journey?.scene === 'm1_boss' && !journey.visiting ? journey.workday : undefined;
+    this.delivery.visible = Boolean(journey && (workday ? ['delivery', 'signature', 'signing', 'delivered'].includes(workday.phase) : journey.scene === 'm1_boss' && journey.step > 0 || journey.completed.includes('m1_boss') || journey.scene === 'm1_office_escape'));
+    const parcel = workday ? officeParcelPoint(workday) : { x: OFFICE_CONTACT.parcelX, y: 2.51, z: OFFICE_CONTACT.parcelZ };
+    this.delivery.position.set(parcel.x, parcel.y, parcel.z);
     const phone = journey?.phone;
     const opened = phone ? phone.phase === 'pickup' ? Math.min(1, phone.elapsed / .45) : 1 : journey?.scene === 'm1_office_escape' || journey?.completed.includes('m1_boss') ? 1 : 0;
     this.flap.rotation.x = -opened * 2.7;
@@ -238,6 +247,7 @@ export class OfficeSetRenderer {
     }
   }
   dispose(): void {
+    this.workday.dispose();
     this.phone?.dispose();
     this.root.traverse(object => { if (object instanceof THREE.Mesh) object.geometry.dispose(); if (object instanceof THREE.PointLight) object.dispose(); });
     this.light?.dispose(); this.materials.forEach(m => m.dispose()); this.textures.forEach(t => t.dispose()); this.root.removeFromParent();

@@ -5,6 +5,7 @@ import { renderNeoLife } from './NeoLifePanel.js';
 import { interrogationLocked, interrogationPose } from '@auto_matrix/shared';
 import { meetingLocked, MEETING_TIMING } from '@auto_matrix/shared';
 import { filmPosition, HOTEL_DOOR_PROGRESS } from '@auto_matrix/shared';
+import { workdayLocked } from '@auto_matrix/shared';
 
 const escape = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const WEATHER = { clear: '晴朗', rain: '雨', code_storm: '代码风暴' };
@@ -189,6 +190,17 @@ export class SandboxUI {
       this.el('film-sequence-hint').textContent = waiting ? 'G 握住 Morpheus 的手 · 等待不会替你回应' : '鼠标观察 · V 切换视角 · 暂停或重连会保留动作';
       this.el('sandbox-interact').classList.toggle('hidden', !waiting); this.el('sandbox-nearby').textContent = '握住 Morpheus 的手';
       this.el('sandbox-waypoint').textContent = '';
+      return;
+    }
+    if (!journey.visiting && journey.scene === 'm1_boss' && journey.workday && !journey.phone) {
+      const phase = journey.workday.phase; const locked = workdayLocked(journey);
+      const action = phase === 'answer' ? '回应主管，回到工位' : phase === 'signature' ? '签收 Thomas Anderson 的快递' : phase === 'delivered' ? '拆开包裹，取出手机' : '与 Rhineheart 交谈';
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = phase === 'briefing' || phase === 'signing' ? 'V 切换视角 · 暂停或重连会保留动作' : phase === 'delivery' ? '快递员正在走来 · 可以自由观察' : 'WASD 移动 · 靠近后按 G · J 查看手记';
+      this.el('sandbox-interact').classList.toggle('hidden', !['waiting', 'answer', 'signature', 'delivered'].includes(phase));
+      this.el('sandbox-nearby').textContent = action;
+      if (locked) this.el('sandbox-waypoint').textContent = '';
+      document.getElementById('game-objective-copy')!.textContent = phase === 'released' || phase === 'delivery' ? '回到自己的隔间，等待并签收快递。' : locked && phase !== 'answer' ? phase === 'signing' ? '正在签收与接过包裹' : '主管正在训话，听完后回应他。' : action;
       return;
     }
     if (trainingLocked(journey)) {

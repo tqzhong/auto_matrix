@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { workdayLocked, type OfficeWorkday } from '@auto_matrix/shared';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
@@ -80,7 +81,7 @@ export class FilmSetRenderer {
     this.markerLight = new THREE.PointLight(0xf6d99c, 5, 5); scene.add(this.markerLight);
   }
   get active(): FilmSet | undefined { return this.current; }
-  update(player: AgentState | undefined, sandbox: SandboxState | undefined, elapsed: number, playerPosition?: Vector3, cameraPosition?: Vector3): FilmSet | undefined {
+  update(player: AgentState | undefined, sandbox: SandboxState | undefined, elapsed: number, playerPosition?: Vector3, cameraPosition?: Vector3, workday?: OfficeWorkday): FilmSet | undefined {
     let set = player ? filmSetAt(player.position, player.isInMatrix) : undefined;
     if (set?.id === 'film_extraction_car' && player?.currentLocation === 'film_adams_bridge') set = FILM_SETS.film_adams_bridge;
     if (set?.id === 'film_adams_bridge' && player?.currentLocation === 'film_extraction_car') set = FILM_SETS.film_extraction_car;
@@ -137,7 +138,7 @@ export class FilmSetRenderer {
       this.approach.root.visible = (playerPosition?.y ?? 1) < 15;
       if (this.approach.root.visible) this.approach.renderer.update(journey, elapsed, { phase: 'parked', elapsed: 0, role: 'neo', bugged: false });
     }
-    this.office?.update(journey, cameraPosition, playerPosition);
+    this.office?.update(journey, cameraPosition, playerPosition, workday);
     this.freeway?.update(journey, elapsed, playerPosition);
     this.pods?.update(journey, elapsed);
     this.neb?.update(journey, elapsed);
@@ -156,6 +157,7 @@ export class FilmSetRenderer {
     if (journey?.hotel && !journey.hotel.entered) this.marker.visible = false;
     if (journey && awakeningLocked(journey)) this.marker.visible = false;
     if (journey && trainingLocked(journey)) this.marker.visible = false;
+    if (journey && workdayLocked(journey)) this.marker.visible = false;
     if (journey && phoneLocked(journey)) this.marker.visible = false;
     if (journey && windowOpening(journey)) this.marker.visible = false;
     if (journey?.scene === 'm1_dejavu' && journey.step === 0 && journey.ambush) this.marker.visible = false;

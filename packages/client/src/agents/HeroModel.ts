@@ -10,6 +10,7 @@ import { MeetingPerformance } from './MeetingPerformance.js';
 import { LafayetteWelcomePerformance } from './LafayetteWelcomePerformance.js';
 import { LafayetteKnockPerformance } from './LafayetteKnockPerformance.js';
 import { RecoveryPerformance } from './RecoveryPerformance.js';
+import { OfficeWorkdayPerformance } from './OfficeWorkdayPerformance.js';
 
 type Pose = ReturnType<typeof advanceMotion>;
 interface CoatPanel { mesh: THREE.Mesh; rest: Float32Array; velocity: Float32Array }
@@ -22,6 +23,7 @@ export interface HeroRig {
   glasses: THREE.Group;
   silver: { value: number };
   wardrobe: { mesh: THREE.Mesh; color: THREE.Color; outer: boolean; hair: boolean; cloth: boolean }[];
+  officeRole?: 'rhineheart' | 'courier';
 }
 
 export const HERO_IDS = ['neo', 'trinity', 'smith', 'morpheus'] as const;
@@ -37,6 +39,7 @@ export class HeroModels {
   private welcomes = new Map<HeroRig, LafayetteWelcomePerformance>();
   private knocks = new Map<HeroRig, LafayetteKnockPerformance>();
   private recoveries = new Map<HeroRig, RecoveryPerformance>();
+  private workdays = new Map<HeroRig, OfficeWorkdayPerformance>();
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private textures = new Set<THREE.Texture>();
@@ -93,7 +96,7 @@ export class HeroModels {
     this.assets.set(id, promise); return promise;
   }
 
-  async create(id: HeroId, guard?: 'agent_jones' | 'agent_brown', support?: 'switch' | 'apoc'): Promise<HeroRig | undefined> {
+  async create(id: HeroId, guard?: 'agent_jones' | 'agent_brown', support?: 'switch' | 'apoc' | 'rhineheart' | 'courier'): Promise<HeroRig | undefined> {
     const [asset, office] = await Promise.all([this.load(id), id === 'neo' ? this.load('neo-office') : undefined]);
     if (this.disposed) return;
     const root = clone(asset.scene) as THREE.Group;
@@ -130,6 +133,11 @@ export class HeroModels {
     const metadata = asset.parser.json.extras as { eye: number[]; head: number[]; waist: number[] };
     const eye = new THREE.Vector3().fromArray(metadata.eye).sub(new THREE.Vector3().fromArray(metadata.head));
     const glasses = new THREE.Group(); head.add(glasses); this.glasses(glasses, eye, id);
+    if (support === 'courier') {
+      const uniform = new THREE.MeshStandardMaterial({ color: 0x273d4e, roughness: .92 });
+      this.mesh(head, new THREE.SphereGeometry(.285, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), uniform).position.set(0, .11, -.01);
+      const brim = this.mesh(head, new THREE.SphereGeometry(.28, 24, 12), uniform); brim.scale.set(1, .055, .7); brim.position.set(0, .12, .23);
+    }
     const pelvis = bones.get('pelvis')!;
     const waist = new THREE.Vector3().fromArray(metadata.waist).sub(pelvis.position);
     const panels = id === 'neo' || id === 'morpheus' ? [-1, 1].map(side => this.coat(pelvis, waist, side, id)) : [];
@@ -138,6 +146,12 @@ export class HeroModels {
     root.traverse(object => {
       if (!(object instanceof THREE.Mesh) || !(object.material instanceof THREE.MeshStandardMaterial)) return;
       const source = object.material; const material = source.clone(); this.materials.add(material); object.material = material;
+      if (support === 'courier' && material.name === 'Office cotton') material.color.setHex(0x455c6b);
+      if (support === 'rhineheart' && /Coat|Trousers/.test(material.name)) material.color.setHex(0x56594f);
+      if (support === 'rhineheart' && /Hair|hair|Groom|groom/.test(material.name)) {
+        material.onBeforeCompile = shader => { shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', '#include <map_fragment>\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.23, 0.24, 0.21), 0.55);'); };
+        material.customProgramCacheKey = () => 'manager-hair-standin';
+      }
       if (support === 'switch' && /Hair|hair|Groom|groom/.test(material.name)) {
         material.onBeforeCompile = shader => {
           shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', '#include <map_fragment>\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.61, 0.56, 0.41), 0.78);');
@@ -164,7 +178,7 @@ export class HeroModels {
       };
       material.customProgramCacheKey = () => source.customProgramCacheKey() + '-liquid-mirror-v1';
     });
-    const rig = { root, bones, rest, panels, footHeight, glasses, silver, wardrobe };
+    const rig: HeroRig = { root, bones, rest, panels, footHeight, glasses, silver, wardrobe, officeRole: support === 'rhineheart' || support === 'courier' ? support : undefined };
     if (id === 'neo' && !support) this.recoveries.set(rig, new RecoveryPerformance(rig));
     return rig;
   }
@@ -332,12 +346,13 @@ export class HeroModels {
 
   animate(rig: HeroRig, pose: Pose, motion: MotionState, input: MotionInput, delta: number): void {
     rig.silver.value = input.mirror ?? 0;
-    rig.glasses.visible = input.glasses !== false && !input.realWorld;
+    rig.glasses.visible = !rig.officeRole && input.glasses !== false && !input.realWorld;
+    const officeShirt = input.officeShirt || rig.officeRole === 'courier';
     const pod = input.performance && !['touch', 'connect'].includes(input.performance);
     for (const part of rig.wardrobe) {
       part.mesh.visible = !(part.outer && (input.realWorld || input.pills?.role === 'neo' || input.meeting) || part.hair && pod);
-      if (part.mesh.userData.office) part.mesh.visible = Boolean(input.officeShirt || input.meeting?.role === 'neo' && (part.mesh.material as THREE.Material).name === 'Office skin');
-      else if (input.officeShirt && (part.outer || /Tailored.coat.upper|Black.crew.neck/i.test(part.mesh.name))) part.mesh.visible = false;
+      if (part.mesh.userData.office) part.mesh.visible = Boolean(officeShirt || input.meeting?.role === 'neo' && (part.mesh.material as THREE.Material).name === 'Office skin');
+      else if (officeShirt && (part.outer || /Tailored.coat.upper|Black.crew.neck/i.test(part.mesh.name))) part.mesh.visible = false;
       const material = part.mesh.material as THREE.MeshStandardMaterial;
       if (part.cloth && input.realWorld) material.color.setHex(0x706c62); else material.color.copy(part.color);
     }
@@ -496,6 +511,8 @@ export class HeroModels {
     this.knocks.get(rig)?.update(input.knock);
     if (input.recovery !== undefined && !this.recoveries.has(rig)) this.recoveries.set(rig, new RecoveryPerformance(rig));
     this.recoveries.get(rig)?.update(input.recovery, input.realWorld);
+    if (input.workday && !this.workdays.has(rig)) this.workdays.set(rig, new OfficeWorkdayPerformance(rig));
+    this.workdays.get(rig)?.update(input.workday);
     if (delta <= 0) return;
     const dt = Math.min(delta, 1 / 30);
     // Analytic wind target plus damped springs; the waist is pinned. Thigh and
@@ -540,6 +557,7 @@ export class HeroModels {
     this.meetings.forEach(p => p.dispose()); this.meetings.clear();
     this.welcomes.forEach(p => p.dispose()); this.welcomes.clear(); this.knocks.forEach(p => p.dispose()); this.knocks.clear();
     this.recoveries.forEach(p => p.dispose()); this.recoveries.clear();
+    this.workdays.forEach(p => p.dispose()); this.workdays.clear();
     this.geometries.forEach(value => value.dispose()); this.materials.forEach(value => value.dispose());
     this.textures.forEach(value => value.dispose()); this.skeletons.forEach(value => value.dispose());
     this.geometries.clear(); this.materials.clear(); this.textures.clear(); this.skeletons.clear();

@@ -23,6 +23,7 @@ export interface MotionInput {
   recovery?: number;
   reveal?: AwakeningReveal;
   training?: TrainingGesture;
+  workday?: import('@auto_matrix/shared').OfficeWorkdayGesture;
   mirror?: number;
   spoon?: number;
   phone?: OfficePhone;

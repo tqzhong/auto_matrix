@@ -10,6 +10,8 @@ import { OfficeSetRenderer } from '../packages/client/src/engine/OfficeSetRender
 import { FILM_SETS, PILL_ROOM, PILL_TIMING, pillRoot, type PillGesture, OFFICE_WINDOW, OFFICE_LEDGE_OFFSET, officeWindowPose, officeCrossingPose, type FilmJourney } from '@auto_matrix/shared';
 import { INTERROGATION_ROOM, interrogationRoot } from '@auto_matrix/shared';
 import { MEETING_CAR, meetingRoot, meetingCarPose } from '@auto_matrix/shared';
+import { OFFICE_WORKDAY, officeRecipientRoot, officeCourierRoot, officeClipboardPoint, officePenPoint } from '@auto_matrix/shared';
+import { OfficeWorkdayRenderer } from '../packages/client/src/engine/OfficeWorkdayRenderer.js';
 
 async function loadGeometry(id = 'neo') {
   const glb = await readFile(new URL(`../packages/client/public/assets/characters/${id}.glb`, import.meta.url));
@@ -31,6 +33,89 @@ async function loadGeometry(id = 'neo') {
   padded.copy(result, 20); bin.copy(result, 20 + padded.length);
   return new GLTFLoader().parseAsync(result.buffer.slice(result.byteOffset, result.byteOffset + result.byteLength), '');
 }
+
+test('the office rigs reach the keyboard, clipboard and the signature on the delivered form', async () => {
+  const [neo, smith, office] = await Promise.all([loadGeometry(), loadGeometry('smith'), loadGeometry('neo-office')]);
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: (id: string) => Promise<typeof neo> }).load = async id => id === 'neo-office' ? office : id === 'smith' ? smith : neo;
+  const center = FILM_SETS.film_metacortex_floor.center; const origin = new THREE.Vector3(center.x, center.y - 1, center.z);
+  try {
+    for (const role of ['neo', 'rhineheart', 'courier'] as const) {
+      const rig = (await models.create(role === 'rhineheart' ? 'smith' : 'neo', undefined, role === 'neo' ? undefined : role))!;
+      for (const elapsed of [1.05, 1.4, 1.9, 2.5, 3.4]) {
+        const gesture = { phase: role === 'rhineheart' ? 'briefing' as const : 'signing' as const, elapsed, role };
+        const position = role === 'rhineheart' ? OFFICE_WORKDAY.manager : role === 'courier' ? officeCourierRoot(gesture) : officeRecipientRoot(gesture);
+        rig.root.position.copy(origin).add(new THREE.Vector3(position.x, 0, position.z)); rig.root.rotation.y = position.yaw;
+        const motion = newMotion(); const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, officeShirt: role === 'neo', workday: gesture };
+        models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
+        if (role === 'neo' && elapsed < 2.55) {
+          const pen = rig.root.getObjectByName('delivery-signature-pen')!; assert.ok(pen.visible);
+          const target = officePenPoint(gesture); const nib = pen.getWorldPosition(new THREE.Vector3());
+          assert.ok(nib.distanceTo(origin.clone().add(new THREE.Vector3(target.x, target.y, target.z))) < .06, `Neo's pen misses the form at ${elapsed}: ${nib.toArray()}`);
+          const grip = nib.clone().add(new THREE.Vector3(0, .15, 0));
+          for (const finger of [1, 2]) {
+            const joint = rig.bones.get(`finger${finger}-3_R`)!;
+            const tip = joint.localToWorld(joint.position.clone().normalize().multiplyScalar(.04));
+            assert.ok(tip.distanceTo(grip) < .065, `finger ${finger} does not grip the pen at ${elapsed}: ${tip.distanceTo(grip)}`);
+          }
+        } else if (role === 'courier') {
+          const board = officeClipboardPoint(gesture); const contact = origin.clone().add(new THREE.Vector3(board.x - .3, board.y - .045, board.z + .05));
+          const palm = rig.bones.get('wrist_L')!.localToWorld(new THREE.Vector3(-.065, -.17, .01));
+          assert.ok(palm.distanceTo(contact) < .04, `the clipboard floats away from the courier at ${elapsed}: ${palm.distanceTo(contact)}`);
+          assert.equal(rig.glasses.visible, false); assert.ok(rig.panels.every(panel => !panel.mesh.visible));
+        } else if (role === 'rhineheart') {
+          for (const side of ['R', 'L']) {
+            const palm = rig.bones.get('wrist_' + side)!.localToWorld(new THREE.Vector3(side === 'R' ? .065 : -.065, -.17, .01)).sub(origin);
+            assert.ok(Math.abs(palm.x + 22.3) < .04 && Math.abs(palm.y - 2.7) < .055, 'the manager must type on the keyboard, not above his lap');
+          }
+        }
+      }
+    }
+  } finally { models.dispose(); }
+});
+
+test('Neo’s office shirt covers his waist when he leans over the signature form', async () => {
+  const [neo, office] = await Promise.all([loadGeometry(), loadGeometry('neo-office')]);
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: (id: string) => Promise<typeof neo> }).load = async id => id === 'neo-office' ? office : neo;
+  const rig = (await models.create('neo'))!;
+  try {
+    for (const elapsed of [0, 1.1, 2, 3.4]) {
+      const motion = newMotion(); const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, officeShirt: true,
+        workday: { role: 'neo' as const, phase: 'signing' as const, elapsed } };
+      const position = officeRecipientRoot(input.workday); const center = FILM_SETS.film_metacortex_floor.center;
+      rig.root.position.set(center.x + position.x, center.y - 1, center.z + position.z); rig.root.rotation.y = position.yaw;
+      models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
+      const clothes = rig.wardrobe.filter(part => part.mesh.visible && part.mesh instanceof THREE.SkinnedMesh).map(part => part.mesh as THREE.SkinnedMesh);
+      clothes.forEach(mesh => { mesh.skeleton.update(); mesh.computeBoundingSphere(); });
+      for (const x of [-.23, 0, .23]) for (const y of [2.5, 2.6, 2.7, 2.8]) {
+        const from = rig.root.localToWorld(new THREE.Vector3(x, y, 2));
+        const direction = new THREE.Vector3(0, 0, -1).applyQuaternion(rig.root.getWorldQuaternion(new THREE.Quaternion()));
+        const hit = new THREE.Raycaster(from, direction, 0, 2).intersectObjects(clothes)[0];
+        assert.ok(hit && (hit.object as THREE.Mesh).material instanceof THREE.Material);
+        assert.notEqual(((hit.object as THREE.Mesh).material as THREE.Material).name, 'Office skin', `bare waist at ${elapsed}s, ${x}, ${y}`);
+      }
+    }
+  } finally { models.dispose(); }
+});
+
+test('the physical glass doorway stays clear at walking height and the delivered board follows the saved clock', t => {
+  const document = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, fillText() {} }) }) } as unknown as Document;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const root = new THREE.Group(); const renderer = new OfficeWorkdayRenderer(root);
+  try {
+    root.updateMatrixWorld(true);
+    for (const x of [-12, -11, -10.3]) for (const y of [1, 3.8]) {
+      const ray = new THREE.Raycaster(new THREE.Vector3(x, y, 20.8), new THREE.Vector3(0, 0, 1), 0, 2.9);
+      assert.equal(ray.intersectObject(root, true).length, 0, 'the open door, sign and trim cannot cross the walkable entrance');
+    }
+    const journey: FilmJourney = { version: 1, scene: 'm1_boss', actor: 'neo', step: 1, completed: [], enteredAt: 0, reflections: {}, checkpoint: { x: 0, y: 0, z: 0 }, lastText: '', workday: { phase: 'signing', elapsed: 1.9 } };
+    renderer.update(journey); const board = root.getObjectByName('delivery-clipboard')!;
+    const expected = officeClipboardPoint(journey.workday!); assert.deepEqual(board.position.toArray(), [expected.x, expected.y, expected.z]);
+    journey.workday!.phase = 'released'; renderer.update(journey); assert.equal(board.visible, false);
+  } finally { renderer.dispose(); globalThis.document = document; }
+});
 
 test('the actual car occupants fit below the roof and Trinity holds both scanner grips', async () => {
   const [neo, trinity, office] = await Promise.all([loadGeometry(), loadGeometry('trinity'), loadGeometry('neo-office')]);
@@ -267,7 +352,8 @@ test('the left hand reaches and turns the window handle while the right hand hol
   models.dispose();
 });
 
-test('opening the actual office sash clears the aperture instead of revealing an opaque backdrop', () => {
+test('opening the actual office sash clears the aperture instead of revealing an opaque backdrop', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const document = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {} }) }) } as unknown as Document;
   const root = new THREE.Group(); const renderer = new OfficeSetRenderer(root, FILM_SETS.film_metacortex_floor);
@@ -289,7 +375,8 @@ test('opening the actual office sash clears the aperture instead of revealing an
   } finally { renderer.dispose(); globalThis.document = document; }
 });
 
-test('the open sash yields to the ledge follow camera and returns when it no longer obscures Neo', () => {
+test('the open sash yields to the ledge follow camera and returns when it no longer obscures Neo', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const document = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {} }) }) } as unknown as Document;
   const root = new THREE.Group(); const renderer = new OfficeSetRenderer(root, FILM_SETS.film_metacortex_floor);
@@ -314,7 +401,8 @@ test('the open sash yields to the ledge follow camera and returns when it no lon
   } finally { renderer.dispose(); globalThis.document = document; }
 });
 
-test('office and ledge entrances render the same building in world space', () => {
+test('office and ledge entrances render the same building in world space', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const document = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {} }) }) } as unknown as Document;
   const parents = ['film_metacortex_floor', 'film_office_ledge'].map(id => {

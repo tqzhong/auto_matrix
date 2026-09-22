@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import type { OfficeWorkday } from '@auto_matrix/shared';
 import type { AgentState, WorldEvent, SimulationState, SandboxState, CombatImpact, SkillCast } from '@auto_matrix/shared';
 import { insideLifeRoom, meetingLocked, meetingCarPose, interrogationLocked, pillLocked, lafayetteKnocking, lafayetteWelcomeLocked, awakeningLocked, oracleActing, phoneLocked, heldPhone, windowOpening, windowCrossing, OFFICE_CONTACT, FILM_SETS } from '@auto_matrix/shared';
 import { FilmSetRenderer } from './FilmSetRenderer.js';
@@ -131,7 +132,8 @@ export class Engine {
     const meeting = this.sandbox?.neoLife?.journey;
     this.audio.carEngine(this.running && player?.id === meeting?.actor && !meeting?.visiting && meeting?.meeting?.phase === 'driving' ? meetingCarPose(meeting.meeting).speed : undefined);
     this.voxelRenderer.interiors.update(this.timeOfDay, player?.position, this.sandbox?.neoLife);
-    const filmSet = this.filmSets.update(player ?? undefined, this.sandbox, this.elapsed, player ? this.agentRenderer.getAgent(player.id)?.position : undefined, this.camera.position);
+    const workday = this.agentRenderer.getAgentState('courier')?.currentAction?.parameters.workday as OfficeWorkday | undefined;
+    const filmSet = this.filmSets.update(player ?? undefined, this.sandbox, this.elapsed, player ? this.agentRenderer.getAgent(player.id)?.position : undefined, this.camera.position, workday);
     this.voxelRenderer.matrix.visible = this.matrix && !filmSet; this.voxelRenderer.real.visible = !this.matrix && !filmSet;
     this.rain.visible = filmSet ? filmSet.light === 'storm' : this.matrix && this.weather !== 'clear' && !(player && insideLifeRoom(player.position));
     this.sandboxRenderer.update(delta, this.camera, this.matrix, this.tick, this.running);

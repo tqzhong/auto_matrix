@@ -43,6 +43,11 @@ export class SandboxSystem {
     this.life.film.restoreAwakeningSpace();
     this.life.film.reconcileCast();
     this.life.film.restoreTrainingSpace();
+    const journey = this.life.film.state;
+    if (journey?.scene === 'm1_boss') {
+      delete journey.started;
+      this.life.film.workdayFrame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);
+    }
   }
   missionsFor(agent: AgentState) { return agent.id === 'neo' && this.state.neoLife ? this.state.neoLife.missions : this.state.missions; }
   private random(): number {

@@ -58,6 +58,21 @@ function setup(t: TestContext, rotation = 0) {
 
 const angle = (a: number, b: number) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
 
+test('office conversation and signing frame the performers and restore walking after the response', t => {
+  const game = setup(t, -Math.PI / 2); game.state.currentLocation = 'film_metacortex_floor';
+  game.state.position = filmPosition('film_metacortex_floor', -17, 27.4); game.controls.possess(game.state);
+  game.state.currentAction = { type: 'idle', parameters: { workday: { phase: 'answer', elapsed: 0, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
+  game.step(.5); assert.equal(game.controls.performing, true); assert.equal(game.controls.motion.officeShirt, true);
+  const center = FILM_SETS.film_metacortex_floor.center;
+  assert.ok(game.camera.position.x - center.x < -6.2 && game.camera.position.z - center.z < 32.5, 'the office shot remains inside the glass room');
+  const locked = game.group.position.clone(); game.key('KeyW'); game.step(.5); assert.deepEqual(game.group.position, locked);
+  game.key('KeyW', false); game.key('KeyV'); game.key('KeyV', false); game.step(.2);
+  game.event(game.canvas, 'mousedown', { button: 2 }); game.event(game.document, 'mousemove', { movementX: 80, movementY: 0 }); game.step(.1);
+  assert.ok(Math.abs(angle(game.yaw(), -Math.PI / 2)) > .08, 'first-person conversation still allows looking around');
+  game.state.currentAction = null; game.step(.1); assert.equal(game.controls.performing, false);
+  game.key('KeyD'); game.step(.35); assert.ok(game.group.position.distanceTo(locked) > .2, 'answering gives movement back');
+});
+
 test('passenger first-person look follows a car turn while preserving the chosen look offset', t => {
   const game = setup(t, Math.PI); game.state.currentLocation = 'film_extraction_car';
   const pose = (elapsed: number) => {
