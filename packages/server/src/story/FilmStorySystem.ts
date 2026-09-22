@@ -1,4 +1,4 @@
-import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_CAST, filmReflections, CHARACTERS, LOCATIONS, NEO_CHAPTERS, filmCharacterFates, filmEntry, filmPosition, filmStepPosition, locationEntrance, distance, playerBlocked, newFreewayRide, stepFreeway, OFFICE_LADDER, awakeningLocked, awakeningPose, AWAKENING_SECONDS, oracleActing,
+import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_CAST, filmReflections, CHARACTERS, LOCATIONS, NEO_CHAPTERS, filmCharacterFates, filmEntry, filmPosition, filmStepPosition, locationEntrance, distance, playerBlocked, newFreewayRide, stepFreeway, OFFICE_LADDER, awakeningLocked, awakeningPose, AWAKENING_SECONDS, CONSTRUCT_REVEAL, DESERT_REVEAL, oracleActing,
   AMBUSH_REWRITE, AMBUSH_SECONDS, AMBUSH_SEALS, OFFICE_CONTACT, OFFICE_WINDOW, OFFICE_CROSSING_SECONDS, officeCrossingPose, windowCrossing, phoneLocked, heldPhone, windowOpening, pillLocked, pillRoot, PILL_ROOM, PILL_TIMING, type DriveInput, type AgentState, type FilmScene, type FilmStep, type SandboxState } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
 import { LobbyCombatSystem } from './LobbyCombatSystem.js';
@@ -122,6 +122,20 @@ export class FilmStorySystem {
     for (const actor of this.world.agents.values()) if (actor.currentLocation === 'film_lafayette') migrate(actor.position);
     if (this.scene?.set === 'film_lafayette') migrate(this.state?.checkpoint);
     migrate(this.state?.returnPosition);
+  }
+  restoreAwakeningSpace(): void {
+    const state = this.state; const scene = this.scene;
+    if (!state || !scene || state.awakening || state.visiting) return;
+    const kind = state.scene === 'm1_recovery' && state.step === 0 ? 'recovery'
+      : state.scene === 'm1_construct' && state.step === 0 ? 'construct'
+      : state.scene === 'm1_desert' && state.step === 1 ? 'desert' : undefined;
+    if (!kind) return;
+    state.awakening = { kind, elapsed: 0, started: false };
+    const actor = this.world.agents.get(state.actor);
+    if (!actor) return;
+    actor.currentLocation = scene.set; actor.isInMatrix = FILM_SETS[scene.set].world === 'matrix';
+    this.stageCast();
+    this.awakeningFrame(actor, 0, this.world.simulationTick);
   }
   meetingFrame(agent: AgentState, focus: boolean, dt: number, tick: number): void {
     const state = this.state;
@@ -337,15 +351,26 @@ export class FilmStorySystem {
   awakeningFrame(agent: AgentState, dt: number, tick: number): boolean {
     if (!this.controls(agent) || !awakeningLocked(this.state!)) return false;
     const state = this.state!; const beat = state.awakening;
-    const wasPlaying = beat && beat.elapsed < AWAKENING_SECONDS[beat.kind] && (beat.kind !== 'recovery' || beat.started === true);
+    const reveal = beat?.kind === 'construct' || beat?.kind === 'desert';
+    const morpheus = reveal ? this.world.agents.get('morpheus') : undefined;
+    const wasPlaying = beat && beat.elapsed < AWAKENING_SECONDS[beat.kind] && beat.started !== false && !morpheus?.controller;
     if (wasPlaying) beat.elapsed = Math.min(AWAKENING_SECONDS[beat.kind], beat.elapsed + Math.min(.1, dt));
     const pose = awakeningPose(beat); const previous = agent.position;
     agent.position = filmPosition(this.scene!.set, pose.x, pose.z); agent.position.y += pose.y;
-    agent.rotation = Math.PI;
+    agent.rotation = beat?.kind === 'construct' ? CONSTRUCT_REVEAL.neo.yaw : beat?.kind === 'desert' ? DESERT_REVEAL.neo.yaw : Math.PI;
     agent.velocity = dt > 0 ? { x: 0, y: (agent.position.y - previous.y) / dt, z: (agent.position.z - previous.z) / dt } : { x: 0, y: 0, z: 0 };
     agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, filmPose: pose.pose,
-      mirror: beat?.kind === 'mirror' ? beat.elapsed / 8 : 0, recovery: beat?.kind === 'recovery' ? beat.elapsed : undefined }, startedAt: tick, duration: 1, progress: 0 };
-    state.lastText = pose.text;
+      mirror: beat?.kind === 'mirror' ? beat.elapsed / 8 : 0, recovery: beat?.kind === 'recovery' ? beat.elapsed : undefined,
+      seated: beat?.kind === 'construct', reveal: reveal ? { kind: beat.kind, elapsed: beat.elapsed, role: 'neo' } : undefined }, startedAt: tick, duration: 1, progress: 0 };
+    if (reveal && morpheus && !morpheus.controller) {
+      const root = beat.kind === 'construct' ? CONSTRUCT_REVEAL.morpheus : DESERT_REVEAL.morpheus;
+      const before = morpheus.position; morpheus.position = filmPosition(this.scene!.set, root.x, root.z); morpheus.rotation = root.yaw;
+      morpheus.velocity = dt > 0 ? { x: (morpheus.position.x - before.x) / dt, y: 0, z: (morpheus.position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
+      morpheus.currentLocation = this.scene!.set; morpheus.isInMatrix = FILM_SETS[this.scene!.set].world === 'matrix';
+      morpheus.currentAction = { type: 'idle', parameters: { resolved: true, filmPose: pose.pose, seated: beat.kind === 'construct',
+        reveal: { kind: beat.kind, elapsed: beat.elapsed, role: 'morpheus' } }, startedAt: tick, duration: 1, progress: 0 };
+    }
+    state.lastText = morpheus?.controller ? '揭示暂停在当前画面：Morpheus 正由另一位玩家控制。' : pose.text;
     if (wasPlaying && beat.elapsed >= AWAKENING_SECONDS[beat.kind]) this.advance(this.step!.text!, agent, tick);
     return true;
   }
@@ -468,9 +493,10 @@ export class FilmStorySystem {
         agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
         this.pillFrame(agent, 0, tick); return '已经接回递药演出，保留原来的选择与动作进度。';
       }
-      if (state.scene === 'm1_recovery' && state.awakening?.kind === 'recovery') {
+      if (state.awakening && ['recovery', 'construct', 'desert'].includes(state.awakening.kind)) {
         agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
-        this.awakeningFrame(agent, 0, tick); return '已经接回医疗舱恢复，保留针疗和起身进度。';
+        this.awakeningFrame(agent, 0, tick);
+        return state.awakening.kind === 'recovery' ? '已经接回医疗舱恢复，保留针疗和起身进度。' : '已经接回真相揭示，保留电视、讲解与身体动作进度。';
       }
       this.clearThreats();
       delete state.ride;
@@ -574,8 +600,11 @@ export class FilmStorySystem {
     }
     if (this.climbing(agent)) return 'W 沿梯子向下，S 向上。到达下方维修平台才能完成逃脱；停手会抓住当前横档。';
     if (windowOpening(state)) return '正在转动把手、推开窗扇。可以转动视角观察；开窗进度会保存。';
-    if (state.scene === 'm1_recovery' && state.awakening?.kind === 'recovery' && state.awakening.started === false) {
-      if (target !== 'act') return '身体仍躺在医疗床上。按 G 示意船员开始恢复肌肉。';
+    if (state.awakening?.started === false) {
+      const prompt = state.awakening.kind === 'recovery' ? '身体仍躺在医疗床上。按 G 示意船员开始恢复肌肉。'
+        : state.awakening.kind === 'construct' ? '电视仍然关闭。按 G 请 Morpheus 开始说明。' : '灰烬中的讲解正在等待。按 G 请 Morpheus 继续。';
+      if (target !== 'act') return prompt;
+      if (['construct', 'desert'].includes(state.awakening.kind) && this.world.agents.get('morpheus')?.controller) return 'Morpheus 正由另一位玩家控制，揭示停在当前画面。';
       state.awakening.started = true; this.awakeningFrame(agent, 0, tick); return state.lastText;
     }
     if (state.awakening && state.awakening.elapsed < AWAKENING_SECONDS[state.awakening.kind]) return '演出进行中，可以转动视角观察；进度会自动保存。';
@@ -740,6 +769,10 @@ export class FilmStorySystem {
       state.awakening = { kind: 'recovery', elapsed: 0, started: false };
       this.awakeningFrame(actor, 0, tick);
     }
+    if (scene.id === 'm1_construct') {
+      state.awakening = { kind: 'construct', elapsed: 0, started: false };
+      this.awakeningFrame(actor, 0, tick);
+    }
     if (scene.id === 'm1_bug') this.meetingFrame(actor, false, 0, tick);
     if (scene.id === 'm1_wake_again' && state.office?.outcome === 'escaped') state.lastText = '脱身后，Morpheus 再次来电。前往 Adams Street 桥下，与接应者见面。';
     if (scene.id === 'm1_bug' && state.office?.outcome === 'escaped') state.lastText = '你没有被特工带走。Switch 仍要求做安全检查，确认没有追踪装置。';
@@ -764,6 +797,8 @@ export class FilmStorySystem {
         const position = recoveryCrew[id as keyof typeof recoveryCrew];
         if (position) { actor.position = filmPosition(scene.set, position[0], position[1]); actor.rotation = position[2]; }
       }
+      if (scene.id === 'm1_construct' && id === 'morpheus') { actor.position = filmPosition(scene.set, CONSTRUCT_REVEAL.morpheus.x, CONSTRUCT_REVEAL.morpheus.z); actor.rotation = CONSTRUCT_REVEAL.morpheus.yaw; }
+      if (scene.id === 'm1_desert' && id === 'morpheus') { actor.position = filmPosition(scene.set, DESERT_REVEAL.morpheus.x, DESERT_REVEAL.morpheus.z); actor.rotation = DESERT_REVEAL.morpheus.yaw; }
       actor.status = 'alive'; actor.health = actor.maxHealth;
       if (id === 'spoon_boy' && scene.id === 'm1_spoon') {
         actor.rotation = .7;
@@ -805,6 +840,10 @@ export class FilmStorySystem {
     const state = this.state!; const life = this.sandbox().neoLife!;
     if (state.scene === 'm1_bug' && state.step === 0 && state.office?.outcome === 'escaped') text = '扫描完成，没有发现追踪装置。Trinity 收起仪器，确认接头安全，继续前往 Morpheus 的房间。';
     state.lastText = text; state.step++; state.checkpoint = { ...agent.position }; delete state.started; delete state.fighting;
+    if (state.scene === 'm1_desert' && state.step === 1) {
+      state.awakening = { kind: 'desert', elapsed: 0, started: false };
+      this.awakeningFrame(agent, 0, tick); return;
+    }
     if (this.step) return;
     if (!state.completed.includes(state.scene)) {
       state.completed.push(state.scene);

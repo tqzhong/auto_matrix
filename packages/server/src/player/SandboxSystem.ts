@@ -40,6 +40,7 @@ export class SandboxSystem {
     for (const [id, progress] of Object.entries(defaults.missions)) this.state.missions[id] ??= progress;
     this.life.film.restoreOfficeSpace();
     this.life.film.restoreHotelSpace();
+    this.life.film.restoreAwakeningSpace();
     this.life.film.reconcileCast();
   }
   missionsFor(agent: AgentState) { return agent.id === 'neo' && this.state.neoLife ? this.state.neoLife.missions : this.state.missions; }

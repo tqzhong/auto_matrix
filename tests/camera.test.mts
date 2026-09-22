@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import type { AgentState, PlayerInput } from '@auto_matrix/shared';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { CameraController } from '../packages/client/src/engine/CameraController.js';
-import { newFreewayRide, filmPosition, officeCrossingPose, pillRoot, meetingRoot, meetingCarPose, MEETING_CAR } from '@auto_matrix/shared';
+import { newFreewayRide, filmPosition, officeCrossingPose, pillRoot, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS } from '@auto_matrix/shared';
 
 test('observer camera releases drag and ignores pointer capture while a character controls the view', () => {
   let captures = 0;
@@ -155,6 +155,29 @@ test('the recovery camera frames the medical bed and first person moves to Neo e
   game.key('KeyW'); game.key('Space'); game.key('KeyF'); game.step(.3);
   assert.deepEqual(game.group.position.toArray(), [position.x, position.y, position.z]);
   assert.equal(game.actions.length, 0);
+});
+
+test('the Construct and desert reveals use authored wide shots while first person remains at Neo eyes', t => {
+  const game = setup(t, Math.PI); const construct = filmPosition('film_white_construct', 4.4, -6.2);
+  Object.assign(game.state, { position: construct, rotation: Math.PI, isInMatrix: true, currentLocation: 'film_white_construct',
+    currentAction: { type: 'idle', parameters: { filmPose: 'construct', seated: true, reveal: { kind: 'construct', elapsed: 0, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 } });
+  game.controls.possess(game.state); game.controls.performing = true; game.step(.5);
+  const constructCenter = FILM_SETS.film_white_construct.center;
+  assert.ok(game.camera.position.x > constructCenter.x + 10, 'the waiting two-shot starts beside the chairs instead of hiding both actors behind their backs');
+  assert.ok(Math.abs(game.camera.getWorldDirection(new THREE.Vector3()).z) < .25, 'the waiting shot sees both seated profiles instead of looking into the chair backs');
+  assert.ok(game.camera.position.z < constructCenter.z - 8 && game.camera.position.z > constructCenter.z - 12, 'the side angle keeps the television and seated actors in the same shot');
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+  assert.ok(Math.abs(game.camera.position.y - construct.y - 2.35) < .05, 'seated first person uses Neo eye height');
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).z < -.8, 'Neo initially faces the television');
+  game.key('KeyW'); game.key('Space'); game.key('KeyF'); game.step(.3);
+  assert.deepEqual(game.group.position.toArray(), [construct.x, construct.y, construct.z]); assert.equal(game.actions.length, 0);
+
+  const desert = filmPosition('film_real_desert', 1.8, -28); Object.assign(game.state, { position: desert, rotation: Math.PI, isInMatrix: false, currentLocation: 'film_real_desert',
+    currentAction: { type: 'idle', parameters: { filmPose: 'desert', reveal: { kind: 'desert', elapsed: 6, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 } });
+  game.controls.firstPerson = false; game.controls.performing = true; game.controls.possess(game.state); game.step(.5);
+  const desertCenter = FILM_SETS.film_real_desert.center;
+  assert.ok(game.camera.position.x > desertCenter.x + 8 && game.camera.position.y > desertCenter.y + 5, 'the ruined skyline starts in a readable wide shot');
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).z < -.7, 'the wide shot looks toward the harvesting towers');
 });
 
 for (const view of ['third-person', 'first-person']) for (const [key, heading] of [['KeyD', -Math.PI / 2], ['KeyA', Math.PI / 2], ['KeyS', Math.PI]] as const) {

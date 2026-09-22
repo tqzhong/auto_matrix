@@ -304,6 +304,43 @@ test('recovery begins on the medical bed, waits for Neo, and resumes its saved p
   h.advance(30); assert.equal(h.sandbox.life.film.state!.step, 1, 'walking to the core remains a separate objective');
 });
 
+test('the Construct television and ruined-world lesson wait for Neo and preserve both reveal performances', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  Object.assign(state, { scene: 'm1_recovery', actor: 'neo', step: FILM_SCENE_BY_ID.m1_recovery.steps.length, awakening: undefined });
+  h.command('next'); assert.equal(state.scene, 'm1_construct');
+  assert.deepEqual(state.awakening, { kind: 'construct', elapsed: 0, started: false });
+  const chair = { ...h.actor().position }; h.advance(20);
+  assert.equal(state.step, 0); assert.deepEqual(h.actor().position, chair, 'the television cannot start itself while Neo waits');
+  h.command('act'); for (let frame = 0; frame < 43; frame++) h.players.step(.1, true, h.tick());
+  const saved = JSON.parse(JSON.stringify(h.sandbox.state)); const constructElapsed = state.awakening!.elapsed;
+  h.players.step(.8, false, h.tick()); assert.equal(state.awakening!.elapsed, constructElapsed);
+  h.sandbox.restore(saved); h.players.release('film-player', h.tick()); h.advance(20);
+  assert.equal(h.sandbox.life.film.state!.awakening!.elapsed, constructElapsed, 'disconnecting freezes the television lesson');
+  h.players.possess('film-player', 'neo', h.tick());
+  for (let frame = 0; frame < 120 && h.sandbox.life.film.state!.step === 0; frame++) h.players.step(.1, true, h.tick());
+  assert.equal(h.sandbox.life.film.state!.step, 1); h.command('reflect:agency'); assert.equal(h.sandbox.life.film.state!.step, 2);
+  h.command('next'); assert.equal(h.sandbox.life.film.state!.scene, 'm1_desert');
+  const desert = FILM_SCENE_BY_ID.m1_desert; h.actor().position = filmStepPosition(desert, desert.steps[0]); h.advance();
+  assert.equal(h.sandbox.life.film.state!.step, 1);
+  assert.deepEqual(h.sandbox.life.film.state!.awakening, { kind: 'desert', elapsed: 0, started: false });
+  const overlook = { ...h.actor().position }; h.advance(20); assert.deepEqual(h.actor().position, overlook);
+  h.command('act');
+  for (let frame = 0; frame < 140 && h.sandbox.life.film.state!.step === 1; frame++) h.players.step(.1, true, h.tick());
+  assert.equal(h.sandbox.life.film.state!.step, 2); assert.ok(h.sandbox.life.film.state!.completed.includes('m1_desert'));
+});
+
+test('old saves at authored reveal checkpoints are upgraded into explicit player-started performances', () => {
+  for (const [sceneId, step, kind] of [['m1_recovery', 0, 'recovery'], ['m1_construct', 0, 'construct'], ['m1_desert', 1, 'desert']] as const) {
+    const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!; const scene = FILM_SCENE_BY_ID[sceneId];
+    Object.assign(state, { scene: sceneId, actor: 'neo', step, checkpoint: filmEntry(scene), awakening: undefined });
+    h.actor().currentLocation = scene.set; h.actor().isInMatrix = FILM_SETS[scene.set].world === 'matrix'; h.actor().position = filmEntry(scene);
+    h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+    assert.deepEqual(h.sandbox.life.film.state!.awakening, { kind, elapsed: 0, started: false }, sceneId);
+    const parameters = h.actor().currentAction?.parameters;
+    assert.equal(parameters?.reveal?.kind ?? (parameters?.recovery !== undefined ? 'recovery' : undefined), kind, `${sceneId}: actor pose`);
+  }
+});
+
 test('the first rooftop jump uses gravity and a recoverable fall rather than a timer', () => {
   const h = setup(); h.command('start'); const state = h.sandbox.life.film.state!;
   const scene = FILM_SCENE_BY_ID.m1_jump; state.scene = scene.id; state.actor = scene.actor; state.step = 0;
@@ -488,7 +525,7 @@ test('the entire film route completes through interactions, driving and real com
           for (let frame = 0; frame < 30; frame++) h.players.step(.1, true, h.tick());
           h.command('act'); for (let frame = 0; frame < 120; frame++) h.players.step(.1, true, h.tick());
         } else if (scene.id === 'm1_office_escape' && index === 2) for (let frame = 0; frame < 40; frame++) h.players.step(.1, true, h.tick());
-        else if (state.awakening && ['m1_mirror', 'm1_pod', 'm1_recovery'].includes(scene.id)) for (let frame = 0; frame < 200 && state.step === index; frame++) h.players.step(.1, true, h.tick());
+        else if (state.awakening && ['m1_mirror', 'm1_pod', 'm1_recovery', 'm1_construct', 'm1_desert'].includes(scene.id)) for (let frame = 0; frame < 200 && state.step === index; frame++) h.players.step(.1, true, h.tick());
         else if (index === 0 && ['m1_spoon', 'm1_oracle', 'm1_dejavu'].includes(scene.id)) {
           for (let frame = 0; frame < 110 && state.step === index; frame++) {
             h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false, focus: true, sequence: ++sequence });

@@ -415,6 +415,30 @@ export class HeroModels {
       bone('shoulder_R').rotation.x -= inspect * .72; bone('elbow_R').rotation.x -= inspect * 1.05;
       bone('head').rotation.y += inspect * .28;
     }
+    if (input.reveal) {
+      const { kind, elapsed: t, role } = input.reveal;
+      if (kind === 'construct') {
+        const explain = THREE.MathUtils.smoothstep(t, 2, 3.2) * (1 - THREE.MathUtils.smoothstep(t, 8.2, 9.5));
+        const shock = THREE.MathUtils.smoothstep(t, 8.8, 10.4);
+        if (role === 'morpheus') {
+          bone('shoulder_R').rotation.x -= explain * .72; bone('shoulder_R').rotation.z -= explain * .42;
+          bone('elbow_R').rotation.x -= explain * .95; bone('head').rotation.y += explain * .16;
+        } else {
+          bone('head').rotation.y -= .18 * explain; bone('spine').rotation.x += .14 * shock; bone('chest').rotation.x += .2 * shock;
+          bone('shoulder_L').rotation.x -= .2 * shock; bone('shoulder_R').rotation.x -= .2 * shock;
+        }
+      } else {
+        const point = THREE.MathUtils.smoothstep(t, 1.3, 2.8) * (1 - THREE.MathUtils.smoothstep(t, 9.5, 11.2));
+        const collapse = THREE.MathUtils.smoothstep(t, 10.2, 12.8);
+        if (role === 'morpheus') {
+          bone('shoulder_R').rotation.x -= point * 1.12; bone('shoulder_R').rotation.z -= point * .35;
+          bone('elbow_R').rotation.x -= point * .34; bone('head').rotation.y += point * .13;
+        } else {
+          bone('head').rotation.y -= point * .18; bone('spine').rotation.x += collapse * .34; bone('chest').rotation.x += collapse * .42;
+          for (const side of ['R', 'L']) bone('shoulder_' + side).rotation.x -= collapse * .42;
+        }
+      }
+    }
     rig.root.updateWorldMatrix(true, true);
     if (input.grounded && !input.meeting && !input.interrogation && !input.riding && input.climbing === undefined && (!input.performance || input.performance === 'connect')) {
       let lowest = Infinity;

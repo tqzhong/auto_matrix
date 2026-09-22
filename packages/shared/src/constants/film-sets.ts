@@ -134,6 +134,10 @@ export function filmObstacles(set: FilmSet): FilmObstacle[] {
     ...[-1, 1].flatMap(side => [-5, 6].map(z => ({ x: side * 6.5, z, width: 3.2, depth: 3.8, height: 3.2 }))),
     { x: -8, z: 22, width: 10, depth: 4.5, height: 2.4 },
   ];
+  if (set.id === 'film_real_desert') return Array.from({ length: 28 }, (_, i) => ({
+    x: (i % 2 ? 1 : -1) * (18 + i % 4 * 9), z: 38 - Math.floor(i / 2) * 10.5,
+    width: 8 + i % 5 * 2, depth: 7 + i % 3 * 2, height: 17 + (i * 13) % 34,
+  }));
   if (set.architecture === 'lobby') return LOBBY_COLUMNS;
   if (set.architecture === 'oracle') return [...ORACLE_FURNITURE, ...[-1, 1].flatMap(side => [
     { x: side * (set.width / 4 + 2.5), z: -8, width: set.width / 2 - 5, depth: .4, height: 7.8 },

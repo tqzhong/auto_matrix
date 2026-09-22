@@ -8,6 +8,8 @@ import { OfficeSetRenderer } from './OfficeSetRenderer.js';
 import { FreewaySetRenderer } from './FreewaySetRenderer.js';
 import { PodSetRenderer } from './PodSetRenderer.js';
 import { NebDeckRenderer } from './NebDeckRenderer.js';
+import { ConstructRenderer } from './ConstructRenderer.js';
+import { DesertRenderer } from './DesertRenderer.js';
 import { OracleVase } from './OracleVase.js';
 import { AmbushSetRenderer } from './AmbushSetRenderer.js';
 import { createPillGlass } from '../agents/PillPerformance.js';
@@ -56,6 +58,8 @@ export class FilmSetRenderer {
   private freeway?: FreewaySetRenderer;
   private pods?: PodSetRenderer;
   private neb?: NebDeckRenderer;
+  private construct?: ConstructRenderer;
+  private desert?: DesertRenderer;
   private currentScene?: string;
   private mirror?: Reflector;
   private mirrorCracks?: THREE.Group;
@@ -91,6 +95,8 @@ export class FilmSetRenderer {
         else if (set.architecture === 'freeway') this.freeway = new FreewaySetRenderer(this.root, set);
         else if (set.architecture === 'pods') this.pods = new PodSetRenderer(this.root);
         else if (set.id === 'film_neb_deck') this.neb = new NebDeckRenderer(this.root);
+        else if (set.id === 'film_white_construct') this.construct = new ConstructRenderer(this.root, sceneId);
+        else if (set.id === 'film_real_desert') this.desert = new DesertRenderer(this.root);
         else if (set.id === 'film_ambush_house') this.ambush = new AmbushSetRenderer(this.root);
         else if (set.id === 'film_agent_interrogation') this.interrogation = new InterrogationSetRenderer(this.root);
         else if (set.id === 'film_adams_bridge' || set.id === 'film_extraction_car') this.meeting = new MeetingSetRenderer(this.root);
@@ -132,6 +138,8 @@ export class FilmSetRenderer {
     this.freeway?.update(journey, elapsed, playerPosition);
     this.pods?.update(journey, elapsed);
     this.neb?.update(journey, elapsed);
+    this.construct?.update(journey);
+    this.desert?.update(journey, elapsed);
     this.ambush?.update(journey, sandbox?.structures ?? [], elapsed);
     this.oracleVase?.update(sceneId === 'm1_oracle' ? journey?.visiting || journey!.step > 0 ? 4.5 : journey?.oracle?.vase : undefined);
     const scene = journey && FILM_SCENE_BY_ID[journey.scene]; const step = scene?.steps[journey!.step];
@@ -181,6 +189,16 @@ export class FilmSetRenderer {
       (this.scene.background as THREE.Color).setHex(0x101918); fog.color.setHex(0x101918); fog.density = .0035;
       this.scene.environmentIntensity = .52;
       return { color: 0xc7ddd3, ambient: .68, sun: .18 };
+    }
+    if (this.construct) {
+      (this.scene.background as THREE.Color).setHex(0xeeeeea); fog.color.setHex(0xeeeeea); fog.density = .0012;
+      this.scene.environmentIntensity = .82;
+      return { color: 0xffffff, ambient: 1.08, sun: .28 };
+    }
+    if (this.desert) {
+      (this.scene.background as THREE.Color).setHex(0x303b3e); fog.color.setHex(0x303b3e); fog.density = .0055;
+      this.scene.environmentIntensity = .55;
+      return { color: 0xb4c7c6, ambient: .7, sun: .48 };
     }
     return palette;
   }
@@ -838,6 +856,8 @@ export class FilmSetRenderer {
     this.mirror?.dispose(); this.mirror = undefined; this.mirrorCracks = undefined;
     this.pods?.dispose(); this.pods = undefined;
     this.neb?.dispose(); this.neb = undefined;
+    this.construct?.dispose(); this.construct = undefined;
+    this.desert?.dispose(); this.desert = undefined;
     this.office?.dispose(); this.office = undefined;
     this.freeway?.dispose(); this.freeway = undefined;
     this.lobby?.dispose(); this.lobby = undefined;

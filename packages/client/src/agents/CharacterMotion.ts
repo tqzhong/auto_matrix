@@ -1,4 +1,4 @@
-import { MELEE_COMBO, COMBO_WINDOW, COMBAT_SKILLS, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED, type CombatSkillId, type AwakeningPose, type OfficePhone, pillPose, lafayetteWelcomePose, type PillGesture, type InterrogationGesture, type LafayetteWelcomeGesture } from '@auto_matrix/shared';
+import { MELEE_COMBO, COMBO_WINDOW, COMBAT_SKILLS, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED, type CombatSkillId, type AwakeningPose, type AwakeningReveal, type OfficePhone, pillPose, lafayetteWelcomePose, type PillGesture, type InterrogationGesture, type LafayetteWelcomeGesture } from '@auto_matrix/shared';
 
 export interface MotionInput {
   speed: number;
@@ -21,6 +21,7 @@ export interface MotionInput {
   climbing?: number;
   performance?: AwakeningPose;
   recovery?: number;
+  reveal?: AwakeningReveal;
   mirror?: number;
   spoon?: number;
   phone?: OfficePhone;
@@ -102,7 +103,7 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   state.time += dt;
   state.speed = mix(state.speed, input.riding || input.climbing !== undefined ? 0 : speed, blend);
   state.climbPhase += (input.climbing ?? 0) * dt * 5;
-  state.seated = pills ? pills.seat : welcome ? welcome.seated : mix(state.seated, input.seated || input.riding || input.performance === 'connect' ? 1 : 0, blend);
+  state.seated = pills ? pills.seat : welcome ? welcome.seated : mix(state.seated, input.seated || input.riding || input.performance === 'connect' || input.performance === 'construct' ? 1 : 0, blend);
   state.turn = mix(state.turn, clamp(input.turn, -3, 3), blend);
   state.airborne = mix(state.airborne, input.grounded ? 0 : 1, 1 - Math.exp(-18 * dt));
   if (dt > 0) {

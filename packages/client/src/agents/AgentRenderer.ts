@@ -103,14 +103,14 @@ export class AgentRenderer {
         if (state.currentAction?.parameters.passenger && driver?.state.currentAction?.parameters.riding) {
           target.sub(new THREE.Vector3(driver.state.position.x, driver.state.position.y, driver.state.position.z)).add(driver.group.position);
           entry.group.position.copy(target);
-        } else if (state.currentAction?.parameters.meeting || state.currentAction?.parameters.pills || state.currentAction?.parameters.interrogation || state.currentAction?.parameters.welcome || entry.group.position.distanceTo(target) > 60) entry.group.position.copy(target);
+        } else if (state.currentAction?.parameters.meeting || state.currentAction?.parameters.pills || state.currentAction?.parameters.interrogation || state.currentAction?.parameters.welcome || state.currentAction?.parameters.reveal || entry.group.position.distanceTo(target) > 60) entry.group.position.copy(target);
         else entry.group.position.lerp(target, 1 - Math.exp(-8 * delta));
       }
       const moving = Math.hypot(state.velocity.x, state.velocity.z) > .1;
       const heading = moving && state.currentLocation !== 'film_government_lobby' ? Math.atan2(state.velocity.x, state.velocity.z) : state.rotation;
       let difference = heading - entry.body.rotation.y;
       difference = Math.atan2(Math.sin(difference), Math.cos(difference));
-      if (id !== this.playerId) entry.body.rotation.y += difference * (state.currentAction?.parameters.meeting || state.currentAction?.parameters.pills || state.currentAction?.parameters.interrogation || state.currentAction?.parameters.welcome ? 1 : 1 - Math.exp(-10 * delta));
+      if (id !== this.playerId) entry.body.rotation.y += difference * (state.currentAction?.parameters.meeting || state.currentAction?.parameters.pills || state.currentAction?.parameters.interrogation || state.currentAction?.parameters.welcome || state.currentAction?.parameters.reveal ? 1 : 1 - Math.exp(-10 * delta));
       const velocity = state.status === 'alive' ? Math.hypot(state.velocity.x, state.velocity.z) : 0;
       entry.body.rotation.z = THREE.MathUtils.lerp(entry.body.rotation.z, state.status === 'dead' ? Math.PI / 2 : 0, 1 - Math.exp(-7 * delta));
       const dist = camera ? entry.group.position.distanceTo(camera.position) : 0;
@@ -133,11 +133,15 @@ export class AgentRenderer {
         welcome: state.currentAction?.parameters.welcome as MotionInput['welcome'],
         knock: state.currentAction?.parameters.knock as number | undefined,
         recovery: state.currentAction?.parameters.recovery as number | undefined,
+        performance: state.currentAction?.parameters.filmPose as MotionInput['performance'],
+        reveal: state.currentAction?.parameters.reveal as MotionInput['reveal'],
         vase: state.currentAction?.parameters.vase as number | undefined,
         riding: state.currentAction?.parameters.riding === true,
         climbing: state.currentAction?.parameters.climbing ? Number(state.currentAction.parameters.climbDirection ?? 0) : undefined,
       };
-      input.realWorld = !state.isInMatrix;
+      // The ruined city is still a loading program: actors keep their residual
+      // self image even though the represented place is the real world.
+      input.realWorld = !state.isInMatrix && state.currentLocation !== 'film_real_desert';
       input.officeShirt = state.id === 'neo' && state.currentLocation === 'film_agent_interrogation';
       input.glasses = state.id !== 'neo' || state.isAwakened && state.currentLocation !== 'film_oracle_home';
       this.models.animate(entry.rig, delta * (id === this.playerId && speed > 0 ? 1 : speed), input, dist);

@@ -1,4 +1,4 @@
-import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_NAMES, filmStepPosition, pillLocked, lafayetteWelcomeLocked, awakeningLocked, recoveryWaiting, AWAKENING_SECONDS, windowOpening, windowCrossing, ITEMS, RECIPES, SKILLS, FILMS, MISSIONS, LOCATIONS, CITY_BUILDINGS, NEO_CHAPTERS, LIFE_ACTIONS, lifeActionPosition, lifeRoomCenter, locationEntrance, distance, missionPosition, nearTransit, skillPoints,
+import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_NAMES, filmStepPosition, pillLocked, lafayetteWelcomeLocked, awakeningLocked, awakeningWaiting, AWAKENING_SECONDS, windowOpening, windowCrossing, ITEMS, RECIPES, SKILLS, FILMS, MISSIONS, LOCATIONS, CITY_BUILDINGS, NEO_CHAPTERS, LIFE_ACTIONS, lifeActionPosition, lifeRoomCenter, locationEntrance, distance, missionPosition, nearTransit, skillPoints,
   type AgentState, type SandboxState, type SandboxCommand, type ItemId, type SkillId, type Vector3 } from '@auto_matrix/shared';
 import './sandbox.css';
 import { renderNeoLife } from './NeoLifePanel.js';
@@ -184,15 +184,17 @@ export class SandboxUI {
       return;
     }
     if (awakeningLocked(journey)) {
-      const waiting = recoveryWaiting(journey);
-      if (journey.awakening?.kind === 'recovery') document.getElementById('game-objective-copy')!.textContent = waiting
-        ? '1/2 · Neo 正躺在医疗床上 · 按 G 示意开始恢复肌肉'
-        : `1/2 · 针疗与身体恢复进行中 · ${Math.round(journey.awakening.elapsed / AWAKENING_SECONDS.recovery * 100)}%`;
-      this.el('film-sequence-hint').textContent = waiting ? 'G 示意开始针疗 · 鼠标观察 · V 切换视角' : '鼠标观察 · V 切换视角 · 暂停或重连会保留动作';
+      const waiting = awakeningWaiting(journey); const kind = journey.awakening!.kind;
+      const action = kind === 'recovery' ? '示意开始恢复肌肉' : kind === 'construct' ? '请 Morpheus 打开电视' : '请 Morpheus 继续揭示';
+      const activity = ({ mirror: '镜面覆盖', connect: '定位连接', disconnect: '培养舱断线', rescue: '飞船救援', recovery: '针疗与身体恢复', construct: '电视与感官揭示', desert: '真实荒漠讲解' } as const)[kind];
+      document.getElementById('game-objective-copy')!.textContent = waiting
+        ? `${journey.step + 1}/${scene.steps.length} · ${action} · 按 G`
+        : `${journey.step + 1}/${scene.steps.length} · ${activity}进行中 · ${Math.round(journey.awakening!.elapsed / AWAKENING_SECONDS[kind] * 100)}%`;
+      this.el('film-sequence-hint').textContent = waiting ? `G ${action} · 鼠标观察 · V 切换视角` : '鼠标观察 · V 切换视角 · 暂停或重连会保留动作';
       this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
       this.el('sandbox-waypoint').textContent = '';
       this.el('sandbox-interact').classList.toggle('hidden', !waiting);
-      if (waiting) this.el('sandbox-nearby').textContent = '开始恢复肌肉';
+      if (waiting) this.el('sandbox-nearby').textContent = action;
       return;
     }
     if (!journey.visiting && scene.id === 'm1_spoon' && journey.oracle?.spoon !== undefined) {

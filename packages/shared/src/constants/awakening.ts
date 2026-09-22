@@ -1,20 +1,28 @@
 import type { FilmJourney } from './film-story.js';
 
-export interface AwakeningBeat { kind: 'mirror' | 'connect' | 'disconnect' | 'rescue' | 'recovery'; elapsed: number; started?: boolean }
-export const AWAKENING_SECONDS = { mirror: 8, connect: 4, disconnect: 9, rescue: 5, recovery: 12 } as const;
+export type AwakeningKind = 'mirror' | 'connect' | 'disconnect' | 'rescue' | 'recovery' | 'construct' | 'desert';
+export interface AwakeningBeat { kind: AwakeningKind; elapsed: number; started?: boolean }
+export interface AwakeningReveal { kind: 'construct' | 'desert'; elapsed: number; role: 'neo' | 'morpheus' }
+export const AWAKENING_SECONDS = { mirror: 8, connect: 4, disconnect: 9, rescue: 5, recovery: 12, construct: 11, desert: 13 } as const;
 export const POD_WATER_DROP = 18;
 export const RECOVERY_BED = { x: -7, z: -22, standingX: -3.6 } as const;
-export type AwakeningPose = 'touch' | 'connect' | 'pod' | 'fall' | 'float' | 'lift' | 'recover';
+export const CONSTRUCT_REVEAL = { neo: { x: 4.4, z: -6.2, yaw: Math.PI }, morpheus: { x: -4.4, z: -6.2, yaw: Math.PI }, television: { x: 0, z: -16 } } as const;
+export const DESERT_REVEAL = { neo: { x: 1.8, z: -28, yaw: Math.PI }, morpheus: { x: -3.2, z: -26.8, yaw: Math.PI }, towersZ: -70 } as const;
+export type AwakeningPose = 'touch' | 'connect' | 'pod' | 'fall' | 'float' | 'lift' | 'recover' | 'construct' | 'desert';
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
 const smooth = (value: number) => { const t = clamp(value); return t * t * (3 - 2 * t); };
 
 export function awakeningLocked(journey: FilmJourney): boolean {
-  return !journey.visiting && (journey.scene === 'm1_pod' || ['m1_mirror', 'm1_recovery'].includes(journey.scene)
+  return !journey.visiting && (journey.scene === 'm1_pod' || ['m1_mirror', 'm1_recovery', 'm1_construct', 'm1_desert'].includes(journey.scene)
     && !!journey.awakening && journey.awakening.elapsed < AWAKENING_SECONDS[journey.awakening.kind]);
 }
 
 export function recoveryWaiting(journey: FilmJourney): boolean {
   return !journey.visiting && journey.scene === 'm1_recovery' && journey.awakening?.kind === 'recovery' && journey.awakening.started === false;
+}
+
+export function awakeningWaiting(journey: FilmJourney): boolean {
+  return awakeningLocked(journey) && journey.awakening?.started === false;
 }
 
 // Local coordinates are also used by the pod, drainage channel and rescue claw.
@@ -31,6 +39,22 @@ export function awakeningPose(beat?: AwakeningBeat): { x: number; y: number; z: 
       : beat.elapsed < 11.4 ? '船员扶稳医疗床。Neo 坐起，把双脚放到冰冷的甲板上。'
       : 'Neo 在床边站稳。前方通道通向核心连接区。';
     return { x: RECOVERY_BED.x + (RECOVERY_BED.standingX - RECOVERY_BED.x) * standing, y: 0, z: RECOVERY_BED.z, pose: 'recover', text };
+  }
+  if (beat?.kind === 'construct') {
+    const text = beat.started === false ? '白色没有边界。两把旧皮椅与一台电视像被直接写进空间。按 G 请 Morpheus 开始说明。'
+      : beat.elapsed < 2.4 ? '老式电视从雪花中亮起。屏幕里是 Thomas Anderson 熟悉的城市。'
+      : beat.elapsed < 6.8 ? 'Morpheus 指向屏幕：眼睛、气味和触感都可以被系统转换成信号。'
+      : beat.elapsed < 9.2 ? '画面在街道、代码与培养塔之间切换。熟悉并不能单独证明真实。'
+      : '电视的白光吞没城市影像。构造体准备加载真相之后的世界。';
+    return { x: CONSTRUCT_REVEAL.neo.x, y: 0, z: CONSTRUCT_REVEAL.neo.z, pose: 'construct', text };
+  }
+  if (beat?.kind === 'desert') {
+    const text = beat.started === false ? '焦黑城市延伸到灰色天幕。按 G 请 Morpheus 继续这段揭示。'
+      : beat.elapsed < 3 ? '风卷起灰烬。Morpheus 指向被摧毁的天际线。'
+      : beat.elapsed < 7 ? '战争留下断裂的道路、空楼与再也照不到地面的天空。'
+      : beat.elapsed < 10.2 ? '远处的收割塔仍在运作。你刚刚醒来的培养舱只是其中一个。'
+      : '眼前的尺度压垮了旧有解释。Neo 的身体开始拒绝加载程序。';
+    return { x: DESERT_REVEAL.neo.x, y: 0, z: DESERT_REVEAL.neo.z, pose: 'desert', text };
   }
   const fall = clamp(((beat?.elapsed ?? 0) - 4) / 3);
   return { x: 0, y: -POD_WATER_DROP * fall * fall, z: -12 + 24 * fall, pose: fall === 1 ? 'float' : fall > 0 ? 'fall' : 'pod',

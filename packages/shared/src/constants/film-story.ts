@@ -1,5 +1,5 @@
 import { FILM_SETS, filmPosition } from './film-sets.js';
-import { RECOVERY_BED } from './awakening.js';
+import { CONSTRUCT_REVEAL, RECOVERY_BED } from './awakening.js';
 import type { Vector3 } from '../types/agent.js';
 import type { Philosophy } from '../types/neo-life.js';
 import { FILM_CONSEQUENCES } from './film-outcomes.js';
@@ -59,7 +59,7 @@ export const FILM_SCENES: FilmScene[] = [
   scene('m1_mirror', 1, 'lafayette', 'neo', '镜面与定位', 'pill', 'awakening', '房间里的设备追踪你的真实身体，裂开的镜面开始复原。', [use('触碰裂镜', '镜面附着在手臂上，接线组终于定位到培养舱。回到设备旁，让连接完成。', -7, -15.8, 8), use('坐到连接椅上', '定位信号穿过模拟世界，熟悉的房间从感官中消失。', 8, 5)], ['morpheus', 'trinity']),
   scene('m1_pod', 1, 'power_plant_pods', 'neo', '第一次睁眼', 'construct', 'awakening', '连接管线和无尽的培养塔取代了熟悉的城市。转动视角观察，再按 G 检查身体上的连接。', [use('查看培养舱的连接', '维护机器发现异常，拔除管线。你从排放通道坠入水中。', 0, -12, 9), use('抓住救援装置', '尼布甲尼撒号把你从废水里吊起。', 0, 12, 5)]),
   scene('m1_recovery', 1, 'neb_deck', 'neo', '从未使用的肌肉', 'construct', 'awakening', '船员修复 Neo 的身体。醒来后，他第一次看见同伴在现实中的样子。', [use('在医疗床旁检查身体', '针疗和休息逐渐恢复肌肉功能，插口却证明过去的身体认知并不完整。', -7, -22, 5), walk('走向核心连接区', 0, 0)], ['morpheus', 'trinity', 'tank', 'dozer']),
-  scene('m1_construct', 1, 'white_construct', 'neo', '残余自我影像', 'construct', 'awakening', '白色构造体里，衣服、头发和电视都可以被加载。', [use('打开电视', 'Morpheus 区分感官信号与外部世界。熟悉的城市来自共享模拟。', 0, -10), think('感觉足以证明真实吗？', '程序能够生成感受，却无法替你决定该如何理解感受。', 0, 0)], ['morpheus']),
+  scene('m1_construct', 1, 'white_construct', 'neo', '残余自我影像', 'construct', 'awakening', '白色构造体里，衣服、头发和电视都可以被加载。', [use('请 Morpheus 打开电视', 'Morpheus 区分感官信号与外部世界。熟悉的城市来自共享模拟。', 0, -10), think('感觉足以证明真实吗？', '程序能够生成感受，却无法替你决定该如何理解感受。', CONSTRUCT_REVEAL.neo.x, CONSTRUCT_REVEAL.neo.z)], ['morpheus']),
   scene('m1_desert', 1, 'real_desert', 'neo', '真实世界的废墟', 'construct', 'awakening', '天空被遮蔽，城市残骸延伸到远处。Morpheus 讲述人类与机器的战争。', [walk('走到废墟边缘', 0, -30), use('观察收割塔的方向', '眼前的世界让 Neo 难以承受。连接结束后，他在飞船上恢复意识。', 0, -30)], ['morpheus']),
   scene('m1_download', 1, 'neb_deck', 'neo', '训练下载', 'training', 'training', 'Tank 加载格斗程序。学习不再只靠书本，但身体仍需要实践。', [use('在连接椅上开始训练', '程序资料完成加载；Morpheus 已在道场等候。', 0, 0, 5)], ['tank']),
   scene('m1_dojo', 1, 'kungfu_dojo', 'neo', '不要只计算速度', 'training', 'training', '与 Morpheus 本人对练。F 连击，X 闪避；观察起手提示，拉开距离后再反击。对练不会致死。', [fight('完成与 Morpheus 的对练', 1, 'training', 'morpheus'), think('重新理解身体的限制', '规则可以被认识，也可以被改写；能力并非一开始就属于你。')], ['morpheus']),
