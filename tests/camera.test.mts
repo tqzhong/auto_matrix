@@ -58,6 +58,29 @@ function setup(t: TestContext, rotation = 0) {
 
 const angle = (a: number, b: number) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
 
+test('the club whisper keeps Trinity visible beside Neo and first person can still look around', t => {
+  const game = setup(t, Math.PI); const center = FILM_SETS.film_white_rabbit_club.center;
+  game.state.currentLocation = 'film_white_rabbit_club'; game.state.position = filmPosition('film_white_rabbit_club', 7, -4);
+  game.state.currentAction = { type: 'idle', parameters: { club: { phase: 'question', elapsed: 0, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state);
+  for (const aspect of [16 / 9, 426 / 680]) {
+    game.camera.aspect = aspect; game.camera.updateProjectionMatrix(); game.step(2);
+    const face = new THREE.Vector3(center.x + 6.45, center.y + 2.93, center.z - 4.55);
+    const neo = new THREE.Sphere(new THREE.Vector3(center.x + 7, center.y + 3.02, center.z - 4.1), .34);
+    const ray = new THREE.Ray(game.camera.position, face.clone().sub(game.camera.position).normalize());
+    assert.equal(ray.intersectsSphere(neo), false, 'Neo must not obscure Trinity’s face during her warning');
+    const screen = face.project(game.camera); assert.ok(Math.abs(screen.x) < .8 && Math.abs(screen.y) < .8);
+  }
+  game.camera.aspect = 16 / 9;
+  game.key('KeyV'); game.key('KeyV', false); game.step(.2);
+  const nearbyTemple = new THREE.Vector3(center.x + 6.7, center.y + 2.95, center.z - 4.48).project(game.camera);
+  assert.ok(nearbyTemple.z > -1 && nearbyTemple.z < 1, 'the first-person near plane must not slice through the nearby speaker');
+  const initial = game.yaw(); game.event(game.canvas, 'mousedown', { button: 2 });
+  game.event(game.document, 'mousemove', { movementX: 80, movementY: 0 }); game.step(.1);
+  assert.ok(Math.abs(angle(game.yaw(), initial)) > .08);
+  game.state.currentAction = null; game.step(.1); assert.equal(game.controls.performing, false);
+});
+
 test('the white-rabbit close-up clears the visitor beside the door and releases control afterwards', t => {
   const game = setup(t); const center = FILM_SETS.film_anderson_flat.center;
   game.state.currentLocation = 'film_anderson_flat'; game.state.position = filmPosition('film_anderson_flat', 0, 10.2);

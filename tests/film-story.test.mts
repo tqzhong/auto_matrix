@@ -621,12 +621,18 @@ test('the entire film route completes through interactions, driving and real com
       else if (step.kind === 'reflect') {
         h.command(scene.id === 'm1_wake_up' ? 'contact:follow' : scene.id === 'm1_ledge' ? 'escape:retreat' : scene.id === 'm1_pills' ? 'pill:red' : 'reflect:agency');
         if (scene.id === 'm1_pills') for (let frame = 0; frame < 131; frame++) h.players.step(.1, true, h.tick());
+        if (scene.id === 'm1_club') for (let frame = 0; frame < 61; frame++) h.players.step(.1, true, h.tick());
       }
       else if (step.kind === 'interact') {
         h.command('act');
         if (scene.id === 'm1_wake_up') {
           for (let frame = 0; frame < 91; frame++) h.players.step(.1, true, h.tick());
           if (index === 0) { h.command('act'); for (let frame = 0; frame < 41; frame++) h.players.step(.1, true, h.tick()); }
+        }
+        else if (scene.id === 'm1_club') {
+          for (let frame = 0; frame < 81; frame++) h.players.step(.1, true, h.tick());
+          h.command('act'); for (let frame = 0; frame < 61; frame++) h.players.step(.1, true, h.tick());
+          h.command('act'); for (let frame = 0; frame < 141; frame++) h.players.step(.1, true, h.tick());
         }
         else if (scene.id === 'm1_pills') for (let frame = 0; frame < 51; frame++) h.players.step(.1, true, h.tick());
         else if (scene.id === 'm1_download') for (let frame = 0; frame < 101; frame++) h.players.step(.1, true, h.tick());

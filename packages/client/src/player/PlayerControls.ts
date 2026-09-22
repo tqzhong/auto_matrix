@@ -57,9 +57,11 @@ export class PlayerControls {
   phone?: OfficePhone;
   private firing = false;
   private lastShot = -1000;
+  private readonly defaultNear: number;
 
   constructor(private canvas: HTMLCanvasElement, private camera: THREE.PerspectiveCamera,
     private send: (input: PlayerInput) => void, private action: (kind: string) => void) {
+    this.defaultNear = camera.near;
     window.addEventListener('keydown', this.keyDown);
     window.addEventListener('keyup', this.keyUp);
     window.addEventListener('blur', this.blur);
@@ -83,12 +85,12 @@ export class PlayerControls {
     this.vy = 0; this.planar = { x: 0, z: 0 }; this.authoritative = state; this.firstPerson = false; this.enabled = true;
     this.keys.clear(); this.lastSent = 0; this.sequence = 0;
     this.firing = false; this.lastShot = -1000;
-    this.camera.fov = 57; this.camera.updateProjectionMatrix();
+    this.camera.near = this.defaultNear; this.camera.fov = 57; this.camera.updateProjectionMatrix();
     this.onViewChange?.(false);
   }
   release(): void {
     this.id = null; this.keys.clear(); this.enabled = true; this.firing = false; this.firearm = false; this.ride = undefined; this.climbing = false; this.performing = false; this.mirror = 0; this.spoon = undefined; this.phone = undefined; this.welcomeShot = undefined;
-    this.camera.fov = 48; this.camera.updateProjectionMatrix();
+    this.camera.near = this.defaultNear; this.camera.fov = 48; this.camera.updateProjectionMatrix();
     if (document.pointerLockElement === this.canvas) document.exitPointerLock();
   }
   setEnabled(enabled: boolean): void {
@@ -254,6 +256,8 @@ export class PlayerControls {
     if (state.currentAction?.parameters.workday) this.performing = true;
     if (this.motion.contact && !state.currentAction?.parameters.contact) this.performing = false;
     if (state.currentAction?.parameters.contact) this.performing = true;
+    if (this.motion.club && !state.currentAction?.parameters.club) this.performing = false;
+    if (state.currentAction?.parameters.club) this.performing = true;
     if (this.wasPerforming && !this.performing) this.yaw = this.movementYaw = this.facing;
     this.wasPerforming = this.performing;
     this.motion.armed = this.firearm;
@@ -265,6 +269,7 @@ export class PlayerControls {
     this.motion.training = state.currentAction?.parameters.training as MotionInput['training'];
     this.motion.workday = state.currentAction?.parameters.workday as MotionInput['workday'];
     this.motion.contact = state.currentAction?.parameters.contact as MotionInput['contact'];
+    this.motion.club = state.currentAction?.parameters.club as MotionInput['club'];
     this.motion.mirror = this.mirror;
     this.motion.spoon = this.spoon;
     this.motion.phone = this.phone;
@@ -289,12 +294,14 @@ export class PlayerControls {
     if (this.motion.training && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
     if (this.motion.workday && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
     if (this.motion.contact && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
+    if (this.motion.club && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
     this.motion.officeShirt = officeClothing(state.id, state.currentLocation);
     if (this.motion.interrogation && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
     if (this.motion.pills && (!this.firstPerson || this.motion.pills.phase === 'offering' || this.motion.pills.elapsed > 9.6)) this.yaw = this.movementYaw = state.rotation;
     this.motion.vase = state.currentAction?.parameters.vase as number | undefined;
     this.motion.realWorld = !state.isInMatrix && state.currentLocation !== 'film_real_desert';
-    this.motion.glasses = state.id !== 'neo' || state.isAwakened && state.currentLocation !== 'film_oracle_home';
+    this.motion.clubClothes = state.currentLocation === 'film_white_rabbit_club';
+    this.motion.glasses = !this.motion.clubClothes && (state.id !== 'neo' || state.isAwakened && state.currentLocation !== 'film_oracle_home');
     this.motion.climbing = this.climbing ? Number(this.keys.has('KeyW') || this.keys.has('ArrowUp')) - Number(this.keys.has('KeyS') || this.keys.has('ArrowDown')) : undefined;
     if (this.firing) this.requestShot();
     const now = performance.now();
@@ -360,6 +367,7 @@ export class PlayerControls {
     const trainingWide = !this.firstPerson && Boolean(this.motion.training && (this.motion.training.kind === 'jump' || this.motion.training.kind === 'red_dress' && this.motion.training.elapsed < 4.8));
     const officeWide = !this.firstPerson && this.motion.workday && this.motion.workday.phase !== 'signing';
     this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, interviewWide || welcomeWide || revealWide || trainingWide || officeWide ? 58 : this.motion.inspecting ? 42 : this.firstPerson ? sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
+    this.camera.near = this.firstPerson && this.motion.club ? .08 : this.defaultNear;
     this.camera.updateProjectionMatrix();
     this.cameraStep += this.motion.speed * delta;
     const target = new THREE.Vector3(this.position.x, this.position.y + (this.firstPerson ? 2.99 : 2.05) - (this.motion.pills ? .9 : 0) - (this.motion.reveal?.kind === 'construct' ? .62 : 0) - (this.motion.crouching ? 1.1 : 0), this.position.z);
@@ -380,7 +388,16 @@ export class PlayerControls {
     const verticalTarget = THREE.MathUtils.lerp(this.cameraTarget.y, target.y, 1 - Math.exp(-8 * delta));
     this.cameraTarget.lerp(target, 1 - Math.exp(-22 * delta)); this.cameraTarget.y = verticalTarget;
     const spoon = this.motion.inspecting && group.getObjectByName('held-spoon');
-    if (this.motion.contact && !this.firstPerson) {
+    if (this.motion.club && !this.firstPerson) {
+      const center = FILM_SETS.film_white_rabbit_club.center; const origin = new THREE.Vector3(center.x, center.y - 1, center.z);
+      const intimate = ['whisper', 'question', 'reply'].includes(this.motion.club.phase);
+      const close = intimate ? THREE.MathUtils.smoothstep(this.motion.club.phase === 'whisper' ? this.motion.club.elapsed : 2, 0, 2) : 0;
+      const portrait = this.camera.aspect < 1;
+      const ideal = new THREE.Vector3(portrait ? 12.8 : 11.5, 4.8, -1.2).lerp(new THREE.Vector3(portrait ? 3.5 : 4.2, 4.5, portrait ? -1.5 : -2.2), close).add(origin);
+      const focus = new THREE.Vector3(6.7, 3.5, -5.2).lerp(new THREE.Vector3(6.65, 3.92, -4.55), close).add(origin);
+      if (resetCamera) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-7 * delta));
+      this.camera.lookAt(focus);
+    } else if (this.motion.contact && !this.firstPerson) {
       const phase = this.motion.contact.phase; const center = FILM_SETS.film_anderson_flat.center;
       const computer = ['signal', 'reply', 'knocking'].includes(phase); const book = phase === 'retrieving';
       const origin = new THREE.Vector3(center.x, center.y - 1, center.z);

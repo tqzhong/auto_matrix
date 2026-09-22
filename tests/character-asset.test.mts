@@ -34,6 +34,25 @@ async function loadGeometry(id = 'neo') {
   return new GLTFLoader().parseAsync(result.buffer.slice(result.byteOffset, result.byteOffset + result.byteLength), '');
 }
 
+test('Trinity’s fitted outfit has no open waist during the club conversation', async () => {
+  const asset = await loadGeometry('trinity'); const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: () => Promise<typeof asset> }).load = async () => asset;
+  const rig = (await models.create('trinity'))!;
+  try {
+    for (const phase of ['introduction', 'whisper', 'question'] as const) {
+      const motion = newMotion(); const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, glasses: false, clubClothes: true,
+        club: { role: 'trinity' as const, phase, elapsed: 3 } };
+      models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
+      const clothes = rig.wardrobe.filter(part => part.mesh.visible && part.mesh instanceof THREE.SkinnedMesh && /Coat|Trousers/.test((part.mesh.material as THREE.Material).name)).map(part => part.mesh as THREE.SkinnedMesh);
+      clothes.forEach(mesh => { mesh.skeleton.update(); mesh.computeBoundingSphere(); });
+      for (const x of [-.16, 0, .16]) for (const y of [2.38, 2.46, 2.54, 2.62]) {
+        const ray = new THREE.Raycaster(new THREE.Vector3(x, y, 2), new THREE.Vector3(0, 0, -1), 0, 2);
+        assert.ok(ray.intersectObjects(clothes).length > 0, `open waist during ${phase} at ${x}, ${y}`);
+      }
+    }
+  } finally { models.dispose(); }
+});
+
 test('the office rigs reach the keyboard, clipboard and the signature on the delivered form', async () => {
   const [neo, smith, office] = await Promise.all([loadGeometry(), loadGeometry('smith'), loadGeometry('neo-office')]);
   const models = new HeroModels(new THREE.Texture(), new THREE.Texture());

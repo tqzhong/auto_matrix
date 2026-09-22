@@ -4,10 +4,18 @@ import { meetingLocked } from '@auto_matrix/shared';
 import { filmPosition, HOTEL_DOOR_PROGRESS } from '@auto_matrix/shared';
 import { workdayLocked } from '@auto_matrix/shared';
 import { apartmentLocked } from '@auto_matrix/shared';
+import { clubLocked } from '@auto_matrix/shared';
 
 const button = (target: string, label: string, disabled = false) => `<button data-action="life" data-target="film:${target}" ${disabled ? 'disabled' : ''}>${label}</button>`;
 export function renderFilmJourney(player: AgentState, sandbox: SandboxState): string {
   const life = sandbox.neoLife!; const journey = life.journey!; const scene = FILM_SCENE_BY_ID[journey.scene];
+  if (!journey.visiting && journey.scene === 'm1_club' && journey.club) {
+    const phase = journey.club.phase; const step = scene.steps[journey.step];
+    const current = player.id === journey.actor;
+    const close = current && (!step || distance(player.position, filmStepPosition(scene, step)) <= 4);
+    const active = phase === 'ready' || phase === 'listen';
+    return `<div class="film-journal film-contact"><header class="film-heading"><span>THE MATRIX / 01</span><h3>在人群中低声交谈</h3></header><article class="film-now"><div><h3>${step?.label ?? '明天仍然要上班'}</h3><p>${journey.lastText}</p><div class="film-controls">${!current ? button('resume', '继续 Neo 的剧情视角') : phase === 'question' ? filmReflections(scene.id).map(choice => button(`reflect:${choice.id}`, choice.label, !close)).join('') : active ? button('act', phase === 'ready' ? '回应 Trinity · G' : '追问她为什么来找我 · G', !close) : !step ? button('next', '离开夜店，继续第二天 · G') : clubLocked(journey) ? '<p>合上手记观看。V 可以切换视角，暂停和重新载入会保留交谈进度。</p>' : '<p>合上手记，用 WASD 穿过人群。你可以停留观察，走到目标旁再继续。</p>'}</div><details><summary>查看这次相遇的进度</summary><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></details></div></article></div>`;
+  }
   if (!journey.visiting && journey.scene === 'm1_wake_up' && journey.contact) {
     const phase = journey.contact.phase; const step = scene.steps[journey.step];
     const ready = !apartmentLocked(journey) || phase === 'reply';

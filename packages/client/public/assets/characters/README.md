@@ -12,6 +12,8 @@ Rhineheart reuses Smith's rig with different suit/hair colors and no glasses. Th
 
 The apartment visitors use separate `choi.glb` and `dujour.glb` rigs built from the same pinned CC0 MakeHuman assets. Their height/head morphs and unprojected skin differ from the principal cast; Dujour's sleeveless top exposes the shoulder for the runtime white-rabbit tattoo. The saved apartment timeline drives knocking, disk/cash exchange and turning toward the clue. These are provisional supporting models, not likenesses of their actors. Clothes, hair, expressions and hand contact still need visual refinement.
 
+The club uses `club-male.glb` and `club-female.glb`, lighter versions of those two CC0 rigs without surface subdivision. Sixteen dancers share their geometry and textures, with separate bone poses and clothing colors. The assets reuse `choi-skin.png`, `dujour-skin.png`, `brown_eye.png` and `short04-hair.png`; there are no new texture downloads at runtime. These extras are decorative and currently have no personal interaction or collision. Trinity's finished jacket has a separate waist correction: the hem overlaps the trousers and follows her pelvis during the lean. Her head, textures and other meshes are preserved. Her night-club outfit is still the existing long-sleeved costume, not the film's sleeveless outfit.
+
 The bridge/car encounter reuses the office torso beneath Neo's lifted black shirt and hides his outer coat panels while seated. Switch uses Trinity's rig with blond hair; Apoc uses Neo's rig. These two support characters are temporary stand-ins, with no new actor likeness assets. Their seated steering/guarding poses and Trinity's scanner contact are driven by the saved meeting timeline. A rest-space skin mask prevents shoulder skin from protruding through the leather outfit during the lean.
 
 These are approximate film likenesses, not actor scans or complete photogrammetric reconstructions. The reference images are generated interpretations. Profile constraints cover the center of the face; ears, back of the head and hair volume still come from the anatomical base assets. Animation is driven by the existing motion solver, with no facial performance capture or lip sync. Geometric alignment scores do not establish perceptual likeness or film-quality fidelity.
@@ -67,6 +69,19 @@ python3 scripts/build-characters.py --character dujour --output output/character
 ```
 
 Copy their GLBs, the two named skin maps and `brown_eye.png` together. Both also reference the existing `short04-hair.png`. The builder's default still rebuilds only the four principal characters.
+
+Build only the lighter club extras from the same cached sources, without Blender:
+
+```sh
+python3 scripts/build-club-crowd.py
+```
+
+After rebuilding the finished Trinity, apply the waist correction once, into staging. The script rejects an already-corrected input; review and copy only the resulting GLB:
+
+```sh
+python3 scripts/fit-trinity-waist.py --output output/characters/club-staging/trinity.glb
+cp output/characters/club-staging/trinity.glb packages/client/public/assets/characters/trinity.glb
+```
 
 The first command builds the meshes from the pinned sources, applies distinct morphs, subdivides anatomical surfaces, trims garment openings, fits hair outside the scalp and binds all four skeletons. `--fetch` downloads and verifies the 268 MB authoring pack into a temporary cache; later builds can omit it. `--source /path/to/cache` selects a cache. `--character neo` (or another ID) rebuilds one raw model for inspection.
 

@@ -23,6 +23,8 @@ import { LafayetteApproachRenderer } from './LafayetteApproachRenderer.js';
 import { LAFAYETTE } from '@auto_matrix/shared';
 import { ApartmentSetRenderer } from './ApartmentSetRenderer.js';
 import { apartmentLocked } from '@auto_matrix/shared';
+import { clubLocked } from '@auto_matrix/shared';
+import { ClubSetRenderer } from './ClubSetRenderer.js';
 
 const outdoor = new Set(['rooftop', 'plaza', 'bridge', 'street', 'courtyard', 'freeway', 'machine', 'rain', 'garden', 'desert', 'pods']);
 const palettes = {
@@ -60,6 +62,7 @@ export class FilmSetRenderer {
   private lobby?: LobbySetRenderer;
   private office?: OfficeSetRenderer;
   private apartment?: ApartmentSetRenderer;
+  private club?: ClubSetRenderer;
   private freeway?: FreewaySetRenderer;
   private pods?: PodSetRenderer;
   private neb?: NebDeckRenderer;
@@ -98,6 +101,7 @@ export class FilmSetRenderer {
         this.root.position.set(set.center.x, set.center.y - 1, set.center.z);
         if (['film_metacortex_floor', 'film_office_ledge'].includes(set.id)) this.office = new OfficeSetRenderer(this.root, set);
         else if (set.id === 'film_anderson_flat') this.apartment = new ApartmentSetRenderer(this.root);
+        else if (set.id === 'film_white_rabbit_club') { this.club = new ClubSetRenderer(this.root); void this.club.ready.catch(error => console.error('夜店人群加载失败', error)); }
         else if (set.architecture === 'lobby') this.lobby = new LobbySetRenderer(this.root, set);
         else if (set.architecture === 'freeway') this.freeway = new FreewaySetRenderer(this.root, set);
         else if (set.architecture === 'pods') this.pods = new PodSetRenderer(this.root);
@@ -144,6 +148,7 @@ export class FilmSetRenderer {
     }
     this.office?.update(journey, cameraPosition, playerPosition, workday);
     this.apartment?.update(journey);
+    this.club?.update(elapsed);
     this.freeway?.update(journey, elapsed, playerPosition);
     this.pods?.update(journey, elapsed);
     this.neb?.update(journey, elapsed);
@@ -164,6 +169,7 @@ export class FilmSetRenderer {
     if (journey && trainingLocked(journey)) this.marker.visible = false;
     if (journey && workdayLocked(journey)) this.marker.visible = false;
     if (journey && apartmentLocked(journey)) this.marker.visible = false;
+    if (journey && clubLocked(journey)) this.marker.visible = false;
     if (journey && phoneLocked(journey)) this.marker.visible = false;
     if (journey && windowOpening(journey)) this.marker.visible = false;
     if (journey?.scene === 'm1_dejavu' && journey.step === 0 && journey.ambush) this.marker.visible = false;
@@ -190,6 +196,7 @@ export class FilmSetRenderer {
     }
     if (this.office) return { color: 0xe8e8d7, ambient: .65, sun: .3 };
     if (this.apartment) { fog.density = .001; this.scene.environmentIntensity = .42; return { color: 0xcbd2b8, ambient: .52, sun: .06 }; }
+    if (this.club) { fog.density = .005; fog.color.setHex(0x111913); this.scene.environmentIntensity = .28; return { color: 0xc1c8ac, ambient: .38, sun: .025 }; }
     if (this.interrogation) { fog.density = .001; this.scene.environmentIntensity = .38; return { color: 0xdce4ce, ambient: .48, sun: .08 }; }
     if (this.meeting) { fog.density = .007; fog.color.setHex(0x111b1d); (this.scene.background as THREE.Color).copy(fog.color); this.scene.environmentIntensity = .7; return { color: 0xb8cdc6, ambient: .62, sun: .15 }; }
     if (this.hotel) { fog.density = .001; this.scene.environmentIntensity = .42; return { color: 0xd4d1b2, ambient: .62, sun: .12 }; }
@@ -872,6 +879,7 @@ export class FilmSetRenderer {
     for (const geometry of this.geometries) if (!live.has(geometry)) { geometry.dispose(); this.geometries.delete(geometry); }
   }
   private clear(): void {
+    this.club?.dispose(); this.club = undefined;
     this.apartment?.dispose(); this.apartment = undefined;
     this.approach?.renderer.dispose(); this.approach = undefined;
     this.hotel?.dispose(); this.hotel = undefined;

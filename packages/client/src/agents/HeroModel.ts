@@ -12,6 +12,7 @@ import { LafayetteKnockPerformance } from './LafayetteKnockPerformance.js';
 import { RecoveryPerformance } from './RecoveryPerformance.js';
 import { OfficeWorkdayPerformance } from './OfficeWorkdayPerformance.js';
 import { ApartmentPerformance } from './ApartmentPerformance.js';
+import { clubCloseness } from '@auto_matrix/shared';
 
 type Pose = ReturnType<typeof advanceMotion>;
 interface CoatPanel { mesh: THREE.Mesh; rest: Float32Array; velocity: Float32Array }
@@ -355,7 +356,7 @@ export class HeroModels {
     const officeShirt = input.officeShirt || rig.officeRole === 'courier';
     const pod = input.performance && !['touch', 'connect'].includes(input.performance);
     for (const part of rig.wardrobe) {
-      part.mesh.visible = !(part.outer && (input.realWorld || input.pills?.role === 'neo' || input.meeting) || part.hair && pod);
+      part.mesh.visible = !(part.outer && (input.realWorld || input.clubClothes || input.pills?.role === 'neo' || input.meeting) || part.hair && pod);
       if (part.mesh.userData.office) part.mesh.visible = Boolean(officeShirt || input.meeting?.role === 'neo' && (part.mesh.material as THREE.Material).name === 'Office skin');
       else if (officeShirt && (part.outer || /Tailored.coat.upper|Black.crew.neck/i.test(part.mesh.name))) part.mesh.visible = false;
       const material = part.mesh.material as THREE.MeshStandardMaterial;
@@ -489,6 +490,19 @@ export class HeroModels {
           bone('shoulder_R').rotation.z -= .18 * reveal; bone('elbow_R').rotation.x = THREE.MathUtils.lerp(bone('elbow_R').rotation.x, -.34, reveal);
           bone('shoulder_L').rotation.x -= .34 * reveal; bone('elbow_L').rotation.x -= .5 * reveal;
         }
+      }
+    }
+    if (input.club) {
+      const close = clubCloseness(input.club); const { role, phase, elapsed: t } = input.club;
+      if (role === 'neo') {
+        bone('head').rotation.y += close * .38; bone('head').rotation.x += close * .08;
+        bone('chest').rotation.y += close * .08;
+      } else if (!['crowd', 'approaching', 'departing', 'done'].includes(phase)) {
+        bone('spine').rotation.x += close * .07; bone('chest').rotation.x += close * .1;
+        bone('head').rotation.y += close * .23; bone('head').rotation.x -= close * .08;
+        const emphasis = ['introduction', 'reply'].includes(phase) ? Math.sin(Math.min(1, t / 6) * Math.PI) : 0;
+        bone('head').rotation.x += Math.sin(t * 2) * .025 * emphasis;
+        bone('shoulder_R').rotation.x -= .18 * emphasis; bone('elbow_R').rotation.x -= .23 * emphasis;
       }
     }
     rig.root.updateWorldMatrix(true, true);

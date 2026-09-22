@@ -7,6 +7,7 @@ import { OFFICE_CONTACT, OFFICE_WINDOW, OFFICE_LADDER } from './office.js';
 import { INTERROGATION_ROOM } from './interrogation.js';
 import { MEETING_CAR, MEETING_DESTINATION } from './meeting.js';
 import { APARTMENT } from './apartment.js';
+import { CLUB } from './club.js';
 
 export type FilmCue = 'night' | 'contact' | 'office' | 'club' | 'awakening' | 'training' | 'oracle' | 'infiltration' | 'combat' | 'the_one' | 'zion' | 'swarm' | 'restaurant' | 'chateau' | 'chase' | 'source' | 'mobil' | 'siege' | 'bane' | 'farewell' | 'final' | 'dawn';
 export interface FilmStep {
@@ -31,6 +32,7 @@ export interface FilmJourney {
   training?: import('./training.js').TrainingPerformance;
   workday?: import('./office-workday.js').OfficeWorkday;
   contact?: import('./apartment.js').ApartmentContact;
+  club?: import('./club.js').ClubEncounter;
   dojo?: import('./training.js').DojoLesson;
   oracle?: { spoon?: number; vase?: number };
   pills?: import('./pills.js').PillEncounter;
@@ -59,7 +61,12 @@ export const FILM_SCENES: FilmScene[] = [
     use('核对 Dujour 左肩的白兔', '线索与现实发生了交叉。', APARTMENT.door.x, APARTMENT.door.z),
     think('决定是否接受邀请', '你可以去夜店亲自核对，也可以保留疑问，继续生活。', APARTMENT.door.x, APARTMENT.door.z),
   ], ['choi', 'dujour']),
-  scene('m1_club', 1, 'white_rabbit_club', 'neo', '白兔与 Trinity', 'contact', 'club', '地下俱乐部里，Trinity 知道你一直在寻找什么。', [walk('穿过舞池', 7, -4), think('听她谈起那个问题', '你可以检视自己的怀疑、对他人的信任，或追问真相将影响谁。')], ['trinity']),
+  scene('m1_club', 1, 'white_rabbit_club', 'neo', '白兔与 Trinity', 'contact', 'club', '人群和音乐掩住了交谈。一个陌生人知道 Neo 没有说出口的问题。', [
+    walk('穿过舞池，到拱墙旁等候', CLUB.neo.x, CLUB.neo.z),
+    use('回应 Trinity，听她的警告', '陌生人知道你的网名和疑问。', CLUB.neo.x, CLUB.neo.z),
+    think('回应一个知道太多的陌生人', '她知道秘密，并不自动证明她值得信任。', CLUB.neo.x, CLUB.neo.z),
+    walk('亲自离开夜店，迎接第二天', CLUB.exit.x, CLUB.exit.z),
+  ], ['trinity']),
   scene('m1_boss', 1, 'metacortex_floor', 'neo', '迟到的员工', 'office_call', 'office', '第二天的公司仍然井然有序。主管提醒 Anderson 遵守规则。', [use('进入主管办公室', '规章要求你按时出现。平常的一天开始显露出另一种压力。', -17, 27.4), use('回隔间签收快递，再取出手机', '来电者是 Morpheus。特工已经进入办公区，接下来必须按他的指引离开工位。', OFFICE_CONTACT.x, OFFICE_CONTACT.z)], ['rhineheart', 'courier']),
   scene('m1_office_escape', 1, 'metacortex_floor', 'neo', '隔间之间', 'office_call', 'infiltration', '手机保持接通。按住 Z 降低身体、放轻脚步，借隔间挡住视线；奔跑会惊动附近特工。被捕也会继续故事。', [walk('绕到左侧隔间后', -16, 11), walk('沿隔间向北移动', -16, -13), use('打开左前方外窗', '外窗已经推开。脚下的街道远在楼底，窗外的维修窄台通向脚手架。按 G 前往窄台。', OFFICE_WINDOW.approachX, OFFICE_WINDOW.approachZ, OFFICE_WINDOW.seconds)]),
   scene('m1_ledge', 1, 'office_ledge', 'neo', '窗外的恐惧', 'office_call', 'infiltration', '脚下是真实的高空。沿窄台走到维修架，或选择退回办公室；两种结果都会继续故事。', [walk('沿幕墙走到脚手架', 0, OFFICE_LADDER.z), think('决定是否继续下降', '原片中 Neo 在这里退缩。游戏允许你完成逃脱，或者回到被捕后的路线。', 0, OFFICE_LADDER.z)]),

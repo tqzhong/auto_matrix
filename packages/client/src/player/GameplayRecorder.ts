@@ -15,6 +15,8 @@ export class GameplayRecorder {
   private failed = false;
   private markers: { seconds: number; title: string }[] = [];
   private frameAt = 0;
+  private renderAt = 0;
+  private frameTimes: number[] = [];
   private frames = 0;
   private bytes = 0;
   private audio = false;
@@ -52,7 +54,7 @@ export class GameplayRecorder {
   private async start(): Promise<void> {
     this.canvas.width = window.innerWidth; this.canvas.height = window.innerHeight;
     this.id = `neo-${new Date().toISOString().replace(/[:.]/g, '-')}`;
-    this.saved = Promise.resolve(); this.failed = false; this.markers = []; this.frames = 0; this.bytes = 0;
+    this.saved = Promise.resolve(); this.failed = false; this.markers = []; this.frames = 0; this.bytes = 0; this.renderAt = 0; this.frameTimes = [];
     const stream = this.canvas.captureStream(30);
     const audio = await this.engine.audio.recordingAudio(); this.audio = Boolean(audio);
     if (audio) for (const track of audio.getAudioTracks()) stream.addTrack(track.clone());
@@ -69,6 +71,10 @@ export class GameplayRecorder {
     this.startedAt = performance.now(); this.frameAt = 0;
     this.engine.onRendered = () => {
       const now = performance.now();
+      // Measure every rendered frame before the recorder's 30 fps cap. These
+      // timings include capture overhead and are not an unrecorded benchmark.
+      if (this.renderAt) this.frameTimes.push(now - this.renderAt);
+      this.renderAt = now;
       if (now - this.frameAt < 1000 / 30) return;
       this.frameAt = now;
       this.context.drawImage(this.engine.renderer.domElement, 0, 0, this.canvas.width, this.canvas.height);
@@ -125,7 +131,9 @@ export class GameplayRecorder {
     if (this.failed) return;
     if (!this.bytes) { this.error(`未产生视频数据（${this.frames} 帧）`); return; }
     try {
-      await this.write('json', JSON.stringify({ file: `${this.id}.webm`, duration, width: this.canvas.width, height: this.canvas.height, audio: this.audio, frames: this.frames, markers: this.markers }, null, 2));
+      const times = [...this.frameTimes].sort((a, b) => a - b);
+      const rendering = times.length ? { frames: times.length + 1, fps: 1000 * times.length / times.reduce((a, b) => a + b, 0), p95FrameMs: times[Math.ceil(times.length * .95) - 1], includesRecordingOverhead: true } : undefined;
+      await this.write('json', JSON.stringify({ file: `${this.id}.webm`, duration, width: this.canvas.width, height: this.canvas.height, audio: this.audio, frames: this.frames, rendering, markers: this.markers }, null, 2));
       this.status(`已保存 ${Math.round(duration)} 秒 · output/gameplay/neo-longplay-2026-09-20`);
     } catch (error) { this.error(error); }
   }

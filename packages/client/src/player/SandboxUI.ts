@@ -7,6 +7,7 @@ import { meetingLocked, MEETING_TIMING } from '@auto_matrix/shared';
 import { filmPosition, HOTEL_DOOR_PROGRESS } from '@auto_matrix/shared';
 import { workdayLocked } from '@auto_matrix/shared';
 import { apartmentLocked } from '@auto_matrix/shared';
+import { clubLocked } from '@auto_matrix/shared';
 
 const escape = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const WEATHER = { clear: '晴朗', rain: '雨', code_storm: '代码风暴' };
@@ -194,6 +195,16 @@ export class SandboxUI {
       this.el('film-sequence-hint').textContent = waiting ? 'G 握住 Morpheus 的手 · 等待不会替你回应' : '鼠标观察 · V 切换视角 · 暂停或重连会保留动作';
       this.el('sandbox-interact').classList.toggle('hidden', !waiting); this.el('sandbox-nearby').textContent = '握住 Morpheus 的手';
       this.el('sandbox-waypoint').textContent = '';
+      return;
+    }
+    if (!journey.visiting && journey.scene === 'm1_club' && journey.club) {
+      const phase = journey.club.phase; const active = phase === 'ready' || phase === 'listen';
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = phase === 'question' ? 'J 回应 Trinity · 三种问题会留下不同手记' : active ? 'G 回应 · V 切换视角' : clubLocked(journey) ? 'V 切换视角 · 暂停和重新载入会保留交谈' : 'WASD 穿过人群 · J 手记';
+      this.el('sandbox-interact').classList.toggle('hidden', !active && Boolean(step));
+      this.el('sandbox-nearby').textContent = phase === 'listen' ? '追问她为什么来找你' : step ? '回应 Trinity' : '继续第二天的生活';
+      if (clubLocked(journey)) this.el('sandbox-waypoint').textContent = '';
+      document.getElementById('game-objective-copy')!.textContent = phase === 'question' ? 'J 回应 Trinity 的警告' : step?.label ?? 'G 离开夜店，继续第二天';
       return;
     }
     if (!journey.visiting && journey.scene === 'm1_wake_up' && journey.contact) {

@@ -83,6 +83,8 @@ export class GameAudio {
   }
   update(scene: MusicScene): void {
     this.running = scene.running; this.playing = Boolean(scene.player);
+    const club = scene.player?.currentAction?.parameters.club;
+    if (club) this.reading.add('club-conversation'); else this.reading.delete('club-conversation');
     this.sceneCue = this.director.update(scene, performance.now());
     this.select(this.preview ?? this.sceneCue);
     this.mix(); this.ensureMusic();

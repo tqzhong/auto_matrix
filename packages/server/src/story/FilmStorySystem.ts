@@ -9,6 +9,7 @@ import { MEETING_CAR, MEETING_CAST, MEETING_TIMING, meetingLocked, meetingRoot, 
 import { LAFAYETTE, LAFAYETTE_WELCOME, LAFAYETTE_KNOCK_SECONDS, HOTEL_ROUTE_LENGTH, HOTEL_DOOR_PROGRESS, hotelRoutePose, hotelRouteProgress, lafayetteKnocking, lafayetteKnockRoot, lafayetteWelcomeLocked, lafayetteWelcomeRoot, filmSetAt } from '@auto_matrix/shared';
 import { OFFICE_WORKDAY, OFFICE_DELIVERY_SECONDS, officeCourierRoot, officeRecipientRoot, workdayLocked, workdayText } from '@auto_matrix/shared';
 import { APARTMENT, apartmentAfter, apartmentDoor, apartmentLocked, apartmentText, lifeRoomCenter, type ApartmentPhase } from '@auto_matrix/shared';
+import { CLUB, clubLocked, clubRoot, clubText, type ClubPhase } from '@auto_matrix/shared';
 
 export class FilmStorySystem {
   // The controller owns socket sessions. It can refuse a handoff occupied by another player.
@@ -20,7 +21,59 @@ export class FilmStorySystem {
   get scene(): FilmScene | undefined { return this.state && FILM_SCENE_BY_ID[this.state.scene]; }
   get step(): FilmStep | undefined { return this.scene?.steps[this.state!.step]; }
   controls(agent: AgentState): boolean { return Boolean(this.state && this.state.actor === agent.id); }
-  performing(agent: AgentState): boolean { return this.controls(agent) && (apartmentLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || oracleActing(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
+  performing(agent: AgentState): boolean { return this.controls(agent) && (clubLocked(this.state!) || apartmentLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || oracleActing(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
+  clubFrame(agent: AgentState, dt: number, tick: number): void {
+    const state = this.state;
+    if (state?.scene !== 'm1_club' || state.visiting || !this.controls(agent)) return;
+    if (!state.club) {
+      const complete = state.completed.includes(state.scene);
+      state.club = { phase: complete ? 'done' : state.step ? 'question' : 'crowd', elapsed: 0 };
+      state.step = complete ? this.scene!.steps.length : state.step ? 2 : 0; delete state.started;
+    }
+    const club = state.club; const trinity = this.world.agents.get('trinity')!;
+    if (trinity.controller) { state.lastText = 'Trinity 正由另一位玩家控制，夜店交谈停在当前进度。'; return; }
+    if (club.phase === 'crowd' && state.step === 1 && dt > 0) { club.phase = 'approaching'; club.elapsed = 0; }
+    const durations: Partial<Record<ClubPhase, number>> = { approaching: CLUB.approach, introduction: CLUB.introduction, whisper: CLUB.whisper, reply: CLUB.reply, departing: CLUB.departure };
+    const duration = durations[club.phase];
+    if (duration) club.elapsed = Math.min(duration, club.elapsed + Math.max(0, Math.min(.1, dt)));
+    if (duration && club.elapsed >= duration) {
+      const previous = club.phase;
+      club.phase = ({ approaching: 'ready', introduction: 'listen', whisper: 'question', reply: 'departing', departing: 'done' } as Partial<Record<ClubPhase, ClubPhase>>)[previous]!;
+      club.elapsed = 0;
+      if (previous === 'whisper' || previous === 'reply') this.advance(clubText(club), agent, tick);
+      if (previous === 'reply') { agent.currentAction = null; agent.velocity = { x: 0, y: 0, z: 0 }; }
+    }
+    for (const role of ['neo', 'trinity'] as const) {
+      if (role === 'neo' && !clubLocked(state)) continue;
+      const actor = this.world.agents.get(role)!; const before = { ...actor.position }; const pose = clubRoot(club, role);
+      this.place(actor, this.scene!, filmPosition(this.scene!.set, pose.x, pose.z)); actor.rotation = pose.yaw;
+      actor.velocity = dt ? { x: (actor.position.x - before.x) / dt, y: 0, z: (actor.position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
+      actor.currentAction = { type: 'idle', parameters: { resolved: true, player: role === 'neo', club: { ...club, role } }, startedAt: tick, duration: 1, progress: 0 };
+    }
+    if (clubLocked(state)) state.checkpoint = { ...agent.position };
+    state.lastText = club.phase === 'reply' ? filmReflections('m1_club').find(choice => choice.id === club.answer)!.response : clubText(club);
+  }
+  private clubAct(agent: AgentState, target: string, tick: number): string {
+    const state = this.state!; this.clubFrame(agent, 0, tick); const club = state.club!;
+    if (this.world.agents.get('trinity')!.controller) return state.lastText;
+    if (!this.near(agent, this.step!)) return '走近拱墙旁的 Trinity，再继续这次交谈。';
+    if (target === 'act' && club.phase === 'ready') {
+      const center = FILM_SETS[this.scene!.set].center;
+      club.approach = { x: agent.position.x - center.x, z: agent.position.z - center.z, yaw: agent.rotation };
+      club.phase = 'introduction'; club.elapsed = 0;
+    } else if (target === 'act' && club.phase === 'listen') { club.phase = 'whisper'; club.elapsed = 0; }
+    else if (target.startsWith('reflect:') && club.phase === 'question') {
+      const choice = filmReflections('m1_club').find(choice => choice.id === target.slice(8));
+      if (!choice) return '请选择手记里的一个具体问题。';
+      const life = this.sandbox().neoLife!; const key = `${state.scene}:${state.step}`;
+      if (!state.reflections[key]) {
+        state.reflections[key] = choice.id; life.choices[key] = choice.id; life.philosophy[choice.id]++;
+        life.journal.unshift({ day: life.day, time: this.world.timeOfDay, title: `${this.scene!.title} · ${choice.label}`, text: choice.response });
+      }
+      club.answer = choice.id; club.phase = 'reply'; club.elapsed = 0;
+    }
+    this.clubFrame(agent, 0, tick); return state.lastText;
+  }
   apartmentFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
     if (state?.scene !== 'm1_wake_up' || state.visiting) {
@@ -682,6 +735,12 @@ export class FilmStorySystem {
       return `回访${FILM_SETS[visited.set].name}。J 可返回当前剧情，回访不会改写进度。`;
     }
     if (target === 'retry') {
+      if (state.scene === 'm1_club' && state.club) {
+        delete state.visiting; delete state.returnPosition;
+        agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
+        this.place(agent, this.scene, { ...state.checkpoint }); this.clubFrame(agent, 0, tick);
+        return '已接回夜店，保留交谈、人物位置和已经作出的回应。';
+      }
       if (state.scene === 'm1_wake_up' && state.contact) {
         delete state.visiting; delete state.returnPosition;
         agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
@@ -821,6 +880,7 @@ export class FilmStorySystem {
     const step = this.step;
     if (!step) return '本场景已完成。G 或 J 继续下一段。';
     if (state.scene === 'm1_wake_up') return this.apartmentAct(agent, target, tick);
+    if (state.scene === 'm1_club') return this.clubAct(agent, target, tick);
     if (interrogationLocked(state) && state.interrogation!.phase !== 'response') return '审讯正在进行。可以转动视角观察，暂停会保留当前进度。';
     if (target === 'escape:retreat' && state.scene === 'm1_ledge') {
       this.capture(agent, tick, '你退回办公室。特工将你带走；电话中的联系尚未结束。');
@@ -988,6 +1048,7 @@ export class FilmStorySystem {
     delete state.dojo;
     delete state.workday;
     delete state.contact;
+    delete state.club;
     this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== 'film:apartment:door');
     delete state.pills;
     delete state.interrogation;
@@ -1011,6 +1072,7 @@ export class FilmStorySystem {
     this.stageCast();
     this.reconcileCast();
     if (scene.id === 'm1_wake_up') { state.contact = { phase: 'idle', elapsed: 0 }; this.apartmentFrame(actor, 0, tick); }
+    if (scene.id === 'm1_club') { state.club = { phase: 'crowd', elapsed: 0 }; this.clubFrame(actor, 0, tick); }
     if (scene.id === 'm1_boss') { state.workday = { phase: 'waiting', elapsed: 0 }; this.workdayFrame(actor, 0, tick); }
     if (scene.id === 'm1_office_escape') this.office.start(tick);
     if (scene.id === 'm1_pod') this.awakeningFrame(actor, 0, tick);
