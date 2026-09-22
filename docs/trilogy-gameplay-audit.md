@@ -42,7 +42,7 @@ P0 验收必须亲自连续游玩两次：一次成功逃脱后赴约，一次�
 | 1-04 | 特工审讯、追踪器、醒来再次接电话 | **专用样板**：独立板墙/钢桌/档案/灯槽，白衬衫；可保存的四人审讯、明确拒绝、封嘴/控制双臂/按倒/植入；实录已返回公寓，追踪状态保留 | **P0**：封嘴表面、表情与抓握/推搡/步伐、服装；两名特工独立人物资产；成片空间比例及公寓再次来电的身体/电话演出 | `m1_interrogation`, `m1_wake_again` |
 | 1-05 | 桥下接头、车内检查与取虫、乘车赴约 | **专用样板**：同一车内四人座位/活动车门，明确去留与重新接头，扫描/泵杆/分节追踪器；按住 G 抽取、松开停留，完成才清除植入状态；阴性直接通过；约 57 秒实景乘车，弯道/轮胎/雨刷、车厢视角与车身同步，停稳后 Neo/Trinity 从不同后门下车、步行赴约；实录与四人暂停重连证据 | 接头尾随风险；车辆/桥梁/街道的细致还原、人物重心/接触/表情、收起道具过渡；Switch/Apoc 独立人物资产；P0 完整连续人工验收 | `m1_bridge`, `m1_bug` |
 | 1-06 | 见 Morpheus、红蓝药丸、镜面异变 | **专用样板**：Trinity 带路沿实体楼梯到十三层并等候玩家；Neo 明确按 G 后走近、弯肘、以拳峰三次敲门，完成后才开门；跨门后 Morpheus 窗前走近/伸手等待、明确握手，Trinity 绕家具从侧门离场，Morpheus 落座；全段均可保存且有局部实录；低层与上层实录、暂停重连、全路线控制器验证；可保存的双人递药/捏取/吞服与水杯交接，明确选择后延迟结算；红蓝实录；镜面触碰/反射/波纹及银色覆盖 | **P0**：楼梯/走廊/房间/壁炉尺度，脚掌与台阶接触，敲门指节/门板响应；人物面部/口型/服装、手指皮肤和起身重心，正式对白、水面/声音、觉醒连续转场；P0 完整连续人工验收 | `m1_pills`, `m1_mirror` |
-| 1-07 | 培养舱醒来、飞船救援与康复、构造体揭示真相 | 培养舱专用演出：机械臂断线、排放入水、主动抓住救援爪、吊起；康复/构造体仍为原型 | 专用虚弱身体模型与接口、现实服装、可探索飞船；废墟讲解应保留构造体展示语境 | `m1_pod`, `m1_recovery`, `m1_construct`, `m1_desert` |
+| 1-07 | 培养舱醒来、飞船救援与康复、构造体揭示真相 | **专用样板**：培养舱机械臂断线、排放入水、主动抓住救援爪与吊起；康复段由玩家主动开始，Neo 在实体医疗床上完成针疗、检查身体、坐起和站立，身体/颈后接口跨刷新保留；第三/第一人称使用专用床侧镜头与实际眼位；连续飞船甲板已有医疗区、针疗架、核心连接椅/CRT、餐桌、管线、船员布置和共享碰撞 | **P1**：更精细的虚弱身体/现实服装、船员扶持接触、面部/对白/声音与成片医疗区对照；构造体白场、电视/加载程序和“真实荒漠”废墟仍是通用原型，需完成专用揭示演出与可探索细节 | `m1_pod`, `m1_recovery`, `m1_construct`, `m1_desert` |
 | 1-08 | 功夫下载、Morpheus 对练、跳楼训练、红衣女子 | 本人非致命对练、起手提示与连招；真实跨楼尝试/失败恢复 | 对招教学和更丰富招式、注意力测试、路人变特工；能力分阶段解锁 | `m1_download`, `m1_dojo`, `m1_jump`, `m1_red_dress` |
 | 1-09 | 哨兵靠近、飞船生活、Cypher 动摇与背叛交易 | 原型：等待、交互与反思 | 船内日常关系、静默/EMP 的风险；背叛伏笔与可选旁观场景，避免让 Neo 提前知道秘密交易 | `m1_sentinels`, `m1_cypher_console`, `m1_steak`, `m1_meal` |
 | 1-10 | 勺子与先知第一次会面 | 持续专注控制勺子形变、手持近景；花瓶跌落/碎片与存档；反思引用花瓶事件；厨房专用家具/材质与碰撞 | 完整先知模型、对白和表情表演、接触细节；预言影响后续任务 | `m1_spoon`, `m1_oracle` |
@@ -140,6 +140,7 @@ P0 验收必须亲自连续游玩两次：一次成功逃脱后赴约，一次�
 - 桥下接头与扫描：[共享位置与动作](../packages/shared/src/constants/meeting.ts)、[车与桥梁布景](../packages/client/src/engine/MeetingSetRenderer.ts)、[四人动作和扫描仪](../packages/client/src/agents/MeetingPerformance.ts)、[实录和验收说明](../output/gameplay/trilogy-p0-meeting-2026-09-22/README.md)
 - 乘车赴约与后巷抵达：[路线和碰撞](../packages/shared/src/constants/meeting.ts)、[车身同步回归](../tests/meeting-renderer.test.mts)、[实录和验收说明](../output/gameplay/trilogy-p0-arrival-2026-09-22/README.md)
 - 旅馆楼梯、十三层与迎接：[共享楼梯/墙面/带路及三人走位](../packages/shared/src/constants/lafayette.ts)、[布景与活动房门](../packages/client/src/engine/LafayetteApproachRenderer.ts)、[握手手部解算](../packages/client/src/agents/LafayetteWelcomePerformance.ts)、[迎接镜头](../packages/client/src/player/LafayetteWelcomeCamera.ts)、[路线/迎接/保存恢复验证](../tests/lafayette.test.mts)、[门洞渲染回归](../tests/lafayette-renderer.test.mts)、[镜头视线回归](../tests/lafayette-camera.test.mts)、[局部实录和验收说明](../output/gameplay/trilogy-p0-lafayette-2026-09-22/README.md)
+- 培养舱后康复与飞船甲板：[共享演出时间/床位](../packages/shared/src/constants/awakening.ts)、[尼布甲尼撒号连续甲板](../packages/client/src/engine/NebDeckRenderer.ts)、[Neo 身体接口](../packages/client/src/agents/RecoveryPerformance.ts)、[状态/碰撞/镜头/实际骨骼验证](../tests/neb-deck-renderer.test.mts)
 - 新路线界面：[FilmJourneyPanel.ts](../packages/client/src/player/FilmJourneyPanel.ts)
 - 布景和已知画面限制：[场景实施记录](trilogy-scenes.md)、[大堂制作与验收记录](key-scenes.md)
 

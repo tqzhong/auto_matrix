@@ -132,6 +132,7 @@ export class AgentRenderer {
         meeting: state.currentAction?.parameters.meeting as MotionInput['meeting'],
         welcome: state.currentAction?.parameters.welcome as MotionInput['welcome'],
         knock: state.currentAction?.parameters.knock as number | undefined,
+        recovery: state.currentAction?.parameters.recovery as number | undefined,
         vase: state.currentAction?.parameters.vase as number | undefined,
         riding: state.currentAction?.parameters.riding === true,
         climbing: state.currentAction?.parameters.climbing ? Number(state.currentAction.parameters.climbDirection ?? 0) : undefined,

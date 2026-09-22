@@ -507,3 +507,33 @@ test('Neo bends his elbow into view while his knocking fist reaches room 1313', 
       `the curled knuckles must meet the room 1313 door skin: wrist ${wrist.toArray()}, knuckles ${knuckles.map(point => point.toArray()).join(';')}`);
   } finally { models.dispose(); }
 });
+
+test('the shipped Neo rig lies on the medical bed with visible interfaces, then rises to standing', async () => {
+  const [neo, office] = await Promise.all([loadGeometry('neo'), loadGeometry('neo-office')]);
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: (id: string) => Promise<typeof neo> }).load = async id => id === 'neo-office' ? office : neo;
+  const rig = (await models.create('neo'))!;
+  try {
+    const coldMotion = newMotion(); const coldInput = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true };
+    models.animate(rig, advanceMotion(coldMotion, coldInput, 0), coldMotion, coldInput, 0); rig.root.updateMatrixWorld(true);
+    assert.equal(rig.root.getObjectByName('neo-recovery-interfaces')?.visible, true, 'loading a later real-world save still restores Neo physical interfaces');
+    const draw = (recovery: number) => {
+      const motion = newMotion(); const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0,
+        performance: 'recover' as const, recovery, realWorld: true };
+      models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
+    };
+    draw(0);
+    const lyingHead = rig.bones.get('head')!.getWorldPosition(new THREE.Vector3());
+    const lyingPelvis = rig.bones.get('pelvis')!.getWorldPosition(new THREE.Vector3());
+    const lyingAnkle = rig.bones.get('ankle_L')!.getWorldPosition(new THREE.Vector3());
+    assert.ok(Math.max(lyingHead.y, lyingPelvis.y, lyingAnkle.y) - Math.min(lyingHead.y, lyingPelvis.y, lyingAnkle.y) < .75,
+      `the recovery body must be horizontal: head ${lyingHead.y}, pelvis ${lyingPelvis.y}, ankle ${lyingAnkle.y}`);
+    const interfaces = rig.root.getObjectByName('neo-recovery-interfaces')!;
+    assert.ok(interfaces.visible); assert.ok(interfaces.getObjectByName('cervical-interface'));
+    draw(12);
+    const standingHead = rig.bones.get('head')!.getWorldPosition(new THREE.Vector3());
+    const standingAnkle = rig.bones.get('ankle_L')!.getWorldPosition(new THREE.Vector3());
+    assert.ok(standingHead.y > standingAnkle.y + 3.1, 'the saved final pose must finish upright beside the bed');
+    assert.equal(interfaces.visible, true, 'real-world ports remain on Neo after the needles retract');
+  } finally { models.dispose(); }
+});

@@ -140,6 +140,23 @@ test('the pod descent camera stays outside the drain instead of collapsing again
   assert.equal(game.actions.length, 0);
 });
 
+test('the recovery camera frames the medical bed and first person moves to Neo eyes instead of standing height', t => {
+  const game = setup(t, Math.PI); const position = filmPosition('film_neb_deck', -7, -22);
+  Object.assign(game.state, { position, isInMatrix: false, currentLocation: 'film_neb_deck',
+    currentAction: { type: 'idle', parameters: { filmPose: 'recover', recovery: 0 }, startedAt: 0, duration: 1, progress: 0 } });
+  game.controls.possess(game.state); game.controls.performing = true; game.step(.5);
+  assert.ok(game.camera.position.x > position.x + 2.5 && game.camera.position.x < position.x + 3.5, 'the third-person shot clears the needle rack at a readable angle');
+  assert.ok(game.camera.position.y > position.y + 3.5);
+  assert.ok(game.camera.position.z > position.z + 5, 'the opening shot looks diagonally across Neo instead of through the gantry support');
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+  assert.ok(Math.abs(game.camera.position.y - position.y - 1.7) < .05, 'lying first-person camera sits at Neo actual eye height');
+  assert.ok(Math.abs(game.camera.position.z - position.z - 1.78) < .05, 'lying eyes sit at the actual head end of the bed after actor rotation');
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).y > .8, 'lying first person looks up at the needle gantry instead of into the mattress');
+  game.key('KeyW'); game.key('Space'); game.key('KeyF'); game.step(.3);
+  assert.deepEqual(game.group.position.toArray(), [position.x, position.y, position.z]);
+  assert.equal(game.actions.length, 0);
+});
+
 for (const view of ['third-person', 'first-person']) for (const [key, heading] of [['KeyD', -Math.PI / 2], ['KeyA', Math.PI / 2], ['KeyS', Math.PI]] as const) {
   test(`${view} camera follows ${key} without steering a held direction into circles`, t => {
     const game = setup(t); if (view === 'first-person') game.key('KeyV'); game.key(key);

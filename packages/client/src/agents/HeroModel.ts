@@ -9,6 +9,7 @@ import { InterrogationPerformance } from './InterrogationPerformance.js';
 import { MeetingPerformance } from './MeetingPerformance.js';
 import { LafayetteWelcomePerformance } from './LafayetteWelcomePerformance.js';
 import { LafayetteKnockPerformance } from './LafayetteKnockPerformance.js';
+import { RecoveryPerformance } from './RecoveryPerformance.js';
 
 type Pose = ReturnType<typeof advanceMotion>;
 interface CoatPanel { mesh: THREE.Mesh; rest: Float32Array; velocity: Float32Array }
@@ -35,6 +36,7 @@ export class HeroModels {
   private meetings = new Map<HeroRig, MeetingPerformance>();
   private welcomes = new Map<HeroRig, LafayetteWelcomePerformance>();
   private knocks = new Map<HeroRig, LafayetteKnockPerformance>();
+  private recoveries = new Map<HeroRig, RecoveryPerformance>();
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private textures = new Set<THREE.Texture>();
@@ -162,7 +164,9 @@ export class HeroModels {
       };
       material.customProgramCacheKey = () => source.customProgramCacheKey() + '-liquid-mirror-v1';
     });
-    return { root, bones, rest, panels, footHeight, glasses, silver, wardrobe };
+    const rig = { root, bones, rest, panels, footHeight, glasses, silver, wardrobe };
+    if (id === 'neo' && !support) this.recoveries.set(rig, new RecoveryPerformance(rig));
+    return rig;
   }
 
   private mesh(parent: THREE.Object3D, geometry: THREE.BufferGeometry, material: THREE.Material): THREE.Mesh {
@@ -392,6 +396,25 @@ export class HeroModels {
           inward * grip * (f === 1 ? .2 : s === 1 ? .85 : 1.1));
       }
     }
+    if (input.recovery !== undefined) {
+      const t = input.recovery;
+      const lie = 1 - THREE.MathUtils.smoothstep(t, 7, 8.6);
+      const seated = THREE.MathUtils.smoothstep(t, 7.2, 8.8) * (1 - THREE.MathUtils.smoothstep(t, 9.5, 11.7));
+      pelvis.rotation.x = -Math.PI / 2 * lie - .18 * seated;
+      bone('spine').rotation.x += .16 * seated;
+      bone('chest').rotation.x += .22 * seated;
+      bone('head').rotation.x += .12 * lie - .18 * seated;
+      for (const [i, side] of ['R', 'L'].entries()) {
+        bone('hip_' + side).rotation.x = THREE.MathUtils.lerp(bone('hip_' + side).rotation.x, -1.35, seated);
+        bone('knee_' + side).rotation.x = THREE.MathUtils.lerp(bone('knee_' + side).rotation.x, 1.48, seated);
+        const tremor = t > 2 && t < 7 ? Math.sin(t * 7 + i * 2.1) * .025 : 0;
+        bone('shoulder_' + side).rotation.set(-.14 - seated * .22 + tremor, 0, (i ? 1 : -1) * (.32 * lie + .1));
+        bone('elbow_' + side).rotation.x = -.24 - seated * .78;
+      }
+      const inspect = THREE.MathUtils.smoothstep(t, 6.8, 7.8) * (1 - THREE.MathUtils.smoothstep(t, 8.7, 9.3));
+      bone('shoulder_R').rotation.x -= inspect * .72; bone('elbow_R').rotation.x -= inspect * 1.05;
+      bone('head').rotation.y += inspect * .28;
+    }
     rig.root.updateWorldMatrix(true, true);
     if (input.grounded && !input.meeting && !input.interrogation && !input.riding && input.climbing === undefined && (!input.performance || input.performance === 'connect')) {
       let lowest = Infinity;
@@ -415,6 +438,8 @@ export class HeroModels {
     this.welcomes.get(rig)?.update(input.welcome);
     if (input.knock !== undefined && !this.knocks.has(rig)) this.knocks.set(rig, new LafayetteKnockPerformance(rig));
     this.knocks.get(rig)?.update(input.knock);
+    if (input.recovery !== undefined && !this.recoveries.has(rig)) this.recoveries.set(rig, new RecoveryPerformance(rig));
+    this.recoveries.get(rig)?.update(input.recovery, input.realWorld);
     if (delta <= 0) return;
     const dt = Math.min(delta, 1 / 30);
     // Analytic wind target plus damped springs; the waist is pinned. Thigh and
@@ -458,6 +483,7 @@ export class HeroModels {
     this.interrogations.forEach(p => p.dispose()); this.interrogations.clear();
     this.meetings.forEach(p => p.dispose()); this.meetings.clear();
     this.welcomes.forEach(p => p.dispose()); this.welcomes.clear(); this.knocks.forEach(p => p.dispose()); this.knocks.clear();
+    this.recoveries.forEach(p => p.dispose()); this.recoveries.clear();
     this.geometries.forEach(value => value.dispose()); this.materials.forEach(value => value.dispose());
     this.textures.forEach(value => value.dispose()); this.skeletons.forEach(value => value.dispose());
     this.geometries.clear(); this.materials.clear(); this.textures.clear(); this.skeletons.clear();

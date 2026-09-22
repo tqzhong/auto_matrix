@@ -1,4 +1,4 @@
-import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_NAMES, filmStepPosition, pillLocked, lafayetteWelcomeLocked, awakeningLocked, windowOpening, windowCrossing, ITEMS, RECIPES, SKILLS, FILMS, MISSIONS, LOCATIONS, CITY_BUILDINGS, NEO_CHAPTERS, LIFE_ACTIONS, lifeActionPosition, lifeRoomCenter, locationEntrance, distance, missionPosition, nearTransit, skillPoints,
+import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_NAMES, filmStepPosition, pillLocked, lafayetteWelcomeLocked, awakeningLocked, recoveryWaiting, AWAKENING_SECONDS, windowOpening, windowCrossing, ITEMS, RECIPES, SKILLS, FILMS, MISSIONS, LOCATIONS, CITY_BUILDINGS, NEO_CHAPTERS, LIFE_ACTIONS, lifeActionPosition, lifeRoomCenter, locationEntrance, distance, missionPosition, nearTransit, skillPoints,
   type AgentState, type SandboxState, type SandboxCommand, type ItemId, type SkillId, type Vector3 } from '@auto_matrix/shared';
 import './sandbox.css';
 import { renderNeoLife } from './NeoLifePanel.js';
@@ -184,10 +184,16 @@ export class SandboxUI {
       return;
     }
     if (awakeningLocked(journey)) {
-      this.el('film-sequence-hint').textContent = '鼠标观察 · V 切换视角 · J 手记';
+      const waiting = recoveryWaiting(journey);
+      if (journey.awakening?.kind === 'recovery') document.getElementById('game-objective-copy')!.textContent = waiting
+        ? '1/2 · Neo 正躺在医疗床上 · 按 G 示意开始恢复肌肉'
+        : `1/2 · 针疗与身体恢复进行中 · ${Math.round(journey.awakening.elapsed / AWAKENING_SECONDS.recovery * 100)}%`;
+      this.el('film-sequence-hint').textContent = waiting ? 'G 示意开始针疗 · 鼠标观察 · V 切换视角' : '鼠标观察 · V 切换视角 · 暂停或重连会保留动作';
       this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
       this.el('sandbox-waypoint').textContent = '';
-      this.el('sandbox-interact').classList.add('hidden'); return;
+      this.el('sandbox-interact').classList.toggle('hidden', !waiting);
+      if (waiting) this.el('sandbox-nearby').textContent = '开始恢复肌肉';
+      return;
     }
     if (!journey.visiting && scene.id === 'm1_spoon' && journey.oracle?.spoon !== undefined) {
       const bend = journey.oracle.spoon;

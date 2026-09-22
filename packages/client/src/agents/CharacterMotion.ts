@@ -20,6 +20,7 @@ export interface MotionInput {
   riding?: boolean;
   climbing?: number;
   performance?: AwakeningPose;
+  recovery?: number;
   mirror?: number;
   spoon?: number;
   phone?: OfficePhone;

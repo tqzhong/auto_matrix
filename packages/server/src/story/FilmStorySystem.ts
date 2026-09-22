@@ -337,13 +337,14 @@ export class FilmStorySystem {
   awakeningFrame(agent: AgentState, dt: number, tick: number): boolean {
     if (!this.controls(agent) || !awakeningLocked(this.state!)) return false;
     const state = this.state!; const beat = state.awakening;
-    const wasPlaying = beat && beat.elapsed < AWAKENING_SECONDS[beat.kind];
+    const wasPlaying = beat && beat.elapsed < AWAKENING_SECONDS[beat.kind] && (beat.kind !== 'recovery' || beat.started === true);
     if (wasPlaying) beat.elapsed = Math.min(AWAKENING_SECONDS[beat.kind], beat.elapsed + Math.min(.1, dt));
     const pose = awakeningPose(beat); const previous = agent.position;
     agent.position = filmPosition(this.scene!.set, pose.x, pose.z); agent.position.y += pose.y;
     agent.rotation = Math.PI;
     agent.velocity = dt > 0 ? { x: 0, y: (agent.position.y - previous.y) / dt, z: (agent.position.z - previous.z) / dt } : { x: 0, y: 0, z: 0 };
-    agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, filmPose: pose.pose, mirror: beat?.kind === 'mirror' ? beat.elapsed / 8 : 0 }, startedAt: tick, duration: 1, progress: 0 };
+    agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, filmPose: pose.pose,
+      mirror: beat?.kind === 'mirror' ? beat.elapsed / 8 : 0, recovery: beat?.kind === 'recovery' ? beat.elapsed : undefined }, startedAt: tick, duration: 1, progress: 0 };
     state.lastText = pose.text;
     if (wasPlaying && beat.elapsed >= AWAKENING_SECONDS[beat.kind]) this.advance(this.step!.text!, agent, tick);
     return true;
@@ -467,6 +468,10 @@ export class FilmStorySystem {
         agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
         this.pillFrame(agent, 0, tick); return '已经接回递药演出，保留原来的选择与动作进度。';
       }
+      if (state.scene === 'm1_recovery' && state.awakening?.kind === 'recovery') {
+        agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
+        this.awakeningFrame(agent, 0, tick); return '已经接回医疗舱恢复，保留针疗和起身进度。';
+      }
       this.clearThreats();
       delete state.ride;
       if (state.scene === 'm1_spoon' && state.step === 0 && state.oracle) delete state.oracle.spoon;
@@ -569,6 +574,10 @@ export class FilmStorySystem {
     }
     if (this.climbing(agent)) return 'W 沿梯子向下，S 向上。到达下方维修平台才能完成逃脱；停手会抓住当前横档。';
     if (windowOpening(state)) return '正在转动把手、推开窗扇。可以转动视角观察；开窗进度会保存。';
+    if (state.scene === 'm1_recovery' && state.awakening?.kind === 'recovery' && state.awakening.started === false) {
+      if (target !== 'act') return '身体仍躺在医疗床上。按 G 示意船员开始恢复肌肉。';
+      state.awakening.started = true; this.awakeningFrame(agent, 0, tick); return state.lastText;
+    }
     if (state.awakening && state.awakening.elapsed < AWAKENING_SECONDS[state.awakening.kind]) return '演出进行中，可以转动视角观察；进度会自动保存。';
     if (!this.near(agent, step)) return '请走近金色目标标记（4 米内），再按 G。';
     if (state.scene === 'm1_boss' && state.step === 1) delete state.started;
@@ -727,6 +736,10 @@ export class FilmStorySystem {
     this.reconcileCast();
     if (scene.id === 'm1_office_escape') this.office.start(tick);
     if (scene.id === 'm1_pod') this.awakeningFrame(actor, 0, tick);
+    if (scene.id === 'm1_recovery') {
+      state.awakening = { kind: 'recovery', elapsed: 0, started: false };
+      this.awakeningFrame(actor, 0, tick);
+    }
     if (scene.id === 'm1_bug') this.meetingFrame(actor, false, 0, tick);
     if (scene.id === 'm1_wake_again' && state.office?.outcome === 'escaped') state.lastText = '脱身后，Morpheus 再次来电。前往 Adams Street 桥下，与接应者见面。';
     if (scene.id === 'm1_bug' && state.office?.outcome === 'escaped') state.lastText = '你没有被特工带走。Switch 仍要求做安全检查，确认没有追踪装置。';
@@ -745,7 +758,13 @@ export class FilmStorySystem {
         else actor.position = filmPosition(scene.set, i % 2 ? 10 : -10, 5 + Math.floor(i / 2) * 6);
       }
       if (scene.id === 'm1_lobby' && id === 'trinity') actor.position = filmPosition(scene.set, -4, 30);
-      actor.rotation = i % 2 ? -Math.PI / 2 : Math.PI / 2; actor.status = 'alive'; actor.health = actor.maxHealth;
+      actor.rotation = i % 2 ? -Math.PI / 2 : Math.PI / 2;
+      if (scene.id === 'm1_recovery') {
+        const recoveryCrew = { morpheus: [-2.4, -18.5, -2.45], trinity: [-10.5, -15.5, 2.7], tank: [6.5, -5, -2.8], dozer: [10.5, -3, -2.8] } as const;
+        const position = recoveryCrew[id as keyof typeof recoveryCrew];
+        if (position) { actor.position = filmPosition(scene.set, position[0], position[1]); actor.rotation = position[2]; }
+      }
+      actor.status = 'alive'; actor.health = actor.maxHealth;
       if (id === 'spoon_boy' && scene.id === 'm1_spoon') {
         actor.rotation = .7;
         actor.currentAction = { type: 'idle', parameters: { seated: true, floorSeated: true, spoon: 1 }, startedAt: this.state!.enteredAt, duration: 100000, progress: 0 };

@@ -1,4 +1,5 @@
 import { FILM_SETS, filmPosition } from './film-sets.js';
+import { RECOVERY_BED } from './awakening.js';
 import type { Vector3 } from '../types/agent.js';
 import type { Philosophy } from '../types/neo-life.js';
 import { FILM_CONSEQUENCES } from './film-outcomes.js';
@@ -67,7 +68,7 @@ export const FILM_SCENES: FilmScene[] = [
   scene('m1_sentinels', 1, 'service_tunnels', 'morpheus', '静默的飞船', 'oracle_first', 'infiltration', '尼布甲尼撒号停机隐藏。哨兵从船体附近掠过。', [use('关闭外部供电', '船员保持安静，EMP 作为最后防线待命。', -7, -14), use('等候哨兵远离', '红色扫描灯从管道另一端消失，航行可以继续。', 0, 0, 8)], ['trinity', 'tank']),
   scene('m1_cypher_console', 1, 'neb_deck', 'neo', '屏幕旁的一杯酒', 'oracle_first', 'night', 'Neo 在值班控制台旁谈起自己醒来后的困惑。', [use('查看滚动代码', '接线员解释如何从代码中读出城市。旁边的人却怀念从前的生活。', 7, -20), think('知道真相之后还会后悔吗？', '真相无法自动使人幸福；问题在于谁为遗忘付出代价。')], ['cypher']),
   scene('m1_steak', 1, 'cypher_restaurant', 'smith', '舒适的代价', 'oracle_first', 'restaurant', '另一条叙事线：餐厅里的交易决定了同伴接下来面对的危险。', [walk('靠近窗边餐桌', 0, -13), use('确认交易条件', 'Cypher 以出卖 Morpheus 换取重返矩阵并遗忘现实。此段为旁观既定事件。', 0, -13, 5)], ['cypher']),
-  scene('m1_meal', 1, 'neb_deck', 'neo', '真实世界的一顿饭', 'oracle_first', 'zion', '船员吃着营养糊，谈论味觉、需求和接下来对先知的拜访。', [use('到餐桌领取食物', '平凡的吃饭与玩笑让这艘船不只是战争机器。', -7, 20), walk('准备接入矩阵', 0, 0)], ['mouse', 'dozer', 'tank']),
+  scene('m1_meal', 1, 'neb_deck', 'neo', '真实世界的一顿饭', 'oracle_first', 'zion', '船员吃着营养糊，谈论味觉、需求和接下来对先知的拜访。', [use('到餐桌领取食物', '平凡的吃饭与玩笑让这艘船不只是战争机器。', -1.5, 22), walk('准备接入矩阵', 0, 0)], ['mouse', 'dozer', 'tank']),
   scene('m1_spoon', 1, 'oracle_home', 'neo', '等候室的孩子们', 'oracle_first', 'oracle', '先知的客厅里，孩子们以不同方式试探矩阵的规则。靠近孩子拿起勺子，停下脚步，按住 G 专注；松开时它会恢复。', [use('拿起勺子，按住 G 专注', '你看见金属在手中弯曲，松开力气也不再恢复。对规则的认识开始动摇。', -7, 10), walk('走到厨房门口', 0, -8)], ['spoon_boy']),
   scene('m1_oracle', 1, 'oracle_home', 'neo', '厨房里的预言', 'oracle_first', 'oracle', '饼干和花瓶之间，先知让 Neo 面对自我认识、Morpheus 的信念和即将到来的抉择。', [use('听见提醒，回头看花瓶', '你的转身碰落了花瓶。先知留下的问题是：没有那句提醒，你还会做出同一个动作吗？', 7, -14), think('预言如何影响选择？', '你将如何行动，比得到一个称号更重要。', -5, -22)], ['oracle', 'morpheus']),
   scene('m1_dejavu', 1, 'ambush_house', 'neo', '重复经过的黑猫', 'betrayal', 'infiltration', '返回出口的旧楼里，一只黑猫从门前经过。留意它的动作，以及之后房间发生的变化。', [use('留意门前的黑猫', 'Trinity 认出系统被改动的迹象。原来的门与窗被砖墙封死，只能从左侧墙内通道撤退。', 0, -8), { ...fight('突破楼内封锁', 2), z: -8 }, walk('改走左侧墙内通道', -17, -27)], ['trinity', 'switch', 'apoc']),
@@ -162,6 +163,7 @@ export function filmStepPosition(scene: FilmScene, step: FilmStep): Vector3 {
 export function filmEntry(scene: FilmScene): Vector3 {
   if (scene.id === 'm1_ledge') return filmPosition(scene.set, 0, OFFICE_WINDOW.z);
   if (scene.id === 'm1_pod') return filmPosition(scene.set, 0, -12);
+  if (scene.id === 'm1_recovery') return filmPosition(scene.set, RECOVERY_BED.standingX, RECOVERY_BED.z);
   if (scene.id === 'm2_freeway') return filmPosition(scene.set, 14, 674);
   if (scene.id === 'm2_trucks') return filmPosition(scene.set, 14, 25);
   return filmPosition(scene.set, 0, scene.id === 'm1_lobby' ? 35 : FILM_SETS[scene.set].depth * .32);

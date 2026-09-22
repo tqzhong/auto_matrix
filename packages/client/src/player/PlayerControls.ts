@@ -239,6 +239,7 @@ export class PlayerControls {
     this.motion.crouching = this.enabled && !this.performing && this.keys.has('KeyZ');
     this.motion.riding = Boolean(this.ride);
     this.motion.performance = this.performing ? state.currentAction?.parameters.filmPose as AwakeningPose : undefined;
+    this.motion.recovery = state.currentAction?.parameters.recovery as number | undefined;
     this.motion.mirror = this.mirror;
     this.motion.spoon = this.spoon;
     this.motion.phone = this.phone;
@@ -312,7 +313,7 @@ export class PlayerControls {
     this.motion.speed = this.ride || this.climbing || this.performing ? 0 : Math.hypot(dx, dz) / Math.max(delta, .001);
     this.motion.grounded = Boolean(this.ride) || this.climbing || this.performing || this.position.y <= groundHeight(this.position, state.isInMatrix) + .12;
     this.motion.verticalVelocity = this.vy;
-    this.motion.inspecting = Boolean((this.motion.pills || this.motion.interrogation || this.motion.welcome || this.motion.knock !== undefined) && !this.firstPerson) || Boolean(this.phone && this.performing && this.motion.window === undefined && this.motion.crossing === undefined) || this.spoon !== undefined && this.enabled && this.motion.speed < .25 && this.motion.grounded;
+    this.motion.inspecting = Boolean((this.motion.pills || this.motion.interrogation || this.motion.welcome || this.motion.knock !== undefined || this.motion.recovery !== undefined) && !this.firstPerson) || Boolean(this.phone && this.performing && this.motion.window === undefined && this.motion.crossing === undefined) || this.spoon !== undefined && this.enabled && this.motion.speed < .25 && this.motion.grounded;
     const attacking = (now - this.lastAttack) / 1000 < MELEE_COMBO[this.attackCombo].duration;
     const heading = this.ride || this.climbing || this.performing ? state.rotation : attacking ? this.attackYaw : this.firearm ? this.yaw : this.motion.speed > .1 ? Math.atan2(dx, dz) : this.facing;
     const turn = Math.atan2(Math.sin(heading - this.facing), Math.cos(heading - this.facing));
@@ -346,7 +347,22 @@ export class PlayerControls {
     const verticalTarget = THREE.MathUtils.lerp(this.cameraTarget.y, target.y, 1 - Math.exp(-8 * delta));
     this.cameraTarget.lerp(target, 1 - Math.exp(-22 * delta)); this.cameraTarget.y = verticalTarget;
     const spoon = this.motion.inspecting && group.getObjectByName('held-spoon');
-    if (this.motion.meeting && !this.firstPerson) {
+    if (this.motion.recovery !== undefined) {
+      const rise = THREE.MathUtils.smoothstep(this.motion.recovery, 7, 11.7);
+      if (this.firstPerson) {
+        const eye = new THREE.Vector3(0, THREE.MathUtils.lerp(1.7, 3.13, rise), THREE.MathUtils.lerp(-1.78, .32, rise));
+        eye.applyAxisAngle(new THREE.Vector3(0, 1, 0), state.rotation).add(new THREE.Vector3(this.position.x, this.position.y, this.position.z));
+        this.camera.position.copy(eye);
+        const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
+        const lying = forward.clone().multiplyScalar(.24).add(new THREE.Vector3(0, .97, 0)).normalize();
+        forward.lerp(lying, 1 - rise).normalize(); this.camera.lookAt(eye.clone().add(forward));
+      } else {
+        const ideal = new THREE.Vector3(this.position.x + THREE.MathUtils.lerp(3, 1.5, rise), this.position.y + THREE.MathUtils.lerp(4, 4.8, rise), this.position.z + THREE.MathUtils.lerp(6, 5, rise));
+        const focus = new THREE.Vector3(this.position.x, this.position.y + THREE.MathUtils.lerp(1.45, 2.15, rise), this.position.z);
+        if (resetCamera) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-7 * delta));
+        this.camera.lookAt(focus);
+      }
+    } else if (this.motion.meeting && !this.firstPerson) {
       const gesture = this.motion.meeting; const pose = meeting!; const center = FILM_SETS.film_adams_bridge.center;
       const car = meetingCarPose(gesture); const origin = new THREE.Vector3(center.x + car.x, center.y - 1, center.z + car.z);
       const entering = gesture.phase === 'boarding' || gesture.phase === 'leaving' || gesture.phase === 'exiting';

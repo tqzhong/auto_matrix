@@ -39,7 +39,8 @@ test('all trilogy scenes have distinct stable IDs, existing cast, accessible obj
     for (const step of scene.steps) {
       // These targets are seats inside a solid vehicle, reached by boarding.
       // meeting.test exercises that route and character-asset.test checks the seats.
-      assert.equal(playerBlocked(filmStepPosition(scene, step), set.world === 'matrix'), scene.id === 'm1_bug' && scene.steps.indexOf(step) < 2, `${scene.id}: ${step.label}`);
+      const stagedInsideProp = scene.id === 'm1_bug' && scene.steps.indexOf(step) < 2 || scene.id === 'm1_recovery' && scene.steps.indexOf(step) === 0;
+      assert.equal(playerBlocked(filmStepPosition(scene, step), set.world === 'matrix'), stagedInsideProp, `${scene.id}: ${step.label}`);
     }
     if (scene.steps.some(s => s.kind === 'reflect') && !['m1_pills', 'm1_ledge'].includes(scene.id)) assert.equal(filmReflections(scene.id).length, 3, `${scene.id}: dialogue must be playable`);
   }
@@ -275,7 +276,32 @@ test('pod disconnection moves Neo down the drain; rescue must be started in the 
   h.command('act'); assert.equal(state.awakening?.kind, 'rescue');
   for (let i = 0; i < 60; i++) h.players.step(.1, true, h.tick());
   assert.ok(h.actor().position.y > water.y + 10); assert.equal(state.step, 2);
-  h.command('next'); assert.equal(state.scene, 'm1_recovery'); assert.equal(state.awakening, undefined);
+  h.command('next'); assert.equal(state.scene, 'm1_recovery'); assert.deepEqual(state.awakening, { kind: 'recovery', elapsed: 0, started: false });
+});
+
+test('recovery begins on the medical bed, waits for Neo, and resumes its saved performance after pause and reconnect', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  Object.assign(state, { scene: 'm1_pod', actor: 'neo', step: 2 }); h.command('next');
+  assert.equal(state.scene, 'm1_recovery');
+  assert.deepEqual(state.awakening, { kind: 'recovery', elapsed: 0, started: false });
+  const bed = { ...h.actor().position };
+  h.players.receiveInput('film-player', { x: 1, z: 1, yaw: 0, sprint: true, jump: true, sequence: 1 });
+  for (let i = 0; i < 20; i++) h.players.step(.1, true, h.tick());
+  assert.deepEqual(h.actor().position, bed, 'waiting for G cannot slide the weak body off the bed');
+  assert.equal(state.awakening!.elapsed, 0, 'waiting does not make the choice for the player');
+  h.command('act'); assert.equal(state.awakening!.started, true);
+  for (let i = 0; i < 35; i++) h.players.step(.1, true, h.tick());
+  const saved = JSON.parse(JSON.stringify(h.sandbox.state)); const elapsed = state.awakening!.elapsed;
+  h.players.step(.5, false, h.tick()); assert.equal(state.awakening!.elapsed, elapsed, 'pause freezes the needles and body pose');
+  h.sandbox.restore(saved); h.players.release('film-player', h.tick()); h.advance(30);
+  assert.equal(h.sandbox.life.film.state!.awakening!.elapsed, elapsed, 'disconnection cannot finish recovery');
+  h.players.possess('film-player', 'neo', h.tick());
+  assert.match(h.players.act('film-player', 'attack', h.tick()), /演出/);
+  for (let i = 0; i < 120 && h.sandbox.life.film.state!.step === 0; i++) h.players.step(.1, true, h.tick());
+  assert.equal(h.sandbox.life.film.state!.step, 1);
+  assert.equal(h.sandbox.life.film.state!.awakening!.elapsed, 12);
+  assert.ok(h.actor().position.x > bed.x + 2.5, 'Neo finishes standing beside the bed rather than inside it');
+  h.advance(30); assert.equal(h.sandbox.life.film.state!.step, 1, 'walking to the core remains a separate objective');
 });
 
 test('the first rooftop jump uses gravity and a recoverable fall rather than a timer', () => {
@@ -462,7 +488,7 @@ test('the entire film route completes through interactions, driving and real com
           for (let frame = 0; frame < 30; frame++) h.players.step(.1, true, h.tick());
           h.command('act'); for (let frame = 0; frame < 120; frame++) h.players.step(.1, true, h.tick());
         } else if (scene.id === 'm1_office_escape' && index === 2) for (let frame = 0; frame < 40; frame++) h.players.step(.1, true, h.tick());
-        else if (state.awakening && ['m1_mirror', 'm1_pod'].includes(scene.id)) for (let frame = 0; frame < 200 && state.step === index; frame++) h.players.step(.1, true, h.tick());
+        else if (state.awakening && ['m1_mirror', 'm1_pod', 'm1_recovery'].includes(scene.id)) for (let frame = 0; frame < 200 && state.step === index; frame++) h.players.step(.1, true, h.tick());
         else if (index === 0 && ['m1_spoon', 'm1_oracle', 'm1_dejavu'].includes(scene.id)) {
           for (let frame = 0; frame < 110 && state.step === index; frame++) {
             h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false, focus: true, sequence: ++sequence });
