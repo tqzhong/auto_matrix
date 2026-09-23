@@ -112,6 +112,8 @@ export class FilmSetRenderer {
   private chateauDoor?: THREE.Mesh;
   private garageCar?: THREE.Group;
   private garageGhosts: THREE.Group[] = [];
+  private powerStatus?: { primary: THREE.MeshBasicMaterial; emergency: THREE.MeshBasicMaterial; lights: THREE.PointLight[] };
+  private sourceDoor?: { portal: THREE.Group; source: THREE.Group; glow: THREE.Mesh };
 
   constructor(private scene: THREE.Scene) {
     scene.add(this.root);
@@ -156,6 +158,8 @@ export class FilmSetRenderer {
         else if (set.id === 'film_adams_bridge' || set.id === 'film_extraction_car') this.meeting = new MeetingSetRenderer(this.root);
         else {
           this.build(set); this.batch();
+          if (set.architecture === 'power') this.createPowerStatus(set);
+          if (sceneId === 'm2_key_door') this.createSourceDoor();
           if (set.id === 'film_chateau_hall') {
             this.chateauVolley = new THREE.Group(); this.chateauVolley.visible = false; this.root.add(this.chateauVolley);
             const bullet = this.mat(0xc5b49a, .2, .85);
@@ -218,6 +222,18 @@ export class FilmSetRenderer {
     this.reloaded?.update(journey);
     this.zion?.update(journey, elapsed);
     this.baneCopy?.update(journey, elapsed, player && journey?.actor === player.id ? player.position : undefined, set?.center);
+    if (this.powerStatus) {
+      const grid = journey?.grid;
+      const energized = grid?.primary !== 'off' && grid?.emergency !== 'off';
+      this.powerStatus.primary.color.setHex(grid?.primary === 'off' ? 0x35443d : grid?.primary === 'armed' ? 0xffbd62 : 0x8cdb9b);
+      this.powerStatus.emergency.color.setHex(grid?.emergency === 'off' ? 0x35443d : grid?.vigilant === 'lost' ? 0xe26956 : 0x8cdb9b);
+      this.powerStatus.lights.forEach(light => { light.intensity = energized ? 210 : 19; light.color.setHex(energized ? 0xf3e7c9 : 0xac5144); });
+    }
+    if (this.sourceDoor) {
+      this.sourceDoor.portal.position.x = journey?.keyDoor?.portalOpened ? 6.3 : 0;
+      this.sourceDoor.source.position.x = journey?.grid?.phase === 'opened' ? 5.5 : 0;
+      this.sourceDoor.glow.visible = journey?.grid?.phase === 'window' || journey?.grid?.phase === 'opened';
+    }
     if (this.portalDoor) {
       const open = journey?.completed.includes(this.portalDoor.scene) || journey?.scene === this.portalDoor.scene && journey.step >= FILM_SCENE_BY_ID[this.portalDoor.scene].steps.length;
       this.portalDoor.panel.position.x = open ? 5.2 : 0;
@@ -332,6 +348,16 @@ export class FilmSetRenderer {
     if (this.baneCopy) {
       fog.density = .003; fog.color.setHex(0x172627); (this.scene.background as THREE.Color).copy(fog.color);
       this.scene.environmentIntensity = .63; return { color: 0xc9ded5, ambient: .68, sun: .1 };
+    }
+    if (this.powerStatus) {
+      fog.density = .0015; fog.color.setHex(0x202a27);
+      this.scene.environmentIntensity = .62;
+      return { color: 0xe2decb, ambient: .76, sun: .12 };
+    }
+    if (this.sourceDoor) {
+      fog.density = .0012; fog.color.setHex(0x1d2829);
+      this.scene.environmentIntensity = .54;
+      return { color: 0xb9d0c6, ambient: .58, sun: .08 };
     }
     if (this.theOne && this.current.id === 'film_heart_hotel') { fog.density = .0023; fog.color.setHex(0x151e1b); this.scene.environmentIntensity = .48; return { color: 0xd9dfbc, ambient: .55, sun: .08 }; }
     if (this.theOne && this.current.id === 'film_final_phone') { fog.density = .0012; fog.color.setHex(0xaebfc0); this.scene.environmentIntensity = .9; return { color: 0xffe5be, ambient: .96, sun: 1.7 }; }
@@ -559,7 +585,7 @@ export class FilmSetRenderer {
     const { width: w, depth: d, height: h } = set; const exterior = outdoor.has(set.architecture);
     const lavish = ['chateau', 'lobby', 'restaurant', 'hel', 'architect'].includes(set.architecture);
     const industrial = ['ship', 'engineering', 'garage', 'power', 'zion', 'temple', 'pods', 'machine'].includes(set.architecture);
-    const floor = lavish ? this.marble : industrial ? this.metal : ['construct', 'mobil', 'backdoors'].includes(set.architecture) ? this.white : exterior ? this.pbr('damaged_plaster', set.architecture === 'garden' ? 0x6f7851 : 0x6f7879, 14) : this.wood;
+    const floor = this.currentScene === 'm2_key_door' ? this.pbr('damaged_plaster', 0x798380, 8) : lavish ? this.marble : industrial ? this.metal : ['construct', 'mobil', 'backdoors'].includes(set.architecture) ? this.white : exterior ? this.pbr('damaged_plaster', set.architecture === 'garden' ? 0x6f7851 : 0x6f7879, 14) : this.wood;
     if (set.id === 'film_jump_roofs') {
       this.box(floor, 0, -.3, (-13 + d / 2) / 2, w, .6, d / 2 + 13);
       this.box(floor, 0, -.3, (-30 - d / 2) / 2, w, .6, d / 2 - 30);
@@ -568,7 +594,7 @@ export class FilmSetRenderer {
       this.box(this.white, 0, .05, -10, 12, .04, .15);
     } else this.box(floor, 0, -.3, 0, w, .6, d);
     if (exterior || set.architecture === 'construct') return;
-    const wall = industrial ? this.metal : lavish || ['oracle', 'dojo', 'teahouse', 'mobil', 'backdoors'].includes(set.architecture) ? this.white : this.plaster;
+    const wall = set.id === 'film_power_station' ? this.pbr('damaged_plaster', 0x915b4d, 3) : this.currentScene === 'm2_key_door' ? this.pbr('damaged_plaster', 0x9ba5a0, 12) : industrial ? this.metal : lavish || ['oracle', 'dojo', 'teahouse', 'mobil', 'backdoors'].includes(set.architecture) ? this.white : this.plaster;
     for (const x of [-w / 2, w / 2]) {
       if (set.architecture === 'lafayette' && x > 0) continue;
       if (set.id === 'film_le_vrai' && x < 0) {
@@ -578,7 +604,7 @@ export class FilmSetRenderer {
         continue;
       }
       this.box(wall, x, h / 2, 0, .7, h, d);
-      for (const y of [.7, 3.7, h - .6]) this.box(lavish ? this.marble : this.wood, x - Math.sign(x) * .45, y, 0, .35, y === 3.7 ? .18 : .7, d);
+      for (const y of [.7, 3.7, h - .6]) this.box(this.currentScene === 'm2_key_door' ? this.metal : lavish ? this.marble : this.wood, x - Math.sign(x) * .45, y, 0, .35, y === 3.7 ? .18 : .7, d);
     }
     if (set.id === 'film_le_vrai') {
       this.box(this.glass, 0, h / 2, -d / 2, w - 1, h - 1, .22);
@@ -604,10 +630,10 @@ export class FilmSetRenderer {
       return;
     }
     // Coffers instead of a solid ceiling retain daylight and a readable close camera.
-    for (let z = -d / 2; z <= d / 2; z += 12) this.box(industrial ? this.metal : this.white, 0, h - .4, z, w, .6, .7);
-    for (const x of [-w * .24, w * .24]) this.box(this.white, x, h, 0, .6, .5, d);
+    for (let z = -d / 2; z <= d / 2; z += 12) this.box(industrial || this.currentScene === 'm2_key_door' ? this.metal : this.white, 0, h - .4, z, w, .6, .7);
+    for (const x of [-w * .24, w * .24]) this.box(this.currentScene === 'm2_key_door' ? this.metal : this.white, x, h, 0, .6, .5, d);
     for (const o of filmObstacles(set)) {
-      if (['oracle', 'teahouse'].includes(set.architecture) || ['film_le_vrai', 'film_keymaker_workshop'].includes(set.id)) continue;
+      if (['oracle', 'teahouse', 'power'].includes(set.architecture) || ['film_le_vrai', 'film_keymaker_workshop'].includes(set.id)) continue;
       const column = set.architecture === 'lobby' ? this.mat(0x2d4038, .28, .08) : lavish ? this.marble : this.metal;
       this.box(column, o.x, h / 2, o.z, o.width, h, o.depth, .08);
       for (const y of [.35, h - .5]) this.box(lavish ? this.marble : this.metal, o.x, y, o.z, 2.5, .7, 2.5, .06);
@@ -751,17 +777,43 @@ export class FilmSetRenderer {
       for (let z = -d / 2 + 8; z < d / 2; z += 12) for (let y = 6; y < set.height - 1; y += .65) this.box(this.white, -w / 2 + 1, y, z, .2, .12, 8);
       this.label(set.id.includes('metacortex') ? 'METACORTEX' : 'FEDERAL BUILDING', 0, 10, -d / 2 + .6, 17);
     } else if (a === 'backdoors') {
-      for (let z = -d / 2 + 8; z < d / 2; z += 12) for (const x of [-w / 2 + .5, w / 2 - .5]) {
-        const start = this.root.children.length; this.door(0, 0); const g = new THREE.Group(); this.root.children.slice(start).forEach(c => g.add(c)); g.rotation.y = x < 0 ? Math.PI / 2 : -Math.PI / 2; g.position.set(x, 0, z); this.root.add(g);
+      if (this.currentScene !== 'm2_key_door') {
+        for (let z = -d / 2 + 8; z < d / 2; z += 12) for (const x of [-w / 2 + .5, w / 2 - .5]) {
+          const start = this.root.children.length; this.door(0, 0); const g = new THREE.Group(); this.root.children.slice(start).forEach(c => g.add(c)); g.rotation.y = x < 0 ? Math.PI / 2 : -Math.PI / 2; g.position.set(x, 0, z); this.root.add(g);
+        }
+        this.door(0, -d / 2 + .5); this.phone(4, -d / 2 + .6);
+        for (let z = -d / 2 + 6; z < d / 2; z += 10) this.box(this.glow, 0, set.height - .6, z, 3, .1, 1.5);
       }
-      this.door(0, -d / 2 + .5); this.phone(4, -d / 2 + .6);
-      for (let z = -d / 2 + 6; z < d / 2; z += 10) this.box(this.glow, 0, set.height - .6, z, 3, .1, 1.5);
       if (this.currentScene === 'm2_backdoors') {
         this.impossibleDoor('m2_backdoors', -d / 2 + .95);
         for (let z = -d / 2 + 5; z < d / 2; z += 8) {
           this.box(this.mat(0xbec1ba), 0, .018, z, 10, .035, .085);
           this.box(this.white, 0, 9.5, z, 16, .1, .12);
         }
+      } else if (this.currentScene === 'm2_key_door') {
+        const steel = this.mat(0x465554, .5, .7); const concrete = this.pbr('damaged_plaster', 0x727d7a, 11);
+        for (const x of [-w / 2 + .48, w / 2 - .48]) {
+          for (let z = -d / 2 + 4; z < d / 2 - 3; z += 6) {
+            this.box(concrete, x - Math.sign(x) * .12, 5.3, z, .18, 10.5, .22);
+            this.box(steel, x - Math.sign(x) * .38, 8.1, z + 2.4, .18, .12, 3.2);
+          }
+          this.pipe([[x - Math.sign(x) * .5, 9.9, d / 2 - 2], [x - Math.sign(x) * .5, 9.9, -d / 2 + 2]], .13, steel);
+        }
+        for (let z = -d / 2 + 8; z < d / 2 - 3; z += 11) {
+          this.box(steel, 0, 11.2, z, 6.4, .24, 1.3);
+          this.box(this.glow, 0, 10.9, z, 5.4, .08, .38);
+        }
+        for (const x of [-8.7, 8.7]) this.box(concrete, x, 4, -39, 10.6, 8, .75, .08);
+        for (const z of [-39, -55]) {
+          for (const x of [-3.4, 3.4]) this.box(steel, x, 4.4, z + .25, .35, 8.8, .7, .08);
+          this.box(steel, 0, 8.65, z + .25, 7.1, .4, .7, .08);
+        }
+        for (const x of [-11, 11]) for (let z = -54; z < -40; z += 3) {
+          this.box(steel, x, 5.6, z, .24, 11, .3);
+          this.box(this.metal, x - Math.sign(x) * 1.4, .07, z, 2.8, .12, .25);
+        }
+        for (let z = -54; z < -40; z += 3) this.box(steel, 0, 11, z, 23, .22, .25);
+        this.label('SOURCE ACCESS', 0, 10, -54.2, 8, '#c9d3cd', '#263735');
       }
     } else if (a === 'architect') {
       for (let row = 0; row < 4; row++) for (let i = 0; i < 23; i++) {
@@ -795,13 +847,85 @@ export class FilmSetRenderer {
       this.box(this.black, 0, 5, 8, 9, 6, .35); this.box(this.glass, 0, 5, 8.21, 8.6, 5.6, .04);
       this.label('PRIVATE LIBRARY', 0, 11.5, -17.3, 13, '#c4b38c', '#27382f'); this.door(0, d / 2 - .5);
     } else if (a === 'power') {
-      for (const x of [-w * .3, w * .3]) for (let z = -d / 2 + 10; z < d / 2 - 5; z += 12) {
-        this.box(this.metal, x, 4.5, z, 7, 9, 5, .15); for (const y of [3, 5, 7]) { this.box(this.black, x, y, z + 2.6, 5.8, .45, .1); this.sphere(this.mat(0x829a5b), x + 2, y + .6, z + 2.65, .12); }
-        this.pipe([[x, 9, z], [x, 12, z], [x * .7, 12, z - 5]], .3);
+      const main = set.id === 'film_power_station';
+      const banks = filmObstacles(set);
+      const terminal = banks[0];
+      const casing = this.mat(main ? 0x465c51 : 0x555e61, .48, .55);
+      const porcelain = this.mat(0xc5c6ac, .3, .12);
+      const copper = this.mat(0x9c6446, .32, .72);
+      const safety = this.mat(0xd1b063, .5, .3);
+      for (const bank of banks.slice(1)) {
+        this.box(casing, bank.x, 4.5, bank.z, bank.width, 9, bank.depth, .12);
+        for (const y of [2.2, 4.6, 7]) {
+          this.box(this.black, bank.x, y, bank.z + bank.depth / 2 + .06, 5.9, 1.55, .12);
+          this.box(main ? copper : this.glass, bank.x, y, bank.z + bank.depth / 2 + .15, 5.35, 1.05, .05);
+        }
+        for (const dx of [-2.4, 2.4]) {
+          this.box(this.metal, bank.x + dx, 4.5, bank.z + 2.65, .09, 8.2, .16);
+          if (main) {
+            this.cylinder(porcelain, bank.x + dx, 9.75, bank.z, .33, 1.5);
+            this.cylinder(copper, bank.x + dx, 10.7, bank.z, .11, .65);
+          }
+        }
+        const inward = bank.x - Math.sign(bank.x) * (bank.width / 2 + .06);
+        this.box(this.black, inward, 4.5, bank.z, .1, 8.15, 4.25);
+        for (const y of [2.1, 4.45, 6.8]) {
+          this.box(main ? copper : this.glass, inward - Math.sign(bank.x) * .07, y, bank.z, .06, 1.45, 3.55);
+          for (const dz of [-1.4, -.45, .5, 1.45]) this.box(main ? porcelain : this.glow, inward - Math.sign(bank.x) * .13, y + .5, bank.z + dz, .05, .14, .14);
+        }
+        if (!main) for (let row = 0; row < 5; row++) this.box(this.glow, bank.x - 2.2 + row * 1.1, 7.3, bank.z + 2.7, .1, .1, .03);
       }
-      this.label('DANGER — HIGH VOLTAGE', 0, 10, -d / 2 + .5, 16, '#201d16', '#ba9e51');
-      this.box(this.metal, 0, 3, -d / 2 + 6, 8, 6, 3); this.box(this.brass, 0, 4, -d / 2 + 7.6, .35, 2, .4);
+      if (main) {
+        for (const x of [-w * .3, w * .3]) {
+          this.pipe([[x, 11, d / 2 - 11], [x, 14, 0], [x * .55, 14, terminal.z]], .22, copper);
+          for (let z = -d / 2 + 8; z < d / 2; z += 12) this.box(safety, x, .05, z, 8.1, .08, .16);
+        }
+        for (let z = -d / 2 + 5; z < d / 2 - 4; z += 9) {
+          this.box(this.black, 0, .025, z, 7.2, .05, 1.4);
+          for (const x of [-3.45, 3.45]) this.box(this.metal, x, .07, z, .1, .08, 1.4);
+        }
+      } else {
+        for (const x of [-10, 10]) {
+          this.box(this.glass, x, 5.2, terminal.z + 6, .08, 9, 10);
+          for (const z of [terminal.z + 1, terminal.z + 6, terminal.z + 11]) this.box(this.metal, x, 5.2, z, .18, 9, .15);
+        }
+        this.label('EMERGENCY GRID / CORE NETWORK', 0, 10, -d / 2 + .55, 12, '#cfdacb', '#243436');
+      }
+      this.box(casing, terminal.x, 3, terminal.z, terminal.width, 6, terminal.depth, .12);
+      this.box(this.black, 0, 3.8, terminal.z + 1.58, 6.5, 2.5, .08);
+      this.box(this.glass, 0, 3.8, terminal.z + 1.63, 6.1, 2.1, .04);
+      this.label(main ? 'SYNCHRONIZED CHARGE' : 'EMERGENCY SYSTEM', 0, 6.6, terminal.z + 1.65, 8.5, '#e6e4cf', '#26332e');
+      if (main) this.label('DANGER — HIGH VOLTAGE', 0, 11, -d / 2 + .55, 16, '#201d16', '#ba9e51');
     }
+  }
+  private createPowerStatus(set: FilmSet): void {
+    const terminal = filmObstacles(set)[0];
+    const primary = new THREE.MeshBasicMaterial({ color: 0x8cdb9b, toneMapped: false });
+    const emergency = new THREE.MeshBasicMaterial({ color: 0x8cdb9b, toneMapped: false });
+    this.materials.add(primary); this.materials.add(emergency);
+    for (const [index, material] of [primary, emergency].entries())
+      this.box(material, (index ? 1 : -1) * 1.6, 5.2, terminal.z + 1.7, .8, .38, .12, .05);
+    const tube = new THREE.MeshBasicMaterial({ color: 0xe8dcc0, toneMapped: false }); this.materials.add(tube);
+    const lights = [-set.depth * .3, 0, set.depth * .3].map(z => {
+      const light = new THREE.PointLight(0xf3e7c9, 210, 32, 2); light.position.set(0, 12, z); this.root.add(light);
+      this.box(this.metal, 0, 12.2, z, 5.4, .55, 1.25, .08);
+      this.box(tube, 0, 11.9, z, 4.9, .12, .9);
+      return light;
+    });
+    this.powerStatus = { primary, emergency, lights };
+  }
+  private createSourceDoor(): void {
+    const glow = new THREE.MeshBasicMaterial({ color: 0xe5efe5, toneMapped: false }); this.materials.add(glow);
+    this.box(this.black, 0, 4, -39.1, 6.45, 8, .1);
+    this.box(this.black, 0, 4, -55.15, 6.45, 8, .1);
+    const light = this.box(glow, 0, 4, -55, 5.5, 7.6, .06); light.visible = false;
+    const portal = new THREE.Group(); this.root.add(portal);
+    portal.add(this.box(this.mat(0x435652, .35, .55), 0, 4, -38.75, 6.1, 7.7, .28, .08));
+    portal.add(this.box(this.brass, 1.65, 3.5, -38.48, .23, .23, .16));
+    const source = new THREE.Group(); this.root.add(source);
+    source.add(this.box(this.white, 0, 4, -54.8, 5.4, 7.7, .28, .08));
+    source.add(this.box(this.brass, 1.55, 3.5, -54.52, .23, .23, .16));
+    this.sourceDoor = { portal, source, glow: light };
   }
   private publicInterior(set: FilmSet): void {
     const { architecture: a, width: w, depth: d, height: h } = set;
@@ -1283,6 +1407,8 @@ export class FilmSetRenderer {
     this.portalDoor = undefined; this.oracleLetter = undefined; this.courtyardStaff = undefined; this.courtyardBirds = []; this.courtyardDisturbedAt = undefined;
     this.exileDessert = undefined; this.bookDoor = undefined; this.chateauVolley = undefined; this.chateauVolleyTick = undefined; this.chateauDoor = undefined;
     this.garageCar = undefined; this.garageGhosts = [];
+    this.powerStatus = undefined;
+    this.sourceDoor = undefined;
     this.office?.dispose(); this.office = undefined;
     this.freeway?.dispose(); this.freeway = undefined;
     this.lobby?.dispose(); this.lobby = undefined;

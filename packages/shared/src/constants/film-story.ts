@@ -22,6 +22,15 @@ export interface FilmScene {
   id: string; film: 1 | 2 | 3; set: string; actor: string; title: string; chapter: string;
   music: FilmCue; context: string; cast: string[]; steps: FilmStep[];
 }
+export const GRID_WINDOW_SECONDS = 314;
+export const GRID_REROUTE_SECONDS = 6;
+export const GRID_HACK_SECONDS = 12;
+export interface GridOperation {
+  primary: 'online' | 'armed' | 'off'; emergency: 'online' | 'off';
+  vigilant: 'active' | 'lost'; trinity: 'waiting' | 'connected';
+  phase: 'preparing' | 'emergency' | 'window' | 'expired' | 'rerouting' | 'opened';
+  remaining: number; lastTick: number; reroute: number; attempts: number; hackRemaining?: number;
+}
 export interface FilmJourney {
   version: 1; scene: string; step: number; actor: string; completed: string[];
   enteredAt: number; started?: number; fighting?: boolean; checkpoint: Vector3;
@@ -63,6 +72,8 @@ export interface FilmJourney {
   keymaker?: import('./exiles.js').KeymakerEncounter;
   chateau?: import('./chateau.js').ChateauEncounter;
   mountain?: import('./mountain.js').MountainFlight;
+  grid?: GridOperation;
+  keyDoor?: { portalOpened: boolean; keyTaken: boolean };
 }
 const walk = (label: string, x = 0, z = -12): FilmStep => ({ kind: 'reach', label, x, z });
 const use = (label: string, text: string, x = 0, z = -12, seconds = 3): FilmStep => ({ kind: 'interact', label, text, x, z, seconds });
@@ -161,10 +172,17 @@ export const FILM_SCENES: FilmScene[] = [
     use('抓住钥匙匠，迎接 Neo', '两辆货车正面相撞。Neo 掠过车顶，在爆炸前带走 Morpheus 与钥匙匠。', TRUCKS.keymaker.x, TRUCKS.keymaker.z, 1.5),
   ], ['keymaker', 'agent_johnson', 'niobe', 'neo']),
   scene('m2_plan', 2, 'neb_deck', 'neo', '钥匙匠的路线', 'architect', 'infiltration', '打开通往源头的门需要同步切断主电源与备用电源。几艘船分头行动。', [use('核对电站示意图', 'Niobe 的队伍负责发电厂，另一支队伍负责备用电源；Neo 与 Morpheus 护送钥匙匠。', 0, -16), think('合作如何改变可能的选择？', '这条路线无法靠一个人的力量完成。')], ['keymaker', 'morpheus', 'trinity']),
-  scene('m2_power', 2, 'power_station', 'niobe', '主电网的倒计时', 'architect', 'infiltration', 'Niobe 的队伍进入发电设施，准备在同一时刻切断供电。', [fight('清除配电区守卫', 2), use('操作主断路器', '主电源被切断，下一组必须关闭备用系统。', 0, -29, 6)], ['ghost']),
-  scene('m2_vigilant', 2, 'service_tunnels', 'trinity', '突然失去的联系', 'architect', 'siege', '执行备用电源任务的 Vigilant 被哨兵摧毁。Trinity 决定亲自补上缺口。', [use('检查中断的信号', '备用系统仍在供电。等待会让进入核心的队伍全军覆没。', 0, -20), use('接入备用电站', 'Trinity 违背 Neo 的请求进入矩阵。', 0, 0)], ['link']),
-  scene('m2_backup', 2, 'backup_station', 'trinity', '最后一条供电线路', 'architect', 'combat', 'Trinity 冲进备用电站，在特工拦截前完成关停。', [fight('突破机房封锁', 2), use('关闭备用配电柜', '通向核心的路线短暂打开；Trinity 却被特工追上。', 0, -23, 4)]),
-  scene('m2_key_door', 2, 'backdoor_hall', 'neo', '钥匙匠的最后一扇门', 'architect', 'infiltration', 'Smith 出现在走廊里。钥匙匠用最后的时间打开门，把任务交给 Neo。', [walk('抵达走廊尽头', 0, -35), use('接过钥匙，进入白门', '钥匙匠中枪倒下，Morpheus 留在门外。', 0, -40)], ['keymaker', 'morpheus']),
+  scene('m2_power', 2, 'power_station', 'niobe', '主电网的倒计时', 'architect', 'infiltration', 'Niobe 与 Ghost 进入发电厂，在换班前安放同步爆破装置。备用系统未关闭前，主网仍受保护。', [fight('清除配电区守卫', 2), use('设定同步爆破装置', '主网装置已武装；必须等应急系统也停用，才能同时解除源头的保护。', 0, -29, 6)], ['ghost']),
+  scene('m2_vigilant', 2, 'service_tunnels', 'trinity', '突然失去的联系', 'architect', 'siege', '执行应急系统任务的 Vigilant 遭到哨兵袭击。Trinity 与 Link 无法得到船员回应。', [use('检查 Vigilant 最后的信号', 'Soren 的队伍失联，应急系统仍在供电。等待会让进入核心的队伍全军覆没。', 0, -20), use('接入备用电站', 'Trinity 违背 Neo 的请求，决定亲自补上缺口。', 0, 0)], ['link']),
+  scene('m2_backup', 2, 'backup_station', 'trinity', '最后一条供电线路', 'architect', 'combat', 'Trinity 冲进电网改线中心，在特工拦截前接入应急系统主机。', [fight('突破机房封锁', 2), use('接入应急系统，准备终止自动改线', 'Niobe 的主网装置起爆。应急系统随即接管，Trinity 必须在 Neo 抵达白门前完成最后的覆盖。', 0, -23, 4)]),
+  scene('m2_key_door', 2, 'source_corridor', 'neo', '钥匙匠的最后一扇门', 'architect', 'infiltration', '主网已失电，应急系统却重新接管。Neo 与 Morpheus 必须保护钥匙匠穿过 Smith 复制体，等待 Trinity 切断最后一路保护。', [
+    walk('抵达工业走廊的转角', 0, -20),
+    { ...fight('挡住 Smith 复制体，保护钥匙匠', 3, 'smith'), z: -25 },
+    use('从复制体手中救出 Morpheus', 'Neo 将 Smith 从 Morpheus 身旁推开，钥匙匠找到正确的门。', 0, -31, 2),
+    use('配合钥匙匠打开第一道门', '应急保护已解除。钥匙匠推开门户；Smith 的枪声追着三人进入另一侧。', 0, -38, 3),
+    use('从负伤的钥匙匠手中接过最后的钥匙', '钥匙匠把通往源头的钥匙交给 Neo，Morpheus 必须走另一条回程门。', 0, -45, 2),
+    use('由 Neo 打开通往源头的门', 'Neo 用钥匙打开白门，独自面对建筑师；Morpheus 留在门外。', 0, -52, 3),
+  ], ['keymaker', 'morpheus', 'smith']),
   scene('m2_architect', 2, 'architect_room', 'neo', '被计算过的救世主', 'architect', 'source', '建筑师通过环形屏幕解释异常、锡安和此前的循环。两扇门指向不同代价。', [walk('走到建筑师面前', 0, -8), think('预测能够取消自由吗？', '电影中的 Neo 选择救 Trinity；你的反思记录理解，不改写这个关键结果。'), use('走向 Trinity 所在的门', 'Neo 离开建筑师的房间，赶往城市中的坠落。', 7, -21)], ['architect']),
   scene('m2_catch', 2, 'trinity_roof', 'neo', '抓住正在坠落的人', 'trinity_choice', 'the_one', 'Trinity 中枪坠出高楼。Neo 冲入城市，在她触地之前接住她。', [walk('抵达接应平台', 0, -20), use('救回 Trinity', 'Neo 取出子弹，帮助她恢复心跳。两人返回现实，战争却仍在逼近。', 0, -20, 8)], ['trinity']),
   scene('m2_ship_lost', 2, 'neb_deck', 'morpheus', '尼布甲尼撒号的终点', 'trinity_choice', 'siege', '哨兵使用远程炸弹攻击。船员及时弃船，但尼布甲尼撒号被摧毁。', [use('发出弃船指令', '连接设备与旧船体留在身后。', 0, 0), walk('撤向隧道', 0, 31)], ['trinity', 'neo', 'link']),

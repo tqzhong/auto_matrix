@@ -1,8 +1,8 @@
 import { ReloadedOpeningSystem } from './ReloadedOpeningSystem.js';
 import { newReloaded, reloadedLocked, ZION_CAST } from '@auto_matrix/shared';
-import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_CAST, filmReflections, CHARACTERS, LOCATIONS, NEO_CHAPTERS, filmCharacterFates, filmEntry, filmPosition, filmStepPosition, locationEntrance, distance, playerBlocked, newFreewayRide, stepFreeway, OFFICE_LADDER, awakeningLocked, awakeningPose, AWAKENING_SECONDS, CONSTRUCT_REVEAL, DESERT_REVEAL, oracleActing,
+import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_CAST, GRID_WINDOW_SECONDS, GRID_REROUTE_SECONDS, GRID_HACK_SECONDS, filmReflections, CHARACTERS, LOCATIONS, NEO_CHAPTERS, filmCharacterFates, filmEntry, filmPosition, filmStepPosition, locationEntrance, distance, playerBlocked, newFreewayRide, stepFreeway, OFFICE_LADDER, awakeningLocked, awakeningPose, AWAKENING_SECONDS, CONSTRUCT_REVEAL, DESERT_REVEAL, oracleActing,
   AMBUSH_REWRITE, AMBUSH_SECONDS, AMBUSH_SEALS, OFFICE_CONTACT, OFFICE_WINDOW, OFFICE_CROSSING_SECONDS, officeCrossingPose, windowCrossing, phoneLocked, heldPhone, windowOpening, pillLocked, pillRoot, PILL_ROOM, PILL_TIMING, trainingLocked, trainingRoot, trainingText, TRAINING_SECONDS,
-  lobbyLocked, meleeReach, groundHeight, type DriveInput, type AgentState, type FilmScene, type FilmStep, type SandboxState, type SandboxThreat, type TrainingRole, type CombatImpact } from '@auto_matrix/shared';
+  lobbyLocked, meleeReach, groundHeight, type DriveInput, type AgentState, type FilmScene, type FilmStep, type GridOperation, type SandboxState, type SandboxThreat, type TrainingRole, type CombatImpact } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
 import { LobbyCombatSystem } from './LobbyCombatSystem.js';
 import { OfficeEscapeSystem } from './OfficeEscapeSystem.js';
@@ -43,6 +43,53 @@ export class FilmStorySystem {
   get scene(): FilmScene | undefined { return this.state && FILM_SCENE_BY_ID[this.state.scene]; }
   get step(): FilmStep | undefined { return this.scene?.steps[this.state!.step]; }
   controls(agent: AgentState): boolean { return Boolean(this.state && this.state.actor === agent.id); }
+  private grid(tick: number): GridOperation {
+    const state = this.state!;
+    if (!state.grid) {
+      // Saves from before the linked operation existed retain their current scene and step.
+      const current = FILM_SCENES.findIndex(scene => scene.id === state.scene);
+      const reached = (id: string) => state.completed.includes(id) || current > FILM_SCENES.findIndex(scene => scene.id === id)
+        || state.scene === id && state.step >= FILM_SCENE_BY_ID[id].steps.length;
+      const backup = reached('m2_backup');
+      state.grid = { primary: backup ? 'off' : reached('m2_power') ? 'armed' : 'online', emergency: backup ? 'off' : 'online',
+        vigilant: reached('m2_vigilant') || state.scene === 'm2_vigilant' && state.step > 0 ? 'lost' : 'active',
+        trinity: reached('m2_vigilant') ? 'connected' : 'waiting',
+        phase: reached('m2_key_door') ? 'opened' : backup ? 'window' : 'preparing',
+        remaining: GRID_WINDOW_SECONDS, lastTick: tick, reroute: 0, attempts: 0 };
+    }
+    return state.grid;
+  }
+  private gridTick(actor: AgentState | undefined, tick: number): void {
+    const state = this.state!; const grid = this.grid(tick);
+    const elapsed = Math.max(0, tick - grid.lastTick) * .5;
+    grid.lastTick = tick;
+    if (!actor?.controller || actor.status !== 'alive') return;
+    if (grid.phase === 'emergency' && state.scene === 'm2_key_door') {
+      if (this.world.agents.get('trinity')?.controller) {
+        state.lastText = 'Trinity 正由另一位玩家控制；应急系统等待她完成接管。'; return;
+      }
+      grid.hackRemaining = Math.max(0, (grid.hackRemaining ?? GRID_HACK_SECONDS) - elapsed);
+      if (grid.hackRemaining === 0) {
+        grid.emergency = 'off'; grid.phase = 'window'; grid.remaining = GRID_WINDOW_SECONDS;
+        state.lastText = 'Trinity 关闭应急改线，城市灯光再次熄灭。钥匙匠的 314 秒连接窗口开始；快抵达白门。';
+      }
+    } else if (grid.phase === 'window') {
+      grid.remaining = Math.max(0, grid.remaining - elapsed);
+      if (grid.remaining === 0) {
+        grid.phase = 'expired'; delete state.started;
+        state.lastText = '314 秒窗口关闭，白门重新受保护。赶到门前让 Link 联系 Niobe 与 Trinity 改线；这是游戏中的补救路线。';
+      }
+    } else if (grid.phase === 'rerouting') {
+      if (['niobe', 'trinity'].some(id => this.world.agents.get(id)?.controller)) {
+        state.lastText = 'Niobe 或 Trinity 正由另一位玩家控制；改线等待队伍重新配合。'; return;
+      }
+      grid.reroute = Math.min(GRID_REROUTE_SECONDS, grid.reroute + elapsed);
+      if (grid.reroute >= GRID_REROUTE_SECONDS) {
+        grid.phase = 'window'; grid.remaining = GRID_WINDOW_SECONDS; grid.attempts++;
+        state.lastText = 'Link 确认 Niobe 重设主网时序、Trinity 重新接入应急系统。白门获得新的 314 秒窗口，快拿钥匙进入。';
+      }
+    }
+  }
   performing(agent: AgentState): boolean { return this.controls(agent) && (this.state!.trucks?.phase === 'rescue' || this.state!.persephone?.phase === 'enacting' || burlyLocked(this.state!) || clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || theOneLocked(this.state!) || reloadedLocked(this.state!) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
   clubFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
@@ -2509,6 +2556,47 @@ export class FilmStorySystem {
       position: filmPosition('film_keymaker_workshop', EXILES.bookshelf.x, EXILES.bookshelf.z), matrix: true, health: 999,
       film: { scene: 'm2_library', width: 5, depth: .6, height: 13 } });
   }
+  private sourceDoor(): void {
+    const state = this.state!;
+    const former = FILM_SETS.film_backdoor_hall.center; const current = FILM_SETS.film_source_corridor.center;
+    const inFormer = (position: typeof state.checkpoint) => Math.abs(position.x - former.x) < 60 && Math.abs(position.z - former.z) < 100;
+    const migrate = (position: typeof state.checkpoint) => ({ x: position.x + current.x - former.x, y: position.y + current.y - former.y, z: position.z + current.z - former.z });
+    for (const id of [state.actor, ...this.scene!.cast]) {
+      const agent = this.world.agents.get(id);
+      if (!agent || agent.currentLocation !== 'film_backdoor_hall' && (agent.currentLocation !== 'film_source_corridor' || !inFormer(agent.position))) continue;
+      agent.position = migrate(agent.position); agent.currentLocation = 'film_source_corridor';
+    }
+    if (inFormer(state.checkpoint)) state.checkpoint = migrate(state.checkpoint);
+    if (state.returnPosition && inFormer(state.returnPosition)) state.returnPosition = migrate(state.returnPosition);
+    if (!state.keyDoor) {
+      // The old two-step hallway save had already reached its only door at step 1.
+      if (state.step >= 2) state.step = FILM_SCENE_BY_ID.m2_key_door.steps.length;
+      else if (state.step === 1) { state.step = 3; delete state.started; }
+      state.keyDoor = { portalOpened: state.step >= 4, keyTaken: state.step >= 5 };
+    }
+    this.sealSourceDoor();
+    if (state.keyDoor.keyTaken) {
+      const keymaker = this.world.agents.get('keymaker');
+      if (keymaker && !keymaker.controller) { keymaker.status = 'dead'; keymaker.health = 0; keymaker.currentAction = null; }
+    }
+  }
+  private sealSourceDoor(): void {
+    const state = this.state; const prefix = 'film:keydoor:';
+    if (state?.scene !== 'm2_key_door' || state.visiting) {
+      this.sandbox().structures = this.sandbox().structures.filter(s => !s.id.startsWith(prefix)); return;
+    }
+    const closed = !state.keyDoor?.portalOpened;
+    this.sandbox().structures = this.sandbox().structures.filter(s => !s.id.startsWith(prefix) || s.id !== `${prefix}portal` || closed);
+    const barriers: [string, number, number][] = [['left', -8.7, 10.6], ['right', 8.7, 10.6]];
+    if (closed) barriers.push(['portal', 0, 6.8]);
+    for (const [id, x, width] of barriers) {
+      const existing = this.sandbox().structures.find(s => s.id === `${prefix}${id}`);
+      if (existing) { existing.position = filmPosition('film_source_corridor', x, -39); continue; }
+      this.sandbox().structures.push({ id: `${prefix}${id}`, kind: 'barricade', owner: 'matrix',
+        position: filmPosition('film_source_corridor', x, -39), matrix: true, health: 999,
+        film: { scene: 'm2_key_door', width, depth: .6, height: 12 } });
+    }
+  }
 
   command(agent: AgentState, target: string, tick: number): string {
     const life = this.sandbox().neoLife;
@@ -2537,6 +2625,7 @@ export class FilmStorySystem {
       return '已继续保存的剧情视角与位置。';
     }
     if (!this.controls(agent)) return '请接入当前剧情角色，或以 Neo 继续电影进度。';
+    if (state.scene === 'm2_key_door' && !state.visiting) this.sourceDoor();
     if (target === 'return' && state.visiting) {
       agent.position = { ...(state.returnPosition ?? state.checkpoint) }; agent.currentLocation = this.scene.set;
       agent.isInMatrix = FILM_SETS[this.scene.set].world === 'matrix';
@@ -2804,6 +2893,22 @@ export class FilmStorySystem {
     }
     if (state.awakening && state.awakening.elapsed < AWAKENING_SECONDS[state.awakening.kind]) return '演出进行中，可以转动视角观察；进度会自动保存。';
     if (!this.near(agent, step)) return '请走近金色目标标记（4 米内），再按 G。';
+    if (state.scene === 'm2_key_door' && [3, 5].includes(state.step)) {
+      const grid = this.grid(tick);
+      if (grid.phase === 'expired') {
+        if (target !== 'act') return state.lastText;
+        if (['niobe', 'trinity'].some(id => this.world.agents.get(id)?.controller)) return 'Niobe 或 Trinity 正由另一位玩家控制，改线需要等待她们配合。';
+        grid.phase = 'rerouting'; grid.reroute = 0; grid.lastTick = tick;
+        state.lastText = 'Link 正联系 Niobe 与 Trinity，重设主网与应急系统的同步时序。等待改线完成。';
+        return state.lastText;
+      }
+      if (grid.phase === 'rerouting') return '队伍正在重新接通电网时序，等待改线完成。';
+      if (grid.phase === 'emergency') return 'Trinity 仍在覆盖应急改线。守住这条走廊，等最后一路保护解除。';
+      if (grid.phase !== 'window') return '主网和应急系统尚未同时解除保护。先完成两支队伍的任务。';
+    }
+    if (state.scene === 'm2_key_door' && state.step === 1 && this.world.agents.get('smith')?.controller) return 'Smith 正由另一位玩家控制，走廊交锋停在当前检查点。';
+    if (state.scene === 'm2_key_door' && state.step === 2 && this.world.agents.get('morpheus')?.controller) return 'Morpheus 正由另一位玩家控制，营救动作等待他的玩家。';
+    if (state.scene === 'm2_key_door' && [3, 4].includes(state.step) && this.world.agents.get('keymaker')?.controller) return '钥匙匠正由另一位玩家控制，开门与交钥匙等待他的玩家。';
     if (state.scene === 'm2_bane_copy' && state.step > 0 && ['malachi', 'smith'].some(id => this.world.agents.get(id)?.controller)) return 'Ballard 的船员或 Smith 正由另一位玩家控制，感染片段停在当前检查点。';
     if (state.scene === 'm1_boss' && state.step === 1) delete state.started;
     if (state.started !== undefined) return '互动进行中，移动离开会中断。';
@@ -2986,6 +3091,7 @@ export class FilmStorySystem {
     delete state.mountain;
     delete state.persephone;
     delete state.keymaker;
+    delete state.keyDoor;
     this.sandbox().structures = this.sandbox().structures.filter(structure => structure.id !== 'film:reloaded:door');
     this.sandbox().structures = this.sandbox().structures.filter(structure => structure.id !== 'film:library:bookdoor');
     this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== 'film:apartment:door');
@@ -3035,6 +3141,11 @@ export class FilmStorySystem {
     }
     if (scene.id === 'm2_chateau') state.chateau = { phase: 'ready', wave: 1, parries: 0, disarms: 0, attempts: 0, wounded: false };
     if (scene.id === 'm2_trucks') state.trucks = { phase: 'duel', elapsed: 0, lastTick: tick, attempt: 0 };
+    if (scene.id === 'm2_plan') state.grid = { primary: 'online', emergency: 'online', vigilant: 'active', trinity: 'waiting', phase: 'preparing',
+      remaining: GRID_WINDOW_SECONDS, lastTick: tick, reroute: 0, attempts: 0 };
+    if (['m2_power', 'm2_vigilant', 'm2_backup', 'm2_key_door'].includes(scene.id)) this.grid(tick);
+    if (scene.id === 'm2_key_door') state.keyDoor = { portalOpened: false, keyTaken: false };
+    this.sealSourceDoor();
     if (scene.id === 'm2_mountain') state.mountain = { phase: 'ground', elapsed: 0, x: MOUNTAIN.launch.x, z: MOUNTAIN.launch.z, altitude: 0, attempt: 0 };
     if (scene.id === 'm2_persephone') state.persephone = { phase: 'offered', elapsed: 0, attempts: 0 };
     if (scene.id === 'm2_library') {
@@ -3216,6 +3327,10 @@ export class FilmStorySystem {
         const spot = positions[id]; if (spot) { actor.position = filmPosition(scene.set, spot[0], spot[1]); actor.rotation = spot[2]; }
       }
       if (scene.id === 'm2_backdoors' && id === 'seraph') { actor.position = filmPosition(scene.set, 2.5, -30); actor.rotation = Math.PI; }
+      if (scene.id === 'm2_key_door') {
+        const positions: Record<string, [number, number, number]> = { keymaker: [2, -37, 0], morpheus: [-2, -31, 0], smith: [0, -25, 0] };
+        const spot = positions[id]; if (spot) { actor.position = filmPosition(scene.set, spot[0], spot[1]); actor.rotation = spot[2]; }
+      }
       if (scene.id === 'm2_bench' && id === 'oracle') {
         actor.position = filmPosition(scene.set, -9, -20); actor.rotation = 0;
         actor.currentAction = { type: 'idle', parameters: { seated: true }, startedAt: this.state!.enteredAt, duration: 100000, progress: 0 };
@@ -3255,6 +3370,39 @@ export class FilmStorySystem {
   }
   private advance(text: string, agent: AgentState, tick: number): void {
     const state = this.state!; const life = this.sandbox().neoLife!;
+    if (state.scene === 'm2_backup' && state.step === 1) {
+      const grid = this.grid(tick);
+      if (grid.primary !== 'armed' || grid.vigilant !== 'lost' || grid.trinity !== 'connected') {
+        state.lastText = '主网装置、Vigilant 的失联确认和 Trinity 的补位尚未全部完成。'; delete state.started; return;
+      }
+      grid.primary = 'off'; grid.emergency = 'online'; grid.phase = 'emergency'; grid.hackRemaining = GRID_HACK_SECONDS; grid.lastTick = tick;
+    }
+    if (state.scene === 'm2_key_door' && [3, 5].includes(state.step)) {
+      const grid = this.grid(tick);
+      if (grid.phase !== 'window') { state.lastText = '连接窗口已经关闭。先在门前完成改线。'; delete state.started; return; }
+      if (state.step === 5) grid.phase = 'opened';
+    }
+    if (state.scene === 'm2_key_door' && state.keyDoor) {
+      const keymaker = this.world.agents.get('keymaker'); const morpheus = this.world.agents.get('morpheus');
+      if (state.step === 2) {
+        if (morpheus && !morpheus.controller) morpheus.position = filmPosition(this.scene!.set, -2, -37);
+      }
+      if (state.step === 3) {
+        state.keyDoor.portalOpened = true;
+        if (keymaker && !keymaker.controller) {
+          keymaker.position = filmPosition(this.scene!.set, 1, -45); keymaker.health = Math.max(1, Math.round(keymaker.maxHealth * .18));
+          keymaker.currentAction = { type: 'idle', parameters: { crouching: true, resolved: true }, startedAt: tick, duration: 100000, progress: 0 };
+        }
+        if (morpheus && !morpheus.controller) morpheus.position = filmPosition(this.scene!.set, -2, -43);
+      }
+      if (state.step === 4) {
+        state.keyDoor.keyTaken = true;
+        if (keymaker && !keymaker.controller) { keymaker.status = 'dead'; keymaker.health = 0; keymaker.currentAction = null; }
+      }
+    }
+    if (state.scene === 'm2_power' && state.step === 1) this.grid(tick).primary = 'armed';
+    if (state.scene === 'm2_vigilant' && state.step === 0) this.grid(tick).vigilant = 'lost';
+    if (state.scene === 'm2_vigilant' && state.step === 1) this.grid(tick).trinity = 'connected';
     if (state.scene === 'm2_library' && state.keymaker) {
       if (state.step === 1) {
         const cain = this.world.agents.get('cain'); if (cain && !cain.controller) { cain.status = 'dead'; cain.currentAction = null; }
@@ -3316,6 +3464,7 @@ export class FilmStorySystem {
     if (state.scene === 'm1_bug' && state.step === 0 && state.office?.outcome === 'escaped') text = '扫描完成，没有发现追踪装置。Trinity 收起仪器，确认接头安全，继续前往 Morpheus 的房间。';
     state.lastText = text; state.step++; state.checkpoint = { ...agent.position }; delete state.started; delete state.fighting;
     if (state.scene === 'm2_library') this.sealKeymakerDoor();
+    if (state.scene === 'm2_key_door') this.sealSourceDoor();
     if (state.scene === 'm2_oracle_message' && state.step === 1) this.sealZionMessageDoor();
     if (state.scene === 'm1_desert' && state.step === 1) {
       state.awakening = { kind: 'desert', elapsed: 0, started: false };
@@ -3363,7 +3512,9 @@ export class FilmStorySystem {
   }
   tick(tick: number): void {
     const state = this.state; if (!state || !this.scene || state.finished || state.visiting) return;
+    if (state.scene === 'm2_key_door') this.sourceDoor();
     const actor = this.world.agents.get(state.actor);
+    if (['m2_plan', 'm2_power', 'm2_vigilant', 'm2_backup', 'm2_key_door'].includes(state.scene)) this.gridTick(actor, tick);
     if (state.scene === 'm2_trucks' && actor?.currentLocation === 'film_freeway_101') {
       const roof = filmEntry(this.scene);
       this.place(actor, this.scene, roof); state.checkpoint = { ...roof };

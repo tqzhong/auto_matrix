@@ -1,5 +1,5 @@
 import { RELOADED, reloadedText } from '@auto_matrix/shared';
-import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_NAMES, filmStepPosition, pillLocked, lafayetteWelcomeLocked, awakeningLocked, awakeningWaiting, AWAKENING_SECONDS, trainingLocked, trainingWaiting, TRAINING_SECONDS, DOJO_COMBO_WINDOW, windowOpening, windowCrossing, ITEMS, RECIPES, SKILLS, FILMS, MISSIONS, LOCATIONS, CITY_BUILDINGS, NEO_CHAPTERS, LIFE_ACTIONS, lifeActionPosition, lifeRoomCenter, locationEntrance, distance, missionPosition, nearTransit, skillPoints,
+import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_NAMES, GRID_HACK_SECONDS, GRID_REROUTE_SECONDS, filmStepPosition, pillLocked, lafayetteWelcomeLocked, awakeningLocked, awakeningWaiting, AWAKENING_SECONDS, trainingLocked, trainingWaiting, TRAINING_SECONDS, DOJO_COMBO_WINDOW, windowOpening, windowCrossing, ITEMS, RECIPES, SKILLS, FILMS, MISSIONS, LOCATIONS, CITY_BUILDINGS, NEO_CHAPTERS, LIFE_ACTIONS, lifeActionPosition, lifeRoomCenter, locationEntrance, distance, missionPosition, nearTransit, skillPoints,
   type AgentState, type SandboxState, type SandboxCommand, type ItemId, type SkillId, type Vector3 } from '@auto_matrix/shared';
 import './sandbox.css';
 import { renderNeoLife } from './NeoLifePanel.js';
@@ -190,6 +190,30 @@ export class SandboxUI {
     this.el('sandbox-job').style.width = journey.started !== undefined && step ? `${Math.min(100, (this.tick - journey.started) / ((step.seconds ?? 3) * 2) * 100)}%` : '0';
     document.getElementById('game-objective')!.textContent = journey.visiting ? set.name : scene.title;
     document.getElementById('game-objective-copy')!.textContent = journey.visiting ? '自由走动，J 返回保存的剧情位置。' : journey.fighting ? 'F 连击 · X 闪避 · 1 治疗 · 击败追兵后继续' : step ? `${journey.step + 1}/${scene.steps.length} · ${step.label} · ${step.kind === 'reach' ? '走到标记旁' : step.kind === 'reflect' ? '靠近后按 J 记录反思' : '靠近后按 G'}` : 'G 继续下一段，J 查看刚刚发生的事。';
+    if (!journey.visiting && journey.grid && ['m2_plan', 'm2_power', 'm2_vigilant', 'm2_backup', 'm2_key_door'].includes(scene.id)) {
+      const grid = journey.grid;
+      const clock = `${Math.floor(Math.ceil(grid.remaining) / 60)}:${String(Math.ceil(grid.remaining) % 60).padStart(2, '0')}`;
+      this.el('film-sequence').classList.remove('hidden');
+      this.el('film-sequence').classList.toggle('urgent', grid.phase === 'expired' || grid.phase === 'window' && grid.remaining < 60);
+      this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = grid.phase === 'window' ? `连接窗口 ${clock} · Neo 与钥匙匠必须赶到白门`
+        : grid.phase === 'emergency' ? `应急系统已接管 · Trinity 覆盖进度 ${Math.round((1 - (grid.hackRemaining ?? GRID_HACK_SECONDS) / GRID_HACK_SECONDS) * 100)}%`
+        : grid.phase === 'expired' ? '窗口关闭 · 走到白门前按 G 联系剩余队伍改线'
+          : grid.phase === 'rerouting' ? `Link / Niobe / Trinity 改线 ${Math.ceil(GRID_REROUTE_SECONDS - grid.reroute)} 秒 · 等待恢复`
+            : grid.phase === 'opened' ? '白门已打开 · 钥匙匠的任务已完成'
+              : 'Niobe 设定主网装置 · Vigilant 负责应急系统 · Trinity 待命';
+      this.el('sandbox-trace').textContent = grid.phase === 'window' ? `连接窗口 ${clock}` : `主网 ${grid.primary === 'online' ? '在线' : grid.primary === 'armed' ? '已武装' : '离线'} · 应急 ${grid.emergency === 'online' ? '在线' : '离线'}`;
+      this.el('sandbox-trace').classList.toggle('danger', grid.phase === 'expired' || grid.phase === 'window' && grid.remaining < 60);
+      if (scene.id === 'm2_key_door' && grid.phase === 'expired' && [3, 5].includes(journey.step)) {
+        this.el('sandbox-nearby').textContent = '联系队伍改线';
+        document.getElementById('game-objective-copy')!.textContent = '门户已重新受保护 · 走近当前目标，按 G 让 Link 联系 Niobe 与 Trinity';
+      }
+      if (grid.phase === 'rerouting') {
+        this.el('sandbox-interact').classList.add('hidden');
+        this.el('sandbox-job').style.width = `${grid.reroute / GRID_REROUTE_SECONDS * 100}%`;
+        document.getElementById('game-objective-copy')!.textContent = 'Link 正与两队重设时序 · 完成后再拿钥匙开门';
+      }
+    }
     if (!journey.visiting && scene.id === 'm2_persephone' && journey.step === 2 && journey.persephone) {
       this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
       this.el('film-sequence-hint').textContent = journey.persephone.phase === 'enacting' ? '动作与同伴反应正在保存 · V 切换视角' : '靠近后按 J · 电影路线或基于餐桌回应的另一种说法';

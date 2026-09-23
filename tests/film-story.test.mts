@@ -49,6 +49,9 @@ test('all trilogy scenes have distinct stable IDs, existing cast, accessible obj
     if (scene.steps.some(s => s.kind === 'reflect') && !['m1_pills', 'm1_ledge', 'm1_wake_up'].includes(scene.id)) assert.equal(filmReflections(scene.id).length, 3, `${scene.id}: dialogue must be playable`);
   }
   assert.equal(FILM_SCENE_BY_ID.m1_pills.set, 'film_lafayette');
+  assert.equal(FILM_SCENE_BY_ID.m2_key_door.set, 'film_source_corridor');
+  assert.notEqual(FILM_SCENE_BY_ID.m2_key_door.set, FILM_SCENE_BY_ID.m2_backdoors.set);
+  assert.match(FILM_SETS.film_source_corridor.name, /工业|施工/);
   assert.equal(FILM_SCENE_BY_ID.m1_dejavu.set, 'film_ambush_house');
   assert.equal(FILM_SCENE_BY_ID.m3_bane.set, 'film_logos_deck');
   assert.equal(FILM_SCENE_BY_ID.m3_dock_battle.actor, 'mifune');
@@ -1153,6 +1156,152 @@ test('an older truck checkpoint on the shared freeway moves onto the new trailer
   assert.equal(state.step, 1); assert.equal(state.trucks?.phase, 'collision');
 });
 
+test('Niobe arms the main station, Vigilant loss requires Trinity, and only both cuts open the 314-second door window', () => {
+  const h = setup(); h.command('start'); const state = h.sandbox.life.film.state!;
+  const power = FILM_SCENE_BY_ID.m2_power; Object.assign(state, { scene: power.id, actor: 'niobe', step: 1 });
+  h.players.possess('film-player', 'niobe', h.tick()); h.actor().currentLocation = power.set; h.actor().isInMatrix = true;
+  h.actor().position = filmStepPosition(power, power.steps[1]); h.command('act'); h.advance(12);
+  assert.equal(state.step, 2); assert.equal(state.grid?.primary, 'armed');
+  assert.equal(state.grid?.emergency, 'online'); assert.equal(state.grid?.phase, 'preparing');
+
+  const vigilant = FILM_SCENE_BY_ID.m2_vigilant; Object.assign(state, { scene: vigilant.id, actor: 'trinity', step: 0 });
+  h.players.possess('film-player', 'trinity', h.tick()); h.actor().currentLocation = vigilant.set; h.actor().isInMatrix = false;
+  for (const index of [0, 1]) { h.actor().position = filmStepPosition(vigilant, vigilant.steps[index]); h.command('act'); h.advance(6); }
+  assert.equal(state.grid?.vigilant, 'lost'); assert.equal(state.grid?.trinity, 'connected');
+
+  const backup = FILM_SCENE_BY_ID.m2_backup; Object.assign(state, { scene: backup.id, step: 1 });
+  h.actor().currentLocation = backup.set; h.actor().isInMatrix = true; h.actor().position = filmStepPosition(backup, backup.steps[1]);
+  h.command('act'); h.advance(8);
+  assert.equal(state.step, 2); assert.equal(state.grid?.primary, 'off'); assert.equal(state.grid?.emergency, 'online');
+  assert.equal(state.grid?.phase, 'emergency'); assert.equal(state.grid?.remaining, 314);
+
+  const door = FILM_SCENE_BY_ID.m2_key_door; Object.assign(state, { scene: door.id, actor: 'neo', step: 5,
+    keyDoor: { portalOpened: true, keyTaken: true } });
+  h.players.possess('film-player', 'neo', h.tick()); h.actor().currentLocation = door.set; h.actor().isInMatrix = true;
+  h.actor().position = filmStepPosition(door, door.steps[5]); h.advance(24);
+  assert.equal(state.grid?.phase, 'window'); assert.equal(state.grid?.emergency, 'off');
+  h.advance(10);
+  assert.ok(state.grid!.remaining < 314); h.command('act'); h.advance(6);
+  assert.equal(state.grid?.phase, 'opened'); assert.equal(state.step, door.steps.length);
+});
+
+test('a missed grid window blocks the key door and reroutes through the surviving crews; pause and save freeze the repair', () => {
+  const h = setup(); h.command('start'); let state = h.sandbox.life.film.state!;
+  const door = FILM_SCENE_BY_ID.m2_key_door;
+  Object.assign(state, { scene: door.id, actor: 'neo', step: 5, keyDoor: { portalOpened: true, keyTaken: true },
+    grid: { primary: 'off', emergency: 'off', vigilant: 'lost', trinity: 'connected', phase: 'window', remaining: 1, lastTick: h.tick(), reroute: 0, attempts: 0 } });
+  h.players.possess('film-player', 'neo', h.tick());
+  h.actor().currentLocation = door.set; h.actor().isInMatrix = true; h.actor().position = filmStepPosition(door, door.steps[5]);
+  h.advance(3); assert.equal(state.grid?.phase, 'expired');
+  assert.equal(state.step, 5); assert.match(h.command('act'), /改线|重连/); assert.equal(state.grid?.phase, 'rerouting');
+  h.advance(4); const elapsed = state.grid!.reroute;
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); state = h.sandbox.life.film.state!;
+  assert.equal(state.grid?.reroute, elapsed);
+  h.players.release('film-player', h.tick()); h.advance(30); assert.equal(state.grid?.reroute, elapsed);
+  h.players.possess('film-player', 'neo', h.tick()); h.advance(8);
+  assert.equal(state.grid?.phase, 'window'); assert.equal(state.grid?.attempts, 1);
+  h.actor().position = filmStepPosition(door, door.steps[5]); h.command('act'); h.advance(6);
+  assert.equal(state.grid?.phase, 'opened'); assert.equal(state.step, door.steps.length);
+});
+
+test('an older key-door checkpoint reconstructs the cut grid without replaying Niobe or Vigilant', () => {
+  const h = setup(); h.command('start'); const state = h.sandbox.life.film.state!;
+  const door = FILM_SCENE_BY_ID.m2_key_door;
+  Object.assign(state, { scene: door.id, actor: 'neo', step: 1, grid: undefined });
+  h.players.possess('film-player', 'neo', h.tick());
+  h.actor().currentLocation = 'film_backdoor_hall'; h.actor().isInMatrix = true;
+  h.actor().position = filmPosition('film_backdoor_hall', 0, -38); state.checkpoint = { ...h.actor().position };
+  h.advance(); assert.equal(state.step, 3); h.command('act'); assert.equal(state.grid?.primary, 'off'); assert.equal(state.grid?.emergency, 'off');
+  assert.equal(state.grid?.phase, 'window');
+  assert.equal(h.actor().currentLocation, door.set); assert.deepEqual(h.actor().position, filmPosition(door.set, 0, -38));
+  assert.deepEqual(state.checkpoint, filmPosition(door.set, 0, -38));
+  h.actor().position = filmPosition('film_backdoor_hall', 0, -38); state.checkpoint = { ...h.actor().position };
+  h.advance();
+  assert.deepEqual(h.actor().position, filmPosition(door.set, 0, -38));
+  assert.deepEqual(state.checkpoint, filmPosition(door.set, 0, -38));
+});
+
+test('a completed two-step key-door save remains complete after the corridor moves', () => {
+  const h = setup(); h.command('start'); const state = h.sandbox.life.film.state!;
+  const door = FILM_SCENE_BY_ID.m2_key_door;
+  Object.assign(state, { scene: door.id, actor: 'neo', step: 2, grid: undefined, keyDoor: undefined,
+    checkpoint: filmPosition('film_backdoor_hall', 0, -45) });
+  h.players.possess('film-player', 'neo', h.tick());
+  h.actor().position = filmPosition('film_backdoor_hall', 0, -45); h.actor().currentLocation = 'film_backdoor_hall';
+  h.advance();
+  assert.equal(state.step, door.steps.length); assert.equal(state.grid?.phase, 'opened');
+  assert.equal(state.keyDoor?.portalOpened, true); assert.equal(state.keyDoor?.keyTaken, true);
+  assert.deepEqual(state.checkpoint, filmPosition(door.set, 0, -45));
+});
+
+test('the backup console cannot open the route before Niobe and Vigilant handoff, and the window freezes without a player', () => {
+  const h = setup(); h.command('start'); const state = h.sandbox.life.film.state!;
+  const backup = FILM_SCENE_BY_ID.m2_backup;
+  Object.assign(state, { scene: backup.id, actor: 'trinity', step: 1,
+    grid: { primary: 'online', emergency: 'online', vigilant: 'active', trinity: 'waiting', phase: 'preparing', remaining: 314, lastTick: h.tick(), reroute: 0, attempts: 0 } });
+  h.players.possess('film-player', 'trinity', h.tick()); h.actor().currentLocation = backup.set; h.actor().isInMatrix = true;
+  h.actor().position = filmStepPosition(backup, backup.steps[1]); h.command('act'); h.advance(8);
+  assert.equal(state.step, 1); assert.equal(state.grid?.phase, 'preparing');
+  assert.match(state.lastText, /尚未全部完成/);
+  Object.assign(state.grid!, { primary: 'armed', vigilant: 'lost', trinity: 'connected' });
+  h.command('act'); h.advance(8); assert.equal(state.grid?.phase, 'emergency');
+  const remaining = state.grid!.hackRemaining;
+  h.players.release('film-player', h.tick()); h.advance(40);
+  assert.equal(state.grid!.hackRemaining, remaining);
+  h.players.possess('film-player', 'neo', h.tick());
+  const door = FILM_SCENE_BY_ID.m2_key_door; Object.assign(state, { scene: door.id, actor: 'neo', step: 1 });
+  h.actor().currentLocation = door.set; h.actor().position = filmStepPosition(door, door.steps[1]);
+  h.players.possess('other-player', 'trinity', h.tick()); h.advance(4);
+  assert.equal(state.grid!.hackRemaining, remaining);
+  h.players.release('other-player', h.tick()); h.advance(2);
+  assert.equal(state.grid!.hackRemaining, remaining! - 1);
+});
+
+test('Neo holds Smith copies, opens the portal, receives the wounded Keymaker’s key, and alone opens the source door', () => {
+  const h = setup(); h.command('start'); let state = h.sandbox.life.film.state!;
+  Object.assign(state, { scene: 'm2_backup', actor: 'trinity', step: FILM_SCENE_BY_ID.m2_backup.steps.length,
+    grid: { primary: 'off', emergency: 'online', vigilant: 'lost', trinity: 'connected', phase: 'emergency',
+      remaining: 314, lastTick: h.tick(), reroute: 0, attempts: 0, hackRemaining: 12 } });
+  h.players.possess('film-player', 'trinity', h.tick());
+  h.command('next'); const door = FILM_SCENE_BY_ID.m2_key_door;
+  assert.equal(state.scene, door.id); assert.equal(h.actor().id, 'neo'); assert.equal(door.steps.length, 6);
+  assert.equal(state.grid?.phase, 'emergency'); assert.equal(state.grid?.emergency, 'online');
+  const portal = filmPosition(door.set, 0, -39);
+  assert.equal(playerBlocked(portal, true, 1.1, h.sandbox.state.structures), true, 'the first door blocks the hallway before it opens');
+  h.advance(24); assert.equal(state.grid?.phase, 'window'); assert.ok(state.grid!.remaining > 313);
+
+  h.actor().position = filmStepPosition(door, door.steps[0]); h.advance(); assert.equal(state.step, 1);
+  h.actor().position = filmStepPosition(door, door.steps[1]); h.command('act'); h.advance();
+  assert.equal(h.sandbox.state.threats.filter(threat => threat.scene === door.id).length, 3);
+  for (const target of h.sandbox.state.threats.filter(threat => threat.scene === door.id)) {
+    for (let hit = 0; target.health > 0 && hit < 30; hit++) {
+      h.actor().position = { ...target.position, z: target.position.z + 2 }; h.actor().rotation = Math.PI;
+      h.sandbox.attack(h.actor(), h.tick(), 2);
+    }
+    assert.equal(target.health, 0);
+  }
+  h.advance(); assert.equal(state.step, 2);
+  for (const index of [2, 3, 4, 5]) {
+    h.actor().position = filmStepPosition(door, door.steps[index]); h.command('act');
+    h.advance((door.steps[index].seconds ?? 3) * 2);
+    assert.equal(state.step, index + 1);
+    if (index === 3) {
+      assert.equal(state.keyDoor?.portalOpened, true);
+      assert.equal(playerBlocked(portal, true, 1.1, h.sandbox.state.structures), false, 'the opened portal is walkable');
+      assert.equal(playerBlocked(filmPosition(door.set, 8.7, -39), true, 1.1, h.sandbox.state.structures), true, 'the wall beside it remains solid');
+    }
+    if (index === 4) {
+      assert.equal(state.keyDoor?.keyTaken, true); assert.equal(h.world.agents.get('keymaker')?.status, 'dead');
+      const remaining = state.grid!.remaining;
+      h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); state = h.sandbox.life.film.state!;
+      assert.equal(state.step, 5); assert.equal(state.keyDoor?.portalOpened, true); assert.equal(state.keyDoor?.keyTaken, true);
+      assert.equal(state.grid?.remaining, remaining); assert.equal(playerBlocked(portal, true, 1.1, h.sandbox.state.structures), false);
+    }
+  }
+  assert.equal(state.grid?.phase, 'opened'); assert.ok(state.completed.includes(door.id));
+  assert.equal(h.world.agents.get('morpheus')?.status, 'alive');
+});
+
 test('the entire film route completes through interactions, driving and real combat, then starts a recorded new life', () => {
   const h = setup(); h.command('start'); const state = h.sandbox.state.neoLife!.journey!;
   let sequence = 0;
@@ -1191,6 +1340,7 @@ test('the entire film route completes through interactions, driving and real com
     }
     for (let index = 0; index < scene.steps.length; index++) {
       const step = scene.steps[index]; const actor = h.actor(); actor.position = filmStepPosition(scene, step);
+      if (scene.id === 'm2_key_door' && index === 3) for (let count = 0; state.grid?.phase !== 'window' && count < 30; count++) h.advance();
       if (scene.id === 'm2_dream') {
         if (index === 0) h.players.step(.1, true, h.tick());
         else { h.command('act'); for (let frame = 0; frame < 110 && state.step === index; frame++) h.players.step(.1, true, h.tick()); }

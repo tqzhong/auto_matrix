@@ -86,8 +86,9 @@ const definitions: Omit<FilmSet, 'id' | 'center'>[] = [
   { name: '工业阁楼 · Bane 的出口', film: [2], architecture: 'tenement', world: 'matrix', width: 52, depth: 78, height: 24, light: 'night', detail: '破碎天窗、旧式出口电话、钢梁与掉落的玻璃' },
   { name: '梅罗文加城堡后门 · 雪山', film: [2], architecture: 'mountain', world: 'matrix', width: 280, depth: 760, height: 180, light: 'day', detail: '白日雪山、石砌城堡后门、远处山脊与向南的飞行航线' },
   { name: '101 高速 · 十八轮卡车车顶', film: [2], architecture: 'freeway', world: 'matrix', width: 60, depth: 180, height: 35, light: 'day', detail: '疾驰的十八轮卡车、车顶决斗、Niobe 接应和迎面相撞的货车' },
+  { name: '工业施工层 · 源头之门', film: [2], architecture: 'backdoors', world: 'matrix', width: 28, depth: 112, height: 12, light: 'cold', detail: '裸露混凝土、临时管线、钥匙匠的门户与通往源头的白门' },
 ];
-const ids = ['heart_hotel', 'hotel_roofs', 'wells_phone', 'anderson_flat', 'white_rabbit_club', 'metacortex_floor', 'office_ledge', 'agent_interrogation', 'adams_bridge', 'extraction_car', 'lafayette', 'power_plant_pods', 'neb_deck', 'white_construct', 'real_desert', 'kungfu_dojo', 'jump_roofs', 'red_dress_plaza', 'cypher_restaurant', 'oracle_home', 'ambush_house', 'government_lobby', 'government_office', 'government_roof', 'subway_platform', 'escape_streets', 'final_phone', 'captains_meeting', 'zion_hangar', 'zion_council', 'zion_residences', 'zion_temple', 'zion_bedroom', 'zion_engineering', 'backdoor_hall', 'seraph_teahouse', 'oracle_courtyard', 'le_vrai', 'chateau_hall', 'keymaker_workshop', 'chateau_garage', 'freeway_101', 'power_station', 'backup_station', 'architect_room', 'trinity_roof', 'service_tunnels', 'hammer_deck', 'mobil_station', 'club_hel', 'logos_deck', 'machine_defense', 'above_clouds', 'logos_wreck', 'machine_core', 'smith_avenue', 'sunrise_garden', 'industrial_loft', 'mountain_range', 'freeway_trucks'];
+const ids = ['heart_hotel', 'hotel_roofs', 'wells_phone', 'anderson_flat', 'white_rabbit_club', 'metacortex_floor', 'office_ledge', 'agent_interrogation', 'adams_bridge', 'extraction_car', 'lafayette', 'power_plant_pods', 'neb_deck', 'white_construct', 'real_desert', 'kungfu_dojo', 'jump_roofs', 'red_dress_plaza', 'cypher_restaurant', 'oracle_home', 'ambush_house', 'government_lobby', 'government_office', 'government_roof', 'subway_platform', 'escape_streets', 'final_phone', 'captains_meeting', 'zion_hangar', 'zion_council', 'zion_residences', 'zion_temple', 'zion_bedroom', 'zion_engineering', 'backdoor_hall', 'seraph_teahouse', 'oracle_courtyard', 'le_vrai', 'chateau_hall', 'keymaker_workshop', 'chateau_garage', 'freeway_101', 'power_station', 'backup_station', 'architect_room', 'trinity_roof', 'service_tunnels', 'hammer_deck', 'mobil_station', 'club_hel', 'logos_deck', 'machine_defense', 'above_clouds', 'logos_wreck', 'machine_core', 'smith_avenue', 'sunrise_garden', 'industrial_loft', 'mountain_range', 'freeway_trucks', 'source_corridor'];
 
 export const FILM_SETS: Record<string, FilmSet> = Object.fromEntries(definitions.map((set, i) => {
   const id = `film_${ids[i]}`;
@@ -160,6 +161,14 @@ export function filmObstacles(set: FilmSet): FilmObstacle[] {
   if (set.id === 'film_keymaker_workshop') return [
     { x: -16.25, z: -18, width: 11.5, depth: .6, height: 13 },
     { x: 8.25, z: -18, width: 27.5, depth: .6, height: 13 },
+  ];
+  if (set.architecture === 'power') return [
+    { x: 0, z: set.id === 'film_power_station' ? -32.3 : -26.3, width: 8, depth: 3, height: 6 },
+    ...[-set.width * .3, set.width * .3].flatMap(x => {
+      const bank = [];
+      for (let z = -set.depth / 2 + 10; z < set.depth / 2 - 5; z += 12) bank.push({ x, z, width: 7, depth: 5, height: 9 });
+      return bank;
+    }),
   ];
   if (set.id === 'film_metacortex_floor') return [...OFFICE_OBSTACLES, ...OFFICE_MANAGER_WALLS, ...OFFICE_MANAGER_FURNITURE];
   if (set.id === 'film_office_ledge') return [{ x: 4, z: 0, width: 2, depth: 76, height: 40 }];
