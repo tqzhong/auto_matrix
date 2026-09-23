@@ -56,6 +56,7 @@ export class SandboxSystem {
     if (journey) this.life.film.governmentFrame(this.world.agents.get(journey.actor)!, false, 0, this.world.simulationTick);
     if (journey) this.life.film.airRescueFrame(this.world.agents.get(journey.actor)!, false, 0, this.world.simulationTick);
     if (journey) this.life.film.matrixEscapeFrame(this.world.agents.get(journey.actor)!, { movement: 0, sprint: false }, 0, this.world.simulationTick);
+    if (journey) this.life.film.theOneFrame(this.world.agents.get(journey.actor)!, { x: 0, z: 0, sprint: false, jump: false, focus: false }, 0, this.world.simulationTick);
     if (journey) this.life.film.lobby.frame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);
   }
   missionsFor(agent: AgentState) { return agent.id === 'neo' && this.state.neoLife ? this.state.neoLife.missions : this.state.missions; }
@@ -197,13 +198,14 @@ export class SandboxSystem {
     const training = this.life.film.trainingHit(agent, target, combo);
     const bathroom = this.life.film.bathroomHit(agent, target);
     const matrixEscape = this.life.film.matrixEscapeHit(agent, target, combo, tick);
-    if (!training && !bathroom && !matrixEscape) this.hit(agent, target, damage, tick);
+    const theOne = this.life.film.theOneHit(agent, target, combo, tick);
+    if (!training && !bathroom && !matrixEscape && !theOne) this.hit(agent, target, damage, tick);
     target.attackAt = undefined;
     target.stunUntil = training ? Math.max(target.stunUntil, tick + (combo === 2 ? 2 : 1)) : tick + (combo === 2 ? 2 : 1);
     target.position = combatDisplace(target.position, direction, strike.push, target.matrix, this.state.structures);
-    this.onImpact?.({ source: agent.id, target: target.id, position, direction, damage: bathroom || matrixEscape ? damage : training ? target.health <= 0 ? damage : 0 : health - target.health, combo,
+    this.onImpact?.({ source: agent.id, target: target.id, position, direction, damage: bathroom || matrixEscape || theOne ? damage : training ? target.health <= 0 ? damage : 0 : health - target.health, combo,
       matrix: agent.isInMatrix, downed: target.health <= 0 }, tick);
-    if (training || bathroom || matrixEscape) return this.life.film.state?.lastText ?? '剧情动作已记录。';
+    if (training || bathroom || matrixEscape || theOne) return this.life.film.state?.lastText ?? '剧情动作已记录。';
     return targets[0].health <= 0 ? '敌对程序已清除。' : `命中，目标剩余 ${targets[0].health} 生命。`;
   }
 
@@ -457,7 +459,7 @@ export class SandboxSystem {
             direction: { x: dx / Math.max(.01, length), y: 0, z: dz / Math.max(.01, length) }, damage: health - actor.health,
             combo: threat.combo ?? 0, matrix: threat.matrix, downed: actor.health <= 0 }, tick);
           delete this.state.profiles[actor.id].job;
-          if (actor.health === 0) { actor.status = 'dead'; actor.velocity = { x: 0, y: 0, z: 0 }; actor.currentAction = null; this.life.film.matrixEscapeDefeated(actor); }
+          if (actor.health === 0) { actor.status = 'dead'; actor.velocity = { x: 0, y: 0, z: 0 }; actor.currentAction = null; this.life.film.matrixEscapeDefeated(actor) || this.life.film.theOneDefeated(actor); }
         }
         continue;
       }

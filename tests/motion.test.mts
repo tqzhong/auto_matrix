@@ -191,6 +191,23 @@ test('city escape performances visibly roll through the truck gap and transform 
   assert.ok(Math.abs(host.arms[0].outward) > .6 && Math.abs(host.arms[1].outward) > .6, 'the possessed host locks into a visible code rewrite silhouette');
 });
 
+test('the One performances distinguish death, Trinity revival, bullet stop, code dive, Smith burst and flight', () => {
+  const idle = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 };
+  const base = { attempt: 0, checkpoint: 'door' as const, signal: 0, hits: 0, blocks: 0, deadline: 0, altitude: 0, flightX: 0, flightZ: 0, resolved: [] as number[] };
+  const wounded = advanceMotion(newMotion(), { ...idle, theOne: { ...base, kind: 'death', phase: 'gunfire', elapsed: 1.6, role: 'neo' } }, 0);
+  assert.ok(wounded.hipHeight < 1.2 && wounded.lean > .55 && Math.abs(wounded.roll) > .3, 'gunshots fold Neo onto the corridor floor');
+  const kiss = advanceMotion(newMotion(), { ...idle, theOne: { ...base, kind: 'death', phase: 'kiss', elapsed: 1.7, role: 'trinity' } }, 0);
+  assert.ok(kiss.arms.every(arm => arm.shoulder < -.7 && arm.grip > .55) && kiss.lean > .3, 'Trinity reaches down with both hands during the revival');
+  const stopped = advanceMotion(newMotion(), { ...idle, theOne: { ...base, kind: 'return', phase: 'bullet_stop', elapsed: 1.2, checkpoint: 'bullets', role: 'neo' } }, 0);
+  assert.ok(stopped.arms[0].shoulder < -1.25 && stopped.arms[0].elbow > -.55, 'Neo extends one open hand into the stopped volley');
+  const dive = advanceMotion(newMotion(), { ...idle, theOne: { ...base, kind: 'return', phase: 'dive', elapsed: 1.2, checkpoint: 'bullets', role: 'neo' } }, 0);
+  assert.ok(dive.lean < -.35 && dive.arms.every(arm => arm.shoulder < -1.05), 'the code dive forms a forward spear instead of a standing idle');
+  const burst = advanceMotion(newMotion(), { ...idle, theOne: { ...base, kind: 'return', phase: 'burst', elapsed: 1.15, checkpoint: 'bullets', role: 'smith' } }, 0);
+  assert.ok(Math.abs(burst.arms[0].outward) > .55 && Math.abs(burst.arms[1].outward) > .55 && Math.abs(burst.roll) > .08, 'Smith tears into a broken code silhouette');
+  const flight = advanceMotion(newMotion(), { ...idle, theOne: { ...base, kind: 'flight', phase: 'takeoff', elapsed: 5.8, checkpoint: 'phone', altitude: 27, role: 'neo' } }, 0);
+  assert.ok(flight.arms.every(arm => arm.shoulder < -1.25) && flight.legs[0].hip !== flight.legs[1].hip && flight.lean < -.25, 'flight extends Neo into a readable airborne pose');
+});
+
 test('armed shoulders follow vertical aim while recoil remains finite', () => {
   const idle = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, armed: true };
   const level = advanceMotion(newMotion(), { ...idle, aimPitch: 0 }, 0);

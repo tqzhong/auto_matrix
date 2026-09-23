@@ -18,6 +18,7 @@ import { RESCUE, rescueDuration, rescueLocked, rescueRoot, rescueText, type Resc
 import { GOVERNMENT_RESCUE, governmentLocked, governmentRoot, governmentText, type GovernmentRescueEncounter, type GovernmentRescueRole } from '@auto_matrix/shared';
 import { AIR_RESCUE, airRescueLocked, airRescueRoot, airRescueText, type AirRescueEncounter, type AirRescueRole } from '@auto_matrix/shared';
 import { MATRIX_ESCAPE, matrixEscapeLocked, matrixEscapeRoot, matrixEscapeText, type MatrixEscapeEncounter, type MatrixEscapeRole } from '@auto_matrix/shared';
+import { THE_ONE, theOneLocked, theOneRoot, theOneText, type TheOneEncounter, type TheOneRole } from '@auto_matrix/shared';
 
 const BATHROOM_ROLES = ['neo', 'trinity', 'switch', 'apoc'] as const;
 const UNPLUGGED_ROLES = ['tank', 'cypher', 'dozer', 'apoc', 'switch', 'neo', 'trinity'] as const;
@@ -33,7 +34,7 @@ export class FilmStorySystem {
   get scene(): FilmScene | undefined { return this.state && FILM_SCENE_BY_ID[this.state.scene]; }
   get step(): FilmStep | undefined { return this.scene?.steps[this.state!.step]; }
   controls(agent: AgentState): boolean { return Boolean(this.state && this.state.actor === agent.id); }
-  performing(agent: AgentState): boolean { return this.controls(agent) && (clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
+  performing(agent: AgentState): boolean { return this.controls(agent) && (clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || theOneLocked(this.state!) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
   clubFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
     if (state?.scene !== 'm1_club' || state.visiting || !this.controls(agent)) return;
@@ -1345,6 +1346,274 @@ export class FilmStorySystem {
     }
     return matrixEscapeText(encounter);
   }
+  private ensureTheOne(): TheOneEncounter {
+    const state = this.state!;
+    const kind = state.scene === 'm1_death' ? 'death' : state.scene === 'm1_return' ? 'return' : 'flight';
+    if (!state.theOne || state.theOne.kind !== kind) {
+      const done = state.completed.includes(state.scene) || state.step >= this.scene!.steps.length;
+      const phase = done ? 'done' : kind === 'return' ? state.step >= 2 ? 'exit_run' : state.step === 1 ? 'counter' : 'ready'
+        : kind === 'flight' && state.step > 0 ? 'call_ready' : 'ready';
+      state.theOne = { kind, phase, elapsed: 0, attempt: 0, checkpoint: kind === 'death' ? 'door' : kind === 'return' ? state.step >= 2 ? 'exit' : 'bullets' : 'phone',
+        signal: 0, hits: 0, blocks: 0, deadline: 0, altitude: 0, flightX: 0, flightZ: 0, resolved: [] };
+    }
+    const encounter = state.theOne;
+    encounter.signal ??= 0; encounter.hits ??= 0; encounter.blocks ??= 0; encounter.deadline ??= 0;
+    encounter.altitude ??= 0; encounter.flightX ??= 0; encounter.flightZ ??= 0; encounter.resolved ??= [];
+    return encounter;
+  }
+  private theOneOccupied(encounter: TheOneEncounter): AgentState | undefined {
+    const roles = encounter.kind === 'death' ? ['smith', 'agent_brown', 'trinity', 'morpheus', 'tank']
+      : encounter.kind === 'return' ? ['smith', 'agent_brown', 'agent_jones', 'trinity', 'morpheus', 'tank'] : [];
+    return roles.map(id => this.world.agents.get(id)).find(actor => actor?.controller);
+  }
+  private clearTheOneActions(): void {
+    for (const actor of this.world.agents.values()) if (actor.currentAction?.parameters.theOne) {
+      actor.currentAction = null; actor.velocity = { x: 0, y: 0, z: 0 };
+    }
+  }
+  private stageTheOneActor(role: TheOneRole, encounter: TheOneEncounter, dt: number, tick: number): void {
+    const actor = this.world.agents.get(role); if (!actor || actor.controller && actor.id !== this.state!.actor) return;
+    const root = theOneRoot(encounter, role); const before = { ...actor.position }; const position = filmPosition(root.set, root.x, root.z); position.y += root.y;
+    actor.position = position; actor.rotation = root.yaw; actor.currentLocation = root.set; actor.isInMatrix = FILM_SETS[root.set].world === 'matrix';
+    actor.velocity = dt > 0 ? { x: (position.x - before.x) / dt, y: (position.y - before.y) / dt, z: (position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
+    actor.currentAction = { type: 'idle', parameters: { player: actor.id === this.state!.actor, resolved: true,
+      armed: role === 'smith' && ['ambush', 'gunfire'].includes(encounter.phase), theOne: { ...encounter, resolved: [...encounter.resolved], role } },
+      startedAt: tick, duration: 1, progress: 0 };
+  }
+  theOneAction(agent: AgentState, tick: number): void {
+    const state = this.state; const encounter = state?.theOne;
+    if (!state || !encounter || !this.controls(agent) || state.visiting || !['m1_death', 'm1_return', 'm1_final_call'].includes(state.scene)
+      || theOneLocked(state) || encounter.phase === 'failed') return;
+    agent.currentAction ??= { type: 'idle', parameters: { player: true, resolved: true }, startedAt: tick, duration: 1, progress: 0 };
+    agent.currentAction.parameters.theOne = { ...encounter, resolved: [...encounter.resolved], role: 'neo' };
+  }
+  private spawnTheOneThreat(agent: AgentState, tick: number): void {
+    const state = this.state!; const encounter = this.ensureTheOne();
+    if (encounter.kind !== 'return' || encounter.phase !== 'counter' || this.sandbox().threats.some(threat => threat.scene === state.scene)) return;
+    const root = theOneRoot(encounter, 'smith'); const position = filmPosition(root.set, root.x, root.z);
+    this.sandbox().threats.push({ id: `film:${++this.sandbox().serial}`, scene: state.scene, kind: 'smith', character: 'smith', position,
+      matrix: true, health: 999, maxHealth: 999, target: agent.id, stunUntil: tick + 2.5, lastStrike: tick });
+    const smith = this.world.agents.get('smith');
+    if (smith && !smith.controller) smith.currentAction = { type: 'idle', parameters: { filmDuel: true }, startedAt: tick, duration: 100000, progress: 0 };
+  }
+  private theOneImpact(source: string, target: string, tick: number, downed = false): void {
+    const encounter = this.ensureTheOne(); const root = theOneRoot(encounter, target === 'smith' ? 'smith' : 'neo');
+    const position = filmPosition(root.set, root.x, root.z); position.y += root.y + 2;
+    const fromRoot = theOneRoot(encounter, source === 'smith' ? 'smith' : 'neo'); const from = filmPosition(fromRoot.set, fromRoot.x, fromRoot.z); from.y += fromRoot.y + 2;
+    const length = Math.max(.001, distance(from, position));
+    this.onImpact?.({ source, target, position, direction: { x: (position.x - from.x) / length, y: (position.y - from.y) / length, z: (position.z - from.z) / length },
+      damage: 0, combo: 0, matrix: encounter.phase !== 'emp', downed, shot: source === 'smith' ? { from, surface: 'stone' } : undefined }, tick);
+  }
+  theOneHit(agent: AgentState, threat: SandboxThreat, _combo: number, tick: number): boolean {
+    const state = this.state; const encounter = state?.theOne;
+    if (!state || !encounter || !this.controls(agent) || encounter.kind !== 'return' || encounter.phase !== 'counter'
+      || threat.scene !== state.scene || threat.character !== 'smith') return false;
+    encounter.hits = Math.min(THE_ONE.return.requiredHits, encounter.hits + 1); threat.health = threat.maxHealth;
+    state.lastText = theOneText(encounter);
+    if (encounter.hits >= THE_ONE.return.requiredHits && encounter.blocks >= THE_ONE.return.requiredBlocks) {
+      encounter.phase = 'dive'; encounter.elapsed = 0; this.clearThreats(); this.theOneFrame(agent, { x: 0, z: 0, sprint: false, jump: false, focus: false }, 0, tick);
+    }
+    return true;
+  }
+  theOneEvade(agent: AgentState, tick: number): string | undefined {
+    const state = this.state; const encounter = state?.theOne;
+    if (!state || !encounter || !this.controls(agent)) return undefined;
+    if (encounter.kind === 'return' && encounter.phase === 'bullet_window') {
+      const offset = Math.abs(encounter.elapsed - THE_ONE.return.bulletBeat);
+      if (offset > THE_ONE.return.bulletWindow) return encounter.elapsed < THE_ONE.return.bulletBeat
+        ? '弹群仍在高速接近；等它们进入代码视野中心再按 X。' : '停弹拍点已经掠过；保持观察，失败后可从代码视野检查点重试。';
+      encounter.phase = 'bullet_stop'; encounter.elapsed = 0; encounter.bulletStopped = true;
+      this.theOneFrame(agent, { x: 0, z: 0, sprint: false, jump: false, focus: false }, 0, tick);
+      return 'Neo 抬手，整片弹群停在走廊中央。';
+    }
+    if (encounter.kind === 'return' && encounter.phase === 'counter') {
+      const threat = this.sandbox().threats.find(candidate => candidate.scene === state.scene && candidate.character === 'smith');
+      if (!threat?.attackAt || threat.attackAt <= tick) return '先看清 Smith 的红色起手，再在命中前按 X 格挡。';
+      encounter.blocks = Math.min(THE_ONE.return.requiredBlocks, encounter.blocks + 1); delete threat.attackAt; threat.stunUntil = Math.max(threat.stunUntil, tick + 2.2);
+      state.lastText = theOneText(encounter);
+      if (encounter.hits >= THE_ONE.return.requiredHits) {
+        encounter.phase = 'dive'; encounter.elapsed = 0; this.clearThreats(); this.theOneFrame(agent, { x: 0, z: 0, sprint: false, jump: false, focus: false }, 0, tick);
+      }
+      return 'Neo 单手截住 Smith 的拳路。程序的速度已经不再构成优势。';
+    }
+    return undefined;
+  }
+  private failTheOne(agent: AgentState, encounter: TheOneEncounter): void {
+    encounter.phase = 'failed'; this.clearThreats(); this.clearTheOneActions();
+    agent.health = 0; agent.status = 'dead'; agent.currentAction = null; agent.velocity = { x: 0, y: 0, z: 0 };
+    this.state!.lastText = theOneText(encounter);
+  }
+  theOneDefeated(agent: AgentState): boolean {
+    const state = this.state; const encounter = state?.theOne;
+    if (!state || !encounter || !this.controls(agent) || encounter.phase === 'failed' || encounter.phase === 'done'
+      || encounter.kind === 'death') return false;
+    this.failTheOne(agent, encounter); return true;
+  }
+  theOneFrame(agent: AgentState, input: { x: number; z: number; sprint: boolean; jump: boolean; focus: boolean }, dt: number, tick: number): boolean {
+    const state = this.state;
+    if (!state || !this.controls(agent) || state.visiting || !['m1_death', 'm1_return', 'm1_final_call'].includes(state.scene)) return false;
+    const encounter = this.ensureTheOne();
+    if (encounter.phase === 'failed') { this.clearTheOneActions(); state.lastText = theOneText(encounter); return false; }
+    if (encounter.kind === 'flight' && encounter.phase === 'done') {
+      this.stageTheOneActor('neo', encounter, 0, tick); state.lastText = theOneText(encounter); return true;
+    }
+    if (agent.status !== 'alive') { this.failTheOne(agent, encounter); return false; }
+    const occupied = this.theOneOccupied(encounter);
+    if (occupied) { state.lastText = `${occupied.name} 正由另一位玩家控制，觉醒片段停在当前进度。`; return theOneLocked(state); }
+    const delta = Math.max(0, Math.min(.1, dt));
+    if (encounter.kind === 'death') {
+      if (encounter.phase === 'ready') {
+        if (state.step === 0 && this.near(agent, this.step!)) this.advance(this.step!.label, agent, tick);
+        this.theOneAction(agent, tick);
+      } else if (encounter.phase === 'ambush') {
+        encounter.elapsed = Math.min(THE_ONE.death.ambush, encounter.elapsed + delta);
+        for (const role of ['neo', 'smith', 'agent_brown'] as TheOneRole[]) this.stageTheOneActor(role, encounter, dt, tick);
+        if (encounter.elapsed >= THE_ONE.death.ambush) { encounter.phase = 'gunfire'; encounter.elapsed = 0; }
+      } else if (encounter.phase === 'gunfire') {
+        const before = encounter.elapsed; encounter.elapsed = Math.min(THE_ONE.death.gunfire, encounter.elapsed + delta);
+        for (const beat of [.35, .78, 1.22]) if (!encounter.resolved.includes(beat) && before < beat && encounter.elapsed >= beat) {
+          encounter.resolved.push(beat); this.theOneImpact('smith', 'neo', tick, beat === 1.22);
+        }
+        for (const role of ['neo', 'smith', 'agent_brown'] as TheOneRole[]) this.stageTheOneActor(role, encounter, dt, tick);
+        if (encounter.elapsed >= THE_ONE.death.gunfire) { encounter.phase = 'flatline'; encounter.elapsed = 0; encounter.resolved = []; }
+      } else if (encounter.phase === 'flatline') {
+        encounter.elapsed = Math.min(THE_ONE.death.flatline, encounter.elapsed + delta);
+        for (const role of ['neo', 'trinity', 'morpheus', 'tank'] as TheOneRole[]) this.stageTheOneActor(role, encounter, dt, tick);
+        if (encounter.elapsed >= THE_ONE.death.flatline) { encounter.phase = 'listening'; encounter.elapsed = 0; }
+      } else if (encounter.phase === 'listening') {
+        if (input.focus) encounter.signal = Math.min(1, encounter.signal + delta / THE_ONE.death.listen);
+        for (const role of ['neo', 'trinity', 'morpheus', 'tank'] as TheOneRole[]) this.stageTheOneActor(role, encounter, dt, tick);
+        if (encounter.signal >= 1) { encounter.phase = 'kiss'; encounter.elapsed = 0; }
+      } else if (encounter.phase === 'kiss') {
+        encounter.elapsed = Math.min(THE_ONE.death.kiss, encounter.elapsed + delta);
+        for (const role of ['neo', 'trinity', 'morpheus', 'tank'] as TheOneRole[]) this.stageTheOneActor(role, encounter, dt, tick);
+        if (encounter.elapsed >= THE_ONE.death.kiss) { encounter.phase = 'revive'; encounter.elapsed = 0; }
+      } else if (encounter.phase === 'revive') {
+        encounter.elapsed = Math.min(THE_ONE.death.revive, encounter.elapsed + delta);
+        for (const role of ['neo', 'smith', 'agent_brown', 'trinity', 'morpheus', 'tank'] as TheOneRole[]) this.stageTheOneActor(role, encounter, dt, tick);
+        if (encounter.elapsed >= THE_ONE.death.revive) {
+          agent.health = agent.maxHealth; encounter.phase = 'done'; this.clearTheOneActions(); this.stageTheOneActor('neo', encounter, 0, tick);
+          this.advance(this.step!.text ?? 'Neo 在旅馆走廊恢复心跳。', agent, tick);
+        }
+      }
+    } else if (encounter.kind === 'return') {
+      if (encounter.phase === 'ready') this.theOneAction(agent, tick);
+      else if (encounter.phase === 'code_reveal') {
+        encounter.elapsed = Math.min(THE_ONE.return.reveal, encounter.elapsed + delta);
+        for (const role of ['neo', 'smith', 'agent_brown', 'agent_jones'] as TheOneRole[]) this.stageTheOneActor(role, encounter, dt, tick);
+        if (encounter.elapsed >= THE_ONE.return.reveal) { encounter.phase = 'bullet_window'; encounter.elapsed = 0; }
+      } else if (encounter.phase === 'bullet_window') {
+        encounter.elapsed = Math.min(THE_ONE.return.bulletDuration, encounter.elapsed + delta);
+        for (const role of ['neo', 'smith', 'agent_brown', 'agent_jones'] as TheOneRole[]) this.stageTheOneActor(role, encounter, dt, tick);
+        if (encounter.elapsed >= THE_ONE.return.bulletDuration) { this.failTheOne(agent, encounter); return false; }
+      } else if (encounter.phase === 'bullet_stop') {
+        encounter.elapsed = Math.min(THE_ONE.return.bulletStop, encounter.elapsed + delta);
+        for (const role of ['neo', 'smith', 'agent_brown', 'agent_jones'] as TheOneRole[]) this.stageTheOneActor(role, encounter, dt, tick);
+        if (encounter.elapsed >= THE_ONE.return.bulletStop) {
+          this.advance(this.step!.text ?? 'Neo 停住并放下整片弹群。', agent, tick); encounter.phase = 'counter'; encounter.elapsed = 0;
+          this.clearTheOneActions(); this.spawnTheOneThreat(agent, tick); state.checkpoint = { ...agent.position };
+        }
+      } else if (encounter.phase === 'counter') {
+        this.spawnTheOneThreat(agent, tick); this.theOneAction(agent, tick);
+      } else if (encounter.phase === 'dive') {
+        encounter.elapsed = Math.min(THE_ONE.return.dive, encounter.elapsed + delta);
+        for (const role of ['neo', 'smith', 'agent_brown', 'agent_jones'] as TheOneRole[]) this.stageTheOneActor(role, encounter, dt, tick);
+        if (encounter.elapsed >= THE_ONE.return.dive) { encounter.phase = 'burst'; encounter.elapsed = 0; }
+      } else if (encounter.phase === 'burst') {
+        const before = encounter.elapsed; encounter.elapsed = Math.min(THE_ONE.return.burst, encounter.elapsed + delta);
+        if (!encounter.smithBurst && before < 1.15 && encounter.elapsed >= 1.15) {
+          encounter.smithBurst = true; this.theOneImpact('neo-code', 'smith', tick, true);
+        }
+        for (const role of ['neo', 'smith', 'agent_brown', 'agent_jones'] as TheOneRole[]) this.stageTheOneActor(role, encounter, dt, tick);
+        if (encounter.elapsed >= THE_ONE.return.burst) {
+          this.advance(this.step!.text ?? 'Neo 从内部撕开 Smith 的程序外壳。', agent, tick); encounter.phase = 'exit_run'; encounter.elapsed = 0;
+          encounter.checkpoint = 'exit'; encounter.deadline = 0; this.clearTheOneActions();
+          agent.position = filmPosition(this.scene!.set, 0, 8); agent.rotation = Math.PI; state.checkpoint = { ...agent.position };
+        }
+      } else if (encounter.phase === 'exit_run') {
+        encounter.deadline = Math.min(THE_ONE.return.exitDeadline, encounter.deadline + delta);
+        if (encounter.deadline >= THE_ONE.return.exitDeadline) { this.failTheOne(agent, encounter); return false; }
+        if (this.step && this.near(agent, this.step)) { encounter.phase = 'exit_ready'; encounter.elapsed = 0; }
+        this.theOneAction(agent, tick);
+      } else if (encounter.phase === 'exit_ready') this.theOneAction(agent, tick);
+      else if (encounter.phase === 'exit_phone') {
+        encounter.elapsed = Math.min(THE_ONE.return.exitPhone, encounter.elapsed + delta); this.stageTheOneActor('neo', encounter, dt, tick);
+        if (encounter.elapsed >= THE_ONE.return.exitPhone) { encounter.phase = 'emp'; encounter.elapsed = 0; }
+      } else if (encounter.phase === 'emp') {
+        const before = encounter.elapsed; encounter.elapsed = Math.min(THE_ONE.return.emp, encounter.elapsed + delta);
+        for (const role of ['neo', 'trinity', 'morpheus', 'tank'] as TheOneRole[]) this.stageTheOneActor(role, encounter, dt, tick);
+        if (!encounter.empFired && before < 1.15 && encounter.elapsed >= 1.15) encounter.empFired = true;
+        if (encounter.elapsed >= THE_ONE.return.emp) {
+          encounter.phase = 'done'; this.clearTheOneActions(); this.stageTheOneActor('neo', encounter, 0, tick);
+          this.advance(this.step!.text ?? 'Neo 离线后，Morpheus 启动 EMP。', agent, tick);
+        }
+      }
+    } else {
+      if (encounter.phase === 'ready' && state.step > 0) { encounter.phase = 'call_ready'; encounter.elapsed = 0; }
+      if (encounter.phase === 'ready' || encounter.phase === 'call_ready') this.theOneAction(agent, tick);
+      else if (encounter.phase === 'call') {
+        encounter.elapsed = Math.min(THE_ONE.flight.call, encounter.elapsed + delta); this.stageTheOneActor('neo', encounter, dt, tick);
+        if (encounter.elapsed >= THE_ONE.flight.call) { encounter.phase = 'takeoff_ready'; encounter.elapsed = 0; }
+      } else if (encounter.phase === 'takeoff_ready') {
+        this.stageTheOneActor('neo', encounter, dt, tick);
+        if (input.jump) { encounter.phase = 'takeoff'; encounter.elapsed = 0; }
+      } else if (encounter.phase === 'takeoff') {
+        encounter.elapsed = Math.min(THE_ONE.flight.takeoff, encounter.elapsed + delta);
+        const progress = encounter.elapsed / THE_ONE.flight.takeoff; encounter.altitude = THE_ONE.flight.maxAltitude * progress * progress * (3 - 2 * progress);
+        const speed = THE_ONE.flight.speed * (input.sprint ? 1.35 : 1); encounter.flightX += input.x * speed * delta; encounter.flightZ += input.z * speed * delta;
+        encounter.flightX = Math.max(-18, Math.min(18, encounter.flightX)); encounter.flightZ = Math.max(-14, Math.min(14, encounter.flightZ));
+        this.stageTheOneActor('neo', encounter, dt, tick);
+        if (encounter.elapsed >= THE_ONE.flight.takeoff) {
+          encounter.phase = 'done'; this.clearTheOneActions(); this.stageTheOneActor('neo', encounter, 0, tick);
+          this.advance(this.step!.text ?? 'Neo 飞向城市上空。', agent, tick);
+        }
+      }
+    }
+    state.lastText = theOneText(encounter); return theOneLocked(state);
+  }
+  private retryTheOne(agent: AgentState, tick: number): string {
+    const state = this.state!; const previous = this.ensureTheOne(); const attempt = previous.attempt + 1;
+    this.clearThreats(); this.clearTheOneActions(); agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
+    if (previous.kind === 'return') {
+      const exit = previous.checkpoint === 'exit' || state.step >= 2; state.step = exit ? 2 : 0;
+      state.theOne = { kind: 'return', phase: exit ? 'exit_run' : 'code_reveal', elapsed: 0, attempt, checkpoint: exit ? 'exit' : 'bullets',
+        signal: 0, hits: exit ? THE_ONE.return.requiredHits : 0, blocks: exit ? THE_ONE.return.requiredBlocks : 0, deadline: 0,
+        altitude: 0, flightX: 0, flightZ: 0, resolved: [], bulletStopped: exit || previous.bulletStopped, smithBurst: exit || previous.smithBurst };
+      agent.position = exit ? filmPosition(this.scene!.set, 0, 8) : filmPosition(this.scene!.set, 0, -9.5); agent.isInMatrix = true; agent.currentLocation = this.scene!.set;
+    } else {
+      state.theOne = { kind: previous.kind, phase: 'ready', elapsed: 0, attempt, checkpoint: previous.checkpoint,
+        signal: 0, hits: 0, blocks: 0, deadline: 0, altitude: 0, flightX: 0, flightZ: 0, resolved: [] };
+      agent.position = { ...state.checkpoint };
+    }
+    agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentAction = null;
+    this.theOneFrame(agent, { x: 0, z: 0, sprint: false, jump: false, focus: false }, 0, tick);
+    return previous.kind === 'return' && state.step >= 2 ? '已从 Smith 消失后的走廊重试；出口电话与 EMP 倒计时重新开始。'
+      : previous.kind === 'return' ? '已从代码视野检查点重试；重新面对三名特工的子弹。' : '已恢复当前觉醒片段的检查点。';
+  }
+  private theOneAct(agent: AgentState, target: string, tick: number): string {
+    const state = this.state!; const encounter = this.ensureTheOne(); const occupied = this.theOneOccupied(encounter);
+    if (occupied) return `${occupied.name} 正由另一位玩家控制，等待对方结束后再继续。`;
+    if (encounter.phase === 'failed' && target === 'act') return this.retryTheOne(agent, tick);
+    if (target !== 'act') return theOneText(encounter);
+    if (encounter.kind === 'death' && encounter.phase === 'ready' && state.step === 1) {
+      encounter.phase = 'ambush'; encounter.elapsed = 0; this.theOneFrame(agent, { x: 0, z: 0, sprint: false, jump: false, focus: false }, 0, tick);
+      return 'Neo 推开 303 房门，Smith 从黑暗里举起手枪。';
+    }
+    if (encounter.kind === 'return' && encounter.phase === 'ready') {
+      encounter.phase = 'code_reveal'; encounter.elapsed = 0; this.theOneFrame(agent, { x: 0, z: 0, sprint: false, jump: false, focus: false }, 0, tick);
+      return 'Neo 看见走廊、特工与子弹背后的 Matrix 代码。';
+    }
+    if (encounter.kind === 'return' && encounter.phase === 'exit_ready') {
+      encounter.phase = 'exit_phone'; encounter.elapsed = 0; this.theOneFrame(agent, { x: 0, z: 0, sprint: false, jump: false, focus: false }, 0, tick);
+      return 'Neo 接起出口电话。Morpheus 等到信号确认离线后再启动 EMP。';
+    }
+    if (encounter.kind === 'flight' && encounter.phase === 'call_ready') {
+      if (!this.near(agent, this.step!)) return '走近街角电话亭，再接通系统线路。';
+      encounter.phase = 'call'; encounter.elapsed = 0; this.theOneFrame(agent, { x: 0, z: 0, sprint: false, jump: false, focus: false }, 0, tick);
+      return 'Neo 接通电话，追踪程序重新运行。';
+    }
+    return theOneText(encounter);
+  }
   private sealAmbush(): void {
     const state = this.state;
     const sealed = (state?.ambush?.elapsed ?? 0) >= AMBUSH_REWRITE || state?.completed.includes('m1_dejavu') || state?.scene === 'm1_dejavu' && state.step > 0;
@@ -1783,6 +2052,7 @@ export class FilmStorySystem {
       return `回访${FILM_SETS[visited.set].name}。J 可返回当前剧情，回访不会改写进度。`;
     }
     if (target === 'retry') {
+      if (state.theOne && ['m1_death', 'm1_return', 'm1_final_call'].includes(state.scene)) return this.retryTheOne(agent, tick);
       if (state.government && ['m1_smith_question', 'm1_bullet_dodge'].includes(state.scene)) return this.retryGovernment(agent, tick);
       if (state.airRescue && ['m1_helicopter', 'm1_rooftop_rescue'].includes(state.scene)) return this.retryAirRescue(agent, tick);
       if (state.matrixEscape && ['m1_subway', 'm1_city_chase'].includes(state.scene)) return this.retryMatrixEscape(agent, tick);
@@ -1986,6 +2256,7 @@ export class FilmStorySystem {
     if (state.scene === 'm1_smith_question' || state.scene === 'm1_bullet_dodge') return this.governmentAct(agent, target, tick);
     if (state.scene === 'm1_helicopter' || state.scene === 'm1_rooftop_rescue') return this.airRescueAct(agent, target, tick);
     if (state.scene === 'm1_subway' || state.scene === 'm1_city_chase') return this.matrixEscapeAct(agent, target, tick);
+    if (state.scene === 'm1_death' || state.scene === 'm1_return' || state.scene === 'm1_final_call' && state.step > 0) return this.theOneAct(agent, target, tick);
     if (interrogationLocked(state) && state.interrogation!.phase !== 'response') return '审讯正在进行。可以转动视角观察，暂停会保留当前进度。';
     if (target === 'escape:retreat' && state.scene === 'm1_ledge') {
       this.capture(agent, tick, '你退回办公室。特工将你带走；电话中的联系尚未结束。');
@@ -2179,6 +2450,7 @@ export class FilmStorySystem {
     delete state.government;
     delete state.airRescue;
     delete state.matrixEscape;
+    delete state.theOne;
     this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== 'film:apartment:door');
     delete state.pills;
     delete state.interrogation;
@@ -2196,6 +2468,7 @@ export class FilmStorySystem {
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.government) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.airRescue) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.matrixEscape) other.currentAction = null;
+    for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.theOne) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.lobbyEntry) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.riding) { other.currentAction = null; other.velocity = { x: 0, y: 0, z: 0 }; }
     if (scene.id === 'm1_lobby') this.lobby.reset();
@@ -2281,10 +2554,17 @@ export class FilmStorySystem {
         pursuit: 0, segment: 0, possessions: 0, resolved: [] };
       this.matrixEscapeFrame(actor, { movement: 0, sprint: false }, 0, tick);
     }
+    if (scene.id === 'm1_death' || scene.id === 'm1_return' || scene.id === 'm1_final_call') {
+      const kind = scene.id === 'm1_death' ? 'death' : scene.id === 'm1_return' ? 'return' : 'flight';
+      state.theOne = { kind, phase: 'ready', elapsed: 0, attempt: 0, checkpoint: kind === 'death' ? 'door' : kind === 'return' ? 'bullets' : 'phone',
+        signal: 0, hits: 0, blocks: 0, deadline: 0, altitude: 0, flightX: 0, flightZ: 0, resolved: [] };
+      this.theOneFrame(actor, { x: 0, z: 0, sprint: false, jump: false, focus: false }, 0, tick);
+    }
     if (scene.id === 'm1_bug' && state.office?.outcome === 'escaped') state.lastText = '你没有被特工带走。Switch 仍要求做安全检查，确认没有追踪装置。';
   }
   private stageCast(): void {
     const scene = this.scene!;
+    if (['m1_death', 'm1_return', 'm1_final_call'].includes(scene.id)) return;
     scene.cast.forEach((id, i) => {
       const actor = this.world.agents.get(id);
       if (!actor || actor.controller || actor.id === this.state!.actor || this.unavailable(id)) return;
@@ -2401,6 +2681,7 @@ export class FilmStorySystem {
       if (state.step === 2) { delete state.started; return; }
     }
     if (state.matrixEscape && ['m1_subway', 'm1_city_chase'].includes(state.scene)) return;
+    if (state.theOne && ['m1_death', 'm1_return', 'm1_final_call'].includes(state.scene)) return;
     const step = this.step; if (!step) return;
     if (state.scene === 'm1_wake_up') { delete state.started; return; }
     if (state.scene === 'm1_boss' && state.step === 1) { delete state.started; return; }

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, RESCUE, RESCUE_LOADOUTS, GOVERNMENT_RESCUE, AIR_RESCUE, MATRIX_ESCAPE, filmReflections, filmStepPosition, filmEntry, filmPosition, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, RESCUE, RESCUE_LOADOUTS, GOVERNMENT_RESCUE, AIR_RESCUE, MATRIX_ESCAPE, THE_ONE, filmReflections, filmStepPosition, filmEntry, filmPosition, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -847,6 +847,57 @@ test('the entire film route completes through interactions, driving and real com
     }
     for (let index = 0; index < scene.steps.length; index++) {
       const step = scene.steps[index]; const actor = h.actor(); actor.position = filmStepPosition(scene, step);
+      if (scene.id === 'm1_death') {
+        if (index === 0) h.players.step(.1, true, h.tick());
+        else {
+          h.command('act');
+          for (let frame = 0; frame < 65 && state.theOne?.phase !== 'listening'; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.theOne?.phase, 'listening');
+          for (let frame = 0; frame < 40 && state.theOne?.phase === 'listening'; frame++) {
+            h.players.receiveInput('film-player', { x: 0, z: 0, yaw: actor.rotation, jump: false, sprint: false, focus: true, sequence: ++sequence });
+            h.players.step(.1, true, h.tick());
+          }
+          for (let frame = 0; frame < 70 && state.step === index; frame++) h.players.step(.1, true, h.tick());
+        }
+        assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`); continue;
+      }
+      if (scene.id === 'm1_return') {
+        if (index === 0) {
+          h.command('act');
+          for (let frame = 0; frame < 30 && state.theOne?.phase !== 'bullet_window'; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.theOne?.phase, 'bullet_window');
+          while (state.theOne!.elapsed < THE_ONE.return.bulletBeat) h.players.step(.1, true, h.tick());
+          h.players.act('film-player', 'dodge', h.tick());
+          for (let frame = 0; frame < 35 && state.step === index; frame++) h.players.step(.1, true, h.tick());
+        } else if (index === 1) {
+          const target = h.sandbox.state.threats.find(threat => threat.scene === scene.id && threat.character === 'smith')!;
+          assert.ok(target); target.attackAt = h.tick() + 2; target.stunUntil = 0; h.players.act('film-player', 'dodge', h.tick());
+          for (let hit = 0; hit < THE_ONE.return.requiredHits; hit++) {
+            target.position = { ...actor.position, z: actor.position.z - 2.1 }; actor.rotation = Math.PI;
+            h.sandbox.attack(actor, h.tick() + hit + 1, hit % 3);
+          }
+          for (let frame = 0; frame < 55 && state.step === index; frame++) h.players.step(.1, true, h.tick());
+        } else {
+          h.players.step(.1, true, h.tick()); assert.equal(state.theOne?.phase, 'exit_ready'); h.command('act');
+          for (let frame = 0; frame < 50 && state.step === index; frame++) h.players.step(.1, true, h.tick());
+        }
+        assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`); continue;
+      }
+      if (scene.id === 'm1_final_call') {
+        if (index === 0) { h.command('reflect:agency'); h.players.step(.1, true, h.tick()); }
+        else {
+          h.command('act');
+          for (let frame = 0; frame < 60 && state.theOne?.phase !== 'takeoff_ready'; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.theOne?.phase, 'takeoff_ready');
+          h.players.receiveInput('film-player', { x: 0, z: 0, yaw: actor.rotation, jump: true, sprint: false, focus: false, sequence: ++sequence });
+          h.players.step(.1, true, h.tick());
+          for (let frame = 0; frame < 80 && state.step === index; frame++) {
+            h.players.receiveInput('film-player', { x: .35, z: -.5, yaw: actor.rotation, jump: false, sprint: true, focus: false, sequence: ++sequence });
+            h.players.step(.1, true, h.tick());
+          }
+        }
+        assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`); continue;
+      }
       if (scene.id === 'm1_subway') {
         if (index === 0) {
           h.command('act');

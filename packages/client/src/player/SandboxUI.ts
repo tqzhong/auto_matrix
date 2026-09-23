@@ -18,6 +18,7 @@ import { LOBBY_ENTRY, lobbyLocked } from '@auto_matrix/shared';
 import { GOVERNMENT_RESCUE, governmentLocked, governmentText } from '@auto_matrix/shared';
 import { AIR_RESCUE, airRescueLocked, airRescueText } from '@auto_matrix/shared';
 import { MATRIX_ESCAPE, matrixEscapeDuration, matrixEscapeLocked, matrixEscapeText } from '@auto_matrix/shared';
+import { THE_ONE, theOneDuration, theOneLocked, theOneText } from '@auto_matrix/shared';
 
 const escape = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const WEATHER = { clear: '晴朗', rain: '雨', code_storm: '代码风暴' };
@@ -593,6 +594,62 @@ export class SandboxUI {
         : phase === 'running' ? `路线 ${encounter.segment + 1}/3 · 追捕压力 ${Math.round(encounter.pursuit * 100)}% · 保持移动会降低增长速度` : matrixEscapeText(encounter);
       this.el('sandbox-trace').textContent = subway ? `站台交锋 ${encounter.hits}/${MATRIX_ESCAPE.subway.requiredHits} · 闪避 ${encounter.dodges}`
         : `路线 ${encounter.segment + 1}/3 · Smith 换体 ${encounter.possessions} 次`;
+      return;
+    }
+    if (!journey.visiting && journey.theOne && ['m1_death', 'm1_return', 'm1_final_call'].includes(scene.id)) {
+      const encounter = journey.theOne; const phase = encounter.phase;
+      const windup = state.threats.some(threat => threat.scene === scene.id && threat.attackAt !== undefined && threat.attackAt > this.tick);
+      const bulletBeat = phase === 'bullet_window' && Math.abs(encounter.elapsed - THE_ONE.return.bulletBeat) <= THE_ONE.return.bulletWindow;
+      const exitRemaining = THE_ONE.return.exitDeadline - encounter.deadline;
+      const close = !step || distance(player.position, filmStepPosition(scene, step)) < 4;
+      const canAct = phase === 'done' || phase === 'failed' || phase === 'exit_ready' || phase === 'call_ready' && close
+        || phase === 'ready' && (encounter.kind !== 'death' || journey.step === 1 && close);
+      this.el('film-sequence').classList.remove('hidden');
+      this.el('film-sequence').classList.toggle('urgent', phase === 'failed' || bulletBeat || windup || phase === 'exit_run' && exitRemaining <= 4);
+      this.el('film-sequence-line').textContent = theOneText(encounter);
+      this.el('film-sequence-hint').textContent = encounter.kind === 'death'
+        ? phase === 'ready' ? journey.step === 0 ? 'WASD 前往 303 房门 · V 切换主视角与场景镜头' : 'G 推开房门 · 之后每个表演拍点都会保存'
+          : phase === 'listening' ? `按住 G 追随 Trinity 的声音 · 信号 ${Math.round(encounter.signal * 100)}%`
+            : phase === 'done' ? 'G 继续 · Neo 已在旅馆走廊重新站起' : '鼠标观察 · V 切换主视角与场景镜头 · 当前一拍自动保存'
+        : encounter.kind === 'return'
+          ? phase === 'ready' ? 'G 看穿代码 · V 切换主视角与场景镜头'
+            : phase === 'bullet_window' ? bulletBeat ? '现在按 X 停住弹群！' : '盯住逼近的子弹 · 进入代码视野中心时按 X'
+              : phase === 'counter' ? windup ? '红色起手出现 · 现在按 X 格挡，再按 F 反击' : `靠近 Smith · F 反击 ${encounter.hits}/${THE_ONE.return.requiredHits} · 等红色起手再按 X`
+                : phase === 'exit_run' ? `WASD / Shift 冲向走廊尽头 · 剩余 ${Math.max(0, Math.ceil(exitRemaining))} 秒`
+                  : phase === 'exit_ready' ? 'G 接听出口电话 · Morpheus 会等 Neo 离线后再启动 EMP'
+                    : phase === 'failed' ? 'G 从最近的觉醒检查点重试' : phase === 'done' ? 'G 继续最终通话 · J 查看手记'
+                      : '鼠标观察 · V 切换主视角与场景镜头 · 当前一拍自动保存'
+          : phase === 'ready' ? 'G / J 打开手记，决定如何使用这份力量'
+            : phase === 'call_ready' ? '走近街角电话亭 · G 接通系统线路'
+              : phase === 'takeoff_ready' ? '按住空格离地 · 起飞后 WASD 改变方向，Shift 加速'
+                : phase === 'takeoff' ? `WASD 调整航向 · Shift 加速 · 高度 ${Math.round(encounter.altitude)} / ${THE_ONE.flight.maxAltitude} m`
+                  : phase === 'done' ? 'G 保存第一部结局并继续 · V 可在空中切换视角' : '鼠标观察 · V 切换主视角与场景镜头';
+      this.el('sandbox-interact').classList.toggle('hidden', !canAct);
+      this.el('sandbox-nearby').textContent = phase === 'failed' ? '从觉醒检查点重试' : phase === 'done' ? '继续下一段'
+        : encounter.kind === 'death' ? '推开 303 房门' : phase === 'exit_ready' ? '接听出口电话'
+          : encounter.kind === 'flight' && phase === 'ready' ? '在手记中作出选择' : encounter.kind === 'flight' ? '接通系统线路' : '看见 Matrix 代码';
+      const actions = this.el('film-training-actions'); const dodge = actions.querySelector<HTMLButtonElement>('[data-combat="dodge"]')!; const attack = actions.querySelector<HTMLButtonElement>('[data-combat="attack"]')!;
+      if (phase === 'bullet_window' || phase === 'counter') {
+        actions.classList.remove('hidden'); dodge.classList.remove('hidden'); dodge.disabled = phase === 'bullet_window' ? !bulletBeat : !windup;
+        attack.classList.toggle('hidden', phase !== 'counter'); attack.disabled = false; attack.querySelector('span')!.textContent = '反击';
+      }
+      const duration = theOneDuration(encounter);
+      const progress = phase === 'listening' ? encounter.signal * 100 : phase === 'counter'
+        ? (encounter.hits + encounter.blocks) / (THE_ONE.return.requiredHits + THE_ONE.return.requiredBlocks) * 100
+        : phase === 'exit_run' ? encounter.deadline / THE_ONE.return.exitDeadline * 100
+          : phase === 'takeoff' || phase === 'done' && encounter.kind === 'flight' ? encounter.altitude / THE_ONE.flight.maxAltitude * 100
+            : duration ? encounter.elapsed / duration * 100 : 0;
+      this.el('sandbox-job').style.width = `${Math.min(100, progress)}%`;
+      document.getElementById('game-objective')!.textContent = encounter.kind === 'death' ? '303 · 死亡与声音'
+        : encounter.kind === 'return' ? '看见代码 · 成为 The One' : '电话之后的天空';
+      document.getElementById('game-objective-copy')!.textContent = theOneText(encounter);
+      this.el('sandbox-trace').textContent = encounter.kind === 'death' ? `连接信号 ${Math.round(encounter.signal * 100)}%`
+        : encounter.kind === 'return' ? phase === 'exit_run' ? `出口剩余 ${Math.max(0, Math.ceil(exitRemaining))} 秒` : `格挡 ${encounter.blocks}/${THE_ONE.return.requiredBlocks} · 反击 ${encounter.hits}/${THE_ONE.return.requiredHits}`
+          : `飞行高度 ${Math.round(encounter.altitude)} / ${THE_ONE.flight.maxAltitude} m`;
+      if (step && (phase === 'exit_run' || phase === 'call_ready' || encounter.kind === 'death' && phase === 'ready')) {
+        const target = filmStepPosition(scene, step); const direction = Math.atan2(target.x - player.position.x, target.z - player.position.z) - player.rotation;
+        this.el('sandbox-waypoint').innerHTML = `<span style="transform:rotate(${-direction}rad)">↑</span>${step.label} <b>${Math.round(distance(target, player.position))} m</b>`;
+      } else if (theOneLocked(journey) || phase === 'counter' || phase === 'takeoff_ready' || phase === 'done') this.el('sandbox-waypoint').textContent = '';
       return;
     }
     if (scene.id === 'm1_office_escape' && journey.office && !journey.office.outcome && !journey.visiting) {

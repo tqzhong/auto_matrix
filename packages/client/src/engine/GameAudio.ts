@@ -370,6 +370,45 @@ export class GameAudio {
     noise(at, impact ? .8 : 2.2, truck ? 820 : 1450, impact ? .12 : .055, truck ? 'bandpass' : 'highpass');
     tone(at, truck ? 58 : 42, impact ? 24 : truck ? 44 : 31, impact ? 1.6 : 2.6, impact ? .085 : .045, 'sawtooth');
   }
+  theOneSound(kind: 'door' | 'gunshots' | 'flatline' | 'heartbeat' | 'kiss' | 'code' | 'bullets' | 'burst' | 'alarm' | 'emp' | 'call' | 'wind'): void {
+    if (kind === 'door') { this.lafayetteSound('door'); return; }
+    if (kind === 'gunshots') { this.governmentSound('gunfire'); return; }
+    if (kind === 'heartbeat') { this.governmentSound('body'); this.governmentSound('body'); return; }
+    if (kind === 'code') { this.matrixEscapeSound('code'); return; }
+    if (kind === 'bullets') { this.governmentSound('bullet'); return; }
+    if (kind === 'burst') { this.governmentSound('crash'); this.matrixEscapeSound('code'); return; }
+    if (kind === 'alarm') { this.sentinelSound('alarm'); return; }
+    if (kind === 'call') { this.landlineSound('pickup'); return; }
+    if (kind === 'wind') { this.windowSound(true); return; }
+    const bus = this.effects(); if (!bus) return;
+    const { context: ctx, output } = bus; const at = ctx.currentTime;
+    const tone = (start: number, from: number, to: number, duration: number, level: number, type: OscillatorType = 'sine') => {
+      const oscillator = ctx.createOscillator(); const gain = ctx.createGain(); oscillator.type = type;
+      oscillator.frequency.setValueAtTime(from, start); oscillator.frequency.exponentialRampToValueAtTime(to, start + duration);
+      gain.gain.setValueAtTime(.0001, start); gain.gain.linearRampToValueAtTime(level, start + .015); gain.gain.exponentialRampToValueAtTime(.0001, start + duration);
+      oscillator.connect(gain); gain.connect(output); oscillator.start(start); oscillator.stop(start + duration + .01);
+      oscillator.onended = () => { oscillator.disconnect(); gain.disconnect(); };
+    };
+    const noise = (start: number, duration: number, frequency: number, level: number, type: BiquadFilterType) => {
+      const buffer = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * duration), ctx.sampleRate); const samples = buffer.getChannelData(0);
+      for (let i = 0; i < samples.length; i++) samples[i] = (Math.random() * 2 - 1) * Math.exp(-i / ctx.sampleRate * .72);
+      const source = ctx.createBufferSource(); source.buffer = buffer;
+      const filter = ctx.createBiquadFilter(); filter.type = type; filter.frequency.value = frequency;
+      const gain = ctx.createGain(); gain.gain.setValueAtTime(.0001, start); gain.gain.linearRampToValueAtTime(level, start + .025); gain.gain.exponentialRampToValueAtTime(.0001, start + duration);
+      source.connect(filter); filter.connect(gain); gain.connect(output); source.start(start);
+      source.onended = () => { source.disconnect(); filter.disconnect(); gain.disconnect(); };
+    };
+    if (kind === 'flatline') {
+      tone(at, 1030, 1030, 1.8, .034); tone(at, 2060, 2060, 1.8, .009);
+      return;
+    }
+    if (kind === 'kiss') {
+      tone(at, 110, 174, 1.25, .028, 'triangle'); tone(at + .12, 165, 262, 1.18, .021);
+      tone(at + .26, 220, 392, 1.05, .014); return;
+    }
+    noise(at, 2.35, 92, .22, 'lowpass'); noise(at + .08, 1.8, 4200, .105, 'highpass');
+    tone(at, 54, 18, 2.25, .08, 'sawtooth'); tone(at + .18, 680, 68, 1.65, .034, 'square'); tone(at + .52, 2400, 120, .85, .021, 'triangle');
+  }
   lafayetteSound(kind: 'thunder' | 'knock' | 'handshake' | 'door'): void {
     const bus = this.effects(); if (!bus) return;
     const { context: ctx, output } = bus; const duration = kind === 'thunder' ? 2.8 : kind === 'door' ? 1.15 : kind === 'knock' ? .14 : .18;

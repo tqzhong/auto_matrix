@@ -2,7 +2,7 @@
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { FILM_SCENES, FILM_SETS, RESCUE, GOVERNMENT_RESCUE, AIR_RESCUE, filmEntry, filmStepPosition, filmPosition, playerBlocked, NEO_CHAPTERS, MEETING_DRIVE_SECONDS, type MatrixEscapeEncounter, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENES, FILM_SETS, RESCUE, GOVERNMENT_RESCUE, AIR_RESCUE, filmEntry, filmStepPosition, filmPosition, playerBlocked, NEO_CHAPTERS, MEETING_DRIVE_SECONDS, type MatrixEscapeEncounter, type TheOneEncounter, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -315,6 +315,30 @@ if (['city-phone', 'city-truck', 'city-door'].includes(process.argv[3]) && scene
     pursuit: .43, segment: journey.step, possessions: variant === 'city-phone' ? 0 : variant === 'city-truck' ? 1 : 2, resolved: [],
     phoneBroken: variant !== 'city-phone', host: variant === 'city-phone' ? undefined : variant === 'city-truck' ? 'citizen_13' : 'citizen_14' } as MatrixEscapeEncounter;
   sandbox.life.film.matrixEscapeFrame(actor, { movement: 0, sprint: false }, 0, 0); journey.checkpoint = { ...actor.position };
+}
+if (['death-shot', 'death-listen', 'death-kiss'].includes(process.argv[3]) && scene.id === 'm1_death') {
+  const journey = sandbox.life.film.state!; const variant = process.argv[3]; actor.controller = 'player'; journey.step = 1;
+  journey.theOne = { kind: 'death', phase: variant === 'death-shot' ? 'gunfire' : variant === 'death-listen' ? 'listening' : 'kiss',
+    elapsed: variant === 'death-shot' ? .95 : variant === 'death-kiss' ? 1.2 : 0, attempt: 0, checkpoint: 'door',
+    signal: variant === 'death-listen' ? .42 : variant === 'death-kiss' ? 1 : 0, hits: 0, blocks: 0, deadline: 0,
+    altitude: 0, flightX: 0, flightZ: 0, resolved: variant === 'death-shot' ? [.35, .78] : [] } as TheOneEncounter;
+  sandbox.life.film.theOneFrame(actor, { x: 0, z: 0, sprint: false, jump: false, focus: false }, 0, 0); journey.checkpoint = { ...actor.position };
+}
+if (['one-bullets', 'one-dive', 'one-emp'].includes(process.argv[3]) && scene.id === 'm1_return') {
+  const journey = sandbox.life.film.state!; const variant = process.argv[3]; actor.controller = 'player';
+  journey.step = variant === 'one-bullets' ? 0 : variant === 'one-dive' ? 1 : 2;
+  journey.theOne = { kind: 'return', phase: variant === 'one-bullets' ? 'bullet_stop' : variant === 'one-dive' ? 'dive' : 'emp',
+    elapsed: variant === 'one-bullets' ? 1.25 : variant === 'one-dive' ? 1.05 : 1.35, attempt: 0,
+    checkpoint: variant === 'one-emp' ? 'exit' : 'bullets', signal: 0, hits: variant === 'one-bullets' ? 0 : 3,
+    blocks: variant === 'one-bullets' ? 0 : 1, deadline: variant === 'one-emp' ? 4 : 0, altitude: 0, flightX: 0, flightZ: 0,
+    resolved: [], bulletStopped: true, smithBurst: variant === 'one-emp', empFired: variant === 'one-emp' } as TheOneEncounter;
+  sandbox.life.film.theOneFrame(actor, { x: 0, z: 0, sprint: false, jump: false, focus: false }, 0, 0); journey.checkpoint = { ...actor.position };
+}
+if (['final-call', 'final-flight'].includes(process.argv[3]) && scene.id === 'm1_final_call') {
+  const journey = sandbox.life.film.state!; const flight = process.argv[3] === 'final-flight'; actor.controller = 'player'; journey.step = 1;
+  journey.theOne = { kind: 'flight', phase: flight ? 'takeoff' : 'call', elapsed: flight ? 4.6 : 2.7, attempt: 0, checkpoint: 'phone',
+    signal: 0, hits: 0, blocks: 0, deadline: 0, altitude: flight ? 21 : 0, flightX: flight ? 4 : 0, flightZ: flight ? -3 : 0, resolved: [] } as TheOneEncounter;
+  sandbox.life.film.theOneFrame(actor, { x: 0, z: 0, sprint: false, jump: false, focus: false }, 0, 0); journey.checkpoint = { ...actor.position };
 }
 for (const resident of world.agents.values()) delete resident.controller;
 neo.isAwakened = FILM_SCENES.indexOf(scene) >= FILM_SCENES.findIndex(s => s.id === 'm1_pod');

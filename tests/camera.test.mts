@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import type { AgentState, PlayerInput } from '@auto_matrix/shared';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { CameraController } from '../packages/client/src/engine/CameraController.js';
-import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, pillRoot, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, ORACLE_VISIT, RESCUE, airRescueRoot, matrixEscapeRoot } from '@auto_matrix/shared';
+import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, pillRoot, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, ORACLE_VISIT, RESCUE, airRescueRoot, matrixEscapeRoot, theOneRoot, type TheOneEncounter } from '@auto_matrix/shared';
 
 test('observer camera releases drag and ignores pointer capture while a character controls the view', () => {
   let captures = 0;
@@ -778,4 +778,94 @@ test('the pill camera supports seated first person and releases movement when th
   assert.equal(game.controls.motion.pills, undefined);
   game.key('KeyW'); game.step(.5); game.key('KeyW', false);
   assert.ok(game.group.position.z > game.state.position.z + .4, 'ordinary movement must resume clear of the chair');
+});
+
+const oneEncounter = (kind: TheOneEncounter['kind'], phase: TheOneEncounter['phase'], elapsed: number): TheOneEncounter => ({
+  kind, phase, elapsed, attempt: 0, checkpoint: kind === 'death' ? 'door' : kind === 'return' ? 'bullets' : 'phone',
+  signal: 0, hits: 0, blocks: 0, deadline: 0, altitude: kind === 'flight' ? 18 : 0, flightX: 2, flightZ: -1, resolved: [],
+});
+
+test('room 303 gunfire frames Neo and Smith while V follows Neo toward the shooter', t => {
+  const game = setup(t, Math.PI); const center = FILM_SETS.film_heart_hotel.center; const encounter = oneEncounter('death', 'gunfire', 1.15);
+  const neo = theOneRoot(encounter, 'neo'); const smith = theOneRoot(encounter, 'smith'); game.state.currentLocation = neo.set;
+  game.state.position = { ...filmPosition(neo.set, neo.x, neo.z), y: center.y + neo.y }; game.state.rotation = neo.yaw;
+  game.state.currentAction = { type: 'idle', parameters: { theOne: { ...encounter, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.step(.4); assert.equal(game.controls.performing, true);
+  assert.ok(Math.abs(game.camera.position.x - center.x) < 6.35, '303 camera must stay inside the corridor walls');
+  for (const root of [neo, smith]) {
+    const screen = new THREE.Vector3(center.x + root.x, center.y + root.y + 2.1, center.z + root.z).project(game.camera);
+    assert.ok(Math.abs(screen.x) < .82 && Math.abs(screen.y) < .86 && screen.z > -1 && screen.z < 1, `303 gunfire crop: ${screen.toArray().join(',')}`);
+  }
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+  const target = new THREE.Vector3(center.x + smith.x, center.y + smith.y + 2.2, center.z + smith.z);
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).dot(target.clone().sub(game.camera.position).normalize()) > .88);
+});
+
+test('Trinity revival and the EMP each keep the ship crew readable', t => {
+  const game = setup(t); const center = FILM_SETS.film_neb_deck.center;
+  const apply = (encounter: TheOneEncounter) => {
+    const neo = theOneRoot(encounter, 'neo'); game.state.currentLocation = neo.set;
+    game.state.position = { ...filmPosition(neo.set, neo.x, neo.z), y: center.y + neo.y }; game.state.rotation = neo.yaw;
+    game.state.currentAction = { type: 'idle', parameters: { theOne: { ...encounter, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
+    game.controls.possess(game.state); game.step(.4);
+  };
+  const kiss = oneEncounter('death', 'kiss', 1.45); apply(kiss);
+  for (const role of ['neo', 'trinity'] as const) {
+    const root = theOneRoot(kiss, role); const screen = new THREE.Vector3(center.x + root.x, center.y + root.y + 1.8, center.z + root.z).project(game.camera);
+    assert.ok(Math.abs(screen.x) < .75 && Math.abs(screen.y) < .82 && screen.z > -1 && screen.z < 1, `${role} missing from revival`);
+  }
+  const emp = oneEncounter('return', 'emp', 1.55); emp.empFired = true; apply(emp);
+  assert.ok(Math.abs(game.camera.position.x - center.x) < 8 && game.camera.position.z - center.z > 8,
+    'EMP camera must use the open center aisle instead of looking through the operator CRTs');
+  for (const role of ['neo', 'trinity', 'morpheus', 'tank'] as const) {
+    const root = theOneRoot(emp, role); const screen = new THREE.Vector3(center.x + root.x, center.y + root.y + 2, center.z + root.z).project(game.camera);
+    assert.ok(Math.abs(screen.x) < .9 && Math.abs(screen.y) < .9 && screen.z > -1 && screen.z < 1, `${role} missing from EMP`);
+  }
+});
+
+test('stopped bullets and Smith destruction hold every body in the hotel composition', t => {
+  const game = setup(t); const center = FILM_SETS.film_heart_hotel.center;
+  const apply = (phase: 'bullet_stop' | 'dive' | 'burst', elapsed: number) => {
+    const encounter = oneEncounter('return', phase, elapsed); const neo = theOneRoot(encounter, 'neo'); game.state.currentLocation = neo.set;
+    game.state.position = { ...filmPosition(neo.set, neo.x, neo.z), y: center.y + neo.y }; game.state.rotation = neo.yaw;
+    game.state.currentAction = { type: 'idle', parameters: { theOne: { ...encounter, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
+    game.controls.possess(game.state); game.step(.4);
+    assert.ok(Math.abs(game.camera.position.x - center.x) < 6.35, `${phase} camera must stay inside the corridor walls`);
+    return encounter;
+  };
+  const stopped = apply('bullet_stop', 1.2);
+  for (const role of ['neo', 'smith', 'agent_brown', 'agent_jones'] as const) {
+    const root = theOneRoot(stopped, role); const screen = new THREE.Vector3(center.x + root.x, center.y + root.y + 2.1, center.z + root.z).project(game.camera);
+    assert.ok(Math.abs(screen.x) < .9 && Math.abs(screen.y) < .9 && screen.z > -1 && screen.z < 1, `${role} missing from stopped volley`);
+  }
+  for (const phase of ['dive', 'burst'] as const) {
+    const encounter = apply(phase, 1.15); const neo = theOneRoot(encounter, 'neo'); const smith = theOneRoot(encounter, 'smith');
+    for (const root of [neo, smith]) {
+      const screen = new THREE.Vector3(center.x + root.x, center.y + root.y + 2, center.z + root.z).project(game.camera);
+      assert.ok(Math.abs(screen.x) < .88 && Math.abs(screen.y) < .88 && screen.z > -1 && screen.z < 1, `${phase} crop`);
+    }
+  }
+});
+
+test('the final takeoff camera follows Neo above the skyline and V enters the airborne eye line', t => {
+  const game = setup(t); const center = FILM_SETS.film_final_phone.center; const encounter = oneEncounter('flight', 'takeoff', 4.3);
+  encounter.altitude = 22; encounter.flightX = 5; encounter.flightZ = -2; const neo = theOneRoot(encounter, 'neo'); game.state.currentLocation = neo.set;
+  game.state.position = { ...filmPosition(neo.set, neo.x, neo.z), y: center.y + neo.y }; game.state.rotation = neo.yaw;
+  game.state.currentAction = { type: 'idle', parameters: { theOne: { ...encounter, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.step(.4); assert.ok(game.camera.position.y > center.y + 20);
+  const screen = new THREE.Vector3(game.state.position.x, game.state.position.y + 2, game.state.position.z).project(game.camera);
+  assert.ok(Math.abs(screen.x) < .6 && Math.abs(screen.y) < .65 && screen.z > -1 && screen.z < 1);
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+  assert.ok(game.camera.position.distanceTo(new THREE.Vector3(game.state.position.x, game.state.position.y + 2.35, game.state.position.z)) < .1);
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).z < -.7);
+});
+
+for (const phase of ['counter', 'exit_run'] as const) test(`the One ${phase} phase keeps V turning and locomotion live`, t => {
+  const game = setup(t); const encounter = oneEncounter('return', phase, 0); const neo = theOneRoot(encounter, 'neo');
+  game.state.currentLocation = neo.set; game.state.position = filmPosition(neo.set, 0, phase === 'counter' ? -9.5 : 8); game.state.rotation = Math.PI;
+  game.state.currentAction = { type: 'idle', parameters: { theOne: { ...encounter, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.key('KeyV'); game.key('KeyV', false); game.document.pointerLockElement = game.canvas;
+  game.event(game.document, 'mousemove', { movementX: 560, movementY: 0 }); game.step(.2);
+  assert.equal(game.controls.performing, false); assert.ok(Math.abs(angle(game.yaw(), Math.PI / 2)) < .08);
+  game.key('KeyW'); game.step(.45); game.key('KeyW', false); assert.ok(game.group.position.x > game.state.position.x + .6);
 });
