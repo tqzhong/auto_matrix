@@ -28,6 +28,8 @@ const HERO_LOOKS: Record<string, Look> = {
   morpheus: { face: 3, width: 1.13, shoulders: 0.71, waist: 0.44, hips: 0.49, skin: '#89614b', cloth: '#201a18', leather: true, coat: true, hair: 'bald', glasses: 'round' },
   oracle: { width: 1.05, shoulders: 0.62, waist: 0.43, hips: 0.52, skin: '#77513f', cloth: '#79534a', leather: false, coat: false, hair: 'short', glasses: 'none' },
   seraph: { width: .94, shoulders: .58, waist: .34, hips: .4, skin: '#c5a27e', cloth: '#d7d4c6', leather: false, coat: false, hair: 'short', glasses: 'none' },
+  merovingian: { width: 1, shoulders: .67, waist: .42, hips: .46, skin: '#d1ad97', cloth: '#171a1b', leather: false, coat: false, hair: 'short', glasses: 'none' },
+  persephone: { width: .91, shoulders: .53, waist: .32, hips: .46, skin: '#e1bca9', cloth: '#621923', leather: false, coat: false, hair: 'pixie', glasses: 'none' },
 };
 
 export interface CharacterRig {
@@ -55,7 +57,7 @@ export interface CharacterRig {
   chateauBlade?: { weapon: ChateauWeapon; model: THREE.Group };
   infection?: THREE.Group;
   rifle?: boolean;
-  weaponStyle?: RescueLoadout | 'pistol' | 'pulse';
+  weaponStyle?: RescueLoadout | 'pistol' | 'pulse' | 'hel_pistol';
   muzzleIndex?: number;
 }
 
@@ -235,6 +237,10 @@ export class CharacterModels {
       const skirt = this.mesh(detail, this.geometry(new THREE.CylinderGeometry(.49, .82, 2.35, 32, 4, true)), cloth, [0, 1.27, 0]);
       skirt.name = 'red-dress-skirt'; skirt.scale.z = .68;
     }
+    if (state.id === 'persephone') {
+      const skirt = this.mesh(detail, this.geometry(new THREE.CylinderGeometry(.36, .74, 2.12, 32, 4, true)), cloth, [0, 1.18, 0]);
+      skirt.name = 'persephone-dress'; skirt.scale.z = .7;
+    }
     if (state.id === 'oracle') {
       const apron = this.material(new THREE.MeshStandardMaterial({ color: '#d7c19a', roughness: .93, bumpMap: this.fabric, bumpScale: .002, side: THREE.DoubleSide }));
       const skirt = this.mesh(torso, this.geometry(new THREE.CylinderGeometry(.43, .55, 1.2, 28, 3, true)), apron, [0, .68, 0], [1, 1, .62]);
@@ -251,7 +257,7 @@ export class CharacterModels {
     this.mesh(torso, this.cylinder, black, [0, 0.24, 0], [look.hips + 0.018, 0.10, (look.hips + 0.018) * 0.6]);
     this.mesh(torso, this.box, metal, [0, 0.24, look.hips * 0.6 + 0.022], [0.16, 0.1, 0.018]);
     this.mesh(torso, this.cylinder, seams, [0, 0.99, look.waist * 0.6 + 0.015], [0.008, 1.1, 0.008]);
-    if (state.id === 'smith' || state.faction === 'machines') {
+    if (state.id === 'smith' || state.id === 'merovingian' || state.faction === 'machines') {
       this.surface(torso, [[-0.18, 1.76, 0.19], [0.18, 1.76, 0.19], [0.10, 0.7, 0.32], [-0.10, 0.7, 0.32]], shirt);
       this.surface(torso, [[-0.28, 1.62, 0.23], [-0.45, 1.25, 0.23], [-0.12, 0.61, 0.32], [-0.02, 1.26, 0.33]], cloth);
       this.surface(torso, [[0.28, 1.62, 0.23], [0.02, 1.26, 0.33], [0.12, 0.61, 0.32], [0.45, 1.25, 0.23]], cloth);
@@ -281,6 +287,16 @@ export class CharacterModels {
       this.mesh(head, this.sphere, this.material(new THREE.MeshStandardMaterial({ color: '#916756', roughness: 0.7 })), [0, -0.24, 0.224], [0.078, 0.014, 0.012]);
     }
     if (look.hair !== 'bald') this.addHair(head, look);
+    if (state.id === 'persephone') {
+      this.mesh(head, this.sphere, black, [0, .20, -.19], [.27, .25, .19]);
+      this.mesh(head, this.sphere, black, [0, .28, .13], [.27, .10, .15]);
+      for (const side of [-1, 1]) this.mesh(head, this.sphere, black, [side * .23, -.15, -.07], [.07, .29, .13]);
+    }
+    if (state.id === 'merovingian') {
+      this.mesh(head, this.sphere, black, [0, .24, -.10], [.29, .14, .2]);
+      this.mesh(head, this.sphere, black, [0, .28, .13], [.28, .10, .15]);
+      for (const side of [-1, 1]) this.mesh(head, this.sphere, black, [side * .25, -.13, -.08], [.065, .23, .12]);
+    }
     if (state.id === 'seraph') {
       this.mesh(head, this.sphere, black, [0, .035, -.14], [.275, .30, .145]);
       this.mesh(head, this.sphere, black, [0, .27, .11], [.255, .11, .16]);

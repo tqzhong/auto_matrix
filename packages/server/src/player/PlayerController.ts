@@ -354,6 +354,7 @@ export class PlayerController {
       this.sandbox?.life.film.reloaded.action(agent, tick);
       this.sandbox?.life.film.burlyAction(agent);
       this.sandbox?.life.film.chateauAction(agent);
+      this.sandbox?.life.film.helBargainFrame(agent, tick);
       const journey = this.sandbox?.life.film.state;
       if (journey?.actor === agent.id && agent.currentAction && heldPhone(journey)) agent.currentAction.parameters.phone = { ...heldPhone(journey)! };
       const nearbyLocation = Object.values(LOCATIONS).filter(location => location.id !== 'downtown' && (location.world === 'matrix') === agent.isInMatrix)
@@ -375,7 +376,13 @@ export class PlayerController {
     if (reloaded !== undefined) return reloaded;
     const catchAction = this.sandbox?.life.film.catch.handle(agent, kind, tick);
     if (catchAction !== undefined) return catchAction;
+    if (kind === 'attack') {
+      const helStrike = this.sandbox?.life.film.helBargainStrike(agent, tick);
+      if (helStrike !== undefined) return helStrike;
+    }
     if (kind === 'dodge') {
+      const helDodge = this.sandbox?.life.film.helBargainDodge(agent, tick);
+      if (helDodge !== undefined) return helDodge;
       const burly = this.sandbox?.life.film.burlyDodge(agent, tick);
       if (burly !== undefined) return burly;
       const chateau = this.sandbox?.life.film.chateauParry(agent, tick);
@@ -389,6 +396,8 @@ export class PlayerController {
       const theOne = this.sandbox?.life.film.theOneEvade(agent, tick);
       if (theOne !== undefined) return theOne;
     }
+    if (this.sandbox?.life.film.controls(agent) && this.sandbox.life.film.state?.scene === 'm3_hel_bargain'
+      && ['attack', 'shoot', 'ability', 'ability2', 'dodge'].includes(kind)) return '人群封住了射线。按当前剧情提示行动，不能用普通攻击跳过谈判。';
     if (this.sandbox?.life.film.performing(agent) && kind !== 'interact') return '演出进行中，可以转动视角观察；进度会自动保存。';
     if (this.sandbox?.life.film.state && sentinelActive(this.sandbox.life.film.state) && ['attack', 'shoot', 'ability', 'ability2', 'dodge', 'travel'].includes(kind)) return '哨兵正在附近扫描。保持安静，武器和能力会暴露整艘船。';
     if (this.sandbox?.life.film.driving(agent) && ['attack', 'shoot', 'ability', 'ability2', 'dodge', 'travel'].includes(kind)) return '正在护送钥匙匠。W 加速，S 刹车，A / D 转向。';

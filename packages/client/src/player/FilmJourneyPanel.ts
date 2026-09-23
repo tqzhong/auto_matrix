@@ -16,6 +16,18 @@ import { RESCUE, rescueDuration, rescueLoadout, rescueLocked } from '@auto_matri
 const button = (target: string, label: string, disabled = false) => `<button data-action="life" data-target="film:${target}" ${disabled ? 'disabled' : ''}>${label}</button>`;
 export function renderFilmJourney(player: AgentState, sandbox: SandboxState): string {
   const life = sandbox.neoLife!; const journey = life.journey!; const scene = FILM_SCENE_BY_ID[journey.scene];
+  if (!journey.visiting && scene.id === 'm3_hel_bargain' && journey.helBargain) {
+    const bargain = journey.helBargain; const step = scene.steps[journey.step]; const current = player.id === journey.actor;
+    const close = current && Boolean(step && distance(player.position, filmStepPosition(scene, step)) <= 4);
+    const action = !current ? button('resume', '接回 Trinity 的视角')
+      : bargain.phase === 'failed' ? button('retry', '从舞池突围前重试')
+        : !step ? button('next', '返回 Mobil Ave，接应 Neo →')
+          : step.kind === 'reflect' ? filmReflections(scene.id).map(choice => button(`reflect:${choice.id}`, choice.label, !close)).join('')
+            : journey.step === 3 && bargain.phase !== 'ready' ? `<p>${bargain.phase === 'counter' ? '合上手记，面朝高台按 F 反击。' : '合上手记，等守卫挥拳后按 X 闪避。'}倒计时会自动保存。</p>`
+              : button('act', `${step.label} · G`, !close);
+    const window = bargain.phase === 'evade' ? 3 : bargain.phase === 'counter' ? 2.4 : bargain.phase === 'airborne' ? 2.8 : 0;
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>Club Hel · 不接受的交换</h3><p>Trinity 视角 · 缴枪、突围、接枪与拒绝自动保存</p></header><article class="film-now"><div><h3>${step?.label ?? 'Trainman 已答应带 Neo 回来'}</h3><p>${journey.lastText}</p>${window ? `<p>剩余 ${(window - bargain.elapsed).toFixed(1)} 秒 · 第 ${bargain.attempts + 1} 次尝试</p><div class="film-progress"><i style="width:${Math.max(0, (window - bargain.elapsed) / window * 100)}%"></i></div>` : ''}<div class="film-controls">${action}<small>先放下武器，再听清 Merovingian 的条件。X 闪避、F 反击、G 接枪；失败只重试突围。</small></div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
+  }
   if (!journey.visiting && scene.id === 'm2_architect' && journey.architect) {
     const encounter = journey.architect; const step = scene.steps[journey.step]; const current = player.id === journey.actor;
     const close = current && (!step || distance(player.position, filmStepPosition(scene, step)) <= 4);

@@ -199,6 +199,38 @@ export class SandboxUI {
       this.el('sandbox-interact').classList.add('hidden');
       return;
     }
+    if (!journey.visiting && scene.id === 'm3_hel_bargain' && journey.helBargain) {
+      const bargain = journey.helBargain; const phase = bargain.phase;
+      const window = phase === 'evade' ? 3 : phase === 'counter' ? 2.4 : phase === 'airborne' ? 2.8 : 0;
+      this.el('film-sequence').classList.remove('hidden');
+      this.el('film-sequence').classList.toggle('urgent', phase === 'failed' || Boolean(window));
+      this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = phase === 'windup' ? '守卫正在起手 · 看准动作后按 X'
+        : phase === 'evade' ? `X 闪避 · ${(window - bargain.elapsed).toFixed(1)} 秒`
+          : phase === 'counter' ? `面朝高台按 F 反击 · ${(window - bargain.elapsed).toFixed(1)} 秒`
+              : phase === 'airborne' ? `盯住飞来的枪，靠近后按 G 接住 · ${(window - bargain.elapsed).toFixed(1)} 秒`
+              : phase === 'failed' ? 'J 打开手记 · 从突围前重试' : '按当前目标行动 · 进度自动保存';
+      this.el('sandbox-trace').textContent = window ? `包围圈 ${Math.max(0, window - bargain.elapsed).toFixed(1)} 秒` : 'Club Hel · 舞池与 VIP 高台';
+      this.el('sandbox-trace').classList.toggle('danger', phase === 'failed' || Boolean(window));
+      this.el('sandbox-interact').classList.toggle('hidden', ['windup', 'evade', 'counter', 'failed'].includes(phase) || step?.kind === 'reflect');
+      const actions = this.el('film-training-actions');
+      if (phase === 'evade' || phase === 'counter') {
+        actions.classList.remove('hidden');
+        const dodge = actions.querySelector<HTMLButtonElement>('[data-combat="dodge"]')!;
+        const attack = actions.querySelector<HTMLButtonElement>('[data-combat="attack"]')!;
+        dodge.classList.toggle('hidden', phase !== 'evade'); dodge.disabled = phase !== 'evade';
+        attack.classList.toggle('hidden', phase !== 'counter'); attack.disabled = phase !== 'counter';
+        attack.querySelector('span')!.textContent = '打开缺口';
+      }
+      document.getElementById('game-objective-copy')!.textContent = phase === 'failed' ? '包围圈已合拢 · J 打开手记重试'
+        : phase === 'windup' ? '观察守卫起手 · 等拳锋逼近再按 X'
+          : phase === 'evade' ? '现在按 X 闪避'
+            : phase === 'counter' ? '面朝 VIP 高台按 F 反击'
+              : phase === 'airborne' ? '靠近飞来的枪，按 G 接住'
+                : phase === 'gunpoint' ? '靠近并面朝 Merovingian，按 G 逼他放人'
+                  : step?.kind === 'reflect' ? 'J 打开手记，决定如何拒绝交换' : step ? `${step.label} · 走近按 G` : 'Mero 已让 Trainman 接回 Neo · G 继续';
+      return;
+    }
     if (!journey.visiting && journey.grid && ['m2_plan', 'm2_power', 'm2_vigilant', 'm2_backup', 'm2_key_door'].includes(scene.id)) {
       const grid = journey.grid;
       const clock = `${Math.floor(Math.ceil(grid.remaining) / 60)}:${String(Math.ceil(grid.remaining) % 60).padStart(2, '0')}`;

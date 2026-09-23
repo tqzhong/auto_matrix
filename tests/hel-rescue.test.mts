@@ -54,6 +54,19 @@ test('Hel rescue has a saved chase train and separate garage, elevator, coat che
     assert.ok(door.position.x < shut - 4, 'both the animation and the server barrier open at the first combat step');
     assert.equal(renderer.root.children.filter(object => object.name === 'hel-coatcheck-counter').length, 2);
     assert.ok(renderer.root.getObjectByName('hel-vip-table'));
+    journey.scene = 'm3_hel_bargain'; journey.step = 1;
+    journey.helBargain = { phase: 'disarmed', elapsed: 0, lastTick: 0, attempts: 0 };
+    player.position = filmStepPosition(FILM_SCENE_BY_ID.m3_hel_bargain, FILM_SCENE_BY_ID.m3_hel_bargain.steps[1]);
+    renderer.update(player, sandbox, 12);
+    assert.equal(renderer.root.getObjectByName('hel-front-guard')?.visible, true);
+    assert.equal(renderer.root.getObjectByName('hel-disarmed-guns')?.visible, true);
+    assert.equal(renderer.root.getObjectByName('hel-flying-gun')?.visible, false);
+    journey.helBargain.phase = 'airborne'; journey.helBargain.elapsed = 1.4;
+    renderer.update(player, sandbox, 13);
+    assert.equal(renderer.root.getObjectByName('hel-flying-gun')?.visible, true);
+    assert.equal(renderer.root.getObjectByName('hel-disarmed-guns')?.visible, false);
+    journey.helBargain.phase = 'gunpoint'; renderer.update(player, sandbox, 14);
+    assert.equal(renderer.root.getObjectByName('hel-flying-gun')?.visible, false);
     assert.equal(filmGroundHeight(filmPosition('film_club_hel', 0, -33), FILM_SETS.film_club_hel), FILM_SETS.film_club_hel.center.y + .6);
     for (const id of ['m3_hel_garage', 'm3_hel_entry', 'm3_hel_bargain']) for (const step of FILM_SCENE_BY_ID[id].steps)
       assert.equal(playerBlocked(filmStepPosition(FILM_SCENE_BY_ID[id], step), true), false, `${id}: ${step.label}`);

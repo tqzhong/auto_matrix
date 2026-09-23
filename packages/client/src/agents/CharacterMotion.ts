@@ -46,7 +46,7 @@ export interface MotionInput {
   truckFlight?: boolean;
   truckPassenger?: boolean;
   persephone?: import('@auto_matrix/shared').PersephoneEncounter & { role: 'neo' | 'persephone' };
-  weaponStyle?: RescueLoadout;
+  weaponStyle?: RescueLoadout | 'hel_pistol';
   aimPitch?: number;
   clubClothes?: boolean;
   mirror?: number;
@@ -215,7 +215,8 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const glance = input.vase === undefined ? 0 : Math.sin(clamp((input.vase - .5) / 2.5) * Math.PI) * .15;
   const twist = Math.cos(cycle) * moving * mix(.055, .10, run) + (extension * .3 - windup * .16) * (activeArm ? -1 : 1) * guard + glance;
   if (casting) for (const arm of arms) { arm.shoulder = mix(arm.shoulder, -1.35, casting); arm.elbow = mix(arm.elbow, -.25, casting); arm.grip = 0; }
-  if (input.armed && guard < .1 && !casting) for (const arm of arms) {
+  if (input.armed && guard < .1 && !casting) for (const [index, arm] of arms.entries()) {
+    if (input.weaponStyle === 'hel_pistol' && index === 1) continue;
     const kickback = Math.max(0, 1 - state.shotAge / .18) ** 2;
     arm.shoulder = -1.16 + clamp(input.aimPitch ?? 0, -.9, .9) * .82 - recoil * .1 - kickback * .16; arm.elbow = -.4 - kickback * .12; arm.outward *= .4; arm.grip = .9;
   }

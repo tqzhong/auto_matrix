@@ -680,6 +680,83 @@ test('Club Hel elevator stays shut through a saved ride and opens only on arriva
   assert.equal(playerBlocked(door, true, 1.1, h.sandbox.state.structures), false);
 });
 
+test('Club Hel bargain requires Trinity to disarm, refuse, dodge, counter, catch the gun and confront Merovingian', () => {
+  const h = setup(); h.command('continue'); let state = h.sandbox.life.film.state!;
+  Object.assign(state, { scene: 'm3_hel_entry', actor: 'trinity', step: FILM_SCENE_BY_ID.m3_hel_entry.steps.length });
+  h.players.possess('film-player', 'trinity', h.tick()); h.command('next'); state = h.sandbox.life.film.state!;
+  const scene = FILM_SCENE_BY_ID.m3_hel_bargain;
+  assert.equal(state.scene, scene.id);
+  assert.equal(h.world.agents.get('merovingian')?.currentLocation, scene.set);
+  assert.ok(Math.abs(h.world.agents.get('merovingian')!.position.z - filmPosition(scene.set, 0, -35).z) < .01);
+  h.actor().position = filmStepPosition(scene, scene.steps[0]);
+  h.command('act'); assert.equal(state.step, 1); assert.equal(state.helBargain?.phase, 'disarmed');
+  h.command('act'); assert.equal(state.step, 2); assert.equal(state.helBargain?.phase, 'offered');
+  h.command(`reflect:${filmReflections(scene.id)[0].id}`); assert.equal(state.step, 3);
+  assert.match(h.command('act'), /冲入人群/); assert.equal(state.helBargain?.phase, 'windup');
+  assert.equal(h.command('act').includes('闪避'), true); assert.equal(state.step, 3, 'G cannot replace the dodge');
+  h.advance(2); assert.equal(state.helBargain?.phase, 'evade');
+  h.players.act('film-player', 'attack', h.tick()); assert.equal(state.step, 3, 'F before X cannot skip the dodge');
+  h.players.act('film-player', 'dodge', h.tick()); assert.equal(state.helBargain?.phase, 'counter');
+  const saved = JSON.parse(JSON.stringify(h.sandbox.state)); h.sandbox.restore(saved); state = h.sandbox.life.film.state!;
+  h.advance(); assert.equal(state.helBargain?.phase, 'counter', 'reloading keeps the remaining counter window');
+  h.actor().rotation = Math.PI;
+  h.players.act('film-player', 'attack', h.tick()); assert.equal(state.step, 4); assert.equal(state.helBargain?.phase, 'airborne');
+  h.command('act'); assert.equal(state.step, 4, 'G before the pistol is within reach cannot catch it');
+  h.advance(3); h.command('act'); assert.equal(state.step, 5); assert.equal(state.helBargain?.phase, 'gunpoint');
+  h.players.step(.1, true, h.tick());
+  assert.equal(h.actor().currentAction?.parameters.weaponStyle, 'hel_pistol', 'the gun remains visible between movement frames');
+  h.actor().position = filmStepPosition(scene, scene.steps[5]); h.actor().rotation = 0;
+  h.command('act'); assert.equal(state.step, 5, 'the threat needs Trinity to face Merovingian');
+  h.actor().rotation = Math.PI; h.command('act');
+  assert.equal(state.step, scene.steps.length); assert.equal(state.helBargain?.phase, 'released');
+  assert.equal(h.sandbox.life.state?.choices.neo_release, 'trinity_refused_trade');
+});
+
+test('Club Hel rush expires, retries from the confrontation and pauses when its player disconnects', () => {
+  const h = setup(); h.command('continue'); let state = h.sandbox.life.film.state!;
+  Object.assign(state, { scene: 'm3_hel_entry', actor: 'trinity', step: FILM_SCENE_BY_ID.m3_hel_entry.steps.length });
+  h.players.possess('film-player', 'trinity', h.tick()); h.command('next'); state = h.sandbox.life.film.state!;
+  const scene = FILM_SCENE_BY_ID.m3_hel_bargain;
+  h.actor().position = filmStepPosition(scene, scene.steps[0]);
+  h.command('act'); h.command('act'); h.command(`reflect:${filmReflections(scene.id)[0].id}`); h.command('act');
+  h.advance(2); h.players.release('film-player', h.tick()); h.advance(20);
+  assert.equal(state.helBargain?.phase, 'evade');
+  h.players.possess('film-player', 'trinity', h.tick()); h.advance(10);
+  assert.equal(state.helBargain?.phase, 'failed'); assert.equal(state.step, 3);
+  assert.equal(h.command('act').includes('重试'), true);
+  h.command('retry'); assert.equal(state.helBargain?.phase, 'ready'); assert.equal(state.helBargain?.attempts, 1);
+  assert.equal(state.reflections[`${scene.id}:2`], filmReflections(scene.id)[0].id);
+  assert.equal(h.sandbox.life.state?.choices.neo_release, undefined);
+});
+
+test('older Club Hel saves keep the refusal and resume at the new confrontation checkpoint', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  Object.assign(state, { scene: 'm3_hel_bargain', actor: 'trinity', step: 2, helBargain: undefined, started: 4 });
+  const choice = filmReflections('m3_hel_bargain')[0].id;
+  state.reflections['m3_hel_bargain:1'] = choice;
+  h.players.possess('film-player', 'trinity', h.tick());
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+  const restored = h.sandbox.life.film.state!;
+  assert.equal(restored.step, 3); assert.equal(restored.helBargain?.phase, 'ready');
+  assert.equal(restored.reflections['m3_hel_bargain:2'], choice);
+  assert.equal(restored.started, undefined);
+});
+
+test('another player holding Merovingian pauses Trinity’s Club Hel action window', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  Object.assign(state, { scene: 'm3_hel_entry', actor: 'trinity', step: FILM_SCENE_BY_ID.m3_hel_entry.steps.length });
+  h.players.possess('film-player', 'trinity', h.tick()); h.command('next');
+  const scene = FILM_SCENE_BY_ID.m3_hel_bargain;
+  h.actor().position = filmStepPosition(scene, scene.steps[0]);
+  h.command('act'); h.command('act'); h.command(`reflect:${filmReflections(scene.id)[0].id}`); h.command('act'); h.advance(2);
+  assert.equal(state.helBargain?.phase, 'evade');
+  h.players.possess('other', 'merovingian', h.tick()); h.advance(20);
+  assert.equal(state.helBargain?.phase, 'evade'); assert.equal(state.helBargain?.elapsed, 0);
+  assert.match(h.players.act('film-player', 'dodge', h.tick()), /暂停/);
+  h.players.release('other', h.tick()); h.advance(10);
+  assert.equal(state.helBargain?.phase, 'failed');
+});
+
 test('touching the mirror is a saved performance that freezes on pause and resumes after reconnect', () => {
   const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
   Object.assign(state, { scene: 'm1_pills', actor: 'neo', step: 2 }); h.command('next');
@@ -1841,6 +1918,12 @@ test('the entire film route completes through interactions, driving and real com
         }
         else if (scene.id === 'm1_pills') for (let frame = 0; frame < 51; frame++) h.players.step(.1, true, h.tick());
         else if (scene.id === 'm3_hel_entry' && index === 0) h.advance(10);
+        else if (scene.id === 'm3_hel_bargain' && index === 3) {
+          h.advance(2); h.players.act('film-player', 'dodge', h.tick());
+          actor.rotation = Math.PI; h.players.act('film-player', 'attack', h.tick());
+        }
+        else if (scene.id === 'm3_hel_bargain' && index === 4) { h.advance(4); h.command('act'); }
+        else if (scene.id === 'm3_hel_bargain' && index === 5) { actor.rotation = Math.PI; h.command('act'); }
         else if (scene.id === 'm1_download') for (let frame = 0; frame < 101; frame++) h.players.step(.1, true, h.tick());
         else if (scene.id === 'm1_red_dress') for (let frame = 0; frame < 121; frame++) h.players.step(.1, true, h.tick());
         else if (scene.id === 'm1_bridge') {

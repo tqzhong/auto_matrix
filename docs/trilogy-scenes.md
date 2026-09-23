@@ -152,7 +152,7 @@
 | m3_trainman_chase | 逃走的列车管理员 | 地铁站 · Neo 与 Smith | Seraph | 认出 Trainman → 追到对向站台 → 看列车遮住逃跑 |
 | m3_hel_garage | 通往 Hel 的车库 | Club Hel · 地下车库入口 | Trinity | 突破入口守卫 → 打开钢门 |
 | m3_hel_entry | 地狱的衣帽间 | Club Hel · 地下俱乐部 | Trinity | 按下 HEL 电梯按钮 → 井道下降、到站开门 → 衣帽间交战 → 取回装备 → 到 VIP 高台 |
-| m3_hel_bargain | 不接受的交换 | Club Hel · 地下俱乐部 | Trinity | 听取先知双眼交换 → 拒绝 → 迫使放人 |
+| m3_hel_bargain | 不接受的交换 | Club Hel · 地下俱乐部 | Trinity | 舞池包围后缴枪 → 听先知双眼交易并拒绝 → X 闪避 / F 突围 → G 接枪 → 近身举枪迫使放人；失手可从突围前重试 |
 | m3_mobil_release | 等来同伴 | Mobil Ave · 中间世界 | Neo | 等返程列车停稳 → 与 Trinity 离站 |
 | m3_oracle_last | 没有保证的未来 | 先知公寓 · 候诊室与厨房 | Neo | 反思 → 交互 |
 | m3_bane_questions | 幸存者的说法 | Hammer · 医疗舱与舰桥 | Captain Roland | 交互 → 交互 |

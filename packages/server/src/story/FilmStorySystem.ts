@@ -99,6 +99,123 @@ export class FilmStorySystem {
     }
     lift.lastTick = tick;
   }
+  private ensureHelBargain(tick: number): void {
+    const state = this.state;
+    if (state?.scene !== 'm3_hel_bargain' || state.helBargain) return;
+    // Saves made before the playable standoff used three objectives. Keep their
+    // decision, then resume at the corresponding new checkpoint.
+    const oldStep = state.step;
+    state.step = oldStep === 1 ? 2 : oldStep === 2 ? 3 : oldStep >= 3 ? this.scene!.steps.length : 0;
+    const answer = state.reflections['m3_hel_bargain:1'];
+    if (answer) state.reflections['m3_hel_bargain:2'] = answer;
+    state.helBargain = { phase: oldStep === 0 ? 'armed' : oldStep === 1 ? 'offered' : oldStep === 2 ? 'ready' : 'released',
+      elapsed: 0, lastTick: tick, attempts: 0 };
+    delete state.started;
+  }
+  restoreHelBargain(tick: number): void {
+    this.ensureHelBargain(tick);
+  }
+  private helBargainOccupied(): boolean {
+    return ['merovingian', 'persephone', 'trainman'].some(id => Boolean(this.world.agents.get(id)?.controller));
+  }
+  private helBargainTick(actor: AgentState, tick: number): void {
+    this.ensureHelBargain(tick);
+    const state = this.state!; const bargain = state.helBargain!;
+    if (this.helBargainOccupied()) { bargain.lastTick = tick; this.helBargainFrame(actor, tick); return; }
+    const delta = Math.max(0, tick - bargain.lastTick) * .5;
+    bargain.lastTick = tick;
+    if (bargain.phase === 'windup' && (bargain.elapsed += delta) >= .7) {
+      bargain.phase = 'evade'; bargain.elapsed = 0;
+      state.lastText = '前排守卫向 Trinity 挥拳。现在按 X 闪避，再面朝高台反击。';
+    } else if (['evade', 'counter', 'airborne'].includes(bargain.phase)) {
+      bargain.elapsed += delta;
+      if (bargain.elapsed >= (bargain.phase === 'evade' ? 3 : bargain.phase === 'counter' ? 2.4 : 2.8)) {
+        bargain.phase = 'failed'; bargain.elapsed = 0; actor.currentAction = null;
+        state.lastText = '包围圈重新合拢，枪落在舞池。J 打开手记，从突围前的检查点重试。';
+      }
+    }
+    this.helBargainFrame(actor, tick);
+  }
+  helBargainFrame(actor: AgentState, tick: number): void {
+    const state = this.state;
+    if (state?.scene !== 'm3_hel_bargain' || !this.controls(actor) || !state.helBargain) return;
+    const bargain = state.helBargain;
+    if (bargain.phase === 'gunpoint') actor.currentAction = { type: 'idle',
+      parameters: { player: true, resolved: true, armed: true, weaponStyle: 'hel_pistol' }, startedAt: tick, duration: 1, progress: 0 };
+    else if (bargain.phase === 'armed') actor.currentAction = { type: 'idle',
+      parameters: { player: true, resolved: true, armed: true, weaponStyle: 'hel_pistol' }, startedAt: tick, duration: 1, progress: 0 };
+    else if (actor.currentAction?.parameters.weaponStyle === 'hel_pistol') actor.currentAction = null;
+    for (const id of ['morpheus', 'seraph']) {
+      const companion = this.world.agents.get(id);
+      if (!companion || companion.controller || companion.currentLocation !== this.scene!.set) continue;
+      if (bargain.phase === 'armed') companion.currentAction = { type: 'idle',
+        parameters: { resolved: true, armed: true, weaponStyle: 'hel_pistol' }, startedAt: tick, duration: 1, progress: 0 };
+      else if (companion.currentAction?.parameters.weaponStyle === 'hel_pistol') companion.currentAction = null;
+    }
+  }
+  helBargainDodge(agent: AgentState, tick: number): string | undefined {
+    const state = this.state;
+    if (state?.scene !== 'm3_hel_bargain' || !this.controls(agent) || state.step !== 3) return undefined;
+    this.ensureHelBargain(tick);
+    const bargain = state.helBargain!;
+    if (this.helBargainOccupied()) return '对峙中的角色由另一位玩家控制，动作窗口已暂停。';
+    if (bargain.phase !== 'evade') return bargain.phase === 'failed' ? '包围圈已合拢。J 打开手记重试。' : '等守卫真正挥拳时再按 X。';
+    if (!this.near(agent, this.step!)) return '回到舞池中央，才能避开贴身的守卫。';
+    bargain.phase = 'counter'; bargain.elapsed = 0; bargain.lastTick = tick;
+    agent.currentAction = { type: 'defend', parameters: { player: true, resolved: true }, startedAt: tick, duration: .7, progress: 0 };
+    state.lastText = 'Trinity 侧身躲过挥拳。趁守卫失去平衡，面朝高台按 F 反击。';
+    return state.lastText;
+  }
+  helBargainStrike(agent: AgentState, tick: number): string | undefined {
+    const state = this.state;
+    if (state?.scene !== 'm3_hel_bargain' || !this.controls(agent) || state.step !== 3) return undefined;
+    this.ensureHelBargain(tick);
+    const bargain = state.helBargain!;
+    if (this.helBargainOccupied()) return '对峙中的角色由另一位玩家控制，动作窗口已暂停。';
+    if (bargain.phase !== 'counter') return bargain.phase === 'failed' ? '突围失败。J 打开手记重试。' : '先等守卫出拳，用 X 闪避后再按 F。';
+    if (!this.near(agent, this.step!)) return '守卫还在舞池中央，靠近后再反击。';
+    const vip = filmPosition(this.scene!.set, 0, -35);
+    const dx = vip.x - agent.position.x; const dz = vip.z - agent.position.z;
+    if ((Math.sin(agent.rotation) * dx + Math.cos(agent.rotation) * dz) / Math.hypot(dx, dz) < .55) return '转身面朝 VIP 高台，再用 F 打开缺口。';
+    bargain.phase = 'airborne'; bargain.elapsed = 0; bargain.lastTick = tick;
+    agent.currentAction = { type: 'attack', parameters: { player: true, resolved: true, combo: 2 }, startedAt: tick, duration: .8, progress: 0 };
+    const seraph = this.world.agents.get('seraph');
+    if (seraph && !seraph.controller) seraph.currentAction = { type: 'attack', parameters: { resolved: true, combo: 2 }, startedAt: tick, duration: .8, progress: 0 };
+    this.advance('Trinity 打开人墙；Seraph 踢起手枪。枪正在空中，快按 G 接住。', agent, tick);
+    return state.lastText;
+  }
+  private helBargainAct(agent: AgentState, tick: number): string {
+    const state = this.state!; const bargain = state.helBargain!; const step = this.step!;
+    if (bargain.phase === 'failed') return '突围失败。J 打开手记，选择从当前检查点重试。';
+    if (state.step === 3 && bargain.phase !== 'ready') return bargain.phase === 'windup' || bargain.phase === 'evade'
+      ? '守卫正在出拳，按 X 闪避。' : '闪避之后面朝高台，按 F 反击。';
+    if (!this.near(agent, step)) return '靠近舞池里的当前目标（4 米内）再按 G。';
+    if (state.step === 0) {
+      bargain.phase = 'disarmed'; this.advance('舞曲骤停。Trinity、Morpheus 与 Seraph 放下枪，武装人群没有立刻开火。', agent, tick);
+    } else if (state.step === 1) {
+      bargain.phase = 'offered'; this.advance('Merovingian 要先知的双眼，才肯让 Trainman 带回 Neo。', agent, tick);
+    } else if (state.step === 3) {
+      if (this.helBargainOccupied()) return '对峙中的角色由另一位玩家控制，突围暂时停在检查点。';
+      bargain.phase = 'windup'; bargain.elapsed = 0; bargain.lastTick = tick;
+      state.lastText = 'Trinity 拒绝交易，向前冲入人群。前排守卫开始起手；等拳锋逼近再闪避。';
+    } else if (state.step === 4) {
+      if (bargain.phase !== 'airborne') return '枪还没被踢起。';
+      const flight = Math.min(1, bargain.elapsed / 2.8);
+      const gun = filmPosition(this.scene!.set, 3.2 * (1 - flight), -27 - 4 * flight);
+      if (Math.hypot(agent.position.x - gun.x, agent.position.z - gun.z) > 2.2) return '枪还没有飞到手边。盯住空中的轨迹，再按 G 接住。';
+      bargain.phase = 'gunpoint'; bargain.elapsed = 0; bargain.lastTick = tick;
+      this.advance('Trinity 在人群上方接住 Seraph 踢来的枪，转向高台。', agent, tick);
+    } else if (state.step === 5) {
+      if (bargain.phase !== 'gunpoint') return '先接住枪。';
+      const vip = filmPosition(this.scene!.set, 0, -35);
+      const dx = vip.x - agent.position.x; const dz = vip.z - agent.position.z;
+      if ((Math.sin(agent.rotation) * dx + Math.cos(agent.rotation) * dz) / Math.hypot(dx, dz) < .7) return '面朝 Merovingian，再举枪提出要求。';
+      if (this.helBargainOccupied()) return '对峙中的角色由另一位玩家控制，营救决定停在当前检查点。';
+      bargain.phase = 'released';
+      this.advance('Trinity 把枪抵住 Merovingian。Persephone 看出她不会退让；Merovingian 让 Trainman 带回 Neo。', agent, tick);
+    }
+    return state.lastText;
+  }
   private mobilPassengers(progress: number, tick: number): void {
     const encounter = this.state!.mobil!;
     encounter.boarding = Math.max(encounter.boarding ?? 0, Math.min(1, progress));
@@ -2905,6 +3022,7 @@ export class FilmStorySystem {
       return '已继续保存的剧情视角与位置。';
     }
     if (!this.controls(agent)) return '请接入当前剧情角色，或以 Neo 继续电影进度。';
+    this.ensureHelBargain(tick);
     this.ensureFinale(tick);
     if (state.scene === 'm2_key_door' && !state.visiting) this.sourceDoor();
     if (state.scene === 'm2_architect' && !state.visiting) { this.architect(tick); this.sealArchitectDoors(); }
@@ -2925,6 +3043,14 @@ export class FilmStorySystem {
     if (target === 'retry') {
       if (this.reloaded.active(agent)) return this.reloaded.command(agent, target, tick);
       if (this.catch.active(agent)) return this.catch.command(agent, target, tick);
+      if (state.scene === 'm3_hel_bargain' && state.helBargain?.phase === 'failed') {
+        state.helBargain = { phase: 'ready', elapsed: 0, lastTick: tick, attempts: state.helBargain.attempts + 1 };
+        state.step = 3; agent.status = 'alive'; agent.health = agent.maxHealth;
+        agent.position = filmStepPosition(this.scene!, this.scene!.steps[3]); agent.rotation = Math.PI;
+        agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentAction = null;
+        state.checkpoint = { ...agent.position };
+        state.lastText = '回到舞池包围圈。之前的拒绝仍保留；按 G 再次突围。'; return state.lastText;
+      }
       if (state.scene === 'm2_ship_lost' && state.shipLoss?.phase === 'failed') {
         state.shipLoss = { phase: 'evacuating', remaining: RELOADED_FINALE.evacuationSeconds, lastTick: tick, attempts: state.shipLoss.attempts + 1 };
         agent.position = { ...state.checkpoint }; agent.velocity = { x: 0, y: 0, z: 0 };
@@ -3270,6 +3396,7 @@ export class FilmStorySystem {
       this.advance(`${step.text} ${response}`, agent, tick); return response;
     }
     if (target !== 'act') return '当前没有这个场景操作。';
+    if (state.scene === 'm3_hel_bargain') return this.helBargainAct(agent, tick);
     if (state.scene === 'm1_bug' && state.step === 2 && state.meeting?.phase === 'outside') {
       if (this.world.agents.get('trinity')?.controller) return 'Trinity 正在由另一位玩家控制，等待对方结束后再一起上楼。';
       const position = { ...agent.position }; const facing = agent.rotation;
@@ -3331,8 +3458,6 @@ export class FilmStorySystem {
       state.mobil.approach = { x: agent.position.x - center.x, z: agent.position.z - center.z, yaw: agent.rotation };
       this.mobilFrame(agent, 0, tick); return 'Trainman 伸手拦住你。';
     }
-    if (state.scene === 'm3_hel_bargain' && state.step === 2 && ['merovingian', 'persephone', 'trainman'].some(id => this.world.agents.get(id)?.controller))
-      return '对峙中的角色正由其他玩家控制，营救决定会停在当前进度。';
     if (state.scene === 'm1_jump' && state.step === 1) return 'Morpheus 已经完成示范。Shift 助跑，空格起跳；跌落会恢复检查点。';
     if (step.kind === 'reflect') return 'J 打开手记，记录自己的理解。';
     if (state.scene === 'm2_trucks' && state.step === 2 && ['keymaker', 'neo'].some(id => this.world.agents.get(id)?.controller))
@@ -3433,6 +3558,8 @@ export class FilmStorySystem {
     else delete state.helChase;
     if (scene.id === 'm3_hel_entry') state.helElevator = { phase: 'ready', elapsed: 0, lastTick: tick };
     else delete state.helElevator;
+    if (scene.id === 'm3_hel_bargain') state.helBargain = { phase: 'armed', elapsed: 0, lastTick: tick, attempts: 0 };
+    else delete state.helBargain;
     delete state.baneCopy;
     delete state.seraph;
     delete state.burly;
@@ -3881,7 +4008,8 @@ export class FilmStorySystem {
       state.helChase.phase = 'running'; state.helChase.elapsed = 0; state.helChase.lastTick = tick;
       text = 'Trainman 拉下紧急制动，朝对向站台冲去；Seraph 追出车厢。';
     }
-    if (state.scene === 'm3_hel_bargain' && state.step === 2) life.choices.neo_release = 'trinity_refused_trade';
+    if (state.scene === 'm3_hel_bargain' && state.step === 2 && state.helBargain) state.helBargain.phase = 'ready';
+    if (state.scene === 'm3_hel_bargain' && state.step === 5) life.choices.neo_release = 'trinity_refused_trade';
     if (state.scene === 'm1_bug' && state.step === 0 && state.office?.outcome === 'escaped') text = '扫描完成，没有发现追踪装置。Trinity 收起仪器，确认接头安全，继续前往 Morpheus 的房间。';
     state.lastText = text; state.step++; state.checkpoint = { ...agent.position }; delete state.started; delete state.fighting;
     if (state.scene === 'm2_ship_lost' && state.step === this.scene!.steps.length && state.shipLoss) state.shipLoss.phase = 'escaped';
@@ -3955,6 +4083,7 @@ export class FilmStorySystem {
       if (state.mobil) state.mobil.lastTick = tick;
       if (state.helChase) state.helChase.lastTick = tick;
       if (state.helElevator) state.helElevator.lastTick = tick;
+      if (state.helBargain) state.helBargain.lastTick = tick;
       if (actor?.status === 'alive' && state.scene === 'm2_trucks' && state.trucks) {
         const gap = Math.max(0, tick - state.trucks.lastTick);
         if (state.started !== undefined) state.started += gap;
@@ -3967,6 +4096,7 @@ export class FilmStorySystem {
     if (['m3_mobil', 'm3_family', 'm3_trainman', 'm3_mobil_release'].includes(state.scene)) this.mobilTick(actor, tick);
     if (state.scene === 'm3_trainman_chase') this.helChaseTick(tick);
     if (state.scene === 'm3_hel_entry') { this.helElevatorTick(actor, tick); this.sealHelElevator(); }
+    if (state.scene === 'm3_hel_bargain') this.helBargainTick(actor, tick);
     if (state.scene === 'm2_trucks' && state.trucks?.phase === 'collision') {
       state.trucks.elapsed = Math.min(TRUCKS.collisionSeconds, state.trucks.elapsed + Math.max(0, tick - state.trucks.lastTick) * .5);
       state.trucks.lastTick = tick;

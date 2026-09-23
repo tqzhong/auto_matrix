@@ -120,6 +120,7 @@ export class FilmSetRenderer {
   private mobilLastFrame?: number;
   private helChaseTrain?: THREE.Group;
   private helLift?: { doors: [THREE.Group, THREE.Group]; bands: { mesh: THREE.Mesh; y: number }[]; light: THREE.PointLight };
+  private helStandoff?: { crowd: THREE.Group[]; guard: THREE.Group; floorGuns: THREE.Group; flyingGun: THREE.Group; light: THREE.PointLight };
   private powerStatus?: { primary: THREE.MeshBasicMaterial; emergency: THREE.MeshBasicMaterial; lights: THREE.PointLight[] };
   private sourceDoor?: { portal: THREE.Group; source: THREE.Group; glow: THREE.Mesh };
   private architectScreens?: { materials: THREE.MeshBasicMaterial[]; neo: THREE.Texture[]; trinity: THREE.Texture; leftDoor: THREE.Mesh; leftLight: THREE.PointLight };
@@ -251,6 +252,28 @@ export class FilmSetRenderer {
       this.helLift.doors[1].position.x = HEL_ELEVATOR.doorWidth / 4 + travel * 4.5;
       for (const band of this.helLift.bands) band.mesh.position.y = lift?.phase === 'descending' ? 1 + (band.y + lift.elapsed * 3.5) % 8 : band.y;
       this.helLift.light.intensity = lift?.phase === 'descending' ? 190 + Math.sin(lift.elapsed * 17) * 65 : 90;
+    }
+    if (this.helStandoff) {
+      const encounter = sceneId === 'm3_hel_bargain' && !journey?.visiting ? journey?.helBargain : undefined;
+      const phase = encounter?.phase;
+      this.helStandoff.crowd.forEach((figure, index) => {
+        figure.visible = Boolean(encounter) && phase !== 'released';
+        figure.position.x = (index % 2 ? 1 : -1) * (index < 2 ? 4.8 : 8 + Math.floor(index / 2) * 2)
+          + (['windup', 'evade', 'counter', 'airborne', 'gunpoint'].includes(phase ?? '') ? (index % 2 ? 1 : -1) * 1.6 : 0);
+        figure.rotation.y = Math.sin(elapsed * .7 + index) * .12;
+      });
+      this.helStandoff.guard.visible = Boolean(encounter) && !['armed', 'released'].includes(phase ?? '');
+      this.helStandoff.guard.position.x = 2.1;
+      this.helStandoff.guard.rotation.x = ['airborne', 'gunpoint', 'failed'].includes(phase ?? '') ? -1.2 : 0;
+      this.helStandoff.guard.position.z = phase === 'windup' || phase === 'evade' ? -30.5 - Math.min(1, encounter?.elapsed ?? 0) : -31.5;
+      this.helStandoff.floorGuns.visible = Boolean(encounter) && !['armed', 'airborne', 'gunpoint', 'released'].includes(phase ?? '');
+      this.helStandoff.flyingGun.visible = phase === 'airborne';
+      if (phase === 'airborne') {
+        const flight = Math.min(1, (encounter?.elapsed ?? 0) / 2.8);
+        this.helStandoff.flyingGun.position.set(3.2 * (1 - flight), 1.4 + Math.sin(flight * Math.PI) * 1.8, -27 - 4 * flight);
+        this.helStandoff.flyingGun.rotation.z = flight * Math.PI * 2;
+      }
+      this.helStandoff.light.intensity = encounter && phase !== 'armed' && phase !== 'released' ? 80 : 250;
     }
     if (this.powerStatus) {
       const grid = journey?.grid;
@@ -1223,6 +1246,30 @@ export class FilmSetRenderer {
     for (const x of [-7, 7]) this.chair(x, -37, x < 0 ? Math.PI / 2 : -Math.PI / 2, true);
     this.label('LE MEROVINGIAN', 0, 12.8, -d / 2 + .8, 13, '#d8b8a0', '#281c1d');
     const vip = new THREE.PointLight(0xc33f49, 190, 24, 2); vip.position.set(0, 11, -35); this.root.add(vip);
+    if (this.currentScene === 'm3_hel_bargain') {
+      const crowd: THREE.Group[] = []; const coat = this.mat(0x171b1d, .91); const skin = this.mat(0x685550, .9);
+      for (let i = 0; i < 6; i++) {
+        const figure = new THREE.Group(); figure.name = 'hel-dance-crowd'; figure.userData.dynamic = true; this.root.add(figure);
+        figure.position.z = i < 2 ? -27 : i < 4 ? -22 : -17;
+        figure.add(this.cylinder(coat, 0, 1.35, 0, .58, 2.5));
+        figure.add(this.sphere(skin, 0, 2.94, 0, .43));
+        for (const side of [-1, 1]) figure.add(this.cylinder(coat, side * .64, 1.75, 0, .13, 1.6));
+        crowd.push(figure);
+      }
+      const guard = new THREE.Group(); guard.name = 'hel-front-guard'; guard.userData.dynamic = true; this.root.add(guard);
+      guard.add(this.cylinder(coat, 0, 1.4, 0, .65, 2.6)); guard.add(this.sphere(skin, 0, 3.02, 0, .45));
+      for (const side of [-1, 1]) guard.add(this.cylinder(coat, side * .7, 1.8, -.18, .17, 1.65));
+      const floorGuns = new THREE.Group(); floorGuns.name = 'hel-disarmed-guns'; floorGuns.userData.dynamic = true; this.root.add(floorGuns);
+      for (const x of [-1.5, 1.5]) {
+        floorGuns.add(this.box(steel, x, .17, -28.6, .14, .12, .68));
+        floorGuns.add(this.box(coat, x, .12, -28.4, .16, .2, .18));
+      }
+      const flyingGun = new THREE.Group(); flyingGun.name = 'hel-flying-gun'; flyingGun.userData.dynamic = true; this.root.add(flyingGun);
+      flyingGun.add(this.box(steel, 0, 0, 0, .14, .12, .65));
+      flyingGun.add(this.box(coat, 0, -.1, .18, .18, .24, .18));
+      const house = new THREE.PointLight(0xc82235, 250, 30, 2); house.position.set(0, 8, -24); this.root.add(house);
+      this.helStandoff = { crowd, guard, floorGuns, flyingGun, light: house };
+    }
   }
   private station(set: FilmSet): void {
     if (set.architecture === 'mobil') { this.mobilStation(set); return; }
@@ -1698,6 +1745,7 @@ export class FilmSetRenderer {
     this.mobilLastFrame = undefined;
     this.helChaseTrain = undefined;
     this.helLift = undefined;
+    this.helStandoff = undefined;
     this.powerStatus = undefined;
     this.sourceDoor = undefined;
     this.architectScreens = undefined;
