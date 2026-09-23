@@ -25,6 +25,7 @@ import { BURLY, burlyLocked, burlyText, type BurlyEncounter } from '@auto_matrix
 import { EXILES } from '@auto_matrix/shared';
 import { CHATEAU, type ChateauEncounter } from '@auto_matrix/shared';
 import { MOUNTAIN, type MountainFlight, type PlayerInput } from '@auto_matrix/shared';
+import { GARAGE, newGarageEscape, stepGarageEscape } from '@auto_matrix/shared';
 
 const BATHROOM_ROLES = ['neo', 'trinity', 'switch', 'apoc'] as const;
 const UNPLUGGED_ROLES = ['tank', 'cypher', 'dozer', 'apoc', 'switch', 'neo', 'trinity'] as const;
@@ -2298,9 +2299,31 @@ export class FilmStorySystem {
     }
     return true;
   }
-  driving(agent: AgentState): boolean { return this.controls(agent) && !this.state?.visiting && this.state?.scene === 'm2_freeway' && this.state?.ride?.phase === 'riding'; }
+  driving(agent: AgentState): boolean { return this.controls(agent) && !this.state?.visiting && ((this.state?.scene === 'm2_freeway' && this.state.ride?.phase === 'riding') || (this.state?.scene === 'm2_garage' && this.state.garage?.phase === 'riding')); }
   driveFrame(agent: AgentState, input: DriveInput, dt: number, tick: number): boolean {
     if (!this.driving(agent)) return false;
+    if (this.state!.scene === 'm2_garage') {
+      const state = this.state!; const before = state.garage!;
+      const escape = state.garage = stepGarageEscape(before, input, dt);
+      agent.position = { ...filmPosition(this.scene!.set, escape.x - 1.05, escape.z), y: FILM_SETS[this.scene!.set].center.y };
+      agent.velocity = { x: escape.lateral, y: 0, z: -escape.speed };
+      agent.rotation = Math.PI - Math.atan2(escape.lateral, Math.max(1, escape.speed));
+      agent.currentAction = { type: 'move_to', parameters: { player: true, resolved: true, riding: true, seated: true }, startedAt: tick, duration: 1, progress: 0 };
+      for (const [id, x, z] of [['morpheus', 2.05, .2], ['keymaker', .1, 1.7]] as const) {
+        const passenger = this.world.agents.get(id); if (!passenger || passenger.controller) continue;
+        passenger.position = { ...agent.position, x: agent.position.x + x, z: agent.position.z + z };
+        passenger.velocity = { ...agent.velocity }; passenger.rotation = agent.rotation;
+        passenger.currentAction = { type: 'idle', parameters: { riding: true, passenger: true, seated: true }, startedAt: tick, duration: 1, progress: 0 };
+      }
+      for (let index = 0; index < 2; index++) {
+        const twin = this.world.agents.get(`twin${index + 1}`);
+        if (twin && !twin.controller) twin.currentAction = { type: 'idle', parameters: { ghostPhase: escape.elapsed < escape.ghostUntil[index] }, startedAt: tick, duration: 1, progress: 0 };
+      }
+      if (escape.twins !== before.twins) state.lastText = escape.hits === before.hits ? '双子在车头前化为白色残影，轿车直接穿过。保持速度，冲向出口。' : '车速太慢，双子的剃刀擦过车厢。加速或者绕开下一个拦截点。';
+      else if (escape.hits > before.hits) state.lastText = '车身擦上混凝土护栏。稳住方向，别让钥匙匠受到第二次冲击。';
+      if (escape.phase === 'wrecked') { agent.health = 0; agent.status = 'dead'; agent.velocity = { x: 0, y: 0, z: 0 }; state.lastText = '双子追上了车队。按 J 从轿车旁重试，之前的剧情仍会保留。'; }
+      return true;
+    }
     const state = this.state!; const before = state.ride!;
     const ride = state.ride = stepFreeway(before, input, dt);
     agent.position = { ...filmPosition(this.scene!.set, ride.x, ride.z), y: FILM_SETS[this.scene!.set].center.y + .65 };
@@ -2488,7 +2511,7 @@ export class FilmStorySystem {
     if (target.startsWith('visit:')) {
       const visited = FILM_SCENE_BY_ID[target.slice(6)];
       if (!visited || !state.completed.includes(visited.id)) return '完成这个场景后才能回访。';
-      if (state.fighting || state.started !== undefined || state.ride?.phase === 'riding' || this.climbing(agent) || this.performing(agent)) return '先完成当前战斗或互动，再回访场景。';
+      if (state.fighting || state.started !== undefined || state.ride?.phase === 'riding' || state.garage?.phase === 'riding' || this.climbing(agent) || this.performing(agent)) return '先完成当前战斗或互动，再回访场景。';
       if (!state.visiting) state.returnPosition = { ...agent.position };
       state.visiting = visited.id; this.place(agent, visited, filmEntry(visited));
       return `回访${FILM_SETS[visited.set].name}。J 可返回当前剧情，回访不会改写进度。`;
@@ -2601,6 +2624,7 @@ export class FilmStorySystem {
       }
       this.clearThreats();
       delete state.ride;
+      delete state.garage;
       if (state.scene === 'm1_spoon' && state.step === 0 && state.oracle) delete state.oracle.spoon;
       if (state.scene === 'm1_oracle' && state.step === 0 && state.oracle) delete state.oracle.vase;
       if (state.scene === 'm1_dejavu' && state.step === 0) { delete state.ambush; this.sandbox().structures = this.sandbox().structures.filter(s => s.film?.scene !== 'm1_dejavu'); }
@@ -2832,6 +2856,11 @@ export class FilmStorySystem {
     if (state.scene === 'm1_jump' && state.step === 1) return 'Morpheus 已经完成示范。Shift 助跑，空格起跳；跌落会恢复检查点。';
     if (step.kind === 'reflect') return 'J 打开手记，记录自己的理解。';
     if (step.kind === 'drive') {
+      if (state.scene === 'm2_garage') {
+        if (['morpheus', 'keymaker', 'twin1', 'twin2'].some(id => this.world.agents.get(id)?.controller)) return '车内同伴或双子正在由另一位玩家控制，等待对方结束后再开始撤离。';
+        if (!state.garage) state.garage = newGarageEscape();
+        return '已上车。W 加速，S 刹车，A / D 转向；保持速度穿过双子的相位，趁他们追上前冲出车库。';
+      }
       if (this.world.agents.get('keymaker')?.controller) return '钥匙匠正在由另一位玩家控制，等待对方结束后再开始护送。';
       if (!state.ride) state.ride = newFreewayRide();
       return '已上车。W 加速，S 刹车，A / D 转向；护送钥匙匠通过逆向车流，抵达前方接应区。';
@@ -2895,6 +2924,7 @@ export class FilmStorySystem {
     this.clearThreats(); state.enteredAt = tick; state.checkpoint = position ?? filmEntry(scene); delete state.started; delete state.fighting;
     delete state.lobby;
     delete state.ride;
+    delete state.garage;
     delete state.awakening;
     delete state.training;
     delete state.dojo;
@@ -3156,6 +3186,13 @@ export class FilmStorySystem {
         actor.currentAction = { type: 'idle', parameters: { meeting: { phase: encounter.phase, elapsed: encounter.elapsed, bugged: encounter.bugged, role } }, startedAt: this.state!.enteredAt, duration: 100000, progress: 0 };
       }
       if (scene.id === 'm2_freeway') actor.position = filmPosition(scene.set, id === 'keymaker' ? 19 : 20, id === 'keymaker' ? 660 : -660);
+      if (scene.id === 'm2_garage') {
+        const poses: Record<string, [number, number, number]> = {
+          morpheus: [2.7, 14, Math.PI], keymaker: [3.5, 10.5, Math.PI],
+          twin1: [GARAGE.twins[0].x, GARAGE.twins[0].z, 0], twin2: [GARAGE.twins[1].x, GARAGE.twins[1].z, 0],
+        };
+        const pose = poses[id]; if (pose) { actor.position = filmPosition(scene.set, pose[0], pose[1]); actor.rotation = pose[2]; }
+      }
       if (scene.id === 'm2_trucks' && id === 'keymaker') actor.position = filmPosition(scene.set, 20, -6);
     });
   }
@@ -3290,6 +3327,14 @@ export class FilmStorySystem {
     if (this.performing(actor)) return;
     if (this.climbing(actor)) return;
     if (step.kind === 'drive') {
+      if (state.scene === 'm2_garage' && state.garage?.phase === 'arrived') {
+        actor.position.y = FILM_SETS[this.scene.set].center.y; actor.velocity = { x: 0, y: 0, z: 0 }; actor.currentAction = null;
+        for (const id of ['morpheus', 'keymaker', 'twin1', 'twin2']) {
+          const passenger = this.world.agents.get(id); if (passenger && !passenger.controller) { passenger.velocity = { x: 0, y: 0, z: 0 }; passenger.currentAction = null; }
+        }
+        this.advance('轿车冲出车库。双子转身抢另一辆车追来；Link 只能在高速公路外侧接应，Trinity 必须继续护送钥匙匠。', actor, tick);
+        return;
+      }
       if (state.ride?.phase === 'arrived') {
         actor.position.y = FILM_SETS[this.scene.set].center.y; actor.velocity = { x: 0, y: 0, z: 0 }; actor.currentAction = null;
         const passenger = this.world.agents.get('keymaker');

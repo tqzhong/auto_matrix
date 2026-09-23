@@ -23,6 +23,7 @@ export * from './constants/apartment.js';
 export * from './constants/club.js';
 export * from './constants/lobby.js';
 export * from './constants/freeway.js';
+export * from './constants/garage.js';
 export * from './constants/awakening.js';
 export * from './constants/training.js';
 export * from './constants/pills.js';

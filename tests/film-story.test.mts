@@ -1,7 +1,7 @@
 import { RELOADED } from '@auto_matrix/shared';
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, RESCUE, RESCUE_LOADOUTS, GOVERNMENT_RESCUE, AIR_RESCUE, MATRIX_ESCAPE, THE_ONE, filmReflections, filmStepPosition, filmEntry, filmPosition, groundHeight, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, RESCUE, RESCUE_LOADOUTS, GOVERNMENT_RESCUE, AIR_RESCUE, MATRIX_ESCAPE, THE_ONE, filmReflections, filmStepPosition, filmEntry, filmPosition, groundHeight, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, newGarageEscape, stepGarageEscape, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -1012,6 +1012,44 @@ test('highway traffic moves, braking reduces speed and a collision injures the v
   assert.ok(struck.hull < 100, 'an oncoming car must damage a stationary motorcycle too');
 });
 
+test('garage twins phase through a fast car, while hesitation and wall impacts can defeat the escort', () => {
+  let escape = newGarageEscape();
+  for (let frame = 0; frame < 160 && escape.phase === 'riding'; frame++) escape = stepGarageEscape(escape, { throttle: 1, steer: 0, brake: false }, .05);
+  assert.equal(escape.phase, 'arrived'); assert.equal(escape.twins, 3);
+  assert.equal(escape.hits, 0); assert.equal(escape.passenger, 100);
+  let slow = newGarageEscape();
+  for (let frame = 0; frame < 300 && slow.phase === 'riding'; frame++) slow = stepGarageEscape(slow, { throttle: 0, steer: 0, brake: true }, .05);
+  assert.equal(slow.phase, 'wrecked'); assert.ok(slow.elapsed <= 14);
+  let barrier = { ...newGarageEscape(), x: 7.8, speed: 20 };
+  barrier = stepGarageEscape(barrier, { throttle: 1, steer: 1, brake: false }, .1);
+  assert.ok(barrier.hits > 0); assert.ok(barrier.hull < 100);
+});
+
+test('Trinity drives the garage escape with companions, saved progress, retry and a clean highway handoff', () => {
+  const h = setup(); h.command('start'); let state = h.sandbox.life.film.state!; const scene = FILM_SCENE_BY_ID.m2_garage;
+  Object.assign(state, { scene: scene.id, actor: scene.actor, step: 0 });
+  h.players.possess('film-player', 'trinity', h.tick()); h.actor().currentLocation = scene.set; h.actor().isInMatrix = true;
+  h.actor().position = filmStepPosition(scene, scene.steps[0]); h.advance(); assert.equal(state.step, 1);
+  h.actor().position = filmStepPosition(scene, scene.steps[1]);
+  h.players.possess('other', 'keymaker', h.tick()); assert.match(h.command('act'), /另一位玩家/); assert.equal(state.garage, undefined);
+  h.players.release('other', h.tick()); h.command('act'); assert.equal(state.garage?.phase, 'riding');
+  assert.match(h.players.possess('other', 'keymaker', h.tick()).error!, /车/);
+  for (let frame = 0; frame < 18; frame++) h.sandbox.life.film.driveFrame(h.actor(), { throttle: 1, steer: 0, brake: false }, .05, h.tick());
+  const saved = JSON.parse(JSON.stringify(h.sandbox.state)); const at = { ...h.actor().position };
+  h.sandbox.restore(saved); state = h.sandbox.life.film.state!; h.players.release('film-player', h.tick()); h.advance();
+  assert.deepEqual(h.sandbox.life.film.state?.garage, saved.neoLife.journey.garage);
+  h.players.possess('film-player', 'trinity', h.tick()); assert.deepEqual(h.actor().position, at);
+  for (let frame = 0; frame < 160 && h.sandbox.life.film.state?.garage?.phase === 'riding'; frame++)
+    h.sandbox.life.film.driveFrame(h.actor(), { throttle: 1, steer: 0, brake: false }, .05, h.tick());
+  h.advance(); assert.equal(state.step, 2); assert.equal(h.world.agents.get('keymaker')!.status, 'alive');
+  h.command('next'); assert.equal(state.scene, 'm2_freeway'); assert.equal(state.garage, undefined);
+  Object.assign(state, { scene: scene.id, actor: scene.actor, step: 1, garage: { ...newGarageEscape(), elapsed: 13.9 } });
+  h.actor().currentLocation = scene.set; h.actor().position = filmStepPosition(scene, scene.steps[1]);
+  h.sandbox.life.film.driveFrame(h.actor(), { throttle: 0, steer: 0, brake: true }, .1, h.tick());
+  assert.equal(h.actor().status, 'dead'); h.command('retry');
+  assert.equal(state.step, 1); assert.equal(state.garage, undefined); assert.equal(h.actor().status, 'alive');
+});
+
 test('the motorcycle escort requires driving, preserves its position on reconnect, and finishes with a living passenger', () => {
   const h = setup(); h.command('start'); const state = h.sandbox.life.film.state!; const scene = FILM_SCENE_BY_ID.m2_freeway;
   Object.assign(state, { scene: scene.id, actor: scene.actor, step: 1 });
@@ -1353,7 +1391,17 @@ test('the entire film route completes through interactions, driving and real com
         }
         else h.advance((step.seconds ?? 3) * 2);
       }
-      else if (step.kind === 'drive') { h.command('act'); rideToExit(h); }
+      else if (step.kind === 'drive') {
+        h.command('act');
+        if (scene.id === 'm2_garage') {
+          for (let frame = 0; state.garage?.phase === 'riding' && frame < 200; frame++) {
+            h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, sprint: false, jump: false,
+              drive: { throttle: 1, steer: 0, brake: false }, sequence: ++sequence });
+            h.players.step(.05, true, h.tick());
+          }
+          assert.equal(state.garage?.phase, 'arrived'); h.advance();
+        } else rideToExit(h);
+      }
       else {
         if (scene.id === 'm2_burly') {
           h.command('act');

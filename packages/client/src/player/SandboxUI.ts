@@ -6,7 +6,7 @@ import { renderNeoLife } from './NeoLifePanel.js';
 import { interrogationLocked, interrogationPose } from '@auto_matrix/shared';
 import { meetingLocked, MEETING_TIMING } from '@auto_matrix/shared';
 import { filmPosition, HOTEL_DOOR_PROGRESS } from '@auto_matrix/shared';
-import { CHATEAU, MOUNTAIN } from '@auto_matrix/shared';
+import { CHATEAU, MOUNTAIN, GARAGE } from '@auto_matrix/shared';
 import { workdayLocked } from '@auto_matrix/shared';
 import { apartmentLocked } from '@auto_matrix/shared';
 import { wakeCallLocked } from '@auto_matrix/shared';
@@ -838,6 +838,15 @@ export class SandboxUI {
       this.el('film-alert-label').textContent = `已下降 ${Math.round(journey.office.climbed / 2)} / 16 m · W 向下 · S 向上 · 松手停留`;
       document.getElementById('game-objective-copy')!.textContent = '沿维修梯抵达下方平台 · 可停在横档上观察';
       this.el('sandbox-waypoint').textContent = '↓ 维修平台'; this.el('sandbox-interact').classList.add('hidden'); return;
+    }
+    if (scene.id === 'm2_garage' && journey.garage?.phase === 'riding' && !journey.visiting) {
+      const escape = journey.garage;
+      this.el('film-ride').classList.remove('hidden');
+      this.el('film-ride-speed').textContent = `${Math.round(escape.speed * 3.6)} km/h`;
+      this.el('film-ride-health').textContent = `车况 ${Math.ceil(escape.hull)}% · 乘员 ${Math.ceil(escape.passenger)}% · ${Math.ceil(Math.max(0, GARAGE.limit - escape.elapsed))} 秒`;
+      this.el('sandbox-waypoint').textContent = `车库出口 ↑ ${Math.max(0, Math.round(escape.z - GARAGE.finish))} m`;
+      document.getElementById('game-objective-copy')!.textContent = '加速穿过双子的相位 · A / D 可绕行 · 别撞混凝土护栏';
+      this.el('sandbox-interact').classList.add('hidden'); return;
     }
     if (scene.id === 'm2_freeway' && journey.ride?.phase === 'riding' && !journey.visiting) {
       const ride = journey.ride;

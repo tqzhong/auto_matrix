@@ -91,7 +91,7 @@ export class AgentRenderer {
   update(delta: number, camera?: THREE.Camera, speed = 1, tick = 0): void {
     for (const [id, entry] of this.agents) {
       const state = entry.state;
-      entry.body.visible = (id !== this.playerId || !this.firstPerson || this.playerMotion?.inspecting === true) && state.status !== 'disconnected' && !state.currentAction?.parameters.filmDuel;
+      entry.body.visible = (id !== this.playerId || !this.firstPerson || this.playerMotion?.inspecting === true) && state.status !== 'disconnected' && !state.currentAction?.parameters.filmDuel && !state.currentAction?.parameters.ghostPhase;
       const warning = state.currentAction?.type === 'attack' && state.currentAction.target === this.playerId && Number(state.currentAction.parameters.contactTick ?? 0) > tick;
       entry.marker.visible = warning || !this.playerId || id === this.selected;
       (entry.marker.material as THREE.MeshBasicMaterial).color.set(warning ? '#f6b177' : FACTION_COLORS[state.faction] ?? '#91cfb0');

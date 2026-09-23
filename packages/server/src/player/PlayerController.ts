@@ -74,6 +74,7 @@ export class PlayerController {
     if (INTERROGATION_CAST.includes(id as typeof INTERROGATION_CAST[number]) && this.sandbox?.life.film.state && interrogationLocked(this.sandbox.life.film.state)) return { error: '这个特工正在参与审讯，结束后可以接入。' };
     if (id === 'morpheus' && this.sandbox?.life.film.state && pillLocked(this.sandbox.life.film.state)) return { error: 'Morpheus 正在与 Neo 交谈递药，结束后可以接入。' };
     if (id === 'keymaker' && this.sandbox?.life.film.state?.ride?.phase === 'riding') return { error: '钥匙匠正在后座接受护送，抵达接应区后可以接入。' };
+    if (['keymaker', 'morpheus', 'twin1', 'twin2'].includes(id) && this.sandbox?.life.film.state?.garage?.phase === 'riding') return { error: '这个角色正在车库追逐中，轿车冲出车库后可以接入。' };
     if (this.sandbox?.state.threats.some(t => t.character === id)) return { error: '这个角色正在剧情交手，结束后可以接入。' };
     const restarting = newCycle && id === 'neo' && this.sandbox?.life.film.state?.finished;
     if (!restarting && this.sandbox?.life.film.unavailable(id) && !this.sandbox.life.film.controls(agent)) return { error: '这个角色在本轮故事中已无法接入；新循环会恢复。' };

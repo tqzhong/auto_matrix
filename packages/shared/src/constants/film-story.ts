@@ -31,6 +31,7 @@ export interface FilmJourney {
   phone?: import('./office.js').OfficePhone;
   skipped?: string[];
   ride?: import('./freeway.js').FreewayRide;
+  garage?: import('./garage.js').GarageEscape;
   awakening?: import('./awakening.js').AwakeningBeat;
   training?: import('./training.js').TrainingPerformance;
   workday?: import('./office-workday.js').OfficeWorkday;
@@ -150,7 +151,7 @@ export const FILM_SCENES: FilmScene[] = [
     use('到山崖边联系 Link', 'Link 确认 Neo 身在群山中；双子正追赶 Morpheus、Trinity 和钥匙匠。城市在正南方。', MOUNTAIN.lookout.x, MOUNTAIN.lookout.z, 1),
     use('朝南方起飞', 'Neo 冲向天空，赶赴高速公路。', MOUNTAIN.launch.x, MOUNTAIN.launch.z, 1),
   ], ['link']),
-  scene('m2_garage', 2, 'chateau_garage', 'trinity', '车库中的追兵', 'freeway', 'chase', 'Trinity 与 Morpheus 护着钥匙匠进入车库，双子紧追不舍。', [fight('为钥匙匠打开通路', 2), use('检查出口车辆', '车辆冲出地下车库，进入高速公路。', 0, -30)], ['morpheus', 'keymaker']),
+  scene('m2_garage', 2, 'chateau_garage', 'trinity', '车库中的追兵', 'freeway', 'chase', '钥匙匠已发动轿车。双子会穿透撞击，不能靠拳脚清除；Trinity 必须载上 Morpheus 与钥匙匠冲出车库。', [walk('跑向钥匙匠发动的轿车', -3, 14), { kind: 'drive', label: '驾车穿过双子的拦截', x: -3, z: 14 }], ['morpheus', 'keymaker', 'twin1', 'twin2']),
   scene('m2_freeway', 2, 'freeway_101', 'trinity', '逆向的高速路', 'freeway', 'chase', 'Trinity 骑摩托车带着钥匙匠逆向穿过车流。W 加速，S 刹车，A / D 转向；碰撞会损伤车辆和乘员。', [walk('靠近接应摩托车', 14, 660), { kind: 'drive', label: '驾驶摩托车护送钥匙匠', x: 14, z: 660 }, use('把钥匙匠交给 Morpheus', '两人抵达接应区。Morpheus 接过护送任务，追逐转向重型卡车。', 14, -660)], ['keymaker', 'morpheus']),
   scene('m2_trucks', 2, 'freeway_101', 'morpheus', '两辆卡车之间', 'freeway', 'chase', 'Morpheus 在卡车上对抗特工，钥匙匠已没有更多退路。', [{ ...fight('保护钥匙匠', 2), x: 14 }, use('等待 Neo 的空中接应', '两辆卡车即将相撞，Neo 及时带走两人。', 14, -50)], ['keymaker']),
   scene('m2_plan', 2, 'neb_deck', 'neo', '钥匙匠的路线', 'architect', 'infiltration', '打开通往源头的门需要同步切断主电源与备用电源。几艘船分头行动。', [use('核对电站示意图', 'Niobe 的队伍负责发电厂，另一支队伍负责备用电源；Neo 与 Morpheus 护送钥匙匠。', 0, -16), think('合作如何改变可能的选择？', '这条路线无法靠一个人的力量完成。')], ['keymaker', 'morpheus', 'trinity']),

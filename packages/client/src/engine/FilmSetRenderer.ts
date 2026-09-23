@@ -6,7 +6,7 @@ import { workdayLocked, type OfficeWorkday } from '@auto_matrix/shared';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
-import { FILM_SETS, FILM_SCENE_BY_ID, PILL_ROOM, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, EXILES, CHATEAU, awakeningLocked, trainingLocked, phoneLocked, windowOpening, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
+import { FILM_SETS, FILM_SCENE_BY_ID, PILL_ROOM, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, GARAGE, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, EXILES, CHATEAU, awakeningLocked, trainingLocked, phoneLocked, windowOpening, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
 import { LobbySetRenderer } from './LobbySetRenderer.js';
 import { OfficeSetRenderer } from './OfficeSetRenderer.js';
 import { FreewaySetRenderer } from './FreewaySetRenderer.js';
@@ -110,6 +110,8 @@ export class FilmSetRenderer {
   private chateauVolleyTick?: number;
   private chateauVolleyStart = 0;
   private chateauDoor?: THREE.Mesh;
+  private garageCar?: THREE.Group;
+  private garageGhosts: THREE.Group[] = [];
 
   constructor(private scene: THREE.Scene) {
     scene.add(this.root);
@@ -234,6 +236,16 @@ export class FilmSetRenderer {
       this.chateauVolley.visible = volley !== undefined && elapsed - this.chateauVolleyStart < 1.25;
     }
     if (this.chateauDoor) this.chateauDoor.position.x = sceneId === 'm2_chateau' && (journey?.step ?? 0) >= 2 ? 5 : 0;
+    if (this.garageCar) {
+      const escape = sceneId === 'm2_garage' && !journey?.visiting ? journey?.garage : undefined;
+      this.garageCar.position.set(escape?.x ?? GARAGE.start.x, 0, escape?.z ?? GARAGE.start.z);
+      this.garageCar.rotation.y = escape ? -Math.atan2(escape.lateral, Math.max(1, escape.speed)) : 0;
+      this.garageGhosts.forEach((ghost, index) => {
+        ghost.visible = Boolean(escape && escape.elapsed < escape.ghostUntil[index]);
+        ghost.rotation.y = elapsed * (index ? -3 : 3);
+        ghost.scale.setScalar(1 + Math.sin(elapsed * 18 + index) * .12);
+      });
+    }
     if (this.courtyardBirds.length) {
       const startled = sceneId === 'm2_burly' && !journey?.visiting && journey?.burly?.phase !== 'ready';
       if (startled && this.courtyardDisturbedAt === undefined) this.courtyardDisturbedAt = elapsed;
@@ -254,6 +266,7 @@ export class FilmSetRenderer {
     if (journey?.scene === 'm2_burly' && !['ready', 'staff_ready', 'flight_ready'].includes(journey.burly?.phase ?? 'ready')) this.marker.visible = false;
     if (journey?.scene === 'm2_chateau' && journey.step === 0 && !['ready', 'landing'].includes(journey.chateau?.phase ?? 'ready')) this.marker.visible = false;
     if (journey?.scene === 'm2_mountain' && journey.step === 2 && !['ready', 'failed'].includes(journey.mountain?.phase ?? 'ready')) this.marker.visible = false;
+    if (journey?.scene === 'm2_garage' && journey.garage?.phase === 'riding') this.marker.visible = false;
     if (journey && pillLocked(journey)) this.marker.visible = false;
     if (journey && interrogationLocked(journey)) this.marker.visible = false;
     if (journey && meetingLocked(journey)) this.marker.visible = false;
@@ -571,6 +584,14 @@ export class FilmSetRenderer {
       this.box(this.glass, 0, h / 2, -d / 2, w - 1, h - 1, .22);
       for (let x = -w / 2 + 1; x < w / 2; x += 7) this.box(this.brass, x, h / 2, -d / 2 + .2, .25, h, .28, .05);
       for (const y of [.65, h - .65]) this.box(this.brass, 0, y, -d / 2 + .2, w, .23, .28, .05);
+    } else if (set.architecture === 'garage') {
+      for (const side of [-1, 1]) this.box(wall, side * (w + 12) / 4, h / 2, -d / 2, (w - 12) / 2, h, .7);
+      this.box(wall, 0, (h + 9) / 2, -d / 2, 12, h - 9, .7);
+      const daylight = new THREE.MeshBasicMaterial({ color: 0x94b6b2 }); this.materials.add(daylight);
+      this.box(daylight, 0, 4.5, -d / 2 - 3, 11.2, 9, .12);
+      this.box(this.black, 0, 9.15, -d / 2 + .3, 12.8, .35, 1);
+      for (const side of [-1, 1]) this.box(this.black, side * 6, 4.5, -d / 2 + .3, .38, 9, .7);
+      const light = new THREE.PointLight(0xbadcd4, 175, 36); light.position.set(0, 7, -38); this.root.add(light);
     } else this.box(wall, 0, h / 2, -d / 2, w, h, .7);
     this.box(wall, 0, h / 2, d / 2, w, h, .7);
     if (set.architecture === 'lafayette') {
@@ -1039,7 +1060,36 @@ export class FilmSetRenderer {
         this.label('101 NORTH / DOWNTOWN', 0, 16, -d / 2 + 10, 27, '#e0dfcc', '#345a46'); for (const x of [-w / 2 + 2, w / 2 - 2]) this.box(this.metal, x, 8, -d / 2 + 10, .6, 16, .6);
       } else if (a === 'bridge') {
         this.box(this.plaster, 0, 19, -15, w + 25, 6, 20); for (const x of [-w / 2 + 3, w / 2 - 3]) this.box(this.plaster, x, 8, -15, 5, 18, 12, .1); this.car(0, -19);
-      } else if (a === 'garage') { this.car(-15, -14); this.car(15, 15, 0x606b66); this.label('EXIT →', 0, 10, -d / 2 + .5, 10); }
+      } else if (a === 'garage') {
+        const concrete = this.mat(0x697471, .88); const paint = this.mat(0xd8d2ae, .9);
+        for (const side of [-1, 1]) {
+          this.box(concrete, side * 10.5, .45, -1, .85, .9, 77);
+          for (const z of [-33, -19, -5, 9, 23, 37]) {
+            this.box(paint, side * 14.5, .1, z, 9, .05, .22);
+            this.box(this.metal, side * 21, 6.5, z, .16, 13, .16);
+          }
+        }
+        for (const z of [-29, -14, 1, 16, 31]) {
+          this.box(this.white, 0, 11.9, z, 12, .15, .65);
+          this.box(this.glow, 0, 11.7, z, 10, .08, .35);
+        }
+        for (const x of [-5.5, 5.5]) this.box(paint, x, .12, -35, .25, .04, 6);
+        this.box(paint, 0, .12, -35, 11, .04, .27);
+        this.car(-17, -14, 0x343f3c); this.car(17, 22, 0x626a65);
+        this.garageCar = this.car(GARAGE.start.x, GARAGE.start.z, 0x303b3a);
+        this.garageCar.userData.dynamic = true;
+        const vapor = new THREE.MeshBasicMaterial({ color: 0xe3f2ed, transparent: true, opacity: .48, depthWrite: false, side: THREE.DoubleSide });
+        this.materials.add(vapor);
+        for (const twin of GARAGE.twins) {
+          const ghost = new THREE.Group(); ghost.userData.dynamic = true; ghost.position.set(twin.x, 0, twin.z); ghost.visible = false; this.root.add(ghost);
+          for (let ring = 0; ring < 3; ring++) {
+            const wisp = this.mesh(new THREE.TorusGeometry(.7 + ring * .35, .07, 6, 32), vapor, 0, 2.2 + ring * .8, 0, ghost);
+            wisp.rotation.y = ring * 1.05; wisp.rotation.x = ring * .38;
+          }
+          this.garageGhosts.push(ghost);
+        }
+        this.label('EXIT / CITY ↑', 0, 10, -d / 2 + .5, 11, '#e4e8d8', '#315443');
+      }
       else {
         for (const x of [-w * .34, w * .34]) { this.box(this.marble, x, .2, 0, w * .15, .45, d); for (let z = -d / 2 + 8; z < d / 2; z += 23) { this.cylinder(this.metal, x, 7, z, .14, 14); this.lamp(x, 14, z, false); } }
         if (a !== 'rain') this.phone(0, -d * .32, true);
@@ -1232,6 +1282,7 @@ export class FilmSetRenderer {
     this.baneCopy?.dispose(); this.baneCopy = undefined;
     this.portalDoor = undefined; this.oracleLetter = undefined; this.courtyardStaff = undefined; this.courtyardBirds = []; this.courtyardDisturbedAt = undefined;
     this.exileDessert = undefined; this.bookDoor = undefined; this.chateauVolley = undefined; this.chateauVolleyTick = undefined; this.chateauDoor = undefined;
+    this.garageCar = undefined; this.garageGhosts = [];
     this.office?.dispose(); this.office = undefined;
     this.freeway?.dispose(); this.freeway = undefined;
     this.lobby?.dispose(); this.lobby = undefined;
