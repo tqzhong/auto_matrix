@@ -24,6 +24,7 @@ import { THE_ONE, theOneLocked, theOneRoot, theOneText, type TheOneEncounter, ty
 import { BURLY, burlyLocked, burlyText, type BurlyEncounter } from '@auto_matrix/shared';
 import { EXILES } from '@auto_matrix/shared';
 import { CHATEAU, type ChateauEncounter } from '@auto_matrix/shared';
+import { MOUNTAIN, type MountainFlight, type PlayerInput } from '@auto_matrix/shared';
 
 const BATHROOM_ROLES = ['neo', 'trinity', 'switch', 'apoc'] as const;
 const UNPLUGGED_ROLES = ['tank', 'cypher', 'dozer', 'apoc', 'switch', 'neo', 'trinity'] as const;
@@ -2230,6 +2231,57 @@ export class FilmStorySystem {
     state.checkpoint = { ...agent.position }; state.lastText = encounter.wave === 1 ? '再走进大厅中央迎战；兵器架仍在两侧。' : '再上二层平台迎战剩余守卫。';
     return state.lastText;
   }
+  mountainFrame(agent: AgentState, input: Pick<PlayerInput, 'x' | 'z' | 'yaw' | 'jump' | 'sprint'>, dt: number, tick: number): boolean {
+    const state = this.state;
+    if (state?.scene !== 'm2_mountain' || state.visiting || !this.controls(agent)) return false;
+    const flight = state.mountain;
+    if (!flight || state.step !== 2 && flight.phase !== 'arrived') return false;
+    if (flight.phase === 'ready') {
+      if (!input.jump || !this.near(agent, this.scene!.steps[2])) return false;
+      flight.phase = 'takeoff'; flight.elapsed = 0;
+      flight.x = agent.position.x - FILM_SETS[this.scene!.set].center.x;
+      flight.z = agent.position.z - FILM_SETS[this.scene!.set].center.z;
+      flight.altitude = 0;
+      state.lastText = 'Neo 冲离雪地。按住 W 向南飞，A / D 调整航线，Shift 加速。';
+    }
+    const delta = Math.max(0, Math.min(.1, dt));
+    if (flight.phase === 'takeoff') {
+      flight.elapsed += delta;
+      const rise = Math.min(1, flight.elapsed / MOUNTAIN.ascent);
+      flight.altitude = MOUNTAIN.altitude * rise * rise * (3 - 2 * rise);
+      flight.z -= delta * 8;
+      if (rise >= 1) { flight.phase = 'flying'; flight.elapsed = 0; }
+    } else if (flight.phase === 'flying') {
+      flight.elapsed += delta;
+      flight.x = Math.max(-115, Math.min(115, flight.x + input.x * 25 * delta));
+      flight.z = Math.max(MOUNTAIN.destinationZ, Math.min(MOUNTAIN.launch.z, flight.z + input.z * MOUNTAIN.speed * (input.sprint ? 1.4 : 1) * delta));
+      flight.altitude = MOUNTAIN.altitude + Math.sin(flight.elapsed * 2.6) * .45;
+      if (flight.z <= MOUNTAIN.destinationZ) {
+        flight.phase = 'arrived'; this.advance('雪山退到身后。Neo 已锁定城市方向，继续追赶高速公路上的同伴。', agent, tick);
+      } else if (flight.elapsed >= MOUNTAIN.deadline) {
+        flight.phase = 'failed'; flight.attempt++;
+        agent.position = filmPosition(this.scene!.set, MOUNTAIN.launch.x, MOUNTAIN.launch.z);
+        agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentAction = null;
+        state.lastText = '航线失去方向。Neo 回到城堡外的起飞点；Link 的方位仍记得。按 G 重试。';
+        return true;
+      }
+    }
+    if (flight.phase === 'failed') return false;
+    agent.position = { ...filmPosition(this.scene!.set, flight.x, flight.z), y: FILM_SETS[this.scene!.set].center.y + flight.altitude };
+    agent.velocity = { x: input.x * 25, y: 0, z: input.z * MOUNTAIN.speed };
+    if (Math.hypot(input.x, input.z) > .1) agent.rotation = Math.atan2(input.x, input.z);
+    agent.currentAction = { type: 'move_to', parameters: { player: true, resolved: true, mountainFlight: { ...flight } }, startedAt: tick, duration: 1, progress: 0 };
+    if (flight.phase === 'flying') state.lastText = `向南飞往城市 · 已离开山口 ${Math.round(MOUNTAIN.launch.z - flight.z)} / ${MOUNTAIN.launch.z - MOUNTAIN.destinationZ} 米 · 剩余 ${Math.max(0, Math.ceil(MOUNTAIN.deadline - flight.elapsed))} 秒`;
+    return true;
+  }
+  private retryMountain(agent: AgentState): string {
+    const state = this.state!; const flight = state.mountain!;
+    flight.phase = 'ready'; flight.elapsed = 0; flight.x = MOUNTAIN.launch.x; flight.z = MOUNTAIN.launch.z; flight.altitude = 0;
+    agent.position = filmPosition(this.scene!.set, flight.x, flight.z);
+    agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentAction = null;
+    state.checkpoint = { ...agent.position }; state.lastText = 'Link 的方位仍在：城市位于正南。站在山崖边按 Space 再次起飞。';
+    return state.lastText;
+  }
   climbing(agent: AgentState): boolean { return this.controls(agent) && !this.state?.visiting && this.state?.scene === 'm1_ledge' && this.state.step === 1 && this.state.office?.climbed !== undefined; }
   climbFrame(agent: AgentState, direction: number, dt: number, tick: number): boolean {
     if (!this.climbing(agent)) return false;
@@ -2445,6 +2497,7 @@ export class FilmStorySystem {
       if (this.reloaded.active(agent)) return this.reloaded.command(agent, target, tick);
       if (state.scene === 'm2_burly') return this.retryBurly(agent, tick);
       if (state.scene === 'm2_chateau' && state.step === 0) return this.retryChateau(agent, tick);
+      if (state.scene === 'm2_mountain' && state.step === 2 && state.mountain) return this.retryMountain(agent);
       if (state.scene === 'm2_persephone' && state.persephone?.phase === 'enacting') {
         agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
         this.persephoneFrame(agent, 0, tick); return '已接回盥洗室，条件与动作进度均已保留。';
@@ -2647,6 +2700,7 @@ export class FilmStorySystem {
     if (this.reloaded.active(agent)) return this.reloaded.command(agent, target, tick);
     if (state.scene === 'm2_burly') return this.burlyAct(agent, target, tick);
     if (state.scene === 'm2_chateau' && state.step === 0) return this.chateauAct(agent, target, tick);
+    if (state.scene === 'm2_mountain' && state.step === 2) return state.mountain?.phase === 'failed' && target === 'act' ? this.retryMountain(agent) : '站在山崖起飞点按 Space，随后按住 W 向南飞，A / D 调整航线。';
     if (state.scene === 'm2_persephone' && state.step === 2) return this.persephoneAct(agent, target, tick);
     if (state.scene === 'm1_wake_up') return this.apartmentAct(agent, target, tick);
     if (state.scene === 'm1_wake_again' && state.step === 0) return this.wakeCallAct(agent, target, tick);
@@ -2860,6 +2914,7 @@ export class FilmStorySystem {
     delete state.seraph;
     delete state.burly;
     delete state.chateau;
+    delete state.mountain;
     delete state.persephone;
     delete state.keymaker;
     this.sandbox().structures = this.sandbox().structures.filter(structure => structure.id !== 'film:reloaded:door');
@@ -2888,6 +2943,7 @@ export class FilmStorySystem {
     const actor = this.world.agents.get(state.actor)!;
     this.place(actor, scene, state.checkpoint); actor.status = 'alive'; actor.health = actor.maxHealth; actor.activeEffects = [];
     if (scene.id === 'm2_room') actor.rotation = Math.PI;
+    if (scene.id === 'm2_mountain') actor.rotation = 0;
     if (scene.id === 'm2_oracle_message') actor.rotation = 0;
     life.chapter = NEO_CHAPTERS.findIndex(c => c.id === scene.chapter);
     const neo = this.world.agents.get('neo')!;
@@ -2908,6 +2964,7 @@ export class FilmStorySystem {
       }
     }
     if (scene.id === 'm2_chateau') state.chateau = { phase: 'ready', wave: 1, parries: 0, disarms: 0, attempts: 0, wounded: false };
+    if (scene.id === 'm2_mountain') state.mountain = { phase: 'ground', elapsed: 0, x: MOUNTAIN.launch.x, z: MOUNTAIN.launch.z, altitude: 0, attempt: 0 };
     if (scene.id === 'm2_persephone') state.persephone = { phase: 'offered', elapsed: 0, attempts: 0 };
     if (scene.id === 'm2_library') {
       state.keymaker = { x: EXILES.keymaker.x, z: EXILES.keymaker.z, phase: 'hidden', separated: 0, setbacks: 0 };
@@ -3155,6 +3212,7 @@ export class FilmStorySystem {
     if (state.scene === 'm2_departure' && state.step === 1) life.choices.bane_departure_encounter = 'unexplained';
     if (state.scene === 'm2_departure' && state.step === 2) life.choices.kid_spoon = 'received';
     if (state.scene === 'm2_departure' && state.step === 3) life.choices.zion_clearance = 'hamann';
+    if (state.scene === 'm2_mountain' && state.step === 1 && state.mountain) state.mountain.phase = 'ready';
     if (state.scene === 'm1_bug' && state.step === 0 && state.office?.outcome === 'escaped') text = '扫描完成，没有发现追踪装置。Trinity 收起仪器，确认接头安全，继续前往 Morpheus 的房间。';
     state.lastText = text; state.step++; state.checkpoint = { ...agent.position }; delete state.started; delete state.fighting;
     if (state.scene === 'm2_library') this.sealKeymakerDoor();

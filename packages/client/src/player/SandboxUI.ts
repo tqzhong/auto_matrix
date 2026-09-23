@@ -6,7 +6,7 @@ import { renderNeoLife } from './NeoLifePanel.js';
 import { interrogationLocked, interrogationPose } from '@auto_matrix/shared';
 import { meetingLocked, MEETING_TIMING } from '@auto_matrix/shared';
 import { filmPosition, HOTEL_DOOR_PROGRESS } from '@auto_matrix/shared';
-import { CHATEAU } from '@auto_matrix/shared';
+import { CHATEAU, MOUNTAIN } from '@auto_matrix/shared';
 import { workdayLocked } from '@auto_matrix/shared';
 import { apartmentLocked } from '@auto_matrix/shared';
 import { wakeCallLocked } from '@auto_matrix/shared';
@@ -277,6 +277,23 @@ export class SandboxUI {
         const direction = Math.atan2(destination.x - player.position.x, destination.z - player.position.z) - player.rotation;
         this.el('sandbox-waypoint').innerHTML = `<span style="transform:rotate(${-direction}rad)">↑</span>${phase === 'landing' ? '二层平台' : '左墙长剑'} <b>${Math.round(distance(destination, player.position))} m</b>`;
       } else this.el('sandbox-waypoint').textContent = '';
+      return;
+    }
+    if (!journey.visiting && scene.id === 'm2_mountain' && journey.mountain && journey.step === 2) {
+      const flight = journey.mountain;
+      const active = flight.phase === 'takeoff' || flight.phase === 'flying' || flight.phase === 'arrived';
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.toggle('urgent', flight.phase === 'failed');
+      this.el('film-sequence-line').textContent = flight.phase === 'failed' ? journey.lastText : active ? 'Link 正在追踪同伴的高速公路信号。' : 'Link 已确认：城市位于正南。';
+      this.el('film-sequence-hint').textContent = flight.phase === 'failed' ? 'G 从山崖起飞点重试' : active
+        ? `W 朝南飞 · A / D 校正 · Shift 加速 · 高度 ${Math.round(flight.altitude)} m` : '站在山崖边按 Space 起飞';
+      this.el('sandbox-interact').classList.toggle('hidden', flight.phase !== 'failed');
+      this.el('sandbox-nearby').textContent = flight.phase === 'failed' ? '重试飞行' : '';
+      this.el('sandbox-trace').textContent = active ? `山地航线 ${Math.max(0, Math.round(MOUNTAIN.launch.z - flight.z))} / ${MOUNTAIN.launch.z - MOUNTAIN.destinationZ} m` : 'Link 已确认城市位于正南';
+      this.el('sandbox-trace').classList.toggle('danger', flight.phase === 'failed');
+      this.el('sandbox-job').style.width = `${Math.max(0, Math.min(100, (MOUNTAIN.launch.z - flight.z) / (MOUNTAIN.launch.z - MOUNTAIN.destinationZ) * 100))}%`;
+      document.getElementById('game-objective')!.textContent = '雪山误传 · Neo 返航';
+      document.getElementById('game-objective-copy')!.textContent = flight.phase === 'failed' ? '重新起飞，朝正南返回城市' : active ? '穿过山脊，赶上公路上的同伴' : '从城堡外的山崖起飞';
+      this.el('sandbox-waypoint').textContent = '↓ 南方 · 城市与高速公路';
       return;
     }
     if (journey.reloaded && !journey.visiting) {

@@ -296,6 +296,8 @@ export class PlayerControls {
     if (reloadedCinematic) this.performing = true;
     if (this.motion.burly && !state.currentAction?.parameters.burly) this.performing = false;
     if (['approaching', 'grapple', 'flight'].includes((state.currentAction?.parameters.burly as MotionInput['burly'] | undefined)?.phase ?? '')) this.performing = true;
+    if (this.motion.mountainFlight && !state.currentAction?.parameters.mountainFlight) this.performing = false;
+    if (['takeoff', 'flying', 'arrived'].includes((state.currentAction?.parameters.mountainFlight as MotionInput['mountainFlight'] | undefined)?.phase ?? '')) this.performing = true;
     if (this.motion.persephone && !state.currentAction?.parameters.persephone) this.performing = false;
     if (state.currentAction?.parameters.persephone) this.performing = true;
     if (this.motion.lobbyEntry && !state.currentAction?.parameters.lobbyEntry) this.performing = false;
@@ -328,6 +330,7 @@ export class PlayerControls {
     this.motion.reloaded = reloadedGesture;
     this.motion.burly = state.currentAction?.parameters.burly as MotionInput['burly'];
     this.motion.chateauWeapon = state.currentAction?.parameters.chateauWeapon as MotionInput['chateauWeapon'];
+    this.motion.mountainFlight = state.currentAction?.parameters.mountainFlight as MotionInput['mountainFlight'];
     this.motion.persephone = state.currentAction?.parameters.persephone as MotionInput['persephone'];
     this.motion.lobbyEntry = state.currentAction?.parameters.lobbyEntry as MotionInput['lobbyEntry'];
     this.motion.aimPitch = this.firearm || state.currentAction?.parameters.armed === true ? this.pitch : undefined;
@@ -996,6 +999,17 @@ export class PlayerControls {
       const focus = spoon.localToWorld(new THREE.Vector3(.1, .55, 0));
       const ideal = focus.clone().add(new THREE.Vector3(Math.sin(this.yaw + .45) * 2.1, .35 + Math.sin(this.pitch), Math.cos(this.yaw + .45) * 2.1));
       this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta)); this.camera.lookAt(focus);
+    } else if (this.motion.mountainFlight && ['takeoff', 'flying', 'arrived'].includes(this.motion.mountainFlight.phase)) {
+      if (this.firstPerson) {
+        const eye = new THREE.Vector3(this.position.x, this.position.y + 2.3, this.position.z);
+        this.camera.position.copy(eye); this.camera.lookAt(eye.x, eye.y + .35, eye.z - 24);
+      } else {
+        const ideal = new THREE.Vector3(this.position.x + 3, this.position.y + 8, this.position.z + 21);
+        const focus = new THREE.Vector3(this.position.x, this.position.y + 1, this.position.z - 8);
+        if (resetCamera) this.camera.position.copy(ideal);
+        else this.camera.position.lerp(ideal, 1 - Math.exp(-7 * delta));
+        this.camera.lookAt(focus);
+      }
     } else if (this.motion.burly?.phase === 'flight') {
       if (this.firstPerson) {
         const eye = new THREE.Vector3(this.position.x, this.position.y + 2.35, this.position.z);

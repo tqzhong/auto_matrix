@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import type { AgentState, PlayerInput } from '@auto_matrix/shared';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { CameraController } from '../packages/client/src/engine/CameraController.js';
-import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, pillRoot, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, ORACLE_VISIT, RESCUE, airRescueRoot, matrixEscapeRoot, theOneRoot, type TheOneEncounter } from '@auto_matrix/shared';
+import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, pillRoot, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, airRescueRoot, matrixEscapeRoot, theOneRoot, type TheOneEncounter } from '@auto_matrix/shared';
 
 test('observer camera releases drag and ignores pointer capture while a character controls the view', () => {
   let captures = 0;
@@ -858,6 +858,20 @@ test('the final takeoff camera follows Neo above the skyline and V enters the ai
   game.key('KeyV'); game.key('KeyV', false); game.step(.1);
   assert.ok(game.camera.position.distanceTo(new THREE.Vector3(game.state.position.x, game.state.position.y + 2.35, game.state.position.z)) < .1);
   assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).z < -.7);
+});
+
+test('mountain return flight keeps Neo and the southern route in frame in both views', t => {
+  const game = setup(t, Math.PI); const center = FILM_SETS.film_mountain_range.center;
+  game.state.currentLocation = 'film_mountain_range';
+  game.state.position = { ...filmPosition('film_mountain_range', 0, 50), y: center.y + MOUNTAIN.altitude };
+  game.state.currentAction = { type: 'move_to', parameters: { mountainFlight: { phase: 'flying', elapsed: 3, x: 0, z: 50, altitude: MOUNTAIN.altitude, attempt: 0 } }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.step(.5);
+  const neo = new THREE.Vector3(game.state.position.x, game.state.position.y + 1.5, game.state.position.z).project(game.camera);
+  assert.ok(Math.abs(neo.x) < .5 && Math.abs(neo.y) < .58 && neo.z > -1 && neo.z < 1, 'the flight body must clear the lower HUD');
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).z < -.6);
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+  assert.ok(game.camera.position.distanceTo(new THREE.Vector3(game.state.position.x, game.state.position.y + 2.3, game.state.position.z)) < .1);
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).z < -.9);
 });
 
 test('Smith courtyard flight is framed from beyond the wall with the courtyard behind Neo', t => {

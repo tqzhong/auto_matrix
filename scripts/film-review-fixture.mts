@@ -1,4 +1,4 @@
-import { newReloaded, BURLY, EXILES, CHATEAU } from '@auto_matrix/shared';
+import { newReloaded, BURLY, EXILES, CHATEAU, MOUNTAIN } from '@auto_matrix/shared';
 // Creates an isolated visual-review save; never writes the player's data directory.
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import os from 'node:os';
@@ -408,6 +408,18 @@ if (scene.id === 'm2_chateau' && ['chateau-duel', 'chateau-upper'].includes(proc
     for (const threat of sandbox.state.threats.filter(threat => threat.scene === scene.id)) threat.stunUntil = 100000;
   }
   actor.rotation = Math.PI; journey.checkpoint = { ...actor.position };
+}
+if (scene.id === 'm2_mountain' && ['mountain-lookout', 'mountain-flight'].includes(process.argv[3])) {
+  const journey = sandbox.life.film.state!; actor.controller = 'player';
+  journey.step = process.argv[3] === 'mountain-flight' ? 2 : 1;
+  actor.position = filmStepPosition(scene, scene.steps[journey.step]); actor.rotation = Math.PI;
+  if (journey.mountain) journey.mountain.phase = journey.step === 2 ? 'flying' : 'ground';
+  if (journey.step === 2 && journey.mountain) {
+    Object.assign(journey.mountain, { elapsed: 3, x: 0, z: 50, altitude: MOUNTAIN.altitude });
+    actor.position = { ...filmPosition(scene.set, 0, 50), y: FILM_SETS[scene.set].center.y + MOUNTAIN.altitude };
+    actor.currentAction = { type: 'move_to', parameters: { player: true, resolved: true, mountainFlight: { ...journey.mountain } }, startedAt: 0, duration: 1, progress: 0 };
+  }
+  journey.checkpoint = { ...actor.position };
 }
 for (const resident of world.agents.values()) delete resident.controller;
 neo.isAwakened = FILM_SCENES.indexOf(scene) >= FILM_SCENES.findIndex(s => s.id === 'm1_pod');

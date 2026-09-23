@@ -922,6 +922,49 @@ test('the château guard can wound Neo, and a failed attempt retries without los
   assert.equal(state.chateau?.weapon, 'sword'); assert.equal(h.sandbox.state.threats.filter(t => t.scene === hall.id).length, 2);
 });
 
+test('Neo must inspect the mountain exit, call Link, then steer a saved flight south before the garage cut', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  const hall = FILM_SCENE_BY_ID.m2_chateau; const mountain = FILM_SCENE_BY_ID.m2_mountain;
+  Object.assign(state, { scene: hall.id, actor: 'neo', step: hall.steps.length });
+  h.actor().currentLocation = hall.set; h.actor().isInMatrix = true;
+  h.command('next'); assert.equal(state.scene, mountain.id);
+  assert.equal(state.mountain?.phase, 'ground');
+  h.actor().position = filmStepPosition(mountain, mountain.steps[0]); h.command('act'); h.advance(3);
+  assert.equal(state.step, 1);
+  h.actor().position = filmStepPosition(mountain, mountain.steps[1]); h.command('act'); h.advance(3);
+  assert.equal(state.step, 2); assert.equal(state.mountain?.phase, 'ready');
+  const flightInput = { x: 0, z: -1, yaw: Math.PI, jump: true, sprint: true, sequence: 1 };
+  h.actor().position = filmStepPosition(mountain, mountain.steps[2]);
+  h.players.receiveInput('film-player', flightInput); h.players.step(.1, true, h.tick());
+  assert.equal(state.mountain?.phase, 'takeoff');
+  for (let frame = 0; frame < 30; frame++) h.players.step(.1, true, h.tick());
+  assert.ok(state.mountain!.altitude > 20);
+  const before = state.mountain!.z;
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+  assert.equal(h.sandbox.life.film.state?.mountain?.z, before);
+  h.players.receiveInput('film-player', { ...flightInput, jump: false, sequence: 2 });
+  for (let frame = 0; frame < 180 && h.sandbox.life.film.state?.step === 2; frame++) h.players.step(.1, true, h.tick());
+  assert.equal(h.sandbox.life.film.state?.step, 3);
+  assert.equal(h.sandbox.life.film.state?.mountain?.phase, 'arrived');
+  h.command('next'); assert.equal(h.sandbox.life.film.state?.scene, 'm2_garage');
+});
+
+test('Neo can retry a missed mountain flight without replaying Link’s location call', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  const hall = FILM_SCENE_BY_ID.m2_chateau; const mountain = FILM_SCENE_BY_ID.m2_mountain;
+  Object.assign(state, { scene: hall.id, actor: 'neo', step: hall.steps.length });
+  h.actor().currentLocation = hall.set; h.actor().isInMatrix = true; h.command('next');
+  for (let index = 0; index < 2; index++) {
+    h.actor().position = filmStepPosition(mountain, mountain.steps[index]); h.command('act'); h.advance(3);
+  }
+  h.actor().position = filmStepPosition(mountain, mountain.steps[2]);
+  h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: true, sprint: false, sequence: 1 });
+  for (let frame = 0; frame < 280; frame++) h.players.step(.1, true, h.tick());
+  assert.equal(state.mountain?.phase, 'failed'); assert.equal(state.step, 2);
+  h.command('retry'); assert.equal(state.mountain?.phase, 'ready');
+  assert.equal(state.step, 2); assert.equal(state.mountain?.attempt, 1);
+});
+
 test('Smith assimilation is reversible at the ending, without reviving Trinity', () => {
   const h = setup(); h.command('start'); const state = h.sandbox.life.film.state!;
   const playLast = (id: string) => {
@@ -1182,6 +1225,13 @@ test('the entire film route completes through interactions, driving and real com
         if (scene.id === 'm1_cypher_console') for (let frame = 0; frame < 48; frame++) h.players.step(.1, true, h.tick());
       }
       else if (step.kind === 'interact') {
+        if (scene.id === 'm2_mountain' && index === 2) {
+          h.players.receiveInput('film-player', { x: 0, z: -1, yaw: Math.PI, jump: true, sprint: true, sequence: ++sequence });
+          h.players.step(.1, true, h.tick());
+          h.players.receiveInput('film-player', { x: 0, z: -1, yaw: Math.PI, jump: false, sprint: true, sequence: ++sequence });
+          for (let frame = 0; frame < 180 && state.step === index; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.step, index + 1); continue;
+        }
         if (scene.id === 'm2_persephone' && index === 2) {
           h.command('persephone:memory');
           for (let frame = 0; frame < 30; frame++) h.players.step(.1, true, h.tick());

@@ -152,6 +152,7 @@ export class AgentRenderer {
         reloaded: state.currentAction?.parameters.reloaded as MotionInput['reloaded'],
         burly: state.currentAction?.parameters.burly as MotionInput['burly'],
         chateauWeapon: state.currentAction?.parameters.chateauWeapon as MotionInput['chateauWeapon'],
+        mountainFlight: state.currentAction?.parameters.mountainFlight as MotionInput['mountainFlight'],
         persephone: state.currentAction?.parameters.persephone as MotionInput['persephone'],
         lobbyEntry: state.currentAction?.parameters.lobbyEntry as MotionInput['lobbyEntry'],
         weaponStyle: state.currentAction?.parameters.weaponStyle as MotionInput['weaponStyle'],
@@ -165,9 +166,11 @@ export class AgentRenderer {
       input.officeShirt = officeClothing(state.id, state.currentLocation);
       input.clubClothes = state.currentLocation === 'film_white_rabbit_club';
       input.glasses = !input.clubClothes && (state.id !== 'neo' || state.isAwakened && state.currentLocation !== 'film_oracle_home');
+      const mountainFlying = input.mountainFlight && ['takeoff', 'flying', 'arrived'].includes(input.mountainFlight.phase);
+      entry.body.rotation.x = mountainFlying ? THREE.MathUtils.lerp(entry.body.rotation.x, 1.12, 1 - Math.exp(-6 * delta)) : 0;
       this.models.animate(entry.rig, delta * (id === this.playerId && speed > 0 ? 1 : speed), input, dist);
       entry.shadow.position.y = floor - entry.group.position.y - .97;
-      entry.shadow.visible = state.status !== 'disconnected' && !state.currentAction?.parameters.filmDuel;
+      entry.shadow.visible = state.status !== 'disconnected' && !state.currentAction?.parameters.filmDuel && !mountainFlying;
       entry.shadow.scale.setScalar(1 + Math.max(0, entry.group.position.y - floor) * .04);
       const selected = id === this.selected;
       entry.label.visible = id !== this.playerId && state.status === 'alive' && !state.currentAction?.parameters.filmDuel && (selected || (!this.playerId && dist < 90 && (['neo', 'trinity', 'smith', 'morpheus'].includes(id) || state.currentAction?.type === 'talk_to')));

@@ -41,6 +41,7 @@ export interface MotionInput {
   reloaded?: ReloadedGesture;
   burly?: import('@auto_matrix/shared').BurlyEncounter & { role: 'neo' | 'smith' };
   chateauWeapon?: import('@auto_matrix/shared').ChateauWeapon;
+  mountainFlight?: import('@auto_matrix/shared').MountainFlight;
   persephone?: import('@auto_matrix/shared').PersephoneEncounter & { role: 'neo' | 'persephone' };
   weaponStyle?: RescueLoadout;
   aimPitch?: number;
@@ -486,6 +487,11 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
       arms[i].outward = mix(arms[i].outward, (i ? 1 : -1) * .14, theOne.flight); arms[i].grip = mix(arms[i].grip, .28, theOne.flight);
       legs[i].hip = mix(legs[i].hip, i ? -.55 : .22, theOne.flight); legs[i].knee = mix(legs[i].knee, i ? .95 : .3, theOne.flight);
     }
+  }
+  const mountainFlight = input.mountainFlight && ['takeoff', 'flying', 'arrived'].includes(input.mountainFlight.phase);
+  if (mountainFlight) for (let i = 0; i < 2; i++) {
+    arms[i].shoulder = i ? -.25 : -2.15; arms[i].elbow = i ? -.35 : -.08; arms[i].outward = (i ? 1 : -1) * .12; arms[i].grip = i ? .18 : .8;
+    legs[i].hip = i ? -.2 : .08; legs[i].knee = i ? .26 : .12;
   }
   if (input.performance && !['touch', 'connect'].includes(input.performance)) for (let i = 0; i < 2; i++) {
     const afloat = input.performance === 'float'; const raised = input.performance === 'lift';

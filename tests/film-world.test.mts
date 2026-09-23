@@ -1,19 +1,32 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { FILM_SETS, filmPosition } from '../packages/shared/src/constants/film-sets.ts';
+import { MOUNTAIN } from '../packages/shared/src/constants/mountain.ts';
 import { PILL_ROOM } from '../packages/shared/src/constants/pills.ts';
 import { INTERROGATION_ROOM } from '../packages/shared/src/constants/interrogation.ts';
 import { groundHeight, playerBlocked, stepPlayer } from '../packages/shared/src/constants/city.ts';
 
 test('film sets admit walking in both worlds and use their own floor', () => {
   for (const set of Object.values(FILM_SETS)) {
-    const position = filmPosition(set.id, set.architecture === 'freeway' ? 14 : set.id === 'film_agent_interrogation' ? INTERROGATION_ROOM.approach.x : 0);
+    const position = filmPosition(set.id, set.architecture === 'freeway' ? 14 : set.id === 'film_agent_interrogation' ? INTERROGATION_ROOM.approach.x : 0, set.id === 'film_mountain_range' ? MOUNTAIN.door.z : 0);
     assert.equal(playerBlocked(position, set.world === 'matrix'), false, set.name);
     assert.equal(groundHeight(position, set.world === 'matrix'), position.y, set.name);
     const next = stepPlayer(position, 0, { x: 0, z: -1, yaw: Math.PI, jump: false, sprint: false, sequence: 1 }, .1, set.world === 'matrix');
     assert.ok(next.position.z < position.z, `${set.name}: movement must not freeze at the old city boundary`);
     assert.equal(playerBlocked({ ...position, x: position.x + (set.id === 'film_lafayette' ? 48.4 : (set.id === 'film_office_ledge' ? -1 : 1) * (set.width / 2 + 2)) }, set.world === 'matrix'), true, set.name);
   }
+});
+
+test('the mountain door, Link lookout and launch point stay walkable while the terrace rail is solid', () => {
+  const set = FILM_SETS.film_mountain_range;
+  for (const z of [MOUNTAIN.door.z, MOUNTAIN.lookout.z, MOUNTAIN.launch.z]) {
+    const position = filmPosition(set.id, 0, z);
+    assert.equal(groundHeight(position, true), position.y);
+    assert.equal(playerBlocked(position, true), false);
+  }
+  assert.equal(playerBlocked(filmPosition(set.id, 23.5, 295), true), true);
+  assert.equal(playerBlocked(filmPosition(set.id, -23.5, 295), true), true);
+  assert.ok(groundHeight(filmPosition(set.id, 0, -200), true) < set.center.y - 5);
 });
 
 test('the interrogation table and chairs are solid while both side aisles admit walking', () => {

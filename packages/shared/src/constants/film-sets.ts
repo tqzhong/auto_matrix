@@ -12,8 +12,9 @@ import { POD_WATER_DROP, RECOVERY_BED } from './awakening.js';
 import { AMBUSH_WALLS } from './ambush.js';
 import { MEETING_CAR, MEETING_DESTINATION, meetingCarPose, meetingRoadContains } from './meeting.js';
 import { LAFAYETTE, hotelContains, hotelBlocked, hotelFloor } from './lafayette.js';
+import { mountainFloor } from './mountain.js';
 
-export type FilmArchitecture = 'hotel' | 'apartment' | 'club' | 'office' | 'interrogation' | 'bridge' | 'car' | 'lafayette' | 'pods' | 'ship' | 'construct' | 'desert' | 'dojo' | 'rooftop' | 'plaza' | 'restaurant' | 'oracle' | 'tenement' | 'lobby' | 'subway' | 'street' | 'zion' | 'temple' | 'engineering' | 'teahouse' | 'backdoors' | 'courtyard' | 'chateau' | 'workshop' | 'garage' | 'freeway' | 'power' | 'architect' | 'mobil' | 'hel' | 'machine' | 'rain' | 'garden';
+export type FilmArchitecture = 'hotel' | 'apartment' | 'club' | 'office' | 'interrogation' | 'bridge' | 'car' | 'lafayette' | 'pods' | 'ship' | 'construct' | 'desert' | 'dojo' | 'rooftop' | 'plaza' | 'restaurant' | 'oracle' | 'tenement' | 'lobby' | 'subway' | 'street' | 'zion' | 'temple' | 'engineering' | 'teahouse' | 'backdoors' | 'courtyard' | 'chateau' | 'mountain' | 'workshop' | 'garage' | 'freeway' | 'power' | 'architect' | 'mobil' | 'hel' | 'machine' | 'rain' | 'garden';
 export interface FilmSet {
   id: string; name: string; film: (1 | 2 | 3)[]; architecture: FilmArchitecture;
   world: 'matrix' | 'real'; width: number; depth: number; height: number;
@@ -82,12 +83,13 @@ const definitions: Omit<FilmSet, 'id' | 'center'>[] = [
   { name: 'Smith 大道 · 暴雨决战', film: [3], architecture: 'rain', world: 'matrix', width: 72, depth: 150, height: 40, light: 'storm', detail: '两侧复制体、闪电、积水、破碎路面与深坑' },
   { name: '公园 · 新的日出', film: [3], architecture: 'garden', world: 'matrix', width: 90, depth: 110, height: 30, light: 'sunrise', detail: '湖边长椅、树木、草地与暖色城市天际线' },
   { name: '工业阁楼 · Bane 的出口', film: [2], architecture: 'tenement', world: 'matrix', width: 52, depth: 78, height: 24, light: 'night', detail: '破碎天窗、旧式出口电话、钢梁与掉落的玻璃' },
+  { name: '梅罗文加城堡后门 · 雪山', film: [2], architecture: 'mountain', world: 'matrix', width: 280, depth: 760, height: 180, light: 'day', detail: '白日雪山、石砌城堡后门、远处山脊与向南的飞行航线' },
 ];
-const ids = ['heart_hotel', 'hotel_roofs', 'wells_phone', 'anderson_flat', 'white_rabbit_club', 'metacortex_floor', 'office_ledge', 'agent_interrogation', 'adams_bridge', 'extraction_car', 'lafayette', 'power_plant_pods', 'neb_deck', 'white_construct', 'real_desert', 'kungfu_dojo', 'jump_roofs', 'red_dress_plaza', 'cypher_restaurant', 'oracle_home', 'ambush_house', 'government_lobby', 'government_office', 'government_roof', 'subway_platform', 'escape_streets', 'final_phone', 'captains_meeting', 'zion_hangar', 'zion_council', 'zion_residences', 'zion_temple', 'zion_bedroom', 'zion_engineering', 'backdoor_hall', 'seraph_teahouse', 'oracle_courtyard', 'le_vrai', 'chateau_hall', 'keymaker_workshop', 'chateau_garage', 'freeway_101', 'power_station', 'backup_station', 'architect_room', 'trinity_roof', 'service_tunnels', 'hammer_deck', 'mobil_station', 'club_hel', 'logos_deck', 'machine_defense', 'above_clouds', 'logos_wreck', 'machine_core', 'smith_avenue', 'sunrise_garden', 'industrial_loft'];
+const ids = ['heart_hotel', 'hotel_roofs', 'wells_phone', 'anderson_flat', 'white_rabbit_club', 'metacortex_floor', 'office_ledge', 'agent_interrogation', 'adams_bridge', 'extraction_car', 'lafayette', 'power_plant_pods', 'neb_deck', 'white_construct', 'real_desert', 'kungfu_dojo', 'jump_roofs', 'red_dress_plaza', 'cypher_restaurant', 'oracle_home', 'ambush_house', 'government_lobby', 'government_office', 'government_roof', 'subway_platform', 'escape_streets', 'final_phone', 'captains_meeting', 'zion_hangar', 'zion_council', 'zion_residences', 'zion_temple', 'zion_bedroom', 'zion_engineering', 'backdoor_hall', 'seraph_teahouse', 'oracle_courtyard', 'le_vrai', 'chateau_hall', 'keymaker_workshop', 'chateau_garage', 'freeway_101', 'power_station', 'backup_station', 'architect_room', 'trinity_roof', 'service_tunnels', 'hammer_deck', 'mobil_station', 'club_hel', 'logos_deck', 'machine_defense', 'above_clouds', 'logos_wreck', 'machine_core', 'smith_avenue', 'sunrise_garden', 'industrial_loft', 'mountain_range'];
 
 export const FILM_SETS: Record<string, FilmSet> = Object.fromEntries(definitions.map((set, i) => {
   const id = `film_${ids[i]}`;
-  return [id, { ...set, id, center: { x: id === 'film_freeway_101' ? 8192 : 4096 + i % 8 * 320, y: set.world === 'matrix' ? 1 : -100, z: 4096 + Math.floor(i / 8) * 320 } }];
+  return [id, { ...set, id, center: { x: id === 'film_freeway_101' ? 8192 : id === 'film_mountain_range' ? 12000 : 4096 + i % 8 * 320, y: set.world === 'matrix' ? 1 : -100, z: id === 'film_mountain_range' ? 12000 : 4096 + Math.floor(i / 8) * 320 } }];
 }));
 // The window and its exterior are one building; other film destinations remain streamed areas.
 FILM_SETS.film_office_ledge.center = { ...FILM_SETS.film_metacortex_floor.center, x: FILM_SETS.film_metacortex_floor.center.x + OFFICE_LEDGE_OFFSET };
@@ -122,6 +124,10 @@ export const ORACLE_FURNITURE: FilmObstacle[] = [
   { x: 8, z: -11, width: 2.7, depth: 2.2, height: 1.95 },
 ];
 export function filmObstacles(set: FilmSet): FilmObstacle[] {
+  if (set.id === 'film_mountain_range') return [
+    { x: 0, z: 338, width: 64, depth: 7, height: 35 },
+    ...[-1, 1].map(side => ({ x: side * 23.5, z: 295, width: 1.8, depth: 80, height: 3.5 })),
+  ];
   if (set.id === 'film_seraph_teahouse') return [-15, 15].flatMap(x => [-16, 0, 16].map(z => ({ x, z, width: 7, depth: 5, height: 3.2 })));
   if (set.id === 'film_oracle_courtyard') return [
     { x: -9, z: -20, width: 4.5, depth: 2.4, height: 3.1 },
@@ -199,6 +205,7 @@ export function filmBlocked(position: Vector3, set: FilmSet, radius: number): bo
 }
 
 export function filmGroundHeight(position: Vector3, set: FilmSet): number {
+  if (set.id === 'film_mountain_range') return set.center.y - 1 + mountainFloor(position.x - set.center.x, position.z - set.center.z);
   if (set.id === 'film_lafayette') return set.center.y - LAFAYETTE.upper + (hotelFloor(position.x - set.center.x, position.z - set.center.z, position.y - set.center.y + LAFAYETTE.upper) ?? 0);
   if (set.architecture === 'pods' && position.z > set.center.z + 6) return set.center.y - POD_WATER_DROP;
   if (set.id === 'film_office_ledge') {

@@ -35,8 +35,9 @@ import { governmentLocked, airRescueLocked } from '@auto_matrix/shared';
 import { GovernmentSetRenderer } from './GovernmentSetRenderer.js';
 import { MatrixEscapeRenderer } from './MatrixEscapeRenderer.js';
 import { TheOneRenderer } from './TheOneRenderer.js';
+import { MountainSetRenderer } from './MountainSetRenderer.js';
 
-const outdoor = new Set(['rooftop', 'plaza', 'bridge', 'street', 'courtyard', 'freeway', 'machine', 'rain', 'garden', 'desert', 'pods']);
+const outdoor = new Set(['rooftop', 'plaza', 'bridge', 'street', 'courtyard', 'freeway', 'machine', 'rain', 'garden', 'desert', 'pods', 'mountain']);
 const palettes = {
   day: { sky: 0xb8c9cd, fog: .001, ambient: 1.25, sun: 2.3, color: 0xffedcf },
   night: { sky: 0x121b21, fog: .009, ambient: .55, sun: .35, color: 0xaabdc3 },
@@ -78,6 +79,7 @@ export class FilmSetRenderer {
   private neb?: NebDeckRenderer;
   private construct?: ConstructRenderer;
   private desert?: DesertRenderer;
+  private mountain?: MountainSetRenderer;
   private training?: TrainingSetRenderer;
   private currentScene?: string;
   private mirror?: Reflector;
@@ -144,6 +146,7 @@ export class FilmSetRenderer {
         else if (set.id === 'film_cypher_restaurant') this.restaurant = new CypherRestaurantRenderer(this.root);
         else if (set.id === 'film_white_construct') this.construct = new ConstructRenderer(this.root, sceneId);
         else if (set.id === 'film_real_desert') this.desert = new DesertRenderer(this.root);
+        else if (set.id === 'film_mountain_range') this.mountain = new MountainSetRenderer(this.root);
         else if (['m1_dojo', 'm1_jump', 'm1_red_dress'].includes(sceneId ?? '')) this.training = new TrainingSetRenderer(this.root, sceneId!);
         else if (sceneId === 'm1_sentinels') this.sentinel = new SentinelSetRenderer(this.root);
         else if (set.id === 'film_ambush_house') this.ambush = new AmbushSetRenderer(this.root);
@@ -202,6 +205,7 @@ export class FilmSetRenderer {
     this.neb?.update(journey, elapsed);
     this.construct?.update(journey);
     this.desert?.update(journey, elapsed);
+    this.mountain?.update(journey?.scene === 'm2_mountain' && !journey.visiting ? journey.mountain : undefined, elapsed);
     this.training?.update(journey, elapsed);
     this.sentinel?.update(journey, elapsed);
     this.restaurant?.update(journey, elapsed);
@@ -249,6 +253,7 @@ export class FilmSetRenderer {
     if (journey?.scene === 'm1_lobby' && journey.fighting) this.marker.visible = false;
     if (journey?.scene === 'm2_burly' && !['ready', 'staff_ready', 'flight_ready'].includes(journey.burly?.phase ?? 'ready')) this.marker.visible = false;
     if (journey?.scene === 'm2_chateau' && journey.step === 0 && !['ready', 'landing'].includes(journey.chateau?.phase ?? 'ready')) this.marker.visible = false;
+    if (journey?.scene === 'm2_mountain' && journey.step === 2 && !['ready', 'failed'].includes(journey.mountain?.phase ?? 'ready')) this.marker.visible = false;
     if (journey && pillLocked(journey)) this.marker.visible = false;
     if (journey && interrogationLocked(journey)) this.marker.visible = false;
     if (journey && meetingLocked(journey)) this.marker.visible = false;
@@ -1215,6 +1220,7 @@ export class FilmSetRenderer {
     this.neb?.dispose(); this.neb = undefined;
     this.construct?.dispose(); this.construct = undefined;
     this.desert?.dispose(); this.desert = undefined;
+    this.mountain?.dispose(); this.mountain = undefined;
     this.training?.dispose(); this.training = undefined;
     this.sentinel?.dispose(); this.sentinel = undefined;
     this.restaurant?.dispose(); this.restaurant = undefined;

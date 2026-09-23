@@ -10,6 +10,7 @@ import { APARTMENT } from './apartment.js';
 import { CLUB } from './club.js';
 import { SERAPH_ORACLE } from './seraph-oracle.js';
 import { EXILES } from './exiles.js';
+import { MOUNTAIN } from './mountain.js';
 
 export type FilmCue = 'night' | 'contact' | 'office' | 'club' | 'awakening' | 'training' | 'oracle' | 'infiltration' | 'combat' | 'the_one' | 'zion' | 'swarm' | 'restaurant' | 'chateau' | 'chase' | 'source' | 'mobil' | 'siege' | 'bane' | 'farewell' | 'final' | 'dawn';
 export interface FilmStep {
@@ -58,6 +59,7 @@ export interface FilmJourney {
   persephone?: import('./exiles.js').PersephoneEncounter;
   keymaker?: import('./exiles.js').KeymakerEncounter;
   chateau?: import('./chateau.js').ChateauEncounter;
+  mountain?: import('./mountain.js').MountainFlight;
 }
 const walk = (label: string, x = 0, z = -12): FilmStep => ({ kind: 'reach', label, x, z });
 const use = (label: string, text: string, x = 0, z = -12, seconds = 3): FilmStep => ({ kind: 'interact', label, text, x, z, seconds });
@@ -143,6 +145,11 @@ export const FILM_SCENES: FilmScene[] = [
   scene('m2_persephone', 2, 'le_vrai', 'neo', 'Persephone 的条件', 'keymaker', 'oracle', '在餐厅出口，Persephone 主动把三人带进侧面的盥洗室。她愿意带路，但提出一个关于真情的条件。', [walk('跟随 Persephone 进入盥洗室', EXILES.washroom.x, EXILES.washroom.z), use('听清她真正想要的条件', '她想重新确认曾经感受过的爱，而不是再听一套因果论。', EXILES.washroom.x, EXILES.washroom.z), use('回应 Persephone 的条件', '回应会改变她与 Trinity 对你的态度。', EXILES.washroom.x, EXILES.washroom.z), walk('穿过后厨，找到私人办公室', EXILES.kitchen.x, EXILES.kitchen.z), use('请 Persephone 打开伪装成壁橱的门', '钥匙打开的不是壁橱，而是通往城堡的后门。', EXILES.office.x, EXILES.office.z)], ['persephone', 'trinity', 'morpheus']),
   scene('m2_library', 2, 'keymaker_workshop', 'neo', '书墙后的囚徒', 'keymaker', 'chateau', '众人经过城堡前厅来到书房。两个旧版本流亡程序守着书墙后的囚室；Persephone 的背叛让去见钥匙匠的路打开。', [walk('穿过城堡书房，观察旧程序', EXILES.library.x, EXILES.library.z), use('让 Persephone 应对看守', '一个看守倒下，另一个逃去通风报信。Merovingian 很快会赶来。', EXILES.guard.x, EXILES.guard.z), use('检查书墙后的暗门', '隐藏的书架滑开，露出后面的钥匙工坊。', EXILES.bookshelf.x, EXILES.bookshelf.z), use('亲自确认钥匙匠身份', '钥匙匠承认自己一直在等人打开这扇门。', EXILES.keymaker.x, EXILES.keymaker.z), walk('带钥匙匠到书房侧门', EXILES.escape.x, EXILES.escape.z)], ['keymaker', 'persephone', 'morpheus', 'trinity', 'cain', 'abel_mero']),
   scene('m2_chateau', 2, 'chateau_hall', 'neo', '双楼梯与古兵器', 'keymaker', 'chateau', 'Morpheus 与 Trinity 护送钥匙匠离开。Neo 留在城堡大厅，先挡住枪火，再利用墙上的古兵器对付 Merovingian 的守卫。', [fight('守住城堡大厅', 4), use('推开通向同伴的门', '门后不是车库，而是遥远的雪山。Neo 必须从远处赶回高速公路。', 0, -38.5)]),
+  scene('m2_mountain', 2, 'mountain_range', 'neo', '城堡后门 · 雪山误传', 'keymaker', 'chateau', '城堡后门通向白日里的雪山。同伴已从另一扇门进入车库；Neo 必须弄清位置，亲自飞回城市。', [
+    use('试着推回城堡后门', '门已锁死，车库的轮胎声隔在另一侧。', MOUNTAIN.door.x, MOUNTAIN.door.z, 1),
+    use('到山崖边联系 Link', 'Link 确认 Neo 身在群山中；双子正追赶 Morpheus、Trinity 和钥匙匠。城市在正南方。', MOUNTAIN.lookout.x, MOUNTAIN.lookout.z, 1),
+    use('朝南方起飞', 'Neo 冲向天空，赶赴高速公路。', MOUNTAIN.launch.x, MOUNTAIN.launch.z, 1),
+  ], ['link']),
   scene('m2_garage', 2, 'chateau_garage', 'trinity', '车库中的追兵', 'freeway', 'chase', 'Trinity 与 Morpheus 护着钥匙匠进入车库，双子紧追不舍。', [fight('为钥匙匠打开通路', 2), use('检查出口车辆', '车辆冲出地下车库，进入高速公路。', 0, -30)], ['morpheus', 'keymaker']),
   scene('m2_freeway', 2, 'freeway_101', 'trinity', '逆向的高速路', 'freeway', 'chase', 'Trinity 骑摩托车带着钥匙匠逆向穿过车流。W 加速，S 刹车，A / D 转向；碰撞会损伤车辆和乘员。', [walk('靠近接应摩托车', 14, 660), { kind: 'drive', label: '驾驶摩托车护送钥匙匠', x: 14, z: 660 }, use('把钥匙匠交给 Morpheus', '两人抵达接应区。Morpheus 接过护送任务，追逐转向重型卡车。', 14, -660)], ['keymaker', 'morpheus']),
   scene('m2_trucks', 2, 'freeway_101', 'morpheus', '两辆卡车之间', 'freeway', 'chase', 'Morpheus 在卡车上对抗特工，钥匙匠已没有更多退路。', [{ ...fight('保护钥匙匠', 2), x: 14 }, use('等待 Neo 的空中接应', '两辆卡车即将相撞，Neo 及时带走两人。', 14, -50)], ['keymaker']),
@@ -213,5 +220,6 @@ export function filmEntry(scene: FilmScene): Vector3 {
   if (scene.id === 'm1_recovery') return filmPosition(scene.set, RECOVERY_BED.standingX, RECOVERY_BED.z);
   if (scene.id === 'm2_freeway') return filmPosition(scene.set, 14, 674);
   if (scene.id === 'm2_trucks') return filmPosition(scene.set, 14, 25);
+  if (scene.id === 'm2_mountain') return filmPosition(scene.set, MOUNTAIN.door.x, MOUNTAIN.door.z - 7);
   return filmPosition(scene.set, 0, scene.id === 'm1_lobby' ? 35 : FILM_SETS[scene.set].depth * .32);
 }
