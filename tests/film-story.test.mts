@@ -620,6 +620,35 @@ test('Mobil Ave plays Sati, her family, Trainman refusal and both tunnel loops i
   assert.equal(h.sandbox.life.state?.choices.mobil_loop, 'both_ends');
 });
 
+test('Seraph loses the subway chase, Trinity crosses Hel garage and the rescue train returns for Neo', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  const oracle = FILM_SCENE_BY_ID.m3_oracle_request;
+  Object.assign(state, { scene: oracle.id, actor: oracle.actor, step: oracle.steps.length });
+  h.players.possess('film-player', 'trinity', h.tick()); h.command('next');
+  assert.equal(state.scene, 'm3_trainman_chase'); assert.equal(h.actor().id, 'seraph');
+  const chase = FILM_SCENE_BY_ID.m3_trainman_chase;
+  h.actor().position = filmStepPosition(chase, chase.steps[0]); h.command('act'); h.advance(4);
+  assert.equal(state.helChase?.phase, 'running');
+  assert.ok(h.world.agents.get('trainman')!.position.z < FILM_SETS[chase.set].center.z + 8);
+  h.actor().position = filmStepPosition(chase, chase.steps[1]); h.advance();
+  h.advance(12); assert.equal(state.helChase?.phase, 'escaped');
+  h.actor().position = filmStepPosition(chase, chase.steps[2]); h.command('act'); h.advance(5);
+  assert.ok(state.completed.includes(chase.id)); h.command('next');
+  assert.equal(state.scene, 'm3_hel_garage'); assert.equal(h.actor().id, 'trinity');
+  assert.equal(FILM_SCENE_BY_ID.m3_hel_garage.set, 'film_hel_garage');
+  assert.match(FILM_SCENE_BY_ID.m3_hel_entry.steps[0].label, /电梯/);
+  assert.match(FILM_SCENE_BY_ID.m3_hel_entry.steps[1].label, /衣帽间/);
+  Object.assign(state, { scene: 'm3_hel_bargain', step: FILM_SCENE_BY_ID.m3_hel_bargain.steps.length, actor: 'trinity' });
+  h.command('next'); assert.equal(state.scene, 'm3_mobil_release'); assert.equal(h.actor().id, 'neo');
+  assert.equal(state.mobil?.phase, 'approaching');
+  h.actor().position = filmStepPosition(FILM_SCENE_BY_ID.m3_mobil_release, FILM_SCENE_BY_ID.m3_mobil_release.steps[0]);
+  h.advance(); assert.equal(state.step, 0, 'Neo cannot greet Trinity before the rescue train arrives');
+  h.advance(12); assert.equal(state.mobil?.phase, 'stopped'); assert.equal(state.step, 1);
+  assert.ok(h.world.agents.get('trinity')!.position.x < FILM_SETS.film_mobil_station.center.x + 8);
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+  assert.equal(h.sandbox.life.film.state!.mobil?.phase, 'stopped');
+});
+
 test('touching the mirror is a saved performance that freezes on pause and resumes after reconnect', () => {
   const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
   Object.assign(state, { scene: 'm1_pills', actor: 'neo', step: 2 }); h.command('next');
@@ -1569,6 +1598,7 @@ test('the entire film route completes through interactions, driving and real com
     }
     for (let index = 0; index < scene.steps.length; index++) {
       const step = scene.steps[index]; const actor = h.actor(); actor.position = filmStepPosition(scene, step);
+      if (scene.id === 'm3_trainman_chase' && index === 2 || scene.id === 'm3_mobil_release' && index === 0) h.advance(12);
       if (scene.id === 'm3_trainman') {
         if (index === 0) { h.command('act'); h.advance(6); }
         else if (index === 1) h.advance(10);
@@ -1739,7 +1769,8 @@ test('the entire film route completes through interactions, driving and real com
           for (let frame = 0; frame < 110; frame++) h.players.step(.1, true, h.tick());
           assert.equal(state.oracle?.consultation?.phase, 'question'); h.command('reflect:agency');
           for (let frame = 0; frame < 50; frame++) h.players.step(.1, true, h.tick());
-        } else h.command(scene.id === 'm1_wake_up' ? 'contact:follow' : scene.id === 'm1_ledge' ? 'escape:retreat' : scene.id === 'm1_pills' ? 'pill:red' : 'reflect:agency');
+        } else h.command(scene.id === 'm1_wake_up' ? 'contact:follow' : scene.id === 'm1_ledge' ? 'escape:retreat' : scene.id === 'm1_pills' ? 'pill:red'
+          : ['m3_oracle_request', 'm3_hel_bargain'].includes(scene.id) ? `reflect:${filmReflections(scene.id)[0].id}` : 'reflect:agency');
         if (scene.id === 'm1_smith_question') for (let frame = 0; frame < 130 && state.step === index; frame++) {
           h.players.receiveInput('film-player', { x: 0, z: 0, yaw: h.actor().rotation, jump: false, sprint: false, focus: true, sequence: ++sequence });
           h.players.step(.1, true, h.tick());

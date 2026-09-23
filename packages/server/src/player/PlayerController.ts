@@ -80,6 +80,10 @@ export class PlayerController {
     if (['keymaker', 'neo', 'agent_johnson'].includes(id) && ['collision', 'rescue'].includes(this.sandbox?.life.film.state?.trucks?.phase ?? '')) return { error: '这个角色正在卡车对撞接应中，抵达安全地点后可以接入。' };
     if (['trainman', 'rama_kandra', 'kamala', 'sati'].includes(id) && this.sandbox?.life.film.state?.scene === 'm3_trainman'
       && this.sandbox.life.film.state.mobil?.phase !== 'gone') return { error: '这个角色正在 Mobil Ave 的列车片段中，驶离后可以接入。' };
+    if (id === 'trainman' && this.sandbox?.life.film.state?.scene === 'm3_trainman_chase'
+      && this.sandbox.life.film.state.helChase?.phase !== 'escaped') return { error: 'Trainman 正在地铁追逐中，列车驶过后可以接入。' };
+    if (['trinity', 'trainman'].includes(id) && this.sandbox?.life.film.state?.scene === 'm3_mobil_release'
+      && this.sandbox.life.film.state.mobil?.phase !== 'stopped') return { error: '这个角色正在返程列车中，到站后可以接入。' };
     if (this.sandbox?.state.threats.some(t => t.character === id)) return { error: '这个角色正在剧情交手，结束后可以接入。' };
     const restarting = newCycle && id === 'neo' && this.sandbox?.life.film.state?.finished;
     if (!restarting && this.sandbox?.life.film.unavailable(id) && !this.sandbox.life.film.controls(agent)) return { error: '这个角色在本轮故事中已无法接入；新循环会恢复。' };

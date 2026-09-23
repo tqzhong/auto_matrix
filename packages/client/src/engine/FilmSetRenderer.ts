@@ -118,6 +118,7 @@ export class FilmSetRenderer {
   private garageGhosts: THREE.Group[] = [];
   private mobilTrain?: { car: THREE.Group; doors: [THREE.Mesh, THREE.Mesh] };
   private mobilLastFrame?: number;
+  private helChaseTrain?: THREE.Group;
   private powerStatus?: { primary: THREE.MeshBasicMaterial; emergency: THREE.MeshBasicMaterial; lights: THREE.PointLight[] };
   private sourceDoor?: { portal: THREE.Group; source: THREE.Group; glow: THREE.Mesh };
   private architectScreens?: { materials: THREE.MeshBasicMaterial[]; neo: THREE.Texture[]; trinity: THREE.Texture; leftDoor: THREE.Mesh; leftLight: THREE.PointLight };
@@ -235,6 +236,11 @@ export class FilmSetRenderer {
     this.zion?.update(journey, elapsed);
     this.baneCopy?.update(journey, elapsed, player && journey?.actor === player.id ? player.position : undefined, set?.center);
     if (this.mobilTrain) this.updateMobilStation(journey, elapsed);
+    if (this.helChaseTrain) {
+      const chase = sceneId === 'm3_trainman_chase' && !journey?.visiting ? journey?.helChase : undefined;
+      this.helChaseTrain.visible = chase?.phase === 'running' && chase.elapsed >= 3;
+      this.helChaseTrain.position.z = 60 - Math.max(0, (chase?.elapsed ?? 0) - 3) / 3 * 130;
+    }
     if (this.powerStatus) {
       const grid = journey?.grid;
       const energized = grid?.primary !== 'off' && grid?.emergency !== 'off';
@@ -668,6 +674,7 @@ export class FilmSetRenderer {
     for (let z = -d / 2; z <= d / 2; z += 12) this.box(industrial || this.currentScene === 'm2_key_door' ? this.metal : this.white, 0, h - .4, z, w, .6, .7);
     for (const x of [-w * .24, w * .24]) this.box(this.currentScene === 'm2_key_door' ? this.metal : this.white, x, h, 0, .6, .5, d);
     for (const o of filmObstacles(set)) {
+      if (['film_hel_garage', 'film_club_hel'].includes(set.id)) continue;
       if (['oracle', 'teahouse', 'power'].includes(set.architecture) || ['film_le_vrai', 'film_keymaker_workshop'].includes(set.id)) continue;
       const column = set.architecture === 'lobby' ? this.mat(0x2d4038, .28, .08) : lavish ? this.marble : this.metal;
       this.box(column, o.x, h / 2, o.z, o.width, h, o.depth, .08);
@@ -1012,6 +1019,7 @@ export class FilmSetRenderer {
     this.sourceDoor = { portal, source, glow: light };
   }
   private publicInterior(set: FilmSet): void {
+    if (set.id === 'film_club_hel') { this.helClub(set); return; }
     const { architecture: a, width: w, depth: d, height: h } = set;
     if (a === 'chateau') {
       // Two stair wings, a landing, balustrades and a weapons wall define the film's composition.
@@ -1128,6 +1136,65 @@ export class FilmSetRenderer {
       this.label(a === 'hel' ? 'HEL' : 'EXIT', 0, h - 2, -d / 2 + .5, 7, '#c59878', '#201513');
     }
   }
+  private helClub(set: FilmSet): void {
+    const { width: w, depth: d, height: h } = set;
+    const basalt = this.mat(0x242729, .88); const red = this.mat(0x5b2027, .5, .14);
+    const steel = this.mat(0x52575a, .35, .65); const velvet = this.mat(0x321016, .92);
+    const lamp = new THREE.MeshBasicMaterial({ color: 0xd44752, toneMapped: false }); this.materials.add(lamp);
+    this.box(basalt, 0, .035, 0, w - 2, .09, d - 2).name = 'hel-stone-floor';
+    for (const side of [-1, 1]) {
+      this.box(velvet, side * (w / 2 - .55), h / 2, 0, .12, h - 1, d - 1);
+      for (let z = -d / 2 + 6; z < d / 2; z += 8) {
+        this.box(steel, side * (w / 2 - 1), h / 2, z, .75, h - 1, .8);
+        this.box(lamp, side * (w / 2 - 1.5), 8.5, z, .13, 3.8, .16);
+      }
+    }
+    // Entry cage, weapon check and dance floor occupy one continuous playable room.
+    for (const side of [-1, 1]) for (const z of [25, 31, 37]) {
+      this.box(steel, side * 4.2, 4.8, z, .22, 9.6, .22);
+      for (const y of [1.3, 4, 6.7, 9.3]) this.box(steel, side * 4.2, y, z - 2.8, .12, .12, 5.6);
+    }
+    this.box(basalt, 0, 9.8, 31, 9, .65, 16);
+    const elevatorSign = this.label('HEL ↓', 0, 10.5, 24.6, 6, '#cf6064', '#1d171a'); elevatorSign.name = 'hel-elevator-sign'; elevatorSign.userData.dynamic = true;
+    this.box(steel, -3.45, 2.2, 26.1, 1.15, 3.1, .46, .08);
+    const button = this.cylinder(lamp, -3.45, 2.45, 26.42, .23, .12); button.rotation.x = Math.PI / 2;
+    button.name = 'hel-elevator-button'; button.userData.dynamic = true;
+    this.label('HEL', -3.45, 3.35, 26.43, 1.3, '#f4d2c7', '#2e1b20');
+    for (const z of [31, 12]) {
+      this.box(this.glow, 0, 9.1, z, 8, .12, .7);
+      const light = new THREE.PointLight(0xf0d8cb, z === 31 ? 330 : 290, 24, 2);
+      light.position.set(0, 8.5, z); this.root.add(light);
+    }
+    for (const x of [-14, 14]) {
+      const counter = this.box(basalt, x, 1.6, 11, 8, 3.2, 4); counter.name = 'hel-coatcheck-counter'; counter.userData.dynamic = true;
+      this.box(steel, x, 3.25, 11, 8.6, .28, 4.4);
+      for (let i = 0; i < 7; i++) this.box(steel, x - 3 + i, 6, 14, .035, 5, .04);
+    }
+    for (const side of [-1, 1]) {
+      this.box(steel, side * 9.5, 5.1, 1, 13, 10.2, .5);
+      this.box(red, side * 9.5, 5.1, 1.35, 12.7, 9.6, .12);
+    }
+    this.label('CLUB HEL', 0, 12.5, 1.45, 8, '#d69a9d', '#1b1417');
+    for (const z of [-19, -13, -7]) {
+      for (const x of [-19, -12, 12, 19]) {
+        const tile = this.box(red, x, .1, z, 6.2, .08, 5.4); tile.name = 'hel-dance-floor';
+        this.box(lamp, x, h - 2, z, .18, .12, 4.6);
+      }
+    }
+    for (let z = -23; z < 0; z += 7) {
+      this.box(steel, 0, h - 1.2, z, w - 8, .4, .35);
+      const light = new THREE.PointLight(z % 2 ? 0x8040a0 : 0xb62738, 45, 24, 2);
+      light.position.set(z % 2 ? -15 : 15, h - 2, z); this.root.add(light);
+    }
+    for (let i = 0; i < 4; i++) this.box(basalt, 0, .2 + i * .35, -24 - i * 1.6, 23, .4 + i * .7, 1.65);
+    this.box(velvet, 0, .8, -36, 24, 1.6, 17);
+    for (const x of [-11, 11]) this.box(red, x, 4.6, -36, 1.2, 8, 13);
+    const table = this.box(basalt, 0, 2.1, -38, 8, 2.5, 3.1); table.name = 'hel-vip-table'; table.userData.dynamic = true;
+    this.box(steel, 0, 3.45, -38, 8.6, .18, 3.6);
+    for (const x of [-7, 7]) this.chair(x, -37, x < 0 ? Math.PI / 2 : -Math.PI / 2, true);
+    this.label('LE MEROVINGIAN', 0, 12.8, -d / 2 + .8, 13, '#d8b8a0', '#281c1d');
+    const vip = new THREE.PointLight(0xc33f49, 190, 24, 2); vip.position.set(0, 11, -35); this.root.add(vip);
+  }
   private station(set: FilmSet): void {
     if (set.architecture === 'mobil') { this.mobilStation(set); return; }
     const { width: w, depth: d, height: h } = set;
@@ -1151,7 +1218,8 @@ export class FilmSetRenderer {
     const start = this.root.children.length; this.box(this.metal, 0, 3.4, 0, 4, 6, 35, .5);
     for (let z = -13; z <= 13; z += 5) { this.box(this.black, -2.02, 4, z, .06, 2.5, 3.3); this.box(this.glass, -2.06, 4, z, .03, 2.3, 3.1); }
     const train = new THREE.Group(); this.root.children.slice(start).forEach(c => train.add(c)); train.position.x = trackX; train.userData.dynamic = true; this.root.add(train);
-    this.moving.push({ object: train, update: t => { train.position.z = ((t * 11) % (d + 90)) - d / 2 - 45; } });
+    if (this.currentScene === 'm3_trainman_chase') { train.name = 'hel-chase-train'; train.visible = false; this.helChaseTrain = train; }
+    else this.moving.push({ object: train, update: t => { train.position.z = ((t * 11) % (d + 90)) - d / 2 - 45; } });
     for (let z = -d / 2; z < d / 2; z += 13) {
       const shape = new THREE.Shape(); shape.moveTo(-w / 2, 0); shape.absellipse(0, 0, w / 2, 7, Math.PI, 0, true, 0); shape.lineTo(w / 2, .6); shape.absellipse(0, .6, w / 2 + .6, 7.6, 0, Math.PI, false, 0); shape.closePath();
       this.mesh(new THREE.ExtrudeGeometry(shape, { depth: .4, bevelEnabled: false, curveSegments: 24 }), border, 0, h - 7.6, z);
@@ -1228,9 +1296,8 @@ export class FilmSetRenderer {
   }
   private updateMobilStation(journey: FilmJourney | undefined, elapsed: number): void {
     const train = this.mobilTrain!;
-    const release = journey?.scene === 'm3_mobil_release';
-    const encounter = journey?.scene === 'm3_trainman' && !journey.visiting ? journey.mobil : undefined;
-    const phase = release ? 'stopped' : encounter?.phase ?? 'waiting';
+    const encounter = ['m3_trainman', 'm3_mobil_release'].includes(journey?.scene ?? '') && !journey?.visiting ? journey?.mobil : undefined;
+    const phase = encounter?.phase ?? 'waiting';
     train.car.visible = phase !== 'waiting' && phase !== 'gone';
     const progress = Math.max(0, Math.min(1, (encounter?.elapsed ?? 0) / (phase === 'approaching' ? 4.5 : 3)));
     const z = phase === 'approaching' ? -80 + 60 * (progress * progress * (3 - 2 * progress))
@@ -1319,6 +1386,7 @@ export class FilmSetRenderer {
     }
   }
   private transport(set: FilmSet): void {
+    if (set.id === 'film_hel_garage') { this.helGarage(set); return; }
     const { architecture: a, width: w, depth: d } = set;
     if (a === 'rooftop') {
       for (const side of [-1, 1]) this.box(this.plaster, side * (w / 2 - .5), 1.7, 0, .7, 3.4, d);
@@ -1392,6 +1460,31 @@ export class FilmSetRenderer {
         }
       }
     }
+  }
+  private helGarage(set: FilmSet): void {
+    const { width: w, depth: d, height: h } = set;
+    const concrete = this.mat(0x515657, .91); const stripe = this.mat(0x9b8b7d, .86);
+    const steel = this.mat(0x272e31, .48, .53);
+    this.box(concrete, 0, .04, 0, w - 1, .1, d - 1);
+    for (const side of [-1, 1]) {
+      this.box(steel, side * (w / 2 - 1), 1.2, 0, .13, 2.4, d);
+      for (const z of [-23, -5, 13, 29]) {
+        this.box(concrete, side * 11, h / 2, z, 1.3, h - .6, 1.3);
+        this.box(stripe, side * 11, 2, z, 1.34, .55, 1.34);
+      }
+      for (const z of [-17, 9, 24]) {
+        const car = this.car(side * 18, z, z === 9 ? 0x1c2427 : 0x3a3d3e); car.name = 'hel-parked-car'; car.userData.dynamic = true;
+        this.box(stripe, side * 11, .12, z, .19, .04, 13);
+      }
+    }
+    for (const z of [-26, -10, 6, 22]) {
+      this.box(steel, 0, h - .7, z, w - 4, .45, .42);
+      this.box(this.glow, 0, h - 1.1, z, 15, .07, .6);
+      const light = new THREE.PointLight(0xe5e4d6, 82, 30, 2); light.position.set(0, h - 1.7, z); this.root.add(light);
+    }
+    const gate = this.box(steel, 0, 4.5, -d / 2 + 1.3, 12, 9, .7); gate.name = 'hel-garage-steel-door'; gate.userData.dynamic = true;
+    this.label('HEL / PRIVATE ENTRANCE', 0, 10.8, -d / 2 + 2, 12, '#e9ddd1', '#262125');
+    for (const x of [-5.8, 5.8]) this.box(stripe, x, 4.5, -d / 2 + 2, .22, 9, .4);
   }
   private special(set: FilmSet): void {
     const { architecture: a, width: w, depth: d, height: h } = set;
@@ -1574,6 +1667,7 @@ export class FilmSetRenderer {
     this.garageCar = undefined; this.garageGhosts = [];
     this.mobilTrain = undefined;
     this.mobilLastFrame = undefined;
+    this.helChaseTrain = undefined;
     this.powerStatus = undefined;
     this.sourceDoor = undefined;
     this.architectScreens = undefined;

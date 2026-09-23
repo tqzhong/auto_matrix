@@ -48,9 +48,29 @@ export class FilmStorySystem {
   controls(agent: AgentState): boolean { return Boolean(this.state && this.state.actor === agent.id); }
   private ensureMobil(tick: number): void {
     const state = this.state;
-    if (!state || !['m3_mobil', 'm3_family', 'm3_trainman'].includes(state.scene) || state.mobil) return;
+    if (!state || !['m3_mobil', 'm3_family', 'm3_trainman', 'm3_mobil_release'].includes(state.scene) || state.mobil) return;
     // A save from the original two-step station can continue at its recorded scene.
-    state.mobil = { phase: state.scene === 'm3_trainman' && state.step > 0 ? 'approaching' : 'waiting', elapsed: 0, lastTick: tick, loops: 0 };
+    state.mobil = { phase: state.scene === 'm3_mobil_release' || state.scene === 'm3_trainman' && state.step > 0 ? 'approaching' : 'waiting', elapsed: 0, lastTick: tick, loops: 0 };
+  }
+  private helChaseTick(tick: number): void {
+    const state = this.state!;
+    state.helChase ??= { phase: state.step > 0 ? 'running' : 'sighting', elapsed: 0, lastTick: tick };
+    const chase = state.helChase;
+    const trainman = this.world.agents.get('trainman');
+    if (trainman?.controller) { chase.lastTick = tick; return; }
+    if (chase.phase === 'running') chase.elapsed = Math.min(6, chase.elapsed + Math.max(0, tick - chase.lastTick) * .5);
+    chase.lastTick = tick;
+    if (chase.phase === 'running' && chase.elapsed >= 6) {
+      chase.phase = 'escaped'; state.lastText = '列车没有停。Trainman 从钢柱后跃过轨道，消失在驶过的车厢另一侧。';
+    }
+    if (trainman) {
+      const progress = Math.min(1, chase.elapsed / 6);
+      trainman.position = filmPosition(this.scene!.set, chase.phase === 'escaped' ? 26 : progress > .72 ? (progress - .72) / .28 * 26 : 0,
+        chase.phase === 'sighting' ? 10 : 10 - progress * 49);
+      trainman.rotation = Math.PI; trainman.velocity = { x: 0, y: 0, z: 0 };
+      trainman.currentAction = { type: chase.phase === 'escaped' ? 'idle' : 'move_to',
+        parameters: { resolved: true, helChase: chase.phase }, startedAt: tick, duration: 1, progress };
+    }
   }
   private mobilPassengers(progress: number, tick: number): void {
     const encounter = this.state!.mobil!;
@@ -113,7 +133,26 @@ export class FilmStorySystem {
       encounter.phase = 'gone'; encounter.elapsed = 0;
       state.lastText = '尾灯消失在隧道中。两端都没有楼梯；只剩下铁轨。';
     }
-    if (encounter.phase === 'stopped') this.mobilPassengers(encounter.elapsed / 5, tick);
+    if (encounter.phase === 'stopped' && state.scene === 'm3_trainman') this.mobilPassengers(encounter.elapsed / 5, tick);
+    if (state.scene === 'm3_mobil_release') {
+      const trainman = this.world.agents.get('trainman');
+      if (trainman && !trainman.controller) {
+        trainman.position = filmPosition(this.scene!.set, 13, encounter.phase === 'approaching' ? -80 + Math.min(1, encounter.elapsed / 4.5) * 60 : -20);
+        trainman.position.y -= 1.35; trainman.rotation = -Math.PI / 2;
+      }
+      const trinity = this.world.agents.get('trinity');
+      if (trinity && !trinity.controller) {
+        const arrival = encounter.phase === 'stopped' ? Math.min(1, encounter.elapsed / 2) : 0;
+        const x = 12 - arrival * 10;
+        const z = encounter.phase === 'approaching' ? -80 + Math.min(1, encounter.elapsed / 4.5) * 60 : -20 + arrival * 2;
+        trinity.position = filmPosition(this.scene!.set, x, z);
+        if (x > 8) trinity.position.y -= 1.35;
+        trinity.rotation = -Math.PI / 2; trinity.velocity = { x: 0, y: 0, z: 0 };
+        trinity.currentAction = { type: arrival > 0 && arrival < 1 ? 'move_to' : 'idle',
+          parameters: { resolved: true, mobilRelease: arrival }, startedAt: tick, duration: 1, progress: arrival };
+      }
+      return;
+    }
     const trainman = this.world.agents.get('trainman');
     if (trainman && !trainman.controller && state.scene === 'm3_trainman') {
       const boarding = encounter.phase === 'stopped' || encounter.phase === 'refusing';
@@ -3073,7 +3112,8 @@ export class FilmStorySystem {
       if (!next) { state.finished = true; life.ending = 'peace'; this.sandbox().ending = 'peace'; return '三部曲通关。停战与本轮反思已经保存。'; }
       if (!this.changeActor(agent, next.actor, tick)) return '下一段的角色正在由另一位玩家控制，进度已保留。';
       const sameRoom = state.scene === 'm1_pills' && next.id === 'm1_mirror' || state.scene === 'm2_merovingian' && next.id === 'm2_persephone'
-        || state.scene === 'm3_mobil' && next.id === 'm3_family' || state.scene === 'm3_family' && next.id === 'm3_trainman';
+        || state.scene === 'm3_mobil' && next.id === 'm3_family' || state.scene === 'm3_family' && next.id === 'm3_trainman'
+        || state.scene === 'm3_hel_entry' && next.id === 'm3_hel_bargain';
       const position = sameRoom || state.scene === 'm1_boss' && next.id === 'm1_office_escape' ? { ...agent.position } : undefined;
       const facing = agent.rotation;
       state.scene = next.id; state.actor = next.actor; state.step = 0; state.lastText = next.context;
@@ -3087,6 +3127,8 @@ export class FilmStorySystem {
     if (this.catch.active(agent)) return this.catch.command(agent, target, tick);
     if (state.scene === 'm2_ship_lost' && state.shipLoss?.phase === 'failed' || state.scene === 'm2_stop_sentinels' && state.tunnel?.phase === 'failed') return '当前检查点失败。按 J 打开手记并重试。';
     if (state.scene === 'm3_trainman' && state.step === 1 && state.mobil?.phase !== 'stopped') return '列车仍在进站，等车门完全打开。';
+    if (state.scene === 'm3_trainman_chase' && state.step === 2 && state.helChase?.phase !== 'escaped') return 'Trainman 正穿过对向站台；等驶过的列车遮断视线。';
+    if (state.scene === 'm3_mobil_release' && state.step === 0 && state.mobil?.phase !== 'stopped') return '列车仍在进站，等 Trinity 下车。';
     if (state.scene === 'm2_burly') return this.burlyAct(agent, target, tick);
     if (state.scene === 'm2_chateau' && state.step === 0) return this.chateauAct(agent, target, tick);
     if (state.scene === 'm2_mountain' && state.step === 2) return state.mountain?.phase === 'failed' && target === 'act' ? this.retryMountain(agent) : '站在山崖起飞点按 Space，随后按住 W 向南飞，A / D 调整航线。';
@@ -3254,6 +3296,8 @@ export class FilmStorySystem {
       state.mobil.approach = { x: agent.position.x - center.x, z: agent.position.z - center.z, yaw: agent.rotation };
       this.mobilFrame(agent, 0, tick); return 'Trainman 伸手拦住你。';
     }
+    if (state.scene === 'm3_hel_bargain' && state.step === 2 && ['merovingian', 'persephone', 'trainman'].some(id => this.world.agents.get(id)?.controller))
+      return '对峙中的角色正由其他玩家控制，营救决定会停在当前进度。';
     if (state.scene === 'm1_jump' && state.step === 1) return 'Morpheus 已经完成示范。Shift 助跑，空格起跳；跌落会恢复检查点。';
     if (step.kind === 'reflect') return 'J 打开手记，记录自己的理解。';
     if (state.scene === 'm2_trucks' && state.step === 2 && ['keymaker', 'neo'].some(id => this.world.agents.get(id)?.controller))
@@ -3348,7 +3392,10 @@ export class FilmStorySystem {
     delete state.shipLoss;
     delete state.tunnel;
     if (scene.id === 'm3_mobil') state.mobil = { phase: 'waiting', elapsed: 0, lastTick: tick, loops: 0 };
+    else if (scene.id === 'm3_mobil_release') state.mobil = { phase: 'approaching', elapsed: 0, lastTick: tick, loops: 0 };
     else if (!['m3_family', 'm3_trainman'].includes(scene.id)) delete state.mobil;
+    if (scene.id === 'm3_trainman_chase') state.helChase = { phase: 'sighting', elapsed: 0, lastTick: tick };
+    else delete state.helChase;
     delete state.baneCopy;
     delete state.seraph;
     delete state.burly;
@@ -3658,6 +3705,21 @@ export class FilmStorySystem {
         const spot = spots[id]; if (spot) { actor.position = filmPosition(scene.set, spot[0], spot[1]); actor.rotation = spot[2]; }
         if (scene.id === 'm3_family' && id === 'kamala') actor.currentAction = { type: 'idle', parameters: { seated: true }, startedAt: this.state!.enteredAt, duration: 100000, progress: 0 };
       }
+      if (scene.id === 'm3_trainman_chase') {
+        const spots: Record<string, [number, number, number]> = { trainman: [0, 10, Math.PI], trinity: [-4, 22, Math.PI], morpheus: [4, 22, Math.PI] };
+        const spot = spots[id]; if (spot) { actor.position = filmPosition(scene.set, spot[0], spot[1]); actor.rotation = spot[2]; }
+      }
+      if (['m3_hel_garage', 'm3_hel_entry', 'm3_hel_bargain'].includes(scene.id)) {
+        const z = scene.id === 'm3_hel_garage' ? 23 : scene.id === 'm3_hel_entry' ? 34 : -27;
+        const spots: Record<string, [number, number, number]> = { morpheus: [-4, z, Math.PI], seraph: [4, z, Math.PI],
+          merovingian: [0, -35, 0], persephone: [5, -35, 0], trainman: [-9, -32, 0] };
+        const spot = spots[id]; if (spot) { actor.position = filmPosition(scene.set, spot[0], spot[1]); actor.rotation = spot[2]; }
+        if (spot && scene.id === 'm3_hel_bargain' && spot[1] < -28) actor.position.y += .6;
+      }
+      if (scene.id === 'm3_mobil_release') {
+        const spot: [number, number, number] = id === 'trainman' ? [13, -80, -Math.PI / 2] : [12, -80, -Math.PI / 2];
+        actor.position = filmPosition(scene.set, spot[0], spot[1]); actor.position.y -= 1.35; actor.rotation = spot[2];
+      }
     });
   }
   private near(agent: AgentState, step: FilmStep): boolean {
@@ -3777,6 +3839,12 @@ export class FilmStorySystem {
       state.mobil!.phase = 'approaching'; state.mobil!.elapsed = 0; state.mobil!.lastTick = tick;
       text = '你接过 Rama 的箱子。轨道深处亮起两束车灯，迟到的单节列车终于来了。';
     }
+    if (state.scene === 'm3_trainman_chase' && state.step === 0) {
+      state.helChase ??= { phase: 'sighting', elapsed: 0, lastTick: tick };
+      state.helChase.phase = 'running'; state.helChase.elapsed = 0; state.helChase.lastTick = tick;
+      text = 'Trainman 拉下紧急制动，朝对向站台冲去；Seraph 追出车厢。';
+    }
+    if (state.scene === 'm3_hel_bargain' && state.step === 2) life.choices.neo_release = 'trinity_refused_trade';
     if (state.scene === 'm1_bug' && state.step === 0 && state.office?.outcome === 'escaped') text = '扫描完成，没有发现追踪装置。Trinity 收起仪器，确认接头安全，继续前往 Morpheus 的房间。';
     state.lastText = text; state.step++; state.checkpoint = { ...agent.position }; delete state.started; delete state.fighting;
     if (state.scene === 'm2_ship_lost' && state.step === this.scene!.steps.length && state.shipLoss) state.shipLoss.phase = 'escaped';
@@ -3848,6 +3916,7 @@ export class FilmStorySystem {
     }
     if (!actor?.controller || actor.status !== 'alive') {
       if (state.mobil) state.mobil.lastTick = tick;
+      if (state.helChase) state.helChase.lastTick = tick;
       if (actor?.status === 'alive' && state.scene === 'm2_trucks' && state.trucks) {
         const gap = Math.max(0, tick - state.trucks.lastTick);
         if (state.started !== undefined) state.started += gap;
@@ -3857,7 +3926,8 @@ export class FilmStorySystem {
     }
     if (state.scene === 'm2_trucks' && !state.trucks)
       state.trucks = { phase: state.step === 0 ? 'duel' : 'collision', elapsed: 0, lastTick: tick, attempt: 0 };
-    if (['m3_mobil', 'm3_family', 'm3_trainman'].includes(state.scene)) this.mobilTick(actor, tick);
+    if (['m3_mobil', 'm3_family', 'm3_trainman', 'm3_mobil_release'].includes(state.scene)) this.mobilTick(actor, tick);
+    if (state.scene === 'm3_trainman_chase') this.helChaseTick(tick);
     if (state.scene === 'm2_trucks' && state.trucks?.phase === 'collision') {
       state.trucks.elapsed = Math.min(TRUCKS.collisionSeconds, state.trucks.elapsed + Math.max(0, tick - state.trucks.lastTick) * .5);
       state.trucks.lastTick = tick;
@@ -3923,6 +3993,7 @@ export class FilmStorySystem {
     }
     if (state.scene === 'm3_trainman' && state.step === 1 && state.mobil?.phase !== 'stopped') return;
     if (state.scene === 'm3_trainman' && state.step >= 3) return;
+    if (state.scene === 'm3_mobil_release' && state.step === 0 && state.mobil?.phase !== 'stopped') return;
     if (state.scene === 'm1_ledge' && actor.position.y < FILM_SETS[this.scene.set].center.y - 6) {
       this.capture(actor, tick, '你失足抓住下方维修架，赶来的保安将你带回室内。被捕之后，故事仍会继续。'); return;
     }

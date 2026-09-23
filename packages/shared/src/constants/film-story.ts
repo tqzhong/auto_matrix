@@ -48,6 +48,9 @@ export interface MobilEncounter {
   phase: 'waiting' | 'approaching' | 'stopped' | 'refusing' | 'departing' | 'gone';
   elapsed: number; lastTick: number; loops: number; boarding?: number; approach?: { x: number; z: number; yaw: number };
 }
+export interface HelChaseEncounter {
+  phase: 'sighting' | 'running' | 'escaped'; elapsed: number; lastTick: number;
+}
 export interface FilmJourney {
   version: 1; scene: string; step: number; actor: string; completed: string[];
   enteredAt: number; started?: number; fighting?: boolean; checkpoint: Vector3;
@@ -96,6 +99,7 @@ export interface FilmJourney {
   shipLoss?: ShipLossEncounter;
   tunnel?: TunnelEncounter;
   mobil?: MobilEncounter;
+  helChase?: HelChaseEncounter;
 }
 const walk = (label: string, x = 0, z = -12): FilmStep => ({ kind: 'reach', label, x, z });
 const use = (label: string, text: string, x = 0, z = -12, seconds = 3): FilmStep => ({ kind: 'interact', label, text, x, z, seconds });
@@ -238,11 +242,12 @@ export const FILM_SCENES: FilmScene[] = [
   scene('m3_mobil', 3, 'mobil_station', 'neo', '既不在这里，也不在那里', 'mobil', 'mobil', 'Neo 在没有来路的白色站台醒来。先与迎上来的 Sati 说话，再确认站名。', [use('与 Sati 说话', 'Sati 说这里是 Mobil Ave；她没有见过通往城市的出口。', -5, 12, 2), use('辨认 MOBIL AVE 站名', '站名像一条线索：Mobil 是 Limbo 的字母重排，这里不是普通的地铁站。', -10, 5, 2)], ['sati']),
   scene('m3_family', 3, 'mobil_station', 'neo', '没有指定用途的孩子', 'sati', 'oracle', 'Rama-Kandra 与 Kamala 带着女儿等待迟到的列车。Sati 没有系统指定的用途，他们仍愿付出一切保护她。', [walk('走到 Sati 一家的长椅旁', -7, -8), think('没有指定用途的生命，仍值得被爱吗？', 'Rama-Kandra 不把爱当成程序错误；他们让 Sati 通过这列车去见先知。', -7, -8)], ['rama_kandra', 'kamala', 'sati']),
   scene('m3_trainman', 3, 'mobil_station', 'neo', '列车驶离', 'sati', 'mobil', '列车晚点抵达。帮助这一家上车，再试着面对替 Merovingian 管理边界的 Trainman。', [use('帮 Rama 提起行李', '隧道深处传来列车声。Neo 把行李递到站台边。', -6, -8, 2), walk('等列车停稳，走向车门', 6, -20), use('尝试随 Sati 一家上车', 'Trainman 拒绝 Neo，击退他，并带着一家人驶离。', 6, -20, 1), walk('沿一端隧道寻找出口', 0, -49), walk('再试另一端隧道', 0, 49)], ['trainman', 'rama_kandra', 'kamala', 'sati']),
-  scene('m3_oracle_request', 3, 'oracle_home', 'trinity', '另一边的营救', 'oracle_last', 'oracle', '先知告诉 Morpheus 与 Trinity：Neo 被困在 Trainman 掌管的地方。', [use('在厨房听取线索', 'Seraph 将带两人去找 Trainman；他的主人是 Merovingian。', -4, -21), walk('跟随 Seraph 离开', 0, 18)], ['oracle', 'morpheus', 'seraph']),
-  scene('m3_trainman_chase', 3, 'subway_platform', 'seraph', '逃走的列车管理员', 'oracle_last', 'chase', 'Seraph 认出 Trainman，但对方逃入列车。必须直接前往 Club Hel。', [walk('追到站台另一端', 0, -34), use('查明俱乐部入口', '通往地下俱乐部的电梯成为下一条路线。', 0, -34)], ['trinity', 'morpheus']),
-  scene('m3_hel_entry', 3, 'club_hel', 'trinity', '地狱的衣帽间', 'oracle_last', 'combat', '三人穿过电梯与衣帽间，守卫从墙壁和天花板方向发动攻击。', [fight('突破衣帽间守卫', 4), walk('抵达 VIP 高台', 0, -29)], ['morpheus', 'seraph']),
-  scene('m3_hel_bargain', 3, 'club_hel', 'trinity', '不接受的交换', 'oracle_last', 'infiltration', 'Merovingian 索取先知的眼睛。Trinity 以直接对峙迫使他释放 Neo。', [walk('靠近 Merovingian 的座位', 0, -28), use('要求释放 Neo', 'Persephone 认出 Trinity 的决心。Merovingian 同意让 Trainman 放人。', 0, -28, 6)], ['merovingian', 'persephone', 'morpheus', 'seraph']),
-  scene('m3_mobil_release', 3, 'mobil_station', 'neo', '等来同伴', 'oracle_last', 'oracle', '返回的列车终于带来 Trinity。Neo 决定先去见先知。', [walk('走向列车门', 0, -22), use('与 Trinity 一同离站', '连接重新通向矩阵。', 0, -22)], ['trinity']),
+  scene('m3_oracle_request', 3, 'oracle_home', 'trinity', '另一边的营救', 'oracle_last', 'oracle', 'Seraph 把 Trinity 与 Morpheus 带到先知的旧公寓。眼前的先知换了模样，而 Neo 的身体仍躺在 Hammer。', [use('确认眼前的人仍是先知', '她为帮助 Neo 作了选择，也付出了代价。', -4, -18, 2), use('询问 Neo 被困的位置', '他在矩阵与机器世界之间的线路上；Trainman 替 Merovingian 守着出口。', -4, -18, 2), think('知道先知也会付代价，还要信任她吗？', 'Morpheus 可以自己判断是否相信她；救回 Neo 不需要先解决所有预言。', -4, -18), walk('跟随 Seraph 出门找 Trainman', 0, 18)], ['oracle', 'morpheus', 'seraph']),
+  scene('m3_trainman_chase', 3, 'subway_platform', 'seraph', '逃走的列车管理员', 'oracle_last', 'chase', 'Seraph 在地铁车厢认出 Trainman。他急停列车，穿过站台与通道逃向另一侧月台。', [use('认出车厢里的 Trainman', '他拉下紧急制动，持枪逃下列车。', 0, 15, 1), walk('穿过钢柱追到对向站台', 0, -34), use('看他借驶过的列车消失', 'Seraph、Trinity 与 Morpheus 没有抓住他；Trinity 决定直接去找他的主人。', 0, -34, 2)], ['trinity', 'morpheus', 'trainman']),
+  scene('m3_hel_garage', 3, 'hel_garage', 'trinity', '通往 Hel 的车库', 'oracle_last', 'combat', '三人到达地下车库。大块头和两名流亡程序挡住通往 Club Hel 的金属门。', [{ ...fight('突破三名入口守卫', 3), z: 12 }, use('打开通往 Club Hel 的钢门', '门后只有一部向下的铁笼电梯。', 0, -29, 2)], ['morpheus', 'seraph']),
+  scene('m3_hel_entry', 3, 'club_hel', 'trinity', '地狱的衣帽间', 'oracle_last', 'combat', '在标着 HEL 的电梯按钮后面，是衣帽间、武器检查柜与通往舞池的重门。', [use('按下电梯的 HEL 按钮', '铁笼下降；Seraph 提醒俱乐部不许携带武器。', 0, 31, 3), { ...fight('突破衣帽间守卫', 5), z: 13 }, use('从武器检查柜取回装备', '衣帽间的枪声被舞池音乐盖过，三人重新拿起装备。', -8, 7, 2), walk('穿过舞池到 VIP 高台', 0, -28)], ['morpheus', 'seraph']),
+  scene('m3_hel_bargain', 3, 'club_hel', 'trinity', '不接受的交换', 'oracle_last', 'infiltration', 'Merovingian 掌握 Trainman 的线路，开价要先知的双眼。Trinity 必须当面拒绝这个交换。', [use('听 Merovingian 提出交换', '他要先知的双眼；武装人群已经围住三人。', 0, -29, 2), think('是否牺牲先知换回 Neo？', 'Trinity 拒绝让另一个人的身体成为交换品；她选择承担自己面前的风险。', 0, -29), use('逼迫 Trainman 放人', 'Trinity 举枪控制 Merovingian。Persephone 看出她不会退让，他命 Trainman 带 Neo 回来。', 0, -29, 5)], ['merovingian', 'persephone', 'morpheus', 'seraph', 'trainman']),
+  scene('m3_mobil_release', 3, 'mobil_station', 'neo', '等来同伴', 'oracle_last', 'oracle', 'Neo 无法靠自己打破 Mobil Ave 的边界。列车再次出现，这一次 Trinity 从车门走向他。', [walk('等列车停稳，走向 Trinity', 0, -22), use('与 Trinity 一同离站', '连接重新通向矩阵。Neo 决定先去见先知。', 0, -22, 2)], ['trinity', 'trainman']),
   scene('m3_oracle_last', 3, 'oracle_home', 'neo', '没有保证的未来', 'oracle_last', 'oracle', '先知解释 Neo 与源头的联系，也指出 Smith 已威胁双方的生存。', [think('不知道结果，还要行动吗？', '先知不能替你看穿所有选择。希望包含一次不能保证成功的尝试。'), use('带着线索离开公寓', 'Neo 决定去机器城，Trinity 要与他同行。', 0, 18)], ['oracle', 'sati', 'seraph']),
   scene('m3_bane_questions', 3, 'hammer_deck', 'roland', '幸存者的说法', 'bane', 'bane', 'Bane 声称不记得舰队遭遇。Maggie 检查他的伤口与精神状态。', [use('核对舰队记录', '他的解释无法完全消除疑点。', 0, -16), use('把检查交给 Maggie', 'Bane 随后袭击 Maggie，并潜入即将出发的 Logos。', -7, -25)], ['bane', 'maggie']),
   scene('m3_logos_plan', 3, 'service_tunnels', 'neo', '分开的两条航线', 'last_sky', 'zion', '众人找到 Logos。Niobe 把船交给 Neo，自己驾驶 Hammer 返回锡安。', [walk('抵达停泊的 Logos', 0, -28), think('信任来自预言还是行动？', 'Niobe 把决定建立在对人的判断上。两条航线分别承担谈判与防守。')], ['niobe', 'trinity', 'morpheus', 'roland']),
@@ -282,6 +287,7 @@ export function filmStepPosition(scene: FilmScene, step: FilmStep): Vector3 {
 }
 export function filmEntry(scene: FilmScene): Vector3 {
   if (scene.id === 'm3_mobil') return filmPosition(scene.set, 0, 22);
+  if (scene.id === 'm3_mobil_release') return filmPosition(scene.set, 0, 20);
   if (scene.id === 'm2_backdoors') return filmPosition(scene.set, SERAPH_ORACLE.hall.entry.x, SERAPH_ORACLE.hall.entry.z);
   if (scene.id === 'm2_bench') return filmPosition(scene.set, SERAPH_ORACLE.yard.entry.x, SERAPH_ORACLE.yard.entry.z);
   if (scene.id === 'm2_room') return filmPosition(scene.set, 0, 8);
