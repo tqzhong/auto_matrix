@@ -1,4 +1,4 @@
-import { reloadedLocked } from '@auto_matrix/shared';
+import { catchLocked, reloadedLocked } from '@auto_matrix/shared';
 import { COMBAT_SKILLS, playerSkills, neoSkillUnlocked, CHARACTERS, LOCATIONS, filmSetAt, filmObstacles, distance, matrixEscapeLocked, theOneLocked, type AgentState, type SimulationState, type WorldEvent, type NeoLifeState } from '@auto_matrix/shared';
 import { FACTION_COLORS } from '../agents/AgentRenderer.js';
 
@@ -147,7 +147,8 @@ export class PlayerExperience {
     const matrixPerforming = Boolean(neoLife?.journey && neoLife.journey.actor === player?.id && matrixEscapeLocked(neoLife.journey));
     const onePerforming = Boolean(neoLife?.journey && neoLife.journey.actor === player?.id && theOneLocked(neoLife.journey));
     const reloadedPerforming = Boolean(neoLife?.journey && neoLife.journey.actor === player?.id && reloadedLocked(neoLife.journey));
-    const performing = Boolean(player?.currentAction?.parameters.persephone || player?.currentAction?.parameters.club || player?.currentAction?.parameters.workday || player?.currentAction?.parameters.meeting || player?.currentAction?.parameters.interrogation || player?.currentAction?.parameters.pills || player?.currentAction?.parameters.welcome || player?.currentAction?.parameters.sentinel || player?.currentAction?.parameters.interlude || player?.currentAction?.parameters.oracleVisit || player?.currentAction?.parameters.betrayal || player?.currentAction?.parameters.rescue || player?.currentAction?.parameters.government || player?.currentAction?.parameters.airRescue || player?.currentAction?.parameters.truckPassenger || matrixPerforming || onePerforming || reloadedPerforming || player?.currentAction?.parameters.lobbyEntry || player?.currentAction?.parameters.filmPose || player?.currentAction?.parameters.spoon !== undefined || player?.currentAction?.parameters.vase !== undefined);
+    const catchPerforming = Boolean(neoLife?.journey && neoLife.journey.actor === player?.id && catchLocked(neoLife.journey.catch));
+    const performing = Boolean(player?.currentAction?.parameters.persephone || player?.currentAction?.parameters.club || player?.currentAction?.parameters.workday || player?.currentAction?.parameters.meeting || player?.currentAction?.parameters.interrogation || player?.currentAction?.parameters.pills || player?.currentAction?.parameters.welcome || player?.currentAction?.parameters.sentinel || player?.currentAction?.parameters.interlude || player?.currentAction?.parameters.oracleVisit || player?.currentAction?.parameters.betrayal || player?.currentAction?.parameters.rescue || player?.currentAction?.parameters.government || player?.currentAction?.parameters.airRescue || player?.currentAction?.parameters.truckPassenger || matrixPerforming || onePerforming || reloadedPerforming || catchPerforming || player?.currentAction?.parameters.lobbyEntry || player?.currentAction?.parameters.filmPose || player?.currentAction?.parameters.spoon !== undefined || player?.currentAction?.parameters.vase !== undefined);
     document.body.classList.toggle('film-driving', driving);
     document.body.classList.toggle('film-performing', performing);
     document.body.classList.toggle('film-workday-scene', Boolean(player?.currentAction?.parameters.workday));
@@ -157,6 +158,7 @@ export class PlayerExperience {
     document.body.classList.toggle('film-meeting-scene', Boolean(player?.currentAction?.parameters.meeting));
     this.filmPlaying = Boolean(player && neoLife?.journey?.actor === player.id);
     document.body.classList.toggle('film-reloaded-scene', this.filmPlaying && Boolean(neoLife?.journey?.reloaded) && !neoLife?.journey?.visiting);
+    document.body.classList.toggle('film-catch-scene', this.filmPlaying && neoLife?.journey?.scene === 'm2_catch' && !neoLife?.journey?.visiting);
     document.body.classList.toggle('film-burly-scene', this.filmPlaying && neoLife?.journey?.scene === 'm2_burly' && !neoLife.journey.visiting);
     document.body.classList.toggle('film-grid-scene', this.filmPlaying && ['m2_plan', 'm2_power', 'm2_vigilant', 'm2_backup', 'm2_key_door'].includes(neoLife?.journey?.scene ?? '') && !neoLife?.journey?.visiting);
     document.body.classList.toggle('film-mountain-flight', this.filmPlaying && neoLife?.journey?.scene === 'm2_mountain' && ['takeoff', 'flying', 'arrived'].includes(neoLife.journey.mountain?.phase ?? ''));
@@ -212,7 +214,7 @@ export class PlayerExperience {
     const theOneScene = this.filmPlaying && Boolean(neoLife?.journey?.theOne) && !neoLife?.journey?.visiting;
     const truckScene = this.filmPlaying && neoLife?.journey?.scene === 'm2_trucks' && !neoLife.journey.visiting && neoLife.journey.step < 3;
     const seraphOracleScene = this.filmPlaying && !neoLife?.journey?.visiting && (neoLife?.journey?.scene === 'm2_bench' || neoLife?.journey?.scene === 'm2_seraph');
-    this.el('game-interaction').classList.toggle('hidden', nearby.length === 0 || player.status === 'dead' || Boolean(player.currentAction?.parameters.riding || player.currentAction?.parameters.lobbyEntry) || sentinelScene || interludeScene || oracleScene || seraphOracleScene || betrayalScene || rescueScene || lobbyScene || governmentScene || airRescueScene || matrixEscapeScene || theOneScene || truckScene || this.filmPlaying && Boolean(neoLife?.journey?.reloaded) && !neoLife?.journey?.visiting);
+    this.el('game-interaction').classList.toggle('hidden', nearby.length === 0 || player.status === 'dead' || Boolean(player.currentAction?.parameters.riding || player.currentAction?.parameters.lobbyEntry) || sentinelScene || interludeScene || oracleScene || seraphOracleScene || betrayalScene || rescueScene || lobbyScene || governmentScene || airRescueScene || matrixEscapeScene || theOneScene || truckScene || this.filmPlaying && Boolean(neoLife?.journey?.reloaded || neoLife?.journey?.scene === 'm2_catch') && !neoLife?.journey?.visiting);
     this.el('game-interaction').querySelector('span')!.textContent = nearby[0] ? `与 ${nearby[0].name} 交谈` : '';
     this.el('game-objective').textContent = player.isAwakened ? '你会怎样改变这个世界？' : '寻找现实背后的真相';
     this.el('game-objective-copy').textContent = player.isAwakened ? '结识同伴、探索城市，或前往地铁站寻找出口。' : `怀疑 ${Math.round(player.mind?.suspicion ?? 0)}% · 目击异常，与可信的觉醒者交谈。`;

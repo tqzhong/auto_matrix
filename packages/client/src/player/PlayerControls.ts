@@ -1,4 +1,4 @@
-import { reloadedPhaseLocked } from '@auto_matrix/shared';
+import { catchLocked, reloadedPhaseLocked } from '@auto_matrix/shared';
 import { reloadedCamera } from './ReloadedCamera.js';
 import * as THREE from 'three';
 import { FILM_SETS, OFFICE_CONTACT, LOBBY_FIRE_INTERVAL, RESCUE, groundHeight, playerBlocked, stepPlayer, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, COMBAT_SKILLS, combatDisplace, PLAYER_WALK_SPEED, meleeReach, trainingRoot, matrixEscapePhaseLocked, matrixEscapePose, matrixEscapeRoot, theOnePhaseLocked, theOnePose, theOneRoot, type OfficePhone, type AwakeningPose, type FreewayRide, type AgentState, type PlayerInput, type Vector3, type WorldStructure, type CombatImpact, type SkillCast, type RescueLoadout } from '@auto_matrix/shared';
@@ -177,7 +177,7 @@ export class PlayerControls {
   }
 
   private requestAttack(guided = false, guidedCombo?: number): boolean {
-    if (this.motion.reloaded?.phase === 'falling') {
+    if (this.motion.reloaded?.phase === 'falling' || this.motion.catch?.phase === 'pulse') {
       if (!this.running || !this.enabled || this.authoritative?.status !== 'alive') return false;
       this.send(this.input(false)); this.action('attack'); return true;
     }
@@ -250,6 +250,8 @@ export class PlayerControls {
     const escapeCinematic = matrixEscapePhaseLocked(escapeGesture);
     const reloadedGesture = state.currentAction?.parameters.reloaded as MotionInput['reloaded'];
     const reloadedCinematic = reloadedPhaseLocked(reloadedGesture);
+    const catchGesture = state.currentAction?.parameters.catch as MotionInput['catch'];
+    const catchCinematic = catchLocked(catchGesture);
     const oneGesture = state.currentAction?.parameters.theOne as MotionInput['theOne'];
     const oneCinematic = theOnePhaseLocked(oneGesture) || Boolean(oneGesture?.kind === 'flight' && oneGesture.phase === 'done');
     if (this.motion.crossing !== undefined && state.currentLocation === 'film_office_ledge' && state.currentAction?.parameters.crossing === undefined) this.performing = false;
@@ -295,6 +297,8 @@ export class PlayerControls {
     if (oneCinematic) this.performing = true;
     if (this.motion.reloaded && !reloadedCinematic) this.performing = false;
     if (reloadedCinematic) this.performing = true;
+    if (this.motion.catch && !catchCinematic) this.performing = false;
+    if (catchCinematic) this.performing = true;
     if (this.motion.burly && !state.currentAction?.parameters.burly) this.performing = false;
     if (['approaching', 'grapple', 'flight'].includes((state.currentAction?.parameters.burly as MotionInput['burly'] | undefined)?.phase ?? '')) this.performing = true;
     if (this.motion.mountainFlight && !state.currentAction?.parameters.mountainFlight) this.performing = false;
@@ -331,6 +335,7 @@ export class PlayerControls {
     this.motion.matrixEscape = escapeGesture;
     this.motion.theOne = oneGesture;
     this.motion.reloaded = reloadedGesture;
+    this.motion.catch = catchGesture;
     this.motion.burly = state.currentAction?.parameters.burly as MotionInput['burly'];
     this.motion.chateauWeapon = state.currentAction?.parameters.chateauWeapon as MotionInput['chateauWeapon'];
     this.motion.mountainFlight = state.currentAction?.parameters.mountainFlight as MotionInput['mountainFlight'];
@@ -404,7 +409,7 @@ export class PlayerControls {
     }
     const previous = { ...this.position };
     if (this.ride || this.climbing || this.performing) {
-      const blend = this.motion.truckPassenger || this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.training || this.motion.workday || this.motion.interlude || this.motion.oracleVisit || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || this.motion.lobbyEntry ? 1 : 1 - Math.exp(-20 * delta);
+      const blend = this.motion.truckPassenger || this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.training || this.motion.workday || this.motion.interlude || this.motion.oracleVisit || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || catchCinematic || this.motion.lobbyEntry ? 1 : 1 - Math.exp(-20 * delta);
       this.position.x += (state.position.x - this.position.x) * blend; this.position.y += (state.position.y - this.position.y) * blend; this.position.z += (state.position.z - this.position.z) * blend;
       this.vy = 0; this.planar = { x: 0, z: 0 }; this.localJump = false;
     } else if (running && this.enabled && state.status === 'alive') {
@@ -456,8 +461,9 @@ export class PlayerControls {
     const airRescueWide = !this.firstPerson && Boolean(this.motion.airRescue);
     const escapeWide = !this.firstPerson && escapeCinematic;
     const oneWide = !this.firstPerson && oneCinematic;
+    const catchWide = !this.firstPerson && catchCinematic;
     const lobbyWide = !this.firstPerson && Boolean(this.motion.lobbyEntry);
-    this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide || sentinelWide || interludeWide || oracleWide || betrayalWide || rescueWide || governmentWide || airRescueWide || escapeWide || oneWide || lobbyWide ? 58 : this.motion.inspecting ? 42 : this.firstPerson ? sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
+    this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide || sentinelWide || interludeWide || oracleWide || betrayalWide || rescueWide || governmentWide || airRescueWide || escapeWide || oneWide || catchWide || lobbyWide ? 58 : this.motion.inspecting ? 42 : this.firstPerson ? sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
     this.camera.near = this.firstPerson && this.motion.club ? .08 : this.defaultNear;
     this.camera.updateProjectionMatrix();
     this.cameraStep += this.motion.speed * delta;
@@ -629,6 +635,20 @@ export class PlayerControls {
         if (resetCamera || gesture.elapsed < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
         this.camera.lookAt(focus);
       }
+    } else if (this.motion.catch && catchCinematic) {
+      const gesture = this.motion.catch;
+      const falling = gesture.phase === 'flight';
+      const heading = gesture.yaw ?? Math.PI;
+      const target = falling ? new THREE.Vector3(this.position.x + Math.sin(heading) * 16, this.position.y - 3, this.position.z + Math.cos(heading) * 16)
+        : gesture.phase === 'ascent' ? new THREE.Vector3(this.position.x - 1, this.position.y + 1, this.position.z - 2)
+          : new THREE.Vector3(this.position.x - 1.7, this.position.y + .85, this.position.z - 2.3);
+      const ideal = this.firstPerson ? new THREE.Vector3(this.position.x, this.position.y + 2.7, this.position.z)
+        : falling ? new THREE.Vector3(this.position.x - Math.sin(heading) * 15 + Math.cos(heading) * (this.camera.aspect < .8 ? 3 : 6), this.position.y + 5, this.position.z - Math.cos(heading) * 15 - Math.sin(heading) * (this.camera.aspect < .8 ? 3 : 6))
+          : gesture.phase === 'ascent' ? new THREE.Vector3(this.position.x + 11, this.position.y + 5, this.position.z + 9)
+            : new THREE.Vector3(this.position.x - (this.camera.aspect < .8 ? 6 : 8), this.position.y + 5.3, this.position.z + 8);
+      if (this.firstPerson || resetCamera || gesture.elapsed < .12) this.camera.position.copy(ideal);
+      else this.camera.position.lerp(ideal, 1 - Math.exp(-9 * delta));
+      this.camera.lookAt(target);
     } else if (this.motion.reloaded && reloadedCinematic) {
       const framing = reloadedCamera(this.motion.reloaded, this.position, state.currentLocation, this.firstPerson, this.camera.aspect, this.yaw, this.pitch);
       if (this.firstPerson || resetCamera || this.motion.reloaded.elapsed < .12) this.camera.position.copy(framing.eye);

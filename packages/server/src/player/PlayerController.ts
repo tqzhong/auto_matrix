@@ -67,6 +67,7 @@ export class PlayerController {
     const escapeRoles = interlude?.matrixEscape?.kind === 'subway' ? ['neo', 'smith', 'citizen_13'] : ['neo', 'smith', 'citizen_13', 'citizen_14'];
     if (interlude?.matrixEscape && !['failed', 'done'].includes(interlude.matrixEscape.phase) && id !== interlude.actor && escapeRoles.includes(id)) return { error: '这个角色正在参与地铁与街巷追逐片段，当前撤离结束后可以接入。' };
     if (interlude?.reloaded && !interlude.visiting && interlude.reloaded.phase !== 'done' && id !== interlude.actor && (RELOADED.cast as readonly string[]).includes(id)) return { error: '这个角色正在参与第二部的预感与升级特工片段，结束后可以接入。' };
+    if (interlude?.scene === 'm2_catch' && !interlude.visiting && interlude.catch && interlude.catch.phase !== 'done' && id !== interlude.actor && ['trinity', 'agent_johnson'].includes(id)) return { error: '这个角色正在参与 Neo 的高空营救，片段结束后可以接入。' };
     const theOneRoles = interlude?.theOne?.kind === 'death' ? ['neo', 'smith', 'agent_brown', 'trinity', 'morpheus', 'tank']
       : interlude?.theOne?.kind === 'return' ? ['neo', 'smith', 'agent_brown', 'agent_jones', 'trinity', 'morpheus', 'tank'] : ['neo'];
     if (interlude?.theOne && !['ready', 'failed', 'done'].includes(interlude.theOne.phase) && id !== interlude.actor && theOneRoles.includes(id)) return { error: '这个角色正在参与 Neo 的复苏与觉醒片段，当前演出结束后可以接入。' };
@@ -131,6 +132,7 @@ export class PlayerController {
     this.sandbox?.life.film.airRescueFrame(agent, false, 0, tick);
     this.sandbox?.life.film.matrixEscapeFrame(agent, { movement: 0, sprint: false }, 0, tick);
     this.sandbox?.life.film.theOneFrame(agent, { x: 0, z: 0, sprint: false, jump: false, focus: false }, 0, tick); this.sandbox?.life.film.reloaded.frame(agent, { x: 0, focus: false }, 0, tick);
+    this.sandbox?.life.film.catch.frame(agent, { x: 0, z: 0, focus: false }, 0, tick);
     this.sandbox?.life.film.lobby.frame(agent, 0, tick);
     if (agent.mind) agent.mind.thought = '由玩家决定下一步行动。';
     return { agentId: id };
@@ -161,6 +163,7 @@ export class PlayerController {
       this.sandbox?.life.film.governmentFrame(agent, false, 0, tick);
       this.sandbox?.life.film.airRescueFrame(agent, false, 0, tick);
       this.sandbox?.life.film.theOneFrame(agent, { x: 0, z: 0, sprint: false, jump: false, focus: false }, 0, tick); this.sandbox?.life.film.reloaded.frame(agent, { x: 0, focus: false }, 0, tick);
+      this.sandbox?.life.film.catch.frame(agent, { x: 0, z: 0, focus: false }, 0, tick);
       this.sandbox?.life.film.lobby.frame(agent, 0, tick);
       agent.activeEffects = agent.activeEffects.filter(effect => effect.remainingSeconds === undefined);
       if (agent.mind) agent.mind.thought = '重新回到自己的生活，继续追寻尚未完成的目标。';
@@ -204,7 +207,7 @@ export class PlayerController {
     }
     for (const session of this.sessions.values()) {
       const agent = this.world.agents.get(session.agentId)!;
-      if (!running || agent.status !== 'alive') { agent.velocity = { x: 0, y: 0, z: 0 }; this.sandbox?.life.film.hotelFrame(agent, 0, tick); this.sandbox?.life.film.sentinelFrame(agent, { movement: 0, sprint: false, jump: false }, 0, tick); this.sandbox?.life.film.interludeFrame(agent, 0, tick); this.sandbox?.life.film.betrayalFrame(agent, 0, tick); this.sandbox?.life.film.rescueFrame(agent, 0, tick); this.sandbox?.life.film.governmentFrame(agent, false, 0, tick); this.sandbox?.life.film.airRescueFrame(agent, false, 0, tick); this.sandbox?.life.film.matrixEscapeFrame(agent, { movement: 0, sprint: false }, 0, tick); this.sandbox?.life.film.theOneFrame(agent, { x: 0, z: 0, sprint: false, jump: false, focus: false }, 0, tick); this.sandbox?.life.film.reloaded.frame(agent, { x: 0, focus: false }, 0, tick); this.sandbox?.life.film.mountainFrame(agent, { x: 0, z: 0, yaw: agent.rotation, jump: false, sprint: false }, 0, tick); this.sandbox?.life.film.lobby.frame(agent, 0, tick); session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue; }
+      if (!running || agent.status !== 'alive') { agent.velocity = { x: 0, y: 0, z: 0 }; this.sandbox?.life.film.hotelFrame(agent, 0, tick); this.sandbox?.life.film.sentinelFrame(agent, { movement: 0, sprint: false, jump: false }, 0, tick); this.sandbox?.life.film.interludeFrame(agent, 0, tick); this.sandbox?.life.film.betrayalFrame(agent, 0, tick); this.sandbox?.life.film.rescueFrame(agent, 0, tick); this.sandbox?.life.film.governmentFrame(agent, false, 0, tick); this.sandbox?.life.film.airRescueFrame(agent, false, 0, tick); this.sandbox?.life.film.matrixEscapeFrame(agent, { movement: 0, sprint: false }, 0, tick); this.sandbox?.life.film.theOneFrame(agent, { x: 0, z: 0, sprint: false, jump: false, focus: false }, 0, tick); this.sandbox?.life.film.reloaded.frame(agent, { x: 0, focus: false }, 0, tick); this.sandbox?.life.film.catch.frame(agent, { x: 0, z: 0, focus: false }, 0, tick); this.sandbox?.life.film.mountainFrame(agent, { x: 0, z: 0, yaw: agent.rotation, jump: false, sprint: false }, 0, tick); this.sandbox?.life.film.lobby.frame(agent, 0, tick); session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue; }
       session.stagger = Math.max(0, session.stagger - dt);
       const stale = now - session.lastInput > 300;
       let input = stale ? { ...idleInput(), yaw: session.input.yaw } : session.input;
@@ -248,6 +251,9 @@ export class PlayerController {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
       if (this.sandbox?.life.film.reloaded.frame(agent, { x: input.x, focus: Boolean(input.focus) }, dt, tick)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
+      if (this.sandbox?.life.film.catch.frame(agent, { x: input.x, z: input.z, focus: Boolean(input.focus) }, dt, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
       if (this.sandbox?.life.film.theOneFrame(agent, { x: input.x, z: input.z, sprint: input.sprint, jump: input.jump, focus: Boolean(input.focus) }, dt, tick)) {
@@ -354,6 +360,8 @@ export class PlayerController {
     if (!session || !agent || agent.status !== 'alive') return '请先接入一个存活角色。';
     const reloaded = this.sandbox?.life.film.reloaded.handle(agent, kind, tick);
     if (reloaded !== undefined) return reloaded;
+    const catchAction = this.sandbox?.life.film.catch.handle(agent, kind, tick);
+    if (catchAction !== undefined) return catchAction;
     if (kind === 'dodge') {
       const burly = this.sandbox?.life.film.burlyDodge(agent, tick);
       if (burly !== undefined) return burly;

@@ -81,6 +81,7 @@ export interface FilmJourney {
   grid?: GridOperation;
   keyDoor?: { portalOpened: boolean; keyTaken: boolean };
   architect?: ArchitectEncounter;
+  catch?: import('./reloaded-catch.js').CatchEncounter;
 }
 const walk = (label: string, x = 0, z = -12): FilmStep => ({ kind: 'reach', label, x, z });
 const use = (label: string, text: string, x = 0, z = -12, seconds = 3): FilmStep => ({ kind: 'interact', label, text, x, z, seconds });
@@ -198,7 +199,12 @@ export const FILM_SCENES: FilmScene[] = [
     think('理解代价，再决定谁来承担', '两扇门都不是没有损失的答案。记录你的理解，然后由 Neo 亲自走向左门。', 0, -18),
     use('打开左门，返回矩阵营救 Trinity', 'Neo 走进左门，飞向城中的坠落；源头提出的循环没有在这一刻被执行。', -8, -26, 2),
   ], ['architect']),
-  scene('m2_catch', 2, 'trinity_roof', 'neo', '抓住正在坠落的人', 'trinity_choice', 'the_one', 'Trinity 中枪坠出高楼。Neo 冲入城市，在她触地之前接住她。', [walk('抵达接应平台', 0, -20), use('救回 Trinity', 'Neo 取出子弹，帮助她恢复心跳。两人返回现实，战争却仍在逼近。', 0, -20, 8)], ['trinity']),
+  scene('m2_catch', 2, 'trinity_roof', 'neo', '抓住正在坠落的人', 'trinity_choice', 'the_one', 'Trinity 中枪坠出高楼。Neo 从建筑师的左门返回矩阵，必须在她触地前赶到。', [
+    use('冲出大楼，追上 Trinity', 'Neo 冲破窗口，沿城市街谷飞向坠落的 Trinity。', 0, 27),
+    use('在落地前接住 Trinity', 'Neo 在城市高空接住 Trinity，把她带往屋顶。', -8.5, -24),
+    use('从代码中取出子弹', '子弹离开伤口，Trinity 却失去了心跳。', -.6, -18.2),
+    use('让心脏重新跳动', 'Trinity 恢复意识。两人回到飞船，战争却仍在逼近。', -.6, -18.2),
+  ], ['trinity', 'agent_johnson']),
   scene('m2_ship_lost', 2, 'neb_deck', 'morpheus', '尼布甲尼撒号的终点', 'trinity_choice', 'siege', '哨兵使用远程炸弹攻击。船员及时弃船，但尼布甲尼撒号被摧毁。', [use('发出弃船指令', '连接设备与旧船体留在身后。', 0, 0), walk('撤向隧道', 0, 31)], ['trinity', 'neo', 'link']),
   scene('m2_stop_sentinels', 2, 'service_tunnels', 'neo', '触及现实中的连接', 'trinity_choice', 'awakening', 'Neo 在现实中感到哨兵的连接并让它们停下，自己也陷入昏迷。', [walk('面对追来的哨兵', 0, -25), use('伸手触及陌生的信号', 'Hammer 救起幸存者。医疗舱里，Neo 与 Bane 躺在相邻床上。', 0, -25, 6)]),
   scene('m2_medical', 2, 'hammer_deck', 'trinity', '两个昏迷的人', 'mobil', 'mobil', 'Neo 的脑电信号仍像连接在矩阵中。Bane 是另一场灾难后仅存的幸存者。', [use('查看 Neo 的诊断屏幕', '没有插入连接，却仍有来自另一侧的活动。第二部在未解的信号中结束。', -7, -25)], ['morpheus', 'maggie']),

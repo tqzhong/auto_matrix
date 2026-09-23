@@ -931,3 +931,11 @@ test('the keyboard attack reaches the dream encounter while its camera owns move
   game.key('KeyF'); assert.deepEqual(game.actions, ['attack']);
   game.key('KeyF', false); game.controls.update(.1, game.state, game.group, false); game.key('KeyF'); assert.deepEqual(game.actions, ['attack'], 'paused dream cannot fire');
 });
+
+test('the keyboard attack reaches Trinity revival while the rooftop camera owns movement', async t => {
+  const { newCatch } = await import('@auto_matrix/shared');
+  const game = setup(t); game.state.currentLocation = 'film_trinity_roof'; game.state.position = filmPosition('film_trinity_roof', 0, -15);
+  game.state.currentAction = { type: 'idle', parameters: { catch: { ...newCatch(), phase: 'pulse', elapsed: 1.1, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.step(.2); assert.equal(game.controls.performing, true);
+  game.key('KeyF'); assert.deepEqual(game.actions, ['attack']);
+});

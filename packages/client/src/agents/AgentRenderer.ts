@@ -103,14 +103,14 @@ export class AgentRenderer {
         if (state.currentAction?.parameters.passenger && driver?.state.currentAction?.parameters.riding) {
           target.sub(new THREE.Vector3(driver.state.position.x, driver.state.position.y, driver.state.position.z)).add(driver.group.position);
           entry.group.position.copy(target);
-        } else if (state.currentAction?.parameters.truckPassenger || state.currentAction?.parameters.truckFlight || state.currentAction?.parameters.club || state.currentAction?.parameters.sentinel || state.currentAction?.parameters.interlude || state.currentAction?.parameters.oracleVisit || state.currentAction?.parameters.betrayal || state.currentAction?.parameters.rescue || state.currentAction?.parameters.government || state.currentAction?.parameters.airRescue || state.currentAction?.parameters.matrixEscape || state.currentAction?.parameters.theOne || state.currentAction?.parameters.reloaded || state.currentAction?.parameters.lobbyEntry || state.currentAction?.parameters.meeting || state.currentAction?.parameters.pills || state.currentAction?.parameters.interrogation || state.currentAction?.parameters.welcome || state.currentAction?.parameters.reveal || state.currentAction?.parameters.training || state.currentAction?.parameters.workday || entry.group.position.distanceTo(target) > 60) entry.group.position.copy(target);
+        } else if (state.currentAction?.parameters.truckPassenger || state.currentAction?.parameters.truckFlight || state.currentAction?.parameters.club || state.currentAction?.parameters.sentinel || state.currentAction?.parameters.interlude || state.currentAction?.parameters.oracleVisit || state.currentAction?.parameters.betrayal || state.currentAction?.parameters.rescue || state.currentAction?.parameters.government || state.currentAction?.parameters.airRescue || state.currentAction?.parameters.matrixEscape || state.currentAction?.parameters.theOne || state.currentAction?.parameters.reloaded || state.currentAction?.parameters.catch || state.currentAction?.parameters.lobbyEntry || state.currentAction?.parameters.meeting || state.currentAction?.parameters.pills || state.currentAction?.parameters.interrogation || state.currentAction?.parameters.welcome || state.currentAction?.parameters.reveal || state.currentAction?.parameters.training || state.currentAction?.parameters.workday || entry.group.position.distanceTo(target) > 60) entry.group.position.copy(target);
         else entry.group.position.lerp(target, 1 - Math.exp(-8 * delta));
       }
       const moving = Math.hypot(state.velocity.x, state.velocity.z) > .1;
-      const heading = moving && !state.currentAction?.parameters.club && state.currentLocation !== 'film_government_lobby' ? Math.atan2(state.velocity.x, state.velocity.z) : state.rotation;
+      const heading = moving && !state.currentAction?.parameters.club && !state.currentAction?.parameters.catch && state.currentLocation !== 'film_government_lobby' ? Math.atan2(state.velocity.x, state.velocity.z) : state.rotation;
       let difference = heading - entry.body.rotation.y;
       difference = Math.atan2(Math.sin(difference), Math.cos(difference));
-      if (id !== this.playerId) entry.body.rotation.y += difference * (state.currentAction?.parameters.club || state.currentAction?.parameters.sentinel || state.currentAction?.parameters.interlude || state.currentAction?.parameters.oracleVisit || state.currentAction?.parameters.betrayal || state.currentAction?.parameters.rescue || state.currentAction?.parameters.government || state.currentAction?.parameters.airRescue || state.currentAction?.parameters.matrixEscape || state.currentAction?.parameters.theOne || state.currentAction?.parameters.reloaded || state.currentAction?.parameters.lobbyEntry || state.currentAction?.parameters.meeting || state.currentAction?.parameters.pills || state.currentAction?.parameters.interrogation || state.currentAction?.parameters.welcome || state.currentAction?.parameters.reveal || state.currentAction?.parameters.training || state.currentAction?.parameters.workday ? 1 : 1 - Math.exp(-10 * delta));
+      if (id !== this.playerId) entry.body.rotation.y += difference * (state.currentAction?.parameters.club || state.currentAction?.parameters.sentinel || state.currentAction?.parameters.interlude || state.currentAction?.parameters.oracleVisit || state.currentAction?.parameters.betrayal || state.currentAction?.parameters.rescue || state.currentAction?.parameters.government || state.currentAction?.parameters.airRescue || state.currentAction?.parameters.matrixEscape || state.currentAction?.parameters.theOne || state.currentAction?.parameters.reloaded || state.currentAction?.parameters.catch || state.currentAction?.parameters.lobbyEntry || state.currentAction?.parameters.meeting || state.currentAction?.parameters.pills || state.currentAction?.parameters.interrogation || state.currentAction?.parameters.welcome || state.currentAction?.parameters.reveal || state.currentAction?.parameters.training || state.currentAction?.parameters.workday ? 1 : 1 - Math.exp(-10 * delta));
       const velocity = state.status === 'alive' ? Math.hypot(state.velocity.x, state.velocity.z) : 0;
       entry.body.rotation.z = THREE.MathUtils.lerp(entry.body.rotation.z, state.status === 'dead' ? Math.PI / 2 : 0, 1 - Math.exp(-7 * delta));
       const dist = camera ? entry.group.position.distanceTo(camera.position) : 0;
@@ -150,6 +150,7 @@ export class AgentRenderer {
         matrixEscape: state.currentAction?.parameters.matrixEscape as MotionInput['matrixEscape'],
         theOne: state.currentAction?.parameters.theOne as MotionInput['theOne'],
         reloaded: state.currentAction?.parameters.reloaded as MotionInput['reloaded'],
+        catch: state.currentAction?.parameters.catch as MotionInput['catch'],
         burly: state.currentAction?.parameters.burly as MotionInput['burly'],
         chateauWeapon: state.currentAction?.parameters.chateauWeapon as MotionInput['chateauWeapon'],
         mountainFlight: state.currentAction?.parameters.mountainFlight as MotionInput['mountainFlight'],
@@ -169,10 +170,14 @@ export class AgentRenderer {
       input.clubClothes = state.currentLocation === 'film_white_rabbit_club';
       input.glasses = !input.clubClothes && (state.id !== 'neo' || state.isAwakened && state.currentLocation !== 'film_oracle_home');
       const mountainFlying = input.mountainFlight && ['takeoff', 'flying', 'arrived'].includes(input.mountainFlight.phase) || input.truckFlight;
-      entry.body.rotation.x = mountainFlying ? THREE.MathUtils.lerp(entry.body.rotation.x, 1.12, 1 - Math.exp(-6 * delta)) : 0;
+      const catchFlying = input.catch && ['flight', 'ascent'].includes(input.catch.phase);
+      const catchResting = input.catch?.role === 'trinity' && (['extract_ready', 'extracting', 'pulse', 'done'].includes(input.catch.phase) || input.catch.phase === 'failed' && input.catch.checkpoint === 'pulse');
+      entry.body.rotation.x = mountainFlying || catchFlying && input.catch?.role === 'neo' ? THREE.MathUtils.lerp(entry.body.rotation.x, 1.05, 1 - Math.exp(-6 * delta))
+        : catchFlying && input.catch?.role === 'trinity' ? THREE.MathUtils.lerp(entry.body.rotation.x, -1.05, 1 - Math.exp(-6 * delta))
+          : catchResting ? THREE.MathUtils.lerp(entry.body.rotation.x, -Math.PI / 2, 1 - Math.exp(-6 * delta)) : 0;
       this.models.animate(entry.rig, delta * (id === this.playerId && speed > 0 ? 1 : speed), input, dist);
       entry.shadow.position.y = floor - entry.group.position.y - .97;
-      entry.shadow.visible = state.status !== 'disconnected' && !state.currentAction?.parameters.filmDuel && !mountainFlying && !input.truckPassenger;
+      entry.shadow.visible = state.status !== 'disconnected' && !state.currentAction?.parameters.filmDuel && !mountainFlying && !catchFlying && !input.truckPassenger;
       entry.shadow.scale.setScalar(1 + Math.max(0, entry.group.position.y - floor) * .04);
       const selected = id === this.selected;
       entry.label.visible = id !== this.playerId && state.status === 'alive' && !state.currentAction?.parameters.filmDuel && (selected || (!this.playerId && dist < 90 && (['neo', 'trinity', 'smith', 'morpheus'].includes(id) || state.currentAction?.type === 'talk_to')));

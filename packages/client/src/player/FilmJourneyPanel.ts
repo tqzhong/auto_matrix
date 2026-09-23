@@ -1,4 +1,4 @@
-import { reloadedText } from '@auto_matrix/shared';
+import { CATCH, catchText, reloadedText } from '@auto_matrix/shared';
 import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_NAMES, ARCHITECT_DOOR_SECONDS, filmReflections, CHARACTERS, filmStepPosition, distance, AWAKENING_SECONDS, oracleActing, interrogationLocked, pillLocked, lafayetteWelcomeLocked, phoneLocked, windowOpening, windowCrossing, awakeningWaiting, trainingLocked, trainingWaiting, theOneLocked, type AgentState, type SandboxState } from '@auto_matrix/shared';
 import './film-journey.css';
 import { meetingLocked } from '@auto_matrix/shared';
@@ -29,6 +29,23 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
     const costs = encounter.trinityReviewed ? '<p>右门：源头重启、二十三名幸存者重建锡安。左门：返回矩阵营救 Trinity；锡安的风险仍在。</p>'
       : encounter.sourceReviewed ? '<p>右门通向源头重启。另一边的代价还需要从屏幕中确认。</p>' : '';
     return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX RELOADED / 02</span><h3>建筑师 · 第六次异常</h3><p>Neo 视角 · 环形屏幕、两扇门与回应自动保存</p></header><article class="film-now"><div><h3>${step?.label ?? '左门已经打开'}</h3><p>${journey.lastText}</p>${costs}${journey.step >= 5 && encounter.phase !== 'done' ? `<p>Trinity 信号窗口 · ${clock}${encounter.phase === 'failed' ? ' · 已中断' : ''}</p><div class="film-progress"><i style="width:${encounter.remaining / ARCHITECT_DOOR_SECONDS * 100}%"></i></div>` : ''}<div class="film-controls">${action}<small>${encounter.trinityReviewed ? '电影路线由 Neo 亲自打开左门。右门可检查，暂不进入另一条结局。' : '先亲自查看两扇门及其代价；等待不会替你作出回应。'}</small></div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
+  }
+  if (!journey.visiting && scene.id === 'm2_catch' && journey.catch) {
+    const encounter = journey.catch; const step = scene.steps[journey.step]; const current = player.id === journey.actor;
+    const gap = Math.hypot(encounter.x - CATCH.trinity.x, encounter.z - CATCH.trinity.z);
+    const action = !current ? button('resume', '接回 Neo 的视角')
+      : encounter.phase === 'failed' ? button('retry', encounter.checkpoint === 'pulse' ? '从心跳检查点重试' : '从冲出大楼处重试')
+        : encounter.phase === 'done' ? button('next', '返回尼布甲尼撒号 →')
+          : encounter.phase === 'launch' ? button('act', '冲出大楼 · G')
+            : encounter.phase === 'flight' ? `<p>W 飞行 · A / D 调整航线 · 距 Trinity ${gap.toFixed(1)} 米。接近后按 G 抓住她。</p>`
+              : encounter.phase === 'extract_ready' ? button('act', '开始聚焦代码 · 按住 G')
+                : encounter.phase === 'extracting' ? '<p>继续按住 G，直到子弹离开伤口。</p>'
+                  : encounter.phase === 'pulse' ? '<p>合上手记，在每次脉冲收拢到中心时按 F。失败可从屋顶重试。</p>'
+                    : '<p>Neo 正把 Trinity 带到屋顶。</p>';
+    const progress = encounter.phase === 'flight' ? (1 - encounter.elapsed / CATCH.impact) * 100
+      : encounter.phase === 'extracting' ? encounter.focus / CATCH.extraction * 100
+        : encounter.phase === 'pulse' ? encounter.elapsed / CATCH.pulsePeriod * 100 : 0;
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX RELOADED / 02</span><h3>坠落 · 再作一次选择</h3><p>Neo 视角 · 飞行、接应与屋顶救援自动保存</p></header><article class="film-now"><div><h3>${step?.label ?? 'Trinity 睁开眼睛'}</h3><p>${catchText(encounter)}</p>${['flight', 'extracting', 'pulse'].includes(encounter.phase) ? `<div class="film-progress"><i style="width:${Math.max(0, progress)}%"></i></div>` : ''}<div class="film-controls">${action}<small>${encounter.phase === 'flight' ? '梦中的破窗与枪口已变成现实；这次 Neo 可以改变坠落的结果。' : '暂停、断线与读档保留当前一拍；失败不会抹去已完成的屋顶检查点。'}</small></div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
   }
   if (!journey.visiting && scene.id === 'm2_persephone' && journey.persephone) {
     const step = scene.steps[journey.step]; const current = player.id === journey.actor;

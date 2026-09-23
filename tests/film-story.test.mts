@@ -13,7 +13,7 @@ import { musicForScene } from '../packages/client/src/engine/Soundtrack.js';
 import { HOTEL_ROUTE, HOTEL_DOOR_PROGRESS } from '@auto_matrix/shared';
 
 function setup() {
-  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const world = new WorldState(); const manager = new AgentManager(world); manager.initializeAllAgents();
   const dynamics = { record: (event: Omit<WorldEvent, 'id'>) => world.addWorldEvent(event) } as WorldDynamics;
   const sandbox = new SandboxSystem(world, dynamics, 42);
   const conversations = { interrupt() {}, isAgentInConversation: () => false } as unknown as ConversationEngine;
@@ -25,7 +25,7 @@ function setup() {
   let tick = 0;
   const command = (target: string) => players.sandboxAction('film-player', { kind: 'life', target: `film:${target}` }, ++tick);
   const advance = (amount = 1) => { for (let i = 0; i < amount; i++) sandbox.tick(++tick); };
-  return { world, sandbox, players, command, advance, attacked, actor: () => players.getAgent('film-player')!, tick: () => tick };
+  return { world, manager, sandbox, players, command, advance, attacked, actor: () => players.getAgent('film-player')!, tick: () => tick };
 }
 
 test('all trilogy scenes have distinct stable IDs, existing cast, accessible objectives and authored locations', () => {
@@ -56,6 +56,57 @@ test('all trilogy scenes have distinct stable IDs, existing cast, accessible obj
   assert.equal(FILM_SCENE_BY_ID.m3_bane.set, 'film_logos_deck');
   assert.equal(FILM_SCENE_BY_ID.m3_dock_battle.actor, 'mifune');
   assert.equal(FILM_SCENE_BY_ID.m3_deus.cast[0], 'deus_ex_machina');
+});
+
+test('Neo must steer through the city and catch the falling Trinity before impact', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  Object.assign(state, { scene: 'm2_catch', actor: 'neo', step: 0, catch: undefined });
+  h.actor().currentLocation = 'film_trinity_roof'; h.actor().position = filmEntry(FILM_SCENE_BY_ID.m2_catch);
+  h.sandbox.life.film.catch.frame(h.actor(), { x: 0, z: 0, focus: false }, 0, h.tick());
+  assert.equal(state.catch?.phase, 'launch');
+  h.command('act'); assert.equal(state.catch?.phase, 'flight');
+  for (let i = 0; i < 90; i++) h.players.step(.1, true, h.tick());
+  assert.equal(state.catch?.phase, 'failed'); assert.equal(state.step, 1);
+  h.command('retry'); assert.equal(state.catch?.phase, 'launch');
+  assert.equal(state.catch?.attempt, 1);
+  h.command('act');
+  let sequence = 0;
+  for (let i = 0; i < 70 && state.catch?.phase === 'flight'; i++) {
+    const x = i < 6 ? -1 : 0;
+    const z = i < 24 ? -1 : 0;
+    h.players.receiveInput('film-player', { x, z, yaw: Math.PI, jump: false, sprint: false, focus: false, sequence: ++sequence });
+    h.players.step(.1, true, h.tick());
+    if (i >= 52 && state.catch?.phase === 'flight') h.command('act');
+  }
+  assert.equal(state.catch?.phase, 'ascent'); assert.equal(state.step, 2);
+  for (let i = 0; i < 32; i++) h.players.step(.1, true, h.tick());
+  assert.equal(state.catch?.phase, 'extract_ready');
+});
+
+test('Trinity revival needs deliberate code focus and three timed pulses, and survives a saved retry', () => {
+  const h = setup(); h.command('continue'); let state = h.sandbox.life.film.state!;
+  Object.assign(state, { scene: 'm2_catch', actor: 'neo', step: 2,
+    catch: { phase: 'extract_ready', elapsed: 0, attempt: 0, x: 0, z: -15, focus: 0, beats: 0, misses: 0 } });
+  h.actor().currentLocation = 'film_trinity_roof'; h.actor().position = filmPosition('film_trinity_roof', 0, -15);
+  h.command('act'); assert.equal(state.catch?.phase, 'extracting');
+  for (let i = 0; i < 11; i++) h.sandbox.life.film.catch.frame(h.actor(), { x: 0, z: 0, focus: true }, .1, ++state.enteredAt);
+  assert.equal(state.catch?.phase, 'extracting'); assert.ok((state.catch?.focus ?? 0) > 1);
+  const saved = JSON.parse(JSON.stringify(h.sandbox.state)); h.sandbox.restore(saved);
+  state = h.sandbox.life.film.state!;
+  for (let i = 0; i < 16; i++) h.sandbox.life.film.catch.frame(h.actor(), { x: 0, z: 0, focus: true }, .1, ++state.enteredAt);
+  assert.equal(state.catch?.phase, 'pulse'); assert.equal(state.step, 3);
+  for (let i = 0; i < 50; i++) h.sandbox.life.film.catch.frame(h.actor(), { x: 0, z: 0, focus: false }, .1, ++state.enteredAt);
+  assert.equal(state.catch?.phase, 'pulse', 'the rhythm keeps looping while the player loads or observes it');
+  for (let i = 0; i < 3; i++) h.players.act('film-player', 'attack', ++state.enteredAt);
+  assert.equal(state.catch?.phase, 'failed');
+  h.manager.updateAllAgents(state.enteredAt + 2); h.manager.updateAllAgents(state.enteredAt + 3);
+  assert.equal(h.world.agents.get('trinity')?.currentAction?.parameters.catch?.role, 'trinity', 'Trinity stays on the roof while the pulse checkpoint waits');
+  h.command('retry'); assert.equal(state.catch?.phase, 'pulse'); assert.equal(state.step, 3);
+  for (let beat = 0; beat < 3; beat++) {
+    for (let i = 0; i < 11; i++) h.sandbox.life.film.catch.frame(h.actor(), { x: 0, z: 0, focus: false }, .1, ++state.enteredAt);
+    h.players.act('film-player', 'attack', ++state.enteredAt);
+  }
+  assert.equal(state.catch?.phase, 'done'); assert.ok(state.completed.includes('m2_catch'));
 });
 
 test('story role handoffs never take a character away from another player', () => {
@@ -1426,6 +1477,27 @@ test('the entire film route completes through interactions, driving and real com
       if (scene.id === 'm2_dream') {
         if (index === 0) h.players.step(.1, true, h.tick());
         else { h.command('act'); for (let frame = 0; frame < 110 && state.step === index; frame++) h.players.step(.1, true, h.tick()); }
+        assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`); continue;
+      }
+      if (scene.id === 'm2_catch') {
+        if (index === 0) h.command('act');
+        else if (index === 1) {
+          for (let frame = 0; frame < 54; frame++) {
+            h.players.receiveInput('film-player', { x: frame < 6 ? -1 : 0, z: frame < 24 ? -1 : 0, yaw: Math.PI, jump: false, sprint: false, focus: false, sequence: ++sequence });
+            h.players.step(.1, true, h.tick());
+          }
+          h.command('act');
+        } else if (index === 2) {
+          for (let frame = 0; frame < 30; frame++) h.players.step(.1, true, h.tick());
+          h.command('act');
+          for (let frame = 0; frame < 26 && state.step === 2; frame++) {
+            h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false, focus: true, sequence: ++sequence });
+            h.players.step(.1, true, h.tick());
+          }
+        } else for (let beat = 0; beat < 3; beat++) {
+          for (let frame = 0; frame < 11; frame++) h.players.step(.1, true, h.tick());
+          h.players.act('film-player', 'attack', h.tick());
+        }
         assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`); continue;
       }
       if (scene.id === 'm2_meeting') {

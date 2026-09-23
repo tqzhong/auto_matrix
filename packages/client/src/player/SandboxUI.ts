@@ -1,4 +1,4 @@
-import { RELOADED, reloadedText } from '@auto_matrix/shared';
+import { CATCH, RELOADED, catchText, reloadedText } from '@auto_matrix/shared';
 import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_NAMES, GRID_HACK_SECONDS, GRID_REROUTE_SECONDS, filmStepPosition, pillLocked, lafayetteWelcomeLocked, awakeningLocked, awakeningWaiting, AWAKENING_SECONDS, trainingLocked, trainingWaiting, TRAINING_SECONDS, DOJO_COMBO_WINDOW, windowOpening, windowCrossing, ITEMS, RECIPES, SKILLS, FILMS, MISSIONS, LOCATIONS, CITY_BUILDINGS, NEO_CHAPTERS, LIFE_ACTIONS, lifeActionPosition, lifeRoomCenter, locationEntrance, distance, missionPosition, nearTransit, skillPoints,
   type AgentState, type SandboxState, type SandboxCommand, type ItemId, type SkillId, type Vector3 } from '@auto_matrix/shared';
 import './sandbox.css';
@@ -232,6 +232,24 @@ export class SandboxUI {
         this.el('sandbox-interact').classList.add('hidden');
         document.getElementById('game-objective-copy')!.textContent = '信号窗口中断 · 按 J 打开手记并重试当前检查点';
       }
+    }
+    if (!journey.visiting && scene.id === 'm2_catch' && journey.catch) {
+      const encounter = journey.catch;
+      this.el('film-sequence').classList.remove('hidden');
+      this.el('film-sequence').classList.toggle('urgent', encounter.phase === 'failed' || encounter.phase === 'flight' && CATCH.impact - encounter.elapsed < 2);
+      this.el('film-sequence-line').textContent = catchText(encounter);
+      this.el('film-sequence-hint').textContent = encounter.phase === 'flight' ? `落地前 ${Math.max(0, CATCH.impact - encounter.elapsed).toFixed(1)} 秒 · 距离 ${Math.hypot(encounter.x - CATCH.trinity.x, encounter.z - CATCH.trinity.z).toFixed(1)} 米`
+        : encounter.phase === 'extracting' ? `代码聚焦 ${Math.round(encounter.focus / CATCH.extraction * 100)}% · 按住 G`
+          : encounter.phase === 'pulse' ? `心跳 ${encounter.beats}/3 · 误按 ${encounter.misses}/3 · 光圈收拢时按 F`
+            : encounter.phase === 'failed' ? 'J 打开手记重试检查点' : '跟随当前剧情提示行动';
+      this.el('sandbox-trace').textContent = encounter.phase === 'flight' ? `坠落 ${Math.max(0, CATCH.impact - encounter.elapsed).toFixed(1)} 秒`
+        : encounter.phase === 'pulse' || encounter.phase === 'failed' && encounter.checkpoint === 'pulse' ? `心跳 ${encounter.beats}/3 · 误按 ${encounter.misses}/3`
+          : encounter.phase === 'extracting' ? `取弹 ${Math.round(encounter.focus / CATCH.extraction * 100)}%` : '坠落营救';
+      this.el('sandbox-trace').classList.toggle('danger', encounter.phase === 'failed' || encounter.phase === 'flight' && CATCH.impact - encounter.elapsed < 2);
+      this.el('sandbox-job').style.width = encounter.phase === 'extracting' ? `${encounter.focus / CATCH.extraction * 100}%` : encounter.phase === 'pulse' ? `${encounter.elapsed / CATCH.pulsePeriod * 100}%` : '0';
+      document.getElementById('game-objective-copy')!.textContent = encounter.phase === 'flight' ? 'W 前进 · A / D 绕开中间楼体 · 靠近 Trinity 后按 G'
+        : encounter.phase === 'pulse' ? '看光圈节奏：每次收拢时按 F，共三次' : catchText(encounter);
+      this.el('sandbox-interact').classList.add('hidden');
     }
     if (!journey.visiting && scene.id === 'm2_persephone' && journey.step === 2 && journey.persephone) {
       this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;

@@ -1,4 +1,5 @@
 import { ReloadedOpeningRenderer } from './ReloadedOpeningRenderer.js';
+import { ReloadedCatchRenderer } from './ReloadedCatchRenderer.js';
 import { ZionHomecomingRenderer } from './ZionHomecomingRenderer.js';
 import { BaneCopyRenderer } from './BaneCopyRenderer.js';
 import * as THREE from 'three';
@@ -97,6 +98,7 @@ export class FilmSetRenderer {
   private matrixEscape?: MatrixEscapeRenderer;
   private theOne?: TheOneRenderer;
   private reloaded?: ReloadedOpeningRenderer;
+  private catchSet?: ReloadedCatchRenderer;
   private zion?: ZionHomecomingRenderer;
   private baneCopy?: BaneCopyRenderer;
   private portalDoor?: { scene: 'm2_seraph' | 'm2_backdoors'; panel: THREE.Group };
@@ -142,6 +144,7 @@ export class FilmSetRenderer {
         else if (sceneId === 'm1_subway' && set.id === 'film_subway_platform' || sceneId === 'm1_city_chase' && set.id === 'film_escape_streets') this.matrixEscape = new MatrixEscapeRenderer(this.root, set.id as 'film_subway_platform' | 'film_escape_streets');
         else if (['m1_death', 'm1_return', 'm1_final_call'].includes(sceneId ?? '') && (set.id === 'film_heart_hotel' || set.id === 'film_final_phone')) this.theOne = new TheOneRenderer(this.root, set.id);
         else if (['m2_dream', 'm2_meeting'].includes(sceneId ?? '') && (set.id === 'film_trinity_roof' || set.id === 'film_captains_meeting')) this.reloaded = new ReloadedOpeningRenderer(this.root, set.id);
+        else if (sceneId === 'm2_catch' && set.id === 'film_trinity_roof') this.catchSet = new ReloadedCatchRenderer(this.root);
         else if (sceneId === 'm2_bane_copy' && set.id === 'film_industrial_loft') this.baneCopy = new BaneCopyRenderer(this.root);
         else if (['film_zion_hangar', 'film_zion_council', 'film_zion_residences', 'film_zion_temple', 'film_zion_bedroom', 'film_zion_engineering'].includes(set.id)) this.zion = new ZionHomecomingRenderer(this.root, set.id);
         else if (set.architecture === 'lobby') this.lobby = new LobbySetRenderer(this.root, set);
@@ -222,6 +225,7 @@ export class FilmSetRenderer {
     this.matrixEscape?.update(journey, elapsed);
     this.theOne?.update(journey, elapsed);
     this.reloaded?.update(journey);
+    this.catchSet?.update(journey);
     this.zion?.update(journey, elapsed);
     this.baneCopy?.update(journey, elapsed, player && journey?.actor === player.id ? player.position : undefined, set?.center);
     if (this.powerStatus) {
@@ -313,6 +317,7 @@ export class FilmSetRenderer {
     if (journey && airRescueLocked(journey)) this.marker.visible = false;
     if (journey?.matrixEscape && ['m1_subway', 'm1_city_chase'].includes(journey.scene)) this.marker.visible = false;
     if (journey?.reloaded && !journey.visiting) this.marker.visible = false;
+    if (journey?.scene === 'm2_catch' && journey.catch && !journey.visiting) this.marker.visible = false;
     if (journey?.theOne && ['m1_death', 'm1_return', 'm1_final_call'].includes(journey.scene)) this.marker.visible = false;
     if (journey && phoneLocked(journey)) this.marker.visible = false;
     if (journey && windowOpening(journey)) this.marker.visible = false;
@@ -351,6 +356,10 @@ export class FilmSetRenderer {
     if (this.reloaded && this.current.id !== 'film_neb_deck') {
       fog.density = this.current.id === 'film_trinity_roof' ? .002 : .003; fog.color.setHex(0x0f1917); (this.scene.background as THREE.Color).copy(fog.color);
       this.scene.environmentIntensity = .56; return { color: 0xc4d1b5, ambient: .6, sun: .14 };
+    }
+    if (this.catchSet) {
+      fog.density = .0014; fog.color.setHex(0x243438); (this.scene.background as THREE.Color).copy(fog.color);
+      this.scene.environmentIntensity = .88; return { color: 0xd9ded2, ambient: 1.15, sun: .34 };
     }
     if (this.zion) {
       fog.density = this.current.id === 'film_zion_hangar' ? .0015 : .0008;
@@ -1467,6 +1476,7 @@ export class FilmSetRenderer {
     this.matrixEscape?.dispose(); this.matrixEscape = undefined;
     this.theOne?.dispose(); this.theOne = undefined;
     this.reloaded?.dispose(); this.reloaded = undefined;
+    this.catchSet?.dispose(); this.catchSet = undefined;
     this.zion?.dispose(); this.zion = undefined;
     this.baneCopy?.dispose(); this.baneCopy = undefined;
     this.portalDoor = undefined; this.oracleLetter = undefined; this.courtyardStaff = undefined; this.courtyardBirds = []; this.courtyardDisturbedAt = undefined;

@@ -1,4 +1,4 @@
-import { reloadedPose, type ReloadedGesture } from '@auto_matrix/shared';
+import { reloadedPose, type CatchGesture, type ReloadedGesture } from '@auto_matrix/shared';
 import { MELEE_COMBO, COMBO_WINDOW, COMBAT_SKILLS, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED, lobbyPose, governmentPose, airRescuePose, matrixEscapePose, theOnePose, type CombatSkillId, type AwakeningPose, type AwakeningReveal, type OfficePhone, pillPose, lafayetteWelcomePose, oracleVisitPose, betrayalPose, rescuePose, type PillGesture, type InterrogationGesture, type LafayetteWelcomeGesture, type TrainingGesture, type OracleVisitGesture, type BetrayalGesture, type RescueGesture, type RescueLoadout, type LobbyGesture, type GovernmentRescueGesture, type AirRescueGesture, type MatrixEscapeGesture, type TheOneGesture } from '@auto_matrix/shared';
 
 export interface MotionInput {
@@ -39,6 +39,7 @@ export interface MotionInput {
   matrixEscape?: MatrixEscapeGesture;
   theOne?: TheOneGesture;
   reloaded?: ReloadedGesture;
+  catch?: CatchGesture;
   burly?: import('@auto_matrix/shared').BurlyEncounter & { role: 'neo' | 'smith' };
   chateauWeapon?: import('@auto_matrix/shared').ChateauWeapon;
   mountainFlight?: import('@auto_matrix/shared').MountainFlight;
@@ -490,6 +491,23 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
       legs[i].hip = mix(legs[i].hip, i ? -.55 : .22, theOne.flight); legs[i].knee = mix(legs[i].knee, i ? .95 : .3, theOne.flight);
     }
   }
+  const catching = input.catch;
+  const catchFlying = catching && ['flight', 'ascent'].includes(catching.phase);
+  if (catchFlying) for (let i = 0; i < 2; i++) {
+    arms[i].shoulder = catching.role === 'trinity' ? -.7 : catching.phase === 'ascent' ? -1.1 : -1.9;
+    arms[i].elbow = catching.phase === 'ascent' ? -.85 : -.25;
+    arms[i].outward = (i ? 1 : -1) * (catching.role === 'trinity' ? .72 : .2);
+    arms[i].grip = catching.role === 'neo' ? .75 : .1;
+    legs[i].hip = i ? -.42 : .15; legs[i].knee = i ? .9 : .25;
+  }
+  if (catching?.role === 'trinity' && ['extract_ready', 'extracting', 'pulse', 'done'].includes(catching.phase)) for (let i = 0; i < 2; i++) {
+    arms[i].shoulder = -.55; arms[i].elbow = -.25; legs[i].hip = i ? -.18 : .12; legs[i].knee = i ? .38 : .22;
+  }
+  if (catching?.role === 'neo' && ['extracting', 'pulse'].includes(catching.phase)) for (let i = 0; i < 2; i++) {
+    arms[i].shoulder = catching.phase === 'pulse' ? i ? -.55 : -1.25 : -1.25;
+    arms[i].elbow = catching.phase === 'pulse' ? i ? -.45 : -.25 : -1.15;
+    arms[i].outward = (i ? 1 : -1) * .3; arms[i].grip = .6;
+  }
   const mountainFlight = input.mountainFlight && ['takeoff', 'flying', 'arrived'].includes(input.mountainFlight.phase) || input.truckFlight;
   if (mountainFlight) for (let i = 0; i < 2; i++) {
     arms[i].shoulder = i ? -.25 : -2.15; arms[i].elbow = i ? -.35 : -.08; arms[i].outward = (i ? 1 : -1) * .12; arms[i].grip = i ? .18 : .8;
@@ -521,7 +539,7 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const escapeRoll = matrixEscape ? matrixEscape.wall * (input.matrixEscape?.role === 'smith' ? -.68 : .52) + matrixEscape.brace * 1.05 + matrixEscape.transform * Math.sin(input.matrixEscape!.elapsed * 18) * .12 : 0;
   const theOneLean = theOne ? theOne.wound * .92 + theOne.fallen * 1.35 + theOne.kiss * .45 - theOne.revive * .18 + theOne.block * .18 - theOne.dive * .72 + theOne.burst * .32 - theOne.flight * .58 : 0;
   const theOneRoll = theOne ? theOne.wound * .58 + theOne.fallen * 1.08 + theOne.burst * (.18 + Math.sin(input.theOne!.elapsed * 11) * .12) + theOne.flight * Math.sin(input.theOne!.elapsed * .8) * .08 : 0;
-  return { legs, arms, hipHeight, twist, lean: run * .12 + state.landing * .12 + state.airborne * .04 + extension * .10 - kick * .27 - recoil * .35 + (input.crouching ? .26 : 0) + (input.riding ? .2 : 0) + oracleLean + betrayalLean + rescueLean + lobbyLean + governmentLean + airRescueLean + escapeLean + theOneLean - (reloaded?.falling ?? 0) * .85 + (reloaded?.dreamAgent ?? 0) * 2 + (reloaded?.down ?? 0) * 1.25 - (reloaded?.flight ?? 0) * .65,
+  return { legs, arms, hipHeight, twist, lean: run * .12 + state.landing * .12 + state.airborne * .04 + extension * .10 - kick * .27 - recoil * .35 + (input.crouching ? .26 : 0) + (input.riding ? .2 : 0) + oracleLean + betrayalLean + rescueLean + lobbyLean + governmentLean + airRescueLean + escapeLean + theOneLean - (reloaded?.falling ?? 0) * .85 + (reloaded?.dreamAgent ?? 0) * 2 + (reloaded?.down ?? 0) * 1.25 - (reloaded?.flight ?? 0) * .65 - (catchFlying && catching?.role === 'neo' ? .45 : 0) + (catching?.role === 'trinity' && catching.phase === 'flight' ? .25 : 0),
     sway: Math.sin(cycle) * moving * .035, lunge: extension * .16 - kick * .25 - recoil * .22 - dodging * .35 + (matrixEscape?.strike ?? 0) * .32,
     roll: -state.turn * run * .035 - dodging * .22 + betrayalRoll + lobbyRoll + governmentRoll + airRescueRoll + escapeRoll + theOneRoll + (reloaded?.down ?? 0) * 1.1 - (reloaded?.dodge ?? 0) * .6 + (reloaded?.falling ?? 0) * (input.reloaded?.drift ?? 0) * .055, headTurn: -twist * .65 + glance + oracleLook + rescueLook, moving, run, airborne: state.airborne,
     coat: moving * (.10 + run * .3) + state.airborne * .18 + kick * .35, impact: extension, landing: state.landing };
