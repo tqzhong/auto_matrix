@@ -60,6 +60,11 @@ export function musicForScene({ player, sandbox, time, matrix }: MusicScene): Mu
   const journey = sandbox?.neoLife?.journey;
   if (journey?.actor === player.id) {
     const scene = FILM_SCENE_BY_ID[journey.visiting ?? journey.scene];
+    if (!journey.visiting && journey.scene === 'm2_meeting' && journey.reloaded) {
+      if (!player.isInMatrix) return 'night';
+      if (['breach', 'combat', 'departure_ready'].includes(journey.reloaded.phase)) return 'combat';
+      if (journey.reloaded.phase === 'departing') return 'the_one';
+    }
     if (scene?.set === player.currentLocation) return scene.music;
   }
   const life = player.id === 'neo' ? sandbox?.neoLife : undefined;

@@ -869,3 +869,12 @@ for (const phase of ['counter', 'exit_run'] as const) test(`the One ${phase} pha
   assert.equal(game.controls.performing, false); assert.ok(Math.abs(angle(game.yaw(), Math.PI / 2)) < .08);
   game.key('KeyW'); game.step(.45); game.key('KeyW', false); assert.ok(game.group.position.x > game.state.position.x + .6);
 });
+
+test('the keyboard attack reaches the dream encounter while its camera owns movement', async t => {
+  const { newReloaded } = await import('@auto_matrix/shared');
+  const game = setup(t); game.state.currentLocation = 'film_trinity_roof'; game.state.position = filmPosition('film_trinity_roof', 0, -25);
+  game.state.currentAction = { type: 'idle', parameters: { reloaded: { ...newReloaded('dream'), phase: 'falling', elapsed: 3.2, role: 'trinity' } }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.step(.2); assert.equal(game.controls.performing, true);
+  game.key('KeyF'); assert.deepEqual(game.actions, ['attack']);
+  game.key('KeyF', false); game.controls.update(.1, game.state, game.group, false); game.key('KeyF'); assert.deepEqual(game.actions, ['attack'], 'paused dream cannot fire');
+});

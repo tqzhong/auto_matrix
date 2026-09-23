@@ -1,3 +1,4 @@
+import { reloadedText } from '@auto_matrix/shared';
 import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_NAMES, filmReflections, CHARACTERS, filmStepPosition, distance, AWAKENING_SECONDS, oracleActing, interrogationLocked, pillLocked, lafayetteWelcomeLocked, phoneLocked, windowOpening, windowCrossing, awakeningWaiting, trainingLocked, trainingWaiting, theOneLocked, type AgentState, type SandboxState } from '@auto_matrix/shared';
 import './film-journey.css';
 import { meetingLocked } from '@auto_matrix/shared';
@@ -15,6 +16,15 @@ import { RESCUE, rescueDuration, rescueLoadout, rescueLocked } from '@auto_matri
 const button = (target: string, label: string, disabled = false) => `<button data-action="life" data-target="film:${target}" ${disabled ? 'disabled' : ''}>${label}</button>`;
 export function renderFilmJourney(player: AgentState, sandbox: SandboxState): string {
   const life = sandbox.neoLife!; const journey = life.journey!; const scene = FILM_SCENE_BY_ID[journey.scene];
+  if (!journey.visiting && journey.reloaded) {
+    const state = journey.reloaded; const current = player.id === journey.actor; const step = scene.steps[journey.step];
+    const close = !step || distance(player.position, filmStepPosition(scene, step)) < 4;
+    const active = ['talk_ready', 'connect_ready', 'failed'].includes(state.phase) || ['window_ready', 'report_ready', 'earpiece_ready'].includes(state.phase) && close || state.phase === 'departure_ready' && state.evacuated;
+    const actions = !current ? button('resume', '接回保存的剧情角色') : state.phase === 'evacuate_ready'
+      ? `${button('exit:west', '掩护西侧出口')}${button('exit:east', '掩护东侧出口')}`
+      : state.phase === 'done' ? button('next', '继续下一段') : active ? button('act', state.phase === 'failed' ? '重试入口战斗' : '继续 · G') : '<p>合上手记，继续观察或行动。</p>';
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX RELOADED / 02</span><h3>${scene.title}</h3><p>梦境与现实分别记录 · 暂停、退出与重连会保留当前进度</p></header><article class="film-now"><div><h3>${step?.label ?? '本段完成'}</h3><p>${reloadedText(state)}</p>${state.kind === 'dream' ? '<p>F 还击 · 按住 G 放慢梦境 · A / D 调整姿态。梦中的受伤不会改变 Trinity 在现实中的状态。</p>' : '<p>会议情报：舰队返回锡安，Ballard 留守等待先知。三名升级特工会抓住正面连打，观察真实冲拳，再闪避反击。</p>'}${actions}</div></article></div>`;
+  }
   if (!journey.visiting && journey.scene === 'm1_club' && journey.club) {
     const phase = journey.club.phase; const step = scene.steps[journey.step];
     const current = player.id === journey.actor;

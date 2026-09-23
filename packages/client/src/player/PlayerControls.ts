@@ -1,3 +1,5 @@
+import { reloadedPhaseLocked } from '@auto_matrix/shared';
+import { reloadedCamera } from './ReloadedCamera.js';
 import * as THREE from 'three';
 import { FILM_SETS, OFFICE_CONTACT, LOBBY_FIRE_INTERVAL, RESCUE, groundHeight, playerBlocked, stepPlayer, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, COMBAT_SKILLS, combatDisplace, PLAYER_WALK_SPEED, meleeReach, trainingRoot, matrixEscapePhaseLocked, matrixEscapePose, matrixEscapeRoot, theOnePhaseLocked, theOnePose, theOneRoot, type OfficePhone, type AwakeningPose, type FreewayRide, type AgentState, type PlayerInput, type Vector3, type WorldStructure, type CombatImpact, type SkillCast, type RescueLoadout } from '@auto_matrix/shared';
 import { lafayetteWelcomeCamera } from './LafayetteWelcomeCamera.js';
@@ -174,6 +176,10 @@ export class PlayerControls {
   }
 
   private requestAttack(guided = false, guidedCombo?: number): boolean {
+    if (this.motion.reloaded?.phase === 'falling') {
+      if (!this.running || !this.enabled || this.authoritative?.status !== 'alive') return false;
+      this.send(this.input(false)); this.action('attack'); return true;
+    }
     if (this.ride || this.climbing || !guided && (this.performing || this.spoon !== undefined)) return false;
     if (!this.running || !this.enabled || this.authoritative?.status !== 'alive' || !guided && (this.impulse || performance.now() - (this.motion.hit ?? -1000) < 220)) return false;
     const now = performance.now(); const elapsed = (now - this.lastAttack) / 1000;
@@ -241,6 +247,8 @@ export class PlayerControls {
     this.running = running;
     const escapeGesture = state.currentAction?.parameters.matrixEscape as MotionInput['matrixEscape'];
     const escapeCinematic = matrixEscapePhaseLocked(escapeGesture);
+    const reloadedGesture = state.currentAction?.parameters.reloaded as MotionInput['reloaded'];
+    const reloadedCinematic = reloadedPhaseLocked(reloadedGesture);
     const oneGesture = state.currentAction?.parameters.theOne as MotionInput['theOne'];
     const oneCinematic = theOnePhaseLocked(oneGesture) || Boolean(oneGesture?.kind === 'flight' && oneGesture.phase === 'done');
     if (this.motion.crossing !== undefined && state.currentLocation === 'film_office_ledge' && state.currentAction?.parameters.crossing === undefined) this.performing = false;
@@ -284,6 +292,8 @@ export class PlayerControls {
     if (escapeCinematic) this.performing = true;
     if (this.motion.theOne && !oneCinematic) this.performing = false;
     if (oneCinematic) this.performing = true;
+    if (this.motion.reloaded && !reloadedCinematic) this.performing = false;
+    if (reloadedCinematic) this.performing = true;
     if (this.motion.lobbyEntry && !state.currentAction?.parameters.lobbyEntry) this.performing = false;
     if ((state.currentAction?.parameters.lobbyEntry as MotionInput['lobbyEntry'])?.phase === 'checkpoint') this.performing = true;
     if (this.wasPerforming && !this.performing) this.yaw = this.movementYaw = this.facing;
@@ -311,6 +321,7 @@ export class PlayerControls {
     this.motion.airRescue = state.currentAction?.parameters.airRescue as MotionInput['airRescue'];
     this.motion.matrixEscape = escapeGesture;
     this.motion.theOne = oneGesture;
+    this.motion.reloaded = reloadedGesture;
     this.motion.lobbyEntry = state.currentAction?.parameters.lobbyEntry as MotionInput['lobbyEntry'];
     this.motion.aimPitch = this.firearm || state.currentAction?.parameters.armed === true ? this.pitch : undefined;
     this.motion.mirror = this.mirror;
@@ -604,6 +615,11 @@ export class PlayerControls {
         if (resetCamera || gesture.elapsed < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
         this.camera.lookAt(focus);
       }
+    } else if (this.motion.reloaded && reloadedCinematic) {
+      const framing = reloadedCamera(this.motion.reloaded, this.position, state.currentLocation, this.firstPerson, this.camera.aspect, this.yaw, this.pitch);
+      if (this.firstPerson || resetCamera || this.motion.reloaded.elapsed < .12) this.camera.position.copy(framing.eye);
+      else this.camera.position.lerp(framing.eye, 1 - Math.exp(-12 * delta));
+      this.camera.lookAt(framing.target);
     } else if (this.motion.theOne && oneCinematic) {
       const gesture = this.motion.theOne; const center = FILM_SETS[state.currentLocation].center; const origin = new THREE.Vector3(center.x, center.y - 1, center.z);
       const pose = theOnePose(gesture);

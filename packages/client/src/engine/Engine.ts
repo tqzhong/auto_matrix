@@ -1,3 +1,4 @@
+import { reloadedLocked } from '@auto_matrix/shared';
 import * as THREE from 'three';
 import type { OfficeWorkday } from '@auto_matrix/shared';
 import type { AgentState, WorldEvent, SimulationState, SandboxState, CombatImpact, SkillCast } from '@auto_matrix/shared';
@@ -325,6 +326,16 @@ export class Engine {
         if (!previous.truckHit && current.truckHit) this.audio.matrixEscapeSound('truck-impact');
       }
     }
+    if (after?.reloaded && !after.visiting && after.actor === this.playerControls?.id && this.running) {
+      const previous = before?.scene === after.scene ? before.reloaded : undefined; const current = after.reloaded;
+      if (previous?.phase !== current.phase) {
+        if (current.phase === 'breaking') this.audio.matrixEscapeSound('truck-impact');
+        else if (current.phase === 'dream_hit') this.audio.theOneSound('gunshots');
+        else if (current.phase === 'report' || current.phase === 'talking') this.audio.dialogue();
+        else if (current.phase === 'breach') this.audio.theOneSound('door');
+        else if (current.phase === 'departing') this.audio.theOneSound('wind');
+      }
+    }
     if (after?.theOne && ['m1_death', 'm1_return', 'm1_final_call'].includes(after.scene) && !after.visiting && after.actor === this.playerControls?.id && this.running) {
       const previous = before?.scene === after.scene ? before.theOne : undefined; const current = after.theOne;
       if (current.phase !== previous?.phase) {
@@ -372,7 +383,7 @@ export class Engine {
       const loadout = rescueLoadout(journey);
       this.playerControls.spoon = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_spoon' ? journey.oracle?.spoon : undefined;
       this.playerControls.phone = journey?.actor === this.playerControls.id ? heldPhone(journey) : undefined;
-      this.playerControls.performing = Boolean(journey?.actor === this.playerControls.id && (meetingLocked(journey) || awakeningLocked(journey) || oracleActing(journey) || phoneLocked(journey) || wakeCallLocked(journey) || sentinelLocked(journey) || interludeLocked(journey) || rescueLocked(journey) || lobbyLocked(journey) || governmentLocked(journey) || airRescueLocked(journey) || matrixEscapeLocked(journey) || theOneLocked(journey) || windowOpening(journey) || windowCrossing(journey) || pillLocked(journey) || interrogationLocked(journey) || lafayetteKnocking(journey) || lafayetteWelcomeLocked(journey)));
+      this.playerControls.performing = Boolean(journey?.actor === this.playerControls.id && (meetingLocked(journey) || awakeningLocked(journey) || oracleActing(journey) || phoneLocked(journey) || wakeCallLocked(journey) || sentinelLocked(journey) || interludeLocked(journey) || rescueLocked(journey) || lobbyLocked(journey) || governmentLocked(journey) || airRescueLocked(journey) || matrixEscapeLocked(journey) || theOneLocked(journey) || reloadedLocked(journey) || windowOpening(journey) || windowCrossing(journey) || pillLocked(journey) || interrogationLocked(journey) || lafayetteKnocking(journey) || lafayetteWelcomeLocked(journey)));
       this.playerControls.mirror = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_mirror' ? journey.awakening?.kind === 'connect' ? 1 : (journey.awakening?.elapsed ?? 0) / 8 : 0;
       this.playerControls.climbing = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_ledge' && journey.step === 1 && journey.office?.climbed !== undefined;
       this.playerControls.ride = journey?.actor === this.playerControls.id && !journey.visiting && journey.ride?.phase === 'riding' ? journey.ride : undefined;

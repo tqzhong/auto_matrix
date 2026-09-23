@@ -1,3 +1,4 @@
+import { newReloaded } from '@auto_matrix/shared';
 // Creates an isolated visual-review save; never writes the player's data directory.
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import os from 'node:os';
@@ -339,6 +340,18 @@ if (['final-call', 'final-flight'].includes(process.argv[3]) && scene.id === 'm1
   journey.theOne = { kind: 'flight', phase: flight ? 'takeoff' : 'call', elapsed: flight ? 4.6 : 2.7, attempt: 0, checkpoint: 'phone',
     signal: 0, hits: 0, blocks: 0, deadline: 0, altitude: flight ? 21 : 0, flightX: flight ? 4 : 0, flightZ: flight ? -3 : 0, resolved: [] } as TheOneEncounter;
   sandbox.life.film.theOneFrame(actor, { x: 0, z: 0, sprint: false, jump: false, focus: false }, 0, 0); journey.checkpoint = { ...actor.position };
+}
+if (scene.id === 'm2_dream' && process.argv[3] === 'dream-fall') {
+  const journey = sandbox.life.film.state!; journey.step = 1; actor.controller = 'player';
+  journey.reloaded = { ...newReloaded('dream'), phase: 'falling', elapsed: 3.3, shots: [1.3], drift: -.8 };
+  sandbox.life.film.reloaded.frame(actor, { x: 0, focus: false }, 0, 0); journey.checkpoint = { ...actor.position };
+}
+if (scene.id === 'm2_meeting') {
+  const journey = sandbox.life.film.state!; const variant = process.argv[3]; actor.controller = 'player';
+  if (variant === 'meeting-report') { journey.step = 1; journey.reloaded = { ...newReloaded('meeting'), phase: 'report', elapsed: 2.5 }; }
+  else if (variant === 'meeting-door') { journey.step = 3; journey.reloaded = { ...newReloaded('meeting'), phase: 'breach', elapsed: 2.6, exit: 'west', evacuation: 2.6 }; }
+  else if (variant === 'meeting-combat') { journey.step = 3; journey.reloaded = { ...newReloaded('meeting'), phase: 'breach', elapsed: 3.6, exit: 'east', evacuation: 3.6 }; }
+  sandbox.life.film.reloaded.frame(actor, { x: 0, focus: false }, 0, 0); journey.checkpoint = { ...actor.position };
 }
 for (const resident of world.agents.values()) delete resident.controller;
 neo.isAwakened = FILM_SCENES.indexOf(scene) >= FILM_SCENES.findIndex(s => s.id === 'm1_pod');

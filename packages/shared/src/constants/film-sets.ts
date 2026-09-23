@@ -1,3 +1,4 @@
+import { RELOADED_WALLS, RELOADED_TABLE, DREAM_CABINETS } from './reloaded-opening.js';
 import type { Vector3 } from '../types/agent.js';
 import { LOBBY_COLUMNS } from './lobby.js';
 import { OFFICE_OBSTACLES, OFFICE_LADDER, OFFICE_LEDGE_OFFSET } from './office.js';
@@ -49,7 +50,7 @@ const definitions: Omit<FilmSet, 'id' | 'center'>[] = [
   { name: '地铁站 · Neo 与 Smith', film: [1, 3], architecture: 'subway', world: 'matrix', width: 46, depth: 104, height: 16, light: 'cold', detail: '拱顶、铆钉柱、轨道、出口电话与列车' },
   { name: '城市街巷 · 接线员撤离路线', film: [1], architecture: 'street', world: 'matrix', width: 48, depth: 112, height: 26, light: 'day', detail: '市场、窄巷、住户门窗、电话线路' },
   { name: '城市电话亭 · 第一部尾声', film: [1], architecture: 'street', world: 'matrix', width: 54, depth: 86, height: 28, light: 'day', detail: '街角电话亭、上班人流与城市天空' },
-  { name: '反抗军船长 · 秘密会议', film: [2], architecture: 'tenement', world: 'matrix', width: 46, depth: 58, height: 16, light: 'night', detail: '废弃楼层、长桌、出口楼梯与特工围堵' },
+  { name: '反抗军船长 · 秘密会议', film: [2], architecture: 'tenement', world: 'matrix', width: 46, depth: 80, height: 16, light: 'night', detail: '地下交通砖砌拱廊、长桌地热图、双侧出口、铁门与地面窄巷' },
   { name: '锡安 · 船坞', film: [2, 3], architecture: 'zion', world: 'real', width: 108, depth: 138, height: 65, light: 'warm', detail: '巨大圆形船坞、钢桁架、悬桥、APU 与闸门' },
   { name: '锡安 · 指挥所与议事厅', film: [2, 3], architecture: 'engineering', world: 'real', width: 54, depth: 76, height: 20, light: 'warm', detail: '石壁、环形会议席、战术台与维修灯' },
   { name: '锡安 · 居住层', film: [2, 3], architecture: 'zion', world: 'real', width: 64, depth: 82, height: 36, light: 'warm', detail: '岩壁住宅、曲面阳台、升降梯与生活用品' },
@@ -115,6 +116,8 @@ export const ORACLE_FURNITURE: FilmObstacle[] = [
   { x: 8, z: -11, width: 2.7, depth: 2.2, height: 1.95 },
 ];
 export function filmObstacles(set: FilmSet): FilmObstacle[] {
+  if (set.id === 'film_captains_meeting') return [...RELOADED_WALLS, RELOADED_TABLE];
+  if (set.id === 'film_trinity_roof') return DREAM_CABINETS;
   if (set.id === 'film_anderson_flat') return APARTMENT_FURNITURE;
   if (set.id === 'film_white_rabbit_club') return CLUB_OBSTACLES;
   if (set.id === 'film_adams_bridge' || set.id === 'film_extraction_car') {

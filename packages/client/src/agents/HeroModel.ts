@@ -15,6 +15,7 @@ import { ApartmentPerformance } from './ApartmentPerformance.js';
 import { WakeCallPerformance } from './WakeCallPerformance.js';
 import { clubCloseness } from '@auto_matrix/shared';
 
+export type HeroSupport = 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour' | 'niobe' | 'ballard' | 'ghost' | 'soren' | 'link';
 type Pose = ReturnType<typeof advanceMotion>;
 interface CoatPanel { mesh: THREE.Mesh; rest: Float32Array; velocity: Float32Array }
 export interface HeroRig {
@@ -102,7 +103,7 @@ export class HeroModels {
     this.assets.set(id, promise); return promise;
   }
 
-  async create(id: HeroId, guard?: 'agent_jones' | 'agent_brown', support?: 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour'): Promise<HeroRig | undefined> {
+  async create(id: HeroId, guard?: 'agent_jones' | 'agent_brown' | 'agent_johnson' | 'agent_jackson' | 'agent_thompson', support?: HeroSupport): Promise<HeroRig | undefined> {
     const apartmentRole = support === 'choi' || support === 'dujour' ? support : undefined;
     const [asset, office] = await Promise.all([this.load(apartmentRole ?? id), id === 'neo' && !apartmentRole ? this.load('neo-office') : undefined]);
     if (this.disposed) return;
@@ -147,7 +148,7 @@ export class HeroModels {
     }
     const pelvis = bones.get('pelvis')!;
     const waist = new THREE.Vector3().fromArray(metadata.waist).sub(pelvis.position);
-    const panels = id === 'neo' || id === 'morpheus' ? [-1, 1].map(side => this.coat(pelvis, waist, side, id)) : [];
+    const panels = (id === 'neo' || id === 'morpheus') && support !== 'link' ? [-1, 1].map(side => this.coat(pelvis, waist, side, id)) : [];
     const footHeight = this.point.setFromMatrixPosition(bones.get('ankle_L')!.matrixWorld).y;
     const silver = { value: 0 }; const wardrobe: HeroRig['wardrobe'] = [];
     root.traverse(object => {
@@ -165,6 +166,16 @@ export class HeroModels {
         };
         material.customProgramCacheKey = () => 'switch-hair-standin';
       }
+      // Supporting cast shares the existing skinned meshes until bespoke likenesses are produced.
+      if (support === 'niobe') {
+        if (material.name === 'Skin') material.color.setHex(0x986d4e);
+        if (/jacket/i.test(object.name)) material.color.setHex(0x653327);
+        if (/Hair|hair|Groom|groom/.test(material.name)) { object.visible = false; object.userData.reloadedHidden = true; }
+      }
+      if (support === 'ballard' && /Coat/.test(material.name)) material.color.setHex(0x302d23);
+      if (support === 'ghost' && /Coat/.test(material.name)) material.color.setHex(0x394140);
+      if (support === 'soren' && /Hair|hair|Groom|groom/.test(material.name)) material.color.setHex(0xb7b1a2);
+      if (support === 'link' && /Coat|Trousers/.test(material.name)) { material.color.setHex(0x777467); material.roughness = .95; }
       wardrobe.push({ mesh: object, color: material.color.clone(), outer: panels.some(p => p.mesh === object),
         hair: /Hair|hair|Groom|groom/.test(material.name), cloth: /Coat|Trousers/.test(material.name) });
       if (id !== 'neo') return;
@@ -185,6 +196,16 @@ export class HeroModels {
       };
       material.customProgramCacheKey = () => source.customProgramCacheKey() + '-liquid-mirror-v1';
     });
+    if (support === 'niobe') {
+      const hair = new THREE.MeshStandardMaterial({ color: 0x171812, roughness: .82 });
+      for (let i = 0; i < 10; i++) {
+        const theta = i * Math.PI * 2 / 10; const knot = this.mesh(head, new THREE.SphereGeometry(.092, 12, 10), hair);
+        knot.position.set(Math.cos(theta) * .23, .17 + (i % 2) * .07, -.04 + Math.sin(theta) * .17); knot.scale.y = 1.3;
+      }
+    }
+    if (support === 'ballard') {
+      const cap = this.mesh(head, new THREE.SphereGeometry(.3, 24, 12), new THREE.MeshStandardMaterial({ color: 0x151813, roughness: .94 })); cap.position.set(.03, .21, -.04); cap.scale.set(1.15, .3, .93); cap.rotation.z = -.17;
+    }
     const rig: HeroRig = { root, bones, rest, panels, footHeight, glasses, silver, wardrobe, officeRole: support === 'rhineheart' || support === 'courier' ? support : undefined, apartmentRole };
     if (apartmentRole) this.apartments.set(rig, new ApartmentPerformance(rig));
     if (id === 'neo' && !support) this.recoveries.set(rig, new RecoveryPerformance(rig));
@@ -358,7 +379,7 @@ export class HeroModels {
     const officeShirt = input.officeShirt || rig.officeRole === 'courier';
     const pod = input.performance && !['touch', 'connect'].includes(input.performance);
     for (const part of rig.wardrobe) {
-      part.mesh.visible = !(part.outer && (input.realWorld || input.clubClothes || input.pills?.role === 'neo' || input.meeting || input.wakeCall) || part.hair && pod);
+      part.mesh.visible = !part.mesh.userData.reloadedHidden && !(part.outer && (input.realWorld || input.clubClothes || input.pills?.role === 'neo' || input.meeting || input.wakeCall) || part.hair && pod);
       if (part.mesh.userData.office) part.mesh.visible = Boolean(officeShirt || input.meeting?.role === 'neo' && (part.mesh.material as THREE.Material).name === 'Office skin');
       else if (officeShirt && (part.outer || /Tailored.coat.upper|Black.crew.neck/i.test(part.mesh.name))) part.mesh.visible = false;
       const material = part.mesh.material as THREE.MeshStandardMaterial;

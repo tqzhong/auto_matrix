@@ -49,6 +49,7 @@ export interface FilmJourney {
   airRescue?: import('./air-rescue.js').AirRescueEncounter;
   matrixEscape?: import('./matrix-escape.js').MatrixEscapeEncounter;
   theOne?: import('./the-one.js').TheOneEncounter;
+  reloaded?: import('./reloaded-opening.js').ReloadedOpening;
 }
 const walk = (label: string, x = 0, z = -12): FilmStep => ({ kind: 'reach', label, x, z });
 const use = (label: string, text: string, x = 0, z = -12, seconds = 3): FilmStep => ({ kind: 'interact', label, text, x, z, seconds });
@@ -115,8 +116,8 @@ export const FILM_SCENES: FilmScene[] = [
   scene('m1_return', 1, 'heart_hotel', 'neo', '看见代码', 'the_one', 'the_one', 'Neo 恢复意识。走廊、子弹与特工都呈现出新的结构。', [use('停住逼近的子弹', 'Neo 重新认识规则，Smith 的攻击失去了原来的决定性。', 0, -10), fight('穿透 Smith 的防线', 1, 'training'), use('接通出口', 'Neo 离线后，Morpheus 在最后关头启动 EMP，哨兵被摧毁。', 0, -20)], ['smith', 'agent_brown', 'agent_jones', 'trinity', 'morpheus', 'tank']),
   scene('m1_final_call', 1, 'final_phone', 'neo', '电话之后的天空', 'the_one', 'the_one', 'Neo 向系统宣告新的可能，随后飞向城市上空。第一部结束。', [think('力量将用来打开什么？', '让他人有选择的可能，比替所有人预先选择更困难。'), use('结束通话', '城市生活仍在继续，战争也没有结束。', 0, -25)]),
 
-  scene('m2_dream', 2, 'trinity_roof', 'trinity', '关于坠落的梦', 'zion', 'chase', '第二部以 Trinity 的危险行动开场。高楼上的枪战与坠落不断出现在 Neo 的梦里。', [walk('抵达楼顶出口', 0, -16), use('穿过破窗', 'Neo 从梦中惊醒。这是预感，之后仍将面对真正的选择。', 0, -16)]),
-  scene('m2_meeting', 2, 'captains_meeting', 'neo', '船长们的秘密会议', 'zion', 'infiltration', '机器大军正向锡安钻进。反抗军船长讨论防守与等待先知消息的分歧。', [use('听取船长报告', 'Lock 要求舰队返回，Morpheus 希望继续寻找通往源头的机会。', 0, -10), fight('击退升级后的特工', 3)], ['morpheus', 'trinity', 'niobe', 'ballard']),
+  scene('m2_dream', 2, 'trinity_roof', 'trinity', '关于坠落的梦', 'zion', 'chase', '第二部以 Trinity 的危险行动开场。高楼上的枪战与坠落不断出现在 Neo 的梦里。', [walk('穿过电网维护层', 0, -15), use('破窗后记住追击细节', '枪声留在梦里。Neo 将带着这段预感醒来。', 0, -15)]),
+  scene('m2_meeting', 2, 'captains_meeting', 'neo', '船长们的秘密会议', 'zion', 'infiltration', '机器大军正向锡安钻进。反抗军船长讨论防守与等待先知消息的分歧。', [use('醒来，与 Trinity 交谈', 'Link 准备好广播，船长们正在地下交通通道等待。'), use('核对地热图与值守约定', 'Ballard 留守 36 小时，等待先知的消息。', 0, 13), use('查看 Smith 留下的耳机', 'Smith 已经脱离原来的连接。', 0, -14), use('掩护船员撤离并迎战升级特工', '三名升级特工被击退，船员抵达出口。', 0, -9), use('飞离现场，返回锡安', 'Link 确认船员安全。', 0, -24)], ['morpheus', 'trinity', 'niobe', 'ballard', 'ghost', 'soren', 'link', 'smith', 'agent_johnson', 'agent_jackson', 'agent_thompson']),
   scene('m2_dock', 2, 'zion_hangar', 'neo', '回到锡安', 'zion', 'zion', '尼布甲尼撒号进入船坞。Kid 热切地迎接 Neo，维修人员忙着补给。', [walk('走下船坞栈桥', 0, -28), use('与 Kid 交谈', 'Kid 将自己的获救归功于 Neo；Neo 提醒他，那也是他自己的决定。', 0, -28)], ['kid', 'morpheus', 'trinity', 'link']),
   scene('m2_lock', 2, 'zion_council', 'morpheus', '信念与军令', 'zion', 'zion', 'Lock 对舰队行动表达不满。守城的责任与对预言的信任发生冲突。', [walk('进入指挥区域', 0, -12), think('如何面对共同的风险？', '信念不能取消他人必须承担的代价。')], ['lock', 'niobe']),
   scene('m2_residents', 2, 'zion_residences', 'neo', '门口的请求', 'zion', 'zion', '居民带着礼物与愿望等在 Neo 门口。他首先是一个会疲惫的人。', [walk('穿过居住层走廊', 0, -18), use('停下听取请求', '人们把战争中的焦虑与希望交给一个具体的人。', 0, -18)], ['trinity']),

@@ -1,3 +1,4 @@
+import { reloadedPose, type ReloadedGesture } from '@auto_matrix/shared';
 import { MELEE_COMBO, COMBO_WINDOW, COMBAT_SKILLS, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED, lobbyPose, governmentPose, airRescuePose, matrixEscapePose, theOnePose, type CombatSkillId, type AwakeningPose, type AwakeningReveal, type OfficePhone, pillPose, lafayetteWelcomePose, oracleVisitPose, betrayalPose, rescuePose, type PillGesture, type InterrogationGesture, type LafayetteWelcomeGesture, type TrainingGesture, type OracleVisitGesture, type BetrayalGesture, type RescueGesture, type RescueLoadout, type LobbyGesture, type GovernmentRescueGesture, type AirRescueGesture, type MatrixEscapeGesture, type TheOneGesture } from '@auto_matrix/shared';
 
 export interface MotionInput {
@@ -37,6 +38,7 @@ export interface MotionInput {
   airRescue?: AirRescueGesture;
   matrixEscape?: MatrixEscapeGesture;
   theOne?: TheOneGesture;
+  reloaded?: ReloadedGesture;
   weaponStyle?: RescueLoadout;
   aimPitch?: number;
   clubClothes?: boolean;
@@ -123,13 +125,14 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const airRescue = input.airRescue && airRescuePose(input.airRescue);
   const matrixEscape = input.matrixEscape && matrixEscapePose(input.matrixEscape);
   const theOne = input.theOne && theOnePose(input.theOne);
+  const reloaded = input.reloaded && reloadedPose(input.reloaded);
   const welcomeWalking = input.welcome?.phase === 'approach' || input.welcome?.phase === 'departing' && input.welcome.role !== 'neo';
   const welcomeSpeed = input.welcome?.role === 'morpheus' ? 2.6 : input.welcome?.role === 'neo' ? 2.3 : 1.8;
   const speed = input.pills ? exiting ? 1.7 : 0 : welcomeWalking ? welcomeSpeed : input.speed;
   state.time += dt;
   state.speed = mix(state.speed, input.riding || input.climbing !== undefined ? 0 : speed, blend);
   state.climbPhase += (input.climbing ?? 0) * dt * 5;
-  state.seated = pills ? pills.seat : welcome ? welcome.seated : mix(state.seated, input.seated || input.riding || input.performance === 'connect' || input.performance === 'construct' ? 1 : 0, blend);
+  state.seated = reloaded ? reloaded.seated : pills ? pills.seat : welcome ? welcome.seated : mix(state.seated, input.seated || input.riding || input.performance === 'connect' || input.performance === 'construct' ? 1 : 0, blend);
   state.turn = mix(state.turn, clamp(input.turn, -3, 3), blend);
   state.airborne = mix(state.airborne, input.grounded ? 0 : 1, 1 - Math.exp(-18 * dt));
   if (dt > 0) {
@@ -173,7 +176,7 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const governmentBend = government?.bend ?? 0;
   const escapePinned = matrixEscape?.grapple && input.matrixEscape?.role === 'neo' ? matrixEscape.grapple : 0;
   const hipHeight = 1.98 - moving * .08 - run * .12 + bob - state.landing * .20 - guard * .08 - dodging * .3 - (input.crouching ? .9 : 0) - state.seated * .6 - (input.floorSeated ? .85 : 0) - lobbyDown * 1.5 - governmentBend * .9 - (airRescue?.strain ?? 0) * .32 - (airRescue?.land ?? 0) * .18 - escapePinned * .72 - (matrixEscape?.brace ?? 0) * .55
-    - (theOne?.wound ?? 0) * 1.2 - (theOne?.fallen ?? 0) * 1.58 - (theOne?.kiss ?? 0) * .28 - (theOne?.block ?? 0) * .18 - (theOne?.dive ?? 0) * .22 - (theOne?.burst ?? 0) * .28;
+    - (theOne?.wound ?? 0) * 1.2 - (theOne?.fallen ?? 0) * 1.58 - (theOne?.kiss ?? 0) * .28 - (theOne?.block ?? 0) * .18 - (theOne?.dive ?? 0) * .22 - (theOne?.burst ?? 0) * .28 - (reloaded?.down ?? 0) * 1.5 - (reloaded?.dodge ?? 0) * .38;
   const legs = [0, .5].map(offset => {
     const foot = footTrajectory(state.phase + offset, stride, stance);
     const lift = foot.lift * mix(.22, .55, run) * moving;
@@ -415,6 +418,22 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
       arms[0].grip = mix(arms[0].grip, .72, matrixEscape.door);
     }
   }
+  if (reloaded && input.reloaded) {
+    for (let i = 0; i < 2; i++) {
+      const fall = reloaded.falling;
+      arms[i].shoulder = mix(arms[i].shoulder, reloaded.dreamAgent ? -1.1 : -2.05, fall); arms[i].elbow = mix(arms[i].elbow, -.28, fall); arms[i].grip = mix(arms[i].grip, .92, fall);
+      arms[i].outward = mix(arms[i].outward, (i ? 1 : -1) * .18, fall);
+      legs[i].hip = mix(legs[i].hip, i ? -.55 : .45, fall); legs[i].knee = mix(legs[i].knee, i ? 1.12 : .6, fall);
+      const stance = Math.max(reloaded.windup, reloaded.dodge);
+      arms[i].shoulder = mix(arms[i].shoulder, i ? -.5 : -1.25, stance); arms[i].elbow = mix(arms[i].elbow, -1.4, stance);
+      legs[i].hip = mix(legs[i].hip, i ? -.55 : .25, stance); legs[i].knee = mix(legs[i].knee, .72, stance);
+      arms[i].shoulder = mix(arms[i].shoulder, i ? -1.65 : -.8, Math.max(reloaded.punch, reloaded.strike)); arms[i].elbow = mix(arms[i].elbow, i ? -.15 : -1.3, Math.max(reloaded.punch, reloaded.strike));
+      arms[i].shoulder = mix(arms[i].shoulder, -1.55, reloaded.flight); arms[i].elbow = mix(arms[i].elbow, -.18, reloaded.flight);
+      legs[i].hip = mix(legs[i].hip, i ? -.3 : .18, reloaded.flight); legs[i].knee = mix(legs[i].knee, .3, reloaded.flight);
+      legs[i].knee = mix(legs[i].knee, .42, reloaded.down); arms[i].shoulder = mix(arms[i].shoulder, .25, reloaded.down);
+    }
+    if (reloaded.inspect) { arms[0].shoulder = -.75; arms[0].elbow = -1.45; arms[0].grip = .45; }
+  }
   if (theOne && input.theOne) {
     const role = input.theOne.role;
     if (theOne.wound && role === 'neo') for (let i = 0; i < 2; i++) {
@@ -487,8 +506,8 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const escapeRoll = matrixEscape ? matrixEscape.wall * (input.matrixEscape?.role === 'smith' ? -.68 : .52) + matrixEscape.brace * 1.05 + matrixEscape.transform * Math.sin(input.matrixEscape!.elapsed * 18) * .12 : 0;
   const theOneLean = theOne ? theOne.wound * .92 + theOne.fallen * 1.35 + theOne.kiss * .45 - theOne.revive * .18 + theOne.block * .18 - theOne.dive * .72 + theOne.burst * .32 - theOne.flight * .58 : 0;
   const theOneRoll = theOne ? theOne.wound * .58 + theOne.fallen * 1.08 + theOne.burst * (.18 + Math.sin(input.theOne!.elapsed * 11) * .12) + theOne.flight * Math.sin(input.theOne!.elapsed * .8) * .08 : 0;
-  return { legs, arms, hipHeight, twist, lean: run * .12 + state.landing * .12 + state.airborne * .04 + extension * .10 - kick * .27 - recoil * .35 + (input.crouching ? .26 : 0) + (input.riding ? .2 : 0) + oracleLean + betrayalLean + rescueLean + lobbyLean + governmentLean + airRescueLean + escapeLean + theOneLean,
+  return { legs, arms, hipHeight, twist, lean: run * .12 + state.landing * .12 + state.airborne * .04 + extension * .10 - kick * .27 - recoil * .35 + (input.crouching ? .26 : 0) + (input.riding ? .2 : 0) + oracleLean + betrayalLean + rescueLean + lobbyLean + governmentLean + airRescueLean + escapeLean + theOneLean - (reloaded?.falling ?? 0) * .85 + (reloaded?.dreamAgent ?? 0) * 2 + (reloaded?.down ?? 0) * 1.25 - (reloaded?.flight ?? 0) * .65,
     sway: Math.sin(cycle) * moving * .035, lunge: extension * .16 - kick * .25 - recoil * .22 - dodging * .35 + (matrixEscape?.strike ?? 0) * .32,
-    roll: -state.turn * run * .035 - dodging * .22 + betrayalRoll + lobbyRoll + governmentRoll + airRescueRoll + escapeRoll + theOneRoll, headTurn: -twist * .65 + glance + oracleLook + rescueLook, moving, run, airborne: state.airborne,
+    roll: -state.turn * run * .035 - dodging * .22 + betrayalRoll + lobbyRoll + governmentRoll + airRescueRoll + escapeRoll + theOneRoll + (reloaded?.down ?? 0) * 1.1 - (reloaded?.dodge ?? 0) * .6 + (reloaded?.falling ?? 0) * (input.reloaded?.drift ?? 0) * .055, headTurn: -twist * .65 + glance + oracleLook + rescueLook, moving, run, airborne: state.airborne,
     coat: moving * (.10 + run * .3) + state.airborne * .18 + kick * .35, impact: extension, landing: state.landing };
 }

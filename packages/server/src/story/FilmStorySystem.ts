@@ -1,3 +1,5 @@
+import { ReloadedOpeningSystem } from './ReloadedOpeningSystem.js';
+import { newReloaded, reloadedLocked } from '@auto_matrix/shared';
 import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_CAST, filmReflections, CHARACTERS, LOCATIONS, NEO_CHAPTERS, filmCharacterFates, filmEntry, filmPosition, filmStepPosition, locationEntrance, distance, playerBlocked, newFreewayRide, stepFreeway, OFFICE_LADDER, awakeningLocked, awakeningPose, AWAKENING_SECONDS, CONSTRUCT_REVEAL, DESERT_REVEAL, oracleActing,
   AMBUSH_REWRITE, AMBUSH_SECONDS, AMBUSH_SEALS, OFFICE_CONTACT, OFFICE_WINDOW, OFFICE_CROSSING_SECONDS, officeCrossingPose, windowCrossing, phoneLocked, heldPhone, windowOpening, pillLocked, pillRoot, PILL_ROOM, PILL_TIMING, trainingLocked, trainingRoot, trainingText, TRAINING_SECONDS,
   lobbyLocked, type DriveInput, type AgentState, type FilmScene, type FilmStep, type SandboxState, type SandboxThreat, type TrainingRole, type CombatImpact } from '@auto_matrix/shared';
@@ -27,14 +29,15 @@ export class FilmStorySystem {
   // The controller owns socket sessions. It can refuse a handoff occupied by another player.
   handoff?: (from: AgentState, to: string, tick: number, newCycle?: boolean) => boolean;
   onImpact?: (impact: CombatImpact, tick: number) => void;
+  readonly reloaded: ReloadedOpeningSystem;
   readonly lobby: LobbyCombatSystem;
   readonly office: OfficeEscapeSystem;
-  constructor(private world: WorldState, private sandbox: () => SandboxState, private returnToLife: (tick: number) => void) { this.lobby = new LobbyCombatSystem(world, sandbox); this.office = new OfficeEscapeSystem(sandbox); }
+  constructor(private world: WorldState, private sandbox: () => SandboxState, private returnToLife: (tick: number) => void) { this.lobby = new LobbyCombatSystem(world, sandbox); this.office = new OfficeEscapeSystem(sandbox); this.reloaded = new ReloadedOpeningSystem(world, sandbox); this.reloaded.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.reloaded.onImpact = (impact, tick) => this.onImpact?.(impact, tick); }
   get state() { return this.sandbox().neoLife?.journey; }
   get scene(): FilmScene | undefined { return this.state && FILM_SCENE_BY_ID[this.state.scene]; }
   get step(): FilmStep | undefined { return this.scene?.steps[this.state!.step]; }
   controls(agent: AgentState): boolean { return Boolean(this.state && this.state.actor === agent.id); }
-  performing(agent: AgentState): boolean { return this.controls(agent) && (clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || theOneLocked(this.state!) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
+  performing(agent: AgentState): boolean { return this.controls(agent) && (clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || theOneLocked(this.state!) || reloadedLocked(this.state!) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
   clubFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
     if (state?.scene !== 'm1_club' || state.visiting || !this.controls(agent)) return;
@@ -2052,6 +2055,7 @@ export class FilmStorySystem {
       return `回访${FILM_SETS[visited.set].name}。J 可返回当前剧情，回访不会改写进度。`;
     }
     if (target === 'retry') {
+      if (this.reloaded.active(agent)) return this.reloaded.command(agent, target, tick);
       if (state.theOne && ['m1_death', 'm1_return', 'm1_final_call'].includes(state.scene)) return this.retryTheOne(agent, tick);
       if (state.government && ['m1_smith_question', 'm1_bullet_dodge'].includes(state.scene)) return this.retryGovernment(agent, tick);
       if (state.airRescue && ['m1_helicopter', 'm1_rooftop_rescue'].includes(state.scene)) return this.retryAirRescue(agent, tick);
@@ -2245,6 +2249,7 @@ export class FilmStorySystem {
     }
     const step = this.step;
     if (!step) return '本场景已完成。G 或 J 继续下一段。';
+    if (this.reloaded.active(agent)) return this.reloaded.command(agent, target, tick);
     if (state.scene === 'm1_wake_up') return this.apartmentAct(agent, target, tick);
     if (state.scene === 'm1_wake_again' && state.step === 0) return this.wakeCallAct(agent, target, tick);
     if (state.scene === 'm1_club') return this.clubAct(agent, target, tick);
@@ -2451,6 +2456,8 @@ export class FilmStorySystem {
     delete state.airRescue;
     delete state.matrixEscape;
     delete state.theOne;
+    delete state.reloaded;
+    this.sandbox().structures = this.sandbox().structures.filter(structure => structure.id !== 'film:reloaded:door');
     this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== 'film:apartment:door');
     delete state.pills;
     delete state.interrogation;
@@ -2468,7 +2475,7 @@ export class FilmStorySystem {
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.government) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.airRescue) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.matrixEscape) other.currentAction = null;
-    for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.theOne) other.currentAction = null;
+    for (const other of this.world.agents.values()) if (!other.controller && (other.currentAction?.parameters.theOne || other.currentAction?.parameters.reloaded)) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.lobbyEntry) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.riding) { other.currentAction = null; other.velocity = { x: 0, y: 0, z: 0 }; }
     if (scene.id === 'm1_lobby') this.lobby.reset();
@@ -2560,11 +2567,16 @@ export class FilmStorySystem {
         signal: 0, hits: 0, blocks: 0, deadline: 0, altitude: 0, flightX: 0, flightZ: 0, resolved: [] };
       this.theOneFrame(actor, { x: 0, z: 0, sprint: false, jump: false, focus: false }, 0, tick);
     }
+    if (scene.id === 'm2_dream' || scene.id === 'm2_meeting') {
+      state.reloaded = newReloaded(scene.id === 'm2_dream' ? 'dream' : 'meeting');
+      this.reloaded.frame(actor, { x: 0, focus: false }, 0, tick);
+    }
+    if (scene.id === 'm2_catch' && life.choices.trinity_dream) state.lastText += life.choices.trinity_dream === 'clear' ? '你认出了梦里的破窗、枪口与坠落方向；这次仍有机会作出行动。' : '这座大楼让你想起那个破碎的梦。';
     if (scene.id === 'm1_bug' && state.office?.outcome === 'escaped') state.lastText = '你没有被特工带走。Switch 仍要求做安全检查，确认没有追踪装置。';
   }
   private stageCast(): void {
     const scene = this.scene!;
-    if (['m1_death', 'm1_return', 'm1_final_call'].includes(scene.id)) return;
+    if (['m1_death', 'm1_return', 'm1_final_call', 'm2_dream', 'm2_meeting'].includes(scene.id)) return;
     scene.cast.forEach((id, i) => {
       const actor = this.world.agents.get(id);
       if (!actor || actor.controller || actor.id === this.state!.actor || this.unavailable(id)) return;
@@ -2680,6 +2692,7 @@ export class FilmStorySystem {
       }
       if (state.step === 2) { delete state.started; return; }
     }
+    if (this.reloaded.active(actor)) return;
     if (state.matrixEscape && ['m1_subway', 'm1_city_chase'].includes(state.scene)) return;
     if (state.theOne && ['m1_death', 'm1_return', 'm1_final_call'].includes(state.scene)) return;
     const step = this.step; if (!step) return;

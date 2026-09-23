@@ -1,3 +1,4 @@
+import { RELOADED } from '@auto_matrix/shared';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, RESCUE, RESCUE_LOADOUTS, GOVERNMENT_RESCUE, AIR_RESCUE, MATRIX_ESCAPE, THE_ONE, filmReflections, filmStepPosition, filmEntry, filmPosition, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
@@ -814,8 +815,8 @@ test('the entire film route completes through interactions, driving and real com
   let sequence = 0;
   for (const scene of FILM_SCENES) {
     assert.equal(state.scene, scene.id); assert.equal(h.actor().id, scene.actor);
-    assert.equal(h.actor().isInMatrix, FILM_SETS[scene.set].world === 'matrix');
-    assert.equal(musicForScene({ player: h.actor(), sandbox: h.sandbox.state, time: 7500, matrix: h.actor().isInMatrix, running: true }), scene.music);
+    assert.equal(h.actor().isInMatrix, scene.id === 'm2_meeting' ? false : FILM_SETS[scene.set].world === 'matrix');
+    assert.equal(musicForScene({ player: h.actor(), sandbox: h.sandbox.state, time: 7500, matrix: h.actor().isInMatrix, running: true }), scene.id === 'm2_meeting' ? 'night' : scene.music);
     if (scene.id === 'm1_pills' && state.hotel) {
       // Enter the room by walking all stair flights and opening the actual door.
       for (const point of HOTEL_ROUTE.slice(4, -2)) {
@@ -847,6 +848,31 @@ test('the entire film route completes through interactions, driving and real com
     }
     for (let index = 0; index < scene.steps.length; index++) {
       const step = scene.steps[index]; const actor = h.actor(); actor.position = filmStepPosition(scene, step);
+      if (scene.id === 'm2_dream') {
+        if (index === 0) h.players.step(.1, true, h.tick());
+        else { h.command('act'); for (let frame = 0; frame < 110 && state.step === index; frame++) h.players.step(.1, true, h.tick()); }
+        assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`); continue;
+      }
+      if (scene.id === 'm2_meeting') {
+        const frames = (seconds: number) => { for (let frame = 0; frame < Math.ceil(seconds * 10); frame++) h.players.step(.1, true, h.tick()); };
+        if (index === 0) { frames(RELOADED.wake + .2); h.command('act'); frames(RELOADED.conversation + .2); h.command('act'); frames(RELOADED.connect + .2); }
+        else if (index === 1) { h.command('act'); frames(RELOADED.report + .2); }
+        else if (index === 2) { h.command('act'); frames(RELOADED.earpiece + .2); }
+        else if (index === 3) {
+          h.command('exit:west'); frames(RELOADED.breach + .2);
+          for (let hit = 0; hit < 6; hit++) {
+            const enemy = h.world.agents.get(RELOADED.agents[state.reloaded!.opponent])!;
+            actor.position = { ...enemy.position, z: enemy.position.z + 2.2 }; actor.rotation = Math.PI;
+            h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false, sequence: ++sequence });
+            for (let frame = 0; frame < 50 && state.reloaded!.cycle < RELOADED.strike - .3; frame++) frames(.1);
+            h.players.act('film-player', 'dodge', h.tick()); frames(.4);
+            h.players.act('film-player', 'attack', h.tick()); frames(.3);
+            if (hit < 5) { const round = state.reloaded!.round; for (let frame = 0; frame < 40 && state.reloaded!.round === round; frame++) frames(.1); }
+          }
+          assert.equal(state.reloaded!.phase, 'departure_ready');
+        } else { frames(1); h.command('act'); frames(RELOADED.departure + .2); }
+        assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`); continue;
+      }
       if (scene.id === 'm1_death') {
         if (index === 0) h.players.step(.1, true, h.tick());
         else {
