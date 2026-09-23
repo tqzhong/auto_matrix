@@ -327,6 +327,7 @@ export class PlayerControls {
     this.motion.theOne = oneGesture;
     this.motion.reloaded = reloadedGesture;
     this.motion.burly = state.currentAction?.parameters.burly as MotionInput['burly'];
+    this.motion.chateauWeapon = state.currentAction?.parameters.chateauWeapon as MotionInput['chateauWeapon'];
     this.motion.persephone = state.currentAction?.parameters.persephone as MotionInput['persephone'];
     this.motion.lobbyEntry = state.currentAction?.parameters.lobbyEntry as MotionInput['lobbyEntry'];
     this.motion.aimPitch = this.firearm || state.currentAction?.parameters.armed === true ? this.pitch : undefined;

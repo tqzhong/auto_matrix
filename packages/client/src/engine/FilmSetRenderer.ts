@@ -6,7 +6,7 @@ import { workdayLocked, type OfficeWorkday } from '@auto_matrix/shared';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
-import { FILM_SETS, FILM_SCENE_BY_ID, PILL_ROOM, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, EXILES, awakeningLocked, trainingLocked, phoneLocked, windowOpening, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
+import { FILM_SETS, FILM_SCENE_BY_ID, PILL_ROOM, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, EXILES, CHATEAU, awakeningLocked, trainingLocked, phoneLocked, windowOpening, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
 import { LobbySetRenderer } from './LobbySetRenderer.js';
 import { OfficeSetRenderer } from './OfficeSetRenderer.js';
 import { FreewaySetRenderer } from './FreewaySetRenderer.js';
@@ -104,6 +104,10 @@ export class FilmSetRenderer {
   private courtyardDisturbedAt?: number;
   private exileDessert?: THREE.Group;
   private bookDoor?: THREE.Group;
+  private chateauVolley?: THREE.Group;
+  private chateauVolleyTick?: number;
+  private chateauVolleyStart = 0;
+  private chateauDoor?: THREE.Mesh;
 
   constructor(private scene: THREE.Scene) {
     scene.add(this.root);
@@ -147,6 +151,15 @@ export class FilmSetRenderer {
         else if (set.id === 'film_adams_bridge' || set.id === 'film_extraction_car') this.meeting = new MeetingSetRenderer(this.root);
         else {
           this.build(set); this.batch();
+          if (set.id === 'film_chateau_hall') {
+            this.chateauVolley = new THREE.Group(); this.chateauVolley.visible = false; this.root.add(this.chateauVolley);
+            const bullet = this.mat(0xc5b49a, .2, .85);
+            for (let i = 0; i < 8; i++) {
+              const round = this.mesh(new THREE.CylinderGeometry(.035, .035, .34, 8), bullet, -2.6 + i * .72, 3.05 + Math.sin(i * 2.4) * .26, 2.4 + i % 3 * .4, this.chateauVolley);
+              round.rotation.x = Math.PI / 2;
+            }
+            this.chateauDoor = this.mesh(new THREE.BoxGeometry(5, 7, .38), this.wood, 0, 14.5, -40.7);
+          }
           if (set.id === 'film_lafayette') {
             this.hotel = new LafayetteApproachRenderer(this.root, new THREE.Vector3(0, -LAFAYETTE.upper, 0));
             const root = new THREE.Group(); root.position.set(-MEETING_DESTINATION.x, -LAFAYETTE.upper, 0); this.root.add(root);
@@ -211,6 +224,12 @@ export class FilmSetRenderer {
       this.exileDessert.scale.setScalar(1 + Math.sin(elapsed * 4) * .08);
     }
     if (this.bookDoor) this.bookDoor.position.x = sceneId === 'm2_library' && !journey?.visiting && (journey?.step ?? 0) >= 3 ? -5.8 : 0;
+    if (this.chateauVolley) {
+      const volley = sceneId === 'm2_chateau' && !journey?.visiting ? journey?.chateau?.volleyAt : undefined;
+      if (volley !== undefined && volley !== this.chateauVolleyTick) { this.chateauVolleyTick = volley; this.chateauVolleyStart = elapsed; }
+      this.chateauVolley.visible = volley !== undefined && elapsed - this.chateauVolleyStart < 1.25;
+    }
+    if (this.chateauDoor) this.chateauDoor.position.x = sceneId === 'm2_chateau' && (journey?.step ?? 0) >= 2 ? 5 : 0;
     if (this.courtyardBirds.length) {
       const startled = sceneId === 'm2_burly' && !journey?.visiting && journey?.burly?.phase !== 'ready';
       if (startled && this.courtyardDisturbedAt === undefined) this.courtyardDisturbedAt = elapsed;
@@ -229,6 +248,7 @@ export class FilmSetRenderer {
     this.marker.visible = Boolean(set && scene?.set === set.id && step && !journey?.visiting && journey?.actor === player?.id);
     if (journey?.scene === 'm1_lobby' && journey.fighting) this.marker.visible = false;
     if (journey?.scene === 'm2_burly' && !['ready', 'staff_ready', 'flight_ready'].includes(journey.burly?.phase ?? 'ready')) this.marker.visible = false;
+    if (journey?.scene === 'm2_chateau' && journey.step === 0 && !['ready', 'landing'].includes(journey.chateau?.phase ?? 'ready')) this.marker.visible = false;
     if (journey && pillLocked(journey)) this.marker.visible = false;
     if (journey && interrogationLocked(journey)) this.marker.visible = false;
     if (journey && meetingLocked(journey)) this.marker.visible = false;
@@ -253,6 +273,7 @@ export class FilmSetRenderer {
     if (journey?.scene === 'm1_dejavu' && journey.step === 0 && journey.ambush) this.marker.visible = false;
     if (this.marker.visible && step && scene) {
       const position = scene.id === 'm2_burly' && journey?.burly?.phase === 'staff_ready' ? filmPosition(scene.set, BURLY.staff.x, BURLY.staff.z)
+        : scene.id === 'm2_chateau' && journey?.chateau?.phase === 'landing' ? filmStepPosition(scene, scene.steps[1])
         : step.kind === 'drive' && journey?.ride ? filmPosition(scene.set, 14, FREEWAY_FINISH) : filmStepPosition(scene, step);
       if (scene.id === 'm1_ledge' && journey?.office?.climbed !== undefined) position.y -= 32;
       this.marker.position.set(position.x, position.y - .82, position.z);
@@ -784,6 +805,22 @@ export class FilmSetRenderer {
         this.pipe([[x - side * .4, 3, z - 2], [x - side * .4, 9, z + 2]], .09, this.metal);
         this.pipe([[x - side * .5, 3, z + 2], [x - side * .5, 9, z - 2]], .09, this.metal);
       }
+      for (const weapon of ['sword', 'spear'] as const) {
+        const { x, z } = CHATEAU.racks[weapon]; const metal = this.mat(0xa9aaa0, .26, .72);
+        this.box(this.wood, x, 2.3, z, 2.6, 4.6, .55, .08);
+        this.box(this.brass, x, 4.7, z, 2.8, .12, .66);
+        if (weapon === 'sword') {
+          this.box(metal, x, 2.9, z + .38, .12, 2.6, .09); this.box(this.brass, x, 1.65, z + .44, .8, .1, .18);
+          this.cylinder(this.wood, x, 1.22, z + .42, .08, .74);
+        } else {
+          this.cylinder(this.wood, x, 2.35, z + .42, .06, 3.3);
+          this.mesh(new THREE.ConeGeometry(.16, .6, 6), metal, x, 4.25, z + .42);
+        }
+        this.label(weapon === 'sword' ? '长剑 / SWORD' : '长矛 / SPEAR', x, 5.2, z + .4, 2.8, '#ead9ad', '#302b24');
+      }
+      this.box(this.brass, 0, 18.3, -40.6, 7, .45, .25);
+      for (const x of [-3, 3]) this.box(this.marble, x, 14.4, -40.6, .6, 8, .6);
+      this.label('CHÂTEAU', 0, 20, -40.4, 6, '#ead5a6', '#33271e');
       for (const z of [7, 24]) { this.cylinder(this.brass, 0, h - 3, z, 3, .3); for (let i = 0; i < 10; i++) this.lamp(Math.sin(i * Math.PI / 5) * 3, h - 3, z + Math.cos(i * Math.PI / 5) * 3); }
     } else if (set.id === 'film_le_vrai') {
       const cloth = this.mat(0xb2a796, .94); const gold = this.mat(0x9e8257, .24, .55);
@@ -1188,7 +1225,7 @@ export class FilmSetRenderer {
     this.zion?.dispose(); this.zion = undefined;
     this.baneCopy?.dispose(); this.baneCopy = undefined;
     this.portalDoor = undefined; this.oracleLetter = undefined; this.courtyardStaff = undefined; this.courtyardBirds = []; this.courtyardDisturbedAt = undefined;
-    this.exileDessert = undefined; this.bookDoor = undefined;
+    this.exileDessert = undefined; this.bookDoor = undefined; this.chateauVolley = undefined; this.chateauVolleyTick = undefined; this.chateauDoor = undefined;
     this.office?.dispose(); this.office = undefined;
     this.freeway?.dispose(); this.freeway = undefined;
     this.lobby?.dispose(); this.lobby = undefined;

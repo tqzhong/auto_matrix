@@ -2,7 +2,7 @@ import { ReloadedOpeningSystem } from './ReloadedOpeningSystem.js';
 import { newReloaded, reloadedLocked, ZION_CAST } from '@auto_matrix/shared';
 import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_CAST, filmReflections, CHARACTERS, LOCATIONS, NEO_CHAPTERS, filmCharacterFates, filmEntry, filmPosition, filmStepPosition, locationEntrance, distance, playerBlocked, newFreewayRide, stepFreeway, OFFICE_LADDER, awakeningLocked, awakeningPose, AWAKENING_SECONDS, CONSTRUCT_REVEAL, DESERT_REVEAL, oracleActing,
   AMBUSH_REWRITE, AMBUSH_SECONDS, AMBUSH_SEALS, OFFICE_CONTACT, OFFICE_WINDOW, OFFICE_CROSSING_SECONDS, officeCrossingPose, windowCrossing, phoneLocked, heldPhone, windowOpening, pillLocked, pillRoot, PILL_ROOM, PILL_TIMING, trainingLocked, trainingRoot, trainingText, TRAINING_SECONDS,
-  lobbyLocked, type DriveInput, type AgentState, type FilmScene, type FilmStep, type SandboxState, type SandboxThreat, type TrainingRole, type CombatImpact } from '@auto_matrix/shared';
+  lobbyLocked, meleeReach, groundHeight, type DriveInput, type AgentState, type FilmScene, type FilmStep, type SandboxState, type SandboxThreat, type TrainingRole, type CombatImpact } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
 import { LobbyCombatSystem } from './LobbyCombatSystem.js';
 import { OfficeEscapeSystem } from './OfficeEscapeSystem.js';
@@ -23,6 +23,7 @@ import { MATRIX_ESCAPE, matrixEscapeLocked, matrixEscapeRoot, matrixEscapeText, 
 import { THE_ONE, theOneLocked, theOneRoot, theOneText, type TheOneEncounter, type TheOneRole } from '@auto_matrix/shared';
 import { BURLY, burlyLocked, burlyText, type BurlyEncounter } from '@auto_matrix/shared';
 import { EXILES } from '@auto_matrix/shared';
+import { CHATEAU, type ChateauEncounter } from '@auto_matrix/shared';
 
 const BATHROOM_ROLES = ['neo', 'trinity', 'switch', 'apoc'] as const;
 const UNPLUGGED_ROLES = ['tank', 'cypher', 'dozer', 'apoc', 'switch', 'neo', 'trinity'] as const;
@@ -2121,6 +2122,114 @@ export class FilmStorySystem {
     state.checkpoint = { ...agent.position }; state.lastText = burlyText(state.burly); delete state.fighting;
     this.stageCast(); return state.lastText;
   }
+  private chateauEncounter(): ChateauEncounter {
+    return this.state!.chateau ??= { phase: 'ready', wave: 1, parries: 0, disarms: 0, attempts: 0, wounded: false };
+  }
+  restoreChateauSpace(): void {
+    const state = this.state;
+    if (state?.scene !== 'm2_chateau' || state.chateau) return;
+    state.chateau = { phase: state.step === 0 ? 'ready' : 'cleared', wave: state.step === 0 ? 1 : 2,
+      parries: 0, disarms: 0, attempts: 0, wounded: false };
+    this.sandbox().threats = this.sandbox().threats.filter(threat => threat.scene !== 'm2_chateau');
+    if (state.step !== 0) return;
+    const actor = this.world.agents.get(state.actor);
+    if (!actor) return;
+    actor.position = filmPosition('film_chateau_hall', 0, 10); actor.velocity = { x: 0, y: 0, z: 0 }; actor.currentAction = null;
+    actor.status = 'alive'; actor.health = actor.maxHealth; state.checkpoint = { ...actor.position };
+    delete state.started; delete state.fighting;
+    state.lastText = '已从旧存档接回城堡大厅。走到中央重新迎战，墙上兵器可以取用。';
+  }
+  private spawnChateau(agent: AgentState, tick: number): void {
+    const encounter = this.chateauEncounter();
+    for (const guard of CHATEAU.waves[encounter.wave - 1]) {
+      const position = filmPosition(this.scene!.set, guard.x, guard.z);
+      position.y = groundHeight(position, true);
+      this.sandbox().threats.push({ id: `film:${++this.sandbox().serial}`, scene: 'm2_chateau', kind: 'agent', weapon: guard.weapon,
+        position, matrix: true, health: 88, maxHealth: 88, target: agent.id, stunUntil: tick + 2, lastStrike: tick });
+    }
+    encounter.phase = 'duel'; this.state!.fighting = true;
+  }
+  private chateauAct(agent: AgentState, target: string, tick: number): string {
+    const state = this.state!; const encounter = this.chateauEncounter();
+    if (target !== 'act') return state.lastText;
+    if (encounter.phase === 'failed') return this.retryChateau(agent, tick);
+    if (encounter.phase === 'ready') {
+      if (!this.near(agent, this.scene!.steps[0])) return '走到大厅中央，掩护钥匙匠一行离开。';
+      this.spawnChateau(agent, tick); encounter.volleyAt = tick;
+      state.lastText = 'Merovingian 的人开枪。Neo 伸手截住子弹；守卫拔出墙上的古兵器。两侧武器架可以按 G 取剑或长矛。';
+      return state.lastText;
+    }
+    for (const weapon of ['sword', 'spear'] as const) {
+      const rack = CHATEAU.racks[weapon];
+      if (distance(agent.position, filmPosition(this.scene!.set, rack.x, rack.z)) > 4) continue;
+      encounter.weapon = weapon; this.chateauAction(agent);
+      state.lastText = weapon === 'sword' ? '从左墙取下长剑。X 在敌人起手时格挡，F 趁破绽缴械。' : '换上右墙长矛。保持正面距离，X 格挡后用 F 反击。';
+      return state.lastText;
+    }
+    return encounter.phase === 'landing' ? '沿左或右楼梯上到二层平台，挡住最后两名守卫。' : '先靠近两侧墙上的兵器架取剑或长矛；看见红色起手时按 X 格挡。';
+  }
+  chateauAction(agent: AgentState): void {
+    const encounter = this.state?.scene === 'm2_chateau' && !this.state.visiting && this.controls(agent) ? this.state.chateau : undefined;
+    if (encounter && agent.currentAction) agent.currentAction.parameters.chateauWeapon = encounter.weapon;
+  }
+  chateauParry(agent: AgentState, tick: number): string | undefined {
+    const encounter = this.state?.scene === 'm2_chateau' && this.controls(agent) && !this.state.visiting ? this.state.chateau : undefined;
+    if (encounter?.phase !== 'duel') return undefined;
+    const guard = this.sandbox().threats.find(threat => threat.scene === 'm2_chateau' && threat.attackAt !== undefined && threat.weapon
+      && meleeReach(agent.position, agent.rotation, threat.position, 4.4, true, this.sandbox().structures));
+    if (!guard) return undefined;
+    guard.attackAt = undefined; guard.stunUntil = tick + 5; guard.openingUntil = tick + 5; encounter.parries++;
+    this.state!.lastText = `${guard.weapon === 'mace' ? '重锤' : guard.weapon === 'axe' ? '战斧' : guard.weapon === 'spear' ? '长矛' : '长剑'}被格开。现在按 F 反击；持械守卫会挡下贸然出拳。`;
+    return this.state!.lastText;
+  }
+  chateauStrike(agent: AgentState, guard: SandboxThreat, tick: number): number | undefined {
+    const encounter = this.state?.scene === 'm2_chateau' && this.controls(agent) && !this.state.visiting ? this.state.chateau : undefined;
+    if (!encounter || guard.scene !== 'm2_chateau') return undefined;
+    if (!encounter.weapon) { this.state!.lastText = '徒手无法拆开这群守卫的兵器防线。先从墙上取一件兵器。'; return 0; }
+    if (guard.weapon && (guard.openingUntil ?? -1) < tick) { this.state!.lastText = '守卫架住了正面攻击。等红色起手出现，按 X 格挡再用 F 反击。'; return 0; }
+    const damage = encounter.weapon === 'sword' ? 52 : 44;
+    if (guard.weapon) { guard.weapon = undefined; encounter.disarms++; this.state!.lastText = '兵刃相撞，守卫的武器脱手。趁他失去防线继续进攻。'; }
+    else this.state!.lastText = '守卫退向大厅边缘。保持朝向，继续压制。';
+    return damage;
+  }
+  private chateauTick(agent: AgentState, tick: number): void {
+    const state = this.state!; const encounter = this.chateauEncounter();
+    if (state.step !== 0) return;
+    if (encounter.phase === 'duel' && !this.sandbox().threats.some(threat => threat.scene === 'm2_chateau')) {
+      if (encounter.wave === 1) {
+        encounter.phase = 'landing'; state.fighting = false;
+        state.lastText = '大厅下层已清开。Merovingian 退向楼上；沿双楼梯追到二层平台。';
+        state.checkpoint = { ...agent.position };
+      } else {
+        encounter.phase = 'cleared'; state.fighting = false;
+        this.advance('最后的守卫倒下。Merovingian 穿过二层门扉；Neo 追上去，却看见门后空间开始错位。', agent, tick);
+      }
+    }
+    if (encounter.phase === 'landing' && distance(agent.position, filmStepPosition(this.scene!, this.scene!.steps[1])) <= 5) {
+      encounter.wave = 2; this.spawnChateau(agent, tick); state.checkpoint = { ...agent.position };
+      state.lastText = '二层平台的两名守卫从雕花门旁包抄。利用楼梯和长兵器挡住他们。';
+    }
+  }
+  chateauFailed(agent: AgentState, tick: number): boolean {
+    const state = this.state;
+    if (state?.scene !== 'm2_chateau' || !this.controls(agent) || state.step !== 0 || !state.chateau) return false;
+    const encounter = state.chateau; encounter.phase = 'failed'; encounter.attempts++;
+    this.clearThreats(); delete state.fighting;
+    agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
+    agent.position = encounter.wave === 1 ? filmPosition(this.scene!.set, 0, 10) : filmStepPosition(this.scene!, this.scene!.steps[1]);
+    agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentAction = null;
+    state.checkpoint = { ...agent.position }; state.lastText = '守卫合围，Neo 暂时退回安全位置。按 G 重试当前楼层，已夺取的兵器保留。';
+    return true;
+  }
+  private retryChateau(agent: AgentState, tick: number): string {
+    const state = this.state!; const encounter = this.chateauEncounter();
+    this.clearThreats(); agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
+    agent.position = encounter.wave === 1 ? filmPosition(this.scene!.set, 0, 10) : filmStepPosition(this.scene!, this.scene!.steps[1]);
+    agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentAction = null;
+    encounter.phase = encounter.wave === 1 ? 'ready' : 'landing'; delete state.fighting;
+    state.checkpoint = { ...agent.position }; state.lastText = encounter.wave === 1 ? '再走进大厅中央迎战；兵器架仍在两侧。' : '再上二层平台迎战剩余守卫。';
+    return state.lastText;
+  }
   climbing(agent: AgentState): boolean { return this.controls(agent) && !this.state?.visiting && this.state?.scene === 'm1_ledge' && this.state.step === 1 && this.state.office?.climbed !== undefined; }
   climbFrame(agent: AgentState, direction: number, dt: number, tick: number): boolean {
     if (!this.climbing(agent)) return false;
@@ -2335,6 +2444,7 @@ export class FilmStorySystem {
     if (target === 'retry') {
       if (this.reloaded.active(agent)) return this.reloaded.command(agent, target, tick);
       if (state.scene === 'm2_burly') return this.retryBurly(agent, tick);
+      if (state.scene === 'm2_chateau' && state.step === 0) return this.retryChateau(agent, tick);
       if (state.scene === 'm2_persephone' && state.persephone?.phase === 'enacting') {
         agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
         this.persephoneFrame(agent, 0, tick); return '已接回盥洗室，条件与动作进度均已保留。';
@@ -2536,6 +2646,7 @@ export class FilmStorySystem {
     if (!step) return '本场景已完成。G 或 J 继续下一段。';
     if (this.reloaded.active(agent)) return this.reloaded.command(agent, target, tick);
     if (state.scene === 'm2_burly') return this.burlyAct(agent, target, tick);
+    if (state.scene === 'm2_chateau' && state.step === 0) return this.chateauAct(agent, target, tick);
     if (state.scene === 'm2_persephone' && state.step === 2) return this.persephoneAct(agent, target, tick);
     if (state.scene === 'm1_wake_up') return this.apartmentAct(agent, target, tick);
     if (state.scene === 'm1_wake_again' && state.step === 0) return this.wakeCallAct(agent, target, tick);
@@ -2748,6 +2859,7 @@ export class FilmStorySystem {
     delete state.baneCopy;
     delete state.seraph;
     delete state.burly;
+    delete state.chateau;
     delete state.persephone;
     delete state.keymaker;
     this.sandbox().structures = this.sandbox().structures.filter(structure => structure.id !== 'film:reloaded:door');
@@ -2795,6 +2907,7 @@ export class FilmStorySystem {
         oracle.currentAction = null; oracle.targetPosition = null; oracle.currentPath = []; oracle.velocity = { x: 0, y: 0, z: 0 };
       }
     }
+    if (scene.id === 'm2_chateau') state.chateau = { phase: 'ready', wave: 1, parries: 0, disarms: 0, attempts: 0, wounded: false };
     if (scene.id === 'm2_persephone') state.persephone = { phase: 'offered', elapsed: 0, attempts: 0 };
     if (scene.id === 'm2_library') {
       state.keymaker = { x: EXILES.keymaker.x, z: EXILES.keymaker.z, phase: 'hidden', separated: 0, setbacks: 0 };
@@ -3094,6 +3207,7 @@ export class FilmStorySystem {
     const actor = this.world.agents.get(state.actor);
     if (!actor?.controller || actor.status !== 'alive') { delete state.started; return; }
     if (state.scene === 'm2_burly') { this.burlyTick(actor, tick); return; }
+    if (state.scene === 'm2_chateau' && state.step === 0) { this.chateauTick(actor, tick); return; }
     if (state.scene === 'm2_library' && state.step === 4) {
       if (this.world.agents.get('keymaker')?.controller) return;
       const escort = state.keymaker;

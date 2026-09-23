@@ -1,4 +1,4 @@
-import { newReloaded, BURLY, EXILES } from '@auto_matrix/shared';
+import { newReloaded, BURLY, EXILES, CHATEAU } from '@auto_matrix/shared';
 // Creates an isolated visual-review save; never writes the player's data directory.
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import os from 'node:os';
@@ -392,6 +392,22 @@ if (scene.id === 'm2_library' && ['exiles-bookcase', 'exiles-escort'].includes(p
   actor.position = filmPosition(scene.set, EXILES.bookshelf.x, EXILES.bookshelf.z + 7); actor.rotation = Math.PI;
   if (journey.step === 4) Object.assign(journey.keymaker!, { phase: 'following', x: EXILES.bookshelf.x, z: EXILES.bookshelf.z + 3 });
   sandbox.life.film.keymakerFrame(actor, 0, 0); journey.checkpoint = { ...actor.position };
+}
+if (scene.id === 'm2_chateau' && ['chateau-duel', 'chateau-upper'].includes(process.argv[3])) {
+  const journey = sandbox.life.film.state!; actor.controller = 'player';
+  actor.position = filmStepPosition(scene, scene.steps[0]); sandbox.life.film.command(actor, 'act', 0);
+  actor.position = filmPosition(scene.set, CHATEAU.racks.sword.x, CHATEAU.racks.sword.z);
+  sandbox.life.film.command(actor, 'act', 0);
+  if (process.argv[3] === 'chateau-upper') {
+    sandbox.state.threats = sandbox.state.threats.filter(threat => threat.scene !== scene.id);
+    sandbox.life.film.tick(1); actor.position = filmStepPosition(scene, scene.steps[1]);
+    sandbox.life.film.tick(2);
+    for (const threat of sandbox.state.threats.filter(threat => threat.scene === scene.id)) threat.stunUntil = 100000;
+  } else {
+    actor.position = filmPosition(scene.set, 0, 5);
+    for (const threat of sandbox.state.threats.filter(threat => threat.scene === scene.id)) threat.stunUntil = 100000;
+  }
+  actor.rotation = Math.PI; journey.checkpoint = { ...actor.position };
 }
 for (const resident of world.agents.values()) delete resident.controller;
 neo.isAwakened = FILM_SCENES.indexOf(scene) >= FILM_SCENES.findIndex(s => s.id === 'm1_pod');

@@ -40,6 +40,7 @@ export interface MotionInput {
   theOne?: TheOneGesture;
   reloaded?: ReloadedGesture;
   burly?: import('@auto_matrix/shared').BurlyEncounter & { role: 'neo' | 'smith' };
+  chateauWeapon?: import('@auto_matrix/shared').ChateauWeapon;
   persephone?: import('@auto_matrix/shared').PersephoneEncounter & { role: 'neo' | 'persephone' };
   weaponStyle?: RescueLoadout;
   aimPitch?: number;

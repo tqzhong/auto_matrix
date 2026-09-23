@@ -33,6 +33,8 @@ export interface WorldStructure {
 }
 export interface SandboxThreat {
   character?: string;
+  weapon?: import('../constants/chateau.js').ChateauWeapon;
+  openingUntil?: number;
   combo?: number;
   patrol?: boolean;
   yaw?: number;

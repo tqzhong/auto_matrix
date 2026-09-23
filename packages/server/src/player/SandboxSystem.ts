@@ -45,6 +45,7 @@ export class SandboxSystem {
     this.life.film.reconcileCast();
     this.life.film.restoreTrainingSpace();
     const journey = this.life.film.state;
+    if (journey) this.life.film.restoreChateauSpace();
     if (journey) this.life.film.apartmentFrame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);
     if (journey) this.life.film.clubFrame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);
     if (journey) this.life.film.persephoneFrame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);
@@ -121,7 +122,8 @@ export class SandboxSystem {
       if (target === 'medkit') agent.health = Math.min(agent.maxHealth, agent.health + 40 + profile.skills.survival * 10);
       else for (const threat of [...this.state.threats]) {
         if (threat.matrix !== agent.isInMatrix || distance(threat.position, agent.position) > 35) continue;
-        threat.stunUntil = tick + 12; this.hit(agent, threat, 45, tick);
+        threat.stunUntil = tick + 12;
+        if (threat.scene !== 'm2_chateau' || !threat.weapon) this.hit(agent, threat, 45, tick);
       }
       agent.activeEffects.push({ abilityId: target, visualEffect: target === 'emp' ? 'code_overlay' : 'healing', remainingTicks: 6 });
       return target === 'medkit' ? '医疗包已使用。' : 'EMP 已释放：附近敌对程序受损并短暂瘫痪。';
@@ -184,7 +186,8 @@ export class SandboxSystem {
   attack(agent: AgentState, tick: number, combo = 0): string | null {
     const strike = MELEE_COMBO[combo];
     const staff = this.life.film.state?.scene === 'm2_burly' && this.life.film.state.burly?.phase === 'staff' && this.life.film.controls(agent);
-    const targets = this.state.threats.filter(t => t.matrix === agent.isInMatrix && meleeReach(agent.position, agent.rotation, t.position, staff && t.scene === 'm2_burly' ? 8 : strike.reach, agent.isInMatrix, this.state.structures))
+    const chateauWeapon = this.life.film.state?.scene === 'm2_chateau' && this.life.film.controls(agent) ? this.life.film.state.chateau?.weapon : undefined;
+    const targets = this.state.threats.filter(t => t.matrix === agent.isInMatrix && meleeReach(agent.position, agent.rotation, t.position, staff && t.scene === 'm2_burly' ? 8 : chateauWeapon && t.scene === 'm2_chateau' ? chateauWeapon === 'spear' ? 7.2 : 5.5 : strike.reach, agent.isInMatrix, this.state.structures))
       .sort((a, b) => distance(a.position, agent.position) - distance(b.position, agent.position));
     if (!targets[0]) return null;
     this.enterIfNeeded(agent);
@@ -212,6 +215,18 @@ export class SandboxSystem {
     const direction = { x: Math.sin(agent.rotation), y: 0, z: Math.cos(agent.rotation) };
     const position = { ...target.position, y: target.position.y + 2 };
     const health = target.health;
+    const chateauDamage = this.life.film.chateauStrike(agent, target, tick);
+    if (chateauDamage !== undefined) {
+      if (chateauDamage > 0) {
+        this.hit(agent, target, chateauDamage, tick);
+        target.attackAt = undefined; target.stunUntil = tick + 3;
+        target.position = combatDisplace(target.position, direction, strike.push, target.matrix, this.state.structures);
+        target.position.y = groundHeight(target.position, target.matrix);
+        this.onImpact?.({ source: agent.id, target: target.id, position, direction, damage: health - target.health,
+          combo, matrix: true, downed: target.health <= 0 }, tick);
+      }
+      return this.life.film.state!.lastText;
+    }
     const seraphCounters = target.character === 'seraph' && target.scene === 'm2_seraph' ? this.life.film.state?.seraph?.counters ?? 0 : undefined;
     const training = this.life.film.trainingHit(agent, target, combo, tick);
     const bathroom = this.life.film.bathroomHit(agent, target);
@@ -248,6 +263,7 @@ export class SandboxSystem {
 
   private skillHit(agent: AgentState, target: SandboxThreat, damage: number, tick: number, push = 0): void {
     if (target.scene === 'm2_seraph' && target.character === 'seraph') return;
+    if (target.scene === 'm2_chateau' && target.weapon) return;
     const position = { ...target.position, y: target.position.y + 2 };
     const dx = target.position.x - agent.position.x; const dz = target.position.z - agent.position.z; const length = Math.max(.01, Math.hypot(dx, dz));
     const direction = { x: dx / length, y: 0, z: dz / length }; const health = target.health;
@@ -467,7 +483,7 @@ export class SandboxSystem {
         if (tick < threat.attackAt) continue;
         threat.attackAt = undefined;
         if (!meleeReach(threat.position, Math.atan2(dx, dz), target, 3.8, threat.matrix, this.state.structures)) continue;
-        const damage = threat.kind === 'training' ? threat.character ? threat.combo === 2 ? 5 : 3 : 2 : threat.scene === 'm2_burly' ? 7 : threat.kind === 'smith' ? 12 : 6;
+        const damage = threat.kind === 'training' ? threat.character ? threat.combo === 2 ? 5 : 3 : 2 : threat.scene === 'm2_burly' ? 7 : threat.scene === 'm2_chateau' ? threat.weapon === 'axe' || threat.weapon === 'mace' ? 12 : 9 : threat.kind === 'smith' ? 12 : 6;
         if (escort) escort.health = Math.max(0, escort.health - damage);
         else {
           if (actor.activeEffects.some(e => ['dodge', 'agent_dodge', 'vision_flash', 'phase_shift'].includes(e.visualEffect))) {
@@ -479,6 +495,10 @@ export class SandboxSystem {
           const health = actor.health;
           const defended = actor.activeEffects.some(e => ['agent_dodge', 'slow_motion'].includes(e.visualEffect));
           actor.health = Math.max(threat.kind === 'training' ? 1 : 0, actor.health - (defended ? Math.ceil(damage / 3) : damage));
+          if (threat.scene === 'm2_chateau' && actor.health < health && this.life.film.state?.chateau) {
+            this.life.film.state.chateau.wounded = true;
+            this.life.film.state.lastText = '刀锋划过 Neo 的手臂。Merovingian 看见血，守卫继续逼近；看准起手格挡。';
+          }
           this.onImpact?.({ source: threat.id, target: actor.id, position: { ...actor.position, y: actor.position.y + 2 },
             direction: { x: dx / Math.max(.01, length), y: 0, z: dz / Math.max(.01, length) }, damage: health - actor.health,
             combo: threat.combo ?? 0, matrix: threat.matrix, downed: actor.health <= 0 }, tick);
@@ -487,28 +507,33 @@ export class SandboxSystem {
           delete this.state.profiles[actor.id].job;
           if (actor.health === 0) {
             if (this.life.film.burlyFailed(actor, tick)) break;
+            if (this.life.film.chateauFailed(actor, tick)) break;
             actor.status = 'dead'; actor.velocity = { x: 0, y: 0, z: 0 }; actor.currentAction = null; this.life.film.matrixEscapeDefeated(actor) || this.life.film.theOneDefeated(actor);
           }
         }
         continue;
       }
-      const step = threat.character === 'seraph' ? 3.4 : threat.kind === 'smith' ? 4.5 : threat.kind === 'training' ? 2 : 3;
+      const step = threat.scene === 'm2_chateau' ? 1.5 : threat.character === 'seraph' ? 3.4 : threat.kind === 'smith' ? 4.5 : threat.kind === 'training' ? 2 : 3;
       const approach = Math.min(step, Math.max(0, length - 2.7));
       const next = { ...threat.position, x: threat.position.x + dx / Math.max(1, length) * approach, z: threat.position.z + dz / Math.max(1, length) * approach };
+      if (threat.scene === 'm2_chateau') next.y = groundHeight(next, true);
       const barrier = this.state.structures.find(s => s.kind === 'barricade' && !s.film && s.matrix === threat.matrix && distance(s.position, next) < 8);
       if (barrier) { if (tick % 4 === 0) barrier.health -= 8; }
       else if (length > 2.7) {
-        if (!playerBlocked(next, threat.matrix, 1.1, this.state.structures)) threat.position = next;
+        if (Math.abs(next.y - threat.position.y) <= (threat.scene === 'm2_chateau' ? 1.2 : Infinity) && !playerBlocked(next, threat.matrix, 1.1, this.state.structures)) threat.position = next;
         else {
-          const sideX = { ...threat.position, x: next.x }; const sideZ = { ...threat.position, z: next.z };
-          if (!playerBlocked(sideX, threat.matrix, 1.1, this.state.structures)) threat.position = sideX;
-          if (!playerBlocked(sideZ, threat.matrix, 1.1, this.state.structures)) threat.position = { ...threat.position, z: sideZ.z };
+          const sideX = { ...threat.position, x: next.x };
+          if (threat.scene === 'm2_chateau') sideX.y = groundHeight(sideX, true);
+          if ((Math.abs(sideX.y - threat.position.y) <= 1.2 || threat.scene !== 'm2_chateau') && !playerBlocked(sideX, threat.matrix, 1.1, this.state.structures)) threat.position = sideX;
+          const sideZ = { ...threat.position, z: next.z };
+          if (threat.scene === 'm2_chateau') sideZ.y = groundHeight(sideZ, true);
+          if ((Math.abs(sideZ.y - threat.position.y) <= 1.2 || threat.scene !== 'm2_chateau') && !playerBlocked(sideZ, threat.matrix, 1.1, this.state.structures)) threat.position = sideZ;
         }
       }
       if (distance(threat.position, target) > 3.3 || tick - threat.lastStrike < (threat.character === 'seraph' ? 4 : threat.character === 'morpheus' ? 7 : 5) || barrier) continue;
       threat.lastStrike = tick;
       threat.combo = threat.character ? ((threat.combo ?? -1) + 1) % 3 : 0;
-      threat.attackAt = tick + (threat.character === 'morpheus' ? 2 : 1);
+      threat.attackAt = tick + (threat.character === 'morpheus' || threat.scene === 'm2_chateau' ? 2 : 1);
     }
     this.state.structures = this.state.structures.filter(s => s.health > 0);
     this.state.threats = this.state.threats.filter(t => t.scene || t.mission || t.incident || this.world.agents.get(t.target)?.controller && (this.state.profiles[t.target]?.trace ?? 0) > 20);

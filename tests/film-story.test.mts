@@ -1,7 +1,7 @@
 import { RELOADED } from '@auto_matrix/shared';
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, RESCUE, RESCUE_LOADOUTS, GOVERNMENT_RESCUE, AIR_RESCUE, MATRIX_ESCAPE, THE_ONE, filmReflections, filmStepPosition, filmEntry, filmPosition, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, RESCUE, RESCUE_LOADOUTS, GOVERNMENT_RESCUE, AIR_RESCUE, MATRIX_ESCAPE, THE_ONE, filmReflections, filmStepPosition, filmEntry, filmPosition, groundHeight, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -807,6 +807,121 @@ test('the keyed doors must be reached, and the Oracle leaves a saved Keymaker le
   h.command('retry'); assert.equal(h.sandbox.state.profiles.neo.inventory.code, prepared, 'loading the checkpoint cannot duplicate the benefit');
 });
 
+test('the château fight requires a chosen weapon, timed parry and a climb before the upper guard wave', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  const library = FILM_SCENE_BY_ID.m2_library; const hall = FILM_SCENE_BY_ID.m2_chateau;
+  Object.assign(state, { scene: library.id, actor: 'neo', step: library.steps.length });
+  h.actor().currentLocation = library.set; h.actor().isInMatrix = true;
+  h.command('next'); assert.equal(state.scene, hall.id);
+  h.actor().position = filmStepPosition(hall, hall.steps[0]); h.command('act');
+  assert.equal((state as any).chateau?.phase, 'duel');
+  assert.equal(h.sandbox.state.threats.filter(t => t.scene === hall.id).length, 2);
+  const guard = h.sandbox.state.threats.find(t => t.scene === hall.id)!;
+  guard.position = { ...h.actor().position, z: h.actor().position.z - 2 };
+  h.actor().rotation = Math.PI;
+  const before = guard.health; h.sandbox.attack(h.actor(), h.tick(), 0);
+  assert.equal(guard.health, before, 'an armed guard blocks an unprepared frontal strike');
+  guard.attackAt = h.tick() + 2; guard.stunUntil = 0;
+  assert.match(h.players.act('film-player', 'dodge', h.tick()), /格开/);
+  assert.equal(guard.attackAt, undefined);
+  h.actor().position = filmPosition(hall.set, -29, 17); h.command('act');
+  assert.equal((state as any).chateau?.weapon, 'sword');
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+  assert.equal((h.sandbox.life.film.state as any).chateau?.weapon, 'sword', 'the selected wall weapon survives reload');
+  assert.equal(h.sandbox.state.threats.filter(t => t.scene === hall.id).length, 2);
+  const finishWave = () => {
+    for (const target of [...h.sandbox.state.threats.filter(t => t.scene === hall.id)]) {
+      h.actor().position = { ...target.position, z: target.position.z + 2 }; h.actor().rotation = Math.PI;
+      target.attackAt = h.tick() + 2; target.stunUntil = 0;
+      h.players.act('film-player', 'dodge', h.tick());
+      for (let hit = 0; hit < 3 && target.health > 0; hit++) h.sandbox.attack(h.actor(), h.tick(), 0);
+      assert.equal(target.health, 0, `${target.weapon ?? 'disarmed'} guard was not defeated at wave ${h.sandbox.life.film.state?.chateau?.wave}`);
+    }
+  };
+  finishWave(); h.advance();
+  assert.equal(h.sandbox.life.film.state?.chateau?.phase, 'landing'); assert.equal(h.sandbox.life.film.state?.step, 0);
+  assert.equal(h.sandbox.state.threats.filter(t => t.scene === hall.id).length, 0);
+  h.advance(10); assert.equal(h.sandbox.life.film.state?.chateau?.phase, 'landing', 'waiting on the ground does not summon the upper wave');
+  h.actor().position = filmStepPosition(hall, hall.steps[1]); h.advance();
+  assert.equal(h.sandbox.life.film.state?.chateau?.wave, 2);
+  assert.equal(h.sandbox.state.threats.filter(t => t.scene === hall.id).length, 2);
+  finishWave(); h.advance(); assert.equal(h.sandbox.life.film.state?.step, 1);
+  assert.equal(h.sandbox.life.film.state?.chateau?.phase, 'cleared');
+  h.command('retry');
+  assert.equal(h.sandbox.life.film.state?.step, 1);
+  assert.equal(h.sandbox.life.film.state?.chateau?.phase, 'cleared', 'retry at the exit cannot restart a cleared battle');
+});
+
+test('EMP can stagger château guards but cannot bypass their weapon defense', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  const library = FILM_SCENE_BY_ID.m2_library; const hall = FILM_SCENE_BY_ID.m2_chateau;
+  Object.assign(state, { scene: library.id, actor: 'neo', step: library.steps.length });
+  h.actor().currentLocation = library.set; h.actor().isInMatrix = true; h.command('next');
+  h.actor().position = filmStepPosition(hall, hall.steps[0]); h.command('act');
+  h.sandbox.state.profiles.neo.inventory.emp = 2;
+  const guard = h.sandbox.state.threats.find(t => t.scene === hall.id)!;
+  const health = guard.health;
+  h.sandbox.command(h.actor(), { kind: 'use', target: 'emp' }, h.tick());
+  h.advance(3);
+  h.sandbox.command(h.actor(), { kind: 'use', target: 'emp' }, h.tick());
+  assert.equal(guard.health, health);
+  assert.ok(guard.stunUntil > h.tick());
+  assert.equal(state.chateau?.phase, 'duel');
+});
+
+test('an older château save restarts its unfinished fight without erasing a cleared exit', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  const library = FILM_SCENE_BY_ID.m2_library; const hall = FILM_SCENE_BY_ID.m2_chateau;
+  Object.assign(state, { scene: library.id, actor: 'neo', step: library.steps.length });
+  h.actor().currentLocation = library.set; h.actor().isInMatrix = true; h.command('next');
+  h.actor().position = filmStepPosition(hall, hall.steps[0]); h.command('act');
+  delete state.chateau;
+  for (const guard of h.sandbox.state.threats.filter(t => t.scene === hall.id)) delete guard.weapon;
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+  assert.equal(h.sandbox.life.film.state?.chateau?.phase, 'ready');
+  assert.equal(h.sandbox.state.threats.filter(t => t.scene === hall.id).length, 0);
+  h.actor().position = filmStepPosition(hall, hall.steps[0]);
+  h.command('act'); assert.equal(h.sandbox.state.threats.filter(t => t.scene === hall.id).length, 2);
+  const resumed = h.sandbox.life.film.state!;
+  resumed.step = 1; delete resumed.chateau;
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+  assert.equal(h.sandbox.life.film.state?.chateau?.phase, 'cleared');
+  assert.equal(h.sandbox.life.film.state?.step, 1);
+});
+
+test('upper château guards remain on their floor when Neo retreats below the landing', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  const library = FILM_SCENE_BY_ID.m2_library; const hall = FILM_SCENE_BY_ID.m2_chateau;
+  Object.assign(state, { scene: library.id, actor: 'neo', step: library.steps.length });
+  h.actor().currentLocation = library.set; h.actor().isInMatrix = true; h.command('next');
+  h.actor().position = filmStepPosition(hall, hall.steps[0]); h.command('act');
+  h.sandbox.state.threats = h.sandbox.state.threats.filter(t => t.scene !== hall.id);
+  h.advance(); h.actor().position = filmStepPosition(hall, hall.steps[1]); h.advance();
+  h.actor().position = filmPosition(hall.set, -8, -25);
+  h.advance(20);
+  for (const guard of h.sandbox.state.threats.filter(t => t.scene === hall.id))
+    assert.equal(guard.position.y, groundHeight(guard.position, true), 'guard cannot hover across the landing edge');
+});
+
+test('the château guard can wound Neo, and a failed attempt retries without losing the chosen weapon', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  const library = FILM_SCENE_BY_ID.m2_library; const hall = FILM_SCENE_BY_ID.m2_chateau;
+  Object.assign(state, { scene: library.id, actor: 'neo', step: library.steps.length });
+  h.actor().currentLocation = library.set; h.actor().isInMatrix = true; h.command('next');
+  h.actor().position = filmStepPosition(hall, hall.steps[0]); h.command('act');
+  h.actor().position = filmPosition(hall.set, -29, 17); h.command('act');
+  const guard = h.sandbox.state.threats.find(t => t.scene === hall.id)!;
+  guard.position = { ...h.actor().position, z: h.actor().position.z - 2 };
+  guard.stunUntil = 0; guard.attackAt = h.tick() + 1;
+  h.actor().health = 1; h.advance();
+  assert.equal(state.chateau?.phase, 'failed'); assert.equal(state.chateau?.wounded, true);
+  assert.equal(state.chateau?.weapon, 'sword'); assert.equal(h.actor().status, 'alive');
+  assert.equal(h.sandbox.state.threats.filter(t => t.scene === hall.id).length, 0);
+  h.command('act'); assert.equal(state.chateau?.phase, 'ready');
+  h.actor().position = filmStepPosition(hall, hall.steps[0]); h.command('act');
+  assert.equal(state.chateau?.weapon, 'sword'); assert.equal(h.sandbox.state.threats.filter(t => t.scene === hall.id).length, 2);
+});
+
 test('Smith assimilation is reversible at the ending, without reviving Trinity', () => {
   const h = setup(); h.command('start'); const state = h.sandbox.life.film.state!;
   const playLast = (id: string) => {
@@ -1211,6 +1326,22 @@ test('the entire film route completes through interactions, driving and real com
             h.sandbox.attack(actor, h.tick(), 2);
           }
           assert.equal(state.step, 1); continue;
+        }
+        if (scene.id === 'm2_chateau') {
+          h.command('act');
+          actor.position = filmPosition(scene.set, -29, 17); h.command('act');
+          const fightWave = () => {
+            for (const target of [...h.sandbox.state.threats.filter(threat => threat.scene === scene.id)]) {
+              actor.position = { ...target.position, z: target.position.z + 2 }; actor.rotation = Math.PI;
+              target.attackAt = h.tick() + 2; target.stunUntil = 0;
+              h.players.act('film-player', 'dodge', h.tick());
+              for (let hit = 0; hit < 3 && target.health > 0; hit++) h.sandbox.attack(actor, h.tick(), 0);
+              assert.equal(target.health, 0, scene.id);
+            }
+          };
+          fightWave(); h.advance(); assert.equal(state.chateau?.phase, 'landing');
+          actor.position = filmStepPosition(scene, scene.steps[1]); h.advance();
+          fightWave(); h.advance(); assert.equal(state.step, 1); continue;
         }
         if (scene.id === 'm1_bullet_dodge') {
           h.command('act');

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { BURLY, oracleVisitPose, type AgentState, type RescueLoadout } from '@auto_matrix/shared';
+import { BURLY, oracleVisitPose, type AgentState, type RescueLoadout, type ChateauWeapon } from '@auto_matrix/shared';
 import { advanceMotion, newMotion, type MotionInput, type MotionState } from './CharacterMotion.js';
 import { HERO_IDS, HeroModels, type HeroId, type HeroRig, type HeroSupport } from './HeroModel.js';
 import { SpoonModel } from './SpoonModel.js';
@@ -52,6 +52,7 @@ export interface CharacterRig {
   phone?: PhoneModel;
   cookie?: THREE.Group;
   staff?: THREE.Group;
+  chateauBlade?: { weapon: ChateauWeapon; model: THREE.Group };
   infection?: THREE.Group;
   rifle?: boolean;
   weaponStyle?: RescueLoadout | 'pistol' | 'pulse';
@@ -205,6 +206,10 @@ export class CharacterModels {
       hair: state.id === 'spoon_boy' ? 'bald' : 'short', glasses: state.faction === 'civilians' || state.faction === 'oracle' || state.faction === 'zion' && !state.isInMatrix ? 'none' : 'square',
     };
     if (state.id === 'citizen_2') look.cloth = '#a21722';
+    if (state.id.startsWith('chateau_guard_')) {
+      look.glasses = 'none'; look.hair = state.id.endsWith('mace') || state.id.endsWith('axe') ? 'bald' : 'short';
+      look.shoulders = state.id.endsWith('mace') ? .69 : .61;
+    }
     const root = new THREE.Group(); const detail = new VisibleGroup(); root.add(detail);
     if (state.id === 'spoon_boy') { root.scale.setScalar(.73); look.cloth = '#d5c7ac'; look.skin = '#d8b99b'; }
     const torso = this.joint(detail, 0, 1.86); const smallDetails = this.joint(detail, 0, 0);
@@ -327,6 +332,7 @@ export class CharacterModels {
         for (const child of detail.children) child.visible = false;
         detail.add(model.root); rig.hero = model;
         if (rig.staff) { rig.staff.removeFromParent(); rig.staff.position.set(0, -.16, .06); model.bones.get('wrist_R')!.add(rig.staff); }
+        if (rig.chateauBlade) { rig.chateauBlade.model.removeFromParent(); rig.chateauBlade.model.position.set(0, -.16, .06); model.bones.get('wrist_R')!.add(rig.chateauBlade.model); }
       }).catch(error => console.warn(`${state.id} asset could not load; retaining the procedural character.`, error));
     }
     return rig;
@@ -458,6 +464,39 @@ export class CharacterModels {
       rig.staff.position.set(0, rig.hero ? -.16 : -.76, .06); rig.staff.rotation.z = Math.PI / 2; parent.add(rig.staff);
     }
     if (rig.staff) rig.staff.visible = holdsStaff;
+    if (input.chateauWeapon && rig.chateauBlade?.weapon !== input.chateauWeapon) {
+      rig.chateauBlade?.model.removeFromParent();
+      const weapon = input.chateauWeapon; const model = new THREE.Group(); model.name = `chateau-${weapon}`;
+      const steel = this.material(new THREE.MeshStandardMaterial({ color: 0xa7aaa1, metalness: .84, roughness: .26 }));
+      const dark = this.material(new THREE.MeshStandardMaterial({ color: 0x362e25, metalness: .24, roughness: .58 }));
+      const brass = this.material(new THREE.MeshStandardMaterial({ color: 0x9c8151, metalness: .72, roughness: .3 }));
+      if (weapon === 'spear') {
+        this.mesh(model, this.cylinder, dark, [0, -1.25, 0], [.035, 3.1, .035]);
+        this.mesh(model, this.geometry(new THREE.ConeGeometry(.11, .48, 8)), steel, [0, .53, 0]);
+        this.mesh(model, this.cylinder, brass, [0, .24, 0], [.075, .2, .075]);
+      } else {
+        this.mesh(model, this.cylinder, dark, [0, -.48, 0], [.055, .85, .055]);
+        this.mesh(model, this.cylinder, brass, [0, -.02, 0], [.2, .09, .08]);
+        if (weapon === 'mace') {
+          this.mesh(model, this.sphere, steel, [0, .8, 0], [.26, .28, .26]);
+          for (const side of [-1, 1]) this.mesh(model, this.box, steel, [side * .27, .8, 0], [.24, .12, .12]);
+        } else if (weapon === 'axe') {
+          this.mesh(model, this.box, steel, [0, .75, 0], [.18, .56, .12]);
+          this.mesh(model, this.geometry(new THREE.ConeGeometry(.37, .72, 3)), steel, [.27, .75, 0]).rotation.z = -Math.PI / 2;
+        } else {
+          this.mesh(model, this.box, steel, [0, .85, 0], [.11, 1.48, .045]);
+          this.mesh(model, this.geometry(new THREE.ConeGeometry(.077, .31, 4)), steel, [0, 1.7, 0]);
+        }
+      }
+      const parent = rig.hero?.bones.get('wrist_R') ?? rig.elbows[0];
+      model.position.set(0, rig.hero ? -.16 : -.76, .06); parent.add(model);
+      rig.chateauBlade = { weapon, model };
+    }
+    if (rig.chateauBlade) {
+      rig.chateauBlade.model.visible = Boolean(input.chateauWeapon);
+      const sweep = rig.motion.attackAge < .6 ? Math.sin(rig.motion.attackAge / .6 * Math.PI) : 0;
+      rig.chateauBlade.model.rotation.z = input.chateauWeapon === 'spear' ? Math.PI / 2 + sweep * .55 : sweep * 1.1;
+    }
     const infected = input.burly?.role === 'neo' && (input.burly.phase === 'grapple' || input.burly.assimilation > 0 && ['swarm', 'staff_ready', 'staff', 'flight_ready'].includes(input.burly.phase));
     if (infected && !rig.infection) {
       const black = this.material(new THREE.MeshBasicMaterial({ color: 0x030b09, transparent: true, opacity: .9, depthWrite: false }));
@@ -485,6 +524,7 @@ export class CharacterModels {
         rig.hero.bones.get('shoulder_L')!.rotation.x -= .55 + staffSweep * .35;
         rig.hero.bones.get('chest')!.rotation.y += staffSweep * .42;
       }
+      if (input.chateauWeapon) rig.hero.bones.get('shoulder_R')!.rotation.x -= .55;
       if (input.burly?.phase === 'flight' && input.burly.role === 'neo') {
         rig.hero.bones.get('chest')!.rotation.x -= .55;
         for (const side of ['R', 'L']) rig.hero.bones.get(`shoulder_${side}`)!.rotation.x -= 1.1;
@@ -505,6 +545,7 @@ export class CharacterModels {
     rig.torso.rotation.set(pose.lean, pose.twist, pose.roll);
     rig.head.rotation.set(-pose.lean * .6, pose.headTurn, -pose.roll * .5);
     if (holdsStaff) rig.torso.rotation.y += staffSweep * .42;
+    if (input.chateauWeapon) rig.torso.rotation.y += rig.motion.attackAge < .6 ? Math.sin(rig.motion.attackAge / .6 * Math.PI) * .2 : 0;
     if (input.burly?.phase === 'flight' && input.burly.role === 'neo') rig.torso.rotation.x -= .55;
     if (input.persephone?.phase === 'enacting') {
       const weight = Math.sin(Math.min(1, input.persephone.elapsed / 2.8) * Math.PI);
@@ -519,6 +560,7 @@ export class CharacterModels {
       rig.elbows[i].rotation.x = pose.arms[i].elbow;
       if (i === 0 && input.persephone?.phase === 'enacting') rig.shoulders[i].rotation.x -= Math.sin(Math.min(1, input.persephone.elapsed / 2.8) * Math.PI) * .45;
       if (holdsStaff) rig.shoulders[i].rotation.x -= (i ? .55 : .7) + staffSweep * (i ? .35 : .5);
+      if (input.chateauWeapon && i === 0) rig.shoulders[i].rotation.x -= .55;
       if (input.burly?.phase === 'flight' && input.burly.role === 'neo') rig.shoulders[i].rotation.x -= 1.1;
       if (i === 0 && input.burly?.phase === 'grapple' && input.burly.role === 'smith') { rig.shoulders[i].rotation.x -= 1.15; rig.elbows[i].rotation.x -= .65; }
       for (const finger of rig.fingers[i]) finger.rotation.x = -.12 - pose.arms[i].grip * 2.1;

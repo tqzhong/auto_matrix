@@ -44,3 +44,4 @@ export * from './constants/zion-homecoming.js';
 export * from './constants/seraph-oracle.js';
 export * from './constants/burly.js';
 export * from './constants/exiles.js';
+export * from './constants/chateau.js';

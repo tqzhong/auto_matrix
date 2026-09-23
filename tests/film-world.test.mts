@@ -39,6 +39,25 @@ test('the chateau staircase supports the player and its upper landing blocks ent
   assert.equal(groundHeight(landing, true), landing.y);
 });
 
+test('Neo can walk from the château floor up either staircase and reach the actual upper door', () => {
+  for (const side of [-1, 1]) {
+    let position = filmPosition('film_chateau_hall', 0, 0);
+    let verticalVelocity = 0; let horizontalVelocity = { x: 0, z: 0 };
+    for (const [x, z] of [[side * 14, -4], [side * 25, -29], [0, -38.5]]) {
+      const target = filmPosition('film_chateau_hall', x, z);
+      for (let frame = 0; frame < 2000; frame++) {
+        const dx = target.x - position.x; const dz = target.z - position.z; const length = Math.hypot(dx, dz);
+        if (length < .6) break;
+        const next = stepPlayer(position, verticalVelocity, { x: dx / length, z: dz / length, yaw: 0, jump: false, sprint: false }, .05, true, [], horizontalVelocity);
+        position = next.position; verticalVelocity = next.verticalVelocity; horizontalVelocity = next.horizontalVelocity;
+        assert.ok(frame < 1999, `${side} staircase blocked at ${JSON.stringify(position)}`);
+      }
+    }
+    assert.ok(position.y > FILM_SETS.film_chateau_hall.center.y + 9);
+    assert.ok(Math.hypot(position.x - FILM_SETS.film_chateau_hall.center.x, position.z - (FILM_SETS.film_chateau_hall.center.z - 38.5)) < 1);
+  }
+});
+
 test('the Oracle apartment separates the waiting room from the kitchen while keeping its doorway open', () => {
   assert.equal(playerBlocked(filmPosition('film_oracle_home', 13, -8), true), true);
   assert.equal(playerBlocked(filmPosition('film_oracle_home', 0, -8), true), false);

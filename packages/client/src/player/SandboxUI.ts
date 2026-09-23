@@ -6,6 +6,7 @@ import { renderNeoLife } from './NeoLifePanel.js';
 import { interrogationLocked, interrogationPose } from '@auto_matrix/shared';
 import { meetingLocked, MEETING_TIMING } from '@auto_matrix/shared';
 import { filmPosition, HOTEL_DOOR_PROGRESS } from '@auto_matrix/shared';
+import { CHATEAU } from '@auto_matrix/shared';
 import { workdayLocked } from '@auto_matrix/shared';
 import { apartmentLocked } from '@auto_matrix/shared';
 import { wakeCallLocked } from '@auto_matrix/shared';
@@ -242,6 +243,39 @@ export class SandboxUI {
       if (destination) {
         const direction = Math.atan2(destination.x - player.position.x, destination.z - player.position.z) - player.rotation;
         this.el('sandbox-waypoint').innerHTML = `<span style="transform:rotate(${-direction}rad)">↑</span>${phase === 'staff_ready' ? '松动栏杆' : '起飞空地'} <b>${Math.round(distance(destination, player.position))} m</b>`;
+      } else this.el('sandbox-waypoint').textContent = '';
+      return;
+    }
+    if (!journey.visiting && scene.id === 'm2_chateau' && journey.chateau && journey.step === 0) {
+      const encounter = journey.chateau; const phase = encounter.phase;
+      const rack = (['sword', 'spear'] as const).find(weapon => distance(player.position, filmPosition(scene.set, CHATEAU.racks[weapon].x, CHATEAU.racks[weapon].z)) <= 4);
+      const landing = filmStepPosition(scene, scene.steps[1]);
+      const close = distance(player.position, filmStepPosition(scene, scene.steps[0])) <= 4;
+      const windup = state.threats.some(threat => threat.scene === scene.id && threat.attackAt !== undefined && threat.weapon && distance(threat.position, player.position) <= 4.4);
+      const ready = phase === 'failed' || phase === 'ready' && close || ['duel', 'landing'].includes(phase) && Boolean(rack);
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.toggle('urgent', windup || phase === 'failed');
+      this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = phase === 'ready' ? '走到大厅中央 · G 掩护同伴' : phase === 'failed' ? 'G 重试当前楼层 · 兵器保留'
+        : phase === 'landing' ? '沿任一侧楼梯上二层平台 · 兵器架仍可更换'
+        : `${encounter.weapon === 'sword' ? '长剑' : encounter.weapon === 'spear' ? '长矛' : '徒手'} · ${windup ? '现在按 X 格挡，再按 F 缴械' : '观察红色起手 · X 格挡 · F 反击'} · 已缴械 ${encounter.disarms}`;
+      this.el('sandbox-interact').classList.toggle('hidden', !ready);
+      this.el('sandbox-nearby').textContent = phase === 'failed' ? '重试当前楼层' : phase === 'ready' ? '挡住开火的守卫' : rack ? `取下${rack === 'sword' ? '长剑' : '长矛'}` : '';
+      const actions = this.el('film-training-actions'); const dodge = actions.querySelector<HTMLButtonElement>('[data-combat="dodge"]')!;
+      const attack = actions.querySelector<HTMLButtonElement>('[data-combat="attack"]')!;
+      if (phase === 'duel') {
+        actions.classList.remove('hidden'); dodge.classList.remove('hidden'); dodge.disabled = false;
+        dodge.innerHTML = `<kbd>X</kbd> ${windup ? '现在格挡' : '闪避 / 格挡'}`;
+        attack.classList.remove('hidden'); attack.disabled = false; attack.querySelector('span')!.textContent = encounter.weapon ? '挥击' : '徒手';
+      }
+      this.el('sandbox-trace').textContent = `守卫 ${state.threats.filter(threat => threat.scene === scene.id).length} · 格挡 ${encounter.parries} · 缴械 ${encounter.disarms}`;
+      this.el('sandbox-trace').classList.toggle('danger', windup);
+      this.el('sandbox-job').style.width = `${(encounter.wave - 1) * 50 + (encounter.phase === 'landing' ? 50 : encounter.phase === 'duel' ? (2 - state.threats.filter(threat => threat.scene === scene.id).length) * 25 : 0)}%`;
+      document.getElementById('game-objective')!.textContent = '城堡大厅 · 古兵器战';
+      document.getElementById('game-objective-copy')!.textContent = phase === 'landing' ? '登上二层平台，迎战后方守卫' : phase === 'ready' ? '挡住火力，让同伴带钥匙匠离开' : journey.lastText;
+      const destination = phase === 'landing' ? landing : !encounter.weapon ? filmPosition(scene.set, CHATEAU.racks.sword.x, CHATEAU.racks.sword.z) : undefined;
+      if (destination) {
+        const direction = Math.atan2(destination.x - player.position.x, destination.z - player.position.z) - player.rotation;
+        this.el('sandbox-waypoint').innerHTML = `<span style="transform:rotate(${-direction}rad)">↑</span>${phase === 'landing' ? '二层平台' : '左墙长剑'} <b>${Math.round(distance(destination, player.position))} m</b>`;
       } else this.el('sandbox-waypoint').textContent = '';
       return;
     }

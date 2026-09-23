@@ -328,6 +328,7 @@ export class PlayerController {
       this.sandbox?.life.film.theOneAction(agent, tick);
       this.sandbox?.life.film.reloaded.action(agent, tick);
       this.sandbox?.life.film.burlyAction(agent);
+      this.sandbox?.life.film.chateauAction(agent);
       const journey = this.sandbox?.life.film.state;
       if (journey?.actor === agent.id && agent.currentAction && heldPhone(journey)) agent.currentAction.parameters.phone = { ...heldPhone(journey)! };
       const nearbyLocation = Object.values(LOCATIONS).filter(location => location.id !== 'downtown' && (location.world === 'matrix') === agent.isInMatrix)
@@ -350,6 +351,8 @@ export class PlayerController {
     if (kind === 'dodge') {
       const burly = this.sandbox?.life.film.burlyDodge(agent, tick);
       if (burly !== undefined) return burly;
+      const chateau = this.sandbox?.life.film.chateauParry(agent, tick);
+      if (chateau !== undefined) return chateau;
       const result = this.sandbox?.life.film.governmentDodge(agent, tick);
       if (result !== undefined) return result;
       const rescue = this.sandbox?.life.film.airRescueBrace(agent, tick);
