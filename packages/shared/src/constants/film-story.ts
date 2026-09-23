@@ -11,6 +11,7 @@ import { CLUB } from './club.js';
 import { SERAPH_ORACLE } from './seraph-oracle.js';
 import { EXILES } from './exiles.js';
 import { MOUNTAIN } from './mountain.js';
+import { TRUCKS } from './trucks.js';
 
 export type FilmCue = 'night' | 'contact' | 'office' | 'club' | 'awakening' | 'training' | 'oracle' | 'infiltration' | 'combat' | 'the_one' | 'zion' | 'swarm' | 'restaurant' | 'chateau' | 'chase' | 'source' | 'mobil' | 'siege' | 'bane' | 'farewell' | 'final' | 'dawn';
 export interface FilmStep {
@@ -32,6 +33,7 @@ export interface FilmJourney {
   skipped?: string[];
   ride?: import('./freeway.js').FreewayRide;
   garage?: import('./garage.js').GarageEscape;
+  trucks?: import('./trucks.js').TruckEncounter;
   awakening?: import('./awakening.js').AwakeningBeat;
   training?: import('./training.js').TrainingPerformance;
   workday?: import('./office-workday.js').OfficeWorkday;
@@ -153,7 +155,11 @@ export const FILM_SCENES: FilmScene[] = [
   ], ['link']),
   scene('m2_garage', 2, 'chateau_garage', 'trinity', '车库中的追兵', 'freeway', 'chase', '钥匙匠已发动轿车。双子会穿透撞击，不能靠拳脚清除；Trinity 必须载上 Morpheus 与钥匙匠冲出车库。', [walk('跑向钥匙匠发动的轿车', -3, 14), { kind: 'drive', label: '驾车穿过双子的拦截', x: -3, z: 14 }], ['morpheus', 'keymaker', 'twin1', 'twin2']),
   scene('m2_freeway', 2, 'freeway_101', 'trinity', '逆向的高速路', 'freeway', 'chase', 'Trinity 骑摩托车带着钥匙匠逆向穿过车流。W 加速，S 刹车，A / D 转向；碰撞会损伤车辆和乘员。', [walk('靠近接应摩托车', 14, 660), { kind: 'drive', label: '驾驶摩托车护送钥匙匠', x: 14, z: 660 }, use('把钥匙匠交给 Morpheus', '两人抵达接应区。Morpheus 接过护送任务，追逐转向重型卡车。', 14, -660)], ['keymaker', 'morpheus']),
-  scene('m2_trucks', 2, 'freeway_101', 'morpheus', '两辆卡车之间', 'freeway', 'chase', 'Morpheus 在卡车上对抗特工，钥匙匠已没有更多退路。', [{ ...fight('保护钥匙匠', 2), x: 14 }, use('等待 Neo 的空中接应', '两辆卡车即将相撞，Neo 及时带走两人。', 14, -50)], ['keymaker']),
+  scene('m2_trucks', 2, 'freeway_trucks', 'morpheus', '两辆卡车之间', 'freeway', 'chase', 'Morpheus 在疾驰的十八轮卡车车顶抵挡 Johnson。F 连击、X 闪避；把他击退后，赶到钥匙匠身边，在卡车相撞前按 G 稳住两人，等待 Neo 飞来。', [
+    { ...fight('在卡车顶击退 Johnson', 1, 'agent', 'agent_johnson'), ...TRUCKS.morpheus },
+    walk('赶到钥匙匠身边', TRUCKS.keymaker.x, TRUCKS.keymaker.z),
+    use('抓住钥匙匠，迎接 Neo', '两辆货车正面相撞。Neo 掠过车顶，在爆炸前带走 Morpheus 与钥匙匠。', TRUCKS.keymaker.x, TRUCKS.keymaker.z, 1.5),
+  ], ['keymaker', 'agent_johnson', 'niobe', 'neo']),
   scene('m2_plan', 2, 'neb_deck', 'neo', '钥匙匠的路线', 'architect', 'infiltration', '打开通往源头的门需要同步切断主电源与备用电源。几艘船分头行动。', [use('核对电站示意图', 'Niobe 的队伍负责发电厂，另一支队伍负责备用电源；Neo 与 Morpheus 护送钥匙匠。', 0, -16), think('合作如何改变可能的选择？', '这条路线无法靠一个人的力量完成。')], ['keymaker', 'morpheus', 'trinity']),
   scene('m2_power', 2, 'power_station', 'niobe', '主电网的倒计时', 'architect', 'infiltration', 'Niobe 的队伍进入发电设施，准备在同一时刻切断供电。', [fight('清除配电区守卫', 2), use('操作主断路器', '主电源被切断，下一组必须关闭备用系统。', 0, -29, 6)], ['ghost']),
   scene('m2_vigilant', 2, 'service_tunnels', 'trinity', '突然失去的联系', 'architect', 'siege', '执行备用电源任务的 Vigilant 被哨兵摧毁。Trinity 决定亲自补上缺口。', [use('检查中断的信号', '备用系统仍在供电。等待会让进入核心的队伍全军覆没。', 0, -20), use('接入备用电站', 'Trinity 违背 Neo 的请求进入矩阵。', 0, 0)], ['link']),
@@ -205,6 +211,7 @@ export function oracleActing(journey: FilmJourney): boolean {
 }
 export function filmStepPosition(scene: FilmScene, step: FilmStep): Vector3 {
   const position = filmPosition(scene.set, step.x, step.z);
+  if (scene.id === 'm2_trucks') position.y += TRUCKS.roof.height;
   if (scene.id === 'm2_chateau' && step.z < -30) position.y += 10;
   if (scene.id === 'm1_pod' && step.z === 12) position.y -= 18;
   return position;
@@ -220,7 +227,7 @@ export function filmEntry(scene: FilmScene): Vector3 {
   if (scene.id === 'm1_pod') return filmPosition(scene.set, 0, -12);
   if (scene.id === 'm1_recovery') return filmPosition(scene.set, RECOVERY_BED.standingX, RECOVERY_BED.z);
   if (scene.id === 'm2_freeway') return filmPosition(scene.set, 14, 674);
-  if (scene.id === 'm2_trucks') return filmPosition(scene.set, 14, 25);
+  if (scene.id === 'm2_trucks') return { ...filmPosition(scene.set, TRUCKS.morpheus.x, TRUCKS.morpheus.z), y: FILM_SETS[scene.set].center.y + TRUCKS.roof.height };
   if (scene.id === 'm2_mountain') return filmPosition(scene.set, MOUNTAIN.door.x, MOUNTAIN.door.z - 7);
   return filmPosition(scene.set, 0, scene.id === 'm1_lobby' ? 35 : FILM_SETS[scene.set].depth * .32);
 }

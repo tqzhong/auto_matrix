@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { FREEWAY_START, FREEWAY_FINISH, freewayTraffic, filmObstacles, type FilmSet, type FilmJourney, type Vector3 } from '@auto_matrix/shared';
+import { FREEWAY_START, FREEWAY_FINISH, TRUCKS, freewayTraffic, filmObstacles, type FilmSet, type FilmJourney, type Vector3 } from '@auto_matrix/shared';
 
 /** The ride, traffic and roadside barriers share the server's road coordinates. */
 export class FreewaySetRenderer {
@@ -10,6 +10,13 @@ export class FreewaySetRenderer {
   private materials = new Set<THREE.Material>();
   private textures = new Set<THREE.Texture>();
   private bike = new THREE.Group();
+  private heroTruck?: THREE.Group;
+  private oncomingTruck?: THREE.Group;
+  private niobeCar?: THREE.Group;
+  private neoTrail?: THREE.Group;
+  private impact?: THREE.Group;
+  private fire?: THREE.Group;
+  private smoke?: THREE.Group;
   private wheels: THREE.Mesh[] = [];
   private traffic: { mesh: THREE.InstancedMesh; part: THREE.Matrix4; truck: boolean; paint: boolean }[] = [];
   private previousElapsed = 0;
@@ -28,6 +35,7 @@ export class FreewaySetRenderer {
     this.paint = this.mat(0xffffff, .26, .65); this.rubber = this.mat(0x121713, .9); this.steel = this.mat(0x858c82, .34, .8);
     this.windows = this.mat(0x1e393b, .13, .7); this.white = this.mat(0xd3cfb9, .85);
     this.buildRoad(); this.batch(); this.buildBike(); this.buildTraffic(false); this.buildTraffic(true);
+    if (set.id === 'film_freeway_trucks') this.buildTruckScene();
   }
   private mat(color: number, roughness: number, metalness = 0): THREE.MeshStandardMaterial {
     const mat = new THREE.MeshStandardMaterial({ color, roughness, metalness }); this.materials.add(mat); return mat;
@@ -147,6 +155,73 @@ export class FreewaySetRenderer {
       this.traffic.push({ mesh, part: object.matrix.clone(), truck, paint: object.material === this.paint });
     }
   }
+  private buildTruckScene(): void {
+    const trailer = this.mat(0xc4c7bd, .78, .18); const roof = this.mat(0xb1b9ae, .86, .12); const cab = this.mat(0x32433e, .35, .43);
+    const red = this.mat(0x973b2c, .45, .35); const lamp = this.mat(0xffdca4, .19);
+    const buildRig = (body: THREE.Material, name: string): THREE.Group => {
+      const rig = new THREE.Group(); rig.name = name; this.root.add(rig);
+      this.box(this.rubber, 0, 1.15, 2.5, 5.3, .7, 25, rig, .15);
+      this.box(trailer, 0, 3.6, 3.5, 5.6, 6, 20, rig, .1);
+      this.box(roof, 0, TRUCKS.roof.height + .01, 3.5, 5.65, .07, 19.9, rig);
+      for (let z = -6; z <= 12; z += 1.8) this.box(this.steel, 0, TRUCKS.roof.height + .08, z, 5.45, .035, .06, rig);
+      for (const x of [-2.84, 2.84]) for (let z = -6; z < 13; z += 2.4) this.box(this.steel, x, 3.7, z, .055, 5.65, .1, rig);
+      this.box(body, 0, 2.8, -10.4, 5.35, 3.7, 6.8, rig, .35);
+      this.box(body, 0, 4.25, -11.8, 5, 2.8, 3.6, rig, .4);
+      this.box(this.windows, 0, 4.45, -13.62, 4.35, 2, .06, rig);
+      for (const x of [-2.1, 2.1]) {
+        this.box(lamp, x, 2.2, -13.84, .7, .4, .08, rig, .05);
+        this.box(this.rubber, x * 1.13, 3.4, -11.3, .3, .65, .65, rig, .08);
+      }
+      for (const side of [-1, 1]) for (const z of [-11, 1, 7, 11]) {
+        const wheel = this.cylinder(this.rubber, side * 2.52, 1, z, 1.08, .65, rig); wheel.rotation.z = Math.PI / 2;
+        const hub = this.cylinder(this.steel, side * 2.88, 1, z, .57, .04, rig); hub.rotation.z = Math.PI / 2;
+      }
+      this.box(this.steel, 0, 1.8, -13.9, 5.8, .5, .3, rig, .08);
+      return rig;
+    };
+    this.heroTruck = buildRig(cab, 'matrix-freeway-hero-truck'); this.heroTruck.position.set(TRUCKS.roof.x, 0, TRUCKS.morpheus.z);
+    this.oncomingTruck = buildRig(red, 'matrix-freeway-oncoming-truck'); this.oncomingTruck.position.set(TRUCKS.roof.x, 0, TRUCKS.oncomingStart);
+    this.oncomingTruck.rotation.y = Math.PI;
+    const car = this.niobeCar = new THREE.Group(); car.name = 'matrix-freeway-niobe-car'; this.root.add(car); car.position.set(TRUCKS.niobe.x, 0, TRUCKS.niobe.z);
+    this.box(cab, 0, 1.25, 0, 4.5, 1.4, 9, car, .4);
+    this.box(this.windows, 0, 2.45, -.2, 3.7, 1.35, 4.5, car, .55);
+    this.box(cab, 0, 3.15, -.2, 3.8, .18, 4.4, car, .08);
+    for (const side of [-1, 1]) for (const z of [-2.9, 2.8]) {
+      const wheel = this.cylinder(this.rubber, side * 2.1, .9, z, .83, .48, car); wheel.rotation.z = Math.PI / 2;
+      const hub = this.cylinder(this.steel, side * 2.35, .9, z, .45, .03, car); hub.rotation.z = Math.PI / 2;
+    }
+    for (const x of [-1.5, 1.5]) this.box(lamp, x, 1.55, -4.52, .7, .25, .07, car, .05);
+    this.neoTrail = new THREE.Group(); this.neoTrail.name = 'matrix-freeway-neo-trail'; this.root.add(this.neoTrail);
+    const trailMat = new THREE.MeshBasicMaterial({ color: 0xdcead8, transparent: true, opacity: .4, depthWrite: false }); this.materials.add(trailMat);
+    for (let i = 0; i < 5; i++) {
+      const ring = this.mesh(new THREE.TorusGeometry(.55 + i * .27, .045, 5, 24), trailMat, 0, 0, i * 2.5, this.neoTrail);
+      ring.rotation.y = Math.PI / 2;
+    }
+    this.impact = new THREE.Group(); this.impact.name = 'matrix-freeway-collision'; this.root.add(this.impact); this.impact.position.set(TRUCKS.roof.x, 7.5, 11.5);
+    this.fire = new THREE.Group(); this.impact.add(this.fire);
+    this.smoke = new THREE.Group(); this.impact.add(this.smoke);
+    const flare = new THREE.MeshBasicMaterial({ color: 0xffad46, transparent: true, opacity: .38, depthWrite: false, blending: THREE.AdditiveBlending }); this.materials.add(flare);
+    for (let i = 0; i < 5; i++) {
+      const angle = i * Math.PI * 2 / 5;
+      const flame = this.mesh(new THREE.IcosahedronGeometry(1.05 + i % 2 * .45, 1), flare,
+        Math.sin(angle) * 1.55, Math.cos(angle) * .8, Math.cos(angle) * 1.55, this.fire);
+      flame.castShadow = flame.receiveShadow = false;
+    }
+    const flash = this.mesh(new THREE.TorusGeometry(3.6, .1, 8, 32), flare, 0, .7, 0, this.fire); flash.rotation.x = Math.PI / 2;
+    const smokeCanvas = document.createElement('canvas'); smokeCanvas.width = smokeCanvas.height = 64;
+    const smokeContext = smokeCanvas.getContext('2d')!;
+    const gradient = smokeContext.createRadialGradient(32, 32, 3, 32, 32, 31);
+    gradient.addColorStop(0, 'rgba(255,255,255,.68)'); gradient.addColorStop(.5, 'rgba(255,255,255,.36)'); gradient.addColorStop(1, 'rgba(255,255,255,0)');
+    smokeContext.fillStyle = gradient; smokeContext.fillRect(0, 0, 64, 64);
+    const smokeTexture = new THREE.CanvasTexture(smokeCanvas); this.textures.add(smokeTexture);
+    const soot = new THREE.SpriteMaterial({ map: smokeTexture, color: 0x424942, transparent: true, opacity: .62, depthWrite: false }); this.materials.add(soot);
+    for (let i = 0; i < 7; i++) {
+      const puff = new THREE.Sprite(soot); this.smoke.add(puff);
+      puff.position.set(Math.sin(i * 2.4) * (1 + i * .34), 1 + i * 1.15, Math.cos(i * 2.4) * (1 + i * .28));
+      puff.scale.set(5 + i * .55, 5 + i * .65, 1);
+    }
+    this.impact.visible = false; this.neoTrail.visible = false;
+  }
   update(journey: FilmJourney | undefined, elapsed: number, playerPosition?: Vector3): void {
     const ride = journey?.ride;
     if (ride && ride.elapsed !== this.previousElapsed) { this.clock = ride.elapsed; this.previousElapsed = ride.elapsed; this.syncAt = elapsed; }
@@ -155,7 +230,8 @@ export class FreewaySetRenderer {
     for (const batch of this.traffic) {
       let i = 0;
       for (const car of traffic) if (car.truck === batch.truck) {
-        pose.position.set(car.x, 0, car.z); pose.rotation.set(0, car.speed > 0 ? Math.PI : 0, 0); pose.updateMatrix();
+        const staged = this.set.id === 'film_freeway_trucks' && Math.abs(car.z) < 110 && car.x > 0;
+        pose.position.set(car.x, 0, staged ? car.z + 500 : car.z); pose.rotation.set(0, car.speed > 0 ? Math.PI : 0, 0); pose.updateMatrix();
         this.matrix.multiplyMatrices(pose.matrix, batch.part); batch.mesh.setMatrixAt(i, this.matrix);
         if (batch.paint) batch.mesh.setColorAt(i, this.color.setHex(car.color)); i++;
       }
@@ -167,6 +243,18 @@ export class FreewaySetRenderer {
     this.bike.rotation.y = ride ? -Math.atan2(ride.lateral, Math.max(1, ride.speed)) : 0;
     this.bike.rotation.z = ride ? -ride.lateral * .025 : 0;
     for (const wheel of this.wheels) wheel.rotation.x = -(FREEWAY_START - (ride?.z ?? FREEWAY_START));
+    const trucks = journey?.scene === 'm2_trucks' && !journey.visiting ? journey.trucks : undefined;
+    if (this.oncomingTruck) {
+      const progress = trucks?.phase === 'duel' || !trucks ? 0 : Math.min(1, trucks.elapsed / TRUCKS.collisionSeconds);
+      this.oncomingTruck.position.z = TRUCKS.oncomingStart + (TRUCKS.oncomingEnd - TRUCKS.oncomingStart) * progress;
+      this.niobeCar!.position.z = TRUCKS.niobe.z + Math.sin(elapsed * 1.7) * .45;
+      this.impact!.visible = trucks?.phase === 'rescue' || trucks?.phase === 'rescued' || trucks?.phase === 'failed';
+      this.fire!.visible = trucks?.phase === 'rescue' || trucks?.phase === 'failed';
+      if (this.fire!.visible) this.fire!.scale.setScalar(1 + Math.sin(elapsed * 7) * .08);
+      this.neoTrail!.visible = Boolean(trucks && trucks.phase === 'collision' && trucks.elapsed > 5.5);
+      if (this.neoTrail!.visible) this.neoTrail!.position.set(TRUCKS.roof.x, 13 + (trucks!.elapsed - 5.5) * -1.5,
+        -58 + (trucks!.elapsed - 5.5) * 20);
+    }
   }
   private batch(parent = this.root): void {
     parent.updateMatrixWorld(true); const batches = new Map<THREE.Material, THREE.BufferGeometry[]>();

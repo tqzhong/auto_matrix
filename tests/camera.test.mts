@@ -239,6 +239,30 @@ test('the garbage-truck dodge camera stays on the open lane and keeps Neo readab
   assert.ok(Math.abs(screen.x) < .72 && Math.abs(screen.y) < .82 && screen.z > -1 && screen.z < 1, 'Neo stays visible at the dodge line');
 });
 
+test('the truck-roof camera clears the passenger and rotates behind Morpheus when he turns', t => {
+  const game = setup(t, Math.PI); const center = FILM_SETS.film_freeway_trucks.center;
+  Object.assign(game.state, { id: 'morpheus', name: 'Morpheus', currentLocation: 'film_freeway_trucks',
+    position: { ...filmPosition('film_freeway_trucks', 14, 29.5), y: center.y + 6.6 }, rotation: Math.PI });
+  game.controls.possess(game.state); game.step(.5);
+  assert.ok(game.camera.position.z > game.state.position.z + 13);
+  assert.ok(game.camera.position.y > game.state.position.y + 6);
+  game.state.rotation = 0; game.controls.possess(game.state); game.step(.5);
+  assert.ok(game.camera.position.z < game.state.position.z - 13, 'turning around must move the camera behind the new heading');
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+  assert.ok(Math.abs(game.camera.position.z - game.state.position.z) < .1, 'V returns to Morpheus’s own eyes');
+});
+
+test('the truck rescue camera keeps the landed crew clear of the wrecked trailer', t => {
+  const game = setup(t, Math.PI); const center = FILM_SETS.film_freeway_trucks.center;
+  Object.assign(game.state, { id: 'morpheus', name: 'Morpheus', currentLocation: 'film_freeway_trucks',
+    position: filmPosition('film_freeway_trucks', 20, 46), rotation: Math.PI });
+  game.controls.possess(game.state); game.controls.truckRescue = true; game.step(.5);
+  assert.ok(game.camera.position.x > center.x + 26 && game.camera.position.z > center.z + 55,
+    'the side shot must stay beyond the truck and keep the landing in front of it');
+  const crew = new THREE.Vector3(game.state.position.x, game.state.position.y + 2, game.state.position.z).project(game.camera);
+  assert.ok(Math.abs(crew.x) < .5 && Math.abs(crew.y) < .5 && crew.z > -1 && crew.z < 1);
+});
+
 test('the room 303 entry frames Neo and the pursuing possession in depth', t => {
   const game = setup(t, Math.PI); const center = FILM_SETS.film_escape_streets.center;
   game.state.currentLocation = 'film_escape_streets';

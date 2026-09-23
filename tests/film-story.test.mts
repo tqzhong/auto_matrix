@@ -1083,6 +1083,76 @@ test('a failed escort retries from the motorcycle and never takes another player
   h.command('act'); assert.equal(state.ride!.hull, 100); assert.equal(state.ride!.passenger, 100);
 });
 
+test('the truck duel takes place on a standable trailer and Johnson returns through the driver', () => {
+  const h = setup(); h.command('start'); const state = h.sandbox.life.film.state!; const scene = FILM_SCENE_BY_ID.m2_trucks;
+  assert.equal(scene.set, 'film_freeway_trucks');
+  assert.ok(scene.cast.includes('agent_johnson') && scene.cast.includes('keymaker') && scene.cast.includes('neo'));
+  Object.assign(state, { scene: scene.id, actor: scene.actor, step: 0 });
+  h.players.possess('film-player', 'morpheus', h.tick()); h.actor().currentLocation = scene.set; h.actor().isInMatrix = true;
+  h.actor().position = filmEntry(scene); state.checkpoint = { ...h.actor().position };
+  assert.equal(groundHeight(h.actor().position, true), h.actor().position.y);
+  assert.equal(playerBlocked(h.actor().position, true), false);
+  h.command('act');
+  assert.equal(h.sandbox.state.threats.length, 1);
+  assert.equal(h.sandbox.state.threats[0].character, 'agent_johnson');
+  assert.equal(h.sandbox.state.threats[0].position.y, h.actor().position.y);
+  const johnson = h.sandbox.state.threats[0];
+  for (let hit = 0; johnson.health > 0 && hit < 12; hit++) {
+    h.actor().position = { ...johnson.position, z: johnson.position.z + 2 }; h.actor().rotation = Math.PI;
+    h.sandbox.attack(h.actor(), h.tick(), 2);
+  }
+  assert.equal(johnson.health, 0); h.advance();
+  assert.equal(state.step, 1); assert.equal(state.trucks?.phase, 'collision');
+  assert.equal(h.world.agents.get('agent_johnson')?.position.z, filmPosition(scene.set, 0, 14).z);
+  assert.equal(h.world.agents.get('keymaker')?.status, 'alive');
+});
+
+test('truck collision is timed, preserves the rescue across saves and retries after failure', () => {
+  const h = setup(); h.command('start'); let state = h.sandbox.life.film.state!; const scene = FILM_SCENE_BY_ID.m2_trucks;
+  Object.assign(state, { scene: scene.id, actor: scene.actor, step: 1, trucks: { phase: 'collision', elapsed: 0, lastTick: h.tick(), attempt: 0 } });
+  h.players.possess('film-player', 'morpheus', h.tick()); h.actor().currentLocation = scene.set; h.actor().isInMatrix = true;
+  h.actor().position = filmEntry(scene); state.checkpoint = { ...h.actor().position };
+  h.advance(5);
+  const saved = JSON.parse(JSON.stringify(h.sandbox.state)); h.sandbox.restore(saved); state = h.sandbox.life.film.state!;
+  assert.equal(state.trucks?.elapsed, saved.neoLife.journey.trucks.elapsed);
+  const beforeDisconnect = state.trucks!.elapsed;
+  h.actor().controller = undefined; h.advance(8); h.actor().controller = 'film-player'; h.advance();
+  assert.ok(state.trucks!.elapsed <= beforeDisconnect + .5, 'disconnection must not consume the collision window');
+  h.actor().position = filmStepPosition(scene, scene.steps[1]); h.advance(); assert.equal(state.step, 2);
+  h.command('act'); h.actor().controller = undefined; h.advance(6); h.actor().controller = 'film-player';
+  assert.ok(state.started !== undefined, 'the held rescue action survives disconnection');
+  h.advance(2); assert.equal(state.step, 2);
+  h.advance(4);
+  assert.equal(state.step, 2, 'the grab must play out before the scene is marked complete');
+  assert.equal(state.trucks?.phase, 'rescue');
+  const rescueSave = JSON.parse(JSON.stringify(h.sandbox.state)); h.sandbox.restore(rescueSave); state = h.sandbox.life.film.state!;
+  assert.equal(state.trucks?.phase, 'rescue');
+  for (let frame = 0; frame < 40 && state.trucks?.phase === 'rescue'; frame++) h.players.step(.1, true, h.tick());
+  assert.equal(state.step, scene.steps.length); assert.equal(state.trucks?.phase, 'rescued');
+  assert.equal(h.actor().position.y, FILM_SETS[scene.set].center.y, 'Morpheus lands on the safe shoulder');
+  assert.equal(h.world.agents.get('keymaker')?.status, 'alive');
+  h.command('next'); assert.equal(state.scene, FILM_SCENES[FILM_SCENES.indexOf(scene) + 1].id);
+  Object.assign(state, { scene: scene.id, actor: scene.actor, step: 1, trucks: { phase: 'collision', elapsed: 9.8, lastTick: h.tick(), attempt: 0 } });
+  h.players.possess('film-player', 'morpheus', h.tick());
+  h.actor().currentLocation = scene.set; h.actor().position = filmEntry(scene); state.checkpoint = { ...h.actor().position };
+  h.advance(3); assert.equal(h.actor().status, 'dead');
+  h.command('retry'); assert.equal(h.actor().status, 'alive'); assert.equal(state.step, 1);
+  assert.equal(state.trucks?.phase, 'collision'); assert.equal(state.trucks?.elapsed, 0);
+  assert.equal(h.actor().position.y, filmEntry(scene).y);
+});
+
+test('an older truck checkpoint on the shared freeway moves onto the new trailer without losing progress', () => {
+  const h = setup(); h.command('start'); const state = h.sandbox.life.film.state!; const scene = FILM_SCENE_BY_ID.m2_trucks;
+  Object.assign(state, { scene: scene.id, actor: scene.actor, step: 1, checkpoint: filmPosition('film_freeway_101', 14, 25) });
+  h.players.possess('film-player', 'morpheus', h.tick());
+  h.actor().currentLocation = 'film_freeway_101'; h.actor().position = filmPosition('film_freeway_101', 14, 25);
+  h.advance();
+  assert.equal(h.actor().currentLocation, scene.set);
+  assert.deepEqual(h.actor().position, filmEntry(scene));
+  assert.deepEqual(state.checkpoint, filmEntry(scene));
+  assert.equal(state.step, 1); assert.equal(state.trucks?.phase, 'collision');
+});
+
 test('the entire film route completes through interactions, driving and real combat, then starts a recorded new life', () => {
   const h = setup(); h.command('start'); const state = h.sandbox.state.neoLife!.journey!;
   let sequence = 0;
@@ -1389,7 +1459,10 @@ test('the entire film route completes through interactions, driving and real com
             h.players.step(.1, true, h.tick());
           }
         }
-        else h.advance((step.seconds ?? 3) * 2);
+        else if (scene.id === 'm2_trucks' && index === 2) {
+          h.advance((step.seconds ?? 3) * 2);
+          for (let frame = 0; frame < 40 && state.trucks?.phase === 'rescue'; frame++) h.players.step(.1, true, h.tick());
+        } else h.advance((step.seconds ?? 3) * 2);
       }
       else if (step.kind === 'drive') {
         h.command('act');

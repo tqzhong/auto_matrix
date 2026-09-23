@@ -54,6 +54,7 @@ export class PlayerControls {
   ride?: FreewayRide;
   climbing = false;
   performing = false;
+  truckRescue = false;
   private wasPerforming = false;
   private meetingYaw?: number;
   mirror = 0;
@@ -298,6 +299,8 @@ export class PlayerControls {
     if (['approaching', 'grapple', 'flight'].includes((state.currentAction?.parameters.burly as MotionInput['burly'] | undefined)?.phase ?? '')) this.performing = true;
     if (this.motion.mountainFlight && !state.currentAction?.parameters.mountainFlight) this.performing = false;
     if (['takeoff', 'flying', 'arrived'].includes((state.currentAction?.parameters.mountainFlight as MotionInput['mountainFlight'] | undefined)?.phase ?? '')) this.performing = true;
+    if (this.motion.truckPassenger && !state.currentAction?.parameters.truckPassenger) this.performing = false;
+    if (state.currentAction?.parameters.truckPassenger) this.performing = true;
     if (this.motion.persephone && !state.currentAction?.parameters.persephone) this.performing = false;
     if (state.currentAction?.parameters.persephone) this.performing = true;
     if (this.motion.lobbyEntry && !state.currentAction?.parameters.lobbyEntry) this.performing = false;
@@ -331,6 +334,7 @@ export class PlayerControls {
     this.motion.burly = state.currentAction?.parameters.burly as MotionInput['burly'];
     this.motion.chateauWeapon = state.currentAction?.parameters.chateauWeapon as MotionInput['chateauWeapon'];
     this.motion.mountainFlight = state.currentAction?.parameters.mountainFlight as MotionInput['mountainFlight'];
+    this.motion.truckPassenger = state.currentAction?.parameters.truckPassenger as boolean | undefined;
     this.motion.persephone = state.currentAction?.parameters.persephone as MotionInput['persephone'];
     this.motion.lobbyEntry = state.currentAction?.parameters.lobbyEntry as MotionInput['lobbyEntry'];
     this.motion.aimPitch = this.firearm || state.currentAction?.parameters.armed === true ? this.pitch : undefined;
@@ -400,7 +404,7 @@ export class PlayerControls {
     }
     const previous = { ...this.position };
     if (this.ride || this.climbing || this.performing) {
-      const blend = this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.training || this.motion.workday || this.motion.interlude || this.motion.oracleVisit || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || this.motion.lobbyEntry ? 1 : 1 - Math.exp(-20 * delta);
+      const blend = this.motion.truckPassenger || this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.training || this.motion.workday || this.motion.interlude || this.motion.oracleVisit || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || this.motion.lobbyEntry ? 1 : 1 - Math.exp(-20 * delta);
       this.position.x += (state.position.x - this.position.x) * blend; this.position.y += (state.position.y - this.position.y) * blend; this.position.z += (state.position.z - this.position.z) * blend;
       this.vy = 0; this.planar = { x: 0, z: 0 }; this.localJump = false;
     } else if (running && this.enabled && state.status === 'alive') {
@@ -1023,6 +1027,19 @@ export class PlayerControls {
         else this.camera.position.lerp(ideal, 1 - Math.exp(-9 * delta));
         this.camera.lookAt(focus);
       }
+    } else if (state.currentLocation === 'film_freeway_trucks' && this.truckRescue && !this.firstPerson) {
+      const ideal = new THREE.Vector3(this.position.x + 8, this.position.y + 8, this.position.z + 12);
+      const focus = new THREE.Vector3(this.position.x, this.position.y + 1.8, this.position.z - 3);
+      if (resetCamera) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
+      this.camera.lookAt(focus);
+    } else if (state.currentLocation === 'film_freeway_trucks' && !this.firstPerson) {
+      const forward = new THREE.Vector3(Math.sin(this.yaw), 0, Math.cos(this.yaw));
+      const right = new THREE.Vector3(Math.cos(this.yaw), 0, -Math.sin(this.yaw));
+      const ideal = new THREE.Vector3(this.position.x, this.position.y + 8, this.position.z)
+        .addScaledVector(forward, -17).addScaledVector(right, this.camera.aspect < .8 ? -3.5 : -6);
+      const focus = new THREE.Vector3(this.position.x, this.position.y + 1.8, this.position.z).addScaledVector(forward, 3);
+      if (resetCamera) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
+      this.camera.lookAt(focus);
     } else if (this.firstPerson) {
       this.camera.position.copy(target);
       if (this.motion.grounded && this.motion.speed > .1) this.camera.position.y += Math.sin(this.cameraStep * 2) * .018;

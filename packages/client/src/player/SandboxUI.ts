@@ -6,7 +6,7 @@ import { renderNeoLife } from './NeoLifePanel.js';
 import { interrogationLocked, interrogationPose } from '@auto_matrix/shared';
 import { meetingLocked, MEETING_TIMING } from '@auto_matrix/shared';
 import { filmPosition, HOTEL_DOOR_PROGRESS } from '@auto_matrix/shared';
-import { CHATEAU, MOUNTAIN, GARAGE } from '@auto_matrix/shared';
+import { CHATEAU, MOUNTAIN, GARAGE, TRUCKS } from '@auto_matrix/shared';
 import { workdayLocked } from '@auto_matrix/shared';
 import { apartmentLocked } from '@auto_matrix/shared';
 import { wakeCallLocked } from '@auto_matrix/shared';
@@ -52,7 +52,7 @@ export class SandboxUI {
       <div id="film-training-actions" class="film-training-actions hidden"><button data-combat="dodge"><kbd>X</kbd> 现在闪避</button><button data-combat="attack"><kbd>F</kbd> <span>刺拳</span></button></div>
       <div id="film-pills" class="film-pills hidden" role="group" aria-label="选择药丸"><p>选择仍然属于你</p><div class="film-pill-choices"><button data-action="life" data-target="film:pill:red">红色 · 继续追问</button><button data-action="life" data-target="film:blue">蓝色 · 回到日常</button></div></div>
       <div id="film-meeting" class="film-pills hidden" role="group" aria-label="接头决定"><p>你仍然可以离开</p><div class="film-pill-choices"><button data-action="life" data-target="film:meeting:stay">留在车内 · 接受检查</button><button data-action="life" data-target="film:meeting:leave">打开车门 · 暂时离开</button></div></div>
-      <div id="film-ride" class="film-ride hidden" role="status"><span>TRINITY / KEYMAKER</span><strong id="film-ride-speed"></strong><p id="film-ride-health"></p><small>W 加速 · S 刹车 · A / D 转向</small></div>
+      <div id="film-ride" class="film-ride hidden" role="status"><span id="film-ride-title">TRINITY / KEYMAKER</span><strong id="film-ride-speed"></strong><p id="film-ride-health"></p><small id="film-ride-controls">W 加速 · S 刹车 · A / D 转向</small></div>
       <div id="sandbox-interact" class="sandbox-interact hidden"><button data-action="interact"><kbd>G</kbd> <span id="sandbox-nearby"></span></button><div id="sandbox-job"></div></div>
       <div class="sandbox-hotbar" aria-label="物品快捷栏">${(['medkit', 'emp', 'beacon', 'barricade'] as const).map((id, i) => `<button data-action="${i < 2 ? 'use' : 'build'}" data-target="${id}" title="${ITEMS[id].description}"><kbd>${i + 1}</kbd><span class="slot-symbol">${ITEMS[id].symbol}</span><span>${ITEMS[id].name}</span><b id="count-${id}">0</b></button>`).join('')}</div>
       <section id="sandbox-panel" class="sandbox-panel hidden" role="dialog" aria-modal="true" aria-label="沙盒菜单"><div class="sandbox-window">
@@ -842,6 +842,8 @@ export class SandboxUI {
     if (scene.id === 'm2_garage' && journey.garage?.phase === 'riding' && !journey.visiting) {
       const escape = journey.garage;
       this.el('film-ride').classList.remove('hidden');
+      this.el('film-ride-title').textContent = 'TRINITY / KEYMAKER';
+      this.el('film-ride-controls').textContent = 'W 加速 · S 刹车 · A / D 转向';
       this.el('film-ride-speed').textContent = `${Math.round(escape.speed * 3.6)} km/h`;
       this.el('film-ride-health').textContent = `车况 ${Math.ceil(escape.hull)}% · 乘员 ${Math.ceil(escape.passenger)}% · ${Math.ceil(Math.max(0, GARAGE.limit - escape.elapsed))} 秒`;
       this.el('sandbox-waypoint').textContent = `车库出口 ↑ ${Math.max(0, Math.round(escape.z - GARAGE.finish))} m`;
@@ -851,10 +853,29 @@ export class SandboxUI {
     if (scene.id === 'm2_freeway' && journey.ride?.phase === 'riding' && !journey.visiting) {
       const ride = journey.ride;
       this.el('film-ride').classList.remove('hidden');
+      this.el('film-ride-title').textContent = 'TRINITY / KEYMAKER';
+      this.el('film-ride-controls').textContent = 'W 加速 · S 刹车 · A / D 转向';
       this.el('film-ride-speed').textContent = `${Math.round(ride.speed * 1.8)} km/h`;
       this.el('film-ride-health').textContent = `车况 ${Math.ceil(ride.hull)}% · 钥匙匠 ${Math.ceil(ride.passenger)}%`;
       this.el('sandbox-waypoint').textContent = `接应区 ↑ ${Math.max(0, Math.round((ride.z + 660) / 2))} m`;
       document.getElementById('game-objective-copy')!.textContent = '在逆向车流中护送钥匙匠 · 留意大型卡车 · 碰撞后先刹车';
+      this.el('sandbox-interact').classList.add('hidden'); return;
+    }
+    if (scene.id === 'm2_trucks' && journey.trucks?.phase === 'collision' && !journey.visiting) {
+      this.el('film-ride').classList.remove('hidden');
+      this.el('film-ride-title').textContent = 'MORPHEUS / KEYMAKER';
+      this.el('film-ride-speed').textContent = `${Math.ceil(Math.max(0, TRUCKS.collisionSeconds - journey.trucks.elapsed))} 秒`;
+      this.el('film-ride-health').textContent = '两辆卡车迎面相撞 · 保护钥匙匠';
+      this.el('film-ride-controls').textContent = 'Shift 奔跑 · G 抓住钥匙匠';
+      document.getElementById('game-objective-copy')!.textContent = journey.step === 1 ? '沿车顶赶到钥匙匠身边' : '在钥匙匠身边按 G 抓紧，等待 Neo 飞来';
+    }
+    if (scene.id === 'm2_trucks' && journey.trucks?.phase === 'rescue' && !journey.visiting) {
+      this.el('film-ride').classList.remove('hidden');
+      this.el('film-ride-title').textContent = 'NEO / 救援';
+      this.el('film-ride-speed').textContent = `${Math.ceil(Math.max(0, TRUCKS.rescueSeconds - (journey.trucks.rescueElapsed ?? 0)))} 秒`;
+      this.el('film-ride-health').textContent = '带 Morpheus 与钥匙匠离开爆炸';
+      this.el('film-ride-controls').textContent = 'V 切换至第一人称观察救援';
+      document.getElementById('game-objective-copy')!.textContent = 'Neo 正带两人离开相撞的卡车';
       this.el('sandbox-interact').classList.add('hidden'); return;
     }
     if (scene.id === 'm1_ledge' && step?.kind === 'reflect') this.el('sandbox-nearby').textContent = '沿维修架脱身，或退回办公室';

@@ -42,6 +42,8 @@ export interface MotionInput {
   burly?: import('@auto_matrix/shared').BurlyEncounter & { role: 'neo' | 'smith' };
   chateauWeapon?: import('@auto_matrix/shared').ChateauWeapon;
   mountainFlight?: import('@auto_matrix/shared').MountainFlight;
+  truckFlight?: boolean;
+  truckPassenger?: boolean;
   persephone?: import('@auto_matrix/shared').PersephoneEncounter & { role: 'neo' | 'persephone' };
   weaponStyle?: RescueLoadout;
   aimPitch?: number;
@@ -488,10 +490,14 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
       legs[i].hip = mix(legs[i].hip, i ? -.55 : .22, theOne.flight); legs[i].knee = mix(legs[i].knee, i ? .95 : .3, theOne.flight);
     }
   }
-  const mountainFlight = input.mountainFlight && ['takeoff', 'flying', 'arrived'].includes(input.mountainFlight.phase);
+  const mountainFlight = input.mountainFlight && ['takeoff', 'flying', 'arrived'].includes(input.mountainFlight.phase) || input.truckFlight;
   if (mountainFlight) for (let i = 0; i < 2; i++) {
     arms[i].shoulder = i ? -.25 : -2.15; arms[i].elbow = i ? -.35 : -.08; arms[i].outward = (i ? 1 : -1) * .12; arms[i].grip = i ? .18 : .8;
     legs[i].hip = i ? -.2 : .08; legs[i].knee = i ? .26 : .12;
+  }
+  if (input.truckPassenger) for (let i = 0; i < 2; i++) {
+    arms[i].shoulder = -.92; arms[i].elbow = -.95; arms[i].outward = (i ? 1 : -1) * .38; arms[i].grip = .7;
+    legs[i].hip = i ? -.5 : .2; legs[i].knee = i ? .9 : .55;
   }
   if (input.performance && !['touch', 'connect'].includes(input.performance)) for (let i = 0; i < 2; i++) {
     const afloat = input.performance === 'float'; const raised = input.performance === 'lift';

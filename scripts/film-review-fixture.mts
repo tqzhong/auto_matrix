@@ -1,4 +1,4 @@
-import { newReloaded, BURLY, EXILES, CHATEAU, MOUNTAIN } from '@auto_matrix/shared';
+import { newReloaded, BURLY, EXILES, CHATEAU, MOUNTAIN, TRUCKS } from '@auto_matrix/shared';
 // Creates an isolated visual-review save; never writes the player's data directory.
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import os from 'node:os';
@@ -39,6 +39,12 @@ if (process.argv[3] === 'near') {
   actor.position = filmStepPosition(scene, scene.steps[0]); actor.position.z += 2.5;
   if (playerBlocked(actor.position, actor.isInMatrix)) actor.position = filmStepPosition(scene, scene.steps[0]);
   sandbox.state.neoLife!.journey!.checkpoint = { ...actor.position };
+}
+if (process.argv[3] === 'collision' && scene.id === 'm2_trucks') {
+  const journey = sandbox.life.film.state!;
+  journey.step = 2; journey.trucks = { phase: 'collision', elapsed: 5, lastTick: 0, attempt: 0 };
+  actor.position = { ...filmPosition(scene.set, TRUCKS.roof.x, 29.5), y: FILM_SETS[scene.set].center.y + TRUCKS.roof.height };
+  journey.checkpoint = { ...actor.position };
 }
 if (process.argv[3] === 'seraph-door' && scene.id === 'm2_seraph' || process.argv[3] === 'hall-door' && scene.id === 'm2_backdoors') {
   const journey = sandbox.life.film.state!; journey.step = scene.steps.length; journey.completed.push(scene.id);

@@ -26,6 +26,7 @@ import { EXILES } from '@auto_matrix/shared';
 import { CHATEAU, type ChateauEncounter } from '@auto_matrix/shared';
 import { MOUNTAIN, type MountainFlight, type PlayerInput } from '@auto_matrix/shared';
 import { GARAGE, newGarageEscape, stepGarageEscape } from '@auto_matrix/shared';
+import { TRUCKS } from '@auto_matrix/shared';
 
 const BATHROOM_ROLES = ['neo', 'trinity', 'switch', 'apoc'] as const;
 const UNPLUGGED_ROLES = ['tank', 'cypher', 'dozer', 'apoc', 'switch', 'neo', 'trinity'] as const;
@@ -42,7 +43,7 @@ export class FilmStorySystem {
   get scene(): FilmScene | undefined { return this.state && FILM_SCENE_BY_ID[this.state.scene]; }
   get step(): FilmStep | undefined { return this.scene?.steps[this.state!.step]; }
   controls(agent: AgentState): boolean { return Boolean(this.state && this.state.actor === agent.id); }
-  performing(agent: AgentState): boolean { return this.controls(agent) && (this.state!.persephone?.phase === 'enacting' || burlyLocked(this.state!) || clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || theOneLocked(this.state!) || reloadedLocked(this.state!) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
+  performing(agent: AgentState): boolean { return this.controls(agent) && (this.state!.trucks?.phase === 'rescue' || this.state!.persephone?.phase === 'enacting' || burlyLocked(this.state!) || clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || theOneLocked(this.state!) || reloadedLocked(this.state!) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
   clubFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
     if (state?.scene !== 'm1_club' || state.visiting || !this.controls(agent)) return;
@@ -2299,6 +2300,40 @@ export class FilmStorySystem {
     }
     return true;
   }
+  truckFrame(agent: AgentState, dt: number, tick: number): boolean {
+    const state = this.state;
+    if (state?.scene !== 'm2_trucks' || state.visiting || !this.controls(agent) || state.trucks?.phase !== 'rescue') return false;
+    const rescue = state.trucks;
+    rescue.rescueElapsed = Math.min(TRUCKS.rescueSeconds, (rescue.rescueElapsed ?? 0) + Math.max(0, Math.min(.1, dt)));
+    const t = rescue.rescueElapsed / TRUCKS.rescueSeconds;
+    const progress = t * t * (3 - 2 * t);
+    const origin = rescue.origin ?? { x: TRUCKS.keymaker.x, z: TRUCKS.keymaker.z };
+    const base = FILM_SETS[this.scene!.set].center;
+    const x = origin.x + (20 - origin.x) * progress;
+    const z = origin.z + (46 - origin.z) * progress;
+    const y = t >= 1 ? base.y : base.y + TRUCKS.roof.height * (1 - progress) + 11 * Math.sin(Math.PI * progress);
+    const passengers = [
+      [agent, 0, 0, 0, 'morpheus'],
+      [this.world.agents.get('keymaker'), -1.5, 1, 0, 'keymaker'],
+      [this.world.agents.get('neo'), 1.4, -1, .8, 'neo'],
+    ] as const;
+    for (const [passenger, dx, dz, dy, role] of passengers) {
+      if (!passenger || role !== 'morpheus' && passenger.controller) continue;
+      const before = { ...passenger.position };
+      passenger.position = { x: base.x + x + dx * progress, y: t >= 1 ? base.y : y + dy * Math.sin(Math.PI * progress), z: base.z + z + dz * progress };
+      passenger.velocity = dt > 0 ? { x: (passenger.position.x - before.x) / dt, y: (passenger.position.y - before.y) / dt, z: (passenger.position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
+      passenger.rotation = Math.atan2(20 - origin.x, 46 - origin.z);
+      passenger.currentAction = { type: 'move_to', parameters: { resolved: true, player: role === 'morpheus', truckFlight: role === 'neo', truckPassenger: role !== 'neo' }, startedAt: tick, duration: 1, progress: t };
+    }
+    state.checkpoint = { ...agent.position };
+    state.lastText = 'Neo 接住 Morpheus 与钥匙匠，带两人离开相撞的卡车。';
+    if (t >= 1) {
+      rescue.phase = 'rescued';
+      for (const [passenger] of passengers) if (passenger) { passenger.velocity = { x: 0, y: 0, z: 0 }; passenger.currentAction = null; }
+      this.advance('两辆卡车迎面相撞；Neo 在爆炸前接住 Morpheus 与钥匙匠，三人安全落地。', agent, tick);
+    }
+    return true;
+  }
   driving(agent: AgentState): boolean { return this.controls(agent) && !this.state?.visiting && ((this.state?.scene === 'm2_freeway' && this.state.ride?.phase === 'riding') || (this.state?.scene === 'm2_garage' && this.state.garage?.phase === 'riding')); }
   driveFrame(agent: AgentState, input: DriveInput, dt: number, tick: number): boolean {
     if (!this.driving(agent)) return false;
@@ -2625,6 +2660,7 @@ export class FilmStorySystem {
       this.clearThreats();
       delete state.ride;
       delete state.garage;
+      if (state.scene === 'm2_trucks') state.trucks = { phase: state.step === 0 ? 'duel' : 'collision', elapsed: 0, lastTick: tick, attempt: (state.trucks?.attempt ?? 0) + 1 };
       if (state.scene === 'm1_spoon' && state.step === 0 && state.oracle) delete state.oracle.spoon;
       if (state.scene === 'm1_oracle' && state.step === 0 && state.oracle) delete state.oracle.vase;
       if (state.scene === 'm1_dejavu' && state.step === 0) { delete state.ambush; this.sandbox().structures = this.sandbox().structures.filter(s => s.film?.scene !== 'm1_dejavu'); }
@@ -2855,6 +2891,8 @@ export class FilmStorySystem {
     if (state.scene === 'm3_mobil' && state.step === 0) return '沿站台走进黑色隧道，亲自寻找出口。';
     if (state.scene === 'm1_jump' && state.step === 1) return 'Morpheus 已经完成示范。Shift 助跑，空格起跳；跌落会恢复检查点。';
     if (step.kind === 'reflect') return 'J 打开手记，记录自己的理解。';
+    if (state.scene === 'm2_trucks' && state.step === 2 && ['keymaker', 'neo'].some(id => this.world.agents.get(id)?.controller))
+      return '钥匙匠或 Neo 正由另一位玩家控制，等待对方结束后再接应。';
     if (step.kind === 'drive') {
       if (state.scene === 'm2_garage') {
         if (['morpheus', 'keymaker', 'twin1', 'twin2'].some(id => this.world.agents.get(id)?.controller)) return '车内同伴或双子正在由另一位玩家控制，等待对方结束后再开始撤离。';
@@ -2925,6 +2963,7 @@ export class FilmStorySystem {
     delete state.lobby;
     delete state.ride;
     delete state.garage;
+    delete state.trucks;
     delete state.awakening;
     delete state.training;
     delete state.dojo;
@@ -2974,6 +3013,7 @@ export class FilmStorySystem {
     this.place(actor, scene, state.checkpoint); actor.status = 'alive'; actor.health = actor.maxHealth; actor.activeEffects = [];
     if (scene.id === 'm2_room') actor.rotation = Math.PI;
     if (scene.id === 'm2_mountain') actor.rotation = 0;
+    if (scene.id === 'm2_trucks') actor.rotation = Math.PI;
     if (scene.id === 'm2_oracle_message') actor.rotation = 0;
     life.chapter = NEO_CHAPTERS.findIndex(c => c.id === scene.chapter);
     const neo = this.world.agents.get('neo')!;
@@ -2994,6 +3034,7 @@ export class FilmStorySystem {
       }
     }
     if (scene.id === 'm2_chateau') state.chateau = { phase: 'ready', wave: 1, parries: 0, disarms: 0, attempts: 0, wounded: false };
+    if (scene.id === 'm2_trucks') state.trucks = { phase: 'duel', elapsed: 0, lastTick: tick, attempt: 0 };
     if (scene.id === 'm2_mountain') state.mountain = { phase: 'ground', elapsed: 0, x: MOUNTAIN.launch.x, z: MOUNTAIN.launch.z, altitude: 0, attempt: 0 };
     if (scene.id === 'm2_persephone') state.persephone = { phase: 'offered', elapsed: 0, attempts: 0 };
     if (scene.id === 'm2_library') {
@@ -3193,7 +3234,20 @@ export class FilmStorySystem {
         };
         const pose = poses[id]; if (pose) { actor.position = filmPosition(scene.set, pose[0], pose[1]); actor.rotation = pose[2]; }
       }
-      if (scene.id === 'm2_trucks' && id === 'keymaker') actor.position = filmPosition(scene.set, 20, -6);
+      if (scene.id === 'm2_trucks') {
+        const poses: Record<string, [number, number, number]> = {
+          keymaker: [TRUCKS.keymaker.x, TRUCKS.keymaker.z, TRUCKS.roof.height],
+          agent_johnson: this.state!.trucks?.phase === 'collision'
+            ? [TRUCKS.roof.x, 14, .5] : [TRUCKS.johnson.x, TRUCKS.johnson.z, TRUCKS.roof.height],
+          niobe: [TRUCKS.niobe.x, TRUCKS.niobe.z, .5], neo: [TRUCKS.morpheus.x, -58, 23],
+        };
+        const pose = poses[id]; if (pose) {
+          actor.position = { ...filmPosition(scene.set, pose[0], pose[1]), y: FILM_SETS[scene.set].center.y + pose[2] };
+          if (id === 'niobe') actor.currentAction = { type: 'idle', parameters: { seated: true }, startedAt: this.state!.enteredAt, duration: 100000, progress: 0 };
+          if (id === 'agent_johnson' && this.state!.trucks?.phase === 'collision') actor.currentAction = { type: 'idle', parameters: { seated: true }, startedAt: this.state!.enteredAt, duration: 100000, progress: 0 };
+          if (id === 'neo') actor.currentAction = { type: 'move_to', parameters: { truckFlight: true, resolved: true }, startedAt: this.state!.enteredAt, duration: 100000, progress: 0 };
+        }
+      }
     });
   }
   private near(agent: AgentState, step: FilmStep): boolean {
@@ -3250,6 +3304,15 @@ export class FilmStorySystem {
     if (state.scene === 'm2_departure' && state.step === 2) life.choices.kid_spoon = 'received';
     if (state.scene === 'm2_departure' && state.step === 3) life.choices.zion_clearance = 'hamann';
     if (state.scene === 'm2_mountain' && state.step === 1 && state.mountain) state.mountain.phase = 'ready';
+    if (state.scene === 'm2_trucks' && state.trucks) {
+      if (state.step === 0) {
+        state.trucks.phase = 'collision'; state.trucks.elapsed = 0; state.trucks.lastTick = tick;
+        this.stageCast();
+        text = 'Johnson 被踢下车，随即占据了驾驶员。另一名特工驾驶卡车迎面掉头；快去保护钥匙匠。';
+      } else if (state.step === 2) {
+        state.trucks.phase = 'rescued'; state.trucks.elapsed = TRUCKS.collisionSeconds;
+      }
+    }
     if (state.scene === 'm1_bug' && state.step === 0 && state.office?.outcome === 'escaped') text = '扫描完成，没有发现追踪装置。Trinity 收起仪器，确认接头安全，继续前往 Morpheus 的房间。';
     state.lastText = text; state.step++; state.checkpoint = { ...agent.position }; delete state.started; delete state.fighting;
     if (state.scene === 'm2_library') this.sealKeymakerDoor();
@@ -3290,6 +3353,7 @@ export class FilmStorySystem {
       let position = step.opponent
         ? { ...agent.position, x: agent.position.x + Math.sin(facing) * 6, z: agent.position.z + Math.cos(facing) * 6 }
         : filmPosition(this.scene!.set, step.x + Math.sin(angle) * 9, step.z + Math.cos(angle) * 9);
+      if (this.state?.scene === 'm2_trucks') position = { ...filmPosition(this.scene!.set, TRUCKS.johnson.x, TRUCKS.johnson.z), y: FILM_SETS[this.scene!.set].center.y + TRUCKS.roof.height };
       if (playerBlocked(position, agent.isInMatrix)) position = filmPosition(this.scene!.set, step.x, step.z - 5 - i * 3);
       this.sandbox().threats.push({ id: `film:${++this.sandbox().serial}`, scene: this.state!.scene, kind, character: step.opponent, position, matrix: agent.isInMatrix,
         health, maxHealth: health, target: agent.id, stunUntil: tick + 4, lastStrike: tick });
@@ -3300,7 +3364,39 @@ export class FilmStorySystem {
   tick(tick: number): void {
     const state = this.state; if (!state || !this.scene || state.finished || state.visiting) return;
     const actor = this.world.agents.get(state.actor);
-    if (!actor?.controller || actor.status !== 'alive') { delete state.started; return; }
+    if (state.scene === 'm2_trucks' && actor?.currentLocation === 'film_freeway_101') {
+      const roof = filmEntry(this.scene);
+      this.place(actor, this.scene, roof); state.checkpoint = { ...roof };
+      if (state.step >= 2) state.step = this.scene.steps.length;
+      state.trucks = { phase: state.step === 0 ? 'duel' : state.step === 1 ? 'collision' : 'rescued',
+        elapsed: 0, lastTick: tick, attempt: 0 };
+      this.stageCast();
+    }
+    if (!actor?.controller || actor.status !== 'alive') {
+      if (actor?.status === 'alive' && state.scene === 'm2_trucks' && state.trucks) {
+        const gap = Math.max(0, tick - state.trucks.lastTick);
+        if (state.started !== undefined) state.started += gap;
+        state.trucks.lastTick = tick;
+      } else delete state.started;
+      return;
+    }
+    if (state.scene === 'm2_trucks' && !state.trucks)
+      state.trucks = { phase: state.step === 0 ? 'duel' : 'collision', elapsed: 0, lastTick: tick, attempt: 0 };
+    if (state.scene === 'm2_trucks' && state.trucks?.phase === 'collision') {
+      state.trucks.elapsed = Math.min(TRUCKS.collisionSeconds, state.trucks.elapsed + Math.max(0, tick - state.trucks.lastTick) * .5);
+      state.trucks.lastTick = tick;
+      const neo = this.world.agents.get('neo');
+      if (neo && !neo.controller && state.trucks.elapsed >= 5.5) {
+        const approach = (state.trucks.elapsed - 5.5) / (TRUCKS.collisionSeconds - 5.5);
+        neo.position = { ...filmPosition(this.scene.set, TRUCKS.roof.x, -58 + approach * 91),
+          y: FILM_SETS[this.scene.set].center.y + 23 - approach * 12 };
+        neo.velocity = { x: 0, y: -12 / 4.5, z: 91 / 4.5 };
+      }
+      if (state.trucks.elapsed >= TRUCKS.collisionSeconds) {
+        state.trucks.phase = 'failed'; actor.status = 'dead'; actor.health = 0; delete state.started;
+        state.lastText = '两辆卡车先于 Neo 的接应正面相撞。按 J 从车顶检查点重试。'; return;
+      }
+    }
     if (state.scene === 'm2_burly') { this.burlyTick(actor, tick); return; }
     if (state.scene === 'm2_chateau' && state.step === 0) { this.chateauTick(actor, tick); return; }
     if (state.scene === 'm2_library' && state.step === 4) {
@@ -3369,7 +3465,14 @@ export class FilmStorySystem {
     if (step.kind === 'reach' && this.near(actor, step)) this.advance(step.label, actor, tick);
     else if (state.started !== undefined) {
       if (!this.near(actor, step)) { delete state.started; state.lastText = '已离开互动位置。返回标记旁可重新开始。'; }
-      else if (tick - state.started >= (step.seconds ?? 3) * 2) this.advance(step.text ?? step.label, actor, tick);
+      else if (tick - state.started >= (step.seconds ?? 3) * 2) {
+        if (state.scene === 'm2_trucks' && state.step === 2 && state.trucks) {
+          state.trucks.phase = 'rescue'; state.trucks.elapsed = TRUCKS.collisionSeconds;
+          state.trucks.rescueElapsed = 0;
+          state.trucks.origin = { x: actor.position.x - FILM_SETS[this.scene.set].center.x, z: actor.position.z - FILM_SETS[this.scene.set].center.z };
+          delete state.started; this.truckFrame(actor, 0, tick);
+        } else this.advance(step.text ?? step.label, actor, tick);
+      }
     } else if (step.kind === 'fight' && state.fighting && !this.sandbox().threats.some(t => t.scene === state.scene)) {
       this.clearThreats();
       this.advance(step.enemy === 'training' ? '对练结束，对手收起架势。可以继续交谈。' : '通路已经打开。继续完成本场景的目标。', actor, tick);
