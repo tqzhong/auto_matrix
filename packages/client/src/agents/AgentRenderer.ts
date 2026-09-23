@@ -150,6 +150,7 @@ export class AgentRenderer {
         matrixEscape: state.currentAction?.parameters.matrixEscape as MotionInput['matrixEscape'],
         theOne: state.currentAction?.parameters.theOne as MotionInput['theOne'],
         reloaded: state.currentAction?.parameters.reloaded as MotionInput['reloaded'],
+        burly: state.currentAction?.parameters.burly as MotionInput['burly'],
         lobbyEntry: state.currentAction?.parameters.lobbyEntry as MotionInput['lobbyEntry'],
         weaponStyle: state.currentAction?.parameters.weaponStyle as MotionInput['weaponStyle'],
         vase: state.currentAction?.parameters.vase as number | undefined,

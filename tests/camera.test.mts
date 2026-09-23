@@ -860,6 +860,21 @@ test('the final takeoff camera follows Neo above the skyline and V enters the ai
   assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).z < -.7);
 });
 
+test('Smith courtyard flight is framed from beyond the wall with the courtyard behind Neo', t => {
+  const game = setup(t, Math.PI); const center = FILM_SETS.film_oracle_courtyard.center;
+  game.state.currentLocation = 'film_oracle_courtyard';
+  game.state.position = { ...filmPosition('film_oracle_courtyard', 0, -42), y: center.y + 34 };
+  game.state.currentAction = { type: 'idle', parameters: { burly: { phase: 'flight', elapsed: 1.2, attempt: 0, repelled: 2,
+    staffSwings: 3, assimilation: 0, nextCopyAt: 0, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.step(.5);
+  assert.ok(game.camera.position.z < game.state.position.z - 8, 'the camera is outside the wall, facing into the courtyard');
+  assert.ok(game.camera.position.y > game.state.position.y + 8, 'the camera sees the courtyard from above');
+  const screen = new THREE.Vector3(game.state.position.x, game.state.position.y + 2, game.state.position.z).project(game.camera);
+  assert.ok(Math.abs(screen.x) < .65 && Math.abs(screen.y) < .65 && screen.z > -1 && screen.z < 1);
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+  assert.ok(game.camera.position.distanceTo(new THREE.Vector3(game.state.position.x, game.state.position.y + 2.35, game.state.position.z)) < .1);
+});
+
 for (const phase of ['counter', 'exit_run'] as const) test(`the One ${phase} phase keeps V turning and locomotion live`, t => {
   const game = setup(t); const encounter = oneEncounter('return', phase, 0); const neo = theOneRoot(encounter, 'neo');
   game.state.currentLocation = neo.set; game.state.position = filmPosition(neo.set, 0, phase === 'counter' ? -9.5 : 8); game.state.rotation = Math.PI;

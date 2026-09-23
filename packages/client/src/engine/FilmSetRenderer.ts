@@ -6,7 +6,7 @@ import { workdayLocked, type OfficeWorkday } from '@auto_matrix/shared';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
-import { FILM_SETS, FILM_SCENE_BY_ID, PILL_ROOM, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, ORACLE_FURNITURE, SERAPH_ORACLE, awakeningLocked, trainingLocked, phoneLocked, windowOpening, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
+import { FILM_SETS, FILM_SCENE_BY_ID, PILL_ROOM, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, awakeningLocked, trainingLocked, phoneLocked, windowOpening, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
 import { LobbySetRenderer } from './LobbySetRenderer.js';
 import { OfficeSetRenderer } from './OfficeSetRenderer.js';
 import { FreewaySetRenderer } from './FreewaySetRenderer.js';
@@ -99,6 +99,9 @@ export class FilmSetRenderer {
   private baneCopy?: BaneCopyRenderer;
   private portalDoor?: { scene: 'm2_seraph' | 'm2_backdoors'; panel: THREE.Group };
   private oracleLetter?: THREE.Group;
+  private courtyardStaff?: THREE.Group;
+  private courtyardBirds: THREE.Group[] = [];
+  private courtyardDisturbedAt?: number;
 
   constructor(private scene: THREE.Scene) {
     scene.add(this.root);
@@ -199,10 +202,25 @@ export class FilmSetRenderer {
       this.portalDoor.panel.position.x = open ? 5.2 : 0;
     }
     if (this.oracleLetter) this.oracleLetter.visible = sceneId === 'm2_bench' && (journey?.step ?? 0) < FILM_SCENE_BY_ID.m2_bench.steps.length;
+    if (this.courtyardStaff) this.courtyardStaff.visible = sceneId === 'm2_bench' || sceneId === 'm2_burly' && !journey?.visiting && !['staff', 'flight_ready', 'flight', 'done'].includes(journey?.burly?.phase ?? 'ready');
+    if (this.courtyardBirds.length) {
+      const startled = sceneId === 'm2_burly' && !journey?.visiting && journey?.burly?.phase !== 'ready';
+      if (startled && this.courtyardDisturbedAt === undefined) this.courtyardDisturbedAt = elapsed;
+      if (!startled) this.courtyardDisturbedAt = undefined;
+      const time = startled ? elapsed - this.courtyardDisturbedAt! : 0;
+      this.courtyardBirds.forEach((bird, index) => {
+        const rise = Math.min(1, Math.max(0, time * 1.2 - index * .18));
+        bird.position.y = rise * (6 + index * 2); bird.position.x = [-15, -12, -2][index] + rise * (index - 1) * 5;
+        bird.position.z = -14 + ([-15, -12, -2][index] % 3) - rise * (9 + index * 3);
+        bird.rotation.y = Math.sin(elapsed * 7 + index) * .35;
+        for (const wing of bird.children.filter(child => child.name === 'bird-wing')) wing.rotation.z = Math.sin(elapsed * 24 + index) * .8 * rise;
+      });
+    }
     this.oracleVase?.update(sceneId === 'm1_oracle' ? journey?.visiting || journey!.step > 0 ? 4.5 : journey?.oracle?.vase : undefined);
     const scene = journey && FILM_SCENE_BY_ID[journey.scene]; const step = scene?.steps[journey!.step];
     this.marker.visible = Boolean(set && scene?.set === set.id && step && !journey?.visiting && journey?.actor === player?.id);
     if (journey?.scene === 'm1_lobby' && journey.fighting) this.marker.visible = false;
+    if (journey?.scene === 'm2_burly' && !['ready', 'staff_ready', 'flight_ready'].includes(journey.burly?.phase ?? 'ready')) this.marker.visible = false;
     if (journey && pillLocked(journey)) this.marker.visible = false;
     if (journey && interrogationLocked(journey)) this.marker.visible = false;
     if (journey && meetingLocked(journey)) this.marker.visible = false;
@@ -226,7 +244,8 @@ export class FilmSetRenderer {
     if (journey && windowOpening(journey)) this.marker.visible = false;
     if (journey?.scene === 'm1_dejavu' && journey.step === 0 && journey.ambush) this.marker.visible = false;
     if (this.marker.visible && step && scene) {
-      const position = step.kind === 'drive' && journey?.ride ? filmPosition(scene.set, 14, FREEWAY_FINISH) : filmStepPosition(scene, step);
+      const position = scene.id === 'm2_burly' && journey?.burly?.phase === 'staff_ready' ? filmPosition(scene.set, BURLY.staff.x, BURLY.staff.z)
+        : step.kind === 'drive' && journey?.ride ? filmPosition(scene.set, 14, FREEWAY_FINISH) : filmStepPosition(scene, step);
       if (scene.id === 'm1_ledge' && journey?.office?.climbed !== undefined) position.y -= 32;
       this.marker.position.set(position.x, position.y - .82, position.z);
       this.marker.scale.setScalar(1 + Math.sin(elapsed * 2) * .07); this.markerLight.position.copy(this.marker.position).y += 1.5;
@@ -253,7 +272,7 @@ export class FilmSetRenderer {
     if (this.meeting) { fog.density = .007; fog.color.setHex(0x111b1d); (this.scene.background as THREE.Color).copy(fog.color); this.scene.environmentIntensity = .7; return { color: 0xb8cdc6, ambient: .62, sun: .15 }; }
     if (this.matrixEscape && this.current.id === 'film_subway_platform') { fog.density = .006; fog.color.setHex(0x15231f); this.scene.environmentIntensity = .58; return { color: 0xd5e1d3, ambient: .72, sun: .08 }; }
     if (this.matrixEscape) { fog.density = .0015; fog.color.setHex(0xaebfc0); this.scene.environmentIntensity = .82; return { color: 0xffe2bc, ambient: .86, sun: 1.35 }; }
-    if (this.current.id === 'film_oracle_courtyard') { fog.density = .0018; this.scene.environmentIntensity = .58; return { color: 0xf4dfb9, ambient: .73, sun: 1.15 }; }
+    if (this.current.id === 'film_oracle_courtyard') { fog.density = .0015; this.scene.environmentIntensity = .88; return { color: 0xf7e8cc, ambient: 1.05, sun: 1.7 }; }
     if (this.reloaded && this.current.id !== 'film_neb_deck') {
       fog.density = this.current.id === 'film_trinity_roof' ? .002 : .003; fog.color.setHex(0x0f1917); (this.scene.background as THREE.Color).copy(fog.color);
       this.scene.environmentIntensity = .56; return { color: 0xc4d1b5, ambient: .6, sun: .14 };
@@ -965,8 +984,8 @@ export class FilmSetRenderer {
     }
   }
   private oracleCourtyard(set: FilmSet): void {
-    const brick = this.pbr('damaged_plaster', 0x746b62, 12);
-    const stone = this.mat(0x3d4944, .94), iron = this.mat(0x303836, .6, .6), soil = this.mat(0x403e38, .98), benchPaint = this.mat(0x30443b, .85);
+    const brick = this.pbr('damaged_plaster', 0xd3c7b0, 12);
+    const stone = this.mat(0x6c7972, .94), iron = this.mat(0x303836, .6, .6), soil = this.mat(0x403e38, .98), benchPaint = this.mat(0x30443b, .85);
     this.box(stone, 0, -.015, 0, set.width - 4, .06, set.depth - 4);
     for (let z = -set.depth / 2 + 1; z < set.depth / 2; z += 5) this.box(this.mat(0x777a75), 0, .025, z, set.width - 6, .025, .055);
     for (const side of [-1, 1]) {
@@ -999,9 +1018,16 @@ export class FilmSetRenderer {
       this.box(iron, x, 2.05, -19.6, .28, .18, 2.1);
     }
     for (const x of [-15, -12, -2]) {
-      const bird = this.sphere(iron, x, .55, -14 + (x % 3), .23); bird.scale.set(1.1, .7, 1.4);
-      this.sphere(iron, x + .11, .76, -14 + (x % 3), .13);
+      const bird = new THREE.Group(); bird.userData.dynamic = true; bird.name = 'courtyard-startled-bird'; bird.position.set(x, 0, -14 + (x % 3)); this.root.add(bird);
+      this.mesh(new THREE.SphereGeometry(.23, 12, 8), iron, 0, .55, 0, bird).scale.set(1.1, .7, 1.4);
+      this.mesh(new THREE.SphereGeometry(.13, 10, 8), iron, .11, .76, 0, bird);
+      for (const side of [-1, 1]) { const wing = this.mesh(new THREE.BoxGeometry(.52, .05, .22), iron, side * .27, .6, 0, bird); wing.name = 'bird-wing'; }
+      this.courtyardBirds.push(bird);
     }
+    const staff = new THREE.Group(); staff.userData.dynamic = true; staff.name = 'courtyard-loose-fence-post'; staff.position.set(BURLY.staff.x, 0, BURLY.staff.z); this.root.add(staff);
+    const pole = this.mesh(new THREE.CylinderGeometry(.065, .065, 5.7, 12), iron, 0, 2.85, 0, staff); pole.rotation.z = .25;
+    this.mesh(new THREE.BoxGeometry(.42, .1, .42), iron, 0, .16, 0, staff);
+    this.courtyardStaff = staff;
     const note = new THREE.Group(); note.userData.dynamic = true; note.name = 'oracle-second-folded-lead'; this.root.add(note);
     this.mesh(new THREE.BoxGeometry(.7, .035, .48), this.white, -7.3, 1.65, -19.45, note).rotation.y = -.22;
     this.mesh(new THREE.BoxGeometry(.45, .022, .018), iron, -7.3, 1.68, -19.23, note);
@@ -1079,7 +1105,7 @@ export class FilmSetRenderer {
     this.reloaded?.dispose(); this.reloaded = undefined;
     this.zion?.dispose(); this.zion = undefined;
     this.baneCopy?.dispose(); this.baneCopy = undefined;
-    this.portalDoor = undefined; this.oracleLetter = undefined;
+    this.portalDoor = undefined; this.oracleLetter = undefined; this.courtyardStaff = undefined; this.courtyardBirds = []; this.courtyardDisturbedAt = undefined;
     this.office?.dispose(); this.office = undefined;
     this.freeway?.dispose(); this.freeway = undefined;
     this.lobby?.dispose(); this.lobby = undefined;

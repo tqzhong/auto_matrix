@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { oracleVisitPose, type AgentState, type RescueLoadout } from '@auto_matrix/shared';
+import { BURLY, oracleVisitPose, type AgentState, type RescueLoadout } from '@auto_matrix/shared';
 import { advanceMotion, newMotion, type MotionInput, type MotionState } from './CharacterMotion.js';
 import { HERO_IDS, HeroModels, type HeroId, type HeroRig, type HeroSupport } from './HeroModel.js';
 import { SpoonModel } from './SpoonModel.js';
@@ -51,6 +51,8 @@ export interface CharacterRig {
   spoon?: SpoonModel;
   phone?: PhoneModel;
   cookie?: THREE.Group;
+  staff?: THREE.Group;
+  infection?: THREE.Group;
   rifle?: boolean;
   weaponStyle?: RescueLoadout | 'pistol' | 'pulse';
   muzzleIndex?: number;
@@ -324,6 +326,7 @@ export class CharacterModels {
         rig.weapons?.forEach(gun => gun.removeFromParent()); rig.weapons = undefined; rig.weaponStyle = undefined;
         for (const child of detail.children) child.visible = false;
         detail.add(model.root); rig.hero = model;
+        if (rig.staff) { rig.staff.removeFromParent(); rig.staff.position.set(0, -.16, .06); model.bones.get('wrist_R')!.add(rig.staff); }
       }).catch(error => console.warn(`${state.id} asset could not load; retaining the procedural character.`, error));
     }
     return rig;
@@ -443,12 +446,61 @@ export class CharacterModels {
       const visit = input.oracleVisit; const gesture = visit && oracleVisitPose(visit);
       rig.cookie.visible = Boolean(visit && gesture && (visit.role === 'oracle' ? gesture.offer > .12 && gesture.receive < .72 : gesture.receive > .55));
     }
+    const holdsStaff = input.burly?.role === 'neo' && ['staff', 'flight_ready'].includes(input.burly.phase);
+    if (holdsStaff && !rig.staff) {
+      const steel = this.material(new THREE.MeshStandardMaterial({ color: 0x555b59, metalness: .78, roughness: .36 }));
+      const grip = this.material(new THREE.MeshStandardMaterial({ color: 0x202b29, metalness: .4, roughness: .63 }));
+      rig.staff = new THREE.Group(); rig.staff.name = 'burly-fence-staff';
+      this.mesh(rig.staff, this.cylinder, steel, [0, 0, 0], [.045, 5.7, .045]);
+      this.mesh(rig.staff, this.cylinder, grip, [0, -.34, 0], [.06, .55, .06]);
+      for (const y of [-2.75, 2.75]) this.mesh(rig.staff, this.cylinder, steel, [0, y, 0], [.09, .08, .09]);
+      const parent = rig.hero?.bones.get('wrist_R') ?? rig.elbows[0];
+      rig.staff.position.set(0, rig.hero ? -.16 : -.76, .06); rig.staff.rotation.z = Math.PI / 2; parent.add(rig.staff);
+    }
+    if (rig.staff) rig.staff.visible = holdsStaff;
+    const infected = input.burly?.role === 'neo' && (input.burly.phase === 'grapple' || input.burly.assimilation > 0 && ['swarm', 'staff_ready', 'staff', 'flight_ready'].includes(input.burly.phase));
+    if (infected && !rig.infection) {
+      const black = this.material(new THREE.MeshBasicMaterial({ color: 0x030b09, transparent: true, opacity: .9, depthWrite: false }));
+      const code = this.material(new THREE.MeshBasicMaterial({ color: 0x8bfc92, transparent: true, opacity: .85, depthWrite: false }));
+      rig.infection = new THREE.Group(); rig.infection.name = 'smith-assimilation'; rig.detail.add(rig.infection);
+      for (let i = 0; i < 22; i++) {
+        const x = ((i * 7) % 17 - 8) * .055; const y = 1.05 + ((i * 11) % 19) * .07;
+        const mark = this.mesh(rig.infection, this.box, i % 4 ? black : code, [x, y, .38 + i % 3 * .015], [.025 + i % 3 * .015, .08 + i % 5 * .085, .012]);
+        mark.rotation.z = (i % 5 - 2) * .19; mark.castShadow = false;
+      }
+    }
+    if (rig.infection) {
+      rig.infection.visible = Boolean(infected);
+      const spread = input.burly?.phase === 'grapple' ? .25 + Math.min(1, input.burly.elapsed / BURLY.grapple) * .85 : .2 + (input.burly?.assimilation ?? 0) * .008;
+      rig.infection.scale.setScalar(spread);
+      rig.infection.position.y = Math.sin(rig.motion.time * 9) * .015;
+    }
     const pose = advanceMotion(rig.motion, input, delta);
-    if (rig.hero) { this.heroes.animate(rig.hero, pose, rig.motion, input, delta); return; }
+    const staffSweep = holdsStaff && rig.motion.attackAge < .65 ? Math.sin(rig.motion.attackAge / .65 * Math.PI) : 0;
+    if (rig.staff) rig.staff.rotation.z = Math.PI / 2 + staffSweep * .65;
+    if (rig.hero) {
+      this.heroes.animate(rig.hero, pose, rig.motion, input, delta);
+      if (holdsStaff) {
+        rig.hero.bones.get('shoulder_R')!.rotation.x -= .7 + staffSweep * .5;
+        rig.hero.bones.get('shoulder_L')!.rotation.x -= .55 + staffSweep * .35;
+        rig.hero.bones.get('chest')!.rotation.y += staffSweep * .42;
+      }
+      if (input.burly?.phase === 'flight' && input.burly.role === 'neo') {
+        rig.hero.bones.get('chest')!.rotation.x -= .55;
+        for (const side of ['R', 'L']) rig.hero.bones.get(`shoulder_${side}`)!.rotation.x -= 1.1;
+      }
+      if (input.burly?.phase === 'grapple' && input.burly.role === 'smith') {
+        rig.hero.bones.get('shoulder_R')!.rotation.x -= 1.15;
+        rig.hero.bones.get('elbow_R')!.rotation.x -= .65;
+      }
+      return;
+    }
     rig.torso.position.y = pose.hipHeight;
     rig.torso.position.x = pose.sway; rig.torso.position.z = pose.lunge;
     rig.torso.rotation.set(pose.lean, pose.twist, pose.roll);
     rig.head.rotation.set(-pose.lean * .6, pose.headTurn, -pose.roll * .5);
+    if (holdsStaff) rig.torso.rotation.y += staffSweep * .42;
+    if (input.burly?.phase === 'flight' && input.burly.role === 'neo') rig.torso.rotation.x -= .55;
     for (let i = 0; i < 2; i++) {
       rig.hips[i].position.y = pose.hipHeight;
       rig.hips[i].rotation.set(input.floorSeated ? -1.2 : pose.legs[i].hip, input.floorSeated ? (i ? 1 : -1) * .4 : 0, input.floorSeated ? (i ? 1 : -1) * .6 : 0);
@@ -456,6 +508,9 @@ export class CharacterModels {
       rig.ankles[i].rotation.x = pose.legs[i].ankle;
       rig.shoulders[i].rotation.set(pose.arms[i].shoulder, 0, pose.arms[i].outward);
       rig.elbows[i].rotation.x = pose.arms[i].elbow;
+      if (holdsStaff) rig.shoulders[i].rotation.x -= (i ? .55 : .7) + staffSweep * (i ? .35 : .5);
+      if (input.burly?.phase === 'flight' && input.burly.role === 'neo') rig.shoulders[i].rotation.x -= 1.1;
+      if (i === 0 && input.burly?.phase === 'grapple' && input.burly.role === 'smith') { rig.shoulders[i].rotation.x -= 1.15; rig.elbows[i].rotation.x -= .65; }
       for (const finger of rig.fingers[i]) finger.rotation.x = -.12 - pose.arms[i].grip * 2.1;
       const panel = rig.cloth[i];
       if (!panel) continue;

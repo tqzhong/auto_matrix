@@ -21,6 +21,7 @@ import { GOVERNMENT_RESCUE, governmentLocked, governmentRoot, governmentText, ty
 import { AIR_RESCUE, airRescueLocked, airRescueRoot, airRescueText, type AirRescueEncounter, type AirRescueRole } from '@auto_matrix/shared';
 import { MATRIX_ESCAPE, matrixEscapeLocked, matrixEscapeRoot, matrixEscapeText, type MatrixEscapeEncounter, type MatrixEscapeRole } from '@auto_matrix/shared';
 import { THE_ONE, theOneLocked, theOneRoot, theOneText, type TheOneEncounter, type TheOneRole } from '@auto_matrix/shared';
+import { BURLY, burlyLocked, burlyText, type BurlyEncounter } from '@auto_matrix/shared';
 
 const BATHROOM_ROLES = ['neo', 'trinity', 'switch', 'apoc'] as const;
 const UNPLUGGED_ROLES = ['tank', 'cypher', 'dozer', 'apoc', 'switch', 'neo', 'trinity'] as const;
@@ -37,7 +38,7 @@ export class FilmStorySystem {
   get scene(): FilmScene | undefined { return this.state && FILM_SCENE_BY_ID[this.state.scene]; }
   get step(): FilmStep | undefined { return this.scene?.steps[this.state!.step]; }
   controls(agent: AgentState): boolean { return Boolean(this.state && this.state.actor === agent.id); }
-  performing(agent: AgentState): boolean { return this.controls(agent) && (clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || theOneLocked(this.state!) || reloadedLocked(this.state!) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
+  performing(agent: AgentState): boolean { return this.controls(agent) && (burlyLocked(this.state!) || clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || theOneLocked(this.state!) || reloadedLocked(this.state!) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
   clubFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
     if (state?.scene !== 'm1_club' || state.visiting || !this.controls(agent)) return;
@@ -1986,6 +1987,139 @@ export class FilmStorySystem {
     state.checkpoint = { ...agent.position }; state.lastText = 'Seraph 在最后一击前收手，让 Neo 重新站稳。观察起手，按 G 再次开始考验。';
     this.stageCast();
   }
+  private burlyEncounter(tick: number): BurlyEncounter {
+    return this.state!.burly ??= { phase: 'ready', elapsed: 0, attempt: 0, repelled: 0, staffSwings: 0, assimilation: 0, nextCopyAt: tick };
+  }
+  burlyFrame(agent: AgentState, dt: number, tick: number): boolean {
+    const state = this.state;
+    if (state?.scene !== 'm2_burly' || state.visiting || !this.controls(agent)) return false;
+    const encounter = this.burlyEncounter(tick);
+    if (!burlyLocked(state)) return false;
+    encounter.elapsed += Math.max(0, Math.min(.1, dt));
+    if (encounter.phase === 'approaching' || encounter.phase === 'grapple') {
+      const smith = this.world.agents.get('smith');
+      if (smith && !smith.controller) {
+        const z = encounter.phase === 'approaching' ? -8 + 6 * Math.min(1, encounter.elapsed / BURLY.approach) : -2;
+        smith.position = filmPosition(this.scene!.set, 0, z); smith.rotation = 0;
+        smith.currentAction = { type: 'move_to', parameters: { resolved: true, burly: { ...encounter, role: 'smith' } }, startedAt: tick, duration: 1, progress: 0 };
+      }
+      agent.position = filmPosition(this.scene!.set, 0, 0); agent.rotation = Math.PI;
+      if (encounter.phase === 'approaching' && encounter.elapsed >= BURLY.approach) { encounter.phase = 'grapple'; encounter.elapsed = 0; }
+      else if (encounter.phase === 'grapple' && encounter.elapsed >= BURLY.grapple) { this.burlyFailed(agent, tick); return true; }
+    } else if (encounter.phase === 'flight') {
+      const from = encounter.flightFrom!; const progress = Math.min(1, encounter.elapsed / BURLY.flight); const drift = progress * progress * (3 - 2 * progress);
+      agent.position = { x: from.x, y: from.y + 50 * Math.sin(Math.min(1, progress * 1.1) * Math.PI / 2), z: from.z - 14 * drift };
+      agent.rotation = Math.PI;
+      if (progress >= 1) {
+        encounter.phase = 'done'; this.clearThreats(); this.advance(burlyText(encounter), agent, tick);
+        this.command(agent, 'next', tick); return true;
+      }
+    }
+    agent.velocity = { x: 0, y: 0, z: 0 };
+    agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, burly: { ...encounter, role: 'neo' } }, startedAt: tick, duration: 1, progress: 0 };
+    state.checkpoint = { ...agent.position };
+    state.lastText = burlyText(encounter);
+    return true;
+  }
+  burlyAction(agent: AgentState): void {
+    if (this.state?.scene !== 'm2_burly' || this.state.visiting || !this.controls(agent) || !agent.currentAction) return;
+    agent.currentAction.parameters.burly = { ...this.burlyEncounter(this.world.simulationTick), role: 'neo' };
+  }
+  private spawnBurlyCopies(agent: AgentState, tick: number, count: number): void {
+    const state = this.state!; const encounter = this.burlyEncounter(tick);
+    const positions = [[-14, -10], [14, -10], [-14, 10], [14, 10], [0, -26], [-18, 25], [18, 25], [0, 20]];
+    for (let i = 0; i < count; i++) {
+      const index = (encounter.repelled + this.sandbox().serial + i) % positions.length;
+      const [x, z] = positions[index]; let position = filmPosition(this.scene!.set, x, z);
+      if (playerBlocked(position, true, 1.1, this.sandbox().structures)) position = filmPosition(this.scene!.set, 0, -12 - i * 3);
+      this.sandbox().threats.push({ id: `film:${++this.sandbox().serial}`, scene: state.scene, kind: 'smith', position, matrix: true,
+        health: 64, maxHealth: 64, target: agent.id, stunUntil: tick + 2, lastStrike: tick + i * 2 });
+    }
+  }
+  private burlyTick(agent: AgentState, tick: number): void {
+    const state = this.state!; const encounter = this.burlyEncounter(tick);
+    if (!['swarm', 'staff_ready', 'staff', 'flight_ready'].includes(encounter.phase)) return;
+    encounter.assimilation = Math.max(0, encounter.assimilation - 1);
+    const copies = this.sandbox().threats.filter(threat => threat.scene === state.scene);
+    if (tick >= encounter.nextCopyAt && copies.length < BURLY.maxCopies) {
+      this.spawnBurlyCopies(agent, tick, Math.min(2, BURLY.maxCopies - copies.length));
+      encounter.nextCopyAt = tick + BURLY.copyInterval;
+    }
+  }
+  private burlyAct(agent: AgentState, target: string, tick: number): string {
+    const state = this.state!; const encounter = this.burlyEncounter(tick);
+    if (target !== 'act') return burlyText(encounter);
+    if (encounter.phase === 'failed') return this.retryBurly(agent, tick);
+    if (encounter.phase === 'ready') {
+      if (!this.near(agent, this.scene!.steps[0])) return '走近庭院中央的 Smith，再按 G 面对他。';
+      if (this.world.agents.get('smith')?.controller) return 'Smith 正由另一位玩家控制，庭院对峙停在这里。';
+      encounter.phase = 'approaching'; encounter.elapsed = 0; state.fighting = true;
+      this.burlyFrame(agent, 0, tick); return state.lastText;
+    }
+    if (encounter.phase === 'staff_ready') {
+      if (distance(agent.position, filmPosition(this.scene!.set, BURLY.staff.x, BURLY.staff.z)) > 4) return '先冲到庭院右侧松动的金属栏杆旁。';
+      encounter.phase = 'staff'; encounter.elapsed = 0; state.lastText = burlyText(encounter); return state.lastText;
+    }
+    if (encounter.phase === 'flight_ready') {
+      if (!this.near(agent, this.scene!.steps[1])) return '先冲到庭院北侧的空地，摆脱围住出口的复制体。';
+      encounter.phase = 'flight'; encounter.elapsed = 0; encounter.flightFrom = { ...agent.position };
+      this.clearThreats(); this.burlyFrame(agent, 0, tick); return state.lastText;
+    }
+    return burlyText(encounter);
+  }
+  burlyDodge(agent: AgentState, tick: number): string | undefined {
+    const state = this.state;
+    if (state?.scene !== 'm2_burly' || !this.controls(agent) || state.visiting || state.burly?.phase !== 'grapple') return undefined;
+    const encounter = state.burly; encounter.phase = 'swarm'; encounter.elapsed = 0; encounter.assimilation = 0; encounter.nextCopyAt = tick + BURLY.copyInterval;
+    const smith = this.world.agents.get('smith'); if (smith && !smith.controller) smith.currentAction = { type: 'idle', parameters: { filmDuel: true }, startedAt: tick, duration: 100000, progress: 0 };
+    this.spawnBurlyCopies(agent, tick, BURLY.initialCopies);
+    state.lastText = 'Neo 挣脱了按进胸口的手；黑色代码退去，四周的 Smith 却继续复制。';
+    return state.lastText;
+  }
+  burlyContact(agent: AgentState, tick: number): boolean {
+    const encounter = this.state?.scene === 'm2_burly' && this.controls(agent) ? this.state.burly : undefined;
+    if (!encounter || !['swarm', 'staff_ready', 'staff', 'flight_ready'].includes(encounter.phase)) return false;
+    encounter.assimilation = Math.min(100, encounter.assimilation + 12);
+    if (encounter.assimilation >= 100) return this.burlyFailed(agent, tick);
+    this.state!.lastText = `Smith 的手掌碰到你，代码试图重写身体。同化 ${encounter.assimilation}%；用 X 闪避，别停在包围中心。`;
+    return false;
+  }
+  burlyRepelled(agent: AgentState, tick: number): void {
+    const encounter = this.state?.scene === 'm2_burly' && this.controls(agent) ? this.state.burly : undefined;
+    if (!encounter || !['swarm', 'staff_ready', 'staff'].includes(encounter.phase)) return;
+    encounter.repelled++;
+    if (encounter.phase === 'swarm' && encounter.repelled >= BURLY.staffAfterRepels) encounter.phase = 'staff_ready';
+    encounter.nextCopyAt = Math.min(encounter.nextCopyAt, tick + 2);
+    this.state!.lastText = burlyText(encounter);
+  }
+  burlyStaffStrike(agent: AgentState, tick: number): void {
+    const encounter = this.state?.scene === 'm2_burly' && this.controls(agent) ? this.state.burly : undefined;
+    if (encounter?.phase !== 'staff') return;
+    encounter.staffSwings++;
+    if (encounter.staffSwings >= BURLY.escapeAfterSwings) {
+      encounter.phase = 'flight_ready'; this.advance(burlyText(encounter), agent, tick);
+    } else this.state!.lastText = burlyText(encounter);
+  }
+  burlyFailed(agent: AgentState, tick: number): boolean {
+    const state = this.state;
+    if (state?.scene !== 'm2_burly' || !this.controls(agent) || !state.burly || state.burly.phase === 'done') return false;
+    const encounter = state.burly; encounter.phase = 'failed'; encounter.elapsed = 0; encounter.attempt++;
+    this.clearThreats(); delete state.fighting;
+    agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
+    agent.position = filmPosition(this.scene!.set, 0, 10); agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentAction = null;
+    state.checkpoint = { ...agent.position }; state.lastText = burlyText(encounter); this.stageCast();
+    return true;
+  }
+  private retryBurly(agent: AgentState, tick: number): string {
+    const state = this.state!; const old = this.burlyEncounter(tick);
+    const escape = state.step === 1 || old.phase === 'flight' || old.phase === 'flight_ready';
+    this.clearThreats(); agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
+    agent.position = filmPosition(this.scene!.set, 0, escape ? -28 : 10); agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentAction = null;
+    state.step = escape ? 1 : 0; state.burly = { phase: escape ? 'flight_ready' : 'ready', elapsed: 0, attempt: old.attempt + 1,
+      repelled: escape ? old.repelled : 0, staffSwings: escape ? old.staffSwings : 0, assimilation: 0, nextCopyAt: tick + BURLY.copyInterval };
+    state.checkpoint = { ...agent.position }; state.lastText = burlyText(state.burly); delete state.fighting;
+    this.stageCast(); return state.lastText;
+  }
   climbing(agent: AgentState): boolean { return this.controls(agent) && !this.state?.visiting && this.state?.scene === 'm1_ledge' && this.state.step === 1 && this.state.office?.climbed !== undefined; }
   climbFrame(agent: AgentState, direction: number, dt: number, tick: number): boolean {
     if (!this.climbing(agent)) return false;
@@ -2108,6 +2242,7 @@ export class FilmStorySystem {
     }
     if (target === 'retry') {
       if (this.reloaded.active(agent)) return this.reloaded.command(agent, target, tick);
+      if (state.scene === 'm2_burly') return this.retryBurly(agent, tick);
       if (state.theOne && ['m1_death', 'm1_return', 'm1_final_call'].includes(state.scene)) return this.retryTheOne(agent, tick);
       if (state.government && ['m1_smith_question', 'm1_bullet_dodge'].includes(state.scene)) return this.retryGovernment(agent, tick);
       if (state.airRescue && ['m1_helicopter', 'm1_rooftop_rescue'].includes(state.scene)) return this.retryAirRescue(agent, tick);
@@ -2304,6 +2439,7 @@ export class FilmStorySystem {
     const step = this.step;
     if (!step) return '本场景已完成。G 或 J 继续下一段。';
     if (this.reloaded.active(agent)) return this.reloaded.command(agent, target, tick);
+    if (state.scene === 'm2_burly') return this.burlyAct(agent, target, tick);
     if (state.scene === 'm1_wake_up') return this.apartmentAct(agent, target, tick);
     if (state.scene === 'm1_wake_again' && state.step === 0) return this.wakeCallAct(agent, target, tick);
     if (state.scene === 'm1_club') return this.clubAct(agent, target, tick);
@@ -2514,6 +2650,7 @@ export class FilmStorySystem {
     delete state.reloaded;
     delete state.baneCopy;
     delete state.seraph;
+    delete state.burly;
     this.sandbox().structures = this.sandbox().structures.filter(structure => structure.id !== 'film:reloaded:door');
     this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== 'film:apartment:door');
     delete state.pills;
@@ -2550,6 +2687,8 @@ export class FilmStorySystem {
     this.stageCast();
     this.reconcileCast();
     if (scene.id === 'm2_burly') {
+      state.burly = { phase: 'ready', elapsed: 0, attempt: 0, repelled: 0, staffSwings: 0, assimilation: 0, nextCopyAt: tick };
+      state.lastText = burlyText(state.burly);
       const oracle = this.world.agents.get('oracle');
       if (oracle && !oracle.controller) {
         oracle.currentLocation = CHARACTERS.oracle.initialLocation; oracle.position = locationEntrance(oracle.currentLocation);
@@ -2713,6 +2852,7 @@ export class FilmStorySystem {
       }
       if (scene.id === 'm1_jump' && id === 'morpheus') actor.position = filmPosition(scene.set, 0, -38);
       if (scene.id === 'm2_seraph' && id === 'seraph') { actor.position = filmPosition(scene.set, 0, -8); actor.rotation = 0; }
+      if (scene.id === 'm2_burly' && id === 'smith') { actor.position = filmPosition(scene.set, 0, -8); actor.rotation = 0; }
       if (scene.id === 'm2_backdoors' && id === 'seraph') { actor.position = filmPosition(scene.set, 2.5, -30); actor.rotation = Math.PI; }
       if (scene.id === 'm2_bench' && id === 'oracle') {
         actor.position = filmPosition(scene.set, -9, -20); actor.rotation = 0;
@@ -2822,6 +2962,7 @@ export class FilmStorySystem {
     const state = this.state; if (!state || !this.scene || state.finished || state.visiting) return;
     const actor = this.world.agents.get(state.actor);
     if (!actor?.controller || actor.status !== 'alive') { delete state.started; return; }
+    if (state.scene === 'm2_burly') { this.burlyTick(actor, tick); return; }
     if (state.scene === 'm2_bane_copy' && state.baneCopy && state.step === 2 && state.started !== undefined) state.baneCopy.progress = Math.min(1, (tick - state.started) / 10);
     if (state.scene === 'm1_office_escape') {
       if (this.office.tick(actor, tick)) {

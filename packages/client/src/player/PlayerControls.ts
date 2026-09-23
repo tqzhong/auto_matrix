@@ -294,6 +294,8 @@ export class PlayerControls {
     if (oneCinematic) this.performing = true;
     if (this.motion.reloaded && !reloadedCinematic) this.performing = false;
     if (reloadedCinematic) this.performing = true;
+    if (this.motion.burly && !state.currentAction?.parameters.burly) this.performing = false;
+    if (['approaching', 'grapple', 'flight'].includes((state.currentAction?.parameters.burly as MotionInput['burly'] | undefined)?.phase ?? '')) this.performing = true;
     if (this.motion.lobbyEntry && !state.currentAction?.parameters.lobbyEntry) this.performing = false;
     if ((state.currentAction?.parameters.lobbyEntry as MotionInput['lobbyEntry'])?.phase === 'checkpoint') this.performing = true;
     if (this.wasPerforming && !this.performing) this.yaw = this.movementYaw = this.facing;
@@ -322,6 +324,7 @@ export class PlayerControls {
     this.motion.matrixEscape = escapeGesture;
     this.motion.theOne = oneGesture;
     this.motion.reloaded = reloadedGesture;
+    this.motion.burly = state.currentAction?.parameters.burly as MotionInput['burly'];
     this.motion.lobbyEntry = state.currentAction?.parameters.lobbyEntry as MotionInput['lobbyEntry'];
     this.motion.aimPitch = this.firearm || state.currentAction?.parameters.armed === true ? this.pitch : undefined;
     this.motion.mirror = this.mirror;
@@ -989,6 +992,19 @@ export class PlayerControls {
       const focus = spoon.localToWorld(new THREE.Vector3(.1, .55, 0));
       const ideal = focus.clone().add(new THREE.Vector3(Math.sin(this.yaw + .45) * 2.1, .35 + Math.sin(this.pitch), Math.cos(this.yaw + .45) * 2.1));
       this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta)); this.camera.lookAt(focus);
+    } else if (this.motion.burly?.phase === 'flight') {
+      if (this.firstPerson) {
+        const eye = new THREE.Vector3(this.position.x, this.position.y + 2.35, this.position.z);
+        const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
+        this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
+      } else {
+        const center = FILM_SETS.film_oracle_courtyard.center;
+        const ideal = new THREE.Vector3(center.x + 14, this.position.y + 16, center.z - 61);
+        const focus = new THREE.Vector3(this.position.x, this.position.y + 1.7, this.position.z + 2.2);
+        if (resetCamera || this.motion.burly.elapsed < .12) this.camera.position.copy(ideal);
+        else this.camera.position.lerp(ideal, 1 - Math.exp(-9 * delta));
+        this.camera.lookAt(focus);
+      }
     } else if (this.firstPerson) {
       this.camera.position.copy(target);
       if (this.motion.grounded && this.motion.speed > .1) this.camera.position.y += Math.sin(this.cameraStep * 2) * .018;

@@ -39,6 +39,7 @@ export interface MotionInput {
   matrixEscape?: MatrixEscapeGesture;
   theOne?: TheOneGesture;
   reloaded?: ReloadedGesture;
+  burly?: import('@auto_matrix/shared').BurlyEncounter & { role: 'neo' | 'smith' };
   weaponStyle?: RescueLoadout;
   aimPitch?: number;
   clubClothes?: boolean;

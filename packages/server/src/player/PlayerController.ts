@@ -213,6 +213,9 @@ export class PlayerController {
       this.sandbox?.life.film.workdayFrame(agent, dt, tick);
       this.sandbox?.life.film.apartmentFrame(agent, dt, tick);
       this.sandbox?.life.film.clubFrame(agent, dt, tick);
+      if (this.sandbox?.life.film.burlyFrame(agent, dt, tick)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
       if (this.sandbox?.life.film.interludeFrame(agent, dt, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
@@ -316,6 +319,7 @@ export class PlayerController {
       this.sandbox?.life.film.matrixEscapeAction(agent, tick);
       this.sandbox?.life.film.theOneAction(agent, tick);
       this.sandbox?.life.film.reloaded.action(agent, tick);
+      this.sandbox?.life.film.burlyAction(agent);
       const journey = this.sandbox?.life.film.state;
       if (journey?.actor === agent.id && agent.currentAction && heldPhone(journey)) agent.currentAction.parameters.phone = { ...heldPhone(journey)! };
       const nearbyLocation = Object.values(LOCATIONS).filter(location => location.id !== 'downtown' && (location.world === 'matrix') === agent.isInMatrix)
@@ -336,6 +340,8 @@ export class PlayerController {
     const reloaded = this.sandbox?.life.film.reloaded.handle(agent, kind, tick);
     if (reloaded !== undefined) return reloaded;
     if (kind === 'dodge') {
+      const burly = this.sandbox?.life.film.burlyDodge(agent, tick);
+      if (burly !== undefined) return burly;
       const result = this.sandbox?.life.film.governmentDodge(agent, tick);
       if (result !== undefined) return result;
       const rescue = this.sandbox?.life.film.airRescueBrace(agent, tick);

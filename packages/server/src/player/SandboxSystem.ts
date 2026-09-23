@@ -181,7 +181,8 @@ export class SandboxSystem {
   private enterIfNeeded(agent: AgentState): void { if (!this.state.profiles[agent.id]) this.enter(agent); }
   attack(agent: AgentState, tick: number, combo = 0): string | null {
     const strike = MELEE_COMBO[combo];
-    const targets = this.state.threats.filter(t => t.matrix === agent.isInMatrix && meleeReach(agent.position, agent.rotation, t.position, strike.reach, agent.isInMatrix, this.state.structures))
+    const staff = this.life.film.state?.scene === 'm2_burly' && this.life.film.state.burly?.phase === 'staff' && this.life.film.controls(agent);
+    const targets = this.state.threats.filter(t => t.matrix === agent.isInMatrix && meleeReach(agent.position, agent.rotation, t.position, staff && t.scene === 'm2_burly' ? 8 : strike.reach, agent.isInMatrix, this.state.structures))
       .sort((a, b) => distance(a.position, agent.position) - distance(b.position, agent.position));
     if (!targets[0]) return null;
     this.enterIfNeeded(agent);
@@ -190,6 +191,20 @@ export class SandboxSystem {
     // ticks here would slow the player's attacks during their own bullet time.
     profile.lastAttack = tick;
     agent.currentAction = { type: 'attack', parameters: { player: true, resolved: true }, startedAt: tick, duration: 1, progress: 0 };
+    const staffTargets = staff ? targets.filter(t => t.scene === 'm2_burly').slice(0, 4) : [];
+    if (staff && staffTargets.length) {
+      const direction = { x: Math.sin(agent.rotation), y: 0, z: Math.cos(agent.rotation) };
+      for (const target of staffTargets) {
+        const position = { ...target.position, y: target.position.y + 2 }; const health = target.health;
+        this.hit(agent, target, 72, tick);
+        target.attackAt = undefined; target.stunUntil = tick + 3;
+        target.position = combatDisplace(target.position, direction, 5, target.matrix, this.state.structures);
+        this.onImpact?.({ source: agent.id, target: target.id, position, direction, damage: health - target.health,
+          combo: 2, matrix: true, downed: target.health <= 0 }, tick);
+      }
+      this.life.film.burlyStaffStrike(agent, tick);
+      return this.life.film.state?.lastText ?? '长杆扫开了一片复制体。';
+    }
     const target = targets[0];
     const damage = strike.damage + profile.skills.combat * 6;
     const direction = { x: Math.sin(agent.rotation), y: 0, z: Math.cos(agent.rotation) };
@@ -244,6 +259,7 @@ export class SandboxSystem {
     threat.health = Math.max(0, threat.health - damage);
     if (threat.health) return;
     this.state.threats = this.state.threats.filter(t => t.id !== threat.id);
+    if (threat.scene === 'm2_burly') this.life.film.burlyRepelled(agent, tick);
     const profile = this.state.profiles[agent.id];
     profile.xp += threat.kind === 'smith' ? 25 : 12; profile.inventory.code += 2; profile.inventory.scrap++;
     if (threat.kind !== 'training') profile.trace = Math.min(100, profile.trace + 4);
@@ -449,7 +465,7 @@ export class SandboxSystem {
         if (tick < threat.attackAt) continue;
         threat.attackAt = undefined;
         if (!meleeReach(threat.position, Math.atan2(dx, dz), target, 3.8, threat.matrix, this.state.structures)) continue;
-        const damage = threat.kind === 'training' ? threat.character ? threat.combo === 2 ? 5 : 3 : 2 : threat.kind === 'smith' ? 12 : 6;
+        const damage = threat.kind === 'training' ? threat.character ? threat.combo === 2 ? 5 : 3 : 2 : threat.scene === 'm2_burly' ? 7 : threat.kind === 'smith' ? 12 : 6;
         if (escort) escort.health = Math.max(0, escort.health - damage);
         else {
           if (actor.activeEffects.some(e => ['dodge', 'agent_dodge', 'vision_flash', 'phase_shift'].includes(e.visualEffect))) {
@@ -465,8 +481,12 @@ export class SandboxSystem {
             direction: { x: dx / Math.max(.01, length), y: 0, z: dz / Math.max(.01, length) }, damage: health - actor.health,
             combo: threat.combo ?? 0, matrix: threat.matrix, downed: actor.health <= 0 }, tick);
           if (threat.character === 'seraph' && actor.health <= 1) { this.life.film.seraphFailed(actor); continue; }
+          if (threat.scene === 'm2_burly' && this.life.film.burlyContact(actor, tick)) break;
           delete this.state.profiles[actor.id].job;
-          if (actor.health === 0) { actor.status = 'dead'; actor.velocity = { x: 0, y: 0, z: 0 }; actor.currentAction = null; this.life.film.matrixEscapeDefeated(actor) || this.life.film.theOneDefeated(actor); }
+          if (actor.health === 0) {
+            if (this.life.film.burlyFailed(actor, tick)) break;
+            actor.status = 'dead'; actor.velocity = { x: 0, y: 0, z: 0 }; actor.currentAction = null; this.life.film.matrixEscapeDefeated(actor) || this.life.film.theOneDefeated(actor);
+          }
         }
         continue;
       }

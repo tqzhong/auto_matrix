@@ -1061,6 +1061,10 @@ test('the entire film route completes through interactions, driving and real com
       }
       else if (step.kind === 'interact') {
         h.command('act');
+        if (scene.id === 'm2_burly') {
+          for (let frame = 0; frame < 28 && state.scene === scene.id; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.scene, 'm2_merovingian', `${scene.id}: ${step.label}`); continue;
+        }
         if (scene.id === 'm1_wake_up') {
           for (let frame = 0; frame < 91; frame++) h.players.step(.1, true, h.tick());
           if (index === 0) { h.command('act'); for (let frame = 0; frame < 41; frame++) h.players.step(.1, true, h.tick()); }
@@ -1172,6 +1176,28 @@ test('the entire film route completes through interactions, driving and real com
       }
       else if (step.kind === 'drive') { h.command('act'); rideToExit(h); }
       else {
+        if (scene.id === 'm2_burly') {
+          h.command('act');
+          for (let frame = 0; frame < 25; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.burly?.phase, 'grapple');
+          h.players.act('film-player', 'dodge', h.tick());
+          for (const target of h.sandbox.state.threats.slice(0, 2)) {
+            for (let hit = 0; target.health > 0 && hit < 10; hit++) {
+              actor.position = { ...target.position, z: target.position.z + 2 }; actor.rotation = Math.PI;
+              h.sandbox.attack(actor, h.tick(), 2);
+            }
+          }
+          assert.equal(state.burly?.phase, 'staff_ready');
+          actor.position = filmPosition(scene.set, 12, -13); h.command('act');
+          actor.position = filmStepPosition(scene, step);
+          for (let swing = 0; state.step === index && swing < 4; swing++) {
+            if (!h.sandbox.state.threats.some(threat => threat.scene === scene.id)) h.advance(6);
+            const target = h.sandbox.state.threats.find(threat => threat.scene === scene.id)!;
+            target.position = { ...actor.position, z: actor.position.z - 2 }; actor.rotation = Math.PI;
+            h.sandbox.attack(actor, h.tick(), 2);
+          }
+          assert.equal(state.step, 1); continue;
+        }
         if (scene.id === 'm1_bullet_dodge') {
           h.command('act');
           for (let frame = 0; frame < 36; frame++) h.players.step(.1, true, h.tick());

@@ -20,6 +20,7 @@ import { GOVERNMENT_RESCUE, governmentLocked, governmentText } from '@auto_matri
 import { AIR_RESCUE, airRescueLocked, airRescueText } from '@auto_matrix/shared';
 import { MATRIX_ESCAPE, matrixEscapeDuration, matrixEscapeLocked, matrixEscapeText } from '@auto_matrix/shared';
 import { THE_ONE, theOneDuration, theOneLocked, theOneText } from '@auto_matrix/shared';
+import { BURLY } from '@auto_matrix/shared';
 
 const escape = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const WEATHER = { clear: '晴朗', rain: '雨', code_storm: '代码风暴' };
@@ -188,6 +189,48 @@ export class SandboxUI {
     this.el('sandbox-job').style.width = journey.started !== undefined && step ? `${Math.min(100, (this.tick - journey.started) / ((step.seconds ?? 3) * 2) * 100)}%` : '0';
     document.getElementById('game-objective')!.textContent = journey.visiting ? set.name : scene.title;
     document.getElementById('game-objective-copy')!.textContent = journey.visiting ? '自由走动，J 返回保存的剧情位置。' : journey.fighting ? 'F 连击 · X 闪避 · 1 治疗 · 击败追兵后继续' : step ? `${journey.step + 1}/${scene.steps.length} · ${step.label} · ${step.kind === 'reach' ? '走到标记旁' : step.kind === 'reflect' ? '靠近后按 J 记录反思' : '靠近后按 G'}` : 'G 继续下一段，J 查看刚刚发生的事。';
+    if (!journey.visiting && scene.id === 'm2_burly' && journey.burly) {
+      const encounter = journey.burly; const phase = encounter.phase;
+      const staffPosition = filmPosition(scene.set, BURLY.staff.x, BURLY.staff.z);
+      const destination = phase === 'staff_ready' ? staffPosition : phase === 'flight_ready' ? filmStepPosition(scene, scene.steps[1]) : undefined;
+      const close = destination ? distance(player.position, destination) <= 4 : distance(player.position, filmStepPosition(scene, scene.steps[0])) <= 4;
+      const ready = ['ready', 'staff_ready', 'flight_ready'].includes(phase) && close || phase === 'failed' || phase === 'done';
+      this.el('film-sequence').classList.remove('hidden');
+      this.el('film-sequence').classList.toggle('urgent', phase === 'grapple' || phase === 'failed' || encounter.assimilation >= 60);
+      this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = phase === 'grapple' ? `现在按 X · 同化接触还剩 ${(BURLY.grapple - encounter.elapsed).toFixed(1)} 秒`
+        : phase === 'approaching' ? '看清 Smith 的靠近 · V 切换视角 · 当前动作会保存'
+        : phase === 'swarm' ? `F 连击 · X 闪避 · 击退 ${encounter.repelled}/${BURLY.staffAfterRepels} · 复制体会补位`
+        : phase === 'staff_ready' ? '沿右侧跑到松动栏杆 · G 抽出长杆 · F / X 保持距离'
+        : phase === 'staff' ? `F 长杆横扫 · 有效挥击 ${encounter.staffSwings}/${BURLY.escapeAfterSwings} · X 闪避同化`
+        : phase === 'flight_ready' ? '冲向北侧空地 · G 起飞脱离 · Smith 不会被清空'
+        : phase === 'flight' ? 'Neo 正冲出包围 · V 切换视角 · 进度自动保存'
+        : phase === 'failed' ? 'G 从庭院入口重新面对 Smith · 已完成的故事线索保留'
+        : phase === 'done' ? 'G 继续追查先知的线索' : '走近 Smith · G 开始对峙';
+      this.el('sandbox-interact').classList.toggle('hidden', !ready);
+      this.el('sandbox-nearby').textContent = phase === 'staff_ready' ? '抽出松动栏杆' : phase === 'flight_ready' ? '飞离包围' : phase === 'failed' ? '从入口重试'
+        : phase === 'done' ? '继续追查钥匙匠' : '面对 Smith';
+      const actions = this.el('film-training-actions'); const dodge = actions.querySelector<HTMLButtonElement>('[data-combat="dodge"]')!;
+      const attack = actions.querySelector<HTMLButtonElement>('[data-combat="attack"]')!;
+      if (['grapple', 'swarm', 'staff_ready', 'staff', 'flight_ready'].includes(phase)) {
+        actions.classList.remove('hidden'); dodge.classList.remove('hidden'); dodge.disabled = false;
+        dodge.innerHTML = `<kbd>X</kbd> ${phase === 'grapple' ? '现在挣脱' : '闪避同化'}`;
+        attack.classList.toggle('hidden', phase === 'grapple'); attack.disabled = false;
+        attack.querySelector('span')!.textContent = phase === 'staff' ? '长杆横扫' : '反击';
+      }
+      this.el('sandbox-trace').textContent = phase === 'ready' || phase === 'approaching' ? '旧特工 · 身份异常'
+        : phase === 'done' ? '已脱离 · 感染仍在' : `复制体 ${state.threats.filter(threat => threat.scene === scene.id).length} · 同化 ${encounter.assimilation}%`;
+      this.el('sandbox-trace').classList.toggle('danger', encounter.assimilation >= 60);
+      this.el('sandbox-job').style.width = phase === 'grapple' ? `${Math.min(100, encounter.elapsed / BURLY.grapple * 100)}%`
+        : phase === 'flight' ? `${Math.min(100, encounter.elapsed / BURLY.flight * 100)}%` : `${encounter.assimilation}%`;
+      document.getElementById('game-objective')!.textContent = '先知庭院 · Smith 增殖';
+      document.getElementById('game-objective-copy')!.textContent = journey.lastText;
+      if (destination) {
+        const direction = Math.atan2(destination.x - player.position.x, destination.z - player.position.z) - player.rotation;
+        this.el('sandbox-waypoint').innerHTML = `<span style="transform:rotate(${-direction}rad)">↑</span>${phase === 'staff_ready' ? '松动栏杆' : '起飞空地'} <b>${Math.round(distance(destination, player.position))} m</b>`;
+      } else this.el('sandbox-waypoint').textContent = '';
+      return;
+    }
     if (journey.reloaded && !journey.visiting) {
       const encounter = journey.reloaded; const phase = encounter.phase;
       const close = !step || distance(player.position, filmStepPosition(scene, step)) < 4;

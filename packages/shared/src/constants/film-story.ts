@@ -53,6 +53,7 @@ export interface FilmJourney {
   reloaded?: import('./reloaded-opening.js').ReloadedOpening;
   baneCopy?: { progress: number };
   seraph?: { dodges: number; counters: number; attempts: number; counterUntil?: number };
+  burly?: import('./burly.js').BurlyEncounter;
 }
 const walk = (label: string, x = 0, z = -12): FilmStep => ({ kind: 'reach', label, x, z });
 const use = (label: string, text: string, x = 0, z = -12, seconds = 3): FilmStep => ({ kind: 'interact', label, text, x, z, seconds });

@@ -1,4 +1,4 @@
-import { newReloaded } from '@auto_matrix/shared';
+import { newReloaded, BURLY } from '@auto_matrix/shared';
 // Creates an isolated visual-review save; never writes the player's data directory.
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import os from 'node:os';
@@ -364,6 +364,22 @@ if (scene.id === 'm2_meeting') {
   else if (variant === 'meeting-door') { journey.step = 3; journey.reloaded = { ...newReloaded('meeting'), phase: 'breach', elapsed: 2.6, exit: 'west', evacuation: 2.6 }; }
   else if (variant === 'meeting-combat') { journey.step = 3; journey.reloaded = { ...newReloaded('meeting'), phase: 'breach', elapsed: 3.6, exit: 'east', evacuation: 3.6 }; }
   sandbox.life.film.reloaded.frame(actor, { x: 0, focus: false }, 0, 0); journey.checkpoint = { ...actor.position };
+}
+if (scene.id === 'm2_burly' && ['burly-grapple', 'burly-swarm', 'burly-staff', 'burly-flight'].includes(process.argv[3])) {
+  const journey = sandbox.life.film.state!; const variant = process.argv[3]; actor.controller = 'player';
+  journey.burly = { phase: 'grapple', elapsed: 1.1, attempt: 0, repelled: 0, staffSwings: 0, assimilation: 24, nextCopyAt: 5 };
+  actor.position = filmStepPosition(scene, scene.steps[0]);
+  if (variant !== 'burly-grapple') {
+    sandbox.life.film.burlyDodge(actor, 0);
+    if (variant === 'burly-staff') { journey.burly.repelled = BURLY.staffAfterRepels; journey.burly.phase = 'staff'; }
+    if (variant === 'burly-flight') {
+      journey.step = 1; journey.burly.phase = 'flight'; journey.burly.elapsed = 1.1;
+      journey.burly.flightFrom = filmStepPosition(scene, scene.steps[1]);
+      sandbox.life.film.burlyFrame(actor, 0, 0);
+    }
+  } else sandbox.life.film.burlyFrame(actor, 0, 0);
+  journey.lastText = variant === 'burly-grapple' ? 'Smith 正试图把 Neo 同化。现在按 X 挣脱。' : variant === 'burly-flight' ? 'Neo 正冲出围攻。' : '复制体不断补位；不能靠清空一波取胜。';
+  journey.checkpoint = { ...actor.position };
 }
 for (const resident of world.agents.values()) delete resident.controller;
 neo.isAwakened = FILM_SCENES.indexOf(scene) >= FILM_SCENES.findIndex(s => s.id === 'm1_pod');

@@ -5,7 +5,7 @@ import { newMotion } from '../agents/CharacterMotion.js';
 
 type WorldObject = WorldNode | WorldStructure | WorldIncident;
 interface Prop { group: THREE.Group; label: THREE.Sprite; data: WorldObject; accent: THREE.Mesh; }
-interface Enemy { group: THREE.Group; rig?: CharacterRig; kind: SandboxThreat['kind'] | 'escort'; character?: string; health: THREE.Mesh; label: THREE.Sprite; target: THREE.Vector3; telegraph: THREE.Mesh; aimLine: THREE.Line; hit?: number; impact?: number; shot?: number; fallen?: number; facing: number; }
+interface Enemy { group: THREE.Group; rig?: CharacterRig; kind: SandboxThreat['kind'] | 'escort'; character?: string; scene?: string; bornAt: number; replicate: THREE.Mesh; health: THREE.Mesh; label: THREE.Sprite; target: THREE.Vector3; telegraph: THREE.Mesh; aimLine: THREE.Line; hit?: number; impact?: number; shot?: number; fallen?: number; facing: number; }
 
 export class SandboxRenderer {
   private state?: SandboxState;
@@ -105,13 +105,13 @@ export class SandboxRenderer {
       if (enemy.fallen !== undefined) this.fallen.push(enemy);
       else { this.scene.remove(enemy.group); this.pool.push(enemy); }
     }
-    for (const threat of state.threats) this.updateEnemy(threat.id, threat.kind, threat.position, threat.health / threat.maxHealth, agents, threat.character);
+    for (const threat of state.threats) this.updateEnemy(threat.id, threat.kind, threat.position, threat.health / threat.maxHealth, agents, threat.character, threat.scene);
     for (const [id, mission] of Object.entries(state.missions)) if (mission.escort) this.updateEnemy(`escort:${id}`, 'escort', mission.escort.position, mission.escort.health / 100, agents);
   }
-  private updateEnemy(id: string, kind: Enemy['kind'], position: Vector3, health: number, agents: Record<string, AgentState>, character?: string): void {
+  private updateEnemy(id: string, kind: Enemy['kind'], position: Vector3, health: number, agents: Record<string, AgentState>, character?: string, scene?: string): void {
     let enemy = this.enemies.get(id);
     if (!enemy) {
-      const reuse = this.pool.findIndex(entry => entry.kind === kind && entry.character === character);
+      const reuse = this.pool.findIndex(entry => entry.kind === kind && entry.character === character && entry.scene === scene);
       if (reuse >= 0) enemy = this.pool.splice(reuse, 1)[0];
       else {
         const group = new THREE.Group(); let rig: CharacterRig | undefined;
@@ -137,14 +137,15 @@ export class SandboxRenderer {
           if (kind === 'smith' && !character) rig.root.scale.multiplyScalar(1.18);
         }
         const bar = this.mesh(group, this.box, kind === 'escort' ? this.green : this.red, [0, 6.4, 0], [4, .15, .15]);
-        const label = this.label(character ? `${agents[character]?.name ?? character}${kind === 'training' ? ' · 对练' : ''}` : ({ agent: '追踪特工', sentinel: '乌贼', smith: 'SMITH / 病毒核心', training: '武术训练程序', soldier: '武装警卫', escort: '钥匙匠 · 留在附近护送' })[kind], kind === 'escort' ? '#c9e8ad' : '#f2aa99');
+        const label = this.label(character ? `${agents[character]?.name ?? character}${kind === 'training' ? ' · 对练' : ''}` : scene === 'm2_burly' ? 'SMITH / 复制体' : ({ agent: '追踪特工', sentinel: '乌贼', smith: 'SMITH / 病毒核心', training: '武术训练程序', soldier: '武装警卫', escort: '钥匙匠 · 留在附近护送' })[kind], kind === 'escort' ? '#c9e8ad' : '#f2aa99');
         label.position.y = 7.1; group.add(label);
         const telegraph = this.mesh(group, this.warningRing, this.warning, [0, -.94, 0], [2.8, 2.8, 2.8]); telegraph.rotation.x = -Math.PI / 2; telegraph.visible = false;
+        const replicate = this.mesh(group, this.warningRing, this.green, [0, -.91, 0], [2.8, 2.8, 2.8]); replicate.rotation.x = -Math.PI / 2; replicate.visible = false;
         const aimLine = new THREE.Line(this.geometry(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()])), this.aimMaterial); aimLine.visible = false; group.add(aimLine);
-        enemy = { group, rig, kind, character, health: bar, label, target: new THREE.Vector3(), telegraph, aimLine, facing: 0 };
+        enemy = { group, rig, kind, character, scene, bornAt: this.elapsed, replicate, health: bar, label, target: new THREE.Vector3(), telegraph, aimLine, facing: 0 };
       }
       enemy.group.position.set(position.x, position.y, position.z); enemy.group.rotation.set(0, 0, 0); enemy.group.scale.setScalar(1);
-      enemy.fallen = undefined; enemy.hit = enemy.impact = enemy.shot = undefined; enemy.health.visible = character !== 'seraph';
+      enemy.fallen = undefined; enemy.hit = enemy.impact = enemy.shot = undefined; enemy.health.visible = character !== 'seraph'; enemy.bornAt = this.elapsed;
       if (enemy.rig) { enemy.rig.motion = newMotion(); enemy.rig.root.rotation.set(0, 0, 0); }
       this.scene.add(enemy.group); this.enemies.set(id, enemy);
     }
@@ -195,6 +196,10 @@ export class SandboxRenderer {
       enemy.health.scale.y = threat?.attackAt !== undefined ? .28 + Math.sin(this.elapsed * 22) * .06 : .15;
       enemy.health.material = threat?.infection ? this.green : threat && threat.stunUntil > tick ? this.blue : enemy.kind === 'escort' ? this.green : this.red;
       enemy.telegraph.visible = threat?.attackAt !== undefined;
+      const replicationAge = this.elapsed - enemy.bornAt;
+      enemy.replicate.visible = enemy.scene === 'm2_burly' && replicationAge < .9;
+      if (enemy.replicate.visible) enemy.replicate.scale.setScalar(2.8 + replicationAge * 4);
+      if (enemy.scene === 'm2_burly') enemy.group.scale.setScalar(Math.min(1, .68 + replicationAge * .6));
       enemy.aimLine.visible = Boolean(threat?.aim && threat.attackAt !== undefined);
       if (threat?.aim) {
         const points = enemy.aimLine.geometry.attributes.position;
@@ -205,7 +210,7 @@ export class SandboxRenderer {
     }
     for (let i = this.fallen.length - 1; i >= 0; i--) {
       const enemy = this.fallen[i]; enemy.fallen! += running ? delta : 0;
-      const age = enemy.fallen!; enemy.health.visible = enemy.label.visible = enemy.telegraph.visible = enemy.aimLine.visible = false;
+      const age = enemy.fallen!; enemy.health.visible = enemy.label.visible = enemy.telegraph.visible = enemy.aimLine.visible = enemy.replicate.visible = false;
       enemy.group.rotation.y = enemy.facing;
       if (enemy.rig) enemy.rig.root.rotation.y = 0;
       enemy.group.rotation.x = -Math.min(Math.PI / 2, age * 4);

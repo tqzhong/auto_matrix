@@ -157,6 +157,7 @@ export class PlayerExperience {
     document.body.classList.toggle('film-meeting-scene', Boolean(player?.currentAction?.parameters.meeting));
     this.filmPlaying = Boolean(player && neoLife?.journey?.actor === player.id);
     document.body.classList.toggle('film-reloaded-scene', this.filmPlaying && Boolean(neoLife?.journey?.reloaded) && !neoLife?.journey?.visiting);
+    document.body.classList.toggle('film-burly-scene', this.filmPlaying && neoLife?.journey?.scene === 'm2_burly' && !neoLife.journey.visiting);
     const rescueScene = this.filmPlaying && ['m1_rescue_decision', 'm1_guns'].includes(neoLife?.journey?.scene ?? '') && !neoLife?.journey?.visiting;
     document.body.classList.toggle('film-rescue-scene', rescueScene);
     const armed = Boolean(this.filmPlaying && neoLife?.journey?.scene === 'm1_lobby' && !neoLife.journey.visiting);
