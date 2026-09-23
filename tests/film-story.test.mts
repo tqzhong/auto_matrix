@@ -720,14 +720,91 @@ test('Morpheus and Seraph take part in their own nonlethal duels without cloning
         h.sandbox.attack(h.actor(), h.tick(), combo);
       }
     } else {
-      for (let hits = 0; threat.health > 0 && hits < 20; hits++) {
+      for (let exchange = 0; exchange < 2; exchange++) {
+        threat.attackAt = h.tick() + 1; threat.stunUntil = 0;
+        assert.equal(h.sandbox.life.film.trainingDodge(h.actor(), threat, h.tick()), true);
         h.actor().position = { ...threat.position, z: threat.position.z + 2 }; h.actor().rotation = Math.PI;
-        h.sandbox.attack(h.actor(), h.tick(), 2);
+        h.sandbox.attack(h.actor(), h.tick(), exchange);
       }
     }
     h.advance(); assert.equal(state.step, 1); assert.equal(h.world.agents.get(opponent)!.status, 'alive');
     assert.notEqual(h.world.agents.get(opponent)!.currentAction?.parameters.filmDuel, true);
   }
+});
+
+test('Seraph tests two separately read attacks, blocks reckless blows and resets a failed exchange without killing Neo', () => {
+  const h = setup(); h.command('start'); const state = h.sandbox.life.film.state!; const scene = FILM_SCENE_BY_ID.m2_seraph;
+  state.scene = scene.id; state.actor = 'neo'; state.step = 0; h.players.possess('film-player', 'neo', h.tick());
+  h.actor().isInMatrix = true; h.actor().currentLocation = scene.set; h.actor().position = filmStepPosition(scene, scene.steps[0]);
+  h.command('act'); const threat = h.sandbox.state.threats[0]; assert.equal(threat.character, 'seraph');
+  h.actor().position = { ...threat.position, z: threat.position.z + 2 }; h.actor().rotation = Math.PI;
+  h.sandbox.attack(h.actor(), h.tick(), 2);
+  assert.equal(threat.health, threat.maxHealth); assert.equal(state.step, 0); assert.equal(threat.stunUntil < 100, true);
+  assert.equal(h.sandbox.life.film.trainingDodge(h.actor(), threat, h.tick()), false, 'a dodge outside a windup does not count');
+  delete state.seraph; threat.attackAt = h.tick() + 1;
+  h.sandbox.attack(h.actor(), h.tick(), 2);
+  assert.equal(threat.attackAt, h.tick() + 1, 'an older save without duel progress must still preserve the windup');
+  threat.attackAt = h.tick() + 1; h.sandbox.attack(h.actor(), h.tick(), 2);
+  assert.equal(threat.attackAt, h.tick() + 1, 'a parried attack must not cancel Seraph’s windup');
+  for (let exchange = 0; exchange < 2; exchange++) {
+    threat.attackAt = h.tick() + 1; threat.stunUntil = 0;
+    assert.equal(h.sandbox.life.film.trainingDodge(h.actor(), threat, h.tick()), true);
+    h.actor().position = { ...threat.position, z: threat.position.z + 2 }; h.actor().rotation = Math.PI;
+    h.sandbox.attack(h.actor(), h.tick(), exchange);
+    assert.equal(state.seraph?.counters, exchange + 1);
+  }
+  h.advance(); assert.equal(state.step, 1); assert.equal(h.world.agents.get('seraph')!.status, 'alive');
+  h.command('retry'); assert.equal(state.step, 1, 'retry keeps the completed trial');
+});
+
+test('Seraph calls off a losing spar and leaves a repeatable checkpoint', () => {
+  const h = setup(); h.command('start'); const state = h.sandbox.life.film.state!; const scene = FILM_SCENE_BY_ID.m2_seraph;
+  state.scene = scene.id; state.actor = 'neo'; state.step = 0; h.players.possess('film-player', 'neo', h.tick());
+  h.actor().isInMatrix = true; h.actor().currentLocation = scene.set; h.actor().position = filmStepPosition(scene, scene.steps[0]);
+  h.command('act'); const threat = h.sandbox.state.threats[0];
+  threat.position = { ...h.actor().position, z: h.actor().position.z - 2 }; threat.attackAt = h.tick(); threat.stunUntil = 0;
+  h.actor().health = 3; h.advance();
+  assert.equal(state.seraph?.attempts, 1); assert.equal(state.step, 0); assert.equal(h.actor().health, h.actor().maxHealth);
+  assert.equal(h.sandbox.state.threats.length, 0); assert.equal(h.actor().status, 'alive');
+  h.command('act'); assert.equal(h.sandbox.state.threats.length, 1);
+});
+
+test('the keyed doors must be reached, and the Oracle leaves a saved Keymaker lead with a later consequence', () => {
+  const h = setup(); h.command('start'); const state = h.sandbox.life.film.state!; const tea = FILM_SCENE_BY_ID.m2_seraph;
+  state.scene = tea.id; state.actor = 'neo'; state.step = tea.steps.length; h.players.possess('film-player', 'neo', h.tick());
+  h.actor().isInMatrix = true; h.actor().currentLocation = tea.set; h.actor().position = filmEntry(tea);
+  assert.match(h.command('next'), /后门/); assert.equal(state.scene, tea.id);
+  h.actor().position = filmStepPosition(tea, tea.steps.at(-1)!); h.command('next');
+  assert.equal(state.scene, 'm2_backdoors'); assert.equal(h.actor().currentLocation, FILM_SCENE_BY_ID.m2_backdoors.set);
+  const hall = FILM_SCENE_BY_ID.m2_backdoors;
+  h.actor().position = filmStepPosition(hall, hall.steps[0]); h.advance();
+  h.actor().position = filmStepPosition(hall, hall.steps[1]); h.command('act'); h.advance((hall.steps[1].seconds ?? 3) * 2 + 1);
+  assert.equal(state.step, hall.steps.length);
+  h.actor().position = filmEntry(hall); assert.match(h.command('next'), /庭院/); assert.equal(state.scene, hall.id);
+  h.actor().position = filmStepPosition(hall, hall.steps.at(-1)!); h.command('next');
+  assert.equal(state.scene, 'm2_bench');
+  const bench = FILM_SCENE_BY_ID.m2_bench;
+  h.actor().position = filmStepPosition(bench, bench.steps[0]); h.advance();
+  h.actor().position = filmStepPosition(bench, bench.steps[1]); h.command('act'); h.advance((bench.steps[1].seconds ?? 3) * 2 + 1);
+  h.actor().position = filmStepPosition(bench, bench.steps[2]); h.command('reflect:agency');
+  assert.equal(state.step, 3); assert.equal(h.sandbox.state.neoLife!.choices.oracle_second_lead, undefined);
+  h.actor().position = filmStepPosition(bench, bench.steps[3]); h.command('act'); h.advance((bench.steps[3].seconds ?? 3) * 2 + 1);
+  assert.equal(h.sandbox.state.neoLife!.choices.oracle_second_lead, 'le_vrai');
+  assert.equal(h.world.agents.get('oracle')!.currentAction?.parameters.seated, undefined, 'Oracle stands when she leaves the bench');
+  assert.ok(h.world.agents.get('oracle')!.targetPosition, 'Oracle physically departs after giving Neo the address');
+  assert.equal(state.reflections['m2_bench:2'], 'agency');
+  const saved = JSON.parse(JSON.stringify(h.sandbox.state)); h.sandbox.restore(saved);
+  const restored = h.sandbox.life.film.state!;
+  assert.equal(restored.step, bench.steps.length); assert.equal(restored.reflections['m2_bench:2'], 'agency');
+  assert.equal(h.sandbox.state.neoLife!.choices.oracle_second_lead, 'le_vrai');
+  h.command('next'); assert.equal(restored.scene, 'm2_burly');
+  assert.notEqual(h.world.agents.get('oracle')!.currentLocation, bench.set, 'the Oracle has left before Smith arrives');
+  const oldCode = h.sandbox.state.profiles.neo.inventory.code;
+  const burly = FILM_SCENE_BY_ID.m2_burly; restored.step = burly.steps.length; h.actor().currentLocation = burly.set;
+  h.command('next'); assert.equal(restored.scene, 'm2_merovingian');
+  assert.ok(h.sandbox.state.profiles.neo.inventory.code > oldCode, 'the choice changes real preparation');
+  const prepared = h.sandbox.state.profiles.neo.inventory.code;
+  h.command('retry'); assert.equal(h.sandbox.state.profiles.neo.inventory.code, prepared, 'loading the checkpoint cannot duplicate the benefit');
 });
 
 test('Smith assimilation is reversible at the ending, without reviving Trinity', () => {
@@ -1129,6 +1206,16 @@ test('the entire film route completes through interactions, driving and real com
           assert.equal(target.health, 0, scene.id);
           assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`);
           continue;
+        }
+        if (scene.id === 'm2_seraph') {
+          const target = h.sandbox.state.threats[0];
+          for (let exchange = 0; exchange < 2; exchange++) {
+            target.attackAt = h.tick() + 1; target.stunUntil = 0;
+            assert.equal(h.sandbox.life.film.trainingDodge(actor, target, h.tick()), true);
+            actor.position = { ...target.position, z: target.position.z + 2 }; actor.rotation = Math.PI;
+            h.sandbox.attack(actor, h.tick(), exchange);
+          }
+          h.advance(); assert.equal(state.step, index + 1); continue;
         }
         // Exercise the same hit, death and reward path as player melee, not direct removal.
         for (let round = 0; state.step === index && round < 20; round++) {

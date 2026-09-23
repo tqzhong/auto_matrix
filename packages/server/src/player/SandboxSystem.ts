@@ -195,14 +195,18 @@ export class SandboxSystem {
     const direction = { x: Math.sin(agent.rotation), y: 0, z: Math.cos(agent.rotation) };
     const position = { ...target.position, y: target.position.y + 2 };
     const health = target.health;
-    const training = this.life.film.trainingHit(agent, target, combo);
+    const seraphCounters = target.character === 'seraph' && target.scene === 'm2_seraph' ? this.life.film.state?.seraph?.counters ?? 0 : undefined;
+    const training = this.life.film.trainingHit(agent, target, combo, tick);
     const bathroom = this.life.film.bathroomHit(agent, target);
     const matrixEscape = this.life.film.matrixEscapeHit(agent, target, combo, tick);
     const theOne = this.life.film.theOneHit(agent, target, combo, tick);
     if (!training && !bathroom && !matrixEscape && !theOne) this.hit(agent, target, damage, tick);
-    target.attackAt = undefined;
-    target.stunUntil = training ? Math.max(target.stunUntil, tick + (combo === 2 ? 2 : 1)) : tick + (combo === 2 ? 2 : 1);
-    target.position = combatDisplace(target.position, direction, strike.push, target.matrix, this.state.structures);
+    const parried = seraphCounters !== undefined && target.health > 0 && this.life.film.state?.seraph?.counters === seraphCounters;
+    if (!parried) {
+      target.attackAt = undefined;
+      target.stunUntil = training ? Math.max(target.stunUntil, tick + (combo === 2 ? 2 : 1)) : tick + (combo === 2 ? 2 : 1);
+      target.position = combatDisplace(target.position, direction, strike.push, target.matrix, this.state.structures);
+    }
     this.onImpact?.({ source: agent.id, target: target.id, position, direction, damage: bathroom || matrixEscape || theOne ? damage : training ? target.health <= 0 ? damage : 0 : health - target.health, combo,
       matrix: agent.isInMatrix, downed: target.health <= 0 }, tick);
     if (training || bathroom || matrixEscape || theOne) return this.life.film.state?.lastText ?? '剧情动作已记录。';
@@ -226,6 +230,7 @@ export class SandboxSystem {
   }
 
   private skillHit(agent: AgentState, target: SandboxThreat, damage: number, tick: number, push = 0): void {
+    if (target.scene === 'm2_seraph' && target.character === 'seraph') return;
     const position = { ...target.position, y: target.position.y + 2 };
     const dx = target.position.x - agent.position.x; const dz = target.position.z - agent.position.z; const length = Math.max(.01, Math.hypot(dx, dz));
     const direction = { x: dx / length, y: 0, z: dz / length }; const health = target.health;
@@ -235,6 +240,7 @@ export class SandboxSystem {
       matrix: agent.isInMatrix, downed: target.health <= 0 }, tick);
   }
   private hit(agent: AgentState, threat: SandboxThreat, damage: number, tick: number): void {
+    if (threat.scene === 'm2_seraph' && threat.character === 'seraph') return;
     threat.health = Math.max(0, threat.health - damage);
     if (threat.health) return;
     this.state.threats = this.state.threats.filter(t => t.id !== threat.id);
@@ -458,6 +464,7 @@ export class SandboxSystem {
           this.onImpact?.({ source: threat.id, target: actor.id, position: { ...actor.position, y: actor.position.y + 2 },
             direction: { x: dx / Math.max(.01, length), y: 0, z: dz / Math.max(.01, length) }, damage: health - actor.health,
             combo: threat.combo ?? 0, matrix: threat.matrix, downed: actor.health <= 0 }, tick);
+          if (threat.character === 'seraph' && actor.health <= 1) { this.life.film.seraphFailed(actor); continue; }
           delete this.state.profiles[actor.id].job;
           if (actor.health === 0) { actor.status = 'dead'; actor.velocity = { x: 0, y: 0, z: 0 }; actor.currentAction = null; this.life.film.matrixEscapeDefeated(actor) || this.life.film.theOneDefeated(actor); }
         }

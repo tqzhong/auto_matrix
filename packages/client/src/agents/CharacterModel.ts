@@ -27,6 +27,7 @@ const HERO_LOOKS: Record<string, Look> = {
   smith: { face: 2, width: 1.02, shoulders: 0.68, waist: 0.41, hips: 0.46, skin: '#d7b399', cloth: '#252b28', leather: false, coat: false, hair: 'short', glasses: 'square' },
   morpheus: { face: 3, width: 1.13, shoulders: 0.71, waist: 0.44, hips: 0.49, skin: '#89614b', cloth: '#201a18', leather: true, coat: true, hair: 'bald', glasses: 'round' },
   oracle: { width: 1.05, shoulders: 0.62, waist: 0.43, hips: 0.52, skin: '#77513f', cloth: '#79534a', leather: false, coat: false, hair: 'short', glasses: 'none' },
+  seraph: { width: .94, shoulders: .58, waist: .34, hips: .4, skin: '#c5a27e', cloth: '#d7d4c6', leather: false, coat: false, hair: 'short', glasses: 'none' },
 };
 
 export interface CharacterRig {
@@ -214,6 +215,7 @@ export class CharacterModels {
     }
     const cloth = this.material(new THREE.MeshPhysicalMaterial({ color: look.cloth, roughness: look.leather ? 0.43 : 0.88,
       metalness: 0, clearcoat: look.leather ? 0.22 : 0, clearcoatRoughness: 0.4, bumpMap: this.fabric, bumpScale: look.leather ? 0.003 : 0.002, side: THREE.DoubleSide }));
+    const trousers = state.id === 'seraph' ? this.material(new THREE.MeshStandardMaterial({ color: '#282c29', roughness: .9, bumpMap: this.fabric, bumpScale: .002 })) : cloth;
     const seams = this.material(new THREE.MeshStandardMaterial({ color: look.leather ? '#292e2a' : '#252c28', roughness: 0.75 }));
     const black = this.material(new THREE.MeshStandardMaterial({ color: '#070b0a', roughness: 0.32 }));
     const metal = this.material(new THREE.MeshStandardMaterial({ color: '#969c90', metalness: 0.88, roughness: 0.24 }));
@@ -272,6 +274,10 @@ export class CharacterModels {
       this.mesh(head, this.sphere, this.material(new THREE.MeshStandardMaterial({ color: '#916756', roughness: 0.7 })), [0, -0.24, 0.224], [0.078, 0.014, 0.012]);
     }
     if (look.hair !== 'bald') this.addHair(head, look);
+    if (state.id === 'seraph') {
+      this.mesh(head, this.sphere, black, [0, .035, -.14], [.275, .30, .145]);
+      this.mesh(head, this.sphere, black, [0, .27, .11], [.255, .11, .16]);
+    }
     if (look.glasses !== 'none') this.addGlasses(head, look, black, metal);
 
     const shoulders: THREE.Group[] = []; const elbows: THREE.Object3D[] = []; const hips: THREE.Group[] = []; const knees: THREE.Object3D[] = []; const ankles: THREE.Group[] = []; const tails: THREE.Group[] = [];
@@ -295,7 +301,7 @@ export class CharacterModels {
       const thumb = this.mesh(elbow, this.sphere, handMaterial, [side * -0.10, -0.75, 0.02], [0.03, 0.08, 0.03]); thumb.rotation.z = side * 0.5;
 
       const hip = this.joint(detail, side * 0.225, 1.86); hips.push(hip);
-      const knee = this.limb(hip, [[.125, -1.8], [.14, -1.63], [.155, -1.39], [.165, -1.17], [.15, -1.03], [.16, -.94], [.17, -.85], [.185, -.68], [.21, -.40], [.24, -.13], [.22, .04], [.002, .1]], .94, cloth, 1.13);
+      const knee = this.limb(hip, [[.125, -1.8], [.14, -1.63], [.155, -1.39], [.165, -1.17], [.15, -1.03], [.16, -.94], [.17, -.85], [.185, -.68], [.21, -.40], [.24, -.13], [.22, .04], [.002, .1]], .94, trousers, 1.13);
       knees.push(knee);
       const ankle = this.joint(knee, 0, -.9); ankles.push(ankle);
       this.mesh(ankle, this.cylinder, black, [0, .1, 0], [.14, look.leather ? .4 : .20, .17]);

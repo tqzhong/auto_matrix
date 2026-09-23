@@ -122,6 +122,12 @@ export const ORACLE_FURNITURE: FilmObstacle[] = [
   { x: 8, z: -11, width: 2.7, depth: 2.2, height: 1.95 },
 ];
 export function filmObstacles(set: FilmSet): FilmObstacle[] {
+  if (set.id === 'film_seraph_teahouse') return [-15, 15].flatMap(x => [-16, 0, 16].map(z => ({ x, z, width: 7, depth: 5, height: 3.2 })));
+  if (set.id === 'film_oracle_courtyard') return [
+    { x: -9, z: -20, width: 4.5, depth: 2.4, height: 3.1 },
+    ...[-1, 1].map(side => ({ x: 12 + side * 4, z: -17, width: .8, depth: .8, height: 10 })),
+    ...[-24, 24].flatMap(x => [-26, 8, 28].map(z => ({ x, z, width: 9, depth: 5.5, height: 3.6 }))),
+  ];
   if (set.id === 'film_industrial_loft') return BANE_LOFT_OBSTACLES;
   if (ZION_OBSTACLES[set.id]) return ZION_OBSTACLES[set.id];
   if (set.id === 'film_captains_meeting') return [...RELOADED_WALLS, RELOADED_TABLE];

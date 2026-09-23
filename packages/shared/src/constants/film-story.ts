@@ -8,6 +8,7 @@ import { INTERROGATION_ROOM } from './interrogation.js';
 import { MEETING_CAR, MEETING_DESTINATION } from './meeting.js';
 import { APARTMENT } from './apartment.js';
 import { CLUB } from './club.js';
+import { SERAPH_ORACLE } from './seraph-oracle.js';
 
 export type FilmCue = 'night' | 'contact' | 'office' | 'club' | 'awakening' | 'training' | 'oracle' | 'infiltration' | 'combat' | 'the_one' | 'zion' | 'swarm' | 'restaurant' | 'chateau' | 'chase' | 'source' | 'mobil' | 'siege' | 'bane' | 'farewell' | 'final' | 'dawn';
 export interface FilmStep {
@@ -51,6 +52,7 @@ export interface FilmJourney {
   theOne?: import('./the-one.js').TheOneEncounter;
   reloaded?: import('./reloaded-opening.js').ReloadedOpening;
   baneCopy?: { progress: number };
+  seraph?: { dodges: number; counters: number; attempts: number; counterUntil?: number };
 }
 const walk = (label: string, x = 0, z = -12): FilmStep => ({ kind: 'reach', label, x, z });
 const use = (label: string, text: string, x = 0, z = -12, seconds = 3): FilmStep => ({ kind: 'interact', label, text, x, z, seconds });
@@ -128,9 +130,9 @@ export const FILM_SCENES: FilmScene[] = [
   scene('m2_hamann', 2, 'zion_engineering', 'neo', '维持生命的机器', 'zion', 'oracle', 'Hamann 带 Neo 到工业核心。风、水和热由这些人类制造的机器维持。', [walk('沿栈桥走到生命维持机旁', 0, -24), use('检查空气与回收水的读数', '空气循环、供水与照明都连在同一片设备上。关闭其中一段会立刻影响居住层。', -9, -24), use('调整备用循环阀', '维护回路恢复平衡。机器仍在运转，而人们对它的依赖变得具体可见。', 9, -24, 5), think('相互依赖是否排除自由？', '能够关闭机器，并不意味着可以不承担关闭之后的后果。', 0, -24)], ['hamann']),
   scene('m2_oracle_message', 2, 'zion_bedroom', 'neo', '先知托来的磁盘', 'oracle_second', 'oracle', 'Hamann 谈话后的清晨，Ballard 和受伤的 Malachi 来到卧室门口。Bane 没有与他们同行。', [use('回应卧室铁门的敲击', 'Trinity 打开门。Ballard 带着船员来到门口，Malachi 的伤口还未痊愈。', 0, 13, 2), use('从 Ballard 手中接过先知的磁盘', '讯息终于抵达 Neo 手里。他知道该去见先知了。', 0, 9, 3)], ['trinity', 'ballard', 'malachi']),
   scene('m2_departure', 2, 'zion_hangar', 'neo', '离港前的道别', 'oracle_second', 'zion', '尼布甲尼撒号获准离港。Link 要和 Zee 道别；Bane 隐在通往船坞的路上，Kid 带来一件出自先知等候室的礼物。', [use('见证 Link 和 Zee 的道别', 'Zee 把贴身的护身符交给 Link。他不相信预言，却答应会带着它回来。', 0, 32, 4), use('留意 Bane 的异常道别', 'Bane 的手上有伤，眼神陌生。他说只是来祝好运；Neo 只察觉到一瞬不安，并不知道感染。', 0, 20, 3), use('从 Kid 手中接过勺子', '孩子托 Kid 把勺子送给 Neo。这件小礼物让他想起矩阵的规则可以改变。', -3, 10, 3), use('核对 Hamann 的放行与 Lock 的守城异议', 'Hamann 放行了尼布甲尼撒号；Lock 仍认为守城需要每一艘船。', 0, -2, 2), walk('沿接驳桥登上尼布甲尼撒号', 11, 17)], ['morpheus', 'trinity', 'link', 'zee', 'bane', 'kid']),
-  scene('m2_seraph', 2, 'seraph_teahouse', 'neo', '认识一个人的方法', 'oracle_second', 'training', '茶馆里的 Seraph 亲自交手，才肯带 Neo 前往先知身边。观察他的连续攻势，闪避后再接近。', [fight('完成 Seraph 的考验', 1, 'training', 'seraph'), use('接受前往后门的引导', 'Seraph 确认来者的身份与意图。', 0, -15)], ['seraph']),
-  scene('m2_backdoors', 2, 'backdoor_hall', 'neo', '门连接的另一侧', 'oracle_second', 'oracle', '白色走廊中的门连接着通常无法相邻的地点。', [walk('跟随 Seraph 穿过走廊', 0, -30), use('打开通往庭院的门', '空间关系可以被程序重新安排。', 0, -40)], ['seraph']),
-  scene('m2_bench', 2, 'oracle_courtyard', 'neo', '先知也是程序', 'oracle_second', 'oracle', '先知在庭院长椅旁谈到选择、异常程序与钥匙匠。', [walk('抵达庭院长椅', -7, -16), think('如何相信一个程序？', '判断可以依据来源，也可以依据行为；信任始终包含风险。', -7, -16)], ['oracle']),
+  scene('m2_seraph', 2, 'seraph_teahouse', 'neo', '认识一个人的方法', 'oracle_second', 'training', '白天的茶馆里，Seraph 要求先交手。观察两次起手，用 X 避开，再靠近以 F 反击；蛮打只会被挡开。', [fight('读懂 Seraph 的两次攻势', 1, 'training', 'seraph'), use('跟 Seraph 走到茶馆后门', 'Seraph 用颈间的钥匙打开旧门。门后并不是来时的街巷。', SERAPH_ORACLE.tea.door.x, SERAPH_ORACLE.tea.door.z, 2)], ['seraph']),
+  scene('m2_backdoors', 2, 'backdoor_hall', 'neo', '门连接的另一侧', 'oracle_second', 'oracle', '茶馆旧门接到一条没有窗的白色走廊。Link 暂时失去 Neo 的定位；跟随 Seraph 去尽头的另一扇门。', [walk('穿过重复的门，跟上 Seraph', SERAPH_ORACLE.hall.turn.x, SERAPH_ORACLE.hall.turn.z), use('用 Seraph 的钥匙打开庭院门', '门外忽然传来孩子玩耍和鸟群的声音：同一条走廊连接着不相邻的地方。', SERAPH_ORACLE.hall.door.x, SERAPH_ORACLE.hall.door.z, 2)], ['seraph']),
+  scene('m2_bench', 2, 'oracle_courtyard', 'neo', '先知也是程序', 'oracle_second', 'oracle', '旧楼围着一块灰色庭院。先知坐在长椅旁喂鸟，愿意谈流亡程序、选择和通往源头的路线。', [walk('走到先知的长椅前', SERAPH_ORACLE.yard.bench.x, SERAPH_ORACLE.yard.bench.z), use('听先知谈流亡程序和源头', '先知承认自己和 Seraph 也是程序。被系统遗弃的程序仍会为自己的存在寻找出路；去源头需要先找到钥匙匠。', SERAPH_ORACLE.yard.bench.x, SERAPH_ORACLE.yard.bench.z, 4), think('如何在未知结果前选择信任？', '她没有替 Neo 做出选择，也没有保证下一段路安全。', SERAPH_ORACLE.yard.bench.x, SERAPH_ORACLE.yard.bench.z), use('接过写有约见地址的折纸', '纸上写着 Le Vrai 的约见地点。Neo 把钥匙匠的线索带走；先知先离开庭院。', SERAPH_ORACLE.yard.bench.x, SERAPH_ORACLE.yard.bench.z, 2)], ['oracle']),
   scene('m2_burly', 2, 'oracle_courtyard', 'neo', '越来越多的 Smith', 'copies', 'swarm', 'Smith 已脱离原来的系统职责。他把复制理解为新的存在方式。', [fight('突破复制体的围攻', 5), use('从庭院脱离包围', '对手仍在增殖。Neo 飞离庭院，这场交锋无法终结感染。', 0, -35)], ['smith']),
   scene('m2_merovingian', 2, 'le_vrai', 'neo', 'Le Vrai 的因果论', 'keymaker', 'restaurant', 'Merovingian 在餐厅拒绝交出钥匙匠，将权力解释为对原因的掌握。', [walk('靠近餐厅主桌', 0, -20), think('理解原因等于控制一切吗？', '把他人当作因果链上的工具，本身也是一种选择。')], ['morpheus', 'trinity', 'merovingian', 'persephone']),
   scene('m2_persephone', 2, 'le_vrai', 'neo', 'Persephone 的条件', 'keymaker', 'oracle', 'Persephone 在盥洗室提出交换，愿意带众人去见钥匙匠。', [walk('进入侧面的盥洗区域', 7, 8), use('听取她的交换条件', '交换涉及情感与背叛。她随后带众人穿过通往城堡的门。', 7, 8)], ['persephone', 'trinity', 'morpheus']),
@@ -194,6 +196,8 @@ export function filmStepPosition(scene: FilmScene, step: FilmStep): Vector3 {
   return position;
 }
 export function filmEntry(scene: FilmScene): Vector3 {
+  if (scene.id === 'm2_backdoors') return filmPosition(scene.set, SERAPH_ORACLE.hall.entry.x, SERAPH_ORACLE.hall.entry.z);
+  if (scene.id === 'm2_bench') return filmPosition(scene.set, SERAPH_ORACLE.yard.entry.x, SERAPH_ORACLE.yard.entry.z);
   if (scene.id === 'm2_room') return filmPosition(scene.set, 0, 8);
   if (scene.id === 'm2_oracle_message') return filmPosition(scene.set, 0, 0);
   if (scene.id === 'm1_wake_up') return filmPosition(scene.set, 0, 1);

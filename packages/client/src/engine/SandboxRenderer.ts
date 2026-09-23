@@ -144,7 +144,7 @@ export class SandboxRenderer {
         enemy = { group, rig, kind, character, health: bar, label, target: new THREE.Vector3(), telegraph, aimLine, facing: 0 };
       }
       enemy.group.position.set(position.x, position.y, position.z); enemy.group.rotation.set(0, 0, 0); enemy.group.scale.setScalar(1);
-      enemy.fallen = undefined; enemy.hit = enemy.impact = enemy.shot = undefined; enemy.health.visible = true;
+      enemy.fallen = undefined; enemy.hit = enemy.impact = enemy.shot = undefined; enemy.health.visible = character !== 'seraph';
       if (enemy.rig) { enemy.rig.motion = newMotion(); enemy.rig.root.rotation.set(0, 0, 0); }
       this.scene.add(enemy.group); this.enemies.set(id, enemy);
     }

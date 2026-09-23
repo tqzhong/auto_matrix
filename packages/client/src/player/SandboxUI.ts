@@ -352,6 +352,22 @@ export class SandboxUI {
       document.getElementById('game-objective-copy')!.textContent = !lesson.dodged ? windup ? '现在闪避 · X' : '等待 Morpheus 出手 · 看见红色提示后按 X 闪避' : `完成有顺序的三段反击 · ${lesson.combo}/3`;
       return;
     }
+    if (!journey.visiting && scene.id === 'm2_seraph' && journey.seraph && journey.fighting) {
+      const trial = journey.seraph;
+      const warning = state.threats.some(threat => threat.scene === scene.id && threat.character === 'seraph' && threat.attackAt !== undefined && threat.attackAt > this.tick);
+      const counter = (trial.counterUntil ?? 0) >= this.tick;
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence').classList.toggle('urgent', warning && !counter);
+      const actions = this.el('film-training-actions'); const dodge = actions.querySelector<HTMLButtonElement>('[data-combat="dodge"]')!; const attack = actions.querySelector<HTMLButtonElement>('[data-combat="attack"]')!;
+      actions.classList.remove('hidden'); dodge.classList.toggle('hidden', counter); dodge.disabled = !warning;
+      attack.classList.toggle('hidden', !counter); attack.querySelector('span')!.textContent = '近身反击';
+      this.el('film-sequence-hint').textContent = counter ? '趁 Seraph 后撤前靠近，按 F 反击' : warning ? '现在按 X 避开这次攻势' : '保持距离，观察红色起手提示；正面连打无效';
+      this.el('sandbox-job').style.width = `${trial.counters * 50}%`;
+      this.el('sandbox-waypoint').textContent = `读懂攻势并反击 · ${trial.counters}/2`;
+      this.el('sandbox-interact').classList.add('hidden');
+      document.getElementById('game-objective-copy')!.textContent = `Seraph 考验 · 两次闪避反击 ${trial.counters}/2`;
+      return;
+    }
     if (awakeningLocked(journey)) {
       const waiting = awakeningWaiting(journey); const kind = journey.awakening!.kind;
       const action = kind === 'recovery' ? '示意开始恢复肌肉' : kind === 'construct' ? '请 Morpheus 打开电视' : '请 Morpheus 继续揭示';

@@ -23,6 +23,10 @@ const previous = FILM_SCENES[FILM_SCENES.indexOf(scene) - 1];
 sandbox.life.film.handoff = (from, id) => { delete from.controller; world.agents.get(id)!.controller = 'player'; return true; };
 if (previous) {
   Object.assign(sandbox.state.neoLife!.journey, { scene: previous.id, actor: previous.actor, step: previous.steps.length });
+  if (['m2_backdoors', 'm2_bench'].includes(scene.id)) {
+    actor.position = filmStepPosition(previous, previous.steps.at(-1)!);
+    actor.currentLocation = previous.set;
+  }
   if (previous.id === 'm1_bug') sandbox.state.neoLife!.journey!.meeting = { phase: 'outside', elapsed: 0, bugged: false, approach: { x: 4, z: -12.35, yaw: Math.PI } };
   if (scene.id === 'm1_ledge') actor.position = filmStepPosition(previous, previous.steps[2]);
   sandbox.life.film.command(world.agents.get(previous.actor)!, 'next', 0);
@@ -35,6 +39,14 @@ if (process.argv[3] === 'near') {
   actor.position = filmStepPosition(scene, scene.steps[0]); actor.position.z += 2.5;
   if (playerBlocked(actor.position, actor.isInMatrix)) actor.position = filmStepPosition(scene, scene.steps[0]);
   sandbox.state.neoLife!.journey!.checkpoint = { ...actor.position };
+}
+if (process.argv[3] === 'seraph-door' && scene.id === 'm2_seraph' || process.argv[3] === 'hall-door' && scene.id === 'm2_backdoors') {
+  const journey = sandbox.life.film.state!; journey.step = scene.steps.length; journey.completed.push(scene.id);
+  actor.position = filmStepPosition(scene, scene.steps.at(-1)!); journey.checkpoint = { ...actor.position };
+}
+if (process.argv[3] === 'oracle-note' && scene.id === 'm2_bench') {
+  const journey = sandbox.life.film.state!; journey.step = 3;
+  actor.position = filmStepPosition(scene, scene.steps[3]); journey.checkpoint = { ...actor.position };
 }
 if (scene.id === 'm1_club' && ['club-meeting', 'club-whisper'].includes(process.argv[3])) {
   actor.controller = 'player'; actor.position = filmStepPosition(scene, scene.steps[0]); actor.rotation = Math.PI;

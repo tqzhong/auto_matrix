@@ -1918,6 +1918,15 @@ export class FilmStorySystem {
   }
   trainingDodge(agent: AgentState, threat: SandboxThreat, tick: number): boolean {
     const state = this.state;
+    if (state?.scene === 'm2_seraph' && state.step === 0 && threat.scene === state.scene && threat.character === 'seraph' && agent.id === state.actor) {
+      const trial = state.seraph ??= { dodges: 0, counters: 0, attempts: 0 };
+      if (threat.attackAt === undefined || trial.counterUntil && trial.counterUntil >= tick) return false;
+      trial.dodges++; trial.counterUntil = tick + 10;
+      threat.stunUntil = tick + 8;
+      state.lastText = `你避开了 Seraph 的第 ${trial.dodges} 次攻势。趁他重心尚未恢复，靠近按 F 反击。`;
+      agent.currentAction = { type: 'defend', parameters: { player: true, resolved: true }, startedAt: tick, duration: 1, progress: 0 };
+      return true;
+    }
     if (!state || state.scene !== 'm1_dojo' || state.step !== 0 || threat.scene !== state.scene || threat.character !== 'morpheus') return false;
     const dojo = state.dojo ??= { dodged: false, combo: 0, hits: 0 };
     if (dojo.dodged) return true;
@@ -1927,8 +1936,25 @@ export class FilmStorySystem {
     agent.currentAction = { type: 'defend', parameters: { player: true, resolved: true }, startedAt: tick, duration: 1, progress: 0 };
     return true;
   }
-  trainingHit(agent: AgentState, threat: SandboxThreat, combo: number): boolean {
+  trainingHit(agent: AgentState, threat: SandboxThreat, combo: number, tick: number): boolean {
     const state = this.state;
+    if (state?.scene === 'm2_seraph' && state.step === 0 && threat.scene === state.scene && threat.character === 'seraph') {
+      const trial = state.seraph ??= { dodges: 0, counters: 0, attempts: 0 };
+      if (agent.id !== state.actor || !trial.counterUntil || trial.counterUntil < tick) {
+        state.lastText = 'Seraph 轻易挡开了正面攻击。看见起手提示后按 X，避开再反击。';
+        return true;
+      }
+      trial.counters++; delete trial.counterUntil;
+      if (trial.counters < 2) {
+        threat.stunUntil = tick + 3;
+        state.lastText = 'Seraph 接下这一击，后退半步又重新摆好架势。还要读懂一次不同的进攻。';
+        return true;
+      }
+      threat.health = 0; this.sandbox().threats = this.sandbox().threats.filter(item => item !== threat);
+      const seraph = this.world.agents.get('seraph'); if (seraph && !seraph.controller) seraph.currentAction = null;
+      state.lastText = '第二次攻防结束。Seraph 收手，取下钥匙，示意 Neo 跟他去茶馆后门。';
+      return true;
+    }
     if (!state || state.scene !== 'm1_dojo' || state.step !== 0 || threat.scene !== state.scene || threat.character !== 'morpheus') return false;
     const dojo = state.dojo ??= { dodged: false, combo: 0, hits: 0 };
     if (!dojo.dodged) {
@@ -1949,6 +1975,16 @@ export class FilmStorySystem {
     const morpheus = this.world.agents.get('morpheus'); if (morpheus && !morpheus.controller) morpheus.currentAction = null;
     state.lastText = '闪避与三段反击完成。Morpheus 收起架势：下载的知识终于变成了你自己的动作。';
     return true;
+  }
+  seraphFailed(agent: AgentState): void {
+    const state = this.state;
+    if (!state || state.scene !== 'm2_seraph' || state.step !== 0 || agent.id !== state.actor) return;
+    const attempts = (state.seraph?.attempts ?? 0) + 1;
+    this.clearThreats(); state.seraph = { dodges: 0, counters: 0, attempts }; delete state.fighting;
+    agent.health = agent.maxHealth; agent.position = filmStepPosition(this.scene!, this.scene!.steps[0]);
+    agent.velocity = { x: 0, y: 0, z: 0 }; agent.activeEffects = [];
+    state.checkpoint = { ...agent.position }; state.lastText = 'Seraph 在最后一击前收手，让 Neo 重新站稳。观察起手，按 G 再次开始考验。';
+    this.stageCast();
   }
   climbing(agent: AgentState): boolean { return this.controls(agent) && !this.state?.visiting && this.state?.scene === 'm1_ledge' && this.state.step === 1 && this.state.office?.climbed !== undefined; }
   climbFrame(agent: AgentState, direction: number, dt: number, tick: number): boolean {
@@ -2239,6 +2275,8 @@ export class FilmStorySystem {
     }
     if (target === 'next') {
       if (this.step) return '先完成当前场景中的目标。';
+      if (state.scene === 'm2_seraph' && !this.near(agent, this.scene.steps.at(-1)!)) return '走近茶馆后门，再跟 Seraph 穿过那把钥匙打开的门。';
+      if (state.scene === 'm2_backdoors' && !this.near(agent, this.scene.steps.at(-1)!)) return '走到白色走廊尽头的庭院门，再按 G 通过。';
       if (state.scene === 'm1_office_escape' && state.office?.outcome !== 'captured' && !this.near(agent, this.scene.steps[2])) return '先回到已打开的窗口旁，再按 G 前往窄台。';
       if (state.scene === 'm1_office_escape' && state.office?.outcome !== 'captured') {
         state.office ??= { alert: 0, suspicion: [], waypoints: [], lastTick: tick, guide: '' };
@@ -2408,9 +2446,9 @@ export class FilmStorySystem {
         if (!state.fighting) { state.fighting = true; this.lobby.start(agent, tick); }
         return state.lastText;
       }
-      if (state.fighting) return 'F 连击，X 闪避；清除追兵后会记录完成。';
+      if (state.fighting) return state.scene === 'm2_seraph' ? '观察 Seraph 起手，X 闪避后靠近 F 反击。完成两次攻防才会收手。' : 'F 连击，X 闪避；清除追兵后会记录完成。';
       this.spawn(agent, step, tick); state.fighting = true;
-      return '行动开始。F 连击 / X 闪避 / 1 医疗包；完成后返回目标路线。';
+      return state.scene === 'm2_seraph' ? 'Seraph 放下茶杯摆好架势。正面进攻会被挡开：先观察红色起手，再用 X 闪避。' : '行动开始。F 连击 / X 闪避 / 1 医疗包；完成后返回目标路线。';
     }
     if (step.kind === 'reach') { this.advance(step.label, agent, tick); return '已抵达目标。'; }
     state.started = tick; return `${step.label}。停留 ${step.seconds ?? 3} 秒。`;
@@ -2475,6 +2513,7 @@ export class FilmStorySystem {
     delete state.theOne;
     delete state.reloaded;
     delete state.baneCopy;
+    delete state.seraph;
     this.sandbox().structures = this.sandbox().structures.filter(structure => structure.id !== 'film:reloaded:door');
     this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== 'film:apartment:door');
     delete state.pills;
@@ -2510,6 +2549,24 @@ export class FilmStorySystem {
     this.sandbox().weatherUntil = tick + 100000;
     this.stageCast();
     this.reconcileCast();
+    if (scene.id === 'm2_burly') {
+      const oracle = this.world.agents.get('oracle');
+      if (oracle && !oracle.controller) {
+        oracle.currentLocation = CHARACTERS.oracle.initialLocation; oracle.position = locationEntrance(oracle.currentLocation);
+        oracle.currentAction = null; oracle.targetPosition = null; oracle.currentPath = []; oracle.velocity = { x: 0, y: 0, z: 0 };
+      }
+    }
+    if (scene.id === 'm2_merovingian' && life.choices.oracle_second_lead && !life.choices.oracle_second_prepared) {
+      const answer = life.choices['m2_bench:2']; const inventory = this.sandbox().profiles[actor.id].inventory;
+      const preparation = answer === 'agency' ? '你核对过约见地址与程序入口，备好 8 份破解代码。'
+        : answer === 'care' ? '你记住先知对流亡者的提醒，同行者带来两份急救包。'
+          : '你接受一次有边界的合作，船员为团队带来一枚协作信标。';
+      if (answer === 'agency') inventory.code += 8;
+      else if (answer === 'care') inventory.medkit += 2;
+      else inventory.beacon++;
+      life.choices.oracle_second_prepared = answer ?? 'trust'; state.lastText += ` ${preparation}`;
+      life.journal.unshift({ day: life.day, time: this.world.timeOfDay, title: '带着先知的线索赴约', text: preparation });
+    }
     if (scene.id === 'm3_zion_prepare' && life.choices.zion_residents_contacted) state.lastText += ' 居住层的两份寻人请求已列入联络簿，撤离名单有了对应家属。';
     if (scene.id === 'm3_dock_battle' && !life.choices.zion_dock_supplies_used) {
       const supplies = Number(Boolean(life.choices.zion_ship_charged)) + Number(Boolean(life.choices.zion_lock_reported));
@@ -2601,6 +2658,7 @@ export class FilmStorySystem {
       this.reloaded.frame(actor, { x: 0, focus: false }, 0, tick);
     }
     if (scene.id === 'm2_bane_copy') state.baneCopy = { progress: 0 };
+    if (scene.id === 'm2_seraph') state.seraph = { dodges: 0, counters: 0, attempts: 0 };
     if (scene.id === 'm2_catch' && life.choices.trinity_dream) state.lastText += life.choices.trinity_dream === 'clear' ? '你认出了梦里的破窗、枪口与坠落方向；这次仍有机会作出行动。' : '这座大楼让你想起那个破碎的梦。';
     if (scene.id === 'm1_bug' && state.office?.outcome === 'escaped') state.lastText = '你没有被特工带走。Switch 仍要求做安全检查，确认没有追踪装置。';
   }
@@ -2654,6 +2712,12 @@ export class FilmStorySystem {
         actor.currentAction = { type: 'idle', parameters: { interrogation: { phase: 'file', elapsed: 0, role } }, startedAt: this.state!.enteredAt, duration: 100000, progress: 0 };
       }
       if (scene.id === 'm1_jump' && id === 'morpheus') actor.position = filmPosition(scene.set, 0, -38);
+      if (scene.id === 'm2_seraph' && id === 'seraph') { actor.position = filmPosition(scene.set, 0, -8); actor.rotation = 0; }
+      if (scene.id === 'm2_backdoors' && id === 'seraph') { actor.position = filmPosition(scene.set, 2.5, -30); actor.rotation = Math.PI; }
+      if (scene.id === 'm2_bench' && id === 'oracle') {
+        actor.position = filmPosition(scene.set, -9, -20); actor.rotation = 0;
+        actor.currentAction = { type: 'idle', parameters: { seated: true }, startedAt: this.state!.enteredAt, duration: 100000, progress: 0 };
+      }
       if ((scene.id === 'm1_bridge' || scene.id === 'm1_bug') && MEETING_CAST.includes(id as typeof MEETING_CAST[number])) {
         const encounter: MeetingEncounter = this.state!.meeting ?? { phase: 'ready', elapsed: 0, bugged: false, approach: { ...MEETING_CAR.approach, yaw: -Math.PI / 2 } };
         const role = id as typeof MEETING_CAST[number]; const pose = meetingRoot(encounter, role);
@@ -2669,6 +2733,18 @@ export class FilmStorySystem {
   }
   private advance(text: string, agent: AgentState, tick: number): void {
     const state = this.state!; const life = this.sandbox().neoLife!;
+    if (state.scene === 'm2_seraph' && state.step === 0) {
+      const seraph = this.world.agents.get('seraph'); if (seraph && !seraph.controller) { seraph.position = filmPosition(this.scene!.set, 2.8, -24); seraph.rotation = Math.PI; }
+    }
+    if (state.scene === 'm2_bench' && state.step === 3) {
+      life.choices.oracle_second_lead = 'le_vrai';
+      const oracle = this.world.agents.get('oracle');
+      if (oracle && !oracle.controller) {
+        oracle.currentAction = null;
+        oracle.targetPosition = filmPosition(this.scene!.set, -18, 25);
+        oracle.currentPath = [filmPosition(this.scene!.set, -9, -16), filmPosition(this.scene!.set, -18, -12)];
+      }
+    }
     if (state.scene === 'm2_dock' && state.step === 2) life.choices.zion_ship_charged = 'yes';
     if (state.scene === 'm2_lock' && state.step === 1) life.choices.zion_lock_reported = '72h';
     if (state.scene === 'm2_residents' && state.step === 1) life.choices.zion_jacob_request = 'Gnosis';

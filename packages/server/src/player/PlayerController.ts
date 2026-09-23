@@ -348,6 +348,7 @@ export class PlayerController {
     if (this.sandbox?.life.film.performing(agent) && kind !== 'interact') return '演出进行中，可以转动视角观察；进度会自动保存。';
     if (this.sandbox?.life.film.state && sentinelActive(this.sandbox.life.film.state) && ['attack', 'shoot', 'ability', 'ability2', 'dodge', 'travel'].includes(kind)) return '哨兵正在附近扫描。保持安静，武器和能力会暴露整艘船。';
     if (this.sandbox?.life.film.driving(agent) && ['attack', 'shoot', 'ability', 'ability2', 'dodge', 'travel'].includes(kind)) return '正在护送钥匙匠。W 加速，S 刹车，A / D 转向。';
+    if (this.sandbox?.life.film.state?.scene === 'm2_seraph' && this.sandbox.life.film.state.fighting && ['shoot', 'ability', 'ability2'].includes(kind)) return 'Seraph 要看近身攻防。观察起手，X 闪避后用 F 反击。';
     if (this.sandbox?.life.film.controls(agent) && ['m1_office_escape', 'm1_ledge'].includes(this.sandbox.life.film.state!.scene)
       && ['attack', 'shoot', 'ability', 'ability2', 'dodge'].includes(kind)) return '你仍是普通的 Anderson。按住 Z 潜行，利用遮挡避开特工。';
     if (agent.id === 'neo' && this.sandbox?.state.neoLife) {
