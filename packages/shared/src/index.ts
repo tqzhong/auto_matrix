@@ -31,6 +31,7 @@ export * from './constants/betrayal.js';
 export * from './constants/rescue.js';
 export * from './constants/government-rescue.js';
 export * from './constants/air-rescue.js';
+export * from './constants/matrix-escape.js';
 export * from './constants/interrogation.js';
 export * from './constants/meeting.js';
 export * from './constants/lafayette.js';

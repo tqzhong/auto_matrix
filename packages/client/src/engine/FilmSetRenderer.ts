@@ -30,6 +30,7 @@ import { CypherRestaurantRenderer } from './CypherRestaurantRenderer.js';
 import { betrayalLocked, rescueLocked } from '@auto_matrix/shared';
 import { governmentLocked, airRescueLocked } from '@auto_matrix/shared';
 import { GovernmentSetRenderer } from './GovernmentSetRenderer.js';
+import { MatrixEscapeRenderer } from './MatrixEscapeRenderer.js';
 
 const outdoor = new Set(['rooftop', 'plaza', 'bridge', 'street', 'courtyard', 'freeway', 'machine', 'rain', 'garden', 'desert', 'pods']);
 const palettes = {
@@ -87,6 +88,7 @@ export class FilmSetRenderer {
   private sentinel?: SentinelSetRenderer;
   private restaurant?: CypherRestaurantRenderer;
   private government?: GovernmentSetRenderer;
+  private matrixEscape?: MatrixEscapeRenderer;
 
   constructor(private scene: THREE.Scene) {
     scene.add(this.root);
@@ -111,6 +113,7 @@ export class FilmSetRenderer {
         else if (set.id === 'film_anderson_flat') this.apartment = new ApartmentSetRenderer(this.root);
         else if (set.id === 'film_white_rabbit_club') { this.club = new ClubSetRenderer(this.root); void this.club.ready.catch(error => console.error('夜店人群加载失败', error)); }
         else if (set.id === 'film_government_office' || set.id === 'film_government_roof') this.government = new GovernmentSetRenderer(this.root, set.id);
+        else if (sceneId === 'm1_subway' && set.id === 'film_subway_platform' || sceneId === 'm1_city_chase' && set.id === 'film_escape_streets') this.matrixEscape = new MatrixEscapeRenderer(this.root, set.id as 'film_subway_platform' | 'film_escape_streets');
         else if (set.architecture === 'lobby') this.lobby = new LobbySetRenderer(this.root, set);
         else if (set.architecture === 'freeway') this.freeway = new FreewaySetRenderer(this.root, set);
         else if (set.architecture === 'pods') this.pods = new PodSetRenderer(this.root);
@@ -170,6 +173,7 @@ export class FilmSetRenderer {
     this.restaurant?.update(journey, elapsed);
     this.ambush?.update(journey, sandbox?.structures ?? [], elapsed);
     this.government?.update(journey, elapsed);
+    this.matrixEscape?.update(journey, elapsed);
     this.oracleVase?.update(sceneId === 'm1_oracle' ? journey?.visiting || journey!.step > 0 ? 4.5 : journey?.oracle?.vase : undefined);
     const scene = journey && FILM_SCENE_BY_ID[journey.scene]; const step = scene?.steps[journey!.step];
     this.marker.visible = Boolean(set && scene?.set === set.id && step && !journey?.visiting && journey?.actor === player?.id);
@@ -190,6 +194,7 @@ export class FilmSetRenderer {
     if (journey && (rescueLocked(journey) || journey.scene === 'm1_guns' && journey.rescue?.phase === 'selecting')) this.marker.visible = false;
     if (journey && governmentLocked(journey)) this.marker.visible = false;
     if (journey && airRescueLocked(journey)) this.marker.visible = false;
+    if (journey?.matrixEscape && ['m1_subway', 'm1_city_chase'].includes(journey.scene)) this.marker.visible = false;
     if (journey && phoneLocked(journey)) this.marker.visible = false;
     if (journey && windowOpening(journey)) this.marker.visible = false;
     if (journey?.scene === 'm1_dejavu' && journey.step === 0 && journey.ambush) this.marker.visible = false;
@@ -219,6 +224,8 @@ export class FilmSetRenderer {
     if (this.club) { fog.density = .005; fog.color.setHex(0x111913); this.scene.environmentIntensity = .28; return { color: 0xc1c8ac, ambient: .38, sun: .025 }; }
     if (this.interrogation) { fog.density = .001; this.scene.environmentIntensity = .38; return { color: 0xdce4ce, ambient: .48, sun: .08 }; }
     if (this.meeting) { fog.density = .007; fog.color.setHex(0x111b1d); (this.scene.background as THREE.Color).copy(fog.color); this.scene.environmentIntensity = .7; return { color: 0xb8cdc6, ambient: .62, sun: .15 }; }
+    if (this.matrixEscape && this.current.id === 'film_subway_platform') { fog.density = .006; fog.color.setHex(0x15231f); this.scene.environmentIntensity = .58; return { color: 0xd5e1d3, ambient: .72, sun: .08 }; }
+    if (this.matrixEscape) { fog.density = .0015; fog.color.setHex(0xaebfc0); this.scene.environmentIntensity = .82; return { color: 0xffe2bc, ambient: .86, sun: 1.35 }; }
     if (this.hotel) { fog.density = .001; this.scene.environmentIntensity = .42; return { color: 0xd4d1b2, ambient: .62, sun: .12 }; }
     if (this.ambush) { this.scene.environmentIntensity = .4; return { color: 0xd4ddbe, ambient: .52, sun: .15 }; }
     if (this.pods) {
@@ -933,6 +940,7 @@ export class FilmSetRenderer {
     this.sentinel?.dispose(); this.sentinel = undefined;
     this.restaurant?.dispose(); this.restaurant = undefined;
     this.government?.dispose(); this.government = undefined;
+    this.matrixEscape?.dispose(); this.matrixEscape = undefined;
     this.office?.dispose(); this.office = undefined;
     this.freeway?.dispose(); this.freeway = undefined;
     this.lobby?.dispose(); this.lobby = undefined;

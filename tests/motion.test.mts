@@ -169,6 +169,28 @@ test('air rescue performances distinguish the mounted gun, falling catch and roo
   assert.ok(trinity.arms[1].shoulder < -1 && trinity.arms[1].grip > .85, 'Trinity raises the pistol to cut free of the aircraft');
 });
 
+test('subway escape performances hold the phone, aim, grapple and leap as distinct poses', () => {
+  const idle = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 };
+  const base = { kind: 'subway' as const, attempt: 0, checkpoint: 'duel' as const, hits: 0, dodges: 0, pursuit: 0, segment: 0, possessions: 0, resolved: [] };
+  const phone = advanceMotion(newMotion(), { ...idle, matrixEscape: { ...base, phase: 'phone_shot', elapsed: .2, role: 'neo' as const } }, 0);
+  assert.ok(phone.arms[1].elbow < -1.35 && phone.arms[1].grip > .5, 'Neo keeps the exit handset against his ear before the shot');
+  const smith = advanceMotion(newMotion(), { ...idle, armed: true, matrixEscape: { ...base, phase: 'phone_shot', elapsed: 1, role: 'smith' as const } }, 0);
+  assert.ok(smith.arms.every(arm => arm.shoulder < -1 && arm.grip > .9), 'Smith visibly aims into the exit phone');
+  const pinned = advanceMotion(newMotion(), { ...idle, matrixEscape: { ...base, phase: 'train_window', elapsed: 2.2, role: 'neo' as const } }, 0);
+  assert.ok(pinned.hipHeight < 1.5 && pinned.lean < -.5 && pinned.legs.every(leg => leg.knee > 1.2), 'the rail grapple pins Neo below a standing pose');
+  const leap = advanceMotion(newMotion(), { ...idle, matrixEscape: { ...base, phase: 'train_escape', elapsed: 1.8, role: 'neo' as const } }, 0);
+  assert.ok(leap.arms.every(arm => arm.shoulder < -1.25) && Math.abs(leap.legs[0].hip - leap.legs[1].hip) > .5, 'the train escape extends the arms and separates the legs');
+});
+
+test('city escape performances visibly roll through the truck gap and transform the next host', () => {
+  const idle = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 };
+  const base = { kind: 'city' as const, attempt: 0, checkpoint: 'street' as const, hits: 0, dodges: 0, pursuit: .4, segment: 1, possessions: 1, resolved: [] };
+  const roll = advanceMotion(newMotion(), { ...idle, matrixEscape: { ...base, phase: 'truck_window', elapsed: 2.15, role: 'neo' as const } }, 0);
+  assert.ok(roll.hipHeight < 1.55 && Math.abs(roll.roll) > .8, 'Neo drops into a full side roll at the truck beat');
+  const host = advanceMotion(newMotion(), { ...idle, matrixEscape: { ...base, phase: 'possession', elapsed: 1.05, host: 'citizen_14' as const, role: 'citizen_14' as const } }, 0);
+  assert.ok(Math.abs(host.arms[0].outward) > .6 && Math.abs(host.arms[1].outward) > .6, 'the possessed host locks into a visible code rewrite silhouette');
+});
+
 test('armed shoulders follow vertical aim while recoil remains finite', () => {
   const idle = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, armed: true };
   const level = advanceMotion(newMotion(), { ...idle, aimPitch: 0 }, 0);

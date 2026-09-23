@@ -17,6 +17,7 @@ import { BETRAYAL, betrayalDuration, betrayalLocked, betrayalRoot, betrayalText,
 import { RESCUE, rescueDuration, rescueLocked, rescueRoot, rescueText, type RescueLoadout, type RescuePreparation, type RescueRole } from '@auto_matrix/shared';
 import { GOVERNMENT_RESCUE, governmentLocked, governmentRoot, governmentText, type GovernmentRescueEncounter, type GovernmentRescueRole } from '@auto_matrix/shared';
 import { AIR_RESCUE, airRescueLocked, airRescueRoot, airRescueText, type AirRescueEncounter, type AirRescueRole } from '@auto_matrix/shared';
+import { MATRIX_ESCAPE, matrixEscapeLocked, matrixEscapeRoot, matrixEscapeText, type MatrixEscapeEncounter, type MatrixEscapeRole } from '@auto_matrix/shared';
 
 const BATHROOM_ROLES = ['neo', 'trinity', 'switch', 'apoc'] as const;
 const UNPLUGGED_ROLES = ['tank', 'cypher', 'dozer', 'apoc', 'switch', 'neo', 'trinity'] as const;
@@ -32,7 +33,7 @@ export class FilmStorySystem {
   get scene(): FilmScene | undefined { return this.state && FILM_SCENE_BY_ID[this.state.scene]; }
   get step(): FilmStep | undefined { return this.scene?.steps[this.state!.step]; }
   controls(agent: AgentState): boolean { return Boolean(this.state && this.state.actor === agent.id); }
-  performing(agent: AgentState): boolean { return this.controls(agent) && (clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
+  performing(agent: AgentState): boolean { return this.controls(agent) && (clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
   clubFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
     if (state?.scene !== 'm1_club' || state.visiting || !this.controls(agent)) return;
@@ -1089,6 +1090,261 @@ export class FilmStorySystem {
     this.airRescueFrame(agent, true, 0, tick);
     return encounter.kind === 'office' ? 'Trinity 把 B-212 贴向审讯层；持续按住 G 操作侧舱机枪。' : 'Neo 抓紧连接 Trinity 的绳索；持续按住 G，冲击到来时按 X。';
   }
+  private ensureMatrixEscape(): MatrixEscapeEncounter {
+    const state = this.state!; const kind = state.scene === 'm1_subway' ? 'subway' : 'city';
+    if (!state.matrixEscape || state.matrixEscape.kind !== kind) {
+      const done = state.completed.includes(state.scene) || state.step >= this.scene!.steps.length;
+      const checkpoint = kind === 'subway' ? state.step > 0 ? 'tracks' : 'duel' : 'street';
+      state.matrixEscape = { kind, phase: done ? 'done' : kind === 'subway' ? state.step > 0 ? 'tracks' : 'ready' : state.step > 0 ? 'running' : 'ready',
+        elapsed: 0, attempt: 0, checkpoint, hits: 0, dodges: 0, pursuit: 0, segment: state.step, possessions: 0, resolved: [] };
+    }
+    const encounter = state.matrixEscape;
+    encounter.checkpoint ??= encounter.kind === 'subway' && state.step > 0 ? 'tracks' : encounter.kind === 'subway' ? 'duel' : 'street';
+    encounter.hits ??= 0; encounter.dodges ??= 0; encounter.pursuit ??= 0; encounter.segment ??= state.step;
+    encounter.possessions ??= 0; encounter.resolved ??= [];
+    return encounter;
+  }
+  private matrixEscapeOccupied(encounter: MatrixEscapeEncounter): AgentState | undefined {
+    const ids = encounter.kind === 'subway' ? ['smith', 'citizen_13'] : ['smith', 'citizen_13', 'citizen_14'];
+    return ids.map(id => this.world.agents.get(id)).find(actor => actor?.controller);
+  }
+  private clearMatrixEscapeActions(): void {
+    for (const actor of this.world.agents.values()) if (actor.currentAction?.parameters.matrixEscape) {
+      actor.currentAction = null; actor.velocity = { x: 0, y: 0, z: 0 };
+    }
+  }
+  private stageMatrixEscapeActor(role: MatrixEscapeRole, encounter: MatrixEscapeEncounter, dt: number, tick: number): void {
+    const actor = this.world.agents.get(role); if (!actor || actor.controller && actor.id !== this.state!.actor) return;
+    const root = matrixEscapeRoot(encounter, role); const before = { ...actor.position };
+    actor.position = filmPosition(this.scene!.set, root.x, root.z); actor.position.y += root.y; actor.rotation = root.yaw;
+    actor.velocity = dt > 0 ? { x: (actor.position.x - before.x) / dt, y: (actor.position.y - before.y) / dt, z: (actor.position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
+    actor.currentLocation = this.scene!.set; actor.isInMatrix = true;
+    const armed = role === 'smith' && encounter.phase === 'phone_shot';
+    actor.currentAction = { type: 'idle', parameters: { player: actor.id === this.state!.actor, resolved: true, armed,
+      matrixEscape: { ...encounter, resolved: [...encounter.resolved], role } }, startedAt: tick, duration: 1, progress: 0 };
+  }
+  matrixEscapeAction(agent: AgentState, tick: number): void {
+    const state = this.state; const encounter = state?.matrixEscape;
+    if (!state || !encounter || !this.controls(agent) || state.visiting || !['m1_subway', 'm1_city_chase'].includes(state.scene)
+      || matrixEscapeLocked(state) || encounter.phase === 'failed') return;
+    agent.currentAction ??= { type: 'idle', parameters: { player: true, resolved: true }, startedAt: tick, duration: 1, progress: 0 };
+    agent.currentAction.parameters.matrixEscape = { ...encounter, resolved: [...encounter.resolved], role: 'neo' };
+  }
+  private spawnMatrixEscapeThreat(agent: AgentState, tick: number): void {
+    const state = this.state!; const encounter = this.ensureMatrixEscape();
+    if (this.sandbox().threats.some(threat => threat.scene === state.scene)) return;
+    const position = encounter.kind === 'subway' ? filmPosition(this.scene!.set, 0, 2)
+      : { ...agent.position, x: agent.position.x + Math.sin(agent.rotation + Math.PI) * 12, z: agent.position.z + Math.cos(agent.rotation + Math.PI) * 12 };
+    this.sandbox().threats.push({ id: `film:${++this.sandbox().serial}`, scene: state.scene, kind: 'smith', character: 'smith', position,
+      matrix: true, health: 999, maxHealth: 999, target: agent.id, stunUntil: tick + (encounter.kind === 'subway' ? 3 : 8), lastStrike: tick });
+    const smith = this.world.agents.get('smith');
+    if (smith && !smith.controller) smith.currentAction = { type: 'idle', parameters: { filmDuel: true }, startedAt: tick, duration: 100000, progress: 0 };
+  }
+  private matrixEscapeImpact(source: string, target: string, encounter: MatrixEscapeEncounter, tick: number, downed = false): void {
+    const root = matrixEscapeRoot(encounter, target === 'smith' ? 'smith' : 'neo');
+    const position = filmPosition(this.scene!.set, root.x, root.z); position.y += root.y + 2;
+    const from = encounter.kind === 'subway' ? filmPosition(this.scene!.set, 16.4, 18) : filmPosition(this.scene!.set, 7, 18);
+    from.y += 2; const length = Math.max(.001, distance(from, position));
+    this.onImpact?.({ source, target, position, direction: { x: (position.x - from.x) / length, y: (position.y - from.y) / length, z: (position.z - from.z) / length },
+      damage: 0, combo: 0, matrix: true, downed, shot: source === 'smith' ? { from, surface: 'stone' } : undefined }, tick);
+  }
+  private finishSubwayExchange(agent: AgentState, encounter: MatrixEscapeEncounter, tick: number): void {
+    if (encounter.phase !== 'duel' || encounter.hits < MATRIX_ESCAPE.subway.requiredHits || encounter.dodges < MATRIX_ESCAPE.subway.requiredDodges) return;
+    encounter.phase = 'wall_break'; encounter.elapsed = 0; this.clearThreats();
+    this.matrixEscapeFrame(agent, { movement: 0, sprint: false }, 0, tick);
+  }
+  matrixEscapeHit(agent: AgentState, threat: SandboxThreat, _combo: number, tick: number): boolean {
+    const state = this.state; const encounter = state?.matrixEscape;
+    if (!state || !encounter || !this.controls(agent) || threat.scene !== state.scene) return false;
+    if (encounter.kind === 'subway' && encounter.phase === 'duel') {
+      encounter.hits = Math.min(MATRIX_ESCAPE.subway.requiredHits, encounter.hits + 1); threat.health = threat.maxHealth;
+      state.lastText = matrixEscapeText(encounter); this.finishSubwayExchange(agent, encounter, tick); return true;
+    }
+    if (encounter.kind === 'city' && encounter.phase === 'running') {
+      encounter.pursuit = Math.max(0, encounter.pursuit - .08); threat.health = threat.maxHealth;
+      state.lastText = `Neo 击退当前身体，但 Smith 会继续换体。${matrixEscapeText(encounter)}`; return true;
+    }
+    return false;
+  }
+  matrixEscapeCombatDodge(agent: AgentState, threat: SandboxThreat, tick: number): boolean {
+    const state = this.state; const encounter = state?.matrixEscape;
+    if (!state || !encounter || !this.controls(agent) || threat.scene !== state.scene) return false;
+    if (encounter.kind === 'subway' && encounter.phase === 'duel') {
+      encounter.dodges = Math.min(MATRIX_ESCAPE.subway.requiredDodges, encounter.dodges + 1); state.lastText = matrixEscapeText(encounter);
+      this.finishSubwayExchange(agent, encounter, tick); return true;
+    }
+    if (encounter.kind === 'city' && encounter.phase === 'running') {
+      encounter.dodges++; encounter.pursuit = Math.max(0, encounter.pursuit - .12); state.lastText = matrixEscapeText(encounter); return true;
+    }
+    return false;
+  }
+  matrixEscapeEvade(agent: AgentState, tick: number): string | undefined {
+    const state = this.state; const encounter = state?.matrixEscape;
+    if (!state || !encounter || !this.controls(agent)) return undefined;
+    if (encounter.kind === 'subway' && encounter.phase === 'train_window') {
+      const offset = Math.abs(encounter.elapsed - MATRIX_ESCAPE.subway.trainBeat);
+      if (offset > MATRIX_ESCAPE.subway.trainWindow) return encounter.elapsed < MATRIX_ESCAPE.subway.trainBeat ? '列车还没到翻身线，盯住头灯越过立柱的瞬间。' : '已经错过最安全的起身点，继续寻找列车侧面的空隙。';
+      encounter.phase = 'train_escape'; encounter.elapsed = 0; encounter.dodges++; this.matrixEscapeFrame(agent, { movement: 0, sprint: false }, 0, tick);
+      return 'Neo 蹬开 Smith，翻上站台边缘。列车已经进入轨道。';
+    }
+    if (encounter.kind === 'city' && encounter.phase === 'truck_window') {
+      const offset = Math.abs(encounter.elapsed - MATRIX_ESCAPE.city.truckBeat);
+      if (offset > MATRIX_ESCAPE.city.truckWindow) return encounter.elapsed < MATRIX_ESCAPE.city.truckBeat ? '垃圾车还没封死路口，保持重心等待侧面的缺口。' : '车身已经压过最佳线，沿墙寻找最后的侧翻空间。';
+      encounter.phase = 'possession'; encounter.elapsed = 0; encounter.dodges++; encounter.truckHit = true;
+      this.matrixEscapeFrame(agent, { movement: 0, sprint: false }, 0, tick); return 'Neo 侧翻穿过垃圾车与墙面的窄缝，追来的身体被撞倒。';
+    }
+    return undefined;
+  }
+  private failMatrixEscape(agent: AgentState, encounter: MatrixEscapeEncounter): void {
+    encounter.phase = 'failed'; this.clearThreats(); this.clearMatrixEscapeActions();
+    agent.health = 0; agent.status = 'dead'; agent.currentAction = null; agent.velocity = { x: 0, y: 0, z: 0 };
+    this.state!.lastText = matrixEscapeText(encounter);
+  }
+  matrixEscapeDefeated(agent: AgentState): boolean {
+    const state = this.state; const encounter = state?.matrixEscape;
+    if (!state || !encounter || !this.controls(agent) || encounter.phase === 'failed' || encounter.phase === 'done') return false;
+    this.failMatrixEscape(agent, encounter); return true;
+  }
+  matrixEscapeFrame(agent: AgentState, input: { movement: number; sprint: boolean }, dt: number, tick: number): boolean {
+    const state = this.state;
+    if (!state || !this.controls(agent) || state.visiting || !['m1_subway', 'm1_city_chase'].includes(state.scene)) return false;
+    const encounter = this.ensureMatrixEscape();
+    if (encounter.phase === 'failed') { this.clearMatrixEscapeActions(); state.lastText = matrixEscapeText(encounter); return false; }
+    if (agent.status !== 'alive') { this.failMatrixEscape(agent, encounter); return false; }
+    const occupied = this.matrixEscapeOccupied(encounter);
+    if (occupied) { state.lastText = `${occupied.name} 正由另一位玩家控制，地铁撤离停在当前进度。`; return matrixEscapeLocked(state); }
+    const delta = Math.max(0, Math.min(.1, dt));
+    if (encounter.kind === 'subway') {
+      // Keep the later possession host at its authored waiting position. Scene
+      // entry otherwise leaves it near the track camera before the body swap.
+      this.stageMatrixEscapeActor('citizen_13', encounter, dt, tick);
+      if (encounter.phase === 'phone_shot') {
+        const before = encounter.elapsed; encounter.elapsed = Math.min(MATRIX_ESCAPE.subway.phoneShot, encounter.elapsed + delta);
+        if (!encounter.phoneBroken && before < .62 && encounter.elapsed >= .62) { encounter.phoneBroken = true; this.matrixEscapeImpact('smith', 'subway-phone', encounter, tick); }
+        for (const role of ['neo', 'smith'] as MatrixEscapeRole[]) this.stageMatrixEscapeActor(role, encounter, dt, tick);
+        if (encounter.elapsed >= MATRIX_ESCAPE.subway.phoneShot) { encounter.phase = 'stance'; encounter.elapsed = 0; }
+      } else if (encounter.phase === 'stance') {
+        encounter.elapsed = Math.min(MATRIX_ESCAPE.subway.stance, encounter.elapsed + delta);
+        for (const role of ['neo', 'smith'] as MatrixEscapeRole[]) this.stageMatrixEscapeActor(role, encounter, dt, tick);
+        if (encounter.elapsed >= MATRIX_ESCAPE.subway.stance) {
+          const root = matrixEscapeRoot(encounter, 'neo'); agent.position = filmPosition(this.scene!.set, root.x, root.z); agent.rotation = root.yaw;
+          encounter.phase = 'duel'; encounter.elapsed = 0; this.clearMatrixEscapeActions(); this.spawnMatrixEscapeThreat(agent, tick); state.checkpoint = { ...agent.position };
+        }
+      } else if (encounter.phase === 'duel') {
+        this.spawnMatrixEscapeThreat(agent, tick); this.matrixEscapeAction(agent, tick);
+      } else if (encounter.phase === 'wall_break') {
+        const before = encounter.elapsed; encounter.elapsed = Math.min(MATRIX_ESCAPE.subway.wallBreak, encounter.elapsed + delta);
+        if (!encounter.wallBroken && before < 1.05 && encounter.elapsed >= 1.05) { encounter.wallBroken = true; this.matrixEscapeImpact('neo', 'subway-wall', encounter, tick); }
+        for (const role of ['neo', 'smith'] as MatrixEscapeRole[]) this.stageMatrixEscapeActor(role, encounter, dt, tick);
+        if (encounter.elapsed >= MATRIX_ESCAPE.subway.wallBreak) {
+          this.advance(this.step!.text ?? 'Neo 把 Smith 撞穿站台墙面。', agent, tick); encounter.phase = 'tracks'; encounter.elapsed = 0; encounter.checkpoint = 'tracks';
+          for (const role of ['neo', 'smith'] as MatrixEscapeRole[]) this.stageMatrixEscapeActor(role, encounter, 0, tick);
+          state.checkpoint = { ...agent.position };
+        }
+      } else if (encounter.phase === 'tracks') {
+        encounter.elapsed = Math.min(MATRIX_ESCAPE.subway.tracks, encounter.elapsed + delta);
+        for (const role of ['neo', 'smith'] as MatrixEscapeRole[]) this.stageMatrixEscapeActor(role, encounter, dt, tick);
+        if (encounter.elapsed >= MATRIX_ESCAPE.subway.tracks) { encounter.phase = 'train_window'; encounter.elapsed = 0; }
+      } else if (encounter.phase === 'train_window') {
+        encounter.elapsed = Math.min(MATRIX_ESCAPE.subway.trainDuration, encounter.elapsed + delta);
+        for (const role of ['neo', 'smith'] as MatrixEscapeRole[]) this.stageMatrixEscapeActor(role, encounter, dt, tick);
+        if (encounter.elapsed >= MATRIX_ESCAPE.subway.trainDuration) { this.failMatrixEscape(agent, encounter); return false; }
+      } else if (encounter.phase === 'train_escape') {
+        const before = encounter.elapsed; encounter.elapsed = Math.min(MATRIX_ESCAPE.subway.escape, encounter.elapsed + delta);
+        if (!encounter.trainHit && before < 1.45 && encounter.elapsed >= 1.45) { encounter.trainHit = true; this.matrixEscapeImpact('subway-train', 'smith', encounter, tick, true); }
+        for (const role of ['neo', 'smith'] as MatrixEscapeRole[]) this.stageMatrixEscapeActor(role, encounter, dt, tick);
+        if (encounter.elapsed >= MATRIX_ESCAPE.subway.escape) { encounter.phase = 'body_swap'; encounter.elapsed = 0; encounter.possessions = 1; encounter.host = 'citizen_13'; }
+      } else if (encounter.phase === 'body_swap') {
+        encounter.elapsed = Math.min(MATRIX_ESCAPE.subway.bodySwap, encounter.elapsed + delta);
+        for (const role of ['neo', 'smith'] as MatrixEscapeRole[]) this.stageMatrixEscapeActor(role, encounter, dt, tick);
+        if (encounter.elapsed >= MATRIX_ESCAPE.subway.bodySwap) {
+          encounter.phase = 'done'; this.clearMatrixEscapeActions(); this.advance(this.step!.text ?? 'Smith 通过新的身体继续追踪。', agent, tick);
+        }
+      }
+    } else {
+      if (encounter.phase === 'briefing') {
+        encounter.elapsed = Math.min(MATRIX_ESCAPE.city.briefing, encounter.elapsed + delta); this.stageMatrixEscapeActor('neo', encounter, dt, tick);
+        if (encounter.elapsed >= MATRIX_ESCAPE.city.briefing) { encounter.phase = 'running'; encounter.elapsed = 0; this.clearMatrixEscapeActions(); this.spawnMatrixEscapeThreat(agent, tick); state.checkpoint = { ...agent.position }; }
+      } else if (encounter.phase === 'running') {
+        const moving = input.movement > .12;
+        encounter.pursuit = Math.max(0, Math.min(1, encounter.pursuit + delta * (input.sprint && moving ? -MATRIX_ESCAPE.city.pursuitSprint : moving ? MATRIX_ESCAPE.city.pursuitMoving : MATRIX_ESCAPE.city.pursuitIdle)));
+        this.spawnMatrixEscapeThreat(agent, tick);
+        const pursuer = this.sandbox().threats.find(threat => threat.scene === state.scene);
+        if (pursuer && distance(agent.position, pursuer.position) < 6) encounter.pursuit = Math.min(1, encounter.pursuit + delta * .18);
+        if (encounter.pursuit >= 1) { this.failMatrixEscape(agent, encounter); return false; }
+        if (this.step && this.near(agent, this.step)) {
+          this.clearThreats(); state.checkpoint = filmPosition(this.scene!.set, this.step.x, this.step.z + 7);
+          encounter.phase = state.step === 0 ? 'phone_failure' : state.step === 1 ? 'truck_warning' : 'door_ready'; encounter.elapsed = 0;
+          if (encounter.phase !== 'door_ready') this.matrixEscapeFrame(agent, { movement: 0, sprint: false }, 0, tick);
+        } else this.matrixEscapeAction(agent, tick);
+      } else if (encounter.phase === 'phone_failure') {
+        const before = encounter.elapsed; encounter.elapsed = Math.min(MATRIX_ESCAPE.city.phoneFailure, encounter.elapsed + delta);
+        if (!encounter.phoneBroken && before < .55 && encounter.elapsed >= .55) { encounter.phoneBroken = true; this.matrixEscapeImpact('smith', 'city-phone', encounter, tick); }
+        for (const role of ['neo', 'citizen_13'] as MatrixEscapeRole[]) this.stageMatrixEscapeActor(role, encounter, dt, tick);
+        if (encounter.elapsed >= MATRIX_ESCAPE.city.phoneFailure) {
+          encounter.possessions = 1; encounter.host = 'citizen_13'; this.advance(this.step!.text ?? '第一部出口电话失效。', agent, tick);
+          encounter.segment = 1; encounter.phase = 'running'; encounter.elapsed = 0; encounter.pursuit = .12; this.clearMatrixEscapeActions(); this.spawnMatrixEscapeThreat(agent, tick);
+        }
+      } else if (encounter.phase === 'truck_warning') {
+        encounter.elapsed = Math.min(MATRIX_ESCAPE.city.truckWarning, encounter.elapsed + delta); this.stageMatrixEscapeActor('neo', encounter, dt, tick);
+        if (encounter.elapsed >= MATRIX_ESCAPE.city.truckWarning) { encounter.phase = 'truck_window'; encounter.elapsed = 0; }
+      } else if (encounter.phase === 'truck_window') {
+        encounter.elapsed = Math.min(MATRIX_ESCAPE.city.truckDuration, encounter.elapsed + delta); this.stageMatrixEscapeActor('neo', encounter, dt, tick);
+        if (encounter.elapsed >= MATRIX_ESCAPE.city.truckDuration) { this.failMatrixEscape(agent, encounter); return false; }
+      } else if (encounter.phase === 'possession') {
+        encounter.elapsed = Math.min(MATRIX_ESCAPE.city.possession, encounter.elapsed + delta);
+        for (const role of ['neo', 'citizen_14'] as MatrixEscapeRole[]) this.stageMatrixEscapeActor(role, encounter, dt, tick);
+        if (encounter.elapsed >= MATRIX_ESCAPE.city.possession) {
+          encounter.possessions = 2; encounter.host = 'citizen_14'; this.advance(this.step!.text ?? 'Neo 穿过封锁路口。', agent, tick);
+          encounter.segment = 2; encounter.phase = 'running'; encounter.elapsed = 0; encounter.pursuit = .18; this.clearMatrixEscapeActions(); this.spawnMatrixEscapeThreat(agent, tick);
+        }
+      } else if (encounter.phase === 'door_ready') this.matrixEscapeAction(agent, tick);
+      else if (encounter.phase === 'door') {
+        encounter.elapsed = Math.min(MATRIX_ESCAPE.city.door, encounter.elapsed + delta);
+        for (const role of ['neo', encounter.host ?? 'citizen_14'] as MatrixEscapeRole[]) this.stageMatrixEscapeActor(role, encounter, dt, tick);
+        if (encounter.elapsed >= MATRIX_ESCAPE.city.door) {
+          encounter.phase = 'done'; this.clearThreats(); this.clearMatrixEscapeActions(); this.advance(this.step!.text ?? 'Neo 进入 303 房间的撤离楼梯。', agent, tick);
+        }
+      }
+    }
+    state.lastText = matrixEscapeText(encounter); return matrixEscapeLocked(state);
+  }
+  private retryMatrixEscape(agent: AgentState, tick: number): string {
+    const state = this.state!; const previous = this.ensureMatrixEscape(); const attempt = previous.attempt + 1;
+    this.clearThreats(); this.clearMatrixEscapeActions(); agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
+    agent.position = { ...state.checkpoint }; agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentAction = null;
+    if (previous.kind === 'subway') {
+      const tracks = previous.checkpoint === 'tracks' || state.step > 0; state.step = tracks ? 1 : 0;
+      state.matrixEscape = { kind: 'subway', phase: tracks ? 'tracks' : 'ready', elapsed: 0, attempt, checkpoint: tracks ? 'tracks' : 'duel',
+        hits: 0, dodges: 0, pursuit: 0, segment: state.step, possessions: tracks ? previous.possessions : 0, resolved: [], phoneBroken: tracks || previous.phoneBroken, wallBroken: tracks };
+    } else {
+      state.matrixEscape = { ...previous, phase: 'running', elapsed: 0, attempt, checkpoint: 'street', pursuit: .12, segment: state.step,
+        hits: 0, dodges: previous.dodges, resolved: [...previous.resolved] };
+      this.spawnMatrixEscapeThreat(agent, tick);
+    }
+    this.matrixEscapeFrame(agent, { movement: 0, sprint: false }, 0, tick);
+    return previous.kind === 'subway' ? state.step ? '已从轨道挣扎前重试；列车仍会按保存的时序接近。' : '已从出口电话前重试；重新面对 Smith。'
+      : '已从最近的街巷检查点重试；继续沿 Tank 的路线奔跑。';
+  }
+  private matrixEscapeAct(agent: AgentState, target: string, tick: number): string {
+    const encounter = this.ensureMatrixEscape(); const occupied = this.matrixEscapeOccupied(encounter);
+    if (occupied) return `${occupied.name} 正由另一位玩家控制，等待对方结束后再继续。`;
+    if (encounter.phase === 'failed' && target === 'act') return this.retryMatrixEscape(agent, tick);
+    if (target !== 'act') return matrixEscapeText(encounter);
+    if (encounter.kind === 'subway' && encounter.phase === 'ready') {
+      encounter.phase = 'phone_shot'; encounter.elapsed = 0; this.matrixEscapeFrame(agent, { movement: 0, sprint: false }, 0, tick);
+      return 'Neo 刚碰到听筒，Smith 的子弹击碎了出口电话。';
+    }
+    if (encounter.kind === 'city' && encounter.phase === 'ready') {
+      encounter.phase = 'briefing'; encounter.elapsed = 0; this.matrixEscapeFrame(agent, { movement: 0, sprint: false }, 0, tick);
+      return 'Tank 接通耳机，把市场、后巷和 303 房间分成三段路线。';
+    }
+    if (encounter.kind === 'city' && encounter.phase === 'door_ready') {
+      encounter.phase = 'door'; encounter.elapsed = 0; this.matrixEscapeFrame(agent, { movement: 0, sprint: false }, 0, tick);
+      return 'Neo 推开旅馆楼梯门，向 303 房间冲去。';
+    }
+    return matrixEscapeText(encounter);
+  }
   private sealAmbush(): void {
     const state = this.state;
     const sealed = (state?.ambush?.elapsed ?? 0) >= AMBUSH_REWRITE || state?.completed.includes('m1_dejavu') || state?.scene === 'm1_dejavu' && state.step > 0;
@@ -1529,6 +1785,7 @@ export class FilmStorySystem {
     if (target === 'retry') {
       if (state.government && ['m1_smith_question', 'm1_bullet_dodge'].includes(state.scene)) return this.retryGovernment(agent, tick);
       if (state.airRescue && ['m1_helicopter', 'm1_rooftop_rescue'].includes(state.scene)) return this.retryAirRescue(agent, tick);
+      if (state.matrixEscape && ['m1_subway', 'm1_city_chase'].includes(state.scene)) return this.retryMatrixEscape(agent, tick);
       if (state.scene === 'm1_sentinels' && state.sentinel) {
         if (state.sentinel.phase === 'failed') return this.sentinelAct(agent, target, tick);
         agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
@@ -1728,6 +1985,7 @@ export class FilmStorySystem {
     if ((state.scene === 'm1_rescue_decision' && state.step === 1) || state.scene === 'm1_guns') return this.rescueAct(agent, target, tick);
     if (state.scene === 'm1_smith_question' || state.scene === 'm1_bullet_dodge') return this.governmentAct(agent, target, tick);
     if (state.scene === 'm1_helicopter' || state.scene === 'm1_rooftop_rescue') return this.airRescueAct(agent, target, tick);
+    if (state.scene === 'm1_subway' || state.scene === 'm1_city_chase') return this.matrixEscapeAct(agent, target, tick);
     if (interrogationLocked(state) && state.interrogation!.phase !== 'response') return '审讯正在进行。可以转动视角观察，暂停会保留当前进度。';
     if (target === 'escape:retreat' && state.scene === 'm1_ledge') {
       this.capture(agent, tick, '你退回办公室。特工将你带走；电话中的联系尚未结束。');
@@ -1920,6 +2178,7 @@ export class FilmStorySystem {
     delete state.betrayal;
     delete state.government;
     delete state.airRescue;
+    delete state.matrixEscape;
     this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== 'film:apartment:door');
     delete state.pills;
     delete state.interrogation;
@@ -1936,6 +2195,7 @@ export class FilmStorySystem {
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.rescue) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.government) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.airRescue) other.currentAction = null;
+    for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.matrixEscape) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.lobbyEntry) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.riding) { other.currentAction = null; other.velocity = { x: 0, y: 0, z: 0 }; }
     if (scene.id === 'm1_lobby') this.lobby.reset();
@@ -2010,6 +2270,16 @@ export class FilmStorySystem {
     if (scene.id === 'm1_rooftop_rescue') {
       state.airRescue = { kind: 'roof', phase: 'ready', elapsed: 0, attempt: 0, grip: 1, braces: 0, misses: 0, resolved: [] };
       this.airRescueFrame(actor, false, 0, tick);
+    }
+    if (scene.id === 'm1_subway') {
+      state.matrixEscape = { kind: 'subway', phase: 'ready', elapsed: 0, attempt: 0, checkpoint: 'duel', hits: 0, dodges: 0,
+        pursuit: 0, segment: 0, possessions: 0, resolved: [] };
+      this.matrixEscapeFrame(actor, { movement: 0, sprint: false }, 0, tick);
+    }
+    if (scene.id === 'm1_city_chase') {
+      state.matrixEscape = { kind: 'city', phase: 'ready', elapsed: 0, attempt: 0, checkpoint: 'street', hits: 0, dodges: 0,
+        pursuit: 0, segment: 0, possessions: 0, resolved: [] };
+      this.matrixEscapeFrame(actor, { movement: 0, sprint: false }, 0, tick);
     }
     if (scene.id === 'm1_bug' && state.office?.outcome === 'escaped') state.lastText = '你没有被特工带走。Switch 仍要求做安全检查，确认没有追踪装置。';
   }
@@ -2130,6 +2400,7 @@ export class FilmStorySystem {
       }
       if (state.step === 2) { delete state.started; return; }
     }
+    if (state.matrixEscape && ['m1_subway', 'm1_city_chase'].includes(state.scene)) return;
     const step = this.step; if (!step) return;
     if (state.scene === 'm1_wake_up') { delete state.started; return; }
     if (state.scene === 'm1_boss' && state.step === 1) { delete state.started; return; }

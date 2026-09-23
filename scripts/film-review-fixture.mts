@@ -2,7 +2,7 @@
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { FILM_SCENES, FILM_SETS, RESCUE, GOVERNMENT_RESCUE, AIR_RESCUE, filmEntry, filmStepPosition, filmPosition, playerBlocked, NEO_CHAPTERS, MEETING_DRIVE_SECONDS, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENES, FILM_SETS, RESCUE, GOVERNMENT_RESCUE, AIR_RESCUE, filmEntry, filmStepPosition, filmPosition, playerBlocked, NEO_CHAPTERS, MEETING_DRIVE_SECONDS, type MatrixEscapeEncounter, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -296,6 +296,25 @@ if (['rope-brace', 'rope-crash', 'rope-pull'].includes(process.argv[3]) && scene
     for (let frame = 0; frame < frames; frame++) sandbox.life.film.airRescueFrame(actor, true, .1, 0);
   }
   sandbox.life.film.state!.checkpoint = { ...actor.position };
+}
+if (['subway-duel', 'subway-train', 'subway-swap'].includes(process.argv[3]) && scene.id === 'm1_subway') {
+  const journey = sandbox.life.film.state!; actor.controller = 'player';
+  journey.step = process.argv[3] === 'subway-duel' ? 0 : 1;
+  journey.matrixEscape = { kind: 'subway', phase: process.argv[3] === 'subway-duel' ? 'duel' : process.argv[3] === 'subway-train' ? 'train_window' : 'body_swap',
+    elapsed: process.argv[3] === 'subway-train' ? 2.45 : process.argv[3] === 'subway-swap' ? 1.35 : 0, attempt: 0,
+    checkpoint: process.argv[3] === 'subway-duel' ? 'duel' : 'tracks', hits: process.argv[3] === 'subway-duel' ? 2 : 4,
+    dodges: 1, pursuit: 0, segment: journey.step, possessions: process.argv[3] === 'subway-swap' ? 1 : 0, resolved: [],
+    phoneBroken: true, wallBroken: process.argv[3] !== 'subway-duel', host: process.argv[3] === 'subway-swap' ? 'citizen_13' : undefined } as MatrixEscapeEncounter;
+  sandbox.life.film.matrixEscapeFrame(actor, { movement: 0, sprint: false }, 0, 0); journey.checkpoint = { ...actor.position };
+}
+if (['city-phone', 'city-truck', 'city-door'].includes(process.argv[3]) && scene.id === 'm1_city_chase') {
+  const journey = sandbox.life.film.state!; actor.controller = 'player'; const variant = process.argv[3];
+  journey.step = variant === 'city-phone' ? 0 : variant === 'city-truck' ? 1 : 2;
+  journey.matrixEscape = { kind: 'city', phase: variant === 'city-phone' ? 'phone_failure' : variant === 'city-truck' ? 'truck_window' : 'door',
+    elapsed: variant === 'city-phone' ? 1.15 : variant === 'city-truck' ? 1.9 : .8, attempt: 0, checkpoint: 'street', hits: 0, dodges: variant === 'city-phone' ? 0 : 1,
+    pursuit: .43, segment: journey.step, possessions: variant === 'city-phone' ? 0 : variant === 'city-truck' ? 1 : 2, resolved: [],
+    phoneBroken: variant !== 'city-phone', host: variant === 'city-phone' ? undefined : variant === 'city-truck' ? 'citizen_13' : 'citizen_14' } as MatrixEscapeEncounter;
+  sandbox.life.film.matrixEscapeFrame(actor, { movement: 0, sprint: false }, 0, 0); journey.checkpoint = { ...actor.position };
 }
 for (const resident of world.agents.values()) delete resident.controller;
 neo.isAwakened = FILM_SCENES.indexOf(scene) >= FILM_SCENES.findIndex(s => s.id === 'm1_pod');

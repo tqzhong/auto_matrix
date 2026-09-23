@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, RESCUE, RESCUE_LOADOUTS, GOVERNMENT_RESCUE, AIR_RESCUE, filmReflections, filmStepPosition, filmEntry, filmPosition, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, RESCUE, RESCUE_LOADOUTS, GOVERNMENT_RESCUE, AIR_RESCUE, MATRIX_ESCAPE, filmReflections, filmStepPosition, filmEntry, filmPosition, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -847,6 +847,48 @@ test('the entire film route completes through interactions, driving and real com
     }
     for (let index = 0; index < scene.steps.length; index++) {
       const step = scene.steps[index]; const actor = h.actor(); actor.position = filmStepPosition(scene, step);
+      if (scene.id === 'm1_subway') {
+        if (index === 0) {
+          h.command('act');
+          for (let frame = 0; frame < 45 && state.matrixEscape?.phase !== 'duel'; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.matrixEscape?.phase, 'duel');
+          const target = h.sandbox.state.threats.find(threat => threat.scene === scene.id)!;
+          target.attackAt = h.tick() + 2; target.stunUntil = 0; h.players.act('film-player', 'dodge', h.tick());
+          for (let hit = 0; hit < MATRIX_ESCAPE.subway.requiredHits; hit++) {
+            target.position = { ...actor.position, z: actor.position.z - 2.2 }; actor.rotation = Math.PI;
+            h.sandbox.attack(actor, h.tick() + hit + 1, hit % 3);
+          }
+          for (let frame = 0; frame < 35 && state.step === index; frame++) h.players.step(.1, true, h.tick());
+        } else {
+          for (let frame = 0; frame < 25 && state.matrixEscape?.phase !== 'train_window'; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.matrixEscape?.phase, 'train_window');
+          while (state.matrixEscape!.elapsed < MATRIX_ESCAPE.subway.trainBeat) h.players.step(.1, true, h.tick());
+          h.players.act('film-player', 'dodge', h.tick());
+          for (let frame = 0; frame < 65 && state.step === index; frame++) h.players.step(.1, true, h.tick());
+        }
+        assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`); continue;
+      }
+      if (scene.id === 'm1_city_chase') {
+        const frame = () => {
+          h.players.receiveInput('film-player', { x: 0, z: 0, yaw: actor.rotation, jump: false, sprint: true, sequence: ++sequence });
+          h.players.step(.1, true, h.tick());
+        };
+        if (index === 0) {
+          h.command('act'); for (let count = 0; count < 28 && state.matrixEscape?.phase !== 'running'; count++) frame();
+          actor.position = filmStepPosition(scene, step); frame();
+          for (let count = 0; count < 32 && state.step === index; count++) frame();
+        } else if (index === 1) {
+          frame(); for (let count = 0; count < 20 && state.matrixEscape?.phase !== 'truck_window'; count++) frame();
+          assert.equal(state.matrixEscape?.phase, 'truck_window');
+          while (state.matrixEscape!.elapsed < MATRIX_ESCAPE.city.truckBeat) frame();
+          h.players.act('film-player', 'dodge', h.tick());
+          for (let count = 0; count < 30 && state.step === index; count++) frame();
+        } else {
+          frame(); assert.equal(state.matrixEscape?.phase, 'door_ready'); h.command('act');
+          for (let count = 0; count < 28 && state.step === index; count++) frame();
+        }
+        assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`); continue;
+      }
       if (step.kind === 'reach') h.advance();
       else if (step.kind === 'reflect') {
         if (scene.id === 'm1_oracle') {

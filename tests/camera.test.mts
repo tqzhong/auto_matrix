@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import type { AgentState, PlayerInput } from '@auto_matrix/shared';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { CameraController } from '../packages/client/src/engine/CameraController.js';
-import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, pillRoot, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, ORACLE_VISIT, RESCUE, airRescueRoot } from '@auto_matrix/shared';
+import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, pillRoot, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, ORACLE_VISIT, RESCUE, airRescueRoot, matrixEscapeRoot } from '@auto_matrix/shared';
 
 test('observer camera releases drag and ignores pointer capture while a character controls the view', () => {
   let captures = 0;
@@ -179,6 +179,93 @@ test('roof rope camera holds Neo and dangling Trinity through shocks, impact and
     const screen = point.project(game.camera); assert.ok(Math.abs(screen.x) < .88 && Math.abs(screen.y) < .9 && screen.z > -1 && screen.z < 1, `roof pull crop: ${screen.toArray().join(',')}`);
     if (index < 2) assert.ok(screen.x > -.65, `Neo and Trinity cannot be reduced to the left edge during the crash: ${screen.toArray().join(',')}`);
   }
+});
+
+test('the subway train window owns a readable camera and V looks from Neo toward Smith on the rails', t => {
+  const game = setup(t, Math.PI / 2); const center = FILM_SETS.film_subway_platform.center;
+  game.camera.aspect = .72; game.camera.updateProjectionMatrix(); game.state.currentLocation = 'film_subway_platform';
+  const encounter = { kind: 'subway' as const, phase: 'train_window' as const, elapsed: 2.7, attempt: 0, checkpoint: 'tracks' as const,
+    hits: 4, dodges: 1, pursuit: 0, segment: 1, possessions: 0, resolved: [] };
+  const neo = matrixEscapeRoot(encounter, 'neo'); const smith = matrixEscapeRoot(encounter, 'smith');
+  game.state.position = { ...filmPosition('film_subway_platform', neo.x, neo.z), y: center.y + neo.y };
+  game.state.rotation = neo.yaw;
+  game.state.currentAction = { type: 'idle', parameters: { matrixEscape: { ...encounter, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.step(.4);
+  assert.equal(game.controls.performing, true);
+  assert.ok(game.camera.position.x < center.x + 21.8, 'the train camera must stay inside the tiled tunnel wall');
+  for (const actor of [neo, smith]) {
+    const screen = new THREE.Vector3(center.x + actor.x, center.y + actor.y + 2.1, center.z + actor.z).project(game.camera);
+    assert.ok(Math.abs(screen.x) < .85 && Math.abs(screen.y) < .88 && screen.z > -1 && screen.z < 1, `rail actor crop: ${screen.toArray().join(',')}`);
+  }
+  const locked = game.group.position.clone(); game.key('KeyW'); game.step(.25); game.key('KeyW', false); assert.deepEqual(game.group.position, locked);
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+  const target = new THREE.Vector3(center.x + smith.x, center.y + smith.y + 2.25, center.z + smith.z);
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).dot(target.clone().sub(game.camera.position).normalize()) > .9,
+    'Neo first person follows his authored body and faces Smith instead of the global set direction');
+});
+
+test('the subway body-swap camera keeps its subject clear of the platform columns', t => {
+  const game = setup(t, Math.PI); const center = FILM_SETS.film_subway_platform.center;
+  game.state.currentLocation = 'film_subway_platform';
+  const encounter = { kind: 'subway' as const, phase: 'body_swap' as const, elapsed: 1.35, attempt: 0, checkpoint: 'tracks' as const,
+    hits: 4, dodges: 2, pursuit: 0, segment: 1, possessions: 1, resolved: [], host: 'citizen_13' as const };
+  const neo = matrixEscapeRoot(encounter, 'neo'); game.state.position = { ...filmPosition('film_subway_platform', neo.x, neo.z), y: center.y + neo.y };
+  game.state.currentAction = { type: 'idle', parameters: { matrixEscape: { ...encounter, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.step(.4);
+  const host = matrixEscapeRoot(encounter, 'citizen_13');
+  const subject = new THREE.Vector3(center.x + host.x, center.y + host.y + 2.25, center.z + host.z);
+  const screen = subject.clone().project(game.camera);
+  assert.ok(Math.abs(screen.x) < .75 && Math.abs(screen.y) < .8 && screen.z > -1 && screen.z < 1, 'the changing host stays readable');
+  const sight = new THREE.Line3(new THREE.Vector3(game.camera.position.x, 0, game.camera.position.z), new THREE.Vector3(subject.x, 0, subject.z));
+  for (const x of [-15.3, 8.2]) for (let z = -46; z <= 46; z += 13) {
+    const column = new THREE.Vector3(center.x + x, 0, center.z + z); const closest = new THREE.Vector3();
+    sight.closestPointToPoint(column, true, closest);
+    assert.ok(closest.distanceTo(column) > 1.1, `body-swap sightline crosses platform column ${x},${z}`);
+  }
+});
+
+test('the garbage-truck dodge camera stays on the open lane and keeps Neo readable', t => {
+  const game = setup(t, Math.PI); const center = FILM_SETS.film_escape_streets.center;
+  game.state.currentLocation = 'film_escape_streets';
+  const encounter = { kind: 'city' as const, phase: 'truck_window' as const, elapsed: 2.15, attempt: 0, checkpoint: 'street' as const,
+    hits: 0, dodges: 1, pursuit: .4, segment: 1, possessions: 1, resolved: [], host: 'citizen_13' as const };
+  const neo = matrixEscapeRoot(encounter, 'neo'); game.state.position = { ...filmPosition('film_escape_streets', neo.x, neo.z), y: center.y + neo.y };
+  game.state.currentAction = { type: 'idle', parameters: { matrixEscape: { ...encounter, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.step(.4);
+  assert.ok(game.camera.position.z < center.z + neo.z - 10, 'the camera must get ahead of Neo and the truck instead of looking through its body');
+  assert.ok(game.camera.position.distanceTo(new THREE.Vector3(center.x + neo.x, center.y + neo.y + 2.1, center.z + neo.z)) > 18,
+    'the truck shot needs enough distance to show the vehicle instead of filling the frame with its body');
+  const screen = new THREE.Vector3(center.x + neo.x, center.y + neo.y + 2.1, center.z + neo.z).project(game.camera);
+  assert.ok(Math.abs(screen.x) < .72 && Math.abs(screen.y) < .82 && screen.z > -1 && screen.z < 1, 'Neo stays visible at the dodge line');
+});
+
+test('the room 303 entry frames Neo and the pursuing possession in depth', t => {
+  const game = setup(t, Math.PI); const center = FILM_SETS.film_escape_streets.center;
+  game.state.currentLocation = 'film_escape_streets';
+  const encounter = { kind: 'city' as const, phase: 'door' as const, elapsed: .8, attempt: 0, checkpoint: 'street' as const,
+    hits: 0, dodges: 2, pursuit: .35, segment: 2, possessions: 2, resolved: [], host: 'citizen_14' as const };
+  const neo = matrixEscapeRoot(encounter, 'neo'); game.state.position = { ...filmPosition('film_escape_streets', neo.x, neo.z), y: center.y + neo.y };
+  game.state.currentAction = { type: 'idle', parameters: { matrixEscape: { ...encounter, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.step(.4);
+  for (const role of ['neo', 'citizen_14'] as const) {
+    const root = matrixEscapeRoot(encounter, role);
+    const screen = new THREE.Vector3(center.x + root.x, center.y + root.y + 2.1, center.z + root.z).project(game.camera);
+    assert.ok(Math.abs(screen.x) < .86 && Math.abs(screen.y) < .85 && screen.z > -1 && screen.z < 1, `${role} is cropped from the 303 entry shot`);
+  }
+});
+
+for (const phase of ['duel', 'running'] as const) test(`matrix ${phase} keeps V first person tied to the player's live turn`, t => {
+  const game = setup(t); game.state.currentLocation = phase === 'duel' ? 'film_subway_platform' : 'film_escape_streets';
+  game.state.position = filmPosition(game.state.currentLocation, 0, phase === 'duel' ? 10 : 35);
+  game.state.currentAction = { type: 'idle', parameters: { matrixEscape: { kind: phase === 'duel' ? 'subway' : 'city', phase, elapsed: 0, attempt: 0,
+    checkpoint: phase === 'duel' ? 'duel' : 'street', hits: 0, dodges: 0, pursuit: .2, segment: 0, possessions: 0, resolved: [], role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.key('KeyV'); game.key('KeyV', false); game.document.pointerLockElement = game.canvas;
+  game.event(game.document, 'mousemove', { movementX: -560, movementY: 0 }); game.step(.2);
+  assert.equal(game.controls.performing, false, 'free combat and chase phases must not lock player locomotion');
+  assert.ok(Math.abs(angle(game.yaw(), Math.PI / 2)) < .08, 'V view follows the live mouse turn instead of the set entrance yaw');
+  game.key('KeyW'); game.step(.45); game.key('KeyW', false);
+  assert.ok(game.group.position.x > game.state.position.x + .6, 'forward movement follows the newly turned first-person view');
+  assert.ok(Math.abs(angle(game.group.children[0].rotation.y, Math.PI / 2)) < .12, 'the avatar body follows the same live turn');
 });
 
 function setup(t: TestContext, rotation = 0) {

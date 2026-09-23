@@ -63,6 +63,8 @@ export class PlayerController {
     if (interlude && governmentLocked(interlude) && id !== interlude.actor && governmentRoles.includes(id)) return { error: '这个角色正在参与政府大楼营救片段，当前动作结束后可以接入。' };
     const airRoles = interlude?.airRescue?.kind === 'office' ? ['neo', 'trinity', 'morpheus', 'smith', 'agent_brown', 'agent_jones'] : ['neo', 'trinity', 'morpheus'];
     if (interlude && airRescueLocked(interlude) && id !== interlude.actor && airRoles.includes(id)) return { error: '这个角色正在参与直升机营救片段，当前动作结束后可以接入。' };
+    const escapeRoles = interlude?.matrixEscape?.kind === 'subway' ? ['neo', 'smith', 'citizen_13'] : ['neo', 'smith', 'citizen_13', 'citizen_14'];
+    if (interlude?.matrixEscape && !['failed', 'done'].includes(interlude.matrixEscape.phase) && id !== interlude.actor && escapeRoles.includes(id)) return { error: '这个角色正在参与地铁与街巷追逐片段，当前撤离结束后可以接入。' };
     if (interlude && lobbyLocked(interlude) && id !== interlude.actor && ['trinity', 'citizen_12'].includes(id)) return { error: '这个角色正在参与大厅安检片段，警戒启动后可以接入。' };
     if (INTERROGATION_CAST.includes(id as typeof INTERROGATION_CAST[number]) && this.sandbox?.life.film.state && interrogationLocked(this.sandbox.life.film.state)) return { error: '这个特工正在参与审讯，结束后可以接入。' };
     if (id === 'morpheus' && this.sandbox?.life.film.state && pillLocked(this.sandbox.life.film.state)) return { error: 'Morpheus 正在与 Neo 交谈递药，结束后可以接入。' };
@@ -118,6 +120,7 @@ export class PlayerController {
     this.sandbox?.life.film.rescueFrame(agent, 0, tick);
     this.sandbox?.life.film.governmentFrame(agent, false, 0, tick);
     this.sandbox?.life.film.airRescueFrame(agent, false, 0, tick);
+    this.sandbox?.life.film.matrixEscapeFrame(agent, { movement: 0, sprint: false }, 0, tick);
     this.sandbox?.life.film.lobby.frame(agent, 0, tick);
     if (agent.mind) agent.mind.thought = '由玩家决定下一步行动。';
     return { agentId: id };
@@ -188,7 +191,7 @@ export class PlayerController {
     }
     for (const session of this.sessions.values()) {
       const agent = this.world.agents.get(session.agentId)!;
-      if (!running || agent.status !== 'alive') { agent.velocity = { x: 0, y: 0, z: 0 }; this.sandbox?.life.film.hotelFrame(agent, 0, tick); this.sandbox?.life.film.sentinelFrame(agent, { movement: 0, sprint: false, jump: false }, 0, tick); this.sandbox?.life.film.interludeFrame(agent, 0, tick); this.sandbox?.life.film.betrayalFrame(agent, 0, tick); this.sandbox?.life.film.rescueFrame(agent, 0, tick); this.sandbox?.life.film.governmentFrame(agent, false, 0, tick); this.sandbox?.life.film.airRescueFrame(agent, false, 0, tick); this.sandbox?.life.film.lobby.frame(agent, 0, tick); session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue; }
+      if (!running || agent.status !== 'alive') { agent.velocity = { x: 0, y: 0, z: 0 }; this.sandbox?.life.film.hotelFrame(agent, 0, tick); this.sandbox?.life.film.sentinelFrame(agent, { movement: 0, sprint: false, jump: false }, 0, tick); this.sandbox?.life.film.interludeFrame(agent, 0, tick); this.sandbox?.life.film.betrayalFrame(agent, 0, tick); this.sandbox?.life.film.rescueFrame(agent, 0, tick); this.sandbox?.life.film.governmentFrame(agent, false, 0, tick); this.sandbox?.life.film.airRescueFrame(agent, false, 0, tick); this.sandbox?.life.film.matrixEscapeFrame(agent, { movement: 0, sprint: false }, 0, tick); this.sandbox?.life.film.lobby.frame(agent, 0, tick); session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue; }
       session.stagger = Math.max(0, session.stagger - dt);
       const stale = now - session.lastInput > 300;
       let input = stale ? { ...idleInput(), yaw: session.input.yaw } : session.input;
@@ -216,6 +219,9 @@ export class PlayerController {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
       if (this.sandbox?.life.film.airRescueFrame(agent, Boolean(input.focus), dt, tick)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
+      if (this.sandbox?.life.film.matrixEscapeFrame(agent, { movement: Math.hypot(input.x, input.z), sprint: input.sprint }, dt, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
       if (this.sandbox?.life.film.lobby.frame(agent, dt, tick)) {
@@ -294,6 +300,7 @@ export class PlayerController {
       }
       this.sandbox?.life.film.oracleFrame(agent, input.focus === true, dt, tick);
       this.sandbox?.life.film.ambushFrame(agent, dt, tick);
+      this.sandbox?.life.film.matrixEscapeAction(agent, tick);
       const journey = this.sandbox?.life.film.state;
       if (journey?.actor === agent.id && agent.currentAction && heldPhone(journey)) agent.currentAction.parameters.phone = { ...heldPhone(journey)! };
       const nearbyLocation = Object.values(LOCATIONS).filter(location => location.id !== 'downtown' && (location.world === 'matrix') === agent.isInMatrix)
@@ -316,6 +323,8 @@ export class PlayerController {
       if (result !== undefined) return result;
       const rescue = this.sandbox?.life.film.airRescueBrace(agent, tick);
       if (rescue !== undefined) return rescue;
+      const escape = this.sandbox?.life.film.matrixEscapeEvade(agent, tick);
+      if (escape !== undefined) return escape;
     }
     if (this.sandbox?.life.film.performing(agent) && kind !== 'interact') return '演出进行中，可以转动视角观察；进度会自动保存。';
     if (this.sandbox?.life.film.state && sentinelActive(this.sandbox.life.film.state) && ['attack', 'shoot', 'ability', 'ability2', 'dodge', 'travel'].includes(kind)) return '哨兵正在附近扫描。保持安静，武器和能力会暴露整艘船。';
@@ -392,7 +401,7 @@ export class PlayerController {
       session.impulse = { direction, remaining: skill.duration, speed: id === 'dodge' ? 16 : 20, strike: id === 'scorpion_dash' };
       if (id === 'dodge') {
         const warning = this.sandbox?.state.threats.find(threat => threat.target === agent.id && threat.attackAt !== undefined);
-        if (warning && this.sandbox!.life.film.trainingDodge(agent, warning, tick)) {
+        if (warning && (this.sandbox!.life.film.matrixEscapeCombatDodge(agent, warning, tick) || this.sandbox!.life.film.trainingDodge(agent, warning, tick))) {
           warning.attackAt = undefined; warning.stunUntil = Math.max(warning.stunUntil, tick + 3);
         }
       }

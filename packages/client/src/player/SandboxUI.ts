@@ -17,6 +17,7 @@ import { RESCUE, rescueDuration, rescueLoadout, rescueLocked } from '@auto_matri
 import { LOBBY_ENTRY, lobbyLocked } from '@auto_matrix/shared';
 import { GOVERNMENT_RESCUE, governmentLocked, governmentText } from '@auto_matrix/shared';
 import { AIR_RESCUE, airRescueLocked, airRescueText } from '@auto_matrix/shared';
+import { MATRIX_ESCAPE, matrixEscapeDuration, matrixEscapeLocked, matrixEscapeText } from '@auto_matrix/shared';
 
 const escape = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const WEATHER = { clear: '晴朗', rain: '雨', code_storm: '代码风暴' };
@@ -554,6 +555,44 @@ export class SandboxUI {
           : airRescueText(encounter);
       this.el('sandbox-trace').textContent = office ? `B-212 火力 ${Math.round((encounter.suppression ?? 0) * 100)}%`
         : `绳索握力 ${Math.round((encounter.grip ?? 1) * 100)}% · 稳住 ${encounter.braces ?? 0}/3`;
+      return;
+    }
+    if (!journey.visiting && journey.matrixEscape && ['m1_subway', 'm1_city_chase'].includes(scene.id)) {
+      const encounter = journey.matrixEscape; const phase = encounter.phase; const subway = encounter.kind === 'subway';
+      const windup = state.threats.some(threat => threat.scene === scene.id && threat.attackAt !== undefined && threat.attackAt > this.tick);
+      const timedEvade = phase === 'train_window' || phase === 'truck_window';
+      const canAct = ['ready', 'failed', 'door_ready', 'done'].includes(phase);
+      this.el('film-sequence').classList.remove('hidden');
+      this.el('film-sequence').classList.toggle('urgent', phase === 'failed' || windup || timedEvade || encounter.pursuit > .72);
+      this.el('film-sequence-line').textContent = matrixEscapeText(encounter);
+      this.el('film-sequence-hint').textContent = phase === 'ready' ? subway ? '走到出口电话旁 · G 接听 · V 切换视角' : 'G 接收 Tank 的路线 · V 切换视角'
+        : phase === 'duel' ? windup ? '红色起手出现 · 现在按 X 闪避，再按 F 反击' : `观察 Smith 起手 · F 反击 ${encounter.hits}/${MATRIX_ESCAPE.subway.requiredHits} · X 闪避 ${encounter.dodges}/${MATRIX_ESCAPE.subway.requiredDodges}`
+        : phase === 'running' ? `WASD 改变方向 · Shift 奔跑 · F 击退当前身体 · 追捕压力 ${Math.round(encounter.pursuit * 100)}%`
+        : phase === 'train_window' ? `列车头灯接近第三根立柱 · ${Math.abs(encounter.elapsed - MATRIX_ESCAPE.subway.trainBeat) <= MATRIX_ESCAPE.subway.trainWindow ? '现在按 X！' : '准备按 X 翻回站台'}`
+        : phase === 'truck_window' ? `垃圾车正在封巷 · ${Math.abs(encounter.elapsed - MATRIX_ESCAPE.city.truckBeat) <= MATRIX_ESCAPE.city.truckWindow ? '现在按 X！' : '盯住右侧缺口，准备按 X'}`
+        : phase === 'failed' ? 'G 从最近检查点重试 · 已完成的剧情不会丢失'
+        : phase === 'door_ready' ? '走到 303 楼梯门前 · G 冲进旅馆'
+        : phase === 'done' ? 'G 继续下一段 · J 查看这次撤离'
+        : matrixEscapeLocked(journey) ? '鼠标环顾 · V 切换主视角与场景镜头 · 当前一拍自动保存' : 'WASD 移动 · Shift 奔跑';
+      this.el('sandbox-interact').classList.toggle('hidden', !canAct);
+      this.el('sandbox-nearby').textContent = phase === 'failed' ? '从检查点重试' : phase === 'door_ready' ? '进入 303 楼梯门'
+        : phase === 'done' ? '继续下一段' : subway ? '接听出口电话' : '接收 Tank 的撤离路线';
+      const actions = this.el('film-training-actions'); const dodge = actions.querySelector<HTMLButtonElement>('[data-combat="dodge"]')!; const attack = actions.querySelector<HTMLButtonElement>('[data-combat="attack"]')!;
+      if (phase === 'duel' || timedEvade) {
+        actions.classList.remove('hidden'); dodge.classList.remove('hidden'); dodge.disabled = phase === 'duel' && !windup;
+        attack.classList.toggle('hidden', phase !== 'duel'); attack.querySelector('span')!.textContent = '反击';
+      }
+      const duration = matrixEscapeDuration(encounter);
+      const progress = phase === 'duel' ? (encounter.hits + encounter.dodges) / (MATRIX_ESCAPE.subway.requiredHits + MATRIX_ESCAPE.subway.requiredDodges) * 100
+        : phase === 'running' ? encounter.pursuit * 100 : duration ? encounter.elapsed / duration * 100 : 0;
+      this.el('sandbox-job').style.width = `${Math.min(100, progress)}%`;
+      if (matrixEscapeLocked(journey) || phase === 'duel') this.el('sandbox-waypoint').textContent = '';
+      document.getElementById('game-objective')!.textContent = subway ? '地铁站 · 不再逃跑' : 'Tank 指引的街巷';
+      document.getElementById('game-objective-copy')!.textContent = phase === 'duel'
+        ? `有效命中 ${encounter.hits}/${MATRIX_ESCAPE.subway.requiredHits} · 成功闪避 ${encounter.dodges}/${MATRIX_ESCAPE.subway.requiredDodges}`
+        : phase === 'running' ? `路线 ${encounter.segment + 1}/3 · 追捕压力 ${Math.round(encounter.pursuit * 100)}% · 保持移动会降低增长速度` : matrixEscapeText(encounter);
+      this.el('sandbox-trace').textContent = subway ? `站台交锋 ${encounter.hits}/${MATRIX_ESCAPE.subway.requiredHits} · 闪避 ${encounter.dodges}`
+        : `路线 ${encounter.segment + 1}/3 · Smith 换体 ${encounter.possessions} 次`;
       return;
     }
     if (scene.id === 'm1_office_escape' && journey.office && !journey.office.outcome && !journey.visiting) {
