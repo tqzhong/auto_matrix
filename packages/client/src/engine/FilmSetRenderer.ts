@@ -8,7 +8,7 @@ import { workdayLocked, type OfficeWorkday } from '@auto_matrix/shared';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
-import { FILM_SETS, FILM_SCENE_BY_ID, HEL_ELEVATOR, helElevatorLocked, PILL_ROOM, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, GARAGE, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, EXILES, CHATEAU, awakeningLocked, trainingLocked, phoneLocked, windowOpening, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type FilmJourney, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
+import { FILM_SETS, FILM_SCENE_BY_ID, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, PILL_ROOM, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, GARAGE, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, EXILES, CHATEAU, awakeningLocked, trainingLocked, phoneLocked, windowOpening, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type FilmJourney, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
 import { LobbySetRenderer } from './LobbySetRenderer.js';
 import { OfficeSetRenderer } from './OfficeSetRenderer.js';
 import { FreewaySetRenderer } from './FreewaySetRenderer.js';
@@ -120,6 +120,7 @@ export class FilmSetRenderer {
   private mobilLastFrame?: number;
   private helChaseTrain?: THREE.Group;
   private helLift?: { doors: [THREE.Group, THREE.Group]; bands: { mesh: THREE.Mesh; y: number }[]; light: THREE.PointLight };
+  private helDanceDoor?: [THREE.Group, THREE.Group];
   private helCoatDamage?: THREE.Group[];
   private helStandoff?: { crowd: THREE.Group[]; guard: THREE.Group; floorGuns: THREE.Group; flyingGun: THREE.Group; light: THREE.PointLight };
   private powerStatus?: { primary: THREE.MeshBasicMaterial; emergency: THREE.MeshBasicMaterial; lights: THREE.PointLight[] };
@@ -254,13 +255,20 @@ export class FilmSetRenderer {
       for (const band of this.helLift.bands) band.mesh.position.y = lift?.phase === 'descending' ? 1 + (band.y + lift.elapsed * 3.5) % 8 : band.y;
       this.helLift.light.intensity = lift?.phase === 'descending' ? 190 + Math.sin(lift.elapsed * 17) * 65 : 90;
     }
+    if (this.helDanceDoor) {
+      const opening = sceneId === 'm3_hel_bargain' || Boolean(journey?.visiting) || (journey?.step ?? 0) > 3 || journey?.helDanceDoor?.phase === 'open';
+      const progress = opening ? 1 : helDanceDoorLocked(journey) ? Math.min(1, journey!.helDanceDoor!.elapsed / HEL_DANCE_DOOR.seconds) : 0;
+      const swing = (progress * progress * (3 - 2 * progress)) * 1.28;
+      this.helDanceDoor[0].rotation.y = swing; this.helDanceDoor[1].rotation.y = -swing;
+    }
     this.helCoatDamage?.forEach((mark, index) => { mark.visible = (journey?.helCoatcheck?.coverHits[index] ?? 0) > 0 && !journey?.visiting; });
     if (this.helStandoff) {
       const encounter = sceneId === 'm3_hel_bargain' && !journey?.visiting ? journey?.helBargain : undefined;
+      const entering = sceneId === 'm3_hel_entry' && !journey?.visiting && ((journey?.step ?? 0) > 3 || journey?.helDanceDoor?.phase === 'open' || journey?.helDanceDoor?.phase === 'opening' && journey.helDanceDoor.elapsed > HEL_DANCE_DOOR.seconds * .3);
       const phase = encounter?.phase;
       this.helStandoff.crowd.forEach((figure, index) => {
-        figure.visible = Boolean(encounter) && phase !== 'released';
-        figure.position.x = (index % 2 ? 1 : -1) * (index < 2 ? 4.8 : 8 + Math.floor(index / 2) * 2)
+        figure.visible = entering || Boolean(encounter) && phase !== 'released';
+        figure.position.x = (index % 2 ? 1 : -1) * (index < 6 ? 2.8 + Math.floor(index / 2) * .35 : 5.5 + Math.floor(index / 4) * 1.1)
           + (['windup', 'evade', 'counter', 'airborne', 'gunpoint'].includes(phase ?? '') ? (index % 2 ? 1 : -1) * 1.6 : 0);
         figure.rotation.y = Math.sin(elapsed * .7 + index) * .12;
       });
@@ -343,7 +351,7 @@ export class FilmSetRenderer {
     this.oracleVase?.update(sceneId === 'm1_oracle' ? journey?.visiting || journey!.step > 0 ? 4.5 : journey?.oracle?.vase : undefined);
     const scene = journey && FILM_SCENE_BY_ID[journey.scene]; const step = scene?.steps[journey!.step];
     this.marker.visible = Boolean(set && scene?.set === set.id && step && !journey?.visiting && journey?.actor === player?.id);
-    if (helElevatorLocked(journey)) this.marker.visible = false;
+    if (helElevatorLocked(journey) || helDanceDoorLocked(journey)) this.marker.visible = false;
     if (['m1_lobby', 'm3_hel_entry'].includes(journey?.scene ?? '') && journey?.fighting) this.marker.visible = false;
     if (journey?.scene === 'm2_burly' && !['ready', 'staff_ready', 'flight_ready'].includes(journey.burly?.phase ?? 'ready')) this.marker.visible = false;
     if (journey?.scene === 'm2_chateau' && journey.step === 0 && !['ready', 'landing'].includes(journey.chateau?.phase ?? 'ready')) this.marker.visible = false;
@@ -1245,6 +1253,15 @@ export class FilmSetRenderer {
       this.box(red, side * 9.5, 5.1, 1.35, 12.7, 9.6, .12);
     }
     this.label('CLUB HEL', 0, 12.5, 1.45, 8, '#d69a9d', '#1b1417');
+    this.helDanceDoor = [-1, 1].map((side, index) => {
+      const panel = new THREE.Group(); panel.name = index ? 'hel-dance-right-door' : 'hel-dance-left-door'; panel.userData.dynamic = true;
+      panel.position.set(side * HEL_DANCE_DOOR.width / 2, 0, HEL_DANCE_DOOR.z); this.root.add(panel);
+      panel.add(this.box(steel, -side * HEL_DANCE_DOOR.width / 4, HEL_DANCE_DOOR.height / 2, 0, HEL_DANCE_DOOR.width / 2, HEL_DANCE_DOOR.height, .52));
+      panel.add(this.box(velvet, -side * HEL_DANCE_DOOR.width / 4, HEL_DANCE_DOOR.height / 2, .28, HEL_DANCE_DOOR.width / 2 - .27, HEL_DANCE_DOOR.height - .3, .055));
+      for (const y of [1.1, 7.9]) panel.add(this.box(steel, -side * HEL_DANCE_DOOR.width / 4, y, .32, HEL_DANCE_DOOR.width / 2 - .35, .08, .07));
+      panel.add(this.box(steel, -side * .6, 4.1, .39, .12, 1.3, .14));
+      return panel;
+    }) as [THREE.Group, THREE.Group];
     for (const z of [-19, -13, -7]) {
       for (const x of [-19, -12, 12, 19]) {
         const tile = this.box(red, x, .1, z, 6.2, .08, 5.4); tile.name = 'hel-dance-floor';
@@ -1264,11 +1281,11 @@ export class FilmSetRenderer {
     for (const x of [-7, 7]) this.chair(x, -37, x < 0 ? Math.PI / 2 : -Math.PI / 2, true);
     this.label('LE MEROVINGIAN', 0, 12.8, -d / 2 + .8, 13, '#d8b8a0', '#281c1d');
     const vip = new THREE.PointLight(0xc33f49, 190, 24, 2); vip.position.set(0, 11, -35); this.root.add(vip);
-    if (this.currentScene === 'm3_hel_bargain') {
+    if (this.currentScene === 'm3_hel_entry' || this.currentScene === 'm3_hel_bargain') {
       const crowd: THREE.Group[] = []; const coat = this.mat(0x171b1d, .91); const skin = this.mat(0x685550, .9);
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i < 12; i++) {
         const figure = new THREE.Group(); figure.name = 'hel-dance-crowd'; figure.userData.dynamic = true; this.root.add(figure);
-        figure.position.z = i < 2 ? -27 : i < 4 ? -22 : -17;
+        figure.position.z = -6 - Math.floor(i / 2) * 4.3;
         figure.add(this.cylinder(coat, 0, 1.35, 0, .58, 2.5));
         figure.add(this.sphere(skin, 0, 2.94, 0, .43));
         for (const side of [-1, 1]) figure.add(this.cylinder(coat, side * .64, 1.75, 0, .13, 1.6));
@@ -1763,6 +1780,7 @@ export class FilmSetRenderer {
     this.mobilLastFrame = undefined;
     this.helChaseTrain = undefined;
     this.helLift = undefined;
+    this.helDanceDoor = undefined;
     this.helCoatDamage = undefined;
     this.helStandoff = undefined;
     this.powerStatus = undefined;

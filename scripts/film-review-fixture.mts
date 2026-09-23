@@ -1,4 +1,4 @@
-import { newReloaded, BURLY, EXILES, CHATEAU, MOUNTAIN, TRUCKS } from '@auto_matrix/shared';
+import { newReloaded, BURLY, EXILES, CHATEAU, MOUNTAIN, TRUCKS, HEL_COATCHECK } from '@auto_matrix/shared';
 // Creates an isolated visual-review save; never writes the player's data directory.
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import os from 'node:os';
@@ -426,6 +426,20 @@ if (scene.id === 'm2_mountain' && ['mountain-lookout', 'mountain-flight'].includ
     actor.currentAction = { type: 'move_to', parameters: { player: true, resolved: true, mountainFlight: { ...journey.mountain } }, startedAt: 0, duration: 1, progress: 0 };
   }
   journey.checkpoint = { ...actor.position };
+}
+if (scene.id === 'm3_hel_entry' && ['hel-door', 'hel-door-open'].includes(process.argv[3])) {
+  const journey = sandbox.life.film.state!;
+  journey.step = process.argv[3] === 'hel-door' ? 3 : 4;
+  journey.helElevator = { phase: 'open', elapsed: 4.2, lastTick: 0 };
+  journey.helCoatcheck = { phase: 'cleared', ammo: 12, wave: 2, shots: 5, kills: 5, allyShotAt: [0, 0], coverHits: [2, 1, 0] };
+  journey.helDanceDoor = { phase: journey.step === 3 ? 'sealed' : 'open', elapsed: journey.step === 3 ? 0 : 2.5, lastTick: 0 };
+  actor.position = filmPosition(scene.set, 0, journey.step === 3 ? 4 : -4); actor.rotation = Math.PI;
+  journey.checkpoint = { ...actor.position };
+  for (const id of ['morpheus', 'seraph'] as const) {
+    const ally = world.agents.get(id)!; const root = HEL_COATCHECK.allies[id];
+    ally.position = filmPosition(scene.set, root.x, root.z); ally.rotation = Math.PI;
+  }
+  sandbox.life.film.reconcileCast();
 }
 for (const resident of world.agents.values()) delete resident.controller;
 neo.isAwakened = FILM_SCENES.indexOf(scene) >= FILM_SCENES.findIndex(s => s.id === 'm1_pod');

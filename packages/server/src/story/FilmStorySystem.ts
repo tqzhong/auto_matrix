@@ -2,7 +2,7 @@ import { ReloadedOpeningSystem } from './ReloadedOpeningSystem.js';
 import { ReloadedCatchSystem } from './ReloadedCatchSystem.js';
 import { newReloaded, reloadedLocked, ZION_CAST } from '@auto_matrix/shared';
 import { catchLocked, newCatch } from '@auto_matrix/shared';
-import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_CAST, GRID_WINDOW_SECONDS, GRID_REROUTE_SECONDS, GRID_HACK_SECONDS, ARCHITECT_DOOR_SECONDS, RELOADED_FINALE, HEL_ELEVATOR, helElevatorLocked, filmReflections, CHARACTERS, LOCATIONS, NEO_CHAPTERS, filmCharacterFates, filmEntry, filmPosition, filmStepPosition, locationEntrance, distance, playerBlocked, newFreewayRide, stepFreeway, OFFICE_LADDER, awakeningLocked, awakeningPose, AWAKENING_SECONDS, CONSTRUCT_REVEAL, DESERT_REVEAL, oracleActing,
+import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_CAST, GRID_WINDOW_SECONDS, GRID_REROUTE_SECONDS, GRID_HACK_SECONDS, ARCHITECT_DOOR_SECONDS, RELOADED_FINALE, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, filmReflections, CHARACTERS, LOCATIONS, NEO_CHAPTERS, filmCharacterFates, filmEntry, filmPosition, filmStepPosition, locationEntrance, distance, playerBlocked, newFreewayRide, stepFreeway, OFFICE_LADDER, awakeningLocked, awakeningPose, AWAKENING_SECONDS, CONSTRUCT_REVEAL, DESERT_REVEAL, oracleActing,
   AMBUSH_REWRITE, AMBUSH_SECONDS, AMBUSH_SEALS, OFFICE_CONTACT, OFFICE_WINDOW, OFFICE_CROSSING_SECONDS, officeCrossingPose, windowCrossing, phoneLocked, heldPhone, windowOpening, pillLocked, pillRoot, PILL_ROOM, PILL_TIMING, trainingLocked, trainingRoot, trainingText, TRAINING_SECONDS,
   lobbyLocked, meleeReach, groundHeight, type DriveInput, type AgentState, type FilmScene, type FilmStep, type GridOperation, type SandboxState, type SandboxThreat, type TrainingRole, type CombatImpact } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
@@ -100,6 +100,62 @@ export class FilmStorySystem {
       }
     }
     lift.lastTick = tick;
+  }
+  private ensureHelDanceDoor(tick: number): void {
+    const state = this.state;
+    if (state?.scene !== 'm3_hel_entry' || state.helDanceDoor) return;
+    // Saves from before the door objective were already walking into the dance floor.
+    const pastWeaponCheck = state.step >= 3;
+    if (pastWeaponCheck) state.step++;
+    state.helDanceDoor = { phase: pastWeaponCheck ? 'open' : 'sealed', elapsed: pastWeaponCheck ? HEL_DANCE_DOOR.seconds : 0, lastTick: tick };
+  }
+  private sealHelDanceDoor(): void {
+    const id = 'film:hel:dance-door'; const state = this.state;
+    if (state?.scene !== 'm3_hel_entry' || state.visiting || state.step > 3 || state.helDanceDoor?.phase === 'open') {
+      this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== id); return;
+    }
+    if (!this.sandbox().structures.some(s => s.id === id)) this.sandbox().structures.push({ id, kind: 'barricade', owner: 'matrix',
+      position: filmPosition('film_club_hel', 0, HEL_DANCE_DOOR.z), matrix: true, health: 999,
+      film: { scene: 'm3_hel_entry', width: HEL_DANCE_DOOR.width, depth: .5, height: HEL_DANCE_DOOR.height } });
+  }
+  private helDanceDoorTick(actor: AgentState, tick: number): void {
+    const state = this.state!; const door = state.helDanceDoor;
+    if (!door) return;
+    if (door.phase === 'opening') {
+      door.elapsed = Math.min(HEL_DANCE_DOOR.seconds, door.elapsed + Math.max(0, tick - door.lastTick) * .5);
+      actor.velocity = { x: 0, y: 0, z: 0 }; actor.rotation = Math.PI;
+      actor.currentAction = { type: 'idle', parameters: { player: true, resolved: true, helDanceDoor: door.elapsed / HEL_DANCE_DOOR.seconds },
+        startedAt: tick, duration: 1, progress: door.elapsed / HEL_DANCE_DOOR.seconds };
+      state.checkpoint = { ...actor.position };
+      if (door.elapsed >= HEL_DANCE_DOOR.seconds) {
+        door.phase = 'open'; actor.currentAction = null;
+        this.advance('重门向内打开。舞曲盖过身后的枪声，穿过人群去见 Merovingian。', actor, tick);
+      }
+    }
+    door.lastTick = tick;
+  }
+  private helDanceAlliesTick(actor: AgentState, tick: number): void {
+    const state = this.state!; const door = state.helDanceDoor;
+    if (!door || state.step < 2) return;
+    const dt = Math.min(.5, Math.max(0, tick - (door.allyTick ?? tick - 1)) * .5);
+    door.allyTick = tick;
+    for (const [index, id] of (['morpheus', 'seraph'] as const).entries()) {
+      const ally = this.world.agents.get(id);
+      if (!ally || ally.controller || ally.status !== 'alive' || ally.currentLocation !== 'film_club_hel') continue;
+      const side = index ? 1 : -1;
+      const target = state.step === 2 ? filmPosition(this.scene!.set, side * 5, 7)
+        : state.step === 3 ? filmPosition(this.scene!.set, side * 2.5, 5.5)
+          : { ...actor.position, x: actor.position.x + side * 2.5, z: actor.position.z + 3.2 };
+      const dx = target.x - ally.position.x; const dz = target.z - ally.position.z;
+      const length = Math.hypot(dx, dz); const travel = Math.min(length, dt * 5.5);
+      if (length > .01 && dt > 0) {
+        ally.position.x += dx / length * travel; ally.position.z += dz / length * travel;
+        ally.rotation = Math.atan2(dx, dz);
+      }
+      ally.velocity = { x: dt ? dx / Math.max(length, .01) * travel / dt : 0, y: 0, z: dt ? dz / Math.max(length, .01) * travel / dt : 0 };
+      ally.currentAction = { type: travel > .01 ? 'move_to' : 'idle', parameters: { resolved: true, armed: true, weaponStyle: 'hel_pistol' },
+        startedAt: tick, duration: 1, progress: 0 };
+    }
   }
   private ensureHelBargain(tick: number): void {
     const state = this.state;
@@ -489,7 +545,7 @@ export class FilmStorySystem {
         film: { scene: 'm2_architect', width: 5, depth: .5, height: 8 } });
     }
   }
-  performing(agent: AgentState): boolean { return this.controls(agent) && (helElevatorLocked(this.state!) || this.state!.scene === 'm3_trainman' && this.state!.mobil?.phase === 'refusing' || this.state!.trucks?.phase === 'rescue' || this.state!.persephone?.phase === 'enacting' || burlyLocked(this.state!) || clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || theOneLocked(this.state!) || reloadedLocked(this.state!) || catchLocked(this.state!.catch) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
+  performing(agent: AgentState): boolean { return this.controls(agent) && (helElevatorLocked(this.state!) || helDanceDoorLocked(this.state!) || this.state!.scene === 'm3_trainman' && this.state!.mobil?.phase === 'refusing' || this.state!.trucks?.phase === 'rescue' || this.state!.persephone?.phase === 'enacting' || burlyLocked(this.state!) || clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || theOneLocked(this.state!) || reloadedLocked(this.state!) || catchLocked(this.state!.catch) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
   clubFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
     if (state?.scene !== 'm1_club' || state.visiting || !this.controls(agent)) return;
@@ -2836,7 +2892,8 @@ export class FilmStorySystem {
   }
   reconcileCast(): void {
     if (!this.state) return;
-    this.sealAmbush(); this.sealZionMessageDoor(); this.sealArchitectDoors(); this.sealHelElevator();
+    this.ensureHelDanceDoor(this.world.simulationTick);
+    this.sealAmbush(); this.sealZionMessageDoor(); this.sealArchitectDoors(); this.sealHelElevator(); this.sealHelDanceDoor();
     const bane = this.world.agents.get('bane');
     if (bane) {
       const infected = Boolean(this.sandbox().neoLife?.choices.bane_infected || this.state.completed.includes('m2_bane_copy'));
@@ -3290,6 +3347,7 @@ export class FilmStorySystem {
     if (state.scene === 'm2_ship_lost' && state.shipLoss?.phase === 'failed' || state.scene === 'm2_stop_sentinels' && state.tunnel?.phase === 'failed') return '当前检查点失败。按 J 打开手记并重试。';
     if (state.scene === 'm3_trainman' && state.step === 1 && state.mobil?.phase !== 'stopped') return '列车仍在进站，等车门完全打开。';
     if (helElevatorLocked(state)) return '电梯正在下降。到站开门后再进入衣帽间。';
+    if (helDanceDoorLocked(state)) return '重门正在打开。留在门前，等舞池入口完全敞开。';
     if (state.scene === 'm3_trainman_chase' && state.step === 2 && state.helChase?.phase !== 'escaped') return 'Trainman 正穿过对向站台；等驶过的列车遮断视线。';
     if (state.scene === 'm3_mobil_release' && state.step === 0 && state.mobil?.phase !== 'stopped') return '列车仍在进站，等 Trinity 下车。';
     if (state.scene === 'm2_burly') return this.burlyAct(agent, target, tick);
@@ -3367,6 +3425,14 @@ export class FilmStorySystem {
     if (state.scene === 'm2_bane_copy' && state.step > 0 && ['malachi', 'smith'].some(id => this.world.agents.get(id)?.controller)) return 'Ballard 的船员或 Smith 正由另一位玩家控制，感染片段停在当前检查点。';
     if (state.scene === 'm1_boss' && state.step === 1) delete state.started;
     if (state.started !== undefined) return '互动进行中，移动离开会中断。';
+    if (state.scene === 'm3_hel_entry' && state.step === 3) {
+      if (target !== 'act') return '靠近舞池重门，按 G 推开。';
+      state.helDanceDoor ??= { phase: 'sealed', elapsed: 0, lastTick: tick };
+      state.helDanceDoor.phase = 'opening'; state.helDanceDoor.elapsed = 0; state.helDanceDoor.lastTick = tick;
+      agent.rotation = Math.PI;
+      state.lastText = 'Trinity 抵住门板；铰链缓缓转动，红色灯光和低音从门缝里涌出。';
+      return state.lastText;
+    }
     if (state.scene === 'm3_hel_entry' && state.step === 0) {
       if (target !== 'act') return '走近电梯按钮，按 G 开始下降。';
       state.helElevator ??= { phase: 'ready', elapsed: 0, lastTick: tick };
@@ -3571,6 +3637,8 @@ export class FilmStorySystem {
     else delete state.helChase;
     if (scene.id === 'm3_hel_entry') state.helElevator = { phase: 'ready', elapsed: 0, lastTick: tick };
     else delete state.helElevator;
+    if (scene.id === 'm3_hel_entry') state.helDanceDoor = { phase: 'sealed', elapsed: 0, lastTick: tick };
+    else delete state.helDanceDoor;
     if (scene.id === 'm3_hel_entry') this.coatcheck.reset();
     else delete state.helCoatcheck;
     if (scene.id === 'm3_hel_bargain') state.helBargain = { phase: 'armed', elapsed: 0, lastTick: tick, attempts: 0 };
@@ -4033,6 +4101,7 @@ export class FilmStorySystem {
     if (state.scene === 'm2_key_door') this.sealSourceDoor();
     if (state.scene === 'm2_architect') this.sealArchitectDoors();
     if (state.scene === 'm2_oracle_message' && state.step === 1) this.sealZionMessageDoor();
+    if (state.scene === 'm3_hel_entry') this.sealHelDanceDoor();
     if (state.scene === 'm1_desert' && state.step === 1) {
       state.awakening = { kind: 'desert', elapsed: 0, started: false };
       this.awakeningFrame(agent, 0, tick); return;
@@ -4098,6 +4167,8 @@ export class FilmStorySystem {
       if (state.mobil) state.mobil.lastTick = tick;
       if (state.helChase) state.helChase.lastTick = tick;
       if (state.helElevator) state.helElevator.lastTick = tick;
+      if (state.helDanceDoor) state.helDanceDoor.lastTick = tick;
+      if (state.helDanceDoor) state.helDanceDoor.allyTick = tick;
       if (state.helBargain) state.helBargain.lastTick = tick;
       if (actor?.status === 'alive' && state.scene === 'm2_trucks' && state.trucks) {
         const gap = Math.max(0, tick - state.trucks.lastTick);
@@ -4110,7 +4181,7 @@ export class FilmStorySystem {
       state.trucks = { phase: state.step === 0 ? 'duel' : 'collision', elapsed: 0, lastTick: tick, attempt: 0 };
     if (['m3_mobil', 'm3_family', 'm3_trainman', 'm3_mobil_release'].includes(state.scene)) this.mobilTick(actor, tick);
     if (state.scene === 'm3_trainman_chase') this.helChaseTick(tick);
-    if (state.scene === 'm3_hel_entry') { this.helElevatorTick(actor, tick); this.sealHelElevator(); }
+    if (state.scene === 'm3_hel_entry') { this.ensureHelDanceDoor(tick); this.helElevatorTick(actor, tick); this.helDanceDoorTick(actor, tick); this.helDanceAlliesTick(actor, tick); this.sealHelElevator(); this.sealHelDanceDoor(); }
     if (state.scene === 'm3_hel_bargain') this.helBargainTick(actor, tick);
     if (state.scene === 'm2_trucks' && state.trucks?.phase === 'collision') {
       state.trucks.elapsed = Math.min(TRUCKS.collisionSeconds, state.trucks.elapsed + Math.max(0, tick - state.trucks.lastTick) * .5);

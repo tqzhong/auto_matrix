@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { FILM_SCENE_BY_ID, FILM_SETS, filmEntry, filmStepPosition, filmPosition, filmGroundHeight, playerBlocked, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, HEL_DANCE_DOOR, filmEntry, filmStepPosition, filmPosition, filmGroundHeight, playerBlocked, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
+import { advanceMotion, newMotion } from '../packages/client/src/agents/CharacterMotion.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 
@@ -60,6 +61,19 @@ test('Hel rescue has a saved chase train and separate garage, elevator, coat che
     assert.equal(renderer.root.children.filter(object => object.name === 'hel-coatcheck-gouges')[0].visible, true, 'saved cover damage appears on the same counter that blocked the shot');
     assert.equal(renderer.root.children.filter(object => object.name === 'hel-coatcheck-gouges')[1].visible, false);
     assert.equal(playerBlocked(filmPosition('film_club_hel', -8, 4.5), true), true, 'the visible weapon wall blocks movement');
+    journey.step = 3; journey.fighting = false;
+    journey.helDanceDoor = { phase: 'sealed', elapsed: 0, lastTick: 0 };
+    renderer.update(player, sandbox, 11.6);
+    const danceDoor = renderer.root.getObjectByName('hel-dance-left-door') as THREE.Group;
+    assert.ok(danceDoor); assert.equal(danceDoor.rotation.y, 0);
+    assert.equal(renderer.root.children.filter(object => object.name === 'hel-dance-crowd' && object.visible).length, 0);
+    journey.helDanceDoor.phase = 'opening'; journey.helDanceDoor.elapsed = HEL_DANCE_DOOR.seconds * .6;
+    renderer.update(player, sandbox, 11.7);
+    assert.ok(danceDoor.rotation.y > .4, 'the pair of heavy doors opens into the dance floor');
+    assert.ok(renderer.root.children.some(object => object.name === 'hel-dance-crowd' && object.visible), 'the crowd is revealed through the opening');
+    journey.helDanceDoor.phase = 'open'; journey.step = 4;
+    renderer.update(player, sandbox, 11.8);
+    assert.ok(danceDoor.rotation.y > 1);
     assert.ok(renderer.root.getObjectByName('hel-vip-table'));
     journey.scene = 'm3_hel_bargain'; journey.step = 1;
     journey.helBargain = { phase: 'disarmed', elapsed: 0, lastTick: 0, attempts: 0 };
@@ -78,4 +92,11 @@ test('Hel rescue has a saved chase train and separate garage, elevator, coat che
     for (const id of ['m3_hel_garage', 'm3_hel_entry', 'm3_hel_bargain']) for (const step of FILM_SCENE_BY_ID[id].steps)
       assert.equal(playerBlocked(filmStepPosition(FILM_SCENE_BY_ID[id], step), true), false, `${id}: ${step.label}`);
   } finally { renderer.dispose(); globalThis.document = document; }
+});
+
+test('pushing the Club Hel doors uses both arms and a forward lean', () => {
+  const idle = advanceMotion(newMotion(), { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 }, .016);
+  const push = advanceMotion(newMotion(), { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, helDanceDoor: .5 }, .016);
+  assert.ok(push.lean > idle.lean + .2);
+  for (const arm of push.arms) assert.ok(arm.shoulder < -1.4);
 });

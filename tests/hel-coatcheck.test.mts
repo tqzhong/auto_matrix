@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SCENE_BY_ID, filmPosition, filmStepPosition, HEL_COATCHECK, helCoatcheckCover, type CombatImpact } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, filmPosition, filmStepPosition, HEL_COATCHECK, HEL_DANCE_DOOR, helCoatcheckCover, playerBlocked, type CombatImpact } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -119,4 +119,68 @@ test('the saved guard count includes a close-range knockout as well as gunfire',
   assert.equal(enemy.health, 0);
   h.combat.tick(h.trinity, 3);
   assert.equal(h.combat.state!.kills, 1);
+});
+
+test('the heavy door holds the dance floor until Trinity pushes it open, then saves a passable route', () => {
+  const h = setup(); const film = h.sandbox.life.film; const journey = film.state!;
+  journey.step = 3; journey.helDanceDoor = { phase: 'sealed', elapsed: 0, lastTick: 0 };
+  h.trinity.position = filmStepPosition(FILM_SCENE_BY_ID.m3_hel_entry, FILM_SCENE_BY_ID.m3_hel_entry.steps[3]);
+  film.reconcileCast();
+  const threshold = filmPosition('film_club_hel', 0, HEL_DANCE_DOOR.z);
+  assert.equal(playerBlocked(threshold, true, .7, h.sandbox.state.structures), true);
+  assert.equal(playerBlocked(filmPosition('film_club_hel', 9.5, HEL_DANCE_DOOR.z), true, .7, h.sandbox.state.structures), true,
+    'the masonry beside the door cannot be used to bypass the door');
+  film.command(h.trinity, 'act', 2);
+  assert.equal(journey.helDanceDoor.phase, 'opening');
+  film.tick(4);
+  assert.equal(journey.step, 3); assert.equal(journey.helDanceDoor.elapsed, 1);
+  assert.equal(playerBlocked(threshold, true, .7, h.sandbox.state.structures), true);
+  h.trinity.controller = null; film.tick(20);
+  assert.equal(journey.helDanceDoor.elapsed, 1, 'disconnect pauses the opening');
+  h.trinity.controller = 'player';
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+  assert.equal(film.state!.helDanceDoor?.elapsed, 1);
+  film.tick(22);
+  assert.equal(film.state!.step, 3);
+  film.tick(26);
+  assert.equal(film.state!.step, 4);
+  assert.equal(film.state!.helDanceDoor?.phase, 'open');
+  assert.equal(playerBlocked(threshold, true, .7, h.sandbox.state.structures), false);
+});
+
+test('an older save already walking through Club Hel keeps its progress and an open door', () => {
+  const h = setup(); const journey = h.sandbox.life.film.state!;
+  journey.step = 3; delete journey.helDanceDoor;
+  h.trinity.position = filmPosition('film_club_hel', 0, -13);
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+  assert.equal(h.sandbox.life.film.state!.step, 4);
+  assert.equal(h.sandbox.life.film.state!.helDanceDoor?.phase, 'open');
+  assert.equal(playerBlocked(filmPosition('film_club_hel', 0, HEL_DANCE_DOOR.z), true, .7, h.sandbox.state.structures), false);
+});
+
+test('an older save after Club Hel remains completed with the inserted door objective', () => {
+  const h = setup(); const journey = h.sandbox.life.film.state!;
+  journey.step = 4; journey.completed.push('m3_hel_entry'); delete journey.helDanceDoor;
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+  assert.equal(h.sandbox.life.film.state!.step, FILM_SCENE_BY_ID.m3_hel_entry.steps.length);
+  assert.equal(h.sandbox.life.film.state!.helDanceDoor?.phase, 'open');
+});
+
+test('Morpheus and Seraph regroup at the dance door and follow Trinity without moving another player', () => {
+  const h = setup(); const film = h.sandbox.life.film; const journey = film.state!;
+  journey.step = 3; journey.helDanceDoor = { phase: 'sealed', elapsed: 0, lastTick: 0 };
+  h.trinity.position = filmStepPosition(FILM_SCENE_BY_ID.m3_hel_entry, FILM_SCENE_BY_ID.m3_hel_entry.steps[3]);
+  const morpheus = h.world.agents.get('morpheus')!; const seraph = h.world.agents.get('seraph')!;
+  seraph.controller = 'other-player'; const seraphStart = { ...seraph.position };
+  film.tick(2);
+  assert.ok(morpheus.position.z < filmPosition('film_club_hel', 0, 20).z);
+  assert.deepEqual(seraph.position, seraphStart);
+  film.command(h.trinity, 'act', 2);
+  for (let tick = 3; tick <= 8; tick++) film.tick(tick);
+  assert.equal(journey.helDanceDoor.phase, 'open');
+  assert.ok(morpheus.position.z <= filmPosition('film_club_hel', 0, 8).z);
+  h.trinity.position = filmPosition('film_club_hel', 0, -8);
+  film.tick(9);
+  assert.ok(morpheus.velocity.z < 0, 'the companion follows through the open doorway');
+  assert.deepEqual(seraph.position, seraphStart);
 });

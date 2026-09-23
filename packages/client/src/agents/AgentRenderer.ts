@@ -134,6 +134,7 @@ export class AgentRenderer {
         knock: state.currentAction?.parameters.knock as number | undefined,
         recovery: state.currentAction?.parameters.recovery as number | undefined,
         performance: state.currentAction?.parameters.filmPose as MotionInput['performance'],
+        helDanceDoor: state.currentAction?.parameters.helDanceDoor as number | undefined,
         reveal: state.currentAction?.parameters.reveal as MotionInput['reveal'],
         training: state.currentAction?.parameters.training as MotionInput['training'],
         workday: state.currentAction?.parameters.workday as MotionInput['workday'],

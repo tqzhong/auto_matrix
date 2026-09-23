@@ -55,6 +55,10 @@ export const HEL_ELEVATOR = { doorZ: 24.6, doorWidth: 8.8, doorHeight: 8.8, seco
 export interface HelElevatorEncounter {
   phase: 'ready' | 'descending' | 'open'; elapsed: number; lastTick: number;
 }
+export const HEL_DANCE_DOOR = { z: 1.7, width: 6, height: 9, seconds: 2.5 } as const;
+export interface HelDanceDoorEncounter {
+  phase: 'sealed' | 'opening' | 'open'; elapsed: number; lastTick: number; allyTick?: number;
+}
 export interface HelBargainEncounter {
   phase: 'armed' | 'disarmed' | 'offered' | 'ready' | 'windup' | 'evade' | 'counter' | 'airborne' | 'gunpoint' | 'released' | 'failed';
   elapsed: number; lastTick: number; attempts: number;
@@ -109,11 +113,15 @@ export interface FilmJourney {
   mobil?: MobilEncounter;
   helChase?: HelChaseEncounter;
   helElevator?: HelElevatorEncounter;
+  helDanceDoor?: HelDanceDoorEncounter;
   helCoatcheck?: import('./hel-coatcheck.js').HelCoatcheckEncounter;
   helBargain?: HelBargainEncounter;
 }
 export function helElevatorLocked(journey: FilmJourney | undefined): boolean {
   return journey?.scene === 'm3_hel_entry' && !journey.visiting && journey.helElevator?.phase === 'descending';
+}
+export function helDanceDoorLocked(journey: FilmJourney | undefined): boolean {
+  return journey?.scene === 'm3_hel_entry' && !journey.visiting && journey.helDanceDoor?.phase === 'opening';
 }
 const walk = (label: string, x = 0, z = -12): FilmStep => ({ kind: 'reach', label, x, z });
 const use = (label: string, text: string, x = 0, z = -12, seconds = 3): FilmStep => ({ kind: 'interact', label, text, x, z, seconds });
@@ -259,7 +267,7 @@ export const FILM_SCENES: FilmScene[] = [
   scene('m3_oracle_request', 3, 'oracle_home', 'trinity', '另一边的营救', 'oracle_last', 'oracle', 'Seraph 把 Trinity 与 Morpheus 带到先知的旧公寓。眼前的先知换了模样，而 Neo 的身体仍躺在 Hammer。', [use('确认眼前的人仍是先知', '她为帮助 Neo 作了选择，也付出了代价。', -4, -18, 2), use('询问 Neo 被困的位置', '他在矩阵与机器世界之间的线路上；Trainman 替 Merovingian 守着出口。', -4, -18, 2), think('知道先知也会付代价，还要信任她吗？', 'Morpheus 可以自己判断是否相信她；救回 Neo 不需要先解决所有预言。', -4, -18), walk('跟随 Seraph 出门找 Trainman', 0, 18)], ['oracle', 'morpheus', 'seraph']),
   scene('m3_trainman_chase', 3, 'subway_platform', 'seraph', '逃走的列车管理员', 'oracle_last', 'chase', 'Seraph 在地铁车厢认出 Trainman。他急停列车，穿过站台与通道逃向另一侧月台。', [use('认出车厢里的 Trainman', '他拉下紧急制动，持枪逃下列车。', 0, 15, 1), walk('穿过钢柱追到对向站台', 0, -34), use('看他借驶过的列车消失', 'Seraph、Trinity 与 Morpheus 没有抓住他；Trinity 决定直接去找他的主人。', 0, -34, 2)], ['trinity', 'morpheus', 'trainman']),
   scene('m3_hel_garage', 3, 'hel_garage', 'trinity', '通往 Hel 的车库', 'oracle_last', 'combat', '三人到达地下车库。大块头和两名流亡程序挡住通往 Club Hel 的金属门。', [{ ...fight('突破三名入口守卫', 3), z: 12 }, use('打开通往 Club Hel 的钢门', '门后只有一部向下的铁笼电梯。', 0, -29, 2)], ['morpheus', 'seraph']),
-  scene('m3_hel_entry', 3, 'club_hel', 'trinity', '地狱的衣帽间', 'oracle_last', 'combat', '在标着 HEL 的电梯按钮后面，是衣帽间、武器检查柜与通往舞池的重门。', [use('按下电梯的 HEL 按钮', '铁笼下降；Seraph 提醒俱乐部不许携带武器。', 0, 31, 3), { ...fight('突破衣帽间守卫', 5), z: 19 }, use('从武器检查柜取回装备', '衣帽间的枪声被舞池音乐盖过，三人重新拿起装备。', -8, 7, 2), walk('穿过舞池到 VIP 高台', 0, -28)], ['morpheus', 'seraph']),
+  scene('m3_hel_entry', 3, 'club_hel', 'trinity', '地狱的衣帽间', 'oracle_last', 'combat', '在标着 HEL 的电梯按钮后面，是衣帽间、武器检查柜与通往舞池的重门。', [use('按下电梯的 HEL 按钮', '铁笼下降；Seraph 提醒俱乐部不许携带武器。', 0, 31, 3), { ...fight('突破衣帽间守卫', 5), z: 19 }, use('从武器检查柜取回装备', '衣帽间的枪声被舞池音乐盖过，三人重新拿起装备。', -8, 7, 2), use('推开通往舞池的重门', '三人推开重门，震耳的舞曲和人群涌入视野。', 0, 4, HEL_DANCE_DOOR.seconds), walk('穿过舞池到 VIP 高台', 0, -28)], ['morpheus', 'seraph']),
   scene('m3_hel_bargain', 3, 'club_hel', 'trinity', '不接受的交换', 'oracle_last', 'infiltration', '舞池里的人群围住三人。Merovingian 要用先知的双眼交换 Neo；Trinity 必须亲自打破包围。', [
     use('被包围后放下武器', '舞曲戛然而止。三人放下枪，避免人群立刻开火。', 0, -28, 0),
     use('听清交换条件', 'Merovingian 要先知的双眼作为带回 Neo 的代价。', 0, -29, 0),

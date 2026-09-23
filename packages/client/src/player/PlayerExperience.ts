@@ -1,4 +1,4 @@
-import { catchLocked, helElevatorLocked, reloadedLocked } from '@auto_matrix/shared';
+import { catchLocked, helElevatorLocked, helDanceDoorLocked, reloadedLocked } from '@auto_matrix/shared';
 import { COMBAT_SKILLS, playerSkills, neoSkillUnlocked, CHARACTERS, LOCATIONS, filmSetAt, filmObstacles, distance, matrixEscapeLocked, theOneLocked, type AgentState, type SimulationState, type WorldEvent, type NeoLifeState } from '@auto_matrix/shared';
 import { FACTION_COLORS } from '../agents/AgentRenderer.js';
 
@@ -206,7 +206,7 @@ export class PlayerExperience {
     document.body.classList.toggle('bullet-time', player.activeEffects.some(e => e.visualEffect === 'slow_motion'));
     const nearby = Object.values(agents).filter(a => a.id !== player.id && a.status === 'alive' && !a.currentAction?.parameters.finaleComa && a.isInMatrix === player.isInMatrix && distance(a.position, player.position) < 14)
       .sort((a, b) => distance(a.position, player.position) - distance(b.position, player.position));
-    const helElevatorScene = this.filmPlaying && helElevatorLocked(neoLife?.journey);
+    const helElevatorScene = this.filmPlaying && (helElevatorLocked(neoLife?.journey) || helDanceDoorLocked(neoLife?.journey));
     const sentinelScene = this.filmPlaying && neoLife?.journey?.scene === 'm1_sentinels' && !neoLife.journey.visiting;
     const interludeScene = this.filmPlaying && ['m1_cypher_console', 'm1_steak', 'm1_meal'].includes(neoLife?.journey?.scene ?? '') && !neoLife?.journey?.visiting;
     const oracleScene = this.filmPlaying && neoLife?.journey?.scene === 'm1_oracle' && Boolean(neoLife.journey.oracle?.consultation) && !neoLife.journey.visiting;

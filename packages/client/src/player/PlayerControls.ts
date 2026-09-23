@@ -318,6 +318,7 @@ export class PlayerControls {
     this.motion.crouching = this.enabled && !this.performing && this.keys.has('KeyZ');
     this.motion.riding = Boolean(this.ride);
     this.motion.performance = this.performing ? state.currentAction?.parameters.filmPose as AwakeningPose : undefined;
+    this.motion.helDanceDoor = state.currentAction?.parameters.helDanceDoor as number | undefined;
     this.motion.recovery = state.currentAction?.parameters.recovery as number | undefined;
     this.motion.reveal = state.currentAction?.parameters.reveal as MotionInput['reveal'];
     this.motion.training = state.currentAction?.parameters.training as MotionInput['training'];
