@@ -2,7 +2,7 @@
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { FILM_SCENES, FILM_SETS, RESCUE, GOVERNMENT_RESCUE, filmEntry, filmStepPosition, filmPosition, playerBlocked, NEO_CHAPTERS, MEETING_DRIVE_SECONDS, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENES, FILM_SETS, RESCUE, GOVERNMENT_RESCUE, AIR_RESCUE, filmEntry, filmStepPosition, filmPosition, playerBlocked, NEO_CHAPTERS, MEETING_DRIVE_SECONDS, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -266,6 +266,34 @@ if (['roof-ready', 'roof-bullet', 'roof-trinity', 'roof-download'].includes(proc
         for (let frame = 0; frame < 22; frame++) sandbox.life.film.governmentFrame(actor, false, .1, 0);
       }
     }
+  }
+  sandbox.life.film.state!.checkpoint = { ...actor.position };
+}
+if (['office-fire', 'office-catch'].includes(process.argv[3]) && scene.id === 'm1_helicopter') {
+  actor.controller = 'player'; sandbox.life.film.airRescueFrame(actor, false, 0, 0); sandbox.life.film.command(actor, 'act', 0);
+  for (let frame = 0; frame < Math.ceil(AIR_RESCUE.office.approach * 10) + 1; frame++) sandbox.life.film.airRescueFrame(actor, true, .1, 0);
+  const fireFrames = process.argv[3] === 'office-fire' ? 24 : Math.ceil(AIR_RESCUE.office.fire * 10) + 1;
+  for (let frame = 0; frame < fireFrames; frame++) sandbox.life.film.airRescueFrame(actor, true, .1, 0);
+  if (process.argv[3] === 'office-catch') {
+    while (sandbox.life.film.state!.airRescue!.elapsed < AIR_RESCUE.office.leapAt) sandbox.life.film.airRescueFrame(actor, true, .1, 0);
+    sandbox.life.film.airRescueBrace(actor, 0);
+    for (let frame = 0; frame < 10; frame++) sandbox.life.film.airRescueFrame(actor, true, .1, 0);
+  }
+  sandbox.life.film.state!.checkpoint = { ...actor.position };
+}
+if (['rope-brace', 'rope-crash', 'rope-pull'].includes(process.argv[3]) && scene.id === 'm1_rooftop_rescue') {
+  actor.controller = 'player'; sandbox.life.film.airRescueFrame(actor, false, 0, 0); sandbox.life.film.command(actor, 'act', 0);
+  for (let frame = 0; frame < Math.ceil(AIR_RESCUE.roof.impact * 10) + 1; frame++) sandbox.life.film.airRescueFrame(actor, true, .1, 0);
+  const target = process.argv[3] === 'rope-brace' ? AIR_RESCUE.roof.beats[1] : AIR_RESCUE.roof.duration;
+  for (const beat of AIR_RESCUE.roof.beats) {
+    while (sandbox.life.film.state!.airRescue!.phase === 'bracing' && sandbox.life.film.state!.airRescue!.elapsed < Math.min(beat, target)) sandbox.life.film.airRescueFrame(actor, true, .1, 0);
+    if (beat <= target && sandbox.life.film.state!.airRescue!.phase === 'bracing') sandbox.life.film.airRescueBrace(actor, 0);
+    if (beat >= target) break;
+  }
+  while (process.argv[3] !== 'rope-brace' && sandbox.life.film.state!.airRescue!.phase === 'bracing') sandbox.life.film.airRescueFrame(actor, true, .1, 0);
+  if (process.argv[3] !== 'rope-brace') {
+    const frames = process.argv[3] === 'rope-crash' ? 34 : 49;
+    for (let frame = 0; frame < frames; frame++) sandbox.life.film.airRescueFrame(actor, true, .1, 0);
   }
   sandbox.life.film.state!.checkpoint = { ...actor.position };
 }

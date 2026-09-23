@@ -16,6 +16,7 @@ import { ORACLE_VISIT, oracleLegacyChoice, oracleVisitDuration, oracleVisitLocke
 import { BETRAYAL, betrayalDuration, betrayalLocked, betrayalRoot, betrayalText, type BetrayalEncounter, type BetrayalRole } from '@auto_matrix/shared';
 import { RESCUE, rescueDuration, rescueLocked, rescueRoot, rescueText, type RescueLoadout, type RescuePreparation, type RescueRole } from '@auto_matrix/shared';
 import { GOVERNMENT_RESCUE, governmentLocked, governmentRoot, governmentText, type GovernmentRescueEncounter, type GovernmentRescueRole } from '@auto_matrix/shared';
+import { AIR_RESCUE, airRescueLocked, airRescueRoot, airRescueText, type AirRescueEncounter, type AirRescueRole } from '@auto_matrix/shared';
 
 const BATHROOM_ROLES = ['neo', 'trinity', 'switch', 'apoc'] as const;
 const UNPLUGGED_ROLES = ['tank', 'cypher', 'dozer', 'apoc', 'switch', 'neo', 'trinity'] as const;
@@ -31,7 +32,7 @@ export class FilmStorySystem {
   get scene(): FilmScene | undefined { return this.state && FILM_SCENE_BY_ID[this.state.scene]; }
   get step(): FilmStep | undefined { return this.scene?.steps[this.state!.step]; }
   controls(agent: AgentState): boolean { return Boolean(this.state && this.state.actor === agent.id); }
-  performing(agent: AgentState): boolean { return this.controls(agent) && (clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
+  performing(agent: AgentState): boolean { return this.controls(agent) && (clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
   clubFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
     if (state?.scene !== 'm1_club' || state.visiting || !this.controls(agent)) return;
@@ -942,6 +943,152 @@ export class FilmStorySystem {
     }
     return governmentText(encounter);
   }
+  private ensureAirRescue(): AirRescueEncounter {
+    const state = this.state!;
+    if (!state.airRescue) {
+      const kind = state.scene === 'm1_helicopter' ? 'office' : 'roof';
+      const done = state.completed.includes(state.scene) || state.step >= this.scene!.steps.length;
+      state.airRescue = kind === 'office'
+        ? { kind, phase: done ? 'done' : 'ready', elapsed: 0, attempt: 0, suppression: done ? 1 : 0, bursts: done ? 4 : 0 }
+        : { kind, phase: done ? 'done' : 'ready', elapsed: 0, attempt: 0, grip: 1, braces: done ? 3 : 0, misses: 0, resolved: done ? [0, 1, 2] : [] };
+    }
+    return state.airRescue;
+  }
+  private airRescueOccupied(encounter: AirRescueEncounter): AgentState | undefined {
+    const ids = encounter.kind === 'office' ? ['trinity', 'morpheus', 'smith', 'agent_brown', 'agent_jones'] : ['trinity', 'morpheus'];
+    return ids.map(id => this.world.agents.get(id)).find(actor => actor?.controller);
+  }
+  private stageAirRescueActor(role: AirRescueRole, encounter: AirRescueEncounter, dt: number, tick: number): void {
+    const actor = this.world.agents.get(role); if (!actor || actor.controller && actor.id !== this.state!.actor) return;
+    const root = airRescueRoot(encounter, role); const before = { ...actor.position };
+    actor.position = filmPosition(this.scene!.set, root.x, root.z); actor.position.y += root.y; actor.rotation = root.yaw;
+    actor.velocity = dt > 0 ? { x: (actor.position.x - before.x) / dt, y: (actor.position.y - before.y) / dt, z: (actor.position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
+    actor.currentLocation = this.scene!.set; actor.isInMatrix = true;
+    const armed = encounter.kind === 'office' && (role === 'neo' && encounter.phase === 'firing'
+      || ['smith', 'agent_brown', 'agent_jones'].includes(role) && ['firing', 'leap_window'].includes(encounter.phase));
+    actor.currentAction = { type: 'idle', parameters: { player: actor.id === this.state!.actor, resolved: true, armed,
+      airRescue: { ...encounter, resolved: encounter.resolved ? [...encounter.resolved] : undefined, role } }, startedAt: tick, duration: 1, progress: 0 };
+  }
+  private clearAirRescueActions(): void {
+    for (const actor of this.world.agents.values()) if (actor.currentAction?.parameters.airRescue) {
+      actor.currentAction = null; actor.velocity = { x: 0, y: 0, z: 0 };
+    }
+  }
+  private airRescueImpact(source: string, target: string, encounter: AirRescueEncounter, tick: number, damage = 0): void {
+    const sourceRole: AirRescueRole = source === 'helicopter' ? 'trinity' : source as AirRescueRole;
+    const root = airRescueRoot(encounter, sourceRole); const from = filmPosition(this.scene!.set, root.x, root.z); from.y += root.y + 2;
+    const destination = encounter.kind === 'office'
+      ? filmPosition(this.scene!.set, 0, -26.2)
+      : filmPosition(this.scene!.set, -2.4, -38);
+    destination.y += encounter.kind === 'office' ? 5 : 7;
+    const length = Math.max(.001, distance(from, destination));
+    this.onImpact?.({ source, target, position: destination, direction: { x: (destination.x - from.x) / length, y: (destination.y - from.y) / length, z: (destination.z - from.z) / length },
+      damage, combo: 0, matrix: true, downed: false, shot: { from, surface: target.includes('glass') ? 'stone' : 'body' } }, tick);
+  }
+  private failAirRescue(agent: AgentState, encounter: AirRescueEncounter): void {
+    encounter.phase = 'failed'; agent.health = 0; agent.status = 'dead'; agent.currentAction = null; agent.velocity = { x: 0, y: 0, z: 0 };
+    this.clearAirRescueActions(); this.state!.lastText = airRescueText(encounter);
+  }
+  airRescueFrame(agent: AgentState, focus: boolean, dt: number, tick: number): boolean {
+    const state = this.state;
+    if (!state || !this.controls(agent) || state.visiting || !['m1_helicopter', 'm1_rooftop_rescue'].includes(state.scene)) return false;
+    const encounter = this.ensureAirRescue();
+    if (encounter.phase === 'failed') { this.clearAirRescueActions(); state.lastText = airRescueText(encounter); return false; }
+    const occupied = this.airRescueOccupied(encounter);
+    if (occupied) { state.lastText = `${occupied.name} 正由另一位玩家控制，直升机营救停在当前动作。`; return airRescueLocked(state); }
+    const delta = Math.max(0, Math.min(.1, dt));
+    if (encounter.kind === 'office') {
+      if (encounter.phase === 'approach') {
+        encounter.elapsed = Math.min(AIR_RESCUE.office.approach, encounter.elapsed + delta);
+        if (encounter.elapsed >= AIR_RESCUE.office.approach) { encounter.phase = 'firing'; encounter.elapsed = 0; }
+      } else if (encounter.phase === 'firing') {
+        encounter.elapsed += delta; encounter.suppression = Math.max(0, Math.min(1, (encounter.suppression ?? 0) + delta * (focus ? 1 / AIR_RESCUE.office.fire : -.15)));
+        const bursts = Math.floor((encounter.suppression ?? 0) * 4 + .0001);
+        while ((encounter.bursts ?? 0) < bursts) { encounter.bursts = (encounter.bursts ?? 0) + 1; this.airRescueImpact('neo', 'government-glass', encounter, tick); }
+        if ((encounter.suppression ?? 0) >= 1) { encounter.phase = 'leap_window'; encounter.elapsed = 0; }
+      } else if (encounter.phase === 'leap_window') {
+        encounter.elapsed = Math.min(AIR_RESCUE.office.leapWindow, encounter.elapsed + delta);
+        if (encounter.elapsed >= AIR_RESCUE.office.leapWindow) { this.failAirRescue(agent, encounter); return false; }
+      } else if (encounter.phase === 'catching') {
+        encounter.elapsed = Math.min(AIR_RESCUE.office.catching, encounter.elapsed + delta);
+        if (encounter.elapsed >= AIR_RESCUE.office.catching) {
+          encounter.phase = 'done'; this.clearAirRescueActions();
+          this.advance(this.step!.text ?? 'Neo 抓住下坠的 Morpheus。', agent, tick);
+          this.airRescueFrame(agent, false, 0, tick); return false;
+        }
+      }
+      const roles: AirRescueRole[] = encounter.phase === 'done' ? ['neo', 'trinity', 'morpheus']
+        : ['neo', 'trinity', 'morpheus', 'smith', 'agent_brown', 'agent_jones'];
+      for (const role of roles) this.stageAirRescueActor(role, encounter, dt, tick);
+    } else {
+      if (encounter.phase === 'impact') {
+        encounter.elapsed = Math.min(AIR_RESCUE.roof.impact, encounter.elapsed + delta);
+        if (encounter.elapsed >= AIR_RESCUE.roof.impact) { encounter.phase = 'bracing'; encounter.elapsed = 0; encounter.resolved = []; encounter.grip = 1; encounter.braces = 0; encounter.misses = 0; }
+      } else if (encounter.phase === 'bracing') {
+        encounter.elapsed = Math.min(AIR_RESCUE.roof.duration, encounter.elapsed + delta);
+        encounter.grip = Math.max(0, Math.min(1, (encounter.grip ?? 1) + delta * (focus ? .08 : -.42)));
+        encounter.resolved ??= [];
+        for (const [index, beat] of AIR_RESCUE.roof.beats.entries()) {
+          if (encounter.resolved.includes(index) || encounter.elapsed <= beat + AIR_RESCUE.roof.window) continue;
+          encounter.resolved.push(index); encounter.misses = (encounter.misses ?? 0) + 1; encounter.grip = Math.max(0, (encounter.grip ?? 0) - .34);
+          if ((encounter.misses ?? 0) >= 2) { this.failAirRescue(agent, encounter); return false; }
+        }
+        if ((encounter.grip ?? 0) <= 0) { this.failAirRescue(agent, encounter); return false; }
+        if (encounter.elapsed >= AIR_RESCUE.roof.duration) {
+          if ((encounter.braces ?? 0) < 2) { this.failAirRescue(agent, encounter); return false; }
+          encounter.phase = 'pulling'; encounter.elapsed = 0;
+        }
+      } else if (encounter.phase === 'pulling') {
+        const before = encounter.elapsed; encounter.elapsed = Math.min(AIR_RESCUE.roof.pulling, encounter.elapsed + delta);
+        if (!encounter.ropeCut && before < .9 && encounter.elapsed >= .9) { encounter.ropeCut = true; this.airRescueImpact('trinity', 'helicopter-rope', encounter, tick); }
+        if (!encounter.crash && before < 2.65 && encounter.elapsed >= 2.65) { encounter.crash = true; this.airRescueImpact('helicopter', 'glass-facade', encounter, tick); }
+        if (encounter.elapsed >= AIR_RESCUE.roof.pulling) {
+          encounter.phase = 'done'; this.clearAirRescueActions();
+          this.advance(this.step!.text ?? 'Neo 把 Trinity 拉回屋顶。', agent, tick);
+          this.airRescueFrame(agent, false, 0, tick); return false;
+        }
+      }
+      for (const role of ['neo', 'trinity', 'morpheus'] as AirRescueRole[]) this.stageAirRescueActor(role, encounter, dt, tick);
+    }
+    state.checkpoint = { ...agent.position }; state.lastText = airRescueText(encounter); return airRescueLocked(state);
+  }
+  airRescueBrace(agent: AgentState, tick: number): string | undefined {
+    const state = this.state; const encounter = state?.airRescue;
+    if (!state || !this.controls(agent) || !encounter) return undefined;
+    if (encounter.kind === 'office' && encounter.phase === 'leap_window') {
+      const distanceToCatch = Math.abs(encounter.elapsed - AIR_RESCUE.office.leapAt);
+      if (distanceToCatch > .62) return encounter.elapsed < AIR_RESCUE.office.leapAt ? '救援绳还没有摆到 Morpheus 上方。' : '绳索已经越过最佳接应线。';
+      encounter.phase = 'catching'; encounter.elapsed = 0; this.airRescueFrame(agent, false, 0, tick); return 'Neo 跃出侧舱，抓住了下坠的 Morpheus。';
+    }
+    if (encounter.kind !== 'roof' || encounter.phase !== 'bracing') return undefined;
+    encounter.resolved ??= [];
+    const match = AIR_RESCUE.roof.beats.map((beat, index) => ({ beat, index, distance: Math.abs(encounter.elapsed - beat) }))
+      .filter(candidate => !encounter.resolved!.includes(candidate.index) && candidate.distance <= AIR_RESCUE.roof.window)
+      .sort((a, b) => a.distance - b.distance)[0];
+    if (!match) return '绳索尚未突然绷紧。持续按住 G，在冲击抵达时按 X。';
+    encounter.resolved.push(match.index); encounter.braces = (encounter.braces ?? 0) + 1; encounter.grip = Math.min(1, (encounter.grip ?? 0) + .12);
+    this.airRescueFrame(agent, false, 0, tick); return match.distance < AIR_RESCUE.roof.window * .45
+      ? 'Neo 借女儿墙卸掉冲击，稳住绳索。' : '绳索从手套中滑过一截，但 Neo 仍抓住了。';
+  }
+  private retryAirRescue(agent: AgentState, tick: number): string {
+    const state = this.state!; const previous = this.ensureAirRescue(); const attempt = previous.attempt + 1;
+    this.clearAirRescueActions(); agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
+    agent.position = { ...state.checkpoint }; agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentAction = null;
+    state.airRescue = previous.kind === 'office'
+      ? { kind: 'office', phase: 'ready', elapsed: 0, attempt, suppression: 0, bursts: 0 }
+      : { kind: 'roof', phase: 'ready', elapsed: 0, attempt, grip: 1, braces: 0, misses: 0, resolved: [] };
+    this.airRescueFrame(agent, false, 0, tick);
+    return previous.kind === 'office' ? '已从 B-212 侧舱重试；按住 G 重新接近并压制审讯层。' : '已从屋顶接应点重试；按住 G 抓绳，在冲击抵达时按 X。';
+  }
+  private airRescueAct(agent: AgentState, target: string, tick: number): string {
+    const encounter = this.ensureAirRescue(); const occupied = this.airRescueOccupied(encounter);
+    if (occupied) return `${occupied.name} 正由另一位玩家控制，等待对方结束后再继续。`;
+    if (encounter.phase === 'failed' && target === 'act') return this.retryAirRescue(agent, tick);
+    if (encounter.phase !== 'ready' || target !== 'act') return airRescueText(encounter);
+    encounter.phase = encounter.kind === 'office' ? 'approach' : 'impact'; encounter.elapsed = 0;
+    this.airRescueFrame(agent, true, 0, tick);
+    return encounter.kind === 'office' ? 'Trinity 把 B-212 贴向审讯层；持续按住 G 操作侧舱机枪。' : 'Neo 抓紧连接 Trinity 的绳索；持续按住 G，冲击到来时按 X。';
+  }
   private sealAmbush(): void {
     const state = this.state;
     const sealed = (state?.ambush?.elapsed ?? 0) >= AMBUSH_REWRITE || state?.completed.includes('m1_dejavu') || state?.scene === 'm1_dejavu' && state.step > 0;
@@ -1381,6 +1528,7 @@ export class FilmStorySystem {
     }
     if (target === 'retry') {
       if (state.government && ['m1_smith_question', 'm1_bullet_dodge'].includes(state.scene)) return this.retryGovernment(agent, tick);
+      if (state.airRescue && ['m1_helicopter', 'm1_rooftop_rescue'].includes(state.scene)) return this.retryAirRescue(agent, tick);
       if (state.scene === 'm1_sentinels' && state.sentinel) {
         if (state.sentinel.phase === 'failed') return this.sentinelAct(agent, target, tick);
         agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
@@ -1579,6 +1727,7 @@ export class FilmStorySystem {
     if (state.scene === 'm1_bathroom' || state.scene === 'm1_unplugged' && state.step === 1) return this.betrayalAct(agent, target, tick);
     if ((state.scene === 'm1_rescue_decision' && state.step === 1) || state.scene === 'm1_guns') return this.rescueAct(agent, target, tick);
     if (state.scene === 'm1_smith_question' || state.scene === 'm1_bullet_dodge') return this.governmentAct(agent, target, tick);
+    if (state.scene === 'm1_helicopter' || state.scene === 'm1_rooftop_rescue') return this.airRescueAct(agent, target, tick);
     if (interrogationLocked(state) && state.interrogation!.phase !== 'response') return '审讯正在进行。可以转动视角观察，暂停会保留当前进度。';
     if (target === 'escape:retreat' && state.scene === 'm1_ledge') {
       this.capture(agent, tick, '你退回办公室。特工将你带走；电话中的联系尚未结束。');
@@ -1770,6 +1919,7 @@ export class FilmStorySystem {
     delete state.interlude;
     delete state.betrayal;
     delete state.government;
+    delete state.airRescue;
     this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== 'film:apartment:door');
     delete state.pills;
     delete state.interrogation;
@@ -1785,6 +1935,7 @@ export class FilmStorySystem {
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.betrayal) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.rescue) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.government) other.currentAction = null;
+    for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.airRescue) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.lobbyEntry) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.riding) { other.currentAction = null; other.velocity = { x: 0, y: 0, z: 0 }; }
     if (scene.id === 'm1_lobby') this.lobby.reset();
@@ -1851,6 +2002,14 @@ export class FilmStorySystem {
     if (scene.id === 'm1_bullet_dodge') {
       state.government = { kind: 'rooftop', phase: 'ready', elapsed: 0, attempt: 0, dodges: 0, wounds: 0, resolved: [] };
       this.governmentFrame(actor, false, 0, tick);
+    }
+    if (scene.id === 'm1_helicopter') {
+      state.airRescue = { kind: 'office', phase: 'ready', elapsed: 0, attempt: 0, suppression: 0, bursts: 0 };
+      this.airRescueFrame(actor, false, 0, tick);
+    }
+    if (scene.id === 'm1_rooftop_rescue') {
+      state.airRescue = { kind: 'roof', phase: 'ready', elapsed: 0, attempt: 0, grip: 1, braces: 0, misses: 0, resolved: [] };
+      this.airRescueFrame(actor, false, 0, tick);
     }
     if (scene.id === 'm1_bug' && state.office?.outcome === 'escaped') state.lastText = '你没有被特工带走。Switch 仍要求做安全检查，确认没有追踪装置。';
   }

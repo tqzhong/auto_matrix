@@ -151,6 +151,24 @@ test('government rescue performances visibly restrain Morpheus and form Neo bull
   assert.ok(trinity.arms[0].shoulder < -1 && trinity.arms[0].grip > .85, 'Trinity holds the close-range firing pose');
 });
 
+test('air rescue performances distinguish the mounted gun, falling catch and roof rope shock', () => {
+  const idle = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 };
+  const gunner = advanceMotion(newMotion(), { ...idle,
+    airRescue: { kind: 'office', phase: 'firing', elapsed: 2, attempt: 0, suppression: .65, role: 'neo' as const } }, 0);
+  assert.ok(gunner.arms.every(arm => arm.grip > .9 && arm.shoulder < -.8), 'Neo visibly grips the mounted gun with both hands');
+  const morpheus = advanceMotion(newMotion(), { ...idle,
+    airRescue: { kind: 'office', phase: 'catching', elapsed: 1.8, attempt: 0, suppression: 1, role: 'morpheus' as const } }, 0);
+  assert.ok(morpheus.legs.every(leg => leg.knee > .35), 'Morpheus hangs below the helicopter instead of standing in mid-air');
+  assert.ok(morpheus.arms[0].elbow > -.5 && Math.abs(morpheus.roll) > .1, 'Morpheus reaches into the catch while falling');
+  const neo = advanceMotion(newMotion(), { ...idle,
+    airRescue: { kind: 'roof', phase: 'bracing', elapsed: 3.35, attempt: 0, grip: .62, braces: 1, misses: 0, resolved: [0], role: 'neo' as const } }, 0);
+  assert.ok(neo.arms.every(arm => arm.grip > .9 && arm.elbow < -1), 'Neo keeps both hands closed around the roof rope');
+  assert.ok(neo.hipHeight < 1.75 && neo.lean > .35, 'the rope shock visibly pulls Neo off balance');
+  const trinity = advanceMotion(newMotion(), { ...idle,
+    airRescue: { kind: 'roof', phase: 'pulling', elapsed: .9, attempt: 0, grip: .8, braces: 2, misses: 1, resolved: [0, 1], ropeCut: true, role: 'trinity' as const } }, 0);
+  assert.ok(trinity.arms[1].shoulder < -1 && trinity.arms[1].grip > .85, 'Trinity raises the pistol to cut free of the aircraft');
+});
+
 test('armed shoulders follow vertical aim while recoil remains finite', () => {
   const idle = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, armed: true };
   const level = advanceMotion(newMotion(), { ...idle, aimPitch: 0 }, 0);

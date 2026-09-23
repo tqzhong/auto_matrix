@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, RESCUE, RESCUE_LOADOUTS, GOVERNMENT_RESCUE, filmReflections, filmStepPosition, filmEntry, filmPosition, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, RESCUE, RESCUE_LOADOUTS, GOVERNMENT_RESCUE, AIR_RESCUE, filmReflections, filmStepPosition, filmEntry, filmPosition, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -927,6 +927,34 @@ test('the entire film route completes through interactions, driving and real com
         }
         else if (scene.id === 'm1_smith_question') for (let frame = 0; frame < 75 && state.step === index; frame++) h.players.step(.1, true, h.tick());
         else if (scene.id === 'm1_bullet_dodge') for (let frame = 0; frame < 55 && state.step === index; frame++) h.players.step(.1, true, h.tick());
+        else if (scene.id === 'm1_helicopter') {
+          for (let frame = 0; frame < 90 && ['approach', 'firing'].includes(state.airRescue?.phase ?? ''); frame++) {
+            h.players.receiveInput('film-player', { x: 0, z: 0, yaw: h.actor().rotation, jump: false, sprint: false, focus: true, sequence: ++sequence });
+            h.players.step(.1, true, h.tick());
+          }
+          assert.equal(state.airRescue?.phase, 'leap_window');
+          while (state.airRescue!.elapsed < AIR_RESCUE.office.leapAt) h.players.step(.1, true, h.tick());
+          h.players.act('film-player', 'dodge', h.tick());
+          for (let frame = 0; frame < 60 && state.step === index; frame++) h.players.step(.1, true, h.tick());
+        }
+        else if (scene.id === 'm1_rooftop_rescue') {
+          for (let frame = 0; frame < 45 && state.airRescue?.phase === 'impact'; frame++) {
+            h.players.receiveInput('film-player', { x: 0, z: 0, yaw: h.actor().rotation, jump: false, sprint: false, focus: true, sequence: ++sequence });
+            h.players.step(.1, true, h.tick());
+          }
+          assert.equal(state.airRescue?.phase, 'bracing');
+          for (const beat of AIR_RESCUE.roof.beats) {
+            while (state.airRescue!.phase === 'bracing' && state.airRescue!.elapsed < beat) {
+              h.players.receiveInput('film-player', { x: 0, z: 0, yaw: h.actor().rotation, jump: false, sprint: false, focus: true, sequence: ++sequence });
+              h.players.step(.1, true, h.tick());
+            }
+            if (state.airRescue!.phase === 'bracing') h.players.act('film-player', 'dodge', h.tick());
+          }
+          for (let frame = 0; frame < 80 && state.step === index; frame++) {
+            h.players.receiveInput('film-player', { x: 0, z: 0, yaw: h.actor().rotation, jump: false, sprint: false, focus: true, sequence: ++sequence });
+            h.players.step(.1, true, h.tick());
+          }
+        }
         else if (scene.id === 'm1_boss' && index === 0) {
           for (let frame = 0; frame < 91; frame++) h.players.step(.1, true, h.tick());
           h.command('act');

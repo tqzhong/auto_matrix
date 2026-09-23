@@ -16,6 +16,7 @@ import { BETRAYAL, betrayalDuration, betrayalLocked } from '@auto_matrix/shared'
 import { RESCUE, rescueDuration, rescueLoadout, rescueLocked } from '@auto_matrix/shared';
 import { LOBBY_ENTRY, lobbyLocked } from '@auto_matrix/shared';
 import { GOVERNMENT_RESCUE, governmentLocked, governmentText } from '@auto_matrix/shared';
+import { AIR_RESCUE, airRescueLocked, airRescueText } from '@auto_matrix/shared';
 
 const escape = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const WEATHER = { clear: '晴朗', rain: '雨', code_storm: '代码风暴' };
@@ -516,6 +517,43 @@ export class SandboxUI {
       document.getElementById('game-objective-copy')!.textContent = questioning ? phase === 'monologue' ? `守住接入密码 · 意志 ${Math.round((encounter.resolve ?? 0) * 100)}%` : governmentText(encounter)
         : phase === 'bullet_time' ? `躲避 ${encounter.dodges ?? 0}/3 · 擦伤 ${encounter.wounds ?? 0}/1 · X 闪避` : governmentText(encounter);
       if (!questioning) this.el('sandbox-trace').textContent = `弹道躲避 ${encounter.dodges ?? 0}/3 · 擦伤 ${encounter.wounds ?? 0}/1`;
+      return;
+    }
+    if (!journey.visiting && journey.airRescue && ['m1_helicopter', 'm1_rooftop_rescue'].includes(scene.id)) {
+      const encounter = journey.airRescue; const office = encounter.kind === 'office'; const phase = encounter.phase;
+      const canAct = phase === 'ready' || phase === 'failed' || phase === 'done';
+      this.el('film-sequence').classList.remove('hidden');
+      this.el('film-sequence').classList.toggle('urgent', phase === 'leap_window' || phase === 'bracing' || phase === 'failed');
+      this.el('film-sequence-line').textContent = airRescueText(encounter);
+      this.el('film-sequence-hint').textContent = office
+        ? phase === 'ready' ? '按住 G 开始接近 · V 切换主视角与场景镜头'
+          : phase === 'approach' ? '稳住安全扣 · 等待侧舱进入射界'
+            : phase === 'firing' ? `持续按住 G 压制特工 · 火力 ${Math.round((encounter.suppression ?? 0) * 100)}%`
+              : phase === 'leap_window' ? '绳索经过 Morpheus 上方时按 X 跃出抓住他'
+                : phase === 'catching' ? '抓紧 Morpheus · 镜头与动作进度会自动保存'
+                  : phase === 'failed' ? '按 G 从 B-212 接近检查点重试' : '按 G 进入屋顶绳索接应'
+        : phase === 'ready' ? '按住 G 抓紧救援绳 · V 切换主视角与场景镜头'
+          : phase === 'impact' ? '持续按住 G · 准备承受绳索冲击'
+            : phase === 'bracing' ? `保持 G · 绳索绷紧时按 X · 握力 ${Math.round((encounter.grip ?? 0) * 100)}%`
+              : phase === 'pulling' ? '稳住屋顶边缘，把 Trinity 拉离撞击幕墙'
+                : phase === 'failed' ? '按 G 从屋顶绳索检查点重试' : '按 G 继续下一段 · J 查看手记';
+      this.el('sandbox-interact').classList.toggle('hidden', !canAct);
+      this.el('sandbox-nearby').textContent = phase === 'failed' ? '从本段检查点重试' : phase === 'done' ? '继续营救后的故事'
+        : office ? '开始 B-212 空中接应' : '抓住连接 Trinity 的救援绳';
+      if (airRescueLocked(journey)) this.el('sandbox-waypoint').textContent = '';
+      const duration = office ? phase === 'approach' ? AIR_RESCUE.office.approach : phase === 'firing' ? AIR_RESCUE.office.fire
+        : phase === 'leap_window' ? AIR_RESCUE.office.leapWindow : phase === 'catching' ? AIR_RESCUE.office.catching : 0
+        : phase === 'impact' ? AIR_RESCUE.roof.impact : phase === 'bracing' ? AIR_RESCUE.roof.duration
+          : phase === 'pulling' ? AIR_RESCUE.roof.pulling : 0;
+      this.el('sandbox-job').style.width = duration ? `${Math.min(100, encounter.elapsed / duration * 100)}%` : '0';
+      document.getElementById('game-objective')!.textContent = office ? '政府大楼 · 空中接应' : '政府大楼 · 屋顶绳索';
+      document.getElementById('game-objective-copy')!.textContent = office && phase === 'firing'
+        ? `打碎幕墙并压制三名特工 · 火力 ${Math.round((encounter.suppression ?? 0) * 100)}%`
+        : !office && phase === 'bracing'
+          ? `稳住 ${encounter.braces ?? 0}/3 · 失手 ${encounter.misses ?? 0}/1 · 握力 ${Math.round((encounter.grip ?? 0) * 100)}%`
+          : airRescueText(encounter);
+      this.el('sandbox-trace').textContent = office ? `B-212 火力 ${Math.round((encounter.suppression ?? 0) * 100)}%`
+        : `绳索握力 ${Math.round((encounter.grip ?? 1) * 100)}% · 稳住 ${encounter.braces ?? 0}/3`;
       return;
     }
     if (scene.id === 'm1_office_escape' && journey.office && !journey.office.outcome && !journey.visiting) {

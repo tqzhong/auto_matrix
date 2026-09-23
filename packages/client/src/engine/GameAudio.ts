@@ -285,7 +285,7 @@ export class GameAudio {
       source.connect(filter); filter.connect(gain); gain.connect(output); source.start(start); source.onended = () => { source.disconnect(); filter.disconnect(); gain.disconnect(); };
     }
   }
-  governmentSound(kind: 'earpiece' | 'serum' | 'alarm' | 'gunfire' | 'bullet' | 'body' | 'phone' | 'upload' | 'rotor'): void {
+  governmentSound(kind: 'earpiece' | 'serum' | 'alarm' | 'gunfire' | 'bullet' | 'body' | 'phone' | 'upload' | 'rotor' | 'minigun' | 'glass' | 'rope' | 'cut' | 'crash'): void {
     const bus = this.effects(); if (!bus) return;
     const { context: ctx, output } = bus; const at = ctx.currentTime;
     const tone = (start: number, from: number, to: number, duration: number, level: number, type: OscillatorType = 'sine') => {
@@ -320,6 +320,18 @@ export class GameAudio {
     if (kind === 'upload') {
       for (let i = 0; i < 5; i++) tone(at + i * .095, 230 + i * 120, 540 + i * 180, .16, .018, 'square');
       return;
+    }
+    if (kind === 'minigun') {
+      for (let i = 0; i < 9; i++) { const start = at + i * .052; noise(start, .13, 360 + i % 3 * 110, .11, 2.7); tone(start, 125, 46, .11, .024, 'square'); }
+      return;
+    }
+    if (kind === 'glass') {
+      noise(at, .9, 5200, .11, .65, 'highpass'); noise(at + .08, .72, 7100, .075, .5, 'highpass'); tone(at, 2600, 380, .75, .028, 'triangle'); return;
+    }
+    if (kind === 'rope') { noise(at, .62, 180, .12, 1.8, 'lowpass'); tone(at, 92, 38, .58, .045, 'sawtooth'); return; }
+    if (kind === 'cut') { noise(at, .18, 1900, .12, 2.4, 'highpass'); tone(at, 880, 120, .22, .035, 'square'); return; }
+    if (kind === 'crash') {
+      noise(at, 2.4, 115, .22, 1.4, 'lowpass'); noise(at + .12, 1.8, 4200, .12, .7, 'highpass'); tone(at, 88, 24, 2.2, .07, 'sawtooth'); return;
     }
     for (let i = 0; i < 8; i++) { const start = at + i * .085; noise(start, .15, 82 + i % 2 * 35, .085, 2.6, 'lowpass'); tone(start, 58, 42, .12, .018, 'triangle'); }
   }

@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import type { AgentState, PlayerInput } from '@auto_matrix/shared';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { CameraController } from '../packages/client/src/engine/CameraController.js';
-import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, pillRoot, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, ORACLE_VISIT, RESCUE } from '@auto_matrix/shared';
+import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, pillRoot, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, ORACLE_VISIT, RESCUE, airRescueRoot } from '@auto_matrix/shared';
 
 test('observer camera releases drag and ignores pointer capture while a character controls the view', () => {
   let captures = 0;
@@ -99,6 +99,85 @@ test('the B-212 download uses a wide portrait establishing shot instead of filli
   for (const point of [new THREE.Vector3(center.x - 6.4, center.y + 7.3, center.z - 20), new THREE.Vector3(center.x + 20.4, center.y + 7.3, center.z - 20),
     new THREE.Vector3(center.x + 7, center.y + 7.3, center.z - 6.6), new THREE.Vector3(center.x + 7, center.y + 7.3, center.z - 33.4)]) {
     const tip = point.project(game.camera); assert.ok(Math.abs(tip.x) < .72 && Math.abs(tip.y) < .72, `B-212 rotor crop: ${tip.toArray().join(',')}`);
+  }
+});
+
+test('office air rescue keeps the B-212, broken-window target and both falling men readable in portrait', t => {
+  const game = setup(t, Math.PI); const center = FILM_SETS.film_government_office.center;
+  game.camera.aspect = .72; game.camera.updateProjectionMatrix(); game.state.currentLocation = 'film_government_office';
+  const apply = (phase: 'firing' | 'catching', elapsed: number) => {
+    const encounter = { kind: 'office' as const, phase, elapsed, attempt: 0, suppression: 1, bursts: 4 };
+    const neo = airRescueRoot(encounter, 'neo'); game.state.position = { x: center.x + neo.x, y: center.y + neo.y, z: center.z + neo.z }; game.state.rotation = neo.yaw;
+    game.state.currentAction = { type: 'idle', parameters: { airRescue: { ...encounter, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
+    game.controls.possess(game.state); game.step(.5); return encounter;
+  };
+  apply('firing', 2);
+  assert.ok(game.camera.position.z < center.z - 30, 'the fire camera must stay outside the facade instead of filming into the opaque side wall');
+  for (const point of [new THREE.Vector3(center.x + 4, center.y + 5.8, center.z - 36), new THREE.Vector3(center.x, center.y + 4.8, center.z - 26.2),
+    new THREE.Vector3(center.x, center.y + 2.8, center.z - 22.4)]) {
+    const screen = point.project(game.camera); assert.ok(Math.abs(screen.x) < .86 && Math.abs(screen.y) < .88 && screen.z > -1 && screen.z < 1, `office approach crop: ${screen.toArray().join(',')}`);
+  }
+  game.key('KeyV'); game.key('KeyV', false); game.step(.2);
+  assert.ok(game.camera.position.x < center.x - 1.4 && game.camera.position.z > center.z - 35.2,
+    'the minigun first-person camera must clear the cabin and rear gun housing');
+  const officeTarget = new THREE.Vector3(center.x, center.y + 4.6, center.z - 7).project(game.camera);
+  assert.ok(Math.abs(officeTarget.x) < .65 && Math.abs(officeTarget.y) < .72 && officeTarget.z > -1 && officeTarget.z < 1,
+    `the broken-window target must remain readable from the minigun view: ${officeTarget.toArray().join(',')}`);
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+  for (const elapsed of [.8, 2.2, 3.8]) {
+    const encounter = apply('catching', elapsed); const neo = airRescueRoot(encounter, 'neo'); const morpheus = airRescueRoot(encounter, 'morpheus');
+    for (const actor of [neo, morpheus]) {
+      const screen = new THREE.Vector3(center.x + actor.x, center.y + actor.y + 2.2, center.z + actor.z).project(game.camera);
+      assert.ok(Math.abs(screen.x) < .84 && Math.abs(screen.y) < .84 && screen.z > -1 && screen.z < 1, `catch crop at ${elapsed}s: ${screen.toArray().join(',')}`);
+    }
+  }
+  const encounter = apply('catching', 1); const morpheus = airRescueRoot(encounter, 'morpheus');
+  game.key('KeyV'); game.key('KeyV', false); game.step(.2);
+  const target = new THREE.Vector3(center.x + morpheus.x, center.y + morpheus.y + 2.2, center.z + morpheus.z);
+  const screen = target.clone().project(game.camera); const towardMorpheus = target.clone().sub(game.camera.position).normalize();
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).dot(towardMorpheus) > .75,
+    'Neo first person must face the falling Morpheus instead of staring through the office');
+  assert.ok(Math.abs(screen.x) < .55 && Math.abs(screen.y) < .7 && screen.z > -1 && screen.z < 1,
+    `Morpheus must remain readable in Neo first person: ${screen.toArray().join(',')}`);
+});
+
+test('roof rope camera holds Neo and dangling Trinity through shocks, impact and pull-up', t => {
+  const game = setup(t, Math.PI); const center = FILM_SETS.film_government_roof.center;
+  game.camera.aspect = .72; game.camera.updateProjectionMatrix(); game.state.currentLocation = 'film_government_roof';
+  const apply = (phase: 'bracing' | 'pulling', elapsed: number) => {
+    const encounter = { kind: 'roof' as const, phase, elapsed, attempt: 0, grip: .72, braces: phase === 'pulling' ? 2 : 1, misses: 0, resolved: [0], ropeCut: phase === 'pulling', crash: phase === 'pulling' };
+    const neo = airRescueRoot(encounter, 'neo'); game.state.position = { x: center.x + neo.x, y: center.y + neo.y, z: center.z + neo.z }; game.state.rotation = neo.yaw;
+    game.state.currentAction = { type: 'idle', parameters: { airRescue: { ...encounter, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
+    game.controls.possess(game.state); game.step(.5); return encounter;
+  };
+  for (const elapsed of [1.25, 3.35, 5.55]) {
+    const encounter = apply('bracing', elapsed); const neo = airRescueRoot(encounter, 'neo'); const trinity = airRescueRoot(encounter, 'trinity');
+    assert.ok(game.camera.position.x < center.x - 31, 'the rope camera must stay beyond the west parapet so the roof deck cannot hide Trinity');
+    for (const actor of [neo, trinity]) {
+      const screen = new THREE.Vector3(center.x + actor.x, center.y + actor.y + 2.2, center.z + actor.z).project(game.camera);
+      assert.ok(Math.abs(screen.x) < .82 && Math.abs(screen.y) < .9 && screen.z > -1 && screen.z < 1, `rope shock crop at ${elapsed}s: ${screen.toArray().join(',')}`);
+      if (actor === trinity) assert.ok(screen.y > -.3, `Trinity must stay above the action prompt: ${screen.toArray().join(',')}`);
+    }
+  }
+  const hanging = apply('bracing', 3.35); const hangingTrinity = airRescueRoot(hanging, 'trinity');
+  game.key('KeyV'); game.key('KeyV', false); game.step(.2);
+  assert.ok(game.camera.position.y > center.y + 2.8, 'Neo first person must lean above the west parapet instead of looking into it');
+  assert.ok(game.camera.position.x < center.x - 31.1, 'Neo first person must look from beyond the parapet instead of through its concrete');
+  const firstPersonTrinity = new THREE.Vector3(center.x + hangingTrinity.x, center.y + hangingTrinity.y + 2.2, center.z + hangingTrinity.z).project(game.camera);
+  assert.ok(Math.abs(firstPersonTrinity.x) < .55 && Math.abs(firstPersonTrinity.y) < .7 && firstPersonTrinity.z > -1 && firstPersonTrinity.z < 1,
+    `Trinity must remain readable in the roof first person view: ${firstPersonTrinity.toArray().join(',')}`);
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+  const encounter = apply('pulling', 3.4); const trinity = airRescueRoot(encounter, 'trinity');
+  const pullPoints = [new THREE.Vector3(center.x - 28.5, center.y + 2.2, center.z - 22),
+    new THREE.Vector3(center.x + trinity.x, center.y + trinity.y + 2.2, center.z + trinity.z),
+    new THREE.Vector3(center.x - 3, center.y + 8, center.z - 48)];
+  assert.ok(game.camera.position.distanceTo(pullPoints[0]) < 30, 'the crash shot must stay close enough to read Neo pulling Trinity');
+  const actorScreens = pullPoints.slice(0, 2).map(point => point.clone().project(game.camera));
+  assert.ok(Math.abs(actorScreens[0].x - actorScreens[1].x) > .45, 'Neo and Trinity need distinct silhouettes during the crash shot');
+  assert.ok(actorScreens.every(actor => actor.y > -.3), 'the action prompt must not cover Neo or Trinity during the crash shot');
+  for (const [index, point] of pullPoints.entries()) {
+    const screen = point.project(game.camera); assert.ok(Math.abs(screen.x) < .88 && Math.abs(screen.y) < .9 && screen.z > -1 && screen.z < 1, `roof pull crop: ${screen.toArray().join(',')}`);
+    if (index < 2) assert.ok(screen.x > -.65, `Neo and Trinity cannot be reduced to the left edge during the crash: ${screen.toArray().join(',')}`);
   }
 });
 

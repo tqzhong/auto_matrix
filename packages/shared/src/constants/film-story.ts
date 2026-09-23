@@ -46,6 +46,7 @@ export interface FilmJourney {
   betrayal?: import('./betrayal.js').BetrayalEncounter;
   rescue?: import('./rescue.js').RescuePreparation;
   government?: import('./government-rescue.js').GovernmentRescueEncounter;
+  airRescue?: import('./air-rescue.js').AirRescueEncounter;
 }
 const walk = (label: string, x = 0, z = -12): FilmStep => ({ kind: 'reach', label, x, z });
 const use = (label: string, text: string, x = 0, z = -12, seconds = 3): FilmStep => ({ kind: 'interact', label, text, x, z, seconds });
@@ -104,8 +105,8 @@ export const FILM_SCENES: FilmScene[] = [
   scene('m1_lobby', 1, 'government_lobby', 'neo', '政府大楼的大堂', 'rescue', 'combat', '与 Trinity 突破大堂警戒，抵达后方电梯。石柱能挡住枪火；敌人瞄准后，及时换位。', [walk('穿过安检入口', 0, 23), { ...fight('与 Trinity 突破三道警戒', 2), z: 19 }, use('接通后方电梯', '电梯门打开。大堂通路已打通，可以继续营救 Morpheus。', 0, -35, 1)], ['trinity', 'citizen_12']),
   scene('m1_smith_question', 1, 'government_office', 'morpheus', 'Smith 的独白', 'rescue', 'infiltration', '审讯楼层里，Smith 对人类与矩阵表达了厌恶，逼问锡安的接入信息。', [think('在强迫下守住他人的生命', '被困者无法控制审讯，却仍在承受拒绝出卖同伴的代价。'), use('留意窗外的动静', '外面的营救逐渐接近。', 0, -18)], ['smith', 'agent_brown', 'agent_jones']),
   scene('m1_bullet_dodge', 1, 'government_roof', 'neo', '屋顶上的子弹', 'rescue', 'combat', '特工堵住屋顶。Neo 尝试闪避弹道，Trinity 在近处终结对手。', [fight('击退屋顶特工', 2), use('检查屋顶直升机', 'Trinity 请求下载驾驶程序，接下来的营救从空中展开。', 11.5, -15.5)], ['trinity', 'agent_jones', 'citizen_11']),
-  scene('m1_helicopter', 1, 'government_office', 'morpheus', '破窗与绳索', 'rescue', 'chase', '直升机的火力打开审讯室。Morpheus 冲向窗外的救援绳索。', [walk('冲向破损玻璃幕墙', 0, -18), use('抓住 Neo 的救援绳', 'Morpheus 脱离大楼。受损的直升机继续失去高度。', 0, -18, 4)]),
-  scene('m1_rooftop_rescue', 1, 'government_roof', 'neo', '拉住 Trinity', 'rescue', 'chase', '直升机坠落前，Trinity 将自己系在绳索上。Neo 在屋顶抓紧另一端。', [walk('抵达绳索固定点', 0, -22), use('稳住绳索，接应 Trinity', '直升机撞向玻璃大楼；Trinity 被拉到安全的屋顶。', 0, -22, 6)], ['trinity', 'morpheus']),
+  scene('m1_helicopter', 1, 'government_office', 'neo', '破窗与绳索', 'rescue', 'chase', 'Trinity 把 B-212 贴向审讯层。Neo 操作侧舱机枪打碎幕墙，再靠安全绳跃出接住 Morpheus。', [use('压制审讯层并接住 Morpheus', 'Neo 抓住下坠的 Morpheus，救援绳承受住两人的重量。', 0, -18, 4)], ['trinity', 'morpheus', 'smith', 'agent_brown', 'agent_jones']),
+  scene('m1_rooftop_rescue', 1, 'government_roof', 'neo', '拉住 Trinity', 'rescue', 'chase', 'Smith 击穿油箱后，Trinity 将 Morpheus 与 Neo 放上屋顶。坠落的机体把连接绳猛然拉紧。', [use('抓紧绳索，接应 Trinity', '直升机撞向玻璃大楼；Trinity 被拉到安全的屋顶。', 0, -22, 6)], ['trinity', 'morpheus']),
   scene('m1_subway', 1, 'subway_platform', 'neo', '不再逃跑', 'subway', 'combat', 'Morpheus 与 Trinity 通过电话离开。Smith 打断 Neo 的撤离。', [fight('面对站台上的 Smith', 1, 'smith', 'smith'), use('穿过站台出口', 'Neo 把对手拖向列车后逃出，但 Smith 仍能占用新的身体。', 0, -38)], ['smith']),
   scene('m1_city_chase', 1, 'escape_streets', 'neo', 'Tank 指引的街巷', 'the_one', 'chase', '出口电话不断失效，Tank 指引 Neo 穿过市场、后巷和住户楼层。', [walk('穿过街巷', -7, 18), walk('绕过被封住的路口', 7, -12), use('进入旅馆楼梯', '新的出口位于序幕出现过的旅馆。', 0, -42)]),
   scene('m1_death', 1, 'heart_hotel', 'neo', '再次回到 303', 'the_one', 'awakening', 'Neo 即将接通出口，Smith 却在房门后等候。', [walk('抵达 303 房门', 0, -16), use('推开房门', '枪击中断了信号。现实中的 Trinity 仍在对 Neo 说话。', 0, -16, 5)]),

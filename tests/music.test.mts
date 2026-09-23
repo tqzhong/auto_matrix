@@ -225,6 +225,16 @@ test('government rescue effects cover interrogation machinery, bullets, the phon
   assert.ok([...ctx.oscillators, ...ctx.sources].every(source => source.starts > 0), 'every cue is scheduled immediately');
 });
 
+test('air rescue effects give the minigun, glass wall, rope, cut and crash separate audible layers', async t => {
+  const h = audioHarness(t); await h.audio.resume(); const ctx = h.contexts[0];
+  const before = { sources: ctx.sources.length, oscillators: ctx.oscillators.length };
+  for (const sound of ['minigun', 'glass', 'rope', 'cut', 'crash'] as const) h.audio.governmentSound(sound);
+  assert.ok(ctx.sources.length - before.sources >= 15, 'the aircraft sequence needs sustained mechanical, impact and debris noise');
+  assert.ok(ctx.oscillators.length - before.oscillators >= 13, 'each physical event keeps a distinct pitched transient');
+  assert.ok(ctx.sources.slice(before.sources).every(source => source.starts > 0));
+  assert.ok(ctx.oscillators.slice(before.oscillators).every(source => source.starts > 0));
+});
+
 test('music mute persists independently from effects; backgrounding silences the shared output', async t => {
   const h = audioHarness(t, '{"music":0.25,"effects":0.65,"musicMuted":true}'); h.audio.update(scene());
   await h.audio.resume(); assert.equal(h.requests.length, 0); assert.ok(h.audio.effects());

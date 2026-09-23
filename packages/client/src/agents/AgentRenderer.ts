@@ -146,6 +146,7 @@ export class AgentRenderer {
         betrayal: state.currentAction?.parameters.betrayal as MotionInput['betrayal'],
         rescue: state.currentAction?.parameters.rescue as MotionInput['rescue'],
         government: state.currentAction?.parameters.government as MotionInput['government'],
+        airRescue: state.currentAction?.parameters.airRescue as MotionInput['airRescue'],
         lobbyEntry: state.currentAction?.parameters.lobbyEntry as MotionInput['lobbyEntry'],
         weaponStyle: state.currentAction?.parameters.weaponStyle as MotionInput['weaponStyle'],
         vase: state.currentAction?.parameters.vase as number | undefined,

@@ -1,4 +1,4 @@
-import { MELEE_COMBO, COMBO_WINDOW, COMBAT_SKILLS, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED, lobbyPose, governmentPose, type CombatSkillId, type AwakeningPose, type AwakeningReveal, type OfficePhone, pillPose, lafayetteWelcomePose, oracleVisitPose, betrayalPose, rescuePose, type PillGesture, type InterrogationGesture, type LafayetteWelcomeGesture, type TrainingGesture, type OracleVisitGesture, type BetrayalGesture, type RescueGesture, type RescueLoadout, type LobbyGesture, type GovernmentRescueGesture } from '@auto_matrix/shared';
+import { MELEE_COMBO, COMBO_WINDOW, COMBAT_SKILLS, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED, lobbyPose, governmentPose, airRescuePose, type CombatSkillId, type AwakeningPose, type AwakeningReveal, type OfficePhone, pillPose, lafayetteWelcomePose, oracleVisitPose, betrayalPose, rescuePose, type PillGesture, type InterrogationGesture, type LafayetteWelcomeGesture, type TrainingGesture, type OracleVisitGesture, type BetrayalGesture, type RescueGesture, type RescueLoadout, type LobbyGesture, type GovernmentRescueGesture, type AirRescueGesture } from '@auto_matrix/shared';
 
 export interface MotionInput {
   speed: number;
@@ -34,6 +34,7 @@ export interface MotionInput {
   rescue?: RescueGesture;
   lobbyEntry?: LobbyGesture;
   government?: GovernmentRescueGesture;
+  airRescue?: AirRescueGesture;
   weaponStyle?: RescueLoadout;
   aimPitch?: number;
   clubClothes?: boolean;
@@ -117,6 +118,7 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const rescue = input.rescue && rescuePose(input.rescue);
   const lobby = input.lobbyEntry && lobbyPose(input.lobbyEntry);
   const government = input.government && governmentPose(input.government);
+  const airRescue = input.airRescue && airRescuePose(input.airRescue);
   const welcomeWalking = input.welcome?.phase === 'approach' || input.welcome?.phase === 'departing' && input.welcome.role !== 'neo';
   const welcomeSpeed = input.welcome?.role === 'morpheus' ? 2.6 : input.welcome?.role === 'neo' ? 2.3 : 1.8;
   const speed = input.pills ? exiting ? 1.7 : 0 : welcomeWalking ? welcomeSpeed : input.speed;
@@ -165,7 +167,7 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const kick = state.combo === 2 ? extension : 0;
   const lobbyDown = lobby?.fall ?? 0;
   const governmentBend = government?.bend ?? 0;
-  const hipHeight = 1.98 - moving * .08 - run * .12 + bob - state.landing * .20 - guard * .08 - dodging * .3 - (input.crouching ? .9 : 0) - state.seated * .6 - (input.floorSeated ? .85 : 0) - lobbyDown * 1.5 - governmentBend * .9;
+  const hipHeight = 1.98 - moving * .08 - run * .12 + bob - state.landing * .20 - guard * .08 - dodging * .3 - (input.crouching ? .9 : 0) - state.seated * .6 - (input.floorSeated ? .85 : 0) - lobbyDown * 1.5 - governmentBend * .9 - (airRescue?.strain ?? 0) * .32 - (airRescue?.land ?? 0) * .18;
   const legs = [0, .5].map(offset => {
     const foot = footTrajectory(state.phase + offset, stride, stance);
     const lift = foot.lift * mix(.22, .55, run) * moving;
@@ -321,6 +323,37 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
       arms[i].shoulder = mix(arms[i].shoulder, .15, government.fall); arms[i].elbow = mix(arms[i].elbow, -.12, government.fall); arms[i].grip = mix(arms[i].grip, 0, government.fall);
     }
   }
+  if (airRescue && input.airRescue) {
+    const role = input.airRescue.role;
+    if (role === 'neo' && airRescue.gun) for (let i = 0; i < 2; i++) {
+      arms[i].shoulder = mix(arms[i].shoulder, -.88, airRescue.gun); arms[i].elbow = mix(arms[i].elbow, -.52, airRescue.gun);
+      arms[i].outward = mix(arms[i].outward, (i ? 1 : -1) * .24, airRescue.gun); arms[i].grip = mix(arms[i].grip, .98, airRescue.gun);
+    }
+    if (role === 'trinity' && airRescue.pilot) for (let i = 0; i < 2; i++) {
+      arms[i].shoulder = mix(arms[i].shoulder, -.62, airRescue.pilot); arms[i].elbow = mix(arms[i].elbow, -.92, airRescue.pilot);
+      arms[i].outward = mix(arms[i].outward, (i ? 1 : -1) * .28, airRescue.pilot); arms[i].grip = mix(arms[i].grip, .88, airRescue.pilot);
+    }
+    if (airRescue.rope && role === 'neo') for (let i = 0; i < 2; i++) {
+      arms[i].shoulder = mix(arms[i].shoulder, -1.35, airRescue.rope); arms[i].elbow = mix(arms[i].elbow, -1.2, airRescue.rope);
+      arms[i].outward = mix(arms[i].outward, (i ? 1 : -1) * .18, airRescue.rope); arms[i].grip = mix(arms[i].grip, .98, airRescue.rope);
+    }
+    if (airRescue.reach && (role === 'neo' || role === 'morpheus' || role === 'trinity')) {
+      const arm = role === 'morpheus' ? 0 : 1; arms[arm].shoulder = mix(arms[arm].shoulder, -1.48, airRescue.reach);
+      arms[arm].elbow = mix(arms[arm].elbow, -.25, airRescue.reach); arms[arm].outward = mix(arms[arm].outward, arm ? .22 : -.22, airRescue.reach);
+      arms[arm].grip = mix(arms[arm].grip, .92, airRescue.reach);
+    }
+    if (airRescue.fall && (role === 'morpheus' || role === 'trinity')) for (let i = 0; i < 2; i++) {
+      legs[i].hip = mix(legs[i].hip, i ? -.5 : .45, airRescue.fall); legs[i].knee = mix(legs[i].knee, .75, airRescue.fall);
+      arms[i].outward = mix(arms[i].outward, (i ? 1 : -1) * .72, airRescue.fall);
+    }
+    if (airRescue.cut && role === 'trinity') {
+      arms[1].shoulder = mix(arms[1].shoulder, -1.2, airRescue.cut); arms[1].elbow = mix(arms[1].elbow, -.2, airRescue.cut); arms[1].grip = mix(arms[1].grip, .95, airRescue.cut);
+    }
+    if (airRescue.scatter && ['smith', 'agent_brown', 'agent_jones'].includes(role)) {
+      arms[0].shoulder = mix(arms[0].shoulder, -.45, airRescue.scatter); arms[1].shoulder = mix(arms[1].shoulder, .35, airRescue.scatter);
+      legs[0].hip = mix(legs[0].hip, -.55, airRescue.scatter); legs[1].knee = mix(legs[1].knee, .72, airRescue.scatter);
+    }
+  }
   if (input.performance && !['touch', 'connect'].includes(input.performance)) for (let i = 0; i < 2; i++) {
     const afloat = input.performance === 'float'; const raised = input.performance === 'lift';
     arms[i].shoulder = raised ? -2 : -.5 + (afloat ? Math.sin(state.time * 2 + i) * .2 : 0);
@@ -337,8 +370,10 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const lobbyRoll = -1.18 * lobbyDown;
   const governmentLean = government ? government.strain * .42 - government.bend * 1.08 + government.fall * 1.25 - (government.jonesDodge ?? 0) * .24 : 0;
   const governmentRoll = government ? government.bend * (Math.sin(input.government!.elapsed * 2.1) >= 0 ? .42 : -.42) + government.fall * .85 + (government.jonesDodge ?? 0) * .5 : 0;
-  return { legs, arms, hipHeight, twist, lean: run * .12 + state.landing * .12 + state.airborne * .04 + extension * .10 - kick * .27 - recoil * .35 + (input.crouching ? .26 : 0) + (input.riding ? .2 : 0) + oracleLean + betrayalLean + rescueLean + lobbyLean + governmentLean,
+  const airRescueLean = airRescue ? airRescue.strain * .72 + airRescue.fall * .45 - airRescue.land * .25 : 0;
+  const airRescueRoll = airRescue ? airRescue.fall * .5 + airRescue.strain * Math.sin(input.airRescue!.elapsed * 4) * .18 : 0;
+  return { legs, arms, hipHeight, twist, lean: run * .12 + state.landing * .12 + state.airborne * .04 + extension * .10 - kick * .27 - recoil * .35 + (input.crouching ? .26 : 0) + (input.riding ? .2 : 0) + oracleLean + betrayalLean + rescueLean + lobbyLean + governmentLean + airRescueLean,
     sway: Math.sin(cycle) * moving * .035, lunge: extension * .16 - kick * .25 - recoil * .22 - dodging * .35,
-    roll: -state.turn * run * .035 - dodging * .22 + betrayalRoll + lobbyRoll + governmentRoll, headTurn: -twist * .65 + glance + oracleLook + rescueLook, moving, run, airborne: state.airborne,
+    roll: -state.turn * run * .035 - dodging * .22 + betrayalRoll + lobbyRoll + governmentRoll + airRescueRoll, headTurn: -twist * .65 + glance + oracleLook + rescueLook, moving, run, airborne: state.airborne,
     coat: moving * (.10 + run * .3) + state.airborne * .18 + kick * .35, impact: extension, landing: state.landing };
 }
