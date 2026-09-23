@@ -7,6 +7,7 @@ import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_CAST, GRID_WINDOW_SECOND
   lobbyLocked, meleeReach, groundHeight, type DriveInput, type AgentState, type FilmScene, type FilmStep, type GridOperation, type SandboxState, type SandboxThreat, type TrainingRole, type CombatImpact } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
 import { LobbyCombatSystem } from './LobbyCombatSystem.js';
+import { HelCoatcheckSystem } from './HelCoatcheckSystem.js';
 import { OfficeEscapeSystem } from './OfficeEscapeSystem.js';
 import { INTERROGATION_CAST, INTERROGATION_TIMING, interrogationLocked, interrogationRoot } from '@auto_matrix/shared';
 import { MEETING_CAR, MEETING_CAST, MEETING_TIMING, meetingLocked, meetingRoot, type MeetingEncounter } from '@auto_matrix/shared';
@@ -40,8 +41,9 @@ export class FilmStorySystem {
   readonly reloaded: ReloadedOpeningSystem;
   readonly catch: ReloadedCatchSystem;
   readonly lobby: LobbyCombatSystem;
+  readonly coatcheck: HelCoatcheckSystem;
   readonly office: OfficeEscapeSystem;
-  constructor(private world: WorldState, private sandbox: () => SandboxState, private returnToLife: (tick: number) => void) { this.lobby = new LobbyCombatSystem(world, sandbox); this.office = new OfficeEscapeSystem(sandbox); this.reloaded = new ReloadedOpeningSystem(world, sandbox); this.reloaded.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.reloaded.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.catch = new ReloadedCatchSystem(world, sandbox); this.catch.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); }
+  constructor(private world: WorldState, private sandbox: () => SandboxState, private returnToLife: (tick: number) => void) { this.lobby = new LobbyCombatSystem(world, sandbox); this.coatcheck = new HelCoatcheckSystem(world, sandbox); this.office = new OfficeEscapeSystem(sandbox); this.reloaded = new ReloadedOpeningSystem(world, sandbox); this.reloaded.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.reloaded.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.catch = new ReloadedCatchSystem(world, sandbox); this.catch.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); }
   get state() { return this.sandbox().neoLife?.journey; }
   get scene(): FilmScene | undefined { return this.state && FILM_SCENE_BY_ID[this.state.scene]; }
   get step(): FilmStep | undefined { return this.scene?.steps[this.state!.step]; }
@@ -3071,6 +3073,13 @@ export class FilmStorySystem {
         return '已从建筑师房间的抉择检查点重试。';
       }
       if (state.scene === 'm2_burly') return this.retryBurly(agent, tick);
+      if (state.scene === 'm3_hel_entry' && state.step === 1) {
+        this.clearThreats(); this.coatcheck.reset(); delete state.fighting;
+        agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
+        agent.position = filmStepPosition(this.scene!, this.scene!.steps[1]); agent.rotation = Math.PI;
+        agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentAction = null; state.checkpoint = { ...agent.position };
+        return state.lastText = '已回到衣帽间门口。五名守卫和弹药恢复，走近后按 G 再次突围。';
+      }
       if (state.scene === 'm2_chateau' && state.step === 0) return this.retryChateau(agent, tick);
       if (state.scene === 'm2_mountain' && state.step === 2 && state.mountain) return this.retryMountain(agent);
       if (state.scene === 'm2_persephone' && state.persephone?.phase === 'enacting') {
@@ -3480,6 +3489,10 @@ export class FilmStorySystem {
         if (!state.fighting) { state.fighting = true; this.lobby.start(agent, tick); }
         return state.lastText;
       }
+      if (state.scene === 'm3_hel_entry') {
+        if (!state.fighting) { state.fighting = true; this.coatcheck.start(agent, tick); }
+        return state.lastText;
+      }
       if (state.fighting) return state.scene === 'm2_seraph' ? '观察 Seraph 起手，X 闪避后靠近 F 反击。完成两次攻防才会收手。' : 'F 连击，X 闪避；清除追兵后会记录完成。';
       this.spawn(agent, step, tick); state.fighting = true;
       return state.scene === 'm2_seraph' ? 'Seraph 放下茶杯摆好架势。正面进攻会被挡开：先观察红色起手，再用 X 闪避。' : '行动开始。F 连击 / X 闪避 / 1 医疗包；完成后返回目标路线。';
@@ -3558,6 +3571,8 @@ export class FilmStorySystem {
     else delete state.helChase;
     if (scene.id === 'm3_hel_entry') state.helElevator = { phase: 'ready', elapsed: 0, lastTick: tick };
     else delete state.helElevator;
+    if (scene.id === 'm3_hel_entry') this.coatcheck.reset();
+    else delete state.helCoatcheck;
     if (scene.id === 'm3_hel_bargain') state.helBargain = { phase: 'armed', elapsed: 0, lastTick: tick, attempts: 0 };
     else delete state.helBargain;
     delete state.baneCopy;
@@ -4171,6 +4186,10 @@ export class FilmStorySystem {
         const ally = this.world.agents.get('trinity'); if (ally && !ally.controller) ally.velocity = { x: 0, y: 0, z: 0 };
         this.advance('警戒已经解除。与 Trinity 前往大厅尽头的电梯。', actor, tick);
       }
+      return;
+    }
+    if (state.scene === 'm3_hel_entry' && step.kind === 'fight' && state.fighting) {
+      if (this.coatcheck.tick(actor, tick)) this.advance('最后一名守卫倒下。Seraph 确认女服务生仍躲在柜台后，三人去武器检查柜补齐装备。', actor, tick);
       return;
     }
     if (step.kind === 'reach' && this.near(actor, step)) this.advance(step.label, actor, tick);

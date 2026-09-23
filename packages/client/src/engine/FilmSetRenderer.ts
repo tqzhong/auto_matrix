@@ -120,6 +120,7 @@ export class FilmSetRenderer {
   private mobilLastFrame?: number;
   private helChaseTrain?: THREE.Group;
   private helLift?: { doors: [THREE.Group, THREE.Group]; bands: { mesh: THREE.Mesh; y: number }[]; light: THREE.PointLight };
+  private helCoatDamage?: THREE.Group[];
   private helStandoff?: { crowd: THREE.Group[]; guard: THREE.Group; floorGuns: THREE.Group; flyingGun: THREE.Group; light: THREE.PointLight };
   private powerStatus?: { primary: THREE.MeshBasicMaterial; emergency: THREE.MeshBasicMaterial; lights: THREE.PointLight[] };
   private sourceDoor?: { portal: THREE.Group; source: THREE.Group; glow: THREE.Mesh };
@@ -253,6 +254,7 @@ export class FilmSetRenderer {
       for (const band of this.helLift.bands) band.mesh.position.y = lift?.phase === 'descending' ? 1 + (band.y + lift.elapsed * 3.5) % 8 : band.y;
       this.helLift.light.intensity = lift?.phase === 'descending' ? 190 + Math.sin(lift.elapsed * 17) * 65 : 90;
     }
+    this.helCoatDamage?.forEach((mark, index) => { mark.visible = (journey?.helCoatcheck?.coverHits[index] ?? 0) > 0 && !journey?.visiting; });
     if (this.helStandoff) {
       const encounter = sceneId === 'm3_hel_bargain' && !journey?.visiting ? journey?.helBargain : undefined;
       const phase = encounter?.phase;
@@ -342,7 +344,7 @@ export class FilmSetRenderer {
     const scene = journey && FILM_SCENE_BY_ID[journey.scene]; const step = scene?.steps[journey!.step];
     this.marker.visible = Boolean(set && scene?.set === set.id && step && !journey?.visiting && journey?.actor === player?.id);
     if (helElevatorLocked(journey)) this.marker.visible = false;
-    if (journey?.scene === 'm1_lobby' && journey.fighting) this.marker.visible = false;
+    if (['m1_lobby', 'm3_hel_entry'].includes(journey?.scene ?? '') && journey?.fighting) this.marker.visible = false;
     if (journey?.scene === 'm2_burly' && !['ready', 'staff_ready', 'flight_ready'].includes(journey.burly?.phase ?? 'ready')) this.marker.visible = false;
     if (journey?.scene === 'm2_chateau' && journey.step === 0 && !['ready', 'landing'].includes(journey.chateau?.phase ?? 'ready')) this.marker.visible = false;
     if (journey?.scene === 'm2_mountain' && journey.step === 2 && !['ready', 'failed'].includes(journey.mountain?.phase ?? 'ready')) this.marker.visible = false;
@@ -1220,7 +1222,23 @@ export class FilmSetRenderer {
     for (const x of [-14, 14]) {
       const counter = this.box(basalt, x, 1.6, 11, 8, 3.2, 4); counter.name = 'hel-coatcheck-counter'; counter.userData.dynamic = true;
       this.box(steel, x, 3.25, 11, 8.6, .28, 4.4);
-      for (let i = 0; i < 7; i++) this.box(steel, x - 3 + i, 6, 14, .035, 5, .04);
+      for (let i = 0; i < 7; i++) {
+        const hangerX = x - 3 + i;
+        this.box(steel, hangerX, 7.5, 14, .06, 2, .06);
+        this.box(this.mat(i % 2 ? 0x242127 : 0x34333a, .94), hangerX, 5.35 - i % 2 * .25, 14, .75, 2.9 + i % 2 * .5, .55);
+      }
+      this.box(steel, x, 8.4, 14, 8, .13, .13);
+      const damage = new THREE.Group(); damage.name = 'hel-coatcheck-gouges'; damage.visible = false; damage.userData.dynamic = true;
+      for (const [offset, y] of [[-2.5, 1.55], [-1.1, 2.3], [.7, 1.75], [2.9, 2.5]] as const) {
+        const gouge = this.box(this.mat(0x100e10, 1), x + offset, y, 13.02, .33, .19, .03); damage.add(gouge);
+        const splinter = this.box(steel, x + offset + .27, y - .17, 13.04, .18, .055, .04); splinter.rotation.z = .5; damage.add(splinter);
+      }
+      this.root.add(damage); (this.helCoatDamage ??= []).push(damage);
+    }
+    this.box(steel, -8, 5.8, 4.5, 7, 7, .4);
+    for (const x of [-10.5, -9, -7.5, -6]) for (const y of [3.5, 6, 8]) {
+      this.box(basalt, x, y, 4.78, 1.1, 1.6, .14);
+      this.box(steel, x, y + .45, 4.87, .65, .12, .08);
     }
     for (const side of [-1, 1]) {
       this.box(steel, side * 9.5, 5.1, 1, 13, 10.2, .5);
@@ -1745,6 +1763,7 @@ export class FilmSetRenderer {
     this.mobilLastFrame = undefined;
     this.helChaseTrain = undefined;
     this.helLift = undefined;
+    this.helCoatDamage = undefined;
     this.helStandoff = undefined;
     this.powerStatus = undefined;
     this.sourceDoor = undefined;

@@ -2,7 +2,7 @@ import { reloadedLocked } from '@auto_matrix/shared';
 import * as THREE from 'three';
 import type { OfficeWorkday } from '@auto_matrix/shared';
 import type { AgentState, WorldEvent, SimulationState, SandboxState, CombatImpact, SkillCast } from '@auto_matrix/shared';
-import { insideLifeRoom, meetingLocked, meetingCarPose, interrogationLocked, pillLocked, lafayetteKnocking, lafayetteWelcomeLocked, awakeningLocked, oracleActing, phoneLocked, heldPhone, wakeCallLocked, sentinelLocked, interludeLocked, rescueLocked, lobbyLocked, governmentLocked, airRescueLocked, matrixEscapeLocked, theOneLocked, helElevatorLocked, rescueLoadout, windowOpening, windowCrossing, OFFICE_CONTACT, LOBBY_ENTRY, GOVERNMENT_RESCUE, FILM_SETS } from '@auto_matrix/shared';
+import { insideLifeRoom, meetingLocked, meetingCarPose, interrogationLocked, pillLocked, lafayetteKnocking, lafayetteWelcomeLocked, awakeningLocked, oracleActing, phoneLocked, heldPhone, wakeCallLocked, sentinelLocked, interludeLocked, rescueLocked, lobbyLocked, governmentLocked, airRescueLocked, matrixEscapeLocked, theOneLocked, helElevatorLocked, rescueLoadout, windowOpening, windowCrossing, OFFICE_CONTACT, LOBBY_ENTRY, GOVERNMENT_RESCUE, FILM_SETS, HEL_COATCHECK } from '@auto_matrix/shared';
 import { FilmSetRenderer } from './FilmSetRenderer.js';
 import { CombatEffects } from './CombatEffects.js';
 import { GameAudio } from './GameAudio.js';
@@ -388,9 +388,10 @@ export class Engine {
       this.playerControls.mirror = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_mirror' ? journey.awakening?.kind === 'connect' ? 1 : (journey.awakening?.elapsed ?? 0) / 8 : 0;
       this.playerControls.climbing = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_ledge' && journey.step === 1 && journey.office?.climbed !== undefined;
       this.playerControls.ride = journey?.actor === this.playerControls.id && !journey.visiting ? journey.garage?.phase === 'riding' ? journey.garage : journey.ride?.phase === 'riding' ? journey.ride : undefined : undefined;
-      this.playerControls.firearm = Boolean(journey?.scene === 'm1_lobby' && !journey.visiting && !lobbyLocked(journey) && journey.actor === this.playerControls.id && agents[journey.actor]?.currentLocation === 'film_government_lobby');
-      this.playerControls.weaponStyle = this.playerControls.firearm ? loadout.id : undefined;
-      this.playerControls.fireInterval = loadout.fireInterval;
+      const coatcheck = journey?.scene === 'm3_hel_entry' && journey.step === 1 && Boolean(journey.fighting) && journey.helCoatcheck?.phase === 'combat';
+      this.playerControls.firearm = Boolean(journey && !journey.visiting && journey.actor === this.playerControls.id && (journey.scene === 'm1_lobby' && !lobbyLocked(journey) && agents[journey.actor]?.currentLocation === 'film_government_lobby' || coatcheck && agents[journey.actor]?.currentLocation === 'film_club_hel'));
+      this.playerControls.weaponStyle = this.playerControls.firearm ? coatcheck ? 'hel_pistol' : loadout.id : undefined;
+      this.playerControls.fireInterval = coatcheck ? HEL_COATCHECK.fireInterval : loadout.fireInterval;
     }
     if (state !== this.sandbox || this.sandboxPlayer !== this.playerControls?.id) {
       this.sandboxPlayer = this.playerControls?.id;

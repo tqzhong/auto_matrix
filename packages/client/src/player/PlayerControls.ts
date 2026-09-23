@@ -49,7 +49,7 @@ export class PlayerControls {
   structures: WorldStructure[] = [];
   targets: Vector3[] = [];
   firearm = false;
-  weaponStyle?: RescueLoadout;
+  weaponStyle?: RescueLoadout | 'hel_pistol';
   fireInterval = LOBBY_FIRE_INTERVAL;
   ride?: FreewayRide;
   climbing = false;

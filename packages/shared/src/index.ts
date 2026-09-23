@@ -22,6 +22,7 @@ export * from './constants/office-workday.js';
 export * from './constants/apartment.js';
 export * from './constants/club.js';
 export * from './constants/lobby.js';
+export * from './constants/hel-coatcheck.js';
 export * from './constants/freeway.js';
 export * from './constants/garage.js';
 export * from './constants/trucks.js';

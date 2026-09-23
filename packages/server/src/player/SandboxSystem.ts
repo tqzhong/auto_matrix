@@ -14,6 +14,8 @@ export class SandboxSystem {
     this.life.film.onImpact = (impact, tick) => this.onImpact?.(impact, tick);
     this.life.film.lobby.onImpact = (impact, tick) => this.onImpact?.(impact, tick);
     this.life.film.lobby.onHit = (actor, target, damage, tick) => { this.enterIfNeeded(actor); this.hit(actor, target, damage, tick); };
+    this.life.film.coatcheck.onImpact = (impact, tick) => this.onImpact?.(impact, tick);
+    this.life.film.coatcheck.onHit = (actor, target, damage, tick) => { this.enterIfNeeded(actor); this.hit(actor, target, damage, tick); };
     this.state = { version: 1, seed, serial: 0, weather: 'clear', weatherUntil: world.simulationTick + 600,
       nextIncidentAt: world.simulationTick + 20, security: 25, corruption: 10, zion: 80, ending: 'open',
       profiles: {}, nodes: [], structures: [], threats: [], incidents: [], missions: {} };
@@ -463,7 +465,7 @@ export class SandboxSystem {
 
   private updateThreats(tick: number): void {
     for (const threat of [...this.state.threats]) {
-      if (threat.scene === 'm1_lobby' || threat.patrol) continue;
+      if (threat.scene === 'm1_lobby' || threat.scene === 'm3_hel_entry' || threat.patrol) continue;
       if (threat.infection && tick >= threat.infection.nextAt) {
         const source = this.world.agents.get(threat.infection.source);
         if (tick > threat.infection.until || !source || source.status !== 'alive' || source.isInMatrix !== threat.matrix) delete threat.infection;

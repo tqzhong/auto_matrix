@@ -165,7 +165,7 @@ export class PlayerExperience {
     document.body.classList.toggle('film-mountain-flight', this.filmPlaying && neoLife?.journey?.scene === 'm2_mountain' && ['takeoff', 'flying', 'arrived'].includes(neoLife.journey.mountain?.phase ?? ''));
     const rescueScene = this.filmPlaying && ['m1_rescue_decision', 'm1_guns'].includes(neoLife?.journey?.scene ?? '') && !neoLife?.journey?.visiting;
     document.body.classList.toggle('film-rescue-scene', rescueScene);
-    const armed = Boolean(this.filmPlaying && neoLife?.journey?.scene === 'm1_lobby' && !neoLife.journey.visiting);
+    const armed = Boolean(this.filmPlaying && !neoLife?.journey?.visiting && (neoLife?.journey?.scene === 'm1_lobby' || neoLife?.journey?.scene === 'm3_hel_entry' && neoLife.journey.fighting));
     this.el('attack-keys').textContent = armed ? '左键 / T' : 'F / 左键';
     this.el('attack-label').textContent = armed ? '射击 · F 近战' : '连击';
     this.el('r-label').textContent = armed ? '换弹' : '出口接入';
@@ -211,7 +211,7 @@ export class PlayerExperience {
     const interludeScene = this.filmPlaying && ['m1_cypher_console', 'm1_steak', 'm1_meal'].includes(neoLife?.journey?.scene ?? '') && !neoLife?.journey?.visiting;
     const oracleScene = this.filmPlaying && neoLife?.journey?.scene === 'm1_oracle' && Boolean(neoLife.journey.oracle?.consultation) && !neoLife.journey.visiting;
     const betrayalScene = this.filmPlaying && Boolean(neoLife?.journey?.betrayal) && !neoLife?.journey?.visiting;
-    const lobbyScene = this.filmPlaying && neoLife?.journey?.scene === 'm1_lobby' && Boolean(neoLife.journey.fighting) && !neoLife.journey.visiting;
+    const lobbyScene = this.filmPlaying && ['m1_lobby', 'm3_hel_entry'].includes(neoLife?.journey?.scene ?? '') && Boolean(neoLife?.journey?.fighting) && !neoLife?.journey?.visiting;
     const governmentScene = this.filmPlaying && Boolean(neoLife?.journey?.government) && !neoLife?.journey?.visiting;
     const airRescueScene = this.filmPlaying && Boolean(neoLife?.journey?.airRescue) && !neoLife?.journey?.visiting;
     const matrixEscapeScene = this.filmPlaying && Boolean(neoLife?.journey?.matrixEscape) && !neoLife?.journey?.visiting;

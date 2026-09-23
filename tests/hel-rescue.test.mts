@@ -53,6 +53,13 @@ test('Hel rescue has a saved chase train and separate garage, elevator, coat che
     renderer.update(player, sandbox, 11);
     assert.ok(door.position.x < shut - 4, 'both the animation and the server barrier open at the first combat step');
     assert.equal(renderer.root.children.filter(object => object.name === 'hel-coatcheck-counter').length, 2);
+    journey.helCoatcheck = { phase: 'combat', ammo: 12, wave: 1, shots: 1, kills: 0, allyShotAt: [0, 0], coverHits: [20, 0, 0] };
+    journey.fighting = true;
+    renderer.update(player, sandbox, 11.5);
+    assert.equal(marker.visible, false, 'the activation marker disappears once coat-check gunfire starts');
+    assert.equal(renderer.root.children.filter(object => object.name === 'hel-coatcheck-gouges')[0].visible, true, 'saved cover damage appears on the same counter that blocked the shot');
+    assert.equal(renderer.root.children.filter(object => object.name === 'hel-coatcheck-gouges')[1].visible, false);
+    assert.equal(playerBlocked(filmPosition('film_club_hel', -8, 4.5), true), true, 'the visible weapon wall blocks movement');
     assert.ok(renderer.root.getObjectByName('hel-vip-table'));
     journey.scene = 'm3_hel_bargain'; journey.step = 1;
     journey.helBargain = { phase: 'disarmed', elapsed: 0, lastTick: 0, attempts: 0 };

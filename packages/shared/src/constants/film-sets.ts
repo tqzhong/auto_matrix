@@ -132,6 +132,7 @@ export function filmObstacles(set: FilmSet): FilmObstacle[] {
   if (set.id === 'film_hel_garage') return [-18, 18].flatMap(x => [-17, 9, 24].map(z => ({ x, z, width: 8.5, depth: 13, height: 5 })));
   if (set.id === 'film_club_hel') return [
     ...[-14, 14].map(x => ({ x, z: 11, width: 8, depth: 4, height: 3.3 })),
+    { x: -8, z: 4.5, width: 7, depth: .4, height: 7 },
     { x: 0, z: -38, width: 8.6, depth: 3.6, height: 3.5 },
   ];
   if (set.id === 'film_mountain_range') return [

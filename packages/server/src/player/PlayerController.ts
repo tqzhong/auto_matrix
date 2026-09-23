@@ -1,4 +1,4 @@
-import { RELOADED } from '@auto_matrix/shared';
+import { RELOADED, HEL_COATCHECK } from '@auto_matrix/shared';
 import { LOCATIONS, heldPhone, pillLocked, lobbyLocked, governmentLocked, airRescueLocked, filmSetAt, FILM_CAST, NEO_CAST, neoSkillUnlocked, insideLifeRoom, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, rescueLoadout, rescueLocked, COMBAT_SKILLS, playerSkills, dodgeDirection, combatDisplace, groundHeight, meleeReach, distance, locationEntrance, playerBlocked, stepPlayer, type AgentState, type PlayerInput, type SandboxCommand, type SkillCast, type Vector3, type CombatSkillId } from '@auto_matrix/shared';
 import type { SandboxSystem } from './SandboxSystem.js';
 import type { WorldState } from '../world/WorldState.js';
@@ -432,11 +432,15 @@ export class PlayerController {
       return '';
     }
     if (kind === 'shoot') {
-      if (!this.sandbox?.life.film.lobby.active(agent) || session.strike || session.impulse || session.stagger > 0 || Date.now() - (session.lastShot ?? 0) < rescueLoadout(this.sandbox.life.film.state).fireInterval * 1000) return '';
+      const lobby = this.sandbox?.life.film.lobby.active(agent);
+      const coatcheck = this.sandbox?.life.film.coatcheck.active(agent);
+      if (!lobby && !coatcheck || session.strike || session.impulse || session.stagger > 0 || Date.now() - (session.lastShot ?? 0) < (coatcheck ? HEL_COATCHECK.fireInterval : rescueLoadout(this.sandbox!.life.film.state).fireInterval) * 1000) return '';
       session.lastShot = Date.now();
-      return this.sandbox.life.film.lobby.shoot(agent, session.input.yaw, session.input.pitch ?? 0, tick);
+      return coatcheck ? this.sandbox!.life.film.coatcheck.shoot(agent, session.input.yaw, session.input.pitch ?? 0, tick)
+        : this.sandbox!.life.film.lobby.shoot(agent, session.input.yaw, session.input.pitch ?? 0, tick);
     }
-    if (kind === 'reload') return this.sandbox?.life.film.lobby.reload(agent, tick) ?? '';
+    if (kind === 'reload') return this.sandbox?.life.film.coatcheck.active(agent)
+      ? this.sandbox.life.film.coatcheck.reload(agent, tick) : this.sandbox?.life.film.lobby.reload(agent, tick) ?? '';
     if (kind === 'ability' || kind === 'ability2' || kind === 'dodge') {
       return this.cast(agent, session, kind === 'dodge' ? 'dodge' : playerSkills(agent)[kind === 'ability' ? 0 : 1], tick);
     }

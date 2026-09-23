@@ -1,4 +1,4 @@
-import { CATCH, RELOADED_FINALE, catchText, reloadedText } from '@auto_matrix/shared';
+import { CATCH, RELOADED_FINALE, HEL_COATCHECK, catchText, reloadedText } from '@auto_matrix/shared';
 import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_NAMES, ARCHITECT_DOOR_SECONDS, filmReflections, CHARACTERS, filmStepPosition, distance, AWAKENING_SECONDS, oracleActing, helElevatorLocked, interrogationLocked, pillLocked, lafayetteWelcomeLocked, phoneLocked, windowOpening, windowCrossing, awakeningWaiting, trainingLocked, trainingWaiting, theOneLocked, type AgentState, type SandboxState } from '@auto_matrix/shared';
 import './film-journey.css';
 import { meetingLocked } from '@auto_matrix/shared';
@@ -249,7 +249,8 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
     : scene.id === 'm1_ledge' ? `${journey.office?.climbed !== undefined ? '<p>合上手记：W 沿梯子下降，S 向上。松开按键会抓住当前横档，到达下方维修平台才算脱身。</p>' : button('escape:climb', '抓住外侧维修梯 →', !close)}${button('escape:retreat', '退回办公室，继续被捕后的故事')}`
     : filmReflections(scene.id).map(choice => button(`reflect:${choice.id}`, choice.label, !close)).join('');
   const enemies = sandbox.threats.filter(t => t.scene === scene.id).length;
-  const combatHint = scene.id === 'm1_lobby' ? '左键 / T 射击 · R 换弹 · F 近战 · X 闪避 · Q 子弹时间。警卫瞄准后及时换位，Trinity 会从侧翼掩护。' : 'F 连击 · X 闪避 · 1 治疗。';
+  const combatHint = scene.id === 'm1_lobby' ? '左键 / T 射击 · R 换弹 · F 近战 · X 闪避 · Q 子弹时间。警卫瞄准后及时换位，Trinity 会从侧翼掩护。'
+    : scene.id === 'm3_hel_entry' ? `左键 / T 射击 · R 换弹 · F 近战 · X 闪避。弹匣 ${journey.helCoatcheck?.ammo ?? 0}/${HEL_COATCHECK.magazine}；衣帽柜台能挡住射线，Morpheus 与 Seraph 会掩护。` : 'F 连击 · X 闪避 · 1 治疗。';
   return `<div class="film-journal">
     <header class="film-heading"><span>THE MATRIX / 0${scene.film}</span><h3>${FILM_NAMES[scene.film]}</h3><p>${journey.completed.length} / ${FILM_SCENES.length} 段 · 第 ${life.cycle} 轮 · ${journey.finished ? '三部曲已完成' : '进度自动保存'}</p><div class="film-progress"><i style="width:${journey.completed.length / FILM_SCENES.length * 100}%"></i></div></header>
     ${journey.visiting ? `<article class="film-now"><span>回访场景</span><h3>${FILM_SETS[FILM_SCENE_BY_ID[journey.visiting].set].name}</h3><p>原来的剧情与位置已保留，可以自由走动观察。</p>${button('return', '返回正在进行的剧情 →')}</article>` : `<article class="film-now"><div class="film-scene-number">${String(FILM_SCENES.indexOf(scene) + 1).padStart(3, '0')}</div><div><span>${set.name} · ${CHARACTERS[journey.actor]?.nameCn ?? journey.actor} 视角</span><h3>${scene.id === 'm1_bug' && escaped ? '确认没有被追踪' : scene.title}</h3><p>${context}</p>

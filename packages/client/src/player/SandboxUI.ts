@@ -1,4 +1,4 @@
-import { CATCH, RELOADED, RELOADED_FINALE, catchText, reloadedText } from '@auto_matrix/shared';
+import { CATCH, RELOADED, RELOADED_FINALE, HEL_COATCHECK, catchText, reloadedText } from '@auto_matrix/shared';
 import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_NAMES, GRID_HACK_SECONDS, GRID_REROUTE_SECONDS, HEL_ELEVATOR, filmStepPosition, helElevatorLocked, pillLocked, lafayetteWelcomeLocked, awakeningLocked, awakeningWaiting, AWAKENING_SECONDS, trainingLocked, trainingWaiting, TRAINING_SECONDS, DOJO_COMBO_WINDOW, windowOpening, windowCrossing, ITEMS, RECIPES, SKILLS, FILMS, MISSIONS, LOCATIONS, CITY_BUILDINGS, NEO_CHAPTERS, LIFE_ACTIONS, lifeActionPosition, lifeRoomCenter, locationEntrance, distance, missionPosition, nearTransit, skillPoints,
   type AgentState, type SandboxState, type SandboxCommand, type ItemId, type SkillId, type Vector3 } from '@auto_matrix/shared';
 import './sandbox.css';
@@ -196,6 +196,15 @@ export class SandboxUI {
       this.el('film-sequence-hint').textContent = `井道下降中 · ${Math.round(journey.helElevator!.elapsed / HEL_ELEVATOR.seconds * 100)}% · 到站后前门打开`;
       document.getElementById('game-objective-copy')!.textContent = '铁笼下降中 · 到站后前门打开 · 当前进度自动保存';
       this.el('sandbox-waypoint').textContent = '↓ CLUB HEL';
+      this.el('sandbox-interact').classList.add('hidden');
+      return;
+    }
+    if (!journey.visiting && scene.id === 'm3_hel_entry' && journey.fighting && journey.helCoatcheck?.phase === 'combat') {
+      const coatcheck = journey.helCoatcheck;
+      this.el('film-sequence').classList.remove('hidden');
+      this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = `衣帽间 ${coatcheck.kills}/5 · 第 ${coatcheck.wave} 组 · 弹匣 ${coatcheck.ammo}/${HEL_COATCHECK.magazine}${coatcheck.reloadAt !== undefined ? ' · 换弹中' : ''}`;
+      document.getElementById('game-objective-copy')!.textContent = '左键 / T 射击 · R 换弹 · X 闪避 · 柜台可挡子弹 · Morpheus / Seraph 掩护';
       this.el('sandbox-interact').classList.add('hidden');
       return;
     }
