@@ -296,6 +296,8 @@ export class PlayerControls {
     if (reloadedCinematic) this.performing = true;
     if (this.motion.burly && !state.currentAction?.parameters.burly) this.performing = false;
     if (['approaching', 'grapple', 'flight'].includes((state.currentAction?.parameters.burly as MotionInput['burly'] | undefined)?.phase ?? '')) this.performing = true;
+    if (this.motion.persephone && !state.currentAction?.parameters.persephone) this.performing = false;
+    if (state.currentAction?.parameters.persephone) this.performing = true;
     if (this.motion.lobbyEntry && !state.currentAction?.parameters.lobbyEntry) this.performing = false;
     if ((state.currentAction?.parameters.lobbyEntry as MotionInput['lobbyEntry'])?.phase === 'checkpoint') this.performing = true;
     if (this.wasPerforming && !this.performing) this.yaw = this.movementYaw = this.facing;
@@ -325,6 +327,7 @@ export class PlayerControls {
     this.motion.theOne = oneGesture;
     this.motion.reloaded = reloadedGesture;
     this.motion.burly = state.currentAction?.parameters.burly as MotionInput['burly'];
+    this.motion.persephone = state.currentAction?.parameters.persephone as MotionInput['persephone'];
     this.motion.lobbyEntry = state.currentAction?.parameters.lobbyEntry as MotionInput['lobbyEntry'];
     this.motion.aimPitch = this.firearm || state.currentAction?.parameters.armed === true ? this.pitch : undefined;
     this.motion.mirror = this.mirror;

@@ -144,6 +144,15 @@ export function filmObstacles(set: FilmSet): FilmObstacle[] {
   if (set.id === 'film_agent_interrogation') return [INTERROGATION_ROOM.table, ...[-1, 1].map(side => ({ x: side * INTERROGATION_ROOM.seat, z: 0, width: 1.3, depth: 1.5, height: 2.8 }))];
   if (set.id === 'film_ambush_house') return AMBUSH_WALLS;
   if (set.id === 'film_cypher_restaurant') return [{ x: 0, z: -13, width: 12, depth: 5.6, height: 3.1 }];
+  if (set.id === 'film_le_vrai') return [
+    { x: 0, z: -23, width: 12, depth: 5, height: 3 },
+    ...[-16, 16].flatMap(x => [-7, 9].map(z => ({ x, z, width: 7, depth: 5, height: 3 }))),
+    { x: 10, z: 27, width: .6, depth: 20, height: 8 },
+  ];
+  if (set.id === 'film_keymaker_workshop') return [
+    { x: -16.25, z: -18, width: 11.5, depth: .6, height: 13 },
+    { x: 8.25, z: -18, width: 27.5, depth: .6, height: 13 },
+  ];
   if (set.id === 'film_metacortex_floor') return [...OFFICE_OBSTACLES, ...OFFICE_MANAGER_WALLS, ...OFFICE_MANAGER_FURNITURE];
   if (set.id === 'film_office_ledge') return [{ x: 4, z: 0, width: 2, depth: 76, height: 40 }];
   if (set.architecture === 'freeway') return [-28, 0, 28].map(x => ({ x, z: 0, width: 1.5, depth: set.depth, height: 2.2 }));

@@ -16,6 +16,17 @@ import { RESCUE, rescueDuration, rescueLoadout, rescueLocked } from '@auto_matri
 const button = (target: string, label: string, disabled = false) => `<button data-action="life" data-target="film:${target}" ${disabled ? 'disabled' : ''}>${label}</button>`;
 export function renderFilmJourney(player: AgentState, sandbox: SandboxState): string {
   const life = sandbox.neoLife!; const journey = life.journey!; const scene = FILM_SCENE_BY_ID[journey.scene];
+  if (!journey.visiting && scene.id === 'm2_persephone' && journey.persephone) {
+    const step = scene.steps[journey.step]; const current = player.id === journey.actor;
+    const close = current && Boolean(step && distance(player.position, filmStepPosition(scene, step)) <= 4);
+    const condition = journey.step === 2; const acting = journey.persephone.phase === 'enacting';
+    const controls = !current ? button('resume', '继续 Neo 的剧情视角') : condition
+      ? acting ? '<button disabled>回应进行中 · 合上手记观看</button>'
+        : `${button('persephone:memory', journey.persephone.attempts ? '认真回应她对往日感情的记忆' : '按电影路线接受她提出的条件', !close)}${button('persephone:appeal', '指出她也能亲自决定是否带路', !close)}<small>后一种回应需要先在餐桌上关注她被当成工具的处境；敷衍的尝试会被拒绝。</small>`
+      : step?.kind === 'reach' ? '<p>合上手记，亲自走过餐厅、后厨与私人办公室。</p>'
+        : step ? button('act', `${step.label} · G`, !close) : button('next', '穿过后门，进入城堡书房 →');
+    return `<div class="film-journal film-exiles"><header class="film-heading"><span>THE MATRIX RELOADED / 02</span><h3>Persephone · 一次由她提出的交换</h3><p>Neo 视角 · 回应、动作和同伴反应自动保存</p></header><article class="film-now"><div><h3>${step?.label ?? '钥匙已经握在她手中'}</h3><p>${journey.lastText}</p><div class="film-controls">${controls}</div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
+  }
   if (!journey.visiting && journey.reloaded) {
     const state = journey.reloaded; const current = player.id === journey.actor; const step = scene.steps[journey.step];
     const close = !step || distance(player.position, filmStepPosition(scene, step)) < 4;

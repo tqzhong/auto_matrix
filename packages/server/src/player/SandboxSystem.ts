@@ -47,6 +47,8 @@ export class SandboxSystem {
     const journey = this.life.film.state;
     if (journey) this.life.film.apartmentFrame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);
     if (journey) this.life.film.clubFrame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);
+    if (journey) this.life.film.persephoneFrame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);
+    if (journey) this.life.film.keymakerFrame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);
     if (journey?.scene === 'm1_boss') {
       delete journey.started;
       this.life.film.workdayFrame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);

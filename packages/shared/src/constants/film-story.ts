@@ -9,6 +9,7 @@ import { MEETING_CAR, MEETING_DESTINATION } from './meeting.js';
 import { APARTMENT } from './apartment.js';
 import { CLUB } from './club.js';
 import { SERAPH_ORACLE } from './seraph-oracle.js';
+import { EXILES } from './exiles.js';
 
 export type FilmCue = 'night' | 'contact' | 'office' | 'club' | 'awakening' | 'training' | 'oracle' | 'infiltration' | 'combat' | 'the_one' | 'zion' | 'swarm' | 'restaurant' | 'chateau' | 'chase' | 'source' | 'mobil' | 'siege' | 'bane' | 'farewell' | 'final' | 'dawn';
 export interface FilmStep {
@@ -54,6 +55,8 @@ export interface FilmJourney {
   baneCopy?: { progress: number };
   seraph?: { dodges: number; counters: number; attempts: number; counterUntil?: number };
   burly?: import('./burly.js').BurlyEncounter;
+  persephone?: import('./exiles.js').PersephoneEncounter;
+  keymaker?: import('./exiles.js').KeymakerEncounter;
 }
 const walk = (label: string, x = 0, z = -12): FilmStep => ({ kind: 'reach', label, x, z });
 const use = (label: string, text: string, x = 0, z = -12, seconds = 3): FilmStep => ({ kind: 'interact', label, text, x, z, seconds });
@@ -135,9 +138,9 @@ export const FILM_SCENES: FilmScene[] = [
   scene('m2_backdoors', 2, 'backdoor_hall', 'neo', '门连接的另一侧', 'oracle_second', 'oracle', '茶馆旧门接到一条没有窗的白色走廊。Link 暂时失去 Neo 的定位；跟随 Seraph 去尽头的另一扇门。', [walk('穿过重复的门，跟上 Seraph', SERAPH_ORACLE.hall.turn.x, SERAPH_ORACLE.hall.turn.z), use('用 Seraph 的钥匙打开庭院门', '门外忽然传来孩子玩耍和鸟群的声音：同一条走廊连接着不相邻的地方。', SERAPH_ORACLE.hall.door.x, SERAPH_ORACLE.hall.door.z, 2)], ['seraph']),
   scene('m2_bench', 2, 'oracle_courtyard', 'neo', '先知也是程序', 'oracle_second', 'oracle', '旧楼围着一块灰色庭院。先知坐在长椅旁喂鸟，愿意谈流亡程序、选择和通往源头的路线。', [walk('走到先知的长椅前', SERAPH_ORACLE.yard.bench.x, SERAPH_ORACLE.yard.bench.z), use('听先知谈流亡程序和源头', '先知承认自己和 Seraph 也是程序。被系统遗弃的程序仍会为自己的存在寻找出路；去源头需要先找到钥匙匠。', SERAPH_ORACLE.yard.bench.x, SERAPH_ORACLE.yard.bench.z, 4), think('如何在未知结果前选择信任？', '她没有替 Neo 做出选择，也没有保证下一段路安全。', SERAPH_ORACLE.yard.bench.x, SERAPH_ORACLE.yard.bench.z), use('接过写有约见地址的折纸', '纸上写着 Le Vrai 的约见地点。Neo 把钥匙匠的线索带走；先知先离开庭院。', SERAPH_ORACLE.yard.bench.x, SERAPH_ORACLE.yard.bench.z, 2)], ['oracle']),
   scene('m2_burly', 2, 'oracle_courtyard', 'neo', '越来越多的 Smith', 'copies', 'swarm', 'Smith 已脱离原来的系统职责。他把复制理解为新的存在方式。', [fight('突破复制体的围攻', 5), use('从庭院脱离包围', '对手仍在增殖。Neo 飞离庭院，这场交锋无法终结感染。', 0, -35)], ['smith']),
-  scene('m2_merovingian', 2, 'le_vrai', 'neo', 'Le Vrai 的因果论', 'keymaker', 'restaurant', 'Merovingian 在餐厅拒绝交出钥匙匠，将权力解释为对原因的掌握。', [walk('靠近餐厅主桌', 0, -20), think('理解原因等于控制一切吗？', '把他人当作因果链上的工具，本身也是一种选择。')], ['morpheus', 'trinity', 'merovingian', 'persephone']),
-  scene('m2_persephone', 2, 'le_vrai', 'neo', 'Persephone 的条件', 'keymaker', 'oracle', 'Persephone 在盥洗室提出交换，愿意带众人去见钥匙匠。', [walk('进入侧面的盥洗区域', 7, 8), use('听取她的交换条件', '交换涉及情感与背叛。她随后带众人穿过通往城堡的门。', 7, 8)], ['persephone', 'trinity', 'morpheus']),
-  scene('m2_library', 2, 'keymaker_workshop', 'neo', '书墙后的囚徒', 'keymaker', 'chateau', 'Persephone 带众人绕过守卫，打开藏着钥匙匠的暗室。', [use('检查书墙暗门', '钥匙匠的工作台被钥匙和锁具包围。', -7, -18), use('打开工坊出口', 'Morpheus 与 Trinity 护送钥匙匠先行离开。', 0, -23)], ['keymaker', 'persephone', 'morpheus', 'trinity']),
+  scene('m2_merovingian', 2, 'le_vrai', 'neo', 'Le Vrai 的因果论', 'keymaker', 'restaurant', '白天的 Le Vrai 俯瞰城市。Merovingian 借一份被改写的甜点宣称人都受原因支配，并拒绝交出钥匙匠。', [walk('穿过餐厅，靠近高台主桌', EXILES.table.x, EXILES.table.z + 8), use('坐下观察被改写的甜点', '甜点的代码改变了客人的感受；Persephone 看见丈夫怎样把他人当成实验。', EXILES.table.x, EXILES.table.z), think('知道原因，就能拥有他人的选择吗？', '对原因的认识不能抹掉被影响者的感受与决定。', EXILES.table.x, EXILES.table.z), use('要求交出钥匙匠', 'Merovingian 拒绝交出钥匙匠，并让守卫送客。', EXILES.table.x, EXILES.table.z), walk('离开主桌，走向升降梯', 0, 17)], ['morpheus', 'trinity', 'merovingian', 'persephone', 'twin1', 'twin2']),
+  scene('m2_persephone', 2, 'le_vrai', 'neo', 'Persephone 的条件', 'keymaker', 'oracle', '在餐厅出口，Persephone 主动把三人带进侧面的盥洗室。她愿意带路，但提出一个关于真情的条件。', [walk('跟随 Persephone 进入盥洗室', EXILES.washroom.x, EXILES.washroom.z), use('听清她真正想要的条件', '她想重新确认曾经感受过的爱，而不是再听一套因果论。', EXILES.washroom.x, EXILES.washroom.z), use('回应 Persephone 的条件', '回应会改变她与 Trinity 对你的态度。', EXILES.washroom.x, EXILES.washroom.z), walk('穿过后厨，找到私人办公室', EXILES.kitchen.x, EXILES.kitchen.z), use('请 Persephone 打开伪装成壁橱的门', '钥匙打开的不是壁橱，而是通往城堡的后门。', EXILES.office.x, EXILES.office.z)], ['persephone', 'trinity', 'morpheus']),
+  scene('m2_library', 2, 'keymaker_workshop', 'neo', '书墙后的囚徒', 'keymaker', 'chateau', '众人经过城堡前厅来到书房。两个旧版本流亡程序守着书墙后的囚室；Persephone 的背叛让去见钥匙匠的路打开。', [walk('穿过城堡书房，观察旧程序', EXILES.library.x, EXILES.library.z), use('让 Persephone 应对看守', '一个看守倒下，另一个逃去通风报信。Merovingian 很快会赶来。', EXILES.guard.x, EXILES.guard.z), use('检查书墙后的暗门', '隐藏的书架滑开，露出后面的钥匙工坊。', EXILES.bookshelf.x, EXILES.bookshelf.z), use('亲自确认钥匙匠身份', '钥匙匠承认自己一直在等人打开这扇门。', EXILES.keymaker.x, EXILES.keymaker.z), walk('带钥匙匠到书房侧门', EXILES.escape.x, EXILES.escape.z)], ['keymaker', 'persephone', 'morpheus', 'trinity', 'cain', 'abel_mero']),
   scene('m2_chateau', 2, 'chateau_hall', 'neo', '双楼梯与古兵器', 'keymaker', 'chateau', 'Neo 留在城堡大厅牵制 Merovingian 的守卫，追兵从柱列和楼梯两侧进入。', [fight('守住城堡大厅', 4), use('尝试追上同伴', '门后突然是遥远的山地。Neo 必须从远处赶回高速公路。', 0, -28)]),
   scene('m2_garage', 2, 'chateau_garage', 'trinity', '车库中的追兵', 'freeway', 'chase', 'Trinity 与 Morpheus 护着钥匙匠进入车库，双子紧追不舍。', [fight('为钥匙匠打开通路', 2), use('检查出口车辆', '车辆冲出地下车库，进入高速公路。', 0, -30)], ['morpheus', 'keymaker']),
   scene('m2_freeway', 2, 'freeway_101', 'trinity', '逆向的高速路', 'freeway', 'chase', 'Trinity 骑摩托车带着钥匙匠逆向穿过车流。W 加速，S 刹车，A / D 转向；碰撞会损伤车辆和乘员。', [walk('靠近接应摩托车', 14, 660), { kind: 'drive', label: '驾驶摩托车护送钥匙匠', x: 14, z: 660 }, use('把钥匙匠交给 Morpheus', '两人抵达接应区。Morpheus 接过护送任务，追逐转向重型卡车。', 14, -660)], ['keymaker', 'morpheus']),

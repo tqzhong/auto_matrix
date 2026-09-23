@@ -493,6 +493,11 @@ export class CharacterModels {
         rig.hero.bones.get('shoulder_R')!.rotation.x -= 1.15;
         rig.hero.bones.get('elbow_R')!.rotation.x -= .65;
       }
+      if (input.persephone?.phase === 'enacting' && input.persephone.role === 'neo') {
+        const weight = Math.sin(Math.min(1, input.persephone.elapsed / 2.8) * Math.PI);
+        rig.hero.bones.get('chest')!.rotation.x -= weight * .12;
+        rig.hero.bones.get('shoulder_R')!.rotation.x -= weight * .4;
+      }
       return;
     }
     rig.torso.position.y = pose.hipHeight;
@@ -501,6 +506,10 @@ export class CharacterModels {
     rig.head.rotation.set(-pose.lean * .6, pose.headTurn, -pose.roll * .5);
     if (holdsStaff) rig.torso.rotation.y += staffSweep * .42;
     if (input.burly?.phase === 'flight' && input.burly.role === 'neo') rig.torso.rotation.x -= .55;
+    if (input.persephone?.phase === 'enacting') {
+      const weight = Math.sin(Math.min(1, input.persephone.elapsed / 2.8) * Math.PI);
+      rig.torso.rotation.x -= weight * .08; rig.head.rotation.x -= weight * .16;
+    }
     for (let i = 0; i < 2; i++) {
       rig.hips[i].position.y = pose.hipHeight;
       rig.hips[i].rotation.set(input.floorSeated ? -1.2 : pose.legs[i].hip, input.floorSeated ? (i ? 1 : -1) * .4 : 0, input.floorSeated ? (i ? 1 : -1) * .6 : 0);
@@ -508,6 +517,7 @@ export class CharacterModels {
       rig.ankles[i].rotation.x = pose.legs[i].ankle;
       rig.shoulders[i].rotation.set(pose.arms[i].shoulder, 0, pose.arms[i].outward);
       rig.elbows[i].rotation.x = pose.arms[i].elbow;
+      if (i === 0 && input.persephone?.phase === 'enacting') rig.shoulders[i].rotation.x -= Math.sin(Math.min(1, input.persephone.elapsed / 2.8) * Math.PI) * .45;
       if (holdsStaff) rig.shoulders[i].rotation.x -= (i ? .55 : .7) + staffSweep * (i ? .35 : .5);
       if (input.burly?.phase === 'flight' && input.burly.role === 'neo') rig.shoulders[i].rotation.x -= 1.1;
       if (i === 0 && input.burly?.phase === 'grapple' && input.burly.role === 'smith') { rig.shoulders[i].rotation.x -= 1.15; rig.elbows[i].rotation.x -= .65; }

@@ -1043,7 +1043,14 @@ test('the entire film route completes through interactions, driving and real com
         }
         assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`); continue;
       }
-      if (step.kind === 'reach') h.advance();
+      if (scene.id === 'm2_library' && index === 4) {
+        for (const [x, z] of [[-8, -17], [-8, -10], [-5, -3], [0, 4], [0, 11], [0, 18], [0, 23]]) {
+          actor.position = filmPosition(scene.set, x, z);
+          for (let frame = 0; frame < 27; frame++) h.players.step(.1, true, h.tick());
+        }
+        h.advance();
+      }
+      else if (step.kind === 'reach') h.advance();
       else if (step.kind === 'reflect') {
         if (scene.id === 'm1_oracle') {
           h.command('act');
@@ -1060,6 +1067,13 @@ test('the entire film route completes through interactions, driving and real com
         if (scene.id === 'm1_cypher_console') for (let frame = 0; frame < 48; frame++) h.players.step(.1, true, h.tick());
       }
       else if (step.kind === 'interact') {
+        if (scene.id === 'm2_persephone' && index === 2) {
+          h.command('persephone:memory');
+          for (let frame = 0; frame < 30; frame++) h.players.step(.1, true, h.tick());
+          h.command('persephone:memory');
+          for (let frame = 0; frame < 30; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.step, 3); continue;
+        }
         h.command('act');
         if (scene.id === 'm2_burly') {
           for (let frame = 0; frame < 28 && state.scene === scene.id; frame++) h.players.step(.1, true, h.tick());

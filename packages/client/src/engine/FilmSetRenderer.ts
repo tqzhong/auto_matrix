@@ -6,7 +6,7 @@ import { workdayLocked, type OfficeWorkday } from '@auto_matrix/shared';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
-import { FILM_SETS, FILM_SCENE_BY_ID, PILL_ROOM, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, awakeningLocked, trainingLocked, phoneLocked, windowOpening, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
+import { FILM_SETS, FILM_SCENE_BY_ID, PILL_ROOM, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, EXILES, awakeningLocked, trainingLocked, phoneLocked, windowOpening, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
 import { LobbySetRenderer } from './LobbySetRenderer.js';
 import { OfficeSetRenderer } from './OfficeSetRenderer.js';
 import { FreewaySetRenderer } from './FreewaySetRenderer.js';
@@ -102,6 +102,8 @@ export class FilmSetRenderer {
   private courtyardStaff?: THREE.Group;
   private courtyardBirds: THREE.Group[] = [];
   private courtyardDisturbedAt?: number;
+  private exileDessert?: THREE.Group;
+  private bookDoor?: THREE.Group;
 
   constructor(private scene: THREE.Scene) {
     scene.add(this.root);
@@ -203,6 +205,12 @@ export class FilmSetRenderer {
     }
     if (this.oracleLetter) this.oracleLetter.visible = sceneId === 'm2_bench' && (journey?.step ?? 0) < FILM_SCENE_BY_ID.m2_bench.steps.length;
     if (this.courtyardStaff) this.courtyardStaff.visible = sceneId === 'm2_bench' || sceneId === 'm2_burly' && !journey?.visiting && !['staff', 'flight_ready', 'flight', 'done'].includes(journey?.burly?.phase ?? 'ready');
+    if (this.exileDessert) {
+      const triggered = sceneId === 'm2_merovingian' && (journey?.step ?? 0) >= 2;
+      this.exileDessert.visible = triggered;
+      this.exileDessert.scale.setScalar(1 + Math.sin(elapsed * 4) * .08);
+    }
+    if (this.bookDoor) this.bookDoor.position.x = sceneId === 'm2_library' && !journey?.visiting && (journey?.step ?? 0) >= 3 ? -5.8 : 0;
     if (this.courtyardBirds.length) {
       const startled = sceneId === 'm2_burly' && !journey?.visiting && journey?.burly?.phase !== 'ready';
       if (startled && this.courtyardDisturbedAt === undefined) this.courtyardDisturbedAt = elapsed;
@@ -524,10 +532,20 @@ export class FilmSetRenderer {
     const wall = industrial ? this.metal : lavish || ['oracle', 'dojo', 'teahouse', 'mobil', 'backdoors'].includes(set.architecture) ? this.white : this.plaster;
     for (const x of [-w / 2, w / 2]) {
       if (set.architecture === 'lafayette' && x > 0) continue;
+      if (set.id === 'film_le_vrai' && x < 0) {
+        this.box(this.glass, x, h / 2, 0, .22, h - 1, d - 2);
+        for (let z = -d / 2 + 1; z <= d / 2; z += 6.8) this.box(this.brass, x + .16, h / 2, z, .34, h, .25, .05);
+        for (const y of [.6, h / 2, h - .6]) this.box(this.brass, x + .16, y, 0, .32, .2, d, .05);
+        continue;
+      }
       this.box(wall, x, h / 2, 0, .7, h, d);
       for (const y of [.7, 3.7, h - .6]) this.box(lavish ? this.marble : this.wood, x - Math.sign(x) * .45, y, 0, .35, y === 3.7 ? .18 : .7, d);
     }
-    this.box(wall, 0, h / 2, -d / 2, w, h, .7);
+    if (set.id === 'film_le_vrai') {
+      this.box(this.glass, 0, h / 2, -d / 2, w - 1, h - 1, .22);
+      for (let x = -w / 2 + 1; x < w / 2; x += 7) this.box(this.brass, x, h / 2, -d / 2 + .2, .25, h, .28, .05);
+      for (const y of [.65, h - .65]) this.box(this.brass, 0, y, -d / 2 + .2, w, .23, .28, .05);
+    } else this.box(wall, 0, h / 2, -d / 2, w, h, .7);
     this.box(wall, 0, h / 2, d / 2, w, h, .7);
     if (set.architecture === 'lafayette') {
       this.box(this.plaster, 0, h, 0, w, .5, d);
@@ -542,12 +560,12 @@ export class FilmSetRenderer {
     for (let z = -d / 2; z <= d / 2; z += 12) this.box(industrial ? this.metal : this.white, 0, h - .4, z, w, .6, .7);
     for (const x of [-w * .24, w * .24]) this.box(this.white, x, h, 0, .6, .5, d);
     for (const o of filmObstacles(set)) {
-      if (['oracle', 'teahouse'].includes(set.architecture)) continue;
+      if (['oracle', 'teahouse'].includes(set.architecture) || ['film_le_vrai', 'film_keymaker_workshop'].includes(set.id)) continue;
       const column = set.architecture === 'lobby' ? this.mat(0x2d4038, .28, .08) : lavish ? this.marble : this.metal;
       this.box(column, o.x, h / 2, o.z, o.width, h, o.depth, .08);
       for (const y of [.35, h - .5]) this.box(lavish ? this.marble : this.metal, o.x, y, o.z, 2.5, .7, 2.5, .06);
     }
-    if (['day', 'warm'].includes(set.light) && !['dojo', 'teahouse'].includes(set.architecture)) for (let z = -d / 2 + 9; z < d / 2 - 6; z += 13) this.window(-w / 2 + .45, h * .58, z, 7, h * .53, true);
+    if (['day', 'warm'].includes(set.light) && !['dojo', 'teahouse'].includes(set.architecture) && set.id !== 'film_le_vrai') for (let z = -d / 2 + 9; z < d / 2 - 6; z += 13) this.window(-w / 2 + .45, h * .58, z, 7, h * .53, true);
     for (let z = -d / 2 + 12; z < d / 2 - 4; z += 22) for (const x of [-w * .25, w * .25]) this.lamp(x, h - 2, z, set.light === 'warm' || lavish, true);
   }
   private build(set: FilmSet): void {
@@ -709,8 +727,26 @@ export class FilmSetRenderer {
         for (const y of [1, 4, 7, 10, 13]) this.box(this.wood, x, y, 0, 3.5, .4, d - 5);
         for (let z = -d / 2 + 4; z < d / 2 - 3; z += .9) for (const y of [2.5, 5.5, 8.5, 11.5]) this.box(this.mat([0x504b3c, 0x43302a, 0x4f5651, 0x6c624d][Math.abs(Math.round(z * 3)) % 4]), x, y, z, 2, 2.5, .6);
       }
-      this.table(0, -21, 9, 4); for (let i = 0; i < 28; i++) { const x = -11 + i % 14 * 1.6; const y = 7 + Math.floor(i / 14) * 2; this.mesh(new THREE.TorusGeometry(.22, .045, 6, 12), this.brass, x, y, -d / 2 + 1); this.box(this.brass, x, y - .5, -d / 2 + 1, .07, .7, .08); }
-      this.door(0, -d / 2 + .5);
+      this.rug(0, 8, 22, 24); this.table(0, -25, 9, 4);
+      this.lamp(0, 12, -25, true, true);
+      this.box(this.mat(0x7e6348, .86), 0, 7, -32.5, 12, 9, .2);
+      for (let i = 0; i < 28; i++) { const x = -11 + i % 14 * 1.6; const y = 7 + Math.floor(i / 14) * 2; this.mesh(new THREE.TorusGeometry(.22, .045, 6, 12), this.brass, x, y, -d / 2 + 1); this.box(this.brass, x, y - .5, -d / 2 + 1, .07, .7, .08); }
+      for (const [x, width] of [[-16.25, 11.5], [8.25, 27.5]]) {
+        this.box(this.wood, x, 6.5, -18, width, 13, .6);
+        for (let y = 1.3; y < 13; y += 2.4) this.box(this.brass, x, y, -17.62, width, .1, .15);
+        for (let dx = -width / 2 + .55; dx < width / 2 - .2; dx += .7) for (let y = 2.4; y < 12; y += 2.4)
+          this.box(this.mat(Math.round(dx * 10 + y * 3) % 3 ? 0x615445 : 0x303d38), x + dx, y, -17.55, .58, 2.1, .4);
+      }
+      const bookDoor = new THREE.Group(); bookDoor.userData.dynamic = true; this.root.add(bookDoor);
+      const start = this.root.children.length;
+      this.box(this.wood, EXILES.bookshelf.x, 6.5, EXILES.bookshelf.z, 5, 13, .55);
+      for (let y = 1.3; y < 13; y += 2.4) this.box(this.brass, EXILES.bookshelf.x, y, -17.6, 5, .12, .2);
+      for (let dx = -2.1; dx <= 2.1; dx += .7) for (let y = 2.4; y < 12; y += 2.4)
+        this.box(this.mat(Math.round(dx * 10 + y) % 2 ? 0x69513c : 0x3e5049), EXILES.bookshelf.x + dx, y, -17.53, .56, 2.1, .38);
+      this.root.children.slice(start).forEach(object => bookDoor.add(object)); this.bookDoor = bookDoor;
+      for (const x of [-15, 15]) { this.loungeChair(x, 6, x < 0 ? Math.PI / 2 : -Math.PI / 2); this.lamp(x, 7, 6, true); }
+      this.box(this.black, 0, 5, 8, 9, 6, .35); this.box(this.glass, 0, 5, 8.21, 8.6, 5.6, .04);
+      this.label('PRIVATE LIBRARY', 0, 11.5, -17.3, 13, '#c4b38c', '#27382f'); this.door(0, d / 2 - .5);
     } else if (a === 'power') {
       for (const x of [-w * .3, w * .3]) for (let z = -d / 2 + 10; z < d / 2 - 5; z += 12) {
         this.box(this.metal, x, 4.5, z, 7, 9, 5, .15); for (const y of [3, 5, 7]) { this.box(this.black, x, y, z + 2.6, 5.8, .45, .1); this.sphere(this.mat(0x829a5b), x + 2, y + .6, z + 2.65, .12); }
@@ -749,6 +785,52 @@ export class FilmSetRenderer {
         this.pipe([[x - side * .5, 3, z + 2], [x - side * .5, 9, z - 2]], .09, this.metal);
       }
       for (const z of [7, 24]) { this.cylinder(this.brass, 0, h - 3, z, 3, .3); for (let i = 0; i < 10; i++) this.lamp(Math.sin(i * Math.PI / 5) * 3, h - 3, z + Math.cos(i * Math.PI / 5) * 3); }
+    } else if (set.id === 'film_le_vrai') {
+      const cloth = this.mat(0xb2a796, .94); const gold = this.mat(0x9e8257, .24, .55);
+      const jade = this.mat(0x2c5145, .18, .25); const mirror = this.mat(0x687e72, .09, .65);
+      // The dining room faces a daylight city, rather than the trilogy's night-green street palette.
+      for (let i = 0; i < 16; i++) {
+        const z = -d / 2 + 3 + i * 5.1; const height = 15 + (i * 7) % 20;
+        const facade = this.mat(i % 3 ? 0x536761 : 0x354e4a, .5, .25);
+        this.box(facade, -39 - i % 3 * 3, height / 2 - 12, z, 7.5, height, 4, .05);
+        for (let floor = 0; floor < 6; floor++) for (const dz of [-1.3, 1.3]) this.box(this.mat(0x9db9a8, .35), -34.9 - i % 3 * 3, -9 + floor * 3.1, z + dz, .05, 1.5, .8);
+      }
+      for (let i = 0; i < 9; i++) {
+        const x = -35 + i * 9; const height = 17 + (i * 11) % 21;
+        this.box(this.mat(i % 2 ? 0x526a65 : 0x839890, .48), x, height / 2 - 11, -d / 2 - 12 - i % 3 * 4, 7.8, height, 6, .04);
+        for (let floor = 0; floor < 7; floor++) this.box(this.mat(0xabc7bd, .28), x, -7 + floor * 2.9, -d / 2 - 8 - i % 3 * 4, 5.4, 1, .08);
+      }
+      for (const x of [-16, 16]) for (const z of [-7, 9]) {
+        this.table(x, z, 7, 5, cloth); this.chair(x - 4.7, z, Math.PI / 2, true); this.chair(x + 4.7, z, -Math.PI / 2, true);
+        this.cylinder(gold, x, 3.15, z, .12, .65); this.sphere(this.glow, x, 3.55, z, .13);
+        for (const dx of [-1.8, 1.8]) { this.cylinder(this.glass, x + dx, 3, z, .22, .6); this.cylinder(gold, x + dx, 2.87, z, .1, .05); }
+      }
+      this.box(jade, 0, .09, -12, 11, .04, 41); this.table(0, -23, 12, 5, cloth);
+      for (const x of [-6.5, 6.5]) this.chair(x, -23, x > 0 ? -Math.PI / 2 : Math.PI / 2, true);
+      this.chair(0, -28, 0, true); this.chair(0, -17.5, Math.PI, true);
+      for (const x of [-7, 7]) this.cylinder(gold, x, 1.8, -28, .22, 3.6);
+      for (let i = 0; i < 4; i++) this.box(gold, -4.5 + i * 3, .08, -14, .045, .04, 45);
+      for (const z of [-31, -14, 4, 20]) {
+        this.cylinder(gold, 0, h - 2.2, z, 2.3, .18);
+        for (let i = 0; i < 8; i++) this.sphere(this.glow, Math.sin(i * Math.PI / 4) * 2, h - 2.6, z + Math.cos(i * Math.PI / 4) * 2, .19);
+      }
+      // A screened washroom, then a working kitchen and an unremarkable office closet.
+      this.box(this.marble, 10, 4, 27, .6, 8, 20); this.box(mirror, 11, 4.5, 31, .13, 6, 7);
+      for (const z of [21, 27, 33]) { this.box(this.marble, 21, 3.5, z, .3, 7, .2); this.box(gold, 21, 7.1, z, .5, .2, .5); }
+      for (const z of [20, 27]) { this.box(this.marble, 25, 2, z, 2.2, 2.2, 1.3, .12); this.cylinder(gold, 25, 3.15, z, .22, .45); }
+      for (const z of [-12, -6, 0]) {
+        this.box(this.metal, 16, 1.4, z, 8, 2.8, 4, .08);
+        for (const x of [13.6, 17.6]) this.cylinder(this.black, x, 2.95, z, .8, .14);
+      }
+      this.box(this.wood, 22, 5, -26, 10, 10, .4); this.box(jade, 24, 4.1, -28, 5, 8, .2);
+      this.box(gold, 26.1, 4.1, -27, .17, .28, .17); this.label('LE VRAI', 0, h - 3.3, -d / 2 + .7, 11, '#d5bd88', '#243b32');
+      const dessert = new THREE.Group(); dessert.userData.dynamic = true; dessert.name = 'causality-dessert';
+      this.root.add(dessert); const start = this.root.children.length;
+      this.cylinder(this.mat(0x3c201c, .28), 16, 3.12, -7, .85, .22);
+      for (let i = 0; i < 18; i++) this.box(this.mat(i % 4 ? 0xd2935b : 0xa9e1bb, .2), 15.4 + i % 6 * .23, 3.4 + Math.floor(i / 6) * .15, -7 + (i % 3 - 1) * .16, .07, .26, .03);
+      dessert.position.set(16, 3.1, -7);
+      this.root.children.slice(start).forEach(object => { dessert.add(object); object.position.sub(dessert.position); });
+      this.exileDessert = dessert;
     } else if (a === 'restaurant') {
       const cloth = this.mat(0xe1ddd0, .9);
       for (const x of [-w * .29, w * .29]) for (let z = -d / 2 + 12; z < d / 2 - 8; z += 15) {
@@ -1106,6 +1188,7 @@ export class FilmSetRenderer {
     this.zion?.dispose(); this.zion = undefined;
     this.baneCopy?.dispose(); this.baneCopy = undefined;
     this.portalDoor = undefined; this.oracleLetter = undefined; this.courtyardStaff = undefined; this.courtyardBirds = []; this.courtyardDisturbedAt = undefined;
+    this.exileDessert = undefined; this.bookDoor = undefined;
     this.office?.dispose(); this.office = undefined;
     this.freeway?.dispose(); this.freeway = undefined;
     this.lobby?.dispose(); this.lobby = undefined;

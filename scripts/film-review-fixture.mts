@@ -1,4 +1,4 @@
-import { newReloaded, BURLY } from '@auto_matrix/shared';
+import { newReloaded, BURLY, EXILES } from '@auto_matrix/shared';
 // Creates an isolated visual-review save; never writes the player's data directory.
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import os from 'node:os';
@@ -380,6 +380,18 @@ if (scene.id === 'm2_burly' && ['burly-grapple', 'burly-swarm', 'burly-staff', '
   } else sandbox.life.film.burlyFrame(actor, 0, 0);
   journey.lastText = variant === 'burly-grapple' ? 'Smith 正试图把 Neo 同化。现在按 X 挣脱。' : variant === 'burly-flight' ? 'Neo 正冲出围攻。' : '复制体不断补位；不能靠清空一波取胜。';
   journey.checkpoint = { ...actor.position };
+}
+if (scene.id === 'm2_persephone' && process.argv[3] === 'exiles-washroom') {
+  const journey = sandbox.life.film.state!; actor.controller = 'player'; journey.step = 2;
+  actor.position = filmPosition(scene.set, EXILES.washroom.x - 2, EXILES.washroom.z + 1); actor.rotation = 2.1;
+  journey.checkpoint = { ...actor.position };
+}
+if (scene.id === 'm2_library' && ['exiles-bookcase', 'exiles-escort'].includes(process.argv[3])) {
+  const journey = sandbox.life.film.state!; actor.controller = 'player';
+  journey.step = process.argv[3] === 'exiles-bookcase' ? 2 : 4;
+  actor.position = filmPosition(scene.set, EXILES.bookshelf.x, EXILES.bookshelf.z + 7); actor.rotation = Math.PI;
+  if (journey.step === 4) Object.assign(journey.keymaker!, { phase: 'following', x: EXILES.bookshelf.x, z: EXILES.bookshelf.z + 3 });
+  sandbox.life.film.keymakerFrame(actor, 0, 0); journey.checkpoint = { ...actor.position };
 }
 for (const resident of world.agents.values()) delete resident.controller;
 neo.isAwakened = FILM_SCENES.indexOf(scene) >= FILM_SCENES.findIndex(s => s.id === 'm1_pod');

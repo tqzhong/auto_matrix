@@ -119,6 +119,8 @@ export class PlayerController {
     this.sandbox?.life.film.workdayFrame(agent, 0, tick);
     this.sandbox?.life.film.apartmentFrame(agent, 0, tick);
     this.sandbox?.life.film.clubFrame(agent, 0, tick);
+    this.sandbox?.life.film.persephoneFrame(agent, 0, tick);
+    this.sandbox?.life.film.keymakerFrame(agent, 0, tick);
     this.sandbox?.life.film.sentinelFrame(agent, { movement: 0, sprint: false, jump: false }, 0, tick);
     this.sandbox?.life.film.interludeFrame(agent, 0, tick);
     this.sandbox?.life.film.betrayalFrame(agent, 0, tick);
@@ -149,6 +151,8 @@ export class PlayerController {
       this.sandbox?.life.film.workdayFrame(agent, 0, tick);
       this.sandbox?.life.film.apartmentFrame(agent, 0, tick);
       this.sandbox?.life.film.clubFrame(agent, 0, tick);
+      this.sandbox?.life.film.persephoneFrame(agent, 0, tick);
+      this.sandbox?.life.film.keymakerFrame(agent, 0, tick);
       this.sandbox?.life.film.interludeFrame(agent, 0, tick);
       this.sandbox?.life.film.betrayalFrame(agent, 0, tick);
       this.sandbox?.life.film.rescueFrame(agent, 0, tick);
@@ -213,6 +217,10 @@ export class PlayerController {
       this.sandbox?.life.film.workdayFrame(agent, dt, tick);
       this.sandbox?.life.film.apartmentFrame(agent, dt, tick);
       this.sandbox?.life.film.clubFrame(agent, dt, tick);
+      if (this.sandbox?.life.film.persephoneFrame(agent, dt, tick)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
+      this.sandbox?.life.film.keymakerFrame(agent, dt, tick);
       if (this.sandbox?.life.film.burlyFrame(agent, dt, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }

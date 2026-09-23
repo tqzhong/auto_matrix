@@ -99,7 +99,7 @@ export class SandboxUI {
     const journey = this.state?.neoLife?.journey;
     if (journey && journey.actor === this.player?.id) {
       const step = FILM_SCENE_BY_ID[journey.scene].steps[journey.step];
-      if (journey.visiting || step?.kind === 'reflect' || journey.finished) this.open('journal');
+      if (journey.visiting || step?.kind === 'reflect' || journey.scene === 'm2_persephone' && journey.step === 2 || journey.finished) this.open('journal');
       else this.send({ kind: 'life', target: `film:${step ? 'act' : 'next'}` });
       return;
     }
@@ -189,6 +189,20 @@ export class SandboxUI {
     this.el('sandbox-job').style.width = journey.started !== undefined && step ? `${Math.min(100, (this.tick - journey.started) / ((step.seconds ?? 3) * 2) * 100)}%` : '0';
     document.getElementById('game-objective')!.textContent = journey.visiting ? set.name : scene.title;
     document.getElementById('game-objective-copy')!.textContent = journey.visiting ? '自由走动，J 返回保存的剧情位置。' : journey.fighting ? 'F 连击 · X 闪避 · 1 治疗 · 击败追兵后继续' : step ? `${journey.step + 1}/${scene.steps.length} · ${step.label} · ${step.kind === 'reach' ? '走到标记旁' : step.kind === 'reflect' ? '靠近后按 J 记录反思' : '靠近后按 G'}` : 'G 继续下一段，J 查看刚刚发生的事。';
+    if (!journey.visiting && scene.id === 'm2_persephone' && journey.step === 2 && journey.persephone) {
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = journey.persephone.phase === 'enacting' ? '动作与同伴反应正在保存 · V 切换视角' : '靠近后按 J · 电影路线或基于餐桌回应的另一种说法';
+      this.el('sandbox-nearby').textContent = '在手记中回应 Persephone';
+      this.el('sandbox-job').style.width = `${journey.persephone.elapsed / 2.8 * 100}%`;
+      document.getElementById('game-objective-copy')!.textContent = journey.persephone.phase === 'enacting' ? 'Persephone 正在判断这次回应 · 进度自动保存' : '走近 Persephone，在手记中亲自回应条件';
+    }
+    if (!journey.visiting && scene.id === 'm2_library' && journey.keymaker?.phase === 'following') {
+      const gap = distance(player.position, filmPosition(scene.set, journey.keymaker.x, journey.keymaker.z));
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.toggle('urgent', gap > 14);
+      this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = `钥匙匠距离 ${Math.round(gap)} m · 保持在 14 m 内 · 亲自带他到侧门`;
+      document.getElementById('game-objective-copy')!.textContent = `护送钥匙匠到书房侧门 · 相距 ${Math.round(gap)} m${gap > 14 ? ' · 返回接应' : ''}`;
+    }
     if (!journey.visiting && scene.id === 'm2_burly' && journey.burly) {
       const encounter = journey.burly; const phase = encounter.phase;
       const staffPosition = filmPosition(scene.set, BURLY.staff.x, BURLY.staff.z);

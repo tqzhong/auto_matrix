@@ -1,4 +1,7 @@
 .film-journal { color:#d8dccf; max-width:1240px; margin:auto; }
+.film-exiles { color:#293a33; }.film-exiles .film-heading>span { color:#677767; }.film-exiles .film-heading p { color:#677267; }
+.film-exiles .film-objectives li { color:#667268; border-color:#526b5430; }.film-exiles .film-objectives .done { color:#536b5b; }.film-exiles .film-objectives .current { color:#35472e; background:#91a77324; }
+.film-exiles .film-controls small { color:#687458; }.film-journal.film-exiles button { color:#263d33; background:#dbe4d6; border-color:#779075; }.film-journal.film-exiles button:hover:not(:disabled) { background:#c9dac5; }
 .film-contact { background:#15221c; padding:22px; box-sizing:border-box; }
 .film-contact .film-heading { padding:0 0 12px; }.film-contact .film-heading h3 { font-size:24px; }
 .film-contact .film-now { grid-template-columns:minmax(0,1fr); padding:16px 0 0; }.film-contact .film-now h3 { font-size:22px; }

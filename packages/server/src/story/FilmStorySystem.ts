@@ -22,6 +22,7 @@ import { AIR_RESCUE, airRescueLocked, airRescueRoot, airRescueText, type AirResc
 import { MATRIX_ESCAPE, matrixEscapeLocked, matrixEscapeRoot, matrixEscapeText, type MatrixEscapeEncounter, type MatrixEscapeRole } from '@auto_matrix/shared';
 import { THE_ONE, theOneLocked, theOneRoot, theOneText, type TheOneEncounter, type TheOneRole } from '@auto_matrix/shared';
 import { BURLY, burlyLocked, burlyText, type BurlyEncounter } from '@auto_matrix/shared';
+import { EXILES } from '@auto_matrix/shared';
 
 const BATHROOM_ROLES = ['neo', 'trinity', 'switch', 'apoc'] as const;
 const UNPLUGGED_ROLES = ['tank', 'cypher', 'dozer', 'apoc', 'switch', 'neo', 'trinity'] as const;
@@ -38,7 +39,7 @@ export class FilmStorySystem {
   get scene(): FilmScene | undefined { return this.state && FILM_SCENE_BY_ID[this.state.scene]; }
   get step(): FilmStep | undefined { return this.scene?.steps[this.state!.step]; }
   controls(agent: AgentState): boolean { return Boolean(this.state && this.state.actor === agent.id); }
-  performing(agent: AgentState): boolean { return this.controls(agent) && (burlyLocked(this.state!) || clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || theOneLocked(this.state!) || reloadedLocked(this.state!) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
+  performing(agent: AgentState): boolean { return this.controls(agent) && (this.state!.persephone?.phase === 'enacting' || burlyLocked(this.state!) || clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || theOneLocked(this.state!) || reloadedLocked(this.state!) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
   clubFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
     if (state?.scene !== 'm1_club' || state.visiting || !this.controls(agent)) return;
@@ -2199,6 +2200,97 @@ export class FilmStorySystem {
     if (!reset) this.reconcileCast();
   }
 
+  persephoneFrame(agent: AgentState, dt: number, tick: number): boolean {
+    const state = this.state;
+    if (state?.scene !== 'm2_persephone' || state.visiting || !this.controls(agent) || state.persephone?.phase !== 'enacting') return false;
+    const encounter = state.persephone;
+    if (['persephone', 'trinity'].some(id => this.world.agents.get(id)?.controller)) {
+      state.lastText = '另一位玩家正在控制这段交谈中的人物。动作停在当前一拍。'; return true;
+    }
+    encounter.elapsed = Math.min(EXILES.exchangeSeconds, encounter.elapsed + Math.max(0, Math.min(.1, dt)));
+    const memory = encounter.route === 'memory';
+    const neo = filmPosition(this.scene!.set, 22.1, 21.8);
+    agent.position = neo; agent.rotation = memory ? .9 : 1.5; agent.velocity = { x: 0, y: 0, z: 0 };
+    agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, persephone: { ...encounter, role: 'neo' } }, startedAt: tick, duration: 1, progress: 0 };
+    const persephone = this.world.agents.get('persephone')!;
+    if (!persephone.controller) {
+      persephone.position = filmPosition(this.scene!.set, 23.4, 22.5); persephone.rotation = -.9;
+      persephone.currentAction = { type: 'idle', parameters: { resolved: true, persephone: { ...encounter, role: 'persephone' } }, startedAt: tick, duration: 1, progress: 0 };
+    }
+    state.checkpoint = { ...agent.position };
+    if (encounter.elapsed < EXILES.exchangeSeconds) return true;
+    agent.currentAction = null; persephone.currentAction = null;
+    if (memory && encounter.attempts === 0) {
+      encounter.phase = 'reconsider'; encounter.attempts = 1; encounter.elapsed = 0;
+      state.lastText = '第一次只是敷衍的交换。Persephone 后退，Trinity 仍在旁边看着你；认真回应，或重新提出自己的条件。';
+      return true;
+    }
+    encounter.phase = 'agreed'; encounter.elapsed = 0;
+    const choice = memory ? 'memory' : 'appeal';
+    this.sandbox().neoLife!.choices.persephone_route = choice;
+    const response = memory ? 'Neo 想起 Trinity，第二次没有把这当成手续。Trinity 明显不悦，但 Persephone 决定带路。'
+      : 'Neo 拒绝把亲密变成赎金，承认 Persephone 有权自己决定。她听见有人第一次问她想做什么，选择背离丈夫。';
+    this.advance(response, agent, tick);
+    return true;
+  }
+  private persephoneAct(agent: AgentState, target: string, tick: number): string {
+    const state = this.state!; const encounter = state.persephone!;
+    if (!this.near(agent, this.step!)) return '先走近 Persephone，在盥洗室里回应。';
+    if (encounter.phase === 'enacting') return state.lastText;
+    if (target !== 'persephone:memory' && target !== 'persephone:appeal') return '打开 J 手记，亲自回应她提出的条件。';
+    if (['persephone', 'trinity'].some(id => this.world.agents.get(id)?.controller)) return '这段交谈中的人物正由另一位玩家控制，等待对方离开再继续。';
+    if (target === 'persephone:appeal' && this.sandbox().neoLife!.choices['m2_merovingian:2'] !== 'care') {
+      encounter.phase = 'reconsider';
+      return state.lastText = '你试着请求她自行带路，但刚才在餐桌上没有正面回应她被当成工具的处境。她不接受这套说辞；可以重新考虑电影中的条件。';
+    }
+    encounter.phase = 'enacting'; encounter.route = target === 'persephone:memory' ? 'memory' : 'appeal'; encounter.elapsed = 0;
+    state.lastText = encounter.route === 'memory' ? 'Neo 走近她，Trinity 抬眼看着两人。' : 'Neo 停下，先把选择还给 Persephone。';
+    this.persephoneFrame(agent, 0, tick); return state.lastText;
+  }
+  keymakerFrame(agent: AgentState, dt: number, tick: number): void {
+    const state = this.state;
+    if (state?.scene !== 'm2_library' || state.visiting || !this.controls(agent) || !state.keymaker) return;
+    this.sealKeymakerDoor();
+    const encounter = state.keymaker; const captive = this.world.agents.get('keymaker')!;
+    if (captive.controller) { state.lastText = '钥匙匠正由另一位玩家控制，营救进度停在原处。'; return; }
+    if (encounter.phase === 'following' && dt > 0) {
+      const x = agent.position.x - FILM_SETS[this.scene!.set].center.x;
+      const z = agent.position.z - FILM_SETS[this.scene!.set].center.z;
+      const gap = Math.hypot(x - encounter.x, z - encounter.z);
+      if (gap > EXILES.followRange) encounter.separated += Math.min(.1, dt);
+      else encounter.separated = Math.max(0, encounter.separated - dt * 2);
+      if (encounter.separated >= 7) {
+        encounter.phase = 'revealed'; encounter.x = EXILES.keymaker.x; encounter.z = EXILES.keymaker.z;
+        encounter.separated = 0; encounter.setbacks++; state.step = 3;
+        agent.position = filmPosition(this.scene!.set, EXILES.bookshelf.x, EXILES.bookshelf.z + 3);
+        agent.velocity = { x: 0, y: 0, z: 0 }; state.checkpoint = { ...agent.position };
+        state.lastText = '你走得太远。看守把钥匙匠重新带回工作台；从已打开的暗门再次接应他。';
+      } else if (gap > 2.7 && gap <= EXILES.followRange) {
+        const length = Math.min(gap - 2.7, EXILES.followSpeed * Math.min(.1, dt));
+        const crossingBookcase = encounter.z < EXILES.bookshelf.z - 1 && z > EXILES.bookshelf.z;
+        const throughDoor = crossingBookcase && Math.hypot(encounter.x - EXILES.bookshelf.x, encounter.z - (EXILES.bookshelf.z - 1)) < 1.3;
+        const goalX = crossingBookcase && !throughDoor ? EXILES.bookshelf.x : x;
+        const goalZ = crossingBookcase && !throughDoor ? EXILES.bookshelf.z - 1 : z;
+        const toGoal = Math.hypot(goalX - encounter.x, goalZ - encounter.z);
+        const stride = Math.min(length, toGoal);
+        if (toGoal > 0) { encounter.x += (goalX - encounter.x) / toGoal * stride; encounter.z += (goalZ - encounter.z) / toGoal * stride; }
+        captive.rotation = Math.atan2(goalX - encounter.x, goalZ - encounter.z);
+      }
+    }
+    captive.position = filmPosition(this.scene!.set, encounter.x, encounter.z);
+    captive.currentLocation = this.scene!.set; captive.isInMatrix = true; captive.status = 'alive'; captive.velocity = { x: 0, y: 0, z: 0 };
+    captive.currentAction = { type: 'idle', parameters: { resolved: true, keymakerEscort: encounter.phase }, startedAt: tick, duration: 1, progress: 0 };
+  }
+  private sealKeymakerDoor(): void {
+    const id = 'film:library:bookdoor'; const state = this.state;
+    if (state?.scene !== 'm2_library' || state.visiting || state.step >= 3) {
+      this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== id); return;
+    }
+    if (!this.sandbox().structures.some(s => s.id === id)) this.sandbox().structures.push({ id, kind: 'barricade', owner: 'matrix',
+      position: filmPosition('film_keymaker_workshop', EXILES.bookshelf.x, EXILES.bookshelf.z), matrix: true, health: 999,
+      film: { scene: 'm2_library', width: 5, depth: .6, height: 13 } });
+  }
+
   command(agent: AgentState, target: string, tick: number): string {
     const life = this.sandbox().neoLife;
     if (!life) return '先以 Neo 开始生活，再追查异常。';
@@ -2243,6 +2335,10 @@ export class FilmStorySystem {
     if (target === 'retry') {
       if (this.reloaded.active(agent)) return this.reloaded.command(agent, target, tick);
       if (state.scene === 'm2_burly') return this.retryBurly(agent, tick);
+      if (state.scene === 'm2_persephone' && state.persephone?.phase === 'enacting') {
+        agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
+        this.persephoneFrame(agent, 0, tick); return '已接回盥洗室，条件与动作进度均已保留。';
+      }
       if (state.theOne && ['m1_death', 'm1_return', 'm1_final_call'].includes(state.scene)) return this.retryTheOne(agent, tick);
       if (state.government && ['m1_smith_question', 'm1_bullet_dodge'].includes(state.scene)) return this.retryGovernment(agent, tick);
       if (state.airRescue && ['m1_helicopter', 'm1_rooftop_rescue'].includes(state.scene)) return this.retryAirRescue(agent, tick);
@@ -2428,7 +2524,7 @@ export class FilmStorySystem {
       }
       if (!next) { state.finished = true; life.ending = 'peace'; this.sandbox().ending = 'peace'; return '三部曲通关。停战与本轮反思已经保存。'; }
       if (!this.changeActor(agent, next.actor, tick)) return '下一段的角色正在由另一位玩家控制，进度已保留。';
-      const sameRoom = state.scene === 'm1_pills' && next.id === 'm1_mirror';
+      const sameRoom = state.scene === 'm1_pills' && next.id === 'm1_mirror' || state.scene === 'm2_merovingian' && next.id === 'm2_persephone';
       const position = sameRoom || state.scene === 'm1_boss' && next.id === 'm1_office_escape' ? { ...agent.position } : undefined;
       const facing = agent.rotation;
       state.scene = next.id; state.actor = next.actor; state.step = 0; state.lastText = next.context;
@@ -2440,6 +2536,7 @@ export class FilmStorySystem {
     if (!step) return '本场景已完成。G 或 J 继续下一段。';
     if (this.reloaded.active(agent)) return this.reloaded.command(agent, target, tick);
     if (state.scene === 'm2_burly') return this.burlyAct(agent, target, tick);
+    if (state.scene === 'm2_persephone' && state.step === 2) return this.persephoneAct(agent, target, tick);
     if (state.scene === 'm1_wake_up') return this.apartmentAct(agent, target, tick);
     if (state.scene === 'm1_wake_again' && state.step === 0) return this.wakeCallAct(agent, target, tick);
     if (state.scene === 'm1_club') return this.clubAct(agent, target, tick);
@@ -2651,7 +2748,10 @@ export class FilmStorySystem {
     delete state.baneCopy;
     delete state.seraph;
     delete state.burly;
+    delete state.persephone;
+    delete state.keymaker;
     this.sandbox().structures = this.sandbox().structures.filter(structure => structure.id !== 'film:reloaded:door');
+    this.sandbox().structures = this.sandbox().structures.filter(structure => structure.id !== 'film:library:bookdoor');
     this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== 'film:apartment:door');
     delete state.pills;
     delete state.interrogation;
@@ -2694,6 +2794,11 @@ export class FilmStorySystem {
         oracle.currentLocation = CHARACTERS.oracle.initialLocation; oracle.position = locationEntrance(oracle.currentLocation);
         oracle.currentAction = null; oracle.targetPosition = null; oracle.currentPath = []; oracle.velocity = { x: 0, y: 0, z: 0 };
       }
+    }
+    if (scene.id === 'm2_persephone') state.persephone = { phase: 'offered', elapsed: 0, attempts: 0 };
+    if (scene.id === 'm2_library') {
+      state.keymaker = { x: EXILES.keymaker.x, z: EXILES.keymaker.z, phase: 'hidden', separated: 0, setbacks: 0 };
+      this.keymakerFrame(actor, 0, tick);
     }
     if (scene.id === 'm2_merovingian' && life.choices.oracle_second_lead && !life.choices.oracle_second_prepared) {
       const answer = life.choices['m2_bench:2']; const inventory = this.sandbox().profiles[actor.id].inventory;
@@ -2853,6 +2958,22 @@ export class FilmStorySystem {
       if (scene.id === 'm1_jump' && id === 'morpheus') actor.position = filmPosition(scene.set, 0, -38);
       if (scene.id === 'm2_seraph' && id === 'seraph') { actor.position = filmPosition(scene.set, 0, -8); actor.rotation = 0; }
       if (scene.id === 'm2_burly' && id === 'smith') { actor.position = filmPosition(scene.set, 0, -8); actor.rotation = 0; }
+      if (scene.id === 'm2_merovingian') {
+        const seats: Record<string, [number, number, number]> = { merovingian: [0, -27, 0], persephone: [-5, -27, .5],
+          morpheus: [-7, -17, Math.PI], trinity: [7, -17, Math.PI], twin1: [-14, -25, .7], twin2: [14, -25, -.7] };
+        const seat = seats[id]; if (seat) { actor.position = filmPosition(scene.set, seat[0], seat[1]); actor.rotation = seat[2];
+          actor.currentAction = { type: 'idle', parameters: { seated: ['merovingian', 'persephone'].includes(id) }, startedAt: this.state!.enteredAt, duration: 100000, progress: 0 }; }
+      }
+      if (scene.id === 'm2_persephone') {
+        const positions: Record<string, [number, number, number]> = { persephone: [23.4, 22.5, -.9], trinity: [18.5, 20.2, 1], morpheus: [17.5, 17.2, 1] };
+        const spot = positions[id]; if (spot) { actor.position = filmPosition(scene.set, spot[0], spot[1]); actor.rotation = spot[2]; }
+      }
+      if (scene.id === 'm2_library') {
+        const positions: Record<string, [number, number, number]> = { keymaker: [EXILES.keymaker.x, EXILES.keymaker.z, 0],
+          persephone: [-4, -4, Math.PI], morpheus: [-7, 9, Math.PI], trinity: [7, 9, Math.PI],
+          cain: [-7, -7, 0], abel_mero: [7, -7, 0] };
+        const spot = positions[id]; if (spot) { actor.position = filmPosition(scene.set, spot[0], spot[1]); actor.rotation = spot[2]; }
+      }
       if (scene.id === 'm2_backdoors' && id === 'seraph') { actor.position = filmPosition(scene.set, 2.5, -30); actor.rotation = Math.PI; }
       if (scene.id === 'm2_bench' && id === 'oracle') {
         actor.position = filmPosition(scene.set, -9, -20); actor.rotation = 0;
@@ -2873,6 +2994,15 @@ export class FilmStorySystem {
   }
   private advance(text: string, agent: AgentState, tick: number): void {
     const state = this.state!; const life = this.sandbox().neoLife!;
+    if (state.scene === 'm2_library' && state.keymaker) {
+      if (state.step === 1) {
+        const cain = this.world.agents.get('cain'); if (cain && !cain.controller) { cain.status = 'dead'; cain.currentAction = null; }
+        const abel = this.world.agents.get('abel_mero'); if (abel && !abel.controller) abel.targetPosition = filmPosition(this.scene!.set, 0, 26);
+      }
+      if (state.step === 2) state.keymaker.phase = 'revealed';
+      if (state.step === 3) { state.keymaker.phase = 'following'; state.keymaker.separated = 0; }
+      if (state.step === 4) { state.keymaker.phase = 'escaped'; life.choices.keymaker_rescued = 'yes'; }
+    }
     if (state.scene === 'm2_seraph' && state.step === 0) {
       const seraph = this.world.agents.get('seraph'); if (seraph && !seraph.controller) { seraph.position = filmPosition(this.scene!.set, 2.8, -24); seraph.rotation = Math.PI; }
     }
@@ -2914,6 +3044,7 @@ export class FilmStorySystem {
     if (state.scene === 'm2_departure' && state.step === 3) life.choices.zion_clearance = 'hamann';
     if (state.scene === 'm1_bug' && state.step === 0 && state.office?.outcome === 'escaped') text = '扫描完成，没有发现追踪装置。Trinity 收起仪器，确认接头安全，继续前往 Morpheus 的房间。';
     state.lastText = text; state.step++; state.checkpoint = { ...agent.position }; delete state.started; delete state.fighting;
+    if (state.scene === 'm2_library') this.sealKeymakerDoor();
     if (state.scene === 'm2_oracle_message' && state.step === 1) this.sealZionMessageDoor();
     if (state.scene === 'm1_desert' && state.step === 1) {
       state.awakening = { kind: 'desert', elapsed: 0, started: false };
@@ -2963,6 +3094,14 @@ export class FilmStorySystem {
     const actor = this.world.agents.get(state.actor);
     if (!actor?.controller || actor.status !== 'alive') { delete state.started; return; }
     if (state.scene === 'm2_burly') { this.burlyTick(actor, tick); return; }
+    if (state.scene === 'm2_library' && state.step === 4) {
+      if (this.world.agents.get('keymaker')?.controller) return;
+      const escort = state.keymaker;
+      if (escort && this.near(actor, this.step!) && Math.hypot(escort.x - EXILES.escape.x, escort.z - EXILES.escape.z) <= EXILES.escapeRange)
+        this.advance('钥匙匠跟上了。Morpheus 与 Trinity 接过护送，Neo 留在大厅挡住赶来的守卫。', actor, tick);
+      else if (escort && this.near(actor, this.step!)) state.lastText = '钥匙匠仍在身后。回去接应他，保持在能跟上的距离。';
+      return;
+    }
     if (state.scene === 'm2_bane_copy' && state.baneCopy && state.step === 2 && state.started !== undefined) state.baneCopy.progress = Math.min(1, (tick - state.started) / 10);
     if (state.scene === 'm1_office_escape') {
       if (this.office.tick(actor, tick)) {
