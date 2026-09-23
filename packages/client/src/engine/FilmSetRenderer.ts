@@ -1,5 +1,6 @@
 import { ReloadedOpeningRenderer } from './ReloadedOpeningRenderer.js';
 import { ReloadedCatchRenderer } from './ReloadedCatchRenderer.js';
+import { ReloadedFinaleRenderer } from './ReloadedFinaleRenderer.js';
 import { ZionHomecomingRenderer } from './ZionHomecomingRenderer.js';
 import { BaneCopyRenderer } from './BaneCopyRenderer.js';
 import * as THREE from 'three';
@@ -99,6 +100,7 @@ export class FilmSetRenderer {
   private theOne?: TheOneRenderer;
   private reloaded?: ReloadedOpeningRenderer;
   private catchSet?: ReloadedCatchRenderer;
+  private finale?: ReloadedFinaleRenderer;
   private zion?: ZionHomecomingRenderer;
   private baneCopy?: BaneCopyRenderer;
   private portalDoor?: { scene: 'm2_seraph' | 'm2_backdoors'; panel: THREE.Group };
@@ -162,6 +164,7 @@ export class FilmSetRenderer {
         else if (set.id === 'film_adams_bridge' || set.id === 'film_extraction_car') this.meeting = new MeetingSetRenderer(this.root);
         else {
           this.build(set); this.batch();
+          if (sceneId === 'm2_stop_sentinels' && set.id === 'film_service_tunnels' || sceneId === 'm2_medical' && set.id === 'film_hammer_deck') this.finale = new ReloadedFinaleRenderer(this.root, sceneId);
           if (set.architecture === 'power') this.createPowerStatus(set);
           if (sceneId === 'm2_key_door') this.createSourceDoor();
           if (sceneId === 'm2_architect') this.createArchitectScreens();
@@ -214,6 +217,7 @@ export class FilmSetRenderer {
     this.freeway?.update(journey, elapsed, playerPosition);
     this.pods?.update(journey, elapsed);
     this.neb?.update(journey, elapsed);
+    this.finale?.update(journey, elapsed);
     this.construct?.update(journey);
     this.desert?.update(journey, elapsed);
     this.mountain?.update(journey?.scene === 'm2_mountain' && !journey.visiting ? journey.mountain : undefined, elapsed);
@@ -1466,6 +1470,7 @@ export class FilmSetRenderer {
     this.mirror?.dispose(); this.mirror = undefined; this.mirrorCracks = undefined;
     this.pods?.dispose(); this.pods = undefined;
     this.neb?.dispose(); this.neb = undefined;
+    this.finale?.dispose(); this.finale = undefined;
     this.construct?.dispose(); this.construct = undefined;
     this.desert?.dispose(); this.desert = undefined;
     this.mountain?.dispose(); this.mountain = undefined;

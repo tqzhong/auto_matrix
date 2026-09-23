@@ -37,6 +37,13 @@ export interface GridOperation {
   phase: 'preparing' | 'emergency' | 'window' | 'expired' | 'rerouting' | 'opened';
   remaining: number; lastTick: number; reroute: number; attempts: number; hackRemaining?: number;
 }
+export const RELOADED_FINALE = { evacuationSeconds: 32, sentinelSeconds: 14, signalSeconds: 2.2 } as const;
+export interface ShipLossEncounter {
+  phase: 'briefing' | 'evacuating' | 'failed' | 'escaped'; remaining: number; lastTick: number; attempts: number;
+}
+export interface TunnelEncounter {
+  phase: 'running' | 'sensing' | 'failed' | 'collapsed'; remaining: number; focus: number; lastTick: number; attempts: number;
+}
 export interface FilmJourney {
   version: 1; scene: string; step: number; actor: string; completed: string[];
   enteredAt: number; started?: number; fighting?: boolean; checkpoint: Vector3;
@@ -82,6 +89,8 @@ export interface FilmJourney {
   keyDoor?: { portalOpened: boolean; keyTaken: boolean };
   architect?: ArchitectEncounter;
   catch?: import('./reloaded-catch.js').CatchEncounter;
+  shipLoss?: ShipLossEncounter;
+  tunnel?: TunnelEncounter;
 }
 const walk = (label: string, x = 0, z = -12): FilmStep => ({ kind: 'reach', label, x, z });
 const use = (label: string, text: string, x = 0, z = -12, seconds = 3): FilmStep => ({ kind: 'interact', label, text, x, z, seconds });
@@ -205,9 +214,21 @@ export const FILM_SCENES: FilmScene[] = [
     use('从代码中取出子弹', '子弹离开伤口，Trinity 却失去了心跳。', -.6, -18.2),
     use('让心脏重新跳动', 'Trinity 恢复意识。两人回到飞船，战争却仍在逼近。', -.6, -18.2),
   ], ['trinity', 'agent_johnson']),
-  scene('m2_ship_lost', 2, 'neb_deck', 'morpheus', '尼布甲尼撒号的终点', 'trinity_choice', 'siege', '哨兵使用远程炸弹攻击。船员及时弃船，但尼布甲尼撒号被摧毁。', [use('发出弃船指令', '连接设备与旧船体留在身后。', 0, 0), walk('撤向隧道', 0, 31)], ['trinity', 'neo', 'link']),
-  scene('m2_stop_sentinels', 2, 'service_tunnels', 'neo', '触及现实中的连接', 'trinity_choice', 'awakening', 'Neo 在现实中感到哨兵的连接并让它们停下，自己也陷入昏迷。', [walk('面对追来的哨兵', 0, -25), use('伸手触及陌生的信号', 'Hammer 救起幸存者。医疗舱里，Neo 与 Bane 躺在相邻床上。', 0, -25, 6)]),
-  scene('m2_medical', 2, 'hammer_deck', 'trinity', '两个昏迷的人', 'mobil', 'mobil', 'Neo 的脑电信号仍像连接在矩阵中。Bane 是另一场灾难后仅存的幸存者。', [use('查看 Neo 的诊断屏幕', '没有插入连接，却仍有来自另一侧的活动。第二部在未解的信号中结束。', -7, -25)], ['morpheus', 'maggie']),
+  scene('m2_ship_lost', 2, 'neb_deck', 'morpheus', '尼布甲尼撒号的终点', 'trinity_choice', 'siege', 'Neo 说预言也是控制。Link 的雷达突然报告：哨兵停在 EMP 范围外，投下的炸弹正逼近旧船。', [
+    use('听 Neo 说出源头的真相', 'Morpheus 听见：预言与锡安的重建也是控制的一部分。他的信念动摇，但警报打断了谈话。', 0, 20),
+    use('核对雷达：炸弹在 EMP 范围外', '哨兵留在 EMP 射程外；开火不能阻止炸弹。Link 找到通往船尾货舱的逃生路线。', 0, 0),
+    use('下令弃船，打开货舱出口', '连接椅、屏幕与船体都必须留在身后。炸弹已经进入最后航段。', 0, 0),
+    walk('带领船员从货舱撤入隧道', 0, 35),
+  ], ['neo', 'trinity', 'link']),
+  scene('m2_stop_sentinels', 2, 'service_tunnels', 'neo', '触及现实中的连接', 'trinity_choice', 'awakening', '尼布甲尼撒号在身后爆炸。众人沿狭窄管道逃跑，哨兵再次追来；Neo 感到它们的信号。', [
+    walk('跑到隧道窄口，回身面对哨兵', 0, -25),
+    use('朝哨兵伸手，凝神切断连接', '哨兵逐一失去动力。Neo 因这次现实中的连接耗尽体力、陷入昏迷；Hammer 接走幸存者。', 0, -25),
+  ], ['trinity', 'morpheus', 'link']),
+  scene('m2_medical', 2, 'hammer_deck', 'trinity', '两个昏迷的人', 'mobil', 'mobil', 'Hammer 的医疗舱内，Neo 没有接入设备却仍昏迷。Maggie 在床边监测他的身体。', [
+    use('与 Maggie 一起查看 Neo 的生命体征', 'Neo 的身体稳定，却没有醒来；Maggie 无法解释他与机器的连接。Trinity 留在床旁。', -7, -25),
+    use('向 Roland 询问另一场灾难', '锡安舰队过早触发 EMP，计划因此瓦解；那场战斗只带回一名幸存者。', 0, -16),
+    use('走到邻床，确认幸存者身份', '邻床的人是 Bane。他同样昏迷；没人知道他在那场灾难之前经历了什么。', 10, -25),
+  ], ['neo', 'bane', 'maggie', 'morpheus', 'roland']),
 
   scene('m3_mobil', 3, 'mobil_station', 'neo', '既不在这里，也不在那里', 'mobil', 'mobil', 'Neo 醒在 Mobil Ave。沿站台一直走入黑色隧道，试试这里的空间规则。', [walk('走进站台尽头的隧道', 0, -49), use('检查再次出现的站名', '这里属于 Trainman 管理的中间世界，通常的规则无法帮你离开。', 0, 37)]),
   scene('m3_family', 3, 'mobil_station', 'neo', '没有指定用途的孩子', 'sati', 'oracle', 'Rama-Kandra 与 Kamala 为女儿 Sati 寻找庇护。程序之间也有爱。', [walk('走到长椅旁', -7, -8), think('生命必须有用途吗？', 'Sati 的价值不能仅靠系统分配的功能来衡量。', -7, -8)], ['rama_kandra', 'kamala', 'sati']),

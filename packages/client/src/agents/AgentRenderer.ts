@@ -172,12 +172,14 @@ export class AgentRenderer {
       const mountainFlying = input.mountainFlight && ['takeoff', 'flying', 'arrived'].includes(input.mountainFlight.phase) || input.truckFlight;
       const catchFlying = input.catch && ['flight', 'ascent'].includes(input.catch.phase);
       const catchResting = input.catch?.role === 'trinity' && (['extract_ready', 'extracting', 'pulse', 'done'].includes(input.catch.phase) || input.catch.phase === 'failed' && input.catch.checkpoint === 'pulse');
+      const coma = state.currentAction?.parameters.finaleComa === true;
+      entry.body.position.y = coma ? 2.62 : -1;
       entry.body.rotation.x = mountainFlying || catchFlying && input.catch?.role === 'neo' ? THREE.MathUtils.lerp(entry.body.rotation.x, 1.05, 1 - Math.exp(-6 * delta))
         : catchFlying && input.catch?.role === 'trinity' ? THREE.MathUtils.lerp(entry.body.rotation.x, -1.05, 1 - Math.exp(-6 * delta))
-          : catchResting ? THREE.MathUtils.lerp(entry.body.rotation.x, -Math.PI / 2, 1 - Math.exp(-6 * delta)) : 0;
+          : catchResting || coma ? THREE.MathUtils.lerp(entry.body.rotation.x, -Math.PI / 2, 1 - Math.exp(-6 * delta)) : 0;
       this.models.animate(entry.rig, delta * (id === this.playerId && speed > 0 ? 1 : speed), input, dist);
       entry.shadow.position.y = floor - entry.group.position.y - .97;
-      entry.shadow.visible = state.status !== 'disconnected' && !state.currentAction?.parameters.filmDuel && !mountainFlying && !catchFlying && !input.truckPassenger;
+      entry.shadow.visible = state.status !== 'disconnected' && !state.currentAction?.parameters.filmDuel && !mountainFlying && !catchFlying && !coma && !input.truckPassenger;
       entry.shadow.scale.setScalar(1 + Math.max(0, entry.group.position.y - floor) * .04);
       const selected = id === this.selected;
       entry.label.visible = id !== this.playerId && state.status === 'alive' && !state.currentAction?.parameters.filmDuel && (selected || (!this.playerId && dist < 90 && (['neo', 'trinity', 'smith', 'morpheus'].includes(id) || state.currentAction?.type === 'talk_to')));

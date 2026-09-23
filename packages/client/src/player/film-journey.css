@@ -20,6 +20,8 @@ body.film-catch-scene .film-sequence { bottom:150px; width:min(560px,calc(100vw 
 .film-sequence.urgent { background:#220d0de8; border-color:#ff6d5f; box-shadow:0 -4px 24px #ff4a3238; }.film-sequence.urgent small { color:#ffb3a8; font-size:14px; font-weight:700; letter-spacing:.12em; }
 body.film-grid-scene .film-sequence { bottom:184px; width:min(470px,calc(100vw - 36px)); box-sizing:border-box; padding:8px 14px; }
 body.film-grid-scene .film-sequence p { margin:3px 0 6px; font-size:12px; line-height:1.5; }
+body.film-finale-scene .film-sequence { bottom:184px; box-sizing:border-box; padding:8px 14px; }
+body.film-finale-scene .film-sequence p { margin:3px 0 6px; font-size:12px; line-height:1.5; }
 body.film-grid-scene .sandbox-interact { top:54%; }
 body.film-burly-scene .film-sequence { bottom:184px; width:min(510px,calc(100vw - 36px)); box-sizing:border-box; padding:10px 16px; }
 body.film-burly-scene .film-sequence p { margin:3px 0 7px; font-size:13px; line-height:1.5; }

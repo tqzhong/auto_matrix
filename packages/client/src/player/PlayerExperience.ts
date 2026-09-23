@@ -161,6 +161,7 @@ export class PlayerExperience {
     document.body.classList.toggle('film-catch-scene', this.filmPlaying && neoLife?.journey?.scene === 'm2_catch' && !neoLife?.journey?.visiting);
     document.body.classList.toggle('film-burly-scene', this.filmPlaying && neoLife?.journey?.scene === 'm2_burly' && !neoLife.journey.visiting);
     document.body.classList.toggle('film-grid-scene', this.filmPlaying && ['m2_plan', 'm2_power', 'm2_vigilant', 'm2_backup', 'm2_key_door'].includes(neoLife?.journey?.scene ?? '') && !neoLife?.journey?.visiting);
+    document.body.classList.toggle('film-finale-scene', this.filmPlaying && ['m2_ship_lost', 'm2_stop_sentinels'].includes(neoLife?.journey?.scene ?? '') && !neoLife?.journey?.visiting);
     document.body.classList.toggle('film-mountain-flight', this.filmPlaying && neoLife?.journey?.scene === 'm2_mountain' && ['takeoff', 'flying', 'arrived'].includes(neoLife.journey.mountain?.phase ?? ''));
     const rescueScene = this.filmPlaying && ['m1_rescue_decision', 'm1_guns'].includes(neoLife?.journey?.scene ?? '') && !neoLife?.journey?.visiting;
     document.body.classList.toggle('film-rescue-scene', rescueScene);
@@ -201,7 +202,7 @@ export class PlayerExperience {
     });
     document.body.classList.toggle('code-vision', player.activeEffects.some(e => e.visualEffect === 'code_overlay'));
     document.body.classList.toggle('bullet-time', player.activeEffects.some(e => e.visualEffect === 'slow_motion'));
-    const nearby = Object.values(agents).filter(a => a.id !== player.id && a.status === 'alive' && a.isInMatrix === player.isInMatrix && distance(a.position, player.position) < 14)
+    const nearby = Object.values(agents).filter(a => a.id !== player.id && a.status === 'alive' && !a.currentAction?.parameters.finaleComa && a.isInMatrix === player.isInMatrix && distance(a.position, player.position) < 14)
       .sort((a, b) => distance(a.position, player.position) - distance(b.position, player.position));
     const sentinelScene = this.filmPlaying && neoLife?.journey?.scene === 'm1_sentinels' && !neoLife.journey.visiting;
     const interludeScene = this.filmPlaying && ['m1_cypher_console', 'm1_steak', 'm1_meal'].includes(neoLife?.journey?.scene ?? '') && !neoLife?.journey?.visiting;

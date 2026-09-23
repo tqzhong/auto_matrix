@@ -2,7 +2,7 @@ import { ReloadedOpeningSystem } from './ReloadedOpeningSystem.js';
 import { ReloadedCatchSystem } from './ReloadedCatchSystem.js';
 import { newReloaded, reloadedLocked, ZION_CAST } from '@auto_matrix/shared';
 import { catchLocked, newCatch } from '@auto_matrix/shared';
-import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_CAST, GRID_WINDOW_SECONDS, GRID_REROUTE_SECONDS, GRID_HACK_SECONDS, ARCHITECT_DOOR_SECONDS, filmReflections, CHARACTERS, LOCATIONS, NEO_CHAPTERS, filmCharacterFates, filmEntry, filmPosition, filmStepPosition, locationEntrance, distance, playerBlocked, newFreewayRide, stepFreeway, OFFICE_LADDER, awakeningLocked, awakeningPose, AWAKENING_SECONDS, CONSTRUCT_REVEAL, DESERT_REVEAL, oracleActing,
+import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_CAST, GRID_WINDOW_SECONDS, GRID_REROUTE_SECONDS, GRID_HACK_SECONDS, ARCHITECT_DOOR_SECONDS, RELOADED_FINALE, filmReflections, CHARACTERS, LOCATIONS, NEO_CHAPTERS, filmCharacterFates, filmEntry, filmPosition, filmStepPosition, locationEntrance, distance, playerBlocked, newFreewayRide, stepFreeway, OFFICE_LADDER, awakeningLocked, awakeningPose, AWAKENING_SECONDS, CONSTRUCT_REVEAL, DESERT_REVEAL, oracleActing,
   AMBUSH_REWRITE, AMBUSH_SECONDS, AMBUSH_SEALS, OFFICE_CONTACT, OFFICE_WINDOW, OFFICE_CROSSING_SECONDS, officeCrossingPose, windowCrossing, phoneLocked, heldPhone, windowOpening, pillLocked, pillRoot, PILL_ROOM, PILL_TIMING, trainingLocked, trainingRoot, trainingText, TRAINING_SECONDS,
   lobbyLocked, meleeReach, groundHeight, type DriveInput, type AgentState, type FilmScene, type FilmStep, type GridOperation, type SandboxState, type SandboxThreat, type TrainingRole, type CombatImpact } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
@@ -46,6 +46,66 @@ export class FilmStorySystem {
   get scene(): FilmScene | undefined { return this.state && FILM_SCENE_BY_ID[this.state.scene]; }
   get step(): FilmStep | undefined { return this.scene?.steps[this.state!.step]; }
   controls(agent: AgentState): boolean { return Boolean(this.state && this.state.actor === agent.id); }
+  private ensureFinale(tick: number): void {
+    const state = this.state; if (!state || state.visiting) return;
+    if (state.scene === 'm2_ship_lost' && !state.shipLoss) state.shipLoss = {
+      phase: state.step >= this.scene!.steps.length ? 'escaped' : state.step >= 3 ? 'evacuating' : 'briefing',
+      remaining: RELOADED_FINALE.evacuationSeconds, lastTick: tick, attempts: 0,
+    };
+    if (state.scene === 'm2_stop_sentinels' && !state.tunnel) state.tunnel = {
+      phase: state.step >= this.scene!.steps.length ? 'collapsed' : state.step >= 1 ? 'sensing' : 'running',
+      remaining: RELOADED_FINALE.sentinelSeconds, focus: 0, lastTick: tick, attempts: 0,
+    };
+  }
+  finaleFrame(agent: AgentState, focus: boolean, yaw: number, dt: number, tick: number): boolean {
+    const state = this.state;
+    if (!state || state.visiting || !this.controls(agent)) return false;
+    this.ensureFinale(tick);
+    if (state.scene === 'm2_ship_lost' && state.shipLoss?.phase === 'evacuating') {
+      for (const [id, side, lag] of [['neo', -1, 5], ['trinity', 1, 8], ['link', 0, 11]] as const) {
+        const crew = this.world.agents.get(id);
+        if (!crew || crew.controller) continue;
+        const target = filmPosition(this.scene!.set, side * 4, Math.max(-4, Math.min(31, agent.position.z - FILM_SETS[this.scene!.set].center.z - lag)));
+        const before = { ...crew.position }; const blend = Math.min(1, dt * 3);
+        crew.position.x += (target.x - crew.position.x) * blend; crew.position.z += (target.z - crew.position.z) * blend;
+        crew.velocity = dt > 0 ? { x: (crew.position.x - before.x) / dt, y: 0, z: (crew.position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
+        crew.rotation = 0; crew.currentAction = { type: 'move_to', parameters: { resolved: true }, startedAt: tick, duration: 100000, progress: 0 };
+      }
+      return false;
+    }
+    if (state.scene !== 'm2_stop_sentinels' || !state.tunnel || state.tunnel.phase !== 'sensing' || state.step !== 1) return false;
+    const encounter = state.tunnel;
+    agent.rotation = yaw; agent.velocity = { x: 0, y: 0, z: 0 };
+    if (['trinity', 'morpheus', 'link'].some(id => this.world.agents.get(id)?.controller)) {
+      state.lastText = '同伴由另一位玩家控制；哨兵的追击停在当前检查点。'; return true;
+    }
+    const nearSignal = this.near(agent, this.step!); const facing = Math.cos(agent.rotation) > .45;
+    if (nearSignal && focus && facing) encounter.focus = Math.min(RELOADED_FINALE.signalSeconds, encounter.focus + Math.max(0, Math.min(.1, dt)));
+    else if (!focus) encounter.focus = Math.max(0, encounter.focus - Math.max(0, dt) * .25);
+    if (encounter.focus >= RELOADED_FINALE.signalSeconds) {
+      encounter.phase = 'collapsed'; agent.health = Math.max(1, Math.min(agent.health, 1));
+      this.advance('三只哨兵逐一失去动力。Neo 在现实中触及机器信号，却耗尽体力倒下；Hammer 的探照灯照进隧道。', agent, tick);
+      agent.currentAction = { type: 'idle', parameters: { resolved: true, finaleCollapse: true }, startedAt: tick, duration: 100000, progress: 0 };
+      return true;
+    }
+    state.lastText = !nearSignal ? '跑到窄口，再回身面对追来的哨兵。' : !facing ? '哨兵在身后。转身朝向它们，再按住 G 感知连接。' : '面对哨兵，按住 G；信号不在矩阵里，Neo 的身体正承受代价。';
+    return true;
+  }
+  private finaleTick(actor: AgentState | undefined, tick: number): void {
+    const state = this.state!;
+    if (state.scene === 'm2_ship_lost' && state.shipLoss?.phase === 'evacuating') {
+      const loss = state.shipLoss; const elapsed = Math.max(0, tick - loss.lastTick) * .5; loss.lastTick = tick;
+      if (!actor?.controller || ['neo', 'trinity', 'link'].some(id => this.world.agents.get(id)?.controller)) return;
+      loss.remaining = Math.max(0, loss.remaining - elapsed);
+      if (loss.remaining === 0) { loss.phase = 'failed'; state.lastText = '炸弹击中船体，货舱出口关闭。按 J 从弃船命令检查点重试。'; }
+    }
+    if (state.scene === 'm2_stop_sentinels' && state.tunnel?.phase === 'sensing') {
+      const encounter = state.tunnel; const elapsed = Math.max(0, tick - encounter.lastTick) * .5; encounter.lastTick = tick;
+      if (!actor?.controller || ['trinity', 'morpheus', 'link'].some(id => this.world.agents.get(id)?.controller)) return;
+      encounter.remaining = Math.max(0, encounter.remaining - elapsed);
+      if (encounter.remaining === 0) { encounter.phase = 'failed'; state.lastText = '哨兵逼到身前，Neo 失去接触信号的机会。按 J 从隧道窄口重试。'; }
+    }
+  }
   private grid(tick: number): GridOperation {
     const state = this.state!;
     if (!state.grid) {
@@ -2680,6 +2740,7 @@ export class FilmStorySystem {
       return '已继续保存的剧情视角与位置。';
     }
     if (!this.controls(agent)) return '请接入当前剧情角色，或以 Neo 继续电影进度。';
+    this.ensureFinale(tick);
     if (state.scene === 'm2_key_door' && !state.visiting) this.sourceDoor();
     if (state.scene === 'm2_architect' && !state.visiting) { this.architect(tick); this.sealArchitectDoors(); }
     if (target === 'return' && state.visiting) {
@@ -2691,7 +2752,7 @@ export class FilmStorySystem {
     if (target.startsWith('visit:')) {
       const visited = FILM_SCENE_BY_ID[target.slice(6)];
       if (!visited || !state.completed.includes(visited.id)) return '完成这个场景后才能回访。';
-      if (state.fighting || state.started !== undefined || state.ride?.phase === 'riding' || state.garage?.phase === 'riding' || this.climbing(agent) || this.performing(agent)) return '先完成当前战斗或互动，再回访场景。';
+      if (state.fighting || state.started !== undefined || state.ride?.phase === 'riding' || state.garage?.phase === 'riding' || state.shipLoss?.phase === 'evacuating' || state.tunnel?.phase === 'sensing' || this.climbing(agent) || this.performing(agent)) return '先完成当前战斗或互动，再回访场景。';
       if (!state.visiting) state.returnPosition = { ...agent.position };
       state.visiting = visited.id; this.place(agent, visited, filmEntry(visited));
       return `回访${FILM_SETS[visited.set].name}。J 可返回当前剧情，回访不会改写进度。`;
@@ -2699,6 +2760,16 @@ export class FilmStorySystem {
     if (target === 'retry') {
       if (this.reloaded.active(agent)) return this.reloaded.command(agent, target, tick);
       if (this.catch.active(agent)) return this.catch.command(agent, target, tick);
+      if (state.scene === 'm2_ship_lost' && state.shipLoss?.phase === 'failed') {
+        state.shipLoss = { phase: 'evacuating', remaining: RELOADED_FINALE.evacuationSeconds, lastTick: tick, attempts: state.shipLoss.attempts + 1 };
+        agent.position = { ...state.checkpoint }; agent.velocity = { x: 0, y: 0, z: 0 };
+        state.lastText = '从弃船命令检查点重试。带同伴穿过船尾货舱，别回去启动无效的 EMP。'; return state.lastText;
+      }
+      if (state.scene === 'm2_stop_sentinels' && state.tunnel?.phase === 'failed') {
+        state.tunnel = { phase: 'sensing', remaining: RELOADED_FINALE.sentinelSeconds, focus: 0, lastTick: tick, attempts: state.tunnel.attempts + 1 };
+        agent.position = { ...state.checkpoint }; agent.rotation = 0; agent.velocity = { x: 0, y: 0, z: 0 };
+        state.lastText = '回到隧道窄口。面朝哨兵，按住 G 聚焦；现实中的能力会使 Neo 昏迷。'; return state.lastText;
+      }
       if (state.scene === 'm2_architect' && state.architect?.phase === 'failed') {
         state.architect.phase = 'decision'; state.architect.remaining = ARCHITECT_DOOR_SECONDS;
         state.architect.lastTick = tick; state.architect.attempts++;
@@ -2914,6 +2985,7 @@ export class FilmStorySystem {
     if (!step) return '本场景已完成。G 或 J 继续下一段。';
     if (this.reloaded.active(agent)) return this.reloaded.command(agent, target, tick);
     if (this.catch.active(agent)) return this.catch.command(agent, target, tick);
+    if (state.scene === 'm2_ship_lost' && state.shipLoss?.phase === 'failed' || state.scene === 'm2_stop_sentinels' && state.tunnel?.phase === 'failed') return '当前检查点失败。按 J 打开手记并重试。';
     if (state.scene === 'm2_burly') return this.burlyAct(agent, target, tick);
     if (state.scene === 'm2_chateau' && state.step === 0) return this.chateauAct(agent, target, tick);
     if (state.scene === 'm2_mountain' && state.step === 2) return state.mountain?.phase === 'failed' && target === 'act' ? this.retryMountain(agent) : '站在山崖起飞点按 Space，随后按住 W 向南飞，A / D 调整航线。';
@@ -2961,6 +3033,12 @@ export class FilmStorySystem {
     if (state.awakening && state.awakening.elapsed < AWAKENING_SECONDS[state.awakening.kind]) return '演出进行中，可以转动视角观察；进度会自动保存。';
     if (state.scene === 'm2_architect' && state.architect?.phase === 'failed') return 'Trinity 的信号已经消失。按 J 从抉择检查点重试。';
     if (!this.near(agent, step)) return '请走近金色目标标记（4 米内），再按 G。';
+    if (state.scene === 'm2_ship_lost' && state.step === 2 && target === 'act') {
+      if (['neo', 'trinity', 'link'].some(id => this.world.agents.get(id)?.controller)) return '船员正在由其他玩家控制，弃船命令先停在这里。';
+      state.shipLoss = { phase: 'evacuating', remaining: RELOADED_FINALE.evacuationSeconds, lastTick: tick, attempts: state.shipLoss?.attempts ?? 0 };
+      this.advance(step.text!, agent, tick); return state.lastText;
+    }
+    if (state.scene === 'm2_stop_sentinels' && state.step === 1) return '面向身后追来的哨兵，按住 G 保持连接；松开会渐渐失去聚焦。';
     if (state.scene === 'm2_key_door' && [3, 5].includes(state.step)) {
       const grid = this.grid(tick);
       if (grid.phase === 'expired') {
@@ -3158,6 +3236,8 @@ export class FilmStorySystem {
     delete state.theOne;
     delete state.reloaded;
     delete state.catch;
+    delete state.shipLoss;
+    delete state.tunnel;
     delete state.baneCopy;
     delete state.seraph;
     delete state.burly;
@@ -3332,6 +3412,8 @@ export class FilmStorySystem {
       this.reloaded.frame(actor, { x: 0, focus: false }, 0, tick);
     }
     if (scene.id === 'm2_catch') { state.catch = newCatch(); this.catch.frame(actor, { x: 0, z: 0, focus: false }, 0, tick); }
+    if (scene.id === 'm2_ship_lost') state.shipLoss = { phase: 'briefing', remaining: RELOADED_FINALE.evacuationSeconds, lastTick: tick, attempts: 0 };
+    if (scene.id === 'm2_stop_sentinels') state.tunnel = { phase: 'running', remaining: RELOADED_FINALE.sentinelSeconds, focus: 0, lastTick: tick, attempts: 0 };
     if (scene.id === 'm2_bane_copy') state.baneCopy = { progress: 0 };
     if (scene.id === 'm2_seraph') state.seraph = { dodges: 0, counters: 0, attempts: 0 };
     if (scene.id === 'm2_catch' && life.choices.trinity_dream) state.lastText += life.choices.trinity_dream === 'clear' ? '你认出了梦里的破窗、枪口与坠落方向；这次仍有机会作出行动。' : '这座大楼让你想起那个破碎的梦。';
@@ -3445,6 +3527,19 @@ export class FilmStorySystem {
           if (id === 'agent_johnson' && this.state!.trucks?.phase === 'collision') actor.currentAction = { type: 'idle', parameters: { seated: true }, startedAt: this.state!.enteredAt, duration: 100000, progress: 0 };
           if (id === 'neo') actor.currentAction = { type: 'move_to', parameters: { truckFlight: true, resolved: true }, startedAt: this.state!.enteredAt, duration: 100000, progress: 0 };
         }
+      }
+      if (scene.id === 'm2_ship_lost') {
+        const spots: Record<string, [number, number, number]> = { neo: [2, 22, 0], trinity: [5, 24, 0], link: [4, 1, Math.PI] };
+        const spot = spots[id]; if (spot) { actor.position = filmPosition(scene.set, spot[0], spot[1]); actor.rotation = spot[2]; }
+      }
+      if (scene.id === 'm2_stop_sentinels') {
+        const spots: Record<string, [number, number, number]> = { trinity: [-6, -35, 0], morpheus: [6, -35, 0], link: [0, -40, 0] };
+        const spot = spots[id]; if (spot) { actor.position = filmPosition(scene.set, spot[0], spot[1]); actor.rotation = spot[2]; }
+      }
+      if (scene.id === 'm2_medical') {
+        const spots: Record<string, [number, number, number]> = { neo: [-10, -23, 0], bane: [10, -23, 0], maggie: [-13, -21, Math.PI], morpheus: [2, -16, Math.PI], roland: [0, -18, 0] };
+        const spot = spots[id]; if (spot) { actor.position = filmPosition(scene.set, spot[0], spot[1]); actor.rotation = spot[2]; }
+        if (id === 'neo' || id === 'bane') actor.currentAction = { type: 'idle', parameters: { resolved: true, finaleComa: true }, startedAt: this.state!.enteredAt, duration: 100000, progress: 0 };
       }
     });
   }
@@ -3562,6 +3657,8 @@ export class FilmStorySystem {
     }
     if (state.scene === 'm1_bug' && state.step === 0 && state.office?.outcome === 'escaped') text = '扫描完成，没有发现追踪装置。Trinity 收起仪器，确认接头安全，继续前往 Morpheus 的房间。';
     state.lastText = text; state.step++; state.checkpoint = { ...agent.position }; delete state.started; delete state.fighting;
+    if (state.scene === 'm2_ship_lost' && state.step === this.scene!.steps.length && state.shipLoss) state.shipLoss.phase = 'escaped';
+    if (state.scene === 'm2_stop_sentinels' && state.step === 1 && state.tunnel) { state.tunnel.phase = 'sensing'; state.tunnel.lastTick = tick; }
     if (state.scene === 'm2_library') this.sealKeymakerDoor();
     if (state.scene === 'm2_key_door') this.sealSourceDoor();
     if (state.scene === 'm2_architect') this.sealArchitectDoors();
@@ -3612,8 +3709,11 @@ export class FilmStorySystem {
   }
   tick(tick: number): void {
     const state = this.state; if (!state || !this.scene || state.finished || state.visiting) return;
+    this.ensureFinale(tick);
     if (state.scene === 'm2_key_door') this.sourceDoor();
     const actor = this.world.agents.get(state.actor);
+    this.finaleTick(actor, tick);
+    if (state.scene === 'm2_ship_lost' && state.shipLoss?.phase === 'failed' || state.scene === 'm2_stop_sentinels' && state.tunnel?.phase === 'failed') return;
     if (state.scene === 'm2_architect') this.architectTick(actor, tick);
     if (['m2_plan', 'm2_power', 'm2_vigilant', 'm2_backup', 'm2_key_door'].includes(state.scene)) this.gridTick(actor, tick);
     if (state.scene === 'm2_trucks' && actor?.currentLocation === 'film_freeway_101') {

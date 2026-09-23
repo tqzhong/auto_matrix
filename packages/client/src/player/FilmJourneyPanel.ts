@@ -1,4 +1,4 @@
-import { CATCH, catchText, reloadedText } from '@auto_matrix/shared';
+import { CATCH, RELOADED_FINALE, catchText, reloadedText } from '@auto_matrix/shared';
 import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_NAMES, ARCHITECT_DOOR_SECONDS, filmReflections, CHARACTERS, filmStepPosition, distance, AWAKENING_SECONDS, oracleActing, interrogationLocked, pillLocked, lafayetteWelcomeLocked, phoneLocked, windowOpening, windowCrossing, awakeningWaiting, trainingLocked, trainingWaiting, theOneLocked, type AgentState, type SandboxState } from '@auto_matrix/shared';
 import './film-journey.css';
 import { meetingLocked } from '@auto_matrix/shared';
@@ -46,6 +46,23 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
       : encounter.phase === 'extracting' ? encounter.focus / CATCH.extraction * 100
         : encounter.phase === 'pulse' ? encounter.elapsed / CATCH.pulsePeriod * 100 : 0;
     return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX RELOADED / 02</span><h3>坠落 · 再作一次选择</h3><p>Neo 视角 · 飞行、接应与屋顶救援自动保存</p></header><article class="film-now"><div><h3>${step?.label ?? 'Trinity 睁开眼睛'}</h3><p>${catchText(encounter)}</p>${['flight', 'extracting', 'pulse'].includes(encounter.phase) ? `<div class="film-progress"><i style="width:${Math.max(0, progress)}%"></i></div>` : ''}<div class="film-controls">${action}<small>${encounter.phase === 'flight' ? '梦中的破窗与枪口已变成现实；这次 Neo 可以改变坠落的结果。' : '暂停、断线与读档保留当前一拍；失败不会抹去已完成的屋顶检查点。'}</small></div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
+  }
+  if (!journey.visiting && (scene.id === 'm2_ship_lost' && journey.shipLoss || scene.id === 'm2_stop_sentinels' && journey.tunnel)) {
+    const ship = scene.id === 'm2_ship_lost'; const loss = journey.shipLoss; const tunnel = journey.tunnel;
+    const step = scene.steps[journey.step]; const current = player.id === journey.actor;
+    const close = current && Boolean(step && distance(player.position, filmStepPosition(scene, step)) <= 4);
+    const failed = ship ? loss?.phase === 'failed' : tunnel?.phase === 'failed';
+    const action = !current ? button('resume', `接回 ${ship ? 'Morpheus' : 'Neo'} 的视角`)
+      : failed ? button('retry', ship ? '从弃船命令重试' : '从隧道窄口重试')
+        : !step ? button('next', ship ? '进入隧道，继续逃亡 →' : '登上 Hammer →')
+          : step.kind === 'reach' ? `<p>合上手记，${ship ? '带船员跑向船尾货舱' : '沿管道跑到窄口'}。</p>`
+            : !ship && journey.step === 1 ? '<p>合上手记，面朝追来的哨兵，按住 G 聚焦连接。松开会失去聚焦；这会让 Neo 昏迷。</p>'
+              : button('act', `${step.label} · G`, !close || journey.started !== undefined);
+    const status = ship ? loss?.phase === 'evacuating' ? `炸弹到达前 ${Math.ceil(loss.remaining)} 秒 · 撤离尝试 ${loss.attempts + 1}` : 'EMP 够不到远处的哨兵；必须弃船。'
+      : tunnel?.phase === 'sensing' ? `哨兵逼近 ${Math.ceil(tunnel.remaining)} 秒 · 信号 ${Math.round(tunnel.focus / RELOADED_FINALE.signalSeconds * 100)}%` : '旧船已经被摧毁；Hammer 正在搜索幸存者。';
+    const progress = ship && loss?.phase === 'evacuating' ? 100 * loss.remaining / RELOADED_FINALE.evacuationSeconds
+      : !ship && tunnel?.phase === 'sensing' ? 100 * tunnel.focus / RELOADED_FINALE.signalSeconds : 0;
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX RELOADED / 02</span><h3>${scene.title}</h3><p>${ship ? 'Morpheus · 失去旧船' : 'Neo · 现实中的代价'} · 检查点自动保存</p></header><article class="film-now"><div><h3>${step?.label ?? '本段完成'}</h3><p>${journey.lastText}</p><p>${status}</p>${progress ? `<div class="film-progress"><i style="width:${Math.max(0, progress)}%"></i></div>` : ''}<div class="film-controls">${action}</div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
   }
   if (!journey.visiting && scene.id === 'm2_persephone' && journey.persephone) {
     const step = scene.steps[journey.step]; const current = player.id === journey.actor;

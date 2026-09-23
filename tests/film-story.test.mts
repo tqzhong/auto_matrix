@@ -1,4 +1,4 @@
-import { RELOADED } from '@auto_matrix/shared';
+import { RELOADED, RELOADED_FINALE } from '@auto_matrix/shared';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, RESCUE, RESCUE_LOADOUTS, GOVERNMENT_RESCUE, AIR_RESCUE, MATRIX_ESCAPE, THE_ONE, filmReflections, filmStepPosition, filmEntry, filmPosition, groundHeight, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, newGarageEscape, stepGarageEscape, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
@@ -16,7 +16,7 @@ function setup() {
   const world = new WorldState(); const manager = new AgentManager(world); manager.initializeAllAgents();
   const dynamics = { record: (event: Omit<WorldEvent, 'id'>) => world.addWorldEvent(event) } as WorldDynamics;
   const sandbox = new SandboxSystem(world, dynamics, 42);
-  const conversations = { interrupt() {}, isAgentInConversation: () => false } as unknown as ConversationEngine;
+  const conversations = { interrupt() {}, isAgentInConversation: () => false, startConversation: () => false } as unknown as ConversationEngine;
   const attacked: string[] = [];
   const actions = { execute: (_actor: AgentState, action: { target?: string }) => attacked.push(action.target ?? '') } as unknown as ActionExecutor;
   const players = new PlayerController(world, conversations, actions, dynamics, sandbox);
@@ -107,6 +107,67 @@ test('Trinity revival needs deliberate code focus and three timed pulses, and su
     h.players.act('film-player', 'attack', ++state.enteredAt);
   }
   assert.equal(state.catch?.phase, 'done'); assert.ok(state.completed.includes('m2_catch'));
+});
+
+test('the bomb begins only after Morpheus orders evacuation, pauses without a player, and retries from the cargo checkpoint', () => {
+  const h = setup(); h.command('continue'); let state = h.sandbox.life.film.state!;
+  const scene = FILM_SCENE_BY_ID.m2_ship_lost;
+  Object.assign(state, { scene: scene.id, actor: 'morpheus', step: 2,
+    shipLoss: { phase: 'briefing', remaining: RELOADED_FINALE.evacuationSeconds, lastTick: h.tick(), attempts: 0 } });
+  h.players.possess('film-player', 'morpheus', h.tick()); h.actor().currentLocation = scene.set; h.actor().isInMatrix = false;
+  h.actor().position = filmStepPosition(scene, scene.steps[2]);
+  h.advance(15); assert.equal(state.shipLoss?.remaining, RELOADED_FINALE.evacuationSeconds);
+  h.command('act'); assert.equal(state.step, 3); assert.equal(state.shipLoss?.phase, 'evacuating');
+  state.completed.push('m1_lobby'); assert.match(h.command('visit:m1_lobby'), /先完成/);
+  h.advance(5); const remaining = state.shipLoss!.remaining; assert.ok(remaining < RELOADED_FINALE.evacuationSeconds);
+  h.players.release('film-player', h.tick()); h.advance(80); assert.equal(state.shipLoss?.remaining, remaining);
+  h.players.possess('film-player', 'morpheus', h.tick());
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); state = h.sandbox.life.film.state!;
+  assert.equal(state.shipLoss?.remaining, remaining); h.advance(65);
+  assert.equal(state.shipLoss?.phase, 'failed'); assert.equal(state.step, 3);
+  h.command('retry'); assert.equal(state.shipLoss?.phase, 'evacuating'); assert.equal(state.shipLoss?.attempts, 1);
+  assert.deepEqual(h.actor().position, state.checkpoint);
+  h.actor().position = filmStepPosition(scene, scene.steps[3]); h.advance();
+  assert.equal(state.shipLoss?.phase, 'escaped'); assert.ok(state.completed.includes(scene.id));
+});
+
+test('Neo must face the real Sentinels and hold focus; the signal and pursuit survive a save', () => {
+  const h = setup(); h.command('continue'); let state = h.sandbox.life.film.state!;
+  const scene = FILM_SCENE_BY_ID.m2_stop_sentinels;
+  Object.assign(state, { scene: scene.id, actor: 'neo', step: 0,
+    tunnel: { phase: 'running', remaining: RELOADED_FINALE.sentinelSeconds, focus: 0, lastTick: h.tick(), attempts: 0 } });
+  h.actor().currentLocation = scene.set; h.actor().isInMatrix = false; h.actor().position = filmStepPosition(scene, scene.steps[0]);
+  h.advance(); assert.equal(state.step, 1); assert.equal(state.tunnel?.phase, 'sensing');
+  let sequence = 0;
+  const focus = (yaw: number, frames: number) => { for (let i = 0; i < frames; i++) {
+    h.players.receiveInput('film-player', { x: 0, z: 0, yaw, jump: false, sprint: false, focus: true, sequence: ++sequence });
+    h.players.step(.1, true, h.tick());
+  } };
+  focus(Math.PI, 10); assert.equal(state.tunnel?.focus, 0);
+  focus(0, 10); assert.ok((state.tunnel?.focus ?? 0) > .9 && (state.tunnel?.focus ?? 0) < 1.1);
+  const saved = JSON.parse(JSON.stringify(h.sandbox.state)); h.sandbox.restore(saved); state = h.sandbox.life.film.state!;
+  const before = state.tunnel!.remaining; h.players.release('film-player', h.tick()); h.advance(20);
+  assert.equal(state.tunnel?.remaining, before);
+  h.players.possess('film-player', 'neo', h.tick()); focus(0, 15);
+  assert.equal(state.tunnel?.phase, 'collapsed'); assert.ok(state.completed.includes(scene.id));
+  assert.equal(h.actor().health, 1);
+});
+
+test('Hammer reveals Neo and Bane on adjacent beds and hands the completed scene to Mobil Ave', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  Object.assign(state, { scene: 'm2_stop_sentinels', actor: 'neo', step: FILM_SCENE_BY_ID.m2_stop_sentinels.steps.length,
+    tunnel: { phase: 'collapsed', remaining: 4, focus: RELOADED_FINALE.signalSeconds, lastTick: h.tick(), attempts: 0 } });
+  h.command('next'); const medical = FILM_SCENE_BY_ID.m2_medical;
+  assert.equal(state.scene, medical.id); assert.equal(h.actor().id, 'trinity');
+  assert.equal(h.world.agents.get('neo')?.currentAction?.parameters.finaleComa, true);
+  assert.equal(h.world.agents.get('bane')?.currentAction?.parameters.finaleComa, true);
+  assert.equal(h.world.agents.get('neo')?.position.x - h.world.agents.get('bane')!.position.x, -20);
+  assert.match(h.players.possess('other-player', 'bane', h.tick()).error ?? '', /昏迷/);
+  h.actor().position = filmPosition(medical.set, -9, -22.5);
+  assert.match(h.players.act('film-player', 'talk', h.tick()), /Maggie/);
+  for (const step of medical.steps) { h.actor().position = filmStepPosition(medical, step); h.command('act'); h.advance(6); }
+  assert.ok(state.completed.includes(medical.id));
+  h.command('next'); assert.equal(state.scene, 'm3_mobil'); assert.equal(h.actor().id, 'neo');
 });
 
 test('story role handoffs never take a character away from another player', () => {
@@ -1497,6 +1558,14 @@ test('the entire film route completes through interactions, driving and real com
         } else for (let beat = 0; beat < 3; beat++) {
           for (let frame = 0; frame < 11; frame++) h.players.step(.1, true, h.tick());
           h.players.act('film-player', 'attack', h.tick());
+        }
+        assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`); continue;
+      }
+      if (scene.id === 'm2_stop_sentinels' && index === 1) {
+        h.command('act');
+        for (let frame = 0; frame < 25 && state.step === index; frame++) {
+          h.players.receiveInput('film-player', { x: 0, z: 0, yaw: 0, jump: false, sprint: false, focus: true, sequence: ++sequence });
+          h.players.step(.1, true, h.tick());
         }
         assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`); continue;
       }

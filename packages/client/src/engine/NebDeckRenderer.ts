@@ -38,12 +38,16 @@ export class NebDeckRenderer {
   private rescueSignal!: THREE.Mesh;
   private rescueBuilding!: THREE.Group;
   private rescueLight!: THREE.PointLight;
+  private shipLossRig = new THREE.Group();
+  private shipAlarm!: THREE.PointLight;
+  private shipHatch!: THREE.Mesh;
 
   constructor(private root: THREE.Group) {
     this.hull();
     this.medicalBay();
     this.operatorCore();
     this.mess();
+    this.shipLossScene();
   }
 
   private material<T extends THREE.Material>(material: T): T { this.materials.add(material); return material; }
@@ -278,6 +282,25 @@ export class NebDeckRenderer {
     this.mealScene();
   }
 
+  private shipLossScene(): void {
+    this.shipLossRig.name = 'neb-final-evacuation'; this.shipLossRig.visible = false; this.root.add(this.shipLossRig);
+    const warning = this.material(new THREE.MeshBasicMaterial({ color: 0xe66a50, toneMapped: false }));
+    const radar = this.box(this.shipLossRig, this.rubber, 1.4, 3.7, 1.2, 5.2, 3.1, .55, 'neb-bomb-radar'); radar.rotation.y = -.25;
+    this.box(this.shipLossRig, warning, 1.4, 3.72, 1.51, 4.45, 2.25, .04, 'neb-bomb-range-screen');
+    for (let index = 0; index < 4; index++) {
+      const mark = this.box(this.shipLossRig, this.rubber, -.3 + index * .92, 3.7, 1.55, .09, .09, .06); mark.rotation.z = index * .7;
+    }
+    for (const z of [7, 16, 25, 34]) for (const side of [-1, 1]) {
+      this.box(this.shipLossRig, warning, side * 17.5, .16, z, .25, .07, 3.6, `neb-evacuation-path-${z}`);
+      this.box(this.shipLossRig, warning, side * 17, 11.2, z, 1.6, .2, .65, 'neb-evacuation-lamp');
+    }
+    this.box(this.shipLossRig, this.steel, 0, 4.5, 39.6, 13, 9, .55, 'neb-cargo-frame');
+    this.shipHatch = this.box(this.shipLossRig, this.dark, 0, 4.5, 39.2, 11.8, 8.6, .35, 'neb-cargo-hatch');
+    this.box(this.shipLossRig, this.amber, 0, 9, 39.1, 4.4, .17, .1);
+    this.shipAlarm = new THREE.PointLight(0xf04430, 0, 36, 2); this.shipAlarm.name = 'neb-evacuation-alarm'; this.shipAlarm.position.set(0, 10, 24);
+    this.shipLossRig.add(this.shipAlarm); this.lights.add(this.shipAlarm);
+  }
+
   private mealScene(): void {
     this.mealRig.name = 'neb-crew-meal-scene'; this.mealRig.visible = false; this.root.add(this.mealRig);
     const bowl = this.material(new THREE.MeshStandardMaterial({ color: 0x767a70, metalness: .28, roughness: .68 }));
@@ -298,6 +321,12 @@ export class NebDeckRenderer {
   }
 
   update(journey: FilmJourney | undefined, elapsed: number): void {
+    const loss = journey?.scene === 'm2_ship_lost' && !journey.visiting ? journey.shipLoss : undefined;
+    this.shipLossRig.visible = Boolean(loss);
+    if (loss) {
+      this.shipHatch.position.y = loss.phase === 'evacuating' || loss.phase === 'escaped' ? 12.5 : 4.5;
+      this.shipAlarm.intensity = loss.phase === 'briefing' ? 70 : loss.phase === 'failed' ? 30 : 170 + Math.sin(elapsed * 14) * 65;
+    }
     const recovery = journey?.scene === 'm1_recovery' && !journey.visiting && journey.awakening?.kind === 'recovery' ? journey.awakening : undefined;
     const t = recovery?.elapsed ?? 0; const active = recovery?.started === true;
     const consoleActive = journey?.scene === 'm1_cypher_console' && !journey.visiting;

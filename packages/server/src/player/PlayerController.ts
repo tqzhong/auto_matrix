@@ -68,6 +68,7 @@ export class PlayerController {
     if (interlude?.matrixEscape && !['failed', 'done'].includes(interlude.matrixEscape.phase) && id !== interlude.actor && escapeRoles.includes(id)) return { error: '这个角色正在参与地铁与街巷追逐片段，当前撤离结束后可以接入。' };
     if (interlude?.reloaded && !interlude.visiting && interlude.reloaded.phase !== 'done' && id !== interlude.actor && (RELOADED.cast as readonly string[]).includes(id)) return { error: '这个角色正在参与第二部的预感与升级特工片段，结束后可以接入。' };
     if (interlude?.scene === 'm2_catch' && !interlude.visiting && interlude.catch && interlude.catch.phase !== 'done' && id !== interlude.actor && ['trinity', 'agent_johnson'].includes(id)) return { error: '这个角色正在参与 Neo 的高空营救，片段结束后可以接入。' };
+    if (interlude?.scene === 'm2_medical' && !interlude.visiting && this.sandbox?.life.film.step && ['neo', 'bane'].includes(id) && id !== interlude.actor) return { error: '这个角色正在 Hammer 医疗舱昏迷；等待剧情恢复后再接入。' };
     const theOneRoles = interlude?.theOne?.kind === 'death' ? ['neo', 'smith', 'agent_brown', 'trinity', 'morpheus', 'tank']
       : interlude?.theOne?.kind === 'return' ? ['neo', 'smith', 'agent_brown', 'agent_jones', 'trinity', 'morpheus', 'tank'] : ['neo'];
     if (interlude?.theOne && !['ready', 'failed', 'done'].includes(interlude.theOne.phase) && id !== interlude.actor && theOneRoles.includes(id)) return { error: '这个角色正在参与 Neo 的复苏与觉醒片段，当前演出结束后可以接入。' };
@@ -256,6 +257,9 @@ export class PlayerController {
       if (this.sandbox?.life.film.catch.frame(agent, { x: input.x, z: input.z, focus: Boolean(input.focus) }, dt, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
+      if (this.sandbox?.life.film.finaleFrame(agent, Boolean(input.focus), input.yaw, dt, tick)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
       if (this.sandbox?.life.film.theOneFrame(agent, { x: input.x, z: input.z, sprint: input.sprint, jump: input.jump, focus: Boolean(input.focus) }, dt, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
@@ -387,7 +391,7 @@ export class PlayerController {
       if ((kind === 'ability' || kind === 'ability2') && !neoSkillUnlocked(this.sandbox.state.neoLife, kind === 'ability' ? 0 : 1)) return '这项能力会在 Neo 的训练与觉醒剧情中解锁。';
       if (kind === 'talk' && !agent.isAwakened) return 'J 打开生活手记：可以和同事聊天，或预约与朋友见面。';
     }
-    const nearby = [...this.world.agents.values()].filter(other => other.id !== agent.id && other.status === 'alive' && other.isInMatrix === agent.isInMatrix && distance(agent.position, other.position) < 14)
+    const nearby = [...this.world.agents.values()].filter(other => other.id !== agent.id && other.status === 'alive' && !other.currentAction?.parameters.finaleComa && other.isInMatrix === agent.isInMatrix && distance(agent.position, other.position) < 14)
       .sort((a, b) => distance(agent.position, a.position) - distance(agent.position, b.position));
     if (kind === 'talk') {
       const target = nearby[0];

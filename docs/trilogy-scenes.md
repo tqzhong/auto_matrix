@@ -137,9 +137,9 @@
 | m2_key_door | 钥匙匠的最后一扇门 | 后门通道 · 白色走廊 | Neo | 移动 → 交互 |
 | m2_architect | 被计算过的救世主 | 建筑师 · 监视器房间 | Neo | 移动 → 听循环解释 → 检查右门 → 查看 Trinity 影像 → 反思 → 限时打开左门 |
 | m2_catch | 抓住正在坠落的人 | Trinity 坠落 · 城市高空 | Neo | 冲出左门 → 操控飞行绕楼并接住 Trinity → 屋顶聚焦取弹 → 三次心跳复苏 |
-| m2_ship_lost | 尼布甲尼撒号的终点 | 尼布甲尼撒号 · 核心与医疗舱 | Morpheus | 交互 → 移动 |
-| m2_stop_sentinels | 触及现实中的连接 | 地下隧道 · 舰船撤离 | Neo | 移动 → 交互 |
-| m2_medical | 两个昏迷的人 | Hammer · 医疗舱与舰桥 | Trinity | 交互 |
+| m2_ship_lost | 尼布甲尼撒号的终点 | 尼布甲尼撒号 · 核心与医疗舱 | Morpheus | 听 Neo 说出源头真相 → 核对超出 EMP 射程的炸弹 → 下令弃船 → 限时带船员抵达货舱 |
+| m2_stop_sentinels | 触及现实中的连接 | 地下隧道 · 舰船撤离 | Neo | 跑到窄口 → 回身面对哨兵并按住 G 聚焦 → 昏迷，Hammer 搜救 |
+| m2_medical | 两个昏迷的人 | Hammer · 医疗舱与舰桥 | Trinity | 查看 Neo 生命体征 → 询问 Roland 提前触发的 EMP → 确认邻床 Bane |
 
 ### 3. 矩阵革命（28 段）
 

@@ -1,4 +1,4 @@
-import { CATCH, RELOADED, catchText, reloadedText } from '@auto_matrix/shared';
+import { CATCH, RELOADED, RELOADED_FINALE, catchText, reloadedText } from '@auto_matrix/shared';
 import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_NAMES, GRID_HACK_SECONDS, GRID_REROUTE_SECONDS, filmStepPosition, pillLocked, lafayetteWelcomeLocked, awakeningLocked, awakeningWaiting, AWAKENING_SECONDS, trainingLocked, trainingWaiting, TRAINING_SECONDS, DOJO_COMBO_WINDOW, windowOpening, windowCrossing, ITEMS, RECIPES, SKILLS, FILMS, MISSIONS, LOCATIONS, CITY_BUILDINGS, NEO_CHAPTERS, LIFE_ACTIONS, lifeActionPosition, lifeRoomCenter, locationEntrance, distance, missionPosition, nearTransit, skillPoints,
   type AgentState, type SandboxState, type SandboxCommand, type ItemId, type SkillId, type Vector3 } from '@auto_matrix/shared';
 import './sandbox.css';
@@ -250,6 +250,30 @@ export class SandboxUI {
       document.getElementById('game-objective-copy')!.textContent = encounter.phase === 'flight' ? 'W 前进 · A / D 绕开中间楼体 · 靠近 Trinity 后按 G'
         : encounter.phase === 'pulse' ? '看光圈节奏：每次收拢时按 F，共三次' : catchText(encounter);
       this.el('sandbox-interact').classList.add('hidden');
+    }
+    if (!journey.visiting && scene.id === 'm2_ship_lost' && journey.shipLoss) {
+      const loss = journey.shipLoss;
+      this.el('film-sequence').classList.remove('hidden');
+      this.el('film-sequence').classList.toggle('urgent', loss.phase === 'failed' || loss.phase === 'evacuating' && loss.remaining < 10);
+      this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = loss.phase === 'evacuating' ? `炸弹 ${Math.ceil(loss.remaining)} 秒 · 带船员从船尾货舱撤离`
+        : loss.phase === 'failed' ? 'J 打开手记，从弃船命令检查点重试' : '雷达显示炸弹在 EMP 范围外';
+      this.el('sandbox-trace').textContent = loss.phase === 'evacuating' ? `炸弹 ${Math.ceil(loss.remaining)} 秒` : '尼布甲尼撒号 · 最后一程';
+      this.el('sandbox-trace').classList.toggle('danger', loss.phase === 'failed' || loss.phase === 'evacuating' && loss.remaining < 10);
+      if (loss.phase === 'failed') this.el('sandbox-interact').classList.add('hidden');
+    }
+    if (!journey.visiting && scene.id === 'm2_stop_sentinels' && journey.tunnel) {
+      const tunnel = journey.tunnel;
+      this.el('film-sequence').classList.remove('hidden');
+      this.el('film-sequence').classList.toggle('urgent', tunnel.phase === 'failed' || tunnel.phase === 'sensing' && tunnel.remaining < 5);
+      this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = tunnel.phase === 'sensing' ? `面向哨兵 · 按住 G · 信号 ${Math.round(tunnel.focus / RELOADED_FINALE.signalSeconds * 100)}% · 追击 ${Math.ceil(tunnel.remaining)} 秒`
+        : tunnel.phase === 'failed' ? 'J 打开手记，从窄口重试' : '沿隧道向前跑；旧船已经失去';
+      this.el('sandbox-trace').textContent = tunnel.phase === 'sensing' ? `信号 ${Math.round(tunnel.focus / RELOADED_FINALE.signalSeconds * 100)}%` : '现实中的连接';
+      this.el('sandbox-trace').classList.toggle('danger', tunnel.phase === 'failed' || tunnel.phase === 'sensing' && tunnel.remaining < 5);
+      this.el('sandbox-job').style.width = `${tunnel.focus / RELOADED_FINALE.signalSeconds * 100}%`;
+      document.getElementById('game-objective-copy')!.textContent = tunnel.phase === 'sensing' ? '转身面对追兵，按住 G 让哨兵停下' : tunnel.phase === 'failed' ? '按 J 打开手记重试窄口' : 'Shift 奔跑，抵达隧道窄口';
+      if (tunnel.phase === 'sensing' || tunnel.phase === 'failed') this.el('sandbox-interact').classList.add('hidden');
     }
     if (!journey.visiting && scene.id === 'm2_persephone' && journey.step === 2 && journey.persephone) {
       this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
