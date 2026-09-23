@@ -192,11 +192,13 @@ export class PlayerExperience {
       const skill = COMBAT_SKILLS[id]; const cooldown = player.combatCooldowns?.[id] ?? 0;
       const locked = player.id === 'neo' && !neoSkillUnlocked(neoLife, slot);
       const seraphDuel = this.filmPlaying && neoLife?.journey?.scene === 'm2_seraph' && Boolean(neoLife.journey.fighting) && !neoLife.journey.visiting;
+      const mobilBound = this.filmPlaying && neoLife?.journey?.actor === player.id && !neoLife.journey.visiting
+        && ['m3_mobil', 'm3_family', 'm3_trainman'].includes(neoLife.journey.scene);
       this.el(`player-skill-${slot}`).textContent = skill.name;
       this.el(`skill-detail-${slot}`).textContent = skill.description;
-      this.el(`skill-status-${slot}`).textContent = seraphDuel ? '近身考验' : locked ? '剧情解锁' : skill.matrixOnly && !player.isInMatrix ? '矩阵内' : cooldown > 0 ? `${Math.ceil(cooldown)}s` : '就绪';
+      this.el(`skill-status-${slot}`).textContent = mobilBound ? '线路封锁' : seraphDuel ? '近身考验' : locked ? '剧情解锁' : skill.matrixOnly && !player.isInMatrix ? '矩阵内' : cooldown > 0 ? `${Math.ceil(cooldown)}s` : '就绪';
       const button = this.root.querySelector<HTMLButtonElement>(`[data-skill="${slot}"]`)!;
-      button.disabled = driving || seraphDuel || locked || cooldown > 0 || !simulation.running || player.status !== 'alive' || skill.matrixOnly && !player.isInMatrix;
+      button.disabled = driving || mobilBound || seraphDuel || locked || cooldown > 0 || !simulation.running || player.status !== 'alive' || skill.matrixOnly && !player.isInMatrix;
       button.title = skill.description;
       button.style.setProperty('--cooldown', `${cooldown / skill.cooldown * 100}%`);
     });

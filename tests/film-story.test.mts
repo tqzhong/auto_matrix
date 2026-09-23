@@ -572,17 +572,52 @@ test('philosophical choices answer the current question and survive loading with
   assert.notEqual(filmReflections('m1_oracle')[0].response, filmReflections('m2_architect')[0].response);
 });
 
-test('Mobil Avenue loops through space only when Neo actually enters the tunnel', () => {
-  const h = setup(); h.command('start'); const state = h.sandbox.life.film.state!;
-  const scene = FILM_SCENE_BY_ID.m3_mobil; state.scene = scene.id; state.actor = scene.actor; state.step = 0;
-  h.players.possess('film-player', 'neo', h.tick()); h.actor().isInMatrix = true; h.actor().currentLocation = scene.set;
-  h.actor().position = filmEntry(scene); h.advance(60); assert.equal(state.step, 0);
-  h.actor().position = filmStepPosition(scene, scene.steps[0]); h.advance();
-  assert.equal(state.step, 1);
-  assert.ok(h.actor().position.z > FILM_SETS[scene.set].center.z + 35, 'the tunnel must return to the other end of the same station');
-  assert.match(state.lastText, /同一个站台/);
-  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); h.advance(20);
-  assert.equal(h.sandbox.life.film.state!.step, 1);
+test('Mobil Ave plays Sati, her family, Trainman refusal and both tunnel loops in that order', () => {
+  const h = setup(); h.command('continue'); let state = h.sandbox.life.film.state!;
+  Object.assign(state, { scene: 'm2_medical', actor: 'trinity', step: FILM_SCENE_BY_ID.m2_medical.steps.length });
+  h.players.possess('film-player', 'trinity', h.tick()); h.command('next');
+  assert.equal(state.scene, 'm3_mobil'); assert.equal(h.actor().id, 'neo');
+  assert.match(FILM_SCENE_BY_ID.m3_mobil.steps[0].label, /Sati/);
+  assert.match(h.players.act('film-player', 'ability', h.tick()), /Trainman/);
+  const center = FILM_SETS.film_mobil_station.center;
+  h.actor().position = filmPosition('film_mobil_station', 0, -49); h.advance();
+  assert.equal(state.step, 0, 'the loop cannot precede Trainman leaving');
+  for (const id of ['m3_mobil', 'm3_family']) {
+    const scene = FILM_SCENE_BY_ID[id];
+    assert.equal(state.scene, id);
+    for (const step of scene.steps) {
+      h.actor().position = filmStepPosition(scene, step);
+      if (step.kind === 'reach') h.advance();
+      else if (step.kind === 'reflect') h.command(`reflect:${filmReflections(id)[0].id}`);
+      else { h.command('act'); h.advance(8); }
+    }
+    h.command('next');
+  }
+  assert.equal(state.scene, 'm3_trainman');
+  const train = FILM_SCENE_BY_ID.m3_trainman;
+  h.actor().position = filmStepPosition(train, train.steps[0]); h.command('act'); h.advance(6);
+  assert.equal(state.mobil?.phase, 'approaching');
+  assert.match(h.players.possess('other-player', 'trainman', h.tick()).error ?? '', /列车片段/);
+  const elapsed = state.mobil!.elapsed;
+  h.players.release('film-player', h.tick()); h.advance(20);
+  assert.equal(state.mobil?.elapsed, elapsed, 'the train must not arrive while its player is disconnected');
+  h.players.possess('film-player', 'neo', h.tick());
+  h.actor().position = filmStepPosition(train, train.steps[1]); h.advance();
+  assert.equal(state.step, 1, 'Neo must wait for the actual train');
+  h.advance(12); assert.equal(state.mobil?.phase, 'stopped'); assert.equal(state.step, 2);
+  h.actor().position = filmStepPosition(train, train.steps[2]); h.command('act');
+  assert.equal(state.mobil?.phase, 'refusing');
+  const before = h.actor().health;
+  for (let i = 0; i < 28; i++) h.players.step(.1, true, h.tick());
+  assert.equal(state.mobil?.phase, 'departing'); assert.ok(h.actor().health < before);
+  h.advance(10); assert.equal(state.mobil?.phase, 'gone');
+  h.actor().position = filmStepPosition(train, train.steps[3]); h.advance();
+  assert.equal(state.step, 4); assert.ok(h.actor().position.z > center.z + 35);
+  assert.equal(h.sandbox.life.state?.choices.mobil_loop, 'one_end');
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); state = h.sandbox.life.film.state!;
+  h.actor().position = filmStepPosition(train, train.steps[4]); h.advance();
+  assert.equal(state.step, train.steps.length); assert.ok(h.actor().position.z < center.z - 35);
+  assert.equal(h.sandbox.life.state?.choices.mobil_loop, 'both_ends');
 });
 
 test('touching the mirror is a saved performance that freezes on pause and resumes after reconnect', () => {
@@ -1534,6 +1569,14 @@ test('the entire film route completes through interactions, driving and real com
     }
     for (let index = 0; index < scene.steps.length; index++) {
       const step = scene.steps[index]; const actor = h.actor(); actor.position = filmStepPosition(scene, step);
+      if (scene.id === 'm3_trainman') {
+        if (index === 0) { h.command('act'); h.advance(6); }
+        else if (index === 1) h.advance(10);
+        else if (index === 2) {
+          h.command('act'); for (let frame = 0; frame < 24; frame++) h.players.step(.1, true, h.tick()); h.advance(7);
+        } else h.advance();
+        assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`); continue;
+      }
       if (scene.id === 'm2_key_door' && index === 3) for (let count = 0; state.grid?.phase !== 'window' && count < 30; count++) h.advance();
       if (scene.id === 'm2_dream') {
         if (index === 0) h.players.step(.1, true, h.tick());

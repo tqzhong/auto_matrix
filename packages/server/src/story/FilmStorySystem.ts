@@ -46,6 +46,105 @@ export class FilmStorySystem {
   get scene(): FilmScene | undefined { return this.state && FILM_SCENE_BY_ID[this.state.scene]; }
   get step(): FilmStep | undefined { return this.scene?.steps[this.state!.step]; }
   controls(agent: AgentState): boolean { return Boolean(this.state && this.state.actor === agent.id); }
+  private ensureMobil(tick: number): void {
+    const state = this.state;
+    if (!state || !['m3_mobil', 'm3_family', 'm3_trainman'].includes(state.scene) || state.mobil) return;
+    // A save from the original two-step station can continue at its recorded scene.
+    state.mobil = { phase: state.scene === 'm3_trainman' && state.step > 0 ? 'approaching' : 'waiting', elapsed: 0, lastTick: tick, loops: 0 };
+  }
+  private mobilPassengers(progress: number, tick: number): void {
+    const encounter = this.state!.mobil!;
+    encounter.boarding = Math.max(encounter.boarding ?? 0, Math.min(1, progress));
+    const boarding = encounter.boarding;
+    for (const [id, x, z, offset] of [['rama_kandra', -12, -8, -1], ['kamala', -10, -8, 0], ['sati', -5, -8, 1]] as const) {
+      const passenger = this.world.agents.get(id);
+      if (!passenger || passenger.controller) continue;
+      const approach = Math.min(1, boarding / .7); const entering = Math.max(0, (boarding - .7) / .3);
+      const px = x + (6.5 - x) * approach + entering * 6;
+      const pz = z + (-20 + offset * 2 - z) * approach;
+      passenger.position = filmPosition(this.scene!.set, px, pz);
+      if (px > 8) passenger.position.y -= 1.35;
+      passenger.rotation = Math.PI / 2; passenger.velocity = { x: 0, y: 0, z: 0 };
+      passenger.currentAction = { type: boarding > 0 && boarding < 1 ? 'move_to' : 'idle',
+        parameters: { resolved: true, mobilBoarding: boarding }, startedAt: tick, duration: 1, progress: boarding };
+    }
+  }
+  mobilFrame(agent: AgentState, dt: number, tick: number): boolean {
+    const state = this.state;
+    if (!state || state.visiting || state.scene !== 'm3_trainman' || !this.controls(agent)) return false;
+    this.ensureMobil(tick);
+    const encounter = state.mobil!;
+    if (encounter.phase !== 'refusing') return false;
+    if (['trainman', 'rama_kandra', 'kamala', 'sati'].some(id => this.world.agents.get(id)?.controller)) {
+      state.lastText = '车门旁的角色由其他玩家控制，登车片段停在这里。'; return true;
+    }
+    const previous = encounter.elapsed;
+    encounter.elapsed = Math.min(2.2, encounter.elapsed + Math.max(0, dt));
+    this.mobilPassengers((encounter.boarding ?? 0) + Math.max(0, dt) / 2.2, tick);
+    const center = FILM_SETS[this.scene!.set].center;
+    const impact = Math.max(0, Math.min(1, (encounter.elapsed - .35) / 1.2));
+    agent.position = { x: center.x + (encounter.approach?.x ?? 6) - impact * 4.2, y: center.y,
+      z: center.z + (encounter.approach?.z ?? -20) + impact * 2.5 };
+    agent.rotation = encounter.approach?.yaw ?? Math.PI / 2;
+    agent.velocity = { x: 0, y: 0, z: 0 };
+    agent.currentAction = { type: 'defend', parameters: { player: true, resolved: true, mobilRefusal: encounter.elapsed }, startedAt: tick, duration: 1, progress: impact };
+    const trainman = this.world.agents.get('trainman');
+    if (trainman && !trainman.controller) trainman.currentAction = { type: 'attack', target: agent.id,
+      parameters: { resolved: true, contactTick: tick + 1 }, startedAt: tick, duration: 1, progress: impact };
+    if (previous < .35 && encounter.elapsed >= .35) this.onImpact?.({ source: 'trainman', target: agent.id,
+      position: { ...agent.position }, direction: { x: -1, y: 0, z: .2 }, damage: 10, combo: 0, matrix: true, downed: false }, tick);
+    if (encounter.elapsed >= 2.2) {
+      agent.health = Math.max(1, agent.health - 10);
+      this.advance('Trainman 挡住 Neo：这条线路由他定规矩。Sati 一家已经上车，车门在 Neo 面前关闭。', agent, tick);
+      encounter.phase = 'departing'; encounter.elapsed = 0; encounter.lastTick = tick;
+    }
+    return true;
+  }
+  private mobilTick(actor: AgentState, tick: number): void {
+    const state = this.state!; this.ensureMobil(tick);
+    const encounter = state.mobil!;
+    const elapsed = Math.max(0, tick - encounter.lastTick) * .5; encounter.lastTick = tick;
+    if (encounter.phase === 'approaching' || encounter.phase === 'departing' || encounter.phase === 'stopped') encounter.elapsed += elapsed;
+    if (encounter.phase === 'approaching' && encounter.elapsed >= 4.5) {
+      encounter.phase = 'stopped'; encounter.elapsed = 0;
+      state.lastText = '隧道灯逐盏亮起。只有一节车厢的列车停在站台前，Trainman 守在车门旁。';
+    }
+    if (encounter.phase === 'departing' && encounter.elapsed >= 3) {
+      encounter.phase = 'gone'; encounter.elapsed = 0;
+      state.lastText = '尾灯消失在隧道中。两端都没有楼梯；只剩下铁轨。';
+    }
+    if (encounter.phase === 'stopped') this.mobilPassengers(encounter.elapsed / 5, tick);
+    const trainman = this.world.agents.get('trainman');
+    if (trainman && !trainman.controller && state.scene === 'm3_trainman') {
+      const boarding = encounter.phase === 'stopped' || encounter.phase === 'refusing';
+      trainman.position = filmPosition(this.scene!.set, boarding ? 7.4 : 12,
+        boarding ? -20 : encounter.phase === 'departing' ? -20 - Math.min(3, encounter.elapsed) * 20 : -80);
+      if (!boarding) trainman.position.y -= 1.35;
+      trainman.rotation = -Math.PI / 2;
+    }
+    if (encounter.phase === 'departing' || encounter.phase === 'gone') {
+      for (const [id, offset] of [['rama_kandra', -1], ['kamala', 0], ['sati', 1]] as const) {
+        const passenger = this.world.agents.get(id);
+        if (passenger && !passenger.controller) {
+          passenger.position = filmPosition(this.scene!.set, 12.5, -20 + offset * 2 - Math.min(3, encounter.elapsed) * 18);
+          if (encounter.phase === 'gone') passenger.position.z = FILM_SETS[this.scene!.set].center.z - 80;
+          passenger.position.y -= 1.35;
+          passenger.rotation = Math.PI / 2; passenger.velocity = { x: 0, y: 0, z: 0 };
+        }
+      }
+    }
+    if (state.scene !== 'm3_trainman' || encounter.phase !== 'gone') return;
+    const center = FILM_SETS[this.scene!.set].center;
+    if (state.step === 3 && actor.position.z < center.z - 46) {
+      actor.position = filmPosition(this.scene!.set, 0, 42); actor.velocity = { x: 0, y: 0, z: 0 };
+      encounter.loops = 1; this.sandbox().neoLife!.choices.mobil_loop = 'one_end';
+      this.advance('隧道转过弯，Neo 却从另一侧走回同一个站台：MOBIL AVE。', actor, tick);
+    } else if (state.step === 4 && actor.position.z > center.z + 46) {
+      actor.position = filmPosition(this.scene!.set, 0, -42); actor.velocity = { x: 0, y: 0, z: 0 };
+      encounter.loops = 2; this.sandbox().neoLife!.choices.mobil_loop = 'both_ends';
+      this.advance('另一端也返回 Mobil Ave。空间被 Trainman 折成闭环，Neo 必须等外面的人来开门。', actor, tick);
+    }
+  }
   private ensureFinale(tick: number): void {
     const state = this.state; if (!state || state.visiting) return;
     if (state.scene === 'm2_ship_lost' && !state.shipLoss) state.shipLoss = {
@@ -205,7 +304,7 @@ export class FilmStorySystem {
         film: { scene: 'm2_architect', width: 5, depth: .5, height: 8 } });
     }
   }
-  performing(agent: AgentState): boolean { return this.controls(agent) && (this.state!.trucks?.phase === 'rescue' || this.state!.persephone?.phase === 'enacting' || burlyLocked(this.state!) || clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || theOneLocked(this.state!) || reloadedLocked(this.state!) || catchLocked(this.state!.catch) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
+  performing(agent: AgentState): boolean { return this.controls(agent) && (this.state!.scene === 'm3_trainman' && this.state!.mobil?.phase === 'refusing' || this.state!.trucks?.phase === 'rescue' || this.state!.persephone?.phase === 'enacting' || burlyLocked(this.state!) || clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || theOneLocked(this.state!) || reloadedLocked(this.state!) || catchLocked(this.state!.catch) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
   clubFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
     if (state?.scene !== 'm1_club' || state.visiting || !this.controls(agent)) return;
@@ -2973,7 +3072,8 @@ export class FilmStorySystem {
       }
       if (!next) { state.finished = true; life.ending = 'peace'; this.sandbox().ending = 'peace'; return '三部曲通关。停战与本轮反思已经保存。'; }
       if (!this.changeActor(agent, next.actor, tick)) return '下一段的角色正在由另一位玩家控制，进度已保留。';
-      const sameRoom = state.scene === 'm1_pills' && next.id === 'm1_mirror' || state.scene === 'm2_merovingian' && next.id === 'm2_persephone';
+      const sameRoom = state.scene === 'm1_pills' && next.id === 'm1_mirror' || state.scene === 'm2_merovingian' && next.id === 'm2_persephone'
+        || state.scene === 'm3_mobil' && next.id === 'm3_family' || state.scene === 'm3_family' && next.id === 'm3_trainman';
       const position = sameRoom || state.scene === 'm1_boss' && next.id === 'm1_office_escape' ? { ...agent.position } : undefined;
       const facing = agent.rotation;
       state.scene = next.id; state.actor = next.actor; state.step = 0; state.lastText = next.context;
@@ -2986,6 +3086,7 @@ export class FilmStorySystem {
     if (this.reloaded.active(agent)) return this.reloaded.command(agent, target, tick);
     if (this.catch.active(agent)) return this.catch.command(agent, target, tick);
     if (state.scene === 'm2_ship_lost' && state.shipLoss?.phase === 'failed' || state.scene === 'm2_stop_sentinels' && state.tunnel?.phase === 'failed') return '当前检查点失败。按 J 打开手记并重试。';
+    if (state.scene === 'm3_trainman' && state.step === 1 && state.mobil?.phase !== 'stopped') return '列车仍在进站，等车门完全打开。';
     if (state.scene === 'm2_burly') return this.burlyAct(agent, target, tick);
     if (state.scene === 'm2_chateau' && state.step === 0) return this.chateauAct(agent, target, tick);
     if (state.scene === 'm2_mountain' && state.step === 2) return state.mountain?.phase === 'failed' && target === 'act' ? this.retryMountain(agent) : '站在山崖起飞点按 Space，随后按住 W 向南飞，A / D 调整航线。';
@@ -3144,7 +3245,15 @@ export class FilmStorySystem {
       this.awakeningFrame(agent, 0, tick);
       return state.lastText;
     }
-    if (state.scene === 'm3_mobil' && state.step === 0) return '沿站台走进黑色隧道，亲自寻找出口。';
+    if (state.scene === 'm3_trainman' && state.step === 2) {
+      if (['trainman', 'rama_kandra', 'kamala', 'sati'].some(id => this.world.agents.get(id)?.controller)) return '车门旁的角色正由其他玩家控制，等待他们完成行动。';
+      this.ensureMobil(tick);
+      if (state.mobil?.phase !== 'stopped') return '等车停稳，Trainman 才会打开车门。';
+      const center = FILM_SETS[this.scene!.set].center;
+      state.mobil.phase = 'refusing'; state.mobil.elapsed = 0;
+      state.mobil.approach = { x: agent.position.x - center.x, z: agent.position.z - center.z, yaw: agent.rotation };
+      this.mobilFrame(agent, 0, tick); return 'Trainman 伸手拦住你。';
+    }
     if (state.scene === 'm1_jump' && state.step === 1) return 'Morpheus 已经完成示范。Shift 助跑，空格起跳；跌落会恢复检查点。';
     if (step.kind === 'reflect') return 'J 打开手记，记录自己的理解。';
     if (state.scene === 'm2_trucks' && state.step === 2 && ['keymaker', 'neo'].some(id => this.world.agents.get(id)?.controller))
@@ -3238,6 +3347,8 @@ export class FilmStorySystem {
     delete state.catch;
     delete state.shipLoss;
     delete state.tunnel;
+    if (scene.id === 'm3_mobil') state.mobil = { phase: 'waiting', elapsed: 0, lastTick: tick, loops: 0 };
+    else if (!['m3_family', 'm3_trainman'].includes(scene.id)) delete state.mobil;
     delete state.baneCopy;
     delete state.seraph;
     delete state.burly;
@@ -3541,6 +3652,12 @@ export class FilmStorySystem {
         const spot = spots[id]; if (spot) { actor.position = filmPosition(scene.set, spot[0], spot[1]); actor.rotation = spot[2]; }
         if (id === 'neo' || id === 'bane') actor.currentAction = { type: 'idle', parameters: { resolved: true, finaleComa: true }, startedAt: this.state!.enteredAt, duration: 100000, progress: 0 };
       }
+      if (['m3_mobil', 'm3_family', 'm3_trainman'].includes(scene.id)) {
+        const spots: Record<string, [number, number, number]> = { sati: [-5, scene.id === 'm3_mobil' ? 12 : -8, 0],
+          rama_kandra: [-12, -8, Math.PI / 2], kamala: [-10, -8, Math.PI / 2], trainman: [12, -80, -Math.PI / 2] };
+        const spot = spots[id]; if (spot) { actor.position = filmPosition(scene.set, spot[0], spot[1]); actor.rotation = spot[2]; }
+        if (scene.id === 'm3_family' && id === 'kamala') actor.currentAction = { type: 'idle', parameters: { seated: true }, startedAt: this.state!.enteredAt, duration: 100000, progress: 0 };
+      }
     });
   }
   private near(agent: AgentState, step: FilmStep): boolean {
@@ -3655,6 +3772,11 @@ export class FilmStorySystem {
         state.trucks.phase = 'rescued'; state.trucks.elapsed = TRUCKS.collisionSeconds;
       }
     }
+    if (state.scene === 'm3_trainman' && state.step === 0) {
+      this.ensureMobil(tick);
+      state.mobil!.phase = 'approaching'; state.mobil!.elapsed = 0; state.mobil!.lastTick = tick;
+      text = '你接过 Rama 的箱子。轨道深处亮起两束车灯，迟到的单节列车终于来了。';
+    }
     if (state.scene === 'm1_bug' && state.step === 0 && state.office?.outcome === 'escaped') text = '扫描完成，没有发现追踪装置。Trinity 收起仪器，确认接头安全，继续前往 Morpheus 的房间。';
     state.lastText = text; state.step++; state.checkpoint = { ...agent.position }; delete state.started; delete state.fighting;
     if (state.scene === 'm2_ship_lost' && state.step === this.scene!.steps.length && state.shipLoss) state.shipLoss.phase = 'escaped';
@@ -3725,6 +3847,7 @@ export class FilmStorySystem {
       this.stageCast();
     }
     if (!actor?.controller || actor.status !== 'alive') {
+      if (state.mobil) state.mobil.lastTick = tick;
       if (actor?.status === 'alive' && state.scene === 'm2_trucks' && state.trucks) {
         const gap = Math.max(0, tick - state.trucks.lastTick);
         if (state.started !== undefined) state.started += gap;
@@ -3734,6 +3857,7 @@ export class FilmStorySystem {
     }
     if (state.scene === 'm2_trucks' && !state.trucks)
       state.trucks = { phase: state.step === 0 ? 'duel' : 'collision', elapsed: 0, lastTick: tick, attempt: 0 };
+    if (['m3_mobil', 'm3_family', 'm3_trainman'].includes(state.scene)) this.mobilTick(actor, tick);
     if (state.scene === 'm2_trucks' && state.trucks?.phase === 'collision') {
       state.trucks.elapsed = Math.min(TRUCKS.collisionSeconds, state.trucks.elapsed + Math.max(0, tick - state.trucks.lastTick) * .5);
       state.trucks.lastTick = tick;
@@ -3797,14 +3921,8 @@ export class FilmStorySystem {
       this.advance('第一次跳跃失败。程序把你送回起跳线，但身体仍记得坠落的痛感。现在可以回到连接椅。', actor, tick);
       return;
     }
-    if (state.scene === 'm3_mobil' && state.step === 0) {
-      if (actor.position.z < FILM_SETS[this.scene.set].center.z - 46) {
-        actor.position = filmPosition(this.scene.set, 0, 42); actor.velocity = { x: 0, y: 0, z: 0 };
-        this.sandbox().neoLife!.choices.mobil_loop = 'experienced';
-        this.advance('隧道并没有通往城市。你从另一端走回同一个站台，墙上仍是 MOBIL AVE。', actor, tick);
-      }
-      return;
-    }
+    if (state.scene === 'm3_trainman' && state.step === 1 && state.mobil?.phase !== 'stopped') return;
+    if (state.scene === 'm3_trainman' && state.step >= 3) return;
     if (state.scene === 'm1_ledge' && actor.position.y < FILM_SETS[this.scene.set].center.y - 6) {
       this.capture(actor, tick, '你失足抓住下方维修架，赶来的保安将你带回室内。被捕之后，故事仍会继续。'); return;
     }

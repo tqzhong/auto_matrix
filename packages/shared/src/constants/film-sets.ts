@@ -127,6 +127,7 @@ export const ORACLE_FURNITURE: FilmObstacle[] = [
   { x: 8, z: -11, width: 2.7, depth: 2.2, height: 1.95 },
 ];
 export function filmObstacles(set: FilmSet): FilmObstacle[] {
+  if (set.id === 'film_mobil_station') return [];
   if (set.id === 'film_mountain_range') return [
     { x: 0, z: 338, width: 64, depth: 7, height: 35 },
     ...[-1, 1].map(side => ({ x: side * 23.5, z: 295, width: 1.8, depth: 80, height: 3.5 })),
@@ -218,6 +219,7 @@ export function filmBlocked(position: Vector3, set: FilmSet, radius: number): bo
 }
 
 export function filmGroundHeight(position: Vector3, set: FilmSet): number {
+  if (set.id === 'film_mobil_station' && position.x - set.center.x > 8) return set.center.y - 1.35;
   if (set.id === 'film_freeway_trucks' && Math.abs(position.x - set.center.x - TRUCKS.roof.x) <= TRUCKS.roof.width / 2 &&
     Math.abs(position.z - set.center.z - TRUCKS.roof.z) <= TRUCKS.roof.depth / 2) return set.center.y + TRUCKS.roof.height;
   if (set.id === 'film_mountain_range') return set.center.y - 1 + mountainFloor(position.x - set.center.x, position.z - set.center.z);

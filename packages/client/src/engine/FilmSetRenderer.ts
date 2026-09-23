@@ -8,7 +8,7 @@ import { workdayLocked, type OfficeWorkday } from '@auto_matrix/shared';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
-import { FILM_SETS, FILM_SCENE_BY_ID, PILL_ROOM, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, GARAGE, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, EXILES, CHATEAU, awakeningLocked, trainingLocked, phoneLocked, windowOpening, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
+import { FILM_SETS, FILM_SCENE_BY_ID, PILL_ROOM, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, GARAGE, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, EXILES, CHATEAU, awakeningLocked, trainingLocked, phoneLocked, windowOpening, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type FilmJourney, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
 import { LobbySetRenderer } from './LobbySetRenderer.js';
 import { OfficeSetRenderer } from './OfficeSetRenderer.js';
 import { FreewaySetRenderer } from './FreewaySetRenderer.js';
@@ -116,6 +116,8 @@ export class FilmSetRenderer {
   private chateauDoor?: THREE.Mesh;
   private garageCar?: THREE.Group;
   private garageGhosts: THREE.Group[] = [];
+  private mobilTrain?: { car: THREE.Group; doors: [THREE.Mesh, THREE.Mesh] };
+  private mobilLastFrame?: number;
   private powerStatus?: { primary: THREE.MeshBasicMaterial; emergency: THREE.MeshBasicMaterial; lights: THREE.PointLight[] };
   private sourceDoor?: { portal: THREE.Group; source: THREE.Group; glow: THREE.Mesh };
   private architectScreens?: { materials: THREE.MeshBasicMaterial[]; neo: THREE.Texture[]; trinity: THREE.Texture; leftDoor: THREE.Mesh; leftLight: THREE.PointLight };
@@ -232,6 +234,7 @@ export class FilmSetRenderer {
     this.catchSet?.update(journey);
     this.zion?.update(journey, elapsed);
     this.baneCopy?.update(journey, elapsed, player && journey?.actor === player.id ? player.position : undefined, set?.center);
+    if (this.mobilTrain) this.updateMobilStation(journey, elapsed);
     if (this.powerStatus) {
       const grid = journey?.grid;
       const energized = grid?.primary !== 'off' && grid?.emergency !== 'off';
@@ -621,6 +624,9 @@ export class FilmSetRenderer {
       this.box(this.plaster, 0, -22.6, -12.8, w, 45, .5); this.box(this.plaster, 0, -22.6, -30.2, w, 45, .5);
       this.box(this.black, 0, -45, -21.5, w + 50, .7, 17);
       this.box(this.white, 0, .05, -10, 12, .04, .15);
+    } else if (set.architecture === 'mobil') {
+      this.box(floor, -7, -.3, 0, 30, .6, d);
+      this.box(this.black, 15, -1.65, 0, 14, .6, d);
     } else this.box(floor, 0, -.3, 0, w, .6, d);
     if (exterior || set.architecture === 'construct') return;
     const wall = set.id === 'film_power_station' ? this.pbr('damaged_plaster', 0x915b4d, 3) : this.currentScene === 'm2_key_door' ? this.pbr('damaged_plaster', 0x9ba5a0, 12) : set.architecture === 'architect' ? this.mat(0xf1f1eb, .48) : industrial ? this.metal : lavish || ['oracle', 'dojo', 'teahouse', 'mobil', 'backdoors'].includes(set.architecture) ? this.white : this.plaster;
@@ -1123,14 +1129,15 @@ export class FilmSetRenderer {
     }
   }
   private station(set: FilmSet): void {
-    const { width: w, depth: d, height: h } = set; const mobil = set.architecture === 'mobil';
-    const tile = this.mat(mobil ? 0xd0d7d2 : 0x839c92, .35); const border = this.mat(mobil ? 0x313d3b : 0x526a60, .4);
+    if (set.architecture === 'mobil') { this.mobilStation(set); return; }
+    const { width: w, depth: d, height: h } = set;
+    const tile = this.mat(0x839c92, .35); const border = this.mat(0x526a60, .4);
     for (const side of [-1, 1]) for (let z = -d / 2; z < d / 2; z += 3.5) {
       this.box(tile, side * (w / 2 - .45), h / 2, z, .15, h - .6, 3.44);
       for (let y = .4; y < h; y += 1) this.box(border, side * (w / 2 - .55), y, z, .02, .025, 3.5);
     }
     for (const z of [-d / 2 + 9, -5, d / 2 - 12]) {
-      this.label(mobil ? 'MOBIL AVE' : 'SUBWAY / PLATFORM 1', 0, h - 3.4, z, 14, mobil ? '#202626' : '#d9dfc5', mobil ? '#daddd3' : '#263831');
+      this.label('SUBWAY / PLATFORM 1', 0, h - 3.4, z, 14, '#d9dfc5', '#263831');
       this.table(-9, z + 3, 10, 2, this.wood, 1.4); this.box(this.wood, -9, 2.5, z + 2.2, 10, 1.8, .25);
       for (const x of [-w * .32, w * .32]) for (const y of [2, 4, 6, 8, 10]) this.sphere(this.metal, x, y, z + .94, .09);
     }
@@ -1140,23 +1147,101 @@ export class FilmSetRenderer {
     for (let z = -d / 2; z < d / 2; z += 2.5) this.box(this.wood, trackX, .13, z, 4.2, .2, .35);
     this.box(this.mat(0xbeb67c), trackX - 3, .07, 0, .6, .07, d);
     this.phone(-7, -d / 2 + 1);
-    if (mobil) {
-      for (const side of [-1, 1]) {
-        this.box(this.black, 0, 5.4, side * (d / 2 - .42), 8, 10.8, .08);
-        for (const x of [-4.2, 4.2]) this.box(border, x, 5.5, side * (d / 2 - 3), .35, 11, 5.3);
-        this.box(border, 0, 11, side * (d / 2 - 3), 8.6, .3, 5.3);
-        this.box(this.black, 0, .04, side * (d / 2 - 3), 8, .06, 5.3);
-      }
-    }
     // The moving train stays beyond the walkable platform aisle.
     const start = this.root.children.length; this.box(this.metal, 0, 3.4, 0, 4, 6, 35, .5);
     for (let z = -13; z <= 13; z += 5) { this.box(this.black, -2.02, 4, z, .06, 2.5, 3.3); this.box(this.glass, -2.06, 4, z, .03, 2.3, 3.1); }
     const train = new THREE.Group(); this.root.children.slice(start).forEach(c => train.add(c)); train.position.x = trackX; train.userData.dynamic = true; this.root.add(train);
     this.moving.push({ object: train, update: t => { train.position.z = ((t * 11) % (d + 90)) - d / 2 - 45; } });
-    if (!mobil) for (let z = -d / 2; z < d / 2; z += 13) {
+    for (let z = -d / 2; z < d / 2; z += 13) {
       const shape = new THREE.Shape(); shape.moveTo(-w / 2, 0); shape.absellipse(0, 0, w / 2, 7, Math.PI, 0, true, 0); shape.lineTo(w / 2, .6); shape.absellipse(0, .6, w / 2 + .6, 7.6, 0, Math.PI, false, 0); shape.closePath();
       this.mesh(new THREE.ExtrudeGeometry(shape, { depth: .4, bevelEnabled: false, curveSegments: 24 }), border, 0, h - 7.6, z);
     }
+  }
+  private mobilStation(set: FilmSet): void {
+    const { width: w, depth: d, height: h } = set;
+    const porcelain = this.mat(0xdce2db, .25); const grout = this.mat(0xaebbb4, .82);
+    const charcoal = this.mat(0x252d2b, .43); const edge = this.mat(0xb9b286, .63);
+    const light = new THREE.MeshBasicMaterial({ color: 0xf4fff4, toneMapped: false }); this.materials.add(light);
+    for (const side of [-1, 1]) {
+      for (let z = -d / 2 + 1.5; z < d / 2; z += 3) {
+        this.box(porcelain, side * (w / 2 - .58), h / 2, z, .14, h - .7, 2.96);
+        for (const y of [2, 4, 6, 8, 10, 12, 14]) this.box(grout, side * (w / 2 - .66), y, z, .025, .035, 3);
+      }
+      this.box(charcoal, side * (w / 2 - .68), 1.05, 0, .08, 2.1, d);
+      this.box(edge, side * (w / 2 - .7), 2.25, 0, .09, .11, d);
+    }
+    for (const side of [-1, 1]) {
+      this.box(charcoal, 0, 5.3, side * (d / 2 - 1.3), 17.5, 10.6, .2);
+      for (const x of [-9, 9]) this.box(porcelain, x, 5.3, side * (d / 2 - 1.4), .5, 10.7, .45);
+      this.box(porcelain, 0, 10.8, side * (d / 2 - 1.4), 18.5, .55, .45);
+      const sign = this.label('MOBIL AVE', 0, 12.2, side * (d / 2 - 1.7), 14, '#e8ece4', '#29312f');
+      if (side > 0) sign.rotation.y = Math.PI;
+      for (const x of [-9.2, 9.2]) this.box(charcoal, x, 5.2, side * (d / 2 - 5.2), 1.2, 10.4, 7);
+    }
+    for (const z of [-22, 16]) {
+      const sign = this.label('MOBIL AVE', -21.05, 9.5, z, 13, '#e9ede5', '#202927');
+      sign.rotation.y = Math.PI / 2;
+    }
+    for (let z = -d / 2 + 2; z < d / 2; z += 3) {
+      this.box(charcoal, 15, -.98, z, 12.5, .2, .6);
+      for (const x of [12, 18]) this.box(this.metal, x, -.76, z, .22, .27, 3.05);
+    }
+    this.box(edge, 7.55, .03, 0, .55, .08, d);
+    this.box(charcoal, 8.05, -.55, 0, .22, 1.3, d);
+    for (let z = -d / 2 + 5; z < d / 2 - 3; z += 9) {
+      this.box(charcoal, -6, h - .65, z, 14, .55, .85);
+      this.box(light, -6, h - 1, z, 12.8, .07, .72);
+      this.box(charcoal, 13, h - .65, z, 6, .55, .85);
+      this.box(light, 13, h - 1, z, 5.3, .07, .72);
+    }
+    for (const z of [-30, 0, 28]) {
+      const lamp = new THREE.PointLight(0xe7fff2, 115, 34, 2); lamp.position.set(-7, h - 2, z); this.root.add(lamp);
+    }
+    this.box(this.metal, -12, 1.35, -8, 8, .32, 1.8, .12);
+    this.box(this.metal, -12, 2.28, -8.65, 8, 1.4, .28, .1);
+    for (const x of [-15.5, -8.5]) for (const z of [-8.5, -7.5]) this.box(charcoal, x, .72, z, .23, 1.45, .23);
+    for (const [x, z, size] of [[-13, -10.1, 1.2], [-11.3, -10.4, .9]] as const) {
+      this.box(charcoal, x, size / 2, z, size, size, size * .67, .08);
+      this.box(this.metal, x, size + .04, z, size * .8, .13, size * .53);
+      this.box(this.metal, x, size + .18, z, size * .42, .22, .11);
+    }
+    const start = this.root.children.length;
+    const enamel = this.mat(0xc8d3cf, .22, .35); const window = this.mat(0x223c3a, .12, .28);
+    this.box(enamel, 0, .2, 0, 6.6, .35, 28);
+    this.box(enamel, 0, 6.4, 0, 6.6, .5, 28);
+    this.box(enamel, 3.25, 3.2, 0, .18, 5.9, 28);
+    for (const z of [-7.8, 7.8]) this.box(enamel, -3.25, 3.2, z, .18, 5.9, 11.5);
+    for (const z of [-13.9, 13.9]) this.box(enamel, 0, 3.2, z, 6.6, 5.9, .22);
+    for (const z of [-10.8, -6, 6, 10.8]) {
+      this.box(window, -3.35, 4.1, z, .12, 2.35, 2.2);
+      this.box(charcoal, -3.43, 4.1, z, .08, 2.52, 2.35);
+    }
+    for (const z of [-13.2, 13.2]) for (const x of [-1.3, 1.3]) this.box(light, x, 2.7, z + (z < 0 ? -.12 : .12), .8, .48, .06);
+    const left = this.box(enamel, -3.42, 3.1, -.84, .19, 5.35, 1.62); left.name = 'mobil-train-door-left';
+    const right = this.box(enamel, -3.42, 3.1, .84, .19, 5.35, 1.62); right.name = 'mobil-train-door-right';
+    for (const door of [left, right]) {
+      const pane = this.box(window, -3.54, 4.15, door.position.z, .04, 1.7, 1.3);
+      door.add(pane); pane.position.set(-.12, 1.05, 0);
+    }
+    const car = new THREE.Group(); car.name = 'mobil-train'; this.root.children.slice(start).forEach(c => car.add(c)); car.userData.dynamic = true;
+    car.position.set(14.3, -1.35, -80); this.root.add(car); this.mobilTrain = { car, doors: [left, right] };
+  }
+  private updateMobilStation(journey: FilmJourney | undefined, elapsed: number): void {
+    const train = this.mobilTrain!;
+    const release = journey?.scene === 'm3_mobil_release';
+    const encounter = journey?.scene === 'm3_trainman' && !journey.visiting ? journey.mobil : undefined;
+    const phase = release ? 'stopped' : encounter?.phase ?? 'waiting';
+    train.car.visible = phase !== 'waiting' && phase !== 'gone';
+    const progress = Math.max(0, Math.min(1, (encounter?.elapsed ?? 0) / (phase === 'approaching' ? 4.5 : 3)));
+    const z = phase === 'approaching' ? -80 + 60 * (progress * progress * (3 - 2 * progress))
+      : phase === 'departing' ? -20 - 60 * (progress * progress * (3 - 2 * progress))
+        : phase === 'stopped' || phase === 'refusing' ? -20 : -80;
+    train.car.position.z = this.mobilLastFrame === undefined ? z
+      : THREE.MathUtils.damp(train.car.position.z, z, 12, Math.max(0, elapsed - this.mobilLastFrame));
+    this.mobilLastFrame = elapsed;
+    const open = phase === 'stopped' || phase === 'refusing' && (encounter?.elapsed ?? 0) < 1.75;
+    train.doors[0].position.z = -.84 - (open ? 1.45 : 0);
+    train.doors[1].position.z = .84 + (open ? 1.45 : 0);
   }
   private realWorld(set: FilmSet): void {
     const { architecture: a, width: w, depth: d, height: h } = set;
@@ -1487,6 +1572,8 @@ export class FilmSetRenderer {
     this.portalDoor = undefined; this.oracleLetter = undefined; this.courtyardStaff = undefined; this.courtyardBirds = []; this.courtyardDisturbedAt = undefined;
     this.exileDessert = undefined; this.bookDoor = undefined; this.chateauVolley = undefined; this.chateauVolleyTick = undefined; this.chateauDoor = undefined;
     this.garageCar = undefined; this.garageGhosts = [];
+    this.mobilTrain = undefined;
+    this.mobilLastFrame = undefined;
     this.powerStatus = undefined;
     this.sourceDoor = undefined;
     this.architectScreens = undefined;

@@ -78,6 +78,8 @@ export class PlayerController {
     if (id === 'keymaker' && this.sandbox?.life.film.state?.ride?.phase === 'riding') return { error: '钥匙匠正在后座接受护送，抵达接应区后可以接入。' };
     if (['keymaker', 'morpheus', 'twin1', 'twin2'].includes(id) && this.sandbox?.life.film.state?.garage?.phase === 'riding') return { error: '这个角色正在车库追逐中，轿车冲出车库后可以接入。' };
     if (['keymaker', 'neo', 'agent_johnson'].includes(id) && ['collision', 'rescue'].includes(this.sandbox?.life.film.state?.trucks?.phase ?? '')) return { error: '这个角色正在卡车对撞接应中，抵达安全地点后可以接入。' };
+    if (['trainman', 'rama_kandra', 'kamala', 'sati'].includes(id) && this.sandbox?.life.film.state?.scene === 'm3_trainman'
+      && this.sandbox.life.film.state.mobil?.phase !== 'gone') return { error: '这个角色正在 Mobil Ave 的列车片段中，驶离后可以接入。' };
     if (this.sandbox?.state.threats.some(t => t.character === id)) return { error: '这个角色正在剧情交手，结束后可以接入。' };
     const restarting = newCycle && id === 'neo' && this.sandbox?.life.film.state?.finished;
     if (!restarting && this.sandbox?.life.film.unavailable(id) && !this.sandbox.life.film.controls(agent)) return { error: '这个角色在本轮故事中已无法接入；新循环会恢复。' };
@@ -260,6 +262,9 @@ export class PlayerController {
       if (this.sandbox?.life.film.finaleFrame(agent, Boolean(input.focus), input.yaw, dt, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
+      if (this.sandbox?.life.film.mobilFrame(agent, dt, tick)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
       if (this.sandbox?.life.film.theOneFrame(agent, { x: input.x, z: input.z, sprint: input.sprint, jump: input.jump, focus: Boolean(input.focus) }, dt, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
@@ -384,6 +389,8 @@ export class PlayerController {
     if (this.sandbox?.life.film.state && sentinelActive(this.sandbox.life.film.state) && ['attack', 'shoot', 'ability', 'ability2', 'dodge', 'travel'].includes(kind)) return '哨兵正在附近扫描。保持安静，武器和能力会暴露整艘船。';
     if (this.sandbox?.life.film.driving(agent) && ['attack', 'shoot', 'ability', 'ability2', 'dodge', 'travel'].includes(kind)) return '正在护送钥匙匠。W 加速，S 刹车，A / D 转向。';
     if (this.sandbox?.life.film.state?.scene === 'm2_seraph' && this.sandbox.life.film.state.fighting && ['shoot', 'ability', 'ability2'].includes(kind)) return 'Seraph 要看近身攻防。观察起手，X 闪避后用 F 反击。';
+    if (this.sandbox?.life.film.controls(agent) && ['m3_mobil', 'm3_family', 'm3_trainman'].includes(this.sandbox.life.film.state!.scene)
+      && ['ability', 'ability2', 'travel'].includes(kind)) return 'Mobil Ave 的边界由 Trainman 控制，Neo 的能力不能直接打开这条线路。';
     if (this.sandbox?.life.film.controls(agent) && ['m1_office_escape', 'm1_ledge'].includes(this.sandbox.life.film.state!.scene)
       && ['attack', 'shoot', 'ability', 'ability2', 'dodge'].includes(kind)) return '你仍是普通的 Anderson。按住 Z 潜行，利用遮挡避开特工。';
     if (agent.id === 'neo' && this.sandbox?.state.neoLife) {

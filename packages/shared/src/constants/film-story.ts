@@ -44,6 +44,10 @@ export interface ShipLossEncounter {
 export interface TunnelEncounter {
   phase: 'running' | 'sensing' | 'failed' | 'collapsed'; remaining: number; focus: number; lastTick: number; attempts: number;
 }
+export interface MobilEncounter {
+  phase: 'waiting' | 'approaching' | 'stopped' | 'refusing' | 'departing' | 'gone';
+  elapsed: number; lastTick: number; loops: number; boarding?: number; approach?: { x: number; z: number; yaw: number };
+}
 export interface FilmJourney {
   version: 1; scene: string; step: number; actor: string; completed: string[];
   enteredAt: number; started?: number; fighting?: boolean; checkpoint: Vector3;
@@ -91,6 +95,7 @@ export interface FilmJourney {
   catch?: import('./reloaded-catch.js').CatchEncounter;
   shipLoss?: ShipLossEncounter;
   tunnel?: TunnelEncounter;
+  mobil?: MobilEncounter;
 }
 const walk = (label: string, x = 0, z = -12): FilmStep => ({ kind: 'reach', label, x, z });
 const use = (label: string, text: string, x = 0, z = -12, seconds = 3): FilmStep => ({ kind: 'interact', label, text, x, z, seconds });
@@ -230,9 +235,9 @@ export const FILM_SCENES: FilmScene[] = [
     use('走到邻床，确认幸存者身份', '邻床的人是 Bane。他同样昏迷；没人知道他在那场灾难之前经历了什么。', 10, -25),
   ], ['neo', 'bane', 'maggie', 'morpheus', 'roland']),
 
-  scene('m3_mobil', 3, 'mobil_station', 'neo', '既不在这里，也不在那里', 'mobil', 'mobil', 'Neo 醒在 Mobil Ave。沿站台一直走入黑色隧道，试试这里的空间规则。', [walk('走进站台尽头的隧道', 0, -49), use('检查再次出现的站名', '这里属于 Trainman 管理的中间世界，通常的规则无法帮你离开。', 0, 37)]),
-  scene('m3_family', 3, 'mobil_station', 'neo', '没有指定用途的孩子', 'sati', 'oracle', 'Rama-Kandra 与 Kamala 为女儿 Sati 寻找庇护。程序之间也有爱。', [walk('走到长椅旁', -7, -8), think('生命必须有用途吗？', 'Sati 的价值不能仅靠系统分配的功能来衡量。', -7, -8)], ['rama_kandra', 'kamala', 'sati']),
-  scene('m3_trainman', 3, 'mobil_station', 'neo', '列车驶离', 'sati', 'mobil', 'Trainman 拒绝带走 Neo，并展示对这个空间的控制。Sati 一家乘车离开。', [use('尝试与 Trainman 沟通', '强行上车没有成功。Neo 只能等待外部的帮助。', 0, -22), walk('回到空站台', 0, 12)], ['trainman', 'sati']),
+  scene('m3_mobil', 3, 'mobil_station', 'neo', '既不在这里，也不在那里', 'mobil', 'mobil', 'Neo 在没有来路的白色站台醒来。先与迎上来的 Sati 说话，再确认站名。', [use('与 Sati 说话', 'Sati 说这里是 Mobil Ave；她没有见过通往城市的出口。', -5, 12, 2), use('辨认 MOBIL AVE 站名', '站名像一条线索：Mobil 是 Limbo 的字母重排，这里不是普通的地铁站。', -10, 5, 2)], ['sati']),
+  scene('m3_family', 3, 'mobil_station', 'neo', '没有指定用途的孩子', 'sati', 'oracle', 'Rama-Kandra 与 Kamala 带着女儿等待迟到的列车。Sati 没有系统指定的用途，他们仍愿付出一切保护她。', [walk('走到 Sati 一家的长椅旁', -7, -8), think('没有指定用途的生命，仍值得被爱吗？', 'Rama-Kandra 不把爱当成程序错误；他们让 Sati 通过这列车去见先知。', -7, -8)], ['rama_kandra', 'kamala', 'sati']),
+  scene('m3_trainman', 3, 'mobil_station', 'neo', '列车驶离', 'sati', 'mobil', '列车晚点抵达。帮助这一家上车，再试着面对替 Merovingian 管理边界的 Trainman。', [use('帮 Rama 提起行李', '隧道深处传来列车声。Neo 把行李递到站台边。', -6, -8, 2), walk('等列车停稳，走向车门', 6, -20), use('尝试随 Sati 一家上车', 'Trainman 拒绝 Neo，击退他，并带着一家人驶离。', 6, -20, 1), walk('沿一端隧道寻找出口', 0, -49), walk('再试另一端隧道', 0, 49)], ['trainman', 'rama_kandra', 'kamala', 'sati']),
   scene('m3_oracle_request', 3, 'oracle_home', 'trinity', '另一边的营救', 'oracle_last', 'oracle', '先知告诉 Morpheus 与 Trinity：Neo 被困在 Trainman 掌管的地方。', [use('在厨房听取线索', 'Seraph 将带两人去找 Trainman；他的主人是 Merovingian。', -4, -21), walk('跟随 Seraph 离开', 0, 18)], ['oracle', 'morpheus', 'seraph']),
   scene('m3_trainman_chase', 3, 'subway_platform', 'seraph', '逃走的列车管理员', 'oracle_last', 'chase', 'Seraph 认出 Trainman，但对方逃入列车。必须直接前往 Club Hel。', [walk('追到站台另一端', 0, -34), use('查明俱乐部入口', '通往地下俱乐部的电梯成为下一条路线。', 0, -34)], ['trinity', 'morpheus']),
   scene('m3_hel_entry', 3, 'club_hel', 'trinity', '地狱的衣帽间', 'oracle_last', 'combat', '三人穿过电梯与衣帽间，守卫从墙壁和天花板方向发动攻击。', [fight('突破衣帽间守卫', 4), walk('抵达 VIP 高台', 0, -29)], ['morpheus', 'seraph']),
@@ -276,6 +281,7 @@ export function filmStepPosition(scene: FilmScene, step: FilmStep): Vector3 {
   return position;
 }
 export function filmEntry(scene: FilmScene): Vector3 {
+  if (scene.id === 'm3_mobil') return filmPosition(scene.set, 0, 22);
   if (scene.id === 'm2_backdoors') return filmPosition(scene.set, SERAPH_ORACLE.hall.entry.x, SERAPH_ORACLE.hall.entry.z);
   if (scene.id === 'm2_bench') return filmPosition(scene.set, SERAPH_ORACLE.yard.entry.x, SERAPH_ORACLE.yard.entry.z);
   if (scene.id === 'm2_room') return filmPosition(scene.set, 0, 8);

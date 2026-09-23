@@ -145,9 +145,9 @@
 
 | ID | 剧情段落 | 场景 | 操控人物 | 游玩步骤 |
 | --- | --- | --- | --- | --- |
-| m3_mobil | 既不在这里，也不在那里 | Mobil Ave · 中间世界 | Neo | 移动 → 交互 |
-| m3_family | 没有指定用途的孩子 | Mobil Ave · 中间世界 | Neo | 移动 → 反思 |
-| m3_trainman | 列车驶离 | Mobil Ave · 中间世界 | Neo | 交互 → 移动 |
+| m3_mobil | 既不在这里，也不在那里 | Mobil Ave · 中间世界 | Neo | 与 Sati 交谈 → 确认站名 |
+| m3_family | 没有指定用途的孩子 | Mobil Ave · 中间世界 | Neo | 到长椅旁 → 回应 Sati 一家 |
+| m3_trainman | 列车驶离 | Mobil Ave · 中间世界 | Neo | 帮提行李 → 等列车 → 尝试登车遭拒 → 两端隧道回环 |
 | m3_oracle_request | 另一边的营救 | 先知公寓 · 候诊室与厨房 | Trinity | 交互 → 移动 |
 | m3_trainman_chase | 逃走的列车管理员 | 地铁站 · Neo 与 Smith | Seraph | 移动 → 交互 |
 | m3_hel_entry | 地狱的衣帽间 | Club Hel · 地下俱乐部 | Trinity | 战斗 → 移动 |
