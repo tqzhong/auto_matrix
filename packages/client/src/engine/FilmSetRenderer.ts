@@ -8,7 +8,7 @@ import { workdayLocked, type OfficeWorkday } from '@auto_matrix/shared';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
-import { FILM_SETS, FILM_SCENE_BY_ID, PILL_ROOM, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, GARAGE, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, EXILES, CHATEAU, awakeningLocked, trainingLocked, phoneLocked, windowOpening, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type FilmJourney, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
+import { FILM_SETS, FILM_SCENE_BY_ID, HEL_ELEVATOR, helElevatorLocked, PILL_ROOM, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, GARAGE, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, EXILES, CHATEAU, awakeningLocked, trainingLocked, phoneLocked, windowOpening, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type FilmJourney, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
 import { LobbySetRenderer } from './LobbySetRenderer.js';
 import { OfficeSetRenderer } from './OfficeSetRenderer.js';
 import { FreewaySetRenderer } from './FreewaySetRenderer.js';
@@ -119,6 +119,7 @@ export class FilmSetRenderer {
   private mobilTrain?: { car: THREE.Group; doors: [THREE.Mesh, THREE.Mesh] };
   private mobilLastFrame?: number;
   private helChaseTrain?: THREE.Group;
+  private helLift?: { doors: [THREE.Group, THREE.Group]; bands: { mesh: THREE.Mesh; y: number }[]; light: THREE.PointLight };
   private powerStatus?: { primary: THREE.MeshBasicMaterial; emergency: THREE.MeshBasicMaterial; lights: THREE.PointLight[] };
   private sourceDoor?: { portal: THREE.Group; source: THREE.Group; glow: THREE.Mesh };
   private architectScreens?: { materials: THREE.MeshBasicMaterial[]; neo: THREE.Texture[]; trinity: THREE.Texture; leftDoor: THREE.Mesh; leftLight: THREE.PointLight };
@@ -241,6 +242,16 @@ export class FilmSetRenderer {
       this.helChaseTrain.visible = chase?.phase === 'running' && chase.elapsed >= 3;
       this.helChaseTrain.position.z = 60 - Math.max(0, (chase?.elapsed ?? 0) - 3) / 3 * 130;
     }
+    if (this.helLift) {
+      const lift = sceneId === 'm3_hel_entry' && !journey?.visiting ? journey?.helElevator : undefined;
+      const open = sceneId === 'm3_hel_bargain' || Boolean(journey?.visiting) || (journey?.step ?? 0) > 0 || lift?.phase === 'open';
+      const opening = lift?.phase === 'descending' ? Math.max(0, Math.min(1, (lift.elapsed - HEL_ELEVATOR.seconds + .7) / .7)) : 0;
+      const travel = open ? 1 : opening * opening * (3 - 2 * opening);
+      this.helLift.doors[0].position.x = -HEL_ELEVATOR.doorWidth / 4 - travel * 4.5;
+      this.helLift.doors[1].position.x = HEL_ELEVATOR.doorWidth / 4 + travel * 4.5;
+      for (const band of this.helLift.bands) band.mesh.position.y = lift?.phase === 'descending' ? 1 + (band.y + lift.elapsed * 3.5) % 8 : band.y;
+      this.helLift.light.intensity = lift?.phase === 'descending' ? 190 + Math.sin(lift.elapsed * 17) * 65 : 90;
+    }
     if (this.powerStatus) {
       const grid = journey?.grid;
       const energized = grid?.primary !== 'off' && grid?.emergency !== 'off';
@@ -307,6 +318,7 @@ export class FilmSetRenderer {
     this.oracleVase?.update(sceneId === 'm1_oracle' ? journey?.visiting || journey!.step > 0 ? 4.5 : journey?.oracle?.vase : undefined);
     const scene = journey && FILM_SCENE_BY_ID[journey.scene]; const step = scene?.steps[journey!.step];
     this.marker.visible = Boolean(set && scene?.set === set.id && step && !journey?.visiting && journey?.actor === player?.id);
+    if (helElevatorLocked(journey)) this.marker.visible = false;
     if (journey?.scene === 'm1_lobby' && journey.fighting) this.marker.visible = false;
     if (journey?.scene === 'm2_burly' && !['ready', 'staff_ready', 'flight_ready'].includes(journey.burly?.phase ?? 'ready')) this.marker.visible = false;
     if (journey?.scene === 'm2_chateau' && journey.step === 0 && !['ready', 'landing'].includes(journey.chateau?.phase ?? 'ready')) this.marker.visible = false;
@@ -1141,6 +1153,7 @@ export class FilmSetRenderer {
     const basalt = this.mat(0x242729, .88); const red = this.mat(0x5b2027, .5, .14);
     const steel = this.mat(0x52575a, .35, .65); const velvet = this.mat(0x321016, .92);
     const lamp = new THREE.MeshBasicMaterial({ color: 0xd44752, toneMapped: false }); this.materials.add(lamp);
+    const shaftLamp = this.mat(0x85434b, .55, .12);
     this.box(basalt, 0, .035, 0, w - 2, .09, d - 2).name = 'hel-stone-floor';
     for (const side of [-1, 1]) {
       this.box(velvet, side * (w / 2 - .55), h / 2, 0, .12, h - 1, d - 1);
@@ -1156,6 +1169,22 @@ export class FilmSetRenderer {
     }
     this.box(basalt, 0, 9.8, 31, 9, .65, 16);
     const elevatorSign = this.label('HEL ↓', 0, 10.5, 24.6, 6, '#cf6064', '#1d171a'); elevatorSign.name = 'hel-elevator-sign'; elevatorSign.userData.dynamic = true;
+    const doors = [-1, 1].map((side, index) => {
+      const panel = new THREE.Group(); panel.name = index ? 'hel-elevator-right-door' : 'hel-elevator-left-door'; panel.userData.dynamic = true;
+      panel.position.set(side * HEL_ELEVATOR.doorWidth / 4, 0, HEL_ELEVATOR.doorZ); this.root.add(panel);
+      panel.add(this.box(steel, 0, 4.4, 0, HEL_ELEVATOR.doorWidth / 2, HEL_ELEVATOR.doorHeight, .32, .06));
+      panel.add(this.box(basalt, 0, 4.4, .19, HEL_ELEVATOR.doorWidth / 2 - .42, 7.9, .04));
+      for (const y of [1.25, 4.4, 7.55]) panel.add(this.box(steel, 0, y, .23, HEL_ELEVATOR.doorWidth / 2 - .35, .09, .08));
+      return panel;
+    }) as [THREE.Group, THREE.Group];
+    const bands: { mesh: THREE.Mesh; y: number }[] = [];
+    for (const side of [-1, 1]) for (let i = 0; i < 5; i++) {
+      const y = 1 + i * 1.6;
+      const mesh = this.box(shaftLamp, side * 3.97, y, 29.5, .08, .13, .8); mesh.name = 'hel-shaft-band'; mesh.userData.dynamic = true;
+      bands.push({ mesh, y });
+    }
+    const liftLight = new THREE.PointLight(0xd64f5b, 90, 14, 2); liftLight.position.set(0, 6, 27); this.root.add(liftLight);
+    this.helLift = { doors, bands, light: liftLight };
     this.box(steel, -3.45, 2.2, 26.1, 1.15, 3.1, .46, .08);
     const button = this.cylinder(lamp, -3.45, 2.45, 26.42, .23, .12); button.rotation.x = Math.PI / 2;
     button.name = 'hel-elevator-button'; button.userData.dynamic = true;
@@ -1668,6 +1697,7 @@ export class FilmSetRenderer {
     this.mobilTrain = undefined;
     this.mobilLastFrame = undefined;
     this.helChaseTrain = undefined;
+    this.helLift = undefined;
     this.powerStatus = undefined;
     this.sourceDoor = undefined;
     this.architectScreens = undefined;

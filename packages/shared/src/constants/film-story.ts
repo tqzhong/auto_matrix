@@ -51,6 +51,10 @@ export interface MobilEncounter {
 export interface HelChaseEncounter {
   phase: 'sighting' | 'running' | 'escaped'; elapsed: number; lastTick: number;
 }
+export const HEL_ELEVATOR = { doorZ: 24.6, doorWidth: 8.8, doorHeight: 8.8, seconds: 4.2 } as const;
+export interface HelElevatorEncounter {
+  phase: 'ready' | 'descending' | 'open'; elapsed: number; lastTick: number;
+}
 export interface FilmJourney {
   version: 1; scene: string; step: number; actor: string; completed: string[];
   enteredAt: number; started?: number; fighting?: boolean; checkpoint: Vector3;
@@ -100,6 +104,10 @@ export interface FilmJourney {
   tunnel?: TunnelEncounter;
   mobil?: MobilEncounter;
   helChase?: HelChaseEncounter;
+  helElevator?: HelElevatorEncounter;
+}
+export function helElevatorLocked(journey: FilmJourney | undefined): boolean {
+  return journey?.scene === 'm3_hel_entry' && !journey.visiting && journey.helElevator?.phase === 'descending';
 }
 const walk = (label: string, x = 0, z = -12): FilmStep => ({ kind: 'reach', label, x, z });
 const use = (label: string, text: string, x = 0, z = -12, seconds = 3): FilmStep => ({ kind: 'interact', label, text, x, z, seconds });

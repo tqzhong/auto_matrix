@@ -11,7 +11,7 @@ test('Hel rescue has a saved chase train and separate garage, elevator, coat che
   const document = globalThis.document;
   globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {} }) }) } as unknown as Document;
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
-  const player = world.agents.get('seraph')!;
+  let player = world.agents.get('seraph')!;
   const journey: FilmJourney = { version: 1, scene: 'm3_trainman_chase', actor: 'seraph', step: 1, completed: [],
     enteredAt: 0, reflections: {}, lastText: '', checkpoint: filmEntry(FILM_SCENE_BY_ID.m3_trainman_chase),
     helChase: { phase: 'sighting', elapsed: 0, lastTick: 0 } };
@@ -27,14 +27,31 @@ test('Hel rescue has a saved chase train and separate garage, elevator, coat che
     renderer.update(player, sandbox, 4); assert.equal(train.visible, true); assert.ok(train.position.z < 60);
     journey.helChase!.phase = 'escaped'; renderer.update(player, sandbox, 7); assert.equal(train.visible, false);
 
-    journey.scene = 'm3_hel_garage'; journey.actor = 'trinity'; player.position = filmEntry(FILM_SCENE_BY_ID.m3_hel_garage);
+    journey.scene = 'm3_hel_garage'; journey.actor = 'trinity'; player = world.agents.get('trinity')!;
+    player.position = filmEntry(FILM_SCENE_BY_ID.m3_hel_garage); player.currentLocation = 'film_hel_garage'; player.isInMatrix = true;
     renderer.update(player, sandbox, 8);
     assert.ok(renderer.root.getObjectByName('hel-garage-steel-door'));
     assert.equal(renderer.root.children.filter(object => object.name === 'hel-parked-car').length, 6);
-    journey.scene = 'm3_hel_entry'; player.position = filmEntry(FILM_SCENE_BY_ID.m3_hel_entry);
+    journey.scene = 'm3_hel_entry'; journey.step = 0; player.position = filmEntry(FILM_SCENE_BY_ID.m3_hel_entry);
     renderer.update(player, sandbox, 9);
     assert.ok(renderer.root.getObjectByName('hel-elevator-sign'));
     assert.ok(renderer.root.getObjectByName('hel-elevator-button'));
+    const door = renderer.root.getObjectByName('hel-elevator-left-door') as THREE.Group;
+    const shaftBand = renderer.root.getObjectByName('hel-shaft-band') as THREE.Mesh;
+    assert.ok(door); assert.ok(shaftBand);
+    shaftBand.geometry.computeBoundingBox();
+    assert.ok(shaftBand.geometry.boundingBox!.max.z - shaftBand.geometry.boundingBox!.min.z < 1, 'shaft lamps stay short inside the narrow cage');
+    const marker = scene.children.find(object => object instanceof THREE.Mesh && object.geometry instanceof THREE.TorusGeometry)!;
+    assert.equal(marker.visible, true);
+    const shut = door.position.x; const bandY = shaftBand.position.y;
+    journey.helElevator = { phase: 'descending', elapsed: 1.5, lastTick: 0 };
+    renderer.update(player, sandbox, 10);
+    assert.equal(door.position.x, shut, 'the lift remains sealed during travel');
+    assert.equal(marker.visible, false, 'the button waypoint disappears during the ride');
+    assert.notEqual(shaftBand.position.y, bandY, 'shaft lights pass the cage during travel');
+    journey.helElevator.phase = 'open'; journey.step = 1;
+    renderer.update(player, sandbox, 11);
+    assert.ok(door.position.x < shut - 4, 'both the animation and the server barrier open at the first combat step');
     assert.equal(renderer.root.children.filter(object => object.name === 'hel-coatcheck-counter').length, 2);
     assert.ok(renderer.root.getObjectByName('hel-vip-table'));
     assert.equal(filmGroundHeight(filmPosition('film_club_hel', 0, -33), FILM_SETS.film_club_hel), FILM_SETS.film_club_hel.center.y + .6);

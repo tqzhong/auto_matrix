@@ -649,6 +649,37 @@ test('Seraph loses the subway chase, Trinity crosses Hel garage and the rescue t
   assert.equal(h.sandbox.life.film.state!.mobil?.phase, 'stopped');
 });
 
+test('Club Hel elevator stays shut through a saved ride and opens only on arrival', () => {
+  const h = setup(); h.command('continue'); let state = h.sandbox.life.film.state!;
+  Object.assign(state, { scene: 'm3_hel_garage', actor: 'trinity', step: FILM_SCENE_BY_ID.m3_hel_garage.steps.length });
+  h.players.possess('film-player', 'trinity', h.tick()); h.command('next');
+  state = h.sandbox.life.film.state!;
+  assert.equal(state.scene, 'm3_hel_entry');
+  const door = filmPosition('film_club_hel', 0, 24.6);
+  assert.equal(playerBlocked(door, true, 1.1, h.sandbox.state.structures), true);
+  h.actor().position = filmStepPosition(FILM_SCENE_BY_ID.m3_hel_entry, FILM_SCENE_BY_ID.m3_hel_entry.steps[0]);
+  h.command('act');
+  assert.equal(state.step, 0, 'pressing the button starts the ride rather than completing it');
+  assert.equal((state as typeof state & { helElevator?: { phase: string } }).helElevator?.phase, 'descending');
+  assert.equal(h.sandbox.life.film.performing(h.actor()), true);
+  h.advance(3);
+  const saved = JSON.parse(JSON.stringify(h.sandbox.state)); h.sandbox.restore(saved);
+  state = h.sandbox.life.film.state!;
+  const elapsed = (state as typeof state & { helElevator?: { elapsed: number } }).helElevator!.elapsed;
+  h.players.release('film-player', h.tick()); h.advance(8);
+  assert.equal((state as typeof state & { helElevator?: { elapsed: number } }).helElevator!.elapsed, elapsed, 'the ride pauses without its player');
+  h.players.possess('film-player', 'trinity', h.tick()); h.advance(10);
+  assert.equal(state.step, 1);
+  assert.equal((state as typeof state & { helElevator?: { phase: string } }).helElevator?.phase, 'open');
+  assert.equal(playerBlocked(door, true, 1.1, h.sandbox.state.structures), false);
+  assert.equal(h.sandbox.life.film.performing(h.actor()), false);
+  delete state.helElevator;
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+  h.advance(1);
+  assert.equal(h.sandbox.life.film.state!.helElevator?.phase, 'open', 'older saves after the elevator do not replay the descent');
+  assert.equal(playerBlocked(door, true, 1.1, h.sandbox.state.structures), false);
+});
+
 test('touching the mirror is a saved performance that freezes on pause and resumes after reconnect', () => {
   const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
   Object.assign(state, { scene: 'm1_pills', actor: 'neo', step: 2 }); h.command('next');
@@ -1809,6 +1840,7 @@ test('the entire film route completes through interactions, driving and real com
           h.command('act'); for (let frame = 0; frame < 141; frame++) h.players.step(.1, true, h.tick());
         }
         else if (scene.id === 'm1_pills') for (let frame = 0; frame < 51; frame++) h.players.step(.1, true, h.tick());
+        else if (scene.id === 'm3_hel_entry' && index === 0) h.advance(10);
         else if (scene.id === 'm1_download') for (let frame = 0; frame < 101; frame++) h.players.step(.1, true, h.tick());
         else if (scene.id === 'm1_red_dress') for (let frame = 0; frame < 121; frame++) h.players.step(.1, true, h.tick());
         else if (scene.id === 'm1_bridge') {

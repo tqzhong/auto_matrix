@@ -1,5 +1,5 @@
 import { CATCH, RELOADED, RELOADED_FINALE, catchText, reloadedText } from '@auto_matrix/shared';
-import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_NAMES, GRID_HACK_SECONDS, GRID_REROUTE_SECONDS, filmStepPosition, pillLocked, lafayetteWelcomeLocked, awakeningLocked, awakeningWaiting, AWAKENING_SECONDS, trainingLocked, trainingWaiting, TRAINING_SECONDS, DOJO_COMBO_WINDOW, windowOpening, windowCrossing, ITEMS, RECIPES, SKILLS, FILMS, MISSIONS, LOCATIONS, CITY_BUILDINGS, NEO_CHAPTERS, LIFE_ACTIONS, lifeActionPosition, lifeRoomCenter, locationEntrance, distance, missionPosition, nearTransit, skillPoints,
+import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_NAMES, GRID_HACK_SECONDS, GRID_REROUTE_SECONDS, HEL_ELEVATOR, filmStepPosition, helElevatorLocked, pillLocked, lafayetteWelcomeLocked, awakeningLocked, awakeningWaiting, AWAKENING_SECONDS, trainingLocked, trainingWaiting, TRAINING_SECONDS, DOJO_COMBO_WINDOW, windowOpening, windowCrossing, ITEMS, RECIPES, SKILLS, FILMS, MISSIONS, LOCATIONS, CITY_BUILDINGS, NEO_CHAPTERS, LIFE_ACTIONS, lifeActionPosition, lifeRoomCenter, locationEntrance, distance, missionPosition, nearTransit, skillPoints,
   type AgentState, type SandboxState, type SandboxCommand, type ItemId, type SkillId, type Vector3 } from '@auto_matrix/shared';
 import './sandbox.css';
 import { renderNeoLife } from './NeoLifePanel.js';
@@ -190,6 +190,15 @@ export class SandboxUI {
     this.el('sandbox-job').style.width = journey.started !== undefined && step ? `${Math.min(100, (this.tick - journey.started) / ((step.seconds ?? 3) * 2) * 100)}%` : '0';
     document.getElementById('game-objective')!.textContent = journey.visiting ? set.name : scene.title;
     document.getElementById('game-objective-copy')!.textContent = journey.visiting ? '自由走动，J 返回保存的剧情位置。' : journey.fighting ? 'F 连击 · X 闪避 · 1 治疗 · 击败追兵后继续' : step ? `${journey.step + 1}/${scene.steps.length} · ${step.label} · ${step.kind === 'reach' ? '走到标记旁' : step.kind === 'reflect' ? '靠近后按 J 记录反思' : '靠近后按 G'}` : 'G 继续下一段，J 查看刚刚发生的事。';
+    if (helElevatorLocked(journey)) {
+      this.el('film-sequence').classList.remove('hidden');
+      this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = `井道下降中 · ${Math.round(journey.helElevator!.elapsed / HEL_ELEVATOR.seconds * 100)}% · 到站后前门打开`;
+      document.getElementById('game-objective-copy')!.textContent = '铁笼下降中 · 到站后前门打开 · 当前进度自动保存';
+      this.el('sandbox-waypoint').textContent = '↓ CLUB HEL';
+      this.el('sandbox-interact').classList.add('hidden');
+      return;
+    }
     if (!journey.visiting && journey.grid && ['m2_plan', 'm2_power', 'm2_vigilant', 'm2_backup', 'm2_key_door'].includes(scene.id)) {
       const grid = journey.grid;
       const clock = `${Math.floor(Math.ceil(grid.remaining) / 60)}:${String(Math.ceil(grid.remaining) % 60).padStart(2, '0')}`;
