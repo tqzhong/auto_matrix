@@ -1,4 +1,5 @@
 import { ReloadedOpeningRenderer } from './ReloadedOpeningRenderer.js';
+import { ZionHomecomingRenderer } from './ZionHomecomingRenderer.js';
 import * as THREE from 'three';
 import { workdayLocked, type OfficeWorkday } from '@auto_matrix/shared';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
@@ -93,6 +94,7 @@ export class FilmSetRenderer {
   private matrixEscape?: MatrixEscapeRenderer;
   private theOne?: TheOneRenderer;
   private reloaded?: ReloadedOpeningRenderer;
+  private zion?: ZionHomecomingRenderer;
 
   constructor(private scene: THREE.Scene) {
     scene.add(this.root);
@@ -120,6 +122,7 @@ export class FilmSetRenderer {
         else if (sceneId === 'm1_subway' && set.id === 'film_subway_platform' || sceneId === 'm1_city_chase' && set.id === 'film_escape_streets') this.matrixEscape = new MatrixEscapeRenderer(this.root, set.id as 'film_subway_platform' | 'film_escape_streets');
         else if (['m1_death', 'm1_return', 'm1_final_call'].includes(sceneId ?? '') && (set.id === 'film_heart_hotel' || set.id === 'film_final_phone')) this.theOne = new TheOneRenderer(this.root, set.id);
         else if (['m2_dream', 'm2_meeting'].includes(sceneId ?? '') && (set.id === 'film_trinity_roof' || set.id === 'film_captains_meeting')) this.reloaded = new ReloadedOpeningRenderer(this.root, set.id);
+        else if (['film_zion_hangar', 'film_zion_council', 'film_zion_residences', 'film_zion_temple', 'film_zion_bedroom', 'film_zion_engineering'].includes(set.id)) this.zion = new ZionHomecomingRenderer(this.root, set.id);
         else if (set.architecture === 'lobby') this.lobby = new LobbySetRenderer(this.root, set);
         else if (set.architecture === 'freeway') this.freeway = new FreewaySetRenderer(this.root, set);
         else if (set.architecture === 'pods') this.pods = new PodSetRenderer(this.root);
@@ -184,6 +187,7 @@ export class FilmSetRenderer {
     this.matrixEscape?.update(journey, elapsed);
     this.theOne?.update(journey, elapsed);
     this.reloaded?.update(journey);
+    this.zion?.update(journey, elapsed);
     this.oracleVase?.update(sceneId === 'm1_oracle' ? journey?.visiting || journey!.step > 0 ? 4.5 : journey?.oracle?.vase : undefined);
     const scene = journey && FILM_SCENE_BY_ID[journey.scene]; const step = scene?.steps[journey!.step];
     this.marker.visible = Boolean(set && scene?.set === set.id && step && !journey?.visiting && journey?.actor === player?.id);
@@ -241,6 +245,11 @@ export class FilmSetRenderer {
     if (this.reloaded && this.current.id !== 'film_neb_deck') {
       fog.density = this.current.id === 'film_trinity_roof' ? .002 : .003; fog.color.setHex(0x0f1917); (this.scene.background as THREE.Color).copy(fog.color);
       this.scene.environmentIntensity = .56; return { color: 0xc4d1b5, ambient: .6, sun: .14 };
+    }
+    if (this.zion) {
+      fog.density = this.current.id === 'film_zion_hangar' ? .0015 : .0008;
+      fog.color.setHex(0x211b18); (this.scene.background as THREE.Color).copy(fog.color);
+      this.scene.environmentIntensity = .85; return { color: 0xffdbba, ambient: 1.38, sun: .32 };
     }
     if (this.theOne && this.current.id === 'film_heart_hotel') { fog.density = .0023; fog.color.setHex(0x151e1b); this.scene.environmentIntensity = .48; return { color: 0xd9dfbc, ambient: .55, sun: .08 }; }
     if (this.theOne && this.current.id === 'film_final_phone') { fog.density = .0012; fog.color.setHex(0xaebfc0); this.scene.environmentIntensity = .9; return { color: 0xffe5be, ambient: .96, sun: 1.7 }; }
@@ -961,6 +970,7 @@ export class FilmSetRenderer {
     this.matrixEscape?.dispose(); this.matrixEscape = undefined;
     this.theOne?.dispose(); this.theOne = undefined;
     this.reloaded?.dispose(); this.reloaded = undefined;
+    this.zion?.dispose(); this.zion = undefined;
     this.office?.dispose(); this.office = undefined;
     this.freeway?.dispose(); this.freeway = undefined;
     this.lobby?.dispose(); this.lobby = undefined;

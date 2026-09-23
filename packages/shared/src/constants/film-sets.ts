@@ -1,4 +1,5 @@
 import { RELOADED_WALLS, RELOADED_TABLE, DREAM_CABINETS } from './reloaded-opening.js';
+import { ZION_OBSTACLES } from './zion-homecoming.js';
 import type { Vector3 } from '../types/agent.js';
 import { LOBBY_COLUMNS } from './lobby.js';
 import { OFFICE_OBSTACLES, OFFICE_LADDER, OFFICE_LEDGE_OFFSET } from './office.js';
@@ -116,6 +117,7 @@ export const ORACLE_FURNITURE: FilmObstacle[] = [
   { x: 8, z: -11, width: 2.7, depth: 2.2, height: 1.95 },
 ];
 export function filmObstacles(set: FilmSet): FilmObstacle[] {
+  if (ZION_OBSTACLES[set.id]) return ZION_OBSTACLES[set.id];
   if (set.id === 'film_captains_meeting') return [...RELOADED_WALLS, RELOADED_TABLE];
   if (set.id === 'film_trinity_roof') return DREAM_CABINETS;
   if (set.id === 'film_anderson_flat') return APARTMENT_FURNITURE;

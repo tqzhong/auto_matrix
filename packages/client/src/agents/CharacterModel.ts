@@ -197,8 +197,9 @@ export class CharacterModels {
   create(state: AgentState): CharacterRig {
     const look: Look = HERO_LOOKS[state.id] ?? {
       width: 1, shoulders: 0.6, waist: 0.39, hips: 0.43, skin: state.appearance.headColor,
-      cloth: state.appearance.clothing, leather: state.faction === 'zion', coat: false,
-      hair: state.id === 'spoon_boy' ? 'bald' : 'short', glasses: state.faction === 'civilians' || state.faction === 'oracle' ? 'none' : 'square',
+      cloth: state.faction === 'zion' && !state.isInMatrix ? '#665d4d' : state.appearance.clothing,
+      leather: state.faction === 'zion' && state.isInMatrix, coat: false,
+      hair: state.id === 'spoon_boy' ? 'bald' : 'short', glasses: state.faction === 'civilians' || state.faction === 'oracle' || state.faction === 'zion' && !state.isInMatrix ? 'none' : 'square',
     };
     if (state.id === 'citizen_2') look.cloth = '#a21722';
     const root = new THREE.Group(); const detail = new VisibleGroup(); root.add(detail);

@@ -25,6 +25,7 @@
 | 步骤验证、战斗、检查点、回访与角色交接 | packages/server/src/story/FilmStorySystem.ts |
 | 日常生活、蓝色药丸与循环衔接 | packages/server/src/story/NeoLifeSystem.ts |
 | 建筑、道具、材质、局部灯光与列车动画 | packages/client/src/engine/FilmSetRenderer.ts |
+| 锡安回港六处专用布景与动态人群 | packages/client/src/engine/ZionHomecomingRenderer.ts |
 | 场景手记 | packages/client/src/player/FilmJourneyPanel.ts |
 | 运行时贴图与来源 | packages/client/public/assets/film-materials/ |
 | 剧情路由测试、地图边界与楼梯测试 | tests/film-story.test.mts / tests/film-world.test.mts |
@@ -108,13 +109,13 @@
 | --- | --- | --- | --- | --- |
 | m2_dream | 关于坠落的梦 | Trinity 坠落 · 城市高空 | Trinity | 移动 → 交互 |
 | m2_meeting | 船长们的秘密会议 | 反抗军船长 · 秘密会议 | Neo | 交互 → 战斗 |
-| m2_dock | 回到锡安 | 锡安 · 船坞 | Neo | 移动 → 交互 |
-| m2_lock | 信念与军令 | 锡安 · 指挥所与议事厅 | Morpheus | 移动 → 反思 |
-| m2_residents | 门口的请求 | 锡安 · 居住层 | Neo | 移动 → 交互 |
-| m2_temple | 洞窟里的集会 | 锡安 · 神庙洞窟 | Morpheus | 移动 → 交互 |
-| m2_room | 房间里的两个人 | 锡安 · Neo 与 Trinity 的房间 | Neo | 移动 → 反思 |
-| m2_hamann | 维持生命的机器 | 锡安 · 工程层 | Neo | 移动 → 反思 |
-| m2_bane_copy | 被带出矩阵的感染 | 后门通道 · 白色走廊 | Bane | 移动 → 交互 |
+| m2_dock | 回到锡安 | 锡安 · 三号闸门船坞 | Neo | 走过悬桥 → 回应 Kid → 确认补电 |
+| m2_lock | 信念与军令 | 锡安 · 金属指挥所 | Morpheus | 进入指挥室 → 核对 72 小时战备 → 反思 |
+| m2_residents | 门口的请求 | 锡安 · 居住层 | Neo | 走过廊桥 → 记录 Jacob/Gnosis → 记录 Icarus → 送入联络簿 |
+| m2_temple | 洞窟里的集会 | 锡安 · 神庙洞窟 | Morpheus | 走到讲台 → 公布威胁 → 鼓声与舞蹈 |
+| m2_bane_copy | 被带出矩阵的感染 | 后门通道 · 白色走廊 | Bane · 旁观视角 | 赶往电话 → 被 Smith 同化 |
+| m2_room | 房间里的两个人 | 锡安 · Neo 与 Trinity 的房间 | Neo | 回到房间 → 坦白梦境 → 反思 |
+| m2_hamann | 维持生命的机器 | 锡安 · 工程层 | Neo | 走到维护台 → 检查读数 → 调整备用阀 → 反思 |
 | m2_departure | 离港前的消息 | 锡安 · 船坞 | Neo | 交互 → 移动 |
 | m2_seraph | 认识一个人的方法 | 赛拉夫 · 茶馆 | Neo | 战斗 → 交互 |
 | m2_backdoors | 门连接的另一侧 | 后门通道 · 白色走廊 | Neo | 移动 → 交互 |

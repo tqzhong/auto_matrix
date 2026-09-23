@@ -1,5 +1,5 @@
 import { ReloadedOpeningSystem } from './ReloadedOpeningSystem.js';
-import { newReloaded, reloadedLocked } from '@auto_matrix/shared';
+import { newReloaded, reloadedLocked, ZION_CAST } from '@auto_matrix/shared';
 import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_CAST, filmReflections, CHARACTERS, LOCATIONS, NEO_CHAPTERS, filmCharacterFates, filmEntry, filmPosition, filmStepPosition, locationEntrance, distance, playerBlocked, newFreewayRide, stepFreeway, OFFICE_LADDER, awakeningLocked, awakeningPose, AWAKENING_SECONDS, CONSTRUCT_REVEAL, DESERT_REVEAL, oracleActing,
   AMBUSH_REWRITE, AMBUSH_SECONDS, AMBUSH_SEALS, OFFICE_CONTACT, OFFICE_WINDOW, OFFICE_CROSSING_SECONDS, officeCrossingPose, windowCrossing, phoneLocked, heldPhone, windowOpening, pillLocked, pillRoot, PILL_ROOM, PILL_TIMING, trainingLocked, trainingRoot, trainingText, TRAINING_SECONDS,
   lobbyLocked, type DriveInput, type AgentState, type FilmScene, type FilmStep, type SandboxState, type SandboxThreat, type TrainingRole, type CombatImpact } from '@auto_matrix/shared';
@@ -2490,6 +2490,15 @@ export class FilmStorySystem {
     this.sandbox().weatherUntil = tick + 100000;
     this.stageCast();
     this.reconcileCast();
+    if (scene.id === 'm3_zion_prepare' && life.choices.zion_residents_contacted) state.lastText += ' 居住层的两份寻人请求已列入联络簿，撤离名单有了对应家属。';
+    if (scene.id === 'm3_dock_battle' && !life.choices.zion_dock_supplies_used) {
+      const supplies = Number(Boolean(life.choices.zion_ship_charged)) + Number(Boolean(life.choices.zion_lock_reported));
+      if (supplies) { this.sandbox().profiles[actor.id].inventory.medkit += supplies; life.choices.zion_dock_supplies_used = String(supplies); state.lastText += ` 已整理的补给与部署带来 ${supplies} 份急救包。`; }
+    }
+    if (scene.id === 'm3_temple_defense' && life.choices.zion_residents_contacted && !life.choices.zion_care_supplies_used) {
+      this.sandbox().profiles[actor.id].inventory.medkit++; life.choices.zion_care_supplies_used = '1';
+      state.lastText += ' 联络簿上的家属已找到避难区；互助小组留下一份急救包。';
+    }
     if (scene.id === 'm1_wake_up') { state.contact = { phase: 'idle', elapsed: 0 }; this.apartmentFrame(actor, 0, tick); }
     if (scene.id === 'm1_wake_again') { state.wakeCall = { phase: 'waking', elapsed: 0, nightmare: state.office?.outcome !== 'escaped' }; this.apartmentFrame(actor, 0, tick); }
     if (scene.id === 'm1_club') { state.club = { phase: 'crowd', elapsed: 0 }; this.clubFrame(actor, 0, tick); }
@@ -2583,12 +2592,14 @@ export class FilmStorySystem {
       if (id === 'trinity' && this.state?.hotel) return;
       // Cast stands clear of the playable aisle and its interaction targets.
       this.place(actor, scene, filmPosition(scene.set, (i % 2 ? 1 : -1) * (10 + Math.floor(i / 2) * 2), -6 + Math.floor(i / 2) * 8));
+      const zion = ZION_CAST[scene.id]?.[id];
+      if (zion) { actor.position = filmPosition(scene.set, zion.x, zion.z); actor.rotation = zion.yaw; }
       if (scene.set === 'film_oracle_home') {
         if (id === 'oracle') actor.position = filmPosition(scene.set, -7, -22);
         else if (id === 'spoon_boy') actor.position = filmPosition(scene.set, -9, 8);
         else actor.position = filmPosition(scene.set, i % 2 ? 10 : -10, 5 + Math.floor(i / 2) * 6);
       }
-      actor.rotation = i % 2 ? -Math.PI / 2 : Math.PI / 2;
+      if (!zion) actor.rotation = i % 2 ? -Math.PI / 2 : Math.PI / 2;
       if (scene.id === 'm1_lobby' && id === 'trinity') { actor.position = filmPosition(scene.set, -4, 30); actor.rotation = Math.PI; }
       if (scene.id === 'm1_lobby' && id === 'citizen_12') { actor.position = filmPosition(scene.set, 0, 20.8); actor.rotation = 0; }
       if (scene.id === 'm1_recovery') {
@@ -2637,6 +2648,14 @@ export class FilmStorySystem {
   }
   private advance(text: string, agent: AgentState, tick: number): void {
     const state = this.state!; const life = this.sandbox().neoLife!;
+    if (state.scene === 'm2_dock' && state.step === 2) life.choices.zion_ship_charged = 'yes';
+    if (state.scene === 'm2_lock' && state.step === 1) life.choices.zion_lock_reported = '72h';
+    if (state.scene === 'm2_residents' && state.step === 1) life.choices.zion_jacob_request = 'Gnosis';
+    if (state.scene === 'm2_residents' && state.step === 2) life.choices.zion_icarus_request = 'Icarus';
+    if (state.scene === 'm2_residents' && state.step === 3) life.choices.zion_residents_contacted = 'both';
+    if (state.scene === 'm2_temple' && state.step === 1) life.choices.zion_truth_spoken = '72h';
+    if (state.scene === 'm2_room' && state.step === 1) life.choices.zion_dream_shared = 'trinity';
+    if (state.scene === 'm2_hamann' && state.step === 2) life.choices.zion_backup_balanced = 'yes';
     if (state.scene === 'm1_bug' && state.step === 0 && state.office?.outcome === 'escaped') text = '扫描完成，没有发现追踪装置。Trinity 收起仪器，确认接头安全，继续前往 Morpheus 的房间。';
     state.lastText = text; state.step++; state.checkpoint = { ...agent.position }; delete state.started; delete state.fighting;
     if (state.scene === 'm1_desert' && state.step === 1) {
@@ -2655,7 +2674,7 @@ export class FilmStorySystem {
     if (!state.completed.includes(state.scene)) {
       state.completed.push(state.scene);
       this.reconcileCast();
-      const observing = state.scene === 'm1_steak';
+      const observing = state.scene === 'm1_steak' || state.scene === 'm2_bane_copy';
       life.journal.unshift({ day: life.day, time: this.world.timeOfDay, title: observing ? `旁观片段 · ${this.scene!.title}` : this.scene!.title,
         text: observing ? `这不是 Neo 此时拥有的角色知识。${text}` : text });
       life.journal = life.journal.slice(0, 120);

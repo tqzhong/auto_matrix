@@ -209,6 +209,12 @@ export const LOCATIONS: Record<string, LocationDef> = {
     storyPhase: 'phase2_awakening',
     world: 'real',
   },
+  zion_residential: {
+    id: 'zion_residential', name: 'Zion Residential Level', nameCn: '锡安居住层',
+    description: '岩壁之间的住户与廊桥，居民在这里交换消息和物资。',
+    bounds: { min: { x: 2150, y: -100, z: 2410 }, max: { x: 2240, y: -80, z: 2500 } },
+    faction: 'zion', isInterior: true, storyPhase: 'phase2_awakening', world: 'real',
+  },
 
   // === 飞船 ===
   nebuchadnezzar: {

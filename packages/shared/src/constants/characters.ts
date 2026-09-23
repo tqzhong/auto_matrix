@@ -355,6 +355,18 @@ export const CHARACTERS: Record<string, CharacterDef> = {
     allies: ['morpheus', 'niobe'],
     enemies: ['machines'],
   },
+  zion_parent: {
+    id: 'zion_parent', name: 'Jacob’s parent', nameCn: 'Jacob 的家人', faction: 'zion',
+    description: 'A resident waiting for news of Jacob aboard the Gnosis.', initialLocation: 'zion_residential',
+    abilities: [], personality: 'Worried but direct.', goals: ['Hear reliable news of Jacob'], isAwakened: true,
+    health: 80, allies: ['neo'], enemies: ['machines'],
+  },
+  zion_neighbor: {
+    id: 'zion_neighbor', name: 'Icarus passenger’s parent', nameCn: 'Icarus 乘员的家人', faction: 'zion',
+    description: 'A resident trying to learn whether her daughter on the Icarus is safe.', initialLocation: 'zion_residential',
+    abilities: [], personality: 'Patient and frightened.', goals: ['Hear reliable news of her daughter'], isAwakened: true,
+    health: 80, allies: ['neo'], enemies: ['machines'],
+  },
   niobe: {
     id: 'niobe',
     name: 'Niobe',

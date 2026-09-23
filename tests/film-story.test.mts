@@ -445,12 +445,12 @@ test('canonical losses persist across scene transitions, loading and character s
 
 test('philosophical choices answer the current question and survive loading without duplicate rewards', () => {
   const h = setup(); h.command('start'); const state = h.sandbox.life.film.state!;
-  const scene = FILM_SCENE_BY_ID.m2_hamann; state.scene = scene.id; state.actor = scene.actor; state.step = 1;
+  const scene = FILM_SCENE_BY_ID.m2_hamann; state.scene = scene.id; state.actor = scene.actor; state.step = 3;
   h.players.possess('film-player', 'neo', h.tick()); h.actor().isInMatrix = false;
-  h.actor().position = filmStepPosition(scene, scene.steps[1]);
+  h.actor().position = filmStepPosition(scene, scene.steps[3]);
   assert.match(h.command('reflect:care'), /生活|清水/);
   assert.equal(h.sandbox.life.state!.philosophy.care, 1);
-  assert.equal(h.sandbox.life.state!.choices['m2_hamann:1'], 'care');
+  assert.equal(h.sandbox.life.state!.choices['m2_hamann:3'], 'care');
   h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
   h.command('reflect:care'); assert.equal(h.sandbox.life.state!.philosophy.care, 1);
   assert.ok(h.sandbox.life.state!.journal.some(e => e.title.includes('维持谁的生活')));
