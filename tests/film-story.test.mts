@@ -1221,6 +1221,88 @@ test('an older key-door checkpoint reconstructs the cut grid without replaying N
   assert.deepEqual(state.checkpoint, filmPosition(door.set, 0, -38));
 });
 
+test('the Architect reveals both costs before Neo can take the film-left door', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  const scene = FILM_SCENE_BY_ID.m2_architect;
+  Object.assign(state, { scene: scene.id, actor: 'neo', step: 0, architect: undefined });
+  h.actor().currentLocation = scene.set; h.actor().position = filmEntry(scene);
+  assert.ok(scene.steps[2].x > 0, 'Source reset is the right-hand door');
+  assert.ok(scene.steps.at(-1)!.x < 0, 'Trinity is behind the left-hand door');
+  h.advance();
+  assert.equal(state.architect?.phase, 'cycles');
+  assert.equal(playerBlocked(filmPosition(scene.set, 8, -28.2), true, 1.1, h.sandbox.state.structures), true);
+  assert.equal(playerBlocked(filmPosition(scene.set, -8, -28.2), true, 1.1, h.sandbox.state.structures), true);
+  for (let index = 0; index < scene.steps.length; index++) {
+    h.actor().position = filmStepPosition(scene, scene.steps[index]);
+    if (index === 0) h.advance();
+    else if (scene.steps[index].kind === 'reflect') h.command('reflect:agency');
+    else { h.command('act'); h.advance((scene.steps[index].seconds ?? 3) * 2 + 1); }
+    assert.equal(state.step, index + 1, `Architect beat ${index}`);
+    if (index === 2) assert.equal(state.architect?.sourceReviewed, true);
+    if (index === 3) assert.equal(state.architect?.trinityReviewed, true);
+  }
+  assert.equal(state.architect?.door, 'matrix');
+  assert.equal(h.sandbox.life.state!.choices.architect_door, 'matrix');
+  assert.equal(playerBlocked(filmPosition(scene.set, 8, -28.2), true, 1.1, h.sandbox.state.structures), true);
+  assert.equal(playerBlocked(filmPosition(scene.set, -8, -28.2), true, 1.1, h.sandbox.state.structures), false);
+  assert.ok(state.completed.includes(scene.id));
+});
+
+test('an older Architect save replays the door costs while preserving its philosophical answer', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  Object.assign(state, { scene: 'm2_architect', actor: 'neo', step: 2, architect: undefined });
+  state.reflections['m2_architect:1'] = 'agency';
+  h.sandbox.life.state!.choices['m2_architect:1'] = 'agency';
+  h.actor().currentLocation = FILM_SCENE_BY_ID.m2_architect.set;
+  h.advance();
+  assert.equal(state.step, 1);
+  assert.equal(state.reflections['m2_architect:1'], undefined);
+  assert.equal(state.reflections['m2_architect:4'], 'agency');
+  assert.equal(h.sandbox.life.state!.choices['m2_architect:4'], 'agency');
+  assert.deepEqual(h.world.agents.get('architect')?.position, filmPosition('film_architect_room', 0, -14));
+  state.step = 4; h.actor().position = filmStepPosition(FILM_SCENE_BY_ID.m2_architect, FILM_SCENE_BY_ID.m2_architect.steps[4]);
+  assert.match(h.command('reflect:care'), /此前存档/); assert.equal(state.step, 4);
+});
+
+test('another player holding Architect or Trinity pauses the corresponding reveal', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  const scene = FILM_SCENE_BY_ID.m2_architect;
+  Object.assign(state, { scene: scene.id, actor: 'neo', step: 1,
+    architect: { phase: 'cycles', sourceReviewed: false, trinityReviewed: false, remaining: 45, lastTick: h.tick(), attempts: 0 } });
+  h.actor().currentLocation = scene.set; h.actor().position = filmStepPosition(scene, scene.steps[1]);
+  h.players.possess('other-player', 'architect', h.tick());
+  assert.match(h.command('act'), /另一位玩家/); assert.equal(state.started, undefined);
+  h.players.release('other-player', h.tick());
+  state.step = 3; h.actor().position = filmStepPosition(scene, scene.steps[3]);
+  h.players.possess('other-player', 'trinity', h.tick());
+  assert.match(h.command('act'), /另一位玩家/); assert.equal(state.started, undefined);
+  state.step = 5; state.architect!.phase = 'decision'; state.architect!.remaining = 20;
+  h.actor().position = filmStepPosition(scene, scene.steps[5]);
+  h.advance(10); assert.equal(state.architect!.remaining, 20);
+  assert.match(h.command('act'), /另一位玩家/); assert.equal(state.started, undefined);
+});
+
+test('the Architect door window pauses on disconnect, restores, fails, and retries without replaying the conversation', () => {
+  const h = setup(); h.command('continue'); const scene = FILM_SCENE_BY_ID.m2_architect;
+  const state = h.sandbox.life.film.state!;
+  Object.assign(state, { scene: scene.id, actor: 'neo', step: scene.steps.length - 1,
+    architect: { phase: 'decision', sourceReviewed: true, trinityReviewed: true, remaining: 2, lastTick: h.tick(), attempts: 0 } });
+  h.actor().currentLocation = scene.set; h.actor().position = filmStepPosition(scene, scene.steps.at(-1)!);
+  h.players.release('film-player', h.tick()); h.advance(20);
+  assert.equal(state.architect!.remaining, 2);
+  h.players.possess('film-player', 'neo', h.tick());
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+  h.advance(5); const restored = h.sandbox.life.film.state!;
+  assert.equal(restored.architect?.phase, 'failed'); assert.equal(restored.step, scene.steps.length - 1);
+  assert.match(h.command('act'), /重试/);
+  assert.match(h.command('retry'), /重试/);
+  assert.equal(restored.architect?.phase, 'decision'); assert.equal(restored.architect?.attempts, 1);
+  assert.equal(restored.architect?.sourceReviewed, true); assert.equal(restored.architect?.trinityReviewed, true);
+  h.actor().position = filmStepPosition(scene, scene.steps.at(-1)!);
+  h.command('act'); h.advance((scene.steps.at(-1)!.seconds ?? 3) * 2 + 1);
+  assert.equal(restored.architect?.door, 'matrix');
+});
+
 test('a completed two-step key-door save remains complete after the corridor moves', () => {
   const h = setup(); h.command('start'); const state = h.sandbox.life.film.state!;
   const door = FILM_SCENE_BY_ID.m2_key_door;

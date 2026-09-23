@@ -114,6 +114,7 @@ export class FilmSetRenderer {
   private garageGhosts: THREE.Group[] = [];
   private powerStatus?: { primary: THREE.MeshBasicMaterial; emergency: THREE.MeshBasicMaterial; lights: THREE.PointLight[] };
   private sourceDoor?: { portal: THREE.Group; source: THREE.Group; glow: THREE.Mesh };
+  private architectScreens?: { materials: THREE.MeshBasicMaterial[]; neo: THREE.Texture[]; trinity: THREE.Texture; leftDoor: THREE.Mesh; leftLight: THREE.PointLight };
 
   constructor(private scene: THREE.Scene) {
     scene.add(this.root);
@@ -160,6 +161,7 @@ export class FilmSetRenderer {
           this.build(set); this.batch();
           if (set.architecture === 'power') this.createPowerStatus(set);
           if (sceneId === 'm2_key_door') this.createSourceDoor();
+          if (sceneId === 'm2_architect') this.createArchitectScreens();
           if (set.id === 'film_chateau_hall') {
             this.chateauVolley = new THREE.Group(); this.chateauVolley.visible = false; this.root.add(this.chateauVolley);
             const bullet = this.mat(0xc5b49a, .2, .85);
@@ -233,6 +235,16 @@ export class FilmSetRenderer {
       this.sourceDoor.portal.position.x = journey?.keyDoor?.portalOpened ? 6.3 : 0;
       this.sourceDoor.source.position.x = journey?.grid?.phase === 'opened' ? 5.5 : 0;
       this.sourceDoor.glow.visible = journey?.grid?.phase === 'window' || journey?.grid?.phase === 'opened';
+    }
+    if (this.architectScreens) {
+      const live = sceneId === 'm2_architect' && !journey?.visiting && (journey?.step ?? 0) >= 4;
+      this.architectScreens.materials.forEach((material, index) => {
+        const map = live ? this.architectScreens!.trinity : this.architectScreens!.neo[index];
+        if (material.map !== map) { material.map = map; material.needsUpdate = true; }
+      });
+      const open = journey?.architect?.door === 'matrix';
+      this.architectScreens.leftDoor.position.x = open ? -12.8 : -8;
+      this.architectScreens.leftLight.intensity = live ? 15 : 4;
     }
     if (this.portalDoor) {
       const open = journey?.completed.includes(this.portalDoor.scene) || journey?.scene === this.portalDoor.scene && journey.step >= FILM_SCENE_BY_ID[this.portalDoor.scene].steps.length;
@@ -358,6 +370,10 @@ export class FilmSetRenderer {
       fog.density = .0012; fog.color.setHex(0x1d2829);
       this.scene.environmentIntensity = .54;
       return { color: 0xb9d0c6, ambient: .58, sun: .08 };
+    }
+    if (this.architectScreens) {
+      fog.density = .001; this.scene.environmentIntensity = .55;
+      return { color: 0xf1f1e9, ambient: .95, sun: .08 };
     }
     if (this.theOne && this.current.id === 'film_heart_hotel') { fog.density = .0023; fog.color.setHex(0x151e1b); this.scene.environmentIntensity = .48; return { color: 0xd9dfbc, ambient: .55, sun: .08 }; }
     if (this.theOne && this.current.id === 'film_final_phone') { fog.density = .0012; fog.color.setHex(0xaebfc0); this.scene.environmentIntensity = .9; return { color: 0xffe5be, ambient: .96, sun: 1.7 }; }
@@ -585,7 +601,7 @@ export class FilmSetRenderer {
     const { width: w, depth: d, height: h } = set; const exterior = outdoor.has(set.architecture);
     const lavish = ['chateau', 'lobby', 'restaurant', 'hel', 'architect'].includes(set.architecture);
     const industrial = ['ship', 'engineering', 'garage', 'power', 'zion', 'temple', 'pods', 'machine'].includes(set.architecture);
-    const floor = this.currentScene === 'm2_key_door' ? this.pbr('damaged_plaster', 0x798380, 8) : lavish ? this.marble : industrial ? this.metal : ['construct', 'mobil', 'backdoors'].includes(set.architecture) ? this.white : exterior ? this.pbr('damaged_plaster', set.architecture === 'garden' ? 0x6f7851 : 0x6f7879, 14) : this.wood;
+    const floor = this.currentScene === 'm2_key_door' ? this.pbr('damaged_plaster', 0x798380, 8) : set.architecture === 'architect' ? this.mat(0xecece7, .28) : lavish ? this.marble : industrial ? this.metal : ['construct', 'mobil', 'backdoors'].includes(set.architecture) ? this.white : exterior ? this.pbr('damaged_plaster', set.architecture === 'garden' ? 0x6f7851 : 0x6f7879, 14) : this.wood;
     if (set.id === 'film_jump_roofs') {
       this.box(floor, 0, -.3, (-13 + d / 2) / 2, w, .6, d / 2 + 13);
       this.box(floor, 0, -.3, (-30 - d / 2) / 2, w, .6, d / 2 - 30);
@@ -594,7 +610,7 @@ export class FilmSetRenderer {
       this.box(this.white, 0, .05, -10, 12, .04, .15);
     } else this.box(floor, 0, -.3, 0, w, .6, d);
     if (exterior || set.architecture === 'construct') return;
-    const wall = set.id === 'film_power_station' ? this.pbr('damaged_plaster', 0x915b4d, 3) : this.currentScene === 'm2_key_door' ? this.pbr('damaged_plaster', 0x9ba5a0, 12) : industrial ? this.metal : lavish || ['oracle', 'dojo', 'teahouse', 'mobil', 'backdoors'].includes(set.architecture) ? this.white : this.plaster;
+    const wall = set.id === 'film_power_station' ? this.pbr('damaged_plaster', 0x915b4d, 3) : this.currentScene === 'm2_key_door' ? this.pbr('damaged_plaster', 0x9ba5a0, 12) : set.architecture === 'architect' ? this.mat(0xf1f1eb, .48) : industrial ? this.metal : lavish || ['oracle', 'dojo', 'teahouse', 'mobil', 'backdoors'].includes(set.architecture) ? this.white : this.plaster;
     for (const x of [-w / 2, w / 2]) {
       if (set.architecture === 'lafayette' && x > 0) continue;
       if (set.id === 'film_le_vrai' && x < 0) {
@@ -816,11 +832,19 @@ export class FilmSetRenderer {
         this.label('SOURCE ACCESS', 0, 10, -54.2, 8, '#c9d3cd', '#263735');
       }
     } else if (a === 'architect') {
-      for (let row = 0; row < 4; row++) for (let i = 0; i < 23; i++) {
-        const theta = Math.PI + i / 22 * Math.PI; const x = Math.cos(theta) * 24; const z = Math.sin(theta) * 25 - 2;
-        const start = this.root.children.length; this.crt(0, 0, 0, .95, true); const g = new THREE.Group(); this.root.children.slice(start).forEach(c => g.add(c)); g.position.set(x, 2 + row * 3.6, z); g.rotation.y = -theta - Math.PI / 2; this.root.add(g);
+      const ivory = this.mat(0xe6e5de, .32); const portal = this.mat(0x101312, .42);
+      this.box(this.black, 0, .04, -8, 30, .08, 31);
+      this.box(ivory, 0, .14, -8, 28, .13, 29);
+      this.box(ivory, 0, 1.5, -14, 2.4, .6, 2.4, .16);
+      this.box(ivory, 0, 2.8, -15, 2.4, 2.6, .55, .18);
+      for (const x of [-8, 8]) {
+        this.box(portal, x, 4.1, -30.45, 5.3, 8.2, .15);
+        for (const dx of [-2.8, 2.8]) this.box(ivory, x + dx, 4.1, -30.1, .38, 8.7, .75);
+        this.box(ivory, x, 8.5, -30.1, 6, .35, .75);
       }
-      this.chair(0, -14); this.door(-8, -d / 2 + .6); this.door(8, -d / 2 + .6);
+      this.box(ivory, 8, 4.05, -30.13, 4.8, 7.9, .23);
+      this.label('SOURCE / RELOAD', 8, 9.4, -30.04, 2.4, '#56635d', '#efefea');
+      this.label('MATRIX / TRINITY', -8, 9.4, -30.04, 2.4, '#56635d', '#efefea');
     } else if (a === 'workshop') {
       for (const x of [-w / 2 + 2, w / 2 - 2]) {
         for (const y of [1, 4, 7, 10, 13]) this.box(this.wood, x, y, 0, 3.5, .4, d - 5);
@@ -897,6 +921,47 @@ export class FilmSetRenderer {
       this.label(main ? 'SYNCHRONIZED CHARGE' : 'EMERGENCY SYSTEM', 0, 6.6, terminal.z + 1.65, 8.5, '#e6e4cf', '#26332e');
       if (main) this.label('DANGER — HIGH VOLTAGE', 0, 11, -d / 2 + .55, 16, '#201d16', '#ba9e51');
     }
+  }
+  private createArchitectScreens(): void {
+    const loader = new THREE.TextureLoader();
+    const neo = [0, 1, 2, 3].map(index => {
+      const texture = loader.load('/assets/architect/neo-reactions-atlas.png');
+      texture.repeat.set(.5, .5); texture.offset.set(index % 2 * .5, index < 2 ? .5 : 0);
+      return texture;
+    });
+    const trinity = loader.load('/assets/architect/trinity-signal.png');
+    for (const texture of [...neo, trinity]) { texture.colorSpace = THREE.SRGBColorSpace; texture.anisotropy = 8; this.textures.add(texture); }
+    const materials = neo.map(map => new THREE.MeshBasicMaterial({ color: 0xf4f5ef, map, side: THREE.DoubleSide, toneMapped: false }));
+    materials.forEach(material => this.materials.add(material));
+    const columns = 21; const rows = 8; const count = columns * rows;
+    const frames = new THREE.InstancedMesh(this.own(new THREE.BoxGeometry(2.76, 1.64, .16)), this.mat(0x101615, .3), count);
+    const screenGeometry = this.own(new THREE.PlaneGeometry(2.58, 1.45));
+    const screens = materials.map(material => new THREE.InstancedMesh(screenGeometry, material, count));
+    const screenCounts = [0, 0, 0, 0];
+    const dummy = new THREE.Object3D();
+    let index = 0;
+    for (let row = 0; row < rows; row++) for (let column = 0; column < columns; column++) {
+      const theta = Math.PI + (column + .5) / columns * Math.PI;
+      const x = Math.cos(theta) * 21; const z = Math.sin(theta) * 21 - .5;
+      if (row < 4 && Math.abs(x) < 12) continue;
+      const yaw = Math.atan2(-x, -z - .5); const y = 2 + row * 1.8;
+      dummy.position.set(x, y, z); dummy.rotation.set(0, yaw, 0); dummy.updateMatrix(); frames.setMatrixAt(index, dummy.matrix);
+      dummy.position.set(x + Math.sin(yaw) * .14, y, z + Math.cos(yaw) * .14);
+      dummy.updateMatrix();
+      const variant = (row * 7 + column * 11) % 4; const slot = screenCounts[variant]++;
+      screens[variant].setMatrixAt(slot, dummy.matrix);
+      const brightness = .78 + ((row * 7 + column * 11) % 5) * .05;
+      screens[variant].setColorAt(slot, new THREE.Color().setRGB(brightness, brightness, brightness));
+      index++;
+    }
+    frames.count = index; frames.instanceMatrix.needsUpdate = true; frames.castShadow = false;
+    screens.forEach((screen, variant) => { screen.count = screenCounts[variant]; screen.instanceMatrix.needsUpdate = true; screen.castShadow = false; });
+    this.root.add(frames, ...screens);
+    const leftDoor = this.box(this.mat(0xe6e5de, .32), -8, 4.05, -30.13, 4.8, 7.9, .23);
+    leftDoor.userData.dynamic = true;
+    const leftLight = new THREE.PointLight(0xd8eee5, 4, 12);
+    leftLight.position.set(-8, 5, -28); this.root.add(leftLight);
+    this.architectScreens = { materials, neo, trinity, leftDoor, leftLight };
   }
   private createPowerStatus(set: FilmSet): void {
     const terminal = filmObstacles(set)[0];
@@ -1409,6 +1474,7 @@ export class FilmSetRenderer {
     this.garageCar = undefined; this.garageGhosts = [];
     this.powerStatus = undefined;
     this.sourceDoor = undefined;
+    this.architectScreens = undefined;
     this.office?.dispose(); this.office = undefined;
     this.freeway?.dispose(); this.freeway = undefined;
     this.lobby?.dispose(); this.lobby = undefined;

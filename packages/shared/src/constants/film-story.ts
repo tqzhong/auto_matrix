@@ -23,6 +23,12 @@ export interface FilmScene {
   music: FilmCue; context: string; cast: string[]; steps: FilmStep[];
 }
 export const GRID_WINDOW_SECONDS = 314;
+export const ARCHITECT_DOOR_SECONDS = 45;
+export interface ArchitectEncounter {
+  phase: 'cycles' | 'source' | 'trinity' | 'reflection' | 'decision' | 'failed' | 'done';
+  sourceReviewed: boolean; trinityReviewed: boolean;
+  remaining: number; lastTick: number; attempts: number; door?: 'matrix';
+}
 export const GRID_REROUTE_SECONDS = 6;
 export const GRID_HACK_SECONDS = 12;
 export interface GridOperation {
@@ -74,6 +80,7 @@ export interface FilmJourney {
   mountain?: import('./mountain.js').MountainFlight;
   grid?: GridOperation;
   keyDoor?: { portalOpened: boolean; keyTaken: boolean };
+  architect?: ArchitectEncounter;
 }
 const walk = (label: string, x = 0, z = -12): FilmStep => ({ kind: 'reach', label, x, z });
 const use = (label: string, text: string, x = 0, z = -12, seconds = 3): FilmStep => ({ kind: 'interact', label, text, x, z, seconds });
@@ -183,7 +190,14 @@ export const FILM_SCENES: FilmScene[] = [
     use('从负伤的钥匙匠手中接过最后的钥匙', '钥匙匠把通往源头的钥匙交给 Neo，Morpheus 必须走另一条回程门。', 0, -45, 2),
     use('由 Neo 打开通往源头的门', 'Neo 用钥匙打开白门，独自面对建筑师；Morpheus 留在门外。', 0, -52, 3),
   ], ['keymaker', 'morpheus', 'smith']),
-  scene('m2_architect', 2, 'architect_room', 'neo', '被计算过的救世主', 'architect', 'source', '建筑师通过环形屏幕解释异常、锡安和此前的循环。两扇门指向不同代价。', [walk('走到建筑师面前', 0, -8), think('预测能够取消自由吗？', '电影中的 Neo 选择救 Trinity；你的反思记录理解，不改写这个关键结果。'), use('走向 Trinity 所在的门', 'Neo 离开建筑师的房间，赶往城市中的坠落。', 7, -21)], ['architect']),
+  scene('m2_architect', 2, 'architect_room', 'neo', '被计算过的救世主', 'architect', 'source', '环形屏幕记录了 Neo 的不同反应。建筑师说出此前五次循环、锡安的命运，以及两扇门各自的代价。', [
+    walk('走到建筑师面前', 0, -8),
+    use('听建筑师解释异常与此前五次循环', '屏幕上的 Neo 同时反驳、沉默、愤怒。建筑师说，这是第六次；先知引导的选择一直是控制异常的组成部分。', 0, -12, 5),
+    use('查看右门：返回源头', '右门通向源头。按建筑师的方案，Neo 会重置矩阵、从矩阵挑选二十三人重建锡安；现有锡安将被摧毁。', 8, -26, 4),
+    use('查看屏幕：Trinity 的实时影像', '画面切到城中改线设施。Trinity 已闯入危险之中；左门返回矩阵，Neo 可以去救她，但拒绝源头方案也意味着锡安前途未定。', -4, -19, 4),
+    think('理解代价，再决定谁来承担', '两扇门都不是没有损失的答案。记录你的理解，然后由 Neo 亲自走向左门。', 0, -18),
+    use('打开左门，返回矩阵营救 Trinity', 'Neo 走进左门，飞向城中的坠落；源头提出的循环没有在这一刻被执行。', -8, -26, 2),
+  ], ['architect']),
   scene('m2_catch', 2, 'trinity_roof', 'neo', '抓住正在坠落的人', 'trinity_choice', 'the_one', 'Trinity 中枪坠出高楼。Neo 冲入城市，在她触地之前接住她。', [walk('抵达接应平台', 0, -20), use('救回 Trinity', 'Neo 取出子弹，帮助她恢复心跳。两人返回现实，战争却仍在逼近。', 0, -20, 8)], ['trinity']),
   scene('m2_ship_lost', 2, 'neb_deck', 'morpheus', '尼布甲尼撒号的终点', 'trinity_choice', 'siege', '哨兵使用远程炸弹攻击。船员及时弃船，但尼布甲尼撒号被摧毁。', [use('发出弃船指令', '连接设备与旧船体留在身后。', 0, 0), walk('撤向隧道', 0, 31)], ['trinity', 'neo', 'link']),
   scene('m2_stop_sentinels', 2, 'service_tunnels', 'neo', '触及现实中的连接', 'trinity_choice', 'awakening', 'Neo 在现实中感到哨兵的连接并让它们停下，自己也陷入昏迷。', [walk('面对追来的哨兵', 0, -25), use('伸手触及陌生的信号', 'Hammer 救起幸存者。医疗舱里，Neo 与 Bane 躺在相邻床上。', 0, -25, 6)]),

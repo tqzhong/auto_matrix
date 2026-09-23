@@ -135,7 +135,7 @@
 | m2_vigilant | 突然失去的联系 | 地下隧道 · 舰船撤离 | Trinity | 交互 → 交互 |
 | m2_backup | 最后一条供电线路 | 备用电站 · Trinity 的路线 | Trinity | 战斗 → 交互 |
 | m2_key_door | 钥匙匠的最后一扇门 | 后门通道 · 白色走廊 | Neo | 移动 → 交互 |
-| m2_architect | 被计算过的救世主 | 建筑师 · 监视器房间 | Neo | 移动 → 反思 → 交互 |
+| m2_architect | 被计算过的救世主 | 建筑师 · 监视器房间 | Neo | 移动 → 听循环解释 → 检查右门 → 查看 Trinity 影像 → 反思 → 限时打开左门 |
 | m2_catch | 抓住正在坠落的人 | Trinity 坠落 · 城市高空 | Neo | 移动 → 交互 |
 | m2_ship_lost | 尼布甲尼撒号的终点 | 尼布甲尼撒号 · 核心与医疗舱 | Morpheus | 交互 → 移动 |
 | m2_stop_sentinels | 触及现实中的连接 | 地下隧道 · 舰船撤离 | Neo | 移动 → 交互 |

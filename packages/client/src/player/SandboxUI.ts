@@ -214,6 +214,25 @@ export class SandboxUI {
         document.getElementById('game-objective-copy')!.textContent = 'Link 正与两队重设时序 · 完成后再拿钥匙开门';
       }
     }
+    if (!journey.visiting && scene.id === 'm2_architect' && journey.architect) {
+      const encounter = journey.architect;
+      this.el('film-sequence').classList.remove('hidden');
+      this.el('film-sequence').classList.toggle('urgent', encounter.phase === 'failed' || encounter.phase === 'decision' && encounter.remaining < 15);
+      this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = encounter.phase === 'failed' ? 'J 打开手记，从抉择检查点重试'
+        : encounter.phase === 'decision' ? `Trinity 信号 ${Math.ceil(encounter.remaining)} 秒 · 左门返回矩阵`
+          : encounter.phase === 'done' ? '左门已打开 · 赶往 Trinity 坠落处'
+            : encounter.trinityReviewed ? '右门返回源头 · 左门返回矩阵 · 先记录你的理解'
+              : encounter.sourceReviewed ? '源头门的代价已知 · 去查看另一块实时影像'
+                : '这些屏幕为什么会同时显示 Neo？先听建筑师解释';
+      this.el('sandbox-trace').textContent = encounter.phase === 'decision' || encounter.phase === 'failed'
+        ? `Trinity 信号 ${Math.ceil(encounter.remaining)} 秒` : '第六次异常 · 两扇门';
+      this.el('sandbox-trace').classList.toggle('danger', encounter.phase === 'failed' || encounter.phase === 'decision' && encounter.remaining < 15);
+      if (encounter.phase === 'failed') {
+        this.el('sandbox-interact').classList.add('hidden');
+        document.getElementById('game-objective-copy')!.textContent = '信号窗口中断 · 按 J 打开手记并重试当前检查点';
+      }
+    }
     if (!journey.visiting && scene.id === 'm2_persephone' && journey.step === 2 && journey.persephone) {
       this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
       this.el('film-sequence-hint').textContent = journey.persephone.phase === 'enacting' ? '动作与同伴反应正在保存 · V 切换视角' : '靠近后按 J · 电影路线或基于餐桌回应的另一种说法';

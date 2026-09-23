@@ -1,5 +1,5 @@
 import { reloadedText } from '@auto_matrix/shared';
-import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_NAMES, filmReflections, CHARACTERS, filmStepPosition, distance, AWAKENING_SECONDS, oracleActing, interrogationLocked, pillLocked, lafayetteWelcomeLocked, phoneLocked, windowOpening, windowCrossing, awakeningWaiting, trainingLocked, trainingWaiting, theOneLocked, type AgentState, type SandboxState } from '@auto_matrix/shared';
+import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_NAMES, ARCHITECT_DOOR_SECONDS, filmReflections, CHARACTERS, filmStepPosition, distance, AWAKENING_SECONDS, oracleActing, interrogationLocked, pillLocked, lafayetteWelcomeLocked, phoneLocked, windowOpening, windowCrossing, awakeningWaiting, trainingLocked, trainingWaiting, theOneLocked, type AgentState, type SandboxState } from '@auto_matrix/shared';
 import './film-journey.css';
 import { meetingLocked } from '@auto_matrix/shared';
 import { filmPosition, HOTEL_DOOR_PROGRESS } from '@auto_matrix/shared';
@@ -16,6 +16,20 @@ import { RESCUE, rescueDuration, rescueLoadout, rescueLocked } from '@auto_matri
 const button = (target: string, label: string, disabled = false) => `<button data-action="life" data-target="film:${target}" ${disabled ? 'disabled' : ''}>${label}</button>`;
 export function renderFilmJourney(player: AgentState, sandbox: SandboxState): string {
   const life = sandbox.neoLife!; const journey = life.journey!; const scene = FILM_SCENE_BY_ID[journey.scene];
+  if (!journey.visiting && scene.id === 'm2_architect' && journey.architect) {
+    const encounter = journey.architect; const step = scene.steps[journey.step]; const current = player.id === journey.actor;
+    const close = current && (!step || distance(player.position, filmStepPosition(scene, step)) <= 4);
+    const action = !current ? button('resume', '接回 Neo 的视角')
+      : encounter.phase === 'failed' ? button('retry', '从抉择检查点重试')
+        : !step ? button('next', '赶往 Trinity 坠落处 →')
+          : step.kind === 'reach' ? '<p>合上手记，走到建筑师面前。</p>'
+            : step.kind === 'reflect' ? filmReflections(scene.id).map(choice => button(`reflect:${choice.id}`, choice.label, !close || Boolean(journey.reflections['m2_architect:4'] && journey.reflections['m2_architect:4'] !== choice.id))).join('')
+              : button('act', `${step.label} · G`, !close || journey.started !== undefined);
+    const clock = `${Math.floor(Math.ceil(encounter.remaining) / 60)}:${String(Math.ceil(encounter.remaining) % 60).padStart(2, '0')}`;
+    const costs = encounter.trinityReviewed ? '<p>右门：源头重启、二十三名幸存者重建锡安。左门：返回矩阵营救 Trinity；锡安的风险仍在。</p>'
+      : encounter.sourceReviewed ? '<p>右门通向源头重启。另一边的代价还需要从屏幕中确认。</p>' : '';
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX RELOADED / 02</span><h3>建筑师 · 第六次异常</h3><p>Neo 视角 · 环形屏幕、两扇门与回应自动保存</p></header><article class="film-now"><div><h3>${step?.label ?? '左门已经打开'}</h3><p>${journey.lastText}</p>${costs}${journey.step >= 5 && encounter.phase !== 'done' ? `<p>Trinity 信号窗口 · ${clock}${encounter.phase === 'failed' ? ' · 已中断' : ''}</p><div class="film-progress"><i style="width:${encounter.remaining / ARCHITECT_DOOR_SECONDS * 100}%"></i></div>` : ''}<div class="film-controls">${action}<small>${encounter.trinityReviewed ? '电影路线由 Neo 亲自打开左门。右门可检查，暂不进入另一条结局。' : '先亲自查看两扇门及其代价；等待不会替你作出回应。'}</small></div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
+  }
   if (!journey.visiting && scene.id === 'm2_persephone' && journey.persephone) {
     const step = scene.steps[journey.step]; const current = player.id === journey.actor;
     const close = current && Boolean(step && distance(player.position, filmStepPosition(scene, step)) <= 4);
