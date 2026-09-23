@@ -14,5 +14,8 @@ export const ZION_CAST: Record<string, Record<string, { x: number; z: number; ya
   m2_residents: { zion_parent: { x: -9, z: -23, yaw: .4 }, zion_neighbor: { x: 9, z: -23, yaw: -.4 }, trinity: { x: 4, z: -13, yaw: -1 } },
   m2_temple: { niobe: { x: -10, z: -34, yaw: 0 }, lock: { x: 11, z: -34, yaw: 0 }, hamann: { x: -15, z: -30, yaw: 0 } },
   m2_room: { trinity: { x: 2, z: -8, yaw: -1 } },
+  m2_bane_copy: { malachi: { x: -5, z: -28, yaw: 1 }, smith: { x: 33, z: -38, yaw: -1 } },
   m2_hamann: { hamann: { x: -7, z: -23, yaw: 1 } },
+  m2_oracle_message: { trinity: { x: 2, z: 12, yaw: 0 }, ballard: { x: 2, z: 19, yaw: Math.PI }, malachi: { x: -2, z: 19, yaw: Math.PI } },
+  m2_departure: { morpheus: { x: -4, z: -13, yaw: .5 }, trinity: { x: 5, z: -14, yaw: -.5 }, link: { x: 3, z: 32, yaw: 1 }, zee: { x: -3, z: 32, yaw: -1 }, bane: { x: 5, z: 20, yaw: -.6 }, kid: { x: -5, z: 10, yaw: .7 } },
 };

@@ -12,6 +12,9 @@ export class ZionHomecomingRenderer {
   private lights = new Set<THREE.Light>();
   private moving = new THREE.Group();
   private signals: THREE.MeshStandardMaterial[] = [];
+  private messageDisk?: THREE.Group;
+  private messageDoor?: THREE.Group;
+  private departureGifts?: { charm: THREE.Group; spoon: THREE.Group; engines: THREE.MeshStandardMaterial };
   private crowd?: { bodies: THREE.InstancedMesh; heads: THREE.InstancedMesh; arms: THREE.InstancedMesh; poses: [number, number, number][] };
   private disposed = false;
   constructor(root: THREE.Group, readonly set: string) {
@@ -75,13 +78,14 @@ export class ZionHomecomingRenderer {
       const uneven = Math.sin(i * 2.7 + side) * 2.1;
       const wall = this.mesh(new THREE.DodecahedronGeometry(4 + i % 4, 0), stone);
       wall.position.set(side * (width / 2 - 2), 4 + i % 5 * 2, z + uneven); wall.scale.set(.85, 1.8 + i % 3 * .25, 1.4); wall.rotation.set(i * .27, i * .49, i * .13);
-      if (i % 2 === 0) { const high = this.mesh(new THREE.DodecahedronGeometry(5 + i % 3, 0), stone);
+      if (height >= 20 && i % 2 === 0) { const high = this.mesh(new THREE.DodecahedronGeometry(5 + i % 3, 0), stone);
         high.position.set(side * (width / 2 - 7 - i % 3), height - 8 + Math.sin(i) * 2, z); high.scale.set(1.5, .8, 1.6); high.rotation.z = i * .39; }
     }
     for (let i = 0; i < 13; i++) {
       const z = -depth / 2 + i * depth / 12;
       const crown = this.mesh(new THREE.DodecahedronGeometry(5 + i % 3, 0), stone);
-      crown.position.set(Math.sin(i * 4) * 5, height - 2, z); crown.scale.set(3.1, .8, 1.3); crown.rotation.set(.2, i * .6, .1);
+      crown.position.set(Math.sin(i * 4) * 5, height < 20 ? height + 3 : height - 2, z);
+      crown.scale.set(3.1, height < 20 ? .35 : .8, 1.3); crown.rotation.set(.2, i * .6, .1);
     }
   }
   private lamp(x: number, z: number, y = 7, strength = 110): void {
@@ -100,6 +104,7 @@ export class ZionHomecomingRenderer {
   private dock(): void {
     const stone = this.surface('damaged_plaster', 0x706252, 6), metal = this.surface('metal_plate', 0x6d7770, 3);
     const iron = this.material(0x252e2d, .48, .68), lit = this.material(0xcebda0, .4, .25, 0xeaba72, 2);
+    const engine = this.material(0x96c1a6, .28, .34, 0x7dc2aa, 1.2);
     this.rockShell(108, 138, 65, stone); this.grating(15, 108, metal, 3);
     for (const side of [-1, 1]) {
       this.box(iron, side * 7.5, 1.2, 3, .6, 2.4, 108);
@@ -112,7 +117,7 @@ export class ZionHomecomingRenderer {
     for (const side of [-1, 1]) {
       this.box(iron, side * 5.4, -.7, 9, 4.3, 2.5, 8, ship);
       const thruster = this.mesh(new THREE.TorusGeometry(1.7, .5, 10, 30), metal, ship); thruster.position.set(side * 5.4, -.5, 13); thruster.rotation.x = Math.PI / 2;
-      this.box(lit, side * 5.4, -.5, 13.3, 2.6, .18, .1, ship);
+      this.box(engine, side * 5.4, -.5, 13.3, 2.6, .18, .1, ship);
       this.box(iron, side * 7.5, 2.8, -4, 10, .7, 5, ship);
     }
     for (let i = 0; i < 8; i++) { const z = -48 + i * 12; this.pipe(metal, [-43, 34, z], [43, 34, z], .28); this.pipe(iron, [-43, 34, z], [-12, 2, z], .18); this.pipe(iron, [43, 34, z], [12, 2, z], .18); }
@@ -122,6 +127,14 @@ export class ZionHomecomingRenderer {
       const spoke = this.box(lit, x, y, -62.5, .85, 3.4, .35); spoke.rotation.z = -angle; }
     this.sign('DOCK 03 / BAY 07', 0, 10, -57, 12); this.sign('NEBUCHADNEZZAR', 18, 5, -11, 10, 1.5, -Math.PI / 2);
     this.obstacles(iron); for (const x of [-24, 18]) for (let i = 0; i < 3; i++) this.box(metal, x, 2 + i * 1.5, -18 + i * 3, 7, .2, 4);
+    this.box(metal, 11.5, -.04, 17, 8, .18, 3.2, this.static, 'zion-ship-gangway');
+    const charm = new THREE.Group(); charm.name = 'zee-farewell-charm'; charm.position.set(0, 2.4, 32); this.moving.add(charm);
+    this.mesh(new THREE.TorusGeometry(.24, .055, 8, 20), this.material(0xbca77b, .42, .6), charm);
+    this.mesh(new THREE.CylinderGeometry(.08, .09, .5, 8), metal, charm).position.y = -.18;
+    const spoon = new THREE.Group(); spoon.name = 'kid-spoon-gift'; spoon.position.set(-4.2, 2.3, 10); this.moving.add(spoon);
+    this.mesh(new THREE.SphereGeometry(.18, 12, 8), metal, spoon).scale.set(.7, .15, 1.7);
+    this.box(metal, 0, -.42, -.2, .055, .06, .75, spoon);
+    this.departureGifts = { charm, spoon, engines: engine };
     this.glow(0xffd0a0, 560, 68, 21, 18, 18); this.glow(0xeeb573, 330, 75, 18, 23, -28); this.glow(0x9cbaab, 180, 65, -29, 35, 18);
   }
   private council(): void {
@@ -201,6 +214,14 @@ export class ZionHomecomingRenderer {
     this.box(warm, 11, 7, -17, 1.5, 2.3, .2); this.glow(0xf2b889, 120, 18, 10, 6, -14);
     this.box(warm, -12, 7, 5, 1.5, 2.3, .2); this.glow(0xf2b889, 70, 15, -10, 6, 4);
     for (const x of [-14, 14]) this.pipe(metal, [x, 8, -18], [x, 8, 18], .1);
+    for (const x of [-2.5, 2.5]) this.box(metal, x, 5.1, 18.1, .45, 10.2, .65);
+    this.box(metal, 0, 10, 18.1, 5.4, .55, .7, this.static, 'zion-bedroom-door-frame');
+    this.messageDoor = new THREE.Group(); this.messageDoor.position.set(-2.2, 0, 17.6); this.moving.add(this.messageDoor);
+    this.box(this.material(0x302d29, .55, .58), 2.2, 4.8, 0, 4.2, 8.8, .35, this.messageDoor, 'zion-bedroom-door');
+    const disk = new THREE.Group(); disk.name = 'oracle-message-disk'; disk.position.set(2.5, 2.3, 10.8); this.moving.add(disk);
+    this.mesh(new THREE.CylinderGeometry(.38, .38, .035, 24), metal, disk);
+    this.mesh(new THREE.CylinderGeometry(.09, .09, .045, 16), warm, disk).position.y = .04;
+    this.messageDisk = disk;
   }
   private engineering(): void {
     const stone = this.surface('damaged_plaster', 0x6b6558, 4), steel = this.surface('metal_plate', 0x717974, 3);
@@ -247,6 +268,14 @@ export class ZionHomecomingRenderer {
   update(journey: FilmJourney | undefined, elapsed: number): void {
     const ship = this.moving.getObjectByName('zion-docked-nebuchadnezzar'); if (ship) ship.position.y = 11 + Math.sin(elapsed * .45) * .24;
     const wheel = this.moving.getObjectByName('zion-recycler-flywheel'); if (wheel) wheel.rotation.x = elapsed * .3;
+    if (this.messageDoor) this.messageDoor.rotation.y = journey?.scene === 'm2_oracle_message' && journey.step >= 1 ? -.85 : 0;
+    if (this.messageDisk) this.messageDisk.visible = journey?.scene === 'm2_oracle_message' && journey.step < 2;
+    if (this.departureGifts) {
+      const departure = journey?.scene === 'm2_departure' && !journey.visiting;
+      this.departureGifts.charm.visible = departure && journey.step < 1;
+      this.departureGifts.spoon.visible = departure && journey.step >= 2 && journey.step < 3;
+      this.departureGifts.engines.emissiveIntensity = departure && journey.step >= 4 ? 4 : 1.2;
+    }
     if (this.signals.length) for (const signal of this.signals) signal.emissiveIntensity = journey?.scene === 'm2_hamann' && journey.step >= 3 ? 3 : .55 + Math.sin(elapsed * 2) * .25;
     if (this.crowd) {
       const { bodies, heads, arms, poses } = this.crowd;

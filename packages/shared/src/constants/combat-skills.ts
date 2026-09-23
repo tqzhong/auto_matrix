@@ -29,12 +29,13 @@ const ROLE_SKILLS: Record<string, readonly [CombatSkillId, CombatSkillId]> = {
   twin1: ['phase_shift', 'crushing_palm'], twin2: ['phase_shift', 'scorpion_dash'],
   architect: ['code_snare', 'force_push'], keymaker: ['phase_shift', 'code_snare'],
   sati: ['force_push', 'field_patch'], trainman: ['force_push', 'escape'],
-  deus_ex_machina: ['force_push', 'system_hack'], bane: ['viral_overwrite', 'crushing_palm'],
+  deus_ex_machina: ['force_push', 'system_hack'],
   mifune: ['crushing_palm', 'iron_guard'], maggie: ['field_patch', 'foresight'],
   spoon_boy: ['force_push', 'foresight'], kid: ['escape', 'scorpion_dash'],
 };
 
-export function playerSkills(agent: Pick<AgentState, 'id' | 'abilities'>): readonly [CombatSkillId, CombatSkillId] {
+export function playerSkills(agent: Pick<AgentState, 'id' | 'abilities' | 'faction'>): readonly [CombatSkillId, CombatSkillId] {
+  if (agent.id === 'bane') return agent.faction === 'machines' ? ['viral_overwrite', 'crushing_palm'] : ['escape', 'dodge'];
   if (ROLE_SKILLS[agent.id]) return ROLE_SKILLS[agent.id];
   const has = (id: string) => agent.abilities.some(ability => ability.id === id);
   if (has('agent_protocol')) return ['agent_evade', has('super_speed') ? 'scorpion_dash' : 'crushing_palm'];

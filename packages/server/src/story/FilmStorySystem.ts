@@ -1990,9 +1990,24 @@ export class FilmStorySystem {
     // Bane remains active as Smith's host, unlike the programs consumed inside the Matrix.
     return Boolean(fate && fate !== 'alive' && !(id === 'bane' && fate === 'assimilated'));
   }
+  private sealZionMessageDoor(): void {
+    const id = 'film:zion:oracle-door';
+    if (this.state?.scene === 'm2_oracle_message' && this.state.step === 0 && !this.state.visiting) {
+      if (!this.sandbox().structures.some(s => s.id === id)) this.sandbox().structures.push({ id, kind: 'barricade', owner: 'zion',
+        position: filmPosition('film_zion_bedroom', 0, 17.6), matrix: false, health: 1,
+        film: { scene: 'm2_oracle_message', width: 4.2, depth: .35, height: 8.8 } });
+    } else this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== id);
+  }
   reconcileCast(): void {
     if (!this.state) return;
-    this.sealAmbush();
+    this.sealAmbush(); this.sealZionMessageDoor();
+    const bane = this.world.agents.get('bane');
+    if (bane) {
+      const infected = Boolean(this.sandbox().neoLife?.choices.bane_infected || this.state.completed.includes('m2_bane_copy'));
+      bane.faction = infected ? 'machines' : 'zion';
+      bane.currentGoal = infected ? 'Find Neo without revealing Smith' : 'Return to Zion';
+      bane.alertness = infected ? 8 : 3;
+    }
     for (const [id, fate] of Object.entries(filmCharacterFates(this.state))) {
       const actor = this.world.agents.get(id);
       if (!actor || actor.controller || id === 'bane' && fate === 'assimilated') continue;
@@ -2009,6 +2024,7 @@ export class FilmStorySystem {
       actor.currentLocation = CHARACTERS[id].initialLocation; actor.position = locationEntrance(actor.currentLocation);
       actor.isInMatrix = LOCATIONS[actor.currentLocation].world === 'matrix'; actor.status = 'alive'; actor.health = actor.maxHealth;
       actor.currentAction = null; actor.targetPosition = null; actor.currentPath = []; actor.velocity = { x: 0, y: 0, z: 0 }; actor.activeEffects = [];
+      if (reset && id === 'bane') { actor.faction = 'zion'; actor.currentGoal = 'Return to Zion'; actor.alertness = 3; }
     }
     if (!reset) this.reconcileCast();
   }
@@ -2292,6 +2308,7 @@ export class FilmStorySystem {
     }
     if (state.awakening && state.awakening.elapsed < AWAKENING_SECONDS[state.awakening.kind]) return '演出进行中，可以转动视角观察；进度会自动保存。';
     if (!this.near(agent, step)) return '请走近金色目标标记（4 米内），再按 G。';
+    if (state.scene === 'm2_bane_copy' && state.step > 0 && ['malachi', 'smith'].some(id => this.world.agents.get(id)?.controller)) return 'Ballard 的船员或 Smith 正由另一位玩家控制，感染片段停在当前检查点。';
     if (state.scene === 'm1_boss' && state.step === 1) delete state.started;
     if (state.started !== undefined) return '互动进行中，移动离开会中断。';
     if (state.scene === 'm1_ledge' && step.kind === 'reflect') {
@@ -2457,6 +2474,7 @@ export class FilmStorySystem {
     delete state.matrixEscape;
     delete state.theOne;
     delete state.reloaded;
+    delete state.baneCopy;
     this.sandbox().structures = this.sandbox().structures.filter(structure => structure.id !== 'film:reloaded:door');
     this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== 'film:apartment:door');
     delete state.pills;
@@ -2481,6 +2499,8 @@ export class FilmStorySystem {
     if (scene.id === 'm1_lobby') this.lobby.reset();
     const actor = this.world.agents.get(state.actor)!;
     this.place(actor, scene, state.checkpoint); actor.status = 'alive'; actor.health = actor.maxHealth; actor.activeEffects = [];
+    if (scene.id === 'm2_room') actor.rotation = Math.PI;
+    if (scene.id === 'm2_oracle_message') actor.rotation = 0;
     life.chapter = NEO_CHAPTERS.findIndex(c => c.id === scene.chapter);
     const neo = this.world.agents.get('neo')!;
     neo.isAwakened = FILM_SCENES.indexOf(scene) >= FILM_SCENES.findIndex(s => s.id === 'm1_pod');
@@ -2580,6 +2600,7 @@ export class FilmStorySystem {
       state.reloaded = newReloaded(scene.id === 'm2_dream' ? 'dream' : 'meeting');
       this.reloaded.frame(actor, { x: 0, focus: false }, 0, tick);
     }
+    if (scene.id === 'm2_bane_copy') state.baneCopy = { progress: 0 };
     if (scene.id === 'm2_catch' && life.choices.trinity_dream) state.lastText += life.choices.trinity_dream === 'clear' ? '你认出了梦里的破窗、枪口与坠落方向；这次仍有机会作出行动。' : '这座大楼让你想起那个破碎的梦。';
     if (scene.id === 'm1_bug' && state.office?.outcome === 'escaped') state.lastText = '你没有被特工带走。Switch 仍要求做安全检查，确认没有追踪装置。';
   }
@@ -2655,9 +2676,29 @@ export class FilmStorySystem {
     if (state.scene === 'm2_residents' && state.step === 3) life.choices.zion_residents_contacted = 'both';
     if (state.scene === 'm2_temple' && state.step === 1) life.choices.zion_truth_spoken = '72h';
     if (state.scene === 'm2_room' && state.step === 1) life.choices.zion_dream_shared = 'trinity';
+    if (state.scene === 'm2_bane_copy' && state.step === 1) {
+      life.choices.oracle_disk_carrier = 'malachi';
+      const malachi = this.world.agents.get('malachi'); if (malachi && !malachi.controller) malachi.position = filmPosition(this.scene!.set, -34, 32);
+      const smith = this.world.agents.get('smith'); if (smith && !smith.controller) { smith.position = filmPosition(this.scene!.set, 3, -20); smith.rotation = 2.8; }
+    }
+    if (state.scene === 'm2_bane_copy' && state.step === 2) {
+      life.choices.bane_infected = 'smith'; if (state.baneCopy) state.baneCopy.progress = 1;
+      agent.faction = 'machines'; agent.currentGoal = 'Find Neo without revealing Smith'; agent.alertness = 8;
+    }
+    if (state.scene === 'm2_bane_copy' && state.step === 3) life.choices.bane_returned = 'yes';
     if (state.scene === 'm2_hamann' && state.step === 2) life.choices.zion_backup_balanced = 'yes';
+    if (state.scene === 'm2_oracle_message' && state.step === 0) {
+      const ballard = this.world.agents.get('ballard'); if (ballard && !ballard.controller) ballard.position = filmPosition(this.scene!.set, 2, 11);
+      const malachi = this.world.agents.get('malachi'); if (malachi && !malachi.controller) malachi.position = filmPosition(this.scene!.set, -2, 12);
+    }
+    if (state.scene === 'm2_oracle_message' && state.step === 1) life.choices.oracle_disk_received = 'yes';
+    if (state.scene === 'm2_departure' && state.step === 0) life.choices.zee_charm_given = 'link';
+    if (state.scene === 'm2_departure' && state.step === 1) life.choices.bane_departure_encounter = 'unexplained';
+    if (state.scene === 'm2_departure' && state.step === 2) life.choices.kid_spoon = 'received';
+    if (state.scene === 'm2_departure' && state.step === 3) life.choices.zion_clearance = 'hamann';
     if (state.scene === 'm1_bug' && state.step === 0 && state.office?.outcome === 'escaped') text = '扫描完成，没有发现追踪装置。Trinity 收起仪器，确认接头安全，继续前往 Morpheus 的房间。';
     state.lastText = text; state.step++; state.checkpoint = { ...agent.position }; delete state.started; delete state.fighting;
+    if (state.scene === 'm2_oracle_message' && state.step === 1) this.sealZionMessageDoor();
     if (state.scene === 'm1_desert' && state.step === 1) {
       state.awakening = { kind: 'desert', elapsed: 0, started: false };
       this.awakeningFrame(agent, 0, tick); return;
@@ -2705,6 +2746,7 @@ export class FilmStorySystem {
     const state = this.state; if (!state || !this.scene || state.finished || state.visiting) return;
     const actor = this.world.agents.get(state.actor);
     if (!actor?.controller || actor.status !== 'alive') { delete state.started; return; }
+    if (state.scene === 'm2_bane_copy' && state.baneCopy && state.step === 2 && state.started !== undefined) state.baneCopy.progress = Math.min(1, (tick - state.started) / 10);
     if (state.scene === 'm1_office_escape') {
       if (this.office.tick(actor, tick)) {
         this.capture(actor, tick, '特工认出了你并封住通道。你被带去审讯；这次失败仍然通往接头与真相。'); return;
