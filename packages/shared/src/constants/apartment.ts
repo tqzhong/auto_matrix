@@ -8,7 +8,7 @@ export interface WakeCall { phase: WakeCallPhase; elapsed: number; nightmare: bo
 export const APARTMENT = {
   computer: { x: -9, z: -8.8, yaw: Math.PI },
   bed: { x: 10.2, z: -9, yaw: 0 },
-  bedside: { x: 5.5, z: -9, yaw: Math.PI / 2 },
+  bedside: { x: 5.5, z: -9, yaw: -Math.PI / 2 },
   phone: { x: -5.78, y: 2.62, z: -10.45, approachX: -5.8, approachZ: -9.15, yaw: Math.PI },
   door: { x: 0, z: 10.2, yaw: 0 },
   book: { x: 6, z: 3.4, yaw: 0 },

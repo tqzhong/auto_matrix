@@ -44,6 +44,9 @@ test('captured Neo physically wakes, answers the landline and must personally ag
   assert.ok(h.neo.currentAction?.parameters.wakeCall, 'waking starts as a physical performance');
   h.frames(WAKE_CALL.waking + .2); assert.equal(h.state().wakeCall?.phase, 'ringing'); assert.equal(h.state().step, 0);
   assert.equal(h.neo.currentAction?.parameters.wakeCall, undefined, 'Neo regains movement and must walk to the phone');
+  const phone = filmStepPosition(FILM_SCENE_BY_ID.m1_wake_again, FILM_SCENE_BY_ID.m1_wake_again.steps[0]);
+  const towardPhone = Math.atan2(phone.x - h.neo.position.x, phone.z - h.neo.position.z);
+  assert.ok(Math.cos(h.neo.rotation - towardPhone) > .95, 'Neo faces the ringing phone after waking');
   assert.match(h.command('act'), /座机/); assert.equal(h.state().wakeCall?.phase, 'ringing');
   h.neo.position = filmStepPosition(FILM_SCENE_BY_ID.m1_wake_again, FILM_SCENE_BY_ID.m1_wake_again.steps[0]);
   h.command('act'); assert.equal(h.state().wakeCall?.phase, 'pickup');
