@@ -67,6 +67,22 @@ test('the mirror reaches Neo’s hand before his face and coat hem', async () =>
   } finally { models.dispose(); }
 });
 
+test('the silver front changes Neo’s skinned silhouette rather than only its color', async () => {
+  const asset = await loadGeometry('neo'); const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: () => Promise<typeof asset> }).load = async () => asset;
+  try {
+    const rig = (await models.create('neo'))!;
+    const skin = rig.wardrobe.find(part => (part.mesh.material as THREE.Material).name === 'Skin')!.mesh.material as THREE.MeshStandardMaterial;
+    const shader = { vertexShader: '#include <common>\n#include <skinning_vertex>\n#include <project_vertex>', fragmentShader: '#include <common>\n#include <metalnessmap_fragment>', uniforms: {} };
+    skin.onBeforeCompile(shader as Parameters<typeof skin.onBeforeCompile>[0], {} as THREE.WebGLRenderer);
+    const afterSkinning = shader.vertexShader.indexOf('#include <skinning_vertex>');
+    const displacement = shader.vertexShader.indexOf('transformed +=');
+    const beforeProjection = shader.vertexShader.indexOf('#include <project_vertex>');
+    assert.ok(afterSkinning < displacement && displacement < beforeProjection, 'the liquid must lift posed vertices before projection');
+    assert.equal((shader.uniforms as { matrixSilver?: unknown }).matrixSilver, rig.silver, 'the saved silver progress drives the same moving ridge');
+  } finally { models.dispose(); }
+});
+
 test('Neo keeps a continuous patient body through rescue and medical recovery', async () => {
   const asset = await loadGeometry('neo'); const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
   (models as unknown as { load: () => Promise<typeof asset> }).load = async () => asset;

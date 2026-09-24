@@ -226,17 +226,25 @@ export class HeroModels {
       material.onBeforeCompile = (shader, renderer) => {
         source.onBeforeCompile(shader, renderer);
         shader.uniforms.matrixSilver = silver;
-        shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nattribute float _mirrorArrival;\nvarying float vLiquidArrival;\nvarying vec3 vLiquidPosition;')
-          .replace('#include <skinning_vertex>', '#include <skinning_vertex>\nvLiquidArrival = _mirrorArrival;\nvLiquidPosition = transformed;');
+        shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nuniform float matrixSilver;\nattribute float _mirrorArrival;\nvarying float vLiquidArrival;\nvarying vec3 vLiquidPosition;')
+          .replace('#include <skinning_vertex>', `#include <skinning_vertex>
+            float liquidPhase = matrixSilver - _mirrorArrival;
+            float liquidFront = exp(-pow(liquidPhase * 18.0, 2.0));
+            float liquidCovered = smoothstep(0.0, 0.09, liquidPhase);
+            float liquidRipple = sin(transformed.y * 34.0 + transformed.x * 25.0 - matrixSilver * 58.0) * 0.004;
+            transformed += normalize(objectNormal) * (liquidFront * (0.034 + liquidRipple) + liquidCovered * 0.005);
+            vLiquidArrival = _mirrorArrival; vLiquidPosition = transformed;`);
         shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nuniform float matrixSilver;\nvarying float vLiquidArrival;\nvarying vec3 vLiquidPosition;')
           .replace('#include <metalnessmap_fragment>', `#include <metalnessmap_fragment>
             float liquidEdge = vLiquidArrival + sin(vLiquidPosition.y * 21.0) * sin(vLiquidPosition.x * 14.0) * 0.012;
             float liquidMask = smoothstep(liquidEdge - 0.03, liquidEdge + 0.005, matrixSilver);
-            diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.78, 0.82, 0.83), liquidMask);
-            roughnessFactor = mix(roughnessFactor, 0.13, liquidMask);
+            float liquidRidge = exp(-pow((matrixSilver - vLiquidArrival) * 17.0, 2.0));
+            vec3 liquidColor = mix(vec3(0.63, 0.69, 0.71), vec3(0.85, 0.91, 0.90), liquidRidge * 0.6);
+            diffuseColor.rgb = mix(diffuseColor.rgb, liquidColor, liquidMask);
+            roughnessFactor = mix(roughnessFactor, 0.16 - liquidRidge * 0.08, liquidMask);
             metalnessFactor = mix(metalnessFactor, 0.62, liquidMask);`);
       };
-      material.customProgramCacheKey = () => source.customProgramCacheKey() + '-liquid-mirror-v2';
+      material.customProgramCacheKey = () => source.customProgramCacheKey() + '-liquid-mirror-v3';
     });
     if (support === 'niobe') {
       const hair = new THREE.MeshStandardMaterial({ color: 0x171812, roughness: .82 });
