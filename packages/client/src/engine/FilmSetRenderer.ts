@@ -8,7 +8,7 @@ import { workdayLocked, type OfficeWorkday } from '@auto_matrix/shared';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
-import { FILM_SETS, FILM_SCENE_BY_ID, OPENING_ESCAPE, openingTruckPose, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, PILL_ROOM, MIRROR_SEAT, MIRROR_TIMING, mirrorSilver, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, GARAGE, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, EXILES, CHATEAU, awakeningLocked, trainingLocked, phoneLocked, windowOpening, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type FilmJourney, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
+import { FILM_SETS, FILM_SCENE_BY_ID, OPENING_ESCAPE, openingTruckPose, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, PILL_ROOM, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, mirrorSilver, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, GARAGE, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, EXILES, CHATEAU, awakeningLocked, trainingLocked, phoneLocked, windowOpening, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type FilmJourney, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
 import { OPENING_HOTEL } from '@auto_matrix/shared';
 import { LobbySetRenderer } from './LobbySetRenderer.js';
 import { OfficeSetRenderer } from './OfficeSetRenderer.js';
@@ -1032,19 +1032,20 @@ export class FilmSetRenderer {
       this.lamp(-6, 7.6, -15.4, false, true);
       this.box(this.marble, 0, 4, -d / 2 + 1, 14, 8, 1.5, .08); this.box(this.black, 0, 2.8, -d / 2 + 2, 8, 5, .2); this.box(this.wood, 0, 8.2, -d / 2 + 1, 15, .6, 2, .06);
       for (const x of [-5.5, 5.5]) for (const y of [1.8, 4.3, 6.8]) this.box(this.white, x, y, -d / 2 + 1.9, 1.9, 2.1, .14, .04);
-      const oval = this.mesh(new THREE.CircleGeometry(1, 96), this.wood, -10, 5, -17.8);
-      oval.scale.set(3.2, 4.8, 1);
-      for (const [rx, ry, z, radius, material] of [[3.05, 4.64, -17.58, .12, this.brass], [2.88, 4.48, -17.56, .055, this.black]] as const) {
-        const rim = Array.from({ length: 65 }, (_, i) => { const theta = i / 64 * Math.PI * 2; return [-10 + Math.cos(theta) * rx, 5 + Math.sin(theta) * ry, z]; });
+      const mirrorY = MIRROR_FACE.y + 1;
+      const oval = this.mesh(new THREE.CircleGeometry(1, 96), this.wood, PILL_ROOM.mirror.x, mirrorY, -17.8);
+      oval.scale.set(2.1, 2.95, 1);
+      for (const [rx, ry, z, radius, material] of [[2, 2.83, -17.58, .12, this.brass], [1.92, 2.73, -17.56, .055, this.black]] as const) {
+        const rim = Array.from({ length: 65 }, (_, i) => { const theta = i / 64 * Math.PI * 2; return [PILL_ROOM.mirror.x + Math.cos(theta) * rx, mirrorY + Math.sin(theta) * ry, z]; });
         this.pipe(rim, radius, material);
       }
       this.mirror = new Reflector(this.own(new THREE.CircleGeometry(1, 96)), { color: 0x667d6d, textureWidth: 768, textureHeight: 1024, clipBias: .003, multisample: 0 });
-      this.mirror.scale.set(2.78, 4.36, 1);
+      this.mirror.scale.set(MIRROR_FACE.radiusX, MIRROR_FACE.radiusY, 1);
       showMirrorSubject(this.mirror, () => this.mirrorSubject);
-      this.mirror.position.set(PILL_ROOM.mirror.x, 5, PILL_ROOM.mirror.z); this.mirror.userData.dynamic = true; this.root.add(this.mirror);
+      this.mirror.position.set(PILL_ROOM.mirror.x, mirrorY, PILL_ROOM.mirror.z); this.mirror.userData.dynamic = true; this.root.add(this.mirror);
       const shader = this.mirror.material as THREE.ShaderMaterial;
       shader.uniforms.liquidTime = { value: -1 }; shader.uniforms.liquidAmount = { value: 0 };
-      shader.uniforms.liquidContact = { value: new THREE.Vector2(.382, -.344) };
+      shader.uniforms.liquidContact = { value: new THREE.Vector2(.573, -.113) };
       shader.vertexShader = shader.vertexShader.replace('varying vec4 vUv;', 'varying vec4 vUv;\nvarying vec2 vMirrorPoint;')
         .replace('vUv = textureMatrix * vec4( position, 1.0 );', 'vMirrorPoint = position.xy;\n          vUv = textureMatrix * vec4( position, 1.0 );');
       shader.fragmentShader = shader.fragmentShader.replace('varying vec4 vUv;', 'varying vec4 vUv;\nvarying vec2 vMirrorPoint;\nuniform float liquidTime;\nuniform float liquidAmount;\nuniform vec2 liquidContact;')
@@ -1062,10 +1063,10 @@ export class FilmSetRenderer {
       const crackStart = this.root.children.length;
       for (let i = 0; i < 8; i++) {
         const theta = i / 8 * Math.PI * 2 + .22;
-        this.pipe([[-10.15, -.3, -17.53], [-10 + Math.cos(theta + .23) * 1.2, Math.sin(theta + .23) * 2.1, -17.53],
-          [-10 + Math.cos(theta) * 2.5, Math.sin(theta) * 3.95, -17.53]], .013, this.black);
+        this.pipe([[PILL_ROOM.mirror.x - .1, -.2, -17.53], [PILL_ROOM.mirror.x + Math.cos(theta + .23) * .8, Math.sin(theta + .23) * 1.3, -17.53],
+          [PILL_ROOM.mirror.x + Math.cos(theta) * 1.7, Math.sin(theta) * 2.4, -17.53]], .013, this.black);
       }
-      this.mirrorCracks = new THREE.Group(); this.root.children.slice(crackStart).forEach(c => this.mirrorCracks!.add(c)); this.mirrorCracks.position.y = 5; this.mirrorCracks.userData.dynamic = true; this.root.add(this.mirrorCracks);
+      this.mirrorCracks = new THREE.Group(); this.root.children.slice(crackStart).forEach(c => this.mirrorCracks!.add(c)); this.mirrorCracks.position.y = mirrorY; this.mirrorCracks.userData.dynamic = true; this.root.add(this.mirrorCracks);
       this.table(13, 10); this.crt(13, 3.7, 10); this.crt(10, 3.3, 11, .7); this.lamp(-13, 7, -18);
       this.chair(8, 5, Math.PI); this.lamp(7, 6, -17); this.lamp(-15, 10, 9, false);
       for (const z of [-13, 1, 15]) {

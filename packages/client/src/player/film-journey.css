@@ -12,6 +12,10 @@ body.film-club-scene:has(#gameplay-recorder) .sandbox-interact { bottom:64px; }
 body.film-pod-scene .sandbox-interact { top:auto; bottom:24px; }
 body.film-pod-scene .sandbox-waypoint,body.film-pod-scene .play-tip { display:none; }
 body.film-club-scene:has(#gameplay-recorder) .film-sequence { bottom:125px; }
+body.film-mirror-scene .sandbox-interact { top:auto; bottom:36px; }
+body.film-mirror-scene .sandbox-nav { display:none; }
+body.film-mirror-scene:has(#gameplay-recorder) .sandbox-interact { bottom:64px; }
+body.film-mirror-scene:has(#gameplay-recorder) .film-sequence { bottom:125px; }
 body.film-driving .game-controls,body.film-driving .player-ability,body.film-driving .sandbox-hotbar,body.film-driving .game-map { display:none; }
 body.film-performing .game-controls,body.film-performing .player-ability,body.film-performing .sandbox-hotbar,body.film-performing .game-map { display:none; }
 body.film-rescue-scene .sandbox-hotbar { display:none; }

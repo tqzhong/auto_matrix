@@ -181,7 +181,7 @@ export class PlayerControls {
     const z = center.z + PILL_ROOM.mirror.z - this.position.z;
     const eye = this.position.y + 2.99 - THREE.MathUtils.smoothstep(this.motion.mirrorBeat ?? 0, .65, MIRROR_TIMING.sit) * .9;
     this.yaw = this.movementYaw = Math.atan2(x, z);
-    this.pitch = -Math.atan2(center.y + 2.6 - eye, Math.hypot(x, z));
+    this.pitch = -Math.atan2(center.y + 2.1 - eye, Math.hypot(x, z));
   }
 
   triggerCombat(kind: 'attack' | 'dodge', guided = false, guidedCombo?: number): boolean {

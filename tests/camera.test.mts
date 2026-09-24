@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import type { AgentState, PlayerInput } from '@auto_matrix/shared';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { CameraController } from '../packages/client/src/engine/CameraController.js';
-import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, pillRoot, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_TIMING, POD_WATER_DROP, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, airRescueRoot, matrixEscapeRoot, theOneRoot, type TheOneEncounter } from '@auto_matrix/shared';
+import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, pillRoot, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, POD_WATER_DROP, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, airRescueRoot, matrixEscapeRoot, theOneRoot, type TheOneEncounter } from '@auto_matrix/shared';
 
 test('observer camera releases drag and ignores pointer capture while a character controls the view', () => {
   let captures = 0;
@@ -898,14 +898,14 @@ test('the tracking-chair shot contains Neo and the mirror while V lowers to seat
   game.state.currentAction = { type: 'idle', parameters: { filmPose: 'touch', mirrorBeat: MIRROR_TIMING.wired, mirror: 0, seated: true }, startedAt: 0, duration: 1, progress: 0 };
   game.controls.possess(game.state); game.controls.performing = true; game.step(.5);
   for (const point of [new THREE.Vector3(center.x + MIRROR_SEAT.x, center.y + 2.4, center.z + MIRROR_SEAT.z),
-    new THREE.Vector3(center.x + PILL_ROOM.mirror.x, center.y + 4, center.z + PILL_ROOM.mirror.z)]) {
+    new THREE.Vector3(center.x + PILL_ROOM.mirror.x, center.y + MIRROR_FACE.y, center.z + PILL_ROOM.mirror.z)]) {
     const screen = point.project(game.camera);
     assert.ok(Math.abs(screen.x) < .88 && Math.abs(screen.y) < .9 && screen.z > -1 && screen.z < 1, `chair and mirror must share the shot: ${screen.toArray()}`);
   }
   game.key('KeyV'); game.key('KeyV', false); game.step(.6);
   assert.ok(Math.abs(game.camera.position.y - (center.y + 2.09)) < .08, 'first-person eyes must sit at the chair height');
   for (const point of [new THREE.Vector3(center.x - 8.94, center.y + 2.5, center.z + PILL_ROOM.mirror.z),
-    new THREE.Vector3(center.x + PILL_ROOM.mirror.x, center.y + 4, center.z + PILL_ROOM.mirror.z)]) {
+    new THREE.Vector3(center.x + PILL_ROOM.mirror.x, center.y + MIRROR_FACE.y, center.z + PILL_ROOM.mirror.z)]) {
     const screen = point.project(game.camera);
     assert.ok(Math.abs(screen.x) < .75 && Math.abs(screen.y) < .85 && screen.z > -1 && screen.z < 1,
       `first person must see Neo's touching finger and its mirror: ${screen.toArray()}`);
@@ -922,7 +922,7 @@ test('starting the mirror performance while already in first person finds the gl
   game.key('KeyV'); game.key('KeyV', false); game.step(.1);
   game.state.currentAction = { type: 'idle', parameters: { filmPose: 'touch', mirrorBeat: MIRROR_TIMING.wired, mirror: 0, seated: true }, startedAt: 0, duration: 1, progress: 0 };
   game.controls.performing = true; game.step(.6);
-  const mirror = new THREE.Vector3(center.x + PILL_ROOM.mirror.x, center.y + 4, center.z + PILL_ROOM.mirror.z).project(game.camera);
+  const mirror = new THREE.Vector3(center.x + PILL_ROOM.mirror.x, center.y + MIRROR_FACE.y, center.z + PILL_ROOM.mirror.z).project(game.camera);
   assert.ok(Math.abs(mirror.x) < .75 && Math.abs(mirror.y) < .85, 'the newly seated Neo sees the mirror without pressing V again');
   const view = game.camera.getWorldDirection(new THREE.Vector3()); game.step(.2);
   assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(view) < .01, 'the initial aim is not reapplied every frame');
@@ -975,7 +975,7 @@ test('the red-pill departure keeps Neo in the third-person frame and reveals the
     assert.ok(Math.abs(actor.x) < .82 && Math.abs(actor.y) < .86 && actor.z > -1 && actor.z < 1,
       `Neo must remain visible at ${elapsed}s: ${actor.toArray().join(',')}`);
     if (elapsed > PILL_TIMING.exit) {
-      const mirror = new THREE.Vector3(center.x + PILL_ROOM.mirror.x, center.y + 4, center.z + PILL_ROOM.mirror.z).project(game.camera);
+      const mirror = new THREE.Vector3(center.x + PILL_ROOM.mirror.x, center.y + MIRROR_FACE.y, center.z + PILL_ROOM.mirror.z).project(game.camera);
       assert.ok(Math.abs(mirror.x) < .9 && Math.abs(mirror.y) < .9 && mirror.z > -1 && mirror.z < 1,
         `the cracked mirror must enter the frame before the cut: ${mirror.toArray().join(',')}`);
     }

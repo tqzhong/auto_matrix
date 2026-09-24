@@ -7,6 +7,7 @@ export interface AwakeningReveal { kind: 'construct' | 'desert'; elapsed: number
 export const AWAKENING_SECONDS = { mirror: 8, connect: 4, disconnect: 9, rescue: 5, recovery: 12, construct: 11, desert: 13 } as const;
 export const MIRROR_TOUCH = { x: -7.1, z: -14.6, radius: 1.25 } as const;
 export const MIRROR_SEAT = { x: -9.5, z: -16.05 } as const;
+export const MIRROR_FACE = { y: 2.8, radiusX: 1.85, radiusY: 2.65 } as const;
 export const MIRROR_TRINITY = { x: -7.75, z: -15.16, yaw: -1.35 } as const;
 export const MIRROR_TIMING = { sit: 1.35, wired: 2.75, touch: 3.45, fade: 7.2 } as const;
 export interface MirrorGuide { progress: number; lastTick: number; done: boolean; rise?: number }
