@@ -941,7 +941,12 @@ export class FilmStorySystem {
   }
   restoreAwakeningSpace(): void {
     const state = this.state; const scene = this.scene;
-    if (!state || !scene || state.awakening || state.visiting) return;
+    if (!state || !scene || state.visiting) return;
+    if (state.scene === 'm1_mirror' && state.step >= scene.steps.length) {
+      this.finishMirror(this.world.agents.get(state.actor)!, this.world.simulationTick);
+      return;
+    }
+    if (state.awakening) return;
     const kind = state.scene === 'm1_recovery' && state.step === 0 ? 'recovery'
       : state.scene === 'm1_construct' && state.step === 0 ? 'construct'
       : state.scene === 'm1_desert' && state.step === 1 ? 'desert' : undefined;
@@ -2326,8 +2331,21 @@ export class FilmStorySystem {
         reveal: { kind: beat.kind, elapsed: beat.elapsed, role: 'morpheus' } }, startedAt: tick, duration: 1, progress: 0 };
     }
     state.lastText = morpheus?.controller ? '揭示暂停在当前画面：Morpheus 正由另一位玩家控制。' : pose.text;
-    if (wasPlaying && beat.elapsed >= AWAKENING_SECONDS[beat.kind]) this.advance(this.step!.text!, agent, tick);
+    if (wasPlaying && beat.elapsed >= AWAKENING_SECONDS[beat.kind]) {
+      if (beat.kind === 'mirror') this.finishMirror(agent, tick);
+      else this.advance(this.step!.text!, agent, tick);
+    }
     return true;
+  }
+  private finishMirror(agent: AgentState, tick: number): void {
+    const state = this.state!;
+    if (!state.completed.includes('m1_mirror')) {
+      state.step = 0; // Old saves may be waiting at the removed connection-chair objective.
+      this.advance(FILM_SCENE_BY_ID.m1_mirror.steps[0].text!, agent, tick);
+    }
+    const pod = FILM_SCENE_BY_ID.m1_pod;
+    state.scene = pod.id; state.actor = pod.actor; state.step = 0; state.lastText = pod.context;
+    this.enter(pod, tick);
   }
   trainingFrame(agent: AgentState, dt: number, tick: number): boolean {
     const state = this.state; const training = state?.training;
@@ -3645,7 +3663,7 @@ export class FilmStorySystem {
       return '先知提醒你留意花瓶。你的注意转向身后。';
     }
     if (state.scene === 'm1_mirror' || state.scene === 'm1_pod') {
-      state.awakening = { kind: state.scene === 'm1_mirror' ? state.step === 0 ? 'mirror' : 'connect' : state.step === 0 ? 'disconnect' : 'rescue', elapsed: 0 };
+      state.awakening = { kind: state.scene === 'm1_mirror' ? 'mirror' : state.step === 0 ? 'disconnect' : 'rescue', elapsed: 0 };
       this.awakeningFrame(agent, 0, tick);
       return state.lastText;
     }

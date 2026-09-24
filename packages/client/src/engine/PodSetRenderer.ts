@@ -76,6 +76,7 @@ export class PodSetRenderer {
     this.cable = this.mesh(new THREE.CylinderGeometry(.07, .07, 1, 8), this.steel, 0, 0, 12);
     this.scan = new THREE.SpotLight(0xc3e6ef, 2300, 70, .52, .7, 2); this.scan.position.set(0, 10, 12); this.scan.target.position.set(0, -18, 12); this.root.add(this.scan, this.scan.target);
     const tankLight = new THREE.PointLight(0xb76b62, 170, 22, 2); tankLight.position.set(-3, 6, -12); this.root.add(tankLight);
+    const awakeningLight = new THREE.PointLight(0xf5b9ab, 620, 16, 2); awakeningLight.position.set(1, 5, -8); this.root.add(awakeningLight);
     const rimLight = new THREE.PointLight(0x8bb8ce, 220, 30, 2); rimLight.position.set(4, 10, -21); this.root.add(rimLight);
     const mistGeometry = new THREE.BufferGeometry(); const particles: number[] = [];
     for (let i = 0; i < 180; i++) particles.push(Math.sin(i * 7.23) * 30, -16 + Math.sin(i * 3.12) * 3, 12 + Math.cos(i * 9.14) * 40);

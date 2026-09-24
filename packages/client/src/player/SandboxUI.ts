@@ -37,6 +37,7 @@ export class SandboxUI {
   private signature = '';
   private selectedFilm = 1;
   private nearest = '';
+  private previousFilmScene?: string;
   private waypoint: { position: Vector3; matrix: boolean; name: string } | null = null;
 
   constructor(private send: (command: SandboxCommand) => void, private menu: (open: boolean) => void,
@@ -181,6 +182,14 @@ export class SandboxUI {
 
   private updateFilm(player: AgentState, state: SandboxState): void {
     const journey = state.neoLife!.journey!; const scene = FILM_SCENE_BY_ID[journey.scene]; const step = scene.steps[journey.step];
+    const blackout = this.el('film-blackout');
+    if (!journey.visiting) {
+      if (this.previousFilmScene === 'm1_mirror' && scene.id === 'm1_pod') blackout.classList.add('pod-reveal');
+      if (scene.id !== 'm1_pod') blackout.classList.remove('pod-reveal');
+      this.previousFilmScene = scene.id;
+      if (scene.id === 'm1_mirror' && journey.awakening?.kind === 'mirror')
+        blackout.style.opacity = String(Math.min(.96, Math.max(0, (journey.awakening.elapsed - 6.8) / 1.2)));
+    }
     const set = FILM_SETS[journey.visiting ? FILM_SCENE_BY_ID[journey.visiting].set : scene.set];
     const shown = journey.visiting ? FILM_SCENE_BY_ID[journey.visiting] : scene;
     this.el('sandbox-clock').textContent = `${FILM_NAMES[shown.film]} · 第 ${FILM_SCENES.indexOf(shown) + 1} 段`;
@@ -645,7 +654,7 @@ export class SandboxUI {
       document.getElementById('game-objective-copy')!.textContent = `Seraph 考验 · 两次闪避反击 ${trial.counters}/2`;
       return;
     }
-    if (awakeningLocked(journey)) {
+    if (journey.awakening && journey.awakening.elapsed < AWAKENING_SECONDS[journey.awakening.kind] && awakeningLocked(journey)) {
       const waiting = awakeningWaiting(journey); const kind = journey.awakening!.kind;
       const action = kind === 'recovery' ? '示意开始恢复肌肉' : kind === 'construct' ? '请 Morpheus 打开电视' : '请 Morpheus 继续揭示';
       const activity = ({ mirror: '镜面覆盖', connect: '定位连接', disconnect: '培养舱断线', rescue: '飞船救援', recovery: '针疗与身体恢复', construct: '电视与感官揭示', desert: '真实荒漠讲解' } as const)[kind];

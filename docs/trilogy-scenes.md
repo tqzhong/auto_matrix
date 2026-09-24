@@ -73,7 +73,7 @@
 | m1_bridge | 桥下的车灯 | Adams Street · 桥下 | Neo | 移动 → 交互 |
 | m1_bug | 取出追踪器 | 接头轿车 · 除虫 | Neo | 交互 → 反思 |
 | m1_pills | 两把皮椅之间 | Lafayette · 药丸与镜面 | Neo | 移动 → 反思 |
-| m1_mirror | 镜面与定位 | Lafayette · 药丸与镜面 | Neo | 交互 → 移动 |
+| m1_mirror | 镜面与定位 | Lafayette · 药丸与镜面 | Neo | 触镜 → 银色覆盖 → 自动进入培养舱 |
 | m1_pod | 第一次睁眼 | 培养舱与收割塔 | Neo | 交互 → 交互 |
 | m1_recovery | 从未使用的肌肉 | 尼布甲尼撒号 · 核心与医疗舱 | Neo | 交互 → 移动 |
 | m1_construct | 残余自我影像 | 构造体 · 白色空间 | Neo | 交互 → 反思 |

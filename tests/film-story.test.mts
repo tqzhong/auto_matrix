@@ -1034,14 +1034,35 @@ test('touching the mirror is a saved performance that freezes on pause and resum
   h.players.step(.1, true, h.tick()); assert.deepEqual(h.actor().position, position, 'the hand remains at the mirror while the camera can look around');
   assert.match(h.players.act('film-player', 'attack', h.tick()), /演出/);
   for (let i = 0; i < 70; i++) h.players.step(.1, true, h.tick());
-  assert.equal(h.sandbox.life.film.state!.step, 1);
-  assert.equal(h.sandbox.life.film.state!.awakening!.elapsed, 8);
-  h.advance(30); assert.equal(h.sandbox.life.film.state!.step, 1, 'the next objective requires a separate choice');
+  assert.equal(h.sandbox.life.film.state!.scene, 'm1_pod', 'the completed mirror touch enters the pod without another objective');
+  assert.equal(h.sandbox.life.film.state!.step, 0);
+  assert.equal(h.sandbox.life.film.state!.awakening, undefined);
+  assert.ok(h.sandbox.life.film.state!.completed.includes('m1_mirror'));
+  assert.equal(h.actor().currentLocation, 'film_power_plant_pods');
+  assert.equal(h.actor().isAwakened, true);
+  h.advance(30); assert.equal(h.sandbox.life.film.state!.scene, 'm1_pod', 'the pod waits for Neo to inspect the connections');
+});
+
+test('old mirror saves after the touch resume in the pod instead of requiring the removed chair beat', () => {
+  for (const legacy of [
+    { step: 1, awakening: { kind: 'mirror', elapsed: 8 } },
+    { step: 1, awakening: { kind: 'connect', elapsed: 2 } },
+    { step: 2, awakening: { kind: 'connect', elapsed: 4 } },
+  ]) {
+    const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+    Object.assign(state, { scene: 'm1_mirror', actor: 'neo', ...legacy });
+    if (legacy.step === 2) state.completed.push('m1_mirror');
+    h.actor().currentLocation = 'film_lafayette';
+    h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+    assert.equal(h.sandbox.life.film.state!.scene, 'm1_pod');
+    assert.equal(h.sandbox.life.film.state!.completed.filter(id => id === 'm1_mirror').length, 1);
+    assert.equal(h.actor().currentLocation, 'film_power_plant_pods');
+  }
 });
 
 test('pod disconnection moves Neo down the drain; rescue must be started in the water and lifts the body', () => {
   const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
-  Object.assign(state, { scene: 'm1_mirror', actor: 'neo', step: 2 }); h.command('next');
+  Object.assign(state, { scene: 'm1_mirror', actor: 'neo', step: 1 }); h.command('next');
   const start = { ...h.actor().position };
   h.command('act'); assert.equal(state.awakening?.kind, 'disconnect');
   for (let i = 0; i < 100; i++) h.players.step(.1, true, h.tick());
@@ -2422,6 +2443,10 @@ test('the entire film route completes through interactions, driving and real com
         assert.equal(state.scene, 'm1_mirror', 'the red pill starts the mirror scene without an extra command');
         continue;
       }
+      if (scene.id === 'm1_mirror') {
+        assert.equal(state.scene, 'm1_pod', 'the mirror covering Neo starts the pod scene without another command');
+        continue;
+      }
       assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`);
       if (scene.id === 'm1_jump' && index === 0) {
         h.command('act');
@@ -2430,7 +2455,7 @@ test('the entire film route completes through interactions, driving and real com
     }
     assert.ok(state.completed.includes(scene.id));
     if (scene.id === 'm1_phone_escape') h.advance(3); // Hold the connected booth shot through the truck impact.
-    if (!['m1_bridge', 'm1_bug', 'm1_pills'].includes(scene.id)) h.command('next');
+    if (!['m1_bridge', 'm1_bug', 'm1_pills', 'm1_mirror'].includes(scene.id)) h.command('next');
     if (scene.id === 'm1_office_escape' && state.office?.crossing !== undefined) for (let frame = 0; frame < 65; frame++) h.players.step(.1, true, h.tick());
   }
   assert.equal(state.finished, true); assert.equal(state.completed.length, FILM_SCENES.length);
