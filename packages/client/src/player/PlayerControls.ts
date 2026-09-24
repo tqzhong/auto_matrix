@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { FILM_SETS, OFFICE_CONTACT, LOBBY_FIRE_INTERVAL, RESCUE, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_TIMING, groundHeight, playerBlocked, stepPlayer, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, COMBAT_SKILLS, combatDisplace, PLAYER_WALK_SPEED, meleeReach, trainingRoot, matrixEscapePhaseLocked, matrixEscapePose, matrixEscapeRoot, theOnePhaseLocked, theOnePose, theOneRoot, type OfficePhone, type AwakeningPose, type FreewayRide, type AgentState, type PlayerInput, type Vector3, type WorldStructure, type CombatImpact, type SkillCast, type RescueLoadout } from '@auto_matrix/shared';
 import { lafayetteWelcomeCamera } from './LafayetteWelcomeCamera.js';
 import type { MotionInput } from '../agents/CharacterMotion.js';
-import { AIR_RESCUE, governmentPose, airRescuePose, airRescueRoot, interrogationPose, meetingPose, meetingCarPose } from '@auto_matrix/shared';
+import { AIR_RESCUE, governmentPose, airRescuePose, airRescueRoot, interrogationPose, meetingPose, meetingCarPose, meetingCarPoint, MEETING_TIMING } from '@auto_matrix/shared';
 import { officeClothing } from '@auto_matrix/shared';
 
 export class PlayerControls {
@@ -143,6 +143,7 @@ export class PlayerControls {
       if (event.code === 'KeyV') {
         this.firstPerson = !this.firstPerson;
         if (this.firstPerson && this.motion.mirrorBeat !== undefined) this.aimAtMirror();
+        if (this.firstPerson && this.motion.meeting && ['scanning', 'located', 'removing', 'discarding'].includes(this.motion.meeting.phase)) this.aimAtMeetingScanner();
         if (this.firstPerson && this.climbing && this.authoritative?.currentLocation === 'film_office_ledge') {
           this.yaw = -.55; this.pitch = .55;
         }
@@ -182,6 +183,28 @@ export class PlayerControls {
     const eye = this.position.y + 2.99 - THREE.MathUtils.smoothstep(this.motion.mirrorBeat ?? 0, .65, MIRROR_TIMING.sit) * .9;
     this.yaw = this.movementYaw = Math.atan2(x, z);
     this.pitch = -Math.atan2(center.y + 2.1 - eye, Math.hypot(x, z));
+  }
+
+  private aimAtMeetingScanner(): void {
+    const car = meetingCarPose(this.motion.meeting); const pose = meetingPose(this.motion.meeting!);
+    const center = FILM_SETS.film_adams_bridge.center;
+    const tool = new THREE.Vector3(-.6, 1.82, 1.05).lerp(new THREE.Vector3(1.02, 2.15, 1.38), pose.probe)
+      .lerp(new THREE.Vector3(-2.45, 3, .3), pose.discard);
+    const target = meetingCarPoint(car, tool.x, tool.z);
+    const eye = this.meetingEye(this.motion.meeting!);
+    const x = center.x + target.x - eye.x; const z = center.z + target.z - eye.z;
+    this.yaw = this.movementYaw = Math.atan2(x, z);
+    this.pitch = THREE.MathUtils.clamp(-Math.atan2(center.y - 1 + tool.y + .75 - eye.y, Math.hypot(x, z)), -.4, 1.1);
+  }
+
+  private meetingEye(gesture: NonNullable<MotionInput['meeting']>): THREE.Vector3 {
+    const blend = gesture.phase === 'scanning' && !gesture.bugged
+      ? THREE.MathUtils.smoothstep(gesture.elapsed, MEETING_TIMING.scanning - 2, MEETING_TIMING.scanning)
+      : gesture.phase === 'discarding' ? meetingPose(gesture).discard
+        : ['scanning', 'located', 'removing'].includes(gesture.phase) ? 0 : 1;
+    return new THREE.Vector3(-1.05 * blend, 2.86, .4 - 1.2 * blend)
+      .applyEuler(new THREE.Euler(0, meetingCarPose(gesture).yaw, 0))
+      .add(new THREE.Vector3(this.position.x, this.position.y, this.position.z));
   }
 
   triggerCombat(kind: 'attack' | 'dodge', guided = false, guidedCombo?: number): boolean {
@@ -972,9 +995,7 @@ export class PlayerControls {
       if (resetCamera || entering && gesture.elapsed < .15) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
       this.camera.lookAt(focus);
     } else if (this.motion.meeting && this.firstPerson) {
-      const car = meetingCarPose(this.motion.meeting);
-      const eye = new THREE.Vector3(-1.05, 2.86, -.8).applyEuler(new THREE.Euler(0, car.yaw, 0))
-        .add(new THREE.Vector3(this.position.x, this.position.y, this.position.z));
+      const eye = this.meetingEye(this.motion.meeting);
       const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
       this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
     } else if (interviewApproach) {
