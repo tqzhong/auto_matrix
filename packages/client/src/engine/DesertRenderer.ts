@@ -7,18 +7,31 @@ import { DESERT_REVEAL, type FilmJourney } from '@auto_matrix/shared';
 export class DesertRenderer {
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
+  private textures = new Set<THREE.Texture>();
   private lights = new Set<THREE.Light>();
+  private disposed = false;
   private ash: THREE.Points;
   private towerGlow: THREE.MeshStandardMaterial;
   private flash: THREE.PointLight;
-  private ground = this.material(new THREE.MeshStandardMaterial({ color: 0x454c49, roughness: .98, metalness: .04 }));
-  private concrete = this.material(new THREE.MeshStandardMaterial({ color: 0x505a58, roughness: .96 }));
-  private brokenConcrete = this.material(new THREE.MeshStandardMaterial({ color: 0x343d3d, roughness: .98 }));
+  private ground = this.material(new THREE.MeshStandardMaterial({ color: 0x9daaa4, roughness: .98, metalness: .04 }));
+  private concrete = this.material(new THREE.MeshStandardMaterial({ color: 0x68736e, roughness: .96 }));
+  private brokenConcrete = this.material(new THREE.MeshStandardMaterial({ color: 0x48534f, roughness: .98 }));
+  private plaster = this.material(new THREE.MeshStandardMaterial({ color: 0x78827c, roughness: .96 }));
   private charcoal = this.material(new THREE.MeshStandardMaterial({ color: 0x252c2c, roughness: .82, metalness: .18 }));
   private rust = this.material(new THREE.MeshStandardMaterial({ color: 0x694a39, roughness: .86, metalness: .36 }));
   private glass = this.material(new THREE.MeshPhysicalMaterial({ color: 0x6a7b77, roughness: .24, metalness: .42, transparent: true, opacity: .4, depthWrite: false }));
 
   constructor(private root: THREE.Group) {
+    if (typeof document !== 'undefined') {
+      this.surface([this.ground], 'surfaces', 'asphalt_02');
+      this.surface([this.plaster], 'film-materials', 'damaged_plaster');
+      for (const material of [this.concrete, this.brokenConcrete]) {
+        material.normalMap = this.plaster.normalMap;
+        material.roughnessMap = this.plaster.roughnessMap;
+        material.normalScale.set(.42, .42);
+        material.needsUpdate = true;
+      }
+    }
     this.towerGlow = this.material(new THREE.MeshStandardMaterial({ color: 0x8d563c, emissive: 0xe06d37, emissiveIntensity: .5, metalness: .76, roughness: .31 }));
     this.terrain(); this.city(); this.overpass(); this.harvesters();
     this.ash = this.createAsh();
@@ -28,12 +41,35 @@ export class DesertRenderer {
 
   private material<T extends THREE.Material>(value: T): T { this.materials.add(value); return value; }
   private geometry<T extends THREE.BufferGeometry>(value: T): T { this.geometries.add(value); return value; }
+  private surface(materials: THREE.MeshStandardMaterial[], folder: string, id: string): void {
+    const loader = new THREE.TextureLoader();
+    const load = (kind: string) => {
+      const texture = loader.load(`/assets/${folder}/${id}-${kind}.jpg`, loaded => { if (this.disposed) loaded.dispose(); });
+      texture.wrapS = texture.wrapT = THREE.RepeatWrapping; texture.anisotropy = 8;
+      if (kind === 'color') texture.colorSpace = THREE.SRGBColorSpace;
+      this.textures.add(texture); return texture;
+    };
+    const map = load('color'); const normalMap = load('normal'); const roughnessMap = load('roughness');
+    for (const material of materials) {
+      material.map = map; material.normalMap = normalMap; material.roughnessMap = roughnessMap;
+      material.normalScale.set(.42, .42); material.needsUpdate = true;
+    }
+  }
   private mesh(parent: THREE.Object3D, geometry: THREE.BufferGeometry, material: THREE.Material, name?: string): THREE.Mesh {
     const mesh = new THREE.Mesh(this.geometry(geometry), material); mesh.castShadow = mesh.receiveShadow = true;
     if (name) mesh.name = name; parent.add(mesh); return mesh;
   }
+  private tileUvs(geometry: THREE.BufferGeometry): void {
+    const position = geometry.attributes.position; const normal = geometry.attributes.normal; const uv = geometry.attributes.uv;
+    for (let i = 0; i < uv.count; i++) uv.setXY(i,
+      (Math.abs(normal.getX(i)) > .5 ? position.getZ(i) : position.getX(i)) / 5,
+      (Math.abs(normal.getY(i)) > .5 ? position.getZ(i) : position.getY(i)) / 5);
+    uv.needsUpdate = true;
+  }
   private box(parent: THREE.Object3D, material: THREE.Material, x: number, y: number, z: number, width: number, height: number, depth: number, name?: string): THREE.Mesh {
-    const mesh = this.mesh(parent, new THREE.BoxGeometry(width, height, depth), material, name); mesh.position.set(x, y, z); return mesh;
+    const geometry = new THREE.BoxGeometry(width, height, depth);
+    this.tileUvs(geometry);
+    const mesh = this.mesh(parent, geometry, material, name); mesh.position.set(x, y, z); return mesh;
   }
   private cylinder(parent: THREE.Object3D, material: THREE.Material, x: number, y: number, z: number, radius: number, height: number, radial = 12): THREE.Mesh {
     const mesh = this.mesh(parent, new THREE.CylinderGeometry(radius * .86, radius, height, radial), material); mesh.position.set(x, y, z); return mesh;
@@ -50,10 +86,11 @@ export class DesertRenderer {
       const height = Math.abs(x) < 7 ? 0 : Math.sin(x * .31 + y * .13) * .23 + Math.cos(y * .19 - x * .08) * .18 + path;
       position.setZ(i, height);
     }
+    this.tileUvs(geometry);
     geometry.computeVertexNormals(); const floor = this.mesh(this.root, geometry, this.ground, 'desert-cracked-ground'); floor.rotation.x = -Math.PI / 2; floor.position.y = -.18;
     for (let i = 0; i < 46; i++) {
       const side = i % 2 ? 1 : -1; const z = 42 - i * 2.45; const x = side * (9 + (i * 17) % 19);
-      const rubble = this.mesh(this.root, new THREE.DodecahedronGeometry(.65 + i % 5 * .32, 0), i % 4 ? this.concrete : this.rust, `desert-rubble-${i}`);
+      const rubble = this.mesh(this.root, new THREE.DodecahedronGeometry(.65 + i % 5 * .32, 0), i % 4 ? this.brokenConcrete : this.rust, `desert-rubble-${i}`);
       rubble.position.set(x, .35 + i % 3 * .12, z); rubble.scale.set(1.7, .7, 1.1); rubble.rotation.set(i * .17, i * .73, i * .11);
     }
     for (let i = 0; i < 34; i++) {
@@ -81,7 +118,8 @@ export class DesertRenderer {
       }
       for (const front of [-1, 1]) {
         const face = front * (depth / 2 - .16);
-        this.box(building, this.brokenConcrete, offset, base + 1, face, levelWidth, 1.45, .35);
+        this.box(building, (level + index) % 7 === 0 ? this.plaster : this.brokenConcrete,
+          offset, base + 1, face, levelWidth, 1.45, .35);
         this.box(building, this.concrete, offset, base + 4.55, face, levelWidth, .82, .38);
         for (const side of [-1, 1]) {
           this.box(building, level % 4 ? this.concrete : this.brokenConcrete,
@@ -115,6 +153,7 @@ export class DesertRenderer {
     city.traverse(object => {
       if (!(object instanceof THREE.Mesh)) return;
       const geometry = object.geometry.clone().applyMatrix4(inverse.clone().multiply(object.matrixWorld));
+      this.tileUvs(geometry);
       const bucket = batches.get(object.material) ?? []; bucket.push(geometry); batches.set(object.material, bucket);
     });
     city.traverse(object => {
@@ -224,7 +263,9 @@ export class DesertRenderer {
   }
 
   dispose(): void {
-    this.root.clear(); this.geometries.forEach(value => value.dispose()); this.materials.forEach(value => value.dispose()); this.lights.forEach(value => value.dispose());
-    this.geometries.clear(); this.materials.clear(); this.lights.clear();
+    this.disposed = true;
+    this.root.clear(); this.geometries.forEach(value => value.dispose()); this.materials.forEach(value => value.dispose());
+    this.textures.forEach(value => value.dispose()); this.lights.forEach(value => value.dispose());
+    this.geometries.clear(); this.materials.clear(); this.textures.clear(); this.lights.clear();
   }
 }

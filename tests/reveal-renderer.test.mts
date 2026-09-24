@@ -46,6 +46,13 @@ test('the desert reveal has a walkable overlook, collidable ruins, ash and opera
     assert.ok(root.getObjectByName('desert-ruined-skyline'));
     assert.ok(root.getObjectByName('desert-collapsed-overpass'));
     assert.ok(root.getObjectByName('desert-harvest-towers'));
+    const groundUv = (root.getObjectByName('desert-cracked-ground') as THREE.Mesh).geometry.attributes.uv;
+    assert.ok(Math.abs(groundUv.getX(groundUv.count - 1) - groundUv.getX(0)) > 30, 'the walkable ground tiles its surface instead of stretching one image across the entire wasteland');
+    assert.ok(root.getObjectByName('desert-ruined-skyline')!.children.some(child => {
+      const uv = (child as THREE.Mesh).geometry.attributes.uv;
+      for (let i = 0; i < uv.count; i++) if (Math.abs(uv.getY(i)) > 5) return true;
+      return false;
+    }), 'ruin walls preserve metre-scale texture coordinates after facade batching');
     const facade = new THREE.Raycaster(new THREE.Vector3(-18, 7.5, 42), new THREE.Vector3(0, 0, -1), 0, 1.2);
     assert.equal(facade.intersectObjects(root.getObjectByName('desert-ruined-skyline')!.children, true).length, 0,
       'ruined towers need open window bays instead of solid stacked boxes');

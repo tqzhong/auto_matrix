@@ -9,6 +9,10 @@ export function savedEntryCharacter(chosen: string | null, journeyActor: string 
   return !explicitChoice && journeyActor ? journeyActor : chosen ?? 'neo';
 }
 
+export function cinematicTalkSuppressed(scene: string | undefined, visiting: string | undefined): boolean {
+  return !visiting && (scene === 'm1_construct' || scene === 'm1_desert');
+}
+
 export interface PlayerExperienceActions {
   play: (id: string) => void;
   observe: () => void;
@@ -220,7 +224,8 @@ export class PlayerExperience {
     const theOneScene = this.filmPlaying && Boolean(neoLife?.journey?.theOne) && !neoLife?.journey?.visiting;
     const truckScene = this.filmPlaying && neoLife?.journey?.scene === 'm2_trucks' && !neoLife.journey.visiting && neoLife.journey.step < 3;
     const seraphOracleScene = this.filmPlaying && !neoLife?.journey?.visiting && (neoLife?.journey?.scene === 'm2_bench' || neoLife?.journey?.scene === 'm2_seraph');
-    this.el('game-interaction').classList.toggle('hidden', nearby.length === 0 || player.status === 'dead' || Boolean(player.currentAction?.parameters.riding || player.currentAction?.parameters.lobbyEntry) || helElevatorScene || sentinelScene || interludeScene || oracleScene || seraphOracleScene || betrayalScene || rescueScene || lobbyScene || governmentScene || airRescueScene || matrixEscapeScene || theOneScene || truckScene || this.filmPlaying && Boolean(neoLife?.journey?.reloaded || neoLife?.journey?.scene === 'm2_catch') && !neoLife?.journey?.visiting);
+    const awakeningScene = this.filmPlaying && cinematicTalkSuppressed(neoLife?.journey?.scene, neoLife?.journey?.visiting);
+    this.el('game-interaction').classList.toggle('hidden', nearby.length === 0 || player.status === 'dead' || Boolean(player.currentAction?.parameters.riding || player.currentAction?.parameters.lobbyEntry) || awakeningScene || helElevatorScene || sentinelScene || interludeScene || oracleScene || seraphOracleScene || betrayalScene || rescueScene || lobbyScene || governmentScene || airRescueScene || matrixEscapeScene || theOneScene || truckScene || this.filmPlaying && Boolean(neoLife?.journey?.reloaded || neoLife?.journey?.scene === 'm2_catch') && !neoLife?.journey?.visiting);
     this.el('game-interaction').querySelector('span')!.textContent = nearby[0] ? `与 ${nearby[0].name} 交谈` : '';
     this.el('game-objective').textContent = player.isAwakened ? '你会怎样改变这个世界？' : '寻找现实背后的真相';
     this.el('game-objective-copy').textContent = player.isAwakened ? '结识同伴、探索城市，或前往地铁站寻找出口。' : `怀疑 ${Math.round(player.mind?.suspicion ?? 0)}% · 目击异常，与可信的觉醒者交谈。`;
