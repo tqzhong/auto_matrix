@@ -612,12 +612,23 @@ export class FilmSetRenderer {
   }
   private pbr(id: string, color = 0xffffff, repeat = 4, roughness = .85, metalness = 0): THREE.MeshStandardMaterial {
     const loader = new THREE.TextureLoader();
-    const texture = (kind: string) => {
-      const map = loader.load(`/assets/film-materials/${id}-${kind}.jpg`); map.wrapS = map.wrapT = THREE.RepeatWrapping; map.repeat.set(repeat, repeat); map.anisotropy = 8;
-      if (kind === 'color') map.colorSpace = THREE.SRGBColorSpace; this.textures.add(map); return map;
+    const material = new THREE.MeshStandardMaterial({ color, roughness, metalness, normalScale: new THREE.Vector2(.4, .4) });
+    this.materials.add(material);
+    const maps: Partial<Record<'color' | 'normal' | 'roughness', THREE.Texture>> = {};
+    const texture = (kind: 'color' | 'normal' | 'roughness') => {
+      const map = loader.load(`/assets/film-materials/${id}-${kind}.jpg`, loaded => {
+        if (!this.materials.has(material)) { loaded.dispose(); return; }
+        maps[kind] = loaded;
+        if (maps.color && maps.normal && maps.roughness) {
+          material.map = maps.color; material.normalMap = maps.normal; material.roughnessMap = maps.roughness;
+          material.needsUpdate = true;
+        }
+      });
+      map.wrapS = map.wrapT = THREE.RepeatWrapping; map.repeat.set(repeat, repeat); map.anisotropy = 8;
+      if (kind === 'color') map.colorSpace = THREE.SRGBColorSpace; this.textures.add(map);
     };
-    const material = new THREE.MeshStandardMaterial({ color, map: texture('color'), normalMap: texture('normal'), roughnessMap: texture('roughness'), roughness, metalness, normalScale: new THREE.Vector2(.4, .4) });
-    this.materials.add(material); return material;
+    texture('color'); texture('normal'); texture('roughness');
+    return material;
   }
   private mesh(geometry: THREE.BufferGeometry, material: THREE.Material, x: number, y: number, z: number, parent = this.root): THREE.Mesh {
     const mesh = new THREE.Mesh(this.own(geometry), material); mesh.position.set(x, y, z); mesh.castShadow = true; mesh.receiveShadow = true; parent.add(mesh); return mesh;
