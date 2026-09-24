@@ -473,6 +473,29 @@ test('the left hand reaches and turns the window handle while the right hand hol
   models.dispose();
 });
 
+test('office window cleaners keep the squeegee above their faces during the briefing', async t => {
+  const asset = await loadGeometry('club-male');
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', async () => asset);
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const document = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {} }) }) } as unknown as Document;
+  const root = new THREE.Group(); const renderer = new OfficeSetRenderer(root, FILM_SETS.film_metacortex_floor);
+  const journey: FilmJourney = { version: 1, scene: 'm1_boss', actor: 'neo', step: 0, completed: [], enteredAt: 0, reflections: {}, checkpoint: { x: 0, y: 0, z: 0 }, lastText: '' };
+  try {
+    await Promise.resolve();
+    for (const time of [0, 1.5, 3]) {
+      renderer.update(journey, undefined, undefined, undefined, time); root.updateMatrixWorld(true);
+      for (let i = 1; i <= 2; i++) {
+        const cleaner = root.getObjectByName(`window-cleaner-${i}`)!;
+        const head = cleaner.getObjectByName('head')!;
+        const blade = root.getObjectByName(`window-squeegee-${i}`)!;
+        const gap = blade.getWorldPosition(new THREE.Vector3()).y - head.getWorldPosition(new THREE.Vector3()).y;
+        assert.ok(gap > .4, `the squeegee must clear cleaner ${i}'s face at ${time}s: ${gap}`);
+      }
+    }
+  } finally { renderer.dispose(); globalThis.document = document; }
+});
+
 test('opening the actual office sash clears the aperture instead of revealing an opaque backdrop', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const document = globalThis.document;

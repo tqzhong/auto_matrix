@@ -76,7 +76,7 @@ export class OfficeSetRenderer {
       bones.get('head')!.rotation.y = -.18 + sweep * .06;
       root.updateWorldMatrix(true, true);
       const wrist = this.root.worldToLocal(bones.get('wrist_R')!.getWorldPosition(new THREE.Vector3()));
-      const glass = new THREE.Vector3(-27.14, 3.6 + sweep * .5, z);
+      const glass = new THREE.Vector3(-27.14, 4.8 + sweep * .5, z);
       blade.position.copy(glass);
       const reach = glass.clone().sub(wrist); handle.position.copy(wrist).addScaledVector(reach, .5);
       handle.quaternion.setFromUnitVectors(up, reach.clone().normalize()); handle.scale.y = reach.length();
