@@ -64,15 +64,43 @@ export class FilmStorySystem {
     }
     const brown = this.world.agents.get('agent_brown');
     if (!brown || brown.currentLocation !== this.scene!.set) return;
+    const roof = FILM_SETS.film_hotel_roofs;
+    const takeoff = OPENING_ESCAPE.roofGapNear + 2;
+    const landing = OPENING_ESCAPE.roofGapFar - 1;
+    const localZ = brown.position.z - roof.center.z;
+    if (!chase.crossed && !chase.leap && localZ <= OPENING_ESCAPE.roofGapFar) chase.crossed = true;
+    if (!chase.crossed && !chase.leap && localZ < takeoff && localZ > OPENING_ESCAPE.roofGapFar) {
+      chase.leap = { elapsed: (takeoff - localZ) / (takeoff - landing) * OPENING_ESCAPE.pursuerLeapSeconds,
+        fromX: brown.position.x - roof.center.x, toX: brown.position.x - roof.center.x };
+    }
     if (!brown.controller && dt > 0) {
-      const dx = actor.position.x - brown.position.x; const dz = actor.position.z - brown.position.z;
-      const length = Math.hypot(dx, dz); const travel = Math.min(length, OPENING_ESCAPE.pursuerSpeed * dt);
-      if (length > .01) {
-        brown.position.x += dx / length * travel; brown.position.z += dz / length * travel;
-        brown.rotation = Math.atan2(dx, dz);
+      if (!chase.crossed && !chase.leap && actor.position.z - roof.center.z < OPENING_ESCAPE.roofGapFar && localZ <= takeoff + .1) {
+        chase.leap = { elapsed: 0, fromX: brown.position.x - roof.center.x,
+          toX: Math.max(-roof.width / 2 + 4, Math.min(roof.width / 2 - 4, actor.position.x - roof.center.x)) };
       }
-      brown.velocity = { x: dt ? dx / Math.max(length, .01) * travel / dt : 0, y: 0, z: dt ? dz / Math.max(length, .01) * travel / dt : 0 };
-      brown.currentAction = { type: travel > .01 ? 'move_to' : 'idle', parameters: { resolved: true, filmPursuit: true }, startedAt: tick, duration: 1, progress: 0 };
+      if (chase.leap) {
+        const leap = chase.leap;
+        leap.elapsed = Math.min(OPENING_ESCAPE.pursuerLeapSeconds, leap.elapsed + dt);
+        const progress = leap.elapsed / OPENING_ESCAPE.pursuerLeapSeconds;
+        const before = { ...brown.position };
+        brown.position.x = roof.center.x + leap.fromX + (leap.toX - leap.fromX) * progress;
+        brown.position.z = roof.center.z + takeoff + (landing - takeoff) * progress;
+        brown.position.y = roof.center.y + Math.sin(progress * Math.PI) * OPENING_ESCAPE.pursuerLeapHeight;
+        brown.rotation = Math.atan2(leap.toX - leap.fromX, landing - takeoff);
+        brown.velocity = { x: (brown.position.x - before.x) / dt, y: (brown.position.y - before.y) / dt, z: (brown.position.z - before.z) / dt };
+        brown.currentAction = { type: 'move_to', parameters: { resolved: true, filmPursuit: true, openingRoofLeap: progress }, startedAt: tick, duration: 1, progress: 0 };
+        if (progress >= 1) { chase.crossed = true; delete chase.leap; }
+      } else {
+        const dx = actor.position.x - brown.position.x;
+        const dz = (chase.crossed ? actor.position.z : Math.max(actor.position.z, roof.center.z + takeoff)) - brown.position.z;
+        const length = Math.hypot(dx, dz); const travel = Math.min(length, OPENING_ESCAPE.pursuerSpeed * dt);
+        if (length > .01) {
+          brown.position.x += dx / length * travel; brown.position.z += dz / length * travel;
+          brown.rotation = Math.atan2(dx, dz);
+        }
+        brown.velocity = { x: dt ? dx / Math.max(length, .01) * travel / dt : 0, y: 0, z: dt ? dz / Math.max(length, .01) * travel / dt : 0 };
+        brown.currentAction = { type: travel > .01 ? 'move_to' : 'idle', parameters: { resolved: true, filmPursuit: true }, startedAt: tick, duration: 1, progress: 0 };
+      }
     }
     if (distance(actor.position, brown.position) < 2.7) {
       chase.phase = 'failed'; delete state.started;

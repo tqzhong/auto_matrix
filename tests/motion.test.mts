@@ -40,6 +40,15 @@ test('jump, landing recovery and chained strikes are separate finite poses', () 
   assert.ok(Object.values(solveLeg(30, 30)).every(Number.isFinite));
 });
 
+test('Brown has a distinct airborne roof-crossing silhouette', () => {
+  const input = { speed: 7, grounded: false, verticalVelocity: 0, turn: 0 };
+  const jump = advanceMotion(newMotion(), input, .1);
+  const crossing = advanceMotion(newMotion(), { ...input, openingRoofLeap: .5 }, .1);
+  assert.ok(crossing.arms[0].shoulder < jump.arms[0].shoulder - .4);
+  assert.ok(crossing.legs[1].knee > jump.legs[1].knee + .3);
+  assert.ok(crossing.lean < jump.lean - .1);
+});
+
 test('each strike extends at its damage frame and the finisher is a kick', () => {
   const idle = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 };
   for (let combo = 0; combo < 3; combo++) {

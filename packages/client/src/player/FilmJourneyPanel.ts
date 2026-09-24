@@ -40,7 +40,7 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
     const action = !current ? button('resume', '接回 Trinity 的视角') : failed ? button('retry', roof ? '从屋顶入口重试' : '从电话街口重试')
       : !step ? phone?.phase === 'connected' ? '<button disabled>线路已断开 · 卡车正在撞击</button>' : button('next', '继续下一段 →')
         : step.kind === 'reach' ? '<p>合上手记，亲自跑到目标。到达后自动记录。</p>' : button('act', `${step.label} · G`, !close);
-    const status = roof ? 'Brown 就在身后 · Shift 助跑 · 空格越过楼间空隙'
+    const status = roof ? chase?.leap ? 'Brown 正跃过楼间空隙 · 别停下' : 'Brown 就在身后 · Shift 助跑 · 空格越过楼间空隙'
       : phone?.phase === 'running' ? `卡车撞击前 ${phone.remaining.toFixed(1)} 秒 · 到亭内立即按 G` : phone?.phase === 'failed' ? '出口已毁，等待重试' : '连接已断开，Trinity 安全撤离';
     const progress = !roof && phone?.phase === 'running' ? `<div class="film-progress"><i style="width:${Math.max(0, phone.remaining / OPENING_ESCAPE.phoneSeconds * 100)}%"></i></div>` : '';
     return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>${scene.title}</h3><p>Trinity 视角 · 路线、追兵与倒计时自动保存</p></header><article class="film-now"><div><h3>${step?.label ?? '撤离完成'}</h3><p>${journey.lastText}</p><p>${status}</p>${progress}<div class="film-controls">${action}<small>${roof ? '穿过通风设施，到楼间空隙前加速起跳；跌落或被追上可从屋顶入口重试。' : '等待不会自动接通。暂停、断线和读档会保留卡车位置与剩余时间。'}</small></div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;

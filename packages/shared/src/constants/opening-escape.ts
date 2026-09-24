@@ -3,12 +3,16 @@ export const OPENING_ESCAPE = {
   roofGapFar: -5.8,
   roofDrop: 38,
   pursuerSpeed: 6.4,
+  pursuerLeapSeconds: 1.1,
+  pursuerLeapHeight: 3.2,
   phoneSeconds: 15,
   truckImpactSeconds: 1.35,
 } as const;
 
 export interface OpeningRoofEncounter {
   phase: 'running' | 'failed' | 'escaped'; lastTick: number; attempts: number;
+  leap?: { elapsed: number; fromX: number; toX: number };
+  crossed?: boolean;
 }
 
 export interface OpeningPhoneEncounter {

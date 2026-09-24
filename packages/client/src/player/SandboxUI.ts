@@ -203,7 +203,7 @@ export class SandboxUI {
       const failed = journey.openingRoof.phase === 'failed';
       this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.toggle('urgent', failed);
       this.el('film-sequence-line').textContent = journey.lastText;
-      this.el('film-sequence-hint').textContent = failed ? 'J 手记 · 从屋顶入口重试' : 'Brown 在身后 · Shift 助跑 · 空格越过楼间空隙';
+      this.el('film-sequence-hint').textContent = failed ? 'J 手记 · 从屋顶入口重试' : journey.openingRoof.leap ? 'Brown 正跃过楼间空隙 · 继续奔跑' : 'Brown 在身后 · Shift 助跑 · 空格越过楼间空隙';
       if (failed) document.getElementById('game-objective-copy')!.textContent = '撤离失败 · J 打开手记重试';
     }
     if (!journey.visiting && scene.id === 'm1_phone_escape' && journey.openingPhone) {

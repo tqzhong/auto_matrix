@@ -1,7 +1,7 @@
 import { RELOADED, RELOADED_FINALE } from '@auto_matrix/shared';
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, RESCUE, RESCUE_LOADOUTS, GOVERNMENT_RESCUE, AIR_RESCUE, MATRIX_ESCAPE, THE_ONE, OPENING_HOTEL, filmReflections, filmStepPosition, filmEntry, filmPosition, groundHeight, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, newGarageEscape, stepGarageEscape, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, RESCUE, RESCUE_LOADOUTS, GOVERNMENT_RESCUE, AIR_RESCUE, MATRIX_ESCAPE, THE_ONE, OPENING_HOTEL, OPENING_ESCAPE, filmReflections, filmStepPosition, filmEntry, filmPosition, groundHeight, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, newGarageEscape, stepGarageEscape, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -358,6 +358,30 @@ test('Brown pursues Trinity across a real rooftop gap and a fall or capture rest
   assert.equal(state.openingRoof?.attempts, 1); assert.equal(state.step, 0);
   h.actor().position = { ...filmPosition(scene.set, 0, -4), y: FILM_SETS[scene.set].center.y - 8 };
   h.advance(); assert.equal(state.openingRoof?.phase, 'failed', 'falling between roofs can fail the chase');
+});
+
+test('Brown leaps across the roof gap instead of running through empty air, and the leap survives a save', () => {
+  const h = setup(); h.command('start'); let state = h.sandbox.life.film.state!;
+  const roofs = FILM_SCENE_BY_ID.m1_roofs; const center = FILM_SETS[roofs.set].center;
+  Object.assign(state, { scene: roofs.id, step: 1, checkpoint: filmEntry(roofs), openingRoof: { phase: 'running', lastTick: h.tick(), attempts: 0 } });
+  h.actor().currentLocation = roofs.set; h.actor().position = filmPosition(roofs.set, 0, -20);
+  const brown = h.world.agents.get('agent_brown')!;
+  brown.currentLocation = roofs.set; brown.position = filmPosition(roofs.set, 0, 0);
+  h.advance();
+  assert.ok(brown.position.z - center.z < OPENING_ESCAPE.roofGapNear && brown.position.z - center.z > OPENING_ESCAPE.roofGapFar);
+  assert.ok(brown.position.y > center.y + 1, 'Brown must be visibly airborne over the void');
+  assert.ok(state.openingRoof?.leap && brown.currentAction?.parameters.openingRoofLeap);
+  const elapsed = state.openingRoof!.leap!.elapsed;
+  h.players.release('film-player', h.tick()); h.advance(20);
+  assert.equal(state.openingRoof?.leap?.elapsed, elapsed, 'disconnect pauses the crossing');
+  h.players.possess('film-player', 'trinity', h.tick());
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); state = h.sandbox.life.film.state!;
+  assert.equal(state.openingRoof?.leap?.elapsed, elapsed);
+  h.advance(3);
+  assert.equal(state.openingRoof?.crossed, true);
+  assert.equal(state.openingRoof?.leap, undefined);
+  assert.ok(brown.position.z - center.z < OPENING_ESCAPE.roofGapFar && Math.abs(brown.position.y - center.y) < .01);
+  assert.equal(state.openingRoof?.phase, 'running');
 });
 
 test('Trinity can walk from 303 through the roof gap and answer the phone without a player-position shortcut', () => {
