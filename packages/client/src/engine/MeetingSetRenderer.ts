@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
-import { MEETING_CAR, MEETING_DESTINATION, MEETING_ROAD_SAMPLES, MEETING_ROAD_WIDTH, meetingCarPose, meetingPose, type FilmJourney, type MeetingGesture } from '@auto_matrix/shared';
+import { MEETING_CAR, MEETING_DESTINATION, MEETING_ROAD_SAMPLES, MEETING_ROAD_WIDTH, bridgeArrivalPose, meetingCarPose, meetingPose, type FilmJourney, type MeetingGesture } from '@auto_matrix/shared';
 import { LafayetteApproachRenderer } from './LafayetteApproachRenderer.js';
 
 // The occupants and vehicle share the server's saved route. The street and
@@ -265,7 +265,8 @@ export class MeetingSetRenderer {
   update(journey: FilmJourney | undefined, elapsed: number, occupant?: MeetingGesture): void {
     const encounter = journey?.visiting ? undefined : occupant ?? journey?.meeting;
     const pose = encounter && meetingPose({ ...encounter, role: 'neo' });
-    const car = meetingCarPose(encounter);
+    const car = journey?.scene === 'm1_bridge' && !journey.visiting && !encounter && journey.bridgeArrival
+      ? bridgeArrivalPose(journey.bridgeArrival.elapsed) : meetingCarPose(encounter);
     this.vehicle.position.set(car.x, 0, car.z); this.vehicle.rotation.y = car.yaw;
     for (const wheel of this.wheels) { wheel.steering.rotation.y = wheel.front ? car.steering : 0; wheel.spin.rotation.x = -car.distance / 1.02; }
     this.steering.rotation.z = car.steering * 1.6;

@@ -114,7 +114,7 @@ export function groundHeight(position: Vector3, matrix: boolean): number {
 export function playerBlocked(position: Vector3, matrix: boolean, radius = 1.1, structures: WorldStructure[] = []): boolean {
   if (structures.some(s => s.kind === 'barricade' && s.matrix === matrix && s.health > 0 && position.y < s.position.y + (s.film?.height ?? 3) && position.y > s.position.y - 3 && Math.abs(position.x - s.position.x) < (s.film ? s.film.width / 2 : 4) + radius && Math.abs(position.z - s.position.z) < (s.film ? s.film.depth / 2 : 1.2) + radius)) return true;
   const set = filmSetAt(position, matrix);
-  if (set) return filmBlocked(position, set, radius);
+  if (set) return filmBlocked(position, set, radius, structures.some(s => s.id === 'film:bridge:car'));
   if (!matrix) return Math.hypot(position.x - 2170, position.z - 2390) > 440;
   if (position.x < 0 || position.x > 2560 || position.z < 0 || position.z > 2560) return true;
   return CITY_BUILDINGS.some(building => {

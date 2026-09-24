@@ -9,6 +9,8 @@ export interface MeetingEncounter {
 export interface BridgeTailEncounter {
   phase: 'tracking' | 'evaded' | 'failed'; alert: number; lastTick: number; attempts: number; spawned: boolean;
 }
+export interface BridgeArrival { phase: 'approaching' | 'parked'; elapsed: number }
+export const BRIDGE_ARRIVAL_SECONDS = 7;
 export const BRIDGE_TAIL = { spawnX: 0, spawnZ: 46, speed: 2.8, noticeRange: 16, captureRange: 3.2, captureAlert: 60 } as const;
 export type MeetingRole = 'neo' | 'trinity' | 'switch' | 'apoc';
 export type MeetingGesture = Pick<MeetingEncounter, 'phase' | 'elapsed' | 'bugged'> & { role: MeetingRole };
@@ -70,6 +72,17 @@ export function meetingRoadContains(x: number, z: number, radius = 0): boolean {
 export function meetingCarPose(gesture?: Pick<MeetingGesture, 'phase' | 'elapsed'>) {
   return meetingDrive(gesture?.phase === 'driving' ? gesture.elapsed : gesture && ['parked', 'exiting', 'outside'].includes(gesture.phase) ? MEETING_DRIVE_SECONDS : 0);
 }
+export function bridgeArrivalPose(elapsed: number) {
+  const t = Math.max(0, Math.min(1, elapsed / BRIDGE_ARRIVAL_SECONDS));
+  const t2 = t * t; const t3 = t2 * t;
+  const startZ = 70; const startTangent = -12 * BRIDGE_ARRIVAL_SECONDS;
+  const z = (2 * t3 - 3 * t2 + 1) * startZ + (t3 - 2 * t2 + t) * startTangent + (-2 * t3 + 3 * t2) * MEETING_CAR.z;
+  const vz = ((6 * t2 - 6 * t) * startZ + (3 * t2 - 4 * t + 1) * startTangent + (-6 * t2 + 6 * t) * MEETING_CAR.z) / BRIDGE_ARRIVAL_SECONDS;
+  const lane = Math.max(0, Math.min(1, (t - .35) / .5));
+  const x = -7 + 7 * lane * lane * (3 - 2 * lane);
+  const vx = lane > 0 && lane < 1 ? 42 * lane * (1 - lane) / (BRIDGE_ARRIVAL_SECONDS * .5) : 0;
+  return { x, z, yaw: t === 1 ? 0 : Math.atan2(-vx, -vz), speed: Math.hypot(vx, vz), steering: 0, distance: Math.hypot(x + 7, startZ - z) };
+}
 export function meetingCarPoint(car: { x: number; z: number; yaw: number }, x: number, z: number) {
   return { x: car.x + Math.cos(car.yaw) * x + Math.sin(car.yaw) * z, z: car.z - Math.sin(car.yaw) * x + Math.cos(car.yaw) * z };
 }
@@ -95,10 +108,9 @@ export function meetingPose(gesture: MeetingGesture) {
     alert: phase === 'choice' ? 1 : phase === 'scanning' ? 1 - ease(t, 0, 2) : 0,
   };
 }
-export function meetingRoot(encounter: MeetingEncounter, role: MeetingRole) {
+export function meetingRoot(encounter: MeetingEncounter, role: MeetingRole, car = meetingCarPose(encounter)) {
   const seat = MEETING_CAR.seat;
   const rear = MEETING_CAR.z + MEETING_CAR.rear;
-  const car = meetingCarPose(encounter);
   const world = (x: number, z: number, yaw: number) => ({ ...meetingCarPoint(car, x, z - MEETING_CAR.z), yaw: yaw + car.yaw });
   if (role === 'trinity' && (encounter.phase === 'exiting' || encounter.phase === 'outside')) {
     const t = encounter.phase === 'outside' ? 0 : MEETING_TIMING.exiting - encounter.elapsed;

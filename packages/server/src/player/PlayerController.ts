@@ -231,6 +231,7 @@ export class PlayerController {
         input = { ...input, yaw }; session.input.yaw = yaw;
       }
       this.sandbox?.life.film.hotelFrame(agent, dt, tick);
+      this.sandbox?.life.film.bridgeArrivalFrame(agent, dt, tick);
       this.sandbox?.life.film.workdayFrame(agent, dt, tick);
       this.sandbox?.life.film.apartmentFrame(agent, dt, tick);
       this.sandbox?.life.film.clubFrame(agent, dt, tick);

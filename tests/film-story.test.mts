@@ -2352,6 +2352,7 @@ test('the entire film route completes through interactions, driving and real com
           for (let frame = 0; frame < 30; frame++) h.players.step(.1, true, h.tick());
           assert.equal(state.step, 3); continue;
         }
+        if (scene.id === 'm1_bridge') for (let frame = 0; frame < 80 && state.bridgeArrival?.phase === 'approaching'; frame++) h.players.step(.1, true, h.tick());
         h.command('act');
         if (scene.id === 'm2_burly') {
           for (let frame = 0; frame < 28 && state.scene === scene.id; frame++) h.players.step(.1, true, h.tick());

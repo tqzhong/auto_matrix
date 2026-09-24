@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { meetingCarPose, type FilmJourney } from '@auto_matrix/shared';
+import { bridgeArrivalPose, meetingCarPose, type FilmJourney } from '@auto_matrix/shared';
 import { MeetingSetRenderer } from '../packages/client/src/engine/MeetingSetRenderer.js';
 
 test('the actual car body uses the same fast pose as its occupants between journey snapshots', t => {
@@ -26,5 +26,11 @@ test('the actual car body uses the same fast pose as its occupants between journ
       assert.ok(vehicle.position.distanceTo(new THREE.Vector3(car.x, 0, car.z)) < .001, 'a slow journey snapshot cannot leave the car behind its occupants');
       assert.ok(Math.abs(vehicle.rotation.y - car.yaw) < .001);
     }
+    journey.scene = 'm1_bridge'; delete journey.meeting;
+    journey.bridgeArrival = { phase: 'approaching', elapsed: 2.35 };
+    renderer.update(journey, 2.35);
+    const inbound = bridgeArrivalPose(2.35);
+    assert.ok(vehicle.position.distanceTo(new THREE.Vector3(inbound.x, 0, inbound.z)) < .001);
+    assert.ok(Math.abs(vehicle.rotation.y - inbound.yaw) < .001);
   } finally { renderer.dispose(); globalThis.document = document; }
 });

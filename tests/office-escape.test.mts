@@ -46,6 +46,7 @@ function setup() {
       } else if (scene().id === 'm1_wake_again') {
         frame(6); goal(); command('act'); frame(12); command('act'); frame(5);
       } else if (scene().id === 'm1_bridge') {
+        frame(7.1);
         command('act'); for (let f = 0; f < 81; f++) players.step(.1, true, tick);
         command('meeting:stay'); break;
       } else { command('act'); advance((step.seconds ?? 3) * 2); }

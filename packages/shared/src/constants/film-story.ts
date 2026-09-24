@@ -107,6 +107,7 @@ export interface FilmJourney {
   pills?: import('./pills.js').PillEncounter;
   interrogation?: import('./interrogation.js').InterrogationEncounter;
   meeting?: import('./meeting.js').MeetingEncounter;
+  bridgeArrival?: import('./meeting.js').BridgeArrival;
   bridgeTail?: import('./meeting.js').BridgeTailEncounter;
   hotel?: import('./lafayette.js').HotelApproach;
   ambush?: import('./ambush.js').AmbushEncounter;
@@ -189,7 +190,7 @@ export const FILM_SCENES: FilmScene[] = [
   scene('m1_ledge', 1, 'office_ledge', 'neo', '窗外的恐惧', 'office_call', 'infiltration', '脚下是真实的高空。沿窄台走到维修架，或选择退回办公室；两种结果都会继续故事。', [walk('沿幕墙走到脚手架', 0, OFFICE_LADDER.z), think('决定是否继续下降', '原片中 Neo 在这里退缩。游戏允许你完成逃脱，或者回到被捕后的路线。', 0, OFFICE_LADDER.z)]),
   scene('m1_interrogation', 1, 'agent_interrogation', 'neo', '无法开口', 'office_call', 'awakening', 'Smith 把档案放在金属桌上。按 G 坐下查看，他要求你帮助寻找 Morpheus。', [use('坐下查看 Smith 的档案', '档案把 Thomas Anderson 与 Neo 两种生活联系起来。Smith 用清除记录交换合作。', INTERROGATION_ROOM.approach.x, 0), use('拒绝合作，要求打电话', '嘴唇失去原来的形状。两名特工将你按在桌上，Smith 放下的追踪器进入腹部；眼前的房间消失。', INTERROGATION_ROOM.approach.x, 0)], ['smith', 'agent_jones', 'agent_brown']),
   scene('m1_wake_again', 1, 'anderson_flat', 'neo', '并非一场梦', 'office_call', 'night', 'Neo 在公寓醒来。响起的有线座机把办公室之后的经历与下一次见面连接起来。', [use('走到工作台，拿起座机听筒', 'Morpheus 把接头地点定在 Adams Street 桥下。', APARTMENT.phone.approachX, APARTMENT.phone.approachZ), walk('离开 101 公寓', 0, 13)]),
-  scene('m1_bridge', 1, 'adams_bridge', 'neo', '桥下的车灯', 'pill', 'contact', '雨夜桥下，轿车的后门等着你。Apoc 开车，Switch 在前座，Trinity 留出后座的位置。', [walk('走近轿车右后门', MEETING_CAR.approach.x, MEETING_CAR.approach.z), use('打开后车门并上车', 'Switch 要求检查追踪装置。Trinity 让你重新考虑是否现在离开。', MEETING_CAR.approach.x, MEETING_CAR.approach.z)], ['trinity', 'switch', 'apoc']),
+  scene('m1_bridge', 1, 'adams_bridge', 'neo', '桥下的车灯', 'pill', 'contact', '雨夜桥下，后方的车灯正在接近。等轿车停在桥下，再走向右后门；Apoc 开车，Switch 在前座，Trinity 留出后座的位置。', [walk('等待轿车靠边，走近右后门', MEETING_CAR.approach.x, MEETING_CAR.approach.z), use('打开后车门并上车', 'Switch 要求检查追踪装置。Trinity 让你重新考虑是否现在离开。', MEETING_CAR.approach.x, MEETING_CAR.approach.z)], ['trinity', 'switch', 'apoc']),
   scene('m1_bug', 1, 'extraction_car', 'neo', '取出追踪器', 'pill', 'awakening', '你坐在 Trinity 身旁。扫描发现追踪器时，按住 G 保持身体稳定，松开会暂停抽取。检查后由 Apoc 送你赴约。', [use('配合扫描与抽取', '装置从腹部取出机械追踪器，Trinity 将它扔出车外。', MEETING_CAR.seat, MEETING_CAR.z + MEETING_CAR.rear), think('重新判断昨夜的经历', '当证据与熟悉的解释冲突，下一步应当相信什么？', MEETING_CAR.seat, MEETING_CAR.z + MEETING_CAR.rear), use('乘车抵达 Lafayette，下车后走到入口', '旧楼的门在面前。Morpheus 正在楼上的房间等你。', MEETING_DESTINATION.x, MEETING_DESTINATION.z)], ['trinity', 'switch', 'apoc']),
   scene('m1_pills', 1, 'lafayette', 'neo', '两把皮椅之间', 'pill', 'awakening', 'Lafayette 的旧房间里，Morpheus 把决定交给你。走到皮椅前，按 G 坐下听他说。', [use('坐到 Morpheus 对面的皮椅上', 'Morpheus 摊开双手。一边继续追问，一边回到熟悉的生活；决定仍然属于你。', 0, -3.3), think('亲自选择红色或蓝色药丸', '电影中的 Neo 选择红色药丸。蓝色药丸是游戏的日常生活分支；选择后，Neo 会亲手拿取药丸，用水吞服。', 0, -3.3)], ['morpheus', 'trinity']),
   scene('m1_mirror', 1, 'lafayette', 'neo', '镜面与定位', 'pill', 'awakening', 'Morpheus 起身，带你穿过会客厅后方的门。跟随他进入追踪室，再坐到设备和裂镜旁。', [use('坐进追踪椅，触碰裂镜', '银色镜面覆盖 Neo，接线组锁定信号；眼前的房间消失，培养舱中的身体睁开眼睛。', MIRROR_TOUCH.x, MIRROR_TOUCH.z, 8)], ['morpheus', 'trinity', 'apoc', 'switch', 'cypher']),

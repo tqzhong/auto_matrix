@@ -372,6 +372,8 @@ export class Engine {
       if (previous < 1.2 && current >= 1.2) this.audio.windowSound(true);
     }
     if (after && ['m1_bridge', 'm1_bug'].includes(after.scene) && !after.visiting && after.actor === this.playerControls?.id && this.running) {
+      if (after.scene === 'm1_bridge' && after.bridgeArrival?.phase === 'approaching' && before?.scene !== after.scene) this.audio.meetingSound('approach');
+      if (after.scene === 'm1_bridge' && before?.bridgeArrival?.phase === 'approaching' && after.bridgeArrival?.phase === 'parked') this.audio.meetingSound('brake');
       const previous = before?.meeting; const current = after.meeting;
       if (current && previous && current.phase === previous.phase) {
         if (['boarding', 'leaving', 'exiting'].includes(current.phase) && previous.elapsed < 7.7 && current.elapsed >= 7.7) this.audio.meetingSound('door');

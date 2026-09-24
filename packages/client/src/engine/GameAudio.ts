@@ -186,15 +186,15 @@ export class GameAudio {
     source.connect(filter); filter.connect(gain); gain.connect(output); source.start(at);
     source.onended = () => { source.disconnect(); filter.disconnect(); gain.disconnect(); };
   }
-  meetingSound(kind: 'door' | 'pump' | 'release' | 'wiper'): void {
+  meetingSound(kind: 'door' | 'pump' | 'release' | 'wiper' | 'approach' | 'brake'): void {
     const bus = this.effects(); if (!bus) return;
-    const { context: ctx, output } = bus; const duration = kind === 'pump' ? .42 : .28;
+    const { context: ctx, output } = bus; const duration = kind === 'approach' ? 1.4 : kind === 'brake' ? .7 : kind === 'pump' ? .42 : .28;
     const buffer = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * duration), ctx.sampleRate); const samples = buffer.getChannelData(0);
     for (let i = 0; i < samples.length; i++) samples[i] = Math.random() * 2 - 1;
     const source = ctx.createBufferSource(); source.buffer = buffer;
-    const filter = ctx.createBiquadFilter(); filter.type = 'bandpass'; filter.frequency.value = kind === 'door' ? 230 : kind === 'pump' ? 850 : kind === 'wiper' ? 1600 : 2100; filter.Q.value = kind === 'door' ? 4 : .9;
+    const filter = ctx.createBiquadFilter(); filter.type = 'bandpass'; filter.frequency.value = kind === 'approach' ? 180 : kind === 'brake' ? 560 : kind === 'door' ? 230 : kind === 'pump' ? 850 : kind === 'wiper' ? 1600 : 2100; filter.Q.value = kind === 'door' ? 4 : .9;
     const gain = ctx.createGain(); const at = ctx.currentTime;
-    gain.gain.setValueAtTime(.0001, at); gain.gain.linearRampToValueAtTime(kind === 'door' ? .18 : kind === 'wiper' ? .025 : .085, at + .015); gain.gain.exponentialRampToValueAtTime(.0001, at + duration);
+    gain.gain.setValueAtTime(.0001, at); gain.gain.linearRampToValueAtTime(kind === 'door' ? .18 : kind === 'wiper' ? .025 : kind === 'approach' ? .055 : .085, at + (kind === 'approach' ? .35 : .015)); gain.gain.exponentialRampToValueAtTime(.0001, at + duration);
     source.connect(filter); filter.connect(gain); gain.connect(output); source.start(at);
     source.onended = () => { source.disconnect(); filter.disconnect(); gain.disconnect(); };
   }

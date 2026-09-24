@@ -10,7 +10,7 @@ import { LobbyCombatSystem } from './LobbyCombatSystem.js';
 import { HelCoatcheckSystem } from './HelCoatcheckSystem.js';
 import { OfficeEscapeSystem } from './OfficeEscapeSystem.js';
 import { INTERROGATION_CAST, INTERROGATION_ROOM, INTERROGATION_TIMING, interrogationLocked, interrogationRoot } from '@auto_matrix/shared';
-import { BRIDGE_TAIL, MEETING_CAR, MEETING_CAST, MEETING_TIMING, meetingLocked, meetingRoot, type MeetingEncounter } from '@auto_matrix/shared';
+import { BRIDGE_TAIL, BRIDGE_ARRIVAL_SECONDS, MEETING_CAR, MEETING_CAST, MEETING_TIMING, bridgeArrivalPose, meetingLocked, meetingRoot, type MeetingEncounter } from '@auto_matrix/shared';
 import { LAFAYETTE, LAFAYETTE_WELCOME, LAFAYETTE_KNOCK_SECONDS, HOTEL_ROUTE_LENGTH, HOTEL_DOOR_PROGRESS, hotelRoutePose, hotelRouteProgress, lafayetteKnocking, lafayetteKnockRoot, lafayetteWelcomeLocked, lafayetteWelcomeRoot, filmSetAt } from '@auto_matrix/shared';
 import { OFFICE_WORKDAY, OFFICE_DELIVERY_SECONDS, officeCourierRoot, officeRecipientRoot, workdayLocked, workdayText } from '@auto_matrix/shared';
 import { APARTMENT, WAKE_CALL, apartmentAfter, apartmentDoor, apartmentLocked, apartmentText, wakeCallLocked, wakeCallRoot, wakeCallText, lifeRoomCenter, type ApartmentPhase, type WakeCallPhase } from '@auto_matrix/shared';
@@ -1187,6 +1187,30 @@ export class FilmStorySystem {
       : encounter.phase === 'removing' ? focus ? '保持稳定。Trinity 拉动泵杆，透明收集筒里的压力正在改变。' : '你暂时停止配合。装置停在原处；继续按住 G 才会抽取。'
       : '追踪器已经离开身体。Trinity 把收集装置移到窗边，将它弹入雨中。';
     if (finish) this.advance(encounter.bugged ? this.step!.text! : '扫描完成，没有发现追踪装置。Trinity 收起仪器，确认接头安全。', agent, tick);
+  }
+  bridgeArrivalFrame(agent: AgentState, dt: number, tick: number): void {
+    const state = this.state;
+    if (!state || state.scene !== 'm1_bridge' || state.visiting || state.meeting || !state.bridgeArrival) return;
+    const arrival = state.bridgeArrival;
+    if (!this.controls(agent) || MEETING_CAST.some(id => this.world.agents.get(id)?.controller)) return;
+    if (arrival.phase === 'approaching') arrival.elapsed = Math.min(BRIDGE_ARRIVAL_SECONDS, arrival.elapsed + Math.min(.1, dt));
+    if (arrival.elapsed >= BRIDGE_ARRIVAL_SECONDS && arrival.phase === 'approaching') {
+      arrival.phase = 'parked'; state.lastText = '轿车从身后驶来，在桥下靠边停稳。Trinity 从后座示意你靠近右后门。';
+    }
+    const car = bridgeArrivalPose(arrival.elapsed);
+    let body = this.sandbox().structures.find(structure => structure.id === 'film:bridge:car');
+    if (!body) {
+      body = { id: 'film:bridge:car', kind: 'barricade', owner: 'matrix', position: filmPosition(this.scene!.set, car.x, car.z), matrix: true,
+        health: 1, film: { scene: 'm1_bridge', width: MEETING_CAR.width, depth: MEETING_CAR.depth, height: MEETING_CAR.height } };
+      this.sandbox().structures.push(body);
+    } else body.position = filmPosition(this.scene!.set, car.x, car.z);
+    const seated: MeetingEncounter = { phase: 'ready', elapsed: 0, bugged: false, approach: { ...MEETING_CAR.approach, yaw: -Math.PI / 2 } };
+    for (const role of MEETING_CAST) {
+      const actor = this.world.agents.get(role)!; const pose = meetingRoot(seated, role, car);
+      actor.position = filmPosition(this.scene!.set, pose.x, pose.z); actor.rotation = pose.yaw;
+      actor.velocity = { x: 0, y: 0, z: 0 }; actor.currentLocation = this.scene!.set; actor.isInMatrix = true;
+      actor.currentAction = { type: 'idle', parameters: { meeting: { phase: 'ready', elapsed: 0, bugged: false, role } }, startedAt: tick, duration: 1, progress: 0 };
+    }
   }
   private bridgeTailFrame(agent: AgentState, tick: number): void {
     const state = this.state;
@@ -3512,8 +3536,10 @@ export class FilmStorySystem {
         const attempts = state.bridgeTail.attempts + 1;
         this.sandbox().threats = this.sandbox().threats.filter(threat => threat.id !== 'bridge:tail');
         state.bridgeTail = { phase: 'tracking', alert: 0, lastTick: tick, attempts, spawned: false };
+        if (state.bridgeArrival) state.bridgeArrival = { phase: 'approaching', elapsed: 0 };
         state.step = 0; state.checkpoint = filmEntry(this.scene); delete state.started;
         this.place(agent, this.scene, state.checkpoint); agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentAction = null;
+        this.bridgeArrivalFrame(agent, 0, tick);
         this.bridgeTailFrame(agent, tick);
         return state.lastText = '回到桥下入口。追踪器还在体内，赶在尾随特工靠近前到达右后车门。';
       }
@@ -3995,10 +4021,12 @@ export class FilmStorySystem {
       this.hotelFrame(agent, 0, tick); return state.lastText;
     }
     if (state.scene === 'm1_bridge' && state.step === 1) {
+      if (state.bridgeArrival?.phase === 'approaching') return '轿车还在从身后驶入桥下。等它靠边停稳，再打开右后门。';
       if (MEETING_CAST.some(id => this.world.agents.get(id)?.controller)) return '一位接头者正在由另一位玩家控制，等待对方结束后再上车。';
       const center = FILM_SETS[this.scene.set].center;
       state.meeting = { phase: 'boarding', elapsed: 0, bugged: state.office?.bugged ?? state.office?.outcome !== 'escaped',
         approach: { x: agent.position.x - center.x, z: agent.position.z - center.z, yaw: agent.rotation } };
+      this.sandbox().structures = this.sandbox().structures.filter(structure => structure.id !== 'film:bridge:car');
       this.sandbox().threats = this.sandbox().threats.filter(threat => threat.id !== 'bridge:tail'); delete state.bridgeTail;
       delete state.started; this.meetingFrame(agent, false, 0, tick); return state.lastText;
     }
@@ -4163,6 +4191,7 @@ export class FilmStorySystem {
     delete state.contact;
     delete state.wakeCall;
     delete state.bridgeTail;
+    state.bridgeArrival = scene.id === 'm1_bridge' ? { phase: 'approaching', elapsed: 0 } : undefined;
     delete state.club;
     delete state.sentinel;
     delete state.interlude;
@@ -4213,6 +4242,7 @@ export class FilmStorySystem {
     this.sandbox().structures = this.sandbox().structures.filter(structure => structure.id !== 'film:reloaded:door');
     this.sandbox().structures = this.sandbox().structures.filter(structure => structure.id !== 'film:library:bookdoor');
     this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== 'film:apartment:door');
+    this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== 'film:bridge:car');
     delete state.pills;
     delete state.interrogation;
     if (!['m1_pills', 'm1_mirror'].includes(scene.id)) { delete state.hotel; this.sealHotelDoor(); }
@@ -4251,6 +4281,7 @@ export class FilmStorySystem {
     this.sandbox().weather = FILM_SETS[scene.set].light === 'storm' ? 'rain' : 'clear';
     this.sandbox().weatherUntil = tick + 100000;
     this.stageCast();
+    if (scene.id === 'm1_bridge') this.bridgeArrivalFrame(actor, 0, tick);
     this.reconcileCast();
     if (scene.id === 'm3_oracle_last') {
       const first = life.choices.oracle_first;
@@ -4503,7 +4534,8 @@ export class FilmStorySystem {
       }
       if ((scene.id === 'm1_bridge' || scene.id === 'm1_bug') && MEETING_CAST.includes(id as typeof MEETING_CAST[number])) {
         const encounter: MeetingEncounter = this.state!.meeting ?? { phase: 'ready', elapsed: 0, bugged: false, approach: { ...MEETING_CAR.approach, yaw: -Math.PI / 2 } };
-        const role = id as typeof MEETING_CAST[number]; const pose = meetingRoot(encounter, role);
+        const role = id as typeof MEETING_CAST[number]; const arrival = this.state!.bridgeArrival;
+        const pose = meetingRoot(encounter, role, arrival && !this.state!.meeting ? bridgeArrivalPose(arrival.elapsed) : undefined);
         actor.position = filmPosition(scene.set, pose.x, pose.z); actor.rotation = pose.yaw;
         actor.currentAction = { type: 'idle', parameters: { meeting: { phase: encounter.phase, elapsed: encounter.elapsed, bugged: encounter.bugged, role } }, startedAt: this.state!.enteredAt, duration: 100000, progress: 0 };
       }
@@ -4894,6 +4926,7 @@ export class FilmStorySystem {
       if (state.step === 2) { delete state.started; return; }
     }
     if (state.scene === 'm1_bridge') {
+      this.bridgeArrivalFrame(actor, 0, tick);
       this.bridgeTailFrame(actor, tick);
       if (state.bridgeTail?.phase === 'failed') return;
     }

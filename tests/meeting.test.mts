@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SCENE_BY_ID, FILM_SETS, filmEntry, filmStepPosition, filmPosition, filmSetAt, meetingDrive, meetingRoadContains, MEETING_DRIVE_SECONDS, MEETING_DESTINATION, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, filmEntry, filmStepPosition, filmPosition, filmSetAt, meetingDrive, meetingRoadContains, playerBlocked, MEETING_DRIVE_SECONDS, MEETING_DESTINATION, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -114,6 +114,45 @@ test('a clean office escape has no bridge tail, even if Neo lingers', () => {
   const h = setup(false); h.state().step = 0; h.neo.position = filmEntry(FILM_SCENE_BY_ID.m1_bridge);
   h.frames(25); assert.equal(h.state().bridgeTail, undefined);
   assert.equal(h.sandbox.state.threats.some(threat => threat.id === 'bridge:tail'), false);
+});
+
+test('the bridge car approaches with its passengers and waits for a physical stop before boarding', () => {
+  const h = setup(false); h.state().step = 0; h.neo.position = filmEntry(FILM_SCENE_BY_ID.m1_bridge);
+  h.state().bridgeArrival = { phase: 'approaching', elapsed: 0 };
+  const trinity = h.world.agents.get('trinity')!;
+  h.frames(.05);
+  assert.ok(h.state().bridgeArrival!.elapsed <= .1, 'the car must move on the player frame clock, not jump half a second per story tick');
+  assert.equal(playerBlocked(filmPosition('film_adams_bridge', 0, -14), true, 1.1, h.sandbox.state.structures), false);
+  assert.equal(playerBlocked(h.sandbox.state.structures.find(structure => structure.id === 'film:bridge:car')!.position,
+    true, 1.1, h.sandbox.state.structures), true);
+  h.frames(.5);
+  const start = { ...trinity.position };
+  h.frames(2);
+  assert.ok(h.state().bridgeArrival!.elapsed > 1);
+  assert.ok(trinity.position.z < start.z);
+  h.state().step = 1;
+  h.neo.position = filmStepPosition(FILM_SCENE_BY_ID.m1_bridge, FILM_SCENE_BY_ID.m1_bridge.steps[1]);
+  assert.match(h.command('act'), /停稳/);
+  assert.equal(h.state().meeting, undefined);
+});
+
+test('the approaching car keeps its exact position through pause, disconnect and saved recovery', () => {
+  const h = setup(false); h.state().bridgeArrival = { phase: 'approaching', elapsed: 0 };
+  h.frames(2);
+  const elapsed = h.state().bridgeArrival!.elapsed;
+  const car = structuredClone(h.sandbox.state.structures.find(structure => structure.id === 'film:bridge:car')!.position);
+  const trinity = { ...h.world.agents.get('trinity')!.position };
+  h.frames(3, false, false); assert.equal(h.state().bridgeArrival!.elapsed, elapsed);
+  h.players.release('player', h.tick()); h.frames(3);
+  assert.equal(h.state().bridgeArrival!.elapsed, elapsed);
+  assert.deepEqual(h.sandbox.state.structures.find(structure => structure.id === 'film:bridge:car')!.position, car);
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); h.players.possess('player', 'neo', h.tick());
+  assert.deepEqual(h.world.agents.get('trinity')!.position, trinity);
+  h.frames(.05);
+  assert.ok(h.state().bridgeArrival!.elapsed > elapsed && h.state().bridgeArrival!.elapsed < elapsed + .1);
+  h.frames(6); assert.equal(h.state().bridgeArrival!.phase, 'parked');
+  assert.equal(h.sandbox.state.structures.find(structure => structure.id === 'film:bridge:car')?.position.z,
+    filmPosition('film_adams_bridge', 0, -14).z);
 });
 
 test('older captured saves without a bugged flag still face the bridge tail', () => {

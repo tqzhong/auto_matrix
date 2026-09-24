@@ -131,7 +131,7 @@ export const ORACLE_FURNITURE: FilmObstacle[] = [
   { x: 3, z: -17, width: 5, depth: 3, height: 2.1 },
   { x: 8, z: -11, width: 2.7, depth: 2.2, height: 1.95 },
 ];
-export function filmObstacles(set: FilmSet): FilmObstacle[] {
+export function filmObstacles(set: FilmSet, movingMeetingCar = false): FilmObstacle[] {
   if (set.id === 'film_mobil_station') return [];
   if (set.id === 'film_hel_garage') return [-18, 18].flatMap(x => [-17, 9, 24].map(z => ({ x, z, width: 8.5, depth: 13, height: 5 })));
   if (set.id === 'film_club_hel') return [
@@ -158,7 +158,7 @@ export function filmObstacles(set: FilmSet): FilmObstacle[] {
   if (set.id === 'film_white_rabbit_club') return CLUB_OBSTACLES;
   if (set.id === 'film_adams_bridge' || set.id === 'film_extraction_car') {
     const parked = meetingCarPose({ phase: 'parked', elapsed: 0 });
-    return [MEETING_CAR, { x: parked.x, z: parked.z, width: MEETING_CAR.depth, depth: MEETING_CAR.width, height: MEETING_CAR.height },
+    return [...(movingMeetingCar ? [] : [MEETING_CAR]), { x: parked.x, z: parked.z, width: MEETING_CAR.depth, depth: MEETING_CAR.width, height: MEETING_CAR.height },
       { x: MEETING_DESTINATION.x, z: 0, width: 46, depth: 52, height: 99 },
       { x: MEETING_DESTINATION.x, z: 65, width: 25, depth: 18, height: 39 },
       ...[-23, 23].map(x => ({ x, z: -14, width: 3.6, depth: 23, height: 16 }))];
@@ -218,7 +218,7 @@ export function filmObstacles(set: FilmSet): FilmObstacle[] {
   return columns;
 }
 
-export function filmBlocked(position: Vector3, set: FilmSet, radius: number): boolean {
+export function filmBlocked(position: Vector3, set: FilmSet, radius: number, movingMeetingCar = false): boolean {
   const x = position.x - set.center.x; const z = position.z - set.center.z;
   if (set.id === 'film_freeway_trucks' && position.y > set.center.y + 3.5 &&
     (Math.abs(x - TRUCKS.roof.x) > TRUCKS.roof.width / 2 - radius || Math.abs(z - TRUCKS.roof.z) > TRUCKS.roof.depth / 2 - radius)) return true;
@@ -231,7 +231,7 @@ export function filmBlocked(position: Vector3, set: FilmSet, radius: number): bo
     if (!meetingRoadContains(x, z, radius)) return true;
   } else if (!hotelEscape && (Math.abs(x) > set.width / 2 - radius - .6 || Math.abs(z) > set.depth / 2 - radius - .6)) return true;
   if (position.y < filmGroundHeight(position, set) - .8) return true;
-  return filmObstacles(set).some(o => Math.abs(x - o.x) < o.width / 2 + radius && Math.abs(z - o.z) < o.depth / 2 + radius && position.y < set.center.y + o.height);
+  return filmObstacles(set, movingMeetingCar).some(o => Math.abs(x - o.x) < o.width / 2 + radius && Math.abs(z - o.z) < o.depth / 2 + radius && position.y < set.center.y + o.height);
 }
 
 export function filmGroundHeight(position: Vector3, set: FilmSet): number {
