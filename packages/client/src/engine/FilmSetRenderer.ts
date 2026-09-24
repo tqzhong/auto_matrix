@@ -157,7 +157,9 @@ export class FilmSetRenderer {
     this.markerLight = new THREE.PointLight(0xf6d99c, 5, 5); scene.add(this.markerLight);
   }
   get active(): FilmSet | undefined { return this.current; }
+  get televisionPreviewImage(): string | undefined { return this.construct?.televisionPreviewImage; }
   setMirrorSubject(subject?: THREE.Object3D): void { this.mirrorSubject = subject; }
+  renderTelevisionPreview(renderer: THREE.WebGLRenderer): void { this.construct?.renderPreview(renderer, this.scene.environment); }
   update(player: AgentState | undefined, sandbox: SandboxState | undefined, elapsed: number, playerPosition?: Vector3, cameraPosition?: Vector3, workday?: OfficeWorkday, firstPerson = false): FilmSet | undefined {
     let set = player ? filmSetAt(player.position, player.isInMatrix) : undefined;
     if (set?.id === 'film_extraction_car' && player?.currentLocation === 'film_adams_bridge') set = FILM_SETS.film_adams_bridge;

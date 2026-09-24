@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { FILM_SETS, filmObstacles, filmPosition, playerBlocked, type FilmJourney } from '@auto_matrix/shared';
-import { ConstructRenderer } from '../packages/client/src/engine/ConstructRenderer.js';
+import { ConstructRenderer, renderTargetPreviewImage } from '../packages/client/src/engine/ConstructRenderer.js';
 import { DesertRenderer } from '../packages/client/src/engine/DesertRenderer.js';
 
 const canvasDocument = () => ({
@@ -27,6 +27,24 @@ test('the Construct has physical red chairs, an authored CRT reveal and a separa
     renderer.update(journey); const waiting = light.intensity;
     journey.awakening.started = true; journey.awakening.elapsed = 10; renderer.update(journey);
     assert.ok(light.intensity > waiting * 4, 'the ruined television must visibly light the actors instead of changing only text');
+    const screen = root.getObjectByName('construct-television-screen') as THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
+    const paintedMap = screen.material.map;
+    const previousTarget = new THREE.WebGLRenderTarget(1, 1); let activeTarget: THREE.WebGLRenderTarget | null = previousTarget;
+    let previewScene: THREE.Scene | undefined; let previewCamera: THREE.Camera | undefined;
+    const webgl = {
+      getRenderTarget: () => activeTarget,
+      setRenderTarget: (target: THREE.WebGLRenderTarget | null) => { activeTarget = target; },
+      render: (scene: THREE.Scene, camera: THREE.Camera) => { previewScene = scene; previewCamera = camera; },
+    } as unknown as THREE.WebGLRenderer;
+    globalThis.document = savedDocument;
+    assert.equal(renderer.renderPreview(webgl), true, 'the television captures the playable desert instead of retaining a painted stand-in');
+    assert.ok(previewScene?.getObjectByName('desert-ruined-skyline'));
+    assert.ok(previewScene?.getObjectByName('desert-harvest-towers'));
+    assert.ok(previewCamera && (previewCamera as THREE.PerspectiveCamera).position.z > 30, 'the preview looks down the same route as Neo on arrival');
+    assert.notEqual(screen.material.map, paintedMap);
+    assert.equal(screen.material.map?.isRenderTargetTexture, true);
+    assert.equal(activeTarget, previousTarget, 'offscreen rendering restores the game render target');
+    previousTarget.dispose();
   } finally { renderer.dispose(); globalThis.document = savedDocument; }
 
   globalThis.document = canvasDocument(); const armouryRoot = new THREE.Group(); const armoury = new ConstructRenderer(armouryRoot, 'm1_guns');
@@ -77,4 +95,21 @@ test('the desert reveal has a walkable overlook, collidable ruins, ash and opera
     assert.ok(podBounds.max.y - podBounds.min.y > 2, 'a pod must read as a suspended capsule at player distance');
     assert.ok(root.getObjectByName('desert-ruined-skyline')!.children.length <= 6, 'the rebuilt city must remain batched at player distance');
   } finally { renderer.dispose(); }
+});
+
+test('the television preview can become a correctly oriented transition frame', () => {
+  const savedDocument = globalThis.document; let captured: Uint8ClampedArray | undefined;
+  globalThis.document = { createElement: () => ({ width: 0, height: 0,
+    getContext: () => ({ createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }),
+      putImageData: (image: { data: Uint8ClampedArray }) => { captured = image.data; } }),
+    toDataURL: () => 'data:image/webp;base64,preview' }) } as unknown as Document;
+  const target = new THREE.WebGLRenderTarget(1, 2);
+  const webgl = { readRenderTargetPixels: (_target: THREE.WebGLRenderTarget, _x: number, _y: number, _width: number, _height: number, pixels: Uint8Array) => {
+    pixels.set([255, 0, 0, 255, 0, 0, 128, 255]);
+  } } as unknown as THREE.WebGLRenderer;
+  try {
+    assert.equal(renderTargetPreviewImage(webgl, target), 'data:image/webp;base64,preview');
+    assert.deepEqual(Array.from(captured!.slice(0, 4)), [0, 0, 188, 255], 'the bottom WebGL row becomes the top browser row with linear colour converted for CSS');
+    assert.deepEqual(Array.from(captured!.slice(4, 8)), [255, 0, 0, 255]);
+  } finally { target.dispose(); globalThis.document = savedDocument; }
 });

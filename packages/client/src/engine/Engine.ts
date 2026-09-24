@@ -49,6 +49,8 @@ export class Engine {
   private eventAge = 10;
   private frameRate = new FrameRate();
   get fps(): number { return this.frameRate.fps; }
+  private lastTelevisionPreviewImage?: string;
+  get televisionPreviewImage(): string | undefined { return this.lastTelevisionPreviewImage; }
   playerControls?: PlayerControls;
   private running = true;
   private tick = 0;
@@ -170,6 +172,8 @@ export class Engine {
     }
     this.particleSystem.update(delta);
     this.combatEffects.update(this.running ? delta * Math.min(1, this.simulationSpeed) : 0);
+    this.filmSets.renderTelevisionPreview(this.renderer);
+    if (this.filmSets.televisionPreviewImage) this.lastTelevisionPreviewImage = this.filmSets.televisionPreviewImage;
     for (let i = 0; i < this.rainPositions.length; i += 6) {
       const drop = delta * 95;
       this.rainPositions[i + 1] -= drop;
@@ -202,6 +206,7 @@ export class Engine {
   private phoneRingAt = -10000;
   setSandbox(state: SandboxState, agents: Record<string, AgentState>): void {
     const before = this.sandbox?.neoLife?.journey; const after = state.neoLife?.journey;
+    if (after?.scene === 'm1_construct' && before?.scene !== 'm1_construct') this.lastTelevisionPreviewImage = undefined;
     if (after?.scene === 'm1_wake_up' && !after.visiting && after.actor === this.playerControls?.id && before?.scene === after.scene && this.running) {
       const previous = before.contact; const current = after.contact;
       if (current?.phase === 'knocking' && previous?.phase === 'knocking') for (const beat of [1.05, 1.36, 1.68]) {

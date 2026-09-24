@@ -41,7 +41,7 @@ export class SandboxUI {
   private waypoint: { position: Vector3; matrix: boolean; name: string } | null = null;
 
   constructor(private send: (command: SandboxCommand) => void, private menu: (open: boolean) => void,
-    private combat: (kind: 'attack' | 'dodge', combo?: number) => void) {
+    private combat: (kind: 'attack' | 'dodge', combo?: number) => void, private desertPreview: () => string | undefined) {
     this.root.id = 'sandbox-overlay'; this.root.className = 'hidden';
     this.root.innerHTML = `
       <div id="film-blackout" class="film-blackout" aria-hidden="true"></div>
@@ -187,9 +187,13 @@ export class SandboxUI {
     const blackout = this.el('film-blackout');
     if (!journey.visiting) {
       if (this.previousFilmScene === 'm1_mirror' && scene.id === 'm1_pod') blackout.classList.add('pod-reveal');
-      if (this.previousFilmScene === 'm1_construct' && scene.id === 'm1_desert') blackout.classList.add('desert-reveal');
+      if (this.previousFilmScene === 'm1_construct' && scene.id === 'm1_desert') {
+        const image = this.desertPreview();
+        blackout.style.backgroundImage = image ? `url("${image}")` : '';
+        blackout.classList.add('desert-reveal');
+      }
       if (scene.id !== 'm1_pod') blackout.classList.remove('pod-reveal');
-      if (scene.id !== 'm1_desert') blackout.classList.remove('desert-reveal');
+      if (scene.id !== 'm1_desert') { blackout.classList.remove('desert-reveal'); blackout.style.backgroundImage = ''; }
       this.previousFilmScene = scene.id;
       if (scene.id === 'm1_mirror' && journey.awakening?.kind === 'mirror')
         blackout.style.opacity = String(Math.min(.96, Math.max(0, (journey.awakening.elapsed - MIRROR_TIMING.fade) / (AWAKENING_SECONDS.mirror - MIRROR_TIMING.fade))));

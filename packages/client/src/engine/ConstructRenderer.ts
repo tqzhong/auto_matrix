@@ -1,6 +1,32 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { CONSTRUCT_REVEAL, RESCUE, type FilmJourney, type RescueLoadout } from '@auto_matrix/shared';
+import { DesertRenderer } from './DesertRenderer.js';
+
+const srgbBytes = Uint8Array.from({ length: 256 }, (_, byte) => {
+  const linear = byte / 255;
+  return Math.round(255 * (linear <= .0031308 ? linear * 12.92 : 1.055 * linear ** (1 / 2.4) - .055));
+});
+
+export function renderTargetPreviewImage(renderer: THREE.WebGLRenderer, target: THREE.WebGLRenderTarget): string | undefined {
+  if (typeof document === 'undefined') return;
+  const { width, height } = target;
+  const pixels = new Uint8Array(width * height * 4);
+  renderer.readRenderTargetPixels(target, 0, 0, width, height, pixels);
+  const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
+  const ctx = canvas.getContext('2d'); if (!ctx) return;
+  const frame = ctx.createImageData(width, height);
+  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+    const source = ((height - 1 - y) * width + x) * 4;
+    const dest = (y * width + x) * 4;
+    frame.data[dest] = srgbBytes[pixels[source]];
+    frame.data[dest + 1] = srgbBytes[pixels[source + 1]];
+    frame.data[dest + 2] = srgbBytes[pixels[source + 2]];
+    frame.data[dest + 3] = pixels[source + 3];
+  }
+  ctx.putImageData(frame, 0, 0);
+  return canvas.toDataURL('image/webp', .82);
+}
 
 /** Horizonless loading program used for the first truth lesson and the later
  * armoury. Props remain sparse so their physical scale is unmistakable. */
@@ -11,8 +37,13 @@ export class ConstructRenderer {
   private lights = new Set<THREE.Light>();
   private canvas = document.createElement('canvas');
   private screenTexture: THREE.CanvasTexture;
+  private screenMaterial?: THREE.MeshBasicMaterial;
   private screenLight: THREE.PointLight;
   private lastFrame = -1;
+  private revealElapsed = 0;
+  private revealActive = false;
+  private previewImage?: string;
+  private preview?: { scene: THREE.Scene; camera: THREE.PerspectiveCamera; target: THREE.WebGLRenderTarget; desert: DesertRenderer; captures: number; capturedAt: number };
   private white = this.material(new THREE.MeshStandardMaterial({ color: 0xe4e5df, roughness: .96 }));
   private leather = this.material(new THREE.MeshStandardMaterial({ color: 0x5a1715, roughness: .42, metalness: .03 }));
   private darkLeather = this.material(new THREE.MeshStandardMaterial({ color: 0x2d0b0a, roughness: .56 }));
@@ -35,6 +66,7 @@ export class ConstructRenderer {
   }
 
   private material<T extends THREE.Material>(value: T): T { this.materials.add(value); return value; }
+  get televisionPreviewImage(): string | undefined { return this.previewImage; }
   private geometry<T extends THREE.BufferGeometry>(value: T): T { this.geometries.add(value); return value; }
   private mesh(parent: THREE.Object3D, geometry: THREE.BufferGeometry, material: THREE.Material, name?: string): THREE.Mesh {
     const mesh = new THREE.Mesh(this.geometry(geometry), material); mesh.castShadow = mesh.receiveShadow = true;
@@ -75,8 +107,8 @@ export class ConstructRenderer {
     const tv = new THREE.Group(); tv.name = 'construct-television'; tv.position.set(CONSTRUCT_REVEAL.television.x, 0, CONSTRUCT_REVEAL.television.z); this.root.add(tv);
     this.box(tv, this.black, 0, 3.2, 0, 6.5, 4.7, 2.3, .38);
     this.box(tv, this.steel, 0, 3.2, 1.17, 5.35, 3.55, .12, .08);
-    const screenMaterial = this.material(new THREE.MeshBasicMaterial({ map: this.screenTexture, toneMapped: false }));
-    const screen = this.mesh(tv, new THREE.PlaneGeometry(4.92, 3.12), screenMaterial, 'construct-television-screen'); screen.position.set(-.35, 3.25, 1.245);
+    this.screenMaterial = this.material(new THREE.MeshBasicMaterial({ map: this.screenTexture, toneMapped: false }));
+    const screen = this.mesh(tv, new THREE.PlaneGeometry(4.92, 3.12), this.screenMaterial, 'construct-television-screen'); screen.position.set(-.35, 3.25, 1.245);
     for (const y of [2.8, 3.25, 3.7]) this.cylinder(tv, this.steel, 2.65, y, 1.24, .18, .08).rotation.x = Math.PI / 2;
     for (const x of [-2.35, 2.35]) this.tube(tv, [new THREE.Vector3(x, 1, -.45), new THREE.Vector3(x * 1.1, .18, -.2)], .075);
     this.box(tv, this.steel, 0, .2, -.2, 6.2, .18, 2.3, .06);
@@ -216,6 +248,10 @@ export class ConstructRenderer {
 
   update(journey: FilmJourney | undefined): void {
     const beat = journey?.scene === 'm1_construct' && !journey.visiting && journey.awakening?.kind === 'construct' ? journey.awakening : undefined;
+    this.revealElapsed = beat?.elapsed ?? 0; this.revealActive = beat?.started === true;
+    if (this.screenMaterial && (!this.revealActive || this.revealElapsed < 7.65) && this.screenMaterial.map !== this.screenTexture) {
+      this.screenMaterial.map = this.screenTexture; this.screenMaterial.needsUpdate = true;
+    }
     const rescue = this.sceneId === 'm1_guns' && journey?.scene === 'm1_guns' && !journey.visiting ? journey.rescue : undefined;
     const phase = rescue ? ['briefing_ready', 'briefing', 'briefing_done', 'racks_ready', 'racks_arriving', 'selecting', 'equipping', 'equipped'].indexOf(rescue.phase) : -1;
     const frame = beat ? Math.floor(beat.elapsed * 8) : rescue ? phase * 1000 + Math.floor(rescue.elapsed * 12) : -1;
@@ -226,7 +262,41 @@ export class ConstructRenderer {
     if (this.sceneId === 'm1_guns') this.updateArmoury(journey);
   }
 
+  /** Capture the real wasteland set for the final CRT image. The preview is
+   * refreshed briefly for local textures, then held while Neo makes his choice. */
+  renderPreview(renderer: THREE.WebGLRenderer, environment?: THREE.Texture | null): boolean {
+    if (this.sceneId !== 'm1_construct' || !this.revealActive || this.revealElapsed < 7.65 || !this.screenMaterial) return false;
+    if (!this.preview) {
+      const scene = new THREE.Scene(); scene.background = new THREE.Color(0x303b3e); scene.fog = new THREE.FogExp2(0x303b3e, .0055);
+      scene.environment = environment ?? null; scene.environmentIntensity = .55;
+      const root = new THREE.Group(); scene.add(root);
+      const desert = new DesertRenderer(root);
+      const ambient = new THREE.AmbientLight(0xb4c7c6, .7); scene.add(ambient);
+      const sun = new THREE.DirectionalLight(0xb4c7c6, .48); sun.position.set(30, 80, 60); scene.add(sun);
+      const camera = new THREE.PerspectiveCamera(61, 1280 / 800, .1, 300);
+      camera.position.set(1.8, 2.8, 41); camera.lookAt(0, 14, -65);
+      this.preview = { scene, camera, target: new THREE.WebGLRenderTarget(1280, 800), desert, captures: 0, capturedAt: -Infinity };
+    }
+    const preview = this.preview; const now = performance.now();
+    if (preview.captures >= 4 || now - preview.capturedAt < 750) return false;
+    const previousTarget = renderer.getRenderTarget();
+    try {
+      renderer.setRenderTarget(preview.target);
+      renderer.render(preview.scene, preview.camera);
+      if (preview.captures === 0 || preview.captures === 3) {
+        try { this.previewImage = renderTargetPreviewImage(renderer, preview.target); }
+        catch (error) { console.warn('荒漠转场帧捕获失败', error); }
+      }
+    } finally { renderer.setRenderTarget(previousTarget); }
+    preview.captures++; preview.capturedAt = now;
+    if (this.screenMaterial.map !== preview.target.texture) {
+      this.screenMaterial.map = preview.target.texture; this.screenMaterial.needsUpdate = true;
+    }
+    return true;
+  }
+
   dispose(): void {
+    if (this.preview) { this.preview.desert.dispose(); this.preview.target.dispose(); this.preview.scene.clear(); this.preview = undefined; }
     this.root.clear(); this.geometries.forEach(value => value.dispose()); this.materials.forEach(value => value.dispose());
     this.textures.forEach(value => value.dispose()); this.lights.forEach(value => value.dispose());
     this.geometries.clear(); this.materials.clear(); this.textures.clear(); this.lights.clear();

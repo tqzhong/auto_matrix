@@ -248,7 +248,7 @@ const sandboxUI = new SandboxUI(command => socket.send('sandbox_action', command
   controls.setEnabled(!open); engine.audio.setReading('sandbox', open);
 }, (kind, combo) => {
   if (!controls.triggerCombat(kind, true, combo)) socket.send('player_action', { kind });
-});
+}, () => engine.televisionPreviewImage);
 const audioPanel = new AudioPanel(engine.audio, open => {
   if (open) sandboxUI.close();
   controls.setEnabled(!open && !playerUI.isChoosingCharacter);
