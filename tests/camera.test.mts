@@ -330,6 +330,18 @@ function setup(t: TestContext, rotation = 0) {
 
 const angle = (a: number, b: number) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
 
+test('the connected phone shot holds the local player at the exit until the next scene', t => {
+  const game = setup(t); game.state.currentLocation = 'film_wells_phone';
+  game.state.position = filmPosition('film_wells_phone', 0, -18); game.controls.possess(game.state);
+  game.key('KeyW'); const start = { ...game.state.position };
+  for (let i = 0; i < 30; i++) game.controls.update(1 / 60, game.state, game.group, true, true);
+  assert.ok(game.group.position.distanceTo(new THREE.Vector3(start.x, start.y, start.z)) < .01);
+  for (let i = 0; i < 30; i++) game.controls.update(1 / 60, game.state, game.group, true, false);
+  assert.ok(game.group.position.distanceTo(new THREE.Vector3(start.x, start.y, start.z)) > .2,
+    'loading an earlier running checkpoint must restore local movement');
+  game.key('KeyW', false);
+});
+
 test('the club whisper keeps Trinity visible beside Neo and first person can still look around', t => {
   const game = setup(t, Math.PI); const center = FILM_SETS.film_white_rabbit_club.center;
   game.state.currentLocation = 'film_white_rabbit_club'; game.state.position = filmPosition('film_white_rabbit_club', 7, -4);

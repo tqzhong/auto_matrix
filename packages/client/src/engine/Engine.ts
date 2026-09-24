@@ -134,21 +134,22 @@ export class Engine {
     const delta = Math.min(frameDelta, 0.1);
     this.frameRate.update(frameDelta);
     this.elapsed += delta * this.simulationSpeed;
+    const meeting = this.sandbox?.neoLife?.journey;
     this.cameraController.setEnabled(!this.playerControls?.id);
     if (!this.playerControls?.id) this.cameraController.update(delta);
     if (this.playerControls?.id) {
       const state = this.agentRenderer.getAgentState(this.playerControls.id);
       const group = this.agentRenderer.getAgent(this.playerControls.id);
-      if (state && group) this.playerControls.update(delta, state, group, this.running);
+      if (state && group) this.playerControls.update(delta, state, group, this.running,
+        meeting?.scene === 'm1_phone_escape' && meeting.actor === state.id && ['connected', 'done'].includes(meeting.openingPhone?.phase ?? ''));
       this.agentRenderer.setPlayer(this.playerControls.id, this.playerControls.firstPerson);
       this.agentRenderer.setPlayerMotion(this.playerControls.motion);
     }
     measure?.('controls');
-    this.agentRenderer.update(delta, this.camera, this.simulationSpeed, this.tick);
+    this.agentRenderer.update(delta, this.camera, this.simulationSpeed, this.tick, meeting);
     measure?.('agents');
     this.voxelRenderer.update(this.elapsed, this.playerControls?.id ? this.camera : undefined);
     const player = this.playerControls?.id ? this.agentRenderer.getAgentState(this.playerControls.id) : undefined;
-    const meeting = this.sandbox?.neoLife?.journey;
     this.audio.carEngine(this.running && player?.id === meeting?.actor && !meeting?.visiting && meeting?.meeting?.phase === 'driving' ? meetingCarPose(meeting.meeting).speed : undefined);
     this.voxelRenderer.interiors.update(this.timeOfDay, player?.position, this.sandbox?.neoLife);
     measure?.('city');

@@ -339,6 +339,15 @@ test('Trinity must answer the Wells phone before the truck arrives; the countdow
   assert.equal(state.step, 1);
   h.command('act');
   assert.equal(state.openingPhone?.phase, 'connected');
+  assert.equal(h.sandbox.life.film.performing(h.actor()), true, 'the disconnected caller cannot walk into the truck impact');
+  const exitedAt = { ...h.actor().position };
+  h.players.receiveInput('film-player', { x: 1, z: 0, yaw: 0, jump: false, sprint: true, focus: false, sequence: 1 });
+  h.players.step(.1, true, h.tick());
+  assert.deepEqual(h.actor().position, exitedAt, 'movement input cannot move the disconnected caller');
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); state = h.sandbox.life.film.state!;
+  assert.equal(h.sandbox.life.film.performing(h.actor()), true, 'the exit lock survives a save');
+  h.advance(4); assert.equal(state.openingPhone?.phase, 'done');
+  assert.equal(h.sandbox.life.film.performing(h.actor()), true, 'movement remains locked until the next scene');
   assert.ok(state.completed.includes(scene.id), 'answering immediately connects without a two-second wait');
 });
 

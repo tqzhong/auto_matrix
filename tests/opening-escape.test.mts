@@ -3,6 +3,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import { FILM_SCENE_BY_ID, FILM_SETS, OPENING_ESCAPE, filmEntry, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
+import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 
@@ -74,4 +75,27 @@ test('303 broken glass stays broken while Trinity climbs the visible fire escape
     renderer.update(player, sandbox, 1);
     assert.equal(glass.visible, false); assert.equal(shards.visible, true);
   } finally { renderer.dispose(); globalThis.document = document; }
+});
+
+test('the caller disappears from the booth after the line connects and returns on retry', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const originalDocument = globalThis.document;
+  const context = { createRadialGradient: () => ({ addColorStop() {} }), fillRect() {}, strokeRect() {}, fillText() {},
+    createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }), putImageData() {} };
+  globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => context }) } as unknown as Document;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const caller = world.agents.get('citizen_1')!; const scene = new THREE.Scene();
+  const renderer = new AgentRenderer(scene); renderer.updateAgent(caller.id, caller); renderer.setPlayer(caller.id);
+  const film = FILM_SCENE_BY_ID.m1_phone_escape;
+  const journey: FilmJourney = { version: 1, scene: film.id, actor: caller.id, step: 2, completed: [film.id], enteredAt: 0,
+    reflections: {}, lastText: '', checkpoint: filmEntry(film), openingPhone: { phase: 'running', remaining: 4, lastTick: 0, attempts: 0 } };
+  const body = renderer.getAgent(caller.id)!;
+  try {
+    renderer.update(.016, undefined, 1, 0, journey); assert.equal(body.visible, true);
+    journey.openingPhone!.phase = 'connected'; renderer.update(.016, undefined, 1, 0, journey);
+    assert.equal(body.visible, false, 'the truck must strike an empty booth after Trinity exits');
+    journey.openingPhone!.phase = 'done'; renderer.update(.016, undefined, 1, 0, journey); assert.equal(body.visible, false);
+    journey.openingPhone!.phase = 'running'; renderer.update(.016, undefined, 1, 0, journey);
+    assert.equal(body.visible, true, 'retry restores a visible playable actor');
+  } finally { renderer.dispose(); globalThis.document = originalDocument; }
 });

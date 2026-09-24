@@ -54,6 +54,7 @@ export class PlayerControls {
   ride?: FreewayRide;
   climbing = false;
   performing = false;
+  private phoneExit = false;
   truckRescue = false;
   private wasPerforming = false;
   private meetingYaw?: number;
@@ -78,7 +79,7 @@ export class PlayerControls {
   }
 
   possess(state: AgentState): void {
-    this.meetingYaw = undefined; this.welcomeShot = undefined;
+    this.meetingYaw = undefined; this.welcomeShot = undefined; this.performing = false; this.phoneExit = false;
     this.id = state.id; this.position = { ...state.position }; this.yaw = state.rotation;
     this.movementYaw = this.yaw; this.movementForward = 0; this.movementRight = 0;
     this.lastLook = -1000; this.dragging = false;
@@ -94,7 +95,7 @@ export class PlayerControls {
     this.onViewChange?.(false);
   }
   release(): void {
-    this.id = null; this.keys.clear(); this.enabled = true; this.firing = false; this.firearm = false; this.weaponStyle = undefined; this.fireInterval = LOBBY_FIRE_INTERVAL; this.ride = undefined; this.climbing = false; this.performing = false; this.mirror = 0; this.spoon = undefined; this.phone = undefined; this.welcomeShot = undefined;
+    this.id = null; this.keys.clear(); this.enabled = true; this.firing = false; this.firearm = false; this.weaponStyle = undefined; this.fireInterval = LOBBY_FIRE_INTERVAL; this.ride = undefined; this.climbing = false; this.performing = false; this.phoneExit = false; this.mirror = 0; this.spoon = undefined; this.phone = undefined; this.welcomeShot = undefined;
     this.camera.near = this.defaultNear; this.camera.fov = 48; this.camera.updateProjectionMatrix();
     if (document.pointerLockElement === this.canvas) document.exitPointerLock();
   }
@@ -243,8 +244,10 @@ export class PlayerControls {
       climb: this.climbing && this.enabled ? forward : 0, focus: this.enabled && this.running && this.keys.has('KeyG'), sequence: ++this.sequence };
   }
 
-  update(delta: number, state: AgentState, group: THREE.Group, running: boolean): void {
+  update(delta: number, state: AgentState, group: THREE.Group, running: boolean, phoneExit = false): void {
     if (!this.id) return;
+    if (this.phoneExit && !phoneExit) this.performing = false;
+    this.phoneExit = phoneExit;
     this.running = running;
     const escapeGesture = state.currentAction?.parameters.matrixEscape as MotionInput['matrixEscape'];
     const escapeCinematic = matrixEscapePhaseLocked(escapeGesture);
@@ -309,6 +312,7 @@ export class PlayerControls {
     if (state.currentAction?.parameters.persephone) this.performing = true;
     if (this.motion.lobbyEntry && !state.currentAction?.parameters.lobbyEntry) this.performing = false;
     if ((state.currentAction?.parameters.lobbyEntry as MotionInput['lobbyEntry'])?.phase === 'checkpoint') this.performing = true;
+    if (phoneExit) this.performing = true;
     if (this.wasPerforming && !this.performing) this.yaw = this.movementYaw = this.facing;
     this.wasPerforming = this.performing;
     this.motion.armed = this.firearm || state.currentAction?.parameters.armed === true;

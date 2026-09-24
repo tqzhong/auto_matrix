@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { groundHeight, officeClothing, type AgentState, type CombatImpact } from '@auto_matrix/shared';
+import { groundHeight, officeClothing, type AgentState, type CombatImpact, type FilmJourney } from '@auto_matrix/shared';
 import { CharacterModels, weaponMuzzle, type CharacterRig } from './CharacterModel.js';
 import type { MotionInput } from './CharacterMotion.js';
 
@@ -88,9 +88,11 @@ export class AgentRenderer {
     if (source && hit.shot) source.shot = performance.now();
   }
 
-  update(delta: number, camera?: THREE.Camera, speed = 1, tick = 0): void {
+  update(delta: number, camera?: THREE.Camera, speed = 1, tick = 0, journey?: FilmJourney): void {
     for (const [id, entry] of this.agents) {
       const state = entry.state;
+      const phoneExit = journey?.scene === 'm1_phone_escape' && journey.actor === id && ['connected', 'done'].includes(journey.openingPhone?.phase ?? '');
+      entry.group.visible = state.isInMatrix === this.matrix && state.status !== 'disconnected' && !phoneExit;
       entry.body.visible = (id !== this.playerId || !this.firstPerson || this.playerMotion?.inspecting === true) && state.status !== 'disconnected' && !state.currentAction?.parameters.filmDuel && !state.currentAction?.parameters.ghostPhase;
       const warning = state.currentAction?.type === 'attack' && state.currentAction.target === this.playerId && Number(state.currentAction.parameters.contactTick ?? 0) > tick;
       entry.marker.visible = warning || !this.playerId || id === this.selected;
