@@ -142,6 +142,9 @@ test('successful office escape produces a negative scan without inventing a para
   assert.equal(h.state().meeting?.bugged, false); assert.equal(h.state().meeting?.phase, 'done');
   assert.equal(h.state().step, 1); assert.equal(h.state().office?.bugged, false);
   assert.match(h.state().lastText, /没有发现/);
+  h.command('reflect:agency');
+  assert.doesNotMatch(h.sandbox.state.neoLife!.journal[0].title, /噩梦|审讯|植入/);
+  assert.match(h.sandbox.state.neoLife!.journal[0].text, /扫描没有发现追踪装置/);
 });
 
 test('leaving the car returns control outside and permits reentry without erasing the implanted tracker', () => {

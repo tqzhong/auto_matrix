@@ -62,6 +62,8 @@ test('the successful office escape reaches the same call without inventing an in
   const h = setup('escaped');
   assert.equal(h.state().wakeCall?.nightmare, false); reachDecision(h); h.command('act'); h.frames(WAKE_CALL.reply + .2);
   assert.equal(h.state().step, 1); assert.equal(h.state().office?.bugged, false); assert.match(h.state().lastText, /Adams Street/);
+  h.neo.position = filmStepPosition(FILM_SCENE_BY_ID.m1_wake_again, FILM_SCENE_BY_ID.m1_wake_again.steps[1]); h.frames(.2);
+  assert.equal(h.sandbox.state.neoLife!.journal[0].title, '第二次来电');
 });
 
 test('Morpheus describes the actual office outcome during the second call', () => {

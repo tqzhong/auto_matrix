@@ -187,6 +187,8 @@ export class SandboxUI {
 
   private updateFilm(player: AgentState, state: SandboxState): void {
     const journey = state.neoLife!.journey!; const scene = FILM_SCENE_BY_ID[journey.scene]; const step = scene.steps[journey.step];
+    const escapedScan = scene.id === 'm1_bug' && journey.office?.outcome === 'escaped';
+    const stepLabel = escapedScan ? ['配合安全扫描', '重新判断今晚的接头', step?.label][journey.step] : step?.label;
     const bridgeDoor = scene.id === 'm1_bridge' && journey.step === 1 && journey.bridgeArrival?.parkedRoadTime !== undefined
       ? meetingBoardPoint(journey.bridgeArrival) : undefined;
     const stepTarget = bridgeDoor ? filmPosition(scene.set, bridgeDoor.x, bridgeDoor.z)
@@ -213,10 +215,11 @@ export class SandboxUI {
     this.el('sandbox-interact').classList.toggle('hidden', Boolean(step && !journey.visiting && !journey.finished
       && !(bridgeDoor || scene.id === 'm1_bug' && journey.step === 1 && journey.meeting?.phase === 'done'
         ? player.isInMatrix && distance(player.position, stepTarget!) <= 4 : filmStepActionReady(scene, step, player.position, player.isInMatrix))));
-    this.el('sandbox-nearby').textContent = journey.visiting ? '回访场景 · J 返回剧情' : journey.finished ? '三部曲已完成 · 查看手记' : !step ? '场景完成 · 继续下一段' : step.kind === 'reflect' ? '打开手记，记录反思' : journey.fighting ? `战斗中 · 剩余 ${state.threats.filter(t => t.scene === scene.id).length}` : step.label;
+    this.el('sandbox-nearby').textContent = journey.visiting ? '回访场景 · J 返回剧情' : journey.finished ? '三部曲已完成 · 查看手记' : !step ? '场景完成 · 继续下一段' : step.kind === 'reflect' ? '打开手记，记录反思' : journey.fighting ? `战斗中 · 剩余 ${state.threats.filter(t => t.scene === scene.id).length}` : stepLabel!;
     this.el('sandbox-job').style.width = journey.started !== undefined && step ? `${Math.min(100, (this.tick - journey.started) / ((step.seconds ?? 3) * 2) * 100)}%` : '0';
-    document.getElementById('game-objective')!.textContent = journey.visiting ? set.name : scene.title;
-    document.getElementById('game-objective-copy')!.textContent = journey.visiting ? '自由走动，J 返回保存的剧情位置。' : scene.id === 'm3_dock_battle' && journey.dockGunnery?.phase === 'failed' ? 'APU 防线失守 · 从剧情检查点重试' : journey.fighting ? 'F 连击 · X 闪避 · 1 治疗 · 击败追兵后继续' : step ? `${journey.step + 1}/${scene.steps.length} · ${step.label} · ${step.kind === 'reach' ? '走到标记旁' : step.kind === 'reflect' ? '靠近后按 J 记录反思' : '靠近后按 G'}` : 'G 继续下一段，J 查看刚刚发生的事。';
+    document.getElementById('game-objective')!.textContent = journey.visiting ? set.name : escapedScan ? '确认没有被追踪'
+      : scene.id === 'm1_wake_again' && journey.office?.outcome === 'escaped' ? '第二次来电' : scene.title;
+    document.getElementById('game-objective-copy')!.textContent = journey.visiting ? '自由走动，J 返回保存的剧情位置。' : scene.id === 'm3_dock_battle' && journey.dockGunnery?.phase === 'failed' ? 'APU 防线失守 · 从剧情检查点重试' : journey.fighting ? 'F 连击 · X 闪避 · 1 治疗 · 击败追兵后继续' : step ? `${journey.step + 1}/${scene.steps.length} · ${stepLabel} · ${step.kind === 'reach' ? '走到标记旁' : step.kind === 'reflect' ? '靠近后按 J 记录反思' : '靠近后按 G'}` : 'G 继续下一段，J 查看刚刚发生的事。';
     if (!journey.visiting && scene.id === 'm1_bridge' && journey.bridgeTail) {
       const tail = journey.bridgeTail; const failed = tail.phase === 'failed';
       this.el('sandbox-trace').textContent = tail.phase === 'evaded' ? '已甩开尾随' : `尾随警戒 ${Math.round(tail.alert)}%`;

@@ -4015,7 +4015,7 @@ export class FilmStorySystem {
       return state.lastText;
     }
     if (target.startsWith('reflect:') && step.kind === 'reflect') {
-      const choice = filmReflections(state.scene).find(c => c.id === target.slice(8));
+      const choice = filmReflections(state.scene, state.office?.outcome).find(c => c.id === target.slice(8));
       if (!choice) return '请选择手记中的一种反思。';
       if (state.scene === 'm2_architect' && state.reflections['m2_architect:4'] && state.reflections['m2_architect:4'] !== choice.id)
         return '此前存档中的回答已经记录。请沿原来的理解继续抉择。';
@@ -4023,7 +4023,8 @@ export class FilmStorySystem {
       const key = `${state.scene}:${state.step}`;
       if (!state.reflections[key]) {
         state.reflections[key] = choice.id; life.choices[key] = choice.id; life.philosophy[choice.id]++;
-        life.journal.unshift({ day: life.day, time: this.world.timeOfDay, title: `${this.scene.title} · ${choice.label}`, text: response });
+        life.journal.unshift({ day: life.day, time: this.world.timeOfDay,
+          title: `${state.scene === 'm1_bug' && state.office?.outcome === 'escaped' ? '确认没有被追踪' : this.scene.title} · ${choice.label}`, text: response });
       }
       this.advance(`${step.text} ${response}`, agent, tick);
       if (state.scene === 'm1_construct') this.command(agent, 'next', tick);
@@ -4816,7 +4817,8 @@ export class FilmStorySystem {
       state.completed.push(state.scene);
       this.reconcileCast();
       const observing = ['m1_steak', 'm2_bane_copy', 'm3_oracle_absorbed', 'm3_bane_questions', 'm3_maggie_discovery'].includes(state.scene);
-      life.journal.unshift({ day: life.day, time: this.world.timeOfDay, title: observing ? `旁观片段 · ${this.scene!.title}` : this.scene!.title,
+      life.journal.unshift({ day: life.day, time: this.world.timeOfDay, title: observing ? `旁观片段 · ${this.scene!.title}`
+        : state.scene === 'm1_wake_again' && state.office?.outcome === 'escaped' ? '第二次来电' : this.scene!.title,
         text: observing ? `这不是 Neo 此时拥有的角色知识。${text}` : text });
       life.journal = life.journal.slice(0, 120);
       const profile = this.sandbox().profiles[agent.id]; if (profile) profile.xp += 15;

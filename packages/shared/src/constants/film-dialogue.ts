@@ -120,4 +120,11 @@ export const FILM_DIALOGUES: Record<string, FilmReflection[]> = {
     ['和平要靠双方继续守约。', '先知没有给出永远的保证。合作保留下来的，是未来仍然可以选择的空间。']),
 };
 
-export function filmReflections(scene: string): FilmReflection[] { return FILM_DIALOGUES[scene] ?? []; }
+const escapedScanDialogue = dialogue(
+  ['先核对扫描结果，再问接头为什么仍要检查。', '扫描没有发现追踪装置。你要求把检查的依据讲清楚，再决定怎样理解这场接头。'],
+  ['在继续之前，我需要知道检查是否安全。', 'Trinity 放慢动作，说明仪器的用途。身体属于你，调查不能取消你的同意。'],
+  ['我愿意继续，但请把知道的事情告诉我。', 'Trinity：我们正在前往能回答你的人那里。你可以随时提出问题。']);
+
+export function filmReflections(scene: string, officeOutcome?: 'escaped' | 'captured'): FilmReflection[] {
+  return scene === 'm1_bug' && officeOutcome === 'escaped' ? escapedScanDialogue : FILM_DIALOGUES[scene] ?? [];
+}

@@ -19,9 +19,11 @@ sandbox.enter(neo); sandbox.life.begin(neo, 0); const actor = world.agents.get(s
 actor.position = filmEntry(scene); actor.currentLocation = scene.set; actor.isInMatrix = FILM_SETS[scene.set].world === 'matrix'; actor.rotation = Math.PI;
 sandbox.state.profiles[actor.id].trackedMission = ''; sandbox.state.neoLife!.chapter = NEO_CHAPTERS.findIndex(c => c.id === scene.chapter);
 sandbox.state.neoLife!.journey = { version: 1, scene: scene.id, step: 0, actor: actor.id, completed: FILM_SCENES.slice(0, FILM_SCENES.indexOf(scene)).map(s => s.id), enteredAt: 0, reflections: {}, lastText: '独立验收存档：此前场景可回访，玩家原存档不受影响。', checkpoint: { ...actor.position } };
-const previous = FILM_SCENES[FILM_SCENES.indexOf(scene) - 1];
+const clearWake = scene.id === 'm1_wake_again' && process.argv[3] === 'wake-clear-ringing';
+const previous = clearWake ? FILM_SCENES.find(s => s.id === 'm1_ledge')! : FILM_SCENES[FILM_SCENES.indexOf(scene) - 1];
 sandbox.life.film.handoff = (from, id) => { delete from.controller; world.agents.get(id)!.controller = 'player'; return true; };
 if (previous) {
+  if (clearWake) sandbox.state.neoLife!.journey!.completed = sandbox.state.neoLife!.journey!.completed.filter(id => id !== 'm1_interrogation');
   Object.assign(sandbox.state.neoLife!.journey, { scene: previous.id, actor: previous.actor, step: previous.steps.length });
   if (['m2_backdoors', 'm2_bench'].includes(scene.id)) {
     actor.position = filmStepPosition(previous, previous.steps.at(-1)!);
@@ -29,7 +31,7 @@ if (previous) {
   }
   if (previous.id === 'm1_bug') sandbox.state.neoLife!.journey!.meeting = { phase: 'outside', elapsed: 0, bugged: false, approach: { x: 4, z: -12.35, yaw: Math.PI } };
   if (scene.id === 'm1_wake_again') sandbox.state.neoLife!.journey!.office = { alert: 0, suspicion: [], waypoints: [], lastTick: 0,
-    guide: '', outcome: 'captured', bugged: true };
+    guide: '', outcome: clearWake ? 'escaped' : 'captured', bugged: !clearWake };
   if (scene.id === 'm1_ledge') actor.position = filmStepPosition(previous, previous.steps[2]);
   sandbox.life.film.command(world.agents.get(previous.actor)!, 'next', 0);
   if (scene.id === 'm1_ledge') for (let frame = 0; frame < 65; frame++) sandbox.life.film.crossingFrame(actor, .1, 0);
@@ -147,10 +149,10 @@ if (process.argv[3] === 'interrogation' && scene.id === 'm1_interrogation') {
   sandbox.life.film.command(actor, 'act', 0);
   for (let frame = 0; frame < 85; frame++) sandbox.life.film.interrogationFrame(actor, .1, 0);
 }
-if (scene.id === 'm1_wake_again' && ['wake-ringing', 'wake-listening', 'wake-decision'].includes(process.argv[3])) {
+if (scene.id === 'm1_wake_again' && ['wake-ringing', 'wake-clear-ringing', 'wake-listening', 'wake-decision'].includes(process.argv[3])) {
   actor.controller = 'player';
   for (let frame = 0; frame < 57; frame++) sandbox.life.film.apartmentFrame(actor, .1, 0);
-  if (process.argv[3] !== 'wake-ringing') {
+  if (!['wake-ringing', 'wake-clear-ringing'].includes(process.argv[3])) {
     actor.position = filmStepPosition(scene, scene.steps[0]); actor.rotation = Math.PI;
     sandbox.life.film.command(actor, 'act', 0);
     const frames = process.argv[3] === 'wake-listening' ? 45 : 110;
