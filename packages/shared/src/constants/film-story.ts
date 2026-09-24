@@ -107,6 +107,7 @@ export interface FilmJourney {
   pills?: import('./pills.js').PillEncounter;
   interrogation?: import('./interrogation.js').InterrogationEncounter;
   meeting?: import('./meeting.js').MeetingEncounter;
+  bridgeTail?: import('./meeting.js').BridgeTailEncounter;
   hotel?: import('./lafayette.js').HotelApproach;
   ambush?: import('./ambush.js').AmbushEncounter;
   sentinel?: import('./sentinel.js').SentinelEncounter;

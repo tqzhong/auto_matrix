@@ -10,7 +10,7 @@ import { LobbyCombatSystem } from './LobbyCombatSystem.js';
 import { HelCoatcheckSystem } from './HelCoatcheckSystem.js';
 import { OfficeEscapeSystem } from './OfficeEscapeSystem.js';
 import { INTERROGATION_CAST, INTERROGATION_ROOM, INTERROGATION_TIMING, interrogationLocked, interrogationRoot } from '@auto_matrix/shared';
-import { MEETING_CAR, MEETING_CAST, MEETING_TIMING, meetingLocked, meetingRoot, type MeetingEncounter } from '@auto_matrix/shared';
+import { BRIDGE_TAIL, MEETING_CAR, MEETING_CAST, MEETING_TIMING, meetingLocked, meetingRoot, type MeetingEncounter } from '@auto_matrix/shared';
 import { LAFAYETTE, LAFAYETTE_WELCOME, LAFAYETTE_KNOCK_SECONDS, HOTEL_ROUTE_LENGTH, HOTEL_DOOR_PROGRESS, hotelRoutePose, hotelRouteProgress, lafayetteKnocking, lafayetteKnockRoot, lafayetteWelcomeLocked, lafayetteWelcomeRoot, filmSetAt } from '@auto_matrix/shared';
 import { OFFICE_WORKDAY, OFFICE_DELIVERY_SECONDS, officeCourierRoot, officeRecipientRoot, workdayLocked, workdayText } from '@auto_matrix/shared';
 import { APARTMENT, WAKE_CALL, apartmentAfter, apartmentDoor, apartmentLocked, apartmentText, wakeCallLocked, wakeCallRoot, wakeCallText, lifeRoomCenter, type ApartmentPhase, type WakeCallPhase } from '@auto_matrix/shared';
@@ -745,7 +745,7 @@ export class FilmStorySystem {
         film: { scene: 'm2_architect', width: 5, depth: .5, height: 8 } });
     }
   }
-  performing(agent: AgentState): boolean { return this.controls(agent) && (this.state!.scene === 'm1_room303' && ['breach', 'dive', 'ladder_ready'].includes(this.state!.openingHotel?.phase ?? '') || this.state!.scene === 'm1_phone_escape' && ['connected', 'done'].includes(this.state!.openingPhone?.phase ?? '') || helElevatorLocked(this.state!) || helDanceDoorLocked(this.state!) || this.state!.scene === 'm3_trainman' && this.state!.mobil?.phase === 'refusing' || this.state!.trucks?.phase === 'rescue' || this.state!.persephone?.phase === 'enacting' || burlyLocked(this.state!) || clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || theOneLocked(this.state!) || reloadedLocked(this.state!) || catchLocked(this.state!.catch) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
+  performing(agent: AgentState): boolean { return this.controls(agent) && (this.state!.scene === 'm1_bridge' && this.state!.bridgeTail?.phase === 'failed' || this.state!.scene === 'm1_room303' && ['breach', 'dive', 'ladder_ready'].includes(this.state!.openingHotel?.phase ?? '') || this.state!.scene === 'm1_phone_escape' && ['connected', 'done'].includes(this.state!.openingPhone?.phase ?? '') || helElevatorLocked(this.state!) || helDanceDoorLocked(this.state!) || this.state!.scene === 'm3_trainman' && this.state!.mobil?.phase === 'refusing' || this.state!.trucks?.phase === 'rescue' || this.state!.persephone?.phase === 'enacting' || burlyLocked(this.state!) || clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || theOneLocked(this.state!) || reloadedLocked(this.state!) || catchLocked(this.state!.catch) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
   clubFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
     if (state?.scene !== 'm1_club' || state.visiting || !this.controls(agent)) return;
@@ -1187,6 +1187,41 @@ export class FilmStorySystem {
       : encounter.phase === 'removing' ? focus ? '保持稳定。Trinity 拉动泵杆，透明收集筒里的压力正在改变。' : '你暂时停止配合。装置停在原处；继续按住 G 才会抽取。'
       : '追踪器已经离开身体。Trinity 把收集装置移到窗边，将它弹入雨中。';
     if (finish) this.advance(encounter.bugged ? this.step!.text! : '扫描完成，没有发现追踪装置。Trinity 收起仪器，确认接头安全。', agent, tick);
+  }
+  private bridgeTailFrame(agent: AgentState, tick: number): void {
+    const state = this.state;
+    if (!state || state.scene !== 'm1_bridge' || state.visiting || state.meeting || !(state.office?.bugged ?? state.office?.outcome === 'captured')) return;
+    const tail = state.bridgeTail ??= { phase: 'tracking', alert: 0, lastTick: tick, attempts: 0, spawned: false };
+    const threat = this.sandbox().threats.find(item => item.id === 'bridge:tail');
+    if (tail.phase !== 'tracking') { tail.lastTick = tick; return; }
+    if (!threat && tail.spawned) {
+      tail.phase = 'evaded'; tail.lastTick = tick;
+      state.lastText = '追踪特工失去了这次接头位置。体内的装置仍在；上车后还必须接受检查。';
+      return;
+    }
+    if (!threat) {
+      const position = filmPosition(this.scene!.set, BRIDGE_TAIL.spawnX, BRIDGE_TAIL.spawnZ);
+      this.sandbox().threats.push({ id: 'bridge:tail', scene: state.scene, kind: 'agent', patrol: true, yaw: Math.PI,
+        position, matrix: true, health: 80, maxHealth: 80, target: agent.id, stunUntil: tick, lastStrike: tick - 10 });
+      tail.spawned = true;
+    }
+    const pursuit = threat ?? this.sandbox().threats.find(item => item.id === 'bridge:tail')!;
+    const seconds = Math.min(1, Math.max(0, tick - tail.lastTick)) * .5; tail.lastTick = tick;
+    if (!seconds) return;
+    const dx = agent.position.x - pursuit.position.x; const dz = agent.position.z - pursuit.position.z;
+    const gap = Math.hypot(dx, dz);
+    if (tick >= pursuit.stunUntil && gap > .01) {
+      const step = Math.min(gap, BRIDGE_TAIL.speed * seconds);
+      const next = { ...pursuit.position, x: pursuit.position.x + dx / gap * step, z: pursuit.position.z + dz / gap * step };
+      pursuit.yaw = Math.atan2(dx, dz);
+      if (!playerBlocked(next, true, 1.1, this.sandbox().structures)) pursuit.position = next;
+    }
+    const range = distance(agent.position, pursuit.position); const previous = tail.alert;
+    tail.alert = Math.max(0, Math.min(100, tail.alert + (range < BRIDGE_TAIL.noticeRange ? 14 : -10) * seconds));
+    if (range <= BRIDGE_TAIL.captureRange && tail.alert >= BRIDGE_TAIL.captureAlert && tick >= pursuit.stunUntil) {
+      tail.phase = 'failed'; agent.velocity = { x: 0, y: 0, z: 0 };
+      state.lastText = '追踪器把你的位置暴露给尾随的特工。他在桥下拦住了你。J 打开手记，从桥下入口重试。';
+    } else if (previous < 35 && tail.alert >= 35) state.lastText = '后方的脚步正在逼近。追踪器仍在体内；赶到轿车右后门，别停在桥下。';
   }
   interrogationFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
@@ -3473,6 +3508,15 @@ export class FilmStorySystem {
       return `回访${FILM_SETS[visited.set].name}。J 可返回当前剧情，回访不会改写进度。`;
     }
     if (target === 'retry') {
+      if (state.scene === 'm1_bridge' && state.bridgeTail?.phase === 'failed') {
+        const attempts = state.bridgeTail.attempts + 1;
+        this.sandbox().threats = this.sandbox().threats.filter(threat => threat.id !== 'bridge:tail');
+        state.bridgeTail = { phase: 'tracking', alert: 0, lastTick: tick, attempts, spawned: false };
+        state.step = 0; state.checkpoint = filmEntry(this.scene); delete state.started;
+        this.place(agent, this.scene, state.checkpoint); agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentAction = null;
+        this.bridgeTailFrame(agent, tick);
+        return state.lastText = '回到桥下入口。追踪器还在体内，赶在尾随特工靠近前到达右后车门。';
+      }
       if (state.scene === 'm3_dock_battle' && state.dockGunnery?.phase === 'failed') {
         if (this.world.agents.get('kid')?.controller) return 'Kid 正由另一位玩家控制；弹药车等待他空闲后出发。';
         state.dockGunnery = newDockGunnery(tick, state.dockGunnery.attempts + 1);
@@ -3693,6 +3737,7 @@ export class FilmStorySystem {
     if (state.finished) return '三部曲已完成。可回访场景，或在手记中开始下一轮生活。';
     if (state.scene === 'm3_dock_battle' && state.dockGunnery?.phase === 'failed') return '哨兵突破了 APU 防线。按 J 从炮位检查点重试。';
     if (state.scene === 'm3_temple_defense' && state.templeSeal?.phase === 'failed') return '下一波哨兵已抵达神庙。按 J 从入口检查点重试。';
+    if (state.scene === 'm1_bridge' && state.bridgeTail?.phase === 'failed') return '尾随特工已拦住你。J 打开手记，从桥下入口重试。';
     if (state.hotel && !state.hotel.entered) {
       const door = filmPosition('film_lafayette', 24, 0);
       if (target === 'act' && distance(agent.position, door) < 4 && state.hotel.progress >= HOTEL_DOOR_PROGRESS - .01) {
@@ -3954,6 +3999,7 @@ export class FilmStorySystem {
       const center = FILM_SETS[this.scene.set].center;
       state.meeting = { phase: 'boarding', elapsed: 0, bugged: state.office?.bugged ?? state.office?.outcome !== 'escaped',
         approach: { x: agent.position.x - center.x, z: agent.position.z - center.z, yaw: agent.rotation } };
+      this.sandbox().threats = this.sandbox().threats.filter(threat => threat.id !== 'bridge:tail'); delete state.bridgeTail;
       delete state.started; this.meetingFrame(agent, false, 0, tick); return state.lastText;
     }
     if (state.scene === 'm1_interrogation') {
@@ -4116,6 +4162,7 @@ export class FilmStorySystem {
     delete state.workday;
     delete state.contact;
     delete state.wakeCall;
+    delete state.bridgeTail;
     delete state.club;
     delete state.sentinel;
     delete state.interlude;
@@ -4757,6 +4804,7 @@ export class FilmStorySystem {
       if (state.openingHotel) state.openingHotel.lastTick = tick;
       if (state.openingRoof) state.openingRoof.lastTick = tick;
       if (state.openingPhone) state.openingPhone.lastTick = tick;
+      if (state.bridgeTail) state.bridgeTail.lastTick = tick;
       if (state.mobil) state.mobil.lastTick = tick;
       if (state.helChase) state.helChase.lastTick = tick;
       if (state.helElevator) state.helElevator.lastTick = tick;
@@ -4844,6 +4892,10 @@ export class FilmStorySystem {
         this.capture(actor, tick, '特工认出了你并封住通道。你被带去审讯；这次失败仍然通往接头与真相。'); return;
       }
       if (state.step === 2) { delete state.started; return; }
+    }
+    if (state.scene === 'm1_bridge') {
+      this.bridgeTailFrame(actor, tick);
+      if (state.bridgeTail?.phase === 'failed') return;
     }
     if (this.reloaded.active(actor)) return;
     if (this.catch.active(actor)) return;

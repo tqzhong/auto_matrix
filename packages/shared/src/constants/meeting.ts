@@ -6,6 +6,10 @@ export interface MeetingEncounter {
   bugged: boolean;
   approach: { x: number; z: number; yaw: number };
 }
+export interface BridgeTailEncounter {
+  phase: 'tracking' | 'evaded' | 'failed'; alert: number; lastTick: number; attempts: number; spawned: boolean;
+}
+export const BRIDGE_TAIL = { spawnX: 0, spawnZ: 46, speed: 2.8, noticeRange: 16, captureRange: 3.2, captureAlert: 60 } as const;
 export type MeetingRole = 'neo' | 'trinity' | 'switch' | 'apoc';
 export type MeetingGesture = Pick<MeetingEncounter, 'phase' | 'elapsed' | 'bugged'> & { role: MeetingRole };
 export const MEETING_CAST = ['trinity', 'switch', 'apoc'] as const;

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SCENE_BY_ID, FILM_SETS, filmStepPosition, filmPosition, filmSetAt, meetingDrive, meetingRoadContains, MEETING_DRIVE_SECONDS, MEETING_DESTINATION, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, filmEntry, filmStepPosition, filmPosition, filmSetAt, meetingDrive, meetingRoadContains, MEETING_DRIVE_SECONDS, MEETING_DESTINATION, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -83,6 +83,51 @@ test('leaving the car returns control outside and permits reentry without erasin
   assert.equal(h.state().meeting, undefined); assert.equal(h.state().step, 1); assert.equal(h.state().scene, 'm1_bridge');
   assert.deepEqual(h.neo.position, outside); assert.equal(h.state().office?.bugged, true);
   h.board(); assert.equal(h.state().meeting?.phase, 'choice');
+});
+
+test('the implanted tracker draws a visible bridge tail; getting caught requires a saved retry', () => {
+  const h = setup(); const bridge = FILM_SCENE_BY_ID.m1_bridge;
+  h.state().step = 0; h.neo.position = filmEntry(bridge); h.state().checkpoint = { ...h.neo.position };
+  h.frames(.5);
+  assert.equal(h.state().bridgeTail?.phase, 'tracking');
+  const tail = h.sandbox.state.threats.find(threat => threat.id === 'bridge:tail')!;
+  assert.equal(tail?.scene, 'm1_bridge'); assert.equal(tail?.patrol, true);
+  const first = { ...tail.position }; h.frames(3);
+  assert.ok(tail.position.z < first.z, 'the pursuer must physically close from the far side of the underpass');
+  const saved = JSON.parse(JSON.stringify(h.sandbox.state)); const gap = Math.hypot(tail.position.x - h.neo.position.x, tail.position.z - h.neo.position.z);
+  h.frames(3, false, false); assert.equal(h.state().bridgeTail?.alert, saved.neoLife.journey.bridgeTail.alert);
+  h.players.release('player', h.tick()); h.frames(4); assert.deepEqual(tail.position, saved.threats.find((threat: { id: string }) => threat.id === 'bridge:tail').position);
+  h.sandbox.restore(saved); h.players.possess('player', 'neo', h.tick()); h.frames(.5);
+  const resumed = h.sandbox.state.threats.find(threat => threat.id === 'bridge:tail')!;
+  assert.ok(Math.hypot(resumed.position.x - h.neo.position.x, resumed.position.z - h.neo.position.z) >= gap - 2,
+    'rejoining cannot skip the pursuer forward across the disconnected interval');
+  h.frames(12); assert.equal(h.state().bridgeTail?.phase, 'failed');
+  assert.match(h.command('act'), /重试/); assert.equal(h.state().meeting, undefined);
+  h.command('retry'); assert.equal(h.state().bridgeTail?.phase, 'tracking'); assert.equal(h.state().bridgeTail?.attempts, 1);
+  assert.deepEqual(h.neo.position, filmEntry(bridge));
+  assert.ok(h.walkTo(filmStepPosition(bridge, bridge.steps[0]).x, filmStepPosition(bridge, bridge.steps[0]).z));
+  h.command('act'); assert.equal(h.state().meeting?.phase, 'boarding');
+  assert.equal(h.sandbox.state.threats.some(threat => threat.id === 'bridge:tail'), false);
+});
+
+test('a clean office escape has no bridge tail, even if Neo lingers', () => {
+  const h = setup(false); h.state().step = 0; h.neo.position = filmEntry(FILM_SCENE_BY_ID.m1_bridge);
+  h.frames(25); assert.equal(h.state().bridgeTail, undefined);
+  assert.equal(h.sandbox.state.threats.some(threat => threat.id === 'bridge:tail'), false);
+});
+
+test('older captured saves without a bugged flag still face the bridge tail', () => {
+  const h = setup(); delete h.state().office!.bugged;
+  h.frames(.5);
+  assert.equal(h.state().bridgeTail?.phase, 'tracking');
+  assert.equal(h.sandbox.state.threats.some(threat => threat.id === 'bridge:tail'), true);
+});
+
+test('losing the pursuer does not remove the implanted tracker', () => {
+  const h = setup(); h.frames(.5);
+  h.sandbox.state.threats = h.sandbox.state.threats.filter(threat => threat.id !== 'bridge:tail');
+  h.frames(.5); assert.equal(h.state().bridgeTail?.phase, 'evaded');
+  h.command('act'); assert.equal(h.state().meeting?.bugged, true);
 });
 
 test('door, passengers and pump retain the same clock across pause, disconnect, save restore and retry', () => {

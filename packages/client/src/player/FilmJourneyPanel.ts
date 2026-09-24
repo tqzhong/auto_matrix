@@ -17,6 +17,9 @@ import { BANE_ENCOUNTER } from '@auto_matrix/shared';
 const button = (target: string, label: string, disabled = false) => `<button data-action="life" data-target="film:${target}" ${disabled ? 'disabled' : ''}>${label}</button>`;
 export function renderFilmJourney(player: AgentState, sandbox: SandboxState): string {
   const life = sandbox.neoLife!; const journey = life.journey!; const scene = FILM_SCENE_BY_ID[journey.scene];
+  if (!journey.visiting && scene.id === 'm1_bridge' && journey.bridgeTail?.phase === 'failed') {
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>桥下的车灯</h3><p>Neo 视角 · 追踪器与尾随风险</p></header><article class="film-now"><div><h3>接头被追踪特工阻断</h3><p>${journey.lastText}</p><p>第 ${journey.bridgeTail.attempts + 1} 次尝试 · 追踪器仍在体内</p><div class="film-controls">${player.id === journey.actor ? button('retry', '从桥下入口重试') : button('resume', '接回 Neo 的视角')}<small>重新走近右后车门；上车检查之前，不要在桥下逗留。</small></div></div></article></div>`;
+  }
   if (!journey.visiting && scene.id === 'm3_bane' && journey.bane) {
     const bane = journey.bane; const step = scene.steps[journey.step]; const current = player.id === journey.actor;
     const close = current && Boolean(step && distance(player.position, filmStepPosition(scene, step)) <= 4);

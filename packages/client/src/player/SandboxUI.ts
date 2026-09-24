@@ -209,6 +209,20 @@ export class SandboxUI {
     this.el('sandbox-job').style.width = journey.started !== undefined && step ? `${Math.min(100, (this.tick - journey.started) / ((step.seconds ?? 3) * 2) * 100)}%` : '0';
     document.getElementById('game-objective')!.textContent = journey.visiting ? set.name : scene.title;
     document.getElementById('game-objective-copy')!.textContent = journey.visiting ? '自由走动，J 返回保存的剧情位置。' : scene.id === 'm3_dock_battle' && journey.dockGunnery?.phase === 'failed' ? 'APU 防线失守 · 从剧情检查点重试' : journey.fighting ? 'F 连击 · X 闪避 · 1 治疗 · 击败追兵后继续' : step ? `${journey.step + 1}/${scene.steps.length} · ${step.label} · ${step.kind === 'reach' ? '走到标记旁' : step.kind === 'reflect' ? '靠近后按 J 记录反思' : '靠近后按 G'}` : 'G 继续下一段，J 查看刚刚发生的事。';
+    if (!journey.visiting && scene.id === 'm1_bridge' && journey.bridgeTail) {
+      const tail = journey.bridgeTail; const failed = tail.phase === 'failed';
+      this.el('sandbox-trace').textContent = tail.phase === 'evaded' ? '已甩开尾随' : `尾随警戒 ${Math.round(tail.alert)}%`;
+      this.el('sandbox-trace').classList.toggle('danger', tail.alert >= 60 || failed);
+      if (tail.alert >= 35 || tail.phase !== 'tracking') {
+        this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.toggle('urgent', tail.alert >= 60 || failed);
+        this.el('film-sequence-line').textContent = journey.lastText;
+        this.el('film-sequence-hint').textContent = failed ? 'J 手记 · 从桥下入口重试' : tail.phase === 'evaded' ? '追踪器仍在 · 到车内接受检查' : '继续靠近右后车门 · 不要停在桥下';
+      }
+      if (failed) {
+        this.el('sandbox-interact').classList.add('hidden'); this.el('sandbox-waypoint').textContent = '';
+        document.getElementById('game-objective-copy')!.textContent = '被追踪特工拦住 · J 打开手记重试'; return;
+      }
+    }
     if (!journey.visiting && scene.id === 'm1_room303' && journey.openingHotel) {
       const hotel = journey.openingHotel; const failed = hotel.phase === 'failed';
       this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.toggle('urgent', failed || hotel.phase === 'combat');
