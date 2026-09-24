@@ -89,6 +89,15 @@ export class ApartmentSetRenderer {
       this.box(i % 3 ? plastic : dark, -12.25, 2.45 + i * .06, -12, 1.15, .048, 1.03);
       this.box(paper, -12.25, 2.44 + i * .06, -11.478, .96, .018, .015);
     }
+    // Open components and loose wiring make the workbench feel lived in without narrowing the route to the phone.
+    const circuit = this.mat(0x315649, .8, .15);
+    this.box(metal, -7.1, 2.52, -11.65, 1.2, .08, .82);
+    this.box(circuit, -7.1, 2.59, -11.65, 1.1, .045, .72);
+    for (const [x, z, w, d] of [[-7.35, -11.79, .28, .22], [-7, -11.55, .37, .3], [-6.75, -11.87, .16, .15]] as const)
+      this.box(dark, x, 2.65, z, w, .09, d);
+    for (let i = 0; i < 6; i++) this.mesh(new THREE.CylinderGeometry(.035, .035, .13, 8), metal, -7.55 + i * .17, 2.66, -11.4);
+    for (const shift of [0, .14, .3]) this.tube([[-7.5 + shift, 2.63, -11.9], [-7.7 + shift, 2.26, -12.3],
+      [-8 + shift, 1.3, -12.9], [-8.4 + shift, .18, -13.4], [-8.55 + shift, .13, -12.9]], dark, .024);
     // The corded apartment telephone is the physical bridge between the two office outcomes and Adams Street.
     this.phoneBase.name = 'apartment-landline-base'; this.phoneBase.userData.dynamic = true;
     this.phoneBase.position.set(APARTMENT.phone.x, APARTMENT.phone.y, APARTMENT.phone.z); this.root.add(this.phoneBase);
