@@ -4,6 +4,7 @@ export type AwakeningKind = 'mirror' | 'connect' | 'disconnect' | 'rescue' | 're
 export interface AwakeningBeat { kind: AwakeningKind; elapsed: number; started?: boolean }
 export interface AwakeningReveal { kind: 'construct' | 'desert'; elapsed: number; role: 'neo' | 'morpheus' }
 export const AWAKENING_SECONDS = { mirror: 8, connect: 4, disconnect: 9, rescue: 5, recovery: 12, construct: 11, desert: 13 } as const;
+export const MIRROR_TOUCH = { x: -9.5, z: -16.1, radius: 1.25 } as const;
 export const POD_WATER_DROP = 18;
 export const RECOVERY_BED = { x: -7, z: -22, standingX: -3.6 } as const;
 export const CONSTRUCT_REVEAL = { neo: { x: 4.4, z: -6.2, yaw: Math.PI }, morpheus: { x: -4.4, z: -6.2, yaw: Math.PI }, television: { x: 0, z: -16 } } as const;
@@ -27,7 +28,7 @@ export function awakeningWaiting(journey: FilmJourney): boolean {
 
 // Local coordinates are also used by the pod, drainage channel and rescue claw.
 export function awakeningPose(beat?: AwakeningBeat): { x: number; y: number; z: number; pose: AwakeningPose; text: string } {
-  if (beat?.kind === 'mirror') return { x: -9.5, y: 0, z: -16.1, pose: 'touch', text: beat.elapsed < 2 ? '镜面的裂纹正在合拢。' : beat.elapsed < 5 ? '冰冷的银色表面附着在手上，沿手臂蔓延。' : '房间的声音变得遥远。接线组正在定位你的真实身体。' };
+  if (beat?.kind === 'mirror') return { x: MIRROR_TOUCH.x, y: 0, z: MIRROR_TOUCH.z, pose: 'touch', text: beat.elapsed < 2 ? '镜面的裂纹正在合拢。' : beat.elapsed < 5 ? '冰冷的银色表面附着在手上，沿手臂蔓延。' : '房间的声音变得遥远。接线组正在定位你的真实身体。' };
   if (beat?.kind === 'connect') return { x: 8, y: 0, z: 5, pose: 'connect', text: '坐稳。接线组已经找到你，连接正在从模拟世界转向真实身体。' };
   if (beat?.kind === 'rescue') return { x: 0, y: -POD_WATER_DROP + clamp(beat.elapsed / 5) * 14, z: 12, pose: 'lift', text: '救援机械爪托住身体，尼布甲尼撒号正在将你吊出废水。' };
   if (beat?.kind === 'recovery') {
