@@ -34,6 +34,39 @@ async function loadGeometry(id = 'neo') {
   return new GLTFLoader().parseAsync(result.buffer.slice(result.byteOffset, result.byteOffset + result.byteLength), '');
 }
 
+test('the mirror reaches Neo’s hand before his face and coat hem', async () => {
+  const asset = await loadGeometry('neo'); const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: () => Promise<typeof asset> }).load = async () => asset;
+  try {
+    const rig = (await models.create('neo'))!;
+    const skin = rig.wardrobe.find(part => (part.mesh.material as THREE.Material).name === 'Skin')!.mesh.geometry;
+    const position = skin.getAttribute('position'); const arrival = skin.getAttribute('_mirrorArrival');
+    assert.ok(arrival, 'the skinned model needs a per-vertex liquid arrival time');
+    const hand: number[] = []; const face: number[] = [];
+    for (let i = 0; i < position.count; i++) {
+      if (position.getX(i) < -.45 && position.getY(i) < 2.25) hand.push(arrival.getX(i));
+      if (position.getY(i) > 3.95) face.push(arrival.getX(i));
+    }
+    assert.ok(hand.length > 20 && face.length > 20, 'both parts must be represented in the shipped mesh');
+    assert.ok(Math.max(...hand) < .55, 'the reaching hand must be covered by the middle of the performance');
+    assert.ok(Math.min(...face) > .7, 'the face must still be uncovered while silver climbs the arm');
+    const coat = rig.wardrobe.find(part => /Tailored.coat.upper/i.test(part.mesh.name))!.mesh.geometry;
+    const coatPosition = coat.getAttribute('position'); const coatArrival = coat.getAttribute('_mirrorArrival');
+    const sleeve: number[] = [];
+    for (let i = 0; i < coatPosition.count; i++) if (coatPosition.getX(i) < -.45 && coatPosition.getY(i) > 2.5 && coatPosition.getY(i) < 3.7) sleeve.push(coatArrival.getX(i));
+    assert.ok(sleeve.some(time => time < .54) && sleeve.some(time => time > .58), 'the sleeve needs a moving frontier between hand and shoulder');
+    for (const panel of rig.panels) {
+      const tail = panel.mesh.geometry.getAttribute('_mirrorArrival');
+      assert.ok(tail, 'the separate coat panels must join the same transition');
+      assert.ok(tail.getX(0) < tail.getX(tail.count - 1), 'the coat hem follows the upper body');
+    }
+    for (const part of rig.wardrobe) {
+      const times = part.mesh.geometry.getAttribute('_mirrorArrival');
+      for (let i = 0; i < times.count; i++) assert.ok(times.getX(i) < .995, `${part.mesh.name} must finish coating before the pod cut`);
+    }
+  } finally { models.dispose(); }
+});
+
 test('Trinity’s fitted outfit has no open waist during the club conversation', async () => {
   const asset = await loadGeometry('trinity'); const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
   (models as unknown as { load: () => Promise<typeof asset> }).load = async () => asset;

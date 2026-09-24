@@ -42,6 +42,17 @@ import { TheOneRenderer } from './TheOneRenderer.js';
 import { MountainSetRenderer } from './MountainSetRenderer.js';
 
 const outdoor = new Set(['rooftop', 'plaza', 'bridge', 'street', 'courtyard', 'freeway', 'machine', 'rain', 'garden', 'desert', 'pods', 'mountain']);
+
+export function showMirrorSubject(mirror: Reflector, subject: () => THREE.Object3D | undefined): void {
+  const renderReflection = mirror.onBeforeRender.bind(mirror);
+  mirror.onBeforeRender = (...args) => {
+    const body = subject(); const wasVisible = body?.visible;
+    if (body) body.visible = true;
+    try { renderReflection(...args); }
+    finally { if (body) body.visible = wasVisible!; }
+  };
+}
+
 const palettes = {
   day: { sky: 0xb8c9cd, fog: .001, ambient: 1.25, sun: 2.3, color: 0xffedcf },
   night: { sky: 0x121b21, fog: .009, ambient: .55, sun: .35, color: 0xaabdc3 },
@@ -87,6 +98,7 @@ export class FilmSetRenderer {
   private training?: TrainingSetRenderer;
   private currentScene?: string;
   private mirror?: Reflector;
+  private mirrorSubject?: THREE.Object3D;
   private mirrorCracks?: THREE.Group;
   private oracleVase?: OracleVase;
   private ambush?: AmbushSetRenderer;
@@ -144,6 +156,7 @@ export class FilmSetRenderer {
     this.markerLight = new THREE.PointLight(0xf6d99c, 5, 5); scene.add(this.markerLight);
   }
   get active(): FilmSet | undefined { return this.current; }
+  setMirrorSubject(subject?: THREE.Object3D): void { this.mirrorSubject = subject; }
   update(player: AgentState | undefined, sandbox: SandboxState | undefined, elapsed: number, playerPosition?: Vector3, cameraPosition?: Vector3, workday?: OfficeWorkday): FilmSet | undefined {
     let set = player ? filmSetAt(player.position, player.isInMatrix) : undefined;
     if (set?.id === 'film_extraction_car' && player?.currentLocation === 'film_adams_bridge') set = FILM_SETS.film_adams_bridge;
@@ -910,6 +923,7 @@ export class FilmSetRenderer {
       this.box(this.brass, -10, 5, -18, 6.4, 9.6, .4, .12);
       this.box(this.wood, -10, 5, -17.75, 5.95, 9.15, .16, .08);
       this.mirror = new Reflector(this.own(new THREE.PlaneGeometry(5.6, 8.8)), { color: 0xb4beb8, textureWidth: 768, textureHeight: 1024, clipBias: .003, multisample: 0 });
+      showMirrorSubject(this.mirror, () => this.mirrorSubject);
       this.mirror.position.set(PILL_ROOM.mirror.x, 5, PILL_ROOM.mirror.z); this.mirror.userData.dynamic = true; this.root.add(this.mirror);
       const shader = this.mirror.material as THREE.ShaderMaterial;
       shader.uniforms.liquidTime = { value: 0 }; shader.uniforms.liquidAmount = { value: 0 };

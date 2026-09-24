@@ -34,6 +34,49 @@ export interface HeroRig {
 export const HERO_IDS = ['neo', 'trinity', 'smith', 'morpheus'] as const;
 export type HeroId = typeof HERO_IDS[number];
 
+function mirrorBoneArrival(name: string): number {
+  if (name.startsWith('finger') && name.endsWith('_R')) return .23 + (3 - Number(name.match(/-(\d)_R$/)?.[1] ?? 1)) * .025;
+  if (name === 'wrist_R') return .34;
+  if (name === 'elbow_R') return .48;
+  if (name === 'shoulder_R') return .61;
+  if (name === 'chest') return .68;
+  if (name === 'spine') return .76;
+  if (name === 'head') return .84;
+  if (name === 'shoulder_L') return .78;
+  if (name === 'elbow_L') return .83;
+  if (name === 'wrist_L') return .88;
+  if (name.startsWith('finger') && name.endsWith('_L')) return .9;
+  if (name === 'pelvis') return .84;
+  if (name.startsWith('hip_')) return .88;
+  if (name.startsWith('knee_')) return .93;
+  return .97;
+}
+
+function addMirrorArrival(mesh: THREE.Mesh): void {
+  const geometry = mesh.geometry;
+  if (geometry.getAttribute('_mirrorArrival')) return;
+  const position = geometry.getAttribute('position');
+  const arrival = new Float32Array(position.count);
+  const indices = geometry.getAttribute('skinIndex'); const weights = geometry.getAttribute('skinWeight');
+  let parent = mesh.parent;
+  while (parent && !(parent instanceof THREE.Bone)) parent = parent.parent;
+  if (mesh instanceof THREE.SkinnedMesh && indices && weights) {
+    for (let i = 0; i < position.count; i++) {
+      let value = 0; let total = 0;
+      for (let joint = 0; joint < 4; joint++) {
+        const weight = weights.getComponent(i, joint);
+        if (weight <= 0) continue;
+        value += mirrorBoneArrival(mesh.skeleton.bones[indices.getComponent(i, joint)]?.name ?? '') * weight;
+        total += weight;
+      }
+      arrival[i] = total ? value / total : 1;
+    }
+  } else if (parent instanceof THREE.Bone && parent.name === 'pelvis') {
+    for (let i = 0; i < position.count; i++) arrival[i] = .76 + THREE.MathUtils.clamp(-position.getY(i) / 1.97, 0, 1) * .22;
+  } else arrival.fill(parent instanceof THREE.Bone ? mirrorBoneArrival(parent.name) : .97);
+  geometry.setAttribute('_mirrorArrival', new THREE.BufferAttribute(arrival, 1));
+}
+
 // The inspector and world share these exact skinned assets and motion solver.
 export class HeroModels {
   private assets = new Map<HeroId | 'neo-office' | 'choi' | 'dujour', Promise<GLTF>>();
@@ -179,22 +222,21 @@ export class HeroModels {
       wardrobe.push({ mesh: object, color: material.color.clone(), outer: panels.some(p => p.mesh === object),
         hair: /Hair|hair|Groom|groom/.test(material.name), cloth: /Coat|Trousers/.test(material.name) });
       if (id !== 'neo') return;
+      addMirrorArrival(object);
       material.onBeforeCompile = (shader, renderer) => {
         source.onBeforeCompile(shader, renderer);
         shader.uniforms.matrixSilver = silver;
-        shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vLiquidPosition;')
-          .replace('#include <begin_vertex>', '#include <begin_vertex>\nvLiquidPosition = position;');
-        shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nuniform float matrixSilver;\nvarying vec3 vLiquidPosition;')
+        shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nattribute float _mirrorArrival;\nvarying float vLiquidArrival;\nvarying vec3 vLiquidPosition;')
+          .replace('#include <skinning_vertex>', '#include <skinning_vertex>\nvLiquidArrival = _mirrorArrival;\nvLiquidPosition = transformed;');
+        shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nuniform float matrixSilver;\nvarying float vLiquidArrival;\nvarying vec3 vLiquidPosition;')
           .replace('#include <metalnessmap_fragment>', `#include <metalnessmap_fragment>
-            float liquidRadius = max(0.0, (matrixSilver - 0.15) / 0.85) * 6.0;
-            float liquidDistance = distance(vLiquidPosition, vec3(-0.55, 1.8, 0.3));
-            liquidDistance += sin(vLiquidPosition.y * 21.0) * sin(vLiquidPosition.x * 14.0) * 0.035;
-            float liquidMask = matrixSilver > 0.15 ? 1.0 - smoothstep(liquidRadius - 0.08, liquidRadius, liquidDistance) : 0.0;
-            diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.82, 0.86, 0.87), liquidMask);
-            roughnessFactor = mix(roughnessFactor, 0.07, liquidMask);
-            metalnessFactor = mix(metalnessFactor, 1.0, liquidMask);`);
+            float liquidEdge = vLiquidArrival + sin(vLiquidPosition.y * 21.0) * sin(vLiquidPosition.x * 14.0) * 0.012;
+            float liquidMask = smoothstep(liquidEdge - 0.03, liquidEdge + 0.005, matrixSilver);
+            diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.78, 0.82, 0.83), liquidMask);
+            roughnessFactor = mix(roughnessFactor, 0.13, liquidMask);
+            metalnessFactor = mix(metalnessFactor, 0.62, liquidMask);`);
       };
-      material.customProgramCacheKey = () => source.customProgramCacheKey() + '-liquid-mirror-v1';
+      material.customProgramCacheKey = () => source.customProgramCacheKey() + '-liquid-mirror-v2';
     });
     if (support === 'niobe') {
       const hair = new THREE.MeshStandardMaterial({ color: 0x171812, roughness: .82 });

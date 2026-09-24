@@ -77,6 +77,7 @@ export class AgentRenderer {
     for (const entry of this.agents.values()) entry.group.visible = entry.state.isInMatrix === matrix;
   }
   getAgent(id: string): THREE.Group | null { return this.agents.get(id)?.group ?? null; }
+  getAgentBody(id: string): THREE.Group | undefined { return this.agents.get(id)?.body; }
   getAgentState(id: string): AgentState | null { return this.agents.get(id)?.state ?? null; }
   getAgentIds(): string[] { return [...this.agents.keys()]; }
   muzzle(id: string): THREE.Vector3 | undefined { const entry = this.agents.get(id); return entry ? weaponMuzzle(entry.rig) : undefined; }
