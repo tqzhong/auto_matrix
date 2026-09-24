@@ -242,8 +242,11 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     legs[i].hip = -.75 + pull * .4; legs[i].knee = 1.1 - pull * .6; legs[i].ankle = -.2;
     arms[i].shoulder = -2.2 - pull * .55; arms[i].elbow = -.65 + pull * .5; arms[i].grip = 1;
   }
-  if (input.performance === 'touch' && (input.mirrorBeat ?? MIRROR_TIMING.touch) >= MIRROR_TIMING.touch) {
-    arms[0].shoulder = -1.5; arms[0].elbow = -.06; arms[0].grip = 0;
+  if (input.performance === 'touch') {
+    const reach = smooth(clamp(((input.mirrorBeat ?? MIRROR_TIMING.touch) - MIRROR_TIMING.wired) / (MIRROR_TIMING.touch - MIRROR_TIMING.wired)));
+    arms[0].shoulder = mix(arms[0].shoulder, -1.5, reach);
+    arms[0].elbow = mix(arms[0].elbow, -.65, reach);
+    arms[0].grip = mix(arms[0].grip, 0, reach);
   }
   if (input.mirrorCrew !== undefined) {
     const wire = smooth(clamp((input.mirrorCrew - MIRROR_TIMING.sit) / .55)) * (1 - smooth(clamp((input.mirrorCrew - MIRROR_TIMING.wired) / .5)));

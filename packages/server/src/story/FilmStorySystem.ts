@@ -4,7 +4,7 @@ import { newReloaded, reloadedLocked, ZION_CAST } from '@auto_matrix/shared';
 import { catchLocked, newCatch } from '@auto_matrix/shared';
 import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_CAST, GRID_WINDOW_SECONDS, GRID_REROUTE_SECONDS, GRID_HACK_SECONDS, ARCHITECT_DOOR_SECONDS, RELOADED_FINALE, BANE_ENCOUNTER, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, filmReflections, CHARACTERS, LOCATIONS, NEO_CHAPTERS, filmCharacterFates, filmEntry, filmPosition, filmStepPosition, locationEntrance, distance, playerBlocked, newFreewayRide, stepFreeway, OFFICE_LADDER, awakeningLocked, awakeningPose, AWAKENING_SECONDS, MIRROR_TOUCH, MIRROR_TIMING, MIRROR_GUIDE_LENGTH, mirrorGuidePose, mirrorGuideProgress, mirrorSilver, CONSTRUCT_REVEAL, DESERT_REVEAL, oracleActing,
   AMBUSH_REWRITE, AMBUSH_SECONDS, AMBUSH_SEALS, OFFICE_CONTACT, OFFICE_WINDOW, OFFICE_CROSSING_SECONDS, officeCrossingPose, windowCrossing, phoneLocked, heldPhone, windowOpening, pillLocked, pillRoot, PILL_ROOM, PILL_TIMING, trainingLocked, trainingRoot, trainingText, TRAINING_SECONDS,
-  lobbyLocked, meleeReach, groundHeight, MIRROR_SEAT, type DriveInput, type AgentState, type FilmScene, type FilmStep, type GridOperation, type SandboxState, type SandboxThreat, type TrainingRole, type CombatImpact } from '@auto_matrix/shared';
+  lobbyLocked, meleeReach, groundHeight, MIRROR_SEAT, MIRROR_TRINITY, type DriveInput, type AgentState, type FilmScene, type FilmStep, type GridOperation, type SandboxState, type SandboxThreat, type TrainingRole, type CombatImpact } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
 import { LobbyCombatSystem } from './LobbyCombatSystem.js';
 import { HelCoatcheckSystem } from './HelCoatcheckSystem.js';
@@ -1091,6 +1091,14 @@ export class FilmStorySystem {
   restoreAwakeningSpace(): void {
     const state = this.state; const scene = this.scene;
     if (!state || !scene || state.visiting) return;
+    if (state.scene === 'm1_mirror' && state.awakening?.kind === 'mirror') {
+      const trinity = this.world.agents.get('trinity');
+      if (trinity && !trinity.controller) {
+        trinity.position = filmPosition(scene.set, MIRROR_TRINITY.x, MIRROR_TRINITY.z);
+        trinity.rotation = MIRROR_TRINITY.yaw;
+        trinity.velocity = { x: 0, y: 0, z: 0 };
+      }
+    }
     if (state.scene === 'm1_mirror' && state.step >= scene.steps.length) {
       this.finishMirror(this.world.agents.get(state.actor)!, this.world.simulationTick);
       return;
@@ -4391,7 +4399,7 @@ export class FilmStorySystem {
       }
       if (scene.id === 'm1_mirror') {
         const crew: Record<string, [number, number, number]> = {
-          morpheus: [-3, -17, -1.43], trinity: [-6.4, -16.5, -1.35], apoc: [1, -17, 1.57], switch: [-3, -22, 0], cypher: [9, -18.5, -1.57],
+          morpheus: [-3, -17, -1.43], trinity: [MIRROR_TRINITY.x, MIRROR_TRINITY.z, MIRROR_TRINITY.yaw], apoc: [1, -17, 1.57], switch: [-3, -22, 0], cypher: [9, -18.5, -1.57],
         };
         const station = crew[id];
         if (station) { actor.position = filmPosition(scene.set, station[0], station[1]); actor.rotation = station[2]; }

@@ -1,7 +1,7 @@
 import { RELOADED, RELOADED_FINALE } from '@auto_matrix/shared';
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, RESCUE, RESCUE_LOADOUTS, GOVERNMENT_RESCUE, AIR_RESCUE, MATRIX_ESCAPE, THE_ONE, OPENING_HOTEL, OPENING_ESCAPE, PILL_ROOM, PILL_TIMING, MIRROR_TOUCH, MIRROR_SEAT, MIRROR_TIMING, DOCK_GUNNERY, awakeningPose, mirrorSilver, filmReflections, filmStepPosition, filmEntry, filmPosition, groundHeight, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, newGarageEscape, stepGarageEscape, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, RESCUE, RESCUE_LOADOUTS, GOVERNMENT_RESCUE, AIR_RESCUE, MATRIX_ESCAPE, THE_ONE, OPENING_HOTEL, OPENING_ESCAPE, PILL_ROOM, PILL_TIMING, MIRROR_TOUCH, MIRROR_SEAT, MIRROR_TRINITY, MIRROR_TIMING, DOCK_GUNNERY, awakeningPose, mirrorSilver, filmReflections, filmStepPosition, filmEntry, filmPosition, groundHeight, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, newGarageEscape, stepGarageEscape, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -1048,9 +1048,25 @@ test('an old standing-at-mirror save moves to the reachable chair approach', () 
   assert.deepEqual(h.actor().position, filmStepPosition(FILM_SCENE_BY_ID.m1_mirror, FILM_SCENE_BY_ID.m1_mirror.steps[0]));
 });
 
+test('a saved wiring beat restores Trinity to the reachable side of the chair', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  Object.assign(state, { scene: 'm1_pills', actor: 'neo', step: 2 }); h.command('next');
+  state.awakening = { kind: 'mirror', elapsed: 2.1, started: false };
+  const trinity = h.world.agents.get('trinity')!;
+  trinity.position = filmPosition('film_lafayette', -6.4, -16.5);
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+  assert.deepEqual(trinity.position, filmPosition('film_lafayette', MIRROR_TRINITY.x, MIRROR_TRINITY.z));
+  assert.equal(trinity.rotation, MIRROR_TRINITY.yaw);
+});
+
 test('touching the mirror is a saved seated performance that freezes on pause and resumes after reconnect', () => {
   const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
   Object.assign(state, { scene: 'm1_pills', actor: 'neo', step: 2 }); h.command('next');
+  const trinity = h.world.agents.get('trinity')!;
+  const seat = filmPosition('film_lafayette', MIRROR_SEAT.x, MIRROR_SEAT.z);
+  assert.ok(Math.hypot(trinity.position.x - seat.x, trinity.position.z - seat.z) < 2.05,
+    'Trinity must stand close enough to connect the headset instead of reaching from across the room');
+  assert.equal(playerBlocked(trinity.position, true, .5), false, 'Trinity must stand beside, not inside, the tracking chair');
   const target = filmStepPosition(FILM_SCENE_BY_ID.m1_mirror, FILM_SCENE_BY_ID.m1_mirror.steps[0]);
   const touch = awakeningPose({ kind: 'mirror', elapsed: 0 });
   assert.deepEqual(target, filmPosition('film_lafayette', touch.x, touch.z), 'the chair interaction begins at the approach marker');
