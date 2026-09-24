@@ -26,13 +26,16 @@ test('the Construct has physical red chairs, an authored CRT reveal and a separa
       awakening: { kind: 'construct', elapsed: 0, started: false } } satisfies FilmJourney;
     renderer.update(journey); const waiting = light.intensity;
     journey.awakening.started = true; journey.awakening.elapsed = 10; renderer.update(journey);
-    assert.ok(light.intensity > waiting * 4, 'the white transition must visibly light the actors instead of changing only text');
+    assert.ok(light.intensity > waiting * 4, 'the ruined television must visibly light the actors instead of changing only text');
   } finally { renderer.dispose(); globalThis.document = savedDocument; }
 
   globalThis.document = canvasDocument(); const armouryRoot = new THREE.Group(); const armoury = new ConstructRenderer(armouryRoot, 'm1_guns');
   try {
     assert.ok(armouryRoot.getObjectByName('construct-weapon-racks'));
     assert.equal(armouryRoot.getObjectByName('construct-chair-neo'), undefined, 'the later loadout scene must not retain invisible lesson furniture');
+    armoury.update({ scene: 'm1_guns', rescue: { phase: 'racks_arriving', elapsed: 1 } } as FilmJourney);
+    assert.ok((armouryRoot.getObjectByName('construct-screen-light') as THREE.PointLight).intensity >= 140,
+      'the later armoury keeps its bright loading-space lighting');
   } finally { armoury.dispose(); globalThis.document = savedDocument; }
 });
 

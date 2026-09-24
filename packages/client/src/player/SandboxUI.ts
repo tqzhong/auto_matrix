@@ -185,7 +185,9 @@ export class SandboxUI {
     const blackout = this.el('film-blackout');
     if (!journey.visiting) {
       if (this.previousFilmScene === 'm1_mirror' && scene.id === 'm1_pod') blackout.classList.add('pod-reveal');
+      if (this.previousFilmScene === 'm1_construct' && scene.id === 'm1_desert') blackout.classList.add('desert-reveal');
       if (scene.id !== 'm1_pod') blackout.classList.remove('pod-reveal');
+      if (scene.id !== 'm1_desert') blackout.classList.remove('desert-reveal');
       this.previousFilmScene = scene.id;
       if (scene.id === 'm1_mirror' && journey.awakening?.kind === 'mirror')
         blackout.style.opacity = String(Math.min(.96, Math.max(0, (journey.awakening.elapsed - MIRROR_TIMING.fade) / (AWAKENING_SECONDS.mirror - MIRROR_TIMING.fade))));

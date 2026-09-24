@@ -171,7 +171,7 @@ export class ConstructRenderer {
 
   private draw(elapsed: number, waiting: boolean): void {
     const ctx = this.canvas.getContext('2d')!; const width = this.canvas.width; const height = this.canvas.height;
-    ctx.fillStyle = waiting ? '#080b0a' : elapsed > 9.2 ? '#e9ece6' : '#10201d'; ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = waiting ? '#080b0a' : '#10201d'; ctx.fillRect(0, 0, width, height);
     if (waiting) {
       ctx.fillStyle = '#c9d6cf'; ctx.beginPath(); ctx.arc(width / 2, height / 2, 4, 0, Math.PI * 2); ctx.fill();
     } else if (elapsed < 2.4) {
@@ -188,17 +188,30 @@ export class ConstructRenderer {
         ctx.fillStyle = '#9eb6a5'; for (let y = height - 100; y > height - buildingHeight - 60; y -= 25) for (let wx = x + 7; wx < x + buildingWidth - 4; wx += 13) ctx.fillRect(wx, y, 5, 8);
       }
       ctx.fillStyle = '#b8c7bd'; ctx.font = '26px monospace'; ctx.fillText('CITY SIMULATION / 1999', 34, 48);
-    } else if (elapsed < 9.2) {
+    } else if (elapsed < 7.65) {
       ctx.fillStyle = '#05100b'; ctx.fillRect(0, 0, width, height); ctx.font = '22px monospace';
       for (let column = 0; column < 31; column++) {
         ctx.fillStyle = column % 5 ? '#3fb66c' : '#c0ffd1';
         for (let row = 0; row < 18; row++) ctx.fillText(String.fromCharCode(0x30a0 + (column * 17 + row * 29) % 80), column * 25, (row * 34 + elapsed * (35 + column % 4 * 9)) % 570 - 25);
       }
       ctx.strokeStyle = '#d0ddd4'; ctx.lineWidth = 7; ctx.beginPath(); ctx.ellipse(width * .7, height * .52, 95, 180, 0, 0, Math.PI * 2); ctx.stroke();
+    } else {
+      const sky = ctx.createLinearGradient(0, 0, 0, height);
+      sky.addColorStop(0, '#1d272a'); sky.addColorStop(.55, '#485556'); sky.addColorStop(1, '#121a1b');
+      ctx.fillStyle = sky; ctx.fillRect(0, 0, width, height);
+      for (let i = 0; i < 19; i++) {
+        const x = i * 45 - 35; const top = 130 + (i * 71) % 205; const span = 28 + i % 4 * 10;
+        ctx.fillStyle = i % 3 ? '#192326' : '#263132'; ctx.fillRect(x, top, span, height - top);
+        ctx.fillStyle = '#394343'; ctx.fillRect(x + span * .13, top - (i * 11) % 35, span * .27, 8 + (i * 5) % 18);
+        ctx.fillStyle = '#0c1517';
+        for (let floor = top + 22; floor < height - 30; floor += 29) if ((floor + i * 13) % 5) ctx.fillRect(x + 5, floor, span * .56, 12);
+      }
+      ctx.fillStyle = '#6b706a55';
+      for (let i = 0; i < 65; i++) ctx.fillRect((i * 79 + Math.floor(elapsed * 8)) % width, (i * 47) % height, 2, 2);
     }
     ctx.fillStyle = '#ffffff22'; for (let y = 0; y < height; y += 4) ctx.fillRect(0, y, width, 1);
     this.screenTexture.needsUpdate = true;
-    this.screenLight.intensity = waiting ? 18 : elapsed > 9.2 ? 150 : 75 + Math.sin(elapsed * 9) * 10;
+    this.screenLight.intensity = waiting ? 18 : this.sceneId === 'm1_guns' ? 150 : elapsed > 7.65 ? 90 + Math.sin(elapsed * 13) * 16 : 75 + Math.sin(elapsed * 9) * 10;
   }
 
   update(journey: FilmJourney | undefined): void {

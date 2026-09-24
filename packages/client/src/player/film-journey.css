@@ -68,6 +68,8 @@ body.film-pill-scene .game-objective,body.film-pill-scene .game-vitals,body.film
 .film-blackout { position:absolute; inset:0; background:#000; opacity:0; pointer-events:none; z-index:-1; transition:opacity .18s linear; }
 .film-blackout.pod-reveal { animation:pod-reveal 1.1s ease-out both; }
 @keyframes pod-reveal { from { opacity:1; } to { opacity:0; } }
+.film-blackout.desert-reveal { z-index:30; background:#d9e1da; animation:desert-reveal .95s ease-out both; }
+@keyframes desert-reveal { 0%,18% { opacity:1; } 100% { opacity:0; } }
 body.film-interrogation-scene .game-objective,body.film-interrogation-scene .game-vitals,body.film-interrogation-scene .game-crosshair,body.film-interrogation-scene .play-tip,body.film-interrogation-scene .sandbox-clock,body.film-interrogation-scene .sandbox-nav { display:none; }
 body.film-interrogation-scene .sandbox-interact { top:auto; bottom:36px; }
 body.film-interrogation-scene:has(#gameplay-recorder) .sandbox-interact { bottom:64px; }

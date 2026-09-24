@@ -637,6 +637,13 @@ test('the Construct and desert reveals use authored wide shots while first perso
   assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).z < -.8, 'Neo initially faces the television');
   game.key('KeyW'); game.key('Space'); game.key('KeyF'); game.step(.3);
   assert.deepEqual(game.group.position.toArray(), [construct.x, construct.y, construct.z]); assert.equal(game.actions.length, 0);
+  game.key('KeyV'); game.key('KeyV', false);
+  (game.state.currentAction!.parameters.reveal as { elapsed: number }).elapsed = 10.8;
+  game.controls.possess(game.state); game.step(1.5);
+  assert.ok(Math.abs(game.camera.position.x - constructCenter.x) < 1.5
+    && game.camera.position.z < constructCenter.z - 12.5,
+  'the final Construct shot pushes into the television instead of turning back toward the chairs');
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).z < -.8, 'the camera enters the televised ruined world');
 
   const desert = filmPosition('film_real_desert', 1.8, -28); Object.assign(game.state, { position: desert, rotation: Math.PI, isInMatrix: false, currentLocation: 'film_real_desert',
     currentAction: { type: 'idle', parameters: { filmPose: 'desert', reveal: { kind: 'desert', elapsed: 6, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 } });

@@ -53,10 +53,10 @@ export function awakeningPose(beat?: AwakeningBeat): { x: number; y: number; z: 
   }
   if (beat?.kind === 'construct') {
     const text = beat.started === false ? '白色没有边界。两把旧皮椅与一台电视像被直接写进空间。按 G 请 Morpheus 开始说明。'
-      : beat.elapsed < 2.4 ? '老式电视从雪花中亮起。屏幕里是 Thomas Anderson 熟悉的城市。'
-      : beat.elapsed < 6.8 ? 'Morpheus 指向屏幕：眼睛、气味和触感都可以被系统转换成信号。'
-      : beat.elapsed < 9.2 ? '画面在街道、代码与培养塔之间切换。熟悉并不能单独证明真实。'
-      : '电视的白光吞没城市影像。构造体准备加载真相之后的世界。';
+      : beat.elapsed < 2.4 ? '老式电视亮起雪花。Morpheus 正准备切换画面。'
+      : beat.elapsed < 6.8 ? '屏幕里是 Thomas Anderson 熟悉的城市。眼睛、气味和触感都可以被系统转换成信号。'
+      : beat.elapsed < 7.65 ? '熟悉的街道短暂剥落成代码。熟悉并不能单独证明真实。'
+      : 'Morpheus 切换频道：屏幕里的城市已成废墟。镜头不断靠近，仿佛要进入那个世界。';
     return { x: CONSTRUCT_REVEAL.neo.x, y: 0, z: CONSTRUCT_REVEAL.neo.z, pose: 'construct', text };
   }
   if (beat?.kind === 'desert') {

@@ -916,9 +916,9 @@ export class PlayerControls {
         const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
         this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
       } else if (gesture.kind === 'construct') {
-        const boot = THREE.MathUtils.smoothstep(gesture.elapsed, .6, 2.4); const reaction = THREE.MathUtils.smoothstep(gesture.elapsed, 8.4, 9.4);
-        const ideal = new THREE.Vector3(13, 4.8, -9.5).lerp(new THREE.Vector3(8.5, 4.7, -1.5), boot).lerp(new THREE.Vector3(0, 3.45, -12.5), reaction).add(new THREE.Vector3(center.x, center.y - 1, center.z));
-        const focus = new THREE.Vector3(0, 2.4, -10.5).lerp(new THREE.Vector3(0, 3.1, -15.2), boot).lerp(new THREE.Vector3(0, 2.55, -6), reaction).add(new THREE.Vector3(center.x, center.y - 1, center.z));
+        const boot = THREE.MathUtils.smoothstep(gesture.elapsed, .6, 2.4); const entry = THREE.MathUtils.smoothstep(gesture.elapsed, 8.1, 10.7);
+        const ideal = new THREE.Vector3(13, 4.8, -9.5).lerp(new THREE.Vector3(8.5, 4.7, -1.5), boot).lerp(new THREE.Vector3(0, 3.25, -13.9), entry).add(new THREE.Vector3(center.x, center.y - 1, center.z));
+        const focus = new THREE.Vector3(0, 2.4, -10.5).lerp(new THREE.Vector3(0, 3.1, -15.2), boot).lerp(new THREE.Vector3(0, 3.25, -16.5), entry).add(new THREE.Vector3(center.x, center.y - 1, center.z));
         if (resetCamera || gesture.elapsed < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-6 * delta));
         this.camera.lookAt(focus);
       } else {

@@ -1156,6 +1156,8 @@ test('recovery begins on the medical bed, waits for Neo, and resumes its saved p
 });
 
 test('the Construct television and ruined-world lesson wait for Neo and preserve both reveal performances', () => {
+  assert.match(awakeningPose({ kind: 'construct', elapsed: 1 }).text, /雪花/);
+  assert.match(awakeningPose({ kind: 'construct', elapsed: 10 }).text, /废墟/);
   const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
   Object.assign(state, { scene: 'm1_recovery', actor: 'neo', step: FILM_SCENE_BY_ID.m1_recovery.steps.length, awakening: undefined });
   h.command('next'); assert.equal(state.scene, 'm1_construct');
