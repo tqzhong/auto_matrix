@@ -104,6 +104,14 @@ export class ApartmentSetRenderer {
     const cordGeometry = new THREE.BufferGeometry(); cordGeometry.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(25 * 3), 3)); this.geometries.add(cordGeometry);
     const cordMaterial = new THREE.LineBasicMaterial({ color: 0x111716 }); this.materials.add(cordMaterial);
     this.phoneCord = new THREE.Line(cordGeometry, cordMaterial); this.phoneCord.name = 'apartment-landline-cord'; this.phoneCord.frustumCulled = false; this.root.add(this.phoneCord);
+    this.mesh(new THREE.CylinderGeometry(.28, .28, .08, 16), metal, -6.8, 2.47, -12.75);
+    this.tube([[-6.8, 2.5, -12.75], [-6.8, 3.75, -12.75], [-5.95, 4.13, -11.42]], metal, .045);
+    const phoneShade = this.mesh(new THREE.ConeGeometry(.6, .5, 24, 1, true), dark, -5.95, 3.86, -11.42);
+    phoneShade.name = 'apartment-phone-task-shade'; phoneShade.userData.dynamic = true;
+    const phoneBulb = new THREE.MeshBasicMaterial({ color: 0xffe6b3, toneMapped: false }); this.materials.add(phoneBulb);
+    this.mesh(new THREE.SphereGeometry(.15, 16, 12), phoneBulb, -5.95, 3.62, -11.42);
+    const phoneLight = new THREE.PointLight(0xffd69c, 75, 9, 2);
+    phoneLight.name = 'apartment-phone-task-light'; phoneLight.position.set(-5.95, 3.6, -11.42); this.root.add(phoneLight);
     const chair = this.mat(0x292f2b, .92);
     this.box(chair, -9, 1.5, -8.4, 2, .3, 1.75, .14);
     this.box(chair, -9, 2.4, -7.6, 1.94, 1.5, .24, .13);

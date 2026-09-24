@@ -76,7 +76,7 @@ test('the exact handset beat and body pose survive pause, disconnect, save resto
   h.neo.status = 'dead'; h.command('retry'); assert.deepEqual(h.state().wakeCall, expected); assert.deepEqual(h.neo.position, position);
 });
 
-test('the bedside-to-landline route is clear and the apartment set owns a visible base, handset and cord', t => {
+test('the bedside-to-landline route is clear and the apartment set owns a lit phone, handset and cord', t => {
   for (let i = 0; i <= 100; i++) {
     const x = APARTMENT.bedside.x + (APARTMENT.phone.approachX - APARTMENT.bedside.x) * i / 100;
     const z = APARTMENT.bedside.z + (APARTMENT.phone.approachZ - APARTMENT.bedside.z) * i / 100;
@@ -88,6 +88,11 @@ test('the bedside-to-landline route is clear and the apartment set owns a visibl
   const root = new THREE.Group(); const renderer = new ApartmentSetRenderer(root);
   try {
     for (const name of ['apartment-landline-base', 'apartment-landline-handset', 'apartment-landline-cord']) assert.ok(root.getObjectByName(name), name);
+    const phoneLight = root.getObjectByName('apartment-phone-task-light') as THREE.PointLight | undefined;
+    const phoneShade = root.getObjectByName('apartment-phone-task-shade');
+    assert.ok(phoneLight && phoneShade, 'the ringing phone needs a visible local light source at night');
+    assert.ok(phoneLight.position.distanceTo(new THREE.Vector3(APARTMENT.phone.x, APARTMENT.phone.y, APARTMENT.phone.z)) < 2.2);
+    assert.ok(phoneLight.intensity >= 55, 'the light must expose the handset, not only decorate the desk');
     renderer.update({ version: 1, scene: 'm1_wake_again', step: 0, actor: 'neo', completed: [], enteredAt: 0, reflections: {}, lastText: '', checkpoint: filmPosition('film_anderson_flat'),
       wakeCall: { phase: 'ringing', elapsed: .11, nightmare: true } });
     const handset = root.getObjectByName('apartment-landline-handset')!; assert.equal(handset.visible, true);
