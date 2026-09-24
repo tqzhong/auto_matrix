@@ -131,8 +131,17 @@ export class SandboxRenderer {
           rig = this.models.create({ ...base, id: scene === 'm2_chateau' ? `chateau_guard_${style ?? 'unarmed'}` : character ?? (kind === 'soldier' ? 'film_soldier' : kind === 'escort' ? 'keymaker' : 'smith'),
             faction: scene === 'm2_chateau' ? 'merovingian' : base.faction,
             appearance: scene === 'm2_chateau' ? { ...base.appearance, clothing: style === 'axe' ? '#473d31' : style === 'spear' ? '#2e3b3b' : style === 'mace' ? '#52493e' : '#302d31' }
+              : scene === 'm1_room303' ? { ...base.appearance, clothing: '#222c36' }
               : kind === 'soldier' ? { ...base.appearance, clothing: '#172121' } : base.appearance }); rig.root.position.y = -1; group.add(rig.root);
-          if (kind === 'soldier') {
+          if (scene === 'm1_room303') {
+            this.mesh(rig.head, this.cylinder, this.dark, [0, .26, -.04], [.34, .16, .31]);
+            this.mesh(rig.head, this.box, this.dark, [0, .16, .21], [.7, .06, .3]);
+            this.mesh(rig.head, this.box, this.metal, [0, .3, .245], [.12, .12, .04]);
+            this.mesh(rig.torso, this.box, this.dark, [0, .81, .35], [.76, .13, .1]);
+            this.mesh(rig.torso, this.box, this.metal, [-.23, 1.18, .42], [.16, .21, .055]);
+            this.mesh(rig.torso, this.box, this.dark, [0, .38, .4], [.75, .12, .14]);
+          }
+          if (kind === 'soldier' && scene !== 'm1_room303') {
             this.mesh(rig.head, this.orb, this.dark, [0, .12, -.03], [.32, .3, .28]);
             this.mesh(rig.head, this.orb, this.dark, [0, -.18, .20], [.22, .13, .08]);
             this.mesh(rig.torso, this.box, this.dark, [0, .8, .29], [.9, .95, .25]);
@@ -141,7 +150,7 @@ export class SandboxRenderer {
           if (kind === 'smith' && !character) rig.root.scale.multiplyScalar(1.18);
         }
         const bar = this.mesh(group, this.box, kind === 'escort' ? this.green : this.red, [0, 6.4, 0], [4, .15, .15]);
-        const label = this.label(scene === 'm2_chateau' ? `城堡守卫 · ${{ sword: '长剑', spear: '长矛', axe: '战斧', mace: '重锤' }[style ?? 'sword']}`
+        const label = this.label(scene === 'm1_room303' ? '303 / 警员' : scene === 'm2_chateau' ? `城堡守卫 · ${{ sword: '长剑', spear: '长矛', axe: '战斧', mace: '重锤' }[style ?? 'sword']}`
           : character ? `${agents[character]?.name ?? character}${kind === 'training' ? ' · 对练' : ''}` : scene === 'm2_burly' ? 'SMITH / 复制体' : ({ agent: '追踪特工', sentinel: '乌贼', smith: 'SMITH / 病毒核心', training: '武术训练程序', soldier: '武装警卫', escort: '钥匙匠 · 留在附近护送' })[kind], kind === 'escort' ? '#c9e8ad' : '#f2aa99');
         label.position.y = 7.1; group.add(label);
         const telegraph = this.mesh(group, this.warningRing, this.warning, [0, -.94, 0], [2.8, 2.8, 2.8]); telegraph.rotation.x = -Math.PI / 2; telegraph.visible = false;
@@ -194,9 +203,9 @@ export class SandboxRenderer {
       enemy.group.position.lerp(enemy.target, running ? 1 - Math.exp(-8 * delta) : 0);
       const dist = enemy.group.position.distanceTo(camera.position);
       if (enemy.rig) this.models.animate(enemy.rig, running ? delta : 0, { speed: Math.min(8.4, previous.distanceTo(enemy.group.position) / Math.max(.001, delta)), grounded: true, verticalVelocity: 0, turn: 0,
-        attack: enemy.kind !== 'soldier' && threat && tick - threat.lastStrike < 3 ? threat.lastStrike : undefined, armed: enemy.kind === 'soldier', shot: enemy.shot, combo: threat?.combo ?? 0, windingUp: threat?.attackAt !== undefined, hit: enemy.hit, impact: enemy.impact, chateauWeapon: threat?.weapon }, dist);
-      enemy.label.visible = !threat?.patrol && dist < (enemy.kind === 'soldier' ? 30 : 65); enemy.label.scale.set(enemy.kind === 'soldier' ? 3 : 5, enemy.kind === 'soldier' ? .56 : .94, 1);
-      enemy.health.visible = !threat?.patrol;
+        attack: enemy.kind !== 'soldier' && threat && tick - threat.lastStrike < 3 ? threat.lastStrike : undefined, armed: enemy.kind === 'soldier', weaponStyle: enemy.scene === 'm1_room303' ? 'hel_pistol' : undefined, shot: enemy.shot, combo: threat?.combo ?? 0, windingUp: threat?.attackAt !== undefined, hit: enemy.hit, impact: enemy.impact, chateauWeapon: threat?.weapon }, dist);
+      enemy.label.visible = enemy.scene !== 'm1_room303' && !threat?.patrol && dist < (enemy.kind === 'soldier' ? 30 : 65); enemy.label.scale.set(enemy.kind === 'soldier' ? 3 : 5, enemy.kind === 'soldier' ? .56 : .94, 1);
+      enemy.health.visible = enemy.scene !== 'm1_room303' && !threat?.patrol;
       enemy.health.quaternion.copy(camera.quaternion);
       enemy.health.scale.y = threat?.attackAt !== undefined ? .28 + Math.sin(this.elapsed * 22) * .06 : .15;
       enemy.health.material = threat?.infection ? this.green : threat && threat.stunUntil > tick ? this.blue : enemy.kind === 'escort' ? this.green : this.red;

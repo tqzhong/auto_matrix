@@ -1,7 +1,7 @@
 import { RELOADED, RELOADED_FINALE } from '@auto_matrix/shared';
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, RESCUE, RESCUE_LOADOUTS, GOVERNMENT_RESCUE, AIR_RESCUE, MATRIX_ESCAPE, THE_ONE, filmReflections, filmStepPosition, filmEntry, filmPosition, groundHeight, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, newGarageEscape, stepGarageEscape, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, RESCUE, RESCUE_LOADOUTS, GOVERNMENT_RESCUE, AIR_RESCUE, MATRIX_ESCAPE, THE_ONE, OPENING_HOTEL, filmReflections, filmStepPosition, filmEntry, filmPosition, groundHeight, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, newGarageEscape, stepGarageEscape, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -187,18 +187,19 @@ test('remote interactions, premature next and unvisited scene jumps cannot advan
   assert.match(h.command('next'), /先完成/); assert.equal(state.scene, FILM_SCENES[0].id);
   assert.match(h.command('visit:m3_dawn'), /完成这个场景/); assert.equal(state.visiting, undefined);
   h.actor().position = filmStepPosition(FILM_SCENES[0], FILM_SCENES[0].steps[0]);
-  h.command('act'); assert.ok(state.started !== undefined);
-  h.actor().position.z += 8; h.advance(10); assert.equal(state.step, 0); assert.equal(state.started, undefined);
+  h.command('act'); assert.equal(state.openingHotel?.phase, 'breach');
+  assert.equal(state.step, 1); h.advance(4);
+  assert.equal(state.openingHotel?.phase, 'combat'); assert.equal(h.sandbox.state.threats.length, 4);
 });
 
 test('a fight persists through simulation cleanup and can be retried after death without skipping it', () => {
   const h = setup(); h.command('start'); const state = h.sandbox.state.neoLife!.journey!;
   state.step = 1; h.actor().position = filmStepPosition(FILM_SCENES[0], FILM_SCENES[0].steps[1]); state.checkpoint = { ...h.actor().position };
-  h.command('act'); h.advance(); assert.equal(h.sandbox.state.threats.length, 2);
+  h.command('act'); h.advance(); assert.equal(h.sandbox.state.threats.length, 4);
   assert.match(h.command('next'), /先完成/);
   h.actor().health = 0; h.actor().status = 'dead';
-  h.command('retry'); assert.equal(h.actor().status, 'alive'); assert.equal(state.step, 1); assert.equal(h.sandbox.state.threats.length, 0);
-  h.command('act'); assert.equal(h.sandbox.state.threats.length, 2);
+  h.command('retry'); assert.equal(h.actor().status, 'alive'); assert.equal(state.step, 1); assert.equal(h.sandbox.state.threats.length, 4);
+  assert.equal(state.openingHotel?.phase, 'combat'); assert.equal(state.openingHotel?.attempts, 1);
 });
 
 test('saved scene, active fight, role and completed history restore without restarting the route', () => {
@@ -206,9 +207,83 @@ test('saved scene, active fight, role and completed history restore without rest
   state.step = 1; h.actor().position = filmStepPosition(FILM_SCENES[0], FILM_SCENES[0].steps[1]); h.command('act');
   const saved = JSON.parse(JSON.stringify(h.sandbox.state)); h.sandbox.restore(saved); h.advance();
   assert.equal(h.sandbox.life.film.state!.actor, 'trinity'); assert.equal(h.sandbox.life.film.state!.step, 1);
-  assert.equal(h.sandbox.state.threats.length, 2);
+  assert.equal(h.sandbox.state.threats.length, 4);
   h.players.release('film-player', h.tick()); h.players.possess('film-player', 'trinity', h.tick());
-  assert.equal(h.sandbox.life.film.state!.scene, 'm1_room303'); assert.equal(h.sandbox.state.threats.length, 2);
+  assert.equal(h.sandbox.life.film.state!.scene, 'm1_room303'); assert.equal(h.sandbox.state.threats.length, 4);
+});
+
+test('303 breach saves its timing, then Trinity disarms, shoots and reaches the fire escape in order', () => {
+  const h = setup(); h.command('start'); let state = h.sandbox.life.film.state!;
+  const actor = h.actor(); const hotel = h.sandbox.life.film.openingHotel;
+  assert.equal(state.openingHotel?.phase, 'trace');
+  assert.ok(h.sandbox.state.structures.some(structure => structure.id === 'film:hotel303:3'));
+  actor.position = filmPosition('film_heart_hotel', OPENING_HOTEL.computer.x, OPENING_HOTEL.computer.z);
+  h.command('act'); h.advance(); assert.equal(state.openingHotel?.phase, 'breach');
+  assert.equal(state.openingHotel.elapsed, .5);
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); state = h.sandbox.life.film.state!;
+  h.advance(2); assert.equal(state.openingHotel?.phase, 'combat'); assert.equal(state.step, 1);
+  assert.equal(h.sandbox.state.threats.length, 4);
+  assert.deepEqual(h.sandbox.state.threats.map(threat => threat.character), ['citizen_4', 'citizen_14', 'citizen_10', 'citizen_13']);
+  assert.ok(!h.sandbox.state.structures.some(structure => structure.id === 'film:hotel303:3'));
+  const lead = h.sandbox.state.threats[0];
+  for (let hit = 0; lead.health > 0 && hit < 6; hit++) {
+    actor.position = { ...lead.position, z: lead.position.z + 2 }; actor.rotation = Math.PI;
+    h.sandbox.attack(actor, h.tick(), hit % 3);
+  }
+  assert.equal(lead.health, 0); assert.ok(state.openingHotel?.fallen);
+  actor.position = { ...state.openingHotel!.fallen! }; h.command('act');
+  assert.equal(state.openingHotel?.disarmed, true); assert.equal(state.openingHotel.ammo, OPENING_HOTEL.magazine);
+  actor.position = filmPosition('film_heart_hotel', 0, 0);
+  for (const target of [...h.sandbox.state.threats]) {
+    for (let shot = 0; target.health > 0 && shot < 3; shot++) {
+      const yaw = Math.atan2(target.position.x - actor.position.x, target.position.z - actor.position.z);
+      hotel.shoot(actor, yaw, 0, h.tick());
+    }
+    assert.equal(target.health, 0);
+  }
+  assert.equal(state.openingHotel!.shots, 6); assert.equal(state.openingHotel!.ammo, 2);
+  h.advance(); assert.equal(state.openingHotel?.phase, 'phone'); assert.equal(state.step, 2);
+  actor.position = filmPosition('film_heart_hotel', OPENING_HOTEL.phone.x, OPENING_HOTEL.phone.z);
+  h.command('act'); assert.equal(state.step, 3); assert.match(state.lastText, /Wells/);
+  actor.position = filmStepPosition(FILM_SCENES[0], FILM_SCENES[0].steps[3]); h.advance(); assert.equal(state.step, 4);
+  actor.position = filmPosition('film_heart_hotel', OPENING_HOTEL.window.x, OPENING_HOTEL.window.z);
+  h.command('act'); assert.equal(state.openingHotel?.phase, 'dive'); h.advance(4);
+  assert.equal(state.openingHotel?.phase, 'done'); assert.ok(state.completed.includes('m1_room303'));
+});
+
+test('303 combat can fail and retry, while disconnect freezes the breached-door sequence', () => {
+  const h = setup(); h.command('start'); const state = h.sandbox.life.film.state!;
+  h.actor().position = filmStepPosition(FILM_SCENES[0], FILM_SCENES[0].steps[0]);
+  h.command('act'); h.advance(); const elapsed = state.openingHotel!.elapsed;
+  h.players.release('film-player', h.tick()); h.advance(20);
+  assert.equal(state.openingHotel!.elapsed, elapsed);
+  h.players.possess('film-player', 'trinity', h.tick()); h.advance(2);
+  assert.equal(state.openingHotel?.phase, 'combat');
+  h.actor().position = filmPosition('film_heart_hotel', 0, -5);
+  const before = h.actor().health; h.advance(30);
+  assert.ok(h.actor().health < before, 'police fire must threaten a stationary player');
+  h.actor().health = 0; h.actor().status = 'dead';
+  h.command('retry'); assert.equal(state.openingHotel?.phase, 'combat'); assert.equal(state.openingHotel?.attempts, 1);
+  assert.equal(h.actor().health, h.actor().maxHealth); assert.equal(h.sandbox.state.threats.length, 4);
+});
+
+test('303 door blocks movement before the breach and the same player controls can cross afterward', () => {
+  const h = setup(); h.command('start'); const center = FILM_SETS.film_heart_hotel.center;
+  const actor = h.actor(); let sequence = 0;
+  const walk = (x: number, z: number, frames = 100) => {
+    const target = filmPosition('film_heart_hotel', x, z);
+    for (let frame = 0; frame < frames; frame++) {
+      const dx = target.x - actor.position.x; const dz = target.z - actor.position.z; const length = Math.hypot(dx, dz);
+      if (length < 1.1) break;
+      h.players.receiveInput('film-player', { x: dx / length, z: dz / length, yaw: Math.atan2(dx, dz), jump: false, sprint: false, sequence: ++sequence });
+      h.players.step(.1, true, h.tick());
+    }
+  };
+  walk(0, -5); assert.ok(actor.position.z - center.z > OPENING_HOTEL.doorZ, 'closed door should stop the player');
+  actor.position = filmPosition('film_heart_hotel', OPENING_HOTEL.computer.x, OPENING_HOTEL.computer.z);
+  h.command('act'); h.advance(4); assert.equal(h.sandbox.life.film.state?.openingHotel?.phase, 'combat');
+  walk(0, 6); walk(0, -5);
+  assert.ok(Math.hypot(actor.position.x - center.x, actor.position.z - center.z + 5) < 1.1, 'the open door should be walkable');
 });
 
 test('Trinity must answer the Wells phone before the truck arrives; the countdown saves and retries', () => {
@@ -305,8 +380,7 @@ test('reconnecting a defeated story actor rebuilds at the scene checkpoint inste
   assert.equal(h.actor().currentLocation, FILM_SCENES[0].set);
   assert.deepEqual(h.actor().position, state.checkpoint);
   assert.equal(h.actor().health, h.actor().maxHealth); assert.equal(state.step, 1);
-  assert.equal(state.fighting, undefined); assert.equal(h.sandbox.state.threats.length, 0);
-  h.command('act'); assert.equal(h.sandbox.state.threats.length, 2);
+  assert.equal(state.fighting, true); assert.equal(h.sandbox.state.threats.length, 4);
 });
 
 test('melee outside a scripted fight cannot kill the film cast', () => {
@@ -1792,6 +1866,22 @@ test('the entire film route completes through interactions, driving and real com
     }
     for (let index = 0; index < scene.steps.length; index++) {
       const step = scene.steps[index]; const actor = h.actor(); actor.position = filmStepPosition(scene, step);
+      if (scene.id === 'm1_room303') {
+        if (index === 0) { h.command('act'); h.advance(4); assert.equal(state.openingHotel?.phase, 'combat'); }
+        else if (index === 1) {
+          for (const target of [...h.sandbox.state.threats.filter(threat => threat.scene === scene.id)]) {
+            for (let hit = 0; target.health > 0 && hit < 6; hit++) {
+              actor.position = { ...target.position, z: target.position.z + 2 }; actor.rotation = Math.PI;
+              h.sandbox.attack(actor, h.tick(), hit % 3);
+            }
+            assert.equal(target.health, 0);
+          }
+          actor.position = { ...state.openingHotel!.fallen! }; h.command('act'); h.advance();
+          assert.equal(state.openingHotel?.disarmed, true);
+        } else if (index === 2 || index === 4) { h.command('act'); if (index === 4) h.advance(4); }
+        else h.advance();
+        assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`); continue;
+      }
       if (scene.id === 'm3_trainman_chase' && index === 2 || scene.id === 'm3_mobil_release' && index === 0) h.advance(12);
       if (scene.id === 'm3_trainman') {
         if (index === 0) { h.command('act'); h.advance(6); }

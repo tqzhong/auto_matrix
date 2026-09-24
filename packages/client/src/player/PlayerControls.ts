@@ -337,6 +337,7 @@ export class PlayerControls {
     this.motion.theOne = oneGesture;
     this.motion.reloaded = reloadedGesture;
     this.motion.catch = catchGesture;
+    this.motion.hotel303 = state.currentAction?.parameters.hotel303 as MotionInput['hotel303'];
     this.motion.burly = state.currentAction?.parameters.burly as MotionInput['burly'];
     this.motion.chateauWeapon = state.currentAction?.parameters.chateauWeapon as MotionInput['chateauWeapon'];
     this.motion.mountainFlight = state.currentAction?.parameters.mountainFlight as MotionInput['mountainFlight'];

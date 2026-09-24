@@ -285,6 +285,7 @@ export class PlayerController {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
       if (this.sandbox?.life.film.performing(agent)) {
+        this.sandbox.life.film.openingHotel.frame(agent);
         this.sandbox.life.film.truckFrame(agent, dt, tick);
         this.sandbox.life.film.windowFrame(agent, dt, tick);
         this.sandbox.life.film.crossingFrame(agent, dt, tick);
@@ -434,12 +435,15 @@ export class PlayerController {
     if (kind === 'shoot') {
       const lobby = this.sandbox?.life.film.lobby.active(agent);
       const coatcheck = this.sandbox?.life.film.coatcheck.active(agent);
-      if (!lobby && !coatcheck || session.strike || session.impulse || session.stagger > 0 || Date.now() - (session.lastShot ?? 0) < (coatcheck ? HEL_COATCHECK.fireInterval : rescueLoadout(this.sandbox!.life.film.state).fireInterval) * 1000) return '';
+      const hotel = this.sandbox?.life.film.openingHotel.active(agent);
+      if (!lobby && !coatcheck && !hotel || session.strike || session.impulse || session.stagger > 0 || Date.now() - (session.lastShot ?? 0) < (coatcheck || hotel ? HEL_COATCHECK.fireInterval : rescueLoadout(this.sandbox!.life.film.state).fireInterval) * 1000) return '';
       session.lastShot = Date.now();
-      return coatcheck ? this.sandbox!.life.film.coatcheck.shoot(agent, session.input.yaw, session.input.pitch ?? 0, tick)
+      return hotel ? this.sandbox!.life.film.openingHotel.shoot(agent, session.input.yaw, session.input.pitch ?? 0, tick)
+        : coatcheck ? this.sandbox!.life.film.coatcheck.shoot(agent, session.input.yaw, session.input.pitch ?? 0, tick)
         : this.sandbox!.life.film.lobby.shoot(agent, session.input.yaw, session.input.pitch ?? 0, tick);
     }
-    if (kind === 'reload') return this.sandbox?.life.film.coatcheck.active(agent)
+    if (kind === 'reload') return this.sandbox?.life.film.openingHotel.active(agent)
+      ? this.sandbox.life.film.openingHotel.reload(agent, tick) : this.sandbox?.life.film.coatcheck.active(agent)
       ? this.sandbox.life.film.coatcheck.reload(agent, tick) : this.sandbox?.life.film.lobby.reload(agent, tick) ?? '';
     if (kind === 'ability' || kind === 'ability2' || kind === 'dodge') {
       return this.cast(agent, session, kind === 'dodge' ? 'dodge' : playerSkills(agent)[kind === 'ability' ? 0 : 1], tick);

@@ -152,6 +152,7 @@ export class AgentRenderer {
         theOne: state.currentAction?.parameters.theOne as MotionInput['theOne'],
         reloaded: state.currentAction?.parameters.reloaded as MotionInput['reloaded'],
         catch: state.currentAction?.parameters.catch as MotionInput['catch'],
+        hotel303: state.currentAction?.parameters.hotel303 as MotionInput['hotel303'],
         burly: state.currentAction?.parameters.burly as MotionInput['burly'],
         chateauWeapon: state.currentAction?.parameters.chateauWeapon as MotionInput['chateauWeapon'],
         mountainFlight: state.currentAction?.parameters.mountainFlight as MotionInput['mountainFlight'],

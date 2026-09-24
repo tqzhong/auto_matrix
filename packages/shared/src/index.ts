@@ -16,6 +16,7 @@ export * from './constants/neo-story.js';
 export * from './constants/film-sets.js';
 export * from './constants/film-story.js';
 export * from './constants/opening-escape.js';
+export * from './constants/opening-hotel.js';
 export * from './constants/film-outcomes.js';
 export * from './constants/film-dialogue.js';
 export * from './constants/office.js';

@@ -16,6 +16,21 @@ import { RESCUE, rescueDuration, rescueLoadout, rescueLocked } from '@auto_matri
 const button = (target: string, label: string, disabled = false) => `<button data-action="life" data-target="film:${target}" ${disabled ? 'disabled' : ''}>${label}</button>`;
 export function renderFilmJourney(player: AgentState, sandbox: SandboxState): string {
   const life = sandbox.neoLife!; const journey = life.journey!; const scene = FILM_SCENE_BY_ID[journey.scene];
+  if (!journey.visiting && scene.id === 'm1_room303' && journey.openingHotel) {
+    const hotel = journey.openingHotel; const step = scene.steps[journey.step]; const current = player.id === journey.actor;
+    const close = current && Boolean(step && distance(player.position, filmStepPosition(scene, step)) <= 4);
+    const fallen = hotel.fallen && distance(player.position, hotel.fallen) <= 4;
+    const action = !current ? button('resume', '接回 Trinity 的视角')
+      : hotel.phase === 'failed' ? button('retry', '从破门检查点重试')
+        : !step ? button('next', '爬上屋顶 →')
+          : hotel.phase === 'breach' || hotel.phase === 'dive' ? '<button disabled>演出进行中 · 自动保存</button>'
+            : journey.step === 1 ? hotel.disarmed ? '<p>左键 / T 开火，F 近身还击，X 闪避枪线；清除四名警员后前往电话。</p>'
+              : hotel.fallen ? button('act', '夺取警员手枪 · G', !fallen) : '<p>领头警员正在靠近。F 击倒近身警员；红色枪线亮起后按 X。</p>'
+              : step.kind === 'reach' ? '<p>合上手记，亲自穿过走廊，抵达破窗。</p>' : button('act', `${step.label} · G`, !close);
+    const status = hotel.phase === 'combat' ? `警员 ${sandbox.threats.filter(threat => threat.scene === scene.id).length} 人 · ${hotel.disarmed ? `弹匣 ${hotel.ammo}/8 · R 换弹` : '先夺取手枪'}`
+      : hotel.phase === 'breach' ? '303 房门被撞开 · Trinity 举手应对' : hotel.phase === 'dive' ? '穿窗进入消防梯' : hotel.phase === 'failed' ? '突围失败 · 可以重试' : '电话、走廊与破窗都要亲自完成';
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>${scene.title}</h3><p>Trinity 视角 · 303 破门、夺枪、电话和破窗自动保存</p></header><article class="film-now"><div><h3>${step?.label ?? '303 突围完成'}</h3><p>${journey.lastText}</p><p>${status}</p><div class="film-controls">${action}<small>等待不会自动击败警员；死亡后从破门检查点重试，暂停和断线保留当前节拍。</small></div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
+  }
   if (!journey.visiting && (scene.id === 'm1_roofs' && journey.openingRoof || scene.id === 'm1_phone_escape' && journey.openingPhone)) {
     const roof = scene.id === 'm1_roofs'; const chase = journey.openingRoof; const phone = journey.openingPhone;
     const step = scene.steps[journey.step]; const current = player.id === journey.actor;

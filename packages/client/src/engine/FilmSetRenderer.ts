@@ -9,6 +9,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { FILM_SETS, FILM_SCENE_BY_ID, OPENING_ESCAPE, openingTruckPose, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, PILL_ROOM, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, GARAGE, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, EXILES, CHATEAU, awakeningLocked, trainingLocked, phoneLocked, windowOpening, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type FilmJourney, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
+import { OPENING_HOTEL } from '@auto_matrix/shared';
 import { LobbySetRenderer } from './LobbySetRenderer.js';
 import { OfficeSetRenderer } from './OfficeSetRenderer.js';
 import { FreewaySetRenderer } from './FreewaySetRenderer.js';
@@ -121,6 +122,10 @@ export class FilmSetRenderer {
   private openingTruck?: THREE.Group;
   private openingBooth?: THREE.Group;
   private openingGlass?: THREE.Group;
+  private hotel303Door?: THREE.Group;
+  private hotel303Glass?: THREE.Group;
+  private hotel303Shards?: THREE.Group;
+  private hotel303Pistol?: THREE.Group;
   private mobilLastFrame?: number;
   private helChaseTrain?: THREE.Group;
   private helLift?: { doors: [THREE.Group, THREE.Group]; bands: { mesh: THREE.Mesh; y: number }[]; light: THREE.PointLight };
@@ -228,6 +233,17 @@ export class FilmSetRenderer {
       if (this.approach.root.visible) this.approach.renderer.update(journey, elapsed, { phase: 'parked', elapsed: 0, role: 'neo', bugged: false });
     }
     this.office?.update(journey, cameraPosition, playerPosition, workday);
+    if (this.hotel303Door && this.hotel303Glass && this.hotel303Shards) {
+      const hotel = sceneId === 'm1_room303' && !journey?.visiting ? journey?.openingHotel : undefined;
+      const opening = hotel?.phase === 'breach' ? Math.min(1, hotel.elapsed / OPENING_HOTEL.breachSeconds) : hotel?.phase === 'trace' || !hotel ? 0 : 1;
+      this.hotel303Door.rotation.y = -opening * 1.35;
+      const broken = hotel?.phase === 'dive' && hotel.elapsed > .35 || hotel?.phase === 'done';
+      this.hotel303Glass.visible = !broken; this.hotel303Shards.visible = Boolean(broken);
+      if (this.hotel303Pistol) {
+        this.hotel303Pistol.visible = Boolean(hotel?.fallen && !hotel.disarmed && hotel.phase === 'combat');
+        if (hotel?.fallen) this.hotel303Pistol.position.set(hotel.fallen.x - this.current!.center.x, .12, hotel.fallen.z - this.current!.center.z);
+      }
+    }
     if (this.openingTruck && this.openingBooth && this.openingGlass) {
       const phone = sceneId === 'm1_phone_escape' && !journey?.visiting ? journey?.openingPhone : undefined;
       const pose = openingTruckPose(phone ?? { phase: 'running', remaining: OPENING_ESCAPE.phoneSeconds, lastTick: 0, attempts: 0 });
@@ -463,6 +479,7 @@ export class FilmSetRenderer {
       return { color: 0xf1f1e9, ambient: .95, sun: .08 };
     }
     if (this.theOne && this.current.id === 'film_heart_hotel') { fog.density = .0023; fog.color.setHex(0x151e1b); this.scene.environmentIntensity = .48; return { color: 0xd9dfbc, ambient: .55, sun: .08 }; }
+    if (this.currentScene === 'm1_room303') { fog.density = .003; fog.color.setHex(0x121a18); this.scene.environmentIntensity = .36; return { color: 0xb9c8bb, ambient: .35, sun: .05 }; }
     if (this.theOne && this.current.id === 'film_final_phone') { fog.density = .0012; fog.color.setHex(0xaebfc0); this.scene.environmentIntensity = .9; return { color: 0xffe5be, ambient: .96, sun: 1.7 }; }
     if (this.hotel) { fog.density = .001; this.scene.environmentIntensity = .42; return { color: 0xd4d1b2, ambient: .62, sun: .12 }; }
     if (this.ambush) { this.scene.environmentIntensity = .4; return { color: 0xd4ddbe, ambient: .52, sun: .15 }; }
@@ -733,6 +750,9 @@ export class FilmSetRenderer {
       this.box(this.black, 0, 9.15, -d / 2 + .3, 12.8, .35, 1);
       for (const side of [-1, 1]) this.box(this.black, side * 6, 4.5, -d / 2 + .3, .38, 9, .7);
       const light = new THREE.PointLight(0xbadcd4, 175, 36); light.position.set(0, 7, -38); this.root.add(light);
+    } else if (this.currentScene === 'm1_room303') {
+      for (const x of [-1, 1]) this.box(wall, x * (w + 7.6) / 4, h / 2, -d / 2, (w - 7.6) / 2, h, .7);
+      this.box(wall, 0, (h + 7.6) / 2, -d / 2, 7.6, h - 7.6, .7);
     } else this.box(wall, 0, h / 2, -d / 2, w, h, .7);
     this.box(wall, 0, h / 2, d / 2, w, h, .7);
     if (set.architecture === 'lafayette') {
@@ -782,8 +802,81 @@ export class FilmSetRenderer {
       this.root.add(spot, spot.target);
     }
   }
+  private openingHotelSet(set: FilmSet): void {
+    const soot = this.pbr('damaged_plaster', 0x3b4540, 4);
+    const plaster = this.pbr('damaged_plaster', 0x6a7066, 5);
+    const carpet = this.mat(0x302d2a, .95);
+    const ember = this.mat(0x1b201e, 1);
+    this.box(this.pbr('old_wood_floor', 0x897f72, 5), 0, .04, 12, set.width - 1.6, .07, 25);
+    this.box(carpet, 0, .085, 12, 19, .035, 17);
+    for (let i = 0; i < 14; i++) {
+      const x = Math.sin(i * 3.8) * 12; const z = 4 + i * 1.31;
+      const mark = this.box(ember, x, .11, z, 2 + i % 3, .012, 1.4 + i % 4); mark.rotation.y = i * .77;
+    }
+    for (const wall of OPENING_HOTEL.walls.slice(0, 2)) {
+      this.box(soot, wall.x, set.height / 2, wall.z, wall.width, set.height, wall.depth);
+      for (const y of [1.1, 3.8, 8.5]) this.box(plaster, wall.x, y, wall.z + .42, wall.width, .16, .06);
+    }
+    this.box(soot, 0, 10, OPENING_HOTEL.doorZ, 6.7, 4, .65);
+    const door = new THREE.Group(); door.name = 'hotel-303-door'; door.userData.dynamic = true;
+    door.position.set(-3.23, 0, OPENING_HOTEL.doorZ); this.root.add(door); this.hotel303Door = door;
+    door.add(this.box(this.wood, 3.23, 3.95, 0, 6.35, 7.9, .3, .1));
+    door.add(this.box(this.metal, 5.8, 3.7, .24, .35, .18, .17));
+    this.box(this.metal, 0, 8.1, OPENING_HOTEL.doorZ, 7.2, .34, .65);
+    for (const x of [-3.55, 3.55]) this.box(this.metal, x, 4, OPENING_HOTEL.doorZ, .3, 8, .65);
+    this.label('303', 0, 8.8, OPENING_HOTEL.doorZ + .45, 2.1, '#d8d0b6', '#34413e');
+
+    const desk = OPENING_HOTEL.computer;
+    this.table(-11, desk.z, 3, 2.2, this.metal, 2.75);
+    this.crt(-11.1, 3.6, desk.z, .66);
+    this.chair(-7.5, desk.z + 2, Math.PI);
+    this.phone(OPENING_HOTEL.phone.x, OPENING_HOTEL.phone.z);
+    this.hotel303Pistol = new THREE.Group(); this.hotel303Pistol.name = 'hotel-303-dropped-pistol'; this.hotel303Pistol.userData.dynamic = true;
+    this.hotel303Pistol.visible = false; this.root.add(this.hotel303Pistol);
+    this.hotel303Pistol.add(this.box(this.black, 0, .22, 0, 1.05, .17, .24));
+    const grip = this.box(this.metal, -.24, .08, .15, .24, .27, .14); grip.rotation.z = -.35; this.hotel303Pistol.add(grip);
+    this.hotel303Pistol.add(this.box(this.brass, .35, .33, 0, .13, .12, .16));
+    const computerLight = new THREE.PointLight(0x8fcbb3, 180, 18, 2); computerLight.position.set(-9.5, 4.8, desk.z); this.root.add(computerLight);
+    const corridorLight = new THREE.PointLight(0xc3b89a, 125, 30, 2); corridorLight.position.set(0, 9, -12); this.root.add(corridorLight);
+    for (const z of [-20, -12, -4]) {
+      this.box(plaster, -set.width / 2 + .65, 4.6, z, .18, 8.6, 7.2);
+      this.box(plaster, set.width / 2 - .65, 4.6, z, .18, 8.6, 7.2);
+      for (const x of [-12, 12]) {
+        this.box(this.wood, x, 3.5, z, 4.8, 7.1, .18, .12);
+        this.box(this.brass, x + 1.5, 3.2, z + .14, .16, .16, .1);
+      }
+      this.box(soot, 0, 10, z, set.width - 1, .25, .28);
+    }
+    this.label('FIRE EXIT', 0, 8.4, -set.depth / 2 + .55, 5.4, '#c9d0b1', '#27302d');
+    this.box(this.metal, 0, 7.65, -set.depth / 2 + .34, 8.1, .35, .3);
+    for (const x of [-4, 4]) this.box(this.metal, x, 3.8, -set.depth / 2 + .34, .3, 7.6, .3);
+    this.hotel303Glass = new THREE.Group(); this.hotel303Glass.name = 'hotel-303-window'; this.hotel303Glass.userData.dynamic = true; this.root.add(this.hotel303Glass);
+    this.hotel303Glass.add(this.box(this.glass, 0, 3.75, -set.depth / 2 + .39, 7.6, 7.2, .08));
+    this.hotel303Shards = new THREE.Group(); this.hotel303Shards.name = 'hotel-303-window-shards'; this.hotel303Shards.userData.dynamic = true;
+    this.hotel303Shards.visible = false; this.root.add(this.hotel303Shards);
+    for (let i = 0; i < 28; i++) {
+      const angle = i * 2.399; const radius = 1.5 + (i % 6) * .42;
+      const shard = this.box(this.glass, Math.sin(angle) * radius, .1 + i % 5 * .16, -set.depth / 2 - .3 - Math.cos(angle) * radius,
+        .12 + i % 3 * .12, .04, .28 + i % 4 * .14); shard.rotation.y = angle; this.hotel303Shards.add(shard);
+    }
+    this.box(this.metal, 0, -.35, -set.depth / 2 - 4.8, 11, .4, 9);
+    for (const x of [-5.3, 5.3]) {
+      this.box(this.metal, x, 2.15, -set.depth / 2 - 4.8, .16, 4.7, 9);
+      for (const z of [-set.depth / 2 - 8, -set.depth / 2 - 5, -set.depth / 2 - 2]) this.box(this.metal, x, 2.4, z, .18, .14, .18);
+    }
+    const exterior = this.pbr('damaged_plaster', 0x73746e, 6);
+    this.box(exterior, 0, 8, -42, 27, 16, .5);
+    for (const x of [-9, -3, 3, 9]) {
+      this.box(this.black, x, 9.5, -41.68, 3.2, 5, .12);
+      this.box(this.mat(0x6c775e, .7), x, 9.5, -41.6, 2.8, 4.6, .06);
+      this.box(this.black, x, 9.5, -41.5, .12, 4.8, .1);
+      this.box(this.black, x, 9.5, -41.5, 2.9, .12, .1);
+    }
+    const escapeLight = new THREE.PointLight(0xb1be9d, 155, 31, 2); escapeLight.position.set(0, 8, -32); this.root.add(escapeLight);
+  }
   private domestic(set: FilmSet): void {
     const { architecture: a, width: w, depth: d } = set;
+    if (set.id === 'film_heart_hotel' && this.currentScene === 'm1_room303') { this.openingHotelSet(set); return; }
     if (a === 'hotel' || a === 'tenement') {
       for (let z = -d / 2 + 6; z < d / 2 - 6; z += 12) {
         for (const side of [-1, 1]) { const start = this.root.children.length; this.door(0, 0, String(301 + Math.round((z + d / 2) / 12))); const group = new THREE.Group(); this.root.children.slice(start).forEach(c => group.add(c)); group.rotation.y = side * Math.PI / 2; group.position.set(side * (w / 2 - .5), 0, z); this.root.add(group); }
@@ -1855,6 +1948,7 @@ export class FilmSetRenderer {
     this.garageCar = undefined; this.garageGhosts = [];
     this.mobilTrain = undefined;
     this.openingTruck = undefined; this.openingBooth = undefined; this.openingGlass = undefined;
+    this.hotel303Door = undefined; this.hotel303Glass = undefined; this.hotel303Shards = undefined; this.hotel303Pistol = undefined;
     this.mobilLastFrame = undefined;
     this.helChaseTrain = undefined;
     this.helLift = undefined;

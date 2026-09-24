@@ -190,6 +190,15 @@ export class SandboxUI {
     this.el('sandbox-job').style.width = journey.started !== undefined && step ? `${Math.min(100, (this.tick - journey.started) / ((step.seconds ?? 3) * 2) * 100)}%` : '0';
     document.getElementById('game-objective')!.textContent = journey.visiting ? set.name : scene.title;
     document.getElementById('game-objective-copy')!.textContent = journey.visiting ? '自由走动，J 返回保存的剧情位置。' : journey.fighting ? 'F 连击 · X 闪避 · 1 治疗 · 击败追兵后继续' : step ? `${journey.step + 1}/${scene.steps.length} · ${step.label} · ${step.kind === 'reach' ? '走到标记旁' : step.kind === 'reflect' ? '靠近后按 J 记录反思' : '靠近后按 G'}` : 'G 继续下一段，J 查看刚刚发生的事。';
+    if (!journey.visiting && scene.id === 'm1_room303' && journey.openingHotel) {
+      const hotel = journey.openingHotel; const failed = hotel.phase === 'failed';
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.toggle('urgent', failed || hotel.phase === 'combat');
+      this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = failed ? 'J 手记 · 从破门检查点重试'
+        : hotel.phase === 'combat' ? hotel.disarmed ? `四警员突围 · 弹匣 ${hotel.ammo}/8 · 左键 / T 开火 · R 换弹 · X 闪避` : hotel.fallen ? '靠近落枪位置按 G 夺枪 · F 反击 · X 闪避' : 'F 击倒近身警员 · X 闪避枪线'
+          : hotel.phase === 'breach' ? '房门被撞开 · 正在进入突围' : hotel.phase === 'dive' ? '穿窗而出 · 进度自动保存' : '按 G 完成当前互动';
+      document.getElementById('game-objective-copy')!.textContent = failed ? '突围失败 · J 打开手记重试' : this.el('film-sequence-hint').textContent;
+    }
     if (!journey.visiting && scene.id === 'm1_roofs' && journey.openingRoof) {
       const failed = journey.openingRoof.phase === 'failed';
       this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.toggle('urgent', failed);

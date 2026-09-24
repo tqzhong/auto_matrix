@@ -40,6 +40,7 @@ export interface MotionInput {
   theOne?: TheOneGesture;
   reloaded?: ReloadedGesture;
   catch?: CatchGesture;
+  hotel303?: { phase: 'surrender' | 'dive'; elapsed: number };
   burly?: import('@auto_matrix/shared').BurlyEncounter & { role: 'neo' | 'smith' };
   chateauWeapon?: import('@auto_matrix/shared').ChateauWeapon;
   mountainFlight?: import('@auto_matrix/shared').MountainFlight;
@@ -532,6 +533,14 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     arms[i].elbow = -.7; arms[i].outward = (i ? 1 : -1) * (afloat ? .65 : .25); arms[i].grip = raised ? .8 : .1;
     legs[i].hip = -.2; legs[i].knee = .45 + (afloat ? Math.sin(state.time * 1.8 + i * Math.PI) * .15 : 0);
   }
+  if (input.hotel303?.phase === 'surrender') for (let i = 0; i < 2; i++) {
+    arms[i].shoulder = -2.55; arms[i].elbow = -.45; arms[i].outward = (i ? 1 : -1) * .42; arms[i].grip = .1;
+    legs[i].hip = 0; legs[i].knee = .12;
+  }
+  if (input.hotel303?.phase === 'dive') for (let i = 0; i < 2; i++) {
+    arms[i].shoulder = -1.35; arms[i].elbow = -.65; arms[i].outward = (i ? 1 : -1) * .38; arms[i].grip = .72;
+    legs[i].hip = i ? -.72 : .48; legs[i].knee = i ? 1.12 : .45;
+  }
   const oracleLean = oracle && input.oracleVisit?.role === 'oracle' ? oracle.inspect * .07 : 0;
   const oracleLook = oracle && input.oracleVisit ? (input.oracleVisit.role === 'oracle' ? oracle.listen * .12 : -oracle.listen * .09) : 0;
   const betrayalLean = betrayal ? betrayal.fall * 1.15 + (betrayal.unplugged ? .62 : 0) - betrayal.charge * .2 : 0;
@@ -547,8 +556,9 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const escapeLean = matrixEscape ? matrixEscape.wall * .75 + matrixEscape.grapple * (input.matrixEscape?.role === 'neo' ? -.82 : .24) - matrixEscape.strike * .32 - matrixEscape.leap * .24 + matrixEscape.brace * .74 : 0;
   const escapeRoll = matrixEscape ? matrixEscape.wall * (input.matrixEscape?.role === 'smith' ? -.68 : .52) + matrixEscape.brace * 1.05 + matrixEscape.transform * Math.sin(input.matrixEscape!.elapsed * 18) * .12 : 0;
   const theOneLean = theOne ? theOne.wound * .92 + theOne.fallen * 1.35 + theOne.kiss * .45 - theOne.revive * .18 + theOne.block * .18 - theOne.dive * .72 + theOne.burst * .32 - theOne.flight * .58 : 0;
+  const hotelLean = input.hotel303?.phase === 'dive' ? -.68 : 0;
   const theOneRoll = theOne ? theOne.wound * .58 + theOne.fallen * 1.08 + theOne.burst * (.18 + Math.sin(input.theOne!.elapsed * 11) * .12) + theOne.flight * Math.sin(input.theOne!.elapsed * .8) * .08 : 0;
-  return { legs, arms, hipHeight, twist, lean: run * .12 + state.landing * .12 + state.airborne * .04 + extension * .10 - kick * .27 - recoil * .35 + (input.crouching ? .26 : 0) + (input.riding ? .2 : 0) + doorPush * .38 + oracleLean + betrayalLean + rescueLean + lobbyLean + governmentLean + airRescueLean + escapeLean + theOneLean - (reloaded?.falling ?? 0) * .85 + (reloaded?.dreamAgent ?? 0) * 2 + (reloaded?.down ?? 0) * 1.25 - (reloaded?.flight ?? 0) * .65 - (catchFlying && catching?.role === 'neo' ? .45 : 0) + (catching?.role === 'trinity' && catching.phase === 'flight' ? .25 : 0),
+  return { legs, arms, hipHeight, twist, lean: run * .12 + state.landing * .12 + state.airborne * .04 + extension * .10 - kick * .27 - recoil * .35 + (input.crouching ? .26 : 0) + (input.riding ? .2 : 0) + doorPush * .38 + oracleLean + betrayalLean + rescueLean + lobbyLean + governmentLean + airRescueLean + escapeLean + theOneLean + hotelLean - (reloaded?.falling ?? 0) * .85 + (reloaded?.dreamAgent ?? 0) * 2 + (reloaded?.down ?? 0) * 1.25 - (reloaded?.flight ?? 0) * .65 - (catchFlying && catching?.role === 'neo' ? .45 : 0) + (catching?.role === 'trinity' && catching.phase === 'flight' ? .25 : 0),
     sway: Math.sin(cycle) * moving * .035, lunge: extension * .16 - kick * .25 - recoil * .22 - dodging * .35 + doorPush * .12 + (matrixEscape?.strike ?? 0) * .32,
     roll: -state.turn * run * .035 - dodging * .22 + betrayalRoll + lobbyRoll + governmentRoll + airRescueRoll + escapeRoll + theOneRoll + (reloaded?.down ?? 0) * 1.1 - (reloaded?.dodge ?? 0) * .6 + (reloaded?.falling ?? 0) * (input.reloaded?.drift ?? 0) * .055, headTurn: -twist * .65 + glance + oracleLook + rescueLook, moving, run, airborne: state.airborne,
     coat: moving * (.10 + run * .3) + state.airborne * .18 + kick * .35, impact: extension, landing: state.landing };
