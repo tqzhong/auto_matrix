@@ -31,6 +31,7 @@ import { MOUNTAIN, type MountainFlight, type PlayerInput } from '@auto_matrix/sh
 import { GARAGE, newGarageEscape, stepGarageEscape } from '@auto_matrix/shared';
 import { newHammerFlight, stepHammerFlight } from '@auto_matrix/shared';
 import { newApuRun, stepApuRun } from '@auto_matrix/shared';
+import { TEMPLE_SEAL_SECONDS } from '@auto_matrix/shared';
 import { TRUCKS } from '@auto_matrix/shared';
 import { OPENING_ESCAPE } from '@auto_matrix/shared';
 import { OpeningHotelSystem } from './OpeningHotelSystem.js';
@@ -3097,6 +3098,13 @@ export class FilmStorySystem {
     this.place(actor, this.scene!, position); state.checkpoint = { ...position }; delete state.started;
     state.lastText = '旧版门控检查点已接回 Kid 的 APU 冲刺；已完成的船坞战保留。';
   }
+  private ensureTempleSeal(tick: number): void {
+    const state = this.state;
+    if (state?.scene !== 'm3_temple_defense') return;
+    if (state.step === 2 && state.completed.includes(state.scene)) state.step = this.scene!.steps.length;
+    state.templeSeal ??= { phase: state.step >= this.scene!.steps.length ? 'sealed' : 'running',
+      remaining: TEMPLE_SEAL_SECONDS, lastTick: tick, attempts: 0 };
+  }
   driveFrame(agent: AgentState, input: DriveInput, dt: number, tick: number): boolean {
     if (!this.driving(agent)) return false;
     if (this.state!.scene === 'm3_gate') {
@@ -3368,6 +3376,7 @@ export class FilmStorySystem {
     if (!state || !this.scene) return '这条电影进度尚未开始。';
     this.ensureHammerRoute();
     this.ensureApuGate();
+    this.ensureTempleSeal(tick);
     if (target === 'resume' && agent.id === 'neo' && agent.id !== state.actor) {
       if (!this.changeActor(agent, state.actor, tick)) return '当前剧情角色正在由另一位玩家控制。';
       return '已继续保存的剧情视角与位置。';
@@ -3395,6 +3404,14 @@ export class FilmStorySystem {
       return `回访${FILM_SETS[visited.set].name}。J 可返回当前剧情，回访不会改写进度。`;
     }
     if (target === 'retry') {
+      if (state.scene === 'm3_temple_defense' && state.templeSeal?.phase === 'failed') {
+        state.templeSeal = { phase: 'running', remaining: TEMPLE_SEAL_SECONDS, lastTick: tick,
+          attempts: state.templeSeal.attempts + 1 };
+        state.step = 0; state.checkpoint = filmEntry(this.scene); delete state.started;
+        agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
+        this.place(agent, this.scene, state.checkpoint);
+        return state.lastText = '从神庙入口重试。自动防御已熄灭；赶在下一波哨兵抵达前，手动锁住两侧卡榫。';
+      }
       if (state.scene === 'm3_bane' && state.bane?.phase === 'failed') {
         const encounter = state.bane; encounter.phase = encounter.checkpoint === 'gun' ? 'gun_warning' : 'blind';
         encounter.elapsed = 0; encounter.focus = 0; encounter.hits = 0; encounter.counters = 0; encounter.lastStrike = -1;
@@ -3597,6 +3614,7 @@ export class FilmStorySystem {
     }
     if (state.visiting) return '回访期间不推进主线。J 返回当前剧情。';
     if (state.finished) return '三部曲已完成。可回访场景，或在手记中开始下一轮生活。';
+    if (state.scene === 'm3_temple_defense' && state.templeSeal?.phase === 'failed') return '下一波哨兵已抵达神庙。按 J 从入口检查点重试。';
     if (state.hotel && !state.hotel.entered) {
       const door = filmPosition('film_lafayette', 24, 0);
       if (target === 'act' && distance(agent.position, door) < 4 && state.hotel.progress >= HOTEL_DOOR_PROGRESS - .01) {
@@ -4023,6 +4041,11 @@ export class FilmStorySystem {
     delete state.openingPhone;
     delete state.openingHotel;
     delete state.bane;
+    delete state.templeSeal;
+    if (scene.id === 'm3_temple_defense') {
+      state.templeSeal = { phase: 'running', remaining: TEMPLE_SEAL_SECONDS, lastTick: tick, attempts: 0 };
+      if (state.completed.includes('m3_emp') && !state.emp) this.sandbox().zion = Math.min(this.sandbox().zion, 15);
+    }
     if (scene.id === 'm1_room303') this.openingHotel.reset(tick);
     if (scene.id === 'm1_roofs') state.openingRoof = { phase: 'running', lastTick: tick, attempts: 0 };
     if (scene.id === 'm1_phone_escape') state.openingPhone = { phase: 'running', remaining: OPENING_ESCAPE.phoneSeconds, lastTick: tick, attempts: 0 };
@@ -4543,6 +4566,10 @@ export class FilmStorySystem {
       if (state.step === 4) life.choices.hammer_supplies = 'loaded';
     }
     if (state.scene === 'm3_maggie_discovery' && state.step === 1) life.choices.bane_escape_route = 'logos_suspected';
+    if (state.scene === 'm3_emp' && state.step === 0) {
+      state.emp = { firedAt: tick }; this.sandbox().zion = Math.min(this.sandbox().zion, 15);
+    }
+    if (state.scene === 'm3_temple_defense' && state.step === 2 && state.templeSeal) state.templeSeal.phase = 'sealed';
     if (state.scene === 'm3_hel_bargain' && state.step === 2 && state.helBargain) state.helBargain.phase = 'ready';
     if (state.scene === 'm3_hel_bargain' && state.step === 5) life.choices.neo_release = 'trinity_refused_trade';
     if (state.scene === 'm1_bug' && state.step === 0 && state.office?.outcome === 'escaped') text = '扫描完成，没有发现追踪装置。Trinity 收起仪器，确认接头安全，继续前往 Morpheus 的房间。';
@@ -4604,6 +4631,7 @@ export class FilmStorySystem {
     const state = this.state; if (!state || !this.scene || state.finished || state.visiting) return;
     this.ensureHammerRoute();
     this.ensureApuGate();
+    this.ensureTempleSeal(tick);
     this.ensureFinale(tick);
     if (state.scene === 'm3_bane') this.ensureBane(tick);
     if (state.scene === 'm2_key_door') this.sourceDoor();
@@ -4630,6 +4658,7 @@ export class FilmStorySystem {
       if (state.helElevator) state.helElevator.lastTick = tick;
       if (state.helDanceDoor) state.helDanceDoor.lastTick = tick;
       if (state.helDanceDoor) state.helDanceDoor.allyTick = tick;
+      if (state.templeSeal) state.templeSeal.lastTick = tick;
       if (state.helBargain) state.helBargain.lastTick = tick;
       if (actor?.status === 'alive' && state.scene === 'm2_trucks' && state.trucks) {
         const gap = Math.max(0, tick - state.trucks.lastTick);
@@ -4640,6 +4669,15 @@ export class FilmStorySystem {
     }
     if (state.scene === 'm2_trucks' && !state.trucks)
       state.trucks = { phase: state.step === 0 ? 'duel' : 'collision', elapsed: 0, lastTick: tick, attempt: 0 };
+    if (state.scene === 'm3_temple_defense' && state.templeSeal?.phase === 'running') {
+      const seal = state.templeSeal;
+      seal.remaining = Math.max(0, seal.remaining - Math.max(0, tick - seal.lastTick) * .5); seal.lastTick = tick;
+      if (!seal.remaining) {
+        seal.phase = 'failed'; actor.health = 0; actor.status = 'dead'; delete state.started;
+        state.lastText = '自动防御已停，下一波哨兵抢先抵达。按 J 从神庙入口重试，亲手锁住两侧卡榫。';
+        return;
+      }
+    }
     if (state.scene === 'm1_roofs') { this.openingRoofTick(actor, tick); if (state.openingRoof?.phase === 'failed') return; }
     if (state.scene === 'm1_phone_escape') { this.openingPhoneTick(tick); if (state.openingPhone?.phase === 'failed') return; }
     if (state.scene === 'm1_room303' && this.openingHotel.tick(actor, tick)) return;

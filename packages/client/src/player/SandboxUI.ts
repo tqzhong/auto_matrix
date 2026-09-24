@@ -1,5 +1,5 @@
 import { CATCH, RELOADED, RELOADED_FINALE, HEL_COATCHECK, catchText, reloadedText } from '@auto_matrix/shared';
-import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_NAMES, filmReflections, GRID_HACK_SECONDS, GRID_REROUTE_SECONDS, HEL_ELEVATOR, HEL_DANCE_DOOR, filmStepPosition, helElevatorLocked, helDanceDoorLocked, pillLocked, lafayetteWelcomeLocked, awakeningLocked, awakeningWaiting, AWAKENING_SECONDS, MIRROR_TOUCH, MIRROR_TIMING, trainingLocked, trainingWaiting, TRAINING_SECONDS, DOJO_COMBO_WINDOW, windowOpening, windowCrossing, ITEMS, RECIPES, SKILLS, FILMS, MISSIONS, LOCATIONS, CITY_BUILDINGS, NEO_CHAPTERS, LIFE_ACTIONS, lifeActionPosition, lifeRoomCenter, locationEntrance, distance, missionPosition, nearTransit, skillPoints,
+import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_NAMES, filmReflections, GRID_HACK_SECONDS, GRID_REROUTE_SECONDS, HEL_ELEVATOR, HEL_DANCE_DOOR, filmStepPosition, helElevatorLocked, helDanceDoorLocked, pillLocked, lafayetteWelcomeLocked, awakeningLocked, awakeningWaiting, AWAKENING_SECONDS, MIRROR_TOUCH, MIRROR_TIMING, trainingLocked, trainingWaiting, TRAINING_SECONDS, DOJO_COMBO_WINDOW, windowOpening, windowCrossing, dockPowerOffline, ITEMS, RECIPES, SKILLS, FILMS, MISSIONS, LOCATIONS, CITY_BUILDINGS, NEO_CHAPTERS, LIFE_ACTIONS, lifeActionPosition, lifeRoomCenter, locationEntrance, distance, missionPosition, nearTransit, skillPoints,
   type AgentState, type SandboxState, type SandboxCommand, type ItemId, type SkillId, type Vector3 } from '@auto_matrix/shared';
 import './sandbox.css';
 import { renderNeoLife } from './NeoLifePanel.js';
@@ -1095,6 +1095,18 @@ export class SandboxUI {
       this.el('sandbox-waypoint').textContent = `三号闸门 ↑ ${Math.max(0, Math.round(run.z + 50))} m`;
       document.getElementById('game-objective-copy')!.textContent = '沿船坞通道驶向闸门 · 看准哨兵俯冲位置并绕开';
       this.el('sandbox-interact').classList.add('hidden'); return;
+    }
+    if (scene.id === 'm3_emp' && !journey.visiting) {
+      this.el('sandbox-trace').textContent = dockPowerOffline(journey) ? 'EMP 已触发 · 船坞自动防御失效' : 'EMP 已充能 · 船坞防御仍在线';
+    }
+    if (scene.id === 'm3_temple_defense' && journey.templeSeal?.phase === 'running' && !journey.visiting) {
+      const seal = journey.templeSeal;
+      this.el('film-ride').classList.remove('hidden');
+      this.el('film-ride-title').textContent = 'ZEE / 神庙入口';
+      this.el('film-ride-speed').textContent = `${Math.ceil(seal.remaining)} 秒`;
+      this.el('film-ride-health').textContent = `自动防御失效 · 手动卡榫 ${Math.max(0, journey.step - 1)} / 2`;
+      this.el('film-ride-controls').textContent = 'Shift 奔跑 · 靠近左右卡榫按 G';
+      document.getElementById('game-objective-copy')!.textContent = '下一波哨兵逼近 · 在倒计时结束前锁住入口';
     }
     if (scene.id === 'm2_garage' && journey.garage?.phase === 'riding' && !journey.visiting) {
       const escape = journey.garage;

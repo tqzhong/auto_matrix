@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { APU_ROUTE, ZION_OBSTACLES, type FilmJourney } from '@auto_matrix/shared';
+import { APU_ROUTE, ZION_OBSTACLES, dockPowerOffline, type FilmJourney } from '@auto_matrix/shared';
 
 /** Six authored Zion interiors share rock, metal and service-light materials, not a generic cave layout. */
 export class ZionHomecomingRenderer {
@@ -19,6 +19,10 @@ export class ZionHomecomingRenderer {
   private gateLeaf?: THREE.Group;
   private gateLift = 0;
   private sentinelDives: THREE.Group[] = [];
+  private dockElectrical?: { lights: [THREE.Light, number][]; lit: THREE.MeshStandardMaterial; engines: THREE.MeshStandardMaterial };
+  private templeBulkhead?: THREE.Group;
+  private templeLevers: THREE.Group[] = [];
+  private templeLift = 10;
   private crowd?: { bodies: THREE.InstancedMesh; heads: THREE.InstancedMesh; arms: THREE.InstancedMesh; poses: [number, number, number][] };
   private disposed = false;
   constructor(root: THREE.Group, readonly set: string) {
@@ -165,6 +169,7 @@ export class ZionHomecomingRenderer {
     this.departureGifts = { charm, spoon, engines: engine };
     this.glow(0xffb273, 420, 52, 0, 19, -54);
     this.glow(0xffd0a0, 560, 68, 21, 18, 18); this.glow(0xeeb573, 330, 75, 18, 23, -28); this.glow(0x9cbaab, 180, 65, -29, 35, 18);
+    this.dockElectrical = { lights: [...this.lights].map(light => [light, light.intensity]), lit, engines: engine };
   }
   private council(): void {
     const steel = this.surface('metal_plate', 0x737b72, 3), stone = this.surface('damaged_plaster', 0x6e675b, 3);
@@ -210,6 +215,16 @@ export class ZionHomecomingRenderer {
     }
     this.box(cloth, 0, .12, -17, 10, .06, 55);
     this.box(iron, 0, 3.1, -41, 10.3, .35, 4.5, this.static, 'zion-assembly-rostrum');
+    this.templeBulkhead = new THREE.Group(); this.templeBulkhead.name = 'zion-temple-bulkhead';
+    this.templeBulkhead.position.y = this.templeLift; this.moving.add(this.templeBulkhead);
+    this.box(iron, 0, 5.2, -52, 14, 10, .9, this.templeBulkhead);
+    for (const x of [-8, 8]) {
+      const lever = new THREE.Group(); lever.name = `zion-temple-latch-${x < 0 ? 'left' : 'right'}`;
+      lever.position.set(x, 2.5, -45); this.moving.add(lever);
+      this.box(iron, 0, -.8, 0, .9, 1.5, .8, lever);
+      this.pipe(amber, [0, 0, 0], [0, 1.2, 0], .13, lever);
+      this.templeLevers.push(lever);
+    }
     for (const x of [-17, 17]) { this.cylinder(iron, x, 1.4, -23, 2.1, 2.8); this.cylinder(cloth, x, 2.85, -23, 2.15, .16); }
     // Background residents dance only after the speech. Instancing keeps the crowd inexpensive.
     const poses: [number, number, number][] = [];
@@ -307,9 +322,16 @@ export class ZionHomecomingRenderer {
       sentinel.position.y = 11 + Math.sin(elapsed * 3 + index) * 1.3;
     }
     if (this.gateLeaf) {
-      const open = journey?.scene === 'm3_gate' && journey.step >= 3;
+      const open = journey?.completed.includes('m3_gate') || journey?.scene === 'm3_gate' && journey.step >= 3;
       this.gateLift += (open ? 31 - this.gateLift : -this.gateLift) * .08;
       this.gateLeaf.position.y = this.gateLift;
+    }
+    if (this.templeBulkhead) {
+      const defense = journey?.scene === 'm3_temple_defense' && !journey.visiting;
+      const sealed = journey?.completed.includes('m3_temple_defense') || defense && journey.step >= 3;
+      this.templeLift += ((sealed ? 0 : 10) - this.templeLift) * .12;
+      this.templeBulkhead.position.y = this.templeLift;
+      this.templeLevers.forEach((lever, index) => lever.rotation.z = defense && journey.step >= index + 2 || sealed ? -.85 : 0);
     }
     const wheel = this.moving.getObjectByName('zion-recycler-flywheel'); if (wheel) wheel.rotation.x = elapsed * .3;
     if (this.messageDoor) this.messageDoor.rotation.y = journey?.scene === 'm2_oracle_message' && journey.step >= 1 ? -.85 : 0;
@@ -319,6 +341,12 @@ export class ZionHomecomingRenderer {
       this.departureGifts.charm.visible = departure && journey.step < 1;
       this.departureGifts.spoon.visible = departure && journey.step >= 2 && journey.step < 3;
       this.departureGifts.engines.emissiveIntensity = departure && journey.step >= 4 ? 4 : 1.2;
+    }
+    if (this.dockElectrical) {
+      const offline = dockPowerOffline(journey);
+      for (const [light, power] of this.dockElectrical.lights) light.intensity = offline ? power * .08 : power;
+      this.dockElectrical.lit.emissiveIntensity = offline ? .05 : 2;
+      if (offline) this.dockElectrical.engines.emissiveIntensity = .05;
     }
     if (this.signals.length) for (const signal of this.signals) signal.emissiveIntensity = journey?.scene === 'm2_hamann' && journey.step >= 3 ? 3 : .55 + Math.sin(elapsed * 2) * .25;
     if (this.crowd) {

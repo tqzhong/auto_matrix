@@ -207,8 +207,8 @@ export class FilmSetRenderer {
           this.build(set); this.batch();
           if (sceneId === 'm3_bane' && set.id === 'film_logos_deck') this.logosBane = new LogosBaneRenderer(this.root);
           if (sceneId === 'm3_oracle_absorbed' && set.id === 'film_oracle_home'
-            || ['m3_bane_questions', 'm3_logos_plan', 'm3_maggie_discovery'].includes(sceneId ?? '') && set.id === 'film_hammer_deck')
-            this.revolutionsPrelude = new RevolutionsPreludeRenderer(this.root, sceneId as 'm3_oracle_absorbed' | 'm3_bane_questions' | 'm3_logos_plan' | 'm3_maggie_discovery');
+            || ['m3_bane_questions', 'm3_logos_plan', 'm3_maggie_discovery', 'm3_emp'].includes(sceneId ?? '') && set.id === 'film_hammer_deck')
+            this.revolutionsPrelude = new RevolutionsPreludeRenderer(this.root, sceneId as 'm3_oracle_absorbed' | 'm3_bane_questions' | 'm3_logos_plan' | 'm3_maggie_discovery' | 'm3_emp');
           if (set.id === 'film_club_hel' && typeof window !== 'undefined') {
             this.helPerformers = new HelClubPerformers(this.root);
             void this.helPerformers.ready.catch(error => console.error('Club Hel 演员加载失败', error));
@@ -484,6 +484,11 @@ export class FilmSetRenderer {
       (this.scene.background as THREE.Color).copy(fog.color);
       this.scene.environmentIntensity = dark ? .22 : .45;
       return { color: dark ? 0x99cfa5 : 0xe1dbc0, ambient: dark ? .32 : .66, sun: .08 };
+    }
+    if (this.revolutionsPrelude && this.currentScene === 'm3_emp' && this.revolutionsPrelude.blackout) {
+      fog.color.setHex(0x0b1318); fog.density = .005; (this.scene.background as THREE.Color).copy(fog.color);
+      this.scene.environmentIntensity = .12;
+      return { color: 0x93a9b1, ambient: .24, sun: .02 };
     }
     if (this.logosBane) {
       const phase = this.logosBanePhase;

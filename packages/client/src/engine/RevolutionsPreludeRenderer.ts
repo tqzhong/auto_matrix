@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import type { FilmJourney } from '@auto_matrix/shared';
+import { dockPowerOffline, type FilmJourney } from '@auto_matrix/shared';
 
-type PreludeScene = 'm3_oracle_absorbed' | 'm3_bane_questions' | 'm3_logos_plan' | 'm3_maggie_discovery';
+type PreludeScene = 'm3_oracle_absorbed' | 'm3_bane_questions' | 'm3_logos_plan' | 'm3_maggie_discovery' | 'm3_emp';
 
 /** Small, state-driven set pieces layered over the existing Oracle apartment and Hammer interiors. */
 export class RevolutionsPreludeRenderer {
@@ -14,7 +14,13 @@ export class RevolutionsPreludeRenderer {
   private evidence: THREE.Mesh[] = [];
   private routes?: [THREE.Mesh, THREE.Mesh];
   private warning?: THREE.PointLight;
+  private hammerDiffuser?: THREE.MeshBasicMaterial;
+  private empDisplay?: THREE.MeshBasicMaterial;
+  private empFlash?: THREE.PointLight;
+  private empTriggeredAt?: number;
+  private empSeen = false;
   consumed = false;
+  blackout = false;
 
   constructor(root: THREE.Group, private scene: PreludeScene) {
     this.group.name = `revolutions-prelude-${scene}`; root.add(this.group);
@@ -23,6 +29,7 @@ export class RevolutionsPreludeRenderer {
       this.hammerLighting();
       if (scene === 'm3_bane_questions') this.baneInquiry();
       else if (scene === 'm3_logos_plan') this.routesAtHammer();
+      else if (scene === 'm3_emp') this.empDetonator();
       else this.maggieDiscovery();
     }
   }
@@ -60,6 +67,7 @@ export class RevolutionsPreludeRenderer {
   }
   private hammerLighting(): void {
     const diffuser = this.material(new THREE.MeshBasicMaterial({ color: 0xcbdfe0, toneMapped: false }));
+    this.hammerDiffuser = diffuser;
     const frame = this.material(new THREE.MeshStandardMaterial({ color: 0x526467, metalness: .6, roughness: .4 }));
     for (const z of [27, 0, -27]) {
       this.box(frame, 0, 17.2, z, 11.4, .22, 1.25);
@@ -108,6 +116,17 @@ export class RevolutionsPreludeRenderer {
     const warning = new THREE.PointLight(0xdb735e, 0, 18, 2); warning.name = 'hammer-medical-warning'; warning.position.set(-10, 6, -25);
     this.group.add(warning); this.lamps.push(warning); this.warning = warning;
   }
+  private empDetonator(): void {
+    const iron = this.material(new THREE.MeshStandardMaterial({ color: 0x354348, roughness: .5, metalness: .7 }));
+    this.empDisplay = this.material(new THREE.MeshBasicMaterial({ color: 0xe3b88b, toneMapped: false }));
+    const console = new THREE.Group(); console.name = 'hammer-emp-detonator'; this.group.add(console);
+    this.box(iron, 2.4, 1.2, -16, 2.6, 2.4, 1.8, console);
+    this.box(this.empDisplay, 2.4, 2.46, -16.15, 1.8, .08, 1.1, console);
+    const handle = this.mesh(new THREE.CylinderGeometry(.17, .22, .8, 12), iron, console);
+    handle.position.set(2.4, 3, -16); handle.rotation.z = -.3;
+    this.empFlash = new THREE.PointLight(0xe8f9ff, 0, 95, 2);
+    this.empFlash.position.set(0, 8, -16); this.group.add(this.empFlash);
+  }
   update(journey: FilmJourney | undefined, elapsed: number): void {
     const step = journey?.scene === this.scene && !journey.visiting ? journey.step : 0;
     if (this.scene === 'm3_oracle_absorbed') {
@@ -120,10 +139,21 @@ export class RevolutionsPreludeRenderer {
       const material = route.material as THREE.MeshBasicMaterial; material.opacity = step >= 2 ? .82 : .28 + Math.sin(elapsed * 2 + i) * .08;
     });
     else if (this.scene === 'm3_maggie_discovery' && this.warning) this.warning.intensity = step ? 90 + Math.sin(elapsed * 5) * 45 : 45;
+    else if (this.scene === 'm3_emp') {
+      const fired = dockPowerOffline(journey);
+      if (fired && !this.empSeen) this.empTriggeredAt = elapsed;
+      this.empSeen = fired; this.blackout = fired;
+      this.lamps.forEach(lamp => lamp.intensity = fired ? 0 : 850);
+      this.hammerDiffuser?.color.setHex(fired ? 0x182023 : 0xcbdfe0);
+      this.empDisplay?.color.setHex(fired ? 0x30231f : 0xe3b88b);
+      const pulse = fired && this.empTriggeredAt !== undefined ? Math.max(0, 1 - (elapsed - this.empTriggeredAt) / .7) : 0;
+      if (this.empFlash) this.empFlash.intensity = pulse * 4500;
+    }
   }
   dispose(): void {
     this.group.removeFromParent(); this.group.clear();
     this.geometries.forEach(geometry => geometry.dispose()); this.materials.forEach(material => material.dispose());
     this.lamps.forEach(light => light.dispose()); this.codeLight?.dispose();
+    this.empFlash?.dispose();
   }
 }

@@ -90,6 +90,8 @@ export interface FilmJourney {
   garage?: import('./garage.js').GarageEscape;
   hammer?: import('./hammer-flight.js').HammerFlight;
   apu?: import('./dock-apu.js').ApuRun;
+  emp?: { firedAt: number };
+  templeSeal?: { phase: 'running' | 'failed' | 'sealed'; remaining: number; lastTick: number; attempts: number };
   trucks?: import('./trucks.js').TruckEncounter;
   awakening?: import('./awakening.js').AwakeningBeat;
   training?: import('./training.js').TrainingPerformance;
@@ -133,6 +135,11 @@ export interface FilmJourney {
   helCoatcheck?: import('./hel-coatcheck.js').HelCoatcheckEncounter;
   helBargain?: HelBargainEncounter;
   bane?: BaneEncounter;
+}
+export const TEMPLE_SEAL_SECONDS = 42;
+export function dockPowerOffline(journey: FilmJourney | undefined): boolean {
+  return Boolean(journey && (journey.emp?.firedAt !== undefined || journey.completed.includes('m3_emp')
+    || journey.scene === 'm3_emp' && journey.step > 0));
 }
 export function helElevatorLocked(journey: FilmJourney | undefined): boolean {
   return journey?.scene === 'm3_hel_entry' && !journey.visiting && journey.helElevator?.phase === 'descending';
@@ -349,8 +356,15 @@ export const FILM_SCENES: FilmScene[] = [
     { kind: 'drive', label: '接管受损 APU，冲向三号闸门', x: 0, z: 12 },
     use('操作三号闸门，让 Hammer 冲入船坞', 'Kid 用受损的 APU 拉起闸门。Hammer 冲进船坞；在里面启动 EMP 会同时瘫痪锡安自己的防御系统。', 0, -50, 7),
   ], ['zee']),
-  scene('m3_emp', 3, 'hammer_deck', 'niobe', '代价高昂的援军', 'siege', 'siege', 'EMP 清除附近哨兵，也摧毁了锡安自己的防御设备。', [use('关闭过载的控制台', 'Hammer 的到来挽救了眼前的船坞，新的机器仍会继续到达。', 0, -16), think('救援也会带来代价', '此刻的职责是保护剩下的人，而不是给刚才的选择寻找简单的胜负。')], ['morpheus', 'lock']),
-  scene('m3_temple_defense', 3, 'zion_temple', 'zee', '神庙最后的门', 'siege', 'siege', '居民退入神庙。Zee 与 Link 重逢，留守者准备迎接最后一次冲击。', [walk('抵达居民集结处', 0, -30), use('检查最后的入口', '防线已无法再退。所有人等待着仍在另一条航线上的希望。', 0, -30)], ['link', 'hamann', 'kid', 'zion_parent', 'zion_neighbor']),
+  scene('m3_emp', 3, 'hammer_deck', 'link', '代价高昂的援军', 'siege', 'siege', 'Hammer 刚穿过打开的闸门，Link 的 EMP 已充满。哨兵涌入船坞；启动它会同时烧毁锡安自己的防御设备。', [
+    use('启动 EMP，清除船坞里的哨兵', '白色电磁波席卷船坞。哨兵坠落，APU 与自动防御也全部熄灭；下一波机器仍会到来。', 0, -16, 2),
+    think('救援也会带来代价', '这次救援给人们争取了时间，却夺走了原有防线。剩下的人必须用手动设施守住神庙。'),
+  ], ['niobe', 'morpheus', 'roland']),
+  scene('m3_temple_defense', 3, 'zion_temple', 'zee', '神庙最后的门', 'siege', 'siege', 'EMP 之后自动防御停摆。新的哨兵已进入船坞；居民退向神庙，Zee 必须在它们抵达前手动锁住入口。', [
+    walk('穿过人群，抵达神庙入口', 0, -30),
+    use('锁住左侧手动卡榫', '左侧卡榫落位；没有电力，另一边也必须由人亲手扳紧。', -8, -45, 2),
+    use('锁住右侧手动卡榫', '两侧卡榫咬合，厚重闸门在机器群抵达前落下。Zee 与 Link 暂时守住居民。', 8, -45, 2),
+  ], ['link', 'hamann', 'kid', 'zion_parent', 'zion_neighbor']),
   scene('m3_defense', 3, 'machine_defense', 'trinity', '机器城的防线', 'last_sky', 'chase', 'Logos 接近机器城，浮动炸弹和密集机器封锁航路。', [use('沿 Neo 指引调整航线', 'Neo 感知并破坏部分来袭机器，过载却让他的身体越来越虚弱。', 0, -20, 6), walk('转向上方的云层', 0, -40)], ['neo']),
   scene('m3_sun', 3, 'above_clouds', 'trinity', '第一次看见太阳', 'last_sky', 'farewell', 'Logos 短暂穿出乌云。Trinity 看见蓝天与阳光，随后飞船失去动力。', [walk('靠近驾驶舷窗', 0, -20), use('望向云层之上的天空', '阳光只停留片刻。飞船再次坠入云层。', 0, -20, 8)], ['neo']),
   scene('m3_farewell', 3, 'logos_wreck', 'neo', '坠落之后', 'last_sky', 'farewell', 'Logos 撞入机器城。Trinity 身受重伤，最后的路只能由 Neo 独自走完。', [walk('回到 Trinity 身边', 0, -15), think('有限的生命如何留下意义？', '失去无法被一个更大的目标抵消。你带着共同的经历继续行动。')], ['trinity']),

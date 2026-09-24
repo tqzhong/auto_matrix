@@ -50,6 +50,16 @@ if (scene.id === 'm3_gate' && process.argv[3] === 'apu-drive') {
   journey.step = 1; actor.controller = 'player'; actor.position = filmStepPosition(scene, scene.steps[1]);
   journey.checkpoint = { ...actor.position }; sandbox.life.film.command(actor, 'act', 0);
 }
+if (scene.id === 'm3_emp' && process.argv[3] === 'emp-fired') {
+  const journey = sandbox.life.film.state!;
+  journey.step = 1; journey.emp = { firedAt: 0 };
+  actor.position = filmStepPosition(scene, scene.steps[1]); journey.checkpoint = { ...actor.position };
+}
+if (scene.id === 'm3_temple_defense' && process.argv[3] === 'temple-latches') {
+  const journey = sandbox.life.film.state!;
+  journey.step = 1; actor.position = filmStepPosition(scene, scene.steps[1]);
+  journey.checkpoint = { ...actor.position };
+}
 if (scene.id === 'm1_mirror' && ['mirror-wired', 'mirror-silver'].includes(process.argv[3])) {
   const journey = sandbox.life.film.state!;
   journey.awakening = { kind: 'mirror', elapsed: process.argv[3] === 'mirror-wired' ? 2.75 : 4.8, started: false,

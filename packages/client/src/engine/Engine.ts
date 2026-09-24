@@ -362,6 +362,8 @@ export class Engine {
       }
       if (previous?.phase === current.phase && !previous.empFired && current.empFired) this.audio.theOneSound('emp');
     }
+    if (after?.scene === 'm3_emp' && before?.scene === after.scene && before.emp?.firedAt === undefined
+      && after.emp?.firedAt !== undefined && after.actor === this.playerControls?.id && this.running) this.audio.theOneSound('emp');
     if (after?.scene === 'm1_office_escape' && !after.visiting && after.actor === this.playerControls?.id && before?.scene === after.scene && !after.office?.outcome && this.running) {
       const previous = before.office?.window ?? 0; const current = after.office?.window ?? 0;
       if (previous < .7 && current >= .7) this.audio.windowSound(false);
