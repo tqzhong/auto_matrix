@@ -12,6 +12,7 @@ export interface HelCoatcheckEncounter {
   phase: 'ready' | 'combat' | 'cleared';
   ammo: number; reloadAt?: number; wave: number; nextWaveAt?: number;
   shots: number; kills: number; allyShotAt: number[]; coverHits: number[];
+  rescueElapsed?: number; rescueLastTick?: number;
 }
 
 /** Coat counters are both solid room furniture and ballistic cover. */

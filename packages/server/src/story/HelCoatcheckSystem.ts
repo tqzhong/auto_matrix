@@ -26,7 +26,7 @@ export class HelCoatcheckSystem {
   }
   start(actor: AgentState, tick: number): void {
     this.sandbox().threats = this.sandbox().threats.filter(threat => threat.scene !== 'm3_hel_entry');
-    this.reset(); this.state!.phase = 'combat'; this.wave(actor, tick);
+    this.reset(); this.state!.phase = 'combat'; this.state!.rescueElapsed = 0; this.state!.rescueLastTick = tick; this.wave(actor, tick);
     this.sandbox().neoLife!.journey!.lastText = 'Seraph 把衣帽间女服务生拉到柜台后。五名守卫拔枪，Trinity 与 Morpheus 冲入交火。左键 / T 射击，R 换弹，柜台能挡住子弹。';
     this.stageAllies(tick);
   }
@@ -102,6 +102,9 @@ export class HelCoatcheckSystem {
     const state = this.state;
     if (state.phase === 'cleared') return true;
     if (state.phase !== 'combat') return false;
+    // Older combat saves had no attendant pose; resume with her already behind cover.
+    state.rescueElapsed = Math.min(2, (state.rescueElapsed ?? 2) + Math.max(0, tick - (state.rescueLastTick ?? tick)));
+    state.rescueLastTick = tick;
     if (state.reloadAt !== undefined && tick >= state.reloadAt) { state.ammo = HEL_COATCHECK.magazine; delete state.reloadAt; }
     this.stageAllies(tick);
     const enemies = this.enemies();

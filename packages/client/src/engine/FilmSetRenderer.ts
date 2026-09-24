@@ -30,6 +30,7 @@ import { ApartmentSetRenderer } from './ApartmentSetRenderer.js';
 import { apartmentLocked } from '@auto_matrix/shared';
 import { clubLocked } from '@auto_matrix/shared';
 import { ClubSetRenderer } from './ClubSetRenderer.js';
+import { HelClubPerformers } from './HelClubPerformers.js';
 import { SentinelSetRenderer } from './SentinelSetRenderer.js';
 import { CypherRestaurantRenderer } from './CypherRestaurantRenderer.js';
 import { betrayalLocked, rescueLocked } from '@auto_matrix/shared';
@@ -122,6 +123,7 @@ export class FilmSetRenderer {
   private helLift?: { doors: [THREE.Group, THREE.Group]; bands: { mesh: THREE.Mesh; y: number }[]; light: THREE.PointLight };
   private helDanceDoor?: [THREE.Group, THREE.Group];
   private helCoatDamage?: THREE.Group[];
+  private helPerformers?: HelClubPerformers;
   private helStandoff?: { crowd: THREE.Group[]; guard: THREE.Group; floorGuns: THREE.Group; flyingGun: THREE.Group; light: THREE.PointLight };
   private powerStatus?: { primary: THREE.MeshBasicMaterial; emergency: THREE.MeshBasicMaterial; lights: THREE.PointLight[] };
   private sourceDoor?: { portal: THREE.Group; source: THREE.Group; glow: THREE.Mesh };
@@ -171,6 +173,10 @@ export class FilmSetRenderer {
         else if (set.id === 'film_adams_bridge' || set.id === 'film_extraction_car') this.meeting = new MeetingSetRenderer(this.root);
         else {
           this.build(set); this.batch();
+          if (set.id === 'film_club_hel' && typeof window !== 'undefined') {
+            this.helPerformers = new HelClubPerformers(this.root);
+            void this.helPerformers.ready.catch(error => console.error('Club Hel 演员加载失败', error));
+          }
           if (sceneId === 'm2_stop_sentinels' && set.id === 'film_service_tunnels' || sceneId === 'm2_medical' && set.id === 'film_hammer_deck') this.finale = new ReloadedFinaleRenderer(this.root, sceneId);
           if (set.architecture === 'power') this.createPowerStatus(set);
           if (sceneId === 'm2_key_door') this.createSourceDoor();
@@ -267,12 +273,12 @@ export class FilmSetRenderer {
       const entering = sceneId === 'm3_hel_entry' && !journey?.visiting && ((journey?.step ?? 0) > 3 || journey?.helDanceDoor?.phase === 'open' || journey?.helDanceDoor?.phase === 'opening' && journey.helDanceDoor.elapsed > HEL_DANCE_DOOR.seconds * .3);
       const phase = encounter?.phase;
       this.helStandoff.crowd.forEach((figure, index) => {
-        figure.visible = entering || Boolean(encounter) && phase !== 'released';
+        figure.visible = !this.helPerformers?.loaded && (entering || Boolean(encounter) && phase !== 'released');
         figure.position.x = (index % 2 ? 1 : -1) * (index < 6 ? 2.8 + Math.floor(index / 2) * .35 : 5.5 + Math.floor(index / 4) * 1.1)
           + (['windup', 'evade', 'counter', 'airborne', 'gunpoint'].includes(phase ?? '') ? (index % 2 ? 1 : -1) * 1.6 : 0);
         figure.rotation.y = Math.sin(elapsed * .7 + index) * .12;
       });
-      this.helStandoff.guard.visible = Boolean(encounter) && !['armed', 'released'].includes(phase ?? '');
+      this.helStandoff.guard.visible = !this.helPerformers?.loaded && Boolean(encounter) && !['armed', 'released'].includes(phase ?? '');
       this.helStandoff.guard.position.x = 2.1;
       this.helStandoff.guard.rotation.x = ['airborne', 'gunpoint', 'failed'].includes(phase ?? '') ? -1.2 : 0;
       this.helStandoff.guard.position.z = phase === 'windup' || phase === 'evade' ? -30.5 - Math.min(1, encounter?.elapsed ?? 0) : -31.5;
@@ -285,6 +291,7 @@ export class FilmSetRenderer {
       }
       this.helStandoff.light.intensity = encounter && phase !== 'armed' && phase !== 'released' ? 80 : 250;
     }
+    this.helPerformers?.update(journey, elapsed);
     if (this.powerStatus) {
       const grid = journey?.grid;
       const energized = grid?.primary !== 'off' && grid?.emergency !== 'off';
@@ -1747,6 +1754,7 @@ export class FilmSetRenderer {
     for (const geometry of this.geometries) if (!live.has(geometry)) { geometry.dispose(); this.geometries.delete(geometry); }
   }
   private clear(): void {
+    this.helPerformers?.dispose(); this.helPerformers = undefined;
     this.club?.dispose(); this.club = undefined;
     this.apartment?.dispose(); this.apartment = undefined;
     this.approach?.renderer.dispose(); this.approach = undefined;

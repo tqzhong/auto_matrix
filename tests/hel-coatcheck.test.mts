@@ -31,6 +31,23 @@ test('coat check starts with five authored guards in two saved groups and an arm
   assert.equal(h.combat.active(h.trinity), true);
 });
 
+test('the coat-check attendant reaches cover during combat and keeps that pose after loading', () => {
+  const h = setup(); h.sandbox.life.film.command(h.trinity, 'act', 1);
+  assert.equal(h.combat.state!.rescueElapsed, 0);
+  h.combat.tick(h.trinity, 2);
+  assert.equal(h.combat.state!.rescueElapsed, 1);
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+  assert.equal(h.combat.state!.rescueElapsed, 1);
+  h.combat.tick(h.trinity, 3);
+  assert.equal(h.combat.state!.rescueElapsed, 2);
+  h.trinity.controller = null; h.combat.tick(h.trinity, 20);
+  assert.equal(h.combat.state!.rescueElapsed, 2, 'the performance cannot advance while the player is disconnected');
+  h.trinity.controller = 'player';
+  delete h.combat.state!.rescueElapsed; delete h.combat.state!.rescueLastTick;
+  h.combat.tick(h.trinity, 21);
+  assert.equal(h.combat.state!.rescueElapsed, 2, 'an older fight save resumes with the attendant already in cover');
+});
+
 test('Trinity can shoot, while coat counters block shots and create impacts', () => {
   const h = setup(); h.sandbox.life.film.command(h.trinity, 'act', 1);
   const enemy = h.sandbox.state.threats[0]; h.sandbox.state.threats = [enemy];
