@@ -64,6 +64,20 @@ test('the successful office escape reaches the same call without inventing an in
   assert.equal(h.state().step, 1); assert.equal(h.state().office?.bugged, false); assert.match(h.state().lastText, /Adams Street/);
 });
 
+test('Morpheus describes the actual office outcome during the second call', () => {
+  for (const outcome of ['captured', 'escaped'] as const) {
+    const h = setup(outcome); h.frames(WAKE_CALL.waking + .2);
+    h.neo.position = filmStepPosition(FILM_SCENE_BY_ID.m1_wake_again, FILM_SCENE_BY_ID.m1_wake_again.steps[0]);
+    h.command('act'); h.frames(WAKE_CALL.pickup + 3.5);
+    assert.equal(h.state().wakeCall?.phase, 'listening');
+    if (outcome === 'captured') assert.match(h.state().lastText, /特工抢先找到了你/);
+    else {
+      assert.match(h.state().lastText, /你避开了他们的追捕/);
+      assert.doesNotMatch(h.state().lastText, /特工抢先找到了你/);
+    }
+  }
+});
+
 test('the exact handset beat and body pose survive pause, disconnect, save restore and retry', () => {
   const h = setup('captured'); h.frames(WAKE_CALL.waking + .2);
   h.neo.position = filmStepPosition(FILM_SCENE_BY_ID.m1_wake_again, FILM_SCENE_BY_ID.m1_wake_again.steps[0]); h.command('act'); h.frames(WAKE_CALL.pickup + 2.35);

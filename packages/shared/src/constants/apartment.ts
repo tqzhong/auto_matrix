@@ -59,7 +59,7 @@ export function wakeCallText(call: WakeCall): string {
       return call.elapsed < 1.35 ? 'Neo 在床上猛然惊醒。' : call.elapsed < 3 ? '他先摸向嘴，再检查腹部；审讯室留下的触感并没有随着梦境消失。' : '座机铃声迫使他离开床铺。';
     case 'ringing': return '公寓里的有线座机持续响着。走到工作台旁，按 G 拿起听筒。';
     case 'pickup': return call.elapsed < .8 ? 'Neo 伸手从底座上拿起听筒。' : '他没有先开口。线路另一端传来 Morpheus 的声音。';
-    case 'listening': return call.elapsed < 2.8 ? 'MORPHEUS · 这条线路正在被监听，不能谈太久。' : call.elapsed < 5.8 ? 'MORPHEUS · 特工抢先找到了你，但他们低估了你的选择。' : 'MORPHEUS · 你仍然想和我见面吗？';
+    case 'listening': return call.elapsed < 2.8 ? 'MORPHEUS · 这条线路正在被监听，不能谈太久。' : call.elapsed < 5.8 ? (call.nightmare ? 'MORPHEUS · 特工抢先找到了你，但他们低估了你的选择。' : 'MORPHEUS · 你避开了他们的追捕，但这条线路仍不安全。') : 'MORPHEUS · 你仍然想和我见面吗？';
     case 'decision': return '电话另一端安静下来，等待你的回答。按 G 明确答应；等待不会替你作出选择。';
     case 'reply': return call.elapsed < 1.5 ? 'NEO · 是。' : call.elapsed < 3.15 ? 'MORPHEUS · 去 Adams Street 桥下。接应车辆会找到你。' : '听筒回到底座。接头地点已经记下。';
     case 'done': return '前往 101 房门，离开公寓，去 Adams Street 桥下。';
