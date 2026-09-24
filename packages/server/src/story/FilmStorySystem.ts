@@ -3594,7 +3594,9 @@ export class FilmStorySystem {
       }
       const index = FILM_SCENES.findIndex(s => s.id === state.scene);
       const branch = state.scene === 'm1_office_escape' && state.office?.outcome === 'captured' ? 'm1_interrogation'
-        : state.scene === 'm1_ledge' && state.office?.outcome === 'escaped' ? 'm1_wake_again' : undefined;
+        : state.scene === 'm1_ledge' && state.office?.outcome === 'escaped' ? 'm1_wake_again'
+          : state.scene === 'm3_logos_plan' && !state.completed.includes('m3_oracle_absorbed') ? 'm3_oracle_absorbed'
+            : state.scene === 'm3_oracle_absorbed' && state.completed.includes('m3_bane_questions') ? state.completed.includes('m3_logos_plan') ? 'm3_zion_prepare' : 'm3_logos_plan' : undefined;
       const next = branch ? FILM_SCENE_BY_ID[branch] : FILM_SCENES[index + 1];
       if (branch) {
         const skipped = FILM_SCENES.slice(index + 1, FILM_SCENES.indexOf(next!)).map(s => s.id);
@@ -4014,6 +4016,18 @@ export class FilmStorySystem {
     this.sandbox().weatherUntil = tick + 100000;
     this.stageCast();
     this.reconcileCast();
+    if (scene.id === 'm3_oracle_last') {
+      const first = life.choices.oracle_first;
+      const second = life.choices['m2_bench:2'];
+      if (first) state.lastText += first === 'rescue' ? ' 第一次来这里时，你担心 Morpheus 会因你受伤；后来你亲自把他救出。'
+        : first === 'doubt' ? ' 第一次来这里时，你追问过一句预言会不会改变人的决定。'
+          : ' 第一次来这里时，你选择带着疑问继续观察。';
+      if (second) state.lastText += second === 'agency' ? ' 第二次会面后，你仍根据先知的行动而非程序身份判断她。'
+        : second === 'care' ? ' 第二次会面后，你记得她也曾为了保护别人付出代价。'
+          : ' 第二次会面后，你接受有边界的合作，仍要求彼此承担风险。';
+    }
+    if (scene.id === 'm3_logos_plan' && life.choices.bane_neural_scan)
+      state.lastText += ' Roland 的报告列出 Bane 的疑点；没有证据能证明他现在在哪里。';
     if (scene.id === 'm2_burly') {
       state.burly = { phase: 'ready', elapsed: 0, attempt: 0, repelled: 0, staffSwings: 0, assimilation: 0, nextCopyAt: tick };
       state.lastText = burlyText(state.burly);
@@ -4166,6 +4180,10 @@ export class FilmStorySystem {
         else actor.position = filmPosition(scene.set, i % 2 ? 10 : -10, 5 + Math.floor(i / 2) * 6);
       }
       if (!zion) actor.rotation = i % 2 ? -Math.PI / 2 : Math.PI / 2;
+      if (scene.id === 'm3_oracle_last' || scene.id === 'm3_oracle_absorbed') {
+        const spots: Record<string, [number, number, number]> = { oracle: [-7, -22, 0], sati: [5, -17, -Math.PI / 2], seraph: [1, 9, Math.PI], smith: [0, 40, Math.PI] };
+        const spot = spots[id]; if (spot) { actor.position = filmPosition(scene.set, spot[0], spot[1]); actor.rotation = spot[2]; }
+      }
       if (scene.id === 'm1_roofs' && id === 'agent_brown') { actor.position = filmPosition(scene.set, 0, 43); actor.rotation = Math.PI; }
       if (scene.id === 'm1_lobby' && id === 'trinity') { actor.position = filmPosition(scene.set, -4, 30); actor.rotation = Math.PI; }
       if (scene.id === 'm1_lobby' && id === 'citizen_12') { actor.position = filmPosition(scene.set, 0, 20.8); actor.rotation = 0; }
@@ -4281,6 +4299,15 @@ export class FilmStorySystem {
         const spot = spots[id]; if (spot) { actor.position = filmPosition(scene.set, spot[0], spot[1]); actor.rotation = spot[2]; }
         if (id === 'neo' || id === 'bane') actor.currentAction = { type: 'idle', parameters: { resolved: true, finaleComa: true }, startedAt: this.state!.enteredAt, duration: 100000, progress: 0 };
       }
+      if (scene.id === 'm3_bane_questions') {
+        const spots: Record<string, [number, number, number]> = { bane: [8, -19, Math.PI], maggie: [-12, -24, Math.PI / 2] };
+        const spot = spots[id]; if (spot) { actor.position = filmPosition(scene.set, spot[0], spot[1]); actor.rotation = spot[2]; }
+      }
+      if (scene.id === 'm3_logos_plan') {
+        const spots: Record<string, [number, number, number]> = { niobe: [0, -20, 0], roland: [-10, -17, .8], morpheus: [9, -17, -.8], trinity: [8, 6, Math.PI] };
+        const spot = spots[id]; if (spot) { actor.position = filmPosition(scene.set, spot[0], spot[1]); actor.rotation = spot[2]; }
+      }
+      if (scene.id === 'm3_maggie_discovery' && id === 'morpheus') { actor.position = filmPosition(scene.set, 6, -18); actor.rotation = Math.PI; }
       if (['m3_mobil', 'm3_family', 'm3_trainman'].includes(scene.id)) {
         const spots: Record<string, [number, number, number]> = { sati: [-5, scene.id === 'm3_mobil' ? 12 : -8, 0],
           rama_kandra: [-12, -8, Math.PI / 2], kamala: [-10, -8, Math.PI / 2], trainman: [12, -80, -Math.PI / 2] };
@@ -4427,6 +4454,20 @@ export class FilmStorySystem {
       state.helChase.phase = 'running'; state.helChase.elapsed = 0; state.helChase.lastTick = tick;
       text = 'Trainman 拉下紧急制动，朝对向站台冲去；Seraph 追出车厢。';
     }
+    if (state.scene === 'm3_bane_questions') {
+      if (state.step === 1) life.choices.bane_wounds = 'self_inflicted';
+      if (state.step === 2) life.choices.bane_emp_record = 'unexplained';
+      if (state.step === 3) life.choices.bane_neural_scan = 'abnormal';
+    }
+    if (state.scene === 'm3_oracle_absorbed' && state.step === 2) {
+      const smith = this.world.agents.get('smith');
+      if (smith && !smith.controller) { smith.position = filmPosition(this.scene!.set, -4, -13); smith.rotation = Math.PI; }
+    }
+    if (state.scene === 'm3_logos_plan') {
+      if (state.step === 2) { life.choices.logos_assignment = 'neo_trinity'; life.choices.hammer_assignment = 'niobe_zion'; }
+      if (state.step === 4) life.choices.hammer_supplies = 'loaded';
+    }
+    if (state.scene === 'm3_maggie_discovery' && state.step === 1) life.choices.bane_escape_route = 'logos_suspected';
     if (state.scene === 'm3_hel_bargain' && state.step === 2 && state.helBargain) state.helBargain.phase = 'ready';
     if (state.scene === 'm3_hel_bargain' && state.step === 5) life.choices.neo_release = 'trinity_refused_trade';
     if (state.scene === 'm1_bug' && state.step === 0 && state.office?.outcome === 'escaped') text = '扫描完成，没有发现追踪装置。Trinity 收起仪器，确认接头安全，继续前往 Morpheus 的房间。';
@@ -4456,7 +4497,7 @@ export class FilmStorySystem {
     if (!state.completed.includes(state.scene)) {
       state.completed.push(state.scene);
       this.reconcileCast();
-      const observing = state.scene === 'm1_steak' || state.scene === 'm2_bane_copy';
+      const observing = ['m1_steak', 'm2_bane_copy', 'm3_oracle_absorbed', 'm3_bane_questions', 'm3_maggie_discovery'].includes(state.scene);
       life.journal.unshift({ day: life.day, time: this.world.timeOfDay, title: observing ? `旁观片段 · ${this.scene!.title}` : this.scene!.title,
         text: observing ? `这不是 Neo 此时拥有的角色知识。${text}` : text });
       life.journal = life.journal.slice(0, 120);

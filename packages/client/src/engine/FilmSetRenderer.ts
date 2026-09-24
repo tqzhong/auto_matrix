@@ -41,6 +41,7 @@ import { MatrixEscapeRenderer } from './MatrixEscapeRenderer.js';
 import { TheOneRenderer } from './TheOneRenderer.js';
 import { MountainSetRenderer } from './MountainSetRenderer.js';
 import { LogosBaneRenderer } from './LogosBaneRenderer.js';
+import { RevolutionsPreludeRenderer } from './RevolutionsPreludeRenderer.js';
 
 const outdoor = new Set(['rooftop', 'plaza', 'bridge', 'street', 'courtyard', 'freeway', 'machine', 'rain', 'garden', 'desert', 'pods', 'mountain']);
 
@@ -121,6 +122,7 @@ export class FilmSetRenderer {
   private baneCopy?: BaneCopyRenderer;
   private logosBane?: LogosBaneRenderer;
   private logosBanePhase?: string;
+  private revolutionsPrelude?: RevolutionsPreludeRenderer;
   private portalDoor?: { scene: 'm2_seraph' | 'm2_backdoors'; panel: THREE.Group };
   private oracleLetter?: THREE.Group;
   private courtyardStaff?: THREE.Group;
@@ -201,6 +203,9 @@ export class FilmSetRenderer {
         else {
           this.build(set); this.batch();
           if (sceneId === 'm3_bane' && set.id === 'film_logos_deck') this.logosBane = new LogosBaneRenderer(this.root);
+          if (sceneId === 'm3_oracle_absorbed' && set.id === 'film_oracle_home'
+            || ['m3_bane_questions', 'm3_logos_plan', 'm3_maggie_discovery'].includes(sceneId ?? '') && set.id === 'film_hammer_deck')
+            this.revolutionsPrelude = new RevolutionsPreludeRenderer(this.root, sceneId as 'm3_oracle_absorbed' | 'm3_bane_questions' | 'm3_logos_plan' | 'm3_maggie_discovery');
           if (set.id === 'film_club_hel' && typeof window !== 'undefined') {
             this.helPerformers = new HelClubPerformers(this.root);
             void this.helPerformers.ready.catch(error => console.error('Club Hel 演员加载失败', error));
@@ -286,6 +291,7 @@ export class FilmSetRenderer {
     this.pods?.update(journey, elapsed, firstPerson);
     this.neb?.update(journey, elapsed);
     this.finale?.update(journey, elapsed);
+    this.revolutionsPrelude?.update(journey, elapsed);
     this.construct?.update(journey);
     this.desert?.update(journey, elapsed);
     this.mountain?.update(journey?.scene === 'm2_mountain' && !journey.visiting ? journey.mountain : undefined, elapsed);
@@ -466,6 +472,13 @@ export class FilmSetRenderer {
     (this.scene.background as THREE.Color).setHex(palette.sky);
     const fog = this.scene.fog as THREE.FogExp2; fog.color.setHex(palette.sky); fog.density = palette.fog;
     this.scene.environmentIntensity = outdoor.has(this.current.architecture) ? .8 : .6;
+    if (this.revolutionsPrelude && this.currentScene === 'm3_oracle_absorbed') {
+      const dark = this.revolutionsPrelude.consumed;
+      fog.color.setHex(dark ? 0x101e19 : 0x333d31); fog.density = dark ? .006 : .003;
+      (this.scene.background as THREE.Color).copy(fog.color);
+      this.scene.environmentIntensity = dark ? .22 : .45;
+      return { color: dark ? 0x99cfa5 : 0xe1dbc0, ambient: dark ? .32 : .66, sun: .08 };
+    }
     if (this.logosBane) {
       const phase = this.logosBanePhase;
       const cut = phase && !['ready', 'gun_warning'].includes(phase);
@@ -2031,6 +2044,7 @@ export class FilmSetRenderer {
     this.zion?.dispose(); this.zion = undefined;
     this.baneCopy?.dispose(); this.baneCopy = undefined;
     this.logosBane?.dispose(); this.logosBane = undefined; this.logosBanePhase = undefined;
+    this.revolutionsPrelude?.dispose(); this.revolutionsPrelude = undefined;
     this.portalDoor = undefined; this.oracleLetter = undefined; this.courtyardStaff = undefined; this.courtyardBirds = []; this.courtyardDisturbedAt = undefined;
     this.exileDessert = undefined; this.bookDoor = undefined; this.chateauVolley = undefined; this.chateauVolleyTick = undefined; this.chateauDoor = undefined;
     this.garageCar = undefined; this.garageGhosts = [];

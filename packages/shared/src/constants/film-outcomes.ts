@@ -8,7 +8,7 @@ export const FILM_CONSEQUENCES: Record<string, Record<string, FilmFate>> = {
   m2_bane_copy: { bane: 'assimilated' },
   m2_vigilant: { soren: 'dead', axel: 'dead' },
   m2_key_door: { keymaker: 'dead' },
-  m3_bane_questions: { maggie: 'dead' },
+  m3_maggie_discovery: { maggie: 'dead' },
   m3_oracle_absorbed: { oracle: 'assimilated', sati: 'assimilated', seraph: 'assimilated' },
   m3_bane: { bane: 'dead' },
   m3_dock_battle: { charra: 'dead' },
@@ -23,5 +23,7 @@ export function filmCharacterFates(journey: FilmJourney): Record<string, FilmFat
   for (const [scene, changes] of Object.entries(FILM_CONSEQUENCES)) {
     if (journey.completed.includes(scene)) Object.assign(fates, changes);
   }
+  // Saves from before the shipboard discovery still reached the Logos fight.
+  if (journey.completed.includes('m3_bane') && !journey.completed.includes('m3_maggie_discovery')) fates.maggie = 'dead';
   return fates;
 }

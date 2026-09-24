@@ -6,7 +6,7 @@
 
 ## 当前完成度
 
-这是可运行的三部曲场景原型：105 个剧情段落、62 个可进入场景定义、39 类建筑布局。计数按本项目任务粒度划分，不是电影逐镜头统计，也不代表原片所有室内房间、镜头与动作已经一比一复现。当前空间主要由程序生成的几何与 PBR 材质组成，尚未达到电影级美术验收标准。
+这是可运行的三部曲场景原型：106 个剧情段落、62 个可进入场景定义、39 类建筑布局。计数按本项目任务粒度划分，不是电影逐镜头统计，也不代表原片所有室内房间、镜头与动作已经一比一复现。当前空间主要由程序生成的几何与 PBR 材质组成，尚未达到电影级美术验收标准。
 
 三部影片的事件顺序、主要人物所在地点、营救与背叛、建筑师的选择、停战结局已串成连续路线。成片事件是路线依据；日常养成、蓝色药丸分支、哲学反思记录、场景回访与下一轮生活属于游戏扩展。非 Neo 出场的情节由对应人物游玩，例如 Trinity 的序幕、Morpheus 的营救、Niobe 的电站与归航、Kid 的闸门；角色已被另一玩家控制时保留进度并拒绝强占。
 
@@ -154,11 +154,12 @@
 | m3_hel_entry | 地狱的衣帽间 | Club Hel · 地下俱乐部 | Trinity | 按下 HEL 电梯按钮 → 井道下降、到站开门 → 衣帽间交战 → 取回装备 → 到 VIP 高台 |
 | m3_hel_bargain | 不接受的交换 | Club Hel · 地下俱乐部 | Trinity | 舞池包围后缴枪 → 听先知双眼交易并拒绝 → X 闪避 / F 突围 → G 接枪 → 近身举枪迫使放人；失手可从突围前重试 |
 | m3_mobil_release | 等来同伴 | Mobil Ave · 中间世界 | Neo | 等返程列车停稳 → 与 Trinity 离站 |
-| m3_oracle_last | 没有保证的未来 | 先知公寓 · 候诊室与厨房 | Neo | 反思 → 交互 |
-| m3_bane_questions | 幸存者的说法 | Hammer · 医疗舱与舰桥 | Captain Roland | 交互 → 交互 |
-| m3_logos_plan | 分开的两条航线 | 地下隧道 · 舰船撤离 | Neo | 移动 → 反思 |
-| m3_oracle_absorbed | 等待 Smith | 先知公寓 · 候诊室与厨房 | The Oracle | 交互 → 反思 |
+| m3_oracle_last | 没有保证的未来 | 先知公寓 · 候诊室与厨房 | Neo | 进入厨房 → 追问建筑师/源头/Smith → 反思 → 离开 |
+| m3_oracle_absorbed | 等待 Smith | 先知公寓 · 候诊室与厨房 | The Oracle | 送 Sati 撤离 → 听走廊灯熄灭 → 反思 → 面对 Smith |
+| m3_bane_questions | 幸存者的说法 | Hammer · 医疗舱与舰桥 | Captain Roland | 进医疗舱 → 查伤口/EMP/神经扫描 → 反思 |
+| m3_logos_plan | 分开的两条航线 | Hammer · 医疗舱与舰桥 | Neo | 进会议区 → 说明机器城航线 → 核对补给/船员 → 反思 → 登 Logos |
 | m3_zion_prepare | 最后的防守部署 | 锡安 · 指挥所与议事厅 | Commander Lock | 交互 → 移动 |
+| m3_maggie_discovery | 空出的医疗舱 | Hammer · 医疗舱与舰桥 | Captain Roland | 返回医疗舱 → 发现 Maggie 遇害、Bane 失踪 |
 | m3_bane | Logos 上的 Bane | Logos · 驾驶舱与货舱 | Neo | 移动 → 战斗 → 交互 |
 | m3_hammer_tunnels | Hammer 的狭窄航路 | 地下隧道 · 舰船撤离 | Niobe | 交互 → 移动 → 交互 |
 | m3_dock_battle | 船坞的弹药与钢铁 | 锡安 · 船坞 | Captain Mifune | 战斗 → 交互 |
