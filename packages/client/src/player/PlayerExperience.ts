@@ -107,7 +107,7 @@ export class PlayerExperience {
   }
   observe(release = true): void {
     this.controlled = null; this.menuOpen = false;
-    document.body.classList.remove('landing', 'playing', 'code-vision', 'bullet-time', 'neo-daily');
+    document.body.classList.remove('landing', 'playing', 'code-vision', 'bullet-time', 'neo-daily', 'film-story');
     this.el('landing-screen').classList.add('hidden'); this.el('game-hud').classList.add('hidden'); this.el('character-select').classList.add('hidden');
     if (release) this.actions.observe();
   }
@@ -157,6 +157,7 @@ export class PlayerExperience {
     document.body.classList.toggle('film-interrogation-scene', Boolean(player?.currentAction?.parameters.interrogation));
     document.body.classList.toggle('film-meeting-scene', Boolean(player?.currentAction?.parameters.meeting));
     this.filmPlaying = Boolean(player && neoLife?.journey?.actor === player.id);
+    document.body.classList.toggle('film-story', this.filmPlaying);
     document.body.classList.toggle('film-reloaded-scene', this.filmPlaying && Boolean(neoLife?.journey?.reloaded) && !neoLife?.journey?.visiting);
     document.body.classList.toggle('film-catch-scene', this.filmPlaying && neoLife?.journey?.scene === 'm2_catch' && !neoLife?.journey?.visiting);
     document.body.classList.toggle('film-burly-scene', this.filmPlaying && neoLife?.journey?.scene === 'm2_burly' && !neoLife.journey.visiting);

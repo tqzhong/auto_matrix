@@ -82,7 +82,7 @@ body.neo-daily .sandbox-nav { background: #152724cf; padding: 7px 12px; top: 82p
 body.neo-daily .sandbox-nav button { color: #dce1cc; }
 body.neo-daily .game-top { background: linear-gradient(#10211ac9, transparent); }
 body.neo-daily .mouse-hint { bottom: 28px; color: #e1e3d7; background: #142923bd; padding: 10px 18px; }
-body.neo-daily .sandbox-waypoint { display: none; }
+body.neo-daily:not(.film-story) .sandbox-waypoint { display: none; }
 @media (max-width: 760px) {
   .neo-panel .sandbox-window { padding: 17px; }
   .life-masthead h3 { font-size: 22px; }
