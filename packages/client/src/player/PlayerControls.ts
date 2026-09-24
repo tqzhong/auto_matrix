@@ -472,6 +472,7 @@ export class PlayerControls {
     if (body) body.rotation.y = this.firstPerson && !this.performing ? this.yaw : this.facing;
     const sprint = this.motion.speed > PLAYER_WALK_SPEED * 1.6 || Boolean(this.ride && this.ride.speed > 20);
     const interviewWide = !this.firstPerson && this.motion.interrogation && (this.motion.interrogation.phase === 'file' || this.motion.interrogation.phase === 'coercion' && this.motion.interrogation.elapsed > 5.3 && this.motion.interrogation.elapsed < 14);
+    const interviewApproach = !this.firstPerson && state.currentLocation === 'film_agent_interrogation' && !this.motion.interrogation;
     const welcomeWide = !this.firstPerson && this.motion.welcome && ['approach', 'departing'].includes(this.motion.welcome.phase);
     const revealWide = !this.firstPerson && Boolean(this.motion.reveal && (this.motion.reveal.kind === 'desert' ? this.motion.reveal.elapsed < 10.2 : this.motion.reveal.elapsed < 2.4));
     const trainingWide = !this.firstPerson && Boolean(this.motion.training && (this.motion.training.kind === 'jump' || this.motion.training.kind === 'red_dress' && this.motion.training.elapsed < 4.8));
@@ -491,7 +492,7 @@ export class PlayerControls {
     const ladderWide = this.climbing && state.currentLocation === 'film_office_ledge' && !this.firstPerson;
     const pillDepartureWide = !this.firstPerson && this.motion.pills?.phase === 'taking' && this.motion.pills.elapsed >= 10;
     const podWide = !this.firstPerson && this.motion.performance === 'pod';
-    this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, podWide ? 65 : ladderWide ? 62 : interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide || sentinelWide || interludeWide || oracleWide || betrayalWide || rescueWide || governmentWide || airRescueWide || escapeWide || oneWide || catchWide || lobbyWide || pillDepartureWide ? 58 : this.motion.inspecting ? 42 : this.firstPerson ? this.motion.mirrorBeat !== undefined ? 78 : sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
+    this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, podWide ? 65 : ladderWide ? 62 : interviewApproach ? 70 : interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide || sentinelWide || interludeWide || oracleWide || betrayalWide || rescueWide || governmentWide || airRescueWide || escapeWide || oneWide || catchWide || lobbyWide || pillDepartureWide ? 58 : this.motion.inspecting ? 42 : this.firstPerson ? this.motion.mirrorBeat !== undefined ? 78 : sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
     this.camera.near = this.firstPerson && this.motion.club ? .08 : this.defaultNear;
     this.camera.updateProjectionMatrix();
     this.cameraStep += this.motion.speed * delta;
@@ -976,6 +977,17 @@ export class PlayerControls {
         .add(new THREE.Vector3(this.position.x, this.position.y, this.position.z));
       const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
       this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
+    } else if (interviewApproach) {
+      const room = FILM_SETS.film_agent_interrogation;
+      // Orbit sideways: the entry is too close to the rear wall for a straight follow camera.
+      const forward = new THREE.Vector3(Math.sin(this.yaw), 0, Math.cos(this.yaw));
+      const right = new THREE.Vector3(Math.cos(this.yaw), 0, -Math.sin(this.yaw));
+      const ideal = this.cameraTarget.clone().addScaledVector(forward, -4).addScaledVector(right, -6);
+      ideal.x = THREE.MathUtils.clamp(ideal.x, room.center.x - room.width / 2 + .65, room.center.x + room.width / 2 - .65);
+      ideal.z = THREE.MathUtils.clamp(ideal.z, room.center.z - room.depth / 2 + .65, room.center.z + room.depth / 2 - .65);
+      ideal.y = this.position.y + 4.8;
+      if (resetCamera) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-10 * delta));
+      this.camera.lookAt(this.cameraTarget.clone().addScaledVector(forward, 3));
     } else if (this.motion.interrogation && !this.firstPerson) {
       const gesture = this.motion.interrogation; const center = FILM_SETS.film_agent_interrogation.center; const origin = new THREE.Vector3(center.x, center.y - 1, center.z);
       const action = gesture.phase === 'coercion' || gesture.phase === 'done'; const t = gesture.elapsed;

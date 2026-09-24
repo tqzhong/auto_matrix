@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import type { AgentState, PlayerInput } from '@auto_matrix/shared';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { CameraController } from '../packages/client/src/engine/CameraController.js';
-import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, pillRoot, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, POD_WATER_DROP, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, airRescueRoot, matrixEscapeRoot, theOneRoot, type TheOneEncounter } from '@auto_matrix/shared';
+import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, INTERROGATION_ROOM, pillRoot, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, POD_WATER_DROP, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, airRescueRoot, matrixEscapeRoot, theOneRoot, type TheOneEncounter } from '@auto_matrix/shared';
 
 test('observer camera releases drag and ignores pointer capture while a character controls the view', () => {
   let captures = 0;
@@ -84,6 +84,24 @@ test('the office ladder camera looks along the city canyon while Neo descends', 
     'the authored first-person starting direction must still allow the player to look around');
   game.key('KeyV'); game.key('KeyV', false); game.step(.5);
   assert.ok(game.camera.position.z < game.state.position.z - 7, 'switching back restores the exterior third-person shot');
+});
+
+test('the interrogation entrance keeps Smith visible beside Neo in a narrow third-person view', t => {
+  const room = FILM_SETS.film_agent_interrogation;
+  const entry = filmPosition(room.id, 0, room.depth * .32);
+  const smith = filmPosition(room.id, -INTERROGATION_ROOM.seat, 0);
+  const game = setup(t, Math.atan2(smith.x - entry.x, smith.z - entry.z));
+  game.state.currentLocation = room.id; game.state.position = entry;
+  game.camera.aspect = 426 / 680; game.camera.updateProjectionMatrix();
+  game.controls.possess(game.state); game.step(.5);
+  const head = new THREE.Vector3(smith.x, smith.y + 3, smith.z).project(game.camera);
+  assert.ok(Math.abs(head.x) < .85 && Math.abs(head.y) < .85, `Smith must fit the portrait frame: ${head.toArray()}`);
+  assert.ok(game.camera.position.distanceTo(new THREE.Vector3(entry.x, entry.y + 3, entry.z)) > 5,
+    'the room wall must not force the camera into Neo’s back');
+  const before = game.camera.getWorldDirection(new THREE.Vector3());
+  game.event(game.canvas, 'mousedown', { button: 2 });
+  game.event(game.document, 'mousemove', { movementX: 100, movementY: 0 }); game.step(.2);
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(before) > .1, 'the player can still turn the camera');
 });
 
 test('Smith questioning keeps both faces readable and V uses Morpheus seated eye line', t => {
