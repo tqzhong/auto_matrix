@@ -263,6 +263,46 @@ test('the actual car occupants fit below the roof and Trinity holds both scanner
   } finally { models.dispose(); }
 });
 
+test('Neo’s tracker scan keeps his waist covered before lifting and skin inside the shirt', async () => {
+  const [neo, office] = await Promise.all([loadGeometry(), loadGeometry('neo-office')]);
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: (id: string) => Promise<typeof neo> }).load = async id => id === 'neo-office' ? office : neo;
+  try {
+    const rig = (await models.create('neo'))!;
+    const motion = newMotion(); const gesture = { phase: 'located' as const, elapsed: 0, role: 'neo' as const, bugged: true };
+    const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, meeting: gesture };
+    models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0);
+    const shirt = rig.wardrobe.find(part => /Black.crew.neck/i.test(part.mesh.name))!.mesh;
+    const shader = { vertexShader: '#include <common>\n#include <begin_vertex>', fragmentShader: '', uniforms: {} };
+    (shirt.material as THREE.MeshStandardMaterial).onBeforeCompile(shader as Parameters<THREE.MeshStandardMaterial['onBeforeCompile']>[0], {} as THREE.WebGLRenderer);
+    assert.match(shader.vertexShader, /_meetingShirtTuck \* -0\.4 \+ _meetingShirtLift \* meetingShirt \* 0\.48/, 'the shirt must cover the waist before the scan and raise its front hem during it');
+    const position = shirt.geometry.getAttribute('position');
+    const lift = shirt.geometry.getAttribute('_meetingShirtLift'); const tuck = shirt.geometry.getAttribute('_meetingShirtTuck');
+    assert.ok(lift && tuck, 'the actual mesh needs a covered waist and a hem-shaped lift rather than a pinched shader wedge');
+    const hem: number[] = []; const tucked: number[] = [];
+    for (let i = 0; i < position.count; i++) {
+      const x = position.getX(i), y = position.getY(i), z = position.getZ(i);
+      if (Math.abs(x) >= .04 && Math.abs(x) <= .36 && y >= 2.89 && y < 2.94 && z > .15) {
+        hem.push(y - tuck.getX(i) * .4 + lift.getX(i) * .48);
+        tucked.push(y - tuck.getX(i) * .4);
+      }
+      if (z < -.15) assert.equal(lift.getX(i), 0, 'the back of the shirt must not rise during extraction');
+    }
+    assert.ok(hem.length > 20, 'sample the shipped front hem across the whole abdomen');
+    assert.ok(Math.max(...hem) - Math.min(...hem) < .09, `the lifted hem must not taper to a triangular skin gap at the flanks: ${Math.min(...hem)}–${Math.max(...hem)}`);
+    const trousers = rig.wardrobe.find(part => /Tailored.trousers/i.test(part.mesh.name))!.mesh.geometry;
+    trousers.computeBoundingBox(); const waist = trousers.boundingBox!.max.y;
+    assert.ok(Math.max(...tucked) < waist, `the waiting pose must cover the trouser waist: hem ${Math.min(...tucked)}–${Math.max(...tucked)}, waist ${waist}`);
+    assert.ok(Math.min(...hem) - waist > .25 && Math.max(...hem) - waist < .5, `extraction exposes only the lower abdomen: hem ${Math.min(...hem)}–${Math.max(...hem)}, waist ${waist}`);
+    const skin = rig.wardrobe.find(part => (part.mesh.material as THREE.Material).name === 'Office skin')!.mesh;
+    rig.root.updateMatrixWorld(true);
+    for (const x of [-.16, 0, .16]) for (const y of [2.38, 2.44]) {
+      const ray = new THREE.Raycaster(new THREE.Vector3(x, y, 1), new THREE.Vector3(0, 0, -1), 0, 2);
+      assert.equal(ray.intersectObjects([shirt, skin])[0]?.object, shirt, `skin must not cut through Neo's black shirt at ${x}, ${y}`);
+    }
+  } finally { models.dispose(); }
+});
+
 test('Trinity ducks out of the opposite rear door and stands before becoming the hotel guide', async () => {
   const trinity = await loadGeometry('trinity'); const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
   (models as unknown as { load: (id: string) => Promise<typeof trinity> }).load = async () => trinity;

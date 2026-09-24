@@ -46,15 +46,25 @@ export class MeetingPerformance {
     rig.bones.get('wrist_R')!.add(this.gun); this.gun.position.set(.07, -.18, .07); this.gun.rotation.x = -Math.PI / 2;
     this.gun.name = 'switch-warning-pistol';
     for (const part of rig.wardrobe) if (/Black.crew.neck/i.test(part.mesh.name)) {
+      // The shipped crew neck ends above the trousers; tuck the full hem until the scanner lifts its front.
+      const geometry = part.mesh.geometry;
+      if (!geometry.getAttribute('_meetingShirtLift')) {
+        const position = geometry.getAttribute('position'); const lift = new Float32Array(position.count); const tuck = new Float32Array(position.count);
+        for (let i = 0; i < position.count; i++) {
+          tuck[i] = (1 - THREE.MathUtils.smoothstep(position.getY(i), 3, 3.6)) * (1 - THREE.MathUtils.smoothstep(Math.abs(position.getX(i)), .5, .65));
+          lift[i] = tuck[i] * THREE.MathUtils.smoothstep(position.getZ(i), -.12, .06);
+        }
+        geometry.setAttribute('_meetingShirtLift', new THREE.BufferAttribute(lift, 1));
+        geometry.setAttribute('_meetingShirtTuck', new THREE.BufferAttribute(tuck, 1));
+      }
       const material = part.mesh.material as THREE.MeshStandardMaterial; const source = material.onBeforeCompile; const cache = material.customProgramCacheKey();
       material.onBeforeCompile = (shader, renderer) => {
         source(shader, renderer); shader.uniforms.meetingShirt = this.shirt;
-        shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nuniform float meetingShirt;')
+        shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nuniform float meetingShirt;\nattribute float _meetingShirtTuck;\nattribute float _meetingShirtLift;')
           .replace('#include <begin_vertex>', `#include <begin_vertex>
-            float lift = (1.0 - smoothstep(2.65, 3.2, position.y)) * smoothstep(0.08, 0.3, position.z);
-            transformed.y += lift * meetingShirt * 0.48;`);
+            transformed.y += _meetingShirtTuck * -0.4 + _meetingShirtLift * meetingShirt * 0.48;`);
       };
-      material.customProgramCacheKey = () => cache + '-meeting-shirt'; material.needsUpdate = true;
+      material.customProgramCacheKey = () => cache + '-meeting-shirt-v3'; material.needsUpdate = true;
     }
     for (const part of rig.wardrobe) if ((part.mesh.material as THREE.Material).name === 'Skin') {
       const material = part.mesh.material as THREE.MeshStandardMaterial; const source = material.onBeforeCompile; const cache = material.customProgramCacheKey();

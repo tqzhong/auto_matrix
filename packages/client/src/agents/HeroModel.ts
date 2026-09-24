@@ -164,7 +164,14 @@ export class HeroModels {
       const meshes: THREE.SkinnedMesh[] = [];
       office.scene.traverse(object => { if (object instanceof THREE.SkinnedMesh) meshes.push(object); });
       for (const source of meshes) {
-        const mesh = new THREE.SkinnedMesh(source.geometry, source.material); mesh.name = source.name; mesh.userData.office = true;
+        // The torso otherwise pierces Neo's black shirt when he reclines for the scanner.
+        const geometry = (source.material as THREE.Material).name === 'Office skin' ? source.geometry.clone() : source.geometry;
+        if (geometry !== source.geometry) {
+          const position = geometry.getAttribute('position');
+          for (let i = 0; i < position.count; i++) { position.setX(i, position.getX(i) * .98); position.setZ(i, position.getZ(i) * .97); }
+          position.needsUpdate = true; geometry.computeVertexNormals(); this.geometries.add(geometry);
+        }
+        const mesh = new THREE.SkinnedMesh(geometry, source.material); mesh.name = source.name; mesh.userData.office = true;
         const skeleton = new THREE.Skeleton(source.skeleton.bones.map(bone => bones.get(bone.name)!), source.skeleton.boneInverses.map(matrix => matrix.clone()));
         mesh.bind(skeleton, source.bindMatrix.clone()); mesh.frustumCulled = false; mesh.castShadow = mesh.receiveShadow = true; mesh.visible = false;
         this.skeletons.add(skeleton); root.add(mesh);
