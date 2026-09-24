@@ -989,7 +989,7 @@ export class FilmStorySystem {
     }
     const allowed = hotel.entered ? HOTEL_ROUTE_LENGTH : Math.min(HOTEL_DOOR_PROGRESS, hotelRouteProgress(local) + 7);
     const before = hotelRoutePose(hotel.progress);
-    hotel.progress = Math.min(Math.max(hotel.progress, allowed), hotel.progress + dt * (allowed - hotel.progress > 12 ? 6.2 : 3.4));
+    hotel.progress = Math.min(Math.max(hotel.progress, allowed), hotel.progress + dt * (allowed - hotel.progress > 12 ? 9.2 : 3.4));
     const pose = hotelRoutePose(hotel.progress);
     guide.position = { x: center.x + pose.x, y: center.y - LAFAYETTE.upper + pose.y, z: center.z + pose.z };
     guide.rotation = hotel.progress >= HOTEL_DOOR_PROGRESS && !hotel.entered ? -Math.PI / 2 : pose.yaw;
@@ -1001,6 +1001,7 @@ export class FilmStorySystem {
       state.checkpoint = { ...agent.position };
       state.lastText = hotel.door !== undefined ? hotel.door < LAFAYETTE.doorSeconds ? 'TRINITY · 门开了。进去吧，Morpheus 在等你。' : '走过打开的 1313 房门，去见 Morpheus。'
         : hotel.progress >= HOTEL_DOOR_PROGRESS - .01 ? 'TRINITY · 就是这里。进去后，把你真正的疑问告诉他。按 G 敲门。'
+        : distance(agent.position, filmPosition('film_lafayette', 24, 0)) < 4 ? '你先到了 1313 门前；Trinity 正从楼梯赶来，等她到场再敲门。'
         : Math.abs(local.y - 84) < 1 ? '十三层。跟随 Trinity 沿走廊来到 1313 房间。'
         : `TRINITY · 跟我来。我们去十三层。当前 ${Math.min(13, Math.floor(local.y / 7) + 1)} 层；你停下来时，我会等你。`;
     }

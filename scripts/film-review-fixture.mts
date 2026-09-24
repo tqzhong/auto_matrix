@@ -28,6 +28,8 @@ if (previous) {
     actor.currentLocation = previous.set;
   }
   if (previous.id === 'm1_bug') sandbox.state.neoLife!.journey!.meeting = { phase: 'outside', elapsed: 0, bugged: false, approach: { x: 4, z: -12.35, yaw: Math.PI } };
+  if (scene.id === 'm1_wake_again') sandbox.state.neoLife!.journey!.office = { alert: 0, suspicion: [], waypoints: [], lastTick: 0,
+    guide: '', outcome: 'captured', bugged: true };
   if (scene.id === 'm1_ledge') actor.position = filmStepPosition(previous, previous.steps[2]);
   sandbox.life.film.command(world.agents.get(previous.actor)!, 'next', 0);
   if (scene.id === 'm1_ledge') for (let frame = 0; frame < 65; frame++) sandbox.life.film.crossingFrame(actor, .1, 0);

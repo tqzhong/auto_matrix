@@ -165,7 +165,7 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
     const watching = wakeCallLocked(journey) && phase !== 'decision';
     const action = phase === 'ringing' ? button('act', '拿起有线座机听筒 · G', !close)
       : phase === 'decision' ? button('act', '回答：我仍然要见面 · G', !current)
-      : phase === 'done' ? '<p>合上手记，亲自走到 101 房门；抵达后会记录离开。</p>'
+      : phase === 'done' ? !step ? button('next', '离开公寓，前往 Adams Street 桥下 · G', !current) : '<p>合上手记，亲自走到 101 房门；抵达后会记录离开。</p>'
       : '<button disabled>演出进行中 · 合上手记观看</button>';
     return `<div class="film-journal film-contact"><header class="film-heading"><span>THE MATRIX / 01</span><h3>101 · 并非一场梦</h3><p>${journey.wakeCall.nightmare ? '被捕路线 · 追踪状态保留' : '成功脱身路线 · 仍需接头检查'}</p></header><article class="film-now"><div><h3>${phase === 'waking' ? '在床上惊醒' : phase === 'ringing' ? '公寓里的座机' : phase === 'decision' ? '你仍然想见面吗？' : phase === 'done' ? '前往 Adams Street' : '监听中的线路'}</h3><p>${journey.lastText}</p><div class="film-controls">${action}${!current ? button('resume', '继续 Neo 的剧情视角') : ''}${watching ? '<small>人物姿势、电话阶段和对话时钟正在自动保存。</small>' : ''}</div><details><summary>查看这次来电的进度</summary><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></details></div></article></div>`;
   }
@@ -273,7 +273,8 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
   if (journey.hotel && !journey.hotel.entered && !journey.visiting) {
     const ready = journey.hotel.progress >= HOTEL_DOOR_PROGRESS - .01 && distance(player.position, filmPosition('film_lafayette', 24, 0)) < 4;
     const knocking = journey.hotel.knock !== undefined;
-    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>前往十三层 · 1313</h3><p>旅馆途中自动保存</p></header><article class="film-now"><div><h3>${knocking ? '三下敲门' : '跟随 Trinity 上楼'}</h3><p>${journey.lastText}</p><p>${knocking ? '人物动作与位置正在保存；暂停或重新载入会从当前一拍继续。' : 'WASD 移动，Shift 快步。可以停留观察，再回到楼梯继续。'}</p>${journey.hotel.door !== undefined ? '<p>走过打开的房门，去见 Morpheus。</p>' : knocking ? '<button disabled>等待门内回应</button>' : button('act', '敲响 1313 房门 · G', !ready)}</div></article></div>`;
+    const waiting = !ready && distance(player.position, filmPosition('film_lafayette', 24, 0)) < 4;
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>前往十三层 · 1313</h3><p>旅馆途中自动保存</p></header><article class="film-now"><div><h3>${knocking ? '三下敲门' : waiting ? '等待 Trinity 赶来' : '跟随 Trinity 上楼'}</h3><p>${journey.lastText}</p><p>${knocking ? '人物动作与位置正在保存；暂停或重新载入会从当前一拍继续。' : 'WASD 移动，Shift 快步。可以停留观察，再回到楼梯继续。'}</p>${journey.hotel.door !== undefined ? '<p>走过打开的房门，去见 Morpheus。</p>' : knocking ? '<button disabled>等待门内回应</button>' : waiting ? '<button disabled>等待 Trinity 赶来</button>' : button('act', '敲响 1313 房门 · G', !ready)}</div></article></div>`;
   }
   if (lafayetteWelcomeLocked(journey)) {
     const phase = journey.hotel!.welcome!.phase; const ready = phase === 'ready' && player.id === journey.actor;

@@ -21,18 +21,18 @@ function setup() {
   neo.position = filmStepPosition(scene, scene.steps[2]); neo.currentLocation = scene.set;
   let tick = 0; let sequence = 0;
   const command = (target: string) => players.sandboxAction('player', { kind: 'life', target: `film:${target}` }, ++tick);
-  const frame = (x = 0, z = 0, running = true) => {
-    players.receiveInput('player', { x, z, yaw: x || z ? Math.atan2(x, z) : neo.rotation, jump: false, sprint: false, sequence: ++sequence });
+  const frame = (x = 0, z = 0, running = true, sprint = false) => {
+    players.receiveInput('player', { x, z, yaw: x || z ? Math.atan2(x, z) : neo.rotation, jump: false, sprint, sequence: ++sequence });
     players.step(.05, running, tick); if (running && sequence % 10 === 0) sandbox.tick(++tick);
   };
   const frames = (seconds: number, running = true) => { for (let i = 0; i < seconds * 20; i++) frame(0, 0, running); };
   const state = () => sandbox.life.film.state!;
-  const walk = (point: { x: number; y: number; z: number }) => {
+  const walk = (point: { x: number; y: number; z: number }, sprint = false) => {
     const target = { x: FILM_SETS.film_lafayette.center.x + point.x, y: 1 + point.y, z: FILM_SETS.film_lafayette.center.z + point.z };
     for (let i = 0; i < 1200; i++) {
       const dx = target.x - neo.position.x; const dz = target.z - neo.position.z; const distance = Math.hypot(dx, dz);
       if (distance < .3 && Math.abs(neo.position.y - target.y) < .6) return;
-      frame(dx / Math.max(1, distance), dz / Math.max(1, distance));
+      frame(dx / Math.max(1, distance), dz / Math.max(1, distance), true, sprint);
     }
     assert.fail(`cannot reach ${JSON.stringify(point)} from ${JSON.stringify(neo.position)}`);
   };
@@ -118,6 +118,20 @@ test('all thirteen floors and the locked 1313 door are playable through controll
   h.command('act'); h.frames(9); assert.equal(h.state().hotel!.welcome?.phase, 'done');
   h.walk({ x: 0, y: 84, z: 0 }); h.walk({ x: 0, y: 84, z: -3.3 });
   h.command('act'); h.frames(6); assert.equal(h.state().pills?.phase, 'choice');
+});
+
+test('sprinting to 1313 does not leave Trinity half a minute behind at the door', () => {
+  const h = setup(); h.command('act');
+  for (const point of HOTEL_ROUTE.slice(4, -3)) h.walk(point, true);
+  assert.ok(h.state().hotel!.progress >= HOTEL_DOOR_PROGRESS - 30,
+    `Trinity is ${Math.round(HOTEL_DOOR_PROGRESS - h.state().hotel!.progress)} m behind Neo`);
+});
+
+test('arriving at 1313 before Trinity explains why the door is not ready', () => {
+  const h = setup(); h.command('act');
+  h.neo.position = filmPosition('film_lafayette', 24, 0); h.frames(.1);
+  assert.match(h.state().lastText, /Trinity.*赶来/);
+  assert.ok(h.state().hotel!.progress < HOTEL_DOOR_PROGRESS);
 });
 
 test('Neo knocks before 1313 opens, and the saved knock cannot be skipped by movement or pause', () => {
