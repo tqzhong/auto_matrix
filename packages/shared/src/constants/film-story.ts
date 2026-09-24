@@ -89,6 +89,7 @@ export interface FilmJourney {
   ride?: import('./freeway.js').FreewayRide;
   garage?: import('./garage.js').GarageEscape;
   hammer?: import('./hammer-flight.js').HammerFlight;
+  apu?: import('./dock-apu.js').ApuRun;
   trucks?: import('./trucks.js').TruckEncounter;
   awakening?: import('./awakening.js').AwakeningBeat;
   training?: import('./training.js').TrainingPerformance;
@@ -343,7 +344,11 @@ export const FILM_SCENES: FilmScene[] = [
     { kind: 'drive', label: '驾驶 Hammer 穿过机械管线', x: 0, z: 175 },
   ], ['morpheus', 'roland']),
   scene('m3_dock_battle', 3, 'zion_hangar', 'mifune', '船坞的弹药与钢铁', 'siege', 'siege', '钻头突破穹顶，哨兵涌入船坞。Mifune 带队坚守。', [fight('抵挡第一批哨兵', 4, 'sentinel'), use('掩护弹药运输', 'Kid 向 APU 输送弹药，Zee 与 Charra 在地面攻击钻头。', 0, -30)], ['kid', 'zee', 'charra']),
-  scene('m3_gate', 3, 'zion_hangar', 'kid', '打开三号闸门', 'siege', 'siege', 'Mifune 受致命伤，把打开闸门的任务交给 Kid。', [fight('突破闸门附近的哨兵', 2, 'sentinel'), use('操作三号闸门', 'Kid 用受损的 APU 打开入口。Hammer 冲入船坞，触发 EMP。', 0, -50, 7)], ['zee']),
+  scene('m3_gate', 3, 'zion_hangar', 'kid', '打开三号闸门', 'siege', 'siege', 'Mifune 受致命伤，把打开闸门的任务交给 Kid。', [
+    fight('突破闸门附近的哨兵', 2, 'sentinel'),
+    { kind: 'drive', label: '接管受损 APU，冲向三号闸门', x: 0, z: 12 },
+    use('操作三号闸门，让 Hammer 冲入船坞', 'Kid 用受损的 APU 拉起闸门。Hammer 冲进船坞；在里面启动 EMP 会同时瘫痪锡安自己的防御系统。', 0, -50, 7),
+  ], ['zee']),
   scene('m3_emp', 3, 'hammer_deck', 'niobe', '代价高昂的援军', 'siege', 'siege', 'EMP 清除附近哨兵，也摧毁了锡安自己的防御设备。', [use('关闭过载的控制台', 'Hammer 的到来挽救了眼前的船坞，新的机器仍会继续到达。', 0, -16), think('救援也会带来代价', '此刻的职责是保护剩下的人，而不是给刚才的选择寻找简单的胜负。')], ['morpheus', 'lock']),
   scene('m3_temple_defense', 3, 'zion_temple', 'zee', '神庙最后的门', 'siege', 'siege', '居民退入神庙。Zee 与 Link 重逢，留守者准备迎接最后一次冲击。', [walk('抵达居民集结处', 0, -30), use('检查最后的入口', '防线已无法再退。所有人等待着仍在另一条航线上的希望。', 0, -30)], ['link', 'hamann', 'kid', 'zion_parent', 'zion_neighbor']),
   scene('m3_defense', 3, 'machine_defense', 'trinity', '机器城的防线', 'last_sky', 'chase', 'Logos 接近机器城，浮动炸弹和密集机器封锁航路。', [use('沿 Neo 指引调整航线', 'Neo 感知并破坏部分来袭机器，过载却让他的身体越来越虚弱。', 0, -20, 6), walk('转向上方的云层', 0, -40)], ['neo']),

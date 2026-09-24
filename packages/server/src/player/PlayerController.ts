@@ -410,7 +410,8 @@ export class PlayerController {
     if (this.sandbox?.life.film.performing(agent) && kind !== 'interact') return '演出进行中，可以转动视角观察；进度会自动保存。';
     if (this.sandbox?.life.film.state && sentinelActive(this.sandbox.life.film.state) && ['attack', 'shoot', 'ability', 'ability2', 'dodge', 'travel'].includes(kind)) return '哨兵正在附近扫描。保持安静，武器和能力会暴露整艘船。';
     if (this.sandbox?.life.film.driving(agent) && ['attack', 'shoot', 'ability', 'ability2', 'dodge', 'travel'].includes(kind)) return this.sandbox.life.film.state?.scene === 'm3_hammer_tunnels'
-      ? '正在驾驶 Hammer。W 加速，S 刹车，A / D 控制侧向推进器。' : '正在护送钥匙匠。W 加速，S 刹车，A / D 转向。';
+      ? '正在驾驶 Hammer。W 加速，S 刹车，A / D 控制侧向推进器。' : this.sandbox.life.film.state?.scene === 'm3_gate'
+        ? '正在驾驶受损 APU。W 前进，S 制动，A / D 横向避开哨兵。' : '正在护送钥匙匠。W 加速，S 刹车，A / D 转向。';
     if (this.sandbox?.life.film.state?.scene === 'm2_seraph' && this.sandbox.life.film.state.fighting && ['shoot', 'ability', 'ability2'].includes(kind)) return 'Seraph 要看近身攻防。观察起手，X 闪避后用 F 反击。';
     if (this.sandbox?.life.film.controls(agent) && ['m3_mobil', 'm3_family', 'm3_trainman'].includes(this.sandbox.life.film.state!.scene)
       && ['ability', 'ability2', 'travel'].includes(kind)) return 'Mobil Ave 的边界由 Trainman 控制，Neo 的能力不能直接打开这条线路。';

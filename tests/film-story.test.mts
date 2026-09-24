@@ -2028,6 +2028,7 @@ test('the entire film route completes through interactions, driving and real com
   let sequence = 0;
   for (const scene of FILM_SCENES) {
     assert.equal(state.scene, scene.id); assert.equal(h.actor().id, scene.actor);
+    if (scene.id === 'm3_gate') assert.equal(h.world.agents.get('mifune')?.status, 'dead');
     assert.equal(h.actor().isInMatrix, scene.id === 'm2_meeting' ? false : FILM_SETS[scene.set].world === 'matrix');
     assert.equal(musicForScene({ player: h.actor(), sandbox: h.sandbox.state, time: 7500, matrix: h.actor().isInMatrix, running: true }), scene.id === 'm2_meeting' ? 'night' : scene.music);
     if (scene.id === 'm1_pills' && state.hotel) {
@@ -2446,6 +2447,13 @@ test('the entire film route completes through interactions, driving and real com
             h.players.step(.05, true, h.tick());
           }
           assert.equal(state.hammer?.phase, 'arrived'); h.advance();
+        } else if (scene.id === 'm3_gate') {
+          for (let frame = 0; state.apu?.phase === 'riding' && frame < 500; frame++) {
+            h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, sprint: false, jump: false,
+              drive: { throttle: 1, steer: state.apu.x < 6.6 ? 1 : 0, brake: false }, sequence: ++sequence });
+            h.players.step(.05, true, h.tick());
+          }
+          assert.equal(state.apu?.phase, 'arrived'); h.advance();
         } else rideToExit(h);
       }
       else {

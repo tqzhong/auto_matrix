@@ -30,6 +30,7 @@ import { CHATEAU, type ChateauEncounter } from '@auto_matrix/shared';
 import { MOUNTAIN, type MountainFlight, type PlayerInput } from '@auto_matrix/shared';
 import { GARAGE, newGarageEscape, stepGarageEscape } from '@auto_matrix/shared';
 import { newHammerFlight, stepHammerFlight } from '@auto_matrix/shared';
+import { newApuRun, stepApuRun } from '@auto_matrix/shared';
 import { TRUCKS } from '@auto_matrix/shared';
 import { OPENING_ESCAPE } from '@auto_matrix/shared';
 import { OpeningHotelSystem } from './OpeningHotelSystem.js';
@@ -3073,7 +3074,7 @@ export class FilmStorySystem {
     }
     return true;
   }
-  driving(agent: AgentState): boolean { return this.controls(agent) && !this.state?.visiting && ((this.state?.scene === 'm2_freeway' && this.state.ride?.phase === 'riding') || (this.state?.scene === 'm2_garage' && this.state.garage?.phase === 'riding') || (this.state?.scene === 'm3_hammer_tunnels' && this.state.hammer?.phase === 'riding')); }
+  driving(agent: AgentState): boolean { return this.controls(agent) && !this.state?.visiting && ((this.state?.scene === 'm2_freeway' && this.state.ride?.phase === 'riding') || (this.state?.scene === 'm2_garage' && this.state.garage?.phase === 'riding') || (this.state?.scene === 'm3_hammer_tunnels' && this.state.hammer?.phase === 'riding') || (this.state?.scene === 'm3_gate' && this.state.apu?.phase === 'riding')); }
   private ensureHammerRoute(): void {
     const state = this.state;
     if (state?.scene !== 'm3_hammer_tunnels' || state.step >= this.scene!.steps.length) return;
@@ -3085,8 +3086,30 @@ export class FilmStorySystem {
     delete state.started; delete state.hammer; this.stageCast();
     state.lastText = '旧版隧道检查点已接回 Hammer 驾驶航路；已完成的剧情保留，请继续当前目标。';
   }
+  private ensureApuGate(): void {
+    const state = this.state;
+    if (state?.scene !== 'm3_gate') return;
+    if (state.step === 2 && state.completed.includes('m3_gate')) { state.step = this.scene!.steps.length; return; }
+    const actor = this.world.agents.get(state.actor);
+    if (state.step !== 1 || state.apu || actor?.currentLocation !== this.scene!.set
+      || actor.position.z > FILM_SETS[this.scene!.set].center.z - 25) return;
+    const position = filmStepPosition(this.scene!, this.scene!.steps[1]);
+    this.place(actor, this.scene!, position); state.checkpoint = { ...position }; delete state.started;
+    state.lastText = '旧版门控检查点已接回 Kid 的 APU 冲刺；已完成的船坞战保留。';
+  }
   driveFrame(agent: AgentState, input: DriveInput, dt: number, tick: number): boolean {
     if (!this.driving(agent)) return false;
+    if (this.state!.scene === 'm3_gate') {
+      const state = this.state!; const before = state.apu!;
+      const run = state.apu = stepApuRun(before, input, dt);
+      agent.position = { ...filmPosition(this.scene!.set, run.x, run.z), y: FILM_SETS[this.scene!.set].center.y + 2.2 };
+      agent.velocity = { x: run.lateral, y: 0, z: -run.speed };
+      agent.rotation = Math.PI - Math.atan2(run.lateral, Math.max(1, run.speed));
+      agent.currentAction = { type: 'idle', parameters: { riding: true, seated: true }, startedAt: tick, duration: 1, progress: 0 };
+      if (run.hits > before.hits) state.lastText = '哨兵撞上 APU 装甲。Kid 稳住机器，绕开下一次俯冲，闸门就在前方。';
+      if (run.phase === 'wrecked') { agent.health = 0; agent.status = 'dead'; agent.velocity = { x: 0, y: 0, z: 0 }; state.lastText = '受损 APU 没能抵达三号闸门。按 J 从接管机甲的检查点重试。'; }
+      return true;
+    }
     if (this.state!.scene === 'm3_hammer_tunnels') {
       const state = this.state!; const before = state.hammer!;
       const flight = state.hammer = stepHammerFlight(before, input, dt);
@@ -3344,6 +3367,7 @@ export class FilmStorySystem {
     const state = this.state;
     if (!state || !this.scene) return '这条电影进度尚未开始。';
     this.ensureHammerRoute();
+    this.ensureApuGate();
     if (target === 'resume' && agent.id === 'neo' && agent.id !== state.actor) {
       if (!this.changeActor(agent, state.actor, tick)) return '当前剧情角色正在由另一位玩家控制。';
       return '已继续保存的剧情视角与位置。';
@@ -3363,7 +3387,7 @@ export class FilmStorySystem {
     if (target.startsWith('visit:')) {
       const visited = FILM_SCENE_BY_ID[target.slice(6)];
       if (!visited || !state.completed.includes(visited.id)) return '完成这个场景后才能回访。';
-      if (state.fighting || state.started !== undefined || state.ride?.phase === 'riding' || state.garage?.phase === 'riding' || state.hammer?.phase === 'riding' || state.shipLoss?.phase === 'evacuating' || state.tunnel?.phase === 'sensing'
+      if (state.fighting || state.started !== undefined || state.ride?.phase === 'riding' || state.garage?.phase === 'riding' || state.hammer?.phase === 'riding' || state.apu?.phase === 'riding' || state.shipLoss?.phase === 'evacuating' || state.tunnel?.phase === 'sensing'
         || state.scene === 'm3_bane' && state.bane && !['ready', 'defeated'].includes(state.bane.phase)
         || this.climbing(agent) || this.performing(agent)) return '先完成当前战斗或互动，再回访场景。';
       if (!state.visiting) state.returnPosition = { ...agent.position };
@@ -3547,6 +3571,7 @@ export class FilmStorySystem {
       delete state.ride;
       delete state.garage;
       delete state.hammer;
+      delete state.apu;
       if (state.scene === 'm2_trucks') state.trucks = { phase: state.step === 0 ? 'duel' : 'collision', elapsed: 0, lastTick: tick, attempt: (state.trucks?.attempt ?? 0) + 1 };
       if (state.scene === 'm1_spoon' && state.step === 0 && state.oracle) delete state.oracle.spoon;
       if (state.scene === 'm1_oracle' && state.step === 0 && state.oracle) delete state.oracle.vase;
@@ -3889,6 +3914,11 @@ export class FilmStorySystem {
     if (state.scene === 'm2_trucks' && state.step === 2 && ['keymaker', 'neo'].some(id => this.world.agents.get(id)?.controller))
       return '钥匙匠或 Neo 正由另一位玩家控制，等待对方结束后再接应。';
     if (step.kind === 'drive') {
+      if (state.scene === 'm3_gate') {
+        if (!state.apu) state.apu = newApuRun();
+        state.checkpoint = filmStepPosition(this.scene!, step);
+        return 'Kid 接管 Mifune 留下的受损 APU。W 前进、S 制动、A / D 横向避开哨兵，赶到三号闸门。';
+      }
       if (state.scene === 'm3_hammer_tunnels') {
         if (['morpheus', 'roland'].some(id => this.world.agents.get(id)?.controller)) return '舰桥船员正由另一位玩家控制，等待他们结束当前行动。';
         if (!state.hammer) state.hammer = newHammerFlight();
@@ -3969,6 +3999,7 @@ export class FilmStorySystem {
     delete state.ride;
     delete state.garage;
     delete state.hammer;
+    delete state.apu;
     delete state.trucks;
     delete state.awakening;
     delete state.training;
@@ -4572,6 +4603,7 @@ export class FilmStorySystem {
   tick(tick: number): void {
     const state = this.state; if (!state || !this.scene || state.finished || state.visiting) return;
     this.ensureHammerRoute();
+    this.ensureApuGate();
     this.ensureFinale(tick);
     if (state.scene === 'm3_bane') this.ensureBane(tick);
     if (state.scene === 'm2_key_door') this.sourceDoor();
@@ -4658,6 +4690,11 @@ export class FilmStorySystem {
     if (this.performing(actor)) return;
     if (this.climbing(actor)) return;
     if (step.kind === 'drive') {
+      if (state.scene === 'm3_gate' && state.apu?.phase === 'arrived') {
+        actor.position.y = FILM_SETS[this.scene.set].center.y; actor.velocity = { x: 0, y: 0, z: 0 }; actor.currentAction = null;
+        this.advance('受损 APU 已到达三号闸门。Kid 必须亲手操作门控，Hammer 才能进入船坞。', actor, tick);
+        return;
+      }
       if (state.scene === 'm3_hammer_tunnels' && state.hammer?.phase === 'arrived') {
         actor.velocity = { x: 0, y: 0, z: 0 }; actor.currentAction = null;
         for (const id of ['morpheus', 'roland']) {

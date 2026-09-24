@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { ZION_OBSTACLES, type FilmJourney } from '@auto_matrix/shared';
+import { APU_ROUTE, ZION_OBSTACLES, type FilmJourney } from '@auto_matrix/shared';
 
 /** Six authored Zion interiors share rock, metal and service-light materials, not a generic cave layout. */
 export class ZionHomecomingRenderer {
@@ -15,6 +15,10 @@ export class ZionHomecomingRenderer {
   private messageDisk?: THREE.Group;
   private messageDoor?: THREE.Group;
   private departureGifts?: { charm: THREE.Group; spoon: THREE.Group; engines: THREE.MeshStandardMaterial };
+  private apu?: THREE.Group;
+  private gateLeaf?: THREE.Group;
+  private gateLift = 0;
+  private sentinelDives: THREE.Group[] = [];
   private crowd?: { bodies: THREE.InstancedMesh; heads: THREE.InstancedMesh; arms: THREE.InstancedMesh; poses: [number, number, number][] };
   private disposed = false;
   constructor(root: THREE.Group, readonly set: string) {
@@ -122,12 +126,36 @@ export class ZionHomecomingRenderer {
     }
     for (let i = 0; i < 8; i++) { const z = -48 + i * 12; this.pipe(metal, [-43, 34, z], [43, 34, z], .28); this.pipe(iron, [-43, 34, z], [-12, 2, z], .18); this.pipe(iron, [43, 34, z], [12, 2, z], .18); }
     const gate = this.mesh(new THREE.TorusGeometry(27, 2.5, 12, 48), metal); gate.position.set(0, 28, -61);
-    this.box(iron, 0, 29, -64, 48, 53, 1.1, this.static, 'zion-gate-three');
+    this.gateLeaf = new THREE.Group(); this.gateLeaf.name = 'zion-gate-three'; this.moving.add(this.gateLeaf);
+    this.box(iron, 0, 29, -64, 48, 53, 1.1, this.gateLeaf);
     for (let a = 0; a < 16; a++) { const angle = a / 16 * Math.PI * 2; const x = Math.sin(angle) * 26, y = 28 + Math.cos(angle) * 26;
       const spoke = this.box(lit, x, y, -62.5, .85, 3.4, .35); spoke.rotation.z = -angle; }
     this.sign('DOCK 03 / BAY 07', 0, 10, -57, 12); this.sign('NEBUCHADNEZZAR', 18, 5, -11, 10, 1.5, -Math.PI / 2);
     this.obstacles(iron); for (const x of [-24, 18]) for (let i = 0; i < 3; i++) this.box(metal, x, 2 + i * 1.5, -18 + i * 3, 7, .2, 4);
     this.box(metal, 11.5, -.04, 17, 8, .18, 3.2, this.static, 'zion-ship-gangway');
+    this.apu = new THREE.Group(); this.apu.name = 'zion-kid-apu'; this.moving.add(this.apu);
+    const armor = this.material(0x58625f, .44, .72), joint = this.material(0x242b2a, .58, .65);
+    this.box(joint, 0, 2.9, .4, 3.1, 1.3, 2.1, this.apu);
+    this.box(armor, 0, 6.8, 1.1, 4.8, .55, .7, this.apu);
+    this.box(joint, 0, 4.1, -1.15, 2.1, 1.25, 1.1, this.apu);
+    for (const side of [-1, 1]) {
+      this.box(armor, side * 2.2, 5.2, .75, .72, 3.6, 1.1, this.apu);
+      this.box(armor, side * 1.55, 1.2, .4, 1.45, 2.4, 2.2, this.apu);
+      this.box(joint, side * 1.55, 2.5, .45, 1.4, 1, 1.7, this.apu);
+      this.box(armor, side * 1.55, .16, -.55, 2.25, .35, 3, this.apu);
+      this.box(joint, side * 3.1, 5.7, -.4, 1.5, 1.5, 2.4, this.apu);
+      this.pipe(armor, [side * 3.1, 5.6, -.5], [side * 3.1, 5.6, -5.2], .48, this.apu);
+      this.pipe(armor, [side * 3.6, 5.9, -.5], [side * 3.6, 5.9, -5.2], .23, this.apu);
+      this.box(lit, side * 3.1, 5.55, -5.2, .65, .13, .1, this.apu);
+    }
+    const warning = this.material(0xd35445, .65, .2, 0xd35445, 1.8);
+    for (const dive of APU_ROUTE.dives) {
+      const sentinel = new THREE.Group(); sentinel.position.set(dive.x, 11, dive.z); this.moving.add(sentinel);
+      const body = this.mesh(new THREE.IcosahedronGeometry(.9, 1), joint, sentinel); body.scale.set(1.3, .65, 1.5);
+      this.box(warning, 0, -.1, -1.4, .7, .16, .2, sentinel);
+      for (const side of [-1, 1]) this.pipe(joint, [side * .7, -.2, .3], [side * 2.1, -1.7, 2.2], .09, sentinel);
+      this.sentinelDives.push(sentinel);
+    }
     const charm = new THREE.Group(); charm.name = 'zee-farewell-charm'; charm.position.set(0, 2.4, 32); this.moving.add(charm);
     this.mesh(new THREE.TorusGeometry(.24, .055, 8, 20), this.material(0xbca77b, .42, .6), charm);
     this.mesh(new THREE.CylinderGeometry(.08, .09, .5, 8), metal, charm).position.y = -.18;
@@ -135,6 +163,7 @@ export class ZionHomecomingRenderer {
     this.mesh(new THREE.SphereGeometry(.18, 12, 8), metal, spoon).scale.set(.7, .15, 1.7);
     this.box(metal, 0, -.42, -.2, .055, .06, .75, spoon);
     this.departureGifts = { charm, spoon, engines: engine };
+    this.glow(0xffb273, 420, 52, 0, 19, -54);
     this.glow(0xffd0a0, 560, 68, 21, 18, 18); this.glow(0xeeb573, 330, 75, 18, 23, -28); this.glow(0x9cbaab, 180, 65, -29, 35, 18);
   }
   private council(): void {
@@ -267,6 +296,21 @@ export class ZionHomecomingRenderer {
   }
   update(journey: FilmJourney | undefined, elapsed: number): void {
     const ship = this.moving.getObjectByName('zion-docked-nebuchadnezzar'); if (ship) ship.position.y = 11 + Math.sin(elapsed * .45) * .24;
+    if (this.apu) {
+      const battle = !journey?.visiting && ['m3_dock_battle', 'm3_gate'].includes(journey?.scene ?? '');
+      this.apu.visible = battle;
+      this.apu.position.set(journey?.scene === 'm3_gate' ? journey.apu?.x ?? 0 : 0, .9, journey?.scene === 'm3_gate' ? journey.apu?.z ?? APU_ROUTE.start : APU_ROUTE.start);
+      this.apu.rotation.z = journey?.apu?.phase === 'riding' ? Math.sin(elapsed * 11) * .015 : 0;
+    }
+    for (const [index, sentinel] of this.sentinelDives.entries()) {
+      sentinel.visible = journey?.scene === 'm3_gate' && !journey.visiting && (journey.apu?.phase === 'riding' || journey.apu === undefined) && !((journey.apu?.dives ?? 0) & (1 << index));
+      sentinel.position.y = 11 + Math.sin(elapsed * 3 + index) * 1.3;
+    }
+    if (this.gateLeaf) {
+      const open = journey?.scene === 'm3_gate' && journey.step >= 3;
+      this.gateLift += (open ? 31 - this.gateLift : -this.gateLift) * .08;
+      this.gateLeaf.position.y = this.gateLift;
+    }
     const wheel = this.moving.getObjectByName('zion-recycler-flywheel'); if (wheel) wheel.rotation.x = elapsed * .3;
     if (this.messageDoor) this.messageDoor.rotation.y = journey?.scene === 'm2_oracle_message' && journey.step >= 1 ? -.85 : 0;
     if (this.messageDisk) this.messageDisk.visible = journey?.scene === 'm2_oracle_message' && journey.step < 2;

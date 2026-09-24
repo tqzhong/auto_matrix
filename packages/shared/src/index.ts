@@ -28,6 +28,7 @@ export * from './constants/hel-coatcheck.js';
 export * from './constants/freeway.js';
 export * from './constants/garage.js';
 export * from './constants/hammer-flight.js';
+export * from './constants/dock-apu.js';
 export * from './constants/trucks.js';
 export * from './constants/awakening.js';
 export * from './constants/training.js';

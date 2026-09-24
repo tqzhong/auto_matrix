@@ -1085,6 +1085,17 @@ export class SandboxUI {
       document.getElementById('game-objective-copy')!.textContent = '沿机械管线转弯，避开横梁 · 低速会让哨兵追上';
       this.el('sandbox-interact').classList.add('hidden'); return;
     }
+    if (scene.id === 'm3_gate' && journey.apu?.phase === 'riding' && !journey.visiting) {
+      const run = journey.apu;
+      this.el('film-ride').classList.remove('hidden');
+      this.el('film-ride-title').textContent = 'KID / APU 03';
+      this.el('film-ride-controls').textContent = 'W 前进 · S 制动 · A / D 横向避让';
+      this.el('film-ride-speed').textContent = `${Math.round(run.speed * 3.6)} km/h`;
+      this.el('film-ride-health').textContent = `机甲 ${Math.ceil(run.hull)}% · 哨兵撞击 ${run.hits} 次 · 剩余 ${Math.ceil(Math.max(0, 18 - run.elapsed))} 秒`;
+      this.el('sandbox-waypoint').textContent = `三号闸门 ↑ ${Math.max(0, Math.round(run.z + 50))} m`;
+      document.getElementById('game-objective-copy')!.textContent = '沿船坞通道驶向闸门 · 看准哨兵俯冲位置并绕开';
+      this.el('sandbox-interact').classList.add('hidden'); return;
+    }
     if (scene.id === 'm2_garage' && journey.garage?.phase === 'riding' && !journey.visiting) {
       const escape = journey.garage;
       this.el('film-ride').classList.remove('hidden');

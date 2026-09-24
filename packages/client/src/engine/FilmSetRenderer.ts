@@ -436,6 +436,7 @@ export class FilmSetRenderer {
     if (journey?.scene === 'm3_bane' && journey.step === 1 && journey.bane?.phase !== 'ready') this.marker.visible = false;
     if (journey?.scene === 'm2_garage' && journey.garage?.phase === 'riding') this.marker.visible = false;
     if (journey?.scene === 'm3_hammer_tunnels' && journey.hammer?.phase === 'riding') this.marker.visible = false;
+    if (journey?.scene === 'm3_gate' && journey.apu?.phase === 'riding') this.marker.visible = false;
     if (journey && pillLocked(journey)) this.marker.visible = false;
     if (journey && interrogationLocked(journey)) this.marker.visible = false;
     if (journey && meetingLocked(journey)) this.marker.visible = false;
