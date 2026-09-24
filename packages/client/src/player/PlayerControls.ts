@@ -1,7 +1,7 @@
 import { catchLocked, reloadedPhaseLocked } from '@auto_matrix/shared';
 import { reloadedCamera } from './ReloadedCamera.js';
 import * as THREE from 'three';
-import { FILM_SETS, OFFICE_CONTACT, LOBBY_FIRE_INTERVAL, RESCUE, PILL_TIMING, MIRROR_SEAT, MIRROR_TIMING, groundHeight, playerBlocked, stepPlayer, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, COMBAT_SKILLS, combatDisplace, PLAYER_WALK_SPEED, meleeReach, trainingRoot, matrixEscapePhaseLocked, matrixEscapePose, matrixEscapeRoot, theOnePhaseLocked, theOnePose, theOneRoot, type OfficePhone, type AwakeningPose, type FreewayRide, type AgentState, type PlayerInput, type Vector3, type WorldStructure, type CombatImpact, type SkillCast, type RescueLoadout } from '@auto_matrix/shared';
+import { FILM_SETS, OFFICE_CONTACT, LOBBY_FIRE_INTERVAL, RESCUE, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_TIMING, groundHeight, playerBlocked, stepPlayer, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, COMBAT_SKILLS, combatDisplace, PLAYER_WALK_SPEED, meleeReach, trainingRoot, matrixEscapePhaseLocked, matrixEscapePose, matrixEscapeRoot, theOnePhaseLocked, theOnePose, theOneRoot, type OfficePhone, type AwakeningPose, type FreewayRide, type AgentState, type PlayerInput, type Vector3, type WorldStructure, type CombatImpact, type SkillCast, type RescueLoadout } from '@auto_matrix/shared';
 import { lafayetteWelcomeCamera } from './LafayetteWelcomeCamera.js';
 import type { MotionInput } from '../agents/CharacterMotion.js';
 import { AIR_RESCUE, governmentPose, airRescuePose, airRescueRoot, interrogationPose, meetingPose, meetingCarPose } from '@auto_matrix/shared';
@@ -142,6 +142,7 @@ export class PlayerControls {
       if (event.code === 'Digit4') this.action('barricade');
       if (event.code === 'KeyV') {
         this.firstPerson = !this.firstPerson;
+        if (this.firstPerson && this.motion.mirrorBeat !== undefined) this.aimAtMirror();
         if (this.firstPerson && this.climbing && this.authoritative?.currentLocation === 'film_office_ledge') {
           this.yaw = -.55; this.pitch = .55;
         }
@@ -169,10 +170,19 @@ export class PlayerControls {
     const turn = -event.movementX * 0.0028;
     this.yaw += turn;
     if (!this.dragging) this.movementYaw += turn;
-    this.pitch = THREE.MathUtils.clamp(this.pitch + event.movementY * 0.002, -0.4, 1.1);
+    this.pitch = THREE.MathUtils.clamp(this.pitch + event.movementY * 0.002, this.motion.mirrorBeat !== undefined ? -.9 : -.4, 1.1);
     this.lastLook = performance.now();
   };
   private click = (): void => { if (this.id && this.enabled && document.pointerLockElement !== this.canvas) this.lockPointer(); };
+
+  private aimAtMirror(): void {
+    const center = FILM_SETS.film_lafayette.center;
+    const x = center.x + PILL_ROOM.mirror.x + .5 - this.position.x;
+    const z = center.z + PILL_ROOM.mirror.z - this.position.z;
+    const eye = this.position.y + 2.99 - THREE.MathUtils.smoothstep(this.motion.mirrorBeat ?? 0, .65, MIRROR_TIMING.sit) * .9;
+    this.yaw = this.movementYaw = Math.atan2(x, z);
+    this.pitch = -Math.atan2(center.y + 2.6 - eye, Math.hypot(x, z));
+  }
 
   triggerCombat(kind: 'attack' | 'dodge', guided = false, guidedCombo?: number): boolean {
     if (kind === 'attack') return this.requestAttack(guided, guidedCombo);
@@ -250,6 +260,7 @@ export class PlayerControls {
 
   update(delta: number, state: AgentState, group: THREE.Group, running: boolean, phoneExit = false): void {
     if (!this.id) return;
+    const mirrorStarting = this.motion.mirrorBeat === undefined && state.currentAction?.parameters.mirrorBeat !== undefined;
     const redPillEnded = this.motion.pills?.choice === 'red' && !state.currentAction?.parameters.pills && state.currentLocation === 'film_lafayette';
     if (this.phoneExit && !phoneExit) this.performing = false;
     this.phoneExit = phoneExit;
@@ -442,6 +453,7 @@ export class PlayerControls {
       this.networkJump = false; this.lastSent = performance.now();
     }
     group.position.set(this.position.x, this.position.y, this.position.z);
+    if (mirrorStarting && this.firstPerson && now - this.lastLook > 900) this.aimAtMirror();
     const dx = this.position.x - previous.x; const dz = this.position.z - previous.z;
     this.motion.speed = this.ride || this.climbing || this.performing ? 0 : Math.hypot(dx, dz) / Math.max(delta, .001);
     if (this.motion.wakeCall?.phase === 'waking' && this.motion.wakeCall.elapsed > 2.7) this.motion.speed = 1.45;
@@ -479,7 +491,7 @@ export class PlayerControls {
     const ladderWide = this.climbing && state.currentLocation === 'film_office_ledge' && !this.firstPerson;
     const pillDepartureWide = !this.firstPerson && this.motion.pills?.phase === 'taking' && this.motion.pills.elapsed >= 10;
     const podWide = !this.firstPerson && this.motion.performance === 'pod';
-    this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, podWide ? 65 : ladderWide ? 62 : interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide || sentinelWide || interludeWide || oracleWide || betrayalWide || rescueWide || governmentWide || airRescueWide || escapeWide || oneWide || catchWide || lobbyWide || pillDepartureWide ? 58 : this.motion.inspecting ? 42 : this.firstPerson ? sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
+    this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, podWide ? 65 : ladderWide ? 62 : interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide || sentinelWide || interludeWide || oracleWide || betrayalWide || rescueWide || governmentWide || airRescueWide || escapeWide || oneWide || catchWide || lobbyWide || pillDepartureWide ? 58 : this.motion.inspecting ? 42 : this.firstPerson ? this.motion.mirrorBeat !== undefined ? 78 : sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
     this.camera.near = this.firstPerson && this.motion.club ? .08 : this.defaultNear;
     this.camera.updateProjectionMatrix();
     this.cameraStep += this.motion.speed * delta;

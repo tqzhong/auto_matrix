@@ -6,6 +6,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MIRROR_SEAT, MIRROR_TIMING, MIRROR_TRINITY, PILL_ROOM } from '@auto_matrix/shared';
 import { HeroModels } from '../packages/client/src/agents/HeroModel.js';
 import { advanceMotion, newMotion } from '../packages/client/src/agents/CharacterMotion.js';
+import { mirrorSurfacePoint } from '../packages/client/src/engine/FilmSetRenderer.js';
 
 async function heroAsset(id = 'neo') {
   const glb = await readFile(new URL(`../packages/client/public/assets/characters/${id}.glb`, import.meta.url));
@@ -40,6 +41,12 @@ test('Neo reaches the actual mirror smoothly without passing through it', async 
       `finger ${contact.toArray()} must touch the visible face of the mirror at z=${PILL_ROOM.mirror.z}`);
     const ellipse = ((contact.x - PILL_ROOM.mirror.x) / 2.78) ** 2 + ((contact.y - 4) / 4.36) ** 2;
     assert.ok(ellipse < .85 ** 2, 'the finger must meet the reflective glass inside the oval frame');
+    const mirror = new THREE.Mesh(new THREE.CircleGeometry(1));
+    mirror.position.set(PILL_ROOM.mirror.x, 4, PILL_ROOM.mirror.z); mirror.scale.set(2.78, 4.36, 1);
+    const ripple = mirrorSurfacePoint(mirror, rig.root)!;
+    assert.ok(Math.abs(ripple.x - .382) < .02 && Math.abs(ripple.y + .344) < .02,
+      `the ripple must start under Neo's actual fingertip, not at the center of the glass: ${ripple.toArray()}`);
+    assert.equal(mirrorSurfacePoint(mirror, new THREE.Group()), undefined, 'other actors without a reaching hand do not move the ripple');
     for (const time of [2.9, 3.1, 3.3, 3.6, 5]) {
       const finger = fingerAt(time);
       assert.ok(finger.z > PILL_ROOM.mirror.z - .02, `finger passes through the mirror at ${time}s: ${finger.toArray()}`);

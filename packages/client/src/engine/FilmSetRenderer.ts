@@ -56,6 +56,13 @@ export function showMirrorSubject(mirror: Reflector, subject: () => THREE.Object
   };
 }
 
+export function mirrorSurfacePoint(mirror: THREE.Object3D, subject: THREE.Object3D): THREE.Vector2 | undefined {
+  const finger = subject.getObjectByName('finger2-3_R');
+  if (!finger) return;
+  const point = mirror.worldToLocal(finger.getWorldPosition(new THREE.Vector3()));
+  return new THREE.Vector2(point.x, point.y);
+}
+
 const palettes = {
   day: { sky: 0xb8c9cd, fog: .001, ambient: 1.25, sun: 2.3, color: 0xffedcf },
   night: { sky: 0x121b21, fog: .009, ambient: .55, sun: .35, color: 0xaabdc3 },
@@ -243,7 +250,12 @@ export class FilmSetRenderer {
       this.mirrorCracks.visible = progress < 1;
       this.mirrorCracks.scale.y = Math.max(.001, 1 - progress);
       const shader = this.mirror!.material as THREE.ShaderMaterial;
-      shader.uniforms.liquidTime.value = elapsed; shader.uniforms.liquidAmount.value = healing ? mirrorSilver(time) * .003 : 0;
+      shader.uniforms.liquidTime.value = healing ? time - MIRROR_TIMING.touch : -1;
+      shader.uniforms.liquidAmount.value = healing ? mirrorSilver(time) : 0;
+      if (healing && player?.id === 'neo' && this.mirrorSubject) {
+        const contact = mirrorSurfacePoint(this.mirror!, this.mirrorSubject);
+        if (contact) shader.uniforms.liquidContact.value.copy(contact);
+      }
     }
     if (this.trackingHeadset) {
       const time = journey?.scene === 'm1_mirror' ? journey.awakening?.elapsed ?? 0 : 0;
@@ -1026,16 +1038,27 @@ export class FilmSetRenderer {
         const rim = Array.from({ length: 65 }, (_, i) => { const theta = i / 64 * Math.PI * 2; return [-10 + Math.cos(theta) * rx, 5 + Math.sin(theta) * ry, z]; });
         this.pipe(rim, radius, material);
       }
-      this.mirror = new Reflector(this.own(new THREE.CircleGeometry(1, 96)), { color: 0xb4beb8, textureWidth: 768, textureHeight: 1024, clipBias: .003, multisample: 0 });
+      this.mirror = new Reflector(this.own(new THREE.CircleGeometry(1, 96)), { color: 0x667d6d, textureWidth: 768, textureHeight: 1024, clipBias: .003, multisample: 0 });
       this.mirror.scale.set(2.78, 4.36, 1);
       showMirrorSubject(this.mirror, () => this.mirrorSubject);
       this.mirror.position.set(PILL_ROOM.mirror.x, 5, PILL_ROOM.mirror.z); this.mirror.userData.dynamic = true; this.root.add(this.mirror);
       const shader = this.mirror.material as THREE.ShaderMaterial;
-      shader.uniforms.liquidTime = { value: 0 }; shader.uniforms.liquidAmount = { value: 0 };
-      shader.fragmentShader = shader.fragmentShader.replace('void main()', 'uniform float liquidTime;\nuniform float liquidAmount;\nvoid main()')
+      shader.uniforms.liquidTime = { value: -1 }; shader.uniforms.liquidAmount = { value: 0 };
+      shader.uniforms.liquidContact = { value: new THREE.Vector2(.382, -.344) };
+      shader.vertexShader = shader.vertexShader.replace('varying vec4 vUv;', 'varying vec4 vUv;\nvarying vec2 vMirrorPoint;')
+        .replace('vUv = textureMatrix * vec4( position, 1.0 );', 'vMirrorPoint = position.xy;\n          vUv = textureMatrix * vec4( position, 1.0 );');
+      shader.fragmentShader = shader.fragmentShader.replace('varying vec4 vUv;', 'varying vec4 vUv;\nvarying vec2 vMirrorPoint;\nuniform float liquidTime;\nuniform float liquidAmount;\nuniform vec2 liquidContact;')
         .replace('vec4 base = texture2DProj( tDiffuse, vUv );', `vec2 mirrorUv = vUv.xy / vUv.w;
-          vec2 liquidOffset = vec2(sin(mirrorUv.y * 28.0 - liquidTime * 2.0), cos(mirrorUv.x * 24.0 + liquidTime * 1.6)) * liquidAmount;
-          vec4 base = texture2D(tDiffuse, mirrorUv + liquidOffset);`);
+          vec2 fromContact = vMirrorPoint - liquidContact;
+          float radius = length(fromContact);
+          float front = min(1.4, max(0.0, liquidTime) * .36);
+          float ring = step(0.0, liquidTime) * exp(-pow((radius - front) * 18.0, 2.0)) * (1.0 - smoothstep(2.8, 4.5, liquidTime));
+          float spread = step(0.0, liquidTime) * (1.0 - smoothstep(front - .12, front + .04, radius));
+          vec2 direction = normalize(fromContact + vec2(.0001));
+          vec2 liquidOffset = direction * (ring * .018 + spread * sin(radius * 28.0 - liquidTime * 8.0) * .003);
+          vec4 base = texture2D(tDiffuse, mirrorUv + liquidOffset);
+          base.rgb = min(base.rgb, vec3(.58, .64, .59));
+          base.rgb = mix(base.rgb, vec3(.86, .91, .88), min(.78, ring * .7 + spread * liquidAmount * .25));`);
       const crackStart = this.root.children.length;
       for (let i = 0; i < 8; i++) {
         const theta = i / 8 * Math.PI * 2 + .22;

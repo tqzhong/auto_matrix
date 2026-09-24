@@ -904,6 +904,28 @@ test('the tracking-chair shot contains Neo and the mirror while V lowers to seat
   }
   game.key('KeyV'); game.key('KeyV', false); game.step(.6);
   assert.ok(Math.abs(game.camera.position.y - (center.y + 2.09)) < .08, 'first-person eyes must sit at the chair height');
+  for (const point of [new THREE.Vector3(center.x - 8.94, center.y + 2.5, center.z + PILL_ROOM.mirror.z),
+    new THREE.Vector3(center.x + PILL_ROOM.mirror.x, center.y + 4, center.z + PILL_ROOM.mirror.z)]) {
+    const screen = point.project(game.camera);
+    assert.ok(Math.abs(screen.x) < .75 && Math.abs(screen.y) < .85 && screen.z > -1 && screen.z < 1,
+      `first person must see Neo's touching finger and its mirror: ${screen.toArray()}`);
+  }
+  const view = game.camera.getWorldDirection(new THREE.Vector3());
+  game.document.pointerLockElement = game.canvas; game.event(game.document, 'mousemove', { movementX: 120, movementY: -40 }); game.step(.1);
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(view) > .2, 'Neo can still look around from the chair');
+});
+
+test('starting the mirror performance while already in first person finds the glass once', t => {
+  const game = setup(t, Math.PI); const center = FILM_SETS.film_lafayette.center;
+  game.state.currentLocation = 'film_lafayette'; game.state.position = filmPosition('film_lafayette', MIRROR_SEAT.x, MIRROR_SEAT.z);
+  game.state.rotation = Math.PI; game.controls.possess(game.state);
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+  game.state.currentAction = { type: 'idle', parameters: { filmPose: 'touch', mirrorBeat: MIRROR_TIMING.wired, mirror: 0, seated: true }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.performing = true; game.step(.6);
+  const mirror = new THREE.Vector3(center.x + PILL_ROOM.mirror.x, center.y + 4, center.z + PILL_ROOM.mirror.z).project(game.camera);
+  assert.ok(Math.abs(mirror.x) < .75 && Math.abs(mirror.y) < .85, 'the newly seated Neo sees the mirror without pressing V again');
+  const view = game.camera.getWorldDirection(new THREE.Vector3()); game.step(.2);
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(view) < .01, 'the initial aim is not reapplied every frame');
 });
 
 test('the pod reveal frames Neo in the tank and V opens at the immersed eye line', t => {
