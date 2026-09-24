@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import type { AgentState, PlayerInput } from '@auto_matrix/shared';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { CameraController } from '../packages/client/src/engine/CameraController.js';
-import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, pillRoot, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, airRescueRoot, matrixEscapeRoot, theOneRoot, type TheOneEncounter } from '@auto_matrix/shared';
+import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, pillRoot, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, airRescueRoot, matrixEscapeRoot, theOneRoot, type TheOneEncounter } from '@auto_matrix/shared';
 
 test('observer camera releases drag and ignores pointer capture while a character controls the view', () => {
   let captures = 0;
@@ -37,6 +37,35 @@ test('the lobby checkpoint has a readable authored camera and V returns to Neo e
   const locked = game.group.position.clone(); game.key('KeyW'); game.step(.35); assert.deepEqual(game.group.position, locked, 'the entry performance owns movement until weapons are drawn');
   game.key('KeyW', false); game.key('KeyV'); game.key('KeyV', false); game.step(.1);
   assert.ok(game.camera.position.distanceTo(new THREE.Vector3(game.state.position.x, game.state.position.y + 2.99, game.state.position.z)) < .06);
+});
+
+test('the office ladder camera looks along the city canyon while Neo descends', t => {
+  const game = setup(t, Math.PI / 2); const center = FILM_SETS.film_office_ledge.center;
+  game.state.currentLocation = 'film_office_ledge';
+  game.state.position = filmPosition('film_office_ledge', OFFICE_LADDER.x, OFFICE_LADDER.z);
+  game.state.position.y -= OFFICE_LADDER.depth / 2; game.state.rotation = Math.PI / 2;
+  game.state.currentAction = { type: 'move_to', parameters: { player: true, resolved: true, climbing: true, climbDirection: 0 }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.controls.climbing = true; game.step(.5);
+  assert.ok(game.camera.position.z < game.state.position.z - 7, 'the camera should see down the facade rather than into a flat wall');
+  for (const aspect of [16 / 9, .72]) {
+    game.camera.aspect = aspect; game.camera.updateProjectionMatrix(); game.step(.5);
+    for (const point of [new THREE.Vector3(game.state.position.x, game.state.position.y + 2, game.state.position.z),
+      new THREE.Vector3(center.x - 32, center.y + 5, center.z + 108)]) {
+      const screen = point.project(game.camera);
+      assert.ok(Math.abs(screen.x) < .95 && Math.abs(screen.y) < .99 && screen.z > -1 && screen.z < 1,
+        `Neo and a visible distant building must share the climbing frame at ${aspect}: ${screen.toArray().join(',')}`);
+    }
+  }
+  game.key('KeyV'); game.key('KeyV', false); game.step(2);
+  const view = game.camera.getWorldDirection(new THREE.Vector3());
+  assert.ok(view.x < -.25 && view.z > .4 && view.y < -.2,
+    'first person should keep the street drop in view instead of snapping back to the facade');
+  game.event(game.canvas, 'mousedown', { button: 2 });
+  game.event(game.document, 'mousemove', { movementX: 120, movementY: -60 }); game.step(.1);
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(view) > .2,
+    'the authored first-person starting direction must still allow the player to look around');
+  game.key('KeyV'); game.key('KeyV', false); game.step(.5);
+  assert.ok(game.camera.position.z < game.state.position.z - 7, 'switching back restores the exterior third-person shot');
 });
 
 test('Smith questioning keeps both faces readable and V uses Morpheus seated eye line', t => {

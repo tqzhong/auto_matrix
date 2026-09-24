@@ -482,6 +482,12 @@ test('the playable office ledge looks into a built city canyon instead of empty 
     const hit = new THREE.Raycaster(eye, direction, 0, 140).intersectObject(building, true)[0];
     assert.ok(hit, 'the route to the scaffold needs visible exterior geometry ahead');
     assert.ok(hit.point.z > 75 && hit.point.y > 0, 'the camera should see a raised facade beyond the ledge');
+    const streetEye = building.localToWorld(new THREE.Vector3(OFFICE_LEDGE_OFFSET - 18, 200, 205));
+    const street = new THREE.Raycaster(streetEye, new THREE.Vector3(0, -1, 0), 0, 300).intersectObject(building, true)[0];
+    assert.ok(street && building.worldToLocal(street.point).y < -60, 'a distant tower cannot stand in the drivable street');
+    const outerEye = building.localToWorld(new THREE.Vector3(OFFICE_LEDGE_OFFSET - 110, 200, 205));
+    const ground = new THREE.Raycaster(outerEye, new THREE.Vector3(0, -1, 0), 0, 300).intersectObject(building, true)[0];
+    assert.ok(ground && building.worldToLocal(ground.point).y < -60, 'the visible city canyon needs continuous ground beneath its blocks');
   } finally { renderer.dispose(); globalThis.document = document; }
 });
 

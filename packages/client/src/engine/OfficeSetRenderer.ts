@@ -270,9 +270,13 @@ export class OfficeSetRenderer {
     this.box(metal, x - 4.4, -OFFICE_LADDER.depth + 1.5, z, .1, 3, 6);
   }
   private exterior(offset: number): void {
-    const asphalt = this.mat(0x414a4d, .9); this.box(asphalt, offset - 27, -65, 0, 54, 1, 250);
+    const asphalt = this.mat(0x414a4d, .9); const ground = this.mat(0x626b69, .98);
+    this.box(ground, offset - 25, -65.9, 0, 250, .8, 500);
+    this.box(asphalt, offset - 12, -65, 0, 24, 1, 440);
+    this.box(asphalt, offset - 25, -64.96, 90, 250, .92, 12);
     const facade = this.mat(0x899396, .75); const trim = this.mat(0xc2c7be);
     const glass = this.mat(0x657e87, .17, .6);
+    for (const x of [-26, 2]) this.box(trim, offset + x, -64.65, 0, 4, .6, 440);
     for (let i = 0; i < 9; i++) {
       const x = offset - 42 - (i % 3) * 20; const z = -70 + i * 18; const h = 45 + [36, 6, 22, 52, 15, 38, 8, 48, 20][i];
       this.box(facade, x, h / 2 - 65, z, 15, h, 16);
@@ -283,7 +287,7 @@ export class OfficeSetRenderer {
     // that playable view from ending in an empty sky instead of a city canyon.
     const towerWall = this.mat(0x717f80, .84); const farWall = this.mat(0x9ca7a6, .84);
     const towerGlass = this.mat(0x4b6970, .22, .4);
-    for (const [i, [dx, z, width, depth, height]] of [[-32, 108, 14, 20, 109], [-52, 145, 17, 26, 151], [-18, 205, 20, 28, 136], [21, 109, 15, 24, 116], [46, 169, 19, 28, 148]].entries()) {
+    for (const [i, [dx, z, width, depth, height]] of [[-32, 108, 14, 20, 109], [-52, 145, 17, 26, 151], [-34, 205, 20, 28, 136], [21, 109, 15, 24, 116], [46, 169, 19, 28, 148]].entries()) {
       const x = offset + dx; const roof = height - 65;
       const wall = i % 2 ? farWall : towerWall;
       this.box(wall, x, height / 2 - 65, z, width, height, depth);
@@ -294,11 +298,11 @@ export class OfficeSetRenderer {
       this.box(trim, x, roof, z, width + .6, .55, depth + .6);
       this.box(wall, x, roof + 2, z + depth * .16, width * .45, 3.7, depth * .25);
     }
-    for (const x of [-17, -29]) for (let z = -115; z <= 115; z += 12) this.box(trim, offset + x, -64.47, z, .13, .015, 4.6);
-    for (const z of [-42, 32]) for (let x = -34; x < -7; x += 1.8) this.box(trim, offset + x, -64.46, z, 1.1, .02, 4.5);
+    for (const x of [-8, -16]) for (let z = -211; z <= 211; z += 12) this.box(trim, offset + x, -64.47, z, .13, .015, 4.6);
+    for (const z of [-42, 32]) for (let x = -22; x < 0; x += 1.8) this.box(trim, offset + x, -64.46, z, 1.1, .02, 4.5);
     const car = this.mat(0x253a3c, .33, .45); const wheel = this.mat(0x1b2424, .9);
     for (let i = 0; i < 12; i++) {
-      const x = offset - 10 - i % 3 * 10; const z = -106 + i * 19;
+      const x = offset - 4 - i % 3 * 8; const z = -106 + i * 19;
       this.box(car, x, -63.7, z, 2.2, 1, 4.3); this.box(glass, x, -62.95, z - .1, 1.9, .65, 2.4);
       for (const dx of [-1.1, 1.1]) for (const dz of [-1.3, 1.3]) this.box(wheel, x + dx, -64.1, z + dz, .2, .65, .65);
     }

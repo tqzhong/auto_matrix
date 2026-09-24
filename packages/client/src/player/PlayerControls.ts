@@ -141,6 +141,9 @@ export class PlayerControls {
       if (event.code === 'Digit4') this.action('barricade');
       if (event.code === 'KeyV') {
         this.firstPerson = !this.firstPerson;
+        if (this.firstPerson && this.climbing && this.authoritative?.currentLocation === 'film_office_ledge') {
+          this.yaw = -.55; this.pitch = .55;
+        }
         this.onViewChange?.(this.firstPerson);
       }
     }
@@ -445,7 +448,7 @@ export class PlayerControls {
     const heading = this.ride || this.climbing || this.performing ? state.rotation : attacking ? this.attackYaw : this.firearm ? this.yaw : this.motion.speed > .1 ? Math.atan2(dx, dz) : this.facing;
     const turn = Math.atan2(Math.sin(heading - this.facing), Math.cos(heading - this.facing));
     this.facing += turn * (this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.welcome || this.motion.knock !== undefined || this.motion.training || this.motion.workday || this.motion.wakeCall || this.motion.sentinel || this.motion.interlude || this.motion.oracleVisit || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || this.motion.lobbyEntry ? 1 : 1 - Math.exp(-14 * delta)); this.motion.turn = turn * 8;
-    if (running && this.enabled && (this.motion.speed > .1 || this.ride || this.climbing) && !this.dragging && performance.now() - this.lastLook > 900) {
+    if (running && this.enabled && (this.motion.speed > .1 || this.ride || this.climbing) && !(this.firstPerson && this.climbing && state.currentLocation === 'film_office_ledge') && !this.dragging && performance.now() - this.lastLook > 900) {
       const cameraTurn = Math.atan2(Math.sin(this.facing - this.yaw), Math.cos(this.facing - this.yaw));
       this.yaw += cameraTurn * (1 - Math.exp(-5 * delta));
     }
@@ -469,7 +472,8 @@ export class PlayerControls {
     const oneWide = !this.firstPerson && oneCinematic;
     const catchWide = !this.firstPerson && catchCinematic;
     const lobbyWide = !this.firstPerson && Boolean(this.motion.lobbyEntry);
-    this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide || sentinelWide || interludeWide || oracleWide || betrayalWide || rescueWide || governmentWide || airRescueWide || escapeWide || oneWide || catchWide || lobbyWide ? 58 : this.motion.inspecting ? 42 : this.firstPerson ? sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
+    const ladderWide = this.climbing && state.currentLocation === 'film_office_ledge' && !this.firstPerson;
+    this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, ladderWide ? 62 : interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide || sentinelWide || interludeWide || oracleWide || betrayalWide || rescueWide || governmentWide || airRescueWide || escapeWide || oneWide || catchWide || lobbyWide ? 58 : this.motion.inspecting ? 42 : this.firstPerson ? sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
     this.camera.near = this.firstPerson && this.motion.club ? .08 : this.defaultNear;
     this.camera.updateProjectionMatrix();
     this.cameraStep += this.motion.speed * delta;
@@ -1064,6 +1068,11 @@ export class PlayerControls {
       const ideal = new THREE.Vector3(this.position.x, this.position.y + 8, this.position.z)
         .addScaledVector(forward, -17).addScaledVector(right, this.camera.aspect < .8 ? -3.5 : -6);
       const focus = new THREE.Vector3(this.position.x, this.position.y + 1.8, this.position.z).addScaledVector(forward, 3);
+      if (resetCamera) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
+      this.camera.lookAt(focus);
+    } else if (this.climbing && state.currentLocation === 'film_office_ledge' && !this.firstPerson) {
+      const ideal = new THREE.Vector3(this.position.x - 6.5, this.position.y + 5.5, this.position.z - 15);
+      const focus = new THREE.Vector3(this.position.x - 4, this.position.y - 2.5, this.position.z + 9);
       if (resetCamera) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
       this.camera.lookAt(focus);
     } else if (this.firstPerson) {
