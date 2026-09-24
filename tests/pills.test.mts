@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SCENE_BY_ID, FILM_SETS, PILL_ROOM, PILL_TIMING, filmObstacles, filmStepPosition, filmPosition, pillRoot, playerBlocked, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, MIRROR_GUIDE_LENGTH, PILL_ROOM, PILL_TIMING, filmObstacles, filmStepPosition, filmPosition, mirrorGuidePose, pillRoot, playerBlocked, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -26,26 +26,25 @@ function setup() {
   return { world, sandbox, players, neo, command, frames, offer, state: () => sandbox.life.film.state!, tick: () => tick };
 }
 
-test('Neo leaves the chairs before turning toward a clear view of the cracked mirror', () => {
+test('Neo leaves the chairs facing the open tracking-room doorway', () => {
   const pose = (elapsed: number, choice: 'red' | 'blue' = 'red') => pillRoot({ phase: 'taking', elapsed, choice,
     approach: { x: 0, z: -3.3, yaw: Math.PI } });
   const seated = pose(10.8); const leaving = pose(12.5); const stopped = pose(PILL_TIMING.take);
   assert.ok(Math.abs(seated.x - PILL_ROOM.seat) < .1, 'Neo should rise from his own chair before walking');
   assert.ok(leaving.z > PILL_ROOM.z + 1, 'he should walk in front of the chairs');
   assert.ok(stopped.x < -PILL_ROOM.seat - 1 && stopped.z > PILL_ROOM.z + 2,
-    'the last sidestep should clear the line to the mirror');
+    'the last sidestep should clear the route to the rear doorway');
   assert.equal(playerBlocked(filmPosition('film_lafayette', stopped.x, stopped.z), true, 1.1), false);
-  const mirrorYaw = Math.atan2(PILL_ROOM.mirror.x - stopped.x, PILL_ROOM.mirror.z - stopped.z);
-  assert.ok(Math.cos(stopped.yaw - mirrorYaw) > .998, 'the standing body should finish looking at the mirror');
-  assert.ok(Math.cos(pose(PILL_TIMING.take, 'blue').yaw - mirrorYaw) < .8, 'blue does not use the mirror reveal');
-  const chairs = filmObstacles(FILM_SETS.film_lafayette).slice(0, 2);
+  const doorYaw = Math.atan2(PILL_ROOM.trackingDoor.x - stopped.x, PILL_ROOM.trackingDoor.z - stopped.z);
+  assert.ok(Math.cos(stopped.yaw - doorYaw) > .998, 'Morpheus leads through the rear doorway, not toward a wall');
+  assert.ok(Math.cos(pose(PILL_TIMING.take, 'blue').yaw - doorYaw) < .8, 'blue does not follow the tracking-room route');
+  const furniture = filmObstacles(FILM_SETS.film_lafayette);
   for (let sample = 1; sample < 100; sample++) {
     const amount = sample / 100;
-    const x = stopped.x + (PILL_ROOM.mirror.x - stopped.x) * amount;
-    const z = stopped.z + (PILL_ROOM.mirror.z - stopped.z) * amount;
-    const eyeLine = 2.99 + (5 - 2.99) * amount;
-    assert.ok(chairs.every(chair => eyeLine > chair.height || Math.abs(x - chair.x) > chair.width / 2 || Math.abs(z - chair.z) > chair.depth / 2),
-      `a chair blocks the mirror at ${x.toFixed(2)}, ${z.toFixed(2)}`);
+    const x = stopped.x + (PILL_ROOM.trackingDoor.x - stopped.x) * amount;
+    const z = stopped.z + (PILL_ROOM.trackingDoor.z - stopped.z) * amount;
+    assert.ok(furniture.slice(0, 3).every(item => Math.abs(x - item.x) > item.width / 2 || Math.abs(z - item.z) > item.depth / 2),
+      `furniture blocks the tracking doorway at ${x.toFixed(2)}, ${z.toFixed(2)}`);
   }
 });
 
@@ -67,6 +66,41 @@ test('Morpheus waits for an explicit pill choice and red completes only after th
   assert.equal(h.sandbox.state.neoLife!.philosophy.agency, agency);
   const beforeMirror = { ...h.neo.position };
   h.frames(1); assert.deepEqual(h.neo.position, beforeMirror, 'the same-room transition must not teleport Neo back to the doorway');
+});
+
+test('after the red pill Morpheus leads Neo to the tracking chair instead of appearing there', () => {
+  const h = setup(); h.offer(); h.command('pill:red'); h.frames(PILL_TIMING.take + .1);
+  const state = h.state(), morpheus = h.world.agents.get('morpheus')!;
+  assert.equal(state.scene, 'm1_mirror');
+  assert.ok(state.mirrorGuide, 'the room transition must save an escort in progress');
+  assert.ok(Math.hypot(morpheus.position.x - filmPosition('film_lafayette', -PILL_ROOM.seat, PILL_ROOM.z).x,
+    morpheus.position.z - filmPosition('film_lafayette', -PILL_ROOM.seat, PILL_ROOM.z).z) < 2,
+    'Morpheus starts at the chair instead of teleporting to the equipment room');
+  for (let progress = 2.5; progress < MIRROR_GUIDE_LENGTH; progress += .5) {
+    const pose = mirrorGuidePose(progress);
+    assert.equal(playerBlocked(filmPosition('film_lafayette', pose.x, pose.z), true), false,
+      `Morpheus must not walk through furniture or the rear wall at ${progress.toFixed(1)} m`);
+  }
+  h.neo.position = filmStepPosition(FILM_SCENE_BY_ID.m1_mirror, FILM_SCENE_BY_ID.m1_mirror.steps[0]);
+  assert.match(h.command('act'), /带路/); assert.equal(state.awakening, undefined);
+  assert.match(h.players.possess('other', 'morpheus', h.tick()).error!, /追踪室/);
+  h.neo.position = { ...morpheus.position }; const beforeStep = state.mirrorGuide!.progress;
+  h.frames(.5);
+  assert.ok(state.mirrorGuide!.progress - beforeStep > 1.4 && state.mirrorGuide!.progress - beforeStep < 1.8,
+    'one server tick advances Morpheus by about 1.6 metres');
+  const first = state.mirrorGuide!.progress;
+  h.neo.position = filmPosition('film_lafayette', 0, 10);
+  h.frames(4); assert.equal(state.mirrorGuide!.progress, first, 'Morpheus waits when Neo falls behind');
+  const saved = structuredClone(h.sandbox.state); h.sandbox.restore(saved);
+  assert.equal(h.state().mirrorGuide!.progress, saved.neoLife.journey.mirrorGuide.progress);
+  assert.equal(h.state().mirrorGuide!.done, saved.neoLife.journey.mirrorGuide.done);
+  for (let i = 0; i < 50 && !h.state().mirrorGuide!.done; i++) {
+    h.neo.position = { ...morpheus.position };
+    h.frames(.5);
+  }
+  assert.equal(h.state().mirrorGuide!.done, true);
+  assert.ok(morpheus.position.z < filmPosition('film_lafayette', 0, -11.5).z,
+    'Morpheus reaches the tracking room before Neo starts the chair performance');
 });
 
 test('blue takes the same physical sequence before preserving the daily-life save', () => {

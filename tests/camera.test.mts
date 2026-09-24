@@ -873,7 +873,7 @@ test('the pill camera supports seated first person and releases movement when th
     'ordinary movement must resume in the direction Neo faces, clear of the chair');
 });
 
-test('the red pill hands the first-person camera to the cracked mirror when the performance ends', t => {
+test('the red pill hands the first-person camera to the tracking-room doorway when the performance ends', t => {
   const game = setup(t, Math.PI);
   game.state.currentLocation = 'film_lafayette';
   const gesture = { phase: 'taking' as const, elapsed: PILL_TIMING.take - .2, choice: 'red' as const, role: 'neo' as const };
@@ -881,13 +881,13 @@ test('the red pill hands the first-person camera to the cracked mirror when the 
   game.state.position = filmPosition('film_lafayette', root.x, root.z); game.state.rotation = root.yaw;
   game.state.currentAction = { type: 'idle', parameters: { pills: gesture }, startedAt: 0, duration: 1, progress: 0 };
   game.controls.possess(game.state); game.key('KeyV'); game.key('KeyV', false); game.step(.15);
-  const mirror = filmPosition('film_lafayette', -10, -17.62);
-  const mirrorYaw = Math.atan2(mirror.x - game.state.position.x, mirror.z - game.state.position.z);
-  game.state.currentAction = null; game.state.rotation = mirrorYaw; game.step(.15);
+  const door = filmPosition('film_lafayette', PILL_ROOM.trackingDoor.x, PILL_ROOM.trackingDoor.z);
+  const doorYaw = Math.atan2(door.x - game.state.position.x, door.z - game.state.position.z);
+  game.state.currentAction = null; game.state.rotation = doorYaw; game.step(.15);
   assert.equal(game.controls.performing, false);
-  assert.ok(Math.abs(angle(game.yaw(), mirrorYaw)) < .05, 'the first-person view should follow the authored mirror cue');
+  assert.ok(Math.abs(angle(game.yaw(), doorYaw)) < .05, 'the first-person view should follow Morpheus through the rear doorway');
   game.key('KeyV'); game.key('KeyV', false); game.step(.6);
-  assert.ok(Math.abs(angle(game.yaw(), mirrorYaw)) < .15, 'third person should keep the mirror in front of Neo');
+  assert.ok(Math.abs(angle(game.yaw(), doorYaw)) < .15, 'third person should keep the doorway in front of Neo');
 });
 
 test('the tracking-chair shot contains Neo and the mirror while V lowers to seated eye height', t => {

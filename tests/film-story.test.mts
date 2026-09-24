@@ -2031,6 +2031,24 @@ test('the entire film route completes through interactions, driving and real com
     if (scene.id === 'm3_gate') assert.equal(h.world.agents.get('mifune')?.status, 'dead');
     assert.equal(h.actor().isInMatrix, scene.id === 'm2_meeting' ? false : FILM_SETS[scene.set].world === 'matrix');
     assert.equal(musicForScene({ player: h.actor(), sandbox: h.sandbox.state, time: 7500, matrix: h.actor().isInMatrix, running: true }), scene.id === 'm2_meeting' ? 'night' : scene.music);
+    if (scene.id === 'm1_mirror' && state.mirrorGuide) {
+      for (const [x, z] of [[-5, -3.1], [-5, -9.8], [-6, -12.7], [MIRROR_TOUCH.x, MIRROR_TOUCH.z]]) {
+        const target = filmPosition(scene.set, x, z);
+        for (let frame = 0; frame < 500; frame++) {
+          const actor = h.actor(), dx = target.x - actor.position.x, dz = target.z - actor.position.z;
+          const gap = Math.hypot(dx, dz);
+          if (gap < .3) break;
+          h.players.receiveInput('film-player', { x: dx / Math.max(1, gap), z: dz / Math.max(1, gap), yaw: Math.atan2(dx, dz), jump: false, sprint: false, sequence: ++sequence });
+          h.players.step(.05, true, h.tick());
+          if (frame % 10 === 0) h.advance();
+          assert.ok(frame < 499, `Morpheus route blocked at ${x}, ${z}`);
+        }
+      }
+      h.players.receiveInput('film-player', { x: 0, z: 0, yaw: h.actor().rotation, jump: false, sprint: false, sequence: ++sequence });
+      for (let frame = 0; frame < 100 && !state.mirrorGuide.done; frame++) h.advance();
+      assert.equal(state.mirrorGuide.done, true, JSON.stringify({ guide: state.mirrorGuide,
+        neo: h.actor().position, morpheus: h.world.agents.get('morpheus')?.position }));
+    }
     if (scene.id === 'm1_pills' && state.hotel) {
       // Enter the room by walking all stair flights and opening the actual door.
       for (const point of HOTEL_ROUTE.slice(4, -2)) {

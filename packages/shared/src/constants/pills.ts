@@ -8,7 +8,7 @@ export interface PillEncounter {
 }
 export type PillGesture = Pick<PillEncounter, 'phase' | 'elapsed' | 'choice'> & { role: 'neo' | 'morpheus' };
 export const PILL_ROOM = { seat: 1.75, z: -6, tableZ: -8.4, tableY: 1.65, cup: { x: 1.1, y: 2.03, z: -7.65 },
-  exit: { x: -3, z: -3.1 }, mirror: { x: -10, z: -17.62 } } as const;
+  exit: { x: -3, z: -3.1 }, trackingDoor: { x: -6, z: -11.5 }, mirror: { x: -10, z: -17.62 } } as const;
 export const PILL_TIMING = { offer: 5, take: 17, transfer: 1.8, swallow: 3.65, liftCup: 5.3, replaceCup: 8.6,
   stand: 11, walk: 13, exit: 15.7 } as const;
 export const pillEase = (time: number, from: number, to: number): number => {
@@ -51,8 +51,8 @@ export function pillRoot(encounter: PillEncounter): { x: number; z: number; yaw:
   const sidestep = encounter.phase === 'done' ? 1 : encounter.phase === 'taking' ? pillEase(t, PILL_TIMING.walk, PILL_TIMING.exit) : 0;
   const facing = -Math.PI / 2 + Math.PI / 2 * pillEase(rise, .5, 1);
   const walkingYaw = facing + (-Math.PI / 2 - facing) * pillEase(t, PILL_TIMING.walk - .1, PILL_TIMING.walk + .3);
-  const mirrorYaw = Math.atan2(PILL_ROOM.mirror.x - PILL_ROOM.exit.x, PILL_ROOM.mirror.z - PILL_ROOM.exit.z);
-  const finalYaw = encounter.choice === 'red' ? mirrorYaw : 0;
+  const doorYaw = Math.atan2(PILL_ROOM.trackingDoor.x - PILL_ROOM.exit.x, PILL_ROOM.trackingDoor.z - PILL_ROOM.exit.z);
+  const finalYaw = encounter.choice === 'red' ? doorYaw : 0;
   const turn = Math.atan2(Math.sin(finalYaw + Math.PI / 2), Math.cos(finalYaw + Math.PI / 2));
   return { x: seat + (PILL_ROOM.exit.x - seat) * sidestep, z: z + (PILL_ROOM.exit.z - z) * walk,
     yaw: walkingYaw + turn * pillEase(t, PILL_TIMING.exit, PILL_TIMING.take) };

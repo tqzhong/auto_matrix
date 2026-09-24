@@ -9,6 +9,8 @@ import {
   HOTEL_ROUTE,
   LAFAYETTE,
   MEETING_DRIVE_SECONDS,
+  MIRROR_TOUCH,
+  PILL_ROOM,
   PILL_TIMING,
   WAKE_CALL,
   filmPosition,
@@ -167,11 +169,18 @@ test('P0 runs continuously from daily contact through a clean escape and the red
   h.command('pill:red'); h.frames(PILL_TIMING.take + .1); assert.equal(h.sandbox.state.neoLife!.choices.pill, 'red');
   assert.equal(h.state().scene, 'm1_mirror', 'the mirror begins as soon as Neo finishes taking the red pill');
   assert.equal(h.state().step, 0);
-  const mirror = filmPosition('film_lafayette', -10, -17.62);
-  const mirrorYaw = Math.atan2(mirror.x - h.neo.position.x, mirror.z - h.neo.position.z);
-  assert.ok(Math.cos(h.neo.rotation - mirrorYaw) > .998, 'Neo faces the cracked mirror rather than the exit door');
+  const door = filmPosition('film_lafayette', PILL_ROOM.trackingDoor.x, PILL_ROOM.trackingDoor.z);
+  const doorYaw = Math.atan2(door.x - h.neo.position.x, door.z - h.neo.position.z);
+  assert.ok(Math.cos(h.neo.rotation - doorYaw) > .998, 'Neo faces the rear doorway where Morpheus leads');
   h.reload(); assert.equal(h.state().scene, 'm1_mirror');
   assert.deepEqual(h.state().completed.slice(-5), ['m1_ledge', 'm1_wake_again', 'm1_bridge', 'm1_bug', 'm1_pills']);
+  for (const [x, z] of [[-5, -3.1], [-5, -9.8], [-6, -12.7], [MIRROR_TOUCH.x, MIRROR_TOUCH.z]])
+    h.walkLocal('film_lafayette', x, z);
+  h.frames(10); assert.equal(h.state().mirrorGuide?.done, true, JSON.stringify({ guide: h.state().mirrorGuide,
+    neo: h.neo.position, morpheus: h.world.agents.get('morpheus')?.position }));
+  h.command('act'); assert.equal(h.state().awakening?.kind, 'mirror');
+  h.frames(8.2); assert.equal(h.state().scene, 'm1_pod');
+  assert.ok(h.state().completed.includes('m1_mirror'));
 });
 
 test('P0 runs continuously from daily contact through capture, tracker removal and the blue pill', () => {

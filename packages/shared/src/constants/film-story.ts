@@ -95,6 +95,7 @@ export interface FilmJourney {
   templeSeal?: { phase: 'running' | 'failed' | 'sealed'; remaining: number; lastTick: number; attempts: number };
   trucks?: import('./trucks.js').TruckEncounter;
   awakening?: import('./awakening.js').AwakeningBeat;
+  mirrorGuide?: import('./awakening.js').MirrorGuide;
   training?: import('./training.js').TrainingPerformance;
   workday?: import('./office-workday.js').OfficeWorkday;
   contact?: import('./apartment.js').ApartmentContact;
@@ -189,7 +190,7 @@ export const FILM_SCENES: FilmScene[] = [
   scene('m1_bridge', 1, 'adams_bridge', 'neo', '桥下的车灯', 'pill', 'contact', '雨夜桥下，轿车的后门等着你。Apoc 开车，Switch 在前座，Trinity 留出后座的位置。', [walk('走近轿车右后门', MEETING_CAR.approach.x, MEETING_CAR.approach.z), use('打开后车门并上车', 'Switch 要求检查追踪装置。Trinity 让你重新考虑是否现在离开。', MEETING_CAR.approach.x, MEETING_CAR.approach.z)], ['trinity', 'switch', 'apoc']),
   scene('m1_bug', 1, 'extraction_car', 'neo', '取出追踪器', 'pill', 'awakening', '你坐在 Trinity 身旁。扫描发现追踪器时，按住 G 保持身体稳定，松开会暂停抽取。检查后由 Apoc 送你赴约。', [use('配合扫描与抽取', '装置从腹部取出机械追踪器，Trinity 将它扔出车外。', MEETING_CAR.seat, MEETING_CAR.z + MEETING_CAR.rear), think('重新判断昨夜的经历', '当证据与熟悉的解释冲突，下一步应当相信什么？', MEETING_CAR.seat, MEETING_CAR.z + MEETING_CAR.rear), use('乘车抵达 Lafayette，下车后走到入口', '旧楼的门在面前。Morpheus 正在楼上的房间等你。', MEETING_DESTINATION.x, MEETING_DESTINATION.z)], ['trinity', 'switch', 'apoc']),
   scene('m1_pills', 1, 'lafayette', 'neo', '两把皮椅之间', 'pill', 'awakening', 'Lafayette 的旧房间里，Morpheus 把决定交给你。走到皮椅前，按 G 坐下听他说。', [use('坐到 Morpheus 对面的皮椅上', 'Morpheus 摊开双手。一边继续追问，一边回到熟悉的生活；决定仍然属于你。', 0, -3.3), think('亲自选择红色或蓝色药丸', '电影中的 Neo 选择红色药丸。蓝色药丸是游戏的日常生活分支；选择后，Neo 会亲手拿取药丸，用水吞服。', 0, -3.3)], ['morpheus', 'trinity']),
-  scene('m1_mirror', 1, 'lafayette', 'neo', '镜面与定位', 'pill', 'awakening', '穿过会客厅后方的门，进入追踪室。设备正在寻找你的真实身体，裂开的镜面开始复原。', [use('坐进追踪椅，触碰裂镜', '银色镜面覆盖 Neo，接线组锁定信号；眼前的房间消失，培养舱中的身体睁开眼睛。', MIRROR_TOUCH.x, MIRROR_TOUCH.z, 8)], ['morpheus', 'trinity', 'apoc', 'switch', 'cypher']),
+  scene('m1_mirror', 1, 'lafayette', 'neo', '镜面与定位', 'pill', 'awakening', 'Morpheus 起身，带你穿过会客厅后方的门。跟随他进入追踪室，再坐到设备和裂镜旁。', [use('坐进追踪椅，触碰裂镜', '银色镜面覆盖 Neo，接线组锁定信号；眼前的房间消失，培养舱中的身体睁开眼睛。', MIRROR_TOUCH.x, MIRROR_TOUCH.z, 8)], ['morpheus', 'trinity', 'apoc', 'switch', 'cypher']),
   scene('m1_pod', 1, 'power_plant_pods', 'neo', '第一次睁眼', 'construct', 'awakening', '连接管线和无尽的培养塔取代了熟悉的城市。转动视角观察，再按 G 检查身体上的连接。', [use('查看培养舱的连接', '维护机器发现异常，拔除管线。你从排放通道坠入水中。', 0, -12, 9), use('抓住救援装置', '尼布甲尼撒号把你从废水里吊起。', 0, 12, 5)]),
   scene('m1_recovery', 1, 'neb_deck', 'neo', '从未使用的肌肉', 'construct', 'awakening', '船员修复 Neo 的身体。醒来后，他第一次看见同伴在现实中的样子。', [use('在医疗床旁检查身体', '针疗和休息逐渐恢复肌肉功能，插口却证明过去的身体认知并不完整。', -7, -22, 5), walk('走向核心连接区', 0, 0)], ['morpheus', 'trinity', 'tank', 'dozer']),
   scene('m1_construct', 1, 'white_construct', 'neo', '残余自我影像', 'construct', 'awakening', '白色构造体里，衣服、头发和电视都可以被加载。', [use('请 Morpheus 打开电视', 'Morpheus 区分感官信号与外部世界。熟悉的城市来自共享模拟。', 0, -10), think('感觉足以证明真实吗？', '程序能够生成感受，却无法替你决定该如何理解感受。', CONSTRUCT_REVEAL.neo.x, CONSTRUCT_REVEAL.neo.z)], ['morpheus']),

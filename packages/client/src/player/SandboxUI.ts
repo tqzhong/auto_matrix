@@ -1,5 +1,5 @@
 import { CATCH, RELOADED, RELOADED_FINALE, HEL_COATCHECK, catchText, reloadedText } from '@auto_matrix/shared';
-import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_NAMES, filmReflections, GRID_HACK_SECONDS, GRID_REROUTE_SECONDS, HEL_ELEVATOR, HEL_DANCE_DOOR, filmStepPosition, helElevatorLocked, helDanceDoorLocked, pillLocked, lafayetteWelcomeLocked, awakeningLocked, awakeningWaiting, AWAKENING_SECONDS, MIRROR_TOUCH, MIRROR_TIMING, trainingLocked, trainingWaiting, TRAINING_SECONDS, DOJO_COMBO_WINDOW, windowOpening, windowCrossing, dockPowerOffline, ITEMS, RECIPES, SKILLS, FILMS, MISSIONS, LOCATIONS, CITY_BUILDINGS, NEO_CHAPTERS, LIFE_ACTIONS, lifeActionPosition, lifeRoomCenter, locationEntrance, distance, missionPosition, nearTransit, skillPoints,
+import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_NAMES, filmReflections, GRID_HACK_SECONDS, GRID_REROUTE_SECONDS, HEL_ELEVATOR, HEL_DANCE_DOOR, filmStepPosition, helElevatorLocked, helDanceDoorLocked, pillLocked, lafayetteWelcomeLocked, awakeningLocked, awakeningWaiting, AWAKENING_SECONDS, MIRROR_TOUCH, MIRROR_TIMING, mirrorGuidePose, PILL_ROOM, trainingLocked, trainingWaiting, TRAINING_SECONDS, DOJO_COMBO_WINDOW, windowOpening, windowCrossing, dockPowerOffline, ITEMS, RECIPES, SKILLS, FILMS, MISSIONS, LOCATIONS, CITY_BUILDINGS, NEO_CHAPTERS, LIFE_ACTIONS, lifeActionPosition, lifeRoomCenter, locationEntrance, distance, missionPosition, nearTransit, skillPoints,
   type AgentState, type SandboxState, type SandboxCommand, type ItemId, type SkillId, type Vector3 } from '@auto_matrix/shared';
 import './sandbox.css';
 import { renderNeoLife } from './NeoLifePanel.js';
@@ -773,6 +773,22 @@ export class SandboxUI {
       this.el('sandbox-interact').classList.add('hidden'); this.el('sandbox-waypoint').textContent = '';
       document.getElementById('game-objective-copy')!.textContent = choosing ? '看着 Morpheus 的双手，作出自己的选择。' : journey.pills!.phase === 'offering' ? '与 Morpheus 交谈' : '拿取药丸，用水吞服';
       return;
+    }
+    if (!journey.visiting && scene.id === 'm1_mirror' && journey.mirrorGuide) {
+      const door = filmPosition(scene.set, PILL_ROOM.trackingDoor.x, PILL_ROOM.trackingDoor.z);
+      const outside = player.position.z > door.z - .6;
+      if (!journey.mirrorGuide.done || outside) {
+        const pose = mirrorGuidePose(journey.mirrorGuide.progress);
+        const target = outside ? door : filmPosition(scene.set, pose.x, pose.z);
+        const direction = Math.atan2(target.x - player.position.x, target.z - player.position.z) - player.rotation;
+        const label = outside ? '会客厅后门' : 'Morpheus · 追踪室';
+        this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
+        this.el('film-sequence-hint').textContent = 'WASD 跟随 Morpheus · 他会在前方等你';
+        this.el('sandbox-interact').classList.add('hidden');
+        this.el('sandbox-waypoint').innerHTML = `<span style="transform:rotate(${-direction}rad)">↑</span>${label} <b>${Math.round(distance(target, player.position))} m</b>`;
+        document.getElementById('game-objective-copy')!.textContent = outside ? '穿过会客厅后门，跟随 Morpheus 进入追踪室' : '跟随 Morpheus 到追踪椅旁；抵达后按 G';
+        return;
+      }
     }
     if (!journey.visiting && scene.id === 'm1_boss' && journey.phone) {
       const phase = journey.phone.phase;

@@ -75,6 +75,7 @@ export class PlayerController {
     if (interlude && lobbyLocked(interlude) && id !== interlude.actor && ['trinity', 'citizen_12'].includes(id)) return { error: '这个角色正在参与大厅安检片段，警戒启动后可以接入。' };
     if (INTERROGATION_CAST.includes(id as typeof INTERROGATION_CAST[number]) && this.sandbox?.life.film.state && interrogationLocked(this.sandbox.life.film.state)) return { error: '这个特工正在参与审讯，结束后可以接入。' };
     if (id === 'morpheus' && this.sandbox?.life.film.state && pillLocked(this.sandbox.life.film.state)) return { error: 'Morpheus 正在与 Neo 交谈递药，结束后可以接入。' };
+    if (id === 'morpheus' && this.sandbox?.life.film.state?.mirrorGuide && !this.sandbox.life.film.state.mirrorGuide.done) return { error: 'Morpheus 正在带 Neo 前往追踪室。抵达后可以接入。' };
     if (id === 'keymaker' && this.sandbox?.life.film.state?.ride?.phase === 'riding') return { error: '钥匙匠正在后座接受护送，抵达接应区后可以接入。' };
     if (['keymaker', 'morpheus', 'twin1', 'twin2'].includes(id) && this.sandbox?.life.film.state?.garage?.phase === 'riding') return { error: '这个角色正在车库追逐中，轿车冲出车库后可以接入。' };
     if (['morpheus', 'roland'].includes(id) && this.sandbox?.life.film.state?.hammer?.phase === 'riding') return { error: '这个角色正在 Hammer 舰桥协助 Niobe 驾驶，驶出管线后可以接入。' };

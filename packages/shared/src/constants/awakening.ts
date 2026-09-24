@@ -1,4 +1,5 @@
 import type { FilmJourney } from './film-story.js';
+import { PILL_ROOM } from './pills.js';
 
 export type AwakeningKind = 'mirror' | 'connect' | 'disconnect' | 'rescue' | 'recovery' | 'construct' | 'desert';
 export interface AwakeningBeat { kind: AwakeningKind; elapsed: number; started?: boolean; approach?: { x: number; z: number } }
@@ -7,6 +8,37 @@ export const AWAKENING_SECONDS = { mirror: 8, connect: 4, disconnect: 9, rescue:
 export const MIRROR_TOUCH = { x: -7.1, z: -14.6, radius: 1.25 } as const;
 export const MIRROR_SEAT = { x: -9.5, z: -16.1 } as const;
 export const MIRROR_TIMING = { sit: 1.35, wired: 2.75, touch: 3.45, fade: 7.2 } as const;
+export interface MirrorGuide { progress: number; lastTick: number; done: boolean }
+export const MIRROR_GUIDE_ROUTE = [
+  { x: -PILL_ROOM.seat, z: PILL_ROOM.z }, { x: -2.8, z: -3.1 }, { x: -5.8, z: -3.1 },
+  { x: -6, z: -9.8 }, { x: -6, z: -12.7 }, { x: -3, z: -17 },
+] as const;
+const mirrorGuideSegments = MIRROR_GUIDE_ROUTE.slice(1).map((point, i) =>
+  Math.hypot(point.x - MIRROR_GUIDE_ROUTE[i].x, point.z - MIRROR_GUIDE_ROUTE[i].z));
+export const MIRROR_GUIDE_LENGTH = mirrorGuideSegments.reduce((sum, length) => sum + length, 0);
+export function mirrorGuidePose(progress: number): { x: number; z: number; yaw: number } {
+  let remaining = Math.max(0, Math.min(MIRROR_GUIDE_LENGTH, progress));
+  for (let i = 0; i < mirrorGuideSegments.length; i++) {
+    const length = mirrorGuideSegments[i];
+    if (remaining > length && i < mirrorGuideSegments.length - 1) { remaining -= length; continue; }
+    const a = MIRROR_GUIDE_ROUTE[i], b = MIRROR_GUIDE_ROUTE[i + 1], t = Math.min(1, remaining / length);
+    return { x: a.x + (b.x - a.x) * t, z: a.z + (b.z - a.z) * t,
+      yaw: Math.atan2(b.x - a.x, b.z - a.z) };
+  }
+  return { ...MIRROR_GUIDE_ROUTE[MIRROR_GUIDE_ROUTE.length - 1], yaw: Math.PI };
+}
+export function mirrorGuideProgress(point: { x: number; z: number }): number {
+  let nearest = Infinity, progress = 0, passed = 0;
+  for (let i = 0; i < mirrorGuideSegments.length; i++) {
+    const a = MIRROR_GUIDE_ROUTE[i], b = MIRROR_GUIDE_ROUTE[i + 1], length = mirrorGuideSegments[i];
+    const dx = b.x - a.x, dz = b.z - a.z;
+    const t = Math.max(0, Math.min(1, ((point.x - a.x) * dx + (point.z - a.z) * dz) / length ** 2));
+    const gap = (point.x - a.x - dx * t) ** 2 + (point.z - a.z - dz * t) ** 2;
+    if (gap < nearest) { nearest = gap; progress = passed + length * t; }
+    passed += length;
+  }
+  return progress;
+}
 export const POD_WATER_DROP = 18;
 export const RECOVERY_BED = { x: -7, z: -22, standingX: -3.6 } as const;
 export const CONSTRUCT_REVEAL = { neo: { x: 4.4, z: -6.2, yaw: Math.PI }, morpheus: { x: -4.4, z: -6.2, yaw: Math.PI }, television: { x: 0, z: -16 } } as const;
