@@ -9,6 +9,7 @@ import {
   HOTEL_ROUTE,
   LAFAYETTE,
   MEETING_DRIVE_SECONDS,
+  PILL_TIMING,
   WAKE_CALL,
   filmPosition,
   filmStepPosition,
@@ -163,7 +164,7 @@ test('P0 runs continuously from daily contact through a clean escape and the red
   assert.equal(h.state().step, 1); h.command('escape:climb'); h.frames(8.5, { climb: 1 });
   assert.equal(h.state().office?.outcome, 'escaped'); h.command('next');
   assert.ok(h.state().skipped?.includes('m1_interrogation')); answerSecondCall(h); meetAndTravel(h, false); reachPillChoice(h);
-  h.command('pill:red'); h.frames(14); assert.equal(h.sandbox.state.neoLife!.choices.pill, 'red');
+  h.command('pill:red'); h.frames(PILL_TIMING.take + .1); assert.equal(h.sandbox.state.neoLife!.choices.pill, 'red');
   assert.equal(h.state().scene, 'm1_mirror', 'the mirror begins as soon as Neo finishes taking the red pill');
   assert.equal(h.state().step, 0);
   const mirror = filmPosition('film_lafayette', -10, -17.62);
@@ -184,7 +185,7 @@ test('P0 runs continuously from daily contact through capture, tracker removal a
   assert.equal(h.state().office?.bugged, true); assert.equal(h.state().step, 2); h.command('next');
   answerSecondCall(h); meetAndTravel(h, true); reachPillChoice(h);
   const life = h.sandbox.state.neoLife!; life.money = 287; life.evidence = ['office_tracker'];
-  h.command('blue'); h.frames(14);
+  h.command('blue'); h.frames(PILL_TIMING.take + .1);
   assert.equal(life.journey, undefined); assert.equal(life.chapter, 0); assert.equal(life.choices.pill, 'blue');
   assert.equal(life.money, 287); assert.deepEqual(life.evidence, ['office_tracker']);
   assert.equal(h.neo.currentLocation, 'neo_apartment');

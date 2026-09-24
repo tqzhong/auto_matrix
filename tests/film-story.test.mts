@@ -1,7 +1,7 @@
 import { RELOADED, RELOADED_FINALE } from '@auto_matrix/shared';
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, RESCUE, RESCUE_LOADOUTS, GOVERNMENT_RESCUE, AIR_RESCUE, MATRIX_ESCAPE, THE_ONE, OPENING_HOTEL, OPENING_ESCAPE, filmReflections, filmStepPosition, filmEntry, filmPosition, groundHeight, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, newGarageEscape, stepGarageEscape, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, RESCUE, RESCUE_LOADOUTS, GOVERNMENT_RESCUE, AIR_RESCUE, MATRIX_ESCAPE, THE_ONE, OPENING_HOTEL, OPENING_ESCAPE, PILL_TIMING, filmReflections, filmStepPosition, filmEntry, filmPosition, groundHeight, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, newGarageEscape, stepGarageEscape, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -2163,7 +2163,7 @@ test('the entire film route completes through interactions, driving and real com
           h.players.receiveInput('film-player', { x: 0, z: 0, yaw: h.actor().rotation, jump: false, sprint: false, focus: true, sequence: ++sequence });
           h.players.step(.1, true, h.tick());
         }
-        if (scene.id === 'm1_pills') for (let frame = 0; frame < 131; frame++) h.players.step(.1, true, h.tick());
+        if (scene.id === 'm1_pills') for (let frame = 0; frame < Math.ceil(PILL_TIMING.take / .1) + 1; frame++) h.players.step(.1, true, h.tick());
         if (scene.id === 'm1_club') for (let frame = 0; frame < 61; frame++) h.players.step(.1, true, h.tick());
         if (scene.id === 'm1_cypher_console') for (let frame = 0; frame < 48; frame++) h.players.step(.1, true, h.tick());
       }

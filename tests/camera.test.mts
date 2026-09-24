@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import type { AgentState, PlayerInput } from '@auto_matrix/shared';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { CameraController } from '../packages/client/src/engine/CameraController.js';
-import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, pillRoot, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, airRescueRoot, matrixEscapeRoot, theOneRoot, type TheOneEncounter } from '@auto_matrix/shared';
+import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, pillRoot, PILL_ROOM, PILL_TIMING, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, airRescueRoot, matrixEscapeRoot, theOneRoot, type TheOneEncounter } from '@auto_matrix/shared';
 
 test('observer camera releases drag and ignores pointer capture while a character controls the view', () => {
   let captures = 0;
@@ -838,17 +838,20 @@ test('the pill camera supports seated first person and releases movement when th
   draw(0); game.key('KeyV'); game.key('KeyV', false); draw(1);
   assert.equal(game.controls.firstPerson, true); assert.ok(Math.abs(angle(game.yaw(), -Math.PI / 2)) < .02);
   assert.ok(Math.abs(game.camera.position.y - game.group.position.y - 2.09) < .02, 'first-person eyes sit at the seated height');
-  game.key('KeyV'); game.key('KeyV', false); draw(13);
+  game.key('KeyV'); game.key('KeyV', false); draw(PILL_TIMING.take);
   game.state.currentAction = null; game.step(.1); assert.equal(game.controls.performing, false);
   assert.equal(game.controls.motion.pills, undefined);
+  const start = game.group.position.clone();
   game.key('KeyW'); game.step(.5); game.key('KeyW', false);
-  assert.ok(game.group.position.z > game.state.position.z + .4, 'ordinary movement must resume clear of the chair');
+  const stride = game.group.position.clone().sub(start);
+  assert.ok(stride.x * Math.sin(game.state.rotation) + stride.z * Math.cos(game.state.rotation) > .4,
+    'ordinary movement must resume in the direction Neo faces, clear of the chair');
 });
 
 test('the red pill hands the first-person camera to the cracked mirror when the performance ends', t => {
   const game = setup(t, Math.PI);
   game.state.currentLocation = 'film_lafayette';
-  const gesture = { phase: 'taking' as const, elapsed: 12.8, choice: 'red' as const, role: 'neo' as const };
+  const gesture = { phase: 'taking' as const, elapsed: PILL_TIMING.take - .2, choice: 'red' as const, role: 'neo' as const };
   const root = pillRoot({ ...gesture, approach: { x: 0, z: -3.3, yaw: Math.PI } });
   game.state.position = filmPosition('film_lafayette', root.x, root.z); game.state.rotation = root.yaw;
   game.state.currentAction = { type: 'idle', parameters: { pills: gesture }, startedAt: 0, duration: 1, progress: 0 };
@@ -860,6 +863,29 @@ test('the red pill hands the first-person camera to the cracked mirror when the 
   assert.ok(Math.abs(angle(game.yaw(), mirrorYaw)) < .05, 'the first-person view should follow the authored mirror cue');
   game.key('KeyV'); game.key('KeyV', false); game.step(.6);
   assert.ok(Math.abs(angle(game.yaw(), mirrorYaw)) < .15, 'third person should keep the mirror in front of Neo');
+});
+
+test('the red-pill departure keeps Neo in the third-person frame and reveals the mirror before handoff', t => {
+  const game = setup(t, Math.PI); const center = FILM_SETS.film_lafayette.center;
+  game.state.currentLocation = 'film_lafayette';
+  game.camera.aspect = .72; game.camera.updateProjectionMatrix();
+  game.state.position = filmPosition('film_lafayette', PILL_ROOM.seat, PILL_ROOM.z);
+  game.controls.possess(game.state);
+  for (const elapsed of [11.5, 13, 14.5, PILL_TIMING.take - .2]) {
+    const gesture = { phase: 'taking' as const, elapsed, choice: 'red' as const, role: 'neo' as const };
+    const root = pillRoot({ ...gesture, approach: { x: 0, z: -3.3, yaw: Math.PI } });
+    game.state.position = filmPosition('film_lafayette', root.x, root.z); game.state.rotation = root.yaw;
+    game.state.currentAction = { type: 'idle', parameters: { pills: gesture }, startedAt: 0, duration: 1, progress: 0 };
+    game.step(.5);
+    const actor = new THREE.Vector3(game.state.position.x, game.state.position.y + 2.3, game.state.position.z).project(game.camera);
+    assert.ok(Math.abs(actor.x) < .82 && Math.abs(actor.y) < .86 && actor.z > -1 && actor.z < 1,
+      `Neo must remain visible at ${elapsed}s: ${actor.toArray().join(',')}`);
+    if (elapsed > PILL_TIMING.exit) {
+      const mirror = new THREE.Vector3(center.x + PILL_ROOM.mirror.x, center.y + 4, center.z + PILL_ROOM.mirror.z).project(game.camera);
+      assert.ok(Math.abs(mirror.x) < .9 && Math.abs(mirror.y) < .9 && mirror.z > -1 && mirror.z < 1,
+        `the cracked mirror must enter the frame before the cut: ${mirror.toArray().join(',')}`);
+    }
+  }
 });
 
 const oneEncounter = (kind: TheOneEncounter['kind'], phase: TheOneEncounter['phase'], elapsed: number): TheOneEncounter => ({

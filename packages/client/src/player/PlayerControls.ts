@@ -1,7 +1,7 @@
 import { catchLocked, reloadedPhaseLocked } from '@auto_matrix/shared';
 import { reloadedCamera } from './ReloadedCamera.js';
 import * as THREE from 'three';
-import { FILM_SETS, OFFICE_CONTACT, LOBBY_FIRE_INTERVAL, RESCUE, groundHeight, playerBlocked, stepPlayer, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, COMBAT_SKILLS, combatDisplace, PLAYER_WALK_SPEED, meleeReach, trainingRoot, matrixEscapePhaseLocked, matrixEscapePose, matrixEscapeRoot, theOnePhaseLocked, theOnePose, theOneRoot, type OfficePhone, type AwakeningPose, type FreewayRide, type AgentState, type PlayerInput, type Vector3, type WorldStructure, type CombatImpact, type SkillCast, type RescueLoadout } from '@auto_matrix/shared';
+import { FILM_SETS, OFFICE_CONTACT, LOBBY_FIRE_INTERVAL, RESCUE, PILL_TIMING, groundHeight, playerBlocked, stepPlayer, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, COMBAT_SKILLS, combatDisplace, PLAYER_WALK_SPEED, meleeReach, trainingRoot, matrixEscapePhaseLocked, matrixEscapePose, matrixEscapeRoot, theOnePhaseLocked, theOnePose, theOneRoot, type OfficePhone, type AwakeningPose, type FreewayRide, type AgentState, type PlayerInput, type Vector3, type WorldStructure, type CombatImpact, type SkillCast, type RescueLoadout } from '@auto_matrix/shared';
 import { lafayetteWelcomeCamera } from './LafayetteWelcomeCamera.js';
 import type { MotionInput } from '../agents/CharacterMotion.js';
 import { AIR_RESCUE, governmentPose, airRescuePose, airRescueRoot, interrogationPose, meetingPose, meetingCarPose } from '@auto_matrix/shared';
@@ -475,7 +475,8 @@ export class PlayerControls {
     const catchWide = !this.firstPerson && catchCinematic;
     const lobbyWide = !this.firstPerson && Boolean(this.motion.lobbyEntry);
     const ladderWide = this.climbing && state.currentLocation === 'film_office_ledge' && !this.firstPerson;
-    this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, ladderWide ? 62 : interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide || sentinelWide || interludeWide || oracleWide || betrayalWide || rescueWide || governmentWide || airRescueWide || escapeWide || oneWide || catchWide || lobbyWide ? 58 : this.motion.inspecting ? 42 : this.firstPerson ? sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
+    const pillDepartureWide = !this.firstPerson && this.motion.pills?.phase === 'taking' && this.motion.pills.elapsed >= 10;
+    this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, ladderWide ? 62 : interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide || sentinelWide || interludeWide || oracleWide || betrayalWide || rescueWide || governmentWide || airRescueWide || escapeWide || oneWide || catchWide || lobbyWide || pillDepartureWide ? 58 : this.motion.inspecting ? 42 : this.firstPerson ? sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
     this.camera.near = this.firstPerson && this.motion.club ? .08 : this.defaultNear;
     this.camera.updateProjectionMatrix();
     this.cameraStep += this.motion.speed * delta;
@@ -1000,8 +1001,13 @@ export class PlayerControls {
       const taking = this.motion.pills.phase === 'taking';
       const close = taking ? THREE.MathUtils.smoothstep(this.motion.pills.elapsed, .1, 1.2) * (1 - THREE.MathUtils.smoothstep(this.motion.pills.elapsed, 3.65, 4.3)) : 0;
       const mouth = taking ? THREE.MathUtils.smoothstep(this.motion.pills.elapsed, 2.15, 2.85) * (1 - THREE.MathUtils.smoothstep(this.motion.pills.elapsed, 3.85, 4.3)) : 0;
-      const ideal = new THREE.Vector3(.1, 3.85, 1.1).lerp(new THREE.Vector3(.6, 3.05, -2.1), close).lerp(new THREE.Vector3(-.3, 3.85, -2.8), mouth).add(new THREE.Vector3(center.x, center.y - 1, center.z));
-      const focus = new THREE.Vector3(0, 2.6, -6).lerp(new THREE.Vector3(-.2, 2.5, -5.8), close).lerp(new THREE.Vector3(1.3, 3.2, -6), mouth).add(new THREE.Vector3(center.x, center.y - 1, center.z));
+      const departure = taking ? THREE.MathUtils.smoothstep(this.motion.pills.elapsed, 10, PILL_TIMING.walk) : 0;
+      const mirrorReveal = taking && this.motion.pills.choice === 'red' ? THREE.MathUtils.smoothstep(this.motion.pills.elapsed, PILL_TIMING.exit - .7, PILL_TIMING.take) : 0;
+      const ideal = new THREE.Vector3(.1, 3.85, 1.1).lerp(new THREE.Vector3(.6, 3.05, -2.1), close).lerp(new THREE.Vector3(-.3, 3.85, -2.8), mouth)
+        .lerp(new THREE.Vector3(-1.5, 5.2, 8), departure).add(new THREE.Vector3(center.x, center.y - 1, center.z));
+      const focus = new THREE.Vector3(0, 2.6, -6).lerp(new THREE.Vector3(-.2, 2.5, -5.8), close).lerp(new THREE.Vector3(1.3, 3.2, -6), mouth)
+        .lerp(new THREE.Vector3(-1, 2.7, -5.4), departure).lerp(new THREE.Vector3(-4, 3.1, -9.5), mirrorReveal)
+        .add(new THREE.Vector3(center.x, center.y - 1, center.z));
       if (resetCamera) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-6 * delta));
       this.camera.lookAt(focus);
     } else if (this.performing && this.motion.crossing !== undefined && !this.firstPerson) {

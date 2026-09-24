@@ -1,5 +1,5 @@
 import { reloadedPose, type CatchGesture, type ReloadedGesture } from '@auto_matrix/shared';
-import { MELEE_COMBO, COMBO_WINDOW, COMBAT_SKILLS, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED, lobbyPose, governmentPose, airRescuePose, matrixEscapePose, theOnePose, type CombatSkillId, type AwakeningPose, type AwakeningReveal, type OfficePhone, pillPose, lafayetteWelcomePose, oracleVisitPose, betrayalPose, rescuePose, type PillGesture, type InterrogationGesture, type LafayetteWelcomeGesture, type TrainingGesture, type OracleVisitGesture, type BetrayalGesture, type RescueGesture, type RescueLoadout, type LobbyGesture, type GovernmentRescueGesture, type AirRescueGesture, type MatrixEscapeGesture, type TheOneGesture } from '@auto_matrix/shared';
+import { MELEE_COMBO, COMBO_WINDOW, COMBAT_SKILLS, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED, PILL_TIMING, lobbyPose, governmentPose, airRescuePose, matrixEscapePose, theOnePose, type CombatSkillId, type AwakeningPose, type AwakeningReveal, type OfficePhone, pillPose, lafayetteWelcomePose, oracleVisitPose, betrayalPose, rescuePose, type PillGesture, type InterrogationGesture, type LafayetteWelcomeGesture, type TrainingGesture, type OracleVisitGesture, type BetrayalGesture, type RescueGesture, type RescueLoadout, type LobbyGesture, type GovernmentRescueGesture, type AirRescueGesture, type MatrixEscapeGesture, type TheOneGesture } from '@auto_matrix/shared';
 
 export interface MotionInput {
   speed: number;
@@ -125,7 +125,7 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   }
   const blend = 1 - Math.exp(-12 * dt);
   const pills = input.pills && pillPose(input.pills);
-  const exiting = input.pills?.role === 'neo' && input.pills.phase === 'taking' && input.pills.elapsed > 11;
+  const exiting = input.pills?.role === 'neo' && input.pills.phase === 'taking' && input.pills.elapsed > PILL_TIMING.stand && input.pills.elapsed < PILL_TIMING.exit;
   const welcome = input.welcome && lafayetteWelcomePose(input.welcome);
   const oracle = input.oracleVisit && oracleVisitPose(input.oracleVisit);
   const betrayal = input.betrayal && betrayalPose(input.betrayal);
@@ -165,7 +165,7 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const stance = mix(.6, .42, run);
   if (input.grounded) state.phase += speed * dt / (2 * stride / stance);
   if (welcomeWalking && input.welcome) state.phase = input.welcome.elapsed * welcomeSpeed / (2 * stride / stance);
-  if (exiting) state.phase = (input.pills!.elapsed - 11) * 1.1;
+  if (exiting) state.phase = (input.pills!.elapsed - PILL_TIMING.stand) * 1.1;
   const moving = smooth(clamp(state.speed / 2.2));
   const cycle = state.phase * Math.PI * 2;
   const bob = Math.cos(cycle * 2) * mix(.025, .045, run) * moving + Math.sin(state.time * 1.7) * .009 * (1 - moving);

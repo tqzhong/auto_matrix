@@ -7,8 +7,10 @@ export interface PillEncounter {
   approach: { x: number; z: number; yaw: number };
 }
 export type PillGesture = Pick<PillEncounter, 'phase' | 'elapsed' | 'choice'> & { role: 'neo' | 'morpheus' };
-export const PILL_ROOM = { seat: 1.75, z: -6, tableZ: -8.4, tableY: 1.65, cup: { x: 1.1, y: 2.03, z: -7.65 }, mirror: { x: -10, z: -17.62 } } as const;
-export const PILL_TIMING = { offer: 5, take: 13, transfer: 1.8, swallow: 3.65, liftCup: 5.3, replaceCup: 8.6 } as const;
+export const PILL_ROOM = { seat: 1.75, z: -6, tableZ: -8.4, tableY: 1.65, cup: { x: 1.1, y: 2.03, z: -7.65 },
+  exit: { x: -3, z: -3.1 }, mirror: { x: -10, z: -17.62 } } as const;
+export const PILL_TIMING = { offer: 5, take: 17, transfer: 1.8, swallow: 3.65, liftCup: 5.3, replaceCup: 8.6,
+  stand: 11, walk: 13, exit: 15.7 } as const;
 export const pillEase = (time: number, from: number, to: number): number => {
   const t = Math.max(0, Math.min(1, (time - from) / (to - from))); return t * t * (3 - 2 * t);
 };
@@ -20,7 +22,7 @@ export function pillLocked(journey: FilmJourney): boolean {
 // One timeline drives bodies, hand props, the table glass and the saved outcome.
 export function pillPose(gesture: PillGesture) {
   const t = gesture.elapsed; const taking = gesture.phase === 'taking'; const done = gesture.phase === 'done';
-  const rise = done ? 1 : taking ? pillEase(t, 9.6, 11) : 0;
+  const rise = done ? 1 : taking ? pillEase(t, 9.6, PILL_TIMING.stand) : 0;
   const seat = gesture.role === 'morpheus' ? 1 : gesture.phase === 'offering' ? pillEase(t, .3, 1.8) : 1 - rise;
   const offer = gesture.phase === 'offering' ? pillEase(t, 2, 3.6) : done ? 0 : taking ? 1 - pillEase(t, 2.2, 3.5) : 1;
   const reach = taking ? pillEase(t, .35, PILL_TIMING.transfer) * (1 - pillEase(t, 2.15, 3.45)) : 0;
@@ -43,9 +45,17 @@ export function pillRoot(encounter: PillEncounter): { x: number; z: number; yaw:
     const turn = Math.atan2(Math.sin(-Math.PI / 2 - encounter.approach.yaw), Math.cos(-Math.PI / 2 - encounter.approach.yaw));
     return { x: encounter.approach.x + (seat - encounter.approach.x) * t, z: encounter.approach.z + (z - encounter.approach.z) * t, yaw: encounter.approach.yaw + turn * t };
   }
-  const rise = encounter.phase === 'done' ? 1 : encounter.phase === 'taking' ? pillEase(encounter.elapsed, 9.6, 11) : 0;
-  const exit = encounter.phase === 'done' ? 1 : encounter.phase === 'taking' ? pillEase(encounter.elapsed, 11, 13) : 0;
-  return { x: seat * (1 - rise), z: z + 2.7 * exit, yaw: -Math.PI / 2 + Math.PI / 2 * pillEase(rise, .5, 1) };
+  const t = encounter.elapsed;
+  const rise = encounter.phase === 'done' ? 1 : encounter.phase === 'taking' ? pillEase(t, 9.6, PILL_TIMING.stand) : 0;
+  const walk = encounter.phase === 'done' ? 1 : encounter.phase === 'taking' ? pillEase(t, PILL_TIMING.stand, PILL_TIMING.walk) : 0;
+  const sidestep = encounter.phase === 'done' ? 1 : encounter.phase === 'taking' ? pillEase(t, PILL_TIMING.walk, PILL_TIMING.exit) : 0;
+  const facing = -Math.PI / 2 + Math.PI / 2 * pillEase(rise, .5, 1);
+  const walkingYaw = facing + (-Math.PI / 2 - facing) * pillEase(t, PILL_TIMING.walk - .1, PILL_TIMING.walk + .3);
+  const mirrorYaw = Math.atan2(PILL_ROOM.mirror.x - PILL_ROOM.exit.x, PILL_ROOM.mirror.z - PILL_ROOM.exit.z);
+  const finalYaw = encounter.choice === 'red' ? mirrorYaw : 0;
+  const turn = Math.atan2(Math.sin(finalYaw + Math.PI / 2), Math.cos(finalYaw + Math.PI / 2));
+  return { x: seat + (PILL_ROOM.exit.x - seat) * sidestep, z: z + (PILL_ROOM.exit.z - z) * walk,
+    yaw: walkingYaw + turn * pillEase(t, PILL_TIMING.exit, PILL_TIMING.take) };
 }
 
 export function pillContact(color: 'red' | 'blue') {

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SCENE_BY_ID, FILM_SETS, filmStepPosition, filmPosition, officeOccluded, playerBlocked, stepPlayer, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, PILL_TIMING, filmStepPosition, filmPosition, officeOccluded, playerBlocked, stepPlayer, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -407,7 +407,7 @@ test('pills require the live choice position and red cannot be selected through 
   h.goal(); state.visiting = 'm1_boss'; assert.match(h.command('blue'), /回访/); delete state.visiting;
   h.command('reflect:agency'); assert.equal(state.step, 1);
   h.command('pill:red'); assert.equal(state.step, 1);
-  for (let frame = 0; frame < 131; frame++) h.players.step(.1, true, h.tick());
+  for (let frame = 0; frame < Math.ceil(PILL_TIMING.take / .1) + 1; frame++) h.players.step(.1, true, h.tick());
   assert.equal(state.scene, 'm1_mirror'); assert.equal(state.step, 0);
   assert.equal(h.sandbox.state.neoLife!.choices.pill, 'red');
 });
@@ -417,7 +417,7 @@ test('blue pill returns to daily life with money and evidence preserved', () => 
   state.scene = 'm1_pills'; state.step = 1; h.neo().currentLocation = 'film_lafayette'; h.goal();
   h.sandbox.state.neoLife!.money = 287; h.sandbox.state.neoLife!.evidence = ['clock']; h.command('blue');
   assert.ok(h.sandbox.state.neoLife!.journey);
-  for (let frame = 0; frame < 131; frame++) h.players.step(.1, true, h.tick());
+  for (let frame = 0; frame < Math.ceil(PILL_TIMING.take / .1) + 1; frame++) h.players.step(.1, true, h.tick());
   assert.equal(h.sandbox.state.neoLife!.journey, undefined); assert.equal(h.sandbox.state.neoLife!.chapter, 0);
   assert.equal(h.sandbox.state.neoLife!.money, 287); assert.deepEqual(h.sandbox.state.neoLife!.evidence, ['clock']);
   assert.equal(h.neo().currentLocation, 'neo_apartment');
