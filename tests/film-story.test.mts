@@ -211,6 +211,92 @@ test('saved scene, active fight, role and completed history restore without rest
   assert.equal(h.sandbox.life.film.state!.scene, 'm1_room303'); assert.equal(h.sandbox.state.threats.length, 2);
 });
 
+test('Trinity must answer the Wells phone before the truck arrives; the countdown saves and retries', () => {
+  const h = setup(); h.command('start'); let state = h.sandbox.life.film.state!;
+  const scene = FILM_SCENE_BY_ID.m1_phone_escape;
+  Object.assign(state, { scene: scene.id, step: 0, checkpoint: filmEntry(scene) });
+  h.actor().currentLocation = scene.set; h.actor().position = filmEntry(scene);
+  h.advance(2);
+  assert.equal(state.openingPhone?.phase, 'running');
+  const before = state.openingPhone!.remaining;
+  h.players.release('film-player', h.tick()); h.advance(20);
+  assert.equal(state.openingPhone!.remaining, before, 'disconnect pauses the approaching truck');
+  h.players.possess('film-player', 'trinity', h.tick());
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); state = h.sandbox.life.film.state!;
+  assert.equal(state.openingPhone!.remaining, before);
+  h.advance(35);
+  assert.equal(state.openingPhone?.phase, 'failed');
+  assert.equal(state.step, 0); assert.match(h.command('next'), /先完成/);
+  h.command('retry');
+  assert.equal(state.openingPhone?.phase, 'running'); assert.equal(state.openingPhone?.attempts, 1);
+  assert.deepEqual(h.actor().position, filmEntry(scene));
+  h.actor().position = filmStepPosition(scene, scene.steps[0]); h.advance();
+  assert.equal(state.step, 1);
+  h.command('act');
+  assert.equal(state.openingPhone?.phase, 'connected');
+  assert.ok(state.completed.includes(scene.id), 'answering immediately connects without a two-second wait');
+});
+
+test('Brown pursues Trinity across a real rooftop gap and a fall or capture restores the route', () => {
+  const h = setup(); h.command('start'); const state = h.sandbox.life.film.state!;
+  const scene = FILM_SCENE_BY_ID.m1_roofs;
+  Object.assign(state, { scene: scene.id, step: 0, checkpoint: filmEntry(scene) });
+  h.actor().currentLocation = scene.set; h.actor().position = filmEntry(scene);
+  const brown = h.world.agents.get('agent_brown')!;
+  brown.currentLocation = scene.set; brown.position = filmPosition(scene.set, 0, 43);
+  assert.ok(groundHeight(filmPosition(scene.set, 0, -4), true) < filmEntry(scene).y - 10);
+  const startZ = brown.position.z;
+  h.advance(10);
+  assert.ok(brown.position.z < startZ - 1, 'Brown leaves his staging mark');
+  assert.equal(state.openingRoof?.phase, 'failed', 'standing still lets Brown catch the player');
+  h.command('retry'); assert.equal(state.openingRoof?.phase, 'running');
+  assert.equal(state.openingRoof?.attempts, 1); assert.equal(state.step, 0);
+  h.actor().position = { ...filmPosition(scene.set, 0, -4), y: FILM_SETS[scene.set].center.y - 8 };
+  h.advance(); assert.equal(state.openingRoof?.phase, 'failed', 'falling between roofs can fail the chase');
+});
+
+test('Trinity can sprint and jump the authored gap, then answer the phone before impact', () => {
+  const h = setup(); h.command('start'); const state = h.sandbox.life.film.state!;
+  const roofs = FILM_SCENE_BY_ID.m1_roofs; const phone = FILM_SCENE_BY_ID.m1_phone_escape;
+  Object.assign(state, { scene: roofs.id, step: 0, checkpoint: filmEntry(roofs), openingRoof: { phase: 'running', lastTick: h.tick(), attempts: 0 } });
+  h.actor().currentLocation = roofs.set; h.actor().position = filmEntry(roofs);
+  const brown = h.world.agents.get('agent_brown')!;
+  brown.currentLocation = roofs.set; brown.position = filmPosition(roofs.set, 0, 43);
+  let sequence = 0; let jumped = false;
+  const move = (x: number, z: number, jump = false) => {
+    h.players.receiveInput('film-player', { x, z, yaw: Math.atan2(x, z), jump, sprint: true, sequence: ++sequence });
+    h.players.step(.1, true, h.tick());
+    if (sequence % 5 === 0) h.advance();
+  };
+  for (let frame = 0; frame < 150 && state.openingRoof?.phase === 'running' && state.step < 2; frame++) {
+    const localX = h.actor().position.x - FILM_SETS[roofs.set].center.x;
+    const localZ = h.actor().position.z - FILM_SETS[roofs.set].center.z;
+    const target = state.step === 0 ? { x: -7, z: 12 } : localZ > 2 ? { x: 7, z: 2 } : { x: 7, z: -14 };
+    const dx = target.x - localX; const dz = target.z - localZ; const length = Math.hypot(dx, dz);
+    const jump = state.step === 1 && !jumped && localZ < -.4 && localZ > -2;
+    if (jump) jumped = true;
+    move(dx / Math.max(.01, length), dz / Math.max(.01, length), jump);
+  }
+  assert.equal(state.openingRoof?.phase, 'running', state.lastText);
+  assert.equal(state.step, 2, `rooftop route stopped at step ${state.step}`);
+  assert.ok(jumped);
+  for (let frame = 0; frame < 60 && state.openingRoof?.phase === 'running'; frame++) {
+    const target = filmStepPosition(roofs, roofs.steps[2]);
+    const dx = target.x - h.actor().position.x; const dz = target.z - h.actor().position.z;
+    const length = Math.hypot(dx, dz); move(dx / Math.max(.01, length), dz / Math.max(.01, length));
+    if (length <= 3) break;
+  }
+  assert.equal(state.openingRoof?.phase, 'running', state.lastText);
+  h.command('act'); h.advance(6);
+  assert.ok(state.completed.includes(roofs.id), state.lastText);
+  h.command('next'); assert.equal(state.scene, phone.id);
+  for (let frame = 0; frame < 115 && state.openingPhone?.phase === 'running' && state.step === 0; frame++) move(0, -1);
+  assert.equal(state.step, 1, state.lastText);
+  h.command('act'); assert.equal(state.openingPhone?.phase, 'connected');
+  h.advance(4); assert.equal(state.openingPhone?.phase, 'done');
+  h.command('next'); assert.equal(state.scene, 'm1_wake_up');
+});
+
 test('reconnecting a defeated story actor rebuilds at the scene checkpoint instead of their daily home', () => {
   const h = setup(); h.command('start'); const state = h.sandbox.state.neoLife!.journey!;
   state.step = 1; h.actor().position = filmStepPosition(FILM_SCENES[0], FILM_SCENES[0].steps[1]); state.checkpoint = { ...h.actor().position };
@@ -2139,7 +2225,9 @@ test('the entire film route completes through interactions, driving and real com
         for (let frame = 0; frame < 41; frame++) h.players.step(.1, true, h.tick());
       }
     }
-    assert.ok(state.completed.includes(scene.id)); if (!['m1_bridge', 'm1_bug'].includes(scene.id)) h.command('next');
+    assert.ok(state.completed.includes(scene.id));
+    if (scene.id === 'm1_phone_escape') h.advance(3); // Hold the connected booth shot through the truck impact.
+    if (!['m1_bridge', 'm1_bug'].includes(scene.id)) h.command('next');
     if (scene.id === 'm1_office_escape' && state.office?.crossing !== undefined) for (let frame = 0; frame < 65; frame++) h.players.step(.1, true, h.tick());
   }
   assert.equal(state.finished, true); assert.equal(state.completed.length, FILM_SCENES.length);

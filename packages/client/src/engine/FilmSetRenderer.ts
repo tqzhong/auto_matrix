@@ -8,7 +8,7 @@ import { workdayLocked, type OfficeWorkday } from '@auto_matrix/shared';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
-import { FILM_SETS, FILM_SCENE_BY_ID, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, PILL_ROOM, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, GARAGE, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, EXILES, CHATEAU, awakeningLocked, trainingLocked, phoneLocked, windowOpening, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type FilmJourney, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
+import { FILM_SETS, FILM_SCENE_BY_ID, OPENING_ESCAPE, openingTruckPose, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, PILL_ROOM, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, GARAGE, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, EXILES, CHATEAU, awakeningLocked, trainingLocked, phoneLocked, windowOpening, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type FilmJourney, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
 import { LobbySetRenderer } from './LobbySetRenderer.js';
 import { OfficeSetRenderer } from './OfficeSetRenderer.js';
 import { FreewaySetRenderer } from './FreewaySetRenderer.js';
@@ -118,6 +118,9 @@ export class FilmSetRenderer {
   private garageCar?: THREE.Group;
   private garageGhosts: THREE.Group[] = [];
   private mobilTrain?: { car: THREE.Group; doors: [THREE.Mesh, THREE.Mesh] };
+  private openingTruck?: THREE.Group;
+  private openingBooth?: THREE.Group;
+  private openingGlass?: THREE.Group;
   private mobilLastFrame?: number;
   private helChaseTrain?: THREE.Group;
   private helLift?: { doors: [THREE.Group, THREE.Group]; bands: { mesh: THREE.Mesh; y: number }[]; light: THREE.PointLight };
@@ -225,6 +228,16 @@ export class FilmSetRenderer {
       if (this.approach.root.visible) this.approach.renderer.update(journey, elapsed, { phase: 'parked', elapsed: 0, role: 'neo', bugged: false });
     }
     this.office?.update(journey, cameraPosition, playerPosition, workday);
+    if (this.openingTruck && this.openingBooth && this.openingGlass) {
+      const phone = sceneId === 'm1_phone_escape' && !journey?.visiting ? journey?.openingPhone : undefined;
+      const pose = openingTruckPose(phone ?? { phase: 'running', remaining: OPENING_ESCAPE.phoneSeconds, lastTick: 0, attempts: 0 });
+      this.openingTruck.position.set(pose.x, 0, pose.z); this.openingTruck.rotation.y = pose.yaw;
+      const strike = phone?.phase === 'done' || phone?.phase === 'failed' ? 1
+        : phone?.phase === 'connected' ? Math.min(1, (phone.impactElapsed ?? 0) / OPENING_ESCAPE.truckImpactSeconds) : 0;
+      this.openingBooth.rotation.x = -.46 * strike;
+      this.openingGlass.visible = strike > .35;
+      this.openingGlass.scale.setScalar(Math.max(.01, strike));
+    }
     this.apartment?.update(journey);
     this.club?.update(elapsed);
     this.freeway?.update(journey, elapsed, playerPosition);
@@ -675,8 +688,17 @@ export class FilmSetRenderer {
     const { width: w, depth: d, height: h } = set; const exterior = outdoor.has(set.architecture);
     const lavish = ['chateau', 'lobby', 'restaurant', 'hel', 'architect'].includes(set.architecture);
     const industrial = ['ship', 'engineering', 'garage', 'power', 'zion', 'temple', 'pods', 'machine'].includes(set.architecture);
-    const floor = this.currentScene === 'm2_key_door' ? this.pbr('damaged_plaster', 0x798380, 8) : set.architecture === 'architect' ? this.mat(0xecece7, .28) : lavish ? this.marble : industrial ? this.metal : ['construct', 'mobil', 'backdoors'].includes(set.architecture) ? this.white : exterior ? this.pbr('damaged_plaster', set.architecture === 'garden' ? 0x6f7851 : 0x6f7879, 14) : this.wood;
-    if (set.id === 'film_jump_roofs') {
+    const floor = set.id === 'film_hotel_roofs' ? this.mat(0x485653, .92) : this.currentScene === 'm2_key_door' ? this.pbr('damaged_plaster', 0x798380, 8) : set.architecture === 'architect' ? this.mat(0xecece7, .28) : lavish ? this.marble : industrial ? this.metal : ['construct', 'mobil', 'backdoors'].includes(set.architecture) ? this.white : exterior ? this.pbr('damaged_plaster', set.architecture === 'garden' ? 0x6f7851 : 0x6f7879, 14) : this.wood;
+    if (set.id === 'film_hotel_roofs') {
+      const near = OPENING_ESCAPE.roofGapNear; const far = OPENING_ESCAPE.roofGapFar;
+      this.box(floor, 0, -.3, (near + d / 2) / 2, w, .6, d / 2 - near);
+      this.box(floor, 0, -.3, (far - d / 2) / 2, w, .6, far + d / 2);
+      this.box(this.black, 0, -OPENING_ESCAPE.roofDrop, (near + far) / 2, w + 24, .5, near - far);
+      for (const z of [near, far]) {
+        this.box(this.plaster, 0, -OPENING_ESCAPE.roofDrop / 2, z, w, OPENING_ESCAPE.roofDrop, .6);
+        this.box(this.metal, 0, .14, z, w, .28, .28);
+      }
+    } else if (set.id === 'film_jump_roofs') {
       this.box(floor, 0, -.3, (-13 + d / 2) / 2, w, .6, d / 2 + 13);
       this.box(floor, 0, -.3, (-30 - d / 2) / 2, w, .6, d / 2 - 30);
       this.box(this.plaster, 0, -22.6, -12.8, w, 45, .5); this.box(this.plaster, 0, -22.6, -30.2, w, 45, .5);
@@ -1513,6 +1535,28 @@ export class FilmSetRenderer {
         this.box(this.metal, x, 2.2, z, 6, 4.4, 8, .1); for (let i = 0; i < 7; i++) this.box(this.black, x, 4.45, z - 2.7 + i * .8, 5, .06, .3);
         this.cylinder(this.metal, x, 5.4, z + 2, 1.1, 2); this.cylinder(this.metal, x, 6.4, z + 2, 1.5, .3);
       }
+      if (set.id === 'film_hotel_roofs') {
+        this.root.add(new THREE.HemisphereLight(0xc4d4c9, 0x31403b, .9));
+        for (const z of [11, -10, -35]) {
+          const flood = new THREE.PointLight(z === -35 ? 0xe6c597 : 0xaacbc0, 450, 34, 2);
+          flood.position.set(0, 8, z); this.root.add(flood);
+        }
+        for (const z of [OPENING_ESCAPE.roofGapNear + 1.5, OPENING_ESCAPE.roofGapFar - 1.5]) {
+          this.box(this.black, 0, .11, z, 7, .04, .2);
+          this.box(this.brass, -3.2, .18, z, .16, .04, .75);
+          this.box(this.brass, 3.2, .18, z, .16, .04, .75);
+        }
+        for (const z of [OPENING_ESCAPE.roofGapNear, OPENING_ESCAPE.roofGapFar]) this.box(this.mat(0xb7ad83, .75), 0, .18, z, w - 2, .07, .18);
+        this.box(this.plaster, 0, 7.5, -d / 2 + 1, 19, 15, 1);
+        const windowGlow = new THREE.MeshBasicMaterial({ color: 0x8a9a7c }); this.materials.add(windowGlow);
+        this.box(windowGlow, 0, 5.8, -d / 2 + 1.38, 7.1, 7.6, .06);
+        this.window(0, 5.8, -d / 2 + 1.6, 7.4, 8, false);
+        for (let i = 0; i < 5; i++) {
+          const z = -d / 2 + 3 + i * 2.2;
+          this.box(this.metal, 12, -i * 1.2, z, 6, .18, 2.5);
+          this.box(this.metal, 15, 1.1 - i * 1.2, z, .12, 2.4, 2.4);
+        }
+      }
       if (set.id.includes('government_roof')) {
         this.mesh(new THREE.TorusGeometry(11, .14, 8, 64), this.white, 0, .05, -15).rotation.x = Math.PI / 2;
         const hull = this.sphere(this.black, 12, 4, -22, 4); hull.scale.set(1, 1, 2.2); this.sphere(this.glass, 12, 4.7, -28, 3.2).scale.set(1, 1, .7);
@@ -1565,8 +1609,33 @@ export class FilmSetRenderer {
       }
       else {
         for (const x of [-w * .34, w * .34]) { this.box(this.marble, x, .2, 0, w * .15, .45, d); for (let z = -d / 2 + 8; z < d / 2; z += 23) { this.cylinder(this.metal, x, 7, z, .14, 14); this.lamp(x, 14, z, false); } }
-        if (a !== 'rain') this.phone(0, -d * .32, true);
-        if (set.id.includes('wells')) this.car(12, -10, 0x555e58, true);
+        if (set.id === 'film_wells_phone') {
+          this.root.add(new THREE.HemisphereLight(0xc7d6cd, 0x364540, .78));
+          for (const [x, z, color] of [[0, -27, 0xb8d9c8], [14, 2, 0xd3ded0]] as const) {
+            const streetlight = new THREE.PointLight(color, 650, 46, 2); streetlight.position.set(x, 11, z); this.root.add(streetlight);
+          }
+          const boothZ = -d * .32; const start = this.root.children.length;
+          this.phone(0, boothZ, true);
+          this.openingBooth = new THREE.Group(); this.openingBooth.name = 'opening-phone-booth'; this.openingBooth.userData.dynamic = true;
+          this.root.children.slice(start).forEach(child => { child.position.z -= boothZ; this.openingBooth!.add(child); });
+          this.openingBooth.position.z = boothZ; this.root.add(this.openingBooth);
+          this.openingTruck = this.car(15, 4, 0x555e58, true);
+          this.openingTruck.name = 'opening-garbage-truck'; this.openingTruck.userData.dynamic = true;
+          const cargo = this.mat(0x829189, .82, .08);
+          this.openingTruck.add(this.box(cargo, 0, 4.3, 7, 5.65, 7.05, 13.05, .15));
+          for (const z of [2, 5, 8, 11]) for (const side of [-1, 1]) this.openingTruck.add(this.box(this.metal, side * 2.86, 4.3, z, .1, 6.6, .14));
+          this.openingTruck.add(this.box(this.black, 0, 2.8, 13.58, 4.5, 3.5, .08));
+          this.openingTruck.add(this.box(this.mat(0xc4a769), 0, 1.1, 13.64, 4.6, .2, .09));
+          const tail = new THREE.MeshBasicMaterial({ color: 0xc9503d, toneMapped: false }); this.materials.add(tail);
+          for (const x of [-2.2, 2.2]) this.openingTruck.add(this.box(tail, x, 1.75, 13.68, .3, .48, .08));
+          this.openingGlass = new THREE.Group(); this.openingGlass.name = 'opening-shattered-glass'; this.openingGlass.userData.dynamic = true;
+          this.openingGlass.visible = false; this.openingGlass.position.z = boothZ; this.root.add(this.openingGlass);
+          for (let i = 0; i < 18; i++) {
+            const angle = i * 2.399; const radius = 1.4 + i % 5 * .47;
+            const shard = this.box(this.glass, Math.cos(angle) * radius, .2 + i % 4 * .13, Math.sin(angle) * radius, .13 + i % 3 * .07, .03, .35 + i % 4 * .13);
+            shard.rotation.y = angle; this.openingGlass.add(shard);
+          }
+        } else if (a !== 'rain') this.phone(0, -d * .32, true);
         if (a === 'rain') {
           // Repeated silhouettes read as the occupied avenue without adding hundreds of animated rigs.
           for (const x of [-w * .31, w * .31]) for (let z = -d / 2 + 5; z < d / 2; z += 4.2) {
@@ -1785,6 +1854,7 @@ export class FilmSetRenderer {
     this.exileDessert = undefined; this.bookDoor = undefined; this.chateauVolley = undefined; this.chateauVolleyTick = undefined; this.chateauDoor = undefined;
     this.garageCar = undefined; this.garageGhosts = [];
     this.mobilTrain = undefined;
+    this.openingTruck = undefined; this.openingBooth = undefined; this.openingGlass = undefined;
     this.mobilLastFrame = undefined;
     this.helChaseTrain = undefined;
     this.helLift = undefined;

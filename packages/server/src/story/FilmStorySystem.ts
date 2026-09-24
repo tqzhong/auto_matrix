@@ -30,6 +30,7 @@ import { CHATEAU, type ChateauEncounter } from '@auto_matrix/shared';
 import { MOUNTAIN, type MountainFlight, type PlayerInput } from '@auto_matrix/shared';
 import { GARAGE, newGarageEscape, stepGarageEscape } from '@auto_matrix/shared';
 import { TRUCKS } from '@auto_matrix/shared';
+import { OPENING_ESCAPE } from '@auto_matrix/shared';
 
 const BATHROOM_ROLES = ['neo', 'trinity', 'switch', 'apoc'] as const;
 const UNPLUGGED_ROLES = ['tank', 'cypher', 'dozer', 'apoc', 'switch', 'neo', 'trinity'] as const;
@@ -48,6 +49,51 @@ export class FilmStorySystem {
   get scene(): FilmScene | undefined { return this.state && FILM_SCENE_BY_ID[this.state.scene]; }
   get step(): FilmStep | undefined { return this.scene?.steps[this.state!.step]; }
   controls(agent: AgentState): boolean { return Boolean(this.state && this.state.actor === agent.id); }
+  private openingRoofTick(actor: AgentState, tick: number): void {
+    const state = this.state!;
+    state.openingRoof ??= { phase: 'running', lastTick: tick, attempts: 0 };
+    const chase = state.openingRoof;
+    const dt = Math.min(.5, Math.max(0, tick - chase.lastTick) * .5);
+    chase.lastTick = tick;
+    if (chase.phase !== 'running') return;
+    if (actor.position.y < FILM_SETS.film_hotel_roofs.center.y - 7) {
+      chase.phase = 'failed'; delete state.started;
+      state.lastText = 'Trinity 没能跨过楼间空隙。J 打开手记，从屋顶入口重试。'; return;
+    }
+    const brown = this.world.agents.get('agent_brown');
+    if (!brown || brown.currentLocation !== this.scene!.set) return;
+    if (!brown.controller && dt > 0) {
+      const dx = actor.position.x - brown.position.x; const dz = actor.position.z - brown.position.z;
+      const length = Math.hypot(dx, dz); const travel = Math.min(length, OPENING_ESCAPE.pursuerSpeed * dt);
+      if (length > .01) {
+        brown.position.x += dx / length * travel; brown.position.z += dz / length * travel;
+        brown.rotation = Math.atan2(dx, dz);
+      }
+      brown.velocity = { x: dt ? dx / Math.max(length, .01) * travel / dt : 0, y: 0, z: dt ? dz / Math.max(length, .01) * travel / dt : 0 };
+      brown.currentAction = { type: travel > .01 ? 'move_to' : 'idle', parameters: { resolved: true, filmPursuit: true }, startedAt: tick, duration: 1, progress: 0 };
+    }
+    if (distance(actor.position, brown.position) < 2.7) {
+      chase.phase = 'failed'; delete state.started;
+      state.lastText = 'Brown 追上了 Trinity。J 打开手记，从屋顶入口重试。';
+    }
+  }
+  private openingPhoneTick(tick: number): void {
+    const state = this.state!;
+    state.openingPhone ??= { phase: 'running', remaining: OPENING_ESCAPE.phoneSeconds, lastTick: tick, attempts: 0 };
+    const phone = state.openingPhone;
+    const dt = Math.min(.5, Math.max(0, tick - phone.lastTick) * .5);
+    phone.lastTick = tick;
+    if (phone.phase === 'running') {
+      phone.remaining = Math.max(0, phone.remaining - dt);
+      if (phone.remaining === 0) {
+        phone.phase = 'failed'; delete state.started;
+        state.lastText = '卡车撞进电话亭，线路被切断。J 打开手记，从街口重试。';
+      }
+    } else if (phone.phase === 'connected') {
+      phone.impactElapsed = Math.min(OPENING_ESCAPE.truckImpactSeconds, (phone.impactElapsed ?? 0) + dt);
+      if (phone.impactElapsed >= OPENING_ESCAPE.truckImpactSeconds) phone.phase = 'done';
+    }
+  }
   private ensureMobil(tick: number): void {
     const state = this.state;
     if (!state || !['m3_mobil', 'm3_family', 'm3_trainman', 'm3_mobil_release'].includes(state.scene) || state.mobil) return;
@@ -3102,6 +3148,23 @@ export class FilmStorySystem {
     if (target === 'retry') {
       if (this.reloaded.active(agent)) return this.reloaded.command(agent, target, tick);
       if (this.catch.active(agent)) return this.catch.command(agent, target, tick);
+      if (state.scene === 'm1_roofs' && state.openingRoof?.phase === 'failed') {
+        state.openingRoof = { phase: 'running', lastTick: tick, attempts: state.openingRoof.attempts + 1 };
+        state.step = 0; state.checkpoint = filmEntry(this.scene); delete state.started;
+        this.place(agent, this.scene, state.checkpoint);
+        const brown = this.world.agents.get('agent_brown');
+        if (brown && !brown.controller) {
+          this.place(brown, this.scene, filmPosition(this.scene.set, 0, 43));
+          brown.rotation = Math.PI; brown.currentAction = null;
+        }
+        return state.lastText = '回到屋顶入口。Brown 正从身后赶来；穿过通风设施，在楼间空隙前助跑起跳。';
+      }
+      if (state.scene === 'm1_phone_escape' && state.openingPhone?.phase === 'failed') {
+        state.openingPhone = { phase: 'running', remaining: OPENING_ESCAPE.phoneSeconds, lastTick: tick, attempts: state.openingPhone.attempts + 1 };
+        state.step = 0; state.checkpoint = filmEntry(this.scene); delete state.started;
+        this.place(agent, this.scene, state.checkpoint);
+        return state.lastText = '线路重新响起，卡车正在掉头。Shift 奔跑，到电话亭后立即按 G 接起。';
+      }
       if (state.scene === 'm3_hel_bargain' && state.helBargain?.phase === 'failed') {
         state.helBargain = { phase: 'ready', elapsed: 0, lastTick: tick, attempts: state.helBargain.attempts + 1 };
         state.step = 3; agent.status = 'alive'; agent.health = agent.maxHealth;
@@ -3312,6 +3375,7 @@ export class FilmStorySystem {
     }
     if (target === 'next') {
       if (this.step) return '先完成当前场景中的目标。';
+      if (state.scene === 'm1_phone_escape' && state.openingPhone?.phase === 'connected') return '信号已经断开。卡车撞过电话亭后再继续 Neo 的故事。';
       if (state.scene === 'm2_seraph' && !this.near(agent, this.scene.steps.at(-1)!)) return '走近茶馆后门，再跟 Seraph 穿过那把钥匙打开的门。';
       if (state.scene === 'm2_backdoors' && !this.near(agent, this.scene.steps.at(-1)!)) return '走到白色走廊尽头的庭院门，再按 G 通过。';
       if (state.scene === 'm1_office_escape' && state.office?.outcome !== 'captured' && !this.near(agent, this.scene.steps[2])) return '先回到已打开的窗口旁，再按 G 前往窄台。';
@@ -3342,6 +3406,8 @@ export class FilmStorySystem {
     }
     const step = this.step;
     if (!step) return '本场景已完成。G 或 J 继续下一段。';
+    if (state.scene === 'm1_roofs' && state.openingRoof?.phase === 'failed' || state.scene === 'm1_phone_escape' && state.openingPhone?.phase === 'failed')
+      return '撤离失败。J 打开手记，从本场景入口重试。';
     if (this.reloaded.active(agent)) return this.reloaded.command(agent, target, tick);
     if (this.catch.active(agent)) return this.catch.command(agent, target, tick);
     if (state.scene === 'm2_ship_lost' && state.shipLoss?.phase === 'failed' || state.scene === 'm2_stop_sentinels' && state.tunnel?.phase === 'failed') return '当前检查点失败。按 J 打开手记并重试。';
@@ -3471,6 +3537,13 @@ export class FilmStorySystem {
       this.advance(`${step.text} ${response}`, agent, tick); return response;
     }
     if (target !== 'act') return '当前没有这个场景操作。';
+    if (state.scene === 'm1_phone_escape' && state.step === 1) {
+      const phone = state.openingPhone;
+      if (!phone || phone.phase !== 'running' || phone.remaining <= 0) return '线路已经被卡车切断。J 打开手记重试。';
+      phone.phase = 'connected'; phone.impactElapsed = 0; phone.impactFrom = phone.remaining; phone.lastTick = tick;
+      this.advance('Trinity 抢在卡车前接起听筒，连接立即断开。空车撞进玻璃电话亭。', agent, tick);
+      return state.lastText;
+    }
     if (state.scene === 'm3_hel_bargain') return this.helBargainAct(agent, tick);
     if (state.scene === 'm1_bug' && state.step === 2 && state.meeting?.phase === 'outside') {
       if (this.world.agents.get('trinity')?.controller) return 'Trinity 正在由另一位玩家控制，等待对方结束后再一起上楼。';
@@ -3630,6 +3703,10 @@ export class FilmStorySystem {
     delete state.catch;
     delete state.shipLoss;
     delete state.tunnel;
+    delete state.openingRoof;
+    delete state.openingPhone;
+    if (scene.id === 'm1_roofs') state.openingRoof = { phase: 'running', lastTick: tick, attempts: 0 };
+    if (scene.id === 'm1_phone_escape') state.openingPhone = { phase: 'running', remaining: OPENING_ESCAPE.phoneSeconds, lastTick: tick, attempts: 0 };
     if (scene.id === 'm3_mobil') state.mobil = { phase: 'waiting', elapsed: 0, lastTick: tick, loops: 0 };
     else if (scene.id === 'm3_mobil_release') state.mobil = { phase: 'approaching', elapsed: 0, lastTick: tick, loops: 0 };
     else if (!['m3_family', 'm3_trainman'].includes(scene.id)) delete state.mobil;
@@ -3841,6 +3918,7 @@ export class FilmStorySystem {
         else actor.position = filmPosition(scene.set, i % 2 ? 10 : -10, 5 + Math.floor(i / 2) * 6);
       }
       if (!zion) actor.rotation = i % 2 ? -Math.PI / 2 : Math.PI / 2;
+      if (scene.id === 'm1_roofs' && id === 'agent_brown') { actor.position = filmPosition(scene.set, 0, 43); actor.rotation = Math.PI; }
       if (scene.id === 'm1_lobby' && id === 'trinity') { actor.position = filmPosition(scene.set, -4, 30); actor.rotation = Math.PI; }
       if (scene.id === 'm1_lobby' && id === 'citizen_12') { actor.position = filmPosition(scene.set, 0, 20.8); actor.rotation = 0; }
       if (scene.id === 'm1_recovery') {
@@ -4095,6 +4173,7 @@ export class FilmStorySystem {
     if (state.scene === 'm3_hel_bargain' && state.step === 5) life.choices.neo_release = 'trinity_refused_trade';
     if (state.scene === 'm1_bug' && state.step === 0 && state.office?.outcome === 'escaped') text = '扫描完成，没有发现追踪装置。Trinity 收起仪器，确认接头安全，继续前往 Morpheus 的房间。';
     state.lastText = text; state.step++; state.checkpoint = { ...agent.position }; delete state.started; delete state.fighting;
+    if (state.scene === 'm1_roofs' && state.step === this.scene!.steps.length && state.openingRoof) state.openingRoof.phase = 'escaped';
     if (state.scene === 'm2_ship_lost' && state.step === this.scene!.steps.length && state.shipLoss) state.shipLoss.phase = 'escaped';
     if (state.scene === 'm2_stop_sentinels' && state.step === 1 && state.tunnel) { state.tunnel.phase = 'sensing'; state.tunnel.lastTick = tick; }
     if (state.scene === 'm2_library') this.sealKeymakerDoor();
@@ -4164,6 +4243,8 @@ export class FilmStorySystem {
       this.stageCast();
     }
     if (!actor?.controller || actor.status !== 'alive') {
+      if (state.openingRoof) state.openingRoof.lastTick = tick;
+      if (state.openingPhone) state.openingPhone.lastTick = tick;
       if (state.mobil) state.mobil.lastTick = tick;
       if (state.helChase) state.helChase.lastTick = tick;
       if (state.helElevator) state.helElevator.lastTick = tick;
@@ -4179,6 +4260,8 @@ export class FilmStorySystem {
     }
     if (state.scene === 'm2_trucks' && !state.trucks)
       state.trucks = { phase: state.step === 0 ? 'duel' : 'collision', elapsed: 0, lastTick: tick, attempt: 0 };
+    if (state.scene === 'm1_roofs') { this.openingRoofTick(actor, tick); if (state.openingRoof?.phase === 'failed') return; }
+    if (state.scene === 'm1_phone_escape') { this.openingPhoneTick(tick); if (state.openingPhone?.phase === 'failed') return; }
     if (['m3_mobil', 'm3_family', 'm3_trainman', 'm3_mobil_release'].includes(state.scene)) this.mobilTick(actor, tick);
     if (state.scene === 'm3_trainman_chase') this.helChaseTick(tick);
     if (state.scene === 'm3_hel_entry') { this.ensureHelDanceDoor(tick); this.helElevatorTick(actor, tick); this.helDanceDoorTick(actor, tick); this.helDanceAlliesTick(actor, tick); this.sealHelElevator(); this.sealHelDanceDoor(); }

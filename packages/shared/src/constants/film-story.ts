@@ -68,6 +68,8 @@ export interface FilmJourney {
   enteredAt: number; started?: number; fighting?: boolean; checkpoint: Vector3;
   reflections: Record<string, Philosophy>; lastText: string; finished?: boolean;
   visiting?: string; returnPosition?: Vector3;
+  openingRoof?: import('./opening-escape.js').OpeningRoofEncounter;
+  openingPhone?: import('./opening-escape.js').OpeningPhoneEncounter;
   lobby?: import('./lobby.js').LobbyEncounter;
   office?: import('./office.js').OfficeEncounter;
   phone?: import('./office.js').OfficePhone;
@@ -133,8 +135,8 @@ const scene = (id: string, film: 1 | 2 | 3, set: string, actor: string, title: s
 // Perspective changes follow the people actually present; the ordinary-life prologue is a game extension.
 export const FILM_SCENES: FilmScene[] = [
   scene('m1_room303', 1, 'heart_hotel', 'trinity', '追踪中的房间 303', 'contact', 'infiltration', '序幕：警方包围旅馆，Trinity 必须赶在特工封锁线路前撤离。', [use('断开电脑连接', '线路已经暴露。拿起听筒，确认撤离出口。', -7, -12), fight('突破警员封锁', 2), walk('抵达走廊尽头', 0, -21)]),
-  scene('m1_roofs', 1, 'hotel_roofs', 'trinity', '屋顶追逐', 'contact', 'chase', '特工紧追不舍，撤离路线穿过屋顶与消防梯。', [walk('穿过通风设施', -7, 12), walk('绕过楼梯间', 7, -14), use('沿消防梯撤向电话亭', 'Trinity 穿过对面的窗户，继续赶往 Wells 与 Lake 的出口。', 0, -38)]),
-  scene('m1_phone_escape', 1, 'wells_phone', 'trinity', '卡车前的电话', 'contact', 'chase', '出口电话响起，特工驾驶的卡车正在逼近。', [walk('冲向电话亭', 0, -28), use('接起出口电话', '连接及时中断。卡车撞毁电话亭，Trinity 已返回飞船。', 0, -28, 2)]),
+  scene('m1_roofs', 1, 'hotel_roofs', 'trinity', '屋顶追逐', 'contact', 'chase', 'Brown 紧追不舍。穿过通风设施，助跑越过楼间空隙，抵达消防梯。', [walk('穿过通风设施', -7, 12), walk('越过楼间空隙', 7, -14), use('沿消防梯撤向电话亭', 'Trinity 穿过对面的窗户，继续赶往 Wells 与 Lake 的出口。', 0, -38)], ['agent_brown']),
+  scene('m1_phone_escape', 1, 'wells_phone', 'trinity', '卡车前的电话', 'contact', 'chase', '出口电话响起。卡车已在路口掉头，必须赶在撞击前接起听筒。', [walk('冲向电话亭', 0, -28), use('接起出口电话', '连接及时中断。卡车撞毁电话亭，Trinity 已返回飞船。', 0, -28, 0)]),
   scene('m1_wake_up', 1, 'anderson_flat', 'neo', '屏幕上的来信', 'contact', 'night', '叙事回到 Thomas Anderson 的公寓。屏幕上的消息与敲门声打断了深夜。', [
     use('查看 CRT，尝试退出异常窗口', '屏幕上的线索没有发送者。', APARTMENT.computer.x, APARTMENT.computer.z),
     use('打开 101 房门', '来客是 Choi 与 Dujour。', APARTMENT.door.x, APARTMENT.door.z),

@@ -190,6 +190,22 @@ export class SandboxUI {
     this.el('sandbox-job').style.width = journey.started !== undefined && step ? `${Math.min(100, (this.tick - journey.started) / ((step.seconds ?? 3) * 2) * 100)}%` : '0';
     document.getElementById('game-objective')!.textContent = journey.visiting ? set.name : scene.title;
     document.getElementById('game-objective-copy')!.textContent = journey.visiting ? '自由走动，J 返回保存的剧情位置。' : journey.fighting ? 'F 连击 · X 闪避 · 1 治疗 · 击败追兵后继续' : step ? `${journey.step + 1}/${scene.steps.length} · ${step.label} · ${step.kind === 'reach' ? '走到标记旁' : step.kind === 'reflect' ? '靠近后按 J 记录反思' : '靠近后按 G'}` : 'G 继续下一段，J 查看刚刚发生的事。';
+    if (!journey.visiting && scene.id === 'm1_roofs' && journey.openingRoof) {
+      const failed = journey.openingRoof.phase === 'failed';
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.toggle('urgent', failed);
+      this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = failed ? 'J 手记 · 从屋顶入口重试' : 'Brown 在身后 · Shift 助跑 · 空格越过楼间空隙';
+      if (failed) document.getElementById('game-objective-copy')!.textContent = '撤离失败 · J 打开手记重试';
+    }
+    if (!journey.visiting && scene.id === 'm1_phone_escape' && journey.openingPhone) {
+      const phone = journey.openingPhone; const failed = phone.phase === 'failed';
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.toggle('urgent', failed || phone.phase === 'running' && phone.remaining < 5);
+      this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = phone.phase === 'running' ? `卡车撞击前 ${phone.remaining.toFixed(1)} 秒 · Shift 奔跑 · 到电话亭按 G`
+        : failed ? '电话亭已毁 · J 手记重试' : phone.phase === 'connected' ? '连接成功 · 卡车正在撞击' : 'Trinity 已安全撤离 · G 继续';
+      document.getElementById('game-objective-copy')!.textContent = failed ? '线路中断 · J 打开手记重试'
+        : phone.phase === 'running' ? `卡车将在 ${phone.remaining.toFixed(1)} 秒后撞击电话亭` : 'Trinity 已断开连接';
+    }
     if (helElevatorLocked(journey)) {
       this.el('film-sequence').classList.remove('hidden');
       this.el('film-sequence-line').textContent = journey.lastText;

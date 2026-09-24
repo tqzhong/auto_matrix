@@ -14,6 +14,7 @@ import { MEETING_CAR, MEETING_DESTINATION, meetingCarPose, meetingRoadContains }
 import { LAFAYETTE, hotelContains, hotelBlocked, hotelFloor } from './lafayette.js';
 import { mountainFloor } from './mountain.js';
 import { TRUCKS } from './trucks.js';
+import { OPENING_ESCAPE } from './opening-escape.js';
 
 export type FilmArchitecture = 'hotel' | 'apartment' | 'club' | 'office' | 'interrogation' | 'bridge' | 'car' | 'lafayette' | 'pods' | 'ship' | 'construct' | 'desert' | 'dojo' | 'rooftop' | 'plaza' | 'restaurant' | 'oracle' | 'tenement' | 'lobby' | 'subway' | 'street' | 'zion' | 'temple' | 'engineering' | 'teahouse' | 'backdoors' | 'courtyard' | 'chateau' | 'mountain' | 'workshop' | 'garage' | 'freeway' | 'power' | 'architect' | 'mobil' | 'hel' | 'machine' | 'rain' | 'garden';
 export interface FilmSet {
@@ -227,6 +228,10 @@ export function filmBlocked(position: Vector3, set: FilmSet, radius: number): bo
 }
 
 export function filmGroundHeight(position: Vector3, set: FilmSet): number {
+  if (set.id === 'film_hotel_roofs') {
+    const z = position.z - set.center.z;
+    if (z < OPENING_ESCAPE.roofGapNear && z > OPENING_ESCAPE.roofGapFar) return set.center.y - OPENING_ESCAPE.roofDrop;
+  }
   if (set.id === 'film_mobil_station' && position.x - set.center.x > 8) return set.center.y - 1.35;
   if (set.id === 'film_club_hel' && position.z - set.center.z < -28 && Math.abs(position.x - set.center.x) < 12) return set.center.y + .6;
   if (set.id === 'film_freeway_trucks' && Math.abs(position.x - set.center.x - TRUCKS.roof.x) <= TRUCKS.roof.width / 2 &&
