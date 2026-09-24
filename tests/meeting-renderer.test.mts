@@ -13,6 +13,12 @@ test('the actual car body uses the same fast pose as its occupants between journ
     meeting: { phase: 'driving', elapsed: 20, bugged: false, approach: { x: 4, z: -12.35, yaw: Math.PI } } };
   try {
     const vehicle = (renderer as unknown as { vehicle: THREE.Group }).vehicle;
+    const tailLights = vehicle.children.filter(child => child.name.startsWith('meeting-tail-light-')) as THREE.PointLight[];
+    assert.equal(tailLights.length, 2, 'the parked car needs two visible rear lamps against the bridge darkness');
+    for (const light of tailLights) {
+      assert.ok(light.position.z > 6.5 && light.position.y > 1, 'the rear lamps must sit on the car tail');
+      assert.ok(light.color.r > light.color.g * 2 && light.intensity >= 40, 'the wet road needs a readable red spill');
+    }
     for (const elapsed of [20, 20.45, 40.5, 42]) {
       const gesture = { phase: 'driving' as const, elapsed, role: 'neo' as const, bugged: false };
       renderer.update(journey, elapsed, gesture);

@@ -12,6 +12,7 @@ import { SERAPH_ORACLE } from './seraph-oracle.js';
 import { EXILES } from './exiles.js';
 import { MOUNTAIN } from './mountain.js';
 import { TRUCKS } from './trucks.js';
+import { distance } from '../utils/index.js';
 
 export type FilmCue = 'night' | 'contact' | 'office' | 'club' | 'awakening' | 'training' | 'oracle' | 'infiltration' | 'combat' | 'the_one' | 'zion' | 'swarm' | 'restaurant' | 'chateau' | 'chase' | 'source' | 'mobil' | 'siege' | 'bane' | 'farewell' | 'final' | 'dawn';
 export interface FilmStep {
@@ -392,6 +393,13 @@ export function filmStepPosition(scene: FilmScene, step: FilmStep): Vector3 {
   if (scene.id === 'm2_chateau' && step.z < -30) position.y += 10;
   if (scene.id === 'm1_pod' && step.z === 12) position.y -= 18;
   return position;
+}
+export function filmStepNear(scene: FilmScene, step: FilmStep, position: Vector3, matrix: boolean): boolean {
+  const radius = scene.id === 'm1_mirror' && step === scene.steps[0] ? MIRROR_TOUCH.radius : 4;
+  return matrix === (FILM_SETS[scene.set].world === 'matrix') && distance(position, filmStepPosition(scene, step)) <= radius;
+}
+export function filmStepActionReady(scene: FilmScene, step: FilmStep, position: Vector3, matrix: boolean): boolean {
+  return step.kind !== 'reach' && step.kind !== 'reflect' && filmStepNear(scene, step, position, matrix);
 }
 export function filmEntry(scene: FilmScene): Vector3 {
   if (scene.id === 'm3_hammer_tunnels') return filmPosition(scene.set, 0, 184);

@@ -82,6 +82,14 @@ export class MeetingSetRenderer {
     for (const z of [-6.75, 6.75]) this.box(0, .99, z, 5.5, .34, .32, chrome, car, .09);
     this.box(0, 1.65, -6.74, 3.2, .74, .05, black, car);
     for (let i = -12; i <= 12; i++) this.box(i * .12, 1.65, -6.78, .035, .7, .04, chrome, car);
+    const tailLens = new THREE.MeshBasicMaterial({ color: 0xe63b28, toneMapped: false });
+    for (const side of [-1, 1]) {
+      this.box(side * 1.65, 1.75, 6.77, 1.35, .52, .09, black, car, .06);
+      this.box(side * 1.65, 1.75, 6.83, 1.12, .33, .035, tailLens, car, .035);
+      const tailLight = new THREE.PointLight(0xef2f20, 58, 18, 2);
+      tailLight.name = `meeting-tail-light-${side}`; tailLight.position.set(side * 1.65, 1.75, 6.87); this.vehicle.add(tailLight);
+    }
+    this.box(0, 1.58, 6.82, .76, .24, .04, chrome, car, .025);
     for (const x of [-2.08, -1.55, 1.55, 2.08]) {
       const lamp = this.cylinder(x, 1.68, -6.79, .215, .07, glow, car); lamp.rotation.x = Math.PI / 2;
       if (Math.abs(x) > 2) {

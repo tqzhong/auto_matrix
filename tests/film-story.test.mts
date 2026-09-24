@@ -1,7 +1,7 @@
 import { RELOADED, RELOADED_FINALE } from '@auto_matrix/shared';
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, RESCUE, RESCUE_LOADOUTS, GOVERNMENT_RESCUE, AIR_RESCUE, MATRIX_ESCAPE, THE_ONE, OPENING_HOTEL, OPENING_ESCAPE, PILL_ROOM, PILL_TIMING, MIRROR_TOUCH, MIRROR_SEAT, MIRROR_TRINITY, MIRROR_TIMING, DOCK_GUNNERY, awakeningPose, mirrorSilver, filmReflections, filmStepPosition, filmEntry, filmPosition, groundHeight, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, newGarageEscape, stepGarageEscape, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, RESCUE, RESCUE_LOADOUTS, GOVERNMENT_RESCUE, AIR_RESCUE, MATRIX_ESCAPE, THE_ONE, OPENING_HOTEL, OPENING_ESCAPE, PILL_ROOM, PILL_TIMING, MIRROR_TOUCH, MIRROR_SEAT, MIRROR_TRINITY, MIRROR_TIMING, DOCK_GUNNERY, awakeningPose, mirrorSilver, filmReflections, filmStepActionReady, filmStepPosition, filmEntry, filmPosition, groundHeight, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, newGarageEscape, stepGarageEscape, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -57,6 +57,19 @@ test('all trilogy scenes have distinct stable IDs, existing cast, accessible obj
   assert.equal(FILM_SCENE_BY_ID.m3_bane.set, 'film_logos_deck');
   assert.equal(FILM_SCENE_BY_ID.m3_dock_battle.actor, 'mifune');
   assert.equal(FILM_SCENE_BY_ID.m3_deus.cast[0], 'deus_ex_machina');
+});
+
+test('distant bridge markers guide movement without offering a premature G action', () => {
+  const bridge = FILM_SCENE_BY_ID.m1_bridge;
+  const [walk, board] = bridge.steps;
+  assert.equal(filmStepActionReady(bridge, walk, filmEntry(bridge), true), false);
+  assert.equal(filmStepActionReady(bridge, walk, filmStepPosition(bridge, walk), true), false, 'arrival advances a walking step automatically');
+  assert.equal(filmStepActionReady(bridge, board, filmEntry(bridge), true), false);
+  assert.equal(filmStepActionReady(bridge, board, filmStepPosition(bridge, board), true), true);
+  assert.equal(filmStepActionReady(bridge, board, filmStepPosition(bridge, board), false), false);
+  const reflection = FILM_SCENE_BY_ID.m1_construct.steps.find(step => step.kind === 'reflect')!;
+  assert.equal(filmStepActionReady(FILM_SCENE_BY_ID.m1_construct, reflection,
+    filmStepPosition(FILM_SCENE_BY_ID.m1_construct, reflection), true), false, 'a reflection belongs in the journal, not the G button');
 });
 
 test('Neo must steer through the city and catch the falling Trinity before impact', () => {
