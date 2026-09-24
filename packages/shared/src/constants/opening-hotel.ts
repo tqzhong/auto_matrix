@@ -5,6 +5,9 @@ export const OPENING_HOTEL = {
   phone: { x: -11, z: 18 },
   doorZ: 1,
   window: { x: 0, z: -23 },
+  ladderZ: -30,
+  ladderHeight: 7,
+  climbSpeed: 2.4,
   breachSeconds: 1.5,
   diveSeconds: 1.6,
   magazine: 8,
@@ -17,8 +20,8 @@ export const OPENING_HOTEL = {
 } as const;
 
 export interface OpeningHotelEncounter {
-  phase: 'trace' | 'breach' | 'combat' | 'phone' | 'corridor' | 'dive' | 'done' | 'failed';
+  phase: 'trace' | 'breach' | 'combat' | 'phone' | 'corridor' | 'dive' | 'ladder_ready' | 'climbing' | 'done' | 'failed';
   elapsed: number; lastTick: number; attempts: number;
   disarmed: boolean; ammo: number; shots: number; fallen?: Vector3;
-  reloadAt?: number;
+  reloadAt?: number; climbed?: number;
 }

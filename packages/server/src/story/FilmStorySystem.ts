@@ -593,7 +593,7 @@ export class FilmStorySystem {
         film: { scene: 'm2_architect', width: 5, depth: .5, height: 8 } });
     }
   }
-  performing(agent: AgentState): boolean { return this.controls(agent) && (this.state!.scene === 'm1_room303' && ['breach', 'dive'].includes(this.state!.openingHotel?.phase ?? '') || helElevatorLocked(this.state!) || helDanceDoorLocked(this.state!) || this.state!.scene === 'm3_trainman' && this.state!.mobil?.phase === 'refusing' || this.state!.trucks?.phase === 'rescue' || this.state!.persephone?.phase === 'enacting' || burlyLocked(this.state!) || clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || theOneLocked(this.state!) || reloadedLocked(this.state!) || catchLocked(this.state!.catch) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
+  performing(agent: AgentState): boolean { return this.controls(agent) && (this.state!.scene === 'm1_room303' && ['breach', 'dive', 'ladder_ready'].includes(this.state!.openingHotel?.phase ?? '') || helElevatorLocked(this.state!) || helDanceDoorLocked(this.state!) || this.state!.scene === 'm3_trainman' && this.state!.mobil?.phase === 'refusing' || this.state!.trucks?.phase === 'rescue' || this.state!.persephone?.phase === 'enacting' || burlyLocked(this.state!) || clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || theOneLocked(this.state!) || reloadedLocked(this.state!) || catchLocked(this.state!.catch) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
   clubFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
     if (state?.scene !== 'm1_club' || state.visiting || !this.controls(agent)) return;
@@ -2836,6 +2836,7 @@ export class FilmStorySystem {
   }
   climbing(agent: AgentState): boolean { return this.controls(agent) && !this.state?.visiting && this.state?.scene === 'm1_ledge' && this.state.step === 1 && this.state.office?.climbed !== undefined; }
   climbFrame(agent: AgentState, direction: number, dt: number, tick: number): boolean {
+    if (this.openingHotel.climbFrame(agent, direction, dt, tick)) return true;
     if (!this.climbing(agent)) return false;
     const state = this.state!; const office = state.office!;
     office.climbed = Math.max(0, Math.min(OFFICE_LADDER.depth, office.climbed! + direction * Math.min(.1, dt) * OFFICE_LADDER.speed));
@@ -3479,6 +3480,7 @@ export class FilmStorySystem {
       return state.lastText;
     }
     if (state.scene === 'm1_room303' && state.step === 4 && target === 'act') return this.openingHotel.dive(agent, tick);
+    if (state.scene === 'm1_room303' && state.step === 5 && target === 'act') return this.openingHotel.beginClimb(agent);
     if (state.scene === 'm2_ship_lost' && state.step === 2 && target === 'act') {
       if (['neo', 'trinity', 'link'].some(id => this.world.agents.get(id)?.controller)) return '船员正在由其他玩家控制，弃船命令先停在这里。';
       state.shipLoss = { phase: 'evacuating', remaining: RELOADED_FINALE.evacuationSeconds, lastTick: tick, attempts: state.shipLoss?.attempts ?? 0 };

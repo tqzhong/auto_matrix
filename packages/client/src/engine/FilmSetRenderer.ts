@@ -237,7 +237,7 @@ export class FilmSetRenderer {
       const hotel = sceneId === 'm1_room303' && !journey?.visiting ? journey?.openingHotel : undefined;
       const opening = hotel?.phase === 'breach' ? Math.min(1, hotel.elapsed / OPENING_HOTEL.breachSeconds) : hotel?.phase === 'trace' || !hotel ? 0 : 1;
       this.hotel303Door.rotation.y = -opening * 1.35;
-      const broken = hotel?.phase === 'dive' && hotel.elapsed > .35 || hotel?.phase === 'done';
+      const broken = hotel?.phase === 'dive' && hotel.elapsed > .35 || ['ladder_ready', 'climbing', 'done'].includes(hotel?.phase ?? '');
       this.hotel303Glass.visible = !broken; this.hotel303Shards.visible = Boolean(broken);
       if (this.hotel303Pistol) {
         this.hotel303Pistol.visible = Boolean(hotel?.fallen && !hotel.disarmed && hotel.phase === 'combat');
@@ -864,6 +864,10 @@ export class FilmSetRenderer {
       this.box(this.metal, x, 2.15, -set.depth / 2 - 4.8, .16, 4.7, 9);
       for (const z of [-set.depth / 2 - 8, -set.depth / 2 - 5, -set.depth / 2 - 2]) this.box(this.metal, x, 2.4, z, .18, .14, .18);
     }
+    const ladder = new THREE.Group(); ladder.name = 'hotel-303-fire-escape-ladder'; this.root.add(ladder);
+    for (const x of [-.8, .8]) ladder.add(this.box(this.metal, x, OPENING_HOTEL.ladderHeight / 2, OPENING_HOTEL.ladderZ - .4, .16, OPENING_HOTEL.ladderHeight + .6, .18));
+    for (let y = .35; y < OPENING_HOTEL.ladderHeight; y += .65) ladder.add(this.box(this.metal, 0, y, OPENING_HOTEL.ladderZ - .4, 1.75, .12, .16));
+    ladder.add(this.box(this.metal, 0, OPENING_HOTEL.ladderHeight + .12, OPENING_HOTEL.ladderZ - 1.2, 5.4, .24, 4.3));
     const exterior = this.pbr('damaged_plaster', 0x73746e, 6);
     this.box(exterior, 0, 8, -42, 27, 16, .5);
     for (const x of [-9, -3, 3, 9]) {

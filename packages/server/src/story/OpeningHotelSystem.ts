@@ -23,10 +23,14 @@ export class OpeningHotelSystem {
   clear(): void { this.sandbox().structures = this.sandbox().structures.filter(structure => !structure.id.startsWith('film:hotel303:')); }
   sync(): void {
     if (this.journey?.scene !== 'm1_room303' || this.journey.visiting) { this.clear(); return; }
-    const barriers: { x: number; z: number; width: number; depth: number; height: number }[] = [...OPENING_HOTEL.walls];
-    if (this.state?.phase === 'trace') barriers.push({ x: 0, z: OPENING_HOTEL.doorZ, width: 6.7, depth: .65, height: 8 });
-    this.sandbox().structures = this.sandbox().structures.filter(structure => !structure.id.startsWith('film:hotel303:') || Number(structure.id.slice('film:hotel303:'.length)) < barriers.length);
-    barriers.forEach((barrier, index) => {
+    const barriers: { barrier: { x: number; z: number; width: number; depth: number; height: number }; index: number }[] =
+      OPENING_HOTEL.walls.map((barrier, index) => ({ barrier, index }));
+    if (this.state?.phase === 'trace') barriers.push({ barrier: { x: 0, z: OPENING_HOTEL.doorZ, width: 6.7, depth: .65, height: 8 }, index: 3 });
+    if (!['dive', 'ladder_ready', 'climbing', 'done'].includes(this.state?.phase ?? ''))
+      barriers.push({ barrier: { x: 0, z: -SET.depth / 2 + .4, width: 7.6, depth: .45, height: 8 }, index: 4 });
+    const active = new Set(barriers.map(({ index }) => `film:hotel303:${index}`));
+    this.sandbox().structures = this.sandbox().structures.filter(structure => !structure.id.startsWith('film:hotel303:') || active.has(structure.id));
+    barriers.forEach(({ barrier, index }) => {
       const id = `film:hotel303:${index}`;
       if (this.sandbox().structures.some(structure => structure.id === id)) return;
       this.sandbox().structures.push({ id, kind: 'barricade', owner: 'matrix', position: filmPosition(SET.id, barrier.x, barrier.z),
@@ -40,7 +44,7 @@ export class OpeningHotelSystem {
       this.state!.phase = 'combat'; this.journey.fighting = true;
       this.sandbox().threats = this.sandbox().threats.filter(threat => threat.scene !== 'm1_room303');
       this.spawn(this.journey.actor, tick);
-    } else if (this.journey.step >= 2) this.state!.phase = this.journey.step === 2 ? 'phone' : 'corridor';
+    } else if (this.journey.step >= 2) this.state!.phase = this.journey.step === 2 ? 'phone' : this.journey.step >= 5 ? 'ladder_ready' : 'corridor';
     this.sync();
   }
   begin(actor: AgentState, tick: number): string {
@@ -128,9 +132,29 @@ export class OpeningHotelSystem {
   dive(actor: AgentState, tick: number): string {
     if (this.state?.phase !== 'corridor') return this.journey!.lastText;
     this.state.phase = 'dive'; this.state.elapsed = 0; this.state.lastTick = tick;
+    this.sync();
     this.journey!.lastText = 'Trinity 护住头部，冲过走廊尽头的破窗。玻璃碎片落向消防梯。';
     actor.rotation = Math.PI;
     return this.journey!.lastText;
+  }
+  beginClimb(actor: AgentState): string {
+    if (this.state?.phase !== 'ladder_ready') return this.journey!.lastText;
+    this.state.phase = 'climbing'; this.state.climbed = 0;
+    this.frame(actor);
+    return this.journey!.lastText = 'Trinity 抓住消防梯。按 W 往上攀，S 可退回；爬到屋顶才算脱离 303。';
+  }
+  climbFrame(actor: AgentState, direction: number, dt: number, tick: number): boolean {
+    const state = this.state;
+    if (this.journey?.scene !== 'm1_room303' || this.journey.visiting || this.journey.actor !== actor.id || state?.phase !== 'climbing') return false;
+    state.climbed = Math.max(0, Math.min(OPENING_HOTEL.ladderHeight, (state.climbed ?? 0) + direction * Math.min(.1, dt) * OPENING_HOTEL.climbSpeed));
+    this.frame(actor);
+    actor.velocity = { x: 0, y: direction * OPENING_HOTEL.climbSpeed, z: 0 };
+    actor.currentAction = { type: 'move_to', parameters: { player: true, resolved: true, climbing: true, climbDirection: direction }, startedAt: tick, duration: 1, progress: 0 };
+    if (state.climbed >= OPENING_HOTEL.ladderHeight) {
+      state.phase = 'done'; actor.currentAction = null;
+      this.onAdvance?.('Trinity 爬上屋顶。Brown 和特工紧追而来，必须继续奔跑。', actor, tick);
+    }
+    return true;
   }
   frame(actor: AgentState): void {
     const state = this.state; if (!state) return;
@@ -140,9 +164,15 @@ export class OpeningHotelSystem {
     } else if (state.phase === 'dive') {
       const progress = Math.min(1, state.elapsed / OPENING_HOTEL.diveSeconds);
       actor.position = filmPosition(SET.id, OPENING_HOTEL.window.x, OPENING_HOTEL.window.z - progress * 6);
-      actor.position.y = SET.center.y + Math.sin(progress * Math.PI) * 1.1 - progress * 2.2;
-      actor.velocity = { x: 0, y: -2.2 / OPENING_HOTEL.diveSeconds, z: -6 / OPENING_HOTEL.diveSeconds };
+      actor.position.y = SET.center.y + Math.sin(progress * Math.PI) * 1.1 - progress * .35;
+      actor.velocity = { x: 0, y: -.35 / OPENING_HOTEL.diveSeconds, z: -6 / OPENING_HOTEL.diveSeconds };
       actor.currentAction = { type: 'idle', parameters: { resolved: true, hotel303: { phase: 'dive', elapsed: state.elapsed } }, startedAt: state.lastTick, duration: 1, progress: 0 };
+    } else if (state.phase === 'ladder_ready' || state.phase === 'climbing') {
+      actor.position = filmPosition(SET.id, 0, OPENING_HOTEL.ladderZ);
+      actor.position.y = SET.center.y - .35 + (state.climbed ?? 0);
+      actor.rotation = Math.PI;
+      actor.velocity = { x: 0, y: 0, z: 0 };
+      actor.currentAction = { type: 'move_to', parameters: { player: true, resolved: true, climbing: true, climbDirection: 0 }, startedAt: state.lastTick, duration: 1, progress: 0 };
     }
   }
   tick(actor: AgentState, tick: number): boolean {
@@ -159,10 +189,12 @@ export class OpeningHotelSystem {
         actor.currentAction = null; this.spawn(actor.id, tick);
         this.journey.lastText = '四名警员冲进 303。领头警员伸手铐人：F 反击、X 躲开瞄准，击倒一人后按 G 夺枪。';
       } else if (state.phase === 'dive' && state.elapsed >= OPENING_HOTEL.diveSeconds) {
-        state.phase = 'done'; this.onAdvance?.('Trinity 撞开玻璃，落在消防梯上，随后沿梯子向屋顶攀去。', actor, tick);
+        state.phase = 'ladder_ready'; state.climbed = 0; this.frame(actor);
+        this.onAdvance?.('Trinity 撞开玻璃，落在消防梯下沿。现在要亲自爬上屋顶。', actor, tick);
       }
       return true;
     }
+    if (state.phase === 'ladder_ready' || state.phase === 'climbing') { this.frame(actor); return true; }
     if (state.phase === 'failed') return true;
     if (state.phase !== 'combat') return false;
     if (actor.status !== 'alive' || actor.health <= 0) {

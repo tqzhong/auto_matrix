@@ -248,7 +248,33 @@ test('303 breach saves its timing, then Trinity disarms, shoots and reaches the 
   actor.position = filmStepPosition(FILM_SCENES[0], FILM_SCENES[0].steps[3]); h.advance(); assert.equal(state.step, 4);
   actor.position = filmPosition('film_heart_hotel', OPENING_HOTEL.window.x, OPENING_HOTEL.window.z);
   h.command('act'); assert.equal(state.openingHotel?.phase, 'dive'); h.advance(4);
+  assert.equal(state.openingHotel?.phase, 'ladder_ready'); assert.equal(state.step, 5);
+  h.command('act'); assert.equal(state.openingHotel?.phase, 'climbing');
+  let sequence = 0;
+  for (let frame = 0; frame < 40 && state.openingHotel?.phase === 'climbing'; frame++) {
+    h.players.receiveInput('film-player', { x: 0, z: 0, yaw: 0, jump: false, sprint: false, climb: 1, sequence: ++sequence });
+    h.players.step(.1, true, h.tick());
+  }
   assert.equal(state.openingHotel?.phase, 'done'); assert.ok(state.completed.includes('m1_room303'));
+});
+
+test('303 fire escape requires upward input and preserves climbing progress through a save and disconnect', () => {
+  const h = setup(); h.command('start'); let state = h.sandbox.life.film.state!;
+  state.step = 5; state.openingHotel!.phase = 'ladder_ready';
+  h.actor().position = filmPosition('film_heart_hotel', 0, -30);
+  h.command('act'); assert.equal(state.openingHotel?.phase, 'climbing');
+  h.advance(20); assert.equal(state.openingHotel?.climbed, 0, 'waiting cannot climb the fire escape');
+  h.players.receiveInput('film-player', { x: 0, z: 0, yaw: 0, jump: false, sprint: false, climb: 1, sequence: 1 });
+  for (let frame = 0; frame < 10; frame++) h.players.step(.1, true, h.tick());
+  const progress = state.openingHotel!.climbed!; assert.ok(progress > 1);
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); state = h.sandbox.life.film.state!;
+  h.advance(20); assert.equal(state.openingHotel?.climbed, progress);
+  h.players.release('film-player', h.tick()); h.advance(20);
+  assert.equal(state.openingHotel?.climbed, progress);
+  h.players.possess('film-player', 'trinity', h.tick());
+  h.players.receiveInput('film-player', { x: 0, z: 0, yaw: 0, jump: false, sprint: false, climb: 1, sequence: 2 });
+  for (let frame = 0; frame < 50 && state.openingHotel?.phase === 'climbing'; frame++) h.players.step(.1, true, h.tick());
+  assert.ok(state.completed.includes('m1_room303'));
 });
 
 test('303 combat can fail and retry, while disconnect freezes the breached-door sequence', () => {
@@ -284,6 +310,10 @@ test('303 door blocks movement before the breach and the same player controls ca
   h.command('act'); h.advance(4); assert.equal(h.sandbox.life.film.state?.openingHotel?.phase, 'combat');
   walk(0, 6); walk(0, -5);
   assert.ok(Math.hypot(actor.position.x - center.x, actor.position.z - center.z + 5) < 1.1, 'the open door should be walkable');
+  const glass = filmPosition('film_heart_hotel', 0, -26.5);
+  assert.equal(playerBlocked(glass, true, 1, h.sandbox.state.structures), true, 'the intact window bars early exit');
+  h.sandbox.life.film.state!.openingHotel!.phase = 'dive'; h.sandbox.life.film.openingHotel.sync();
+  assert.equal(playerBlocked(glass, true, 1, h.sandbox.state.structures), false, 'the broken window opens the exterior platform');
 });
 
 test('Trinity must answer the Wells phone before the truck arrives; the countdown saves and retries', () => {
@@ -330,19 +360,53 @@ test('Brown pursues Trinity across a real rooftop gap and a fall or capture rest
   h.advance(); assert.equal(state.openingRoof?.phase, 'failed', 'falling between roofs can fail the chase');
 });
 
-test('Trinity can sprint and jump the authored gap, then answer the phone before impact', () => {
+test('Trinity can walk from 303 through the roof gap and answer the phone without a player-position shortcut', () => {
   const h = setup(); h.command('start'); const state = h.sandbox.life.film.state!;
-  const roofs = FILM_SCENE_BY_ID.m1_roofs; const phone = FILM_SCENE_BY_ID.m1_phone_escape;
-  Object.assign(state, { scene: roofs.id, step: 0, checkpoint: filmEntry(roofs), openingRoof: { phase: 'running', lastTick: h.tick(), attempts: 0 } });
-  h.actor().currentLocation = roofs.set; h.actor().position = filmEntry(roofs);
-  const brown = h.world.agents.get('agent_brown')!;
-  brown.currentLocation = roofs.set; brown.position = filmPosition(roofs.set, 0, 43);
+  const room = FILM_SCENE_BY_ID.m1_room303; const roofs = FILM_SCENE_BY_ID.m1_roofs; const phone = FILM_SCENE_BY_ID.m1_phone_escape;
   let sequence = 0; let jumped = false;
   const move = (x: number, z: number, jump = false) => {
     h.players.receiveInput('film-player', { x, z, yaw: Math.atan2(x, z), jump, sprint: true, sequence: ++sequence });
     h.players.step(.1, true, h.tick());
     if (sequence % 5 === 0) h.advance();
   };
+  const walkTo = (set: string, x: number, z: number, frames = 100) => {
+    const target = filmPosition(set, x, z);
+    for (let frame = 0; frame < frames && Math.hypot(target.x - h.actor().position.x, target.z - h.actor().position.z) > 2.5; frame++) {
+      const dx = target.x - h.actor().position.x; const dz = target.z - h.actor().position.z;
+      const length = Math.hypot(dx, dz); move(dx / length, dz / length);
+    }
+    assert.ok(Math.hypot(target.x - h.actor().position.x, target.z - h.actor().position.z) <= 2.5, `cannot reach ${set}: ${x}, ${z}`);
+  };
+  walkTo(room.set, OPENING_HOTEL.computer.x, OPENING_HOTEL.computer.z);
+  h.command('act'); h.advance(4); assert.equal(state.openingHotel?.phase, 'combat');
+  const lead = h.sandbox.state.threats[0];
+  for (let strike = 0; lead.health > 0 && strike < 6; strike++) {
+    walkTo(room.set, lead.position.x - FILM_SETS[room.set].center.x, lead.position.z - FILM_SETS[room.set].center.z + 2);
+    h.actor().rotation = Math.atan2(lead.position.x - h.actor().position.x, lead.position.z - h.actor().position.z);
+    h.sandbox.attack(h.actor(), h.tick(), strike % 3);
+  }
+  assert.equal(lead.health, 0);
+  const fallen = state.openingHotel!.fallen!;
+  walkTo(room.set, fallen.x - FILM_SETS[room.set].center.x, fallen.z - FILM_SETS[room.set].center.z);
+  h.command('act'); assert.equal(state.openingHotel?.disarmed, true);
+  walkTo(room.set, 0, 0);
+  for (const target of [...h.sandbox.state.threats]) for (let shot = 0; target.health > 0 && shot < 3; shot++) {
+    h.sandbox.life.film.openingHotel.shoot(h.actor(), Math.atan2(target.position.x - h.actor().position.x, target.position.z - h.actor().position.z), 0, h.tick());
+  }
+  h.advance(); assert.equal(state.step, 2);
+  walkTo(room.set, 0, 6); walkTo(room.set, -8, 18);
+  h.command('act'); assert.equal(state.step, 3);
+  walkTo(room.set, 0, 6); walkTo(room.set, 0, -18);
+  h.advance(); assert.equal(state.step, 4);
+  walkTo(room.set, OPENING_HOTEL.window.x, OPENING_HOTEL.window.z);
+  h.command('act'); h.advance(4); assert.equal(state.openingHotel?.phase, 'ladder_ready');
+  h.command('act');
+  for (let frame = 0; frame < 50 && state.openingHotel?.phase === 'climbing'; frame++) {
+    h.players.receiveInput('film-player', { x: 0, z: 0, yaw: 0, jump: false, sprint: false, climb: 1, sequence: ++sequence });
+    h.players.step(.1, true, h.tick());
+  }
+  assert.ok(state.completed.includes(room.id));
+  h.command('next'); assert.equal(state.scene, roofs.id);
   for (let frame = 0; frame < 150 && state.openingRoof?.phase === 'running' && state.step < 2; frame++) {
     const localX = h.actor().position.x - FILM_SETS[roofs.set].center.x;
     const localZ = h.actor().position.z - FILM_SETS[roofs.set].center.z;
@@ -1879,6 +1943,13 @@ test('the entire film route completes through interactions, driving and real com
           actor.position = { ...state.openingHotel!.fallen! }; h.command('act'); h.advance();
           assert.equal(state.openingHotel?.disarmed, true);
         } else if (index === 2 || index === 4) { h.command('act'); if (index === 4) h.advance(4); }
+        else if (index === 5) {
+          h.command('act');
+          for (let frame = 0; frame < 50 && state.openingHotel?.phase === 'climbing'; frame++) {
+            h.players.receiveInput('film-player', { x: 0, z: 0, yaw: 0, jump: false, sprint: false, climb: 1, sequence: ++sequence });
+            h.players.step(.1, true, h.tick());
+          }
+        }
         else h.advance();
         assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`); continue;
       }

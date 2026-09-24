@@ -220,9 +220,10 @@ export function filmBlocked(position: Vector3, set: FilmSet, radius: number): bo
     if (hotelBlocked(x, z, position.y - set.center.y + LAFAYETTE.upper, radius)) return true;
     return position.y >= set.center.y - .8 && filmObstacles(set).some(o => Math.abs(x - o.x) < o.width / 2 + radius && Math.abs(z - o.z) < o.depth / 2 + radius && position.y < set.center.y + o.height);
   }
+  const hotelEscape = set.id === 'film_heart_hotel' && Math.abs(x) < 4.2 && z < -25 && z > -35 && position.y >= set.center.y - 1.4;
   if (set.id === 'film_extraction_car' || set.id === 'film_adams_bridge') {
     if (!meetingRoadContains(x, z, radius)) return true;
-  } else if (Math.abs(x) > set.width / 2 - radius - .6 || Math.abs(z) > set.depth / 2 - radius - .6) return true;
+  } else if (!hotelEscape && (Math.abs(x) > set.width / 2 - radius - .6 || Math.abs(z) > set.depth / 2 - radius - .6)) return true;
   if (position.y < filmGroundHeight(position, set) - .8) return true;
   return filmObstacles(set).some(o => Math.abs(x - o.x) < o.width / 2 + radius && Math.abs(z - o.z) < o.depth / 2 + radius && position.y < set.center.y + o.height);
 }

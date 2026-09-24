@@ -47,3 +47,31 @@ test('the opening roof has a raycastable drop and the phone truck follows saved 
     assert.ok(booth.rotation.x < -.4 && glass.visible, 'connected escape is followed by the glass booth impact');
   } finally { renderer.dispose(); globalThis.document = document; }
 });
+
+test('303 broken glass stays broken while Trinity climbs the visible fire escape', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const document = globalThis.document;
+  globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {} }) }) } as unknown as Document;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const player = world.agents.get('trinity')!; const hotel = FILM_SCENE_BY_ID.m1_room303;
+  const journey: FilmJourney = { version: 1, scene: hotel.id, actor: player.id, step: 4, completed: [], enteredAt: 0,
+    reflections: {}, lastText: '', checkpoint: filmEntry(hotel), openingHotel: { phase: 'dive', elapsed: .7, lastTick: 0, attempts: 0, disarmed: true, ammo: 2, shots: 6 } };
+  const sandbox = { neoLife: { journey }, structures: [] } as unknown as SandboxState;
+  const scene = new THREE.Scene(); scene.background = new THREE.Color(); scene.fog = new THREE.FogExp2(0, .01);
+  const renderer = new FilmSetRenderer(scene);
+  try {
+    player.position = filmEntry(hotel); player.currentLocation = hotel.set; player.isInMatrix = true;
+    renderer.update(player, sandbox, 0);
+    const glass = renderer.root.getObjectByName('hotel-303-window')!;
+    const shards = renderer.root.getObjectByName('hotel-303-window-shards')!;
+    renderer.root.updateMatrixWorld(true);
+    const center = FILM_SETS[hotel.set].center;
+    const rung = new THREE.Raycaster(new THREE.Vector3(center.x, center.y + 1.3, center.z - 28), new THREE.Vector3(0, 0, -1))
+      .intersectObjects(renderer.root.children, true)[0];
+    assert.ok(rung && rung.point.z - center.z < -29 && rung.point.z - center.z > -31, 'the ladder rungs are part of the playable set');
+    assert.equal(glass.visible, false); assert.equal(shards.visible, true);
+    journey.openingHotel!.phase = 'ladder_ready'; journey.step = 5;
+    renderer.update(player, sandbox, 1);
+    assert.equal(glass.visible, false); assert.equal(shards.visible, true);
+  } finally { renderer.dispose(); globalThis.document = document; }
+});
