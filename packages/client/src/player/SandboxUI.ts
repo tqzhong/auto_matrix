@@ -1176,6 +1176,8 @@ export class SandboxUI {
     if (scene.id === 'm1_ledge' && step?.kind === 'reflect') this.el('sandbox-nearby').textContent = '沿维修架脱身，或退回办公室';
     if (scene.id === 'm1_mirror' && journey.step === 0 && step && !journey.visiting)
       this.el('sandbox-interact').classList.toggle('hidden', distance(player.position, filmStepPosition(scene, step)) > MIRROR_TOUCH.radius);
+    if (scene.id === 'm1_interrogation' && step && !journey.interrogation && !journey.visiting)
+      this.el('sandbox-interact').classList.toggle('hidden', distance(player.position, filmStepPosition(scene, step)) > 4);
     if (step && !journey.visiting) {
       const target = filmStepPosition(scene, step); const direction = Math.atan2(target.x - player.position.x, target.z - player.position.z) - player.rotation;
       this.el('sandbox-waypoint').innerHTML = `<span style="transform:rotate(${-direction}rad)">↑</span>${step.label} <b>${Math.round(distance(target, player.position))} m</b>`;

@@ -9,7 +9,7 @@ import type { WorldState } from '../world/WorldState.js';
 import { LobbyCombatSystem } from './LobbyCombatSystem.js';
 import { HelCoatcheckSystem } from './HelCoatcheckSystem.js';
 import { OfficeEscapeSystem } from './OfficeEscapeSystem.js';
-import { INTERROGATION_CAST, INTERROGATION_TIMING, interrogationLocked, interrogationRoot } from '@auto_matrix/shared';
+import { INTERROGATION_CAST, INTERROGATION_ROOM, INTERROGATION_TIMING, interrogationLocked, interrogationRoot } from '@auto_matrix/shared';
 import { MEETING_CAR, MEETING_CAST, MEETING_TIMING, meetingLocked, meetingRoot, type MeetingEncounter } from '@auto_matrix/shared';
 import { LAFAYETTE, LAFAYETTE_WELCOME, LAFAYETTE_KNOCK_SECONDS, HOTEL_ROUTE_LENGTH, HOTEL_DOOR_PROGRESS, hotelRoutePose, hotelRouteProgress, lafayetteKnocking, lafayetteKnockRoot, lafayetteWelcomeLocked, lafayetteWelcomeRoot, filmSetAt } from '@auto_matrix/shared';
 import { OFFICE_WORKDAY, OFFICE_DELIVERY_SECONDS, officeCourierRoot, officeRecipientRoot, workdayLocked, workdayText } from '@auto_matrix/shared';
@@ -4188,6 +4188,10 @@ export class FilmStorySystem {
     if (scene.id === 'm1_lobby') this.lobby.reset();
     const actor = this.world.agents.get(state.actor)!;
     this.place(actor, scene, state.checkpoint); actor.status = 'alive'; actor.health = actor.maxHealth; actor.activeEffects = [];
+    if (scene.id === 'm1_interrogation') {
+      const smith = filmPosition(scene.set, -INTERROGATION_ROOM.seat, 0);
+      actor.rotation = Math.atan2(smith.x - actor.position.x, smith.z - actor.position.z);
+    }
     if (scene.id === 'm2_room') actor.rotation = Math.PI;
     if (scene.id === 'm2_mountain') actor.rotation = 0;
     if (scene.id === 'm2_trucks') actor.rotation = Math.PI;

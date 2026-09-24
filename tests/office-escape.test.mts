@@ -126,6 +126,19 @@ test('exposure triggers capture rather than death; interrogation persists the tr
   assert.equal(h.state().office?.bugged, true); h.command('next'); assert.equal(h.scene().id, 'm1_wake_again');
 });
 
+test('capture transition faces Smith instead of inheriting the office pursuit heading', () => {
+  const h = setup(); h.office(); h.advance(8);
+  const guard = h.sandbox.state.threats.find(t => t.id === 'office:0')!;
+  h.neo().position = { ...guard.position, z: guard.position.z + 3 }; guard.yaw = 0;
+  h.advance(6); assert.equal(h.state().office?.outcome, 'captured');
+  h.neo().rotation = 0;
+  h.command('next');
+  const smith = h.world.agents.get('smith')!;
+  const dx = smith.position.x - h.neo().position.x; const dz = smith.position.z - h.neo().position.z;
+  const facing = (Math.sin(h.neo().rotation) * dx + Math.cos(h.neo().rotation) * dz) / Math.hypot(dx, dz);
+  assert.ok(facing > .95, `Neo should enter facing Smith, not the wall (facing=${facing})`);
+});
+
 test('Neo has time to crouch after the call before the agents begin checking cubicles', () => {
   const h = setup(); h.office(); h.advance(6);
   assert.equal(h.state().office?.alert, 0);
