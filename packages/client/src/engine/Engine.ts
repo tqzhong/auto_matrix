@@ -155,7 +155,7 @@ export class Engine {
     this.voxelRenderer.interiors.update(this.timeOfDay, player?.position, this.sandbox?.neoLife);
     measure?.('city');
     const workday = this.agentRenderer.getAgentState('courier')?.currentAction?.parameters.workday as OfficeWorkday | undefined;
-    const filmSet = this.filmSets.update(player ?? undefined, this.sandbox, this.elapsed, player ? this.agentRenderer.getAgent(player.id)?.position : undefined, this.camera.position, workday);
+    const filmSet = this.filmSets.update(player ?? undefined, this.sandbox, this.elapsed, player ? this.agentRenderer.getAgent(player.id)?.position : undefined, this.camera.position, workday, this.playerControls?.firstPerson ?? false);
     this.voxelRenderer.matrix.visible = this.matrix && !filmSet; this.voxelRenderer.real.visible = !this.matrix && !filmSet;
     measure?.('film');
     this.rain.visible = filmSet ? filmSet.light === 'storm' : this.matrix && this.weather !== 'clear' && !(player && insideLifeRoom(player.position));

@@ -335,7 +335,8 @@ export class NebDeckRenderer {
       if (cable) cable.visible = !consoleActive;
     }
     const descend = active ? THREE.MathUtils.smoothstep(t, 1.8, 3.8) * (1 - THREE.MathUtils.smoothstep(t, 7, 8.2)) : 0;
-    this.gantry.position.y = 6.2 - descend * 1.15;
+    const retract = active ? THREE.MathUtils.smoothstep(t, 7.5, 9.2) : 0;
+    this.gantry.position.y = 6.2 - descend * 1.15 + retract * 6;
     this.gantry.rotation.z = Math.sin(elapsed * 2.1) * .004 * descend;
     this.needles.forEach((needle, i) => {
       needle.position.y = Number(needle.userData.baseY) - descend * (.18 + (i % 3) * .07);

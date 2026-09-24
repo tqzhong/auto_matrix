@@ -477,7 +477,8 @@ export class PlayerControls {
     const lobbyWide = !this.firstPerson && Boolean(this.motion.lobbyEntry);
     const ladderWide = this.climbing && state.currentLocation === 'film_office_ledge' && !this.firstPerson;
     const pillDepartureWide = !this.firstPerson && this.motion.pills?.phase === 'taking' && this.motion.pills.elapsed >= 10;
-    this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, ladderWide ? 62 : interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide || sentinelWide || interludeWide || oracleWide || betrayalWide || rescueWide || governmentWide || airRescueWide || escapeWide || oneWide || catchWide || lobbyWide || pillDepartureWide ? 58 : this.motion.inspecting ? 42 : this.firstPerson ? sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
+    const podWide = !this.firstPerson && this.motion.performance === 'pod';
+    this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, podWide ? 65 : ladderWide ? 62 : interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide || sentinelWide || interludeWide || oracleWide || betrayalWide || rescueWide || governmentWide || airRescueWide || escapeWide || oneWide || catchWide || lobbyWide || pillDepartureWide ? 58 : this.motion.inspecting ? 42 : this.firstPerson ? sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
     this.camera.near = this.firstPerson && this.motion.club ? .08 : this.defaultNear;
     this.camera.updateProjectionMatrix();
     this.cameraStep += this.motion.speed * delta;
@@ -938,7 +939,7 @@ export class PlayerControls {
         forward.lerp(lying, 1 - rise).normalize(); this.camera.lookAt(eye.clone().add(forward));
       } else {
         const ideal = new THREE.Vector3(this.position.x + THREE.MathUtils.lerp(3, 1.5, rise), this.position.y + THREE.MathUtils.lerp(4, 4.8, rise), this.position.z + THREE.MathUtils.lerp(6, 5, rise));
-        const focus = new THREE.Vector3(this.position.x, this.position.y + THREE.MathUtils.lerp(1.45, 2.15, rise), this.position.z);
+        const focus = new THREE.Vector3(this.position.x, this.position.y + THREE.MathUtils.lerp(2.55, 3.05, rise), this.position.z);
         if (resetCamera) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-7 * delta));
         this.camera.lookAt(focus);
       }
@@ -1018,6 +1019,24 @@ export class PlayerControls {
       if (resetCamera || this.motion.mirrorBeat < .12) this.camera.position.copy(ideal);
       else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
       this.camera.lookAt(focus);
+    } else if (this.motion.performance === 'pod' && state.currentLocation === 'film_power_plant_pods') {
+      const center = FILM_SETS.film_power_plant_pods.center;
+      if (this.firstPerson) {
+        const eye = new THREE.Vector3(center.x - .85, center.y + 2.5, center.z - 13.8);
+        const pitch = this.pitch - 1.47, yaw = this.yaw - .12;
+        const forward = new THREE.Vector3(Math.sin(yaw) * Math.cos(pitch), -Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch));
+        this.camera.position.copy(eye); this.camera.lookAt(eye.add(forward));
+      } else {
+        const ideal = new THREE.Vector3(center.x + 5.8, center.y + 8.2, center.z - 6.5);
+        if (resetCamera) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
+        this.camera.lookAt(center.x, center.y + 4.9, center.z - 12.5);
+      }
+    } else if (this.firstPerson && state.currentLocation === 'film_power_plant_pods' &&
+      (this.motion.performance === 'float' || this.motion.performance === 'lift')) {
+      const eye = new THREE.Vector3(this.position.x - .85, this.position.y + 2.5, this.position.z - .5);
+      const pitch = this.pitch - 1, yaw = this.yaw - Math.PI / 2;
+      const forward = new THREE.Vector3(Math.sin(yaw) * Math.cos(pitch), -Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch));
+      this.camera.position.copy(eye); this.camera.lookAt(eye.add(forward));
     } else if (this.performing && this.motion.crossing !== undefined && !this.firstPerson) {
       const center = FILM_SETS.film_metacortex_floor.center;
       const outside = THREE.MathUtils.smoothstep(this.motion.crossing, 1.7, 5.4);

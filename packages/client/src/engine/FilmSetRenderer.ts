@@ -158,7 +158,7 @@ export class FilmSetRenderer {
   }
   get active(): FilmSet | undefined { return this.current; }
   setMirrorSubject(subject?: THREE.Object3D): void { this.mirrorSubject = subject; }
-  update(player: AgentState | undefined, sandbox: SandboxState | undefined, elapsed: number, playerPosition?: Vector3, cameraPosition?: Vector3, workday?: OfficeWorkday): FilmSet | undefined {
+  update(player: AgentState | undefined, sandbox: SandboxState | undefined, elapsed: number, playerPosition?: Vector3, cameraPosition?: Vector3, workday?: OfficeWorkday, firstPerson = false): FilmSet | undefined {
     let set = player ? filmSetAt(player.position, player.isInMatrix) : undefined;
     if (set?.id === 'film_extraction_car' && player?.currentLocation === 'film_adams_bridge') set = FILM_SETS.film_adams_bridge;
     if (set?.id === 'film_adams_bridge' && player?.currentLocation === 'film_extraction_car') set = FILM_SETS.film_extraction_car;
@@ -277,7 +277,7 @@ export class FilmSetRenderer {
     this.apartment?.update(journey);
     this.club?.update(elapsed);
     this.freeway?.update(journey, elapsed, playerPosition);
-    this.pods?.update(journey, elapsed);
+    this.pods?.update(journey, elapsed, firstPerson);
     this.neb?.update(journey, elapsed);
     this.finale?.update(journey, elapsed);
     this.construct?.update(journey);

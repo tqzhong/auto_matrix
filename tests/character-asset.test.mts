@@ -67,6 +67,27 @@ test('the mirror reaches Neo’s hand before his face and coat hem', async () =>
   } finally { models.dispose(); }
 });
 
+test('Neo keeps a continuous patient body through rescue and medical recovery', async () => {
+  const asset = await loadGeometry('neo'); const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: () => Promise<typeof asset> }).load = async () => asset;
+  try {
+    const rig = (await models.create('neo'))!; const motion = newMotion();
+    const input = { speed: 0, grounded: false, verticalVelocity: 0, turn: 0, realWorld: true, performance: 'pod' as const };
+    models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0);
+    const patientBody = rig.wardrobe.filter(part => !part.mesh.userData.office && (part.mesh.material as THREE.Material).name === 'Trousers');
+    assert.equal(patientBody.length, 2, 'the shipped model has separate torso and leg underlayers');
+    for (const part of patientBody) assert.equal(part.mesh.visible, true, `${part.mesh.name} must fill the absent anatomical torso and legs`);
+    assert.equal(rig.wardrobe.find(part => (part.mesh.material as THREE.Material).name === 'Coat wool')?.mesh.visible, false);
+    const shirt = patientBody[0];
+    const podColor = (shirt.mesh.material as THREE.MeshStandardMaterial).color.getHex();
+    models.animate(rig, advanceMotion(motion, { ...input, performance: 'recover' }, 0), motion, { ...input, performance: 'recover' }, 0);
+    assert.equal((shirt.mesh.material as THREE.MeshStandardMaterial).color.getHex(), podColor, 'medical recovery continues the patient appearance');
+    assert.equal(rig.wardrobe.find(part => (part.mesh.material as THREE.Material).name === 'Coat wool')?.mesh.visible, false);
+    models.animate(rig, advanceMotion(motion, { ...input, performance: undefined }, 0), motion, { ...input, performance: undefined }, 0);
+    assert.notEqual((shirt.mesh.material as THREE.MeshStandardMaterial).color.getHex(), podColor, 'ship clothing returns when recovery ends');
+  } finally { models.dispose(); }
+});
+
 test('Trinity’s fitted outfit has no open waist during the club conversation', async () => {
   const asset = await loadGeometry('trinity'); const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
   (models as unknown as { load: () => Promise<typeof asset> }).load = async () => asset;

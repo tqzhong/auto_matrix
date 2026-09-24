@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import type { AgentState, PlayerInput } from '@auto_matrix/shared';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { CameraController } from '../packages/client/src/engine/CameraController.js';
-import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, pillRoot, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_TIMING, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, airRescueRoot, matrixEscapeRoot, theOneRoot, type TheOneEncounter } from '@auto_matrix/shared';
+import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, pillRoot, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_TIMING, POD_WATER_DROP, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, airRescueRoot, matrixEscapeRoot, theOneRoot, type TheOneEncounter } from '@auto_matrix/shared';
 
 test('observer camera releases drag and ignores pointer capture while a character controls the view', () => {
   let captures = 0;
@@ -879,6 +879,37 @@ test('the tracking-chair shot contains Neo and the mirror while V lowers to seat
   }
   game.key('KeyV'); game.key('KeyV', false); game.step(.6);
   assert.ok(Math.abs(game.camera.position.y - (center.y + 2.09)) < .08, 'first-person eyes must sit at the chair height');
+});
+
+test('the pod reveal frames Neo in the tank and V opens at the immersed eye line', t => {
+  const game = setup(t, Math.PI); const center = FILM_SETS.film_power_plant_pods.center;
+  game.state.currentLocation = 'film_power_plant_pods'; game.state.isInMatrix = false;
+  game.state.position = filmPosition('film_power_plant_pods', 0, -12); game.state.rotation = Math.PI;
+  game.state.currentAction = { type: 'idle', parameters: { filmPose: 'pod', player: true }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.controls.performing = true; game.step(.5);
+  for (const point of [new THREE.Vector3(center.x, center.y + 2.5, center.z - 12),
+    new THREE.Vector3(center.x, center.y + 8, center.z - 14)]) {
+    const screen = point.project(game.camera);
+    assert.ok(Math.abs(screen.x) < .88 && Math.abs(screen.y) < .9 && screen.z > -1 && screen.z < 1,
+      `the patient and maintenance machine must share the tank shot: ${screen.toArray()}`);
+  }
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+  assert.ok(Math.abs(game.camera.position.y - (center.y + 2.5)) < .12, 'eyes must stay just above the pod fluid');
+  assert.ok(game.camera.position.z < center.z - 13.5, 'the viewpoint belongs near Neo’s head, not the pod center');
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).y > .3, 'Neo first looks up at the maintenance machine');
+});
+
+test('the floating first-person view finds the descending rescue claw above the water', t => {
+  const game = setup(t, Math.PI); const center = FILM_SETS.film_power_plant_pods.center;
+  game.state.currentLocation = 'film_power_plant_pods'; game.state.isInMatrix = false;
+  game.state.position = filmPosition('film_power_plant_pods', 0, 12); game.state.position.y -= POD_WATER_DROP;
+  game.state.rotation = Math.PI;
+  game.state.currentAction = { type: 'idle', parameters: { filmPose: 'float', player: true }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.controls.performing = true;
+  game.key('KeyV'); game.key('KeyV', false); game.step(.4);
+  const claw = new THREE.Vector3(center.x, center.y - POD_WATER_DROP + 4, center.z + 12).project(game.camera);
+  assert.ok(Math.abs(claw.x) < .7 && Math.abs(claw.y) < .8 && claw.z > -1 && claw.z < 1,
+    `the rescue device must be in the player's view: ${claw.toArray()}`);
 });
 
 test('the red-pill departure keeps Neo in the third-person frame and reveals the mirror before handoff', t => {

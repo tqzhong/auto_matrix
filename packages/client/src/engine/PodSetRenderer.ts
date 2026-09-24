@@ -9,6 +9,7 @@ export class PodSetRenderer {
   private robot = new THREE.Group();
   private claw = new THREE.Group();
   private connections = new THREE.Group();
+  private neckTube: THREE.Mesh;
   private water: THREE.Mesh;
   private ripple: THREE.Mesh;
   private liquid: THREE.Mesh;
@@ -23,10 +24,12 @@ export class PodSetRenderer {
     parent.add(this.root);
     this.steel = this.mat(0x3e494d, .38, .84); this.dark = this.mat(0x131b1d, .57, .55);
     const rubber = this.mat(0x1c181c, .72); const pink = this.mat(0x59212b, .24, .25); pink.emissive.setHex(0x541723); pink.emissiveIntensity = .25;
-    const wet = new THREE.MeshPhysicalMaterial({ color: 0x732830, roughness: .14, metalness: .22, clearcoat: 1, side: THREE.DoubleSide }); this.materials.add(wet);
+    const wet = new THREE.MeshPhysicalMaterial({ color: 0x53242b, roughness: .22, metalness: .18, clearcoat: 1, side: THREE.DoubleSide }); this.materials.add(wet);
     this.mesh(new THREE.SphereGeometry(1, 48, 24, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), wet, 0, 2.1, -12).scale.set(2.8, 2.7, 5.4);
     const rim = this.mesh(new THREE.TorusGeometry(1, .045, 10, 64), this.steel, 0, 2.1, -12); rim.rotation.x = Math.PI / 2; rim.scale.set(2.85, 5.45, 1);
-    this.liquid = this.mesh(new THREE.CircleGeometry(1, 64), wet, 0, 1.9, -12); this.liquid.rotation.x = -Math.PI / 2; this.liquid.scale.set(2.6, 5.15, 1);
+    const fluid = new THREE.MeshPhysicalMaterial({ color: 0x722c36, roughness: .18, metalness: .12, clearcoat: 1,
+      transparent: true, opacity: .58, depthWrite: false, side: THREE.DoubleSide }); this.materials.add(fluid);
+    this.liquid = this.mesh(new THREE.CircleGeometry(1, 64), fluid, 0, 1.9, -12); this.liquid.rotation.x = -Math.PI / 2; this.liquid.scale.set(2.6, 5.15, 1);
     for (let i = 0; i < 20; i++) {
       const a = i / 20 * Math.PI * 2;
       const brace = this.mesh(new THREE.BoxGeometry(.2, 2.2, .3), this.steel, Math.sin(a) * 2.9, 1.15, -12 + Math.cos(a) * 5.5); brace.rotation.z = -Math.sin(a) * .3;
@@ -37,7 +40,7 @@ export class PodSetRenderer {
       const side = i % 2 ? 1 : -1; const z = -14 + Math.floor(i / 2) * 1.6;
       this.tube([[side * 2.6, 1.7, z], [side * 2.1, 2.9, z - 1], [side * .8, 3.8 - i * .24, -12.1]], .095, rubber, this.connections);
     }
-    this.tube([[0, 1.8, -17.5], [0, 4, -17], [0, 5.25, -13.5], [0, 4.9, -12.3]], .2, rubber, this.connections);
+    this.neckTube = this.tube([[0, 1.8, -17.5], [0, 4, -17], [0, 5.25, -13.5], [0, 4.9, -12.3]], .2, rubber, this.connections);
     this.towers(pink);
     // A concave runoff channel descends to the water rather than an invisible flat floor.
     const positions: number[] = []; const indices: number[] = [];
@@ -76,7 +79,7 @@ export class PodSetRenderer {
     this.cable = this.mesh(new THREE.CylinderGeometry(.07, .07, 1, 8), this.steel, 0, 0, 12);
     this.scan = new THREE.SpotLight(0xc3e6ef, 2300, 70, .52, .7, 2); this.scan.position.set(0, 10, 12); this.scan.target.position.set(0, -18, 12); this.root.add(this.scan, this.scan.target);
     const tankLight = new THREE.PointLight(0xb76b62, 170, 22, 2); tankLight.position.set(-3, 6, -12); this.root.add(tankLight);
-    const awakeningLight = new THREE.PointLight(0xf5b9ab, 620, 16, 2); awakeningLight.position.set(1, 5, -8); this.root.add(awakeningLight);
+    const awakeningLight = new THREE.PointLight(0xf5b9ab, 420, 16, 2); awakeningLight.position.set(1, 5, -8); this.root.add(awakeningLight);
     const rimLight = new THREE.PointLight(0x8bb8ce, 220, 30, 2); rimLight.position.set(4, 10, -21); this.root.add(rimLight);
     const mistGeometry = new THREE.BufferGeometry(); const particles: number[] = [];
     for (let i = 0; i < 180; i++) particles.push(Math.sin(i * 7.23) * 30, -16 + Math.sin(i * 3.12) * 3, 12 + Math.cos(i * 9.14) * 40);
@@ -90,8 +93,8 @@ export class PodSetRenderer {
   private mesh(geometry: THREE.BufferGeometry, material: THREE.Material, x: number, y: number, z: number, parent = this.root): THREE.Mesh {
     this.geometries.add(geometry); const mesh = new THREE.Mesh(geometry, material); mesh.position.set(x, y, z); mesh.castShadow = mesh.receiveShadow = true; parent.add(mesh); return mesh;
   }
-  private tube(points: number[][], radius: number, material: THREE.Material, parent = this.root): void {
-    this.mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points.map(p => new THREE.Vector3(...p as [number, number, number]))), 24, radius, 8, false), material, 0, 0, 0, parent);
+  private tube(points: number[][], radius: number, material: THREE.Material, parent = this.root): THREE.Mesh {
+    return this.mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points.map(p => new THREE.Vector3(...p as [number, number, number]))), 24, radius, 8, false), material, 0, 0, 0, parent);
   }
   private towers(pink: THREE.Material): void {
     const towers: THREE.Matrix4[] = []; const pods: THREE.Matrix4[] = []; const lights: THREE.Matrix4[] = []; const dummy = new THREE.Object3D();
@@ -114,11 +117,12 @@ export class PodSetRenderer {
   private link(mesh: THREE.Mesh, from: THREE.Vector3, to: THREE.Vector3): void {
     mesh.position.copy(from).add(to).multiplyScalar(.5); mesh.scale.y = from.distanceTo(to); mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), to.clone().sub(from).normalize());
   }
-  update(journey: FilmJourney | undefined, elapsed: number): void {
+  update(journey: FilmJourney | undefined, elapsed: number, firstPerson = false): void {
     const beat = journey?.visiting ? undefined : journey?.awakening;
     const disconnect = beat?.kind === 'disconnect' ? beat.elapsed : beat?.kind === 'rescue' ? 9 : 0;
     this.robot.position.y = 10 - Math.min(1, disconnect / 2) * 1.2 + Math.max(0, disconnect - 4) * 1.5;
     this.connections.visible = disconnect < 4; this.connections.scale.y = disconnect < 3 ? 1 : Math.max(.15, 1 - (disconnect - 3) * .85);
+    this.neckTube.visible = !firstPerson;
     this.liquid.visible = disconnect < 5; this.liquid.position.y = 1.9 - Math.max(0, disconnect - 4) * 2 + Math.sin(elapsed * 1.6) * .018;
     const nodes = [new THREE.Vector3(0, 17, -23), new THREE.Vector3(3, 14, -20), new THREE.Vector3(0, 13, -16), this.robot.position];
     this.arm.forEach((link, i) => this.link(link, nodes[i], nodes[i + 1]));

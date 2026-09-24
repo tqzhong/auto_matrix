@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { FILM_SETS, RECOVERY_BED, filmObstacles, filmPosition, playerBlocked, type FilmJourney } from '@auto_matrix/shared';
+import { FILM_SETS, RECOVERY_BED, awakeningPose, filmObstacles, filmPosition, playerBlocked, type FilmJourney } from '@auto_matrix/shared';
 import { NebDeckRenderer } from '../packages/client/src/engine/NebDeckRenderer.js';
 
 test('the Nebuchadnezzar recovery set has a solid medical bed, moving needle gantry and open route to the core', () => {
@@ -28,6 +28,14 @@ test('the Nebuchadnezzar recovery set has a solid medical bed, moving needle gan
     renderer.update(journey, 0); const raised = gantry!.position.y;
     journey.awakening.elapsed = 4; renderer.update(journey, 4);
     assert.ok(gantry!.position.y < raised - .5, 'the saved recovery clock lowers the needle rack toward Neo');
+    journey.awakening.elapsed = 10; renderer.update(journey, 10); root.updateMatrixWorld(true);
+    const rise = THREE.MathUtils.smoothstep(10, 7, 11.7); const standing = awakeningPose(journey.awakening);
+    const nearStanding = new THREE.Vector3(standing.x + THREE.MathUtils.lerp(3, 1.5, rise),
+      THREE.MathUtils.lerp(4, 4.8, rise), RECOVERY_BED.z + THREE.MathUtils.lerp(6, 5, rise));
+    const standingFocus = new THREE.Vector3(standing.x, THREE.MathUtils.lerp(2.55, 3.05, rise), standing.z);
+    const standingSight = new THREE.Raycaster(nearStanding, standingFocus.clone().sub(nearStanding).normalize(), 0, nearStanding.distanceTo(standingFocus));
+    const obstruction = standingSight.intersectObject(root, true);
+    assert.equal(obstruction.length, 0, `retracting needles must not block Neo as he sits up: ${obstruction.map(hit => hit.object.name || hit.object.parent?.name).join(', ')}`);
     const obstacles = filmObstacles(FILM_SETS.film_neb_deck);
     assert.ok(obstacles.some(item => Math.abs(item.x - RECOVERY_BED.x) < .1 && Math.abs(item.z - RECOVERY_BED.z) < .1));
     assert.equal(playerBlocked(filmPosition('film_neb_deck', RECOVERY_BED.standingX, RECOVERY_BED.z), false), false, 'Neo can stand beside the bed');

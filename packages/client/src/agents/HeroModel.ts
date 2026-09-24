@@ -420,12 +420,16 @@ export class HeroModels {
     rig.glasses.visible = !rig.officeRole && !rig.apartmentRole && input.glasses !== false && !input.realWorld;
     const officeShirt = input.officeShirt || rig.officeRole === 'courier';
     const pod = input.performance && !['touch', 'connect'].includes(input.performance);
+    const patient = input.performance && ['pod', 'fall', 'float', 'lift', 'recover'].includes(input.performance);
     for (const part of rig.wardrobe) {
-      part.mesh.visible = !part.mesh.userData.reloadedHidden && !(part.outer && (input.realWorld || input.clubClothes || input.pills?.role === 'neo' || input.meeting || input.wakeCall) || part.hair && pod);
+      const material = part.mesh.material as THREE.MeshStandardMaterial;
+      part.mesh.visible = !part.mesh.userData.reloadedHidden && !(part.outer && (input.realWorld || input.clubClothes || input.pills?.role === 'neo' || input.meeting || input.wakeCall) || part.hair && pod)
+        && (!patient || material.name === 'Skin' || material.name === 'Trousers');
       if (part.mesh.userData.office) part.mesh.visible = Boolean(officeShirt || input.meeting?.role === 'neo' && (part.mesh.material as THREE.Material).name === 'Office skin');
       else if (officeShirt && (part.outer || /Tailored.coat.upper|Black.crew.neck/i.test(part.mesh.name))) part.mesh.visible = false;
-      const material = part.mesh.material as THREE.MeshStandardMaterial;
-      if (part.cloth && input.realWorld) material.color.setHex(0x706c62); else material.color.copy(part.color);
+      if (patient && material.name === 'Trousers') material.color.setHex(0xc2aba3);
+      else if (part.cloth && input.realWorld) material.color.setHex(0x706c62);
+      else material.color.copy(part.color);
     }
     const bone = (name: string) => rig.bones.get(name)!;
     const pelvis = bone('pelvis');

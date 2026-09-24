@@ -1,7 +1,7 @@
 import { RELOADED, RELOADED_FINALE } from '@auto_matrix/shared';
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, RESCUE, RESCUE_LOADOUTS, GOVERNMENT_RESCUE, AIR_RESCUE, MATRIX_ESCAPE, THE_ONE, OPENING_HOTEL, OPENING_ESCAPE, PILL_TIMING, MIRROR_SEAT, MIRROR_TIMING, awakeningPose, mirrorSilver, filmReflections, filmStepPosition, filmEntry, filmPosition, groundHeight, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, newGarageEscape, stepGarageEscape, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, RESCUE, RESCUE_LOADOUTS, GOVERNMENT_RESCUE, AIR_RESCUE, MATRIX_ESCAPE, THE_ONE, OPENING_HOTEL, OPENING_ESCAPE, PILL_ROOM, PILL_TIMING, MIRROR_TOUCH, MIRROR_SEAT, MIRROR_TIMING, awakeningPose, mirrorSilver, filmReflections, filmStepPosition, filmEntry, filmPosition, groundHeight, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, newGarageEscape, stepGarageEscape, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -1022,6 +1022,15 @@ test('the tracking room has a walkable doorway and Neo sits before touching the 
   assert.equal(playerBlocked(filmPosition(set.id, 2, -11.5), true), true, 'the tracking room is separated from the lounge');
   for (const [x, z] of [[-4.5, -9], [-6, -10], [-6, -11.5], [-6, -13], [-7.1, -14.6]])
     assert.equal(playerBlocked(filmPosition(set.id, x, z), true), false, `Neo can walk through the doorway at ${x}, ${z}`);
+  const route = [PILL_ROOM.exit, { x: -5, z: -3.1 }, { x: -5, z: -9.8 }, { x: -6, z: -12.7 }, MIRROR_TOUCH];
+  for (let segment = 1; segment < route.length; segment++) {
+    const from = route[segment - 1], to = route[segment];
+    for (let sample = 0; sample <= 20; sample++) {
+      const t = sample / 20;
+      const x = from.x + (to.x - from.x) * t, z = from.z + (to.z - from.z) * t;
+      assert.equal(playerBlocked(filmPosition(set.id, x, z), true), false, `Neo can walk from the red-pill exit to the tracking chair at ${x}, ${z}`);
+    }
+  }
   const approach = { x: target.x - set.center.x, z: target.z - set.center.z };
   assert.deepEqual(awakeningPose({ kind: 'mirror', elapsed: 0, approach }), { ...awakeningPose({ kind: 'mirror', elapsed: 0 }), x: approach.x, z: approach.z });
   const seated = awakeningPose({ kind: 'mirror', elapsed: MIRROR_TIMING.wired, approach });
