@@ -2265,6 +2265,30 @@ test('the entire film route completes through interactions, driving and real com
         if (scene.id === 'm1_cypher_console') for (let frame = 0; frame < 48; frame++) h.players.step(.1, true, h.tick());
       }
       else if (step.kind === 'interact') {
+        if (scene.id === 'm3_bane' && index === 1) {
+          h.command('act');
+          h.players.receiveInput('film-player', { x: 0, z: 0, yaw: actor.rotation, jump: false, sprint: false, focus: false, sequence: ++sequence });
+          for (let frame = 0; frame < 9; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.bane?.phase, 'gun_window'); h.players.act('film-player', 'dodge', h.tick());
+          const grapplingBane = h.world.agents.get('bane')!;
+          actor.position = { ...grapplingBane.position, x: grapplingBane.position.x - 2 };
+          actor.rotation = Math.atan2(grapplingBane.position.x - actor.position.x, grapplingBane.position.z - actor.position.z);
+          h.players.act('film-player', 'attack', h.tick());
+          for (let frame = 0; frame < 4; frame++) h.players.step(.1, true, h.tick());
+          h.players.act('film-player', 'attack', h.tick());
+          for (let frame = 0; frame < 16; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.bane?.phase, 'blind');
+          h.players.receiveInput('film-player', { x: 0, z: 0, yaw: actor.rotation, jump: false, sprint: false, focus: true, sequence: ++sequence });
+          for (let frame = 0; frame < 19; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.bane?.phase, 'pipe_window'); h.players.act('film-player', 'dodge', h.tick());
+          const bane = h.world.agents.get('bane')!;
+          actor.rotation = Math.atan2(bane.position.x - actor.position.x, bane.position.z - actor.position.z);
+          h.players.act('film-player', 'attack', h.tick());
+          for (let frame = 0; frame < 4; frame++) h.players.step(.1, true, h.tick());
+          actor.rotation = Math.atan2(bane.position.x - actor.position.x, bane.position.z - actor.position.z);
+          h.players.act('film-player', 'attack', h.tick());
+          assert.equal(state.step, 2); continue;
+        }
         if (scene.id === 'm2_mountain' && index === 2) {
           h.players.receiveInput('film-player', { x: 0, z: -1, yaw: Math.PI, jump: true, sprint: true, sequence: ++sequence });
           h.players.step(.1, true, h.tick());

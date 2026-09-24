@@ -63,6 +63,17 @@ export interface HelBargainEncounter {
   phase: 'armed' | 'disarmed' | 'offered' | 'ready' | 'windup' | 'evade' | 'counter' | 'airborne' | 'gunpoint' | 'released' | 'failed';
   elapsed: number; lastTick: number; attempts: number;
 }
+export const BANE_ENCOUNTER = { gunWarning: .8, gunWindow: 1.5, grappleWindow: 6, burnSeconds: 1.4,
+  focusSeconds: 1.8, pipeWindow: 1.5, counterWindow: 5 } as const;
+export interface BaneEncounter {
+  phase: 'ready' | 'gun_warning' | 'gun_window' | 'grapple' | 'burning' | 'blind' | 'pipe_window' | 'counter' | 'defeated' | 'failed';
+  elapsed: number; attempts: number; checkpoint: 'gun' | 'blind'; hits: number; focus: number; counters: number; lastStrike: number;
+  pipeX?: number; pipeZ?: number;
+}
+export function baneLocked(journey: FilmJourney | undefined): boolean {
+  return journey?.scene === 'm3_bane' && !journey.visiting && Boolean(journey.bane &&
+    ['gun_warning', 'gun_window', 'burning', 'pipe_window'].includes(journey.bane.phase));
+}
 export interface FilmJourney {
   version: 1; scene: string; step: number; actor: string; completed: string[];
   enteredAt: number; started?: number; fighting?: boolean; checkpoint: Vector3;
@@ -119,6 +130,7 @@ export interface FilmJourney {
   helDanceDoor?: HelDanceDoorEncounter;
   helCoatcheck?: import('./hel-coatcheck.js').HelCoatcheckEncounter;
   helBargain?: HelBargainEncounter;
+  bane?: BaneEncounter;
 }
 export function helElevatorLocked(journey: FilmJourney | undefined): boolean {
   return journey?.scene === 'm3_hel_entry' && !journey.visiting && journey.helElevator?.phase === 'descending';
@@ -292,7 +304,11 @@ export const FILM_SCENES: FilmScene[] = [
   scene('m3_logos_plan', 3, 'service_tunnels', 'neo', '分开的两条航线', 'last_sky', 'zion', '众人找到 Logos。Niobe 把船交给 Neo，自己驾驶 Hammer 返回锡安。', [walk('抵达停泊的 Logos', 0, -28), think('信任来自预言还是行动？', 'Niobe 把决定建立在对人的判断上。两条航线分别承担谈判与防守。')], ['niobe', 'trinity', 'morpheus', 'roland']),
   scene('m3_oracle_absorbed', 3, 'oracle_home', 'oracle', '等待 Smith', 'final', 'infiltration', '先知让 Sati 与 Seraph 离开，自己留下等待不断扩张的 Smith。', [use('安排 Sati 撤离', 'Seraph 带着孩子穿过后门，追兵却已在矩阵中扩散。', 0, 13), think('无法看见终点的赌注', '先知没有逃走。Smith 同化她，获得了自己无法完全理解的预见。')], ['sati', 'seraph', 'smith']),
   scene('m3_zion_prepare', 3, 'zion_council', 'lock', '最后的防守部署', 'siege', 'siege', '机器接近船坞。议会组织撤离，Lock 与 Mifune 将防守集中在闸门附近。', [use('确认船坞部署', 'APU 队伍负责火力，补给人员运送弹药，居民撤向神庙。', 0, -18), walk('前往船坞防线', 0, 22)], ['mifune', 'hamann']),
-  scene('m3_bane', 3, 'logos_deck', 'neo', 'Logos 上的 Bane', 'bane', 'bane', 'Smith 借 Bane 的身体袭击 Trinity 与 Neo。这里没有矩阵中的超能力。', [walk('进入货舱寻找 Trinity', 0, -24), fight('制止 Bane', 1, 'agent', 'bane'), use('带 Trinity 返回驾驶舱', 'Neo 的双眼被电缆灼伤，却开始感知机器的金色轮廓。Bane 被击倒。', 0, -31, 5)], ['trinity', 'bane']),
+  scene('m3_bane', 3, 'logos_deck', 'neo', 'Logos 上的 Bane', 'bane', 'bane', '驾驶舱突然断电。Trinity 下到工程舱检查保险丝；Neo 听见她呼救，走向下层，发现占据 Bane 身体的 Smith。现实中的肉身不能使用矩阵能力。', [
+    walk('从驾驶舱走进狭长下层，寻找 Trinity', 0, -6),
+    use('面对持电枪的 Bane', 'Trinity 在舱口下切断电路。趁电枪失去瞄准的瞬间闪避，近身反击。', 0, -6, 0),
+    use('打开工程舱舱口，带 Trinity 返回驾驶舱', 'Bane 已死。Neo 的双眼被电缆灼伤，却看见机器与 Smith 的金色轮廓；Trinity 将继续驾驶 Logos。', -6, 8, 1.6),
+  ], ['trinity', 'bane']),
   scene('m3_hammer_tunnels', 3, 'service_tunnels', 'niobe', 'Hammer 的狭窄航路', 'siege', 'chase', 'Niobe 在管网中驾驶 Hammer，哨兵紧追，舰体承受着碰撞。', [use('核对主航道封锁', '必须改走狭窄的机械管线。', -7, -16), walk('抵达手动导航台', 7, -35), use('向锡安发送开门请求', 'Hammer 即将冲入船坞。', 7, -35, 6)], ['morpheus', 'roland']),
   scene('m3_dock_battle', 3, 'zion_hangar', 'mifune', '船坞的弹药与钢铁', 'siege', 'siege', '钻头突破穹顶，哨兵涌入船坞。Mifune 带队坚守。', [fight('抵挡第一批哨兵', 4, 'sentinel'), use('掩护弹药运输', 'Kid 向 APU 输送弹药，Zee 与 Charra 在地面攻击钻头。', 0, -30)], ['kid', 'zee', 'charra']),
   scene('m3_gate', 3, 'zion_hangar', 'kid', '打开三号闸门', 'siege', 'siege', 'Mifune 受致命伤，把打开闸门的任务交给 Kid。', [fight('突破闸门附近的哨兵', 2, 'sentinel'), use('操作三号闸门', 'Kid 用受损的 APU 打开入口。Hammer 冲入船坞，触发 EMP。', 0, -50, 7)], ['zee']),
@@ -340,5 +356,6 @@ export function filmEntry(scene: FilmScene): Vector3 {
   if (scene.id === 'm2_freeway') return filmPosition(scene.set, 14, 674);
   if (scene.id === 'm2_trucks') return { ...filmPosition(scene.set, TRUCKS.morpheus.x, TRUCKS.morpheus.z), y: FILM_SETS[scene.set].center.y + TRUCKS.roof.height };
   if (scene.id === 'm2_mountain') return filmPosition(scene.set, MOUNTAIN.door.x, MOUNTAIN.door.z - 7);
+  if (scene.id === 'm3_bane') return filmPosition(scene.set, 0, -31);
   return filmPosition(scene.set, 0, scene.id === 'm1_lobby' ? 35 : FILM_SETS[scene.set].depth * .32);
 }

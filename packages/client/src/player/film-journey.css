@@ -29,6 +29,9 @@ body.film-burly-scene .film-sequence { bottom:184px; width:min(510px,calc(100vw 
 body.film-burly-scene .film-sequence p { margin:3px 0 7px; font-size:13px; line-height:1.5; }
 body.film-burly-scene .sandbox-interact { top:54%; }
 body.film-burly-scene .game-event { display:none; }
+body.film-bane-scene .sandbox-hotbar,body.film-bane-scene .player-ability,body.film-bane-scene .game-event,body.film-bane-scene .play-tip { display:none; }
+body.film-bane-scene .film-sequence { bottom:70px; width:min(520px,calc(100vw - 36px)); box-sizing:border-box; padding:8px 14px; }
+body.film-bane-scene .film-sequence p { margin:3px 0 6px; font-size:13px; line-height:1.5; }
 body.film-mountain-flight .sandbox-hotbar,body.film-mountain-flight .game-controls,body.film-mountain-flight .player-ability,body.film-mountain-flight .game-map,body.film-mountain-flight .game-event { display:none; }
 body.film-mountain-flight .film-sequence { bottom:34px; width:min(420px,calc(100vw - 36px)); box-sizing:border-box; padding:8px 16px; }
 body.film-mountain-flight .film-sequence p { margin:2px 0 4px; font-size:12px; line-height:1.4; }

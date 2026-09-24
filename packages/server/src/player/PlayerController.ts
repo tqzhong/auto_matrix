@@ -84,6 +84,8 @@ export class PlayerController {
       && this.sandbox.life.film.state.helChase?.phase !== 'escaped') return { error: 'Trainman 正在地铁追逐中，列车驶过后可以接入。' };
     if (['trinity', 'trainman'].includes(id) && this.sandbox?.life.film.state?.scene === 'm3_mobil_release'
       && this.sandbox.life.film.state.mobil?.phase !== 'stopped') return { error: '这个角色正在返程列车中，到站后可以接入。' };
+    if (interlude?.scene === 'm3_bane' && interlude.bane && interlude.bane.phase !== 'ready' && !interlude.completed.includes('m3_bane')
+      && id !== interlude.actor && ['bane', 'trinity'].includes(id)) return { error: '这个角色正在参与 Logos 船上的剧情交手，片段结束后可以接入。' };
     if (this.sandbox?.state.threats.some(t => t.character === id)) return { error: '这个角色正在剧情交手，结束后可以接入。' };
     const restarting = newCycle && id === 'neo' && this.sandbox?.life.film.state?.finished;
     if (!restarting && this.sandbox?.life.film.unavailable(id) && !this.sandbox.life.film.controls(agent)) return { error: '这个角色在本轮故事中已无法接入；新循环会恢复。' };
@@ -257,6 +259,9 @@ export class PlayerController {
       if (this.sandbox?.life.film.matrixEscapeFrame(agent, { movement: Math.hypot(input.x, input.z), sprint: input.sprint }, dt, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
+      if (this.sandbox?.life.film.baneFrame(agent, { focus: Boolean(input.focus), yaw: input.yaw }, dt, tick)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
       if (this.sandbox?.life.film.reloaded.frame(agent, { x: input.x, focus: Boolean(input.focus) }, dt, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
@@ -377,6 +382,8 @@ export class PlayerController {
     if (reloaded !== undefined) return reloaded;
     const catchAction = this.sandbox?.life.film.catch.handle(agent, kind, tick);
     if (catchAction !== undefined) return catchAction;
+    const baneAction = this.sandbox?.life.film.baneAction(agent, kind, tick);
+    if (baneAction !== undefined) return baneAction;
     if (kind === 'attack') {
       const helStrike = this.sandbox?.life.film.helBargainStrike(agent, tick);
       if (helStrike !== undefined) return helStrike;

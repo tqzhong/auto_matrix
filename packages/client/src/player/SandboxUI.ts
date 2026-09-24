@@ -22,6 +22,7 @@ import { AIR_RESCUE, airRescueLocked, airRescueText } from '@auto_matrix/shared'
 import { MATRIX_ESCAPE, matrixEscapeDuration, matrixEscapeLocked, matrixEscapeText } from '@auto_matrix/shared';
 import { THE_ONE, theOneDuration, theOneLocked, theOneText } from '@auto_matrix/shared';
 import { BURLY } from '@auto_matrix/shared';
+import { BANE_ENCOUNTER } from '@auto_matrix/shared';
 
 const escape = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const WEATHER = { clear: '晴朗', rain: '雨', code_storm: '代码风暴' };
@@ -257,6 +258,44 @@ export class SandboxUI {
       this.el('film-sequence-hint').textContent = `衣帽间 ${coatcheck.kills}/5 · 第 ${coatcheck.wave} 组 · 弹匣 ${coatcheck.ammo}/${HEL_COATCHECK.magazine}${coatcheck.reloadAt !== undefined ? ' · 换弹中' : ''}`;
       document.getElementById('game-objective-copy')!.textContent = '左键 / T 射击 · R 换弹 · X 闪避 · 柜台可挡子弹 · Morpheus / Seraph 掩护';
       this.el('sandbox-interact').classList.add('hidden');
+      return;
+    }
+    if (!journey.visiting && scene.id === 'm3_bane' && journey.bane) {
+      const bane = journey.bane; const phase = bane.phase;
+      const window = phase === 'gun_window' ? BANE_ENCOUNTER.gunWindow : phase === 'pipe_window' ? BANE_ENCOUNTER.pipeWindow
+        : phase === 'grapple' ? BANE_ENCOUNTER.grappleWindow : phase === 'counter' ? BANE_ENCOUNTER.counterWindow : 0;
+      const hint = phase === 'ready' ? journey.step === 0 ? 'WASD 穿过驾驶舱，去找 Trinity' : '靠近 Bane 按 G；现实世界无法使用矩阵能力'
+        : phase === 'gun_warning' ? '保险丝即将切断 · 等电枪闪光后按 X'
+          : phase === 'gun_window' ? `电枪射线 · 现在按 X · 剩余 ${(window - bane.elapsed).toFixed(1)} 秒`
+            : phase === 'grapple' ? `WASD 靠近 Bane · F 还击 ${bane.hits}/2 · 剩余 ${(window - bane.elapsed).toFixed(1)} 秒`
+              : phase === 'burning' ? '电缆灼伤双眼 · 这一伤会保留到后续剧情'
+                : phase === 'blind' ? `按住 G 辨认金色信号 · ${Math.round(bane.focus / BANE_ENCOUNTER.focusSeconds * 100)}%`
+                  : phase === 'pipe_window' ? `金色 Smith 举起铁管 · 现在按 X · 剩余 ${(window - bane.elapsed).toFixed(1)} 秒`
+                    : phase === 'counter' ? `面向金色轮廓靠近，按 F 反击 ${bane.counters}/2 · 剩余 ${(window - bane.elapsed).toFixed(1)} 秒`
+                      : phase === 'failed' ? `本次失败 · J 手记从${bane.checkpoint === 'blind' ? '失明后' : '断电前'}检查点重试`
+                        : journey.step === 2 ? 'Bane 已倒下 · 到舱口按 G 救出 Trinity' : '舱口已打开 · G 继续';
+      this.el('film-sequence').classList.remove('hidden');
+      this.el('film-sequence').classList.toggle('urgent', Boolean(window) || phase === 'failed');
+      this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = hint;
+      this.el('sandbox-trace').textContent = phase === 'blind' ? `金色感知 ${Math.round(bane.focus / BANE_ENCOUNTER.focusSeconds * 100)}%`
+        : window ? `危险窗口 ${Math.max(0, window - bane.elapsed).toFixed(1)} 秒` : 'Logos · 工程舱';
+      this.el('sandbox-trace').classList.toggle('danger', Boolean(window) || phase === 'failed');
+      this.el('sandbox-interact').classList.toggle('hidden', !['ready', 'defeated'].includes(phase)
+        || Boolean(step && distance(player.position, filmStepPosition(scene, step)) > 4));
+      this.el('sandbox-nearby').textContent = phase === 'defeated' ? journey.step === 2 ? '打开舱口 · 救出 Trinity' : '继续航程' : step?.label ?? '继续';
+      const actions = this.el('film-training-actions');
+      const dodge = actions.querySelector<HTMLButtonElement>('[data-combat="dodge"]')!;
+      const attack = actions.querySelector<HTMLButtonElement>('[data-combat="attack"]')!;
+      if (['gun_window', 'pipe_window', 'grapple', 'counter'].includes(phase)) {
+        actions.classList.remove('hidden');
+        dodge.classList.toggle('hidden', !['gun_window', 'pipe_window'].includes(phase)); dodge.disabled = !['gun_window', 'pipe_window'].includes(phase);
+        attack.classList.toggle('hidden', !['grapple', 'counter'].includes(phase)); attack.disabled = !['grapple', 'counter'].includes(phase);
+        attack.querySelector('span')!.textContent = phase === 'counter' ? '反击轮廓' : '近身还击';
+      }
+      this.el('sandbox-job').style.width = phase === 'blind' ? `${bane.focus / BANE_ENCOUNTER.focusSeconds * 100}%`
+        : window ? `${Math.max(0, (window - bane.elapsed) / window * 100)}%` : '0';
+      document.getElementById('game-objective-copy')!.textContent = hint;
       return;
     }
     if (!journey.visiting && scene.id === 'm3_hel_bargain' && journey.helBargain) {

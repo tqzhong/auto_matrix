@@ -40,6 +40,7 @@ import { GovernmentSetRenderer } from './GovernmentSetRenderer.js';
 import { MatrixEscapeRenderer } from './MatrixEscapeRenderer.js';
 import { TheOneRenderer } from './TheOneRenderer.js';
 import { MountainSetRenderer } from './MountainSetRenderer.js';
+import { LogosBaneRenderer } from './LogosBaneRenderer.js';
 
 const outdoor = new Set(['rooftop', 'plaza', 'bridge', 'street', 'courtyard', 'freeway', 'machine', 'rain', 'garden', 'desert', 'pods', 'mountain']);
 
@@ -118,6 +119,8 @@ export class FilmSetRenderer {
   private finale?: ReloadedFinaleRenderer;
   private zion?: ZionHomecomingRenderer;
   private baneCopy?: BaneCopyRenderer;
+  private logosBane?: LogosBaneRenderer;
+  private logosBanePhase?: string;
   private portalDoor?: { scene: 'm2_seraph' | 'm2_backdoors'; panel: THREE.Group };
   private oracleLetter?: THREE.Group;
   private courtyardStaff?: THREE.Group;
@@ -197,6 +200,7 @@ export class FilmSetRenderer {
         else if (set.id === 'film_adams_bridge' || set.id === 'film_extraction_car') this.meeting = new MeetingSetRenderer(this.root);
         else {
           this.build(set); this.batch();
+          if (sceneId === 'm3_bane' && set.id === 'film_logos_deck') this.logosBane = new LogosBaneRenderer(this.root);
           if (set.id === 'film_club_hel' && typeof window !== 'undefined') {
             this.helPerformers = new HelClubPerformers(this.root);
             void this.helPerformers.ready.catch(error => console.error('Club Hel 演员加载失败', error));
@@ -296,6 +300,11 @@ export class FilmSetRenderer {
     this.catchSet?.update(journey);
     this.zion?.update(journey, elapsed);
     this.baneCopy?.update(journey, elapsed, player && journey?.actor === player.id ? player.position : undefined, set?.center);
+    if (this.logosBane) {
+      const encounter = journey?.scene === 'm3_bane' && !journey.visiting ? journey.bane : undefined;
+      this.logosBane.update(encounter, journey?.step ?? 0, elapsed);
+      this.logosBanePhase = encounter?.phase;
+    }
     if (this.mobilTrain) this.updateMobilStation(journey, elapsed);
     if (this.helChaseTrain) {
       const chase = sceneId === 'm3_trainman_chase' && !journey?.visiting ? journey?.helChase : undefined;
@@ -414,6 +423,7 @@ export class FilmSetRenderer {
     if (journey?.scene === 'm2_burly' && !['ready', 'staff_ready', 'flight_ready'].includes(journey.burly?.phase ?? 'ready')) this.marker.visible = false;
     if (journey?.scene === 'm2_chateau' && journey.step === 0 && !['ready', 'landing'].includes(journey.chateau?.phase ?? 'ready')) this.marker.visible = false;
     if (journey?.scene === 'm2_mountain' && journey.step === 2 && !['ready', 'failed'].includes(journey.mountain?.phase ?? 'ready')) this.marker.visible = false;
+    if (journey?.scene === 'm3_bane' && journey.step === 1 && journey.bane?.phase !== 'ready') this.marker.visible = false;
     if (journey?.scene === 'm2_garage' && journey.garage?.phase === 'riding') this.marker.visible = false;
     if (journey && pillLocked(journey)) this.marker.visible = false;
     if (journey && interrogationLocked(journey)) this.marker.visible = false;
@@ -456,6 +466,16 @@ export class FilmSetRenderer {
     (this.scene.background as THREE.Color).setHex(palette.sky);
     const fog = this.scene.fog as THREE.FogExp2; fog.color.setHex(palette.sky); fog.density = palette.fog;
     this.scene.environmentIntensity = outdoor.has(this.current.architecture) ? .8 : .6;
+    if (this.logosBane) {
+      const phase = this.logosBanePhase;
+      const cut = phase && !['ready', 'gun_warning'].includes(phase);
+      const blind = phase && ['blind', 'pipe_window', 'counter', 'failed'].includes(phase);
+      const color = blind ? 0x050a0c : cut ? 0x111b1e : 0x26333a;
+      fog.color.setHex(color); fog.density = blind ? .016 : .004;
+      (this.scene.background as THREE.Color).setHex(color);
+      this.scene.environmentIntensity = blind ? .025 : cut ? .12 : .52;
+      return { color: blind ? 0x7d92a0 : 0xc4d5da, ambient: blind ? .065 : cut ? .18 : .68, sun: blind ? .01 : cut ? .04 : .13 };
+    }
     if (this.lobby) {
       (this.scene.fog as THREE.FogExp2).density = .003; (this.scene.fog as THREE.FogExp2).color.setHex(0x182820);
       this.scene.environmentIntensity = .75;
@@ -2010,6 +2030,7 @@ export class FilmSetRenderer {
     this.catchSet?.dispose(); this.catchSet = undefined;
     this.zion?.dispose(); this.zion = undefined;
     this.baneCopy?.dispose(); this.baneCopy = undefined;
+    this.logosBane?.dispose(); this.logosBane = undefined; this.logosBanePhase = undefined;
     this.portalDoor = undefined; this.oracleLetter = undefined; this.courtyardStaff = undefined; this.courtyardBirds = []; this.courtyardDisturbedAt = undefined;
     this.exileDessert = undefined; this.bookDoor = undefined; this.chateauVolley = undefined; this.chateauVolleyTick = undefined; this.chateauDoor = undefined;
     this.garageCar = undefined; this.garageGhosts = [];
