@@ -845,6 +845,23 @@ test('the pill camera supports seated first person and releases movement when th
   assert.ok(game.group.position.z > game.state.position.z + .4, 'ordinary movement must resume clear of the chair');
 });
 
+test('the red pill hands the first-person camera to the cracked mirror when the performance ends', t => {
+  const game = setup(t, Math.PI);
+  game.state.currentLocation = 'film_lafayette';
+  const gesture = { phase: 'taking' as const, elapsed: 12.8, choice: 'red' as const, role: 'neo' as const };
+  const root = pillRoot({ ...gesture, approach: { x: 0, z: -3.3, yaw: Math.PI } });
+  game.state.position = filmPosition('film_lafayette', root.x, root.z); game.state.rotation = root.yaw;
+  game.state.currentAction = { type: 'idle', parameters: { pills: gesture }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.key('KeyV'); game.key('KeyV', false); game.step(.15);
+  const mirror = filmPosition('film_lafayette', -10, -17.62);
+  const mirrorYaw = Math.atan2(mirror.x - game.state.position.x, mirror.z - game.state.position.z);
+  game.state.currentAction = null; game.state.rotation = mirrorYaw; game.step(.15);
+  assert.equal(game.controls.performing, false);
+  assert.ok(Math.abs(angle(game.yaw(), mirrorYaw)) < .05, 'the first-person view should follow the authored mirror cue');
+  game.key('KeyV'); game.key('KeyV', false); game.step(.6);
+  assert.ok(Math.abs(angle(game.yaw(), mirrorYaw)) < .15, 'third person should keep the mirror in front of Neo');
+});
+
 const oneEncounter = (kind: TheOneEncounter['kind'], phase: TheOneEncounter['phase'], elapsed: number): TheOneEncounter => ({
   kind, phase, elapsed, attempt: 0, checkpoint: kind === 'death' ? 'door' : kind === 'return' ? 'bullets' : 'phone',
   signal: 0, hits: 0, blocks: 0, deadline: 0, altitude: kind === 'flight' ? 18 : 0, flightX: 2, flightZ: -1, resolved: [],

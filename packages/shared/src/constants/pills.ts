@@ -7,7 +7,7 @@ export interface PillEncounter {
   approach: { x: number; z: number; yaw: number };
 }
 export type PillGesture = Pick<PillEncounter, 'phase' | 'elapsed' | 'choice'> & { role: 'neo' | 'morpheus' };
-export const PILL_ROOM = { seat: 1.75, z: -6, tableZ: -8.4, tableY: 1.65, cup: { x: 1.1, y: 2.03, z: -7.65 } } as const;
+export const PILL_ROOM = { seat: 1.75, z: -6, tableZ: -8.4, tableY: 1.65, cup: { x: 1.1, y: 2.03, z: -7.65 }, mirror: { x: -10, z: -17.62 } } as const;
 export const PILL_TIMING = { offer: 5, take: 13, transfer: 1.8, swallow: 3.65, liftCup: 5.3, replaceCup: 8.6 } as const;
 export const pillEase = (time: number, from: number, to: number): number => {
   const t = Math.max(0, Math.min(1, (time - from) / (to - from))); return t * t * (3 - 2 * t);

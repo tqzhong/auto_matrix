@@ -408,8 +408,8 @@ test('pills require the live choice position and red cannot be selected through 
   h.command('reflect:agency'); assert.equal(state.step, 1);
   h.command('pill:red'); assert.equal(state.step, 1);
   for (let frame = 0; frame < 131; frame++) h.players.step(.1, true, h.tick());
-  assert.equal(state.step, 2); assert.equal(h.sandbox.state.neoLife!.choices.pill, 'red');
-  h.command('next'); assert.equal(h.scene().id, 'm1_mirror');
+  assert.equal(state.scene, 'm1_mirror'); assert.equal(state.step, 0);
+  assert.equal(h.sandbox.state.neoLife!.choices.pill, 'red');
 });
 
 test('blue pill returns to daily life with money and evidence preserved', () => {

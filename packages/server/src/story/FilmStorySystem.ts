@@ -1072,7 +1072,13 @@ export class FilmStorySystem {
       morpheus.currentAction.parameters.pills = { phase: 'done', elapsed: pills.elapsed, choice: pills.choice, role: 'morpheus' };
       life.choices.pill = pills.choice!;
       if (pills.choice === 'blue') { this.releaseCast(); delete life.journey; this.returnToLife(tick); }
-      else { life.philosophy.agency++; this.advance('红色药丸已经吞下。Morpheus 示意接线组开始定位，裂镜就在房间另一侧。', agent, tick); }
+      else {
+        life.philosophy.agency++;
+        this.advance('红色药丸已经吞下。Morpheus 示意接线组开始定位，裂镜就在房间另一侧。', agent, tick);
+        this.command(agent, 'next', tick);
+        const mirror = filmPosition('film_lafayette', PILL_ROOM.mirror.x, PILL_ROOM.mirror.z);
+        agent.rotation = Math.atan2(mirror.x - agent.position.x, mirror.z - agent.position.z);
+      }
     }
   }
   crossingFrame(agent: AgentState, dt: number, tick: number): void {

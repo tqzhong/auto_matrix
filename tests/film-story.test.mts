@@ -2413,6 +2413,10 @@ test('the entire film route completes through interactions, driving and real com
           h.advance();
         }
       }
+      if (scene.id === 'm1_pills' && index === scene.steps.length - 1) {
+        assert.equal(state.scene, 'm1_mirror', 'the red pill starts the mirror scene without an extra command');
+        continue;
+      }
       assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`);
       if (scene.id === 'm1_jump' && index === 0) {
         h.command('act');
@@ -2421,7 +2425,7 @@ test('the entire film route completes through interactions, driving and real com
     }
     assert.ok(state.completed.includes(scene.id));
     if (scene.id === 'm1_phone_escape') h.advance(3); // Hold the connected booth shot through the truck impact.
-    if (!['m1_bridge', 'm1_bug'].includes(scene.id)) h.command('next');
+    if (!['m1_bridge', 'm1_bug', 'm1_pills'].includes(scene.id)) h.command('next');
     if (scene.id === 'm1_office_escape' && state.office?.crossing !== undefined) for (let frame = 0; frame < 65; frame++) h.players.step(.1, true, h.tick());
   }
   assert.equal(state.finished, true); assert.equal(state.completed.length, FILM_SCENES.length);

@@ -910,7 +910,7 @@ export class FilmSetRenderer {
       this.box(this.brass, -10, 5, -18, 6.4, 9.6, .4, .12);
       this.box(this.wood, -10, 5, -17.75, 5.95, 9.15, .16, .08);
       this.mirror = new Reflector(this.own(new THREE.PlaneGeometry(5.6, 8.8)), { color: 0xb4beb8, textureWidth: 768, textureHeight: 1024, clipBias: .003, multisample: 0 });
-      this.mirror.position.set(-10, 5, -17.62); this.mirror.userData.dynamic = true; this.root.add(this.mirror);
+      this.mirror.position.set(PILL_ROOM.mirror.x, 5, PILL_ROOM.mirror.z); this.mirror.userData.dynamic = true; this.root.add(this.mirror);
       const shader = this.mirror.material as THREE.ShaderMaterial;
       shader.uniforms.liquidTime = { value: 0 }; shader.uniforms.liquidAmount = { value: 0 };
       shader.fragmentShader = shader.fragmentShader.replace('void main()', 'uniform float liquidTime;\nuniform float liquidAmount;\nvoid main()')

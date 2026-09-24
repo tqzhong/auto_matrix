@@ -249,6 +249,7 @@ export class PlayerControls {
 
   update(delta: number, state: AgentState, group: THREE.Group, running: boolean, phoneExit = false): void {
     if (!this.id) return;
+    const redPillEnded = this.motion.pills?.choice === 'red' && !state.currentAction?.parameters.pills && state.currentLocation === 'film_lafayette';
     if (this.phoneExit && !phoneExit) this.performing = false;
     this.phoneExit = phoneExit;
     this.running = running;
@@ -317,6 +318,7 @@ export class PlayerControls {
     if ((state.currentAction?.parameters.lobbyEntry as MotionInput['lobbyEntry'])?.phase === 'checkpoint') this.performing = true;
     if (phoneExit) this.performing = true;
     if (this.wasPerforming && !this.performing) this.yaw = this.movementYaw = this.facing;
+    if (redPillEnded) this.yaw = this.movementYaw = this.facing = state.rotation;
     this.wasPerforming = this.performing;
     this.motion.armed = this.firearm || state.currentAction?.parameters.armed === true;
     this.motion.seated = state.currentAction?.parameters.seated === true;

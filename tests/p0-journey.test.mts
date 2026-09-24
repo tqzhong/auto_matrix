@@ -164,7 +164,12 @@ test('P0 runs continuously from daily contact through a clean escape and the red
   assert.equal(h.state().office?.outcome, 'escaped'); h.command('next');
   assert.ok(h.state().skipped?.includes('m1_interrogation')); answerSecondCall(h); meetAndTravel(h, false); reachPillChoice(h);
   h.command('pill:red'); h.frames(14); assert.equal(h.sandbox.state.neoLife!.choices.pill, 'red');
-  assert.equal(h.state().step, 2); h.command('next'); assert.equal(h.state().scene, 'm1_mirror');
+  assert.equal(h.state().scene, 'm1_mirror', 'the mirror begins as soon as Neo finishes taking the red pill');
+  assert.equal(h.state().step, 0);
+  const mirror = filmPosition('film_lafayette', -10, -17.62);
+  const mirrorYaw = Math.atan2(mirror.x - h.neo.position.x, mirror.z - h.neo.position.z);
+  assert.ok(Math.cos(h.neo.rotation - mirrorYaw) > .998, 'Neo faces the cracked mirror rather than the exit door');
+  h.reload(); assert.equal(h.state().scene, 'm1_mirror');
   assert.deepEqual(h.state().completed.slice(-5), ['m1_ledge', 'm1_wake_again', 'm1_bridge', 'm1_bug', 'm1_pills']);
 });
 

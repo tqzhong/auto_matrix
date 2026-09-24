@@ -36,14 +36,14 @@ test('Morpheus waits for an explicit pill choice and red completes only after th
   assert.equal(h.state().pills?.choice, 'red');
   h.frames(3); assert.equal(h.state().step, 1); assert.ok(!h.state().completed.includes('m1_pills'));
   h.command('blue'); assert.equal(h.state().pills?.choice, 'red');
-  h.frames(12); assert.equal(h.state().step, 2); assert.equal(h.sandbox.state.neoLife!.choices.pill, 'red');
+  h.frames(12); assert.equal(h.state().scene, 'm1_mirror'); assert.equal(h.state().step, 0);
+  assert.equal(h.sandbox.state.neoLife!.choices.pill, 'red');
   assert.equal(h.state().completed.filter(id => id === 'm1_pills').length, 1);
   assert.equal(playerBlocked(h.neo.position, true), false, 'Neo must finish clear of the chair');
   const agency = h.sandbox.state.neoLife!.philosophy.agency; h.command('pill:red'); h.frames(1);
   assert.equal(h.sandbox.state.neoLife!.philosophy.agency, agency);
   const beforeMirror = { ...h.neo.position };
-  h.command('next'); assert.equal(h.state().scene, 'm1_mirror');
-  assert.deepEqual(h.neo.position, beforeMirror, 'continuing in the same room must not teleport Neo back to the doorway');
+  h.frames(1); assert.deepEqual(h.neo.position, beforeMirror, 'the same-room transition must not teleport Neo back to the doorway');
 });
 
 test('blue takes the same physical sequence before preserving the daily-life save', () => {
@@ -68,7 +68,7 @@ test('pill gestures survive pause, disconnection, save restore and retry without
   h.players.possess('player', 'neo', h.tick());
   assert.deepEqual(h.neo.position, position); assert.deepEqual(h.neo.currentAction!.parameters.pills, pose);
   h.command('retry'); assert.deepEqual(h.state().pills, beat); assert.deepEqual(h.neo.position, position);
-  h.frames(12); assert.equal(h.state().step, 2);
+  h.frames(12); assert.equal(h.state().scene, 'm1_mirror'); assert.equal(h.state().step, 0);
 });
 
 test('a pill performance reserves Morpheus and rejects movement, combat and remote choices', () => {
