@@ -23,15 +23,15 @@ export class MeetingPerformance {
     tube(this.scanner, 0, .045, 0, .22, .09, black);
     tube(this.scanner, 0, .38, 0, .18, .57, glass);
     for (const y of [.11, .67]) tube(this.scanner, 0, y, 0, .21, .055, metal);
-    for (const x of [-.37, .37]) tube(this.scanner, x, .59, 0, .034, 1.05, metal);
-    this.box(this.scanner, 0, 1.11, 0, .83, .08, .13, metal);
-    this.box(this.scanner, -.51, .89, -.02, .36, .55, .09, circuit);
-    this.box(this.scanner, -.51, .98, -.077, .24, .24, .024, black);
-    this.box(this.scanner, -.51, .98, -.093, .19, .18, .009, this.screen);
-    for (let i = 0; i < 6; i++) this.box(this.scanner, -.6 + i % 3 * .09, .77 - Math.floor(i / 3) * .09, -.081, .04, .055, .025, metal);
-    for (const x of [-.31, .31]) this.box(this.scanner, x, .92, 0, .09, .23, .14, black);
-    this.scanner.add(this.piston); tube(this.piston, 0, .9, 0, .035, .67, metal);
-    this.box(this.piston, 0, 1.15, 0, .52, .09, .12, black);
+    for (const x of [-.37, .37]) tube(this.scanner, x, .45, 0, .034, .75, metal);
+    this.box(this.scanner, 0, .86, 0, .83, .08, .13, metal);
+    this.box(this.scanner, -.51, .68, -.02, .36, .42, .09, circuit);
+    this.box(this.scanner, -.51, .75, -.077, .24, .19, .024, black);
+    this.box(this.scanner, -.51, .75, -.093, .19, .16, .009, this.screen);
+    for (let i = 0; i < 6; i++) this.box(this.scanner, -.6 + i % 3 * .09, .59 - Math.floor(i / 3) * .09, -.081, .04, .055, .025, metal);
+    for (const x of [-.31, .31]) this.box(this.scanner, x, .75, 0, .09, .14, .14, black);
+    this.scanner.add(this.piston); tube(this.piston, 0, .63, 0, .035, .47, metal);
+    this.box(this.piston, 0, .86, 0, .52, .09, .12, black);
     for (let i = 0; i < 7; i++) {
       const segment = this.mesh(this.bug, new THREE.SphereGeometry(.07 - Math.abs(i - 3) * .008, 12, 8), i % 2 ? metal : black, 0, (i - 3) * .07, 0); segment.scale.set(.75, 1, .65);
       if (i > 0 && i < 6) for (const side of [-1, 1]) {
@@ -146,9 +146,9 @@ export class MeetingPerformance {
       this.scanner.position.copy(this.point(center.x, center.y, center.z));
       const worldRotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, -pose.discard * Math.PI / 2));
       this.scanner.quaternion.copy(this.rig.root.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(worldRotation));
-      this.piston.position.y = pose.pump * .16;
+      this.piston.position.y = pose.pump * .12;
       this.scanner.updateWorldMatrix(true, true);
-      for (const [side, offset] of [['R', new THREE.Vector3(-.2, 1.15 + this.piston.position.y, 0)], ['L', new THREE.Vector3(-.31, .9, 0)]] as const) {
+      for (const [side, offset] of [['R', new THREE.Vector3(-.2, .86 + this.piston.position.y, 0)], ['L', new THREE.Vector3(-.31, .75, 0)]] as const) {
         const x = side === 'R' ? new THREE.Vector3(0, -1, 0) : new THREE.Vector3(-1, 0, 0); const y = new THREE.Vector3(0, 0, 1);
         const grip = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(x, y, x.clone().cross(y)));
         this.hand(side, this.rig.root.worldToLocal(this.scanner.localToWorld(offset.clone())), .95, worldRotation.clone().multiply(grip));

@@ -243,6 +243,9 @@ test('the actual car occupants fit below the roof and Trinity holds both scanner
           patient!.root.position.set(center.x + patientPosition.x, center.y - 1, center.z + patientPosition.z); patient!.root.rotation.y = patientPosition.yaw;
           const patientMotion = newMotion(); const patientInput = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, meeting: patientGesture };
           models.animate(patient!, advanceMotion(patientMotion, patientInput, 0), patientMotion, patientInput, 0); patient!.root.updateMatrixWorld(true);
+          const eye = patient!.bones.get('head')!.localToWorld(new THREE.Vector3(0, .1, .13));
+          const scannerTop = new THREE.Box3().setFromObject(scanner).max.y;
+          assert.ok(scannerTop < eye.y - .18, `the scanner's upper bar blocks Neo's face: top ${scannerTop}, eye ${eye.y}`);
           const probe = scanner.localToWorld(new THREE.Vector3()); let distance = Infinity;
           const point = new THREE.Vector3();
           for (const part of patient!.wardrobe) if (part.mesh instanceof THREE.SkinnedMesh && (part.mesh.material as THREE.Material).name === 'Office skin') {
@@ -253,7 +256,7 @@ test('the actual car occupants fit below the roof and Trinity holds both scanner
           }
           assert.ok(distance < .13, `the suction cup must meet Neo's actual abdomen: gap ${distance}`);
         }
-        for (const [side, grip] of [['R', new THREE.Vector3(-.2, 1.15 + pump.position.y, 0)], ['L', new THREE.Vector3(-.31, .9, 0)]] as const) {
+        for (const [side, grip] of [['R', new THREE.Vector3(-.2, .86 + pump.position.y, 0)], ['L', new THREE.Vector3(-.31, .75, 0)]] as const) {
           const palm = rig.bones.get('wrist_' + side)!.localToWorld(new THREE.Vector3(side === 'R' ? .06 : -.06, -.17, .015));
           const gap = palm.distanceTo(scanner.localToWorld(grip.clone()));
           assert.ok(gap < .045, `Trinity must actually reach the ${side} scanner grip in ${phase}: ${gap}; shoulder ${rig.bones.get('shoulder_' + side)!.getWorldPosition(new THREE.Vector3()).sub(new THREE.Vector3(center.x, 0, center.z + MEETING_CAR.z)).toArray()}; grip ${scanner.localToWorld(grip.clone()).sub(new THREE.Vector3(center.x, 0, center.z + MEETING_CAR.z)).toArray()}`);
