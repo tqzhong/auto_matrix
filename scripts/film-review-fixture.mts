@@ -156,17 +156,22 @@ if (scene.id === 'm1_wake_again' && ['wake-ringing', 'wake-listening', 'wake-dec
   }
   sandbox.life.film.state!.checkpoint = { ...actor.position };
 }
-if (['meeting', 'meeting-clear', 'meeting-scan', 'meeting-drive', 'meeting-driving', 'meeting-arrival'].includes(process.argv[3]) && scene.id === 'm1_bridge') {
+if (['meeting', 'meeting-clear', 'meeting-roll', 'meeting-stop', 'meeting-scan', 'meeting-drive', 'meeting-driving', 'meeting-arrival'].includes(process.argv[3]) && scene.id === 'm1_bridge') {
   const journey = sandbox.state.neoLife!.journey!;
   journey.office = { alert: 0, suspicion: [], waypoints: [], lastTick: 0, guide: '', outcome: process.argv[3] === 'meeting-clear' ? 'escaped' : 'captured', bugged: process.argv[3] !== 'meeting-clear' };
   actor.position = filmStepPosition(scene, scene.steps[0]); actor.position.z += 3.2; actor.rotation = Math.PI;
   journey.checkpoint = { ...actor.position };
-  if (['meeting-scan', 'meeting-drive', 'meeting-driving', 'meeting-arrival'].includes(process.argv[3])) {
-    actor.controller = 'player'; sandbox.life.film.tick(0); sandbox.life.film.command(actor, 'act', 0);
-    for (let frame = 0; frame < 81; frame++) sandbox.life.film.meetingFrame(actor, false, .1, 0);
-    sandbox.life.film.command(actor, 'meeting:stay', 0);
-    for (let frame = 0; frame < 81; frame++) sandbox.life.film.meetingFrame(actor, false, .1, 0);
-    for (let frame = 0; frame < 24; frame++) sandbox.life.film.meetingFrame(actor, true, .1, 0);
+  if (['meeting-roll', 'meeting-stop', 'meeting-scan', 'meeting-drive', 'meeting-driving', 'meeting-arrival'].includes(process.argv[3])) {
+    actor.controller = 'player'; sandbox.life.film.tick(0);
+    for (let frame = 0; frame < 71; frame++) sandbox.life.film.bridgeArrivalFrame(actor, .1, 0);
+    sandbox.life.film.command(actor, 'act', 0);
+    const boardingFrames = process.argv[3] === 'meeting-roll' ? 110 : 151;
+    for (let frame = 0; frame < boardingFrames; frame++) sandbox.life.film.meetingFrame(actor, false, .1, 0);
+    if (!['meeting-roll', 'meeting-stop'].includes(process.argv[3])) {
+      sandbox.life.film.command(actor, 'meeting:stay', 0);
+      for (let frame = 0; frame < 81; frame++) sandbox.life.film.meetingFrame(actor, false, .1, 0);
+      for (let frame = 0; frame < 24; frame++) sandbox.life.film.meetingFrame(actor, true, .1, 0);
+    }
     if (['meeting-drive', 'meeting-driving', 'meeting-arrival'].includes(process.argv[3])) {
       for (let frame = 0; frame < 140; frame++) sandbox.life.film.meetingFrame(actor, true, .1, 0);
       sandbox.life.film.command(actor, 'reflect:trust', 0);

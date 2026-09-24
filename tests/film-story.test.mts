@@ -2378,7 +2378,7 @@ test('the entire film route completes through interactions, driving and real com
         else if (scene.id === 'm1_download') for (let frame = 0; frame < 101; frame++) h.players.step(.1, true, h.tick());
         else if (scene.id === 'm1_red_dress') for (let frame = 0; frame < 121; frame++) h.players.step(.1, true, h.tick());
         else if (scene.id === 'm1_bridge') {
-          for (let frame = 0; frame < 81; frame++) h.players.step(.1, true, h.tick());
+          for (let frame = 0; frame < 151; frame++) h.players.step(.1, true, h.tick());
           h.command('meeting:stay'); assert.equal(state.scene, 'm1_bug'); break;
         } else if (scene.id === 'm1_bug') {
           if (index === 0) {

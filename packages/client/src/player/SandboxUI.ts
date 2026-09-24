@@ -4,7 +4,7 @@ import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_NAMES, filmReflections, 
 import './sandbox.css';
 import { renderNeoLife } from './NeoLifePanel.js';
 import { interrogationLocked, interrogationPose } from '@auto_matrix/shared';
-import { meetingLocked, MEETING_TIMING } from '@auto_matrix/shared';
+import { meetingBoardPoint, meetingLocked, MEETING_TIMING } from '@auto_matrix/shared';
 import { filmPosition, HOTEL_DOOR_PROGRESS } from '@auto_matrix/shared';
 import { CHATEAU, MOUNTAIN, GARAGE, TRUCKS } from '@auto_matrix/shared';
 import { workdayLocked } from '@auto_matrix/shared';
@@ -187,6 +187,11 @@ export class SandboxUI {
 
   private updateFilm(player: AgentState, state: SandboxState): void {
     const journey = state.neoLife!.journey!; const scene = FILM_SCENE_BY_ID[journey.scene]; const step = scene.steps[journey.step];
+    const bridgeDoor = scene.id === 'm1_bridge' && journey.step === 1 && journey.bridgeArrival?.parkedRoadTime !== undefined
+      ? meetingBoardPoint(journey.bridgeArrival) : undefined;
+    const stepTarget = bridgeDoor ? filmPosition(scene.set, bridgeDoor.x, bridgeDoor.z)
+      : scene.id === 'm1_bug' && journey.step === 1 && journey.meeting?.phase === 'done' ? player.position
+        : step ? filmStepPosition(scene, step) : undefined;
     const blackout = this.el('film-blackout');
     if (!journey.visiting) {
       if (this.previousFilmScene === 'm1_mirror' && scene.id === 'm1_pod') blackout.classList.add('pod-reveal');
@@ -206,7 +211,8 @@ export class SandboxUI {
     this.el('sandbox-clock').textContent = `${FILM_NAMES[shown.film]} · 第 ${FILM_SCENES.indexOf(shown) + 1} 段`;
     this.el('sandbox-weather').textContent = set.world === 'real' ? '真实世界' : ({ day: '日间', night: '夜间', warm: '室内', cold: '室内', white: '程序空间', storm: '暴雨', sunrise: '日出' })[set.light];
     this.el('sandbox-interact').classList.toggle('hidden', Boolean(step && !journey.visiting && !journey.finished
-      && !filmStepActionReady(scene, step, player.position, player.isInMatrix)));
+      && !(bridgeDoor || scene.id === 'm1_bug' && journey.step === 1 && journey.meeting?.phase === 'done'
+        ? player.isInMatrix && distance(player.position, stepTarget!) <= 4 : filmStepActionReady(scene, step, player.position, player.isInMatrix))));
     this.el('sandbox-nearby').textContent = journey.visiting ? '回访场景 · J 返回剧情' : journey.finished ? '三部曲已完成 · 查看手记' : !step ? '场景完成 · 继续下一段' : step.kind === 'reflect' ? '打开手记，记录反思' : journey.fighting ? `战斗中 · 剩余 ${state.threats.filter(t => t.scene === scene.id).length}` : step.label;
     this.el('sandbox-job').style.width = journey.started !== undefined && step ? `${Math.min(100, (this.tick - journey.started) / ((step.seconds ?? 3) * 2) * 100)}%` : '0';
     document.getElementById('game-objective')!.textContent = journey.visiting ? set.name : scene.title;
@@ -1203,7 +1209,7 @@ export class SandboxUI {
     if (scene.id === 'm1_interrogation' && step && !journey.interrogation && !journey.visiting)
       this.el('sandbox-interact').classList.toggle('hidden', distance(player.position, filmStepPosition(scene, step)) > 4);
     if (step && !journey.visiting) {
-      const target = filmStepPosition(scene, step); const direction = Math.atan2(target.x - player.position.x, target.z - player.position.z) - player.rotation;
+      const target = stepTarget!; const direction = Math.atan2(target.x - player.position.x, target.z - player.position.z) - player.rotation;
       this.el('sandbox-waypoint').innerHTML = `<span style="transform:rotate(${-direction}rad)">↑</span>${step.label} <b>${Math.round(distance(target, player.position))} m</b>`;
     } else this.el('sandbox-waypoint').textContent = journey.visiting ? '回访不会改变剧情进度' : '本场景已记录';
   }
@@ -1265,7 +1271,10 @@ export class SandboxUI {
     const ctx = canvas.getContext('2d')!; const player = this.player;
     const journey = this.state.neoLife?.journey; const scene = journey && FILM_SCENE_BY_ID[journey.scene]; const step = scene?.steps[journey!.step];
     if (journey?.actor === player.id && !journey.visiting && scene && step) {
-      const position = filmStepPosition(scene, step);
+      const door = scene.id === 'm1_bridge' && journey.step === 1 && journey.bridgeArrival?.parkedRoadTime !== undefined
+        ? meetingBoardPoint(journey.bridgeArrival) : undefined;
+      const position = door ? filmPosition(scene.set, door.x, door.z)
+        : scene.id === 'm1_bug' && journey.step === 1 && journey.meeting?.phase === 'done' ? player.position : filmStepPosition(scene, step);
       ctx.strokeStyle = '#eac987'; ctx.beginPath(); ctx.arc(180 + (position.x - player.position.x) * .75, 115 + (position.z - player.position.z) * .75, 4, 0, Math.PI * 2); ctx.stroke();
     }
     for (const node of [...this.state.nodes, ...this.state.incidents, ...this.state.structures]) {

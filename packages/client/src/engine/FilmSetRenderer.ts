@@ -10,6 +10,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { FILM_SETS, FILM_SCENE_BY_ID, OPENING_ESCAPE, openingTruckPose, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, PILL_ROOM, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, mirrorSilver, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, GARAGE, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, EXILES, CHATEAU, awakeningLocked, trainingLocked, phoneLocked, windowOpening, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type FilmJourney, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
 import { OPENING_HOTEL } from '@auto_matrix/shared';
+import { meetingBoardPoint, meetingRoot } from '@auto_matrix/shared';
 import { LobbySetRenderer } from './LobbySetRenderer.js';
 import { OfficeSetRenderer } from './OfficeSetRenderer.js';
 import { FreewaySetRenderer } from './FreewaySetRenderer.js';
@@ -474,7 +475,13 @@ export class FilmSetRenderer {
     if (journey && windowOpening(journey)) this.marker.visible = false;
     if (journey?.scene === 'm1_dejavu' && journey.step === 0 && journey.ambush) this.marker.visible = false;
     if (this.marker.visible && step && scene) {
-      const position = scene.id === 'm2_burly' && journey?.burly?.phase === 'staff_ready' ? filmPosition(scene.set, BURLY.staff.x, BURLY.staff.z)
+      const bridgeDoor = scene.id === 'm1_bridge' && journey?.step === 1 && journey.bridgeArrival?.parkedRoadTime !== undefined
+        ? meetingBoardPoint(journey.bridgeArrival) : undefined;
+      const carSeat = scene.id === 'm1_bug' && journey?.step === 1 && journey.meeting?.phase === 'done'
+        ? meetingRoot(journey.meeting, 'neo') : undefined;
+      const position = bridgeDoor ? filmPosition(scene.set, bridgeDoor.x, bridgeDoor.z)
+        : carSeat ? filmPosition(scene.set, carSeat.x, carSeat.z)
+        : scene.id === 'm2_burly' && journey?.burly?.phase === 'staff_ready' ? filmPosition(scene.set, BURLY.staff.x, BURLY.staff.z)
         : scene.id === 'm2_chateau' && journey?.chateau?.phase === 'landing' ? filmStepPosition(scene, scene.steps[1])
         : step.kind === 'drive' && journey?.ride ? filmPosition(scene.set, 14, FREEWAY_FINISH) : filmStepPosition(scene, step);
       if (scene.id === 'm1_ledge' && journey?.office?.climbed !== undefined) position.y -= 32;

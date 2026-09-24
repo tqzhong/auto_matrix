@@ -10,7 +10,7 @@ import { LobbyCombatSystem } from './LobbyCombatSystem.js';
 import { HelCoatcheckSystem } from './HelCoatcheckSystem.js';
 import { OfficeEscapeSystem } from './OfficeEscapeSystem.js';
 import { INTERROGATION_CAST, INTERROGATION_ROOM, INTERROGATION_TIMING, interrogationLocked, interrogationRoot } from '@auto_matrix/shared';
-import { BRIDGE_TAIL, BRIDGE_ARRIVAL_SECONDS, MEETING_CAR, MEETING_CAST, MEETING_TIMING, bridgeArrivalPose, meetingLocked, meetingRoot, type MeetingEncounter } from '@auto_matrix/shared';
+import { BRIDGE_TAIL, BRIDGE_ARRIVAL_SECONDS, MEETING_CAR, MEETING_CAST, MEETING_DRIVE_SECONDS, MEETING_TIMING, bridgeArrivalPose, meetingBoardPoint, meetingCarPose, meetingLocked, meetingRollRoadTime, meetingRoot, type MeetingEncounter } from '@auto_matrix/shared';
 import { LAFAYETTE, LAFAYETTE_WELCOME, LAFAYETTE_KNOCK_SECONDS, HOTEL_ROUTE_LENGTH, HOTEL_DOOR_PROGRESS, hotelRoutePose, hotelRouteProgress, lafayetteKnocking, lafayetteKnockRoot, lafayetteWelcomeLocked, lafayetteWelcomeRoot, filmSetAt } from '@auto_matrix/shared';
 import { OFFICE_WORKDAY, OFFICE_DELIVERY_SECONDS, officeCourierRoot, officeRecipientRoot, workdayLocked, workdayText } from '@auto_matrix/shared';
 import { APARTMENT, WAKE_CALL, apartmentAfter, apartmentDoor, apartmentLocked, apartmentText, wakeCallLocked, wakeCallRoot, wakeCallText, lifeRoomCenter, type ApartmentPhase, type WakeCallPhase } from '@auto_matrix/shared';
@@ -1147,10 +1147,19 @@ export class FilmStorySystem {
       approach: { ...MEETING_CAR.approach, yaw: -Math.PI / 2 } };
     if (encounter.phase === 'located' && focus) { encounter.phase = 'removing'; encounter.elapsed = 0; }
     const duration = MEETING_TIMING[encounter.phase as keyof typeof MEETING_TIMING];
-    if (duration && (encounter.phase !== 'removing' || focus)) encounter.elapsed = Math.min(duration, encounter.elapsed + Math.min(.1, dt));
+    const step = Math.min(.1, dt);
+    if (duration && (encounter.phase !== 'removing' || focus)) encounter.elapsed = Math.min(duration, encounter.elapsed + step);
+    if (encounter.roadTime !== undefined) {
+      if (encounter.phase === 'rolling') encounter.roadTime = meetingRollRoadTime(encounter.elapsed);
+      else if (['scanning', 'located', 'removing', 'discarding', 'done', 'driving'].includes(encounter.phase)) {
+        const ramp = Math.min(1, encounter.elapsed / 2);
+        encounter.roadTime = Math.min(MEETING_DRIVE_SECONDS, encounter.roadTime + step * (encounter.phase === 'scanning' ? ramp * ramp * (3 - 2 * ramp) : 1));
+      }
+    }
     let finish = false;
     if (duration && encounter.elapsed >= duration) {
-      if (encounter.phase === 'boarding') { encounter.phase = 'choice'; encounter.elapsed = 0; }
+      if (encounter.phase === 'boarding') { encounter.phase = encounter.roadTime === 0 ? 'rolling' : 'choice'; encounter.elapsed = 0; }
+      else if (encounter.phase === 'rolling') { encounter.phase = 'choice'; encounter.elapsed = 0; }
       else if (encounter.phase === 'reconsidering') { this.acceptMeeting(agent, tick); return; }
       else if (encounter.phase === 'scanning') { encounter.phase = encounter.bugged ? 'located' : 'done'; encounter.elapsed = 0; finish = !encounter.bugged; }
       else if (encounter.phase === 'removing') {
@@ -1159,13 +1168,18 @@ export class FilmStorySystem {
       } else if (encounter.phase === 'discarding') { encounter.phase = 'done'; encounter.elapsed = 0; finish = true; }
       else if (encounter.phase === 'driving') { encounter.phase = 'parked'; encounter.elapsed = 0; }
     }
+    if (encounter.phase === 'driving' && encounter.roadTime !== undefined && encounter.roadTime >= MEETING_DRIVE_SECONDS) {
+      encounter.phase = 'parked'; encounter.elapsed = 0;
+    }
     for (const role of ['neo', ...MEETING_CAST] as const) {
       const actor = this.world.agents.get(role)!; const pose = meetingRoot(encounter, role);
       actor.position = filmPosition(this.scene!.set, pose.x, pose.z); actor.rotation = pose.yaw;
       actor.velocity = { x: 0, y: 0, z: 0 }; actor.currentLocation = this.scene!.set; actor.isInMatrix = true;
-      actor.currentAction = { type: 'idle', parameters: { player: role === 'neo', resolved: true, meeting: { phase: encounter.phase, elapsed: encounter.elapsed, bugged: encounter.bugged, role } }, startedAt: tick, duration: 1, progress: 0 };
+      actor.currentAction = { type: 'idle', parameters: { player: role === 'neo', resolved: true, meeting: { phase: encounter.phase, elapsed: encounter.elapsed, bugged: encounter.bugged, roadTime: encounter.roadTime, role } }, startedAt: tick, duration: 1, progress: 0 };
     }
     if (encounter.phase === 'leaving' && encounter.elapsed >= MEETING_TIMING.leaving) {
+      if (encounter.roadTime !== undefined) state.bridgeArrival = { phase: 'parked', elapsed: BRIDGE_ARRIVAL_SECONDS, parkedRoadTime: encounter.roadTime };
+      state.checkpoint = { ...agent.position };
       delete state.meeting; agent.currentAction = null;
       state.lastText = '你回到了桥下。今晚还没有结束，可以走开，也可以再次上车。'; return;
     }
@@ -1175,17 +1189,18 @@ export class FilmStorySystem {
       state.lastText = '车停在旧楼的后巷。走到入口按 G，前往楼上的会面房间。'; return;
     }
     if (encounter.phase !== 'done') state.lastText = encounter.phase === 'boarding' ? '车门向后展开。你俯身跨过门槛，在 Trinity 身旁坐下。'
+      : encounter.phase === 'rolling' ? encounter.elapsed < 3 ? 'Apoc 启动车辆，桥下的灯光从车窗旁掠过。Switch 举枪盯着 Neo。' : 'Neo 质疑这台仪器。Switch 让 Apoc 靠边停车，车轮在雨中的路缘缓缓停稳。'
       : encounter.phase === 'choice' ? 'SWITCH · 先接受检查。TRINITY · 你知道外面那条路会通向哪里。留下接受检查，或者现在下车；决定还在你手里。'
       : encounter.phase === 'hesitating' ? encounter.elapsed < 1.5 ? 'Neo 推开右后门，望向雨中的街道。Switch 的枪仍指着他。' : 'TRINITY · 你已经走过那条路，也知道它通向哪里。你可以关上门信任我，也可以真的离开。'
       : encounter.phase === 'reconsidering' ? 'Neo 看了 Trinity 一眼，把右后门关上。Switch 放低枪口；检查即将开始。'
       : encounter.phase === 'leaving' ? '你打开车门，退回雨中的桥下。Trinity 没有拉住你。'
       : encounter.phase === 'ready' ? 'Trinity 在身旁准备装置。按 G 开始检查。'
-      : encounter.phase === 'driving' ? encounter.elapsed < 8 ? 'APOC · 检查结束。坐稳，我们去见 Morpheus。'
+      : encounter.phase === 'driving' ? encounter.elapsed < 8 ? 'APOC · 检查结束。我们继续去见 Morpheus。'
         : encounter.elapsed < 39 ? 'TRINITY · 他会回答你的问题。先想清楚：你愿意知道多少？雨中的街灯从车窗旁退去。'
         : 'APOC · 前面就是 Lafayette。车辆减速，驶向旧楼后巷。'
       : encounter.phase === 'parked' ? '已经抵达 Lafayette。车完全停稳了，按 G 打开右后门下车。'
       : encounter.phase === 'exiting' ? '你打开车门，俯身走出后座，站到旧楼旁。'
-      : encounter.phase === 'scanning' ? encounter.elapsed < 3 ? '你向后靠，露出腹部。Trinity 把扫描装置移到身体上方。' : '探头贴在腹部。微弱的脉冲出现在监视器上。'
+      : encounter.phase === 'scanning' ? encounter.elapsed < 3 ? '车重新开动。你向后靠，露出腹部；Trinity 把扫描装置移到身体上方。' : '街灯掠过车窗。探头贴在腹部，微弱的脉冲出现在监视器上。'
       : encounter.phase === 'located' ? '扫描发现了移动的异物。按住 G 保持身体稳定，让 Trinity 抽出追踪器。'
       : encounter.phase === 'removing' ? focus ? '保持稳定。Trinity 拉动泵杆，透明收集筒里的压力正在改变。' : '你暂时停止配合。装置停在原处；继续按住 G 才会抽取。'
       : '追踪器已经离开身体。Trinity 把收集装置移到窗边，将它弹入雨中。';
@@ -1207,7 +1222,7 @@ export class FilmStorySystem {
     if (arrival.elapsed >= BRIDGE_ARRIVAL_SECONDS && arrival.phase === 'approaching') {
       arrival.phase = 'parked'; state.lastText = '轿车从身后驶来，在桥下靠边停稳。Trinity 从后座示意你靠近右后门。';
     }
-    const car = bridgeArrivalPose(arrival.elapsed);
+    const car = arrival.parkedRoadTime === undefined ? bridgeArrivalPose(arrival.elapsed) : meetingCarPose({ phase: 'ready', elapsed: 0, roadTime: arrival.parkedRoadTime });
     let body = this.sandbox().structures.find(structure => structure.id === 'film:bridge:car');
     if (!body) {
       body = { id: 'film:bridge:car', kind: 'barricade', owner: 'matrix', position: filmPosition(this.scene!.set, car.x, car.z), matrix: true,
@@ -1219,7 +1234,7 @@ export class FilmStorySystem {
       const actor = this.world.agents.get(role)!; const pose = meetingRoot(seated, role, car);
       actor.position = filmPosition(this.scene!.set, pose.x, pose.z); actor.rotation = pose.yaw;
       actor.velocity = { x: 0, y: 0, z: 0 }; actor.currentLocation = this.scene!.set; actor.isInMatrix = true;
-      actor.currentAction = { type: 'idle', parameters: { meeting: { phase: 'ready', elapsed: 0, bugged: false, role } }, startedAt: tick, duration: 1, progress: 0 };
+      actor.currentAction = { type: 'idle', parameters: { meeting: { phase: 'ready', elapsed: 0, bugged: false, roadTime: arrival.parkedRoadTime, role } }, startedAt: tick, duration: 1, progress: 0 };
     }
   }
   private bridgeTailFrame(agent: AgentState, tick: number): void {
@@ -4034,8 +4049,10 @@ export class FilmStorySystem {
       if (state.bridgeArrival?.phase === 'approaching') return '轿车还在从身后驶入桥下。等它靠边停稳，再打开右后门。';
       if (MEETING_CAST.some(id => this.world.agents.get(id)?.controller)) return '一位接头者正在由另一位玩家控制，等待对方结束后再上车。';
       const center = FILM_SETS[this.scene.set].center;
+      const roadTime = state.bridgeArrival?.parkedRoadTime ?? 0;
+      const car = meetingCarPose({ phase: 'ready', elapsed: 0, roadTime });
       state.meeting = { phase: 'boarding', elapsed: 0, bugged: state.office?.bugged ?? state.office?.outcome !== 'escaped',
-        approach: { x: agent.position.x - center.x, z: agent.position.z - center.z, yaw: agent.rotation } };
+        roadTime, approach: { x: agent.position.x - center.x - car.x, z: agent.position.z - center.z - car.z + MEETING_CAR.z, yaw: agent.rotation - car.yaw } };
       this.sandbox().structures = this.sandbox().structures.filter(structure => structure.id !== 'film:bridge:car');
       this.sandbox().threats = this.sandbox().threats.filter(threat => threat.id !== 'bridge:tail'); delete state.bridgeTail;
       delete state.started; this.meetingFrame(agent, false, 0, tick); return state.lastText;
@@ -4545,9 +4562,11 @@ export class FilmStorySystem {
       if ((scene.id === 'm1_bridge' || scene.id === 'm1_bug') && MEETING_CAST.includes(id as typeof MEETING_CAST[number])) {
         const encounter: MeetingEncounter = this.state!.meeting ?? { phase: 'ready', elapsed: 0, bugged: false, approach: { ...MEETING_CAR.approach, yaw: -Math.PI / 2 } };
         const role = id as typeof MEETING_CAST[number]; const arrival = this.state!.bridgeArrival;
-        const pose = meetingRoot(encounter, role, arrival && !this.state!.meeting ? bridgeArrivalPose(arrival.elapsed) : undefined);
+        const car = arrival && !this.state!.meeting ? arrival.parkedRoadTime === undefined ? bridgeArrivalPose(arrival.elapsed)
+          : meetingCarPose({ phase: 'ready', elapsed: 0, roadTime: arrival.parkedRoadTime }) : undefined;
+        const pose = meetingRoot(encounter, role, car);
         actor.position = filmPosition(scene.set, pose.x, pose.z); actor.rotation = pose.yaw;
-        actor.currentAction = { type: 'idle', parameters: { meeting: { phase: encounter.phase, elapsed: encounter.elapsed, bugged: encounter.bugged, role } }, startedAt: this.state!.enteredAt, duration: 100000, progress: 0 };
+        actor.currentAction = { type: 'idle', parameters: { meeting: { phase: encounter.phase, elapsed: encounter.elapsed, bugged: encounter.bugged, roadTime: encounter.roadTime ?? arrival?.parkedRoadTime, role } }, startedAt: this.state!.enteredAt, duration: 100000, progress: 0 };
       }
       if (scene.id === 'm2_freeway') actor.position = filmPosition(scene.set, id === 'keymaker' ? 19 : 20, id === 'keymaker' ? 660 : -660);
       if (scene.id === 'm3_hammer_tunnels') {
@@ -4622,6 +4641,11 @@ export class FilmStorySystem {
     });
   }
   private near(agent: AgentState, step: FilmStep): boolean {
+    if (this.state?.scene === 'm1_bug' && this.state.step === 1 && step === this.step && this.state.meeting?.phase === 'done') return true;
+    if (this.state?.scene === 'm1_bridge' && this.state.step === 1 && step === this.step && this.state.bridgeArrival?.parkedRoadTime !== undefined) {
+      const door = meetingBoardPoint(this.state.bridgeArrival);
+      return agent.isInMatrix && distance(agent.position, filmPosition('film_adams_bridge', door.x, door.z)) <= 4;
+    }
     return filmStepNear(this.scene!, step, agent.position, agent.isInMatrix);
   }
   private advance(text: string, agent: AgentState, tick: number): void {

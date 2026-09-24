@@ -266,7 +266,8 @@ export class MeetingSetRenderer {
     const encounter = journey?.visiting ? undefined : occupant ?? journey?.meeting;
     const pose = encounter && meetingPose({ ...encounter, role: 'neo' });
     const car = journey?.scene === 'm1_bridge' && !journey.visiting && !encounter && journey.bridgeArrival
-      ? bridgeArrivalPose(journey.bridgeArrival.elapsed) : meetingCarPose(encounter);
+      ? journey.bridgeArrival.parkedRoadTime === undefined ? bridgeArrivalPose(journey.bridgeArrival.elapsed)
+        : meetingCarPose({ phase: 'ready', elapsed: 0, roadTime: journey.bridgeArrival.parkedRoadTime }) : meetingCarPose(encounter);
     this.vehicle.position.set(car.x, 0, car.z); this.vehicle.rotation.y = car.yaw;
     for (const wheel of this.wheels) { wheel.steering.rotation.y = wheel.front ? car.steering : 0; wheel.spin.rotation.x = -car.distance / 1.02; }
     this.steering.rotation.z = car.steering * 1.6;

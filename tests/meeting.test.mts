@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SCENE_BY_ID, FILM_SETS, filmEntry, filmStepPosition, filmPosition, filmSetAt, meetingDrive, meetingPose, meetingRoadContains, playerBlocked, MEETING_DRIVE_SECONDS, MEETING_DESTINATION, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, filmEntry, filmStepPosition, filmPosition, filmSetAt, meetingBoardPoint, meetingCarPose, meetingDrive, meetingPose, meetingRoadContains, playerBlocked, MEETING_DRIVE_SECONDS, MEETING_DESTINATION, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -25,7 +25,7 @@ function setup(bugged = true) {
     players.step(.05, running, tick); if (running && i % 10 === 0) sandbox.tick(++tick);
   } };
   command('retry');
-  const board = () => { command('act'); frames(9); };
+  const board = () => { command('act'); frames(15); };
   const state = () => sandbox.life.film.state!;
   const poses = () => ['neo', 'trinity', 'switch', 'apoc'].map(id => {
     const a = world.agents.get(id)!;
@@ -55,6 +55,72 @@ test('boarding uses one car and waits for an explicit decision; accepting keeps 
   assert.deepEqual(FILM_SETS.film_adams_bridge.center, FILM_SETS.film_extraction_car.center);
 });
 
+test('after boarding Apoc rolls away from the bridge and stops before Neo can choose', () => {
+  const h = setup(); h.command('act'); h.frames(8.1);
+  assert.equal(h.state().meeting?.phase, 'rolling');
+  const start = { ...h.neo.position }; h.frames(3);
+  assert.ok(Math.hypot(h.neo.position.x - start.x, h.neo.position.z - start.z) > 8,
+    'the whole cast must travel inside the same car before Switch orders a stop');
+  assert.equal(h.state().meeting?.phase, 'rolling');
+  h.command('meeting:stay'); assert.equal(h.state().scene, 'm1_bridge', 'the decision is unavailable while the car moves');
+  h.frames(3.1); assert.equal(h.state().meeting?.phase, 'choice');
+  assert.ok(meetingCarPose(h.state().meeting).speed < .01, 'the car physically stops for Neo to open the door');
+});
+
+test('the moving stop and its new door location survive pause, reload and reboarding', () => {
+  const h = setup(); h.command('act'); h.frames(10);
+  const before = h.poses(); const saved = JSON.parse(JSON.stringify(h.sandbox.state));
+  const roadTime = h.state().meeting!.roadTime!;
+  h.frames(2, false, false); assert.equal(h.state().meeting?.roadTime, roadTime);
+  h.players.release('player', h.tick()); h.frames(2); assert.deepEqual(h.poses(), before);
+  h.sandbox.restore(saved); h.players.possess('player', 'neo', h.tick()); h.command('retry');
+  assert.deepEqual(h.poses(), before);
+  h.frames(5); assert.equal(h.state().meeting?.phase, 'choice');
+  h.command('meeting:leave'); h.frames(2); h.command('meeting:depart'); h.frames(9);
+  const door = meetingBoardPoint(h.state().bridgeArrival);
+  assert.ok(Math.hypot(h.neo.position.x - filmPosition('film_adams_bridge', door.x, door.z).x,
+    h.neo.position.z - filmPosition('film_adams_bridge', door.x, door.z).z) < 4);
+  const car = h.sandbox.state.structures.find(structure => structure.id === 'film:bridge:car')!;
+  const savedStop = JSON.parse(JSON.stringify(h.sandbox.state));
+  h.sandbox.restore(savedStop); h.players.possess('player', 'neo', h.tick()); h.command('retry');
+  assert.deepEqual(h.sandbox.state.structures.find(structure => structure.id === 'film:bridge:car')!.position, car.position);
+  h.command('act'); h.frames(9);
+  assert.equal(h.state().meeting?.phase, 'choice', 'reboarding a stopped car does not replay the initial drive');
+  assert.equal(h.state().meeting?.roadTime, 3);
+});
+
+test('a legacy in-car save without roadTime retains its original route clock', () => {
+  const h = setup(false); h.board(); h.command('meeting:stay'); h.frames(9);
+  h.command('reflect:trust'); h.command('next'); h.frames(4);
+  const encounter = h.state().meeting!;
+  encounter.phase = 'driving'; encounter.elapsed = 14; delete encounter.roadTime;
+  const saved = JSON.parse(JSON.stringify(h.sandbox.state));
+  h.sandbox.restore(saved); h.command('retry'); h.frames(.05);
+  assert.equal(h.state().meeting?.roadTime, undefined);
+  const car = meetingCarPose(h.state().meeting);
+  assert.ok(Math.abs(car.distance - meetingDrive(h.state().meeting!.elapsed).distance) < .001);
+});
+
+test('the car resumes during the scan and keeps its road progress through the later journey', () => {
+  const h = setup(); h.command('act'); h.frames(15);
+  assert.equal(h.state().meeting?.phase, 'choice');
+  h.command('meeting:stay'); const stopped = { ...h.neo.position };
+  h.frames(5);
+  assert.ok(Math.hypot(h.neo.position.x - stopped.x, h.neo.position.z - stopped.z) > 8,
+    'the examination must take place in a moving car');
+  const scannedRoadTime = h.state().meeting?.roadTime ?? 0;
+  h.frames(5); assert.equal(h.state().meeting?.phase, 'located');
+  h.frames(12, true); assert.equal(h.state().meeting?.phase, 'done');
+  assert.equal(h.state().step, 1);
+  h.command('reflect:trust'); h.command('next');
+  assert.equal(h.state().meeting?.phase, 'driving');
+  assert.ok((h.state().meeting?.roadTime ?? 0) > scannedRoadTime, 'the drive cannot restart at the bridge after extraction');
+  const before = { ...h.neo.position }; const beforeRoadTime = h.state().meeting!.roadTime!; h.frames(.5);
+  const distance = Math.hypot(h.neo.position.x - before.x, h.neo.position.z - before.z);
+  const roadDistance = meetingDrive(h.state().meeting!.roadTime!).distance - meetingDrive(beforeRoadTime).distance;
+  assert.ok(distance > 0 && distance <= roadDistance + 1, 'the route remains spatially continuous');
+});
+
 test('a positive scan requires holding still and only clears the tracker after physical extraction', () => {
   const h = setup(); h.board(); h.command('meeting:stay'); h.frames(10);
   assert.equal(h.state().meeting?.phase, 'located'); assert.equal(h.state().office?.bugged, true);
@@ -79,12 +145,14 @@ test('successful office escape produces a negative scan without inventing a para
 });
 
 test('leaving the car returns control outside and permits reentry without erasing the implanted tracker', () => {
-  const h = setup(); const outside = { ...h.neo.position }; h.board(); h.command('meeting:leave');
+  const h = setup(); h.board(); const parked = { ...h.neo.position }; h.command('meeting:leave');
   assert.equal(h.state().meeting?.phase, 'hesitating'); h.frames(2);
   assert.ok(meetingPose({ ...h.state().meeting!, role: 'neo' }).door > .95);
   h.command('meeting:depart'); h.frames(9);
   assert.equal(h.state().meeting, undefined); assert.equal(h.state().step, 1); assert.equal(h.state().scene, 'm1_bridge');
-  assert.deepEqual(h.neo.position, outside); assert.equal(h.state().office?.bugged, true);
+  assert.ok(Math.hypot(h.neo.position.x - parked.x, h.neo.position.z - parked.z) < 5);
+  assert.equal(h.state().office?.bugged, true);
+  assert.equal(h.state().bridgeArrival?.parkedRoadTime, 3);
   h.board(); assert.equal(h.state().meeting?.phase, 'choice');
 });
 

@@ -153,7 +153,7 @@ export class Engine {
     measure?.('agents');
     this.voxelRenderer.update(this.elapsed, this.playerControls?.id ? this.camera : undefined);
     const player = this.playerControls?.id ? this.agentRenderer.getAgentState(this.playerControls.id) : undefined;
-    this.audio.carEngine(this.running && player?.id === meeting?.actor && !meeting?.visiting && meeting?.meeting?.phase === 'driving' ? meetingCarPose(meeting.meeting).speed : undefined);
+    this.audio.carEngine(this.running && player?.id === meeting?.actor && !meeting?.visiting && meeting?.meeting ? meetingCarPose(meeting.meeting).speed : undefined);
     this.voxelRenderer.interiors.update(this.timeOfDay, player?.position, this.sandbox?.neoLife);
     measure?.('city');
     const workday = this.agentRenderer.getAgentState('courier')?.currentAction?.parameters.workday as OfficeWorkday | undefined;
@@ -375,13 +375,14 @@ export class Engine {
       if (after.scene === 'm1_bridge' && after.bridgeArrival?.phase === 'approaching' && before?.scene !== after.scene) this.audio.meetingSound('approach');
       if (after.scene === 'm1_bridge' && before?.bridgeArrival?.phase === 'approaching' && after.bridgeArrival?.phase === 'parked') this.audio.meetingSound('brake');
       const previous = before?.meeting; const current = after.meeting;
+      if (current?.phase === 'choice' && previous?.phase === 'rolling') this.audio.meetingSound('brake');
       if (current?.phase === 'hesitating' && previous?.phase === 'choice') this.audio.meetingSound('door');
       if (current && previous && current.phase === previous.phase) {
         if (current.phase === 'reconsidering' && previous.elapsed < 1.8 && current.elapsed >= 1.8) this.audio.meetingSound('door');
         if (['boarding', 'leaving', 'exiting'].includes(current.phase) && previous.elapsed < 7.7 && current.elapsed >= 7.7) this.audio.meetingSound('door');
         if (current.phase === 'removing' && Math.floor(current.elapsed) > Math.floor(previous.elapsed)) this.audio.meetingSound('pump');
         if (current.phase === 'discarding' && previous.elapsed < 3.2 && current.elapsed >= 3.2) this.audio.meetingSound('release');
-        if (current.phase === 'driving' && Math.floor(current.elapsed * 4 / Math.PI) > Math.floor(previous.elapsed * 4 / Math.PI)) this.audio.meetingSound('wiper');
+        if (meetingCarPose(current).speed > .5 && Math.floor(current.roadTime ?? current.elapsed) > Math.floor(previous.roadTime ?? previous.elapsed)) this.audio.meetingSound('wiper');
       }
     }
     if (after?.scene === 'm1_pills' && !after.visiting && after.actor === this.playerControls?.id && this.running) {

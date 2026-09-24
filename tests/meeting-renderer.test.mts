@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { bridgeArrivalPose, meetingCarPose, type FilmJourney } from '@auto_matrix/shared';
+import { bridgeArrivalPose, meetingCarPose, meetingRollRoadTime, type FilmJourney } from '@auto_matrix/shared';
 import { MeetingSetRenderer } from '../packages/client/src/engine/MeetingSetRenderer.js';
 
 test('the actual car body uses the same fast pose as its occupants between journey snapshots', t => {
@@ -32,8 +32,16 @@ test('the actual car body uses the same fast pose as its occupants between journ
     const inbound = bridgeArrivalPose(2.35);
     assert.ok(vehicle.position.distanceTo(new THREE.Vector3(inbound.x, 0, inbound.z)) < .001);
     assert.ok(Math.abs(vehicle.rotation.y - inbound.yaw) < .001);
+    journey.meeting = { phase: 'rolling', elapsed: 3, roadTime: meetingRollRoadTime(3), bugged: true, approach: { x: 4, z: -12.35, yaw: Math.PI } };
+    renderer.update(journey, 3);
+    const rolling = meetingCarPose(journey.meeting);
+    assert.ok(vehicle.position.distanceTo(new THREE.Vector3(rolling.x, 0, rolling.z)) < .001, 'the rolling car body follows the passenger pose');
+    delete journey.meeting; journey.bridgeArrival = { phase: 'parked', elapsed: 7, parkedRoadTime: 3 };
+    renderer.update(journey, 15);
+    const stopped = meetingCarPose({ phase: 'ready', elapsed: 0, roadTime: 3 });
+    assert.ok(vehicle.position.distanceTo(new THREE.Vector3(stopped.x, 0, stopped.z)) < .001, 'the car remains at the new curb after Neo leaves');
     const door = (renderer as unknown as { door: THREE.Group }).door;
-    journey.meeting = { phase: 'hesitating', elapsed: 2, bugged: true, approach: { x: 4, z: -12.35, yaw: Math.PI } };
+    journey.meeting = { phase: 'hesitating', elapsed: 2, roadTime: 3, bugged: true, approach: { x: 4, z: -12.35, yaw: Math.PI } };
     renderer.update(journey, 2); assert.ok(door.rotation.y < -.95, 'the right rear door remains open during Trinity’s appeal');
     journey.meeting.phase = 'reconsidering'; journey.meeting.elapsed = 0;
     renderer.update(journey, 2); assert.ok(door.rotation.y < -.95, 'trust begins with the same open door pose');

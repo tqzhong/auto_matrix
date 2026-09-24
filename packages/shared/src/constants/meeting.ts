@@ -1,19 +1,22 @@
 import type { FilmJourney } from './film-story.js';
 
 export interface MeetingEncounter {
-  phase: 'boarding' | 'choice' | 'hesitating' | 'reconsidering' | 'leaving' | 'ready' | 'scanning' | 'located' | 'removing' | 'discarding' | 'done' | 'driving' | 'parked' | 'exiting' | 'outside';
+  phase: 'boarding' | 'rolling' | 'choice' | 'hesitating' | 'reconsidering' | 'leaving' | 'ready' | 'scanning' | 'located' | 'removing' | 'discarding' | 'done' | 'driving' | 'parked' | 'exiting' | 'outside';
   elapsed: number;
   bugged: boolean;
   approach: { x: number; z: number; yaw: number };
+  roadTime?: number;
 }
 export interface BridgeTailEncounter {
   phase: 'tracking' | 'evaded' | 'failed'; alert: number; lastTick: number; attempts: number; spawned: boolean;
 }
-export interface BridgeArrival { phase: 'approaching' | 'parked'; elapsed: number }
+export interface BridgeArrival { phase: 'approaching' | 'parked'; elapsed: number; parkedRoadTime?: number }
 export const BRIDGE_ARRIVAL_SECONDS = 7;
+export const MEETING_ROLL_SECONDS = 6;
+export const MEETING_STOP_ROAD_TIME = 3;
 export const BRIDGE_TAIL = { spawnX: 0, spawnZ: 46, speed: 2.8, noticeRange: 16, captureRange: 3.2, captureAlert: 60 } as const;
 export type MeetingRole = 'neo' | 'trinity' | 'switch' | 'apoc';
-export type MeetingGesture = Pick<MeetingEncounter, 'phase' | 'elapsed' | 'bugged'> & { role: MeetingRole };
+export type MeetingGesture = Pick<MeetingEncounter, 'phase' | 'elapsed' | 'bugged' | 'roadTime'> & { role: MeetingRole };
 export const MEETING_CAST = ['trinity', 'switch', 'apoc'] as const;
 export const MEETING_CAR = { x: 0, z: -14, width: 5.4, depth: 13.6, height: 4.35, seat: 1.28, rear: 1.65, front: -1.6,
   approach: { x: 4, z: -12.35 } } as const;
@@ -30,7 +33,7 @@ const road = [
   { x: 680, z: 38, dx: -25, dz: 0, length: 25, seconds: 4, startSpeed: 10, endSpeed: 0 },
 ];
 export const MEETING_DRIVE_SECONDS = road.reduce((sum, span) => sum + span.seconds, 0);
-export const MEETING_TIMING = { boarding: 8, hesitating: 2, reconsidering: 2, leaving: 8, scanning: 8, removing: 6, discarding: 5, driving: MEETING_DRIVE_SECONDS, exiting: 8 } as const;
+export const MEETING_TIMING = { boarding: 8, rolling: MEETING_ROLL_SECONDS, hesitating: 2, reconsidering: 2, leaving: 8, scanning: 8, removing: 6, discarding: 5, driving: MEETING_DRIVE_SECONDS, exiting: 8 } as const;
 const ease = (time: number, from: number, to: number) => { const t = Math.max(0, Math.min(1, (time - from) / (to - from))); return t * t * (3 - 2 * t); };
 const mix = (a: number, b: number, t: number) => a + (b - a) * t;
 // Shared world-space route, with matching tangents and speeds at every join.
@@ -58,6 +61,10 @@ export const MEETING_ROAD_SAMPLES = [
   ...Array.from({ length: 201 }, (_, i) => meetingDrive(i / 200 * MEETING_DRIVE_SECONDS)),
   { x: 560, z: 38, yaw: Math.PI / 2 },
 ];
+export function meetingRollRoadTime(seconds: number) {
+  const t = Math.max(0, Math.min(1, seconds / MEETING_ROLL_SECONDS));
+  return MEETING_STOP_ROAD_TIME * t * t * (3 - 2 * t);
+}
 export function meetingRoadContains(x: number, z: number, radius = 0): boolean {
   if (x < -24 || x > 729 || z < -138 || z > 80) return false;
   const width = 22 - radius;
@@ -69,8 +76,20 @@ export function meetingRoadContains(x: number, z: number, radius = 0): boolean {
   }
   return false;
 }
-export function meetingCarPose(gesture?: Pick<MeetingGesture, 'phase' | 'elapsed'>) {
+export function meetingCarPose(gesture?: Pick<MeetingGesture, 'phase' | 'elapsed' | 'roadTime'>) {
+  if (gesture?.roadTime !== undefined) {
+    const car = meetingDrive(gesture.roadTime);
+    const t = Math.max(0, Math.min(1, gesture.elapsed / MEETING_ROLL_SECONDS));
+    const pace = gesture.phase === 'rolling' ? MEETING_STOP_ROAD_TIME / MEETING_ROLL_SECONDS * 6 * t * (1 - t)
+      : gesture.phase === 'scanning' ? ease(gesture.elapsed, 0, 2)
+      : ['boarding', 'choice', 'hesitating', 'reconsidering', 'leaving', 'ready'].includes(gesture.phase) ? 0 : 1;
+    return { ...car, speed: car.speed * pace };
+  }
   return meetingDrive(gesture?.phase === 'driving' ? gesture.elapsed : gesture && ['parked', 'exiting', 'outside'].includes(gesture.phase) ? MEETING_DRIVE_SECONDS : 0);
+}
+export function meetingBoardPoint(arrival?: BridgeArrival) {
+  const car = arrival?.parkedRoadTime === undefined ? { x: MEETING_CAR.x, z: MEETING_CAR.z, yaw: 0 } : meetingDrive(arrival.parkedRoadTime);
+  return meetingCarPoint(car, MEETING_CAR.approach.x, MEETING_CAR.approach.z - MEETING_CAR.z);
 }
 export function bridgeArrivalPose(elapsed: number) {
   const t = Math.max(0, Math.min(1, elapsed / BRIDGE_ARRIVAL_SECONDS));
@@ -107,7 +126,7 @@ export function meetingPose(gesture: MeetingGesture) {
     extraction: phase === 'removing' ? ease(t, 2.8, 6) : phase === 'discarding' || phase === 'done' ? 1 : 0,
     discard: phase === 'discarding' ? ease(t, 1, 3.2) : 0,
     ejected: phase === 'discarding' && t >= 3.2,
-    alert: phase === 'choice' || phase === 'hesitating' ? 1 : phase === 'reconsidering' || phase === 'scanning' ? 1 - ease(t, 0, 2) : 0,
+    alert: phase === 'rolling' || phase === 'choice' || phase === 'hesitating' ? 1 : phase === 'reconsidering' || phase === 'scanning' ? 1 - ease(t, 0, 2) : 0,
   };
 }
 export function meetingRoot(encounter: MeetingEncounter, role: MeetingRole, car = meetingCarPose(encounter)) {

@@ -129,7 +129,7 @@ function meetAndTravel(h: Harness, tracker: boolean) {
   const bridge = FILM_SCENE_BY_ID.m1_bridge;
   h.walk(filmStepPosition(bridge, bridge.steps[0])); assert.equal(h.state().step, 1);
   assert.equal(h.state().bridgeArrival?.phase, 'parked');
-  h.command('act'); h.frames(9); assert.equal(h.state().meeting?.phase, 'choice');
+  h.command('act'); h.frames(15); assert.equal(h.state().meeting?.phase, 'choice');
   h.command('meeting:stay'); assert.equal(h.state().scene, 'm1_bug');
   h.frames(10);
   if (tracker) {
