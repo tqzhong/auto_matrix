@@ -1,7 +1,7 @@
 import { catchLocked, reloadedPhaseLocked } from '@auto_matrix/shared';
 import { reloadedCamera } from './ReloadedCamera.js';
 import * as THREE from 'three';
-import { FILM_SETS, OFFICE_CONTACT, LOBBY_FIRE_INTERVAL, RESCUE, PILL_TIMING, groundHeight, playerBlocked, stepPlayer, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, COMBAT_SKILLS, combatDisplace, PLAYER_WALK_SPEED, meleeReach, trainingRoot, matrixEscapePhaseLocked, matrixEscapePose, matrixEscapeRoot, theOnePhaseLocked, theOnePose, theOneRoot, type OfficePhone, type AwakeningPose, type FreewayRide, type AgentState, type PlayerInput, type Vector3, type WorldStructure, type CombatImpact, type SkillCast, type RescueLoadout } from '@auto_matrix/shared';
+import { FILM_SETS, OFFICE_CONTACT, LOBBY_FIRE_INTERVAL, RESCUE, PILL_TIMING, MIRROR_SEAT, MIRROR_TIMING, groundHeight, playerBlocked, stepPlayer, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, COMBAT_SKILLS, combatDisplace, PLAYER_WALK_SPEED, meleeReach, trainingRoot, matrixEscapePhaseLocked, matrixEscapePose, matrixEscapeRoot, theOnePhaseLocked, theOnePose, theOneRoot, type OfficePhone, type AwakeningPose, type FreewayRide, type AgentState, type PlayerInput, type Vector3, type WorldStructure, type CombatImpact, type SkillCast, type RescueLoadout } from '@auto_matrix/shared';
 import { lafayetteWelcomeCamera } from './LafayetteWelcomeCamera.js';
 import type { MotionInput } from '../agents/CharacterMotion.js';
 import { AIR_RESCUE, governmentPose, airRescuePose, airRescueRoot, interrogationPose, meetingPose, meetingCarPose } from '@auto_matrix/shared';
@@ -327,6 +327,7 @@ export class PlayerControls {
     this.motion.crouching = this.enabled && !this.performing && this.keys.has('KeyZ');
     this.motion.riding = Boolean(this.ride);
     this.motion.performance = this.performing ? state.currentAction?.parameters.filmPose as AwakeningPose : undefined;
+    this.motion.mirrorBeat = state.currentAction?.parameters.mirrorBeat as number | undefined;
     this.motion.helDanceDoor = state.currentAction?.parameters.helDanceDoor as number | undefined;
     this.motion.recovery = state.currentAction?.parameters.recovery as number | undefined;
     this.motion.reveal = state.currentAction?.parameters.reveal as MotionInput['reveal'];
@@ -480,7 +481,7 @@ export class PlayerControls {
     this.camera.near = this.firstPerson && this.motion.club ? .08 : this.defaultNear;
     this.camera.updateProjectionMatrix();
     this.cameraStep += this.motion.speed * delta;
-    const target = new THREE.Vector3(this.position.x, this.position.y + (this.firstPerson ? 2.99 : 2.05) - (this.motion.pills ? .9 : 0) - (this.motion.reveal?.kind === 'construct' ? .62 : 0) - (this.motion.crouching ? 1.1 : 0), this.position.z);
+    const target = new THREE.Vector3(this.position.x, this.position.y + (this.firstPerson ? 2.99 : 2.05) - (this.motion.pills ? .9 : 0) - (this.motion.mirrorBeat !== undefined ? THREE.MathUtils.smoothstep(this.motion.mirrorBeat, .65, MIRROR_TIMING.sit) * .9 : 0) - (this.motion.reveal?.kind === 'construct' ? .62 : 0) - (this.motion.crouching ? 1.1 : 0), this.position.z);
     if (this.motion.contact && ['signal', 'reply', 'knocking'].includes(this.motion.contact.phase)) target.y -= .65;
     if (this.motion.wakeCall?.phase === 'waking') target.y -= (1 - THREE.MathUtils.smoothstep(this.motion.wakeCall.elapsed, 1.3, 3.1)) * 1.35;
     const meeting = this.motion.meeting && meetingPose(this.motion.meeting);
@@ -1009,6 +1010,13 @@ export class PlayerControls {
         .lerp(new THREE.Vector3(-1, 2.7, -5.4), departure).lerp(new THREE.Vector3(-4, 3.1, -9.5), mirrorReveal)
         .add(new THREE.Vector3(center.x, center.y - 1, center.z));
       if (resetCamera) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-6 * delta));
+      this.camera.lookAt(focus);
+    } else if (this.motion.mirrorBeat !== undefined && !this.firstPerson) {
+      const center = FILM_SETS.film_lafayette.center;
+      const ideal = new THREE.Vector3(center.x + MIRROR_SEAT.x + 5.2, center.y + 5.1, center.z + MIRROR_SEAT.z + 2);
+      const focus = new THREE.Vector3(this.position.x, center.y + 2.5, this.position.z - .5);
+      if (resetCamera || this.motion.mirrorBeat < .12) this.camera.position.copy(ideal);
+      else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
       this.camera.lookAt(focus);
     } else if (this.performing && this.motion.crossing !== undefined && !this.firstPerson) {
       const center = FILM_SETS.film_metacortex_floor.center;

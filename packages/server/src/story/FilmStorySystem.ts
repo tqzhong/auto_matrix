@@ -2,9 +2,9 @@ import { ReloadedOpeningSystem } from './ReloadedOpeningSystem.js';
 import { ReloadedCatchSystem } from './ReloadedCatchSystem.js';
 import { newReloaded, reloadedLocked, ZION_CAST } from '@auto_matrix/shared';
 import { catchLocked, newCatch } from '@auto_matrix/shared';
-import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_CAST, GRID_WINDOW_SECONDS, GRID_REROUTE_SECONDS, GRID_HACK_SECONDS, ARCHITECT_DOOR_SECONDS, RELOADED_FINALE, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, filmReflections, CHARACTERS, LOCATIONS, NEO_CHAPTERS, filmCharacterFates, filmEntry, filmPosition, filmStepPosition, locationEntrance, distance, playerBlocked, newFreewayRide, stepFreeway, OFFICE_LADDER, awakeningLocked, awakeningPose, AWAKENING_SECONDS, MIRROR_TOUCH, CONSTRUCT_REVEAL, DESERT_REVEAL, oracleActing,
+import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_CAST, GRID_WINDOW_SECONDS, GRID_REROUTE_SECONDS, GRID_HACK_SECONDS, ARCHITECT_DOOR_SECONDS, RELOADED_FINALE, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, filmReflections, CHARACTERS, LOCATIONS, NEO_CHAPTERS, filmCharacterFates, filmEntry, filmPosition, filmStepPosition, locationEntrance, distance, playerBlocked, newFreewayRide, stepFreeway, OFFICE_LADDER, awakeningLocked, awakeningPose, AWAKENING_SECONDS, MIRROR_TOUCH, MIRROR_TIMING, mirrorSilver, CONSTRUCT_REVEAL, DESERT_REVEAL, oracleActing,
   AMBUSH_REWRITE, AMBUSH_SECONDS, AMBUSH_SEALS, OFFICE_CONTACT, OFFICE_WINDOW, OFFICE_CROSSING_SECONDS, officeCrossingPose, windowCrossing, phoneLocked, heldPhone, windowOpening, pillLocked, pillRoot, PILL_ROOM, PILL_TIMING, trainingLocked, trainingRoot, trainingText, TRAINING_SECONDS,
-  lobbyLocked, meleeReach, groundHeight, type DriveInput, type AgentState, type FilmScene, type FilmStep, type GridOperation, type SandboxState, type SandboxThreat, type TrainingRole, type CombatImpact } from '@auto_matrix/shared';
+  lobbyLocked, meleeReach, groundHeight, MIRROR_SEAT, type DriveInput, type AgentState, type FilmScene, type FilmStep, type GridOperation, type SandboxState, type SandboxThreat, type TrainingRole, type CombatImpact } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
 import { LobbyCombatSystem } from './LobbyCombatSystem.js';
 import { HelCoatcheckSystem } from './HelCoatcheckSystem.js';
@@ -945,6 +945,14 @@ export class FilmStorySystem {
     if (state.scene === 'm1_mirror' && state.step >= scene.steps.length) {
       this.finishMirror(this.world.agents.get(state.actor)!, this.world.simulationTick);
       return;
+    }
+    if (state.scene === 'm1_mirror' && state.step === 0 && !state.awakening) {
+      const actor = this.world.agents.get(state.actor);
+      const oldTouch = filmPosition(scene.set, MIRROR_SEAT.x, MIRROR_SEAT.z);
+      if (actor?.currentLocation === scene.set && distance(actor.position, oldTouch) < 1.35) {
+        actor.position = filmStepPosition(scene, scene.steps[0]);
+        state.checkpoint = { ...actor.position };
+      }
     }
     if (state.awakening) return;
     const kind = state.scene === 'm1_recovery' && state.step === 0 ? 'recovery'
@@ -2313,15 +2321,21 @@ export class FilmStorySystem {
     const state = this.state!; const beat = state.awakening;
     const reveal = beat?.kind === 'construct' || beat?.kind === 'desert';
     const morpheus = reveal ? this.world.agents.get('morpheus') : undefined;
-    const wasPlaying = beat && beat.elapsed < AWAKENING_SECONDS[beat.kind] && beat.started !== false && !morpheus?.controller;
+    const trinity = beat?.kind === 'mirror' ? this.world.agents.get('trinity') : undefined;
+    const wasPlaying = beat && beat.elapsed < AWAKENING_SECONDS[beat.kind] && beat.started !== false && !morpheus?.controller && !trinity?.controller;
     if (wasPlaying) beat.elapsed = Math.min(AWAKENING_SECONDS[beat.kind], beat.elapsed + Math.min(.1, dt));
     const pose = awakeningPose(beat); const previous = agent.position;
     agent.position = filmPosition(this.scene!.set, pose.x, pose.z); agent.position.y += pose.y;
     agent.rotation = beat?.kind === 'construct' ? CONSTRUCT_REVEAL.neo.yaw : beat?.kind === 'desert' ? DESERT_REVEAL.neo.yaw : Math.PI;
-    agent.velocity = dt > 0 ? { x: 0, y: (agent.position.y - previous.y) / dt, z: (agent.position.z - previous.z) / dt } : { x: 0, y: 0, z: 0 };
+    agent.velocity = dt > 0 ? { x: beat?.kind === 'mirror' ? (agent.position.x - previous.x) / dt : 0,
+      y: (agent.position.y - previous.y) / dt, z: beat?.kind === 'mirror' ? (agent.position.z - previous.z) / dt : 0 } : { x: 0, y: 0, z: 0 };
     agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, filmPose: pose.pose,
-      mirror: beat?.kind === 'mirror' ? beat.elapsed / 8 : 0, recovery: beat?.kind === 'recovery' ? beat.elapsed : undefined,
-      seated: beat?.kind === 'construct', reveal: reveal ? { kind: beat.kind, elapsed: beat.elapsed, role: 'neo' } : undefined }, startedAt: tick, duration: 1, progress: 0 };
+      mirror: beat?.kind === 'mirror' ? mirrorSilver(beat.elapsed) : 0, mirrorBeat: beat?.kind === 'mirror' ? beat.elapsed : undefined,
+      recovery: beat?.kind === 'recovery' ? beat.elapsed : undefined,
+      seated: beat?.kind === 'construct' || beat?.kind === 'mirror' && beat.elapsed >= MIRROR_TIMING.sit,
+      reveal: reveal ? { kind: beat.kind, elapsed: beat.elapsed, role: 'neo' } : undefined }, startedAt: tick, duration: 1, progress: 0 };
+    if (beat?.kind === 'mirror' && trinity && !trinity.controller)
+      trinity.currentAction = { type: 'idle', parameters: { mirrorCrew: beat.elapsed }, startedAt: tick, duration: 1, progress: 0 };
     if (reveal && morpheus && !morpheus.controller) {
       const root = beat.kind === 'construct' ? CONSTRUCT_REVEAL.morpheus : DESERT_REVEAL.morpheus;
       const before = morpheus.position; morpheus.position = filmPosition(this.scene!.set, root.x, root.z); morpheus.rotation = root.yaw;
@@ -2330,7 +2344,8 @@ export class FilmStorySystem {
       morpheus.currentAction = { type: 'idle', parameters: { resolved: true, filmPose: pose.pose, seated: beat.kind === 'construct',
         reveal: { kind: beat.kind, elapsed: beat.elapsed, role: 'morpheus' } }, startedAt: tick, duration: 1, progress: 0 };
     }
-    state.lastText = morpheus?.controller ? '揭示暂停在当前画面：Morpheus 正由另一位玩家控制。' : pose.text;
+    state.lastText = morpheus?.controller ? '揭示暂停在当前画面：Morpheus 正由另一位玩家控制。'
+      : trinity?.controller ? '追踪暂停在当前画面：Trinity 正由另一位玩家控制。' : pose.text;
     if (wasPlaying && beat.elapsed >= AWAKENING_SECONDS[beat.kind]) {
       if (beat.kind === 'mirror') this.finishMirror(agent, tick);
       else this.advance(this.step!.text!, agent, tick);
@@ -3516,15 +3531,17 @@ export class FilmStorySystem {
       return '训练演出进行中，可以转动视角观察；进度会自动保存。';
     }
     if (state.awakening?.started === false) {
-      const prompt = state.awakening.kind === 'recovery' ? '身体仍躺在医疗床上。按 G 示意船员开始恢复肌肉。'
+      const prompt = state.awakening.kind === 'mirror' ? 'Neo 坐在追踪椅上。按 G 继续接线和触镜。'
+        : state.awakening.kind === 'recovery' ? '身体仍躺在医疗床上。按 G 示意船员开始恢复肌肉。'
         : state.awakening.kind === 'construct' ? '电视仍然关闭。按 G 请 Morpheus 开始说明。' : '灰烬中的讲解正在等待。按 G 请 Morpheus 继续。';
       if (target !== 'act') return prompt;
       if (['construct', 'desert'].includes(state.awakening.kind) && this.world.agents.get('morpheus')?.controller) return 'Morpheus 正由另一位玩家控制，揭示停在当前画面。';
+      if (state.awakening.kind === 'mirror' && this.world.agents.get('trinity')?.controller) return 'Trinity 正由另一位玩家控制，接线停在当前画面。';
       state.awakening.started = true; this.awakeningFrame(agent, 0, tick); return state.lastText;
     }
     if (state.awakening && state.awakening.elapsed < AWAKENING_SECONDS[state.awakening.kind]) return '演出进行中，可以转动视角观察；进度会自动保存。';
     if (state.scene === 'm2_architect' && state.architect?.phase === 'failed') return 'Trinity 的信号已经消失。按 J 从抉择检查点重试。';
-    if (!this.near(agent, step)) return state.scene === 'm1_mirror' && state.step === 0 ? '走到裂镜前，伸手可及后再按 G。' : '请走近金色目标标记（4 米内），再按 G。';
+    if (!this.near(agent, step)) return state.scene === 'm1_mirror' && state.step === 0 ? '穿过会客厅后方的门，走到追踪椅右侧再按 G。' : '请走近金色目标标记（4 米内），再按 G。';
     if (state.scene === 'm1_room303' && state.step === 0 && target === 'act') return this.openingHotel.begin(agent, tick);
     if (state.scene === 'm1_room303' && state.step === 2 && target === 'act') {
       this.openingHotel.state!.phase = 'corridor';
@@ -3663,7 +3680,10 @@ export class FilmStorySystem {
       return '先知提醒你留意花瓶。你的注意转向身后。';
     }
     if (state.scene === 'm1_mirror' || state.scene === 'm1_pod') {
-      state.awakening = { kind: state.scene === 'm1_mirror' ? 'mirror' : state.step === 0 ? 'disconnect' : 'rescue', elapsed: 0 };
+      if (state.scene === 'm1_mirror' && this.world.agents.get('trinity')?.controller) return 'Trinity 正由另一位玩家控制；接线会在她空闲后继续。';
+      const center = FILM_SETS[this.scene!.set].center;
+      state.awakening = { kind: state.scene === 'm1_mirror' ? 'mirror' : state.step === 0 ? 'disconnect' : 'rescue', elapsed: 0,
+        approach: state.scene === 'm1_mirror' ? { x: agent.position.x - center.x, z: agent.position.z - center.z } : undefined };
       this.awakeningFrame(agent, 0, tick);
       return state.lastText;
     }
@@ -3980,7 +4000,7 @@ export class FilmStorySystem {
     scene.cast.forEach((id, i) => {
       const actor = this.world.agents.get(id);
       if (!actor || actor.controller || actor.id === this.state!.actor || this.unavailable(id)) return;
-      if (id === 'trinity' && this.state?.hotel) return;
+      if (id === 'trinity' && this.state?.hotel && scene.id !== 'm1_mirror') return;
       // Cast stands clear of the playable aisle and its interaction targets.
       this.place(actor, scene, filmPosition(scene.set, (i % 2 ? 1 : -1) * (10 + Math.floor(i / 2) * 2), -6 + Math.floor(i / 2) * 8));
       const zion = ZION_CAST[scene.id]?.[id];
@@ -4017,6 +4037,13 @@ export class FilmStorySystem {
           actor.position = filmPosition(scene.set, -PILL_ROOM.seat, PILL_ROOM.z); actor.rotation = Math.PI / 2;
           actor.currentAction = { type: 'idle', parameters: { seated: true, pills: { phase: 'offering', elapsed: 0, role: 'morpheus' } }, startedAt: this.state!.enteredAt, duration: 100000, progress: 0 };
         }
+      }
+      if (scene.id === 'm1_mirror') {
+        const crew: Record<string, [number, number, number]> = {
+          morpheus: [-3, -17, -1.43], trinity: [-6.4, -16.5, -1.35], apoc: [1, -17, 1.57], switch: [-3, -22, 0], cypher: [9, -18.5, -1.57],
+        };
+        const station = crew[id];
+        if (station) { actor.position = filmPosition(scene.set, station[0], station[1]); actor.rotation = station[2]; }
       }
       if (scene.id === 'm1_interrogation' && INTERROGATION_CAST.includes(id as typeof INTERROGATION_CAST[number])) {
         const role = id as typeof INTERROGATION_CAST[number];

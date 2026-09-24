@@ -3,7 +3,7 @@ import { newReloaded, BURLY, EXILES, CHATEAU, MOUNTAIN, TRUCKS, HEL_COATCHECK } 
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { FILM_SCENES, FILM_SETS, RESCUE, GOVERNMENT_RESCUE, AIR_RESCUE, filmEntry, filmStepPosition, filmPosition, playerBlocked, NEO_CHAPTERS, MEETING_DRIVE_SECONDS, type MatrixEscapeEncounter, type TheOneEncounter, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENES, FILM_SETS, RESCUE, GOVERNMENT_RESCUE, AIR_RESCUE, MIRROR_TOUCH, filmEntry, filmStepPosition, filmPosition, playerBlocked, NEO_CHAPTERS, MEETING_DRIVE_SECONDS, type MatrixEscapeEncounter, type TheOneEncounter, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -39,6 +39,13 @@ if (process.argv[3] === 'near') {
   actor.position = filmStepPosition(scene, scene.steps[0]); actor.position.z += 2.5;
   if (playerBlocked(actor.position, actor.isInMatrix)) actor.position = filmStepPosition(scene, scene.steps[0]);
   sandbox.state.neoLife!.journey!.checkpoint = { ...actor.position };
+}
+if (scene.id === 'm1_mirror' && ['mirror-wired', 'mirror-silver'].includes(process.argv[3])) {
+  const journey = sandbox.life.film.state!;
+  journey.awakening = { kind: 'mirror', elapsed: process.argv[3] === 'mirror-wired' ? 2.75 : 4.8, started: false,
+    approach: { x: MIRROR_TOUCH.x, z: MIRROR_TOUCH.z } };
+  actor.controller = 'player'; sandbox.life.film.awakeningFrame(actor, 0, 0);
+  journey.checkpoint = { ...actor.position };
 }
 if (process.argv[3] === 'collision' && scene.id === 'm2_trucks') {
   const journey = sandbox.life.film.state!;

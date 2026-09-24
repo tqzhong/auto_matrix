@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import type { AgentState, PlayerInput } from '@auto_matrix/shared';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { CameraController } from '../packages/client/src/engine/CameraController.js';
-import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, pillRoot, PILL_ROOM, PILL_TIMING, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, airRescueRoot, matrixEscapeRoot, theOneRoot, type TheOneEncounter } from '@auto_matrix/shared';
+import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, pillRoot, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_TIMING, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, airRescueRoot, matrixEscapeRoot, theOneRoot, type TheOneEncounter } from '@auto_matrix/shared';
 
 test('observer camera releases drag and ignores pointer capture while a character controls the view', () => {
   let captures = 0;
@@ -863,6 +863,22 @@ test('the red pill hands the first-person camera to the cracked mirror when the 
   assert.ok(Math.abs(angle(game.yaw(), mirrorYaw)) < .05, 'the first-person view should follow the authored mirror cue');
   game.key('KeyV'); game.key('KeyV', false); game.step(.6);
   assert.ok(Math.abs(angle(game.yaw(), mirrorYaw)) < .15, 'third person should keep the mirror in front of Neo');
+});
+
+test('the tracking-chair shot contains Neo and the mirror while V lowers to seated eye height', t => {
+  const game = setup(t, Math.PI); const center = FILM_SETS.film_lafayette.center;
+  game.camera.aspect = .72; game.camera.updateProjectionMatrix();
+  game.state.currentLocation = 'film_lafayette'; game.state.position = filmPosition('film_lafayette', MIRROR_SEAT.x, MIRROR_SEAT.z);
+  game.state.rotation = Math.PI;
+  game.state.currentAction = { type: 'idle', parameters: { filmPose: 'touch', mirrorBeat: MIRROR_TIMING.wired, mirror: 0, seated: true }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.controls.performing = true; game.step(.5);
+  for (const point of [new THREE.Vector3(center.x + MIRROR_SEAT.x, center.y + 2.4, center.z + MIRROR_SEAT.z),
+    new THREE.Vector3(center.x + PILL_ROOM.mirror.x, center.y + 4, center.z + PILL_ROOM.mirror.z)]) {
+    const screen = point.project(game.camera);
+    assert.ok(Math.abs(screen.x) < .88 && Math.abs(screen.y) < .9 && screen.z > -1 && screen.z < 1, `chair and mirror must share the shot: ${screen.toArray()}`);
+  }
+  game.key('KeyV'); game.key('KeyV', false); game.step(.6);
+  assert.ok(Math.abs(game.camera.position.y - (center.y + 2.09)) < .08, 'first-person eyes must sit at the chair height');
 });
 
 test('the red-pill departure keeps Neo in the third-person frame and reveals the mirror before handoff', t => {

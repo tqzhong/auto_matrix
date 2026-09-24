@@ -1,5 +1,5 @@
 import { reloadedPose, type CatchGesture, type ReloadedGesture } from '@auto_matrix/shared';
-import { MELEE_COMBO, COMBO_WINDOW, COMBAT_SKILLS, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED, PILL_TIMING, lobbyPose, governmentPose, airRescuePose, matrixEscapePose, theOnePose, type CombatSkillId, type AwakeningPose, type AwakeningReveal, type OfficePhone, pillPose, lafayetteWelcomePose, oracleVisitPose, betrayalPose, rescuePose, type PillGesture, type InterrogationGesture, type LafayetteWelcomeGesture, type TrainingGesture, type OracleVisitGesture, type BetrayalGesture, type RescueGesture, type RescueLoadout, type LobbyGesture, type GovernmentRescueGesture, type AirRescueGesture, type MatrixEscapeGesture, type TheOneGesture } from '@auto_matrix/shared';
+import { MELEE_COMBO, COMBO_WINDOW, COMBAT_SKILLS, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED, PILL_TIMING, MIRROR_TIMING, lobbyPose, governmentPose, airRescuePose, matrixEscapePose, theOnePose, type CombatSkillId, type AwakeningPose, type AwakeningReveal, type OfficePhone, pillPose, lafayetteWelcomePose, oracleVisitPose, betrayalPose, rescuePose, type PillGesture, type InterrogationGesture, type LafayetteWelcomeGesture, type TrainingGesture, type OracleVisitGesture, type BetrayalGesture, type RescueGesture, type RescueLoadout, type LobbyGesture, type GovernmentRescueGesture, type AirRescueGesture, type MatrixEscapeGesture, type TheOneGesture } from '@auto_matrix/shared';
 
 export interface MotionInput {
   speed: number;
@@ -21,6 +21,8 @@ export interface MotionInput {
   riding?: boolean;
   climbing?: number;
   performance?: AwakeningPose;
+  mirrorBeat?: number;
+  mirrorCrew?: number;
   recovery?: number;
   reveal?: AwakeningReveal;
   training?: TrainingGesture;
@@ -240,7 +242,15 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     legs[i].hip = -.75 + pull * .4; legs[i].knee = 1.1 - pull * .6; legs[i].ankle = -.2;
     arms[i].shoulder = -2.2 - pull * .55; arms[i].elbow = -.65 + pull * .5; arms[i].grip = 1;
   }
-  if (input.performance === 'touch') { arms[0].shoulder = -1.5; arms[0].elbow = -.06; arms[0].grip = 0; }
+  if (input.performance === 'touch' && (input.mirrorBeat ?? MIRROR_TIMING.touch) >= MIRROR_TIMING.touch) {
+    arms[0].shoulder = -1.5; arms[0].elbow = -.06; arms[0].grip = 0;
+  }
+  if (input.mirrorCrew !== undefined) {
+    const wire = smooth(clamp((input.mirrorCrew - MIRROR_TIMING.sit) / .55)) * (1 - smooth(clamp((input.mirrorCrew - MIRROR_TIMING.wired) / .5)));
+    arms[0].shoulder = mix(arms[0].shoulder, -1.42, wire);
+    arms[0].elbow = mix(arms[0].elbow, -.34, wire);
+    arms[0].outward = mix(arms[0].outward, -.25, wire);
+  }
   if (input.spoon !== undefined) { arms[0].shoulder = -.72; arms[0].elbow = -1.45; arms[0].outward = -.2; arms[0].grip = .65; }
   if (input.vase !== undefined) {
     const reach = Math.sin(clamp((input.vase - .6) / 1.8) * Math.PI);

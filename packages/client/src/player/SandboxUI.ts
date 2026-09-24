@@ -1,5 +1,5 @@
 import { CATCH, RELOADED, RELOADED_FINALE, HEL_COATCHECK, catchText, reloadedText } from '@auto_matrix/shared';
-import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_NAMES, GRID_HACK_SECONDS, GRID_REROUTE_SECONDS, HEL_ELEVATOR, HEL_DANCE_DOOR, filmStepPosition, helElevatorLocked, helDanceDoorLocked, pillLocked, lafayetteWelcomeLocked, awakeningLocked, awakeningWaiting, AWAKENING_SECONDS, MIRROR_TOUCH, trainingLocked, trainingWaiting, TRAINING_SECONDS, DOJO_COMBO_WINDOW, windowOpening, windowCrossing, ITEMS, RECIPES, SKILLS, FILMS, MISSIONS, LOCATIONS, CITY_BUILDINGS, NEO_CHAPTERS, LIFE_ACTIONS, lifeActionPosition, lifeRoomCenter, locationEntrance, distance, missionPosition, nearTransit, skillPoints,
+import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_NAMES, GRID_HACK_SECONDS, GRID_REROUTE_SECONDS, HEL_ELEVATOR, HEL_DANCE_DOOR, filmStepPosition, helElevatorLocked, helDanceDoorLocked, pillLocked, lafayetteWelcomeLocked, awakeningLocked, awakeningWaiting, AWAKENING_SECONDS, MIRROR_TOUCH, MIRROR_TIMING, trainingLocked, trainingWaiting, TRAINING_SECONDS, DOJO_COMBO_WINDOW, windowOpening, windowCrossing, ITEMS, RECIPES, SKILLS, FILMS, MISSIONS, LOCATIONS, CITY_BUILDINGS, NEO_CHAPTERS, LIFE_ACTIONS, lifeActionPosition, lifeRoomCenter, locationEntrance, distance, missionPosition, nearTransit, skillPoints,
   type AgentState, type SandboxState, type SandboxCommand, type ItemId, type SkillId, type Vector3 } from '@auto_matrix/shared';
 import './sandbox.css';
 import { renderNeoLife } from './NeoLifePanel.js';
@@ -188,7 +188,7 @@ export class SandboxUI {
       if (scene.id !== 'm1_pod') blackout.classList.remove('pod-reveal');
       this.previousFilmScene = scene.id;
       if (scene.id === 'm1_mirror' && journey.awakening?.kind === 'mirror')
-        blackout.style.opacity = String(Math.min(.96, Math.max(0, (journey.awakening.elapsed - 6.8) / 1.2)));
+        blackout.style.opacity = String(Math.min(.96, Math.max(0, (journey.awakening.elapsed - MIRROR_TIMING.fade) / (AWAKENING_SECONDS.mirror - MIRROR_TIMING.fade))));
     }
     const set = FILM_SETS[journey.visiting ? FILM_SCENE_BY_ID[journey.visiting].set : scene.set];
     const shown = journey.visiting ? FILM_SCENE_BY_ID[journey.visiting] : scene;
@@ -656,8 +656,8 @@ export class SandboxUI {
     }
     if (journey.awakening && journey.awakening.elapsed < AWAKENING_SECONDS[journey.awakening.kind] && awakeningLocked(journey)) {
       const waiting = awakeningWaiting(journey); const kind = journey.awakening!.kind;
-      const action = kind === 'recovery' ? '示意开始恢复肌肉' : kind === 'construct' ? '请 Morpheus 打开电视' : '请 Morpheus 继续揭示';
-      const activity = ({ mirror: '镜面覆盖', connect: '定位连接', disconnect: '培养舱断线', rescue: '飞船救援', recovery: '针疗与身体恢复', construct: '电视与感官揭示', desert: '真实荒漠讲解' } as const)[kind];
+      const action = kind === 'mirror' ? '继续追踪与触镜' : kind === 'recovery' ? '示意开始恢复肌肉' : kind === 'construct' ? '请 Morpheus 打开电视' : '请 Morpheus 继续揭示';
+      const activity = ({ mirror: journey.awakening!.elapsed < MIRROR_TIMING.touch ? '追踪接线' : '镜面覆盖', connect: '定位连接', disconnect: '培养舱断线', rescue: '飞船救援', recovery: '针疗与身体恢复', construct: '电视与感官揭示', desert: '真实荒漠讲解' } as const)[kind];
       document.getElementById('game-objective-copy')!.textContent = waiting
         ? `${journey.step + 1}/${scene.steps.length} · ${action} · 按 G`
         : `${journey.step + 1}/${scene.steps.length} · ${activity}进行中 · ${Math.round(journey.awakening!.elapsed / AWAKENING_SECONDS[kind] * 100)}%`;
