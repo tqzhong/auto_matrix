@@ -147,7 +147,9 @@ export class PlayerExperience {
     if (performance.now() > this.tipUntil) this.el('play-tip').classList.add('hidden');
     if (this.menuOpen && performance.now() - this.lastRender > 1000) this.renderRoster();
     const player = this.controlled ? agents[this.controlled] : undefined;
-    const driving = Boolean(player?.currentAction?.parameters.riding);
+    const gunner = Boolean(player && neoLife?.journey?.actor === player.id && !neoLife.journey.visiting
+      && neoLife.journey.scene === 'm3_dock_battle' && neoLife.journey.dockGunnery?.phase === 'firing');
+    const driving = Boolean(player?.currentAction?.parameters.riding || gunner);
     const matrixPerforming = Boolean(neoLife?.journey && neoLife.journey.actor === player?.id && matrixEscapeLocked(neoLife.journey));
     const onePerforming = Boolean(neoLife?.journey && neoLife.journey.actor === player?.id && theOneLocked(neoLife.journey));
     const reloadedPerforming = Boolean(neoLife?.journey && neoLife.journey.actor === player?.id && reloadedLocked(neoLife.journey));
@@ -172,12 +174,13 @@ export class PlayerExperience {
     document.body.classList.toggle('film-mountain-flight', this.filmPlaying && neoLife?.journey?.scene === 'm2_mountain' && ['takeoff', 'flying', 'arrived'].includes(neoLife.journey.mountain?.phase ?? ''));
     const rescueScene = this.filmPlaying && ['m1_rescue_decision', 'm1_guns'].includes(neoLife?.journey?.scene ?? '') && !neoLife?.journey?.visiting;
     document.body.classList.toggle('film-rescue-scene', rescueScene);
-    const armed = Boolean(this.filmPlaying && !neoLife?.journey?.visiting && (neoLife?.journey?.scene === 'm1_lobby' || neoLife?.journey?.scene === 'm3_hel_entry' && neoLife.journey.fighting));
+    const armed = Boolean(this.filmPlaying && !neoLife?.journey?.visiting && (gunner || neoLife?.journey?.scene === 'm1_lobby' || neoLife?.journey?.scene === 'm3_hel_entry' && neoLife.journey.fighting));
     this.el('attack-keys').textContent = armed ? '左键 / T' : 'F / 左键';
-    this.el('attack-label').textContent = armed ? '射击 · F 近战' : '连击';
-    this.el('r-label').textContent = armed ? '换弹' : '出口接入';
+    this.el('attack-label').textContent = gunner ? 'APU 机炮' : armed ? '射击 · F 近战' : '连击';
+    this.el('r-label').textContent = gunner ? '炮位' : armed ? '换弹' : '出口接入';
     this.el('mouse-hint').textContent = armed ? '点击锁定鼠标 · 朝向辅助瞄准 · 左键 / T 射击 · R 换弹 · 右键观察' : '点击画面锁定鼠标 · F 连击，锁定后也可用左键 · 右键观察 · Esc 释放';
     if (driving) this.el('mouse-hint').textContent = 'W 加速 · S 刹车 · A / D 转向 · V 切换视角 · J 手记';
+    if (gunner) this.el('mouse-hint').textContent = '鼠标左右瞄准 · 左键 / T 开炮 · V 切换视角 · J 手记';
     document.body.classList.toggle('neo-daily', Boolean(player?.id === 'neo' && neoLife && !player.isAwakened));
     if (!player) return;
     this.el('player-name').textContent = player.name.toUpperCase();

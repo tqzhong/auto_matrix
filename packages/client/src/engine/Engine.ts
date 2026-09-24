@@ -364,6 +364,8 @@ export class Engine {
     }
     if (after?.scene === 'm3_emp' && before?.scene === after.scene && before.emp?.firedAt === undefined
       && after.emp?.firedAt !== undefined && after.actor === this.playerControls?.id && this.running) this.audio.theOneSound('emp');
+    if (after?.scene === 'm3_dock_battle' && before?.scene === after.scene && after.actor === this.playerControls?.id && this.running
+      && (after.dockGunnery?.shots ?? 0) > (before.dockGunnery?.shots ?? 0)) this.audio.governmentSound('minigun');
     if (after?.scene === 'm1_office_escape' && !after.visiting && after.actor === this.playerControls?.id && before?.scene === after.scene && !after.office?.outcome && this.running) {
       const previous = before.office?.window ?? 0; const current = after.office?.window ?? 0;
       if (previous < .7 && current >= .7) this.audio.windowSound(false);
@@ -393,15 +395,17 @@ export class Engine {
       this.playerControls.spoon = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_spoon' ? journey.oracle?.spoon : undefined;
       this.playerControls.phone = journey?.actor === this.playerControls.id ? heldPhone(journey) : undefined;
       this.playerControls.truckRescue = Boolean(journey?.actor === this.playerControls.id && journey.scene === 'm2_trucks' && !journey.visiting && ['rescue', 'rescued'].includes(journey.trucks?.phase ?? ''));
-      this.playerControls.performing = Boolean(journey?.actor === this.playerControls.id && (journey.scene === 'm1_room303' && ['breach', 'dive', 'ladder_ready'].includes(journey.openingHotel?.phase ?? '') || journey.trucks?.phase === 'rescue' || helElevatorLocked(journey) || helDanceDoorLocked(journey) || baneLocked(journey) || meetingLocked(journey) || awakeningLocked(journey) || oracleActing(journey) || phoneLocked(journey) || wakeCallLocked(journey) || sentinelLocked(journey) || interludeLocked(journey) || rescueLocked(journey) || lobbyLocked(journey) || governmentLocked(journey) || airRescueLocked(journey) || matrixEscapeLocked(journey) || theOneLocked(journey) || reloadedLocked(journey) || windowOpening(journey) || windowCrossing(journey) || pillLocked(journey) || interrogationLocked(journey) || lafayetteKnocking(journey) || lafayetteWelcomeLocked(journey)));
+      const gunner = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm3_dock_battle' && journey.dockGunnery?.phase === 'firing';
+      this.playerControls.gunner = gunner;
+      this.playerControls.performing = Boolean(journey?.actor === this.playerControls.id && (gunner || journey.scene === 'm1_room303' && ['breach', 'dive', 'ladder_ready'].includes(journey.openingHotel?.phase ?? '') || journey.trucks?.phase === 'rescue' || helElevatorLocked(journey) || helDanceDoorLocked(journey) || baneLocked(journey) || meetingLocked(journey) || awakeningLocked(journey) || oracleActing(journey) || phoneLocked(journey) || wakeCallLocked(journey) || sentinelLocked(journey) || interludeLocked(journey) || rescueLocked(journey) || lobbyLocked(journey) || governmentLocked(journey) || airRescueLocked(journey) || matrixEscapeLocked(journey) || theOneLocked(journey) || reloadedLocked(journey) || windowOpening(journey) || windowCrossing(journey) || pillLocked(journey) || interrogationLocked(journey) || lafayetteKnocking(journey) || lafayetteWelcomeLocked(journey)));
       this.playerControls.mirror = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_mirror' ? mirrorSilver(journey.awakening?.elapsed ?? 0) : 0;
       this.playerControls.climbing = Boolean(journey?.actor === this.playerControls.id && !journey.visiting && (journey.scene === 'm1_ledge' && journey.step === 1 && journey.office?.climbed !== undefined || journey.scene === 'm1_room303' && journey.openingHotel?.phase === 'climbing'));
       this.playerControls.ride = journey?.actor === this.playerControls.id && !journey.visiting ? journey.apu?.phase === 'riding' ? journey.apu : journey.hammer?.phase === 'riding' ? journey.hammer : journey.garage?.phase === 'riding' ? journey.garage : journey.ride?.phase === 'riding' ? journey.ride : undefined : undefined;
       const coatcheck = journey?.scene === 'm3_hel_entry' && journey.step === 1 && Boolean(journey.fighting) && journey.helCoatcheck?.phase === 'combat';
       const hotel = journey?.scene === 'm1_room303' && journey.step === 1 && journey.openingHotel?.phase === 'combat' && journey.openingHotel.disarmed;
-      this.playerControls.firearm = Boolean(journey && !journey.visiting && journey.actor === this.playerControls.id && (journey.scene === 'm1_lobby' && !lobbyLocked(journey) && agents[journey.actor]?.currentLocation === 'film_government_lobby' || coatcheck && agents[journey.actor]?.currentLocation === 'film_club_hel' || hotel && agents[journey.actor]?.currentLocation === 'film_heart_hotel'));
-      this.playerControls.weaponStyle = this.playerControls.firearm ? coatcheck || hotel ? 'hel_pistol' : loadout.id : undefined;
-      this.playerControls.fireInterval = coatcheck || hotel ? HEL_COATCHECK.fireInterval : loadout.fireInterval;
+      this.playerControls.firearm = Boolean(journey && !journey.visiting && journey.actor === this.playerControls.id && (gunner || journey.scene === 'm1_lobby' && !lobbyLocked(journey) && agents[journey.actor]?.currentLocation === 'film_government_lobby' || coatcheck && agents[journey.actor]?.currentLocation === 'film_club_hel' || hotel && agents[journey.actor]?.currentLocation === 'film_heart_hotel'));
+      this.playerControls.weaponStyle = gunner ? undefined : this.playerControls.firearm ? coatcheck || hotel ? 'hel_pistol' : loadout.id : undefined;
+      this.playerControls.fireInterval = gunner ? .11 : coatcheck || hotel ? HEL_COATCHECK.fireInterval : loadout.fireInterval;
     }
     if (state !== this.sandbox || this.sandboxPlayer !== this.playerControls?.id) {
       this.sandboxPlayer = this.playerControls?.id;

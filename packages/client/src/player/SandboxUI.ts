@@ -207,7 +207,7 @@ export class SandboxUI {
     this.el('sandbox-nearby').textContent = journey.visiting ? '回访场景 · J 返回剧情' : journey.finished ? '三部曲已完成 · 查看手记' : !step ? '场景完成 · 继续下一段' : step.kind === 'reflect' ? '打开手记，记录反思' : journey.fighting ? `战斗中 · 剩余 ${state.threats.filter(t => t.scene === scene.id).length}` : step.label;
     this.el('sandbox-job').style.width = journey.started !== undefined && step ? `${Math.min(100, (this.tick - journey.started) / ((step.seconds ?? 3) * 2) * 100)}%` : '0';
     document.getElementById('game-objective')!.textContent = journey.visiting ? set.name : scene.title;
-    document.getElementById('game-objective-copy')!.textContent = journey.visiting ? '自由走动，J 返回保存的剧情位置。' : journey.fighting ? 'F 连击 · X 闪避 · 1 治疗 · 击败追兵后继续' : step ? `${journey.step + 1}/${scene.steps.length} · ${step.label} · ${step.kind === 'reach' ? '走到标记旁' : step.kind === 'reflect' ? '靠近后按 J 记录反思' : '靠近后按 G'}` : 'G 继续下一段，J 查看刚刚发生的事。';
+    document.getElementById('game-objective-copy')!.textContent = journey.visiting ? '自由走动，J 返回保存的剧情位置。' : scene.id === 'm3_dock_battle' && journey.dockGunnery?.phase === 'failed' ? 'APU 防线失守 · 从剧情检查点重试' : journey.fighting ? 'F 连击 · X 闪避 · 1 治疗 · 击败追兵后继续' : step ? `${journey.step + 1}/${scene.steps.length} · ${step.label} · ${step.kind === 'reach' ? '走到标记旁' : step.kind === 'reflect' ? '靠近后按 J 记录反思' : '靠近后按 G'}` : 'G 继续下一段，J 查看刚刚发生的事。';
     if (!journey.visiting && scene.id === 'm1_room303' && journey.openingHotel) {
       const hotel = journey.openingHotel; const failed = hotel.phase === 'failed';
       this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.toggle('urgent', failed || hotel.phase === 'combat');
@@ -1073,6 +1073,16 @@ export class SandboxUI {
       this.el('film-alert-label').textContent = `已下降 ${Math.round(journey.office.climbed / 2)} / 16 m · W 向下 · S 向上 · 松手停留`;
       document.getElementById('game-objective-copy')!.textContent = '沿维修梯抵达下方平台 · 可停在横档上观察';
       this.el('sandbox-waypoint').textContent = '↓ 维修平台'; this.el('sandbox-interact').classList.add('hidden'); return;
+    }
+    if (scene.id === 'm3_dock_battle' && journey.dockGunnery?.phase === 'firing' && !journey.visiting) {
+      const gunner = journey.dockGunnery;
+      this.el('film-ride').classList.remove('hidden');
+      this.el('film-ride-title').textContent = 'MIFUNE / APU 双炮';
+      this.el('film-ride-speed').textContent = `${gunner.ammo} 发`;
+      this.el('film-ride-health').textContent = `机甲 ${Math.ceil(gunner.hull)}% · Kid ${Math.ceil(gunner.kidHealth)}% · 击落 ${gunner.kills}/${gunner.targets.length}`;
+      this.el('film-ride-controls').textContent = '鼠标瞄准 · 左键 / T 开炮 · 保护弹药车';
+      document.getElementById('game-objective-copy')!.textContent = '瞄准迎面飞来的哨兵 · Kid 正推着弹药车接近炮位';
+      this.el('sandbox-interact').classList.add('hidden'); this.el('sandbox-waypoint').textContent = ''; return;
     }
     if (scene.id === 'm3_hammer_tunnels' && journey.hammer?.phase === 'riding' && !journey.visiting) {
       const flight = journey.hammer;

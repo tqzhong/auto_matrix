@@ -90,6 +90,7 @@ export interface FilmJourney {
   garage?: import('./garage.js').GarageEscape;
   hammer?: import('./hammer-flight.js').HammerFlight;
   apu?: import('./dock-apu.js').ApuRun;
+  dockGunnery?: import('./dock-gunnery.js').DockGunnery;
   emp?: { firedAt: number };
   templeSeal?: { phase: 'running' | 'failed' | 'sealed'; remaining: number; lastTick: number; attempts: number };
   trucks?: import('./trucks.js').TruckEncounter;
@@ -350,7 +351,7 @@ export const FILM_SCENES: FilmScene[] = [
     use('让 Morpheus 接管侧向推进器', '船员就位。保持速度穿过弯道和横向管梁；太慢会让哨兵追上。', 0, 175, 1.5),
     { kind: 'drive', label: '驾驶 Hammer 穿过机械管线', x: 0, z: 175 },
   ], ['morpheus', 'roland']),
-  scene('m3_dock_battle', 3, 'zion_hangar', 'mifune', '船坞的弹药与钢铁', 'siege', 'siege', '钻头突破穹顶，哨兵涌入船坞。Mifune 带队坚守。', [fight('抵挡第一批哨兵', 4, 'sentinel'), use('掩护弹药运输', 'Kid 向 APU 输送弹药，Zee 与 Charra 在地面攻击钻头。', 0, -30)], ['kid', 'zee', 'charra']),
+  scene('m3_dock_battle', 3, 'zion_hangar', 'mifune', '船坞的弹药与钢铁', 'siege', 'siege', '钻头突破穹顶，哨兵涌入船坞。Mifune 驾驶 APU 为推送弹药车的 Kid 扫清航路。', [fight('以 APU 双炮掩护 Kid 的弹药车', 4, 'sentinel'), use('让 Kid 装入卡住的弹箱', 'Kid 爬上 APU，把卡住的弹箱踢入位。更多哨兵从穹顶涌来，Mifune 把打开闸门的任务交给他。', 0, 12, 2)], ['kid', 'zee', 'charra']),
   scene('m3_gate', 3, 'zion_hangar', 'kid', '打开三号闸门', 'siege', 'siege', 'Mifune 受致命伤，把打开闸门的任务交给 Kid。', [
     fight('突破闸门附近的哨兵', 2, 'sentinel'),
     { kind: 'drive', label: '接管受损 APU，冲向三号闸门', x: 0, z: 12 },

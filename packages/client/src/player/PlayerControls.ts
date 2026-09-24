@@ -52,6 +52,7 @@ export class PlayerControls {
   weaponStyle?: RescueLoadout | 'hel_pistol';
   fireInterval = LOBBY_FIRE_INTERVAL;
   ride?: Pick<FreewayRide, 'speed'>;
+  gunner = false;
   climbing = false;
   performing = false;
   private phoneExit = false;
@@ -95,7 +96,7 @@ export class PlayerControls {
     this.onViewChange?.(false);
   }
   release(): void {
-    this.id = null; this.keys.clear(); this.enabled = true; this.firing = false; this.firearm = false; this.weaponStyle = undefined; this.fireInterval = LOBBY_FIRE_INTERVAL; this.ride = undefined; this.climbing = false; this.performing = false; this.phoneExit = false; this.mirror = 0; this.spoon = undefined; this.phone = undefined; this.welcomeShot = undefined;
+    this.id = null; this.keys.clear(); this.enabled = true; this.firing = false; this.firearm = false; this.weaponStyle = undefined; this.fireInterval = LOBBY_FIRE_INTERVAL; this.ride = undefined; this.gunner = false; this.climbing = false; this.performing = false; this.phoneExit = false; this.mirror = 0; this.spoon = undefined; this.phone = undefined; this.welcomeShot = undefined;
     this.camera.near = this.defaultNear; this.camera.fov = 48; this.camera.updateProjectionMatrix();
     if (document.pointerLockElement === this.canvas) document.exitPointerLock();
   }
@@ -325,7 +326,7 @@ export class PlayerControls {
     this.motion.floorSeated = state.currentAction?.parameters.floorSeated === true;
     this.motion.weaponStyle = state.currentAction?.parameters.weaponStyle as MotionInput['weaponStyle'] ?? (this.firearm ? this.weaponStyle : undefined);
     this.motion.crouching = this.enabled && !this.performing && this.keys.has('KeyZ');
-    this.motion.riding = Boolean(this.ride);
+    this.motion.riding = Boolean(this.ride || this.gunner);
     this.motion.performance = this.performing ? state.currentAction?.parameters.filmPose as AwakeningPose : undefined;
     this.motion.mirrorBeat = state.currentAction?.parameters.mirrorBeat as number | undefined;
     this.motion.helDanceDoor = state.currentAction?.parameters.helDanceDoor as number | undefined;
@@ -444,7 +445,7 @@ export class PlayerControls {
     const dx = this.position.x - previous.x; const dz = this.position.z - previous.z;
     this.motion.speed = this.ride || this.climbing || this.performing ? 0 : Math.hypot(dx, dz) / Math.max(delta, .001);
     if (this.motion.wakeCall?.phase === 'waking' && this.motion.wakeCall.elapsed > 2.7) this.motion.speed = 1.45;
-    this.motion.grounded = Boolean(this.ride) || this.climbing || this.performing || this.position.y <= groundHeight(this.position, state.isInMatrix) + .12;
+    this.motion.grounded = Boolean(this.ride || this.gunner) || this.climbing || this.performing || this.position.y <= groundHeight(this.position, state.isInMatrix) + .12;
     this.motion.verticalVelocity = this.vy;
     this.motion.inspecting = Boolean((this.motion.pills || this.motion.interrogation || this.motion.welcome || this.motion.knock !== undefined || this.motion.recovery !== undefined || this.motion.reveal || this.motion.training || this.motion.workday || this.motion.wakeCall || this.motion.sentinel || this.motion.interlude || this.motion.oracleVisit || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || this.motion.lobbyEntry) && !this.firstPerson) || Boolean(this.phone && this.performing && this.motion.window === undefined && this.motion.crossing === undefined) || this.spoon !== undefined && this.enabled && this.motion.speed < .25 && this.motion.grounded;
     const attacking = (now - this.lastAttack) / 1000 < MELEE_COMBO[this.attackCombo].duration;
@@ -1109,6 +1110,16 @@ export class PlayerControls {
       const ideal = new THREE.Vector3(this.position.x - 6.5, this.position.y + 5.5, this.position.z - 15);
       const focus = new THREE.Vector3(this.position.x - 4, this.position.y - 2.5, this.position.z + 9);
       if (resetCamera) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
+      this.camera.lookAt(focus);
+    } else if (this.gunner) {
+      const forward = new THREE.Vector3(Math.sin(this.yaw), 0, Math.cos(this.yaw));
+      const side = new THREE.Vector3(Math.cos(this.yaw), 0, -Math.sin(this.yaw));
+      const ideal = new THREE.Vector3(this.position.x, this.position.y + (this.firstPerson ? 5.6 : 8.4), this.position.z)
+        .addScaledVector(forward, this.firstPerson ? 6 : -10).addScaledVector(side, this.firstPerson ? 0 : -7);
+      const focus = new THREE.Vector3(this.position.x, this.position.y + 5.6 - Math.sin(this.pitch - .24) * 24, this.position.z)
+        .addScaledVector(forward, 36);
+      if (this.firstPerson || resetCamera) this.camera.position.copy(ideal);
+      else this.camera.position.lerp(ideal, 1 - Math.exp(-12 * delta));
       this.camera.lookAt(focus);
     } else if (this.firstPerson) {
       this.camera.position.copy(target);

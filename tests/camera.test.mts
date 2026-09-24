@@ -27,6 +27,24 @@ test('mouse pitch is included in authoritative player input', t => {
   assert.ok((game.sent.at(-1)?.pitch ?? 0) < -.15, 'upward camera input must reach server-side ballistics');
 });
 
+test('the dock APU gunner sees past the frame, can turn the aim and fire from both views', t => {
+  const game = setup(t, Math.PI); const center = FILM_SETS.film_zion_hangar.center;
+  game.state.currentLocation = 'film_zion_hangar'; game.state.isInMatrix = false;
+  game.state.position = { ...filmPosition('film_zion_hangar', 0, 12), y: center.y + 2.2 };
+  game.state.currentAction = { type: 'idle', parameters: { riding: true, seated: true }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.controls.gunner = true; game.controls.performing = true;
+  game.controls.firearm = true; game.controls.fireInterval = .11; game.step(.4);
+  assert.ok(Math.abs(game.camera.position.x - center.x) > 5, 'the third-person sightline must clear the APU back frame');
+  assert.ok(game.camera.position.y > center.y + 8, 'the gunner must see over the cannon housing');
+  const oldDirection = game.camera.getWorldDirection(new THREE.Vector3());
+  game.document.pointerLockElement = game.canvas; game.event(game.document, 'mousemove', { movementX: 190, movementY: 0 }); game.step(.2);
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(oldDirection) > .3);
+  game.key('KeyT'); assert.equal(game.actions.at(-1), 'shoot');
+  game.key('KeyT', false); game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+  assert.ok(game.camera.position.z < game.state.position.z - 3, 'first-person gun sight stays in front of the frame');
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).z < -.4);
+});
+
 test('the lobby checkpoint has a readable authored camera and V returns to Neo eye height', t => {
   const game = setup(t, Math.PI); const center = FILM_SETS.film_government_lobby.center;
   game.state.currentLocation = 'film_government_lobby'; game.state.position = filmPosition('film_government_lobby', 1.4, 25.5);

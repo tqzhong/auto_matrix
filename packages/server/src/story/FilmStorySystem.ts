@@ -31,6 +31,7 @@ import { MOUNTAIN, type MountainFlight, type PlayerInput } from '@auto_matrix/sh
 import { GARAGE, newGarageEscape, stepGarageEscape } from '@auto_matrix/shared';
 import { newHammerFlight, stepHammerFlight } from '@auto_matrix/shared';
 import { newApuRun, stepApuRun } from '@auto_matrix/shared';
+import { DOCK_GUNNERY, newDockGunnery, fireDockGunnery, stepDockGunnery } from '@auto_matrix/shared';
 import { TEMPLE_SEAL_SECONDS } from '@auto_matrix/shared';
 import { TRUCKS } from '@auto_matrix/shared';
 import { OPENING_ESCAPE } from '@auto_matrix/shared';
@@ -3105,6 +3106,38 @@ export class FilmStorySystem {
     state.templeSeal ??= { phase: state.step >= this.scene!.steps.length ? 'sealed' : 'running',
       remaining: TEMPLE_SEAL_SECONDS, lastTick: tick, attempts: 0 };
   }
+  private ensureDockGunnery(tick: number): void {
+    const state = this.state;
+    if (state?.scene !== 'm3_dock_battle' || state.completed.includes(state.scene) || state.dockGunnery) return;
+    state.dockGunnery = newDockGunnery(tick);
+    if (state.step > 0) {
+      state.step = 0; delete state.fighting; delete state.started; this.clearThreats();
+      state.checkpoint = filmStepPosition(this.scene!, this.scene!.steps[0]);
+      const actor = this.world.agents.get(state.actor);
+      if (actor) this.place(actor, this.scene!, state.checkpoint);
+      state.lastText = '旧版船坞交战检查点已接回 APU 炮位。Mifune 需要亲自掩护 Kid 送弹。';
+    }
+  }
+  dockGunneryFrame(agent: AgentState, tick: number): boolean {
+    const state = this.state;
+    if (state?.scene !== 'm3_dock_battle' || !this.controls(agent) || state.visiting || state.dockGunnery?.phase !== 'firing') return false;
+    agent.position = { ...filmPosition(this.scene!.set, 0, DOCK_GUNNERY.apuZ), y: FILM_SETS[this.scene!.set].center.y + 2.2 };
+    agent.velocity = { x: 0, y: 0, z: 0 };
+    agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, riding: true, seated: true }, startedAt: tick, duration: 1, progress: 0 };
+    return true;
+  }
+  dockShoot(agent: AgentState, yaw: number, pitch: number, tick: number): string {
+    const state = this.state, encounter = state?.dockGunnery;
+    if (state?.scene !== 'm3_dock_battle' || !this.controls(agent) || !encounter || encounter.phase !== 'firing') return '';
+    if (!Number.isFinite(pitch)) return '';
+    const hit = fireDockGunnery(encounter, yaw, tick); agent.rotation = yaw;
+    if (!encounter.ammo && encounter.kills < encounter.targets.length) {
+      agent.health = 0; agent.status = 'dead';
+      state.lastText = 'APU 弹箱耗尽，Kid 仍暴露在哨兵面前。按 J 从炮位重试。';
+    }
+    else if (hit) state.lastText = `机炮击中哨兵 · 击落 ${encounter.kills}/${encounter.targets.length} · 剩余 ${encounter.ammo} 发`;
+    return hit ? 'APU 机炮击中哨兵。' : '机炮弹幕掠过船坞。';
+  }
   driveFrame(agent: AgentState, input: DriveInput, dt: number, tick: number): boolean {
     if (!this.driving(agent)) return false;
     if (this.state!.scene === 'm3_gate') {
@@ -3376,6 +3409,7 @@ export class FilmStorySystem {
     if (!state || !this.scene) return '这条电影进度尚未开始。';
     this.ensureHammerRoute();
     this.ensureApuGate();
+    this.ensureDockGunnery(tick);
     this.ensureTempleSeal(tick);
     if (target === 'resume' && agent.id === 'neo' && agent.id !== state.actor) {
       if (!this.changeActor(agent, state.actor, tick)) return '当前剧情角色正在由另一位玩家控制。';
@@ -3404,6 +3438,14 @@ export class FilmStorySystem {
       return `回访${FILM_SETS[visited.set].name}。J 可返回当前剧情，回访不会改写进度。`;
     }
     if (target === 'retry') {
+      if (state.scene === 'm3_dock_battle' && state.dockGunnery?.phase === 'failed') {
+        if (this.world.agents.get('kid')?.controller) return 'Kid 正由另一位玩家控制；弹药车等待他空闲后出发。';
+        state.dockGunnery = newDockGunnery(tick, state.dockGunnery.attempts + 1);
+        state.dockGunnery.phase = 'firing'; state.step = 0; state.fighting = true; delete state.started;
+        agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
+        this.dockGunneryFrame(agent, tick); state.checkpoint = { ...agent.position };
+        return state.lastText = 'Mifune 回到 APU 炮位。用鼠标瞄准哨兵，左键或 T 开火；保护 Kid 的弹药车。';
+      }
       if (state.scene === 'm3_temple_defense' && state.templeSeal?.phase === 'failed') {
         state.templeSeal = { phase: 'running', remaining: TEMPLE_SEAL_SECONDS, lastTick: tick,
           attempts: state.templeSeal.attempts + 1 };
@@ -3614,6 +3656,7 @@ export class FilmStorySystem {
     }
     if (state.visiting) return '回访期间不推进主线。J 返回当前剧情。';
     if (state.finished) return '三部曲已完成。可回访场景，或在手记中开始下一轮生活。';
+    if (state.scene === 'm3_dock_battle' && state.dockGunnery?.phase === 'failed') return '哨兵突破了 APU 防线。按 J 从炮位检查点重试。';
     if (state.scene === 'm3_temple_defense' && state.templeSeal?.phase === 'failed') return '下一波哨兵已抵达神庙。按 J 从入口检查点重试。';
     if (state.hotel && !state.hotel.entered) {
       const door = filmPosition('film_lafayette', 24, 0);
@@ -3952,6 +3995,15 @@ export class FilmStorySystem {
       return '已上车。W 加速，S 刹车，A / D 转向；护送钥匙匠通过逆向车流，抵达前方接应区。';
     }
     if (step.kind === 'fight') {
+      if (state.scene === 'm3_dock_battle') {
+        if (this.world.agents.get('kid')?.controller) return 'Kid 正由另一位玩家控制；弹药车等待他空闲后出发。';
+        const encounter = state.dockGunnery!;
+        if (encounter.phase !== 'firing') {
+          encounter.phase = 'firing'; encounter.lastTick = tick; state.fighting = true;
+          this.clearThreats(); this.dockGunneryFrame(agent, tick); state.checkpoint = { ...agent.position };
+        }
+        return state.lastText = 'Mifune 登上 APU。鼠标瞄准、左键或 T 开炮；哨兵逼近时保护 Kid 推来的弹药车。';
+      }
       if (step.opponent && this.world.agents.get(step.opponent)?.controller) return '对手正在由另一位玩家控制，等待对方结束后再开始。';
       if (state.scene === 'm1_lobby') {
         const occupied = this.lobby.occupied();
@@ -4018,6 +4070,7 @@ export class FilmStorySystem {
     delete state.garage;
     delete state.hammer;
     delete state.apu;
+    delete state.dockGunnery;
     delete state.trucks;
     delete state.awakening;
     delete state.training;
@@ -4132,6 +4185,7 @@ export class FilmStorySystem {
     }
     if (scene.id === 'm2_chateau') state.chateau = { phase: 'ready', wave: 1, parries: 0, disarms: 0, attempts: 0, wounded: false };
     if (scene.id === 'm2_trucks') state.trucks = { phase: 'duel', elapsed: 0, lastTick: tick, attempt: 0 };
+    if (scene.id === 'm3_dock_battle') state.dockGunnery = newDockGunnery(tick);
     if (scene.id === 'm2_plan') state.grid = { primary: 'online', emergency: 'online', vigilant: 'active', trinity: 'waiting', phase: 'preparing',
       remaining: GRID_WINDOW_SECONDS, lastTick: tick, reroute: 0, attempts: 0 };
     if (['m2_power', 'm2_vigilant', 'm2_backup', 'm2_key_door'].includes(scene.id)) this.grid(tick);
@@ -4631,6 +4685,7 @@ export class FilmStorySystem {
     const state = this.state; if (!state || !this.scene || state.finished || state.visiting) return;
     this.ensureHammerRoute();
     this.ensureApuGate();
+    this.ensureDockGunnery(tick);
     this.ensureTempleSeal(tick);
     this.ensureFinale(tick);
     if (state.scene === 'm3_bane') this.ensureBane(tick);
@@ -4659,6 +4714,7 @@ export class FilmStorySystem {
       if (state.helDanceDoor) state.helDanceDoor.lastTick = tick;
       if (state.helDanceDoor) state.helDanceDoor.allyTick = tick;
       if (state.templeSeal) state.templeSeal.lastTick = tick;
+      if (state.dockGunnery) state.dockGunnery.lastTick = tick;
       if (state.helBargain) state.helBargain.lastTick = tick;
       if (actor?.status === 'alive' && state.scene === 'm2_trucks' && state.trucks) {
         const gap = Math.max(0, tick - state.trucks.lastTick);
@@ -4669,6 +4725,27 @@ export class FilmStorySystem {
     }
     if (state.scene === 'm2_trucks' && !state.trucks)
       state.trucks = { phase: state.step === 0 ? 'duel' : 'collision', elapsed: 0, lastTick: tick, attempt: 0 };
+    if (state.scene === 'm3_dock_battle' && state.dockGunnery?.phase === 'firing') {
+      const gunner = state.dockGunnery;
+      stepDockGunnery(gunner, Math.max(0, tick - gunner.lastTick) * .5); gunner.lastTick = tick;
+      const kid = this.world.agents.get('kid');
+      if (kid && !kid.controller) {
+        kid.position = filmPosition(this.scene.set, -6.8, gunner.kidZ); kid.currentLocation = this.scene.set; kid.isInMatrix = false;
+        kid.rotation = 0; kid.velocity = { x: 0, y: 0, z: DOCK_GUNNERY.kidSpeed };
+        kid.currentAction = { type: gunner.kidZ < DOCK_GUNNERY.kidFinish ? 'move_to' : 'idle',
+          parameters: { resolved: true, pushingCart: true }, startedAt: tick, duration: 1, progress: 0 };
+      }
+      if (gunner.phase === 'failed') {
+        actor.health = 0; actor.status = 'dead'; delete state.started;
+        state.lastText = gunner.kidHealth <= 0 ? 'Kid 的弹药车被哨兵截住。按 J 从 APU 炮位重试。'
+          : '哨兵冲破了炮位，或弹药耗尽。按 J 从 APU 炮位重试。';
+      } else if (gunner.phase === 'cleared') {
+        actor.position = filmPosition(this.scene.set, 0, DOCK_GUNNERY.apuZ);
+        this.advance('Mifune 的双炮压住第一波哨兵；Kid 把弹药车推到了 APU 脚下。', actor, tick);
+      }
+      return;
+    }
+    if (state.scene === 'm3_dock_battle' && state.dockGunnery?.phase === 'failed') return;
     if (state.scene === 'm3_temple_defense' && state.templeSeal?.phase === 'running') {
       const seal = state.templeSeal;
       seal.remaining = Math.max(0, seal.remaining - Math.max(0, tick - seal.lastTick) * .5); seal.lastTick = tick;

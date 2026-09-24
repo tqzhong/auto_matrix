@@ -78,6 +78,7 @@ export class PlayerController {
     if (id === 'keymaker' && this.sandbox?.life.film.state?.ride?.phase === 'riding') return { error: '钥匙匠正在后座接受护送，抵达接应区后可以接入。' };
     if (['keymaker', 'morpheus', 'twin1', 'twin2'].includes(id) && this.sandbox?.life.film.state?.garage?.phase === 'riding') return { error: '这个角色正在车库追逐中，轿车冲出车库后可以接入。' };
     if (['morpheus', 'roland'].includes(id) && this.sandbox?.life.film.state?.hammer?.phase === 'riding') return { error: '这个角色正在 Hammer 舰桥协助 Niobe 驾驶，驶出管线后可以接入。' };
+    if (id === 'kid' && this.sandbox?.life.film.state?.dockGunnery?.phase === 'firing') return { error: 'Kid 正在船坞推送弹药车。掩护完成后可以接入。' };
     if (['keymaker', 'neo', 'agent_johnson'].includes(id) && ['collision', 'rescue'].includes(this.sandbox?.life.film.state?.trucks?.phase ?? '')) return { error: '这个角色正在卡车对撞接应中，抵达安全地点后可以接入。' };
     if (['trainman', 'rama_kandra', 'kamala', 'sati'].includes(id) && this.sandbox?.life.film.state?.scene === 'm3_trainman'
       && this.sandbox.life.film.state.mobil?.phase !== 'gone') return { error: '这个角色正在 Mobil Ave 的列车片段中，驶离后可以接入。' };
@@ -281,6 +282,10 @@ export class PlayerController {
       if (this.sandbox?.life.film.lobby.frame(agent, dt, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
+      if (this.sandbox?.life.film.dockGunneryFrame(agent, tick)) {
+        agent.rotation = input.yaw; session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false;
+        session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
       if (this.sandbox?.life.film.sentinelFrame(agent, { movement: Math.hypot(input.x, input.z), sprint: input.sprint, jump: input.jump }, dt, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
@@ -446,9 +451,11 @@ export class PlayerController {
       const lobby = this.sandbox?.life.film.lobby.active(agent);
       const coatcheck = this.sandbox?.life.film.coatcheck.active(agent);
       const hotel = this.sandbox?.life.film.openingHotel.active(agent);
-      if (!lobby && !coatcheck && !hotel || session.strike || session.impulse || session.stagger > 0 || Date.now() - (session.lastShot ?? 0) < (coatcheck || hotel ? HEL_COATCHECK.fireInterval : rescueLoadout(this.sandbox!.life.film.state).fireInterval) * 1000) return '';
+      const dock = this.sandbox?.life.film.state?.scene === 'm3_dock_battle' && this.sandbox.life.film.state.dockGunnery?.phase === 'firing';
+      if (!lobby && !coatcheck && !hotel && !dock || session.strike || session.impulse || session.stagger > 0 || Date.now() - (session.lastShot ?? 0) < (dock ? 110 : coatcheck || hotel ? HEL_COATCHECK.fireInterval * 1000 : rescueLoadout(this.sandbox!.life.film.state).fireInterval * 1000)) return '';
       session.lastShot = Date.now();
-      return hotel ? this.sandbox!.life.film.openingHotel.shoot(agent, session.input.yaw, session.input.pitch ?? 0, tick)
+      return dock ? this.sandbox!.life.film.dockShoot(agent, session.input.yaw, session.input.pitch ?? 0, tick)
+        : hotel ? this.sandbox!.life.film.openingHotel.shoot(agent, session.input.yaw, session.input.pitch ?? 0, tick)
         : coatcheck ? this.sandbox!.life.film.coatcheck.shoot(agent, session.input.yaw, session.input.pitch ?? 0, tick)
         : this.sandbox!.life.film.lobby.shoot(agent, session.input.yaw, session.input.pitch ?? 0, tick);
     }
