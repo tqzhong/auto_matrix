@@ -15,6 +15,7 @@ import { LAFAYETTE, hotelContains, hotelBlocked, hotelFloor } from './lafayette.
 import { mountainFloor } from './mountain.js';
 import { TRUCKS } from './trucks.js';
 import { OPENING_ESCAPE } from './opening-escape.js';
+import { hammerHeight } from './hammer-flight.js';
 
 export type FilmArchitecture = 'hotel' | 'apartment' | 'club' | 'office' | 'interrogation' | 'bridge' | 'car' | 'lafayette' | 'pods' | 'ship' | 'construct' | 'desert' | 'dojo' | 'rooftop' | 'plaza' | 'restaurant' | 'oracle' | 'tenement' | 'lobby' | 'subway' | 'street' | 'zion' | 'temple' | 'engineering' | 'teahouse' | 'backdoors' | 'courtyard' | 'chateau' | 'mountain' | 'workshop' | 'garage' | 'freeway' | 'power' | 'architect' | 'mobil' | 'hel' | 'machine' | 'rain' | 'garden';
 export interface FilmSet {
@@ -89,8 +90,9 @@ const definitions: Omit<FilmSet, 'id' | 'center'>[] = [
   { name: '101 高速 · 十八轮卡车车顶', film: [2], architecture: 'freeway', world: 'matrix', width: 60, depth: 180, height: 35, light: 'day', detail: '疾驰的十八轮卡车、车顶决斗、Niobe 接应和迎面相撞的货车' },
   { name: '工业施工层 · 源头之门', film: [2], architecture: 'backdoors', world: 'matrix', width: 28, depth: 112, height: 12, light: 'cold', detail: '裸露混凝土、临时管线、钥匙匠的门户与通往源头的白门' },
   { name: 'Club Hel · 地下车库入口', film: [3], architecture: 'garage', world: 'matrix', width: 56, depth: 72, height: 14, light: 'night', detail: '成排轿车、混凝土柱、入口守卫与通往俱乐部的钢门' },
+  { name: 'Hammer · 返回锡安的机械管线', film: [3], architecture: 'engineering', world: 'real', width: 68, depth: 390, height: 36, light: 'cold', detail: '弯曲机械管道、横梁、悬浮飞船与追击的哨兵' },
 ];
-const ids = ['heart_hotel', 'hotel_roofs', 'wells_phone', 'anderson_flat', 'white_rabbit_club', 'metacortex_floor', 'office_ledge', 'agent_interrogation', 'adams_bridge', 'extraction_car', 'lafayette', 'power_plant_pods', 'neb_deck', 'white_construct', 'real_desert', 'kungfu_dojo', 'jump_roofs', 'red_dress_plaza', 'cypher_restaurant', 'oracle_home', 'ambush_house', 'government_lobby', 'government_office', 'government_roof', 'subway_platform', 'escape_streets', 'final_phone', 'captains_meeting', 'zion_hangar', 'zion_council', 'zion_residences', 'zion_temple', 'zion_bedroom', 'zion_engineering', 'backdoor_hall', 'seraph_teahouse', 'oracle_courtyard', 'le_vrai', 'chateau_hall', 'keymaker_workshop', 'chateau_garage', 'freeway_101', 'power_station', 'backup_station', 'architect_room', 'trinity_roof', 'service_tunnels', 'hammer_deck', 'mobil_station', 'club_hel', 'logos_deck', 'machine_defense', 'above_clouds', 'logos_wreck', 'machine_core', 'smith_avenue', 'sunrise_garden', 'industrial_loft', 'mountain_range', 'freeway_trucks', 'source_corridor', 'hel_garage'];
+const ids = ['heart_hotel', 'hotel_roofs', 'wells_phone', 'anderson_flat', 'white_rabbit_club', 'metacortex_floor', 'office_ledge', 'agent_interrogation', 'adams_bridge', 'extraction_car', 'lafayette', 'power_plant_pods', 'neb_deck', 'white_construct', 'real_desert', 'kungfu_dojo', 'jump_roofs', 'red_dress_plaza', 'cypher_restaurant', 'oracle_home', 'ambush_house', 'government_lobby', 'government_office', 'government_roof', 'subway_platform', 'escape_streets', 'final_phone', 'captains_meeting', 'zion_hangar', 'zion_council', 'zion_residences', 'zion_temple', 'zion_bedroom', 'zion_engineering', 'backdoor_hall', 'seraph_teahouse', 'oracle_courtyard', 'le_vrai', 'chateau_hall', 'keymaker_workshop', 'chateau_garage', 'freeway_101', 'power_station', 'backup_station', 'architect_room', 'trinity_roof', 'service_tunnels', 'hammer_deck', 'mobil_station', 'club_hel', 'logos_deck', 'machine_defense', 'above_clouds', 'logos_wreck', 'machine_core', 'smith_avenue', 'sunrise_garden', 'industrial_loft', 'mountain_range', 'freeway_trucks', 'source_corridor', 'hel_garage', 'hammer_route'];
 
 export const FILM_SETS: Record<string, FilmSet> = Object.fromEntries(definitions.map((set, i) => {
   const id = `film_${ids[i]}`;
@@ -101,6 +103,7 @@ FILM_SETS.film_office_ledge.center = { ...FILM_SETS.film_metacortex_floor.center
 // Boarding and the examination share the same parked car, not separate rooms.
 Object.assign(FILM_SETS.film_extraction_car, { center: { ...FILM_SETS.film_adams_bridge.center }, width: 48, depth: 76 });
 FILM_SETS.film_lafayette.center.y += LAFAYETTE.upper;
+FILM_SETS.film_hammer_route.center = { x: 15000, y: -100, z: 15000 };
 
 export function filmSetAt(position: Vector3, matrix: boolean): FilmSet | undefined {
   const office = FILM_SETS.film_metacortex_floor; const ledge = FILM_SETS.film_office_ledge;
@@ -114,7 +117,7 @@ export function filmSetAt(position: Vector3, matrix: boolean): FilmSet | undefin
 }
 export function filmPosition(id: string, x = 0, z = 0): Vector3 {
   const center = FILM_SETS[id].center;
-  return { x: center.x + x, y: center.y, z: center.z + z };
+  return { x: center.x + x, y: id === 'film_hammer_route' ? center.y + hammerHeight(z) - 1.35 : center.y, z: center.z + z };
 }
 
 export interface FilmObstacle { x: number; z: number; width: number; depth: number; height: number }
@@ -232,6 +235,7 @@ export function filmBlocked(position: Vector3, set: FilmSet, radius: number): bo
 }
 
 export function filmGroundHeight(position: Vector3, set: FilmSet): number {
+  if (set.id === 'film_hammer_route') return set.center.y + hammerHeight(position.z - set.center.z) - 1.35;
   if (set.id === 'film_hotel_roofs') {
     const z = position.z - set.center.z;
     if (z < OPENING_ESCAPE.roofGapNear && z > OPENING_ESCAPE.roofGapFar) return set.center.y - OPENING_ESCAPE.roofDrop;

@@ -88,6 +88,7 @@ export interface FilmJourney {
   skipped?: string[];
   ride?: import('./freeway.js').FreewayRide;
   garage?: import('./garage.js').GarageEscape;
+  hammer?: import('./hammer-flight.js').HammerFlight;
   trucks?: import('./trucks.js').TruckEncounter;
   awakening?: import('./awakening.js').AwakeningBeat;
   training?: import('./training.js').TrainingPerformance;
@@ -336,7 +337,11 @@ export const FILM_SCENES: FilmScene[] = [
     use('面对持电枪的 Bane', 'Trinity 在舱口下切断电路。趁电枪失去瞄准的瞬间闪避，近身反击。', 0, -6, 0),
     use('打开工程舱舱口，带 Trinity 返回驾驶舱', 'Bane 已死。Neo 的双眼被电缆灼伤，却看见机器与 Smith 的金色轮廓；Trinity 将继续驾驶 Logos。', -6, 8, 1.6),
   ], ['trinity', 'bane']),
-  scene('m3_hammer_tunnels', 3, 'service_tunnels', 'niobe', 'Hammer 的狭窄航路', 'siege', 'chase', 'Niobe 在管网中驾驶 Hammer，哨兵紧追，舰体承受着碰撞。', [use('核对主航道封锁', '必须改走狭窄的机械管线。', -7, -16), walk('抵达手动导航台', 7, -35), use('向锡安发送开门请求', 'Hammer 即将冲入船坞。', 7, -35, 6)], ['morpheus', 'roland']),
+  scene('m3_hammer_tunnels', 3, 'hammer_route', 'niobe', 'Hammer 的狭窄航路', 'siege', 'chase', '主航道已被哨兵封死。Niobe 驾驶 Hammer 转入狭窄机械管线；Morpheus 操纵侧向推进器，Roland 与船员守住船身。', [
+    use('核对主航道与机械管线', 'Hammer 无法在主航道减速转弯；Niobe 选择从侧面的机械管线返回锡安。', -5, 164, 1.5),
+    use('让 Morpheus 接管侧向推进器', '船员就位。保持速度穿过弯道和横向管梁；太慢会让哨兵追上。', 0, 175, 1.5),
+    { kind: 'drive', label: '驾驶 Hammer 穿过机械管线', x: 0, z: 175 },
+  ], ['morpheus', 'roland']),
   scene('m3_dock_battle', 3, 'zion_hangar', 'mifune', '船坞的弹药与钢铁', 'siege', 'siege', '钻头突破穹顶，哨兵涌入船坞。Mifune 带队坚守。', [fight('抵挡第一批哨兵', 4, 'sentinel'), use('掩护弹药运输', 'Kid 向 APU 输送弹药，Zee 与 Charra 在地面攻击钻头。', 0, -30)], ['kid', 'zee', 'charra']),
   scene('m3_gate', 3, 'zion_hangar', 'kid', '打开三号闸门', 'siege', 'siege', 'Mifune 受致命伤，把打开闸门的任务交给 Kid。', [fight('突破闸门附近的哨兵', 2, 'sentinel'), use('操作三号闸门', 'Kid 用受损的 APU 打开入口。Hammer 冲入船坞，触发 EMP。', 0, -50, 7)], ['zee']),
   scene('m3_emp', 3, 'hammer_deck', 'niobe', '代价高昂的援军', 'siege', 'siege', 'EMP 清除附近哨兵，也摧毁了锡安自己的防御设备。', [use('关闭过载的控制台', 'Hammer 的到来挽救了眼前的船坞，新的机器仍会继续到达。', 0, -16), think('救援也会带来代价', '此刻的职责是保护剩下的人，而不是给刚才的选择寻找简单的胜负。')], ['morpheus', 'lock']),
@@ -368,6 +373,7 @@ export function filmStepPosition(scene: FilmScene, step: FilmStep): Vector3 {
   return position;
 }
 export function filmEntry(scene: FilmScene): Vector3 {
+  if (scene.id === 'm3_hammer_tunnels') return filmPosition(scene.set, 0, 184);
   if (scene.id === 'm1_room303') return filmPosition(scene.set, -8, 18);
   if (scene.id === 'm3_mobil') return filmPosition(scene.set, 0, 22);
   if (scene.id === 'm3_mobil_release') return filmPosition(scene.set, 0, 20);

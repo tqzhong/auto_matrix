@@ -11,6 +11,7 @@ import type { ActionExecutor } from '../packages/server/src/agents/ActionExecuto
 import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
 import { musicForScene } from '../packages/client/src/engine/Soundtrack.js';
 import { HOTEL_ROUTE, HOTEL_DOOR_PROGRESS } from '@auto_matrix/shared';
+import { hammerCenter } from '@auto_matrix/shared';
 
 function setup() {
   const world = new WorldState(); const manager = new AgentManager(world); manager.initializeAllAgents();
@@ -2436,6 +2437,15 @@ test('the entire film route completes through interactions, driving and real com
             h.players.step(.05, true, h.tick());
           }
           assert.equal(state.garage?.phase, 'arrived'); h.advance();
+        } else if (scene.id === 'm3_hammer_tunnels') {
+          for (let frame = 0; state.hammer?.phase === 'riding' && frame < 900; frame++) {
+            const flight = state.hammer;
+            const steer = Math.max(-1, Math.min(1, (hammerCenter(flight.z - 15) - flight.x) * .24 - flight.lateral * .12));
+            h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, sprint: false, jump: false,
+              drive: { throttle: 1, steer, brake: false }, sequence: ++sequence });
+            h.players.step(.05, true, h.tick());
+          }
+          assert.equal(state.hammer?.phase, 'arrived'); h.advance();
         } else rideToExit(h);
       }
       else {

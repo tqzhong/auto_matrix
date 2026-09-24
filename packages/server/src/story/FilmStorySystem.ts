@@ -29,6 +29,7 @@ import { EXILES } from '@auto_matrix/shared';
 import { CHATEAU, type ChateauEncounter } from '@auto_matrix/shared';
 import { MOUNTAIN, type MountainFlight, type PlayerInput } from '@auto_matrix/shared';
 import { GARAGE, newGarageEscape, stepGarageEscape } from '@auto_matrix/shared';
+import { newHammerFlight, stepHammerFlight } from '@auto_matrix/shared';
 import { TRUCKS } from '@auto_matrix/shared';
 import { OPENING_ESCAPE } from '@auto_matrix/shared';
 import { OpeningHotelSystem } from './OpeningHotelSystem.js';
@@ -3072,9 +3073,39 @@ export class FilmStorySystem {
     }
     return true;
   }
-  driving(agent: AgentState): boolean { return this.controls(agent) && !this.state?.visiting && ((this.state?.scene === 'm2_freeway' && this.state.ride?.phase === 'riding') || (this.state?.scene === 'm2_garage' && this.state.garage?.phase === 'riding')); }
+  driving(agent: AgentState): boolean { return this.controls(agent) && !this.state?.visiting && ((this.state?.scene === 'm2_freeway' && this.state.ride?.phase === 'riding') || (this.state?.scene === 'm2_garage' && this.state.garage?.phase === 'riding') || (this.state?.scene === 'm3_hammer_tunnels' && this.state.hammer?.phase === 'riding')); }
+  private ensureHammerRoute(): void {
+    const state = this.state;
+    if (state?.scene !== 'm3_hammer_tunnels' || state.step >= this.scene!.steps.length) return;
+    const actor = this.world.agents.get(state.actor);
+    if (actor?.currentLocation !== 'film_service_tunnels') return;
+    const position = filmStepPosition(this.scene!, this.scene!.steps[state.step]);
+    if (state.step === 0) position.z += 3;
+    this.place(actor, this.scene!, position); state.checkpoint = { ...position };
+    delete state.started; delete state.hammer; this.stageCast();
+    state.lastText = '旧版隧道检查点已接回 Hammer 驾驶航路；已完成的剧情保留，请继续当前目标。';
+  }
   driveFrame(agent: AgentState, input: DriveInput, dt: number, tick: number): boolean {
     if (!this.driving(agent)) return false;
+    if (this.state!.scene === 'm3_hammer_tunnels') {
+      const state = this.state!; const before = state.hammer!;
+      const flight = state.hammer = stepHammerFlight(before, input, dt);
+      agent.position = filmPosition(this.scene!.set, flight.x, flight.z);
+      agent.velocity = { x: flight.lateral, y: 0, z: -flight.speed };
+      agent.rotation = Math.PI - Math.atan2(flight.lateral, Math.max(1, flight.speed));
+      agent.currentAction = { type: 'idle', parameters: { riding: true, seated: true }, startedAt: tick, duration: 1, progress: 0 };
+      for (const [id, offset] of [['morpheus', -2.6], ['roland', 2.6]] as const) {
+        const crew = this.world.agents.get(id); if (!crew || crew.controller) continue;
+        crew.position = { ...agent.position, x: agent.position.x + offset, z: agent.position.z + 2.5 };
+        crew.currentLocation = this.scene!.set; crew.isInMatrix = false;
+        crew.velocity = { ...agent.velocity }; crew.rotation = agent.rotation;
+        crew.currentAction = { type: 'idle', parameters: { riding: true, passenger: true, seated: true }, startedAt: tick, duration: 1, progress: 0 };
+      }
+      if (flight.hits > before.hits) state.lastText = 'Hammer 擦过管壁或横梁！Morpheus 校准侧向推进器；减速并修正航线，别让哨兵追近。';
+      else if (flight.antennaLost && !before.antennaLost) state.lastText = '一道哨兵掠过船顶，通讯天线被扯断。锡安无法收到开门请求，只能靠目视发现 Hammer。';
+      if (flight.phase === 'wrecked') { agent.health = 0; agent.status = 'dead'; agent.velocity = { x: 0, y: 0, z: 0 }; state.lastText = 'Hammer 在管线中失去推进或被哨兵追上。按 J 从驾驶检查点重试。'; }
+      return true;
+    }
     if (this.state!.scene === 'm2_garage') {
       const state = this.state!; const before = state.garage!;
       const escape = state.garage = stepGarageEscape(before, input, dt);
@@ -3312,6 +3343,7 @@ export class FilmStorySystem {
     }
     const state = this.state;
     if (!state || !this.scene) return '这条电影进度尚未开始。';
+    this.ensureHammerRoute();
     if (target === 'resume' && agent.id === 'neo' && agent.id !== state.actor) {
       if (!this.changeActor(agent, state.actor, tick)) return '当前剧情角色正在由另一位玩家控制。';
       return '已继续保存的剧情视角与位置。';
@@ -3331,7 +3363,7 @@ export class FilmStorySystem {
     if (target.startsWith('visit:')) {
       const visited = FILM_SCENE_BY_ID[target.slice(6)];
       if (!visited || !state.completed.includes(visited.id)) return '完成这个场景后才能回访。';
-      if (state.fighting || state.started !== undefined || state.ride?.phase === 'riding' || state.garage?.phase === 'riding' || state.shipLoss?.phase === 'evacuating' || state.tunnel?.phase === 'sensing'
+      if (state.fighting || state.started !== undefined || state.ride?.phase === 'riding' || state.garage?.phase === 'riding' || state.hammer?.phase === 'riding' || state.shipLoss?.phase === 'evacuating' || state.tunnel?.phase === 'sensing'
         || state.scene === 'm3_bane' && state.bane && !['ready', 'defeated'].includes(state.bane.phase)
         || this.climbing(agent) || this.performing(agent)) return '先完成当前战斗或互动，再回访场景。';
       if (!state.visiting) state.returnPosition = { ...agent.position };
@@ -3514,6 +3546,7 @@ export class FilmStorySystem {
       this.clearThreats();
       delete state.ride;
       delete state.garage;
+      delete state.hammer;
       if (state.scene === 'm2_trucks') state.trucks = { phase: state.step === 0 ? 'duel' : 'collision', elapsed: 0, lastTick: tick, attempt: (state.trucks?.attempt ?? 0) + 1 };
       if (state.scene === 'm1_spoon' && state.step === 0 && state.oracle) delete state.oracle.spoon;
       if (state.scene === 'm1_oracle' && state.step === 0 && state.oracle) delete state.oracle.vase;
@@ -3856,6 +3889,11 @@ export class FilmStorySystem {
     if (state.scene === 'm2_trucks' && state.step === 2 && ['keymaker', 'neo'].some(id => this.world.agents.get(id)?.controller))
       return '钥匙匠或 Neo 正由另一位玩家控制，等待对方结束后再接应。';
     if (step.kind === 'drive') {
+      if (state.scene === 'm3_hammer_tunnels') {
+        if (['morpheus', 'roland'].some(id => this.world.agents.get(id)?.controller)) return '舰桥船员正由另一位玩家控制，等待他们结束当前行动。';
+        if (!state.hammer) state.hammer = newHammerFlight();
+        return '已接管 Hammer。W 加速，S 刹车，A / D 调整侧向推进器；沿弯曲管线飞行，避开横梁并保持与哨兵的距离。';
+      }
       if (state.scene === 'm2_garage') {
         if (['morpheus', 'keymaker', 'twin1', 'twin2'].some(id => this.world.agents.get(id)?.controller)) return '车内同伴或双子正在由另一位玩家控制，等待对方结束后再开始撤离。';
         if (!state.garage) state.garage = newGarageEscape();
@@ -3930,6 +3968,7 @@ export class FilmStorySystem {
     delete state.lobby;
     delete state.ride;
     delete state.garage;
+    delete state.hammer;
     delete state.trucks;
     delete state.awakening;
     delete state.training;
@@ -4265,6 +4304,11 @@ export class FilmStorySystem {
         actor.currentAction = { type: 'idle', parameters: { meeting: { phase: encounter.phase, elapsed: encounter.elapsed, bugged: encounter.bugged, role } }, startedAt: this.state!.enteredAt, duration: 100000, progress: 0 };
       }
       if (scene.id === 'm2_freeway') actor.position = filmPosition(scene.set, id === 'keymaker' ? 19 : 20, id === 'keymaker' ? 660 : -660);
+      if (scene.id === 'm3_hammer_tunnels') {
+        actor.position = filmPosition(scene.set, id === 'morpheus' ? -2.6 : 2.6, 177.5);
+        actor.rotation = Math.PI;
+        actor.currentAction = { type: 'idle', parameters: { seated: true }, startedAt: this.state!.enteredAt, duration: 100000, progress: 0 };
+      }
       if (scene.id === 'm2_garage') {
         const poses: Record<string, [number, number, number]> = {
           morpheus: [2.7, 14, Math.PI], keymaker: [3.5, 10.5, Math.PI],
@@ -4527,6 +4571,7 @@ export class FilmStorySystem {
   }
   tick(tick: number): void {
     const state = this.state; if (!state || !this.scene || state.finished || state.visiting) return;
+    this.ensureHammerRoute();
     this.ensureFinale(tick);
     if (state.scene === 'm3_bane') this.ensureBane(tick);
     if (state.scene === 'm2_key_door') this.sourceDoor();
@@ -4613,6 +4658,14 @@ export class FilmStorySystem {
     if (this.performing(actor)) return;
     if (this.climbing(actor)) return;
     if (step.kind === 'drive') {
+      if (state.scene === 'm3_hammer_tunnels' && state.hammer?.phase === 'arrived') {
+        actor.velocity = { x: 0, y: 0, z: 0 }; actor.currentAction = null;
+        for (const id of ['morpheus', 'roland']) {
+          const crew = this.world.agents.get(id); if (crew && !crew.controller) { crew.velocity = { x: 0, y: 0, z: 0 }; crew.currentAction = null; }
+        }
+        this.advance('Niobe 驾驶 Hammer 冲出狭窄管线。天线已断，船坞仍不知道援军抵达；接下来必须有人打开三号闸门。', actor, tick);
+        return;
+      }
       if (state.scene === 'm2_garage' && state.garage?.phase === 'arrived') {
         actor.position.y = FILM_SETS[this.scene.set].center.y; actor.velocity = { x: 0, y: 0, z: 0 }; actor.currentAction = null;
         for (const id of ['morpheus', 'keymaker', 'twin1', 'twin2']) {

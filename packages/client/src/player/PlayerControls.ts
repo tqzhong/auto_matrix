@@ -51,7 +51,7 @@ export class PlayerControls {
   firearm = false;
   weaponStyle?: RescueLoadout | 'hel_pistol';
   fireInterval = LOBBY_FIRE_INTERVAL;
-  ride?: FreewayRide;
+  ride?: Pick<FreewayRide, 'speed'>;
   climbing = false;
   performing = false;
   private phoneExit = false;
