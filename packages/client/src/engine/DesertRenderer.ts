@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { DESERT_REVEAL, type FilmJourney } from '@auto_matrix/shared';
 
 /** The loading-program reconstruction of the ruined real world: a walkable
@@ -11,7 +12,8 @@ export class DesertRenderer {
   private towerGlow: THREE.MeshStandardMaterial;
   private flash: THREE.PointLight;
   private ground = this.material(new THREE.MeshStandardMaterial({ color: 0x454c49, roughness: .98, metalness: .04 }));
-  private concrete = this.material(new THREE.MeshStandardMaterial({ color: 0x626865, roughness: .93 }));
+  private concrete = this.material(new THREE.MeshStandardMaterial({ color: 0x505a58, roughness: .96 }));
+  private brokenConcrete = this.material(new THREE.MeshStandardMaterial({ color: 0x343d3d, roughness: .98 }));
   private charcoal = this.material(new THREE.MeshStandardMaterial({ color: 0x252c2c, roughness: .82, metalness: .18 }));
   private rust = this.material(new THREE.MeshStandardMaterial({ color: 0x694a39, roughness: .86, metalness: .36 }));
   private glass = this.material(new THREE.MeshPhysicalMaterial({ color: 0x6a7b77, roughness: .24, metalness: .42, transparent: true, opacity: .4, depthWrite: false }));
@@ -64,18 +66,67 @@ export class DesertRenderer {
     const building = new THREE.Group(); building.position.set(x, 0, z); building.rotation.z = (index % 5 - 2) * .012; parent.add(building);
     const levels = Math.max(2, Math.floor(height / 5));
     for (let level = 0; level < levels; level++) {
-      const missing = (level * 3 + index) % 7 === 0; const levelWidth = width * (1 - level / levels * .08);
-      if (!missing) this.box(building, level % 4 ? this.concrete : this.charcoal, (level % 3 - 1) * .35, 2.5 + level * 5, 0, levelWidth, 4.75, depth, `desert-building-${index}-level-${level}`);
-      for (const side of [-1, 1]) {
-        const column = this.box(building, this.rust, side * (levelWidth / 2 - .35), 2.5 + level * 5, depth * .28, .2, 5.1, .25);
-        column.rotation.z = missing ? side * .18 : 0;
+      const missing = level > 0 && (level * 3 + index) % 7 === 0;
+      const base = level * 5; const offset = (level % 3 - 1) * .35;
+      const levelWidth = width * (1 - level / levels * .08);
+      const slab = this.box(building, level % 3 ? this.concrete : this.brokenConcrete,
+        offset + (missing ? levelWidth * .16 : 0), base + .2, 0, levelWidth * (missing ? .68 : 1), .42, depth * (missing ? .78 : 1));
+      if (missing) {
+        slab.rotation.z = (index % 2 ? 1 : -1) * .08;
+        for (const side of [-1, 1]) {
+          const exposed = this.box(building, this.rust, offset + side * levelWidth * .31, base + 2.05, depth * .28, .12, 3.7, .12);
+          exposed.rotation.z = side * .24;
+        }
+        continue;
+      }
+      for (const front of [-1, 1]) {
+        const face = front * (depth / 2 - .16);
+        this.box(building, this.brokenConcrete, offset, base + 1, face, levelWidth, 1.45, .35);
+        this.box(building, this.concrete, offset, base + 4.55, face, levelWidth, .82, .38);
+        for (const side of [-1, 1]) {
+          this.box(building, level % 4 ? this.concrete : this.brokenConcrete,
+            offset + side * (levelWidth / 2 - .68), base + 2.8, face, 1.35, 3.3, .45);
+        }
+      }
+      for (const side of [-1, 1]) for (const end of [-1, 1]) {
+        this.box(building, this.brokenConcrete, offset + side * (levelWidth / 2 - .18), base + 2.65,
+          end * depth * .34, .34, 4.4, depth * .29);
+      }
+      if ((level + index) % 3 === 1) {
+        const shard = this.box(building, this.glass, offset + levelWidth * .23, base + 3.2, depth / 2 + .065,
+          levelWidth * .13, 1.25, .045);
+        shard.rotation.z = -.16;
       }
     }
-    for (let level = 1; level < levels; level += 2) for (const side of [-1, 1]) {
-      const window = this.box(building, this.glass, side * width * .24, level * 5 + 2.7, depth / 2 + .03, width * .34, 2.5, .06);
-      window.rotation.z = (index + level) % 3 === 0 ? .12 : 0;
+    const roof = levels * 5;
+    for (let piece = 0; piece < 3; piece++) {
+      const wall = this.box(building, piece === 1 ? this.brokenConcrete : this.concrete,
+        (piece - 1) * width * .32, roof + (piece === index % 3 ? 1.2 : .65), depth / 2 - .12,
+        width * .3, piece === index % 3 ? 2.4 : 1.3, .38);
+      wall.rotation.z = (piece - 1) * .07;
     }
-    const beam = this.box(building, this.rust, index % 2 ? width * .3 : -width * .25, height + 1.5, 0, .35, 8, .45); beam.rotation.z = index % 2 ? -.8 : .65;
+    const beam = this.box(building, this.rust, index % 2 ? width * .3 : -width * .25, roof + 1.5, 0, .22, 5, .22); beam.rotation.z = index % 2 ? -.8 : .65;
+  }
+
+  private batchCity(city: THREE.Group): void {
+    city.updateMatrixWorld(true);
+    const inverse = city.matrixWorld.clone().invert();
+    const batches = new Map<THREE.Material, THREE.BufferGeometry[]>();
+    city.traverse(object => {
+      if (!(object instanceof THREE.Mesh)) return;
+      const geometry = object.geometry.clone().applyMatrix4(inverse.clone().multiply(object.matrixWorld));
+      const bucket = batches.get(object.material) ?? []; bucket.push(geometry); batches.set(object.material, bucket);
+    });
+    city.traverse(object => {
+      if (!(object instanceof THREE.Mesh)) return;
+      this.geometries.delete(object.geometry); object.geometry.dispose();
+    });
+    city.clear();
+    for (const [material, geometries] of batches) {
+      const merged = mergeGeometries(geometries, false);
+      geometries.forEach(geometry => geometry.dispose());
+      if (merged) this.mesh(city, merged, material, 'desert-ruin-facades');
+    }
   }
 
   private city(): void {
@@ -88,6 +139,7 @@ export class DesertRenderer {
       const tower = this.mesh(city, new THREE.CylinderGeometry(4 * scale, 7 * scale, 54 * scale, 5), this.charcoal, 'desert-distant-ruin');
       tower.position.set(x, 22 * scale, z); tower.rotation.z = x < 0 ? .16 : -.1;
     }
+    this.batchCity(city);
   }
 
   private overpass(): void {
@@ -102,19 +154,49 @@ export class DesertRenderer {
 
   private harvesters(): void {
     const towers = new THREE.Group(); towers.name = 'desert-harvest-towers'; this.root.add(towers);
+    const podShell = this.geometry(new THREE.CapsuleGeometry(.58, 1.5, 4, 8));
+    const podLight = this.geometry(new THREE.SphereGeometry(.32, 8, 6));
+    const armGeometry = this.geometry(new THREE.CylinderGeometry(.12, .2, 2.3, 6));
+    const hangerGeometry = this.geometry(new THREE.CylinderGeometry(.16, .16, .65, 6));
+    const pods = new THREE.InstancedMesh(podShell, this.glass, 120); pods.name = 'desert-harvester-pods'; towers.add(pods);
+    const lights = new THREE.InstancedMesh(podLight, this.towerGlow, 120); towers.add(lights);
+    const arms = new THREE.InstancedMesh(armGeometry, this.rust, 120); towers.add(arms);
+    const hangers = new THREE.InstancedMesh(hangerGeometry, this.rust, 120); towers.add(hangers);
+    const radial = new THREE.Vector3();
+    const position = new THREE.Vector3(); const rotation = new THREE.Quaternion(); const matrix = new THREE.Matrix4();
+    const up = new THREE.Vector3(0, 1, 0); const scale = new THREE.Vector3(1, 1, 1);
+    let podIndex = 0;
     for (const [index, x] of [-24, 0, 25].entries()) {
       const height = index === 1 ? 42 : 34;
-      this.cylinder(towers, this.charcoal, x, height / 2, DESERT_REVEAL.towersZ - index * 5, 3.8, height, 10);
-      for (let y = 6; y < height; y += 6) {
-        const ring = this.mesh(towers, new THREE.TorusGeometry(4.5 - y / height, .22, 7, 24), this.rust, `desert-harvester-ring-${index}-${y}`);
-        ring.position.set(x, y, DESERT_REVEAL.towersZ - index * 5); ring.rotation.x = Math.PI / 2;
+      const z = DESERT_REVEAL.towersZ - index * 5;
+      this.cylinder(towers, this.charcoal, x, height / 2, z, 3.2, height, 10);
+      for (let level = 0, y = 7; y < height - 3; level++, y += 5.2) {
+        const ring = this.mesh(towers, new THREE.TorusGeometry(4.4, .2, 6, 24), this.rust, `desert-harvester-ring-${index}-${level}`);
+        ring.position.set(x, y - 1.5, z); ring.rotation.x = Math.PI / 2;
+        for (let slot = 0; slot < 6; slot++) {
+          const angle = (slot + (level % 2) * .5) / 6 * Math.PI * 2;
+          radial.set(Math.sin(angle), 0, Math.cos(angle));
+          const px = x + radial.x * 5.1; const pz = z + radial.z * 5.1;
+          rotation.setFromUnitVectors(up, radial);
+          arms.setMatrixAt(podIndex, matrix.compose(position.set(x + radial.x * 4.05, y + .72, z + radial.z * 4.05), rotation, scale));
+          rotation.identity();
+          pods.setMatrixAt(podIndex, matrix.makeTranslation(px, y, pz));
+          scale.set(1, 1.65, 1);
+          lights.setMatrixAt(podIndex, matrix.compose(position.set(px, y - .15, pz), rotation, scale));
+          scale.set(1, 1, 1);
+          hangers.setMatrixAt(podIndex, matrix.makeTranslation(px, y + 1.55, pz));
+          podIndex++;
+        }
       }
-      for (let pod = 0; pod < 7; pod++) {
-        const angle = pod / 7 * Math.PI * 2; const light = this.mesh(towers, new THREE.SphereGeometry(.32, 10, 7), this.towerGlow);
-        light.position.set(x + Math.sin(angle) * 3.2, 8 + pod * 3.8, DESERT_REVEAL.towersZ - index * 5 + Math.cos(angle) * 3.2);
+      for (let strut = 0; strut < 4; strut++) {
+        const angle = strut * Math.PI / 2 + .35;
+        this.pipe(towers, [new THREE.Vector3(x + Math.sin(angle) * 7, 0, z + Math.cos(angle) * 7),
+          new THREE.Vector3(x + Math.sin(angle) * 4.2, 9, z + Math.cos(angle) * 4.2),
+          new THREE.Vector3(x + Math.sin(angle) * 2.8, 18, z + Math.cos(angle) * 2.8)], .24, this.rust);
       }
-      this.pipe(towers, [new THREE.Vector3(x, height, DESERT_REVEAL.towersZ - index * 5), new THREE.Vector3(x + (index - 1) * 7, height + 8, DESERT_REVEAL.towersZ - 8 - index * 5)], .55, this.charcoal);
+      this.pipe(towers, [new THREE.Vector3(x, height, z), new THREE.Vector3(x + (index - 1) * 7, height + 8, z - 8)], .55, this.charcoal);
     }
+    for (const mesh of [pods, lights, arms, hangers]) { mesh.count = podIndex; mesh.instanceMatrix.needsUpdate = true; mesh.computeBoundingSphere(); }
   }
 
   private createAsh(): THREE.Points {

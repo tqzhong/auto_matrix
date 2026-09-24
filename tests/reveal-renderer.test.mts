@@ -43,6 +43,12 @@ test('the desert reveal has a walkable overlook, collidable ruins, ash and opera
     assert.ok(root.getObjectByName('desert-ruined-skyline'));
     assert.ok(root.getObjectByName('desert-collapsed-overpass'));
     assert.ok(root.getObjectByName('desert-harvest-towers'));
+    const facade = new THREE.Raycaster(new THREE.Vector3(-18, 7.5, 42), new THREE.Vector3(0, 0, -1), 0, 1.2);
+    assert.equal(facade.intersectObjects(root.getObjectByName('desert-ruined-skyline')!.children, true).length, 0,
+      'ruined towers need open window bays instead of solid stacked boxes');
+    const lowerWall = new THREE.Raycaster(new THREE.Vector3(-18, 1.1, 42), new THREE.Vector3(0, 0, -1), 0, 1.2);
+    assert.ok(lowerWall.intersectObjects(root.getObjectByName('desert-ruined-skyline')!.children, true).length > 0,
+      'the ground-floor ruin must visibly block the same footprint as server collision');
     const ash = root.getObjectByName('desert-falling-ash') as THREE.Points;
     assert.ok(ash.geometry.attributes.position.count >= 1500);
     for (const z of [35, 0, -28, -45]) assert.equal(playerBlocked(filmPosition('film_real_desert', 0, z), false), false, `the central reveal route stays open at ${z}`);
@@ -54,5 +60,11 @@ test('the desert reveal has a walkable overlook, collidable ruins, ash and opera
     assert.ok(ash.geometry.attributes.position.getY(0) < before, 'ash moves through the saved reveal instead of remaining a painted backdrop');
     const glow = (root.getObjectByName('desert-harvest-towers')!.getObjectByProperty('material', (renderer as unknown as { towerGlow: THREE.Material }).towerGlow) as THREE.Mesh | undefined);
     assert.ok(glow, 'harvesting towers expose real emissive machinery');
+    const pods = root.getObjectByName('desert-harvester-pods') as THREE.InstancedMesh | undefined;
+    assert.ok(pods?.isInstancedMesh && pods.count >= 90, 'harvesting towers need many visible pod bodies without one draw call per pod');
+    const firstPod = new THREE.Matrix4(); pods.getMatrixAt(0, firstPod);
+    const podBounds = new THREE.Box3().setFromBufferAttribute(pods.geometry.attributes.position).applyMatrix4(firstPod);
+    assert.ok(podBounds.max.y - podBounds.min.y > 2, 'a pod must read as a suspended capsule at player distance');
+    assert.ok(root.getObjectByName('desert-ruined-skyline')!.children.length <= 6, 'the rebuilt city must remain batched at player distance');
   } finally { renderer.dispose(); }
 });
