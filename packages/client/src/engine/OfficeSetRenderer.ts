@@ -246,7 +246,7 @@ export class OfficeSetRenderer {
     this.sign('METACORTEX', 0, 8, -32.4, 12, '#344c43', '#b5b5a5');
     this.sign('PERSONNEL / AUTHORIZED ACCESS', 0, 6.1, 32.6, 11);
     for (const z of [-17, 5, 24]) { const light = new THREE.PointLight(0xe4ead6, 160, 36, 2); light.position.set(0, 8, z); this.root.add(light); }
-    this.sun(-35, 20, 12, 2.5);
+    this.sun(-35, 20, 12, 1);
   }
   private ledge(): void {
     const concrete = this.mat(0x939a95, .87); const metal = this.mat(0x6d7778, .35, .75); const glass = this.mat(0x657e87, .17, .6);
@@ -279,6 +279,21 @@ export class OfficeSetRenderer {
       for (let y = -58; y < h - 65; y += 5) for (const dz of [-5, 0, 5]) this.box(glass, x + 7.52, y, z + dz, .05, 3.2, 3);
       this.box(trim, x, h - 65, z, 16, .5, 17);
     }
+    // The ledge camera faces along the facade; towers beyond the scaffold keep
+    // that playable view from ending in an empty sky instead of a city canyon.
+    const towerWall = this.mat(0x717f80, .84); const farWall = this.mat(0x9ca7a6, .84);
+    const towerGlass = this.mat(0x4b6970, .22, .4);
+    for (const [i, [dx, z, width, depth, height]] of [[-32, 108, 14, 20, 109], [-52, 145, 17, 26, 151], [-18, 205, 20, 28, 136], [21, 109, 15, 24, 116], [46, 169, 19, 28, 148]].entries()) {
+      const x = offset + dx; const roof = height - 65;
+      const wall = i % 2 ? farWall : towerWall;
+      this.box(wall, x, height / 2 - 65, z, width, height, depth);
+      for (let y = -58; y < roof - 2; y += 5) {
+        for (let px = -width / 2 + 2.6; px < width / 2 - 1; px += 3.6) this.box(towerGlass, x + px, y, z - depth / 2 - .06, 2.5, 3.1, .09);
+        for (let pz = -depth / 2 + 2.6; pz < depth / 2 - 1; pz += 3.6) this.box(towerGlass, x + (dx < 0 ? 1 : -1) * (width / 2 + .06), y, z + pz, .09, 3.1, 2.5);
+      }
+      this.box(trim, x, roof, z, width + .6, .55, depth + .6);
+      this.box(wall, x, roof + 2, z + depth * .16, width * .45, 3.7, depth * .25);
+    }
     for (const x of [-17, -29]) for (let z = -115; z <= 115; z += 12) this.box(trim, offset + x, -64.47, z, .13, .015, 4.6);
     for (const z of [-42, 32]) for (let x = -34; x < -7; x += 1.8) this.box(trim, offset + x, -64.46, z, 1.1, .02, 4.5);
     const car = this.mat(0x253a3c, .33, .45); const wheel = this.mat(0x1b2424, .9);
@@ -290,8 +305,7 @@ export class OfficeSetRenderer {
   }
   private sun(x: number, y: number, z: number, intensity: number): void {
     const light = new THREE.DirectionalLight(0xffefdb, intensity); light.position.set(x, y, z); light.target.position.set(0, 0, -8);
-    light.castShadow = true; light.shadow.mapSize.set(2048, 2048); Object.assign(light.shadow.camera, { left: -40, right: 40, top: 48, bottom: -48, near: .5, far: 160 });
-    light.shadow.bias = -.0003; light.shadow.normalBias = .08; this.root.add(light, light.target); this.light = light;
+    this.root.add(light, light.target); this.light = light;
   }
   private batch(): void {
     const batches = new Map<THREE.Material, THREE.BufferGeometry[]>(); this.root.updateMatrixWorld(true);

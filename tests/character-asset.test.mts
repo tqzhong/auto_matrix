@@ -468,6 +468,23 @@ test('office and ledge entrances render the same building in world space', t => 
   } finally { for (const { renderer } of parents) renderer.dispose(); globalThis.document = document; }
 });
 
+test('the playable office ledge looks into a built city canyon instead of empty sky', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  const document = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {} }) }) } as unknown as Document;
+  const parent = new THREE.Group(); const renderer = new OfficeSetRenderer(parent, FILM_SETS.film_office_ledge);
+  try {
+    const building = parent.children[0]; building.updateWorldMatrix(true, true);
+    const eye = building.localToWorld(new THREE.Vector3(OFFICE_LEDGE_OFFSET, 5, 35));
+    const facade = building.localToWorld(new THREE.Vector3(OFFICE_LEDGE_OFFSET - 32, 5, 108));
+    const direction = facade.sub(eye).normalize();
+    const hit = new THREE.Raycaster(eye, direction, 0, 140).intersectObject(building, true)[0];
+    assert.ok(hit, 'the route to the scaffold needs visible exterior geometry ahead');
+    assert.ok(hit.point.z > 75 && hit.point.y > 0, 'the camera should see a raised facade beyond the ledge');
+  } finally { renderer.dispose(); globalThis.document = document; }
+});
+
 test('the crossing body plants its palm and clears the solid sill with both legs', async () => {
   const { scene } = await loadGeometry(); const bones = new Map<string, THREE.Bone>(); const rest = new Map<string, THREE.Vector3>();
   scene.traverse(object => { if (object instanceof THREE.Bone) { bones.set(object.name, object); rest.set(object.name, object.position.clone()); } });
