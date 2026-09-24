@@ -86,8 +86,9 @@ export class MeetingSetRenderer {
     for (const side of [-1, 1]) {
       this.box(side * 1.65, 1.75, 6.77, 1.35, .52, .09, black, car, .06);
       this.box(side * 1.65, 1.75, 6.83, 1.12, .33, .035, tailLens, car, .035);
-      const tailLight = new THREE.PointLight(0xef2f20, 58, 18, 2);
-      tailLight.name = `meeting-tail-light-${side}`; tailLight.position.set(side * 1.65, 1.75, 6.87); this.vehicle.add(tailLight);
+      const tailLight = new THREE.SpotLight(0xef2f20, 58, 18, .72, .5, 2);
+      tailLight.name = `meeting-tail-light-${side}`; tailLight.position.set(side * 1.65, 1.75, 6.87);
+      tailLight.target.position.set(side * 1.65, .45, 15); this.vehicle.add(tailLight, tailLight.target);
     }
     this.box(0, 1.58, 6.82, .76, .24, .04, chrome, car, .025);
     for (const x of [-2.08, -1.55, 1.55, 2.08]) {
