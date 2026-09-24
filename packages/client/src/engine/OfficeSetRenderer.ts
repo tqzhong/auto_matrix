@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import { OFFICE_DESKS, OFFICE_OBSTACLES, OFFICE_LADDER, OFFICE_CONTACT, OFFICE_WINDOW, OFFICE_LEDGE_OFFSET, officeWindowPose, officeParcelPoint, type FilmSet, type FilmJourney, type Vector3 } from '@auto_matrix/shared';
 import { PhoneModel } from '../agents/PhoneModel.js';
 import { OfficeWorkdayRenderer } from './OfficeWorkdayRenderer.js';
@@ -18,6 +20,10 @@ export class OfficeSetRenderer {
   private sash?: THREE.Group;
   private latch?: THREE.Group;
   private windowMaterials: { material: THREE.MeshStandardMaterial; opacity: number; depthWrite: boolean }[] = [];
+  private cleaners = new THREE.Group();
+  private cleanerActors: { root: THREE.Group; bones: Map<string, THREE.Bone>; blade: THREE.Mesh; handle: THREE.Mesh; z: number }[] = [];
+  private cleanerSkeletons: THREE.Skeleton[] = [];
+  private disposed = false;
   constructor(parent: THREE.Group, set: FilmSet) {
     parent.add(this.root);
     if (set.id === 'film_office_ledge') this.root.position.x = -OFFICE_LEDGE_OFFSET;
@@ -25,6 +31,56 @@ export class OfficeSetRenderer {
     this.batch();
     this.workday = new OfficeWorkdayRenderer(this.root);
     this.parcel(); this.openingWindow();
+    this.cleaners.name = 'office-window-cleaners'; this.root.add(this.cleaners);
+    void this.loadCleaners().catch(error => console.error('窗外清洁工模型加载失败', error));
+  }
+  private async loadCleaners(): Promise<void> {
+    const asset = await new GLTFLoader().loadAsync('/assets/characters/club-male.glb');
+    if (this.disposed) return;
+    asset.scene.traverse(object => {
+      if (!(object instanceof THREE.Mesh)) return;
+      const material = object.material as THREE.MeshStandardMaterial; this.materials.push(material);
+      for (const texture of [material.map, material.normalMap]) if (texture) this.textures.push(texture);
+    });
+    const rubber = this.mat(0x1e2727, .9); const steel = this.mat(0x7c8986, .32, .65);
+    for (const [i, z] of [25, 28.4].entries()) {
+      const root = clone(asset.scene) as THREE.Group; root.name = `window-cleaner-${i + 1}`;
+      const bones = new Map<string, THREE.Bone>();
+      root.traverse(object => {
+        if (object instanceof THREE.Bone) bones.set(object.name, object);
+        if (!(object instanceof THREE.Mesh)) return;
+        object.castShadow = false; object.receiveShadow = true;
+        if (object instanceof THREE.SkinnedMesh) { object.frustumCulled = false; this.cleanerSkeletons.push(object.skeleton); }
+        const source = object.material as THREE.MeshStandardMaterial;
+        if (/Coat|Trousers/.test(source.name)) {
+          const material = source.clone(); material.color.setHex(source.name === 'Trousers' ? 0x303b3e : i ? 0x626b64 : 0x435e66);
+          object.material = material; this.materials.push(material);
+        }
+      });
+      root.position.set(-29.35, 0, z); root.rotation.y = Math.PI / 2; root.scale.setScalar(i ? .88 : .92); this.cleaners.add(root);
+      const blade = new THREE.Mesh(new THREE.BoxGeometry(.09, .08, .94), rubber); blade.name = `window-squeegee-${i + 1}`; this.cleaners.add(blade);
+      const handle = new THREE.Mesh(new THREE.CylinderGeometry(.035, .035, 1, 8), steel); this.cleaners.add(handle);
+      this.cleanerActors.push({ root, bones, blade, handle, z });
+    }
+  }
+  private updateCleaners(time: number, visible: boolean): void {
+    this.cleaners.visible = visible;
+    if (!visible) return;
+    const up = new THREE.Vector3(0, 1, 0);
+    this.cleanerActors.forEach(({ root, bones, blade, handle, z }, i) => {
+      const sweep = Math.sin(time * 1.1 + i * 1.7);
+      bones.get('shoulder_R')!.rotation.x = -1.03 + sweep * .13;
+      bones.get('elbow_R')!.rotation.x = -.42 - sweep * .16;
+      bones.get('shoulder_L')!.rotation.x = -.42;
+      bones.get('elbow_L')!.rotation.x = -.63;
+      bones.get('head')!.rotation.y = -.18 + sweep * .06;
+      root.updateWorldMatrix(true, true);
+      const wrist = this.root.worldToLocal(bones.get('wrist_R')!.getWorldPosition(new THREE.Vector3()));
+      const glass = new THREE.Vector3(-27.14, 3.6 + sweep * .5, z);
+      blade.position.copy(glass);
+      const reach = glass.clone().sub(wrist); handle.position.copy(wrist).addScaledVector(reach, .5);
+      handle.quaternion.setFromUnitVectors(up, reach.clone().normalize()); handle.scale.y = reach.length();
+    });
   }
   private openingWindow(): void {
     const w = OFFICE_WINDOW;
@@ -68,9 +124,10 @@ export class OfficeSetRenderer {
     const label = new THREE.Mesh(new THREE.PlaneGeometry(.72, .85), ink); label.rotation.x = -Math.PI / 2; label.position.set(0, .012, .62); flap.add(label);
     this.phone = new PhoneModel(); this.phone.root.name = 'parcel-phone'; this.phone.root.position.set(0, .215, 0); this.phone.root.rotation.x = -Math.PI / 2; group.add(this.phone.root);
   }
-  update(journey: FilmJourney | undefined, cameraPosition?: Vector3, playerPosition?: Vector3, clock?: OfficeWorkday): void {
+  update(journey: FilmJourney | undefined, cameraPosition?: Vector3, playerPosition?: Vector3, clock?: OfficeWorkday, time = 0): void {
     if (journey?.scene === 'm1_boss' && !journey.visiting && clock) journey = { ...journey, workday: clock };
     this.workday.update(journey);
+    this.updateCleaners(time, journey?.scene === 'm1_boss' && !journey.visiting);
     if (this.sash && this.latch) {
       const time = journey?.office?.window ?? (journey?.completed.includes('m1_office_escape') && journey.office?.outcome !== 'captured' ? OFFICE_WINDOW.seconds : 0);
       const pose = officeWindowPose(time); this.sash.rotation.z = pose.angle; this.latch.rotation.x = pose.latch;
@@ -132,6 +189,7 @@ export class OfficeSetRenderer {
     this.box(wall, 0, 9.3, 0, 54, .4, 66);
     this.box(wall, 27, 4.5, 0, .5, 9, 66); this.box(wall, 0, 4.5, -33, 54, 9, .5); this.box(wall, 0, 4.5, 33, 54, 9, .5);
     const sky = this.mat(0xa8bdc1, .3); sky.emissive.setHex(0x586b70); sky.emissiveIntensity = .3;
+    const cleanerGlass = new THREE.MeshStandardMaterial({ color: 0xb8cac8, transparent: true, opacity: .19, roughness: .1, metalness: .12, depthWrite: false, side: THREE.DoubleSide }); this.materials.push(cleanerGlass);
     this.box(wall, -27, 1.3, 0, .6, 2.6, 66);
     const edges = [-33, -30, -24, -18, -12, -6, 0, 6, 12, 18, 24, 30, 33];
     for (const z of edges) this.box(frame, -26.8, 5.8, z, .25, 6.4, .13);
@@ -141,6 +199,10 @@ export class OfficeSetRenderer {
       if (z === OFFICE_WINDOW.z) {
         this.box(frame, -26.8, 8.96, z, .3, .16, width);
         for (let n = 0; n < 9; n++) this.box(paper, -26.5, 8.95 - n * .045, z, .34, .025, width - .1);
+      } else if (z === 27) {
+        this.box(cleanerGlass, -27, 5.8, z, .045, 6.2, width);
+        for (let y = 7.8; y < 9; y += .35) this.box(paper, -26.5, y, z, .32, .05, width - .1).rotation.z = .24;
+        this.box(frame, -26.7, 6, z, .4, .14, width);
       } else {
         this.box(sky, -27, 5.8, z, .1, 6.2, width);
         for (let y = 3.2; y < 9; y += .38) this.box(paper, -26.5, y, z, .32, .05, width - .1).rotation.z = .24;
@@ -247,9 +309,11 @@ export class OfficeSetRenderer {
     }
   }
   dispose(): void {
+    this.disposed = true;
     this.workday.dispose();
     this.phone?.dispose();
     this.root.traverse(object => { if (object instanceof THREE.Mesh) object.geometry.dispose(); if (object instanceof THREE.PointLight) object.dispose(); });
+    this.cleanerSkeletons.forEach(skeleton => skeleton.dispose());
     this.light?.dispose(); this.materials.forEach(m => m.dispose()); this.textures.forEach(t => t.dispose()); this.root.removeFromParent();
   }
 }
