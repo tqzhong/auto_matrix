@@ -53,7 +53,8 @@ export class SandboxUI {
       <div id="film-sequence" class="film-sequence hidden"><p id="film-sequence-line"></p><small id="film-sequence-hint">鼠标观察 · V 切换视角 · J 手记</small></div>
       <div id="film-training-actions" class="film-training-actions hidden"><button data-combat="dodge"><kbd>X</kbd> 现在闪避</button><button data-combat="attack"><kbd>F</kbd> <span>刺拳</span></button></div>
       <div id="film-pills" class="film-pills hidden" role="group" aria-label="选择药丸"><p>选择仍然属于你</p><div class="film-pill-choices"><button data-action="life" data-target="film:pill:red">红色 · 继续追问</button><button data-action="life" data-target="film:blue">蓝色 · 回到日常</button></div></div>
-      <div id="film-meeting" class="film-pills hidden" role="group" aria-label="接头决定"><p>你仍然可以离开</p><div class="film-pill-choices"><button data-action="life" data-target="film:meeting:stay">留在车内 · 接受检查</button><button data-action="life" data-target="film:meeting:leave">打开车门 · 暂时离开</button></div></div>
+      <div id="film-meeting" class="film-pills hidden" role="group" aria-label="接头决定"><p>你仍然可以离开</p><div class="film-pill-choices"><button data-action="life" data-target="film:meeting:stay">留在车内 · 接受检查</button><button data-action="life" data-target="film:meeting:leave">推开车门 · 质疑检查</button></div></div>
+      <div id="film-meeting-door" class="film-pills hidden" role="group" aria-label="车门前的选择"><p>Trinity 请你想清楚，再决定去留</p><div class="film-pill-choices"><button data-action="life" data-target="film:meeting:stay">信任她 · 关上车门</button><button data-action="life" data-target="film:meeting:depart">离开 · 返回雨中</button></div></div>
       <div id="film-construct-reflection" class="film-pills film-construct-reflection hidden" role="group" aria-label="Neo 对现实的理解"><p>感觉足以证明真实吗？</p><div class="film-pill-choices">${filmReflections('m1_construct').map(choice => `<button data-action="life" data-target="film:reflect:${choice.id}">${escape(choice.label)}</button>`).join('')}</div></div>
       <div id="film-ride" class="film-ride hidden" role="status"><span id="film-ride-title">TRINITY / KEYMAKER</span><strong id="film-ride-speed"></strong><p id="film-ride-health"></p><small id="film-ride-controls">W 加速 · S 刹车 · A / D 转向</small></div>
       <div id="sandbox-interact" class="sandbox-interact hidden"><button data-action="interact"><kbd>G</kbd> <span id="sandbox-nearby"></span></button><div id="sandbox-job"></div></div>
@@ -129,6 +130,7 @@ export class SandboxUI {
     this.el('film-ride').classList.add('hidden');
     this.el('film-pills').classList.add('hidden');
     this.el('film-meeting').classList.add('hidden');
+    this.el('film-meeting-door').classList.add('hidden');
     this.el('film-construct-reflection').classList.add('hidden');
     this.el('film-blackout').style.opacity = '0';
     if (!player || !state || !profile) return;
@@ -755,15 +757,18 @@ export class SandboxUI {
       }
     }
     if (meetingLocked(journey) && journey.meeting) {
-      const encounter = journey.meeting; const choosing = encounter.phase === 'choice';
+      const encounter = journey.meeting; const choosing = encounter.phase === 'choice'; const hesitating = encounter.phase === 'hesitating';
       this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
-      this.el('film-sequence-hint').textContent = choosing ? '留下接受检查，或现在下车 · 等待不会替你决定'
+      this.el('film-sequence-hint').textContent = choosing ? '接受检查，或先推开车门问清楚 · 等待不会替你决定'
+        : hesitating ? encounter.elapsed < MEETING_TIMING.hesitating ? '先望向雨中，听 Trinity 把话说完' : '关门信任 Trinity，或真的离开 · 等待不会替你决定'
         : encounter.phase === 'located' || encounter.phase === 'removing' ? '按住 G 保持稳定 · 松开暂停抽取'
         : encounter.phase === 'done' ? journey.step === 1 ? 'J 记录反思，再继续赴约' : 'G 启程前往 Lafayette'
         : encounter.phase === 'parked' ? 'G 打开车门下车 · 等待不会替你决定'
         : encounter.phase === 'driving' ? 'Apoc 正在驾驶 · V 切换车内视角后可用鼠标观察' : 'V 切换视角 · 暂停或重连会保留动作';
       this.el('film-meeting').classList.toggle('hidden', !choosing);
-      if (choosing && document.pointerLockElement) document.exitPointerLock();
+      this.el('film-meeting-door').classList.toggle('hidden', !hesitating);
+      if (hesitating) this.el('film-meeting-door').querySelectorAll('button').forEach(button => { button.disabled = encounter.elapsed < MEETING_TIMING.hesitating; });
+      if ((choosing || hesitating) && document.pointerLockElement) document.exitPointerLock();
       this.el('sandbox-interact').classList.toggle('hidden', !['ready', 'located', 'removing', 'done', 'parked'].includes(encounter.phase));
       this.el('sandbox-waypoint').textContent = '';
       if (encounter.phase === 'done' && journey.step >= 2) this.el('sandbox-nearby').textContent = '启程前往 Lafayette';

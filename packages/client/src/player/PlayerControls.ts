@@ -984,15 +984,16 @@ export class PlayerControls {
       const gesture = this.motion.meeting; const pose = meeting!; const center = FILM_SETS.film_adams_bridge.center;
       const car = meetingCarPose(gesture); const origin = new THREE.Vector3(center.x + car.x, center.y - 1, center.z + car.z);
       const entering = gesture.phase === 'boarding' || gesture.phase === 'leaving' || gesture.phase === 'exiting';
+      const doorway = gesture.phase === 'hesitating' || gesture.phase === 'reconsidering';
       const travelling = gesture.phase === 'driving' || gesture.phase === 'parked';
       const portrait = this.camera.aspect < .8;
       const ideal = travelling ? portrait ? new THREE.Vector3(9, 6.2, 13) : new THREE.Vector3(14, 8, 19)
-        : entering ? new THREE.Vector3(9, 4.4, 7) : new THREE.Vector3(.1, 3.65, -2.85);
-      const focus = travelling ? new THREE.Vector3(0, 2.1, 0) : entering ? new THREE.Vector3(2.6, 2.3, 1.5) : new THREE.Vector3(.12, 2.95, 1.85);
+        : entering ? new THREE.Vector3(9, 4.4, 7) : doorway ? portrait ? new THREE.Vector3(8, 4.1, 5) : new THREE.Vector3(9, 4.4, 5.5) : new THREE.Vector3(.1, 3.65, -2.85);
+      const focus = travelling ? new THREE.Vector3(0, 2.1, 0) : entering ? new THREE.Vector3(2.6, 2.3, 1.5) : doorway ? new THREE.Vector3(2.3, 2.75, 1.65) : new THREE.Vector3(.12, 2.95, 1.85);
       if (!entering && pose.probe > 0) { ideal.lerp(new THREE.Vector3(1.1, 3.65, -1.25), pose.probe); focus.lerp(new THREE.Vector3(.65, 2.65, 1.65), pose.probe); }
       if (!entering && pose.discard > 0) { ideal.lerp(new THREE.Vector3(.1, 3.55, -.8), pose.discard); focus.lerp(new THREE.Vector3(-1.8, 2.9, .65), pose.discard); }
       const rotation = new THREE.Euler(0, car.yaw, 0); ideal.applyEuler(rotation).add(origin); focus.applyEuler(rotation).add(origin);
-      if (resetCamera || entering && gesture.elapsed < .15) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
+      if (resetCamera || (entering || doorway || gesture.phase === 'scanning') && gesture.elapsed < .15) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
       this.camera.lookAt(focus);
     } else if (this.motion.meeting && this.firstPerson) {
       const eye = this.meetingEye(this.motion.meeting);

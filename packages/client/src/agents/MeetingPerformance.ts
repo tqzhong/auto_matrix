@@ -118,9 +118,9 @@ export class MeetingPerformance {
     pelvis.rotation.set(0, 0, 0);
     pelvis.position.x -= trinity ? pose.probe * .9 : 0;
     if (trinity) pelvis.position.y += pose.probe * .09;
-    bone('spine').rotation.set(neo ? -.3 * pose.recline + pose.duck * .7 : trinity ? .08 * pose.probe + .3 * pose.discard : 0, 0, trinity ? .25 * pose.probe : 0);
+    bone('spine').rotation.set(neo ? -.3 * pose.recline + pose.duck * .7 : trinity ? .08 * pose.probe + .3 * pose.discard : 0, 0, neo ? .12 * pose.lookOut : trinity ? .25 * pose.probe : 0);
     bone('chest').rotation.set(neo ? -.12 * pose.recline + pose.duck * .2 : .03, trinity ? -.75 * pose.probe : gesture.role === 'switch' ? -1.3 * pose.alert : 0, trinity ? .08 * pose.probe : 0);
-    bone('head').rotation.set(neo ? .15 * pose.recline - pose.duck * .3 : trinity ? .12 * pose.probe : 0, trinity ? -.35 * pose.probe : gesture.role === 'switch' ? -1 * pose.alert : 0, 0);
+    bone('head').rotation.set(neo ? .15 * pose.recline - pose.duck * .3 : trinity ? .12 * pose.probe : 0, neo ? -.55 * pose.lookOut : trinity ? -.35 * pose.probe : gesture.role === 'switch' ? -1 * pose.alert : 0, 0);
     for (const [i, side] of ['R', 'L'].entries()) {
       bone('hip_' + side).rotation.set(-1.35 * pose.seat - pose.duck * .3, 0, 0);
       bone('knee_' + side).rotation.set(1.52 * pose.seat + pose.duck * .5, 0, 0);
@@ -137,7 +137,7 @@ export class MeetingPerformance {
       this.gun.visible = pose.alert > .1;
       if (this.gun.visible) this.hand('R', this.point(.92, 2.78, -.35));
     }
-    if (trinity && ['done', 'driving', 'parked', 'exiting', 'outside'].includes(gesture.phase)) {
+    if (trinity && ['ready', 'boarding', 'done', 'driving', 'parked', 'exiting', 'outside'].includes(gesture.phase)) {
       for (const side of ['R', 'L'] as const) this.hand(side, new THREE.Vector3((side === 'R' ? -1 : 1) * (.42 + (1 - pose.seat) * .1), 1.75 + (1 - pose.seat) * .2, .55 * pose.seat), .15);
     } else if (trinity) {
       this.scanner.visible = gesture.phase !== 'done';

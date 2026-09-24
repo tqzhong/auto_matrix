@@ -506,6 +506,39 @@ test('passenger first-person look follows a car turn while preserving the chosen
   assert.ok(game.camera.position.y > game.state.position.y + 2.7, 'the passenger eye line clears the front seat instead of staring into its back');
 });
 
+test('opening the meeting car door frames Neo and the rainy exit in portrait view', t => {
+  const game = setup(t, Math.PI); const gesture = { phase: 'hesitating' as const, elapsed: 2, role: 'neo' as const, bugged: true };
+  const root = meetingRoot({ ...gesture, approach: { ...MEETING_CAR.approach, yaw: -Math.PI / 2 } }, 'neo');
+  game.state.currentLocation = 'film_adams_bridge'; game.state.position = filmPosition('film_adams_bridge', root.x, root.z);
+  game.state.rotation = root.yaw;
+  game.state.currentAction = { type: 'idle', parameters: { meeting: gesture }, startedAt: 0, duration: 1, progress: 0 };
+  game.camera.aspect = 426 / 680; game.camera.updateProjectionMatrix(); game.controls.possess(game.state); game.step(.5);
+  const center = FILM_SETS.film_adams_bridge.center; const car = meetingCarPose(gesture);
+  const origin = new THREE.Vector3(center.x + car.x, center.y - 1, center.z + car.z);
+  const neo = new THREE.Vector3(1.28, 2.8, 1.65).add(origin).project(game.camera);
+  const exit = new THREE.Vector3(3.3, 2.8, 1.65).add(origin).project(game.camera);
+  for (const point of [neo, exit]) assert.ok(Math.abs(point.x) < .9 && Math.abs(point.y) < .9 && point.z > -1 && point.z < 1,
+    `Neo and the opened right rear door should share the portrait frame: ${point.toArray()}`);
+});
+
+test('the meeting camera cuts outside as Neo opens the door instead of crossing the car body', t => {
+  const game = setup(t, Math.PI); const gesture = { phase: 'choice' as const, elapsed: 0, role: 'neo' as const, bugged: true };
+  const root = meetingRoot({ ...gesture, approach: { ...MEETING_CAR.approach, yaw: -Math.PI / 2 } }, 'neo');
+  game.state.currentLocation = 'film_adams_bridge'; game.state.position = filmPosition('film_adams_bridge', root.x, root.z);
+  game.state.rotation = root.yaw;
+  game.state.currentAction = { type: 'idle', parameters: { meeting: gesture }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.step(.5);
+  game.state.currentAction = { type: 'idle', parameters: { meeting: { ...gesture, phase: 'hesitating', elapsed: 0 } }, startedAt: 0, duration: 1, progress: 0 };
+  game.step(.05);
+  assert.ok(game.camera.position.x > FILM_SETS.film_adams_bridge.center.x + 6,
+    'the camera must not interpolate through the rear door and roof on its way outside');
+  game.state.currentLocation = 'film_extraction_car';
+  game.state.currentAction = { type: 'idle', parameters: { meeting: { ...gesture, phase: 'scanning', elapsed: 0 } }, startedAt: 0, duration: 1, progress: 0 };
+  game.step(.05);
+  assert.ok(game.camera.position.x < FILM_SETS.film_adams_bridge.center.x + 1.5,
+    'closing the door and starting the scan must cut back inside instead of crossing the car shell');
+});
+
 test('switching to first person during extraction frames Trinity’s scanner and still permits free look', t => {
   const game = setup(t, Math.PI); const gesture = { phase: 'located' as const, elapsed: 0, role: 'neo' as const, bugged: true };
   const root = meetingRoot({ ...gesture, approach: { ...MEETING_CAR.approach, yaw: Math.PI } }, 'neo');

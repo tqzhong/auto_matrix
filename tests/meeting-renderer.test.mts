@@ -32,5 +32,12 @@ test('the actual car body uses the same fast pose as its occupants between journ
     const inbound = bridgeArrivalPose(2.35);
     assert.ok(vehicle.position.distanceTo(new THREE.Vector3(inbound.x, 0, inbound.z)) < .001);
     assert.ok(Math.abs(vehicle.rotation.y - inbound.yaw) < .001);
+    const door = (renderer as unknown as { door: THREE.Group }).door;
+    journey.meeting = { phase: 'hesitating', elapsed: 2, bugged: true, approach: { x: 4, z: -12.35, yaw: Math.PI } };
+    renderer.update(journey, 2); assert.ok(door.rotation.y < -.95, 'the right rear door remains open during Trinity’s appeal');
+    journey.meeting.phase = 'reconsidering'; journey.meeting.elapsed = 0;
+    renderer.update(journey, 2); assert.ok(door.rotation.y < -.95, 'trust begins with the same open door pose');
+    journey.meeting.elapsed = 2;
+    renderer.update(journey, 4); assert.ok(Math.abs(door.rotation.y) < .01, 'Neo shuts the door before examination');
   } finally { renderer.dispose(); globalThis.document = document; }
 });

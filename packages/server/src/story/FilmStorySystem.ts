@@ -1151,6 +1151,7 @@ export class FilmStorySystem {
     let finish = false;
     if (duration && encounter.elapsed >= duration) {
       if (encounter.phase === 'boarding') { encounter.phase = 'choice'; encounter.elapsed = 0; }
+      else if (encounter.phase === 'reconsidering') { this.acceptMeeting(agent, tick); return; }
       else if (encounter.phase === 'scanning') { encounter.phase = encounter.bugged ? 'located' : 'done'; encounter.elapsed = 0; finish = !encounter.bugged; }
       else if (encounter.phase === 'removing') {
         if (state.office) state.office.bugged = false;
@@ -1175,6 +1176,8 @@ export class FilmStorySystem {
     }
     if (encounter.phase !== 'done') state.lastText = encounter.phase === 'boarding' ? '车门向后展开。你俯身跨过门槛，在 Trinity 身旁坐下。'
       : encounter.phase === 'choice' ? 'SWITCH · 先接受检查。TRINITY · 你知道外面那条路会通向哪里。留下接受检查，或者现在下车；决定还在你手里。'
+      : encounter.phase === 'hesitating' ? encounter.elapsed < 1.5 ? 'Neo 推开右后门，望向雨中的街道。Switch 的枪仍指着他。' : 'TRINITY · 你已经走过那条路，也知道它通向哪里。你可以关上门信任我，也可以真的离开。'
+      : encounter.phase === 'reconsidering' ? 'Neo 看了 Trinity 一眼，把右后门关上。Switch 放低枪口；检查即将开始。'
       : encounter.phase === 'leaving' ? '你打开车门，退回雨中的桥下。Trinity 没有拉住你。'
       : encounter.phase === 'ready' ? 'Trinity 在身旁准备装置。按 G 开始检查。'
       : encounter.phase === 'driving' ? encounter.elapsed < 8 ? 'APOC · 检查结束。坐稳，我们去见 Morpheus。'
@@ -1187,6 +1190,13 @@ export class FilmStorySystem {
       : encounter.phase === 'removing' ? focus ? '保持稳定。Trinity 拉动泵杆，透明收集筒里的压力正在改变。' : '你暂时停止配合。装置停在原处；继续按住 G 才会抽取。'
       : '追踪器已经离开身体。Trinity 把收集装置移到窗边，将它弹入雨中。';
     if (finish) this.advance(encounter.bugged ? this.step!.text! : '扫描完成，没有发现追踪装置。Trinity 收起仪器，确认接头安全。', agent, tick);
+  }
+  private acceptMeeting(agent: AgentState, tick: number): void {
+    const state = this.state!; const encounter = state.meeting!;
+    this.advance('Neo 关上车门，决定留下接受检查。', agent, tick);
+    encounter.phase = 'scanning'; encounter.elapsed = 0; state.scene = 'm1_bug'; state.step = 0;
+    this.enter(FILM_SCENE_BY_ID.m1_bug, tick, { ...agent.position });
+    this.meetingFrame(agent, false, 0, tick);
   }
   bridgeArrivalFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
@@ -3789,14 +3799,14 @@ export class FilmStorySystem {
       if (MEETING_CAST.some(id => this.world.agents.get(id)?.controller)) return '一位接头者正在由另一位玩家控制，检查进度已经保留。';
       this.meetingFrame(agent, false, 0, tick);
       const encounter = state.meeting!;
-      if (encounter.phase === 'choice' && (target === 'meeting:stay' || target === 'meeting:leave')) {
-        encounter.elapsed = 0;
-        if (target === 'meeting:leave') encounter.phase = 'leaving';
-        else {
-          this.advance('你决定留在车内，接受检查后再去见 Morpheus。', agent, tick);
-          encounter.phase = 'scanning'; state.scene = 'm1_bug'; state.step = 0;
-          this.enter(FILM_SCENE_BY_ID.m1_bug, tick, { ...agent.position });
-        }
+      if (encounter.phase === 'choice' && target === 'meeting:stay') { this.acceptMeeting(agent, tick); return state.lastText; }
+      if (encounter.phase === 'choice' && target === 'meeting:leave') {
+        encounter.phase = 'hesitating'; encounter.elapsed = 0;
+        this.meetingFrame(agent, false, 0, tick); return state.lastText;
+      }
+      if (encounter.phase === 'hesitating' && (target === 'meeting:stay' || target === 'meeting:depart')) {
+        if (encounter.elapsed < MEETING_TIMING.hesitating) return state.lastText;
+        encounter.phase = target === 'meeting:stay' ? 'reconsidering' : 'leaving'; encounter.elapsed = 0;
         this.meetingFrame(agent, false, 0, tick); return state.lastText;
       }
       if (encounter.phase === 'ready' && target === 'act') { encounter.phase = 'scanning'; encounter.elapsed = 0; this.meetingFrame(agent, false, 0, tick); return state.lastText; }

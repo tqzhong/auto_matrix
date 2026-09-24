@@ -216,7 +216,7 @@ test('the actual car occupants fit below the roof and Trinity holds both scanner
     for (const role of ['neo', 'trinity', 'switch', 'apoc'] as const) {
       const rig = (await models.create(role === 'switch' || role === 'trinity' ? 'trinity' : 'neo'))!;
       if (role === 'neo') patient = rig;
-      for (const [phase, elapsed] of [['choice', 0], ['located', 0], ['removing', 2.25], ['discarding', 2.25], ['discarding', 4], ['done', 0], ['driving', 8], ['driving', 41], ['parked', 0]] as const) {
+      for (const [phase, elapsed] of [['ready', 0], ['boarding', 2], ['choice', 0], ['hesitating', 2], ['reconsidering', 1], ['located', 0], ['removing', 2.25], ['discarding', 2.25], ['discarding', 4], ['done', 0], ['driving', 8], ['driving', 41], ['parked', 0]] as const) {
         const gesture = { phase, elapsed, role, bugged: true };
         const position = meetingRoot({ ...gesture, approach: { ...MEETING_CAR.approach, yaw: -Math.PI / 2 } }, role);
         rig.root.position.set(center.x + position.x, center.y - 1, center.z + position.z); rig.root.rotation.y = position.yaw;
@@ -224,10 +224,11 @@ test('the actual car occupants fit below the roof and Trinity holds both scanner
         models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
         const head = rig.bones.get('head')!.getWorldPosition(new THREE.Vector3());
         assert.ok(head.y + .4 < MEETING_CAR.height, `${role} head intersects the roof in ${phase}: ${head.y}`);
+        if (role === 'switch' && (phase === 'choice' || phase === 'hesitating')) assert.equal(rig.root.getObjectByName('switch-warning-pistol')?.visible, true);
         if (role !== 'trinity') continue;
         const scanner = rig.root.getObjectByName('extraction-scanner')!;
         const pump = rig.root.getObjectByName('scanner-pump')!;
-        if (phase === 'done' || phase === 'driving' || phase === 'parked') {
+        if (phase === 'ready' || phase === 'boarding' || phase === 'done' || phase === 'driving' || phase === 'parked') {
           assert.equal(scanner.visible, false);
           for (const side of ['R', 'L']) assert.ok(rig.bones.get('wrist_' + side)!.getWorldPosition(new THREE.Vector3()).y < 2.1, 'after putting the scanner away, hands return to the lap');
           continue;

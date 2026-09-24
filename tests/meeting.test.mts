@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SCENE_BY_ID, FILM_SETS, filmEntry, filmStepPosition, filmPosition, filmSetAt, meetingDrive, meetingRoadContains, playerBlocked, MEETING_DRIVE_SECONDS, MEETING_DESTINATION, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, filmEntry, filmStepPosition, filmPosition, filmSetAt, meetingDrive, meetingPose, meetingRoadContains, playerBlocked, MEETING_DRIVE_SECONDS, MEETING_DESTINATION, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -79,10 +79,40 @@ test('successful office escape produces a negative scan without inventing a para
 });
 
 test('leaving the car returns control outside and permits reentry without erasing the implanted tracker', () => {
-  const h = setup(); const outside = { ...h.neo.position }; h.board(); h.command('meeting:leave'); h.frames(9);
+  const h = setup(); const outside = { ...h.neo.position }; h.board(); h.command('meeting:leave');
+  assert.equal(h.state().meeting?.phase, 'hesitating'); h.frames(2);
+  assert.ok(meetingPose({ ...h.state().meeting!, role: 'neo' }).door > .95);
+  h.command('meeting:depart'); h.frames(9);
   assert.equal(h.state().meeting, undefined); assert.equal(h.state().step, 1); assert.equal(h.state().scene, 'm1_bridge');
   assert.deepEqual(h.neo.position, outside); assert.equal(h.state().office?.bugged, true);
   h.board(); assert.equal(h.state().meeting?.phase, 'choice');
+});
+
+test('Neo can open the car door, hear Trinity, then close it before consenting to the scan', () => {
+  const h = setup(); h.board(); const seated = { ...h.neo.position };
+  h.command('meeting:leave'); h.command('meeting:stay');
+  assert.equal(h.state().meeting?.phase, 'hesitating', 'Neo must first see the street and hear Trinity before deciding');
+  h.frames(2);
+  assert.equal(h.state().scene, 'm1_bridge'); assert.equal(h.state().meeting?.phase, 'hesitating');
+  assert.deepEqual(h.neo.position, seated); assert.match(h.state().lastText, /Trinity|TRINITY/);
+  h.command('meeting:stay'); assert.equal(h.state().meeting?.phase, 'reconsidering');
+  h.frames(1); assert.ok(meetingPose({ ...h.state().meeting!, role: 'neo' }).door < .95);
+  h.frames(2); assert.equal(h.state().scene, 'm1_bug'); assert.equal(h.state().meeting?.phase, 'scanning');
+  assert.equal(h.state().office?.bugged, true);
+});
+
+test('the open-door decision survives pause, disconnect and saved recovery without deciding for Neo', () => {
+  const h = setup(); h.board(); h.command('meeting:leave'); h.frames(1.1);
+  const saved = JSON.parse(JSON.stringify(h.sandbox.state)); const before = h.poses();
+  const elapsed = h.state().meeting!.elapsed;
+  h.frames(3, false, false); assert.equal(h.state().meeting!.elapsed, elapsed);
+  h.players.release('player', h.tick()); h.frames(3);
+  assert.equal(h.state().meeting!.phase, 'hesitating'); assert.equal(h.state().meeting!.elapsed, elapsed);
+  h.sandbox.restore(saved); h.players.possess('player', 'neo', h.tick()); h.command('retry');
+  assert.deepEqual(h.poses(), before); assert.equal(h.state().meeting!.elapsed, elapsed);
+  h.frames(2); assert.equal(h.state().meeting?.phase, 'hesitating');
+  h.command('meeting:stay'); h.frames(2.1);
+  assert.equal(h.state().meeting?.phase, 'scanning'); assert.equal(h.state().scene, 'm1_bug');
 });
 
 test('the implanted tracker draws a visible bridge tail; getting caught requires a saved retry', () => {

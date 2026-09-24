@@ -1,7 +1,7 @@
 import type { FilmJourney } from './film-story.js';
 
 export interface MeetingEncounter {
-  phase: 'boarding' | 'choice' | 'leaving' | 'ready' | 'scanning' | 'located' | 'removing' | 'discarding' | 'done' | 'driving' | 'parked' | 'exiting' | 'outside';
+  phase: 'boarding' | 'choice' | 'hesitating' | 'reconsidering' | 'leaving' | 'ready' | 'scanning' | 'located' | 'removing' | 'discarding' | 'done' | 'driving' | 'parked' | 'exiting' | 'outside';
   elapsed: number;
   bugged: boolean;
   approach: { x: number; z: number; yaw: number };
@@ -30,7 +30,7 @@ const road = [
   { x: 680, z: 38, dx: -25, dz: 0, length: 25, seconds: 4, startSpeed: 10, endSpeed: 0 },
 ];
 export const MEETING_DRIVE_SECONDS = road.reduce((sum, span) => sum + span.seconds, 0);
-export const MEETING_TIMING = { boarding: 8, leaving: 8, scanning: 8, removing: 6, discarding: 5, driving: MEETING_DRIVE_SECONDS, exiting: 8 } as const;
+export const MEETING_TIMING = { boarding: 8, hesitating: 2, reconsidering: 2, leaving: 8, scanning: 8, removing: 6, discarding: 5, driving: MEETING_DRIVE_SECONDS, exiting: 8 } as const;
 const ease = (time: number, from: number, to: number) => { const t = Math.max(0, Math.min(1, (time - from) / (to - from))); return t * t * (3 - 2 * t); };
 const mix = (a: number, b: number, t: number) => a + (b - a) * t;
 // Shared world-space route, with matching tangents and speeds at every join.
@@ -95,17 +95,19 @@ export function meetingPose(gesture: MeetingGesture) {
   const gettingOut = gesture.role === 'trinity' && (phase === 'exiting' || phase === 'outside');
   const enter = phase === 'outside' ? 0 : phase === 'leaving' || phase === 'exiting' ? MEETING_TIMING.leaving - t : t;
   const scanning = phase === 'scanning' ? ease(t, 0, 3) : ['located', 'removing'].includes(phase) ? 1 : phase === 'discarding' ? 1 - ease(t, 0, 3) : 0;
+  const lookOut = phase === 'hesitating' ? ease(t, 0, 1.5) : phase === 'reconsidering' ? 1 - ease(t, 0, 1.8) : phase === 'leaving' ? 1 - ease(t, 2, 6) : 0;
   return {
     seat: boarding && (gesture.role === 'neo' || gettingOut) ? ease(enter, 2.4, 5.5) : 1,
     duck: boarding && (gesture.role === 'neo' || gettingOut) ? ease(enter, 1.4, 2.6) * (1 - ease(enter, 4.5, 6)) : 0,
-    door: boarding ? ease(enter, .2, 1.7) * (1 - ease(enter, 6.2, 7.8)) : 0,
+    door: phase === 'leaving' ? 1 - ease(t, 6.2, 7.8) : boarding ? ease(enter, .2, 1.7) * (1 - ease(enter, 6.2, 7.8)) : lookOut,
+    lookOut,
     recline: scanning,
     probe: phase === 'scanning' ? ease(t, 2.5, 5.8) : ['located', 'removing'].includes(phase) ? 1 : phase === 'discarding' ? 1 - ease(t, 0, 1.5) : 0,
     pump: phase === 'removing' ? Math.sin(t * Math.PI * 2) * .5 + .5 : 0,
     extraction: phase === 'removing' ? ease(t, 2.8, 6) : phase === 'discarding' || phase === 'done' ? 1 : 0,
     discard: phase === 'discarding' ? ease(t, 1, 3.2) : 0,
     ejected: phase === 'discarding' && t >= 3.2,
-    alert: phase === 'choice' ? 1 : phase === 'scanning' ? 1 - ease(t, 0, 2) : 0,
+    alert: phase === 'choice' || phase === 'hesitating' ? 1 : phase === 'reconsidering' || phase === 'scanning' ? 1 - ease(t, 0, 2) : 0,
   };
 }
 export function meetingRoot(encounter: MeetingEncounter, role: MeetingRole, car = meetingCarPose(encounter)) {

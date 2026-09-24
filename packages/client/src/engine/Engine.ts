@@ -375,7 +375,9 @@ export class Engine {
       if (after.scene === 'm1_bridge' && after.bridgeArrival?.phase === 'approaching' && before?.scene !== after.scene) this.audio.meetingSound('approach');
       if (after.scene === 'm1_bridge' && before?.bridgeArrival?.phase === 'approaching' && after.bridgeArrival?.phase === 'parked') this.audio.meetingSound('brake');
       const previous = before?.meeting; const current = after.meeting;
+      if (current?.phase === 'hesitating' && previous?.phase === 'choice') this.audio.meetingSound('door');
       if (current && previous && current.phase === previous.phase) {
+        if (current.phase === 'reconsidering' && previous.elapsed < 1.8 && current.elapsed >= 1.8) this.audio.meetingSound('door');
         if (['boarding', 'leaving', 'exiting'].includes(current.phase) && previous.elapsed < 7.7 && current.elapsed >= 7.7) this.audio.meetingSound('door');
         if (current.phase === 'removing' && Math.floor(current.elapsed) > Math.floor(previous.elapsed)) this.audio.meetingSound('pump');
         if (current.phase === 'discarding' && previous.elapsed < 3.2 && current.elapsed >= 3.2) this.audio.meetingSound('release');
