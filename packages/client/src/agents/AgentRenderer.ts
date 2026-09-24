@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { groundHeight, officeClothing, type AgentState, type CombatImpact, type FilmJourney } from '@auto_matrix/shared';
+import { FILM_SETS, groundHeight, mirrorGuidePose, officeClothing, type AgentState, type CombatImpact, type FilmJourney } from '@auto_matrix/shared';
 import { CharacterModels, weaponMuzzle, type CharacterRig } from './CharacterModel.js';
 import type { MotionInput } from './CharacterMotion.js';
 
@@ -19,6 +19,7 @@ interface Entry {
   impact?: number;
   shot?: number;
   speech?: { sprite: THREE.Sprite; age: number };
+  mirrorGuide?: { from: number; to: number; progress: number; elapsed: number };
 }
 
 export class AgentRenderer {
@@ -65,6 +66,15 @@ export class AgentRenderer {
       entry = { group, body, rig, marker, label, state, time: 0, shadow };
       this.agents.set(id, entry);
     }
+    const progress = state.currentAction?.parameters.mirrorGuide;
+    if (typeof progress === 'number') {
+      const guide = entry.mirrorGuide;
+      if (!guide || progress < guide.to || progress - guide.progress > 4) {
+        entry.mirrorGuide = { from: progress, to: progress, progress, elapsed: .5 };
+        const pose = mirrorGuidePose(progress), center = FILM_SETS.film_lafayette.center;
+        entry.group.position.set(center.x + pose.x, state.position.y, center.z + pose.z);
+      } else if (progress !== guide.to) entry.mirrorGuide = { from: guide.progress, to: progress, progress: guide.progress, elapsed: 0 };
+    } else entry.mirrorGuide = undefined;
     entry.state = state;
     entry.group.visible = state.isInMatrix === this.matrix && state.status !== 'disconnected';
   }
@@ -100,10 +110,19 @@ export class AgentRenderer {
       (entry.marker.material as THREE.MeshBasicMaterial).color.set(warning ? '#f6b177' : FACTION_COLORS[state.faction] ?? '#91cfb0');
       entry.marker.position.y = this.playerId ? -.94 : .1;
       entry.time += delta * (id === this.playerId ? 1 : speed);
+      let guideHeading: number | undefined, guideSpeed = 0;
       if (id !== this.playerId) {
         const target = new THREE.Vector3(state.position.x, state.position.y, state.position.z);
         const driver = this.playerId ? this.agents.get(this.playerId) : undefined;
-        if (state.currentAction?.parameters.passenger && driver?.state.currentAction?.parameters.riding) {
+        if (entry.mirrorGuide) {
+          const guide = entry.mirrorGuide, before = guide.progress;
+          guide.elapsed = Math.min(.5, guide.elapsed + delta * speed);
+          guide.progress = THREE.MathUtils.lerp(guide.from, guide.to, guide.elapsed / .5);
+          const pose = mirrorGuidePose(guide.progress), center = FILM_SETS.film_lafayette.center;
+          entry.group.position.set(center.x + pose.x, state.position.y, center.z + pose.z);
+          guideHeading = pose.yaw;
+          if (speed > 0 && delta > 0) guideSpeed = Math.abs(guide.progress - before) / (delta * speed);
+        } else if (state.currentAction?.parameters.passenger && driver?.state.currentAction?.parameters.riding) {
           target.sub(new THREE.Vector3(driver.state.position.x, driver.state.position.y, driver.state.position.z)).add(driver.group.position);
           entry.group.position.copy(target);
         } else if (state.currentAction?.parameters.openingRoofLeap !== undefined) entry.group.position.copy(target);
@@ -111,7 +130,7 @@ export class AgentRenderer {
         else entry.group.position.lerp(target, 1 - Math.exp(-8 * delta));
       }
       const moving = Math.hypot(state.velocity.x, state.velocity.z) > .1;
-      const heading = moving && !state.currentAction?.parameters.club && !state.currentAction?.parameters.catch && state.currentLocation !== 'film_government_lobby' ? Math.atan2(state.velocity.x, state.velocity.z) : state.rotation;
+      const heading = guideHeading ?? (moving && !state.currentAction?.parameters.club && !state.currentAction?.parameters.catch && state.currentLocation !== 'film_government_lobby' ? Math.atan2(state.velocity.x, state.velocity.z) : state.rotation);
       let difference = heading - entry.body.rotation.y;
       difference = Math.atan2(Math.sin(difference), Math.cos(difference));
       if (id !== this.playerId) entry.body.rotation.y += difference * (state.currentAction?.parameters.club || state.currentAction?.parameters.sentinel || state.currentAction?.parameters.interlude || state.currentAction?.parameters.oracleVisit || state.currentAction?.parameters.betrayal || state.currentAction?.parameters.rescue || state.currentAction?.parameters.government || state.currentAction?.parameters.airRescue || state.currentAction?.parameters.matrixEscape || state.currentAction?.parameters.theOne || state.currentAction?.parameters.reloaded || state.currentAction?.parameters.catch || state.currentAction?.parameters.lobbyEntry || state.currentAction?.parameters.meeting || state.currentAction?.parameters.pills || state.currentAction?.parameters.interrogation || state.currentAction?.parameters.welcome || state.currentAction?.parameters.reveal || state.currentAction?.parameters.training || state.currentAction?.parameters.workday ? 1 : 1 - Math.exp(-10 * delta));
@@ -120,7 +139,7 @@ export class AgentRenderer {
       const dist = camera ? entry.group.position.distanceTo(camera.position) : 0;
       const floor = groundHeight(state.position, state.isInMatrix);
       const input: MotionInput = id === this.playerId && this.playerMotion ? this.playerMotion : {
-        speed: velocity, grounded: Boolean(state.currentAction?.parameters.riding || state.currentAction?.parameters.climbing) || state.position.y <= floor + .12, verticalVelocity: state.velocity.y,
+        speed: entry.mirrorGuide ? guideSpeed : velocity, grounded: Boolean(state.currentAction?.parameters.riding || state.currentAction?.parameters.climbing) || state.position.y <= floor + .12, verticalVelocity: state.velocity.y,
         turn: difference * 8, attack: state.currentAction?.type === 'attack' ? Number(state.currentAction.parameters.contactTick ?? state.currentAction.startedAt) : undefined,
         hit: entry.hit, impact: entry.impact, shot: entry.shot, windingUp: warning,
         armed: state.currentAction?.parameters.armed === true || !state.currentAction?.parameters.lobbyEntry && state.currentLocation === 'film_government_lobby' && ['neo', 'trinity'].includes(id),

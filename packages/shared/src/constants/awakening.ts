@@ -8,7 +8,7 @@ export const AWAKENING_SECONDS = { mirror: 8, connect: 4, disconnect: 9, rescue:
 export const MIRROR_TOUCH = { x: -7.1, z: -14.6, radius: 1.25 } as const;
 export const MIRROR_SEAT = { x: -9.5, z: -16.1 } as const;
 export const MIRROR_TIMING = { sit: 1.35, wired: 2.75, touch: 3.45, fade: 7.2 } as const;
-export interface MirrorGuide { progress: number; lastTick: number; done: boolean }
+export interface MirrorGuide { progress: number; lastTick: number; done: boolean; rise?: number }
 export const MIRROR_GUIDE_ROUTE = [
   { x: -PILL_ROOM.seat, z: PILL_ROOM.z }, { x: -2.8, z: -3.1 }, { x: -5.8, z: -3.1 },
   { x: -6, z: -9.8 }, { x: -6, z: -12.7 }, { x: -3, z: -17 },

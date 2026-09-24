@@ -73,6 +73,7 @@ test('after the red pill Morpheus leads Neo to the tracking chair instead of app
   const state = h.state(), morpheus = h.world.agents.get('morpheus')!;
   assert.equal(state.scene, 'm1_mirror');
   assert.ok(state.mirrorGuide, 'the room transition must save an escort in progress');
+  assert.equal(state.mirrorGuide.rise, .5, 'Morpheus is already starting to stand as Neo finishes the red pill');
   assert.ok(Math.hypot(morpheus.position.x - filmPosition('film_lafayette', -PILL_ROOM.seat, PILL_ROOM.z).x,
     morpheus.position.z - filmPosition('film_lafayette', -PILL_ROOM.seat, PILL_ROOM.z).z) < 2,
     'Morpheus starts at the chair instead of teleporting to the equipment room');
@@ -86,14 +87,25 @@ test('after the red pill Morpheus leads Neo to the tracking chair instead of app
   assert.match(h.players.possess('other', 'morpheus', h.tick()).error!, /追踪室/);
   h.neo.position = { ...morpheus.position }; const beforeStep = state.mirrorGuide!.progress;
   h.frames(.5);
+  assert.equal(state.mirrorGuide!.progress, beforeStep, 'Morpheus stands up before stepping away from the chair');
+  assert.equal(state.mirrorGuide!.rise, 1);
+  assert.equal(morpheus.currentAction?.parameters.seated, false);
+  h.frames(.5);
   assert.ok(state.mirrorGuide!.progress - beforeStep > 1.4 && state.mirrorGuide!.progress - beforeStep < 1.8,
     'one server tick advances Morpheus by about 1.6 metres');
   const first = state.mirrorGuide!.progress;
   h.neo.position = filmPosition('film_lafayette', 0, 10);
   h.frames(4); assert.equal(state.mirrorGuide!.progress, first, 'Morpheus waits when Neo falls behind');
+  const ahead = mirrorGuidePose(first + 9);
+  h.neo.position = filmPosition('film_lafayette', ahead.x, ahead.z);
+  h.frames(.5); assert.ok(state.mirrorGuide!.progress > first, 'Morpheus resumes if Neo takes the route ahead');
   const saved = structuredClone(h.sandbox.state); h.sandbox.restore(saved);
   assert.equal(h.state().mirrorGuide!.progress, saved.neoLife.journey.mirrorGuide.progress);
   assert.equal(h.state().mirrorGuide!.done, saved.neoLife.journey.mirrorGuide.done);
+  assert.equal(h.state().mirrorGuide!.rise, saved.neoLife.journey.mirrorGuide.rise);
+  const legacy = structuredClone(saved); delete legacy.neoLife.journey.mirrorGuide.rise;
+  h.sandbox.restore(legacy);
+  assert.equal(h.state().mirrorGuide!.rise, undefined, 'old escort saves resume without a new stand-up delay');
   for (let i = 0; i < 50 && !h.state().mirrorGuide!.done; i++) {
     h.neo.position = { ...morpheus.position };
     h.frames(.5);

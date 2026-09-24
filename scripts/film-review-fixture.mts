@@ -70,7 +70,7 @@ if (scene.id === 'm1_mirror' && ['mirror-wired', 'mirror-silver'].includes(proce
 if (scene.id === 'm1_mirror' && process.argv[3] === 'mirror-escort') {
   const journey = sandbox.life.film.state!;
   sandbox.state.neoLife!.choices.pill = 'red';
-  journey.mirrorGuide = { progress: 0, lastTick: 0, done: false };
+  journey.mirrorGuide = { progress: 0, lastTick: 0, done: false, rise: 0 };
   actor.position = filmPosition(scene.set, PILL_ROOM.exit.x, PILL_ROOM.exit.z);
   actor.rotation = Math.atan2(PILL_ROOM.trackingDoor.x - PILL_ROOM.exit.x, PILL_ROOM.trackingDoor.z - PILL_ROOM.exit.z);
   journey.checkpoint = { ...actor.position };

@@ -1062,8 +1062,11 @@ export class FilmStorySystem {
     if (!morpheus || morpheus.controller || !agent.controller) return;
     const before = mirrorGuidePose(guide.progress);
     const center = FILM_SETS.film_lafayette.center;
-    const ahead = mirrorGuideProgress({ x: agent.position.x - center.x, z: agent.position.z - center.z }) > guide.progress + 1;
-    if (!guide.done && (distance(agent.position, filmPosition('film_lafayette', before.x, before.z)) < 8 || ahead))
+    const local = { x: agent.position.x - center.x, z: agent.position.z - center.z };
+    const projected = mirrorGuideProgress(local), nearest = mirrorGuidePose(projected);
+    const ahead = Math.hypot(local.x - nearest.x, local.z - nearest.z) < 4 && projected > guide.progress + 1;
+    if (guide.rise !== undefined && guide.rise < 1) guide.rise = Math.min(1, guide.rise + dt);
+    else if (!guide.done && (distance(agent.position, filmPosition('film_lafayette', before.x, before.z)) < 8 || ahead))
       guide.progress = Math.min(MIRROR_GUIDE_LENGTH, guide.progress + dt * 3.2);
     guide.done = guide.progress >= MIRROR_GUIDE_LENGTH;
     const pose = mirrorGuidePose(guide.progress);
@@ -1071,7 +1074,7 @@ export class FilmStorySystem {
     morpheus.currentLocation = 'film_lafayette'; morpheus.isInMatrix = true;
     morpheus.velocity = dt > 0 ? { x: (pose.x - before.x) / dt, y: 0, z: (pose.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
     morpheus.currentAction = { type: guide.done || dt === 0 || guide.progress === 0 ? 'idle' : 'move_to',
-      parameters: { resolved: true, seated: guide.progress === 0, mirrorGuide: guide.progress }, startedAt: tick, duration: 1, progress: 0 };
+      parameters: { resolved: true, seated: guide.progress === 0 && (guide.rise ?? 0) === 0, mirrorGuide: guide.progress }, startedAt: tick, duration: 1, progress: 0 };
     if (!guide.done) state.lastText = 'Morpheus 起身，穿过会客厅后门走向追踪室。跟上他；你落后时他会停下等你。';
     else state.lastText = 'Morpheus 已在追踪室等候。走到椅子右侧按 G 坐下，Trinity 会接上电极。';
   }
@@ -4129,7 +4132,7 @@ export class FilmStorySystem {
     if (scene.id === 'm1_room303') this.openingHotel.reset(tick);
     if (scene.id === 'm1_roofs') state.openingRoof = { phase: 'running', lastTick: tick, attempts: 0 };
     if (scene.id === 'm1_phone_escape') state.openingPhone = { phase: 'running', remaining: OPENING_ESCAPE.phoneSeconds, lastTick: tick, attempts: 0 };
-    if (scene.id === 'm1_mirror' && life.choices.pill === 'red') state.mirrorGuide = { progress: 0, lastTick: tick, done: false };
+    if (scene.id === 'm1_mirror' && life.choices.pill === 'red') state.mirrorGuide = { progress: 0, lastTick: tick, done: false, rise: 0 };
     if (scene.id === 'm3_mobil') state.mobil = { phase: 'waiting', elapsed: 0, lastTick: tick, loops: 0 };
     else if (scene.id === 'm3_mobil_release') state.mobil = { phase: 'approaching', elapsed: 0, lastTick: tick, loops: 0 };
     else if (!['m3_family', 'm3_trainman'].includes(scene.id)) delete state.mobil;
@@ -4395,7 +4398,7 @@ export class FilmStorySystem {
         if (id === 'morpheus' && this.state?.mirrorGuide) {
           const pose = mirrorGuidePose(this.state.mirrorGuide.progress);
           actor.position = filmPosition(scene.set, pose.x, pose.z); actor.rotation = pose.yaw;
-          actor.currentAction = { type: 'idle', parameters: { seated: this.state.mirrorGuide.progress === 0,
+          actor.currentAction = { type: 'idle', parameters: { seated: this.state.mirrorGuide.progress === 0 && (this.state.mirrorGuide.rise ?? 0) === 0,
             mirrorGuide: this.state.mirrorGuide.progress }, startedAt: this.state.enteredAt, duration: 100000, progress: 0 };
         }
       }
