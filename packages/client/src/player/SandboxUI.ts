@@ -1,5 +1,5 @@
 import { CATCH, RELOADED, RELOADED_FINALE, HEL_COATCHECK, catchText, reloadedText } from '@auto_matrix/shared';
-import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_NAMES, GRID_HACK_SECONDS, GRID_REROUTE_SECONDS, HEL_ELEVATOR, HEL_DANCE_DOOR, filmStepPosition, helElevatorLocked, helDanceDoorLocked, pillLocked, lafayetteWelcomeLocked, awakeningLocked, awakeningWaiting, AWAKENING_SECONDS, MIRROR_TOUCH, MIRROR_TIMING, trainingLocked, trainingWaiting, TRAINING_SECONDS, DOJO_COMBO_WINDOW, windowOpening, windowCrossing, ITEMS, RECIPES, SKILLS, FILMS, MISSIONS, LOCATIONS, CITY_BUILDINGS, NEO_CHAPTERS, LIFE_ACTIONS, lifeActionPosition, lifeRoomCenter, locationEntrance, distance, missionPosition, nearTransit, skillPoints,
+import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_NAMES, filmReflections, GRID_HACK_SECONDS, GRID_REROUTE_SECONDS, HEL_ELEVATOR, HEL_DANCE_DOOR, filmStepPosition, helElevatorLocked, helDanceDoorLocked, pillLocked, lafayetteWelcomeLocked, awakeningLocked, awakeningWaiting, AWAKENING_SECONDS, MIRROR_TOUCH, MIRROR_TIMING, trainingLocked, trainingWaiting, TRAINING_SECONDS, DOJO_COMBO_WINDOW, windowOpening, windowCrossing, ITEMS, RECIPES, SKILLS, FILMS, MISSIONS, LOCATIONS, CITY_BUILDINGS, NEO_CHAPTERS, LIFE_ACTIONS, lifeActionPosition, lifeRoomCenter, locationEntrance, distance, missionPosition, nearTransit, skillPoints,
   type AgentState, type SandboxState, type SandboxCommand, type ItemId, type SkillId, type Vector3 } from '@auto_matrix/shared';
 import './sandbox.css';
 import { renderNeoLife } from './NeoLifePanel.js';
@@ -53,6 +53,7 @@ export class SandboxUI {
       <div id="film-training-actions" class="film-training-actions hidden"><button data-combat="dodge"><kbd>X</kbd> 现在闪避</button><button data-combat="attack"><kbd>F</kbd> <span>刺拳</span></button></div>
       <div id="film-pills" class="film-pills hidden" role="group" aria-label="选择药丸"><p>选择仍然属于你</p><div class="film-pill-choices"><button data-action="life" data-target="film:pill:red">红色 · 继续追问</button><button data-action="life" data-target="film:blue">蓝色 · 回到日常</button></div></div>
       <div id="film-meeting" class="film-pills hidden" role="group" aria-label="接头决定"><p>你仍然可以离开</p><div class="film-pill-choices"><button data-action="life" data-target="film:meeting:stay">留在车内 · 接受检查</button><button data-action="life" data-target="film:meeting:leave">打开车门 · 暂时离开</button></div></div>
+      <div id="film-construct-reflection" class="film-pills film-construct-reflection hidden" role="group" aria-label="Neo 对现实的理解"><p>感觉足以证明真实吗？</p><div class="film-pill-choices">${filmReflections('m1_construct').map(choice => `<button data-action="life" data-target="film:reflect:${choice.id}">${escape(choice.label)}</button>`).join('')}</div></div>
       <div id="film-ride" class="film-ride hidden" role="status"><span id="film-ride-title">TRINITY / KEYMAKER</span><strong id="film-ride-speed"></strong><p id="film-ride-health"></p><small id="film-ride-controls">W 加速 · S 刹车 · A / D 转向</small></div>
       <div id="sandbox-interact" class="sandbox-interact hidden"><button data-action="interact"><kbd>G</kbd> <span id="sandbox-nearby"></span></button><div id="sandbox-job"></div></div>
       <div class="sandbox-hotbar" aria-label="物品快捷栏">${(['medkit', 'emp', 'beacon', 'barricade'] as const).map((id, i) => `<button data-action="${i < 2 ? 'use' : 'build'}" data-target="${id}" title="${ITEMS[id].description}"><kbd>${i + 1}</kbd><span class="slot-symbol">${ITEMS[id].symbol}</span><span>${ITEMS[id].name}</span><b id="count-${id}">0</b></button>`).join('')}</div>
@@ -127,6 +128,7 @@ export class SandboxUI {
     this.el('film-ride').classList.add('hidden');
     this.el('film-pills').classList.add('hidden');
     this.el('film-meeting').classList.add('hidden');
+    this.el('film-construct-reflection').classList.add('hidden');
     this.el('film-blackout').style.opacity = '0';
     if (!player || !state || !profile) return;
     const life = player.id === 'neo' || player.id === state.neoLife?.journey?.actor ? state.neoLife : undefined;
@@ -668,6 +670,16 @@ export class SandboxUI {
       this.el('sandbox-waypoint').textContent = '';
       this.el('sandbox-interact').classList.toggle('hidden', !waiting);
       if (waiting) this.el('sandbox-nearby').textContent = action;
+      return;
+    }
+    if (!journey.visiting && scene.id === 'm1_construct' && step?.kind === 'reflect') {
+      this.el('film-construct-reflection').classList.remove('hidden');
+      this.el('film-sequence').classList.remove('hidden');
+      this.el('film-sequence-line').textContent = step.text ?? journey.lastText;
+      this.el('film-sequence-hint').textContent = '选择一种理解，随后进入电视中的真实荒漠 · J 也可在手记中选择';
+      this.el('sandbox-waypoint').textContent = '';
+      this.el('sandbox-interact').classList.add('hidden');
+      document.getElementById('game-objective-copy')!.textContent = '2/2 · 感觉足以证明真实吗？ · 选择后继续';
       return;
     }
     if (!journey.visiting && scene.id === 'm1_spoon' && journey.oracle?.spoon !== undefined) {

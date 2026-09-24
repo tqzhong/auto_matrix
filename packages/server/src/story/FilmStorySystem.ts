@@ -3541,7 +3541,7 @@ export class FilmStorySystem {
     }
     if (state.awakening && state.awakening.elapsed < AWAKENING_SECONDS[state.awakening.kind]) return '演出进行中，可以转动视角观察；进度会自动保存。';
     if (state.scene === 'm2_architect' && state.architect?.phase === 'failed') return 'Trinity 的信号已经消失。按 J 从抉择检查点重试。';
-    if (!this.near(agent, step)) return state.scene === 'm1_mirror' && state.step === 0 ? '穿过会客厅后方的门，走到追踪椅右侧再按 G。' : '请走近金色目标标记（4 米内），再按 G。';
+    if (!this.near(agent, step) && !(state.scene === 'm1_construct' && step.kind === 'reflect')) return state.scene === 'm1_mirror' && state.step === 0 ? '穿过会客厅后方的门，走到追踪椅右侧再按 G。' : '请走近金色目标标记（4 米内），再按 G。';
     if (state.scene === 'm1_room303' && state.step === 0 && target === 'act') return this.openingHotel.begin(agent, tick);
     if (state.scene === 'm1_room303' && state.step === 2 && target === 'act') {
       this.openingHotel.state!.phase = 'corridor';
@@ -3621,7 +3621,9 @@ export class FilmStorySystem {
         state.reflections[key] = choice.id; life.choices[key] = choice.id; life.philosophy[choice.id]++;
         life.journal.unshift({ day: life.day, time: this.world.timeOfDay, title: `${this.scene.title} · ${choice.label}`, text: response });
       }
-      this.advance(`${step.text} ${response}`, agent, tick); return response;
+      this.advance(`${step.text} ${response}`, agent, tick);
+      if (state.scene === 'm1_construct') this.command(agent, 'next', tick);
+      return response;
     }
     if (target !== 'act') return '当前没有这个场景操作。';
     if (state.scene === 'm1_phone_escape' && state.step === 1) {

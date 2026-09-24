@@ -59,6 +59,12 @@ body:has(#film-phone:not(.hidden)) .game-vitals,body:has(#film-phone:not(.hidden
 .film-pills button:hover { filter:brightness(1.4); }.film-pills button:focus-visible { outline:2px solid #e2d9ab; outline-offset:3px; }
 body:has(#film-pills:not(.hidden)) .film-sequence { bottom:125px; }
 body:has(#film-pills:not(.hidden)) .game-vitals { display:none; }
+.film-construct-reflection { width:min(840px,calc(100vw - 36px)); }
+.film-construct-reflection .film-pill-choices { grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+.film-construct-reflection .film-pill-choices button { border-color:#a1b9aa; background:#101c19f2; font-size:12px; line-height:1.5; }
+body:has(#film-construct-reflection:not(.hidden)) .film-sequence { bottom:137px; }
+body:has(#film-construct-reflection:not(.hidden)) .sandbox-hotbar,body:has(#film-construct-reflection:not(.hidden)) .game-vitals,body:has(#film-construct-reflection:not(.hidden)) .game-map,body:has(#film-construct-reflection:not(.hidden)) .game-interaction,body:has(#film-construct-reflection:not(.hidden)) .game-crosshair { display:none; }
+@media(max-width:680px) { .film-construct-reflection .film-pill-choices { grid-template-columns:1fr; gap:6px; }.film-construct-reflection button { padding:9px 12px; }body:has(#film-construct-reflection:not(.hidden)) .film-sequence { bottom:225px; } }
 
 body:has(#gameplay-recorder) .film-pills { bottom:66px; }
 body:has(#gameplay-recorder):has(#film-pills:not(.hidden)) .film-sequence { bottom:150px; }

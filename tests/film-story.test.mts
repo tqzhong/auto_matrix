@@ -1171,8 +1171,23 @@ test('the Construct television and ruined-world lesson wait for Neo and preserve
   assert.equal(h.sandbox.life.film.state!.awakening!.elapsed, constructElapsed, 'disconnecting freezes the television lesson');
   h.players.possess('film-player', 'neo', h.tick());
   for (let frame = 0; frame < 120 && h.sandbox.life.film.state!.step === 0; frame++) h.players.step(.1, true, h.tick());
-  assert.equal(h.sandbox.life.film.state!.step, 1); h.command('reflect:agency'); assert.equal(h.sandbox.life.film.state!.step, 2);
-  h.command('next'); assert.equal(h.sandbox.life.film.state!.scene, 'm1_desert');
+  assert.equal(h.sandbox.life.film.state!.step, 1);
+  h.actor().position = filmStepPosition(FILM_SCENE_BY_ID.m1_construct, FILM_SCENE_BY_ID.m1_construct.steps[0]);
+  h.players.receiveInput('film-player', { x: 1, z: 0, yaw: 0, sprint: true, jump: true, sequence: 1 });
+  h.players.step(.1, true, h.tick());
+  assert.deepEqual(h.actor().position, chair, 'Neo remains seated for the on-screen choice after the reveal');
+  assert.equal(h.actor().currentAction?.parameters.seated, true);
+  h.actor().position = filmStepPosition(FILM_SCENE_BY_ID.m1_construct, FILM_SCENE_BY_ID.m1_construct.steps[0]);
+  const agency = h.sandbox.state.neoLife!.philosophy.agency;
+  h.command('reflect:agency');
+  assert.equal(h.sandbox.life.film.state!.scene, 'm1_desert', 'choosing at the television immediately enters the ruined world');
+  assert.equal(h.sandbox.life.film.state!.reflections['m1_construct:1'], 'agency');
+  assert.equal(h.sandbox.state.neoLife!.philosophy.agency, agency + 1);
+  assert.ok(h.sandbox.life.film.state!.completed.includes('m1_construct'));
+  const chosen = JSON.parse(JSON.stringify(h.sandbox.state));
+  h.sandbox.restore(chosen);
+  assert.equal(h.sandbox.life.film.state!.scene, 'm1_desert', 'reload resumes after the committed choice');
+  assert.equal(h.sandbox.state.neoLife!.philosophy.agency, agency + 1, 'reload does not duplicate the reflection');
   const desert = FILM_SCENE_BY_ID.m1_desert; h.actor().position = filmStepPosition(desert, desert.steps[0]); h.advance();
   assert.equal(h.sandbox.life.film.state!.step, 1);
   assert.deepEqual(h.sandbox.life.film.state!.awakening, { kind: 'desert', elapsed: 0, started: false });
@@ -2503,6 +2518,10 @@ test('the entire film route completes through interactions, driving and real com
         assert.equal(state.scene, 'm1_pod', 'the mirror covering Neo starts the pod scene without another command');
         continue;
       }
+      if (scene.id === 'm1_construct' && index === scene.steps.length - 1) {
+        assert.equal(state.scene, 'm1_desert', 'the television choice starts the ruined world without another command');
+        continue;
+      }
       assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`);
       if (scene.id === 'm1_jump' && index === 0) {
         h.command('act');
@@ -2511,7 +2530,7 @@ test('the entire film route completes through interactions, driving and real com
     }
     assert.ok(state.completed.includes(scene.id));
     if (scene.id === 'm1_phone_escape') h.advance(3); // Hold the connected booth shot through the truck impact.
-    if (!['m1_bridge', 'm1_bug', 'm1_pills', 'm1_mirror'].includes(scene.id)) h.command('next');
+    if (!['m1_bridge', 'm1_bug', 'm1_pills', 'm1_mirror', 'm1_construct'].includes(scene.id)) h.command('next');
     if (scene.id === 'm1_office_escape' && state.office?.crossing !== undefined) for (let frame = 0; frame < 65; frame++) h.players.step(.1, true, h.tick());
   }
   assert.equal(state.finished, true); assert.equal(state.completed.length, FILM_SCENES.length);

@@ -18,7 +18,8 @@ export const mirrorSilver = (elapsed: number): number => clamp((elapsed - MIRROR
 
 export function awakeningLocked(journey: FilmJourney): boolean {
   return !journey.visiting && (journey.scene === 'm1_pod' || ['m1_mirror', 'm1_recovery', 'm1_construct', 'm1_desert'].includes(journey.scene)
-    && !!journey.awakening && journey.awakening.elapsed < AWAKENING_SECONDS[journey.awakening.kind]);
+    && !!journey.awakening && (journey.awakening.elapsed < AWAKENING_SECONDS[journey.awakening.kind]
+      || journey.scene === 'm1_construct' && journey.step === 1 && journey.awakening.kind === 'construct' && journey.awakening.started !== false));
 }
 
 export function recoveryWaiting(journey: FilmJourney): boolean {
