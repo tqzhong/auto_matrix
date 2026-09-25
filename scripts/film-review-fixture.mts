@@ -1,4 +1,4 @@
-import { newReloaded, newFarewell, BURLY, EXILES, CHATEAU, MOUNTAIN, TRUCKS, HEL_COATCHECK } from '@auto_matrix/shared';
+import { newReloaded, newFarewell, newDeusPact, BURLY, EXILES, CHATEAU, MOUNTAIN, TRUCKS, HEL_COATCHECK } from '@auto_matrix/shared';
 // Creates an isolated visual-review save; never writes the player's data directory.
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import os from 'node:os';
@@ -494,6 +494,18 @@ if (scene.id === 'm3_farewell' && ['farewell-ready', 'farewell-goodbye', 'farewe
       : { phase: 'still', elapsed: 0, total: 18.4 };
   actor.position = filmStepPosition(scene, scene.steps[Math.min(journey.step, 1)]); actor.rotation = Math.PI;
   sandbox.life.film.farewellFrame(actor, 0, 0); journey.checkpoint = { ...actor.position };
+}
+if (scene.id === 'm3_deus' && ['deus-ready', 'deus-swarm', 'deus-terms', 'deus-cabling', 'deus-consent'].includes(process.argv[3])) {
+  const journey = sandbox.life.film.state!; const variant = process.argv[3]; actor.controller = 'player';
+  journey.step = variant === 'deus-ready' || variant === 'deus-swarm' ? 1 : variant === 'deus-terms' ? 2 : 3;
+  journey.deus = variant === 'deus-ready' ? { ...newDeusPact(), phase: 'ready' }
+    : variant === 'deus-swarm' ? { ...newDeusPact(), phase: 'swarm', elapsed: 2.2, total: 2.2, resolve: 1.25 }
+      : variant === 'deus-terms' ? { ...newDeusPact(), phase: 'terms', total: 8.2, resolve: 3 }
+        : variant === 'deus-cabling' ? { ...newDeusPact(), phase: 'cabling', elapsed: 1.4, total: 10.8, resolve: 3 }
+          : { ...newDeusPact(), phase: 'consent', total: 12.2, resolve: 3, consent: .45 };
+  if (journey.step === 3) sandbox.state.neoLife!.choices.machine_pact = 'peace';
+  actor.position = filmStepPosition(scene, scene.steps[Math.min(journey.step, 3)]); actor.rotation = Math.PI;
+  sandbox.life.film.deusFrame(actor, false, 0, 0); journey.checkpoint = { ...actor.position };
 }
 for (const resident of world.agents.values()) delete resident.controller;
 neo.isAwakened = FILM_SCENES.indexOf(scene) >= FILM_SCENES.findIndex(s => s.id === 'm1_pod');

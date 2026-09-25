@@ -32,6 +32,7 @@ import { GARAGE, newGarageEscape, stepGarageEscape } from '@auto_matrix/shared';
 import { newHammerFlight, stepHammerFlight } from '@auto_matrix/shared';
 import { newLogosFlight, stepLogosFlight } from '@auto_matrix/shared';
 import { farewellLocked, farewellPose, newFarewell, stepFarewell } from '@auto_matrix/shared';
+import { DEUS_PACT, deusPactLocked, deusPactPose, newDeusPact, stepDeusPact } from '@auto_matrix/shared';
 import { newApuRun, stepApuRun } from '@auto_matrix/shared';
 import { DOCK_GUNNERY, newDockGunnery, fireDockGunnery, stepDockGunnery } from '@auto_matrix/shared';
 import { TEMPLE_SEAL_SECONDS } from '@auto_matrix/shared';
@@ -223,6 +224,64 @@ export class FilmStorySystem {
     if (state.farewell.phase === 'still' && state.step === 1)
       this.advance('Neo 没有用战争的目标替这一刻辩解。他听完告别，在撞毁的 Logos 中为两个人留下最后的安静。', agent, tick);
     return true;
+  }
+  private ensureDeus(): void {
+    const state = this.state;
+    if (state?.scene !== 'm3_deus' || state.visiting || state.deus || state.completed.includes('m3_deus')) return;
+    const oldChoice = state.reflections['m3_deus:1'];
+    if (oldChoice) { state.reflections['m3_deus:2'] = oldChoice; delete state.reflections['m3_deus:1']; }
+    state.deus = newDeusPact();
+    if (state.step > 0) {
+      state.step = 1; state.deus.phase = 'ready'; delete state.started; delete state.fighting;
+      state.lastText = '旧存档已接回机器核心谈判前。走到平台，亲自让机器集体听完交换条件。';
+    }
+  }
+  private placeDeus(agent: AgentState, tick: number): void {
+    this.ensureDeus(); const state = this.state; const encounter = state?.deus;
+    if (state?.scene !== 'm3_deus' || !encounter) return;
+    const collective = this.world.agents.get('deus_ex_machina');
+    if (collective && !collective.controller) {
+      collective.position = filmPosition(this.scene!.set, 0, -47); collective.position.y -= 24;
+      collective.currentLocation = this.scene!.set; collective.isInMatrix = false; collective.rotation = 0;
+      collective.velocity = { x: 0, y: 0, z: 0 }; collective.currentAction = null;
+    }
+    if (!deusPactLocked(encounter)) {
+      if (agent.currentAction?.parameters.deusPact) agent.currentAction = null;
+      return;
+    }
+    const pose = deusPactPose(encounter);
+    agent.position = filmPosition(this.scene!.set, DEUS_PACT.platform.x, DEUS_PACT.platform.z);
+    agent.rotation = DEUS_PACT.platform.yaw; agent.velocity = { x: 0, y: 0, z: 0 };
+    agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, seated: pose.seated > .48,
+      deusPact: { ...encounter, role: 'neo' } }, startedAt: tick, duration: 1, progress: 0 };
+  }
+  deusFrame(agent: AgentState, focus: boolean, dt: number, tick: number): boolean {
+    if (!this.controls(agent) || this.state?.scene !== 'm3_deus' || this.state.visiting) return false;
+    this.ensureDeus(); const state = this.state; const encounter = state.deus!;
+    if (!deusPactLocked(encounter)) { this.placeDeus(agent, tick); return false; }
+    if (this.world.agents.get('deus_ex_machina')?.controller) {
+      state.lastText = '机器集体正由另一位玩家控制。谈判停在当前一拍，等待它空闲后继续。';
+      this.placeDeus(agent, tick); return true;
+    }
+    const before = encounter.phase; state.deus = stepDeusPact(encounter, focus, dt);
+    if (state.deus.phase !== before) {
+      state.lastText = state.deus.phase === 'forming' ? 'Neo 没有退开。环绕他的机器散开又重组，一张由无数机械个体构成的面孔开始升起。'
+        : state.deus.phase === 'warning' ? '机器集体允许他说下去。Neo 指出 Smith 已脱离控制，并会从矩阵继续扩散到机器城。'
+          : state.deus.phase === 'terms' ? '机器无法靠自身清除 Smith；Neo 可以尝试，但交换条件必须现在说清。J 打开手记，选择如何提出和平。'
+            : state.deus.phase === 'cabling' ? '平台的机械触须托住 Neo；多条接线寻找他身体上的旧插口。'
+              : state.deus.phase === 'consent' ? '最后一条蛇形探针停在颈后。按住 G 明确同意接入；松开不会替 Neo 作出决定。'
+                : state.deus.phase === 'connecting' ? '探针刺入颈后接口。机器城的金色能量沿身体插口同时点亮。'
+                  : state.deus.phase === 'connected' ? '连接完成。机器把 Neo 送入被 Smith 占据的矩阵，停战协议已经先于决战生效。'
+                    : '机器群压过平台。Neo 没能让集体听完交换条件；J 打开手记，从谈判平台重试。';
+      if (state.deus.phase === 'terms' && state.step === 1)
+        this.advance(state.lastText, agent, tick);
+      if (state.deus.phase === 'connected' && state.step === 3) {
+        this.sandbox().neoLife!.choices.machine_connection = 'active';
+        this.advance(state.lastText, agent, tick);
+      }
+    }
+    this.placeDeus(agent, tick);
+    return deusPactLocked(state.deus);
   }
   private openingRoofTick(actor: AgentState, tick: number): void {
     const state = this.state!;
@@ -794,7 +853,7 @@ export class FilmStorySystem {
         film: { scene: 'm2_architect', width: 5, depth: .5, height: 8 } });
     }
   }
-  performing(agent: AgentState): boolean { return this.controls(agent) && (this.state!.scene === 'm1_bridge' && this.state!.bridgeTail?.phase === 'failed' || this.state!.scene === 'm1_room303' && ['breach', 'dive', 'ladder_ready'].includes(this.state!.openingHotel?.phase ?? '') || this.state!.scene === 'm1_phone_escape' && ['connected', 'done'].includes(this.state!.openingPhone?.phase ?? '') || helElevatorLocked(this.state!) || helDanceDoorLocked(this.state!) || farewellLocked(this.state!.farewell) || this.state!.scene === 'm3_trainman' && this.state!.mobil?.phase === 'refusing' || this.state!.trucks?.phase === 'rescue' || this.state!.persephone?.phase === 'enacting' || burlyLocked(this.state!) || clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || theOneLocked(this.state!) || reloadedLocked(this.state!) || catchLocked(this.state!.catch) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
+  performing(agent: AgentState): boolean { return this.controls(agent) && (this.state!.scene === 'm1_bridge' && this.state!.bridgeTail?.phase === 'failed' || this.state!.scene === 'm1_room303' && ['breach', 'dive', 'ladder_ready'].includes(this.state!.openingHotel?.phase ?? '') || this.state!.scene === 'm1_phone_escape' && ['connected', 'done'].includes(this.state!.openingPhone?.phase ?? '') || helElevatorLocked(this.state!) || helDanceDoorLocked(this.state!) || farewellLocked(this.state!.farewell) || deusPactLocked(this.state!.deus) || this.state!.scene === 'm3_trainman' && this.state!.mobil?.phase === 'refusing' || this.state!.trucks?.phase === 'rescue' || this.state!.persephone?.phase === 'enacting' || burlyLocked(this.state!) || clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || theOneLocked(this.state!) || reloadedLocked(this.state!) || catchLocked(this.state!.catch) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
   clubFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
     if (state?.scene !== 'm1_club' || state.visiting || !this.controls(agent)) return;
@@ -3628,6 +3687,7 @@ export class FilmStorySystem {
     this.ensureHelBargain(tick);
     this.ensureFinale(tick);
     if (state.scene === 'm3_bane' && !state.visiting) this.ensureBane(tick);
+    if (state.scene === 'm3_deus' && !state.visiting) this.ensureDeus();
     if (state.scene === 'm2_key_door' && !state.visiting) this.sourceDoor();
     if (state.scene === 'm2_architect' && !state.visiting) { this.architect(tick); this.sealArchitectDoors(); }
     if (target === 'return' && state.visiting) {
@@ -3687,6 +3747,14 @@ export class FilmStorySystem {
         return state.lastText = encounter.checkpoint === 'gun'
           ? '已从断电前重试。电枪即将开火；等灯熄灭再按 X，随后用 F 近身还击。'
           : '已从失明后重试。双眼的伤不会撤销；按住 G 找出金色轮廓。';
+      }
+      if (state.scene === 'm3_deus' && state.deus?.phase === 'failed') {
+        state.deus = { ...newDeusPact(state.deus.attempts + 1), phase: 'ready' };
+        state.step = 1; delete state.started; agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
+        agent.position = filmPosition(this.scene.set, DEUS_PACT.platform.x, DEUS_PACT.platform.z);
+        agent.rotation = DEUS_PACT.platform.yaw; agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentAction = null;
+        state.checkpoint = { ...agent.position };
+        return state.lastText = '已回到谈判平台。机器群会再次收拢；按 G 开始后继续按住，让 Neo 站稳并请求说话。';
       }
       if (this.reloaded.active(agent)) return this.reloaded.command(agent, target, tick);
       if (this.catch.active(agent)) return this.catch.command(agent, target, tick);
@@ -3988,6 +4056,30 @@ export class FilmStorySystem {
       state.farewell = { phase: 'reaching', elapsed: 0, total: 0 }; state.checkpoint = { ...agent.position };
       state.lastText = 'Neo 跪进变形的驾驶舱，循着 Trinity 的声音伸出手。停留在这一刻，听她把话说完。';
       this.placeFarewell(agent, tick); return state.lastText;
+    }
+    if (state.scene === 'm3_deus' && state.step === 1) {
+      this.ensureDeus(); const encounter = state.deus!;
+      if (encounter.phase === 'failed') return '谈判尝试已经失败。J 打开手记，从平台重试。';
+      if (encounter.phase !== 'ready') return state.lastText;
+      if (target !== 'act') return '走到平台中央，按住 G 请求机器集体听你说话。';
+      if (!this.near(agent, step)) return '先穿过发光通道，走到机器集体面前的平台。';
+      if (this.world.agents.get('deus_ex_machina')?.controller) return '机器集体正由另一位玩家控制，等待它空闲后再谈判。';
+      state.deus = { ...encounter, phase: 'swarm', elapsed: 0, total: 0, resolve: 0, consent: 0 };
+      state.checkpoint = filmPosition(this.scene.set, DEUS_PACT.platform.x, DEUS_PACT.platform.z);
+      state.lastText = '机器群从四面压近。继续按住 G 站稳并请求说话；松开太久会让谈判在开始前失败。';
+      this.placeDeus(agent, tick); return state.lastText;
+    }
+    if (state.scene === 'm3_deus' && state.step === 2 && state.deus?.phase !== 'terms')
+      return '先让机器集体听完 Smith 已失控的警告。';
+    if (state.scene === 'm3_deus' && state.step === 3) {
+      this.ensureDeus(); const encounter = state.deus!;
+      if (encounter.phase !== 'pact') return state.lastText;
+      if (target !== 'act') return '停战信号已经发出。走近连接座，按 G 进入。';
+      if (!this.near(agent, step)) return '先走到平台中央的连接座前。';
+      state.deus = { ...encounter, phase: 'seating', elapsed: 0, consent: 0 };
+      state.checkpoint = { ...agent.position };
+      state.lastText = '平台裂开，机械触须形成连接座。Neo 主动坐下，让机器接近身体上的旧插口。';
+      this.placeDeus(agent, tick); return state.lastText;
     }
     if (this.reloaded.active(agent)) return this.reloaded.command(agent, target, tick);
     if (this.catch.active(agent)) return this.catch.command(agent, target, tick);
@@ -4352,12 +4444,14 @@ export class FilmStorySystem {
     delete state.openingHotel;
     delete state.bane;
     delete state.farewell;
+    delete state.deus;
     delete state.templeSeal;
     if (scene.id === 'm3_temple_defense') {
       state.templeSeal = { phase: 'running', remaining: TEMPLE_SEAL_SECONDS, lastTick: tick, attempts: 0 };
       if (state.completed.includes('m3_emp') && !state.emp) this.sandbox().zion = Math.min(this.sandbox().zion, 15);
     }
     if (scene.id === 'm3_farewell') state.farewell = newFarewell();
+    if (scene.id === 'm3_deus') state.deus = newDeusPact();
     if (scene.id === 'm1_room303') this.openingHotel.reset(tick);
     if (scene.id === 'm1_roofs') state.openingRoof = { phase: 'running', lastTick: tick, attempts: 0 };
     if (scene.id === 'm1_phone_escape') state.openingPhone = { phase: 'running', remaining: OPENING_ESCAPE.phoneSeconds, lastTick: tick, attempts: 0 };
@@ -4657,6 +4751,10 @@ export class FilmStorySystem {
         actor.currentAction = { type: 'idle', parameters: { resolved: true, floorSeated: true,
           farewell: { ...encounter, role: 'trinity' } }, startedAt: this.state!.enteredAt, duration: 100000, progress: 0 };
       }
+      if (scene.id === 'm3_deus' && id === 'deus_ex_machina') {
+        actor.position = filmPosition(scene.set, 0, -47); actor.position.y -= 24; actor.rotation = 0;
+        actor.currentAction = null;
+      }
       if (scene.id === 'm2_merovingian') {
         const seats: Record<string, [number, number, number]> = { merovingian: [0, -27, 0], persephone: [-5, -27, .5],
           morpheus: [-7, -17, Math.PI], trinity: [7, -17, Math.PI], twin1: [-14, -25, .7], twin2: [14, -25, -.7] };
@@ -4914,9 +5012,18 @@ export class FilmStorySystem {
     if (state.scene === 'm3_temple_defense' && state.step === 2 && state.templeSeal) state.templeSeal.phase = 'sealed';
     if (state.scene === 'm3_hel_bargain' && state.step === 2 && state.helBargain) state.helBargain.phase = 'ready';
     if (state.scene === 'm3_hel_bargain' && state.step === 5) life.choices.neo_release = 'trinity_refused_trade';
+    if (state.scene === 'm3_deus' && state.deus) {
+      if (state.step === 0) state.deus.phase = 'ready';
+      if (state.step === 2) {
+        state.deus.phase = 'pact'; state.deus.elapsed = 0; life.choices.machine_pact = 'peace';
+        text = `${text} 机器接受这项有限交换；锡安方向的哨兵立即停止，连接平台开始展开。`;
+      }
+      if (state.step === 3) life.choices.machine_connection = 'active';
+    }
     if (state.scene === 'm1_bug' && state.step === 0 && state.office?.outcome === 'escaped') text = '扫描完成，没有发现追踪装置。Trinity 收起仪器，确认接头安全，继续前往 Morpheus 的房间。';
     state.lastText = text; state.step++; state.checkpoint = { ...agent.position }; delete state.started; delete state.fighting;
     if (state.scene === 'm3_bane' && state.bane) this.banePose(agent, tick);
+    if (state.scene === 'm3_deus' && state.deus) this.placeDeus(agent, tick);
     if (state.scene === 'm1_roofs' && state.step === this.scene!.steps.length && state.openingRoof) state.openingRoof.phase = 'escaped';
     if (state.scene === 'm2_ship_lost' && state.step === this.scene!.steps.length && state.shipLoss) state.shipLoss.phase = 'escaped';
     if (state.scene === 'm2_stop_sentinels' && state.step === 1 && state.tunnel) { state.tunnel.phase = 'sensing'; state.tunnel.lastTick = tick; }
@@ -4978,10 +5085,12 @@ export class FilmStorySystem {
     this.ensureTempleSeal(tick);
     this.ensureFinale(tick);
     if (state.scene === 'm3_bane') this.ensureBane(tick);
+    if (state.scene === 'm3_deus') this.ensureDeus();
     if (state.scene === 'm2_key_door') this.sourceDoor();
     const actor = this.world.agents.get(state.actor);
     if (state.scene === 'm3_bane' && actor) this.banePose(actor, tick);
     if (state.scene === 'm3_farewell' && actor) this.placeFarewell(actor, tick);
+    if (state.scene === 'm3_deus' && actor) this.placeDeus(actor, tick);
     this.finaleTick(actor, tick);
     if (state.scene === 'm2_ship_lost' && state.shipLoss?.phase === 'failed' || state.scene === 'm2_stop_sentinels' && state.tunnel?.phase === 'failed') return;
     if (state.scene === 'm2_architect') this.architectTick(actor, tick);

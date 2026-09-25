@@ -14,6 +14,7 @@ import { BETRAYAL, betrayalDuration, betrayalLocked } from '@auto_matrix/shared'
 import { RESCUE, rescueDuration, rescueLoadout, rescueLocked } from '@auto_matrix/shared';
 import { BANE_ENCOUNTER } from '@auto_matrix/shared';
 import { FAREWELL, farewellLocked } from '@auto_matrix/shared';
+import { DEUS_PACT, deusPactLocked } from '@auto_matrix/shared';
 
 const button = (target: string, label: string, disabled = false) => `<button data-action="life" data-target="film:${target}" ${disabled ? 'disabled' : ''}>${label}</button>`;
 export function renderFilmJourney(player: AgentState, sandbox: SandboxState): string {
@@ -51,6 +52,34 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
         : farewell.phase === 'goodbye' ? '最后的话' : farewell.phase === 'kiss' ? '最后一吻' : '静默';
     const progress = Math.min(100, farewell.total / FAREWELL.minimumSeconds * 100);
     return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>Logos 残骸 · 最后的告别</h3><p>Neo 视角 · 金色视野、人物接触与死亡结果自动保存</p></header><article class="film-now"><div><h3>${step?.label ?? '只剩前方的机器核心'}</h3><p>${journey.lastText}</p><p>${phase}${farewellLocked(farewell) ? ` · ${Math.round(progress)}%` : ''}</p>${farewellLocked(farewell) ? `<div class="film-progress"><i style="width:${progress}%"></i></div>` : ''}<div class="film-controls">${action}<small>这段没有战斗和倒计时。主动走近后让动作完成；暂停、断线与读档会保留正在进行的那一拍。</small></div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
+  }
+  if (!journey.visiting && scene.id === 'm3_deus' && journey.deus) {
+    const pact = journey.deus; const step = scene.steps[journey.step]; const current = player.id === journey.actor;
+    const close = current && Boolean(step && distance(player.position, filmStepPosition(scene, step)) <= 4);
+    const action = !current ? button('resume', '接回 Neo 的视角')
+      : pact.phase === 'failed' ? button('retry', '从谈判平台重试')
+        : !step ? button('next', '接入暴雨中的矩阵 →')
+          : journey.step === 0 ? '<p>合上手记，沿发光通道亲自走到机器核心。</p>'
+            : journey.step === 1 && pact.phase === 'ready' ? button('act', '请求机器集体听你说话 · G', !close)
+              : journey.step === 1 ? '<button disabled>机器群正在收拢 · 按住 G 站稳</button>'
+                : journey.step === 2 ? filmReflections(scene.id).map(choice => button(`reflect:${choice.id}`, choice.label)).join('')
+                  : pact.phase === 'pact' ? button('act', '进入连接座 · G', !close)
+                    : pact.phase === 'consent' ? '<p>最后一条探针停在颈后。按住 G，明确同意接入。</p>'
+                      : '<button disabled>物理接入进行中 · 自动保存</button>';
+    const phase = pact.phase === 'approach' ? '穿过光廊' : pact.phase === 'ready' ? '等待 Neo 开口'
+      : pact.phase === 'swarm' ? '在机器群中站稳' : pact.phase === 'forming' ? '集体面孔正在成形'
+        : pact.phase === 'warning' ? '说明 Smith 已失控' : pact.phase === 'terms' ? '提出和平条件'
+          : pact.phase === 'pact' ? '锡安停火' : pact.phase === 'seating' ? '连接座升起'
+            : pact.phase === 'cabling' ? '身体插口接线' : pact.phase === 'consent' ? '等待颈后接入同意'
+              : pact.phase === 'connecting' ? '机器能量接通' : pact.phase === 'connected' ? '连接完成' : '谈判未被听见';
+    const progress = pact.phase === 'swarm' ? pact.resolve / DEUS_PACT.resolveSeconds * 100
+      : pact.phase === 'consent' ? pact.consent / DEUS_PACT.consentSeconds * 100
+        : pact.phase === 'forming' ? pact.elapsed / DEUS_PACT.seconds.forming * 100
+          : pact.phase === 'warning' ? pact.elapsed / DEUS_PACT.seconds.warning * 100
+            : pact.phase === 'seating' ? pact.elapsed / DEUS_PACT.seconds.seating * 100
+              : pact.phase === 'cabling' ? pact.elapsed / DEUS_PACT.seconds.cabling * 100
+                : pact.phase === 'connecting' ? pact.elapsed / DEUS_PACT.seconds.connecting * 100 : 0;
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>机器核心 · 共同的威胁</h3><p>Neo 视角 · 谈判、停火与身体接入逐拍自动保存</p></header><article class="film-now"><div><h3>${step?.label ?? '暴雨中的矩阵正在等待'}</h3><p>${journey.lastText}</p><p>${phase}${pact.phase === 'failed' ? ` · 第 ${pact.attempts + 1} 次尝试` : ''}</p>${deusPactLocked(pact) && !['terms', 'pact', 'connected'].includes(pact.phase) ? `<div class="film-progress"><i style="width:${Math.max(0, Math.min(100, progress))}%"></i></div>` : ''}<div class="film-controls">${action}<small>机器群靠近时按住 G 让它听完警告；提出和平条件后，连接座会先确认停火，再等待你同意颈后接入。V 可以随时切换视角。</small></div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
   }
   if (!journey.visiting && scene.id === 'm1_room303' && journey.openingHotel) {
     const hotel = journey.openingHotel; const step = scene.steps[journey.step]; const current = player.id === journey.actor;

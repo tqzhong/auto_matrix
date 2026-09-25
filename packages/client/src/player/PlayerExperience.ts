@@ -1,4 +1,4 @@
-import { catchLocked, farewellLocked, helElevatorLocked, helDanceDoorLocked, reloadedLocked } from '@auto_matrix/shared';
+import { catchLocked, deusPactLocked, farewellLocked, helElevatorLocked, helDanceDoorLocked, reloadedLocked } from '@auto_matrix/shared';
 import { COMBAT_SKILLS, playerSkills, neoSkillUnlocked, CHARACTERS, LOCATIONS, filmSetAt, filmObstacles, distance, matrixEscapeLocked, theOneLocked, type AgentState, type SimulationState, type WorldEvent, type NeoLifeState } from '@auto_matrix/shared';
 import { FACTION_COLORS } from '../agents/AgentRenderer.js';
 
@@ -156,7 +156,9 @@ export class PlayerExperience {
     const catchPerforming = Boolean(neoLife?.journey && neoLife.journey.actor === player?.id && catchLocked(neoLife.journey.catch));
     const farewellPerforming = Boolean(neoLife?.journey && neoLife.journey.actor === player?.id
       && neoLife.journey.scene === 'm3_farewell' && !neoLife.journey.visiting && farewellLocked(neoLife.journey.farewell));
-    const performing = Boolean(farewellPerforming || player?.currentAction?.parameters.farewell || player?.currentAction?.parameters.persephone || player?.currentAction?.parameters.club || player?.currentAction?.parameters.workday || player?.currentAction?.parameters.meeting || player?.currentAction?.parameters.interrogation || player?.currentAction?.parameters.pills || player?.currentAction?.parameters.welcome || player?.currentAction?.parameters.sentinel || player?.currentAction?.parameters.interlude || player?.currentAction?.parameters.oracleVisit || player?.currentAction?.parameters.betrayal || player?.currentAction?.parameters.rescue || player?.currentAction?.parameters.government || player?.currentAction?.parameters.airRescue || player?.currentAction?.parameters.truckPassenger || matrixPerforming || onePerforming || reloadedPerforming || catchPerforming || player?.currentAction?.parameters.lobbyEntry || player?.currentAction?.parameters.filmPose || player?.currentAction?.parameters.spoon !== undefined || player?.currentAction?.parameters.vase !== undefined);
+    const deusPerforming = Boolean(neoLife?.journey && neoLife.journey.actor === player?.id
+      && neoLife.journey.scene === 'm3_deus' && !neoLife.journey.visiting && deusPactLocked(neoLife.journey.deus));
+    const performing = Boolean(farewellPerforming || deusPerforming || player?.currentAction?.parameters.farewell || player?.currentAction?.parameters.deusPact || player?.currentAction?.parameters.persephone || player?.currentAction?.parameters.club || player?.currentAction?.parameters.workday || player?.currentAction?.parameters.meeting || player?.currentAction?.parameters.interrogation || player?.currentAction?.parameters.pills || player?.currentAction?.parameters.welcome || player?.currentAction?.parameters.sentinel || player?.currentAction?.parameters.interlude || player?.currentAction?.parameters.oracleVisit || player?.currentAction?.parameters.betrayal || player?.currentAction?.parameters.rescue || player?.currentAction?.parameters.government || player?.currentAction?.parameters.airRescue || player?.currentAction?.parameters.truckPassenger || matrixPerforming || onePerforming || reloadedPerforming || catchPerforming || player?.currentAction?.parameters.lobbyEntry || player?.currentAction?.parameters.filmPose || player?.currentAction?.parameters.spoon !== undefined || player?.currentAction?.parameters.vase !== undefined);
     document.body.classList.toggle('film-driving', driving);
     document.body.classList.toggle('film-performing', performing);
     document.body.classList.toggle('film-workday-scene', Boolean(player?.currentAction?.parameters.workday));
@@ -173,6 +175,7 @@ export class PlayerExperience {
     document.body.classList.toggle('film-burly-scene', this.filmPlaying && neoLife?.journey?.scene === 'm2_burly' && !neoLife.journey.visiting);
     document.body.classList.toggle('film-bane-scene', this.filmPlaying && neoLife?.journey?.scene === 'm3_bane' && !neoLife.journey.visiting);
     document.body.classList.toggle('film-farewell-scene', this.filmPlaying && neoLife?.journey?.scene === 'm3_farewell' && !neoLife.journey.visiting);
+    document.body.classList.toggle('film-deus-scene', this.filmPlaying && neoLife?.journey?.scene === 'm3_deus' && !neoLife.journey.visiting);
     document.body.classList.toggle('film-grid-scene', this.filmPlaying && ['m2_plan', 'm2_power', 'm2_vigilant', 'm2_backup', 'm2_key_door'].includes(neoLife?.journey?.scene ?? '') && !neoLife?.journey?.visiting);
     document.body.classList.toggle('film-finale-scene', this.filmPlaying && ['m2_ship_lost', 'm2_stop_sentinels'].includes(neoLife?.journey?.scene ?? '') && !neoLife?.journey?.visiting);
     document.body.classList.toggle('film-mountain-flight', this.filmPlaying && neoLife?.journey?.scene === 'm2_mountain' && ['takeoff', 'flying', 'arrived'].includes(neoLife.journey.mountain?.phase ?? ''));
@@ -190,6 +193,11 @@ export class PlayerExperience {
     if (neoLife?.journey?.scene === 'm3_farewell' && !neoLife.journey.visiting) this.el('mouse-hint').textContent = neoLife.journey.farewell?.phase === 'still'
       ? 'J 打开手记，记录 Neo 对告别的理解 · V 切换视角'
       : farewellPerforming ? '鼠标观察 · V 切换视角 · 当前告别动作自动保存' : 'WASD 穿过残骸 · 靠近 Trinity 后按 G';
+    if (neoLife?.journey?.scene === 'm3_deus' && !neoLife.journey.visiting) this.el('mouse-hint').textContent = neoLife.journey.deus?.phase === 'swarm'
+      ? '继续按住 G 站稳 · 松开会失去谈判机会 · V 切换视角'
+      : neoLife.journey.deus?.phase === 'terms' ? 'J 打开手记提出和平条件 · V 切换视角'
+        : neoLife.journey.deus?.phase === 'consent' ? '按住 G 同意颈后接入 · V 切换视角'
+          : deusPerforming ? '鼠标观察 · V 切换视角 · 当前谈判动作自动保存' : 'WASD 穿过光廊 · 靠近平台后按 G';
     if (gunner) this.el('mouse-hint').textContent = '鼠标左右瞄准 · 左键 / T 开炮 · V 切换视角 · J 手记';
     document.body.classList.toggle('neo-daily', Boolean(player?.id === 'neo' && neoLife && !player.isAwakened));
     if (!player) return;

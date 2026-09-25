@@ -2123,6 +2123,28 @@ test('the entire film route completes through interactions, driving and real com
     }
     for (let index = 0; index < scene.steps.length; index++) {
       const step = scene.steps[index]; const actor = h.actor(); actor.position = filmStepPosition(scene, step);
+      if (scene.id === 'm3_deus') {
+        if (index === 0) h.advance();
+        else if (index === 1) {
+          h.command('act');
+          for (let frame = 0; frame < 120 && state.step === index; frame++) {
+            h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false,
+              focus: true, sequence: ++sequence });
+            h.players.step(.1, true, h.tick());
+          }
+        } else if (index === 2) h.command(`reflect:${filmReflections(scene.id)[0].id}`);
+        else {
+          h.command('act');
+          for (let frame = 0; frame < 110 && state.step === index; frame++) {
+            h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false,
+              focus: true, sequence: ++sequence });
+            h.players.step(.1, true, h.tick());
+          }
+          h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false,
+            focus: false, sequence: ++sequence });
+        }
+        assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`); continue;
+      }
       if (scene.id === 'm1_room303') {
         if (index === 0) { h.command('act'); h.advance(4); assert.equal(state.openingHotel?.phase, 'combat'); }
         else if (index === 1) {

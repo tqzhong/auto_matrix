@@ -1,4 +1,4 @@
-import { catchLocked, reloadedPhaseLocked } from '@auto_matrix/shared';
+import { catchLocked, deusPactLocked, deusPactPose, reloadedPhaseLocked } from '@auto_matrix/shared';
 import { reloadedCamera } from './ReloadedCamera.js';
 import * as THREE from 'three';
 import { FILM_SETS, OFFICE_CONTACT, LOBBY_FIRE_INTERVAL, RESCUE, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_TIMING, groundHeight, playerBlocked, stepPlayer, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, COMBAT_SKILLS, combatDisplace, PLAYER_WALK_SPEED, meleeReach, trainingRoot, matrixEscapePhaseLocked, matrixEscapePose, matrixEscapeRoot, theOnePhaseLocked, theOnePose, theOneRoot, type OfficePhone, type AwakeningPose, type FreewayRide, type AgentState, type PlayerInput, type Vector3, type WorldStructure, type CombatImpact, type SkillCast, type RescueLoadout } from '@auto_matrix/shared';
@@ -352,6 +352,9 @@ export class PlayerControls {
     const farewell = state.currentAction?.parameters.farewell as MotionInput['farewell'];
     if (this.motion.farewell && (!farewell || ['ready', 'still'].includes(farewell.phase))) this.performing = false;
     if (farewell && !['ready', 'still'].includes(farewell.phase)) this.performing = true;
+    const deusPact = state.currentAction?.parameters.deusPact as MotionInput['deusPact'];
+    if (this.motion.deusPact && !deusPactLocked(deusPact)) this.performing = false;
+    if (deusPactLocked(deusPact)) this.performing = true;
     if (this.motion.lobbyEntry && !state.currentAction?.parameters.lobbyEntry) this.performing = false;
     if ((state.currentAction?.parameters.lobbyEntry as MotionInput['lobbyEntry'])?.phase === 'checkpoint') this.performing = true;
     if (phoneExit) this.performing = true;
@@ -392,6 +395,7 @@ export class PlayerControls {
     this.motion.truckPassenger = state.currentAction?.parameters.truckPassenger as boolean | undefined;
     this.motion.persephone = state.currentAction?.parameters.persephone as MotionInput['persephone'];
     this.motion.farewell = farewell;
+    this.motion.deusPact = deusPact;
     this.motion.lobbyEntry = state.currentAction?.parameters.lobbyEntry as MotionInput['lobbyEntry'];
     this.motion.aimPitch = this.firearm || state.currentAction?.parameters.armed === true ? this.pitch : undefined;
     this.motion.mirror = this.mirror;
@@ -1170,6 +1174,27 @@ export class PlayerControls {
         .addScaledVector(forward, 36);
       if (this.firstPerson || resetCamera) this.camera.position.copy(ideal);
       else this.camera.position.lerp(ideal, 1 - Math.exp(-12 * delta));
+      this.camera.lookAt(focus);
+    } else if (this.motion.deusPact && deusPactLocked(this.motion.deusPact) && this.firstPerson) {
+      const pose = deusPactPose(this.motion.deusPact);
+      const eye = new THREE.Vector3(this.position.x, this.position.y + 2.05 - pose.seated * .72, this.position.z + .22);
+      const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
+      const focus = pose.face > .15 && pose.seated < .4
+        ? new THREE.Vector3(this.position.x, this.position.y + 20, this.position.z - 22)
+        : eye.clone().add(forward);
+      this.camera.position.copy(eye); this.camera.lookAt(focus);
+    } else if (this.motion.deusPact && deusPactLocked(this.motion.deusPact)) {
+      const pose = deusPactPose(this.motion.deusPact);
+      const orbit = this.yaw - Math.PI; const side = pose.seated > .4 ? 4.3 : this.camera.aspect < .85 ? 4.8 : 6.4;
+      const back = pose.seated > .4 ? -4.5 : 8.2;
+      const ideal = new THREE.Vector3(this.position.x + Math.cos(orbit) * side + Math.sin(orbit) * back,
+        this.position.y + (pose.seated > .4 ? 3.8 : 8.6), this.position.z - Math.sin(orbit) * side + Math.cos(orbit) * back);
+      const focus = pose.seated > .4
+        ? new THREE.Vector3(this.position.x, this.position.y + 2.35, this.position.z + .1)
+        : pose.face > .15 ? new THREE.Vector3(this.position.x, this.position.y + 20, this.position.z - 21)
+          : new THREE.Vector3(this.position.x, this.position.y + 5.8, this.position.z - 8);
+      if (resetCamera || this.motion.deusPact.elapsed < .12) this.camera.position.copy(ideal);
+      else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
       this.camera.lookAt(focus);
     } else if (this.motion.farewell && this.firstPerson) {
       const eye = new THREE.Vector3(this.position.x, this.position.y + 2.05, this.position.z + .72);

@@ -46,6 +46,8 @@ import { RevolutionsPreludeRenderer } from './RevolutionsPreludeRenderer.js';
 import { HammerRouteRenderer } from './HammerRouteRenderer.js';
 import { LogosFlightRenderer } from './LogosFlightRenderer.js';
 import { LogosWreckRenderer } from './LogosWreckRenderer.js';
+import { MachineCoreRenderer } from './MachineCoreRenderer.js';
+import { deusPactLocked } from '@auto_matrix/shared';
 
 const outdoor = new Set(['rooftop', 'plaza', 'bridge', 'street', 'courtyard', 'freeway', 'machine', 'rain', 'garden', 'desert', 'pods', 'mountain']);
 
@@ -139,6 +141,7 @@ export class FilmSetRenderer {
   private logosFlight?: LogosFlightRenderer;
   private logosStage?: string;
   private logosWreck?: LogosWreckRenderer;
+  private machineCore?: MachineCoreRenderer;
   private portalDoor?: { scene: 'm2_seraph' | 'm2_backdoors'; panel: THREE.Group };
   private oracleLetter?: THREE.Group;
   private courtyardStaff?: THREE.Group;
@@ -215,6 +218,7 @@ export class FilmSetRenderer {
         else if (set.id === 'film_hammer_route') this.hammerRoute = new HammerRouteRenderer(this.root);
         else if (set.id === 'film_machine_defense' || set.id === 'film_above_clouds') this.logosFlight = new LogosFlightRenderer(this.root, set.id === 'film_machine_defense' ? 'defense' : 'sun');
         else if (set.id === 'film_logos_wreck') this.logosWreck = new LogosWreckRenderer(this.root);
+        else if (sceneId === 'm3_deus' && set.id === 'film_machine_core') this.machineCore = new MachineCoreRenderer(this.root);
         else if (['m1_dojo', 'm1_jump', 'm1_red_dress'].includes(sceneId ?? '')) this.training = new TrainingSetRenderer(this.root, sceneId!);
         else if (sceneId === 'm1_sentinels') this.sentinel = new SentinelSetRenderer(this.root);
         else if (set.id === 'film_ambush_house') this.ambush = new AmbushSetRenderer(this.root);
@@ -321,6 +325,10 @@ export class FilmSetRenderer {
     this.logosStage = journey?.logos?.stage;
     this.logosFlight?.update(['m3_defense', 'm3_sun'].includes(journey?.scene ?? '') && !journey?.visiting ? journey?.logos : undefined, elapsed, firstPerson);
     this.logosWreck?.update(journey?.scene === 'm3_farewell' && !journey.visiting ? journey.farewell : undefined, elapsed, firstPerson);
+    this.machineCore?.update(journey?.scene === 'm3_deus' && !journey.visiting ? journey.deus : undefined, elapsed, firstPerson, {
+      x: (playerPosition?.x ?? this.current?.center.x ?? 0) - (this.current?.center.x ?? 0),
+      z: (playerPosition?.z ?? this.current?.center.z ?? 0) - (this.current?.center.z ?? 0),
+    });
     this.construct?.update(journey);
     this.desert?.update(journey, elapsed);
     this.mountain?.update(journey?.scene === 'm2_mountain' && !journey.visiting ? journey.mountain : undefined, elapsed);
@@ -459,6 +467,7 @@ export class FilmSetRenderer {
     if (journey?.scene === 'm2_chateau' && journey.step === 0 && !['ready', 'landing'].includes(journey.chateau?.phase ?? 'ready')) this.marker.visible = false;
     if (journey?.scene === 'm2_mountain' && journey.step === 2 && !['ready', 'failed'].includes(journey.mountain?.phase ?? 'ready')) this.marker.visible = false;
     if (journey?.scene === 'm3_bane' && journey.step === 1 && journey.bane?.phase !== 'ready') this.marker.visible = false;
+    if (journey?.scene === 'm3_deus' && deusPactLocked(journey.deus)) this.marker.visible = false;
     if (journey?.scene === 'm2_garage' && journey.garage?.phase === 'riding') this.marker.visible = false;
     if (journey?.scene === 'm3_hammer_tunnels' && journey.hammer?.phase === 'riding') this.marker.visible = false;
     if (['m3_defense', 'm3_sun'].includes(journey?.scene ?? '') && journey?.logos?.phase === 'riding') this.marker.visible = false;
@@ -547,6 +556,10 @@ export class FilmSetRenderer {
     if (this.logosWreck) {
       fog.density = .008; fog.color.setHex(0x130f0b); (this.scene.background as THREE.Color).copy(fog.color);
       this.scene.environmentIntensity = .34; return { color: 0xd39a52, ambient: .42, sun: .16 };
+    }
+    if (this.machineCore) {
+      fog.density = .0065; fog.color.setHex(0x090806); (this.scene.background as THREE.Color).copy(fog.color);
+      this.scene.environmentIntensity = .22; return { color: 0xffb044, ambient: .28, sun: .08 };
     }
     if (this.hammerRoute) {
       fog.density = .003; fog.color.setHex(0x1b2a2c); (this.scene.background as THREE.Color).copy(fog.color);
@@ -2134,6 +2147,7 @@ export class FilmSetRenderer {
     this.hammerRoute?.dispose(); this.hammerRoute = undefined;
     this.logosFlight?.dispose(); this.logosFlight = undefined; this.logosStage = undefined;
     this.logosWreck?.dispose(); this.logosWreck = undefined;
+    this.machineCore?.dispose(); this.machineCore = undefined;
     this.portalDoor = undefined; this.oracleLetter = undefined; this.courtyardStaff = undefined; this.courtyardBirds = []; this.courtyardDisturbedAt = undefined;
     this.exileDessert = undefined; this.bookDoor = undefined; this.chateauVolley = undefined; this.chateauVolleyTick = undefined; this.chateauDoor = undefined;
     this.garageCar = undefined; this.garageGhosts = [];

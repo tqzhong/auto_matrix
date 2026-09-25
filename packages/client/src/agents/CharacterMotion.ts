@@ -1,5 +1,5 @@
 import { reloadedPose, type CatchGesture, type ReloadedGesture } from '@auto_matrix/shared';
-import { farewellPose } from '@auto_matrix/shared';
+import { deusPactLocked, deusPactPose, farewellPose } from '@auto_matrix/shared';
 import { MELEE_COMBO, COMBO_WINDOW, COMBAT_SKILLS, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED, PILL_TIMING, MIRROR_TIMING, lobbyPose, governmentPose, airRescuePose, matrixEscapePose, theOnePose, recoveryCrewPose, type CombatSkillId, type AwakeningPose, type AwakeningReveal, type RecoveryCrewGesture, type OfficePhone, pillPose, lafayetteWelcomePose, oracleVisitPose, betrayalPose, rescuePose, type PillGesture, type InterrogationGesture, type LafayetteWelcomeGesture, type TrainingGesture, type OracleVisitGesture, type BetrayalGesture, type RescueGesture, type RescueLoadout, type LobbyGesture, type GovernmentRescueGesture, type AirRescueGesture, type MatrixEscapeGesture, type TheOneGesture } from '@auto_matrix/shared';
 
 export interface MotionInput {
@@ -53,6 +53,7 @@ export interface MotionInput {
   truckPassenger?: boolean;
   persephone?: import('@auto_matrix/shared').PersephoneEncounter & { role: 'neo' | 'persephone' };
   farewell?: import('@auto_matrix/shared').FarewellGesture;
+  deusPact?: import('@auto_matrix/shared').DeusPactGesture;
   weaponStyle?: RescueLoadout | 'hel_pistol';
   helDanceDoor?: number;
   aimPitch?: number;
@@ -143,13 +144,14 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const reloaded = input.reloaded && reloadedPose(input.reloaded);
   const recoveryCrew = input.recoveryCrew && recoveryCrewPose(input.recoveryCrew);
   const farewell = input.farewell && farewellPose(input.farewell);
+  const deus = input.deusPact && deusPactPose(input.deusPact);
   const welcomeWalking = input.welcome?.phase === 'approach' || input.welcome?.phase === 'departing' && input.welcome.role !== 'neo';
   const welcomeSpeed = input.welcome?.role === 'morpheus' ? 2.6 : input.welcome?.role === 'neo' ? 2.3 : 1.8;
-  const speed = input.farewell ? 0 : input.pills ? exiting ? 1.7 : 0 : welcomeWalking ? welcomeSpeed : input.speed;
+  const speed = input.farewell || deusPactLocked(input.deusPact) ? 0 : input.pills ? exiting ? 1.7 : 0 : welcomeWalking ? welcomeSpeed : input.speed;
   state.time += dt;
   state.speed = mix(state.speed, input.riding || input.climbing !== undefined ? 0 : speed, blend);
   state.climbPhase += (input.climbing ?? 0) * dt * 5;
-  state.seated = reloaded ? reloaded.seated : pills ? pills.seat : welcome ? welcome.seated : mix(state.seated, input.seated || input.riding || input.performance === 'connect' || input.performance === 'construct' ? 1 : 0, blend);
+  state.seated = deus ? deus.seated : reloaded ? reloaded.seated : pills ? pills.seat : welcome ? welcome.seated : mix(state.seated, input.seated || input.riding || input.performance === 'connect' || input.performance === 'construct' ? 1 : 0, blend);
   state.turn = mix(state.turn, clamp(input.turn, -3, 3), blend);
   state.airborne = mix(state.airborne, input.grounded ? 0 : 1, 1 - Math.exp(-18 * dt));
   if (dt > 0) {
@@ -558,6 +560,18 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
       legs[0].hip = -.5; legs[1].hip = .16; legs[0].knee = 1.02; legs[1].knee = .72;
     }
   }
+  if (deus) for (let i = 0; i < 2; i++) {
+    arms[i].shoulder = mix(arms[i].shoulder, -.92, deus.brace);
+    arms[i].elbow = mix(arms[i].elbow, -.72, deus.brace);
+    arms[i].outward = mix(arms[i].outward, (i ? 1 : -1) * .42, deus.brace);
+    arms[i].grip = mix(arms[i].grip, .74, deus.brace);
+    if (deus.seated) {
+      arms[i].shoulder = mix(arms[i].shoulder, -.43, deus.seated);
+      arms[i].elbow = mix(arms[i].elbow, -.98, deus.seated);
+      arms[i].outward = mix(arms[i].outward, (i ? 1 : -1) * .3, deus.seated);
+      arms[i].grip = mix(arms[i].grip, .56, deus.seated);
+    }
+  }
   if (recoveryCrew && input.recoveryCrew) {
     const arm = input.recoveryCrew.role === 'morpheus' ? 0 : 1;
     arms[arm].shoulder = mix(arms[arm].shoulder, -.72, recoveryCrew.support);
@@ -605,8 +619,9 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const hotelLean = input.hotel303?.phase === 'dive' ? -.68 : 0;
   const farewellLean = farewell && input.farewell ? input.farewell.role === 'neo' ? farewell.neo.lean : .68 * farewell.trinity.recline : 0;
   const farewellRoll = farewell && input.farewell?.role === 'trinity' ? -.18 * farewell.trinity.recline : 0;
+  const deusLean = deus ? deus.seated * .32 - deus.brace * .08 + deus.pulse * .18 : 0;
   const theOneRoll = theOne ? theOne.wound * .58 + theOne.fallen * 1.08 + theOne.burst * (.18 + Math.sin(input.theOne!.elapsed * 11) * .12) + theOne.flight * Math.sin(input.theOne!.elapsed * .8) * .08 : 0;
-  return { legs, arms, hipHeight, twist, lean: run * .12 + state.landing * .12 + state.airborne * .04 + extension * .10 - kick * .27 - recoil * .35 + (input.crouching ? .26 : 0) + (input.riding ? .2 : 0) + doorPush * .38 + oracleLean + betrayalLean + rescueLean + lobbyLean + governmentLean + airRescueLean + escapeLean + theOneLean + hotelLean + farewellLean + (recoveryCrew?.support ?? 0) * .1 - roofLeap * .45 - (reloaded?.falling ?? 0) * .85 + (reloaded?.dreamAgent ?? 0) * 2 + (reloaded?.down ?? 0) * 1.25 - (reloaded?.flight ?? 0) * .65 - (catchFlying && catching?.role === 'neo' ? .45 : 0) + (catching?.role === 'trinity' && catching.phase === 'flight' ? .25 : 0),
+  return { legs, arms, hipHeight, twist, lean: run * .12 + state.landing * .12 + state.airborne * .04 + extension * .10 - kick * .27 - recoil * .35 + (input.crouching ? .26 : 0) + (input.riding ? .2 : 0) + doorPush * .38 + oracleLean + betrayalLean + rescueLean + lobbyLean + governmentLean + airRescueLean + escapeLean + theOneLean + hotelLean + farewellLean + deusLean + (recoveryCrew?.support ?? 0) * .1 - roofLeap * .45 - (reloaded?.falling ?? 0) * .85 + (reloaded?.dreamAgent ?? 0) * 2 + (reloaded?.down ?? 0) * 1.25 - (reloaded?.flight ?? 0) * .65 - (catchFlying && catching?.role === 'neo' ? .45 : 0) + (catching?.role === 'trinity' && catching.phase === 'flight' ? .25 : 0),
     sway: Math.sin(cycle) * moving * .035, lunge: extension * .16 - kick * .25 - recoil * .22 - dodging * .35 + doorPush * .12 + (matrixEscape?.strike ?? 0) * .32,
     roll: -state.turn * run * .035 - dodging * .22 + betrayalRoll + lobbyRoll + governmentRoll + airRescueRoll + escapeRoll + theOneRoll + farewellRoll + (reloaded?.down ?? 0) * 1.1 - (reloaded?.dodge ?? 0) * .6 + (reloaded?.falling ?? 0) * (input.reloaded?.drift ?? 0) * .055, headTurn: -twist * .65 + glance + oracleLook + rescueLook + (recoveryCrew?.support ?? 0) * (input.recoveryCrew?.role === 'morpheus' ? -.12 : .12), moving, run, airborne: state.airborne,
     coat: moving * (.10 + run * .3) + state.airborne * .18 + kick * .35, impact: extension, landing: state.landing };

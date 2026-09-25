@@ -25,6 +25,7 @@ import { BURLY } from '@auto_matrix/shared';
 import { BANE_ENCOUNTER } from '@auto_matrix/shared';
 import { LOGOS_DEFENSE } from '@auto_matrix/shared';
 import { FAREWELL, farewellLocked } from '@auto_matrix/shared';
+import { DEUS_PACT, deusPactLocked } from '@auto_matrix/shared';
 
 const escape = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const WEATHER = { clear: '晴朗', rain: '雨', code_storm: '代码风暴' };
@@ -348,6 +349,50 @@ export class SandboxUI {
       this.el('sandbox-nearby').textContent = journey.step === 1 ? '跪到 Trinity 身边' : step?.label ?? '继续';
       if (locked || phase === 'still') this.el('sandbox-waypoint').textContent = '';
       document.getElementById('game-objective')!.textContent = phase === 'still' ? '告别之后' : 'Logos 残骸 · Trinity';
+      document.getElementById('game-objective-copy')!.textContent = hint;
+      return;
+    }
+    if (!journey.visiting && scene.id === 'm3_deus' && journey.deus) {
+      const pact = journey.deus; const phase = pact.phase;
+      const near = Boolean(step && distance(player.position, filmStepPosition(scene, step)) <= 4);
+      const phaseName = phase === 'approach' ? '发光通道' : phase === 'ready' ? '谈判平台'
+        : phase === 'swarm' ? '机器群包围' : phase === 'forming' ? '集体面孔成形'
+          : phase === 'warning' ? 'Smith 警告' : phase === 'terms' ? '和平条件'
+            : phase === 'pact' ? '锡安停火' : phase === 'seating' ? '连接座升起'
+              : phase === 'cabling' ? '身体接线' : phase === 'consent' ? '颈后探针等待同意'
+                : phase === 'connecting' ? '矩阵接入' : phase === 'connected' ? '连接完成' : '谈判失败';
+      const hint = journey.step === 0 ? 'WASD 穿过发光通道，走到机器核心开口'
+        : phase === 'ready' ? '走到平台中央按 G 开始；机器群出现后继续按住 G'
+          : phase === 'swarm' ? `按住 G 站稳并请求谈判 · ${Math.round(pact.resolve / DEUS_PACT.resolveSeconds * 100)}%`
+            : phase === 'forming' ? '机器个体正在聚成一张集体面孔 · 当前一拍自动保存'
+              : phase === 'warning' ? 'Neo 正说明 Smith 已脱离控制，并会继续感染机器城'
+                : phase === 'terms' ? 'J 打开手记，明确清除 Smith 与停止进攻锡安的交换条件'
+                  : phase === 'pact' ? '锡安方向的哨兵已经停止 · 走到连接座按 G'
+                    : phase === 'seating' ? '连接座正在托起 Neo · 鼠标观察 · V 切换视角'
+                      : phase === 'cabling' ? '机械触须正在连接身体插口 · 当前一拍自动保存'
+                        : phase === 'consent' ? `按住 G 同意颈后接入 · ${Math.round(pact.consent / DEUS_PACT.consentSeconds * 100)}%`
+                          : phase === 'connecting' ? '颈后探针已接通 · 金色能量正在写入连接'
+                            : phase === 'failed' ? 'J 打开手记，从谈判平台重试' : 'G 进入暴雨中的矩阵';
+      const progress = phase === 'swarm' ? pact.resolve / DEUS_PACT.resolveSeconds * 100
+        : phase === 'forming' ? pact.elapsed / DEUS_PACT.seconds.forming * 100
+          : phase === 'warning' ? pact.elapsed / DEUS_PACT.seconds.warning * 100
+            : phase === 'seating' ? pact.elapsed / DEUS_PACT.seconds.seating * 100
+              : phase === 'cabling' ? pact.elapsed / DEUS_PACT.seconds.cabling * 100
+                : phase === 'consent' ? pact.consent / DEUS_PACT.consentSeconds * 100
+                  : phase === 'connecting' ? pact.elapsed / DEUS_PACT.seconds.connecting * 100 : 0;
+      const interactive = phase === 'ready' && near || phase === 'pact' && near || phase === 'connected';
+      this.el('film-sequence').classList.remove('hidden');
+      this.el('film-sequence').classList.toggle('urgent', phase === 'failed' || phase === 'swarm' && pact.elapsed > DEUS_PACT.seconds.swarm - 2);
+      this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = hint;
+      this.el('sandbox-trace').textContent = phase === 'pact' || ['seating', 'cabling', 'consent', 'connecting', 'connected'].includes(phase)
+        ? '停战信号 · 已发送' : `机器核心 · ${phaseName}`;
+      this.el('sandbox-trace').classList.toggle('danger', phase === 'failed');
+      this.el('sandbox-job').style.width = deusPactLocked(pact) ? `${Math.max(0, Math.min(100, progress))}%` : '0';
+      this.el('sandbox-interact').classList.toggle('hidden', !interactive);
+      this.el('sandbox-nearby').textContent = phase === 'ready' ? '请求谈判' : phase === 'pact' ? '进入连接座' : '进入暴雨矩阵';
+      if (deusPactLocked(pact) || phase === 'failed') this.el('sandbox-waypoint').textContent = '';
+      document.getElementById('game-objective')!.textContent = phase === 'connected' ? '机器连接已建立' : '机器核心 · Deus Ex Machina';
       document.getElementById('game-objective-copy')!.textContent = hint;
       return;
     }

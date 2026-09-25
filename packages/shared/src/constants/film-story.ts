@@ -92,6 +92,7 @@ export interface FilmJourney {
   hammer?: import('./hammer-flight.js').HammerFlight;
   logos?: import('./logos-flight.js').LogosFlight;
   farewell?: import('./farewell.js').FarewellEncounter;
+  deus?: import('./deus-pact.js').DeusPactEncounter;
   apu?: import('./dock-apu.js').ApuRun;
   dockGunnery?: import('./dock-gunnery.js').DockGunnery;
   emp?: { firedAt: number };
@@ -383,7 +384,12 @@ export const FILM_SCENES: FilmScene[] = [
     use('跪到 Trinity 身边，听完她最后的话', 'Neo 握住 Trinity 的手。两个人把最后的时间留给彼此。', 0, -13.5),
     think('有限的生命如何留下意义？', '失去无法被一个更大的目标抵消。你认真听完告别，带着共同生活留下的责任继续行动。', 0, -14),
   ], ['trinity']),
-  scene('m3_deus', 3, 'machine_core', 'neo', '共同的威胁', 'pact', 'source', '机器聚成巨大的面孔。Neo 提出以清除 Smith 换取和平。', [walk('抵达连接平台', 0, -25), think('敌对双方为何还能够对话？', 'Smith 的扩张使双方都面临毁灭。合作从承认共同的脆弱开始。'), use('接受机器的连接', '机器暂缓进攻锡安，并把 Neo 接入矩阵。', 0, -25, 6)], ['deus_ex_machina']),
+  scene('m3_deus', 3, 'machine_core', 'neo', '共同的威胁', 'pact', 'source', 'Neo 独自穿过机器城的发光通道。机器群将聚成集体面孔；他必须让敌人听完一项双方都无法独自完成的交换。', [
+    walk('穿过光廊，走到机器核心开口', 0, -18),
+    use('在机器群包围中站稳并请求谈判', 'Neo 没有武器，也没有退路。按住 G 在机器群中站稳，让机器集体听见 Smith 已经失控。', 0, -25, 0),
+    think('明确以清除 Smith 换取和平的条件', '共同的威胁只打开谈判。Neo 仍要说明谁承担风险，以及他真正要求机器停止什么。', 0, -25),
+    use('进入连接座，接受机器接入', '锡安方向的哨兵已经停止。Neo 仍需亲自进入连接座，并同意颈后的最后一条接线。', 0, -25, 0),
+  ], ['deus_ex_machina']),
   scene('m3_rain', 3, 'smith_avenue', 'neo', '暴雨中的大道', 'final', 'final', '大道两侧全部是 Smith。拥有先知预见的复制体走到中央。', [walk('走到大道中央', 0, -15), fight('迎战 Smith', 1, 'smith'), use('追入被摧毁的街区', '交锋从地面延伸到空中，最终砸出深坑。', 0, -38)]),
   scene('m3_surrender', 3, 'smith_avenue', 'neo', '理解最后的选择', 'final', 'final', 'Smith 说出的预见让 Neo 理解了这场冲突的出口。', [think('胜利一定意味着压倒对方吗？', 'Neo 允许 Smith 同化自己，让机器经由仍然连接的身体抵达感染。'), use('接受同化', '金色的连接贯穿复制体。Smith 的感染被清除，暴雨结束。', 0, -38, 8)]),
   scene('m3_ceasefire', 3, 'zion_temple', 'kid', '机器退去', 'source', 'dawn', '哨兵停止进攻并撤离锡安。消息在神庙和居住层之间传开。', [walk('确认入口外的动静', 0, -30), use('把停战消息带给居民', '人们走出掩体。Morpheus 与 Niobe 看到等待终于有了回应。', 0, -30)], ['morpheus', 'niobe', 'zee', 'link']),
