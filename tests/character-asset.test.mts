@@ -7,7 +7,7 @@ import { HeroModels, type HeroRig } from '../packages/client/src/agents/HeroMode
 import { advanceMotion, newMotion } from '../packages/client/src/agents/CharacterMotion.js';
 import { PhoneModel } from '../packages/client/src/agents/PhoneModel.js';
 import { OfficeSetRenderer } from '../packages/client/src/engine/OfficeSetRenderer.js';
-import { APARTMENT, FILM_SETS, PILL_ROOM, PILL_TIMING, filmPosition, pillRoot, type PillGesture, OFFICE_WINDOW, OFFICE_LEDGE_OFFSET, officeWindowPose, officeCrossingPose, type FilmJourney } from '@auto_matrix/shared';
+import { APARTMENT, FILM_SETS, PILL_ROOM, PILL_TIMING, awakeningPose, filmPosition, pillRoot, recoveryCrewPose, type PillGesture, OFFICE_WINDOW, OFFICE_LEDGE_OFFSET, officeWindowPose, officeCrossingPose, type FilmJourney } from '@auto_matrix/shared';
 import { INTERROGATION_ROOM, interrogationRoot } from '@auto_matrix/shared';
 import { MEETING_CAR, meetingRoot, meetingCarPose } from '@auto_matrix/shared';
 import { OFFICE_WORKDAY, officeRecipientRoot, officeCourierRoot, officeClipboardPoint, officePenPoint } from '@auto_matrix/shared';
@@ -124,6 +124,33 @@ test('Neo keeps a continuous patient body through rescue and medical recovery', 
       assert.equal(material.map, original[i].map); assert.equal(material.bumpMap, original[i].bumpMap);
       assert.equal(material.roughness, original[i].roughness); assert.equal(material.color.getHex(), 0x706c62);
     });
+  } finally { models.dispose(); }
+});
+
+test('Morpheus and Trinity place their supporting hands on Neo during recovery', async () => {
+  const [neo, office, morpheus, trinity] = await Promise.all([loadGeometry('neo'), loadGeometry('neo-office'), loadGeometry('morpheus'), loadGeometry('trinity')]);
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: (id: string) => Promise<typeof morpheus> }).load = async id => id === 'neo' ? neo : id === 'neo-office' ? office : id === 'trinity' ? trinity : morpheus;
+  try {
+    const gaps: { role: string; gap: number }[] = [];
+    const elapsed = 9.75; const neoRig = (await models.create('neo'))!; const neoRoot = awakeningPose({ kind: 'recovery', elapsed, started: true });
+    neoRig.root.position.set(neoRoot.x, 0, neoRoot.z); neoRig.root.rotation.y = Math.PI;
+    const neoMotion = newMotion(); const neoInput = { speed: 0, grounded: false, verticalVelocity: 0, turn: 0, realWorld: true,
+      performance: 'recover' as const, recovery: elapsed };
+    models.animate(neoRig, advanceMotion(neoMotion, neoInput, 0), neoMotion, neoInput, 0); neoRig.root.updateMatrixWorld(true);
+    for (const role of ['morpheus', 'trinity'] as const) {
+      const rig = (await models.create(role))!; const root = recoveryCrewPose({ role, elapsed });
+      rig.root.position.set(root.x, 0, root.z); rig.root.rotation.y = root.yaw; rig.root.updateMatrixWorld(true);
+      const side = role === 'morpheus' ? 'R' : 'L';
+      const neoShoulder = neoRig.bones.get(role === 'morpheus' ? 'shoulder_R' : 'shoulder_L')!;
+      const target = neoShoulder.localToWorld(new THREE.Vector3(0, -.16, .06));
+      const motion = newMotion(); const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true,
+        recoveryCrew: { role, elapsed, target } };
+      models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
+      const wrist = rig.bones.get(`wrist_${side}`)!.getWorldPosition(new THREE.Vector3());
+      gaps.push({ role, gap: wrist.distanceTo(target) });
+    }
+    assert.ok(gaps.every(result => result.gap < .08), `supporting hands miss Neo (${gaps.map(result => `${result.role}: ${result.gap}`).join(', ')})`);
   } finally { models.dispose(); }
 });
 

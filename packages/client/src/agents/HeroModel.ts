@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
-import { APARTMENT, FILM_SETS, OFFICE_WINDOW, officeWindowPose, officeCrossingPose, pillPose, lafayetteKnockPose, lafayetteWelcomePose } from '@auto_matrix/shared';
+import { APARTMENT, FILM_SETS, OFFICE_WINDOW, officeWindowPose, officeCrossingPose, pillPose, lafayetteKnockPose, lafayetteWelcomePose, recoveryCrewPose } from '@auto_matrix/shared';
 import type { advanceMotion, MotionInput, MotionState } from './CharacterMotion.js';
 
 import { PillPerformance } from './PillPerformance.js';
@@ -446,6 +446,32 @@ export class HeroModels {
     for (let finger = 1; finger <= 5; finger++) for (let segment = 1; segment <= 3; segment++) rig.bones.get(`finger${finger}-${segment}_L`)!.rotation.z *= 1 - pose.grip;
   }
 
+  private supportRecovery(rig: HeroRig, gesture: NonNullable<MotionInput['recoveryCrew']>): void {
+    const support = recoveryCrewPose(gesture).support;
+    if (!gesture.target || support <= .001) return;
+    const side = gesture.role === 'morpheus' ? 'R' : 'L';
+    rig.root.updateWorldMatrix(true, true);
+    const shoulder = rig.bones.get(`shoulder_${side}`)!; const elbow = rig.bones.get(`elbow_${side}`)!; const wrist = rig.bones.get(`wrist_${side}`)!;
+    const target = wrist.getWorldPosition(new THREE.Vector3()).lerp(new THREE.Vector3(gesture.target.x, gesture.target.y, gesture.target.z), support);
+    const start = shoulder.getWorldPosition(new THREE.Vector3()); const direction = target.clone().sub(start);
+    const upper = elbow.position.length(); const lower = wrist.position.length();
+    const reach = THREE.MathUtils.clamp(direction.length(), .02, upper + lower - .001); direction.normalize();
+    const along = (upper * upper - lower * lower + reach * reach) / (2 * reach);
+    const rootRotation = rig.root.getWorldQuaternion(new THREE.Quaternion());
+    const bend = new THREE.Vector3(side === 'L' ? .4 : -.4, -1, .35).applyQuaternion(rootRotation);
+    bend.addScaledVector(direction, -bend.dot(direction)).normalize();
+    const hinge = start.clone().addScaledVector(direction, along).addScaledVector(bend, Math.sqrt(Math.max(0, upper * upper - along * along)));
+    const aim = (joint: THREE.Bone, child: THREE.Bone, point: THREE.Vector3) => {
+      const axis = joint.parent!.worldToLocal(point.clone()).sub(joint.position).normalize();
+      joint.quaternion.setFromUnitVectors(child.position.clone().normalize(), axis); joint.updateWorldMatrix(false, true);
+    };
+    aim(shoulder, elbow, hinge); aim(elbow, wrist, target);
+    wrist.rotation.z += (side === 'L' ? -.18 : .18) * support;
+    for (let finger = 1; finger <= 5; finger++) for (let segment = 1; segment <= 3; segment++) {
+      const joint = rig.bones.get(`finger${finger}-${segment}_${side}`); if (joint) joint.rotation.z *= 1 - support * .82;
+    }
+  }
+
   animate(rig: HeroRig, pose: Pose, motion: MotionState, input: MotionInput, delta: number): void {
     rig.silver.value = input.mirror ?? 0;
     rig.glasses.visible = !rig.officeRole && !rig.apartmentRole && input.glasses !== false && !input.realWorld;
@@ -739,6 +765,7 @@ export class HeroModels {
     }
     if (input.window !== undefined) this.openWindow(rig, input.window);
     if (input.crossing !== undefined) this.crossWindow(rig, input.crossing);
+    if (input.recoveryCrew) this.supportRecovery(rig, input.recoveryCrew);
     if (input.pills && !this.pills.has(rig)) this.pills.set(rig, new PillPerformance(rig));
     this.pills.get(rig)?.update(input.pills);
     if ((input.interrogation || input.officeShirt) && !this.interrogations.has(rig)) this.interrogations.set(rig, new InterrogationPerformance(rig));

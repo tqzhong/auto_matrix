@@ -2,7 +2,7 @@ import { ReloadedOpeningSystem } from './ReloadedOpeningSystem.js';
 import { ReloadedCatchSystem } from './ReloadedCatchSystem.js';
 import { newReloaded, reloadedLocked, ZION_CAST } from '@auto_matrix/shared';
 import { catchLocked, newCatch } from '@auto_matrix/shared';
-import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_CAST, GRID_WINDOW_SECONDS, GRID_REROUTE_SECONDS, GRID_HACK_SECONDS, ARCHITECT_DOOR_SECONDS, RELOADED_FINALE, BANE_ENCOUNTER, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, filmReflections, CHARACTERS, LOCATIONS, NEO_CHAPTERS, filmCharacterFates, filmEntry, filmPosition, filmStepPosition, filmStepNear, locationEntrance, distance, playerBlocked, newFreewayRide, stepFreeway, OFFICE_LADDER, awakeningLocked, awakeningPose, AWAKENING_SECONDS, MIRROR_TOUCH, MIRROR_TIMING, MIRROR_GUIDE_LENGTH, mirrorGuidePose, mirrorGuideProgress, mirrorSilver, CONSTRUCT_REVEAL, DESERT_REVEAL, oracleActing,
+import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_CAST, GRID_WINDOW_SECONDS, GRID_REROUTE_SECONDS, GRID_HACK_SECONDS, ARCHITECT_DOOR_SECONDS, RELOADED_FINALE, BANE_ENCOUNTER, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, filmReflections, CHARACTERS, LOCATIONS, NEO_CHAPTERS, filmCharacterFates, filmEntry, filmPosition, filmStepPosition, filmStepNear, locationEntrance, distance, playerBlocked, newFreewayRide, stepFreeway, OFFICE_LADDER, awakeningLocked, awakeningPose, AWAKENING_SECONDS, MIRROR_TOUCH, MIRROR_TIMING, MIRROR_GUIDE_LENGTH, mirrorGuidePose, mirrorGuideProgress, mirrorSilver, recoveryCrewPose, CONSTRUCT_REVEAL, DESERT_REVEAL, oracleActing,
   AMBUSH_REWRITE, AMBUSH_SECONDS, AMBUSH_SEALS, OFFICE_CONTACT, OFFICE_WINDOW, OFFICE_CROSSING_SECONDS, officeCrossingPose, windowCrossing, phoneLocked, heldPhone, windowOpening, pillLocked, pillRoot, PILL_ROOM, PILL_TIMING, trainingLocked, trainingRoot, trainingText, TRAINING_SECONDS,
   lobbyLocked, meleeReach, groundHeight, MIRROR_SEAT, MIRROR_TRINITY, type DriveInput, type AgentState, type FilmScene, type FilmStep, type GridOperation, type SandboxState, type SandboxThreat, type TrainingRole, type CombatImpact } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
@@ -2566,7 +2566,9 @@ export class FilmStorySystem {
     const reveal = beat?.kind === 'construct' || beat?.kind === 'desert';
     const morpheus = reveal ? this.world.agents.get('morpheus') : undefined;
     const trinity = beat?.kind === 'mirror' ? this.world.agents.get('trinity') : undefined;
-    const wasPlaying = beat && beat.elapsed < AWAKENING_SECONDS[beat.kind] && beat.started !== false && !morpheus?.controller && !trinity?.controller;
+    const bedside = beat?.kind === 'recovery' ? ['morpheus', 'trinity'] as const : [];
+    const occupied = bedside.find(id => this.world.agents.get(id)?.controller);
+    const wasPlaying = beat && beat.elapsed < AWAKENING_SECONDS[beat.kind] && beat.started !== false && !morpheus?.controller && !trinity?.controller && !occupied;
     if (wasPlaying) beat.elapsed = Math.min(AWAKENING_SECONDS[beat.kind], beat.elapsed + Math.min(.1, dt));
     const pose = awakeningPose(beat); const previous = agent.position;
     agent.position = filmPosition(this.scene!.set, pose.x, pose.z); agent.position.y += pose.y;
@@ -2580,6 +2582,15 @@ export class FilmStorySystem {
       reveal: reveal ? { kind: beat.kind, elapsed: beat.elapsed, role: 'neo' } : undefined }, startedAt: tick, duration: 1, progress: 0 };
     if (beat?.kind === 'mirror' && trinity && !trinity.controller)
       trinity.currentAction = { type: 'idle', parameters: { mirrorCrew: beat.elapsed }, startedAt: tick, duration: 1, progress: 0 };
+    if (beat?.kind === 'recovery') for (const role of bedside) {
+      const crew = this.world.agents.get(role); if (!crew || crew.controller) continue;
+      const root = recoveryCrewPose({ elapsed: beat.elapsed, role }); const before = crew.position;
+      crew.position = filmPosition(this.scene!.set, root.x, root.z); crew.rotation = root.yaw;
+      crew.velocity = dt > 0 ? { x: (crew.position.x - before.x) / dt, y: 0, z: (crew.position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
+      crew.currentLocation = this.scene!.set; crew.isInMatrix = false;
+      crew.currentAction = { type: root.support > 0 || Math.hypot(crew.velocity.x, crew.velocity.z) < .1 ? 'idle' : 'move_to',
+        parameters: { resolved: true, recoveryCrew: { elapsed: beat.elapsed, role } }, startedAt: tick, duration: 1, progress: 0 };
+    }
     if (reveal && morpheus && !morpheus.controller) {
       const root = beat.kind === 'construct' ? CONSTRUCT_REVEAL.morpheus : DESERT_REVEAL.morpheus;
       const before = morpheus.position; morpheus.position = filmPosition(this.scene!.set, root.x, root.z); morpheus.rotation = root.yaw;
@@ -2588,8 +2599,9 @@ export class FilmStorySystem {
       morpheus.currentAction = { type: 'idle', parameters: { resolved: true, filmPose: pose.pose, seated: beat.kind === 'construct',
         reveal: { kind: beat.kind, elapsed: beat.elapsed, role: 'morpheus' } }, startedAt: tick, duration: 1, progress: 0 };
     }
-    state.lastText = morpheus?.controller ? '揭示暂停在当前画面：Morpheus 正由另一位玩家控制。'
-      : trinity?.controller ? '追踪暂停在当前画面：Trinity 正由另一位玩家控制。' : pose.text;
+    state.lastText = occupied ? `恢复暂停在当前动作：${this.world.agents.get(occupied)?.name ?? occupied} 正由另一位玩家控制。`
+      : morpheus?.controller ? '揭示暂停在当前画面：Morpheus 正由另一位玩家控制。'
+        : trinity?.controller ? '追踪暂停在当前画面：Trinity 正由另一位玩家控制。' : pose.text;
     if (wasPlaying && beat.elapsed >= AWAKENING_SECONDS[beat.kind]) {
       if (beat.kind === 'mirror') this.finishMirror(agent, tick);
       else this.advance(this.step!.text!, agent, tick);
@@ -3941,6 +3953,10 @@ export class FilmStorySystem {
       if (target !== 'act') return prompt;
       if (['construct', 'desert'].includes(state.awakening.kind) && this.world.agents.get('morpheus')?.controller) return 'Morpheus 正由另一位玩家控制，揭示停在当前画面。';
       if (state.awakening.kind === 'mirror' && this.world.agents.get('trinity')?.controller) return 'Trinity 正由另一位玩家控制，接线停在当前画面。';
+      if (state.awakening.kind === 'recovery') {
+        const occupied = (['morpheus', 'trinity'] as const).find(id => this.world.agents.get(id)?.controller);
+        if (occupied) return `${this.world.agents.get(occupied)?.name ?? occupied} 正由另一位玩家控制，恢复停在当前画面。`;
+      }
       state.awakening.started = true; this.awakeningFrame(agent, 0, tick); return state.lastText;
     }
     if (state.awakening && state.awakening.elapsed < AWAKENING_SECONDS[state.awakening.kind]) return '演出进行中，可以转动视角观察；进度会自动保存。';
@@ -4289,6 +4305,7 @@ export class FilmStorySystem {
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.airRescue) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.matrixEscape) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && (other.currentAction?.parameters.theOne || other.currentAction?.parameters.reloaded || other.currentAction?.parameters.catch)) other.currentAction = null;
+    for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.recoveryCrew) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.lobbyEntry) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.riding) { other.currentAction = null; other.velocity = { x: 0, y: 0, z: 0 }; }
     if (scene.id === 'm1_lobby') this.lobby.reset();

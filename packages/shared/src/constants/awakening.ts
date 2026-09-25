@@ -4,6 +4,8 @@ import { PILL_ROOM } from './pills.js';
 export type AwakeningKind = 'mirror' | 'connect' | 'disconnect' | 'rescue' | 'recovery' | 'construct' | 'desert';
 export interface AwakeningBeat { kind: AwakeningKind; elapsed: number; started?: boolean; approach?: { x: number; z: number } }
 export interface AwakeningReveal { kind: 'construct' | 'desert'; elapsed: number; role: 'neo' | 'morpheus' }
+export type RecoveryCrewRole = 'morpheus' | 'trinity';
+export interface RecoveryCrewGesture { elapsed: number; role: RecoveryCrewRole; target?: { x: number; y: number; z: number } }
 export const AWAKENING_SECONDS = { mirror: 8, connect: 4, disconnect: 9, rescue: 5, recovery: 12, construct: 11, desert: 13 } as const;
 export const MIRROR_TOUCH = { x: -7.1, z: -14.6, radius: 1.25 } as const;
 export const MIRROR_SEAT = { x: -9.5, z: -16.05 } as const;
@@ -43,12 +45,29 @@ export function mirrorGuideProgress(point: { x: number; z: number }): number {
 }
 export const POD_WATER_DROP = 18;
 export const RECOVERY_BED = { x: -7, z: -22, standingX: -3.6 } as const;
+export const RECOVERY_CREW = {
+  morpheus: { start: { x: -2.4, z: -18.5, yaw: -2.45 }, side: 1.32 },
+  trinity: { start: { x: -10.5, z: -15.5, yaw: 2.7 }, side: -1.32 },
+  approach: 7.4, contact: 8.9, release: 11.45,
+} as const;
 export const CONSTRUCT_REVEAL = { neo: { x: 4.4, z: -6.2, yaw: Math.PI }, morpheus: { x: -4.4, z: -6.2, yaw: Math.PI }, television: { x: 0, z: -16 } } as const;
 export const DESERT_REVEAL = { neo: { x: 1.8, z: -28, yaw: Math.PI }, morpheus: { x: -3.2, z: -26.8, yaw: Math.PI }, towersZ: -70 } as const;
 export type AwakeningPose = 'touch' | 'connect' | 'pod' | 'fall' | 'float' | 'lift' | 'recover' | 'construct' | 'desert';
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
 const smooth = (value: number) => { const t = clamp(value); return t * t * (3 - 2 * t); };
 export const mirrorSilver = (elapsed: number): number => clamp((elapsed - MIRROR_TIMING.touch) / (AWAKENING_SECONDS.mirror - MIRROR_TIMING.touch));
+
+export function recoveryCrewPose(gesture: RecoveryCrewGesture): { x: number; z: number; yaw: number; support: number } {
+  const config = RECOVERY_CREW[gesture.role];
+  const approach = smooth((gesture.elapsed - RECOVERY_CREW.approach) / (RECOVERY_CREW.contact - RECOVERY_CREW.approach));
+  const standing = smooth((gesture.elapsed - 9) / 3);
+  const neoX = RECOVERY_BED.x + (RECOVERY_BED.standingX - RECOVERY_BED.x) * standing;
+  const x = neoX + config.side;
+  const z = RECOVERY_BED.z + .95;
+  const support = smooth((gesture.elapsed - 8.45) / .6) * (1 - smooth((gesture.elapsed - RECOVERY_CREW.release) / .45));
+  return { x: config.start.x + (x - config.start.x) * approach, z: config.start.z + (z - config.start.z) * approach,
+    yaw: config.start.yaw + (Math.atan2(neoX - x, RECOVERY_BED.z - z) - config.start.yaw) * approach, support };
+}
 
 export function awakeningLocked(journey: FilmJourney): boolean {
   return !journey.visiting && (journey.scene === 'm1_pod' || ['m1_mirror', 'm1_recovery', 'm1_construct', 'm1_desert'].includes(journey.scene)
