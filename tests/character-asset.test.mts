@@ -84,23 +84,46 @@ test('the silver front changes Neo’s skinned silhouette rather than only its c
 });
 
 test('Neo keeps a continuous patient body through rescue and medical recovery', async () => {
-  const asset = await loadGeometry('neo'); const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
-  (models as unknown as { load: () => Promise<typeof asset> }).load = async () => asset;
+  const [asset, office] = await Promise.all([loadGeometry('neo'), loadGeometry('neo-office')]);
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: (id: string) => Promise<typeof asset> }).load = async id => id === 'neo-office' ? office : asset;
   try {
     const rig = (await models.create('neo'))!; const motion = newMotion();
+    const underlayers = rig.wardrobe.filter(part => !part.mesh.userData.office && (part.mesh.material as THREE.Material).name === 'Trousers');
+    const original = underlayers.map(part => {
+      const material = part.mesh.material as THREE.MeshStandardMaterial;
+      return { map: material.map, bumpMap: material.bumpMap, roughness: material.roughness };
+    });
     const input = { speed: 0, grounded: false, verticalVelocity: 0, turn: 0, realWorld: true, performance: 'pod' as const };
     models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0);
     const patientBody = rig.wardrobe.filter(part => !part.mesh.userData.office && (part.mesh.material as THREE.Material).name === 'Trousers');
     assert.equal(patientBody.length, 2, 'the shipped model has separate torso and leg underlayers');
-    for (const part of patientBody) assert.equal(part.mesh.visible, true, `${part.mesh.name} must fill the absent anatomical torso and legs`);
+    const anatomicalTorso = rig.wardrobe.find(part => (part.mesh.material as THREE.Material).name === 'Office skin')!;
+    assert.equal(anatomicalTorso.mesh.visible, true, 'the anatomical torso must replace the crew-neck garment in the pod');
+    assert.equal(patientBody.find(part => /Black.crew.neck/i.test(part.mesh.name))?.mesh.visible, false, 'the crew-neck silhouette cannot masquerade as bare skin');
+    assert.equal(patientBody.find(part => /Tailored.trousers/i.test(part.mesh.name))?.mesh.visible, true, 'the leg underlayer remains until a full anatomical leg mesh exists');
     assert.equal(rig.wardrobe.find(part => (part.mesh.material as THREE.Material).name === 'Coat wool')?.mesh.visible, false);
-    const shirt = patientBody[0];
-    const podColor = (shirt.mesh.material as THREE.MeshStandardMaterial).color.getHex();
+    const legs = patientBody.find(part => /Tailored.trousers/i.test(part.mesh.name))!;
+    const podMaterial = legs.mesh.material as THREE.MeshStandardMaterial; const podColor = podMaterial.color.getHex();
+    assert.equal(podMaterial.map?.name, 'Neo patient skin');
+    assert.equal(podMaterial.bumpMap, podMaterial.map, 'pores replace the fabric weave while Neo is connected');
+    assert.ok(podMaterial.roughness < .6 && podMaterial.metalness < .05, 'wet skin must not retain dry trouser shading');
+    assert.ok(podMaterial.color.r < .7, 'the task light must not blow the temporary body surface out to white');
+    const torsoMaterial = anatomicalTorso.mesh.material as THREE.MeshStandardMaterial;
+    assert.notEqual(torsoMaterial.map, podMaterial.map, 'the anatomical torso keeps its purpose-built skin texture');
+    assert.ok(torsoMaterial.roughness < .6, 'the recovered torso shares the same wet finish');
     models.animate(rig, advanceMotion(motion, { ...input, performance: 'recover' }, 0), motion, { ...input, performance: 'recover' }, 0);
-    assert.equal((shirt.mesh.material as THREE.MeshStandardMaterial).color.getHex(), podColor, 'medical recovery continues the patient appearance');
+    assert.equal((legs.mesh.material as THREE.MeshStandardMaterial).color.getHex(), podColor, 'medical recovery continues the patient appearance');
+    assert.equal(anatomicalTorso.mesh.visible, true);
     assert.equal(rig.wardrobe.find(part => (part.mesh.material as THREE.Material).name === 'Coat wool')?.mesh.visible, false);
     models.animate(rig, advanceMotion(motion, { ...input, performance: undefined }, 0), motion, { ...input, performance: undefined }, 0);
-    assert.notEqual((shirt.mesh.material as THREE.MeshStandardMaterial).color.getHex(), podColor, 'ship clothing returns when recovery ends');
+    assert.notEqual((legs.mesh.material as THREE.MeshStandardMaterial).color.getHex(), podColor, 'ship clothing returns when recovery ends');
+    assert.equal(anatomicalTorso.mesh.visible, false, 'the anatomical torso returns beneath ship clothing after recovery');
+    patientBody.forEach((part, i) => {
+      const material = part.mesh.material as THREE.MeshStandardMaterial;
+      assert.equal(material.map, original[i].map); assert.equal(material.bumpMap, original[i].bumpMap);
+      assert.equal(material.roughness, original[i].roughness); assert.equal(material.color.getHex(), 0x706c62);
+    });
   } finally { models.dispose(); }
 });
 
@@ -830,6 +853,10 @@ test('the shipped Neo rig lies on the medical bed with visible interfaces, then 
     const interfaces = rig.root.getObjectByName('neo-recovery-interfaces')!;
     assert.ok(interfaces.visible); assert.ok(interfaces.getObjectByName('cervical-interface'));
     draw(12);
+    assert.equal(rig.wardrobe.find(part => /Black.crew.neck/i.test(part.mesh.name))?.mesh.visible, true,
+      'Neo must change into ship recovery clothes before control returns for the walk to the core');
+    assert.equal(rig.wardrobe.find(part => (part.mesh.material as THREE.Material).name === 'Office skin')?.mesh.visible, false,
+      'the bare recovery torso must be covered once Neo is standing');
     const standingHead = rig.bones.get('head')!.getWorldPosition(new THREE.Vector3());
     const standingAnkle = rig.bones.get('ankle_L')!.getWorldPosition(new THREE.Vector3());
     assert.ok(standingHead.y > standingAnkle.y + 3.1, 'the saved final pose must finish upright beside the bed');

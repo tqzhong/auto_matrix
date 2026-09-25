@@ -26,7 +26,8 @@ export interface HeroRig {
   footHeight: number;
   glasses: THREE.Group;
   silver: { value: number };
-  wardrobe: { mesh: THREE.Mesh; color: THREE.Color; outer: boolean; hair: boolean; cloth: boolean }[];
+  wardrobe: { mesh: THREE.Mesh; color: THREE.Color; map: THREE.Texture | null; bumpMap: THREE.Texture | null; bumpScale: number;
+    roughness: number; metalness: number; emissive: THREE.Color; emissiveIntensity: number; outer: boolean; hair: boolean; cloth: boolean }[];
   officeRole?: 'rhineheart' | 'courier';
   apartmentRole?: 'choi' | 'dujour';
 }
@@ -98,8 +99,21 @@ export class HeroModels {
   private local = new THREE.Vector3();
   private segment = new THREE.Vector3();
   private closest = new THREE.Vector3();
+  private patientSkin: THREE.DataTexture;
 
-  constructor(private portrait: THREE.Texture, private fabric: THREE.Texture) {}
+  constructor(private portrait: THREE.Texture, private fabric: THREE.Texture) {
+    const size = 96; const data = new Uint8Array(size * size * 4);
+    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+      const pore = Math.sin(x * 2.37 + y * .73) * Math.sin(y * 2.11 - x * .41);
+      const vein = Math.max(0, 1 - Math.abs(Math.sin(x * .16 + Math.sin(y * .11) * 1.7)) * 15);
+      const i = (y * size + x) * 4; const shade = Math.round(226 + pore * 3 - vein * 5);
+      data[i] = shade; data[i + 1] = Math.max(0, shade - 4 + Math.round(vein)); data[i + 2] = Math.max(0, shade - 6 + Math.round(vein * 3)); data[i + 3] = 255;
+    }
+    this.patientSkin = new THREE.DataTexture(data, size, size, THREE.RGBAFormat);
+    this.patientSkin.name = 'Neo patient skin'; this.patientSkin.colorSpace = THREE.SRGBColorSpace;
+    this.patientSkin.wrapS = this.patientSkin.wrapT = THREE.RepeatWrapping; this.patientSkin.repeat.set(2, 3); this.patientSkin.needsUpdate = true;
+    this.textures.add(this.patientSkin);
+  }
 
   private load(id: HeroId | 'neo-office' | 'choi' | 'dujour'): Promise<GLTF> {
     const existing = this.assets.get(id); if (existing) return existing;
@@ -226,7 +240,9 @@ export class HeroModels {
       if (support === 'ghost' && /Coat/.test(material.name)) material.color.setHex(0x394140);
       if (support === 'soren' && /Hair|hair|Groom|groom/.test(material.name)) material.color.setHex(0xb7b1a2);
       if (support === 'link' && /Coat|Trousers/.test(material.name)) { material.color.setHex(0x777467); material.roughness = .95; }
-      wardrobe.push({ mesh: object, color: material.color.clone(), outer: panels.some(p => p.mesh === object),
+      wardrobe.push({ mesh: object, color: material.color.clone(), map: material.map, bumpMap: material.bumpMap, bumpScale: material.bumpScale,
+        roughness: material.roughness, metalness: material.metalness, emissive: material.emissive.clone(), emissiveIntensity: material.emissiveIntensity,
+        outer: panels.some(p => p.mesh === object),
         hair: /Hair|hair|Groom|groom/.test(material.name), cloth: /Coat|Trousers/.test(material.name) });
       if (id !== 'neo') return;
       addMirrorArrival(object);
@@ -435,14 +451,25 @@ export class HeroModels {
     rig.glasses.visible = !rig.officeRole && !rig.apartmentRole && input.glasses !== false && !input.realWorld;
     const officeShirt = input.officeShirt || rig.officeRole === 'courier';
     const pod = input.performance && !['touch', 'connect'].includes(input.performance);
-    const patient = input.performance && ['pod', 'fall', 'float', 'lift', 'recover'].includes(input.performance);
+    const recoveryComplete = input.performance === 'recover' && input.recovery !== undefined && input.recovery >= 11.7;
+    const patient = Boolean(input.performance && ['pod', 'fall', 'float', 'lift', 'recover'].includes(input.performance)
+      && !recoveryComplete);
     for (const part of rig.wardrobe) {
       const material = part.mesh.material as THREE.MeshStandardMaterial;
+      const patientLegs = Boolean(patient && material.name === 'Trousers' && /Tailored.trousers/i.test(part.mesh.name));
+      const patientTorso = Boolean(patient && material.name === 'Office skin');
+      const patientSurface = patient && (material.name === 'Skin' || patientLegs || patientTorso);
       part.mesh.visible = !part.mesh.userData.reloadedHidden && !(part.outer && (input.realWorld || input.clubClothes || input.pills?.role === 'neo' || input.meeting || input.wakeCall) || part.hair && pod)
-        && (!patient || material.name === 'Skin' || material.name === 'Trousers');
-      if (part.mesh.userData.office) part.mesh.visible = Boolean(officeShirt || input.meeting?.role === 'neo' && (part.mesh.material as THREE.Material).name === 'Office skin');
+        && (!patient || material.name === 'Skin' || patientLegs || patientTorso);
+      if (part.mesh.userData.office) part.mesh.visible = Boolean(patientTorso || officeShirt || input.meeting?.role === 'neo' && (part.mesh.material as THREE.Material).name === 'Office skin');
       else if (officeShirt && (part.outer || /Tailored.coat.upper|Black.crew.neck/i.test(part.mesh.name))) part.mesh.visible = false;
-      if (patient && material.name === 'Trousers') material.color.setHex(0xc2aba3);
+      const map = patientLegs ? this.patientSkin : part.map; const bumpMap = patientLegs ? this.patientSkin : part.bumpMap;
+      if (material.map !== map || material.bumpMap !== bumpMap) { material.map = map; material.bumpMap = bumpMap; material.needsUpdate = true; }
+      material.bumpScale = patientLegs ? .0013 : part.bumpScale;
+      material.roughness = patientSurface ? .43 : part.roughness; material.metalness = patientSurface ? .01 : part.metalness;
+      if (patientSurface) material.emissive.setHex(0x160708); else material.emissive.copy(part.emissive);
+      material.emissiveIntensity = patientSurface ? .06 : part.emissiveIntensity;
+      if (patientLegs) material.color.setHex(0xa97c70);
       else if (part.cloth && input.realWorld) material.color.setHex(0x706c62);
       else material.color.copy(part.color);
     }
