@@ -1,4 +1,4 @@
-import { newReloaded, newFarewell, newDeusPact, BURLY, EXILES, CHATEAU, MOUNTAIN, TRUCKS, HEL_COATCHECK } from '@auto_matrix/shared';
+import { newReloaded, newFarewell, newDeusPact, newSmithFinale, BURLY, EXILES, CHATEAU, MOUNTAIN, TRUCKS, HEL_COATCHECK } from '@auto_matrix/shared';
 // Creates an isolated visual-review save; never writes the player's data directory.
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import os from 'node:os';
@@ -39,6 +39,28 @@ if (previous) {
   delete sandbox.state.neoLife!.journey; sandbox.life.film.command(neo, 'start', 0);
 }
 if (sandbox.state.neoLife!.journey?.scene !== scene.id) throw new Error(`Review fixture did not enter ${scene.id}`);
+if (['m3_rain', 'm3_surrender'].includes(scene.id)) {
+  sandbox.state.neoLife!.choices.machine_pact = 'peace';
+  sandbox.state.neoLife!.choices.machine_connection = 'active';
+}
+if (scene.id === 'm3_rain' && ['smith-ground', 'smith-air', 'smith-crater'].includes(process.argv[3])) {
+  const journey = sandbox.state.neoLife!.journey!; const mode = process.argv[3];
+  journey.step = mode === 'smith-crater' ? 2 : 1;
+  journey.smithFinale = { ...newSmithFinale(), phase: mode === 'smith-ground' ? 'ground_dodge' : mode === 'smith-air' ? 'air_dodge' : 'choice',
+    elapsed: mode === 'smith-ground' ? .28 : mode === 'smith-air' ? .3 : 0, total: mode === 'smith-ground' ? 1.2 : mode === 'smith-air' ? 4 : 10,
+    checkpoint: mode === 'smith-ground' ? 'ground' : 'air', lane: mode === 'smith-air' ? .3 : 0 };
+  journey.lastText = mode === 'smith-ground' ? 'Smith 的拳头穿过雨幕。现在按 X 侧闪。'
+    : mode === 'smith-air' ? 'Smith 从雨云上方俯冲。现在按 X 在空中错开。'
+      : 'Smith 问他为何还要坚持。理由必须由玩家亲自选择。';
+  actor.position = filmStepPosition(scene, scene.steps[journey.step]); journey.checkpoint = { ...actor.position };
+}
+if (scene.id === 'm3_surrender' && ['smith-assimilation', 'smith-purge'].includes(process.argv[3])) {
+  const journey = sandbox.state.neoLife!.journey!; const purge = process.argv[3] === 'smith-purge';
+  journey.step = 2; journey.smithFinale = { ...newSmithFinale(), phase: purge ? 'purging' : 'assimilating',
+    elapsed: purge ? 1.2 : 1.8, total: 16, focus: 1.6, checkpoint: 'air' };
+  journey.lastText = purge ? '金色能量沿连接贯穿所有 Smith 复制体。' : 'Smith 的黑色代码正在覆盖 Neo。';
+  actor.position = filmStepPosition(scene, scene.steps[2]); journey.checkpoint = { ...actor.position };
+}
 if (process.argv[3] === 'near') {
   actor.position = filmStepPosition(scene, scene.steps[0]); actor.position.z += 2.5;
   if (playerBlocked(actor.position, actor.isInMatrix)) actor.position = filmStepPosition(scene, scene.steps[0]);

@@ -48,6 +48,8 @@ import { LogosFlightRenderer } from './LogosFlightRenderer.js';
 import { LogosWreckRenderer } from './LogosWreckRenderer.js';
 import { MachineCoreRenderer } from './MachineCoreRenderer.js';
 import { deusPactLocked } from '@auto_matrix/shared';
+import { SmithFinaleRenderer } from './SmithFinaleRenderer.js';
+import { smithFinaleLocked } from '@auto_matrix/shared';
 
 const outdoor = new Set(['rooftop', 'plaza', 'bridge', 'street', 'courtyard', 'freeway', 'machine', 'rain', 'garden', 'desert', 'pods', 'mountain']);
 
@@ -142,6 +144,7 @@ export class FilmSetRenderer {
   private logosStage?: string;
   private logosWreck?: LogosWreckRenderer;
   private machineCore?: MachineCoreRenderer;
+  private smithFinale?: SmithFinaleRenderer;
   private portalDoor?: { scene: 'm2_seraph' | 'm2_backdoors'; panel: THREE.Group };
   private oracleLetter?: THREE.Group;
   private courtyardStaff?: THREE.Group;
@@ -219,6 +222,7 @@ export class FilmSetRenderer {
         else if (set.id === 'film_machine_defense' || set.id === 'film_above_clouds') this.logosFlight = new LogosFlightRenderer(this.root, set.id === 'film_machine_defense' ? 'defense' : 'sun');
         else if (set.id === 'film_logos_wreck') this.logosWreck = new LogosWreckRenderer(this.root);
         else if (sceneId === 'm3_deus' && set.id === 'film_machine_core') this.machineCore = new MachineCoreRenderer(this.root);
+        else if (['m3_rain', 'm3_surrender'].includes(sceneId ?? '') && set.id === 'film_smith_avenue') this.smithFinale = new SmithFinaleRenderer(this.root);
         else if (['m1_dojo', 'm1_jump', 'm1_red_dress'].includes(sceneId ?? '')) this.training = new TrainingSetRenderer(this.root, sceneId!);
         else if (sceneId === 'm1_sentinels') this.sentinel = new SentinelSetRenderer(this.root);
         else if (set.id === 'film_ambush_house') this.ambush = new AmbushSetRenderer(this.root);
@@ -329,6 +333,9 @@ export class FilmSetRenderer {
       x: (playerPosition?.x ?? this.current?.center.x ?? 0) - (this.current?.center.x ?? 0),
       z: (playerPosition?.z ?? this.current?.center.z ?? 0) - (this.current?.center.z ?? 0),
     });
+    this.smithFinale?.update(['m3_rain', 'm3_surrender'].includes(journey?.scene ?? '') && !journey?.visiting ? journey?.smithFinale : undefined,
+      firstPerson, { x: (playerPosition?.x ?? this.current?.center.x ?? 0) - (this.current?.center.x ?? 0),
+        z: (playerPosition?.z ?? this.current?.center.z ?? 0) - (this.current?.center.z ?? 0) });
     this.construct?.update(journey);
     this.desert?.update(journey, elapsed);
     this.mountain?.update(journey?.scene === 'm2_mountain' && !journey.visiting ? journey.mountain : undefined, elapsed);
@@ -468,6 +475,7 @@ export class FilmSetRenderer {
     if (journey?.scene === 'm2_mountain' && journey.step === 2 && !['ready', 'failed'].includes(journey.mountain?.phase ?? 'ready')) this.marker.visible = false;
     if (journey?.scene === 'm3_bane' && journey.step === 1 && journey.bane?.phase !== 'ready') this.marker.visible = false;
     if (journey?.scene === 'm3_deus' && deusPactLocked(journey.deus)) this.marker.visible = false;
+    if (['m3_rain', 'm3_surrender'].includes(journey?.scene ?? '') && smithFinaleLocked(journey?.smithFinale)) this.marker.visible = false;
     if (journey?.scene === 'm2_garage' && journey.garage?.phase === 'riding') this.marker.visible = false;
     if (journey?.scene === 'm3_hammer_tunnels' && journey.hammer?.phase === 'riding') this.marker.visible = false;
     if (['m3_defense', 'm3_sun'].includes(journey?.scene ?? '') && journey?.logos?.phase === 'riding') this.marker.visible = false;
@@ -2148,6 +2156,7 @@ export class FilmSetRenderer {
     this.logosFlight?.dispose(); this.logosFlight = undefined; this.logosStage = undefined;
     this.logosWreck?.dispose(); this.logosWreck = undefined;
     this.machineCore?.dispose(); this.machineCore = undefined;
+    this.smithFinale?.dispose(); this.smithFinale = undefined;
     this.portalDoor = undefined; this.oracleLetter = undefined; this.courtyardStaff = undefined; this.courtyardBirds = []; this.courtyardDisturbedAt = undefined;
     this.exileDessert = undefined; this.bookDoor = undefined; this.chateauVolley = undefined; this.chateauVolleyTick = undefined; this.chateauDoor = undefined;
     this.garageCar = undefined; this.garageGhosts = [];

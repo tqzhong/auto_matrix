@@ -93,6 +93,7 @@ export interface FilmJourney {
   logos?: import('./logos-flight.js').LogosFlight;
   farewell?: import('./farewell.js').FarewellEncounter;
   deus?: import('./deus-pact.js').DeusPactEncounter;
+  smithFinale?: import('./smith-finale.js').SmithFinaleEncounter;
   apu?: import('./dock-apu.js').ApuRun;
   dockGunnery?: import('./dock-gunnery.js').DockGunnery;
   emp?: { firedAt: number };
@@ -390,8 +391,16 @@ export const FILM_SCENES: FilmScene[] = [
     think('明确以清除 Smith 换取和平的条件', '共同的威胁只打开谈判。Neo 仍要说明谁承担风险，以及他真正要求机器停止什么。', 0, -25),
     use('进入连接座，接受机器接入', '锡安方向的哨兵已经停止。Neo 仍需亲自进入连接座，并同意颈后的最后一条接线。', 0, -25, 0),
   ], ['deus_ex_machina']),
-  scene('m3_rain', 3, 'smith_avenue', 'neo', '暴雨中的大道', 'final', 'final', '大道两侧全部是 Smith。拥有先知预见的复制体走到中央。', [walk('走到大道中央', 0, -15), fight('迎战 Smith', 1, 'smith'), use('追入被摧毁的街区', '交锋从地面延伸到空中，最终砸出深坑。', 0, -38)]),
-  scene('m3_surrender', 3, 'smith_avenue', 'neo', '理解最后的选择', 'final', 'final', 'Smith 说出的预见让 Neo 理解了这场冲突的出口。', [think('胜利一定意味着压倒对方吗？', 'Neo 允许 Smith 同化自己，让机器经由仍然连接的身体抵达感染。'), use('接受同化', '金色的连接贯穿复制体。Smith 的感染被清除，暴雨结束。', 0, -38, 8)]),
+  scene('m3_rain', 3, 'smith_avenue', 'neo', '暴雨中的大道', 'final', 'final', '大道两侧全部是 Smith。拥有先知预见的复制体走到中央；地面交锋将冲入高空，再坠回被撕开的街区。', [
+    walk('穿过两列复制体，走到大道中央', 0, -15),
+    use('进入与 Smith 的最后交锋', '两个人的第一击把积水和雨幕同时推开。', 0, -15, 0),
+    think('从陨石坑里站起，回答为什么还要继续', '反复被击倒并没有替 Neo 作出选择；他仍要亲自决定为何站起来。', 0, -38),
+  ], ['smith']),
+  scene('m3_surrender', 3, 'smith_avenue', 'neo', '理解最后的选择', 'final', 'final', 'Smith 的最后猛攻与借来的预见暴露了他的恐惧。Neo 必须分清停止抵抗与向 Smith 屈服。', [
+    use('承受最后的猛攻，让 Smith 的预见说完', 'Smith 发现眼前一幕与先知留下的预见完全重合，并第一次对必然的结局产生恐惧。', 0, -38, 0),
+    think('判断 Smith 真正害怕的是什么', 'Neo 已经与机器建立连接。继续压倒对方不是抵达感染核心的唯一方式。', 0, -38),
+    use('主动停止抵抗，接受同化', 'Neo 放下架势，但最终决定仍需由玩家按住 G 确认。机器会经由连接抵达 Smith 的感染。', 0, -38, 0),
+  ], ['smith']),
   scene('m3_ceasefire', 3, 'zion_temple', 'kid', '机器退去', 'source', 'dawn', '哨兵停止进攻并撤离锡安。消息在神庙和居住层之间传开。', [walk('确认入口外的动静', 0, -30), use('把停战消息带给居民', '人们走出掩体。Morpheus 与 Niobe 看到等待终于有了回应。', 0, -30)], ['morpheus', 'niobe', 'zee', 'link']),
   scene('m3_neo_carried', 3, 'machine_core', 'neo', '光中的身体', 'source', 'dawn', '机器收起连接，带走 Neo 的身体。这一段以尾声观察呈现。', [use('记录已经达成的停战', '人类与机器没有被化约成单方的胜利。矩阵开始恢复。', 0, -20, 7)]),
   scene('m3_dawn', 3, 'sunrise_garden', 'oracle', 'Sati 留下的日出', 'dawn', 'dawn', '恢复后的公园里，先知与建筑师谈到和平与离开的权利。Sati 创造了新的日出。', [walk('抵达公园长椅', -7, -20), think('和平如何成为可以实践的承诺？', '愿意离开矩阵的人会得到机会。未来仍不确定，信任也仍需要行动。', -7, -20), use('看完日出，完成三部曲', '电影的故事在新的清晨结束。游戏保留本轮记忆，下一轮将回到 Anderson 的日常生活。', 0, -30, 6)], ['architect', 'sati', 'seraph']),

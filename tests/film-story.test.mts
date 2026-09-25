@@ -1,7 +1,7 @@
 import { RELOADED, RELOADED_FINALE } from '@auto_matrix/shared';
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, RESCUE, RESCUE_LOADOUTS, GOVERNMENT_RESCUE, AIR_RESCUE, MATRIX_ESCAPE, THE_ONE, OPENING_HOTEL, OPENING_ESCAPE, PILL_ROOM, PILL_TIMING, MIRROR_TOUCH, MIRROR_SEAT, MIRROR_TRINITY, MIRROR_TIMING, DOCK_GUNNERY, awakeningPose, mirrorSilver, filmReflections, filmStepActionReady, filmStepPosition, filmEntry, filmPosition, groundHeight, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, newGarageEscape, stepGarageEscape, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, RESCUE, RESCUE_LOADOUTS, GOVERNMENT_RESCUE, AIR_RESCUE, MATRIX_ESCAPE, THE_ONE, SMITH_FINALE, OPENING_HOTEL, OPENING_ESCAPE, PILL_ROOM, PILL_TIMING, MIRROR_TOUCH, MIRROR_SEAT, MIRROR_TRINITY, MIRROR_TIMING, DOCK_GUNNERY, awakeningPose, mirrorSilver, filmReflections, filmStepActionReady, filmStepPosition, filmEntry, filmPosition, groundHeight, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, newGarageEscape, stepGarageEscape, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -1657,7 +1657,12 @@ test('Smith assimilation is reversible at the ending, without reviving Trinity',
     h.players.possess('film-player', scene.actor, h.tick());
     h.actor().isInMatrix = FILM_SETS[scene.set].world === 'matrix'; h.actor().currentLocation = scene.set;
     h.actor().position = filmStepPosition(scene, scene.steps[state.step]);
-    h.command(scene.steps[state.step].kind === 'reflect' ? 'reflect:care' : 'act'); h.advance(20);
+    if (id === 'm3_surrender') {
+      h.sandbox.state.neoLife!.choices.machine_pact = 'peace'; h.sandbox.state.neoLife!.choices.machine_connection = 'active';
+      h.command('act');
+      h.players.receiveInput('film-player', { x: 0, z: 0, yaw: 0, jump: false, sprint: false, focus: true, sequence: 1 });
+      for (let frame = 0; frame < 100 && state.step < scene.steps.length; frame++) h.players.step(.1, true, h.tick());
+    } else { h.command(scene.steps[state.step].kind === 'reflect' ? 'reflect:care' : 'act'); h.advance(20); }
   };
   playLast('m3_oracle_absorbed'); h.command('next');
   assert.equal(h.world.agents.get('oracle')!.status, 'disconnected');
@@ -2123,6 +2128,37 @@ test('the entire film route completes through interactions, driving and real com
     }
     for (let index = 0; index < scene.steps.length; index++) {
       const step = scene.steps[index]; const actor = h.actor(); actor.position = filmStepPosition(scene, step);
+      if (scene.id === 'm3_rain') {
+        if (index === 0) h.advance();
+        else if (index === 1) {
+          h.command('act');
+          for (let frame = 0; frame < 12 && state.smithFinale?.phase !== 'ground_dodge'; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.smithFinale?.phase, 'ground_dodge'); h.players.act('film-player', 'dodge', h.tick());
+          h.players.act('film-player', 'attack', h.tick());
+          for (let frame = 0; frame < 4; frame++) h.players.step(.1, true, h.tick());
+          h.players.act('film-player', 'attack', h.tick());
+          for (let frame = 0; frame < 30 && state.smithFinale?.phase !== 'air_dodge'; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.smithFinale?.phase, 'air_dodge'); h.players.act('film-player', 'dodge', h.tick()); h.players.act('film-player', 'attack', h.tick());
+          for (let frame = 0; frame < 20 && state.smithFinale?.phase !== 'descent'; frame++) h.players.step(.1, true, h.tick());
+          h.players.receiveInput('film-player', { x: .25, z: 0, yaw: Math.PI, jump: false, sprint: false, focus: true, sequence: ++sequence });
+          for (let frame = 0; frame < 70 && state.step === index; frame++) h.players.step(.1, true, h.tick());
+          h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false, focus: false, sequence: ++sequence });
+        } else h.command('reflect:agency');
+        assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`); continue;
+      }
+      if (scene.id === 'm3_surrender') {
+        if (index === 0) {
+          h.command('act');
+          for (let frame = 0; frame < Math.ceil(SMITH_FINALE.assault / .1) + 2 && state.step === index; frame++) h.players.step(.1, true, h.tick());
+        } else if (index === 1) h.command('reflect:agency');
+        else {
+          h.command('act');
+          h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false, focus: true, sequence: ++sequence });
+          for (let frame = 0; frame < 100 && state.step === index; frame++) h.players.step(.1, true, h.tick());
+          h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false, focus: false, sequence: ++sequence });
+        }
+        assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`); continue;
+      }
       if (scene.id === 'm3_deus') {
         if (index === 0) h.advance();
         else if (index === 1) {

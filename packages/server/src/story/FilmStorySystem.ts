@@ -33,6 +33,8 @@ import { newHammerFlight, stepHammerFlight } from '@auto_matrix/shared';
 import { newLogosFlight, stepLogosFlight } from '@auto_matrix/shared';
 import { farewellLocked, farewellPose, newFarewell, stepFarewell } from '@auto_matrix/shared';
 import { DEUS_PACT, deusPactLocked, deusPactPose, newDeusPact, stepDeusPact } from '@auto_matrix/shared';
+import { SMITH_FINALE, newSmithFinale, retrySmithFinale, smithFinaleAction as reduceSmithFinaleAction,
+  smithFinaleLocked, smithFinalePose, stepSmithFinale } from '@auto_matrix/shared';
 import { newApuRun, stepApuRun } from '@auto_matrix/shared';
 import { DOCK_GUNNERY, newDockGunnery, fireDockGunnery, stepDockGunnery } from '@auto_matrix/shared';
 import { TEMPLE_SEAL_SECONDS } from '@auto_matrix/shared';
@@ -282,6 +284,94 @@ export class FilmStorySystem {
     }
     this.placeDeus(agent, tick);
     return deusPactLocked(state.deus);
+  }
+  private ensureSmithFinale(): void {
+    const state = this.state;
+    if (!state || state.visiting || !['m3_rain', 'm3_surrender'].includes(state.scene) || state.smithFinale) return;
+    const encounter = newSmithFinale();
+    if (state.scene === 'm3_rain') encounter.phase = state.step === 0 ? 'approach' : state.step === 1 ? 'ready' : 'choice';
+    else encounter.phase = state.step === 0 ? 'assault_ready' : state.step === 1 ? 'vision' : state.step === 2 ? 'understanding' : 'done';
+    state.smithFinale = encounter; delete state.started; delete state.fighting; this.clearThreats();
+    if (state.scene === 'm3_rain' && state.step > 0)
+      state.lastText = state.step === 1 ? '旧存档已接回大道中央。最后交锋现在需要亲自闪避、反击并从陨石坑中站起。'
+        : '旧存档已接回陨石坑。按住 G 站起，再在手记中回答为何继续。';
+    if (state.scene === 'm3_surrender')
+      state.lastText = '旧存档已接回最终选择。Smith 的预见、Neo 主动停手与机器清除感染现在会逐拍保存。';
+  }
+  private placeSmithFinale(agent: AgentState, tick: number): void {
+    this.ensureSmithFinale(); const state = this.state; const encounter = state?.smithFinale;
+    if (!state || !encounter || !['m3_rain', 'm3_surrender'].includes(state.scene)) return;
+    const pose = smithFinalePose(encounter); const smith = this.world.agents.get('smith');
+    if (smith && !smith.controller) {
+      smith.position = filmPosition(this.scene!.set, pose.smith.x, pose.smith.z); smith.position.y += pose.smith.y;
+      smith.rotation = pose.smith.yaw; smith.currentLocation = this.scene!.set; smith.isInMatrix = true;
+      smith.status = encounter.phase === 'done' ? 'dead' : 'alive'; smith.health = encounter.phase === 'done' ? 0 : smith.maxHealth;
+      smith.velocity = { x: 0, y: 0, z: 0 };
+      smith.currentAction = encounter.phase === 'done' ? null : { type: pose.strike > .05 ? 'attack' : 'idle', target: agent.id,
+        parameters: { resolved: true, smithFinale: { ...encounter, role: 'smith' } }, startedAt: tick, duration: 1, progress: 0 };
+    }
+    if (!smithFinaleLocked(encounter)) {
+      if (agent.currentAction?.parameters.smithFinale) agent.currentAction = null;
+      return;
+    }
+    agent.position = filmPosition(this.scene!.set, pose.neo.x, pose.neo.z); agent.position.y += pose.neo.y;
+    agent.rotation = pose.neo.yaw; agent.velocity = { x: 0, y: 0, z: 0 };
+    agent.currentAction = { type: pose.strike > .05 && encounter.phase !== 'assault' ? 'attack' : 'idle', target: smith?.id,
+      parameters: { player: true, resolved: true, smithFinale: { ...encounter, role: 'neo' } }, startedAt: tick, duration: 1, progress: 0 };
+  }
+  smithFinaleFrame(agent: AgentState, input: { focus: boolean; x: number; z: number; yaw: number }, dt: number, tick: number): boolean {
+    if (!this.controls(agent) || !['m3_rain', 'm3_surrender'].includes(this.state?.scene ?? '') || this.state?.visiting) return false;
+    this.ensureSmithFinale(); const state = this.state!; const encounter = state.smithFinale!;
+    if (!smithFinaleLocked(encounter)) { this.placeSmithFinale(agent, tick); return false; }
+    if (this.world.agents.get('smith')?.controller) {
+      state.lastText = 'Smith 正由另一位玩家控制。终局停在当前一拍，等待他空闲后继续。';
+      this.placeSmithFinale(agent, tick); return true;
+    }
+    const before = encounter.phase;
+    state.smithFinale = stepSmithFinale(encounter, { focus: input.focus, x: input.x, z: input.z }, dt);
+    const phase = state.smithFinale.phase;
+    if (phase !== before) {
+      state.lastText = phase === 'ground_dodge' ? 'Smith 的拳头穿过雨幕。现在按 X 侧闪，错过窗口会回到大道中央。'
+        : phase === 'air_warning' ? '第一轮对拳压出球形冲击波。两个人冲上高空，Smith 正从雨云后再度逼近。'
+          : phase === 'air_dodge' ? 'Smith 从上方俯冲。现在按 X 在空中错开正面撞击。'
+            : phase === 'descent' ? 'Smith 把 Neo 向街面压下。按住 G 稳住意识，让连接在坠落中保持清醒。'
+              : phase === 'crater' ? '撞击掀开路面、管线与下层结构。按住 G 从坑底站起来；松开不会替 Neo 继续。'
+                : phase === 'choice' ? 'Smith 问他为何还要坚持。Neo 已经站起，但理由必须由玩家在手记中亲自选择。'
+                  : phase === 'vision' ? '最后一轮猛攻停下。Smith 说出从先知那里复制来的预见，又因为眼前一切完全重合而迟疑。'
+                    : phase === 'assimilating' ? 'Neo 明确放下抵抗。Smith 的黑色代码从胸口与面部扩散，直到两具身体共享同一份感染。'
+                      : phase === 'purging' ? '机器沿着 Neo 仍然开放的连接抵达感染核心。金色能量从内部贯穿所有 Smith 复制体。'
+                        : phase === 'done' ? 'Smith 的网络同时崩解。复制体倒下，暴雨停住；机器已完成停战协议中的另一半。'
+                          : '交锋窗口已经错过。J 打开手记，从保存的战斗检查点重试。';
+      if (phase === 'choice' && state.scene === 'm3_rain' && state.step === 1) this.advance(state.lastText, agent, tick);
+      if (phase === 'vision' && state.scene === 'm3_surrender' && state.step === 0) this.advance(state.lastText, agent, tick);
+      if (phase === 'done' && state.scene === 'm3_surrender' && state.step === 2) {
+        this.sandbox().neoLife!.choices.smith_resolution = 'connection'; this.advance(state.lastText, agent, tick);
+      }
+    }
+    this.placeSmithFinale(agent, tick);
+    return smithFinaleLocked(state.smithFinale);
+  }
+  smithFinaleAction(agent: AgentState, kind: string, tick: number): string | undefined {
+    if (!this.controls(agent) || !['m3_rain', 'm3_surrender'].includes(this.state?.scene ?? '') || this.state?.visiting) return;
+    this.ensureSmithFinale(); const state = this.state!; const encounter = state.smithFinale!;
+    if (kind !== 'attack' && kind !== 'dodge') return;
+    if (this.world.agents.get('smith')?.controller) return 'Smith 正由另一位玩家控制；当前战斗窗口已经暂停。';
+    const before = encounter.phase; const hits = encounter.hits;
+    state.smithFinale = reduceSmithFinaleAction(encounter, kind);
+    const next = state.smithFinale;
+    if (next.phase !== before || next.hits !== hits) {
+      state.lastText = next.phase === 'ground_counter' ? 'Smith 的拳锋擦过外套。WASD 调整站位，面向他用 F 完成两次有效反击。'
+        : next.phase === 'shockwave' ? '第二次反击与 Smith 同时命中。冲击波推开积水、雨滴和街边的复制体，两个人被抛向高空。'
+          : next.phase === 'air_counter' ? 'Neo 在俯冲线外翻身。现在按 F 在空中反击，把交锋推向楼体。'
+            : next.phase === 'building' ? '反击命中，Smith 随即把 Neo 砸穿侧面楼体。碎石与玻璃落向积水中的大道。'
+              : `反击 ${next.hits}/${SMITH_FINALE.ground.hits} 命中。拉开一拍，再按 F 完成下一击。`;
+      this.placeSmithFinale(agent, tick); return state.lastText;
+    }
+    return encounter.phase === 'ground_dodge' || encounter.phase === 'air_dodge' ? '观察 Smith 的攻击窗口，按 X 闪避。'
+      : encounter.phase === 'ground_counter' ? '面向 Smith，用 F 反击；连续点击不能跳过动作间隔。'
+        : encounter.phase === 'air_counter' ? '空中窗口已经打开，用 F 反击。'
+          : encounter.phase === 'failed' ? '这一轮交锋已经失败。J 打开手记，从战斗检查点重试。'
+            : '按当前终局提示行动；普通攻击不能跳过哲学选择或同化确认。';
   }
   private openingRoofTick(actor: AgentState, tick: number): void {
     const state = this.state!;
@@ -853,7 +943,7 @@ export class FilmStorySystem {
         film: { scene: 'm2_architect', width: 5, depth: .5, height: 8 } });
     }
   }
-  performing(agent: AgentState): boolean { return this.controls(agent) && (this.state!.scene === 'm1_bridge' && this.state!.bridgeTail?.phase === 'failed' || this.state!.scene === 'm1_room303' && ['breach', 'dive', 'ladder_ready'].includes(this.state!.openingHotel?.phase ?? '') || this.state!.scene === 'm1_phone_escape' && ['connected', 'done'].includes(this.state!.openingPhone?.phase ?? '') || helElevatorLocked(this.state!) || helDanceDoorLocked(this.state!) || farewellLocked(this.state!.farewell) || deusPactLocked(this.state!.deus) || this.state!.scene === 'm3_trainman' && this.state!.mobil?.phase === 'refusing' || this.state!.trucks?.phase === 'rescue' || this.state!.persephone?.phase === 'enacting' || burlyLocked(this.state!) || clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || theOneLocked(this.state!) || reloadedLocked(this.state!) || catchLocked(this.state!.catch) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
+  performing(agent: AgentState): boolean { return this.controls(agent) && (this.state!.scene === 'm1_bridge' && this.state!.bridgeTail?.phase === 'failed' || this.state!.scene === 'm1_room303' && ['breach', 'dive', 'ladder_ready'].includes(this.state!.openingHotel?.phase ?? '') || this.state!.scene === 'm1_phone_escape' && ['connected', 'done'].includes(this.state!.openingPhone?.phase ?? '') || helElevatorLocked(this.state!) || helDanceDoorLocked(this.state!) || farewellLocked(this.state!.farewell) || deusPactLocked(this.state!.deus) || smithFinaleLocked(this.state!.smithFinale) || this.state!.scene === 'm3_trainman' && this.state!.mobil?.phase === 'refusing' || this.state!.trucks?.phase === 'rescue' || this.state!.persephone?.phase === 'enacting' || burlyLocked(this.state!) || clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || theOneLocked(this.state!) || reloadedLocked(this.state!) || catchLocked(this.state!.catch) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
   clubFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
     if (state?.scene !== 'm1_club' || state.visiting || !this.controls(agent)) return;
@@ -3688,6 +3778,7 @@ export class FilmStorySystem {
     this.ensureFinale(tick);
     if (state.scene === 'm3_bane' && !state.visiting) this.ensureBane(tick);
     if (state.scene === 'm3_deus' && !state.visiting) this.ensureDeus();
+    if (['m3_rain', 'm3_surrender'].includes(state.scene) && !state.visiting) this.ensureSmithFinale();
     if (state.scene === 'm2_key_door' && !state.visiting) this.sourceDoor();
     if (state.scene === 'm2_architect' && !state.visiting) { this.architect(tick); this.sealArchitectDoors(); }
     if (target === 'return' && state.visiting) {
@@ -3755,6 +3846,16 @@ export class FilmStorySystem {
         agent.rotation = DEUS_PACT.platform.yaw; agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentAction = null;
         state.checkpoint = { ...agent.position };
         return state.lastText = '已回到谈判平台。机器群会再次收拢；按 G 开始后继续按住，让 Neo 站稳并请求说话。';
+      }
+      if (['m3_rain', 'm3_surrender'].includes(state.scene) && state.smithFinale?.phase === 'failed') {
+        state.smithFinale = retrySmithFinale(state.smithFinale);
+        const checkpoint = state.smithFinale.checkpoint;
+        state.step = state.scene === 'm3_rain' ? 1 : 0; delete state.started; delete state.fighting;
+        agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
+        this.clearThreats(); this.placeSmithFinale(agent, tick); state.checkpoint = { ...agent.position };
+        return state.lastText = checkpoint === 'air'
+          ? '已从高空检查点重试。Smith 正从雨云后俯冲；攻击窗口亮起时按 X，再用 F 反击。'
+          : '已回到大道中央。按 G 重新开始；Smith 出拳时按 X，闪开后靠近用 F 反击。';
       }
       if (this.reloaded.active(agent)) return this.reloaded.command(agent, target, tick);
       if (this.catch.active(agent)) return this.catch.command(agent, target, tick);
@@ -4081,6 +4182,47 @@ export class FilmStorySystem {
       state.lastText = '平台裂开，机械触须形成连接座。Neo 主动坐下，让机器接近身体上的旧插口。';
       this.placeDeus(agent, tick); return state.lastText;
     }
+    if (state.scene === 'm3_rain' && state.step === 1) {
+      this.ensureSmithFinale(); const encounter = state.smithFinale!;
+      if (encounter.phase === 'failed') return '本轮交锋已失败。J 打开手记，从保存的战斗检查点重试。';
+      if (encounter.phase !== 'ready') return state.lastText;
+      if (target !== 'act') return '走到大道中央，按 G 面对 Smith。';
+      if (!this.near(agent, step)) return '先穿过两列复制体，走到大道中央。';
+      if (life.choices.machine_pact !== 'peace' || life.choices.machine_connection !== 'active')
+        return '机器端的连接还没有建立；先完成与机器集体的交换。';
+      if (this.world.agents.get('smith')?.controller) return 'Smith 正由另一位玩家控制；等待他空闲后再开始终局。';
+      state.smithFinale = { ...encounter, phase: 'ground_warning', elapsed: 0, focus: 0, hits: 0, lastStrike: -1, checkpoint: 'ground' };
+      state.checkpoint = { ...agent.position };
+      state.lastText = 'Smith 向前踏入积水，抬手出拳。看清起手；攻击窗口亮起时按 X 闪避。';
+      this.placeSmithFinale(agent, tick); return state.lastText;
+    }
+    if (state.scene === 'm3_rain' && state.step === 2 && state.smithFinale?.phase !== 'choice')
+      return state.smithFinale?.phase === 'failed' ? '本轮交锋已失败。J 打开手记重试。' : '先完成地面、高空和陨石坑中的最后交锋。';
+    if (state.scene === 'm3_surrender' && state.step === 0) {
+      this.ensureSmithFinale(); const encounter = state.smithFinale!;
+      if (encounter.phase !== 'assault_ready') return state.lastText;
+      if (target !== 'act') return '靠近 Smith，按 G 让最后的猛攻开始。';
+      if (!this.near(agent, step)) return '先走到坑底中央，面对 Smith。';
+      if (this.world.agents.get('smith')?.controller) return 'Smith 正由另一位玩家控制；等待他空闲后再继续。';
+      state.smithFinale = { ...encounter, phase: 'assault', elapsed: 0, focus: 0 };
+      state.checkpoint = { ...agent.position };
+      state.lastText = 'Smith 把预见当成必胜的证明，连续把 Neo 击回坑底。这一拍不是血条消耗；看他为什么在结局到来时犹豫。';
+      this.placeSmithFinale(agent, tick); return state.lastText;
+    }
+    if (state.scene === 'm3_surrender' && state.step === 1 && state.smithFinale?.phase !== 'vision')
+      return '先让 Smith 的预见说完，再判断他真正害怕的东西。';
+    if (state.scene === 'm3_surrender' && state.step === 2) {
+      this.ensureSmithFinale(); const encounter = state.smithFinale!;
+      if (encounter.phase !== 'understanding') return state.lastText;
+      if (target !== 'act') return '靠近 Smith，按 G 主动停止抵抗。';
+      if (!this.near(agent, step)) return '先靠近 Smith，让机器连接可以抵达感染核心。';
+      if (life.choices.machine_pact !== 'peace' || life.choices.machine_connection !== 'active')
+        return '没有机器停火协议与身体连接，停手不会完成这个计划。';
+      state.smithFinale = { ...encounter, phase: 'surrender', elapsed: 0, focus: 0 };
+      state.checkpoint = { ...agent.position };
+      state.lastText = 'Neo 放下拳头，但同化还没有发生。按住 G，明确承担让 Smith 进入这具已连接身体的后果。';
+      this.placeSmithFinale(agent, tick); return state.lastText;
+    }
     if (this.reloaded.active(agent)) return this.reloaded.command(agent, target, tick);
     if (this.catch.active(agent)) return this.catch.command(agent, target, tick);
     if (state.scene === 'm2_ship_lost' && state.shipLoss?.phase === 'failed' || state.scene === 'm2_stop_sentinels' && state.tunnel?.phase === 'failed') return '当前检查点失败。按 J 打开手记并重试。';
@@ -4222,7 +4364,11 @@ export class FilmStorySystem {
         life.journal.unshift({ day: life.day, time: this.world.timeOfDay,
           title: `${state.scene === 'm1_bug' && state.office?.outcome === 'escaped' ? '确认没有被追踪' : this.scene.title} · ${choice.label}`, text: response });
       }
+      const reflectedScene = state.scene; const reflectedStep = state.step;
       this.advance(`${step.text} ${response}`, agent, tick);
+      if (reflectedScene === 'm3_rain' && reflectedStep === 2 && state.smithFinale) state.smithFinale.phase = 'rain_done';
+      if (reflectedScene === 'm3_surrender' && reflectedStep === 1 && state.smithFinale) state.smithFinale.phase = 'understanding';
+      if (['m3_rain', 'm3_surrender'].includes(reflectedScene)) this.placeSmithFinale(agent, tick);
       if (state.scene === 'm1_construct') this.command(agent, 'next', tick);
       return response;
     }
@@ -4408,6 +4554,7 @@ export class FilmStorySystem {
   }
   private enter(scene: FilmScene, tick: number, position?: AgentState['position']): void {
     const state = this.state!; const life = this.sandbox().neoLife!;
+    const smithFinale = state.smithFinale;
     this.openingHotel.clear();
     this.clearThreats(); state.enteredAt = tick; state.checkpoint = position ?? filmEntry(scene); delete state.started; delete state.fighting;
     delete state.lobby;
@@ -4445,6 +4592,7 @@ export class FilmStorySystem {
     delete state.bane;
     delete state.farewell;
     delete state.deus;
+    delete state.smithFinale;
     delete state.templeSeal;
     if (scene.id === 'm3_temple_defense') {
       state.templeSeal = { phase: 'running', remaining: TEMPLE_SEAL_SECONDS, lastTick: tick, attempts: 0 };
@@ -4452,6 +4600,8 @@ export class FilmStorySystem {
     }
     if (scene.id === 'm3_farewell') state.farewell = newFarewell();
     if (scene.id === 'm3_deus') state.deus = newDeusPact();
+    if (scene.id === 'm3_rain') state.smithFinale = newSmithFinale();
+    if (scene.id === 'm3_surrender') state.smithFinale = { ...(smithFinale ?? newSmithFinale()), phase: 'assault_ready', elapsed: 0, focus: 0, lane: 0 };
     if (scene.id === 'm1_room303') this.openingHotel.reset(tick);
     if (scene.id === 'm1_roofs') state.openingRoof = { phase: 'running', lastTick: tick, attempts: 0 };
     if (scene.id === 'm1_phone_escape') state.openingPhone = { phase: 'running', remaining: OPENING_ESCAPE.phoneSeconds, lastTick: tick, attempts: 0 };
@@ -4499,6 +4649,7 @@ export class FilmStorySystem {
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.airRescue) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.matrixEscape) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && (other.currentAction?.parameters.theOne || other.currentAction?.parameters.reloaded || other.currentAction?.parameters.catch)) other.currentAction = null;
+    for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.smithFinale) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.recoveryCrew) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.lobbyEntry) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.riding) { other.currentAction = null; other.velocity = { x: 0, y: 0, z: 0 }; }
@@ -4668,6 +4819,7 @@ export class FilmStorySystem {
     if (scene.id === 'm2_bane_copy') state.baneCopy = { progress: 0 };
     if (scene.id === 'm3_bane') { this.ensureBane(tick); this.banePose(actor, tick); }
     if (scene.id === 'm3_farewell') this.placeFarewell(actor, tick);
+    if (['m3_rain', 'm3_surrender'].includes(scene.id)) this.placeSmithFinale(actor, tick);
     if (scene.id === 'm2_seraph') state.seraph = { dodges: 0, counters: 0, attempts: 0 };
     if (scene.id === 'm2_catch' && life.choices.trinity_dream) state.lastText += life.choices.trinity_dream === 'clear' ? '你认出了梦里的破窗、枪口与坠落方向；这次仍有机会作出行动。' : '这座大楼让你想起那个破碎的梦。';
     if (scene.id === 'm1_bug' && state.office?.outcome === 'escaped') state.lastText = '你没有被特工带走。Switch 仍要求做安全检查，确认没有追踪装置。';
@@ -5020,10 +5172,15 @@ export class FilmStorySystem {
       }
       if (state.step === 3) life.choices.machine_connection = 'active';
     }
+    if (state.scene === 'm3_rain' && state.smithFinale && state.step === 0) {
+      state.smithFinale.phase = 'ready'; state.smithFinale.elapsed = 0;
+      text = `${text} Smith 从两列复制体中独自走出；这场交锋会保存动作窗口与高空检查点。`;
+    }
     if (state.scene === 'm1_bug' && state.step === 0 && state.office?.outcome === 'escaped') text = '扫描完成，没有发现追踪装置。Trinity 收起仪器，确认接头安全，继续前往 Morpheus 的房间。';
     state.lastText = text; state.step++; state.checkpoint = { ...agent.position }; delete state.started; delete state.fighting;
     if (state.scene === 'm3_bane' && state.bane) this.banePose(agent, tick);
     if (state.scene === 'm3_deus' && state.deus) this.placeDeus(agent, tick);
+    if (['m3_rain', 'm3_surrender'].includes(state.scene) && state.smithFinale) this.placeSmithFinale(agent, tick);
     if (state.scene === 'm1_roofs' && state.step === this.scene!.steps.length && state.openingRoof) state.openingRoof.phase = 'escaped';
     if (state.scene === 'm2_ship_lost' && state.step === this.scene!.steps.length && state.shipLoss) state.shipLoss.phase = 'escaped';
     if (state.scene === 'm2_stop_sentinels' && state.step === 1 && state.tunnel) { state.tunnel.phase = 'sensing'; state.tunnel.lastTick = tick; }
@@ -5086,11 +5243,13 @@ export class FilmStorySystem {
     this.ensureFinale(tick);
     if (state.scene === 'm3_bane') this.ensureBane(tick);
     if (state.scene === 'm3_deus') this.ensureDeus();
+    if (['m3_rain', 'm3_surrender'].includes(state.scene)) this.ensureSmithFinale();
     if (state.scene === 'm2_key_door') this.sourceDoor();
     const actor = this.world.agents.get(state.actor);
     if (state.scene === 'm3_bane' && actor) this.banePose(actor, tick);
     if (state.scene === 'm3_farewell' && actor) this.placeFarewell(actor, tick);
     if (state.scene === 'm3_deus' && actor) this.placeDeus(actor, tick);
+    if (['m3_rain', 'm3_surrender'].includes(state.scene) && actor) this.placeSmithFinale(actor, tick);
     this.finaleTick(actor, tick);
     if (state.scene === 'm2_ship_lost' && state.shipLoss?.phase === 'failed' || state.scene === 'm2_stop_sentinels' && state.tunnel?.phase === 'failed') return;
     if (state.scene === 'm2_architect') this.architectTick(actor, tick);

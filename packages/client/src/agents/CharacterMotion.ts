@@ -1,5 +1,5 @@
 import { reloadedPose, type CatchGesture, type ReloadedGesture } from '@auto_matrix/shared';
-import { deusPactLocked, deusPactPose, farewellPose } from '@auto_matrix/shared';
+import { deusPactLocked, deusPactPose, farewellPose, smithFinaleLocked, smithFinalePose } from '@auto_matrix/shared';
 import { MELEE_COMBO, COMBO_WINDOW, COMBAT_SKILLS, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED, PILL_TIMING, MIRROR_TIMING, lobbyPose, governmentPose, airRescuePose, matrixEscapePose, theOnePose, recoveryCrewPose, type CombatSkillId, type AwakeningPose, type AwakeningReveal, type RecoveryCrewGesture, type OfficePhone, pillPose, lafayetteWelcomePose, oracleVisitPose, betrayalPose, rescuePose, type PillGesture, type InterrogationGesture, type LafayetteWelcomeGesture, type TrainingGesture, type OracleVisitGesture, type BetrayalGesture, type RescueGesture, type RescueLoadout, type LobbyGesture, type GovernmentRescueGesture, type AirRescueGesture, type MatrixEscapeGesture, type TheOneGesture } from '@auto_matrix/shared';
 
 export interface MotionInput {
@@ -54,6 +54,7 @@ export interface MotionInput {
   persephone?: import('@auto_matrix/shared').PersephoneEncounter & { role: 'neo' | 'persephone' };
   farewell?: import('@auto_matrix/shared').FarewellGesture;
   deusPact?: import('@auto_matrix/shared').DeusPactGesture;
+  smithFinale?: import('@auto_matrix/shared').SmithFinaleGesture;
   weaponStyle?: RescueLoadout | 'hel_pistol';
   helDanceDoor?: number;
   aimPitch?: number;
@@ -145,9 +146,10 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const recoveryCrew = input.recoveryCrew && recoveryCrewPose(input.recoveryCrew);
   const farewell = input.farewell && farewellPose(input.farewell);
   const deus = input.deusPact && deusPactPose(input.deusPact);
+  const smithFinale = input.smithFinale && smithFinalePose(input.smithFinale);
   const welcomeWalking = input.welcome?.phase === 'approach' || input.welcome?.phase === 'departing' && input.welcome.role !== 'neo';
   const welcomeSpeed = input.welcome?.role === 'morpheus' ? 2.6 : input.welcome?.role === 'neo' ? 2.3 : 1.8;
-  const speed = input.farewell || deusPactLocked(input.deusPact) ? 0 : input.pills ? exiting ? 1.7 : 0 : welcomeWalking ? welcomeSpeed : input.speed;
+  const speed = input.farewell || deusPactLocked(input.deusPact) || smithFinaleLocked(input.smithFinale) ? 0 : input.pills ? exiting ? 1.7 : 0 : welcomeWalking ? welcomeSpeed : input.speed;
   state.time += dt;
   state.speed = mix(state.speed, input.riding || input.climbing !== undefined ? 0 : speed, blend);
   state.climbPhase += (input.climbing ?? 0) * dt * 5;
@@ -195,7 +197,7 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const governmentBend = government?.bend ?? 0;
   const escapePinned = matrixEscape?.grapple && input.matrixEscape?.role === 'neo' ? matrixEscape.grapple : 0;
   const hipHeight = 1.98 - moving * .08 - run * .12 + bob - state.landing * .20 - guard * .08 - dodging * .3 - (input.crouching ? .9 : 0) - state.seated * .6 - (input.floorSeated ? .85 : 0) - lobbyDown * 1.5 - governmentBend * .9 - (airRescue?.strain ?? 0) * .32 - (airRescue?.land ?? 0) * .18 - escapePinned * .72 - (matrixEscape?.brace ?? 0) * .55
-    - (theOne?.wound ?? 0) * 1.2 - (theOne?.fallen ?? 0) * 1.58 - (theOne?.kiss ?? 0) * .28 - (theOne?.block ?? 0) * .18 - (theOne?.dive ?? 0) * .22 - (theOne?.burst ?? 0) * .28 - (reloaded?.down ?? 0) * 1.5 - (reloaded?.dodge ?? 0) * .38;
+    - (theOne?.wound ?? 0) * 1.2 - (theOne?.fallen ?? 0) * 1.58 - (theOne?.kiss ?? 0) * .28 - (theOne?.block ?? 0) * .18 - (theOne?.dive ?? 0) * .22 - (theOne?.burst ?? 0) * .28 - (reloaded?.down ?? 0) * 1.5 - (reloaded?.dodge ?? 0) * .38 - (smithFinale?.fallen ?? 0) * 1.38;
   const legs = [0, .5].map(offset => {
     const foot = footTrajectory(state.phase + offset, stride, stance);
     const lift = foot.lift * mix(.22, .55, run) * moving;
@@ -572,6 +574,42 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
       arms[i].grip = mix(arms[i].grip, .56, deus.seated);
     }
   }
+  if (smithFinale && input.smithFinale) {
+    const neo = input.smithFinale.role === 'neo'; const attack = smithFinale.strike;
+    for (let i = 0; i < 2; i++) {
+      arms[i].shoulder = mix(arms[i].shoulder, -.82, smithFinale.guard);
+      arms[i].elbow = mix(arms[i].elbow, -1.28, smithFinale.guard);
+      arms[i].outward = mix(arms[i].outward, (i ? 1 : -1) * .31, smithFinale.guard);
+      arms[i].grip = mix(arms[i].grip, .92, smithFinale.guard);
+      if (smithFinale.flight) {
+        arms[i].shoulder = mix(arms[i].shoulder, i === 0 ? -1.92 : -.34, smithFinale.flight);
+        arms[i].elbow = mix(arms[i].elbow, i === 0 ? -.18 : -.5, smithFinale.flight);
+        legs[i].hip = mix(legs[i].hip, i ? -.58 : .2, smithFinale.flight);
+        legs[i].knee = mix(legs[i].knee, i ? 1.08 : .28, smithFinale.flight);
+      }
+      if (smithFinale.fallen) {
+        arms[i].shoulder = mix(arms[i].shoulder, -.48, smithFinale.fallen);
+        arms[i].elbow = mix(arms[i].elbow, -1.08, smithFinale.fallen);
+        legs[i].hip = mix(legs[i].hip, i ? -.92 : -.22, smithFinale.fallen);
+        legs[i].knee = mix(legs[i].knee, i ? 1.48 : 1.1, smithFinale.fallen);
+      }
+    }
+    const strikingArm = neo ? 0 : 1;
+    arms[strikingArm].shoulder = mix(arms[strikingArm].shoulder, -1.55, attack);
+    arms[strikingArm].elbow = mix(arms[strikingArm].elbow, -.08, attack);
+    arms[strikingArm].grip = mix(arms[strikingArm].grip, 1, attack);
+    if (smithFinale.surrender) for (let i = 0; i < 2; i++) {
+      arms[i].shoulder = mix(arms[i].shoulder, neo ? -.08 : -1.18, smithFinale.surrender);
+      arms[i].elbow = mix(arms[i].elbow, neo ? -.12 : -.45, smithFinale.surrender);
+      arms[i].outward = mix(arms[i].outward, (i ? 1 : -1) * (neo ? .08 : .22), smithFinale.surrender);
+      arms[i].grip = mix(arms[i].grip, neo ? .02 : .8, smithFinale.surrender);
+    }
+    if (smithFinale.assimilation || smithFinale.purge) for (let i = 0; i < 2; i++) {
+      const strain = Math.max(smithFinale.assimilation, smithFinale.purge);
+      arms[i].shoulder = mix(arms[i].shoulder, -.52, strain); arms[i].elbow = mix(arms[i].elbow, -.3, strain);
+      arms[i].outward = mix(arms[i].outward, (i ? 1 : -1) * .78, strain); arms[i].grip = mix(arms[i].grip, .85, strain);
+    }
+  }
   if (recoveryCrew && input.recoveryCrew) {
     const arm = input.recoveryCrew.role === 'morpheus' ? 0 : 1;
     arms[arm].shoulder = mix(arms[arm].shoulder, -.72, recoveryCrew.support);
@@ -620,9 +658,11 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const farewellLean = farewell && input.farewell ? input.farewell.role === 'neo' ? farewell.neo.lean : .68 * farewell.trinity.recline : 0;
   const farewellRoll = farewell && input.farewell?.role === 'trinity' ? -.18 * farewell.trinity.recline : 0;
   const deusLean = deus ? deus.seated * .32 - deus.brace * .08 + deus.pulse * .18 : 0;
+  const smithLean = smithFinale ? smithFinale.fallen * 1.25 - smithFinale.flight * .62 + smithFinale.impact * .3 + smithFinale.purge * .22 : 0;
+  const smithRoll = smithFinale ? -smithFinale.dodge * .78 + smithFinale.fallen * .82 + smithFinale.flight * Math.sin(input.smithFinale!.total * 1.7) * .09 : 0;
   const theOneRoll = theOne ? theOne.wound * .58 + theOne.fallen * 1.08 + theOne.burst * (.18 + Math.sin(input.theOne!.elapsed * 11) * .12) + theOne.flight * Math.sin(input.theOne!.elapsed * .8) * .08 : 0;
-  return { legs, arms, hipHeight, twist, lean: run * .12 + state.landing * .12 + state.airborne * .04 + extension * .10 - kick * .27 - recoil * .35 + (input.crouching ? .26 : 0) + (input.riding ? .2 : 0) + doorPush * .38 + oracleLean + betrayalLean + rescueLean + lobbyLean + governmentLean + airRescueLean + escapeLean + theOneLean + hotelLean + farewellLean + deusLean + (recoveryCrew?.support ?? 0) * .1 - roofLeap * .45 - (reloaded?.falling ?? 0) * .85 + (reloaded?.dreamAgent ?? 0) * 2 + (reloaded?.down ?? 0) * 1.25 - (reloaded?.flight ?? 0) * .65 - (catchFlying && catching?.role === 'neo' ? .45 : 0) + (catching?.role === 'trinity' && catching.phase === 'flight' ? .25 : 0),
+  return { legs, arms, hipHeight, twist, lean: run * .12 + state.landing * .12 + state.airborne * .04 + extension * .10 - kick * .27 - recoil * .35 + (input.crouching ? .26 : 0) + (input.riding ? .2 : 0) + doorPush * .38 + oracleLean + betrayalLean + rescueLean + lobbyLean + governmentLean + airRescueLean + escapeLean + theOneLean + hotelLean + farewellLean + deusLean + smithLean + (recoveryCrew?.support ?? 0) * .1 - roofLeap * .45 - (reloaded?.falling ?? 0) * .85 + (reloaded?.dreamAgent ?? 0) * 2 + (reloaded?.down ?? 0) * 1.25 - (reloaded?.flight ?? 0) * .65 - (catchFlying && catching?.role === 'neo' ? .45 : 0) + (catching?.role === 'trinity' && catching.phase === 'flight' ? .25 : 0),
     sway: Math.sin(cycle) * moving * .035, lunge: extension * .16 - kick * .25 - recoil * .22 - dodging * .35 + doorPush * .12 + (matrixEscape?.strike ?? 0) * .32,
-    roll: -state.turn * run * .035 - dodging * .22 + betrayalRoll + lobbyRoll + governmentRoll + airRescueRoll + escapeRoll + theOneRoll + farewellRoll + (reloaded?.down ?? 0) * 1.1 - (reloaded?.dodge ?? 0) * .6 + (reloaded?.falling ?? 0) * (input.reloaded?.drift ?? 0) * .055, headTurn: -twist * .65 + glance + oracleLook + rescueLook + (recoveryCrew?.support ?? 0) * (input.recoveryCrew?.role === 'morpheus' ? -.12 : .12), moving, run, airborne: state.airborne,
+    roll: -state.turn * run * .035 - dodging * .22 + betrayalRoll + lobbyRoll + governmentRoll + airRescueRoll + escapeRoll + theOneRoll + farewellRoll + smithRoll + (reloaded?.down ?? 0) * 1.1 - (reloaded?.dodge ?? 0) * .6 + (reloaded?.falling ?? 0) * (input.reloaded?.drift ?? 0) * .055, headTurn: -twist * .65 + glance + oracleLook + rescueLook + (recoveryCrew?.support ?? 0) * (input.recoveryCrew?.role === 'morpheus' ? -.12 : .12), moving, run, airborne: state.airborne,
     coat: moving * (.10 + run * .3) + state.airborne * .18 + kick * .35, impact: extension, landing: state.landing };
 }

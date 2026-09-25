@@ -15,6 +15,7 @@ import { RESCUE, rescueDuration, rescueLoadout, rescueLocked } from '@auto_matri
 import { BANE_ENCOUNTER } from '@auto_matrix/shared';
 import { FAREWELL, farewellLocked } from '@auto_matrix/shared';
 import { DEUS_PACT, deusPactLocked } from '@auto_matrix/shared';
+import { SMITH_FINALE, smithFinaleLocked } from '@auto_matrix/shared';
 
 const button = (target: string, label: string, disabled = false) => `<button data-action="life" data-target="film:${target}" ${disabled ? 'disabled' : ''}>${label}</button>`;
 export function renderFilmJourney(player: AgentState, sandbox: SandboxState): string {
@@ -80,6 +81,46 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
               : pact.phase === 'cabling' ? pact.elapsed / DEUS_PACT.seconds.cabling * 100
                 : pact.phase === 'connecting' ? pact.elapsed / DEUS_PACT.seconds.connecting * 100 : 0;
     return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>机器核心 · 共同的威胁</h3><p>Neo 视角 · 谈判、停火与身体接入逐拍自动保存</p></header><article class="film-now"><div><h3>${step?.label ?? '暴雨中的矩阵正在等待'}</h3><p>${journey.lastText}</p><p>${phase}${pact.phase === 'failed' ? ` · 第 ${pact.attempts + 1} 次尝试` : ''}</p>${deusPactLocked(pact) && !['terms', 'pact', 'connected'].includes(pact.phase) ? `<div class="film-progress"><i style="width:${Math.max(0, Math.min(100, progress))}%"></i></div>` : ''}<div class="film-controls">${action}<small>机器群靠近时按住 G 让它听完警告；提出和平条件后，连接座会先确认停火，再等待你同意颈后接入。V 可以随时切换视角。</small></div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
+  }
+  if (!journey.visiting && ['m3_rain', 'm3_surrender'].includes(scene.id) && journey.smithFinale) {
+    const finale = journey.smithFinale; const step = scene.steps[journey.step]; const current = player.id === journey.actor;
+    const close = current && Boolean(step && distance(player.position, filmStepPosition(scene, step)) <= 4);
+    const rain = scene.id === 'm3_rain';
+    const action = !current ? button('resume', '接回 Neo 的视角')
+      : finale.phase === 'failed' ? button('retry', `从${finale.checkpoint === 'air' ? '高空' : '大道中央'}检查点重试`)
+        : !step ? button('next', rain ? '继续最后的选择 →' : '进入停战之后 →')
+          : rain && journey.step === 0 ? '<p>合上手记，亲自穿过两列 Smith 复制体。</p>'
+            : rain && journey.step === 1 && finale.phase === 'ready' ? button('act', '开始最后交锋 · G', !close)
+              : rain && journey.step === 2 && finale.phase === 'choice' ? filmReflections(scene.id).map(choice => button(`reflect:${choice.id}`, choice.label)).join('')
+                : !rain && journey.step === 0 && finale.phase === 'assault_ready' ? button('act', '让 Smith 的预见说完 · G', !close)
+                  : !rain && journey.step === 1 && finale.phase === 'vision' ? filmReflections(scene.id).map(choice => button(`reflect:${choice.id}`, choice.label)).join('')
+                    : !rain && journey.step === 2 && finale.phase === 'understanding' ? button('act', '停止抵抗，接受同化 · G', !close)
+                      : finale.phase === 'surrender' ? '<p>按住 G，明确接受同化并完成与机器的协议。</p>'
+                        : '<button disabled>终局动作进行中 · 自动保存</button>';
+    const phase = finale.phase === 'approach' ? '穿过复制体' : finale.phase === 'ready' ? '大道中央'
+      : finale.phase === 'ground_warning' ? '地面交锋 · Smith 起手' : finale.phase === 'ground_dodge' ? '地面交锋 · 现在按 X'
+        : finale.phase === 'ground_counter' ? `地面交锋 · F 反击 ${finale.hits}/${SMITH_FINALE.ground.hits}` : finale.phase === 'shockwave' ? '对拳冲击波'
+          : finale.phase === 'air_warning' ? '高空交锋 · Smith 俯冲' : finale.phase === 'air_dodge' ? '高空交锋 · 现在按 X'
+            : finale.phase === 'air_counter' ? '高空交锋 · 现在按 F' : finale.phase === 'building' ? '撞穿楼体'
+              : finale.phase === 'descent' ? '向街面坠落 · 按住 G' : finale.phase === 'crater' ? '从陨石坑站起 · 按住 G'
+                : finale.phase === 'choice' ? '为什么继续？由你选择' : finale.phase === 'assault_ready' ? '等待最后猛攻'
+                  : finale.phase === 'assault' ? '最后猛攻' : finale.phase === 'vision' ? 'Smith 的预见正在重合'
+                    : finale.phase === 'understanding' ? '停手是 Neo 的选择' : finale.phase === 'surrender' ? '明确停止抵抗'
+                      : finale.phase === 'assimilating' ? 'Smith 同化 Neo' : finale.phase === 'purging' ? '机器清除感染' : finale.phase === 'done' ? '暴雨停止' : '交锋失败';
+    const progress = finale.phase === 'ground_warning' ? finale.elapsed / SMITH_FINALE.ground.warning * 100
+      : finale.phase === 'ground_dodge' ? (SMITH_FINALE.ground.dodge - finale.elapsed) / SMITH_FINALE.ground.dodge * 100
+        : finale.phase === 'ground_counter' ? (SMITH_FINALE.ground.counter - finale.elapsed) / SMITH_FINALE.ground.counter * 100
+          : finale.phase === 'shockwave' ? finale.elapsed / SMITH_FINALE.shockwave * 100
+            : finale.phase === 'air_warning' ? finale.elapsed / SMITH_FINALE.air.warning * 100
+              : finale.phase === 'air_dodge' ? (SMITH_FINALE.air.dodge - finale.elapsed) / SMITH_FINALE.air.dodge * 100
+                : finale.phase === 'air_counter' ? (SMITH_FINALE.air.counter - finale.elapsed) / SMITH_FINALE.air.counter * 100
+                  : finale.phase === 'descent' ? finale.focus / SMITH_FINALE.descent.braceSeconds * 100
+                    : finale.phase === 'crater' ? finale.focus / SMITH_FINALE.crater.riseSeconds * 100
+                      : finale.phase === 'assault' ? finale.elapsed / SMITH_FINALE.assault * 100
+                        : finale.phase === 'surrender' ? finale.focus / SMITH_FINALE.surrender.consentSeconds * 100
+                          : finale.phase === 'assimilating' ? finale.elapsed / SMITH_FINALE.surrender.assimilationSeconds * 100
+                            : finale.phase === 'purging' ? finale.elapsed / SMITH_FINALE.surrender.purgeSeconds * 100 : 0;
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>${rain ? '暴雨大道 · 最后交锋' : '陨石坑 · 最后的选择'}</h3><p>Neo 视角 · 动作窗口、哲学选择与机器协议逐拍保存</p></header><article class="film-now"><div><h3>${step?.label ?? '终局已完成'}</h3><p>${journey.lastText}</p><p>${phase}${finale.phase === 'failed' ? ` · 第 ${finale.attempts + 1} 次尝试` : ''}</p>${smithFinaleLocked(finale) && !['choice', 'vision', 'understanding'].includes(finale.phase) ? `<div class="film-progress"><i style="width:${Math.max(0, Math.min(100, progress))}%"></i></div>` : ''}<div class="film-controls">${action}<small>地面与高空攻击窗口用 X 闪避、F 反击；坠落、站起和最后停手都要按住 G。停止抵抗是玩家明确作出的选择，不会由倒计时代替。</small></div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
   }
   if (!journey.visiting && scene.id === 'm1_room303' && journey.openingHotel) {
     const hotel = journey.openingHotel; const step = scene.steps[journey.step]; const current = player.id === journey.actor;

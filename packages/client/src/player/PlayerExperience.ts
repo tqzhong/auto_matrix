@@ -1,4 +1,4 @@
-import { catchLocked, deusPactLocked, farewellLocked, helElevatorLocked, helDanceDoorLocked, reloadedLocked } from '@auto_matrix/shared';
+import { catchLocked, deusPactLocked, farewellLocked, helElevatorLocked, helDanceDoorLocked, reloadedLocked, smithFinaleLocked } from '@auto_matrix/shared';
 import { COMBAT_SKILLS, playerSkills, neoSkillUnlocked, CHARACTERS, LOCATIONS, filmSetAt, filmObstacles, distance, matrixEscapeLocked, theOneLocked, type AgentState, type SimulationState, type WorldEvent, type NeoLifeState } from '@auto_matrix/shared';
 import { FACTION_COLORS } from '../agents/AgentRenderer.js';
 
@@ -158,7 +158,10 @@ export class PlayerExperience {
       && neoLife.journey.scene === 'm3_farewell' && !neoLife.journey.visiting && farewellLocked(neoLife.journey.farewell));
     const deusPerforming = Boolean(neoLife?.journey && neoLife.journey.actor === player?.id
       && neoLife.journey.scene === 'm3_deus' && !neoLife.journey.visiting && deusPactLocked(neoLife.journey.deus));
-    const performing = Boolean(farewellPerforming || deusPerforming || player?.currentAction?.parameters.farewell || player?.currentAction?.parameters.deusPact || player?.currentAction?.parameters.persephone || player?.currentAction?.parameters.club || player?.currentAction?.parameters.workday || player?.currentAction?.parameters.meeting || player?.currentAction?.parameters.interrogation || player?.currentAction?.parameters.pills || player?.currentAction?.parameters.welcome || player?.currentAction?.parameters.sentinel || player?.currentAction?.parameters.interlude || player?.currentAction?.parameters.oracleVisit || player?.currentAction?.parameters.betrayal || player?.currentAction?.parameters.rescue || player?.currentAction?.parameters.government || player?.currentAction?.parameters.airRescue || player?.currentAction?.parameters.truckPassenger || matrixPerforming || onePerforming || reloadedPerforming || catchPerforming || player?.currentAction?.parameters.lobbyEntry || player?.currentAction?.parameters.filmPose || player?.currentAction?.parameters.spoon !== undefined || player?.currentAction?.parameters.vase !== undefined);
+    const smithFinaleScene = Boolean(neoLife?.journey && neoLife.journey.actor === player?.id
+      && ['m3_rain', 'm3_surrender'].includes(neoLife.journey.scene) && !neoLife.journey.visiting);
+    const smithFinalePerforming = Boolean(smithFinaleScene && smithFinaleLocked(neoLife?.journey?.smithFinale));
+    const performing = Boolean(farewellPerforming || deusPerforming || smithFinalePerforming || player?.currentAction?.parameters.farewell || player?.currentAction?.parameters.deusPact || player?.currentAction?.parameters.smithFinale || player?.currentAction?.parameters.persephone || player?.currentAction?.parameters.club || player?.currentAction?.parameters.workday || player?.currentAction?.parameters.meeting || player?.currentAction?.parameters.interrogation || player?.currentAction?.parameters.pills || player?.currentAction?.parameters.welcome || player?.currentAction?.parameters.sentinel || player?.currentAction?.parameters.interlude || player?.currentAction?.parameters.oracleVisit || player?.currentAction?.parameters.betrayal || player?.currentAction?.parameters.rescue || player?.currentAction?.parameters.government || player?.currentAction?.parameters.airRescue || player?.currentAction?.parameters.truckPassenger || matrixPerforming || onePerforming || reloadedPerforming || catchPerforming || player?.currentAction?.parameters.lobbyEntry || player?.currentAction?.parameters.filmPose || player?.currentAction?.parameters.spoon !== undefined || player?.currentAction?.parameters.vase !== undefined);
     document.body.classList.toggle('film-driving', driving);
     document.body.classList.toggle('film-performing', performing);
     document.body.classList.toggle('film-workday-scene', Boolean(player?.currentAction?.parameters.workday));
@@ -176,6 +179,7 @@ export class PlayerExperience {
     document.body.classList.toggle('film-bane-scene', this.filmPlaying && neoLife?.journey?.scene === 'm3_bane' && !neoLife.journey.visiting);
     document.body.classList.toggle('film-farewell-scene', this.filmPlaying && neoLife?.journey?.scene === 'm3_farewell' && !neoLife.journey.visiting);
     document.body.classList.toggle('film-deus-scene', this.filmPlaying && neoLife?.journey?.scene === 'm3_deus' && !neoLife.journey.visiting);
+    document.body.classList.toggle('film-smith-finale', smithFinaleScene);
     document.body.classList.toggle('film-grid-scene', this.filmPlaying && ['m2_plan', 'm2_power', 'm2_vigilant', 'm2_backup', 'm2_key_door'].includes(neoLife?.journey?.scene ?? '') && !neoLife?.journey?.visiting);
     document.body.classList.toggle('film-finale-scene', this.filmPlaying && ['m2_ship_lost', 'm2_stop_sentinels'].includes(neoLife?.journey?.scene ?? '') && !neoLife?.journey?.visiting);
     document.body.classList.toggle('film-mountain-flight', this.filmPlaying && neoLife?.journey?.scene === 'm2_mountain' && ['takeoff', 'flying', 'arrived'].includes(neoLife.journey.mountain?.phase ?? ''));
@@ -198,6 +202,17 @@ export class PlayerExperience {
       : neoLife.journey.deus?.phase === 'terms' ? 'J 打开手记提出和平条件 · V 切换视角'
         : neoLife.journey.deus?.phase === 'consent' ? '按住 G 同意颈后接入 · V 切换视角'
           : deusPerforming ? '鼠标观察 · V 切换视角 · 当前谈判动作自动保存' : 'WASD 穿过光廊 · 靠近平台后按 G';
+    if (smithFinaleScene) {
+      const phase = neoLife?.journey?.smithFinale?.phase;
+      this.el('mouse-hint').textContent = phase === 'ground_dodge' || phase === 'air_dodge' ? '现在按 X 闪避 · V 切换视角'
+        : phase === 'ground_counter' || phase === 'air_counter' ? '现在按 F 反击 · V 切换视角'
+          : phase === 'descent' ? '按住 G 调整坠落姿态 · V 切换视角'
+            : phase === 'crater' ? '按住 G 从陨石坑站起 · V 切换视角'
+              : phase === 'surrender' ? '按住 G 明确停止抵抗 · V 切换视角'
+                : ['choice', 'vision', 'understanding', 'failed'].includes(phase ?? '') ? 'J 打开手记作出选择 · V 切换视角'
+                  : phase === 'ready' || phase === 'assault_ready' ? '靠近目标后按 G · V 切换视角'
+                    : smithFinalePerforming ? '鼠标观察 · V 切换视角 · 当前动作自动保存' : 'WASD 前往大道中央 · J 查看手记';
+    }
     if (gunner) this.el('mouse-hint').textContent = '鼠标左右瞄准 · 左键 / T 开炮 · V 切换视角 · J 手记';
     document.body.classList.toggle('neo-daily', Boolean(player?.id === 'neo' && neoLife && !player.isAwakened));
     if (!player) return;
@@ -226,7 +241,7 @@ export class PlayerExperience {
       this.el(`skill-detail-${slot}`).textContent = skill.description;
       this.el(`skill-status-${slot}`).textContent = mobilBound ? '线路封锁' : seraphDuel ? '近身考验' : locked ? '剧情解锁' : skill.matrixOnly && !player.isInMatrix ? '矩阵内' : cooldown > 0 ? `${Math.ceil(cooldown)}s` : '就绪';
       const button = this.root.querySelector<HTMLButtonElement>(`[data-skill="${slot}"]`)!;
-      button.disabled = driving || farewellPerforming || mobilBound || seraphDuel || locked || cooldown > 0 || !simulation.running || player.status !== 'alive' || skill.matrixOnly && !player.isInMatrix;
+      button.disabled = driving || farewellPerforming || smithFinalePerforming || mobilBound || seraphDuel || locked || cooldown > 0 || !simulation.running || player.status !== 'alive' || skill.matrixOnly && !player.isInMatrix;
       button.title = skill.description;
       button.style.setProperty('--cooldown', `${cooldown / skill.cooldown * 100}%`);
     });
@@ -249,7 +264,7 @@ export class PlayerExperience {
     const farewellScene = this.filmPlaying && neoLife?.journey?.scene === 'm3_farewell' && !neoLife.journey.visiting;
     const seraphOracleScene = this.filmPlaying && !neoLife?.journey?.visiting && (neoLife?.journey?.scene === 'm2_bench' || neoLife?.journey?.scene === 'm2_seraph');
     const awakeningScene = this.filmPlaying && cinematicTalkSuppressed(neoLife?.journey?.scene, neoLife?.journey?.visiting, neoLife?.journey?.step);
-    this.el('game-interaction').classList.toggle('hidden', nearby.length === 0 || player.status === 'dead' || Boolean(player.currentAction?.parameters.riding || player.currentAction?.parameters.lobbyEntry) || awakeningScene || helElevatorScene || sentinelScene || interludeScene || oracleScene || seraphOracleScene || betrayalScene || rescueScene || lobbyScene || governmentScene || airRescueScene || matrixEscapeScene || theOneScene || truckScene || baneScene || farewellScene || this.filmPlaying && Boolean(neoLife?.journey?.reloaded || neoLife?.journey?.scene === 'm2_catch') && !neoLife?.journey?.visiting);
+    this.el('game-interaction').classList.toggle('hidden', nearby.length === 0 || player.status === 'dead' || Boolean(player.currentAction?.parameters.riding || player.currentAction?.parameters.lobbyEntry) || awakeningScene || helElevatorScene || sentinelScene || interludeScene || oracleScene || seraphOracleScene || betrayalScene || rescueScene || lobbyScene || governmentScene || airRescueScene || matrixEscapeScene || theOneScene || truckScene || baneScene || farewellScene || smithFinaleScene || this.filmPlaying && Boolean(neoLife?.journey?.reloaded || neoLife?.journey?.scene === 'm2_catch') && !neoLife?.journey?.visiting);
     this.el('game-interaction').querySelector('span')!.textContent = nearby[0] ? `与 ${nearby[0].name} 交谈` : '';
     this.el('game-objective').textContent = player.isAwakened ? '你会怎样改变这个世界？' : '寻找现实背后的真相';
     this.el('game-objective-copy').textContent = player.isAwakened ? '结识同伴、探索城市，或前往地铁站寻找出口。' : `怀疑 ${Math.round(player.mind?.suspicion ?? 0)}% · 目击异常，与可信的觉醒者交谈。`;

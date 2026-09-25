@@ -13,7 +13,7 @@ export const FILM_CONSEQUENCES: Record<string, Record<string, FilmFate>> = {
   m3_bane: { bane: 'dead' },
   m3_dock_battle: { charra: 'dead', mifune: 'dead' },
   m3_farewell: { trinity: 'dead' },
-  m3_surrender: { oracle: 'alive', sati: 'alive', seraph: 'alive' },
+  m3_surrender: { smith: 'dead', oracle: 'alive', sati: 'alive', seraph: 'alive' },
   m3_neo_carried: { neo: 'missing' },
 };
 

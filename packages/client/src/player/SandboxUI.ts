@@ -26,6 +26,7 @@ import { BANE_ENCOUNTER } from '@auto_matrix/shared';
 import { LOGOS_DEFENSE } from '@auto_matrix/shared';
 import { FAREWELL, farewellLocked } from '@auto_matrix/shared';
 import { DEUS_PACT, deusPactLocked } from '@auto_matrix/shared';
+import { SMITH_FINALE, smithFinaleLocked } from '@auto_matrix/shared';
 
 const escape = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const WEATHER = { clear: '晴朗', rain: '雨', code_storm: '代码风暴' };
@@ -393,6 +394,80 @@ export class SandboxUI {
       this.el('sandbox-nearby').textContent = phase === 'ready' ? '请求谈判' : phase === 'pact' ? '进入连接座' : '进入暴雨矩阵';
       if (deusPactLocked(pact) || phase === 'failed') this.el('sandbox-waypoint').textContent = '';
       document.getElementById('game-objective')!.textContent = phase === 'connected' ? '机器连接已建立' : '机器核心 · Deus Ex Machina';
+      document.getElementById('game-objective-copy')!.textContent = hint;
+      return;
+    }
+    if (!journey.visiting && ['m3_rain', 'm3_surrender'].includes(scene.id) && journey.smithFinale) {
+      const finale = journey.smithFinale; const phase = finale.phase;
+      const near = Boolean(step && distance(player.position, filmStepPosition(scene, step)) <= 4);
+      const rain = scene.id === 'm3_rain';
+      const phaseName = phase === 'approach' ? '复制体大道' : phase === 'ready' ? '地面交锋'
+        : phase === 'ground_warning' ? 'Smith 起手' : phase === 'ground_dodge' ? '地面闪避窗口'
+          : phase === 'ground_counter' ? '地面反击窗口' : phase === 'shockwave' ? '球形冲击波'
+            : phase === 'air_warning' ? '雨云中的俯冲' : phase === 'air_dodge' ? '高空闪避窗口'
+              : phase === 'air_counter' ? '高空反击窗口' : phase === 'building' ? '撞穿楼体'
+                : phase === 'descent' ? '向街面坠落' : phase === 'crater' ? '陨石坑'
+                  : phase === 'choice' ? '为何继续' : phase === 'rain_done' ? '第一轮结束'
+                    : phase === 'assault_ready' ? '最后猛攻' : phase === 'assault' ? '预见重合'
+                      : phase === 'vision' ? 'Smith 的恐惧' : phase === 'understanding' ? '停手的意义'
+                        : phase === 'surrender' ? '主动停止抵抗' : phase === 'assimilating' ? 'Smith 同化'
+                          : phase === 'purging' ? '机器清除感染' : phase === 'done' ? '暴雨停止' : '交锋失败';
+      const hint = phase === 'approach' ? 'WASD 穿过两列 Smith，走到大道中央'
+        : phase === 'ready' ? '靠近大道中央按 G 开始最后交锋'
+          : phase === 'ground_warning' ? '看清 Smith 的起手，等闪避窗口亮起'
+            : phase === 'ground_dodge' ? `现在按 X 闪避 · 剩余 ${Math.max(0, SMITH_FINALE.ground.dodge - finale.elapsed).toFixed(1)} 秒`
+              : phase === 'ground_counter' ? `按 F 完成两次有效反击 ${finale.hits}/${SMITH_FINALE.ground.hits} · 剩余 ${Math.max(0, SMITH_FINALE.ground.counter - finale.elapsed).toFixed(1)} 秒`
+                : phase === 'air_warning' ? 'Smith 从雨云上方俯冲 · 准备闪避'
+                  : phase === 'air_dodge' ? `现在按 X 在空中错开 · 剩余 ${Math.max(0, SMITH_FINALE.air.dodge - finale.elapsed).toFixed(1)} 秒`
+                    : phase === 'air_counter' ? `现在按 F 空中反击 · 剩余 ${Math.max(0, SMITH_FINALE.air.counter - finale.elapsed).toFixed(1)} 秒`
+                      : phase === 'descent' ? `按住 G 稳住坠落姿态 · ${Math.round(finale.focus / SMITH_FINALE.descent.braceSeconds * 100)}%`
+                        : phase === 'crater' ? `按住 G 从坑底站起 · ${Math.round(finale.focus / SMITH_FINALE.crater.riseSeconds * 100)}%`
+                          : phase === 'choice' ? 'J 打开手记，亲自回答为什么仍要继续'
+                            : phase === 'rain_done' ? '按 G 继续，听完 Smith 最后的预见'
+                              : phase === 'assault_ready' ? '靠近 Smith 按 G，让最后猛攻开始'
+                                : phase === 'vision' ? 'J 打开手记，判断 Smith 真正害怕的东西'
+                                  : phase === 'understanding' ? '靠近 Smith 按 G，主动放下拳头'
+                                    : phase === 'surrender' ? `按住 G 明确接受同化 · ${Math.round(finale.focus / SMITH_FINALE.surrender.consentSeconds * 100)}%`
+                                      : phase === 'failed' ? `J 打开手记，从${finale.checkpoint === 'air' ? '高空' : '大道中央'}检查点重试`
+                                        : phase === 'done' ? '按 G 进入停战之后' : '鼠标观察 · V 切换视角 · 当前一拍自动保存';
+      const progress = phase === 'ground_warning' ? finale.elapsed / SMITH_FINALE.ground.warning * 100
+        : phase === 'ground_dodge' ? (SMITH_FINALE.ground.dodge - finale.elapsed) / SMITH_FINALE.ground.dodge * 100
+          : phase === 'ground_counter' ? (SMITH_FINALE.ground.counter - finale.elapsed) / SMITH_FINALE.ground.counter * 100
+            : phase === 'shockwave' ? finale.elapsed / SMITH_FINALE.shockwave * 100
+              : phase === 'air_warning' ? finale.elapsed / SMITH_FINALE.air.warning * 100
+                : phase === 'air_dodge' ? (SMITH_FINALE.air.dodge - finale.elapsed) / SMITH_FINALE.air.dodge * 100
+                  : phase === 'air_counter' ? (SMITH_FINALE.air.counter - finale.elapsed) / SMITH_FINALE.air.counter * 100
+                    : phase === 'building' ? finale.elapsed / SMITH_FINALE.building * 100
+                      : phase === 'descent' ? finale.focus / SMITH_FINALE.descent.braceSeconds * 100
+                        : phase === 'crater' ? finale.focus / SMITH_FINALE.crater.riseSeconds * 100
+                          : phase === 'assault' ? finale.elapsed / SMITH_FINALE.assault * 100
+                            : phase === 'surrender' ? finale.focus / SMITH_FINALE.surrender.consentSeconds * 100
+                              : phase === 'assimilating' ? finale.elapsed / SMITH_FINALE.surrender.assimilationSeconds * 100
+                                : phase === 'purging' ? finale.elapsed / SMITH_FINALE.surrender.purgeSeconds * 100 : 0;
+      const interactive = phase === 'ready' && near || phase === 'assault_ready' && near || phase === 'understanding' && near
+        || phase === 'rain_done' || phase === 'done';
+      this.el('film-sequence').classList.remove('hidden');
+      this.el('film-sequence').classList.toggle('urgent', ['ground_dodge', 'ground_counter', 'air_dodge', 'air_counter', 'failed'].includes(phase));
+      this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = hint;
+      this.el('sandbox-trace').textContent = phase === 'done' ? '机器协议 · 已完成' : `暴雨大道 · ${phaseName}`;
+      this.el('sandbox-trace').classList.toggle('danger', ['ground_dodge', 'ground_counter', 'air_dodge', 'air_counter', 'failed'].includes(phase));
+      this.el('sandbox-job').style.width = smithFinaleLocked(finale) && !['choice', 'vision', 'understanding'].includes(phase)
+        ? `${Math.max(0, Math.min(100, progress))}%` : '0';
+      this.el('sandbox-interact').classList.toggle('hidden', !interactive);
+      this.el('sandbox-nearby').textContent = phase === 'ready' ? '开始最后交锋' : phase === 'assault_ready' ? '承受最后猛攻'
+        : phase === 'understanding' ? '主动停止抵抗' : phase === 'done' ? '进入停战之后' : '继续最后的选择';
+      const actions = this.el('film-training-actions');
+      const dodge = actions.querySelector<HTMLButtonElement>('[data-combat="dodge"]')!;
+      const attack = actions.querySelector<HTMLButtonElement>('[data-combat="attack"]')!;
+      if (['ground_dodge', 'ground_counter', 'air_dodge', 'air_counter'].includes(phase)) {
+        actions.classList.remove('hidden');
+        dodge.classList.toggle('hidden', !['ground_dodge', 'air_dodge'].includes(phase)); dodge.disabled = !['ground_dodge', 'air_dodge'].includes(phase);
+        attack.classList.toggle('hidden', !['ground_counter', 'air_counter'].includes(phase)); attack.disabled = !['ground_counter', 'air_counter'].includes(phase);
+        attack.querySelector('span')!.textContent = phase === 'air_counter' ? '空中反击' : '反击 Smith';
+      }
+      if (smithFinaleLocked(finale) || phase === 'failed') this.el('sandbox-waypoint').textContent = '';
+      document.getElementById('game-objective')!.textContent = rain ? '暴雨大道 · 最后交锋' : '陨石坑 · 最后的选择';
       document.getElementById('game-objective-copy')!.textContent = hint;
       return;
     }
