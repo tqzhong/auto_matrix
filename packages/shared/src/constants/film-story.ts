@@ -91,6 +91,7 @@ export interface FilmJourney {
   garage?: import('./garage.js').GarageEscape;
   hammer?: import('./hammer-flight.js').HammerFlight;
   logos?: import('./logos-flight.js').LogosFlight;
+  farewell?: import('./farewell.js').FarewellEncounter;
   apu?: import('./dock-apu.js').ApuRun;
   dockGunnery?: import('./dock-gunnery.js').DockGunnery;
   emp?: { firedAt: number };
@@ -377,7 +378,11 @@ export const FILM_SCENES: FilmScene[] = [
   scene('m3_sun', 3, 'above_clouds', 'trinity', '第一次看见太阳', 'last_sky', 'farewell', 'Logos 短暂穿出乌云。Trinity 看见蓝天与阳光，随后飞船失去动力。', [
     { kind: 'drive', label: '驾驶受损的 Logos 穿出云层，见证阳光与失速坠落', x: 0, z: 29 },
   ], ['neo']),
-  scene('m3_farewell', 3, 'logos_wreck', 'neo', '坠落之后', 'last_sky', 'farewell', 'Logos 撞入机器城。Trinity 身受重伤，最后的路只能由 Neo 独自走完。', [walk('回到 Trinity 身边', 0, -15), think('有限的生命如何留下意义？', '失去无法被一个更大的目标抵消。你带着共同的经历继续行动。')], ['trinity']),
+  scene('m3_farewell', 3, 'logos_wreck', 'neo', '坠落之后', 'last_sky', 'farewell', 'Logos 撞入机器城。失明的 Neo 在金色余光中寻找 Trinity；最后的路只能由他独自走完。', [
+    walk('沿金色余光穿过变形的驾驶舱', 0, -10.5),
+    use('跪到 Trinity 身边，听完她最后的话', 'Neo 握住 Trinity 的手。两个人把最后的时间留给彼此。', 0, -13.5),
+    think('有限的生命如何留下意义？', '失去无法被一个更大的目标抵消。你认真听完告别，带着共同生活留下的责任继续行动。', 0, -14),
+  ], ['trinity']),
   scene('m3_deus', 3, 'machine_core', 'neo', '共同的威胁', 'pact', 'source', '机器聚成巨大的面孔。Neo 提出以清除 Smith 换取和平。', [walk('抵达连接平台', 0, -25), think('敌对双方为何还能够对话？', 'Smith 的扩张使双方都面临毁灭。合作从承认共同的脆弱开始。'), use('接受机器的连接', '机器暂缓进攻锡安，并把 Neo 接入矩阵。', 0, -25, 6)], ['deus_ex_machina']),
   scene('m3_rain', 3, 'smith_avenue', 'neo', '暴雨中的大道', 'final', 'final', '大道两侧全部是 Smith。拥有先知预见的复制体走到中央。', [walk('走到大道中央', 0, -15), fight('迎战 Smith', 1, 'smith'), use('追入被摧毁的街区', '交锋从地面延伸到空中，最终砸出深坑。', 0, -38)]),
   scene('m3_surrender', 3, 'smith_avenue', 'neo', '理解最后的选择', 'final', 'final', 'Smith 说出的预见让 Neo 理解了这场冲突的出口。', [think('胜利一定意味着压倒对方吗？', 'Neo 允许 Smith 同化自己，让机器经由仍然连接的身体抵达感染。'), use('接受同化', '金色的连接贯穿复制体。Smith 的感染被清除，暴雨结束。', 0, -38, 8)]),

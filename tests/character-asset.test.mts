@@ -8,7 +8,7 @@ import { advanceMotion, newMotion } from '../packages/client/src/agents/Characte
 import { PhoneModel } from '../packages/client/src/agents/PhoneModel.js';
 import { OfficeSetRenderer } from '../packages/client/src/engine/OfficeSetRenderer.js';
 import { NebDeckRenderer } from '../packages/client/src/engine/NebDeckRenderer.js';
-import { APARTMENT, FILM_SETS, PILL_ROOM, PILL_TIMING, RECOVERY_BED, awakeningPose, filmPosition, pillRoot, recoveryCrewPose, type PillGesture, OFFICE_WINDOW, OFFICE_LEDGE_OFFSET, officeWindowPose, officeCrossingPose, type FilmJourney } from '@auto_matrix/shared';
+import { APARTMENT, FILM_SETS, PILL_ROOM, PILL_TIMING, RECOVERY_BED, awakeningPose, farewellPose, filmPosition, pillRoot, recoveryCrewPose, type PillGesture, OFFICE_WINDOW, OFFICE_LEDGE_OFFSET, officeWindowPose, officeCrossingPose, type FilmJourney } from '@auto_matrix/shared';
 import { INTERROGATION_ROOM, interrogationRoot } from '@auto_matrix/shared';
 import { MEETING_CAR, meetingRoot, meetingCarPose } from '@auto_matrix/shared';
 import { OFFICE_WORKDAY, officeRecipientRoot, officeCourierRoot, officeClipboardPoint, officePenPoint } from '@auto_matrix/shared';
@@ -152,6 +152,33 @@ test('Morpheus and Trinity place their supporting hands on Neo during recovery',
       gaps.push({ role, gap: wrist.distanceTo(target) });
     }
     assert.ok(gaps.every(result => result.gap < .08), `supporting hands miss Neo (${gaps.map(result => `${result.role}: ${result.gap}`).join(', ')})`);
+  } finally { models.dispose(); }
+});
+
+test('Neo and Trinity make physical hand and face contact during the Logos farewell', async () => {
+  const [neo, office, trinity] = await Promise.all([loadGeometry('neo'), loadGeometry('neo-office'), loadGeometry('trinity')]);
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: (id: string) => Promise<typeof neo> }).load = async id => id === 'neo-office' ? office : id === 'trinity' ? trinity : neo;
+  try {
+    const encounter = { phase: 'goodbye' as const, elapsed: 3.4, total: 13.8 }; const pose = farewellPose(encounter);
+    const neoRig = (await models.create('neo'))!; const trinityRig = (await models.create('trinity'))!;
+    neoRig.root.position.set(pose.neo.x, 0, pose.neo.z); neoRig.root.rotation.y = pose.neo.yaw;
+    trinityRig.root.position.set(pose.trinity.x, 0, pose.trinity.z); trinityRig.root.rotation.set(-.48, pose.trinity.yaw, 0);
+    const trinityMotion = newMotion(); const trinityBase = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0,
+      realWorld: true, floorSeated: true, farewell: { ...encounter, role: 'trinity' as const } };
+    models.animate(trinityRig, advanceMotion(trinityMotion, trinityBase, 0), trinityMotion, trinityBase, 0);
+    trinityRig.root.updateMatrixWorld(true);
+    const handTarget = trinityRig.bones.get('wrist_R')!.localToWorld(new THREE.Vector3(0, -.08, .04));
+    const neoMotion = newMotion(); const neoInput = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0,
+      realWorld: true, crouching: true, farewell: { ...encounter, role: 'neo' as const, target: handTarget } };
+    models.animate(neoRig, advanceMotion(neoMotion, neoInput, 0), neoMotion, neoInput, 0); neoRig.root.updateMatrixWorld(true);
+    const held = neoRig.bones.get('wrist_R')!.getWorldPosition(new THREE.Vector3());
+    const faceTarget = neoRig.bones.get('head')!.localToWorld(new THREE.Vector3(0, .1, .08));
+    const trinityInput = { ...trinityBase, farewell: { ...trinityBase.farewell, target: faceTarget } };
+    models.animate(trinityRig, advanceMotion(trinityMotion, trinityInput, 0), trinityMotion, trinityInput, 0); trinityRig.root.updateMatrixWorld(true);
+    const touching = trinityRig.bones.get('wrist_L')!.getWorldPosition(new THREE.Vector3());
+    assert.ok(held.distanceTo(handTarget) < .09, `Neo's hand misses Trinity's: ${held.distanceTo(handTarget)}`);
+    assert.ok(touching.distanceTo(faceTarget) < .09, `Trinity's hand misses Neo's face: ${touching.distanceTo(faceTarget)}`);
   } finally { models.dispose(); }
 });
 

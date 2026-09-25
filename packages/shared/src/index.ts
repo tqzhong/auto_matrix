@@ -29,6 +29,7 @@ export * from './constants/freeway.js';
 export * from './constants/garage.js';
 export * from './constants/hammer-flight.js';
 export * from './constants/logos-flight.js';
+export * from './constants/farewell.js';
 export * from './constants/dock-apu.js';
 export * from './constants/dock-gunnery.js';
 export * from './constants/trucks.js';

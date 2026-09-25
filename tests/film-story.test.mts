@@ -2328,6 +2328,12 @@ test('the entire film route completes through interactions, driving and real com
         if (scene.id === 'm1_cypher_console') for (let frame = 0; frame < 48; frame++) h.players.step(.1, true, h.tick());
       }
       else if (step.kind === 'interact') {
+        if (scene.id === 'm3_farewell' && index === 1) {
+          h.command('act');
+          for (let frame = 0; frame < 500 && state.farewell?.phase !== 'still'; frame++) h.players.step(.05, true, h.tick());
+          assert.equal(state.farewell?.phase, 'still');
+          assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`); continue;
+        }
         if (scene.id === 'm3_bane' && index === 1) {
           h.command('act');
           h.players.receiveInput('film-player', { x: 0, z: 0, yaw: actor.rotation, jump: false, sprint: false, focus: false, sequence: ++sequence });

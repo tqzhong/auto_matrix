@@ -1,4 +1,4 @@
-import { newReloaded, BURLY, EXILES, CHATEAU, MOUNTAIN, TRUCKS, HEL_COATCHECK } from '@auto_matrix/shared';
+import { newReloaded, newFarewell, BURLY, EXILES, CHATEAU, MOUNTAIN, TRUCKS, HEL_COATCHECK } from '@auto_matrix/shared';
 // Creates an isolated visual-review save; never writes the player's data directory.
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import os from 'node:os';
@@ -485,6 +485,15 @@ if (scene.id === 'm3_hel_entry' && ['hel-door', 'hel-door-open'].includes(proces
     ally.position = filmPosition(scene.set, root.x, root.z); ally.rotation = Math.PI;
   }
   sandbox.life.film.reconcileCast();
+}
+if (scene.id === 'm3_farewell' && ['farewell-ready', 'farewell-goodbye', 'farewell-still'].includes(process.argv[3])) {
+  const journey = sandbox.life.film.state!; const variant = process.argv[3]; actor.controller = 'player';
+  journey.step = variant === 'farewell-still' ? 2 : 1;
+  journey.farewell = variant === 'farewell-ready' ? newFarewell()
+    : variant === 'farewell-goodbye' ? { phase: 'goodbye', elapsed: .4, total: 11.8 }
+      : { phase: 'still', elapsed: 0, total: 18.4 };
+  actor.position = filmStepPosition(scene, scene.steps[Math.min(journey.step, 1)]); actor.rotation = Math.PI;
+  sandbox.life.film.farewellFrame(actor, 0, 0); journey.checkpoint = { ...actor.position };
 }
 for (const resident of world.agents.values()) delete resident.controller;
 neo.isAwakened = FILM_SCENES.indexOf(scene) >= FILM_SCENES.findIndex(s => s.id === 'm1_pod');

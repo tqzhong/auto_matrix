@@ -13,6 +13,7 @@ import { oracleVisitDuration, oracleVisitLocked } from '@auto_matrix/shared';
 import { BETRAYAL, betrayalDuration, betrayalLocked } from '@auto_matrix/shared';
 import { RESCUE, rescueDuration, rescueLoadout, rescueLocked } from '@auto_matrix/shared';
 import { BANE_ENCOUNTER } from '@auto_matrix/shared';
+import { FAREWELL, farewellLocked } from '@auto_matrix/shared';
 
 const button = (target: string, label: string, disabled = false) => `<button data-action="life" data-target="film:${target}" ${disabled ? 'disabled' : ''}>${label}</button>`;
 export function renderFilmJourney(player: AgentState, sandbox: SandboxState): string {
@@ -35,6 +36,21 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
       : bane.phase === 'failed' ? `失败检查点：${bane.checkpoint === 'blind' ? '失明后' : '断电前'} · 已尝试 ${bane.attempts + 1} 次`
         : `Bane 交锋 · ${bane.phase === 'grapple' ? `还击 ${bane.hits}/2` : bane.phase === 'counter' ? `反击 ${bane.counters}/2` : '警惕电枪与铁管'}`;
     return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>Logos · 失明与金色视野</h3><p>Neo 视角 · 断电、伤势、反击与营救自动保存</p></header><article class="film-now"><div><h3>${step?.label ?? 'Trinity 已返回驾驶舱'}</h3><p>${journey.lastText}</p><p>${status}</p>${bane.phase === 'blind' ? `<div class="film-progress"><i style="width:${focus}%"></i></div>` : ''}<div class="film-controls">${action}<small>枪线亮起时 X 闪避；WASD 靠近并面向 Bane，用 F 还击；失明后按住 G，辨认金色轮廓再躲开铁管。暂停、断线和读档保留当前进度。</small></div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
+  }
+  if (!journey.visiting && scene.id === 'm3_farewell' && journey.farewell) {
+    const farewell = journey.farewell; const step = scene.steps[journey.step]; const current = player.id === journey.actor;
+    const close = current && Boolean(step && distance(player.position, filmStepPosition(scene, step)) <= 4);
+    const action = !current ? button('resume', '接回 Neo 的视角')
+      : !step ? button('next', '独自走向机器核心 →')
+        : journey.step === 0 ? '<p>合上手记，沿金色结构穿过撞毁的驾驶舱。</p>'
+          : journey.step === 1 && farewell.phase === 'ready' ? button('act', '跪到 Trinity 身边 · G', !close)
+            : journey.step === 2 ? filmReflections(scene.id).map(choice => button(`reflect:${choice.id}`, choice.label)).join('')
+              : '<button disabled>告别进行中 · 自动保存</button>';
+    const phase = farewell.phase === 'ready' ? '寻找 Trinity' : farewell.phase === 'reaching' ? '循声伸手'
+      : farewell.phase === 'discovery' ? '看见伤势' : farewell.phase === 'promise' ? '听完托付'
+        : farewell.phase === 'goodbye' ? '最后的话' : farewell.phase === 'kiss' ? '最后一吻' : '静默';
+    const progress = Math.min(100, farewell.total / FAREWELL.minimumSeconds * 100);
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>Logos 残骸 · 最后的告别</h3><p>Neo 视角 · 金色视野、人物接触与死亡结果自动保存</p></header><article class="film-now"><div><h3>${step?.label ?? '只剩前方的机器核心'}</h3><p>${journey.lastText}</p><p>${phase}${farewellLocked(farewell) ? ` · ${Math.round(progress)}%` : ''}</p>${farewellLocked(farewell) ? `<div class="film-progress"><i style="width:${progress}%"></i></div>` : ''}<div class="film-controls">${action}<small>这段没有战斗和倒计时。主动走近后让动作完成；暂停、断线与读档会保留正在进行的那一拍。</small></div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
   }
   if (!journey.visiting && scene.id === 'm1_room303' && journey.openingHotel) {
     const hotel = journey.openingHotel; const step = scene.steps[journey.step]; const current = player.id === journey.actor;

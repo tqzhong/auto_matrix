@@ -169,7 +169,7 @@
 | m3_temple_defense | 神庙最后的门 | 锡安 · 神庙洞窟 | Zee | 移动 → 交互 |
 | m3_defense | 机器城的防线 | 机器城 · 防线与乌云 | Trinity | 启航 → A/D 横移、W/S 调整高度 → G 消耗 Neo 感知击碎部分机器 → 爬升入云；碰撞/超时可失败重试 |
 | m3_sun | 第一次看见太阳 | 云层之上 · 最后的阳光 | Trinity | 启航 → W 拉升穿云 → 阳光窗口 → 引擎失速与重力坠落 |
-| m3_farewell | 坠落之后 | 机器城 · 撞毁的 Logos | Neo | 移动 → 反思 |
+| m3_farewell | 坠落之后 | 机器城 · 撞毁的 Logos | Neo | 沿金色余光穿过残骸 → 跪到 Trinity 身边按 G → 握手/发现伤势/听取托付/触脸/最后一吻 → J 反思 |
 | m3_deus | 共同的威胁 | 机器核心 · Deus Ex Machina | Neo | 移动 → 反思 → 交互 |
 | m3_rain | 暴雨中的大道 | Smith 大道 · 暴雨决战 | Neo | 移动 → 战斗 → 交互 |
 | m3_surrender | 理解最后的选择 | Smith 大道 · 暴雨决战 | Neo | 反思 → 交互 |
@@ -185,11 +185,14 @@
 
 背叛段可使用 `node --import tsx scripts/film-review-fixture.mts m1_bathroom bathroom-hold`、`bathroom-crash`，以及 `node --import tsx scripts/film-review-fixture.mts m1_unplugged unplug-window`、`unplug-counter`、`unplug-reconnect`。它们分别定位坚守、破墙、反击窗口、反击演出和重连检查点，只用于局部动作/画面验收，不能作为从黑猫到营救决定的连续游玩证据。
 
+Logos 告别段可使用 `node --import tsx scripts/film-review-fixture.mts m3_farewell farewell-ready`、`farewell-goodbye` 或 `farewell-still`，分别定位走近残骸、最后告别和死亡后的反思检查点。这些存档用于动作、镜头和恢复验证，不代表从机器城防线连续人工飞行到坠毁。
+
 ## 本轮验证（截至 2026-09-25）
 
+- 3-09 Logos 告别专项覆盖残骸内实际移动、主动跪下、七段告别时钟、Neo/Trinity 双人姿态、握手与触脸接触、最后一吻、Trinity 持久死亡、J 反思，以及暂停、断线、读档和角色占用。隔离 3030 / 5175 游戏页实际从可走阶段推进到静止阶段，并切换 V 检查第三/第一人称；暂停存档刷新后两人姿态立即恢复，控制台 warning/error 为 0，原 5174 玩家存档未替换。
 - 3-08 Logos 专项覆盖三轴驾驶、有限 Neo 感知、碰撞/超时失败、读档/断线/角色占用、穿云、阳光、失速与重力落回；专用渲染资源释放和完成后视角也有回归。隔离 3030 / 5175 游戏页实际检查防线、日出和 V 视角，控制台无 warning/error；没有替换 5174 的玩家存档，也没有把局部操控称作完整人工通关。
 - 类型检查通过，生产构建通过；Vite 仍提示主包超过 500 kB，需要后续按场景拆分以改善加载，这不是编译失败。
-- 604 项现有及新增测试全部通过。102 段路线测试已实际执行浴室坚守/击退、Tank 反击/重连及两段 Logos 航行等专用机制；其余普通节点仍可能通过测试定位完成，不是手动正常游玩录像。
+- 608 项现有及新增测试全部通过。102 段路线测试已实际执行浴室坚守/击退、Tank 反击/重连、两段 Logos 航行和 Logos 告别等专用机制；其余普通节点仍可能通过测试定位完成，不是手动正常游玩录像。
 - 在独立浏览器实例中通过实际菜单切换并截图全部 57 个场景，完成后捕获的控制台错误和警告均为 0。图集和索引保存在 output/trilogy-review/index.html、scenes.json 及 01.jpg–57.jpg。
 - 重点人工查看了大堂、城堡、先知公寓、道场、Mobil、Logos 和机器核心的实机画面。修复死亡重建离开剧情、转场镜头方向、城堡楼梯碰撞、先知厨房分隔和真实世界过暗的问题。全部地点成功载入不等于全部地点美术已经达标。
 - 原日常生活存档没有替换；3002 端口使用临时验收目录，预先开放场景回访，仅供检查。

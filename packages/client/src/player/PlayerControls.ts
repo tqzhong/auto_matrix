@@ -349,6 +349,9 @@ export class PlayerControls {
     if (state.currentAction?.parameters.truckPassenger) this.performing = true;
     if (this.motion.persephone && !state.currentAction?.parameters.persephone) this.performing = false;
     if (state.currentAction?.parameters.persephone) this.performing = true;
+    const farewell = state.currentAction?.parameters.farewell as MotionInput['farewell'];
+    if (this.motion.farewell && (!farewell || ['ready', 'still'].includes(farewell.phase))) this.performing = false;
+    if (farewell && !['ready', 'still'].includes(farewell.phase)) this.performing = true;
     if (this.motion.lobbyEntry && !state.currentAction?.parameters.lobbyEntry) this.performing = false;
     if ((state.currentAction?.parameters.lobbyEntry as MotionInput['lobbyEntry'])?.phase === 'checkpoint') this.performing = true;
     if (phoneExit) this.performing = true;
@@ -359,7 +362,7 @@ export class PlayerControls {
     this.motion.seated = state.currentAction?.parameters.seated === true;
     this.motion.floorSeated = state.currentAction?.parameters.floorSeated === true;
     this.motion.weaponStyle = state.currentAction?.parameters.weaponStyle as MotionInput['weaponStyle'] ?? (this.firearm ? this.weaponStyle : undefined);
-    this.motion.crouching = this.enabled && !this.performing && this.keys.has('KeyZ');
+    this.motion.crouching = farewell?.role === 'neo' || this.enabled && !this.performing && this.keys.has('KeyZ');
     this.motion.riding = Boolean(this.ride || this.gunner);
     this.motion.performance = this.performing ? state.currentAction?.parameters.filmPose as AwakeningPose : undefined;
     this.motion.mirrorBeat = state.currentAction?.parameters.mirrorBeat as number | undefined;
@@ -388,6 +391,7 @@ export class PlayerControls {
     this.motion.mountainFlight = state.currentAction?.parameters.mountainFlight as MotionInput['mountainFlight'];
     this.motion.truckPassenger = state.currentAction?.parameters.truckPassenger as boolean | undefined;
     this.motion.persephone = state.currentAction?.parameters.persephone as MotionInput['persephone'];
+    this.motion.farewell = farewell;
     this.motion.lobbyEntry = state.currentAction?.parameters.lobbyEntry as MotionInput['lobbyEntry'];
     this.motion.aimPitch = this.firearm || state.currentAction?.parameters.armed === true ? this.pitch : undefined;
     this.motion.mirror = this.mirror;
@@ -1167,6 +1171,16 @@ export class PlayerControls {
       if (this.firstPerson || resetCamera) this.camera.position.copy(ideal);
       else this.camera.position.lerp(ideal, 1 - Math.exp(-12 * delta));
       this.camera.lookAt(focus);
+    } else if (this.motion.farewell && this.firstPerson) {
+      const eye = new THREE.Vector3(this.position.x, this.position.y + 2.05, this.position.z + .72);
+      const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
+      this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
+    } else if (this.motion.farewell) {
+      const ideal = new THREE.Vector3(this.position.x + (this.camera.aspect < .85 ? 5.8 : 4.8), this.position.y + 4.4, this.position.z + 3.2);
+      const focus = new THREE.Vector3(this.position.x, this.position.y + 1.45, this.position.z - .35);
+      if (resetCamera || this.motion.farewell.elapsed < .12) this.camera.position.copy(ideal);
+      else this.camera.position.lerp(ideal, 1 - Math.exp(-9 * delta));
+      this.camera.lookAt(focus);
     } else if (this.firstPerson) {
       this.camera.position.copy(target);
       if (this.motion.grounded && this.motion.speed > .1) this.camera.position.y += Math.sin(this.cameraStep * 2) * .018;
@@ -1176,7 +1190,7 @@ export class PlayerControls {
       const offset = new THREE.Vector3(-Math.sin(this.yaw) * Math.cos(this.pitch), Math.sin(this.pitch) + 0.1, -Math.cos(this.yaw) * Math.cos(this.pitch));
       const shoulder = new THREE.Vector3(-Math.cos(this.yaw), 0, Math.sin(this.yaw)).multiplyScalar(this.camera.aspect < .8 ? .3 : .8);
       const pivot = this.cameraTarget.clone().add(shoulder);
-      const followDistance = this.ride?.mode ? 34 : this.ride ? 22 : this.camera.aspect < .8 ? 13 : 11.5;
+      const followDistance = this.motion.farewell ? 8.5 : this.ride?.mode ? 34 : this.ride ? 22 : this.camera.aspect < .8 ? 13 : 11.5;
       let cameraDistance = followDistance;
       for (let distance = 1; !(this.performing && state.currentLocation === 'film_power_plant_pods') && distance <= followDistance; distance += .5) {
         const point = pivot.clone().addScaledVector(offset, distance);

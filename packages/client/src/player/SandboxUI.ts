@@ -24,6 +24,7 @@ import { THE_ONE, theOneDuration, theOneLocked, theOneText } from '@auto_matrix/
 import { BURLY } from '@auto_matrix/shared';
 import { BANE_ENCOUNTER } from '@auto_matrix/shared';
 import { LOGOS_DEFENSE } from '@auto_matrix/shared';
+import { FAREWELL, farewellLocked } from '@auto_matrix/shared';
 
 const escape = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const WEATHER = { clear: '晴朗', rain: '雨', code_storm: '代码风暴' };
@@ -322,6 +323,31 @@ export class SandboxUI {
       }
       this.el('sandbox-job').style.width = phase === 'blind' ? `${bane.focus / BANE_ENCOUNTER.focusSeconds * 100}%`
         : window ? `${Math.max(0, (window - bane.elapsed) / window * 100)}%` : '0';
+      document.getElementById('game-objective-copy')!.textContent = hint;
+      return;
+    }
+    if (!journey.visiting && scene.id === 'm3_farewell' && journey.farewell) {
+      const farewell = journey.farewell; const phase = farewell.phase;
+      const phaseName = phase === 'ready' ? '寻找 Trinity' : phase === 'reaching' ? '循声伸手'
+        : phase === 'discovery' ? '看清伤势' : phase === 'promise' ? '听完托付'
+          : phase === 'goodbye' ? '最后的话' : phase === 'kiss' ? '最后一吻' : '静默';
+      const progress = Math.min(100, farewell.total / FAREWELL.minimumSeconds * 100);
+      const near = Boolean(step && distance(player.position, filmStepPosition(scene, step)) <= 4);
+      const locked = farewellLocked(farewell);
+      const hint = journey.step === 0 ? 'WASD 沿金色余光穿过残骸'
+        : phase === 'ready' ? '走到 Trinity 身边按 G · 她会等你主动开始'
+          : phase === 'still' ? 'J 打开手记，留下 Neo 对这一刻的理解'
+            : `${phaseName} · ${Math.round(progress)}% · 鼠标观察 · V 切换视角 · 当前一拍自动保存`;
+      this.el('film-sequence').classList.remove('hidden');
+      this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = hint;
+      this.el('sandbox-trace').textContent = phase === 'still' ? 'Trinity · 已离世' : `Logos 残骸 · ${phaseName}`;
+      this.el('sandbox-trace').classList.toggle('danger', false);
+      this.el('sandbox-job').style.width = locked ? `${progress}%` : '0';
+      this.el('sandbox-interact').classList.toggle('hidden', locked || phase === 'still' || !near);
+      this.el('sandbox-nearby').textContent = journey.step === 1 ? '跪到 Trinity 身边' : step?.label ?? '继续';
+      if (locked || phase === 'still') this.el('sandbox-waypoint').textContent = '';
+      document.getElementById('game-objective')!.textContent = phase === 'still' ? '告别之后' : 'Logos 残骸 · Trinity';
       document.getElementById('game-objective-copy')!.textContent = hint;
       return;
     }
