@@ -1,7 +1,7 @@
 import { reloadedLocked } from '@auto_matrix/shared';
 import * as THREE from 'three';
 import type { OfficeWorkday } from '@auto_matrix/shared';
-import type { AgentState, WorldEvent, SimulationState, SandboxState, CombatImpact, SkillCast } from '@auto_matrix/shared';
+import type { AgentState, WorldEvent, SimulationState, SandboxState, CombatImpact, SkillCast, FilmJourney } from '@auto_matrix/shared';
 import { insideLifeRoom, meetingLocked, meetingCarPose, interrogationLocked, pillLocked, lafayetteKnocking, lafayetteWelcomeLocked, awakeningLocked, mirrorSilver, oracleActing, phoneLocked, heldPhone, wakeCallLocked, sentinelLocked, interludeLocked, rescueLocked, lobbyLocked, governmentLocked, airRescueLocked, matrixEscapeLocked, theOneLocked, baneLocked, helElevatorLocked, helDanceDoorLocked, rescueLoadout, windowOpening, windowCrossing, OFFICE_CONTACT, LOBBY_ENTRY, GOVERNMENT_RESCUE, FILM_SETS, HEL_COATCHECK } from '@auto_matrix/shared';
 import { FilmSetRenderer } from './FilmSetRenderer.js';
 import { CombatEffects } from './CombatEffects.js';
@@ -22,6 +22,15 @@ export interface FrameProfile {
   calls: number;
   triangles: number;
   scene: string;
+}
+
+export function rideForPlayer(journey: FilmJourney | undefined, playerId: string | null | undefined) {
+  if (!journey || !playerId || journey.actor !== playerId || journey.visiting) return undefined;
+  if (journey.logos) return journey.logos;
+  return journey.apu?.phase === 'riding' ? journey.apu
+    : journey.hammer?.phase === 'riding' ? journey.hammer
+      : journey.garage?.phase === 'riding' ? journey.garage
+        : journey.ride?.phase === 'riding' ? journey.ride : undefined;
 }
 
 export class Engine {
@@ -406,7 +415,7 @@ export class Engine {
       this.playerControls.performing = Boolean(journey?.actor === this.playerControls.id && (gunner || journey.scene === 'm1_room303' && ['breach', 'dive', 'ladder_ready'].includes(journey.openingHotel?.phase ?? '') || journey.trucks?.phase === 'rescue' || helElevatorLocked(journey) || helDanceDoorLocked(journey) || baneLocked(journey) || meetingLocked(journey) || awakeningLocked(journey) || oracleActing(journey) || phoneLocked(journey) || wakeCallLocked(journey) || sentinelLocked(journey) || interludeLocked(journey) || rescueLocked(journey) || lobbyLocked(journey) || governmentLocked(journey) || airRescueLocked(journey) || matrixEscapeLocked(journey) || theOneLocked(journey) || reloadedLocked(journey) || windowOpening(journey) || windowCrossing(journey) || pillLocked(journey) || interrogationLocked(journey) || lafayetteKnocking(journey) || lafayetteWelcomeLocked(journey)));
       this.playerControls.mirror = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_mirror' ? mirrorSilver(journey.awakening?.elapsed ?? 0) : 0;
       this.playerControls.climbing = Boolean(journey?.actor === this.playerControls.id && !journey.visiting && (journey.scene === 'm1_ledge' && journey.step === 1 && journey.office?.climbed !== undefined || journey.scene === 'm1_room303' && journey.openingHotel?.phase === 'climbing'));
-      this.playerControls.ride = journey?.actor === this.playerControls.id && !journey.visiting ? journey.apu?.phase === 'riding' ? journey.apu : journey.hammer?.phase === 'riding' ? journey.hammer : journey.garage?.phase === 'riding' ? journey.garage : journey.ride?.phase === 'riding' ? journey.ride : undefined : undefined;
+      this.playerControls.ride = rideForPlayer(journey, this.playerControls.id);
       const coatcheck = journey?.scene === 'm3_hel_entry' && journey.step === 1 && Boolean(journey.fighting) && journey.helCoatcheck?.phase === 'combat';
       const hotel = journey?.scene === 'm1_room303' && journey.step === 1 && journey.openingHotel?.phase === 'combat' && journey.openingHotel.disarmed;
       this.playerControls.firearm = Boolean(journey && !journey.visiting && journey.actor === this.playerControls.id && (gunner || journey.scene === 'm1_lobby' && !lobbyLocked(journey) && agents[journey.actor]?.currentLocation === 'film_government_lobby' || coatcheck && agents[journey.actor]?.currentLocation === 'film_club_hel' || hotel && agents[journey.actor]?.currentLocation === 'film_heart_hotel'));

@@ -30,6 +30,7 @@ import { CHATEAU, type ChateauEncounter } from '@auto_matrix/shared';
 import { MOUNTAIN, type MountainFlight, type PlayerInput } from '@auto_matrix/shared';
 import { GARAGE, newGarageEscape, stepGarageEscape } from '@auto_matrix/shared';
 import { newHammerFlight, stepHammerFlight } from '@auto_matrix/shared';
+import { newLogosFlight, stepLogosFlight } from '@auto_matrix/shared';
 import { newApuRun, stepApuRun } from '@auto_matrix/shared';
 import { DOCK_GUNNERY, newDockGunnery, fireDockGunnery, stepDockGunnery } from '@auto_matrix/shared';
 import { TEMPLE_SEAL_SECONDS } from '@auto_matrix/shared';
@@ -3208,7 +3209,7 @@ export class FilmStorySystem {
     }
     return true;
   }
-  driving(agent: AgentState): boolean { return this.controls(agent) && !this.state?.visiting && ((this.state?.scene === 'm2_freeway' && this.state.ride?.phase === 'riding') || (this.state?.scene === 'm2_garage' && this.state.garage?.phase === 'riding') || (this.state?.scene === 'm3_hammer_tunnels' && this.state.hammer?.phase === 'riding') || (this.state?.scene === 'm3_gate' && this.state.apu?.phase === 'riding')); }
+  driving(agent: AgentState): boolean { return this.controls(agent) && !this.state?.visiting && ((this.state?.scene === 'm2_freeway' && this.state.ride?.phase === 'riding') || (this.state?.scene === 'm2_garage' && this.state.garage?.phase === 'riding') || (this.state?.scene === 'm3_hammer_tunnels' && this.state.hammer?.phase === 'riding') || (['m3_defense', 'm3_sun'].includes(this.state?.scene ?? '') && this.state?.logos?.phase === 'riding') || (this.state?.scene === 'm3_gate' && this.state.apu?.phase === 'riding')); }
   private ensureHammerRoute(): void {
     const state = this.state;
     if (state?.scene !== 'm3_hammer_tunnels' || state.step >= this.scene!.steps.length) return;
@@ -3270,8 +3271,36 @@ export class FilmStorySystem {
     else if (hit) state.lastText = `机炮击中哨兵 · 击落 ${encounter.kills}/${encounter.targets.length} · 剩余 ${encounter.ammo} 发`;
     return hit ? 'APU 机炮击中哨兵。' : '机炮弹幕掠过船坞。';
   }
-  driveFrame(agent: AgentState, input: DriveInput, dt: number, tick: number): boolean {
+  driveFrame(agent: AgentState, input: DriveInput, dt: number, tick: number, focus = false): boolean {
     if (!this.driving(agent)) return false;
+    if (this.state!.scene === 'm3_defense' || this.state!.scene === 'm3_sun') {
+      const state = this.state!; const before = state.logos!;
+      const flight = state.logos = stepLogosFlight(before, input, dt, focus);
+      const center = FILM_SETS[this.scene!.set].center;
+      agent.position = { x: center.x + flight.x, y: center.y + flight.altitude, z: center.z + flight.z };
+      agent.velocity = { x: flight.lateral, y: flight.vertical, z: -flight.speed };
+      agent.rotation = Math.PI - Math.atan2(flight.lateral, Math.max(1, flight.speed));
+      agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, riding: true, seated: true, logosPilot: true }, startedAt: tick, duration: 1, progress: 0 };
+      const neo = this.world.agents.get('neo');
+      if (neo && !neo.controller) {
+        neo.position = { x: agent.position.x + 2.1, y: agent.position.y, z: agent.position.z + 1.2 };
+        neo.currentLocation = this.scene!.set; neo.isInMatrix = false; neo.velocity = { ...agent.velocity }; neo.rotation = agent.rotation;
+        neo.currentAction = { type: 'idle', parameters: { riding: true, passenger: true, seated: true, logosPassenger: true }, startedAt: tick, duration: 1, progress: 0 };
+      }
+      if (flight.destroyed > before.destroyed) state.lastText = `Neo 击碎来袭机器；金色感知剩余 ${Math.ceil(flight.neo)}%。继续手动避开其余浮雷。`;
+      else if (flight.hits > before.hits) state.lastText = 'Logos 撞上浮雷，船壳正在解体。A / D 横移，W 爬升、S 俯冲；按住 G 让 Neo 摧毁一次迫近目标。';
+      else if (flight.stage !== before.stage) state.lastText = flight.stage === 'clouds'
+        ? 'Trinity 把船首拉向乌云。保持爬升，只有穿过云层才能越过机器群。'
+        : flight.stage === 'sun' ? 'Logos 冲出云海。Trinity 第一次看见真实的蓝天与太阳。'
+          : '引擎在阳光中熄灭。Logos 失速，重新坠向机器城。';
+      if (flight.phase === 'wrecked') {
+        agent.health = 0; agent.status = 'dead'; agent.velocity = { x: 0, y: 0, z: 0 };
+        state.lastText = flight.mode === 'defense'
+          ? 'Logos 没能穿过机器城防线。按 J 从接近航路的检查点重试。'
+          : '受损的 Logos 未能爬出云层。按 J 从云海下方重试。';
+      }
+      return true;
+    }
     if (this.state!.scene === 'm3_gate') {
       const state = this.state!; const before = state.apu!;
       const run = state.apu = stepApuRun(before, input, dt);
@@ -3562,7 +3591,7 @@ export class FilmStorySystem {
     if (target.startsWith('visit:')) {
       const visited = FILM_SCENE_BY_ID[target.slice(6)];
       if (!visited || !state.completed.includes(visited.id)) return '完成这个场景后才能回访。';
-      if (state.fighting || state.started !== undefined || state.ride?.phase === 'riding' || state.garage?.phase === 'riding' || state.hammer?.phase === 'riding' || state.apu?.phase === 'riding' || state.shipLoss?.phase === 'evacuating' || state.tunnel?.phase === 'sensing'
+      if (state.fighting || state.started !== undefined || state.ride?.phase === 'riding' || state.garage?.phase === 'riding' || state.hammer?.phase === 'riding' || state.logos?.phase === 'riding' || state.apu?.phase === 'riding' || state.shipLoss?.phase === 'evacuating' || state.tunnel?.phase === 'sensing'
         || state.scene === 'm3_bane' && state.bane && !['ready', 'defeated'].includes(state.bane.phase)
         || this.climbing(agent) || this.performing(agent)) return '先完成当前战斗或互动，再回访场景。';
       if (!state.visiting) state.returnPosition = { ...agent.position };
@@ -3773,6 +3802,7 @@ export class FilmStorySystem {
       delete state.ride;
       delete state.garage;
       delete state.hammer;
+      delete state.logos;
       delete state.apu;
       if (state.scene === 'm2_trucks') state.trucks = { phase: state.step === 0 ? 'duel' : 'collision', elapsed: 0, lastTick: tick, attempt: (state.trucks?.attempt ?? 0) + 1 };
       if (state.scene === 'm1_spoon' && state.step === 0 && state.oracle) delete state.oracle.spoon;
@@ -4131,6 +4161,15 @@ export class FilmStorySystem {
     if (state.scene === 'm2_trucks' && state.step === 2 && ['keymaker', 'neo'].some(id => this.world.agents.get(id)?.controller))
       return '钥匙匠或 Neo 正由另一位玩家控制，等待对方结束后再接应。';
     if (step.kind === 'drive') {
+      if (state.scene === 'm3_defense' || state.scene === 'm3_sun') {
+        if (this.world.agents.get('neo')?.controller) return 'Neo 正由另一位玩家控制；等待他空闲后再启动 Logos 航行。';
+        if (!state.logos) state.logos = newLogosFlight(state.scene === 'm3_defense' ? 'defense' : 'sun');
+        state.checkpoint = filmStepPosition(this.scene!, step);
+        this.driveFrame(agent, { throttle: 0, steer: 0, brake: false }, 0, tick);
+        return state.scene === 'm3_defense'
+          ? '已接管 Logos。A / D 横移，W 爬升、S 俯冲；按住 G 让 Neo 消耗感知击碎迫近目标，余下浮雷必须亲自绕开。'
+          : 'Logos 已对准云层裂口。按住 W 爬升穿出乌云；抵达阳光后引擎会因损伤失速。';
+      }
       if (state.scene === 'm3_gate') {
         if (!state.apu) state.apu = newApuRun();
         state.checkpoint = filmStepPosition(this.scene!, step);
@@ -4225,6 +4264,7 @@ export class FilmStorySystem {
     delete state.ride;
     delete state.garage;
     delete state.hammer;
+    delete state.logos;
     delete state.apu;
     delete state.dockGunnery;
     delete state.trucks;
@@ -4994,6 +5034,15 @@ export class FilmStorySystem {
     if (this.performing(actor)) return;
     if (this.climbing(actor)) return;
     if (step.kind === 'drive') {
+      if ((state.scene === 'm3_defense' || state.scene === 'm3_sun') && state.logos?.phase === 'arrived') {
+        actor.velocity = { x: 0, y: 0, z: 0 }; actor.currentAction = null;
+        const neo = this.world.agents.get('neo');
+        if (neo && !neo.controller) { neo.velocity = { x: 0, y: 0, z: 0 }; neo.currentAction = null; }
+        this.advance(state.scene === 'm3_defense'
+          ? 'Trinity 驾驶 Logos 绕过浮雷，Neo 用有限的金色感知击碎拦截机器。船首钻入乌云，最后一条航线只剩向上。'
+          : 'Logos 冲出云层。Trinity 看见真实的蓝天与太阳；数秒后引擎停转，飞船失速坠回机器城。', actor, tick);
+        return;
+      }
       if (state.scene === 'm3_gate' && state.apu?.phase === 'arrived') {
         actor.position.y = FILM_SETS[this.scene.set].center.y; actor.velocity = { x: 0, y: 0, z: 0 }; actor.currentAction = null;
         this.advance('受损 APU 已到达三号闸门。Kid 必须亲手操作门控，Hammer 才能进入船坞。', actor, tick);

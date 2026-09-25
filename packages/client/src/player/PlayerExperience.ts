@@ -181,6 +181,9 @@ export class PlayerExperience {
     this.el('r-label').textContent = gunner ? '炮位' : armed ? '换弹' : '出口接入';
     this.el('mouse-hint').textContent = armed ? '点击锁定鼠标 · 朝向辅助瞄准 · 左键 / T 射击 · R 换弹 · 右键观察' : '点击画面锁定鼠标 · F 连击，锁定后也可用左键 · 右键观察 · Esc 释放';
     if (driving) this.el('mouse-hint').textContent = 'W 加速 · S 刹车 · A / D 转向 · V 切换视角 · J 手记';
+    if (neoLife?.journey?.logos?.phase === 'riding') this.el('mouse-hint').textContent = neoLife.journey.logos.mode === 'defense'
+      ? 'W 爬升 · S 俯冲 · A / D 横移 · G / 右键 Neo 感知 · V 切换视角'
+      : 'W 爬升穿云 · A / D 修正姿态 · V 切换视角 · J 手记';
     if (gunner) this.el('mouse-hint').textContent = '鼠标左右瞄准 · 左键 / T 开炮 · V 切换视角 · J 手记';
     document.body.classList.toggle('neo-daily', Boolean(player?.id === 'neo' && neoLife && !player.isAwakened));
     if (!player) return;

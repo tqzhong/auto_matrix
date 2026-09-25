@@ -51,7 +51,7 @@ export class PlayerControls {
   firearm = false;
   weaponStyle?: RescueLoadout | 'hel_pistol';
   fireInterval = LOBBY_FIRE_INTERVAL;
-  ride?: Pick<FreewayRide, 'speed'>;
+  ride?: Pick<FreewayRide, 'speed'> & { mode?: 'defense' | 'sun' };
   gunner = false;
   climbing = false;
   performing = false;
@@ -1176,7 +1176,7 @@ export class PlayerControls {
       const offset = new THREE.Vector3(-Math.sin(this.yaw) * Math.cos(this.pitch), Math.sin(this.pitch) + 0.1, -Math.cos(this.yaw) * Math.cos(this.pitch));
       const shoulder = new THREE.Vector3(-Math.cos(this.yaw), 0, Math.sin(this.yaw)).multiplyScalar(this.camera.aspect < .8 ? .3 : .8);
       const pivot = this.cameraTarget.clone().add(shoulder);
-      const followDistance = this.ride ? 22 : this.camera.aspect < .8 ? 13 : 11.5;
+      const followDistance = this.ride?.mode ? 34 : this.ride ? 22 : this.camera.aspect < .8 ? 13 : 11.5;
       let cameraDistance = followDistance;
       for (let distance = 1; !(this.performing && state.currentLocation === 'film_power_plant_pods') && distance <= followDistance; distance += .5) {
         const point = pivot.clone().addScaledVector(offset, distance);

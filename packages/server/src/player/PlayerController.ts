@@ -79,6 +79,7 @@ export class PlayerController {
     if (id === 'keymaker' && this.sandbox?.life.film.state?.ride?.phase === 'riding') return { error: '钥匙匠正在后座接受护送，抵达接应区后可以接入。' };
     if (['keymaker', 'morpheus', 'twin1', 'twin2'].includes(id) && this.sandbox?.life.film.state?.garage?.phase === 'riding') return { error: '这个角色正在车库追逐中，轿车冲出车库后可以接入。' };
     if (['morpheus', 'roland'].includes(id) && this.sandbox?.life.film.state?.hammer?.phase === 'riding') return { error: '这个角色正在 Hammer 舰桥协助 Niobe 驾驶，驶出管线后可以接入。' };
+    if (id === 'neo' && this.sandbox?.life.film.state?.logos?.phase === 'riding') return { error: 'Neo 正在 Logos 驾驶舱为 Trinity 指引航线，航行结束后可以接入。' };
     if (id === 'kid' && this.sandbox?.life.film.state?.dockGunnery?.phase === 'firing') return { error: 'Kid 正在船坞推送弹药车。掩护完成后可以接入。' };
     if (['keymaker', 'neo', 'agent_johnson'].includes(id) && ['collision', 'rescue'].includes(this.sandbox?.life.film.state?.trucks?.phase ?? '')) return { error: '这个角色正在卡车对撞接应中，抵达安全地点后可以接入。' };
     if (['trainman', 'rama_kandra', 'kamala', 'sati'].includes(id) && this.sandbox?.life.film.state?.scene === 'm3_trainman'
@@ -313,7 +314,8 @@ export class PlayerController {
       if (this.sandbox?.life.film.climbFrame(agent, input.climb ?? 0, dt, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; continue;
       }
-      if (this.sandbox?.life.film.driveFrame(agent, input.drive ?? { throttle: 0, steer: 0, brake: true }, dt, tick)) {
+      if (this.sandbox?.life.film.driveFrame(agent, input.drive ?? { throttle: 0, steer: 0,
+        brake: this.sandbox.life.film.state?.logos?.phase !== 'riding' }, dt, tick, Boolean(input.focus))) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.strike = undefined; session.impulse = undefined; session.palm = undefined; session.input.jump = false;
         continue;
       }
@@ -418,7 +420,8 @@ export class PlayerController {
     if (this.sandbox?.life.film.state && sentinelActive(this.sandbox.life.film.state) && ['attack', 'shoot', 'ability', 'ability2', 'dodge', 'travel'].includes(kind)) return '哨兵正在附近扫描。保持安静，武器和能力会暴露整艘船。';
     if (this.sandbox?.life.film.driving(agent) && ['attack', 'shoot', 'ability', 'ability2', 'dodge', 'travel'].includes(kind)) return this.sandbox.life.film.state?.scene === 'm3_hammer_tunnels'
       ? '正在驾驶 Hammer。W 加速，S 刹车，A / D 控制侧向推进器。' : this.sandbox.life.film.state?.scene === 'm3_gate'
-        ? '正在驾驶受损 APU。W 前进，S 制动，A / D 横向避开哨兵。' : '正在护送钥匙匠。W 加速，S 刹车，A / D 转向。';
+        ? '正在驾驶受损 APU。W 前进，S 制动，A / D 横向避开哨兵。' : ['m3_defense', 'm3_sun'].includes(this.sandbox.life.film.state?.scene ?? '')
+          ? '正在驾驶 Logos。W 爬升，S 俯冲，A / D 横移；G 让 Neo 感知迫近目标。' : '正在护送钥匙匠。W 加速，S 刹车，A / D 转向。';
     if (this.sandbox?.life.film.state?.scene === 'm2_seraph' && this.sandbox.life.film.state.fighting && ['shoot', 'ability', 'ability2'].includes(kind)) return 'Seraph 要看近身攻防。观察起手，X 闪避后用 F 反击。';
     if (this.sandbox?.life.film.controls(agent) && ['m3_mobil', 'm3_family', 'm3_trainman'].includes(this.sandbox.life.film.state!.scene)
       && ['ability', 'ability2', 'travel'].includes(kind)) return 'Mobil Ave 的边界由 Trainman 控制，Neo 的能力不能直接打开这条线路。';

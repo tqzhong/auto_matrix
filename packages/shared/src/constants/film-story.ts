@@ -90,6 +90,7 @@ export interface FilmJourney {
   ride?: import('./freeway.js').FreewayRide;
   garage?: import('./garage.js').GarageEscape;
   hammer?: import('./hammer-flight.js').HammerFlight;
+  logos?: import('./logos-flight.js').LogosFlight;
   apu?: import('./dock-apu.js').ApuRun;
   dockGunnery?: import('./dock-gunnery.js').DockGunnery;
   emp?: { firedAt: number };
@@ -370,8 +371,12 @@ export const FILM_SCENES: FilmScene[] = [
     use('锁住左侧手动卡榫', '左侧卡榫落位；没有电力，另一边也必须由人亲手扳紧。', -8, -45, 2),
     use('锁住右侧手动卡榫', '两侧卡榫咬合，厚重闸门在机器群抵达前落下。Zee 与 Link 暂时守住居民。', 8, -45, 2),
   ], ['link', 'hamann', 'kid', 'zion_parent', 'zion_neighbor']),
-  scene('m3_defense', 3, 'machine_defense', 'trinity', '机器城的防线', 'last_sky', 'chase', 'Logos 接近机器城，浮动炸弹和密集机器封锁航路。', [use('沿 Neo 指引调整航线', 'Neo 感知并破坏部分来袭机器，过载却让他的身体越来越虚弱。', 0, -20, 6), walk('转向上方的云层', 0, -40)], ['neo']),
-  scene('m3_sun', 3, 'above_clouds', 'trinity', '第一次看见太阳', 'last_sky', 'farewell', 'Logos 短暂穿出乌云。Trinity 看见蓝天与阳光，随后飞船失去动力。', [walk('靠近驾驶舷窗', 0, -20), use('望向云层之上的天空', '阳光只停留片刻。飞船再次坠入云层。', 0, -20, 8)], ['neo']),
+  scene('m3_defense', 3, 'machine_defense', 'trinity', '机器城的防线', 'last_sky', 'chase', 'Logos 接近机器城，浮动炸弹和密集机器封锁航路。', [
+    { kind: 'drive', label: '驾驶 Logos 穿过浮雷与机器群，爬升进入云层', x: 0, z: 42 },
+  ], ['neo']),
+  scene('m3_sun', 3, 'above_clouds', 'trinity', '第一次看见太阳', 'last_sky', 'farewell', 'Logos 短暂穿出乌云。Trinity 看见蓝天与阳光，随后飞船失去动力。', [
+    { kind: 'drive', label: '驾驶受损的 Logos 穿出云层，见证阳光与失速坠落', x: 0, z: 29 },
+  ], ['neo']),
   scene('m3_farewell', 3, 'logos_wreck', 'neo', '坠落之后', 'last_sky', 'farewell', 'Logos 撞入机器城。Trinity 身受重伤，最后的路只能由 Neo 独自走完。', [walk('回到 Trinity 身边', 0, -15), think('有限的生命如何留下意义？', '失去无法被一个更大的目标抵消。你带着共同的经历继续行动。')], ['trinity']),
   scene('m3_deus', 3, 'machine_core', 'neo', '共同的威胁', 'pact', 'source', '机器聚成巨大的面孔。Neo 提出以清除 Smith 换取和平。', [walk('抵达连接平台', 0, -25), think('敌对双方为何还能够对话？', 'Smith 的扩张使双方都面临毁灭。合作从承认共同的脆弱开始。'), use('接受机器的连接', '机器暂缓进攻锡安，并把 Neo 接入矩阵。', 0, -25, 6)], ['deus_ex_machina']),
   scene('m3_rain', 3, 'smith_avenue', 'neo', '暴雨中的大道', 'final', 'final', '大道两侧全部是 Smith。拥有先知预见的复制体走到中央。', [walk('走到大道中央', 0, -15), fight('迎战 Smith', 1, 'smith'), use('追入被摧毁的街区', '交锋从地面延伸到空中，最终砸出深坑。', 0, -38)]),

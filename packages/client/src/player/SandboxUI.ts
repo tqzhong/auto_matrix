@@ -23,6 +23,7 @@ import { MATRIX_ESCAPE, matrixEscapeDuration, matrixEscapeLocked, matrixEscapeTe
 import { THE_ONE, theOneDuration, theOneLocked, theOneText } from '@auto_matrix/shared';
 import { BURLY } from '@auto_matrix/shared';
 import { BANE_ENCOUNTER } from '@auto_matrix/shared';
+import { LOGOS_DEFENSE } from '@auto_matrix/shared';
 
 const escape = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const WEATHER = { clear: '晴朗', rain: '雨', code_storm: '代码风暴' };
@@ -1143,6 +1144,22 @@ export class SandboxUI {
       this.el('film-ride-health').textContent = `船体 ${Math.ceil(flight.hull)}% · 哨兵 ${Math.ceil(flight.pursuit)}% · ${flight.antennaLost ? '通讯已断' : '通讯正常'}`;
       this.el('sandbox-waypoint').textContent = `锡安管线出口 ↑ ${Math.max(0, Math.round(flight.z + 175))} m`;
       document.getElementById('game-objective-copy')!.textContent = '沿机械管线转弯，避开横梁 · 低速会让哨兵追上';
+      this.el('sandbox-interact').classList.add('hidden'); return;
+    }
+    if ((scene.id === 'm3_defense' || scene.id === 'm3_sun') && journey.logos?.phase === 'riding' && !journey.visiting) {
+      const flight = journey.logos;
+      const sun = flight.mode === 'sun';
+      this.el('film-ride').classList.remove('hidden');
+      this.el('film-ride-title').textContent = sun ? 'TRINITY / 云层之上' : 'TRINITY / LOGOS';
+      this.el('film-ride-controls').textContent = flight.stage === 'sun' ? '阳光窗口 · 观察真实天空'
+        : flight.stage === 'stall' ? '引擎熄火 · 飞船正在失速' : sun ? 'W 爬升 · A / D 修正姿态' : 'W 爬升 · S 俯冲 · A / D 横移 · G / 右键 Neo 感知';
+      this.el('film-ride-speed').textContent = `${Math.round(flight.altitude)} m · ${Math.round(flight.speed * 3.6)} km/h`;
+      this.el('film-ride-health').textContent = sun ? `船体 ${Math.ceil(flight.hull)}% · ${flight.stage === 'clouds' ? '云层内' : flight.stage === 'sun' ? '阳光中' : '动力失效'}`
+        : `船体 ${Math.ceil(flight.hull)}% · Neo ${Math.ceil(flight.neo)}% · 击碎 ${flight.destroyed}/${LOGOS_DEFENSE.threats.length}`;
+      this.el('sandbox-waypoint').textContent = sun ? flight.stage === 'clouds' ? `云顶 ↑ ${Math.max(0, Math.ceil(29 - flight.altitude))} m` : flight.stage === 'sun' ? '真实天空 · 保持航向' : '机器城 ↓ 失速'
+        : `云层入口 ↑ ${Math.max(0, Math.round(flight.z - LOGOS_DEFENSE.finish))} m`;
+      document.getElementById('game-objective-copy')!.textContent = sun ? flight.stage === 'clouds' ? '把受损的 Logos 拉出黑云' : flight.stage === 'sun' ? 'Trinity 第一次看见真实的太阳' : '动力熄灭 · Logos 坠回机器城'
+        : '手动绕开浮雷 · Neo 的感知只能摧毁部分来袭机器 · 末段必须爬升';
       this.el('sandbox-interact').classList.add('hidden'); return;
     }
     if (scene.id === 'm3_gate' && journey.apu?.phase === 'riding' && !journey.visiting) {

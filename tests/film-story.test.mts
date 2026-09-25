@@ -11,7 +11,7 @@ import type { ActionExecutor } from '../packages/server/src/agents/ActionExecuto
 import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
 import { musicForScene } from '../packages/client/src/engine/Soundtrack.js';
 import { HOTEL_ROUTE, HOTEL_DOOR_PROGRESS } from '@auto_matrix/shared';
-import { hammerCenter } from '@auto_matrix/shared';
+import { hammerCenter, LOGOS_DEFENSE } from '@auto_matrix/shared';
 
 function setup() {
   const world = new WorldState(); const manager = new AgentManager(world); manager.initializeAllAgents();
@@ -2516,6 +2516,29 @@ test('the entire film route completes through interactions, driving and real com
             h.players.step(.05, true, h.tick());
           }
           assert.equal(state.apu?.phase, 'arrived'); h.advance();
+        } else if (scene.id === 'm3_defense') {
+          for (let frame = 0; state.logos?.phase === 'riding' && frame < 600; frame++) {
+            const flight = state.logos;
+            const next = LOGOS_DEFENSE.threats.find((threat, threatIndex) => !(flight.resolved & 1 << threatIndex) && threat.z < flight.z + 2);
+            const focus = Boolean(next && next.z > flight.z - 22 && next.id % 2 === 0 && flight.neo >= LOGOS_DEFENSE.pulseCost);
+            let targetX = 0, targetAltitude = flight.z < -31 ? 41 : 25;
+            if (next && !focus && next.z > flight.z - 27) {
+              targetX = next.x > 0 ? next.x - 13 : next.x + 13;
+              targetAltitude = next.altitude > 27 ? next.altitude - 11 : next.altitude + 11;
+            }
+            const steer = Math.max(-1, Math.min(1, (targetX - flight.x) * .16 - flight.lateral * .1));
+            h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, sprint: false, jump: false, focus,
+              drive: { throttle: targetAltitude > flight.altitude + .8 ? 1 : 0, steer, brake: targetAltitude < flight.altitude - .8 }, sequence: ++sequence });
+            h.players.step(.05, true, h.tick());
+          }
+          assert.equal(state.logos?.phase, 'arrived'); h.advance();
+        } else if (scene.id === 'm3_sun') {
+          for (let frame = 0; state.logos?.phase === 'riding' && frame < 600; frame++) {
+            h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, sprint: false, jump: false,
+              drive: { throttle: state.logos.stage === 'clouds' ? 1 : 0, steer: 0, brake: false }, sequence: ++sequence });
+            h.players.step(.05, true, h.tick());
+          }
+          assert.equal(state.logos?.phase, 'arrived'); h.advance();
         } else rideToExit(h);
       }
       else {
