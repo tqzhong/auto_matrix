@@ -7,7 +7,8 @@ import { HeroModels, type HeroRig } from '../packages/client/src/agents/HeroMode
 import { advanceMotion, newMotion } from '../packages/client/src/agents/CharacterMotion.js';
 import { PhoneModel } from '../packages/client/src/agents/PhoneModel.js';
 import { OfficeSetRenderer } from '../packages/client/src/engine/OfficeSetRenderer.js';
-import { APARTMENT, FILM_SETS, PILL_ROOM, PILL_TIMING, awakeningPose, filmPosition, pillRoot, recoveryCrewPose, type PillGesture, OFFICE_WINDOW, OFFICE_LEDGE_OFFSET, officeWindowPose, officeCrossingPose, type FilmJourney } from '@auto_matrix/shared';
+import { NebDeckRenderer } from '../packages/client/src/engine/NebDeckRenderer.js';
+import { APARTMENT, FILM_SETS, PILL_ROOM, PILL_TIMING, RECOVERY_BED, awakeningPose, filmPosition, pillRoot, recoveryCrewPose, type PillGesture, OFFICE_WINDOW, OFFICE_LEDGE_OFFSET, officeWindowPose, officeCrossingPose, type FilmJourney } from '@auto_matrix/shared';
 import { INTERROGATION_ROOM, interrogationRoot } from '@auto_matrix/shared';
 import { MEETING_CAR, meetingRoot, meetingCarPose } from '@auto_matrix/shared';
 import { OFFICE_WORKDAY, officeRecipientRoot, officeCourierRoot, officeClipboardPoint, officePenPoint } from '@auto_matrix/shared';
@@ -152,6 +153,28 @@ test('Morpheus and Trinity place their supporting hands on Neo during recovery',
     }
     assert.ok(gaps.every(result => result.gap < .08), `supporting hands miss Neo (${gaps.map(result => `${result.role}: ${result.gap}`).join(', ')})`);
   } finally { models.dispose(); }
+});
+
+test('the articulated recovery needles meet the shipped Neo skeleton', async () => {
+  const [neo, office] = await Promise.all([loadGeometry('neo'), loadGeometry('neo-office')]);
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture()); const set = new THREE.Group(); const medical = new NebDeckRenderer(set);
+  (models as unknown as { load: (id: string) => Promise<typeof neo> }).load = async id => id === 'neo-office' ? office : neo;
+  try {
+    const elapsed = 4; const rig = (await models.create('neo'))!; const root = awakeningPose({ kind: 'recovery', elapsed, started: true });
+    rig.root.position.set(root.x, -1, root.z); rig.root.rotation.y = Math.PI;
+    const motion = newMotion(); const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true,
+      performance: 'recover' as const, recovery: elapsed };
+    models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
+    const journey = { version: 1, scene: 'm1_recovery', step: 0, actor: 'neo', completed: [], enteredAt: 0,
+      checkpoint: filmPosition('film_neb_deck', RECOVERY_BED.x, RECOVERY_BED.z), reflections: {}, lastText: '',
+      awakening: { kind: 'recovery', elapsed, started: true } } satisfies FilmJourney;
+    medical.update(journey, elapsed, rig.root); set.updateMatrixWorld(true);
+    for (const [index, boneName, offset] of [[0, 'chest', [-.24, .08, .06]], [6, 'hip_L', [0, .08, .04]], [10, 'ankle_L', [0, .06, .04]]] as const) {
+      const target = rig.bones.get(boneName)!.localToWorld(new THREE.Vector3(...offset));
+      const tip = set.getObjectByName(`neb-medical-needle-tip-${index}`)!.getWorldPosition(new THREE.Vector3());
+      assert.ok(tip.distanceTo(target) < .035, `${boneName} needle misses the posed body: ${tip.distanceTo(target)}`);
+    }
+  } finally { medical.dispose(); models.dispose(); }
 });
 
 test('Trinity’s fitted outfit has no open waist during the club conversation', async () => {

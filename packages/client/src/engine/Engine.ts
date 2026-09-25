@@ -150,6 +150,7 @@ export class Engine {
     measure?.('controls');
     this.agentRenderer.update(delta, this.camera, this.simulationSpeed, this.tick, meeting);
     this.filmSets.setMirrorSubject(this.playerControls?.id ? this.agentRenderer.getAgentBody(this.playerControls.id) : undefined);
+    this.filmSets.setRecoverySubject(this.agentRenderer.getAgentBody('neo'));
     measure?.('agents');
     this.voxelRenderer.update(this.elapsed, this.playerControls?.id ? this.camera : undefined);
     const player = this.playerControls?.id ? this.agentRenderer.getAgentState(this.playerControls.id) : undefined;

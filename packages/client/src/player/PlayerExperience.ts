@@ -9,8 +9,8 @@ export function savedEntryCharacter(chosen: string | null, journeyActor: string 
   return !explicitChoice && journeyActor ? journeyActor : chosen ?? 'neo';
 }
 
-export function cinematicTalkSuppressed(scene: string | undefined, visiting: string | undefined): boolean {
-  return !visiting && (scene === 'm1_construct' || scene === 'm1_desert');
+export function cinematicTalkSuppressed(scene: string | undefined, visiting: string | undefined, step?: number): boolean {
+  return !visiting && (scene === 'm1_construct' || scene === 'm1_desert' || scene === 'm1_recovery' && step === 0);
 }
 
 export interface PlayerExperienceActions {
@@ -230,7 +230,7 @@ export class PlayerExperience {
     const truckScene = this.filmPlaying && neoLife?.journey?.scene === 'm2_trucks' && !neoLife.journey.visiting && neoLife.journey.step < 3;
     const baneScene = this.filmPlaying && neoLife?.journey?.scene === 'm3_bane' && !neoLife.journey.visiting;
     const seraphOracleScene = this.filmPlaying && !neoLife?.journey?.visiting && (neoLife?.journey?.scene === 'm2_bench' || neoLife?.journey?.scene === 'm2_seraph');
-    const awakeningScene = this.filmPlaying && cinematicTalkSuppressed(neoLife?.journey?.scene, neoLife?.journey?.visiting);
+    const awakeningScene = this.filmPlaying && cinematicTalkSuppressed(neoLife?.journey?.scene, neoLife?.journey?.visiting, neoLife?.journey?.step);
     this.el('game-interaction').classList.toggle('hidden', nearby.length === 0 || player.status === 'dead' || Boolean(player.currentAction?.parameters.riding || player.currentAction?.parameters.lobbyEntry) || awakeningScene || helElevatorScene || sentinelScene || interludeScene || oracleScene || seraphOracleScene || betrayalScene || rescueScene || lobbyScene || governmentScene || airRescueScene || matrixEscapeScene || theOneScene || truckScene || baneScene || this.filmPlaying && Boolean(neoLife?.journey?.reloaded || neoLife?.journey?.scene === 'm2_catch') && !neoLife?.journey?.visiting);
     this.el('game-interaction').querySelector('span')!.textContent = nearby[0] ? `与 ${nearby[0].name} 交谈` : '';
     this.el('game-objective').textContent = player.isAwakened ? '你会怎样改变这个世界？' : '寻找现实背后的真相';

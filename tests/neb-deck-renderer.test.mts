@@ -42,3 +42,23 @@ test('the Nebuchadnezzar recovery set has a solid medical bed, moving needle gan
     for (const z of [-15, -8, 0]) assert.equal(playerBlocked(filmPosition('film_neb_deck', 0, z), false), false, `the central aisle stays open at ${z}`);
   } finally { renderer.dispose(); }
 });
+
+test('the recovery needle tips follow Neo’s posed body instead of stopping above the mattress', () => {
+  const root = new THREE.Group(); const renderer = new NebDeckRenderer(root);
+  const neo = new THREE.Group();
+  const chest = new THREE.Bone(); chest.name = 'chest'; chest.position.set(RECOVERY_BED.x, 2.28, RECOVERY_BED.z - .72); neo.add(chest);
+  const journey = { version: 1, scene: 'm1_recovery', step: 0, actor: 'neo', completed: [], enteredAt: 0,
+    checkpoint: filmPosition('film_neb_deck', RECOVERY_BED.x, RECOVERY_BED.z), reflections: {}, lastText: '',
+    awakening: { kind: 'recovery', elapsed: 4, started: true } } satisfies FilmJourney;
+  try {
+    neo.updateMatrixWorld(true); renderer.update(journey, 4, neo); root.updateMatrixWorld(true);
+    const tip = root.getObjectByName('neb-medical-needle-tip-0');
+    assert.ok(tip, 'the first medical needle needs a separately animated contact tip');
+    const expected = chest.localToWorld(new THREE.Vector3(-.24, .08, .06));
+    const contact = tip!.getWorldPosition(new THREE.Vector3());
+    assert.ok(contact.distanceTo(expected) < .035, `needle tip must meet the posed chest: ${contact.toArray()} vs ${expected.toArray()}`);
+    const shaft = root.getObjectByName('neb-medical-needle-0')!;
+    const axis = new THREE.Vector3(0, 1, 0).applyQuaternion(shaft.getWorldQuaternion(new THREE.Quaternion()));
+    assert.ok(Math.abs(axis.dot(new THREE.Vector3(0, 1, 0))) > .96, `the sliding carriage must keep the needle nearly vertical, not crossed over the body: ${axis.toArray()}`);
+  } finally { renderer.dispose(); }
+});

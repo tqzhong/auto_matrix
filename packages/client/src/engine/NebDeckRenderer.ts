@@ -17,7 +17,7 @@ export class NebDeckRenderer {
   private amber = this.material(new THREE.MeshBasicMaterial({ color: 0xd49d5d, toneMapped: false }));
   private glass = this.material(new THREE.MeshPhysicalMaterial({ color: 0x879b94, transparent: true, opacity: .23, roughness: .18, metalness: .22, side: THREE.DoubleSide, depthWrite: false }));
   private gantry = new THREE.Group();
-  private needles: THREE.Mesh[] = [];
+  private needles: { shaft: THREE.Mesh; tip: THREE.Mesh; hub: THREE.Mesh; anchorY: number; bone: string; offset: THREE.Vector3 }[] = [];
   private downloadRig = new THREE.Group();
   private downloadConnector = new THREE.Group();
   private downloadBars: THREE.Mesh[] = [];
@@ -125,11 +125,17 @@ export class NebDeckRenderer {
       this.box(this.gantry, this.dark, side * 2.45, -2.7, 0, .34, 5.5, 7);
       this.pipe([new THREE.Vector3(RECOVERY_BED.x + side * 2.45, 6.2, RECOVERY_BED.z - 3.2), new THREE.Vector3(RECOVERY_BED.x + side * 4, 9.8, RECOVERY_BED.z - 4), new THREE.Vector3(side * 16, 14, -29)], .15, this.rubber);
     }
-    for (let i = 0; i < 12; i++) {
-      const x = -1.5 + i % 4; const z = -2.1 + Math.floor(i / 4) * 2.1;
-      const needle = this.cylinder(this.gantry, i % 3 ? this.steel : this.amber, x, -1.65, z, .028, 2.7, `neb-medical-needle-${i}`);
-      needle.userData.baseY = needle.position.y; this.needles.push(needle);
-      this.cylinder(this.gantry, this.rubber, x, -.35, z, .11, .4);
+    const contacts = [
+      ['chest', -.24, .08, .06], ['chest', .24, .08, .06], ['spine', -.18, .07, .08], ['spine', .18, .07, .08],
+      ['pelvis', -.2, .08, .05], ['pelvis', .2, .08, .05], ['hip_L', 0, .08, .04], ['hip_R', 0, .08, .04],
+      ['knee_L', 0, .07, .04], ['knee_R', 0, .07, .04], ['ankle_L', 0, .06, .04], ['ankle_R', 0, .06, .04],
+    ] as const;
+    for (let i = 0; i < contacts.length; i++) {
+      const x = -1.5 + i % 4; const z = -2.1 + Math.floor(i / 4) * 2.1; const [bone, ox, oy, oz] = contacts[i];
+      const shaft = this.cylinder(this.gantry, this.steel, x, -1, z, .014, 1, `neb-medical-needle-${i}`);
+      const tip = this.mesh(this.gantry, new THREE.SphereGeometry(.035, 10, 7), i % 3 ? this.steel : this.amber, `neb-medical-needle-tip-${i}`);
+      const hub = this.cylinder(this.gantry, this.rubber, x, -.35, z, .1, .4, `neb-medical-needle-carriage-${i}`);
+      this.needles.push({ shaft, tip, hub, anchorY: -.55, bone, offset: new THREE.Vector3(ox, oy, oz) });
     }
     const curtain = this.box(this.root, this.glass, -1.1, 4.3, -22, .06, 7.4, 11); curtain.name = 'neb-medical-curtain';
     this.pointLight('neb-medical-task-light', 0xd9e6dc, 260, 22, -5.5, 9.2, -20.5);
@@ -320,7 +326,7 @@ export class NebDeckRenderer {
     for (let i = 0; i < 4; i++) this.cylinder(tray, bowl, -1.35 + i * .9, .24, 0, .32, .27);
   }
 
-  update(journey: FilmJourney | undefined, elapsed: number): void {
+  update(journey: FilmJourney | undefined, elapsed: number, recoverySubject?: THREE.Object3D): void {
     const loss = journey?.scene === 'm2_ship_lost' && !journey.visiting ? journey.shipLoss : undefined;
     this.shipLossRig.visible = Boolean(loss);
     if (loss) {
@@ -338,9 +344,21 @@ export class NebDeckRenderer {
     const retract = active ? THREE.MathUtils.smoothstep(t, 7.5, 9.2) : 0;
     this.gantry.position.y = 6.2 - descend * 1.15 + retract * 6;
     this.gantry.rotation.z = Math.sin(elapsed * 2.1) * .004 * descend;
+    this.root.updateWorldMatrix(true, true); recoverySubject?.updateWorldMatrix(true, true); this.gantry.updateWorldMatrix(true, true);
     this.needles.forEach((needle, i) => {
-      needle.position.y = Number(needle.userData.baseY) - descend * (.18 + (i % 3) * .07);
-      needle.visible = Boolean(recovery);
+      const bone = recoverySubject?.getObjectByName(needle.bone);
+      const fallback = new THREE.Vector3(RECOVERY_BED.x - this.gantry.position.x + (i % 2 ? .32 : -.32), 2.32 - this.gantry.position.y,
+        RECOVERY_BED.z - this.gantry.position.z - 2.1 + Math.floor(i / 4) * 2.1);
+      const target = bone ? this.gantry.worldToLocal(bone.localToWorld(needle.offset.clone())) : fallback;
+      const insert = active ? THREE.MathUtils.smoothstep(t, 2.1 + i % 4 * .12, 3.25 + i % 4 * .12)
+        * (1 - THREE.MathUtils.smoothstep(t, 6.75 + Math.floor(i / 4) * .08, 8.15 + Math.floor(i / 4) * .08)) : 0;
+      const anchor = new THREE.Vector3(target.x, needle.anchorY, target.z);
+      const tip = anchor.clone().add(new THREE.Vector3(0, -.72, 0)).lerp(target, insert);
+      const direction = tip.clone().sub(anchor); const length = direction.length();
+      needle.hub.position.set(anchor.x, -.35, anchor.z);
+      needle.shaft.position.copy(anchor).add(tip).multiplyScalar(.5);
+      needle.shaft.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize()); needle.shaft.scale.y = length;
+      needle.tip.position.copy(tip); needle.shaft.visible = needle.tip.visible = Boolean(recovery);
     });
     const training = journey?.scene === 'm1_download' && !journey.visiting && journey.training?.kind === 'download' ? journey.training : undefined;
     this.downloadRig.visible = Boolean(training);

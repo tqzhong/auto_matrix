@@ -110,6 +110,7 @@ export class FilmSetRenderer {
   private currentScene?: string;
   private mirror?: Reflector;
   private mirrorSubject?: THREE.Object3D;
+  private recoverySubject?: THREE.Object3D;
   private mirrorCracks?: THREE.Group;
   private trackingHeadset?: THREE.Group;
   private oracleVase?: OracleVase;
@@ -174,6 +175,7 @@ export class FilmSetRenderer {
   get active(): FilmSet | undefined { return this.current; }
   get televisionPreviewImage(): string | undefined { return this.construct?.televisionPreviewImage; }
   setMirrorSubject(subject?: THREE.Object3D): void { this.mirrorSubject = subject; }
+  setRecoverySubject(subject?: THREE.Object3D): void { this.recoverySubject = subject; }
   renderTelevisionPreview(renderer: THREE.WebGLRenderer): void { this.construct?.renderPreview(renderer, this.scene.environment); }
   update(player: AgentState | undefined, sandbox: SandboxState | undefined, elapsed: number, playerPosition?: Vector3, cameraPosition?: Vector3, workday?: OfficeWorkday, firstPerson = false): FilmSet | undefined {
     let set = player ? filmSetAt(player.position, player.isInMatrix) : undefined;
@@ -305,7 +307,7 @@ export class FilmSetRenderer {
     this.club?.update(elapsed);
     this.freeway?.update(journey, elapsed, playerPosition);
     this.pods?.update(journey, elapsed, firstPerson);
-    this.neb?.update(journey, elapsed);
+    this.neb?.update(journey, elapsed, this.recoverySubject);
     this.finale?.update(journey, elapsed);
     this.revolutionsPrelude?.update(journey, elapsed);
     this.hammerRoute?.update(journey?.scene === 'm3_hammer_tunnels' && !journey.visiting ? journey.hammer : undefined, elapsed, firstPerson);
