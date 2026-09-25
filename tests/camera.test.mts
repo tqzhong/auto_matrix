@@ -1156,6 +1156,28 @@ test('the final takeoff camera follows Neo above the skyline and V enters the ai
   assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).z < -.7);
 });
 
+test('the machine funeral camera keeps carried Neo readable inside the central aisle', t => {
+  const game = setup(t, Math.PI); const center = FILM_SETS.film_machine_core.center;
+  game.camera.aspect = .72; game.camera.updateProjectionMatrix(); game.state.currentLocation = 'film_machine_core';
+  game.state.isInMatrix = false; game.state.position = filmPosition('film_machine_core', 0, -30);
+  game.state.currentAction = { type: 'idle', parameters: { epilogue: {
+    kind: 'neo_carried', phase: 'transfer', elapsed: 1.6, total: 7.5, role: 'neo',
+  } }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.step(.5);
+  assert.ok(game.camera.position.x > center.x + 11 && game.camera.position.x < center.x + 14,
+    'the carried shot must use the unobstructed aisle between the machine pillars');
+  const body = new THREE.Vector3(game.state.position.x, game.state.position.y + 1.1, game.state.position.z - .5).project(game.camera);
+  assert.ok(Math.abs(body.x) < .55 && Math.abs(body.y) < .6 && body.z > -1 && body.z < 1,
+    `Neo must remain the subject of the funeral shot: ${body.toArray().join(',')}`);
+  for (const z of [-3, 3]) {
+    const end = new THREE.Vector3(game.state.position.x, game.state.position.y + .4, game.state.position.z + z).project(game.camera);
+    assert.ok(Math.abs(end.x) < .8 && Math.abs(end.y) < .76, `the whole carried silhouette must fit: ${end.toArray().join(',')}`);
+  }
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+  assert.ok(game.camera.position.distanceTo(new THREE.Vector3(game.state.position.x, game.state.position.y + 1.25, game.state.position.z + .7)) < .08,
+    'first person must stay at Neo eye height while the barge carries him');
+});
+
 test('mountain return flight keeps Neo and the southern route in frame in both views', t => {
   const game = setup(t, Math.PI); const center = FILM_SETS.film_mountain_range.center;
   game.state.currentLocation = 'film_mountain_range';

@@ -16,6 +16,7 @@ import { BANE_ENCOUNTER } from '@auto_matrix/shared';
 import { FAREWELL, farewellLocked } from '@auto_matrix/shared';
 import { DEUS_PACT, deusPactLocked } from '@auto_matrix/shared';
 import { SMITH_FINALE, smithFinaleLocked } from '@auto_matrix/shared';
+import { trilogyEpilogueLocked, trilogyEpilogueProgress } from '@auto_matrix/shared';
 
 const button = (target: string, label: string, disabled = false) => `<button data-action="life" data-target="film:${target}" ${disabled ? 'disabled' : ''}>${label}</button>`;
 export function renderFilmJourney(player: AgentState, sandbox: SandboxState): string {
@@ -121,6 +122,27 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
                           : finale.phase === 'assimilating' ? finale.elapsed / SMITH_FINALE.surrender.assimilationSeconds * 100
                             : finale.phase === 'purging' ? finale.elapsed / SMITH_FINALE.surrender.purgeSeconds * 100 : 0;
     return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>${rain ? '暴雨大道 · 最后交锋' : '陨石坑 · 最后的选择'}</h3><p>Neo 视角 · 动作窗口、哲学选择与机器协议逐拍保存</p></header><article class="film-now"><div><h3>${step?.label ?? '终局已完成'}</h3><p>${journey.lastText}</p><p>${phase}${finale.phase === 'failed' ? ` · 第 ${finale.attempts + 1} 次尝试` : ''}</p>${smithFinaleLocked(finale) && !['choice', 'vision', 'understanding'].includes(finale.phase) ? `<div class="film-progress"><i style="width:${Math.max(0, Math.min(100, progress))}%"></i></div>` : ''}<div class="film-controls">${action}<small>地面与高空攻击窗口用 X 闪避、F 反击；坠落、站起和最后停手都要按住 G。停止抵抗是玩家明确作出的选择，不会由倒计时代替。</small></div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
+  }
+  if (!journey.visiting && ['m3_ceasefire', 'm3_neo_carried', 'm3_dawn'].includes(scene.id) && journey.epilogue) {
+    const epilogue = journey.epilogue; const step = scene.steps[journey.step]; const current = player.id === journey.actor;
+    const close = current && Boolean(step && distance(player.position, filmStepPosition(scene, step)) <= 4);
+    const ceasefire = epilogue.kind === 'ceasefire'; const carried = epilogue.kind === 'neo_carried';
+    const action = !current ? button('resume', `接回 ${ceasefire ? 'Kid' : carried ? 'Neo' : '先知'} 的视角`)
+      : !step ? button('next', scene.id === 'm3_dawn' ? '确认完成本轮三部曲 →' : '继续尾声 →')
+        : ceasefire && journey.step === 0 ? '<p>合上手记，亲自走到神庙入口。</p>'
+          : ceasefire && journey.step === 1 && epilogue.phase === 'ready' ? button('act', '亲眼确认哨兵撤离 · G', !close)
+            : ceasefire && journey.step === 2 && epilogue.phase === 'message_ready' ? button('act', '向所有人宣布战争结束 · G', !close)
+              : carried && epilogue.phase === 'ready' ? button('act', '目送机器带走 Neo · G', !close)
+                : !ceasefire && !carried && journey.step === 0 ? '<p>合上手记，走到恢复后的长椅。</p>'
+                  : !ceasefire && !carried && journey.step === 1 && epilogue.phase === 'ready' ? button('act', '观察矩阵重置 · G', !close)
+                    : !ceasefire && !carried && journey.step === 2 && epilogue.phase === 'choice' ? filmReflections(scene.id).map(choice => button(`reflect:${choice.id}`, choice.label)).join('')
+                      : !ceasefire && !carried && journey.step === 3 && epilogue.phase === 'promise' ? button('act', '请 Sati 展示日出 · G', !close)
+                        : '<button disabled>尾声演出进行中 · 自动保存</button>';
+    const labels: Record<string, string> = { ready: '等待玩家行动', retreat: '哨兵逐批撤离', message_ready: '把消息带回人群', running: 'Kid 奔向神庙深处', announcement: '战争结束了', embrace: '幸存者重逢', disconnecting: '收回连接', lowering: '放低 Neo 的身体', transfer: '转移到机器驳船', departing: '驶入机器城', cat: '黑猫与矩阵重置', architect: '建筑师兑现协议', choice: '和平的边界', promise: '等待 Sati', sati: '为 Neo 留下天空', sunrise: '日出正在展开', belief: '先知选择相信', done: '尾声已完成' };
+    const progress = trilogyEpilogueProgress(epilogue) * 100;
+    const title = ceasefire ? '锡安神庙 · 停战消息' : carried ? '机器城 · 光中的身体' : '矩阵公园 · 新的清晨';
+    const perspective = ceasefire ? 'Kid' : carried ? 'Neo' : '先知';
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / EPILOGUE</span><h3>${title}</h3><p>${perspective} 视角 · 世界变化、人物表演与当前节拍自动保存</p></header><article class="film-now"><div><h3>${step?.label ?? '本段已经完成'}</h3><p>${journey.lastText}</p><p>${labels[epilogue.phase] ?? epilogue.phase}</p>${trilogyEpilogueLocked(epilogue) ? `<div class="film-progress"><i style="width:${progress}%"></i></div>` : ''}<div class="film-controls">${action}<small>撤军、报信、遗体运输、矩阵重置和日出都是真实场景过程；暂停或断线会保留当前一拍，下一轮不会自动开始。</small></div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
   }
   if (!journey.visiting && scene.id === 'm1_room303' && journey.openingHotel) {
     const hotel = journey.openingHotel; const step = scene.steps[journey.step]; const current = player.id === journey.actor;

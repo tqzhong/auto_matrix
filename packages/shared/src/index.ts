@@ -32,6 +32,7 @@ export * from './constants/logos-flight.js';
 export * from './constants/farewell.js';
 export * from './constants/deus-pact.js';
 export * from './constants/smith-finale.js';
+export * from './constants/trilogy-epilogue.js';
 export * from './constants/dock-apu.js';
 export * from './constants/dock-gunnery.js';
 export * from './constants/trucks.js';

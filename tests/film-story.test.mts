@@ -2181,6 +2181,15 @@ test('the entire film route completes through interactions, driving and real com
         }
         assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`); continue;
       }
+      if (['m3_ceasefire', 'm3_neo_carried', 'm3_dawn'].includes(scene.id)) {
+        if (step.kind === 'reach') h.advance();
+        else if (step.kind === 'reflect') h.command(`reflect:${filmReflections(scene.id)[0].id}`);
+        else {
+          h.command('act');
+          for (let frame = 0; frame < 320 && state.step === index; frame++) h.players.step(.1, true, h.tick());
+        }
+        assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`); continue;
+      }
       if (scene.id === 'm1_room303') {
         if (index === 0) { h.command('act'); h.advance(4); assert.equal(state.openingHotel?.phase, 'combat'); }
         else if (index === 1) {

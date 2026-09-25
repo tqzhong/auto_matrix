@@ -1,4 +1,4 @@
-import { newReloaded, newFarewell, newDeusPact, newSmithFinale, BURLY, EXILES, CHATEAU, MOUNTAIN, TRUCKS, HEL_COATCHECK } from '@auto_matrix/shared';
+import { newReloaded, newFarewell, newDeusPact, newSmithFinale, newTrilogyEpilogue, BURLY, EXILES, CHATEAU, MOUNTAIN, TRUCKS, HEL_COATCHECK } from '@auto_matrix/shared';
 // Creates an isolated visual-review save; never writes the player's data directory.
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import os from 'node:os';
@@ -528,6 +528,24 @@ if (scene.id === 'm3_deus' && ['deus-ready', 'deus-swarm', 'deus-terms', 'deus-c
   if (journey.step === 3) sandbox.state.neoLife!.choices.machine_pact = 'peace';
   actor.position = filmStepPosition(scene, scene.steps[Math.min(journey.step, 3)]); actor.rotation = Math.PI;
   sandbox.life.film.deusFrame(actor, false, 0, 0); journey.checkpoint = { ...actor.position };
+}
+if (scene.id === 'm3_ceasefire' && process.argv[3] === 'ceasefire-retreat') {
+  const journey = sandbox.life.film.state!; actor.controller = 'player'; journey.step = 1;
+  journey.epilogue = { ...newTrilogyEpilogue('ceasefire'), phase: 'retreat', elapsed: 2.6, total: 2.6 };
+  actor.position = filmStepPosition(scene, scene.steps[1]); actor.rotation = 0;
+  sandbox.life.film.epilogueFrame(actor, 0, 0); journey.checkpoint = { ...actor.position };
+}
+if (scene.id === 'm3_neo_carried' && process.argv[3] === 'neo-barge') {
+  const journey = sandbox.life.film.state!; actor.controller = 'player'; journey.step = 0;
+  journey.epilogue = { ...newTrilogyEpilogue('neo_carried'), phase: 'transfer', elapsed: .4, total: 6.3 };
+  actor.position = filmStepPosition(scene, scene.steps[0]); actor.rotation = Math.PI;
+  sandbox.life.film.epilogueFrame(actor, 0, 0); journey.checkpoint = { ...actor.position };
+}
+if (scene.id === 'm3_dawn' && process.argv[3] === 'dawn-sunrise') {
+  const journey = sandbox.life.film.state!; actor.controller = 'player'; journey.step = 3;
+  journey.epilogue = { ...newTrilogyEpilogue('dawn'), phase: 'sunrise', elapsed: 3.1, total: 13.2 };
+  actor.position = filmStepPosition(scene, scene.steps[3]); actor.rotation = 0;
+  sandbox.life.film.epilogueFrame(actor, 0, 0); journey.checkpoint = { ...actor.position };
 }
 for (const resident of world.agents.values()) delete resident.controller;
 neo.isAwakened = FILM_SCENES.indexOf(scene) >= FILM_SCENES.findIndex(s => s.id === 'm1_pod');

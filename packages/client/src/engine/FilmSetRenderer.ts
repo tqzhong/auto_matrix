@@ -50,6 +50,8 @@ import { MachineCoreRenderer } from './MachineCoreRenderer.js';
 import { deusPactLocked } from '@auto_matrix/shared';
 import { SmithFinaleRenderer } from './SmithFinaleRenderer.js';
 import { smithFinaleLocked } from '@auto_matrix/shared';
+import { trilogyEpilogueLocked } from '@auto_matrix/shared';
+import { TrilogyEpilogueRenderer } from './TrilogyEpilogueRenderer.js';
 
 const outdoor = new Set(['rooftop', 'plaza', 'bridge', 'street', 'courtyard', 'freeway', 'machine', 'rain', 'garden', 'desert', 'pods', 'mountain']);
 
@@ -145,6 +147,7 @@ export class FilmSetRenderer {
   private logosWreck?: LogosWreckRenderer;
   private machineCore?: MachineCoreRenderer;
   private smithFinale?: SmithFinaleRenderer;
+  private trilogyEpilogue?: TrilogyEpilogueRenderer;
   private portalDoor?: { scene: 'm2_seraph' | 'm2_backdoors'; panel: THREE.Group };
   private oracleLetter?: THREE.Group;
   private courtyardStaff?: THREE.Group;
@@ -221,7 +224,7 @@ export class FilmSetRenderer {
         else if (set.id === 'film_hammer_route') this.hammerRoute = new HammerRouteRenderer(this.root);
         else if (set.id === 'film_machine_defense' || set.id === 'film_above_clouds') this.logosFlight = new LogosFlightRenderer(this.root, set.id === 'film_machine_defense' ? 'defense' : 'sun');
         else if (set.id === 'film_logos_wreck') this.logosWreck = new LogosWreckRenderer(this.root);
-        else if (sceneId === 'm3_deus' && set.id === 'film_machine_core') this.machineCore = new MachineCoreRenderer(this.root);
+        else if (['m3_deus', 'm3_neo_carried'].includes(sceneId ?? '') && set.id === 'film_machine_core') this.machineCore = new MachineCoreRenderer(this.root);
         else if (['m3_rain', 'm3_surrender'].includes(sceneId ?? '') && set.id === 'film_smith_avenue') this.smithFinale = new SmithFinaleRenderer(this.root);
         else if (['m1_dojo', 'm1_jump', 'm1_red_dress'].includes(sceneId ?? '')) this.training = new TrainingSetRenderer(this.root, sceneId!);
         else if (sceneId === 'm1_sentinels') this.sentinel = new SentinelSetRenderer(this.root);
@@ -259,6 +262,9 @@ export class FilmSetRenderer {
         }
         if (sceneId === 'm2_meeting' && set.id === 'film_neb_deck') this.reloaded = new ReloadedOpeningRenderer(this.root, set.id);
         if (!this.theOne && ['m1_death', 'm1_return'].includes(sceneId ?? '') && set.id === 'film_neb_deck') this.theOne = new TheOneRenderer(this.root, set.id);
+        if (sceneId === 'm3_ceasefire') this.trilogyEpilogue = new TrilogyEpilogueRenderer(this.root, 'ceasefire');
+        if (sceneId === 'm3_neo_carried') this.trilogyEpilogue = new TrilogyEpilogueRenderer(this.root, 'neo_carried');
+        if (sceneId === 'm3_dawn') this.trilogyEpilogue = new TrilogyEpilogueRenderer(this.root, 'dawn');
       }
     }
     if (this.mirrorCracks) {
@@ -336,6 +342,7 @@ export class FilmSetRenderer {
     this.smithFinale?.update(['m3_rain', 'm3_surrender'].includes(journey?.scene ?? '') && !journey?.visiting ? journey?.smithFinale : undefined,
       firstPerson, { x: (playerPosition?.x ?? this.current?.center.x ?? 0) - (this.current?.center.x ?? 0),
         z: (playerPosition?.z ?? this.current?.center.z ?? 0) - (this.current?.center.z ?? 0) });
+    this.trilogyEpilogue?.update(['m3_ceasefire', 'm3_neo_carried', 'm3_dawn'].includes(journey?.scene ?? '') && !journey?.visiting ? journey?.epilogue : undefined, elapsed);
     this.construct?.update(journey);
     this.desert?.update(journey, elapsed);
     this.mountain?.update(journey?.scene === 'm2_mountain' && !journey.visiting ? journey.mountain : undefined, elapsed);
@@ -476,6 +483,7 @@ export class FilmSetRenderer {
     if (journey?.scene === 'm3_bane' && journey.step === 1 && journey.bane?.phase !== 'ready') this.marker.visible = false;
     if (journey?.scene === 'm3_deus' && deusPactLocked(journey.deus)) this.marker.visible = false;
     if (['m3_rain', 'm3_surrender'].includes(journey?.scene ?? '') && smithFinaleLocked(journey?.smithFinale)) this.marker.visible = false;
+    if (trilogyEpilogueLocked(journey?.epilogue)) this.marker.visible = false;
     if (journey?.scene === 'm2_garage' && journey.garage?.phase === 'riding') this.marker.visible = false;
     if (journey?.scene === 'm3_hammer_tunnels' && journey.hammer?.phase === 'riding') this.marker.visible = false;
     if (['m3_defense', 'm3_sun'].includes(journey?.scene ?? '') && journey?.logos?.phase === 'riding') this.marker.visible = false;
@@ -2157,6 +2165,7 @@ export class FilmSetRenderer {
     this.logosWreck?.dispose(); this.logosWreck = undefined;
     this.machineCore?.dispose(); this.machineCore = undefined;
     this.smithFinale?.dispose(); this.smithFinale = undefined;
+    this.trilogyEpilogue?.dispose(); this.trilogyEpilogue = undefined;
     this.portalDoor = undefined; this.oracleLetter = undefined; this.courtyardStaff = undefined; this.courtyardBirds = []; this.courtyardDisturbedAt = undefined;
     this.exileDessert = undefined; this.bookDoor = undefined; this.chateauVolley = undefined; this.chateauVolleyTick = undefined; this.chateauDoor = undefined;
     this.garageCar = undefined; this.garageGhosts = [];

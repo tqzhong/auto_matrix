@@ -27,6 +27,7 @@ import { LOGOS_DEFENSE } from '@auto_matrix/shared';
 import { FAREWELL, farewellLocked } from '@auto_matrix/shared';
 import { DEUS_PACT, deusPactLocked } from '@auto_matrix/shared';
 import { SMITH_FINALE, smithFinaleLocked } from '@auto_matrix/shared';
+import { trilogyEpilogueLocked, trilogyEpilogueProgress } from '@auto_matrix/shared';
 
 const escape = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const WEATHER = { clear: '晴朗', rain: '雨', code_storm: '代码风暴' };
@@ -468,6 +469,31 @@ export class SandboxUI {
       }
       if (smithFinaleLocked(finale) || phase === 'failed') this.el('sandbox-waypoint').textContent = '';
       document.getElementById('game-objective')!.textContent = rain ? '暴雨大道 · 最后交锋' : '陨石坑 · 最后的选择';
+      document.getElementById('game-objective-copy')!.textContent = hint;
+      return;
+    }
+    if (!journey.visiting && ['m3_ceasefire', 'm3_neo_carried', 'm3_dawn'].includes(scene.id) && journey.epilogue) {
+      const epilogue = journey.epilogue; const phase = epilogue.phase;
+      const near = Boolean(step && distance(player.position, filmStepPosition(scene, step)) <= 4);
+      const names: Record<string, string> = { ready: '等待行动', retreat: '哨兵撤离', message_ready: '带回消息', running: '奔向人群', announcement: '宣布停战', embrace: '幸存者重逢', disconnecting: '连接断开', lowering: '放低身体', transfer: '转上驳船', departing: '驶入机器城', cat: '既视感与重置', architect: '停战协议', choice: '离开的权利', promise: '承诺已记录', sati: 'Sati 的礼物', sunrise: '新的日出', belief: '我相信', done: '尾声完成' };
+      const hint = trilogyEpilogueLocked(epilogue) ? `${names[phase]} · 鼠标观察 · V 切换视角 · 当前一拍自动保存`
+        : phase === 'choice' ? 'J 打开手记，要求建筑师明确谁可以离开矩阵'
+          : phase === 'message_ready' ? 'WASD 跑回神庙人群 · 靠近后按 G 亲口报信'
+            : phase === 'promise' ? 'WASD 走向 Sati · 靠近后按 G 看她留下的日出'
+              : phase === 'done' ? 'G 或 J 继续；到最终场景后仍需亲自确认本轮结束'
+                : 'WASD 前往标记 · 靠近后按 G';
+      const interactive = near && ['ready', 'message_ready', 'promise'].includes(phase) || phase === 'done';
+      this.el('film-sequence').classList.remove('hidden');
+      this.el('film-sequence').classList.toggle('urgent', false);
+      this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = hint;
+      this.el('sandbox-trace').textContent = `尾声 · ${names[phase]}`;
+      this.el('sandbox-trace').classList.toggle('danger', false);
+      this.el('sandbox-job').style.width = trilogyEpilogueLocked(epilogue) ? `${trilogyEpilogueProgress(epilogue) * 100}%` : '0';
+      this.el('sandbox-interact').classList.toggle('hidden', !interactive);
+      this.el('sandbox-nearby').textContent = phase === 'message_ready' ? '宣布战争结束' : phase === 'promise' ? '观看 Sati 的日出' : phase === 'done' ? '继续尾声' : step?.label ?? '继续';
+      if (trilogyEpilogueLocked(epilogue)) this.el('sandbox-waypoint').textContent = '';
+      document.getElementById('game-objective')!.textContent = scene.title;
       document.getElementById('game-objective-copy')!.textContent = hint;
       return;
     }

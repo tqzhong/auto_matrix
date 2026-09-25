@@ -94,6 +94,7 @@ export interface FilmJourney {
   farewell?: import('./farewell.js').FarewellEncounter;
   deus?: import('./deus-pact.js').DeusPactEncounter;
   smithFinale?: import('./smith-finale.js').SmithFinaleEncounter;
+  epilogue?: import('./trilogy-epilogue.js').TrilogyEpilogueEncounter;
   apu?: import('./dock-apu.js').ApuRun;
   dockGunnery?: import('./dock-gunnery.js').DockGunnery;
   emp?: { firedAt: number };
@@ -401,9 +402,20 @@ export const FILM_SCENES: FilmScene[] = [
     think('判断 Smith 真正害怕的是什么', 'Neo 已经与机器建立连接。继续压倒对方不是抵达感染核心的唯一方式。', 0, -38),
     use('主动停止抵抗，接受同化', 'Neo 放下架势，但最终决定仍需由玩家按住 G 确认。机器会经由连接抵达 Smith 的感染。', 0, -38, 0),
   ], ['smith']),
-  scene('m3_ceasefire', 3, 'zion_temple', 'kid', '机器退去', 'source', 'dawn', '哨兵停止进攻并撤离锡安。消息在神庙和居住层之间传开。', [walk('确认入口外的动静', 0, -30), use('把停战消息带给居民', '人们走出掩体。Morpheus 与 Niobe 看到等待终于有了回应。', 0, -30)], ['morpheus', 'niobe', 'zee', 'link']),
-  scene('m3_neo_carried', 3, 'machine_core', 'neo', '光中的身体', 'source', 'dawn', '机器收起连接，带走 Neo 的身体。这一段以尾声观察呈现。', [use('记录已经达成的停战', '人类与机器没有被化约成单方的胜利。矩阵开始恢复。', 0, -20, 7)]),
-  scene('m3_dawn', 3, 'sunrise_garden', 'oracle', 'Sati 留下的日出', 'dawn', 'dawn', '恢复后的公园里，先知与建筑师谈到和平与离开的权利。Sati 创造了新的日出。', [walk('抵达公园长椅', -7, -20), think('和平如何成为可以实践的承诺？', '愿意离开矩阵的人会得到机会。未来仍不确定，信任也仍需要行动。', -7, -20), use('看完日出，完成三部曲', '电影的故事在新的清晨结束。游戏保留本轮记忆，下一轮将回到 Anderson 的日常生活。', 0, -30, 6)], ['architect', 'sati', 'seraph']),
+  scene('m3_ceasefire', 3, 'zion_temple', 'kid', '机器退去', 'source', 'dawn', '神庙入口忽然安静。Kid 必须亲眼确认哨兵撤离，再把这件不可能发生的事带给仍躲在深处的人。', [
+    walk('走到神庙入口，确认最后一批哨兵', 0, -30),
+    use('留在入口，亲眼看见哨兵全部撤离', '攻击群停止俯冲，逐批升回黑暗的竖井。', 0, -30, 0),
+    use('跑进人群，亲口宣布战争结束', '人们先不敢相信，随后 Morpheus 与 Niobe、Link 与 Zee 在人群中找到彼此。', 0, 14, 0),
+  ], ['morpheus', 'niobe', 'zee', 'link']),
+  scene('m3_neo_carried', 3, 'machine_core', 'neo', '光中的身体', 'source', 'dawn', '连接另一端已经没有回应。机器收回接口、放低 Neo 的身体，再用发光的运输平台把他带入机器城深处。', [
+    use('目送连接断开与机器驳船离开', '身体被金色机器光托住。停战成立，但 Neo 的去向没有被胜利叙事抹去。', 0, -25, 0),
+  ]),
+  scene('m3_dawn', 3, 'sunrise_garden', 'oracle', 'Sati 留下的日出', 'dawn', 'dawn', '暴雨后的矩阵公园正在重建。重复出现的黑猫掠过新铺好的路面；先知要让建筑师亲口说明和平的边界。', [
+    walk('走到恢复后的公园长椅', -7, -20),
+    use('看黑猫经过，等建筑师来兑现协议', '街道重置完成。建筑师来到长椅前，承认这场危险游戏改变了系统。', -7, -20, 0),
+    think('要求建筑师说明谁拥有离开的权利', '愿意离开矩阵的人必须得到出口；和平能维持多久，要由双方继续履行承诺。', -7, -20),
+    use('请 Sati 展示为 Neo 留下的日出', 'Sati 把天空点亮。先知没有声称自己知道结局；她只是选择相信 Neo 仍可能回来。', 1, -15, 0),
+  ], ['architect', 'sati', 'seraph']),
 ];
 
 export const FILM_SCENE_BY_ID = Object.fromEntries(FILM_SCENES.map(s => [s.id, s]));

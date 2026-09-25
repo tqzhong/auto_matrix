@@ -35,6 +35,8 @@ import { farewellLocked, farewellPose, newFarewell, stepFarewell } from '@auto_m
 import { DEUS_PACT, deusPactLocked, deusPactPose, newDeusPact, stepDeusPact } from '@auto_matrix/shared';
 import { SMITH_FINALE, newSmithFinale, retrySmithFinale, smithFinaleAction as reduceSmithFinaleAction,
   smithFinaleLocked, smithFinalePose, stepSmithFinale } from '@auto_matrix/shared';
+import { newTrilogyEpilogue, stepTrilogyEpilogue, trilogyEpilogueLocked, trilogyEpilogueProgress,
+  type TrilogyEpilogueKind } from '@auto_matrix/shared';
 import { newApuRun, stepApuRun } from '@auto_matrix/shared';
 import { DOCK_GUNNERY, newDockGunnery, fireDockGunnery, stepDockGunnery } from '@auto_matrix/shared';
 import { TEMPLE_SEAL_SECONDS } from '@auto_matrix/shared';
@@ -372,6 +374,109 @@ export class FilmStorySystem {
         : encounter.phase === 'air_counter' ? '空中窗口已经打开，用 F 反击。'
           : encounter.phase === 'failed' ? '这一轮交锋已经失败。J 打开手记，从战斗检查点重试。'
             : '按当前终局提示行动；普通攻击不能跳过哲学选择或同化确认。';
+  }
+  private epilogueKind(): TrilogyEpilogueKind | undefined {
+    return this.state?.scene === 'm3_ceasefire' ? 'ceasefire'
+      : this.state?.scene === 'm3_neo_carried' ? 'neo_carried'
+        : this.state?.scene === 'm3_dawn' ? 'dawn' : undefined;
+  }
+  private ensureEpilogue(): void {
+    const state = this.state; const kind = this.epilogueKind();
+    if (!state || state.visiting || !kind || state.epilogue) return;
+    const encounter = newTrilogyEpilogue(kind);
+    if (kind === 'ceasefire') encounter.phase = state.step >= 3 ? 'done' : state.step >= 2 ? 'message_ready' : 'ready';
+    if (kind === 'neo_carried' && state.step >= 1) encounter.phase = 'done';
+    if (kind === 'dawn') encounter.phase = state.step >= 4 ? 'done' : state.step >= 3 ? 'promise' : state.step >= 2 ? 'choice' : 'ready';
+    state.epilogue = encounter; delete state.started; delete state.fighting;
+    if (state.step > 0 && encounter.phase !== 'done')
+      state.lastText = kind === 'ceasefire' ? '旧存档已接回停战现场。撤军与报信现在会逐拍保存。'
+        : kind === 'neo_carried' ? '旧存档已接回机器核心。连接、放低身体和驳船离开现在会完整呈现。'
+          : '旧存档已接回重建后的公园。黑猫、协议与日出现在会逐拍呈现。';
+  }
+  private placeEpilogue(agent: AgentState, tick: number): void {
+    this.ensureEpilogue(); const state = this.state; const encounter = state?.epilogue;
+    if (!state || !encounter || !this.epilogueKind()) return;
+    const progress = trilogyEpilogueProgress(encounter);
+    const set = this.scene!.set;
+    if (encounter.kind === 'ceasefire') {
+      const stations: Record<string, [number, number, number]> = {
+        morpheus: [-6, 17, Math.PI / 2], niobe: [-2.2, 17, -Math.PI / 2],
+        link: [3, 19, Math.PI / 2], zee: [6.5, 19, -Math.PI / 2],
+      };
+      const embracing = encounter.phase === 'embrace' || encounter.phase === 'done';
+      for (const [id, station] of Object.entries(stations)) {
+        const member = this.world.agents.get(id); if (!member || member.controller) continue;
+        const pair = id === 'morpheus' || id === 'niobe';
+        const x = embracing ? pair ? id === 'morpheus' ? -4.35 : -3.75 : id === 'link' ? 4.35 : 4.95 : station[0];
+        member.position = filmPosition(set, x, station[1]); member.rotation = station[2]; member.currentLocation = set; member.isInMatrix = false;
+        member.velocity = { x: 0, y: 0, z: 0 }; member.currentAction = { type: 'idle', parameters: { resolved: true,
+          epilogue: { ...encounter, role: id } }, startedAt: tick, duration: 1, progress: 0 };
+      }
+      if (trilogyEpilogueLocked(encounter)) {
+        const z = encounter.phase === 'running' ? -30 + progress * 44 : ['announcement', 'embrace'].includes(encounter.phase) ? 14 : -30;
+        agent.position = filmPosition(set, 0, z); agent.rotation = 0; agent.velocity = { x: 0, y: 0, z: 0 };
+      }
+    } else if (encounter.kind === 'neo_carried') {
+      if (trilogyEpilogueLocked(encounter)) {
+        const lowering = encounter.phase === 'lowering' ? progress : ['transfer', 'departing'].includes(encounter.phase) ? 1 : 0;
+        const transfer = encounter.phase === 'transfer' ? progress : encounter.phase === 'departing' ? 1 : 0;
+        const depart = encounter.phase === 'departing' ? progress : 0;
+        agent.position = filmPosition(set, 0, -25 - transfer * 9 - depart * 20); agent.position.y += 2.4 * (1 - lowering) + depart * 1.2;
+        agent.rotation = Math.PI; agent.velocity = { x: 0, y: 0, z: 0 };
+      }
+    } else {
+      const cast: Record<string, [number, number, number]> = {
+        architect: [-3.2, -15.5, Math.PI], sati: [1.5, -10, Math.PI], seraph: [5.2, -9, Math.PI],
+      };
+      for (const [id, station] of Object.entries(cast)) {
+        const member = this.world.agents.get(id); if (!member || member.controller) continue;
+        const arrived = id === 'architect' ? !['ready', 'cat'].includes(encounter.phase) : ['sati', 'sunrise', 'belief', 'done'].includes(encounter.phase);
+        member.position = filmPosition(set, arrived ? station[0] : 28, arrived ? station[1] : 36 + (id === 'sati' ? 3 : 0));
+        member.rotation = station[2]; member.currentLocation = set; member.isInMatrix = true; member.velocity = { x: 0, y: 0, z: 0 };
+        member.currentAction = { type: 'idle', parameters: { resolved: true, epilogue: { ...encounter, role: id } }, startedAt: tick, duration: 1, progress: 0 };
+      }
+      if (trilogyEpilogueLocked(encounter)) {
+        agent.position = filmPosition(set, -7, -20); agent.rotation = 0; agent.velocity = { x: 0, y: 0, z: 0 };
+      }
+    }
+    if (trilogyEpilogueLocked(encounter)) agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true,
+      epilogue: { ...encounter, role: agent.id } }, startedAt: tick, duration: 1, progress: 0 };
+    else if (agent.currentAction?.parameters.epilogue) agent.currentAction = null;
+  }
+  epilogueFrame(agent: AgentState, dt: number, tick: number): boolean {
+    if (!this.controls(agent) || !this.epilogueKind() || this.state?.visiting) return false;
+    this.ensureEpilogue(); const state = this.state!; const encounter = state.epilogue!;
+    if (!trilogyEpilogueLocked(encounter)) { this.placeEpilogue(agent, tick); return false; }
+    const cast = encounter.kind === 'ceasefire' ? ['morpheus', 'niobe', 'zee', 'link']
+      : encounter.kind === 'dawn' ? ['architect', 'sati', 'seraph'] : [];
+    if (cast.some(id => this.world.agents.get(id)?.controller)) {
+      state.lastText = '这段尾声中的一位角色正由另一位玩家控制。演出停在当前一拍，等待角色空闲。';
+      this.placeEpilogue(agent, tick); return true;
+    }
+    const before = encounter.phase; state.epilogue = stepTrilogyEpilogue(encounter, dt); const phase = state.epilogue.phase;
+    if (phase !== before) {
+      state.lastText = phase === 'message_ready' ? '最后一批哨兵转身升出竖井。Kid 终于敢转身：现在亲自跑回人群，把“战争结束了”说出口。'
+        : phase === 'announcement' ? 'Kid 冲上台阶，喘着气喊出消息。神庙先是一片迟疑，随后有人开始哭、笑和相互确认。'
+          : phase === 'embrace' ? 'Link 找到 Zee；Morpheus 与 Niobe 在人群里抱住彼此。Morpheus 看着空下来的入口，终于允许自己相信奇迹。'
+            : phase === 'lowering' ? '最后的接口从 Neo 身上松开。机器触须没有抛下他，而是缓慢放低失去回应的身体。'
+              : phase === 'transfer' ? '发光的机械托架接住 Neo，把身体转移到等待的机器驳船上。'
+                : phase === 'departing' ? '驳船沿金色机器城的脉络远去。没有人宣布他的命运，只有停战仍在继续。'
+                  : phase === 'architect' ? '黑猫第二次掠过同一块路面，裂缝随即闭合。建筑师来到先知面前，承认她玩了一场危险的游戏。'
+                    : phase === 'choice' ? '建筑师承诺：凡是愿意离开矩阵的人，系统都会放行。先知仍要决定怎样理解一份没有永久保证的和平。'
+                      : phase === 'sunrise' ? 'Sati 抬头看向天空。冷白晨光从云后裂开，逐渐染成她为 Neo 留下的彩色日出。'
+                        : phase === 'belief' ? 'Seraph 问这是否意味着 Neo 会回来。先知没有说她知道；她说自己相信。'
+                          : phase === 'done' ? encounter.kind === 'ceasefire' ? '神庙里的人终于开始庆祝。停战消息已经由亲眼见证它的人传到每一个角落。'
+                            : encounter.kind === 'neo_carried' ? '机器驳船消失在金色城市深处。Neo 的身体与去向被保留在本轮记录里。'
+                              : '新的太阳照亮恢复后的矩阵。三部曲尾声已经看完，是否结束本轮仍由玩家在手记中确认。'
+                            : state.lastText;
+      if (encounter.kind === 'ceasefire' && phase === 'message_ready' && state.step === 1) this.advance(state.lastText, agent, tick);
+      if (encounter.kind === 'ceasefire' && phase === 'done' && state.step === 2) this.advance(state.lastText, agent, tick);
+      if (encounter.kind === 'neo_carried' && phase === 'done' && state.step === 0) this.advance(state.lastText, agent, tick);
+      if (encounter.kind === 'dawn' && phase === 'choice' && state.step === 1) this.advance(state.lastText, agent, tick);
+      if (encounter.kind === 'dawn' && phase === 'done' && state.step === 3) this.advance(state.lastText, agent, tick);
+    }
+    this.placeEpilogue(agent, tick);
+    return trilogyEpilogueLocked(state.epilogue);
   }
   private openingRoofTick(actor: AgentState, tick: number): void {
     const state = this.state!;
@@ -943,7 +1048,7 @@ export class FilmStorySystem {
         film: { scene: 'm2_architect', width: 5, depth: .5, height: 8 } });
     }
   }
-  performing(agent: AgentState): boolean { return this.controls(agent) && (this.state!.scene === 'm1_bridge' && this.state!.bridgeTail?.phase === 'failed' || this.state!.scene === 'm1_room303' && ['breach', 'dive', 'ladder_ready'].includes(this.state!.openingHotel?.phase ?? '') || this.state!.scene === 'm1_phone_escape' && ['connected', 'done'].includes(this.state!.openingPhone?.phase ?? '') || helElevatorLocked(this.state!) || helDanceDoorLocked(this.state!) || farewellLocked(this.state!.farewell) || deusPactLocked(this.state!.deus) || smithFinaleLocked(this.state!.smithFinale) || this.state!.scene === 'm3_trainman' && this.state!.mobil?.phase === 'refusing' || this.state!.trucks?.phase === 'rescue' || this.state!.persephone?.phase === 'enacting' || burlyLocked(this.state!) || clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || theOneLocked(this.state!) || reloadedLocked(this.state!) || catchLocked(this.state!.catch) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
+  performing(agent: AgentState): boolean { return this.controls(agent) && (this.state!.scene === 'm1_bridge' && this.state!.bridgeTail?.phase === 'failed' || this.state!.scene === 'm1_room303' && ['breach', 'dive', 'ladder_ready'].includes(this.state!.openingHotel?.phase ?? '') || this.state!.scene === 'm1_phone_escape' && ['connected', 'done'].includes(this.state!.openingPhone?.phase ?? '') || helElevatorLocked(this.state!) || helDanceDoorLocked(this.state!) || farewellLocked(this.state!.farewell) || deusPactLocked(this.state!.deus) || smithFinaleLocked(this.state!.smithFinale) || trilogyEpilogueLocked(this.state!.epilogue) || this.state!.scene === 'm3_trainman' && this.state!.mobil?.phase === 'refusing' || this.state!.trucks?.phase === 'rescue' || this.state!.persephone?.phase === 'enacting' || burlyLocked(this.state!) || clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || theOneLocked(this.state!) || reloadedLocked(this.state!) || catchLocked(this.state!.catch) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
   clubFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
     if (state?.scene !== 'm1_club' || state.visiting || !this.controls(agent)) return;
@@ -3779,6 +3884,7 @@ export class FilmStorySystem {
     if (state.scene === 'm3_bane' && !state.visiting) this.ensureBane(tick);
     if (state.scene === 'm3_deus' && !state.visiting) this.ensureDeus();
     if (['m3_rain', 'm3_surrender'].includes(state.scene) && !state.visiting) this.ensureSmithFinale();
+    if (['m3_ceasefire', 'm3_neo_carried', 'm3_dawn'].includes(state.scene) && !state.visiting) this.ensureEpilogue();
     if (state.scene === 'm2_key_door' && !state.visiting) this.sourceDoor();
     if (state.scene === 'm2_architect' && !state.visiting) { this.architect(tick); this.sealArchitectDoors(); }
     if (target === 'return' && state.visiting) {
@@ -4223,6 +4329,53 @@ export class FilmStorySystem {
       state.lastText = 'Neo 放下拳头，但同化还没有发生。按住 G，明确承担让 Smith 进入这具已连接身体的后果。';
       this.placeSmithFinale(agent, tick); return state.lastText;
     }
+    if (state.scene === 'm3_ceasefire' && state.step === 1) {
+      this.ensureEpilogue(); const encounter = state.epilogue!;
+      if (encounter.phase !== 'ready') return state.lastText;
+      if (target !== 'act') return '站在神庙入口，按 G 留下来确认哨兵撤离。';
+      if (!this.near(agent, step)) return '先走到神庙入口，亲眼确认空中的动静。';
+      encounter.phase = 'retreat'; encounter.elapsed = 0; encounter.total = 0; state.checkpoint = { ...agent.position };
+      state.lastText = '攻击群在半空停住。不要转身；看着最后一批哨兵收起触须，离开锡安竖井。';
+      this.placeEpilogue(agent, tick); return state.lastText;
+    }
+    if (state.scene === 'm3_ceasefire' && state.step === 2) {
+      this.ensureEpilogue(); const encounter = state.epilogue!;
+      if (encounter.phase !== 'message_ready') return state.lastText;
+      if (target !== 'act') return '跑回居民中间，按 G 亲口宣布停战。';
+      if (!this.near(agent, step)) return '亲自从入口跑回神庙深处的人群。';
+      encounter.phase = 'announcement'; encounter.elapsed = 0; state.checkpoint = { ...agent.position };
+      state.lastText = 'Kid 亲自跑到人群中央，喘着气喊出消息。战争结束了。';
+      this.placeEpilogue(agent, tick); return state.lastText;
+    }
+    if (state.scene === 'm3_neo_carried' && state.step === 0) {
+      this.ensureEpilogue(); const encounter = state.epilogue!;
+      if (encounter.phase !== 'ready') return state.lastText;
+      if (target !== 'act') return '留在机器核心，按 G 目送连接断开。';
+      if (!this.near(agent, step)) return '先走回连接平台中央。';
+      encounter.phase = 'disconnecting'; encounter.elapsed = 0; encounter.total = 0; state.checkpoint = { ...agent.position };
+      state.lastText = 'Neo 已经没有回应。机器开始逐条收回连接，金色光仍沿身体上的接口缓慢退去。';
+      this.placeEpilogue(agent, tick); return state.lastText;
+    }
+    if (state.scene === 'm3_dawn' && state.step === 1) {
+      this.ensureEpilogue(); const encounter = state.epilogue!;
+      if (encounter.phase !== 'ready') return state.lastText;
+      if (target !== 'act') return '在长椅旁按 G，观察矩阵恢复。';
+      if (!this.near(agent, step)) return '先走到恢复后的公园长椅。';
+      encounter.phase = 'cat'; encounter.elapsed = 0; encounter.total = 0; state.checkpoint = { ...agent.position };
+      state.lastText = '一只黑猫从同一路线走过两次。破裂的路面和雨水开始倒转，矩阵把战场重新拼回清晨的公园。';
+      this.placeEpilogue(agent, tick); return state.lastText;
+    }
+    if (state.scene === 'm3_dawn' && state.step === 2 && state.epilogue?.phase !== 'choice')
+      return '先听建筑师把停战与离开矩阵的条件说完。';
+    if (state.scene === 'm3_dawn' && state.step === 3) {
+      this.ensureEpilogue(); const encounter = state.epilogue!;
+      if (encounter.phase !== 'promise') return state.lastText;
+      if (target !== 'act') return '走近 Sati，按 G 请她展示为 Neo 留下的天空。';
+      if (!this.near(agent, step)) return '先走到 Sati 与 Seraph 面前。';
+      encounter.phase = 'sati'; encounter.elapsed = 0; state.checkpoint = { ...agent.position };
+      state.lastText = 'Sati 说，这片天空是她为 Neo 做的。她抬起头，等先知也愿意一起看。';
+      this.placeEpilogue(agent, tick); return state.lastText;
+    }
     if (this.reloaded.active(agent)) return this.reloaded.command(agent, target, tick);
     if (this.catch.active(agent)) return this.catch.command(agent, target, tick);
     if (state.scene === 'm2_ship_lost' && state.shipLoss?.phase === 'failed' || state.scene === 'm2_stop_sentinels' && state.tunnel?.phase === 'failed') return '当前检查点失败。按 J 打开手记并重试。';
@@ -4368,7 +4521,9 @@ export class FilmStorySystem {
       this.advance(`${step.text} ${response}`, agent, tick);
       if (reflectedScene === 'm3_rain' && reflectedStep === 2 && state.smithFinale) state.smithFinale.phase = 'rain_done';
       if (reflectedScene === 'm3_surrender' && reflectedStep === 1 && state.smithFinale) state.smithFinale.phase = 'understanding';
+      if (reflectedScene === 'm3_dawn' && reflectedStep === 2 && state.epilogue) state.epilogue.phase = 'promise';
       if (['m3_rain', 'm3_surrender'].includes(reflectedScene)) this.placeSmithFinale(agent, tick);
+      if (reflectedScene === 'm3_dawn') this.placeEpilogue(agent, tick);
       if (state.scene === 'm1_construct') this.command(agent, 'next', tick);
       return response;
     }
@@ -4593,6 +4748,7 @@ export class FilmStorySystem {
     delete state.farewell;
     delete state.deus;
     delete state.smithFinale;
+    delete state.epilogue;
     delete state.templeSeal;
     if (scene.id === 'm3_temple_defense') {
       state.templeSeal = { phase: 'running', remaining: TEMPLE_SEAL_SECONDS, lastTick: tick, attempts: 0 };
@@ -4602,6 +4758,9 @@ export class FilmStorySystem {
     if (scene.id === 'm3_deus') state.deus = newDeusPact();
     if (scene.id === 'm3_rain') state.smithFinale = newSmithFinale();
     if (scene.id === 'm3_surrender') state.smithFinale = { ...(smithFinale ?? newSmithFinale()), phase: 'assault_ready', elapsed: 0, focus: 0, lane: 0 };
+    if (scene.id === 'm3_ceasefire') state.epilogue = newTrilogyEpilogue('ceasefire');
+    if (scene.id === 'm3_neo_carried') state.epilogue = newTrilogyEpilogue('neo_carried');
+    if (scene.id === 'm3_dawn') state.epilogue = newTrilogyEpilogue('dawn');
     if (scene.id === 'm1_room303') this.openingHotel.reset(tick);
     if (scene.id === 'm1_roofs') state.openingRoof = { phase: 'running', lastTick: tick, attempts: 0 };
     if (scene.id === 'm1_phone_escape') state.openingPhone = { phase: 'running', remaining: OPENING_ESCAPE.phoneSeconds, lastTick: tick, attempts: 0 };
@@ -4650,6 +4809,7 @@ export class FilmStorySystem {
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.matrixEscape) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && (other.currentAction?.parameters.theOne || other.currentAction?.parameters.reloaded || other.currentAction?.parameters.catch)) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.smithFinale) other.currentAction = null;
+    for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.epilogue) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.recoveryCrew) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.lobbyEntry) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.riding) { other.currentAction = null; other.velocity = { x: 0, y: 0, z: 0 }; }
@@ -4820,6 +4980,7 @@ export class FilmStorySystem {
     if (scene.id === 'm3_bane') { this.ensureBane(tick); this.banePose(actor, tick); }
     if (scene.id === 'm3_farewell') this.placeFarewell(actor, tick);
     if (['m3_rain', 'm3_surrender'].includes(scene.id)) this.placeSmithFinale(actor, tick);
+    if (['m3_ceasefire', 'm3_neo_carried', 'm3_dawn'].includes(scene.id)) this.placeEpilogue(actor, tick);
     if (scene.id === 'm2_seraph') state.seraph = { dodges: 0, counters: 0, attempts: 0 };
     if (scene.id === 'm2_catch' && life.choices.trinity_dream) state.lastText += life.choices.trinity_dream === 'clear' ? '你认出了梦里的破窗、枪口与坠落方向；这次仍有机会作出行动。' : '这座大楼让你想起那个破碎的梦。';
     if (scene.id === 'm1_bug' && state.office?.outcome === 'escaped') state.lastText = '你没有被特工带走。Switch 仍要求做安全检查，确认没有追踪装置。';
@@ -5181,6 +5342,7 @@ export class FilmStorySystem {
     if (state.scene === 'm3_bane' && state.bane) this.banePose(agent, tick);
     if (state.scene === 'm3_deus' && state.deus) this.placeDeus(agent, tick);
     if (['m3_rain', 'm3_surrender'].includes(state.scene) && state.smithFinale) this.placeSmithFinale(agent, tick);
+    if (['m3_ceasefire', 'm3_neo_carried', 'm3_dawn'].includes(state.scene) && state.epilogue) this.placeEpilogue(agent, tick);
     if (state.scene === 'm1_roofs' && state.step === this.scene!.steps.length && state.openingRoof) state.openingRoof.phase = 'escaped';
     if (state.scene === 'm2_ship_lost' && state.step === this.scene!.steps.length && state.shipLoss) state.shipLoss.phase = 'escaped';
     if (state.scene === 'm2_stop_sentinels' && state.step === 1 && state.tunnel) { state.tunnel.phase = 'sensing'; state.tunnel.lastTick = tick; }
@@ -5244,12 +5406,14 @@ export class FilmStorySystem {
     if (state.scene === 'm3_bane') this.ensureBane(tick);
     if (state.scene === 'm3_deus') this.ensureDeus();
     if (['m3_rain', 'm3_surrender'].includes(state.scene)) this.ensureSmithFinale();
+    if (['m3_ceasefire', 'm3_neo_carried', 'm3_dawn'].includes(state.scene)) this.ensureEpilogue();
     if (state.scene === 'm2_key_door') this.sourceDoor();
     const actor = this.world.agents.get(state.actor);
     if (state.scene === 'm3_bane' && actor) this.banePose(actor, tick);
     if (state.scene === 'm3_farewell' && actor) this.placeFarewell(actor, tick);
     if (state.scene === 'm3_deus' && actor) this.placeDeus(actor, tick);
     if (['m3_rain', 'm3_surrender'].includes(state.scene) && actor) this.placeSmithFinale(actor, tick);
+    if (['m3_ceasefire', 'm3_neo_carried', 'm3_dawn'].includes(state.scene) && actor) this.placeEpilogue(actor, tick);
     this.finaleTick(actor, tick);
     if (state.scene === 'm2_ship_lost' && state.shipLoss?.phase === 'failed' || state.scene === 'm2_stop_sentinels' && state.tunnel?.phase === 'failed') return;
     if (state.scene === 'm2_architect') this.architectTick(actor, tick);

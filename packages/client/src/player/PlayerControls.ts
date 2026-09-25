@@ -1,4 +1,4 @@
-import { catchLocked, deusPactLocked, deusPactPose, reloadedPhaseLocked, smithFinaleLocked, smithFinalePose } from '@auto_matrix/shared';
+import { catchLocked, deusPactLocked, deusPactPose, reloadedPhaseLocked, smithFinaleLocked, smithFinalePose, trilogyEpilogueLocked } from '@auto_matrix/shared';
 import { reloadedCamera } from './ReloadedCamera.js';
 import * as THREE from 'three';
 import { FILM_SETS, OFFICE_CONTACT, LOBBY_FIRE_INTERVAL, RESCUE, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_TIMING, groundHeight, playerBlocked, stepPlayer, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, COMBAT_SKILLS, combatDisplace, PLAYER_WALK_SPEED, meleeReach, trainingRoot, matrixEscapePhaseLocked, matrixEscapePose, matrixEscapeRoot, theOnePhaseLocked, theOnePose, theOneRoot, type OfficePhone, type AwakeningPose, type FreewayRide, type AgentState, type PlayerInput, type Vector3, type WorldStructure, type CombatImpact, type SkillCast, type RescueLoadout } from '@auto_matrix/shared';
@@ -358,6 +358,9 @@ export class PlayerControls {
     const smithFinale = state.currentAction?.parameters.smithFinale as MotionInput['smithFinale'];
     if (this.motion.smithFinale && !smithFinaleLocked(smithFinale)) this.performing = false;
     if (smithFinaleLocked(smithFinale)) this.performing = true;
+    const epilogue = state.currentAction?.parameters.epilogue as MotionInput['epilogue'];
+    if (this.motion.epilogue && !trilogyEpilogueLocked(epilogue)) this.performing = false;
+    if (trilogyEpilogueLocked(epilogue)) this.performing = true;
     if (this.motion.lobbyEntry && !state.currentAction?.parameters.lobbyEntry) this.performing = false;
     if ((state.currentAction?.parameters.lobbyEntry as MotionInput['lobbyEntry'])?.phase === 'checkpoint') this.performing = true;
     if (phoneExit) this.performing = true;
@@ -400,6 +403,7 @@ export class PlayerControls {
     this.motion.farewell = farewell;
     this.motion.deusPact = deusPact;
     this.motion.smithFinale = smithFinale;
+    this.motion.epilogue = epilogue;
     this.motion.lobbyEntry = state.currentAction?.parameters.lobbyEntry as MotionInput['lobbyEntry'];
     this.motion.aimPitch = this.firearm || state.currentAction?.parameters.armed === true ? this.pitch : undefined;
     this.motion.mirror = this.mirror;
@@ -438,6 +442,7 @@ export class PlayerControls {
     if (escapeCinematic && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
     if (oneCinematic && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
     if (smithFinaleLocked(this.motion.smithFinale) && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
+    if (trilogyEpilogueLocked(this.motion.epilogue) && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
     if (this.motion.lobbyEntry && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
     this.motion.officeShirt = officeClothing(state.id, state.currentLocation);
     if (this.motion.interrogation && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
@@ -525,11 +530,12 @@ export class PlayerControls {
     const oneWide = !this.firstPerson && oneCinematic;
     const catchWide = !this.firstPerson && catchCinematic;
     const smithFinaleWide = !this.firstPerson && smithFinaleLocked(this.motion.smithFinale);
+    const epilogueWide = !this.firstPerson && trilogyEpilogueLocked(this.motion.epilogue);
     const lobbyWide = !this.firstPerson && Boolean(this.motion.lobbyEntry);
     const ladderWide = this.climbing && state.currentLocation === 'film_office_ledge' && !this.firstPerson;
     const pillDepartureWide = !this.firstPerson && this.motion.pills?.phase === 'taking' && this.motion.pills.elapsed >= 10;
     const podWide = !this.firstPerson && this.motion.performance === 'pod';
-    this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, podWide ? 65 : smithFinaleWide ? 64 : ladderWide ? 62 : interviewApproach ? 70 : interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide || sentinelWide || interludeWide || oracleWide || betrayalWide || rescueWide || governmentWide || airRescueWide || escapeWide || oneWide || catchWide || lobbyWide || pillDepartureWide ? 58 : this.motion.inspecting ? 42 : this.firstPerson ? this.motion.mirrorBeat !== undefined ? 78 : sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
+    this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, podWide ? 65 : smithFinaleWide || epilogueWide ? 64 : ladderWide ? 62 : interviewApproach ? 70 : interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide || sentinelWide || interludeWide || oracleWide || betrayalWide || rescueWide || governmentWide || airRescueWide || escapeWide || oneWide || catchWide || lobbyWide || pillDepartureWide ? 58 : this.motion.inspecting ? 42 : this.firstPerson ? this.motion.mirrorBeat !== undefined ? 78 : sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
     this.camera.near = this.firstPerson && this.motion.club ? .08 : this.defaultNear;
     this.camera.updateProjectionMatrix();
     this.cameraStep += this.motion.speed * delta;
@@ -1180,6 +1186,23 @@ export class PlayerControls {
         .addScaledVector(forward, 36);
       if (this.firstPerson || resetCamera) this.camera.position.copy(ideal);
       else this.camera.position.lerp(ideal, 1 - Math.exp(-12 * delta));
+      this.camera.lookAt(focus);
+    } else if (this.motion.epilogue && trilogyEpilogueLocked(this.motion.epilogue) && this.firstPerson) {
+      const carried = this.motion.epilogue.kind === 'neo_carried';
+      const eye = new THREE.Vector3(this.position.x, this.position.y + (carried ? 1.25 : 2.25), this.position.z + (carried ? .7 : 0));
+      const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
+      this.camera.position.copy(eye); this.camera.lookAt(eye.clone().addScaledVector(forward, 20));
+    } else if (this.motion.epilogue && trilogyEpilogueLocked(this.motion.epilogue)) {
+      const gesture = this.motion.epilogue; const center = FILM_SETS[state.currentLocation].center;
+      const carried = gesture.kind === 'neo_carried'; const dawn = gesture.kind === 'dawn';
+      const focus = carried ? new THREE.Vector3(this.position.x, this.position.y + .8, this.position.z - .4)
+        : dawn ? new THREE.Vector3(center.x, center.y + 8, center.z - 28)
+          : new THREE.Vector3(center.x, center.y + 5.5, center.z + (gesture.phase === 'retreat' ? -42 : 14));
+      const ideal = carried ? new THREE.Vector3(this.position.x + 13, this.position.y + 6.8, this.position.z + 4.5)
+        : dawn ? new THREE.Vector3(center.x + 17, center.y + 9, center.z + 1)
+          : new THREE.Vector3(center.x + 15, center.y + 9, center.z + (gesture.phase === 'retreat' ? -20 : 31));
+      if (resetCamera || gesture.elapsed < .08) this.camera.position.copy(ideal);
+      else this.camera.position.lerp(ideal, 1 - Math.exp(-7 * delta));
       this.camera.lookAt(focus);
     } else if (this.motion.smithFinale && smithFinaleLocked(this.motion.smithFinale) && this.firstPerson) {
       const pose = smithFinalePose(this.motion.smithFinale);
