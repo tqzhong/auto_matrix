@@ -13,7 +13,7 @@ import { INTERROGATION_CAST, INTERROGATION_ROOM, INTERROGATION_TIMING, interroga
 import { BRIDGE_TAIL, BRIDGE_ARRIVAL_SECONDS, MEETING_CAR, MEETING_CAST, MEETING_DRIVE_SECONDS, MEETING_TIMING, bridgeArrivalPose, meetingBoardPoint, meetingCarPose, meetingLocked, meetingRollRoadTime, meetingRoot, type MeetingEncounter } from '@auto_matrix/shared';
 import { LAFAYETTE, LAFAYETTE_WELCOME, LAFAYETTE_KNOCK_SECONDS, HOTEL_ROUTE_LENGTH, HOTEL_DOOR_PROGRESS, hotelRoutePose, hotelRouteProgress, lafayetteKnocking, lafayetteKnockRoot, lafayetteWelcomeLocked, lafayetteWelcomeRoot, filmSetAt } from '@auto_matrix/shared';
 import { OFFICE_WORKDAY, OFFICE_DELIVERY_SECONDS, officeCourierRoot, officeRecipientRoot, workdayLocked, workdayText } from '@auto_matrix/shared';
-import { APARTMENT, WAKE_CALL, apartmentAfter, apartmentDoor, apartmentLocked, apartmentText, wakeCallLocked, wakeCallRoot, wakeCallText, lifeRoomCenter, type ApartmentPhase, type WakeCallPhase } from '@auto_matrix/shared';
+import { APARTMENT, WAKE_CALL, apartmentAfter, apartmentDoor, apartmentLocked, apartmentText, wakeCallDoor, wakeCallLocked, wakeCallRoot, wakeCallText, lifeRoomCenter, type ApartmentPhase, type WakeCallPhase } from '@auto_matrix/shared';
 import { CLUB, clubLocked, clubRoot, clubText, type ClubPhase } from '@auto_matrix/shared';
 import { SENTINEL_CAST, SENTINEL_TIMING, sentinelActive, sentinelDanger, sentinelLocked, sentinelRoot, sentinelText, type SentinelRole } from '@auto_matrix/shared';
 import { INTERLUDE_CAST, interludeDuration, interludeKind, interludeLocked, interludeRoot, interludeSeated, interludeText, type InterludeEncounter, type InterludeRole } from '@auto_matrix/shared';
@@ -1104,7 +1104,6 @@ export class FilmStorySystem {
   apartmentFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
     if (state?.scene === 'm1_wake_again' && !state.visiting) {
-      this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== 'film:apartment:door');
       this.wakeCallFrame(agent, dt, tick); return;
     }
     if (state?.scene !== 'm1_wake_up' || state.visiting) {
@@ -1156,10 +1155,15 @@ export class FilmStorySystem {
     if (!state || state.scene !== 'm1_wake_again' || state.visiting || !this.controls(agent)) return;
     const call = state.wakeCall ??= { phase: state.step ? 'done' : 'ringing', elapsed: 0, nightmare: state.office?.outcome !== 'escaped' };
     const duration = call.phase === 'waking' ? WAKE_CALL.waking : call.phase === 'pickup' ? WAKE_CALL.pickup
-      : call.phase === 'listening' ? WAKE_CALL.listening : call.phase === 'reply' ? WAKE_CALL.reply : 0;
+      : call.phase === 'listening' ? WAKE_CALL.listening : call.phase === 'reply' ? WAKE_CALL.reply : call.phase === 'leaving' ? WAKE_CALL.leaving : 0;
     if (duration) call.elapsed = Math.min(duration, call.elapsed + Math.max(0, Math.min(.1, dt)));
     if (duration && call.elapsed >= duration) {
       const previous = call.phase;
+      if (previous === 'leaving') {
+        agent.currentAction = null;
+        this.advance('Neo 亲手打开 101 房门，走入楼道。Adams Street 的雨夜在下一次切换中出现。', agent, tick);
+        this.command(agent, 'next', tick); return;
+      }
       const next: Partial<Record<WakeCallPhase, WakeCallPhase>> = { waking: 'ringing', pickup: 'listening', listening: 'decision', reply: 'done' };
       call.phase = next[previous]!; call.elapsed = 0;
       if (previous === 'waking') {
@@ -1177,12 +1181,22 @@ export class FilmStorySystem {
       agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, wakeCall: { ...call } }, startedAt: tick, duration: 1, progress: 0 };
       state.checkpoint = { ...agent.position };
     } else if (call.phase === 'ringing' || call.phase === 'done') agent.currentAction = null;
+    const seal = 'film:apartment:door';
+    if (state.step >= this.scene!.steps.length || wakeCallDoor(call) >= .8)
+      this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== seal);
+    else if (!this.sandbox().structures.some(s => s.id === seal))
+      this.sandbox().structures.push({ id: seal, kind: 'barricade', owner: 'matrix', position: filmPosition(this.scene!.set, 0, APARTMENT.doorZ), matrix: true, health: 1,
+        film: { scene: state.scene, width: APARTMENT.doorWidth, depth: .28, height: 6.5 } });
     state.lastText = wakeCallText(call);
   }
   private wakeCallAct(agent: AgentState, target: string, tick: number): string {
     const state = this.state!; this.wakeCallFrame(agent, 0, tick); const call = state.wakeCall!;
     if (target !== 'act') return state.lastText;
-    if (call.phase === 'ringing') {
+    if (state.step === 1) {
+      if (call.phase !== 'done') return state.lastText;
+      if (!this.near(agent, this.step!)) return '先走到 101 房门内侧，再转动把手。';
+      call.phase = 'leaving'; call.elapsed = 0;
+    } else if (call.phase === 'ringing') {
       if (!this.near(agent, this.step!)) return '先走到工作台旁正在响的座机前。';
       call.phase = 'pickup'; call.elapsed = 0;
     } else if (call.phase === 'decision') { call.phase = 'reply'; call.elapsed = 0; }
@@ -4389,7 +4403,7 @@ export class FilmStorySystem {
     if (state.scene === 'm2_mountain' && state.step === 2) return state.mountain?.phase === 'failed' && target === 'act' ? this.retryMountain(agent) : '站在山崖起飞点按 Space，随后按住 W 向南飞，A / D 调整航线。';
     if (state.scene === 'm2_persephone' && state.step === 2) return this.persephoneAct(agent, target, tick);
     if (state.scene === 'm1_wake_up') return this.apartmentAct(agent, target, tick);
-    if (state.scene === 'm1_wake_again' && state.step === 0) return this.wakeCallAct(agent, target, tick);
+    if (state.scene === 'm1_wake_again' && state.step < this.scene!.steps.length) return this.wakeCallAct(agent, target, tick);
     if (state.scene === 'm1_club') return this.clubAct(agent, target, tick);
     if (state.scene === 'm1_sentinels') return this.sentinelAct(agent, target, tick);
     if (interludeKind(state.scene)) return this.interludeAct(agent, target, tick);

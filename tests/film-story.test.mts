@@ -2078,7 +2078,7 @@ test('the entire film route completes through interactions, driving and real com
     assert.equal(state.scene, scene.id); assert.equal(h.actor().id, scene.actor);
     if (scene.id === 'm3_gate') assert.equal(h.world.agents.get('mifune')?.status, 'dead');
     assert.equal(h.actor().isInMatrix, scene.id === 'm2_meeting' ? false : FILM_SETS[scene.set].world === 'matrix');
-    assert.equal(musicForScene({ player: h.actor(), sandbox: h.sandbox.state, time: 7500, matrix: h.actor().isInMatrix, running: true }), scene.id === 'm2_meeting' ? 'night' : scene.music);
+    assert.equal(musicForScene({ player: h.actor(), sandbox: h.sandbox.state, time: 7500, matrix: h.actor().isInMatrix, running: true }), scene.id === 'm2_meeting' ? 'night' : scene.music, `${scene.id}: music follows the active film set at ${h.actor().currentLocation}`);
     if (scene.id === 'm1_mirror' && state.mirrorGuide) {
       for (const [x, z] of [[-5, -3.1], [-5, -9.8], [-6, -12.7], [MIRROR_TOUCH.x, MIRROR_TOUCH.z]]) {
         const target = filmPosition(scene.set, x, z);
@@ -2483,10 +2483,12 @@ test('the entire film route completes through interactions, driving and real com
         }
         else if (scene.id === 'm1_interrogation') for (let frame = 0; frame < (index === 0 ? 61 : 241); frame++) h.players.step(.1, true, h.tick());
         else if (scene.id === 'm1_wake_again') {
-          for (let frame = 0; frame < 120; frame++) h.players.step(.1, true, h.tick());
-          assert.equal(state.wakeCall?.phase, 'decision');
-          h.command('act');
-          for (let frame = 0; frame < 51; frame++) h.players.step(.1, true, h.tick());
+          if (index === 0) {
+            for (let frame = 0; frame < 120; frame++) h.players.step(.1, true, h.tick());
+            assert.equal(state.wakeCall?.phase, 'decision');
+            h.command('act');
+            for (let frame = 0; frame < 51; frame++) h.players.step(.1, true, h.tick());
+          } else for (let frame = 0; frame < 50 && state.scene === scene.id; frame++) h.players.step(.1, true, h.tick());
         }
         else if (scene.id === 'm1_sentinels') {
           const frames = index === 0 ? 210 : 36;
@@ -2726,6 +2728,10 @@ test('the entire film route completes through interactions, driving and real com
       }
       if (scene.id === 'm1_construct' && index === scene.steps.length - 1) {
         assert.equal(state.scene, 'm1_desert', 'the television choice starts the ruined world without another command');
+        continue;
+      }
+      if (scene.id === 'm1_wake_again' && index === scene.steps.length - 1) {
+        assert.equal(state.scene, 'm1_bridge', 'walking out of 101 starts the bridge scene without another command');
         continue;
       }
       assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`);

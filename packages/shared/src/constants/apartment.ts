@@ -3,7 +3,7 @@ import type { FilmJourney } from './film-story.js';
 export type ApartmentPhase = 'idle' | 'signal' | 'reply' | 'knocking' | 'door' | 'opening' | 'book' | 'retrieving' | 'disk' | 'handover' | 'invitation' | 'inspecting' | 'noticed' | 'accepted';
 export interface ApartmentContact { phase: ApartmentPhase; elapsed: number; paid?: boolean }
 export interface ApartmentGesture extends ApartmentContact { role: 'neo' | 'choi' | 'dujour' }
-export type WakeCallPhase = 'waking' | 'ringing' | 'pickup' | 'listening' | 'decision' | 'reply' | 'done';
+export type WakeCallPhase = 'waking' | 'ringing' | 'pickup' | 'listening' | 'decision' | 'reply' | 'done' | 'leaving';
 export interface WakeCall { phase: WakeCallPhase; elapsed: number; nightmare: boolean }
 export const APARTMENT = {
   computer: { x: -9, z: -8.8, yaw: Math.PI },
@@ -17,7 +17,7 @@ export const APARTMENT = {
   doorZ: 12, doorWidth: 3.8,
   signal: 8, knocking: 4, opening: 2.4, retrieving: 3.2, handover: 4.5,
 } as const;
-export const WAKE_CALL = { waking: 5.6, pickup: 2.2, listening: 8.6, reply: 4.2 } as const;
+export const WAKE_CALL = { waking: 5.6, pickup: 2.2, listening: 8.6, reply: 4.2, leaving: 4.4 } as const;
 export const APARTMENT_FURNITURE = [
   { x: -9, z: -12, width: 8, depth: 3.4, height: 2.4 },
   { x: 10.2, z: -9, width: 6.2, depth: 10, height: 1.5 },
@@ -36,9 +36,13 @@ export function apartmentLocked(journey: FilmJourney): boolean {
   return journey.scene === 'm1_wake_up' && !journey.visiting && ['signal', 'reply', 'knocking', 'opening', 'retrieving', 'handover', 'inspecting'].includes(journey.contact?.phase ?? '');
 }
 export function wakeCallLocked(journey: FilmJourney): boolean {
-  return journey.scene === 'm1_wake_again' && !journey.visiting && ['waking', 'pickup', 'listening', 'decision', 'reply'].includes(journey.wakeCall?.phase ?? '');
+  return journey.scene === 'm1_wake_again' && !journey.visiting && ['waking', 'pickup', 'listening', 'decision', 'reply', 'leaving'].includes(journey.wakeCall?.phase ?? '');
 }
 export function wakeCallRoot(call: WakeCall): { x: number; z: number; yaw: number } {
+  if (call.phase === 'leaving') {
+    const crossing = smooth(Math.max(0, Math.min(1, (call.elapsed - 1.15) / (WAKE_CALL.leaving - 1.55))));
+    return { x: 1.22 + (0 - 1.22) * crossing, z: 10.15 + (14.35 - 10.15) * crossing, yaw: 0 };
+  }
   if (call.phase !== 'waking') return { x: APARTMENT.phone.approachX, z: APARTMENT.phone.approachZ, yaw: APARTMENT.phone.yaw };
   const t = smooth(Math.max(0, Math.min(1, (call.elapsed - 2.7) / (WAKE_CALL.waking - 2.7))));
   return {
@@ -48,6 +52,10 @@ export function wakeCallRoot(call: WakeCall): { x: number; z: number; yaw: numbe
   };
 }
 const smooth = (t: number) => t * t * (3 - 2 * t);
+export function wakeCallDoor(call?: WakeCall): number {
+  if (call?.phase !== 'leaving') return 0;
+  return smooth(Math.max(0, Math.min(1, (call.elapsed - .25) / 1.15)));
+}
 export function wakeCallHandsetHeld(call?: WakeCall): boolean {
   if (!call) return false;
   return call.phase === 'pickup' ? call.elapsed >= .65 : ['listening', 'decision'].includes(call.phase) || call.phase === 'reply' && call.elapsed < 3.15;
@@ -62,7 +70,8 @@ export function wakeCallText(call: WakeCall): string {
     case 'listening': return call.elapsed < 2.8 ? 'MORPHEUS · 这条线路正在被监听，不能谈太久。' : call.elapsed < 5.8 ? (call.nightmare ? 'MORPHEUS · 特工抢先找到了你，但他们低估了你的选择。' : 'MORPHEUS · 你避开了他们的追捕，但这条线路仍不安全。') : 'MORPHEUS · 你仍然想和我见面吗？';
     case 'decision': return '电话另一端安静下来，等待你的回答。按 G 明确答应；等待不会替你作出选择。';
     case 'reply': return call.elapsed < 1.5 ? 'NEO · 是。' : call.elapsed < 3.15 ? 'MORPHEUS · 去 Adams Street 桥下。接应车辆会找到你。' : '听筒回到底座。接头地点已经记下。';
-    case 'done': return '前往 101 房门，离开公寓，去 Adams Street 桥下。';
+    case 'done': return '前往 101 房门。站到门内侧，按 G 转动把手，去 Adams Street 桥下。';
+    case 'leaving': return call.elapsed < 1.4 ? 'Neo 转动 101 的门把，推开房门。' : call.elapsed < 3.7 ? '他亲自迈过门槛，走入公寓楼道。' : '房门在身后合拢；Adams Street 的雨夜接入视野。';
   }
 }
 export function apartmentText(contact: ApartmentContact): string {

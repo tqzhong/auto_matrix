@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import type { AgentState, PlayerInput } from '@auto_matrix/shared';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { CameraController } from '../packages/client/src/engine/CameraController.js';
-import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, INTERROGATION_ROOM, pillRoot, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, POD_WATER_DROP, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, airRescueRoot, matrixEscapeRoot, theOneRoot, type TheOneEncounter } from '@auto_matrix/shared';
+import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, INTERROGATION_ROOM, pillRoot, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, POD_WATER_DROP, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, airRescueRoot, matrixEscapeRoot, theOneRoot, wakeCallRoot, type TheOneEncounter } from '@auto_matrix/shared';
 
 test('observer camera releases drag and ignores pointer capture while a character controls the view', () => {
   let captures = 0;
@@ -465,6 +465,36 @@ test('the apartment wake call frames the bed and the front of Neo at the physica
   game.key('KeyV'); game.key('KeyV', false); game.step(.1);
   assert.ok(game.camera.position.distanceTo(new THREE.Vector3(game.state.position.x, game.state.position.y + 2.99, game.state.position.z)) < .06,
     'first-person call view must start at Neo eyes');
+});
+
+test('leaving apartment 101 keeps Neo and the doorway readable before V returns to his eyes', t => {
+  const game = setup(t); const center = FILM_SETS.film_anderson_flat.center;
+  game.state.currentLocation = 'film_anderson_flat'; game.camera.aspect = 426 / 680; game.camera.updateProjectionMatrix();
+  for (const elapsed of [.7, 3.2]) {
+    const call = { phase: 'leaving' as const, elapsed, nightmare: true }; const root = wakeCallRoot(call);
+    game.state.position = filmPosition('film_anderson_flat', root.x, root.z); game.state.rotation = root.yaw;
+    game.state.currentAction = { type: 'idle', parameters: { wakeCall: call }, startedAt: 0, duration: 1, progress: 0 };
+    game.controls.possess(game.state); game.step(.5);
+    assert.ok(game.camera.position.x > center.x + 4,
+      'the departure camera must stay on the latch side instead of looking through the open door panel and left wall');
+    if (game.state.position.z > center.z + APARTMENT.doorZ) {
+      const atDoor = (center.z + APARTMENT.doorZ - game.camera.position.z) / (game.state.position.z - game.camera.position.z);
+      const doorwayX = THREE.MathUtils.lerp(game.camera.position.x, game.state.position.x, atDoor) - center.x;
+      assert.ok(Math.abs(doorwayX) < 1.65, `the sightline to Neo must clear the door jamb: ${doorwayX}`);
+    }
+    for (const point of [new THREE.Vector3(game.state.position.x, game.state.position.y + 3.05, game.state.position.z),
+      new THREE.Vector3(center.x, center.y + 3, center.z + APARTMENT.doorZ)]) {
+      const screen = point.project(game.camera);
+      assert.ok(Math.abs(screen.x) < .86 && Math.abs(screen.y) < .88 && screen.z > -1 && screen.z < 1,
+        `Neo and the physical door must share the portrait departure frame at ${elapsed}s: ${screen.toArray().join(',')}`);
+    }
+  }
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+  assert.ok(game.camera.position.distanceTo(new THREE.Vector3(game.state.position.x, game.state.position.y + 2.99, game.state.position.z)) < .06,
+    'first-person departure view starts at Neo eyes');
+  const before = game.yaw(); game.document.pointerLockElement = game.canvas;
+  game.event(game.document, 'mousemove', { movementX: 90, movementY: 0 }); game.step(.1);
+  assert.ok(Math.abs(angle(game.yaw(), before)) > .08, 'the first-person departure view still allows looking around');
 });
 
 test('office conversation and signing frame the performers and restore walking after the response', t => {

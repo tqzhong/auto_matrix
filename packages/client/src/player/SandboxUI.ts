@@ -795,17 +795,17 @@ export class SandboxUI {
     }
     if (!journey.visiting && journey.scene === 'm1_wake_again' && journey.wakeCall) {
       const phase = journey.wakeCall.phase; const close = !step || distance(player.position, filmStepPosition(scene, step)) <= 4;
-      const canAct = phase === 'decision' || phase === 'ringing' && close || phase === 'done' && !step;
+      const canAct = phase === 'decision' || (phase === 'ringing' || phase === 'done') && close;
       this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
-      this.el('film-sequence-hint').textContent = phase === 'ringing' ? '走到工作台旁 · G 拿起听筒 · V 切换视角' : phase === 'decision' ? 'G 明确答应 · 等待不会替你回答' : phase === 'done' ? step ? 'WASD 走到 101 房门 · 途中自动保存' : 'G 离开公寓 · 前往 Adams Street 桥下' : '鼠标观察 · V 切换视角 · 暂停或重连会保留当前动作';
+      this.el('film-sequence-hint').textContent = phase === 'ringing' ? '走到工作台旁 · G 拿起听筒 · V 切换视角' : phase === 'decision' ? 'G 明确答应 · 等待不会替你回答' : phase === 'done' ? step ? 'WASD 走到 101 房门 · G 转动门把' : '前往 Adams Street 桥下' : phase === 'leaving' ? 'Neo 正在推门并走入楼道 · 暂停或重连会保留当前动作' : '鼠标观察 · V 切换视角 · 暂停或重连会保留当前动作';
       this.el('sandbox-interact').classList.toggle('hidden', !canAct);
-      this.el('sandbox-nearby').textContent = phase === 'ringing' ? '拿起有线座机听筒' : phase === 'decision' ? '回答仍然要见面' : phase === 'done' ? step ? '前往 101 房门' : '前往 Adams Street 桥下' : '来电演出进行中';
+      this.el('sandbox-nearby').textContent = phase === 'ringing' ? '拿起有线座机听筒' : phase === 'decision' ? '回答仍然要见面' : phase === 'done' ? step ? '打开 101 房门' : '前往 Adams Street 桥下' : phase === 'leaving' ? '离开 101 公寓' : '来电演出进行中';
       if (wakeCallLocked(journey) || !step) this.el('sandbox-waypoint').textContent = '';
       else {
         const target = filmStepPosition(scene, step); const direction = Math.atan2(target.x - player.position.x, target.z - player.position.z) - player.rotation;
         this.el('sandbox-waypoint').innerHTML = `<span style="transform:rotate(${-direction}rad)">↑</span>${phase === 'ringing' ? '响铃的座机' : '101 房门'} <b>${Math.round(distance(target, player.position))} m</b>`;
       }
-      document.getElementById('game-objective-copy')!.textContent = phase === 'waking' ? 'Neo 正在床上醒来；被捕与逃脱路线会保留各自经历。' : phase === 'ringing' ? '走到工作台旁的实体座机前，按 G 接听。' : phase === 'decision' ? 'Morpheus 等待你亲自确认是否仍要见面。' : phase === 'done' ? step ? '离开公寓，前往 Adams Street 桥下。' : '按 G 离开公寓，前往 Adams Street 桥下。' : '通话阶段与人物姿势自动保存。';
+      document.getElementById('game-objective-copy')!.textContent = phase === 'waking' ? 'Neo 正在床上醒来；被捕与逃脱路线会保留各自经历。' : phase === 'ringing' ? '走到工作台旁的实体座机前，按 G 接听。' : phase === 'decision' ? 'Morpheus 等待你亲自确认是否仍要见面。' : phase === 'done' ? step ? '走到门内侧，按 G 打开 101，再前往 Adams Street。' : '前往 Adams Street 桥下。' : phase === 'leaving' ? 'Neo 正在打开房门并迈入楼道。' : '通话阶段与人物姿势自动保存。';
       return;
     }
     if (!journey.visiting && journey.scene === 'm1_sentinels' && journey.sentinel) {

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SCENE_BY_ID, FILM_SETS, PILL_TIMING, filmStepPosition, filmPosition, officeOccluded, playerBlocked, stepPlayer, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, PILL_TIMING, WAKE_CALL, filmStepPosition, filmPosition, officeOccluded, playerBlocked, stepPlayer, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -31,7 +31,8 @@ function setup() {
     goal(); command('act'); frame(11); command('act'); frame(4.1);
   };
   const finish = () => {
-    while (sandbox.life.film.step) {
+    const sceneId = scene().id;
+    while (sandbox.life.film.step && scene().id === sceneId) {
       const step = sandbox.life.film.step; goal();
       if (step.kind === 'reach') advance();
       else if (step.kind === 'reflect') command('reflect:agency');
@@ -44,7 +45,11 @@ function setup() {
       } else if (scene().id === 'm1_interrogation') {
         command('act'); for (let f = 0; f < 241; f++) players.step(.1, true, tick);
       } else if (scene().id === 'm1_wake_again') {
-        frame(6); goal(); command('act'); frame(12); command('act'); frame(5);
+        if (sandbox.life.film.state!.step === 0) {
+          frame(6); goal(); command('act'); frame(12); command('act'); frame(5);
+        } else {
+          goal(); command('act'); frame(WAKE_CALL.leaving + .2);
+        }
       } else if (scene().id === 'm1_bridge') {
         frame(7.1);
         command('act'); for (let f = 0; f < 151; f++) players.step(.1, true, tick);

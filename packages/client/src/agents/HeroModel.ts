@@ -622,6 +622,15 @@ export class HeroModels {
         bone('head').rotation.y += .2 * inspect;
       }
     }
+    if (input.wakeCall?.phase === 'leaving') {
+      const t = input.wakeCall.elapsed;
+      const reach = THREE.MathUtils.smoothstep(t, .12, .58) * (1 - THREE.MathUtils.smoothstep(t, 1.08, 1.48));
+      const glance = THREE.MathUtils.smoothstep(t, .45, 1.15) * (1 - THREE.MathUtils.smoothstep(t, 2.6, 3.5));
+      bone('spine').rotation.x += reach * .06; bone('chest').rotation.y -= reach * .11;
+      bone('head').rotation.y -= glance * .16;
+      bone('shoulder_R').rotation.x -= reach * .72; bone('shoulder_R').rotation.z -= reach * .24;
+      bone('elbow_R').rotation.x -= reach * .88; bone('wrist_R').rotation.z += reach * .24;
+    }
     if (input.reveal) {
       const { kind, elapsed: t, role } = input.reveal;
       if (kind === 'construct') {
@@ -789,7 +798,8 @@ export class HeroModels {
         const handset = rig.root.worldToLocal(new THREE.Vector3(center.x + APARTMENT.phone.x, center.y - 1 + APARTMENT.phone.y + .48, center.z + APARTMENT.phone.z + .22));
         this.holdPhone(rig, { phase: 'pickup', elapsed: Math.min(1.8, input.wakeCall.elapsed) }, handset);
       }
-      else if (input.wakeCall.phase !== 'reply' || input.wakeCall.elapsed < 3.15) this.holdPhone(rig, { phase: 'connected', elapsed: 2 });
+      else if (['listening', 'decision'].includes(input.wakeCall.phase) || input.wakeCall.phase === 'reply' && input.wakeCall.elapsed < 3.15)
+        this.holdPhone(rig, { phase: 'connected', elapsed: 2 });
     }
     if (input.window !== undefined) this.openWindow(rig, input.window);
     if (input.crossing !== undefined) this.crossWindow(rig, input.crossing);

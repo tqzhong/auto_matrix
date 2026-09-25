@@ -121,7 +121,8 @@ function answerSecondCall(h: Harness) {
   h.reload(); assert.equal(h.state().wakeCall?.phase, 'decision');
   h.command('act'); h.frames(WAKE_CALL.reply + .2); assert.equal(h.state().step, 1);
   h.walk(filmStepPosition(FILM_SCENE_BY_ID.m1_wake_again, FILM_SCENE_BY_ID.m1_wake_again.steps[1]));
-  assert.equal(h.state().step, 2); h.command('next'); assert.equal(h.state().scene, 'm1_bridge');
+  assert.equal(h.state().step, 1); h.command('act'); assert.equal(h.state().wakeCall?.phase, 'leaving');
+  h.frames(WAKE_CALL.leaving + .2); assert.equal(h.state().scene, 'm1_bridge');
   assert.equal(h.state().bridgeArrival?.phase, 'approaching');
 }
 

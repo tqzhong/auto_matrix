@@ -1,5 +1,5 @@
 import { RELOADED, HEL_COATCHECK } from '@auto_matrix/shared';
-import { LOCATIONS, heldPhone, pillLocked, lobbyLocked, governmentLocked, airRescueLocked, filmSetAt, FILM_CAST, NEO_CAST, neoSkillUnlocked, insideLifeRoom, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, rescueLoadout, rescueLocked, COMBAT_SKILLS, playerSkills, dodgeDirection, combatDisplace, groundHeight, meleeReach, distance, locationEntrance, playerBlocked, stepPlayer, type AgentState, type PlayerInput, type SandboxCommand, type SkillCast, type Vector3, type CombatSkillId } from '@auto_matrix/shared';
+import { LOCATIONS, heldPhone, pillLocked, lobbyLocked, governmentLocked, airRescueLocked, filmSetAt, FILM_SETS, FILM_CAST, NEO_CAST, neoSkillUnlocked, insideLifeRoom, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, rescueLoadout, rescueLocked, COMBAT_SKILLS, playerSkills, dodgeDirection, combatDisplace, groundHeight, meleeReach, distance, locationEntrance, playerBlocked, stepPlayer, type AgentState, type PlayerInput, type SandboxCommand, type SkillCast, type Vector3, type CombatSkillId } from '@auto_matrix/shared';
 import type { SandboxSystem } from './SandboxSystem.js';
 import type { WorldState } from '../world/WorldState.js';
 import type { ConversationEngine } from '../agents/ConversationEngine.js';
@@ -402,7 +402,9 @@ export class PlayerController {
       const nearbyLocation = Object.values(LOCATIONS).filter(location => location.id !== 'downtown' && (location.world === 'matrix') === agent.isInMatrix)
         .find(location => distance(locationEntrance(location.id), agent.position) < 42);
       const room = agent.isInMatrix ? insideLifeRoom(agent.position) : undefined;
-      const set = filmSetAt(agent.position, agent.isInMatrix);
+      let set = filmSetAt(agent.position, agent.isInMatrix);
+      if (journey?.actor === agent.id && journey.scene === 'm1_bridge' && set?.id === 'film_extraction_car') set = FILM_SETS.film_adams_bridge;
+      else if (journey?.actor === agent.id && journey.scene === 'm1_bug' && set?.id === 'film_adams_bridge') set = FILM_SETS.film_extraction_car;
       if (set) agent.currentLocation = set.id;
       else if (room) agent.currentLocation = room;
       else if (nearbyLocation) agent.currentLocation = nearbyLocation.id;

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { APARTMENT, FILM_SCENE_BY_ID, WAKE_CALL, filmPosition, filmStepPosition, playerBlocked, type WorldEvent } from '@auto_matrix/shared';
+import { APARTMENT, FILM_SCENE_BY_ID, WAKE_CALL, filmPosition, filmStepPosition, playerBlocked, wakeCallDoor, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -55,7 +55,8 @@ test('captured Neo physically wakes, answers the landline and must personally ag
   h.command('act'); assert.equal(h.state().wakeCall?.phase, 'reply'); h.frames(WAKE_CALL.reply + .2);
   assert.equal(h.state().wakeCall?.phase, 'done'); assert.equal(h.state().step, 1); assert.equal(h.state().office?.bugged, true);
   h.neo.position = filmStepPosition(FILM_SCENE_BY_ID.m1_wake_again, FILM_SCENE_BY_ID.m1_wake_again.steps[1]); h.frames(.2);
-  assert.equal(h.state().step, 2); h.command('next'); assert.equal(h.state().scene, 'm1_bridge'); assert.equal(h.state().office?.bugged, true);
+  assert.equal(h.state().step, 1); h.command('act'); assert.equal(h.state().wakeCall?.phase, 'leaving'); h.frames(WAKE_CALL.leaving + .2);
+  assert.equal(h.state().scene, 'm1_bridge'); assert.equal(h.state().office?.bugged, true);
 });
 
 test('the successful office escape reaches the same call without inventing an interrogation nightmare or tracker', () => {
@@ -63,7 +64,43 @@ test('the successful office escape reaches the same call without inventing an in
   assert.equal(h.state().wakeCall?.nightmare, false); reachDecision(h); h.command('act'); h.frames(WAKE_CALL.reply + .2);
   assert.equal(h.state().step, 1); assert.equal(h.state().office?.bugged, false); assert.match(h.state().lastText, /Adams Street/);
   h.neo.position = filmStepPosition(FILM_SCENE_BY_ID.m1_wake_again, FILM_SCENE_BY_ID.m1_wake_again.steps[1]); h.frames(.2);
+  h.command('act'); h.frames(WAKE_CALL.leaving + .2);
   assert.equal(h.sandbox.state.neoLife!.journal[0].title, '第二次来电');
+});
+
+test('Neo opens 101 himself and physically leaves before the story cuts to Adams Street', () => {
+  const h = setup('captured'); reachDecision(h); h.command('act'); h.frames(WAKE_CALL.reply + .2);
+  const scene = FILM_SCENE_BY_ID.m1_wake_again;
+  assert.equal(scene.steps[1].kind, 'interact', 'walking through an already-open door cannot stand in for leaving the apartment');
+  h.neo.position = filmStepPosition(scene, scene.steps[1]); h.frames(.2);
+  assert.equal(h.state().step, 1, 'reaching the inside of the door must wait for the player to open it');
+  assert.equal(h.state().wakeCall?.phase, 'done');
+  h.command('act');
+  assert.equal(h.state().wakeCall?.phase, 'leaving');
+  assert.ok(h.neo.currentAction?.parameters.wakeCall, 'the handle and walk-out beat must drive Neo’s visible body');
+  h.frames(WAKE_CALL.leaving * .55);
+  assert.equal(h.state().scene, 'm1_wake_again');
+  assert.ok(wakeCallDoor(h.state().wakeCall) > .7, '101 must visibly open before Neo crosses the threshold');
+  assert.ok(h.neo.position.z > filmPosition(scene.set, APARTMENT.door.x, APARTMENT.door.z).z, 'Neo must move into the landing');
+  h.frames(WAKE_CALL.leaving);
+  assert.equal(h.state().scene, 'm1_bridge', 'the completed walk-out should cut directly to the bridge instead of asking for another generic continue');
+  assert.equal(h.neo.currentLocation, 'film_adams_bridge');
+  assert.equal(h.state().step, 0);
+  assert.equal(h.state().bridgeArrival?.phase, 'approaching');
+});
+
+test('the exact apartment departure beat survives pause, disconnect, save restore and retry', () => {
+  const h = setup('escaped'); reachDecision(h); h.command('act'); h.frames(WAKE_CALL.reply + .2);
+  h.neo.position = filmStepPosition(FILM_SCENE_BY_ID.m1_wake_again, FILM_SCENE_BY_ID.m1_wake_again.steps[1]);
+  h.command('act'); h.frames(WAKE_CALL.leaving * .48);
+  const beat = structuredClone(h.state().wakeCall); const position = { ...h.neo.position };
+  assert.equal(beat?.phase, 'leaving');
+  h.frames(1.5, false); assert.deepEqual(h.state().wakeCall, beat);
+  h.players.release('player', h.tick()); h.frames(1.5); assert.deepEqual(h.state().wakeCall, beat);
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); h.players.possess('player', 'neo', h.tick());
+  assert.deepEqual(h.state().wakeCall, beat); assert.deepEqual(h.neo.position, position);
+  assert.ok(h.neo.currentAction?.parameters.wakeCall, 'restoring the save must rebuild the exact departure pose');
+  h.neo.status = 'dead'; h.command('retry'); assert.deepEqual(h.state().wakeCall, beat); assert.deepEqual(h.neo.position, position);
 });
 
 test('Morpheus describes the actual office outcome during the second call', () => {
@@ -116,5 +153,14 @@ test('the bedside-to-landline route is clear and the apartment set owns a lit ph
     renderer.update({ version: 1, scene: 'm1_wake_again', step: 0, actor: 'neo', completed: [], enteredAt: 0, reflections: {}, lastText: '', checkpoint: filmPosition('film_anderson_flat'),
       wakeCall: { phase: 'listening', elapsed: 2, nightmare: true } });
     assert.equal(handset.visible, false, 'the cradle handset transfers to Neo hand during the call');
+    const door = root.getObjectByName('apartment-101-door'); assert.ok(door);
+    renderer.update({ version: 1, scene: 'm1_wake_again', step: 1, actor: 'neo', completed: [], enteredAt: 0, reflections: {}, lastText: '', checkpoint: filmPosition('film_anderson_flat'),
+      wakeCall: { phase: 'done', elapsed: 0, nightmare: true } });
+    assert.equal(door.rotation.y, 0, '101 stays closed until the player uses its handle');
+    renderer.update({ version: 1, scene: 'm1_wake_again', step: 1, actor: 'neo', completed: [], enteredAt: 0, reflections: {}, lastText: '', checkpoint: filmPosition('film_anderson_flat'),
+      wakeCall: { phase: 'leaving', elapsed: WAKE_CALL.leaving * .55, nightmare: true } });
+    assert.ok(door.rotation.y > 1, 'the departure phase opens the actual 101 door');
+    const doorwayFill = root.getObjectByName('apartment-doorway-fill') as THREE.PointLight | undefined;
+    assert.ok(doorwayFill && doorwayFill.intensity >= 90, 'the night departure needs a readable rim light on Neo’s dark coat');
   } finally { renderer.dispose(); globalThis.document = document; }
 });

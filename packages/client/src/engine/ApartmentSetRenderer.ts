@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { APARTMENT, apartmentAfter, apartmentDoor, wakeCallHandsetHeld, type FilmJourney } from '@auto_matrix/shared';
+import { APARTMENT, apartmentAfter, apartmentDoor, wakeCallDoor, wakeCallHandsetHeld, type FilmJourney } from '@auto_matrix/shared';
 
 /** Anderson's workroom and the shared landing. Props use the shared interaction layout. */
 export class ApartmentSetRenderer {
@@ -39,7 +39,7 @@ export class ApartmentSetRenderer {
     this.box(plaster, 0, 7.7, APARTMENT.doorZ, 4, 2.2, .4);
     for (const x of [-2, 2]) this.box(trim, x, 3.35, 12, .22, 6.7, .65);
     this.box(trim, 0, 6.67, 12, 4.25, .24, .65);
-    this.door.position.set(-1.9, 0, 12); this.door.userData.dynamic = true; this.root.add(this.door);
+    this.door.name = 'apartment-101-door'; this.door.position.set(-1.9, 0, 12); this.door.userData.dynamic = true; this.root.add(this.door);
     this.mesh(new RoundedBoxGeometry(3.8, 6.45, .21, 2, .025), walnut, 1.9, 3.25, 0, this.door);
     for (const z of [-.12, .12]) for (const y of [1.7, 4.6]) this.mesh(new THREE.BoxGeometry(3.18, 2.35, .035), trim, 1.9, y, z, this.door);
     const plate = this.label('101', 1.1, .47, '#c8c4a5', '#2a3028', 256); plate.position.set(1.9, 5.67, .151); this.door.add(plate);
@@ -158,8 +158,8 @@ export class ApartmentSetRenderer {
     const lamp = new THREE.PointLight(0xffce8b, 80, 23, 2); lamp.position.set(13, 5.65, 4); this.root.add(lamp);
     const light = new THREE.SpotLight(0xc9d2a3, 180, 30, 1.05, .65, 2); light.position.set(0, 8.3, 16); light.target.position.set(0, 0, 11); light.castShadow = true; light.shadow.mapSize.set(1024, 1024); light.shadow.normalBias = .035; this.root.add(light, light.target);
     const luminous = new THREE.MeshBasicMaterial({ color: 0xc2cba1, toneMapped: false }); this.materials.add(luminous);
-    const hallBounce = new THREE.PointLight(0xd7d0a7, 65, 20, 2); hallBounce.position.set(0, 5.8, 15.5); this.root.add(hallBounce);
-    const doorwayFill = new THREE.PointLight(0xadbba1, 22, 13, 2); doorwayFill.position.set(2, 5, 8); this.root.add(doorwayFill);
+    const hallBounce = new THREE.PointLight(0xd7d0a7, 82, 20, 2); hallBounce.position.set(0, 5.8, 15.5); this.root.add(hallBounce);
+    const doorwayFill = new THREE.PointLight(0xc3c8aa, 105, 14, 2); doorwayFill.name = 'apartment-doorway-fill'; doorwayFill.position.set(2, 4.8, 8.4); this.root.add(doorwayFill);
     this.box(trim, 0, 8.55, 16, 3.4, .16, .7); this.box(luminous, 0, 8.42, 16, 3.1, .08, .32);
     this.batch(); this.update();
   }
@@ -189,12 +189,13 @@ export class ApartmentSetRenderer {
   }
   update(journey?: FilmJourney): void {
     const contact = journey?.scene === 'm1_wake_up' && !journey.visiting ? journey.contact : undefined;
+    const call = journey?.scene === 'm1_wake_again' && !journey.visiting ? journey.wakeCall : undefined;
     this.door.rotation.y = apartmentDoor(contact) * 1.42;
-    if (journey?.scene === 'm1_wake_again' || journey?.visiting) this.door.rotation.y = 1.42;
+    if (journey?.scene === 'm1_wake_again') this.door.rotation.y = (journey.visiting || journey.step >= 2 ? 1 : wakeCallDoor(call)) * 1.42;
+    else if (journey?.visiting) this.door.rotation.y = 1.42;
     const opening = contact?.phase === 'retrieving' ? THREE.MathUtils.smoothstep(contact.elapsed, .3, 1.65) : contact && apartmentAfter(contact, 'disk') ? 1 : 0;
     this.cover.rotation.z = opening * 2.88;
     this.disk.visible = !(contact && (apartmentAfter(contact, 'disk') || contact.phase === 'retrieving' && contact.elapsed > 2.3));
-    const call = journey?.scene === 'm1_wake_again' && !journey.visiting ? journey.wakeCall : undefined;
     const held = wakeCallHandsetHeld(call); this.phoneHandset.visible = !held;
     this.phoneHandset.position.set(APARTMENT.phone.x, APARTMENT.phone.y + .48, APARTMENT.phone.z + .22);
     this.phoneHandset.rotation.set(0, 0, call?.phase === 'ringing' ? Math.sin(call.elapsed * 52) * .045 : 0);

@@ -498,6 +498,7 @@ export class PlayerControls {
     const dx = this.position.x - previous.x; const dz = this.position.z - previous.z;
     this.motion.speed = this.ride || this.climbing || this.performing ? 0 : Math.hypot(dx, dz) / Math.max(delta, .001);
     if (this.motion.wakeCall?.phase === 'waking' && this.motion.wakeCall.elapsed > 2.7) this.motion.speed = 1.45;
+    if (this.motion.wakeCall?.phase === 'leaving' && this.motion.wakeCall.elapsed > 1.15) this.motion.speed = 1.35;
     this.motion.grounded = Boolean(this.ride || this.gunner) || this.climbing || this.performing || this.position.y <= groundHeight(this.position, state.isInMatrix) + .12;
     this.motion.verticalVelocity = this.vy;
     this.motion.inspecting = Boolean((this.motion.pills || this.motion.interrogation || this.motion.welcome || this.motion.knock !== undefined || this.motion.recovery !== undefined || this.motion.reveal || this.motion.training || this.motion.workday || this.motion.wakeCall || this.motion.sentinel || this.motion.interlude || this.motion.oracleVisit || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || this.motion.lobbyEntry) && !this.firstPerson) || Boolean(this.phone && this.performing && this.motion.window === undefined && this.motion.crossing === undefined) || this.spoon !== undefined && this.enabled && this.motion.speed < .25 && this.motion.grounded;
@@ -518,7 +519,7 @@ export class PlayerControls {
     const revealWide = !this.firstPerson && Boolean(this.motion.reveal && (this.motion.reveal.kind === 'desert' ? this.motion.reveal.elapsed < 10.2 : this.motion.reveal.elapsed < 2.4));
     const trainingWide = !this.firstPerson && Boolean(this.motion.training && (this.motion.training.kind === 'jump' || this.motion.training.kind === 'red_dress' && this.motion.training.elapsed < 4.8));
     const officeWide = !this.firstPerson && this.motion.workday && this.motion.workday.phase !== 'signing';
-    const wakeWide = !this.firstPerson && this.motion.wakeCall?.phase === 'waking';
+    const wakeWide = !this.firstPerson && Boolean(this.motion.wakeCall && ['waking', 'leaving'].includes(this.motion.wakeCall.phase));
     const sentinelWide = !this.firstPerson && Boolean(this.motion.sentinel && ['shutdown', 'detected', 'clear'].includes(this.motion.sentinel.phase));
     const interludeWide = !this.firstPerson && Boolean(this.motion.interlude);
     const oracleWide = !this.firstPerson && Boolean(this.motion.oracleVisit?.phase === 'examining');
@@ -805,10 +806,13 @@ export class PlayerControls {
     } else if (this.motion.wakeCall && !this.firstPerson) {
       const call = this.motion.wakeCall; const center = FILM_SETS.film_anderson_flat.center; const origin = new THREE.Vector3(center.x, center.y - 1, center.z);
       const waking = call.phase === 'waking'; const rise = waking ? THREE.MathUtils.smoothstep(call.elapsed, 1.1, 3.5) : 1;
+      const leaving = call.phase === 'leaving'; const crossing = leaving ? THREE.MathUtils.smoothstep(call.elapsed, 1.15, 3.9) : 0;
       const ideal = (waking ? new THREE.Vector3(15.4, 5.2, -5.2).lerp(new THREE.Vector3(8.3, 4.35, -4.8), rise)
-        : new THREE.Vector3(-2.55, 4.35, -11.05)).add(origin);
+        : leaving ? new THREE.Vector3(4.5, 4.6, 6.8).lerp(new THREE.Vector3(4.6, 4.7, 7.2), crossing)
+          : new THREE.Vector3(-2.55, 4.35, -11.05)).add(origin);
       const focus = (waking ? new THREE.Vector3(10.1, 2.05, -9.2).lerp(new THREE.Vector3(6.2, 3.05, -8.9), rise)
-        : new THREE.Vector3(-5.95, 3.15, -9.05)).add(origin);
+        : leaving ? new THREE.Vector3(.8, 3.05, 11).lerp(new THREE.Vector3(.1, 3.05, 13), crossing)
+          : new THREE.Vector3(-5.95, 3.15, -9.05)).add(origin);
       if (resetCamera || call.elapsed < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-7 * delta));
       this.camera.lookAt(focus);
     } else if (this.motion.contact && !this.firstPerson) {
