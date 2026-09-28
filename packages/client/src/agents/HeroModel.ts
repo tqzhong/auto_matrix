@@ -13,6 +13,7 @@ import { RecoveryPerformance } from './RecoveryPerformance.js';
 import { OfficeWorkdayPerformance } from './OfficeWorkdayPerformance.js';
 import { ApartmentPerformance } from './ApartmentPerformance.js';
 import { WakeCallPerformance } from './WakeCallPerformance.js';
+import { enableSkinnedCulling } from './SkinnedBounds.js';
 import { clubCloseness } from '@auto_matrix/shared';
 
 export type HeroSupport = 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour' | 'niobe' | 'ballard' | 'ghost' | 'soren' | 'link';
@@ -170,7 +171,7 @@ export class HeroModels {
       if (object instanceof THREE.Bone) { bones.set(object.name, object); rest.set(object.name, object.position.clone()); }
       if (object instanceof THREE.Mesh) {
         object.castShadow = object.receiveShadow = true;
-        if (object instanceof THREE.SkinnedMesh) { object.frustumCulled = false; this.skeletons.add(object.skeleton); }
+        if (object instanceof THREE.SkinnedMesh) this.skeletons.add(object.skeleton);
       }
     });
     root.updateMatrixWorld(true);
@@ -187,7 +188,7 @@ export class HeroModels {
         }
         const mesh = new THREE.SkinnedMesh(geometry, source.material); mesh.name = source.name; mesh.userData.office = true;
         const skeleton = new THREE.Skeleton(source.skeleton.bones.map(bone => bones.get(bone.name)!), source.skeleton.boneInverses.map(matrix => matrix.clone()));
-        mesh.bind(skeleton, source.bindMatrix.clone()); mesh.frustumCulled = false; mesh.castShadow = mesh.receiveShadow = true; mesh.visible = false;
+        mesh.bind(skeleton, source.bindMatrix.clone()); mesh.castShadow = mesh.receiveShadow = true; mesh.visible = false;
         this.skeletons.add(skeleton); root.add(mesh);
       }
     }
@@ -282,6 +283,7 @@ export class HeroModels {
     const rig: HeroRig = { root, bones, rest, panels, footHeight, glasses, silver, wardrobe, officeRole: support === 'rhineheart' || support === 'courier' ? support : undefined, apartmentRole };
     if (apartmentRole) this.apartments.set(rig, new ApartmentPerformance(rig));
     if (id === 'neo' && !support) this.recoveries.set(rig, new RecoveryPerformance(rig));
+    enableSkinnedCulling(root);
     return rig;
   }
 
@@ -823,7 +825,7 @@ export class HeroModels {
     this.apartments.get(rig)?.update(input.contact);
     if (input.wakeCall && !this.wakeCalls.has(rig)) this.wakeCalls.set(rig, new WakeCallPerformance(rig));
     this.wakeCalls.get(rig)?.update(input.wakeCall);
-    if (delta <= 0) return;
+    if (delta <= 0 || !rig.panels.some(panel => panel.mesh.visible)) return;
     const dt = Math.min(delta, 1 / 30);
     // Analytic wind target plus damped springs; the waist is pinned. Thigh and
     // shin capsules stop the running knees from cutting through the coat.
@@ -833,7 +835,9 @@ export class HeroModels {
       pelvis.worldToLocal(start); pelvis.worldToLocal(end); return { start, end, radius: i ? .16 : .195 };
     }));
     for (const panel of rig.panels) {
+      if (!panel.mesh.visible) continue;
       const position = panel.mesh.geometry.attributes.position;
+      let changed = false;
       for (let i = 0; i < position.count; i++) {
         const x = panel.rest[i * 3]; const y = panel.rest[i * 3 + 1]; const z = panel.rest[i * 3 + 2];
         const t = Math.max(0, -y / 1.97); const hem = t * t;
@@ -855,9 +859,10 @@ export class HeroModels {
           const offset = i * 3 + axis; const value = position.array[offset]; const target = this.point.getComponent(axis);
           panel.velocity[offset] += ((target - value) * 150 - panel.velocity[offset] * 24) * dt;
           position.array[offset] = t < .04 ? panel.rest[offset] : value + panel.velocity[offset] * dt;
+          changed ||= position.array[offset] !== value;
         }
       }
-      position.needsUpdate = true; panel.mesh.geometry.computeVertexNormals();
+      if (changed) { position.needsUpdate = true; panel.mesh.geometry.computeVertexNormals(); }
     }
   }
 

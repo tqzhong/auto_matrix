@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { HeroModels, type HeroRig } from '../packages/client/src/agents/HeroModel.js';
-import { advanceMotion, newMotion } from '../packages/client/src/agents/CharacterMotion.js';
+import { advanceMotion, newMotion, type MotionInput } from '../packages/client/src/agents/CharacterMotion.js';
 import { PhoneModel } from '../packages/client/src/agents/PhoneModel.js';
 import { OfficeSetRenderer } from '../packages/client/src/engine/OfficeSetRenderer.js';
 import { NebDeckRenderer } from '../packages/client/src/engine/NebDeckRenderer.js';
@@ -34,6 +34,114 @@ async function loadGeometry(id = 'neo') {
   padded.copy(result, 20); bin.copy(result, 20 + padded.length);
   return new GLTFLoader().parseAsync(result.buffer.slice(result.byteOffset, result.byteOffset + result.byteLength), '');
 }
+
+test('hidden coat panels skip deformation work and retain correct normals when worn again', async t => {
+  const asset = await loadGeometry(); const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: () => Promise<typeof asset> }).load = async () => asset;
+  try {
+    const rig = (await models.create('neo'))!; const motion = newMotion();
+    let updates = 0;
+    for (const panel of rig.panels) {
+      const normals = panel.mesh.geometry.computeVertexNormals.bind(panel.mesh.geometry);
+      t.mock.method(panel.mesh.geometry, 'computeVertexNormals', () => { updates++; normals(); });
+    }
+    const hidden = { speed: 6, grounded: true, verticalVelocity: 0, turn: .3, realWorld: true };
+    const original = rig.panels.map(panel => Array.from(panel.mesh.geometry.attributes.position.array));
+    for (let frame = 0; frame < 30; frame++) models.animate(rig, advanceMotion(motion, hidden, 1 / 60), motion, hidden, 1 / 60);
+    assert.ok(rig.panels.every(panel => !panel.mesh.visible));
+    assert.equal(updates, 0, 'invisible ship-clothing tails cannot consume the frame budget');
+    rig.panels.forEach((panel, i) => assert.deepEqual(Array.from(panel.mesh.geometry.attributes.position.array), original[i]));
+    const running = { ...hidden, realWorld: false };
+    for (let frame = 0; frame < 45; frame++) models.animate(rig, advanceMotion(motion, running, 1 / 60), motion, running, 1 / 60);
+    assert.ok(updates > 0 && rig.panels.every(panel => panel.mesh.visible), 'switching clothes back restores the animated coat');
+    for (const panel of rig.panels) {
+      const geometry = panel.mesh.geometry; const reference = geometry.clone(); reference.computeVertexNormals();
+      const actual = geometry.attributes.normal.array, expected = reference.attributes.normal.array;
+      assert.ok(actual.every((value, i) => Number.isFinite(value) && Math.abs(value - expected[i]) < 1e-6), 'moving cloth keeps exactly the geometry-derived lighting');
+      reference.dispose();
+    }
+  } finally { models.dispose(); }
+});
+
+test('a settled coat does not upload identical positions and normals every frame', async () => {
+  const asset = await loadGeometry('morpheus'); const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: () => Promise<typeof asset> }).load = async () => asset;
+  try {
+    const rig = (await models.create('morpheus'))!; const motion = newMotion();
+    const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 };
+    const pose = advanceMotion(motion, input, 0);
+    for (let frame = 0; frame < 360; frame++) models.animate(rig, pose, motion, input, 1 / 60);
+    const before = rig.panels.map(panel => ({ positions: Array.from(panel.mesh.geometry.attributes.position.array),
+      positionVersion: panel.mesh.geometry.attributes.position.version, normalVersion: panel.mesh.geometry.attributes.normal.version }));
+    for (let frame = 0; frame < 30; frame++) models.animate(rig, pose, motion, input, 1 / 60);
+    rig.panels.forEach((panel, i) => {
+      assert.deepEqual(Array.from(panel.mesh.geometry.attributes.position.array), before[i].positions, 'the pose has fully settled');
+      assert.equal(panel.mesh.geometry.attributes.position.version, before[i].positionVersion, 'identical vertex positions should not upload again');
+      assert.equal(panel.mesh.geometry.attributes.normal.version, before[i].normalVersion, 'identical cloth should reuse its existing surface normals');
+    });
+  } finally { models.dispose(); }
+});
+
+test('animated heroes leave the draw list behind the camera while every posed vertex remains inside their bounds', async () => {
+  const ids = ['neo', 'morpheus', 'trinity', 'smith'] as const;
+  const assets = new Map(await Promise.all([...ids, 'neo-office'].map(async id => [id, await loadGeometry(id)] as const)));
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: (id: string) => Promise<unknown> }).load = async id => assets.get(id)!;
+  const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 };
+  const poses: MotionInput[] = [input, { ...input, speed: 7, turn: .8 }, { ...input, grounded: false, verticalVelocity: 4 },
+    { ...input, seated: true }, { ...input, performance: 'touch', performanceTime: 4.15, mirror: .3 },
+    { ...input, realWorld: true, performance: 'recover', recovery: 6 }];
+  const camera = new THREE.PerspectiveCamera(48, 16 / 9, .1, 1000); const frustum = new THREE.Frustum();
+  const point = new THREE.Vector3(); const matrix = new THREE.Matrix4();
+  try {
+    for (const id of ids) {
+      const rig = (await models.create(id))!; const motion = newMotion();
+      rig.root.position.set(80, 3, -120); rig.root.rotation.y = .67; rig.root.scale.set(.91, 1.08, 1.01);
+      for (const input of poses) {
+        models.animate(rig, advanceMotion(motion, input, 1 / 30), motion, input, 1 / 30);
+        // Weapon gestures can change bones after HeroModels.animate returns.
+        rig.bones.get('shoulder_R')!.rotation.x -= 1.2;
+        rig.root.updateMatrixWorld(true);
+        const meshes = rig.wardrobe.map(part => part.mesh).filter((mesh): mesh is THREE.SkinnedMesh => mesh.visible && mesh instanceof THREE.SkinnedMesh);
+        camera.position.set(80, 6, -150); camera.lookAt(80, 6, -180); camera.updateMatrixWorld();
+        frustum.setFromProjectionMatrix(matrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
+        assert.equal(meshes.filter(mesh => !mesh.frustumCulled || frustum.intersectsObject(mesh)).length, 0, `${id} behind this view must not submit skinned geometry`);
+        for (const mesh of meshes) {
+          assert.ok(mesh.boundingSphere, `${id} ${mesh.name} needs a current bound`);
+          for (let i = 0; i < mesh.geometry.attributes.position.count; i++) {
+            mesh.getVertexPosition(i, point);
+            assert.ok(mesh.boundingSphere.distanceToPoint(point) < 1e-5, `${id} ${mesh.name} vertex ${i} escapes during ${input.performance ?? input.speed}`);
+          }
+        }
+        // The same frame must still render through an opposite mirror/shadow view.
+        camera.lookAt(80, 5, -120); camera.updateMatrixWorld();
+        frustum.setFromProjectionMatrix(matrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
+        assert.ok(meshes.every(mesh => frustum.intersectsObject(mesh)), 'culling must be per view, not a visibility toggle');
+      }
+    }
+  } finally { models.dispose(); }
+});
+
+test('the tucked and raised shirt stays inside culling bounds after the car-scan shader deforms it', async () => {
+  const [neo, office] = await Promise.all([loadGeometry(), loadGeometry('neo-office')]);
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: (id: string) => Promise<typeof neo> }).load = async id => id === 'neo-office' ? office : neo;
+  try {
+    const rig = (await models.create('neo'))!; const motion = newMotion();
+    const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0,
+      meeting: { phase: 'located' as const, elapsed: 0, role: 'neo' as const, bugged: true } };
+    models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
+    const shirt = rig.wardrobe.find(part => /Black.crew.neck/i.test(part.mesh.name))!.mesh as THREE.SkinnedMesh;
+    const { position, _meetingShirtLift: lift, _meetingShirtTuck: tuck } = shirt.geometry.attributes;
+    const point = new THREE.Vector3();
+    for (const amount of [0, 1]) for (let i = 0; i < position.count; i++) {
+      point.fromBufferAttribute(position, i); point.y += tuck.getX(i) * -.4 + lift.getX(i) * amount * .48;
+      shirt.applyBoneTransform(i, point);
+      assert.ok(shirt.boundingBox!.distanceToPoint(point) < 1e-5, `the shader hem escapes at vertex ${i}, lift ${amount}`);
+      assert.ok(shirt.boundingSphere!.distanceToPoint(point) < 1e-5);
+    }
+  } finally { models.dispose(); }
+});
 
 test('the mirror reaches Neo’s hand before his face and coat hem', async () => {
   const asset = await loadGeometry('neo'); const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
