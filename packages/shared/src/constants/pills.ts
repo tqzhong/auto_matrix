@@ -7,7 +7,7 @@ export interface PillEncounter {
   approach: { x: number; z: number; yaw: number };
 }
 export type PillGesture = Pick<PillEncounter, 'phase' | 'elapsed' | 'choice'> & { role: 'neo' | 'morpheus' };
-export const PILL_ROOM = { seat: 1.75, z: -6, tableZ: -8.4, tableY: 1.65, cup: { x: 1.1, y: 2.03, z: -7.65 },
+export const PILL_ROOM = { seat: 1.75, z: -6, tableZ: -7.35, tableY: 1.75, tableRadius: .64, cup: { x: .42, y: 2.03, z: -7.2 },
   fireplace: { x: 0, z: -10.8, width: 7.7, depth: 1.25, height: 5 },
   exit: { x: -3, z: -3.1 }, trackingDoor: { x: -6, z: -11.5 }, mirror: { x: -10, z: -17.62 } } as const;
 export const PILL_TIMING = { offer: 5, take: 17, transfer: 1.8, swallow: 3.65, liftCup: 5.3, replaceCup: 8.6,
@@ -32,7 +32,7 @@ export function pillPose(gesture: PillGesture) {
   const drink = taking ? pillEase(t, 5.55, 6.6) * (1 - pillEase(t, 7.7, 8.6)) : 0;
   const tilt = taking ? pillEase(t, 6.6, 7.15) * (1 - pillEase(t, 7.7, 8.35)) : 0;
   return { seat, offer, reach, mouth, cupReach, drink, tilt, rise,
-    lean: gesture.role === 'morpheus' ? offer * .12 : reach * .68 + cupReach * (1 - drink) * .24 + Math.sin(rise * Math.PI) * .42,
+    lean: gesture.role === 'morpheus' ? -seat * .16 + offer * .1 : seat * .16 + reach * .68 + cupReach * (1 - drink) * .24 + Math.sin(rise * Math.PI) * .42,
     holdingPill: taking && t >= PILL_TIMING.transfer && t < PILL_TIMING.swallow,
     holdingCup: taking && t >= PILL_TIMING.liftCup && t < PILL_TIMING.replaceCup,
     cupUsed: done || taking && t >= PILL_TIMING.replaceCup,

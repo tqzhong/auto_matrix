@@ -854,6 +854,13 @@ test('the shipped Neo and Morpheus rigs pass a capsule hand to hand and lift a g
     return { models, rig, draw };
   });
   try {
+    actors[0].draw({ phase: 'choice', elapsed: 5, role: 'neo' });
+    for (const side of ['L', 'R']) {
+      const hand = actors[0].rig.bones.get('wrist_' + side)!;
+      const palm = hand.localToWorld(new THREE.Vector3(side === 'R' ? .082 : -.082, -.18, .015));
+      const knee = actors[0].rig.bones.get('knee_' + side)!.getWorldPosition(new THREE.Vector3());
+      assert.ok(palm.distanceTo(knee) < .32, 'waiting Neo must rest his hands on his knees instead of holding both arms in midair');
+    }
     for (const choice of ['red', 'blue'] as const) {
       const offered = actors[1].draw({ phase: 'taking', elapsed: PILL_TIMING.transfer - .001, choice, role: 'morpheus' })(`held-${choice}-pill`);
       const previous = offered.getWorldPosition(new THREE.Vector3()); assert.ok(offered.visible);
@@ -879,6 +886,17 @@ test('the shipped Neo and Morpheus rigs pass a capsule hand to hand and lift a g
     draw(PILL_TIMING.replaceCup - .001);
     assert.ok(cup.getWorldPosition(new THREE.Vector3()).distanceTo(table) < .03, 'replace the same glass, without a visible jump');
     draw(PILL_TIMING.replaceCup); assert.equal(cup.visible, false);
+    actors[1].draw({ phase: 'taking', elapsed: 9.3, choice: 'red', role: 'morpheus' });
+    for (const side of ['R', 'L']) {
+      const rig = actors[1].rig;
+      const palm = rig.root.worldToLocal(rig.bones.get('wrist_' + side)!.localToWorld(new THREE.Vector3(side === 'R' ? .082 : -.082, -.18, .015)));
+      assert.ok(Math.abs(palm.x) > .9 && Math.abs(palm.x) < 1.15 && palm.y > 1.85 && palm.y < 2.02,
+        `Morpheus must lower his hands onto the rolled armrests after offering the pills: ${palm.toArray()}`);
+      const shoulder = rig.root.worldToLocal(rig.bones.get('shoulder_' + side)!.getWorldPosition(new THREE.Vector3()));
+      const elbow = rig.root.worldToLocal(rig.bones.get('elbow_' + side)!.getWorldPosition(new THREE.Vector3()));
+      assert.ok(Math.abs(elbow.x) > Math.abs(shoulder.x) + .1 && elbow.z < 0,
+        `resting elbows must bend beside the body, not fold the coat sleeves across the abdomen: ${elbow.toArray()}`);
+    }
   } finally { actors.forEach(actor => actor.models.dispose()); }
 });
 

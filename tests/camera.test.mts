@@ -999,6 +999,20 @@ for (const firstPerson of [false, true]) test(`armed ${firstPerson ? 'first' : '
 });
 
 
+test('the pill choice frames both complete chairs above the choice overlay', t => {
+  const game = setup(t, -Math.PI / 2); const center = FILM_SETS.film_lafayette.center;
+  game.state.currentLocation = 'film_lafayette'; game.state.position = filmPosition('film_lafayette', PILL_ROOM.seat, PILL_ROOM.z);
+  game.state.currentAction = { type: 'idle', parameters: { pills: { phase: 'choice', elapsed: 5, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
+  for (const aspect of [16 / 9, .72]) {
+    game.camera.aspect = aspect; game.camera.updateProjectionMatrix(); game.controls.possess(game.state); game.step(.6);
+    for (const x of [-2.9, 2.9]) for (const y of [.08, 3.5]) {
+      const point = new THREE.Vector3(center.x + x, center.y - 1 + y, center.z - 5.3).project(game.camera);
+      assert.ok(Math.abs(point.x) < .88 && point.y > -.4 && point.y < .82 && point.z > -1 && point.z < 1,
+        `the full silhouette must clear the bottom choice controls at aspect ${aspect}: ${point.toArray()}`);
+    }
+  }
+});
+
 test('the pill camera supports seated first person and releases movement when the actor finishes before the journey snapshot', t => {
   const game = setup(t, Math.PI);
   game.state.currentLocation = 'film_lafayette'; game.state.position = filmPosition('film_lafayette', 0, -3.3);

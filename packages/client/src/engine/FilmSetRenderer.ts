@@ -757,42 +757,77 @@ export class FilmSetRenderer {
   }
   private loungeChair(x: number, z: number, angle: number): void {
     const start = this.root.children.length;
-    const seam = this.mat(0x43221c, .68); const trim = this.mat(0x856747, .38, .65);
+    const seam = this.mat(0x43221c, .88); const trim = this.mat(0x604c32, .72, .3); const frame = this.mat(0x281c17, .64);
+    const leg = new THREE.LatheGeometry([[.18, .12], [.21, .18], [.17, .28], [.12, .38], [.11, .55], [.16, .78], [.2, .85]]
+      .map(([radius, y]) => new THREE.Vector2(radius, y)), 16);
     for (const dx of [-1.35, 1.35]) for (const dz of [-1.05, 1.05]) {
-      this.cylinder(this.wood, dx, .48, dz, .16, .92, .22); this.sphere(this.wood, dx, .19, dz, .22);
+      this.mesh(leg, frame, dx, 0, dz);
     }
-    this.box(this.leather, 0, 1.02, 0, 3.65, .6, 3.05, .22);
-    this.box(this.leather, 0, 1.48, .1, 2.8, .55, 2.65, .25);
-    this.pipe([[-1.3, 1.55, 1.36], [0, 1.56, 1.4], [1.3, 1.55, 1.36]], .018, seam);
-    this.box(this.leather, 0, 3.23, -1.23, 3.7, 3.65, .65, .3).rotation.x = -.09;
+    this.box(frame, 0, .83, 0, 3.45, .22, 2.9, .08);
+    this.box(this.leather, 0, 1.05, 0, 3.5, .45, 2.95, .2);
+    this.box(this.leather, 0, 1.49, .14, 2.7, .52, 2.58, .22);
+    this.pipe([[-1.27, 1.5, 1.39], [0, 1.49, 1.44], [1.27, 1.5, 1.39]], .013, seam);
+    // A continuous padded shell: a domed crown, a reclined centre and forward
+    // wings. The rear and perimeter are closed, so side views have no flat card.
     const buttons: [number, number][] = [];
     for (let row = 0; row < 5; row++) for (let col = 0; col < 5; col++) {
-      const bx = -1.44 + col * .72 + row % 2 * .36;
-      if (bx < 1.6) buttons.push([bx, 2 + row * .62]);
+      const u = (col - 2) * .38 + row % 2 * .19;
+      if (Math.abs(u) < .88) buttons.push([u, .16 + row * .16]);
     }
     const positions: number[] = []; const uv: number[] = []; const indices: number[] = [];
-    const surface = (sx: number, sy: number) => {
-      const v = (sy - 1.65) / 3.3;
-      const radius = Math.min(...buttons.map(([bx, by]) => ((sx - bx) / .65) ** 2 + ((sy - by) / .55) ** 2));
-      return -.8 - v * .2 + sx * sx * .095 + .19 * Math.min(1, radius * 3) - .13 * Math.exp(-radius * 20);
+    const surface = (u: number, v: number, back = false): number[] => {
+      const sx = u * (1.56 + .22 * Math.sin(v * Math.PI * .85));
+      const sy = 1.45 + v * (3.5 + .4 * (1 - u * u));
+      const radius = Math.min(...buttons.map(([bu, bv]) => ((u - bu) / .38) ** 2 + ((v - bv) / .16) ** 2));
+      const padded = .07 * (1 - Math.exp(-radius * 9)) - .07 * Math.exp(-radius * 45);
+      return [sx, sy, -.94 - .55 * v + .62 * u ** 4 * Math.sin(v * Math.PI * .9) + (back ? -.32 : padded)];
     };
-    for (let row = 0; row <= 48; row++) for (let col = 0; col <= 48; col++) {
-      const sx = (col / 48 - .5) * 3.4; const sy = 1.65 + row / 48 * 3.3;
-      positions.push(sx, sy, surface(sx, sy)); uv.push(col / 48, row / 48);
-      if (row < 48 && col < 48) { const a = row * 49 + col; indices.push(a, a + 1, a + 49, a + 1, a + 50, a + 49); }
+    const columns = 40, rows = 56, count = (columns + 1) * (rows + 1);
+    for (let side = 0; side < 2; side++) for (let row = 0; row <= rows; row++) for (let col = 0; col <= columns; col++) {
+      positions.push(...surface(col / columns * 2 - 1, row / rows, !!side)); uv.push(col / columns, row / rows);
+      if (row < rows && col < columns) {
+        const a = side * count + row * (columns + 1) + col, b = a + columns + 1;
+        if (side) indices.push(a, b, a + 1, a + 1, b, b + 1);
+        else indices.push(a, a + 1, b, a + 1, b + 1, b);
+      }
     }
+    const close = (a: number, b: number) => indices.push(a, b, a + count, b, b + count, a + count);
+    for (let col = 0; col < columns; col++) { close(col + 1, col); close(rows * (columns + 1) + col, rows * (columns + 1) + col + 1); }
+    for (let row = 0; row < rows; row++) { close(row * (columns + 1), (row + 1) * (columns + 1)); close((row + 1) * (columns + 1) + columns, row * (columns + 1) + columns); }
     const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)); geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geometry.setIndex(indices); geometry.computeVertexNormals();
     this.mesh(geometry, this.leather, 0, 0, 0);
-    for (const [bx, by] of buttons) this.sphere(seam, bx, by, surface(bx, by) + .035, .065).scale.z = .45;
+    for (const [u, v] of buttons) { const [bx, by, bz] = surface(u, v); this.sphere(seam, bx, by, bz + .022, .046).scale.z = .4; }
+    const crown = Array.from({ length: 17 }, (_, i) => surface(i / 8 - 1, 1)); this.pipe(crown, .018, seam);
+    const armShape = new THREE.Shape(); armShape.moveTo(-1.4, 1.03); armShape.lineTo(1.37, 1.03);
+    armShape.bezierCurveTo(1.46, 1.56, 1.46, 2.24, 1.34, 2.55);
+    armShape.bezierCurveTo(1.16, 2.9, .58, 2.68, -.2, 2.71);
+    armShape.bezierCurveTo(-.85, 2.74, -1.13, 3.1, -1.36, 3.22); armShape.closePath();
+    const arm = new THREE.ExtrudeGeometry(armShape, { depth: .34, bevelEnabled: true, bevelSize: .12, bevelThickness: .12, bevelSegments: 4, curveSegments: 12, steps: 1 });
+    arm.translate(0, 0, -.17); arm.rotateY(-Math.PI / 2);
     for (const side of [-1, 1]) {
-      this.box(this.leather, side * 1.58, 2.04, 0, .65, 1.85, 2.9, .3);
-      this.cylinder(this.leather, side * 1.6, 2.78, .1, .42, 2.8).rotation.x = Math.PI / 2;
-      this.sphere(this.leather, side * 1.6, 2.78, 1.5, .43).scale.z = .5;
-      for (let i = 0; i < 11; i++) this.sphere(trim, side * 1.86, 1.1 + i * .32, -1.17, .033);
-      this.pipe([[side * 1.9, 1.2, 1.43], [side * 1.9, 2.6, 1.43], [side * 1.6, 3.17, 1.43], [side * 1.25, 2.65, 1.43]], .025, seam);
+      this.mesh(arm, this.leather, side * 1.57, 0, 0);
+      this.pipe([[side * 1.58, 3.12, -1.05], [side * 1.59, 2.85, -.5], [side * 1.6, 2.72, .45], [side * 1.6, 2.72, 1.23]], .27, this.leather);
+      this.sphere(this.leather, side * 1.6, 2.72, 1.29, .285).scale.z = .58;
+      this.mesh(new THREE.TorusGeometry(.244, .012, 6, 28), seam, side * 1.6, 2.72, 1.36);
+      this.pipe(Array.from({ length: 15 }, (_, i) => surface(side, i / 14)), .018, seam);
+      for (let i = 0; i < 13; i++) { const [bx, by, bz] = surface(side, .08 + i * .07); this.sphere(trim, bx, by, bz + .018, .025); }
     }
-    for (let i = 0; i < 26; i++) this.sphere(trim, -1.72 + i * .138, .89, 1.55, .033);
+    for (let i = 0; i < 23; i++) this.sphere(trim, -1.55 + i * .141, 1, 1.485, .025);
     const group = new THREE.Group(); this.root.children.slice(start).forEach(child => group.add(child)); group.scale.setScalar(.65); group.position.set(x, 0, z); group.rotation.y = angle; this.root.add(group);
+  }
+  private pillTable(): void {
+    const { tableZ: z, tableY: y, tableRadius: radius } = PILL_ROOM;
+    const timber = this.mat(0x594632, .77); const edge = this.mat(0x8d7857, .7);
+    const profile = [[0, y - .08], [radius - .06, y - .08], [radius, y - .03], [radius, y + .035], [radius - .025, y + .06], [0, y + .06]];
+    this.mesh(new THREE.LatheGeometry(profile.map(([r, h]) => new THREE.Vector2(r, h)), 64), timber, 0, 0, z);
+    this.mesh(new THREE.TorusGeometry(radius - .012, .011, 6, 64), edge, 0, y + .034, z).rotation.x = Math.PI / 2;
+    this.cylinder(timber, 0, y / 2, z, .065, y - .15, .075);
+    for (let i = 0; i < 3; i++) {
+      const angle = i * Math.PI * 2 / 3 + Math.PI / 6;
+      const point = (r: number, h: number) => [Math.cos(angle) * r, h, z + Math.sin(angle) * r];
+      this.pipe([point(.06, .45), point(.22, .26), point(.47, .055)], .043, timber);
+      this.pipe([point(.055, .4), point(.12, 1.2), point(.21, y - .15)], .024, edge);
+    }
   }
   private rug(x: number, z: number, width: number, depth: number): void {
     const canvas = document.createElement('canvas'); canvas.width = canvas.height = 512;
@@ -1132,8 +1167,7 @@ export class FilmSetRenderer {
       const rug = this.imageMaterial('lafayette-rug-v1', 0x493b31);
       this.box(rug, 0, .035, -6, 19, .055, 22);
       this.loungeChair(-PILL_ROOM.seat, PILL_ROOM.z, Math.PI / 2); this.loungeChair(PILL_ROOM.seat, PILL_ROOM.z, -Math.PI / 2);
-      this.table(0, PILL_ROOM.tableZ, 3.2, 1.8, this.wood, PILL_ROOM.tableY);
-      this.box(this.black, -.65, PILL_ROOM.tableY + .21, PILL_ROOM.tableZ, .5, .12, .35, .04);
+      this.pillTable();
       this.pillGlass = createPillGlass(); this.pillGlass.position.set(PILL_ROOM.cup.x, PILL_ROOM.cup.y, PILL_ROOM.cup.z); this.root.add(this.pillGlass);
       this.pillGlass.traverse(object => { if (object instanceof THREE.Mesh) { this.geometries.add(object.geometry); this.materials.add(object.material as THREE.Material); } });
       const plaster = this.imageMaterial('lafayette-wallpaper-v1', 0x73745c, true); const cable = this.mat(0x1a201f, .9);

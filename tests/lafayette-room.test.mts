@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { FILM_SETS, filmBlocked, filmPosition } from '@auto_matrix/shared';
+import { FILM_SETS, PILL_ROOM, filmBlocked, filmPosition } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -37,5 +37,19 @@ test('Lafayette windows, fireplace and tracking passage have matching visible ge
       'the carved fireplace must be visible immediately behind the meeting table');
     assert.equal(filmBlocked(filmPosition('film_lafayette', 3.1, -10.4), FILM_SETS.film_lafayette, .1), true,
       'the projecting fireplace pilaster must be solid to the player');
+    const cup = renderer.root.getObjectByName('pill-water-glass')!;
+    const beneathGlass = blockers(cup.position.clone(), new THREE.Vector3(0, -1, 0), .4)[0];
+    assert.ok(beneathGlass, 'the glass must sit on the table');
+    assert.ok(Math.abs(renderer.root.worldToLocal(beneathGlass.point).y - (cup.position.y - .22)) < .012,
+      'the glass base must contact the visible tabletop without hovering');
+    assert.equal(blockers(new THREE.Vector3(1.45, 2.8, PILL_ROOM.tableZ - .6), new THREE.Vector3(0, -1, 0), 2.5).length, 0,
+      'a slender side table must not retain the large rectangular coffee-table corners');
+    assert.equal(filmBlocked(filmPosition('film_lafayette', 1.45, PILL_ROOM.tableZ - .6), FILM_SETS.film_lafayette, .05), false,
+      'shrinking the visible table must also remove its old invisible collision');
+    const crown = (side: number) => blockers(new THREE.Vector3(PILL_ROOM.seat - 1, 3.35, PILL_ROOM.z + side * .65), new THREE.Vector3(1, 0, 0), 3).length;
+    assert.ok(crown(0) > 0 && crown(1.7) === 0 && crown(-1.7) === 0,
+      'the upholstered crown must curve down toward its shoulders instead of forming a square slab');
+    for (const side of [-1, 1]) assert.ok(blockers(new THREE.Vector3(PILL_ROOM.seat + .9 * .65, 2.3, PILL_ROOM.z + side * 2.2 * .65),
+      new THREE.Vector3(0, 0, -side), .6).length > 0, 'the wing upholstery must be closed from both outside views');
   } finally { renderer.dispose(); globalThis.document = document; }
 });

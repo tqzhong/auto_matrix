@@ -37,7 +37,7 @@ export class PillPerformance {
     const center = FILM_SETS.film_lafayette.center;
     return this.rig.root.worldToLocal(new THREE.Vector3(center.x + point.x, center.y - 1 + point.y, center.z + point.z));
   }
-  private hand(side: 'R' | 'L', contact: THREE.Vector3, rotation: THREE.Quaternion, offset: THREE.Vector3, blend = 1): void {
+  private hand(side: 'R' | 'L', contact: THREE.Vector3, rotation: THREE.Quaternion, offset: THREE.Vector3, blend = 1, armrest = 0): void {
     const root = this.rig.root; root.updateWorldMatrix(true, true);
     const upper = this.bone('shoulder_' + side); const lower = this.bone('elbow_' + side); const end = this.bone('wrist_' + side);
     const rootRotation = root.getWorldQuaternion(new THREE.Quaternion());
@@ -47,7 +47,9 @@ export class PillPerformance {
     const a = lower.position.length(); const b = end.position.length(); const reach = THREE.MathUtils.clamp(direction.length(), .02, a + b - .001); direction.normalize();
     target.copy(start).addScaledVector(direction, reach);
     const along = (a * a - b * b + reach * reach) / (2 * reach);
-    const pole = new THREE.Vector3(side === 'L' ? .3 : -.3, -1, .15).applyQuaternion(rootRotation); pole.addScaledVector(direction, -pole.dot(direction)).normalize();
+    const pole = new THREE.Vector3(side === 'L' ? .3 : -.3, -1, .15)
+      .lerp(new THREE.Vector3(side === 'L' ? 1 : -1, -.6, -1.2), armrest).applyQuaternion(rootRotation);
+    pole.addScaledVector(direction, -pole.dot(direction)).normalize();
     const hinge = start.clone().addScaledVector(direction, along).addScaledVector(pole, Math.sqrt(Math.max(0, a * a - along * along)));
     const aim = (joint: THREE.Bone, child: THREE.Bone, position: THREE.Vector3) => {
       joint.quaternion.setFromUnitVectors(child.position.clone().normalize(), joint.parent!.worldToLocal(position.clone()).sub(joint.position).normalize()); joint.updateWorldMatrix(false, true);
@@ -94,8 +96,11 @@ export class PillPerformance {
     if (gesture.role === 'morpheus') {
       for (const [side, color, object] of [['R', 'red', this.red], ['L', 'blue', this.blue]] as const) {
         const palm = new THREE.Vector3(side === 'R' ? .082 : -.082, -.18, .015);
-        this.fingers(side, .025);
-        this.hand(side, this.local(pillContact(color)), this.orientation(side, new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 1)), palm, pose.offer);
+        const rest = new THREE.Vector3(side === 'R' ? -1.04 : 1.04, 1.95, .35);
+        const rotation = this.orientation(side, new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, 1))
+          .slerp(this.orientation(side, new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 1)), pose.offer);
+        this.fingers(side, .18 - pose.offer * .155);
+        this.hand(side, rest.lerp(this.local(pillContact(color)), pose.offer), rotation, palm, 1, 1 - pose.offer);
         this.attach(object, side, palm);
         object.visible = pose.offer > .1 && !(gesture.choice === color && (gesture.phase === 'done' || gesture.phase === 'taking' && time >= PILL_TIMING.transfer));
       }
@@ -106,6 +111,14 @@ export class PillPerformance {
     const contact = this.local(pillContact(gesture.choice ?? 'red')); contact.y += .022;
     const mouth = root.worldToLocal(this.bone('head').localToWorld(new THREE.Vector3(0, -.2, .36)));
     const reach = gesture.phase === 'taking' ? pillEase(time, .35, PILL_TIMING.transfer) * (1 - pillEase(time, 3.85, 4.35)) : 0;
+    for (const restingSide of ['R', 'L'] as const) {
+      const rest = pose.seat * (1 - (side === restingSide ? reach : 0)) * (restingSide === 'R' ? 1 - pose.cupReach : 1);
+      if (!rest) continue;
+      const knee = root.worldToLocal(this.bone('knee_' + restingSide).getWorldPosition(new THREE.Vector3())); knee.y += .13; knee.z -= .13;
+      this.fingers(restingSide, .18);
+      this.hand(restingSide, knee, this.orientation(restingSide, new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, 1)),
+        new THREE.Vector3(restingSide === 'R' ? .082 : -.082, -.18, .015), rest);
+    }
     if (reach) {
       const rotation = this.orientation(side, new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, 1))
         .slerp(this.orientation(side, new THREE.Vector3(0, 0, -1), new THREE.Vector3(0, 1, 0)), pillEase(time, 2.15, 3.45));

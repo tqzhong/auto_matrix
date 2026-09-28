@@ -1077,9 +1077,10 @@ export class PlayerControls {
       const mouth = taking ? THREE.MathUtils.smoothstep(this.motion.pills.elapsed, 2.15, 2.85) * (1 - THREE.MathUtils.smoothstep(this.motion.pills.elapsed, 3.85, 4.3)) : 0;
       const departure = taking ? THREE.MathUtils.smoothstep(this.motion.pills.elapsed, 10, PILL_TIMING.walk) : 0;
       const mirrorReveal = taking && this.motion.pills.choice === 'red' ? THREE.MathUtils.smoothstep(this.motion.pills.elapsed, PILL_TIMING.exit - .7, PILL_TIMING.take) : 0;
-      const ideal = new THREE.Vector3(.1, 3.85, 1.1).lerp(new THREE.Vector3(.6, 3.05, -2.1), close).lerp(new THREE.Vector3(-.3, 3.85, -2.8), mouth)
+      const wide = new THREE.Vector3(.1, 1.6, 8.6).multiplyScalar(Math.max(1, 1.1 / this.camera.aspect)).add(new THREE.Vector3(0, 1.1, -6));
+      const ideal = wide.lerp(new THREE.Vector3(.6, 3.05, -2.1), close).lerp(new THREE.Vector3(-.3, 3.85, -2.8), mouth)
         .lerp(new THREE.Vector3(-1.5, 5.2, 8), departure).add(new THREE.Vector3(center.x, center.y - 1, center.z));
-      const focus = new THREE.Vector3(0, 2.6, -6).lerp(new THREE.Vector3(-.2, 2.5, -5.8), close).lerp(new THREE.Vector3(1.3, 3.2, -6), mouth)
+      const focus = new THREE.Vector3(0, 1.1, -6).lerp(new THREE.Vector3(-.2, 2.5, -5.8), close).lerp(new THREE.Vector3(1.3, 3.2, -6), mouth)
         .lerp(new THREE.Vector3(-1, 2.7, -5.4), departure).lerp(new THREE.Vector3(-4, 3.1, -9.5), mirrorReveal)
         .add(new THREE.Vector3(center.x, center.y - 1, center.z));
       if (resetCamera) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-6 * delta));
