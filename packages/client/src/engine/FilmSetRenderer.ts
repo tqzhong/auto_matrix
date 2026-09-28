@@ -628,7 +628,7 @@ export class FilmSetRenderer {
     if (this.theOne && this.current.id === 'film_heart_hotel') { fog.density = .0023; fog.color.setHex(0x151e1b); this.scene.environmentIntensity = .48; return { color: 0xd9dfbc, ambient: .55, sun: .08 }; }
     if (this.currentScene === 'm1_room303') { fog.density = .003; fog.color.setHex(0x121a18); this.scene.environmentIntensity = .36; return { color: 0xb9c8bb, ambient: .35, sun: .05 }; }
     if (this.theOne && this.current.id === 'film_final_phone') { fog.density = .0012; fog.color.setHex(0xaebfc0); this.scene.environmentIntensity = .9; return { color: 0xffe5be, ambient: .96, sun: 1.7 }; }
-    if (this.hotel) { fog.density = .001; this.scene.environmentIntensity = .42; return { color: 0xd4d1b2, ambient: .62, sun: .12 }; }
+    if (this.hotel) { fog.density = .001; this.scene.environmentIntensity = .36; return { color: 0xc8ceba, ambient: .4, sun: .06 }; }
     if (this.ambush) { this.scene.environmentIntensity = .4; return { color: 0xd4ddbe, ambient: .52, sun: .15 }; }
     if (this.pods) {
       (this.scene.background as THREE.Color).setHex(0x080f14); fog.color.setHex(0x080f14); fog.density = .005;
@@ -705,6 +705,16 @@ export class FilmSetRenderer {
     };
     texture('color'); texture('normal'); texture('roughness');
     return material;
+  }
+  private imageMaterial(id: string, fallback: number, repeat = false): THREE.MeshStandardMaterial {
+    const material = new THREE.MeshStandardMaterial({ color: fallback, roughness: .96 }); this.materials.add(material);
+    const texture = new THREE.TextureLoader().load(`/assets/film-materials/${id}.jpg`, loaded => {
+      if (!this.materials.has(material)) { loaded.dispose(); return; }
+      material.map = loaded; material.color.setHex(0xffffff); material.needsUpdate = true;
+    });
+    texture.colorSpace = THREE.SRGBColorSpace; texture.anisotropy = 8;
+    if (repeat) texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    this.textures.add(texture); return material;
   }
   private mesh(geometry: THREE.BufferGeometry, material: THREE.Material, x: number, y: number, z: number, parent = this.root): THREE.Mesh {
     const mesh = new THREE.Mesh(this.own(geometry), material); mesh.position.set(x, y, z); mesh.castShadow = true; mesh.receiveShadow = true; parent.add(mesh); return mesh;
@@ -860,6 +870,7 @@ export class FilmSetRenderer {
     const group = new THREE.Group(); this.root.children.slice(start).forEach(c => group.add(c)); group.position.set(x, 0, z); this.root.add(group); return group;
   }
   private shell(set: FilmSet): void {
+    if (set.architecture === 'lafayette') { this.lafayetteRoomShell(set); return; }
     const { width: w, depth: d, height: h } = set; const exterior = outdoor.has(set.architecture);
     const lavish = ['chateau', 'lobby', 'restaurant', 'hel', 'architect'].includes(set.architecture);
     const industrial = ['ship', 'engineering', 'garage', 'power', 'zion', 'temple', 'pods', 'machine'].includes(set.architecture);
@@ -886,7 +897,6 @@ export class FilmSetRenderer {
     if (exterior || set.architecture === 'construct') return;
     const wall = set.id === 'film_power_station' ? this.pbr('damaged_plaster', 0x915b4d, 3) : this.currentScene === 'm2_key_door' ? this.pbr('damaged_plaster', 0x9ba5a0, 12) : set.architecture === 'architect' ? this.mat(0xf1f1eb, .48) : industrial ? this.metal : lavish || ['oracle', 'dojo', 'teahouse', 'mobil', 'backdoors'].includes(set.architecture) ? this.white : this.plaster;
     for (const x of [-w / 2, w / 2]) {
-      if (set.architecture === 'lafayette' && x > 0) continue;
       if (set.id === 'film_le_vrai' && x < 0) {
         this.box(this.glass, x, h / 2, 0, .22, h - 1, d - 2);
         for (let z = -d / 2 + 1; z <= d / 2; z += 6.8) this.box(this.brass, x + .16, h / 2, z, .34, h, .25, .05);
@@ -913,15 +923,6 @@ export class FilmSetRenderer {
       this.box(wall, 0, (h + 7.6) / 2, -d / 2, 7.6, h - 7.6, .7);
     } else this.box(wall, 0, h / 2, -d / 2, w, h, .7);
     this.box(wall, 0, h / 2, d / 2, w, h, .7);
-    if (set.architecture === 'lafayette') {
-      this.box(this.plaster, 0, h, 0, w, .5, d);
-      for (const y of [.2, .55, 3.7, h - 1.1, h - .8, h - .4]) {
-        const trim = y > 4 ? this.white : this.wood;
-        for (const side of [-1, 1]) { if (side < 0) this.box(trim, side * (w / 2 - .45), y, 0, .35, .15, d); this.box(trim, 0, y, side * (d / 2 - .45), w, .15, .35); }
-      }
-      for (let z = -d / 2 + 3; z < d / 2; z += 6) for (const side of [-1, 1]) if (side < 0 || Math.abs(z) > 3.3) this.box(this.wood, side * (w / 2 - .4), 1.9, z, .12, 3.2, .12);
-      return;
-    }
     // Coffers instead of a solid ceiling retain daylight and a readable close camera.
     for (let z = -d / 2; z <= d / 2; z += 12) this.box(industrial || this.currentScene === 'm2_key_door' ? this.metal : this.white, 0, h - .4, z, w, .6, .7);
     for (const x of [-w * .24, w * .24]) this.box(this.currentScene === 'm2_key_door' ? this.metal : this.white, x, h, 0, .6, .5, d);
@@ -936,9 +937,10 @@ export class FilmSetRenderer {
     for (let z = -d / 2 + 12; z < d / 2 - 4; z += 22) for (const x of [-w * .25, w * .25]) this.lamp(x, h - 2, z, set.light === 'warm' || lavish, true);
   }
   private build(set: FilmSet): void {
+    const lafayette = set.architecture === 'lafayette';
     this.metal = this.pbr('metal_plate', 0x9caaa9, 3, .7, .28);
-    this.wood = this.pbr('old_wood_floor', 0x96826b, 3); this.marble = this.pbr('marble_01', 0xbdcbd1, 4, .25);
-    this.plaster = this.pbr('damaged_plaster', 0xadae9c, 5); this.leather = this.pbr('leather_red_03', 0x71413a, 1, .48);
+    this.wood = this.pbr('old_wood_floor', lafayette ? 0x93846f : 0x96826b, lafayette ? 1 : 3, lafayette ? .88 : .85); this.marble = this.pbr('marble_01', 0xbdcbd1, 4, .25);
+    this.plaster = this.pbr('damaged_plaster', lafayette ? 0x829077 : 0xadae9c, lafayette ? 1 : 5, lafayette ? .95 : .85); this.leather = this.pbr('leather_red_03', lafayette ? 0xb48b79 : 0x71413a, 1, lafayette ? .94 : .48);
     this.white = this.pbr('white_plaster_02', 0xd8d9ce, 3); this.black = this.mat(0x161b1a, .44); this.brass = this.mat(0x8e7951, .32, .8);
     this.glass = new THREE.MeshPhysicalMaterial({ color: 0xb3c9c7, metalness: .12, roughness: .12, transparent: true, opacity: .3, side: THREE.DoubleSide, depthWrite: false }); this.materials.add(this.glass);
     this.glow = new THREE.MeshBasicMaterial({ color: 0xffdb9e, toneMapped: false }); this.materials.add(this.glow);
@@ -952,12 +954,82 @@ export class FilmSetRenderer {
     if (['rooftop', 'street', 'rain', 'bridge', 'freeway', 'garage', 'car'].includes(a)) this.transport(set);
     if (['dojo', 'teahouse', 'construct', 'plaza', 'courtyard', 'garden'].includes(a)) this.special(set);
     if (outdoor.has(a) && !['pods', 'machine', 'desert'].includes(a)) this.skyline(set);
-    if (!outdoor.has(a)) {
+    if (!outdoor.has(a) && a !== 'lafayette') {
       const fill = new THREE.HemisphereLight(set.light === 'warm' ? 0xeed9b7 : 0xc7d3d3, 0x3e3830, .5); this.root.add(fill);
       const spot = new THREE.SpotLight(set.light === 'warm' ? 0xffd8b1 : 0xe5eee9, 2100, 120, Math.PI / 3, .7, 2);
-      spot.position.set(-set.width * .28, set.architecture === 'lafayette' ? set.height - 2 : set.height + 5, 10); spot.target.position.set(0, 0, -5); spot.castShadow = true;
+      spot.position.set(-set.width * .28, set.height + 5, 10); spot.target.position.set(0, 0, -5); spot.castShadow = true;
       spot.shadow.mapSize.set(1024, 1024); spot.shadow.bias = -.0002; spot.shadow.normalBias = .05;
       this.root.add(spot, spot.target);
+    }
+  }
+  private lafayetteSurface(material: THREE.Material, x: number, y: number, z: number, w: number, h: number, d: number, tile = 6): THREE.Mesh {
+    const geometry = new THREE.BoxGeometry(w, h, d);
+    const uv = geometry.attributes.uv, position = geometry.attributes.position, normal = geometry.attributes.normal;
+    // Keep the scan at the same physical scale across differently sized walls.
+    for (let i = 0; i < uv.count; i++) {
+      const side = Math.abs(normal.getX(i)) > .5; const top = Math.abs(normal.getY(i)) > .5;
+      uv.setXY(i, (side ? z + position.getZ(i) : x + position.getX(i)) / tile,
+        (top ? z + position.getZ(i) : y + position.getY(i)) / tile);
+    }
+    return this.mesh(geometry, material, x, y, z);
+  }
+  private lafayetteRoomShell(set: FilmSet): void {
+    const { width: w, depth: d, height: h } = set;
+    const trim = this.mat(0x414b3a, .87); const edge = this.mat(0x727561, .91);
+    this.lafayetteSurface(this.wood, 0, -.3, 0, w, .6, d, 10);
+    this.lafayetteSurface(this.plaster, 0, h, 0, w, .5, d);
+    for (const z of [-d / 2, d / 2]) {
+      this.lafayetteSurface(this.plaster, 0, h / 2, z, w, h, .7);
+      for (const y of [.2, .6, 1.45, h - .9, h - .55]) this.box(y > 4 ? edge : trim, 0, y, z - Math.sign(z) * .43, w, y === .6 ? .65 : .14, .28);
+    }
+    // Three recessed sash windows, with solid piers instead of glass over a wall.
+    const cloth = this.pbr('white_plaster_02', 0x77765d, 2, 1); cloth.side = THREE.DoubleSide; cloth.normalScale.set(.07, .07);
+    const windows = [-18, -2, 14]; let start = -d / 2;
+    for (const z of [...windows, d / 2 + 4]) {
+      const end = z - 4;
+      if (end > start) this.lafayetteSurface(this.plaster, -w / 2, h / 2, (start + end) / 2, .7, h, end - start);
+      if (z <= d / 2) {
+        this.lafayetteSurface(this.plaster, -w / 2, 1.6, z, .7, 3.2, 8);
+        this.lafayetteSurface(this.plaster, -w / 2, (11.2 + h) / 2, z, .7, h - 11.2, 8);
+        this.lafayetteWindow(-w / 2, z, trim, edge, cloth);
+      }
+      start = z + 4;
+    }
+    for (const y of [.2, .6, 1.45, h - .9, h - .55]) this.box(y > 4 ? edge : trim, -w / 2 + .43, y, 0, .28, y === .6 ? .65 : .14, d);
+    const fill = new THREE.HemisphereLight(0xc6cfbd, 0x30291f, .18); this.root.add(fill);
+    const key = new THREE.SpotLight(0xc8d2b9, 1900, 50, .85, .65, 2);
+    key.position.set(-w / 2 + 1.7, 9.4, -2); key.target.position.set(1, 1.9, -6);
+    key.castShadow = true; key.shadow.mapSize.set(1024, 1024); key.shadow.bias = -.0002; key.shadow.normalBias = .035;
+    this.root.add(key, key.target);
+    const bounce = new THREE.PointLight(0xd3bc97, 85, 24, 2); bounce.position.set(6, 5, -2); this.root.add(bounce);
+    const rim = new THREE.SpotLight(0xb7c5b2, 650, 40, 1.1, .8, 2);
+    rim.position.set(15, 8, 6); rim.target.position.set(-2, 2, -6); this.root.add(rim, rim.target);
+  }
+  private lafayetteWindow(x: number, z: number, trim: THREE.Material, edge: THREE.Material, cloth: THREE.Material): void {
+    const glass = new THREE.MeshStandardMaterial({ color: 0x66766d, roughness: .4, metalness: .1, transparent: true, opacity: .45, side: THREE.DoubleSide, depthWrite: false }); this.materials.add(glass);
+    const pane = this.box(glass, x - .12, 7.2, z, .06, 8, 8);
+    pane.castShadow = false; pane.userData.dynamic = true;
+    const night = new THREE.MeshBasicMaterial({ color: 0x25342f }); this.materials.add(night);
+    const beyond = this.box(night, x - 2, 7.2, z, .05, 8.8, 8.8);
+    beyond.castShadow = false; beyond.userData.dynamic = true;
+    for (const offset of [-4, 4]) {
+      this.box(trim, x + .22, 7.2, z + offset, .5, 8.4, .25);
+      this.box(edge, x + .5, 7.2, z + offset * 1.05, .18, 8.7, .11);
+    }
+    for (const y of [3.2, 7.1, 11.2]) this.box(trim, x + .25, y, z, .45, .19, 8.25);
+    this.box(trim, x + .25, 7.2, z, .3, 8, .12);
+    this.box(edge, x + .55, 3.03, z, 1.1, .22, 8.65, .04);
+    this.box(trim, x + .6, 11.7, z, .55, .3, 9.5, .04);
+    for (const side of [-1, 1]) {
+      const geometry = new THREE.PlaneGeometry(2.05, 11.2, 32, 28);
+      const p = geometry.attributes.position;
+      for (let i = 0; i < p.count; i++) {
+        const u = p.getX(i) / 2.05 + .5; const v = p.getY(i) / 11.2 + .5;
+        const fold = Math.sin(u * Math.PI * 12 + v * .22);
+        p.setXYZ(i, side * (u - .5) * (1.85 + (1 - v) * .8), p.getY(i) + (1 - v) ** 5 * (.16 * Math.sin(u * 27) + .07 * Math.sin(u * 61)), fold * (.1 + (1 - v) * .16));
+      }
+      geometry.computeVertexNormals();
+      const curtain = this.mesh(geometry, cloth, x + .95, 5.9, z + side * 3.75); curtain.rotation.y = Math.PI / 2;
     }
   }
   private openingHotelSet(set: FilmSet): void {
@@ -1057,21 +1129,33 @@ export class FilmSetRenderer {
       this.table(11, -11, 4, 3); this.lamp(11, 5, -11); this.door(0, d / 2 - .4, '101');
     }
     if (a === 'lafayette') {
-      this.rug(0, -6, 19, 22);
+      const rug = this.imageMaterial('lafayette-rug-v1', 0x493b31);
+      this.box(rug, 0, .035, -6, 19, .055, 22);
       this.loungeChair(-PILL_ROOM.seat, PILL_ROOM.z, Math.PI / 2); this.loungeChair(PILL_ROOM.seat, PILL_ROOM.z, -Math.PI / 2);
       this.table(0, PILL_ROOM.tableZ, 3.2, 1.8, this.wood, PILL_ROOM.tableY);
       this.box(this.black, -.65, PILL_ROOM.tableY + .21, PILL_ROOM.tableZ, .5, .12, .35, .04);
       this.pillGlass = createPillGlass(); this.pillGlass.position.set(PILL_ROOM.cup.x, PILL_ROOM.cup.y, PILL_ROOM.cup.z); this.root.add(this.pillGlass);
       this.pillGlass.traverse(object => { if (object instanceof THREE.Mesh) { this.geometries.add(object.geometry); this.materials.add(object.material as THREE.Material); } });
-      const plaster = this.mat(0x8b897b, .9); const cable = this.mat(0x1a201f, .9);
+      const plaster = this.imageMaterial('lafayette-wallpaper-v1', 0x73745c, true); const cable = this.mat(0x1a201f, .9);
+      const trim = this.mat(0x414b3a, .87); const wornEdge = this.mat(0x727561, .91);
       for (const wall of filmObstacles(set).filter(item => item.z === -11.5)) {
-        this.box(plaster, wall.x, wall.height / 2, wall.z, wall.width, wall.height, wall.depth, .04);
-        this.box(this.wood, wall.x, .65, wall.z + .37, wall.width, 1.3, .1);
-        this.box(this.wood, wall.x, 8.8, wall.z + .37, wall.width, .45, .15);
+        this.lafayetteSurface(plaster, wall.x, wall.height / 2, wall.z, wall.width, wall.height, wall.depth);
+        for (const side of [-1, 1]) {
+          const z = wall.z + side * .38;
+          this.lafayetteSurface(this.wood, wall.x, .65, z, wall.width, 1.3, .1);
+          for (const y of [.18, 1.35, 8.65, 8.9]) this.box(y < 2 ? trim : wornEdge, wall.x, y, z + side * .06, wall.width, .12, .16);
+          for (let x = wall.x - wall.width / 2 + .9; x < wall.x + wall.width / 2 - 4.4; x += 5.9) {
+            for (const dx of [0, 4.7]) this.box(trim, x + dx, 4.85, z + side * .05, .045, 5.5, .045);
+            for (const y of [2.1, 7.6]) this.box(trim, x + 2.35, y, z + side * .05, 4.7, .045, .045);
+          }
+        }
       }
-      for (const x of [-8, -4]) this.box(this.wood, x, 4.5, -11.5, .3, 9.2, .9);
-      this.box(this.wood, -6, 9.1, -11.5, 4.4, .35, .9);
-      this.rug(-7, -17, 19, 14);
+      for (const x of [-8, -4]) {
+        this.box(trim, x, 4.5, -11.5, .3, 9.2, .9);
+        this.box(wornEdge, x + (x === -8 ? -.2 : .2), 4.5, -10.99, .09, 9.2, .12);
+      }
+      this.box(trim, -6, 9.1, -11.5, 4.4, .35, .9);
+      this.box(rug, -7, .035, -17, 19, .055, 14);
       const chairX = MIRROR_SEAT.x; const chairZ = MIRROR_SEAT.z;
       this.box(this.metal, chairX, .35, chairZ, 2.1, .28, 2.1, .12);
       for (const dx of [-.85, .85]) for (const dz of [-.85, .85]) this.cylinder(this.metal, chairX + dx, .75, chairZ + dz, .075, 1.5);
@@ -1094,8 +1178,38 @@ export class FilmSetRenderer {
       for (const x of [3.55, 6.45]) this.crt(x, 3.1, -17.2, .78);
       for (const x of [-17.5, -16.5, -15.5]) this.pipe([[x, 0, -20], [x, 6.5, -20], [chairX - 2.2 + (x + 16.5) * .12, 6.5, chairZ + 1.5], [chairX - 1.9, 3.5, chairZ + 1.2]], .014, cable);
       this.lamp(-6, 7.6, -15.4, false, true);
-      this.box(this.marble, 0, 4, -d / 2 + 1, 14, 8, 1.5, .08); this.box(this.black, 0, 2.8, -d / 2 + 2, 8, 5, .2); this.box(this.wood, 0, 8.2, -d / 2 + 1, 15, .6, 2, .06);
-      for (const x of [-5.5, 5.5]) for (const y of [1.8, 4.3, 6.8]) this.box(this.white, x, y, -d / 2 + 1.9, 1.9, 2.1, .14, .04);
+      const hearth = this.mat(0x343c36, .96); const stone = this.pbr('marble_01', 0x788478, 1, .85);
+      const carving = this.mat(0x626f61, .83); const f = PILL_ROOM.fireplace;
+      const front = f.z + f.depth / 2;
+      const leafShape = new THREE.Shape(); leafShape.moveTo(0, 0);
+      leafShape.bezierCurveTo(-.13, .12, -.1, .28, 0, .38); leafShape.bezierCurveTo(.1, .28, .13, .12, 0, 0);
+      const leafGeometry = new THREE.ExtrudeGeometry(leafShape, { depth: .045, bevelEnabled: true, bevelSize: .014, bevelThickness: .012, bevelSegments: 2, curveSegments: 6, steps: 1 });
+      this.box(hearth, f.x, .16, f.z, f.width, .3, f.depth, .03);
+      this.box(this.black, f.x, 2.15, f.z - .27, 4.9, 3.85, .06);
+      for (const side of [-1, 1]) {
+        const x = f.x + side * 3.05;
+        this.lafayetteSurface(stone, x, 2.2, f.z, 1.15, 4.1, .9);
+        for (const y of [.55, 3.45, 3.85]) this.box(carving, x, y, front - .17, 1.3, .19, .34, .035);
+        for (const dx of [-.35, -.12, .12, .35]) this.cylinder(carving, x + dx, 1.97, front - .16, .065, 2.6);
+        this.pipe([[f.x + side * .65, 3.65, front - .06], [f.x + side * 1.15, 3.75, front - .03],
+          [f.x + side * 2.35, 4.35, front - .06], [x, 4.45, front - .12]], .04, carving);
+        this.pipe([[f.x + side * .72, 3.47, front - .07], [f.x + side * 1.4, 3.55, front - .04],
+          [f.x + side * 2.3, 4.12, front - .06], [x, 4.2, front - .12]], .035, carving);
+        for (let i = 0; i < 8; i++) for (const turn of [-1, 1]) {
+          const u = i / 8;
+          const leaf = this.mesh(leafGeometry, stone, f.x + side * (.75 + u * 2.15), 3.7 + u * .65, front - .06);
+          leaf.rotation.z = side * (turn > 0 ? -.65 : -2.15); leaf.scale.setScalar(.8 + u * .3);
+        }
+      }
+      this.lafayetteSurface(stone, f.x, 4.25, f.z, 7.15, 1.15, .9);
+      for (const [y, width, depth] of [[4.65, 7.35, 1.1], [4.87, f.width, f.depth]] as const) this.box(carving, f.x, y, f.z, width, .19, depth, .045);
+      this.mesh(new THREE.TorusGeometry(.48, .035, 8, 40), carving, f.x, 4.06, front - .055);
+      for (let i = 0; i < 12; i++) {
+        const angle = i / 12 * Math.PI * 2;
+        const leaf = this.mesh(leafGeometry, stone, f.x + Math.cos(angle) * .08, 4.06 + Math.sin(angle) * .08, front - .04);
+        leaf.rotation.z = angle - Math.PI / 2;
+      }
+      for (const x of [-1.7, -1, -.3, .4, 1.1, 1.8]) this.box(this.black, f.x + x, .65, front - .2, .07, .95, .08);
       const mirrorY = MIRROR_FACE.y + 1;
       const oval = this.mesh(new THREE.CircleGeometry(1, 96), this.wood, PILL_ROOM.mirror.x, mirrorY, -17.8);
       oval.scale.set(2.1, 2.95, 1);
@@ -1132,12 +1246,12 @@ export class FilmSetRenderer {
       }
       this.mirrorCracks = new THREE.Group(); this.root.children.slice(crackStart).forEach(c => this.mirrorCracks!.add(c)); this.mirrorCracks.position.y = mirrorY; this.mirrorCracks.userData.dynamic = true; this.root.add(this.mirrorCracks);
       this.table(13, 10); this.crt(13, 3.7, 10); this.crt(10, 3.3, 11, .7); this.lamp(-13, 7, -18);
-      this.chair(8, 5, Math.PI); this.lamp(7, 6, -17); this.lamp(-15, 10, 9, false);
-      for (const z of [-13, 1, 15]) {
-        this.window(-w / 2 + .5, 8, z, 8, 9, true);
-        for (let i = 0; i < 12; i++) this.box(this.wood, -w / 2 + 1, 8, z - 3.8 + i * .69, .16, 8.7, .35).rotation.y = .2;
-        this.box(this.wood, -w / 2 + .9, 12.9, z, .6, .4, 9.5);
-      }
+      this.chair(8, 5, Math.PI); this.lamp(7, 6, -17);
+      this.box(this.brass, 8, 5.2, -10.98, .22, .7, .15, .03);
+      this.pipe([[8, 5.1, -10.9], [8, 5, -10.5], [8, 5.55, -10.3]], .055, this.brass);
+      this.mesh(new THREE.CylinderGeometry(.3, .52, .68, 24, 1, true), wornEdge, 8, 5.9, -10.3);
+      this.sphere(this.glow, 8, 5.7, -10.3, .11);
+      const sconce = new THREE.PointLight(0xd8bd86, 24, 15, 2); sconce.position.set(8, 5.5, -10.1); this.root.add(sconce);
       this.door(0, d / 2 - .4);
     }
     if (a === 'oracle') {

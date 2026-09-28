@@ -190,6 +190,7 @@ export function filmObstacles(set: FilmSet, movingMeetingCar = false): FilmObsta
     { x: -PILL_ROOM.seat, z: PILL_ROOM.z, width: 2, depth: 2.5, height: 3.4 }, { x: PILL_ROOM.seat, z: PILL_ROOM.z, width: 2, depth: 2.5, height: 3.4 },
     { x: 0, z: PILL_ROOM.tableZ, width: 3.2, depth: 1.8, height: 1.85 }, { x: -10, z: -18, width: 6.4, depth: .4, height: 9.8 },
     { x: -14.5, z: -11.5, width: 13, depth: .65, height: 9 }, { x: 8.5, z: -11.5, width: 25, depth: .65, height: 9 },
+    PILL_ROOM.fireplace,
     { x: MIRROR_SEAT.x, z: MIRROR_SEAT.z, width: 2.4, depth: 2.5, height: 3.4 },
     { x: -16.5, z: -18.5, width: 3.5, depth: 6, height: 4.6 }, { x: 5, z: -18.5, width: 5.2, depth: 3, height: 4.8 },
     { x: 12, z: 10, width: 8, depth: 3, height: 4.8 },
