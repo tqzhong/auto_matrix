@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, MIRROR_TRINITY, PILL_ROOM, filmPosition, type SandboxState, type FilmJourney } from '@auto_matrix/shared';
+import { MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, MIRROR_TRINITY, PILL_ROOM, FILM_SETS, filmBlocked, filmPosition, type SandboxState, type FilmJourney } from '@auto_matrix/shared';
 import { HeroModels } from '../packages/client/src/agents/HeroModel.js';
 import { advanceMotion, newMotion } from '../packages/client/src/agents/CharacterMotion.js';
 import { FilmSetRenderer, mirrorSurfacePoint } from '../packages/client/src/engine/FilmSetRenderer.js';
@@ -11,7 +11,7 @@ import { Reflector } from 'three/addons/objects/Reflector.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 
-test('the tracking-room mirror is a person-sized oval beside Neo, not a wall-height surface', t => {
+test('the tracking-room mirror has straight carved sides and glass across all four corners', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const document = globalThis.document;
   globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, stroke() {}, fill() {} }) }) } as unknown as Document;
@@ -24,13 +24,22 @@ test('the tracking-room mirror is a person-sized oval beside Neo, not a wall-hei
     renderer.update(neo, undefined, 0);
     const mirror = renderer.root.children.find(child => child instanceof Reflector) as Reflector | undefined;
     assert.ok(mirror, 'the room contains an actual reflective mirror');
-    assert.ok(mirror.scale.y * 2 < 6, 'the oval should be comparable with the seated actor, not nearly twice standing height');
+    assert.ok(mirror.scale.y * 2 < 6, 'the mirror should be comparable with the seated actor, not nearly twice standing height');
     assert.ok(mirror.scale.x * 2 < 4.5, 'the mirror should read as a dressing mirror rather than a wall panel');
     assert.equal(mirror.position.y, MIRROR_FACE.y + 1, 'the glass is centered at the seated face and reaching hand');
+    assert.equal(filmBlocked(filmPosition('film_lafayette', -12.85, -17.84), FILM_SETS.film_lafayette, .1), false,
+      'the smaller mirror frame must not retain an invisible wall extending past its side');
+    assert.equal(filmBlocked(filmPosition('film_lafayette', -12.06, -17.84), FILM_SETS.film_lafayette, .1), true,
+      'the visible side of the wooden frame must still block movement');
     renderer.root.updateMatrixWorld(true);
     const fracture = renderer.root.localToWorld(new THREE.Vector3(PILL_ROOM.mirror.x - .1, MIRROR_FACE.y + .8, -17));
     const hit = new THREE.Raycaster(fracture, new THREE.Vector3(0, 0, -1), 0, 1).intersectObject(renderer.root, true)[0];
     assert.ok(hit?.object === mirror, 'cracks belong to the glass surface instead of thick rods floating in front of the reflection');
+    for (const x of [-.9, .9]) for (const y of [-.9, .9]) {
+      const corner = mirror.localToWorld(new THREE.Vector3(x, y, .5));
+      assert.ok(new THREE.Raycaster(corner, new THREE.Vector3(0, 0, -1), 0, 1).intersectObject(renderer.root, true)[0]?.object === mirror,
+        'the straight frame must contain reflective glass instead of empty oval corners');
+    }
   } finally { renderer.dispose(); globalThis.document = document; }
 });
 
@@ -113,9 +122,9 @@ test('Neo reaches the actual mirror smoothly without passing through it', async 
     assert.ok(near.distanceTo(contact) < .02, 'the hand does not snap when the silver starts to spread');
     assert.ok(contact.z > PILL_ROOM.mirror.z + .01 && contact.z < PILL_ROOM.mirror.z + .12,
       `finger ${contact.toArray()} must touch the visible face of the mirror at z=${PILL_ROOM.mirror.z}`);
-    const ellipse = ((contact.x - PILL_ROOM.mirror.x) / MIRROR_FACE.radiusX) ** 2 + ((contact.y - MIRROR_FACE.y) / MIRROR_FACE.radiusY) ** 2;
-    assert.ok(ellipse < .85 ** 2, 'the finger must meet the reflective glass inside the oval frame');
-    const mirror = new THREE.Mesh(new THREE.CircleGeometry(1));
+    assert.ok(Math.abs(contact.x - PILL_ROOM.mirror.x) < MIRROR_FACE.radiusX * .85
+      && Math.abs(contact.y - MIRROR_FACE.y) < MIRROR_FACE.radiusY * .85, 'the finger must meet glass inside the frame');
+    const mirror = new THREE.Mesh(new THREE.PlaneGeometry(2, 2));
     mirror.position.set(PILL_ROOM.mirror.x, MIRROR_FACE.y, PILL_ROOM.mirror.z); mirror.scale.set(MIRROR_FACE.radiusX, MIRROR_FACE.radiusY, 1);
     const ripple = mirrorSurfacePoint(mirror, rig.root)!;
     assert.ok(Math.abs(ripple.x - .573) < .02 && Math.abs(ripple.y + .113) < .02,
@@ -131,18 +140,60 @@ test('Neo reaches the actual mirror smoothly without passing through it', async 
   } finally { models.dispose(); }
 });
 
-test('Trinity reaches the headset while wiring Neo in the tracking chair', async () => {
+test('Trinity connects the electrode on Neo’s left forearm instead of reaching for a headset', async () => {
   const asset = await heroAsset('trinity'); const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  const neoAsset = await heroAsset();
+  const neoModels = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (neoModels as unknown as { load: () => Promise<typeof neoAsset> }).load = async () => neoAsset;
   (models as unknown as { load: () => Promise<typeof asset> }).load = async () => asset;
   try {
     const rig = (await models.create('trinity'))!;
+    const neo = (await neoModels.create('neo'))!;
+    neo.root.position.set(MIRROR_SEAT.x, -1, MIRROR_SEAT.z); neo.root.rotation.y = Math.PI;
+    const neoMotion = newMotion(); neoMotion.seated = 1;
+    const neoInput = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, seated: true, performance: 'touch' as const, mirrorBeat: 2.1 };
+    neoModels.animate(neo, advanceMotion(neoMotion, neoInput, 0), neoMotion, neoInput, 0);
+    neo.root.updateMatrixWorld(true);
+    const contact = neo.bones.get('elbow_L')!.getWorldPosition(new THREE.Vector3()).lerp(neo.bones.get('wrist_L')!.getWorldPosition(new THREE.Vector3()), .35).add(new THREE.Vector3(0, .13, 0));
     rig.root.position.set(MIRROR_TRINITY.x, -1, MIRROR_TRINITY.z); rig.root.rotation.y = MIRROR_TRINITY.yaw;
     const motion = newMotion(); const mirrorCrew = 2.1;
-    const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, mirrorCrew };
+    const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, mirrorCrew, mirrorContact: contact };
     models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
-    const lowered = THREE.MathUtils.smoothstep(mirrorCrew, MIRROR_TIMING.sit, MIRROR_TIMING.wired);
-    const leftCup = new THREE.Vector3(MIRROR_SEAT.x + 1.9 * (1 - lowered) - .72, 3.4 - 1.1 * lowered - .16, MIRROR_SEAT.z + .65);
-    const finger = rig.bones.get('finger2-3_R')!.getWorldPosition(new THREE.Vector3());
-    assert.ok(finger.distanceTo(leftCup) < .18, `Trinity's finger remains ${finger.distanceTo(leftCup).toFixed(2)}m from the lowering headset cup`);
-  } finally { models.dispose(); }
+    const palm = rig.bones.get('wrist_R')!.localToWorld(new THREE.Vector3(.09, -.18, .02));
+    assert.ok(palm.distanceTo(contact) < .025, `Trinity's palm remains ${palm.distanceTo(contact).toFixed(3)}m from the electrode`);
+    const normal = new THREE.Vector3(1, 0, 0).applyQuaternion(rig.bones.get('wrist_R')!.getWorldQuaternion(new THREE.Quaternion()));
+    assert.ok(normal.y < -.9, 'the palm faces down to attach the electrode instead of turning upward');
+  } finally { models.dispose(); neoModels.dispose(); }
+});
+
+test('the visible electrode and lead stay attached to Neo when paused, restored or hidden from first person', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const document = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, stroke() {}, fill() {} }) }) } as unknown as Document;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!; neo.position = filmPosition('film_lafayette', MIRROR_SEAT.x, MIRROR_SEAT.z); neo.isInMatrix = true;
+  const journey = { scene: 'm1_mirror', step: 0, awakening: { kind: 'mirror', elapsed: 2.75, started: false } } as FilmJourney;
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  const subject = new THREE.Group(); const wrist = new THREE.Bone(); wrist.name = 'wrist_L'; subject.add(wrist);
+  const elbow = new THREE.Bone(); elbow.name = 'elbow_L'; subject.add(elbow);
+  const renderer = new FilmSetRenderer(new THREE.Scene()); renderer.setMirrorSubject(subject);
+  try {
+    renderer.update(neo, sandbox, 0);
+    const electrode = renderer.root.getObjectByName('tracking-electrode');
+    assert.ok(electrode && electrode.children.some(child => child instanceof THREE.Mesh), 'static batching must retain the moving electrode geometry');
+    const check = () => {
+      renderer.update(neo, sandbox, 100); renderer.root.updateMatrixWorld(true);
+      const contact = elbow.getWorldPosition(new THREE.Vector3()).lerp(wrist.getWorldPosition(new THREE.Vector3()), .35).add(new THREE.Vector3(0, .13, 0));
+      assert.ok(electrode.getWorldPosition(new THREE.Vector3()).distanceTo(contact) < .001, 'the pad follows the actual arm, not a guessed head position');
+      const lead = renderer.root.getObjectByName('tracking-electrode-lead') as THREE.Line;
+      const positions = lead.geometry.getAttribute('position');
+      assert.ok(lead.localToWorld(new THREE.Vector3().fromBufferAttribute(positions, positions.count - 1)).distanceTo(contact) < .001, 'the cable ends on the electrode');
+    };
+    wrist.position.copy(renderer.root.localToWorld(new THREE.Vector3(-8.8, 2.3, -16)));
+    elbow.position.copy(wrist.position).add(new THREE.Vector3(0, .3, .1));
+    check(); wrist.position.add(new THREE.Vector3(.1, .2, -.1)); subject.visible = false; check();
+    assert.equal(electrode.visible, false, 'the direct first-person view must not show a floating electrode without the hidden arm');
+    journey.visiting = 'm1_pills'; renderer.update(neo, sandbox, 200);
+    assert.equal(renderer.root.getObjectByName('tracking-electrode')!.visible, false, 'a revisit does not attach an electrode to an unrelated player');
+  } finally { renderer.dispose(); globalThis.document = document; }
 });

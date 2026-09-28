@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { FILM_SETS, groundHeight, mirrorGuidePose, officeClothing, type AgentState, type CombatImpact, type FilmJourney } from '@auto_matrix/shared';
+import { trackingContact } from './TrackingContact.js';
 import { CharacterModels, weaponMuzzle, type CharacterRig } from './CharacterModel.js';
 import type { MotionInput } from './CharacterMotion.js';
 
@@ -217,6 +218,10 @@ export class AgentRenderer {
           const target = targetBone.localToWorld(offset);
           input.farewell = { ...input.farewell, target: { x: target.x, y: target.y, z: target.z } };
         }
+      }
+      if (input.mirrorCrew !== undefined) {
+        const neo = this.agents.get('neo');
+        if (neo) input.mirrorContact = trackingContact(neo.body);
       }
       const mountainFlying = input.mountainFlight && ['takeoff', 'flying', 'arrived'].includes(input.mountainFlight.phase) || input.truckFlight;
       const catchFlying = input.catch && ['flight', 'ascent'].includes(input.catch.phase);

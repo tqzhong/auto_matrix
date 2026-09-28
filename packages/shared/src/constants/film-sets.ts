@@ -8,7 +8,7 @@ import { APARTMENT_FURNITURE } from './apartment.js';
 import { CLUB_OBSTACLES } from './club.js';
 import { PILL_ROOM } from './pills.js';
 import { INTERROGATION_ROOM } from './interrogation.js';
-import { MIRROR_SEAT, POD_WATER_DROP, RECOVERY_BED } from './awakening.js';
+import { MIRROR_SEAT, MIRROR_FRAME, POD_WATER_DROP, RECOVERY_BED } from './awakening.js';
 import { AMBUSH_WALLS } from './ambush.js';
 import { MEETING_CAR, MEETING_DESTINATION, meetingCarPose, meetingRoadContains } from './meeting.js';
 import { LAFAYETTE, hotelContains, hotelBlocked, hotelFloor } from './lafayette.js';
@@ -188,7 +188,8 @@ export function filmObstacles(set: FilmSet, movingMeetingCar = false): FilmObsta
   if (set.architecture === 'freeway') return [-28, 0, 28].map(x => ({ x, z: 0, width: 1.5, depth: set.depth, height: 2.2 }));
   if (set.id === 'film_lafayette') return [
     { x: -PILL_ROOM.seat, z: PILL_ROOM.z, width: 2, depth: 2.5, height: 3.4 }, { x: PILL_ROOM.seat, z: PILL_ROOM.z, width: 2, depth: 2.5, height: 3.4 },
-    { x: 0, z: PILL_ROOM.tableZ, width: PILL_ROOM.tableRadius * 2, depth: PILL_ROOM.tableRadius * 2, height: PILL_ROOM.tableY + .06 }, { x: -10, z: -18, width: 6.4, depth: .4, height: 9.8 },
+    { x: 0, z: PILL_ROOM.tableZ, width: PILL_ROOM.tableRadius * 2, depth: PILL_ROOM.tableRadius * 2, height: PILL_ROOM.tableY + .06 },
+    { x: MIRROR_FRAME.x, z: MIRROR_FRAME.z, width: MIRROR_FRAME.width, depth: MIRROR_FRAME.depth, height: MIRROR_FRAME.y + MIRROR_FRAME.height / 2 },
     { x: -14.5, z: -11.5, width: 13, depth: .65, height: 9 }, { x: 8.5, z: -11.5, width: 25, depth: .65, height: 9 },
     PILL_ROOM.fireplace,
     { x: MIRROR_SEAT.x, z: MIRROR_SEAT.z, width: 2.4, depth: 2.5, height: 3.4 },

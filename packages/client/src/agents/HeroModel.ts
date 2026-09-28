@@ -14,6 +14,7 @@ import { OfficeWorkdayPerformance } from './OfficeWorkdayPerformance.js';
 import { ApartmentPerformance } from './ApartmentPerformance.js';
 import { WakeCallPerformance } from './WakeCallPerformance.js';
 import { enableSkinnedCulling } from './SkinnedBounds.js';
+import { wireTrackingElectrode } from './TrackingContact.js';
 import { clubCloseness } from '@auto_matrix/shared';
 
 export type HeroSupport = 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour' | 'niobe' | 'ballard' | 'ghost' | 'soren' | 'link';
@@ -806,6 +807,7 @@ export class HeroModels {
     if (input.window !== undefined) this.openWindow(rig, input.window);
     if (input.crossing !== undefined) this.crossWindow(rig, input.crossing);
     if (input.recoveryCrew) this.supportRecovery(rig, input.recoveryCrew);
+    if (input.mirrorCrew !== undefined && input.mirrorContact) wireTrackingElectrode(rig, input.mirrorCrew, input.mirrorContact);
     if (input.farewell) this.farewellContact(rig, input.farewell);
     if (input.pills && !this.pills.has(rig)) this.pills.set(rig, new PillPerformance(rig));
     this.pills.get(rig)?.update(input.pills);

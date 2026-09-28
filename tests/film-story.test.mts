@@ -1078,7 +1078,7 @@ test('touching the mirror is a saved seated performance that freezes on pause an
   const trinity = h.world.agents.get('trinity')!;
   const seat = filmPosition('film_lafayette', MIRROR_SEAT.x, MIRROR_SEAT.z);
   assert.ok(Math.hypot(trinity.position.x - seat.x, trinity.position.z - seat.z) < 2.05,
-    'Trinity must stand close enough to connect the headset instead of reaching from across the room');
+    'Trinity must stand close enough to connect the arm electrode instead of reaching from across the room');
   assert.equal(playerBlocked(trinity.position, true, .5), false, 'Trinity must stand beside, not inside, the tracking chair');
   const target = filmStepPosition(FILM_SCENE_BY_ID.m1_mirror, FILM_SCENE_BY_ID.m1_mirror.steps[0]);
   const touch = awakeningPose({ kind: 'mirror', elapsed: 0 });

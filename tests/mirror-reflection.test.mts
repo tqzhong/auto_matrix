@@ -5,7 +5,7 @@ import { Reflector } from 'three/addons/objects/Reflector.js';
 import { showMirrorSubject } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { createMirrorSurface } from '../packages/client/src/engine/MirrorSurface.js';
 
-test('the fractured glass tessellates the oval without overlapping pieces, holes or flipped faces', () => {
+test('the fractured glass fills the straight-sided mirror without overlapping pieces, holes or flipped faces', () => {
   const mirror = createMirrorSurface();
   try {
     const positions = mirror.geometry.getAttribute('position');
@@ -20,10 +20,9 @@ test('the fractured glass tessellates the oval without overlapping pieces, holes
       for (const vertex of [i + 1, i + 2]) assert.deepEqual([fractures.getX(vertex), fractures.getY(vertex), fractures.getZ(vertex)], [fractures.getX(i), fractures.getY(i), fractures.getZ(i)], 'one fragment keeps one optical offset');
       tilts.add(`${fractures.getX(i)},${fractures.getY(i)}`);
     }
-    assert.ok(Math.abs(area - Math.PI) < .003, 'the pieces cover the full oval exactly');
+    assert.ok(Math.abs(area - 4) < .003, 'the pieces cover the whole rectangular glass, including all four corners');
     assert.ok(tilts.size >= 6, 'the broken mirror contains separate reflected views');
     for (let x = -.9; x <= .9; x += .15) for (let y = -.9; y <= .9; y += .15) {
-      if (x * x + y * y >= .95) continue;
       assert.ok(new THREE.Raycaster(new THREE.Vector3(x, y, 1), new THREE.Vector3(0, 0, -1)).intersectObject(mirror).length,
         `no missing fragment at ${x}, ${y}`);
     }
@@ -33,12 +32,14 @@ test('the fractured glass tessellates the oval without overlapping pieces, holes
 test('the first-person body appears only in the mirror render', () => {
   const mirror = new Reflector(new THREE.PlaneGeometry(1, 1));
   const body = new THREE.Group(); body.visible = false;
+  const electrode = new THREE.Group(); electrode.visible = false;
   let visibleInReflection = false;
-  mirror.onBeforeRender = () => { visibleInReflection = body.visible; };
-  showMirrorSubject(mirror, () => body);
+  mirror.onBeforeRender = () => { visibleInReflection = body.visible && electrode.visible; };
+  showMirrorSubject(mirror, () => body, () => [electrode]);
   mirror.onBeforeRender({} as THREE.WebGLRenderer, new THREE.Scene(), new THREE.PerspectiveCamera(), mirror.geometry, mirror.material, null);
   assert.equal(visibleInReflection, true, 'Neo should be reflected in first person');
   assert.equal(body.visible, false, 'Neo should remain hidden from the direct first-person camera');
+  assert.equal(electrode.visible, false, 'the electrode must not float in front of the camera after the arm is hidden');
   mirror.dispose(); mirror.geometry.dispose();
 });
 

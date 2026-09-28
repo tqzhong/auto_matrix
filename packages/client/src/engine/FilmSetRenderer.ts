@@ -9,6 +9,8 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { createMirrorSurface } from './MirrorSurface.js';
+import { trackingContact } from '../agents/TrackingContact.js';
+import { MIRROR_FRAME } from '@auto_matrix/shared';
 import { FILM_SETS, FILM_SCENE_BY_ID, OPENING_ESCAPE, openingTruckPose, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, PILL_ROOM, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, mirrorSilver, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, GARAGE, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, EXILES, CHATEAU, awakeningLocked, trainingLocked, phoneLocked, windowOpening, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type FilmJourney, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
 import { OPENING_HOTEL } from '@auto_matrix/shared';
 import { meetingBoardPoint, meetingRoot } from '@auto_matrix/shared';
@@ -56,14 +58,16 @@ import { TrilogyEpilogueRenderer } from './TrilogyEpilogueRenderer.js';
 
 const outdoor = new Set(['rooftop', 'plaza', 'bridge', 'street', 'courtyard', 'freeway', 'machine', 'rain', 'garden', 'desert', 'pods', 'mountain']);
 
-export function showMirrorSubject(mirror: Reflector, subject: () => THREE.Object3D | undefined): void {
+export function showMirrorSubject(mirror: Reflector, subject: () => THREE.Object3D | undefined, attachments: () => THREE.Object3D[] = () => []): void {
   const renderReflection = mirror.onBeforeRender.bind(mirror);
   mirror.onBeforeRender = (...args) => {
     if (args[1].overrideMaterial) return;
     const body = subject(); const wasVisible = body?.visible;
+    const props = attachments().map(object => ({ object, visible: object.visible }));
     if (body) body.visible = true;
+    for (const prop of props) prop.object.visible = true;
     try { renderReflection(...args); }
-    finally { if (body) body.visible = wasVisible!; }
+    finally { if (body) body.visible = wasVisible!; for (const prop of props) prop.object.visible = prop.visible; }
   };
 }
 
@@ -122,7 +126,8 @@ export class FilmSetRenderer {
   private mirrorSubject?: THREE.Object3D;
   private mirrorFilament?: THREE.Mesh;
   private recoverySubject?: THREE.Object3D;
-  private trackingHeadset?: THREE.Group;
+  private trackingElectrode?: THREE.Group;
+  private trackingLead?: THREE.Line;
   private oracleVase?: OracleVase;
   private ambush?: AmbushSetRenderer;
   private pillGlass?: THREE.Group;
@@ -295,10 +300,20 @@ export class FilmSetRenderer {
         }
       }
     }
-    if (this.trackingHeadset) {
-      const time = journey?.scene === 'm1_mirror' ? journey.awakening?.elapsed ?? 0 : 0;
-      const lowered = THREE.MathUtils.smoothstep(time, MIRROR_TIMING.sit, MIRROR_TIMING.wired);
-      this.trackingHeadset.position.set(MIRROR_SEAT.x + 1.9 * (1 - lowered), 4.4 - 1.1 * lowered, MIRROR_SEAT.z + .65);
+    if (this.trackingElectrode && this.trackingLead) {
+      const contact = this.mirrorSubject && trackingContact(this.mirrorSubject);
+      const visible = Boolean(contact && journey?.scene === 'm1_mirror' && !journey.visiting && (journey.awakening?.elapsed ?? 0) >= MIRROR_TIMING.sit);
+      this.trackingElectrode.userData.active = this.trackingLead.userData.active = visible;
+      this.trackingElectrode.visible = this.trackingLead.visible = visible && this.mirrorSubject?.visible !== false;
+      if (visible) {
+        this.trackingElectrode.position.copy(this.root.worldToLocal(contact!));
+        const end = this.trackingElectrode.position;
+        const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(-14.7, 2.1, -17.7), new THREE.Vector3(-12, .13, -15),
+          new THREE.Vector3(end.x + .5, .18, end.z + .5), end]);
+        const positions = this.trackingLead.geometry.getAttribute('position');
+        for (let i = 0; i < positions.count; i++) { const point = curve.getPoint(i / (positions.count - 1)); positions.setXYZ(i, point.x, point.y, point.z); }
+        positions.needsUpdate = true; this.trackingLead.geometry.computeBoundingSphere();
+      }
     }
     if (this.pillGlass) {
       const gesture = sceneId === 'm1_pills' && !journey?.visiting ? player?.currentAction?.parameters.pills as PillGesture | undefined : undefined;
@@ -859,6 +874,89 @@ export class FilmSetRenderer {
     const material = new THREE.MeshStandardMaterial({ map: texture, roughness: 1 }); this.materials.add(material);
     this.box(material, x, .025, z, width, .04, depth);
   }
+  private trackingEquipment(): void {
+    const canvas = document.createElement('canvas'); canvas.width = 768; canvas.height = 512;
+    const ctx = canvas.getContext('2d')!;
+    for (let tile = 0; tile < 6; tile++) {
+      const ox = tile % 3 * 256, oy = Math.floor(tile / 3) * 256;
+      const ink = tile % 2 ? '#a0c6c8' : '#95b397';
+      ctx.fillStyle = '#060e10'; ctx.fillRect(ox, oy, 256, 256);
+      ctx.strokeStyle = '#1b3537'; ctx.lineWidth = 1;
+      for (let i = 24; i < 256; i += 24) {
+        ctx.beginPath(); ctx.moveTo(ox + i, oy + 24); ctx.lineTo(ox + i, oy + 234); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(ox + 12, oy + i); ctx.lineTo(ox + 244, oy + i); ctx.stroke();
+      }
+      ctx.fillStyle = ink; ctx.font = '10px monospace'; ctx.fillText(['SIGNAL / CH 01', 'CARRIER TRACE', 'BODY TELEMETRY', 'LOCAL GRID', 'RETURN PATH', 'ACQUISITION'][tile], ox + 14, oy + 17);
+      ctx.strokeStyle = ink; ctx.lineWidth = 1.5;
+      if (tile === 3 || tile === 4) {
+        for (let i = 0; i < 19; i++) {
+          const x = ox + 22 + (i * 37 % 210), y = oy + 36 + (i * 61 % 187);
+          ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(ox + 22 + ((i + 1) * 37 % 210), oy + 36 + ((i + 1) * 61 % 187)); ctx.stroke();
+          ctx.fillRect(x - 2, y - 2, 4, 4);
+        }
+      } else {
+        for (let row = 0; row < 3; row++) {
+          ctx.beginPath();
+          for (let x = 14; x < 244; x++) {
+            const pulse = Math.exp(-(((x % 67 - 31) / 4) ** 2)) * (20 + tile * 3);
+            const y = oy + 64 + row * 61 + Math.sin(x * (.05 + row * .03) + tile) * 8 - pulse;
+            if (x === 14) ctx.moveTo(ox + x, y); else ctx.lineTo(ox + x, y);
+          }
+          ctx.stroke();
+        }
+      }
+      for (let y = 0; y < 256; y += 3) { ctx.fillStyle = '#00000038'; ctx.fillRect(ox, oy + y, 256, 1); }
+    }
+    const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; this.textures.add(texture);
+    const phosphor = new THREE.MeshStandardMaterial({ color: 0x718f89, map: texture, emissive: 0xffffff, emissiveMap: texture, emissiveIntensity: .65, roughness: .3 }); this.materials.add(phosphor);
+    const casing = this.mat(0x444b42, .78, .15), panel = this.mat(0x8a8d77, .75, .25);
+    const amber = this.mat(0xae753a, .4); amber.emissive.setHex(0xe89c3a); amber.emissiveIntensity = .65;
+    for (const [bank, width, depth] of [[0, 6, 3.5], [1, 5.2, 3]] as const) {
+      const start = this.root.children.length;
+      this.table(0, 0, width, depth, this.metal, 1.8);
+      for (const x of [-width * .28, width * .28]) {
+        this.box(this.black, x, .84, -.12, width * .42, 1.35, depth * .7, .06);
+        for (const y of [.35, 1.35]) this.box(this.metal, x, y, depth * .35, width * .44, .06, .06);
+        for (const dx of [-.3, .3]) this.box(this.metal, x + dx, .9, depth * .35 + .05, .05, .25, .08);
+      }
+      const units = [[-width * .27, 2.57, .12, .68, 0], [width * .25, 2.73, -.18, .81, 1], [width * .25, 4.12, -.23, .46, 2]];
+      for (const [x, y, z, scale, id] of units) {
+        this.box(casing, x, y, z, 2.65 * scale, 1.9 * scale, 1.85 * scale, .14 * scale);
+        this.box(this.black, x - .12 * scale, y + .07 * scale, z + .94 * scale, 2.28 * scale, 1.54 * scale, .1, .12 * scale);
+        const face = new THREE.PlaneGeometry(1.93 * scale, 1.27 * scale, 10, 8);
+        const p = face.getAttribute('position'), uv = face.getAttribute('uv'); const tile = bank * 3 + id;
+        for (let i = 0; i < p.count; i++) {
+          p.setZ(i, .065 * scale * (1 - (p.getX(i) / scale) ** 2 - (p.getY(i) / scale) ** 2));
+          uv.setXY(i, (tile % 3 + .03 + uv.getX(i) * .94) / 3, (1 - Math.floor(tile / 3) + .03 + uv.getY(i) * .94) / 2);
+        }
+        face.computeVertexNormals(); this.mesh(face, phosphor, x - .12 * scale, y + .07 * scale, z + 1.002 * scale);
+        for (const dy of [-.42, -.08, .26]) this.cylinder(this.black, x + 1.12 * scale, y + dy * scale, z + .96 * scale, .07 * scale, .08).rotation.x = Math.PI / 2;
+        this.box(amber, x + 1.12 * scale, y - .7 * scale, z + .991 * scale, .04, .04, .025);
+        for (let i = 0; i < 8; i++) this.box(this.black, x - .7 * scale + i * .2 * scale, y + .956 * scale, z - .25 * scale, .055 * scale, .012, .65 * scale);
+        this.pipe([[x - .36 * scale, y + .97 * scale, z], [x - .3 * scale, y + 1.14 * scale, z], [x + .3 * scale, y + 1.14 * scale, z], [x + .36 * scale, y + .97 * scale, z]], .035, this.metal);
+      }
+      for (let rack = 0; rack < 3; rack++) {
+        const y = 3.44 + rack * .32;
+        this.box(this.black, -width * .27, y, -.37, width * .46, .3, 1.35, .035);
+        this.box(panel, -width * .27, y, .325, width * .43, .24, .045);
+        for (let knob = 0; knob < 4; knob++) {
+          const x = -width * .45 + knob * width * .08;
+          this.cylinder(this.black, x, y, .38, .045, .055).rotation.x = Math.PI / 2;
+          this.box(amber, x + .09, y + .06, .359, .025, .025, .018);
+        }
+      }
+      this.box(panel, -.5, 1.995, depth / 2 - .35, 2.2, .12, .62, .045);
+      for (let row = 0; row < 4; row++) for (let key = 0; key < 13; key++) this.box(this.black, -1.47 + key * .15, 2.08, depth / 2 - .56 + row * .13, .105, .04, .075, .01);
+      for (let i = 0; i < 4; i++) this.pipe([[-width * .25, 2.1, -.6], [-width * .47, 1.2, -.65 + i * .12], [-width * .3 + i * .15, .12, -.75], [.7, .1, -depth * .35]], .015, this.black);
+      const group = new THREE.Group(); this.root.children.slice(start).forEach(child => group.add(child));
+      group.position.set(bank ? 5 : -16.5, 0, -18.5); group.rotation.y = bank ? 0 : Math.PI / 2; this.root.add(group);
+    }
+    this.cylinder(this.metal, -5.2, 2.7, -18.7, .045, 5.4);
+    for (const [dx, dz] of [[-.6, .4], [.6, .4], [0, -.7]]) this.pipe([[-5.2 + dx, .05, -18.7 + dz], [-5.2, 1.1, -18.7]], .035, this.metal);
+    this.box(this.black, -5.2, 5.55, -18.7, 2.15, 1.3, .35, .05);
+    this.box(this.glow, -5.2, 5.55, -18.51, 1.95, 1.08, .04);
+    const light = new THREE.PointLight(0xc7d8d0, 120, 24, 2); light.position.set(-5.2, 5.55, -18.2); this.root.add(light);
+  }
   private crt(x: number, y: number, z: number, scale = 1, blue = false): void {
     this.box(this.black, x, y + .25 * scale, z, 2.5 * scale, 2 * scale, 1.8 * scale, .18);
     const screen = this.box(this.mat(blue ? 0x587888 : 0x354b35, .25), x, y + .3 * scale, z + .92 * scale, 2.1 * scale, 1.5 * scale, .08, .12);
@@ -1214,18 +1312,17 @@ export class FilmSetRenderer {
         this.box(this.metal, chairX + dx, 1.72, chairZ, .18, .18, 2.05, .04);
         this.box(this.leather, chairX + dx, 1.82, chairZ, .28, .14, 1.45, .06);
       }
-      const headsetStart = this.root.children.length;
-      this.pipe([[-.72, -.18, 0], [-.7, .36, 0], [0, .59, 0], [.7, .36, 0], [.72, -.18, 0]], .07, this.black);
-      for (const x of [-.72, .72]) this.sphere(this.black, x, -.16, 0, .17);
-      for (const x of [-.5, 0, .5]) this.sphere(this.metal, x, .38, -.14, .12);
-      this.trackingHeadset = new THREE.Group(); this.root.children.slice(headsetStart).forEach(child => this.trackingHeadset!.add(child));
-      this.root.add(this.trackingHeadset);
-      this.box(this.black, -16.5, 2.28, -18.5, 3.5, 4.55, 6, .08);
-      for (const z of [-20.2, -17.8]) this.crt(-16.5, 3.1, z, .72);
-      this.box(this.black, 5, 2.3, -18.5, 5.2, 4.6, 3, .08);
-      for (const x of [3.55, 6.45]) this.crt(x, 3.1, -17.2, .78);
+      const electrodeStart = this.root.children.length;
+      this.box(this.mat(0xbab9a4, .92), 0, -.018, 0, .26, .035, .32, .025);
+      this.cylinder(this.metal, 0, .011, 0, .06, .025);
+      this.pipe([[0, .03, 0], [.08, .045, .03], [.16, -.01, .05]], .013, cable);
+      this.trackingElectrode = new THREE.Group(); this.trackingElectrode.name = 'tracking-electrode'; this.trackingElectrode.userData.dynamic = true;
+      this.root.children.slice(electrodeStart).forEach(child => this.trackingElectrode!.add(child)); this.root.add(this.trackingElectrode);
+      const leadGeometry = this.own(new THREE.BufferGeometry()); leadGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(33 * 3), 3));
+      const leadMaterial = new THREE.LineBasicMaterial({ color: 0x28241c }); this.materials.add(leadMaterial);
+      this.trackingLead = new THREE.Line(leadGeometry, leadMaterial); this.trackingLead.name = 'tracking-electrode-lead'; this.root.add(this.trackingLead);
+      this.trackingEquipment();
       for (const x of [-17.5, -16.5, -15.5]) this.pipe([[x, 0, -20], [x, 6.5, -20], [chairX - 2.2 + (x + 16.5) * .12, 6.5, chairZ + 1.5], [chairX - 1.9, 3.5, chairZ + 1.2]], .014, cable);
-      this.lamp(-6, 7.6, -15.4, false, true);
       const hearth = this.mat(0x343c36, .96); const stone = this.pbr('marble_01', 0x788478, 1, .85);
       const carving = this.mat(0x626f61, .83); const f = PILL_ROOM.fireplace;
       const front = f.z + f.depth / 2;
@@ -1259,15 +1356,27 @@ export class FilmSetRenderer {
       }
       for (const x of [-1.7, -1, -.3, .4, 1.1, 1.8]) this.box(this.black, f.x + x, .65, front - .2, .07, .95, .08);
       const mirrorY = MIRROR_FACE.y + 1;
-      const oval = this.mesh(new THREE.CircleGeometry(1, 96), this.wood, PILL_ROOM.mirror.x, mirrorY, -17.8);
-      oval.scale.set(2.1, 2.95, 1);
-      for (const [rx, ry, z, radius, material] of [[2, 2.83, -17.58, .12, this.brass], [1.92, 2.73, -17.56, .055, this.black]] as const) {
-        const rim = Array.from({ length: 65 }, (_, i) => { const theta = i / 64 * Math.PI * 2; return [PILL_ROOM.mirror.x + Math.cos(theta) * rx, mirrorY + Math.sin(theta) * ry, z]; });
-        this.pipe(rim, radius, material);
+      const mirrorWood = this.pbr('old_wood_floor', 0x252b22, 1.5, .66);
+      const relief = this.mat(0x303727, .9); const mx = PILL_ROOM.mirror.x;
+      this.box(mirrorWood, MIRROR_FRAME.x, MIRROR_FRAME.y, MIRROR_FRAME.z, MIRROR_FRAME.width, MIRROR_FRAME.height, MIRROR_FRAME.depth, .035);
+      for (const side of [-1, 1]) {
+        const x = mx + side * 2.06;
+        this.box(mirrorWood, x, mirrorY, -17.56, .43, 5.95, .26, .04);
+        this.box(relief, mx + side * 1.9, mirrorY, -17.49, .045, 5.4, .045);
+        this.box(this.black, mx + side * 1.865, mirrorY, -17.56, .025, 5.34, .025);
+        for (let i = 0; i < 8; i++) {
+          const y = mirrorY - 2.35 + i * .65;
+          this.pipe([[x, y - .21, -17.405], [x - side * .11, y - .05, -17.375], [x + side * .11, y + .1, -17.365], [x, y + .3, -17.405]], .013, relief);
+          for (const turn of [-1, 1]) {
+            const leaf = this.mesh(leafGeometry, relief, x, y, -17.405); leaf.rotation.z = turn * .85; leaf.scale.set(.62, .74, .5);
+          }
+        }
+        for (const offset of [2.79, 2.98]) this.box(offset < 2.9 ? mirrorWood : relief, mx, mirrorY + side * offset, -17.5, 4.68, offset < 2.9 ? .28 : .1, .28, .025);
+        this.box(relief, mx, mirrorY + side * 2.68, -17.49, 3.84, .04, .045);
       }
       this.mirror = createMirrorSurface(); this.own(this.mirror.geometry);
       this.mirror.scale.set(MIRROR_FACE.radiusX, MIRROR_FACE.radiusY, 1);
-      showMirrorSubject(this.mirror, () => this.mirrorSubject);
+      showMirrorSubject(this.mirror, () => this.mirrorSubject, () => [this.trackingElectrode!, this.trackingLead!].filter(object => object.userData.active));
       this.mirror.position.set(PILL_ROOM.mirror.x, mirrorY, PILL_ROOM.mirror.z); this.mirror.userData.dynamic = true; this.root.add(this.mirror);
       const liquidProfile = [[0, 0], [.14, 0], [.075, .06], [.027, .26], [.012, .5], [.018, .76], [.042, .95], [0, 1]].map(([x, y]) => new THREE.Vector2(x, y));
       this.mirrorFilament = this.mesh(new THREE.LatheGeometry(liquidProfile, 24), this.mat(0xb4c1bd, .08, .96), 0, 0, 0);
@@ -2268,7 +2377,7 @@ export class FilmSetRenderer {
       if (!geometry) throw new Error('Film set geometry could not be merged');
       const mesh = new THREE.Mesh(this.own(geometry), material); mesh.castShadow = true; mesh.receiveShadow = true; this.root.add(mesh);
     }
-    const live = new Set<THREE.BufferGeometry>(); this.root.traverse(object => { if (object instanceof THREE.Mesh) live.add(object.geometry); });
+    const live = new Set<THREE.BufferGeometry>(); this.root.traverse(object => { if (object instanceof THREE.Mesh || object instanceof THREE.Line) live.add(object.geometry); });
     for (const geometry of this.geometries) if (!live.has(geometry)) { geometry.dispose(); this.geometries.delete(geometry); }
   }
   private clear(): void {
@@ -2282,7 +2391,7 @@ export class FilmSetRenderer {
     this.pillGlass = undefined;
     this.ambush?.dispose(); this.ambush = undefined;
     this.oracleVase?.dispose(); this.oracleVase = undefined;
-    this.mirror?.dispose(); this.mirror = undefined; this.mirrorFilament = undefined; this.trackingHeadset = undefined;
+    this.mirror?.dispose(); this.mirror = undefined; this.mirrorFilament = undefined; this.trackingElectrode = undefined; this.trackingLead = undefined;
     this.pods?.dispose(); this.pods = undefined;
     this.neb?.dispose(); this.neb = undefined;
     this.finale?.dispose(); this.finale = undefined;

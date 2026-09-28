@@ -2,15 +2,15 @@ import * as THREE from 'three';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 
 /** All shards sample one live reflection. Their seams and small optical offsets
- * close together; the oval itself never shrinks or slides during the repair. */
+ * close together; the glass itself never shrinks or slides during the repair. */
 export function createMirrorSurface(): Reflector {
   const seeds = [[-.43, .75], [-.72, .03], [-.55, -.67], [.11, .22], [.63, .64], [.72, -.17], [.17, -.66], [.01, .94], [-.08, -.12]]
     .map(([x, y]) => new THREE.Vector2(x, y));
-  const circle = Array.from({ length: 96 }, (_, i) => new THREE.Vector2(Math.cos(i / 96 * Math.PI * 2), Math.sin(i / 96 * Math.PI * 2)));
+  const frame = [new THREE.Vector2(-1, -1), new THREE.Vector2(1, -1), new THREE.Vector2(1, 1), new THREE.Vector2(-1, 1)];
   const positions: number[] = [], fractures: number[] = [], edges: number[] = [];
   for (const [index, seed] of seeds.entries()) {
-    let polygon = circle;
-    // Clip the oval's unit circle against the perpendicular bisectors of each shard.
+    let polygon = frame;
+    // Clip the straight-sided glass against the perpendicular bisectors of each shard.
     for (const other of seeds) {
       if (other === seed) continue;
       const normal = other.clone().sub(seed); const offset = (other.lengthSq() - seed.lengthSq()) / 2;

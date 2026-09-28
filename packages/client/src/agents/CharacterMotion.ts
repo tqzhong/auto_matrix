@@ -24,6 +24,7 @@ export interface MotionInput {
   performance?: AwakeningPose;
   mirrorBeat?: number;
   mirrorCrew?: number;
+  mirrorContact?: { x: number; y: number; z: number };
   recovery?: number;
   recoveryCrew?: RecoveryCrewGesture;
   reveal?: AwakeningReveal;

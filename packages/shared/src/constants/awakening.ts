@@ -10,7 +10,8 @@ export const AWAKENING_SECONDS = { mirror: 8, connect: 4, disconnect: 9, rescue:
 export const MIRROR_TOUCH = { x: -7.1, z: -14.6, radius: 1.25 } as const;
 export const MIRROR_SEAT = { x: -9.5, z: -16.05 } as const;
 export const MIRROR_FACE = { y: 2.8, radiusX: 1.85, radiusY: 2.65 } as const;
-export const MIRROR_TRINITY = { x: -7.75, z: -15.16, yaw: -1.35 } as const;
+export const MIRROR_FRAME = { x: PILL_ROOM.mirror.x, y: MIRROR_FACE.y + 1, z: PILL_ROOM.mirror.z - .22, width: 4.7, height: 6.25, depth: .3 } as const;
+export const MIRROR_TRINITY = { x: -11.35, z: -16.65, yaw: 1.7 } as const;
 export const MIRROR_TIMING = { sit: 1.35, wired: 2.75, touch: 3.45, fade: 7.2 } as const;
 export interface MirrorGuide { progress: number; lastTick: number; done: boolean; rise?: number }
 export const MIRROR_GUIDE_ROUTE = [
@@ -89,7 +90,7 @@ export function awakeningPose(beat?: AwakeningBeat): { x: number; y: number; z: 
     const from = beat.approach ?? MIRROR_TOUCH;
     const sit = smooth(beat.elapsed / MIRROR_TIMING.sit);
     return { x: from.x + (MIRROR_SEAT.x - from.x) * sit, y: 0, z: from.z + (MIRROR_SEAT.z - from.z) * sit, pose: 'touch',
-      text: beat.elapsed < MIRROR_TIMING.sit ? '走到追踪椅旁坐下。' : beat.elapsed < MIRROR_TIMING.wired ? 'Trinity 接上电极与耳机；屏幕开始追踪信号。'
+      text: beat.elapsed < MIRROR_TIMING.sit ? '走到追踪椅旁坐下。' : beat.elapsed < MIRROR_TIMING.wired ? 'Trinity 将电极接到手臂；屏幕开始追踪信号。'
         : beat.elapsed < MIRROR_TIMING.touch ? '裂镜里的倒影正在复原。Neo 从椅上伸出手。'
         : beat.elapsed < 5.8 ? '冰冷的银色镜面粘住指尖，沿手臂与颈部蔓延。' : 'Neo 惊恐地仰头；房间的声音和光线正在消失。' };
   }
