@@ -544,6 +544,23 @@ test('passenger first-person look follows a car turn while preserving the chosen
   assert.ok(game.camera.position.y > game.state.position.y + 2.7, 'the passenger eye line clears the front seat instead of staring into its back');
 });
 
+test('first-person boarding ducks under the cabin light before settling into the rear seat', t => {
+  const game = setup(t, Math.PI);
+  const pose = (elapsed: number) => {
+    const gesture = { phase: 'boarding' as const, elapsed, role: 'neo' as const, bugged: false };
+    const root = meetingRoot({ ...gesture, approach: { ...MEETING_CAR.approach, yaw: Math.PI } }, 'neo');
+    game.state.currentLocation = 'film_extraction_car'; game.state.position = filmPosition('film_extraction_car', root.x, root.z);
+    game.state.rotation = root.yaw;
+    game.state.currentAction = { type: 'idle', parameters: { meeting: gesture }, startedAt: 0, duration: 1, progress: 0 };
+  };
+  pose(3.8); game.controls.possess(game.state); game.step(.1); game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+  const crouched = game.camera.position.y;
+  assert.ok(crouched < game.state.position.y + 2.55, 'Neo must lower his first-person eye before passing beneath the cabin light');
+  pose(7.4); game.step(.5);
+  assert.ok(game.camera.position.y > crouched + .35, 'the eye line must rise smoothly after Neo clears the door opening');
+  assert.ok(game.camera.position.y < game.state.position.y + 2.78, 'the settled eye must remain clear of the low cabin light');
+});
+
 test('opening the meeting car door frames Neo and the rainy exit in portrait view', t => {
   const game = setup(t, Math.PI); const gesture = { phase: 'hesitating' as const, elapsed: 2, role: 'neo' as const, bugged: true };
   const root = meetingRoot({ ...gesture, approach: { ...MEETING_CAR.approach, yaw: -Math.PI / 2 } }, 'neo');

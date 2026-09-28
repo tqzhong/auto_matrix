@@ -198,11 +198,12 @@ export class PlayerControls {
   }
 
   private meetingEye(gesture: NonNullable<MotionInput['meeting']>): THREE.Vector3 {
+    const pose = meetingPose(gesture);
     const blend = gesture.phase === 'scanning' && !gesture.bugged
       ? THREE.MathUtils.smoothstep(gesture.elapsed, MEETING_TIMING.scanning - 2, MEETING_TIMING.scanning)
-      : gesture.phase === 'discarding' ? meetingPose(gesture).discard
+      : gesture.phase === 'discarding' ? pose.discard
         : ['scanning', 'located', 'removing'].includes(gesture.phase) ? 0 : 1;
-    return new THREE.Vector3(-1.05 * blend, 2.86, .4 - 1.2 * blend)
+    return new THREE.Vector3(-1.05 * blend, 2.74 - pose.duck * .43, .4 - 1.2 * blend)
       .applyEuler(new THREE.Euler(0, meetingCarPose(gesture).yaw, 0))
       .add(new THREE.Vector3(this.position.x, this.position.y, this.position.z));
   }
