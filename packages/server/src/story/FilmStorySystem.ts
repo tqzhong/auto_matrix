@@ -1182,7 +1182,8 @@ export class FilmStorySystem {
       state.checkpoint = { ...agent.position };
     } else if (call.phase === 'ringing' || call.phase === 'done') agent.currentAction = null;
     const seal = 'film:apartment:door';
-    if (state.step >= this.scene!.steps.length || wakeCallDoor(call) >= .8)
+    const crossedDoor = call.phase === 'leaving' && call.elapsed >= 1.1;
+    if (state.step >= this.scene!.steps.length || crossedDoor || wakeCallDoor(call) >= .8)
       this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== seal);
     else if (!this.sandbox().structures.some(s => s.id === seal))
       this.sandbox().structures.push({ id: seal, kind: 'barricade', owner: 'matrix', position: filmPosition(this.scene!.set, 0, APARTMENT.doorZ), matrix: true, health: 1,

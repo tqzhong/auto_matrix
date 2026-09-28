@@ -251,6 +251,7 @@ export class Engine {
       if (call?.phase === 'reply' && previous?.phase === 'decision') this.audio.dialogue();
       if (call?.phase === 'reply' && previous?.phase === 'reply' && previous.elapsed < 3.15 && call.elapsed >= 3.15) this.audio.landlineSound('hangup');
       if (call?.phase === 'leaving' && previous?.phase === 'done') this.audio.lafayetteSound('door');
+      if (call?.phase === 'leaving' && previous?.phase === 'leaving' && previous.elapsed < 3.25 && call.elapsed >= 3.25) this.audio.lafayetteSound('door');
     }
     if (after?.scene === 'm1_sentinels' && !after.visiting && after.actor === this.playerControls?.id && this.running) {
       const previous = before?.scene === after.scene ? before.sentinel : undefined; const current = after.sentinel;

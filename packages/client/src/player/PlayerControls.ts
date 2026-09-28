@@ -498,7 +498,7 @@ export class PlayerControls {
     const dx = this.position.x - previous.x; const dz = this.position.z - previous.z;
     this.motion.speed = this.ride || this.climbing || this.performing ? 0 : Math.hypot(dx, dz) / Math.max(delta, .001);
     if (this.motion.wakeCall?.phase === 'waking' && this.motion.wakeCall.elapsed > 2.7) this.motion.speed = 1.45;
-    if (this.motion.wakeCall?.phase === 'leaving' && this.motion.wakeCall.elapsed > 1.15) this.motion.speed = 1.35;
+    if (this.motion.wakeCall?.phase === 'leaving' && this.motion.wakeCall.elapsed > 1.15 && this.motion.wakeCall.elapsed < 3.05) this.motion.speed = 1.35;
     this.motion.grounded = Boolean(this.ride || this.gunner) || this.climbing || this.performing || this.position.y <= groundHeight(this.position, state.isInMatrix) + .12;
     this.motion.verticalVelocity = this.vy;
     this.motion.inspecting = Boolean((this.motion.pills || this.motion.interrogation || this.motion.welcome || this.motion.knock !== undefined || this.motion.recovery !== undefined || this.motion.reveal || this.motion.training || this.motion.workday || this.motion.wakeCall || this.motion.sentinel || this.motion.interlude || this.motion.oracleVisit || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || this.motion.lobbyEntry) && !this.firstPerson) || Boolean(this.phone && this.performing && this.motion.window === undefined && this.motion.crossing === undefined) || this.spoon !== undefined && this.enabled && this.motion.speed < .25 && this.motion.grounded;

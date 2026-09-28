@@ -495,6 +495,14 @@ test('leaving apartment 101 keeps Neo and the doorway readable before V returns 
   const before = game.yaw(); game.document.pointerLockElement = game.canvas;
   game.event(game.document, 'mousemove', { movementX: 90, movementY: 0 }); game.step(.1);
   assert.ok(Math.abs(angle(game.yaw(), before)) > .08, 'the first-person departure view still allows looking around');
+
+  const closing = { phase: 'leaving' as const, elapsed: 3.6, nightmare: true }; const closingRoot = wakeCallRoot(closing);
+  game.state.position = filmPosition('film_anderson_flat', closingRoot.x, closingRoot.z); game.state.rotation = closingRoot.yaw;
+  game.state.currentAction = { type: 'idle', parameters: { wakeCall: closing }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.step(.5); game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+  const towardDoor = new THREE.Vector3(center.x, game.camera.position.y, center.z + APARTMENT.doorZ).sub(game.camera.position).normalize();
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).dot(towardDoor) > .8,
+    'Neo must turn back toward the closing 101 door instead of switching V into the blank hallway wall');
 });
 
 test('office conversation and signing frame the performers and restore walking after the response', t => {

@@ -171,7 +171,7 @@ if (process.argv[3] === 'interrogation' && scene.id === 'm1_interrogation') {
   sandbox.life.film.command(actor, 'act', 0);
   for (let frame = 0; frame < 85; frame++) sandbox.life.film.interrogationFrame(actor, .1, 0);
 }
-if (scene.id === 'm1_wake_again' && ['wake-ringing', 'wake-clear-ringing', 'wake-listening', 'wake-decision', 'wake-leaving'].includes(process.argv[3])) {
+if (scene.id === 'm1_wake_again' && ['wake-ringing', 'wake-clear-ringing', 'wake-listening', 'wake-decision', 'wake-leaving', 'wake-closing'].includes(process.argv[3])) {
   actor.controller = 'player';
   for (let frame = 0; frame < 57; frame++) sandbox.life.film.apartmentFrame(actor, .1, 0);
   if (!['wake-ringing', 'wake-clear-ringing'].includes(process.argv[3])) {
@@ -180,12 +180,13 @@ if (scene.id === 'm1_wake_again' && ['wake-ringing', 'wake-clear-ringing', 'wake
     const frames = process.argv[3] === 'wake-listening' ? 45 : 110;
     for (let frame = 0; frame < frames; frame++) sandbox.life.film.apartmentFrame(actor, .1, 0);
   }
-  if (process.argv[3] === 'wake-leaving') {
+  if (['wake-leaving', 'wake-closing'].includes(process.argv[3])) {
     sandbox.life.film.command(actor, 'act', 0);
     for (let frame = 0; frame < 43; frame++) sandbox.life.film.apartmentFrame(actor, .1, 0);
     actor.position = filmStepPosition(scene, scene.steps[1]); actor.rotation = 0;
     sandbox.life.film.command(actor, 'act', 0);
-    for (let frame = 0; frame < 31; frame++) sandbox.life.film.apartmentFrame(actor, .1, 0);
+    const departureFrames = process.argv[3] === 'wake-closing' ? 36 : 31;
+    for (let frame = 0; frame < departureFrames; frame++) sandbox.life.film.apartmentFrame(actor, .1, 0);
   }
   sandbox.life.film.state!.checkpoint = { ...actor.position };
 }

@@ -40,8 +40,9 @@ export function wakeCallLocked(journey: FilmJourney): boolean {
 }
 export function wakeCallRoot(call: WakeCall): { x: number; z: number; yaw: number } {
   if (call.phase === 'leaving') {
-    const crossing = smooth(Math.max(0, Math.min(1, (call.elapsed - 1.15) / (WAKE_CALL.leaving - 1.55))));
-    return { x: 1.22 + (0 - 1.22) * crossing, z: 10.15 + (14.35 - 10.15) * crossing, yaw: 0 };
+    const crossing = smooth(Math.max(0, Math.min(1, (call.elapsed - 1.15) / 1.9)));
+    const turnBack = smooth(Math.max(0, Math.min(1, (call.elapsed - 3.02) / .5)));
+    return { x: 1.22 + (0 - 1.22) * crossing, z: 10.15 + (14.35 - 10.15) * crossing, yaw: Math.PI * turnBack };
   }
   if (call.phase !== 'waking') return { x: APARTMENT.phone.approachX, z: APARTMENT.phone.approachZ, yaw: APARTMENT.phone.yaw };
   const t = smooth(Math.max(0, Math.min(1, (call.elapsed - 2.7) / (WAKE_CALL.waking - 2.7))));
@@ -54,7 +55,9 @@ export function wakeCallRoot(call: WakeCall): { x: number; z: number; yaw: numbe
 const smooth = (t: number) => t * t * (3 - 2 * t);
 export function wakeCallDoor(call?: WakeCall): number {
   if (call?.phase !== 'leaving') return 0;
-  return smooth(Math.max(0, Math.min(1, (call.elapsed - .25) / 1.15)));
+  const opened = smooth(Math.max(0, Math.min(1, (call.elapsed - .25) / 1.15)));
+  const closing = smooth(Math.max(0, Math.min(1, (call.elapsed - 3.25) / .9)));
+  return opened * (1 - closing);
 }
 export function wakeCallHandsetHeld(call?: WakeCall): boolean {
   if (!call) return false;
@@ -71,7 +74,7 @@ export function wakeCallText(call: WakeCall): string {
     case 'decision': return '电话另一端安静下来，等待你的回答。按 G 明确答应；等待不会替你作出选择。';
     case 'reply': return call.elapsed < 1.5 ? 'NEO · 是。' : call.elapsed < 3.15 ? 'MORPHEUS · 去 Adams Street 桥下。接应车辆会找到你。' : '听筒回到底座。接头地点已经记下。';
     case 'done': return '前往 101 房门。站到门内侧，按 G 转动把手，去 Adams Street 桥下。';
-    case 'leaving': return call.elapsed < 1.4 ? 'Neo 转动 101 的门把，推开房门。' : call.elapsed < 3.7 ? '他亲自迈过门槛，走入公寓楼道。' : '房门在身后合拢；Adams Street 的雨夜接入视野。';
+    case 'leaving': return call.elapsed < 1.4 ? 'Neo 转动 101 的门把，推开房门。' : call.elapsed < 3.25 ? '他亲自迈过门槛，走入公寓楼道。' : '房门在身后合拢；Adams Street 的雨夜接入视野。';
   }
 }
 export function apartmentText(contact: ApartmentContact): string {
