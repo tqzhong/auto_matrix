@@ -32,8 +32,8 @@ export class MeetingSetRenderer {
   constructor(parent: THREE.Group, includeHotel = true) {
     parent.add(this.root); this.root.add(this.static);
     const material = (color: number, roughness = .6, metalness = 0) => new THREE.MeshStandardMaterial({ color, roughness, metalness });
-    const paint = new THREE.MeshPhysicalMaterial({ color: 0x090f10, roughness: .22, metalness: .62, clearcoat: 1, clearcoatRoughness: .12 });
-    const chrome = material(0xa4b1b0, .19, .93); const black = material(0x080b0c, .85);
+    const paint = new THREE.MeshPhysicalMaterial({ color: 0x090f10, roughness: .31, metalness: .28, clearcoat: 1, clearcoatRoughness: .2 });
+    const chrome = material(0x9aa8a6, .27, .93); const black = material(0x080b0c, .85);
     const leather = material(0x191e1c, .43); const rubber = material(0x111313, .94);
     const glass = new THREE.MeshPhysicalMaterial({ color: 0x829c92, roughness: .16, metalness: .05, transparent: true, opacity: .13, depthWrite: false, side: THREE.DoubleSide });
     const stone = material(0x5b6762, .86);
@@ -105,67 +105,103 @@ export class MeetingSetRenderer {
     const car = new THREE.Group(); this.vehicle.add(car); this.root.add(this.vehicle);
     this.box(0, .67, 0, 5.1, .35, 12.8, black, car);
     this.box(0, .96, .3, 4.9, .18, 7.2, black, car);
-    this.box(0, 1.65, -4.77, 5.28, 1.35, 3.85, paint, car, .17);
-    this.box(0, 1.66, 5.02, 5.28, 1.38, 3.5, paint, car, .15);
-    this.box(0, 2.38, -4.6, 5.19, .16, 3.9, paint, car, .08);
-    this.box(0, 2.45, 5.02, 5.19, .16, 3.5, paint, car, .08);
-    for (const z of [-6.75, 6.75]) this.box(0, .99, z, 5.5, .34, .32, chrome, car, .09);
-    this.box(0, 1.65, -6.74, 3.2, .74, .05, black, car);
-    for (let i = -12; i <= 12; i++) this.box(i * .12, 1.65, -6.78, .035, .7, .04, chrome, car);
-    const tailLens = new THREE.MeshBasicMaterial({ color: 0xe63b28, toneMapped: false });
-    for (const side of [-1, 1]) {
-      this.box(side * 1.65, 1.75, 6.77, 1.35, .52, .09, black, car, .06);
-      this.box(side * 1.65, 1.75, 6.83, 1.12, .33, .035, tailLens, car, .035);
-      const tailLight = new THREE.SpotLight(0xef2f20, 58, 18, .72, .5, 2);
-      tailLight.name = `meeting-tail-light-${side}`; tailLight.position.set(side * 1.65, 1.75, 6.87);
-      tailLight.target.position.set(side * 1.65, .45, 15); this.vehicle.add(tailLight, tailLight.target);
+    this.box(0, 1.68, -4.85, 4.5, 1.35, 3.6, black, car, .1);
+    this.box(0, 1.67, 5.02, 4.5, 1.38, 3.4, black, car, .1);
+    this.crownedPanel(car, paint, [[-6.67, 2.48, 2.4], [-6.4, 2.59, 2.47], [-5.8, 2.62, 2.51], [-3.65, 2.6, 2.52], [-3.51, 2.5, 2.5]], .07);
+    this.crownedPanel(car, paint, [[3.53, 2.5, 2.5], [3.72, 2.61, 2.5], [5.8, 2.62, 2.47], [6.46, 2.59, 2.42], [6.68, 2.48, 2.37]], .055);
+    for (const z of [-6.67, 6.67]) {
+      this.box(0, 1.71, z, 5.12, 1.24, .12, paint, car, .05);
+      this.box(0, 1.02, z * 1.015, 5.36, .3, .24, chrome, car, .065);
+      this.box(0, 1.18, z * 1.012, 5.08, .055, .19, black, car, .025);
     }
-    this.box(0, 1.58, 6.82, .76, .24, .04, chrome, car, .025);
+    this.box(0, 1.8, -6.76, 2.58, .84, .065, chrome, car, .045);
+    this.box(0, 1.8, -6.8, 2.48, .72, .06, black, car);
+    for (let i = -10; i <= 10; i++) this.box(i * .115, 1.8, -6.84, .027, .72, .025, chrome, car);
+    for (let i = 0; i < 5; i++) this.box(0, 1.5 + i * .15, -6.855, 2.5, .025, .02, chrome, car);
+    this.box(0, 2.5, -6.49, .018, .3, .018, chrome, car); this.box(0, 2.55, -6.49, .14, .014, .018, chrome, car);
+    const tailLens = new THREE.MeshStandardMaterial({ color: 0x661c13, emissive: 0xc62712, emissiveIntensity: 1.2, roughness: .24 });
+    for (const side of [-1, 1]) {
+      this.fender(car, side, -6.61, -3.46, -4.3, paint, chrome);
+      this.fender(car, side, 3.46, 6.61, 4.6, paint, chrome);
+      this.box(side * 2.4, 1.85, 6.76, .4, 1.12, .16, chrome, car, .065);
+      this.box(side * 2.4, 1.85, 6.86, .3, .95, .055, tailLens, car, .04);
+      this.box(side * 2.605, 1.86, 6.53, .06, .91, .48, tailLens, car, .025);
+      for (let i = 0; i < 5; i++) {
+        this.box(side * 2.4, 1.5 + i * .17, 6.894, .34, .025, .018, chrome, car);
+        this.box(side * 2.645, 1.5 + i * .17, 6.53, .018, .025, .46, chrome, car);
+      }
+      const tailLight = new THREE.SpotLight(0xef2f20, 58, 18, .72, .5, 2);
+      tailLight.name = `meeting-tail-light-${side}`; tailLight.position.set(side * 2.4, 1.85, 6.92);
+      tailLight.target.position.set(side * 2.4, .45, 15); this.vehicle.add(tailLight, tailLight.target);
+    }
+    this.box(0, 2.24, 6.755, 4.35, .045, .035, chrome, car);
+    this.box(0, 1.53, 6.78, .83, .37, .03, chrome, car, .025);
+    this.box(0, 1.53, 6.802, .73, .27, .015, black, car);
+    this.box(0, 2.1, 6.8, .018, .27, .018, chrome, car); this.box(0, 2.15, 6.8, .16, .012, .018, chrome, car);
+    const headlamp = new THREE.MeshStandardMaterial({ color: 0x959b91, emissive: 0xe3d8b7, emissiveIntensity: .8, roughness: .2, metalness: .15 });
     for (const x of [-2.08, -1.55, 1.55, 2.08]) {
-      const lamp = this.cylinder(x, 1.68, -6.79, .215, .07, glow, car); lamp.rotation.x = Math.PI / 2;
+      const bezel = this.cylinder(x, 1.85, -6.78, .26, .1, chrome, car); bezel.rotation.x = Math.PI / 2;
+      const lamp = this.cylinder(x, 1.85, -6.84, .218, .035, headlamp, car); lamp.rotation.x = Math.PI / 2;
       if (Math.abs(x) > 2) {
         const beam = new THREE.SpotLight(0xffedd1, 110, 70, .32, .7, 1.2); beam.position.set(x, 1.7, -6.8); beam.target.position.set(x, 0, -48); this.vehicle.add(beam, beam.target);
       }
     }
+    const whitewall = material(0xc4c2ad, .83);
     for (const side of [-1, 1]) {
+      this.box(side * 2.63, 1.82, -6.38, .065, .83, .38, whitewall, car, .03);
+      for (let i = 0; i < 5; i++) this.box(side * 2.671, 1.5 + i * .16, -6.38, .018, .025, .4, chrome, car);
       for (const z of [-4.3, 4.6]) {
-        const steering = new THREE.Group(); const spin = new THREE.Group(); steering.position.set(side * 2.58, 1, z); steering.add(spin); this.vehicle.add(steering);
+        const steering = new THREE.Group(); const spin = new THREE.Group(); steering.position.set(side * 2.41, 1, z); steering.add(spin); this.vehicle.add(steering);
         this.wheels.push({ steering, spin, front: z < 0 });
-        const tire = this.cylinder(0, 0, 0, 1.02, .48, rubber, spin); tire.rotation.z = Math.PI / 2;
-        const hub = this.cylinder(side * .26, 0, 0, .65, .06, chrome, spin); hub.rotation.z = Math.PI / 2;
-        const cap = this.cylinder(side * .3, 0, 0, .28, .08, paint, spin); cap.rotation.z = Math.PI / 2;
-        for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; this.box(side * .3, Math.sin(a) * .47, Math.cos(a) * .47, .025, .07, .07, black, spin); }
+        const profile = [[.63, -.2], [.8, -.23], [.95, -.18], [1.01, -.1], [1.02, 0], [1.01, .1], [.95, .18], [.8, .23], [.63, .2]].map(([r, y]) => new THREE.Vector2(r, y));
+        const tire = this.mesh(spin, new THREE.LatheGeometry(profile, 64), rubber); tire.rotation.z = Math.PI / 2;
+        const stripe = this.mesh(spin, new THREE.RingGeometry(.72, .85, 64), whitewall); stripe.position.x = side * .232; stripe.rotation.y = side * Math.PI / 2;
+        const hub = this.cylinder(side * .22, 0, 0, .64, .05, chrome, spin); hub.rotation.z = Math.PI / 2;
+        const cap = this.cylinder(side * .26, 0, 0, .38, .045, chrome, spin); cap.rotation.z = Math.PI / 2;
+        for (const radius of [.44, .59]) { const ring = this.mesh(spin, new THREE.TorusGeometry(radius, .014, 6, 48), chrome); ring.rotation.y = Math.PI / 2; ring.position.x = side * .254; }
+        for (let i = 0; i < 20; i++) { const a = i * Math.PI / 10; const vent = this.box(side * .25, Math.sin(a) * .53, Math.cos(a) * .53, .014, .065, .032, black, spin); vent.rotation.x = -a; }
+        this.batch(spin);
       }
-      this.box(side * 2.64, 1.12, .2, .12, .18, 7.5, chrome, car);
-      this.box(side * 2.56, 2.02, -1.72, .17, 1.18, 3.45, paint, car, .035);
+      this.box(side * 2.59, .99, .05, .065, .09, 6.83, chrome, car);
+      this.box(side * 2.56, 1.77, -1.77, .17, 1.69, 3.34, paint, car, .035);
       this.box(side * 2.51, 2.63, -1.72, .2, .1, 3.45, chrome, car);
-      this.box(side * 2.48, 3.24, -1.55, .035, 1.13, 3.1, glass, car);
-      this.box(side * 2.33, 4.23, .15, .13, .13, 6.2, chrome, car);
-      this.box(side * 2.48, 3.39, -.1, .15, 1.62, .14, chrome, car);
+      const frontWindow = [[side * 2.5, 2.7, -3.32], [side * 2.5, 2.7, -.15], [side * 2.28, 4.13, -.15], [side * 2.23, 4.13, -2.53]];
+      this.panel(car, glass, frontWindow); this.trim(car, chrome, [...frontWindow, frontWindow[0]], .028);
+      this.trim(car, chrome, [[side * 2.51, 2.65, -.08], [side * 2.3, 4.19, -.08]], .052);
+      const pillar = [[side * 2.27, 4.17, 2.23], [side * 2.51, 2.63, 3.16], [side * 2.2, 2.63, 3.7], [side * 1.98, 4.17, 2.89]];
+      this.panel(car, paint, side > 0 ? pillar.reverse() : pillar);
+      this.trim(car, chrome, [[side * 2.6, 2.47, -6.56], [side * 2.65, 2.53, -3.52]], .022);
+      this.trim(car, chrome, [[side * 2.6, 2.47, 6.56], [side * 2.65, 2.53, 3.53]], .022);
       this.box(side * 2.5, 2.4, -.55, .12, .07, .47, chrome, car);
       if (side === -1) {
         this.leftDoor.position.set(-2.56, 0, 3.45); this.vehicle.add(this.leftDoor);
-        this.box(0, 2.02, -1.7, .17, 1.18, 3.4, paint, this.leftDoor, .035);
+        this.box(0, 1.77, -1.7, .17, 1.69, 3.4, paint, this.leftDoor, .035);
         this.box(.11, 2.06, -1.7, .15, 1.01, 3.3, leather, this.leftDoor);
         this.box(0, 2.64, -1.7, .2, .1, 3.4, chrome, this.leftDoor);
-        this.box(.23, 4.06, -1.7, .09, .1, 3.15, chrome, this.leftDoor);
         this.box(-.13, 2.42, -2.85, .12, .07, .47, chrome, this.leftDoor);
-        this.window = this.box(.08, 3.28, -1.77, .035, 1.2, 3.15, glass, this.leftDoor);
+        const rearWindow = [[.06, 2.7, -3.33], [.06, 2.7, -.31], [.29, 4.13, -1.23], [.28, 4.13, -3.33]];
+        this.window = this.panel(this.leftDoor, glass, rearWindow.map(([x, y, z]) => [x, y - 3.28, z])); this.window.position.y = 3.28;
+        this.trim(this.leftDoor, chrome, [...rearWindow, rearWindow[0]], .03);
       }
     }
+    this.trim(car, chrome, [[-2.57, 2.6, -3.14], [-2.84, 2.87, -3.23]], .04);
+    const mirror = this.cylinder(-2.87, 2.96, -3.23, .22, .09, chrome, car); mirror.rotation.x = Math.PI / 2;
+    const mirrorGlass = this.cylinder(-2.87, 2.96, -3.174, .184, .015, material(0x758b8a, .08, .96), car); mirrorGlass.rotation.x = Math.PI / 2;
     this.door.position.set(2.56, 0, 3.45); this.vehicle.add(this.door);
-    this.box(0, 2.02, -1.7, .17, 1.18, 3.4, paint, this.door, .035);
+    this.box(0, 1.77, -1.7, .17, 1.69, 3.4, paint, this.door, .035);
     this.box(-.11, 2.06, -1.7, .15, 1.01, 3.3, leather, this.door);
     this.box(0, 2.64, -1.7, .2, .1, 3.4, chrome, this.door);
-    this.box(-.08, 3.28, -1.7, .035, 1.2, 3.15, glass, this.door);
-    this.box(-.23, 4.06, -1.7, .09, .1, 3.15, chrome, this.door);
+    const rearWindow = [[-.06, 2.7, -3.33], [-.06, 2.7, -.31], [-.29, 4.13, -1.23], [-.28, 4.13, -3.33]];
+    this.panel(this.door, glass, rearWindow); this.trim(this.door, chrome, [...rearWindow, rearWindow[0]], .03);
     this.box(.13, 2.42, -2.85, .12, .07, .47, chrome, this.door);
     this.box(-.28, 2, -1.5, .25, .16, 1.2, black, this.door, .05);
-    this.box(0, 4.28, .1, 4.65, .16, 5.95, paint, car, .12);
-    this.box(0, 4.12, .1, 4.42, .09, 5.8, leather, car);
-    for (const z of [-3.1, 3.25]) {
-      const windshield = this.box(0, 3.28, z, 4.67, 1.55, .04, glass, car); windshield.rotation.x = z < 0 ? -.38 : .38;
-      for (const side of [-1, 1]) { const pillar = this.box(side * 2.34, 3.29, z, .15, 1.75, .16, chrome, car); pillar.rotation.x = windshield.rotation.x; }
+    this.crownedPanel(car, paint, [[-2.72, 2.21, 4.22], [-2.6, 2.27, 4.31], [-1.8, 2.3, 4.35], [0, 2.31, 4.35], [1.9, 2.28, 4.33], [2.7, 2.22, 4.27], [2.89, 2.1, 4.22]], .09);
+    this.box(0, 4.12, .1, 4.25, .09, 5.44, leather, car);
+    for (const window of [
+      [[-2.47, 2.67, -3.49], [-2.2, 4.17, -2.6], [2.2, 4.17, -2.6], [2.47, 2.67, -3.49]],
+      [[-2.18, 2.68, 3.63], [2.18, 2.68, 3.63], [1.96, 4.17, 2.89], [-1.96, 4.17, 2.89]],
+    ]) {
+      this.panel(car, glass, window); this.trim(car, black, [...window, window[0]], .07); this.trim(car, chrome, [...window, window[0]], .032);
     }
     for (const z of [MEETING_CAR.front, MEETING_CAR.rear]) {
       this.box(0, 1.26, z - .25, 4.66, .43, 1.53, leather, car, .15);
@@ -175,22 +211,23 @@ export class MeetingSetRenderer {
         this.box(x, 2.18, z + .355, .016, 1.1, .027, black, car);
       }
     }
-    this.box(0, 2.4, -3.7, 4.62, .66, .67, leather, car, .1);
-    this.box(-1.15, 2.51, -3.33, 1.63, .37, .04, chrome, car);
-    for (const x of [-1.7, -1.22, -.74]) { const dial = this.cylinder(x, 2.53, -3.29, .16, .03, black, car); dial.rotation.x = Math.PI / 2; }
+    this.box(0, 2.3, -3.22, 4.62, .48, .48, leather, car, .08);
+    this.box(-1.15, 2.31, -2.958, 1.63, .34, .04, chrome, car);
+    for (const x of [-1.7, -1.22, -.74]) { const dial = this.cylinder(x, 2.32, -2.925, .145, .03, black, car); dial.rotation.x = Math.PI / 2; }
     this.steering.position.set(-1.28, 2.46, -2.8); this.steering.rotation.x = -.32; this.vehicle.add(this.steering);
     this.mesh(this.steering, new THREE.TorusGeometry(.55, .035, 8, 40), black);
     for (let i = 0; i < 3; i++) { const spoke = this.box(0, 0, 0, .05, 1.05, .04, chrome, this.steering); spoke.rotation.z = i * Math.PI / 3; }
     for (const x of [-1.55, .5]) {
-      const wiper = new THREE.Group(); wiper.position.set(x, 2.66, -3.34); wiper.rotation.x = -.38; this.vehicle.add(wiper); this.wipers.push(wiper);
+      const wiper = new THREE.Group(); wiper.position.set(x, 2.68, -3.52); wiper.rotation.x = Math.atan2(.89, 1.5); this.vehicle.add(wiper); this.wipers.push(wiper);
       this.box(0, .48, 0, .035, .96, .03, black, wiper); this.box(0, .95, 0, .06, .48, .035, rubber, wiper);
     }
     this.box(0, 3.9, -2.82, .63, .21, .1, chrome, car, .025);
     this.box(0, 3.89, -2.74, .52, .15, .012, black, car);
     this.box(0, 4.055, .1, .48, .08, .7, black, car, .03);
-    this.box(0, 4.005, .1, .36, .028, .56, new THREE.MeshStandardMaterial({ color: 0xa2ae88, emissive: 0x88976a, emissiveIntensity: .14, roughness: .65 }), car, .02);
-    const cabin = new THREE.PointLight(0xbed3b6, 6, 7, 2); cabin.position.set(0, 3.95, .2); this.vehicle.add(cabin);
-    const windowFill = new THREE.PointLight(0xb9d2d1, 28, 12, 2); windowFill.position.set(4.8, 4, 2); this.vehicle.add(windowFill);
+    this.box(0, 4.005, .1, .36, .028, .56, new THREE.MeshBasicMaterial({ color: 0xb5bca4 }), car, .02);
+    const cabin = new THREE.SpotLight(0xbed3b6, 8, 7, Math.PI / 2.5, .8, 2);
+    cabin.position.set(0, 3.95, .2); cabin.target.position.set(0, 1.4, .8); this.vehicle.add(cabin, cabin.target);
+    const windowFill = new THREE.PointLight(0xb9d2d1, 70, 18, 2); windowFill.position.set(8, 7, 1.5); this.vehicle.add(windowFill);
     const rain = new Float32Array(1500 * 6);
     for (let i = 0; i < 1500; i++) {
       this.rainBase.set([((i * 7.919) % 1) * 70 - 35, ((i * 5.317) % 1) * 28, ((i * 3.713) % 1) * 100 - 50], i * 3);
@@ -200,6 +237,41 @@ export class MeetingSetRenderer {
     this.rain = new THREE.LineSegments(geometry, rainMaterial); this.root.add(this.rain);
     for (let i = 0; i < 2; i++) { const light = new THREE.PointLight(0xe5d6ae, 180, 36, 2); this.root.add(light); this.lightPool.push(light); }
     this.batch(); this.batch(car);
+  }
+  private panel(parent: THREE.Object3D, material: THREE.Material, points: number[][]): THREE.Mesh {
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(points.flat(), 3));
+    geometry.setAttribute('uv', new THREE.Float32BufferAttribute([0, 0, 1, 0, 1, 1, 0, 1], 2));
+    geometry.setIndex([0, 1, 2, 0, 2, 3]); geometry.computeVertexNormals();
+    return this.mesh(parent, geometry, material);
+  }
+  private trim(parent: THREE.Object3D, material: THREE.Material, points: number[][], radius: number): void {
+    for (let i = 1; i < points.length; i++) {
+      const a = points[i - 1]; const b = points[i];
+      const curve = new THREE.LineCurve3(new THREE.Vector3(a[0], a[1], a[2]), new THREE.Vector3(b[0], b[1], b[2]));
+      this.mesh(parent, new THREE.TubeGeometry(curve, 1, radius, 6, false), material);
+    }
+  }
+  private crownedPanel(parent: THREE.Object3D, material: THREE.Material, rows: number[][], crown: number): void {
+    const vertices: number[] = []; const uv: number[] = []; const indices: number[] = [];
+    for (const [row, [z, width, height]] of rows.entries()) for (let col = 0; col <= 16; col++) {
+      const x = col / 8 - 1; vertices.push(x * width, height - crown * x * x, z); uv.push(col / 16, row / (rows.length - 1));
+      if (row && col) { const n = row * 17 + col; indices.push(n - 18, n - 1, n - 17, n - 17, n - 1, n); }
+    }
+    const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geometry.setIndex(indices); geometry.computeVertexNormals();
+    this.mesh(parent, geometry, material);
+  }
+  private fender(parent: THREE.Object3D, side: number, from: number, to: number, wheel: number, material: THREE.Material, chrome: THREE.Material): void {
+    const left = side > 0 ? -to : from; const right = side > 0 ? -from : to; const center = -side * wheel;
+    const shape = new THREE.Shape();
+    shape.moveTo(left, .85); shape.lineTo(center - 1.12, .85); shape.lineTo(center - 1.12, 1);
+    shape.absarc(center, 1, 1.12, Math.PI, 0, true);
+    shape.lineTo(center + 1.12, .85); shape.lineTo(right, .85); shape.lineTo(right, 2.45); shape.lineTo(left, 2.45); shape.closePath();
+    const geometry = new THREE.ExtrudeGeometry(shape, { depth: .105, bevelEnabled: true, bevelSegments: 3, steps: 1, bevelSize: .025, bevelThickness: .025, curveSegments: 24 });
+    geometry.rotateY(side * Math.PI / 2); geometry.translate(side * 2.51, 0, 0); this.mesh(parent, geometry, material);
+    const edge = Array.from({ length: 33 }, (_, i) => { const a = Math.PI - i / 32 * Math.PI; return [side * 2.648, 1 + Math.sin(a) * 1.14, wheel + Math.cos(a) * 1.14]; });
+    this.trim(parent, chrome, edge, .025);
   }
   private surfaceMaps(material: THREE.MeshStandardMaterial, id: string): void {
     let ready = 0;
@@ -469,7 +541,7 @@ export class MeetingSetRenderer {
     this.door.rotation.y = -(pose?.door ?? 0) * 1.05;
     this.leftDoor.rotation.y = encounter?.phase === 'exiting' ? (pose?.door ?? 0) * 1.05 : 0;
     this.hotel?.update(journey?.hotel, 0, true);
-    this.window.position.y = 3.28 - (encounter?.phase === 'discarding' ? Math.min(1, encounter.elapsed) : 0) * 1.05;
+    this.window.position.y = 3.28 - (encounter?.phase === 'discarding' ? Math.min(1, encounter.elapsed) : 0) * 1.4;
     this.reflection.visible = Math.hypot(car.x, car.z + 15) < 135;
     (this.reflection.material as THREE.ShaderMaterial).uniforms.time.value = elapsed;
     this.runoff.visible = this.spray.visible = this.reflection.visible;

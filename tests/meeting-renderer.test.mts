@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { bridgeArrivalPose, meetingCarPose, meetingRollRoadTime, MEETING_ROAD_WIDTH, type FilmJourney } from '@auto_matrix/shared';
+import { bridgeArrivalPose, meetingCarPose, meetingRollRoadTime, MEETING_ROAD_WIDTH, MEETING_CAR, type FilmJourney } from '@auto_matrix/shared';
 import { MeetingSetRenderer } from '../packages/client/src/engine/MeetingSetRenderer.js';
 
 test('the actual car body uses the same fast pose as its occupants between journey snapshots', t => {
@@ -127,4 +127,104 @@ test('bridge runoff falls at both portals without synchronized diagonal bands', 
     renderer.update(undefined, 40, { phase: 'driving', elapsed: 40, role: 'neo', bugged: false });
     assert.equal(rain.visible, false, 'distant bridge spray must stop drawing once the car leaves the area');
   } finally { renderer.dispose(); assert.equal(released, 3, 'changing scenes releases the rain instances, geometry and shader'); }
+});
+
+test('the meeting sedan has actual wheel openings and its tires fit under the body', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const renderer = new MeetingSetRenderer(new THREE.Group(), false);
+  try {
+    const vehicle = (renderer as unknown as { vehicle: THREE.Group }).vehicle;
+    vehicle.updateWorldMatrix(true, true);
+    const panels: THREE.Mesh[] = [];
+    vehicle.traverse(object => { if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshPhysicalMaterial && object.material.clearcoat === 1) panels.push(object); });
+    const ray = new THREE.Raycaster();
+    for (const side of [-1, 1]) for (const z of [-4.3, 4.6]) {
+      ray.set(new THREE.Vector3(side * 4, 1.55, z), new THREE.Vector3(-side, 0, 0));
+      const body = ray.intersectObjects(panels, false)[0];
+      assert.ok(!body || Math.abs(body.point.x) < 2.32, 'painted box sides must not fill the wheel opening');
+      ray.set(new THREE.Vector3(side * 4, 1.55, z < 0 ? -6.25 : 6.35), new THREE.Vector3(-side, 0, 0));
+      assert.ok(Math.abs(ray.intersectObjects(panels, false)[0]?.point.x ?? 0) > 2.5, 'the fender remains solid outside the wheel opening');
+    }
+    const wheels = (renderer as unknown as { wheels: { steering: THREE.Group }[] }).wheels;
+    for (const { steering } of wheels) {
+      const bounds = new THREE.Box3().setFromObject(steering);
+      assert.ok(bounds.min.x >= -MEETING_CAR.width / 2 - .02 && bounds.max.x <= MEETING_CAR.width / 2 + .02,
+        'the tires sit inside the collision width, rather than protruding from box sides');
+    }
+  } finally { renderer.dispose(); }
+});
+
+test('window trim stays on the glass perimeter instead of bowing above the roof', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const renderer = new MeetingSetRenderer(new THREE.Group(), false); const trim = new THREE.Group();
+  try {
+    const points = [[2.5, 2.7, -3.32], [2.5, 2.7, -.15], [2.28, 4.13, -.15], [2.23, 4.13, -2.53]];
+    (renderer as unknown as { trim: (parent: THREE.Group, material: THREE.Material, points: number[][], radius: number) => void })
+      .trim(trim, new THREE.MeshStandardMaterial(), [...points, points[0]], .028);
+    const bounds = new THREE.Box3().setFromObject(trim);
+    assert.ok(bounds.max.y < 4.17 && bounds.min.y > 2.66, 'a rounded spline must not create floating chrome arches above or below the window');
+    assert.ok(bounds.min.z > -3.36 && bounds.max.z < -.11, 'the side rails follow the slanted glass edges');
+  } finally { renderer.dispose(); }
+});
+
+test('the cabin lamp lights passengers without illuminating its own diffuser and headliner', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const renderer = new MeetingSetRenderer(new THREE.Group(), false);
+  try {
+    const vehicle = (renderer as unknown as { vehicle: THREE.Group }).vehicle;
+    const light = vehicle.children.find(child => child instanceof THREE.Light && child.position.distanceTo(new THREE.Vector3(0, 3.95, .2)) < .01);
+    assert.ok(light instanceof THREE.SpotLight, 'the ceiling light must direct its spill down, rather than burn out the headliner above it');
+    assert.ok(light.target.position.y < 2 && light.angle < Math.PI / 2);
+    let diffuser: THREE.Material | undefined;
+    vehicle.traverse(object => {
+      if (!(object instanceof THREE.Mesh)) return;
+      object.geometry.computeBoundingBox();
+      const center = object.geometry.boundingBox!.getCenter(new THREE.Vector3());
+      if (center.distanceTo(new THREE.Vector3(0, 4.005, .1)) < .015) diffuser = object.material as THREE.Material;
+    });
+    assert.ok(diffuser instanceof THREE.MeshBasicMaterial && diffuser.toneMapped, 'the emitting cover has bounded brightness independent of the adjacent light source');
+  } finally { renderer.dispose(); }
+});
+
+test('the dashboard stays behind the windshield instead of sitting on the bonnet', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const renderer = new MeetingSetRenderer(new THREE.Group(), false);
+  try {
+    const vehicle = (renderer as unknown as { vehicle: THREE.Group }).vehicle;
+    vehicle.updateWorldMatrix(true, true);
+    const ray = new THREE.Raycaster(new THREE.Vector3(0, 2.63, -6), new THREE.Vector3(0, 0, 1));
+    const hit = ray.intersectObject(vehicle, true)[0];
+    // The thin rubber seal extends .07 ahead of the pane at z = -3.49.
+    assert.ok(!hit || hit.point.z >= -3.57, 'the cowl must stay below the glazing; a cabin dashboard cannot protrude onto the bonnet');
+  } finally { renderer.dispose(); }
+});
+
+test('the passenger fill light stays clear of the opening rear door', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const renderer = new MeetingSetRenderer(new THREE.Group(), false);
+  try {
+    const { vehicle, door } = renderer as unknown as { vehicle: THREE.Group; door: THREE.Group };
+    const fill = vehicle.children.find(child => child instanceof THREE.PointLight && child.color.getHex() === 0xb9d2d1);
+    assert.ok(fill instanceof THREE.PointLight);
+    for (const elapsed of [0, .5, 1, 2]) {
+      renderer.update(undefined, elapsed, { phase: 'hesitating', elapsed, role: 'neo', bugged: false });
+      vehicle.updateWorldMatrix(true, true);
+      const distance = new THREE.Box3().setFromObject(door).distanceToPoint(fill.getWorldPosition(new THREE.Vector3()));
+      assert.ok(distance > 2, 'the moving window frame must not pass through its fill light and bloom into a white patch');
+    }
+  } finally { renderer.dispose(); }
+});
+
+test('the reshaped rear window still clears Trinity’s scanner when she discards the tracker', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const renderer = new MeetingSetRenderer(new THREE.Group(), false);
+  try {
+    const window = (renderer as unknown as { window: THREE.Mesh }).window;
+    renderer.update(undefined, 1, { phase: 'discarding', elapsed: 1, role: 'neo', bugged: true });
+    window.updateWorldMatrix(true, true);
+    assert.ok(new THREE.Box3().setFromObject(window).max.y < 2.85, 'the lowered glass must be below the scanner passage at y = 3');
+    renderer.update(undefined, 2, { phase: 'choice', elapsed: 0, role: 'neo', bugged: true });
+    window.updateWorldMatrix(true, true);
+    assert.ok(new THREE.Box3().setFromObject(window).max.y > 4.1, 'a restarted encounter restores the closed window');
+  } finally { renderer.dispose(); }
 });
