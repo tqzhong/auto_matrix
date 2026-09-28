@@ -26,8 +26,10 @@ function setup() {
   const command = (target: string) => players.sandboxAction('film-player', { kind: 'life', target: `film:${target}` }, ++tick);
   const act = (kind: string) => players.act('film-player', kind, ++tick);
   const frames = (count: number, focus = false, yaw = actor.rotation, x = 0, z = 0) => {
-    players.receiveInput('film-player', { x, z, yaw, jump: false, sprint: false, focus, sequence: ++sequence });
-    for (let i = 0; i < count; i++) players.step(.1, true, ++tick);
+    for (let i = 0; i < count; i++) {
+      players.receiveInput('film-player', { x, z, yaw, jump: false, sprint: false, focus, sequence: ++sequence });
+      players.step(.1, true, ++tick);
+    }
   };
   const advance = (count = 1) => { for (let i = 0; i < count; i++) sandbox.tick(++tick); };
   return { world, sandbox, players, scene, state, actor, command, act, frames, advance, tick: () => tick };

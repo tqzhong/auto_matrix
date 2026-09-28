@@ -2140,8 +2140,10 @@ test('the entire film route completes through interactions, driving and real com
           for (let frame = 0; frame < 30 && state.smithFinale?.phase !== 'air_dodge'; frame++) h.players.step(.1, true, h.tick());
           assert.equal(state.smithFinale?.phase, 'air_dodge'); h.players.act('film-player', 'dodge', h.tick()); h.players.act('film-player', 'attack', h.tick());
           for (let frame = 0; frame < 20 && state.smithFinale?.phase !== 'descent'; frame++) h.players.step(.1, true, h.tick());
-          h.players.receiveInput('film-player', { x: .25, z: 0, yaw: Math.PI, jump: false, sprint: false, focus: true, sequence: ++sequence });
-          for (let frame = 0; frame < 70 && state.step === index; frame++) h.players.step(.1, true, h.tick());
+          for (let frame = 0; frame < 70 && state.step === index; frame++) {
+            h.players.receiveInput('film-player', { x: .25, z: 0, yaw: Math.PI, jump: false, sprint: false, focus: true, sequence: ++sequence });
+            h.players.step(.1, true, h.tick());
+          }
           h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false, focus: false, sequence: ++sequence });
         } else h.command('reflect:agency');
         assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`); continue;
@@ -2153,8 +2155,10 @@ test('the entire film route completes through interactions, driving and real com
         } else if (index === 1) h.command('reflect:agency');
         else {
           h.command('act');
-          h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false, focus: true, sequence: ++sequence });
-          for (let frame = 0; frame < 100 && state.step === index; frame++) h.players.step(.1, true, h.tick());
+          for (let frame = 0; frame < 100 && state.step === index; frame++) {
+            h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false, focus: true, sequence: ++sequence });
+            h.players.step(.1, true, h.tick());
+          }
           h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false, focus: false, sequence: ++sequence });
         }
         assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`); continue;
@@ -2414,8 +2418,10 @@ test('the entire film route completes through interactions, driving and real com
           h.players.act('film-player', 'attack', h.tick());
           for (let frame = 0; frame < 16; frame++) h.players.step(.1, true, h.tick());
           assert.equal(state.bane?.phase, 'blind');
-          h.players.receiveInput('film-player', { x: 0, z: 0, yaw: actor.rotation, jump: false, sprint: false, focus: true, sequence: ++sequence });
-          for (let frame = 0; frame < 19; frame++) h.players.step(.1, true, h.tick());
+          for (let frame = 0; frame < 19; frame++) {
+            h.players.receiveInput('film-player', { x: 0, z: 0, yaw: actor.rotation, jump: false, sprint: false, focus: true, sequence: ++sequence });
+            h.players.step(.1, true, h.tick());
+          }
           assert.equal(state.bane?.phase, 'pipe_window'); h.players.act('film-player', 'dodge', h.tick());
           const bane = h.world.agents.get('bane')!;
           actor.rotation = Math.atan2(bane.position.x - actor.position.x, bane.position.z - actor.position.z);
