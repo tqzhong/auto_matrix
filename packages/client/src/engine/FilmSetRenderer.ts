@@ -8,6 +8,7 @@ import { workdayLocked, type OfficeWorkday } from '@auto_matrix/shared';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
+import { createMirrorSurface } from './MirrorSurface.js';
 import { FILM_SETS, FILM_SCENE_BY_ID, OPENING_ESCAPE, openingTruckPose, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, PILL_ROOM, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, mirrorSilver, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, GARAGE, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, EXILES, CHATEAU, awakeningLocked, trainingLocked, phoneLocked, windowOpening, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type FilmJourney, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
 import { OPENING_HOTEL } from '@auto_matrix/shared';
 import { meetingBoardPoint, meetingRoot } from '@auto_matrix/shared';
@@ -58,6 +59,7 @@ const outdoor = new Set(['rooftop', 'plaza', 'bridge', 'street', 'courtyard', 'f
 export function showMirrorSubject(mirror: Reflector, subject: () => THREE.Object3D | undefined): void {
   const renderReflection = mirror.onBeforeRender.bind(mirror);
   mirror.onBeforeRender = (...args) => {
+    if (args[1].overrideMaterial) return;
     const body = subject(); const wasVisible = body?.visible;
     if (body) body.visible = true;
     try { renderReflection(...args); }
@@ -118,8 +120,8 @@ export class FilmSetRenderer {
   private currentScene?: string;
   private mirror?: Reflector;
   private mirrorSubject?: THREE.Object3D;
+  private mirrorFilament?: THREE.Mesh;
   private recoverySubject?: THREE.Object3D;
-  private mirrorCracks?: THREE.Group;
   private trackingHeadset?: THREE.Group;
   private oracleVase?: OracleVase;
   private ambush?: AmbushSetRenderer;
@@ -267,18 +269,30 @@ export class FilmSetRenderer {
         if (sceneId === 'm3_dawn') this.trilogyEpilogue = new TrilogyEpilogueRenderer(this.root, 'dawn');
       }
     }
-    if (this.mirrorCracks) {
+    if (this.mirror) {
       const healing = journey?.scene === 'm1_mirror' && !journey.visiting;
       const time = journey?.awakening?.elapsed ?? 0;
-      const progress = !healing ? 0 : journey!.step > 0 ? 1 : THREE.MathUtils.smoothstep(time, MIRROR_TIMING.wired, MIRROR_TIMING.touch + .4);
-      this.mirrorCracks.visible = progress < 1;
-      this.mirrorCracks.scale.y = Math.max(.001, 1 - progress);
-      const shader = this.mirror!.material as THREE.ShaderMaterial;
+      const progress = !healing ? 0 : journey!.step > 0 ? 1 : THREE.MathUtils.smoothstep(time, MIRROR_TIMING.wired, MIRROR_TIMING.touch - .12);
+      const shader = this.mirror.material as THREE.ShaderMaterial;
+      shader.uniforms.healProgress.value = progress;
       shader.uniforms.liquidTime.value = healing ? time - MIRROR_TIMING.touch : -1;
       shader.uniforms.liquidAmount.value = healing ? mirrorSilver(time) : 0;
-      if (healing && player?.id === 'neo' && this.mirrorSubject) {
-        const contact = mirrorSurfacePoint(this.mirror!, this.mirrorSubject);
+      if (healing && player?.id === 'neo' && this.mirrorSubject && time <= MIRROR_TIMING.touch + .05) {
+        const contact = mirrorSurfacePoint(this.mirror, this.mirrorSubject);
         if (contact) shader.uniforms.liquidContact.value.copy(contact);
+      }
+      const finger = this.mirrorSubject?.getObjectByName('finger2-3_R');
+      if (this.mirrorFilament) {
+        this.mirrorFilament.visible = Boolean(healing && finger && time >= MIRROR_TIMING.touch && time < MIRROR_TIMING.touch + 1.17);
+        if (this.mirrorFilament.visible) {
+          const contact = shader.uniforms.liquidContact.value as THREE.Vector2;
+          const start = this.root.worldToLocal(this.mirror.localToWorld(new THREE.Vector3(contact.x, contact.y, .006)));
+          const end = this.root.worldToLocal(finger!.getWorldPosition(new THREE.Vector3()));
+          const stretch = end.sub(start); const radius = .35 * (1 - THREE.MathUtils.smoothstep(time, MIRROR_TIMING.touch + .82, MIRROR_TIMING.touch + 1.17));
+          this.mirrorFilament.position.copy(start);
+          this.mirrorFilament.scale.set(radius, stretch.length(), radius);
+          this.mirrorFilament.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), stretch.normalize());
+        }
       }
     }
     if (this.trackingHeadset) {
@@ -1251,34 +1265,13 @@ export class FilmSetRenderer {
         const rim = Array.from({ length: 65 }, (_, i) => { const theta = i / 64 * Math.PI * 2; return [PILL_ROOM.mirror.x + Math.cos(theta) * rx, mirrorY + Math.sin(theta) * ry, z]; });
         this.pipe(rim, radius, material);
       }
-      this.mirror = new Reflector(this.own(new THREE.CircleGeometry(1, 96)), { color: 0x667d6d, textureWidth: 768, textureHeight: 1024, clipBias: .003, multisample: 0 });
+      this.mirror = createMirrorSurface(); this.own(this.mirror.geometry);
       this.mirror.scale.set(MIRROR_FACE.radiusX, MIRROR_FACE.radiusY, 1);
       showMirrorSubject(this.mirror, () => this.mirrorSubject);
       this.mirror.position.set(PILL_ROOM.mirror.x, mirrorY, PILL_ROOM.mirror.z); this.mirror.userData.dynamic = true; this.root.add(this.mirror);
-      const shader = this.mirror.material as THREE.ShaderMaterial;
-      shader.uniforms.liquidTime = { value: -1 }; shader.uniforms.liquidAmount = { value: 0 };
-      shader.uniforms.liquidContact = { value: new THREE.Vector2(.573, -.113) };
-      shader.vertexShader = shader.vertexShader.replace('varying vec4 vUv;', 'varying vec4 vUv;\nvarying vec2 vMirrorPoint;')
-        .replace('vUv = textureMatrix * vec4( position, 1.0 );', 'vMirrorPoint = position.xy;\n          vUv = textureMatrix * vec4( position, 1.0 );');
-      shader.fragmentShader = shader.fragmentShader.replace('varying vec4 vUv;', 'varying vec4 vUv;\nvarying vec2 vMirrorPoint;\nuniform float liquidTime;\nuniform float liquidAmount;\nuniform vec2 liquidContact;')
-        .replace('vec4 base = texture2DProj( tDiffuse, vUv );', `vec2 mirrorUv = vUv.xy / vUv.w;
-          vec2 fromContact = vMirrorPoint - liquidContact;
-          float radius = length(fromContact);
-          float front = min(1.4, max(0.0, liquidTime) * .36);
-          float ring = step(0.0, liquidTime) * exp(-pow((radius - front) * 18.0, 2.0)) * (1.0 - smoothstep(2.8, 4.5, liquidTime));
-          float spread = step(0.0, liquidTime) * (1.0 - smoothstep(front - .12, front + .04, radius));
-          vec2 direction = normalize(fromContact + vec2(.0001));
-          vec2 liquidOffset = direction * (ring * .018 + spread * sin(radius * 28.0 - liquidTime * 8.0) * .003);
-          vec4 base = texture2D(tDiffuse, mirrorUv + liquidOffset);
-          base.rgb = min(base.rgb, vec3(.58, .64, .59));
-          base.rgb = mix(base.rgb, vec3(.86, .91, .88), min(.78, ring * .7 + spread * liquidAmount * .25));`);
-      const crackStart = this.root.children.length;
-      for (let i = 0; i < 8; i++) {
-        const theta = i / 8 * Math.PI * 2 + .22;
-        this.pipe([[PILL_ROOM.mirror.x - .1, -.2, -17.53], [PILL_ROOM.mirror.x + Math.cos(theta + .23) * .8, Math.sin(theta + .23) * 1.3, -17.53],
-          [PILL_ROOM.mirror.x + Math.cos(theta) * 1.7, Math.sin(theta) * 2.4, -17.53]], .013, this.black);
-      }
-      this.mirrorCracks = new THREE.Group(); this.root.children.slice(crackStart).forEach(c => this.mirrorCracks!.add(c)); this.mirrorCracks.position.y = mirrorY; this.mirrorCracks.userData.dynamic = true; this.root.add(this.mirrorCracks);
+      const liquidProfile = [[0, 0], [.14, 0], [.075, .06], [.027, .26], [.012, .5], [.018, .76], [.042, .95], [0, 1]].map(([x, y]) => new THREE.Vector2(x, y));
+      this.mirrorFilament = this.mesh(new THREE.LatheGeometry(liquidProfile, 24), this.mat(0xb4c1bd, .08, .96), 0, 0, 0);
+      this.mirrorFilament.name = 'mirror-liquid-filament'; this.mirrorFilament.userData.dynamic = true; this.mirrorFilament.visible = false;
       this.table(13, 10); this.crt(13, 3.7, 10); this.crt(10, 3.3, 11, .7); this.lamp(-13, 7, -18);
       this.chair(8, 5, Math.PI); this.lamp(7, 6, -17);
       this.box(this.brass, 8, 5.2, -10.98, .22, .7, .15, .03);
@@ -2289,7 +2282,7 @@ export class FilmSetRenderer {
     this.pillGlass = undefined;
     this.ambush?.dispose(); this.ambush = undefined;
     this.oracleVase?.dispose(); this.oracleVase = undefined;
-    this.mirror?.dispose(); this.mirror = undefined; this.mirrorCracks = undefined; this.trackingHeadset = undefined;
+    this.mirror?.dispose(); this.mirror = undefined; this.mirrorFilament = undefined; this.trackingHeadset = undefined;
     this.pods?.dispose(); this.pods = undefined;
     this.neb?.dispose(); this.neb = undefined;
     this.finale?.dispose(); this.finale = undefined;

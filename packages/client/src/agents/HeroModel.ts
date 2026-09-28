@@ -36,7 +36,7 @@ export const HERO_IDS = ['neo', 'trinity', 'smith', 'morpheus'] as const;
 export type HeroId = typeof HERO_IDS[number];
 
 function mirrorBoneArrival(name: string): number {
-  if (name.startsWith('finger') && name.endsWith('_R')) return .23 + (3 - Number(name.match(/-(\d)_R$/)?.[1] ?? 1)) * .025;
+  if (name.startsWith('finger') && name.endsWith('_R')) return .035 + (3 - Number(name.match(/-(\d)_R$/)?.[1] ?? 1)) * .055;
   if (name === 'wrist_R') return .34;
   if (name === 'elbow_R') return .48;
   if (name === 'shoulder_R') return .61;
@@ -252,7 +252,7 @@ export class HeroModels {
         shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nuniform float matrixSilver;\nattribute float _mirrorArrival;\nvarying float vLiquidArrival;\nvarying vec3 vLiquidPosition;')
           .replace('#include <skinning_vertex>', `#include <skinning_vertex>
             float liquidPhase = matrixSilver - _mirrorArrival;
-            float liquidFront = exp(-pow(liquidPhase * 18.0, 2.0));
+            float liquidFront = exp(-pow(liquidPhase * 18.0, 2.0)) * step(0.001, matrixSilver);
             float liquidCovered = smoothstep(0.0, 0.09, liquidPhase);
             float liquidRipple = sin(transformed.y * 34.0 + transformed.x * 25.0 - matrixSilver * 58.0) * 0.004;
             transformed += normalize(objectNormal) * (liquidFront * (0.034 + liquidRipple) + liquidCovered * 0.005);
@@ -260,7 +260,7 @@ export class HeroModels {
         shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nuniform float matrixSilver;\nvarying float vLiquidArrival;\nvarying vec3 vLiquidPosition;')
           .replace('#include <metalnessmap_fragment>', `#include <metalnessmap_fragment>
             float liquidEdge = vLiquidArrival + sin(vLiquidPosition.y * 21.0) * sin(vLiquidPosition.x * 14.0) * 0.012;
-            float liquidMask = smoothstep(liquidEdge - 0.03, liquidEdge + 0.005, matrixSilver);
+            float liquidMask = smoothstep(liquidEdge - 0.03, liquidEdge + 0.005, matrixSilver) * step(0.001, matrixSilver);
             float liquidRidge = exp(-pow((matrixSilver - vLiquidArrival) * 17.0, 2.0));
             vec3 liquidColor = mix(vec3(0.63, 0.69, 0.71), vec3(0.85, 0.91, 0.90), liquidRidge * 0.6);
             diffuseColor.rgb = mix(diffuseColor.rgb, liquidColor, liquidMask);

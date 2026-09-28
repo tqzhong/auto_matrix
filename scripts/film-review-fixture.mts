@@ -86,9 +86,9 @@ if (scene.id === 'm3_temple_defense' && process.argv[3] === 'temple-latches') {
   journey.step = 1; actor.position = filmStepPosition(scene, scene.steps[1]);
   journey.checkpoint = { ...actor.position };
 }
-if (scene.id === 'm1_mirror' && ['mirror-wired', 'mirror-silver'].includes(process.argv[3])) {
+if (scene.id === 'm1_mirror' && ['mirror-wired', 'mirror-healing', 'mirror-thread', 'mirror-silver'].includes(process.argv[3])) {
   const journey = sandbox.life.film.state!;
-  journey.awakening = { kind: 'mirror', elapsed: process.argv[3] === 'mirror-wired' ? 2.75 : 4.8, started: false,
+  journey.awakening = { kind: 'mirror', elapsed: process.argv[3] === 'mirror-wired' ? 2.75 : process.argv[3] === 'mirror-healing' ? 3.04 : process.argv[3] === 'mirror-thread' ? 4.15 : 4.8, started: false,
     approach: { x: MIRROR_TOUCH.x, z: MIRROR_TOUCH.z } };
   actor.controller = 'player'; sandbox.life.film.awakeningFrame(actor, 0, 0);
   journey.checkpoint = { ...actor.position };

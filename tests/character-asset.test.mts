@@ -49,6 +49,7 @@ test('the mirror reaches Neo’s hand before his face and coat hem', async () =>
       if (position.getY(i) > 3.95) face.push(arrival.getX(i));
     }
     assert.ok(hand.length > 20 && face.length > 20, 'both parts must be represented in the shipped mesh');
+    assert.ok(Math.min(...hand) < .06, 'silver starts at the touching fingertip within a quarter-second, before the hand is withdrawn');
     assert.ok(Math.max(...hand) < .55, 'the reaching hand must be covered by the middle of the performance');
     assert.ok(Math.min(...face) > .7, 'the face must still be uncovered while silver climbs the arm');
     const coat = rig.wardrobe.find(part => /Tailored.coat.upper/i.test(part.mesh.name))!.mesh.geometry;

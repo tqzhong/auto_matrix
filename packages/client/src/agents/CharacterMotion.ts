@@ -257,6 +257,9 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     arms[0].shoulder = mix(arms[0].shoulder, -1.5, reach);
     arms[0].elbow = mix(arms[0].elbow, -.65, reach);
     arms[0].grip = mix(arms[0].grip, 0, reach);
+    const withdraw = smooth(clamp(((input.mirrorBeat ?? 0) - MIRROR_TIMING.touch - .35) / .85));
+    arms[0].shoulder = mix(arms[0].shoulder, -1.1, withdraw);
+    arms[0].elbow = mix(arms[0].elbow, -1.65, withdraw);
   }
   if (input.mirrorCrew !== undefined) {
     const wire = smooth(clamp((input.mirrorCrew - MIRROR_TIMING.sit) / .55)) * (1 - smooth(clamp((input.mirrorCrew - MIRROR_TIMING.wired) / .5)));
