@@ -23,9 +23,12 @@ export class MeetingSetRenderer {
   private reflection!: Reflector;
   private rain!: THREE.LineSegments;
   private rainBase = new Float32Array(1500 * 3);
+  private runoff!: THREE.InstancedMesh<THREE.PlaneGeometry, THREE.ShaderMaterial>;
+  private spray!: THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>;
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private textures = new Set<THREE.Texture>();
+  private disposed = false;
   constructor(parent: THREE.Group, includeHotel = true) {
     parent.add(this.root); this.root.add(this.static);
     const material = (color: number, roughness = .6, metalness = 0) => new THREE.MeshStandardMaterial({ color, roughness, metalness });
@@ -33,18 +36,21 @@ export class MeetingSetRenderer {
     const chrome = material(0xa4b1b0, .19, .93); const black = material(0x080b0c, .85);
     const leather = material(0x191e1c, .43); const rubber = material(0x111313, .94);
     const glass = new THREE.MeshPhysicalMaterial({ color: 0x829c92, roughness: .16, metalness: .05, transparent: true, opacity: .13, depthWrite: false, side: THREE.DoubleSide });
-    const stone = material(0x5b6762, .86); const road = material(0x293632, .46);
+    const stone = material(0x5b6762, .86);
+    const road = new THREE.MeshPhysicalMaterial({ color: 0x909a94, roughness: .72, metalness: .02, clearcoat: .6, clearcoatRoughness: .28 });
+    road.name = 'meeting-asphalt'; road.normalScale.set(.55, .55);
+    const pavement = new THREE.MeshPhysicalMaterial({ color: 0x969a8c, roughness: .82, clearcoat: .22, clearcoatRoughness: .4 });
+    pavement.normalScale.set(.5, .5);
+    this.surfaceMaps(road, 'asphalt_02'); this.surfaceMaps(pavement, 'concrete_pavement_03');
     const load = (name: string, repeat: number) => {
       const texture = new THREE.TextureLoader().load(`/assets/film-materials/${name}.jpg`); texture.wrapS = texture.wrapT = THREE.RepeatWrapping; texture.repeat.set(repeat, repeat); texture.anisotropy = 4; this.textures.add(texture); return texture;
     };
     stone.map = load('damaged_plaster-color', 2); stone.map.colorSpace = THREE.SRGBColorSpace; stone.normalMap = load('damaged_plaster-normal', 2); stone.normalScale.set(.38, .38);
-    road.normalMap = load('metal_plate-normal', 12); road.normalScale.set(.13, .13);
     leather.normalMap = load('leather_red_03-normal', 2); leather.normalScale.set(.35, .35);
     const glow = new THREE.MeshBasicMaterial({ color: 0xfbeed0 });
-    this.buildStreet(road, stone, black, chrome, glow);
+    this.buildStreet(road, pavement, stone, black, chrome, glow);
     if (includeHotel) this.hotel = new LafayetteApproachRenderer(this.root, new THREE.Vector3(MEETING_DESTINATION.x, 0, 0), true);
-    this.reflection = new Reflector(new THREE.PlaneGeometry(46, 106), { color: 0x27372e, textureWidth: 512, textureHeight: 512, clipBias: .004 });
-    this.reflection.rotation.x = -Math.PI / 2; this.reflection.position.y = -.005; this.root.add(this.reflection);
+    this.buildPuddles();
     for (const x of [-23, 23]) {
       this.box(x, .22, 0, 2, .46, 108, stone);
       this.box(x, 8, -14, 3.6, 16, 23, stone);
@@ -56,16 +62,40 @@ export class MeetingSetRenderer {
         const light = new THREE.PointLight(0xb9d0be, 110, 32, 2); light.position.set(x, 12.6, z); this.root.add(light);
       }
     }
-    // The underside is an arch with ribs, rather than a floating slab.
+    // A shallow masonry barrel, with joints rather than shiny metal ribs.
     const arch = new THREE.Shape();
-    arch.moveTo(-23, 8); for (let i = 0; i <= 40; i++) { const a = Math.PI - i / 40 * Math.PI; arch.lineTo(Math.cos(a) * 23, 8 + Math.sin(a) * 10); }
+    arch.moveTo(-21.2, 5.8); for (let i = 0; i <= 64; i++) { const a = Math.PI - i / 64 * Math.PI; arch.lineTo(Math.cos(a) * 21.2, 5.8 + Math.sin(a) * 7.8); }
     arch.lineTo(23, 23); arch.lineTo(-23, 23); arch.closePath();
-    const bridge = this.mesh(this.static, new THREE.ExtrudeGeometry(arch, { depth: 22, bevelEnabled: false, steps: 1, curveSegments: 32 }), stone);
+    const archGeometry = new THREE.ExtrudeGeometry(arch, { depth: 22, bevelEnabled: false, steps: 1 });
+    const uv = archGeometry.getAttribute('uv'); for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * .09, uv.getY(i) * .09);
+    const bridge = this.mesh(this.static, archGeometry, stone);
     bridge.position.z = -25;
-    for (const z of [-25.1, -20, -14, -8, -2.9]) {
-      const curve = new THREE.CatmullRomCurve3(Array.from({ length: 41 }, (_, i) => { const a = Math.PI - i / 40 * Math.PI; return new THREE.Vector3(Math.cos(a) * 22.7, 8 + Math.sin(a) * 9.8, z); }));
-      this.mesh(this.static, new THREE.TubeGeometry(curve, 48, .18, 8), chrome);
+    const mortar = material(0x252e28, .98);
+    const archStone = [0x6f7265, 0x808073, 0x747a6d].map(color => { const m = stone.clone(); m.color.setHex(color); return m; });
+    for (const z of [-25.3, -2.99]) for (let i = 0; i < 29; i++) {
+      const a = i / 29 * Math.PI + .002; const b = (i + 1) / 29 * Math.PI - .002;
+      const block = new THREE.Shape();
+      for (let j = 0; j <= 4; j++) { const t = a + (b - a) * j / 4; const x = Math.cos(t) * 21.2; const y = 5.8 + Math.sin(t) * 7.8; if (j) block.lineTo(x, y); else block.moveTo(x, y); }
+      for (let j = 4; j >= 0; j--) { const t = a + (b - a) * j / 4; block.lineTo(Math.cos(t) * 22.6, 5.8 + Math.sin(t) * 9.2); }
+      block.closePath();
+      const geometry = new THREE.ExtrudeGeometry(block, { depth: .3, bevelEnabled: false, steps: 1 });
+      const blockUv = geometry.getAttribute('uv'); for (let j = 0; j < blockUv.count; j++) blockUv.setXY(j, blockUv.getX(j) * .09, blockUv.getY(j) * .09);
+      this.mesh(this.static, geometry, archStone[i % 3]).position.z = z;
     }
+    for (const z of [-25.02, -17.7, -10.3, -2.98]) {
+      const curve = new THREE.CatmullRomCurve3(Array.from({ length: 65 }, (_, i) => { const a = Math.PI - i / 64 * Math.PI; return new THREE.Vector3(Math.cos(a) * 21.18, 5.78 + Math.sin(a) * 7.8, z); }));
+      this.mesh(this.static, new THREE.TubeGeometry(curve, 64, .025, 4), mortar);
+    }
+    for (const side of [-1, 1]) for (let row = 0; row < 4; row++) for (let column = 0; column < 7; column++) {
+      this.box(side * 21.15, .7 + row * 1.4, -24 + column * 3.25 + row % 2 * 1.6, .018, 1.34, .045, mortar);
+    }
+    this.box(0, 13.25, -14, 1.4, .2, .5, black); this.box(0, 13.12, -14, 1.1, .04, .35, glow);
+    const vaultLight = new THREE.PointLight(0xb9c9b4, 80, 28, 2); vaultLight.position.set(0, 12.8, -14); this.root.add(vaultLight);
+    for (const z of [-29, 1]) {
+      const light = new THREE.SpotLight(0xc2d6d1, 260, 48, .88, .85, 1.6);
+      light.position.set(0, 12.3, z); light.target.position.set(0, 0, z + (z < -14 ? 10 : -10)); this.root.add(light, light.target);
+    }
+    this.buildRunoff();
     for (let z = -45; z < 45; z += 10) this.box(-7, .012, z, .16, .016, 4, material(0xa6a078, .6));
     for (const x of [-30, 32]) for (let i = 0; i < 6; i++) {
       const h = 20 + i % 3 * 7; const z = 25 + i * 14;
@@ -171,7 +201,170 @@ export class MeetingSetRenderer {
     for (let i = 0; i < 2; i++) { const light = new THREE.PointLight(0xe5d6ae, 180, 36, 2); this.root.add(light); this.lightPool.push(light); }
     this.batch(); this.batch(car);
   }
-  private buildStreet(road: THREE.Material, stone: THREE.MeshStandardMaterial, dark: THREE.Material, metal: THREE.Material, glow: THREE.Material): void {
+  private surfaceMaps(material: THREE.MeshStandardMaterial, id: string): void {
+    let ready = 0;
+    const maps: THREE.Texture[] = [];
+    for (const kind of ['color', 'normal', 'roughness']) {
+      const texture = new THREE.TextureLoader().load(`/assets/surfaces/${id}-${kind}.jpg`, () => {
+        if (++ready !== 3 || this.disposed) return;
+        [material.map, material.normalMap, material.roughnessMap] = maps; material.needsUpdate = true;
+      });
+      texture.wrapS = texture.wrapT = THREE.RepeatWrapping; texture.anisotropy = 8;
+      if (kind === 'color') texture.colorSpace = THREE.SRGBColorSpace;
+      maps.push(texture); this.textures.add(texture);
+    }
+  }
+  private buildRunoff(): void {
+    const uniforms = { ...THREE.UniformsLib.fog, time: { value: 0 }, car: { value: new THREE.Vector3() } };
+    const material = new THREE.ShaderMaterial({ uniforms, transparent: true, depthWrite: false, side: THREE.DoubleSide, fog: true,
+      vertexShader: `
+        uniform float time;
+        attribute float phase;
+        attribute float fallHeight;
+        varying vec2 vUv;
+        varying vec3 vBridge;
+        varying float vDistance;
+        #include <common>
+        #include <logdepthbuf_pars_vertex>
+        #include <fog_pars_vertex>
+        void main() {
+          vUv = uv;
+          vec4 local = instanceMatrix * vec4(position, 1.0);
+          local.y -= mod(time * (15. + phase * 5.) + phase * fallHeight, fallHeight);
+          vBridge = local.xyz;
+          vec4 mvPosition = modelViewMatrix * local;
+          vDistance = length(mvPosition.xyz);
+          gl_Position = projectionMatrix * mvPosition;
+          #include <logdepthbuf_vertex>
+          #include <fog_vertex>
+        }`,
+      fragmentShader: `
+        uniform vec3 car;
+        varying vec2 vUv;
+        varying vec3 vBridge;
+        varying float vDistance;
+        #include <logdepthbuf_pars_fragment>
+        #include <fog_pars_fragment>
+        void main() {
+          #include <logdepthbuf_fragment>
+          vec2 offset = vBridge.xz - car.xy;
+          vec2 cabin = mat2(cos(car.z), sin(car.z), -sin(car.z), cos(car.z)) * offset;
+          if (abs(cabin.x) < 3. && abs(cabin.y) < 7. && vBridge.y < 4.6) discard;
+          float alpha = pow(max(0., 1. - abs(vUv.x * 2. - 1.)), 1.5) * sin(vUv.y * 3.14159) * .3 * smoothstep(2., 10., vDistance);
+          gl_FragColor = vec4(.64, .82, .8, alpha);
+          #include <tonemapping_fragment>
+          #include <colorspace_fragment>
+          #include <fog_fragment>
+        }`,
+    });
+    const geometry = new THREE.PlaneGeometry(.045, .85); const phases: number[] = []; const heights: number[] = [];
+    this.geometries.add(geometry); this.materials.add(material);
+    this.runoff = new THREE.InstancedMesh(geometry, material, 1200); this.runoff.name = 'meeting-bridge-runoff';
+    const matrix = new THREE.Matrix4();
+    const random = (seed: number) => { const value = Math.sin(seed * 12.9898 + 78.233) * 43758.5453; return value - Math.floor(value); };
+    for (let i = 0; i < 1200; i++) {
+      const x = ((i % 600 + .5) / 600) * 41.4 - 20.7; const height = 5.7 + Math.sqrt(1 - (x / 21.2) ** 2) * 7.8;
+      matrix.makeScale(.65 + random(i + 1200), .6 + random(i + 2400) * .8, 1);
+      matrix.setPosition(x, height, (i < 600 ? -25.8 : -2.2) + random(i + 3600) * .7);
+      this.runoff.setMatrixAt(i, matrix); phases.push(random(i)); heights.push(height);
+    }
+    geometry.setAttribute('phase', new THREE.InstancedBufferAttribute(new Float32Array(phases), 1));
+    geometry.setAttribute('fallHeight', new THREE.InstancedBufferAttribute(new Float32Array(heights), 1));
+    this.runoff.frustumCulled = false; this.root.add(this.runoff);
+    const sprayMaterial = new THREE.ShaderMaterial({ uniforms: { ...THREE.UniformsLib.fog, time: { value: 0 } }, transparent: true, depthWrite: false, side: THREE.DoubleSide, fog: true,
+      vertexShader: `
+        varying vec2 vUv;
+        #include <common>
+        #include <logdepthbuf_pars_vertex>
+        #include <fog_pars_vertex>
+        void main() {
+          vUv = uv; vec4 mvPosition = modelViewMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * mvPosition;
+          #include <logdepthbuf_vertex>
+          #include <fog_vertex>
+        }`,
+      fragmentShader: `
+        uniform float time;
+        varying vec2 vUv;
+        #include <logdepthbuf_pars_fragment>
+        #include <fog_pars_fragment>
+        void main() {
+          #include <logdepthbuf_fragment>
+          float drift = .65 + .2 * sin(vUv.x * 80. + time * 1.8) * sin(vUv.x * 37. - time);
+          float alpha = sin(vUv.x * 3.14159) * pow(1. - vUv.y, 3.) * smoothstep(0., .1, vUv.y) * drift * .23;
+          gl_FragColor = vec4(.54, .71, .69, alpha);
+          #include <tonemapping_fragment>
+          #include <colorspace_fragment>
+          #include <fog_fragment>
+        }`,
+    });
+    const planes = [-25.65, -1.85].map(z => new THREE.PlaneGeometry(42, 2.2).translate(0, 1.12, z));
+    const sprayGeometry = mergeGeometries(planes)!; planes.forEach(plane => plane.dispose());
+    this.spray = this.mesh(this.root, sprayGeometry, sprayMaterial) as THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>;
+    this.spray.name = 'meeting-bridge-spray'; this.spray.castShadow = false; this.spray.receiveShadow = false;
+  }
+  private buildPuddles(): void {
+    this.reflection = new Reflector(new THREE.PlaneGeometry(MEETING_ROAD_WIDTH, 132), {
+      color: 0xaebcb8, textureWidth: 512, textureHeight: 512, multisample: 0, clipBias: .004,
+      shader: {
+        name: 'Meeting road water',
+        uniforms: { ...THREE.UniformsLib.fog, color: { value: null }, tDiffuse: { value: null }, textureMatrix: { value: null }, time: { value: 0 } },
+        vertexShader: `
+          uniform mat4 textureMatrix;
+          varying vec4 vReflection;
+          varying vec2 vRoad;
+          varying vec3 vEye;
+          #include <common>
+          #include <logdepthbuf_pars_vertex>
+          #include <fog_pars_vertex>
+          void main() {
+            vReflection = textureMatrix * vec4(position, 1.0);
+            vRoad = position.xy;
+            vEye = cameraPosition - (modelMatrix * vec4(position, 1.0)).xyz;
+            vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+            gl_Position = projectionMatrix * mvPosition;
+            #include <logdepthbuf_vertex>
+            #include <fog_vertex>
+          }`,
+        fragmentShader: `
+          uniform vec3 color;
+          uniform sampler2D tDiffuse;
+          uniform float time;
+          varying vec4 vReflection;
+          varying vec2 vRoad;
+          varying vec3 vEye;
+          #include <logdepthbuf_pars_fragment>
+          #include <fog_pars_fragment>
+          float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+          float noise(vec2 p) {
+            vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+            return mix(mix(hash(i), hash(i + vec2(1., 0.)), f.x), mix(hash(i + vec2(0., 1.)), hash(i + 1.), f.x), f.y);
+          }
+          void main() {
+            #include <logdepthbuf_fragment>
+            float edge = smoothstep(0., 1.1, 14. - abs(vRoad.x)) * smoothstep(0., 9., 66. - abs(vRoad.y));
+            float pools = smoothstep(.36, .7, noise(vRoad * vec2(.43, .17)) + .12 * noise(vRoad * 2.3));
+            float grazing = pow(1. - abs(normalize(vEye).y), 2.);
+            float alpha = edge * mix(.025, .72, pools) * mix(.28, 1., grazing);
+            if (alpha < .008) discard;
+            vec4 uv = vReflection;
+            vec2 ripple = vec2(noise(vRoad * 3.7), sin(vRoad.y * 28. + time * 3.)) * .0008;
+            uv.xy += (ripple - .0004) * uv.w;
+            vec3 reflected = texture2DProj(tDiffuse, uv).rgb * .5;
+            reflected += texture2DProj(tDiffuse, uv + vec4(.0012 * uv.w, 0., 0., 0.)).rgb * .25;
+            reflected += texture2DProj(tDiffuse, uv - vec4(.0012 * uv.w, 0., 0., 0.)).rgb * .25;
+            gl_FragColor = vec4(reflected * color, alpha);
+            #include <tonemapping_fragment>
+            #include <colorspace_fragment>
+            #include <fog_fragment>
+          }`,
+      },
+    });
+    this.reflection.name = 'meeting-road-puddles';
+    const water = this.reflection.material as THREE.ShaderMaterial;
+    water.transparent = true; water.depthWrite = false; water.fog = true;
+    this.reflection.rotation.x = -Math.PI / 2; this.reflection.position.set(0, -.005, -15); this.root.add(this.reflection);
+  }
+  private buildStreet(road: THREE.Material, pavement: THREE.Material, stone: THREE.MeshStandardMaterial, dark: THREE.Material, metal: THREE.Material, glow: THREE.Material): void {
     const samples = MEETING_ROAD_SAMPLES;
     const strip = (from: number, to: number, y: number, material: THREE.Material) => {
       const vertices: number[] = []; const uv: number[] = []; const indices: number[] = []; let distance = 0;
@@ -183,7 +376,7 @@ export class MeetingSetRenderer {
       const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3)); geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geometry.setIndex(indices); geometry.computeVertexNormals(); this.mesh(this.static, geometry, material);
     };
     strip(-MEETING_ROAD_WIDTH / 2, MEETING_ROAD_WIDTH / 2, -.01, road);
-    for (const side of [-1, 1]) { strip(side < 0 ? -22 : 14, side < 0 ? -14 : 22, .05, stone); strip(side < 0 ? -14.3 : 14, side < 0 ? -14 : 14.3, .13, stone); }
+    for (const side of [-1, 1]) { strip(side < 0 ? -22 : 14, side < 0 ? -14 : 22, .05, pavement); strip(side < 0 ? -14.3 : 14, side < 0 ? -14 : 14.3, .13, stone); }
     const line = new THREE.MeshStandardMaterial({ color: 0x92957d, roughness: .55 });
     const wallMaterials = [0x59605b, 0x65615a, 0x434e49].map(color => { const material = stone.clone(); material.color.setHex(color); return material; });
     const window = new THREE.MeshStandardMaterial({ color: 0x101d1c, roughness: .22, metalness: .5 });
@@ -277,7 +470,11 @@ export class MeetingSetRenderer {
     this.leftDoor.rotation.y = encounter?.phase === 'exiting' ? (pose?.door ?? 0) * 1.05 : 0;
     this.hotel?.update(journey?.hotel, 0, true);
     this.window.position.y = 3.28 - (encounter?.phase === 'discarding' ? Math.min(1, encounter.elapsed) : 0) * 1.05;
-    this.reflection.position.set(car.x, -.005, car.z); this.reflection.visible = Math.abs(car.x) < 24 && car.z > -25;
+    this.reflection.visible = Math.hypot(car.x, car.z + 15) < 135;
+    (this.reflection.material as THREE.ShaderMaterial).uniforms.time.value = elapsed;
+    this.runoff.visible = this.spray.visible = this.reflection.visible;
+    this.runoff.material.uniforms.time.value = this.spray.material.uniforms.time.value = elapsed;
+    this.runoff.material.uniforms.car.value.set(car.x, car.z, car.yaw);
     const positions = this.rain.geometry.attributes.position as THREE.BufferAttribute;
     const cos = Math.cos(car.yaw); const sin = Math.sin(car.yaw);
     for (let i = 0; i < 1500; i++) {
@@ -292,7 +489,9 @@ export class MeetingSetRenderer {
     this.lightPool.forEach((light, i) => { if (closest[i]) { light.position.copy(closest[i]); light.intensity = 180 * Math.max(0, 1 - Math.hypot(closest[i].x - car.x, closest[i].z - car.z) / 55); } });
   }
   dispose(): void {
+    this.disposed = true;
     this.hotel?.dispose();
+    this.runoff.dispose();
     this.reflection.dispose(); this.reflection.geometry.dispose();
     this.root.traverse(object => { if (object instanceof THREE.Light) object.dispose(); });
     this.geometries.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); this.textures.forEach(t => t.dispose()); this.root.removeFromParent();
