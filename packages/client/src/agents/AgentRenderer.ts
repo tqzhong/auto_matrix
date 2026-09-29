@@ -232,7 +232,7 @@ export class AgentRenderer {
       const disconnect = journey?.scene === 'm1_pod' && journey.awakening?.kind === 'disconnect' ? journey.awakening.elapsed : 0;
       const pod = state.currentLocation === 'film_power_plant_pods' && (input.performance === 'pod' || disconnect > 0 && disconnect < 5.2);
       const podRecline = pod ? 1 - THREE.MathUtils.smoothstep(disconnect, 3.8, 5.2) : 0;
-      entry.body.position.y = epilogueCarried ? 1.3 : coma ? 2.62 : THREE.MathUtils.lerp(-1, 2.8, podRecline);
+      entry.body.position.y = epilogueCarried ? 1.3 : coma ? 2.62 : THREE.MathUtils.lerp(-1, .9, podRecline);
       entry.body.position.z = podRecline * 1.2;
       if (podRecline) entry.body.rotation.y = state.rotation * (1 - podRecline);
       entry.body.rotation.x = input.farewell?.role === 'trinity' ? THREE.MathUtils.lerp(entry.body.rotation.x, -.48, 1 - Math.exp(-6 * delta))

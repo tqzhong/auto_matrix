@@ -1138,7 +1138,7 @@ export class PlayerControls {
     } else if (this.motion.performance === 'pod' && state.currentLocation === 'film_power_plant_pods') {
       const center = FILM_SETS.film_power_plant_pods.center;
       if (this.firstPerson) {
-        const eye = new THREE.Vector3(center.x - .85, center.y + 2.5, center.z - 13.8);
+        const eye = new THREE.Vector3(center.x, center.y + 1.45, center.z - 15);
         const pitch = this.pitch - 1.47, yaw = this.yaw - .12;
         const forward = new THREE.Vector3(Math.sin(yaw) * Math.cos(pitch), -Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch));
         this.camera.position.copy(eye); this.camera.lookAt(eye.add(forward));
@@ -1153,6 +1153,14 @@ export class PlayerControls {
       const pitch = this.pitch - 1, yaw = this.yaw - Math.PI / 2;
       const forward = new THREE.Vector3(Math.sin(yaw) * Math.cos(pitch), -Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch));
       this.camera.position.copy(eye); this.camera.lookAt(eye.add(forward));
+    } else if (state.currentLocation === 'film_power_plant_pods' &&
+      (this.motion.performance === 'float' || this.motion.performance === 'lift')) {
+      // The ordinary rear boom rises through the tower behind the drain.
+      // Keep the cinematic shot in the open channel; V retains free eye movement.
+      const ideal = new THREE.Vector3(this.position.x + 6.5, this.position.y + 4.8, this.position.z + 4.5);
+      if (resetCamera) this.camera.position.copy(ideal);
+      else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
+      this.camera.lookAt(this.position.x, this.position.y + 2.5, this.position.z);
     } else if (this.performing && this.motion.crossing !== undefined && !this.firstPerson) {
       const center = FILM_SETS.film_metacortex_floor.center;
       const outside = THREE.MathUtils.smoothstep(this.motion.crossing, 1.7, 5.4);

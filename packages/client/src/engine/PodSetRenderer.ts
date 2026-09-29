@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { POD_WATER_DROP, awakeningPose, type FilmJourney } from '@auto_matrix/shared';
+import { batchStaticGeometry } from './StaticGeometry.js';
 
 /** A single awakening set: the foreground tank, drain and rescue share story coordinates. */
 export class PodSetRenderer {
@@ -30,22 +31,24 @@ export class PodSetRenderer {
     this.steel = this.mat(0x46565b, .4, .45); this.dark = this.mat(0x131b1d, .57, .35);
     const rubber = this.mat(0x1c181c, .72); const pink = this.mat(0x59212b, .24, .25); pink.emissive.setHex(0x541723); pink.emissiveIntensity = .25;
     const wet = new THREE.MeshPhysicalMaterial({ color: 0x331923, roughness: .28, metalness: .18, clearcoat: .8, side: THREE.DoubleSide }); this.materials.add(wet);
-    this.mesh(new THREE.SphereGeometry(1, 48, 24, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), wet, 0, 2.1, -12).scale.set(2.8, 2.7, 5.4);
-    const rim = this.mesh(new THREE.TorusGeometry(1, .045, 10, 64), this.steel, 0, 2.1, -12); rim.rotation.x = Math.PI / 2; rim.scale.set(2.85, 5.45, 1);
+    this.mesh(this.podShell(48), wet, 0, 2.1, -12.8).scale.set(1.8, 1.25, 3.4);
+    this.mesh(this.podRim(64), this.steel, 0, 2.1, -12.8).scale.set(1.8, 1.25, 3.4);
     const fluid = new THREE.MeshPhysicalMaterial({ color: 0x551b28, roughness: .2, metalness: .08, clearcoat: 1,
       transparent: true, opacity: .48, depthWrite: false, side: THREE.DoubleSide }); this.materials.add(fluid);
-    this.liquid = this.mesh(new THREE.CircleGeometry(1, 64), fluid, 0, 1.9, -12); this.liquid.rotation.x = -Math.PI / 2; this.liquid.scale.set(2.6, 5.15, 1);
+    const fluidGeometry = this.podFluid(64); fluidGeometry.translate(0, .12, 0);
+    this.liquid = this.mesh(fluidGeometry, fluid, 0, 1.9, -12.8); this.liquid.scale.set(1.75, 1, 3.3);
     for (let i = 0; i < 20; i++) {
       const a = i / 20 * Math.PI * 2;
-      const brace = this.mesh(new THREE.BoxGeometry(.2, 2.2, .3), this.steel, Math.sin(a) * 2.9, 1.15, -12 + Math.cos(a) * 5.5); brace.rotation.z = -Math.sin(a) * .3;
-      this.mesh(new THREE.SphereGeometry(.1, 8, 6), this.steel, Math.sin(a) * 2.86, 2.15, -12 + Math.cos(a) * 5.46);
+      const x = Math.sin(a) * 1.85 * (.84 - .16 * Math.cos(a)), z = -12.8 + Math.cos(a) * 3.45;
+      const brace = this.mesh(new THREE.BoxGeometry(.13, 1.1, .18), this.steel, x, 1.55, z); brace.rotation.z = -Math.sin(a) * .3;
+      this.mesh(new THREE.SphereGeometry(.065, 8, 6), this.steel, x, 2.15, z);
     }
     this.root.add(this.connections);
     for (let i = 0; i < 6; i++) {
-      const side = i % 2 ? 1 : -1; const z = -14 + Math.floor(i / 2) * 1.6;
-      this.tube([[side * 2.6, 1.7, z], [side * 2.1, 2.9, z - 1], [side * .8, 3.8 - i * .24, -12.1]], .095, rubber, this.connections);
+      const side = i % 2 ? 1 : -1; const z = -14.2 + Math.floor(i / 2) * 1.25;
+      this.tube([[side * 1.5, 1.9, z], [side * 1.05, 2.45, z - .4], [side * .36, 2.06, z]], .065, rubber, this.connections);
     }
-    this.neckTube = this.tube([[0, 1.8, -17.5], [0, 4, -17], [0, 5.25, -13.5], [0, 4.9, -12.3]], .2, rubber, this.connections);
+    this.neckTube = this.tube([[0, 1.7, -16.3], [0, 2.7, -16.6], [0, 2.3, -15.7], [0, 1.94, -14.78]], .12, rubber, this.connections);
     this.towers(pink);
     this.nearBank();
     // A concave runoff channel descends to the water rather than an invisible flat floor.
@@ -110,6 +113,8 @@ export class PodSetRenderer {
     mistGeometry.setAttribute('position', new THREE.Float32BufferAttribute(particles, 3)); this.geometries.add(mistGeometry);
     const mistMaterial = new THREE.PointsMaterial({ color: 0x91a1a2, size: .09, transparent: true, opacity: .25, depthWrite: false }); this.materials.add(mistMaterial);
     this.mist = new THREE.Points(mistGeometry, mistMaterial); this.root.add(this.mist);
+    const movable = new Set([this.liquid, this.neckTube, this.needle, this.clawHousing, this.clawCollar, this.cable, this.ripple, ...this.fingers, ...this.arm]);
+    batchStaticGeometry(this.root, movable).forEach(geometry => this.geometries.add(geometry));
   }
   private mat(color: number, roughness: number, metalness = 0): THREE.MeshStandardMaterial {
     const material = new THREE.MeshStandardMaterial({ color, roughness, metalness }); this.materials.add(material); return material;
@@ -120,6 +125,27 @@ export class PodSetRenderer {
   private tube(points: number[][], radius: number, material: THREE.Material, parent = this.root): THREE.Mesh {
     return this.mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points.map(p => new THREE.Vector3(...p as [number, number, number]))), 24, radius, 8, false), material, 0, 0, 0, parent);
   }
+  private podShell(segments: number): THREE.SphereGeometry {
+    const geometry = new THREE.SphereGeometry(1, segments, segments / 2, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
+    this.taperPod(geometry); return geometry;
+  }
+  private taperPod(geometry: THREE.BufferGeometry): void {
+    const position = geometry.getAttribute('position');
+    for (let i = 0; i < position.count; i++) position.setX(i, position.getX(i) * (.84 - .16 * position.getZ(i)));
+    geometry.computeVertexNormals();
+  }
+  private podRim(segments: number): THREE.TorusGeometry {
+    const geometry = new THREE.TorusGeometry(1, .055, 6, segments); geometry.rotateX(Math.PI / 2);
+    this.taperPod(geometry); return geometry;
+  }
+  private podFluid(segments: number): THREE.CircleGeometry {
+    const geometry = new THREE.CircleGeometry(.97, segments); geometry.rotateX(-Math.PI / 2); geometry.translate(0, -.12, 0);
+    this.taperPod(geometry); return geometry;
+  }
+  private instances(geometry: THREE.BufferGeometry, material: THREE.Material, matrices: THREE.Matrix4[], parent = this.root): void {
+    this.geometries.add(geometry); const mesh = new THREE.InstancedMesh(geometry, material, matrices.length);
+    matrices.forEach((matrix, i) => mesh.setMatrixAt(i, matrix)); mesh.computeBoundingSphere(); parent.add(mesh);
+  }
   private nearBank(): void {
     const bank = new THREE.Group(); this.root.add(bank);
     const wall = this.mat(0x1b282d, .75, .18); wall.emissive.setHex(0x24353d); wall.emissiveIntensity = .25;
@@ -129,42 +155,87 @@ export class PodSetRenderer {
       this.mesh(new THREE.BoxGeometry(.8, 54, 1.4), support, x, 13, -33.7, bank);
       for (const y of [1, 7, 13, 19, 25]) this.mesh(new THREE.BoxGeometry(7.5, .25, 1), support, x + 4, y, -33.2, bank);
     }
-    const shell = this.mat(0x30232c, .35, .25); shell.emissive.setHex(0x2e1119); shell.emissiveIntensity = .22;
-    const gel = this.mat(0x5c2933, .29, .08); gel.emissive.setHex(0x8d2532); gel.emissiveIntensity = .18;
-    const rim = this.mat(0x435158, .38, .38); rim.emissive.setHex(0x223039); rim.emissiveIntensity = .2;
-    const matrices = [[], [], []] as THREE.Matrix4[][]; const dummy = new THREE.Object3D();
+    // Feed lines run behind the cantilevered basins, rather than empty wall panels.
+    for (const x of [-26, -24.8, -20.4, -19.6, -13.6, -12.4, -6.6, -5.8]) {
+      this.tube([[x, -12, -33.2], [x + .35, 3, -33.3], [x, 20, -33.2], [x - .3, 38, -33.5]], .18, this.dark, bank);
+      for (let y = -10; y < 36; y += 2.4) {
+        const joint = this.mesh(new THREE.TorusGeometry(.19, .045, 5, 10), support, x, y, -33.2, bank); joint.rotation.x = Math.PI / 2;
+      }
+    }
+    const shell = this.mat(0x362a2b, .36, .23); shell.side = THREE.DoubleSide;
+    shell.emissive.setHex(0x7b2635); shell.emissiveIntensity = .2;
+    const gel = new THREE.MeshPhysicalMaterial({ color: 0x53212c, roughness: .27, metalness: .08, clearcoat: 1,
+      emissive: 0x922639, emissiveIntensity: .3, transparent: true, opacity: .66, depthWrite: false, side: THREE.DoubleSide }); this.materials.add(gel);
+    const rim = this.mat(0x322d30, .43, .35); rim.emissive.setHex(0x25333b); rim.emissiveIntensity = .18;
+    const matrices: THREE.Matrix4[] = []; const dummy = new THREE.Object3D();
     for (const x of [-23, -16, -9]) for (const y of [4, 9, 14, 19]) {
-      dummy.position.set(x, y, -29.6); dummy.scale.set(1.85, 1.13, 3.7); dummy.updateMatrix(); matrices[0].push(dummy.matrix.clone());
-      dummy.position.set(x, y - .2, -26.9); dummy.scale.set(1.08, .7, 1.05); dummy.updateMatrix(); matrices[1].push(dummy.matrix.clone());
-      dummy.position.set(x, y, -26.5); dummy.scale.set(1.7, 1.02, 1); dummy.updateMatrix(); matrices[2].push(dummy.matrix.clone());
-      this.mesh(new THREE.BoxGeometry(1, .3, 4.5), this.steel, x, y - 1.4, -32, bank);
+      dummy.position.set(x, y, -29.6); dummy.scale.set(1.85, 1.13, 3.7); dummy.updateMatrix(); matrices.push(dummy.matrix.clone());
+      this.mesh(new THREE.BoxGeometry(1, .3, 6.2), support, x, y - 1.35, -30.8, bank);
+      this.mesh(new THREE.BoxGeometry(3.8, 1.9, .35), support, x, y - .5, -33.5, bank);
+      for (const side of [-1, 1]) {
+        this.tube([[x + side * 1.4, y - .25, -30.7], [x + side * 2.2, y - .9, -31.5],
+          [x + side * 2.3, y + .9, -32.9], [x + side * 2.6, y + 1.2, -33.5]], .13, this.dark, bank);
+        this.tube([[x + side * .8, y - 1.15, -28], [x + side * 1, y - 2.2, -30.8], [x + side * 1.4, y - 2.3, -33.5]], .1, support, bank);
+      }
     }
-    for (const [geometry, material, instances] of [[new THREE.SphereGeometry(1, 20, 12), shell, matrices[0]],
-      [new THREE.SphereGeometry(1, 16, 10), gel, matrices[1]],
-      [new THREE.TorusGeometry(1, .06, 8, 32), rim, matrices[2]]] as const) {
-      this.geometries.add(geometry); const mesh = new THREE.InstancedMesh(geometry, material, instances.length);
-      instances.forEach((matrix, i) => mesh.setMatrixAt(i, matrix)); mesh.computeBoundingSphere(); bank.add(mesh);
+    this.instances(this.podShell(24), shell, matrices, bank);
+    this.instances(this.podRim(40), rim, matrices, bank);
+    this.instances(this.podFluid(40), gel, matrices, bank);
+    // A submerged low-detail body gives the neighboring basins a human scale.
+    const occupant = new THREE.Group(); const skin = this.mat(0x6b5353, .55);
+    const body = (x: number, y: number, z: number, sx: number, sy: number, sz: number) =>
+      this.mesh(new THREE.SphereGeometry(1, 12, 8), skin, x, y, z, occupant).scale.set(sx, sy, sz);
+    body(0, -.13, -.58, .12, .18, .125); body(0, -.2, -.42, .07, .08, .05);
+    body(0, -.21, -.18, .23, .16, .24); body(0, -.23, .1, .19, .13, .13);
+    for (const side of [-1, 1]) {
+      body(side * .26, -.22, -.11, .055, .065, .23);
+      body(side * .095, -.23, .43, .075, .075, .245);
+      body(side * .095, -.2, .7, .065, .105, .09);
     }
+    const bodies = batchStaticGeometry(occupant, new Set())[0]; this.instances(bodies, skin, matrices, bank);
+    const ribs = new THREE.Group();
+    for (const z of [-.65, 0, .6]) {
+      const crossSection = Math.sqrt(1 - z * z); const points: number[][] = [];
+      for (let i = 0; i <= 12; i++) {
+        const a = i / 12 * Math.PI;
+        points.push([Math.cos(a) * crossSection * (.84 - .16 * z), -Math.sin(a) * crossSection, z]);
+      }
+      this.tube(points, .04, support, ribs);
+    }
+    const ribGeometry = batchStaticGeometry(ribs, new Set())[0]; this.instances(ribGeometry, support, matrices, bank);
+    batchStaticGeometry(bank, new Set()).forEach(geometry => this.geometries.add(geometry));
     const waterBank = bank.clone(true); waterBank.rotation.y = -Math.PI / 2;
     waterBank.position.set(0, 12, 25); this.root.add(waterBank);
   }
-  private towers(pink: THREE.Material): void {
-    const towers: THREE.Matrix4[] = []; const pods: THREE.Matrix4[] = []; const lights: THREE.Matrix4[] = []; const dummy = new THREE.Object3D();
+  private towers(pink: THREE.MeshStandardMaterial): void {
+    const towers: THREE.Matrix4[] = []; const pods: THREE.Matrix4[] = []; const lights: THREE.Matrix4[] = [];
+    const conduits: THREE.Matrix4[] = []; const bands: THREE.Matrix4[] = []; const dummy = new THREE.Object3D();
+    pink.side = THREE.DoubleSide;
     for (let ring = 0; ring < 3; ring++) for (let tower = 0; tower < 8 + ring * 4; tower++) {
       const angle = tower / (8 + ring * 4) * Math.PI * 2 + ring * .31; const radius = 42 + ring * 49;
       const x = Math.sin(angle) * radius; const z = -14 + Math.cos(angle) * radius;
       dummy.position.set(x, 29, z); dummy.scale.set(4, 150 + ring * 20, 4); dummy.rotation.set(0, 0, 0); dummy.updateMatrix(); towers.push(dummy.matrix.clone());
+      for (let side = 0; side < 8; side++) {
+        const a = side * Math.PI / 4;
+        dummy.position.set(x + Math.sin(a) * 4.1, 29, z + Math.cos(a) * 4.1); dummy.scale.set(.16, 150 + ring * 20, .16); dummy.updateMatrix(); conduits.push(dummy.matrix.clone());
+      }
       for (let level = 0; level < 20; level++) for (let side = 0; side < 4; side++) {
         const a = side * Math.PI / 2 + level % 2 * .22; const y = -35 + level * 8;
-        dummy.position.set(x + Math.sin(a) * 5, y, z + Math.cos(a) * 5); dummy.scale.set(1.9, 1, 3.4); dummy.rotation.y = a; dummy.updateMatrix(); pods.push(dummy.matrix.clone());
+        if (side === 0) {
+          dummy.position.set(x, y - 1.3, z); dummy.scale.set(4.2, .3, 4.2); dummy.rotation.y = 0; dummy.updateMatrix(); bands.push(dummy.matrix.clone());
+        }
+        dummy.position.set(x + Math.sin(a) * 6.2, y, z + Math.cos(a) * 6.2); dummy.scale.set(1.9, 1, 3.4); dummy.rotation.y = a; dummy.updateMatrix(); pods.push(dummy.matrix.clone());
         dummy.position.set(x + Math.sin(a) * 3.8, y + 1.5, z + Math.cos(a) * 3.8); dummy.scale.set(.16, .15, .16); dummy.updateMatrix(); lights.push(dummy.matrix.clone());
       }
     }
     const glow = new THREE.MeshBasicMaterial({ color: 0xbb4137 }); this.materials.add(glow);
-    for (const [geometry, material, matrices] of [[new THREE.CylinderGeometry(1, 1.12, 1, 12), this.dark, towers], [new THREE.SphereGeometry(1, 12, 8), pink, pods], [new THREE.SphereGeometry(1, 6, 4), glow, lights]] as const) {
-      this.geometries.add(geometry); const mesh = new THREE.InstancedMesh(geometry, material, matrices.length);
-      matrices.forEach((matrix, i) => mesh.setMatrixAt(i, matrix)); mesh.computeBoundingSphere(); this.root.add(mesh);
-    }
+    this.instances(new THREE.CylinderGeometry(1, 1.12, 1, 12), this.dark, towers);
+    this.instances(new THREE.CylinderGeometry(1, 1, 1, 6), this.steel, conduits);
+    this.instances(new THREE.CylinderGeometry(1, 1, 1, 12, 1, true), this.steel, bands);
+    this.instances(this.podShell(12), pink, pods);
+    this.instances(this.podRim(16), this.dark, pods);
+    this.instances(this.podFluid(16), pink, pods);
+    this.instances(new THREE.SphereGeometry(1, 6, 4), glow, lights);
   }
   private link(mesh: THREE.Mesh, from: THREE.Vector3, to: THREE.Vector3): void {
     mesh.position.copy(from).add(to).multiplyScalar(.5); mesh.scale.y = from.distanceTo(to); mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), to.clone().sub(from).normalize());

@@ -15,6 +15,10 @@ import { OFFICE_WORKDAY, officeRecipientRoot, officeCourierRoot, officeClipboard
 import { OfficeWorkdayRenderer } from '../packages/client/src/engine/OfficeWorkdayRenderer.js';
 import { LAFAYETTE, hotelFloor } from '@auto_matrix/shared';
 import { MORNING, morningRoot, morningWakePose } from '@auto_matrix/shared';
+import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
+import { PodSetRenderer } from '../packages/client/src/engine/PodSetRenderer.js';
+import { WorldState } from '../packages/server/src/world/WorldState.js';
+import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 
 async function loadGeometry(id = 'neo') {
   const glb = await readFile(new URL(`../packages/client/public/assets/characters/${id}.glb`, import.meta.url));
@@ -515,6 +519,38 @@ test('the silver front changes Neo’s skinned silhouette rather than only its c
     assert.ok(afterSkinning < displacement && displacement < beforeProjection, 'the liquid must lift posed vertices before projection');
     assert.equal((shader.uniforms as { matrixSilver?: unknown }).matrixSilver, rig.silver, 'the saved silver progress drives the same moving ridge');
   } finally { models.dispose(); }
+});
+
+test('the shipped Neo body rests in the pod fluid instead of hovering over the tank', async t => {
+  const assets = new Map(await Promise.all(['neo', 'neo-office', 'neo-tracking'].map(async id => [id, await loadGeometry(id)] as const)));
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', async (path: string) => assets.get(path.split('/').pop()!.replace(/\.glb.*$/, ''))!);
+  const document = globalThis.document;
+  const context = { createRadialGradient: () => ({ addColorStop() {} }), fillRect() {}, strokeRect() {}, fillText() {},
+    createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }), putImageData() {} };
+  globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => context }) } as unknown as Document;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!; neo.position = filmPosition('film_power_plant_pods', 0, -12);
+  neo.currentLocation = 'film_power_plant_pods'; neo.isInMatrix = false;
+  neo.currentAction = { type: 'idle', parameters: { filmPose: 'pod' }, startedAt: 0, duration: 1, progress: 0 };
+  const scene = new THREE.Scene(); const renderer = new AgentRenderer(scene);
+  const setRoot = new THREE.Group(); scene.add(setRoot);
+  setRoot.position.set(neo.position.x, neo.position.y - 1, neo.position.z + 12);
+  const set = new PodSetRenderer(setRoot);
+  try {
+    renderer.updateAgent('neo', neo); renderer.setWorld(false);
+    await new Promise(resolve => setImmediate(resolve));
+    renderer.update(0); scene.updateMatrixWorld(true);
+    const pelvis = renderer.getAgentBody('neo')!.getObjectByName('pelvis')!;
+    assert.ok(pelvis, 'load the real shipped skeleton before testing immersion');
+    let fluid: THREE.Mesh | undefined;
+    setRoot.traverse(object => { if (object instanceof THREE.Mesh && !(object instanceof THREE.InstancedMesh) && object.geometry instanceof THREE.CircleGeometry) fluid = object; });
+    assert.ok(fluid);
+    const hip = pelvis.getWorldPosition(new THREE.Vector3()), surface = fluid.getWorldPosition(new THREE.Vector3());
+    assert.ok(Math.abs(hip.y - surface.y) < .2, `pelvis must sit at the fluid level, not ${hip.y - surface.y} units above it`);
+    const head = renderer.getAgentBody('neo')!.getObjectByName('head')!.getWorldPosition(new THREE.Vector3());
+    assert.ok(head.y > surface.y + .05, 'Neo’s face must remain above the fluid');
+  } finally { renderer.dispose(); set.dispose(); globalThis.document = document; }
 });
 
 test('Neo has a connected anatomical body after leaving the mirror for the pod and recovery bed', async () => {

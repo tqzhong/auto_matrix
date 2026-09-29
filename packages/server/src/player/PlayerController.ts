@@ -136,6 +136,7 @@ export class PlayerController {
     this.sandbox?.life.film.windowFrame(agent, 0, tick);
     this.sandbox?.life.film.crossingFrame(agent, 0, tick);
     this.sandbox?.life.film.pillFrame(agent, 0, tick);
+    this.sandbox?.life.film.awakeningFrame(agent, 0, tick);
     this.sandbox?.life.film.interrogationFrame(agent, 0, tick);
     this.sandbox?.life.film.meetingFrame(agent, false, 0, tick);
     this.sandbox?.life.film.hotelFrame(agent, 0, tick);
@@ -175,6 +176,7 @@ export class PlayerController {
       this.sandbox?.life.film.windowFrame(agent, 0, tick);
       this.sandbox?.life.film.crossingFrame(agent, 0, tick);
       this.sandbox?.life.film.pillFrame(agent, 0, tick);
+      this.sandbox?.life.film.awakeningFrame(agent, 0, tick);
       this.sandbox?.life.film.interrogationFrame(agent, 0, tick);
       this.sandbox?.life.film.meetingFrame(agent, false, 0, tick);
       this.sandbox?.life.film.hotelFrame(agent, 0, tick);

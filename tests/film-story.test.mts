@@ -1145,6 +1145,24 @@ test('old mirror saves after the touch resume in the pod instead of requiring th
   }
 });
 
+test('a paused pod save keeps its immersed, floating or lifted pose when released and possessed again', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  Object.assign(state, { scene: 'm1_mirror', actor: 'neo', step: 1 }); h.command('next');
+  const neo = h.actor();
+  for (const beat of [undefined, { kind: 'disconnect' as const, elapsed: 2.4 },
+    { kind: 'disconnect' as const, elapsed: 9 }, { kind: 'rescue' as const, elapsed: 1.25 }]) {
+    state.awakening = beat; h.sandbox.life.film.awakeningFrame(h.actor(), 0, h.tick());
+    const position = { ...h.actor().position }, pose = h.actor().currentAction?.parameters.filmPose;
+    const saved = JSON.stringify(state.awakening);
+    h.players.release('film-player', h.tick());
+    assert.equal(neo.currentAction?.parameters.filmPose, pose, 'disconnecting cannot stand the immersed body up');
+    h.players.possess('film-player', 'neo', h.tick()); h.players.step(5, false, h.tick());
+    assert.equal(h.actor().currentAction?.parameters.filmPose, pose, 'reconnecting while paused restores the pose without waiting for the clock');
+    assert.deepEqual(h.actor().position, position);
+    assert.equal(JSON.stringify(state.awakening), saved, 'neither reconnect nor the paused step advances the performance');
+  }
+});
+
 test('pod disconnection moves Neo down the drain; rescue must be started in the water and lifts the body', () => {
   const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
   Object.assign(state, { scene: 'm1_mirror', actor: 'neo', step: 1 }); h.command('next');

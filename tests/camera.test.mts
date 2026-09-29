@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import type { AgentState, PlayerInput } from '@auto_matrix/shared';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { CameraController } from '../packages/client/src/engine/CameraController.js';
+import { PodSetRenderer } from '../packages/client/src/engine/PodSetRenderer.js';
 import { MORNING, morningRoot, morningWakePose } from '@auto_matrix/shared';
 import { metacortexPosition } from '@auto_matrix/shared';
 import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, INTERROGATION_ROOM, pillRoot, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, POD_WATER_DROP, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, airRescueRoot, matrixEscapeRoot, theOneRoot, wakeCallRoot, type TheOneEncounter } from '@auto_matrix/shared';
@@ -1216,9 +1217,37 @@ test('the pod reveal frames Neo in the tank and V opens at the immersed eye line
       `the patient and maintenance machine must share the tank shot: ${screen.toArray()}`);
   }
   game.key('KeyV'); game.key('KeyV', false); game.step(.1);
-  assert.ok(Math.abs(game.camera.position.y - (center.y + 2.5)) < .12, 'eyes must stay just above the pod fluid');
-  assert.ok(game.camera.position.z < center.z - 13.5, 'the viewpoint belongs near Neo’s head, not the pod center');
+  assert.ok(Math.abs(game.camera.position.y - (center.y + 1.45)) < .12, 'eyes must stay just above the immersed face');
+  assert.ok(Math.abs(game.camera.position.z - (center.z - 15)) < .12, 'the viewpoint belongs near Neo’s head, not the pod center');
   assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).y > .3, 'Neo first looks up at the maintenance machine');
+});
+
+test('the rescue camera stays clear of the cultivation towers throughout the lift', t => {
+  const game = setup(t, Math.PI); const center = FILM_SETS.film_power_plant_pods.center;
+  game.state.currentLocation = 'film_power_plant_pods'; game.state.isInMatrix = false;
+  game.state.currentAction = { type: 'idle', parameters: { filmPose: 'lift', player: true }, startedAt: 0, duration: 1, progress: 0 };
+  const root = new THREE.Group(); root.position.set(center.x, center.y - 1, center.z);
+  const set = new PodSetRenderer(root);
+  try {
+    for (const aspect of [449 / 680, 16 / 9]) {
+      game.camera.aspect = aspect; game.camera.updateProjectionMatrix();
+      game.state.position = filmPosition('film_power_plant_pods', 0, 12); game.state.position.y -= POD_WATER_DROP;
+      game.controls.possess(game.state); game.controls.performing = true;
+      for (let frame = 0; frame <= 50; frame++) {
+        const elapsed = frame / 10;
+        game.state.position.y = center.y - POD_WATER_DROP + elapsed / 5 * 14;
+        game.step(.1);
+        set.update({ awakening: { kind: 'rescue', elapsed } } as Parameters<PodSetRenderer['update']>[0], elapsed);
+        root.updateMatrixWorld(true);
+        const chest = new THREE.Vector3(game.state.position.x, game.state.position.y + 2.3, game.state.position.z);
+        const direction = chest.clone().sub(game.camera.position);
+        const ray = new THREE.Raycaster(game.camera.position, direction.clone().normalize(), .01, direction.length() * .65);
+        const obstruction = ray.intersectObject(root, true).find(hit => hit.object instanceof THREE.Mesh && hit.object.visible
+          && !Array.isArray(hit.object.material) && !hit.object.material.transparent);
+        assert.ok(!obstruction, `${aspect} at ${elapsed}s: the camera looks through a solid pod ${obstruction?.distance.toFixed(2)} units away`);
+      }
+    }
+  } finally { set.dispose(); }
 });
 
 test('the floating first-person view finds the descending rescue claw above the water', t => {

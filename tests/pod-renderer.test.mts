@@ -3,6 +3,17 @@ import test from 'node:test';
 import * as THREE from 'three';
 import { PodSetRenderer } from '../packages/client/src/engine/PodSetRenderer.js';
 
+test('nearby pods have an open upper basin instead of a closed ellipsoid over the occupant', () => {
+  const root = new THREE.Group(); const set = new PodSetRenderer(root);
+  root.updateMatrixWorld(true);
+  const ray = new THREE.Raycaster(new THREE.Vector3(-16, 16, -29.6), new THREE.Vector3(0, -1, 0), 0, 4);
+  const surface = ray.intersectObject(root, true)[0];
+  assert.ok(surface, 'the neighboring pod must have a visible interior below its opening');
+  assert.ok(surface.point.y <= 14.04, `the upper half must be open, but a solid surface covers it at ${surface.point.y}`);
+  assert.ok(surface.point.y >= 12.7, 'the basin floor must remain above its support');
+  set.dispose();
+});
+
 test('the default pod shot has a readable near bank behind Neo, not only distant dots', () => {
   const root = new THREE.Group(); const set = new PodSetRenderer(root);
   const camera = new THREE.PerspectiveCamera(65, 449 / 680, .1, 300);
@@ -42,7 +53,8 @@ test('the floating first-person view sees a nearby pod bank beyond the rescue cl
     if (!(object instanceof THREE.InstancedMesh) || !(object.geometry instanceof THREE.SphereGeometry)) return;
     if (object.geometry.parameters.widthSegments < 16) return;
     for (let i = 0; i < object.count; i++) {
-      object.getMatrixAt(i, matrix); point.setFromMatrixPosition(matrix).applyMatrix4(object.matrixWorld);
+      // The open basins are viewed from below: test their projecting front lip.
+      object.getMatrixAt(i, matrix); point.set(0, 0, .8).applyMatrix4(matrix).applyMatrix4(object.matrixWorld);
       if (point.x < 24 || point.x > 29 || point.z < -3 || point.z > 26 || point.y < 12 || point.y > 34) continue;
       const screen = point.clone().project(camera);
       if (Math.abs(screen.x) < .95 && Math.abs(screen.y) < .95 && screen.z > -1 && screen.z < 1) visible++;
