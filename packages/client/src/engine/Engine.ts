@@ -206,7 +206,8 @@ export class Engine {
     this.eventRing.scale.setScalar(1 + this.eventAge * 3);
     (this.eventRing.material as THREE.MeshBasicMaterial).opacity = Math.max(0, 0.7 - this.eventAge * 0.15);
     measure?.('effects');
-    this.postProcessing.render();
+    // The cabin has its own lighting; GTAO redraws its actors and seats for little visible gain.
+    this.postProcessing.render(filmSet?.id !== 'film_extraction_car');
     measure?.('render');
     this.onRendered?.();
     measure?.('capture');

@@ -75,7 +75,7 @@ export class PostProcessing {
     }
     this.pixelRatio = renderer.getPixelRatio(); this.resize(window.innerWidth, window.innerHeight);
   }
-  render(): void { this.composer.render(); }
+  render(occlusion = true): void { this.occlusion.enabled = occlusion; this.composer.render(); }
   resize(w: number, h: number): void { this.composer.setSize(w, h); this.antialias.uniforms.resolution.value.set(1 / (w * this.pixelRatio), 1 / (h * this.pixelRatio)); }
   dispose(): void { this.bloom.dispose(); this.output.dispose(); this.occlusion.dispose(); this.antialias.dispose(); this.composer.dispose(); }
 }
