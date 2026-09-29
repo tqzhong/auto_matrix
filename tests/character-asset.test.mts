@@ -13,6 +13,7 @@ import { INTERROGATION_ROOM, interrogationRoot } from '@auto_matrix/shared';
 import { MEETING_CAR, meetingRoot, meetingCarPose } from '@auto_matrix/shared';
 import { OFFICE_WORKDAY, officeRecipientRoot, officeCourierRoot, officeClipboardPoint, officePenPoint } from '@auto_matrix/shared';
 import { OfficeWorkdayRenderer } from '../packages/client/src/engine/OfficeWorkdayRenderer.js';
+import { LAFAYETTE, hotelFloor } from '@auto_matrix/shared';
 
 async function loadGeometry(id = 'neo') {
   const glb = await readFile(new URL(`../packages/client/public/assets/characters/${id}.glb`, import.meta.url));
@@ -273,6 +274,155 @@ test('Trinity’s leather covers her shoulder caps while she connects and releas
       }
     }
   } finally { models.dispose(); }
+});
+
+test('the principal characters place their feet on different hotel treads instead of sharing a flat floor', async () => {
+  for (const id of ['neo', 'trinity', 'smith', 'morpheus'] as const) {
+    const asset = await loadGeometry(id); const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+    (models as unknown as { load: () => Promise<typeof asset> }).load = async () => asset;
+    try {
+      const rig = (await models.create(id))!; const motion = newMotion();
+      const center = FILM_SETS.film_lafayette.center; const base = center.y - LAFAYETTE.upper - 1;
+      const y = hotelFloor(LAFAYETTE.left, 18, 1)!;
+      rig.root.position.set(center.x + LAFAYETTE.left, base + y, center.z + 18);
+      rig.root.rotation.y = Math.PI / 2;
+      const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 };
+      for (let frame = 0; frame < 4; frame++) {
+        models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
+        const floors: number[] = [];
+        for (const side of ['R', 'L']) {
+          const ankle = rig.bones.get('ankle_' + side)!;
+          const foot = ankle.getWorldPosition(new THREE.Vector3());
+          const floor = base + hotelFloor(foot.x - center.x, foot.z - center.z, y)!; floors.push(floor);
+          assert.ok(Math.abs(foot.y - rig.footHeight - floor) < .025, `${id} ${side} sole floats over or cuts into the tread: ${foot.y - rig.footHeight - floor}`);
+          const up = new THREE.Vector3(0, 1, 0).applyQuaternion(ankle.getWorldQuaternion(new THREE.Quaternion()));
+          assert.ok(up.y > .999, 'the ankle should keep the sole parallel to a horizontal tread');
+        }
+        assert.ok(Math.abs(floors[0] - floors[1]) > .2, 'the stance must actually straddle different steps');
+      }
+    } finally { models.dispose(); }
+  }
+});
+
+test('hotel foot placement preserves the walking lift on both flights and on upper floors', async () => {
+  for (const id of ['neo', 'trinity'] as const) {
+    const asset = await loadGeometry(id); const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+    (models as unknown as { load: () => Promise<typeof asset> }).load = async () => asset;
+    try {
+      const rig = (await models.create(id))!, flat = (await models.create(id))!;
+      const shoes = rig.root.getObjectByName('shoes01') as THREE.SkinnedMesh;
+      const soleVertices = ['R', 'L'].map(side => Array.from({ length: shoes.geometry.attributes.position.count }, (_, i) => i)
+        .filter(i => shoes.geometry.attributes.position.getY(i) < .12 && (side === 'R' ? shoes.geometry.attributes.position.getX(i) < 0 : shoes.geometry.attributes.position.getX(i) > 0)));
+      // Match AgentRenderer's translated actor, body offset and nested hero.
+      const actor = new THREE.Group(), body = new THREE.Group(); actor.add(body); body.add(rig.root); body.position.y = -1;
+      const center = FILM_SETS.film_lafayette.center, base = center.y - LAFAYETTE.upper - 1;
+      let raised = 0, planted = 0;
+      for (const storey of [0, 6, 11]) for (const x of [LAFAYETTE.left, LAFAYETTE.right]) for (const direction of [-1, 1]) {
+        const motion = newMotion(); motion.speed = 6;
+        const input = { speed: 6, grounded: true, verticalVelocity: 0, turn: 0 };
+        body.rotation.y = flat.root.rotation.y = direction === -1 ? Math.PI : 0;
+        for (let frame = 0; frame < 96; frame++) {
+          const z = direction === -1 ? 19.9 - frame * .25 : -3.9 + frame * .25;
+          const y = hotelFloor(x, z, storey * LAFAYETTE.rise + (x === LAFAYETTE.left ? 3.5 : 7))!;
+          actor.position.set(center.x + x, base + y + 1, center.z + z);
+          const pose = advanceMotion(motion, input, 1 / 24);
+          models.animate(flat, pose, motion, input, 0); models.animate(rig, pose, motion, input, 0);
+          rig.root.updateMatrixWorld(true);
+          for (const [sideIndex, side] of ['R', 'L'].entries()) {
+            const ankle = rig.bones.get('ankle_' + side)!;
+            const foot = ankle.getWorldPosition(new THREE.Vector3());
+            const reference = flat.bones.get('ankle_' + side)!.getWorldPosition(new THREE.Vector3());
+            const lift = Math.max(0, reference.y - flat.footHeight);
+            if (lift > .1) raised++; else if (lift < .001) planted++;
+            let clearance = Infinity;
+            for (const index of soleVertices[sideIndex]) {
+              const point = shoes.localToWorld(shoes.getVertexPosition(index, new THREE.Vector3()));
+              const floor = base + hotelFloor(point.x - center.x, point.z - center.z, y)!;
+              clearance = Math.min(clearance, point.y - floor);
+            }
+            assert.ok(Math.abs(clearance - lift) < .025, `${id} storey ${storey} flight ${x} direction ${direction} frame ${frame} ${side} loses tread/lift: ${clearance - lift}`);
+            assert.ok(Math.hypot(foot.x - actor.position.x - reference.x, foot.z - actor.position.z - reference.z) < .001, 'IK must preserve the stride, not drag the shoe sideways');
+            for (const name of ['knee_', 'ankle_']) assert.ok(rig.bones.get(name + side)!.position.distanceTo(rig.rest.get(name + side)!) < 1e-8, 'leg bones must not stretch');
+          }
+        }
+      }
+      assert.ok(raised > 100 && planted > 100, 'exercise both the swinging and supporting feet');
+    } finally { models.dispose(); }
+  }
+});
+
+test('hotel foot placement releases for jumping, combat and leaving the stairwell', async () => {
+  const asset = await loadGeometry(); const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: () => Promise<typeof asset> }).load = async () => asset;
+  try {
+    const rig = (await models.create('neo'))!, flat = (await models.create('neo'))!;
+    const center = FILM_SETS.film_lafayette.center, base = center.y - LAFAYETTE.upper - 1;
+    const input: MotionInput = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 };
+    for (const mode of ['jump', 'attack', 'skill', 'seated', 'outside'] as const) {
+      const motion = newMotion();
+      rig.root.position.set(center.x + LAFAYETTE.left, base + hotelFloor(LAFAYETTE.left, 18, 1)!, center.z + 18);
+      rig.root.rotation.y = flat.root.rotation.y = Math.PI / 2;
+      models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0);
+      const next: MotionInput = { ...input, grounded: mode !== 'jump', verticalVelocity: mode === 'jump' ? 5 : 0,
+        attack: mode === 'attack' ? 1 : undefined, cast: mode === 'skill' ? 1 : undefined,
+        skill: mode === 'skill' ? 'bullet_time' : undefined, seated: mode === 'seated' };
+      if (mode === 'outside') rig.root.position.set(0, 0, 0);
+      const pose = advanceMotion(motion, next, 1 / 30);
+      models.animate(rig, pose, motion, next, 0); models.animate(flat, pose, motion, next, 0);
+      for (const [name, bone] of rig.bones) {
+        assert.ok(bone.position.distanceTo(flat.bones.get(name)!.position) < 1e-8, `${mode} retains a stair pelvis offset`);
+        assert.ok(bone.quaternion.angleTo(flat.bones.get(name)!.quaternion) < 1e-6, `${mode} retains stair IK on ${name}`);
+      }
+    }
+  } finally { models.dispose(); }
+});
+
+test('the four principal characters keep their shoe soles rigid when the knees bend', async () => {
+  for (const id of ['neo', 'trinity', 'smith', 'morpheus']) {
+    const { scene } = await loadGeometry(id); scene.updateMatrixWorld(true);
+    const shoes = scene.getObjectByName('shoes01') as THREE.SkinnedMesh;
+    for (const side of ['R', 'L']) {
+      const ankle = scene.getObjectByName('ankle_' + side)!;
+      const samples: { index: number; local: THREE.Vector3 }[] = [];
+      for (let i = 0; i < shoes.geometry.attributes.position.count; i++) {
+        const point = new THREE.Vector3().fromBufferAttribute(shoes.geometry.attributes.position, i);
+        if (point.y > .12 || (side === 'R' ? point.x > 0 : point.x < 0)) continue;
+        samples.push({ index: i, local: ankle.worldToLocal(shoes.localToWorld(shoes.getVertexPosition(i, new THREE.Vector3()))) });
+      }
+      scene.getObjectByName('hip_' + side)!.rotation.x = -.4;
+      scene.getObjectByName('knee_' + side)!.rotation.x = 1.1; ankle.rotation.x = -.7; scene.updateMatrixWorld(true);
+      assert.ok(samples.length > 30);
+      for (const sample of samples) {
+        const local = ankle.worldToLocal(shoes.localToWorld(shoes.getVertexPosition(sample.index, new THREE.Vector3())));
+        assert.ok(local.distanceTo(sample.local) < .001, `${id} ${side} sole vertex ${sample.index} deforms with the shin: ${local.distanceTo(sample.local)}`);
+      }
+    }
+  }
+});
+
+test('the actual shoe meshes clear the hotel riser when a heel or toe straddles its edge', async () => {
+  for (const id of ['neo', 'trinity', 'smith', 'morpheus'] as const) {
+    const asset = await loadGeometry(id); const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+    (models as unknown as { load: () => Promise<typeof asset> }).load = async () => asset;
+    try {
+      const rig = (await models.create(id))!; const shoes = rig.root.getObjectByName('shoes01') as THREE.SkinnedMesh;
+      const center = FILM_SETS.film_lafayette.center, base = center.y - LAFAYETTE.upper - 1;
+      const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 }; const motion = newMotion();
+      for (const yaw of [0, Math.PI / 4, Math.PI / 2, Math.PI]) for (const z of [17.6, 17.9, 18.1, 18.4]) {
+        const y = hotelFloor(LAFAYETTE.left, z, 1)!;
+        rig.root.position.set(center.x + LAFAYETTE.left, base + y, center.z + z); rig.root.rotation.y = yaw;
+        models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
+        let clearance = Infinity;
+        for (let i = 0; i < shoes.geometry.attributes.position.count; i++) {
+          const point = shoes.localToWorld(shoes.getVertexPosition(i, new THREE.Vector3()));
+          const floor = base + hotelFloor(point.x - center.x, point.z - center.z, y)!;
+          clearance = Math.min(clearance, point.y - floor);
+        }
+        assert.ok(clearance > -.015, `${id} yaw ${yaw} z ${z}: shoe penetrates the riser by ${-clearance}`);
+        assert.ok(clearance < .04, 'at least part of a sole must support the standing body');
+      }
+    } finally { models.dispose(); }
+  }
 });
 
 test('the mirror reaches Neo’s hand before his face and coat hem', async () => {

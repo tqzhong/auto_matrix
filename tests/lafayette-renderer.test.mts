@@ -1,8 +1,24 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { LAFAYETTE, HOTEL_DOOR_PROGRESS } from '@auto_matrix/shared';
+import { LAFAYETTE, HOTEL_DOOR_PROGRESS, HOTEL_SURFACES } from '@auto_matrix/shared';
 import { LafayetteApproachRenderer } from '../packages/client/src/engine/LafayetteApproachRenderer.js';
+
+test('worn stair nosings stay flush with the surface used for foot contact', t => {
+  const document = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, fillText() {} }) }) } as unknown as Document;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const root = new THREE.Group(); const renderer = new LafayetteApproachRenderer(root, new THREE.Vector3());
+  const ray = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(0, -1, 0), 0, .4);
+  try {
+    root.updateMatrixWorld(true);
+    for (const surface of HOTEL_SURFACES.filter(surface => surface.depth === 2)) for (const edge of [0, -.9, .9]) {
+      ray.ray.origin.set(surface.x, surface.y + .2, surface.z + edge);
+      const hit = ray.intersectObject(root, true)[0]; assert.ok(hit, 'every tread has visible supporting geometry');
+      assert.ok(Math.abs(hit.point.y - surface.y) < .008, `the visible nosing rises through a correctly planted sole: ${hit.point.y - surface.y}`);
+    }
+  } finally { renderer.dispose(); globalThis.document = document; }
+});
 
 test('opening 1313 clears the visible doorway as well as its collision', t => {
   const document = globalThis.document;

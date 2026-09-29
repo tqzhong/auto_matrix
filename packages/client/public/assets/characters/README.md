@@ -6,6 +6,8 @@ The four heads use different MakeHuman morphs followed by image-constrained mesh
 
 Neo has an additional local refinement pass: narrower eyelid openings, a slightly fuller lower face, a procedural short-hair scalp with 3,000 swept mesh ribbons, and a baked tangent-space skin normal map. The groom replaces his stock hair-card mesh and remains bound to the same head bone. The actor likeness is still weak; these changes address visible surface and silhouette defects, not film-quality reconstruction. The other three characters retain the previous assets.
 
+The four principal characters also have corrected shoe bindings. The source proxy attached parts of the soles to the shin, bending the heel when the knee flexed. Soles now follow the ankle rigidly, with a smooth transition back to the original weights above the ankle. Only shoe joint indices/weights change; all geometry, faces, textures and other clothing remain intact. The hotel stair solver samples those actual soles against the shared treads, adjusts each leg independently and preserves the walking lift. Its in-game appearance and frame cost still await browser review.
+
 The office, ledge and interrogation use `neo-office.glb`, an additional shirt and torso bound to Neo's existing 46-bone skeleton. It replaces the coat and black undershirt, keeps his trousers/head/hands, and uses `neo-office-skin.png` for the previously covered abdomen. The CC0 casual shirt is trimmed and lengthened to meet the shipped trouser waist while retaining its sleeves. The lowered hem is rebound to the nearby abdomen weights so leaning over the delivery form does not pull it through the body. The tie, opening shirt, mouth deformation and tracking device are driven by the saved interrogation timeline. Jones and Brown currently reuse Smith's rig with small head-shape variations; these are temporary stand-ins, not likenesses of their actors.
 
 Rhineheart reuses Smith's rig with different suit/hair colors and no glasses. The courier reuses Neo's rig with a blue office shirt and cap. Their keyboard, clipboard, package and pen contacts follow the saved office workday timeline. They are temporary support-character assets, not new actor likenesses.
@@ -96,6 +98,15 @@ python3 scripts/fit-trinity-shoulders.py --source output/characters/club-staging
 cp output/characters/shoulder-staging/trinity.glb packages/client/public/assets/characters/trinity.glb
 ```
 
+After all four principal-character finishing passes, correct the shoe bindings once. The script rejects already-corrected inputs:
+
+```sh
+for character in neo trinity smith morpheus; do
+  python3 scripts/fit-character-soles.py --source "packages/client/public/assets/characters/$character.glb" --output "output/characters/sole-staging/$character.glb"
+  cp "output/characters/sole-staging/$character.glb" "packages/client/public/assets/characters/$character.glb"
+done
+```
+
 The first command builds the meshes from the pinned sources, applies distinct morphs, subdivides anatomical surfaces, trims garment openings, fits hair outside the scalp and binds all four skeletons. `--fetch` downloads and verifies the 268 MB authoring pack into a temporary cache; later builds can omit it. `--source /path/to/cache` selects a cache. `--character neo` (or another ID) rebuilds one raw model for inspection.
 
 The Blender pass fits the mesh using `scripts/character_fitting.py` and the checked-in `scripts/character-landmarks.json`, bakes 2K facial albedo, replaces the stock cropped-hair texture on Morpheus's scalp, tones the irises, finishes Smith's tie and saves the editable `.blend`. Run it on freshly rebuilt raw assets: it rejects an already-finished GLB and checks the source hash against the calibration. Original glTF bone axes/bind matrices are preserved so the game's animation remains consistent. Blender and Python are authoring tools only, not runtime dependencies.
@@ -117,6 +128,8 @@ blender --background --factory-startup --python scripts/finish-characters.py
 Calibration detects 478 landmarks on each unprojected raw frontal render and on the generated front/profile references. It saves the measured points, cameras, source hashes and hairline boundaries locally. The fit uses a regularized smooth deformation with fixed neck/crown regions; it does not send photos to a cloud reconstruction service. The frontal reference is square and the profile crop is 3:4; their separate pixel aspect ratios are retained.
 
 ## Validation
+
+Shoe checks load all four shipped rigs, bend their knees and verify that the soles retain their shape. Hotel checks cover standing across two treads, real shoe clearance at heel/toe edges, paused poses, Neo/Trinity walking both directions on both flights at low/middle/high floors, and releasing the correction when jumping, fighting, sitting or leaving the stairwell. These geometric checks do not establish natural-looking gait, film likeness or acceptable in-game performance.
 
 The tracking-outfit checks use the shipped GLB to verify wrist continuity, shared animated bones, exposed forearms, sleeve coverage, bounds and silver arrival through the reaching poses. Outfit checks cover entering directly at a saved mirror time and restoring office, pod and normal clothing. Patient checks probe both forearms and calves in pod, floating and recovery poses, confirm feet are present and that trousers no longer substitute for skin. Actual material appearance and the reflection still require browser review.
 

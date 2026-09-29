@@ -15,6 +15,7 @@ import { ApartmentPerformance } from './ApartmentPerformance.js';
 import { WakeCallPerformance } from './WakeCallPerformance.js';
 import { enableSkinnedCulling } from './SkinnedBounds.js';
 import { wireTrackingElectrode } from './TrackingContact.js';
+import { placeHotelFeet } from './HotelFootPlacement.js';
 import { clubCloseness } from '@auto_matrix/shared';
 
 export type HeroSupport = 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour' | 'niobe' | 'ballard' | 'ghost' | 'soren' | 'link';
@@ -829,6 +830,8 @@ export class HeroModels {
       }
       pelvis.position.y -= lowest;
       rig.root.updateWorldMatrix(true, true);
+      if (!input.realWorld && !input.seated && !input.floorSeated && motion.seated < .01 && !input.performance
+        && !input.windingUp && motion.attackAge > 1 && motion.skillAge > 1 && motion.hitAge > .5) placeHotelFeet(rig);
     }
     if (input.phone) this.holdPhone(rig, input.phone);
     if (input.wakeCall && input.wakeCall.phase !== 'waking') {

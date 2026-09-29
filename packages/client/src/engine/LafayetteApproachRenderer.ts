@@ -34,7 +34,7 @@ export class LafayetteApproachRenderer {
     for (const surface of HOTEL_SURFACES) {
       if (surface.x === 0 && surface.y === 84 && surface.depth === 50) continue;
       this.box(surface.x, surface.y - .14, surface.z, surface.width, .28, surface.depth, wood);
-      if (surface.depth === 2) this.box(surface.x, surface.y + .018, surface.z + (surface.x === LAFAYETTE.left ? 1 : -1) * .9, surface.width, .04, .15, wornEdge);
+      if (surface.depth === 2) this.box(surface.x, surface.y - .015, surface.z + (surface.x === LAFAYETTE.left ? 1 : -1) * .9, surface.width, .04, .15, wornEdge);
     }
     for (const wall of HOTEL_WALLS) this.box(wall.x, wall.y + wall.height / 2, wall.z, wall.width, wall.height, wall.depth, plaster);
     // The unvisited lower rooms remain behind the exterior wall. The staircase
