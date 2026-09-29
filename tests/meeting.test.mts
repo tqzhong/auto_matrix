@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SCENE_BY_ID, FILM_SETS, filmEntry, filmStepPosition, filmPosition, filmSetAt, meetingBoardPoint, meetingCarPose, meetingDrive, meetingPose, meetingRoadContains, playerBlocked, MEETING_DRIVE_SECONDS, MEETING_DESTINATION, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, filmEntry, filmStepPosition, filmPosition, filmSetAt, meetingBoardPoint, meetingCarPose, meetingDrive, meetingPose, meetingRoadContains, playerBlocked, BRIDGE_ARRIVAL_SECONDS, MEETING_DRIVE_SECONDS, MEETING_DESTINATION, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -203,8 +203,20 @@ test('the implanted tracker draws a visible bridge tail; getting caught requires
   assert.ok(Math.hypot(resumed.position.x - h.neo.position.x, resumed.position.z - h.neo.position.z) >= gap - 2,
     'rejoining cannot skip the pursuer forward across the disconnected interval');
   h.frames(12); assert.equal(h.state().bridgeTail?.phase, 'failed');
+  const caught = h.sandbox.state.threats.find(threat => threat.id === 'bridge:tail')!;
+  const separation = Math.hypot(caught.position.x - h.neo.position.x, caught.position.z - h.neo.position.z);
+  assert.ok(separation >= 1.8 && separation <= 3.2, `the pursuer must halt at a readable distance from Neo: ${separation}`);
+  assert.deepEqual(h.neo.currentAction?.parameters.bridgeCaught, { x: caught.position.x, z: caught.position.z });
+  h.neo.currentAction = null; h.frames(.5);
+  assert.deepEqual(h.neo.currentAction?.parameters.bridgeCaught, { x: caught.position.x, z: caught.position.z },
+    'a failed checkpoint saved before the camera fix must recover its capture framing');
+  h.state().bridgeArrival = { phase: 'approaching', elapsed: BRIDGE_ARRIVAL_SECONDS - .05 };
+  const failureText = h.state().lastText; h.frames(.1);
+  assert.equal(h.state().bridgeArrival?.phase, 'approaching', 'the car cannot resume its entrance during the failed checkpoint');
+  assert.equal(h.state().lastText, failureText, 'car arrival cannot replace the capture explanation');
   assert.match(h.command('act'), /重试/); assert.equal(h.state().meeting, undefined);
   h.command('retry'); assert.equal(h.state().bridgeTail?.phase, 'tracking'); assert.equal(h.state().bridgeTail?.attempts, 1);
+  assert.equal(h.neo.currentAction?.parameters.bridgeCaught, undefined, 'retry must release the capture shot');
   assert.deepEqual(h.neo.position, filmEntry(bridge));
   assert.ok(h.walkTo(filmStepPosition(bridge, bridge.steps[0]).x, filmStepPosition(bridge, bridge.steps[0]).z));
   h.command('act'); assert.equal(h.state().meeting?.phase, 'boarding');

@@ -644,6 +644,36 @@ test('opening the meeting car door frames Neo and the rainy exit in portrait vie
     `Neo and the opened right rear door should share the portrait frame: ${point.toArray()}`);
 });
 
+test('the bridge capture frames Neo and his pursuer separately in both views', t => {
+  const game = setup(t, Math.PI);
+  const neo = filmPosition('film_adams_bridge', 4, -9.15);
+  const pursuer = filmPosition('film_adams_bridge', 3.85, -7.06);
+  game.state.currentLocation = 'film_adams_bridge'; game.state.position = neo;
+  game.state.currentAction = { type: 'idle', parameters: { bridgeCaught: { x: pursuer.x, z: pursuer.z } }, startedAt: 0, duration: 1, progress: 0 };
+  for (const aspect of [16 / 9, 426 / 680]) {
+    game.camera.aspect = aspect; game.camera.updateProjectionMatrix(); game.controls.possess(game.state); game.step(.1);
+    game.camera.updateMatrixWorld();
+    const neoFace = new THREE.Vector3(neo.x, neo.y + 3, neo.z).project(game.camera);
+    const pursuerFace = new THREE.Vector3(pursuer.x, neo.y + 3, pursuer.z).project(game.camera);
+    for (const face of [neoFace, pursuerFace]) assert.ok(Math.abs(face.x) < .88 && Math.abs(face.y) < .82 && face.z > -1 && face.z < 1,
+      `both faces should fit in the ${aspect} capture frame: ${face.toArray()}`);
+    assert.ok(Math.abs(neoFace.x - pursuerFace.x) > .2, 'the agent cannot appear merged with Neo from behind');
+    game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+    assert.ok(game.camera.position.distanceTo(new THREE.Vector3(neo.x, neo.y + 2.99, neo.z)) < .06, 'V uses Neo eye position');
+    const view = game.camera.getWorldDirection(new THREE.Vector3());
+    assert.ok(Math.abs(angle(Math.atan2(view.x, view.z), Math.atan2(pursuer.x - neo.x, pursuer.z - neo.z))) < .15,
+      'first person starts aimed toward the agent');
+    game.document.pointerLockElement = game.canvas;
+    game.event(game.document, 'mousemove', { movementX: 120, movementY: 0 }); game.step(.1);
+    assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(view) > .1, 'first-person look remains steerable');
+    game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+    assert.ok(game.camera.position.distanceTo(new THREE.Vector3(neo.x, neo.y + 2.99, neo.z)) > 5,
+      'V returns to the side view of both characters');
+  }
+  game.state.currentAction = null; game.step(.1);
+  assert.equal(game.controls.performing, false, 'retry releases the capture camera and movement lock');
+});
+
 test('the meeting camera cuts outside as Neo opens the door instead of crossing the car body', t => {
   const game = setup(t, Math.PI); const gesture = { phase: 'choice' as const, elapsed: 0, role: 'neo' as const, bugged: true };
   const root = meetingRoot({ ...gesture, approach: { ...MEETING_CAR.approach, yaw: -Math.PI / 2 } }, 'neo');

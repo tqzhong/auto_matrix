@@ -8,6 +8,16 @@
 .neo-panel .sandbox-window > nav button.active { color: #273d33; box-shadow: 0 2px #526d5c; }
 .neo-panel .sandbox-window > header button { color: #45554a; }
 .neo-panel .sandbox-panel-body { padding-top: 16px; scrollbar-color: #a9ac9b transparent; }
+.neo-panel .film-journal:not(.film-contact) { color: #303b3b; }
+.neo-panel .film-journal:not(.film-contact) .film-heading > span, .neo-panel .film-journal:not(.film-contact) .film-now > div > span { color: #617365; }
+.neo-panel .film-journal:not(.film-contact) .film-heading p, .neo-panel .film-journal:not(.film-contact) .film-atlas > p { color: #637367; }
+.neo-panel .film-journal:not(.film-contact) .film-controls small, .neo-panel .film-journal:not(.film-contact) .film-now details { color: #6c6b55; }
+.neo-panel .film-journal:not(.film-contact) button { color: #263d33; background: #dce5d8; border-color: #81957b; }
+.neo-panel .film-journal:not(.film-contact) button:hover:not(:disabled) { background: #cadac5; }
+.neo-panel .film-pill-choices button:first-child { background: #eadbd9; border-color: #b96b62; }
+.neo-panel .film-pill-choices button:last-child { background: #dce8ed; border-color: #5a91b5; }
+.neo-panel .film-journal:not(.film-contact) .film-objectives .current, .neo-panel .film-journal:not(.film-contact) .film-atlas summary { color: #435e48; }
+.neo-panel .film-journal:not(.film-contact) .film-memory { color: #4f5e4f; }
 .neo-life-page { font-family: "PingFang SC", "Microsoft Yahei", sans-serif; }
 .neo-life-page button { color: #33483f; padding: 11px 14px; border: 1px solid #61796a4d; background: #f7f4ed; font-size: 12px; line-height: 1.6; text-align: left; transition: background .15s; }
 .neo-life-page button:hover:not(:disabled) { background: #dce5d9; border-color: #7c9380; }

@@ -43,6 +43,7 @@ export class PlayerControls {
   private cameraTarget = new THREE.Vector3();
   private cameraStep = 0;
   private welcomeShot?: ReturnType<typeof lafayetteWelcomeCamera>['name'];
+  private bridgeCaught?: { x: number; z: number };
   readonly motion: MotionInput = { speed: 0, verticalVelocity: 0, grounded: true, turn: 0 };
   onViewChange?: (firstPerson: boolean) => void;
   onMenu?: () => void;
@@ -84,6 +85,7 @@ export class PlayerControls {
 
   possess(state: AgentState): void {
     this.meetingYaw = undefined; this.welcomeShot = undefined; this.performing = false; this.phoneExit = false;
+    this.bridgeCaught = undefined;
     this.id = state.id; this.position = { ...state.position }; this.yaw = state.rotation;
     this.movementYaw = this.yaw; this.movementForward = 0; this.movementRight = 0;
     this.lastLook = -1000; this.dragging = false;
@@ -100,6 +102,7 @@ export class PlayerControls {
   }
   release(): void {
     this.id = null; this.keys.clear(); this.enabled = true; this.firing = false; this.firearm = false; this.weaponStyle = undefined; this.fireInterval = LOBBY_FIRE_INTERVAL; this.ride = undefined; this.gunner = false; this.climbing = false; this.performing = false; this.phoneExit = false; this.mirror = 0; this.spoon = undefined; this.phone = undefined; this.welcomeShot = undefined;
+    this.bridgeCaught = undefined;
     this.camera.near = this.defaultNear; this.camera.fov = 48; this.camera.updateProjectionMatrix();
     if (document.pointerLockElement === this.canvas) document.exitPointerLock();
   }
@@ -145,6 +148,7 @@ export class PlayerControls {
       if (event.code === 'Digit4') this.action('barricade');
       if (event.code === 'KeyV') {
         this.firstPerson = !this.firstPerson;
+        if (this.bridgeCaught) this.cameraReady = false;
         if (this.firstPerson && this.motion.mirrorBeat !== undefined) this.aimAtMirror();
         if (this.firstPerson && this.motion.meeting && ['scanning', 'located', 'removing', 'discarding'].includes(this.motion.meeting.phase)) this.aimAtMeetingScanner();
         if (this.firstPerson && this.climbing && this.authoritative?.currentLocation === 'film_office_ledge') {
@@ -368,12 +372,18 @@ export class PlayerControls {
     if (this.motion.lobbyEntry && !state.currentAction?.parameters.lobbyEntry) this.performing = false;
     if ((state.currentAction?.parameters.lobbyEntry as MotionInput['lobbyEntry'])?.phase === 'checkpoint') this.performing = true;
     if (phoneExit) this.performing = true;
+    const bridgeCaught = state.currentAction?.parameters.bridgeCaught as { x: number; z: number } | undefined;
+    const bridgeCaptureStarting = Boolean(bridgeCaught && !this.bridgeCaught);
+    if (this.bridgeCaught && !bridgeCaught) this.performing = false;
+    if (bridgeCaught) this.performing = true;
+    this.bridgeCaught = bridgeCaught;
     const inOfficeLift = Boolean(state.currentAction?.parameters.metacortexLift);
     if (this.inOfficeLift && !inOfficeLift) this.performing = false;
     if (inOfficeLift) this.performing = true;
     this.inOfficeLift = inOfficeLift;
     if (this.wasPerforming && !this.performing) this.yaw = this.movementYaw = this.facing;
     if (redPillEnded) this.yaw = this.movementYaw = this.facing = state.rotation;
+    if (bridgeCaptureStarting) this.yaw = this.movementYaw = Math.atan2(bridgeCaught!.x - state.position.x, bridgeCaught!.z - state.position.z);
     this.wasPerforming = this.performing;
     this.motion.armed = this.firearm || state.currentAction?.parameters.armed === true;
     this.motion.seated = state.currentAction?.parameters.seated === true;
@@ -573,7 +583,23 @@ export class PlayerControls {
     const verticalTarget = THREE.MathUtils.lerp(this.cameraTarget.y, target.y, 1 - Math.exp(-8 * delta));
     this.cameraTarget.lerp(target, 1 - Math.exp(-22 * delta)); this.cameraTarget.y = verticalTarget;
     const spoon = this.motion.inspecting && group.getObjectByName('held-spoon');
-    if (this.motion.government) {
+    if (this.bridgeCaught) {
+      const pursuer = new THREE.Vector3(this.bridgeCaught.x, this.position.y, this.bridgeCaught.z);
+      if (this.firstPerson) {
+        const eye = new THREE.Vector3(this.position.x, this.position.y + 2.99, this.position.z);
+        const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
+        this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
+      } else {
+        const neo = new THREE.Vector3(this.position.x, this.position.y, this.position.z);
+        const towardPursuer = pursuer.clone().sub(neo).normalize();
+        const focus = neo.clone().add(pursuer).multiplyScalar(.5); focus.y += 2.65;
+        const ideal = focus.clone().add(new THREE.Vector3(towardPursuer.z, 0, -towardPursuer.x).multiplyScalar(this.camera.aspect < .8 ? 9 : 7));
+        ideal.y += 1.8;
+        if (resetCamera || bridgeCaptureStarting) this.camera.position.copy(ideal);
+        else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
+        this.camera.lookAt(focus);
+      }
+    } else if (this.motion.government) {
       const gesture = this.motion.government; const center = FILM_SETS[state.currentLocation].center;
       if (this.firstPerson) {
         const pose = governmentPose(gesture); const eyeHeight = gesture.kind === 'questioning' ? 2.18 : 2.99 - pose.bend * 1.38 - pose.fall * 1.25;

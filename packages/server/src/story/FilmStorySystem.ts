@@ -1612,7 +1612,7 @@ export class FilmStorySystem {
   }
   bridgeArrivalFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
-    if (!state || state.scene !== 'm1_bridge' || state.visiting || state.meeting || !state.bridgeArrival) return;
+    if (!state || state.scene !== 'm1_bridge' || state.visiting || state.meeting || !state.bridgeArrival || state.bridgeTail?.phase === 'failed') return;
     const arrival = state.bridgeArrival;
     if (!this.controls(agent) || MEETING_CAST.some(id => this.world.agents.get(id)?.controller)) return;
     if (arrival.phase === 'approaching') arrival.elapsed = Math.min(BRIDGE_ARRIVAL_SECONDS, arrival.elapsed + Math.min(.1, dt));
@@ -1639,7 +1639,10 @@ export class FilmStorySystem {
     if (!state || state.scene !== 'm1_bridge' || state.visiting || state.meeting || !(state.office?.bugged ?? state.office?.outcome === 'captured')) return;
     const tail = state.bridgeTail ??= { phase: 'tracking', alert: 0, lastTick: tick, attempts: 0, spawned: false };
     const threat = this.sandbox().threats.find(item => item.id === 'bridge:tail');
-    if (tail.phase !== 'tracking') { tail.lastTick = tick; return; }
+    if (tail.phase !== 'tracking') {
+      if (tail.phase === 'failed' && threat && !agent.currentAction?.parameters.bridgeCaught) this.stageBridgeCapture(agent, threat, tick);
+      tail.lastTick = tick; return;
+    }
     if (!threat && tail.spawned) {
       tail.phase = 'evaded'; tail.lastTick = tick;
       state.lastText = '追踪特工失去了这次接头位置。体内的装置仍在；上车后还必须接受检查。';
@@ -1666,8 +1669,13 @@ export class FilmStorySystem {
     tail.alert = Math.max(0, Math.min(100, tail.alert + (range < BRIDGE_TAIL.noticeRange ? 14 : -10) * seconds));
     if (range <= BRIDGE_TAIL.captureRange && tail.alert >= BRIDGE_TAIL.captureAlert && tick >= pursuit.stunUntil) {
       tail.phase = 'failed'; agent.velocity = { x: 0, y: 0, z: 0 };
+      this.stageBridgeCapture(agent, pursuit, tick);
       state.lastText = '追踪器把你的位置暴露给尾随的特工。他在桥下拦住了你。J 打开手记，从桥下入口重试。';
     } else if (previous < 35 && tail.alert >= 35) state.lastText = '后方的脚步正在逼近。追踪器仍在体内；赶到轿车右后门，别停在桥下。';
+  }
+  private stageBridgeCapture(agent: AgentState, threat: SandboxThreat, tick: number): void {
+    agent.currentAction = { type: 'idle', parameters: { bridgeCaught: { x: threat.position.x, z: threat.position.z } },
+      startedAt: tick, duration: 1, progress: 0 };
   }
   interrogationFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
