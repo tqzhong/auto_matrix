@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { RECOVERY_BED, RESCUE, type FilmJourney } from '@auto_matrix/shared';
+import { RECOVERY_BED, RECOVERY_CABINET, RECOVERY_FRAME, RESCUE, type FilmJourney } from '@auto_matrix/shared';
 
 /** The Nebuchadnezzar is one continuous deck: medical bay, operator core and mess.
  * The central aisle remains open so recovery hands control back to the player. */
@@ -17,7 +17,9 @@ export class NebDeckRenderer {
   private amber = this.material(new THREE.MeshBasicMaterial({ color: 0xd49d5d, toneMapped: false }));
   private glass = this.material(new THREE.MeshPhysicalMaterial({ color: 0x879b94, transparent: true, opacity: .23, roughness: .18, metalness: .22, side: THREE.DoubleSide, depthWrite: false }));
   private gantry = new THREE.Group();
-  private needles: { shaft: THREE.Mesh; tip: THREE.Mesh; hub: THREE.Mesh; anchorY: number; bone: string; offset: THREE.Vector3 }[] = [];
+  private recoverySkin?: THREE.SkinnedMesh;
+  private skinContacts = new Map<number, THREE.Vector3>();
+  private needles: { shaft: THREE.Mesh; tip: THREE.Mesh; hub: THREE.Mesh; support: THREE.Mesh; anchorY: number; bone: string; offset: THREE.Vector3 }[] = [];
   private downloadRig = new THREE.Group();
   private downloadConnector = new THREE.Group();
   private downloadBars: THREE.Mesh[] = [];
@@ -109,20 +111,23 @@ export class NebDeckRenderer {
 
   private medicalBay(): void {
     const bed = new THREE.Group(); bed.name = 'neb-medical-bed'; bed.position.set(RECOVERY_BED.x, 0, RECOVERY_BED.z); this.root.add(bed);
-    this.box(bed, this.dark, 0, .72, 0, 2.65, 1.35, 6.7);
-    this.box(bed, this.steel, 0, 1.38, 0, 3.15, .18, 6.95);
-    this.box(bed, this.linen, 0, 1.78, 0, 2.85, .62, 6.35);
-    const pillow = this.box(bed, this.linen, 0, 2.08, -2.25, 2.35, .35, 1.35); pillow.rotation.x = -.11;
+    this.box(bed, this.dark, 0, .32, 0, 2.65, .54, 6.7);
+    this.box(bed, this.steel, 0, .66, 0, 3.15, .14, 6.95);
+    this.box(bed, this.linen, 0, RECOVERY_BED.surface - .19, 0, 2.85, .38, 6.35);
+    const pillow = this.box(bed, this.linen, 0, 1.24, 2.05, 1.55, .24, .95, 'neb-medical-pillow'); pillow.rotation.x = .08;
     for (const x of [-1.35, 1.35]) for (const z of [-2.6, 2.6]) {
       this.cylinder(bed, this.steel, x, .5, z, .12, 1);
       const wheel = this.mesh(bed, new THREE.TorusGeometry(.24, .055, 8, 20), this.rubber); wheel.position.set(x, .12, z); wheel.rotation.y = Math.PI / 2;
     }
-    this.box(this.root, this.dark, -15.6, 3.4, -22, 6.2, 6.5, 10.5);
+    const cabinet = RECOVERY_CABINET;
+    this.box(this.root, this.dark, cabinet.x, cabinet.y, cabinet.z, cabinet.width, cabinet.height, cabinet.depth, 'neb-medical-cabinet');
     for (let row = 0; row < 3; row++) for (let column = 0; column < 2; column++) this.crt(-14.2 + column * 2.8, 2.4 + row * 2.05, -17.2, Math.PI, row === 2);
     this.gantry.name = 'neb-recovery-gantry'; this.gantry.position.set(RECOVERY_BED.x, 6.2, RECOVERY_BED.z); this.root.add(this.gantry);
-    this.box(this.gantry, this.steel, 0, 0, 0, 5.4, .38, 7.2);
     for (const side of [-1, 1]) {
-      this.box(this.gantry, this.dark, side * 2.45, -2.7, 0, .34, 5.5, 7);
+      this.box(this.gantry, this.steel, side * 2.45, 0, 0, .14, .18, 7.2, `neb-medical-side-rail-${side}`);
+      this.box(this.gantry, this.steel, 0, 0, side * 3.45, 5.1, .18, .14, `neb-medical-end-rail-${side}`);
+      for (const end of [-1, 1]) this.box(this.root, this.dark, RECOVERY_BED.x + side * RECOVERY_FRAME.halfWidth, RECOVERY_FRAME.height / 2,
+        RECOVERY_BED.z + end * RECOVERY_FRAME.halfLength, RECOVERY_FRAME.post, RECOVERY_FRAME.height, RECOVERY_FRAME.post, `neb-medical-post-${side}-${end}`);
       this.pipe([new THREE.Vector3(RECOVERY_BED.x + side * 2.45, 6.2, RECOVERY_BED.z - 3.2), new THREE.Vector3(RECOVERY_BED.x + side * 4, 9.8, RECOVERY_BED.z - 4), new THREE.Vector3(side * 16, 14, -29)], .15, this.rubber);
     }
     const contacts = [
@@ -135,7 +140,8 @@ export class NebDeckRenderer {
       const shaft = this.cylinder(this.gantry, this.steel, x, -1, z, .014, 1, `neb-medical-needle-${i}`);
       const tip = this.mesh(this.gantry, new THREE.SphereGeometry(.035, 10, 7), i % 3 ? this.steel : this.amber, `neb-medical-needle-tip-${i}`);
       const hub = this.cylinder(this.gantry, this.rubber, x, -.35, z, .1, .4, `neb-medical-needle-carriage-${i}`);
-      this.needles.push({ shaft, tip, hub, anchorY: -.55, bone, offset: new THREE.Vector3(ox, oy, oz) });
+      const support = this.box(this.gantry, this.steel, 0, -.08, z, 1, .07, .09, `neb-medical-carriage-arm-${i}`);
+      this.needles.push({ shaft, tip, hub, support, anchorY: -.55, bone, offset: new THREE.Vector3(ox, oy, oz) });
     }
     const curtain = this.box(this.root, this.glass, -1.1, 4.3, -22, .06, 7.4, 11); curtain.name = 'neb-medical-curtain';
     this.pointLight('neb-medical-task-light', 0xd9e6dc, 260, 22, -5.5, 9.2, -20.5);
@@ -335,6 +341,9 @@ export class NebDeckRenderer {
     }
     const recovery = journey?.scene === 'm1_recovery' && !journey.visiting && journey.awakening?.kind === 'recovery' ? journey.awakening : undefined;
     const t = recovery?.elapsed ?? 0; const active = recovery?.started === true;
+    let skin: THREE.SkinnedMesh | undefined;
+    if (recovery) recoverySubject?.traverse(object => { if (object instanceof THREE.SkinnedMesh && object.userData.patientBody) skin = object; });
+    if (skin !== this.recoverySkin) { this.recoverySkin = skin; this.skinContacts.clear(); }
     const consoleActive = journey?.scene === 'm1_cypher_console' && !journey.visiting;
     for (const side of [-1, 1]) {
       const cable = this.root.getObjectByName(`neb-core-chair-four-cable-${side}`);
@@ -343,19 +352,34 @@ export class NebDeckRenderer {
     const descend = active ? THREE.MathUtils.smoothstep(t, 1.8, 3.8) * (1 - THREE.MathUtils.smoothstep(t, 7, 8.2)) : 0;
     const retract = active ? THREE.MathUtils.smoothstep(t, 7.5, 9.2) : 0;
     this.gantry.position.y = 6.2 - descend * 1.15 + retract * 6;
-    this.gantry.rotation.z = Math.sin(elapsed * 2.1) * .004 * descend;
+    this.gantry.rotation.z = Math.sin(t * 2.1) * .004 * descend;
     this.root.updateWorldMatrix(true, true); recoverySubject?.updateWorldMatrix(true, true); this.gantry.updateWorldMatrix(true, true);
+    if (skin && this.skinContacts.size === 0 && t >= 2.1 && t < 7) {
+      skin.updateMatrixWorld(true); skin.skeleton.update(); skin.computeBoundingBox(); skin.computeBoundingSphere();
+      // Sample the shipped skin once, then retain contacts in bone space as the body moves.
+      // Twelve skinned-mesh raycasts every render frame would make this sequence needlessly expensive.
+      this.needles.forEach((needle, index) => {
+        const bone = recoverySubject!.getObjectByName(needle.bone); if (!bone) return;
+        const point = bone.localToWorld(needle.offset.clone());
+        const ray = new THREE.Raycaster(point.clone().add(new THREE.Vector3(0, 2, 0)), new THREE.Vector3(0, -1, 0), 0, 3);
+        const hit = ray.intersectObject(skin!)[0];
+        if (hit) this.skinContacts.set(index, bone.worldToLocal(hit.point.add(new THREE.Vector3(0, -.012, 0))));
+      });
+    }
     this.needles.forEach((needle, i) => {
       const bone = recoverySubject?.getObjectByName(needle.bone);
-      const fallback = new THREE.Vector3(RECOVERY_BED.x - this.gantry.position.x + (i % 2 ? .32 : -.32), 2.32 - this.gantry.position.y,
+      const fallback = new THREE.Vector3(RECOVERY_BED.x - this.gantry.position.x + (i % 2 ? .32 : -.32), 1.32 - this.gantry.position.y,
         RECOVERY_BED.z - this.gantry.position.z - 2.1 + Math.floor(i / 4) * 2.1);
-      const target = bone ? this.gantry.worldToLocal(bone.localToWorld(needle.offset.clone())) : fallback;
+      const target = bone ? this.gantry.worldToLocal(bone.localToWorld((this.skinContacts.get(i) ?? needle.offset).clone())) : fallback;
       const insert = active ? THREE.MathUtils.smoothstep(t, 2.1 + i % 4 * .12, 3.25 + i % 4 * .12)
-        * (1 - THREE.MathUtils.smoothstep(t, 6.75 + Math.floor(i / 4) * .08, 8.15 + Math.floor(i / 4) * .08)) : 0;
+        * (1 - THREE.MathUtils.smoothstep(t, 6.1 + Math.floor(i / 4) * .08, 6.8 + Math.floor(i / 4) * .08)) : 0;
       const anchor = new THREE.Vector3(target.x, needle.anchorY, target.z);
       const tip = anchor.clone().add(new THREE.Vector3(0, -.72, 0)).lerp(target, insert);
       const direction = tip.clone().sub(anchor); const length = direction.length();
       needle.hub.position.set(anchor.x, -.35, anchor.z);
+      const railX = anchor.x < 0 ? -2.45 : 2.45;
+      needle.support.position.set((railX + anchor.x) / 2, -.08, anchor.z);
+      needle.support.scale.x = Math.abs(railX - anchor.x);
       needle.shaft.position.copy(anchor).add(tip).multiplyScalar(.5);
       needle.shaft.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize()); needle.shaft.scale.y = length;
       needle.tip.position.copy(tip); needle.shaft.visible = needle.tip.visible = Boolean(recovery);

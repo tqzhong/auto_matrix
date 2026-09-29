@@ -1,7 +1,7 @@
 import { RELOADED, RELOADED_FINALE } from '@auto_matrix/shared';
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, RESCUE, RESCUE_LOADOUTS, GOVERNMENT_RESCUE, AIR_RESCUE, MATRIX_ESCAPE, THE_ONE, SMITH_FINALE, OPENING_HOTEL, OPENING_ESCAPE, PILL_ROOM, PILL_TIMING, MIRROR_TOUCH, MIRROR_SEAT, MIRROR_TRINITY, MIRROR_TIMING, DOCK_GUNNERY, awakeningPose, mirrorSilver, filmReflections, filmStepActionReady, filmStepPosition, filmEntry, filmPosition, groundHeight, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, newGarageEscape, stepGarageEscape, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, RESCUE, RESCUE_LOADOUTS, GOVERNMENT_RESCUE, AIR_RESCUE, MATRIX_ESCAPE, THE_ONE, SMITH_FINALE, OPENING_HOTEL, OPENING_ESCAPE, PILL_ROOM, PILL_TIMING, MIRROR_TOUCH, MIRROR_SEAT, MIRROR_TRINITY, MIRROR_TIMING, DOCK_GUNNERY, awakeningPose, recoveryBodyPose, mirrorSilver, filmReflections, filmStepActionReady, filmStepPosition, filmEntry, filmPosition, groundHeight, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, newGarageEscape, stepGarageEscape, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -1259,7 +1259,11 @@ test('recovery begins on the medical bed, waits for Neo, and resumes its saved p
   h.players.step(.5, false, h.tick()); assert.equal(state.awakening!.elapsed, elapsed, 'pause freezes the needles and body pose');
   h.sandbox.restore(saved); h.players.release('film-player', h.tick()); h.advance(30);
   assert.equal(h.sandbox.life.film.state!.awakening!.elapsed, elapsed, 'disconnection cannot finish recovery');
+  h.world.agents.get('neo')!.rotation = Math.PI; // A pre-turning-pose save may still contain the former bed orientation.
   h.players.possess('film-player', 'neo', h.tick());
+  const resumedPose = awakeningPose(h.sandbox.life.film.state!.awakening);
+  assert.equal(h.actor().rotation, recoveryBodyPose(elapsed).yaw, 'reconnection restores the bed-side orientation');
+  assert.equal(h.actor().position.y, FILM_SETS.film_neb_deck.center.y + resumedPose.y, 'the lowered recovery bed also restores the patient height');
   assert.match(h.players.act('film-player', 'attack', h.tick()), /演出/);
   for (let i = 0; i < 120 && h.sandbox.life.film.state!.step === 0; i++) h.players.step(.1, true, h.tick());
   assert.equal(h.sandbox.life.film.state!.step, 1);

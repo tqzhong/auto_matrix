@@ -47,11 +47,13 @@ export function mirrorGuideProgress(point: { x: number; z: number }): number {
 export const POD_WATER_DROP = 18;
 export const POD_RESCUE = { immersion: 1.8, descend: 1, secured: 1.65, hoisted: 5, cleared: 7, closed: 7.8, lowered: 8.6, release: 9.4, fade: 13,
   hatch: { x: 0, y: 0, z: 12, half: 2.8 } } as const;
-export const RECOVERY_BED = { x: -7, z: -22, standingX: -3.6 } as const;
+export const RECOVERY_BED = { x: -7, z: -22, standingX: -3.6, surface: 1.11 } as const;
+export const RECOVERY_CABINET = { x: -15.6, y: 3.4, z: -22, width: 6.2, height: 6.5, depth: 10.5 } as const;
+export const RECOVERY_FRAME = { halfWidth: 2.45, halfLength: 3.35, height: 12.6, post: .14 } as const;
 export const RECOVERY_CREW = {
   morpheus: { start: { x: -2.4, z: -18.5, yaw: -2.45 }, side: 1.32 },
   trinity: { start: { x: -10.5, z: -15.5, yaw: 2.7 }, side: -1.32 },
-  approach: 7.4, contact: 8.9, release: 11.45,
+  approach: 6.8, contact: 10.35, release: 11.7,
 } as const;
 export const CONSTRUCT_REVEAL = { neo: { x: 4.4, z: -6.2, yaw: Math.PI }, morpheus: { x: -4.4, z: -6.2, yaw: Math.PI }, television: { x: 0, z: -16 } } as const;
 export const DESERT_REVEAL = { neo: { x: 1.8, z: -28, yaw: Math.PI }, morpheus: { x: -3.2, z: -26.8, yaw: Math.PI }, towersZ: -70 } as const;
@@ -71,6 +73,13 @@ export function podRescuePose(elapsed: number): { descend: number; grip: number;
     fade: smooth((elapsed - POD_RESCUE.fade) / (AWAKENING_SECONDS.rescue - POD_RESCUE.fade)) };
 }
 
+export function recoveryBodyPose(elapsed: number) {
+  const sit = smooth((elapsed - 7) / 1.4), turn = smooth((elapsed - 8.4) / .8);
+  const scoot = smooth((elapsed - 9.2) / .65), lower = smooth((elapsed - 9.85) / .65), rise = smooth((elapsed - 10.5) / 1.2);
+  return { sit, turn, lower, rise, x: RECOVERY_BED.x + scoot + (RECOVERY_BED.standingX - RECOVERY_BED.x - 1) * rise, y: rise - 1,
+    yaw: Math.PI - Math.PI / 2 * turn };
+}
+
 export function recoveryCrewPose(gesture: RecoveryCrewGesture): { x: number; z: number; yaw: number; support: number } {
   if (gesture.boarding) {
     const side = gesture.role === 'morpheus' ? 1 : -1;
@@ -80,13 +89,16 @@ export function recoveryCrewPose(gesture: RecoveryCrewGesture): { x: number; z: 
   }
   const config = RECOVERY_CREW[gesture.role];
   const approach = smooth((gesture.elapsed - RECOVERY_CREW.approach) / (RECOVERY_CREW.contact - RECOVERY_CREW.approach));
-  const standing = smooth((gesture.elapsed - 9) / 3);
-  const neoX = RECOVERY_BED.x + (RECOVERY_BED.standingX - RECOVERY_BED.x) * standing;
-  const x = neoX + config.side;
-  const z = RECOVERY_BED.z + .95;
-  const support = smooth((gesture.elapsed - 8.45) / .6) * (1 - smooth((gesture.elapsed - RECOVERY_CREW.release) / .45));
-  return { x: config.start.x + (x - config.start.x) * approach, z: config.start.z + (z - config.start.z) * approach,
-    yaw: config.start.yaw + (Math.atan2(neoX - x, RECOVERY_BED.z - z) - config.start.yaw) * approach, support };
+  const neoX = recoveryBodyPose(gesture.elapsed).x;
+  const targetX = Math.max(RECOVERY_BED.x + 2.25, neoX + .65), targetZ = RECOVERY_BED.z + config.side * .75;
+  // Reach the open aisle before approaching the patient; neither helper may walk through the bed.
+  const first = Math.min(1, approach / .45), second = clamp((approach - .45) / .4), third = clamp((approach - .85) / .15);
+  const x = gesture.role === 'morpheus' ? config.start.x + (targetX - config.start.x) * approach
+    : config.start.x + (-2.1 - config.start.x) * first + (targetX + 2.1) * third;
+  const z = gesture.role === 'morpheus' ? config.start.z + (targetZ - config.start.z) * approach
+    : config.start.z + (-17.4 - config.start.z) * first - 6.8 * second + (targetZ + 24.2) * third;
+  const support = smooth((gesture.elapsed - 10.35) / .6) * (1 - smooth((gesture.elapsed - RECOVERY_CREW.release) / .3));
+  return { x, z, yaw: config.start.yaw + (Math.atan2(neoX - x, RECOVERY_BED.z - z) - config.start.yaw) * approach, support };
 }
 
 export function awakeningLocked(journey: FilmJourney): boolean {
@@ -126,14 +138,14 @@ export function awakeningPose(beat?: AwakeningBeat): { x: number; y: number; z: 
                   : beat.elapsed < POD_RESCUE.fade ? 'Morpheus：欢迎来到真实世界，Neo。' : 'Neo 失去意识。船员将他送往医疗舱。' };
   }
   if (beat?.kind === 'recovery') {
-    const standing = smooth((beat.elapsed - 9) / 3);
+    const body = recoveryBodyPose(beat.elapsed);
     const text = beat.started === false ? '陌生的空气进入肺部。转动视角看清医疗舱，按 G 示意船员开始恢复肌肉。'
-      : beat.elapsed < 2.2 ? '眼睛第一次适应真实世界的光。Morpheus 和 Trinity 就在床边。'
+      : beat.elapsed < 2.2 ? '眼睛第一次适应真实世界的光。船员正在启动肌肉恢复设备。'
       : beat.elapsed < 7 ? '针疗臂依次刺激从未真正使用过的肌肉。旧插口仍留在皮肤与颈后。'
       : beat.elapsed < 9 ? 'Neo 抬起手，确认眼前的身体属于自己。'
       : beat.elapsed < 11.4 ? '船员扶稳医疗床。Neo 坐起，把双脚放到冰冷的甲板上。'
       : 'Neo 在床边站稳。前方通道通向核心连接区。';
-    return { x: RECOVERY_BED.x + (RECOVERY_BED.standingX - RECOVERY_BED.x) * standing, y: 0, z: RECOVERY_BED.z, pose: 'recover', text };
+    return { x: body.x, y: body.y, z: RECOVERY_BED.z, pose: 'recover', text };
   }
   if (beat?.kind === 'construct') {
     const text = beat.started === false ? '白色没有边界。两把旧皮椅与一台电视像被直接写进空间。按 G 请 Morpheus 开始说明。'

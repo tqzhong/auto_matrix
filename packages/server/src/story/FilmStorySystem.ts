@@ -3,7 +3,7 @@ import { ReloadedOpeningSystem } from './ReloadedOpeningSystem.js';
 import { ReloadedCatchSystem } from './ReloadedCatchSystem.js';
 import { newReloaded, reloadedLocked, ZION_CAST } from '@auto_matrix/shared';
 import { catchLocked, newCatch } from '@auto_matrix/shared';
-import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_CAST, GRID_WINDOW_SECONDS, GRID_REROUTE_SECONDS, GRID_HACK_SECONDS, ARCHITECT_DOOR_SECONDS, RELOADED_FINALE, BANE_ENCOUNTER, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, filmReflections, CHARACTERS, LOCATIONS, NEO_CHAPTERS, filmCharacterFates, filmEntry, filmPosition, filmStepPosition, filmStepNear, locationEntrance, distance, playerBlocked, newFreewayRide, stepFreeway, OFFICE_LADDER, awakeningLocked, awakeningPose, AWAKENING_SECONDS, MIRROR_TOUCH, MIRROR_TIMING, MIRROR_GUIDE_LENGTH, mirrorGuidePose, mirrorGuideProgress, mirrorSilver, recoveryCrewPose, CONSTRUCT_REVEAL, DESERT_REVEAL, oracleActing,
+import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_CAST, GRID_WINDOW_SECONDS, GRID_REROUTE_SECONDS, GRID_HACK_SECONDS, ARCHITECT_DOOR_SECONDS, RELOADED_FINALE, BANE_ENCOUNTER, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, filmReflections, CHARACTERS, LOCATIONS, NEO_CHAPTERS, filmCharacterFates, filmEntry, filmPosition, filmStepPosition, filmStepNear, locationEntrance, distance, playerBlocked, newFreewayRide, stepFreeway, OFFICE_LADDER, awakeningLocked, awakeningPose, AWAKENING_SECONDS, MIRROR_TOUCH, MIRROR_TIMING, MIRROR_GUIDE_LENGTH, mirrorGuidePose, mirrorGuideProgress, mirrorSilver, recoveryBodyPose, recoveryCrewPose, CONSTRUCT_REVEAL, DESERT_REVEAL, oracleActing,
   AMBUSH_REWRITE, AMBUSH_SECONDS, AMBUSH_SEALS, OFFICE_CONTACT, OFFICE_WINDOW, OFFICE_CROSSING_SECONDS, officeCrossingPose, windowCrossing, phoneLocked, heldPhone, windowOpening, pillLocked, pillRoot, PILL_ROOM, PILL_TIMING, trainingLocked, trainingRoot, trainingText, TRAINING_SECONDS,
   lobbyLocked, meleeReach, groundHeight, MIRROR_SEAT, MIRROR_TRINITY, type DriveInput, type AgentState, type FilmScene, type FilmStep, type GridOperation, type SandboxState, type SandboxThreat, type TrainingRole, type CombatImpact } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
@@ -3004,7 +3004,7 @@ export class FilmStorySystem {
     if (wasPlaying) beat.elapsed = Math.min(AWAKENING_SECONDS[beat.kind], beat.elapsed + Math.min(.1, dt));
     const pose = awakeningPose(beat); const previous = agent.position;
     agent.position = filmPosition(this.scene!.set, pose.x, pose.z); agent.position.y += pose.y;
-    agent.rotation = beat?.kind === 'construct' ? CONSTRUCT_REVEAL.neo.yaw : beat?.kind === 'desert' ? DESERT_REVEAL.neo.yaw : Math.PI;
+    agent.rotation = beat?.kind === 'recovery' ? recoveryBodyPose(beat.elapsed).yaw : beat?.kind === 'construct' ? CONSTRUCT_REVEAL.neo.yaw : beat?.kind === 'desert' ? DESERT_REVEAL.neo.yaw : Math.PI;
     agent.velocity = dt > 0 ? { x: beat?.kind === 'mirror' ? (agent.position.x - previous.x) / dt : 0,
       y: (agent.position.y - previous.y) / dt, z: beat?.kind === 'mirror' ? (agent.position.z - previous.z) / dt : 0 } : { x: 0, y: 0, z: 0 };
     agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, filmPose: pose.pose,

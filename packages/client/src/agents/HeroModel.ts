@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
-import { APARTMENT, MORNING, FILM_SETS, OFFICE_WINDOW, officeWindowPose, officeCrossingPose, pillPose, lafayetteKnockPose, lafayetteWelcomePose, recoveryCrewPose, podRescuePose, farewellPose } from '@auto_matrix/shared';
+import { APARTMENT, MORNING, FILM_SETS, OFFICE_WINDOW, officeWindowPose, officeCrossingPose, pillPose, lafayetteKnockPose, lafayetteWelcomePose, recoveryBodyPose, recoveryCrewPose, podRescuePose, farewellPose } from '@auto_matrix/shared';
 import type { advanceMotion, MotionInput, MotionState } from './CharacterMotion.js';
 
 import { PillPerformance } from './PillPerformance.js';
@@ -670,15 +670,14 @@ export class HeroModels {
     }
     if (input.recovery !== undefined) {
       const t = input.recovery;
-      const lie = 1 - THREE.MathUtils.smoothstep(t, 7, 8.6);
-      const seated = THREE.MathUtils.smoothstep(t, 7.2, 8.8) * (1 - THREE.MathUtils.smoothstep(t, 9.5, 11.7));
-      pelvis.rotation.x = -Math.PI / 2 * lie - .18 * seated;
-      bone('spine').rotation.x += .16 * seated;
-      bone('chest').rotation.x += .22 * seated;
+      const body = recoveryBodyPose(t); const lie = 1 - body.sit, seated = body.sit * (1 - body.rise);
+      pelvis.rotation.x = -Math.PI / 2 * lie;
+      bone('spine').rotation.x += .08 * seated;
+      bone('chest').rotation.x += .12 * seated;
       bone('head').rotation.x += .12 * lie - .18 * seated;
       for (const [i, side] of ['R', 'L'].entries()) {
-        bone('hip_' + side).rotation.x = THREE.MathUtils.lerp(bone('hip_' + side).rotation.x, -1.35, seated);
-        bone('knee_' + side).rotation.x = THREE.MathUtils.lerp(bone('knee_' + side).rotation.x, 1.48, seated);
+        bone('hip_' + side).rotation.x = THREE.MathUtils.lerp(bone('hip_' + side).rotation.x, -Math.PI / 2, seated);
+        bone('knee_' + side).rotation.x = THREE.MathUtils.lerp(bone('knee_' + side).rotation.x, Math.PI / 2 * body.lower, seated);
         const tremor = t > 2 && t < 7 ? Math.sin(t * 7 + i * 2.1) * .025 : 0;
         bone('shoulder_' + side).rotation.set(-.14 - seated * .22 + tremor, 0, (i ? 1 : -1) * (.32 * lie + .1));
         bone('elbow_' + side).rotation.x = -.24 - seated * .78;

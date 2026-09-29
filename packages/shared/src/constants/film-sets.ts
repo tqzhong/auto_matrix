@@ -9,7 +9,7 @@ import { APARTMENT_FURNITURE, APARTMENT_ROOM } from './apartment.js';
 import { CLUB_OBSTACLES } from './club.js';
 import { PILL_ROOM } from './pills.js';
 import { INTERROGATION_ROOM } from './interrogation.js';
-import { MIRROR_SEAT, MIRROR_FRAME, POD_WATER_DROP, RECOVERY_BED } from './awakening.js';
+import { MIRROR_SEAT, MIRROR_FRAME, POD_WATER_DROP, RECOVERY_BED, RECOVERY_CABINET, RECOVERY_FRAME } from './awakening.js';
 import { AMBUSH_WALLS } from './ambush.js';
 import { MEETING_CAR, MEETING_DESTINATION, meetingCarPose, meetingRoadContains } from './meeting.js';
 import { LAFAYETTE, hotelContains, hotelBlocked, hotelFloor } from './lafayette.js';
@@ -203,7 +203,10 @@ export function filmObstacles(set: FilmSet, movingMeetingCar = false): FilmObsta
     { x: 12, z: 10, width: 8, depth: 3, height: 4.8 },
   ];
   if (set.id === 'film_neb_deck') return [
-    { x: RECOVERY_BED.x, z: RECOVERY_BED.z, width: 3.2, depth: 6.8, height: 2.1 },
+    { x: RECOVERY_BED.x, z: RECOVERY_BED.z, width: 3.2, depth: 6.8, height: RECOVERY_BED.surface },
+    { ...RECOVERY_CABINET, height: RECOVERY_CABINET.y + RECOVERY_CABINET.height / 2 },
+    ...[-1, 1].flatMap(side => [-1, 1].map(end => ({ x: RECOVERY_BED.x + side * RECOVERY_FRAME.halfWidth,
+      z: RECOVERY_BED.z + end * RECOVERY_FRAME.halfLength, width: RECOVERY_FRAME.post, depth: RECOVERY_FRAME.post, height: RECOVERY_FRAME.height }))),
     ...[-1, 1].flatMap(side => [-5, 6].map(z => ({ x: side * 6.5, z, width: 3.2, depth: 3.8, height: 3.2 }))),
     { x: -8, z: 22, width: 10, depth: 4.5, height: 2.4 },
   ];

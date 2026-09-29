@@ -7,12 +7,13 @@ import { lafayetteWelcomeCamera } from './LafayetteWelcomeCamera.js';
 import type { MotionInput } from '../agents/CharacterMotion.js';
 import { AIR_RESCUE, governmentPose, airRescuePose, airRescueRoot, interrogationPose, meetingPose, meetingCarPose, meetingCarPoint, MEETING_TIMING } from '@auto_matrix/shared';
 import { officeClothing } from '@auto_matrix/shared';
-import { MORNING, POD_RESCUE, podRescuePose, recoveryCrewPose } from '@auto_matrix/shared';
+import { MORNING, POD_RESCUE, podRescuePose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
 
 export class PlayerControls {
   id: string | null = null;
   firstPerson = false;
   private inOfficeLift = false;
+  private recoveryYaw: number | undefined;
   private keys = new Set<string>();
   private yaw = 0;
   private movementYaw = 0;
@@ -88,6 +89,7 @@ export class PlayerControls {
     this.meetingYaw = undefined; this.welcomeShot = undefined; this.performing = false; this.phoneExit = false;
     this.bridgeCaught = undefined;
     this.id = state.id; this.position = { ...state.position }; this.yaw = state.rotation;
+    this.recoveryYaw = typeof state.currentAction?.parameters.recovery === 'number' ? recoveryBodyPose(state.currentAction.parameters.recovery).yaw : undefined;
     this.movementYaw = this.yaw; this.movementForward = 0; this.movementRight = 0;
     this.lastLook = -1000; this.dragging = false;
     this.facing = state.rotation; this.cameraReady = false; this.motion.attack = undefined;
@@ -396,6 +398,11 @@ export class PlayerControls {
     this.motion.mirrorBeat = state.currentAction?.parameters.mirrorBeat as number | undefined;
     this.motion.helDanceDoor = state.currentAction?.parameters.helDanceDoor as number | undefined;
     this.motion.recovery = state.currentAction?.parameters.recovery as number | undefined;
+    if (this.motion.recovery !== undefined) {
+      const yaw = recoveryBodyPose(this.motion.recovery).yaw;
+      if (this.recoveryYaw !== undefined) this.yaw += yaw - this.recoveryYaw;
+      this.recoveryYaw = yaw;
+    } else this.recoveryYaw = undefined;
     this.motion.reveal = state.currentAction?.parameters.reveal as MotionInput['reveal'];
     this.motion.training = state.currentAction?.parameters.training as MotionInput['training'];
     this.motion.workday = state.currentAction?.parameters.workday as MotionInput['workday'];
@@ -1037,16 +1044,18 @@ export class PlayerControls {
       }
     } else if (this.motion.recovery !== undefined) {
       const rise = THREE.MathUtils.smoothstep(this.motion.recovery, 7, 11.7);
+      const body = recoveryBodyPose(this.motion.recovery);
       if (this.firstPerson) {
-        const eye = new THREE.Vector3(0, THREE.MathUtils.lerp(1.7, 3.13, rise), THREE.MathUtils.lerp(-1.78, .32, rise));
+        const eye = new THREE.Vector3(0, THREE.MathUtils.lerp(1.7, 3, body.sit) + .13 * body.rise, THREE.MathUtils.lerp(-1.78, .18, body.sit));
         eye.applyAxisAngle(new THREE.Vector3(0, 1, 0), state.rotation).add(new THREE.Vector3(this.position.x, this.position.y, this.position.z));
         this.camera.position.copy(eye);
         const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
         const lying = forward.clone().multiplyScalar(.24).add(new THREE.Vector3(0, .97, 0)).normalize();
-        forward.lerp(lying, 1 - rise).normalize(); this.camera.lookAt(eye.clone().add(forward));
+        forward.lerp(lying, 1 - body.sit).normalize(); this.camera.lookAt(eye.clone().add(forward));
       } else {
-        const ideal = new THREE.Vector3(this.position.x + THREE.MathUtils.lerp(3, 1.5, rise), this.position.y + THREE.MathUtils.lerp(4, 4.8, rise), this.position.z + THREE.MathUtils.lerp(6, 5, rise));
-        const focus = new THREE.Vector3(this.position.x, this.position.y + THREE.MathUtils.lerp(2.55, 3.05, rise), this.position.z);
+        const bedside = THREE.MathUtils.smoothstep(this.motion.recovery, 6.8, 8.4);
+        const ideal = new THREE.Vector3(this.position.x + THREE.MathUtils.lerp(3, -3.4, bedside), this.position.y + THREE.MathUtils.lerp(4, 5.5, bedside), this.position.z + THREE.MathUtils.lerp(6, 7.5, bedside));
+        const focus = new THREE.Vector3(this.position.x, this.position.y + THREE.MathUtils.lerp(1.55, 2.05, rise), this.position.z);
         if (resetCamera) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-7 * delta));
         this.camera.lookAt(focus);
       }

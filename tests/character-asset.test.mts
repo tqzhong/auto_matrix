@@ -1,4 +1,3 @@
-import { recoveryCrewPose } from '@auto_matrix/shared';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
@@ -9,7 +8,7 @@ import { advanceMotion, newMotion, type MotionInput } from '../packages/client/s
 import { PhoneModel } from '../packages/client/src/agents/PhoneModel.js';
 import { OfficeSetRenderer } from '../packages/client/src/engine/OfficeSetRenderer.js';
 import { NebDeckRenderer } from '../packages/client/src/engine/NebDeckRenderer.js';
-import { APARTMENT, FILM_SETS, PILL_ROOM, PILL_TIMING, RECOVERY_BED, awakeningPose, farewellPose, filmPosition, pillRoot, recoveryCrewPose, type PillGesture, OFFICE_WINDOW, OFFICE_LEDGE_OFFSET, officeWindowPose, officeCrossingPose, type FilmJourney } from '@auto_matrix/shared';
+import { APARTMENT, FILM_SETS, PILL_ROOM, PILL_TIMING, RECOVERY_BED, awakeningPose, farewellPose, filmPosition, pillRoot, recoveryBodyPose, recoveryCrewPose, type PillGesture, OFFICE_WINDOW, OFFICE_LEDGE_OFFSET, officeWindowPose, officeCrossingPose, type FilmJourney } from '@auto_matrix/shared';
 import { INTERROGATION_ROOM, interrogationRoot } from '@auto_matrix/shared';
 import { MEETING_CAR, meetingRoot, meetingCarPose } from '@auto_matrix/shared';
 import { OFFICE_WORKDAY, officeRecipientRoot, officeCourierRoot, officeClipboardPoint, officePenPoint } from '@auto_matrix/shared';
@@ -702,30 +701,43 @@ test('legacy rigs without the full patient asset restore their clothing after re
   } finally { models.dispose(); }
 });
 
-test('Morpheus and Trinity place their supporting hands on Neo during recovery', async () => {
-  const [neo, office, morpheus, trinity] = await Promise.all([loadGeometry('neo'), loadGeometry('neo-office'), loadGeometry('morpheus'), loadGeometry('trinity')]);
+test('Morpheus and Trinity support Neo without placing their bodies through the medical bed', async () => {
   const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
-  (models as unknown as { load: (id: string) => Promise<typeof morpheus> }).load = async id => id === 'neo' ? neo : id === 'neo-office' ? office : id === 'trinity' ? trinity : morpheus;
+  (models as unknown as { load: typeof loadGeometry }).load = loadGeometry;
   try {
-    const gaps: { role: string; gap: number }[] = [];
-    const elapsed = 9.75; const neoRig = (await models.create('neo'))!; const neoRoot = awakeningPose({ kind: 'recovery', elapsed, started: true });
-    neoRig.root.position.set(neoRoot.x, 0, neoRoot.z); neoRig.root.rotation.y = Math.PI;
-    const neoMotion = newMotion(); const neoInput = { speed: 0, grounded: false, verticalVelocity: 0, turn: 0, realWorld: true,
-      performance: 'recover' as const, recovery: elapsed };
-    models.animate(neoRig, advanceMotion(neoMotion, neoInput, 0), neoMotion, neoInput, 0); neoRig.root.updateMatrixWorld(true);
-    for (const role of ['morpheus', 'trinity'] as const) {
-      const rig = (await models.create(role))!; const root = recoveryCrewPose({ role, elapsed });
-      rig.root.position.set(root.x, 0, root.z); rig.root.rotation.y = root.yaw; rig.root.updateMatrixWorld(true);
-      const side = role === 'morpheus' ? 'R' : 'L';
-      const neoShoulder = neoRig.bones.get(role === 'morpheus' ? 'shoulder_R' : 'shoulder_L')!;
-      const target = neoShoulder.localToWorld(new THREE.Vector3(0, -.16, .06));
-      const motion = newMotion(); const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true,
-        recoveryCrew: { role, elapsed, target } };
-      models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
-      const wrist = rig.bones.get(`wrist_${side}`)!.getWorldPosition(new THREE.Vector3());
-      gaps.push({ role, gap: wrist.distanceTo(target) });
+    const neoRig = (await models.create('neo'))!;
+    const helpers = { morpheus: (await models.create('morpheus'))!, trinity: (await models.create('trinity'))! };
+    const point = new THREE.Vector3();
+    for (const elapsed of [9.3, 10.35, 10.95, 11.3, 11.6]) {
+      const neoRoot = awakeningPose({ kind: 'recovery', elapsed, started: true });
+      neoRig.root.position.set(neoRoot.x, neoRoot.y, neoRoot.z); neoRig.root.rotation.y = recoveryBodyPose(elapsed).yaw;
+      const neoMotion = newMotion(); const neoInput = { speed: 0, grounded: false, verticalVelocity: 0, turn: 0, realWorld: true,
+        performance: 'recover' as const, recovery: elapsed };
+      models.animate(neoRig, advanceMotion(neoMotion, neoInput, 0), neoMotion, neoInput, 0); neoRig.root.updateMatrixWorld(true);
+      for (const role of ['morpheus', 'trinity'] as const) {
+        const rig = helpers[role]; const root = recoveryCrewPose({ role, elapsed });
+        rig.root.position.set(root.x, 0, root.z); rig.root.rotation.y = root.yaw; rig.root.updateMatrixWorld(true);
+        const side = role === 'morpheus' ? 'R' : 'L';
+        const target = neoRig.bones.get(`shoulder_${side}`)!.localToWorld(new THREE.Vector3(0, -.16, .06));
+        const motion = newMotion(); const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true,
+          recoveryCrew: { role, elapsed, target } };
+        models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
+        if (elapsed >= 10.95) {
+          const gap = rig.bones.get(`wrist_${side}`)!.getWorldPosition(new THREE.Vector3()).distanceTo(target);
+          assert.ok(gap < .08, `${role} misses the supported arm by ${gap} at ${elapsed}s`);
+        }
+        for (const { mesh } of rig.wardrobe) {
+          if (!(mesh instanceof THREE.SkinnedMesh) || !mesh.visible) continue;
+          mesh.updateMatrixWorld(true); mesh.skeleton.update();
+          for (let index = 0; index < mesh.geometry.attributes.position.count; index++) {
+            mesh.getVertexPosition(index, point).applyMatrix4(mesh.matrixWorld);
+            const x = Math.abs(point.x - RECOVERY_BED.x), z = Math.abs(point.z - RECOVERY_BED.z);
+            assert.ok(!(x < 1.425 && z < 3.175 && point.y < RECOVERY_BED.surface - .04)
+              && !(x < 1.575 && z < 3.475 && point.y < .69), `${role}'s ${mesh.name} penetrates the bed at ${elapsed}s`);
+          }
+        }
+      }
     }
-    assert.ok(gaps.every(result => result.gap < .08), `supporting hands miss Neo (${gaps.map(result => `${result.role}: ${result.gap}`).join(', ')})`);
   } finally { models.dispose(); }
 });
 
@@ -756,13 +768,12 @@ test('Neo and Trinity make physical hand and face contact during the Logos farew
   } finally { models.dispose(); }
 });
 
-test('the articulated recovery needles meet the shipped Neo skeleton', async () => {
-  const [neo, office] = await Promise.all([loadGeometry('neo'), loadGeometry('neo-office')]);
+test('the recovery needles stop at the shipped patient skin instead of penetrating to the bones', async () => {
   const models = new HeroModels(new THREE.Texture(), new THREE.Texture()); const set = new THREE.Group(); const medical = new NebDeckRenderer(set);
-  (models as unknown as { load: (id: string) => Promise<typeof neo> }).load = async id => id === 'neo-office' ? office : neo;
+  (models as unknown as { load: typeof loadGeometry }).load = loadGeometry;
   try {
     const elapsed = 4; const rig = (await models.create('neo'))!; const root = awakeningPose({ kind: 'recovery', elapsed, started: true });
-    rig.root.position.set(root.x, -1, root.z); rig.root.rotation.y = Math.PI;
+    rig.root.position.set(root.x, root.y, root.z); rig.root.rotation.y = recoveryBodyPose(elapsed).yaw;
     const motion = newMotion(); const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true,
       performance: 'recover' as const, recovery: elapsed };
     models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
@@ -770,12 +781,40 @@ test('the articulated recovery needles meet the shipped Neo skeleton', async () 
       checkpoint: filmPosition('film_neb_deck', RECOVERY_BED.x, RECOVERY_BED.z), reflections: {}, lastText: '',
       awakening: { kind: 'recovery', elapsed, started: true } } satisfies FilmJourney;
     medical.update(journey, elapsed, rig.root); set.updateMatrixWorld(true);
-    for (const [index, boneName, offset] of [[0, 'chest', [-.24, .08, .06]], [6, 'hip_L', [0, .08, .04]], [10, 'ankle_L', [0, .06, .04]]] as const) {
-      const target = rig.bones.get(boneName)!.localToWorld(new THREE.Vector3(...offset));
+    const body = rig.wardrobe.find(part => part.mesh.userData.patientBody)!.mesh as THREE.SkinnedMesh;
+    body.updateMatrixWorld(true); body.skeleton.update(); body.computeBoundingBox(); body.computeBoundingSphere();
+    for (let index = 0; index < 12; index++) {
       const tip = set.getObjectByName(`neb-medical-needle-tip-${index}`)!.getWorldPosition(new THREE.Vector3());
-      assert.ok(tip.distanceTo(target) < .035, `${boneName} needle misses the posed body: ${tip.distanceTo(target)}`);
+      const skin = new THREE.Raycaster(new THREE.Vector3(tip.x, 10, tip.z), new THREE.Vector3(0, -1, 0)).intersectObject(body)[0];
+      assert.ok(skin, `needle ${index} must target the actual skin`);
+      assert.ok(Math.abs(skin.point.y - tip.y) < .035, `needle ${index} penetrates ${skin.point.y - tip.y} units below the skin`);
     }
   } finally { medical.dispose(); models.dispose(); }
+});
+
+test('Neo keeps his legs above the mattress until they clear the side of the recovery bed', async () => {
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: typeof loadGeometry }).load = loadGeometry;
+  try {
+    const rig = (await models.create('neo'))!; const point = new THREE.Vector3();
+    const body = rig.wardrobe.find(part => part.mesh.userData.patientBody)!.mesh as THREE.SkinnedMesh;
+    for (const elapsed of [0, 7.5, 8, 8.6, 9.2, 9.7, 10.1, 10.4, 10.8, 11.1, 11.6]) {
+      const root = awakeningPose({ kind: 'recovery', elapsed, started: true });
+      rig.root.position.set(root.x, root.y, root.z); rig.root.rotation.y = recoveryBodyPose(elapsed).yaw;
+      const motion = newMotion(); const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true,
+        performance: 'recover' as const, recovery: elapsed };
+      models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0);
+      rig.root.updateMatrixWorld(true); body.updateMatrixWorld(true); body.skeleton.update();
+      let penetration = 0;
+      for (let index = 0; index < body.geometry.attributes.position.count; index++) {
+        body.getVertexPosition(index, point).applyMatrix4(body.matrixWorld);
+        const x = Math.abs(point.x - RECOVERY_BED.x), z = Math.abs(point.z - RECOVERY_BED.z);
+        if (x < 1.425 && z < 3.175) penetration = Math.max(penetration, RECOVERY_BED.surface - point.y);
+        if (x < 1.575 && z < 3.475) penetration = Math.max(penetration, .73 - point.y);
+      }
+      assert.ok(penetration < .04, `at ${elapsed}s the patient penetrates the bed by ${penetration} units`);
+    }
+  } finally { models.dispose(); }
 });
 
 test('Trinity resumes in her club costume and restores her jacket after leaving', async () => {
