@@ -1337,6 +1337,7 @@ export class FilmStorySystem {
     if (guide.controller) { state.lastText = 'Trinity 暂时无法带路，楼梯和当前进度已保留。'; return; }
     const center = FILM_SETS.film_lafayette.center;
     const local = { x: agent.position.x - center.x, y: agent.position.y - center.y + LAFAYETTE.upper, z: agent.position.z - center.z };
+    if (!hotel.entered) hotel.progress = Math.min(hotel.progress, HOTEL_DOOR_PROGRESS);
     if (hotel.door !== undefined) hotel.door = Math.min(LAFAYETTE.doorSeconds, hotel.door + dt);
     if (hotel.knock !== undefined && hotel.door === undefined) {
       hotel.knock = Math.min(LAFAYETTE_KNOCK_SECONDS, hotel.knock + dt);

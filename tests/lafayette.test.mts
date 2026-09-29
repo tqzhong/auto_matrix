@@ -69,6 +69,26 @@ test('Trinity route stays on the same steps and landings as the player', () => {
   assert.equal(groundHeight(filmPosition('film_lafayette'), true), room.center.y);
 });
 
+test('Trinity waits beside Neo at 1313 without stacking their bodies in the doorway shot', () => {
+  const guide = hotelRoutePose(HOTEL_DOOR_PROGRESS);
+  const neo = { x: 22.5, z: 0 };
+  assert.ok(Math.abs(guide.z - neo.z) > .7, 'the guide needs a separate screen-space silhouette beside the door');
+  assert.ok(Math.hypot(guide.x - neo.x, guide.z - neo.z) > 2.2, 'Neo and Trinity need room to turn and knock');
+  assert.ok(Math.hypot(guide.x - LAFAYETTE.door.x, guide.z - LAFAYETTE.door.z) < 4, 'Trinity must still wait close enough to introduce the room');
+  assert.equal(playerBlocked(filmPosition('film_lafayette', guide.x, guide.z), true), false);
+});
+
+test('an older 1313 doorstep save keeps Trinity at the new waiting point', () => {
+  const h = setup(); h.command('act');
+  h.neo.position = filmPosition('film_lafayette', 22.5, 0);
+  h.state().hotel!.progress = HOTEL_DOOR_PROGRESS + .8;
+  h.frames(.5);
+  assert.equal(h.state().hotel!.progress, HOTEL_DOOR_PROGRESS);
+  const guide = h.world.agents.get('trinity')!;
+  const point = hotelRoutePose(HOTEL_DOOR_PROGRESS);
+  assert.deepEqual(guide.position, filmPosition('film_lafayette', point.x, point.z));
+});
+
 test('Trinity walks around the 1313 furniture before using the adjacent door', () => {
   const furniture = [
     { name: 'desk chair', x: 8, z: 5, halfWidth: 1.35, halfDepth: 1.65 },

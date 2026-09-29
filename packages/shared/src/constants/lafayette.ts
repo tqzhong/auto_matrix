@@ -147,7 +147,7 @@ for (let floor = 0; floor < 12; floor++) {
     { x: 43, y: y + 7, z: 23 }, { x: 35, y: y + 7, z: 23 });
   if (floor < 11) HOTEL_ROUTE.push({ x: 35, y: y + 7, z: 20 });
 }
-HOTEL_ROUTE.push({ x: 26, y: 84, z: 23 }, { x: 26, y: 84, z: 0 }, { x: 24, y: 84, z: 0 });
+HOTEL_ROUTE.push({ x: 26, y: 84, z: 23 }, { x: 26, y: 84, z: 0 }, { x: 24.8, y: 84, z: -.8 });
 const doorIndex = HOTEL_ROUTE.length - 1;
 HOTEL_ROUTE.push({ x: 18, y: 84, z: 0 }, { x: 18, y: 84, z: 14 }, { x: 12, y: 84, z: 14 });
 const lengths = HOTEL_ROUTE.slice(1).map((point, i) => Math.hypot(point.x - HOTEL_ROUTE[i].x, point.y - HOTEL_ROUTE[i].y, point.z - HOTEL_ROUTE[i].z));
