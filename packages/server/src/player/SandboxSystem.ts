@@ -53,6 +53,7 @@ export class SandboxSystem {
     if (journey) this.life.film.restoreChateauSpace();
     if (journey) this.life.film.apartmentFrame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);
     if (journey) this.life.film.clubFrame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);
+    if (journey) this.life.film.morningFrame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);
     if (journey) this.life.film.persephoneFrame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);
     if (journey) this.life.film.keymakerFrame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);
     if (journey?.scene === 'm1_boss') {

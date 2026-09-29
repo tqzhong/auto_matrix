@@ -3,6 +3,27 @@ import test from 'node:test';
 import { build } from 'esbuild';
 import { FILM_SCENE_BY_ID, filmPosition, filmStepPosition, type AgentState, type SandboxState } from '@auto_matrix/shared';
 
+test('the morning journal requires a bedside action, accepts the alarm and names the actual commute cost', async () => {
+  const output = await build({ entryPoints: ['packages/client/src/player/FilmJourneyPanel.ts'], bundle: true,
+    platform: 'node', format: 'esm', write: false, loader: { '.css': 'empty' }, logLevel: 'silent' });
+  const { renderFilmJourney } = await import(`data:text/javascript;base64,${Buffer.from(output.outputFiles[0].contents).toString('base64')}`);
+  const scene = FILM_SCENE_BY_ID.m1_morning;
+  const player = { id: 'neo', position: filmPosition(scene.set, 0, 6) } as AgentState;
+  const sandbox = { neoLife: { day: 3, money: 140, energy: 50, journey: { scene: scene.id, actor: 'neo', step: 0,
+    completed: [], lastText: '回到 101。', morning: { phase: 'home', elapsed: 0 } } } } as SandboxState;
+  const journey = sandbox.neoLife!.journey!;
+  assert.match(renderFilmJourney(player, sandbox), /data-target="film:act" disabled>休息到早晨/);
+  player.position = filmStepPosition(scene, scene.steps[0]);
+  assert.match(renderFilmJourney(player, sandbox), /data-target="film:act" >休息到早晨/);
+  journey.step = 1; journey.morning = { phase: 'alarm', elapsed: 2 };
+  assert.match(renderFilmJourney(player, sandbox), /data-target="film:act" >伸手关掉闹钟/);
+  journey.step = 3; journey.morning.phase = 'done';
+  assert.match(renderFilmJourney(player, sandbox), /data-target="film:next" >去公司 · 20 分钟 \/ \$2/);
+  sandbox.neoLife!.money = 1;
+  assert.match(renderFilmJourney(player, sandbox), /步行去公司 · 40 分钟 \/ 免费/);
+  player.id = 'trinity'; assert.doesNotMatch(renderFilmJourney(player, sandbox), /data-target="film:next"/);
+});
+
 test('the second call offers a visible door action after Neo reaches the apartment exit', async () => {
   const output = await build({ entryPoints: ['packages/client/src/player/FilmJourneyPanel.ts'], bundle: true,
     platform: 'node', format: 'esm', write: false, loader: { '.css': 'empty' }, logLevel: 'silent' });

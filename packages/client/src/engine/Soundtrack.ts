@@ -60,6 +60,8 @@ export function musicForScene({ player, sandbox, time, matrix }: MusicScene): Mu
   const journey = sandbox?.neoLife?.journey;
   if (journey?.actor === player.id) {
     const scene = FILM_SCENE_BY_ID[journey.visiting ?? journey.scene];
+    if (!journey.visiting && journey.scene === 'm1_morning')
+      return time >= 6000 && time < 19000 ? 'ordinary' : 'night';
     if (!journey.visiting && journey.scene === 'm1_bridge' && journey.bridgeTail?.phase === 'tracking' && journey.bridgeTail.alert >= 35)
       return 'infiltration';
     if (!journey.visiting && journey.scene === 'm2_meeting' && journey.reloaded) {

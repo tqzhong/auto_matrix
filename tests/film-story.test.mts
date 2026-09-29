@@ -42,9 +42,10 @@ test('all trilogy scenes have distinct stable IDs, existing cast, accessible obj
     const stagedEntry = scene.id === 'm1_wake_again';
     assert.equal(playerBlocked(filmEntry(scene), set.world === 'matrix'), stagedEntry, `${scene.id}: entry`);
     for (const step of scene.steps) {
-      // These targets are seats inside a solid vehicle, reached by boarding.
-      // meeting.test exercises that route and character-asset.test checks the seats.
-      const stagedInsideProp = scene.id === 'm1_bug' && scene.steps.indexOf(step) < 2 || scene.id === 'm1_recovery' && scene.steps.indexOf(step) === 0;
+      // These targets are occupied through boarding, recovery or lying down.
+      // Their encounter tests verify entry; character-asset.test checks physical contact.
+      const stagedInsideProp = scene.id === 'm1_bug' && scene.steps.indexOf(step) < 2 || scene.id === 'm1_recovery' && scene.steps.indexOf(step) === 0
+        || scene.id === 'm1_morning' && scene.steps.indexOf(step) === 1;
       assert.equal(playerBlocked(filmStepPosition(scene, step), set.world === 'matrix'), stagedInsideProp, `${scene.id}: ${step.label}`);
     }
     if (scene.steps.some(s => s.kind === 'reflect') && !['m1_pills', 'm1_ledge', 'm1_wake_up'].includes(scene.id)) assert.equal(filmReflections(scene.id).length, 3, `${scene.id}: dialogue must be playable`);
@@ -2078,7 +2079,7 @@ test('the entire film route completes through interactions, driving and real com
     assert.equal(state.scene, scene.id); assert.equal(h.actor().id, scene.actor);
     if (scene.id === 'm3_gate') assert.equal(h.world.agents.get('mifune')?.status, 'dead');
     assert.equal(h.actor().isInMatrix, scene.id === 'm2_meeting' ? false : FILM_SETS[scene.set].world === 'matrix');
-    assert.equal(musicForScene({ player: h.actor(), sandbox: h.sandbox.state, time: 7500, matrix: h.actor().isInMatrix, running: true }), scene.id === 'm2_meeting' ? 'night' : scene.music, `${scene.id}: music follows the active film set at ${h.actor().currentLocation}`);
+    assert.equal(musicForScene({ player: h.actor(), sandbox: h.sandbox.state, time: h.world.timeOfDay, matrix: h.actor().isInMatrix, running: true }), scene.id === 'm2_meeting' ? 'night' : scene.music, `${scene.id}: music follows the active film set at ${h.actor().currentLocation}`);
     if (scene.id === 'm1_mirror' && state.mirrorGuide) {
       for (const [x, z] of [[-5, -3.1], [-5, -9.8], [-6, -12.7], [MIRROR_TOUCH.x, MIRROR_TOUCH.z]]) {
         const target = filmPosition(scene.set, x, z);
@@ -2549,6 +2550,9 @@ test('the entire film route completes through interactions, driving and real com
             h.players.receiveInput('film-player', { x: 0, z: 0, yaw: h.actor().rotation, jump: false, sprint: false, focus: true, sequence: ++sequence });
             h.players.step(.1, true, h.tick());
           }
+        }
+        else if (scene.id === 'm1_morning') {
+          for (let frame = 0; frame < 75 && state.step === index; frame++) h.players.step(.1, true, h.tick());
         }
         else if (scene.id === 'm1_boss' && index === 0) {
           for (let frame = 0; frame < 91; frame++) h.players.step(.1, true, h.tick());

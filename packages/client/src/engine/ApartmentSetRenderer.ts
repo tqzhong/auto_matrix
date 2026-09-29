@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { APARTMENT, APARTMENT_ROOM, apartmentAfter, apartmentDoor, wakeCallDoor, wakeCallHandsetHeld, type FilmJourney } from '@auto_matrix/shared';
+import { APARTMENT, APARTMENT_ROOM, MORNING, apartmentAfter, apartmentDoor, wakeCallDoor, wakeCallHandsetHeld, type FilmJourney } from '@auto_matrix/shared';
 
 /** Anderson's workroom and the shared landing. Props use the shared interaction layout. */
 export class ApartmentSetRenderer {
@@ -18,6 +18,10 @@ export class ApartmentSetRenderer {
   private canvas = document.createElement('canvas');
   private screen: THREE.CanvasTexture;
   private screenKey = '';
+  private clockCanvas = document.createElement('canvas');
+  private clockScreen: THREE.CanvasTexture;
+  private clockKey = '';
+  private clockButton: THREE.Mesh;
   private glow = new THREE.PointLight(0x8bba81, 14, 10, 2);
   private windowGlass: THREE.MeshStandardMaterial;
   private windowLights: THREE.PointLight[] = [];
@@ -145,6 +149,19 @@ export class ApartmentSetRenderer {
     for (let i = 0; i < folds.count; i++) { const x = folds.getX(i); const z = folds.getZ(i); folds.setY(i, .055 * Math.sin(x * 6 + z * 1.7) + .035 * Math.sin(z * 9) - Math.max(0, Math.abs(x) - 2.65) * .95); }
     cloth.computeVertexNormals(); blanket.side = THREE.DoubleSide; this.mesh(cloth, blanket, 10.2, 1.44, -7.5);
     this.box(sheet, 10.2, 1.56, -12.3, 3.8, .36, 1.95, .18).rotation.y = -.13;
+    // The clock sits on an actual cabinet within the reclining actor's reach.
+    this.box(walnut, 6.35, .79, -10.75, 1.45, 1.58, 1.1, .05);
+    this.box(trim, 6.35, 1.01, -10.17, 1.19, .53, .08, .025);
+    this.box(metal, 6.35, 1.03, -10.09, .45, .045, .08, .018);
+    const clock = new THREE.Group(); clock.name = 'apartment-alarm-clock'; clock.userData.dynamic = true;
+    clock.position.set(MORNING.alarm.x, MORNING.alarm.y, MORNING.alarm.z); this.root.add(clock);
+    this.mesh(new RoundedBoxGeometry(1.05, .46, .56, 3, .065), dark, 0, 0, 0, clock);
+    this.clockButton = this.mesh(new RoundedBoxGeometry(.43, .06, .22, 2, .025), plastic, 0, .25, 0, clock);
+    this.clockButton.name = 'apartment-alarm-button';
+    this.clockCanvas.width = 256; this.clockCanvas.height = 96;
+    this.clockScreen = new THREE.CanvasTexture(this.clockCanvas); this.clockScreen.colorSpace = THREE.SRGBColorSpace; this.textures.add(this.clockScreen);
+    const clockMaterial = new THREE.MeshBasicMaterial({ map: this.clockScreen, toneMapped: false }); this.materials.add(clockMaterial);
+    this.mesh(new THREE.PlaneGeometry(.88, .33), clockMaterial, 0, -.015, .285, clock);
     this.box(walnut, 6, 1.68, 6.2, 2.8, .22, 1.8, .035);
     for (const x of [4.85, 7.15]) for (const z of [5.45, 6.95]) this.box(metal, x, .78, z, .1, 1.55, .1);
     const book = this.mat(0x403b31, .96);
@@ -217,6 +234,19 @@ export class ApartmentSetRenderer {
     this.windowGlass.emissiveIntensity = .025 + daylight * .55;
     for (const light of this.roomLights) light.visible = nearby;
     for (const light of this.windowLights) light.intensity = daylight * 100;
+    const morning = journey?.scene === 'm1_morning' && !journey.visiting ? journey.morning : undefined;
+    const alarm = morning?.phase === 'alarm' || morning?.phase === 'stopping' && morning.elapsed < .55;
+    this.clockButton.position.y = morning?.phase === 'stopping' && morning.elapsed >= .5 && morning.elapsed < .8 ? .225 : .25;
+    const minutes = Math.floor(time * .06); const clockText = `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+    const blink = alarm && Math.floor((morning?.elapsed ?? 0) * 4) % 2 === 0;
+    const clockKey = `${clockText}:${blink}`;
+    if (clockKey !== this.clockKey) {
+      this.clockKey = clockKey; const ctx = this.clockCanvas.getContext('2d')!;
+      ctx.fillStyle = '#090b09'; ctx.fillRect(0, 0, 256, 96);
+      ctx.fillStyle = '#dc725b'; ctx.font = '62px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(clockText, 128, 45);
+      if (blink) { ctx.font = '14px monospace'; ctx.fillText('ALARM', 128, 83); }
+      this.clockScreen.needsUpdate = true;
+    }
     const contact = journey?.scene === 'm1_wake_up' && !journey.visiting ? journey.contact : undefined;
     const call = journey?.scene === 'm1_wake_again' && !journey.visiting ? journey.wakeCall : undefined;
     this.door.rotation.y = (contact ? apartmentDoor(contact) : 1) * 1.42;

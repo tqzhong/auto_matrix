@@ -15,6 +15,7 @@ import { LAFAYETTE, LAFAYETTE_WELCOME, LAFAYETTE_KNOCK_SECONDS, HOTEL_ROUTE_LENG
 import { OFFICE_WORKDAY, OFFICE_DELIVERY_SECONDS, officeCourierRoot, officeRecipientRoot, workdayLocked, workdayText } from '@auto_matrix/shared';
 import { APARTMENT, WAKE_CALL, apartmentAfter, apartmentDoor, apartmentLocked, apartmentText, wakeCallDoor, wakeCallLocked, wakeCallRoot, wakeCallText, lifeRoomCenter, insideLifeRoom, type ApartmentPhase, type WakeCallPhase } from '@auto_matrix/shared';
 import { CLUB, clubLocked, clubRoot, clubText, type ClubPhase } from '@auto_matrix/shared';
+import { MORNING, morningLocked, morningRoot, morningWakePose, morningText } from '@auto_matrix/shared';
 import { SENTINEL_CAST, SENTINEL_TIMING, sentinelActive, sentinelDanger, sentinelLocked, sentinelRoot, sentinelText, type SentinelRole } from '@auto_matrix/shared';
 import { INTERLUDE_CAST, interludeDuration, interludeKind, interludeLocked, interludeRoot, interludeSeated, interludeText, type InterludeEncounter, type InterludeRole } from '@auto_matrix/shared';
 import { ORACLE_VISIT, oracleLegacyChoice, oracleVisitDuration, oracleVisitLocked, oracleVisitRoot, oracleVisitText, type OracleVisitRole } from '@auto_matrix/shared';
@@ -57,7 +58,7 @@ export class FilmStorySystem {
   readonly coatcheck: HelCoatcheckSystem;
   readonly openingHotel: OpeningHotelSystem;
   readonly office: OfficeEscapeSystem;
-  constructor(private world: WorldState, private sandbox: () => SandboxState, private returnToLife: (tick: number) => void) { this.lobby = new LobbyCombatSystem(world, sandbox); this.coatcheck = new HelCoatcheckSystem(world, sandbox); this.openingHotel = new OpeningHotelSystem(sandbox); this.openingHotel.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.openingHotel.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.office = new OfficeEscapeSystem(sandbox); this.reloaded = new ReloadedOpeningSystem(world, sandbox); this.reloaded.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.reloaded.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.catch = new ReloadedCatchSystem(world, sandbox); this.catch.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); }
+  constructor(private world: WorldState, private sandbox: () => SandboxState, private returnToLife: (tick: number) => void, private elapse: (minutes: number, tick: number) => void) { this.lobby = new LobbyCombatSystem(world, sandbox); this.coatcheck = new HelCoatcheckSystem(world, sandbox); this.openingHotel = new OpeningHotelSystem(sandbox); this.openingHotel.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.openingHotel.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.office = new OfficeEscapeSystem(sandbox); this.reloaded = new ReloadedOpeningSystem(world, sandbox); this.reloaded.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.reloaded.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.catch = new ReloadedCatchSystem(world, sandbox); this.catch.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); }
   get state() { return this.sandbox().neoLife?.journey; }
   get scene(): FilmScene | undefined { return this.state && FILM_SCENE_BY_ID[this.state.scene]; }
   get step(): FilmStep | undefined { return this.scene?.steps[this.state!.step]; }
@@ -1048,7 +1049,58 @@ export class FilmStorySystem {
         film: { scene: 'm2_architect', width: 5, depth: .5, height: 8 } });
     }
   }
-  performing(agent: AgentState): boolean { return this.controls(agent) && (this.state!.scene === 'm1_bridge' && this.state!.bridgeTail?.phase === 'failed' || this.state!.scene === 'm1_room303' && ['breach', 'dive', 'ladder_ready'].includes(this.state!.openingHotel?.phase ?? '') || this.state!.scene === 'm1_phone_escape' && ['connected', 'done'].includes(this.state!.openingPhone?.phase ?? '') || helElevatorLocked(this.state!) || helDanceDoorLocked(this.state!) || farewellLocked(this.state!.farewell) || deusPactLocked(this.state!.deus) || smithFinaleLocked(this.state!.smithFinale) || trilogyEpilogueLocked(this.state!.epilogue) || this.state!.scene === 'm3_trainman' && this.state!.mobil?.phase === 'refusing' || this.state!.trucks?.phase === 'rescue' || this.state!.persephone?.phase === 'enacting' || burlyLocked(this.state!) || clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || theOneLocked(this.state!) || reloadedLocked(this.state!) || catchLocked(this.state!.catch) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
+  performing(agent: AgentState): boolean { return this.controls(agent) && (this.state!.scene === 'm1_bridge' && this.state!.bridgeTail?.phase === 'failed' || this.state!.scene === 'm1_room303' && ['breach', 'dive', 'ladder_ready'].includes(this.state!.openingHotel?.phase ?? '') || this.state!.scene === 'm1_phone_escape' && ['connected', 'done'].includes(this.state!.openingPhone?.phase ?? '') || helElevatorLocked(this.state!) || helDanceDoorLocked(this.state!) || farewellLocked(this.state!.farewell) || deusPactLocked(this.state!.deus) || smithFinaleLocked(this.state!.smithFinale) || trilogyEpilogueLocked(this.state!.epilogue) || this.state!.scene === 'm3_trainman' && this.state!.mobil?.phase === 'refusing' || this.state!.trucks?.phase === 'rescue' || this.state!.persephone?.phase === 'enacting' || burlyLocked(this.state!) || clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || morningLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || theOneLocked(this.state!) || reloadedLocked(this.state!) || catchLocked(this.state!.catch) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
+  morningFrame(agent: AgentState, dt: number, tick: number): void {
+    const state = this.state;
+    if (state?.scene !== 'm1_morning' || state.visiting || !this.controls(agent)) return;
+    const morning = state.morning ??= { phase: state.step >= 3 ? 'done' : state.step === 2 ? 'ready' : state.step === 1 ? 'alarm' : 'home', elapsed: 0 };
+    if (morning.phase === 'alarm') morning.elapsed += Math.max(0, Math.min(.1, dt));
+    const duration = morning.phase === 'lying' ? MORNING.lying : morning.phase === 'sleeping' ? MORNING.sleeping
+      : morning.phase === 'stopping' ? MORNING.stopping : morning.phase === 'rising' ? WAKE_CALL.waking : 0;
+    if (duration && dt > 0) {
+      morning.elapsed = Math.min(duration, morning.elapsed + Math.min(.1, dt));
+      if (morning.elapsed >= duration) {
+        const previous = morning.phase;
+        morning.phase = previous === 'lying' ? 'sleeping' : previous === 'sleeping' ? 'alarm' : previous === 'stopping' ? 'rising' : 'ready';
+        morning.elapsed = 0;
+        if (previous === 'sleeping') {
+          const now = (this.world.day - 1) * 1440 + this.world.timeOfDay * .06;
+          this.elapse(Math.max(0, (morning.wakeAt ?? now) - now), tick);
+          this.sandbox().neoLife!.energy = 95; if (agent.mind) agent.mind.energy = 95;
+          agent.health = agent.maxHealth;
+          this.advance('窗外已经天亮。09:15 的闹钟催促你起床，身体恢复了精力。', agent, tick);
+        }
+        if (previous === 'rising') {
+          agent.position = filmPosition(this.scene!.set, APARTMENT.bedside.x, APARTMENT.bedside.z); agent.rotation = APARTMENT.bedside.yaw;
+          agent.currentAction = null; agent.velocity = { x: 0, y: 0, z: 0 }; state.checkpoint = { ...agent.position };
+          this.advance('闹钟被关掉。Neo 离开床铺，今天仍然要去上班。', agent, tick);
+        }
+      }
+    }
+    if (morningLocked(state)) {
+      const call = morningWakePose(morning); const root = morningRoot(morning);
+      agent.position = filmPosition(this.scene!.set, root.x, root.z); agent.rotation = root.yaw;
+      agent.velocity = { x: 0, y: 0, z: 0 };
+      agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, wakeCall: call, morning: { ...morning } }, startedAt: tick, duration: 1, progress: 0 };
+      state.checkpoint = { ...agent.position };
+    }
+    state.lastText = morningText(morning);
+  }
+  private morningAct(agent: AgentState, target: string, tick: number): string {
+    const state = this.state!; this.morningFrame(agent, 0, tick); const morning = state.morning!;
+    if (target !== 'act') return state.lastText;
+    if (morning.phase === 'home') {
+      if (!this.near(agent, this.step!)) return '先走到床边，再决定休息。';
+      morning.wakeAt = (this.world.day - 1) * 1440 + (this.world.timeOfDay < 6000 ? 9250 : 33250) * .06;
+      morning.phase = 'lying'; morning.elapsed = 0;
+    } else if (morning.phase === 'alarm') { morning.phase = 'stopping'; morning.elapsed = 0; }
+    else if (morning.phase === 'ready') {
+      if (!this.near(agent, this.step!) || agent.position.z < FILM_SETS[this.scene!.set].center.z + 20) return '先走出 101 房间，穿过楼道，到街边再出发。';
+      morning.phase = 'done'; state.checkpoint = { ...agent.position };
+      this.advance('Neo 离开公寓楼。公司里的平常一天即将继续。', agent, tick);
+    }
+    this.morningFrame(agent, 0, tick); return state.lastText;
+  }
   clubFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
     if (state?.scene !== 'm1_club' || state.visiting || !this.controls(agent)) return;
@@ -4110,6 +4162,12 @@ export class FilmStorySystem {
         this.rescueFrame(agent, 0, tick);
         return '已接回营救准备，保留方案核对、武器架和装备选择进度。';
       }
+      if (state.scene === 'm1_morning' && state.morning) {
+        delete state.visiting; delete state.returnPosition;
+        agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
+        this.place(agent, this.scene, { ...state.checkpoint }); this.morningFrame(agent, 0, tick);
+        return '已接回 101，保留休息、闹钟与通勤进度；日期和费用不会重复结算。';
+      }
       if (state.scene === 'm1_club' && state.club) {
         delete state.visiting; delete state.returnPosition;
         agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
@@ -4263,6 +4321,15 @@ export class FilmStorySystem {
       }
       if (!next) { state.finished = true; life.ending = 'peace'; this.sandbox().ending = 'peace'; return '三部曲通关。停战与本轮反思已经保存。'; }
       if (!this.changeActor(agent, next.actor, tick)) return '下一段的角色正在由另一位玩家控制，进度已保留。';
+      if (state.scene === 'm1_wake_up' && next.id === 'm1_club') {
+        this.elapse(this.world.timeOfDay >= 6000 && this.world.timeOfDay < 20500 ? (20500 - this.world.timeOfDay) * .06 : 20, tick);
+      } else if (state.scene === 'm1_club' && next.id === 'm1_morning') this.elapse(20, tick);
+      else if (state.scene === 'm1_morning' && next.id === 'm1_boss') {
+        const transit = life.money >= 2;
+        if (transit) life.money -= 2;
+        this.elapse(transit ? 20 : 40, tick);
+        life.journal.unshift({ day: life.day, time: this.world.timeOfDay, title: '迟到的通勤', text: transit ? '花费 $2，乘坐公共交通 20 分钟到公司。' : '零钱不够，步行 40 分钟到公司。' });
+      }
       const sameRoom = state.scene === 'm1_pills' && next.id === 'm1_mirror' || state.scene === 'm2_merovingian' && next.id === 'm2_persephone'
         || state.scene === 'm3_mobil' && next.id === 'm3_family' || state.scene === 'm3_family' && next.id === 'm3_trainman'
         || state.scene === 'm3_hel_entry' && next.id === 'm3_hel_bargain';
@@ -4433,6 +4500,7 @@ export class FilmStorySystem {
     if (state.scene === 'm2_persephone' && state.step === 2) return this.persephoneAct(agent, target, tick);
     if (state.scene === 'm1_wake_up') return this.apartmentAct(agent, target, tick);
     if (state.scene === 'm1_wake_again' && state.step < this.scene!.steps.length) return this.wakeCallAct(agent, target, tick);
+    if (state.scene === 'm1_morning') return this.morningAct(agent, target, tick);
     if (state.scene === 'm1_club') return this.clubAct(agent, target, tick);
     if (state.scene === 'm1_sentinels') return this.sentinelAct(agent, target, tick);
     if (interludeKind(state.scene)) return this.interludeAct(agent, target, tick);
@@ -4770,6 +4838,7 @@ export class FilmStorySystem {
     delete state.workday;
     delete state.contact;
     delete state.wakeCall;
+    delete state.morning;
     delete state.bridgeTail;
     state.bridgeArrival = scene.id === 'm1_bridge' ? { phase: 'approaching', elapsed: 0 } : undefined;
     delete state.club;
@@ -4938,6 +5007,7 @@ export class FilmStorySystem {
     if (scene.id === 'm1_wake_up') { state.contact = { phase: 'idle', elapsed: 0 }; this.apartmentFrame(actor, 0, tick); }
     if (scene.id === 'm1_wake_again') { state.wakeCall = { phase: 'waking', elapsed: 0, nightmare: state.office?.outcome !== 'escaped' }; this.apartmentFrame(actor, 0, tick); }
     if (scene.id === 'm1_club') { state.club = { phase: 'crowd', elapsed: 0 }; this.clubFrame(actor, 0, tick); }
+    if (scene.id === 'm1_morning') { state.morning = { phase: 'home', elapsed: 0 }; this.morningFrame(actor, 0, tick); }
     if (scene.id === 'm1_boss') { state.workday = { phase: 'waiting', elapsed: 0 }; this.workdayFrame(actor, 0, tick); }
     if (scene.id === 'm1_office_escape') this.office.start(tick);
     if (scene.id === 'm1_pod') this.awakeningFrame(actor, 0, tick);
@@ -5573,7 +5643,7 @@ export class FilmStorySystem {
     if (state.matrixEscape && ['m1_subway', 'm1_city_chase'].includes(state.scene)) return;
     if (state.theOne && ['m1_death', 'm1_return', 'm1_final_call'].includes(state.scene)) return;
     const step = this.step; if (!step) return;
-    if (state.scene === 'm1_wake_up') { delete state.started; return; }
+    if (state.scene === 'm1_wake_up' || state.scene === 'm1_morning') { delete state.started; return; }
     if (state.scene === 'm1_boss' && state.step === 1) { delete state.started; return; }
     if (this.performing(actor)) return;
     if (this.climbing(actor)) return;

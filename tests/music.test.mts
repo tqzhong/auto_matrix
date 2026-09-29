@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { test, type TestContext } from 'node:test';
-import { NEO_CHAPTERS, type WorldEvent } from '@auto_matrix/shared';
+import { NEO_CHAPTERS, type FilmJourney, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -27,6 +27,17 @@ test('ordinary life keeps its warm score until night or a nightclub, regardless 
   game.player!.currentLocation = 'nightclub'; assert.equal(musicForScene(game), 'club');
   game.player!.currentLocation = 'downtown'; game.player!.isAwakened = true;
   assert.equal(musicForScene(game), 'matrix');
+});
+
+test('the return home shifts from the film night cue to ordinary morning music after sleeping', () => {
+  const game = scene(); const life = game.sandbox!.neoLife!;
+  life.journey = { scene: 'm1_morning', actor: 'neo', morning: { phase: 'home', elapsed: 0 } } as FilmJourney;
+  game.time = 22000;
+  assert.equal(musicForScene(game), 'night');
+  game.time = 12000; assert.equal(musicForScene(game), 'ordinary', 'staying awake until daytime must not keep night music indefinitely');
+  life.journey.morning!.phase = 'alarm'; assert.equal(musicForScene(game), 'ordinary');
+  life.journey.morning!.phase = 'ready'; game.player!.currentLocation = 'downtown';
+  assert.equal(musicForScene(game), 'ordinary', 'the morning continues while Neo walks out to the city street');
 });
 
 test('anomaly music needs a nearby anomaly in the player location, and stops after it is resolved', () => {

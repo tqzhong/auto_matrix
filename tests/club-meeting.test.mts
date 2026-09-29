@@ -77,7 +77,7 @@ test('each night-club answer is recorded once, receives its own response and req
     assert.match(h.command('next'), /先完成/);
     h.frames(15); assert.equal(h.state().step, 3);
     h.near(); h.frames(1); assert.ok(h.state().completed.includes('m1_club'));
-    h.command('next'); assert.equal(h.state().scene, 'm1_boss'); assert.equal(h.state().club, undefined);
+    h.command('next'); assert.equal(h.state().scene, 'm1_morning'); assert.equal(h.state().club, undefined);
     assert.equal(h.sandbox.life.state!.choices['m1_club:2'], answer);
     assert.equal(h.neo.isAwakened, false);
   }
@@ -110,5 +110,5 @@ test('legacy completed club saves retain their choice and do not replay the firs
   const h = setup(); const saved = structuredClone(h.sandbox.state); const state = saved.neoLife!.journey!;
   delete state.club; state.completed.push('m1_club'); state.step = 2; state.reflections['m1_club:1'] = 'care';
   h.sandbox.restore(saved); assert.equal(h.state().step, FILM_SCENE_BY_ID.m1_club.steps.length);
-  h.command('next'); assert.equal(h.state().scene, 'm1_boss'); assert.equal(h.state().reflections['m1_club:1'], 'care');
+  h.command('next'); assert.equal(h.state().scene, 'm1_morning'); assert.equal(h.state().reflections['m1_club:1'], 'care');
 });

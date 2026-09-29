@@ -14,6 +14,7 @@ import { MEETING_CAR, meetingRoot, meetingCarPose } from '@auto_matrix/shared';
 import { OFFICE_WORKDAY, officeRecipientRoot, officeCourierRoot, officeClipboardPoint, officePenPoint } from '@auto_matrix/shared';
 import { OfficeWorkdayRenderer } from '../packages/client/src/engine/OfficeWorkdayRenderer.js';
 import { LAFAYETTE, hotelFloor } from '@auto_matrix/shared';
+import { MORNING, morningRoot, morningWakePose } from '@auto_matrix/shared';
 
 async function loadGeometry(id = 'neo') {
   const glb = await readFile(new URL(`../packages/client/public/assets/characters/${id}.glb`, import.meta.url));
@@ -1062,6 +1063,28 @@ test('Neo reaches the parcel and keeps the phone at his ear while walking and cr
   models.animate(rig, advanceMotion(state, idle, .05), state, idle, .05);
   assert.ok(wrist.quaternion.angleTo(new THREE.Quaternion()) < .0001, 'putting the phone away restores the wrist');
   models.dispose();
+});
+
+test('the morning alarm is turned off by Neo’s actual palm without stretching the arm', async () => {
+  const { scene } = await loadGeometry(); const bones = new Map<string, THREE.Bone>(); const rest = new Map<string, THREE.Vector3>();
+  scene.traverse(object => { if (object instanceof THREE.Bone) { bones.set(object.name, object); rest.set(object.name, object.position.clone()); } });
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture()); const motion = newMotion();
+  const rig: HeroRig = { root: scene, bones, rest, panels: [], footHeight: 0, glasses: new THREE.Group(), silver: { value: 0 }, wardrobe: [] };
+  const center = FILM_SETS.film_anderson_flat.center;
+  const button = new THREE.Vector3(center.x + MORNING.alarm.x, center.y - 1 + MORNING.alarm.y + .255, center.z + MORNING.alarm.z);
+  try {
+    for (const elapsed of [.55, .65]) {
+      const morning = { phase: 'stopping' as const, elapsed }; const root = morningRoot(morning);
+      scene.position.set(center.x + root.x, center.y, center.z + root.z); scene.rotation.y = root.yaw;
+      const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, wakeCall: morningWakePose(morning), morning };
+      models.animate(rig, advanceMotion(motion, input, .05), motion, input, .05); scene.updateMatrixWorld(true);
+      const palm = bones.get('wrist_R')!.localToWorld(new THREE.Vector3(.09, -.18, .02));
+      assert.ok(palm.distanceTo(button) < .025, `the palm must touch the pressed clock button: ${palm.distanceTo(button)}`);
+      for (const name of ['elbow_R', 'wrist_R']) assert.equal(bones.get(name)!.position.length(), rest.get(name)!.length(), 'arm lengths remain anatomical');
+      const head = bones.get('head')!.getWorldPosition(new THREE.Vector3());
+      assert.ok(head.x > center.x + 7.1 && head.x < center.x + 13.3 && head.y > 1.5, 'Neo remains on the physical mattress');
+    }
+  } finally { models.dispose(); }
 });
 
 test('Neo takes the apartment handset from its physical cradle and returns it after the call', async () => {

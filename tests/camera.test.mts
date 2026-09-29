@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import type { AgentState, PlayerInput } from '@auto_matrix/shared';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { CameraController } from '../packages/client/src/engine/CameraController.js';
+import { MORNING, morningRoot, morningWakePose } from '@auto_matrix/shared';
 import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, INTERROGATION_ROOM, pillRoot, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, POD_WATER_DROP, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, airRescueRoot, matrixEscapeRoot, theOneRoot, wakeCallRoot, type TheOneEncounter } from '@auto_matrix/shared';
 
 test('observer camera releases drag and ignores pointer capture while a character controls the view', () => {
@@ -443,6 +444,29 @@ test('the white-rabbit close-up clears the visitor beside the door and releases 
   game.state.currentAction = null; game.step(.1); assert.equal(game.controls.performing, false);
   const start = game.group.position.clone(); game.key('KeyS'); game.step(.3);
   assert.ok(game.group.position.distanceTo(start) > .2, 'finishing the inspection restores walking');
+});
+
+test('the morning camera shows the bedside clock in portrait and landscape and V follows the reclining eyes', t => {
+  const game = setup(t); const center = FILM_SETS.film_anderson_flat.center;
+  const morning = { phase: 'stopping' as const, elapsed: .55 }; const root = morningRoot(morning);
+  game.state.currentLocation = 'film_anderson_flat'; game.state.position = filmPosition('film_anderson_flat', root.x, root.z); game.state.rotation = root.yaw;
+  game.state.currentAction = { type: 'idle', parameters: { morning, wakeCall: morningWakePose(morning) }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state);
+  for (const aspect of [16 / 9, 426 / 680]) {
+    game.camera.aspect = aspect; game.camera.updateProjectionMatrix(); game.step(.5);
+    for (const point of [new THREE.Vector3(center.x + MORNING.alarm.x, MORNING.alarm.y, center.z + MORNING.alarm.z),
+      new THREE.Vector3(game.state.position.x, 1.9, game.state.position.z - 1.7)]) {
+      const view = point.project(game.camera);
+      assert.ok(Math.abs(view.x) < .85 && Math.abs(view.y) < .85 && view.z < 1, 'Neo and the alarm stay inside the frame');
+    }
+    assert.ok(game.camera.position.x < game.state.position.x - 2, 'the camera sees the clock from the open bedside rather than behind Neo');
+  }
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+  assert.ok(game.camera.position.y < 2.3 && game.camera.position.z < game.state.position.z - 1, 'reclining eyes cannot float at standing head height');
+  const direction = game.camera.getWorldDirection(new THREE.Vector3());
+  game.document.pointerLockElement = game.canvas; game.event(game.document, 'mousemove', { movementX: 120, movementY: -40 }); game.step(.1);
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(direction) > .15, 'V retains mouse look');
+  game.state.currentAction = null; game.step(.1); assert.equal(game.controls.performing, false);
 });
 
 test('the apartment wake call frames the bed and the front of Neo at the physical telephone', t => {

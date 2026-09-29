@@ -6,6 +6,7 @@ import { lafayetteWelcomeCamera } from './LafayetteWelcomeCamera.js';
 import type { MotionInput } from '../agents/CharacterMotion.js';
 import { AIR_RESCUE, governmentPose, airRescuePose, airRescueRoot, interrogationPose, meetingPose, meetingCarPose, meetingCarPoint, MEETING_TIMING } from '@auto_matrix/shared';
 import { officeClothing } from '@auto_matrix/shared';
+import { MORNING } from '@auto_matrix/shared';
 
 export class PlayerControls {
   id: string | null = null;
@@ -383,6 +384,7 @@ export class PlayerControls {
     this.motion.workday = state.currentAction?.parameters.workday as MotionInput['workday'];
     this.motion.contact = state.currentAction?.parameters.contact as MotionInput['contact'];
     this.motion.wakeCall = state.currentAction?.parameters.wakeCall as MotionInput['wakeCall'];
+    this.motion.morning = state.currentAction?.parameters.morning as MotionInput['morning'];
     this.motion.club = state.currentAction?.parameters.club as MotionInput['club'];
     this.motion.sentinel = state.currentAction?.parameters.sentinel as MotionInput['sentinel'];
     this.motion.interlude = state.currentAction?.parameters.interlude as MotionInput['interlude'];
@@ -498,7 +500,7 @@ export class PlayerControls {
     if (mirrorStarting && this.firstPerson && now - this.lastLook > 900) this.aimAtMirror();
     const dx = this.position.x - previous.x; const dz = this.position.z - previous.z;
     this.motion.speed = this.ride || this.climbing || this.performing ? 0 : Math.hypot(dx, dz) / Math.max(delta, .001);
-    if (this.motion.wakeCall?.phase === 'waking' && this.motion.wakeCall.elapsed > 2.7) this.motion.speed = 1.45;
+    if (this.motion.wakeCall?.phase === 'waking' && this.motion.wakeCall.elapsed > 2.7 && this.motion.morning?.phase !== 'lying') this.motion.speed = 1.45;
     if (this.motion.wakeCall?.phase === 'leaving' && this.motion.wakeCall.elapsed > 1.15 && this.motion.wakeCall.elapsed < 3.05) this.motion.speed = 1.35;
     this.motion.grounded = Boolean(this.ride || this.gunner) || this.climbing || this.performing || this.position.y <= groundHeight(this.position, state.isInMatrix) + .12;
     this.motion.verticalVelocity = this.vy;
@@ -544,6 +546,11 @@ export class PlayerControls {
     const target = new THREE.Vector3(this.position.x, this.position.y + (this.firstPerson ? 2.99 : 2.05) - (this.motion.pills ? .9 : 0) - (this.motion.mirrorBeat !== undefined ? THREE.MathUtils.smoothstep(this.motion.mirrorBeat, .65, MIRROR_TIMING.sit) * .9 : 0) - (this.motion.reveal?.kind === 'construct' ? .62 : 0) - (this.motion.crouching ? 1.1 : 0), this.position.z);
     if (this.motion.contact && ['signal', 'reply', 'knocking'].includes(this.motion.contact.phase)) target.y -= .65;
     if (this.motion.wakeCall?.phase === 'waking') target.y -= (1 - THREE.MathUtils.smoothstep(this.motion.wakeCall.elapsed, 1.3, 3.1)) * 1.35;
+    if (this.firstPerson && this.motion.morning && this.motion.wakeCall) {
+      const reclining = 1 - THREE.MathUtils.smoothstep(this.motion.wakeCall.elapsed, 1.3, 3.1);
+      target.y = this.position.y + 2.99 - 2.07 * reclining;
+      target.x -= Math.sin(this.facing) * 1.9 * reclining; target.z -= Math.cos(this.facing) * 1.9 * reclining;
+    }
     const meeting = this.motion.meeting && meetingPose(this.motion.meeting);
     if (meeting) { target.y -= meeting.seat * .87; target.x += Math.sin(vehicleYaw!) * meeting.recline * .52; target.z += Math.cos(vehicleYaw!) * meeting.recline * .52; }
     const interview = this.motion.interrogation && interrogationPose(this.motion.interrogation);
@@ -814,6 +821,10 @@ export class PlayerControls {
       const focus = (waking ? new THREE.Vector3(10.1, 2.05, -9.2).lerp(new THREE.Vector3(6.2, 3.05, -8.9), rise)
         : leaving ? new THREE.Vector3(.8, 3.05, 11).lerp(new THREE.Vector3(.1, 3.05, 13), crossing)
           : new THREE.Vector3(-5.95, 3.15, -9.05)).add(origin);
+      if (this.motion.morning) {
+        ideal.copy(new THREE.Vector3(MORNING.alarm.x - 3.1, 4.1, -7.5).lerp(new THREE.Vector3(8.3, 4.35, -4.8), rise).add(origin));
+        focus.copy(new THREE.Vector3(MORNING.bedX - .35, 1.92, -10.2).lerp(new THREE.Vector3(6.2, 3.05, -8.9), rise).add(origin));
+      }
       if (resetCamera || call.elapsed < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-7 * delta));
       this.camera.lookAt(focus);
     } else if (this.motion.contact && !this.firstPerson) {

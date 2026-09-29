@@ -5,6 +5,12 @@ export interface ApartmentContact { phase: ApartmentPhase; elapsed: number; paid
 export interface ApartmentGesture extends ApartmentContact { role: 'neo' | 'choi' | 'dujour' }
 export type WakeCallPhase = 'waking' | 'ringing' | 'pickup' | 'listening' | 'decision' | 'reply' | 'done' | 'leaving';
 export interface WakeCall { phase: WakeCallPhase; elapsed: number; nightmare: boolean }
+export interface MorningRoutine {
+  phase: 'home' | 'lying' | 'sleeping' | 'alarm' | 'stopping' | 'rising' | 'ready' | 'done';
+  elapsed: number; wakeAt?: number;
+}
+export const MORNING = { lying: 3.2, sleeping: 1.8, stopping: 1.1, bedX: 8.05,
+  alarm: { x: 6.45, y: 1.85, z: -10.75 }, exit: { x: 0, z: 23 } } as const;
 export const APARTMENT_ROOM = { width: 34, depth: 40, exitWidth: 10, center: { x: 1210, y: 1, z: 690 } } as const;
 export const APARTMENT = {
   computer: { x: -9, z: -8.8, yaw: Math.PI },
@@ -23,6 +29,7 @@ export const WAKE_CALL = { waking: 5.6, pickup: 2.2, listening: 8.6, reply: 4.2,
 export const APARTMENT_FURNITURE = [
   { x: -9, z: -12, width: 8, depth: 3.4, height: 2.4 },
   { x: 10.2, z: -9, width: 6.2, depth: 10, height: 1.5 },
+  { x: 6.35, z: -10.75, width: 1.45, depth: 1.1, height: 1.62 },
   { x: 6, z: 6.2, width: 2.8, depth: 1.8, height: 1.8 },
   { x: -15.7, z: -4, width: 1.6, depth: 8, height: 5.3 },
   { x: -10, z: 6.8, width: 8, depth: 2.8, height: 2.9 },
@@ -40,6 +47,32 @@ export function apartmentLocked(journey: FilmJourney): boolean {
 }
 export function wakeCallLocked(journey: FilmJourney): boolean {
   return journey.scene === 'm1_wake_again' && !journey.visiting && ['waking', 'pickup', 'listening', 'decision', 'reply', 'leaving'].includes(journey.wakeCall?.phase ?? '');
+}
+export function morningLocked(journey: FilmJourney): boolean {
+  return journey.scene === 'm1_morning' && !journey.visiting && ['lying', 'sleeping', 'alarm', 'stopping', 'rising'].includes(journey.morning?.phase ?? '');
+}
+export function morningWakePose(morning: MorningRoutine): WakeCall {
+  return { phase: 'waking', nightmare: false, elapsed: morning.phase === 'lying'
+    ? WAKE_CALL.waking * (1 - Math.min(1, morning.elapsed / MORNING.lying))
+    : morning.phase === 'rising' ? morning.elapsed : 0 };
+}
+export function morningRoot(morning: MorningRoutine): { x: number; z: number; yaw: number } {
+  const call = morningWakePose(morning); const root = wakeCallRoot(call);
+  const bedside = smooth(Math.max(0, Math.min(1, (call.elapsed - 2.7) / (WAKE_CALL.waking - 2.7))));
+  root.x += (MORNING.bedX - APARTMENT.bed.x) * (1 - bedside);
+  return root;
+}
+export function morningText(morning: MorningRoutine): string {
+  switch (morning.phase) {
+    case 'home': return '回到熟悉的 101。你可以再看看房间，或走到床边按 G 休息；选择睡下才会推进到早晨。';
+    case 'lying': return 'Neo 坐到床沿，慢慢躺下。夜店的音乐与陌生人的警告仍留在脑海里。';
+    case 'sleeping': return '夜晚过去了。窗外逐渐亮起，闹钟已经错过了原定的起床时间。';
+    case 'alarm': return '09:15。闹钟还在响——已经迟到了。按 G 伸手关掉闹钟，起床去公司。';
+    case 'stopping': return 'Neo 伸手按下床头闹钟。';
+    case 'rising': return '他坐起身，双脚落地，离开床边。今天仍然要去上班。';
+    case 'ready': return '走出 101，穿过楼道来到街边，按 G 选择出发。公共交通需要 20 分钟和 $2；零钱不足则步行 40 分钟。';
+    case 'done': return '你已来到街边。G 前往公司：公共交通 20 分钟 / $2，零钱不足则步行 40 分钟。';
+  }
 }
 export function wakeCallRoot(call: WakeCall): { x: number; z: number; yaw: number } {
   if (call.phase === 'leaving') {

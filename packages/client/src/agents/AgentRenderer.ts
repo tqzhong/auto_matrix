@@ -167,6 +167,7 @@ export class AgentRenderer {
         workday: state.currentAction?.parameters.workday as MotionInput['workday'],
         contact: state.currentAction?.parameters.contact as MotionInput['contact'],
         wakeCall: state.currentAction?.parameters.wakeCall as MotionInput['wakeCall'],
+        morning: state.currentAction?.parameters.morning as MotionInput['morning'],
         club: state.currentAction?.parameters.club as MotionInput['club'],
         sentinel: state.currentAction?.parameters.sentinel as MotionInput['sentinel'],
         interlude: state.currentAction?.parameters.interlude as MotionInput['interlude'],

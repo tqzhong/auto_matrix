@@ -10,7 +10,7 @@ const clamp = (n: number): number => Math.max(0, Math.min(100, n));
 export class NeoLifeSystem {
   readonly film: FilmStorySystem;
   constructor(private world: WorldState, private dynamics: WorldDynamics, private sandbox: () => SandboxState) {
-    this.film = new FilmStorySystem(world, sandbox, tick => this.bluePill(tick));
+    this.film = new FilmStorySystem(world, sandbox, tick => this.bluePill(tick), (minutes, tick) => this.elapse(minutes, tick));
   }
   get state(): NeoLifeState | undefined { return this.sandbox().neoLife; }
   get chapter() { return this.state ? NEO_CHAPTERS[this.state.chapter] : undefined; }
@@ -85,7 +85,7 @@ export class NeoLifeSystem {
       state.friends = clamp(state.friends - 5); delete state.appointment;
       this.note('错过的约定', '朋友发来一条消息：今天没见到你，改天吧。关系还在，只是需要再次花时间。', tick);
     }
-    if (state.chapter === 0 && this.world.timeOfDay >= 18000 && state.done[`attendance:${state.day}`] !== state.day) {
+    if (!state.journey && state.chapter <= 1 && this.world.timeOfDay >= 18000 && state.done[`attendance:${state.day}`] !== state.day) {
       state.done[`attendance:${state.day}`] = state.day;
       if (state.done.work !== state.day) {
         state.career = clamp(state.career - 6);

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
-import { APARTMENT, FILM_SETS, OFFICE_WINDOW, officeWindowPose, officeCrossingPose, pillPose, lafayetteKnockPose, lafayetteWelcomePose, recoveryCrewPose, farewellPose } from '@auto_matrix/shared';
+import { APARTMENT, MORNING, FILM_SETS, OFFICE_WINDOW, officeWindowPose, officeCrossingPose, pillPose, lafayetteKnockPose, lafayetteWelcomePose, recoveryCrewPose, farewellPose } from '@auto_matrix/shared';
 import type { advanceMotion, MotionInput, MotionState } from './CharacterMotion.js';
 
 import { PillPerformance } from './PillPerformance.js';
@@ -544,6 +544,30 @@ export class HeroModels {
     }
   }
 
+  private stopAlarm(rig: HeroRig, elapsed: number): void {
+    const blend = THREE.MathUtils.smoothstep(elapsed, .08, .5) * (1 - THREE.MathUtils.smoothstep(elapsed, .7, MORNING.stopping));
+    if (blend <= 0) return;
+    const shoulder = rig.bones.get('shoulder_R')!, elbow = rig.bones.get('elbow_R')!, wrist = rig.bones.get('wrist_R')!;
+    const center = FILM_SETS.film_anderson_flat.center;
+    const orientation = wrist.getWorldQuaternion(new THREE.Quaternion()).slerp(new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, -Math.PI / 2)), blend);
+    const palm = new THREE.Vector3(.09, -.18, .02);
+    const button = new THREE.Vector3(center.x + MORNING.alarm.x, center.y - 1 + MORNING.alarm.y + .255, center.z + MORNING.alarm.z);
+    const target = wrist.localToWorld(palm.clone()).lerp(button, blend).sub(palm.applyQuaternion(orientation));
+    const start = shoulder.getWorldPosition(new THREE.Vector3()); const direction = target.clone().sub(start);
+    const a = elbow.position.length(); const b = wrist.position.length(); const reach = THREE.MathUtils.clamp(direction.length(), .02, a + b - .001); direction.normalize();
+    target.copy(start).addScaledVector(direction, reach);
+    const along = (a * a - b * b + reach * reach) / (2 * reach);
+    const pole = new THREE.Vector3(-.3, 1, .4); pole.addScaledVector(direction, -pole.dot(direction)).normalize();
+    const hinge = start.clone().addScaledVector(direction, along).addScaledVector(pole, Math.sqrt(Math.max(0, a * a - along * along)));
+    const aim = (joint: THREE.Bone, child: THREE.Bone, point: THREE.Vector3) => {
+      joint.quaternion.setFromUnitVectors(child.position.clone().normalize(), joint.parent!.worldToLocal(point.clone()).sub(joint.position).normalize());
+      joint.updateWorldMatrix(false, true);
+    };
+    aim(shoulder, elbow, hinge); aim(elbow, wrist, target);
+    wrist.quaternion.copy(elbow.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation));
+    for (let finger = 1; finger <= 5; finger++) for (let segment = 1; segment <= 3; segment++)
+      rig.bones.get(`finger${finger}-${segment}_R`)!.rotation.z *= 1 - blend;
+  }
   animate(rig: HeroRig, pose: Pose, motion: MotionState, input: MotionInput, delta: number): void {
     rig.silver.value = input.mirror ?? 0;
     rig.glasses.visible = !rig.officeRole && !rig.apartmentRole && input.glasses !== false && !input.realWorld;
@@ -848,6 +872,7 @@ export class HeroModels {
         && !input.windingUp && motion.attackAge > 1 && motion.skillAge > 1 && motion.hitAge > .5) placeHotelFeet(rig);
     }
     if (input.phone) this.holdPhone(rig, input.phone);
+    if (input.morning?.phase === 'stopping') this.stopAlarm(rig, input.morning.elapsed);
     if (input.wakeCall && input.wakeCall.phase !== 'waking') {
       if (input.wakeCall.phase === 'pickup') {
         const center = FILM_SETS.film_anderson_flat.center; rig.root.updateWorldMatrix(true, true);

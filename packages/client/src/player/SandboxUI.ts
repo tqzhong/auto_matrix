@@ -9,7 +9,7 @@ import { filmPosition, HOTEL_DOOR_PROGRESS } from '@auto_matrix/shared';
 import { CHATEAU, MOUNTAIN, GARAGE, TRUCKS } from '@auto_matrix/shared';
 import { workdayLocked } from '@auto_matrix/shared';
 import { apartmentLocked } from '@auto_matrix/shared';
-import { wakeCallLocked } from '@auto_matrix/shared';
+import { wakeCallLocked, morningLocked } from '@auto_matrix/shared';
 import { clubLocked } from '@auto_matrix/shared';
 import { sentinelDanger, sentinelLocked } from '@auto_matrix/shared';
 import { interludeDuration, interludeLocked } from '@auto_matrix/shared';
@@ -212,11 +212,20 @@ export class SandboxUI {
       this.previousFilmScene = scene.id;
       if (scene.id === 'm1_mirror' && journey.awakening?.kind === 'mirror')
         blackout.style.opacity = String(Math.min(.96, Math.max(0, (journey.awakening.elapsed - MIRROR_TIMING.fade) / (AWAKENING_SECONDS.mirror - MIRROR_TIMING.fade))));
+      if (scene.id === 'm1_morning' && journey.morning) {
+        const morning = journey.morning;
+        blackout.style.opacity = String(morning.phase === 'sleeping' ? Math.min(1, morning.elapsed / .6) : morning.phase === 'alarm' ? Math.max(0, 1 - morning.elapsed / 1.2) : 0);
+      }
     }
     const set = FILM_SETS[journey.visiting ? FILM_SCENE_BY_ID[journey.visiting].set : scene.set];
     const shown = journey.visiting ? FILM_SCENE_BY_ID[journey.visiting] : scene;
     this.el('sandbox-clock').textContent = `${FILM_NAMES[shown.film]} · 第 ${FILM_SCENES.indexOf(shown) + 1} 段`;
     this.el('sandbox-weather').textContent = set.world === 'real' ? '真实世界' : ({ day: '日间', night: '夜间', warm: '室内', cold: '室内', white: '程序空间', storm: '暴雨', sunrise: '日出' })[set.light];
+    if (set.id === 'film_anderson_flat') {
+      const minutes = Math.floor(this.time * .06);
+      this.el('sandbox-clock').textContent = `第 ${state.neoLife!.day} 天 · ${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+      this.el('sandbox-weather').textContent = this.time >= 6000 && this.time < 18000 ? '日间 · 101 公寓' : '夜间 · 101 公寓';
+    }
     this.el('sandbox-interact').classList.toggle('hidden', Boolean(step && !journey.visiting && !journey.finished
       && !(bridgeDoor || scene.id === 'm1_bug' && journey.step === 1 && journey.meeting?.phase === 'done'
         ? player.isInMatrix && distance(player.position, stepTarget!) <= 4 : filmStepActionReady(scene, step, player.position, player.isInMatrix))));
@@ -791,6 +800,19 @@ export class SandboxUI {
       this.el('sandbox-nearby').textContent = phase === 'reply' ? '尝试用键盘退出' : phase === 'noticed' ? '决定是否接受邀请' : step?.label ?? '跟随白兔去夜店';
       if (locked) this.el('sandbox-waypoint').textContent = '';
       document.getElementById('game-objective-copy')!.textContent = phase === 'reply' ? 'G 尝试退出窗口' : step?.label ?? 'G 随他们出发';
+      return;
+    }
+    if (!journey.visiting && journey.scene === 'm1_morning' && journey.morning) {
+      const phase = journey.morning.phase; const locked = morningLocked(journey);
+      const close = !step || distance(player.position, filmStepPosition(scene, step)) <= 4;
+      const canAct = phase === 'alarm' || phase === 'done' || phase === 'home' && close
+        || phase === 'ready' && close && player.position.z >= FILM_SETS[scene.set].center.z + 20;
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = phase === 'alarm' ? 'G 关掉闹钟并起床 · V 切换视角' : locked ? '休息与起身进度会保存 · V 切换视角' : phase === 'done' ? 'G 去公司 · 交通费用与时间将在出发时结算' : 'WASD 自由走动 · 靠近目标按 G · J 生活手记';
+      this.el('sandbox-interact').classList.toggle('hidden', !canAct);
+      this.el('sandbox-nearby').textContent = phase === 'alarm' ? '关掉闹钟并起床' : phase === 'done' ? '去公司' : step?.label ?? '';
+      if (locked || !step) this.el('sandbox-waypoint').textContent = '';
+      document.getElementById('game-objective-copy')!.textContent = journey.lastText;
       return;
     }
     if (!journey.visiting && journey.scene === 'm1_wake_again' && journey.wakeCall) {

@@ -6,6 +6,29 @@ import { LifeInteriors } from '../packages/client/src/engine/LifeInteriors.js';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
+import { ApartmentSetRenderer } from '../packages/client/src/engine/ApartmentSetRenderer.js';
+
+test('the physical bedside clock shows world time, flashes while ringing and depresses under Neo’s hand', t => {
+  const original = globalThis.document; const text: string[] = [];
+  globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ({ fillRect() {}, fillText(line: string) { text.push(line); } }) }) } as unknown as Document;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const root = new THREE.Group(); const renderer = new ApartmentSetRenderer(root);
+  const journey = { scene: 'm1_morning', step: 1, morning: { phase: 'alarm', elapsed: 0 } } as FilmJourney;
+  try {
+    text.length = 0; renderer.update(journey, 9250);
+    assert.ok(text.includes('09:15') && text.includes('ALARM'));
+    const clock = root.getObjectByName('apartment-alarm-clock')!; const button = clock.getObjectByName('apartment-alarm-button')!;
+    assert.ok(clock); const height = button.position.y;
+    const light = root.getObjectByName('apartment-window-daylight') as THREE.PointLight;
+    assert.ok(light.intensity > 60, 'daylight must reach the room when the alarm rings');
+    journey.morning!.elapsed = .3; text.length = 0; renderer.update(journey, 9250);
+    assert.ok(text.includes('09:15')); assert.ok(!text.includes('ALARM'), 'the saved story clock controls the blink');
+    text.length = 0; renderer.update(structuredClone(journey), 9250); assert.equal(text.length, 0, 'a paused/restored frame must not toggle the display');
+    journey.morning = { phase: 'stopping', elapsed: .6 }; renderer.update(journey, 9250); assert.ok(button.position.y < height);
+    journey.morning = { phase: 'rising', elapsed: .2 }; renderer.update(journey, 9267); assert.equal(button.position.y, height);
+    assert.ok(text.includes('09:16'));
+  } finally { renderer.dispose(); globalThis.document = original; }
+});
 
 test('one persistent city apartment renders ordinary life, contact, daylight and an open street portal', t => {
   const original = globalThis.document; const text: string[] = [];

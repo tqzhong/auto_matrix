@@ -144,6 +144,16 @@ export class GameAudio {
       tone.onended = () => { tone.disconnect(); gain.disconnect(); };
     }
   }
+  alarmSound(): void {
+    const bus = this.effects(); if (!bus) return;
+    const { context: ctx, output } = bus;
+    for (let i = 0; i < 3; i++) {
+      const tone = ctx.createOscillator(); const gain = ctx.createGain(); const at = ctx.currentTime + i * .12;
+      tone.type = 'square'; tone.frequency.setValueAtTime(1047, at);
+      gain.gain.setValueAtTime(.0001, at); gain.gain.linearRampToValueAtTime(.014, at + .005); gain.gain.exponentialRampToValueAtTime(.0001, at + .07);
+      tone.connect(gain); gain.connect(output); tone.start(at); tone.stop(at + .08); tone.onended = () => { tone.disconnect(); gain.disconnect(); };
+    }
+  }
   landlineSound(kind: 'ring' | 'pickup' | 'hangup'): void {
     const bus = this.effects(); if (!bus) return;
     const { context: ctx, output } = bus; const at = ctx.currentTime;

@@ -94,10 +94,17 @@ function completeContactAndClub(h: Harness) {
   assert.equal(h.state().club?.phase, 'departing');
   h.walkLocal('film_white_rabbit_club', CLUB.exit.x, CLUB.exit.z); h.frames(.2);
   assert.ok(h.state().completed.includes('m1_club')); h.command('next');
+  assert.equal(h.state().scene, 'm1_morning');
+  h.walkLocal('film_anderson_flat', APARTMENT.bedside.x, APARTMENT.bedside.z);
+  h.command('act'); h.frames(1); h.reload(); h.frames(5);
+  assert.equal(h.state().morning?.phase, 'alarm'); assert.equal(h.world.timeOfDay, 9250);
+  h.command('act'); h.frames(7); assert.equal(h.state().morning?.phase, 'ready');
+  h.walkLocal('film_anderson_flat', 0, 2); h.walkLocal('film_anderson_flat', 0, 23);
+  h.command('act'); h.command('next');
   assert.equal(h.state().scene, 'm1_boss'); h.reload(); assert.equal(h.state().scene, 'm1_boss');
   assert.equal(h.sandbox.state.neoLife!.choices.white_rabbit, 'follow');
   assert.equal(h.sandbox.state.neoLife!.choices['m1_club:2'], 'trust');
-  assert.equal(h.sandbox.state.neoLife!.money, cash + 2000);
+  assert.equal(h.sandbox.state.neoLife!.money, cash + 1998);
 }
 
 function completeWorkday(h: Harness) {

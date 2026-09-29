@@ -5,7 +5,7 @@ import { meetingBoardPoint, meetingLocked, MEETING_TIMING } from '@auto_matrix/s
 import { filmPosition, HOTEL_DOOR_PROGRESS } from '@auto_matrix/shared';
 import { workdayLocked } from '@auto_matrix/shared';
 import { apartmentLocked } from '@auto_matrix/shared';
-import { wakeCallLocked } from '@auto_matrix/shared';
+import { wakeCallLocked, morningLocked } from '@auto_matrix/shared';
 import { clubLocked } from '@auto_matrix/shared';
 import { sentinelDanger, sentinelLocked } from '@auto_matrix/shared';
 import { interludeDuration, interludeLocked } from '@auto_matrix/shared';
@@ -258,14 +258,24 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
     const current = player.id === journey.actor;
     const close = current && (!step || distance(player.position, filmStepPosition(scene, step)) <= 4);
     const active = phase === 'ready' || phase === 'listen';
-    return `<div class="film-journal film-contact"><header class="film-heading"><span>THE MATRIX / 01</span><h3>在人群中低声交谈</h3></header><article class="film-now"><div><h3>${step?.label ?? '明天仍然要上班'}</h3><p>${journey.lastText}</p><div class="film-controls">${!current ? button('resume', '继续 Neo 的剧情视角') : phase === 'question' ? filmReflections(scene.id).map(choice => button(`reflect:${choice.id}`, choice.label, !close)).join('') : active ? button('act', phase === 'ready' ? '回应 Trinity · G' : '追问她为什么来找我 · G', !close) : !step ? button('next', '离开夜店，继续第二天 · G') : clubLocked(journey) ? '<p>合上手记观看。V 可以切换视角，暂停和重新载入会保留交谈进度。</p>' : '<p>合上手记，用 WASD 穿过人群。你可以停留观察，走到目标旁再继续。</p>'}</div><details><summary>查看这次相遇的进度</summary><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></details></div></article></div>`;
+    return `<div class="film-journal film-contact"><header class="film-heading"><span>THE MATRIX / 01</span><h3>在人群中低声交谈</h3></header><article class="film-now"><div><h3>${step?.label ?? '明天仍然要上班'}</h3><p>${journey.lastText}</p><div class="film-controls">${!current ? button('resume', '继续 Neo 的剧情视角') : phase === 'question' ? filmReflections(scene.id).map(choice => button(`reflect:${choice.id}`, choice.label, !close)).join('') : active ? button('act', phase === 'ready' ? '回应 Trinity · G' : '追问她为什么来找我 · G', !close) : !step ? button('next', '回到 101 公寓 · 20 分钟 / 免费') : clubLocked(journey) ? '<p>合上手记观看。V 可以切换视角，暂停和重新载入会保留交谈进度。</p>' : '<p>合上手记，用 WASD 穿过人群。你可以停留观察，走到目标旁再继续。</p>'}</div><details><summary>查看这次相遇的进度</summary><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></details></div></article></div>`;
   }
   if (!journey.visiting && journey.scene === 'm1_wake_up' && journey.contact) {
     const phase = journey.contact.phase; const step = scene.steps[journey.step];
     const ready = !apartmentLocked(journey) || phase === 'reply';
     const close = player.id === journey.actor && (!step || distance(player.position, filmStepPosition(scene, step)) <= 4);
     const label = phase === 'reply' ? '尝试退出窗口' : step?.label ?? '随他们去夜店';
-    return `<div class="film-journal film-contact"><header class="film-heading"><span>THE MATRIX / 01</span><h3>101 · 白兔来敲门</h3></header><article class="film-now"><div><h3>${label}</h3><p>${journey.lastText}</p><div class="film-controls">${phase === 'noticed' ? `${button('contact:follow', '接受邀请，亲自核对线索', !close)}${button('contact:wait', '暂时回到日常生活', !close)}<small>暂缓不会丢失调查与交易记录。回家后仍可以继续。</small>` : button(step ? 'act' : 'next', ready ? `${label} · G` : '合上手记观看', !close || !ready)}${player.id !== journey.actor ? button('resume', '继续 Neo 的剧情视角') : ''}</div><details><summary>查看已保存的线索与交易步骤</summary><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></details></div></article></div>`;
+    return `<div class="film-journal film-contact"><header class="film-heading"><span>THE MATRIX / 01</span><h3>101 · 白兔来敲门</h3></header><article class="film-now"><div><h3>${label}</h3><p>${journey.lastText}</p><div class="film-controls">${phase === 'noticed' ? `${button('contact:follow', '接受邀请，亲自核对线索', !close)}${button('contact:wait', '暂时回到日常生活', !close)}<small>暂缓不会丢失调查与交易记录。回家后仍可以继续。</small>` : button(step ? 'act' : 'next', ready ? `${label} · G` : '合上手记观看', !close || !ready)}${!step ? '<small>白天出发会等到今晚 20:30；已到夜间则计入 20 分钟路程。</small>' : ''}${player.id !== journey.actor ? button('resume', '继续 Neo 的剧情视角') : ''}</div><details><summary>查看已保存的线索与交易步骤</summary><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></details></div></article></div>`;
+  }
+  if (!journey.visiting && journey.scene === 'm1_morning' && journey.morning) {
+    const phase = journey.morning.phase; const step = scene.steps[journey.step]; const current = player.id === journey.actor;
+    const close = current && (!step || distance(player.position, filmStepPosition(scene, step)) <= 4)
+      && (phase !== 'ready' || player.position.z >= FILM_SETS[scene.set].center.z + 20);
+    const transit = life.money >= 2; const commute = transit ? '去公司 · 20 分钟 / $2' : '步行去公司 · 40 分钟 / 免费';
+    const action = !current ? button('resume', '继续 Neo 的生活') : phase === 'home' ? button('act', '休息到早晨 · G', !close)
+      : phase === 'alarm' ? button('act', '伸手关掉闹钟，起床 · G') : phase === 'ready' ? button('act', '在街边准备出发 · G', !close)
+      : phase === 'done' ? button('next', commute) : '<button disabled>合上手记，观看当前动作</button>';
+    return `<div class="film-journal film-contact"><header class="film-heading"><span>THE MATRIX / 01</span><h3>101 · 闹钟之后</h3><p>第 ${life.day} 天 · 现金 $${life.money} · 精力 ${Math.round(life.energy)}</p></header><article class="film-now"><div><h3>${step?.label ?? '出发去公司'}</h3><p>${journey.lastText}</p><div class="film-controls">${action}</div><small>${morningLocked(journey) ? '休息与起身进度会保存，暂停或退出后从当前动作继续。' : '选择休息才会推进到早晨；选择去公司才会结算交通时间和费用。'}</small><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
   }
   if (!journey.visiting && journey.scene === 'm1_wake_again' && journey.wakeCall) {
     const phase = journey.wakeCall.phase; const step = scene.steps[journey.step]; const current = player.id === journey.actor;
