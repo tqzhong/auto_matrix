@@ -399,13 +399,14 @@ export class PlayerController {
       this.sandbox?.life.film.helBargainFrame(agent, tick);
       const journey = this.sandbox?.life.film.state;
       if (journey?.actor === agent.id && agent.currentAction && heldPhone(journey)) agent.currentAction.parameters.phone = { ...heldPhone(journey)! };
-      const nearbyLocation = Object.values(LOCATIONS).filter(location => location.id !== 'downtown' && (location.world === 'matrix') === agent.isInMatrix)
+      const nearbyLocation = Object.values(LOCATIONS).filter(location => location.id !== 'downtown' && location.id !== 'film_anderson_flat' && (location.world === 'matrix') === agent.isInMatrix)
         .find(location => distance(locationEntrance(location.id), agent.position) < 42);
       const room = agent.isInMatrix ? insideLifeRoom(agent.position) : undefined;
       let set = filmSetAt(agent.position, agent.isInMatrix);
       if (journey?.actor === agent.id && journey.scene === 'm1_bridge' && set?.id === 'film_extraction_car') set = FILM_SETS.film_adams_bridge;
       else if (journey?.actor === agent.id && journey.scene === 'm1_bug' && set?.id === 'film_adams_bridge') set = FILM_SETS.film_extraction_car;
-      if (set) agent.currentLocation = set.id;
+      if (set?.id === 'film_anderson_flat' && !(journey?.actor === agent.id && (journey.scene === 'm1_wake_up' || journey.scene === 'm1_wake_again' || journey.visiting))) agent.currentLocation = 'neo_apartment';
+      else if (set) agent.currentLocation = set.id;
       else if (room) agent.currentLocation = room;
       else if (nearbyLocation) agent.currentLocation = nearbyLocation.id;
       else if (agent.isInMatrix) agent.currentLocation = 'downtown';

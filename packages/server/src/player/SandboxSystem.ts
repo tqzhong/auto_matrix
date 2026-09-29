@@ -42,6 +42,7 @@ export class SandboxSystem {
     this.state = structuredClone(saved);
     for (const node of defaults.nodes) if (!this.state.nodes.some(n => n.id === node.id)) this.state.nodes.push(node);
     for (const [id, progress] of Object.entries(defaults.missions)) this.state.missions[id] ??= progress;
+    this.life.film.restoreApartmentSpace();
     this.life.film.restoreOfficeSpace();
     this.life.film.restoreHotelSpace();
     this.life.film.restoreAwakeningSpace();

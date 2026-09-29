@@ -13,7 +13,7 @@ import { INTERROGATION_CAST, INTERROGATION_ROOM, INTERROGATION_TIMING, interroga
 import { BRIDGE_TAIL, BRIDGE_ARRIVAL_SECONDS, MEETING_CAR, MEETING_CAST, MEETING_DRIVE_SECONDS, MEETING_TIMING, bridgeArrivalPose, meetingBoardPoint, meetingCarPose, meetingLocked, meetingRollRoadTime, meetingRoot, type MeetingEncounter } from '@auto_matrix/shared';
 import { LAFAYETTE, LAFAYETTE_WELCOME, LAFAYETTE_KNOCK_SECONDS, HOTEL_ROUTE_LENGTH, HOTEL_DOOR_PROGRESS, hotelRoutePose, hotelRouteProgress, lafayetteKnocking, lafayetteKnockRoot, lafayetteWelcomeLocked, lafayetteWelcomeRoot, filmSetAt } from '@auto_matrix/shared';
 import { OFFICE_WORKDAY, OFFICE_DELIVERY_SECONDS, officeCourierRoot, officeRecipientRoot, workdayLocked, workdayText } from '@auto_matrix/shared';
-import { APARTMENT, WAKE_CALL, apartmentAfter, apartmentDoor, apartmentLocked, apartmentText, wakeCallDoor, wakeCallLocked, wakeCallRoot, wakeCallText, lifeRoomCenter, type ApartmentPhase, type WakeCallPhase } from '@auto_matrix/shared';
+import { APARTMENT, WAKE_CALL, apartmentAfter, apartmentDoor, apartmentLocked, apartmentText, wakeCallDoor, wakeCallLocked, wakeCallRoot, wakeCallText, lifeRoomCenter, insideLifeRoom, type ApartmentPhase, type WakeCallPhase } from '@auto_matrix/shared';
 import { CLUB, clubLocked, clubRoot, clubText, type ClubPhase } from '@auto_matrix/shared';
 import { SENTINEL_CAST, SENTINEL_TIMING, sentinelActive, sentinelDanger, sentinelLocked, sentinelRoot, sentinelText, type SentinelRole } from '@auto_matrix/shared';
 import { INTERLUDE_CAST, interludeDuration, interludeKind, interludeLocked, interludeRoot, interludeSeated, interludeText, type InterludeEncounter, type InterludeRole } from '@auto_matrix/shared';
@@ -1211,7 +1211,8 @@ export class FilmStorySystem {
       const life = this.sandbox().neoLife!; state.checkpoint = { ...agent.position };
       life.deferredContact = state; life.contactSignal = true; life.choices.white_rabbit = 'wait';
       this.releaseCast(); delete life.journey;
-      agent.currentLocation = 'neo_apartment'; agent.position = lifeRoomCenter('neo_apartment')!; agent.rotation = Math.PI;
+      agent.currentLocation = 'neo_apartment';
+      this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== 'film:apartment:door');
       agent.currentAction = null; agent.velocity = { x: 0, y: 0, z: 0 };
       life.journal.unshift({ day: life.day, time: this.world.timeOfDay, title: '先过完今天', text: '白兔线索和交易已记下。你暂时没有接受邀请；回到家后仍可继续这条联系。' });
       return '你暂时回到日常生活。线索、交易与门口的决定已保存。';
@@ -1396,6 +1397,29 @@ export class FilmStorySystem {
       parameters: { resolved: true, seated: guide.progress === 0 && (guide.rise ?? 0) === 0, mirrorGuide: guide.progress }, startedAt: tick, duration: 1, progress: 0 };
     if (!guide.done) state.lastText = 'Morpheus 起身，穿过会客厅后门走向追踪室。跟上他；你落后时他会停下等你。';
     else state.lastText = 'Morpheus 已在追踪室等候。走到椅子右侧按 G 坐下，Trinity 会接上电极。';
+  }
+  restoreApartmentSpace(): void {
+    const center = FILM_SETS.film_anderson_flat.center;
+    const life = this.sandbox().neoLife;
+    const migrate = (position?: AgentState['position'] | null) => {
+      if (!position || Math.abs(position.x - 5056) > 45 || Math.abs(position.z - 4096) > 48 || position.y < 0 || position.y >= 12) return;
+      position.x += center.x - 5056; position.z += center.z - 4096;
+    };
+    for (const actor of this.world.agents.values()) if (actor.isInMatrix) {
+      migrate(actor.position); migrate(actor.targetPosition); actor.currentPath.forEach(migrate);
+      // The former daily room had different furniture. Preserve clear saved positions,
+      // but move an ordinary resident out of a newly solid bed, desk or counter.
+      if (actor.currentLocation === 'neo_apartment' && life?.journey?.actor !== actor.id && insideLifeRoom(actor.position) === 'neo_apartment' && playerBlocked(actor.position, true)) {
+        actor.position = lifeRoomCenter('neo_apartment')!; actor.velocity = { x: 0, y: 0, z: 0 }; actor.targetPosition = null; actor.currentPath = [];
+        if (actor.id === 'neo' && life?.activity) life.activity.position = { ...actor.position };
+      }
+    }
+    for (const journey of [life?.journey, life?.deferredContact]) { migrate(journey?.checkpoint); migrate(journey?.returnPosition); }
+    migrate(life?.lastStreetPosition); migrate(life?.activity?.position); migrate(life?.anomaly?.position);
+    for (const item of [...this.sandbox().structures, ...this.sandbox().nodes, ...this.sandbox().threats]) if (item.matrix) migrate(item.position);
+    for (const profile of Object.values(this.sandbox().profiles)) migrate(profile.job?.position);
+    if (!life?.journey || life.journey.visiting || !['m1_wake_up', 'm1_wake_again'].includes(life.journey.scene))
+      this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== 'film:apartment:door');
   }
   restoreHotelSpace(): void {
     if (this.state?.hotel) { this.sealHotelDoor(); return; }
@@ -3871,16 +3895,20 @@ export class FilmStorySystem {
       if (target === 'start' && life.deferredContact) return '已经保留了白兔的邀请，请继续这段联系，或继续日常生活。';
       if (!life.chapter) return '先在日常生活中调查异常，与 Trinity 建立联系。';
       if (life.activity || this.sandbox().threats.some(t => t.target === agent.id)) return '先结束当前活动或战斗。';
-      if (target === 'continue' && life.chapter === 1 && life.contactSignal && (!agent.isInMatrix || distance(agent.position, lifeRoomCenter('neo_apartment')!) > 12)) return '线索留在家里的电脑上。先回公寓，再决定继续调查。';
+      const atHome = agent.isInMatrix && insideLifeRoom(agent.position) === 'neo_apartment';
+      if (target === 'continue' && life.chapter === 1 && life.contactSignal && !atHome) return '线索留在家里的电脑上。先回公寓，再决定继续调查。';
       if (target === 'continue' && life.deferredContact) {
         life.journey = life.deferredContact; delete life.deferredContact;
-        this.place(agent, this.scene!, { ...life.journey.checkpoint }); this.apartmentFrame(agent, 0, tick);
+        const yaw = agent.rotation;
+        this.place(agent, this.scene!, atHome ? agent.position : life.journey.checkpoint); agent.rotation = yaw; this.apartmentFrame(agent, 0, tick);
         return '回到已经核对的白兔线索。先前的交易与选择都保留。';
       }
       const first = target === 'start' ? FILM_SCENES[0] : FILM_SCENES.find(s => s.actor === 'neo' && s.chapter === NEO_CHAPTERS[life.chapter].id) ?? FILM_SCENE_BY_ID.m1_wake_up;
+      if (first.id === 'm1_wake_up' && atHome && agent.position.z >= FILM_SETS.film_anderson_flat.center.z + APARTMENT.doorZ - 1.1) return '先走进 101 房间，再查看电脑上的信号。';
       if (!this.changeActor(agent, first.actor, tick)) return 'Trinity 正在由另一位玩家控制，稍后再接入序幕。';
       life.journey = { version: 1, scene: first.id, step: 0, actor: first.actor, completed: [], enteredAt: tick, reflections: {}, lastText: first.context, checkpoint: filmEntry(first) };
-      this.enter(first, tick);
+      const yaw = agent.rotation; const homePosition = first.id === 'm1_wake_up' && atHome ? { ...agent.position } : undefined;
+      this.enter(first, tick, homePosition); if (homePosition) agent.rotation = yaw;
       return `${first.actor === 'neo' ? '继续 Neo 的故事。生活记录与物品已保留。' : '可选序幕从 Trinity 开始。'}WASD 移动，G 互动，J 查看故事。`;
     }
     const state = this.state;

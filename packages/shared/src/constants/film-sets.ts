@@ -4,7 +4,7 @@ import type { Vector3 } from '../types/agent.js';
 import { LOBBY_COLUMNS } from './lobby.js';
 import { OFFICE_OBSTACLES, OFFICE_LADDER, OFFICE_LEDGE_OFFSET } from './office.js';
 import { OFFICE_MANAGER_WALLS, OFFICE_MANAGER_FURNITURE } from './office-workday.js';
-import { APARTMENT_FURNITURE } from './apartment.js';
+import { APARTMENT_FURNITURE, APARTMENT_ROOM } from './apartment.js';
 import { CLUB_OBSTACLES } from './club.js';
 import { PILL_ROOM } from './pills.js';
 import { INTERROGATION_ROOM } from './interrogation.js';
@@ -31,7 +31,7 @@ const definitions: Omit<FilmSet, 'id' | 'center'>[] = [
   { name: '城市之心旅馆 · 303', film: [1], architecture: 'hotel', world: 'matrix', width: 34, depth: 52, height: 12, light: 'night', detail: '303 / 烧旧墙纸、窄走廊、电话与电脑' },
   { name: '旅馆屋顶与消防梯', film: [1], architecture: 'rooftop', world: 'matrix', width: 54, depth: 100, height: 24, light: 'night', detail: '烟囱、砖墙、相邻屋顶与消防通道' },
   { name: 'Wells & Lake · 电话亭', film: [1], architecture: 'street', world: 'matrix', width: 48, depth: 94, height: 24, light: 'night', detail: '桥下路口、卡车车灯、玻璃电话亭' },
-  { name: 'Anderson 公寓 · 101', film: [1], architecture: 'apartment', world: 'matrix', width: 34, depth: 40, height: 11, light: 'night', detail: 'CRT 屏幕、线缆、唱片、101 门牌' },
+  { name: 'Anderson 公寓 · 101', film: [1], architecture: 'apartment', world: 'matrix', width: APARTMENT_ROOM.width, depth: APARTMENT_ROOM.depth, height: 11, light: 'night', detail: 'CRT 屏幕、线缆、唱片、101 门牌' },
   { name: '地下夜店 · 白兔', film: [1], architecture: 'club', world: 'matrix', width: 42, depth: 56, height: 14, light: 'night', detail: '人群剪影、工业柱网、低照度舞池' },
   { name: 'Metacortex · 办公层', film: [1], architecture: 'office', world: 'matrix', width: 54, depth: 66, height: 13, light: 'day', detail: '隔间、百叶窗、快递、玻璃主管办公室' },
   { name: 'Metacortex · 窗外窄台', film: [1], architecture: 'rooftop', world: 'matrix', width: 32, depth: 76, height: 28, light: 'day', detail: '玻璃幕墙、脚手架与高空落差' },
@@ -98,6 +98,8 @@ export const FILM_SETS: Record<string, FilmSet> = Object.fromEntries(definitions
   const id = `film_${ids[i]}`;
   return [id, { ...set, id, center: { x: id === 'film_freeway_101' ? 8192 : id === 'film_mountain_range' ? 12000 : 4096 + i % 8 * 320, y: set.world === 'matrix' ? 1 : -100, z: id === 'film_mountain_range' ? 12000 : 4096 + Math.floor(i / 8) * 320 } }];
 }));
+// Daily life and both calls take place in the same city apartment.
+FILM_SETS.film_anderson_flat.center = { ...APARTMENT_ROOM.center };
 // The window and its exterior are one building; other film destinations remain streamed areas.
 FILM_SETS.film_office_ledge.center = { ...FILM_SETS.film_metacortex_floor.center, x: FILM_SETS.film_metacortex_floor.center.x + OFFICE_LEDGE_OFFSET };
 // Boarding and the examination share the same parked car, not separate rooms.
@@ -106,6 +108,8 @@ FILM_SETS.film_lafayette.center.y += LAFAYETTE.upper;
 FILM_SETS.film_hammer_route.center = { x: 15000, y: -100, z: 15000 };
 
 export function filmSetAt(position: Vector3, matrix: boolean): FilmSet | undefined {
+  const home = FILM_SETS.film_anderson_flat;
+  if (matrix && position.y >= 0 && position.y < 9 && Math.abs(position.x - home.center.x) < home.width / 2 + 1.2 && Math.abs(position.z - home.center.z) < home.depth / 2 + 1.2) return home;
   const office = FILM_SETS.film_metacortex_floor; const ledge = FILM_SETS.film_office_ledge;
   const outside = position.x < office.center.x - 27.3;
   if (matrix && outside && Math.abs(position.x - ledge.center.x) < ledge.width / 2 + 28 && Math.abs(position.z - ledge.center.z) < ledge.depth / 2 + 28) return ledge;
@@ -113,7 +117,7 @@ export function filmSetAt(position: Vector3, matrix: boolean): FilmSet | undefin
   const x = position.x - bridge.center.x; const z = position.z - bridge.center.z;
   if (matrix && hotelContains(x - MEETING_DESTINATION.x, z)) return FILM_SETS.film_lafayette;
   if (matrix && meetingRoadContains(x, z) && (x < MEETING_DESTINATION.x - 23 || x > MEETING_DESTINATION.x + 23 || z >= 27 || z < -27)) return FILM_SETS.film_extraction_car;
-  return Object.values(FILM_SETS).find(set => set !== ledge && !(set === office && outside) && (set.world === 'matrix') === matrix && Math.abs(position.x - set.center.x) < set.width / 2 + 28 && Math.abs(position.z - set.center.z) < set.depth / 2 + 28);
+  return Object.values(FILM_SETS).find(set => set !== home && set !== ledge && !(set === office && outside) && (set.world === 'matrix') === matrix && Math.abs(position.x - set.center.x) < set.width / 2 + 28 && Math.abs(position.z - set.center.z) < set.depth / 2 + 28);
 }
 export function filmPosition(id: string, x = 0, z = 0): Vector3 {
   const center = FILM_SETS[id].center;
@@ -229,9 +233,10 @@ export function filmBlocked(position: Vector3, set: FilmSet, radius: number, mov
     return position.y >= set.center.y - .8 && filmObstacles(set).some(o => Math.abs(x - o.x) < o.width / 2 + radius && Math.abs(z - o.z) < o.depth / 2 + radius && position.y < set.center.y + o.height);
   }
   const hotelEscape = set.id === 'film_heart_hotel' && Math.abs(x) < 4.2 && z < -25 && z > -35 && position.y >= set.center.y - 1.4;
+  const apartmentExit = set.id === 'film_anderson_flat' && Math.abs(x) < APARTMENT_ROOM.exitWidth / 2 - radius && z > 0;
   if (set.id === 'film_extraction_car' || set.id === 'film_adams_bridge') {
     if (!meetingRoadContains(x, z, radius)) return true;
-  } else if (!hotelEscape && (Math.abs(x) > set.width / 2 - radius - .6 || Math.abs(z) > set.depth / 2 - radius - .6)) return true;
+  } else if (!hotelEscape && (Math.abs(x) > set.width / 2 - radius - .6 || !apartmentExit && Math.abs(z) > set.depth / 2 - radius - .6)) return true;
   if (position.y < filmGroundHeight(position, set) - .8) return true;
   return filmObstacles(set, movingMeetingCar).some(o => Math.abs(x - o.x) < o.width / 2 + radius && Math.abs(z - o.z) < o.depth / 2 + radius && position.y < set.center.y + o.height);
 }

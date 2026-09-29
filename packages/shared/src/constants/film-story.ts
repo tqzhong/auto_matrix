@@ -176,7 +176,7 @@ export const FILM_SCENES: FilmScene[] = [
   ]),
   scene('m1_roofs', 1, 'hotel_roofs', 'trinity', '屋顶追逐', 'contact', 'chase', 'Brown 紧追不舍。穿过通风设施，助跑越过楼间空隙，抵达消防梯。', [walk('穿过通风设施', -7, 12), walk('越过楼间空隙', 7, -14), use('沿消防梯撤向电话亭', 'Trinity 穿过对面的窗户，继续赶往 Wells 与 Lake 的出口。', 0, -38)], ['agent_brown']),
   scene('m1_phone_escape', 1, 'wells_phone', 'trinity', '卡车前的电话', 'contact', 'chase', '出口电话响起。卡车已在路口掉头，必须赶在撞击前接起听筒。', [walk('冲向电话亭', 0, -28), use('接起出口电话', '连接及时中断。卡车撞毁电话亭，Trinity 已返回飞船。', 0, -28, 0)]),
-  scene('m1_wake_up', 1, 'anderson_flat', 'neo', '屏幕上的来信', 'contact', 'night', '叙事回到 Thomas Anderson 的公寓。屏幕上的消息与敲门声打断了深夜。', [
+  scene('m1_wake_up', 1, 'anderson_flat', 'neo', '屏幕上的来信', 'contact', 'night', 'Thomas Anderson 的公寓里，屏幕上的消息与敲门声打断了日常。', [
     use('查看 CRT，尝试退出异常窗口', '屏幕上的线索没有发送者。', APARTMENT.computer.x, APARTMENT.computer.z),
     use('打开 101 房门', '来客是 Choi 与 Dujour。', APARTMENT.door.x, APARTMENT.door.z),
     use('取出空心书里的磁盘', '备用磁盘藏在书页内部。', APARTMENT.book.x, APARTMENT.book.z),

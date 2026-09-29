@@ -31,7 +31,6 @@ import { MEETING_DESTINATION, meetingLocked, type MeetingGesture } from '@auto_m
 import { MeetingSetRenderer } from './MeetingSetRenderer.js';
 import { LafayetteApproachRenderer } from './LafayetteApproachRenderer.js';
 import { LAFAYETTE } from '@auto_matrix/shared';
-import { ApartmentSetRenderer } from './ApartmentSetRenderer.js';
 import { apartmentLocked } from '@auto_matrix/shared';
 import { clubLocked } from '@auto_matrix/shared';
 import { ClubSetRenderer } from './ClubSetRenderer.js';
@@ -112,7 +111,6 @@ export class FilmSetRenderer {
   private glow!: THREE.MeshBasicMaterial;
   private lobby?: LobbySetRenderer;
   private office?: OfficeSetRenderer;
-  private apartment?: ApartmentSetRenderer;
   private club?: ClubSetRenderer;
   private freeway?: FreewaySetRenderer;
   private pods?: PodSetRenderer;
@@ -208,10 +206,10 @@ export class FilmSetRenderer {
     if (this.meeting && set && ['film_adams_bridge', 'film_extraction_car'].includes(set.id)) { this.current = set; this.currentScene = sceneId; }
     if (set?.id !== this.current?.id || sceneId !== this.currentScene) {
       this.clear(); this.current = set; this.currentScene = sceneId;
-      if (set) {
-        this.root.position.set(set.center.x, set.center.y - 1, set.center.z);
+      if (set) this.root.position.set(set.center.x, set.center.y - 1, set.center.z);
+      // LifeInteriors owns the persistent city apartment, even while another actor plays a remote chapter.
+      if (set && set.id !== 'film_anderson_flat') {
         if (['film_metacortex_floor', 'film_office_ledge'].includes(set.id)) this.office = new OfficeSetRenderer(this.root, set);
-        else if (set.id === 'film_anderson_flat') this.apartment = new ApartmentSetRenderer(this.root);
         else if (set.id === 'film_white_rabbit_club') { this.club = new ClubSetRenderer(this.root); void this.club.ready.catch(error => console.error('夜店人群加载失败', error)); }
         else if (set.id === 'film_government_office' || set.id === 'film_government_roof') this.government = new GovernmentSetRenderer(this.root, set.id);
         else if (sceneId === 'm1_subway' && set.id === 'film_subway_platform' || sceneId === 'm1_city_chase' && set.id === 'film_escape_streets') this.matrixEscape = new MatrixEscapeRenderer(this.root, set.id as 'film_subway_platform' | 'film_escape_streets');
@@ -353,7 +351,6 @@ export class FilmSetRenderer {
       this.openingGlass.visible = strike > .35;
       this.openingGlass.scale.setScalar(Math.max(.01, strike));
     }
-    this.apartment?.update(journey);
     this.club?.update(elapsed);
     this.freeway?.update(journey, elapsed, playerPosition);
     this.pods?.update(journey, elapsed, firstPerson);
@@ -560,7 +557,7 @@ export class FilmSetRenderer {
     return set;
   }
   atmosphere(): { color: number; ambient: number; sun: number } | undefined {
-    if (!this.current) return;
+    if (!this.current || this.current.id === 'film_anderson_flat') return;
     const palette = palettes[this.current.light];
     (this.scene.background as THREE.Color).setHex(palette.sky);
     const fog = this.scene.fog as THREE.FogExp2; fog.color.setHex(palette.sky); fog.density = palette.fog;
@@ -616,7 +613,6 @@ export class FilmSetRenderer {
       return { color: 0xdce7d2, ambient: .6, sun: .2 };
     }
     if (this.office) return { color: 0xe8e8d7, ambient: .65, sun: .3 };
-    if (this.apartment) { fog.density = .001; this.scene.environmentIntensity = .42; return { color: 0xcbd2b8, ambient: .52, sun: .06 }; }
     if (this.club) { fog.density = .005; fog.color.setHex(0x111913); this.scene.environmentIntensity = .28; return { color: 0xc1c8ac, ambient: .38, sun: .025 }; }
     if (this.interrogation) { fog.density = .001; this.scene.environmentIntensity = .38; return { color: 0xdce4ce, ambient: .48, sun: .08 }; }
     if (this.meeting) { fog.density = .007; fog.color.setHex(0x111b1d); (this.scene.background as THREE.Color).copy(fog.color); this.scene.environmentIntensity = .7; return { color: 0xb8cdc6, ambient: .62, sun: .15 }; }
@@ -2383,7 +2379,6 @@ export class FilmSetRenderer {
   private clear(): void {
     this.helPerformers?.dispose(); this.helPerformers = undefined;
     this.club?.dispose(); this.club = undefined;
-    this.apartment?.dispose(); this.apartment = undefined;
     this.approach?.renderer.dispose(); this.approach = undefined;
     this.hotel?.dispose(); this.hotel = undefined;
     this.meeting?.dispose(); this.meeting = undefined;

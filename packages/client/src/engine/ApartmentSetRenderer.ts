@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { APARTMENT, apartmentAfter, apartmentDoor, wakeCallDoor, wakeCallHandsetHeld, type FilmJourney } from '@auto_matrix/shared';
+import { APARTMENT, APARTMENT_ROOM, apartmentAfter, apartmentDoor, wakeCallDoor, wakeCallHandsetHeld, type FilmJourney } from '@auto_matrix/shared';
 
 /** Anderson's workroom and the shared landing. Props use the shared interaction layout. */
 export class ApartmentSetRenderer {
@@ -19,8 +19,11 @@ export class ApartmentSetRenderer {
   private screen: THREE.CanvasTexture;
   private screenKey = '';
   private glow = new THREE.PointLight(0x8bba81, 14, 10, 2);
+  private windowGlass: THREE.MeshStandardMaterial;
+  private windowLights: THREE.PointLight[] = [];
+  private roomLights: THREE.Light[] = [];
   constructor(parent: THREE.Group) {
-    parent.add(this.root);
+    this.root.name = 'anderson-shared-apartment'; parent.add(this.root);
     const wood = this.mat(0x82765b, .88, 0, 'old_wood_floor');
     const plaster = this.mat(0x8a8b73, .94, 0, 'white_plaster_02');
     const dark = this.mat(0x131919, .65); const metal = this.mat(0x696e5e, .39, .64);
@@ -33,7 +36,11 @@ export class ApartmentSetRenderer {
       this.box(trim, x - Math.sign(x) * .18, .2, 0, .18, .4, 40);
       this.box(trim, x - Math.sign(x) * .18, 8.1, 0, .16, .3, 40);
     }
-    this.box(plaster, 0, 4.4, 20, 34, 8.8, .3);
+    const frontWidth = (APARTMENT_ROOM.width - APARTMENT_ROOM.exitWidth) / 2;
+    for (const side of [-1, 1]) this.box(plaster, side * (APARTMENT_ROOM.exitWidth + frontWidth) / 2, 4.4, 20, frontWidth, 8.8, .3);
+    this.box(plaster, 0, 7.95, 20, APARTMENT_ROOM.exitWidth, 1.7, .3);
+    for (const side of [-1, 1]) this.box(trim, side * 5, 3.55, 20, .18, 7.1, .4);
+    const exit = this.label('STREET', 2, .5, '#c6cebd', '#35413b', 256); exit.rotation.y = Math.PI; exit.position.set(0, 7.6, 19.8); this.root.add(exit);
     this.box(this.mat(0x5f6354, .94), 0, 8.8, 0, 34, .25, 40);
     for (const x of [-9.5, 9.5]) this.box(plaster, x, 4.4, APARTMENT.doorZ, 15, 8.8, .4);
     this.box(plaster, 0, 7.7, APARTMENT.doorZ, 4, 2.2, .4);
@@ -53,7 +60,8 @@ export class ApartmentSetRenderer {
       const number = this.label(x < 0 ? '102' : '103', .8, .4, '#ada68a', '#252c27', 128); number.rotation.y = Math.PI; number.position.set(x, 5.3, 19.56); this.root.add(number);
     }
     // Three tall windows, dirty glazing, venetian slats and old heating pipes.
-    const glass = this.mat(0x223331, .28, .3);
+    const glass = this.windowGlass = this.mat(0x223331, .28, .3);
+    glass.emissive.setHex(0xabc8d4);
     for (const x of [-11, -1.4, 8.2]) {
       this.box(trim, x, 5.05, -19.65, 6.2, 5.6, .25);
       this.box(glass, x, 5.05, -19.46, 5.7, 5.1, .06);
@@ -61,6 +69,8 @@ export class ApartmentSetRenderer {
       for (let y = 2.6; y < 7.6; y += .27) this.box(plastic, x, y, -19.17, 5.8, .075, .26).rotation.x = -.28;
       this.box(walnut, x, 2.24, -19.05, 6.3, .22, .9);
       for (let fin = 0; fin < 14; fin++) this.box(metal, x - 2.3 + fin * .35, 1.04, -19.2, .16, 1.7, .4, .04);
+      const daylight = new THREE.PointLight(0xd8e6ec, 0, 24, 2); daylight.name = 'apartment-window-daylight';
+      daylight.position.set(x, 6, -17.7); this.root.add(daylight); this.windowLights.push(daylight);
     }
     this.tube([[-16.5, .6, -19], [-16.5, .6, 10], [-16.5, 7.9, 10], [16.5, 7.9, 10]], metal, .055);
     // Workbench: tower, bulky CRT, keyboard, floppy drive and stacks of jewel cases.
@@ -152,6 +162,20 @@ export class ApartmentSetRenderer {
       for (let i = 0; i < 20; i++) this.box(i % 3 ? paper : trim, -15.5, .77 + shelf * 1.2, -7.55 + i * .36, .94, .8 + (i % 3) * .08, .21);
     }
     for (const z of [-7.9, -.1]) this.box(walnut, -15.7, 2.7, z, 1.6, 5.4, .12);
+    // The daily breakfast uses a small kitchenette clear of the book and visitor route.
+    this.box(trim, -10, 1.35, 6.8, 8, 2.7, 2.8, .06);
+    this.box(paper, -10, 2.8, 6.8, 8.1, .18, 2.9, .04);
+    for (const x of [-12.8, -10.9, -9, -7.1]) {
+      this.box(walnut, x, 1.4, 5.35, 1.7, 2.2, .12, .04);
+      this.box(metal, x, 2.15, 5.22, .7, .055, .1, .025);
+    }
+    this.box(metal, -12, 2.91, 6.8, 2.4, .04, 1.7, .12);
+    this.box(dark, -12, 2.94, 6.8, 1.9, .04, 1.2, .12);
+    this.tube([[-12, 2.92, 7.65], [-12, 3.8, 7.65], [-12, 3.8, 6.8], [-12, 3.55, 6.8]], metal, .06);
+    for (const x of [-8.4, -7.1]) this.mesh(new THREE.CylinderGeometry(.43, .43, .04, 24), dark, x, 2.93, 6.8);
+    this.mesh(new THREE.CylinderGeometry(.36, .36, .32, 24), metal, -8.4, 3.1, 6.8);
+    this.box(dark, -9.04, 3.14, 6.8, .75, .1, .15, .04);
+    this.mesh(new THREE.CylinderGeometry(.19, .16, .36, 24), paper, -10.2, 3.08, 6.1);
     // Warm household lamp against the cooler CRT and landing fluorescents.
     this.box(metal, 13, 3, 4, .08, 6, .08);
     this.mesh(new THREE.ConeGeometry(.9, 1.1, 32, 1, true), paper, 13, 6, 4);
@@ -161,6 +185,7 @@ export class ApartmentSetRenderer {
     const hallBounce = new THREE.PointLight(0xd7d0a7, 82, 20, 2); hallBounce.position.set(0, 5.8, 15.5); this.root.add(hallBounce);
     const doorwayFill = new THREE.PointLight(0xc3c8aa, 105, 14, 2); doorwayFill.name = 'apartment-doorway-fill'; doorwayFill.position.set(2, 4.8, 8.4); this.root.add(doorwayFill);
     this.box(trim, 0, 8.55, 16, 3.4, .16, .7); this.box(luminous, 0, 8.42, 16, 3.1, .08, .32);
+    this.root.traverse(object => { if (object instanceof THREE.Light) this.roomLights.push(object); });
     this.batch(); this.update();
   }
   private mat(color: number, roughness: number, metalness = 0, source?: string): THREE.MeshStandardMaterial {
@@ -187,10 +212,14 @@ export class ApartmentSetRenderer {
     const map = new THREE.CanvasTexture(canvas); map.colorSpace = THREE.SRGBColorSpace; this.textures.add(map);
     const mat = new THREE.MeshStandardMaterial({ map, roughness: .8 }); this.materials.add(mat); return this.mesh(new THREE.PlaneGeometry(w, h), mat, 0, 0, 0);
   }
-  update(journey?: FilmJourney): void {
+  update(journey?: FilmJourney, time = 22000, nearby = true, contactSignal = false): void {
+    const daylight = Math.max(0, Math.sin((time / 24000 - .25) * Math.PI * 2));
+    this.windowGlass.emissiveIntensity = .025 + daylight * .55;
+    for (const light of this.roomLights) light.visible = nearby;
+    for (const light of this.windowLights) light.intensity = daylight * 100;
     const contact = journey?.scene === 'm1_wake_up' && !journey.visiting ? journey.contact : undefined;
     const call = journey?.scene === 'm1_wake_again' && !journey.visiting ? journey.wakeCall : undefined;
-    this.door.rotation.y = apartmentDoor(contact) * 1.42;
+    this.door.rotation.y = (contact ? apartmentDoor(contact) : 1) * 1.42;
     if (journey?.scene === 'm1_wake_again') this.door.rotation.y = (journey.visiting || journey.step >= 2 ? 1 : wakeCallDoor(call)) * 1.42;
     else if (journey?.visiting) this.door.rotation.y = 1.42;
     const opening = contact?.phase === 'retrieving' ? THREE.MathUtils.smoothstep(contact.elapsed, .3, 1.65) : contact && apartmentAfter(contact, 'disk') ? 1 : 0;
@@ -210,7 +239,7 @@ export class ApartmentSetRenderer {
         THREE.MathUtils.lerp(start.y, end.y, t) + sag, THREE.MathUtils.lerp(start.z, end.z, t));
     }
     cord.needsUpdate = true;
-    let text = 'SEARCH: MORPHEUS\n\nconnection waiting_';
+    let text = contact || contactSignal ? 'SEARCH: MORPHEUS\n\nconnection waiting_' : 'THOMAS ANDERSON\n\nMAIL / WORK / CONTACTS\n2 unread messages_';
     if (contact?.phase === 'signal') {
       const t = contact.elapsed; const start = t < 2.8 ? 0 : t < 5.6 ? 2.8 : 5.6;
       const line = start === 0 ? 'Wake up, Neo.' : start === 2.8 ? 'The Matrix has you.' : 'Follow the white rabbit.';

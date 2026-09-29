@@ -1,5 +1,5 @@
 import { FILM_SCENES, LIFE_ACTIONS, LIFE_DESTINATIONS, LOCATIONS, NEO_ANOMALIES, NEO_CHAPTERS, PHILOSOPHY_NAMES,
-  distance, lifeActionPosition, lifeRoomCenter, type AgentState, type SandboxState } from '@auto_matrix/shared';
+  distance, lifeActionPosition, insideLifeRoom, type AgentState, type SandboxState } from '@auto_matrix/shared';
 import './neo-life.css';
 import { renderFilmJourney } from './FilmJourneyPanel.js';
 
@@ -15,7 +15,7 @@ export function renderNeoLife(player: AgentState, sandbox: SandboxState, time: n
   const nearAnomaly = Boolean(life.anomaly && player.isInMatrix && distance(player.position, life.anomaly.position) < 18);
   const activities = LIFE_ACTIONS.filter(a => !a.location || player.isInMatrix && distance(player.position, lifeActionPosition(a)) < 10);
   const contact = life.chapter === 1 && life.contactSignal;
-  const home = player.isInMatrix && distance(player.position, lifeRoomCenter('neo_apartment')!) <= 12;
+  const home = player.isInMatrix && insideLifeRoom(player.position) === 'neo_apartment';
   return `<div class="neo-life-page">
     <header class="life-masthead"><div><span>THE ANDERSON JOURNAL</span><h3>${life.chapter ? chapter.title : '今天，也有值得生活的事。'}</h3><p>第 ${life.cycle} 轮 · 第 ${life.day} 天 · <span id="life-panel-clock">${clock(time)}</span> · ${escape(LOCATIONS[player.currentLocation]?.nameCn ?? '城市街道')}</p></div><div class="life-cash"><small>现金</small><strong>$${life.money}</strong><span>工作评价 ${life.career}</span></div></header>
     <div class="life-needs">${[['精力', life.energy], ['饱腹', life.satiety], ['社交', life.social], ['朋友关系', life.friends]].map(([name, value]) => `<div><span>${name}<b>${Math.round(Number(value))}</b></span><i><em style="width:${value}%"></em></i></div>`).join('')}</div>

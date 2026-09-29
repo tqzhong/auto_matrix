@@ -121,6 +121,7 @@ test('the apartment door is solid until opened and the player can walk from each
 
 test('new signals require returning home, while legacy completed apartment scenes do not replay the trade', () => {
   const h = setup(); delete h.sandbox.life.state!.journey; h.sandbox.life.state!.contactSignal = true;
+  h.neo.position = lifeRoomCenter('corner_cafe')!; h.neo.currentLocation = 'corner_cafe';
   assert.match(h.command('continue'), /先回公寓/);
   h.neo.position = lifeRoomCenter('neo_apartment')!; h.neo.currentLocation = 'neo_apartment'; h.command('continue');
   const saved = structuredClone(h.sandbox.state); const journey = saved.neoLife!.journey!;

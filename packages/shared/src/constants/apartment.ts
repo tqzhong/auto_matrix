@@ -5,10 +5,12 @@ export interface ApartmentContact { phase: ApartmentPhase; elapsed: number; paid
 export interface ApartmentGesture extends ApartmentContact { role: 'neo' | 'choi' | 'dujour' }
 export type WakeCallPhase = 'waking' | 'ringing' | 'pickup' | 'listening' | 'decision' | 'reply' | 'done' | 'leaving';
 export interface WakeCall { phase: WakeCallPhase; elapsed: number; nightmare: boolean }
+export const APARTMENT_ROOM = { width: 34, depth: 40, exitWidth: 10, center: { x: 1210, y: 1, z: 690 } } as const;
 export const APARTMENT = {
   computer: { x: -9, z: -8.8, yaw: Math.PI },
   bed: { x: 10.2, z: -9, yaw: 0 },
   bedside: { x: 5.5, z: -9, yaw: -Math.PI / 2 },
+  breakfast: { x: -7, z: 3.7 },
   phone: { x: -5.78, y: 2.62, z: -10.45, approachX: -5.8, approachZ: -9.15, yaw: Math.PI },
   door: { x: 0, z: 10.2, yaw: 0 },
   book: { x: 6, z: 3.4, yaw: 0 },
@@ -23,6 +25,7 @@ export const APARTMENT_FURNITURE = [
   { x: 10.2, z: -9, width: 6.2, depth: 10, height: 1.5 },
   { x: 6, z: 6.2, width: 2.8, depth: 1.8, height: 1.8 },
   { x: -15.7, z: -4, width: 1.6, depth: 8, height: 5.3 },
+  { x: -10, z: 6.8, width: 8, depth: 2.8, height: 2.9 },
   { x: -9.5, z: 12, width: 15, depth: .4, height: 8.8 },
   { x: 9.5, z: 12, width: 15, depth: .4, height: 8.8 },
 ];

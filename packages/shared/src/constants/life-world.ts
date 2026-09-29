@@ -1,15 +1,17 @@
 import { LOCATIONS } from './locations.js';
+import { APARTMENT, APARTMENT_ROOM } from './apartment.js';
 import type { Vector3 } from '../types/agent.js';
 
 // Walkable ground floors share their dimensions with building collision.
 export const LIFE_ROOMS: Record<string, { width: number; depth: number; theme: 'home' | 'office' | 'cafe' | 'bar' | 'oracle' }> = {
-  neo_apartment: { width: 28, depth: 24, theme: 'home' },
+  neo_apartment: { width: APARTMENT_ROOM.width, depth: APARTMENT_ROOM.depth, theme: 'home' },
   metacortex_office: { width: 32, depth: 26, theme: 'office' },
   corner_cafe: { width: 28, depth: 24, theme: 'cafe' },
   nightclub: { width: 32, depth: 26, theme: 'bar' },
   oracles_apartment: { width: 28, depth: 24, theme: 'oracle' },
 };
 export function lifeRoomCenter(location: string): Vector3 | undefined {
+  if (location === 'neo_apartment') return { ...APARTMENT_ROOM.center };
   const room = LIFE_ROOMS[location]; const site = LOCATIONS[location];
   return room && site ? { x: (site.bounds.min.x + site.bounds.max.x) / 2, y: 1, z: site.bounds.max.z - room.depth / 2 } : undefined;
 }
@@ -41,6 +43,11 @@ export const LIFE_ACTIONS: LifeAction[] = [
   { id: 'wait', name: '等一小时', location: '', minutes: 60, cost: 0, energy: -2, satiety: -3, social: -2, description: '原地 · 1 小时', result: '时针继续向前，街上的人流换了一批。' },
 ];
 export function lifeActionPosition(action: LifeAction): Vector3 {
+  if (action.location === 'neo_apartment') {
+    const point = action.id === 'computer' ? APARTMENT.computer : action.id === 'sleep' ? APARTMENT.bedside
+      : action.id === 'invite' ? { x: APARTMENT.phone.approachX, z: APARTMENT.phone.approachZ } : APARTMENT.breakfast;
+    return { x: APARTMENT_ROOM.center.x + point.x, y: APARTMENT_ROOM.center.y, z: APARTMENT_ROOM.center.z + point.z };
+  }
   const site = LOCATIONS[action.location];
   return lifeRoomCenter(action.location) ?? { x: (site.bounds.min.x + site.bounds.max.x) / 2, y: 1, z: site.bounds.max.z + 9 };
 }

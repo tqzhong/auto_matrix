@@ -167,12 +167,15 @@ export class Engine {
     this.voxelRenderer.interiors.update(this.timeOfDay, player?.position, this.sandbox?.neoLife);
     measure?.('city');
     const workday = this.agentRenderer.getAgentState('courier')?.currentAction?.parameters.workday as OfficeWorkday | undefined;
+    const previousSet = this.filmSets.active;
     const filmSet = this.filmSets.update(player ?? undefined, this.sandbox, this.elapsed, player ? this.agentRenderer.getAgent(player.id)?.position : undefined, this.camera.position, workday, this.playerControls?.firstPerson ?? false);
-    this.voxelRenderer.matrix.visible = this.matrix && !filmSet; this.voxelRenderer.real.visible = !this.matrix && !filmSet;
+    const cinematicSet = filmSet?.id === 'film_anderson_flat' ? undefined : filmSet;
+    if (!cinematicSet && previousSet?.id !== filmSet?.id) this.updateAtmosphere();
+    this.voxelRenderer.matrix.visible = this.matrix && !cinematicSet; this.voxelRenderer.real.visible = !this.matrix && !cinematicSet;
     measure?.('film');
-    this.rain.visible = filmSet ? filmSet.light === 'storm' : this.matrix && this.weather !== 'clear' && !(player && insideLifeRoom(player.position));
+    this.rain.visible = cinematicSet ? cinematicSet.light === 'storm' : this.matrix && this.weather !== 'clear' && !(player && insideLifeRoom(player.position));
     this.sandboxRenderer.update(delta, this.camera, this.matrix, this.tick, this.running);
-    this.lightingSystem.setTime(filmSet ? ({ day: 12000, night: 22000, warm: 11000, cold: 10000, white: 12000, storm: 19000, sunrise: 7000 })[filmSet.light] : this.timeOfDay);
+    this.lightingSystem.setTime(cinematicSet ? ({ day: 12000, night: 22000, warm: 11000, cold: 10000, white: 12000, storm: 19000, sunrise: 7000 })[cinematicSet.light] : this.timeOfDay);
     this.lightingSystem.update(this.elapsed, this.playerControls?.id ? this.camera : undefined);
     const atmosphere = this.filmSets.atmosphere();
     if (atmosphere) {
