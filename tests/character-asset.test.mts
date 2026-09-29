@@ -85,13 +85,14 @@ test('a settled coat does not upload identical positions and normals every frame
 
 test('animated heroes leave the draw list behind the camera while every posed vertex remains inside their bounds', async () => {
   const ids = ['neo', 'morpheus', 'trinity', 'smith'] as const;
-  const assets = new Map(await Promise.all([...ids, 'neo-office'].map(async id => [id, await loadGeometry(id)] as const)));
+  const assets = new Map(await Promise.all([...ids, 'neo-office', 'trinity-club'].map(async id => [id, await loadGeometry(id)] as const)));
   const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
   (models as unknown as { load: (id: string) => Promise<unknown> }).load = async id => assets.get(id)!;
   const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 };
   const poses: MotionInput[] = [input, { ...input, speed: 7, turn: .8 }, { ...input, grounded: false, verticalVelocity: 4 },
     { ...input, seated: true }, { ...input, performance: 'touch', performanceTime: 4.15, mirror: .3 },
-    { ...input, realWorld: true, performance: 'recover', recovery: 6 }];
+    { ...input, realWorld: true, performance: 'recover', recovery: 6 },
+    { ...input, clubClothes: true, club: { role: 'trinity', phase: 'whisper', elapsed: 3 } }];
   const camera = new THREE.PerspectiveCamera(48, 16 / 9, .1, 1000); const frustum = new THREE.Frustum();
   const point = new THREE.Vector3(); const matrix = new THREE.Matrix4();
   try {
@@ -623,20 +624,99 @@ test('the articulated recovery needles meet the shipped Neo skeleton', async () 
   } finally { medical.dispose(); models.dispose(); }
 });
 
+test('Trinity resumes in her club costume and restores her jacket after leaving', async () => {
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: typeof loadGeometry }).load = loadGeometry;
+  try {
+    const rig = (await models.create('trinity'))!; const motion = newMotion();
+    const jacket = rig.root.getObjectByName('Fitted_leather_jacket') as THREE.SkinnedMesh;
+    const head = rig.wardrobe.find(part => (part.mesh.material as THREE.Material).name === 'Skin')!.mesh;
+    const original = head.geometry;
+    for (const clubClothes of [true, false, true]) {
+      // Restoring a save must dress her before the conversation is started.
+      const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, clubClothes, glasses: !clubClothes };
+      models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0);
+      assert.equal(jacket.visible, !clubClothes, 'the long-sleeved jacket cannot remain visible in the nightclub');
+      const outfit = rig.wardrobe.filter(part => part.mesh.userData.club);
+      assert.ok(outfit.length >= 2, 'the club needs its own bodice and anatomical shoulder/arm surfaces');
+      assert.ok(outfit.every(part => part.mesh.visible === clubClothes));
+      for (const part of outfit) {
+        const mesh = part.mesh as THREE.SkinnedMesh;
+        assert.ok(mesh.skeleton.bones.every(bone => bone === rig.bones.get(bone.name)), 'the outfit must follow the existing performance skeleton');
+      }
+      assert.equal(head.geometry, original, 'changing clothes must preserve the finished face and hands');
+      assert.ok(head.visible);
+      assert.equal(rig.glasses.visible, !clubClothes);
+      assert.ok(rig.root.getObjectByName('Tailored_trousers')!.visible, 'the shared leather material cannot hide the trousers');
+    }
+    const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, clubClothes: true, realWorld: true };
+    models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0);
+    assert.ok(jacket.visible);
+    assert.ok(rig.wardrobe.filter(part => part.mesh.userData.club).every(part => !part.mesh.visible));
+    const patient = { ...input, performance: 'recover' as const, recovery: 2 };
+    models.animate(rig, advanceMotion(motion, patient, 0), motion, patient, 0);
+    assert.equal(jacket.visible, false, 'restoring the jacket must still respect the existing patient visibility rule');
+  } finally { models.dispose(); }
+});
+
 test('Trinity’s fitted outfit has no open waist during the club conversation', async () => {
-  const asset = await loadGeometry('trinity'); const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
-  (models as unknown as { load: () => Promise<typeof asset> }).load = async () => asset;
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: typeof loadGeometry }).load = loadGeometry;
   const rig = (await models.create('trinity'))!;
   try {
     for (const phase of ['introduction', 'whisper', 'question'] as const) {
       const motion = newMotion(); const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, glasses: false, clubClothes: true,
         club: { role: 'trinity' as const, phase, elapsed: 3 } };
       models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
-      const clothes = rig.wardrobe.filter(part => part.mesh.visible && part.mesh instanceof THREE.SkinnedMesh && /Coat|Trousers/.test((part.mesh.material as THREE.Material).name)).map(part => part.mesh as THREE.SkinnedMesh);
+      const clothes = rig.wardrobe.filter(part => part.mesh.visible && part.mesh instanceof THREE.SkinnedMesh && /Coat|Trousers|Club vinyl/.test((part.mesh.material as THREE.Material).name)).map(part => part.mesh as THREE.SkinnedMesh);
       clothes.forEach(mesh => { mesh.skeleton.update(); mesh.computeBoundingSphere(); });
       for (const x of [-.16, 0, .16]) for (const y of [2.38, 2.46, 2.54, 2.62]) {
         const ray = new THREE.Raycaster(new THREE.Vector3(x, y, 2), new THREE.Vector3(0, 0, -1), 0, 2);
         assert.ok(ray.intersectObjects(clothes).length > 0, `open waist during ${phase} at ${x}, ${y}`);
+      }
+    }
+  } finally { models.dispose(); }
+});
+
+test('the club shoulders and wrists stay welded to Trinity’s finished skin during her performance', async () => {
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: typeof loadGeometry }).load = loadGeometry;
+  try {
+    const rig = (await models.create('trinity'))!;
+    const head = rig.wardrobe.find(part => (part.mesh.material as THREE.Material).name === 'Skin')!.mesh as THREE.SkinnedMesh;
+    const body = rig.root.getObjectByName('Club_upper_body') as THREE.SkinnedMesh;
+    const position = head.geometry.attributes.position; const index = head.geometry.index!;
+    const key = (position: THREE.BufferAttribute | THREE.InterleavedBufferAttribute, i: number) => [position.getX(i), position.getY(i), position.getZ(i)].map(v => v.toFixed(5)).join(',');
+    const edges = new Map<string, { count: number; a: number; b: number }>();
+    for (let i = 0; i < index.count; i += 3) for (const [start, end] of [[0, 1], [1, 2], [2, 0]]) {
+      const a = index.getX(i + start), b = index.getX(i + end);
+      const edgeKey = [key(position, a), key(position, b)].sort().join('/');
+      const previous = edges.get(edgeKey);
+      if (previous) previous.count++; else edges.set(edgeKey, { count: 1, a, b });
+    }
+    const boundary = new Set([...edges.values()].filter(edge => edge.count === 1).flatMap(edge => [edge.a, edge.b]).filter(i => position.getY(i) < 3.68));
+    const surface = body.geometry.attributes.position;
+    const lookup = new Map(Array.from({ length: surface.count }, (_, i) => [key(surface, i), i]));
+    const pairs = [...boundary].map(i => {
+      const other = lookup.get(key(position, i));
+      assert.notEqual(other, undefined, `missing shoulder/wrist surface at ${key(position, i)}`);
+      return [i, other!] as const;
+    });
+    assert.ok(pairs.length > 150, 'inspect the full wrist/shoulder boundary, not a single shared point');
+    for (const [a, b] of pairs) {
+      const normal = new THREE.Vector3().fromBufferAttribute(head.geometry.attributes.normal, a);
+      const other = new THREE.Vector3().fromBufferAttribute(body.geometry.attributes.normal, b);
+      assert.ok(normal.dot(other) > .999, 'the old shoulder cap cannot leave a lighting seam on the new arm');
+    }
+    for (const phase of ['introduction', 'whisper', 'question'] as const) for (const elapsed of [0, 1.5, 3]) {
+      const motion = newMotion(); const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, clubClothes: true,
+        club: { role: 'trinity' as const, phase, elapsed } };
+      models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
+      for (const mesh of [head, body]) mesh.skeleton.update();
+      for (const [a, b] of pairs) {
+        const first = head.getVertexPosition(a, new THREE.Vector3());
+        const second = body.getVertexPosition(b, new THREE.Vector3());
+        assert.ok(first.distanceTo(second) < .00002, `${phase} opens a skin seam at ${elapsed}`);
       }
     }
   } finally { models.dispose(); }

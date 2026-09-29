@@ -84,7 +84,7 @@ function addMirrorArrival(mesh: THREE.Mesh): void {
 
 // The inspector and world share these exact skinned assets and motion solver.
 export class HeroModels {
-  private assets = new Map<HeroId | 'neo-office' | 'neo-tracking' | 'choi' | 'dujour', Promise<GLTF>>();
+  private assets = new Map<HeroId | 'neo-office' | 'neo-tracking' | 'trinity-club' | 'choi' | 'dujour', Promise<GLTF>>();
   private disposed = false;
   private pills = new Map<HeroRig, PillPerformance>();
   private interrogations = new Map<HeroRig, InterrogationPerformance>();
@@ -119,7 +119,7 @@ export class HeroModels {
     this.textures.add(this.patientSkin);
   }
 
-  private load(id: HeroId | 'neo-office' | 'neo-tracking' | 'choi' | 'dujour'): Promise<GLTF> {
+  private load(id: HeroId | 'neo-office' | 'neo-tracking' | 'trinity-club' | 'choi' | 'dujour'): Promise<GLTF> {
     const existing = this.assets.get(id); if (existing) return existing;
     const promise = new GLTFLoader().loadAsync(`/assets/characters/${id}.glb`).then(asset => {
       asset.scene.traverse(object => {
@@ -166,9 +166,10 @@ export class HeroModels {
 
   async create(id: HeroId, guard?: 'agent_jones' | 'agent_brown' | 'agent_johnson' | 'agent_jackson' | 'agent_thompson', support?: HeroSupport): Promise<HeroRig | undefined> {
     const apartmentRole = support === 'choi' || support === 'dujour' ? support : undefined;
-    const [asset, office, tracking] = await Promise.all([this.load(apartmentRole ?? id),
+    const [asset, office, tracking, club] = await Promise.all([this.load(apartmentRole ?? id),
       id === 'neo' && !apartmentRole ? this.load('neo-office') : undefined,
-      id === 'neo' && !support ? this.load('neo-tracking') : undefined]);
+      id === 'neo' && !support ? this.load('neo-tracking') : undefined,
+      id === 'trinity' && !support ? this.load('trinity-club') : undefined]);
     if (this.disposed) return;
     const root = clone(asset.scene) as THREE.Group;
     const bones = new Map<string, THREE.Bone>(); const rest = new Map<string, THREE.Vector3>();
@@ -205,6 +206,16 @@ export class HeroModels {
       mesh.bind(skeleton, source.bindMatrix.clone()); mesh.castShadow = mesh.receiveShadow = true; mesh.visible = false;
       this.skeletons.add(skeleton); root.add(mesh);
     });
+    if (club) {
+      club.scene.traverse(source => {
+        if (!(source instanceof THREE.SkinnedMesh) || !/^Club[ _]/.test(source.name)) return;
+        const mesh = new THREE.SkinnedMesh(source.geometry, source.material); mesh.name = source.name; mesh.userData.club = true;
+        const skeleton = new THREE.Skeleton(source.skeleton.bones.map(bone => bones.get(bone.name)!), source.skeleton.boneInverses.map(matrix => matrix.clone()));
+        mesh.bind(skeleton, source.bindMatrix.clone()); mesh.castShadow = mesh.receiveShadow = true; mesh.visible = false;
+        this.skeletons.add(skeleton); root.add(mesh);
+      });
+      root.getObjectByName('Fitted_leather_jacket')!.userData.clubJacket = true;
+    }
     if (guard) root.traverse(object => {
       if (!(object instanceof THREE.Mesh) || !object.name.includes('Anatomical')) return;
       object.geometry = object.geometry.clone(); this.geometries.add(object.geometry);
@@ -538,6 +549,7 @@ export class HeroModels {
     rig.glasses.visible = !rig.officeRole && !rig.apartmentRole && input.glasses !== false && !input.realWorld;
     const officeShirt = input.officeShirt || rig.officeRole === 'courier';
     const trackingShirt = input.performance === 'touch';
+    const clubClothes = Boolean(input.clubClothes && !input.realWorld);
     if (rig.trackingSkin) {
       const skin = rig.trackingSkin; skin.mesh.geometry = trackingShirt ? skin.covered : skin.original;
     }
@@ -556,6 +568,8 @@ export class HeroModels {
       if (part.mesh.userData.office) part.mesh.visible = Boolean(patientTorso || officeShirt || input.meeting?.role === 'neo' && (part.mesh.material as THREE.Material).name === 'Office skin');
       else if (part.mesh.userData.patientBody) part.mesh.visible = patient;
       else if (part.mesh.userData.tracking) part.mesh.visible = trackingShirt;
+      else if (part.mesh.userData.club) part.mesh.visible = clubClothes;
+      else if (part.mesh.userData.clubJacket && clubClothes) part.mesh.visible = false;
       else if ((officeShirt || trackingShirt) && (part.outer || /Tailored.coat.upper|Black.crew.neck/i.test(part.mesh.name))) part.mesh.visible = false;
       const map = patientLegs ? this.patientSkin : part.map; const bumpMap = patientLegs ? this.patientSkin : part.bumpMap;
       if (material.map !== map || material.bumpMap !== bumpMap) { material.map = map; material.bumpMap = bumpMap; material.needsUpdate = true; }

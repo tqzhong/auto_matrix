@@ -182,14 +182,14 @@ def subdivide(vertices, uv, faces, influence):
 
 
 def trim_neckline(vertices, uv, faces, influence, height, above=False, preserve=None):
-    """Cut a level garment opening instead of exposing a stair-step face edge."""
+    """Cut a garment opening; height may be a level or a per-vertex contour."""
     points, texcoords, weights = list(vertices), list(uv), list(influence)
-    clipped_faces = []; edge_vertices = {}
+    clipped_faces = []; edge_vertices = {}; distance = height - vertices[:, 1]
     for face in faces:
         clipped = []
         for current, previous in zip(face, face[-1:] + face[:-1]):
             i, u = current; j, v = previous
-            a = height - vertices[i, 1]; b = height - vertices[j, 1]
+            a = distance[i]; b = distance[j]
             if above: a, b = -a, -b
             if preserve is not None:
                 if preserve[i]: a = abs(a)
@@ -218,7 +218,95 @@ def write_glb(doc, binaries, filename):
     print('Written', OUT / filename, len(glb), 'bytes')
 
 
-def main(source, character, office=False, tracking=False):
+def club_edge(points):
+    front = np.clip((points[:, 2] + .04) / .22, 0, 1)
+    return 3.13 + .12 * front - .065 * (1 - front) * np.exp(-(points[:, 0] / .25) ** 2)
+
+
+def club_bodice(points, faces, weights):
+    """Loft cloth across convex torso sections, rather than painting the skin.
+
+    Bridging concavities and smoothing sections removes navel/nipple details.
+    The covered torso is masked separately; arms remain anatomical.
+    """
+    triangles = np.array([[f[0][0], f[i][0], f[i + 1][0]] for f in faces for i in range(1, len(f) - 1)])
+    triangles = triangles[(weights[triangles, :3].sum(axis=2).mean(axis=1) > .65)
+                          & (np.abs(points[triangles, 0]).max(axis=1) < .63)]
+    heights = np.linspace(2.22, 3.36, 58); angles = np.arange(128) * np.pi * 2 / 128
+    directions = np.column_stack((np.sin(angles), np.cos(angles)))
+
+    def cross(a, b):
+        return a[..., 0] * b[..., 1] - a[..., 1] * b[..., 0]
+
+    def hull(section):
+        ordered = sorted(set(map(tuple, np.round(section, 7))))
+        chains = []
+        for sequence in [ordered, ordered[::-1]]:
+            chain = []
+            for p in sequence:
+                while len(chain) >= 2 and cross(np.subtract(chain[-1], chain[-2]), np.subtract(p, chain[-1])) <= 0:
+                    chain.pop()
+                chain.append(p)
+            chains.extend(chain[:-1])
+        return np.array(chains)
+
+    sections = []
+    for height in heights:
+        intersection = []
+        for a, b in [(0, 1), (1, 2), (2, 0)]:
+            start, end = points[triangles[:, a]], points[triangles[:, b]]
+            cut = (start[:, 1] > height) != (end[:, 1] > height)
+            start, end = start[cut], end[cut]
+            t = (height - start[:, 1]) / (end[:, 1] - start[:, 1])
+            intersection.extend((start + (end - start) * t[:, None])[:, [0, 2]])
+        outline = hull(intersection); edge = np.roll(outline, -1, axis=0) - outline
+        denominator = cross(directions[:, None, :], edge[None, :, :])
+        denominator[np.abs(denominator) < 1e-10] = 1e-10
+        radius = cross(outline, edge)[None, :] / denominator
+        along = cross(outline[None, :, :], directions[:, None, :]) / denominator
+        radius[(along < 0) | (along > 1) | (radius < 0)] = np.inf
+        section = radius.min(axis=1)
+        assert np.isfinite(section).all(), 'Incomplete torso section at ' + str(height)
+        sections.append(section)
+    sections = np.array(sections)
+    for _ in range(5):
+        padded = np.pad(sections, ((1, 1), (0, 0)), mode='edge')
+        sections = (padded[:-2] + 2 * padded[1:-1] + padded[2:]) / 4
+        sections = (np.roll(sections, 1, axis=1) + 2 * sections + np.roll(sections, -1, axis=1)) / 4
+    top = club_edge(np.column_stack((directions[:, 0] * .43, np.zeros(128), directions[:, 1] * .30)))
+    vertices = []; uv = []
+    for row in range(43):
+        y = 2.25 + (top - 2.25) * min(row / 40, 1)
+        radius = np.array([np.interp(y[i], heights, sections[:, i]) for i in range(128)]) + .012
+        radius += .045 * np.clip((2.57 - y) / .32, 0, 1)
+        # Subtle raised panel joins, with a folded upper binding instead of
+        # an infinitely thin silhouette. Both share the garment's skin weights.
+        seams = sum(np.exp(-(np.arctan2(np.sin(angles - seam), np.cos(angles - seam)) / .022) ** 2)
+                    for seam in [-2.6, -1.55, -.62, .62, 1.55, 2.6, np.pi])
+        radius += seams * .0018
+        if row > 40:
+            radius -= .005 * (row - 40); y -= .003 * (row - 40) ** 2
+        for i in range(128):
+            vertices.append([directions[i, 0] * radius[i], y[i], directions[i, 1] * radius[i]])
+            uv.append([i / 128, row / 42])
+    vertices = np.array(vertices); influence = np.zeros((len(vertices), weights.shape[1]))
+    trunk = np.unique(triangles)
+    for start in range(0, len(vertices), 128):
+        distance = ((vertices[start:start + 128, None, :] - points[trunk]) ** 2).sum(axis=2)
+        nearest = np.argpartition(distance, 4, axis=1)[:, :4]
+        blend = 1 / np.maximum(np.take_along_axis(distance, nearest, axis=1), 1e-6)
+        blend /= blend.sum(axis=1, keepdims=True)
+        influence[start:start + 128, :3] = (weights[trunk[nearest], :3] * blend[:, :, None]).sum(axis=1)
+    influence /= influence.sum(axis=1, keepdims=True)
+    polygons = []
+    for row in range(42):
+        for i in range(128):
+            ids = [row * 128 + i, row * 128 + (i + 1) % 128, (row + 1) * 128 + (i + 1) % 128, (row + 1) * 128 + i]
+            polygons.append([(j, j) for j in ids])
+    return vertices, np.array(uv), polygons, influence
+
+
+def main(source, character, office=False, tracking=False, club=False):
     spec = CHARACTERS[character]
     original, skin_uv, body_faces, groups = obj(source / 'base.obj')
     base = original.copy()
@@ -461,6 +549,67 @@ def main(source, character, office=False, tracking=False):
     waistline = pivot('spine03')[1] + .9
     exposed = [f for f in body_faces if character == 'dujour' and np.mean(base[[i for i, _ in f], 1]) > waistline or np.mean(base[[i for i, _ in f], 1]) > neckline - .85 or
                np.mean(weights[[i for i, _ in f]][:, hand_bones].sum(axis=1)) > .85]
+    if club:
+        # The club scene has bare shoulders and a strapless vinyl bodice.
+        # Complement the finished head/hands; never rebuild their likeness.
+        arm_bones = [i for i, name in enumerate(names) if name.startswith(('shoulder', 'elbow'))]
+        exposed_ids = {tuple(f) for f in exposed}
+        body = [f for f in body_faces if tuple(f) not in exposed_ids]
+        v, uv, faces, w = subdivide(base, skin_uv, body, weights)
+        edge = club_edge(game_space(bake(v, w))) - .035
+        v, uv, faces, w = trim_neckline(v, uv, faces, w, floor + edge / scale, above=True,
+                                      preserve=w[:, arm_bones + hand_bones].sum(axis=1) > .2)
+        export_mesh('Club upper body', v, uv, faces, w, skin)
+
+        # The already finished shoulder/hand halves retain their geometry.
+        # Join their boundary normals and ease into the new arm surface.
+        finished = (ROOT / 'packages/client/public/assets/characters/trinity.glb').read_bytes()
+        length = struct.unpack_from('<I', finished, 12)[0]
+        reference = json.loads(finished[20:20 + length]); reference_binary = finished[28 + length:]
+
+        def surface_array(document, binary, index):
+            item = document['accessors'][index]; view = document['bufferViews'][item['bufferView']]
+            return np.ndarray((item['count'], 3), '<f4', binary, view.get('byteOffset', 0) + item.get('byteOffset', 0),
+                              strides=(view.get('byteStride', 12), 4))
+
+        original = next(m for m in reference['meshes'] if m['name'] == 'Anatomical head and hands')['primitives'][0]['attributes']
+        original_points = surface_array(reference, reference_binary, original['POSITION'])
+        original_normals = surface_array(reference, reference_binary, original['NORMAL'])
+        attributes = doc['meshes'][0]['primitives'][0]['attributes']
+        points = surface_array(doc, binaries, attributes['POSITION']); normals = surface_array(doc, binaries, attributes['NORMAL'])
+        lookup = {tuple(p): i for i, p in enumerate(np.round(original_points, 5))}
+        shared = [(i, lookup[tuple(p)]) for i, p in enumerate(np.round(points, 5)) if tuple(p) in lookup]
+        assert len(shared) > 150, 'Review the finished shoulder and wrist boundaries before rebuilding this costume.'
+        own, other = np.array(shared).T
+        distance = np.linalg.norm(points[:, None, :] - points[own][None, :, :], axis=2)
+        nearest = distance.argmin(axis=1); blend = np.clip(1 - distance.min(axis=1) / .065, 0, 1)
+        normals[:] = normals * (1 - blend[:, None]) + original_normals[other[nearest]] * blend[:, None]
+        normals /= np.maximum(np.linalg.norm(normals, axis=1, keepdims=True), 1e-8)
+        doc['accessors'][attributes['NORMAL']].update(min=normals.min(axis=0).tolist(), max=normals.max(axis=0).tolist())
+        # Release exported buffer views before adding the garment buffers.
+        del points, normals
+
+        v, uv, faces, w = club_bodice(game_space(baked), body_faces, weights)
+        v = v / scale + np.array([0, floor, 0])
+        vinyl = material('Club vinyl', [.012, .014, .015, 1], .28)
+        doc['materials'][vinyl]['extensions'] = {'KHR_materials_clearcoat': {'clearcoatFactor': .65, 'clearcoatRoughnessFactor': .18}}
+        doc['extensionsUsed'] = ['KHR_materials_clearcoat']
+        export_mesh('Club bodice', v, uv, faces, w, vinyl)
+        for mesh in doc['meshes']:
+            mesh['primitives'][0]['material'] = 0 if mesh['primitives'][0]['material'] == skin else 1
+        doc['materials'] = [doc['materials'][skin], doc['materials'][vinyl]]
+        doc['materials'][0]['name'] = 'Club skin'
+        # Linear RGB ratios measured on the unprojected neck UVs of the
+        # finished Trinity atlas, so the shared full-body map joins its tone.
+        doc['materials'][0]['pbrMetallicRoughness']['baseColorFactor'] = [.8984, .8314, .8294, 1]
+        # Reuse the full-body CC0 map. The finished facial atlas contains only
+        # the head/hand islands and cannot texture newly exposed shoulders.
+        doc['images'] = [{'uri': 'dujour-skin.png'}]
+        doc['textures'] = [{'source': 0, 'sampler': 0}]
+        doc['extras'] = {'character': character, 'height': spec['height'], 'sourceRevision': REVISION, 'skinBaked': True,
+                         'costume': 'm1_club', 'costumeVersion': 1}
+        write_glb(doc, binaries, 'trinity-club.glb')
+        return
     v, uv, faces, w = subdivide(base, skin_uv, exposed, weights)
     if tracking:
         arm_bones = [i for i, name in enumerate(names) if name.startswith(('shoulder', 'elbow'))]
@@ -694,10 +843,11 @@ if __name__ == '__main__':
     outfit = parser.add_mutually_exclusive_group()
     outfit.add_argument('--office', action='store_true', help='Build only Neo’s CC0 shirt and torso for the interrogation; use a staging output directory')
     outfit.add_argument('--tracking', action='store_true', help='Build Neo’s short-sleeved shirt, arms and complete patient body; use a staging output directory')
+    outfit.add_argument('--trinity-club', action='store_true', help='Build Trinity’s strapless club bodice and exposed shoulder/arm surfaces into staging')
     parser.add_argument('--output', type=Path, default=OUT, help='Asset directory; use a staging directory to review before replacing the game assets')
     args = parser.parse_args()
     OUT = args.output; OUT.mkdir(parents=True, exist_ok=True)
     if args.fetch:
         fetch_source(args.source)
-    for character in ['neo'] if args.office or args.tracking else [args.character] if args.character else ['neo', 'trinity', 'smith', 'morpheus']:
-        main(args.source, character, args.office, args.tracking)
+    for character in ['trinity'] if args.trinity_club else ['neo'] if args.office or args.tracking else [args.character] if args.character else ['neo', 'trinity', 'smith', 'morpheus']:
+        main(args.source, character, args.office, args.tracking, args.trinity_club)

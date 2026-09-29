@@ -14,7 +14,9 @@ Rhineheart reuses Smith's rig with different suit/hair colors and no glasses. Th
 
 The apartment visitors use separate `choi.glb` and `dujour.glb` rigs built from the same pinned CC0 MakeHuman assets. Their height/head morphs and unprojected skin differ from the principal cast; Dujour's sleeveless top exposes the shoulder for the runtime white-rabbit tattoo. The saved apartment timeline drives knocking, disk/cash exchange and turning toward the clue. These are provisional supporting models, not likenesses of their actors. Clothes, hair, expressions and hand contact still need visual refinement.
 
-The club uses `club-male.glb` and `club-female.glb`, lighter versions of those two CC0 rigs without surface subdivision. Sixteen dancers share their geometry and textures, with separate bone poses and clothing colors. The assets reuse `choi-skin.png`, `dujour-skin.png`, `brown_eye.png` and `short04-hair.png`; there are no new texture downloads at runtime. These extras are decorative and currently have no personal interaction or collision. Trinity's finished jacket has separate waist and shoulder corrections: the hem overlaps the trousers and follows her pelvis during the lean, and the shoulder caps have a small surface-normal offset instead of lying almost coincident with the skin. The shoulder pass changes only jacket positions/normals; her head, textures, skin weights and other meshes are preserved. Her night-club outfit is still the existing long-sleeved costume, not the film's sleeveless outfit.
+The club uses `club-male.glb` and `club-female.glb`, lighter versions of those two CC0 rigs without surface subdivision. Sixteen dancers share their geometry and textures, with separate bone poses and clothing colors. The assets reuse `choi-skin.png`, `dujour-skin.png`, `brown_eye.png` and `short04-hair.png`; there are no new texture downloads at runtime. These extras are decorative and currently have no personal interaction or collision. Trinity's finished jacket has separate waist and shoulder corrections: the hem overlaps the trousers and follows her pelvis during the lean, and the shoulder caps have a small surface-normal offset instead of lying almost coincident with the skin. The shoulder pass changes only jacket positions/normals; her head, textures, skin weights and other meshes are preserved.
+
+Trinity now wears `trinity-club.glb` in `film_white_rabbit_club`: a separate strapless black bodice with bare shoulders, back and arms. The reference is the first encounter's [front view, frame 0690](https://www.cap-that.com/the-matrix/index.php?image=matrix%281999%29_0690.jpg) and [back view, frame 0710](https://www.cap-that.com/the-matrix/index.php?image=matrix%281999%29_0710.jpg). Film images are authoring references only and are not shipped. The bodice bridges smoothed convex torso sections, has a folded upper edge and small panel joins, overlaps the trousers and uses glTF clearcoat. The new skin complements the finished head/hands at their existing boundary rings; matching boundary normals and a measured skin-color multiplier avoid hard shoulder seams. It reuses `dujour-skin.png`, the same CC0 female body map. The 890,976-byte GLB adds 21,206 triangles while hiding the 16,736-triangle jacket, a net 4,470 visible triangles. All 46 bones are shared with the existing performance rig. Scene location selects the costume on cold load; leaving restores the jacket, and support characters keep their own outfits. Neutral Blender views and exported game poses have been inspected. Film-costume details, cloth movement, likeness, nightclub lighting and actual browser frame cost remain unverified; this is not a scanned or film-quality costume.
 
 The bridge/car encounter reuses the office torso beneath Neo's lifted black shirt and hides his outer coat panels while seated. Switch uses Trinity's rig with blond hair; Apoc uses Neo's rig. These two support characters are temporary stand-ins, with no new actor likeness assets. Their seated steering/guarding poses and Trinity's scanner contact are driven by the saved meeting timeline. A rest-space skin mask prevents shoulder skin from protruding through the leather outfit during the lean.
 
@@ -24,7 +26,7 @@ The tracking-chair and mirror performance use `neo-tracking.glb`: a black short-
 
 ## Editable Blender project
 
-The finishing script can generate `output/characters/matrix-cast.blend` (relative to the repository root), containing all four rigs, outfits, editable glasses/coat counterparts, packed materials and the frontal reference atlas. Generated Blender projects, comparison captures and inspection renders are not retained or committed. In the game, glasses and coat panels are managed by `HeroModel.ts` so the cloth can keep responding to movement.
+The finishing script can generate `output/characters/matrix-cast.blend` (relative to the repository root), containing all four rigs, outfits, editable glasses/coat counterparts, packed materials and the frontal reference atlas. Generated Blender projects and intermediate meshes are not retained or committed. Local inspection captures under `output/` are not shipped with the game. In the game, glasses and coat panels are managed by `HeroModel.ts` so the cloth can keep responding to movement.
 
 `matrix-faces.png` is the frontal atlas used by the game's loading fallback and by the authoring tools; its prompt is in `generation-prompt.txt`. The former `matrix-turnarounds.png` was an authoring-only front/profile reference sheet generated with the prompt in `turnaround-prompt.txt`. That unused runtime image has been removed; its measured profile constraints remain in `scripts/character-landmarks.json`, so normal rebuilds do not need the sheet. After deforming the mesh, Blender bakes the registered frontal atlas into each character's `*-albedo.png` using the mesh's proper UV layout. Stock skin is color-matched before blending to reduce face/neck seams. The finished models use these baked maps without depending on a face-projection shader.
 
@@ -90,6 +92,19 @@ Build only the lighter club extras from the same cached sources, without Blender
 python3 scripts/build-club-crowd.py
 ```
 
+Build Trinity's club outfit without rebuilding her finished head. Keep the shipped `trinity.glb` available: its shoulder/wrist boundary normals are used to join the new surfaces. Review staging before copying only the costume GLB:
+
+```sh
+python3 scripts/build-characters.py --trinity-club --output output/characters/club-costume-staging
+cp packages/client/public/assets/characters/dujour-skin.png output/characters/club-costume-staging/dujour-skin.png
+blender --background --factory-startup --python-exit-code 1 --python scripts/render-trinity-club.py -- --costume output/characters/club-costume-staging/trinity-club.glb --output output/characters/club-costume-inspection
+cp output/characters/club-costume-staging/trinity-club.glb packages/client/public/assets/characters/trinity-club.glb
+node --import tsx scripts/export-club-pose.mts output/characters/club-costume-poses
+blender --background --factory-startup --python-exit-code 1 --python scripts/render-trinity-club.py -- --pose output/characters/club-costume-poses/whisper.json --output output/characters/club-costume-inspection
+```
+
+The last two commands export the actual game solver's introduction/whisper/question surfaces and render the selected pose offline. They do not run the browser, simulate the nightclub lighting or establish performance. Delete intermediate staging meshes and pose JSON after review; the costume references the already shipped body texture.
+
 After rebuilding the finished Trinity, apply the waist and shoulder corrections once, into staging. Each script rejects an already-corrected input; review and copy only the final GLB:
 
 ```sh
@@ -128,6 +143,8 @@ blender --background --factory-startup --python scripts/finish-characters.py
 Calibration detects 478 landmarks on each unprojected raw frontal render and on the generated front/profile references. It saves the measured points, cameras, source hashes and hairline boundaries locally. The fit uses a regularized smooth deformation with fixed neck/crown regions; it does not send photos to a cloud reconstruction service. The frontal reference is square and the profile crop is 3:4; their separate pixel aspect ratios are retained.
 
 ## Validation
+
+Club checks load the actual new costume, verify cold scene entry and repeated outfit restoration, preserve the finished face/hands and trousers, and probe waist coverage in the three conversation phases. Every exposed shoulder/wrist boundary is matched to the original skin and checked for coincident animated positions and matching normals. Neutral front, back and three-quarter Blender views also inspect the real exported whisper pose. The nightclub's in-game lighting, shadows, camera and frame cost still require browser review.
 
 Shoe checks load all four shipped rigs, bend their knees and verify that the soles retain their shape. Hotel checks cover standing across two treads, real shoe clearance at heel/toe edges, paused poses, Neo/Trinity walking both directions on both flights at low/middle/high floors, and releasing the correction when jumping, fighting, sitting or leaving the stairwell. These geometric checks do not establish natural-looking gait, film likeness or acceptable in-game performance.
 
