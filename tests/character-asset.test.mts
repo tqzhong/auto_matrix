@@ -247,6 +247,46 @@ test('Neo’s cuff follows the raised biceps without being pulled through them',
   } finally { models.dispose(); }
 });
 
+test('both complete cotton cuffs retain their shape throughout the mirror reach', async () => {
+  const assets = new Map(await Promise.all(['neo', 'neo-office', 'neo-tracking'].map(async id => [id, await loadGeometry(id)] as const)));
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: (id: string) => Promise<unknown> }).load = async id => assets.get(id)!;
+  try {
+    const rig = (await models.create('neo'))!; const motion = newMotion(); motion.seated = 1;
+    const shirt = rig.wardrobe.find(part => (part.mesh.material as THREE.Material).name === 'Tracking cotton')!.mesh as THREE.SkinnedMesh;
+    const positions = shirt.geometry.attributes.position, indices = shirt.geometry.index!;
+    // Weld UV seams before finding the physical openings. The old front-only
+    // probe missed the low and rear cuff edges that stretched into long flaps.
+    const welded = new Map<string, number>();
+    const vertices = Array.from({ length: positions.count }, (_, i) => {
+      const key = new THREE.Vector3().fromBufferAttribute(positions, i).toArray().map(value => value.toFixed(5)).join(',');
+      if (!welded.has(key)) welded.set(key, i);
+      return welded.get(key)!;
+    });
+    const edges = new Map<string, { a: number; b: number; count: number }>();
+    for (let i = 0; i < indices.count; i += 3) for (let corner = 0; corner < 3; corner++) {
+      const a = vertices[indices.getX(i + corner)], b = vertices[indices.getX(i + (corner + 1) % 3)];
+      const key = [Math.min(a, b), Math.max(a, b)].join(',');
+      const edge = edges.get(key) ?? { a, b, count: 0 }; edge.count++; edges.set(key, edge);
+    }
+    const cuffs = [...edges.values()].filter(edge => edge.count === 1 && [edge.a, edge.b].every(i =>
+      Math.abs(positions.getX(i)) > .3 && positions.getY(i) > 2.8 && positions.getY(i) < 3.5));
+    for (const side of [-1, 1]) assert.ok(cuffs.filter(edge => positions.getX(edge.a) * side > 0).length > 50, 'cover each complete cuff, including its underside');
+    const degree = new Map<number, number>();
+    for (const edge of cuffs) for (const vertex of [edge.a, edge.b]) degree.set(vertex, (degree.get(vertex) ?? 0) + 1);
+    assert.ok([...degree.values()].every(count => count === 2), 'the sampled openings must be closed rings, not isolated strips');
+    for (const time of [0, 2.75, 3.1, 3.45, 4.15, 5, 6.3]) {
+      const input: MotionInput = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, seated: true, performance: 'touch', mirrorBeat: time };
+      models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
+      for (const { a, b } of cuffs) {
+        const rest = new THREE.Vector3().fromBufferAttribute(positions, a).distanceTo(new THREE.Vector3().fromBufferAttribute(positions, b));
+        const posed = shirt.getVertexPosition(a, new THREE.Vector3()).distanceTo(shirt.getVertexPosition(b, new THREE.Vector3()));
+        assert.ok(posed / rest > .75 && posed / rest < 1.25, `cotton cuff edge ${a}-${b} stretches to ${(posed / rest).toFixed(2)} times its length at ${time}s`);
+      }
+    }
+  } finally { models.dispose(); }
+});
+
 test('Trinity’s leather covers her shoulder caps while she connects and releases the tracking electrode', async () => {
   const asset = await loadGeometry('trinity'); const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
   (models as unknown as { load: () => Promise<typeof asset> }).load = async () => asset;

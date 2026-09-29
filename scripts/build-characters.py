@@ -697,7 +697,10 @@ def main(source, character, office=False, tracking=False, club=False):
         cut = waistline + .15
         v, uv, faces, w = trim_neckline(v, uv, faces, w, cut, above=True)
         hem = floor + spec['height'] * .57 / scale
-        drape = np.clip((cut + .9 - v[:, 1]) / .9, 0, 1)
+        # In the source A-pose the cuffs reach the same height as the hem.
+        # Only lower the torso: rebinding those sleeve vertices to the abdomen
+        # otherwise leaves hanging flaps when the arms reach toward the mirror.
+        drape = np.clip((cut + .9 - v[:, 1]) / .9, 0, 1) * np.clip((w[:, :3].sum(axis=1) - .3) / .6, 0, 1)
         v[:, 1] -= (cut - hem) * drape
         trunk = body_indices[weights[body_indices, :3].sum(axis=1) > .9]
         for i in np.flatnonzero(drape > 0):
