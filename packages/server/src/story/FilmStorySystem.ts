@@ -4355,6 +4355,7 @@ export class FilmStorySystem {
       if (state.scene === 'm1_wake_up' && next.id === 'm1_club') {
         this.elapse(this.world.timeOfDay >= 6000 && this.world.timeOfDay < 20500 ? (20500 - this.world.timeOfDay) * .06 : 20, tick);
       } else if (state.scene === 'm1_club' && next.id === 'm1_morning') this.elapse(20, tick);
+      else if (next.id === 'm1_wake_again' && this.world.timeOfDay >= 6000 && this.world.timeOfDay < 20500) this.elapse((20500 - this.world.timeOfDay) * .06, tick);
       const sameRoom = state.scene === 'm1_morning' && next.id === 'm1_commute' || state.scene === 'm1_commute' && next.id === 'm1_boss' || state.scene === 'm1_pills' && next.id === 'm1_mirror' || state.scene === 'm2_merovingian' && next.id === 'm2_persephone'
         || state.scene === 'm3_mobil' && next.id === 'm3_family' || state.scene === 'm3_family' && next.id === 'm3_trainman'
         || state.scene === 'm3_hel_entry' && next.id === 'm3_hel_bargain';
@@ -4966,7 +4967,7 @@ export class FilmStorySystem {
     neo.isAwakened = FILM_SCENES.indexOf(scene) >= FILM_SCENES.findIndex(s => s.id === 'm1_pod');
     const profile = this.sandbox().profiles[actor.id];
     if (profile) { profile.trackedMission = ''; profile.trace = 0; profile.inventory.medkit = Math.max(profile.inventory.medkit, 2); delete profile.job; if (!profile.visited.includes(scene.set)) profile.visited.push(scene.set); }
-    this.sandbox().weather = FILM_SETS[scene.set].light === 'storm' ? 'rain' : 'clear';
+    this.sandbox().weather = FILM_SETS[scene.set].light === 'storm' || ['m1_bridge', 'm1_bug'].includes(scene.id) ? 'rain' : 'clear';
     this.sandbox().weatherUntil = tick + 100000;
     this.stageCast();
     if (scene.id === 'm1_bridge') this.bridgeArrivalFrame(actor, 0, tick);

@@ -557,5 +557,6 @@ if (scene.id === 'm3_dawn' && process.argv[3] === 'dawn-sunrise') {
 }
 for (const resident of world.agents.values()) delete resident.controller;
 neo.isAwakened = FILM_SCENES.indexOf(scene) >= FILM_SCENES.findIndex(s => s.id === 'm1_pod');
-await writeFile(path.join(directory, 'world.json'), JSON.stringify({ version: 1, tick: 0, timeOfDay: 12000, day: 1, phase: 'phase1_normal_life', agents: Object.fromEntries(world.agents), events: [], relationships: [], sandbox: sandbox.state }));
+const nightReview = ['m1_wake_again', 'm1_bridge', 'm1_bug'].includes(scene.id);
+await writeFile(path.join(directory, 'world.json'), JSON.stringify({ version: 1, tick: 0, timeOfDay: nightReview ? 20500 : 12000, day: 1, phase: 'phase1_normal_life', agents: Object.fromEntries(world.agents), events: [], relationships: [], sandbox: sandbox.state }));
 console.log(directory);

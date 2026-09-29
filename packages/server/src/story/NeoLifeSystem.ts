@@ -295,6 +295,7 @@ export class NeoLifeSystem {
     const state = this.state!;
     state.choices.rabbit = 'blue'; state.chapter = 0; state.doubt = Math.max(12, state.doubt - 20); state.contactAfterDay = state.day + 2;
     state.missions.rabbit.status = 'locked'; this.sandbox().profiles.neo.trackedMission = '';
+    this.sandbox().weather = 'clear'; this.sandbox().weatherUntil = tick + 600;
     this.move(this.world.agents.get('neo')!, 'neo_apartment');
     this.note('回到自己的生活', '你选择暂时不追查。工作、朋友和日程继续，已经写下的细节还在。至少两天后，新的怀疑才可能让那条联系重新出现。', tick);
   }

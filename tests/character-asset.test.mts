@@ -907,6 +907,44 @@ test('Neo’s tracker scan keeps his waist covered before lifting and skin insid
   } finally { models.dispose(); }
 });
 
+test('Neo’s black shirt covers his upper chest while seated in Trinity’s car', async () => {
+  const [neo, office] = await Promise.all([loadGeometry(), loadGeometry('neo-office')]);
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: (id: string) => Promise<typeof neo> }).load = async id => id === 'neo-office' ? office : neo;
+  try {
+    const rig = (await models.create('neo'))!;
+    const gesture = { phase: 'choice' as const, elapsed: 0, role: 'neo' as const, bugged: true };
+    const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, meeting: gesture };
+    const motion = newMotion();
+    models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0);
+    const shirt = rig.wardrobe.find(part => /Black.crew.neck/i.test(part.mesh.name))!.mesh as THREE.SkinnedMesh;
+    const skin = rig.wardrobe.find(part => (part.mesh.material as THREE.Material).name === 'Office skin')!.mesh as THREE.SkinnedMesh;
+    const front = (mesh: THREE.SkinnedMesh, x: number, y: number, tuck: boolean): number => {
+      const position = mesh.geometry.getAttribute('position'); const index = mesh.geometry.index!;
+      const hem = tuck ? mesh.geometry.getAttribute('_meetingShirtTuck') : undefined;
+      let depth = -Infinity;
+      for (let i = 0; i < index.count; i += 3) {
+        const a = index.getX(i), b = index.getX(i + 1), c = index.getX(i + 2);
+        const ay = position.getY(a) - (hem?.getX(a) ?? 0) * .4;
+        const by = position.getY(b) - (hem?.getX(b) ?? 0) * .4;
+        const cy = position.getY(c) - (hem?.getX(c) ?? 0) * .4;
+        const area = (by - cy) * (position.getX(a) - position.getX(c)) + (position.getX(c) - position.getX(b)) * (ay - cy);
+        if (Math.abs(area) < 1e-9) continue;
+        const u = ((by - cy) * (x - position.getX(c)) + (position.getX(c) - position.getX(b)) * (y - cy)) / area;
+        const v = ((cy - ay) * (x - position.getX(c)) + (position.getX(a) - position.getX(c)) * (y - cy)) / area;
+        if (Math.min(u, v, 1 - u - v) < -1e-7) continue;
+        depth = Math.max(depth, u * position.getZ(a) + v * position.getZ(b) + (1 - u - v) * position.getZ(c));
+      }
+      return depth;
+    };
+    for (const x of [-.2, -.1, 0, .1, .2]) for (const y of [3.1, 3.2, 3.3, 3.4]) {
+      const fabric = front(shirt, x, y, true), body = front(skin, x, y, false);
+      assert.ok(Number.isFinite(fabric) && Number.isFinite(body) && fabric > body + .003,
+        `skin shows through Neo’s seated shirt at ${x}, ${y}: fabric ${fabric}, skin ${body}`);
+    }
+  } finally { models.dispose(); }
+});
+
 test('Trinity ducks out of the opposite rear door and stands before becoming the hotel guide', async () => {
   const trinity = await loadGeometry('trinity'); const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
   (models as unknown as { load: (id: string) => Promise<typeof trinity> }).load = async () => trinity;

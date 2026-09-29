@@ -41,6 +41,7 @@ function reachDecision(h: ReturnType<typeof setup>) {
 test('captured Neo physically wakes, answers the landline and must personally agree to meet Morpheus', () => {
   const h = setup('captured');
   assert.equal(h.state().scene, 'm1_wake_again'); assert.deepEqual(h.state().wakeCall, { phase: 'waking', elapsed: 0, nightmare: true });
+  assert.ok(h.world.timeOfDay >= 20500 || h.world.timeOfDay < 6000, 'the apartment wake should begin after dusk in the same world clock as the bridge');
   assert.ok(h.neo.currentAction?.parameters.wakeCall, 'waking starts as a physical performance');
   h.frames(WAKE_CALL.waking + .2); assert.equal(h.state().wakeCall?.phase, 'ringing'); assert.equal(h.state().step, 0);
   assert.equal(h.neo.currentAction?.parameters.wakeCall, undefined, 'Neo regains movement and must walk to the phone');
@@ -57,6 +58,7 @@ test('captured Neo physically wakes, answers the landline and must personally ag
   h.neo.position = filmStepPosition(FILM_SCENE_BY_ID.m1_wake_again, FILM_SCENE_BY_ID.m1_wake_again.steps[1]); h.frames(.2);
   assert.equal(h.state().step, 1); h.command('act'); assert.equal(h.state().wakeCall?.phase, 'leaving'); h.frames(WAKE_CALL.leaving + .2);
   assert.equal(h.state().scene, 'm1_bridge'); assert.equal(h.state().office?.bugged, true);
+  assert.equal(h.sandbox.state.weather, 'rain', 'the bridge rain should agree with the shared world weather');
 });
 
 test('the successful office escape reaches the same call without inventing an interrogation nightmare or tracker', () => {

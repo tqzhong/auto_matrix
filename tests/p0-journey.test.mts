@@ -139,10 +139,12 @@ function answerSecondCall(h: Harness) {
 
 function meetAndTravel(h: Harness, tracker: boolean) {
   const bridge = FILM_SCENE_BY_ID.m1_bridge;
+  assert.equal(h.sandbox.state.weather, 'rain');
   h.walk(filmStepPosition(bridge, bridge.steps[0])); assert.equal(h.state().step, 1);
   assert.equal(h.state().bridgeArrival?.phase, 'parked');
   h.command('act'); h.frames(15); assert.equal(h.state().meeting?.phase, 'choice');
   h.command('meeting:stay'); assert.equal(h.state().scene, 'm1_bug');
+  assert.equal(h.sandbox.state.weather, 'rain');
   h.frames(10);
   if (tracker) {
     assert.equal(h.state().meeting?.phase, 'located'); h.frames(14, { focus: true });
@@ -155,6 +157,7 @@ function meetAndTravel(h: Harness, tracker: boolean) {
   assert.equal(h.state().meeting?.phase, 'outside');
   h.walk(filmStepPosition(FILM_SCENE_BY_ID.m1_bug, FILM_SCENE_BY_ID.m1_bug.steps[2]));
   h.command('act'); assert.equal(h.state().scene, 'm1_pills'); assert.equal(h.state().hotel?.progress, 0);
+  assert.equal(h.sandbox.state.weather, 'clear');
 }
 
 function reachPillChoice(h: Harness) {
@@ -217,4 +220,5 @@ test('P0 runs continuously from daily contact through capture, tracker removal a
   assert.equal(life.journey, undefined); assert.equal(life.chapter, 0); assert.equal(life.choices.pill, 'blue');
   assert.equal(life.money, 287); assert.deepEqual(life.evidence, ['office_tracker']);
   assert.equal(h.neo.currentLocation, 'neo_apartment');
+  assert.equal(h.sandbox.state.weather, 'clear', 'returning to ordinary life releases the bridge rain');
 });

@@ -189,7 +189,11 @@ export class HeroModels {
         const geometry = (source.material as THREE.Material).name === 'Office skin' ? source.geometry.clone() : source.geometry;
         if (geometry !== source.geometry) {
           const position = geometry.getAttribute('position');
-          for (let i = 0; i < position.count; i++) { position.setX(i, position.getX(i) * .98); position.setZ(i, position.getZ(i) * .97); }
+          for (let i = 0; i < position.count; i++) {
+            position.setX(i, position.getX(i) * .98);
+            const coveredChest = position.getZ(i) > 0 ? THREE.MathUtils.smoothstep(position.getY(i), 3.02, 3.14) : 0;
+            position.setZ(i, position.getZ(i) * (.97 - .08 * coveredChest));
+          }
           position.needsUpdate = true; geometry.computeVertexNormals(); this.geometries.add(geometry);
         }
         const mesh = new THREE.SkinnedMesh(geometry, source.material); mesh.name = source.name; mesh.userData.office = true;
