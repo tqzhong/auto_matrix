@@ -23,6 +23,8 @@ test('the shared tower has an unobstructed lobby, moving car, open upper floor a
   try {
     const car = scene.getObjectByName('metacortex-elevator-car')!; assert.ok(car);
     assert.equal(hits(new THREE.Vector3(1140, 3, 867), new THREE.Vector3(0, 0, -1), 67).length, 0, 'the street, lobby and open car share one clear walkable approach');
+    const frame = hits(new THREE.Vector3(1145.1, 4, 867), new THREE.Vector3(0, 0, -1), 10);
+    assert.ok(frame[0].point.z > 860.28, 'metal door trim must stand in front of the glass panel instead of z-fighting on the same plane');
     const lift: MetacortexLift = { floor: 0, target: 1, phase: 'travel', elapsed: 4.5, passenger: { x: 1140, z: 798 } };
     city.interiors.update(9500, { x: 1140, y: 33.5, z: 798 }, { lift } as never);
     assert.equal(car.position.y, 32.5);

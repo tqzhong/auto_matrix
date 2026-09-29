@@ -52,6 +52,26 @@ test('elevator cameras stay inside the car, support V and looking around, then r
   assert.equal(game.controls.performing, false);
 });
 
+test('the riding camera frames Neo from head to shoes instead of filling the view with his back', t => {
+  const game = setup(t, Math.PI); game.state.position = { ...metacortexPosition(0, -29), y: 33.5 };
+  game.state.currentLocation = 'metacortex_office';
+  game.state.currentAction = { type: 'idle', parameters: { metacortexLift: true }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.document.pointerLockElement = game.canvas;
+  for (const aspect of [.6, 16 / 9]) {
+    game.camera.aspect = aspect;
+    for (let view = 0; view < 8; view++) {
+      game.step(1); game.camera.updateMatrixWorld();
+      for (const y of [.12, 3.5]) {
+        const point = new THREE.Vector3(game.state.position.x, game.state.position.y + y, game.state.position.z).project(game.camera);
+        assert.ok(Math.abs(point.y) < .9 && Math.abs(point.x) < .9 && point.z > -1 && point.z < 1, `head and shoes remain in frame at ${aspect}: ${point.toArray()}`);
+      }
+      game.event(game.document, 'mousemove', { movementX: 210, movementY: 0 });
+    }
+  }
+  game.state.position = metacortexPosition(0, -22, 1); game.state.currentAction = null; game.step(2);
+  assert.ok(Math.abs(game.camera.fov - 57) < .1, 'leaving the car restores the ordinary walking lens');
+});
+
 test('the dock APU gunner sees past the frame, can turn the aim and fire from both views', t => {
   const game = setup(t, Math.PI); const center = FILM_SETS.film_zion_hangar.center;
   game.state.currentLocation = 'film_zion_hangar'; game.state.isInMatrix = false;

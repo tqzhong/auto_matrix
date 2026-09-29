@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { METACORTEX, METACORTEX_LOBBY, metacortexLiftPose, type MetacortexLift } from '@auto_matrix/shared';
+import { batchStaticGeometry } from './StaticGeometry.js';
 
 /** Lobby and moving car stay in the city while the office is streamed above. */
 export class MetacortexRenderer {
@@ -21,7 +22,7 @@ export class MetacortexRenderer {
     for (const side of [-1, 1]) {
       this.box(this.root, side * 27, 5, 0, .6, 10, 66, stone);
       this.box(this.root, side * 16, 5, 33, 22, 10, .4, 0x738d90);
-      this.box(this.root, side * 5.1, 4.6, 33, .18, 9.2, .4, metal);
+      this.box(this.root, side * 5.1, 4.6, 33, .18, 9.2, .6, metal);
       this.box(this.root, side * 18, 5, 32.7, .2, 10, .2, metal);
       this.box(this.root, side * 26.6, .4, 0, .16, .8, 66, dark);
       this.box(this.root, side * 15.25, 9.7, 0, 23.5, .5, 66, stone);
@@ -74,6 +75,7 @@ export class MetacortexRenderer {
     for (const [parent, y, z, power, range] of [[this.root, 8, 15, 200, 40], [this.root, 8, -15, 190, 38], [this.car, 6.7, -29, 55, 10]] as const) {
       const light = new THREE.PointLight(0xffefcf, power, range, 2); light.position.set(0, y, z); parent.add(light); this.lights.push(light);
     }
+    batchStaticGeometry(this.root, new Set(this.doors.map(door => door.mesh)));
     this.update(undefined);
   }
   private box(parent: THREE.Group, x: number, y: number, z: number, w: number, h: number, d: number, color: number): THREE.Mesh {
@@ -104,7 +106,10 @@ export class MetacortexRenderer {
     this.lights.forEach(light => { light.visible = nearby; });
   }
   dispose(): void {
-    this.root.traverse(object => { if (object instanceof THREE.Mesh && object.geometry !== this.geometry) { object.geometry.dispose(); (object.material as THREE.Material).dispose(); } });
+    this.root.traverse(object => { if (object instanceof THREE.Mesh && object.geometry !== this.geometry) {
+      object.geometry.dispose();
+      if (![...this.materials.values()].includes(object.material as THREE.MeshStandardMaterial)) (object.material as THREE.Material).dispose();
+    } });
     this.geometry.dispose(); this.materials.forEach(material => material.dispose()); this.textures.forEach(texture => texture.dispose()); this.lights.forEach(light => light.dispose()); this.root.removeFromParent();
   }
 }

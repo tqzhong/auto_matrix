@@ -34,6 +34,7 @@ export function enableSkinnedCulling(root: THREE.Object3D): void {
   const update = root.updateMatrixWorld.bind(root);
   root.updateMatrixWorld = force => {
     update(force);
+    if (!root.visible) return;
     for (const { mesh, parts } of targets) {
       if (!mesh.visible) continue;
       const box = mesh.boundingBox!; box.makeEmpty();

@@ -6,6 +6,8 @@ import { HERO_IDS, HeroModels, type HeroId, type HeroRig, type HeroSupport } fro
 import { SpoonModel } from './SpoonModel.js';
 import { PhoneModel } from './PhoneModel.js';
 import { VisibleGroup } from '../engine/VisibleGroup.js';
+import { enableSkinnedCulling } from './SkinnedBounds.js';
+import { batchStaticGeometry } from '../engine/StaticGeometry.js';
 
 interface Look {
   face?: number;
@@ -351,6 +353,8 @@ export class CharacterModels {
         if (rig.chateauBlade) { rig.chateauBlade.model.removeFromParent(); rig.chateauBlade.model.position.set(0, -.16, .06); model.bones.get('wrist_R')!.add(rig.chateauBlade.model); }
       }).catch(error => console.warn(`${state.id} asset could not load; retaining the procedural character.`, error));
     }
+    batchStaticGeometry(detail, new Set(clothPanels.map(panel => panel.mesh))).forEach(geometry => this.geometries.add(geometry));
+    enableSkinnedCulling(detail);
     return rig;
   }
 
