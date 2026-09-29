@@ -276,6 +276,7 @@ export class ApartmentSetRenderer {
       text = line.slice(0, Math.floor((t - start) * 18));
     } else if (contact?.phase === 'reply') text = 'Follow the white rabbit.';
     else if (contact && apartmentAfter(contact, 'knocking')) text = contact.phase === 'knocking' && contact.elapsed < 2.2 ? 'Knock, knock, Neo.' : '';
+    this.glow.intensity = text ? 100 - daylight * 65 : 2;
     if (text === this.screenKey) return;
     this.screenKey = text;
     const ctx = this.canvas.getContext('2d')!; ctx.fillStyle = '#050a07'; ctx.fillRect(0, 0, 1024, 640);
@@ -283,7 +284,7 @@ export class ApartmentSetRenderer {
     text.split('\n').forEach((line, i) => ctx.fillText(line, 48, 92 + i * 65)); ctx.shadowBlur = 0;
     if (text) ctx.fillRect(48, 280, 22, 4);
     ctx.fillStyle = '#00000026'; for (let y = 0; y < 640; y += 4) ctx.fillRect(0, y, 1024, 1);
-    this.screen.needsUpdate = true; this.glow.intensity = text ? 14 : 2;
+    this.screen.needsUpdate = true;
   }
   private batch(): void {
     this.root.updateWorldMatrix(true, true); const inverse = this.root.matrixWorld.clone().invert(); const batches = new Map<THREE.Material, THREE.BufferGeometry[]>(); const removed: THREE.Mesh[] = [];
