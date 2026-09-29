@@ -212,14 +212,15 @@ export class VoxelRenderer {
         const room = LIFE_ROOMS[location.id]; const base = room ? 10 : 0;
         if (location.id === 'metacortex_office') {
           // Leave the inhabited office and the entire lift shaft hollow.
-          for (const [bottom, top] of [[10, METACORTEX.upper], [METACORTEX.upper + 10, height]]) {
+          // The streamed office supplies its own 0.4-unit floor slab.
+          for (const [bottom, top] of [[10, METACORTEX.upper - .4], [METACORTEX.upper + 10, height]]) {
             for (const [x, z, width, depth] of [[-15.3, 0, 23.4, 66], [15.3, 0, 23.4, 66], [0, 3.7, 7.2, 58.6]]) {
               const block = new THREE.Mesh(new THREE.BoxGeometry(width, top - bottom, depth), [mat, mat, roof, roof, mat, mat]);
               block.position.set(centerX + x, (bottom + top) / 2, METACORTEX.center.z + z); block.castShadow = block.receiveShadow = true; this.matrix.add(block);
             }
           }
-          this.officeShell = new THREE.Mesh(new THREE.BoxGeometry(54, 10, 66), mat);
-          this.officeShell.position.set(centerX, METACORTEX.upper + 5, METACORTEX.center.z); this.officeShell.castShadow = true; this.matrix.add(this.officeShell);
+          this.officeShell = new THREE.Mesh(new THREE.BoxGeometry(54, 10.4, 66), mat);
+          this.officeShell.position.set(centerX, METACORTEX.upper + 4.8, METACORTEX.center.z); this.officeShell.castShadow = true; this.matrix.add(this.officeShell);
         } else {
           const building = new THREE.Mesh(new THREE.BoxGeometry(max.x - min.x, height - base, max.z - min.z), [mat, mat, roof, roof, mat, mat]);
           building.position.set(centerX, base + (height - base) / 2, centerZ);

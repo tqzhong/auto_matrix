@@ -196,7 +196,7 @@ export class FilmSetRenderer {
   setMirrorSubject(subject?: THREE.Object3D): void { this.mirrorSubject = subject; }
   setRecoverySubject(subject?: THREE.Object3D): void { this.recoverySubject = subject; }
   renderTelevisionPreview(renderer: THREE.WebGLRenderer): void { this.construct?.renderPreview(renderer, this.scene.environment); }
-  update(player: AgentState | undefined, sandbox: SandboxState | undefined, elapsed: number, playerPosition?: Vector3, cameraPosition?: Vector3, workday?: OfficeWorkday, firstPerson = false): FilmSet | undefined {
+  update(player: AgentState | undefined, sandbox: SandboxState | undefined, elapsed: number, playerPosition?: Vector3, cameraPosition?: Vector3, workday?: OfficeWorkday, firstPerson = false, timeOfDay = 12000): FilmSet | undefined {
     let set = player ? filmSetAt(player.position, player.isInMatrix) : undefined;
     if (set?.id === 'film_extraction_car' && player?.currentLocation === 'film_adams_bridge') set = FILM_SETS.film_adams_bridge;
     if (set?.id === 'film_adams_bridge' && player?.currentLocation === 'film_extraction_car') set = FILM_SETS.film_extraction_car;
@@ -329,7 +329,7 @@ export class FilmSetRenderer {
       this.approach.root.visible = (playerPosition?.y ?? 1) < 15;
       if (this.approach.root.visible) this.approach.renderer.update(journey, elapsed, { phase: 'parked', elapsed: 0, role: 'neo', bugged: false });
     }
-    this.office?.update(journey, cameraPosition, playerPosition, workday, elapsed);
+    this.office?.update(journey, cameraPosition, playerPosition, workday, elapsed, timeOfDay);
     if (this.hotel303Door && this.hotel303Glass && this.hotel303Shards) {
       const hotel = sceneId === 'm1_room303' && !journey?.visiting ? journey?.openingHotel : undefined;
       const opening = hotel?.phase === 'breach' ? Math.min(1, hotel.elapsed / OPENING_HOTEL.breachSeconds) : hotel?.phase === 'trace' || !hotel ? 0 : 1;

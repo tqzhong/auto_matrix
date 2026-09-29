@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { FILM_SETS, METACORTEX, OFFICE_WINDOW, type FilmJourney, type MetacortexLift } from '@auto_matrix/shared';
+import { FILM_SETS, METACORTEX, OFFICE_CONTACT, OFFICE_WINDOW, type FilmJourney, type MetacortexLift } from '@auto_matrix/shared';
 import { VoxelRenderer } from '../packages/client/src/engine/VoxelRenderer.js';
 import { OfficeSetRenderer } from '../packages/client/src/engine/OfficeSetRenderer.js';
 import { UrbanMaterials } from '../packages/client/src/engine/UrbanMaterials.js';
@@ -22,6 +22,16 @@ test('the shared tower has an unobstructed lobby, moving car, open upper floor a
   };
   try {
     const car = scene.getObjectByName('metacortex-elevator-car')!; assert.ok(car);
+    const floor = hits(new THREE.Vector3(1150.73, 68, 832.19), new THREE.Vector3(0, -1, 0), 4)
+      .filter(hit => Math.abs(hit.point.y - METACORTEX.upper) < .001);
+    assert.equal(floor.length, 1, 'the occupied floor must not z-fight with a city building cap at the same height');
+    const parcel = scene.getObjectByName('parcel-phone')!.parent!;
+    const furniture = meshes.filter(mesh => { for (let p: THREE.Object3D | null = mesh; p; p = p.parent) if (p === parcel) return false; return true; });
+    for (const dx of [-.37, .37]) for (const dz of [-1.8, -.85, -.3, .48]) {
+      const origin = new THREE.Vector3(office.center.x + OFFICE_CONTACT.parcelX + dx, office.center.y + 4, office.center.z + OFFICE_CONTACT.parcelZ + dz);
+      const obstruction = new THREE.Raycaster(origin, new THREE.Vector3(0, -1, 0), 0, 2.48).intersectObjects(furniture, false);
+      assert.equal(obstruction.length, 0, 'the closed parcel and its open flap need clearance from the keyboard and CRT case');
+    }
     assert.equal(hits(new THREE.Vector3(1140, 3, 867), new THREE.Vector3(0, 0, -1), 67).length, 0, 'the street, lobby and open car share one clear walkable approach');
     const frame = hits(new THREE.Vector3(1145.1, 4, 867), new THREE.Vector3(0, 0, -1), 10);
     assert.ok(frame[0].point.z > 860.28, 'metal door trim must stand in front of the glass panel instead of z-fighting on the same plane');
