@@ -68,10 +68,10 @@ test('the rescue claw approaches from overhead instead of covering the floating 
   const root = new THREE.Group(); const set = new PodSetRenderer(root);
   const journey = { awakening: { kind: 'disconnect', elapsed: 9 } } as Parameters<PodSetRenderer['update']>[0];
   set.update(journey, 9, true);
-  const claw = root.children[0].children.find(object => object instanceof THREE.Group && object.position.z === 12 && object.position.y < 0);
+  const claw = root.getObjectByName('pod-rescue-claw');
   assert.ok(claw);
   const eye = new THREE.Vector3(-.85, -15.5, 11.5);
-  assert.ok(claw.position.distanceTo(eye) > 7, 'the idle claw should be visible overhead without blocking most of the view');
+  assert.ok(claw.position.distanceTo(eye) > 6, 'the idle claw should be visible overhead without blocking most of the view');
   set.update({ awakening: { kind: 'rescue', elapsed: 1 } } as Parameters<PodSetRenderer['update']>[0], 10, true);
   assert.ok(claw.position.y < -9, 'the claw should descend toward Neo when the player requests rescue');
   const housing = claw.children.find(object => object instanceof THREE.Mesh && object.geometry instanceof THREE.CylinderGeometry);

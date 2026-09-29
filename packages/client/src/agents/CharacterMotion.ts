@@ -1,4 +1,4 @@
-import { reloadedPose, type CatchGesture, type ReloadedGesture } from '@auto_matrix/shared';
+import { podRescuePose, reloadedPose, type CatchGesture, type ReloadedGesture } from '@auto_matrix/shared';
 import { deusPactLocked, deusPactPose, farewellPose, smithFinaleLocked, smithFinalePose, trilogyEpilogueLocked } from '@auto_matrix/shared';
 import { MELEE_COMBO, COMBO_WINDOW, COMBAT_SKILLS, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED, PILL_TIMING, MIRROR_TIMING, lobbyPose, governmentPose, airRescuePose, matrixEscapePose, theOnePose, recoveryCrewPose, type CombatSkillId, type AwakeningPose, type AwakeningReveal, type RecoveryCrewGesture, type OfficePhone, pillPose, lafayetteWelcomePose, oracleVisitPose, betrayalPose, rescuePose, type PillGesture, type InterrogationGesture, type LafayetteWelcomeGesture, type TrainingGesture, type OracleVisitGesture, type BetrayalGesture, type RescueGesture, type RescueLoadout, type LobbyGesture, type GovernmentRescueGesture, type AirRescueGesture, type MatrixEscapeGesture, type TheOneGesture } from '@auto_matrix/shared';
 
@@ -22,6 +22,7 @@ export interface MotionInput {
   riding?: boolean;
   climbing?: number;
   performance?: AwakeningPose;
+  podRescue?: number;
   mirrorBeat?: number;
   mirrorCrew?: number;
   mirrorContact?: { x: number; y: number; z: number };
@@ -646,9 +647,13 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   }
   if (input.performance && !['touch', 'connect'].includes(input.performance)) for (let i = 0; i < 2; i++) {
     const afloat = input.performance === 'float'; const raised = input.performance === 'lift';
-    arms[i].shoulder = raised ? -2 : -.5 + (afloat ? Math.sin(state.time * 2 + i) * .2 : 0);
-    arms[i].elbow = -.7; arms[i].outward = (i ? 1 : -1) * (afloat ? .65 : .25); arms[i].grip = raised ? .8 : .1;
-    legs[i].hip = -.2; legs[i].knee = .45 + (afloat ? Math.sin(state.time * 1.8 + i * Math.PI) * .15 : 0);
+    const held = raised ? podRescuePose(input.podRescue ?? 5).grip : 0;
+    const scull = afloat || raised ? 1 - held : 0;
+    const clock = input.podRescue ?? state.time;
+    arms[i].shoulder = -.5 + Math.sin(clock * 2 + i) * .2 * scull;
+    arms[i].elbow = mix(-.7, -.18, held); arms[i].outward = (i ? 1 : -1) * (afloat || raised ? .72 : .25); arms[i].grip = .1;
+    legs[i].hip = mix(-.2, i ? -.08 : .12, held);
+    legs[i].knee = mix(.45 + Math.sin(clock * 1.8 + i * Math.PI) * .15 * scull, i ? .3 : .18, held);
   }
   if (input.hotel303?.phase === 'surrender') for (let i = 0; i < 2; i++) {
     arms[i].shoulder = -2.55; arms[i].elbow = -.45; arms[i].outward = (i ? 1 : -1) * .42; arms[i].grip = .1;

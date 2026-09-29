@@ -1163,6 +1163,22 @@ test('a paused pod save keeps its immersed, floating or lifted pose when release
   }
 });
 
+test('the rescue holds Neo at the waterline until the claw has descended and closed', () => {
+  const water = awakeningPose({ kind: 'disconnect', elapsed: 9 });
+  for (const elapsed of [0, .4, 1, 1.6]) {
+    const rescue = awakeningPose({ kind: 'rescue', elapsed });
+    assert.equal(rescue.y, water.y, `Neo cannot levitate before the claw supports him at ${elapsed}s`);
+    assert.equal(rescue.z, water.z);
+  }
+  let previous = water.y;
+  for (let frame = 17; frame <= 50; frame++) {
+    const pose = awakeningPose({ kind: 'rescue', elapsed: frame / 10 });
+    assert.ok(pose.y >= previous && pose.y - previous < .85, 'the winch lifts continuously without a jump');
+    previous = pose.y;
+  }
+  assert.ok(previous > water.y + 13);
+});
+
 test('pod disconnection moves Neo down the drain; rescue must be started in the water and lifts the body', () => {
   const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
   Object.assign(state, { scene: 'm1_mirror', actor: 'neo', step: 1 }); h.command('next');

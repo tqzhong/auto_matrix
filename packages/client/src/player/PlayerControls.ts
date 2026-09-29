@@ -1149,8 +1149,8 @@ export class PlayerControls {
       }
     } else if (this.firstPerson && state.currentLocation === 'film_power_plant_pods' &&
       (this.motion.performance === 'float' || this.motion.performance === 'lift')) {
-      const eye = new THREE.Vector3(this.position.x - .85, this.position.y + 2.5, this.position.z - .5);
-      const pitch = this.pitch - 1, yaw = this.yaw - Math.PI / 2;
+      const eye = new THREE.Vector3(this.position.x, this.position.y + 3.25, this.position.z - .25);
+      const pitch = this.pitch - 1.42, yaw = this.yaw - Math.PI / 2;
       const forward = new THREE.Vector3(Math.sin(yaw) * Math.cos(pitch), -Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch));
       this.camera.position.copy(eye); this.camera.lookAt(eye.add(forward));
     } else if (state.currentLocation === 'film_power_plant_pods' &&

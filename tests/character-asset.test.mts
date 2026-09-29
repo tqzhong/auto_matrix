@@ -553,6 +553,58 @@ test('the shipped Neo body rests in the pod fluid instead of hovering over the t
   } finally { renderer.dispose(); set.dispose(); globalThis.document = document; }
 });
 
+test('Neo floats chest-deep and the rescue pads support the shipped body throughout the lift', async t => {
+  const assets = new Map(await Promise.all(['neo', 'neo-office', 'neo-tracking'].map(async id => [id, await loadGeometry(id)] as const)));
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', async (path: string) => assets.get(path.split('/').pop()!.replace(/\.glb.*$/, ''))!);
+  const document = globalThis.document;
+  const context = { createRadialGradient: () => ({ addColorStop() {} }), fillRect() {}, strokeRect() {}, fillText() {},
+    createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }), putImageData() {} };
+  globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => context }) } as unknown as Document;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!; neo.currentLocation = 'film_power_plant_pods'; neo.isInMatrix = false; neo.rotation = Math.PI;
+  const scene = new THREE.Scene(), renderer = new AgentRenderer(scene), root = new THREE.Group(); scene.add(root);
+  const center = FILM_SETS.film_power_plant_pods.center; root.position.set(center.x, center.y - 1, center.z);
+  const set = new PodSetRenderer(root);
+  try {
+    for (const elapsed of [-1, 0, 1, 1.65, 2.5, 4, 5]) {
+      const awakening = elapsed < 0 ? { kind: 'disconnect' as const, elapsed: 9 } : { kind: 'rescue' as const, elapsed };
+      const pose = awakeningPose(awakening), journey = { scene: 'm1_pod', awakening } as FilmJourney;
+      neo.position = filmPosition(neo.currentLocation, pose.x, pose.z); neo.position.y += pose.y;
+      neo.currentAction = { type: 'idle', parameters: { filmPose: pose.pose }, startedAt: 0, duration: 1, progress: 0 };
+      renderer.updateAgent('neo', neo); renderer.setWorld(false); renderer.setPlayer('neo');
+      await new Promise(resolve => setImmediate(resolve));
+      // Match the player controller's authoritative placement before animation.
+      renderer.getAgent('neo')!.position.set(neo.position.x, neo.position.y, neo.position.z);
+      const body = renderer.getAgentBody('neo')!; body.rotation.y = Math.PI;
+      renderer.update(0, undefined, 0, 0, journey); set.update(journey, 9 + Math.max(0, elapsed), false, body); scene.updateMatrixWorld(true);
+      const chest = body.getObjectByName('chest')!, head = body.getObjectByName('head')!;
+      const waterY = center.y - 18 + .7;
+      if (elapsed <= 1) {
+        const chestY = chest.getWorldPosition(new THREE.Vector3()).y;
+        assert.ok(chestY < waterY + .12 && chestY > waterY - .6, `Neo must float at the chest, not stand ${chestY - waterY} units above water`);
+        assert.ok(head.getWorldPosition(new THREE.Vector3()).y > waterY + .25, 'the face stays above the water');
+      }
+      if (elapsed < 1.65) continue;
+      const skin: THREE.SkinnedMesh[] = [];
+      body.traverse(object => { if (object instanceof THREE.SkinnedMesh && object.visible && object.userData.patientBody) { object.skeleton.update(); skin.push(object); } });
+      for (const side of ['L', 'R', 'back']) {
+        const pad = root.getObjectByName(`pod-rescue-pad-${side}`); assert.ok(pad, 'the closing claw has a physical support pad');
+        const from = pad.getWorldPosition(new THREE.Vector3()), to = chest.localToWorld(new THREE.Vector3(0, -.15, 0));
+        const hit = new THREE.Raycaster(from, to.sub(from).normalize(), 0, .2).intersectObjects(skin)[0];
+        assert.ok(hit && hit.distance > .025 && hit.distance < .1, `${side} at ${elapsed}s must rest on the skin without penetrating it; gap ${hit?.distance}`);
+        for (let i = 0; i < 3; i++) {
+          const link = root.getObjectByName(`pod-rescue-link-${side}-${i}`)!;
+          const start = link.localToWorld(new THREE.Vector3(0, -.5, 0));
+          const direction = link.localToWorld(new THREE.Vector3(0, .5, 0)).sub(start);
+          const throughBody = new THREE.Raycaster(start, direction.clone().normalize(), .01, direction.length()).intersectObjects(skin)[0];
+          assert.ok(!throughBody, `${side} link ${i} cannot pass through Neo's arms or torso at ${elapsed}s`);
+        }
+      }
+    }
+  } finally { renderer.dispose(); set.dispose(); globalThis.document = document; }
+});
+
 test('Neo has a connected anatomical body after leaving the mirror for the pod and recovery bed', async () => {
   const [asset, office, tracking] = await Promise.all([loadGeometry('neo'), loadGeometry('neo-office'), loadGeometry('neo-tracking')]);
   const models = new HeroModels(new THREE.Texture(), new THREE.Texture());

@@ -5,6 +5,7 @@ import type { AgentState, PlayerInput } from '@auto_matrix/shared';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { CameraController } from '../packages/client/src/engine/CameraController.js';
 import { PodSetRenderer } from '../packages/client/src/engine/PodSetRenderer.js';
+import { awakeningPose } from '@auto_matrix/shared';
 import { MORNING, morningRoot, morningWakePose } from '@auto_matrix/shared';
 import { metacortexPosition } from '@auto_matrix/shared';
 import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, INTERROGATION_ROOM, pillRoot, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, POD_WATER_DROP, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, airRescueRoot, matrixEscapeRoot, theOneRoot, wakeCallRoot, type TheOneEncounter } from '@auto_matrix/shared';
@@ -1231,11 +1232,11 @@ test('the rescue camera stays clear of the cultivation towers throughout the lif
   try {
     for (const aspect of [449 / 680, 16 / 9]) {
       game.camera.aspect = aspect; game.camera.updateProjectionMatrix();
-      game.state.position = filmPosition('film_power_plant_pods', 0, 12); game.state.position.y -= POD_WATER_DROP;
+      game.state.position = filmPosition('film_power_plant_pods', 0, 12); game.state.position.y += awakeningPose({ kind: 'disconnect', elapsed: 9 }).y;
       game.controls.possess(game.state); game.controls.performing = true;
       for (let frame = 0; frame <= 50; frame++) {
         const elapsed = frame / 10;
-        game.state.position.y = center.y - POD_WATER_DROP + elapsed / 5 * 14;
+        game.state.position.y = center.y + awakeningPose({ kind: 'rescue', elapsed }).y;
         game.step(.1);
         set.update({ awakening: { kind: 'rescue', elapsed } } as Parameters<PodSetRenderer['update']>[0], elapsed);
         root.updateMatrixWorld(true);
@@ -1253,14 +1254,21 @@ test('the rescue camera stays clear of the cultivation towers throughout the lif
 test('the floating first-person view finds the descending rescue claw above the water', t => {
   const game = setup(t, Math.PI); const center = FILM_SETS.film_power_plant_pods.center;
   game.state.currentLocation = 'film_power_plant_pods'; game.state.isInMatrix = false;
-  game.state.position = filmPosition('film_power_plant_pods', 0, 12); game.state.position.y -= POD_WATER_DROP;
+  game.state.position = filmPosition('film_power_plant_pods', 0, 12); game.state.position.y += awakeningPose({ kind: 'disconnect', elapsed: 9 }).y;
   game.state.rotation = Math.PI;
   game.state.currentAction = { type: 'idle', parameters: { filmPose: 'float', player: true }, startedAt: 0, duration: 1, progress: 0 };
   game.controls.possess(game.state); game.controls.performing = true;
   game.key('KeyV'); game.key('KeyV', false); game.step(.4);
-  const claw = new THREE.Vector3(center.x, center.y - POD_WATER_DROP + 4, center.z + 12).project(game.camera);
-  assert.ok(Math.abs(claw.x) < .7 && Math.abs(claw.y) < .8 && claw.z > -1 && claw.z < 1,
-    `the rescue device must be in the player's view: ${claw.toArray()}`);
+  const root = new THREE.Group(); root.position.set(center.x, center.y - 1, center.z); const set = new PodSetRenderer(root);
+  try {
+    set.update({ awakening: { kind: 'disconnect', elapsed: 9 } } as Parameters<PodSetRenderer['update']>[0], 9, true);
+    root.updateMatrixWorld(true);
+    const claw = root.getObjectByName('pod-rescue-claw')!.getWorldPosition(new THREE.Vector3()).project(game.camera);
+    assert.ok(Math.abs(claw.x) < .7 && Math.abs(claw.y) < .95 && claw.z > -1 && claw.z < 1,
+      `the actual rescue device must be in the player's view: ${claw.toArray()}`);
+    const eyeAboveWater = game.camera.position.y - (center.y - POD_WATER_DROP + .7);
+    assert.ok(eyeAboveWater > .25 && eyeAboveWater < 1, 'the camera stays at the floating face, above the water');
+  } finally { set.dispose(); }
 });
 
 test('the red-pill departure keeps Neo in the third-person frame and reveals the mirror before handoff', t => {

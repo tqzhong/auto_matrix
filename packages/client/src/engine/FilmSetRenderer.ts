@@ -359,7 +359,7 @@ export class FilmSetRenderer {
     }
     this.club?.update(elapsed);
     this.freeway?.update(journey, elapsed, playerPosition);
-    this.pods?.update(journey, elapsed, firstPerson);
+    this.pods?.update(journey, elapsed, firstPerson, this.recoverySubject);
     this.neb?.update(journey, elapsed, this.recoverySubject);
     this.finale?.update(journey, elapsed);
     this.revolutionsPrelude?.update(journey, elapsed);

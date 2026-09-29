@@ -199,6 +199,8 @@ export class AgentRenderer {
       // The ruined city is still a loading program: actors keep their residual
       // self image even though the represented place is the real world.
       input.realWorld = !state.isInMatrix && state.currentLocation !== 'film_real_desert';
+      input.podRescue = journey?.scene === 'm1_pod' && !journey.visiting && input.performance === 'lift' && journey.awakening?.kind === 'rescue'
+        ? journey.awakening.elapsed : undefined;
       input.officeShirt = officeClothing(state.id, state.currentLocation);
       input.clubClothes = state.currentLocation === 'film_white_rabbit_club';
       input.glasses = !input.clubClothes && (state.id !== 'neo' || state.isAwakened && state.currentLocation !== 'film_oracle_home');

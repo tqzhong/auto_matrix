@@ -45,6 +45,7 @@ export function mirrorGuideProgress(point: { x: number; z: number }): number {
   return progress;
 }
 export const POD_WATER_DROP = 18;
+export const POD_RESCUE = { immersion: 1.8, descend: 1, secured: 1.65 } as const;
 export const RECOVERY_BED = { x: -7, z: -22, standingX: -3.6 } as const;
 export const RECOVERY_CREW = {
   morpheus: { start: { x: -2.4, z: -18.5, yaw: -2.45 }, side: 1.32 },
@@ -57,6 +58,12 @@ export type AwakeningPose = 'touch' | 'connect' | 'pod' | 'fall' | 'float' | 'li
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
 const smooth = (value: number) => { const t = clamp(value); return t * t * (3 - 2 * t); };
 export const mirrorSilver = (elapsed: number): number => clamp((elapsed - MIRROR_TIMING.touch) / (AWAKENING_SECONDS.mirror - MIRROR_TIMING.touch));
+
+export function podRescuePose(elapsed: number): { descend: number; grip: number; lift: number } {
+  return { descend: smooth(elapsed / POD_RESCUE.descend),
+    grip: smooth((elapsed - POD_RESCUE.descend) / (POD_RESCUE.secured - POD_RESCUE.descend)),
+    lift: smooth((elapsed - POD_RESCUE.secured) / (AWAKENING_SECONDS.rescue - POD_RESCUE.secured)) };
+}
 
 export function recoveryCrewPose(gesture: RecoveryCrewGesture): { x: number; z: number; yaw: number; support: number } {
   const config = RECOVERY_CREW[gesture.role];
@@ -95,7 +102,9 @@ export function awakeningPose(beat?: AwakeningBeat): { x: number; y: number; z: 
         : beat.elapsed < 5.8 ? '冰冷的银色镜面粘住指尖，沿手臂与颈部蔓延。' : 'Neo 惊恐地仰头；房间的声音和光线正在消失。' };
   }
   if (beat?.kind === 'connect') return { x: 8, y: 0, z: 5, pose: 'connect', text: '坐稳。接线组已经找到你，连接正在从模拟世界转向真实身体。' };
-  if (beat?.kind === 'rescue') return { x: 0, y: -POD_WATER_DROP + clamp(beat.elapsed / 5) * 14, z: 12, pose: 'lift', text: '救援机械爪托住身体，尼布甲尼撒号正在将你吊出废水。' };
+  if (beat?.kind === 'rescue') return { x: 0, y: -POD_WATER_DROP - POD_RESCUE.immersion + podRescuePose(beat.elapsed).lift * (14 + POD_RESCUE.immersion), z: 12, pose: 'lift',
+    text: beat.elapsed < POD_RESCUE.descend ? '探照灯照亮水面。救援机械爪张开支臂，正在降到身体两侧。'
+      : beat.elapsed < POD_RESCUE.secured ? '支臂收拢到腋下和背部。先让装置托稳身体。' : '绞盘收紧。尼布甲尼撒号将你托出废水。' };
   if (beat?.kind === 'recovery') {
     const standing = smooth((beat.elapsed - 9) / 3);
     const text = beat.started === false ? '陌生的空气进入肺部。转动视角看清医疗舱，按 G 示意船员开始恢复肌肉。'
@@ -123,6 +132,7 @@ export function awakeningPose(beat?: AwakeningBeat): { x: number; y: number; z: 
     return { x: DESERT_REVEAL.neo.x, y: 0, z: DESERT_REVEAL.neo.z, pose: 'desert', text };
   }
   const fall = clamp(((beat?.elapsed ?? 0) - 4) / 3);
-  return { x: 0, y: -POD_WATER_DROP * fall * fall, z: -12 + 24 * fall, pose: fall === 1 ? 'float' : fall > 0 ? 'fall' : 'pod',
+  const immersion = POD_RESCUE.immersion * smooth(((beat?.elapsed ?? 0) - 6.8) / 1.2);
+  return { x: 0, y: -POD_WATER_DROP * fall * fall - immersion, z: -12 + 24 * fall, pose: fall === 1 ? 'float' : fall > 0 ? 'fall' : 'pod',
     text: !beat ? '转动视角观察培养塔。G 检查仍连接在身上的管线。' : beat.elapsed < 2 ? '维护机器锁定了异常信号，正在靠近培养舱。' : beat.elapsed < 4 ? '固定臂扶住后颈，连接管线逐一脱开。' : fall < 1 ? '舱底打开。水流把你冲入排放管道。' : '上方出现了探照灯。G 抓住下降的救援装置。' };
 }
