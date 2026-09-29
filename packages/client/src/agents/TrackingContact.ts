@@ -11,7 +11,19 @@ export function trackingContact(subject: THREE.Object3D): THREE.Vector3 | undefi
 export function wireTrackingElectrode(rig: HeroRig, time: number, contact: { x: number; y: number; z: number }): void {
   const blend = THREE.MathUtils.smoothstep(time, MIRROR_TIMING.sit, 1.9) * (1 - THREE.MathUtils.smoothstep(time, MIRROR_TIMING.wired, 3.25));
   if (!blend) return;
-  rig.bones.get('spine')!.rotation.x += blend * .5; rig.bones.get('chest')!.rotation.x += blend * .6;
+  // Lower through the knees rather than folding the head into Neo's eyeline.
+  // Preserve the grounded soles while the arm solver keeps the pad in reach.
+  const ankleHeight = () => Math.min(...['L', 'R'].map(side =>
+    rig.root.worldToLocal(rig.bones.get('ankle_' + side)!.getWorldPosition(new THREE.Vector3())).y));
+  const floor = ankleHeight();
+  for (const side of ['L', 'R']) {
+    rig.bones.get('hip_' + side)!.rotation.x -= blend * .32;
+    rig.bones.get('knee_' + side)!.rotation.x += blend * .64;
+    rig.bones.get('ankle_' + side)!.rotation.x -= blend * .32;
+  }
+  rig.root.updateWorldMatrix(true, true);
+  rig.bones.get('pelvis')!.position.y += floor - ankleHeight();
+  rig.bones.get('spine')!.rotation.x += blend * .23; rig.bones.get('chest')!.rotation.x += blend * .27;
   rig.bones.get('head')!.rotation.x += blend * .18;
   rig.root.updateWorldMatrix(true, true);
   const shoulder = rig.bones.get('shoulder_R')!, elbow = rig.bones.get('elbow_R')!, wrist = rig.bones.get('wrist_R')!;

@@ -166,6 +166,55 @@ test('Trinity connects the electrode on Neo’s left forearm instead of reaching
   } finally { models.dispose(); neoModels.dispose(); }
 });
 
+test('Trinity keeps her face clear of Neo’s seated eye while connecting and releasing the electrode', async () => {
+  const [asset, neoAsset] = await Promise.all([heroAsset('trinity'), heroAsset()]);
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  const neoModels = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: () => Promise<typeof asset> }).load = async () => asset;
+  (neoModels as unknown as { load: () => Promise<typeof neoAsset> }).load = async () => neoAsset;
+  try {
+    const rig = (await models.create('trinity'))!, neo = (await neoModels.create('neo'))!;
+    rig.root.position.set(MIRROR_TRINITY.x, -1, MIRROR_TRINITY.z); rig.root.rotation.y = MIRROR_TRINITY.yaw;
+    neo.root.position.set(MIRROR_SEAT.x, -1, MIRROR_SEAT.z); neo.root.rotation.y = Math.PI;
+    const motion = newMotion(), neoMotion = newMotion(); neoMotion.seated = 1;
+    const eye = new THREE.Vector3(MIRROR_SEAT.x, 2.09, MIRROR_SEAT.z);
+    const camera = new THREE.PerspectiveCamera(78, 16 / 9, .1, 50); camera.position.copy(eye);
+    camera.lookAt(PILL_ROOM.mirror.x + .5, 2.1, PILL_ROOM.mirror.z); camera.updateMatrixWorld(true);
+    const face = rig.wardrobe.find(part => (part.mesh.material as THREE.Material).name === 'Skin')!.mesh as THREE.SkinnedMesh;
+    const headIndex = face.skeleton.bones.findIndex(bone => bone.name === 'head');
+    const joints = face.geometry.attributes.skinIndex, weights = face.geometry.attributes.skinWeight;
+    const point = new THREE.Vector3(); let lastPalm: THREE.Vector3 | undefined;
+    const resting = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 };
+    models.animate(rig, advanceMotion(motion, resting, 0), motion, resting, 0); rig.root.updateMatrixWorld(true);
+    const feet = ['L', 'R'].map(side => rig.bones.get('ankle_' + side)!.getWorldPosition(new THREE.Vector3()));
+    for (const time of [1.9, 2.1, 2.75, 2.9, 3.1, 3.25, 4.15]) {
+      const neoInput = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, seated: true, performance: 'touch' as const, mirrorBeat: time };
+      neoModels.animate(neo, advanceMotion(neoMotion, neoInput, 0), neoMotion, neoInput, 0); neo.root.updateMatrixWorld(true);
+      const contact = neo.bones.get('elbow_L')!.getWorldPosition(new THREE.Vector3()).lerp(neo.bones.get('wrist_L')!.getWorldPosition(new THREE.Vector3()), .35).add(new THREE.Vector3(0, .13, 0));
+      const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, mirrorCrew: time, mirrorContact: contact };
+      models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
+      let clearance = Infinity, foreground = 0;
+      for (let i = 0; i < joints.count; i++) {
+        if (![0, 1, 2, 3].some(j => joints.getComponent(i, j) === headIndex && weights.getComponent(i, j) > .5)) continue;
+        face.localToWorld(face.getVertexPosition(i, point)); clearance = Math.min(clearance, point.distanceTo(eye));
+        const screen = point.clone().project(camera);
+        if (point.z > PILL_ROOM.mirror.z && point.z < eye.z && Math.abs(screen.x) < .8 && Math.abs(screen.y) < .8) foreground++;
+      }
+      assert.ok(clearance > .85, `Trinity’s face enters the first-person foreground at ${time}s (${clearance.toFixed(3)}m clearance)`);
+      assert.equal(foreground, 0, `Trinity’s face covers the central mirror view at ${time}s (${foreground} vertices)`);
+      for (const [i, side] of ['L', 'R'].entries()) {
+        const foot = rig.bones.get('ankle_' + side)!.getWorldPosition(new THREE.Vector3());
+        assert.ok(Math.abs(foot.y - feet[i].y) < .002, 'bending the knees must not lift or bury the soles');
+        assert.ok(Math.hypot(foot.x - feet[i].x, foot.z - feet[i].z) < .08, 'the planted feet cannot slide toward the chair');
+      }
+      const palm = rig.bones.get('wrist_R')!.localToWorld(new THREE.Vector3(.09, -.18, .02));
+      if (time <= MIRROR_TIMING.wired) assert.ok(palm.distanceTo(contact) < .025, 'a clear view cannot come at the cost of a disconnected hand');
+      if (time === 3.25) lastPalm = palm.clone();
+      if (time === 4.15) assert.ok(palm.distanceTo(lastPalm!) < .02, 'the released hand settles back without holding an invisible electrode');
+    }
+  } finally { models.dispose(); neoModels.dispose(); }
+});
+
 test('the visible electrode and lead stay attached to Neo when paused, restored or hidden from first person', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const document = globalThis.document;
