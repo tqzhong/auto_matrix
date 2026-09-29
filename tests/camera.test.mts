@@ -662,6 +662,20 @@ test('the meeting camera cuts outside as Neo opens the door instead of crossing 
     'closing the door and starting the scan must cut back inside instead of crossing the car shell');
 });
 
+test('the meeting camera cuts inside when boarding changes to rolling', t => {
+  const game = setup(t, Math.PI); const center = FILM_SETS.film_adams_bridge.center;
+  const boarding = { phase: 'boarding' as const, elapsed: 7.9, role: 'neo' as const, bugged: true, roadTime: 0 };
+  const root = meetingRoot({ ...boarding, approach: { ...MEETING_CAR.approach, yaw: Math.PI } }, 'neo');
+  game.state.currentLocation = 'film_adams_bridge'; game.state.position = filmPosition('film_adams_bridge', root.x, root.z);
+  game.state.rotation = root.yaw;
+  game.state.currentAction = { type: 'idle', parameters: { meeting: boarding }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.step(.1);
+  assert.ok(game.camera.position.x > center.x + 6, 'boarding is filmed from outside the open rear door');
+  game.state.currentAction = { type: 'idle', parameters: { meeting: { ...boarding, phase: 'rolling', elapsed: 0 } }, startedAt: 0, duration: 1, progress: 0 };
+  game.step(.05);
+  assert.ok(game.camera.position.x < center.x + 1.5, 'the first rolling frame must be inside the cabin, not passing through the roof and side panel');
+});
+
 test('switching to first person during extraction frames Trinity’s scanner and still permits free look', t => {
   const game = setup(t, Math.PI); const gesture = { phase: 'located' as const, elapsed: 0, role: 'neo' as const, bugged: true };
   const root = meetingRoot({ ...gesture, approach: { ...MEETING_CAR.approach, yaw: Math.PI } }, 'neo');
