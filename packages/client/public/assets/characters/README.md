@@ -12,13 +12,13 @@ Rhineheart reuses Smith's rig with different suit/hair colors and no glasses. Th
 
 The apartment visitors use separate `choi.glb` and `dujour.glb` rigs built from the same pinned CC0 MakeHuman assets. Their height/head morphs and unprojected skin differ from the principal cast; Dujour's sleeveless top exposes the shoulder for the runtime white-rabbit tattoo. The saved apartment timeline drives knocking, disk/cash exchange and turning toward the clue. These are provisional supporting models, not likenesses of their actors. Clothes, hair, expressions and hand contact still need visual refinement.
 
-The club uses `club-male.glb` and `club-female.glb`, lighter versions of those two CC0 rigs without surface subdivision. Sixteen dancers share their geometry and textures, with separate bone poses and clothing colors. The assets reuse `choi-skin.png`, `dujour-skin.png`, `brown_eye.png` and `short04-hair.png`; there are no new texture downloads at runtime. These extras are decorative and currently have no personal interaction or collision. Trinity's finished jacket has a separate waist correction: the hem overlaps the trousers and follows her pelvis during the lean. Her head, textures and other meshes are preserved. Her night-club outfit is still the existing long-sleeved costume, not the film's sleeveless outfit.
+The club uses `club-male.glb` and `club-female.glb`, lighter versions of those two CC0 rigs without surface subdivision. Sixteen dancers share their geometry and textures, with separate bone poses and clothing colors. The assets reuse `choi-skin.png`, `dujour-skin.png`, `brown_eye.png` and `short04-hair.png`; there are no new texture downloads at runtime. These extras are decorative and currently have no personal interaction or collision. Trinity's finished jacket has separate waist and shoulder corrections: the hem overlaps the trousers and follows her pelvis during the lean, and the shoulder caps have a small surface-normal offset instead of lying almost coincident with the skin. The shoulder pass changes only jacket positions/normals; her head, textures, skin weights and other meshes are preserved. Her night-club outfit is still the existing long-sleeved costume, not the film's sleeveless outfit.
 
 The bridge/car encounter reuses the office torso beneath Neo's lifted black shirt and hides his outer coat panels while seated. Switch uses Trinity's rig with blond hair; Apoc uses Neo's rig. These two support characters are temporary stand-ins, with no new actor likeness assets. Their seated steering/guarding poses and Trinity's scanner contact are driven by the saved meeting timeline. A rest-space skin mask prevents shoulder skin from protruding through the leather outfit during the lean.
 
 These are approximate film likenesses, not actor scans or complete photogrammetric reconstructions. The reference images are generated interpretations. Profile constraints cover the center of the face; ears, back of the head and hair volume still come from the anatomical base assets. Animation is driven by the existing motion solver, with no facial performance capture or lip sync. Geometric alignment scores do not establish perceptual likeness or film-quality fidelity.
 
-The tracking-chair and mirror performance use `neo-tracking.glb`: a black short-sleeved cotton shirt, exposed arms and a separate complete patient body, bound to the same 46 bones. It reuses `neo-office-skin.png`; no new texture or runtime dependency is required. The CC0 `male_casualsuit06` shirt is fitted to Neo, its hem overlaps the trousers, and its sleeve weights follow the adjacent body. Covered skin is removed using the source garment's mask, while the wrist rings meet the existing hands. The finished head/hands mesh also has a separate index selection that hides shoulder caps beneath this shirt without modifying the facial vertices. The saved `touch` performance selects the outfit, including a cold resume. The pod, drainage, rescue and recovery use the unmasked anatomical body, with complete arms, legs and feet; it replaces the partial office torso and skin-colored trousers. Office and later scenes restore their own clothing. Only the relevant meshes render in each phase. Coat removal is currently an outfit transition, not an acted undressing sequence. The shirt has no cloth simulation or scanned film-costume detail, and the patient still uses Neo's existing proportions rather than the film's emaciated body.
+The tracking-chair and mirror performance use `neo-tracking.glb`: a black short-sleeved cotton shirt, exposed arms and a separate complete patient body, bound to the same 46 bones. It reuses `neo-office-skin.png`; no new texture or runtime dependency is required. The CC0 `male_casualsuit06` shirt is fitted to Neo and its hem overlaps the trousers. A final sleeve pass transfers cuff weights from the adjacent anatomical arm in the exported bind pose: the original proxy incorrectly bound some outer cuff vertices mainly to the chest, pulling the sleeve through the biceps when reaching. The pass preserves every vertex position, normal, UV and patient-body buffer. Covered skin is removed using the source garment's mask, while the wrist rings meet the existing hands. The finished head/hands mesh also has a separate index selection that hides shoulder caps beneath this shirt without modifying the facial vertices. The saved `touch` performance selects the outfit, including a cold resume. The pod, drainage, rescue and recovery use the unmasked anatomical body, with complete arms, legs and feet; it replaces the partial office torso and skin-colored trousers. Office and later scenes restore their own clothing. Only the relevant meshes render in each phase. Coat removal is currently an outfit transition, not an acted undressing sequence. The shirt has no cloth simulation or scanned film-costume detail, and the patient still uses Neo's existing proportions rather than the film's emaciated body. These latest garment corrections have geometry regression coverage; their in-game visual review is still pending.
 
 ## Editable Blender project
 
@@ -69,7 +69,8 @@ Build the tracking outfit without rebuilding the finished face. Copy only the GL
 
 ```sh
 python3 scripts/build-characters.py --tracking --output output/characters/tracking-staging
-cp output/characters/tracking-staging/neo-tracking.glb packages/client/public/assets/characters/
+python3 scripts/fit-neo-tracking-sleeves.py --source output/characters/tracking-staging/neo-tracking.glb --output output/characters/tracking-fitted/neo-tracking.glb
+cp output/characters/tracking-fitted/neo-tracking.glb packages/client/public/assets/characters/
 ```
 
 Build the apartment visitors separately, without the principal-cast facial finishing pass:
@@ -87,11 +88,12 @@ Build only the lighter club extras from the same cached sources, without Blender
 python3 scripts/build-club-crowd.py
 ```
 
-After rebuilding the finished Trinity, apply the waist correction once, into staging. The script rejects an already-corrected input; review and copy only the resulting GLB:
+After rebuilding the finished Trinity, apply the waist and shoulder corrections once, into staging. Each script rejects an already-corrected input; review and copy only the final GLB:
 
 ```sh
 python3 scripts/fit-trinity-waist.py --output output/characters/club-staging/trinity.glb
-cp output/characters/club-staging/trinity.glb packages/client/public/assets/characters/trinity.glb
+python3 scripts/fit-trinity-shoulders.py --source output/characters/club-staging/trinity.glb --output output/characters/shoulder-staging/trinity.glb
+cp output/characters/shoulder-staging/trinity.glb packages/client/public/assets/characters/trinity.glb
 ```
 
 The first command builds the meshes from the pinned sources, applies distinct morphs, subdivides anatomical surfaces, trims garment openings, fits hair outside the scalp and binds all four skeletons. `--fetch` downloads and verifies the 268 MB authoring pack into a temporary cache; later builds can omit it. `--source /path/to/cache` selects a cache. `--character neo` (or another ID) rebuilds one raw model for inspection.

@@ -214,6 +214,67 @@ test('Neo’s new forearms remain skinned, joined to the hands and exposed throu
   } finally { models.dispose(); }
 });
 
+test('Neo’s cuff follows the raised biceps without being pulled through them', async () => {
+  const assets = new Map(await Promise.all(['neo', 'neo-office', 'neo-tracking'].map(async id => [id, await loadGeometry(id)] as const)));
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: (id: string) => Promise<unknown> }).load = async id => assets.get(id)!;
+  try {
+    const rig = (await models.create('neo'))!; const motion = newMotion(); motion.seated = 1;
+    const shirt = rig.wardrobe.find(part => (part.mesh.material as THREE.Material).name === 'Tracking cotton')!.mesh as THREE.SkinnedMesh;
+    const arms = rig.wardrobe.find(part => /Tracking.arms/.test(part.mesh.name))!.mesh;
+    const positions = shirt.geometry.getAttribute('position'), indices = shirt.geometry.index!;
+    const cuffs: number[][] = [];
+    for (let i = 0; i < indices.count; i += 3) {
+      const triangle = [indices.getX(i), indices.getX(i + 1), indices.getX(i + 2)];
+      if (triangle.every(v => positions.getY(v) > 3.2 && positions.getY(v) < 3.27
+        && Math.abs(positions.getX(v)) > .46 && Math.abs(positions.getX(v)) < .56 && positions.getZ(v) > .19)) cuffs.push(triangle);
+    }
+    assert.ok(cuffs.length > 5, 'sample the front cuff surfaces where the sleeve used to lag behind the arm');
+    for (const time of [2.75, 3.45, 4.15, 6.3]) {
+      const input: MotionInput = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, seated: true, performance: 'touch', mirrorBeat: time };
+      models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
+      for (const triangle of cuffs) {
+        const [a, b, c] = triangle.map(i => shirt.localToWorld(shirt.getVertexPosition(i, new THREE.Vector3())));
+        const normal = b.clone().sub(a).cross(c.clone().sub(a)).normalize();
+        const center = a.clone().add(b).add(c).multiplyScalar(1 / 3);
+        const hit = new THREE.Raycaster(center.clone().addScaledVector(normal, .08), normal.negate(), 0, .082).intersectObjects([shirt, arms])[0];
+        assert.ok(hit?.object === shirt, `the biceps breaks through the cuff at ${time}s: ${hit?.object.name}, triangle ${triangle.join(',')}, gap ${hit?.distance}`);
+      }
+    }
+  } finally { models.dispose(); }
+});
+
+test('Trinity’s leather covers her shoulder caps while she connects and releases the tracking electrode', async () => {
+  const asset = await loadGeometry('trinity'); const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: () => Promise<typeof asset> }).load = async () => asset;
+  try {
+    const rig = (await models.create('trinity'))!; const motion = newMotion();
+    rig.root.position.set(-11.35, -1, -16.65); rig.root.rotation.y = 1.7;
+    const skin = rig.wardrobe.find(part => (part.mesh.material as THREE.Material).name === 'Skin')!.mesh as THREE.SkinnedMesh;
+    const jacket = rig.wardrobe.find(part => /Fitted.leather.jacket/.test(part.mesh.name))!.mesh;
+    const positions = skin.geometry.getAttribute('position'), indices = skin.geometry.index!;
+    const shoulders: number[][] = [];
+    for (let i = 0; i < indices.count; i += 3) {
+      const triangle = [indices.getX(i), indices.getX(i + 1), indices.getX(i + 2)];
+      if (triangle.every(v => positions.getY(v) > 3.45 && positions.getY(v) < 3.68 && Math.abs(positions.getX(v)) > .3)) shoulders.push(triangle);
+    }
+    assert.ok(shoulders.length > 50, 'sample both shoulder surfaces under the jacket, away from its open neckline');
+    for (const time of [0, 1.9, 2.75, 3.1, 4.15]) {
+      const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, mirrorCrew: time,
+        mirrorContact: new THREE.Vector3(-10.104386, 1.351321, -16.536995) };
+      models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
+      for (const triangle of shoulders.filter((_, i) => i % 4 === 0)) {
+        const [a, b, c] = triangle.map(i => skin.localToWorld(skin.getVertexPosition(i, new THREE.Vector3())));
+        const normal = b.clone().sub(a).cross(c.clone().sub(a)).normalize();
+        const center = a.clone().add(b).add(c).multiplyScalar(1 / 3);
+        const hit = new THREE.Raycaster(center.clone().addScaledVector(normal, .08), normal.negate(), 0, .1).intersectObjects([skin, jacket])[0];
+        assert.ok(hit?.object === jacket, `shoulder skin protrudes through the jacket at ${time}s near ${triangle.map(i => positions.getX(i).toFixed(3) + ',' + positions.getY(i).toFixed(3)).join(' / ')}`);
+        assert.ok(hit.distance < .076, `the shoulder layers need clearance instead of nearly coincident surfaces at ${time}s: ${(0.08 - hit.distance).toFixed(5)}`);
+      }
+    }
+  } finally { models.dispose(); }
+});
+
 test('the mirror reaches Neo’s hand before his face and coat hem', async () => {
   const asset = await loadGeometry('neo'); const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
   (models as unknown as { load: () => Promise<typeof asset> }).load = async () => asset;
