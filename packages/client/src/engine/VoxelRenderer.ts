@@ -267,22 +267,26 @@ export class VoxelRenderer {
     const concrete = new THREE.MeshStandardMaterial({ color: 0x666b60, roughness: 0.9 });
     const glass = new THREE.MeshStandardMaterial({ color: 0x173e32, roughness: 0.13, metalness: 0.7 });
     const glow = new THREE.MeshBasicMaterial({ color: 0xc9d9a6 });
-    const roadMarkings: THREE.Matrix4[] = [];
+    const roadMarkings: THREE.Matrix4[] = [], curbs: THREE.Matrix4[] = [], bins: THREE.Matrix4[] = [], reflections: THREE.Matrix4[] = [];
+    const placement = (x: number, y: number, z: number, tilt = 0) => {
+      this.transform.position.set(x, y, z); this.transform.rotation.set(tilt, 0, 0); this.transform.scale.set(1, 1, 1);
+      this.transform.updateMatrix(); return this.transform.matrix.clone();
+    };
+    const instance = (geometry: THREE.BufferGeometry, material: THREE.Material, matrices: THREE.Matrix4[]) => {
+      const mesh = new THREE.InstancedMesh(geometry, material, matrices.length);
+      matrices.forEach((matrix, i) => mesh.setMatrixAt(i, matrix)); this.matrix.add(mesh);
+    };
     for (let x = 800; x <= 1440; x += 80) for (let z = 640; z <= 1200; z += 80) {
       for (let line = 0; line < 6; line++) {
-        this.transform.position.set(x - 6 + line * 2.4, 0.13, z + 16);
-        this.transform.scale.set(1, 1, 1); this.transform.updateMatrix();
-        roadMarkings.push(this.transform.matrix.clone());
+        roadMarkings.push(placement(x - 6 + line * 2.4, .13, z + 16));
       }
-      const curb = new THREE.Mesh(new THREE.BoxGeometry(38, 0.28, 2), concrete);
-      curb.position.set(x + 28, 0.05, z + 11); this.matrix.add(curb);
-      if (noise(x, z) > 0.5) {
-        const bin = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.6, 1.5, 8), metal);
-        bin.position.set(x + 12, 0.9, z + 20); this.matrix.add(bin);
-      }
-      const reflection = new THREE.Mesh(new THREE.PlaneGeometry(2, 16), new THREE.MeshBasicMaterial({ color: 0xc5ccb1, transparent: true, opacity: 0.025, depthWrite: false }));
-      reflection.rotation.x = -Math.PI / 2; reflection.position.set(x + 6, 0.09, z + 12); this.matrix.add(reflection);
+      curbs.push(placement(x + 28, .05, z + 11));
+      if (noise(x, z) > .5) bins.push(placement(x + 12, .9, z + 20));
+      reflections.push(placement(x + 6, .09, z + 12, -Math.PI / 2));
     }
+    instance(new THREE.BoxGeometry(38, .28, 2), concrete, curbs);
+    instance(new THREE.CylinderGeometry(.7, .6, 1.5, 8), metal, bins);
+    instance(new THREE.PlaneGeometry(2, 16), new THREE.MeshBasicMaterial({ color: 0xc5ccb1, transparent: true, opacity: .025, depthWrite: false }), reflections);
     const crossing = new THREE.InstancedMesh(new THREE.BoxGeometry(1.1, 0.03, 7), new THREE.MeshStandardMaterial({ color: 0x7e9580, roughness: 0.7 }), roadMarkings.length);
     roadMarkings.forEach((matrix, i) => crossing.setMatrixAt(i, matrix)); this.matrix.add(crossing);
 

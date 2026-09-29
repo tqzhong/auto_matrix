@@ -66,6 +66,15 @@ test('one persistent city apartment renders ordinary life, contact, daylight and
     assert.equal(scene.getObjectByName('anderson-shared-apartment'), home, 'day/night and chapter updates do not recreate the room');
     interiors.update(22000, filmPosition('film_white_rabbit_club'), life);
     home.traverse(object => { if (object instanceof THREE.Light) assert.equal(object.visible, false, 'remote apartment lights must not render'); });
+    const office = { x: 1140, y: 66, z: 827 };
+    const cafe = city.children.find(object => object.position.x === 1000 && object.position.z === 668)!;
+    const lobby = city.getObjectByName('metacortex-city-lobby')!;
+    interiors.update(22000, office, life, office);
+    assert.equal(home.parent!.visible, false, 'the distant apartment interior must not draw behind its exterior shell');
+    assert.equal(cafe.visible, false, 'the distant cafe interior must not draw from the office');
+    assert.equal(lobby.parent!.visible, true, 'the nearby office lift remains available');
+    interiors.update(22000, office, life, neo.position);
+    assert.equal(home.parent!.visible, true, 'a camera near the apartment still sees its interior');
     interiors.update(7500, neo.position, { contactSignal: true } as NeoLifeState);
     assert.equal(door.rotation.y, 1.42, 'deferring the invitation restores the daily open door');
     assert.ok(sunlight.intensity > 0);

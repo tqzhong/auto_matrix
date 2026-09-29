@@ -22,6 +22,23 @@ test('the shared tower has an unobstructed lobby, moving car, open upper floor a
   };
   try {
     const car = scene.getObjectByName('metacortex-elevator-car')!; assert.ok(car);
+    const streetDetails = city.matrix.children;
+    const curbs = streetDetails.filter(object => object instanceof THREE.Mesh && object.geometry instanceof THREE.BoxGeometry
+      && object.geometry.parameters.width === 38 && object.geometry.parameters.height === .28);
+    const bins = streetDetails.filter(object => object instanceof THREE.Mesh && object.geometry instanceof THREE.CylinderGeometry
+      && object.geometry.parameters.radiusTop === .7 && object.geometry.parameters.height === 1.5);
+    const reflections = streetDetails.filter(object => object instanceof THREE.Mesh && object.geometry instanceof THREE.PlaneGeometry
+      && object.geometry.parameters.width === 2 && object.geometry.parameters.height === 16);
+    assert.equal(curbs.length, 1, 'repeated street curbs should submit as one instanced draw');
+    assert.equal(bins.length, 1, 'repeated street bins should submit as one instanced draw');
+    assert.equal(reflections.length, 1, 'subtle wet-road reflections should submit as one transparent draw');
+    const curb = curbs[0] as THREE.InstancedMesh;
+    assert.equal(curb.count, 72);
+    const matrix = new THREE.Matrix4(), position = new THREE.Vector3();
+    curb.getMatrixAt(0, matrix); position.setFromMatrixPosition(matrix);
+    assert.ok(position.distanceTo(new THREE.Vector3(828, .05, 651)) < .001, 'first curb stays at its original street corner');
+    curb.getMatrixAt(71, matrix); position.setFromMatrixPosition(matrix);
+    assert.ok(position.distanceTo(new THREE.Vector3(1468, .05, 1211)) < .001, 'last curb stays at its original street corner');
     const floor = hits(new THREE.Vector3(1150.73, 68, 832.19), new THREE.Vector3(0, -1, 0), 4)
       .filter(hit => Math.abs(hit.point.y - METACORTEX.upper) < .001);
     assert.equal(floor.length, 1, 'the occupied floor must not z-fight with a city building cap at the same height');

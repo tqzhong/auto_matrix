@@ -6,6 +6,7 @@ import { ApartmentSetRenderer } from './ApartmentSetRenderer.js';
 export class LifeInteriors {
   private textures: THREE.Texture[] = [];
   private lights: { light: THREE.PointLight; location: string }[] = [];
+  private rooms: THREE.Group[] = [];
   private clocks: THREE.Group[] = [];
   private metacortex!: MetacortexRenderer;
   private cats = new THREE.Group();
@@ -18,6 +19,7 @@ export class LifeInteriors {
   constructor(parent: THREE.Group) {
     for (const [id, room] of Object.entries(LIFE_ROOMS)) {
       const center = lifeRoomCenter(id)!; const group = new THREE.Group(); group.position.set(center.x, 0, center.z); parent.add(group);
+      this.rooms.push(group);
       if (id === 'metacortex_office') { this.metacortex = new MetacortexRenderer(group); continue; }
       if (room.theme === 'home') { this.apartment = new ApartmentSetRenderer(group); continue; }
       const plaster = room.theme === 'office' ? '#d1d7d4' : room.theme === 'bar' ? '#403c43' : room.theme === 'oracle' ? '#b7bf91' : '#ded3bd';
@@ -116,7 +118,11 @@ export class LifeInteriors {
       leaf.rotation.set(.4, i * 2.4, .5);
     }
   }
-  update(time: number, player: Vector3 | undefined, life?: NeoLifeState): void {
+  update(time: number, player: Vector3 | undefined, life?: NeoLifeState, camera?: Vector3): void {
+    for (const group of this.rooms) {
+      const nearby = (position?: Vector3) => position && Math.hypot(position.x - group.position.x, position.z - group.position.z) < 120;
+      group.visible = !player && !camera || Boolean(nearby(player) || nearby(camera));
+    }
     const room = player ? insideLifeRoom(player) : undefined;
     const home = lifeRoomCenter('neo_apartment')!;
     this.apartment.update(life?.journey, time, Boolean(player && Math.hypot(player.x - home.x, player.y - home.y, player.z - home.z) < 55), life?.contactSignal);
