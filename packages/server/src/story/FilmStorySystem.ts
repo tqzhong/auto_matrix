@@ -1512,6 +1512,9 @@ export class FilmStorySystem {
         this.mirrorGuideFrame(actor, this.world.simulationTick);
       }
     }
+    if (state.scene === 'm1_pod' && state.awakening?.kind === 'rescue' && state.awakening.elapsed < AWAKENING_SECONDS.rescue && state.step >= scene.steps.length) {
+      state.step = 1; state.completed = state.completed.filter(id => id !== 'm1_pod');
+    }
     if (state.awakening) return;
     const kind = state.scene === 'm1_recovery' && state.step === 0 ? 'recovery'
       : state.scene === 'm1_construct' && state.step === 0 ? 'construct'
@@ -2995,7 +2998,7 @@ export class FilmStorySystem {
     const reveal = beat?.kind === 'construct' || beat?.kind === 'desert';
     const morpheus = reveal ? this.world.agents.get('morpheus') : undefined;
     const trinity = beat?.kind === 'mirror' ? this.world.agents.get('trinity') : undefined;
-    const bedside = beat?.kind === 'recovery' ? ['morpheus', 'trinity'] as const : [];
+    const bedside = beat?.kind === 'recovery' || beat?.kind === 'rescue' ? ['morpheus', 'trinity'] as const : [];
     const occupied = bedside.find(id => this.world.agents.get(id)?.controller);
     const wasPlaying = beat && beat.elapsed < AWAKENING_SECONDS[beat.kind] && beat.started !== false && !morpheus?.controller && !trinity?.controller && !occupied;
     if (wasPlaying) beat.elapsed = Math.min(AWAKENING_SECONDS[beat.kind], beat.elapsed + Math.min(.1, dt));
@@ -3006,19 +3009,20 @@ export class FilmStorySystem {
       y: (agent.position.y - previous.y) / dt, z: beat?.kind === 'mirror' ? (agent.position.z - previous.z) / dt : 0 } : { x: 0, y: 0, z: 0 };
     agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, filmPose: pose.pose,
       mirror: beat?.kind === 'mirror' ? mirrorSilver(beat.elapsed) : 0, mirrorBeat: beat?.kind === 'mirror' ? beat.elapsed : undefined,
-      recovery: beat?.kind === 'recovery' ? beat.elapsed : undefined,
+      recovery: beat?.kind === 'recovery' ? beat.elapsed : undefined, podRescue: beat?.kind === 'rescue' ? beat.elapsed : undefined,
       seated: beat?.kind === 'construct' || beat?.kind === 'mirror' && beat.elapsed >= MIRROR_TIMING.sit,
       reveal: reveal ? { kind: beat.kind, elapsed: beat.elapsed, role: 'neo' } : undefined }, startedAt: tick, duration: 1, progress: 0 };
     if (beat?.kind === 'mirror' && trinity && !trinity.controller)
       trinity.currentAction = { type: 'idle', parameters: { mirrorCrew: beat.elapsed }, startedAt: tick, duration: 1, progress: 0 };
-    if (beat?.kind === 'recovery') for (const role of bedside) {
+    if (beat?.kind === 'recovery' || beat?.kind === 'rescue') for (const role of bedside) {
       const crew = this.world.agents.get(role); if (!crew || crew.controller) continue;
-      const root = recoveryCrewPose({ elapsed: beat.elapsed, role }); const before = crew.position;
+      const gesture = { elapsed: beat.elapsed, role, ...(beat.kind === 'rescue' ? { boarding: true } : {}) };
+      const root = recoveryCrewPose(gesture); const before = crew.position;
       crew.position = filmPosition(this.scene!.set, root.x, root.z); crew.rotation = root.yaw;
       crew.velocity = dt > 0 ? { x: (crew.position.x - before.x) / dt, y: 0, z: (crew.position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
       crew.currentLocation = this.scene!.set; crew.isInMatrix = false;
       crew.currentAction = { type: root.support > 0 || Math.hypot(crew.velocity.x, crew.velocity.z) < .1 ? 'idle' : 'move_to',
-        parameters: { resolved: true, recoveryCrew: { elapsed: beat.elapsed, role } }, startedAt: tick, duration: 1, progress: 0 };
+        parameters: { resolved: true, recoveryCrew: gesture }, startedAt: tick, duration: 1, progress: 0 };
     }
     if (reveal && morpheus && !morpheus.controller) {
       const root = beat.kind === 'construct' ? CONSTRUCT_REVEAL.morpheus : DESERT_REVEAL.morpheus;
@@ -3028,12 +3032,17 @@ export class FilmStorySystem {
       morpheus.currentAction = { type: 'idle', parameters: { resolved: true, filmPose: pose.pose, seated: beat.kind === 'construct',
         reveal: { kind: beat.kind, elapsed: beat.elapsed, role: 'morpheus' } }, startedAt: tick, duration: 1, progress: 0 };
     }
-    state.lastText = occupied ? `恢复暂停在当前动作：${this.world.agents.get(occupied)?.name ?? occupied} 正由另一位玩家控制。`
+    state.lastText = occupied ? `${beat?.kind === 'rescue' ? '救援' : '恢复'}暂停在当前动作：${this.world.agents.get(occupied)?.name ?? occupied} 正由另一位玩家控制。`
       : morpheus?.controller ? '揭示暂停在当前画面：Morpheus 正由另一位玩家控制。'
         : trinity?.controller ? '追踪暂停在当前画面：Trinity 正由另一位玩家控制。' : pose.text;
     if (wasPlaying && beat.elapsed >= AWAKENING_SECONDS[beat.kind]) {
       if (beat.kind === 'mirror') this.finishMirror(agent, tick);
-      else this.advance(this.step!.text!, agent, tick);
+      else if (beat.kind === 'rescue') {
+        this.advance(this.step!.text!, agent, tick);
+        const recovery = FILM_SCENE_BY_ID.m1_recovery;
+        state.scene = recovery.id; state.actor = recovery.actor; state.step = 0; state.lastText = recovery.context;
+        this.enter(recovery, tick);
+      } else this.advance(this.step!.text!, agent, tick);
     }
     return true;
   }

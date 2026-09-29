@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
-import { APARTMENT, MORNING, FILM_SETS, OFFICE_WINDOW, officeWindowPose, officeCrossingPose, pillPose, lafayetteKnockPose, lafayetteWelcomePose, recoveryCrewPose, farewellPose } from '@auto_matrix/shared';
+import { APARTMENT, MORNING, FILM_SETS, OFFICE_WINDOW, officeWindowPose, officeCrossingPose, pillPose, lafayetteKnockPose, lafayetteWelcomePose, recoveryCrewPose, podRescuePose, farewellPose } from '@auto_matrix/shared';
 import type { advanceMotion, MotionInput, MotionState } from './CharacterMotion.js';
 
 import { PillPerformance } from './PillPerformance.js';
@@ -16,6 +16,7 @@ import { WakeCallPerformance } from './WakeCallPerformance.js';
 import { enableSkinnedCulling } from './SkinnedBounds.js';
 import { wireTrackingElectrode } from './TrackingContact.js';
 import { placeHotelFeet } from './HotelFootPlacement.js';
+import { placePodBody } from './PodLandingContact.js';
 import { clubCloseness } from '@auto_matrix/shared';
 
 export type HeroSupport = 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour' | 'niobe' | 'ballard' | 'ghost' | 'soren' | 'link';
@@ -862,6 +863,17 @@ export class HeroModels {
         bone('head').rotation.x += Math.sin(t * 2) * .025 * emphasis;
         bone('shoulder_R').rotation.x -= .18 * emphasis; bone('elbow_R').rotation.x -= .23 * emphasis;
       }
+    }
+    if (input.podRescue !== undefined) {
+      const landing = podRescuePose(input.podRescue);
+      bone('spine').rotation.x += .3 * landing.settle; bone('chest').rotation.x += .25 * landing.settle;
+      bone('head').rotation.x -= .4 * landing.settle;
+      for (const side of ['R', 'L']) {
+        bone('hip_' + side).rotation.x = THREE.MathUtils.lerp(bone('hip_' + side).rotation.x, -1.35, landing.settle);
+        bone('knee_' + side).rotation.x = THREE.MathUtils.lerp(bone('knee_' + side).rotation.x, 2.3, landing.settle);
+        bone('ankle_' + side).rotation.x = -.65 * landing.settle;
+      }
+      placePodBody(rig, landing.lower);
     }
     rig.root.updateWorldMatrix(true, true);
     if (input.grounded && !input.meeting && !input.interrogation && !(input.wakeCall?.phase === 'waking' && input.wakeCall.elapsed < 3.2) && !input.riding && input.climbing === undefined && (!input.performance || input.performance === 'connect')) {

@@ -5,8 +5,8 @@ export type AwakeningKind = 'mirror' | 'connect' | 'disconnect' | 'rescue' | 're
 export interface AwakeningBeat { kind: AwakeningKind; elapsed: number; started?: boolean; approach?: { x: number; z: number } }
 export interface AwakeningReveal { kind: 'construct' | 'desert'; elapsed: number; role: 'neo' | 'morpheus' }
 export type RecoveryCrewRole = 'morpheus' | 'trinity';
-export interface RecoveryCrewGesture { elapsed: number; role: RecoveryCrewRole; target?: { x: number; y: number; z: number } }
-export const AWAKENING_SECONDS = { mirror: 8, connect: 4, disconnect: 9, rescue: 5, recovery: 12, construct: 11, desert: 13 } as const;
+export interface RecoveryCrewGesture { elapsed: number; role: RecoveryCrewRole; boarding?: boolean; target?: { x: number; y: number; z: number } }
+export const AWAKENING_SECONDS = { mirror: 8, connect: 4, disconnect: 9, rescue: 14, recovery: 12, construct: 11, desert: 13 } as const;
 export const MIRROR_TOUCH = { x: -7.1, z: -14.6, radius: 1.25 } as const;
 export const MIRROR_SEAT = { x: -9.5, z: -16.05 } as const;
 export const MIRROR_FACE = { y: 2.8, radiusX: 1.85, radiusY: 2.65 } as const;
@@ -45,7 +45,8 @@ export function mirrorGuideProgress(point: { x: number; z: number }): number {
   return progress;
 }
 export const POD_WATER_DROP = 18;
-export const POD_RESCUE = { immersion: 1.8, descend: 1, secured: 1.65 } as const;
+export const POD_RESCUE = { immersion: 1.8, descend: 1, secured: 1.65, hoisted: 5, cleared: 7, closed: 7.8, lowered: 8.6, release: 9.4, fade: 13,
+  hatch: { x: 0, y: 0, z: 12, half: 2.8 } } as const;
 export const RECOVERY_BED = { x: -7, z: -22, standingX: -3.6 } as const;
 export const RECOVERY_CREW = {
   morpheus: { start: { x: -2.4, z: -18.5, yaw: -2.45 }, side: 1.32 },
@@ -59,13 +60,24 @@ const clamp = (value: number) => Math.max(0, Math.min(1, value));
 const smooth = (value: number) => { const t = clamp(value); return t * t * (3 - 2 * t); };
 export const mirrorSilver = (elapsed: number): number => clamp((elapsed - MIRROR_TIMING.touch) / (AWAKENING_SECONDS.mirror - MIRROR_TIMING.touch));
 
-export function podRescuePose(elapsed: number): { descend: number; grip: number; lift: number } {
+export function podRescuePose(elapsed: number): { descend: number; grip: number; lift: number; board: number; hatch: number; lower: number; release: number; settle: number; fade: number } {
   return { descend: smooth(elapsed / POD_RESCUE.descend),
     grip: smooth((elapsed - POD_RESCUE.descend) / (POD_RESCUE.secured - POD_RESCUE.descend)),
-    lift: smooth((elapsed - POD_RESCUE.secured) / (AWAKENING_SECONDS.rescue - POD_RESCUE.secured)) };
+    lift: smooth((elapsed - POD_RESCUE.secured) / (POD_RESCUE.hoisted - POD_RESCUE.secured)),
+    board: smooth((elapsed - POD_RESCUE.hoisted) / (POD_RESCUE.cleared - POD_RESCUE.hoisted)),
+    hatch: smooth((elapsed - POD_RESCUE.cleared) / (POD_RESCUE.closed - POD_RESCUE.cleared)),
+    lower: smooth((elapsed - POD_RESCUE.closed) / (POD_RESCUE.lowered - POD_RESCUE.closed)),
+    release: smooth((elapsed - POD_RESCUE.release) / .7), settle: smooth((elapsed - 10.1) / 1.3),
+    fade: smooth((elapsed - POD_RESCUE.fade) / (AWAKENING_SECONDS.rescue - POD_RESCUE.fade)) };
 }
 
 export function recoveryCrewPose(gesture: RecoveryCrewGesture): { x: number; z: number; yaw: number; support: number } {
+  if (gesture.boarding) {
+    const side = gesture.role === 'morpheus' ? 1 : -1;
+    const approach = smooth((gesture.elapsed - POD_RESCUE.closed) / 1.6);
+    const x = side * (3.8 - approach * 2.48), z = 8.7 + approach * 2.35;
+    return { x, z, yaw: Math.atan2(-x, POD_RESCUE.hatch.z - z), support: smooth((gesture.elapsed - 9) / .4) };
+  }
   const config = RECOVERY_CREW[gesture.role];
   const approach = smooth((gesture.elapsed - RECOVERY_CREW.approach) / (RECOVERY_CREW.contact - RECOVERY_CREW.approach));
   const standing = smooth((gesture.elapsed - 9) / 3);
@@ -102,9 +114,17 @@ export function awakeningPose(beat?: AwakeningBeat): { x: number; y: number; z: 
         : beat.elapsed < 5.8 ? '冰冷的银色镜面粘住指尖，沿手臂与颈部蔓延。' : 'Neo 惊恐地仰头；房间的声音和光线正在消失。' };
   }
   if (beat?.kind === 'connect') return { x: 8, y: 0, z: 5, pose: 'connect', text: '坐稳。接线组已经找到你，连接正在从模拟世界转向真实身体。' };
-  if (beat?.kind === 'rescue') return { x: 0, y: -POD_WATER_DROP - POD_RESCUE.immersion + podRescuePose(beat.elapsed).lift * (14 + POD_RESCUE.immersion), z: 12, pose: 'lift',
-    text: beat.elapsed < POD_RESCUE.descend ? '探照灯照亮水面。救援机械爪张开支臂，正在降到身体两侧。'
-      : beat.elapsed < POD_RESCUE.secured ? '支臂收拢到腋下和背部。先让装置托稳身体。' : '绞盘收紧。尼布甲尼撒号将你托出废水。' };
+  if (beat?.kind === 'rescue') {
+    const rescue = podRescuePose(beat.elapsed);
+    return { x: 0, y: -POD_WATER_DROP - POD_RESCUE.immersion + rescue.lift * (14 + POD_RESCUE.immersion) + rescue.board * 5.25 - rescue.lower * 1.25, z: POD_RESCUE.hatch.z, pose: 'lift',
+      text: beat.elapsed < POD_RESCUE.descend ? '探照灯照亮水面。救援机械爪张开支臂，正在降到身体两侧。'
+        : beat.elapsed < POD_RESCUE.secured ? '支臂收拢到腋下和背部。先让装置托稳身体。'
+          : beat.elapsed < POD_RESCUE.hoisted ? '绞盘收紧。尼布甲尼撒号将你托出废水。'
+            : beat.elapsed < POD_RESCUE.cleared ? '船底的开口越来越近。船员正在舱口等待。'
+              : beat.elapsed < POD_RESCUE.lowered ? '双脚越过舱口，底门在身下合拢。绞盘慢慢将你放到甲板上。'
+                : beat.elapsed < 11.4 ? 'Morpheus 和 Trinity 接住虚弱的身体，机械支臂松开。'
+                  : beat.elapsed < POD_RESCUE.fade ? 'Morpheus：欢迎来到真实世界，Neo。' : 'Neo 失去意识。船员将他送往医疗舱。' };
+  }
   if (beat?.kind === 'recovery') {
     const standing = smooth((beat.elapsed - 9) / 3);
     const text = beat.started === false ? '陌生的空气进入肺部。转动视角看清医疗舱，按 G 示意船员开始恢复肌肉。'

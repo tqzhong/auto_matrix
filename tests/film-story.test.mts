@@ -1191,8 +1191,42 @@ test('pod disconnection moves Neo down the drain; rescue must be started in the 
   assert.deepEqual(h.actor().position, water); assert.equal(state.step, 1);
   h.command('act'); assert.equal(state.awakening?.kind, 'rescue');
   for (let i = 0; i < 60; i++) h.players.step(.1, true, h.tick());
-  assert.ok(h.actor().position.y > water.y + 10); assert.equal(state.step, 2);
-  h.command('next'); assert.equal(state.scene, 'm1_recovery'); assert.deepEqual(state.awakening, { kind: 'recovery', elapsed: 0, started: false });
+  assert.ok(h.actor().position.y > water.y + 10); assert.equal(state.step, 1);
+  for (let i = 0; i < 90 && state.scene === 'm1_pod'; i++) h.players.step(.1, true, h.tick());
+  assert.equal(state.scene, 'm1_recovery'); assert.deepEqual(state.awakening, { kind: 'recovery', elapsed: 0, started: false });
+});
+
+test('pod rescue enters the ship before recovery and retains the boarding checkpoint across reconnect', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  Object.assign(state, { scene: 'm1_mirror', actor: 'neo', step: 1 }); h.command('next');
+  state.step = 1; state.awakening = { kind: 'rescue', elapsed: 5 };
+  h.sandbox.life.film.awakeningFrame(h.actor(), 0, h.tick());
+  for (let i = 0; i < 24; i++) h.players.step(.1, true, h.tick());
+  assert.equal(state.scene, 'm1_pod'); assert.equal(state.step, 1, 'being above the water does not finish boarding');
+  assert.ok(h.actor().position.y > FILM_SETS.film_power_plant_pods.center.y, 'the feet clear the hatch before it closes');
+  const saved = JSON.parse(JSON.stringify(h.sandbox.state)); const position = { ...h.actor().position };
+  h.sandbox.restore(saved); h.players.release('film-player', h.tick()); h.advance(30);
+  h.players.possess('film-player', 'neo', h.tick()); h.players.step(.1, false, h.tick());
+  assert.deepEqual(h.actor().position, position);
+  const restored = h.sandbox.life.film.state!; const held = restored.awakening!.elapsed;
+  h.players.possess('other', 'morpheus', h.tick());
+  h.players.step(.1, true, h.tick()); assert.equal(restored.awakening!.elapsed, held, 'the receiving actor must not be stolen');
+  h.players.release('other', h.tick());
+  for (let i = 0; i < 90 && restored.scene === 'm1_pod'; i++) h.players.step(.1, true, h.tick());
+  assert.equal(restored.scene, 'm1_recovery', 'boarding and blackout enter recovery without another scene-skip button');
+  assert.deepEqual(restored.awakening, { kind: 'recovery', elapsed: 0, started: false });
+  assert.equal(restored.completed.filter(id => id === 'm1_pod').length, 1);
+});
+
+test('an old completed five-second rescue resumes at the ship instead of skipping boarding', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  Object.assign(state, { scene: 'm1_pod', actor: 'neo', step: 2, awakening: { kind: 'rescue', elapsed: 5 } });
+  state.completed.push('m1_pod');
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+  const restored = h.sandbox.life.film.state!;
+  assert.equal(restored.step, 1); assert.equal(restored.awakening!.elapsed, 5);
+  assert.ok(!restored.completed.includes('m1_pod'));
+  h.command('next'); assert.equal(restored.scene, 'm1_pod', 'next cannot bypass the still-running boarding');
 });
 
 test('recovery begins on the medical bed, waits for Neo, and resumes its saved performance after pause and reconnect', () => {
@@ -2774,6 +2808,11 @@ test('the entire film route completes through interactions, driving and real com
         assert.equal(state.scene, 'm1_pod', 'the mirror covering Neo starts the pod scene without another command');
         continue;
       }
+      if (scene.id === 'm1_pod' && index === scene.steps.length - 1) {
+        assert.equal(state.scene, 'm1_recovery', 'boarding and loss of consciousness lead directly into recovery');
+        assert.equal(state.awakening?.started, false, 'Neo waits for the player before rehabilitation');
+        continue;
+      }
       if (scene.id === 'm1_construct' && index === scene.steps.length - 1) {
         assert.equal(state.scene, 'm1_desert', 'the television choice starts the ruined world without another command');
         continue;
@@ -2790,7 +2829,7 @@ test('the entire film route completes through interactions, driving and real com
     }
     assert.ok(state.completed.includes(scene.id));
     if (scene.id === 'm1_phone_escape') h.advance(3); // Hold the connected booth shot through the truck impact.
-    if (!['m1_bridge', 'm1_bug', 'm1_pills', 'm1_mirror', 'm1_construct'].includes(scene.id)) h.command('next');
+    if (!['m1_bridge', 'm1_bug', 'm1_pills', 'm1_mirror', 'm1_pod', 'm1_construct'].includes(scene.id)) h.command('next');
     if (scene.id === 'm1_office_escape' && state.office?.crossing !== undefined) for (let frame = 0; frame < 65; frame++) h.players.step(.1, true, h.tick());
   }
   assert.equal(state.finished, true); assert.equal(state.completed.length, FILM_SCENES.length);

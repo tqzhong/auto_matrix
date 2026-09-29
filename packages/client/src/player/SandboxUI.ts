@@ -1,6 +1,6 @@
 import { nearMetacortexLift, metacortexLiftLocked } from '@auto_matrix/shared';
 import { CATCH, RELOADED, RELOADED_FINALE, HEL_COATCHECK, catchText, reloadedText } from '@auto_matrix/shared';
-import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_NAMES, filmReflections, GRID_HACK_SECONDS, GRID_REROUTE_SECONDS, HEL_ELEVATOR, HEL_DANCE_DOOR, filmStepPosition, filmStepActionReady, helElevatorLocked, helDanceDoorLocked, pillLocked, lafayetteWelcomeLocked, awakeningLocked, awakeningWaiting, AWAKENING_SECONDS, MIRROR_TOUCH, MIRROR_TIMING, mirrorGuidePose, PILL_ROOM, trainingLocked, trainingWaiting, TRAINING_SECONDS, DOJO_COMBO_WINDOW, windowOpening, windowCrossing, dockPowerOffline, ITEMS, RECIPES, SKILLS, FILMS, MISSIONS, LOCATIONS, CITY_BUILDINGS, NEO_CHAPTERS, LIFE_ACTIONS, lifeActionPosition, lifeRoomCenter, locationEntrance, distance, missionPosition, nearTransit, skillPoints,
+import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_NAMES, filmReflections, GRID_HACK_SECONDS, GRID_REROUTE_SECONDS, HEL_ELEVATOR, HEL_DANCE_DOOR, filmStepPosition, filmStepActionReady, helElevatorLocked, helDanceDoorLocked, pillLocked, lafayetteWelcomeLocked, awakeningLocked, awakeningWaiting, podRescuePose, AWAKENING_SECONDS, MIRROR_TOUCH, MIRROR_TIMING, mirrorGuidePose, PILL_ROOM, trainingLocked, trainingWaiting, TRAINING_SECONDS, DOJO_COMBO_WINDOW, windowOpening, windowCrossing, dockPowerOffline, ITEMS, RECIPES, SKILLS, FILMS, MISSIONS, LOCATIONS, CITY_BUILDINGS, NEO_CHAPTERS, LIFE_ACTIONS, lifeActionPosition, lifeRoomCenter, locationEntrance, distance, missionPosition, nearTransit, skillPoints,
   type AgentState, type SandboxState, type SandboxCommand, type ItemId, type SkillId, type Vector3 } from '@auto_matrix/shared';
 import './sandbox.css';
 import { renderNeoLife } from './NeoLifePanel.js';
@@ -212,11 +212,15 @@ export class SandboxUI {
         blackout.style.backgroundImage = image ? `url("${image}")` : '';
         blackout.classList.add('desert-reveal');
       }
-      if (scene.id !== 'm1_pod') blackout.classList.remove('pod-reveal');
+      if (this.previousFilmScene === 'm1_pod' && scene.id === 'm1_recovery') blackout.classList.add('recovery-reveal');
+      if (scene.id !== 'm1_recovery') blackout.classList.remove('recovery-reveal');
+      if (scene.id !== 'm1_pod' || journey.awakening?.kind === 'rescue') blackout.classList.remove('pod-reveal');
       if (scene.id !== 'm1_desert') { blackout.classList.remove('desert-reveal'); blackout.style.backgroundImage = ''; }
       this.previousFilmScene = scene.id;
       if (scene.id === 'm1_mirror' && journey.awakening?.kind === 'mirror')
         blackout.style.opacity = String(Math.min(.96, Math.max(0, (journey.awakening.elapsed - MIRROR_TIMING.fade) / (AWAKENING_SECONDS.mirror - MIRROR_TIMING.fade))));
+      if (scene.id === 'm1_pod' && journey.awakening?.kind === 'rescue')
+        blackout.style.opacity = String(podRescuePose(journey.awakening.elapsed).fade);
       if (scene.id === 'm1_morning' && journey.morning) {
         const morning = journey.morning;
         blackout.style.opacity = String(morning.phase === 'sleeping' ? Math.min(1, morning.elapsed / .6) : morning.phase === 'alarm' ? Math.max(0, 1 - morning.elapsed / 1.2) : 0);

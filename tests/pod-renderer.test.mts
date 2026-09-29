@@ -3,6 +3,26 @@ import test from 'node:test';
 import * as THREE from 'three';
 import { PodSetRenderer } from '../packages/client/src/engine/PodSetRenderer.js';
 
+test('the rescue bay has an open passage for the body and closes below it after boarding', () => {
+  const root = new THREE.Group(); const set = new PodSetRenderer(root);
+  try {
+    const journey = (elapsed: number) => ({ scene: 'm1_pod', awakening: { kind: 'rescue', elapsed } }) as Parameters<PodSetRenderer['update']>[0];
+    set.update(journey(5), 5); root.updateMatrixWorld(true);
+    const bay = root.getObjectByName('pod-rescue-bay'); assert.ok(bay, 'the cable must lead into a visible ship');
+    for (const x of [-1.5, 0, 1.5]) {
+      const hits = new THREE.Raycaster(new THREE.Vector3(x, -2, 12), new THREE.Vector3(0, 1, 0), 0, 3).intersectObject(bay, true);
+      assert.equal(hits.length, 0, 'hull and hatch must leave a physical opening for the claw and Neo');
+    }
+    set.update(journey(8), 8); root.updateMatrixWorld(true);
+    const floor = new THREE.Raycaster(new THREE.Vector3(.5, 1, 12), new THREE.Vector3(0, -1, 0), 0, 2).intersectObject(bay, true)[0];
+    assert.ok(floor && Math.abs(floor.point.y) < .04, 'the closed hatch forms the receiving deck');
+    for (const direction of [new THREE.Vector3(1, 0, 0), new THREE.Vector3(-1, 0, 0), new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, -1)]) {
+      assert.ok(new THREE.Raycaster(new THREE.Vector3(0, 8.25, 12), direction, 0, 12).intersectObject(bay, true).length,
+        'the walls must meet the roof instead of revealing the cultivation towers through a gap');
+    }
+  } finally { set.dispose(); }
+});
+
 test('nearby pods have an open upper basin instead of a closed ellipsoid over the occupant', () => {
   const root = new THREE.Group(); const set = new PodSetRenderer(root);
   root.updateMatrixWorld(true);

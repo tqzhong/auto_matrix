@@ -7,7 +7,7 @@ import { lafayetteWelcomeCamera } from './LafayetteWelcomeCamera.js';
 import type { MotionInput } from '../agents/CharacterMotion.js';
 import { AIR_RESCUE, governmentPose, airRescuePose, airRescueRoot, interrogationPose, meetingPose, meetingCarPose, meetingCarPoint, MEETING_TIMING } from '@auto_matrix/shared';
 import { officeClothing } from '@auto_matrix/shared';
-import { MORNING } from '@auto_matrix/shared';
+import { MORNING, POD_RESCUE, podRescuePose, recoveryCrewPose } from '@auto_matrix/shared';
 
 export class PlayerControls {
   id: string | null = null;
@@ -43,6 +43,7 @@ export class PlayerControls {
   private cameraTarget = new THREE.Vector3();
   private cameraStep = 0;
   private welcomeShot?: ReturnType<typeof lafayetteWelcomeCamera>['name'];
+  private podInterior = false;
   private bridgeCaught?: { x: number; z: number };
   readonly motion: MotionInput = { speed: 0, verticalVelocity: 0, grounded: true, turn: 0 };
   onViewChange?: (firstPerson: boolean) => void;
@@ -426,6 +427,7 @@ export class PlayerControls {
     this.motion.lobbyEntry = state.currentAction?.parameters.lobbyEntry as MotionInput['lobbyEntry'];
     this.motion.aimPitch = this.firearm || state.currentAction?.parameters.armed === true ? this.pitch : undefined;
     this.motion.mirror = this.mirror;
+    this.motion.podRescue = state.currentAction?.parameters.podRescue as number | undefined;
     this.motion.spoon = this.spoon;
     this.motion.phone = this.phone;
     this.motion.window = this.performing ? state.currentAction?.parameters.window as number | undefined : undefined;
@@ -1149,18 +1151,30 @@ export class PlayerControls {
       }
     } else if (this.firstPerson && state.currentLocation === 'film_power_plant_pods' &&
       (this.motion.performance === 'float' || this.motion.performance === 'lift')) {
-      const eye = new THREE.Vector3(this.position.x, this.position.y + 3.25, this.position.z - .25);
-      const pitch = this.pitch - 1.42, yaw = this.yaw - Math.PI / 2;
+      const boarding = podRescuePose(this.motion.podRescue ?? 0);
+      const eye = new THREE.Vector3(this.position.x, this.position.y + 3.25 - boarding.settle * 1.1, this.position.z - .25);
+      const crew = recoveryCrewPose({ elapsed: this.motion.podRescue ?? 0, role: 'morpheus', boarding: true });
+      const center = FILM_SETS.film_power_plant_pods.center;
+      const dx = center.x + crew.x - eye.x, dz = center.z + crew.z - eye.z;
+      const crewPitch = -Math.atan2(center.y + 3.2 - boarding.settle * .75 - eye.y, Math.hypot(dx, dz));
+      const receiving = THREE.MathUtils.smoothstep(this.motion.podRescue ?? 0, POD_RESCUE.lowered, 10.1);
+      const pitch = this.pitch - 1.42 * (1 - boarding.board) + (crewPitch - .24) * receiving;
+      const yaw = this.yaw - Math.PI / 2 * (1 - boarding.board) + (Math.atan2(dx, dz) - Math.PI) * receiving;
       const forward = new THREE.Vector3(Math.sin(yaw) * Math.cos(pitch), -Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch));
       this.camera.position.copy(eye); this.camera.lookAt(eye.add(forward));
     } else if (state.currentLocation === 'film_power_plant_pods' &&
       (this.motion.performance === 'float' || this.motion.performance === 'lift')) {
       // The ordinary rear boom rises through the tower behind the drain.
       // Keep the cinematic shot in the open channel; V retains free eye movement.
-      const ideal = new THREE.Vector3(this.position.x + 6.5, this.position.y + 4.8, this.position.z + 4.5);
-      if (resetCamera) this.camera.position.copy(ideal);
+      const center = FILM_SETS.film_power_plant_pods.center;
+      const interior = (this.motion.podRescue ?? 0) >= POD_RESCUE.hoisted + .65;
+      const approach = THREE.MathUtils.smoothstep(this.motion.podRescue ?? 0, 4.4, 5.3);
+      const ideal = interior ? new THREE.Vector3(center.x + 5.2, center.y + 4.4, center.z + 18)
+        : new THREE.Vector3(this.position.x + 6.5 - approach * 4.5, Math.min(center.y - 2.1, this.position.y + 4.8), this.position.z + 4.5 - approach * 2.5);
+      if (resetCamera || interior !== this.podInterior) this.camera.position.copy(ideal);
       else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
-      this.camera.lookAt(this.position.x, this.position.y + 2.5, this.position.z);
+      this.podInterior = interior;
+      this.camera.lookAt(this.position.x, this.position.y + 2.5 - podRescuePose(this.motion.podRescue ?? 0).settle, this.position.z);
     } else if (this.performing && this.motion.crossing !== undefined && !this.firstPerson) {
       const center = FILM_SETS.film_metacortex_floor.center;
       const outside = THREE.MathUtils.smoothstep(this.motion.crossing, 1.7, 5.4);

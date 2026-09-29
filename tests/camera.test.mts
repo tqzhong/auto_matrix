@@ -5,7 +5,7 @@ import type { AgentState, PlayerInput } from '@auto_matrix/shared';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { CameraController } from '../packages/client/src/engine/CameraController.js';
 import { PodSetRenderer } from '../packages/client/src/engine/PodSetRenderer.js';
-import { awakeningPose } from '@auto_matrix/shared';
+import { awakeningPose, podRescuePose, recoveryCrewPose } from '@auto_matrix/shared';
 import { MORNING, morningRoot, morningWakePose } from '@auto_matrix/shared';
 import { metacortexPosition } from '@auto_matrix/shared';
 import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, INTERROGATION_ROOM, pillRoot, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, POD_WATER_DROP, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, airRescueRoot, matrixEscapeRoot, theOneRoot, wakeCallRoot, type TheOneEncounter } from '@auto_matrix/shared';
@@ -1234,8 +1234,9 @@ test('the rescue camera stays clear of the cultivation towers throughout the lif
       game.camera.aspect = aspect; game.camera.updateProjectionMatrix();
       game.state.position = filmPosition('film_power_plant_pods', 0, 12); game.state.position.y += awakeningPose({ kind: 'disconnect', elapsed: 9 }).y;
       game.controls.possess(game.state); game.controls.performing = true;
-      for (let frame = 0; frame <= 50; frame++) {
+      for (let frame = 0; frame <= 139; frame++) {
         const elapsed = frame / 10;
+        game.state.currentAction!.parameters.podRescue = elapsed;
         game.state.position.y = center.y + awakeningPose({ kind: 'rescue', elapsed }).y;
         game.step(.1);
         set.update({ awakening: { kind: 'rescue', elapsed } } as Parameters<PodSetRenderer['update']>[0], elapsed);
@@ -1269,6 +1270,27 @@ test('the floating first-person view finds the descending rescue claw above the 
     const eyeAboveWater = game.camera.position.y - (center.y - POD_WATER_DROP + .7);
     assert.ok(eyeAboveWater > .25 && eyeAboveWater < 1, 'the camera stays at the floating face, above the water');
   } finally { set.dispose(); }
+});
+
+test('first person faces the receiving crew as Neo loses strength instead of looking at the ceiling', t => {
+  const game = setup(t, Math.PI); const center = FILM_SETS.film_power_plant_pods.center;
+  game.state.currentLocation = 'film_power_plant_pods'; game.state.isInMatrix = false;
+  game.state.position = filmPosition('film_power_plant_pods', 0, 12);
+  game.controls.possess(game.state); game.controls.performing = true;
+  game.key('KeyV'); game.key('KeyV', false);
+  for (const aspect of [449 / 680, 16 / 9]) for (const elapsed of [10.1, 10.8, 11.4, 12.8]) {
+    game.camera.aspect = aspect; game.camera.updateProjectionMatrix();
+    game.state.currentAction = { type: 'idle', parameters: { filmPose: 'lift', podRescue: elapsed, player: true }, startedAt: 0, duration: 1, progress: 0 };
+    game.step(.1);
+    const crew = recoveryCrewPose({ elapsed, role: 'morpheus', boarding: true });
+    const face = new THREE.Vector3(center.x + crew.x, center.y + 3.2 - .75 * podRescuePose(elapsed).settle, center.z + crew.z).project(game.camera);
+    assert.ok(Math.abs(face.x) < .65 && Math.abs(face.y) < .65 && face.z > -1 && face.z < 1,
+      `Morpheus must be visible above the subtitles at ${elapsed}s, aspect ${aspect}: ${face.toArray()}`);
+  }
+  const forward = game.camera.getWorldDirection(new THREE.Vector3());
+  game.document.pointerLockElement = game.canvas;
+  game.event(game.document, 'mousemove', { movementX: 80, movementY: 0 }); game.step(.1);
+  assert.ok(forward.distanceTo(game.camera.getWorldDirection(new THREE.Vector3())) > .1, 'the player can still look away');
 });
 
 test('the red-pill departure keeps Neo in the third-person frame and reveals the mirror before handoff', t => {

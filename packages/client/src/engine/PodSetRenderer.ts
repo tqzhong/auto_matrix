@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { POD_WATER_DROP, awakeningPose, podRescuePose, type FilmJourney } from '@auto_matrix/shared';
+import { POD_WATER_DROP, POD_RESCUE, awakeningPose, podRescuePose, type FilmJourney } from '@auto_matrix/shared';
 import { batchStaticGeometry } from './StaticGeometry.js';
 
 /** A single awakening set: the foreground tank, drain and rescue share story coordinates. */
@@ -15,6 +15,7 @@ export class PodSetRenderer {
   private clawHousing: THREE.Mesh;
   private clawCollar: THREE.Mesh;
   private grippers: { pad: THREE.Mesh; links: THREE.Mesh[]; hinges: THREE.Mesh[]; offset: THREE.Vector3; angle: number }[] = [];
+  private hatches: THREE.Group[] = [];
   private connections = new THREE.Group();
   private neckTube: THREE.Mesh;
   private water: THREE.Mesh;
@@ -107,6 +108,7 @@ export class PodSetRenderer {
     }
     this.cable = this.mesh(new THREE.CylinderGeometry(.07, .07, 1, 8), this.steel, 0, 0, 12);
     this.scan = new THREE.SpotLight(0xc3e6ef, 2300, 70, .52, .7, 2); this.scan.position.set(0, 10, 12); this.scan.target.position.set(0, -18, 12); this.root.add(this.scan, this.scan.target);
+    this.rescueBay();
     const tankLight = new THREE.PointLight(0xb14a54, 150, 22, 2); tankLight.position.set(-3, 5, -12); this.root.add(tankLight);
     const fluidLight = new THREE.PointLight(0xb13c4c, 100, 9, 2); fluidLight.position.set(0, 1.7, -12); this.root.add(fluidLight);
     const awakeningLight = new THREE.PointLight(0xb3ccda, 250, 16, 2); awakeningLight.position.set(1, 6, -8); this.root.add(awakeningLight);
@@ -130,6 +132,45 @@ export class PodSetRenderer {
   }
   private tube(points: number[][], radius: number, material: THREE.Material, parent = this.root): THREE.Mesh {
     return this.mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points.map(p => new THREE.Vector3(...p as [number, number, number]))), 24, radius, 8, false), material, 0, 0, 0, parent);
+  }
+  private rescueBay(): void {
+    const bay = new THREE.Group(); bay.name = 'pod-rescue-bay'; this.root.add(bay);
+    const deck = this.mat(0x525b58, .78, .45), hull = this.mat(0x283333, .66, .62), trim = this.mat(0x777a69, .57, .55);
+    const lamp = new THREE.MeshBasicMaterial({ color: 0xd2dfbc, toneMapped: false }); this.materials.add(lamp);
+    const warning = this.mat(0x92784a, .78, .25);
+    const half = POD_RESCUE.hatch.half, z = POD_RESCUE.hatch.z;
+    // Four separate slabs leave an actual passage, not a hole painted on a floor.
+    for (const side of [-1, 1]) {
+      this.mesh(new THREE.BoxGeometry(10 - half, .55, 20), deck, side * (10 + half) / 2, -.275, z, bay);
+      this.mesh(new THREE.BoxGeometry(half * 2, .55, 10 - half), deck, 0, -.275, z + side * (10 + half) / 2, bay);
+      const edge = this.mesh(new THREE.BoxGeometry(1.8, 1.25, 22), hull, side * 10.1, -.45, z, bay); edge.rotation.z = side * -.28;
+      this.mesh(new THREE.BoxGeometry(.35, 9.1, 20), hull, side * 10.6, 4.35, z, bay);
+      this.mesh(new THREE.BoxGeometry(21.5, 9.1, .35), hull, 0, 4.35, z + side * 10, bay);
+      if (side < 0) for (const rail of [-1, 1]) this.mesh(new THREE.BoxGeometry(12.6, .15, .2), trim, 0, -.55, z + rail * (half + .17), bay);
+      const hatch = new THREE.Group(); hatch.name = `pod-hatch-${side}`; hatch.position.set(side * (half / 2 + 3), 0, z); bay.add(hatch); this.hatches.push(hatch);
+      this.mesh(new THREE.BoxGeometry(half, .3, half * 2), hull, 0, -.15, 0, hatch);
+      for (let rib = -2; rib <= 2; rib++) this.mesh(new THREE.BoxGeometry(half - .08, .055, .13), trim, 0, -.335, rib, hatch);
+      for (let i = -3; i <= 3; i++) {
+        this.mesh(new THREE.BoxGeometry(.1, .04, 1.6), trim, side * (half + .6), .03, z + i * 2.5, bay);
+        const mark = this.mesh(new THREE.BoxGeometry(.3, .025, .55), warning, side * (half + .3), .02, z + i * .65, bay); mark.rotation.y = side * -.45;
+      }
+      this.tube([[side * 9.8, .4, z - 9.5], [side * 9.8, 6.2, z - 9.5], [side * 6, 7.6, z - 9.5], [0, 7.6, z - 9.5]], .13, trim, bay);
+      for (const dz of [-6, 0, 6]) {
+        this.tube([[side * 10.1, .3, z + dz], [side * 10.1, 6.5, z + dz], [side * 7.2, 8.6, z + dz], [0, 8.6, z + dz]], .18, this.steel, bay);
+        this.mesh(new THREE.BoxGeometry(2.3, .12, .45), lamp, side * 5.2, 8.2, z + dz, bay);
+      }
+      this.tube([[side * 8.8, 1.4, z - 9], [side * 8.8, 1.4, z + 9]], .13, this.dark, bay);
+      this.tube([[side * 8.8, 1.75, z - 9], [side * 8.8, 1.75, z + 9]], .07, trim, bay);
+      const hover = this.mesh(new THREE.TorusGeometry(1.3, .28, 10, 24), hull, side * 10.8, -.9, z + side * 5, bay); hover.rotation.x = Math.PI / 2;
+      const coil = this.mesh(new THREE.TorusGeometry(1.15, .07, 6, 24), lamp, side * 10.8, -1.06, z + side * 5, bay); coil.rotation.x = Math.PI / 2;
+    }
+    this.mesh(new THREE.BoxGeometry(21, .4, 20), hull, 0, 9, z, bay);
+    this.mesh(new THREE.BoxGeometry(.4, .55, 18), this.steel, 0, 8.55, z, bay);
+    const drum = this.mesh(new THREE.CylinderGeometry(.48, .48, 1.1, 20), this.dark, 0, 8.1, z, bay); drum.rotation.z = Math.PI / 2;
+    for (const side of [-1, 1]) {
+      this.mesh(new THREE.BoxGeometry(.16, 1.15, 1.4), trim, side * .68, 8.1, z, bay);
+      const light = new THREE.PointLight(0xc7d5b4, 100, 22, 2); light.position.set(side * 5, 6.8, z - 1); bay.add(light);
+    }
   }
   private podShell(segments: number): THREE.SphereGeometry {
     const geometry = new THREE.SphereGeometry(1, segments, segments / 2, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
@@ -269,21 +310,22 @@ export class PodSetRenderer {
     this.root.updateWorldMatrix(true, false); subject?.updateWorldMatrix(true, true);
     const chest = this.claw.visible ? subject?.getObjectByName('chest') : undefined;
     const center = chest ? this.root.worldToLocal(chest.getWorldPosition(new THREE.Vector3())) : new THREE.Vector3(0, pose.y + 3.26, 12.126);
-    this.claw.position.copy(center).add(new THREE.Vector3(0, 2.6 + 5 * (1 - rescue.descend), 0));
+    this.claw.position.copy(center).add(new THREE.Vector3(0, 2.6 + 5 * (1 - rescue.descend) + rescue.release * 2.2 + rescue.settle * 1.1, 0));
+    this.hatches.forEach((hatch, i) => { hatch.position.x = (i ? 1 : -1) * (POD_RESCUE.hatch.half / 2 + 3 * (1 - rescue.hatch)); });
     this.grippers.forEach(gripper => {
       const radial = new THREE.Vector3(Math.sin(gripper.angle), 0, Math.cos(gripper.angle));
       const contact = chest ? this.root.worldToLocal(chest.localToWorld(gripper.offset.clone())).sub(this.claw.position)
         : gripper.offset.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI).add(center).sub(this.claw.position);
-      const tip = radial.clone().multiplyScalar(1.4).setY(-2.6).lerp(contact, rescue.grip);
+      const tip = radial.clone().multiplyScalar(1.4).setY(-2.6).lerp(contact, rescue.grip * (1 - rescue.release));
       const nodes = [radial.clone().multiplyScalar(.5), radial.clone().multiplyScalar(1.3).setY(-.95),
         radial.clone().multiplyScalar(1.3).setY(-2.45), tip];
       gripper.links.forEach((link, i) => this.link(link, nodes[i], nodes[i + 1]));
       gripper.hinges.forEach((hinge, i) => hinge.position.copy(nodes[i + 1]));
       gripper.pad.position.copy(tip); gripper.pad.rotation.y = gripper.angle;
     });
-    this.cable.visible = this.claw.visible; this.link(this.cable, new THREE.Vector3(0, 15, 12), this.claw.position);
+    this.cable.visible = this.claw.visible; this.link(this.cable, new THREE.Vector3(0, 8.1, 12), this.claw.position);
     this.scan.target.position.copy(center);
-    this.scan.intensity = this.claw.visible ? 2300 : 0;
+    this.scan.intensity = this.claw.visible ? 2300 * (1 - rescue.board) : 0;
     const rippleSize = 1 + elapsed % 2.8 * 1.6; this.ripple.visible = disconnect >= 7 || rescuing;
     this.ripple.scale.setScalar(rippleSize); (this.ripple.material as THREE.MeshBasicMaterial).opacity = .3 * (1 - elapsed % 2.8 / 2.8);
     this.mist.position.x = Math.sin(elapsed * .13) * 2;

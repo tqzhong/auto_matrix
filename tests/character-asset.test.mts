@@ -1,3 +1,4 @@
+import { recoveryCrewPose } from '@auto_matrix/shared';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
@@ -554,7 +555,7 @@ test('the shipped Neo body rests in the pod fluid instead of hovering over the t
 });
 
 test('Neo floats chest-deep and the rescue pads support the shipped body throughout the lift', async t => {
-  const assets = new Map(await Promise.all(['neo', 'neo-office', 'neo-tracking'].map(async id => [id, await loadGeometry(id)] as const)));
+  const assets = new Map(await Promise.all(['neo', 'neo-office', 'neo-tracking', 'morpheus', 'trinity', 'trinity-club'].map(async id => [id, await loadGeometry(id)] as const)));
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   t.mock.method(GLTFLoader.prototype, 'loadAsync', async (path: string) => assets.get(path.split('/').pop()!.replace(/\.glb.*$/, ''))!);
   const document = globalThis.document;
@@ -567,11 +568,19 @@ test('Neo floats chest-deep and the rescue pads support the shipped body through
   const center = FILM_SETS.film_power_plant_pods.center; root.position.set(center.x, center.y - 1, center.z);
   const set = new PodSetRenderer(root);
   try {
-    for (const elapsed of [-1, 0, 1, 1.65, 2.5, 4, 5]) {
+    for (const elapsed of [-1, 0, 1, 1.65, 2.5, 4, 5, 7, 7.4, 8, 8.6, 9.3, 10.1, 11.4, 13.5]) {
       const awakening = elapsed < 0 ? { kind: 'disconnect' as const, elapsed: 9 } : { kind: 'rescue' as const, elapsed };
       const pose = awakeningPose(awakening), journey = { scene: 'm1_pod', awakening } as FilmJourney;
       neo.position = filmPosition(neo.currentLocation, pose.x, pose.z); neo.position.y += pose.y;
       neo.currentAction = { type: 'idle', parameters: { filmPose: pose.pose }, startedAt: 0, duration: 1, progress: 0 };
+      renderer.updateAgent('neo', neo);
+      for (const role of ['morpheus', 'trinity'] as const) {
+        const crew = world.agents.get(role)!; const gesture = { elapsed, role, boarding: true };
+        const pose = recoveryCrewPose(gesture); crew.currentLocation = neo.currentLocation; crew.isInMatrix = false;
+        crew.position = filmPosition(neo.currentLocation, pose.x, pose.z); crew.rotation = pose.yaw;
+        crew.currentAction = { type: 'idle', parameters: { recoveryCrew: gesture }, startedAt: 0, duration: 1, progress: 0 };
+        renderer.updateAgent(role, crew);
+      }
       renderer.updateAgent('neo', neo); renderer.setWorld(false); renderer.setPlayer('neo');
       await new Promise(resolve => setImmediate(resolve));
       // Match the player controller's authoritative placement before animation.
@@ -588,6 +597,22 @@ test('Neo floats chest-deep and the rescue pads support the shipped body through
       if (elapsed < 1.65) continue;
       const skin: THREE.SkinnedMesh[] = [];
       body.traverse(object => { if (object instanceof THREE.SkinnedMesh && object.visible && object.userData.patientBody) { object.skeleton.update(); skin.push(object); } });
+      if (elapsed >= 7) {
+        let bottom = Infinity; const vertex = new THREE.Vector3();
+        for (const mesh of skin) for (let i = 0; i < mesh.geometry.getAttribute('position').count; i++) {
+          mesh.getVertexPosition(i, vertex).applyMatrix4(mesh.matrixWorld); bottom = Math.min(bottom, vertex.y - (center.y - 1));
+        }
+        assert.ok(bottom > -.06, `the bare body must not pierce the deck at ${elapsed}s: ${bottom}`);
+        if (elapsed < 7.8) assert.ok(bottom > .3, 'the feet clear the moving hatch before it closes');
+        if (elapsed >= 8.6) assert.ok(bottom < .18, `Neo must reach the deck at ${elapsed}s: ${bottom}`);
+      }
+      if (elapsed >= 9.3) for (const role of ['morpheus', 'trinity'] as const) {
+        const crew = renderer.getAgentBody(role)!; const side = role === 'morpheus' ? 'R' : 'L';
+        const target = body.getObjectByName('shoulder_' + side)!.localToWorld(new THREE.Vector3(0, -.16, .06));
+        const hand = crew.getObjectByName('wrist_' + side)!.getWorldPosition(new THREE.Vector3());
+        assert.ok(hand.distanceTo(target) < .35, `${role} must reach Neo during handoff at ${elapsed}s; gap ${hand.distanceTo(target)}`);
+      }
+      if (elapsed >= 9.4) continue;
       for (const side of ['L', 'R', 'back']) {
         const pad = root.getObjectByName(`pod-rescue-pad-${side}`); assert.ok(pad, 'the closing claw has a physical support pad');
         const from = pad.getWorldPosition(new THREE.Vector3()), to = chest.localToWorld(new THREE.Vector3(0, -.15, 0));

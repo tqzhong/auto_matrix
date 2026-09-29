@@ -555,6 +555,11 @@ if (scene.id === 'm3_dawn' && process.argv[3] === 'dawn-sunrise') {
   actor.position = filmStepPosition(scene, scene.steps[3]); actor.rotation = 0;
   sandbox.life.film.epilogueFrame(actor, 0, 0); journey.checkpoint = { ...actor.position };
 }
+if (scene.id === 'm1_pod' && ['pod-water', 'pod-boarding'].includes(process.argv[3])) {
+  const journey = sandbox.life.film.state!; actor.controller = 'player'; journey.step = 1;
+  journey.awakening = process.argv[3] === 'pod-water' ? { kind: 'disconnect', elapsed: 9 } : { kind: 'rescue', elapsed: 7.4 };
+  sandbox.life.film.awakeningFrame(actor, 0, 0); journey.checkpoint = { ...actor.position };
+}
 for (const resident of world.agents.values()) delete resident.controller;
 neo.isAwakened = FILM_SCENES.indexOf(scene) >= FILM_SCENES.findIndex(s => s.id === 'm1_pod');
 const nightReview = ['m1_wake_again', 'm1_bridge', 'm1_bug'].includes(scene.id);
