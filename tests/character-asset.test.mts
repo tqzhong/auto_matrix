@@ -143,6 +143,77 @@ test('the tucked and raised shirt stays inside culling bounds after the car-scan
   } finally { models.dispose(); }
 });
 
+test('Neo removes his long sleeves for the tracking electrodes and restores them outside the mirror scene', async () => {
+  const [asset, office, tracking] = await Promise.all([loadGeometry('neo'), loadGeometry('neo-office'), loadGeometry('neo-tracking')]);
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: (id: string) => Promise<typeof asset> }).load = async id => id === 'neo-office' ? office : id === 'neo-tracking' ? tracking : asset;
+  try {
+    const rig = (await models.create('neo'))!; const motion = newMotion();
+    const input: MotionInput = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, performance: 'touch', mirrorBeat: 2.75 };
+    models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0);
+    const coat = rig.wardrobe.find(part => !part.mesh.userData.office && /Tailored.coat.upper/i.test(part.mesh.name))!.mesh;
+    const outfit = rig.wardrobe.filter(part => part.mesh.userData.tracking);
+    assert.equal(outfit.length, 2);
+    assert.ok(outfit.every(part => part.mesh.visible), 'the shirt and anatomical arms load together at a resumed tracking checkpoint');
+    assert.equal(coat.visible, false, 'the electrode must sit on Neo’s exposed arm, not the jacket sleeve');
+    assert.ok(rig.panels.every(panel => !panel.mesh.visible), 'the long coat is removed before touching the mirror');
+    const restored = { ...input, performance: undefined, mirrorBeat: undefined };
+    models.animate(rig, advanceMotion(motion, restored, 0), motion, restored, 0);
+    assert.equal(coat.visible, true, 'leaving or rewinding the scene restores the original outfit');
+    assert.ok(rig.panels.every(panel => panel.mesh.visible));
+    for (const other of [{ ...restored, officeShirt: true }, { ...restored, realWorld: true, performance: 'pod' as const }]) {
+      models.animate(rig, advanceMotion(motion, other, 0), motion, other, 0);
+      assert.ok(outfit.every(part => !part.mesh.visible), 'the tracking shirt cannot remain over office clothing or the pod body');
+    }
+  } finally { models.dispose(); }
+});
+
+test('Neo’s new forearms remain skinned, joined to the hands and exposed throughout the mirror performance', async () => {
+  const [asset, office, tracking] = await Promise.all([loadGeometry('neo'), loadGeometry('neo-office'), loadGeometry('neo-tracking')]);
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: (id: string) => Promise<typeof asset> }).load = async id => id === 'neo-office' ? office : id === 'neo-tracking' ? tracking : asset;
+  try {
+    const rig = (await models.create('neo'))!; const motion = newMotion();
+    const arms = rig.wardrobe.find(part => (part.mesh.material as THREE.Material).name === 'Tracking skin')!.mesh as THREE.SkinnedMesh;
+    const hands = rig.wardrobe.find(part => (part.mesh.material as THREE.Material).name === 'Skin')!.mesh as THREE.SkinnedMesh;
+    const point = new THREE.Vector3(); const key = (v: THREE.Vector3) => v.toArray().map(value => value.toFixed(4)).join(',');
+    const seam = new Set<string>(); const source = hands.geometry.attributes.position;
+    for (let i = 0; i < source.count; i++) if (source.getY(i) < 2.6) seam.add(key(point.fromBufferAttribute(source, i)));
+    const positions = arms.geometry.attributes.position; const joined = new Set<string>();
+    for (let i = 0; i < positions.count; i++) if (seam.has(key(point.fromBufferAttribute(positions, i)))) joined.add(key(point));
+    assert.ok(joined.size > 20, 'both wrist boundary rings must meet the shipped hands without covering them with duplicate skin');
+    assert.ok(arms.skeleton.bones.every(bone => rig.bones.get(bone.name) === bone), 'the outfit uses the animated skeleton rather than a second idle rig');
+    const silver = arms.geometry.attributes._mirrorArrival;
+    assert.ok([...silver.array].some(time => time > .4 && time < .6), 'silver climbs the new anatomical forearm before reaching the face');
+    for (const time of [2.75, 3.45, 4.15, 6.3]) {
+      const input: MotionInput = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, performance: 'touch', mirrorBeat: time, mirror: Math.max(0, (time - 3.45) / 4.55) };
+      models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
+      const visible = rig.wardrobe.filter(part => part.mesh.visible).map(part => part.mesh);
+      for (const side of ['L', 'R']) {
+        const elbow = rig.bones.get(`elbow_${side}`)!.getWorldPosition(new THREE.Vector3());
+        const shoulder = rig.bones.get(`shoulder_${side}`)!.getWorldPosition(new THREE.Vector3());
+        const axis = elbow.clone().sub(shoulder).normalize();
+        // A long front-to-back ray also hits the raised forearm in front of
+        // this shoulder. Probe the front and outside, perpendicular to the arm;
+        // its inward surface joins the torso rather than a separate sleeve.
+        for (const view of [new THREE.Vector3(0, 0, 1), new THREE.Vector3(side === 'L' ? 1 : -1, 0, 0)]) {
+          const direction = view.clone().addScaledVector(axis, -view.dot(axis)).normalize();
+          const sleeve = shoulder.clone().lerp(elbow, .25).addScaledVector(direction, .3);
+          const hits = new THREE.Raycaster(sleeve, direction.negate(), 0, .3).intersectObjects(visible);
+          assert.equal(((hits[0]?.object as THREE.Mesh)?.material as THREE.Material)?.name, 'Tracking cotton', `the ${side} upper arm must remain inside its sleeve at ${time}s (${view.toArray()}): ${hits.map(hit => `${hit.object.name} ${hit.distance.toFixed(3)}`).join(', ')}`);
+        }
+        const center = rig.bones.get(`wrist_${side}`)!.getWorldPosition(new THREE.Vector3()).lerp(elbow, .5);
+        const hit = new THREE.Raycaster(center.clone().add(new THREE.Vector3(0, 0, .75)), new THREE.Vector3(0, 0, -1), 0, 1.5).intersectObjects(visible)[0];
+        assert.equal(hit?.object, arms, `the ${side} forearm at ${time}s must show anatomical skin instead of a hole or long sleeve`);
+      }
+      for (let i = 0; i < positions.count; i++) {
+        point.fromBufferAttribute(positions, i); arms.applyBoneTransform(i, point);
+        assert.ok(arms.boundingBox!.distanceToPoint(point) < 1e-5, 'bending the new arms cannot cull them from the camera or mirror');
+      }
+    }
+  } finally { models.dispose(); }
+});
+
 test('the mirror reaches Neo’s hand before his face and coat hem', async () => {
   const asset = await loadGeometry('neo'); const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
   (models as unknown as { load: () => Promise<typeof asset> }).load = async () => asset;
@@ -193,7 +264,35 @@ test('the silver front changes Neo’s skinned silhouette rather than only its c
   } finally { models.dispose(); }
 });
 
-test('Neo keeps a continuous patient body through rescue and medical recovery', async () => {
+test('Neo has a connected anatomical body after leaving the mirror for the pod and recovery bed', async () => {
+  const [asset, office, tracking] = await Promise.all([loadGeometry('neo'), loadGeometry('neo-office'), loadGeometry('neo-tracking')]);
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: (id: string) => Promise<typeof asset> }).load = async id => id === 'neo-office' ? office : id === 'neo-tracking' ? tracking : asset;
+  try {
+    const rig = (await models.create('neo'))!; const motion = newMotion();
+    for (const performance of ['pod', 'float', 'recover'] as const) {
+      const input: MotionInput = { speed: 0, grounded: false, verticalVelocity: 0, turn: 0, realWorld: true, performance, recovery: performance === 'recover' ? 6 : undefined };
+      models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
+      const surfaces = rig.wardrobe.filter(part => part.mesh.visible).map(part => part.mesh);
+      for (const side of ['L', 'R']) for (const [end, start] of [['wrist', 'elbow'], ['ankle', 'knee']]) {
+        const endPoint = rig.bones.get(`${end}_${side}`)!.getWorldPosition(new THREE.Vector3());
+        const startPoint = rig.bones.get(`${start}_${side}`)!.getWorldPosition(new THREE.Vector3());
+        const center = endPoint.lerp(startPoint, .5); const axis = startPoint.clone().sub(center).normalize();
+        const outward = new THREE.Vector3(side === 'L' ? 1 : -1, 0, 0); outward.addScaledVector(axis, -outward.dot(axis)).normalize();
+        const hit = new THREE.Raycaster(center.addScaledVector(outward, .4), outward.negate(), 0, .8).intersectObjects(surfaces)[0];
+        assert.ok(hit?.object.userData.patientBody, `${performance}: the ${side} ${start}-${end} segment needs continuous anatomical skin`);
+      }
+      assert.ok(surfaces.every(mesh => !mesh.userData.tracking && (mesh.material as THREE.Material).name !== 'Office skin'), 'the complete patient body replaces the tracking shirt and partial office torso');
+      const body = surfaces.find(mesh => mesh.userData.patientBody)!;
+      assert.ok((body.material as THREE.MeshStandardMaterial).roughness < .6, 'the anatomical patient body uses the wet recovery finish');
+      assert.ok(surfaces.every(mesh => !/Tailored.trousers/i.test(mesh.name)), 'painted trousers cannot substitute for bare legs');
+      const positions = body.geometry.attributes.position;
+      assert.ok([...Array(positions.count).keys()].filter(i => positions.getY(i) < .15).length > 50, 'the body includes anatomical feet below the ankle joints');
+    }
+  } finally { models.dispose(); }
+});
+
+test('legacy rigs without the full patient asset restore their clothing after recovery', async () => {
   const [asset, office] = await Promise.all([loadGeometry('neo'), loadGeometry('neo-office')]);
   const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
   (models as unknown as { load: (id: string) => Promise<typeof asset> }).load = async id => id === 'neo-office' ? office : asset;

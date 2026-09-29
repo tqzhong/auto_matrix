@@ -8,6 +8,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import re
 import struct
 import subprocess
 import tempfile
@@ -206,7 +207,18 @@ def trim_neckline(vertices, uv, faces, influence, height, above=False, preserve=
     return np.array(points), np.array(texcoords), clipped_faces, np.array(weights)
 
 
-def main(source, character, office=False):
+def write_glb(doc, binaries, filename):
+    doc['buffers'] = [{'byteLength': len(binaries)}]
+    js = json.dumps(doc, separators=(',', ':')).encode()
+    js += b' ' * ((-len(js)) % 4)
+    binaries += b'\x00' * ((-len(binaries)) % 4)
+    glb = struct.pack('<III', 0x46546C67, 2, 12 + 8 + len(js) + 8 + len(binaries))
+    glb += struct.pack('<II', len(js), 0x4E4F534A) + js + struct.pack('<II', len(binaries), 0x004E4942) + binaries
+    (OUT / filename).write_bytes(glb)
+    print('Written', OUT / filename, len(glb), 'bytes')
+
+
+def main(source, character, office=False, tracking=False):
     spec = CHARACTERS[character]
     original, skin_uv, body_faces, groups = obj(source / 'base.obj')
     base = original.copy()
@@ -340,10 +352,11 @@ def main(source, character, office=False):
         return len(doc['materials']) - 1
 
     system = source / 'system'
-    if office:
+    if office or tracking:
+        outfit = 'male_casualsuit06' if tracking else 'male_casualsuit01'
         with zipfile.ZipFile(source / 'system-assets.zip') as assets:
             for name in assets.namelist():
-                if name.startswith('clothes/male_casualsuit01/') and not name.endswith('/') and '..' not in Path(name).parts:
+                if name.startswith('clothes/' + outfit + '/') and not name.endswith('/') and '..' not in Path(name).parts:
                     dest = system / name; dest.parent.mkdir(parents=True, exist_ok=True); dest.write_bytes(assets.read(name))
     skin_folder = system / 'skins' / spec['skin']
     skin_map = next(skin_folder.glob('*diffuse.png'))
@@ -449,13 +462,31 @@ def main(source, character, office=False):
     exposed = [f for f in body_faces if character == 'dujour' and np.mean(base[[i for i, _ in f], 1]) > waistline or np.mean(base[[i for i, _ in f], 1]) > neckline - .85 or
                np.mean(weights[[i for i, _ in f]][:, hand_bones].sum(axis=1)) > .85]
     v, uv, faces, w = subdivide(base, skin_uv, exposed, weights)
-    if not office:
+    if tracking:
+        arm_bones = [i for i, name in enumerate(names) if name.startswith(('shoulder', 'elbow'))]
+        proxy = (system / 'clothes/male_casualsuit06/male_casualsuit06.mhclo').read_text()
+        covered = np.zeros(len(base), dtype=bool)
+        for first, last in re.findall(r'(\d+)(?:\s*-\s*(\d+))?', proxy.split('delete_verts\n')[1]):
+            covered[int(first):int(last or first) + 1] = True
+        # Complement the shipped head/hands selection. Catmull-Clark uses the
+        # same boundary rings on both halves, including the wrist skin weights.
+        exposed_ids = {tuple(f) for f in exposed}
+        body = [f for f in body_faces if tuple(f) not in exposed_ids]
+        v, uv, faces, w = subdivide(base, skin_uv, body, weights)
+        # Subdivide the continuous body before masking it. Each source corner
+        # makes one quad; both outfits retain the same wrist boundary rings.
+        visible = [not covered[[i for i, _ in f]].any() and
+                   (np.mean(base[[i for i, _ in f], 1]) > waistline - 1 or
+                    np.mean(weights[[i for i, _ in f]][:, arm_bones].sum(axis=1)) > .15) for f in body for _ in f]
+        export_mesh('Tracking arms', v, uv, [f for f, keep in zip(faces, visible) if keep], w, skin)
+        export_mesh('Patient body', v, uv, faces, w, skin)
+    elif not office:
         export_mesh('Anatomical head and hands', v, uv, faces, w, skin, not spec.get('support'))
     else:
         torso = [f for f in body_faces if waistline - 1.8 < np.mean(base[[i for i, _ in f], 1]) < neckline - .8 and np.mean(weights[[i for i, _ in f]][:, :3].sum(axis=1)) > .9]
         v, uv, faces, w = subdivide(base, skin_uv, torso, weights)
         export_mesh('Office torso', v, uv, faces, w, skin)
-    if character != 'smith' and not office:
+    if character != 'smith' and not office and not tracking:
         arm_bones = [i for i, name in enumerate(names) if name.startswith(('shoulder', 'elbow'))]
         undershirt = [f for f in body_faces if (np.mean(base[[i for i, _ in f], 1]) > waistline - .3
                      or character == 'trinity' and np.mean(weights[[i for i, _ in f]][:, arm_bones].sum(axis=1)) > .5)
@@ -501,6 +532,50 @@ def main(source, character, office=False):
         influence = np.maximum((weights[refs] * bary[:, :, None]).sum(axis=1), 0)
         influence /= np.maximum(influence.sum(axis=1, keepdims=True), 1e-8)
         return vertices, uv, faces, influence
+
+    if tracking:
+        v, uv, faces, w = clothing('clothes/male_casualsuit06', 'male_casualsuit06')
+        # The clothing proxy's shoulder weights lag behind the anatomical
+        # biceps when reaching. Transfer weights from the actual nearby skin.
+        for start in range(0, len(v), 128):
+            distance = ((v[start:start + 128, None, :] - base[body_indices]) ** 2).sum(axis=2)
+            nearest = np.argpartition(distance, 4, axis=1)[:, :4]
+            blend = 1 / np.maximum(np.take_along_axis(distance, nearest, axis=1), 1e-6)
+            blend /= blend.sum(axis=1, keepdims=True)
+            w[start:start + 128] = (weights[body_indices[nearest]] * blend[:, :, None]).sum(axis=1)
+        # The source outfit includes jeans. Keep the shirt and overlap the
+        # existing trousers, then bind its lowered hem to the abdomen.
+        cut = waistline + .15
+        v, uv, faces, w = trim_neckline(v, uv, faces, w, cut, above=True)
+        hem = floor + spec['height'] * .57 / scale
+        drape = np.clip((cut + .9 - v[:, 1]) / .9, 0, 1)
+        v[:, 1] -= (cut - hem) * drape
+        trunk = body_indices[weights[body_indices, :3].sum(axis=1) > .9]
+        for i in np.flatnonzero(drape > 0):
+            nearest = trunk[np.argmin(((base[trunk] - v[i]) ** 2).sum(axis=1))]
+            w[i] = weights[nearest]
+        v, uv, faces, w = subdivide(v, uv, faces, w)
+        # Leave a small cotton-to-skin clearance around the moving sleeves.
+        normals = np.zeros_like(v)
+        for face in faces:
+            ids = [i for i, _ in face]
+            normals[ids] += np.cross(v[ids[1]] - v[ids[0]], v[ids[2]] - v[ids[0]])
+        normals /= np.maximum(np.linalg.norm(normals, axis=1, keepdims=True), 1e-8)
+        v += normals * .1
+        shirt = material('Tracking cotton', [.012, .013, .014, 1], .94)
+        export_mesh('Tracking shirt', v, uv, faces, w, shirt)
+        # The finished facial atlas contains only head/hand UV islands. Use
+        # the already shipped full-body skin for the newly exposed arms.
+        for mesh in doc['meshes']:
+            mesh['primitives'][0]['material'] = 0 if mesh['primitives'][0]['material'] == skin else 1
+        doc['materials'] = [doc['materials'][skin], doc['materials'][shirt]]
+        doc['materials'][0]['name'] = 'Tracking skin'
+        doc['materials'][0]['pbrMetallicRoughness']['baseColorFactor'] = [.82, .79, .77, 1]
+        doc['images'] = [{'uri': 'neo-office-skin.png'}]
+        doc['textures'] = [{'source': 0, 'sampler': 0}]
+        doc['extras'] = {'character': character, 'height': spec['height'], 'sourceRevision': REVISION, 'skinBaked': True}
+        write_glb(doc, binaries, 'neo-tracking.glb')
+        return
 
     clothing_name = 'male_casualsuit01' if office else 'female_casualsuit01' if character in ('trinity', 'dujour') else 'male_elegantsuit01'
     v, uv, faces, w = clothing('clothes/' + clothing_name, clothing_name)
@@ -608,15 +683,7 @@ def main(source, character, office=False):
         doc['images'] = [{'uri': filename}]
         doc['textures'] = [{'source': 0, 'sampler': 0}]
         doc['extras']['skinBaked'] = True
-    doc['buffers'] = [{'byteLength': len(binaries)}]
-    js = json.dumps(doc, separators=(',', ':')).encode()
-    js += b' ' * ((-len(js)) % 4)
-    binaries += b'\x00' * ((-len(binaries)) % 4)
-    glb = struct.pack('<III', 0x46546C67, 2, 12 + 8 + len(js) + 8 + len(binaries))
-    glb += struct.pack('<II', len(js), 0x4E4F534A) + js + struct.pack('<II', len(binaries), 0x004E4942) + binaries
-    filename = character + ('-office' if office else '') + '.glb'
-    (OUT / filename).write_bytes(glb)
-    print('Written', OUT / filename, len(glb), 'bytes')
+    write_glb(doc, binaries, character + ('-office' if office else '') + '.glb')
 
 
 if __name__ == '__main__':
@@ -624,11 +691,13 @@ if __name__ == '__main__':
     parser.add_argument('--source', type=Path, default=Path(tempfile.gettempdir()) / 'matrix-character-source')
     parser.add_argument('--fetch', action='store_true', help='Download the pinned CC0 source assets into the cache')
     parser.add_argument('--character', choices=list(CHARACTERS), help='Rebuild only one character')
-    parser.add_argument('--office', action='store_true', help='Build only Neo’s CC0 shirt and torso for the interrogation; use a staging output directory')
+    outfit = parser.add_mutually_exclusive_group()
+    outfit.add_argument('--office', action='store_true', help='Build only Neo’s CC0 shirt and torso for the interrogation; use a staging output directory')
+    outfit.add_argument('--tracking', action='store_true', help='Build Neo’s short-sleeved shirt, arms and complete patient body; use a staging output directory')
     parser.add_argument('--output', type=Path, default=OUT, help='Asset directory; use a staging directory to review before replacing the game assets')
     args = parser.parse_args()
     OUT = args.output; OUT.mkdir(parents=True, exist_ok=True)
     if args.fetch:
         fetch_source(args.source)
-    for character in ['neo'] if args.office else [args.character] if args.character else ['neo', 'trinity', 'smith', 'morpheus']:
-        main(args.source, character, args.office)
+    for character in ['neo'] if args.office or args.tracking else [args.character] if args.character else ['neo', 'trinity', 'smith', 'morpheus']:
+        main(args.source, character, args.office, args.tracking)

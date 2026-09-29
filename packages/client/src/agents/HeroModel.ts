@@ -28,6 +28,7 @@ export interface HeroRig {
   footHeight: number;
   glasses: THREE.Group;
   silver: { value: number };
+  trackingSkin?: { mesh: THREE.SkinnedMesh; original: THREE.BufferGeometry; covered: THREE.BufferGeometry };
   wardrobe: { mesh: THREE.Mesh; color: THREE.Color; map: THREE.Texture | null; bumpMap: THREE.Texture | null; bumpScale: number;
     roughness: number; metalness: number; emissive: THREE.Color; emissiveIntensity: number; outer: boolean; hair: boolean; cloth: boolean }[];
   officeRole?: 'rhineheart' | 'courier';
@@ -82,7 +83,7 @@ function addMirrorArrival(mesh: THREE.Mesh): void {
 
 // The inspector and world share these exact skinned assets and motion solver.
 export class HeroModels {
-  private assets = new Map<HeroId | 'neo-office' | 'choi' | 'dujour', Promise<GLTF>>();
+  private assets = new Map<HeroId | 'neo-office' | 'neo-tracking' | 'choi' | 'dujour', Promise<GLTF>>();
   private disposed = false;
   private pills = new Map<HeroRig, PillPerformance>();
   private interrogations = new Map<HeroRig, InterrogationPerformance>();
@@ -117,7 +118,7 @@ export class HeroModels {
     this.textures.add(this.patientSkin);
   }
 
-  private load(id: HeroId | 'neo-office' | 'choi' | 'dujour'): Promise<GLTF> {
+  private load(id: HeroId | 'neo-office' | 'neo-tracking' | 'choi' | 'dujour'): Promise<GLTF> {
     const existing = this.assets.get(id); if (existing) return existing;
     const promise = new GLTFLoader().loadAsync(`/assets/characters/${id}.glb`).then(asset => {
       asset.scene.traverse(object => {
@@ -152,7 +153,7 @@ export class HeroModels {
           material.depthWrite = true; material.alphaToCoverage = true;
           material.bumpMap = material.map; material.bumpScale = .003;
         }
-        if (material.name === 'Coat wool' || material.name === 'Coat leather' || material.name === 'Trousers') {
+        if (material.name === 'Coat wool' || material.name === 'Coat leather' || material.name === 'Trousers' || material.name === 'Tracking cotton') {
           material.bumpMap = this.fabric; material.bumpScale = .001;
         }
       });
@@ -164,7 +165,9 @@ export class HeroModels {
 
   async create(id: HeroId, guard?: 'agent_jones' | 'agent_brown' | 'agent_johnson' | 'agent_jackson' | 'agent_thompson', support?: HeroSupport): Promise<HeroRig | undefined> {
     const apartmentRole = support === 'choi' || support === 'dujour' ? support : undefined;
-    const [asset, office] = await Promise.all([this.load(apartmentRole ?? id), id === 'neo' && !apartmentRole ? this.load('neo-office') : undefined]);
+    const [asset, office, tracking] = await Promise.all([this.load(apartmentRole ?? id),
+      id === 'neo' && !apartmentRole ? this.load('neo-office') : undefined,
+      id === 'neo' && !support ? this.load('neo-tracking') : undefined]);
     if (this.disposed) return;
     const root = clone(asset.scene) as THREE.Group;
     const bones = new Map<string, THREE.Bone>(); const rest = new Map<string, THREE.Vector3>();
@@ -193,6 +196,14 @@ export class HeroModels {
         this.skeletons.add(skeleton); root.add(mesh);
       }
     }
+    if (tracking) tracking.scene.traverse(source => {
+      if (!(source instanceof THREE.SkinnedMesh) || !/^(Tracking[ _](arms|shirt)|Patient[ _]body)$/.test(source.name)) return;
+      const mesh = new THREE.SkinnedMesh(source.geometry, source.material); mesh.name = source.name;
+      mesh.userData.patientBody = source.name.startsWith('Patient'); mesh.userData.tracking = !mesh.userData.patientBody;
+      const skeleton = new THREE.Skeleton(source.skeleton.bones.map(bone => bones.get(bone.name)!), source.skeleton.boneInverses.map(matrix => matrix.clone()));
+      mesh.bind(skeleton, source.bindMatrix.clone()); mesh.castShadow = mesh.receiveShadow = true; mesh.visible = false;
+      this.skeletons.add(skeleton); root.add(mesh);
+    });
     if (guard) root.traverse(object => {
       if (!(object instanceof THREE.Mesh) || !object.name.includes('Anatomical')) return;
       object.geometry = object.geometry.clone(); this.geometries.add(object.geometry);
@@ -217,9 +228,27 @@ export class HeroModels {
     const panels = (id === 'neo' || id === 'morpheus') && support !== 'link' ? [-1, 1].map(side => this.coat(pelvis, waist, side, id)) : [];
     const footHeight = this.point.setFromMatrixPosition(bones.get('ankle_L')!.matrixWorld).y;
     const silver = { value: 0 }; const wardrobe: HeroRig['wardrobe'] = [];
+    let trackingSkin: HeroRig['trackingSkin'];
     root.traverse(object => {
       if (!(object instanceof THREE.Mesh) || !(object.material instanceof THREE.MeshStandardMaterial)) return;
       const source = object.material; const material = source.clone(); this.materials.add(material); object.material = material;
+      if (tracking && !object.userData.office && object instanceof THREE.SkinnedMesh && material.name === 'Skin') {
+        // The existing head/hands mesh also contains shoulder caps. They sit
+        // beneath the new sleeves; preserve the finished face and wrist rings.
+        const original = object.geometry; const index = original.index!; const positions = original.attributes.position;
+        const covered = (index: number) => positions.getY(index) > 2.6 && positions.getY(index) < 3.68 && Math.abs(positions.getX(index)) > .24;
+        const indices: number[] = [];
+        for (let i = 0; i < index.count; i += 3) {
+          const triangle = [index.getX(i), index.getX(i + 1), index.getX(i + 2)];
+          if (!triangle.every(covered)) indices.push(...triangle);
+        }
+        const dressed = new THREE.BufferGeometry(); dressed.setIndex(indices);
+        // Share the face/hand vertices and any later performance attributes.
+        // Both index buffers belong to disposable geometries, avoiding orphaned
+        // GPU buffers when the outfit changes repeatedly.
+        dressed.attributes = original.attributes;
+        this.geometries.add(dressed); trackingSkin = { mesh: object, original, covered: dressed };
+      }
       if (support === 'courier' && material.name === 'Office cotton') material.color.setHex(0x455c6b);
       if (support === 'rhineheart' && /Coat|Trousers/.test(material.name)) material.color.setHex(0x56594f);
       if (support === 'rhineheart' && /Hair|hair|Groom|groom/.test(material.name)) {
@@ -281,7 +310,7 @@ export class HeroModels {
     if (support === 'ballard') {
       const cap = this.mesh(head, new THREE.SphereGeometry(.3, 24, 12), new THREE.MeshStandardMaterial({ color: 0x151813, roughness: .94 })); cap.position.set(.03, .21, -.04); cap.scale.set(1.15, .3, .93); cap.rotation.z = -.17;
     }
-    const rig: HeroRig = { root, bones, rest, panels, footHeight, glasses, silver, wardrobe, officeRole: support === 'rhineheart' || support === 'courier' ? support : undefined, apartmentRole };
+    const rig: HeroRig = { root, bones, rest, panels, footHeight, glasses, silver, trackingSkin, wardrobe, officeRole: support === 'rhineheart' || support === 'courier' ? support : undefined, apartmentRole };
     if (apartmentRole) this.apartments.set(rig, new ApartmentPerformance(rig));
     if (id === 'neo' && !support) this.recoveries.set(rig, new RecoveryPerformance(rig));
     enableSkinnedCulling(root);
@@ -507,19 +536,26 @@ export class HeroModels {
     rig.silver.value = input.mirror ?? 0;
     rig.glasses.visible = !rig.officeRole && !rig.apartmentRole && input.glasses !== false && !input.realWorld;
     const officeShirt = input.officeShirt || rig.officeRole === 'courier';
+    const trackingShirt = input.performance === 'touch';
+    if (rig.trackingSkin) {
+      const skin = rig.trackingSkin; skin.mesh.geometry = trackingShirt ? skin.covered : skin.original;
+    }
     const pod = input.performance && !['touch', 'connect'].includes(input.performance);
     const recoveryComplete = input.performance === 'recover' && input.recovery !== undefined && input.recovery >= 11.7;
     const patient = Boolean(input.performance && ['pod', 'fall', 'float', 'lift', 'recover'].includes(input.performance)
       && !recoveryComplete);
+    const completePatientBody = rig.wardrobe.some(part => part.mesh.userData.patientBody);
     for (const part of rig.wardrobe) {
       const material = part.mesh.material as THREE.MeshStandardMaterial;
-      const patientLegs = Boolean(patient && material.name === 'Trousers' && /Tailored.trousers/i.test(part.mesh.name));
-      const patientTorso = Boolean(patient && material.name === 'Office skin');
+      const patientLegs = Boolean(patient && !completePatientBody && material.name === 'Trousers' && /Tailored.trousers/i.test(part.mesh.name));
+      const patientTorso = Boolean(patient && (part.mesh.userData.patientBody || !completePatientBody && material.name === 'Office skin'));
       const patientSurface = patient && (material.name === 'Skin' || patientLegs || patientTorso);
       part.mesh.visible = !part.mesh.userData.reloadedHidden && !(part.outer && (input.realWorld || input.clubClothes || input.pills?.role === 'neo' || input.meeting || input.wakeCall) || part.hair && pod)
         && (!patient || material.name === 'Skin' || patientLegs || patientTorso);
       if (part.mesh.userData.office) part.mesh.visible = Boolean(patientTorso || officeShirt || input.meeting?.role === 'neo' && (part.mesh.material as THREE.Material).name === 'Office skin');
-      else if (officeShirt && (part.outer || /Tailored.coat.upper|Black.crew.neck/i.test(part.mesh.name))) part.mesh.visible = false;
+      else if (part.mesh.userData.patientBody) part.mesh.visible = patient;
+      else if (part.mesh.userData.tracking) part.mesh.visible = trackingShirt;
+      else if ((officeShirt || trackingShirt) && (part.outer || /Tailored.coat.upper|Black.crew.neck/i.test(part.mesh.name))) part.mesh.visible = false;
       const map = patientLegs ? this.patientSkin : part.map; const bumpMap = patientLegs ? this.patientSkin : part.bumpMap;
       if (material.map !== map || material.bumpMap !== bumpMap) { material.map = map; material.bumpMap = bumpMap; material.needsUpdate = true; }
       material.bumpScale = patientLegs ? .0013 : part.bumpScale;

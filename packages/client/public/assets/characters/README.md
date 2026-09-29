@@ -18,6 +18,8 @@ The bridge/car encounter reuses the office torso beneath Neo's lifted black shir
 
 These are approximate film likenesses, not actor scans or complete photogrammetric reconstructions. The reference images are generated interpretations. Profile constraints cover the center of the face; ears, back of the head and hair volume still come from the anatomical base assets. Animation is driven by the existing motion solver, with no facial performance capture or lip sync. Geometric alignment scores do not establish perceptual likeness or film-quality fidelity.
 
+The tracking-chair and mirror performance use `neo-tracking.glb`: a black short-sleeved cotton shirt, exposed arms and a separate complete patient body, bound to the same 46 bones. It reuses `neo-office-skin.png`; no new texture or runtime dependency is required. The CC0 `male_casualsuit06` shirt is fitted to Neo, its hem overlaps the trousers, and its sleeve weights follow the adjacent body. Covered skin is removed using the source garment's mask, while the wrist rings meet the existing hands. The finished head/hands mesh also has a separate index selection that hides shoulder caps beneath this shirt without modifying the facial vertices. The saved `touch` performance selects the outfit, including a cold resume. The pod, drainage, rescue and recovery use the unmasked anatomical body, with complete arms, legs and feet; it replaces the partial office torso and skin-colored trousers. Office and later scenes restore their own clothing. Only the relevant meshes render in each phase. Coat removal is currently an outfit transition, not an acted undressing sequence. The shirt has no cloth simulation or scanned film-costume detail, and the patient still uses Neo's existing proportions rather than the film's emaciated body.
+
 ## Editable Blender project
 
 The finishing script can generate `output/characters/matrix-cast.blend` (relative to the repository root), containing all four rigs, outfits, editable glasses/coat counterparts, packed materials and the frontal reference atlas. Generated Blender projects, comparison captures and inspection renders are not retained or committed. In the game, glasses and coat panels are managed by `HeroModel.ts` so the cloth can keep responding to movement.
@@ -34,6 +36,8 @@ All downloaded base geometry, morph targets, rigs, skin, eye, hair and clothing 
 - [MakeHuman system pack](https://static.makehumancommunity.org/assets/assetpacks/makehuman_system_assets.html): `short04` hair, high-poly eyes with brown/bluegreen/grey textures, young Caucasian male/female and middle-aged Caucasian/African male skin, `male_elegantsuit01`, `male_casualsuit01`, `female_casualsuit01`, and `shoes01`. Source credit: MakeHuman team, Data Collection AB, Joel Palmius and Jonas Hauquier.
 - [Source archive](https://files2.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip), SHA-256 `b542127a8e25547c7c29c19f2d1d2adb9a664c80396ecd694095dbc8028a0107`.
 - Blender authoring used [official Blender 4.5.9 LTS](https://download.blender.org/release/Blender4.5/), macOS arm64 DMG SHA-256 `e3a3d7aac381fb4e4d05197f99cd8899484d7e8bc4497c134066e6733f372238`.
+
+The tracking shirt comes from `male_casualsuit06` in that same verified CC0 system archive, with the same source credits. Its source clothing texture and jeans are not shipped.
 
 ## Rebuild
 
@@ -59,6 +63,13 @@ The separate office outfit does not use the facial finishing pass. Build it into
 ```sh
 python3 scripts/build-characters.py --office --output output/characters/interrogation-staging
 cp output/characters/interrogation-staging/neo-office.glb output/characters/interrogation-staging/neo-office-skin.png packages/client/public/assets/characters/
+```
+
+Build the tracking outfit without rebuilding the finished face. Copy only the GLB; it references the existing full-body skin from the office outfit:
+
+```sh
+python3 scripts/build-characters.py --tracking --output output/characters/tracking-staging
+cp output/characters/tracking-staging/neo-tracking.glb packages/client/public/assets/characters/
 ```
 
 Build the apartment visitors separately, without the principal-cast facial finishing pass:
@@ -104,5 +115,7 @@ blender --background --factory-startup --python scripts/finish-characters.py
 Calibration detects 478 landmarks on each unprojected raw frontal render and on the generated front/profile references. It saves the measured points, cameras, source hashes and hairline boundaries locally. The fit uses a regularized smooth deformation with fixed neck/crown regions; it does not send photos to a cloud reconstruction service. The frontal reference is square and the profile crop is 3:4; their separate pixel aspect ratios are retained.
 
 ## Validation
+
+The tracking-outfit checks use the shipped GLB to verify wrist continuity, shared animated bones, exposed forearms, sleeve coverage, bounds and silver arrival through the reaching poses. Outfit checks cover entering directly at a saved mirror time and restoring office, pod and normal clothing. Patient checks probe both forearms and calves in pod, floating and recovery poses, confirm feet are present and that trousers no longer substitute for skin. Actual material appearance and the reflection still require browser review.
 
 `tests/character-asset.test.mts` loads the shipped character and office-outfit GLBs with Three.js. It checks bones, normalized weights, transparent eye surfaces, hand articulation, ground contact and finite mesh deformation through running, landing and punches. Office checks cover replacing the coat, sleeve/waist coverage, the posed mesh clearing the interrogation table, and Smith's arm/release-point contact. Meeting checks cover cabin headroom, scanner grips, suction contact with Neo's actual skinned torso, the scanner clearing Trinity's head at the window, and hands returning to the lap after the device is hidden. Browser inspection covers front/profile views, UV seams, hair, glasses, outfits and motion; these visual properties are not proven by the unit tests.
