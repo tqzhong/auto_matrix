@@ -1,3 +1,4 @@
+import { METACORTEX } from '@auto_matrix/shared';
 import { catchLocked, deusPactLocked, deusPactPose, reloadedPhaseLocked, smithFinaleLocked, smithFinalePose, trilogyEpilogueLocked } from '@auto_matrix/shared';
 import { reloadedCamera } from './ReloadedCamera.js';
 import * as THREE from 'three';
@@ -11,6 +12,7 @@ import { MORNING } from '@auto_matrix/shared';
 export class PlayerControls {
   id: string | null = null;
   firstPerson = false;
+  private inOfficeLift = false;
   private keys = new Set<string>();
   private yaw = 0;
   private movementYaw = 0;
@@ -366,6 +368,10 @@ export class PlayerControls {
     if (this.motion.lobbyEntry && !state.currentAction?.parameters.lobbyEntry) this.performing = false;
     if ((state.currentAction?.parameters.lobbyEntry as MotionInput['lobbyEntry'])?.phase === 'checkpoint') this.performing = true;
     if (phoneExit) this.performing = true;
+    const inOfficeLift = Boolean(state.currentAction?.parameters.metacortexLift);
+    if (this.inOfficeLift && !inOfficeLift) this.performing = false;
+    if (inOfficeLift) this.performing = true;
+    this.inOfficeLift = inOfficeLift;
     if (this.wasPerforming && !this.performing) this.yaw = this.movementYaw = this.facing;
     if (redPillEnded) this.yaw = this.movementYaw = this.facing = state.rotation;
     this.wasPerforming = this.performing;
@@ -1269,6 +1275,11 @@ export class PlayerControls {
       if (resetCamera || this.motion.farewell.elapsed < .12) this.camera.position.copy(ideal);
       else this.camera.position.lerp(ideal, 1 - Math.exp(-9 * delta));
       this.camera.lookAt(focus);
+    } else if (state.currentAction?.parameters.metacortexLift && !this.firstPerson) {
+      const ideal = target.clone().add(new THREE.Vector3(-Math.sin(this.yaw) * 1.8, .3 + Math.sin(this.pitch) * 1.4, -Math.cos(this.yaw) * 1.8));
+      ideal.x = THREE.MathUtils.clamp(ideal.x, METACORTEX.center.x - 2.65, METACORTEX.center.x + 2.65);
+      ideal.z = THREE.MathUtils.clamp(ideal.z, METACORTEX.center.z - 31.65, METACORTEX.center.z - 26.2);
+      this.camera.position.copy(ideal); this.camera.lookAt(target);
     } else if (this.firstPerson) {
       this.camera.position.copy(target);
       if (this.motion.grounded && this.motion.speed > .1) this.camera.position.y += Math.sin(this.cameraStep * 2) * .018;

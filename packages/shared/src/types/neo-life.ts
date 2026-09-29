@@ -8,6 +8,7 @@ export interface NeoCycle {
   choices: Record<string, string>; evidence: string[];
 }
 export interface NeoLifeState {
+  lift?: import('../constants/metacortex.js').MetacortexLift;
   journey?: import('../constants/film-story.js').FilmJourney;
   contactSignal?: boolean;
   deferredContact?: import('../constants/film-story.js').FilmJourney;

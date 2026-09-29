@@ -1,3 +1,4 @@
+import { METACORTEX, OFFICE_LEDGE_OFFSET, OFFICE_PATROLS, metacortexPosition } from '@auto_matrix/shared';
 import { ReloadedOpeningSystem } from './ReloadedOpeningSystem.js';
 import { ReloadedCatchSystem } from './ReloadedCatchSystem.js';
 import { newReloaded, reloadedLocked, ZION_CAST } from '@auto_matrix/shared';
@@ -1750,16 +1751,41 @@ export class FilmStorySystem {
     }
   }
   restoreOfficeSpace(): void {
-    const center = FILM_SETS.film_metacortex_floor.center; const ledge = FILM_SETS.film_office_ledge.center;
-    const migrate = (position: AgentState['position'] | undefined): boolean => {
-      if (!position || Math.abs(position.x - center.x - 320) > 44 || Math.abs(position.z - center.z) > 66) return false;
-      position.x += ledge.x - center.x - 320; position.z = center.z * 2 - position.z; return true;
+    const center = FILM_SETS.film_metacortex_floor.center;
+    const life = this.sandbox().neoLife;
+    const migrate = (position?: AgentState['position'] | null): boolean => {
+      if (!position || Math.abs(position.z - 4096) > 70) return false;
+      const oldLedge = Math.abs(position.x - 6016) < 45;
+      if (!oldLedge && Math.abs(position.x - 5696) > 75) return false;
+      position.x = oldLedge ? center.x + OFFICE_LEDGE_OFFSET + (position.x - 6016) : center.x + (position.x - 5696);
+      position.z = center.z + (oldLedge ? 4096 - position.z : position.z - 4096); position.y += center.y - 1;
+      return oldLedge;
     };
-    for (const agent of this.world.agents.values()) if (agent.currentLocation === 'film_office_ledge' && migrate(agent.position)) {
-      agent.rotation = Math.PI - agent.rotation; agent.velocity = { x: 0, y: 0, z: 0 }; agent.targetPosition = null; agent.currentPath = [];
+    for (const actor of this.world.agents.values()) if (actor.isInMatrix) {
+      if (migrate(actor.position)) actor.rotation = Math.PI - actor.rotation;
+      migrate(actor.targetPosition); actor.currentPath.forEach(migrate);
     }
-    migrate(this.state?.checkpoint); migrate(this.state?.returnPosition);
-    for (const item of [...this.sandbox().structures, ...this.sandbox().nodes, ...this.sandbox().threats]) migrate(item.position);
+    for (const journey of [life?.journey, life?.deferredContact]) {
+      migrate(journey?.checkpoint); migrate(journey?.returnPosition);
+      journey?.office?.searches?.forEach(search => migrate(search?.position));
+    }
+    migrate(life?.activity?.position); migrate(life?.anomaly?.position); migrate(life?.lastStreetPosition);
+    for (const item of [...this.sandbox().structures, ...this.sandbox().nodes, ...this.sandbox().threats]) if (item.matrix) migrate(item.position);
+    OFFICE_PATROLS.forEach((route, i) => {
+      const guard = this.sandbox().threats.find(t => t.id === `office:${i}` && t.patrol);
+      if (guard && Math.abs(guard.position.x - center.x) < 4.4 && Math.abs(guard.position.y - center.y) < 2
+        && guard.position.z - center.z < -24.5 && guard.position.z - center.z > -34) {
+        guard.position = metacortexPosition(route[0].x, route[0].z, 1);
+      }
+    });
+    for (const profile of Object.values(this.sandbox().profiles)) migrate(profile.job?.position);
+    const neo = this.world.agents.get('neo');
+    if (life?.activity && !life.journey && ['work', 'coworker'].includes(life.activity.id) && neo?.isInMatrix
+      && neo.currentLocation === 'metacortex_office' && neo.position.y < 8 && distance(neo.position, metacortexPosition()) < 40) {
+      const point = life.activity.id === 'work' ? metacortexPosition(14, 6.7, 1) : metacortexPosition(0, 17, 1);
+      neo.position = { ...point }; life.activity.position = { ...point };
+      life.lift = { floor: 1, target: 1, phase: 'idle', elapsed: 0 };
+    }
   }
   windowFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
@@ -4186,6 +4212,11 @@ export class FilmStorySystem {
         this.place(agent, this.scene, { ...state.checkpoint }); this.wakeCallFrame(agent, 0, tick);
         return '已接回公寓来电，保留惊醒、听筒和对话进度。';
       }
+      if (state.scene === 'm1_commute') {
+        delete state.visiting; delete state.returnPosition; agent.status = 'alive'; agent.health = agent.maxHealth;
+        agent.position = { ...state.checkpoint }; agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentAction = null;
+        return '已接回通勤途中，保留电梯位置与进度。';
+      }
       if (state.scene === 'm1_boss' && state.workday) {
         agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
         agent.position = { ...state.checkpoint }; this.workdayFrame(agent, 0, tick); this.phoneFrame(agent, 0, tick);
@@ -4324,13 +4355,7 @@ export class FilmStorySystem {
       if (state.scene === 'm1_wake_up' && next.id === 'm1_club') {
         this.elapse(this.world.timeOfDay >= 6000 && this.world.timeOfDay < 20500 ? (20500 - this.world.timeOfDay) * .06 : 20, tick);
       } else if (state.scene === 'm1_club' && next.id === 'm1_morning') this.elapse(20, tick);
-      else if (state.scene === 'm1_morning' && next.id === 'm1_boss') {
-        const transit = life.money >= 2;
-        if (transit) life.money -= 2;
-        this.elapse(transit ? 20 : 40, tick);
-        life.journal.unshift({ day: life.day, time: this.world.timeOfDay, title: '迟到的通勤', text: transit ? '花费 $2，乘坐公共交通 20 分钟到公司。' : '零钱不够，步行 40 分钟到公司。' });
-      }
-      const sameRoom = state.scene === 'm1_pills' && next.id === 'm1_mirror' || state.scene === 'm2_merovingian' && next.id === 'm2_persephone'
+      const sameRoom = state.scene === 'm1_morning' && next.id === 'm1_commute' || state.scene === 'm1_commute' && next.id === 'm1_boss' || state.scene === 'm1_pills' && next.id === 'm1_mirror' || state.scene === 'm2_merovingian' && next.id === 'm2_persephone'
         || state.scene === 'm3_mobil' && next.id === 'm3_family' || state.scene === 'm3_family' && next.id === 'm3_trainman'
         || state.scene === 'm3_hel_entry' && next.id === 'm3_hel_bargain';
       const position = sameRoom || state.scene === 'm1_boss' && next.id === 'm1_office_escape' ? { ...agent.position } : undefined;
@@ -5644,6 +5669,11 @@ export class FilmStorySystem {
     if (state.theOne && ['m1_death', 'm1_return', 'm1_final_call'].includes(state.scene)) return;
     const step = this.step; if (!step) return;
     if (state.scene === 'm1_wake_up' || state.scene === 'm1_morning') { delete state.started; return; }
+    if (state.scene === 'm1_commute' && state.step === 1) {
+      delete state.started; const lift = this.sandbox().neoLife?.lift;
+      if (lift?.floor === 1 && lift.phase === 'idle' && distance(actor.position, metacortexPosition(0, METACORTEX.liftZ, 1)) < 3) this.advance('电梯到站。走出轿厢，去主管办公室。', actor, tick);
+      return;
+    }
     if (state.scene === 'm1_boss' && state.step === 1) { delete state.started; return; }
     if (this.performing(actor)) return;
     if (this.climbing(actor)) return;

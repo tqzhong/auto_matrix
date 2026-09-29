@@ -1,3 +1,4 @@
+import { METACORTEX, metacortexPosition } from './metacortex.js';
 import { FILM_SETS, filmPosition } from './film-sets.js';
 import { CONSTRUCT_REVEAL, MIRROR_TOUCH, RECOVERY_BED } from './awakening.js';
 import type { Vector3 } from '../types/agent.js';
@@ -194,7 +195,12 @@ export const FILM_SCENES: FilmScene[] = [
   scene('m1_morning', 1, 'anderson_flat', 'neo', '闹钟之后', 'contact', 'night', '夜店之后，Neo 回到自己的公寓。窗外的夜色会在休息后变成白天；闹钟响起时，普通生活仍在等他。', [
     use('走到床边，决定休息', '在 101 房间睡下，恢复体力，时间推进到早晨。', APARTMENT.bedside.x, APARTMENT.bedside.z),
     use('关掉床头闹钟，起床', '09:15。赶去公司时，迟到已经成为事实。', MORNING.bedX, APARTMENT.bed.z),
-    use('穿过楼道，在街边准备通勤', '公共交通需要 20 分钟和 $2；零钱不足则步行 40 分钟。', MORNING.exit.x, MORNING.exit.z),
+    use('穿过楼道，在街边准备通勤', '出门后沿城市街道步行去公司，进入大堂再乘电梯。', MORNING.exit.x, MORNING.exit.z),
+  ]),
+  scene('m1_commute', 1, 'metacortex_floor', 'neo', '去公司的路', 'contact', 'office', '沿街走到 Metacortex，穿过一层大堂，乘电梯上楼。日常上班与陌生来电发生在同一间办公室。', [
+    walk('走进 Metacortex 一层大堂', 0, 24),
+    use('进入电梯，按 G 前往开发部', '走进开门的轿厢，再按 G。等待关门、上行和开门。', 0, METACORTEX.liftZ),
+    walk('走出电梯，前往办公区', 0, -20),
   ]),
   scene('m1_boss', 1, 'metacortex_floor', 'neo', '迟到的员工', 'office_call', 'office', '第二天的公司仍然井然有序。主管提醒 Anderson 遵守规则。', [use('进入主管办公室', '规章要求你按时出现。平常的一天开始显露出另一种压力。', -17, 27.4), use('回隔间签收快递，再取出手机', '来电者是 Morpheus。特工已经进入办公区，接下来必须按他的指引离开工位。', OFFICE_CONTACT.x, OFFICE_CONTACT.z)], ['rhineheart', 'courier']),
   scene('m1_office_escape', 1, 'metacortex_floor', 'neo', '隔间之间', 'office_call', 'infiltration', '手机保持接通。按住 Z 降低身体、放轻脚步，借隔间挡住视线；奔跑会惊动附近特工。被捕也会继续故事。', [walk('绕到左侧隔间后', -16, 11), walk('沿隔间向北移动', -16, -13), use('打开左前方外窗', '外窗已经推开。脚下的街道远在楼底，窗外的维修窄台通向脚手架。按 G 前往窄台。', OFFICE_WINDOW.approachX, OFFICE_WINDOW.approachZ, OFFICE_WINDOW.seconds)]),
@@ -434,6 +440,7 @@ export function oracleActing(journey: FilmJourney): boolean {
 }
 export function filmStepPosition(scene: FilmScene, step: FilmStep): Vector3 {
   const position = filmPosition(scene.set, step.x, step.z);
+  if (scene.id === 'm1_commute' && step !== scene.steps[2]) position.y = METACORTEX.center.y;
   if (scene.id === 'm2_trucks') position.y += TRUCKS.roof.height;
   if (scene.id === 'm2_chateau' && step.z < -30) position.y += 10;
   if (scene.id === 'm1_pod' && step.z === 12) position.y -= 18;
@@ -456,6 +463,7 @@ export function filmEntry(scene: FilmScene): Vector3 {
   if (scene.id === 'm2_room') return filmPosition(scene.set, 0, 8);
   if (scene.id === 'm2_oracle_message') return filmPosition(scene.set, 0, 0);
   if (scene.id === 'm1_wake_up') return filmPosition(scene.set, 0, 1);
+  if (scene.id === 'm1_commute') return metacortexPosition(0, 40);
   if (scene.id === 'm1_morning') return filmPosition(scene.set, 0, 6);
   if (scene.id === 'm1_wake_again') return filmPosition(scene.set, APARTMENT.bed.x, APARTMENT.bed.z);
   if (scene.id === 'm1_ledge') return filmPosition(scene.set, 0, OFFICE_WINDOW.z);

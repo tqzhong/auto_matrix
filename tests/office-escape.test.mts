@@ -343,11 +343,12 @@ test('an old isolated-ledge save migrates its player and checkpoint once, retain
   const center = FILM_SETS.film_metacortex_floor.center;
   h.state().scene = 'm1_ledge'; h.state().step = 1; h.state().office!.climbed = 16;
   h.neo().currentLocation = 'film_office_ledge';
-  h.neo().position = { x: center.x + 320 - 3.45, y: center.y - 16, z: center.z - 26 };
-  h.state().checkpoint = { x: center.x + 320, y: center.y, z: center.z - 26 };
+  h.neo().position = { x: 6016 - 3.45, y: 1 - 16, z: 4096 - 26 };
+  h.state().checkpoint = { x: 6016, y: 1, z: 4096 - 26 };
   h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
   const position = { ...h.neo().position };
-  assert.deepEqual(position, { ...filmPosition('film_office_ledge', -3.45, 26), y: center.y - 16 });
+  const expected = { ...filmPosition('film_office_ledge', -3.45, 26), y: center.y - 16 };
+  assert.ok(Math.hypot(position.x - expected.x, position.y - expected.y, position.z - expected.z) < 1e-6);
   assert.deepEqual(h.state().checkpoint, filmPosition('film_office_ledge', 0, 26));
   assert.equal(h.state().office!.climbed, 16);
   h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));

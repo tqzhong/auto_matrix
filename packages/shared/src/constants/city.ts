@@ -1,3 +1,4 @@
+import { METACORTEX_LOBBY } from './metacortex.js';
 import { LOCATIONS } from './locations.js';
 import { LIFE_ROOMS, lifeRoomCenter } from './life-world.js';
 import { FILM_SETS, filmSetAt, filmBlocked, filmGroundHeight } from './film-sets.js';
@@ -72,6 +73,8 @@ export function cityBuildings(): CityBuilding[] {
       height: location.id === 'metacortex_office' ? 110 : location.id === 'architects_chamber' ? 160 : Math.max(12, max.y - min.y),
       width: max.x - min.x, depth: max.z - min.z, variant: 0, location: location.id });
   }
+  // Infill opposite Metacortex keeps the real city visible through its upper windows.
+  for (const [x, z, width, depth, height] of [[1080, 820, 36, 26, 118], [1000, 760, 40, 32.8, 99], [1000, 920, 38, 30, 112]]) buildings.push({ x, z, width, depth, height, variant: 2 });
   buildings.push({ x: locationEntrance('rooftop_A').x, z: locationEntrance('rooftop_A').z - 12, width: 44, depth: 55, height: 50, variant: 0, location: 'rooftop_A' });
   return buildings;
 }
@@ -122,6 +125,7 @@ export function playerBlocked(position: Vector3, matrix: boolean, radius = 1.1, 
     const room = building.location ? LIFE_ROOMS[building.location] : undefined;
     if (!room || position.y >= 8) return true;
     const center = lifeRoomCenter(building.location!)!;
+    if (building.location === 'metacortex_office' && METACORTEX_LOBBY.some(o => Math.abs(position.x - center.x - o.x) < o.width / 2 + radius && Math.abs(position.z - center.z - o.z) < o.depth / 2 + radius)) return true;
     const inside = Math.abs(position.x - center.x) < room.width / 2 - radius - .4 && position.z > center.z - room.depth / 2 + radius + .4;
     const atDoor = Math.abs(position.x - center.x) < 5 - radius;
     return !inside || position.z > center.z + room.depth / 2 - radius - .4 && !atDoor;

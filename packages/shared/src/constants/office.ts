@@ -2,6 +2,7 @@ import type { Vector3 } from '../types/agent.js';
 import { rayBox } from './lobby.js';
 import type { FilmJourney } from './film-story.js';
 import { OFFICE_MANAGER_FURNITURE } from './office-workday.js';
+import { METACORTEX_SHAFT } from './metacortex.js';
 
 export const OFFICE_CONTACT = { x: 14, z: 6.7, parcelX: 14.5, parcelZ: 5.31, pickupSeconds: 2.2, answerSeconds: 11 };
 export interface OfficePhone { phase: 'pickup' | 'ready' | 'answering' | 'connected'; elapsed: number }
@@ -68,9 +69,9 @@ export const OFFICE_OBSTACLES = OFFICE_DESKS.flatMap(({ x, z }) => [
   { x, z: z - 2, width: 8, depth: 3, height: 2.5, kind: 'desk' as const },
 ]);
 export const OFFICE_PATROLS = [
-  [{ x: 0, z: -25 }, { x: OFFICE_CONTACT.x, z: OFFICE_CONTACT.z }],
-  [{ x: 3, z: -28 }, { x: 24, z: 20 }],
-  [{ x: -3, z: -28 }, { x: 0, z: 20 }],
+  [{ x: 0, z: -23 }, { x: OFFICE_CONTACT.x, z: OFFICE_CONTACT.z }],
+  [{ x: 3, z: -23 }, { x: 24, z: 20 }],
+  [{ x: -3, z: -23 }, { x: 0, z: 20 }],
 ];
 export interface OfficeEncounter {
   alert: number;
@@ -96,7 +97,7 @@ export function officeOccluded(from: Vector3, to: Vector3, center: Vector3): boo
   if (length < .001) return false;
   const direction = { x: (to.x - from.x) / length, y: (to.y - from.y) / length, z: (to.z - from.z) / length };
   const start = { x: from.x - center.x, y: from.y - center.y + 1, z: from.z - center.z };
-  return [...OFFICE_OBSTACLES, ...OFFICE_MANAGER_FURNITURE].some(o => {
+  return [...OFFICE_OBSTACLES, ...OFFICE_MANAGER_FURNITURE, ...METACORTEX_SHAFT].some(o => {
     const hit = rayBox(start, direction, { x: o.x - o.width / 2, y: 0, z: o.z - o.depth / 2 },
       { x: o.x + o.width / 2, y: o.height, z: o.z + o.depth / 2 });
     return hit !== undefined && hit < length;

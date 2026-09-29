@@ -101,15 +101,19 @@ function completeContactAndClub(h: Harness) {
   h.command('act'); h.frames(7); assert.equal(h.state().morning?.phase, 'ready');
   h.walkLocal('film_anderson_flat', 0, 2); h.walkLocal('film_anderson_flat', 0, 23);
   h.command('act'); h.command('next');
+  assert.equal(h.state().scene, 'm1_commute');
+  for (const [x, z] of [[1210, 720], [1200, 720], [1200, 880], [1140, 880], [1140, 851], [1140, 798]]) h.walk({ x, y: 1, z });
+  h.frames(.5); h.command('act'); h.frames(4); h.reload(); h.frames(10);
+  h.walkLocal('film_metacortex_floor', 0, -20); h.frames(.5); h.command('next');
   assert.equal(h.state().scene, 'm1_boss'); h.reload(); assert.equal(h.state().scene, 'm1_boss');
   assert.equal(h.sandbox.state.neoLife!.choices.white_rabbit, 'follow');
   assert.equal(h.sandbox.state.neoLife!.choices['m1_club:2'], 'trust');
-  assert.equal(h.sandbox.state.neoLife!.money, cash + 1998);
+  assert.equal(h.sandbox.state.neoLife!.money, cash + 2000);
 }
 
 function completeWorkday(h: Harness) {
   assert.equal(h.state().scene, 'm1_boss');
-  for (const [x, z] of [[-11, 20.5], [-11, 26], [-17, 27.4]]) h.walkLocal('film_metacortex_floor', x, z);
+  for (const [x, z] of [[0, 20.5], [-11, 20.5], [-11, 26], [-17, 27.4]]) h.walkLocal('film_metacortex_floor', x, z);
   h.command('act'); h.frames(10); assert.equal(h.state().workday?.phase, 'answer'); h.command('act');
   for (const [x, z] of [[-11, 26], [-11, 20.5], [0, 20.5], [8, 20.5], [8, 11], [14, 11], [14, 6.7]]) h.walkLocal('film_metacortex_floor', x, z);
   h.command('act'); h.frames(11); assert.equal(h.state().workday?.phase, 'signature');
@@ -197,6 +201,11 @@ test('P0 runs continuously from daily contact through capture, tracker removal a
   const h = setup(); completeContactAndClub(h); completeWorkday(h);
   for (const [x, z] of [[-16, 11], [-8, 11], [-8, -13], [-16, -13], [-8, -13], [-8, -24], [-24, -27]]) {
     if (!h.walkLocal('film_metacortex_floor', x, z, undefined, { sprint: true, stopOnCapture: true })) break;
+  }
+  for (let i = 0; i < 400 && !h.state().office?.outcome; i++) {
+    const guard = h.sandbox.state.threats.filter(t => t.patrol).sort((a, b) => Math.hypot(a.position.x - h.neo.position.x, a.position.z - h.neo.position.z) - Math.hypot(b.position.x - h.neo.position.x, b.position.z - h.neo.position.z))[0];
+    const dx = guard.position.x - h.neo.position.x, dz = guard.position.z - h.neo.position.z; const gap = Math.max(1, Math.hypot(dx, dz));
+    h.frame({ x: dx / gap, z: dz / gap, yaw: Math.atan2(dx, dz), sprint: true });
   }
   assert.equal(h.state().office?.outcome, 'captured'); h.command('next'); assert.equal(h.state().scene, 'm1_interrogation');
   h.walk(filmStepPosition(FILM_SCENE_BY_ID.m1_interrogation, FILM_SCENE_BY_ID.m1_interrogation.steps[0]));

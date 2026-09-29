@@ -1,3 +1,4 @@
+import { metacortexLiftLocked } from '@auto_matrix/shared';
 import { RELOADED, HEL_COATCHECK } from '@auto_matrix/shared';
 import { LOCATIONS, heldPhone, pillLocked, lobbyLocked, governmentLocked, airRescueLocked, filmSetAt, FILM_SETS, FILM_CAST, NEO_CAST, neoSkillUnlocked, insideLifeRoom, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, rescueLoadout, rescueLocked, COMBAT_SKILLS, playerSkills, dodgeDirection, combatDisplace, groundHeight, meleeReach, distance, locationEntrance, playerBlocked, stepPlayer, type AgentState, type PlayerInput, type SandboxCommand, type SkillCast, type Vector3, type CombatSkillId } from '@auto_matrix/shared';
 import type { SandboxSystem } from './SandboxSystem.js';
@@ -127,7 +128,7 @@ export class PlayerController {
     }
     agent.controller = 'player';
     this.sandbox?.enter(agent);
-    if (!this.sandbox?.life.film.performing(agent) && playerBlocked(agent.position, agent.isInMatrix)) agent.position = locationEntrance(agent.currentLocation);
+    if (!(agent.id === 'neo' && metacortexLiftLocked(this.sandbox?.state.neoLife?.lift)) && !this.sandbox?.life.film.performing(agent) && playerBlocked(agent.position, agent.isInMatrix)) agent.position = locationEntrance(agent.currentLocation);
     agent.currentAction = null; agent.targetPosition = null; agent.currentPath = [];
     agent.velocity = { x: 0, y: 0, z: 0 };
     this.sessions.set(socketId, { agentId: id, input: { ...idleInput(), yaw: agent.rotation }, lastInput: Date.now(), vy: 0, planar: { x: 0, z: 0 }, lastAttack: 0, combo: 0, stagger: 0 });
@@ -142,6 +143,7 @@ export class PlayerController {
     this.sandbox?.life.film.apartmentFrame(agent, 0, tick);
     this.sandbox?.life.film.clubFrame(agent, 0, tick);
     this.sandbox?.life.film.morningFrame(agent, 0, tick);
+    this.sandbox?.life.liftFrame(agent, 0, tick);
     this.sandbox?.life.film.persephoneFrame(agent, 0, tick);
     this.sandbox?.life.film.keymakerFrame(agent, 0, tick);
     this.sandbox?.life.film.sentinelFrame(agent, { movement: 0, sprint: false, jump: false }, 0, tick);
@@ -180,6 +182,7 @@ export class PlayerController {
       this.sandbox?.life.film.apartmentFrame(agent, 0, tick);
       this.sandbox?.life.film.clubFrame(agent, 0, tick);
       this.sandbox?.life.film.morningFrame(agent, 0, tick);
+      this.sandbox?.life.liftFrame(agent, 0, tick);
       this.sandbox?.life.film.persephoneFrame(agent, 0, tick);
       this.sandbox?.life.film.keymakerFrame(agent, 0, tick);
       this.sandbox?.life.film.interludeFrame(agent, 0, tick);
@@ -253,6 +256,9 @@ export class PlayerController {
       this.sandbox?.life.film.apartmentFrame(agent, dt, tick);
       this.sandbox?.life.film.clubFrame(agent, dt, tick);
       this.sandbox?.life.film.morningFrame(agent, dt, tick);
+      if (this.sandbox?.life.liftFrame(agent, dt, tick)) {
+        agent.rotation = input.yaw; session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
       if (this.sandbox?.life.film.persephoneFrame(agent, dt, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
@@ -409,6 +415,7 @@ export class PlayerController {
       if (journey?.actor === agent.id && journey.scene === 'm1_bridge' && set?.id === 'film_extraction_car') set = FILM_SETS.film_adams_bridge;
       else if (journey?.actor === agent.id && journey.scene === 'm1_bug' && set?.id === 'film_adams_bridge') set = FILM_SETS.film_extraction_car;
       if (set?.id === 'film_anderson_flat' && !(journey?.actor === agent.id && (journey.scene === 'm1_wake_up' || journey.scene === 'm1_wake_again' || journey.scene === 'm1_morning' || journey.visiting))) agent.currentLocation = 'neo_apartment';
+      else if (set?.id === 'film_metacortex_floor' && !journey) agent.currentLocation = 'metacortex_office';
       else if (set) agent.currentLocation = set.id;
       else if (room) agent.currentLocation = room;
       else if (nearbyLocation) agent.currentLocation = nearbyLocation.id;
@@ -450,6 +457,7 @@ export class PlayerController {
     }
     if (this.sandbox?.life.film.controls(agent) && this.sandbox.life.film.state?.scene === 'm3_hel_bargain'
       && ['attack', 'shoot', 'ability', 'ability2', 'dodge'].includes(kind)) return '人群封住了射线。按当前剧情提示行动，不能用普通攻击跳过谈判。';
+    if (agent.id === 'neo' && metacortexLiftLocked(this.sandbox?.state.neoLife?.lift)) return '电梯运行中，请等候到站。';
     if (this.sandbox?.life.film.performing(agent) && kind !== 'interact') return '演出进行中，可以转动视角观察；进度会自动保存。';
     if (this.sandbox?.life.film.state && sentinelActive(this.sandbox.life.film.state) && ['attack', 'shoot', 'ability', 'ability2', 'dodge', 'travel'].includes(kind)) return '哨兵正在附近扫描。保持安静，武器和能力会暴露整艘船。';
     if (this.sandbox?.life.film.driving(agent) && ['attack', 'shoot', 'ability', 'ability2', 'dodge', 'travel'].includes(kind)) return this.sandbox.life.film.state?.scene === 'm3_hammer_tunnels'

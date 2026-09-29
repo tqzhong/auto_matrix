@@ -1,3 +1,4 @@
+import { nearMetacortexLift, metacortexLiftLocked } from '@auto_matrix/shared';
 import { CATCH, RELOADED, RELOADED_FINALE, HEL_COATCHECK, catchText, reloadedText } from '@auto_matrix/shared';
 import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_NAMES, filmReflections, GRID_HACK_SECONDS, GRID_REROUTE_SECONDS, HEL_ELEVATOR, HEL_DANCE_DOOR, filmStepPosition, filmStepActionReady, helElevatorLocked, helDanceDoorLocked, pillLocked, lafayetteWelcomeLocked, awakeningLocked, awakeningWaiting, AWAKENING_SECONDS, MIRROR_TOUCH, MIRROR_TIMING, mirrorGuidePose, PILL_ROOM, trainingLocked, trainingWaiting, TRAINING_SECONDS, DOJO_COMBO_WINDOW, windowOpening, windowCrossing, dockPowerOffline, ITEMS, RECIPES, SKILLS, FILMS, MISSIONS, LOCATIONS, CITY_BUILDINGS, NEO_CHAPTERS, LIFE_ACTIONS, lifeActionPosition, lifeRoomCenter, locationEntrance, distance, missionPosition, nearTransit, skillPoints,
   type AgentState, type SandboxState, type SandboxCommand, type ItemId, type SkillId, type Vector3 } from '@auto_matrix/shared';
@@ -113,6 +114,7 @@ export class SandboxUI {
       else this.send({ kind: 'life', target: `film:${step ? 'act' : 'next'}` });
       return;
     }
+    if (this.player?.id === 'neo' && this.state?.neoLife && this.player.isInMatrix && nearMetacortexLift(this.player.position)) { this.send({ kind: 'life', target: 'lift' }); return; }
     if ((this.player?.id === 'neo' || this.player?.id === this.state?.neoLife?.journey?.actor) && this.state?.neoLife) { this.open('journal'); return; }
     const node = this.state?.nodes.find(n => n.id === this.nearest);
     if (node?.kind === 'phone') { this.open('map'); return; }
@@ -162,7 +164,10 @@ export class SandboxUI {
     this.el('sandbox-nearby').textContent = profile.job ? '正在破解 · 移动将中断' : nearest ? `${nearest.name}${'availableAt' in nearest && nearest.availableAt > tick ? ` · ${Math.ceil((nearest.availableAt - tick) / 2)} 秒后恢复` : ''}` : '';
     this.el('sandbox-job').style.width = profile.job ? `${Math.min(100, (tick - profile.job.startedAt) / (profile.job.endsAt - profile.job.startedAt) * 100)}%` : '0';
     if (life?.journey) { this.updateFilm(player, state); this.drawMinimap(); this.renderPanel(); return; }
-    if (life && chapter) {
+    if (life && !life.journey && player.isInMatrix && (nearMetacortexLift(player.position) || metacortexLiftLocked(life.lift))) {
+      this.el('sandbox-interact').classList.remove('hidden');
+      this.el('sandbox-nearby').textContent = metacortexLiftLocked(life.lift) ? '电梯运行中 · 请等候到站' : '电梯 · 门外呼叫 / 轿厢内乘梯';
+    } else if (life && chapter) {
       const nearbyLife = LIFE_ACTIONS.find(a => a.location && player.isInMatrix && distance(player.position, lifeActionPosition(a)) < 10);
       const storyPosition = chapter.mission ? missionPosition(chapter.mission) : lifeRoomCenter(chapter.location) ?? locationEntrance(chapter.location);
       const nearStory = life.chapter > 0 && player.isInMatrix === (LOCATIONS[chapter.location].world === 'matrix') && distance(player.position, storyPosition) < 16;
@@ -808,11 +813,20 @@ export class SandboxUI {
       const canAct = phase === 'alarm' || phase === 'done' || phase === 'home' && close
         || phase === 'ready' && close && player.position.z >= FILM_SETS[scene.set].center.z + 20;
       this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
-      this.el('film-sequence-hint').textContent = phase === 'alarm' ? 'G 关掉闹钟并起床 · V 切换视角' : locked ? '休息与起身进度会保存 · V 切换视角' : phase === 'done' ? 'G 去公司 · 交通费用与时间将在出发时结算' : 'WASD 自由走动 · 靠近目标按 G · J 生活手记';
+      this.el('film-sequence-hint').textContent = phase === 'alarm' ? 'G 关掉闹钟并起床 · V 切换视角' : locked ? '休息与起身进度会保存 · V 切换视角' : phase === 'done' ? 'G 开始步行通勤 · 沿街去公司，再从大堂乘电梯' : 'WASD 自由走动 · 靠近目标按 G · J 生活手记';
       this.el('sandbox-interact').classList.toggle('hidden', !canAct);
       this.el('sandbox-nearby').textContent = phase === 'alarm' ? '关掉闹钟并起床' : phase === 'done' ? '去公司' : step?.label ?? '';
       if (locked || !step) this.el('sandbox-waypoint').textContent = '';
       document.getElementById('game-objective-copy')!.textContent = journey.lastText;
+      return;
+    }
+    if (!journey.visiting && scene.id === 'm1_commute') {
+      const lift = state.neoLife!.lift; const busy = lift && lift.phase !== 'idle';
+      this.el('film-sequence').classList.remove('hidden');
+      this.el('film-sequence-line').textContent = busy ? lift.phase === 'closing' ? '电梯正在关门。' : lift.phase === 'travel' ? '电梯正在上行，开发部在八层。' : '已到达开发部，等待电梯门打开。' : step?.label ?? '你已来到开发部。';
+      this.el('film-sequence-hint').textContent = busy ? '鼠标环顾 · V 切换视角 · 暂停或退出会保存当前楼层与动作' : journey.step === 1 ? '先进入轿厢，再按 G 乘梯；门未开时在门外按 G 呼叫' : 'WASD 步行 · 沿金色目标前进 · J 查看手记';
+      if (journey.step === 1) this.el('sandbox-interact').classList.toggle('hidden', Boolean(busy) || !nearMetacortexLift(player.position));
+      if (busy) this.el('sandbox-waypoint').textContent = '';
       return;
     }
     if (!journey.visiting && journey.scene === 'm1_wake_again' && journey.wakeCall) {

@@ -500,7 +500,8 @@ export class FilmSetRenderer {
     }
     this.oracleVase?.update(sceneId === 'm1_oracle' ? journey?.visiting || journey!.step > 0 ? 4.5 : journey?.oracle?.vase : undefined);
     const scene = journey && FILM_SCENE_BY_ID[journey.scene]; const step = scene?.steps[journey!.step];
-    this.marker.visible = Boolean(set && scene?.set === set.id && step && !journey?.visiting && journey?.actor === player?.id);
+    this.marker.visible = Boolean((set && scene?.set === set.id || scene?.id === 'm1_commute' && player?.isInMatrix) && step && !journey?.visiting && journey?.actor === player?.id);
+    if (scene?.id === 'm1_commute' && sandbox?.neoLife?.lift?.passenger) this.marker.visible = false;
     if (helElevatorLocked(journey) || helDanceDoorLocked(journey)) this.marker.visible = false;
     if (['m1_lobby', 'm3_hel_entry'].includes(journey?.scene ?? '') && journey?.fighting) this.marker.visible = false;
     if (journey?.scene === 'm2_burly' && !['ready', 'staff_ready', 'flight_ready'].includes(journey.burly?.phase ?? 'ready')) this.marker.visible = false;
@@ -557,7 +558,7 @@ export class FilmSetRenderer {
     return set;
   }
   atmosphere(): { color: number; ambient: number; sun: number } | undefined {
-    if (!this.current || this.current.id === 'film_anderson_flat') return;
+    if (!this.current || ['film_anderson_flat', 'film_metacortex_floor', 'film_office_ledge'].includes(this.current.id)) return;
     const palette = palettes[this.current.light];
     (this.scene.background as THREE.Color).setHex(palette.sky);
     const fog = this.scene.fog as THREE.FogExp2; fog.color.setHex(palette.sky); fog.density = palette.fog;

@@ -787,9 +787,9 @@ test('the repeated cat seals the old exit, leaves the service passage open and p
   const barriers = h.sandbox.state.structures.filter(s => s.film?.scene === 'm1_dejavu'); assert.equal(barriers.length, 2);
   h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
   h.command('retry'); assert.equal(playerBlocked(door, true, 1.1, h.sandbox.state.structures), true);
-  assert.equal(h.sandbox.state.structures.filter(s => s.film).length, 2, 'loading and retry cannot duplicate the sealed windows');
+  assert.equal(h.sandbox.state.structures.filter(s => s.film?.scene === 'm1_dejavu').length, 2, 'loading and retry cannot duplicate the sealed windows');
   h.sandbox.life.begin(h.world.agents.get('neo')!, h.tick(), true);
-  assert.equal(h.sandbox.state.structures.filter(s => s.film).length, 0, 'a new cycle restores the original building');
+  assert.equal(h.sandbox.state.structures.filter(s => s.film?.scene === 'm1_dejavu').length, 0, 'a new cycle restores the original building');
 });
 
 test('ambush enemies can approach beside the sealed door without trying to dismantle the building', () => {
@@ -797,14 +797,14 @@ test('ambush enemies can approach beside the sealed door without trying to disma
   Object.assign(state, { scene: scene.id, actor: 'neo', step: 0 });
   h.actor().position = filmStepPosition(scene, scene.steps[0]); h.actor().currentLocation = scene.set;
   h.command('act'); for (let frame = 0; frame < 100; frame++) h.players.step(.1, true, h.tick());
-  assert.equal(h.sandbox.state.structures.filter(s => s.film).length, 2);
+  assert.equal(h.sandbox.state.structures.filter(s => s.film?.scene === 'm1_dejavu').length, 2);
   h.command('act'); h.advance();
   const center = FILM_SETS[scene.set].center;
   h.actor().position = { ...center, z: center.z - 18 };
   h.sandbox.state.threats.forEach((threat, i) => { threat.position = { ...center, x: center.x + i, z: center.z - 10 }; threat.stunUntil = 0; });
   h.advance(6);
   assert.ok(h.sandbox.state.threats.every(threat => Math.hypot(threat.position.x - h.actor().position.x, threat.position.z - h.actor().position.z) < 3.4), 'nearby film brickwork must not stop enemies several metres from the player');
-  assert.ok(h.sandbox.state.structures.every(s => !s.film || s.health === 1));
+  assert.ok(h.sandbox.state.structures.every(s => s.film?.scene !== 'm1_dejavu' || s.health === 1));
 });
 
 test('canonical losses persist across scene transitions, loading and character selection', () => {
@@ -2550,6 +2550,10 @@ test('the entire film route completes through interactions, driving and real com
             h.players.receiveInput('film-player', { x: 0, z: 0, yaw: h.actor().rotation, jump: false, sprint: false, focus: true, sequence: ++sequence });
             h.players.step(.1, true, h.tick());
           }
+        }
+        else if (scene.id === 'm1_commute' && index === 1) {
+          for (let frame = 0; frame < 125; frame++) h.players.step(.1, true, h.tick());
+          h.advance();
         }
         else if (scene.id === 'm1_morning') {
           for (let frame = 0; frame < 75 && state.step === index; frame++) h.players.step(.1, true, h.tick());

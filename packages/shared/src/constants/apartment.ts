@@ -70,8 +70,8 @@ export function morningText(morning: MorningRoutine): string {
     case 'alarm': return '09:15。闹钟还在响——已经迟到了。按 G 伸手关掉闹钟，起床去公司。';
     case 'stopping': return 'Neo 伸手按下床头闹钟。';
     case 'rising': return '他坐起身，双脚落地，离开床边。今天仍然要去上班。';
-    case 'ready': return '走出 101，穿过楼道来到街边，按 G 选择出发。公共交通需要 20 分钟和 $2；零钱不足则步行 40 分钟。';
-    case 'done': return '你已来到街边。G 前往公司：公共交通 20 分钟 / $2，零钱不足则步行 40 分钟。';
+    case 'ready': return '走出 101，穿过楼道来到街边，按 G 选择出发。出发后沿街步行去 Metacortex，再从大堂乘电梯上楼。';
+    case 'done': return '你已来到街边。按 G 开始步行通勤，路程由你亲自完成。';
   }
 }
 export function wakeCallRoot(call: WakeCall): { x: number; z: number; yaw: number } {

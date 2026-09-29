@@ -185,7 +185,7 @@ export class OfficeSetRenderer {
       const n = 92 + (x * 17 + y * 31 + x * y) % 36; ctx.fillStyle = `rgb(${n},${n},${n - 7})`; ctx.fillRect(x, y, 2, 2);
     }
     const map = new THREE.CanvasTexture(canvas); map.wrapS = map.wrapT = THREE.RepeatWrapping; map.repeat.set(18, 22); map.colorSpace = THREE.SRGBColorSpace; this.textures.push(map); carpet.map = map;
-    this.box(carpet, 0, -.2, 0, 54, .4, 66);
+    for (const [x, z, w, d] of [[-15.3, 0, 23.4, 66], [15.3, 0, 23.4, 66], [0, 3.7, 7.2, 58.6]]) this.box(carpet, x, -.2, z, w, .4, d);
     this.box(wall, 0, 9.3, 0, 54, .4, 66);
     this.box(wall, 27, 4.5, 0, .5, 9, 66); this.box(wall, 0, 4.5, -33, 54, 9, .5); this.box(wall, 0, 4.5, 33, 54, 9, .5);
     const sky = this.mat(0xa8bdc1, .3); sky.emissive.setHex(0x586b70); sky.emissiveIntensity = .3;
@@ -209,7 +209,6 @@ export class OfficeSetRenderer {
         this.box(frame, -26.7, 6, z, .4, .14, width);
       }
     }
-    this.exterior(OFFICE_LEDGE_OFFSET);
     for (let x = -24; x <= 24; x += 6) this.box(frame, x, 9.04, 0, .04, .025, 66);
     for (let z = -30; z <= 30; z += 6) this.box(frame, 0, 9.04, z, 54, .025, .04);
     const diffuser = new THREE.MeshBasicMaterial({ color: 0xe7eddb, toneMapped: false }); this.materials.push(diffuser);
@@ -242,7 +241,6 @@ export class OfficeSetRenderer {
       this.cylinder(frame, x, .85, z + 1.1, .1, 1.7); this.box(black, x, 1.65, z + 1.1, 2.1, .25, 1.9);
       this.box(black, x, 2.55, z + 2, 2.1, 1.7, .3); this.box(frame, x, .2, z + 1.1, 2.3, .13, .15); this.box(frame, x, .2, z + 1.1, .15, .13, 2.3);
     }
-    for (const x of [-3.3, 3.3]) { this.box(black, x, 3.7, -32.7, 5.5, 7.4, .12); this.box(frame, x, 3.65, -32.6, 5.2, 7.2, .08); }
     this.sign('METACORTEX', 0, 8, -32.4, 12, '#344c43', '#b5b5a5');
     this.sign('PERSONNEL / AUTHORIZED ACCESS', 0, 6.1, 32.6, 11);
     for (const z of [-17, 5, 24]) { const light = new THREE.PointLight(0xe4ead6, 160, 36, 2); light.position.set(0, 8, z); this.root.add(light); }
@@ -268,44 +266,6 @@ export class OfficeSetRenderer {
       this.box(metal, x - 1.7, y, z - .5, .12, .12, 5);
     }
     this.box(metal, x - 4.4, -OFFICE_LADDER.depth + 1.5, z, .1, 3, 6);
-  }
-  private exterior(offset: number): void {
-    const asphalt = this.mat(0x414a4d, .9); const ground = this.mat(0x626b69, .98);
-    this.box(ground, offset - 25, -65.9, 0, 250, .8, 500);
-    this.box(asphalt, offset - 12, -65, 0, 24, 1, 440);
-    this.box(asphalt, offset - 25, -64.96, 90, 250, .92, 12);
-    const facade = this.mat(0x899396, .75); const trim = this.mat(0xc2c7be);
-    const glass = this.mat(0x657e87, .17, .6);
-    for (const x of [-26, 2]) this.box(trim, offset + x, -64.65, 0, 4, .6, 440);
-    for (let i = 0; i < 9; i++) {
-      const x = offset - 42 - (i % 3) * 20; const z = -70 + i * 18; const h = 45 + [36, 6, 22, 52, 15, 38, 8, 48, 20][i];
-      this.box(facade, x, h / 2 - 65, z, 15, h, 16);
-      for (let y = -58; y < h - 65; y += 5) for (const dz of [-5, 0, 5]) this.box(glass, x + 7.52, y, z + dz, .05, 3.2, 3);
-      this.box(trim, x, h - 65, z, 16, .5, 17);
-    }
-    // The ledge camera faces along the facade; towers beyond the scaffold keep
-    // that playable view from ending in an empty sky instead of a city canyon.
-    const towerWall = this.mat(0x717f80, .84); const farWall = this.mat(0x9ca7a6, .84);
-    const towerGlass = this.mat(0x4b6970, .22, .4);
-    for (const [i, [dx, z, width, depth, height]] of [[-32, 108, 14, 20, 109], [-52, 145, 17, 26, 151], [-34, 205, 20, 28, 136], [21, 109, 15, 24, 116], [46, 169, 19, 28, 148]].entries()) {
-      const x = offset + dx; const roof = height - 65;
-      const wall = i % 2 ? farWall : towerWall;
-      this.box(wall, x, height / 2 - 65, z, width, height, depth);
-      for (let y = -58; y < roof - 2; y += 5) {
-        for (let px = -width / 2 + 2.6; px < width / 2 - 1; px += 3.6) this.box(towerGlass, x + px, y, z - depth / 2 - .06, 2.5, 3.1, .09);
-        for (let pz = -depth / 2 + 2.6; pz < depth / 2 - 1; pz += 3.6) this.box(towerGlass, x + (dx < 0 ? 1 : -1) * (width / 2 + .06), y, z + pz, .09, 3.1, 2.5);
-      }
-      this.box(trim, x, roof, z, width + .6, .55, depth + .6);
-      this.box(wall, x, roof + 2, z + depth * .16, width * .45, 3.7, depth * .25);
-    }
-    for (const x of [-8, -16]) for (let z = -211; z <= 211; z += 12) this.box(trim, offset + x, -64.47, z, .13, .015, 4.6);
-    for (const z of [-42, 32]) for (let x = -22; x < 0; x += 1.8) this.box(trim, offset + x, -64.46, z, 1.1, .02, 4.5);
-    const car = this.mat(0x253a3c, .33, .45); const wheel = this.mat(0x1b2424, .9);
-    for (let i = 0; i < 12; i++) {
-      const x = offset - 4 - i % 3 * 8; const z = -106 + i * 19;
-      this.box(car, x, -63.7, z, 2.2, 1, 4.3); this.box(glass, x, -62.95, z - .1, 1.9, .65, 2.4);
-      for (const dx of [-1.1, 1.1]) for (const dz of [-1.3, 1.3]) this.box(wheel, x + dx, -64.1, z + dz, .2, .65, .65);
-    }
   }
   private sun(x: number, y: number, z: number, intensity: number): void {
     const light = new THREE.DirectionalLight(0xffefdb, intensity); light.position.set(x, y, z); light.target.position.set(0, 0, -8);

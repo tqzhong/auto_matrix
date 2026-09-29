@@ -1,3 +1,4 @@
+import { MetacortexRenderer } from './MetacortexRenderer.js';
 import * as THREE from 'three';
 import { LIFE_ROOMS, lifeRoomCenter, insideLifeRoom, type NeoLifeState, type Vector3 } from '@auto_matrix/shared';
 import { ApartmentSetRenderer } from './ApartmentSetRenderer.js';
@@ -6,7 +7,7 @@ export class LifeInteriors {
   private textures: THREE.Texture[] = [];
   private lights: { light: THREE.PointLight; location: string }[] = [];
   private clocks: THREE.Group[] = [];
-  private screens: THREE.MeshStandardMaterial[] = [];
+  private metacortex!: MetacortexRenderer;
   private cats = new THREE.Group();
   private box = new THREE.BoxGeometry(1, 1, 1);
   private cylinder = new THREE.CylinderGeometry(1, 1, 1, 24);
@@ -17,6 +18,7 @@ export class LifeInteriors {
   constructor(parent: THREE.Group) {
     for (const [id, room] of Object.entries(LIFE_ROOMS)) {
       const center = lifeRoomCenter(id)!; const group = new THREE.Group(); group.position.set(center.x, 0, center.z); parent.add(group);
+      if (id === 'metacortex_office') { this.metacortex = new MetacortexRenderer(group); continue; }
       if (room.theme === 'home') { this.apartment = new ApartmentSetRenderer(group); continue; }
       const plaster = room.theme === 'office' ? '#d1d7d4' : room.theme === 'bar' ? '#403c43' : room.theme === 'oracle' ? '#b7bf91' : '#ded3bd';
       this.part(group, [0, .04, 0], [room.width, .08, room.depth], room.theme === 'office' ? '#858d8d' : '#8c7258');
@@ -39,7 +41,6 @@ export class LifeInteriors {
       lamp.position.set(0, 7.4, 1); group.add(lamp); this.lights.push({ light: lamp, location: id });
       this.part(group, [0, 8.8, 0], [.08, 1.6, .08], '#343937');
       this.part(group, [0, 8, 0], [room.theme === 'office' ? 9 : 3, .22, 1.6], '#f3e6cc', .65);
-      if (room.theme === 'office') this.office(group);
       if (room.theme === 'cafe' || room.theme === 'bar') this.cafe(group, room.theme === 'bar');
       if (room.theme === 'oracle') this.oracle(group);
       this.plant(group, room.width / 2 - 2.5, room.depth / 2 - 3);
@@ -87,23 +88,6 @@ export class LifeInteriors {
     this.part(chair, [0, 1.5, 0], [1.7, .3, 1.6], '#655c4e'); this.part(chair, [0, 2.5, -.7], [1.7, 1.8, .2], '#655c4e');
     for (const a of [-.65, .65]) for (const b of [-.6, .6]) this.part(chair, [a, .7, b], [.13, 1.4, .13], '#333d3b');
   }
-  private computer(group: THREE.Group, x: number, z: number): void {
-    this.part(group, [x, 3.25, z], [2.3, 1.55, 1.6], '#c1bbaa');
-    const screen = this.part(group, [x, 3.28, z + .83], [1.93, 1.17, .03], '#688993', .35);
-    this.screens.push(screen.material as THREE.MeshStandardMaterial);
-    this.label(group, 'C : /  WORKSPACE', [x, 3.4, z + .86], 1.75, '#c7e1d7', '#24343c');
-    this.part(group, [x, 2.64, z + 1.2], [2.6, .16, .8], '#beb9ac');
-    for (let row = 0; row < 3; row++) for (let key = 0; key < 11; key++) this.part(group, [x - 1.1 + key * .21, 2.74, z + 1 + row * .2], [.17, .05, .15], '#797e76');
-    this.part(group, [x + 1.8, 2.7, z + 1.2], [.4, .18, .6], '#b2b4a9', 0, this.sphere);
-  }
-  private office(group: THREE.Group): void {
-    for (const x of [-8, 8]) for (const z of [-6, 3]) {
-      this.table(group, x, z, 8, 4, '#c9c8b5'); this.computer(group, x, z - .7); this.chair(group, x, z + 3.4);
-      this.part(group, [x, 2.3, z - 2.1], [8.4, 4.6, .3], '#8d9c9c');
-      this.part(group, [x + 3.5, 2.7, z], [1, .2, 1.5], '#f0ead7');
-    }
-    this.label(group, 'MON  /  09:00  /  TEAM MEETING', [5, 6, -12.6], 8, '#455a5f', '#e0e2d6');
-  }
   private cafe(group: THREE.Group, bar: boolean): void {
     this.part(group, [0, 1.8, -8], [22, 3.6, 3], bar ? '#60482d' : '#b09c72');
     this.part(group, [0, 3.7, -8], [22.5, .22, 3.5], '#514b42');
@@ -138,9 +122,10 @@ export class LifeInteriors {
     this.apartment.update(life?.journey, time, Boolean(player && Math.hypot(player.x - home.x, player.y - home.y, player.z - home.z) < 55), life?.contactSignal);
     for (const entry of this.lights) entry.light.visible = entry.location === room;
     for (const hand of this.clocks) hand.rotation.z = -time / 1000 * Math.PI * 2 + (life?.anomaly?.id === 'clock' ? Math.sin(time * 3) * .2 : 0);
-    for (const screen of this.screens) screen.emissiveIntensity = life?.anomaly?.id === 'screen' ? .3 + Math.sin(time) * .3 : .25;
+    const office = lifeRoomCenter('metacortex_office')!;
+    this.metacortex.update(life?.lift, Boolean(player && Math.hypot(player.x - office.x, player.z - office.z) < 70));
     this.cats.visible = life?.anomaly?.id === 'cat';
     if (life?.anomaly) this.cats.position.set(life.anomaly.position.x - 2, 0, life.anomaly.position.z - 4);
   }
-  dispose(): void { this.apartment.dispose(); this.textures.forEach(texture => texture.dispose()); }
+  dispose(): void { this.apartment.dispose(); this.metacortex.dispose(); this.textures.forEach(texture => texture.dispose()); }
 }

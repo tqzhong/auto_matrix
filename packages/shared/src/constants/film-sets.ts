@@ -1,3 +1,4 @@
+import { METACORTEX, METACORTEX_SHAFT, metacortexPosition } from './metacortex.js';
 import { RELOADED_WALLS, RELOADED_TABLE, DREAM_CABINETS } from './reloaded-opening.js';
 import { ZION_OBSTACLES } from './zion-homecoming.js';
 import type { Vector3 } from '../types/agent.js';
@@ -100,7 +101,8 @@ export const FILM_SETS: Record<string, FilmSet> = Object.fromEntries(definitions
 }));
 // Daily life and both calls take place in the same city apartment.
 FILM_SETS.film_anderson_flat.center = { ...APARTMENT_ROOM.center };
-// The window and its exterior are one building; other film destinations remain streamed areas.
+// The daily lobby, office and exterior occupy the same city tower.
+FILM_SETS.film_metacortex_floor.center = metacortexPosition(0, 0, 1);
 FILM_SETS.film_office_ledge.center = { ...FILM_SETS.film_metacortex_floor.center, x: FILM_SETS.film_metacortex_floor.center.x + OFFICE_LEDGE_OFFSET };
 // Boarding and the examination share the same parked car, not separate rooms.
 Object.assign(FILM_SETS.film_extraction_car, { center: { ...FILM_SETS.film_adams_bridge.center }, width: 48, depth: 76 });
@@ -112,12 +114,12 @@ export function filmSetAt(position: Vector3, matrix: boolean): FilmSet | undefin
   if (matrix && position.y >= 0 && position.y < 9 && Math.abs(position.x - home.center.x) < home.width / 2 + 1.2 && Math.abs(position.z - home.center.z) < home.depth / 2 + 1.2) return home;
   const office = FILM_SETS.film_metacortex_floor; const ledge = FILM_SETS.film_office_ledge;
   const outside = position.x < office.center.x - 27.3;
-  if (matrix && outside && Math.abs(position.x - ledge.center.x) < ledge.width / 2 + 28 && Math.abs(position.z - ledge.center.z) < ledge.depth / 2 + 28) return ledge;
+  if (matrix && position.y > METACORTEX.upper - 35 && outside && Math.abs(position.x - ledge.center.x) < ledge.width / 2 + 28 && Math.abs(position.z - ledge.center.z) < ledge.depth / 2 + 28) return ledge;
   const bridge = FILM_SETS.film_adams_bridge;
   const x = position.x - bridge.center.x; const z = position.z - bridge.center.z;
   if (matrix && hotelContains(x - MEETING_DESTINATION.x, z)) return FILM_SETS.film_lafayette;
   if (matrix && meetingRoadContains(x, z) && (x < MEETING_DESTINATION.x - 23 || x > MEETING_DESTINATION.x + 23 || z >= 27 || z < -27)) return FILM_SETS.film_extraction_car;
-  return Object.values(FILM_SETS).find(set => set !== home && set !== ledge && !(set === office && outside) && (set.world === 'matrix') === matrix && Math.abs(position.x - set.center.x) < set.width / 2 + 28 && Math.abs(position.z - set.center.z) < set.depth / 2 + 28);
+  return Object.values(FILM_SETS).find(set => set !== home && set !== ledge && !(set === office && (outside || position.y < office.center.y - 1 || position.y > office.center.y + 14)) && (set.world === 'matrix') === matrix && Math.abs(position.x - set.center.x) < set.width / 2 + 28 && Math.abs(position.z - set.center.z) < set.depth / 2 + 28);
 }
 export function filmPosition(id: string, x = 0, z = 0): Vector3 {
   const center = FILM_SETS[id].center;
@@ -187,7 +189,7 @@ export function filmObstacles(set: FilmSet, movingMeetingCar = false): FilmObsta
       return bank;
     }),
   ];
-  if (set.id === 'film_metacortex_floor') return [...OFFICE_OBSTACLES, ...OFFICE_MANAGER_WALLS, ...OFFICE_MANAGER_FURNITURE];
+  if (set.id === 'film_metacortex_floor') return [...OFFICE_OBSTACLES, ...OFFICE_MANAGER_WALLS, ...OFFICE_MANAGER_FURNITURE, ...METACORTEX_SHAFT];
   if (set.id === 'film_office_ledge') return [{ x: 4, z: 0, width: 2, depth: 76, height: 40 }];
   if (set.architecture === 'freeway') return [-28, 0, 28].map(x => ({ x, z: 0, width: 1.5, depth: set.depth, height: 2.2 }));
   if (set.id === 'film_lafayette') return [

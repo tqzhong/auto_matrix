@@ -1,3 +1,4 @@
+import { METACORTEX, metacortexPosition } from './metacortex.js';
 import { LOCATIONS } from './locations.js';
 import { APARTMENT, APARTMENT_ROOM } from './apartment.js';
 import type { Vector3 } from '../types/agent.js';
@@ -5,7 +6,7 @@ import type { Vector3 } from '../types/agent.js';
 // Walkable ground floors share their dimensions with building collision.
 export const LIFE_ROOMS: Record<string, { width: number; depth: number; theme: 'home' | 'office' | 'cafe' | 'bar' | 'oracle' }> = {
   neo_apartment: { width: APARTMENT_ROOM.width, depth: APARTMENT_ROOM.depth, theme: 'home' },
-  metacortex_office: { width: 32, depth: 26, theme: 'office' },
+  metacortex_office: { width: METACORTEX.width, depth: METACORTEX.depth, theme: 'office' },
   corner_cafe: { width: 28, depth: 24, theme: 'cafe' },
   nightclub: { width: 32, depth: 26, theme: 'bar' },
   oracles_apartment: { width: 28, depth: 24, theme: 'oracle' },
@@ -16,6 +17,9 @@ export function lifeRoomCenter(location: string): Vector3 | undefined {
   return room && site ? { x: (site.bounds.min.x + site.bounds.max.x) / 2, y: 1, z: site.bounds.max.z - room.depth / 2 } : undefined;
 }
 export function insideLifeRoom(position: Vector3): string | undefined {
+  const x = position.x - METACORTEX.center.x, z = position.z - METACORTEX.center.z;
+  if (position.y >= 0 && position.y < METACORTEX.upper + 9 && (Math.abs(x) < 3 && Math.abs(z - METACORTEX.liftZ) < 3
+    || position.y >= METACORTEX.upper && Math.abs(x) < METACORTEX.width / 2 && Math.abs(z) < METACORTEX.depth / 2)) return 'metacortex_office';
   return Object.keys(LIFE_ROOMS).find(id => {
     const center = lifeRoomCenter(id)!; const room = LIFE_ROOMS[id];
     return position.y >= 0 && position.y < 9 && Math.abs(position.x - center.x) < room.width / 2 && Math.abs(position.z - center.z) < room.depth / 2;
@@ -48,6 +52,7 @@ export function lifeActionPosition(action: LifeAction): Vector3 {
       : action.id === 'invite' ? { x: APARTMENT.phone.approachX, z: APARTMENT.phone.approachZ } : APARTMENT.breakfast;
     return { x: APARTMENT_ROOM.center.x + point.x, y: APARTMENT_ROOM.center.y, z: APARTMENT_ROOM.center.z + point.z };
   }
+  if (action.location === 'metacortex_office') return metacortexPosition(action.id === 'work' ? 14 : 0, action.id === 'work' ? 6.7 : 17, 1);
   const site = LOCATIONS[action.location];
   return lifeRoomCenter(action.location) ?? { x: (site.bounds.min.x + site.bounds.max.x) / 2, y: 1, z: site.bounds.max.z + 9 };
 }

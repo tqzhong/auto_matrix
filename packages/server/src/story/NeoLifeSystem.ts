@@ -2,6 +2,7 @@ import { LIFE_ACTIONS, LIFE_DESTINATIONS, NEO_ANOMALIES, NEO_CAST, NEO_CHAPTERS,
   distance, insideLifeRoom, lifeActionPosition, lifeRoomCenter, locationEntrance, missionPosition,
   type AgentState, type NeoLifeState, type SandboxState, type Vector3, type Philosophy } from '@auto_matrix/shared';
 import { FilmStorySystem } from './FilmStorySystem.js';
+import { METACORTEX, metacortexFloor, metacortexPosition, metacortexLiftPose, metacortexLiftLocked, nearMetacortexLift } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
 import type { WorldDynamics } from './WorldDynamics.js';
 
@@ -97,6 +98,8 @@ export class NeoLifeSystem {
   }
 
   command(agent: AgentState, target: string, tick: number): string {
+    if (agent.id === 'neo' && this.state && (target === 'lift' || target === 'film:act' && this.film.state?.scene === 'm1_commute' && this.film.state.step === 1)) return this.useLift(agent, tick);
+    if (agent.id === 'neo' && metacortexLiftLocked(this.state?.lift) && target !== 'film:retry') return '电梯正在运行。可以环顾轿厢，到站开门后再离开。';
     if (target.startsWith('film:')) {
       if (target === 'film:cycle' && this.state?.journey?.finished && this.film.controls(agent)) {
         if (agent.id !== 'neo' && !this.film.handoff?.(agent, 'neo', tick, true)) return 'Neo 正由另一位玩家控制，暂时无法开始下一轮。';
@@ -128,6 +131,56 @@ export class NeoLifeSystem {
     if (action.id === 'meet' && state.appointment?.day !== state.day) return '先在家给朋友打电话，约好今晚见面。';
     state.activity = { id: target, startedAt: tick, endsAt: tick + (action.id === 'work' || action.id === 'sleep' ? 10 : 6), position: { ...agent.position } };
     return `${action.name}。停留片刻，完成后时间会自然推进。`;
+  }
+
+  private useLift(agent: AgentState, tick: number): string {
+    const state = this.state!;
+    if (metacortexLiftLocked(state.lift)) return '电梯正在运行，请等候开门。';
+    if (!agent.isInMatrix || !nearMetacortexLift(agent.position)) return '先走到 Metacortex 的电梯前。';
+    if (state.activity) return '先完成当前活动，再乘电梯。';
+    if (state.journey && (state.journey.scene !== 'm1_commute' || state.journey.visiting)) return '先完成当前剧情，再安排下楼。';
+    const lift = state.lift ??= { floor: 0, target: 0, phase: 'idle', elapsed: 0 };
+    if (lift.phase !== 'idle') return '电梯正在运行，请等候开门。';
+    const floor = metacortexFloor(agent.position)!;
+    if (state.journey?.scene === 'm1_commute' && floor === 1) return '开发部到了，请走出电梯。';
+    if (lift.floor !== floor) {
+      lift.target = floor; lift.phase = 'closing'; lift.elapsed = 0; delete lift.passenger;
+      this.liftFrame(agent, 0, tick); return '已呼叫电梯，请在门外等候。';
+    }
+    if (Math.abs(agent.position.x - METACORTEX.center.x) > 1.8 || Math.abs(agent.position.z - METACORTEX.center.z - METACORTEX.liftZ) > 1.6) return '电梯已开门。先走进轿厢，再按 G 选择楼层。';
+    lift.target = floor === 0 ? 1 : 0; lift.phase = 'closing'; lift.elapsed = 0;
+    lift.passenger = { x: agent.position.x, z: agent.position.z };
+    this.liftFrame(agent, 0, tick); return floor === 0 ? '关门，上行到开发部。' : '关门，下行到一层大堂。';
+  }
+
+  liftFrame(agent: AgentState, dt: number, tick: number): boolean {
+    if (agent.id !== 'neo' || !this.state) return false;
+    const lift = this.state.lift;
+    const carrying = metacortexLiftLocked(lift);
+    if (lift && lift.phase !== 'idle' && agent.controller) {
+      const seconds = lift.phase === 'travel' ? METACORTEX.travelSeconds : METACORTEX.doorSeconds;
+      lift.elapsed = Math.min(seconds, lift.elapsed + Math.max(0, Math.min(.1, dt)));
+      if (lift.elapsed >= seconds) {
+        lift.phase = lift.phase === 'closing' ? 'travel' : lift.phase === 'travel' ? 'opening' : 'idle'; lift.elapsed = 0;
+        if (lift.phase === 'opening' || lift.phase === 'idle') lift.floor = lift.target;
+      }
+    }
+    const pose = metacortexLiftPose(lift);
+    if (lift?.passenger) {
+      agent.position = { x: lift.passenger.x, y: 1 + pose.height, z: lift.passenger.z };
+      agent.velocity = { x: 0, y: 0, z: 0 }; agent.targetPosition = null; agent.currentPath = [];
+      agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, metacortexLift: true }, startedAt: tick, duration: 1, progress: 0 };
+      if (this.film.state?.scene === 'm1_commute') this.film.state.checkpoint = { ...agent.position };
+      if (lift.phase === 'idle') { delete lift.passenger; agent.currentAction = null; }
+    }
+    for (const floor of [0, 1] as const) {
+      const id = `city:metacortex:door:${floor}`;
+      const open = Math.abs(pose.height - floor * METACORTEX.upper) < .01 && pose.door > .97;
+      if (open) this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== id);
+      else if (!this.sandbox().structures.some(s => s.id === id)) this.sandbox().structures.push({ id, owner: 'world', kind: 'barricade', position: metacortexPosition(0, METACORTEX.doorZ, floor), matrix: true, health: 99999,
+        film: { scene: 'm1_commute', width: 6.4, depth: .3, height: 7 } });
+    }
+    return carrying;
   }
 
   private travel(agent: AgentState, destination: string, tick: number): string {

@@ -1,3 +1,4 @@
+import { metacortexLiftLocked } from '@auto_matrix/shared';
 import { reloadedLocked } from '@auto_matrix/shared';
 import { morningLocked } from '@auto_matrix/shared';
 import * as THREE from 'three';
@@ -170,7 +171,8 @@ export class Engine {
     const workday = this.agentRenderer.getAgentState('courier')?.currentAction?.parameters.workday as OfficeWorkday | undefined;
     const previousSet = this.filmSets.active;
     const filmSet = this.filmSets.update(player ?? undefined, this.sandbox, this.elapsed, player ? this.agentRenderer.getAgent(player.id)?.position : undefined, this.camera.position, workday, this.playerControls?.firstPerson ?? false);
-    const cinematicSet = filmSet?.id === 'film_anderson_flat' ? undefined : filmSet;
+    this.voxelRenderer.showOfficeInterior(Boolean(filmSet && ['film_metacortex_floor', 'film_office_ledge'].includes(filmSet.id)) || Boolean(this.sandbox?.neoLife?.lift?.passenger));
+    const cinematicSet = filmSet && ['film_anderson_flat', 'film_metacortex_floor', 'film_office_ledge'].includes(filmSet.id) ? undefined : filmSet;
     if (!cinematicSet && previousSet?.id !== filmSet?.id) this.updateAtmosphere();
     this.voxelRenderer.matrix.visible = this.matrix && !cinematicSet; this.voxelRenderer.real.visible = !this.matrix && !cinematicSet;
     measure?.('film');
@@ -423,7 +425,7 @@ export class Engine {
       this.playerControls.truckRescue = Boolean(journey?.actor === this.playerControls.id && journey.scene === 'm2_trucks' && !journey.visiting && ['rescue', 'rescued'].includes(journey.trucks?.phase ?? ''));
       const gunner = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm3_dock_battle' && journey.dockGunnery?.phase === 'firing';
       this.playerControls.gunner = gunner;
-      this.playerControls.performing = Boolean(journey?.actor === this.playerControls.id && (gunner || journey.scene === 'm1_room303' && ['breach', 'dive', 'ladder_ready'].includes(journey.openingHotel?.phase ?? '') || journey.trucks?.phase === 'rescue' || helElevatorLocked(journey) || helDanceDoorLocked(journey) || baneLocked(journey) || meetingLocked(journey) || awakeningLocked(journey) || oracleActing(journey) || phoneLocked(journey) || wakeCallLocked(journey) || morningLocked(journey) || sentinelLocked(journey) || interludeLocked(journey) || rescueLocked(journey) || lobbyLocked(journey) || governmentLocked(journey) || airRescueLocked(journey) || matrixEscapeLocked(journey) || theOneLocked(journey) || reloadedLocked(journey) || windowOpening(journey) || windowCrossing(journey) || pillLocked(journey) || interrogationLocked(journey) || lafayetteKnocking(journey) || lafayetteWelcomeLocked(journey)));
+      this.playerControls.performing = Boolean(this.playerControls.id === 'neo' && metacortexLiftLocked(state.neoLife?.lift)) || Boolean(journey?.actor === this.playerControls.id && (gunner || journey.scene === 'm1_room303' && ['breach', 'dive', 'ladder_ready'].includes(journey.openingHotel?.phase ?? '') || journey.trucks?.phase === 'rescue' || helElevatorLocked(journey) || helDanceDoorLocked(journey) || baneLocked(journey) || meetingLocked(journey) || awakeningLocked(journey) || oracleActing(journey) || phoneLocked(journey) || wakeCallLocked(journey) || morningLocked(journey) || sentinelLocked(journey) || interludeLocked(journey) || rescueLocked(journey) || lobbyLocked(journey) || governmentLocked(journey) || airRescueLocked(journey) || matrixEscapeLocked(journey) || theOneLocked(journey) || reloadedLocked(journey) || windowOpening(journey) || windowCrossing(journey) || pillLocked(journey) || interrogationLocked(journey) || lafayetteKnocking(journey) || lafayetteWelcomeLocked(journey)));
       this.playerControls.mirror = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_mirror' ? mirrorSilver(journey.awakening?.elapsed ?? 0) : 0;
       this.playerControls.climbing = Boolean(journey?.actor === this.playerControls.id && !journey.visiting && (journey.scene === 'm1_ledge' && journey.step === 1 && journey.office?.climbed !== undefined || journey.scene === 'm1_room303' && journey.openingHotel?.phase === 'climbing'));
       this.playerControls.ride = rideForPlayer(journey, this.playerControls.id);

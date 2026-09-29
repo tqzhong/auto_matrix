@@ -5,6 +5,7 @@ import type { AgentState, PlayerInput } from '@auto_matrix/shared';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { CameraController } from '../packages/client/src/engine/CameraController.js';
 import { MORNING, morningRoot, morningWakePose } from '@auto_matrix/shared';
+import { metacortexPosition } from '@auto_matrix/shared';
 import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, INTERROGATION_ROOM, pillRoot, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, POD_WATER_DROP, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, airRescueRoot, matrixEscapeRoot, theOneRoot, wakeCallRoot, type TheOneEncounter } from '@auto_matrix/shared';
 
 test('observer camera releases drag and ignores pointer capture while a character controls the view', () => {
@@ -26,6 +27,29 @@ test('mouse pitch is included in authoritative player input', t => {
   game.document.pointerLockElement = game.canvas;
   game.event(game.document, 'mousemove', { movementX: 0, movementY: -240 }); game.step(.1);
   assert.ok((game.sent.at(-1)?.pitch ?? 0) < -.15, 'upward camera input must reach server-side ballistics');
+});
+
+test('elevator cameras stay inside the car, support V and looking around, then release movement at the landing', t => {
+  const game = setup(t); game.state.position = { ...metacortexPosition(0, -29), y: 33.5 };
+  game.state.currentLocation = 'metacortex_office';
+  game.state.currentAction = { type: 'idle', parameters: { metacortexLift: true }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.step(.3); assert.equal(game.controls.performing, true);
+  game.document.pointerLockElement = game.canvas;
+  for (const aspect of [.6, 16 / 9]) {
+    game.camera.aspect = aspect; game.camera.updateProjectionMatrix();
+    for (let i = 0; i < 8; i++) {
+      game.event(game.document, 'mousemove', { movementX: 210, movementY: i % 2 ? 90 : -90 }); game.step(.15);
+      assert.ok(game.camera.position.x >= 1137.35 && game.camera.position.x <= 1142.65);
+      assert.ok(game.camera.position.z >= 795.35 && game.camera.position.z <= 800.8);
+    }
+  }
+  const parked = game.group.position.clone(); game.key('KeyW'); game.step(.3); game.key('KeyW', false); assert.deepEqual(game.group.position, parked);
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+  assert.ok(game.camera.position.y > game.state.position.y + 2 && game.camera.position.y < game.state.position.y + 4);
+  const direction = game.camera.getWorldDirection(new THREE.Vector3()); game.event(game.document, 'mousemove', { movementX: 200, movementY: -60 }); game.step(.2);
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(direction) > .3);
+  game.state.position = metacortexPosition(0, -22, 1); game.state.currentAction = null; game.step(.2);
+  assert.equal(game.controls.performing, false);
 });
 
 test('the dock APU gunner sees past the frame, can turn the aim and fire from both views', t => {

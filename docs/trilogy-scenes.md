@@ -2,11 +2,11 @@
 
 更新：2026-09-29。
 
-最新范围已调整为选取关键电影段落，优先做好可玩性与布景，不要求穷举影片所有镜头。大堂营救已增加专用枪战与布景；后续优先级、验收证据和限制见 [关键片段制作记录](key-scenes.md)。下面的 107 段是当前剧情索引。
+最新范围已调整为选取关键电影段落，优先做好可玩性与布景，不要求穷举影片所有镜头。大堂营救已增加专用枪战与布景；后续优先级、验收证据和限制见 [关键片段制作记录](key-scenes.md)。下面的 108 段是当前剧情索引。
 
 ## 当前完成度
 
-这是可运行的三部曲场景原型：107 个剧情段落、63 个可进入场景定义、39 类建筑布局。计数按本项目任务粒度划分，不是电影逐镜头统计，也不代表原片所有室内房间、镜头与动作已经一比一复现。当前空间主要由程序生成的几何与 PBR 材质组成，尚未达到电影级美术验收标准。
+这是可运行的三部曲场景原型：108 个剧情段落、63 个可进入场景定义、39 类建筑布局。计数按本项目任务粒度划分，不是电影逐镜头统计，也不代表原片所有室内房间、镜头与动作已经一比一复现。当前空间主要由程序生成的几何与 PBR 材质组成，尚未达到电影级美术验收标准。
 
 三部影片的事件顺序、主要人物所在地点、营救与背叛、建筑师的选择、停战结局已串成连续路线。成片事件是路线依据；日常养成、蓝色药丸分支、哲学反思记录、场景回访与下一轮生活属于游戏扩展。非 Neo 出场的情节由对应人物游玩，例如 Trinity 的序幕、Morpheus 的营救、Niobe 的电站与归航、Kid 的闸门；角色已被另一玩家控制时保留进度并拒绝强占。
 
@@ -21,8 +21,9 @@
 | 内容 | 文件 |
 | --- | --- |
 | 场景名称、尺寸、世界、光线与共享碰撞 | packages/shared/src/constants/film-sets.ts |
-| 103 段剧情、角色、目标、叙述与音乐匹配 | packages/shared/src/constants/film-story.ts |
+| 108 段剧情、角色、目标、叙述与音乐匹配 | packages/shared/src/constants/film-story.ts |
 | 步骤验证、战斗、检查点、回访与角色交接 | packages/server/src/story/FilmStorySystem.ts |
+| 城市公司与升降机坐标、实体层门 / 轿厢渲染 | packages/shared/src/constants/metacortex.ts / packages/client/src/engine/MetacortexRenderer.ts |
 | 日常生活、蓝色药丸与循环衔接 | packages/server/src/story/NeoLifeSystem.ts |
 | 建筑、道具、材质、局部灯光与列车动画 | packages/client/src/engine/FilmSetRenderer.ts |
 | 锡安回港六处专用布景与动态人群 | packages/client/src/engine/ZionHomecomingRenderer.ts |
@@ -67,6 +68,7 @@
 | m1_wake_up | 屏幕上的来信 | Anderson 公寓 · 101 | Neo | 交互 → 交互 |
 | m1_club | 白兔与 Trinity | 地下夜店 · 白兔 | Neo | 移动 → 反思 |
 | m1_morning | 闹钟之后 | Anderson 公寓 · 101 | Neo | 卧床休息 → 关闹钟起床 → 出门通勤 |
+| m1_commute | 去公司的路 | 城市街道 / Metacortex 大堂与办公层 | Neo | 步行进楼 → 进入轿厢按 G 上行 → 走出电梯 |
 | m1_boss | 迟到的员工 | Metacortex · 办公层 | Neo | 交互 → 交互 |
 | m1_office_escape | 隔间之间 | Metacortex · 办公层 | Neo | 移动 → 移动 → 交互 |
 | m1_ledge | 窗外的恐惧 | Metacortex · 窗外窄台 | Neo | 移动 → 反思 |

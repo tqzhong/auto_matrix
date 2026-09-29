@@ -1,3 +1,4 @@
+import { nearMetacortexLift } from '@auto_matrix/shared';
 import { CATCH, RELOADED_FINALE, HEL_COATCHECK, OPENING_ESCAPE, OPENING_HOTEL, catchText, reloadedText } from '@auto_matrix/shared';
 import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_NAMES, ARCHITECT_DOOR_SECONDS, filmReflections, CHARACTERS, filmStepPosition, distance, dockPowerOffline, AWAKENING_SECONDS, oracleActing, helElevatorLocked, helDanceDoorLocked, interrogationLocked, pillLocked, lafayetteWelcomeLocked, phoneLocked, windowOpening, windowCrossing, awakeningWaiting, trainingLocked, trainingWaiting, theOneLocked, type AgentState, type SandboxState } from '@auto_matrix/shared';
 import './film-journey.css';
@@ -267,15 +268,22 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
     const label = phase === 'reply' ? '尝试退出窗口' : step?.label ?? '随他们去夜店';
     return `<div class="film-journal film-contact"><header class="film-heading"><span>THE MATRIX / 01</span><h3>101 · 白兔来敲门</h3></header><article class="film-now"><div><h3>${label}</h3><p>${journey.lastText}</p><div class="film-controls">${phase === 'noticed' ? `${button('contact:follow', '接受邀请，亲自核对线索', !close)}${button('contact:wait', '暂时回到日常生活', !close)}<small>暂缓不会丢失调查与交易记录。回家后仍可以继续。</small>` : button(step ? 'act' : 'next', ready ? `${label} · G` : '合上手记观看', !close || !ready)}${!step ? '<small>白天出发会等到今晚 20:30；已到夜间则计入 20 分钟路程。</small>' : ''}${player.id !== journey.actor ? button('resume', '继续 Neo 的剧情视角') : ''}</div><details><summary>查看已保存的线索与交易步骤</summary><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></details></div></article></div>`;
   }
+  if (!journey.visiting && scene.id === 'm1_commute') {
+    const step = scene.steps[journey.step]; const current = player.id === journey.actor;
+    const lift = life.lift; const busy = Boolean(lift && lift.phase !== 'idle');
+    const action = !current ? button('resume', '继续 Neo 的通勤') : !step ? button('next', '走进办公室 · G')
+      : journey.step === 1 ? button('act', busy ? '电梯运行中 · 请等候开门' : '呼叫 / 乘坐电梯 · G', busy || !nearMetacortexLift(player.position)) : '<p>合上手记，沿金色目标亲自步行。</p>';
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>去公司的路</h3><p>街道 → 一层大堂 → 开发部</p></header><article class="film-now"><div><h3>${step?.label ?? '来到办公区'}</h3><p>穿过 Metacortex 正门，走进大堂后方的电梯。进入轿厢后按 G 上楼，开门后亲自走出去。</p><div class="film-controls">${action}</div><small>行走随世界时钟计时。电梯在同一栋楼内升降，暂停和读档保留当前行程。</small></div></article></div>`;
+  }
   if (!journey.visiting && journey.scene === 'm1_morning' && journey.morning) {
     const phase = journey.morning.phase; const step = scene.steps[journey.step]; const current = player.id === journey.actor;
     const close = current && (!step || distance(player.position, filmStepPosition(scene, step)) <= 4)
       && (phase !== 'ready' || player.position.z >= FILM_SETS[scene.set].center.z + 20);
-    const transit = life.money >= 2; const commute = transit ? '去公司 · 20 分钟 / $2' : '步行去公司 · 40 分钟 / 免费';
+    const commute = '步行去公司 · G';
     const action = !current ? button('resume', '继续 Neo 的生活') : phase === 'home' ? button('act', '休息到早晨 · G', !close)
       : phase === 'alarm' ? button('act', '伸手关掉闹钟，起床 · G') : phase === 'ready' ? button('act', '在街边准备出发 · G', !close)
       : phase === 'done' ? button('next', commute) : '<button disabled>合上手记，观看当前动作</button>';
-    return `<div class="film-journal film-contact"><header class="film-heading"><span>THE MATRIX / 01</span><h3>101 · 闹钟之后</h3><p>第 ${life.day} 天 · 现金 $${life.money} · 精力 ${Math.round(life.energy)}</p></header><article class="film-now"><div><h3>${step?.label ?? '出发去公司'}</h3><p>${journey.lastText}</p><div class="film-controls">${action}</div><small>${morningLocked(journey) ? '休息与起身进度会保存，暂停或退出后从当前动作继续。' : '选择休息才会推进到早晨；选择去公司才会结算交通时间和费用。'}</small><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
+    return `<div class="film-journal film-contact"><header class="film-heading"><span>THE MATRIX / 01</span><h3>101 · 闹钟之后</h3><p>第 ${life.day} 天 · 现金 $${life.money} · 精力 ${Math.round(life.energy)}</p></header><article class="film-now"><div><h3>${step?.label ?? '出发去公司'}</h3><p>${journey.lastText}</p><div class="film-controls">${action}</div><small>${morningLocked(journey) ? '休息与起身进度会保存，暂停或退出后从当前动作继续。' : '休息推进到早晨；出门后亲自步行去公司，再从大堂乘电梯上楼。'}</small><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
   }
   if (!journey.visiting && journey.scene === 'm1_wake_again' && journey.wakeCall) {
     const phase = journey.wakeCall.phase; const step = scene.steps[journey.step]; const current = player.id === journey.actor;

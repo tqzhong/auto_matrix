@@ -62,10 +62,11 @@ test('bedtime, a saved ringing alarm and deliberate rising lead to a walkable mo
   h.command('act'); h.frames(7); assert.equal(h.state().morning?.phase, 'ready');
   h.walk(0, 2); h.walk(0, 23);
   h.command('act'); assert.ok(h.state().completed.includes('m1_morning'));
-  h.command('next'); assert.equal(h.state().scene, 'm1_boss'); assert.equal(h.world.timeOfDay, 9583.333333333334);
-  assert.equal(h.sandbox.life.state!.money, cash - 2);
+  const departure = { ...h.neo.position }; h.command('next'); assert.equal(h.state().scene, 'm1_commute'); assert.equal(h.world.timeOfDay, 9250);
+  assert.deepEqual(h.neo.position, departure);
+  assert.equal(h.sandbox.life.state!.money, cash);
   h.sandbox.restore(structuredClone(h.sandbox.state)); h.command('retry');
-  assert.equal(h.sandbox.life.state!.money, cash - 2, 'a restored office must not charge the commute again');
+  assert.equal(h.sandbox.life.state!.money, cash, 'a restored commute must not charge a fare');
 });
 
 test('sleeping after midnight advances to this morning rather than skipping an extra day', () => {
@@ -85,9 +86,8 @@ test('a player without bus fare can still commute, with no negative balance or e
   h.command('act'); h.frames(6); h.command('act'); h.frames(7);
   h.walk(0, 2); h.walk(0, 23); h.command('act');
   const life = h.sandbox.life.state!; life.money = 1; const time = h.world.timeOfDay;
-  h.command('next'); assert.equal(h.state().scene, 'm1_boss'); assert.equal(life.money, 1);
-  assert.ok(Math.abs(h.world.timeOfDay - time - 40 / .06) < .0001);
-  assert.match(life.journal.find(item => item.title === '迟到的通勤')!.text, /步行 40 分钟/);
+  h.command('next'); assert.equal(h.state().scene, 'm1_commute'); assert.equal(life.money, 1);
+  assert.equal(h.world.timeOfDay, time, 'the actual walk advances with the world clock, not a menu skip');
   h.command('retry'); assert.equal(life.money, 1);
 });
 

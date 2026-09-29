@@ -51,7 +51,7 @@ export const LOCATIONS: Record<string, LocationDef> = {
     name: 'Metacortex Office',
     nameCn: 'Metacortex 公司',
     description: 'Neo 工作的软件公司，位于曼哈顿中城的一栋玻璃幕墙写字楼',
-    bounds: { min: { x: 1100, y: 0, z: 800 }, max: { x: 1180, y: 40, z: 860 } },
+    bounds: { min: { x: 1113, y: 0, z: 794 }, max: { x: 1167, y: 110, z: 860 } },
     faction: 'civilians',
     isInterior: true,
     storyPhase: 'phase1_normal_life',
