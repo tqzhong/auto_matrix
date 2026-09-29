@@ -59,3 +59,21 @@ test('the mirror reuses its color reflection while the room normals are rendered
     assert.equal(reflections, 1, 'normal color rendering still updates the live reflected world');
   } finally { normals.dispose(); mirror.dispose(); mirror.geometry.dispose(); }
 });
+
+test('transmission and color passes share one mirror reflection per view, then refresh on the next frame', () => {
+  const mirror = new Reflector(new THREE.PlaneGeometry(1, 1)); const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(); const otherView = new THREE.PerspectiveCamera();
+  const body = new THREE.Group(); body.visible = false; let reflections = 0;
+  mirror.onBeforeRender = () => { assert.equal(body.visible, true); reflections++; };
+  const nextFrame = showMirrorSubject(mirror, () => body);
+  const render = (view: THREE.Camera) => mirror.onBeforeRender({} as THREE.WebGLRenderer, scene, view, mirror.geometry, mirror.material, null);
+  try {
+    render(camera); render(camera);
+    assert.equal(reflections, 1, 'the water-glass transmission prepass and the color pass use the same view');
+    assert.equal(body.visible, false, 'reusing the reflection must not expose the first-person body');
+    render(otherView); assert.equal(reflections, 2, 'a different camera needs its own reflection');
+    render(camera); assert.equal(reflections, 3, 'returning to a view must replace the other camera’s texture');
+    nextFrame(); render(camera); render(camera);
+    assert.equal(reflections, 4, 'animation and camera motion remain live on every frame');
+  } finally { mirror.dispose(); mirror.geometry.dispose(); }
+});

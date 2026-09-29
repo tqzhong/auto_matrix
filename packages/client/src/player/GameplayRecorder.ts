@@ -99,8 +99,15 @@ export class GameplayRecorder {
         const originalsWithScroll = [source, ...source.querySelectorAll('*')];
         const clonesWithScroll = [clone, ...clone.querySelectorAll('*')];
         originalsWithScroll.forEach((element, index) => {
+          const copy = clonesWithScroll[index] as HTMLElement;
+          if (element.id === 'film-blackout') {
+            // A fresh SVG restarts CSS animations. Capture the visible fade,
+            // including its final transparent state, without changing the game.
+            const appearance = getComputedStyle(element);
+            Object.assign(copy.style, { animation: 'none', transition: 'none', opacity: appearance.opacity, transform: appearance.transform });
+          }
           if (!element.scrollTop) return;
-          const copy = clonesWithScroll[index]; const contents = document.createElement('div');
+          const contents = document.createElement('div');
           contents.style.transform = `translateY(-${element.scrollTop}px)`;
           contents.append(...Array.from(copy.childNodes)); copy.appendChild(contents);
         });

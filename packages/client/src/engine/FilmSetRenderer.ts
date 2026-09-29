@@ -57,17 +57,21 @@ import { TrilogyEpilogueRenderer } from './TrilogyEpilogueRenderer.js';
 
 const outdoor = new Set(['rooftop', 'plaza', 'bridge', 'street', 'courtyard', 'freeway', 'machine', 'rain', 'garden', 'desert', 'pods', 'mountain']);
 
-export function showMirrorSubject(mirror: Reflector, subject: () => THREE.Object3D | undefined, attachments: () => THREE.Object3D[] = () => []): void {
+export function showMirrorSubject(mirror: Reflector, subject: () => THREE.Object3D | undefined, attachments: () => THREE.Object3D[] = () => []): () => void {
   const renderReflection = mirror.onBeforeRender.bind(mirror);
+  let reflectedCamera: THREE.Camera | undefined;
   mirror.onBeforeRender = (...args) => {
-    if (args[1].overrideMaterial) return;
+    // Glass transmission renders the opaque room before the color pass. Both
+    // use the same view, so its live reflection only needs to be drawn once.
+    if (args[1].overrideMaterial || args[2] === reflectedCamera) return;
     const body = subject(); const wasVisible = body?.visible;
     const props = attachments().map(object => ({ object, visible: object.visible }));
     if (body) body.visible = true;
     for (const prop of props) prop.object.visible = true;
-    try { renderReflection(...args); }
+    try { renderReflection(...args); reflectedCamera = args[2]; }
     finally { if (body) body.visible = wasVisible!; for (const prop of props) prop.object.visible = prop.visible; }
   };
+  return () => { reflectedCamera = undefined; };
 }
 
 export function mirrorSurfacePoint(mirror: THREE.Object3D, subject: THREE.Object3D): THREE.Vector2 | undefined {
@@ -121,6 +125,7 @@ export class FilmSetRenderer {
   private training?: TrainingSetRenderer;
   private currentScene?: string;
   private mirror?: Reflector;
+  private resetMirrorFrame?: () => void;
   private mirrorSubject?: THREE.Object3D;
   private mirrorFilament?: THREE.Mesh;
   private recoverySubject?: THREE.Object3D;
@@ -197,6 +202,7 @@ export class FilmSetRenderer {
   setRecoverySubject(subject?: THREE.Object3D): void { this.recoverySubject = subject; }
   renderTelevisionPreview(renderer: THREE.WebGLRenderer): void { this.construct?.renderPreview(renderer, this.scene.environment); }
   update(player: AgentState | undefined, sandbox: SandboxState | undefined, elapsed: number, playerPosition?: Vector3, cameraPosition?: Vector3, workday?: OfficeWorkday, firstPerson = false, timeOfDay = 12000): FilmSet | undefined {
+    this.resetMirrorFrame?.();
     let set = player ? filmSetAt(player.position, player.isInMatrix) : undefined;
     if (set?.id === 'film_extraction_car' && player?.currentLocation === 'film_adams_bridge') set = FILM_SETS.film_adams_bridge;
     if (set?.id === 'film_adams_bridge' && player?.currentLocation === 'film_extraction_car') set = FILM_SETS.film_extraction_car;
@@ -1373,7 +1379,7 @@ export class FilmSetRenderer {
       }
       this.mirror = createMirrorSurface(); this.own(this.mirror.geometry);
       this.mirror.scale.set(MIRROR_FACE.radiusX, MIRROR_FACE.radiusY, 1);
-      showMirrorSubject(this.mirror, () => this.mirrorSubject, () => [this.trackingElectrode!, this.trackingLead!].filter(object => object.userData.active));
+      this.resetMirrorFrame = showMirrorSubject(this.mirror, () => this.mirrorSubject, () => [this.trackingElectrode!, this.trackingLead!].filter(object => object.userData.active));
       this.mirror.position.set(PILL_ROOM.mirror.x, mirrorY, PILL_ROOM.mirror.z); this.mirror.userData.dynamic = true; this.root.add(this.mirror);
       const liquidProfile = [[0, 0], [.14, 0], [.075, .06], [.027, .26], [.012, .5], [.018, .76], [.042, .95], [0, 1]].map(([x, y]) => new THREE.Vector2(x, y));
       this.mirrorFilament = this.mesh(new THREE.LatheGeometry(liquidProfile, 24), this.mat(0xb4c1bd, .08, .96), 0, 0, 0);
@@ -2387,7 +2393,7 @@ export class FilmSetRenderer {
     this.pillGlass = undefined;
     this.ambush?.dispose(); this.ambush = undefined;
     this.oracleVase?.dispose(); this.oracleVase = undefined;
-    this.mirror?.dispose(); this.mirror = undefined; this.mirrorFilament = undefined; this.trackingElectrode = undefined; this.trackingLead = undefined;
+    this.mirror?.dispose(); this.mirror = undefined; this.resetMirrorFrame = undefined; this.mirrorFilament = undefined; this.trackingElectrode = undefined; this.trackingLead = undefined;
     this.pods?.dispose(); this.pods = undefined;
     this.neb?.dispose(); this.neb = undefined;
     this.finale?.dispose(); this.finale = undefined;

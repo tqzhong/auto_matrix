@@ -9,6 +9,8 @@ export class PerformancePanel {
   private startAt = 0;
   private restoreAutoReset = true;
   private restoreMatrices?: Engine['scene']['updateMatrixWorld'];
+  private restoreDraw?: Engine['renderer']['renderBufferDirect'];
+  private drawTotals: Record<string, { calls: number; triangles: number }> = {};
 
   constructor(private engine: Engine) {
     this.panel.id = 'performance-panel';
@@ -20,8 +22,20 @@ export class PerformancePanel {
 
   private status(text: string): void { this.panel.querySelector('[role="status"]')!.textContent = text; }
   private start(): void {
-    this.frames = []; this.passes = {}; this.startAt = performance.now();
+    this.frames = []; this.passes = {}; this.drawTotals = {}; this.startAt = performance.now();
     this.restoreAutoReset = this.engine.renderer.info.autoReset; this.engine.renderer.info.autoReset = false;
+    let frameDraws: typeof this.drawTotals = {};
+    const renderer = this.engine.renderer; const draw = renderer.renderBufferDirect; this.restoreDraw = draw;
+    renderer.renderBufferDirect = (...args) => {
+      const [camera, , , material] = args;
+      const pass = material.type === 'MeshDepthMaterial' || material.type === 'MeshDistanceMaterial' ? 'shadows'
+        : material.type === 'MeshNormalMaterial' ? 'occlusion' : camera === this.engine.camera ? 'scene'
+          : camera.type === 'PerspectiveCamera' ? 'reflectionOrPreview' : 'postprocessing';
+      const calls = renderer.info.render.calls; const triangles = renderer.info.render.triangles;
+      draw.apply(renderer, args);
+      const total = frameDraws[pass] ??= { calls: 0, triangles: 0 };
+      total.calls += renderer.info.render.calls - calls; total.triangles += renderer.info.render.triangles - triangles;
+    };
     this.restoreMatrices = this.engine.scene.updateMatrixWorld;
     const matrices = this.restoreMatrices;
     this.engine.scene.updateMatrixWorld = force => {
@@ -34,7 +48,12 @@ export class PerformancePanel {
     };
     this.engine.onProfile = frame => {
       const elapsed = frame.at - this.startAt;
+      const draws = frameDraws; frameDraws = {};
       if (elapsed < 3000) return;
+      for (const [name, count] of Object.entries(draws)) {
+        const total = this.drawTotals[name] ??= { calls: 0, triangles: 0 };
+        total.calls += count.calls; total.triangles += count.triangles;
+      }
       this.frames.push(frame);
       if (this.frames.length % 30 === 0) this.status(`采样 ${Math.min(15, Math.round((elapsed - 3000) / 1000))} / 15 秒 · ${this.frames.length} 帧`);
       if (elapsed >= 18000) void this.finish();
@@ -44,6 +63,7 @@ export class PerformancePanel {
   private async finish(): Promise<void> {
     this.engine.onProfile = undefined; this.engine.postProcessing.onMeasure = undefined;
     this.engine.renderer.info.autoReset = this.restoreAutoReset;
+    this.engine.renderer.renderBufferDirect = this.restoreDraw!;
     this.engine.scene.updateMatrixWorld = this.restoreMatrices!;
     const summarize = (values: number[]) => {
       const sorted = [...values].sort((a, b) => a - b);
@@ -61,6 +81,9 @@ export class PerformancePanel {
       viewport: { width: window.innerWidth, height: window.innerHeight, pixelRatio: this.engine.renderer.getPixelRatio() },
       frames: this.frames.length, fps: 1000 / frameTime.mean, frameTime, cpuMs: sections, passCpuMs: passes,
       calls: summarize(this.frames.map(frame => frame.calls)), triangles: summarize(this.frames.map(frame => frame.triangles)),
+      drawsPerFrame: Object.fromEntries(Object.entries(this.drawTotals).map(([name, total]) => [name, {
+        calls: total.calls / this.frames.length, triangles: total.triangles / this.frames.length,
+      }])),
       gpu: debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) as string : 'unavailable',
       recordingActive: Boolean(this.engine.onRendered), engineFpsDisplay: this.engine.fps,
       objects, visibleObjects,
