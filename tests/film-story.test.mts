@@ -2406,6 +2406,24 @@ test('the entire film route completes through interactions, driving and real com
       for (let frame = 0; frame < 61; frame++) h.players.step(.1, true, h.tick());
       assert.equal(state.wakeCall?.phase, 'ringing');
     }
+    if (scene.id === 'm1_spoon' && state.oracle?.arrival) {
+      const walk = (x: number, z: number) => {
+        const target = filmPosition(scene.set, x, z);
+        for (let frame = 0; frame < 400; frame++) {
+          const actor = h.actor(), dx = target.x - actor.position.x, dz = target.z - actor.position.z, gap = Math.hypot(dx, dz);
+          if (gap < .7) break;
+          h.players.receiveInput('film-player', { x: dx / gap, z: dz / gap, yaw: Math.atan2(dx, dz), jump: false, sprint: false, sequence: ++sequence });
+          h.players.step(.1, true, h.tick()); assert.ok(frame < 399, `Oracle arrival blocked at ${x}, ${z}`);
+        }
+        h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false, sequence: ++sequence });
+      };
+      walk(-1.5, 34); for (let frame = 0; frame < 30 && state.oracle.arrival.phase === 'hallway'; frame++) h.players.step(.1, true, h.tick());
+      assert.equal(state.oracle.arrival.phase, 'waiting'); walk(.5, 32.3); h.command('act');
+      for (let frame = 0; frame < 50; frame++) h.players.step(.1, true, h.tick());
+      walk(0, 23.5); walk(0, 18);
+      for (let frame = 0; frame < 160 && state.oracle.arrival.phase !== 'done'; frame++) h.players.step(.1, true, h.tick());
+      assert.equal(state.oracle.arrival.phase, 'done', 'the complete route enters through the door before the spoon lesson');
+    }
     for (let index = 0; index < scene.steps.length; index++) {
       const step = scene.steps[index]; const actor = h.actor(); actor.position = filmStepPosition(scene, step);
       if (scene.id === 'm3_rain') {

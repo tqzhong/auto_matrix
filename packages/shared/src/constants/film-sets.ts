@@ -18,6 +18,7 @@ import { mountainFloor } from './mountain.js';
 import { TRUCKS } from './trucks.js';
 import { OPENING_ESCAPE } from './opening-escape.js';
 import { hammerHeight } from './hammer-flight.js';
+import { ORACLE_ENTRANCE } from './oracle.js';
 
 export type FilmArchitecture = 'hotel' | 'apartment' | 'club' | 'office' | 'interrogation' | 'bridge' | 'car' | 'lafayette' | 'pods' | 'ship' | 'construct' | 'desert' | 'dojo' | 'rooftop' | 'plaza' | 'restaurant' | 'oracle' | 'tenement' | 'lobby' | 'subway' | 'street' | 'zion' | 'temple' | 'engineering' | 'teahouse' | 'backdoors' | 'courtyard' | 'chateau' | 'mountain' | 'workshop' | 'garage' | 'freeway' | 'power' | 'architect' | 'mobil' | 'hel' | 'machine' | 'rain' | 'garden';
 export interface FilmSet {
@@ -147,7 +148,13 @@ export const ORACLE_WAITING_FURNITURE = {
   bookcase: { x: -12.4, z: -3, width: 1.9, depth: 5, height: 5.8 },
   sideTable: { x: -10.8, z: 20, width: 2.5, depth: 2.5, height: 1.65 },
 } satisfies Record<string, FilmObstacle>;
-export function filmObstacles(set: FilmSet, movingMeetingCar = false): FilmObstacle[] {
+export const ORACLE_ENTRANCE_WALLS: FilmObstacle[] = [
+  ...[-1, 1].map(side => ({ x: side * 8.2, z: ORACLE_ENTRANCE.door.z, width: 11.6, depth: .4, height: 7.8 })),
+  ...[-1, 1].map(side => ({ x: side * 4, z: 39.9, width: .4, depth: 20.6, height: 7.8 })),
+  { x: 0, z: 50, width: 8, depth: .4, height: 7.8 },
+];
+export const ORACLE_OPEN_DOOR: FilmObstacle = { x: ORACLE_ENTRANCE.door.x, z: ORACLE_ENTRANCE.door.z - ORACLE_ENTRANCE.door.width / 2, width: ORACLE_ENTRANCE.door.depth, depth: ORACLE_ENTRANCE.door.width, height: ORACLE_ENTRANCE.door.height };
+export function filmObstacles(set: FilmSet, movingMeetingCar = false, movingOracleDoor = false): FilmObstacle[] {
   if (set.id === 'film_mobil_station') return [];
   if (set.id === 'film_hel_garage') return [-18, 18].flatMap(x => [-17, 9, 24].map(z => ({ x, z, width: 8.5, depth: 13, height: 5 })));
   if (set.id === 'film_club_hel') return [
@@ -229,7 +236,7 @@ export function filmObstacles(set: FilmSet, movingMeetingCar = false): FilmObsta
     width: 8 + i % 5 * 2, depth: 7 + i % 3 * 2, height: 17 + (i * 13) % 34,
   }));
   if (set.architecture === 'lobby') return LOBBY_COLUMNS;
-  if (set.architecture === 'oracle') return [...ORACLE_FURNITURE, ...Object.values(ORACLE_WAITING_FURNITURE), ...[-1, 1].flatMap(side => [
+  if (set.architecture === 'oracle') return [...ORACLE_FURNITURE, ...Object.values(ORACLE_WAITING_FURNITURE), ...ORACLE_ENTRANCE_WALLS, ...(movingOracleDoor ? [] : [ORACLE_OPEN_DOOR]), ...[-1, 1].flatMap(side => [
     { x: side * (set.width / 4 + 2.5), z: -8, width: set.width / 2 - 5, depth: .4, height: 7.8 },
     { x: side * 12, z: -19, width: .4, depth: 21.6, height: 7.8 },
     { x: side * 14, z: 11, width: .4, depth: 38, height: 7.8 },
@@ -244,7 +251,7 @@ export function filmObstacles(set: FilmSet, movingMeetingCar = false): FilmObsta
   return columns;
 }
 
-export function filmBlocked(position: Vector3, set: FilmSet, radius: number, movingMeetingCar = false): boolean {
+export function filmBlocked(position: Vector3, set: FilmSet, radius: number, movingMeetingCar = false, movingOracleDoor = false): boolean {
   const x = position.x - set.center.x; const z = position.z - set.center.z;
   if (set.id === 'film_freeway_trucks' && position.y > set.center.y + 3.5 &&
     (Math.abs(x - TRUCKS.roof.x) > TRUCKS.roof.width / 2 - radius || Math.abs(z - TRUCKS.roof.z) > TRUCKS.roof.depth / 2 - radius)) return true;
@@ -254,11 +261,12 @@ export function filmBlocked(position: Vector3, set: FilmSet, radius: number, mov
   }
   const hotelEscape = set.id === 'film_heart_hotel' && Math.abs(x) < 4.2 && z < -25 && z > -35 && position.y >= set.center.y - 1.4;
   const apartmentExit = set.id === 'film_anderson_flat' && Math.abs(x) < APARTMENT_ROOM.exitWidth / 2 - radius && z > 0;
+  const oracleHall = set.architecture === 'oracle' && z > 27 && z < 50 - radius - .2 && Math.abs(x) < 4 - radius - .2;
   if (set.id === 'film_extraction_car' || set.id === 'film_adams_bridge') {
     if (!meetingRoadContains(x, z, radius)) return true;
-  } else if (!hotelEscape && (Math.abs(x) > set.width / 2 - radius - .6 || !apartmentExit && Math.abs(z) > set.depth / 2 - radius - .6)) return true;
+  } else if (!hotelEscape && !oracleHall && (Math.abs(x) > set.width / 2 - radius - .6 || !apartmentExit && Math.abs(z) > set.depth / 2 - radius - .6)) return true;
   if (position.y < filmGroundHeight(position, set) - .8) return true;
-  return filmObstacles(set, movingMeetingCar).some(o => Math.abs(x - o.x) < o.width / 2 + radius && Math.abs(z - o.z) < o.depth / 2 + radius && position.y < set.center.y + o.height);
+  return filmObstacles(set, movingMeetingCar, movingOracleDoor).some(o => Math.abs(x - o.x) < o.width / 2 + radius && Math.abs(z - o.z) < o.depth / 2 + radius && position.y < set.center.y + o.height);
 }
 
 export function filmGroundHeight(position: Vector3, set: FilmSet): number {

@@ -16,7 +16,7 @@ import { EXILES } from './exiles.js';
 import { MOUNTAIN } from './mountain.js';
 import { TRUCKS } from './trucks.js';
 import { distance } from '../utils/index.js';
-import { SPOON_LESSON, ORACLE_RECEPTION_CAST, spoonLessonLocked, oracleDepartureLocked } from './oracle.js';
+import { SPOON_LESSON, ORACLE_ENTRANCE, ORACLE_RECEPTION_CAST, spoonLessonLocked, oracleDepartureLocked } from './oracle.js';
 
 export type FilmCue = 'night' | 'contact' | 'office' | 'club' | 'awakening' | 'training' | 'oracle' | 'infiltration' | 'combat' | 'the_one' | 'zion' | 'swarm' | 'restaurant' | 'chateau' | 'chase' | 'source' | 'mobil' | 'siege' | 'bane' | 'farewell' | 'final' | 'dawn';
 export interface FilmStep {
@@ -117,7 +117,7 @@ export interface FilmJourney {
   morning?: import('./apartment.js').MorningRoutine;
   club?: import('./club.js').ClubEncounter;
   dojo?: import('./training.js').DojoLesson;
-  oracle?: { spoon?: number; spoonLesson?: import('./oracle.js').SpoonLesson; reception?: import('./oracle.js').OracleReception; waitingTime?: number; vase?: number; consultation?: import('./oracle.js').OracleVisitEncounter; departure?: import('./oracle.js').OracleDeparture };
+  oracle?: { arrival?: import('./oracle.js').OracleArrival; spoon?: number; spoonLesson?: import('./oracle.js').SpoonLesson; reception?: import('./oracle.js').OracleReception; waitingTime?: number; vase?: number; consultation?: import('./oracle.js').OracleVisitEncounter; departure?: import('./oracle.js').OracleDeparture };
   pills?: import('./pills.js').PillEncounter;
   interrogation?: import('./interrogation.js').InterrogationEncounter;
   meeting?: import('./meeting.js').MeetingEncounter;
@@ -465,6 +465,7 @@ export function filmStepActionReady(scene: FilmScene, step: FilmStep, position: 
   return step.kind !== 'reach' && step.kind !== 'reflect' && filmStepNear(scene, step, position, matrix);
 }
 export function filmEntry(scene: FilmScene): Vector3 {
+  if (scene.id === 'm1_spoon') return filmPosition(scene.set, ORACLE_ENTRANCE.entry.x, ORACLE_ENTRANCE.entry.z);
   if (scene.id === 'm3_hammer_tunnels') return filmPosition(scene.set, 0, 184);
   if (scene.id === 'm1_room303') return filmPosition(scene.set, -8, 18);
   if (scene.id === 'm3_mobil') return filmPosition(scene.set, 0, 22);

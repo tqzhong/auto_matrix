@@ -3,7 +3,7 @@ import { CONSTRUCT, CABIN, CABIN_ROUTE_LENGTH, cabinGuidePose, newReloaded, newF
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { FILM_SCENES, FILM_SETS, RESCUE, GOVERNMENT_RESCUE, AIR_RESCUE, MIRROR_TOUCH, PILL_ROOM, filmEntry, filmStepPosition, filmPosition, playerBlocked, NEO_CHAPTERS, MEETING_DRIVE_SECONDS, type MatrixEscapeEncounter, type TheOneEncounter, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENES, FILM_SETS, RESCUE, GOVERNMENT_RESCUE, AIR_RESCUE, MIRROR_TOUCH, PILL_ROOM, filmEntry, filmStepPosition, filmPosition, playerBlocked, stepPlayer, NEO_CHAPTERS, MEETING_DRIVE_SECONDS, type MatrixEscapeEncounter, type TheOneEncounter, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -60,6 +60,25 @@ if (scene.id === 'm3_surrender' && ['smith-assimilation', 'smith-purge'].include
     elapsed: purge ? 1.2 : 1.8, total: 16, focus: 1.6, checkpoint: 'air' };
   journey.lastText = purge ? '金色能量沿连接贯穿所有 Smith 复制体。' : 'Smith 的黑色代码正在覆盖 Neo。';
   actor.position = filmStepPosition(scene, scene.steps[2]); journey.checkpoint = { ...actor.position };
+}
+if (scene.id === 'm1_spoon' && ['near', 'spoon', 'spoon-offered', 'spoon-focus', 'oracle-invitation', 'oracle-guide'].includes(process.argv[3])) {
+  actor.controller = 'player';
+  const frame = () => sandbox.life.film.oracleReceptionFrame(actor, .1, 0);
+  const walk = (x: number, z: number) => {
+    const target = filmPosition(scene.set, x, z); let velocity = { x: 0, z: 0 };
+    for (let i = 0; i < 400; i++) {
+      const dx = target.x - actor.position.x, dz = target.z - actor.position.z, gap = Math.hypot(dx, dz);
+      if (gap < .7) return;
+      const movement = stepPlayer(actor.position, 0, { x: dx / gap, z: dz / gap, yaw: Math.atan2(dx, dz), jump: false, sprint: false, sequence: i }, .1, true, sandbox.state.structures, velocity);
+      actor.position = movement.position; velocity = movement.horizontalVelocity; frame();
+    }
+    throw new Error(`Oracle fixture cannot walk to ${x}, ${z}`);
+  };
+  walk(-1.5, 34); for (let i = 0; i < 30; i++) frame();
+  walk(.5, 32.3); sandbox.life.film.command(actor, 'act', 0);
+  for (let i = 0; i < 50; i++) frame();
+  walk(0, 23.5); walk(0, 18); for (let i = 0; i < 160; i++) frame();
+  if (sandbox.life.film.state!.oracle!.arrival!.phase !== 'done') throw new Error('Oracle review fixture did not complete the apartment welcome');
 }
 if (process.argv[3] === 'near') {
   actor.position = filmStepPosition(scene, scene.steps[0]); actor.position.z += scene.id === 'm1_spoon' ? .7 : 2.5;

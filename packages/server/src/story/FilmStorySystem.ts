@@ -23,6 +23,7 @@ import { MORNING, morningLocked, morningRoot, morningWakePose, morningText } fro
 import { SENTINEL_CAST, SENTINEL_TIMING, sentinelActive, sentinelDanger, sentinelLocked, sentinelRoot, sentinelText, type SentinelRole } from '@auto_matrix/shared';
 import { INTERLUDE_CAST, interludeDuration, interludeKind, interludeLocked, interludeRoot, interludeSeated, interludeText, type InterludeEncounter, type InterludeRole } from '@auto_matrix/shared';
 import { ORACLE_VISIT, ORACLE_DEPARTURE, oracleDepartureRoot, oracleDepartureLocked, oracleDepartureText, oracleDepartureTarget, ORACLE_KITCHEN_CHAIRS, SPOON_LESSON, ORACLE_RECEPTION, ORACLE_RECEPTION_CAST, ORACLE_WAITING_CAST, oracleReceptionRoot, oracleReceptionLength, oracleReceptionText, spoonLessonLocked, spoonLessonRoot, spoonLessonBend, spoonLessonText, oracleLegacyChoice, oracleVisitDuration, oracleVisitLocked, oracleVisitRoot, oracleVisitText, type OracleVisitRole } from '@auto_matrix/shared';
+import { ORACLE_ENTRANCE, oracleArrivalPending, oracleArrivalDoor, oracleArrivalLength, oracleArrivalRoot, oracleArrivalText } from '@auto_matrix/shared';
 import { BETRAYAL, betrayalDuration, betrayalLocked, betrayalRoot, betrayalText, type BetrayalEncounter, type BetrayalRole } from '@auto_matrix/shared';
 import { RESCUE, rescueDuration, rescueLocked, rescueRoot, rescueText, type RescueLoadout, type RescuePreparation, type RescueRole } from '@auto_matrix/shared';
 import { GOVERNMENT_RESCUE, governmentLocked, governmentRoot, governmentText, type GovernmentRescueEncounter, type GovernmentRescueRole } from '@auto_matrix/shared';
@@ -3001,11 +3002,13 @@ export class FilmStorySystem {
     const state = this.state;
     if (!state || !['m1_spoon', 'm1_oracle'].includes(state.scene) || !this.controls(agent) || state.visiting || agent.status !== 'alive') return;
     const oracle = state.oracle ??= {}, lesson = oracle.spoonLesson;
+    if (!oracle.arrival) this.sandbox().structures = this.sandbox().structures.filter(item => item.id !== 'film:oracle:door');
     const reception = oracle.reception ??= { phase: state.scene === 'm1_oracle' || state.step > 0 ? 'ready' : 'waiting', progress: 0, elapsed: 0 };
     const elapsed = Math.max(0, Math.min(.1, dt));
     oracle.waitingTime = (oracle.waitingTime ?? 0) + elapsed;
+    const arriving = this.oracleArrivalFrame(agent, elapsed, tick);
     const hostess = this.world.agents.get('oracle_priestess')!, occupied = Boolean(hostess.controller);
-    if (!occupied) {
+    if (!occupied && !arriving) {
       if (reception.phase === 'waiting' && lesson?.phase === 'understood') { reception.phase = 'approaching'; reception.progress = 0; }
       if (reception.phase === 'inviting') {
         reception.elapsed = Math.min(ORACLE_RECEPTION.invitation, reception.elapsed + elapsed);
@@ -3024,6 +3027,7 @@ export class FilmStorySystem {
         seated: lesson?.phase === 'understood', rising: lesson?.phase === 'rising' ? lesson.elapsed : undefined } }, startedAt: tick, duration: 1, progress: 0 };
     }
     for (const [id, pose] of Object.entries(ORACLE_WAITING_CAST)) {
+      if (id === 'morpheus' && arriving) continue;
       if (id === 'morpheus' && oracle.departure && oracle.departure.phase !== 'waiting') continue;
       const actor = this.world.agents.get(id); if (!actor || actor.controller || this.unavailable(id)) continue;
       this.place(actor, this.scene!, filmPosition(this.scene!.set, pose.x, pose.z)); actor.rotation = pose.yaw;
@@ -3031,11 +3035,12 @@ export class FilmStorySystem {
         oracleWaiting: { kind: pose.kind, elapsed: oracle.waitingTime } }, startedAt: tick, duration: 1, progress: 0 };
     }
     const boy = this.world.agents.get('spoon_boy');
-    if (state.scene === 'm1_oracle' && boy && !boy.controller) {
+    if ((state.scene === 'm1_oracle' || oracleArrivalPending(oracle.arrival)) && boy && !boy.controller) {
       this.place(boy, this.scene!, filmPosition(this.scene!.set, SPOON_LESSON.boy.x, SPOON_LESSON.boy.z)); boy.rotation = SPOON_LESSON.boy.yaw;
       boy.currentAction = { type: 'idle', parameters: { resolved: true, seated: true, floorSeated: true,
         oracleWaiting: { kind: 'meditating', elapsed: oracle.waitingTime } }, startedAt: tick, duration: 1, progress: 0 };
     }
+    if (oracleArrivalPending(oracle.arrival)) return;
     if (state.scene !== 'm1_spoon' || reception.phase === 'waiting') return;
     if (lesson?.phase === 'understood' || state.step > 0) state.lastText = occupied ? '接待者正由另一位玩家控制，邀请与带路进度保留。' : oracleReceptionText(reception);
     if (elapsed > 0 && !occupied && reception.phase === 'ready' && state.step === 1
@@ -3043,6 +3048,66 @@ export class FilmStorySystem {
       this.advance('你跟随接待者走进厨房，身后的孩子们仍在继续练习。', agent, tick);
       this.command(agent, 'next', tick);
     }
+  }
+
+  private oracleArrivalFrame(agent: AgentState, dt: number, tick: number): boolean {
+    const state = this.state!, arrival = state.oracle?.arrival;
+    if (state.scene !== 'm1_spoon' || !arrival || arrival.phase === 'done') return false;
+    const morpheus = this.world.agents.get('morpheus')!, hostess = this.world.agents.get('oracle_priestess')!;
+    const occupied = Boolean(morpheus.controller || hostess.controller);
+    if (!occupied && dt > 0) {
+      if (arrival.phase === 'hallway') {
+        const point = oracleArrivalRoot(arrival, 'morpheus');
+        if (distance(agent.position, filmPosition(this.scene!.set, point.x, point.z)) < 5)
+          arrival.morpheus = Math.min(oracleArrivalLength('hall'), arrival.morpheus + ORACLE_ENTRANCE.speed * dt);
+        if (arrival.morpheus >= oracleArrivalLength('hall')) arrival.phase = 'waiting';
+      } else if (arrival.phase === 'opening' || arrival.phase === 'welcome') {
+        const duration = arrival.phase === 'opening' ? ORACLE_ENTRANCE.opening : ORACLE_ENTRANCE.welcome;
+        arrival.elapsed = Math.min(duration, arrival.elapsed + dt);
+        if (arrival.elapsed >= duration) {
+          arrival.phase = arrival.phase === 'opening' ? 'welcome' : 'guiding'; arrival.elapsed = 0;
+          if (arrival.phase === 'guiding') { arrival.hostess = 0; arrival.morpheus = 0; }
+        }
+      } else {
+        const guiding = arrival.phase === 'guiding', point = oracleArrivalRoot(arrival, 'hostess');
+        if (!guiding || distance(agent.position, filmPosition(this.scene!.set, point.x, point.z)) < 5)
+          arrival.hostess = Math.min(oracleArrivalLength(guiding ? 'guide' : 'return'), arrival.hostess + ORACLE_ENTRANCE.speed * dt);
+        if (agent.position.z < FILM_SETS[this.scene!.set].center.z + 30)
+          arrival.morpheus = Math.min(oracleArrivalLength('morpheus'), arrival.morpheus + ORACLE_ENTRANCE.speed * dt);
+        if (arrival.morpheus >= oracleArrivalLength('morpheus')) arrival.seating = Math.min(2.2, arrival.seating + dt);
+        if (guiding && arrival.hostess >= oracleArrivalLength('guide') && agent.position.z < FILM_SETS[this.scene!.set].center.z + 21) {
+          arrival.phase = 'settling'; arrival.hostess = 0;
+          this.sandbox().neoLife!.choices.oracle_arrival = 'entered';
+        } else if (!guiding && arrival.hostess >= oracleArrivalLength('return') && arrival.seating >= 2.2) arrival.phase = 'done';
+      }
+    }
+    for (const [role, actor] of [['hostess', hostess], ['morpheus', morpheus]] as const) {
+      if (actor.controller || this.unavailable(actor.id)) continue;
+      const pose = oracleArrivalRoot(arrival, role), before = { ...actor.position };
+      this.place(actor, this.scene!, filmPosition(this.scene!.set, pose.x, pose.z)); actor.rotation = pose.yaw;
+      actor.velocity = dt > 0 ? { x: (actor.position.x - before.x) / dt, y: 0, z: (actor.position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
+      actor.currentAction = { type: 'idle', parameters: { resolved: true, oracleArrival: { ...arrival, role } }, startedAt: tick, duration: 1, progress: 0 };
+    }
+    const angle = oracleArrivalDoor(arrival), door = ORACLE_ENTRANCE.door;
+    const leaf = { id: 'film:oracle:door', kind: 'barricade' as const, owner: 'matrix', matrix: true, health: 1,
+      position: filmPosition(this.scene!.set, door.x + door.width / 2 * Math.cos(angle), door.z - door.width / 2 * Math.sin(angle)),
+      film: { scene: 'm1_spoon', width: door.width * Math.cos(angle) + door.depth * Math.sin(angle), depth: door.width * Math.sin(angle) + door.depth * Math.cos(angle), height: door.height } };
+    const index = this.sandbox().structures.findIndex(item => item.id === leaf.id);
+    if (index < 0) this.sandbox().structures.push(leaf); else this.sandbox().structures[index] = leaf;
+    if (oracleArrivalPending(arrival)) state.lastText = occupied ? '陪同者或接待者正由另一位玩家控制，到访进度与门的位置已保留。' : oracleArrivalText(arrival);
+    state.checkpoint = { ...agent.position };
+    return true;
+  }
+
+  private oracleArrivalAct(agent: AgentState, target: string, tick: number): string {
+    this.oracleReceptionFrame(agent, 0, tick);
+    const arrival = this.state!.oracle!.arrival!;
+    if (target === 'act' && arrival.phase === 'waiting'
+      && !this.world.agents.get('morpheus')?.controller && !this.world.agents.get('oracle_priestess')?.controller
+      && distance(agent.position, filmPosition(this.scene!.set, ORACLE_ENTRANCE.threshold.x, ORACLE_ENTRANCE.threshold.z)) <= 1.5) {
+      arrival.phase = 'opening'; arrival.elapsed = 0; this.oracleReceptionFrame(agent, 0, tick);
+    }
+    return this.state!.lastText;
   }
 
   private oracleDepartureFrame(agent: AgentState, dt: number, tick: number): void {
@@ -3111,6 +3176,7 @@ export class FilmStorySystem {
     const state = this.state;
     if (!state || state.scene !== 'm1_spoon' || !this.controls(agent) || state.visiting) return false;
     const oracle = state.oracle ??= {};
+    if (oracleArrivalPending(oracle.arrival)) return false;
     const lesson = oracle.spoonLesson ??= { phase: oracle.spoon === undefined ? 'waiting' : state.step > 0 ? 'done' : 'focus', elapsed: 0 };
     const boy = this.world.agents.get('spoon_boy')!, occupied = Boolean(boy.controller);
     const locked = spoonLessonLocked(lesson), elapsed = Math.max(0, Math.min(.1, dt));
@@ -4561,7 +4627,7 @@ export class FilmStorySystem {
         delete state.visiting; delete state.returnPosition;
         agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
         agent.position = { ...state.checkpoint }; agent.velocity = { x: 0, y: 0, z: 0 };
-        this.spoonFrame(agent, false, 0, tick); return '已接回候客厅，保留坐姿、示范、递勺与专注进度。';
+        this.oracleFrame(agent, false, 0, tick); return '已接回先知公寓，保留入口迎接、坐姿、示范、递勺与专注进度。';
       }
       if (state.scene === 'm1_oracle' && state.oracle?.consultation) {
         delete state.visiting; delete state.returnPosition;
@@ -4736,6 +4802,7 @@ export class FilmStorySystem {
       if (encounter.phase === 'parked' && target === 'act') { encounter.phase = 'exiting'; encounter.elapsed = 0; this.meetingFrame(agent, false, 0, tick); return state.lastText; }
       if (encounter.phase !== 'done') return state.lastText;
     }
+    if (state.scene === 'm1_spoon' && oracleArrivalPending(state.oracle?.arrival)) return this.oracleArrivalAct(agent, target, tick);
     if (state.scene === 'm1_oracle' && state.step >= 2 && state.oracle?.consultation?.phase === 'done' && state.oracle.departure?.phase !== 'done') return this.oracleDepartureAct(agent, target, tick);
     if (target === 'next') {
       if (this.step) return '先完成当前场景中的目标。';
@@ -5322,7 +5389,7 @@ export class FilmStorySystem {
     delete state.club;
     delete state.sentinel;
     delete state.interlude;
-    if (scene.id === 'm1_spoon') state.oracle = { spoonLesson: { phase: 'waiting', elapsed: 0 } };
+    if (scene.id === 'm1_spoon') state.oracle = { arrival: { phase: 'hallway', elapsed: 0, hostess: 0, morpheus: 0, seating: 0 }, spoonLesson: { phase: 'waiting', elapsed: 0 } };
     delete state.betrayal;
     delete state.government;
     delete state.airRescue;
@@ -5395,9 +5462,10 @@ export class FilmStorySystem {
     for (const other of this.world.agents.values()) if (!other.controller && (other.currentAction?.parameters.oracleVisit || other.currentAction?.parameters.oracleDeparture)) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.spoonLesson) other.currentAction = null;
     if (!['m1_spoon', 'm1_oracle'].includes(scene.id)) {
+      this.sandbox().structures = this.sandbox().structures.filter(item => item.id !== 'film:oracle:door');
       for (const id of ORACLE_RECEPTION_CAST) {
         const other = this.world.agents.get(id);
-        if (!other || other.controller || !other.currentAction?.parameters.oracleReception && !other.currentAction?.parameters.oracleWaiting) continue;
+        if (!other || other.controller || !other.currentAction?.parameters.oracleReception && !other.currentAction?.parameters.oracleWaiting && !other.currentAction?.parameters.oracleArrival) continue;
         other.currentAction = null; other.currentLocation = CHARACTERS[id].initialLocation; other.position = locationEntrance(other.currentLocation); other.velocity = { x: 0, y: 0, z: 0 };
       }
     }
@@ -5433,6 +5501,7 @@ export class FilmStorySystem {
     this.stageCast();
     if (scene.id === 'm1_bridge') this.bridgeArrivalFrame(actor, 0, tick);
     this.reconcileCast();
+    if (scene.id === 'm1_spoon') this.oracleFrame(actor, false, 0, tick);
     if (scene.id === 'm3_oracle_last') {
       const first = life.choices.oracle_first;
       const second = life.choices['m2_bench:2'];

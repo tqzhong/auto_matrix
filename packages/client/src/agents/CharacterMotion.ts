@@ -44,6 +44,7 @@ export interface MotionInput {
   sentinel?: import('@auto_matrix/shared').SentinelGesture;
   interlude?: import('@auto_matrix/shared').InterludeGesture;
   oracleVisit?: OracleVisitGesture;
+  oracleArrival?: import('@auto_matrix/shared').OracleArrivalGesture;
   oracleDeparture?: import('@auto_matrix/shared').OracleDepartureGesture;
   oracleReception?: import('@auto_matrix/shared').OracleReceptionGesture;
   oracleWaiting?: import('@auto_matrix/shared').OracleWaitingGesture;

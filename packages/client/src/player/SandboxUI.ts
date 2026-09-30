@@ -16,6 +16,7 @@ import { clubLocked } from '@auto_matrix/shared';
 import { sentinelDanger, sentinelLocked } from '@auto_matrix/shared';
 import { interludeDuration, interludeLocked } from '@auto_matrix/shared';
 import { ORACLE_RECEPTION, oracleReceptionRoot, oracleReceptionText, oracleVisitDuration, oracleVisitLocked, spoonLessonText, oracleDepartureTarget, oracleDepartureLocked } from '@auto_matrix/shared';
+import { oracleArrivalPending, oracleArrivalTarget } from '@auto_matrix/shared';
 import { BETRAYAL, betrayalDuration, betrayalLocked } from '@auto_matrix/shared';
 import { RESCUE, rescueDuration, rescueLoadout, rescueLocked } from '@auto_matrix/shared';
 import { LOBBY_ENTRY, lobbyLocked } from '@auto_matrix/shared';
@@ -134,7 +135,7 @@ export class SandboxUI {
     this.root.classList.toggle('hidden', !player || !state || !profile);
     this.el('film-phone').classList.add('hidden');
     this.el('film-sequence').classList.add('hidden');
-    this.el('film-sequence').classList.remove('urgent', 'oracle-departure');
+    this.el('film-sequence').classList.remove('urgent', 'oracle-departure', 'oracle-arrival');
     this.el('film-training-actions').classList.add('hidden');
     this.el('film-ride').classList.add('hidden');
     this.el('film-pills').classList.add('hidden');
@@ -1016,6 +1017,18 @@ export class SandboxUI {
       this.el('sandbox-waypoint').textContent = '';
       this.el('sandbox-interact').classList.add('hidden');
       document.getElementById('game-objective-copy')!.textContent = '2/2 · 感觉足以证明真实吗？ · 选择后继续';
+      return;
+    }
+    if (!journey.visiting && scene.id === 'm1_spoon' && oracleArrivalPending(journey.oracle?.arrival)) {
+      const arrival = journey.oracle!.arrival!, place = oracleArrivalTarget(arrival), target = filmPosition(scene.set, place.x, place.z);
+      const gap = distance(target, player.position), direction = Math.atan2(target.x - player.position.x, target.z - player.position.z) - player.rotation;
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.add('oracle-arrival'); this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = 'WASD 自由行走 · 门前按 G · V 切换视角 · 到访进度会保存';
+      this.el('sandbox-interact').classList.toggle('hidden', arrival.phase !== 'waiting' || gap > 1.5);
+      this.el('sandbox-nearby').textContent = '准备走进公寓';
+      document.getElementById('game-objective')!.textContent = '先知公寓 · 门的另一边';
+      this.el('sandbox-waypoint').innerHTML = `<span style="transform:rotate(${-direction}rad)">↑</span>${arrival.phase === 'hallway' ? 'Morpheus' : arrival.phase === 'guiding' ? '白衣接待者' : '公寓门前'} <b>${Math.round(gap)} m</b>`;
+      document.getElementById('game-objective-copy')!.textContent = arrival.phase === 'waiting' ? '走近门前，亲自决定进入' : journey.lastText;
       return;
     }
     if (!journey.visiting && scene.id === 'm1_spoon' && journey.oracle?.spoonLesson && journey.step === 0) {

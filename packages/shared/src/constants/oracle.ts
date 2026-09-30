@@ -219,3 +219,73 @@ export function oracleReceptionText(reception: OracleReception): string {
   if (reception.phase === 'ready') return '接待者在厨房门内等你。亲自穿过门口，先知正在烤箱旁。';
   return '';
 }
+
+export interface OracleArrival {
+  phase: 'hallway' | 'waiting' | 'opening' | 'welcome' | 'guiding' | 'settling' | 'done';
+  elapsed: number;
+  hostess: number;
+  morpheus: number;
+  seating: number;
+}
+export type OracleArrivalGesture = OracleArrival & { role: 'hostess' | 'morpheus' };
+export const ORACLE_ENTRANCE = {
+  entry: { x: 0, z: 47 }, door: { x: -2.4, z: 29.8, width: 4.8, height: 6.6, depth: .18 },
+  threshold: { x: .5, z: 32.3 }, opening: 1.8, welcome: 3, speed: 3,
+  hall: [{ x: -1.5, z: 43 }, { x: -1.5, z: 34 }],
+  welcomeRoute: [{ x: -4, z: 25.62 }, { x: -4, z: 23.5 }, { x: 0, z: 23.5 }],
+  guide: [{ x: 0, z: 23.5 }, { x: 0, z: 18 }],
+  return: [{ x: 0, z: 18 }, { x: -2, z: 18 }, { x: -2, z: -5.5 }],
+  morpheus: [{ x: -1.5, z: 34 }, { x: 0, z: 34 }, { x: 0, z: 23 }, { x: -8.2, z: 23 }, { x: -8.2, z: 12 }],
+} as const;
+export function oracleArrivalPending(arrival?: OracleArrival): boolean {
+  return Boolean(arrival && !['settling', 'done'].includes(arrival.phase));
+}
+export function oracleArrivalDoor(arrival?: OracleArrival): number {
+  return !arrival || ['welcome', 'guiding', 'settling', 'done'].includes(arrival.phase) ? Math.PI / 2
+    : arrival.phase === 'opening' ? smooth((arrival.elapsed - .35) / 1.25) * Math.PI / 2 : 0;
+}
+export function oracleArrivalHandle(arrival?: OracleArrival) {
+  const angle = oracleArrivalDoor(arrival), door = ORACLE_ENTRANCE.door;
+  return { x: door.x + 4.18 * Math.cos(angle) - .2 * Math.sin(angle), y: 3.1, z: door.z - 4.18 * Math.sin(angle) - .2 * Math.cos(angle) };
+}
+type ArrivalRoute = keyof Pick<typeof ORACLE_ENTRANCE, 'hall' | 'welcomeRoute' | 'guide' | 'return' | 'morpheus'>;
+export function oracleArrivalLength(route: ArrivalRoute): number {
+  const points = ORACLE_ENTRANCE[route];
+  return points.slice(1).reduce((length, point, i) => length + Math.hypot(point.x - points[i].x, point.z - points[i].z), 0);
+}
+function arrivalPath(route: ArrivalRoute, progress: number) {
+  const points = ORACLE_ENTRANCE[route]; let remaining = Math.max(0, progress);
+  for (let i = 1; i < points.length; i++) {
+    const a = points[i - 1], b = points[i], length = Math.hypot(b.x - a.x, b.z - a.z);
+    if (remaining > length && i < points.length - 1) { remaining -= length; continue; }
+    const t = Math.min(1, remaining / length);
+    return { x: a.x + (b.x - a.x) * t, z: a.z + (b.z - a.z) * t, yaw: Math.atan2(b.x - a.x, b.z - a.z) };
+  }
+  return { ...points.at(-1)!, yaw: Math.PI };
+}
+export function oracleArrivalRoot(arrival: OracleArrival, role: OracleArrivalGesture['role']) {
+  if (role === 'morpheus') {
+    if (arrival.phase === 'hallway') return arrivalPath('hall', arrival.morpheus);
+    if (['waiting', 'opening', 'welcome'].includes(arrival.phase)) return { ...ORACLE_ENTRANCE.hall.at(-1)!, yaw: Math.PI };
+    const point = arrivalPath('morpheus', arrival.morpheus), seat = smooth(arrival.seating / 2.2);
+    return { ...point, x: point.x + (ORACLE_WAITING_CAST.morpheus.x - point.x) * seat, yaw: arrival.seating > 0 ? Math.PI / 2 : point.yaw };
+  }
+  if (['hallway', 'waiting', 'opening'].includes(arrival.phase)) {
+    const angle = oracleArrivalDoor(arrival), hand = oracleArrivalHandle(arrival);
+    return { x: hand.x - 1.4 * Math.sin(angle), z: hand.z - 1.4 * Math.cos(angle), yaw: angle };
+  }
+  if (arrival.phase === 'welcome') return arrivalPath('welcomeRoute', oracleArrivalLength('welcomeRoute') * smooth(arrival.elapsed / ORACLE_ENTRANCE.welcome));
+  return arrivalPath(arrival.phase === 'guiding' ? 'guide' : 'return', arrival.hostess);
+}
+export function oracleArrivalTarget(arrival: OracleArrival) {
+  return arrival.phase === 'hallway' ? oracleArrivalRoot(arrival, 'morpheus')
+    : ['waiting', 'opening', 'welcome'].includes(arrival.phase) ? ORACLE_ENTRANCE.threshold : oracleArrivalRoot(arrival, 'hostess');
+}
+export function oracleArrivalText(arrival: OracleArrival): string {
+  if (arrival.phase === 'hallway') return '电梯停在旧公寓楼层。跟随 Morpheus 走过楼道；你落后时他会等你。';
+  if (arrival.phase === 'waiting') return 'Morpheus 在门旁停下：他可以带你找到门，是否走进去仍由你决定。靠近门前，按 G 准备进入。';
+  if (arrival.phase === 'opening') return '你还没有碰到门把手，门已从里面打开。白衣接待者走到门边迎接你。';
+  if (arrival.phase === 'welcome') return '接待者认出了 Neo，示意 Morpheus 随意坐下。等她让开门口，再亲自走进去。';
+  if (arrival.phase === 'guiding') return '走过门槛，跟随白衣接待者进入客厅。孩子们仍在练习，Morpheus 走向沙发。';
+  return '接待者让你在客厅等候，随后返回厨房。你可以自由观察，再坐到拿勺子的孩子面前。';
+}

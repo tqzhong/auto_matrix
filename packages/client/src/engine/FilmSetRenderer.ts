@@ -12,7 +12,7 @@ import { Reflector } from 'three/addons/objects/Reflector.js';
 import { createMirrorSurface } from './MirrorSurface.js';
 import { trackingContact } from '../agents/TrackingContact.js';
 import { MIRROR_FRAME } from '@auto_matrix/shared';
-import { ORACLE_WAITING_FURNITURE, ORACLE_KITCHEN_CHAIRS } from '@auto_matrix/shared';
+import { ORACLE_WAITING_FURNITURE, ORACLE_KITCHEN_CHAIRS, ORACLE_ENTRANCE, ORACLE_ENTRANCE_WALLS, oracleArrivalDoor, oracleArrivalPending, oracleArrivalTarget } from '@auto_matrix/shared';
 import { SpoonModel } from '../agents/SpoonModel.js';
 import { FILM_SETS, FILM_SCENE_BY_ID, OPENING_ESCAPE, openingTruckPose, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, PILL_ROOM, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, mirrorSilver, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, GARAGE, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, EXILES, CHATEAU, awakeningLocked, trainingLocked, phoneLocked, windowOpening, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type FilmJourney, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
 import { OPENING_HOTEL } from '@auto_matrix/shared';
@@ -136,6 +136,7 @@ export class FilmSetRenderer {
   private trackingLead?: THREE.Line;
   private oracleVase?: OracleVase;
   private oracleBlocks?: THREE.Group;
+  private oracleDoor?: THREE.Group;
   private ambush?: AmbushSetRenderer;
   private pillGlass?: THREE.Group;
   private interrogation?: InterrogationSetRenderer;
@@ -509,6 +510,7 @@ export class FilmSetRenderer {
       });
     }
     this.oracleVase?.update(sceneId === 'm1_oracle' ? journey?.visiting || journey!.step > 0 ? 4.5 : journey?.oracle?.vase : undefined);
+    if (this.oracleDoor) this.oracleDoor.rotation.y = oracleArrivalDoor(journey?.visiting ? undefined : journey?.oracle?.arrival);
     if (this.oracleBlocks) {
       const time = journey?.oracle?.waitingTime ?? 0;
       this.oracleBlocks.children.forEach((block, i) => {
@@ -561,7 +563,8 @@ export class FilmSetRenderer {
         ? meetingBoardPoint(journey.bridgeArrival) : undefined;
       const carSeat = scene.id === 'm1_bug' && journey?.step === 1 && journey.meeting?.phase === 'done'
         ? meetingRoot(journey.meeting, 'neo') : undefined;
-      const position = bridgeDoor ? filmPosition(scene.set, bridgeDoor.x, bridgeDoor.z)
+      const arrivalGoal = scene.id === 'm1_spoon' && oracleArrivalPending(journey?.oracle?.arrival) ? oracleArrivalTarget(journey!.oracle!.arrival!) : undefined;
+      const position = arrivalGoal ? filmPosition(scene.set, arrivalGoal.x, arrivalGoal.z) : bridgeDoor ? filmPosition(scene.set, bridgeDoor.x, bridgeDoor.z)
         : carSeat ? filmPosition(scene.set, carSeat.x, carSeat.z)
         : scene.id === 'm2_burly' && journey?.burly?.phase === 'staff_ready' ? filmPosition(scene.set, BURLY.staff.x, BURLY.staff.z)
         : scene.id === 'm2_chateau' && journey?.chateau?.phase === 'landing' ? filmStepPosition(scene, scene.steps[1])
@@ -1432,12 +1435,9 @@ export class FilmSetRenderer {
       this.box(trim, x - side * .21, .93, 11, .06, 1.5, 38);
       for (let z = -7; z < 30; z += 2.8) this.box(trim, x - side * .3, .94, z, .06, 1.33, .045);
     }
-    wall(0, 3.9, 29.8, 28, 7.8, .4);
+    this.oracleEntrance(paper, trim, wood);
     this.box(this.white, 0, 7.95, 11, 28.4, .3, 38.2);
-    this.box(trim, 0, .21, 29.53, 28, .42, .22); this.box(trim, 0, 7.56, 29.5, 28, .22, .35);
-    const doorStart = this.root.children.length; this.door(0, 0);
-    const entrance = new THREE.Group(); this.root.children.slice(doorStart).forEach(child => entrance.add(child));
-    entrance.position.set(0, 0, 29.5); entrance.rotation.y = Math.PI; entrance.scale.setScalar(.82); this.root.add(entrance);
+    this.box(trim, 0, 7.56, 29.5, 28, .22, .35);
     const key = new THREE.SpotLight(0xe9f0e5, 1450, 45, .95, .7, 2);
     key.position.set(-15.2, 6.2, 1.8); key.target.position.set(-4, .8, 11); key.castShadow = true;
     key.shadow.mapSize.set(1024, 1024); key.shadow.bias = -.0002; key.shadow.normalBias = .025;
@@ -1529,6 +1529,50 @@ export class FilmSetRenderer {
       if (i < 3) blocks.add(block);
     }
     this.box(curtain, -9, .048, 8, 2.6, .006, 2.2);
+  }
+  private oracleEntrance(paper: THREE.Material, trim: THREE.Material, wood: THREE.Material): void {
+    const door = ORACLE_ENTRANCE.door, plaster = this.pbr('white_plaster_02', 0x62675b, 3, .97);
+    for (const wall of ORACLE_ENTRANCE_WALLS) {
+      this.lafayetteSurface(wall.z === door.z ? paper : plaster, wall.x, wall.height / 2, wall.z, wall.width, wall.height, wall.depth, 4);
+      if (wall.z === door.z) this.box(trim, wall.x, .21, door.z - .27, wall.width, .42, .22);
+    }
+    this.box(trim, 0, 7.2, door.z, door.width, 1.2, .4);
+    for (const x of [-2.55, 2.55]) this.box(trim, x, 3.3, door.z, .3, 6.6, .48, .02);
+    this.box(trim, 0, 6.64, door.z, 5.4, .25, .5, .02);
+    this.box(wood, 0, .035, door.z, 4.75, .07, .65);
+    const start = this.root.children.length;
+    this.box(this.wood, door.width / 2, door.height / 2, 0, door.width, door.height, door.depth, .025);
+    for (const side of [-1, 1]) {
+      for (const [y, h] of [[1.65, 2.5], [4.6, 2.45]]) {
+        this.box(wood, door.width / 2, y, side * .12, 3.95, h, .055, .025);
+        this.box(this.wood, door.width / 2, y, side * .155, 3.65, h - .3, .04, .02);
+      }
+      this.sphere(this.brass, 4.18, 3.1, side * .2, .15);
+      this.box(this.brass, 4.18, 2.75, side * .125, .18, .38, .05, .035);
+    }
+    for (const y of [1.05, 3.3, 5.55]) this.cylinder(this.brass, .02, y, 0, .065, .27);
+    const pivot = new THREE.Group(); pivot.name = 'oracle-apartment-door'; pivot.userData.dynamic = true;
+    this.root.children.slice(start).forEach(child => pivot.add(child)); pivot.position.set(door.x, 0, door.z); this.root.add(pivot); this.oracleDoor = pivot;
+    const floor = this.mesh(new THREE.PlaneGeometry(7.6, 20.2), wood, 0, .012, 39.9); floor.rotation.x = -Math.PI / 2;
+    this.box(plaster, 0, 7.95, 39.9, 8.4, .3, 20.6);
+    for (const side of [-1, 1]) {
+      for (const [y, height] of [[.21, .42], [2, .13], [7.55, .22]]) this.box(trim, side * 3.75, y, 39.9, .18, height, 20.2);
+      for (const z of [36.8, 44.8]) {
+        const panel = this.box(this.wood, side * 3.76, 3.2, z, .13, 6.4, 3.4);
+        for (const dz of [-1.85, 1.85]) this.box(trim, side * 3.66, 3.3, z + dz, .22, 6.6, .19);
+        this.box(trim, side * 3.66, 6.64, z, .22, .2, 3.9);
+        this.sphere(this.brass, side * 3.56, 3, z - 1.2, .12); panel.receiveShadow = true;
+      }
+    }
+    for (const x of [-1.16, 1.16]) this.box(this.metal, x, 3.3, 49.72, 2.28, 6.6, .12);
+    for (const x of [-2.5, 2.5]) this.box(this.black, x, 3.4, 49.62, .3, 6.8, .21);
+    this.box(this.black, 0, 6.9, 49.62, 5.3, .28, .22);
+    this.label('4', 0, 7.37, 49.53, .55, '#ded0a5', '#383c34');
+    for (const z of [34.2, 42.5]) {
+      this.box(this.brass, 3.72, 5.4, z, .22, .95, .65, .08);
+      this.box(this.white, 3.56, 5.4, z, .18, .64, .48, .05);
+      const light = new THREE.PointLight(0xe8cf9d, 95, 12, 2); light.position.set(3.2, 5.4, z); this.root.add(light);
+    }
   }
   private workplace(set: FilmSet): void {
     const a = set.architecture; const w = set.width; const d = set.depth;
@@ -2480,6 +2524,7 @@ export class FilmSetRenderer {
     this.ambush?.dispose(); this.ambush = undefined;
     this.oracleVase?.dispose(); this.oracleVase = undefined;
     this.oracleBlocks = undefined;
+    this.oracleDoor = undefined;
     this.mirror?.dispose(); this.mirror = undefined; this.resetMirrorFrame = undefined; this.mirrorFilament = undefined; this.trackingElectrode = undefined; this.trackingLead = undefined;
     this.pods?.dispose(); this.pods = undefined;
     this.neb?.dispose(); this.neb = undefined;

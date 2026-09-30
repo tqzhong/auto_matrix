@@ -11,6 +11,7 @@ import { clubLocked } from '@auto_matrix/shared';
 import { sentinelDanger, sentinelLocked } from '@auto_matrix/shared';
 import { interludeDuration, interludeLocked } from '@auto_matrix/shared';
 import { ORACLE_RECEPTION, oracleReceptionText, spoonLessonText, oracleVisitDuration, oracleVisitLocked, oracleDepartureTarget, oracleDepartureText } from '@auto_matrix/shared';
+import { ORACLE_ENTRANCE, oracleArrivalPending, oracleArrivalText } from '@auto_matrix/shared';
 import { BETRAYAL, betrayalDuration, betrayalLocked } from '@auto_matrix/shared';
 import { RESCUE, rescueDuration, rescueLoadout, rescueLocked } from '@auto_matrix/shared';
 import { BANE_ENCOUNTER } from '@auto_matrix/shared';
@@ -22,6 +23,14 @@ import { trilogyEpilogueLocked, trilogyEpilogueProgress } from '@auto_matrix/sha
 const button = (target: string, label: string, disabled = false) => `<button data-action="life" data-target="film:${target}" ${disabled ? 'disabled' : ''}>${label}</button>`;
 export function renderFilmJourney(player: AgentState, sandbox: SandboxState): string {
   const life = sandbox.neoLife!; const journey = life.journey!; const scene = FILM_SCENE_BY_ID[journey.scene];
+  if (!journey.visiting && scene.id === 'm1_spoon' && oracleArrivalPending(journey.oracle?.arrival)) {
+    const arrival = journey.oracle!.arrival!, current = player.id === journey.actor;
+    const threshold = filmPosition(scene.set, ORACLE_ENTRANCE.threshold.x, ORACLE_ENTRANCE.threshold.z);
+    const action = !current ? button('resume', '接回 Neo 的视角') : player.status !== 'alive' ? button('retry', '继续公寓到访进度')
+      : arrival.phase === 'waiting' ? button('act', '准备走进公寓 · G', distance(player.position, threshold) > 1.5)
+        : '<p>合上手记，自由行走并跟随陪同者。接待者会为你留出进门的空间。</p>';
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>先知公寓 · 门的另一边</h3><p>Neo 视角 · 亲自走进去</p></header><article class="film-now"><div><p>${journey.lastText}</p><p>${oracleArrivalText(arrival)}</p><div class="film-controls">${action}</div><small>WASD 自由移动 · V 切换视角 · 暂停、断线与读档保留门和人物的当前进度</small></div></article></div>`;
+  }
   if (!journey.visiting && scene.id === 'm1_spoon' && journey.oracle?.spoonLesson) {
     const lesson = journey.oracle.spoonLesson, reception = journey.oracle.reception, current = player.id === journey.actor;
     const invited = reception?.phase === 'inviting' && reception.elapsed >= ORACLE_RECEPTION.invitation;
