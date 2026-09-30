@@ -151,6 +151,7 @@ export class PlayerController {
     this.sandbox?.life.film.interludeFrame(agent, 0, tick);
     this.sandbox?.life.film.oracleFrame(agent, false, 0, tick);
     this.sandbox?.life.film.ambushEscapeFrame(agent, 0, tick);
+    this.sandbox?.life.film.wetwall.frame(agent, { climb: 0, jump: false }, 0, tick);
     this.sandbox?.life.film.betrayalFrame(agent, 0, tick);
     this.sandbox?.life.film.rescueFrame(agent, 0, tick);
     this.sandbox?.life.film.governmentFrame(agent, false, 0, tick);
@@ -243,7 +244,7 @@ export class PlayerController {
     }
     for (const session of this.sessions.values()) {
       const agent = this.world.agents.get(session.agentId)!;
-      if (!running || agent.status !== 'alive') { agent.velocity = { x: 0, y: 0, z: 0 }; this.sandbox?.life.film.hotelFrame(agent, 0, tick); this.sandbox?.life.film.sentinelFrame(agent, { movement: 0, sprint: false, jump: false }, 0, tick); this.sandbox?.life.film.interludeFrame(agent, 0, tick); this.sandbox?.life.film.betrayalFrame(agent, 0, tick); this.sandbox?.life.film.rescueFrame(agent, 0, tick); this.sandbox?.life.film.governmentFrame(agent, false, 0, tick); this.sandbox?.life.film.airRescueFrame(agent, false, 0, tick); this.sandbox?.life.film.matrixEscapeFrame(agent, { movement: 0, sprint: false }, 0, tick); this.sandbox?.life.film.farewellFrame(agent, 0, tick); this.sandbox?.life.film.deusFrame(agent, false, 0, tick); this.sandbox?.life.film.smithFinaleFrame(agent, { focus: false, x: 0, z: 0, yaw: agent.rotation }, 0, tick); this.sandbox?.life.film.epilogueFrame(agent, 0, tick); this.sandbox?.life.film.theOneFrame(agent, { x: 0, z: 0, sprint: false, jump: false, focus: false }, 0, tick); this.sandbox?.life.film.reloaded.frame(agent, { x: 0, focus: false }, 0, tick); this.sandbox?.life.film.catch.frame(agent, { x: 0, z: 0, focus: false }, 0, tick); this.sandbox?.life.film.mountainFrame(agent, { x: 0, z: 0, yaw: agent.rotation, jump: false, sprint: false }, 0, tick); this.sandbox?.life.film.lobby.frame(agent, 0, tick); session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue; }
+      if (!running || agent.status !== 'alive') { this.sandbox?.life.film.wetwall.frame(agent, { climb: 0, jump: false }, 0, tick); agent.velocity = { x: 0, y: 0, z: 0 }; this.sandbox?.life.film.hotelFrame(agent, 0, tick); this.sandbox?.life.film.sentinelFrame(agent, { movement: 0, sprint: false, jump: false }, 0, tick); this.sandbox?.life.film.interludeFrame(agent, 0, tick); this.sandbox?.life.film.betrayalFrame(agent, 0, tick); this.sandbox?.life.film.rescueFrame(agent, 0, tick); this.sandbox?.life.film.governmentFrame(agent, false, 0, tick); this.sandbox?.life.film.airRescueFrame(agent, false, 0, tick); this.sandbox?.life.film.matrixEscapeFrame(agent, { movement: 0, sprint: false }, 0, tick); this.sandbox?.life.film.farewellFrame(agent, 0, tick); this.sandbox?.life.film.deusFrame(agent, false, 0, tick); this.sandbox?.life.film.smithFinaleFrame(agent, { focus: false, x: 0, z: 0, yaw: agent.rotation }, 0, tick); this.sandbox?.life.film.epilogueFrame(agent, 0, tick); this.sandbox?.life.film.theOneFrame(agent, { x: 0, z: 0, sprint: false, jump: false, focus: false }, 0, tick); this.sandbox?.life.film.reloaded.frame(agent, { x: 0, focus: false }, 0, tick); this.sandbox?.life.film.catch.frame(agent, { x: 0, z: 0, focus: false }, 0, tick); this.sandbox?.life.film.mountainFrame(agent, { x: 0, z: 0, yaw: agent.rotation, jump: false, sprint: false }, 0, tick); this.sandbox?.life.film.lobby.frame(agent, 0, tick); session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue; }
       session.stagger = Math.max(0, session.stagger - dt);
       const stale = now - session.lastInput > 300;
       let input = stale ? { ...idleInput(), yaw: session.input.yaw } : session.input;
@@ -253,6 +254,9 @@ export class PlayerController {
       if (sparring) {
         const yaw = Math.atan2(sparring.position.x - agent.position.x, sparring.position.z - agent.position.z);
         input = { ...input, yaw }; session.input.yaw = yaw;
+      }
+      if (this.sandbox?.life.film.wetwall.frame(agent, input, dt, tick)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
       this.sandbox?.life.film.hotelFrame(agent, dt, tick);
       this.sandbox?.life.film.bridgeArrivalFrame(agent, dt, tick);

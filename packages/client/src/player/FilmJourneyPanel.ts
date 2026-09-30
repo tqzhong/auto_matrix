@@ -3,6 +3,7 @@ import { CATCH, RELOADED_FINALE, HEL_COATCHECK, OPENING_ESCAPE, OPENING_HOTEL, c
 import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_NAMES, ARCHITECT_DOOR_SECONDS, filmReflections, CHARACTERS, filmStepPosition, distance, dockPowerOffline, AWAKENING_SECONDS, oracleActing, helElevatorLocked, helDanceDoorLocked, interrogationLocked, pillLocked, lafayetteWelcomeLocked, phoneLocked, windowOpening, windowCrossing, awakeningWaiting, trainingLocked, trainingWaiting, theOneLocked, type AgentState, type SandboxState } from '@auto_matrix/shared';
 import './film-journey.css';
 import { ambushEscapeText } from '@auto_matrix/shared';
+import { WETWALL, wetwallText, wetwallEntry } from '@auto_matrix/shared';
 import { meetingBoardPoint, meetingLocked, MEETING_TIMING } from '@auto_matrix/shared';
 import { filmPosition, HOTEL_DOOR_PROGRESS, CABIN, CABIN_ROUTE_LENGTH } from '@auto_matrix/shared';
 import { workdayLocked } from '@auto_matrix/shared';
@@ -24,6 +25,16 @@ import { trilogyEpilogueLocked, trilogyEpilogueProgress } from '@auto_matrix/sha
 const button = (target: string, label: string, disabled = false) => `<button data-action="life" data-target="film:${target}" ${disabled ? 'disabled' : ''}>${label}</button>`;
 export function renderFilmJourney(player: AgentState, sandbox: SandboxState): string {
   const life = sandbox.neoLife!; const journey = life.journey!; const scene = FILM_SCENE_BY_ID[journey.scene];
+  if (!journey.visiting && scene.id === 'm1_wetwall' && journey.wetwall) {
+    const wall = journey.wetwall, current = player.id === journey.actor, center = FILM_SETS[scene.set].center;
+    const near = distance(player.position, { x: center.x + WETWALL.approach.x, y: center.y + WETWALL.approach.y, z: center.z + WETWALL.approach.z }) <= .65;
+    const action = !current ? button('resume', '接回 Neo 的视角') : wall.paused ? '<p>等候同行者释放角色；当前高度和队形已保留。</p>'
+      : wall.phase === 'failed' ? button('retry', '从墙内检查点重试') : wall.phase === 'done' ? button('next', '继续 Morpheus 的掩护视角')
+        : wall.phase === 'sealed' ? button('act', '破开 808 室的灰泥 · G', !near) : wall.phase === 'jammed' ? button('act', '示意 Trinity 解救 Cypher · G')
+          : '<p>合上手记继续观察或控制下行。松开移动键会抓稳等待。</p>';
+    const depth = Math.max(0, wall.progress.neo - wetwallEntry(wall, 'neo'));
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>墙里的退路 · 808 → 608</h3><p>破墙入内、管线下行与同伴解救</p></header><article class="film-now"><div><p>${wetwallText(wall)}</p><div class="film-controls">${action}</div><small>W 下行 · S 向上退回 · 空格松手 · G 示意 Trinity · V 切换视角<br>已下行 ${depth.toFixed(1)} / 14.8 m · 第 ${wall.attempts + 1} 次尝试</small></div></article></div>`;
+  }
   if (!journey.visiting && scene.id === 'm1_dejavu' && journey.ambushEscape) {
     const escape = journey.ambushEscape, current = player.id === journey.actor;
     const action = !current ? button('resume', '接回 Neo 的视角') : escape.phase === 'failed' || player.status !== 'alive' ? button('retry', `从${escape.checkpoint.floor}楼重试`)

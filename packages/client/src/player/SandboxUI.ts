@@ -5,6 +5,7 @@ import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_NAMES, filmReflections, 
   type AgentState, type SandboxState, type SandboxCommand, type ItemId, type SkillId, type Vector3 } from '@auto_matrix/shared';
 import './sandbox.css';
 import { AMBUSH_ESCAPE, ambushEscapeTarget, ambushEscapeText } from '@auto_matrix/shared';
+import { WETWALL, wetwallText, wetwallEntry } from '@auto_matrix/shared';
 import { renderNeoLife } from './NeoLifePanel.js';
 import { interrogationLocked, interrogationPose } from '@auto_matrix/shared';
 import { meetingBoardPoint, meetingLocked, MEETING_TIMING } from '@auto_matrix/shared';
@@ -203,7 +204,7 @@ export class SandboxUI {
 
   private updateFilm(player: AgentState, state: SandboxState): void {
     const journey = state.neoLife!.journey!; const scene = FILM_SCENE_BY_ID[journey.scene]; const step = scene.steps[journey.step];
-    if (!journey.visiting && scene.id === 'm1_dejavu') this.el('film-sequence').classList.add('ambush-company');
+    if (!journey.visiting && ['m1_dejavu', 'm1_wetwall'].includes(scene.id)) this.el('film-sequence').classList.add('ambush-company');
     this.el('film-sequence').classList.toggle('ambush-observing', Boolean(!journey.visiting && scene.id === 'm1_dejavu'
       && journey.step === 0 && journey.ambushApproach?.stairCat && journey.ambush));
     const escapedScan = scene.id === 'm1_bug' && journey.office?.outcome === 'escaped';
@@ -265,6 +266,23 @@ export class SandboxUI {
     document.getElementById('game-objective')!.textContent = journey.visiting ? set.name : escapedScan ? '确认没有被追踪'
       : scene.id === 'm1_wake_again' && journey.office?.outcome === 'escaped' ? '第二次来电' : scene.title;
     document.getElementById('game-objective-copy')!.textContent = journey.visiting ? '自由走动，J 返回保存的剧情位置。' : scene.id === 'm3_dock_battle' && journey.dockGunnery?.phase === 'failed' ? 'APU 防线失守 · 从剧情检查点重试' : journey.fighting ? 'F 连击 · X 闪避 · 1 治疗 · 击败追兵后继续' : step ? `${journey.step + 1}/${scene.steps.length} · ${stepLabel} · ${step.kind === 'reach' ? '走到标记旁' : step.kind === 'reflect' ? '靠近后按 J 记录反思' : '靠近后按 G'}` : 'G 继续下一段，J 查看刚刚发生的事。';
+    if (!journey.visiting && scene.id === 'm1_wetwall' && journey.wetwall) {
+      const wall = journey.wetwall, failed = wall.phase === 'failed', done = wall.phase === 'done';
+      const near = distance(player.position, { x: ambushCenter.x + WETWALL.approach.x, y: ambushCenter.y + WETWALL.approach.y, z: ambushCenter.z + WETWALL.approach.z }) <= .65;
+      const acting = !wall.paused && (wall.phase === 'sealed' && near || wall.phase === 'jammed' || done);
+      const depth = Math.max(0, wall.progress.neo - wetwallEntry(wall, 'neo'));
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.toggle('urgent', failed || wall.phase === 'jammed');
+      this.el('film-sequence-line').textContent = wetwallText(wall);
+      this.el('film-sequence-hint').textContent = wall.paused ? '等候同行者释放角色 · 鼠标环顾 · V 切换视角' : failed ? 'J 手记 · 从墙内检查点重试'
+        : done ? 'G 继续 Morpheus 的掩护视角 · J 查看手记' : wall.phase === 'sealed' ? near ? 'G 破开灰泥 · V 切换视角' : '走近管线墙 · G 破开灰泥'
+          : wall.phase === 'jammed' ? 'G 示意 Trinity 解救 Cypher · V 切换视角' : wall.phase === 'climbing' ? 'W 下行 · S 向上退回 · 空格松手 · V 切换视角' : '动作进行中 · 鼠标环顾 · V 切换视角';
+      this.el('sandbox-interact').classList.toggle('hidden', !acting); this.el('sandbox-nearby').textContent = wall.phase === 'jammed' ? 'Cypher 被供水管卡住' : `墙内下行 ${depth.toFixed(1)} / 14.8 m`;
+      this.el('sandbox-trace').textContent = '808 → 608 · 管线夹层'; this.el('sandbox-job').style.width = `${Math.min(100, depth / 14.8 * 100)}%`;
+      this.el('sandbox-waypoint').textContent = '';
+      document.getElementById('game-objective')!.textContent = '旧楼伏击 · 墙里的退路';
+      document.getElementById('game-objective-copy')!.textContent = failed ? 'Neo 松开了管道 · J 从检查点重试' : wall.phase === 'climbing' ? `沿管线下行 ${depth.toFixed(1)} m · 松开移动键会抓稳等待` : wetwallText(wall);
+      return;
+    }
     if (!journey.visiting && scene.id === 'm1_dejavu' && journey.step === 0 && journey.ambushApproach) {
       const site = journey.ambushApproach.stairCat ? '楼梯' : '门前', point = journey.ambushApproach.stairCat ? '楼梯观察处' : '走廊观察处';
       const pending = !journey.ambushApproach.ready, observing = journey.ambush !== undefined;

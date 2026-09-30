@@ -12,6 +12,7 @@ import { AIR_RESCUE, governmentPose, airRescuePose, airRescueRoot, interrogation
 import { officeClothing } from '@auto_matrix/shared';
 import { cabinSeat, MORNING, POD_RESCUE, podRescuePose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
 import { ambushCat } from '@auto_matrix/shared';
+import { wetwallPose, WETWALL, WETWALL_SHAFT, type WetwallPhase } from '@auto_matrix/shared';
 
 export class PlayerControls {
   id: string | null = null;
@@ -75,6 +76,8 @@ export class PlayerControls {
   spoon?: number;
   ambushObservation?: number;
   private watchingAmbush = false;
+  private wetwallGuide?: { phase: WetwallPhase; from: number; to: number; progress: number; elapsed: number };
+  private hangingWetwall = false;
   phone?: OfficePhone;
   private firing = false;
   private lastShot = -1000;
@@ -97,6 +100,7 @@ export class PlayerControls {
     this.meetingYaw = undefined; this.welcomeShot = undefined; this.performing = false; this.phoneExit = false;
     this.bridgeCaught = undefined;
     this.watchingAmbush = false;
+    this.wetwallGuide = undefined; this.hangingWetwall = false;
     this.id = state.id; this.position = { ...state.position }; this.yaw = state.rotation;
     this.recoveryYaw = typeof state.currentAction?.parameters.recovery === 'number'
       ? state.currentAction.parameters.download ? state.rotation : recoveryBodyPose(state.currentAction.parameters.recovery).yaw : undefined;
@@ -118,6 +122,7 @@ export class PlayerControls {
     this.id = null; this.keys.clear(); this.enabled = true; this.firing = false; this.firearm = false; this.weaponStyle = undefined; this.fireInterval = LOBBY_FIRE_INTERVAL; this.ride = undefined; this.gunner = false; this.climbing = false; this.performing = false; this.phoneExit = false; this.mirror = 0; this.spoon = undefined; this.phone = undefined; this.welcomeShot = undefined;
     this.bridgeCaught = undefined;
     this.ambushObservation = undefined; this.watchingAmbush = false;
+    this.wetwallGuide = undefined; this.hangingWetwall = false;
     this.camera.near = this.defaultNear; this.camera.fov = 48; this.camera.updateProjectionMatrix();
     if (document.pointerLockElement === this.canvas) document.exitPointerLock();
   }
@@ -361,6 +366,8 @@ export class PlayerControls {
     if (this.motion.spoonLesson && !state.currentAction?.parameters.spoonLesson) this.performing = false;
     if (state.currentAction?.parameters.spoonLesson) this.performing = true;
     if (this.motion.betrayal && !state.currentAction?.parameters.betrayal) this.performing = false;
+    if (this.motion.wetwall && !state.currentAction?.parameters.wetwall) this.performing = false;
+    if (state.currentAction?.parameters.wetwall) this.performing = (state.currentAction.parameters.wetwall as NonNullable<MotionInput['wetwall']>).phase !== 'sealed';
     if (state.currentAction?.parameters.betrayal) this.performing = true;
     if (this.motion.rescue && !state.currentAction?.parameters.rescue) this.performing = false;
     if (state.currentAction?.parameters.rescue) this.performing = true;
@@ -450,6 +457,18 @@ export class PlayerControls {
     this.motion.oracleVisit = state.currentAction?.parameters.oracleVisit as MotionInput['oracleVisit'];
     this.motion.oracleDeparture = departure;
     this.motion.spoonLesson = state.currentAction?.parameters.spoonLesson as MotionInput['spoonLesson'];
+    const wall = state.currentAction?.parameters.wetwall as MotionInput['wetwall'];
+    if (wall) {
+      const guide = this.wetwallGuide;
+      if (!guide || guide.phase !== wall.phase || Math.abs(wall.progress - guide.progress) > 5)
+        this.wetwallGuide = { phase: wall.phase, from: wall.progress, to: wall.progress, progress: wall.progress, elapsed: .5 };
+      else if (guide.to !== wall.progress) this.wetwallGuide = { ...guide, from: guide.progress, to: wall.progress, elapsed: 0 };
+      const track = this.wetwallGuide!;
+      if (running) track.elapsed = Math.min(.5, track.elapsed + delta);
+      track.progress = THREE.MathUtils.lerp(track.from, track.to, track.elapsed / .5);
+      const pose = wetwallPose(wall.start, wall.role, track.progress, wall.phase, wall.elapsed, wall.fallY);
+      this.motion.wetwall = { ...wall, progress: track.progress, hanging: pose.hanging };
+    } else { this.motion.wetwall = undefined; this.wetwallGuide = undefined; }
     this.motion.betrayal = state.currentAction?.parameters.betrayal as MotionInput['betrayal'];
     this.motion.rescue = state.currentAction?.parameters.rescue as MotionInput['rescue'];
     this.motion.government = state.currentAction?.parameters.government as MotionInput['government'];
@@ -520,7 +539,7 @@ export class PlayerControls {
     this.motion.realWorld = !state.isInMatrix && state.currentLocation !== 'film_real_desert';
     this.motion.clubClothes = state.currentLocation === 'film_white_rabbit_club' || state.id === 'neo' && state.currentLocation === 'film_white_construct' && !state.currentAction?.parameters.rescue;
     this.motion.glasses = !this.motion.clubClothes && (state.id !== 'neo' || state.isAwakened && state.currentLocation !== 'film_oracle_home');
-    this.motion.climbing = this.climbing ? Number(this.keys.has('KeyW') || this.keys.has('ArrowUp')) - Number(this.keys.has('KeyS') || this.keys.has('ArrowDown')) : undefined;
+    this.motion.climbing = this.motion.wetwall?.hanging ? 0 : this.climbing && !wall ? Number(this.keys.has('KeyW') || this.keys.has('ArrowUp')) - Number(this.keys.has('KeyS') || this.keys.has('ArrowDown')) : undefined;
     if (this.firing) this.requestShot();
     const now = performance.now();
     if (!running || !this.enabled || state.status !== 'alive') { this.attackQueuedUntil = 0; this.localJump = false; this.networkJump = false; this.impulse = undefined; }
@@ -552,7 +571,11 @@ export class PlayerControls {
       this.cameraReady = false; this.lastLook = now;
     }
     this.watchingAmbush = watchingAmbush;
-    if (this.ride || this.climbing || this.performing) {
+    if (wall && wall.phase !== 'sealed' && !['falling', 'failed'].includes(wall.phase)) {
+      const track = this.wetwallGuide!, pose = wetwallPose(wall.start, wall.role, track.progress, wall.phase, wall.elapsed), center = FILM_SETS.film_ambush_house.center;
+      this.position = { x: center.x + pose.x, y: center.y + pose.y, z: center.z + pose.z };
+      this.facing = pose.yaw; this.vy = 0; this.planar = { x: 0, z: 0 }; this.localJump = false;
+    } else if (this.ride || this.climbing || this.performing) {
       const blend = this.motion.truckPassenger || this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.training || this.motion.workday || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || catchCinematic || smithFinaleLocked(this.motion.smithFinale) || this.motion.lobbyEntry ? 1 : 1 - Math.exp(-20 * delta);
       this.position.x += (state.position.x - this.position.x) * blend; this.position.y += (state.position.y - this.position.y) * blend; this.position.z += (state.position.z - this.position.z) * blend;
       this.vy = 0; this.planar = { x: 0, z: 0 }; this.localJump = false;
@@ -576,20 +599,24 @@ export class PlayerControls {
       this.networkJump = false; this.lastSent = performance.now();
     }
     group.position.set(this.position.x, this.position.y, this.position.z);
+    const hanging = Boolean(this.motion.wetwall?.hanging);
+    if (hanging && !this.hangingWetwall) { this.yaw = this.movementYaw = Math.PI; this.pitch = .65; this.cameraReady = false; }
+    this.hangingWetwall = hanging;
     if (mirrorStarting && this.firstPerson && now - this.lastLook > 900) this.aimAtMirror();
     const dx = this.position.x - previous.x; const dz = this.position.z - previous.z;
-    this.motion.speed = this.ride || this.climbing || this.performing ? 0 : Math.hypot(dx, dz) / Math.max(delta, .001);
+    this.motion.speed = wall && !hanging ? Math.hypot(dx, dz) / Math.max(delta, .001) : this.ride || this.climbing || this.performing ? 0 : Math.hypot(dx, dz) / Math.max(delta, .001);
     if (this.motion.spoonLesson?.phase === 'sitting' && this.motion.spoonLesson.elapsed < 1.1) this.motion.speed = Math.hypot(state.velocity.x, state.velocity.z);
     if (this.motion.wakeCall?.phase === 'waking' && this.motion.wakeCall.elapsed > 2.7 && this.motion.morning?.phase !== 'lying') this.motion.speed = 1.45;
     if (this.motion.wakeCall?.phase === 'leaving' && this.motion.wakeCall.elapsed > 1.15 && this.motion.wakeCall.elapsed < 3.05) this.motion.speed = 1.35;
-    this.motion.grounded = Boolean(this.ride || this.gunner) || this.climbing || this.performing || this.position.y <= groundHeight(this.position, state.isInMatrix) + .12;
-    this.motion.verticalVelocity = this.vy;
+    this.motion.grounded = wall?.role === 'neo' && wall.phase === 'falling' ? false : Boolean(this.ride || this.gunner) || this.climbing || this.performing || this.position.y <= groundHeight(this.position, state.isInMatrix) + .12;
+    this.motion.verticalVelocity = wall?.role === 'neo' && wall.phase === 'falling' ? state.velocity.y : this.vy;
     this.motion.inspecting = Boolean((this.motion.pills || this.motion.interrogation || this.motion.welcome || this.motion.knock !== undefined || this.motion.recovery !== undefined || this.motion.cabin || this.motion.reveal || this.motion.training || this.motion.workday || this.motion.wakeCall || this.motion.sentinel || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || this.motion.lobbyEntry) && !this.firstPerson) || Boolean(this.phone && this.performing && this.motion.window === undefined && this.motion.crossing === undefined) || !this.firstPerson && this.spoon !== undefined && this.enabled && this.motion.speed < .25 && this.motion.grounded;
     const attacking = (now - this.lastAttack) / 1000 < MELEE_COMBO[this.attackCombo].duration;
-    const heading = this.ride || this.climbing || this.performing ? state.rotation : attacking ? this.attackYaw : this.firearm ? this.yaw : this.motion.speed > .1 ? Math.atan2(dx, dz) : this.facing;
+    const heading = this.motion.wetwall && this.wetwallGuide ? wetwallPose(this.motion.wetwall.start, this.motion.wetwall.role, this.wetwallGuide.progress, this.motion.wetwall.phase, this.motion.wetwall.elapsed).yaw
+      : this.ride || this.climbing || this.performing ? state.rotation : attacking ? this.attackYaw : this.firearm ? this.yaw : this.motion.speed > .1 ? Math.atan2(dx, dz) : this.facing;
     const turn = Math.atan2(Math.sin(heading - this.facing), Math.cos(heading - this.facing));
     this.facing += turn * (this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.welcome || this.motion.knock !== undefined || this.motion.training || this.motion.workday || this.motion.wakeCall || this.motion.sentinel || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || this.motion.lobbyEntry ? 1 : 1 - Math.exp(-14 * delta)); this.motion.turn = turn * 8;
-    if (running && this.enabled && (this.motion.speed > .1 || this.ride || this.climbing) && !(this.firstPerson && this.climbing && state.currentLocation === 'film_office_ledge') && !this.dragging && performance.now() - this.lastLook > 900) {
+    if (running && this.enabled && !this.motion.wetwall && (this.motion.speed > .1 || this.ride || this.climbing) && !(this.firstPerson && this.climbing && state.currentLocation === 'film_office_ledge') && !this.dragging && performance.now() - this.lastLook > 900) {
       const cameraTurn = Math.atan2(Math.sin(this.facing - this.yaw), Math.cos(this.facing - this.yaw));
       this.yaw += cameraTurn * (1 - Math.exp(-5 * delta));
     }
@@ -621,7 +648,7 @@ export class PlayerControls {
     const podWide = !this.firstPerson && this.motion.performance === 'pod';
     const cabinWide = !this.firstPerson && Boolean(this.motion.cabin);
     this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, inOfficeLift && !this.firstPerson ? 80 : podWide ? 65 : this.motion.truth && !this.firstPerson && this.camera.aspect < .85 ? 68 : cabinWide ? this.camera.aspect < .85 ? 68 : 58 : smithFinaleWide || epilogueWide ? 64 : ladderWide ? 62 : interviewApproach ? 70 : interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide || sentinelWide || interludeWide || oracleWide || betrayalWide || rescueWide || governmentWide || airRescueWide || escapeWide || oneWide || catchWide || lobbyWide || pillDepartureWide ? 58 : this.motion.inspecting ? 42 : this.firstPerson ? this.motion.mirrorBeat !== undefined ? 78 : sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
-    this.camera.near = this.firstPerson && this.motion.club ? .08 : this.defaultNear;
+    this.camera.near = this.firstPerson && this.motion.wetwall?.hanging ? .06 : this.firstPerson && this.motion.club ? .08 : this.defaultNear;
     this.camera.updateProjectionMatrix();
     this.cameraStep += this.motion.speed * delta;
     const target = new THREE.Vector3(this.position.x, this.position.y + (this.firstPerson ? 2.99 : 2.05) - (this.motion.pills ? .9 : 0) - (this.motion.mirrorBeat !== undefined ? THREE.MathUtils.smoothstep(this.motion.mirrorBeat, .65, MIRROR_TIMING.sit) * .9 : 0) - (this.motion.reveal?.kind === 'construct' ? .62 : 0) - (this.motion.crouching ? 1.1 : 0), this.position.z);
@@ -1069,6 +1096,21 @@ export class PlayerControls {
         ideal.add(origin); focus.add(origin);
         if (resetCamera || gesture.elapsed < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
         this.camera.lookAt(focus);
+      }
+    } else if (this.motion.wetwall?.hanging) {
+      const center = FILM_SETS.film_ambush_house.center;
+      if (this.firstPerson) {
+        const head = group.getObjectByName('head'); head?.updateWorldMatrix(true, false);
+        const eye = head ? head.localToWorld(new THREE.Vector3(0, .1, .32)) : new THREE.Vector3(this.position.x, this.position.y + 3.1, this.position.z - .32);
+        const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
+        this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
+      } else {
+        const rescue = ['jammed', 'rescuing'].includes(this.motion.wetwall.phase);
+        const ideal = new THREE.Vector3(center.x + (rescue ? -18.5 : -19.7), rescue ? center.y + WETWALL_SHAFT.top - WETWALL.jam + (this.camera.aspect < .85 ? 8.3 : 7.2) : this.position.y + (this.camera.aspect < .85 ? 3.2 : 1.8), center.z + WETWALL_SHAFT.front - .5);
+        if (resetCamera) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-10 * delta));
+        this.camera.lookAt(rescue ? center.x - 19.1 : this.position.x, rescue ? center.y + WETWALL_SHAFT.top - WETWALL.jam + 2.35 : this.position.y + 1.3, center.z + WETWALL_SHAFT.bodyZ);
+        this.camera.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), this.yaw - Math.PI));
+        this.camera.rotateX(.65 - this.pitch);
       }
     } else if (this.motion.betrayal) {
       const gesture = this.motion.betrayal; const center = FILM_SETS[state.currentLocation].center;

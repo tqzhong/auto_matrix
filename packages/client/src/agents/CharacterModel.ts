@@ -7,6 +7,7 @@ import { poseOracleReception, poseOracleWaiting } from './OracleReceptionPerform
 import { poseOracleCookie } from './OracleCookiePerformance.js';
 import { poseOracleDeparture } from './OracleDeparturePerformance.js';
 import { poseOracleArrival } from './OracleArrivalPerformance.js';
+import { poseWetwall } from './WetwallPerformance.js';
 import { advanceMotion, newMotion, type MotionInput, type MotionState } from './CharacterMotion.js';
 import { HERO_IDS, HeroModels, type HeroId, type HeroRig, type HeroSupport } from './HeroModel.js';
 import { SpoonModel } from './SpoonModel.js';
@@ -592,6 +593,7 @@ export class CharacterModels {
       poseOracleCookie(rig, input.oracleVisit);
       poseOracleDeparture(rig, input.oracleDeparture);
       poseOracleArrival(rig, input.oracleArrival);
+      poseWetwall(rig, input.wetwall);
       if (holdsStaff) {
         rig.hero.bones.get('shoulder_R')!.rotation.x -= .7 + staffSweep * .5;
         rig.hero.bones.get('shoulder_L')!.rotation.x -= .55 + staffSweep * .35;
@@ -665,7 +667,7 @@ export class CharacterModels {
       }
       vertices.needsUpdate = true; panel.mesh.geometry.computeVertexNormals();
     }
-    if (input.grounded && !input.realWorld && !input.seated && !input.floorSeated && !input.performance
+    if (input.grounded && input.climbing === undefined && !input.realWorld && !input.seated && !input.floorSeated && !input.performance
       && !input.windingUp && rig.motion.attackAge > 1 && rig.motion.skillAge > 1 && rig.motion.hitAge > .5) placeAmbushFeet(rig);
     poseSpoonHands(rig, input.spoonLesson);
     poseOracleReception(rig, input.oracleReception);
@@ -673,6 +675,7 @@ export class CharacterModels {
     poseOracleCookie(rig, input.oracleVisit);
     poseOracleDeparture(rig, input.oracleDeparture);
     poseOracleArrival(rig, input.oracleArrival);
+    poseWetwall(rig, input.wetwall);
     if (input.training?.kind === 'download' && input.training.role === 'tank') {
       const engaged = input.training.elapsed > 0 ? 1 : .35;
       for (let i = 0; i < 2; i++) {

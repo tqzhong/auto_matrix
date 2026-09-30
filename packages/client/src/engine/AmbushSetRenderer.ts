@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { FILM_SETS, AMBUSH_WALLS, AMBUSH_SEALS, AMBUSH_FLOORS, AMBUSH_RAILS, AMBUSH_STAIRS, AMBUSH_STOREYS, AMBUSH_ESCAPE, ambushCat, ambushFloor, type FilmJourney, type WorldStructure } from '@auto_matrix/shared';
 import { reach } from '../agents/SpoonPerformance.js';
+import { WetwallRenderer } from './WetwallRenderer.js';
 
 /** The changed masonry uses the same footprints as the saved, authoritative barriers. */
 export class AmbushSetRenderer {
@@ -30,6 +31,7 @@ export class AmbushSetRenderer {
   private previousTime = 0;
   private catReportedTime = -1;
   private catReportedAt = 0;
+  private wetwall: WetwallRenderer;
   constructor(parent: THREE.Group) {
     parent.add(this.root);
     const plaster = this.pbr('damaged_plaster', 0x989d86, 4);
@@ -95,6 +97,7 @@ export class AmbushSetRenderer {
     }
     this.makeLowerFloors(plaster, wood, trim, iron, windowMaterial);
     this.batch();
+    this.wetwall = new WetwallRenderer(this.root, { plaster, wood, iron, trim });
     this.root.add(this.seals, this.eighthSeals, this.cat, this.gunfire);
     this.gunfire.position.set(-17, 3, -15);
     this.eighthSeals.position.y = AMBUSH_ESCAPE.window.y;
@@ -180,13 +183,7 @@ export class AmbushSetRenderer {
     }
     this.sign('13 / 1313', -12.6, 5.7, -17.5, Math.PI / 2, 2.8, 1.2);
     this.sign('8 / 808', -12.6, AMBUSH_ESCAPE.window.y + 5.1, -17.5, Math.PI / 2, 2.8, 1.2);
-    const pipe = this.mat(0x535b53, .45, .6), y = AMBUSH_ESCAPE.wetwall.y;
-    for (const x of [-20.4, -18.7, -16.9]) {
-      this.cylinder(pipe, x, y + 3.6, -32.6, x === -18.7 ? .19 : .11, 7);
-      for (const level of [1.4, 4.8]) this.box(iron, x, y + level, -32.45, .5, .15, .5);
-    }
-    for (const x of [-21.4, -15.3]) this.box(wood, x, y + 3.6, -31.6, .16, 7.2, .18);
-    for (let i = 0; i < 14; i++) this.box(wood, -21.2, y + .3 + i * .49, -31.45, .7 + i % 3 * .27, .16, .15).rotation.z = (i % 3 - 1) * .07;
+    const y = AMBUSH_ESCAPE.wetwall.y;
     const light = new THREE.PointLight(0xcfbd94, 145, 35, 2); light.position.set(-5, y + 6, -14); this.root.add(light);
   }
   private sign(text: string, x: number, y: number, z: number, yaw: number, width: number, height: number): void {
@@ -299,6 +296,7 @@ export class AmbushSetRenderer {
     const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, height, 14), material); mesh.position.set(x, y, z); mesh.castShadow = mesh.receiveShadow = true; parent.add(mesh); return mesh;
   }
   update(journey: FilmJourney | undefined, structures: WorldStructure[], elapsed: number): void {
+    this.wetwall.update(journey);
     const sealed = structures.some(s => s.film?.scene === 'm1_dejavu');
     this.seals.visible = sealed; this.window.visible = !sealed; this.daylight.intensity = sealed ? 0 : 1250;
     this.eighthSeals.visible = structures.some(s => s.film?.scene === 'm1_dejavu' && Math.abs(s.position.y - AMBUSH_ESCAPE.window.y - FILM_SETS.film_ambush_house.center.y) < .1);
@@ -375,6 +373,7 @@ export class AmbushSetRenderer {
     }
   }
   dispose(): void {
+    this.wetwall.dispose();
     this.root.traverse(object => { if (object instanceof THREE.Mesh) object.geometry.dispose(); if (object instanceof THREE.InstancedMesh || object instanceof THREE.PointLight || object instanceof THREE.SpotLight) object.dispose(); });
     this.materials.forEach(m => m.dispose()); this.textures.forEach(t => t.dispose()); this.root.removeFromParent();
   }

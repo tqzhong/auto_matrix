@@ -25,3 +25,8 @@ test('Construct and desert story beats keep ambient conversation prompts out of 
   assert.equal(cinematicTalkSuppressed('m1_spoon', undefined, 1), false, 'ordinary conversation returns when the focus exercise is finished');
   assert.equal(cinematicTalkSuppressed(undefined, undefined), false);
 });
+
+test('wall escape keeps ambient conversation out of breaking, climbing and rescue controls', () => {
+  for (const step of [0, 1, 2, 3, 4]) assert.equal(cinematicTalkSuppressed('m1_wetwall', undefined, step), true);
+  assert.equal(cinematicTalkSuppressed('m1_wetwall', 'film_ambush_house', 1), false, 'visiting outside the escape keeps ordinary conversation');
+});

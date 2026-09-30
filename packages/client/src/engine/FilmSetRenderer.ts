@@ -560,6 +560,7 @@ export class FilmSetRenderer {
     if (journey && windowOpening(journey)) this.marker.visible = false;
     if (journey?.scene === 'm1_dejavu' && journey.step === 0 && journey.ambush) this.marker.visible = false;
     if (!journey?.visiting && journey?.scene === 'm1_dejavu' && journey.ambushEscape && ['alarm', 'call', 'failed', 'done'].includes(journey.ambushEscape.phase)) this.marker.visible = false;
+    if (!journey?.visiting && journey?.scene === 'm1_wetwall' && journey.wetwall?.phase !== 'sealed') this.marker.visible = false;
     if (this.marker.visible && step && scene) {
       const bridgeDoor = scene.id === 'm1_bridge' && journey?.step === 1 && journey.bridgeArrival?.parkedRoadTime !== undefined
         ? meetingBoardPoint(journey.bridgeArrival) : undefined;

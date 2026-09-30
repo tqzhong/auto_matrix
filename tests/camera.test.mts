@@ -8,6 +8,7 @@ import { PodSetRenderer } from '../packages/client/src/engine/PodSetRenderer.js'
 import { NebDeckRenderer } from '../packages/client/src/engine/NebDeckRenderer.js';
 import { AmbushSetRenderer } from '../packages/client/src/engine/AmbushSetRenderer.js';
 import { CABIN, CABIN_ROUTE_LENGTH, cabinBodyPose, downloadRoot, DOWNLOAD_OPERATOR, type DownloadSetup } from '@auto_matrix/shared';
+import { WETWALL, WETWALL_SHAFT, WETWALL_ROLES, wetwallEntry, wetwallPose, type WetwallEncounter, type WetwallGesture } from '@auto_matrix/shared';
 import { truthRoot, TRUTH_BEDSIDE, type TruthGesture } from '@auto_matrix/shared';
 import { awakeningPose, podRescuePose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
 import { MORNING, morningRoot, morningWakePose } from '@auto_matrix/shared';
@@ -445,6 +446,58 @@ function setup(t: TestContext, rotation = 0) {
   step(.5);
   return { controls, camera, group, state, document, window, canvas, sent, actions, event, key, step, yaw };
 }
+
+test('wetwall third person stays inside the actual shaft and frames Neo head and shoes in both aspect ratios', t => {
+  const game = setup(t), center = FILM_SETS.film_ambush_house.center;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const starts = Object.fromEntries(WETWALL_ROLES.map(role => [role, { x: WETWALL.lanes[role], y: WETWALL_SHAFT.top, z: -26.9 }])) as WetwallEncounter['starts'];
+  const wall = { starts } as WetwallEncounter, entry = wetwallEntry(wall, 'neo');
+  const parent = new THREE.Group(); parent.position.set(center.x, center.y - 1, center.z);
+  const renderer = new AmbushSetRenderer(parent);
+  try {
+    for (const aspect of [.72, 16 / 9]) for (const depth of [.1, 4, 9.4, 14.8]) {
+      game.camera.aspect = aspect; game.camera.updateProjectionMatrix();
+      const wetwall: WetwallGesture = { role: 'neo', phase: 'climbing', elapsed: 0, progress: entry + depth, entry, hanging: true, freed: true, start: starts.neo };
+      const pose = wetwallPose(starts.neo, 'neo', wetwall.progress, wetwall.phase, 0);
+      game.state.currentLocation = 'film_ambush_house'; game.state.position = { x: center.x + pose.x, y: center.y + pose.y, z: center.z + pose.z }; game.state.rotation = Math.PI;
+      game.state.currentAction = { type: 'idle', parameters: { resolved: true, wetwall }, startedAt: 0, duration: 1, progress: 0 };
+      game.controls.possess(game.state); game.step(.5); game.camera.updateWorldMatrix(true, true); parent.updateWorldMatrix(true, true);
+      const shaft = parent.getObjectByName('ambush-wetwall-shaft')!;
+      for (const height of [-.8, 3.1]) {
+        const point = new THREE.Vector3(game.state.position.x, game.state.position.y + height, game.state.position.z), direction = point.clone().sub(game.camera.position);
+        const screen = point.clone().project(game.camera);
+        assert.ok(Math.abs(screen.x) < .95 && Math.abs(screen.y) < .95 && screen.z > -1 && screen.z < 1,
+          `Neo head and shoes must remain in frame at aspect=${aspect}, depth=${depth}, height=${height}: ${screen.toArray()}`);
+        const hits = new THREE.Raycaster(game.camera.position, direction.clone().normalize(), 0, direction.length() - .1).intersectObject(shaft, true)
+          .filter(hit => { for (let object: THREE.Object3D | null = hit.object; object; object = object.parent) if (!object.visible) return false; return hit.object instanceof THREE.Mesh && hit.object.castShadow; });
+        assert.equal(hits.length, 0, `actual shaft masonry or fittings obstruct Neo at depth=${depth}, height=${height}: ${hits.map(hit => `${hit.object.name || hit.object.type} ${hit.point.toArray()}`).join('; ')}`);
+      }
+    }
+  } finally { renderer.dispose(); }
+});
+
+test('wetwall V uses the animated eye, sends W/S climb and keeps free look after the normal follow delay', t => {
+  const game = setup(t), center = FILM_SETS.film_ambush_house.center, start = { x: -18, y: WETWALL_SHAFT.top, z: -26.9 };
+  const wall = { starts: { neo: start } } as WetwallEncounter, entry = wetwallEntry(wall, 'neo');
+  const wetwall: WetwallGesture = { role: 'neo', phase: 'climbing', elapsed: 0, progress: entry + 4, entry, hanging: true, freed: false, start };
+  const pose = wetwallPose(start, 'neo', wetwall.progress, wetwall.phase, 0);
+  game.state.currentLocation = 'film_ambush_house'; game.state.position = { x: center.x + pose.x, y: center.y + pose.y, z: center.z + pose.z }; game.state.rotation = Math.PI;
+  game.state.currentAction = { type: 'idle', parameters: { resolved: true, wetwall }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.controls.climbing = true;
+  const head = new THREE.Bone(); head.name = 'head'; head.position.set(.1, 2.9, .25); game.group.children[0].add(head);
+  game.key('KeyV'); game.key('KeyV', false); game.step(.2);
+  assert.ok(game.camera.position.distanceTo(head.localToWorld(new THREE.Vector3(0, .1, .32))) < .01,
+    'the eye is in front of the delivered animated face rather than at default walking height');
+  game.document.pointerLockElement = game.canvas;
+  const before = game.camera.getWorldDirection(new THREE.Vector3()); game.event(game.document, 'mousemove', { movementX: 100, movementY: -70 }); game.step(.2);
+  const looked = game.camera.getWorldDirection(new THREE.Vector3()); assert.ok(looked.distanceTo(before) > .2);
+  game.key('KeyW'); game.step(2); game.key('KeyW', false);
+  assert.equal(game.sent.at(-2)?.climb, 1); assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(looked) < .001);
+  game.key('KeyS'); game.step(.2); game.key('KeyS', false); assert.equal(game.sent.at(-2)?.climb, -1);
+  const height = game.group.position.y; game.step(.5, 1 / 60, false); assert.equal(game.group.position.y, height);
+  game.key('KeyV'); game.key('KeyV', false); game.step(.2);
+  assert.equal(game.controls.firstPerson, false); assert.ok(game.camera.position.distanceTo(game.group.position) > 4);
+});
 
 test('both player views predict solid companions on the eighth floor and allow retreat away from them', t => {
   const game = setup(t), center = FILM_SETS.film_ambush_house.center;

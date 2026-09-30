@@ -2426,6 +2426,33 @@ test('the entire film route completes through interactions, driving and real com
       assert.equal(state.oracle.arrival.phase, 'done', 'the complete route enters through the door before the spoon lesson');
     }
     for (let index = 0; index < scene.steps.length; index++) {
+      if (scene.id === 'm1_wetwall') {
+        const frame = (climb = 0) => {
+          h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, climb, jump: false, sprint: false, sequence: ++sequence });
+          h.players.step(.1, true, h.tick());
+        };
+        if (index === 0) {
+          const target = filmPosition(scene.set, -18, -28.4);
+          for (let frame = 0; frame < 80; frame++) {
+            const actor = h.actor(), dx = target.x - actor.position.x, dz = target.z - actor.position.z, gap = Math.hypot(dx, dz);
+            if (gap < .3) break;
+            h.players.receiveInput('film-player', { x: dx / gap, z: dz / gap, yaw: Math.atan2(dx, dz), jump: false, sprint: false, sequence: ++sequence });
+            h.players.step(.05, true, h.tick()); assert.ok(frame < 79, 'the complete route must walk to the entry plaster');
+          }
+          frame(); h.command('act');
+          for (let i = 0; i < 650 && state.wetwall!.phase !== 'climbing'; i++) frame();
+          assert.equal(state.wetwall!.phase, 'climbing');
+        } else if (index === 1) {
+          for (let i = 0; i < 600 && state.wetwall!.phase !== 'jammed'; i++) frame(1);
+          assert.equal(state.wetwall!.phase, 'jammed');
+        } else if (index === 2) {
+          h.command('act'); for (let i = 0; i < 80 && !state.wetwall!.freed; i++) frame(); assert.equal(state.wetwall!.freed, true);
+        } else {
+          for (let i = 0; i < 500 && state.wetwall!.phase !== 'done'; i++) frame(1);
+          assert.equal(state.wetwall!.phase, 'done');
+        }
+        assert.equal(state.step, index + 1); continue;
+      }
       if (scene.id === 'm1_dejavu' && index > 0 && state.ambushEscape) {
         const walk = (x: number, y: number, z: number) => {
           const target = filmPosition(scene.set, x, z); target.y += y;

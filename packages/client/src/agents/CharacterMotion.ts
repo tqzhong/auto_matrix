@@ -17,6 +17,7 @@ export interface MotionInput {
   skill?: CombatSkillId;
   armed?: boolean;
   ambushEscort?: import('@auto_matrix/shared').AmbushEscort;
+  wetwall?: import('@auto_matrix/shared').WetwallGesture;
   shot?: number;
   crouching?: boolean;
   seated?: boolean;

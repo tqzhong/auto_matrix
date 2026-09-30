@@ -8,6 +8,8 @@ export const AMBUSH_CAT_STAIRS = { repeat: 6.8, rewrite: 13.4, seconds: 14.8, ob
 // 1313 to the eighth-floor hall; the original entry is one floor below the cat.
 export const AMBUSH_STAIRS = { rise: 7.4, steps: 12, left: -5.5, right: 5.5, entry: { x: -5.5, z: 32 } } as const;
 export const AMBUSH_STOREYS = 5;
+export const WETWALL_SHAFT = { top: -37, sixth: -51.8, low: -66.6, front: -30.8, back: -34,
+  left: -22, right: -13, bodyZ: -32.2, pipeZ: -33.35, holeWidth: 3.4, holeHeight: 6.1 } as const;
 export const AMBUSH_COMPANY = {
   morpheus: { offset: 12.6, x: -8.5, z: -17 }, switch: { offset: 8.4, x: -7.5, z: -12 }, apoc: { offset: 4.2, x: -10, z: -7.5 },
   trinity: { offset: -4.2, x: -6, z: -3 }, cypher: { offset: -8.4, x: -10, z: 1.5 },
@@ -70,7 +72,8 @@ export function newAmbushApproach(): AmbushApproach {
 export interface AmbushSurface { x: number; z: number; width: number; depth: number; y: number }
 export const AMBUSH_FLOORS: AmbushSurface[] = Array.from({ length: AMBUSH_STOREYS + 1 }, (_, storey) => {
   const y = -storey * AMBUSH_STAIRS.rise;
-  return [{ x: 0, z: -11, width: 44, depth: 46, y },
+  return [...(storey === AMBUSH_STOREYS ? [{ x: 0, z: -9.4, width: 44, depth: 42.8, y },
+    { x: 4.5, z: -32.4, width: 35, depth: 3.2, y }] : [{ x: 0, z: -11, width: 44, depth: 46, y }]),
     ...[-15.5, 15.5].map(x => ({ x, z: 20.5, width: 13, depth: 17, y })),
     { x: 0, z: 31.5, width: 44, depth: 5, y }];
 }).flat();
@@ -107,9 +110,18 @@ export function ambushFloor(x: number, z: number, y: number): number | undefined
   return floor;
 }
 export function ambushStairsBlocked(x: number, z: number, y: number, radius: number): boolean {
+  if (y <= WETWALL_SHAFT.top + .8 && x < WETWALL_SHAFT.right && z < WETWALL_SHAFT.front) {
+    return x < WETWALL_SHAFT.left + radius + .15 || x > WETWALL_SHAFT.right - radius - .15 || z < WETWALL_SHAFT.back + radius + .15
+      || z > WETWALL_SHAFT.front - radius - .15 && !(Math.abs(y - WETWALL_SHAFT.top) < .8 && Math.abs(x + 18) < WETWALL_SHAFT.holeWidth / 2 - radius)
+      || y < WETWALL_SHAFT.low;
+  }
+  if (Math.abs(y - WETWALL_SHAFT.top) < .8 && x < WETWALL_SHAFT.right && Math.abs(z - WETWALL_SHAFT.front) < radius + .12
+    && Math.abs(x + 18) > WETWALL_SHAFT.holeWidth / 2 - radius) return true;
   if (Math.abs(x) < 2.5 + radius && Math.abs(z - 23) < 5 + radius) return true;
   if (AMBUSH_FLOORS.some(surface => surface.y > y + .8 && surface.y < y + 3.96 && Math.abs(x - surface.x) < surface.width / 2 && Math.abs(z - surface.z) < surface.depth / 2)) return true;
   for (const [dx, dz] of [[radius, 0], [-radius, 0], [0, radius], [0, -radius]]) {
+    if (Math.abs(y - WETWALL_SHAFT.top) < .8 && Math.abs(x + 18) < WETWALL_SHAFT.holeWidth / 2 - radius
+      && z >= WETWALL_SHAFT.front && z + dz < WETWALL_SHAFT.front) continue;
     const floor = ambushFloor(x + dx, z + dz, y);
     if (floor === undefined || floor < y - 4) return true;
   }
