@@ -94,7 +94,14 @@ test('the console, crew meal and restaurant own visible, animated physical props
   const steakJourney: FilmJourney = { version: 1, scene: 'm1_steak', actor: 'smith', step: 1, completed: [], enteredAt: 0,
     reflections: {}, lastText: '', checkpoint: filmPosition('film_cypher_restaurant'), interlude: { kind: 'steak', phase: 'performing', elapsed: 0 } };
   try {
-    for (const name of ['cypher-window-table', 'cypher-chair-smith', 'cypher-chair-cypher', 'cypher-steak', 'cypher-steak-cut-piece', 'cypher-steak-knife', 'cypher-steak-fork', 'cypher-wine-glass', 'cypher-restaurant-window']) assert.ok(restaurantRoot.getObjectByName(name), name);
+    for (const name of ['cypher-window-table', 'cypher-chair-smith', 'cypher-chair-cypher', 'cypher-steak', 'cypher-steak-cut-piece', 'cypher-steak-knife', 'cypher-steak-fork', 'cypher-wine-glass', 'cypher-restaurant-window', 'cypher-restaurant-city-matte', 'cypher-restaurant-window-sill', 'cypher-tablecloth-front', 'cypher-table-runner']) assert.ok(restaurantRoot.getObjectByName(name), name);
+    const matte = restaurantRoot.getObjectByName('cypher-restaurant-city-matte')!;
+    const night = restaurantRoot.getObjectByName('cypher-restaurant-night')!;
+    const window = restaurantRoot.getObjectByName('cypher-restaurant-window')!;
+    assert.ok(matte.position.z > night.position.z + .125 && matte.position.z < window.position.z,
+      'the city matte must sit in front of the opaque night backing and behind the physical glass');
+    assert.equal(((matte as THREE.Mesh).material as THREE.MeshBasicMaterial).color.getHex(), 0xffffff,
+      'the city matte cannot darken its own source image into a flat backing');
     restaurant.update(steakJourney, 0); const bite = restaurantRoot.getObjectByName('cypher-steak-cut-piece')!; const resting = bite.position.y;
     steakJourney.interlude!.elapsed = 3.45; restaurant.update(steakJourney, 3.45); assert.ok(bite.position.y > resting + 1);
   } finally { restaurant.dispose(); }

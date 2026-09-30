@@ -6,7 +6,9 @@ import { INTERLUDE_TIMING, type FilmJourney } from '@auto_matrix/shared';
 export class CypherRestaurantRenderer {
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
+  private textures = new Set<THREE.Texture>();
   private lights = new Set<THREE.Light>();
+  private disposed = false;
   private cutPiece = new THREE.Group();
   private knife = new THREE.Group();
   private wine: THREE.MeshPhysicalMaterial;
@@ -23,15 +25,24 @@ export class CypherRestaurantRenderer {
     const night = this.material(new THREE.MeshBasicMaterial({ color: 0x090d12, toneMapped: false }));
     const window = this.material(new THREE.MeshPhysicalMaterial({ color: 0x8da4a8, transparent: true, opacity: .15, roughness: .12, metalness: .15, depthWrite: false, side: THREE.DoubleSide }));
     this.wine = this.material(new THREE.MeshPhysicalMaterial({ color: 0x551018, transparent: true, opacity: .8, roughness: .12, transmission: .15 }));
+    this.surface(marble, 'marble_01', 4); this.surface(walnut, 'old_wood_floor', 2); this.surface(leather, 'leather_red_03', 2);
 
     this.box(this.root, marble, 0, -.28, 0, 40, .56, 50, 'cypher-restaurant-floor');
+    for (let x = -16; x <= 16; x += 8) this.box(this.root, brass, x, .012, 0, .055, .025, 49.2, 'cypher-restaurant-floor-inlay');
+    for (let z = -20; z <= 20; z += 10) this.box(this.root, brass, 0, .012, z, 39.2, .025, .055, 'cypher-restaurant-floor-cross-inlay');
     this.box(this.root, walnut, -19.65, 6.5, 0, .7, 13, 50);
     this.box(this.root, walnut, 19.65, 6.5, 0, .7, 13, 50);
     this.box(this.root, walnut, 0, 6.5, 24.65, 40, 13, .7);
     this.box(this.root, night, 0, 6.5, -25, 40, 13, .25, 'cypher-restaurant-night');
+    const city = this.material(new THREE.MeshBasicMaterial({ color: 0xffffff, fog: false, side: THREE.DoubleSide }));
+    this.matte(city, '/assets/cypher/restaurant-city-matte-v1.png');
+    const cityMatte = this.mesh(this.root, new THREE.PlaneGeometry(20.4, 11.48), city, 'cypher-restaurant-city-matte');
+    cityMatte.position.set(0, 6.12, -24.8); cityMatte.castShadow = cityMatte.receiveShadow = false;
     this.box(this.root, window, 0, 6.4, -24.7, 37.5, 10.8, .08, 'cypher-restaurant-window');
     for (const x of [-18.5, -9.25, 0, 9.25, 18.5]) this.box(this.root, brass, x, 6.4, -24.52, .18, 11.2, .22);
     for (const y of [1, 6.4, 11.8]) this.box(this.root, brass, 0, y, -24.52, 37.7, .16, .22);
+    this.box(this.root, brass, 0, .38, -24.25, 38.4, .22, .52, 'cypher-restaurant-window-sill');
+    this.box(this.root, walnut, 0, 12.2, -24.35, 39.5, .34, .72, 'cypher-restaurant-window-header');
     const cityLight = this.material(new THREE.MeshBasicMaterial({ color: 0xd4a56b, toneMapped: false }));
     const cityCool = this.material(new THREE.MeshBasicMaterial({ color: 0x86a4a7, toneMapped: false }));
     for (let i = 0; i < 42; i++) {
@@ -46,6 +57,12 @@ export class CypherRestaurantRenderer {
     const table = new THREE.Group(); table.name = 'cypher-window-table'; table.position.set(0, 0, -13); this.root.add(table);
     this.box(table, walnut, 0, 2.33, 0, 11.5, .36, 5.2);
     this.box(table, cloth, 0, 2.58, 0, 11.9, .2, 5.6);
+    this.box(table, cloth, 0, 1.78, -2.72, 11.75, 1.58, .11, 'cypher-tablecloth-front');
+    this.box(table, cloth, 0, 1.78, 2.72, 11.75, 1.58, .11, 'cypher-tablecloth-back');
+    this.box(table, cloth, -5.74, 1.78, 0, .11, 1.58, 5.35, 'cypher-tablecloth-left');
+    this.box(table, cloth, 5.74, 1.78, 0, .11, 1.58, 5.35, 'cypher-tablecloth-right');
+    const runner = this.material(new THREE.MeshStandardMaterial({ color: 0x5f2523, roughness: .84 }));
+    this.box(table, runner, 0, 2.7, 0, 1.15, .035, 5.28, 'cypher-table-runner');
     for (const x of [-5.2, 5.2]) for (const z of [-2.2, 2.2]) this.box(table, walnut, x, 1.15, z, .3, 2.3, .3);
     this.chair(0, -8.7, Math.PI, leather, walnut, 'cypher-chair-smith');
     this.chair(0, -17.3, 0, leather, walnut, 'cypher-chair-cypher');
@@ -63,17 +80,40 @@ export class CypherRestaurantRenderer {
     for (const x of [-.16, -.055, .055, .16]) this.box(fork, steel, x, 0, -1.18, .045, .06, .48);
     this.glass(-2.5, 3.15, -14.45, steel, 'cypher-wine-glass');
     this.glass(2.5, 3.15, -11.55, steel, 'smith-water-glass');
+    for (const x of [-4.3, 4.3]) {
+      this.cylinder(table, brass, x, 3.06, 0, .055, .78);
+      const flame = this.material(new THREE.MeshBasicMaterial({ color: 0xffd89a, toneMapped: false }));
+      this.mesh(table, new THREE.SphereGeometry(.11, 12, 8), flame, `cypher-table-candle-${x}`).position.set(x, 3.5, 0);
+      const light = new THREE.PointLight(0xffb86e, 28, 5, 2); light.position.set(x, 3.55, 0); table.add(light); this.lights.add(light);
+    }
 
     for (const x of [-11, 0, 11]) {
       this.cylinder(this.root, brass, x, 10.5, -8, .06, 4.5);
       const shade = this.mesh(this.root, new THREE.CylinderGeometry(.85, 1.5, .7, 24, 1, true), cloth); shade.position.set(x, 8.25, -8);
-      const light = new THREE.PointLight(0xffd2a0, 58, 20, 2); light.position.set(x, 7.9, -8); this.root.add(light); this.lights.add(light);
+      const light = new THREE.PointLight(0xffd2a0, 86, 20, 2); light.position.set(x, 7.9, -8); this.root.add(light); this.lights.add(light);
     }
     const key = new THREE.SpotLight(0xffc58d, 320, 32, Math.PI / 4, .65, 2); key.name = 'cypher-restaurant-key-light'; key.position.set(7, 10.5, -8); key.target.position.set(0, 2.4, -13); this.root.add(key, key.target); this.lights.add(key);
+    const cityBounce = new THREE.PointLight(0x5d879a, 48, 26, 2); cityBounce.name = 'cypher-restaurant-city-bounce'; cityBounce.position.set(0, 6, -20); this.root.add(cityBounce); this.lights.add(cityBounce);
   }
 
   private material<T extends THREE.Material>(material: T): T { this.materials.add(material); return material; }
   private geometry<T extends THREE.BufferGeometry>(geometry: T): T { this.geometries.add(geometry); return geometry; }
+  private surface(material: THREE.MeshStandardMaterial, id: string, repeat: number): void {
+    if (typeof document === 'undefined') return;
+    const loader = new THREE.TextureLoader();
+    for (const [suffix, slot] of [['color', 'map'], ['normal', 'normalMap'], ['roughness', 'roughnessMap']] as const) {
+      const texture = loader.load(`/assets/film-materials/${id}-${suffix}.jpg`, loaded => { if (this.disposed || !this.materials.has(material)) loaded.dispose(); });
+      texture.wrapS = texture.wrapT = THREE.RepeatWrapping; texture.repeat.set(repeat, repeat); texture.anisotropy = 4;
+      if (slot === 'map') texture.colorSpace = THREE.SRGBColorSpace;
+      material[slot] = texture; this.textures.add(texture);
+    }
+    material.normalScale.set(.35, .35); material.needsUpdate = true;
+  }
+  private matte(material: THREE.MeshBasicMaterial, path: string): void {
+    if (typeof document === 'undefined') return;
+    const texture = new THREE.TextureLoader().load(path, loaded => { if (this.disposed || !this.materials.has(material)) loaded.dispose(); });
+    texture.colorSpace = THREE.SRGBColorSpace; texture.anisotropy = 8; material.map = texture; material.needsUpdate = true; this.textures.add(texture);
+  }
   private mesh(parent: THREE.Object3D, geometry: THREE.BufferGeometry, material: THREE.Material, name?: string): THREE.Mesh {
     const mesh = new THREE.Mesh(this.geometry(geometry), material); mesh.castShadow = mesh.receiveShadow = true; if (name) mesh.name = name; parent.add(mesh); return mesh;
   }
@@ -113,7 +153,7 @@ export class CypherRestaurantRenderer {
   }
 
   dispose(): void {
-    this.root.clear(); this.geometries.forEach(item => item.dispose()); this.materials.forEach(item => item.dispose()); this.lights.forEach(item => item.dispose());
-    this.geometries.clear(); this.materials.clear(); this.lights.clear();
+    this.disposed = true; this.root.clear(); this.geometries.forEach(item => item.dispose()); this.materials.forEach(item => item.dispose()); this.textures.forEach(item => item.dispose()); this.lights.forEach(item => item.dispose());
+    this.geometries.clear(); this.materials.clear(); this.textures.clear(); this.lights.clear();
   }
 }

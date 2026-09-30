@@ -800,10 +800,18 @@ test('Cypher interludes use directed scene cameras while V keeps a freely steera
   const seat = filmPosition('film_cypher_restaurant', 0, -8.7);
   Object.assign(game.state, { position: seat, rotation: Math.PI, isInMatrix: true, currentLocation: 'film_cypher_restaurant',
     currentAction: { type: 'idle', parameters: { seated: true, interlude: { kind: 'steak', phase: 'performing', elapsed: 8, role: 'smith' } }, startedAt: 0, duration: 1, progress: 0 } });
-  game.controls.possess(game.state); game.step(.5);
   const tablePosition = filmPosition('film_cypher_restaurant', 0, -13);
-  const table = new THREE.Vector3(tablePosition.x, tablePosition.y + 2.6, tablePosition.z).project(game.camera);
-  assert.ok(Math.abs(table.x) < .8 && Math.abs(table.y) < .8, 'the restaurant reverse angle keeps the physical table in frame');
+  for (const aspect of [16 / 9, .72]) {
+    game.camera.aspect = aspect; game.camera.updateProjectionMatrix(); game.controls.possess(game.state); game.step(.5);
+    const table = new THREE.Vector3(tablePosition.x, tablePosition.y + 2.6, tablePosition.z).project(game.camera);
+    assert.ok(Math.abs(table.x) < .65 && Math.abs(table.y) < .72, 'the restaurant reverse angle keeps the physical table in frame');
+    for (const z of [-8.7, -17.3]) {
+      const actor = filmPosition('film_cypher_restaurant', 0, z);
+      const face = new THREE.Vector3(actor.x, actor.y + 3, actor.z).project(game.camera);
+      assert.ok(Math.abs(face.x) < .66 && Math.abs(face.y) < .72 && face.z > -1 && face.z < 1,
+        `the restaurant two-shot must keep both seated faces readable at ${aspect}: ${face.toArray().join(',')}`);
+    }
+  }
   game.key('KeyV'); game.key('KeyV', false); game.step(.1);
   assert.ok(game.camera.position.y > tablePosition.y + 2.55, 'the seated Smith view clears the table and chair back');
 });
