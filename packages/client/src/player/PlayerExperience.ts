@@ -10,7 +10,7 @@ export function savedEntryCharacter(chosen: string | null, journeyActor: string 
 }
 
 export function cinematicTalkSuppressed(scene: string | undefined, visiting: string | undefined, step?: number): boolean {
-  return !visiting && (scene === 'm1_download' || scene === 'm1_truth_exit' || scene === 'm1_truth_return' || scene === 'm1_pod' || scene === 'm1_construct' || scene === 'm1_desert' || scene === 'm1_cabin' || scene === 'm1_recovery' && step === 0);
+  return !visiting && (scene === 'm1_download' || scene === 'm1_truth_exit' || scene === 'm1_truth_return' || scene === 'm1_pod' || scene === 'm1_construct' || scene === 'm1_desert' || scene === 'm1_cabin' || (scene === 'm1_recovery' || scene === 'm1_spoon') && step === 0);
 }
 
 export interface PlayerExperienceActions {

@@ -78,6 +78,23 @@ test('the Oracle apartment separates the waiting room from the kitchen while kee
   for (const [x, z] of [[8, -11], [3, -17], [9, -25.5], [-6, -27.5]]) assert.equal(playerBlocked(filmPosition('film_oracle_home', x, z), true), true, 'kitchen furniture is solid');
 });
 
+test('Oracle waiting-room furniture is solid without cutting across the child-to-kitchen route', () => {
+  for (const [x, z] of [[-11.5, 14], [10.8, 9], [11.8, -1], [-12.4, -3], [-10.8, 20], [-14, 5], [14, 5]]) {
+    assert.equal(playerBlocked(filmPosition('film_oracle_home', x, z), true), true, `solid waiting-room furnishing at ${x}, ${z}`);
+  }
+  let position = filmPosition('film_oracle_home', 0, 24); let velocity = { x: 0, z: 0 };
+  for (const [x, z] of [[-7, 12.5], [-7, 10], [-4, 2], [0, -8], [7, -14], [-2, -14], [-4.35, -22]]) {
+    const target = filmPosition('film_oracle_home', x, z);
+    for (let frame = 0; frame < 600; frame++) {
+      const dx = target.x - position.x, dz = target.z - position.z, distance = Math.hypot(dx, dz);
+      if (distance < .4) break;
+      const next = stepPlayer(position, 0, { x: dx / distance, z: dz / distance, yaw: Math.atan2(dx, dz), jump: false, sprint: false }, .05, true, [], velocity);
+      position = next.position; velocity = next.horizontalVelocity;
+      assert.ok(frame < 599, `ordinary walking is blocked on the way to ${x}, ${z}: ${JSON.stringify(position)}`);
+    }
+  }
+});
+
 test('Metacortex cubicles block movement but leave the escape aisles open', () => {
   assert.equal(playerBlocked(filmPosition('film_metacortex_floor', -16, 2), true), true);
   for (const [x, z] of [[0, 20], [-16, 11], [-16, -13], [-24, -27]]) {

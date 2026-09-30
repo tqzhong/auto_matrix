@@ -550,7 +550,7 @@ export class PlayerControls {
     if (this.motion.wakeCall?.phase === 'leaving' && this.motion.wakeCall.elapsed > 1.15 && this.motion.wakeCall.elapsed < 3.05) this.motion.speed = 1.35;
     this.motion.grounded = Boolean(this.ride || this.gunner) || this.climbing || this.performing || this.position.y <= groundHeight(this.position, state.isInMatrix) + .12;
     this.motion.verticalVelocity = this.vy;
-    this.motion.inspecting = Boolean((this.motion.pills || this.motion.interrogation || this.motion.welcome || this.motion.knock !== undefined || this.motion.recovery !== undefined || this.motion.cabin || this.motion.reveal || this.motion.training || this.motion.workday || this.motion.wakeCall || this.motion.sentinel || this.motion.interlude || this.motion.oracleVisit || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || this.motion.lobbyEntry) && !this.firstPerson) || Boolean(this.phone && this.performing && this.motion.window === undefined && this.motion.crossing === undefined) || this.spoon !== undefined && this.enabled && this.motion.speed < .25 && this.motion.grounded;
+    this.motion.inspecting = Boolean((this.motion.pills || this.motion.interrogation || this.motion.welcome || this.motion.knock !== undefined || this.motion.recovery !== undefined || this.motion.cabin || this.motion.reveal || this.motion.training || this.motion.workday || this.motion.wakeCall || this.motion.sentinel || this.motion.interlude || this.motion.oracleVisit || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || this.motion.lobbyEntry) && !this.firstPerson) || Boolean(this.phone && this.performing && this.motion.window === undefined && this.motion.crossing === undefined) || !this.firstPerson && this.spoon !== undefined && this.enabled && this.motion.speed < .25 && this.motion.grounded;
     const attacking = (now - this.lastAttack) / 1000 < MELEE_COMBO[this.attackCombo].duration;
     const heading = this.ride || this.climbing || this.performing ? state.rotation : attacking ? this.attackYaw : this.firearm ? this.yaw : this.motion.speed > .1 ? Math.atan2(dx, dz) : this.facing;
     const turn = Math.atan2(Math.sin(heading - this.facing), Math.cos(heading - this.facing));
@@ -1287,8 +1287,10 @@ export class PlayerControls {
       this.camera.lookAt(center.x + 7.6, center.y + 1.7, center.z - 11.7);
     } else if (spoon) {
       spoon.updateWorldMatrix(true, false);
-      const focus = spoon.localToWorld(new THREE.Vector3(.1, .55, 0));
-      const ideal = focus.clone().add(new THREE.Vector3(Math.sin(this.yaw + .45) * 2.1, .35 + Math.sin(this.pitch), Math.cos(this.yaw + .45) * 2.1));
+      const hand = spoon.localToWorld(new THREE.Vector3(.1, .55, 0));
+      const focus = new THREE.Vector3(this.position.x, this.position.y + 2.85, this.position.z).lerp(hand, .58);
+      const distance = this.camera.aspect < 1 ? 4.6 : 3.7;
+      const ideal = focus.clone().add(new THREE.Vector3(Math.sin(this.facing + .22) * distance, .3, Math.cos(this.facing + .22) * distance));
       this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta)); this.camera.lookAt(focus);
     } else if (this.motion.mountainFlight && ['takeoff', 'flying', 'arrived'].includes(this.motion.mountainFlight.phase)) {
       if (this.firstPerson) {

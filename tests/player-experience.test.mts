@@ -21,5 +21,7 @@ test('Construct and desert story beats keep ambient conversation prompts out of 
   assert.equal(cinematicTalkSuppressed('m1_recovery', undefined, 1), false, 'conversation returns after Neo stands and regains control');
   assert.equal(cinematicTalkSuppressed('m1_pod', undefined, 1), true, 'rescue crew use the saved boarding performance, not ambient talk');
   assert.equal(cinematicTalkSuppressed('m1_pod', 'film_pods', 1), false, 'visiting keeps normal talk');
+  assert.equal(cinematicTalkSuppressed('m1_spoon', undefined, 0), true, 'ambient E prompts must not cover the held-G spoon interaction');
+  assert.equal(cinematicTalkSuppressed('m1_spoon', undefined, 1), false, 'ordinary conversation returns when the focus exercise is finished');
   assert.equal(cinematicTalkSuppressed(undefined, undefined), false);
 });

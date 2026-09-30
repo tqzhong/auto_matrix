@@ -138,6 +138,13 @@ export const ORACLE_FURNITURE: FilmObstacle[] = [
   { x: 3, z: -17, width: 5, depth: 3, height: 2.1 },
   { x: 8, z: -11, width: 2.7, depth: 2.2, height: 1.95 },
 ];
+export const ORACLE_WAITING_FURNITURE = {
+  sofa: { x: -11.5, z: 14, width: 3.6, depth: 7.8, height: 3.4 },
+  armchair: { x: 10.8, z: 9, width: 3.2, depth: 3.6, height: 3.6 },
+  television: { x: 11.8, z: -1, width: 2.4, depth: 6, height: 4.5 },
+  bookcase: { x: -12.4, z: -3, width: 1.9, depth: 5, height: 5.8 },
+  sideTable: { x: -10.8, z: 20, width: 2.5, depth: 2.5, height: 1.65 },
+} satisfies Record<string, FilmObstacle>;
 export function filmObstacles(set: FilmSet, movingMeetingCar = false): FilmObstacle[] {
   if (set.id === 'film_mobil_station') return [];
   if (set.id === 'film_hel_garage') return [-18, 18].flatMap(x => [-17, 9, 24].map(z => ({ x, z, width: 8.5, depth: 13, height: 5 })));
@@ -220,9 +227,10 @@ export function filmObstacles(set: FilmSet, movingMeetingCar = false): FilmObsta
     width: 8 + i % 5 * 2, depth: 7 + i % 3 * 2, height: 17 + (i * 13) % 34,
   }));
   if (set.architecture === 'lobby') return LOBBY_COLUMNS;
-  if (set.architecture === 'oracle') return [...ORACLE_FURNITURE, ...[-1, 1].flatMap(side => [
+  if (set.architecture === 'oracle') return [...ORACLE_FURNITURE, ...Object.values(ORACLE_WAITING_FURNITURE), ...[-1, 1].flatMap(side => [
     { x: side * (set.width / 4 + 2.5), z: -8, width: set.width / 2 - 5, depth: .4, height: 7.8 },
     { x: side * 12, z: -19, width: .4, depth: 21.6, height: 7.8 },
+    { x: side * 14, z: 11, width: .4, depth: 38, height: 7.8 },
   ])];
   // Keep the central route open. Columns and walls use these same footprints in Three.js.
   if (!['lobby', 'chateau', 'temple', 'hel', 'garage', 'ship', 'subway', 'mobil'].includes(set.architecture)) return [];

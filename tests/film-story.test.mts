@@ -525,6 +525,22 @@ test('the spoon responds to held focus, relaxes on release, and never completes 
   assert.equal(h.sandbox.life.state!.choices.spoon, 'bent');
 });
 
+test('old Oracle waiting-room saves move clear of new walls and furniture without losing spoon progress', () => {
+  for (const [x, z] of [[18, 12], [-18, 12], [-11.5, 14], [10.8, 9], [-7, 10]]) {
+    const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+    Object.assign(state, { scene: 'm1_spoon', actor: 'neo', step: 0, oracle: { spoon: .42 }, checkpoint: filmPosition('film_oracle_home', x, z) });
+    h.actor().position = { ...state.checkpoint }; h.actor().currentLocation = 'film_oracle_home';
+    h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+    const restored = h.sandbox.life.film.state!;
+    assert.ok(Math.abs(h.actor().position.x - FILM_SETS.film_oracle_home.center.x) < 13, 'the actor cannot be stranded outside the new apartment walls');
+    assert.equal(playerBlocked(h.actor().position, true), false, 'restoring inside a new solid seat must return the actor to the clear aisle');
+    assert.equal(playerBlocked(restored.checkpoint, true), false);
+    assert.ok(Math.abs(restored.checkpoint.x - FILM_SETS.film_oracle_home.center.x) < 13);
+    assert.equal(restored.oracle?.spoon, .42); assert.equal(restored.step, 0);
+    if (x === -7) assert.deepEqual(h.actor().position, filmPosition('film_oracle_home', x, z), 'an already safe saved position must not be reset');
+  }
+});
+
 test('the Oracle vase falls once, pauses and restores mid-fall, then leaves a persistent result for the conversation', () => {
   const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
   const scene = FILM_SCENE_BY_ID.m1_oracle; Object.assign(state, { scene: scene.id, actor: 'neo', step: 0 });

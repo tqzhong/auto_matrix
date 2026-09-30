@@ -905,6 +905,34 @@ test('spoon focus is a held input and is released when a panel opens or the wind
   assert.equal(game.sent.at(-1)!.focus, false);
 });
 
+test('spoon inspection keeps a front-side view of the hand, while V returns to steerable eyes', t => {
+  const game = setup(t, Math.PI);
+  game.state.position = filmPosition('film_oracle_home', -7, 10); game.state.currentLocation = 'film_oracle_home';
+  game.controls.possess(game.state); game.controls.spoon = .4;
+  const spoon = new THREE.Group(); spoon.name = 'held-spoon'; spoon.position.set(-.55, 2.1, 1.05); game.group.children[0].add(spoon);
+  game.document.pointerLockElement = game.canvas;
+  for (const aspect of [16 / 9, .72]) {
+    game.camera.aspect = aspect; game.step(1.5); game.group.updateMatrixWorld(true);
+    const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(game.group.children[0].getWorldQuaternion(new THREE.Quaternion()));
+    assert.ok(game.camera.position.clone().sub(game.group.position).dot(forward) > 1,
+      'the detail camera must stay in front of Neo, not behind the shoulder');
+    for (const point of [spoon.localToWorld(new THREE.Vector3(.1, .55, 0)), game.group.localToWorld(new THREE.Vector3(0, 2.99, 0))]) {
+      const screen = point.project(game.camera);
+      assert.ok(Math.abs(screen.x) < .9 && Math.abs(screen.y) < .85 && screen.z > -1 && screen.z < 1,
+        `the face and spoon must remain together in frame at ${aspect}: ${screen.toArray()}`);
+    }
+    game.event(game.document, 'mousemove', { movementX: 800, movementY: 0 }); game.step(.2);
+  }
+  game.key('KeyV'); game.key('KeyV', false); game.step(1);
+  assert.ok(Math.hypot(game.camera.position.x - game.group.position.x, game.camera.position.z - game.group.position.z) < .35,
+    'V must leave the spoon orbit and place the camera at Neo’s eyes');
+  assert.ok(Math.abs(game.camera.position.y - game.group.position.y - 2.99) < .15);
+  assert.ok(game.camera.fov > 65, 'first person restores a walking lens instead of retaining the 42 degree prop close-up');
+  const direction = game.camera.getWorldDirection(new THREE.Vector3());
+  game.event(game.document, 'mousemove', { movementX: 210, movementY: -70 }); game.step(.2);
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(direction) > .3, 'looking around remains available while holding the spoon');
+});
+
 test('the guided dojo attack turns toward a nearby sparring partner behind the current camera', t => {
   const game = setup(t);
   game.controls.targets = [{ x: game.state.position.x, y: game.state.position.y, z: game.state.position.z - 2 }];

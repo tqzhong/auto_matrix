@@ -12,6 +12,8 @@ import { Reflector } from 'three/addons/objects/Reflector.js';
 import { createMirrorSurface } from './MirrorSurface.js';
 import { trackingContact } from '../agents/TrackingContact.js';
 import { MIRROR_FRAME } from '@auto_matrix/shared';
+import { ORACLE_WAITING_FURNITURE } from '@auto_matrix/shared';
+import { SpoonModel } from '../agents/SpoonModel.js';
 import { FILM_SETS, FILM_SCENE_BY_ID, OPENING_ESCAPE, openingTruckPose, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, PILL_ROOM, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, mirrorSilver, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, GARAGE, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, EXILES, CHATEAU, awakeningLocked, trainingLocked, phoneLocked, windowOpening, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type FilmJourney, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
 import { OPENING_HOTEL } from '@auto_matrix/shared';
 import { meetingBoardPoint, meetingRoot } from '@auto_matrix/shared';
@@ -990,7 +992,7 @@ export class FilmSetRenderer {
       this.box(floor, -7, -.3, 0, 30, .6, d);
       this.box(this.black, 15, -1.65, 0, 14, .6, d);
     } else this.box(floor, 0, -.3, 0, w, .6, d);
-    if (exterior || set.architecture === 'construct') return;
+    if (exterior || set.architecture === 'construct' || set.architecture === 'oracle') return;
     const wall = set.id === 'film_power_station' ? this.pbr('damaged_plaster', 0x915b4d, 3) : this.currentScene === 'm2_key_door' ? this.pbr('damaged_plaster', 0x9ba5a0, 12) : set.architecture === 'architect' ? this.mat(0xf1f1eb, .48) : industrial ? this.metal : lavish || ['oracle', 'dojo', 'teahouse', 'mobil', 'backdoors'].includes(set.architecture) ? this.white : this.plaster;
     for (const x of [-w / 2, w / 2]) {
       if (set.id === 'film_le_vrai' && x < 0) {
@@ -1050,7 +1052,7 @@ export class FilmSetRenderer {
     if (['rooftop', 'street', 'rain', 'bridge', 'freeway', 'garage', 'car'].includes(a)) this.transport(set);
     if (['dojo', 'teahouse', 'construct', 'plaza', 'courtyard', 'garden'].includes(a)) this.special(set);
     if (outdoor.has(a) && !['pods', 'machine', 'desert'].includes(a)) this.skyline(set);
-    if (!outdoor.has(a) && a !== 'lafayette') {
+    if (!outdoor.has(a) && a !== 'lafayette' && a !== 'oracle') {
       const fill = new THREE.HemisphereLight(set.light === 'warm' ? 0xeed9b7 : 0xc7d3d3, 0x3e3830, .5); this.root.add(fill);
       const spot = new THREE.SpotLight(set.light === 'warm' ? 0xffd8b1 : 0xe5eee9, 2100, 120, Math.PI / 3, .7, 2);
       spot.position.set(-set.width * .28, set.height + 5, 10); spot.target.position.set(0, 0, -5); spot.castShadow = true;
@@ -1342,14 +1344,17 @@ export class FilmSetRenderer {
     if (a === 'oracle') {
       const green = this.mat(0x566e4b, .5); const cream = this.mat(0xc8c2a1, .6);
       const paperCanvas = document.createElement('canvas'); paperCanvas.width = paperCanvas.height = 256;
-      const ctx = paperCanvas.getContext('2d')!; ctx.fillStyle = '#bdc0a0'; ctx.fillRect(0, 0, 256, 256);
+      const ctx = paperCanvas.getContext('2d')!; ctx.fillStyle = '#ccc7ad'; ctx.fillRect(0, 0, 256, 256);
       for (let y = 0; y < 256; y += 64) for (let x = 0; x < 256; x += 64) {
-        ctx.strokeStyle = '#899271'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.ellipse(x + 32, y + 32, 14, 27, 0, 0, Math.PI * 2); ctx.stroke();
-        for (let i = 0; i < 4; i++) { ctx.fillStyle = i % 2 ? '#929779' : '#77816a'; ctx.beginPath(); ctx.ellipse(x + 32, y + 20 + i * 8, 6, 3, i % 2 ? .5 : -.5, 0, Math.PI * 2); ctx.fill(); }
+        const px = x + 20 + (y / 64 % 2) * 12;
+        ctx.strokeStyle = '#a6a58d'; ctx.lineWidth = .7; ctx.beginPath(); ctx.moveTo(px - 5, y + 9); ctx.lineTo(px + 3, y + 29); ctx.lineTo(px - 2, y + 50); ctx.stroke();
+        for (let i = 0; i < 4; i++) { ctx.fillStyle = i % 2 ? '#a3a58b' : '#b2ae94'; ctx.beginPath(); ctx.ellipse(px + (i % 2 ? -3 : 6), y + 18 + i * 8, 4.5, 1.9, i % 2 ? .7 : -.7, 0, Math.PI * 2); ctx.fill(); }
       }
-      const map = new THREE.CanvasTexture(paperCanvas); map.colorSpace = THREE.SRGBColorSpace; map.wrapS = map.wrapT = THREE.RepeatWrapping; map.repeat.set(5, 2); this.textures.add(map);
+      const map = new THREE.CanvasTexture(paperCanvas); map.colorSpace = THREE.SRGBColorSpace; map.wrapS = map.wrapT = THREE.RepeatWrapping; this.textures.add(map);
       const paper = new THREE.MeshStandardMaterial({ map, roughness: .95 }); this.materials.add(paper);
-      for (const o of filmObstacles(set).filter(o => !ORACLE_FURNITURE.includes(o))) this.box(paper, o.x, o.height / 2, o.z, o.width, o.height, o.depth);
+      for (const o of filmObstacles(set).filter(o => !ORACLE_FURNITURE.includes(o) && !Object.values(ORACLE_WAITING_FURNITURE).includes(o) && o.z < 0)) this.lafayetteSurface(paper, o.x, o.height / 2, o.z, o.width, o.height, o.depth, 4);
+      this.oracleWaitingRoom(paper, cream);
+      this.lafayetteSurface(paper, 0, 3.9, -29.8, 24, 7.8, .4, 4);
       for (const side of [-1, 1]) {
         this.box(cream, side * 12.25, .22, -19, .3, .44, 21.6); this.box(cream, side * 12.25, 7.4, -19, .3, .22, 21.6);
         this.box(cream, side * 13, .22, -7.7, 16, .44, .3);
@@ -1360,7 +1365,6 @@ export class FilmSetRenderer {
       const tileMap = new THREE.CanvasTexture(tiles); tileMap.colorSpace = THREE.SRGBColorSpace; tileMap.wrapS = tileMap.wrapT = THREE.RepeatWrapping; tileMap.repeat.set(8, 7); this.textures.add(tileMap);
       const tileMaterial = new THREE.MeshStandardMaterial({ map: tileMap, roughness: .68, normalMap: this.marble.normalMap, normalScale: new THREE.Vector2(.08, .08) }); this.materials.add(tileMaterial);
       const tileFloor = this.mesh(new THREE.PlaneGeometry(23.6, 21.6), tileMaterial, 0, .015, -19); tileFloor.rotation.x = -Math.PI / 2;
-      for (const x of [-w / 2 + .42, w / 2 - .42]) this.box(paper, x, 3.2, 8, .08, 6.4, d - 18);
       for (const x of [-5, 5]) this.box(cream, x, 3.3, -7.7, .35, 6.6, .6);
       this.box(cream, 0, 7.2, -8, 10.4, 1.2, .7); this.box(this.white, 0, 7.9, -19, 24, .3, 22);
       this.label('TEMET NOSCE', 0, 7.15, -7.6, 6, '#675c3e', '#c7c4a8');
@@ -1384,11 +1388,131 @@ export class FilmSetRenderer {
       this.table(3, -17, 5, 3, this.wood, 1.9); this.box(this.metal, 3, 2.09, -17, 2, .06, 1.3, .04);
       for (const x of [2.5, 3, 3.5]) this.cylinder(this.mat(0xb99260), x, 2.16, -17, .18, .06);
       this.chair(3, -13.7); this.chair(3, -20.3, Math.PI);
-      for (const x of [-12, -6, 6, 12]) this.chair(x, 11, 0, x === -12);
       this.table(8, -11, 2.7, 2.2, this.wood, 1.8); this.oracleVase = new OracleVase(this.root);
       this.rug(-6, 10, 12, 9);
       this.lamp(0, 6.6, -19, true);
     }
+  }
+  private oracleWaitingRoom(paper: THREE.Material, trim: THREE.Material): void {
+    const wood = this.pbr('old_wood_floor', 0x514434, 1, .78);
+    const cloth = this.pbr('white_plaster_02', 0x6d7562, 2, 1); cloth.normalScale.set(.035, .035);
+    const curtain = this.pbr('white_plaster_02', 0xcfc8b0, 2, 1); curtain.normalScale.set(.035, .035);
+    const wall = (x: number, y: number, z: number, w: number, h: number, d: number) => this.lafayetteSurface(paper, x, y, z, w, h, d, 4);
+    for (const side of [-1, 1]) {
+      const x = side * 14;
+      // Open the wall around each sash; glazing must never cover an opaque wall.
+      for (const [from, to] of [[-8, -2], [4, 15], [21, 30]]) wall(x, 3.9, (from + to) / 2, .4, 7.8, to - from);
+      for (const z of [1, 18]) {
+        wall(x, 1.05, z, .4, 2.1, 6); wall(x, 7.25, z, .4, 1.1, 6);
+        this.box(this.glass, x, 4.4, z, .06, 4.6, 6);
+        for (const dz of [-3, 0, 3]) this.box(trim, x - side * .15, 4.4, z + dz, .34, 4.85, .12);
+        for (const y of [2.1, 4.4, 6.7]) this.box(trim, x - side * .15, y, z, .34, .14, 6.3);
+        this.box(trim, x - side * .35, 2.02, z, 1, .18, 6.6, .035);
+        this.box(wood, x - side * .5, 7.04, z, .16, .16, 7);
+        for (const edge of [-1, 1]) for (let fold = 0; fold < 8; fold++) {
+          const panel = this.box(curtain, x - side * (.52 + Math.sin(fold * 1.2) * .06), 4.35, z + edge * (3.05 + fold * .07), .12, 5.15, .09);
+          panel.rotation.z = side * .012;
+        }
+        const outside = this.mat(0xc7d4d2, 1); outside.emissive.setHex(0x8babae); outside.emissiveIntensity = .2;
+        this.box(outside, side * 24, 8, z, .5, 24, 10);
+        for (const y of [2.5, 7.5, 12.5]) for (const dz of [-2.6, 1, 4.6]) {
+          this.box(this.mat(0x546a69, .5), side * 23.7, y, z + dz, .08, 2.65, 1.75);
+          this.box(trim, side * 23.58, y - 1.4, z + dz, .35, .18, 2.15);
+        }
+      }
+      for (const [y, h, depth] of [[.2, .4, .34], [2, .11, .14], [7.5, .17, .27], [7.7, .14, .38]]) this.box(trim, x - side * .22, y, 11, depth, h, 38);
+      this.box(trim, x - side * .21, .93, 11, .06, 1.5, 38);
+      for (let z = -7; z < 30; z += 2.8) this.box(trim, x - side * .3, .94, z, .06, 1.33, .045);
+    }
+    wall(0, 3.9, 29.8, 28, 7.8, .4);
+    this.box(this.white, 0, 7.95, 11, 28.4, .3, 38.2);
+    this.box(trim, 0, .21, 29.53, 28, .42, .22); this.box(trim, 0, 7.56, 29.5, 28, .22, .35);
+    const doorStart = this.root.children.length; this.door(0, 0);
+    const entrance = new THREE.Group(); this.root.children.slice(doorStart).forEach(child => entrance.add(child));
+    entrance.position.set(0, 0, 29.5); entrance.rotation.y = Math.PI; entrance.scale.setScalar(.82); this.root.add(entrance);
+    const key = new THREE.SpotLight(0xe9f0e5, 1450, 45, .95, .7, 2);
+    key.position.set(-15.2, 6.2, 1.8); key.target.position.set(-4, .8, 11); key.castShadow = true;
+    key.shadow.mapSize.set(1024, 1024); key.shadow.bias = -.0002; key.shadow.normalBias = .025;
+    this.root.add(key, key.target);
+    const bounce = new THREE.PointLight(0xdac5a2, 130, 29, 2); bounce.position.set(10, 5.5, 16); this.root.add(bounce);
+    const fill = new THREE.HemisphereLight(0xcbd5c5, 0x645844, .55); this.root.add(fill);
+    this.root.add(new THREE.AmbientLight(0xd4cab1, .45));
+
+    // Upholstered seats stay against the room perimeter, clear of Neo and the child.
+    for (const [id, angle] of [['sofa', Math.PI / 2], ['armchair', -Math.PI / 2]] as const) {
+      const f = ORACLE_WAITING_FURNITURE[id]; const width = f.depth, depth = f.width;
+      const start = this.root.children.length;
+      this.box(wood, 0, .9, 0, width, .65, depth - .3, .07);
+      this.box(cloth, 0, 2.32, -depth / 2 + .32, width - .12, f.height - 1.1, .64, .2);
+      const seats = id === 'sofa' ? 3 : 1;
+      for (let i = 0; i < seats; i++) {
+        const x = (i - (seats - 1) / 2) * (width - .88) / seats;
+        this.box(cloth, x, 1.4, .17, (width - .92) / seats - .045, .5, depth - .82, .15);
+        const cushion = this.box(cloth, x, 2.44, -depth / 2 + .7, (width - .95) / seats - .06, 1.53, .42, .18); cushion.rotation.x = -.09;
+        for (const z of [-.55, .75]) this.box(trim, x, 1.63, z, (width - 1.12) / seats, .012, .012);
+      }
+      for (const side of [-1, 1]) {
+        this.box(cloth, side * (width / 2 - .25), 1.94, .04, .49, .74, depth - .05, .22);
+        for (const z of [-depth / 2 + .28, depth / 2 - .28]) this.cylinder(wood, side * (width / 2 - .35), .35, z, .14, .7, .105);
+      }
+      if (id === 'sofa') {
+        const pillow = this.box(this.mat(0x9c8668, 1), -width / 2 + 1.05, 2.05, -.15, 1.2, 1.2, .55, .22); pillow.rotation.set(-.15, .16, .14);
+        const blanket = this.box(curtain, width / 2 - 1, 1.71, .15, 1.1, .08, 2.65, .025);
+        this.box(curtain, blanket.position.x, 1.23, 1.43, 1.1, 1.02, .07, .02);
+      }
+      const group = new THREE.Group(); this.root.children.slice(start).forEach(child => group.add(child));
+      group.position.set(f.x, 0, f.z); group.rotation.y = angle; this.root.add(group);
+    }
+    const tv = ORACLE_WAITING_FURNITURE.television;
+    const tvStart = this.root.children.length;
+    this.box(wood, 0, 1.06, 0, tv.depth, 2.05, tv.width, .055);
+    for (const x of [-1.45, 1.45]) { this.box(this.wood, x, 1.05, 1.22, 2.72, 1.6, .06, .025); this.sphere(this.brass, x + .8, 1.26, 1.28, .07); }
+    this.box(wood, 0, 3.19, -.1, 3.25, 2.3, 2.05, .19);
+    this.box(this.black, -.18, 3.2, .96, 2.8, 1.98, .16, .15);
+    const tvCanvas = document.createElement('canvas'); tvCanvas.width = 256; tvCanvas.height = 192;
+    const tc = tvCanvas.getContext('2d')!;
+    tc.fillStyle = '#4b5f53'; tc.fillRect(0, 0, 256, 192); tc.fillStyle = '#889584'; tc.fillRect(9, 8, 89, 143); tc.fillStyle = '#566347'; tc.fillRect(137, 19, 100, 137);
+    for (const [x, color] of [[76, '#d4be94'], [179, '#bdaa84']] as const) {
+      tc.fillStyle = '#252d29'; tc.beginPath(); tc.ellipse(x, 142, 47, 61, 0, 0, Math.PI * 2); tc.fill();
+      tc.fillStyle = color; tc.beginPath(); tc.ellipse(x, 71, 22, 30, 0, 0, Math.PI * 2); tc.fill();
+      tc.fillStyle = '#35403a'; tc.beginPath(); tc.ellipse(x - 2, 47, 24, 14, -.12, 0, Math.PI * 2); tc.fill();
+    }
+    for (let y = 0; y < 192; y += 3) { tc.fillStyle = '#0c180f35'; tc.fillRect(0, y, 256, 1); }
+    const tvMap = new THREE.CanvasTexture(tvCanvas); tvMap.colorSpace = THREE.SRGBColorSpace; this.textures.add(tvMap);
+    const tvMaterial = new THREE.MeshBasicMaterial({ map: tvMap, color: 0xb5c3a7, toneMapped: false }); this.materials.add(tvMaterial);
+    this.box(tvMaterial, -.3, 3.2, 1.054, 2.32, 1.63, .025, .07);
+    for (const y of [3.55, 2.95]) this.cylinder(this.black, 1.18, y, 1.03, .12, .13).rotation.x = Math.PI / 2;
+    for (let y = 2.56; y < 3.9; y += .1) this.box(this.black, 1.43, y, 1.04, .13, .035, .03);
+    this.pipe([[0, 4.32, -.25], [-.8, 5.6, -.4]], .012, this.metal); this.pipe([[0, 4.32, -.25], [1.1, 5.35, -.4]], .012, this.metal);
+    const television = new THREE.Group(); this.root.children.slice(tvStart).forEach(child => television.add(child)); television.position.set(tv.x, 0, tv.z); television.rotation.y = -Math.PI / 2; this.root.add(television);
+
+    const shelf = ORACLE_WAITING_FURNITURE.bookcase;
+    this.box(wood, shelf.x - .85, 2.9, shelf.z, .14, shelf.height, shelf.depth);
+    for (const z of [shelf.z - 2.42, shelf.z + 2.42]) this.box(wood, shelf.x, 2.9, z, shelf.width, shelf.height, .16);
+    for (const y of [.16, 1.52, 2.88, 4.24, 5.64]) this.box(wood, shelf.x, y, shelf.z, shelf.width, .16, shelf.depth);
+    for (let row = 0; row < 4; row++) for (let i = 0; i < 11; i++) {
+      const height = .76 + (i * 3 + row * 7) % 5 * .08, z = shelf.z - 2.12 + i * .39;
+      const cover = this.mat([0x6a7664, 0x958367, 0x744c3e, 0x454f4a][(i + row) % 4], .94);
+      this.box(cover, shelf.x + .22, .24 + row * 1.36 + height / 2, z, 1.18, height, .26, .012);
+      this.box(trim, shelf.x + .82, .39 + row * 1.36, z, .015, .022, .2);
+    }
+    const table = ORACLE_WAITING_FURNITURE.sideTable;
+    this.table(table.x, table.z, table.width, table.depth, wood, 1.48);
+    this.cylinder(this.brass, table.x, 2.47, table.z, .045, 1.77); this.cylinder(this.brass, table.x, 1.66, table.z, .4, .1);
+    this.mesh(new THREE.CylinderGeometry(.43, .78, 1.08, 32, 1, true), curtain, table.x, 3.32, table.z);
+    const lamp = new THREE.PointLight(0xf3c17e, 24, 12, 2); lamp.position.set(table.x, 3.05, table.z); this.root.add(lamp);
+    const books = this.box(this.mat(0x66594d), table.x + .66, 1.74, table.z + .42, .67, .16, 1.07, .02); books.rotation.y = -.2;
+    for (let i = 0; i < 7; i++) {
+      const spoon = new SpoonModel(); spoon.setBend(.55 + i * .065); spoon.root.scale.setScalar(.65);
+      spoon.root.position.set(-9.5 + (i % 3) * .32, .14 + Math.floor(i / 3) * .045, 6.35 + Math.floor(i / 3) * .29);
+      spoon.root.rotation.set(-Math.PI / 2, 0, -.7 + i * .43);
+      const bounds = new THREE.Box3().setFromObject(spoon.root); spoon.root.position.y += .055 + Math.floor(i / 3) * .012 - bounds.min.y;
+      spoon.root.traverse(object => { if (object instanceof THREE.Mesh) { this.own(object.geometry); this.materials.add(object.material); } }); this.root.add(spoon.root);
+    }
+    for (let i = 0; i < 6; i++) {
+      const block = this.box(this.mat([0x99764d, 0x61786c, 0x975d50][i % 3], .92), 7.4 + i % 3 * .66, .3, 4.2 + Math.floor(i / 3) * .82, .55, .55, .55, .035); block.rotation.y = i * .7;
+    }
+    this.box(curtain, -9, .048, 8, 2.6, .006, 2.2);
   }
   private workplace(set: FilmSet): void {
     const a = set.architecture; const w = set.width; const d = set.depth;

@@ -539,6 +539,17 @@ export class CharacterModels {
     if (rig.staff) rig.staff.rotation.z = Math.PI / 2 + staffSweep * .65;
     if (rig.hero) {
       this.heroes.animate(rig.hero, pose, rig.motion, input, delta);
+      if (input.spoon !== undefined && rig.spoon) {
+        const wrist = rig.hero.bones.get('wrist_R')!;
+        rig.hero.bones.get('finger1-1_R')!.rotation.z = -.28;
+        wrist.updateWorldMatrix(true, true);
+        const thumb = rig.hero.bones.get('finger1-3_R')!.localToWorld(new THREE.Vector3(.02, -.02, .012));
+        const index = rig.hero.bones.get('finger2-3_R')!.localToWorld(new THREE.Vector3(.015, -.015, 0));
+        const contact = wrist.worldToLocal(thumb.lerp(index, .5));
+        if (rig.spoon.root.parent !== wrist) wrist.add(rig.spoon.root);
+        const grip = new THREE.Vector3(0, .08, 0).multiply(rig.spoon.root.scale).applyQuaternion(rig.spoon.root.quaternion);
+        rig.spoon.root.position.copy(contact.sub(grip));
+      }
       if (holdsStaff) {
         rig.hero.bones.get('shoulder_R')!.rotation.x -= .7 + staffSweep * .5;
         rig.hero.bones.get('shoulder_L')!.rotation.x -= .55 + staffSweep * .35;
@@ -573,9 +584,22 @@ export class CharacterModels {
     }
     for (let i = 0; i < 2; i++) {
       rig.hips[i].position.y = pose.hipHeight;
-      rig.hips[i].rotation.set(input.floorSeated ? -1.2 : pose.legs[i].hip, input.floorSeated ? (i ? 1 : -1) * .4 : 0, input.floorSeated ? (i ? 1 : -1) * .6 : 0);
-      rig.knees[i].rotation.x = input.floorSeated ? 2.4 : pose.legs[i].knee;
-      rig.ankles[i].rotation.x = pose.legs[i].ankle;
+      rig.hips[i].rotation.set(pose.legs[i].hip, 0, 0);
+      rig.knees[i].rotation.set(pose.legs[i].knee, 0, 0);
+      rig.ankles[i].rotation.set(pose.legs[i].ankle, 0, 0);
+      if (input.floorSeated) {
+        // Fold the shins inward in model space; an X-only knee bend puts them below the rug.
+        const down = new THREE.Vector3(0, -1, 0), side = i ? 1 : -1;
+        const hip = rig.hips[i], knee = rig.knees[i];
+        const thigh = new THREE.Vector3(side * .675, -.25, .64).normalize();
+        hip.quaternion.setFromUnitVectors(down, thigh);
+        const kneePoint = hip.position.clone().addScaledVector(thigh, .94);
+        const foot = new THREE.Vector3(side * .08, i ? .25 : .39, i ? .78 : 1.03);
+        const shin = foot.sub(kneePoint).normalize().applyQuaternion(hip.quaternion.clone().invert());
+        knee.quaternion.setFromUnitVectors(down, shin);
+        const leg = hip.quaternion.clone().multiply(knee.quaternion);
+        rig.ankles[i].quaternion.copy(leg.invert()).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -side * Math.PI / 2));
+      }
       rig.shoulders[i].rotation.set(pose.arms[i].shoulder, 0, pose.arms[i].outward);
       rig.elbows[i].rotation.x = pose.arms[i].elbow;
       if (i === 0 && input.persephone?.phase === 'enacting') rig.shoulders[i].rotation.x -= Math.sin(Math.min(1, input.persephone.elapsed / 2.8) * Math.PI) * .45;

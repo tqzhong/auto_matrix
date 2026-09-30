@@ -1456,6 +1456,22 @@ export class FilmStorySystem {
     if (!guide.done) state.lastText = 'Morpheus 起身，穿过会客厅后门走向追踪室。跟上他；你落后时他会停下等你。';
     else state.lastText = 'Morpheus 已在追踪室等候。走到椅子右侧按 G 坐下，Trinity 会接上电极。';
   }
+  restoreOracleSpace(): void {
+    const center = FILM_SETS.film_oracle_home.center;
+    const migrate = (position?: AgentState['position']): boolean => {
+      if (!position || Math.abs(position.x - center.x) > 21 || position.z < center.z - 8 || position.z > center.z + 30 || position.y > center.y + 7.8) return false;
+      const x = position.x - center.x;
+      if (Math.abs(x) < 13 && !playerBlocked(position, true)) return false;
+      position.x = center.x + Math.max(-8, Math.min(8, x)); position.z = Math.min(position.z, center.z + 28);
+      if (playerBlocked(position, true)) position.x = center.x;
+      return true;
+    };
+    for (const actor of this.world.agents.values()) if (actor.currentLocation === 'film_oracle_home' && migrate(actor.position)) {
+      actor.velocity = { x: 0, y: 0, z: 0 }; actor.targetPosition = null; actor.currentPath = [];
+    }
+    if (this.scene?.set === 'film_oracle_home') migrate(this.state?.checkpoint);
+    migrate(this.state?.returnPosition);
+  }
   restoreApartmentSpace(): void {
     const center = FILM_SETS.film_anderson_flat.center;
     const life = this.sandbox().neoLife;
