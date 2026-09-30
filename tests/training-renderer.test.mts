@@ -67,6 +67,24 @@ test('the dojo, roof gap and red-dress plaza are dedicated physical training set
   try {
     assert.ok(jumpRoot.getObjectByName('jump-near-roof')); assert.ok(jumpRoot.getObjectByName('jump-far-roof'));
     assert.ok(jumpRoot.getObjectByName('jump-city-canyon'));
+    const serviceBank = jumpRoot.getObjectByName('jump-service-bank')!;
+    const takeoff = jumpRoot.getObjectByName('jump-takeoff-line')!;
+    const distant = jumpRoot.getObjectByName('jump-distant-roofline')!;
+    const canyonFloor = jumpRoot.getObjectByName('jump-canyon-floor')!;
+    const cityMatte = jumpRoot.getObjectByName('jump-city-matte') as THREE.Mesh;
+    const reverseCityMatte = jumpRoot.getObjectByName('jump-city-reverse-matte') as THREE.Mesh;
+    const westCityMatte = jumpRoot.getObjectByName('jump-city-west-matte') as THREE.Mesh;
+    const eastCityMatte = jumpRoot.getObjectByName('jump-city-east-matte') as THREE.Mesh;
+    assert.ok(serviceBank.position.z > 15, 'the playable roof has nearby service detail instead of reading as an empty slab');
+    assert.ok(takeoff.position.z < -8 && takeoff.position.z > -13, 'the jump line gives the run-up a readable edge without filling the gap');
+    assert.ok(distant.position.z < -70, 'roof volumes continue beyond the landing roof to establish city depth');
+    assert.ok(canyonFloor.position.y < -25, 'looking into the gap reveals a distant city floor rather than the renderer background');
+    assert.ok(distant.getObjectByName('jump-distant-west-wing') && distant.getObjectByName('jump-distant-east-wing'), 'far roof detail frames the gap from both sides without turning it into a solid wall');
+    assert.equal((cityMatte.material as THREE.MeshBasicMaterial).fog, false, 'the city horizon stays legible through the local roof haze');
+    assert.ok(cityMatte.position.y <= 28, 'the jump view meets the skyline, not the backdrop floor edge');
+    assert.ok((cityMatte.geometry as THREE.PlaneGeometry).parameters.width >= 300, 'the backdrop spans the player camera instead of exposing a blank world edge');
+    assert.ok(reverseCityMatte.position.z > 120 && Math.abs(reverseCityMatte.rotation.y - Math.PI) < .001, 'the follow camera has a real city horizon behind the starting roof too');
+    assert.ok(westCityMatte.position.x < -120 && eastCityMatte.position.x > 120, 'turning at the take-off line never exposes an empty world edge');
     const down = new THREE.Vector3(0, -1, 0);
     assert.ok(new THREE.Raycaster(new THREE.Vector3(0, 5, 0), down, 0, 8).intersectObject(jumpRoot, true).length > 0, 'the take-off roof is solid');
     assert.equal(new THREE.Raycaster(new THREE.Vector3(0, 5, -21), down, 0, 8).intersectObject(jumpRoot, true).length, 0, 'the alley is a visible physical gap');

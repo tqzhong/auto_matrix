@@ -32,11 +32,11 @@ export class TrainingSetRenderer {
 
   private material<T extends THREE.Material>(value: T): T { this.materials.add(value); return value; }
   private geometry<T extends THREE.BufferGeometry>(value: T): T { this.geometries.add(value); return value; }
-  private surface(material: THREE.MeshStandardMaterial, name: string, repeat: number): void {
+  private surface(material: THREE.MeshStandardMaterial, name: string, repeat: number, folder = 'film-materials'): void {
     if (typeof document === 'undefined') return;
     const loader = new THREE.TextureLoader();
     for (const [suffix, field] of [['color', 'map'], ['normal', 'normalMap'], ['roughness', 'roughnessMap']] as const) {
-      const texture = loader.load(`/assets/film-materials/${name}-${suffix}.jpg`, loaded => { if (this.disposed || !this.materials.has(material)) loaded.dispose(); });
+      const texture = loader.load(`/assets/${folder}/${name}-${suffix}.jpg`, loaded => { if (this.disposed || !this.materials.has(material)) loaded.dispose(); });
       texture.wrapS = texture.wrapT = THREE.RepeatWrapping; texture.repeat.set(repeat, repeat); texture.anisotropy = 4;
       if (field === 'map') texture.colorSpace = THREE.SRGBColorSpace;
       material[field] = texture; this.textures.add(texture);
@@ -50,6 +50,17 @@ export class TrainingSetRenderer {
       texture.colorSpace = THREE.SRGBColorSpace; texture.anisotropy = 8; material.map = texture; material.needsUpdate = true; this.textures.add(texture);
     }
     const matte = this.mesh(parent, new THREE.PlaneGeometry(160, 90), material, name); matte.position.set(x, y, z); matte.rotation.y = reverse ? Math.PI : 0;
+  }
+  private cityMatte(parent: THREE.Object3D): void {
+    const material = this.material(new THREE.MeshBasicMaterial({ color: 0xb6c5cc, fog: false, side: THREE.DoubleSide }));
+    if (typeof document !== 'undefined') {
+      const texture = new THREE.TextureLoader().load('/assets/rooftops/training-city-matte-v1.png', loaded => { if (this.disposed || !this.materials.has(material)) loaded.dispose(); });
+      texture.colorSpace = THREE.SRGBColorSpace; texture.anisotropy = 8; material.map = texture; material.needsUpdate = true; this.textures.add(texture);
+    }
+    for (const [x, z, rotation, name] of [[0, -160, 0, 'jump-city-matte'], [0, 160, Math.PI, 'jump-city-reverse-matte'],
+      [-160, 0, Math.PI / 2, 'jump-city-west-matte'], [160, 0, -Math.PI / 2, 'jump-city-east-matte']] as const) {
+      const matte = this.mesh(parent, new THREE.PlaneGeometry(330, 186), material, name); matte.position.set(x, 26, z); matte.rotation.y = rotation;
+    }
   }
   private mesh(parent: THREE.Object3D, geometry: THREE.BufferGeometry, material: THREE.Material, name?: string): THREE.Mesh {
     const mesh = new THREE.Mesh(this.geometry(geometry), material); mesh.castShadow = mesh.receiveShadow = true;
@@ -197,15 +208,26 @@ export class TrainingSetRenderer {
 
   private rooftops(): void {
     const set = new THREE.Group(); set.name = 'training-jump-set'; this.root.add(set);
-    const tar = this.material(new THREE.MeshStandardMaterial({ color: 0x424846, roughness: .98 }));
+    const tar = this.material(new THREE.MeshStandardMaterial({ color: 0x5a5e5a, roughness: .92 }));
+    const concrete = this.material(new THREE.MeshStandardMaterial({ color: 0x777a73, roughness: .9 }));
+    const roofMetal = this.material(new THREE.MeshStandardMaterial({ color: 0x4c5856, roughness: .48, metalness: .68 }));
+    const warning = this.material(new THREE.MeshStandardMaterial({ color: 0xc19649, roughness: .64, metalness: .1 }));
+    this.surface(tar, 'asphalt_02', 7, 'surfaces'); this.surface(concrete, 'damaged_plaster', 5); this.surface(roofMetal, 'metal_plate', 3);
     this.box(set, tar, 0, -.12, 17, 50, .24, 60, 'jump-near-roof');
     this.box(set, tar, 0, -.12, -38.5, 50, .24, 17, 'jump-far-roof');
+    this.box(set, warning, 0, .02, -10.8, 18, .025, .32, 'jump-takeoff-line');
     for (const z of [-13, -30]) {
-      this.box(set, this.stone, -20, .75, z, 10, 1.5, .7, `jump-parapet-left-${z}`);
-      this.box(set, this.stone, 20, .75, z, 10, 1.5, .7, `jump-parapet-right-${z}`);
+      this.box(set, concrete, -20, .75, z, 10, 1.5, .7, `jump-parapet-left-${z}`);
+      this.box(set, concrete, 20, .75, z, 10, 1.5, .7, `jump-parapet-right-${z}`);
     }
-    for (const side of [-1, 1]) this.box(set, this.stone, side * 24.65, .65, 7, .7, 1.3, 80);
+    for (const side of [-1, 1]) this.box(set, concrete, side * 24.65, .65, 7, .7, 1.3, 80);
     this.rooftopUnit(set, -15, 16, 0); this.rooftopUnit(set, 15, 31, 1); this.rooftopUnit(set, 13, -39, 2);
+    const service = new THREE.Group(); service.name = 'jump-service-bank'; service.position.set(-10, 0, 34); set.add(service);
+    this.box(service, concrete, 0, 2.45, 0, 10, 4.9, 7.5, 'jump-service-hut');
+    this.box(service, roofMetal, 0, 5.1, 0, 11.3, .34, 8.6, 'jump-service-hut-roof');
+    this.box(service, this.dark, 0, 1.75, 3.82, 2.6, 3.5, .12, 'jump-service-door');
+    for (const x of [-4.25, 4.25]) this.cylinder(service, roofMetal, x, 2.2, -2.6, .26, 4.4, 10, 'jump-service-vent');
+    for (let y = .8; y < 4.8; y += .72) this.box(service, roofMetal, -5.2, y, -2.7, .12, .11, 2.4, 'jump-service-ladder-rung');
     for (const [x, z, height] of [[-17, 4, 8], [18, 8, 6], [-14, 33, 5]] as const) {
       const tank = this.cylinder(set, this.metal, x, height / 2 + 1, z, 2.4, height, 20, 'jump-water-tank');
       tank.scale.x = 1.18; for (const dx of [-1.7, 1.7]) this.box(set, this.dark, x + dx, 1, z, .22, 2, .22);
@@ -216,14 +238,35 @@ export class TrainingSetRenderer {
       line.material = this.glow; line.userData.phase = i * .73;
     }
     const city = new THREE.Group(); city.name = 'jump-city-canyon'; set.add(city);
-    for (let i = 0; i < 30; i++) {
-      const side = i % 2 ? 1 : -1; const x = side * (34 + i % 4 * 12); const z = 48 - Math.floor(i / 2) * 9;
-      const height = 35 + (i * 19) % 62; this.box(city, i % 3 ? this.dark : this.stone, x, height / 2 - 20, z, 17 + i % 4 * 3, height, 15);
-      for (let y = 3; y < height - 4; y += 6) {
-        const pane = this.box(city, this.glass, x - side * (8.6 + i % 4 * 1.5), y - 20, z, .06, 3.2, 8);
+    const facade = this.material(new THREE.MeshStandardMaterial({ color: 0x56605d, roughness: .82, metalness: .08 }));
+    const windows = this.material(new THREE.MeshStandardMaterial({ color: 0x182c30, roughness: .32, metalness: .48, emissive: 0x071111, emissiveIntensity: .32 }));
+    this.surface(facade, 'damaged_plaster', 4);
+    for (let index = 0; index < 16; index++) {
+      const side = index % 2 ? 1 : -1; const width = 14 + index % 3 * 3; const depth = 12 + index % 2 * 3;
+      const x = side * (47 + index % 3 * 12); const z = -48 - Math.floor(index / 2) * 16; const height = 15 + index % 5 * 4;
+      this.box(city, facade, x, height / 2, z, width, height, depth, 'jump-city-building');
+      for (let y = 3; y < height - 2; y += 3.2) {
+        const pane = this.box(city, windows, x - side * (width / 2 + .045), y, z, .09, 1.35, depth - 1.2, 'jump-city-window-band');
         this.skylineLights.push(pane);
       }
     }
+    const distant = new THREE.Group(); distant.name = 'jump-distant-roofline'; distant.position.z = -88; set.add(distant);
+    for (const side of [-1, 1]) {
+      const wing = new THREE.Group(); wing.name = `jump-distant-${side < 0 ? 'west' : 'east'}-wing`; wing.position.set(side * 48, 0, side * 5); distant.add(wing);
+      this.box(wing, facade, 0, 9, 0, 20, 18, 14, 'jump-distant-building');
+      for (let y = 3; y < 16; y += 3.2) this.box(wing, windows, -side * 10.05, y, 0, .09, 1.35, 12.5, 'jump-distant-window-band');
+      this.cylinder(wing, roofMetal, -side * 3.4, 21, 0, 1.3, 5.5, 16, 'jump-distant-tank');
+      this.box(wing, concrete, side * 5.2, 20.1, 0, 7.2, .35, 9.4, 'jump-distant-roof');
+    }
+    const canyon = new THREE.Group(); canyon.name = 'jump-canyon-floor'; canyon.position.set(0, -42, -21); set.add(canyon);
+    this.box(canyon, tar, 0, 0, 0, 156, .18, 176, 'jump-canyon-street-grid');
+    this.box(canyon, this.dark, 0, .12, 0, 18, .08, 176, 'jump-canyon-avenue');
+    for (let z = -78; z <= 78; z += 12) this.box(canyon, warning, 0, .18, z, .32, .03, 5.5, 'jump-canyon-lane-mark');
+    for (const [x, z, width, height, depth] of [[-47, -32, 26, 14, 29], [-43, 29, 33, 20, 25], [45, -22, 31, 17, 35], [49, 35, 22, 12, 26]] as const) {
+      this.box(canyon, facade, x, height / 2, z, width, height, depth, 'jump-canyon-block');
+      this.box(canyon, windows, x, height * .6, z - depth / 2 - .05, width - 2, 2.2, .1, 'jump-canyon-window-band');
+    }
+    this.cityMatte(set);
     this.programLight = new THREE.PointLight(0xdbe9de, 190, 48, 2); this.programLight.position.set(0, 12, -21); this.light(this.programLight, 'jump-gap-light');
     const sun = new THREE.DirectionalLight(0xffedcc, 2.3); sun.position.set(-22, 44, 30); sun.castShadow = true; this.light(sun, 'jump-program-sun');
   }
