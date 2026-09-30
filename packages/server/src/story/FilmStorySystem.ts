@@ -3339,12 +3339,16 @@ export class FilmStorySystem {
     const roles = INTERLUDE_CAST[kind];
     const occupied = roles.find(id => id !== agent.id && this.world.agents.get(id)?.controller);
     const locked = interludeLocked(state);
+    // The console answer is still a composed exchange: keep Neo at the station
+    // while the journal prompt is open so its shot does not fall back through
+    // the operator-chair geometry.
+    const framed = locked || kind === 'console' && encounter.phase === 'choice';
     const playing = locked && !occupied;
     if (playing) encounter.elapsed = Math.min(interludeDuration(encounter), encounter.elapsed + Math.max(0, Math.min(.1, dt)));
 
     for (const role of roles) {
       const actor = this.world.agents.get(role);
-      if (!actor || actor.controller && actor !== agent || role === agent.id && !locked) continue;
+      if (!actor || actor.controller && actor !== agent || role === agent.id && !framed) continue;
       const pose = interludeRoot(kind, role as InterludeRole); if (!pose) continue;
       const before = { ...actor.position };
       this.place(actor, this.scene!, filmPosition(this.scene!.set, pose.x, pose.z)); actor.rotation = pose.yaw;
@@ -3352,8 +3356,8 @@ export class FilmStorySystem {
       const gesture = { ...encounter, role: role as InterludeRole };
       actor.currentAction = { type: 'idle', parameters: { player: role === agent.id, resolved: true, seated: interludeSeated(gesture), interlude: gesture }, startedAt: tick, duration: 1, progress: 0 };
     }
-    if (!locked && agent.currentAction?.parameters.interlude) agent.currentAction = null;
-    if (locked) state.checkpoint = { ...agent.position };
+    if (!framed && agent.currentAction?.parameters.interlude) agent.currentAction = null;
+    if (framed) state.checkpoint = { ...agent.position };
     if (occupied && locked) state.lastText = `${this.world.agents.get(occupied)?.name ?? occupied} 正由另一位玩家控制，这段表演停在当前动作。`;
     else if (encounter.phase !== 'responding') state.lastText = interludeText(encounter);
 
@@ -3373,7 +3377,7 @@ export class FilmStorySystem {
       }
       agent.currentAction = null; agent.velocity = { x: 0, y: 0, z: 0 };
     }
-    return interludeLocked(state);
+    return framed;
   }
   private interludeAct(agent: AgentState, target: string, tick: number): string {
     const state = this.state!; const kind = interludeKind(state.scene)!;

@@ -44,6 +44,8 @@ test('Cypher waits at the console, saves the clock and lets Neo answer exactly o
   const saved = JSON.parse(JSON.stringify(h.sandbox.state)); h.players.release('player', h.tick()); h.sandbox.restore(saved); h.players.possess('player', 'neo', h.tick());
   assert.equal(h.state().interlude!.elapsed, elapsed); h.frames(INTERLUDE_TIMING.console - elapsed + .2);
   assert.equal(h.state().interlude?.phase, 'choice'); assert.equal(h.state().step, 1);
+  assert.equal(h.world.agents.get('neo')!.currentAction?.parameters.interlude?.phase, 'choice',
+    'the answer prompt preserves the console framing instead of falling back to the obstructed follow camera');
   const before = h.sandbox.state.neoLife!.philosophy.agency; h.command('reflect:agency'); assert.equal(h.state().interlude?.phase, 'responding');
   h.command('reflect:agency'); assert.equal(h.sandbox.state.neoLife!.philosophy.agency, before + 1);
   h.frames(INTERLUDE_TIMING.consoleResponse + .2); assert.equal(h.state().interlude?.phase, 'done');
@@ -82,8 +84,11 @@ test('the console, crew meal and restaurant own visible, animated physical props
   const consoleJourney: FilmJourney = { version: 1, scene: 'm1_cypher_console', actor: 'neo', step: 0, completed: [], enteredAt: 0,
     reflections: {}, lastText: '', checkpoint: filmPosition('film_neb_deck'), interlude: { kind: 'console', phase: 'ready', elapsed: 0 } };
   try {
-    for (const name of ['neb-cypher-console-scene', 'neb-cypher-liquor-bottle', 'neb-cypher-shot-glass', 'neb-crew-meal-scene', 'neb-neo-protein-bowl', 'neb-neo-spoon']) assert.ok(nebRoot.getObjectByName(name), name);
+    for (const name of ['neb-cypher-console-scene', 'neb-cypher-console-display', 'neb-cypher-console-desk', 'neb-cypher-console-keyboard', 'neb-cypher-console-task-light', 'neb-cypher-liquor-bottle', 'neb-cypher-shot-glass', 'neb-crew-meal-scene', 'neb-neo-protein-bowl', 'neb-neo-spoon']) assert.ok(nebRoot.getObjectByName(name), name);
     neb.update(consoleJourney, 0); const cup = nebRoot.getObjectByName('neb-cypher-shot-glass')!; const resting = cup.position.y;
+    const consoleCables: THREE.Object3D[] = []; nebRoot.traverse(object => { if (/^neb-core-chair-.*-cable-/.test(object.name)) consoleCables.push(object); });
+    assert.ok(consoleCables.length >= 8, 'the shared deck still owns all operator-chair cables outside Cypher’s scene');
+    assert.ok(consoleCables.every(cable => !cable.visible), 'unused operator-chair cables cannot cut across Cypher’s console shot');
     consoleJourney.interlude = { kind: 'console', phase: 'performing', elapsed: 5.5 }; neb.update(consoleJourney, 5.5); assert.ok(cup.position.y > resting + .2);
     const mealJourney: FilmJourney = { ...consoleJourney, scene: 'm1_meal', interlude: { kind: 'meal', phase: 'performing', elapsed: 2.2 } };
     neb.update(mealJourney, 7); const bowl = nebRoot.getObjectByName('neb-neo-protein-bowl')!; assert.ok(bowl.position.x > -4);

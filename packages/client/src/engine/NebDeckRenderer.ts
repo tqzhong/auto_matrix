@@ -31,10 +31,12 @@ export class NebDeckRenderer {
   private downloadDisk = new THREE.Group();
   private downloadScreen?: THREE.CanvasTexture;
   private downloadScreenFrame = -1;
+  private consoleScreen?: THREE.CanvasTexture;
+  private consoleScreenFrame = -1;
   private downloadBars: THREE.Mesh[] = [];
   private downloadPulse = this.material(new THREE.MeshBasicMaterial({ color: 0x8cf4b8, toneMapped: false }));
   private consoleRig = new THREE.Group();
-  private codeBars: THREE.Mesh[] = [];
+  private operatorCables: THREE.Mesh[] = [];
   private mealRig = new THREE.Group();
   private neoBowl = new THREE.Group();
   private mealSteam: THREE.Mesh[] = [];
@@ -91,6 +93,7 @@ export class NebDeckRenderer {
       const cable = this.pipe([new THREE.Vector3(side * 1.6, 1.1, -2.05), new THREE.Vector3(side * 2, 5, -2.9), new THREE.Vector3(side * 2.4, 7, -4)]
         .map(point => point.applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw).add(new THREE.Vector3(x, 0, z))), .07, this.rubber);
       cable.name = `${name}-cable-${side}`;
+      this.operatorCables.push(cable);
     }
     this.box(chair, this.steel, 0, .16, 1.45, 1.75, .1, 1, `${name}-footrest`);
   }
@@ -256,11 +259,22 @@ export class NebDeckRenderer {
 
   private cypherConsole(): void {
     this.consoleRig.name = 'neb-cypher-console-scene'; this.consoleRig.visible = false; this.root.add(this.consoleRig);
-    const code = this.material(new THREE.MeshBasicMaterial({ color: 0x8dffac, toneMapped: false }));
-    for (let row = 0; row < 17; row++) {
-      const bar = this.box(this.consoleRig, code, 9.965, 2.55 + row * .16, 4.95 + (row * 7 % 18) * .12, .025, .035, .35 + (row * 11 % 9) * .13, `neb-cypher-code-${row}`);
-      bar.userData.baseY = bar.position.y; this.codeBars.push(bar);
+    const terminal = new THREE.Group(); terminal.name = 'neb-cypher-console-terminal'; terminal.position.set(10, 0, 6); terminal.rotation.y = -Math.PI / 2; this.consoleRig.add(terminal);
+    this.box(terminal, this.dark, 0, 3.95, 0, 4.35, 4.15, .52, 'neb-cypher-console-casing');
+    this.box(terminal, this.worn, 0, 1.74, .82, 4.15, .24, 1.85, 'neb-cypher-console-desk').rotation.x = -.11;
+    this.box(terminal, this.rubber, 0, 1.92, 1.35, 2.5, .11, .72, 'neb-cypher-console-keyboard').rotation.x = -.11;
+    for (let column = -8; column <= 8; column++) for (let row = 0; row < 3; row++) {
+      const key = this.box(terminal, this.linen, column * .135, 1.99, 1.38 + row * .14, .09, .028, .075); key.rotation.x = -.11;
     }
+    const display = this.material(new THREE.MeshBasicMaterial({ color: 0xc8f6cf, toneMapped: false }));
+    if (typeof document !== 'undefined' && typeof document.createElement === 'function') {
+      const canvas = document.createElement('canvas'); canvas.width = 960; canvas.height = 720;
+      this.consoleScreen = new THREE.CanvasTexture(canvas); this.consoleScreen.colorSpace = THREE.SRGBColorSpace;
+      display.map = this.consoleScreen;
+    }
+    this.box(terminal, display, 0, 4.05, .278, 3.8, 2.92, .025, 'neb-cypher-console-display');
+    this.box(terminal, this.steel, 0, 2.48, .34, 4.02, .1, .16, 'neb-cypher-console-lower-rail');
+    for (const x of [-1.72, 1.72]) this.box(terminal, this.steel, x, 4.04, .18, .1, 3.4, .14, 'neb-cypher-console-side-rail');
     const glass = this.material(new THREE.MeshPhysicalMaterial({ color: 0xa8b9af, transparent: true, opacity: .32, roughness: .12, depthWrite: false }));
     const liquor = this.material(new THREE.MeshPhysicalMaterial({ color: 0x9a6b33, transparent: true, opacity: .72, roughness: .2 }));
     const bottle = new THREE.Group(); bottle.name = 'neb-cypher-liquor-bottle'; bottle.position.set(4.9, 1.75, 7.15); this.consoleRig.add(bottle);
@@ -268,7 +282,7 @@ export class NebDeckRenderer {
     this.cylinder(bottle, liquor, 0, .38, 0, .23, .55);
     const cup = new THREE.Group(); cup.name = 'neb-cypher-shot-glass'; cup.position.set(4.15, 1.63, 6.55); this.consoleRig.add(cup);
     this.mesh(cup, new THREE.CylinderGeometry(.2, .15, .42, 16, 1, true), glass); this.cylinder(cup, liquor, 0, -.12, 0, .13, .14);
-    const lamp = new THREE.PointLight(0x88cda4, 0, 9, 2); lamp.name = 'neb-cypher-code-light'; lamp.position.set(8.9, 4, 6); this.consoleRig.add(lamp); this.lights.add(lamp);
+    const lamp = new THREE.PointLight(0x88cda4, 0, 10, 2); lamp.name = 'neb-cypher-console-task-light'; lamp.position.set(8.8, 4.3, 6); this.consoleRig.add(lamp); this.lights.add(lamp);
   }
 
   private trainingUpload(): void {
@@ -436,10 +450,7 @@ export class NebDeckRenderer {
     if (recovery) recoverySubject?.traverse(object => { if (object instanceof THREE.SkinnedMesh && object.userData.patientBody) skin = object; });
     if (skin !== this.recoverySkin) { this.recoverySkin = skin; this.skinContacts.clear(); }
     const consoleActive = journey?.scene === 'm1_cypher_console' && !journey.visiting;
-    for (const side of [-1, 1]) {
-      const cable = this.root.getObjectByName(`neb-core-chair-four-cable-${side}`);
-      if (cable) cable.visible = !consoleActive;
-    }
+    this.operatorCables.forEach(cable => { cable.visible = !consoleActive; });
     const descend = active ? THREE.MathUtils.smoothstep(t, 1.8, 3.8) * (1 - THREE.MathUtils.smoothstep(t, 7, 8.2)) : 0;
     const retract = active ? THREE.MathUtils.smoothstep(t, 7.5, 9.2) : 0;
     this.gantry.position.y = 6.2 - descend * 1.15 + retract * 6;
@@ -503,8 +514,24 @@ export class NebDeckRenderer {
     this.consoleRig.visible = Boolean(consoleBeat);
     if (consoleBeat) {
       const t = consoleBeat.elapsed;
-      this.codeBars.forEach((bar, index) => { bar.position.y = Number(bar.userData.baseY) + ((elapsed * .38 + index * .11) % 2.7) - 1.35; bar.visible = consoleBeat.phase !== 'performing' || t < 1.15 || index % 4 !== 0; });
-      const light = this.consoleRig.getObjectByName('neb-cypher-code-light') as THREE.PointLight; light.intensity = 75 + Math.sin(elapsed * 7) * 15;
+      const light = this.consoleRig.getObjectByName('neb-cypher-console-task-light') as THREE.PointLight; light.intensity = 68 + Math.sin(elapsed * 7) * 12;
+      const frame = Math.floor(elapsed * 6);
+      if (this.consoleScreen && frame !== this.consoleScreenFrame) {
+        this.consoleScreenFrame = frame; const ctx = (this.consoleScreen.image as HTMLCanvasElement).getContext('2d')!;
+        const redacted = consoleBeat.phase === 'performing' && t < 1.2; const offset = (frame * 7) % 92;
+        ctx.fillStyle = '#07110d'; ctx.fillRect(0, 0, 960, 720); ctx.fillStyle = '#84d99b'; ctx.font = '22px monospace';
+        ctx.fillText('OPERATOR / PRIVATE BUFFER', 46, 54); ctx.fillStyle = '#315d43'; ctx.fillRect(46, 76, 868, 2);
+        ctx.fillStyle = redacted ? '#d9b56d' : '#9de9af'; ctx.font = '28px monospace';
+        ctx.fillText(redacted ? 'INPUT MASKED // LOCAL SESSION' : 'CITY FEED // ROUTE RESOLUTION', 46, 126);
+        ctx.font = '19px monospace';
+        for (let row = 0; row < 18; row++) {
+          const value = ((row * 7919 + offset * 37) >>> 0).toString(16).padStart(7, '0');
+          const prefix = redacted && row % 4 === 0 ? '████████████' : `NODE-${(row + 4).toString().padStart(2, '0')}  ${value}`;
+          ctx.fillStyle = row % 5 === 0 ? '#d8ffc7' : '#6fb782'; ctx.fillText(prefix, 56, 172 + row * 25);
+        }
+        ctx.fillStyle = '#385e44'; for (let y = 0; y < 720; y += 5) ctx.fillRect(0, y, 960, 1);
+        this.consoleScreen.needsUpdate = true;
+      }
       const cup = this.consoleRig.getObjectByName('neb-cypher-shot-glass')!;
       const lift = consoleBeat.phase === 'responding' ? Math.sin(Math.min(1, t / 3.8) * Math.PI) : consoleBeat.phase === 'performing' ? Math.sin(THREE.MathUtils.clamp((t - 4.6) / 3, 0, 1) * Math.PI) : 0;
       cup.position.y = 1.63 + lift * 1.15; cup.rotation.z = -lift * .22;
@@ -561,11 +588,12 @@ export class NebDeckRenderer {
 
   dispose(): void {
     this.downloadScreen?.dispose();
+    this.consoleScreen?.dispose();
     this.root.clear();
     this.geometries.forEach(geometry => geometry.dispose());
     this.materials.forEach(material => material.dispose());
     this.lights.forEach(light => light.dispose());
-    this.geometries.clear(); this.materials.clear(); this.lights.clear(); this.needles = []; this.downloadBars = [];
+    this.geometries.clear(); this.materials.clear(); this.lights.clear(); this.needles = []; this.downloadBars = []; this.operatorCables = [];
     this.betrayalJacks.clear(); this.betrayalLoose.clear(); this.betrayalSignals.clear();
   }
 }
