@@ -3,7 +3,7 @@ import { METACORTEX } from '@auto_matrix/shared';
 import { catchLocked, deusPactLocked, deusPactPose, reloadedPhaseLocked, smithFinaleLocked, smithFinalePose, trilogyEpilogueLocked } from '@auto_matrix/shared';
 import { reloadedCamera } from './ReloadedCamera.js';
 import * as THREE from 'three';
-import { FILM_SETS, OFFICE_CONTACT, LOBBY_FIRE_INTERVAL, RESCUE, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_TIMING, groundHeight, playerBlocked, stepPlayer, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, COMBAT_SKILLS, combatDisplace, PLAYER_WALK_SPEED, meleeReach, trainingRoot, matrixEscapePhaseLocked, matrixEscapePose, matrixEscapeRoot, theOnePhaseLocked, theOnePose, theOneRoot, type OfficePhone, type AwakeningPose, type FreewayRide, type AgentState, type PlayerInput, type Vector3, type WorldStructure, type CombatImpact, type SkillCast, type RescueLoadout } from '@auto_matrix/shared';
+import { FILM_SETS, OFFICE_CONTACT, LOBBY_FIRE_INTERVAL, RESCUE, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_TIMING, groundHeight, playerBlocked, stepPlayer, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, COMBAT_SKILLS, combatDisplace, PLAYER_WALK_SPEED, meleeReach, trainingRoot, matrixEscapePhaseLocked, matrixEscapePose, matrixEscapeRoot, theOnePhaseLocked, theOnePose, theOneRoot, sentinelMachinePose, type OfficePhone, type AwakeningPose, type FreewayRide, type AgentState, type PlayerInput, type Vector3, type WorldStructure, type CombatImpact, type SkillCast, type RescueLoadout } from '@auto_matrix/shared';
 import { lafayetteWelcomeCamera } from './LafayetteWelcomeCamera.js';
 import type { MotionInput } from '../agents/CharacterMotion.js';
 import { AIR_RESCUE, governmentPose, airRescuePose, airRescueRoot, interrogationPose, meetingPose, meetingCarPose, meetingCarPoint, MEETING_TIMING } from '@auto_matrix/shared';
@@ -1042,8 +1042,11 @@ export class PlayerControls {
     } else if (this.motion.sentinel && !this.firstPerson) {
       const gesture = this.motion.sentinel; const center = FILM_SETS.film_service_tunnels.center; const origin = new THREE.Vector3(center.x, center.y - 1, center.z);
       const detected = gesture.phase === 'detected' || gesture.phase === 'failed'; const window = ['clear', 'confirming'].includes(gesture.phase);
-      const ideal = (detected ? new THREE.Vector3(9.5, 5.6, -35.5) : window ? new THREE.Vector3(10.5, 5.2, -38.5) : new THREE.Vector3(-11.5, 6.2, -31.5)).add(origin);
-      const focus = (detected ? new THREE.Vector3(0, 5.4, -52) : window ? new THREE.Vector3(0, 5, -55) : new THREE.Vector3(0, 3.1, -39)).add(origin);
+      const sweep = gesture.phase === 'sweep'; const machine = sentinelMachinePose(gesture);
+      const ideal = (detected ? new THREE.Vector3(9.5, 5.6, -35.5) : window ? new THREE.Vector3(10.5, 5.2, -38.5)
+        : sweep ? new THREE.Vector3(-5.8, 6.15, -34.5) : new THREE.Vector3(-11.5, 6.2, -31.5)).add(origin);
+      const focus = (detected ? new THREE.Vector3(0, 5.4, -52) : window ? new THREE.Vector3(0, 5, -55)
+        : sweep ? new THREE.Vector3(machine.x * .35, 5.25, machine.z + 1.5) : new THREE.Vector3(0, 3.1, -39)).add(origin);
       if (resetCamera || gesture.elapsed < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-7 * delta));
       this.camera.lookAt(focus);
     } else if (this.motion.truth) {

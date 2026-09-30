@@ -102,12 +102,18 @@ test('the service pipe owns a physical cockpit, EMP key, frosted viewport and an
     reflections: {}, lastText: '', checkpoint: filmPosition('film_service_tunnels'), sentinel: { phase: 'ready', elapsed: 0, noise: 0, attempt: 0 } };
   try {
     for (const name of ['sentinel-cockpit-window', 'sentinel-emp-key', 'sentinel-machine', 'sentinel-scan-beam', 'sentinel-power-light', 'sentinel-frosted-glass']) assert.ok(root.getObjectByName(name), name);
+    const exterior = root.getObjectByName('sentinel-exterior-matte') as THREE.Mesh;
+    const windowRim = root.getObjectByName('sentinel-viewport-rim')!;
+    assert.equal((exterior.material as THREE.MeshBasicMaterial).fog, false, 'the exterior service tunnel remains readable through cockpit haze');
+    assert.ok((exterior.geometry as THREE.PlaneGeometry).parameters.width >= 70, 'the cockpit viewport has a real exterior horizon instead of the scene background');
+    assert.ok(windowRim.children.length >= 2, 'the viewport has dedicated interior lighting rather than a black outline');
     renderer.update(journey, 0); const power = root.getObjectByName('sentinel-power-light') as THREE.PointLight;
     const lit = power.intensity; const machine = root.getObjectByName('sentinel-machine')!; const before = machine.position.clone();
     journey.sentinel = { phase: 'shutdown', elapsed: SENTINEL_TIMING.shutdown, noise: 0, attempt: 0 }; renderer.update(journey, 4.5);
     assert.ok(power.intensity < lit * .2, 'the physical cockpit visibly loses power');
     journey.sentinel = { phase: 'sweep', elapsed: 6, noise: .8, attempt: 0 }; renderer.update(journey, 10.5);
     assert.ok(machine.position.distanceTo(before) > 10, 'the Sentinel crosses the exterior service pipe');
+    assert.ok(machine.position.y < 8, 'the Sentinel body stays within the physical cockpit viewport while sweeping');
     assert.equal(root.getObjectByName('sentinel-scan-beam')!.visible, true);
     assert.ok(Array.from({ length: 10 }, (_, i) => root.getObjectByName(`sentinel-noise-bar-${i}`)!).filter(bar => bar.visible).length >= 8);
     journey.sentinel = { phase: 'detected', elapsed: SENTINEL_TIMING.detected, noise: 1, attempt: 0 }; renderer.update(journey, 14);

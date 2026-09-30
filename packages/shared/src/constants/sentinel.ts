@@ -45,22 +45,22 @@ export function sentinelDanger(seconds: number): number {
 }
 
 export function sentinelMachinePose(encounter?: SentinelEncounter) {
-  if (!encounter || encounter.phase === 'ready' || encounter.phase === 'shutdown') return { x: -26, y: 10.5, z: -63, yaw: .55, scan: 0 };
+  if (!encounter || encounter.phase === 'ready' || encounter.phase === 'shutdown') return { x: -26, y: 6.4, z: -63, yaw: .55, scan: 0 };
   const phase = encounter.phase; const t = encounter.elapsed;
   if (phase === 'sweep') {
     const travel = ease(t, .4, SENTINEL_TIMING.sweep - .5);
-    return { x: mix(-25, 23, travel), y: 9.2 + Math.sin(t * .85) * 1.1, z: -61 + Math.sin(t * .52) * 2.3,
+    return { x: mix(-25, 23, travel), y: 5.8 + Math.sin(t * .85) * .58, z: -61 + Math.sin(t * .52) * 2.3,
       yaw: mix(.75, -.72, travel), scan: sentinelDanger(t) };
   }
   if (phase === 'detected' || phase === 'failed') {
     const strike = phase === 'failed' ? 1 : ease(t, 0, SENTINEL_TIMING.detected);
-    return { x: mix(0, 2, strike), y: mix(9.2, 5.1, strike), z: mix(-61, -52.4, strike), yaw: Math.PI, scan: 1 };
+    return { x: mix(0, 2, strike), y: mix(5.8, 4.9, strike), z: mix(-61, -52.4, strike), yaw: Math.PI, scan: 1 };
   }
   if (phase === 'clear' || phase === 'verify' || phase === 'confirming' || phase === 'done') {
     const depart = phase === 'clear' ? ease(t, 0, SENTINEL_TIMING.clear) : 1;
-    return { x: mix(22, 34, depart), y: mix(9.4, 14, depart), z: mix(-61, -70, depart), yaw: -.8, scan: Math.max(0, 1 - depart * 1.5) };
+    return { x: mix(22, 34, depart), y: mix(6.1, 10, depart), z: mix(-61, -70, depart), yaw: -.8, scan: Math.max(0, 1 - depart * 1.5) };
   }
-  return { x: -26, y: 10.5, z: -63, yaw: .55, scan: 0 };
+  return { x: -26, y: 6.4, z: -63, yaw: .55, scan: 0 };
 }
 
 export function sentinelRoot(encounter: SentinelEncounter, role: SentinelRole) {

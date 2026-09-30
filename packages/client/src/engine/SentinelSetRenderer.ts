@@ -8,7 +8,9 @@ export class SentinelSetRenderer {
   private root = new THREE.Group();
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
+  private textures = new Set<THREE.Texture>();
   private lights = new Set<THREE.Light>();
+  private disposed = false;
   private machine = new THREE.Group();
   private tentacles: THREE.Group[] = [];
   private scanBeam!: THREE.Mesh;
@@ -26,8 +28,10 @@ export class SentinelSetRenderer {
     const rubber = this.material(new THREE.MeshStandardMaterial({ color: 0x0e1414, roughness: .92 }));
     const wet = this.material(new THREE.MeshStandardMaterial({ color: 0x17201f, roughness: .25, metalness: .48 }));
     const red = this.material(new THREE.MeshStandardMaterial({ color: 0x702323, emissive: 0x3b0707, emissiveIntensity: 1.2, metalness: .45, roughness: .28 }));
+    this.surface(hull, 'metal_plate', 5); this.surface(steel, 'metal_plate', 4);
 
     this.box(this.root, wet, 0, -.28, 0, 55, .56, 145, 'sentinel-tunnel-floor');
+    for (let z = -66; z <= 66; z += 4.8) this.box(this.root, steel, 0, .035, z, 18.5, .04, .09, 'sentinel-floor-grate');
     for (let z = -68; z <= 68; z += 8) {
       const rib = this.tube(this.root, [new THREE.Vector3(-27, .2, z), new THREE.Vector3(-23, 14, z), new THREE.Vector3(-13, 28, z), new THREE.Vector3(0, 32, z), new THREE.Vector3(13, 28, z), new THREE.Vector3(23, 14, z), new THREE.Vector3(27, .2, z)], .34, worn);
       rib.name = `sentinel-pipe-rib-${z}`;
@@ -56,6 +60,7 @@ export class SentinelSetRenderer {
     for (const [x, z] of [[-8, -34.5], [8, -35.2], [0, -42]] as const) {
       const light = new THREE.PointLight(0xa5d5bd, 185, 15, 2); light.position.set(x, 4.7, z); light.name = 'sentinel-power-light'; this.root.add(light); this.lights.add(light); this.powerLights.push(light);
     }
+    const fill = new THREE.HemisphereLight(0x4e7670, 0x05100d, .46); fill.name = 'sentinel-cockpit-fill'; this.root.add(fill); this.lights.add(fill);
 
     const window = new THREE.Group(); window.name = 'sentinel-cockpit-window'; window.position.set(0, 0, -49.4); this.root.add(window);
     this.box(window, hull, 0, 8.4, 0, 28, 1.2, 1.5);
@@ -63,8 +68,16 @@ export class SentinelSetRenderer {
     for (const x of [-13.2, -8.8, -4.4, 0, 4.4, 8.8, 13.2]) {
       const support = this.box(window, steel, x, 5.3, .05, .5, 6.4, .65); support.rotation.z = x * -.008;
     }
-    this.frost = this.material(new THREE.MeshPhysicalMaterial({ color: 0xb7d1cb, transparent: true, opacity: .08, roughness: .44, metalness: .08, transmission: .58, depthWrite: false, side: THREE.DoubleSide }));
+    this.frost = this.material(new THREE.MeshPhysicalMaterial({ color: 0xb7d1cb, transparent: true, opacity: .035, roughness: .44, metalness: .08, transmission: .58, depthWrite: false, side: THREE.DoubleSide }));
     const glass = this.box(window, this.frost, 0, 5.25, .31, 26.2, 5.6, .12, 'sentinel-frosted-glass'); glass.receiveShadow = false;
+    const rim = new THREE.Group(); rim.name = 'sentinel-viewport-rim'; window.add(rim);
+    const viewportGlow = this.material(new THREE.MeshBasicMaterial({ color: 0x9fd9ca, toneMapped: false }));
+    this.box(rim, viewportGlow, 0, 7.72, .47, 24.4, .1, .08, 'sentinel-viewport-top-light');
+    this.box(rim, viewportGlow, 0, 2.78, .47, 24.4, .08, .08, 'sentinel-viewport-bottom-light');
+    for (const x of [-10.5, 10.5]) {
+      const light = new THREE.PointLight(0x8fc8be, 38, 18, 2); light.position.set(x, 5.25, .7); rim.add(light); this.lights.add(light);
+    }
+    this.exteriorMatte(this.root);
 
     const emp = new THREE.Group(); emp.name = 'sentinel-emp-key'; emp.position.set(-8.3, 2.9, -40.5); emp.rotation.y = .2; this.root.add(emp);
     this.box(emp, rubber, 0, 0, 0, 2.7, 1.25, 1.7); this.cylinder(emp, red, 0, .72, 0, .32, .65);
@@ -81,6 +94,26 @@ export class SentinelSetRenderer {
 
   private material<T extends THREE.Material>(material: T): T { this.materials.add(material); return material; }
   private geometry<T extends THREE.BufferGeometry>(geometry: T): T { this.geometries.add(geometry); return geometry; }
+  private surface(material: THREE.MeshStandardMaterial, name: string, repeat: number): void {
+    if (typeof document === 'undefined') return;
+    const loader = new THREE.TextureLoader();
+    for (const [suffix, field] of [['color', 'map'], ['normal', 'normalMap'], ['roughness', 'roughnessMap']] as const) {
+      const texture = loader.load(`/assets/film-materials/${name}-${suffix}.jpg`, loaded => { if (this.disposed || !this.materials.has(material)) loaded.dispose(); });
+      texture.wrapS = texture.wrapT = THREE.RepeatWrapping; texture.repeat.set(repeat, repeat); texture.anisotropy = 4;
+      if (field === 'map') texture.colorSpace = THREE.SRGBColorSpace;
+      material[field] = texture; this.textures.add(texture);
+    }
+    material.normalScale.set(.28, .28); material.needsUpdate = true;
+  }
+  private exteriorMatte(parent: THREE.Object3D): void {
+    const material = this.material(new THREE.MeshBasicMaterial({ color: 0x31534f, fog: false, side: THREE.DoubleSide }));
+    if (typeof document !== 'undefined') {
+      const texture = new THREE.TextureLoader().load('/assets/sentinel/service-tunnel-matte-v1.png', loaded => { if (this.disposed || !this.materials.has(material)) loaded.dispose(); });
+      texture.colorSpace = THREE.SRGBColorSpace; texture.anisotropy = 8; material.map = texture; material.needsUpdate = true; this.textures.add(texture);
+    }
+    const matte = this.mesh(parent, new THREE.PlaneGeometry(82, 46), material, 'sentinel-exterior-matte');
+    matte.position.set(0, 10, -88); matte.castShadow = false; matte.receiveShadow = false;
+  }
   private mesh(parent: THREE.Object3D, geometry: THREE.BufferGeometry, material: THREE.Material, name?: string): THREE.Mesh {
     const mesh = new THREE.Mesh(this.geometry(geometry), material); mesh.castShadow = mesh.receiveShadow = true; if (name) mesh.name = name; parent.add(mesh); return mesh;
   }
@@ -98,8 +131,14 @@ export class SentinelSetRenderer {
     this.machine.name = 'sentinel-machine'; this.root.add(this.machine);
     const shell = this.mesh(this.machine, new THREE.IcosahedronGeometry(2.45, 2), hull); shell.scale.set(1, .72, 1.18);
     const ring = this.mesh(this.machine, new THREE.TorusGeometry(2.22, .18, 10, 40), steel); ring.rotation.x = Math.PI / 2;
+    const optics = new THREE.Group(); optics.name = 'sentinel-optics-cage'; optics.position.z = 2.18; this.machine.add(optics);
+    const housing = this.mesh(optics, new THREE.CylinderGeometry(1.58, 1.86, .72, 20), hull, 'sentinel-optics-housing'); housing.rotation.x = Math.PI / 2;
+    const visor = this.mesh(optics, new THREE.TorusGeometry(1.72, .12, 10, 32), steel, 'sentinel-optics-visor'); visor.rotation.x = Math.PI / 2; visor.position.z = .38;
+    for (const x of [-1.35, 1.35]) {
+      const cheek = this.mesh(optics, new THREE.ConeGeometry(.46, .94, 6), steel, 'sentinel-optics-cheek'); cheek.position.set(x, -.45, .32); cheek.rotation.z = x < 0 ? .8 : -.8; cheek.rotation.x = Math.PI / 2;
+    }
     for (const x of [-1.45, 0, 1.45]) {
-      const eye = this.mesh(this.machine, new THREE.SphereGeometry(x ? .23 : .38, 20, 12), red); eye.position.set(x, -.15, 2.35);
+      const eye = this.mesh(optics, new THREE.SphereGeometry(x ? .23 : .38, 20, 12), red, 'sentinel-optic'); eye.position.set(x, -.15, .78);
     }
     for (let i = 0; i < 8; i++) {
       const angle = i / 8 * Math.PI * 2; const tentacle = new THREE.Group(); tentacle.rotation.y = angle; this.machine.add(tentacle); this.tentacles.push(tentacle);
@@ -109,9 +148,9 @@ export class SentinelSetRenderer {
       this.tube(tentacle, points, .18 - i * .008, i % 2 ? rubber : steel);
       for (let j = 0; j < 5; j++) { const joint = this.mesh(tentacle, new THREE.SphereGeometry(.28 - j * .025, 10, 8), steel); joint.position.copy(points[Math.min(3, Math.ceil(j * 3 / 4))]); }
     }
-    const beam = this.material(new THREE.MeshBasicMaterial({ color: 0xff3b32, transparent: true, opacity: .18, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, toneMapped: false }));
-    this.scanBeam = this.mesh(this.machine, new THREE.ConeGeometry(4.8, 18, 32, 1, true), beam, 'sentinel-scan-beam');
-    this.scanBeam.position.set(0, -.2, 11); this.scanBeam.rotation.x = Math.PI / 2;
+    const beam = this.material(new THREE.MeshBasicMaterial({ color: 0xff3b32, transparent: true, opacity: .07, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, toneMapped: false }));
+    this.scanBeam = this.mesh(this.machine, new THREE.ConeGeometry(1.75, 10, 20, 1, true), beam, 'sentinel-scan-beam');
+    this.scanBeam.position.set(0, -.2, 7); this.scanBeam.rotation.x = Math.PI / 2;
     this.scanLight = new THREE.PointLight(0xff271c, 0, 30, 2); this.scanLight.name = 'sentinel-scan-light'; this.scanLight.position.set(0, 0, 3); this.machine.add(this.scanLight); this.lights.add(this.scanLight);
   }
 
@@ -122,8 +161,8 @@ export class SentinelSetRenderer {
     this.machine.visible = Boolean(encounter && encounter.phase !== 'done');
     const beamMaterial = this.scanBeam.material as THREE.MeshBasicMaterial;
     this.scanBeam.visible = this.machine.visible && pose.scan > .04;
-    beamMaterial.opacity = .06 + pose.scan * .21; this.scanLight.intensity = pose.scan * 560;
-    this.scanBeam.scale.set(1 + pose.scan * .45, 1, 1 + pose.scan * .45);
+    beamMaterial.opacity = .012 + pose.scan * .055; this.scanLight.intensity = pose.scan * 560;
+    this.scanBeam.scale.set(1 + pose.scan * .22, 1, 1 + pose.scan * .22);
     this.tentacles.forEach((tentacle, index) => {
       tentacle.rotation.x = Math.sin(elapsed * 1.7 + index * 1.8) * .16;
       tentacle.rotation.z = Math.cos(elapsed * 1.23 + index) * .13;
@@ -134,13 +173,14 @@ export class SentinelSetRenderer {
     this.powerLights.forEach((light, index) => { light.intensity = 12 + power * (150 + index * 24); light.color.setHex(power > .4 ? 0xa5d5bd : 0x7b1815); });
     this.powerPanels.forEach((panel, index) => panel.color.setHex(power > .5 ? index % 2 ? 0x86b7a1 : 0x719d8c : index % 3 ? 0x101817 : 0x5d1715));
     const close = encounter && ['sweep', 'detected', 'failed', 'clear'].includes(encounter.phase);
-    this.frost.opacity = close ? .15 + pose.scan * .22 : .07;
+    this.frost.opacity = close ? .055 + pose.scan * .09 : .035;
     const noise = encounter?.noise ?? 0; this.noiseBars.forEach((bar, index) => { bar.visible = index < Math.ceil(noise * this.noiseBars.length); });
   }
 
   dispose(): void {
+    this.disposed = true;
     this.root.traverse(object => { if (object instanceof THREE.Light) object.dispose(); });
-    this.root.removeFromParent(); this.geometries.forEach(geometry => geometry.dispose()); this.materials.forEach(material => material.dispose());
-    this.geometries.clear(); this.materials.clear(); this.lights.clear(); this.tentacles = []; this.noiseBars = [];
+    this.root.removeFromParent(); this.geometries.forEach(geometry => geometry.dispose()); this.materials.forEach(material => material.dispose()); this.textures.forEach(texture => texture.dispose());
+    this.geometries.clear(); this.materials.clear(); this.textures.clear(); this.lights.clear(); this.tentacles = []; this.noiseBars = [];
   }
 }

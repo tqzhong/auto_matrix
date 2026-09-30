@@ -11,7 +11,7 @@ import { truthRoot, TRUTH_BEDSIDE, type TruthGesture } from '@auto_matrix/shared
 import { awakeningPose, podRescuePose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
 import { MORNING, morningRoot, morningWakePose } from '@auto_matrix/shared';
 import { metacortexPosition } from '@auto_matrix/shared';
-import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, INTERROGATION_ROOM, pillRoot, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, POD_WATER_DROP, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, airRescueRoot, matrixEscapeRoot, theOneRoot, wakeCallRoot, type TheOneEncounter } from '@auto_matrix/shared';
+import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, INTERROGATION_ROOM, pillRoot, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, POD_WATER_DROP, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, airRescueRoot, matrixEscapeRoot, theOneRoot, wakeCallRoot, sentinelMachinePose, type TheOneEncounter } from '@auto_matrix/shared';
 
 test('observer camera releases drag and ignores pointer capture while a character controls the view', () => {
   let captures = 0;
@@ -442,6 +442,24 @@ function setup(t: TestContext, rotation = 0) {
   step(.5);
   return { controls, camera, group, state, document, window, canvas, sent, actions, event, key, step, yaw };
 }
+
+test('the Sentinel sweep camera keeps the machine and forward viewport readable together', t => {
+  const game = setup(t, Math.PI); const center = FILM_SETS.film_service_tunnels.center;
+  const gesture = { phase: 'sweep' as const, elapsed: 6, noise: .14, attempt: 0, role: 'neo' as const };
+  game.state.currentLocation = 'film_service_tunnels'; game.state.isInMatrix = false;
+  game.state.position = filmPosition('film_service_tunnels', 0, -38); game.state.rotation = Math.PI;
+  game.state.currentAction = { type: 'idle', parameters: { sentinel: gesture }, startedAt: 0, duration: 1, progress: 0 };
+  for (const aspect of [16 / 9, .72]) {
+    game.camera.aspect = aspect; game.camera.updateProjectionMatrix(); game.controls.possess(game.state); game.step(.4);
+    const pose = sentinelMachinePose(gesture);
+    const machine = new THREE.Vector3(center.x + pose.x, center.y - 1 + pose.y, center.z + pose.z).project(game.camera);
+    const viewport = new THREE.Vector3(center.x, center.y + 4.25, center.z - 49.4).project(game.camera);
+    assert.ok(Math.abs(machine.x) < .82 && Math.abs(machine.y) < .76 && machine.z > -1 && machine.z < 1,
+      `the moving Sentinel must stay in the sweep frame at ${aspect}: ${machine.toArray()}`);
+    assert.ok(Math.abs(viewport.x) < .7 && Math.abs(viewport.y) < .72 && viewport.z > -1 && viewport.z < 1,
+      `the physical forward viewport must remain in the same shot at ${aspect}: ${viewport.toArray()}`);
+  }
+});
 
 const angle = (a: number, b: number) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
 
