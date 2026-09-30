@@ -50,6 +50,7 @@ export class SandboxSystem {
     this.life.film.reconcileCast();
     this.life.film.restoreTrainingSpace();
     this.life.film.restoreOracleSpace();
+    this.life.film.restoreAmbushSpace();
     this.life.film.restoreHelBargain(this.world.simulationTick);
     const journey = this.life.film.state;
     if (journey) this.life.film.restoreChateauSpace();

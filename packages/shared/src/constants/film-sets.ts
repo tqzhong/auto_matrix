@@ -11,7 +11,7 @@ import { PILL_ROOM } from './pills.js';
 import { INTERROGATION_ROOM } from './interrogation.js';
 import { MIRROR_SEAT, MIRROR_FRAME, POD_WATER_DROP, RECOVERY_BED, RECOVERY_CABINET, RECOVERY_FRAME } from './awakening.js';
 import { CABIN, CABIN_WALLS, MEDICAL_OPERATOR } from './cabin.js';
-import { AMBUSH_WALLS } from './ambush.js';
+import { AMBUSH_WALLS, ambushFloor, ambushStairsBlocked } from './ambush.js';
 import { MEETING_CAR, MEETING_DESTINATION, meetingCarPose, meetingRoadContains } from './meeting.js';
 import { LAFAYETTE, hotelContains, hotelBlocked, hotelFloor } from './lafayette.js';
 import { mountainFloor } from './mountain.js';
@@ -253,6 +253,7 @@ export function filmObstacles(set: FilmSet, movingMeetingCar = false, movingOrac
 
 export function filmBlocked(position: Vector3, set: FilmSet, radius: number, movingMeetingCar = false, movingOracleDoor = false): boolean {
   const x = position.x - set.center.x; const z = position.z - set.center.z;
+  if (set.id === 'film_ambush_house' && ambushStairsBlocked(x, z, position.y - set.center.y, radius)) return true;
   if (set.id === 'film_freeway_trucks' && position.y > set.center.y + 3.5 &&
     (Math.abs(x - TRUCKS.roof.x) > TRUCKS.roof.width / 2 - radius || Math.abs(z - TRUCKS.roof.z) > TRUCKS.roof.depth / 2 - radius)) return true;
   if (set.id === 'film_lafayette') {
@@ -270,6 +271,7 @@ export function filmBlocked(position: Vector3, set: FilmSet, radius: number, mov
 }
 
 export function filmGroundHeight(position: Vector3, set: FilmSet): number {
+  if (set.id === 'film_ambush_house') return set.center.y + (ambushFloor(position.x - set.center.x, position.z - set.center.z, position.y - set.center.y) ?? -18);
   if (set.id === 'film_hammer_route') return set.center.y + hammerHeight(position.z - set.center.z) - 1.35;
   if (set.id === 'film_hotel_roofs') {
     const z = position.z - set.center.z;

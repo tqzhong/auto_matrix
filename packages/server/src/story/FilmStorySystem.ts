@@ -1457,6 +1457,19 @@ export class FilmStorySystem {
     if (!guide.done) state.lastText = 'Morpheus 起身，穿过会客厅后门走向追踪室。跟上他；你落后时他会停下等你。';
     else state.lastText = 'Morpheus 已在追踪室等候。走到椅子右侧按 G 坐下，Trinity 会接上电极。';
   }
+  restoreAmbushSpace(): void {
+    const center = FILM_SETS.film_ambush_house.center;
+    const migrate = (position?: AgentState['position']): boolean => {
+      if (!position || Math.abs(position.x - center.x) >= 9 || position.z <= center.z + 12 || position.z >= center.z + 29
+        || Math.abs(position.y - center.y) > .1 || !playerBlocked(position, true)) return false;
+      position.x = center.x; position.z = center.z + 8; return true;
+    };
+    for (const actor of this.world.agents.values()) if (actor.currentLocation === 'film_ambush_house' && migrate(actor.position)) {
+      actor.velocity = { x: 0, y: 0, z: 0 }; actor.targetPosition = null; actor.currentPath = [];
+    }
+    if (this.scene?.set === 'film_ambush_house') migrate(this.state?.checkpoint);
+    migrate(this.state?.returnPosition);
+  }
   restoreOracleSpace(): void {
     const center = FILM_SETS.film_oracle_home.center;
     const migrate = (position?: AgentState['position']): boolean => {

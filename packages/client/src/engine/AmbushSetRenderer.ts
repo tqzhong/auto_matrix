@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { AMBUSH_WALLS, AMBUSH_SEALS, ambushCat, type FilmJourney, type WorldStructure } from '@auto_matrix/shared';
+import { AMBUSH_WALLS, AMBUSH_SEALS, AMBUSH_FLOORS, AMBUSH_RAILS, AMBUSH_STAIRS, ambushCat, type FilmJourney, type WorldStructure } from '@auto_matrix/shared';
 
 /** The changed masonry uses the same footprints as the saved, authoritative barriers. */
 export class AmbushSetRenderer {
@@ -27,8 +27,11 @@ export class AmbushSetRenderer {
     const floor = this.pbr('old_wood_floor', 0x81745c, 6);
     const wood = this.pbr('old_wood_floor', 0x4e5140, 2);
     const trim = this.mat(0xaaa892, .8); const iron = this.mat(0x353d37, .45, .6);
-    this.box(floor, 0, -.2, 0, 44, .4, 68);
-    this.box(plaster, 0, 9.2, 0, 44, .4, 68);
+    for (const surface of AMBUSH_FLOORS) this.box(floor, surface.x, surface.y - .18, surface.z, surface.width, .36, surface.depth);
+    // The upper floor and ceiling both have a real aperture above the lift and
+    // stairs. A continuous slab here would cut through every climbing body.
+    for (const surface of AMBUSH_FLOORS.slice(0, 4)) this.box(plaster, surface.x, 9.2, surface.z, surface.width, .4, surface.depth);
+    this.makeStairwell(wood, iron, plaster);
     for (const z of [-34, 34]) this.box(plaster, 0, 4.5, z, 44, 9, .7);
     this.box(plaster, 22, 4.5, 0, .7, 9, 68);
     // The side window is a genuine opening, so its light can disappear with the brickwork.
@@ -103,6 +106,43 @@ export class AmbushSetRenderer {
   }
   private box(material: THREE.Material, x: number, y: number, z: number, w: number, h: number, d: number, parent = this.root): THREE.Mesh {
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material); mesh.position.set(x, y, z); mesh.castShadow = mesh.receiveShadow = true; parent.add(mesh); return mesh;
+  }
+  private makeStairwell(wood: THREE.Material, iron: THREE.Material, plaster: THREE.Material): void {
+    for (const rail of AMBUSH_RAILS) {
+      const alongX = rail.width > rail.depth, length = Math.max(rail.width, rail.depth);
+      this.box(wood, rail.x, rail.y + rail.height - .1, rail.z, alongX ? length : .24, .2, alongX ? .24 : length);
+      for (let offset = -length / 2 + .12; offset < length / 2; offset += .85) {
+        this.box(iron, rail.x + (alongX ? offset : 0), rail.y + 1.45, rail.z + (alongX ? 0 : offset), .1, 2.9, .1);
+      }
+    }
+    // Closed cage bars are closer together than a player's collision diameter.
+    // The lift is scenery, not an unlocked shortcut through the stair flights.
+    const low = -AMBUSH_STAIRS.rise, high = 9.4;
+    for (const side of [-1, 1]) {
+      for (let z = 18; z <= 28; z += .5) this.box(iron, side * 2.5, (low + high) / 2, z, .09, high - low, .09);
+      for (let x = -2.5; x <= 2.5; x += .5) this.box(iron, x, (low + high) / 2, 23 + side * 5, .09, high - low, .09);
+      for (const y of [low + .2, -3.7, .2, 4.5, 9.2]) {
+        this.box(iron, side * 2.5, y, 23, .18, .18, 10);
+        this.box(iron, 0, y, 23 + side * 5, 5.2, .18, .18);
+      }
+    }
+    this.box(iron, 0, low - .35, 23, 5, .7, 10);
+    for (const x of [-1.25, 1.25]) this.cylinder(iron, x, (low + high) / 2, 23, .035, high - low);
+    for (const side of [-1, 1]) {
+      this.box(plaster, side * 9.3, low / 2, 23, .6, -low, 22);
+    }
+    this.box(plaster, 0, low / 2, 34, 18, -low, .6);
+    this.box(plaster, 0, low / 2, 12, 18, -low, .6);
+    for (const [x, y, direction] of [[AMBUSH_STAIRS.left, -7.4, -1], [AMBUSH_STAIRS.right, -3.7, 1]]) for (const side of [-1, 1]) {
+      const beam = this.box(iron, x + side * 2.1, y + 1.65, 23, .22, .35, Math.hypot(12, 3.7));
+      beam.rotation.x = -direction * Math.atan2(3.7, 12);
+    }
+    const glass = this.mat(0xcbd2ba, .5); glass.emissive.setHex(0x55604a);
+    this.box(glass, 0, 9.6, 20.5, 18, .12, 17);
+    for (let x = -9; x <= 9; x += 3) this.box(iron, x, 9.45, 20.5, .18, .3, 17);
+    for (let z = 12; z <= 29; z += 3.4) this.box(iron, 0, 9.45, z, 18, .3, .18);
+    const light = new THREE.PointLight(0xdbe2ca, 240, 32, 2); light.position.set(0, 7.6, 20.5); this.root.add(light);
+    const lower = new THREE.PointLight(0xd4c99d, 100, 20, 2); lower.position.set(-5.5, -2, 31.5); this.root.add(lower);
   }
   private brickwork(): void {
     const mortar = this.mat(0x6f7264, 1); const brick = this.mat(0x645e49, .95);

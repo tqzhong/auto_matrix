@@ -95,7 +95,7 @@
 | m1_meal | 真实世界的一顿饭 | 尼布甲尼撒号 · 核心与医疗舱 | Neo | 交互 → 移动 |
 | m1_spoon | 等候室的孩子们 | 先知公寓 · 候诊室与厨房 | Neo | 跟随楼道 → 门前决定 → 接待者开门/带入客厅 → 落座/示范/接勺/专注 → 邀请起身/带入厨房 |
 | m1_oracle | 厨房里的预言 | 先知公寓 · 候诊室与厨房 | Neo | 花瓶/检查/递饼干 → 反思 → 接待者送别/会合/吃饼干 → 实体出口 |
-| m1_dejavu | 重复经过的黑猫 | 旧楼 · 黑猫与伏击 | Neo | 交互 → 战斗 → 移动 |
+| m1_dejavu | 重复经过的黑猫 | 旧楼 · 黑猫与伏击 | Neo | 自由爬两段楼梯/绕电梯井 → 观察黑猫/砖封 → 战斗 → 壁内通道 |
 | m1_bathroom | 为同伴争取时间 | 旧楼 · 黑猫与伏击 | Morpheus | 浴室门线坚守/三次击退 → 明确冲撞/破墙/被捕 |
 | m1_unplugged | 背叛发生在现实 | 尼布甲尼撒号 · 核心与医疗舱 | Tank | 查看拔线 → 1.5 秒反击窗口 → 分别接回 Neo/Trinity |
 | m1_rescue_decision | 仍然选择去救他 | 尼布甲尼撒号 · 核心与医疗舱 | Neo | 反思 → 交互 |
@@ -191,6 +191,8 @@
 命令 `node --import tsx scripts/film-review-fixture.mts m1_lobby` 会生成一个临时目录并打印路径。它开放其他场景的回访，仅用于验收；不要将其复制到用户的 data/world.json。构建后通过 `MATRIX_DATA_DIR=<打印的目录> PORT=3002 HOST=127.0.0.1 LLM_API_KEY= node packages/server/dist/index.js` 启动独立实例，在 http://localhost:3002/ 进入 Neo 即可检查。原服务和原存档可保持不变。
 
 先知局部镜头可在场景参数后使用 `oracle-exam`、`oracle-cookie` 或 `oracle-question`，例如 `node --import tsx scripts/film-review-fixture.mts m1_oracle oracle-question`。这些模式只建立对应动作检查点，不代表从候诊室连续游玩到了该位置。
+
+旧楼入口可使用 `node --import tsx scripts/film-review-fixture.mts m1_dejavu`。Neo 从下层开始，可普通行走上下两段楼梯，绕上层护栏再观察黑猫；台阶暂停刷新与实际移动轨迹见[楼梯入口验收](../output/gameplay/trilogy-ambush-stairs-2026-09-30/README.md)。只补一层差，同行人物/猫下楼和完整追捕仍待制作，不代表这一组已达到电影级。
 
 背叛段可使用 `node --import tsx scripts/film-review-fixture.mts m1_bathroom bathroom-hold`、`bathroom-crash`，以及 `node --import tsx scripts/film-review-fixture.mts m1_unplugged unplug-window`、`unplug-counter`、`unplug-reconnect`。它们分别定位坚守、破墙、反击窗口、反击演出和重连检查点，只用于局部动作/画面验收，不能作为从黑猫到营救决定的连续游玩证据。
 

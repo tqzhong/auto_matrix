@@ -6,6 +6,7 @@ import { PlayerControls } from '../packages/client/src/player/PlayerControls.js'
 import { CameraController } from '../packages/client/src/engine/CameraController.js';
 import { PodSetRenderer } from '../packages/client/src/engine/PodSetRenderer.js';
 import { NebDeckRenderer } from '../packages/client/src/engine/NebDeckRenderer.js';
+import { AmbushSetRenderer } from '../packages/client/src/engine/AmbushSetRenderer.js';
 import { CABIN, CABIN_ROUTE_LENGTH, cabinBodyPose, downloadRoot, DOWNLOAD_OPERATOR, type DownloadSetup } from '@auto_matrix/shared';
 import { truthRoot, TRUTH_BEDSIDE, type TruthGesture } from '@auto_matrix/shared';
 import { awakeningPose, podRescuePose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
@@ -1405,6 +1406,25 @@ test('the bathroom sacrifice owns a readable two-shot and still supports Morpheu
   const locked = game.group.position.clone(); game.key('KeyW'); game.step(.25); game.key('KeyW', false); assert.deepEqual(game.group.position, locked);
   game.key('KeyV'); game.key('KeyV', false); game.step(.1);
   assert.ok(game.camera.position.distanceTo(new THREE.Vector3(game.state.position.x, game.state.position.y + 2.99, game.state.position.z)) < .06);
+});
+
+test('Neo third-person view sees the repeated cat without the bathroom partition filling the camera', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const game = setup(t, -Math.PI + .004), center = FILM_SETS.film_ambush_house.center;
+  game.state.currentLocation = 'film_ambush_house'; game.state.position = filmPosition('film_ambush_house', 0, -7.77);
+  const root = new THREE.Group(); root.position.set(center.x, center.y - 1, center.z);
+  const renderer = new AmbushSetRenderer(root); root.updateMatrixWorld(true);
+  try {
+    for (const aspect of [.72, 16 / 9]) {
+      game.camera.aspect = aspect; game.camera.updateProjectionMatrix(); game.controls.possess(game.state); game.step(.4);
+      const cat = new THREE.Vector3(center.x + .06, center.y - 1 + .8, center.z - 23), direction = cat.clone().sub(game.camera.position);
+      const hits = new THREE.Raycaster(game.camera.position, direction.clone().normalize(), 0, direction.length()).intersectObject(root.getObjectByName('ambush-bathroom-partition-intact')!, true);
+      assert.equal(hits.length, 0, 'the third-person cat sightline must not run through the bathroom partition');
+      const screen = cat.project(game.camera); assert.ok(Math.abs(screen.x) < .9 && Math.abs(screen.y) < .9, 'the cat remains visible in wide and compact windows');
+    }
+    game.key('KeyV'); game.step(.1);
+    assert.ok(Math.abs(game.camera.position.x - game.state.position.x) < .1, 'V still uses Neo actual eye position');
+  } finally { renderer.dispose(); }
 });
 
 test('Tank sees the short Cypher counter window from the deck and from his saved prone viewpoint', t => {
