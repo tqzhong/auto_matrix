@@ -71,6 +71,7 @@ export interface MotionInput {
   clubClothes?: boolean;
   mirror?: number;
   spoon?: number;
+  spoonLesson?: import('@auto_matrix/shared').SpoonGesture;
   phone?: OfficePhone;
   window?: number;
   crossing?: number;
@@ -172,6 +173,7 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   state.seated = input.cabin?.kind === 'core' && input.cabin.role === 'neo' ? cabinSeat(input.cabin.elapsed) : deus ? deus.seated : reloaded ? reloaded.seated : pills ? pills.seat : welcome ? welcome.seated : mix(state.seated, input.seated || input.riding || input.performance === 'connect' || input.performance === 'construct' ? 1 : 0, blend);
   if (input.construct || input.reveal?.kind === 'construct') state.seated = construct?.seated ?? (input.reveal?.role === 'morpheus' ? 1 : 0);
   if (input.truth) state.seated = truthRoot(input.truth, input.truth.role).seated;
+  if (input.spoonLesson?.role === 'boy') state.seated = 1;
   state.turn = mix(state.turn, clamp(input.turn, -3, 3), blend);
   state.airborne = mix(state.airborne, input.grounded ? 0 : 1, 1 - Math.exp(-18 * dt));
   if (dt > 0) {

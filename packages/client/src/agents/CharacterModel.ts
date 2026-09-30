@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { BURLY, oracleVisitPose, type AgentState, type RescueLoadout, type ChateauWeapon } from '@auto_matrix/shared';
+import { poseSpoonHands } from './SpoonPerformance.js';
 import { advanceMotion, newMotion, type MotionInput, type MotionState } from './CharacterMotion.js';
 import { HERO_IDS, HeroModels, type HeroId, type HeroRig, type HeroSupport } from './HeroModel.js';
 import { SpoonModel } from './SpoonModel.js';
@@ -550,6 +551,7 @@ export class CharacterModels {
         const grip = new THREE.Vector3(0, .08, 0).multiply(rig.spoon.root.scale).applyQuaternion(rig.spoon.root.quaternion);
         rig.spoon.root.position.copy(contact.sub(grip));
       }
+      poseSpoonHands(rig, input.spoonLesson);
       if (holdsStaff) {
         rig.hero.bones.get('shoulder_R')!.rotation.x -= .7 + staffSweep * .5;
         rig.hero.bones.get('shoulder_L')!.rotation.x -= .55 + staffSweep * .35;
@@ -601,7 +603,7 @@ export class CharacterModels {
         rig.ankles[i].quaternion.copy(leg.invert()).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -side * Math.PI / 2));
       }
       rig.shoulders[i].rotation.set(pose.arms[i].shoulder, 0, pose.arms[i].outward);
-      rig.elbows[i].rotation.x = pose.arms[i].elbow;
+      rig.elbows[i].rotation.set(pose.arms[i].elbow, 0, 0);
       if (i === 0 && input.persephone?.phase === 'enacting') rig.shoulders[i].rotation.x -= Math.sin(Math.min(1, input.persephone.elapsed / 2.8) * Math.PI) * .45;
       if (holdsStaff) rig.shoulders[i].rotation.x -= (i ? .55 : .7) + staffSweep * (i ? .35 : .5);
       if (input.chateauWeapon && i === 0) rig.shoulders[i].rotation.x -= .55;
@@ -623,6 +625,7 @@ export class CharacterModels {
       }
       vertices.needsUpdate = true; panel.mesh.geometry.computeVertexNormals();
     }
+    poseSpoonHands(rig, input.spoonLesson);
     if (input.training?.kind === 'download' && input.training.role === 'tank') {
       const engaged = input.training.elapsed > 0 ? 1 : .35;
       for (let i = 0; i < 2; i++) {

@@ -22,7 +22,7 @@ import { CLUB, clubLocked, clubRoot, clubText, type ClubPhase } from '@auto_matr
 import { MORNING, morningLocked, morningRoot, morningWakePose, morningText } from '@auto_matrix/shared';
 import { SENTINEL_CAST, SENTINEL_TIMING, sentinelActive, sentinelDanger, sentinelLocked, sentinelRoot, sentinelText, type SentinelRole } from '@auto_matrix/shared';
 import { INTERLUDE_CAST, interludeDuration, interludeKind, interludeLocked, interludeRoot, interludeSeated, interludeText, type InterludeEncounter, type InterludeRole } from '@auto_matrix/shared';
-import { ORACLE_VISIT, oracleLegacyChoice, oracleVisitDuration, oracleVisitLocked, oracleVisitRoot, oracleVisitText, type OracleVisitRole } from '@auto_matrix/shared';
+import { ORACLE_VISIT, ORACLE_KITCHEN_CHAIRS, SPOON_LESSON, spoonLessonLocked, spoonLessonRoot, spoonLessonBend, spoonLessonText, oracleLegacyChoice, oracleVisitDuration, oracleVisitLocked, oracleVisitRoot, oracleVisitText, type OracleVisitRole } from '@auto_matrix/shared';
 import { BETRAYAL, betrayalDuration, betrayalLocked, betrayalRoot, betrayalText, type BetrayalEncounter, type BetrayalRole } from '@auto_matrix/shared';
 import { RESCUE, rescueDuration, rescueLocked, rescueRoot, rescueText, type RescueLoadout, type RescuePreparation, type RescueRole } from '@auto_matrix/shared';
 import { GOVERNMENT_RESCUE, governmentLocked, governmentRoot, governmentText, type GovernmentRescueEncounter, type GovernmentRescueRole } from '@auto_matrix/shared';
@@ -1459,7 +1459,11 @@ export class FilmStorySystem {
   restoreOracleSpace(): void {
     const center = FILM_SETS.film_oracle_home.center;
     const migrate = (position?: AgentState['position']): boolean => {
-      if (!position || Math.abs(position.x - center.x) > 21 || position.z < center.z - 8 || position.z > center.z + 30 || position.y > center.y + 7.8) return false;
+      if (!position || Math.abs(position.x - center.x) > 21 || position.z > center.z + 30 || position.y > center.y + 7.8) return false;
+      if (position.z < center.z - 8) {
+        if (!ORACLE_KITCHEN_CHAIRS.some(chair => Math.abs(position.x - center.x - chair.x) < chair.width / 2 + .65 && Math.abs(position.z - center.z - chair.z) < chair.depth / 2 + .65)) return false;
+        position.x = center.x; return true;
+      }
       const x = position.x - center.x;
       if (Math.abs(x) < 13 && !playerBlocked(position, true)) return false;
       position.x = center.x + Math.max(-8, Math.min(8, x)); position.z = Math.min(position.z, center.z + 28);
@@ -2945,18 +2949,9 @@ export class FilmStorySystem {
   }
   oracleFrame(agent: AgentState, focus: boolean, dt: number, tick: number): void {
     const state = this.state;
+    if (state?.scene === 'm1_spoon') { this.spoonFrame(agent, focus, dt, tick); return; }
     if (!state || !this.controls(agent) || state.visiting || !state.oracle) return;
     const oracle = state.oracle;
-    if (state.scene === 'm1_spoon' && oracle.spoon !== undefined) {
-      if (state.step === 0) {
-        const still = Math.hypot(agent.velocity.x, agent.velocity.y, agent.velocity.z) < .25;
-        const attentive = focus && still && this.near(agent, this.step!);
-        oracle.spoon = Math.max(0, Math.min(1, oracle.spoon + Math.min(.1, dt) * (attentive ? 1 / 5 : -.5)));
-        state.lastText = attentive ? '手指不再用力。你注视着勺子，金属正在弯曲。' : '停下脚步，按住 G 专注。松开按键或走开，勺子会恢复原形。';
-        if (oracle.spoon >= 1) { this.sandbox().neoLife!.choices.spoon = 'bent'; this.advance(this.step!.text!, agent, tick); }
-      }
-      if (agent.currentAction) agent.currentAction.parameters.spoon = oracle.spoon;
-    }
     if (state.scene === 'm1_oracle' && state.step === 0 && oracle.vase !== undefined) {
       oracle.vase = Math.min(4.5, oracle.vase + Math.min(.1, dt));
       const turn = Math.max(0, Math.min(1, (oracle.vase - .4) / .8));
@@ -2998,6 +2993,63 @@ export class FilmStorySystem {
       }
       this.oracleFrame(agent, false, 0, tick);
     }
+  }
+
+  spoonFrame(agent: AgentState, focus: boolean, dt: number, tick: number): boolean {
+    const state = this.state;
+    if (!state || state.scene !== 'm1_spoon' || !this.controls(agent) || state.visiting) return false;
+    const oracle = state.oracle ??= {};
+    const lesson = oracle.spoonLesson ??= { phase: oracle.spoon === undefined ? 'waiting' : state.step > 0 ? 'done' : 'focus', elapsed: 0 };
+    const boy = this.world.agents.get('spoon_boy')!, occupied = Boolean(boy.controller);
+    const locked = spoonLessonLocked(lesson), elapsed = Math.max(0, Math.min(.1, dt));
+    if (!occupied && locked) {
+      if (['sitting', 'demonstrating', 'receiving', 'rising'].includes(lesson.phase)) {
+        const duration = SPOON_LESSON[lesson.phase as 'sitting' | 'demonstrating' | 'receiving' | 'rising'];
+        lesson.elapsed = Math.min(duration, lesson.elapsed + elapsed);
+        if (lesson.elapsed >= duration) {
+          const next = { sitting: 'demonstrating', demonstrating: 'offered', receiving: 'focus', rising: 'done' } as const;
+          lesson.phase = next[lesson.phase as keyof typeof next]; lesson.elapsed = 0;
+          if (lesson.phase === 'done') this.advance(this.step!.text!, agent, tick);
+        }
+      } else if (lesson.phase === 'focus') {
+        oracle.spoon = Math.max(0, Math.min(1, (oracle.spoon ?? 0) + elapsed * (focus ? 1 / 5 : -.5)));
+        if (oracle.spoon >= 1) { this.sandbox().neoLife!.choices.spoon = 'bent'; lesson.phase = 'understood'; lesson.elapsed = 0; }
+      }
+    }
+    for (const role of ['neo', 'boy'] as const) {
+      const actor = role === 'neo' ? agent : boy;
+      if (role === 'boy' && occupied) continue;
+      const posing = role === 'boy' || spoonLessonLocked(lesson);
+      if (posing) {
+        const pose = spoonLessonRoot(lesson, role), before = { ...actor.position };
+        this.place(actor, this.scene!, filmPosition(this.scene!.set, pose.x, pose.z)); actor.rotation = pose.yaw;
+        actor.velocity = dt > 0 ? { x: (actor.position.x - before.x) / dt, y: 0, z: (actor.position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
+      }
+      if (posing || actor.currentAction?.parameters.spoonLesson) actor.currentAction = { type: 'idle', parameters: { player: role === 'neo', resolved: true }, startedAt: tick, duration: 1, progress: 0 };
+      if (!actor.currentAction) continue;
+      actor.currentAction.parameters.spoon = spoonLessonBend(lesson, role, oracle.spoon ?? 0);
+      if (posing) actor.currentAction.parameters.spoonLesson = { ...lesson, role };
+      if (role === 'boy') { actor.currentAction.parameters.seated = true; actor.currentAction.parameters.floorSeated = true; }
+    }
+    if (spoonLessonLocked(lesson)) state.checkpoint = { ...agent.position };
+    state.lastText = occupied ? '孩子正由另一位玩家控制，示范与递勺停在当前动作。' : spoonLessonText(lesson);
+    return locked || spoonLessonLocked(lesson);
+  }
+
+  private spoonAct(agent: AgentState, target: string, tick: number): string {
+    this.spoonFrame(agent, false, 0, tick);
+    const state = this.state!, lesson = state.oracle!.spoonLesson!;
+    if (this.world.agents.get('spoon_boy')!.controller) return '孩子正由另一位玩家控制，请等对方结束后再继续。';
+    if (target !== 'act') return state.lastText;
+    if (lesson.phase === 'waiting') {
+      const point = filmPosition('film_oracle_home', SPOON_LESSON.neo.x, SPOON_LESSON.neo.z);
+      if (distance(agent.position, point) > 1.35) return '再走近孩子右前方的空地，站到地毯中央的提示旁按 G。';
+      const center = FILM_SETS.film_oracle_home.center;
+      lesson.approach = { x: agent.position.x - center.x, z: agent.position.z - center.z, yaw: agent.rotation };
+      lesson.phase = 'sitting'; lesson.elapsed = 0; state.oracle!.spoon = 0;
+    } else if (lesson.phase === 'offered') { lesson.phase = 'receiving'; lesson.elapsed = 0; }
+    else if (lesson.phase === 'understood') { lesson.phase = 'rising'; lesson.elapsed = 0; }
+    this.spoonFrame(agent, false, 0, tick); return state.lastText;
   }
 
   private oracleAct(agent: AgentState, target: string, tick: number): string {
@@ -4386,6 +4438,12 @@ export class FilmStorySystem {
         this.interludeFrame(agent, 0, tick);
         return '已接回当前片段，保留人物位置、动作、对话与选择进度。';
       }
+      if (state.scene === 'm1_spoon' && state.oracle?.spoonLesson) {
+        delete state.visiting; delete state.returnPosition;
+        agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
+        agent.position = { ...state.checkpoint }; agent.velocity = { x: 0, y: 0, z: 0 };
+        this.spoonFrame(agent, false, 0, tick); return '已接回候客厅，保留坐姿、示范、递勺与专注进度。';
+      }
       if (state.scene === 'm1_oracle' && state.oracle?.consultation) {
         delete state.visiting; delete state.returnPosition;
         agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
@@ -4782,6 +4840,7 @@ export class FilmStorySystem {
     if (state.scene === 'm1_club') return this.clubAct(agent, target, tick);
     if (state.scene === 'm1_sentinels') return this.sentinelAct(agent, target, tick);
     if (interludeKind(state.scene)) return this.interludeAct(agent, target, tick);
+    if (state.scene === 'm1_spoon' && state.step === 0) return this.spoonAct(agent, target, tick);
     if (state.scene === 'm1_oracle' && state.step === 1 && state.oracle?.consultation) return this.oracleAct(agent, target, tick);
     if (state.scene === 'm1_bathroom' || state.scene === 'm1_unplugged' && state.step === 1) return this.betrayalAct(agent, target, tick);
     if ((state.scene === 'm1_rescue_decision' && state.step === 1) || state.scene === 'm1_guns') return this.rescueAct(agent, target, tick);
@@ -4985,10 +5044,6 @@ export class FilmStorySystem {
       this.phoneFrame(agent, 0, tick); return state.lastText;
     }
     if (state.scene === 'm1_dejavu' && state.step === 0) { state.ambush ??= { elapsed: 0 }; return '留意前方门廊。走远会中断观察，回到这里可以继续。'; }
-    if (state.scene === 'm1_spoon' && state.step === 0) {
-      state.oracle ??= {}; state.oracle.spoon ??= 0;
-      return '勺子已在手中。停下脚步并按住 G 专注，松开时观察它如何恢复；V 可切换视角。';
-    }
     if (state.scene === 'm1_oracle' && state.step === 0) {
       state.oracle ??= {}; state.oracle.vase ??= 0;
       return '先知提醒你留意花瓶。你的注意转向身后。';
@@ -5145,6 +5200,7 @@ export class FilmStorySystem {
     delete state.club;
     delete state.sentinel;
     delete state.interlude;
+    if (scene.id === 'm1_spoon') state.oracle = { spoonLesson: { phase: 'waiting', elapsed: 0 } };
     delete state.betrayal;
     delete state.government;
     delete state.airRescue;
@@ -5215,6 +5271,7 @@ export class FilmStorySystem {
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.sentinel) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.interlude) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.oracleVisit) other.currentAction = null;
+    for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.spoonLesson) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.betrayal) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.rescue) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.government) other.currentAction = null;

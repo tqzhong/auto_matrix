@@ -11,6 +11,7 @@ import { truthRoot, TRUTH_BEDSIDE, type TruthGesture } from '@auto_matrix/shared
 import { awakeningPose, podRescuePose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
 import { MORNING, morningRoot, morningWakePose } from '@auto_matrix/shared';
 import { metacortexPosition } from '@auto_matrix/shared';
+import { SPOON_LESSON, spoonLessonSeat, type SpoonLesson } from '@auto_matrix/shared';
 import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, INTERROGATION_ROOM, pillRoot, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, POD_WATER_DROP, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, airRescueRoot, matrixEscapeRoot, theOneRoot, wakeCallRoot, sentinelMachinePose, type TheOneEncounter } from '@auto_matrix/shared';
 
 test('observer camera releases drag and ignores pointer capture while a character controls the view', () => {
@@ -903,6 +904,39 @@ test('spoon focus is a held input and is released when a panel opens or the wind
   game.key('KeyG'); game.controls.setEnabled(false); game.step(.1); assert.equal(game.sent.at(-1)!.focus, false);
   game.controls.setEnabled(true); game.key('KeyG'); game.event(game.window, 'blur'); game.step(.1);
   assert.equal(game.sent.at(-1)!.focus, false);
+});
+
+test('sitting with Spoon Boy frames both faces and the handoff, and V follows seated eye height with free look', t => {
+  const game = setup(t, SPOON_LESSON.neo.yaw), center = FILM_SETS.film_oracle_home.center;
+  game.state.currentLocation = 'film_oracle_home'; game.state.position = filmPosition('film_oracle_home', SPOON_LESSON.neo.x, SPOON_LESSON.neo.z);
+  game.controls.possess(game.state);
+  const apply = (phase: SpoonLesson['phase'], elapsed: number) => {
+    const gesture = { phase, elapsed, role: 'neo' };
+    game.state.currentAction = { type: 'idle', parameters: { spoonLesson: gesture }, startedAt: 0, duration: 1, progress: 0 }; game.step(1);
+    return spoonLessonSeat(gesture);
+  };
+  for (const aspect of [16 / 9, .72]) {
+    game.camera.aspect = aspect;
+    for (const [phase, elapsed] of [['sitting', 0], ['sitting', 4], ['receiving', 1.1], ['focus', 2], ['rising', 2.5]] as const) {
+      const seated = apply(phase, elapsed);
+      for (const point of [new THREE.Vector3(game.state.position.x, center.y + 2.99 - seated * 2.1, game.state.position.z),
+        new THREE.Vector3(center.x - 9, center.y + .9, center.z + 8),
+        new THREE.Vector3(center.x + SPOON_LESSON.contact.x, center.y - 1 + SPOON_LESSON.contact.y, center.z + SPOON_LESSON.contact.z)]) {
+        const screen = point.project(game.camera);
+        assert.ok(Math.abs(screen.x) < .82 && Math.abs(screen.y) < .82 && screen.z > -1 && screen.z < 1,
+          `${aspect} ${phase} must frame both faces and the exchange: ${screen.toArray()}`);
+      }
+    }
+  }
+  apply('focus', 0); game.key('KeyV'); game.key('KeyV', false); game.step(.2);
+  assert.ok(Math.abs(game.camera.position.y - center.y - .89) < .05, 'first-person eyes must descend with the seated body');
+  const heading = game.camera.getWorldDirection(new THREE.Vector3());
+  game.document.pointerLockElement = game.canvas; game.event(game.document, 'mousemove', { movementX: 200, movementY: -70 }); game.step(.2);
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(heading) > .3);
+  game.key('KeyW'); game.step(.2); game.key('KeyW', false);
+  assert.ok(game.group.position.distanceTo(new THREE.Vector3(game.state.position.x, game.state.position.y, game.state.position.z)) < .02,
+    'free look must not let the body walk away during the exchange');
+  game.state.currentAction = null; game.step(.2); assert.equal(game.controls.performing, false);
 });
 
 test('spoon inspection keeps a front-side view of the hand, while V returns to steerable eyes', t => {

@@ -3,6 +3,7 @@ import { METACORTEX } from '@auto_matrix/shared';
 import { catchLocked, deusPactLocked, deusPactPose, reloadedPhaseLocked, smithFinaleLocked, smithFinalePose, trilogyEpilogueLocked } from '@auto_matrix/shared';
 import { reloadedCamera } from './ReloadedCamera.js';
 import * as THREE from 'three';
+import { spoonLessonSeat } from '@auto_matrix/shared';
 import { FILM_SETS, OFFICE_CONTACT, LOBBY_FIRE_INTERVAL, RESCUE, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_TIMING, groundHeight, playerBlocked, stepPlayer, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, COMBAT_SKILLS, combatDisplace, PLAYER_WALK_SPEED, meleeReach, trainingRoot, matrixEscapePhaseLocked, matrixEscapePose, matrixEscapeRoot, theOnePhaseLocked, theOnePose, theOneRoot, sentinelMachinePose, type OfficePhone, type AwakeningPose, type FreewayRide, type AgentState, type PlayerInput, type Vector3, type WorldStructure, type CombatImpact, type SkillCast, type RescueLoadout } from '@auto_matrix/shared';
 import { lafayetteWelcomeCamera } from './LafayetteWelcomeCamera.js';
 import type { MotionInput } from '../agents/CharacterMotion.js';
@@ -346,6 +347,8 @@ export class PlayerControls {
     if (state.currentAction?.parameters.interlude) this.performing = true;
     if (this.motion.oracleVisit && !state.currentAction?.parameters.oracleVisit) this.performing = false;
     if (state.currentAction?.parameters.oracleVisit) this.performing = true;
+    if (this.motion.spoonLesson && !state.currentAction?.parameters.spoonLesson) this.performing = false;
+    if (state.currentAction?.parameters.spoonLesson) this.performing = true;
     if (this.motion.betrayal && !state.currentAction?.parameters.betrayal) this.performing = false;
     if (state.currentAction?.parameters.betrayal) this.performing = true;
     if (this.motion.rescue && !state.currentAction?.parameters.rescue) this.performing = false;
@@ -434,6 +437,7 @@ export class PlayerControls {
     this.motion.sentinel = state.currentAction?.parameters.sentinel as MotionInput['sentinel'];
     this.motion.interlude = state.currentAction?.parameters.interlude as MotionInput['interlude'];
     this.motion.oracleVisit = state.currentAction?.parameters.oracleVisit as MotionInput['oracleVisit'];
+    this.motion.spoonLesson = state.currentAction?.parameters.spoonLesson as MotionInput['spoonLesson'];
     this.motion.betrayal = state.currentAction?.parameters.betrayal as MotionInput['betrayal'];
     this.motion.rescue = state.currentAction?.parameters.rescue as MotionInput['rescue'];
     this.motion.government = state.currentAction?.parameters.government as MotionInput['government'];
@@ -484,6 +488,10 @@ export class PlayerControls {
     if (this.motion.sentinel && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
     if (this.motion.interlude && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
     if (this.motion.oracleVisit && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
+    if (this.motion.spoonLesson) {
+      this.facing = state.rotation;
+      if (!this.firstPerson) this.yaw = this.movementYaw = state.rotation;
+    }
     if (this.motion.betrayal && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
     if (this.motion.rescue && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
     if (this.motion.government && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
@@ -546,6 +554,7 @@ export class PlayerControls {
     if (mirrorStarting && this.firstPerson && now - this.lastLook > 900) this.aimAtMirror();
     const dx = this.position.x - previous.x; const dz = this.position.z - previous.z;
     this.motion.speed = this.ride || this.climbing || this.performing ? 0 : Math.hypot(dx, dz) / Math.max(delta, .001);
+    if (this.motion.spoonLesson?.phase === 'sitting' && this.motion.spoonLesson.elapsed < 1.1) this.motion.speed = Math.hypot(state.velocity.x, state.velocity.z);
     if (this.motion.wakeCall?.phase === 'waking' && this.motion.wakeCall.elapsed > 2.7 && this.motion.morning?.phase !== 'lying') this.motion.speed = 1.45;
     if (this.motion.wakeCall?.phase === 'leaving' && this.motion.wakeCall.elapsed > 1.15 && this.motion.wakeCall.elapsed < 3.05) this.motion.speed = 1.35;
     this.motion.grounded = Boolean(this.ride || this.gunner) || this.climbing || this.performing || this.position.y <= groundHeight(this.position, state.isInMatrix) + .12;
@@ -571,7 +580,7 @@ export class PlayerControls {
     const wakeWide = !this.firstPerson && Boolean(this.motion.wakeCall && ['waking', 'leaving'].includes(this.motion.wakeCall.phase));
     const sentinelWide = !this.firstPerson && Boolean(this.motion.sentinel && ['shutdown', 'detected', 'clear'].includes(this.motion.sentinel.phase));
     const interludeWide = !this.firstPerson && Boolean(this.motion.interlude);
-    const oracleWide = !this.firstPerson && Boolean(this.motion.oracleVisit?.phase === 'examining');
+    const oracleWide = !this.firstPerson && Boolean(this.motion.spoonLesson || this.motion.oracleVisit?.phase === 'examining');
     const betrayalWide = !this.firstPerson && Boolean(this.motion.betrayal);
     const rescueWide = !this.firstPerson && Boolean(this.motion.rescue);
     const governmentWide = !this.firstPerson && Boolean(this.motion.government);
@@ -959,6 +968,21 @@ export class PlayerControls {
         }
         ideal.add(origin); focus.add(origin);
         if (resetCamera || gesture.elapsed < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-7 * delta));
+        this.camera.lookAt(focus);
+      }
+    } else if (this.motion.spoonLesson) {
+      const gesture = this.motion.spoonLesson, seat = spoonLessonSeat(gesture);
+      const center = FILM_SETS.film_oracle_home.center;
+      if (this.firstPerson) {
+        const head = group.getObjectByName('head'); head?.updateWorldMatrix(true, false);
+        const eye = head ? head.localToWorld(new THREE.Vector3(0, .1, .23)) : new THREE.Vector3(this.position.x, this.position.y + 2.99 - seat * 2.1, this.position.z);
+        const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
+        this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
+      } else {
+        const focus = new THREE.Vector3(center.x - 8, center.y + 1.3 - seat * .5, center.z + 9);
+        const offset = new THREE.Vector3(5.2, 2.2 - seat * 1.2, -6.5).multiplyScalar((this.camera.aspect < .85 ? 1.4 : 1) * (1 - seat * .22));
+        const ideal = focus.clone().add(offset);
+        if (resetCamera) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-7 * delta));
         this.camera.lookAt(focus);
       }
     } else if (this.motion.oracleVisit) {

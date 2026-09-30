@@ -12,7 +12,7 @@ import { Reflector } from 'three/addons/objects/Reflector.js';
 import { createMirrorSurface } from './MirrorSurface.js';
 import { trackingContact } from '../agents/TrackingContact.js';
 import { MIRROR_FRAME } from '@auto_matrix/shared';
-import { ORACLE_WAITING_FURNITURE } from '@auto_matrix/shared';
+import { ORACLE_WAITING_FURNITURE, ORACLE_KITCHEN_CHAIRS } from '@auto_matrix/shared';
 import { SpoonModel } from '../agents/SpoonModel.js';
 import { FILM_SETS, FILM_SCENE_BY_ID, OPENING_ESCAPE, openingTruckPose, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, PILL_ROOM, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, mirrorSilver, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, GARAGE, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, EXILES, CHATEAU, awakeningLocked, trainingLocked, phoneLocked, windowOpening, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type FilmJourney, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
 import { OPENING_HOTEL } from '@auto_matrix/shared';
@@ -1387,7 +1387,7 @@ export class FilmSetRenderer {
       for (let z = -19.8; z <= -14.2; z += .22) this.box(cream, -11.4, 6.7, z, .16, .9 + Math.sin(z * 12) * .05, .18);
       this.table(3, -17, 5, 3, this.wood, 1.9); this.box(this.metal, 3, 2.09, -17, 2, .06, 1.3, .04);
       for (const x of [2.5, 3, 3.5]) this.cylinder(this.mat(0xb99260), x, 2.16, -17, .18, .06);
-      this.chair(3, -13.7); this.chair(3, -20.3, Math.PI);
+      ORACLE_KITCHEN_CHAIRS.forEach((chair, i) => this.chair(chair.x, chair.z, i * Math.PI));
       this.table(8, -11, 2.7, 2.2, this.wood, 1.8); this.oracleVase = new OracleVase(this.root);
       this.rug(-6, 10, 12, 9);
       this.lamp(0, 6.6, -19, true);

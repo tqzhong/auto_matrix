@@ -68,3 +68,52 @@ export function oracleVisitText(encounter: OracleVisitEncounter): string {
 export function oracleLegacyChoice(answer: Philosophy): 'doubt' | 'rescue' | 'observe' {
   return answer === 'agency' ? 'doubt' : answer === 'care' ? 'rescue' : 'observe';
 }
+
+export interface SpoonLesson {
+  phase: 'waiting' | 'sitting' | 'demonstrating' | 'offered' | 'receiving' | 'focus' | 'understood' | 'rising' | 'done';
+  elapsed: number;
+  approach?: { x: number; z: number; yaw: number };
+}
+export type SpoonGesture = SpoonLesson & { role: 'neo' | 'boy' };
+export const SPOON_LESSON = {
+  neo: { x: -7.4, z: 9.6, yaw: -Math.PI * .75 },
+  boy: { x: -9, z: 8, yaw: Math.PI * .25 },
+  contact: { x: -8.32, y: 1.25, z: 8.76 },
+  sitting: 4, demonstrating: 3.2, receiving: 2.4, transfer: 1.1, rising: 2.6,
+} as const;
+
+export function spoonLessonLocked(lesson?: SpoonLesson): boolean {
+  return Boolean(lesson && !['waiting', 'done'].includes(lesson.phase));
+}
+
+export function spoonLessonSeat(lesson: SpoonLesson): number {
+  return lesson.phase === 'sitting' ? smooth((lesson.elapsed - 1.1) / 2.8)
+    : lesson.phase === 'rising' ? 1 - smooth(lesson.elapsed / SPOON_LESSON.rising)
+      : ['waiting', 'done'].includes(lesson.phase) ? 0 : 1;
+}
+
+export function spoonLessonRoot(lesson: SpoonLesson, role: SpoonGesture['role']) {
+  const target = SPOON_LESSON[role], origin = lesson.approach ?? target;
+  if (role === 'boy' || lesson.phase !== 'sitting') return target;
+  const amount = smooth(lesson.elapsed / 1.1), turn = Math.atan2(Math.sin(target.yaw - origin.yaw), Math.cos(target.yaw - origin.yaw));
+  return { x: origin.x + (target.x - origin.x) * amount, z: origin.z + (target.z - origin.z) * amount, yaw: origin.yaw + turn * amount };
+}
+
+export function spoonLessonBend(lesson: SpoonLesson, role: SpoonGesture['role'], bend: number): number | undefined {
+  const transferred = ['focus', 'understood', 'rising', 'done'].includes(lesson.phase) || lesson.phase === 'receiving' && lesson.elapsed >= SPOON_LESSON.transfer;
+  if (role === 'neo') return transferred ? bend : undefined;
+  if (transferred) return undefined;
+  return lesson.phase === 'demonstrating' ? smooth(lesson.elapsed / 1.1) * (1 - smooth((lesson.elapsed - 1.8) / 1.2)) : 0;
+}
+
+export function spoonLessonText(lesson: SpoonLesson): string {
+  if (lesson.phase === 'waiting') return '走到孩子面前的地毯上，按 G 坐下，看看他手里的勺子。';
+  if (lesson.phase === 'sitting') return '你在孩子面前坐下。他把勺子举到两人都看得清的位置。';
+  if (lesson.phase === 'demonstrating') return '孩子没有用双手折它。金属轻轻弯曲，又在递出之前恢复笔直。';
+  if (lesson.phase === 'offered') return '孩子向你递出勺子。按 G 亲手接过，试着重新理解眼前的规则。';
+  if (lesson.phase === 'receiving') return '你伸出右手捏住勺柄。孩子等你接稳，才松手退回。';
+  if (lesson.phase === 'focus') return '按住 G 注视勺子，松开时它会恢复。试着改变自己对规则的理解。';
+  if (lesson.phase === 'understood') return '勺子保留了弯曲的形状。按 G 起身，把这个疑问带进先知的厨房。';
+  if (lesson.phase === 'rising') return '你带着弯曲的勺子慢慢站起，准备走向厨房。';
+  return '勺子已经弯曲。走到厨房门口，亲自与先知会面。';
+}

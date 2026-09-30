@@ -1,5 +1,6 @@
 import { TruthPerformance } from './TruthPerformance.js';
-import { truthKneel, truthSeat } from '@auto_matrix/shared';
+import { poseSpoonBody } from './SpoonPerformance.js';
+import { truthKneel, truthSeat, spoonLessonSeat } from '@auto_matrix/shared';
 import * as THREE from 'three';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
@@ -910,6 +911,7 @@ export class HeroModels {
       if (!input.realWorld && !input.seated && !input.floorSeated && motion.seated < .01 && !input.performance
         && !input.windingUp && motion.attackAge > 1 && motion.skillAge > 1 && motion.hitAge > .5) placeHotelFeet(rig);
     }
+    poseSpoonBody(rig, input.spoonLesson);
     if (input.phone) this.holdPhone(rig, input.phone);
     if (input.morning?.phase === 'stopping') this.stopAlarm(rig, input.morning.elapsed);
     if (input.wakeCall && input.wakeCall.phase !== 'waking') {
@@ -948,8 +950,9 @@ export class HeroModels {
     this.apartments.get(rig)?.update(input.contact);
     if (input.wakeCall && !this.wakeCalls.has(rig)) this.wakeCalls.set(rig, new WakeCallPerformance(rig));
     this.wakeCalls.get(rig)?.update(input.wakeCall);
-    if (delta <= 0 || !rig.panels.some(panel => panel.mesh.visible)) return;
-    const dt = Math.min(delta, 1 / 30);
+    const spoonFloor = input.spoonLesson && spoonLessonSeat(input.spoonLesson) > 0 ? rig.root.getWorldPosition(new THREE.Vector3()).y + .025 : undefined;
+    if (delta <= 0 && spoonFloor === undefined || !rig.panels.some(panel => panel.mesh.visible)) return;
+    const dt = Math.max(0, Math.min(delta, 1 / 30));
     // Analytic wind target plus damped springs; the waist is pinned. Thigh and
     // shin capsules stop the running knees from cutting through the coat.
     const capsules = ['R', 'L'].flatMap(side => ['hip', 'knee'].map((part, i) => {
@@ -983,6 +986,13 @@ export class HeroModels {
           panel.velocity[offset] += ((target - value) * 150 - panel.velocity[offset] * 24) * dt;
           position.array[offset] = t < .04 ? panel.rest[offset] : value + panel.velocity[offset] * dt;
           changed ||= position.array[offset] !== value;
+        }
+        if (spoonFloor !== undefined) {
+          this.point.fromBufferAttribute(position, i); panel.mesh.localToWorld(this.point);
+          if (this.point.y < spoonFloor) {
+            this.point.y = spoonFloor; panel.mesh.worldToLocal(this.point); position.setXYZ(i, this.point.x, this.point.y, this.point.z);
+            panel.velocity[i * 3 + 1] = 0; changed = true;
+          }
         }
       }
       if (changed) { position.needsUpdate = true; panel.mesh.geometry.computeVertexNormals(); }

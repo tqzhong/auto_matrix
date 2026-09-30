@@ -15,7 +15,7 @@ import { wakeCallLocked, morningLocked } from '@auto_matrix/shared';
 import { clubLocked } from '@auto_matrix/shared';
 import { sentinelDanger, sentinelLocked } from '@auto_matrix/shared';
 import { interludeDuration, interludeLocked } from '@auto_matrix/shared';
-import { oracleVisitDuration, oracleVisitLocked } from '@auto_matrix/shared';
+import { oracleVisitDuration, oracleVisitLocked, spoonLessonText } from '@auto_matrix/shared';
 import { BETRAYAL, betrayalDuration, betrayalLocked } from '@auto_matrix/shared';
 import { RESCUE, rescueDuration, rescueLoadout, rescueLocked } from '@auto_matrix/shared';
 import { LOBBY_ENTRY, lobbyLocked } from '@auto_matrix/shared';
@@ -1016,6 +1016,18 @@ export class SandboxUI {
       this.el('sandbox-waypoint').textContent = '';
       this.el('sandbox-interact').classList.add('hidden');
       document.getElementById('game-objective-copy')!.textContent = '2/2 · 感觉足以证明真实吗？ · 选择后继续';
+      return;
+    }
+    if (!journey.visiting && scene.id === 'm1_spoon' && journey.oracle?.spoonLesson && journey.step === 0) {
+      const lesson = journey.oracle.spoonLesson, bend = journey.oracle.spoon ?? 0;
+      const ready = lesson.phase === 'waiting' ? distance(player.position, filmStepPosition(scene, scene.steps[0])) <= 1.35 : ['offered', 'focus', 'understood'].includes(lesson.phase);
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = lesson.phase === 'focus' ? '按住 G 专注 · 松开 G 恢复 · 鼠标环顾 · V 切换视角'
+        : ['offered', 'understood', 'waiting'].includes(lesson.phase) ? spoonLessonText(lesson) : '鼠标环顾 · V 切换视角 · 暂停与读档会保留当前动作';
+      this.el('sandbox-interact').classList.toggle('hidden', !ready);
+      this.el('sandbox-nearby').textContent = lesson.phase === 'offered' ? '接过勺子' : lesson.phase === 'focus' ? '按住 G 专注' : lesson.phase === 'understood' ? '起身去见先知' : '坐在孩子面前';
+      this.el('sandbox-job').style.width = `${bend * 100}%`; this.el('sandbox-waypoint').textContent = '';
+      document.getElementById('game-objective-copy')!.textContent = lesson.phase === 'focus' ? `专注 ${Math.round(bend * 100)}% · 松开按键时观察勺子如何恢复` : spoonLessonText(lesson);
       return;
     }
     if (!journey.visiting && scene.id === 'm1_spoon' && journey.oracle?.spoon !== undefined) {

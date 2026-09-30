@@ -83,7 +83,7 @@ test('Oracle waiting-room furniture is solid without cutting across the child-to
     assert.equal(playerBlocked(filmPosition('film_oracle_home', x, z), true), true, `solid waiting-room furnishing at ${x}, ${z}`);
   }
   let position = filmPosition('film_oracle_home', 0, 24); let velocity = { x: 0, z: 0 };
-  for (const [x, z] of [[-7, 12.5], [-7, 10], [-4, 2], [0, -8], [7, -14], [-2, -14], [-4.35, -22]]) {
+  for (const [x, z] of [[-7, 12.5], [-7, 10], [-4, 2], [0, -8], [0, -12], [-2, -14], [-4.35, -22]]) {
     const target = filmPosition('film_oracle_home', x, z);
     for (let frame = 0; frame < 600; frame++) {
       const dx = target.x - position.x, dz = target.z - position.z, distance = Math.hypot(dx, dz);
@@ -92,6 +92,16 @@ test('Oracle waiting-room furniture is solid without cutting across the child-to
       position = next.position; velocity = next.horizontalVelocity;
       assert.ok(frame < 599, `ordinary walking is blocked on the way to ${x}, ${z}: ${JSON.stringify(position)}`);
     }
+  }
+});
+
+test('both visible kitchen chairs stop a walking player while the aisle stays open', () => {
+  for (const z of [-13.7, -20.3]) {
+    assert.equal(playerBlocked(filmPosition('film_oracle_home', 3, z), true), true, 'the visible chair cannot be walked through');
+    let position = filmPosition('film_oracle_home', 0, z);
+    for (let i = 0; i < 80; i++) position = stepPlayer(position, 0, { x: 1, z: 0, yaw: Math.PI / 2, jump: false, sprint: false }, .05, true).position;
+    assert.ok(position.x < FILM_SETS.film_oracle_home.center.x + 2, 'the player stops before the seat');
+    assert.equal(playerBlocked(filmPosition('film_oracle_home', 0, z), true), false);
   }
 });
 

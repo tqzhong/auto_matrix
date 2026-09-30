@@ -105,7 +105,7 @@ export class AgentRenderer {
       const state = entry.state;
       const phoneExit = journey?.scene === 'm1_phone_escape' && journey.actor === id && ['connected', 'done'].includes(journey.openingPhone?.phase ?? '');
       entry.group.visible = state.isInMatrix === this.matrix && state.status !== 'disconnected' && !phoneExit;
-      entry.body.visible = (id !== this.playerId || !this.firstPerson || this.playerMotion?.inspecting === true || this.playerMotion?.spoon !== undefined) && state.status !== 'disconnected' && !state.currentAction?.parameters.filmDuel && !state.currentAction?.parameters.ghostPhase;
+      entry.body.visible = (id !== this.playerId || !this.firstPerson || this.playerMotion?.inspecting === true || this.playerMotion?.spoon !== undefined || this.playerMotion?.spoonLesson !== undefined) && state.status !== 'disconnected' && !state.currentAction?.parameters.filmDuel && !state.currentAction?.parameters.ghostPhase;
       const warning = state.currentAction?.type === 'attack' && state.currentAction.target === this.playerId && Number(state.currentAction.parameters.contactTick ?? 0) > tick;
       entry.marker.visible = warning || !this.playerId || id === this.selected;
       (entry.marker.material as THREE.MeshBasicMaterial).color.set(warning ? '#f6b177' : FACTION_COLORS[state.faction] ?? '#91cfb0');
@@ -148,6 +148,7 @@ export class AgentRenderer {
         seated: state.currentAction?.parameters.seated === true,
         floorSeated: state.currentAction?.parameters.floorSeated === true,
         spoon: state.currentAction?.parameters.spoon as number | undefined,
+        spoonLesson: state.currentAction?.parameters.spoonLesson as MotionInput['spoonLesson'],
         phone: state.currentAction?.parameters.phone as MotionInput['phone'],
         window: state.currentAction?.parameters.window as number | undefined,
         crossing: state.currentAction?.parameters.crossing as number | undefined,

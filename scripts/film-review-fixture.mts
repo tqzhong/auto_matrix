@@ -62,7 +62,7 @@ if (scene.id === 'm3_surrender' && ['smith-assimilation', 'smith-purge'].include
   actor.position = filmStepPosition(scene, scene.steps[2]); journey.checkpoint = { ...actor.position };
 }
 if (process.argv[3] === 'near') {
-  actor.position = filmStepPosition(scene, scene.steps[0]); actor.position.z += 2.5;
+  actor.position = filmStepPosition(scene, scene.steps[0]); actor.position.z += scene.id === 'm1_spoon' ? .7 : 2.5;
   if (playerBlocked(actor.position, actor.isInMatrix)) actor.position = filmStepPosition(scene, scene.steps[0]);
   sandbox.state.neoLife!.journey!.checkpoint = { ...actor.position };
 }
@@ -259,10 +259,16 @@ if (process.argv[3] === 'ladder' && scene.id === 'm1_ledge') {
   sandbox.life.film.tick(0); sandbox.life.film.command(actor, 'escape:climb', 0);
   for (let frame = 0; frame < 80; frame++) sandbox.life.film.climbFrame(actor, 1, .05, 0);
 }
-if (process.argv[3] === 'spoon' && scene.id === 'm1_spoon') {
-  actor.position = filmStepPosition(scene, scene.steps[0]);
+if (['spoon', 'spoon-offered', 'spoon-focus'].includes(process.argv[3]) && scene.id === 'm1_spoon') {
+  actor.controller = 'player'; actor.position = filmStepPosition(scene, scene.steps[0]);
   sandbox.life.film.command(actor, 'act', 0);
-  for (let frame = 0; frame < 60; frame++) sandbox.life.film.oracleFrame(actor, true, .1, 0);
+  for (let frame = 0; frame < 80; frame++) sandbox.life.film.oracleFrame(actor, false, .1, 0);
+  if (process.argv[3] !== 'spoon-offered') {
+    sandbox.life.film.command(actor, 'act', 0);
+    for (let frame = 0; frame < 25; frame++) sandbox.life.film.oracleFrame(actor, false, .1, 0);
+    if (process.argv[3] === 'spoon') for (let frame = 0; frame < 60; frame++) sandbox.life.film.oracleFrame(actor, true, .1, 0);
+  }
+  sandbox.life.film.state!.checkpoint = { ...actor.position };
 }
 if (['oracle-exam', 'oracle-cookie', 'oracle-question'].includes(process.argv[3]) && scene.id === 'm1_oracle') {
   actor.controller = 'player'; actor.position = filmStepPosition(scene, scene.steps[0]);

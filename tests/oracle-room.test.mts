@@ -3,7 +3,7 @@ import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { filmPosition } from '@auto_matrix/shared';
+import { FILM_SETS, SPOON_LESSON, spoonLessonBend, filmPosition, type SpoonLesson } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -55,10 +55,17 @@ test('Spoon Boy folds both legs above the rug instead of driving his shins throu
   }) }) } as unknown as Document;
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
   const models = new CharacterModels(); const rig = models.create(world.agents.get('spoon_boy')!);
-  const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, seated: true, floorSeated: true, spoon: 1 };
+  const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, seated: true, floorSeated: true, spoon: 1,
+    spoonLesson: { phase: 'offered' as const, elapsed: 0, role: 'boy' as const } };
   try {
+    models.animate(rig, 0, input, 4); rig.root.updateMatrixWorld(true);
+    const pausedHead = rig.head.getWorldPosition(new THREE.Vector3());
+    for (const ankle of rig.ankles) assert.ok(ankle.getWorldPosition(new THREE.Vector3()).y < .4,
+      'loading a paused save must restore the folded seated pose without waiting for time to resume');
     for (let frame = 0; frame < 90; frame++) models.animate(rig, 1 / 30, input, 4);
     rig.root.updateMatrixWorld(true);
+    assert.ok(Math.abs(pausedHead.y - rig.head.getWorldPosition(new THREE.Vector3()).y) < .025,
+      'the child torso cannot float upward only when restoring a paused lesson');
     for (const hip of rig.hips) hip.traverse(object => {
       if (!(object instanceof THREE.Mesh)) return;
       const vertex = new THREE.Vector3();
@@ -140,6 +147,58 @@ test('Neo keeps the spoon between his actual thumb and index finger, including a
           }
         }
         assert.ok(nearest < .05, `finger ${finger} must contact the handle at bend ${bend}, gap=${nearest}`);
+      }
+    }
+    const boy = models.create(world.agents.get('spoon_boy')!);
+    const center = FILM_SETS.film_oracle_home.center;
+    for (const [body, place] of [[rig, SPOON_LESSON.neo], [boy, SPOON_LESSON.boy]] as const) {
+      body.root.position.set(center.x + place.x, center.y - 1, center.z + place.z); body.root.rotation.y = place.yaw;
+    }
+    const pose = (phase: SpoonLesson['phase'], elapsed: number) => {
+      const lesson = { phase, elapsed };
+      for (const [body, role] of [[rig, 'neo'], [boy, 'boy']] as const) {
+        models.animate(body, 1 / 30, { ...input, spoon: spoonLessonBend(lesson, role, .5), spoonLesson: { ...lesson, role },
+          seated: role === 'boy', floorSeated: role === 'boy' }, 4);
+        body.root.updateWorldMatrix(true, true);
+      }
+    };
+    for (let frame = 0; frame < 90; frame++) pose('offered', 0);
+    pose('receiving', SPOON_LESSON.transfer - .001);
+    assert.equal(rig.spoon!.root.visible, false); assert.equal(boy.spoon!.root.visible, true);
+    const before = boy.spoon!.root.localToWorld(new THREE.Vector3(0, .08, 0));
+    const beforeRotation = boy.spoon!.root.getWorldQuaternion(new THREE.Quaternion());
+    pose('receiving', SPOON_LESSON.transfer + .001);
+    const after = rig.spoon!.root.localToWorld(new THREE.Vector3(0, .08, 0));
+    assert.equal(rig.spoon!.root.visible, true); assert.equal(boy.spoon!.root.visible, false);
+    assert.ok(before.distanceTo(after) < .025, `handing over cannot teleport the spoon: ${before.distanceTo(after)}`);
+    assert.ok(beforeRotation.angleTo(rig.spoon!.root.getWorldQuaternion(new THREE.Quaternion())) < .04, 'handoff preserves the spoon orientation');
+    assert.ok(rig.spoon!.root.getWorldScale(new THREE.Vector3()).distanceTo(new THREE.Vector3(.55, .55, .55)) < .001);
+    for (const [phase, elapsed] of [['sitting', 2.6], ['sitting', 4], ['receiving', 1.1], ['focus', 2], ['rising', 1.2]] as const) {
+      for (let frame = 0; frame < 12; frame++) pose(phase, elapsed);
+      let lowest = Infinity, meshName = '';
+      rig.root.traverseVisible(object => {
+        if (!(object instanceof THREE.Mesh)) return;
+        const vertex = new THREE.Vector3();
+        for (let i = 0; i < object.geometry.attributes.position.count; i++) {
+          object.getVertexPosition(i, vertex); object.localToWorld(vertex);
+          if (vertex.y < lowest) { lowest = vertex.y; meshName = object.name; }
+        }
+      });
+      assert.ok(lowest >= center.y - 1 - .015, `${phase} must keep ${meshName} above the rug: ${lowest - center.y + 1}`);
+      if (phase === 'focus') {
+        const head = rig.hero.bones.get('head')!.getWorldPosition(new THREE.Vector3());
+        assert.ok(head.y > center.y + .65 && head.y < center.y + 1.5, `sitting head height: ${head.y - center.y}`);
+      }
+    }
+    const paused = models.create(world.agents.get('neo')!);
+    await new Promise(resolve => setImmediate(resolve));
+    models.animate(paused, 0, { ...input, spoonLesson: { phase: 'focus', elapsed: 0, role: 'neo' } }, 4);
+    paused.root.updateWorldMatrix(true, true);
+    for (const panel of paused.hero!.panels) {
+      const vertex = new THREE.Vector3();
+      for (let i = 0; i < panel.mesh.geometry.attributes.position.count; i++) {
+        panel.mesh.getVertexPosition(i, vertex); panel.mesh.localToWorld(vertex);
+        assert.ok(vertex.y >= -.015, `a fresh paused Neo must not load with his coat below the rug: ${vertex.y}`);
       }
     }
   } finally { models.dispose(); globalThis.document = document; }

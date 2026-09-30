@@ -5,6 +5,18 @@ import { readFileSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { APARTMENT, filmPosition } from '@auto_matrix/shared';
 
+test('the spoon review save reaches each handoff checkpoint through the playable sequence', () => {
+  for (const [mode, phase, owner] of [['spoon-offered', 'offered', 'spoon_boy'], ['spoon-focus', 'focus', 'neo'], ['spoon', 'understood', 'neo']]) {
+    const directory = execFileSync(process.execPath, ['--import', 'tsx', 'scripts/film-review-fixture.mts', 'm1_spoon', mode], { encoding: 'utf8' }).trim();
+    try {
+      const world = JSON.parse(readFileSync(path.join(directory, 'world.json'), 'utf8'));
+      assert.equal(world.sandbox.neoLife.journey.oracle.spoonLesson.phase, phase);
+      assert.equal(world.sandbox.neoLife.journey.step, 0, 'understanding still waits for the player to stand');
+      for (const id of ['neo', 'spoon_boy']) assert.equal(world.agents[id].currentAction.parameters.spoon !== undefined, id === owner);
+    } finally { rmSync(directory, { recursive: true, force: true }); }
+  }
+});
+
 test('the successful office escape review save skips interrogation and has no tracker', () => {
   const directory = execFileSync(process.execPath, ['--import', 'tsx', 'scripts/film-review-fixture.mts', 'm1_wake_again', 'wake-clear-ringing'], { encoding: 'utf8' }).trim();
   try {

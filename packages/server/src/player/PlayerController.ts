@@ -149,6 +149,7 @@ export class PlayerController {
     this.sandbox?.life.film.keymakerFrame(agent, 0, tick);
     this.sandbox?.life.film.sentinelFrame(agent, { movement: 0, sprint: false, jump: false }, 0, tick);
     this.sandbox?.life.film.interludeFrame(agent, 0, tick);
+    this.sandbox?.life.film.oracleFrame(agent, false, 0, tick);
     this.sandbox?.life.film.betrayalFrame(agent, 0, tick);
     this.sandbox?.life.film.rescueFrame(agent, 0, tick);
     this.sandbox?.life.film.governmentFrame(agent, false, 0, tick);
@@ -333,6 +334,9 @@ export class PlayerController {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
       if (this.sandbox?.life.film.trainingFrame(agent, dt, tick)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
+      if (this.sandbox?.life.film.spoonFrame(agent, Boolean(input.focus) && Math.hypot(input.x, input.z) < .05 && !input.jump, dt, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
       if (this.sandbox?.life.film.performing(agent)) {

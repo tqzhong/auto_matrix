@@ -16,6 +16,7 @@ import { EXILES } from './exiles.js';
 import { MOUNTAIN } from './mountain.js';
 import { TRUCKS } from './trucks.js';
 import { distance } from '../utils/index.js';
+import { SPOON_LESSON, spoonLessonLocked } from './oracle.js';
 
 export type FilmCue = 'night' | 'contact' | 'office' | 'club' | 'awakening' | 'training' | 'oracle' | 'infiltration' | 'combat' | 'the_one' | 'zion' | 'swarm' | 'restaurant' | 'chateau' | 'chase' | 'source' | 'mobil' | 'siege' | 'bane' | 'farewell' | 'final' | 'dawn';
 export interface FilmStep {
@@ -116,7 +117,7 @@ export interface FilmJourney {
   morning?: import('./apartment.js').MorningRoutine;
   club?: import('./club.js').ClubEncounter;
   dojo?: import('./training.js').DojoLesson;
-  oracle?: { spoon?: number; vase?: number; consultation?: import('./oracle.js').OracleVisitEncounter };
+  oracle?: { spoon?: number; spoonLesson?: import('./oracle.js').SpoonLesson; vase?: number; consultation?: import('./oracle.js').OracleVisitEncounter };
   pills?: import('./pills.js').PillEncounter;
   interrogation?: import('./interrogation.js').InterrogationEncounter;
   meeting?: import('./meeting.js').MeetingEncounter;
@@ -232,7 +233,7 @@ export const FILM_SCENES: FilmScene[] = [
   scene('m1_cypher_console', 1, 'neb_deck', 'neo', '屏幕旁的一杯酒', 'oracle_first', 'night', 'Neo 在值班控制台旁撞见 Cypher 编写一段没有解释用途的程序。交谈暴露了他的后悔，却没有把后来那场交易提前告诉 Neo。', [use('查看滚动代码', 'Cypher 解释自己如何从字符中读出城市，又用一杯烈酒试探 Neo 对觉醒的看法。', 3.4, 7.2), think('知道真相之后还会后悔吗？', '真相无法自动使人幸福；问题在于谁为遗忘付出代价。', 3.4, 7.2)], ['cypher']),
   scene('m1_steak', 1, 'cypher_restaurant', 'smith', '舒适的代价', 'oracle_first', 'restaurant', '另一条叙事线：以 Smith 的旁观视角见证 Cypher 的交易。此段不会成为 Neo 此时拥有的角色知识。', [walk('靠近窗边餐桌', 0, -6), use('坐下见证交易条件', 'Cypher 以交出 Morpheus 换取重新接入、遗忘现实和一段富有的人生。此段为旁观既定事件。', 0, -8.7, 5)], ['cypher']),
   scene('m1_meal', 1, 'neb_deck', 'neo', '真实世界的一顿饭', 'oracle_first', 'zion', '船员吃着单细胞蛋白，谈论机器如何制造味觉，也把玩笑、欲望和下一次接入带进同一张餐桌。', [use('到餐桌亲手接过食物', '平凡的吃饭与玩笑让这艘船不只是战争机器。', -1.5, 22), walk('回到核心区，准备接入矩阵', 0, 0)], ['mouse', 'dozer', 'tank', 'apoc', 'switch']),
-  scene('m1_spoon', 1, 'oracle_home', 'neo', '等候室的孩子们', 'oracle_first', 'oracle', '先知的客厅里，孩子们以不同方式试探矩阵的规则。靠近孩子拿起勺子，停下脚步，按住 G 专注；松开时它会恢复。', [use('拿起勺子，按住 G 专注', '你看见金属在手中弯曲，松开力气也不再恢复。对规则的认识开始动摇。', -7, 10), walk('走到厨房门口', 0, -8)], ['spoon_boy']),
+  scene('m1_spoon', 1, 'oracle_home', 'neo', '等候室的孩子们', 'oracle_first', 'oracle', '先知的客厅里，孩子们以不同方式试探矩阵的规则。走到孩子面前坐下，看他示范，再亲手接过勺子，按住 G 专注。', [use('坐下观察，接过勺子', '你看见金属在手中弯曲，松开力气也不再恢复。对规则的认识开始动摇。', SPOON_LESSON.neo.x, SPOON_LESSON.neo.z), walk('走到厨房门口', 0, -8)], ['spoon_boy']),
   scene('m1_oracle', 1, 'oracle_home', 'neo', '厨房里的预言', 'oracle_first', 'oracle', '饼干和花瓶之间，先知让 Neo 面对自我认识、Morpheus 的信念和即将到来的抉择。', [use('听见提醒，回头看花瓶', '你的转身碰落了花瓶。先知留下的问题是：没有那句提醒，你还会做出同一个动作吗？', 7, -14), think('预言如何影响选择？', '你将如何行动，比得到一个称号更重要。', -5, -22)], ['oracle', 'morpheus']),
   scene('m1_dejavu', 1, 'ambush_house', 'neo', '重复经过的黑猫', 'betrayal', 'infiltration', '返回出口的旧楼里，一只黑猫从门前经过。留意它的动作，以及之后房间发生的变化。', [use('留意门前的黑猫', 'Trinity 认出系统被改动的迹象。原来的门与窗被砖墙封死，只能从左侧墙内通道撤退。', 0, -8), { ...fight('突破楼内封锁', 2), z: -8 }, walk('改走左侧墙内通道', -17, -27)], ['trinity', 'switch', 'apoc']),
   scene('m1_bathroom', 1, 'ambush_house', 'morpheus', '为同伴争取时间', 'betrayal', 'combat', 'Morpheus 在浴室门线阻挡 Smith，其他人从墙内通道撤离。他必须亲自撑住追击，再决定以被捕换取同伴离开。', [fight('在浴室门线击退 Smith 三次并撑到同伴撤离', 1, 'smith', 'smith'), use('撞向 Smith，把战斗带进浴室', '同伴越过墙内通道后，Morpheus 撞向 Smith 并被捕。争取到的时间没有改写被捕结果，却让其他人离开了旧楼。', 0, 0)], ['smith', 'neo', 'trinity', 'switch', 'apoc']),
@@ -443,9 +444,9 @@ export const FILM_SCENE_BY_ID = Object.fromEntries(FILM_SCENES.map(s => [s.id, s
 export const FILM_CAST = [...new Set([...FILM_SCENES.flatMap(s => [s.actor, ...s.cast]), ...Object.values(FILM_CONSEQUENCES).flatMap(Object.keys)])];
 export const FILM_NAMES = { 1: '黑客帝国', 2: '重装上阵', 3: '矩阵革命' } as const;
 export function oracleActing(journey: FilmJourney): boolean {
-  return !journey.visiting && journey.scene === 'm1_oracle'
+  return !journey.visiting && (journey.scene === 'm1_spoon' && spoonLessonLocked(journey.oracle?.spoonLesson) || journey.scene === 'm1_oracle'
     && (journey.step === 0 && journey.oracle?.vase !== undefined && journey.oracle.vase < 4.5
-      || Boolean(journey.oracle?.consultation && !['waiting', 'done'].includes(journey.oracle.consultation.phase)));
+      || Boolean(journey.oracle?.consultation && !['waiting', 'done'].includes(journey.oracle.consultation.phase))));
 }
 export function filmStepPosition(scene: FilmScene, step: FilmStep): Vector3 {
   const position = filmPosition(scene.set, step.x, step.z);

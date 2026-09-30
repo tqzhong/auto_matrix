@@ -504,12 +504,13 @@ test('melee outside a scripted fight cannot kill the film cast', () => {
   assert.deepEqual(h.attacked, []);
 });
 
-test('the spoon responds to held focus, relaxes on release, and never completes from a timed interaction', () => {
+test('Neo sits for the demonstration, explicitly takes the spoon, focuses and stands before leaving', () => {
   const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
-  const scene = FILM_SCENE_BY_ID.m1_spoon; Object.assign(state, { scene: scene.id, actor: 'neo', step: 0 });
+  const scene = FILM_SCENE_BY_ID.m1_spoon; Object.assign(state, { scene: scene.id, actor: 'neo', step: 0, oracle: undefined });
   h.actor().position = filmStepPosition(scene, scene.steps[0]); h.actor().currentLocation = scene.set;
-  h.command('act'); assert.equal(state.started, undefined); assert.equal(state.oracle?.spoon, 0);
-  h.advance(20); assert.equal(state.step, 0, 'waiting alone cannot bend the spoon');
+  const lesson = () => h.sandbox.life.film.state!.oracle!.spoonLesson!;
+  h.command('act'); assert.equal(state.started, undefined); assert.equal(lesson()?.phase, 'sitting');
+  assert.equal(h.actor().currentAction?.parameters.spoon, undefined, 'Neo cannot own the prop before accepting it');
   let sequence = 10;
   const focus = (seconds: number, held = true, running = true) => {
     for (let i = 0; i < seconds * 10; i++) {
@@ -517,16 +518,56 @@ test('the spoon responds to held focus, relaxes on release, and never completes 
       h.players.step(.1, running, h.tick());
     }
   };
-  focus(2); const bent = state.oracle!.spoon!; assert.ok(bent > .3 && bent < 1);
-  focus(1, false); assert.ok(state.oracle!.spoon! < bent, 'releasing attention visibly relaxes the metal');
+  focus(20); assert.equal(lesson().phase, 'offered', 'waiting or a held key cannot accept the spoon automatically');
+  assert.equal(state.oracle!.spoon, 0); assert.equal(state.step, 0);
+  h.command('act'); assert.equal(lesson().phase, 'receiving');
+  focus(.5, false); assert.equal(h.actor().currentAction?.parameters.spoon, undefined);
+  focus(.8, false); assert.equal(h.world.agents.get('spoon_boy')!.currentAction?.parameters.spoon, undefined);
+  assert.equal(h.actor().currentAction?.parameters.spoon, 0, 'only Neo holds the transferred spoon');
+  focus(2, false); assert.equal(lesson().phase, 'focus');
+  focus(2); const bent = h.sandbox.life.film.state!.oracle!.spoon!; assert.ok(bent > .3 && bent < 1);
+  focus(1, false); assert.ok(h.sandbox.life.film.state!.oracle!.spoon! < bent, 'releasing attention visibly relaxes the metal');
   focus(1); const paused = state.oracle!.spoon; focus(1, true, false); assert.equal(state.oracle!.spoon, paused);
   h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); assert.equal(h.sandbox.life.film.state!.oracle!.spoon, paused);
-  focus(6); assert.equal(h.sandbox.life.film.state!.step, 1);
+  focus(6); assert.equal(lesson().phase, 'understood'); assert.equal(h.sandbox.life.film.state!.step, 0);
   assert.equal(h.sandbox.life.state!.choices.spoon, 'bent');
+  h.command('act'); assert.equal(lesson().phase, 'rising');
+  focus(3, false); assert.equal(lesson().phase, 'done'); assert.equal(h.sandbox.life.film.state!.step, 1);
+  assert.equal(h.sandbox.life.film.performing(h.actor()), false, 'walking returns only after Neo stands');
+});
+
+test('the spoon handoff pauses for disconnects and an occupied child, and survives retry without duplicating the prop', () => {
+  const h = setup(); h.command('continue'); const scene = FILM_SCENE_BY_ID.m1_spoon;
+  Object.assign(h.sandbox.life.film.state!, { scene: scene.id, actor: 'neo', step: 0, oracle: undefined });
+  h.actor().position = filmStepPosition(scene, scene.steps[0]); h.actor().currentLocation = scene.set;
+  const lesson = () => h.sandbox.life.film.state!.oracle!.spoonLesson!;
+  h.players.possess('child-player', 'spoon_boy', h.tick());
+  assert.match(h.command('act'), /另一位玩家/); assert.equal(lesson()?.phase, 'waiting');
+  h.players.release('child-player', h.tick()); h.command('act');
+  h.players.receiveInput('film-player', { x: 1, z: 1, yaw: 0, jump: true, sprint: true, sequence: 1 });
+  assert.match(h.players.act('film-player', 'attack', h.tick())!, /演出/);
+  for (let i = 0; i < 15; i++) h.players.step(.1, true, h.tick());
+  const progress = lesson().elapsed, position = { ...h.actor().position };
+  h.players.step(.1, false, h.tick()); assert.equal(lesson().elapsed, progress);
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+  h.players.release('film-player', h.tick()); h.advance(20); assert.equal(lesson().elapsed, progress);
+  h.players.possess('film-player', 'neo', h.tick()); assert.deepEqual(h.actor().position, position);
+  h.players.possess('child-player', 'spoon_boy', h.tick());
+  const child = h.world.agents.get('spoon_boy')!, childPosition = { ...child.position };
+  for (let i = 0; i < 20; i++) h.players.step(.1, true, h.tick());
+  assert.equal(lesson().elapsed, progress); assert.deepEqual(child.position, childPosition);
+  h.players.release('child-player', h.tick());
+  for (let i = 0; i < 70; i++) h.players.step(.1, true, h.tick());
+  h.command('act'); for (let i = 0; i < 13; i++) h.players.step(.1, true, h.tick());
+  assert.equal(lesson().phase, 'receiving'); const receiving = lesson().elapsed;
+  h.actor().health = 0; h.actor().status = 'dead'; h.command('retry');
+  assert.equal(lesson().elapsed, receiving); assert.equal(lesson().phase, 'receiving');
+  assert.equal(h.actor().currentAction?.parameters.spoon, 0);
+  assert.equal(h.world.agents.get('spoon_boy')!.currentAction?.parameters.spoon, undefined);
 });
 
 test('old Oracle waiting-room saves move clear of new walls and furniture without losing spoon progress', () => {
-  for (const [x, z] of [[18, 12], [-18, 12], [-11.5, 14], [10.8, 9], [-7, 10]]) {
+  for (const [x, z] of [[18, 12], [-18, 12], [-11.5, 14], [10.8, 9], [3, -13.7], [3, -20.3], [-7, 10]]) {
     const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
     Object.assign(state, { scene: 'm1_spoon', actor: 'neo', step: 0, oracle: { spoon: .42 }, checkpoint: filmPosition('film_oracle_home', x, z) });
     h.actor().position = { ...state.checkpoint }; h.actor().currentLocation = 'film_oracle_home';
@@ -2762,7 +2803,16 @@ test('the entire film route completes through interactions, driving and real com
         }
         else if (state.truthRecovery) for (let frame = 0; frame < 200 && state.scene === scene.id && state.step === index; frame++) h.players.step(.1, true, h.tick());
         else if (state.awakening && ['m1_mirror', 'm1_pod', 'm1_recovery', 'm1_cabin', 'm1_construct', 'm1_desert'].includes(scene.id)) for (let frame = 0; frame < 200 && state.scene === scene.id && state.step === index; frame++) h.players.step(.1, true, h.tick());
-        else if (index === 0 && ['m1_spoon', 'm1_oracle', 'm1_dejavu'].includes(scene.id)) {
+        else if (index === 0 && scene.id === 'm1_spoon') {
+          for (let frame = 0; frame < 80; frame++) h.players.step(.1, true, h.tick());
+          h.command('act');
+          for (let frame = 0; frame < 90; frame++) {
+            h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false, focus: true, sequence: ++sequence });
+            h.players.step(.1, true, h.tick());
+          }
+          h.command('act'); for (let frame = 0; frame < 30; frame++) h.players.step(.1, true, h.tick());
+        }
+        else if (index === 0 && ['m1_oracle', 'm1_dejavu'].includes(scene.id)) {
           for (let frame = 0; frame < 110 && state.step === index; frame++) {
             h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false, focus: true, sequence: ++sequence });
             h.players.step(.1, true, h.tick());

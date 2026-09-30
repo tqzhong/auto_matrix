@@ -132,11 +132,13 @@ export const BANE_LOFT_OBSTACLES: FilmObstacle[] = [
   { x: 4, z: -29, width: 4, depth: 3, height: 2.5 },
   ...[-1, 1].flatMap(side => [-24, 0, 24].map(z => ({ x: side * 20, z, width: 1.6, depth: 1.6, height: 21 }))),
 ];
+export const ORACLE_KITCHEN_CHAIRS: FilmObstacle[] = [-13.7, -20.3].map(z => ({ x: 3, z, width: 1.7, depth: 1.7, height: 2.8 }));
 export const ORACLE_FURNITURE: FilmObstacle[] = [
   { x: -1.5, z: -27.5, width: 18, depth: 2.9, height: 2.5 },
   { x: 9, z: -25.5, width: 3.4, depth: 3.5, height: 4.9 },
   { x: 3, z: -17, width: 5, depth: 3, height: 2.1 },
   { x: 8, z: -11, width: 2.7, depth: 2.2, height: 1.95 },
+  ...ORACLE_KITCHEN_CHAIRS,
 ];
 export const ORACLE_WAITING_FURNITURE = {
   sofa: { x: -11.5, z: 14, width: 3.6, depth: 7.8, height: 3.4 },
