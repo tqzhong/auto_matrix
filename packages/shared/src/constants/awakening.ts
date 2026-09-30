@@ -1,12 +1,13 @@
 import type { FilmJourney } from './film-story.js';
 import { PILL_ROOM } from './pills.js';
+import { CABIN, cabinBodyPose, cabinSeat } from './cabin.js';
 
-export type AwakeningKind = 'mirror' | 'connect' | 'disconnect' | 'rescue' | 'recovery' | 'construct' | 'desert';
+export type AwakeningKind = 'mirror' | 'connect' | 'disconnect' | 'rescue' | 'recovery' | 'cabin' | 'core' | 'construct' | 'desert';
 export interface AwakeningBeat { kind: AwakeningKind; elapsed: number; started?: boolean; approach?: { x: number; z: number } }
 export interface AwakeningReveal { kind: 'construct' | 'desert'; elapsed: number; role: 'neo' | 'morpheus' }
 export type RecoveryCrewRole = 'morpheus' | 'trinity';
 export interface RecoveryCrewGesture { elapsed: number; role: RecoveryCrewRole; boarding?: boolean; target?: { x: number; y: number; z: number } }
-export const AWAKENING_SECONDS = { mirror: 8, connect: 4, disconnect: 9, rescue: 14, recovery: 12, construct: 11, desert: 13 } as const;
+export const AWAKENING_SECONDS = { mirror: 8, connect: 4, disconnect: 9, rescue: 14, recovery: 12, cabin: 12, core: 8, construct: 11, desert: 13 } as const;
 export const MIRROR_TOUCH = { x: -7.1, z: -14.6, radius: 1.25 } as const;
 export const MIRROR_SEAT = { x: -9.5, z: -16.05 } as const;
 export const MIRROR_FACE = { y: 2.8, radiusX: 1.85, radiusY: 2.65 } as const;
@@ -57,7 +58,7 @@ export const RECOVERY_CREW = {
 } as const;
 export const CONSTRUCT_REVEAL = { neo: { x: 4.4, z: -6.2, yaw: Math.PI }, morpheus: { x: -4.4, z: -6.2, yaw: Math.PI }, television: { x: 0, z: -16 } } as const;
 export const DESERT_REVEAL = { neo: { x: 1.8, z: -28, yaw: Math.PI }, morpheus: { x: -3.2, z: -26.8, yaw: Math.PI }, towersZ: -70 } as const;
-export type AwakeningPose = 'touch' | 'connect' | 'pod' | 'fall' | 'float' | 'lift' | 'recover' | 'construct' | 'desert';
+export type AwakeningPose = 'touch' | 'connect' | 'pod' | 'fall' | 'float' | 'lift' | 'recover' | 'cabin' | 'core' | 'construct' | 'desert';
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
 const smooth = (value: number) => { const t = clamp(value); return t * t * (3 - 2 * t); };
 export const mirrorSilver = (elapsed: number): number => clamp((elapsed - MIRROR_TIMING.touch) / (AWAKENING_SECONDS.mirror - MIRROR_TIMING.touch));
@@ -102,7 +103,7 @@ export function recoveryCrewPose(gesture: RecoveryCrewGesture): { x: number; z: 
 }
 
 export function awakeningLocked(journey: FilmJourney): boolean {
-  return !journey.visiting && (journey.scene === 'm1_pod' || ['m1_mirror', 'm1_recovery', 'm1_construct', 'm1_desert'].includes(journey.scene)
+  return !journey.visiting && (journey.scene === 'm1_pod' || ['m1_mirror', 'm1_recovery', 'm1_cabin', 'm1_construct', 'm1_desert'].includes(journey.scene)
     && !!journey.awakening && (journey.awakening.elapsed < AWAKENING_SECONDS[journey.awakening.kind]
       || journey.scene === 'm1_construct' && journey.step === 1 && journey.awakening.kind === 'construct' && journey.awakening.started !== false));
 }
@@ -138,14 +139,30 @@ export function awakeningPose(beat?: AwakeningBeat): { x: number; y: number; z: 
                   : beat.elapsed < POD_RESCUE.fade ? 'Morpheus：欢迎来到真实世界，Neo。' : 'Neo 失去意识。船员将他送往医疗舱。' };
   }
   if (beat?.kind === 'recovery') {
-    const body = recoveryBodyPose(beat.elapsed);
+    const body = recoveryBodyPose(0);
     const text = beat.started === false ? '陌生的空气进入肺部。转动视角看清医疗舱，按 G 示意船员开始恢复肌肉。'
-      : beat.elapsed < 2.2 ? '眼睛第一次适应真实世界的光。船员正在启动肌肉恢复设备。'
-      : beat.elapsed < 7 ? '针疗臂依次刺激从未真正使用过的肌肉。旧插口仍留在皮肤与颈后。'
-      : beat.elapsed < 9 ? 'Neo 抬起手，确认眼前的身体属于自己。'
-      : beat.elapsed < 11.4 ? '船员扶稳医疗床。Neo 坐起，把双脚放到冰冷的甲板上。'
-      : 'Neo 在床边站稳。前方通道通向核心连接区。';
+      : beat.elapsed < 2.2 ? 'Dozer 调整治疗设备：这具身体还需要恢复。Morpheus 在床边等待。'
+      : beat.elapsed < 6 ? 'Morpheus 解释，肌肉已经萎缩；这些刺痛来自身体第一次真正使用自己的感官。'
+      : beat.elapsed < 9 ? '设备逐渐停下。Morpheus 让 Neo 先休息，等身体恢复后再面对答案。'
+      : '疲惫让眼前暗下去。飞船仍在航行。';
     return { x: body.x, y: body.y, z: RECOVERY_BED.z, pose: 'recover', text };
+  }
+  if (beat?.kind === 'cabin') {
+    const body = cabinBodyPose(beat.elapsed);
+    return { x: body.x, y: body.y, z: body.z, pose: 'cabin', text: beat.started === false
+      ? '一段休息之后。狭窄船舱的灯亮着，身上已有船员留下的衣物。按 G 起身，检查颈后的接口。'
+      : beat.elapsed < 4.8 ? 'Neo 慢慢坐起，把双脚放到甲板上。颈后的异物感仍然存在。'
+      : beat.elapsed < 8.8 ? '手指摸到金属接口。Morpheus 说明：熟悉的 1999 年来自模拟，现实已过去大约两个世纪，确切年份仍不清楚。'
+      : '舱门打开。Morpheus 邀请 Neo 亲眼看看飞船的核心。' };
+  }
+  if (beat?.kind === 'core') {
+    const from = beat.approach ?? CABIN.approach, walk = smooth(beat.elapsed / .9), sit = cabinSeat(beat.elapsed);
+    return { x: from.x + (CABIN.chair.x - 1.85 - from.x) * walk + 1.85 * sit,
+      y: .22 * smooth((beat.elapsed - .25) / .4) * (1 - sit), z: from.z + (CABIN.chair.z - from.z) * walk, pose: 'core',
+      text: beat.started === false ? '这里是飞船的广播核心。按 G 坐入连接椅，允许 Morpheus 接通颈后接口。'
+        : beat.elapsed < 2.2 ? 'Neo 坐稳。Morpheus 从椅后拿起连接线。'
+        : beat.elapsed < 5 ? '插头靠近颈后的金属接口。现实身体留在飞船，意识将进入加载程序。'
+        : '连接完成。舱内的光逐渐被无边的白色取代。' };
   }
   if (beat?.kind === 'construct') {
     const text = beat.started === false ? '白色没有边界。两把旧皮椅与一台电视像被直接写进空间。按 G 请 Morpheus 开始说明。'

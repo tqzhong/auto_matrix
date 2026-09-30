@@ -7,7 +7,7 @@ import { lafayetteWelcomeCamera } from './LafayetteWelcomeCamera.js';
 import type { MotionInput } from '../agents/CharacterMotion.js';
 import { AIR_RESCUE, governmentPose, airRescuePose, airRescueRoot, interrogationPose, meetingPose, meetingCarPose, meetingCarPoint, MEETING_TIMING } from '@auto_matrix/shared';
 import { officeClothing } from '@auto_matrix/shared';
-import { MORNING, POD_RESCUE, podRescuePose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
+import { cabinSeat, MORNING, POD_RESCUE, podRescuePose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
 
 export class PlayerControls {
   id: string | null = null;
@@ -398,6 +398,7 @@ export class PlayerControls {
     this.motion.mirrorBeat = state.currentAction?.parameters.mirrorBeat as number | undefined;
     this.motion.helDanceDoor = state.currentAction?.parameters.helDanceDoor as number | undefined;
     this.motion.recovery = state.currentAction?.parameters.recovery as number | undefined;
+    this.motion.cabin = state.currentAction?.parameters.cabin as MotionInput['cabin'];
     if (this.motion.recovery !== undefined) {
       const yaw = recoveryBodyPose(this.motion.recovery).yaw;
       if (this.recoveryYaw !== undefined) this.yaw += yaw - this.recoveryYaw;
@@ -529,7 +530,7 @@ export class PlayerControls {
     if (this.motion.wakeCall?.phase === 'leaving' && this.motion.wakeCall.elapsed > 1.15 && this.motion.wakeCall.elapsed < 3.05) this.motion.speed = 1.35;
     this.motion.grounded = Boolean(this.ride || this.gunner) || this.climbing || this.performing || this.position.y <= groundHeight(this.position, state.isInMatrix) + .12;
     this.motion.verticalVelocity = this.vy;
-    this.motion.inspecting = Boolean((this.motion.pills || this.motion.interrogation || this.motion.welcome || this.motion.knock !== undefined || this.motion.recovery !== undefined || this.motion.reveal || this.motion.training || this.motion.workday || this.motion.wakeCall || this.motion.sentinel || this.motion.interlude || this.motion.oracleVisit || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || this.motion.lobbyEntry) && !this.firstPerson) || Boolean(this.phone && this.performing && this.motion.window === undefined && this.motion.crossing === undefined) || this.spoon !== undefined && this.enabled && this.motion.speed < .25 && this.motion.grounded;
+    this.motion.inspecting = Boolean((this.motion.pills || this.motion.interrogation || this.motion.welcome || this.motion.knock !== undefined || this.motion.recovery !== undefined || this.motion.cabin || this.motion.reveal || this.motion.training || this.motion.workday || this.motion.wakeCall || this.motion.sentinel || this.motion.interlude || this.motion.oracleVisit || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || this.motion.lobbyEntry) && !this.firstPerson) || Boolean(this.phone && this.performing && this.motion.window === undefined && this.motion.crossing === undefined) || this.spoon !== undefined && this.enabled && this.motion.speed < .25 && this.motion.grounded;
     const attacking = (now - this.lastAttack) / 1000 < MELEE_COMBO[this.attackCombo].duration;
     const heading = this.ride || this.climbing || this.performing ? state.rotation : attacking ? this.attackYaw : this.firearm ? this.yaw : this.motion.speed > .1 ? Math.atan2(dx, dz) : this.facing;
     const turn = Math.atan2(Math.sin(heading - this.facing), Math.cos(heading - this.facing));
@@ -564,7 +565,8 @@ export class PlayerControls {
     const ladderWide = this.climbing && state.currentLocation === 'film_office_ledge' && !this.firstPerson;
     const pillDepartureWide = !this.firstPerson && this.motion.pills?.phase === 'taking' && this.motion.pills.elapsed >= 10;
     const podWide = !this.firstPerson && this.motion.performance === 'pod';
-    this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, inOfficeLift && !this.firstPerson ? 80 : podWide ? 65 : smithFinaleWide || epilogueWide ? 64 : ladderWide ? 62 : interviewApproach ? 70 : interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide || sentinelWide || interludeWide || oracleWide || betrayalWide || rescueWide || governmentWide || airRescueWide || escapeWide || oneWide || catchWide || lobbyWide || pillDepartureWide ? 58 : this.motion.inspecting ? 42 : this.firstPerson ? this.motion.mirrorBeat !== undefined ? 78 : sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
+    const cabinWide = !this.firstPerson && Boolean(this.motion.cabin);
+    this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, inOfficeLift && !this.firstPerson ? 80 : podWide ? 65 : cabinWide ? this.camera.aspect < .85 ? 68 : 58 : smithFinaleWide || epilogueWide ? 64 : ladderWide ? 62 : interviewApproach ? 70 : interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide || sentinelWide || interludeWide || oracleWide || betrayalWide || rescueWide || governmentWide || airRescueWide || escapeWide || oneWide || catchWide || lobbyWide || pillDepartureWide ? 58 : this.motion.inspecting ? 42 : this.firstPerson ? this.motion.mirrorBeat !== undefined ? 78 : sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
     this.camera.near = this.firstPerson && this.motion.club ? .08 : this.defaultNear;
     this.camera.updateProjectionMatrix();
     this.cameraStep += this.motion.speed * delta;
@@ -1042,6 +1044,17 @@ export class PlayerControls {
         if (resetCamera || gesture.elapsed < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-5 * delta));
         this.camera.lookAt(focus);
       }
+    } else if (this.motion.cabin?.kind === 'core') {
+      if (this.firstPerson) {
+        const eye = new THREE.Vector3(this.position.x, this.position.y + (3.13 - .684 * cabinSeat(this.motion.cabin.elapsed)), this.position.z);
+        this.camera.position.copy(eye);
+        const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
+        this.camera.lookAt(eye.clone().add(forward));
+      } else {
+        const ideal = new THREE.Vector3(this.position.x + 2.9, this.position.y + 4.1, this.position.z + 5.3);
+        if (resetCamera) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-7 * delta));
+        this.camera.lookAt(this.position.x, this.position.y + 1.9, this.position.z);
+      }
     } else if (this.motion.recovery !== undefined) {
       const rise = THREE.MathUtils.smoothstep(this.motion.recovery, 7, 11.7);
       const body = recoveryBodyPose(this.motion.recovery);
@@ -1054,8 +1067,12 @@ export class PlayerControls {
         forward.lerp(lying, 1 - body.sit).normalize(); this.camera.lookAt(eye.clone().add(forward));
       } else {
         const bedside = THREE.MathUtils.smoothstep(this.motion.recovery, 6.8, 8.4);
-        const ideal = new THREE.Vector3(this.position.x + THREE.MathUtils.lerp(3, -3.4, bedside), this.position.y + THREE.MathUtils.lerp(4, 5.5, bedside), this.position.z + THREE.MathUtils.lerp(6, 7.5, bedside));
-        const focus = new THREE.Vector3(this.position.x, this.position.y + THREE.MathUtils.lerp(1.55, 2.05, rise), this.position.z);
+        const waking = this.motion.cabin?.kind === 'wake';
+        const center = FILM_SETS.film_neb_deck.center;
+        const ideal = waking ? new THREE.Vector3(center.x + 7.3, center.y + 3.8, center.z - 26.7)
+          : new THREE.Vector3(this.position.x + THREE.MathUtils.lerp(3, -3.4, bedside), this.position.y + THREE.MathUtils.lerp(4, 5.5, bedside), this.position.z + THREE.MathUtils.lerp(6, 7.5, bedside));
+        const focus = waking ? new THREE.Vector3(center.x + 14, center.y + 1.1, center.z - 32.4)
+          : new THREE.Vector3(this.position.x, this.position.y + THREE.MathUtils.lerp(1.55, 2.05, rise), this.position.z);
         if (resetCamera) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-7 * delta));
         this.camera.lookAt(focus);
       }

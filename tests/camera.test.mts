@@ -6,6 +6,7 @@ import { PlayerControls } from '../packages/client/src/player/PlayerControls.js'
 import { CameraController } from '../packages/client/src/engine/CameraController.js';
 import { PodSetRenderer } from '../packages/client/src/engine/PodSetRenderer.js';
 import { NebDeckRenderer } from '../packages/client/src/engine/NebDeckRenderer.js';
+import { CABIN, cabinBodyPose } from '@auto_matrix/shared';
 import { awakeningPose, podRescuePose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
 import { MORNING, morningRoot, morningWakePose } from '@auto_matrix/shared';
 import { metacortexPosition } from '@auto_matrix/shared';
@@ -938,16 +939,16 @@ test('the recovery opening keeps Neo above subtitles and visible past the medica
   } finally { set.dispose(); }
 });
 
-test('first person follows the recovery sit and turn, keeps free look and restores the same direction after reconnecting', t => {
+test('first person follows the cabin sit and turn, keeps free look and restores the same direction after reconnecting', t => {
   const game = setup(t, Math.PI); game.state.currentLocation = 'film_neb_deck'; game.state.isInMatrix = false;
   const apply = (elapsed: number) => {
-    const pose = awakeningPose({ kind: 'recovery', elapsed });
+    const pose = cabinBodyPose(elapsed);
     game.state.position = filmPosition('film_neb_deck', pose.x, pose.z); game.state.position.y += pose.y;
-    game.state.rotation = recoveryBodyPose(elapsed).yaw;
-    game.state.currentAction = { type: 'idle', parameters: { filmPose: 'recover', recovery: elapsed }, startedAt: 0, duration: 1, progress: 0 };
+    game.state.rotation = pose.yaw;
+    game.state.currentAction = { type: 'idle', parameters: { filmPose: 'cabin', recovery: pose.clock, cabin: { kind: 'wake', elapsed, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
   };
-  apply(7); game.controls.possess(game.state); game.controls.performing = true; game.key('KeyV'); game.key('KeyV', false); game.step(.2);
-  for (const elapsed of [8.4, 8.8, 9.2, 10.2, 11.7]) {
+  apply(.8); game.controls.possess(game.state); game.controls.performing = true; game.key('KeyV'); game.key('KeyV', false); game.step(.2);
+  for (const elapsed of [2.4, 2.8, 3.2, 6, 11.7]) {
     apply(elapsed); game.step(.2);
     const expected = new THREE.Vector3(Math.sin(game.state.rotation), 0, Math.cos(game.state.rotation));
     const direction = game.camera.getWorldDirection(new THREE.Vector3()); direction.y = 0;
@@ -982,21 +983,23 @@ test('after recovery the ordinary follow camera cannot enter the medical equipme
   } finally { set.dispose(); }
 });
 
-test('the recovery frame stays clear of Neo during the sit, turn and assisted rise', t => {
+test('the cabin camera stays inside the room and frames Neo during the sit, turn and rise', t => {
   const game = setup(t, Math.PI); const center = FILM_SETS.film_neb_deck.center;
   const root = new THREE.Group(); root.position.set(center.x, center.y - 1, center.z); const set = new NebDeckRenderer(root);
   game.state.currentLocation = 'film_neb_deck'; game.state.isInMatrix = false;
   try {
     for (const aspect of [16 / 9, 449 / 680]) {
       game.camera.aspect = aspect; game.camera.updateProjectionMatrix();
-      for (const elapsed of [0, 4, 7, 7.5, 8, 8.4, 8.8, 9.2, 9.7, 10.2, 10.8, 11.3, 11.7]) {
-        const body = recoveryBodyPose(elapsed), pose = awakeningPose({ kind: 'recovery', elapsed });
+      for (const elapsed of [0, .8, 1.5, 2.4, 2.8, 3.2, 4, 5, 8, 10, 10.8, 11.3, 11.7]) {
+        const body = cabinBodyPose(elapsed), pose = awakeningPose({ kind: 'cabin', elapsed });
         game.state.position = filmPosition('film_neb_deck', pose.x, pose.z); game.state.position.y += pose.y;
         game.state.rotation = body.yaw;
-        game.state.currentAction = { type: 'idle', parameters: { filmPose: 'recover', recovery: elapsed }, startedAt: 0, duration: 1, progress: 0 };
+        game.state.currentAction = { type: 'idle', parameters: { filmPose: 'cabin', recovery: body.clock, cabin: { kind: 'wake', elapsed, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
         game.controls.possess(game.state); game.controls.performing = true; game.step(.5);
-        set.update({ scene: 'm1_recovery', awakening: { kind: 'recovery', elapsed, started: true } } as Parameters<NebDeckRenderer['update']>[0], elapsed);
+        set.update({ scene: 'm1_cabin', step: 0, awakening: { kind: 'cabin', elapsed, started: true } } as Parameters<NebDeckRenderer['update']>[0], elapsed);
         root.updateMatrixWorld(true);
+        const guide = new THREE.Vector3(center.x + CABIN.morpheus.x, center.y + 2.9, center.z + CABIN.morpheus.z).project(game.camera);
+        assert.ok(Math.abs(guide.x) < .88 && guide.y < .75 && guide.y > -.5, `Morpheus is cropped at ${elapsed}s / ${aspect}: ${guide.toArray()}`);
         for (const [x, y, z] of [[0, 1.5 + body.sit * 1.5, -1.7 * (1 - body.sit)], [-.3, 1.4 + body.sit, -.9 * (1 - body.sit)], [.3, 1.4 + body.sit, -.9 * (1 - body.sit)]]) {
           const point = new THREE.Vector3(x, y, z).applyAxisAngle(new THREE.Vector3(0, 1, 0), body.yaw)
             .add(new THREE.Vector3(game.state.position.x, game.state.position.y, game.state.position.z));
@@ -1004,7 +1007,7 @@ test('the recovery frame stays clear of Neo during the sit, turn and assisted ri
           assert.ok(Math.abs(screen.x) < .85 && screen.y > -.5 && screen.y < .75, `body crop at ${elapsed}s / ${aspect}`);
           const sight = point.sub(game.camera.position);
           const hit = new THREE.Raycaster(game.camera.position, sight.clone().normalize(), .01, sight.length() - .1).intersectObject(root, true)
-            .find(hit => /neb-medical-post|neb-medical-cabinet/.test(hit.object.name));
+            .find(hit => /neb-cabin-(wall|door|ceiling|locker)/.test(hit.object.name));
           assert.ok(!hit, `${hit?.object.name} blocks Neo at ${elapsed}s / ${aspect}`);
         }
       }

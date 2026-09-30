@@ -1,6 +1,7 @@
 import { METACORTEX, metacortexPosition } from './metacortex.js';
 import { FILM_SETS, filmPosition } from './film-sets.js';
 import { CONSTRUCT_REVEAL, MIRROR_TOUCH, RECOVERY_BED } from './awakening.js';
+import { CABIN } from './cabin.js';
 import type { Vector3 } from '../types/agent.js';
 import type { Philosophy } from '../types/neo-life.js';
 import { FILM_CONSEQUENCES } from './film-outcomes.js';
@@ -102,6 +103,7 @@ export interface FilmJourney {
   templeSeal?: { phase: 'running' | 'failed' | 'sealed'; remaining: number; lastTick: number; attempts: number };
   trucks?: import('./trucks.js').TruckEncounter;
   awakening?: import('./awakening.js').AwakeningBeat;
+  cabinEscort?: import('./cabin.js').CabinEscort;
   mirrorGuide?: import('./awakening.js').MirrorGuide;
   training?: import('./training.js').TrainingPerformance;
   workday?: import('./office-workday.js').OfficeWorkday;
@@ -212,7 +214,8 @@ export const FILM_SCENES: FilmScene[] = [
   scene('m1_pills', 1, 'lafayette', 'neo', '两把皮椅之间', 'pill', 'awakening', 'Lafayette 的旧房间里，Morpheus 把决定交给你。走到皮椅前，按 G 坐下听他说。', [use('坐到 Morpheus 对面的皮椅上', 'Morpheus 摊开双手。一边继续追问，一边回到熟悉的生活；决定仍然属于你。', 0, -3.3), think('亲自选择红色或蓝色药丸', '电影中的 Neo 选择红色药丸。蓝色药丸是游戏的日常生活分支；选择后，Neo 会亲手拿取药丸，用水吞服。', 0, -3.3)], ['morpheus', 'trinity']),
   scene('m1_mirror', 1, 'lafayette', 'neo', '镜面与定位', 'pill', 'awakening', 'Morpheus 起身，带你穿过会客厅后方的门。跟随他进入追踪室，再坐到设备和裂镜旁。', [use('坐进追踪椅，触碰裂镜', '银色镜面覆盖 Neo，接线组锁定信号；眼前的房间消失，培养舱中的身体睁开眼睛。', MIRROR_TOUCH.x, MIRROR_TOUCH.z, 8)], ['morpheus', 'trinity', 'apoc', 'switch', 'cypher']),
   scene('m1_pod', 1, 'power_plant_pods', 'neo', '第一次睁眼', 'construct', 'awakening', '连接管线和无尽的培养塔取代了熟悉的城市。转动视角观察，再按 G 检查身体上的连接。', [use('查看培养舱的连接', '维护机器发现异常，拔除管线。你从排放通道坠入水中。', 0, -12, 9), use('让救援装置托住身体', '尼布甲尼撒号将你吊进船舱，Morpheus 和 Trinity 接住你；意识渐渐消失。', 0, 12, 14)]),
-  scene('m1_recovery', 1, 'neb_deck', 'neo', '从未使用的肌肉', 'construct', 'awakening', '船员修复 Neo 的身体。醒来后，他第一次看见同伴在现实中的样子。', [use('在医疗床旁检查身体', '针疗和休息逐渐恢复肌肉功能，插口却证明过去的身体认知并不完整。', -7, -22, 5), walk('走向核心连接区', 0, 0)], ['morpheus', 'trinity', 'tank', 'dozer']),
+  scene('m1_recovery', 1, 'neb_deck', 'neo', '从未使用的肌肉', 'construct', 'awakening', 'Dozer 与 Morpheus 照料 Neo。针疗结束后，他需要先休息。', [use('在医疗床上恢复身体', 'Dozer 停下设备。Neo 在 Morpheus 的照料下睡去。', -7, -22)], ['morpheus', 'trinity', 'tank', 'dozer']),
+  scene('m1_cabin', 1, 'neb_deck', 'neo', '陌生身体，陌生年代', 'construct', 'awakening', 'Neo 在独立舱室醒来。颈后的接口与 Morpheus 对年代的解释，迫使他重新理解自己的过去。', [use('起身检查颈后接口', '身体恢复了力气，旧世界的确定性却没有回来。Morpheus 正在门口等候。', CABIN.bed.x, CABIN.bed.z), walk('跟随 Morpheus 前往核心区', CABIN.approach.x, CABIN.approach.z), use('坐入连接椅，允许接入', 'Morpheus 接通颈后接口。Neo 第一次主动进入飞船的加载程序。', CABIN.approach.x, CABIN.approach.z)], ['morpheus', 'trinity', 'tank', 'dozer', 'apoc', 'switch', 'mouse']),
   scene('m1_construct', 1, 'white_construct', 'neo', '残余自我影像', 'construct', 'awakening', '白色构造体里，衣服、头发和电视都可以被加载。', [use('请 Morpheus 打开电视', 'Morpheus 区分感官信号与外部世界。熟悉的城市来自共享模拟。', 0, -10), think('感觉足以证明真实吗？', '程序能够生成感受，却无法替你决定该如何理解感受。', CONSTRUCT_REVEAL.neo.x, CONSTRUCT_REVEAL.neo.z)], ['morpheus']),
   scene('m1_desert', 1, 'real_desert', 'neo', '真实世界的废墟', 'construct', 'awakening', '天空被遮蔽，城市残骸延伸到远处。Morpheus 讲述人类与机器的战争。', [walk('走到废墟边缘', 0, -30), use('观察收割塔的方向', '眼前的世界让 Neo 难以承受。连接结束后，他在飞船上恢复意识。', 0, -30)], ['morpheus']),
   scene('m1_download', 1, 'neb_deck', 'neo', '训练下载', 'training', 'training', 'Tank 加载格斗程序。学习不再只靠书本，但身体仍需要实践。', [use('在连接椅上开始训练', '程序资料完成加载；Morpheus 已在道场等候。', 0, 0, 5)], ['tank']),
@@ -447,7 +450,8 @@ export function filmStepPosition(scene: FilmScene, step: FilmStep): Vector3 {
   return position;
 }
 export function filmStepNear(scene: FilmScene, step: FilmStep, position: Vector3, matrix: boolean): boolean {
-  const radius = scene.id === 'm1_mirror' && step === scene.steps[0] ? MIRROR_TOUCH.radius : 4;
+  const radius = scene.id === 'm1_mirror' && step === scene.steps[0] ? MIRROR_TOUCH.radius
+    : scene.id === 'm1_cabin' && step !== scene.steps[0] ? .8 : 4;
   return matrix === (FILM_SETS[scene.set].world === 'matrix') && distance(position, filmStepPosition(scene, step)) <= radius;
 }
 export function filmStepActionReady(scene: FilmScene, step: FilmStep, position: Vector3, matrix: boolean): boolean {
@@ -469,6 +473,7 @@ export function filmEntry(scene: FilmScene): Vector3 {
   if (scene.id === 'm1_ledge') return filmPosition(scene.set, 0, OFFICE_WINDOW.z);
   if (scene.id === 'm1_pod') return filmPosition(scene.set, 0, -12);
   if (scene.id === 'm1_recovery') return filmPosition(scene.set, RECOVERY_BED.standingX, RECOVERY_BED.z);
+  if (scene.id === 'm1_cabin') return filmPosition(scene.set, CABIN.bed.x, CABIN.bed.z);
   if (scene.id === 'm2_freeway') return filmPosition(scene.set, 14, 674);
   if (scene.id === 'm2_trucks') return { ...filmPosition(scene.set, TRUCKS.morpheus.x, TRUCKS.morpheus.z), y: FILM_SETS[scene.set].center.y + TRUCKS.roof.height };
   if (scene.id === 'm2_mountain') return filmPosition(scene.set, MOUNTAIN.door.x, MOUNTAIN.door.z - 7);

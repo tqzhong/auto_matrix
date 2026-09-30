@@ -1,7 +1,7 @@
-import { RELOADED, RELOADED_FINALE } from '@auto_matrix/shared';
+import { CABIN_ROUTE_LENGTH, cabinGuidePose, RELOADED, RELOADED_FINALE } from '@auto_matrix/shared';
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, RESCUE, RESCUE_LOADOUTS, GOVERNMENT_RESCUE, AIR_RESCUE, MATRIX_ESCAPE, THE_ONE, SMITH_FINALE, OPENING_HOTEL, OPENING_ESCAPE, PILL_ROOM, PILL_TIMING, MIRROR_TOUCH, MIRROR_SEAT, MIRROR_TRINITY, MIRROR_TIMING, DOCK_GUNNERY, awakeningPose, recoveryBodyPose, mirrorSilver, filmReflections, filmStepActionReady, filmStepPosition, filmEntry, filmPosition, groundHeight, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, newGarageEscape, stepGarageEscape, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, RESCUE, RESCUE_LOADOUTS, GOVERNMENT_RESCUE, AIR_RESCUE, MATRIX_ESCAPE, THE_ONE, SMITH_FINALE, OPENING_HOTEL, OPENING_ESCAPE, PILL_ROOM, PILL_TIMING, MIRROR_TOUCH, MIRROR_SEAT, MIRROR_TRINITY, MIRROR_TIMING, DOCK_GUNNERY, awakeningPose, mirrorSilver, filmReflections, filmStepActionReady, filmStepPosition, filmEntry, filmPosition, groundHeight, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, newGarageEscape, stepGarageEscape, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -39,12 +39,12 @@ test('all trilogy scenes have distinct stable IDs, existing cast, accessible obj
     assert.ok(NEO_CHAPTERS.some(c => c.id === scene.chapter), scene.id);
     // The second apartment wake begins as a locked bed performance; its first
     // walkable position is the bedside route verified in wake-call.test.
-    const stagedEntry = scene.id === 'm1_wake_again';
+    const stagedEntry = scene.id === 'm1_wake_again' || scene.id === 'm1_cabin';
     assert.equal(playerBlocked(filmEntry(scene), set.world === 'matrix'), stagedEntry, `${scene.id}: entry`);
     for (const step of scene.steps) {
       // These targets are occupied through boarding, recovery or lying down.
       // Their encounter tests verify entry; character-asset.test checks physical contact.
-      const stagedInsideProp = scene.id === 'm1_bug' && scene.steps.indexOf(step) < 2 || scene.id === 'm1_recovery' && scene.steps.indexOf(step) === 0
+      const stagedInsideProp = scene.id === 'm1_bug' && scene.steps.indexOf(step) < 2 || ['m1_recovery', 'm1_cabin'].includes(scene.id) && scene.steps.indexOf(step) === 0
         || scene.id === 'm1_morning' && scene.steps.indexOf(step) === 1;
       assert.equal(playerBlocked(filmStepPosition(scene, step), set.world === 'matrix'), stagedInsideProp, `${scene.id}: ${step.label}`);
     }
@@ -1239,17 +1239,16 @@ test('recovery begins on the medical bed, waits for Neo, and resumes its saved p
   for (let i = 0; i < 20; i++) h.players.step(.1, true, h.tick());
   assert.deepEqual(h.actor().position, bed, 'waiting for G cannot slide the weak body off the bed');
   assert.equal(state.awakening!.elapsed, 0, 'waiting does not make the choice for the player');
-  assert.equal(h.players.possess('other-player', 'trinity', h.tick()).agentId, 'trinity');
-  assert.match(h.command('act'), /Trinity/, 'a player-controlled bedside performer pauses the recovery start');
+  assert.equal(h.players.possess('other-player', 'dozer', h.tick()).agentId, 'dozer');
+  assert.match(h.command('act'), /Dozer/, 'a player-controlled medic pauses the recovery start');
   assert.equal(state.awakening!.started, false);
   h.players.release('other-player', h.tick());
   h.command('act'); assert.equal(state.awakening!.started, true);
   for (let i = 0; i < 100; i++) h.players.step(.1, true, h.tick());
-  const morpheus = h.world.agents.get('morpheus')!, trinity = h.world.agents.get('trinity')!;
-  assert.deepEqual(morpheus.currentAction?.parameters.recoveryCrew, { elapsed: state.awakening!.elapsed, role: 'morpheus' });
-  assert.deepEqual(trinity.currentAction?.parameters.recoveryCrew, { elapsed: state.awakening!.elapsed, role: 'trinity' });
-  assert.ok(Math.hypot(morpheus.position.x - h.actor().position.x, morpheus.position.z - h.actor().position.z) < 4, 'Morpheus moves to Neo’s bedside');
-  assert.ok(Math.hypot(trinity.position.x - h.actor().position.x, trinity.position.z - h.actor().position.z) < 4, 'Trinity moves to Neo’s bedside');
+  const morpheus = h.world.agents.get('morpheus')!, dozer = h.world.agents.get('dozer')!;
+  assert.equal(dozer.currentAction?.parameters.medical, state.awakening!.elapsed);
+  assert.ok(Math.hypot(morpheus.position.x - h.actor().position.x, morpheus.position.z - h.actor().position.z) < 4, 'Morpheus remains at Neo’s bedside');
+  assert.ok(Math.hypot(dozer.position.x - h.actor().position.x, dozer.position.z - h.actor().position.z) < 5, 'Dozer operates the nearby equipment');
   assert.equal(h.players.possess('other-player', 'morpheus', h.tick()).agentId, 'morpheus');
   const held = state.awakening!.elapsed;
   for (let i = 0; i < 5; i++) h.players.step(.1, true, h.tick());
@@ -1262,21 +1261,20 @@ test('recovery begins on the medical bed, waits for Neo, and resumes its saved p
   h.world.agents.get('neo')!.rotation = Math.PI; // A pre-turning-pose save may still contain the former bed orientation.
   h.players.possess('film-player', 'neo', h.tick());
   const resumedPose = awakeningPose(h.sandbox.life.film.state!.awakening);
-  assert.equal(h.actor().rotation, recoveryBodyPose(elapsed).yaw, 'reconnection restores the bed-side orientation');
+  assert.equal(h.actor().rotation, Math.PI, 'reconnection restores the resting orientation');
   assert.equal(h.actor().position.y, FILM_SETS.film_neb_deck.center.y + resumedPose.y, 'the lowered recovery bed also restores the patient height');
   assert.match(h.players.act('film-player', 'attack', h.tick()), /演出/);
-  for (let i = 0; i < 120 && h.sandbox.life.film.state!.step === 0; i++) h.players.step(.1, true, h.tick());
-  assert.equal(h.sandbox.life.film.state!.step, 1);
-  assert.equal(h.sandbox.life.film.state!.awakening!.elapsed, 12);
-  assert.ok(h.actor().position.x > bed.x + 2.5, 'Neo finishes standing beside the bed rather than inside it');
-  h.advance(30); assert.equal(h.sandbox.life.film.state!.step, 1, 'walking to the core remains a separate objective');
+  for (let i = 0; i < 120 && h.sandbox.life.film.state!.scene === 'm1_recovery'; i++) h.players.step(.1, true, h.tick());
+  assert.equal(h.sandbox.life.film.state!.scene, 'm1_cabin');
+  assert.equal(h.sandbox.life.film.state!.awakening!.started, false);
+  h.advance(30); assert.equal(h.sandbox.life.film.state!.step, 0, 'waking in the cabin waits for Neo');
 });
 
 test('the Construct television and ruined-world lesson wait for Neo and preserve both reveal performances', () => {
   assert.match(awakeningPose({ kind: 'construct', elapsed: 1 }).text, /雪花/);
   assert.match(awakeningPose({ kind: 'construct', elapsed: 10 }).text, /废墟/);
   const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
-  Object.assign(state, { scene: 'm1_recovery', actor: 'neo', step: FILM_SCENE_BY_ID.m1_recovery.steps.length, awakening: undefined });
+  Object.assign(state, { scene: 'm1_cabin', actor: 'neo', step: FILM_SCENE_BY_ID.m1_cabin.steps.length, awakening: undefined });
   h.command('next'); assert.equal(state.scene, 'm1_construct');
   assert.deepEqual(state.awakening, { kind: 'construct', elapsed: 0, started: false });
   const chair = { ...h.actor().position }; h.advance(20);
@@ -2454,6 +2452,13 @@ test('the entire film route completes through interactions, driving and real com
         }
         h.advance();
       }
+      else if (scene.id === 'm1_cabin' && index === 1) {
+        for (let frame = 0; frame < 250 && state.cabinEscort!.progress < CABIN_ROUTE_LENGTH; frame++) {
+          const guide = cabinGuidePose(state.cabinEscort!.progress);
+          actor.position = filmPosition(scene.set, guide.x, guide.z); h.players.step(.1, true, h.tick());
+        }
+        actor.position = filmStepPosition(scene, step); h.players.step(.1, true, h.tick());
+      }
       else if (step.kind === 'reach') h.advance();
       else if (step.kind === 'reflect') {
         if (scene.id === 'm1_oracle') {
@@ -2640,7 +2645,7 @@ test('the entire film route completes through interactions, driving and real com
           for (let frame = 0; frame < 30; frame++) h.players.step(.1, true, h.tick());
           h.command('act'); for (let frame = 0; frame < 120; frame++) h.players.step(.1, true, h.tick());
         } else if (scene.id === 'm1_office_escape' && index === 2) for (let frame = 0; frame < 40; frame++) h.players.step(.1, true, h.tick());
-        else if (state.awakening && ['m1_mirror', 'm1_pod', 'm1_recovery', 'm1_construct', 'm1_desert'].includes(scene.id)) for (let frame = 0; frame < 200 && state.step === index; frame++) h.players.step(.1, true, h.tick());
+        else if (state.awakening && ['m1_mirror', 'm1_pod', 'm1_recovery', 'm1_cabin', 'm1_construct', 'm1_desert'].includes(scene.id)) for (let frame = 0; frame < 200 && state.scene === scene.id && state.step === index; frame++) h.players.step(.1, true, h.tick());
         else if (index === 0 && ['m1_spoon', 'm1_oracle', 'm1_dejavu'].includes(scene.id)) {
           for (let frame = 0; frame < 110 && state.step === index; frame++) {
             h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false, focus: true, sequence: ++sequence });
@@ -2817,6 +2822,11 @@ test('the entire film route completes through interactions, driving and real com
         assert.equal(state.awakening?.started, false, 'Neo waits for the player before rehabilitation');
         continue;
       }
+      if (scene.id === 'm1_recovery' || scene.id === 'm1_cabin' && index === scene.steps.length - 1) {
+        assert.equal(state.scene, scene.id === 'm1_recovery' ? 'm1_cabin' : 'm1_construct');
+        assert.equal(state.awakening?.started, false, 'the next performance requires player consent');
+        continue;
+      }
       if (scene.id === 'm1_construct' && index === scene.steps.length - 1) {
         assert.equal(state.scene, 'm1_desert', 'the television choice starts the ruined world without another command');
         continue;
@@ -2833,7 +2843,7 @@ test('the entire film route completes through interactions, driving and real com
     }
     assert.ok(state.completed.includes(scene.id));
     if (scene.id === 'm1_phone_escape') h.advance(3); // Hold the connected booth shot through the truck impact.
-    if (!['m1_bridge', 'm1_bug', 'm1_pills', 'm1_mirror', 'm1_pod', 'm1_construct'].includes(scene.id)) h.command('next');
+    if (!['m1_bridge', 'm1_bug', 'm1_pills', 'm1_mirror', 'm1_pod', 'm1_recovery', 'm1_cabin', 'm1_construct'].includes(scene.id)) h.command('next');
     if (scene.id === 'm1_office_escape' && state.office?.crossing !== undefined) for (let frame = 0; frame < 65; frame++) h.players.step(.1, true, h.tick());
   }
   assert.equal(state.finished, true); assert.equal(state.completed.length, FILM_SCENES.length);

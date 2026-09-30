@@ -10,7 +10,7 @@ export function savedEntryCharacter(chosen: string | null, journeyActor: string 
 }
 
 export function cinematicTalkSuppressed(scene: string | undefined, visiting: string | undefined, step?: number): boolean {
-  return !visiting && (scene === 'm1_pod' || scene === 'm1_construct' || scene === 'm1_desert' || scene === 'm1_recovery' && step === 0);
+  return !visiting && (scene === 'm1_pod' || scene === 'm1_construct' || scene === 'm1_desert' || scene === 'm1_cabin' || scene === 'm1_recovery' && step === 0);
 }
 
 export interface PlayerExperienceActions {
@@ -176,6 +176,7 @@ export class PlayerExperience {
     document.body.classList.toggle('film-story', this.filmPlaying);
     document.body.classList.toggle('film-mirror-scene', this.filmPlaying && neoLife?.journey?.scene === 'm1_mirror' && !neoLife.journey.visiting);
     document.body.classList.toggle('film-pod-scene', this.filmPlaying && neoLife?.journey?.scene === 'm1_pod' && !neoLife.journey.visiting);
+    document.body.classList.toggle('film-cabin-scene', this.filmPlaying && neoLife?.journey?.scene === 'm1_cabin' && !neoLife.journey.visiting);
     document.body.classList.toggle('film-reloaded-scene', this.filmPlaying && Boolean(neoLife?.journey?.reloaded) && !neoLife?.journey?.visiting);
     document.body.classList.toggle('film-catch-scene', this.filmPlaying && neoLife?.journey?.scene === 'm2_catch' && !neoLife?.journey?.visiting);
     document.body.classList.toggle('film-burly-scene', this.filmPlaying && neoLife?.journey?.scene === 'm2_burly' && !neoLife.journey.visiting);

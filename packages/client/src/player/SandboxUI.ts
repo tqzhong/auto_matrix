@@ -221,6 +221,12 @@ export class SandboxUI {
         blackout.style.opacity = String(Math.min(.96, Math.max(0, (journey.awakening.elapsed - MIRROR_TIMING.fade) / (AWAKENING_SECONDS.mirror - MIRROR_TIMING.fade))));
       if (scene.id === 'm1_pod' && journey.awakening?.kind === 'rescue')
         blackout.style.opacity = String(podRescuePose(journey.awakening.elapsed).fade);
+      if (scene.id === 'm1_recovery' && journey.awakening?.kind === 'recovery')
+        blackout.style.opacity = String(Math.max(0, Math.min(1, (journey.awakening.elapsed - 9) / 2)));
+      if (scene.id === 'm1_cabin' && journey.awakening?.kind === 'cabin' && journey.awakening.started !== false)
+        blackout.style.opacity = String(Math.max(0, 1 - journey.awakening.elapsed / .8));
+      if (scene.id === 'm1_cabin' && journey.awakening?.kind === 'core')
+        blackout.style.opacity = String(Math.max(0, Math.min(1, (journey.awakening.elapsed - 6.5) / 1.3)));
       if (scene.id === 'm1_morning' && journey.morning) {
         const morning = journey.morning;
         blackout.style.opacity = String(morning.phase === 'sleeping' ? Math.min(1, morning.elapsed / .6) : morning.phase === 'alarm' ? Math.max(0, 1 - morning.elapsed / 1.2) : 0);
@@ -947,8 +953,8 @@ export class SandboxUI {
     }
     if (journey.awakening && journey.awakening.elapsed < AWAKENING_SECONDS[journey.awakening.kind] && awakeningLocked(journey)) {
       const waiting = awakeningWaiting(journey); const kind = journey.awakening!.kind;
-      const action = kind === 'mirror' ? '继续追踪与触镜' : kind === 'recovery' ? '示意开始恢复肌肉' : kind === 'construct' ? '请 Morpheus 打开电视' : '请 Morpheus 继续揭示';
-      const activity = ({ mirror: journey.awakening!.elapsed < MIRROR_TIMING.touch ? '追踪接线' : '镜面覆盖', connect: '定位连接', disconnect: '培养舱断线', rescue: '飞船救援', recovery: '针疗与身体恢复', construct: '电视与感官揭示', desert: '真实荒漠讲解' } as const)[kind];
+      const action = kind === 'mirror' ? '继续追踪与触镜' : kind === 'recovery' ? '示意开始恢复肌肉' : kind === 'cabin' ? '起身检查颈后接口' : kind === 'core' ? '坐入连接椅，允许接入' : kind === 'construct' ? '请 Morpheus 打开电视' : '请 Morpheus 继续揭示';
+      const activity = ({ mirror: journey.awakening!.elapsed < MIRROR_TIMING.touch ? '追踪接线' : '镜面覆盖', connect: '定位连接', disconnect: '培养舱断线', rescue: '飞船救援', recovery: '针疗与休息', cabin: '舱室醒来与身体检查', core: '核心连接', construct: '电视与感官揭示', desert: '真实荒漠讲解' } as const)[kind];
       document.getElementById('game-objective-copy')!.textContent = waiting
         ? `${journey.step + 1}/${scene.steps.length} · ${action} · 按 G`
         : `${journey.step + 1}/${scene.steps.length} · ${activity}进行中 · ${Math.round(journey.awakening!.elapsed / AWAKENING_SECONDS[kind] * 100)}%`;
@@ -958,6 +964,10 @@ export class SandboxUI {
       this.el('sandbox-interact').classList.toggle('hidden', !waiting);
       if (waiting) this.el('sandbox-nearby').textContent = action;
       return;
+    }
+    if (!journey.visiting && scene.id === 'm1_cabin' && journey.step === 1) {
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = 'WASD 跟随 Morpheus · 离得太远时他会等你 · V 切换视角';
     }
     if (!journey.visiting && scene.id === 'm1_construct' && step?.kind === 'reflect') {
       this.el('film-construct-reflection').classList.remove('hidden');

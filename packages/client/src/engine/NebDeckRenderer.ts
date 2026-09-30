@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { RECOVERY_BED, RECOVERY_CABINET, RECOVERY_FRAME, RESCUE, type FilmJourney } from '@auto_matrix/shared';
+import { CABIN, CABIN_WALLS, MEDICAL_OPERATOR, medicalControlBlend, cabinPlugProgress } from '@auto_matrix/shared';
 
 /** The Nebuchadnezzar is one continuous deck: medical bay, operator core and mess.
  * The central aisle remains open so recovery hands control back to the player. */
@@ -17,6 +18,10 @@ export class NebDeckRenderer {
   private amber = this.material(new THREE.MeshBasicMaterial({ color: 0xd49d5d, toneMapped: false }));
   private glass = this.material(new THREE.MeshPhysicalMaterial({ color: 0x879b94, transparent: true, opacity: .23, roughness: .18, metalness: .22, side: THREE.DoubleSide, depthWrite: false }));
   private gantry = new THREE.Group();
+  private cabinDoor!: THREE.Mesh;
+  private medicalLever!: THREE.Mesh;
+  private corePlug = new THREE.Group();
+  private coreCable!: THREE.Mesh;
   private recoverySkin?: THREE.SkinnedMesh;
   private skinContacts = new Map<number, THREE.Vector3>();
   private needles: { shaft: THREE.Mesh; tip: THREE.Mesh; hub: THREE.Mesh; support: THREE.Mesh; anchorY: number; bone: string; offset: THREE.Vector3 }[] = [];
@@ -47,6 +52,7 @@ export class NebDeckRenderer {
   constructor(private root: THREE.Group) {
     this.hull();
     this.medicalBay();
+    this.cabin();
     this.operatorCore();
     this.mess();
     this.shipLossScene();
@@ -73,14 +79,15 @@ export class NebDeckRenderer {
   }
   private chair(x: number, z: number, yaw: number, name: string): void {
     const chair = new THREE.Group(); chair.name = name; chair.position.set(x, 0, z); chair.rotation.y = yaw; this.root.add(chair);
-    this.box(chair, this.dark, 0, .65, 0, 2.7, 1.1, 3.2);
-    const cushion = this.box(chair, this.leather, 0, 1.25, .1, 2.35, .3, 2.55); cushion.rotation.x = -.1;
+    this.box(chair, this.dark, 0, .65, -.35, 2.7, 1.1, 1.7);
+    const cushion = this.box(chair, this.leather, 0, 1.25, -.25, 2.35, .3, 1.75); cushion.rotation.x = .15;
     const back = this.box(chair, this.leather, 0, 2.15, -1.22, 2.35, 2.2, .32); back.rotation.x = .28;
     for (const side of [-1, 1]) {
-      this.box(chair, this.dark, side * 1.3, 1.35, .1, .22, 1.7, 2.7);
+      this.box(chair, this.dark, side * 1.3, 1.35, -.25, .22, 1.7, 1.85);
       const cable = this.pipe([new THREE.Vector3(x + side * 1.05, 2.9, z + .8), new THREE.Vector3(x + side * 1.2, 5, z + 1.8), new THREE.Vector3(x + side * 2, 7, z + 2.4)], .07, this.rubber);
       cable.name = `${name}-cable-${side}`;
     }
+    this.box(chair, this.steel, 0, .16, 1.45, 1.75, .1, 1, `${name}-footrest`);
   }
   private crt(x: number, y: number, z: number, yaw = 0, amber = false): void {
     const group = new THREE.Group(); group.position.set(x, y, z); group.rotation.y = yaw; this.root.add(group);
@@ -145,6 +152,44 @@ export class NebDeckRenderer {
     }
     const curtain = this.box(this.root, this.glass, -1.1, 4.3, -22, .06, 7.4, 11); curtain.name = 'neb-medical-curtain';
     this.pointLight('neb-medical-task-light', 0xd9e6dc, 260, 22, -5.5, 9.2, -20.5);
+    const control = MEDICAL_OPERATOR.control;
+    this.box(this.root, this.dark, control.x, 1.12, control.z - .3, 1.4, 2.2, .8, 'neb-medical-controls');
+    this.box(this.root, this.worn, control.x, 2.25, control.z - .3, 1.5, .15, .9);
+    this.medicalLever = this.cylinder(this.root, this.rubber, control.x, control.y, control.z, .12, .23, 'neb-medical-control-knob');
+    for (let i = 0; i < 4; i++) this.box(this.root, this.amber, control.x - .5 + i * .17, 2.34, control.z - .5, .08, .05, .13);
+  }
+
+  private cabin(): void {
+    const wall = this.material(new THREE.MeshStandardMaterial({ color: 0x51524a, metalness: .42, roughness: .81 }));
+    const bedding = this.material(new THREE.MeshStandardMaterial({ color: 0x5e6258, roughness: .98 }));
+    CABIN_WALLS.forEach((part, i) => this.box(this.root, wall, part.x, part.height / 2, part.z, part.width, part.height, part.depth, `neb-cabin-wall-${i}`));
+    this.box(this.root, this.dark, 12, 6.9, -33, 12, .2, 14, 'neb-cabin-ceiling');
+    for (const x of [6.25, 17.75]) for (const z of [-38, -34, -27]) {
+      this.box(this.root, this.steel, x, 3.4, z, .18, 6.6, .12);
+      for (const y of [.4, 3.6, 6.3]) {
+        const bolt = this.cylinder(this.root, this.dark, x + (x < 12 ? .11 : -.11), y, z, .07, .08);
+        bolt.rotation.z = Math.PI / 2;
+      }
+    }
+    const { x, z, surface } = CABIN.bed;
+    this.box(this.root, this.dark, x, .32, z, 2.65, .54, 6.7, 'neb-cabin-bed-base');
+    this.box(this.root, this.steel, x, .66, z, 3.15, .14, 6.95, 'neb-cabin-bed-frame');
+    this.box(this.root, bedding, x, surface - .19, z, 2.85, .38, 6.35, 'neb-cabin-mattress');
+    const pillow = this.box(this.root, this.linen, x, 1.24, z + 2.05, 1.55, .24, .95, 'neb-cabin-pillow'); pillow.rotation.x = .08;
+    const blanket = this.box(this.root, this.linen, x, 1.21, z - 2.5, 2.72, .17, .9, 'neb-cabin-folded-blanket'); blanket.rotation.y = .025;
+    for (let row = 0; row < 6; row++) this.box(this.root, this.rubber, 12, 5.2 + row * .1, -39.78, 2.4, .035, .07);
+    const locker = CABIN.locker;
+    this.box(this.root, this.worn, locker.x, 2.2, locker.z, locker.width, 3.8, locker.depth, 'neb-cabin-locker');
+    this.box(this.root, this.steel, 16.97, 2.5, -38.3, .05, .4, .13);
+    this.cabinDoor = this.box(this.root, this.worn, CABIN.door.x, 2.9, CABIN.door.z, .22, 5.8, CABIN.door.width, 'neb-cabin-door');
+    this.box(this.root, this.dark, CABIN.door.x, 6.2, CABIN.door.z, .45, .9, 4.7, 'neb-cabin-door-lintel');
+    this.box(this.root, this.screen, 13.2, 6.5, -32, 3.6, .1, .22, 'neb-cabin-light-strip');
+    this.pointLight('neb-cabin-light', 0xe0dfcb, 105, 12, 13.2, 5.6, -32);
+    this.pointLight('neb-cabin-bounce', 0xb1c4ce, 30, 10, 8.4, 4.8, -29.5);
+    this.corePlug.name = 'neb-first-core-connector'; this.root.add(this.corePlug);
+    const plug = this.cylinder(this.corePlug, this.steel, 0, 0, 0, .09, .5); plug.rotation.z = Math.PI / 2;
+    const grip = this.cylinder(this.corePlug, this.rubber, .24, 0, 0, .135, .23); grip.rotation.z = Math.PI / 2;
+    this.coreCable = this.cylinder(this.root, this.rubber, 0, 0, 0, .035, 1, 'neb-first-core-cable');
   }
 
   private operatorCore(): void {
@@ -341,6 +386,23 @@ export class NebDeckRenderer {
     }
     const recovery = journey?.scene === 'm1_recovery' && !journey.visiting && journey.awakening?.kind === 'recovery' ? journey.awakening : undefined;
     const t = recovery?.elapsed ?? 0; const active = recovery?.started === true;
+    this.medicalLever.rotation.y = medicalControlBlend(t) * .8;
+    const cabin = journey?.scene === 'm1_cabin' && !journey.visiting ? journey : undefined;
+    const waking = cabin?.awakening?.kind === 'cabin' && cabin.step === 0;
+    const opened = waking ? THREE.MathUtils.smoothstep(cabin.awakening!.elapsed, 10, 11.6) : 1;
+    this.cabinDoor.position.z = CABIN.door.z - opened * 4.7;
+    const connecting = cabin?.awakening?.kind === 'core' ? cabin.awakening : undefined;
+    const socket = recoverySubject?.getObjectByName('cervical-interface');
+    this.corePlug.visible = this.coreCable.visible = Boolean(connecting && connecting.elapsed >= 2.2 && socket);
+    if (this.corePlug.visible && socket && connecting) {
+      recoverySubject!.updateWorldMatrix(true, true); this.root.updateWorldMatrix(true, false);
+      const point = this.root.worldToLocal(socket.getWorldPosition(new THREE.Vector3()));
+      point.x += .25 + .7 * (1 - cabinPlugProgress(connecting.elapsed));
+      this.corePlug.position.copy(point);
+      const anchor = new THREE.Vector3(9.5, .35, -6.4); const direction = point.clone().sub(anchor);
+      this.coreCable.position.copy(anchor).add(point).multiplyScalar(.5); this.coreCable.scale.y = direction.length();
+      this.coreCable.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
+    }
     let skin: THREE.SkinnedMesh | undefined;
     if (recovery) recoverySubject?.traverse(object => { if (object instanceof THREE.SkinnedMesh && object.userData.patientBody) skin = object; });
     if (skin !== this.recoverySkin) { this.recoverySkin = skin; this.skinContacts.clear(); }

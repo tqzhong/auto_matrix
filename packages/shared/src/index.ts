@@ -37,6 +37,7 @@ export * from './constants/dock-apu.js';
 export * from './constants/dock-gunnery.js';
 export * from './constants/trucks.js';
 export * from './constants/awakening.js';
+export * from './constants/cabin.js';
 export * from './constants/training.js';
 export * from './constants/pills.js';
 export * from './constants/ambush.js';

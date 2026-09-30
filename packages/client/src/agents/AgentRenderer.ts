@@ -158,6 +158,8 @@ export class AgentRenderer {
         knock: state.currentAction?.parameters.knock as number | undefined,
         recovery: state.currentAction?.parameters.recovery as number | undefined,
         recoveryCrew: state.currentAction?.parameters.recoveryCrew as MotionInput['recoveryCrew'],
+        medical: state.currentAction?.parameters.medical as number | undefined,
+        cabin: state.currentAction?.parameters.cabin as MotionInput['cabin'],
         performance: state.currentAction?.parameters.filmPose as MotionInput['performance'],
         mirrorBeat: state.currentAction?.parameters.mirrorBeat as number | undefined,
         mirrorCrew: state.currentAction?.parameters.mirrorCrew as number | undefined,
@@ -210,6 +212,15 @@ export class AgentRenderer {
           neo.group.updateWorldMatrix(true, true);
           const target = shoulder.localToWorld(new THREE.Vector3(0, -.16, .06));
           input.recoveryCrew = { ...input.recoveryCrew, target: { x: target.x, y: target.y, z: target.z } };
+        }
+      }
+      if (input.cabin?.kind === 'core' && input.cabin.role === 'morpheus') {
+        const neo = this.agents.get('neo'); const socket = neo?.body.getObjectByName('cervical-interface');
+        if (neo && socket) {
+          neo.group.updateWorldMatrix(true, true);
+          const target = socket.getWorldPosition(new THREE.Vector3());
+          target.x += .49 + .7 * (1 - THREE.MathUtils.smoothstep(input.cabin.elapsed, 3, 4.6));
+          input.cabin = { ...input.cabin, target: { x: target.x, y: target.y, z: target.z } };
         }
       }
       if (input.farewell) {

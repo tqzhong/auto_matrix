@@ -17,9 +17,10 @@ import { enableSkinnedCulling } from './SkinnedBounds.js';
 import { wireTrackingElectrode } from './TrackingContact.js';
 import { placeHotelFeet } from './HotelFootPlacement.js';
 import { placePodBody } from './PodLandingContact.js';
+import { cabinContact } from './CabinContact.js';
 import { clubCloseness } from '@auto_matrix/shared';
 
-export type HeroSupport = 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour' | 'niobe' | 'ballard' | 'ghost' | 'soren' | 'link';
+export type HeroSupport = 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour' | 'niobe' | 'ballard' | 'ghost' | 'soren' | 'link' | 'dozer';
 type Pose = ReturnType<typeof advanceMotion>;
 interface CoatPanel { mesh: THREE.Mesh; rest: Float32Array; velocity: Float32Array }
 export interface HeroRig {
@@ -242,7 +243,7 @@ export class HeroModels {
     }
     const pelvis = bones.get('pelvis')!;
     const waist = new THREE.Vector3().fromArray(metadata.waist).sub(pelvis.position);
-    const panels = (id === 'neo' || id === 'morpheus') && support !== 'link' ? [-1, 1].map(side => this.coat(pelvis, waist, side, id)) : [];
+    const panels = (id === 'neo' || id === 'morpheus') && support !== 'link' && support !== 'dozer' ? [-1, 1].map(side => this.coat(pelvis, waist, side, id)) : [];
     const footHeight = this.point.setFromMatrixPosition(bones.get('ankle_L')!.matrixWorld).y;
     const silver = { value: 0 }; const wardrobe: HeroRig['wardrobe'] = [];
     let trackingSkin: HeroRig['trackingSkin'];
@@ -288,6 +289,7 @@ export class HeroModels {
       if (support === 'ghost' && /Coat/.test(material.name)) material.color.setHex(0x394140);
       if (support === 'soren' && /Hair|hair|Groom|groom/.test(material.name)) material.color.setHex(0xb7b1a2);
       if (support === 'link' && /Coat|Trousers/.test(material.name)) { material.color.setHex(0x777467); material.roughness = .95; }
+      if (support === 'dozer' && /Coat|Trousers/.test(material.name)) { material.color.setHex(0x665e45); material.roughness = .96; }
       wardrobe.push({ mesh: object, color: material.color.clone(), map: material.map, bumpMap: material.bumpMap, bumpScale: material.bumpScale,
         roughness: material.roughness, metalness: material.metalness, emissive: material.emissive.clone(), emissiveIntensity: material.emissiveIntensity,
         outer: panels.some(p => p.mesh === object),
@@ -582,7 +584,7 @@ export class HeroModels {
     if (rig.trackingSkin) {
       const skin = rig.trackingSkin; skin.mesh.geometry = trackingShirt ? skin.covered : skin.original;
     }
-    const pod = input.performance && !['touch', 'connect'].includes(input.performance);
+    const pod = input.performance && ['pod', 'fall', 'float', 'lift', 'recover'].includes(input.performance);
     const recoveryComplete = input.performance === 'recover' && input.recovery !== undefined && input.recovery >= 11.7;
     const patient = Boolean(input.performance && ['pod', 'fall', 'float', 'lift', 'recover'].includes(input.performance)
       && !recoveryComplete);
@@ -592,7 +594,7 @@ export class HeroModels {
       const patientLegs = Boolean(patient && !completePatientBody && material.name === 'Trousers' && /Tailored.trousers/i.test(part.mesh.name));
       const patientTorso = Boolean(patient && (part.mesh.userData.patientBody || !completePatientBody && material.name === 'Office skin'));
       const patientSurface = patient && (material.name === 'Skin' || patientLegs || patientTorso);
-      part.mesh.visible = !part.mesh.userData.reloadedHidden && !(part.outer && (input.realWorld || input.clubClothes || input.pills?.role === 'neo' || input.meeting || input.wakeCall) || part.hair && pod)
+      part.mesh.visible = !part.mesh.userData.reloadedHidden && !(part.outer && (input.realWorld || input.clubClothes || input.pills?.role === 'neo' || input.meeting || input.wakeCall) || part.hair && (pod || input.realWorld && completePatientBody))
         && (!patient || material.name === 'Skin' || patientLegs || patientTorso);
       if (part.mesh.userData.office) part.mesh.visible = Boolean(patientTorso || officeShirt || input.meeting?.role === 'neo' && (part.mesh.material as THREE.Material).name === 'Office skin');
       else if (part.mesh.userData.patientBody) part.mesh.visible = patient;
@@ -685,6 +687,15 @@ export class HeroModels {
       const inspect = THREE.MathUtils.smoothstep(t, 6.8, 7.8) * (1 - THREE.MathUtils.smoothstep(t, 8.7, 9.3));
       bone('shoulder_R').rotation.x -= inspect * .72; bone('elbow_R').rotation.x -= inspect * 1.05;
       bone('head').rotation.y += inspect * .28;
+    }
+    if (input.cabin?.role === 'morpheus' && input.cabin.kind === 'wake') {
+      const explain = THREE.MathUtils.smoothstep(input.cabin.elapsed, 5, 6) * (1 - THREE.MathUtils.smoothstep(input.cabin.elapsed, 8.5, 9.5));
+      bone('elbow_L').rotation.x -= .75 * explain; bone('shoulder_L').rotation.x -= .35 * explain;
+      bone('head').rotation.x += .1 * explain;
+    }
+    if (input.cabin?.role === 'morpheus' && input.cabin.kind === 'core') {
+      const reach = THREE.MathUtils.smoothstep(input.cabin.elapsed, 2.2, 3) * (1 - THREE.MathUtils.smoothstep(input.cabin.elapsed, 5.8, 6.8));
+      bone('spine').rotation.x += .18 * reach; bone('chest').rotation.x += .2 * reach; bone('head').rotation.x -= .2 * reach;
     }
     if (input.wakeCall?.phase === 'waking') {
       const t = input.wakeCall.elapsed; const smooth = THREE.MathUtils.smoothstep;
@@ -900,6 +911,9 @@ export class HeroModels {
     if (input.window !== undefined) this.openWindow(rig, input.window);
     if (input.crossing !== undefined) this.crossWindow(rig, input.crossing);
     if (input.recoveryCrew) this.supportRecovery(rig, input.recoveryCrew);
+    if (input.recovery !== undefined && !this.recoveries.has(rig)) this.recoveries.set(rig, new RecoveryPerformance(rig));
+    this.recoveries.get(rig)?.update(input.recovery, input.realWorld, patient);
+    if (input.medical !== undefined || input.cabin) cabinContact(rig, input);
     if (input.mirrorCrew !== undefined && input.mirrorContact) wireTrackingElectrode(rig, input.mirrorCrew, input.mirrorContact);
     if (input.farewell) this.farewellContact(rig, input.farewell);
     if (input.pills && !this.pills.has(rig)) this.pills.set(rig, new PillPerformance(rig));
@@ -912,8 +926,6 @@ export class HeroModels {
     this.welcomes.get(rig)?.update(input.welcome);
     if (input.knock !== undefined && !this.knocks.has(rig)) this.knocks.set(rig, new LafayetteKnockPerformance(rig));
     this.knocks.get(rig)?.update(input.knock);
-    if (input.recovery !== undefined && !this.recoveries.has(rig)) this.recoveries.set(rig, new RecoveryPerformance(rig));
-    this.recoveries.get(rig)?.update(input.recovery, input.realWorld);
     if (input.workday && !this.workdays.has(rig)) this.workdays.set(rig, new OfficeWorkdayPerformance(rig));
     this.workdays.get(rig)?.update(input.workday);
     if (input.contact && !this.apartments.has(rig)) this.apartments.set(rig, new ApartmentPerformance(rig));
