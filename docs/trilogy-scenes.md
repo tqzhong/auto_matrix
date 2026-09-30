@@ -1,6 +1,6 @@
 # 三部曲场景与剧情实施记录
 
-更新：2026-09-30。
+更新：2026-10-01。
 
 最新范围已调整为选取关键电影段落，优先做好可玩性与布景，不要求穷举影片所有镜头。大堂营救已增加专用枪战与布景；后续优先级、验收证据和限制见 [关键片段制作记录](key-scenes.md)。下面的 111 段是当前剧情索引。
 
@@ -95,7 +95,7 @@
 | m1_meal | 真实世界的一顿饭 | 尼布甲尼撒号 · 核心与医疗舱 | Neo | 交互 → 移动 |
 | m1_spoon | 等候室的孩子们 | 先知公寓 · 候诊室与厨房 | Neo | 跟随楼道 → 门前决定 → 接待者开门/带入客厅 → 落座/示范/接勺/专注 → 邀请起身/带入厨房 |
 | m1_oracle | 厨房里的预言 | 先知公寓 · 候诊室与厨房 | Neo | 花瓶/检查/递饼干 → 反思 → 接待者送别/会合/吃饼干 → 实体出口 |
-| m1_dejavu | 重复经过的黑猫 | 旧楼 · 黑猫与伏击 | Neo | 自由爬两段楼梯/绕电梯井 → 观察黑猫/砖封 → 战斗 → 壁内通道 |
+| m1_dejavu | 重复经过的黑猫 | 旧楼 · 黑猫与伏击 | Neo | 与五名同伴自由爬两段楼梯/绕电梯井 → 上层平台观察黑猫两次下楼/砖封 → 战斗 → 壁内通道 |
 | m1_bathroom | 为同伴争取时间 | 旧楼 · 黑猫与伏击 | Morpheus | 浴室门线坚守/三次击退 → 明确冲撞/破墙/被捕 |
 | m1_unplugged | 背叛发生在现实 | 尼布甲尼撒号 · 核心与医疗舱 | Tank | 查看拔线 → 1.5 秒反击窗口 → 分别接回 Neo/Trinity |
 | m1_rescue_decision | 仍然选择去救他 | 尼布甲尼撒号 · 核心与医疗舱 | Neo | 反思 → 交互 |
@@ -192,7 +192,7 @@
 
 先知局部镜头可在场景参数后使用 `oracle-exam`、`oracle-cookie` 或 `oracle-question`，例如 `node --import tsx scripts/film-review-fixture.mts m1_oracle oracle-question`。这些模式只建立对应动作检查点，不代表从候诊室连续游玩到了该位置。
 
-旧楼入口可使用 `node --import tsx scripts/film-review-fixture.mts m1_dejavu`。Neo 与五名同伴从下层开始，沿两段楼梯与上层护栏同行；导航指向下一段平台，同伴等候落后的 Neo，到齐后才开放黑猫观察，重复时五人转向 Neo。暂停、断线、读档和重试保留队伍进度，既有黑猫存档不强制重播入口。六名角色的楼梯鞋底/衣摆姿态样本、同一隔离存档的普通移动轨迹、双视角、台阶暂停刷新与随后封锁见[六人同行验收](../output/gameplay/trilogy-ambush-company-2026-09-30/README.md)；此前共享楼梯与洞口验收见[楼梯入口记录](../output/gameplay/trilogy-ambush-stairs-2026-09-30/README.md)。仍只补一层差，猫下楼、跨层连续追捕、演员与成片空间美术、完整连续人工试玩和性能待制作或验收，不代表这一组已达到电影级。
+旧楼入口可使用 `node --import tsx scripts/film-review-fixture.mts m1_dejavu`。Neo 与五名同伴从下层开始，沿两段楼梯与上层护栏同行；导航指向下一段平台，同伴等候落后的 Neo，到齐后在上层观察黑猫伸展、两次沿实际台阶下楼，重复时五人转向 Neo。暂停、断线、读档和重试保留队伍与黑猫进度，既有走廊存档保留原路线及时钟，不强制重播入口。猫的脚掌/身体几何、重复步态、暂停预测、普通控制器轨迹、观察布局与双视角/暂停刷新见[黑猫下楼局部验收](../output/gameplay/trilogy-ambush-cat-2026-10-01/README.md)；六名角色的楼梯鞋底/衣摆姿态样本见[六人同行验收](../output/gameplay/trilogy-ambush-company-2026-09-30/README.md)，共享楼梯与洞口见[楼梯入口记录](../output/gameplay/trilogy-ambush-stairs-2026-09-30/README.md)。仍只补一层差，跨层连续追捕、队形/遮挡与摄影、演员与成片空间美术、正式声音、完整连续人工试玩和性能待制作或验收，不代表这一组已达到电影级。
 
 背叛段可使用 `node --import tsx scripts/film-review-fixture.mts m1_bathroom bathroom-hold`、`bathroom-crash`，以及 `node --import tsx scripts/film-review-fixture.mts m1_unplugged unplug-window`、`unplug-counter`、`unplug-reconnect`。它们分别定位坚守、破墙、反击窗口、反击演出和重连检查点，只用于局部动作/画面验收，不能作为从黑猫到营救决定的连续游玩证据。
 

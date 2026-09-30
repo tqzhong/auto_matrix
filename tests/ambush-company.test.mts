@@ -13,7 +13,7 @@ const roles = ['morpheus', 'switch', 'apoc', 'trinity', 'cypher'];
 const set = FILM_SETS.film_ambush_house;
 const route = [[-5.5, 30.8], [-5.5, 14.5], [5.5, 14.5], [5.5, 31.8], [11, 31.8], [11, 8], [0, 8], [0, -8]];
 
-function setup() {
+function setup(stairCat = false) {
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
   const dynamics = { record: (event: Omit<WorldEvent, 'id'>) => world.addWorldEvent(event) } as WorldDynamics;
   const sandbox = new SandboxSystem(world, dynamics, 42);
@@ -27,6 +27,7 @@ function setup() {
   Object.assign(sandbox.life.film.state!, { scene: 'm1_oracle', actor: 'neo', step: FILM_SCENE_BY_ID.m1_oracle.steps.length });
   command('next');
   assert.equal(sandbox.life.film.state!.scene, 'm1_dejavu', 'the fixture must enter the actual ambush scene');
+  if (!stairCat) delete (sandbox.life.film.state!.ambushApproach as { stairCat?: boolean } | undefined)?.stairCat;
   const state = () => sandbox.life.film.state! as FilmJourney & { ambushApproach?: { ready: boolean; progress: Record<string, number> } };
   const frame = (count = 1, running = true) => { for (let i = 0; i < count; i++) players.step(.1, running, ++tick); };
   const move = (x: number, z: number, sprint = false) => {
@@ -49,8 +50,8 @@ test('the old-building arrival contains Neo and all five companions on its actua
   }
 });
 
-function walk(h: ReturnType<typeof setup>, inspect?: () => void, sprint = false) {
-  for (const [x, z] of route) {
+function walk(h: ReturnType<typeof setup>, inspect?: () => void, sprint = false, path = route) {
+  for (const [x, z] of path) {
     const target = filmPosition(set.id, x, z);
     for (let i = 0; i < 600; i++) {
       const dx = target.x - h.actor.position.x, dz = target.z - h.actor.position.z, gap = Math.hypot(dx, dz);
@@ -139,4 +140,38 @@ test('a legacy cat save continues without adding a staircase or rewinding its ob
   assert.equal(h.state().ambushApproach, undefined);
   assert.ok(h.state().ambush.elapsed > 4.7);
   h.frame(50); assert.equal(h.state().step, 1);
+});
+
+test('a fresh company observes the cat on the upper stairs and preserves the longer descent across pause and loading', () => {
+  const h = setup(true);
+  assert.equal((h.state().ambushApproach as { stairCat?: boolean }).stairCat, true);
+  walk(h, () => {
+    for (const actor of h.cast()) {
+      assert.equal(playerBlocked(actor.position, true), false);
+      assert.ok(distance(actor.position, h.actor.position) >= 1.5);
+      for (const other of h.cast()) if (actor !== other) assert.ok(distance(actor.position, other.position) >= 2.25, 'the new landing still keeps two 1.1-radius bodies apart');
+    }
+  }, false, route.slice(0, 5));
+  assert.equal(h.state().ambushApproach?.ready, true, `the company stops at the stairs before walking into the old doorway corridor: ${JSON.stringify({ player: h.actor.position, approach: h.state().ambushApproach, company: h.cast().map(actor => ({ id: actor.id, position: actor.position })) })}`);
+  h.command('act'); h.frame(50);
+  assert.ok(h.state().ambush!.elapsed > 4.9);
+  assert.match(h.state().lastText, /楼梯/);
+  const before = JSON.stringify(h.state().ambush), positions = h.cast().map(actor => ({ ...actor.position }));
+  h.frame(10, false); h.players.release('company-player', h.tick()); h.frame(10);
+  assert.equal(JSON.stringify(h.state().ambush), before);
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+  h.players.possess('company-player', 'neo', h.tick()); h.frame(1, false);
+  assert.deepEqual(h.cast().map(actor => actor.position), positions);
+  assert.equal(JSON.stringify(h.state().ambush), before);
+  h.players.possess('cypher-player', 'cypher', h.tick()); h.frame(15);
+  assert.equal(h.state().ambush!.paused, true, 'occupation suspends both server time and client prediction');
+  assert.equal(h.state().ambush!.elapsed, JSON.parse(before).elapsed);
+  h.players.release('cypher-player', h.tick());
+  h.actor.status = 'dead'; h.actor.health = 0; h.command('retry');
+  assert.deepEqual(h.cast().map(actor => actor.position), positions, 'retry keeps the company at its saved stair observation');
+  assert.equal(h.state().ambush!.elapsed, JSON.parse(before).elapsed, 'retry preserves the descent instead of restarting the old cat');
+  h.frame(81); assert.equal(h.state().step, 0, 'the stair pass must not use the old 9.5 second doorway clock');
+  assert.equal(h.sandbox.state.structures.filter(item => item.film?.scene === 'm1_dejavu').length, 0);
+  h.frame(6); assert.equal(h.sandbox.state.structures.filter(item => item.film?.scene === 'm1_dejavu').length, 2);
+  h.frame(20); assert.equal(h.state().step, 1);
 });

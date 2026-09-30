@@ -8,6 +8,7 @@ function fixture() {
   player.position.y -= 7.4;
   const sandbox = { threats: [], neoLife: { cycle: 1, journey: { scene: 'm1_dejavu', actor: 'neo', step: 0, completed: [], reflections: {}, lastText: '跟随同伴上楼。',
     ambushApproach: newAmbushApproach() } } } as SandboxState;
+  delete sandbox.neoLife!.journey!.ambushApproach!.stairCat;
   return { player, sandbox, journey: sandbox.neoLife!.journey! };
 }
 
@@ -61,4 +62,16 @@ test('ambush navigation changes with storey and turn, then waits for the company
   assert.match(element('#film-sequence-hint').textContent, /观察.*黑猫/);
   h.journey.step = 1; element('#film-sequence').classes.delete('ambush-company'); ui.updateFilm(h.player, h.sandbox);
   assert.ok(element('#film-sequence').classes.has('ambush-company'), 'the sealed-building action must keep a layout clear of the conversation button');
+  h.journey.step = 0; delete h.journey.ambush; h.journey.ambushApproach!.stairCat = true;
+  h.player.position = filmPosition('film_ambush_house', 11, 31.8); ui.updateFilm(h.player, h.sandbox);
+  assert.equal(element('#sandbox-interact').classes.has('hidden'), false, 'a fresh journey starts observation on the actual landing');
+  assert.match(element('#film-sequence-hint').textContent, /黑猫/);
+  assert.match(element('game-objective-copy').textContent, /楼梯/);
+  h.journey.ambush = { elapsed: 1.8 }; ui.updateFilm(h.player, h.sandbox);
+  assert.ok(element('#film-sequence').classes.has('ambush-observing'), 'observing must clear the cat sightline of the conversation prompt and hotbar');
+  h.journey.step = 1; ui.updateFilm(h.player, h.sandbox);
+  assert.equal(element('#film-sequence').classes.has('ambush-observing'), false, 'the combat step must restore the ordinary controls');
+  h.journey.step = 0; delete h.journey.ambush;
+  h.player.position = filmPosition('film_ambush_house', 0, -8); ui.updateFilm(h.player, h.sandbox);
+  assert.ok(element('#sandbox-interact').classes.has('hidden'), 'the old doorway is no longer the fresh observation target');
 });

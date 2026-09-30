@@ -11,7 +11,7 @@ import type { ActionExecutor } from '../packages/server/src/agents/ActionExecuto
 import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
 import { musicForScene } from '../packages/client/src/engine/Soundtrack.js';
 import { HOTEL_ROUTE, HOTEL_DOOR_PROGRESS } from '@auto_matrix/shared';
-import { hammerCenter, LOGOS_DEFENSE } from '@auto_matrix/shared';
+import { hammerCenter, LOGOS_DEFENSE, AMBUSH_CAT_STAIRS } from '@auto_matrix/shared';
 
 function setup() {
   const world = new WorldState(); const manager = new AgentManager(world); manager.initializeAllAgents();
@@ -2426,7 +2426,9 @@ test('the entire film route completes through interactions, driving and real com
     }
     for (let index = 0; index < scene.steps.length; index++) {
       if (scene.id === 'm1_dejavu' && index === 0 && state.ambushApproach) {
-        for (const [x, z] of [[-5.5, 30.8], [-5.5, 14.5], [5.5, 14.5], [5.5, 31.8], [11, 31.8], [11, 8], [0, 8], [0, -8]]) {
+        const companyRoute = [[-5.5, 30.8], [-5.5, 14.5], [5.5, 14.5], [5.5, 31.8], [11, 31.8]];
+        if (!state.ambushApproach.stairCat) companyRoute.push([11, 8], [0, 8], [0, -8]);
+        for (const [x, z] of companyRoute) {
           const target = filmPosition(scene.set, x, z);
           for (let frame = 0; frame < 600; frame++) {
             const actor = h.actor(), dx = target.x - actor.position.x, dz = target.z - actor.position.z, gap = Math.hypot(dx, dz);
@@ -2440,7 +2442,8 @@ test('the entire film route completes through interactions, driving and real com
         for (let frame = 0; frame < 400 && !state.ambushApproach.ready; frame++) h.players.step(.1, true, h.tick());
         assert.equal(state.ambushApproach.ready, true, 'the full trilogy route waits for the same five physical companions');
       }
-      const step = scene.steps[index]; const actor = h.actor(); actor.position = filmStepPosition(scene, step);
+      const step = scene.steps[index]; const actor = h.actor();
+      if (scene.id !== 'm1_dejavu' || index !== 0 || !state.ambushApproach?.stairCat) actor.position = filmStepPosition(scene, step, state);
       if (scene.id === 'm3_rain') {
         if (index === 0) h.advance();
         else if (index === 1) {
@@ -2933,7 +2936,8 @@ test('the entire film route completes through interactions, driving and real com
           h.command('act'); for (let frame = 0; frame < 30; frame++) h.players.step(.1, true, h.tick());
         }
         else if (index === 0 && ['m1_oracle', 'm1_dejavu'].includes(scene.id)) {
-          for (let frame = 0; frame < 110 && state.step === index; frame++) {
+          const frames = scene.id === 'm1_dejavu' && state.ambushApproach?.stairCat ? Math.ceil(AMBUSH_CAT_STAIRS.seconds / .1) + 2 : 110;
+          for (let frame = 0; frame < frames && state.step === index; frame++) {
             h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false, focus: true, sequence: ++sequence });
             h.players.step(.1, true, h.tick());
           }

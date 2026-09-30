@@ -1427,6 +1427,48 @@ test('Neo third-person view sees the repeated cat without the bathroom partition
   } finally { renderer.dispose(); }
 });
 
+test('the stair-cat observation initially points Neo toward the cat, preserves V and releases looking and movement', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const game = setup(t, Math.PI / 2), center = FILM_SETS.film_ambush_house.center;
+  game.state.currentLocation = 'film_ambush_house'; game.state.position = filmPosition('film_ambush_house', 11, 31.8);
+  game.state.rotation = Math.PI / 2;
+  const root = new THREE.Group(); root.position.set(center.x, center.y - 1, center.z);
+  const renderer = new AmbushSetRenderer(root);
+  try {
+    for (const time of [.8, 4.2]) for (const aspect of [.72, 16 / 9]) {
+      game.camera.aspect = aspect; game.camera.updateProjectionMatrix(); game.controls.possess(game.state);
+      game.controls.ambushObservation = time;
+      game.step(.4);
+      const facing = game.group.children[0].rotation.y;
+      assert.ok(Math.cos(facing - game.yaw()) > .99, 'Neo turns toward the cat when the observation begins instead of looking east while the camera turns west');
+      renderer.update({ version: 1, scene: 'm1_dejavu', actor: 'neo', step: 0, completed: [], enteredAt: 0, reflections: {}, lastText: '',
+        checkpoint: { ...game.state.position }, ambush: { elapsed: time },
+        ambushApproach: { ready: true, stairCat: true, progress: { morpheus: 0, switch: 0, apoc: 0, trinity: 0, cypher: 0 } } }, [], 0);
+      root.updateMatrixWorld(true); game.camera.updateMatrixWorld(true);
+      const cat = root.getObjectByName('ambush-black-cat')!;
+      const focus = cat.localToWorld(new THREE.Vector3(.45, .9, 0)), direction = focus.clone().sub(game.camera.position);
+      const screen = focus.clone().project(game.camera);
+      assert.ok(Math.abs(screen.x) < .9 && Math.abs(screen.y) < .9 && screen.z > -1 && screen.z < 1,
+        `the cat starts in frame after Neo has walked east onto the platform: ${screen.toArray()}`);
+      const hits = new THREE.Raycaster(game.camera.position, direction.clone().normalize(), 0, direction.length() - .4).intersectObject(root, true);
+      assert.equal(hits.filter(hit => !cat.getObjectById(hit.object.id)).length, 0, 'the camera cannot see the cat through a solid wall or rail');
+      game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+      const eye = new THREE.Vector3(game.state.position.x, game.state.position.y + 2.99, game.state.position.z);
+      assert.ok(game.camera.position.distanceTo(eye) < .06, 'V uses Neo actual eye rather than an orbit shot');
+      const firstPerson = focus.clone().project(game.camera);
+      assert.ok(Math.abs(firstPerson.x) < .9 && Math.abs(firstPerson.y) < .9 && firstPerson.z > -1 && firstPerson.z < 1);
+      game.document.pointerLockElement = game.canvas;
+      const before = game.camera.getWorldDirection(new THREE.Vector3());
+      game.event(game.document, 'mousemove', { movementX: 180, movementY: -20 }); game.step(.2);
+      assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(before) > .3, 'observation only sets the initial direction; the player remains free to look');
+      const position = game.group.position.clone(); game.key('KeyW'); game.step(.2); game.key('KeyW', false);
+      assert.ok(game.group.position.distanceTo(position) > .15, 'the cat does not lock ordinary player movement');
+      game.controls.ambushObservation = undefined;
+      game.step(.1); game.document.pointerLockElement = null;
+    }
+  } finally { renderer.dispose(); }
+});
+
 test('Tank sees the short Cypher counter window from the deck and from his saved prone viewpoint', t => {
   const game = setup(t); const center = FILM_SETS.film_neb_deck.center;
   game.state.currentLocation = 'film_neb_deck'; game.state.position = filmPosition('film_neb_deck', -7, -14);

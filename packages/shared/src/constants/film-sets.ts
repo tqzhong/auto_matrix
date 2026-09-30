@@ -263,9 +263,10 @@ export function filmBlocked(position: Vector3, set: FilmSet, radius: number, mov
   const hotelEscape = set.id === 'film_heart_hotel' && Math.abs(x) < 4.2 && z < -25 && z > -35 && position.y >= set.center.y - 1.4;
   const apartmentExit = set.id === 'film_anderson_flat' && Math.abs(x) < APARTMENT_ROOM.exitWidth / 2 - radius && z > 0;
   const oracleHall = set.architecture === 'oracle' && z > 27 && z < 50 - radius - .2 && Math.abs(x) < 4 - radius - .2;
+  const perimeter = set.id === 'film_ambush_house' ? .35 : .6;
   if (set.id === 'film_extraction_car' || set.id === 'film_adams_bridge') {
     if (!meetingRoadContains(x, z, radius)) return true;
-  } else if (!hotelEscape && !oracleHall && (Math.abs(x) > set.width / 2 - radius - .6 || !apartmentExit && Math.abs(z) > set.depth / 2 - radius - .6)) return true;
+  } else if (!hotelEscape && !oracleHall && (Math.abs(x) > set.width / 2 - radius - perimeter || !apartmentExit && Math.abs(z) > set.depth / 2 - radius - perimeter)) return true;
   if (position.y < filmGroundHeight(position, set) - .8) return true;
   return filmObstacles(set, movingMeetingCar, movingOracleDoor).some(o => Math.abs(x - o.x) < o.width / 2 + radius && Math.abs(z - o.z) < o.depth / 2 + radius && position.y < set.center.y + o.height);
 }

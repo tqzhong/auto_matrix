@@ -17,7 +17,7 @@ import { MOUNTAIN } from './mountain.js';
 import { TRUCKS } from './trucks.js';
 import { distance } from '../utils/index.js';
 import { SPOON_LESSON, ORACLE_ENTRANCE, ORACLE_RECEPTION_CAST, spoonLessonLocked, oracleDepartureLocked } from './oracle.js';
-import { AMBUSH_STAIRS } from './ambush.js';
+import { AMBUSH_STAIRS, AMBUSH_CAT_STAIRS } from './ambush.js';
 
 export type FilmCue = 'night' | 'contact' | 'office' | 'club' | 'awakening' | 'training' | 'oracle' | 'infiltration' | 'combat' | 'the_one' | 'zion' | 'swarm' | 'restaurant' | 'chateau' | 'chase' | 'source' | 'mobil' | 'siege' | 'bane' | 'farewell' | 'final' | 'dawn';
 export interface FilmStep {
@@ -237,7 +237,7 @@ export const FILM_SCENES: FilmScene[] = [
   scene('m1_meal', 1, 'neb_deck', 'neo', '真实世界的一顿饭', 'oracle_first', 'zion', '船员吃着单细胞蛋白，谈论机器如何制造味觉，也把玩笑、欲望和下一次接入带进同一张餐桌。', [use('到餐桌亲手接过食物', '平凡的吃饭与玩笑让这艘船不只是战争机器。', -1.5, 22), walk('回到核心区，准备接入矩阵', 0, 0)], ['mouse', 'dozer', 'tank', 'apoc', 'switch']),
   scene('m1_spoon', 1, 'oracle_home', 'neo', '等候室的孩子们', 'oracle_first', 'oracle', '先知的客厅里，孩子们以不同方式试探矩阵的规则。走到孩子面前坐下，看他示范，再亲手接过勺子，按住 G 专注。', [use('坐下观察，接过勺子', '你看见金属在手中弯曲，松开力气也不再恢复。对规则的认识开始动摇。', SPOON_LESSON.neo.x, SPOON_LESSON.neo.z), walk('跟随接待者走进厨房', 0, -8)], ['spoon_boy', ...ORACLE_RECEPTION_CAST]),
   scene('m1_oracle', 1, 'oracle_home', 'neo', '厨房里的预言', 'oracle_first', 'oracle', '饼干和花瓶之间，先知让 Neo 面对自我认识、Morpheus 的信念和即将到来的抉择。', [use('听见提醒，回头看花瓶', '你的转身碰落了花瓶。先知留下的问题是：没有那句提醒，你还会做出同一个动作吗？', 7, -14), think('预言如何影响选择？', '你将如何行动，比得到一个称号更重要。', -5, -22), use('与 Morpheus 会合，带着饼干离开公寓', 'Morpheus 尊重这次会面的隐私。Neo 吃了一口饼干，亲自走到出口，继续返回路线。', 0, 27, 0)], ['oracle', 'spoon_boy', ...ORACLE_RECEPTION_CAST]),
-  scene('m1_dejavu', 1, 'ambush_house', 'neo', '重复经过的黑猫', 'betrayal', 'infiltration', '与 Morpheus、Switch、Apoc、Trinity 和 Cypher 一起沿笼式电梯旁的楼梯向上，在转角换到另一侧，绕过上层护栏进入走廊。留意前方门廊；落后时同伴会等你。', [use('留意门前的黑猫', 'Trinity 认出系统被改动的迹象。原来的门与窗被砖墙封死，只能从左侧墙内通道撤退。', 0, -8), { ...fight('突破楼内封锁', 2), z: -8 }, walk('改走左侧墙内通道', -17, -27)], ['morpheus', 'switch', 'apoc', 'trinity', 'cypher']),
+  scene('m1_dejavu', 1, 'ambush_house', 'neo', '重复经过的黑猫', 'betrayal', 'infiltration', '与 Morpheus、Switch、Apoc、Trinity 和 Cypher 一起沿笼式电梯旁的楼梯向上，在转角换到另一侧，在上层平台让出楼梯口。黑猫经过并走下楼梯；落后时同伴会等你。', [use('留意重复经过的黑猫', 'Trinity 认出系统被改动的迹象。原来的门与窗被砖墙封死，只能从左侧墙内通道撤退。', 0, -8), { ...fight('突破楼内封锁', 2), z: -8 }, walk('改走左侧墙内通道', -17, -27)], ['morpheus', 'switch', 'apoc', 'trinity', 'cypher']),
   scene('m1_bathroom', 1, 'ambush_house', 'morpheus', '为同伴争取时间', 'betrayal', 'combat', 'Morpheus 在浴室门线阻挡 Smith，其他人从墙内通道撤离。他必须亲自撑住追击，再决定以被捕换取同伴离开。', [fight('在浴室门线击退 Smith 三次并撑到同伴撤离', 1, 'smith', 'smith'), use('撞向 Smith，把战斗带进浴室', '同伴越过墙内通道后，Morpheus 撞向 Smith 并被捕。争取到的时间没有改写被捕结果，却让其他人离开了旧楼。', 0, 0)], ['smith', 'neo', 'trinity', 'switch', 'apoc']),
   scene('m1_unplugged', 1, 'neb_deck', 'tank', '背叛发生在现实', 'betrayal', 'bane', 'Cypher 回到飞船袭击 Tank 与 Dozer，并逐一拔除连接。Tank 必须抓住一次短暂的反击窗口，再亲手接回仍有生命信号的 Neo 与 Trinity。', [walk('抵达备用控制台', -7, -14), use('等待枪口偏转，反击并接回两路幸存信号', 'Tank 在短暂窗口内反击，再分别接回 Neo 与 Trinity。Dozer、Apoc 与 Switch 已无法回来。', -7, -14)], ['cypher', 'dozer', 'apoc', 'switch', 'neo', 'trinity']),
   scene('m1_rescue_decision', 1, 'neb_deck', 'neo', '仍然选择去救他', 'rescue', 'oracle', 'Morpheus 面临逼供。Neo 决定返回矩阵营救他，Trinity 坚持同行。', [think('在没有保证时承担责任', '这个决定来自对具体同伴的承诺，而不是已经证明的救世主身份。'), use('请 Tank 准备接入', '两人开始营救准备。', 0, 0)], ['trinity', 'tank']),
@@ -450,7 +450,10 @@ export function oracleActing(journey: FilmJourney): boolean {
     && (journey.step === 0 && journey.oracle?.vase !== undefined && journey.oracle.vase < 4.5
       || oracleDepartureLocked(journey.oracle?.departure) || Boolean(journey.oracle?.consultation && !['waiting', 'done'].includes(journey.oracle.consultation.phase))));
 }
-export function filmStepPosition(scene: FilmScene, step: FilmStep): Vector3 {
+export function filmStepPosition(scene: FilmScene, step: FilmStep, journey?: FilmJourney): Vector3 {
+  if (scene.id === 'm1_dejavu' && step === scene.steps[0] && journey?.ambushApproach?.stairCat) {
+    const target = AMBUSH_CAT_STAIRS.observation; return filmPosition(scene.set, target.x, target.z);
+  }
   const position = filmPosition(scene.set, step.x, step.z);
   if (scene.id === 'm1_commute' && step !== scene.steps[2]) position.y = METACORTEX.center.y;
   if (scene.id === 'm2_trucks') position.y += TRUCKS.roof.height;
@@ -458,13 +461,13 @@ export function filmStepPosition(scene: FilmScene, step: FilmStep): Vector3 {
   if (scene.id === 'm1_pod' && step.z === 12) position.y -= 18;
   return position;
 }
-export function filmStepNear(scene: FilmScene, step: FilmStep, position: Vector3, matrix: boolean): boolean {
+export function filmStepNear(scene: FilmScene, step: FilmStep, position: Vector3, matrix: boolean, journey?: FilmJourney): boolean {
   const radius = scene.id === 'm1_mirror' && step === scene.steps[0] ? MIRROR_TOUCH.radius
     : scene.id === 'm1_cabin' && step !== scene.steps[0] || scene.id === 'm1_construct' && step === scene.steps[0] ? .8 : 4;
-  return matrix === (FILM_SETS[scene.set].world === 'matrix') && distance(position, filmStepPosition(scene, step)) <= radius;
+  return matrix === (FILM_SETS[scene.set].world === 'matrix') && distance(position, filmStepPosition(scene, step, journey)) <= radius;
 }
-export function filmStepActionReady(scene: FilmScene, step: FilmStep, position: Vector3, matrix: boolean): boolean {
-  return step.kind !== 'reach' && step.kind !== 'reflect' && filmStepNear(scene, step, position, matrix);
+export function filmStepActionReady(scene: FilmScene, step: FilmStep, position: Vector3, matrix: boolean, journey?: FilmJourney): boolean {
+  return step.kind !== 'reach' && step.kind !== 'reflect' && filmStepNear(scene, step, position, matrix, journey);
 }
 export function filmEntry(scene: FilmScene): Vector3 {
   if (scene.id === 'm1_dejavu') return { ...filmPosition(scene.set, AMBUSH_STAIRS.entry.x, AMBUSH_STAIRS.entry.z), y: FILM_SETS[scene.set].center.y - AMBUSH_STAIRS.rise };

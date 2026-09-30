@@ -40,6 +40,8 @@ body.film-catch-scene .film-sequence { bottom:150px; width:min(560px,calc(100vw 
 .film-sequence.oracle-departure p,.film-sequence.oracle-arrival p,.film-sequence.ambush-company p { margin:3px 0 6px; font-size:13px; line-height:1.5; }
 body:has(.film-sequence.oracle-departure:not(.hidden)) .sandbox-interact,body:has(.film-sequence.oracle-arrival:not(.hidden)) .sandbox-interact,body:has(.film-sequence.ambush-company:not(.hidden)) .sandbox-interact { top:auto; bottom:310px; }
 body:has(.film-sequence.ambush-company.hidden) .sandbox-interact { top:auto; bottom:180px; }
+.film-sequence.ambush-observing { bottom:86px; }
+body:has(.film-sequence.ambush-observing:not(.hidden)) .game-interaction,body:has(.film-sequence.ambush-observing:not(.hidden)) .sandbox-hotbar { display:none; }
 body.film-grid-scene .film-sequence { bottom:184px; width:min(470px,calc(100vw - 36px)); box-sizing:border-box; padding:8px 14px; }
 body.film-grid-scene .film-sequence p { margin:3px 0 6px; font-size:12px; line-height:1.5; }
 body.film-finale-scene .film-sequence { bottom:184px; box-sizing:border-box; padding:8px 14px; }

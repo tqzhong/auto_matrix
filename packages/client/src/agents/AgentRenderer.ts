@@ -22,7 +22,7 @@ interface Entry {
   speech?: { sprite: THREE.Sprite; age: number };
   mirrorGuide?: { from: number; to: number; progress: number; elapsed: number };
   oracleGuide?: { phase: 'approaching' | 'guiding' | 'returning'; from: number; to: number; progress: number; elapsed: number };
-  ambushGuide?: { role: AmbushEscort['role']; from: number; to: number; progress: number; elapsed: number };
+  ambushGuide?: { stairCat?: true; role: AmbushEscort['role']; from: number; to: number; progress: number; elapsed: number };
 }
 
 export class AgentRenderer {
@@ -88,8 +88,8 @@ export class AgentRenderer {
     const escort = state.currentAction?.parameters.ambushEscort as AmbushEscort | undefined;
     if (escort) {
       const guide = entry.ambushGuide, progress = escort.progress;
-      if (!guide || guide.role !== escort.role || progress < guide.to || progress - guide.progress > 5)
-        entry.ambushGuide = { role: escort.role, from: progress, to: progress, progress, elapsed: .5 };
+      if (!guide || guide.role !== escort.role || guide.stairCat !== escort.stairCat || progress < guide.to || progress - guide.progress > 5)
+        entry.ambushGuide = { stairCat: escort.stairCat, role: escort.role, from: progress, to: progress, progress, elapsed: .5 };
       else if (progress !== guide.to) entry.ambushGuide = { ...guide, from: guide.progress, to: progress, elapsed: 0 };
     } else entry.ambushGuide = undefined;
     entry.state = state;
@@ -148,7 +148,7 @@ export class AgentRenderer {
         } else if (entry.ambushGuide) {
           const guide = entry.ambushGuide, before = guide.progress;
           guide.elapsed = Math.min(.5, guide.elapsed + delta * speed); guide.progress = THREE.MathUtils.lerp(guide.from, guide.to, guide.elapsed / .5);
-          const pose = ambushRouteRoot(guide.progress, guide.role), center = FILM_SETS.film_ambush_house.center;
+          const pose = ambushRouteRoot(guide.progress, guide.role, guide.stairCat), center = FILM_SETS.film_ambush_house.center;
           entry.group.position.set(center.x + pose.x, center.y + pose.y, center.z + pose.z);
           guideHeading = (state.currentAction?.parameters.ambushEscort as AmbushEscort).watching ? state.rotation : pose.yaw;
           if (speed > 0 && delta > 0) guideSpeed = Math.abs(guide.progress - before) / (delta * speed);

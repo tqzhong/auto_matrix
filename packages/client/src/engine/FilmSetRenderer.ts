@@ -567,13 +567,13 @@ export class FilmSetRenderer {
       const arrivalGoal = scene.id === 'm1_spoon' && oracleArrivalPending(journey?.oracle?.arrival) ? oracleArrivalTarget(journey!.oracle!.arrival!) : undefined;
       const center = FILM_SETS.film_ambush_house.center;
       const ambushGoal = scene.id === 'm1_dejavu' && journey?.step === 0 && journey.ambushApproach && !journey.ambushApproach.ready && player
-        ? ambushApproachTarget(player.position.x - center.x, player.position.y - center.y, player.position.z - center.z) : undefined;
+        ? ambushApproachTarget(player.position.x - center.x, player.position.y - center.y, player.position.z - center.z, journey.ambushApproach.stairCat) : undefined;
       const position = ambushGoal ? { x: center.x + ambushGoal.x, y: center.y + ambushGoal.y, z: center.z + ambushGoal.z }
         : arrivalGoal ? filmPosition(scene.set, arrivalGoal.x, arrivalGoal.z) : bridgeDoor ? filmPosition(scene.set, bridgeDoor.x, bridgeDoor.z)
         : carSeat ? filmPosition(scene.set, carSeat.x, carSeat.z)
         : scene.id === 'm2_burly' && journey?.burly?.phase === 'staff_ready' ? filmPosition(scene.set, BURLY.staff.x, BURLY.staff.z)
         : scene.id === 'm2_chateau' && journey?.chateau?.phase === 'landing' ? filmStepPosition(scene, scene.steps[1])
-        : step.kind === 'drive' && journey?.ride ? filmPosition(scene.set, 14, FREEWAY_FINISH) : filmStepPosition(scene, step);
+        : step.kind === 'drive' && journey?.ride ? filmPosition(scene.set, 14, FREEWAY_FINISH) : filmStepPosition(scene, step, journey);
       if (scene.id === 'm1_ledge' && journey?.office?.climbed !== undefined) position.y -= 32;
       this.marker.position.set(position.x, position.y - .82, position.z);
       this.marker.scale.setScalar(1 + Math.sin(elapsed * 2) * .07); this.markerLight.position.copy(this.marker.position).y += 1.5;

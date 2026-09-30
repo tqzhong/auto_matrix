@@ -10,6 +10,7 @@ import type { MotionInput } from '../agents/CharacterMotion.js';
 import { AIR_RESCUE, governmentPose, airRescuePose, airRescueRoot, interrogationPose, meetingPose, meetingCarPose, meetingCarPoint, MEETING_TIMING } from '@auto_matrix/shared';
 import { officeClothing } from '@auto_matrix/shared';
 import { cabinSeat, MORNING, POD_RESCUE, podRescuePose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
+import { ambushCat } from '@auto_matrix/shared';
 
 export class PlayerControls {
   id: string | null = null;
@@ -70,6 +71,8 @@ export class PlayerControls {
   private meetingYaw?: number;
   mirror = 0;
   spoon?: number;
+  ambushObservation?: number;
+  private watchingAmbush = false;
   phone?: OfficePhone;
   private firing = false;
   private lastShot = -1000;
@@ -91,6 +94,7 @@ export class PlayerControls {
   possess(state: AgentState): void {
     this.meetingYaw = undefined; this.welcomeShot = undefined; this.performing = false; this.phoneExit = false;
     this.bridgeCaught = undefined;
+    this.watchingAmbush = false;
     this.id = state.id; this.position = { ...state.position }; this.yaw = state.rotation;
     this.recoveryYaw = typeof state.currentAction?.parameters.recovery === 'number'
       ? state.currentAction.parameters.download ? state.rotation : recoveryBodyPose(state.currentAction.parameters.recovery).yaw : undefined;
@@ -111,6 +115,7 @@ export class PlayerControls {
   release(): void {
     this.id = null; this.keys.clear(); this.enabled = true; this.firing = false; this.firearm = false; this.weaponStyle = undefined; this.fireInterval = LOBBY_FIRE_INTERVAL; this.ride = undefined; this.gunner = false; this.climbing = false; this.performing = false; this.phoneExit = false; this.mirror = 0; this.spoon = undefined; this.phone = undefined; this.welcomeShot = undefined;
     this.bridgeCaught = undefined;
+    this.ambushObservation = undefined; this.watchingAmbush = false;
     this.camera.near = this.defaultNear; this.camera.fov = 48; this.camera.updateProjectionMatrix();
     if (document.pointerLockElement === this.canvas) document.exitPointerLock();
   }
@@ -535,6 +540,16 @@ export class PlayerControls {
       this.authoritative = state;
     }
     const previous = { ...this.position };
+    const watchingAmbush = this.ambushObservation !== undefined && state.currentLocation === 'film_ambush_house';
+    if (watchingAmbush && !this.watchingAmbush) {
+      const cat = ambushCat(Math.max(.8, this.ambushObservation!), true), center = FILM_SETS.film_ambush_house.center;
+      const x = center.x + cat.x - this.position.x, z = center.z + cat.z - this.position.z;
+      const eye = this.position.y + (this.firstPerson ? 2.99 : 2.05);
+      this.yaw = this.movementYaw = this.facing = Math.atan2(x, z);
+      this.pitch = THREE.MathUtils.clamp(-Math.atan2(center.y - 1 + cat.y + .9 - eye, Math.hypot(x, z)), -.4, 1.1);
+      this.cameraReady = false; this.lastLook = now;
+    }
+    this.watchingAmbush = watchingAmbush;
     if (this.ride || this.climbing || this.performing) {
       const blend = this.motion.truckPassenger || this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.training || this.motion.workday || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || catchCinematic || smithFinaleLocked(this.motion.smithFinale) || this.motion.lobbyEntry ? 1 : 1 - Math.exp(-20 * delta);
       this.position.x += (state.position.x - this.position.x) * blend; this.position.y += (state.position.y - this.position.y) * blend; this.position.z += (state.position.z - this.position.z) * blend;

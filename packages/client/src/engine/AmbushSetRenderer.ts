@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { AMBUSH_WALLS, AMBUSH_SEALS, AMBUSH_FLOORS, AMBUSH_RAILS, AMBUSH_STAIRS, ambushCat, type FilmJourney, type WorldStructure } from '@auto_matrix/shared';
+import { AMBUSH_WALLS, AMBUSH_SEALS, AMBUSH_FLOORS, AMBUSH_RAILS, AMBUSH_STAIRS, ambushCat, ambushFloor, type FilmJourney, type WorldStructure } from '@auto_matrix/shared';
+import { reach } from '../agents/SpoonPerformance.js';
 
 /** The changed masonry uses the same footprints as the saved, authoritative barriers. */
 export class AmbushSetRenderer {
@@ -9,6 +10,9 @@ export class AmbushSetRenderer {
   private cat = new THREE.Group();
   private body = new THREE.Group();
   private legs: THREE.Group[] = [];
+  private knees: THREE.Group[] = [];
+  private ankles: THREE.Group[] = [];
+  private pawSoles: THREE.Vector3[] = [];
   private tail = new THREE.Group();
   private bathroom = new THREE.Group();
   private bathroomIntact = new THREE.Group();
@@ -21,6 +25,8 @@ export class AmbushSetRenderer {
   private textures: THREE.Texture[] = [];
   private clock = 0;
   private previousTime = 0;
+  private catReportedTime = -1;
+  private catReportedAt = 0;
   constructor(parent: THREE.Group) {
     parent.add(this.root);
     const plaster = this.pbr('damaged_plaster', 0x989d86, 4);
@@ -42,7 +48,7 @@ export class AmbushSetRenderer {
       this.box(plaster, wall.x, wall.height / 2, wall.z, wall.width, wall.height, wall.depth);
       for (const y of [.24, 3.15, 8.65]) this.box(wood, wall.x, y, wall.z, wall.width + .13, y === .24 ? .48 : .15, wall.depth + .13);
     }
-    // A deep, open doorway frames both passes of the cat in the same place.
+    // Keep the original doorway for corridor saves and the subsequent blockade.
     for (const x of [-3.15, 3.15]) {
       this.box(wood, x, 4.1, -20.6, .35, 8.2, 1);
       this.box(trim, x, 4.1, -20.04, .5, 8.2, .14);
@@ -170,17 +176,25 @@ export class AmbushSetRenderer {
       const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 14), material); mesh.position.set(x, y, z); mesh.scale.set(sx, sy, sz); mesh.castShadow = mesh.receiveShadow = true; parent.add(mesh); return mesh;
     };
     this.cat.add(this.body); this.body.position.y = .8;
+    this.cat.name = 'ambush-black-cat';
     oval(this.body, fur, 0, .05, 0, .8, .32, .29); oval(this.body, fur, .59, .18, 0, .33, .39, .3);
     oval(this.body, fur, .89, .45, 0, .3, .28, .28); oval(this.body, fur, 1.08, .32, 0, .17, .12, .18);
     oval(this.body, nose, 1.23, .37, 0, .05, .04, .05);
     for (const side of [-1, 1]) {
-      const ear = new THREE.Mesh(new THREE.ConeGeometry(.15, .31, 4), fur); ear.position.set(.88, .77, side * .18); ear.rotation.x = side * .2; this.body.add(ear);
+      const ear = new THREE.Mesh(new THREE.ConeGeometry(.15, .31, 8), fur); ear.position.set(.88, .77, side * .18); ear.rotation.x = side * .2; this.body.add(ear);
       oval(this.body, eye, 1.08, .49, side * .2, .045, .035, .02);
+      oval(this.body, fur, 1.09, .49, side * .218, .013, .03, .006);
       for (const rear of [false, true]) {
         const limb = new THREE.Group(); limb.position.set(rear ? -.58 : .54, .67, side * .2); this.cat.add(limb); this.legs.push(limb);
-        oval(limb, fur, 0, -.2, 0, rear ? .16 : .095, .29, .1);
-        oval(limb, fur, rear ? -.09 : .01, -.47, 0, .065, .23, .072);
-        oval(limb, fur, .065, -.62, 0, .18, .075, .095);
+        oval(limb, fur, 0, -.18, 0, rear ? .15 : .095, .2, .1);
+        const knee = new THREE.Group(); knee.position.y = -.38; limb.add(knee); this.knees.push(knee);
+        oval(knee, fur, 0, -.16, 0, .065, .19, .072);
+        const ankle = new THREE.Group(); ankle.position.y = -.36; knee.add(ankle); this.ankles.push(ankle);
+        const paw = oval(ankle, fur, 0, 0, 0, .18, .075, .095); paw.name = 'ambush-cat-paw';
+        if (!this.pawSoles.length) for (let i = 0; i < paw.geometry.attributes.position.count; i++) {
+          const point = paw.getVertexPosition(i, new THREE.Vector3()).multiply(paw.scale);
+          if (point.y <= .000001) this.pawSoles.push(point);
+        }
       }
     }
     const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(0, 0, 0), new THREE.Vector3(-.4, .12, .08), new THREE.Vector3(-.8, .65, .12), new THREE.Vector3(-.84, 1.1, .1), new THREE.Vector3(-.63, 1.3, .06)]);
@@ -241,15 +255,15 @@ export class AmbushSetRenderer {
     const observing = journey?.scene === 'm1_dejavu' && journey.step === 0 && !journey.visiting && journey.ambush;
     const target = observing ? journey.ambush!.elapsed : 0;
     const dt = Math.min(.1, Math.max(0, elapsed - this.previousTime)); this.previousTime = elapsed;
-    if (Math.abs(this.clock - target) > 1) this.clock = target;
+    const stairs = journey?.ambushApproach?.stairCat;
+    if (stairs) {
+      if (dt === 0 || this.catReportedTime !== target || journey?.ambush?.paused) { this.catReportedTime = target; this.catReportedAt = elapsed; }
+      this.clock = target + Math.min(.5, Math.max(0, elapsed - this.catReportedAt));
+    } else if (dt === 0 || Math.abs(this.clock - target) > 1) this.clock = target;
     else this.clock += (target - this.clock) * (1 - Math.exp(-dt * 18));
-    const cat = ambushCat(this.clock); this.cat.visible = Boolean(observing && cat.visible);
-    this.cat.position.set(cat.x, 0, cat.z);
-    const stretching = cat.phase > 1.1 && cat.phase < 2.1;
-    const stretch = stretching ? Math.sin((cat.phase - 1.1) * Math.PI) : 0;
-    this.body.position.y = .8 - stretch * .18; this.body.rotation.z = -stretch * .16; this.body.scale.x = 1 + stretch * .1;
-    for (const [i, leg] of this.legs.entries()) leg.rotation.z = stretching ? (i % 2 ? -.1 : .7) * stretch : Math.sin(cat.phase * 15 + (i === 0 || i === 3 ? 0 : Math.PI)) * .42;
-    this.tail.rotation.x = Math.sin(cat.phase * 3) * .18; this.tail.rotation.z = -stretch * .2;
+    const cat = ambushCat(this.clock, stairs); this.cat.visible = Boolean(observing && cat.visible);
+    this.cat.position.set(cat.x, cat.y, cat.z); this.cat.rotation.y = cat.yaw;
+    if (this.cat.visible) this.poseCat(cat, stairs);
     const betrayal = journey?.betrayal?.kind === 'bathroom' ? journey.betrayal : undefined;
     const breached = Boolean(journey?.completed.includes('m1_bathroom') || betrayal?.phase === 'done'
       || betrayal?.phase === 'sacrifice' && betrayal.elapsed >= 2.1);
@@ -262,6 +276,36 @@ export class AmbushSetRenderer {
     }
     const struggle = betrayal?.phase === 'defending' || betrayal?.phase === 'sacrifice';
     this.bathroomLight.intensity = struggle ? 68 + Math.sin(elapsed * 17) * 17 : 95;
+  }
+  private poseCat(cat: ReturnType<typeof ambushCat>, stairs = false): void {
+    const stretching = cat.phase > 1.1 && cat.phase < 2.1;
+    const stretch = stretching ? Math.sin((cat.phase - 1.1) * Math.PI) : 0;
+    this.body.position.y = .8 - stretch * .18; this.body.rotation.z = -stretch * .16; this.body.scale.x = 1 + stretch * .1;
+    this.cat.updateWorldMatrix(true, true);
+    const rotation = this.cat.getWorldQuaternion(new THREE.Quaternion()), origin = this.root.getWorldPosition(new THREE.Vector3());
+    const feet = this.legs.map((leg, i) => {
+      const phase = (cat.phase / .32 + (i === 0 || i === 3 ? 0 : .5)) % 1, swing = Math.max(0, (phase - .65) / .35);
+      const stride = stretching ? (i % 2 ? -.16 : .23) * stretch : phase < .65 ? .32 - .64 * phase / .65 : -.32 + .64 * THREE.MathUtils.smoothstep(swing, 0, 1);
+      const foot = new THREE.Vector3(leg.position.x + stride, 0, leg.position.z); this.cat.localToWorld(foot);
+      let support = stairs ? -Infinity : origin.y;
+      if (stairs) for (const sole of this.pawSoles) {
+        const point = sole.clone().applyQuaternion(rotation).add(foot), floor = ambushFloor(point.x - origin.x, point.z - origin.z, cat.y + .8);
+        if (floor !== undefined) support = Math.max(support, origin.y + floor - point.y + foot.y - .075);
+      }
+      foot.y = support + .075 + (stretching ? 0 : Math.sin(swing * Math.PI) * .16);
+      return { foot, support };
+    });
+    const floor = feet.reduce((sum, foot) => sum + foot.support, 0) / 4;
+    const grade = stairs ? Math.atan2((feet[0].support + feet[2].support - feet[1].support - feet[3].support) / 2, 1.12) : 0;
+    this.body.position.y += floor - origin.y - cat.y; this.body.rotation.z += grade;
+    for (const leg of this.legs) leg.position.y = .67 + floor - origin.y - cat.y + Math.sin(grade) * leg.position.x - stretch * .1;
+    this.cat.updateWorldMatrix(true, true);
+    for (const [i, leg] of this.legs.entries()) {
+      const knee = this.knees[i], ankle = this.ankles[i];
+      reach(leg, knee, ankle.position, feet[i].foot, new THREE.Vector3(i % 2 ? -1 : 1, 0, 0).applyQuaternion(rotation));
+      ankle.quaternion.copy(knee.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rotation)); ankle.updateWorldMatrix(false, true);
+    }
+    this.tail.rotation.x = Math.sin(cat.phase * 3) * .18; this.tail.rotation.z = -stretch * .2;
   }
   private batch(): void {
     const batches = new Map<THREE.Material, THREE.BufferGeometry[]>();

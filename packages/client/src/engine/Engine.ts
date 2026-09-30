@@ -425,6 +425,8 @@ export class Engine {
       this.playerControls.spoon = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_spoon'
         ? journey.oracle?.spoonLesson ? spoonLessonBend(journey.oracle.spoonLesson, 'neo', journey.oracle.spoon ?? 0) : journey.oracle?.spoon : undefined;
       this.playerControls.phone = journey?.actor === this.playerControls.id ? heldPhone(journey) : undefined;
+      this.playerControls.ambushObservation = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_dejavu'
+        && journey.step === 0 && journey.ambushApproach?.stairCat ? journey.ambush?.elapsed : undefined;
       this.playerControls.truckRescue = Boolean(journey?.actor === this.playerControls.id && journey.scene === 'm2_trucks' && !journey.visiting && ['rescue', 'rescued'].includes(journey.trucks?.phase ?? ''));
       const gunner = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm3_dock_battle' && journey.dockGunnery?.phase === 'firing';
       this.playerControls.gunner = gunner;

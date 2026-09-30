@@ -24,11 +24,12 @@ const button = (target: string, label: string, disabled = false) => `<button dat
 export function renderFilmJourney(player: AgentState, sandbox: SandboxState): string {
   const life = sandbox.neoLife!; const journey = life.journey!; const scene = FILM_SCENE_BY_ID[journey.scene];
   if (!journey.visiting && scene.id === 'm1_dejavu' && journey.step === 0 && journey.ambushApproach) {
+    const site = journey.ambushApproach.stairCat ? '楼梯' : '门前';
     const current = player.id === journey.actor, pending = !journey.ambushApproach.ready, observing = journey.ambush !== undefined;
     const action = !current ? button('resume', '接回 Neo 的视角') : player.status !== 'alive' ? button('retry', '继续当前楼梯进度')
-      : pending ? '<p>合上手记，跟随五名同伴亲自上楼。他们会在前方等你；进入走廊后等队伍到齐。</p>'
-        : observing ? '<p>观察门前黑猫的两次经过，留意同伴的反应。</p>'
-          : button('act', '留意门前的黑猫 · G', distance(player.position, filmStepPosition(scene, scene.steps[0])) > 4);
+      : pending ? '<p>合上手记，跟随五名同伴亲自上楼。他们会在前方等你；到平台后让出楼梯口，等队伍到齐。</p>'
+        : observing ? `<p>观察${site}黑猫的两次经过，留意同伴的反应。</p>`
+          : button('act', `留意${site}的黑猫 · G`, distance(player.position, filmStepPosition(scene, scene.steps[0], journey)) > 4);
     return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>旧楼 · 同行与似曾相识</h3><p>Neo 视角 · 六人一起返回</p></header><article class="film-now"><div><p>${journey.lastText}</p><div class="film-controls">${action}</div><small>WASD 自由行走 · V 切换视角 · 暂停、断线与读档保留队伍位置和黑猫进度</small></div></article></div>`;
   }
   if (!journey.visiting && scene.id === 'm1_spoon' && oracleArrivalPending(journey.oracle?.arrival)) {
