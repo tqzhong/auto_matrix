@@ -94,9 +94,28 @@ test('the dojo, roof gap and red-dress plaza are dedicated physical training set
   try {
     assert.ok(plazaRoot.getObjectByName('red-dress-fountain'));
     assert.ok(plazaRoot.getObjectByName('red-dress-crowd-0'));
+    const fountainApron = plazaRoot.getObjectByName('red-dress-fountain-apron')!;
+    const cityEdges = plazaRoot.getObjectByName('red-dress-city-edges')!;
+    const planters = plazaRoot.getObjectByName('red-dress-planters')!;
+    const attentionAxis = plazaRoot.getObjectByName('red-dress-attention-axis')!;
+    const plazaMatte = plazaRoot.getObjectByName('red-dress-city-matte') as THREE.Mesh;
+    const reversePlazaMatte = plazaRoot.getObjectByName('red-dress-city-reverse-matte') as THREE.Mesh;
+    const westPlazaMatte = plazaRoot.getObjectByName('red-dress-city-west-matte') as THREE.Mesh;
+    const eastPlazaMatte = plazaRoot.getObjectByName('red-dress-city-east-matte') as THREE.Mesh;
+    assert.ok(fountainApron.position.y > 0, 'the fountain has a raised outer apron instead of a flat disk');
+    assert.ok(plazaRoot.getObjectByName('red-dress-fountain-jet-0'), 'water motion has a physical origin at the fountain');
+    assert.ok(cityEdges.getObjectByName('red-dress-city-west-wing') && cityEdges.getObjectByName('red-dress-city-east-wing'), 'the plaza is framed by physical city wings without sealing the central route');
+    assert.ok(planters.children.length >= 4, 'near planting gives the otherwise open program a real pedestrian scale');
+    assert.ok(attentionAxis.position.x > 4 && attentionAxis.position.x < 10, 'the route toward the red-dress encounter remains visibly readable');
+    assert.equal((plazaMatte.material as THREE.MeshBasicMaterial).fog, false, 'the city backdrop remains visible through local haze');
+    assert.ok((plazaMatte.geometry as THREE.PlaneGeometry).parameters.width >= 300, 'the plaza backdrop spans the player camera without a blank horizon');
+    assert.ok(reversePlazaMatte.position.z > 120 && Math.abs(reversePlazaMatte.rotation.y - Math.PI) < .001, 'turning back from the fountain retains a city horizon');
+    assert.ok(westPlazaMatte.position.x < -120 && eastPlazaMatte.position.x > 120, 'looking sideways at the arcade never exposes an empty program edge');
     const state = journey('m1_red_dress', { kind: 'red_dress', elapsed: 5, started: true });
     plaza.update(state, 5); const figure = plazaRoot.getObjectByName('red-dress-crowd-0')!; const frozen = figure.position.z;
+    const jet = plazaRoot.getObjectByName('red-dress-fountain-jet-0')!; const jetHeight = jet.position.y;
     plaza.update(state, 5.6); assert.equal(figure.position.z, frozen, 'the crowd holds the exact frozen program frame');
+    assert.notEqual(jet.position.y, jetHeight, 'the fountain remains alive while the simulated crowd is frozen');
     const reveal = plazaRoot.getObjectByName('red-dress-agent-reveal') as THREE.PointLight;
     assert.equal(reveal.intensity, 0); state.training!.elapsed = 7; plaza.update(state, 7);
     assert.ok(reveal.intensity > 300, 'Smith replacement gets a readable reveal light');

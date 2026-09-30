@@ -10,6 +10,7 @@ export class TrainingSetRenderer {
   private lights = new Set<THREE.Light>();
   private disposed = false;
   private crowd: THREE.Group[] = [];
+  private fountainJets: THREE.Mesh[] = [];
   private skylineLights: THREE.Mesh[] = [];
   private programLight?: THREE.PointLight;
   private revealLight?: THREE.PointLight;
@@ -60,6 +61,17 @@ export class TrainingSetRenderer {
     for (const [x, z, rotation, name] of [[0, -160, 0, 'jump-city-matte'], [0, 160, Math.PI, 'jump-city-reverse-matte'],
       [-160, 0, Math.PI / 2, 'jump-city-west-matte'], [160, 0, -Math.PI / 2, 'jump-city-east-matte']] as const) {
       const matte = this.mesh(parent, new THREE.PlaneGeometry(330, 186), material, name); matte.position.set(x, 26, z); matte.rotation.y = rotation;
+    }
+  }
+  private plazaMatte(parent: THREE.Object3D): void {
+    const material = this.material(new THREE.MeshBasicMaterial({ color: 0xd8ddd7, fog: false, side: THREE.DoubleSide }));
+    if (typeof document !== 'undefined') {
+      const texture = new THREE.TextureLoader().load('/assets/plaza/red-dress-plaza-matte-v1.png', loaded => { if (this.disposed || !this.materials.has(material)) loaded.dispose(); });
+      texture.colorSpace = THREE.SRGBColorSpace; texture.anisotropy = 8; material.map = texture; material.needsUpdate = true; this.textures.add(texture);
+    }
+    for (const [x, z, rotation, name] of [[0, -160, 0, 'red-dress-city-matte'], [0, 160, Math.PI, 'red-dress-city-reverse-matte'],
+      [-160, 0, Math.PI / 2, 'red-dress-city-west-matte'], [160, 0, -Math.PI / 2, 'red-dress-city-east-matte']] as const) {
+      const matte = this.mesh(parent, new THREE.PlaneGeometry(330, 186), material, name); matte.position.set(x, 28, z); matte.rotation.y = rotation; matte.castShadow = false; matte.receiveShadow = false;
     }
   }
   private mesh(parent: THREE.Object3D, geometry: THREE.BufferGeometry, material: THREE.Material, name?: string): THREE.Mesh {
@@ -273,44 +285,92 @@ export class TrainingSetRenderer {
 
   private mannequin(parent: THREE.Object3D, x: number, z: number, color: number, index: number): void {
     const figure = new THREE.Group(); figure.name = `red-dress-crowd-${index}`; figure.position.set(x, 0, z); figure.rotation.y = index % 2 ? 0 : Math.PI; parent.add(figure); this.crowd.push(figure);
+    figure.scale.setScalar(.86 + index % 3 * .06);
     const cloth = this.material(new THREE.MeshStandardMaterial({ color, roughness: .8 }));
-    this.cylinder(figure, cloth, 0, 2.3, 0, .42, 2.7, 12); this.mesh(figure, new THREE.SphereGeometry(.4, 14, 10), this.paper).position.y = 4.05;
+    const skin = this.material(new THREE.MeshStandardMaterial({ color: index % 3 === 0 ? 0xb98265 : index % 3 === 1 ? 0xd5aa8a : 0x8a5f4a, roughness: .76 }));
+    const hair = this.material(new THREE.MeshStandardMaterial({ color: index % 4 === 0 ? 0x211d1a : index % 4 === 1 ? 0x47382f : 0x181c1c, roughness: .9 }));
+    this.mesh(figure, new THREE.CylinderGeometry(.38, .58, 2.45, 14), cloth).position.y = 2.25;
+    this.cylinder(figure, skin, 0, 3.63, 0, .14, .32, 10);
+    this.mesh(figure, new THREE.SphereGeometry(.32, 14, 10), skin).position.y = 4.05;
+    const cap = this.mesh(figure, new THREE.SphereGeometry(.33, 14, 8), hair); cap.position.set(0, 4.22, -.025); cap.scale.y = .5;
     for (const side of [-1, 1]) {
-      const leg = this.box(figure, this.dark, side * .22, .75, 0, .28, 1.5, .35); leg.rotation.x = (index + side) % 3 * .06;
-      const arm = this.box(figure, cloth, side * .58, 2.35, 0, .25, 2.25, .3); arm.rotation.z = side * .12;
+      const leg = this.box(figure, this.dark, side * .2, .72, 0, .24, 1.44, .31); leg.rotation.x = (index + side) % 3 * .06; leg.userData.crowdLimb = true;
+      const arm = this.box(figure, cloth, side * .54, 2.28, 0, .22, 2.05, .28); arm.rotation.z = side * .12; arm.userData.crowdLimb = true;
     }
     figure.userData.baseZ = z; figure.userData.phase = index * .77;
   }
 
   private plaza(): void {
     const set = new THREE.Group(); set.name = 'training-red-dress-set'; this.root.add(set);
-    const paving = this.material(new THREE.MeshStandardMaterial({ color: 0xa5aaa2, roughness: .9 }));
+    const paving = this.material(new THREE.MeshStandardMaterial({ color: 0xc2c2b8, roughness: .9 }));
+    const joint = this.material(new THREE.MeshStandardMaterial({ color: 0xa7aaa2, roughness: .95 }));
+    const limestone = this.material(new THREE.MeshStandardMaterial({ color: 0xc5b79d, roughness: .76, metalness: .04 }));
+    const facade = this.material(new THREE.MeshStandardMaterial({ color: 0xb2a894, roughness: .86, metalness: .03 }));
+    const window = this.material(new THREE.MeshStandardMaterial({ color: 0x627274, roughness: .4, metalness: .18 }));
+    const foliage = this.material(new THREE.MeshStandardMaterial({ color: 0x45634a, roughness: .92 }));
+    const benchWood = this.material(new THREE.MeshStandardMaterial({ color: 0x604633, roughness: .72 }));
+    const attentionInlay = this.material(new THREE.MeshStandardMaterial({ color: 0xaeb4a9, roughness: .9 }));
+    this.surface(limestone, 'marble_01', 5); this.surface(benchWood, 'old_wood_floor', 3);
     this.box(set, paving, 0, -.08, 0, 62, .16, 82, 'red-dress-paving');
-    for (let x = -30; x <= 30; x += 3.1) this.box(set, this.stone, x, .015, 0, .035, .03, 81);
-    for (let z = -40; z <= 40; z += 3.1) this.box(set, this.stone, 0, .018, z, 61, .035, .035);
+    for (let x = -30; x <= 30; x += 4.1) this.box(set, joint, x, .012, 0, .024, .02, 81, 'red-dress-paving-joint');
+    for (let z = -40; z <= 40; z += 4.1) this.box(set, joint, 0, .014, z, 61, .02, .024, 'red-dress-paving-joint');
+    this.box(set, attentionInlay, 7, .021, -12, 2.7, .026, 17.5, 'red-dress-attention-axis');
+
     const fountain = new THREE.Group(); fountain.name = 'red-dress-fountain'; fountain.position.set(-15.5, 0, 3); set.add(fountain);
-    this.cylinder(fountain, this.stone, 0, .4, 0, 7, .8, 40); this.cylinder(fountain, this.water, 0, .84, 0, 6.45, .08, 40);
-    this.cylinder(fountain, this.stone, 0, 1.7, 0, 1.4, 2.6, 24);
-    const spray = this.mesh(fountain, new THREE.SphereGeometry(2.25, 24, 14), this.water); spray.position.y = 3.4; spray.scale.y = .14;
-    for (const side of [-1, 1]) {
-      const arcade = new THREE.Group(); arcade.position.x = side * 28.5; set.add(arcade);
-      for (let z = -36; z <= 36; z += 9) {
-        this.cylinder(arcade, this.stone, 0, 5.2, z, .62, 10.4, 20);
-        this.box(arcade, this.stone, 0, 10.6, z, 4.6, .65, 8.4);
+    this.cylinder(fountain, limestone, 0, .26, 0, 8.05, .52, 48, 'red-dress-fountain-apron');
+    this.cylinder(fountain, facade, 0, .58, 0, 7.35, .26, 48, 'red-dress-fountain-rim'); this.cylinder(fountain, this.water, 0, .75, 0, 6.72, .08, 48);
+    this.cylinder(fountain, limestone, 0, 1.65, 0, 1.5, 2.35, 24, 'red-dress-fountain-pedestal');
+    this.cylinder(fountain, limestone, 0, 3.04, 0, 2.45, .3, 28, 'red-dress-fountain-upper-bowl'); this.cylinder(fountain, this.water, 0, 3.24, 0, 2.1, .05, 28);
+    for (let index = 0; index < 8; index++) {
+      const angle = index / 8 * Math.PI * 2; const jet = this.cylinder(fountain, this.water, Math.cos(angle) * .72, 4.15, Math.sin(angle) * .72, .075, 2.05, 8, `red-dress-fountain-jet-${index}`);
+      jet.userData.phase = index * .77; this.fountainJets.push(jet);
+    }
+
+    const planters = new THREE.Group(); planters.name = 'red-dress-planters'; set.add(planters);
+    for (const [x, z, size] of [[-26, -28, .82], [-26, 28, .76], [26, -25, .8], [26, 29, .88]] as const) {
+      const planter = new THREE.Group(); planter.name = 'red-dress-planter'; planter.position.set(x, 0, z); planters.add(planter);
+      this.box(planter, limestone, 0, .54, 0, 3.9, 1.08, 3.9, 'red-dress-planter-base');
+      for (const [offsetX, offsetZ, scale] of [[-.7, -.25, .82], [.65, -.35, .76], [0, .72, 1]] as const) {
+        const shrub = this.mesh(planter, new THREE.DodecahedronGeometry(.92 * size * scale, 1), foliage, 'red-dress-planter-shrub'); shrub.position.set(offsetX, 1.7 + scale * .35, offsetZ); shrub.scale.y = 1.35;
       }
-      this.box(arcade, this.dark, side * .35, 14.3, 0, 2, 7, 82);
+    }
+
+    const furniture = new THREE.Group(); furniture.name = 'red-dress-street-furniture'; set.add(furniture);
+    for (const [x, z, rotation] of [[-10, -28, 0], [12, -30, Math.PI], [-10, 29, 0], [12, 27, Math.PI]] as const) {
+      const bench = new THREE.Group(); bench.name = 'red-dress-bench'; bench.position.set(x, 0, z); bench.rotation.y = rotation; furniture.add(bench);
+      this.box(bench, benchWood, 0, .98, 0, 4.2, .16, .75, 'red-dress-bench-seat'); this.box(bench, benchWood, 0, 1.7, .27, 4.2, 1.35, .16, 'red-dress-bench-back');
+      for (const side of [-1, 1]) this.box(bench, this.metal, side * 1.55, .48, 0, .12, .96, .55, 'red-dress-bench-leg');
+    }
+
+    for (const side of [-1, 1]) {
+      const arcade = new THREE.Group(); arcade.name = `red-dress-${side < 0 ? 'west' : 'east'}-arcade`; arcade.position.x = side * 29.6; set.add(arcade);
+      for (let z = -36; z <= 36; z += 9) {
+        this.cylinder(arcade, limestone, 0, 5.2, z, .62, 10.4, 20, 'red-dress-arcade-column');
+        this.box(arcade, limestone, 0, 10.6, z, 4.6, .65, 8.4, 'red-dress-arcade-beam');
+      }
+      this.box(arcade, facade, side * 4.25, 8.4, 0, .8, 16.8, 82, 'red-dress-arcade-facade');
       for (let z = -34; z < 36; z += 12) {
         const lamp = this.mesh(arcade, new THREE.SphereGeometry(.22, 12, 8), this.glow); lamp.position.set(-side * .85, 7.4, z);
       }
+      const arcadeLight = new THREE.PointLight(0xffddb2, 11, 16, 2); arcadeLight.position.set(side * 28.6, 7.3, 0); this.light(arcadeLight, `red-dress-${side < 0 ? 'west' : 'east'}-arcade-light`);
     }
-    for (let i = 0; i < 24; i++) {
-      const side = i % 2 ? 1 : -1; const lane = i % 4 < 2 ? 3 : 12; const x = side * lane + (i % 3 - 1) * 1.2; const z = -35 + Math.floor(i / 2) * 6.1;
-      if (Math.abs(x - 7) < 2.2) continue;
+
+    const cityEdges = new THREE.Group(); cityEdges.name = 'red-dress-city-edges'; cityEdges.position.z = -78; set.add(cityEdges);
+    for (const side of [-1, 1]) {
+      const wing = new THREE.Group(); wing.name = `red-dress-city-${side < 0 ? 'west' : 'east'}-wing`; wing.position.set(side * 42, 0, 0); cityEdges.add(wing);
+      this.box(wing, facade, 0, 7.5, 0, 18, 15, 3.6, 'red-dress-city-facade');
+      for (let y = 3; y < 13.5; y += 3.4) this.box(wing, window, 0, y, 1.85, 14.2, 1.08, .06, 'red-dress-city-window-band');
+      this.box(wing, limestone, 0, 15.25, 0, 20.5, .48, 4.5, 'red-dress-city-cornice');
+    }
+    for (let i = 0; i < 20; i++) {
+      const side = i % 2 ? 1 : -1; const lane = i % 4 < 2 ? 22 : 25.5; const x = side * lane + (i % 3 - 1) * .75; const z = -35 + Math.floor(i / 2) * 7.2;
       this.mannequin(set, x, z, [0x364947, 0x585a52, 0x31363b, 0x706757][i % 4], i);
     }
-    this.programLight = new THREE.PointLight(0xe4eadb, 135, 34, 2); this.programLight.position.set(7, 9, -10); this.light(this.programLight, 'red-dress-program-light');
+    this.plazaMatte(set);
+    this.programLight = new THREE.PointLight(0xf2e3c8, 160, 40, 2); this.programLight.position.set(7, 9, -10); this.light(this.programLight, 'red-dress-program-light');
     this.revealLight = new THREE.PointLight(0xff5c43, 0, 20, 2); this.revealLight.position.set(7, 4, 7); this.light(this.revealLight, 'red-dress-agent-reveal');
-    const sun = new THREE.DirectionalLight(0xffeccb, 2.1); sun.position.set(-20, 38, 26); sun.castShadow = true; this.light(sun, 'red-dress-sun');
+    const sun = new THREE.DirectionalLight(0xffe6bc, 2.3); sun.position.set(-20, 38, 26); sun.castShadow = true; this.light(sun, 'red-dress-sun');
+    this.light(new THREE.HemisphereLight(0xd4e0e2, 0x4a5147, .84), 'red-dress-daylight');
   }
 
   update(journey: FilmJourney | undefined, elapsed: number): void {
@@ -329,11 +389,15 @@ export class TrainingSetRenderer {
     }
     const training = journey?.scene === 'm1_red_dress' && !journey.visiting ? journey.training : undefined;
     const t = training?.elapsed ?? 0; const frozen = Boolean(training?.started && t >= 4.8 && t < 9.2);
+    this.fountainJets.forEach(jet => {
+      const phase = Number(jet.userData.phase ?? 0); jet.scale.y = .82 + Math.sin(elapsed * 3.4 + phase) * .16;
+      jet.position.y = 4.15 + Math.sin(elapsed * 3.4 + phase) * .12;
+    });
     this.crowd.forEach((figure, index) => {
       const phase = Number(figure.userData.phase); const base = Number(figure.userData.baseZ);
       figure.position.z = base + (training?.started && !frozen ? Math.sin(elapsed * .55 + phase) * 1.4 : 0);
       figure.rotation.z = frozen ? 0 : Math.sin(elapsed * 1.6 + phase) * .018;
-      figure.children.forEach((child, childIndex) => { if (childIndex > 1) child.rotation.x = frozen ? 0 : Math.sin(elapsed * 3.2 + phase + childIndex) * .08; });
+      figure.children.forEach((child, childIndex) => { if (child.userData.crowdLimb) child.rotation.x = frozen ? 0 : Math.sin(elapsed * 3.2 + phase + childIndex) * .08; });
     });
     if (this.revealLight) this.revealLight.intensity = t >= 6.2 && t < 9.2 ? 420 + Math.sin(elapsed * 12) * 35 : 0;
     if (this.programLight) this.programLight.intensity = frozen ? 70 : 145;
@@ -341,6 +405,6 @@ export class TrainingSetRenderer {
 
   dispose(): void {
     this.disposed = true; this.root.clear(); this.geometries.forEach(value => value.dispose()); this.materials.forEach(value => value.dispose()); this.textures.forEach(value => value.dispose()); this.lights.forEach(value => value.dispose());
-    this.geometries.clear(); this.materials.clear(); this.textures.clear(); this.lights.clear(); this.crowd = []; this.skylineLights = [];
+    this.geometries.clear(); this.materials.clear(); this.textures.clear(); this.lights.clear(); this.crowd = []; this.fountainJets = []; this.skylineLights = [];
   }
 }
