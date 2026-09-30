@@ -2,6 +2,7 @@ import { nearMetacortexLift, filmStepNear } from '@auto_matrix/shared';
 import { CATCH, RELOADED_FINALE, HEL_COATCHECK, OPENING_ESCAPE, OPENING_HOTEL, catchText, reloadedText } from '@auto_matrix/shared';
 import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_NAMES, ARCHITECT_DOOR_SECONDS, filmReflections, CHARACTERS, filmStepPosition, distance, dockPowerOffline, AWAKENING_SECONDS, oracleActing, helElevatorLocked, helDanceDoorLocked, interrogationLocked, pillLocked, lafayetteWelcomeLocked, phoneLocked, windowOpening, windowCrossing, awakeningWaiting, trainingLocked, trainingWaiting, theOneLocked, type AgentState, type SandboxState } from '@auto_matrix/shared';
 import './film-journey.css';
+import { ambushEscapeText } from '@auto_matrix/shared';
 import { meetingBoardPoint, meetingLocked, MEETING_TIMING } from '@auto_matrix/shared';
 import { filmPosition, HOTEL_DOOR_PROGRESS, CABIN, CABIN_ROUTE_LENGTH } from '@auto_matrix/shared';
 import { workdayLocked } from '@auto_matrix/shared';
@@ -23,6 +24,14 @@ import { trilogyEpilogueLocked, trilogyEpilogueProgress } from '@auto_matrix/sha
 const button = (target: string, label: string, disabled = false) => `<button data-action="life" data-target="film:${target}" ${disabled ? 'disabled' : ''}>${label}</button>`;
 export function renderFilmJourney(player: AgentState, sandbox: SandboxState): string {
   const life = sandbox.neoLife!; const journey = life.journey!; const scene = FILM_SCENE_BY_ID[journey.scene];
+  if (!journey.visiting && scene.id === 'm1_dejavu' && journey.ambushEscape) {
+    const escape = journey.ambushEscape, current = player.id === journey.actor;
+    const action = !current ? button('resume', '接回 Neo 的视角') : escape.phase === 'failed' || player.status !== 'alive' ? button('retry', `从${escape.checkpoint.floor}楼重试`)
+      : escape.phase === 'done' ? button('next', '继续旧楼剧情') : escape.paused ? '<p>同行者正在被另一位玩家控制，等候他释放角色。</p>'
+        : ['window', 'phone'].includes(escape.phase) ? button('act', escape.phase === 'window' ? '检查封死的窗户 · G' : '冒险联系 Tank · G', distance(player.position, filmStepPosition(scene, scene.steps[journey.step], journey)) > 4)
+          : '<p>合上手记，自由行走。队伍沿实体楼梯撤退；找到通道即可离开，不必清空追兵。</p>';
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>旧楼 · 被改变的退路</h3><p>硬线切断 → 八楼封窗 → 手机暴露位置 → 管线墙</p></header><article class="film-now"><div><p>${ambushEscapeText(escape)}</p><div class="film-controls">${action}</div><small>最近检查点：${escape.checkpoint.floor}楼 · 第 ${escape.attempts + 1} 次尝试${escape.mouseDead ? ' · Mouse 已遇难' : ''}</small></div></article></div>`;
+  }
   if (!journey.visiting && scene.id === 'm1_dejavu' && journey.step === 0 && journey.ambushApproach) {
     const site = journey.ambushApproach.stairCat ? '楼梯' : '门前';
     const current = player.id === journey.actor, pending = !journey.ambushApproach.ready, observing = journey.ambush !== undefined;

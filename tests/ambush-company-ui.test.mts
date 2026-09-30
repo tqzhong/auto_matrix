@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { build } from 'esbuild';
-import { FILM_SETS, filmPosition, newAmbushApproach, type AgentState, type SandboxState } from '@auto_matrix/shared';
+import { FILM_SETS, filmPosition, newAmbushApproach, newAmbushEscape, ambushRetreatRoot, type AgentState, type SandboxState } from '@auto_matrix/shared';
 
 function fixture() {
   const player = { id: 'neo', status: 'alive', isInMatrix: true, rotation: Math.PI, position: filmPosition('film_ambush_house', -5.5, 32) } as AgentState;
@@ -74,4 +74,20 @@ test('ambush navigation changes with storey and turn, then waits for the company
   h.journey.step = 0; delete h.journey.ambush;
   h.player.position = filmPosition('film_ambush_house', 0, -8); ui.updateFilm(h.player, h.sandbox);
   assert.ok(element('#sandbox-interact').classes.has('hidden'), 'the old doorway is no longer the fresh observation target');
+  h.journey.step = 1; h.journey.ambushEscape = newAmbushEscape(); const escape = h.journey.ambushEscape;
+  escape.phase = 'descending'; h.player.position = { x: center.x + 5.5, y: center.y - 14.8, z: center.z + 31.8 };
+  ui.updateFilm(h.player, h.sandbox); assert.match(element('game-objective-copy').textContent, /11 楼/);
+  assert.ok(element('#sandbox-interact').classes.has('hidden')); assert.doesNotMatch(element('game-objective-copy').textContent, /击败|靠近后按 G/);
+  escape.phase = 'window'; h.player.position = { x: center.x - 18, y: center.y - 37, z: center.z - 16 };
+  ui.updateFilm(h.player, h.sandbox); assert.equal(element('#sandbox-interact').classes.has('hidden'), false);
+  escape.phase = 'phone'; escape.progress.morpheus = 400;
+  ui.updateFilm(h.player, h.sandbox); assert.ok(element('#sandbox-interact').classes.has('hidden'), 'the window cannot display a remote phone interaction');
+  const root = ambushRetreatRoot(escape.progress.morpheus, 'morpheus');
+  h.player.position = { x: center.x + root.x, y: center.y + root.y, z: center.z + root.z };
+  ui.updateFilm(h.player, h.sandbox); assert.equal(element('#sandbox-interact').classes.has('hidden'), false);
+  escape.phase = 'call'; escape.traced = true; ui.updateFilm(h.player, h.sandbox);
+  assert.match(element('#sandbox-trace').textContent, /暴露八楼/); assert.ok(element('#sandbox-interact').classes.has('hidden'));
+  escape.phase = 'forming'; ui.updateFilm(h.player, h.sandbox);
+  assert.match(element('#sandbox-waypoint').innerHTML, /让行/); assert.match(element('#film-sequence-hint').textContent, /等同伴/);
+  escape.phase = 'failed'; ui.updateFilm(h.player, h.sandbox); assert.match(element('game-objective-copy').textContent, /重试/);
 });

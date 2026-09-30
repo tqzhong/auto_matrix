@@ -412,7 +412,8 @@ for (const phase of ['duel', 'running'] as const) test(`matrix ${phase} keeps V 
 function setup(t: TestContext, rotation = 0) {
   class InputTarget extends EventTarget { matches() { return false; } }
   const window = new InputTarget(); const canvas = new InputTarget();
-  const document = Object.assign(new InputTarget(), { pointerLockElement: null as unknown, hidden: false, exitPointerLock() {} });
+  const document = Object.assign(new InputTarget(), { pointerLockElement: null as unknown, hidden: false, exitPointerLock() {},
+    createElement: () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {} }) }) });
   const previous = ['window', 'document'].map(key => Object.getOwnPropertyDescriptor(globalThis, key));
   Object.assign(globalThis, { window, document });
   let time = 2000;
@@ -444,6 +445,24 @@ function setup(t: TestContext, rotation = 0) {
   step(.5);
   return { controls, camera, group, state, document, window, canvas, sent, actions, event, key, step, yaw };
 }
+
+test('both player views predict solid companions on the eighth floor and allow retreat away from them', t => {
+  const game = setup(t), center = FILM_SETS.film_ambush_house.center;
+  game.state.currentLocation = 'film_ambush_house'; game.state.position = { x: center.x, y: center.y - 37, z: center.z - 10 };
+  const companion = { ...game.state.position, z: game.state.position.z + 3 };
+  game.controls.ambushCompany = [companion];
+  for (const firstPerson of [false, true]) {
+    game.controls.possess(game.state); if (firstPerson) game.key('KeyV');
+    assert.equal(game.controls.firstPerson, firstPerson);
+    game.key('KeyW'); game.step(1.2); game.key('KeyW', false);
+    assert.ok(game.group.position.distanceTo(new THREE.Vector3(companion.x, companion.y, companion.z)) >= 2.24,
+      'client prediction cannot phase through a companion before the server corrects it');
+    const stopped = game.group.position.clone();
+    game.key('KeyS'); game.step(.4); game.key('KeyS', false);
+    assert.ok(game.group.position.z < stopped.z - .5, 'body contact must still allow the player to move away');
+    assert.ok(Math.abs(game.group.position.y - game.state.position.y) < .01);
+  }
+});
 
 test('the Sentinel sweep camera keeps the machine and forward viewport readable together', t => {
   const game = setup(t, Math.PI); const center = FILM_SETS.film_service_tunnels.center;

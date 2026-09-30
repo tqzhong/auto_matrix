@@ -67,7 +67,7 @@ test('the lower stairwell has enclosing walls and a solid floor, while low stair
     for (const direction of [new THREE.Vector3(-1, 0, 0), new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 0, 1)]) {
       assert.ok(new THREE.Raycaster(new THREE.Vector3(-5.5, -5, 25), direction, 0, 20).intersectObject(parent, true).length, 'the lower flight cannot open onto the background sky');
     }
-    assert.ok(new THREE.Raycaster(new THREE.Vector3(5.5, -7.3, 23), new THREE.Vector3(0, -1, 0), 0, .2).intersectObject(parent, true).length, 'the space below the stairs has a rendered floor');
+    assert.ok(new THREE.Raycaster(new THREE.Vector3(5.5, -36.9, 23), new THREE.Vector3(0, -1, 0), 0, .2).intersectObject(parent, true).length, 'the connected stairwell ends at a rendered eighth-floor base');
     const underLanding = filmPosition(set.id, 0, 14.5); underLanding.y -= 7.4;
     assert.equal(playerBlocked(underLanding, true), true, 'a standing body cannot enter beneath a low landing slab');
   } finally { renderer.dispose(); }

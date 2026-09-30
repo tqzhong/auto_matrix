@@ -4,6 +4,7 @@ import { CATCH, RELOADED, RELOADED_FINALE, HEL_COATCHECK, catchText, reloadedTex
 import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_NAMES, filmReflections, GRID_HACK_SECONDS, GRID_REROUTE_SECONDS, HEL_ELEVATOR, HEL_DANCE_DOOR, filmStepPosition, filmStepActionReady, helElevatorLocked, helDanceDoorLocked, pillLocked, lafayetteWelcomeLocked, awakeningLocked, awakeningWaiting, podRescuePose, AWAKENING_SECONDS, MIRROR_TOUCH, MIRROR_TIMING, mirrorGuidePose, PILL_ROOM, trainingLocked, trainingWaiting, TRAINING_SECONDS, DOJO_COMBO_WINDOW, windowOpening, windowCrossing, dockPowerOffline, ITEMS, RECIPES, SKILLS, FILMS, MISSIONS, LOCATIONS, CITY_BUILDINGS, NEO_CHAPTERS, LIFE_ACTIONS, lifeActionPosition, lifeRoomCenter, locationEntrance, distance, missionPosition, nearTransit, skillPoints,
   type AgentState, type SandboxState, type SandboxCommand, type ItemId, type SkillId, type Vector3 } from '@auto_matrix/shared';
 import './sandbox.css';
+import { AMBUSH_ESCAPE, ambushEscapeTarget, ambushEscapeText } from '@auto_matrix/shared';
 import { renderNeoLife } from './NeoLifePanel.js';
 import { interrogationLocked, interrogationPose } from '@auto_matrix/shared';
 import { meetingBoardPoint, meetingLocked, MEETING_TIMING } from '@auto_matrix/shared';
@@ -208,8 +209,10 @@ export class SandboxUI {
     const escapedScan = scene.id === 'm1_bug' && journey.office?.outcome === 'escaped';
     const stepLabel = escapedScan ? ['配合安全扫描', '重新判断今晚的接头', step?.label][journey.step] : step?.label;
     const ambushCenter = FILM_SETS.film_ambush_house.center;
-    const ambushGoal = !journey.visiting && scene.id === 'm1_dejavu' && journey.step === 0 && journey.ambushApproach && !journey.ambushApproach.ready
-      ? ambushApproachTarget(player.position.x - ambushCenter.x, player.position.y - ambushCenter.y, player.position.z - ambushCenter.z, journey.ambushApproach.stairCat) : undefined;
+    const ambushGoal = !journey.visiting && scene.id === 'm1_dejavu' && journey.ambushEscape
+      ? ambushEscapeTarget(journey.ambushEscape, player.position.x - ambushCenter.x, player.position.y - ambushCenter.y, player.position.z - ambushCenter.z)
+      : !journey.visiting && scene.id === 'm1_dejavu' && journey.step === 0 && journey.ambushApproach && !journey.ambushApproach.ready
+        ? ambushApproachTarget(player.position.x - ambushCenter.x, player.position.y - ambushCenter.y, player.position.z - ambushCenter.z, journey.ambushApproach.stairCat) : undefined;
     const bridgeDoor = scene.id === 'm1_bridge' && journey.step === 1 && journey.bridgeArrival?.parkedRoadTime !== undefined
       ? meetingBoardPoint(journey.bridgeArrival) : undefined;
     const stepTarget = ambushGoal ? { x: ambushCenter.x + ambushGoal.x, y: ambushCenter.y + ambushGoal.y, z: ambushCenter.z + ambushGoal.z }
@@ -276,6 +279,31 @@ export class SandboxUI {
       else this.el('sandbox-waypoint').innerHTML = `<span style="transform:rotate(${-direction}rad)">↑</span>${ambushGoal?.label ?? point} <b>${Math.round(distance(stepTarget!, player.position))} m</b>`;
       document.getElementById('game-objective-copy')!.textContent = pending ? close ? '等候五名同伴到齐 · 可以自由观察' : '跟随同伴沿木楼梯上楼，到平台后让出楼梯口'
         : observing ? '似曾相识？留意黑猫与同伴的反应' : close ? `同伴已到齐 · 留意${site}的黑猫` : `走到${point}，留意黑猫`;
+      return;
+    }
+    if (!journey.visiting && scene.id === 'm1_dejavu' && journey.ambushEscape) {
+      const escape = journey.ambushEscape, failed = escape.phase === 'failed', done = escape.phase === 'done';
+      const acting = !escape.paused && ['window', 'phone'].includes(escape.phase) && distance(player.position, stepTarget!) <= 4;
+      const floor = 13 + Math.round((player.position.y - ambushCenter.y) / 7.4);
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.toggle('urgent', failed);
+      this.el('film-sequence-line').textContent = ambushEscapeText(escape);
+      this.el('film-sequence-hint').textContent = failed ? 'J 手记 · 从最近楼层重试' : escape.paused ? '等候同行者释放角色'
+        : escape.phase === 'window' ? 'G 检查封死的窗户 · V 切换视角' : escape.phase === 'phone' ? '靠近 Morpheus · G 冒险联系 Tank'
+          : escape.phase === 'call' ? '通话中 · 鼠标观察 · V 切换视角' : escape.phase === 'forming' ? '留出窗前转角 · 等同伴移到两侧 · V 切换视角' : done ? 'G 继续旧楼剧情 · J 查看手记' : 'WASD 随队撤退 · Shift 奔跑 · V 切换视角';
+      this.el('sandbox-interact').classList.toggle('hidden', !acting && !done);
+      this.el('sandbox-nearby').textContent = failed ? '撤退路线被截断' : done ? '队伍已到达管线墙' : ambushGoal!.label;
+      this.el('sandbox-trace').textContent = escape.traced ? '手机信号已暴露八楼' : '硬线已切断';
+      this.el('sandbox-trace').classList.toggle('danger', failed || escape.traced);
+      this.el('sandbox-job').style.width = escape.phase === 'alarm' ? `${escape.elapsed / AMBUSH_ESCAPE.alarm * 100}%`
+        : escape.phase === 'call' ? `${escape.elapsed / AMBUSH_ESCAPE.call * 100}%` : '0';
+      document.getElementById('game-objective')!.textContent = '旧楼伏击 · 撤往八楼';
+      document.getElementById('game-objective-copy')!.textContent = failed ? '队伍被追兵截住 · J 从楼层检查点重试'
+        : done ? '已找到主排水管线墙 · 继续旧楼剧情' : `${floor} 楼 · ${ambushGoal!.label} · ${acting ? '按 G' : escape.phase === 'call' ? 'Tank 正在寻找结构图' : '与五名同伴一起撤离'}`;
+      if (failed || done || escape.phase === 'alarm' || escape.phase === 'call') this.el('sandbox-waypoint').textContent = '';
+      else {
+        const direction = Math.atan2(stepTarget!.x - player.position.x, stepTarget!.z - player.position.z) - player.rotation;
+        this.el('sandbox-waypoint').innerHTML = `<span style="transform:rotate(${-direction}rad)">↑</span>${ambushGoal!.label} <b>${Math.round(distance(stepTarget!, player.position))} m</b>`;
+      }
       return;
     }
     if (!journey.visiting && scene.id === 'm1_bridge' && journey.bridgeTail) {

@@ -2,10 +2,11 @@ import * as THREE from 'three';
 import type { AgentState, SandboxState, SandboxThreat, WorldNode, WorldStructure, WorldIncident, Vector3, CombatImpact, ChateauWeapon } from '@auto_matrix/shared';
 import { CharacterModels, weaponMuzzle, type CharacterRig } from '../agents/CharacterModel.js';
 import { newMotion } from '../agents/CharacterMotion.js';
+import { FILM_SETS, ambushRetreatRoot } from '@auto_matrix/shared';
 
 type WorldObject = WorldNode | WorldStructure | WorldIncident;
 interface Prop { group: THREE.Group; label: THREE.Sprite; data: WorldObject; accent: THREE.Mesh; }
-interface Enemy { group: THREE.Group; rig?: CharacterRig; kind: SandboxThreat['kind'] | 'escort'; character?: string; scene?: string; style?: ChateauWeapon; bornAt: number; replicate: THREE.Mesh; health: THREE.Mesh; label: THREE.Sprite; target: THREE.Vector3; telegraph: THREE.Mesh; aimLine: THREE.Line; hit?: number; impact?: number; shot?: number; fallen?: number; facing: number; }
+interface Enemy { group: THREE.Group; rig?: CharacterRig; kind: SandboxThreat['kind'] | 'escort'; character?: string; scene?: string; style?: ChateauWeapon; bornAt: number; replicate: THREE.Mesh; health: THREE.Mesh; label: THREE.Sprite; target: THREE.Vector3; telegraph: THREE.Mesh; aimLine: THREE.Line; hit?: number; impact?: number; shot?: number; fallen?: number; facing: number; ambushGuide?: { from: number; to: number; progress: number; elapsed: number }; }
 
 export class SandboxRenderer {
   private state?: SandboxState;
@@ -105,7 +106,13 @@ export class SandboxRenderer {
       if (enemy.fallen !== undefined) this.fallen.push(enemy);
       else { this.scene.remove(enemy.group); this.pool.push(enemy); }
     }
-    for (const threat of state.threats) this.updateEnemy(threat.id, threat.kind, threat.position, threat.health / threat.maxHealth, agents, threat.character, threat.scene);
+    for (const threat of state.threats) {
+      this.updateEnemy(threat.id, threat.kind, threat.position, threat.health / threat.maxHealth, agents, threat.character, threat.scene);
+      const enemy = this.enemies.get(threat.id)!, progress = threat.ambushPursuit, guide = enemy.ambushGuide;
+      if (progress === undefined) enemy.ambushGuide = undefined;
+      else if (!guide || progress < guide.to || progress - guide.progress > 5) enemy.ambushGuide = { from: progress, to: progress, progress, elapsed: .5 };
+      else if (progress !== guide.to) enemy.ambushGuide = { ...guide, from: guide.progress, to: progress, elapsed: 0 };
+    }
     for (const [id, mission] of Object.entries(state.missions)) if (mission.escort) this.updateEnemy(`escort:${id}`, 'escort', mission.escort.position, mission.escort.health / 100, agents);
   }
   private updateEnemy(id: string, kind: Enemy['kind'], position: Vector3, health: number, agents: Record<string, AgentState>, character?: string, scene?: string): void {
@@ -195,12 +202,17 @@ export class SandboxRenderer {
       const toward = aim ? new THREE.Vector3(aim.x, aim.y, aim.z).sub(enemy.group.position) : difference;
       if (toward.lengthSq() > .01) enemy.facing = Math.atan2(toward.x, toward.z);
       if (threat?.patrol) enemy.facing = threat.yaw ?? 0;
+      const previous = enemy.group.position.clone();
+      if (enemy.ambushGuide) {
+        const guide = enemy.ambushGuide; guide.elapsed = Math.min(.5, guide.elapsed + (running ? delta : 0));
+        guide.progress = THREE.MathUtils.lerp(guide.from, guide.to, guide.elapsed / .5);
+        const root = ambushRetreatRoot(guide.progress), center = FILM_SETS.film_ambush_house.center;
+        enemy.group.position.set(center.x + root.x, center.y + root.y, center.z + root.z); enemy.facing = root.yaw;
+      } else enemy.group.position.lerp(enemy.target, running ? 1 - Math.exp(-8 * delta) : 0);
       if (enemy.rig) {
         const turn = Math.atan2(Math.sin(enemy.facing - enemy.rig.root.rotation.y), Math.cos(enemy.facing - enemy.rig.root.rotation.y));
-        enemy.rig.root.rotation.y += turn * (1 - Math.exp(-12 * delta));
+        enemy.rig.root.rotation.y += turn * (enemy.ambushGuide && delta === 0 ? 1 : 1 - Math.exp(-12 * delta));
       }
-      const previous = enemy.group.position.clone();
-      enemy.group.position.lerp(enemy.target, running ? 1 - Math.exp(-8 * delta) : 0);
       const dist = enemy.group.position.distanceTo(camera.position);
       if (enemy.rig) this.models.animate(enemy.rig, running ? delta : 0, { speed: Math.min(8.4, previous.distanceTo(enemy.group.position) / Math.max(.001, delta)), grounded: true, verticalVelocity: 0, turn: 0,
         attack: enemy.kind !== 'soldier' && threat && tick - threat.lastStrike < 3 ? threat.lastStrike : undefined, armed: enemy.kind === 'soldier', weaponStyle: enemy.scene === 'm1_room303' ? 'hel_pistol' : undefined, shot: enemy.shot, combo: threat?.combo ?? 0, windingUp: threat?.attackAt !== undefined, hit: enemy.hit, impact: enemy.impact, chateauWeapon: threat?.weapon }, dist);

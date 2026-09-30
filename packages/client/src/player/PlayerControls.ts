@@ -7,6 +7,7 @@ import { spoonLessonSeat, oracleDepartureLocked } from '@auto_matrix/shared';
 import { FILM_SETS, OFFICE_CONTACT, LOBBY_FIRE_INTERVAL, RESCUE, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_TIMING, groundHeight, playerBlocked, stepPlayer, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, COMBAT_SKILLS, combatDisplace, PLAYER_WALK_SPEED, meleeReach, trainingRoot, matrixEscapePhaseLocked, matrixEscapePose, matrixEscapeRoot, theOnePhaseLocked, theOnePose, theOneRoot, sentinelMachinePose, type OfficePhone, type AwakeningPose, type FreewayRide, type AgentState, type PlayerInput, type Vector3, type WorldStructure, type CombatImpact, type SkillCast, type RescueLoadout } from '@auto_matrix/shared';
 import { lafayetteWelcomeCamera } from './LafayetteWelcomeCamera.js';
 import type { MotionInput } from '../agents/CharacterMotion.js';
+import { ambushCompanyStep } from '@auto_matrix/shared';
 import { AIR_RESCUE, governmentPose, airRescuePose, airRescueRoot, interrogationPose, meetingPose, meetingCarPose, meetingCarPoint, MEETING_TIMING } from '@auto_matrix/shared';
 import { officeClothing } from '@auto_matrix/shared';
 import { cabinSeat, MORNING, POD_RESCUE, podRescuePose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
@@ -58,6 +59,7 @@ export class PlayerControls {
   onHUD?: () => void;
   structures: WorldStructure[] = [];
   targets: Vector3[] = [];
+  ambushCompany: Vector3[] = [];
   firearm = false;
   weaponStyle?: RescueLoadout | 'hel_pistol';
   fireInterval = LOBBY_FIRE_INTERVAL;
@@ -558,6 +560,7 @@ export class PlayerControls {
       const boost = state.activeEffects.some(effect => ['speed_blur', 'agent_dodge', 'phase_shift'].includes(effect.visualEffect)) ? 1.8 : 1;
       const input = this.input(this.localJump);
       const attackScale = this.impulse || now - (this.motion.hit ?? -1000) < 220 ? 0 : (now - this.lastAttack) / 1000 < MELEE_COMBO[this.attackCombo].duration ? .4 : 1;
+      const previous = this.position;
       const result = stepPlayer(this.position, this.vy, { ...input, x: input.x * attackScale, z: input.z * attackScale }, Math.min(delta, 0.05), state.isInMatrix, this.structures, this.planar, boost);
       this.position = result.position; this.vy = result.verticalVelocity; this.planar = result.horizontalVelocity; this.localJump = false;
       if (this.impulse) {
@@ -565,6 +568,8 @@ export class PlayerControls {
         this.impulse.remaining -= delta;
         if (this.impulse.remaining <= 0) this.impulse = undefined;
       }
+      const separated = ambushCompanyStep(previous, this.position, this.ambushCompany);
+      if (separated !== this.position) { this.position = playerBlocked(separated, state.isInMatrix, 1.1, this.structures) ? previous : separated; this.planar = { x: 0, z: 0 }; this.vy = 0; }
     }
     if (performance.now() - this.lastSent >= 50) {
       this.send(this.input(this.networkJump && running && this.enabled));

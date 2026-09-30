@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { FILM_SETS, HOTEL_SURFACES, LAFAYETTE, hotelFloor, AMBUSH_FLOORS, AMBUSH_STAIRS, ambushFloor } from '@auto_matrix/shared';
+import { FILM_SETS, HOTEL_SURFACES, LAFAYETTE, hotelFloor, AMBUSH_FLOORS, AMBUSH_STAIRS, AMBUSH_STOREYS, ambushFloor } from '@auto_matrix/shared';
 import type { HeroRig } from './HeroModel.js';
 import type { CharacterRig } from './CharacterModel.js';
 import { reach } from './SpoonPerformance.js';
@@ -34,7 +34,7 @@ export function placeHotelFeet(rig: HeroRig): void {
   const origin = rig.root.getWorldPosition(new THREE.Vector3());
   const ambushCenter = FILM_SETS.film_ambush_house.center;
   const ambush = Math.abs(origin.x - ambushCenter.x) <= 9 && origin.z >= ambushCenter.z + 12 && origin.z <= ambushCenter.z + 34
-    && origin.y >= ambushCenter.y - 1 - AMBUSH_STAIRS.rise - .1 && origin.y <= ambushCenter.y - 1 + .1;
+    && origin.y >= ambushCenter.y - 1 - AMBUSH_STAIRS.rise * AMBUSH_STOREYS - .1 && origin.y <= ambushCenter.y - 1 + .1;
   const center = ambush ? ambushCenter : hotelCenter, base = ambush ? center.y - 1 : hotelBase;
   const x = origin.x - center.x, y = origin.y - base, z = origin.z - center.z;
   if (!ambush && (x < 30 || x > 48 || z < -8 || z > 26 || y < -.1 || y > LAFAYETTE.upper + .1)) return;
@@ -96,7 +96,7 @@ export function placeHotelFeet(rig: HeroRig): void {
 export function placeAmbushFeet(rig: CharacterRig): void {
   const center = FILM_SETS.film_ambush_house.center, base = center.y - 1;
   const origin = rig.root.getWorldPosition(new THREE.Vector3()), y = origin.y - base;
-  if (Math.abs(origin.x - center.x) > 9 || origin.z < center.z + 12 || origin.z > center.z + 34 || y < -AMBUSH_STAIRS.rise - .1 || y > .1) return;
+  if (Math.abs(origin.x - center.x) > 9 || origin.z < center.z + 12 || origin.z > center.z + 34 || y < -AMBUSH_STAIRS.rise * AMBUSH_STOREYS - .1 || y > .1) return;
   rig.root.updateWorldMatrix(true, true);
   let points = proceduralSoles.get(rig);
   if (!points) {

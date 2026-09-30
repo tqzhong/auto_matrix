@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { FILM_SETS, groundHeight, mirrorGuidePose, ambushRouteRoot, oracleCookieOwner, oracleReceptionRoot, officeClothing, type AmbushEscort, type AgentState, type CombatImpact, type FilmJourney } from '@auto_matrix/shared';
+import { FILM_SETS, groundHeight, mirrorGuidePose, ambushRouteRoot, ambushRetreatRoot, oracleCookieOwner, oracleReceptionRoot, officeClothing, type AmbushEscort, type AgentState, type CombatImpact, type FilmJourney } from '@auto_matrix/shared';
 import { trackingContact } from './TrackingContact.js';
 import { CharacterModels, weaponMuzzle, type CharacterRig } from './CharacterModel.js';
 import type { MotionInput } from './CharacterMotion.js';
@@ -22,7 +22,7 @@ interface Entry {
   speech?: { sprite: THREE.Sprite; age: number };
   mirrorGuide?: { from: number; to: number; progress: number; elapsed: number };
   oracleGuide?: { phase: 'approaching' | 'guiding' | 'returning'; from: number; to: number; progress: number; elapsed: number };
-  ambushGuide?: { stairCat?: true; role: AmbushEscort['role']; from: number; to: number; progress: number; elapsed: number };
+  ambushGuide?: { stairCat?: true; retreat?: true; role: AmbushEscort['role']; from: number; to: number; progress: number; elapsed: number };
 }
 
 export class AgentRenderer {
@@ -88,8 +88,8 @@ export class AgentRenderer {
     const escort = state.currentAction?.parameters.ambushEscort as AmbushEscort | undefined;
     if (escort) {
       const guide = entry.ambushGuide, progress = escort.progress;
-      if (!guide || guide.role !== escort.role || guide.stairCat !== escort.stairCat || progress < guide.to || progress - guide.progress > 5)
-        entry.ambushGuide = { stairCat: escort.stairCat, role: escort.role, from: progress, to: progress, progress, elapsed: .5 };
+      if (!guide || guide.role !== escort.role || guide.stairCat !== escort.stairCat || guide.retreat !== escort.retreat || progress < guide.to || progress - guide.progress > 5)
+        entry.ambushGuide = { stairCat: escort.stairCat, retreat: escort.retreat, role: escort.role, from: progress, to: progress, progress, elapsed: .5 };
       else if (progress !== guide.to) entry.ambushGuide = { ...guide, from: guide.progress, to: progress, elapsed: 0 };
     } else entry.ambushGuide = undefined;
     entry.state = state;
@@ -148,7 +148,7 @@ export class AgentRenderer {
         } else if (entry.ambushGuide) {
           const guide = entry.ambushGuide, before = guide.progress;
           guide.elapsed = Math.min(.5, guide.elapsed + delta * speed); guide.progress = THREE.MathUtils.lerp(guide.from, guide.to, guide.elapsed / .5);
-          const pose = ambushRouteRoot(guide.progress, guide.role, guide.stairCat), center = FILM_SETS.film_ambush_house.center;
+          const pose = guide.retreat ? ambushRetreatRoot(guide.progress, guide.role) : ambushRouteRoot(guide.progress, guide.role, guide.stairCat), center = FILM_SETS.film_ambush_house.center;
           entry.group.position.set(center.x + pose.x, center.y + pose.y, center.z + pose.z);
           guideHeading = (state.currentAction?.parameters.ambushEscort as AmbushEscort).watching ? state.rotation : pose.yaw;
           if (speed > 0 && delta > 0) guideSpeed = Math.abs(guide.progress - before) / (delta * speed);
@@ -177,6 +177,7 @@ export class AgentRenderer {
         turn: difference * 8, attack: state.currentAction?.type === 'attack' ? Number(state.currentAction.parameters.contactTick ?? state.currentAction.startedAt) : undefined,
         hit: entry.hit, impact: entry.impact, shot: entry.shot, windingUp: warning,
         armed: state.currentAction?.parameters.armed === true || !state.currentAction?.parameters.lobbyEntry && state.currentLocation === 'film_government_lobby' && ['neo', 'trinity'].includes(id),
+        ambushEscort: state.currentAction?.parameters.ambushEscort as MotionInput['ambushEscort'],
         crouching: state.currentAction?.parameters.crouching === true,
         seated: state.currentAction?.parameters.seated === true,
         floorSeated: state.currentAction?.parameters.floorSeated === true,

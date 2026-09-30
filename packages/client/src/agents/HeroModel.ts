@@ -19,7 +19,7 @@ import { WakeCallPerformance } from './WakeCallPerformance.js';
 import { enableSkinnedCulling } from './SkinnedBounds.js';
 import { wireTrackingElectrode } from './TrackingContact.js';
 import { placeHotelFeet } from './HotelFootPlacement.js';
-import { AMBUSH_STAIRS, ambushFloor } from '@auto_matrix/shared';
+import { AMBUSH_STAIRS, AMBUSH_STOREYS, ambushFloor } from '@auto_matrix/shared';
 import { placePodBody } from './PodLandingContact.js';
 import { cabinContact } from './CabinContact.js';
 import { ConstructPerformance } from './ConstructPerformance.js';
@@ -956,7 +956,7 @@ export class HeroModels {
     const spoonFloor = input.spoonLesson && spoonLessonSeat(input.spoonLesson) > 0 ? rig.root.getWorldPosition(new THREE.Vector3()).y + .025 : undefined;
     const ambushCenter = FILM_SETS.film_ambush_house.center, origin = rig.root.getWorldPosition(new THREE.Vector3());
     const onStairs = Math.abs(origin.x - ambushCenter.x) <= 9 && origin.z >= ambushCenter.z + 12 && origin.z <= ambushCenter.z + 34
-      && origin.y >= ambushCenter.y - 1 - AMBUSH_STAIRS.rise - .1 && origin.y <= ambushCenter.y - 1 + .1;
+      && origin.y >= ambushCenter.y - 1 - AMBUSH_STAIRS.rise * AMBUSH_STOREYS - .1 && origin.y <= ambushCenter.y - 1 + .1;
     if (delta <= 0 && spoonFloor === undefined && !onStairs || !rig.panels.some(panel => panel.mesh.visible)) return;
     const dt = Math.max(0, Math.min(delta, 1 / 30));
     // Analytic wind target plus damped springs; the waist is pinned. Thigh and

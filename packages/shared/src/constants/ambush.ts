@@ -4,16 +4,17 @@ export interface AmbushEncounter { elapsed: number; paused?: boolean }
 export const AMBUSH_REWRITE = 8.3;
 export const AMBUSH_SECONDS = 9.5;
 export const AMBUSH_CAT_STAIRS = { repeat: 6.8, rewrite: 13.4, seconds: 14.8, observation: { x: 11, y: 0, z: 31.8 } } as const;
-// Two playable flights around a caged lift. The corridor stays at its old height
-// so cat, wet-wall and bathroom checkpoints keep their coordinates.
+// The top corridor keeps its saved height. Five pairs of flights connect room
+// 1313 to the eighth-floor hall; the original entry is one floor below the cat.
 export const AMBUSH_STAIRS = { rise: 7.4, steps: 12, left: -5.5, right: 5.5, entry: { x: -5.5, z: 32 } } as const;
+export const AMBUSH_STOREYS = 5;
 export const AMBUSH_COMPANY = {
   morpheus: { offset: 12.6, x: -8.5, z: -17 }, switch: { offset: 8.4, x: -7.5, z: -12 }, apoc: { offset: 4.2, x: -10, z: -7.5 },
   trinity: { offset: -4.2, x: -6, z: -3 }, cypher: { offset: -8.4, x: -10, z: 1.5 },
 } as const;
 export type AmbushCompanion = keyof typeof AMBUSH_COMPANY;
 export interface AmbushApproach { ready: boolean; progress: Record<AmbushCompanion, number>; stairCat?: true }
-export interface AmbushEscort { role: AmbushCompanion; progress: number; watching: boolean; stairCat?: true }
+export interface AmbushEscort { role: AmbushCompanion; progress: number; watching: boolean; stairCat?: true; retreat?: true }
 export const AMBUSH_ROUTE = [
   { x: 5.5, y: -7.4, z: 32 }, { x: -5.5, y: -7.4, z: 32 },
   { x: -5.5, y: -7.4, z: 29 }, { x: -5.5, y: -3.7, z: 17 },
@@ -67,27 +68,36 @@ export function newAmbushApproach(): AmbushApproach {
   return { ready: false, stairCat: true, progress: Object.fromEntries(Object.entries(AMBUSH_COMPANY).map(([id, role]) => [id, 11 + role.offset])) as AmbushApproach['progress'] };
 }
 export interface AmbushSurface { x: number; z: number; width: number; depth: number; y: number }
-export const AMBUSH_FLOORS: AmbushSurface[] = [
-  { x: 0, z: -11, width: 44, depth: 46, y: 0 },
-  ...[-15.5, 15.5].map(x => ({ x, z: 20.5, width: 13, depth: 17, y: 0 })),
-  { x: 0, z: 31.5, width: 44, depth: 5, y: 0 },
-  { x: 0, z: 23, width: 18, depth: 22, y: -AMBUSH_STAIRS.rise },
-  { x: 0, z: 14.5, width: 18, depth: 5, y: -AMBUSH_STAIRS.rise / 2 },
-];
+export const AMBUSH_FLOORS: AmbushSurface[] = Array.from({ length: AMBUSH_STOREYS + 1 }, (_, storey) => {
+  const y = -storey * AMBUSH_STAIRS.rise;
+  return [{ x: 0, z: -11, width: 44, depth: 46, y },
+    ...[-15.5, 15.5].map(x => ({ x, z: 20.5, width: 13, depth: 17, y })),
+    { x: 0, z: 31.5, width: 44, depth: 5, y }];
+}).flat();
+AMBUSH_FLOORS.push({ x: 0, z: 23, width: 18, depth: 22, y: -AMBUSH_STAIRS.rise * AMBUSH_STOREYS });
 export const AMBUSH_TREADS: AmbushSurface[] = [];
-for (let step = 0; step < AMBUSH_STAIRS.steps; step++) {
-  AMBUSH_TREADS.push({ x: AMBUSH_STAIRS.left, z: 28.5 - step, width: 5, depth: 1, y: -AMBUSH_STAIRS.rise + (step + 1) * AMBUSH_STAIRS.rise / 24 },
-    { x: AMBUSH_STAIRS.right, z: 17.5 + step, width: 5, depth: 1, y: -AMBUSH_STAIRS.rise / 2 + (step + 1) * AMBUSH_STAIRS.rise / 24 });
+for (let storey = 0; storey < AMBUSH_STOREYS; storey++) {
+  const y = -storey * AMBUSH_STAIRS.rise;
+  AMBUSH_FLOORS.push({ x: 0, z: 14.5, width: 18, depth: 5, y: y - AMBUSH_STAIRS.rise / 2 });
+  for (let step = 0; step < AMBUSH_STAIRS.steps; step++) {
+    AMBUSH_TREADS.push({ x: AMBUSH_STAIRS.left, z: 28.5 - step, width: 5, depth: 1, y: y - AMBUSH_STAIRS.rise + (step + 1) * AMBUSH_STAIRS.rise / 24 },
+      { x: AMBUSH_STAIRS.right, z: 17.5 + step, width: 5, depth: 1, y: y - AMBUSH_STAIRS.rise / 2 + (step + 1) * AMBUSH_STAIRS.rise / 24 });
+  }
 }
 AMBUSH_FLOORS.push(...AMBUSH_TREADS);
 export const AMBUSH_RAILS: (AmbushSurface & { height: number })[] = [
-  ...[-9, 9].map(x => ({ x, z: 20.5, width: .18, depth: 17, y: 0, height: 3.1 })),
-  { x: 0, z: 12, width: 18, depth: .18, y: 0, height: 3.1 },
+  ...Array.from({ length: AMBUSH_STOREYS + 1 }, (_, storey) => {
+    const y = -storey * AMBUSH_STAIRS.rise;
+    return [...[-9, 9].map(x => ({ x, z: 20.5, width: .18, depth: 17, y, height: 3.1 })),
+      { x: 0, z: 12, width: 18, depth: .18, y, height: 3.1 }];
+  }).flat(),
   { x: -3, z: 29, width: 12, depth: .18, y: 0, height: 3.1 },
-  { x: 0, z: 12, width: 18, depth: .18, y: -3.7, height: 3.1 },
-  { x: 0, z: 17, width: 6, depth: .18, y: -3.7, height: 3.1 },
-  ...[-9, 9].flatMap(x => [{ x, z: 14.5, width: .18, depth: 5, y: -3.7, height: 3.1 },
-    { x, z: 31.5, width: .18, depth: 5, y: -7.4, height: 3.1 }]),
+  ...Array.from({ length: AMBUSH_STOREYS }, (_, storey) => {
+    const y = -storey * AMBUSH_STAIRS.rise - AMBUSH_STAIRS.rise / 2;
+    return [{ x: 0, z: 12, width: 18, depth: .18, y, height: 3.1 },
+      { x: 0, z: 17, width: 6, depth: .18, y, height: 3.1 },
+      ...[-9, 9].map(x => ({ x, z: 14.5, width: .18, depth: 5, y, height: 3.1 }))];
+  }).flat(),
   ...AMBUSH_TREADS.flatMap(tread => [-1, 1].map(side => ({ x: tread.x + side * tread.width / 2, z: tread.z, width: .16, depth: tread.depth, y: tread.y, height: 3.1 }))),
 ];
 export function ambushFloor(x: number, z: number, y: number): number | undefined {

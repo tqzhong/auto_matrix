@@ -12,7 +12,7 @@ import { Reflector } from 'three/addons/objects/Reflector.js';
 import { createMirrorSurface } from './MirrorSurface.js';
 import { trackingContact } from '../agents/TrackingContact.js';
 import { MIRROR_FRAME } from '@auto_matrix/shared';
-import { ambushApproachTarget } from '@auto_matrix/shared';
+import { ambushApproachTarget, ambushEscapeTarget } from '@auto_matrix/shared';
 import { ORACLE_WAITING_FURNITURE, ORACLE_KITCHEN_CHAIRS, ORACLE_ENTRANCE, ORACLE_ENTRANCE_WALLS, oracleArrivalDoor, oracleArrivalPending, oracleArrivalTarget } from '@auto_matrix/shared';
 import { SpoonModel } from '../agents/SpoonModel.js';
 import { FILM_SETS, FILM_SCENE_BY_ID, OPENING_ESCAPE, openingTruckPose, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, PILL_ROOM, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, mirrorSilver, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, GARAGE, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, EXILES, CHATEAU, awakeningLocked, trainingLocked, phoneLocked, windowOpening, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type FilmJourney, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
@@ -559,6 +559,7 @@ export class FilmSetRenderer {
     if (journey && phoneLocked(journey)) this.marker.visible = false;
     if (journey && windowOpening(journey)) this.marker.visible = false;
     if (journey?.scene === 'm1_dejavu' && journey.step === 0 && journey.ambush) this.marker.visible = false;
+    if (!journey?.visiting && journey?.scene === 'm1_dejavu' && journey.ambushEscape && ['alarm', 'call', 'failed', 'done'].includes(journey.ambushEscape.phase)) this.marker.visible = false;
     if (this.marker.visible && step && scene) {
       const bridgeDoor = scene.id === 'm1_bridge' && journey?.step === 1 && journey.bridgeArrival?.parkedRoadTime !== undefined
         ? meetingBoardPoint(journey.bridgeArrival) : undefined;
@@ -566,8 +567,10 @@ export class FilmSetRenderer {
         ? meetingRoot(journey.meeting, 'neo') : undefined;
       const arrivalGoal = scene.id === 'm1_spoon' && oracleArrivalPending(journey?.oracle?.arrival) ? oracleArrivalTarget(journey!.oracle!.arrival!) : undefined;
       const center = FILM_SETS.film_ambush_house.center;
-      const ambushGoal = scene.id === 'm1_dejavu' && journey?.step === 0 && journey.ambushApproach && !journey.ambushApproach.ready && player
-        ? ambushApproachTarget(player.position.x - center.x, player.position.y - center.y, player.position.z - center.z, journey.ambushApproach.stairCat) : undefined;
+      const ambushGoal = scene.id === 'm1_dejavu' && journey?.ambushEscape && player
+        ? ambushEscapeTarget(journey.ambushEscape, player.position.x - center.x, player.position.y - center.y, player.position.z - center.z)
+        : scene.id === 'm1_dejavu' && journey?.step === 0 && journey.ambushApproach && !journey.ambushApproach.ready && player
+          ? ambushApproachTarget(player.position.x - center.x, player.position.y - center.y, player.position.z - center.z, journey.ambushApproach.stairCat) : undefined;
       const position = ambushGoal ? { x: center.x + ambushGoal.x, y: center.y + ambushGoal.y, z: center.z + ambushGoal.z }
         : arrivalGoal ? filmPosition(scene.set, arrivalGoal.x, arrivalGoal.z) : bridgeDoor ? filmPosition(scene.set, bridgeDoor.x, bridgeDoor.z)
         : carSeat ? filmPosition(scene.set, carSeat.x, carSeat.z)

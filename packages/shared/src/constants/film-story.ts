@@ -18,6 +18,7 @@ import { TRUCKS } from './trucks.js';
 import { distance } from '../utils/index.js';
 import { SPOON_LESSON, ORACLE_ENTRANCE, ORACLE_RECEPTION_CAST, spoonLessonLocked, oracleDepartureLocked } from './oracle.js';
 import { AMBUSH_STAIRS, AMBUSH_CAT_STAIRS } from './ambush.js';
+import { ambushEscapeTarget } from './ambush-escape.js';
 
 export type FilmCue = 'night' | 'contact' | 'office' | 'club' | 'awakening' | 'training' | 'oracle' | 'infiltration' | 'combat' | 'the_one' | 'zion' | 'swarm' | 'restaurant' | 'chateau' | 'chase' | 'source' | 'mobil' | 'siege' | 'bane' | 'farewell' | 'final' | 'dawn';
 export interface FilmStep {
@@ -127,6 +128,7 @@ export interface FilmJourney {
   hotel?: import('./lafayette.js').HotelApproach;
   ambush?: import('./ambush.js').AmbushEncounter;
   ambushApproach?: import('./ambush.js').AmbushApproach;
+  ambushEscape?: import('./ambush-escape.js').AmbushEscape;
   sentinel?: import('./sentinel.js').SentinelEncounter;
   interlude?: import('./interlude.js').InterludeEncounter;
   betrayal?: import('./betrayal.js').BetrayalEncounter;
@@ -451,6 +453,10 @@ export function oracleActing(journey: FilmJourney): boolean {
       || oracleDepartureLocked(journey.oracle?.departure) || Boolean(journey.oracle?.consultation && !['waiting', 'done'].includes(journey.oracle.consultation.phase))));
 }
 export function filmStepPosition(scene: FilmScene, step: FilmStep, journey?: FilmJourney): Vector3 {
+  if (scene.id === 'm1_dejavu' && journey?.ambushEscape && journey.step > 0) {
+    const target = ambushEscapeTarget(journey.ambushEscape), position = filmPosition(scene.set, target.x, target.z);
+    position.y += target.y; return position;
+  }
   if (scene.id === 'm1_dejavu' && step === scene.steps[0] && journey?.ambushApproach?.stairCat) {
     const target = AMBUSH_CAT_STAIRS.observation; return filmPosition(scene.set, target.x, target.z);
   }

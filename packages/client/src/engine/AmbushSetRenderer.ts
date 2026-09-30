@@ -1,12 +1,15 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { AMBUSH_WALLS, AMBUSH_SEALS, AMBUSH_FLOORS, AMBUSH_RAILS, AMBUSH_STAIRS, ambushCat, ambushFloor, type FilmJourney, type WorldStructure } from '@auto_matrix/shared';
+import { FILM_SETS, AMBUSH_WALLS, AMBUSH_SEALS, AMBUSH_FLOORS, AMBUSH_RAILS, AMBUSH_STAIRS, AMBUSH_STOREYS, AMBUSH_ESCAPE, ambushCat, ambushFloor, type FilmJourney, type WorldStructure } from '@auto_matrix/shared';
 import { reach } from '../agents/SpoonPerformance.js';
 
 /** The changed masonry uses the same footprints as the saved, authoritative barriers. */
 export class AmbushSetRenderer {
   private root = new THREE.Group();
   private seals = new THREE.Group();
+  private eighthSeals = new THREE.Group();
+  private lowerWindows: THREE.Mesh[] = [];
+  private gunfire = new THREE.PointLight(0xffcb80, 0, 22, 2);
   private cat = new THREE.Group();
   private body = new THREE.Group();
   private legs: THREE.Group[] = [];
@@ -37,7 +40,7 @@ export class AmbushSetRenderer {
     // The upper floor and ceiling both have a real aperture above the lift and
     // stairs. A continuous slab here would cut through every climbing body.
     for (const surface of AMBUSH_FLOORS.slice(0, 4)) this.box(plaster, surface.x, 9.2, surface.z, surface.width, .4, surface.depth);
-    this.makeStairwell(wood, iron, plaster);
+    this.makeStairwell(wood, iron);
     for (const z of [-34, 34]) this.box(plaster, 0, 4.5, z, 44, 9, .7);
     this.box(plaster, 22, 4.5, 0, .7, 9, 68);
     // The side window is a genuine opening, so its light can disappear with the brickwork.
@@ -90,9 +93,12 @@ export class AmbushSetRenderer {
       const side = i % 2 ? 1 : -1; const x = side * (10.9 + i % 5 * .23); const z = -31 + i * 11 % 62;
       const chip = this.box(trim, x, .065, z, .2 + i % 3 * .14, .1, .12 + i % 4 * .11); chip.rotation.y = i * 2.4;
     }
+    this.makeLowerFloors(plaster, wood, trim, iron, windowMaterial);
     this.batch();
-    this.root.add(this.seals, this.cat);
-    this.brickwork(); this.makeCat(); this.makeBathroom();
+    this.root.add(this.seals, this.eighthSeals, this.cat, this.gunfire);
+    this.gunfire.position.set(-17, 3, -15);
+    this.eighthSeals.position.y = AMBUSH_ESCAPE.window.y;
+    this.brickwork(this.seals, 9); this.brickwork(this.eighthSeals, 7.4); this.makeCat(); this.makeBathroom();
     this.daylight = new THREE.SpotLight(0xdce5c8, 1250, 58, .72, .35, 2);
     this.daylight.position.set(-24, 8, -17); this.daylight.target.position.set(3, .5, -10);
     this.daylight.castShadow = true; this.daylight.shadow.mapSize.set(1024, 1024); this.daylight.shadow.normalBias = .05;
@@ -113,7 +119,7 @@ export class AmbushSetRenderer {
   private box(material: THREE.Material, x: number, y: number, z: number, w: number, h: number, d: number, parent = this.root): THREE.Mesh {
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material); mesh.position.set(x, y, z); mesh.castShadow = mesh.receiveShadow = true; parent.add(mesh); return mesh;
   }
-  private makeStairwell(wood: THREE.Material, iron: THREE.Material, plaster: THREE.Material): void {
+  private makeStairwell(wood: THREE.Material, iron: THREE.Material): void {
     for (const rail of AMBUSH_RAILS) {
       const alongX = rail.width > rail.depth, length = Math.max(rail.width, rail.depth);
       this.box(wood, rail.x, rail.y + rail.height - .1, rail.z, alongX ? length : .24, .2, alongX ? .24 : length);
@@ -123,23 +129,19 @@ export class AmbushSetRenderer {
     }
     // Closed cage bars are closer together than a player's collision diameter.
     // The lift is scenery, not an unlocked shortcut through the stair flights.
-    const low = -AMBUSH_STAIRS.rise, high = 9.4;
+    const low = -AMBUSH_STAIRS.rise * AMBUSH_STOREYS, high = 9.4;
     for (const side of [-1, 1]) {
       for (let z = 18; z <= 28; z += .5) this.box(iron, side * 2.5, (low + high) / 2, z, .09, high - low, .09);
       for (let x = -2.5; x <= 2.5; x += .5) this.box(iron, x, (low + high) / 2, 23 + side * 5, .09, high - low, .09);
-      for (const y of [low + .2, -3.7, .2, 4.5, 9.2]) {
+      for (const y of [...Array.from({ length: AMBUSH_STOREYS * 2 + 1 }, (_, floor) => low + floor * 3.7 + .2), 4.5, 9.2]) {
         this.box(iron, side * 2.5, y, 23, .18, .18, 10);
         this.box(iron, 0, y, 23 + side * 5, 5.2, .18, .18);
       }
     }
     this.box(iron, 0, low - .35, 23, 5, .7, 10);
     for (const x of [-1.25, 1.25]) this.cylinder(iron, x, (low + high) / 2, 23, .035, high - low);
-    for (const side of [-1, 1]) {
-      this.box(plaster, side * 9.3, low / 2, 23, .6, -low, 22);
-    }
-    this.box(plaster, 0, low / 2, 34, 18, -low, .6);
-    this.box(plaster, 0, low / 2, 12, 18, -low, .6);
-    for (const [x, y, direction] of [[AMBUSH_STAIRS.left, -7.4, -1], [AMBUSH_STAIRS.right, -3.7, 1]]) for (const side of [-1, 1]) {
+    for (let floor = 0; floor < AMBUSH_STOREYS; floor++) for (const [x, base, direction] of [[AMBUSH_STAIRS.left, -7.4, -1], [AMBUSH_STAIRS.right, -3.7, 1]]) for (const side of [-1, 1]) {
+      const y = base - floor * AMBUSH_STAIRS.rise;
       const beam = this.box(iron, x + side * 2.1, y + 1.65, 23, .22, .35, Math.hypot(12, 3.7));
       beam.rotation.x = -direction * Math.atan2(3.7, 12);
     }
@@ -150,12 +152,59 @@ export class AmbushSetRenderer {
     const light = new THREE.PointLight(0xdbe2ca, 240, 32, 2); light.position.set(0, 7.6, 20.5); this.root.add(light);
     const lower = new THREE.PointLight(0xd4c99d, 100, 20, 2); lower.position.set(-5.5, -2, 31.5); this.root.add(lower);
   }
-  private brickwork(): void {
+  private makeLowerFloors(plaster: THREE.Material, wood: THREE.Material, trim: THREE.Material, iron: THREE.Material, glass: THREE.Material): void {
+    const lamp = this.mat(0xc8b587, .5); lamp.emissive.setHex(0x8e7846); lamp.emissiveIntensity = .65;
+    for (let floor = 1; floor <= AMBUSH_STOREYS; floor++) {
+      const y = -floor * AMBUSH_STAIRS.rise, height = AMBUSH_STAIRS.rise;
+      for (const z of [-34, 34]) this.box(plaster, 0, y + height / 2, z, 44, height, .7);
+      this.box(plaster, 22, y + height / 2, 0, .7, height, 68);
+      for (const [z, depth] of [[11.75, 44.5], [-26.75, 14.5]]) this.box(plaster, -22, y + height / 2, z, .7, height, depth);
+      this.box(plaster, -22, y + .8, -15, .7, 1.6, 9);
+      const window = this.box(glass, -22.1, y + 4.4, -15, .1, 5.6, 9); this.lowerWindows.push(window);
+      for (const z of [-19.5, -17.25, -15, -12.75, -10.5]) this.box(wood, -21.8, y + 4.4, z, .3, 5.8, .15);
+      for (const level of [1.6, 4.4, 7.2]) this.box(wood, -21.8, y + level, -15, .3, .18, 9.3);
+      for (const wall of AMBUSH_WALLS) {
+        this.box(plaster, wall.x, y + height / 2, wall.z, wall.width, height, wall.depth);
+        for (const level of [.24, 3.15, 7.05]) this.box(wood, wall.x, y + level, wall.z, wall.width + .13, level === .24 ? .48 : .15, wall.depth + .13);
+      }
+      for (const x of [-3.15, 3.15]) this.box(wood, x, y + 3.2, -20.6, .35, 6.4, 1);
+      this.box(wood, 0, y + 6.5, -20.6, 6.7, .4, 1); this.box(plaster, 0, y + 7.05, -21, 6, .7, .6);
+      for (const z of [-20, -12]) this.box(wood, -13, y + 3.5, z, .7, 7, .3);
+      for (const side of [-1, 1]) for (const z of [4, 18]) {
+        this.box(wood, side * 12.6, y + 3.3, z, .14, 6.6, 4.7);
+        this.box(iron, side * 12.4, y + 3.3, z + 1.5, .18, .24, .15);
+      }
+      for (const z of [8, 31.5]) this.box(lamp, -11, y + 6, z, .45, .3, .45);
+      this.box(trim, 0, y + .08, 31.5, 1.3, .15, .3);
+      this.sign(`${13 - floor}`, 17, y + 4.3, 33.58, Math.PI, 2.4, 2);
+    }
+    this.sign('13 / 1313', -12.6, 5.7, -17.5, Math.PI / 2, 2.8, 1.2);
+    this.sign('8 / 808', -12.6, AMBUSH_ESCAPE.window.y + 5.1, -17.5, Math.PI / 2, 2.8, 1.2);
+    const pipe = this.mat(0x535b53, .45, .6), y = AMBUSH_ESCAPE.wetwall.y;
+    for (const x of [-20.4, -18.7, -16.9]) {
+      this.cylinder(pipe, x, y + 3.6, -32.6, x === -18.7 ? .19 : .11, 7);
+      for (const level of [1.4, 4.8]) this.box(iron, x, y + level, -32.45, .5, .15, .5);
+    }
+    for (const x of [-21.4, -15.3]) this.box(wood, x, y + 3.6, -31.6, .16, 7.2, .18);
+    for (let i = 0; i < 14; i++) this.box(wood, -21.2, y + .3 + i * .49, -31.45, .7 + i % 3 * .27, .16, .15).rotation.z = (i % 3 - 1) * .07;
+    const light = new THREE.PointLight(0xcfbd94, 145, 35, 2); light.position.set(-5, y + 6, -14); this.root.add(light);
+  }
+  private sign(text: string, x: number, y: number, z: number, yaw: number, width: number, height: number): void {
+    if (typeof document === 'undefined') return;
+    const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 128;
+    const context = canvas.getContext('2d')!; context.fillStyle = '#302f28'; context.fillRect(0, 0, 256, 128);
+    context.strokeStyle = '#a29b81'; context.lineWidth = 3; context.strokeRect(5, 5, 246, 118);
+    context.fillStyle = '#d9d1b4'; context.font = '52px serif'; context.textAlign = 'center'; context.textBaseline = 'middle'; context.fillText(text, 128, 64);
+    const map = new THREE.CanvasTexture(canvas); map.colorSpace = THREE.SRGBColorSpace; this.textures.push(map);
+    const material = new THREE.MeshBasicMaterial({ map }); this.materials.push(material);
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, height), material); mesh.position.set(x, y, z); mesh.rotation.y = yaw; mesh.userData.sign = true; this.root.add(mesh);
+  }
+  private brickwork(parent: THREE.Group, height: number): void {
     const mortar = this.mat(0x6f7264, 1); const brick = this.mat(0x645e49, .95);
     for (const wall of AMBUSH_SEALS) {
-      this.box(mortar, wall.x, wall.height / 2, wall.z, wall.width, wall.height, wall.depth, this.seals);
+      this.box(mortar, wall.x, height / 2, wall.z, wall.width, height, wall.depth, parent);
       const side = wall.width < wall.depth; const length = side ? wall.depth : wall.width;
-      const rows = 18; const columns = Math.ceil(length / .9) + 1;
+      const rows = Math.floor(height / .5); const columns = Math.ceil(length / .9) + 1;
       const mesh = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), brick, rows * columns);
       const object = new THREE.Object3D(); const color = new THREE.Color(); let index = 0;
       for (let row = 0; row < rows; row++) for (let col = 0; col < columns; col++) {
@@ -167,7 +216,7 @@ export class AmbushSetRenderer {
         object.scale.set(side ? .71 : span, .445, side ? span : .71); object.rotation.set(0, 0, 0); object.updateMatrix();
         mesh.setMatrixAt(index, object.matrix); mesh.setColorAt(index++, color.setScalar(.68 + (row * 7 + col * 3) % 9 * .037));
       }
-      mesh.count = index; mesh.castShadow = mesh.receiveShadow = true; this.seals.add(mesh);
+      mesh.count = index; mesh.castShadow = mesh.receiveShadow = true; parent.add(mesh);
     }
   }
   private makeCat(): void {
@@ -252,6 +301,11 @@ export class AmbushSetRenderer {
   update(journey: FilmJourney | undefined, structures: WorldStructure[], elapsed: number): void {
     const sealed = structures.some(s => s.film?.scene === 'm1_dejavu');
     this.seals.visible = sealed; this.window.visible = !sealed; this.daylight.intensity = sealed ? 0 : 1250;
+    this.eighthSeals.visible = structures.some(s => s.film?.scene === 'm1_dejavu' && Math.abs(s.position.y - AMBUSH_ESCAPE.window.y - FILM_SETS.film_ambush_house.center.y) < .1);
+    this.lowerWindows.forEach((window, floor) => { window.visible = floor !== AMBUSH_STOREYS - 1 || !this.eighthSeals.visible; });
+    const escape = journey?.scene === 'm1_dejavu' && !journey.visiting ? journey.ambushEscape : undefined;
+    this.gunfire.intensity = escape?.phase === 'alarm' && escape.elapsed >= AMBUSH_ESCAPE.shots && escape.elapsed < AMBUSH_ESCAPE.mouse
+      ? Math.sin(escape.elapsed * 51) > .2 ? 900 : 0 : 0;
     const observing = journey?.scene === 'm1_dejavu' && journey.step === 0 && !journey.visiting && journey.ambush;
     const target = observing ? journey.ambush!.elapsed : 0;
     const dt = Math.min(.1, Math.max(0, elapsed - this.previousTime)); this.previousTime = elapsed;
@@ -310,7 +364,7 @@ export class AmbushSetRenderer {
   private batch(): void {
     const batches = new Map<THREE.Material, THREE.BufferGeometry[]>();
     for (const child of [...this.root.children]) {
-      if (!(child instanceof THREE.Mesh) || child === this.window || Array.isArray(child.material)) continue;
+      if (!(child instanceof THREE.Mesh) || child === this.window || this.lowerWindows.includes(child) || child.userData.sign || Array.isArray(child.material)) continue;
       child.updateMatrix(); const source = child.geometry.clone().applyMatrix4(child.matrix); const geometry = source.index ? source.toNonIndexed() : source;
       if (source !== geometry) source.dispose(); const group = batches.get(child.material) ?? []; group.push(geometry); batches.set(child.material, group);
       child.geometry.dispose(); child.removeFromParent();

@@ -25,6 +25,8 @@ import { INTERLUDE_CAST, interludeDuration, interludeKind, interludeLocked, inte
 import { ORACLE_VISIT, ORACLE_DEPARTURE, oracleDepartureRoot, oracleDepartureLocked, oracleDepartureText, oracleDepartureTarget, ORACLE_KITCHEN_CHAIRS, SPOON_LESSON, ORACLE_RECEPTION, ORACLE_RECEPTION_CAST, ORACLE_WAITING_CAST, oracleReceptionRoot, oracleReceptionLength, oracleReceptionText, spoonLessonLocked, spoonLessonRoot, spoonLessonBend, spoonLessonText, oracleLegacyChoice, oracleVisitDuration, oracleVisitLocked, oracleVisitRoot, oracleVisitText, type OracleVisitRole } from '@auto_matrix/shared';
 import { ORACLE_ENTRANCE, oracleArrivalPending, oracleArrivalDoor, oracleArrivalLength, oracleArrivalRoot, oracleArrivalText } from '@auto_matrix/shared';
 import { AMBUSH_CAT_STAIRS, AMBUSH_COMPANY, newAmbushApproach, ambushRouteRoot, ambushRouteLength, ambushRouteProgress, type AmbushCompanion } from '@auto_matrix/shared';
+import { AMBUSH_ESCAPE, AMBUSH_WINDOW_PROGRESS, AMBUSH_RETREAT_LANDINGS, newAmbushEscape, ambushRetreatRoot, ambushRetreatLength, ambushRetreatShift, ambushRetreatProgress, ambushRetreatGoal, ambushEscapeText, ambushCompanyBlocked, ambushCompanyStep } from '@auto_matrix/shared';
+import { combatDisplace } from '@auto_matrix/shared';
 import { BETRAYAL, betrayalDuration, betrayalLocked, betrayalRoot, betrayalText, type BetrayalEncounter, type BetrayalRole } from '@auto_matrix/shared';
 import { RESCUE, rescueDuration, rescueLocked, rescueRoot, rescueText, type RescueLoadout, type RescuePreparation, type RescueRole } from '@auto_matrix/shared';
 import { GOVERNMENT_RESCUE, governmentLocked, governmentRoot, governmentText, type GovernmentRescueEncounter, type GovernmentRescueRole } from '@auto_matrix/shared';
@@ -1471,7 +1473,7 @@ export class FilmStorySystem {
     if (this.scene?.set === 'film_ambush_house') migrate(this.state?.checkpoint);
     migrate(this.state?.returnPosition);
     const actor = this.state && this.world.agents.get(this.state.actor);
-    if (actor) this.ambushFrame(actor, 0, this.world.simulationTick);
+    if (actor) { this.ambushFrame(actor, 0, this.world.simulationTick); this.ambushEscapeFrame(actor, 0, this.world.simulationTick); }
   }
   restoreOracleSpace(): void {
     const center = FILM_SETS.film_oracle_home.center;
@@ -1889,7 +1891,7 @@ export class FilmStorySystem {
   }
   ambushFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
-    if (!state || !this.controls(agent) || state.visiting || state.scene !== 'm1_dejavu') return;
+    if (!state || !this.controls(agent) || state.visiting || state.scene !== 'm1_dejavu' || state.ambushEscape) return;
     const roles = Object.keys(AMBUSH_COMPANY) as AmbushCompanion[];
     const occupied = roles.some(id => this.world.agents.get(id)?.controller);
     const approach = state.ambushApproach, delta = Math.max(0, Math.min(.1, dt)), center = FILM_SETS[this.scene!.set].center;
@@ -1933,6 +1935,144 @@ export class FilmStorySystem {
       : time < 4 ? '一只黑猫从门前经过，伸展身体，继续向右。' : time < 8.3 ? '同一只猫，又做了同样的动作。Trinity 突然停住：系统正在改变这里。' : '外面的光线消失了。门与窗被砖墙封死，原来的出口已经不在了。';
     this.sealAmbush();
     if (time >= seconds) this.advance(this.step!.text!, agent, tick);
+  }
+  ambushEscapeFrame(agent: AgentState, dt: number, tick: number): void {
+    const state = this.state, escape = state?.ambushEscape;
+    if (!state || !escape || state.scene !== 'm1_dejavu' || state.visiting || !this.controls(agent)) return;
+    const roles = ['apoc', 'switch', 'morpheus', 'trinity', 'cypher'] as const;
+    const occupied = [...roles, 'mouse'].some(id => this.world.agents.get(id)?.controller);
+    escape.paused = occupied;
+    const delta = occupied || !agent.controller || agent.status !== 'alive' || ['failed', 'done'].includes(escape.phase) ? 0 : Math.max(0, Math.min(.1, dt));
+    const center = FILM_SETS.film_ambush_house.center;
+    if (escape.phase === 'alarm') {
+      escape.elapsed = Math.min(AMBUSH_ESCAPE.alarm, escape.elapsed + delta);
+      const mouse = this.world.agents.get('mouse');
+      if (mouse && !mouse.controller) {
+        if (!escape.mouseDead) {
+          this.place(mouse, this.scene!, filmPosition(this.scene!.set, -18, -15)); mouse.rotation = Math.PI / 2;
+          mouse.currentAction = { type: 'idle', parameters: { resolved: true, armed: true }, startedAt: tick, duration: 1, progress: 0 };
+        }
+        if (escape.elapsed >= AMBUSH_ESCAPE.mouse) { escape.mouseDead = true; mouse.status = 'dead'; mouse.health = 0; mouse.currentAction = null; }
+      }
+      if (escape.elapsed >= AMBUSH_ESCAPE.alarm) { escape.phase = 'descending'; escape.elapsed = 0; }
+    }
+    const neo = ambushRetreatProgress(agent.position.x - center.x, agent.position.y - center.y, agent.position.z - center.z);
+    const wall = { x: center.x + AMBUSH_ESCAPE.wetwall.x, y: center.y + AMBUSH_ESCAPE.wetwall.y, z: center.z + AMBUSH_ESCAPE.wetwall.z };
+    for (const role of roles) {
+      const actor = this.world.agents.get(role); if (!actor || actor.controller || this.unavailable(role)) continue;
+      const before = { ...actor.position }, waiting = ['alarm', 'call', 'failed', 'done'].includes(escape.phase);
+      // The two companions on the left wait for the returning right-hand line
+      // to enter its stair flight. Otherwise both lines block the narrow mouth.
+      const predecessor = role === 'trinity' ? 'morpheus' : role === 'cypher' ? 'trinity' : undefined;
+      const merged = !predecessor || escape.progress[predecessor] - ambushRetreatShift(predecessor) >= 8.5;
+      if (!waiting && merged && delta > 0) {
+        const goal = ['forming', 'wetwall'].includes(escape.phase) ? ambushRetreatLength(role) : ambushRetreatGoal(role, neo, escape.phase);
+        const next = Math.min(Math.max(escape.progress[role], goal), escape.progress[role] + Math.max(4.2, Math.hypot(agent.velocity.x, agent.velocity.z) * 1.08) * delta);
+        const root = ambushRetreatRoot(next, role), candidate = { x: center.x + root.x, y: center.y + root.y, z: center.z + root.z };
+        const clear = !ambushCompanyBlocked(before, candidate, [agent.position]);
+        if (clear && !playerBlocked(candidate, true, 1.1, this.sandbox().structures)
+          && !ambushCompanyBlocked(before, candidate, roles.filter(other => other !== role).map(other => this.world.agents.get(other)!.position))) escape.progress[role] = next;
+      }
+      const root = ambushRetreatRoot(escape.progress[role], role);
+      this.place(actor, this.scene!, { x: center.x + root.x, y: center.y + root.y, z: center.z + root.z });
+      const watching = ['window', 'phone', 'call'].includes(escape.phase) || escape.progress[role] >= ambushRetreatLength(role) - .001;
+      actor.rotation = watching ? Math.atan2(agent.position.x - actor.position.x, agent.position.z - actor.position.z) : root.yaw;
+      actor.velocity = delta > 0 ? { x: (actor.position.x - before.x) / delta, y: (actor.position.y - before.y) / delta, z: (actor.position.z - before.z) / delta } : { x: 0, y: 0, z: 0 };
+      actor.currentAction = { type: 'idle', parameters: { resolved: true, armed: role !== 'morpheus' || escape.phase !== 'call',
+        ambushEscort: { role, progress: escape.progress[role], watching, retreat: true },
+        ...(role === 'morpheus' && escape.phase === 'call' ? { phone: { phase: 'connected', elapsed: escape.elapsed } } : {}) }, startedAt: tick, duration: 1, progress: 0 };
+    }
+    const companyAt = (phase: 'window' | 'wetwall') => roles.every(role => escape.progress[role] >= (phase === 'wetwall'
+      ? ambushRetreatLength(role) : ambushRetreatGoal(role, AMBUSH_WINDOW_PROGRESS, phase)) - .001);
+    if (escape.phase === 'descending' && neo >= AMBUSH_WINDOW_PROGRESS - 4 && Math.abs(agent.position.y - center.y - AMBUSH_ESCAPE.window.y) < .3 && companyAt('window')) escape.phase = 'window';
+    if (escape.phase === 'call') {
+      escape.elapsed = Math.min(AMBUSH_ESCAPE.call, escape.elapsed + delta);
+      if (escape.elapsed >= AMBUSH_ESCAPE.call) {
+        escape.phase = 'forming'; escape.elapsed = 0;
+        this.advance('Tank 找到八楼的主排水管线墙。手机追踪已经暴露这一层；队伍必须去 808 室。', agent, tick);
+        this.ambushEscapeCheckpoint(agent, 8, 'forming');
+      }
+    }
+    if (escape.phase === 'forming' && companyAt('wetwall')) escape.phase = 'wetwall';
+    for (const [i, pursuer] of escape.pursuers.entries()) {
+      const id = `film:ambush:pursuer:${i}`;
+      let threat = this.sandbox().threats.find(t => t.id === id);
+      if (!threat && pursuer.spawned) { pursuer.health = 0; continue; }
+      if (!threat && pursuer.health > 0) {
+        const root = ambushRetreatRoot(pursuer.progress);
+        threat = { id, scene: 'm1_dejavu', kind: 'soldier', patrol: true, position: { x: center.x + root.x, y: center.y + root.y, z: center.z + root.z },
+          yaw: root.yaw, matrix: true, health: pursuer.health, maxHealth: 64, target: agent.id, stunUntil: tick, lastStrike: tick };
+        this.sandbox().threats.push(threat); pursuer.spawned = true;
+      }
+      if (!threat) continue;
+      pursuer.health = threat.health;
+      if (tick < threat.stunUntil) {
+        const root = ambushRetreatRoot(pursuer.progress);
+        if (distance(threat.position, { x: center.x + root.x, y: center.y + root.y, z: center.z + root.z }) > .001)
+          pursuer.progress = pursuer.progress < 0 ? threat.position.z - center.z - 31.8
+            : ambushRetreatProgress(threat.position.x - center.x, threat.position.y - center.y, threat.position.z - center.z);
+        delete threat.ambushPursuit; continue;
+      }
+      if (delta > 0 && !['alarm', 'failed', 'done'].includes(escape.phase) && tick >= threat.stunUntil) {
+        const before = ambushRetreatRoot(pursuer.progress), dx = center.x + before.x - threat.position.x, dz = center.z + before.z - threat.position.z, gap = Math.hypot(dx, dz);
+        if (gap > .08) {
+          const position = combatDisplace(threat.position, { x: dx / gap, y: 0, z: dz / gap }, Math.min(gap, AMBUSH_ESCAPE.speed * delta), true, this.sandbox().structures);
+          position.y = groundHeight(position, true);
+          if (!playerBlocked(position, true, 1.1, this.sandbox().structures)) threat.position = position;
+          delete threat.ambushPursuit; continue;
+        }
+        const next = Math.min(ambushRetreatLength(), pursuer.progress + (escape.traced ? AMBUSH_ESCAPE.tracedSpeed : AMBUSH_ESCAPE.speed) * delta);
+        const root = ambushRetreatRoot(next), candidate = { x: center.x + root.x, y: center.y + root.y, z: center.z + root.z };
+        if (!playerBlocked(candidate, true, 1.1, this.sandbox().structures)
+          && !ambushCompanyBlocked(threat.position, candidate, [agent.position, ...roles.map(role => this.world.agents.get(role)!.position)])
+          && escape.pursuers.every((other, index) => index === i || other.health <= 0 || next <= other.progress - 3 || next >= other.progress + 3)) {
+          pursuer.progress = next; threat.position = candidate; threat.yaw = root.yaw;
+        }
+      }
+      threat.ambushPursuit = pursuer.progress;
+    }
+    const cutOff = escape.pursuers.some((pursuer, i) => {
+      const threat = this.sandbox().threats.find(t => t.id === `film:ambush:pursuer:${i}`);
+      if (!threat || pursuer.health <= 0 || tick < threat.stunUntil) return false;
+      return [agent, ...roles.map(role => this.world.agents.get(role)!)].some(actor => meleeReach(threat.position, threat.yaw ?? 0, actor.position, 3, true, this.sandbox().structures));
+    });
+    if (delta > 0) escape.caught = cutOff ? escape.caught + delta : 0;
+    if (escape.caught >= .8 && !['alarm', 'failed', 'done'].includes(escape.phase)) {
+      escape.phase = 'failed'; agent.health = 0; agent.status = 'dead'; agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentAction = null;
+    }
+    if (delta > 0 && escape.phase === 'descending') for (const landing of AMBUSH_RETREAT_LANDINGS) {
+      if (landing.floor < escape.checkpoint.floor && neo >= landing.progress - .5 && Math.abs(agent.position.y - center.y - landing.point.y) < .15)
+        this.ambushEscapeCheckpoint(agent, landing.floor, 'descending');
+    }
+    this.sealAmbush(); state.lastText = ambushEscapeText(escape);
+    if (escape.phase === 'wetwall' && companyAt('wetwall') && distance(agent.position, wall) < 3) {
+      escape.phase = 'done'; this.advance(ambushEscapeText(escape), agent, tick);
+    }
+  }
+  private ambushEscapeCheckpoint(agent: AgentState, floor: number, phase: 'descending' | 'phone' | 'forming' | 'wetwall'): void {
+    const state = this.state!, escape = state.ambushEscape!;
+    state.checkpoint = { ...agent.position };
+    escape.checkpoint = { floor, phase, progress: { ...escape.progress }, pursuers: escape.pursuers.map(p => ({ ...p })), traced: escape.traced };
+  }
+  private ambushEscapeAct(agent: AgentState, tick: number): string {
+    const escape = this.state!.ambushEscape!, center = FILM_SETS.film_ambush_house.center;
+    if ([...Object.keys(AMBUSH_COMPANY), 'mouse'].some(id => this.world.agents.get(id)?.controller)) escape.paused = true;
+    if (escape.paused || ['alarm', 'descending', 'call', 'forming', 'wetwall', 'failed', 'done'].includes(escape.phase)) return ambushEscapeText(escape);
+    if (escape.phase === 'window') {
+      const point = AMBUSH_ESCAPE.window;
+      if (distance(agent.position, { x: center.x + point.x, y: center.y + point.y, z: center.z + point.z }) > 4) return '走到八楼左侧被砖墙封死的窗前，再按 G。';
+      escape.phase = 'phone'; this.ambushEscapeCheckpoint(agent, 8, 'phone');
+    } else {
+      const morpheus = this.world.agents.get('morpheus')!;
+      if (distance(agent.position, morpheus.position) > 4) return '靠近 Morpheus，再按 G 决定冒险使用手机。';
+      escape.phase = 'call'; escape.elapsed = 0; escape.traced = true;
+    }
+    this.ambushEscapeFrame(agent, 0, tick); return this.state!.lastText;
+  }
+  ambushMovementPosition(agent: AgentState, before: AgentState['position'], after: AgentState['position']): AgentState['position'] {
+    if (!this.controls(agent) || this.state?.scene !== 'm1_dejavu' || !this.state.ambushEscape || this.state.visiting) return after;
+    const position = ambushCompanyStep(before, after, Object.keys(AMBUSH_COMPANY).map(id => this.world.agents.get(id)!).filter(actor => actor.status === 'alive').map(actor => actor.position));
+    return playerBlocked(position, true, 1.1, this.sandbox().structures) ? before : position;
   }
   private ensureBetrayal(kind: BetrayalEncounter['kind']): BetrayalEncounter {
     const state = this.state!;
@@ -2996,10 +3136,11 @@ export class FilmStorySystem {
     const state = this.state;
     const sealed = (state?.ambush?.elapsed ?? 0) >= (state?.ambushApproach?.stairCat ? AMBUSH_CAT_STAIRS.rewrite : AMBUSH_REWRITE) || state?.completed.includes('m1_dejavu') || state?.scene === 'm1_dejavu' && state.step > 0;
     if (!sealed) return;
-    for (const [i, wall] of AMBUSH_SEALS.entries()) {
-      const id = `film:ambush:seal:${i}`; if (this.sandbox().structures.some(s => s.id === id)) continue;
-      this.sandbox().structures.push({ id, kind: 'barricade', owner: 'matrix', position: filmPosition('film_ambush_house', wall.x, wall.z), matrix: true, health: 1,
-        film: { scene: 'm1_dejavu', width: wall.width, depth: wall.depth, height: wall.height } });
+    for (const floor of state?.ambushEscape ? [0, AMBUSH_ESCAPE.window.y] : [0]) for (const [i, wall] of AMBUSH_SEALS.entries()) {
+      const id = `film:ambush:seal:${floor}:${i}`; if (this.sandbox().structures.some(s => s.id === id || floor === 0 && s.id === `film:ambush:seal:${i}`)) continue;
+      const position = filmPosition('film_ambush_house', wall.x, wall.z); position.y += floor;
+      this.sandbox().structures.push({ id, kind: 'barricade', owner: 'matrix', position, matrix: true, health: 1,
+        film: { scene: 'm1_dejavu', width: wall.width, depth: wall.depth, height: floor === 0 ? wall.height : 7.4 } });
     }
   }
   oracleFrame(agent: AgentState, focus: boolean, dt: number, tick: number): void {
@@ -4540,6 +4681,18 @@ export class FilmStorySystem {
       return `回访${FILM_SETS[visited.set].name}。J 可返回当前剧情，回访不会改写进度。`;
     }
     if (target === 'retry') {
+      if (state.scene === 'm1_dejavu' && state.ambushEscape) {
+        const escape = state.ambushEscape, checkpoint = escape.checkpoint;
+        if (Object.keys(AMBUSH_COMPANY).some(id => this.world.agents.get(id)?.controller)) return '同行者正由另一位玩家控制，请等他释放角色后再重试。';
+        escape.phase = checkpoint.phase; escape.elapsed = 0; escape.caught = 0; escape.attempts++;
+        escape.progress = { ...checkpoint.progress }; escape.pursuers = checkpoint.pursuers.map(p => ({ progress: p.progress, health: p.health })); escape.traced = checkpoint.traced;
+        this.sandbox().threats = this.sandbox().threats.filter(t => !t.id.startsWith('film:ambush:pursuer:'));
+        state.step = ['forming', 'wetwall'].includes(checkpoint.phase) ? 2 : 1; delete state.started; delete state.fighting;
+        agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
+        this.place(agent, this.scene, state.checkpoint); agent.velocity = { x: 0, y: 0, z: 0 };
+        this.ambushEscapeFrame(agent, 0, tick);
+        return `已回到${checkpoint.floor}楼检查点。队伍和追兵恢复该处状态，Mouse 的死亡保留。`;
+      }
       if (state.scene === 'm1_dejavu' && state.step === 0 && state.ambushApproach) {
         agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
         this.place(agent, this.scene, state.checkpoint); this.ambushFrame(agent, 0, tick);
@@ -5107,6 +5260,7 @@ export class FilmStorySystem {
       if (target !== 'act') return state.lastText;
       return this.workdayAct(agent, tick);
     }
+    if (state.scene === 'm1_dejavu' && state.ambushEscape) return target === 'act' ? this.ambushEscapeAct(agent, tick) : ambushEscapeText(state.ambushEscape);
     if (state.downloadSetup && state.downloadSetup.phase !== 'ready') {
       const setup = state.downloadSetup;
       if (this.world.agents.get('tank')?.controller) return 'Tank 正由另一位玩家控制，进度保留。';
@@ -5445,7 +5599,7 @@ export class FilmStorySystem {
     delete state.training;
     delete state.dojo;
     state.ambushApproach = scene.id === 'm1_dejavu' ? newAmbushApproach() : undefined;
-    if (scene.id === 'm1_dejavu') delete state.ambush;
+    if (scene.id === 'm1_dejavu') { delete state.ambush; delete state.ambushEscape; }
     delete state.workday;
     delete state.contact;
     delete state.wakeCall;
@@ -6110,6 +6264,9 @@ export class FilmStorySystem {
     }
     if (state.scene === 'm1_bug' && state.step === 0 && state.office?.outcome === 'escaped') text = '扫描完成，没有发现追踪装置。Trinity 收起仪器，确认接头安全，继续前往 Morpheus 的房间。';
     state.lastText = text; state.step++; state.checkpoint = { ...agent.position }; delete state.started; delete state.fighting;
+    if (state.scene === 'm1_dejavu' && state.step === 1 && state.ambushApproach?.stairCat) {
+      state.ambushEscape = newAmbushEscape(); this.ambushEscapeFrame(agent, 0, tick); return;
+    }
     if (state.scene === 'm1_cabin' && state.step === 1) agent.currentAction = null;
     if (state.scene === 'm1_cabin' && state.step === 2) {
       const center = FILM_SETS[this.scene!.set].center;
@@ -6307,6 +6464,7 @@ export class FilmStorySystem {
     if (this.catch.active(actor)) return;
     if (state.matrixEscape && ['m1_subway', 'm1_city_chase'].includes(state.scene)) return;
     if (state.theOne && ['m1_death', 'm1_return', 'm1_final_call'].includes(state.scene)) return;
+    if (state.scene === 'm1_dejavu' && state.ambushEscape) { this.ambushEscapeFrame(actor, 0, tick); return; }
     const step = this.step; if (!step) return;
     if (state.scene === 'm1_wake_up' || state.scene === 'm1_morning') { delete state.started; return; }
     if (state.scene === 'm1_commute' && state.step === 1) {

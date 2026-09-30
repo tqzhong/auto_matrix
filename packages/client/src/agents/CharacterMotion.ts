@@ -16,6 +16,7 @@ export interface MotionInput {
   cast?: number;
   skill?: CombatSkillId;
   armed?: boolean;
+  ambushEscort?: import('@auto_matrix/shared').AmbushEscort;
   shot?: number;
   crouching?: boolean;
   seated?: boolean;
@@ -266,7 +267,8 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   if (input.armed && guard < .1 && !casting) for (const [index, arm] of arms.entries()) {
     if (input.weaponStyle === 'hel_pistol' && index === 1) continue;
     const kickback = Math.max(0, 1 - state.shotAge / .18) ** 2;
-    arm.shoulder = -1.16 + clamp(input.aimPitch ?? 0, -.9, .9) * .82 - recoil * .1 - kickback * .16; arm.elbow = -.4 - kickback * .12; arm.outward *= .4; arm.grip = .9;
+    arm.shoulder = input.ambushEscort?.retreat ? -.14 : -1.16 + clamp(input.aimPitch ?? 0, -.9, .9) * .82 - recoil * .1 - kickback * .16;
+    arm.elbow = input.ambushEscort?.retreat ? -.5 : -.4 - kickback * .12; arm.outward *= .4; arm.grip = .9;
   }
   for (let i = 0; i < 2; i++) {
     legs[i].hip = mix(legs[i].hip, -1.36, state.seated); legs[i].knee = mix(legs[i].knee, 1.46, state.seated); legs[i].ankle = mix(legs[i].ankle, -.1, state.seated);

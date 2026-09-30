@@ -1,5 +1,6 @@
 import { metacortexLiftLocked } from '@auto_matrix/shared';
 import { spoonLessonBend } from '@auto_matrix/shared';
+import { AMBUSH_ESCAPE } from '@auto_matrix/shared';
 import { reloadedLocked } from '@auto_matrix/shared';
 import { morningLocked } from '@auto_matrix/shared';
 import * as THREE from 'three';
@@ -224,6 +225,15 @@ export class Engine {
   private phoneRingAt = -10000;
   setSandbox(state: SandboxState, agents: Record<string, AgentState>): void {
     const before = this.sandbox?.neoLife?.journey; const after = state.neoLife?.journey;
+    if (after?.scene === 'm1_dejavu' && !after.visiting && after.actor === this.playerControls?.id && this.running && !after.ambushEscape?.paused) {
+      const previous = before?.scene === after.scene ? before.ambushEscape : undefined, current = after.ambushEscape;
+      if (current?.phase === 'alarm' && !previous) this.audio.governmentSound('rotor');
+      if (current?.phase === 'alarm' && previous?.phase === 'alarm') {
+        for (const beat of [AMBUSH_ESCAPE.shots, 3.2, 3.6, 4]) if (previous.elapsed < beat && current.elapsed >= beat) this.audio.governmentSound('gunfire');
+      }
+      if (current?.mouseDead && previous && !previous.mouseDead) this.audio.theOneSound('flatline');
+      if (current?.phase === 'call' && previous?.phase === 'phone') { this.audio.governmentSound('phone'); this.audio.dialogue(); }
+    }
     if (after?.scene === 'm1_construct' && before?.scene !== 'm1_construct') this.lastTelevisionPreviewImage = undefined;
     if (after?.scene === 'm1_wake_up' && !after.visiting && after.actor === this.playerControls?.id && before?.scene === after.scene && this.running) {
       const previous = before.contact; const current = after.contact;
@@ -427,6 +437,8 @@ export class Engine {
       this.playerControls.phone = journey?.actor === this.playerControls.id ? heldPhone(journey) : undefined;
       this.playerControls.ambushObservation = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_dejavu'
         && journey.step === 0 && journey.ambushApproach?.stairCat ? journey.ambush?.elapsed : undefined;
+      this.playerControls.ambushCompany = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_dejavu' && journey.ambushEscape
+        ? Object.values(agents).filter(actor => actor.status === 'alive' && Boolean((actor.currentAction?.parameters.ambushEscort as { retreat?: boolean } | undefined)?.retreat)).map(actor => actor.position) : [];
       this.playerControls.truckRescue = Boolean(journey?.actor === this.playerControls.id && journey.scene === 'm2_trucks' && !journey.visiting && ['rescue', 'rescued'].includes(journey.trucks?.phase ?? ''));
       const gunner = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm3_dock_battle' && journey.dockGunnery?.phase === 'firing';
       this.playerControls.gunner = gunner;

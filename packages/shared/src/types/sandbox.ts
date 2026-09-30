@@ -37,6 +37,7 @@ export interface SandboxThreat {
   openingUntil?: number;
   combo?: number;
   patrol?: boolean;
+  ambushPursuit?: number;
   yaw?: number;
   scene?: string;
   campaign?: 'neo';

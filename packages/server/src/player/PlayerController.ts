@@ -150,6 +150,7 @@ export class PlayerController {
     this.sandbox?.life.film.sentinelFrame(agent, { movement: 0, sprint: false, jump: false }, 0, tick);
     this.sandbox?.life.film.interludeFrame(agent, 0, tick);
     this.sandbox?.life.film.oracleFrame(agent, false, 0, tick);
+    this.sandbox?.life.film.ambushEscapeFrame(agent, 0, tick);
     this.sandbox?.life.film.betrayalFrame(agent, 0, tick);
     this.sandbox?.life.film.rescueFrame(agent, 0, tick);
     this.sandbox?.life.film.governmentFrame(agent, false, 0, tick);
@@ -376,6 +377,8 @@ export class PlayerController {
           session.impulse = undefined;
         }
       }
+      const separated = this.sandbox?.life.film.ambushMovementPosition(agent, previous, agent.position);
+      if (separated && separated !== agent.position) { agent.position = separated; session.planar = { x: 0, z: 0 }; session.vy = 0; }
       agent.velocity = { x: (agent.position.x - previous.x) / dt, y: session.vy, z: (agent.position.z - previous.z) / dt };
       if (session.palm) {
         session.palm.remaining -= dt;
@@ -407,6 +410,7 @@ export class PlayerController {
       }
       this.sandbox?.life.film.oracleFrame(agent, input.focus === true, dt, tick);
       this.sandbox?.life.film.ambushFrame(agent, dt, tick);
+      this.sandbox?.life.film.ambushEscapeFrame(agent, dt, tick);
       this.sandbox?.life.film.matrixEscapeAction(agent, tick);
       this.sandbox?.life.film.theOneAction(agent, tick);
       this.sandbox?.life.film.reloaded.action(agent, tick);

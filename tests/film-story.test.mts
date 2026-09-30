@@ -1,5 +1,6 @@
 import { CABIN, CABIN_ROUTE_LENGTH, cabinGuidePose, RELOADED, RELOADED_FINALE } from '@auto_matrix/shared';
 import assert from 'node:assert/strict';
+import { AMBUSH_STAIRS } from '@auto_matrix/shared';
 import test from 'node:test';
 import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, RESCUE, RESCUE_LOADOUTS, GOVERNMENT_RESCUE, AIR_RESCUE, MATRIX_ESCAPE, THE_ONE, SMITH_FINALE, OPENING_HOTEL, OPENING_ESCAPE, PILL_ROOM, PILL_TIMING, MIRROR_TOUCH, MIRROR_SEAT, MIRROR_TRINITY, MIRROR_TIMING, DOCK_GUNNERY, awakeningPose, mirrorSilver, filmReflections, filmStepActionReady, filmStepPosition, filmEntry, filmPosition, groundHeight, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, newGarageEscape, stepGarageEscape, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
@@ -2425,6 +2426,38 @@ test('the entire film route completes through interactions, driving and real com
       assert.equal(state.oracle.arrival.phase, 'done', 'the complete route enters through the door before the spoon lesson');
     }
     for (let index = 0; index < scene.steps.length; index++) {
+      if (scene.id === 'm1_dejavu' && index > 0 && state.ambushEscape) {
+        const walk = (x: number, y: number, z: number) => {
+          const target = filmPosition(scene.set, x, z); target.y += y;
+          for (let frame = 0; frame < 650; frame++) {
+            const actor = h.actor(), dx = target.x - actor.position.x, dz = target.z - actor.position.z, gap = Math.hypot(dx, dz);
+            if (gap < .3 && Math.abs(actor.position.y - target.y) < .15) break;
+            h.players.receiveInput('film-player', { x: dx / Math.max(.01, gap), z: dz / Math.max(.01, gap), yaw: Math.atan2(dx, dz), jump: false, sprint: true, sequence: ++sequence });
+            h.players.step(.1, true, h.tick()); assert.ok(frame < 649, `ambush descent blocked at ${x}, ${y}, ${z}: ${state.lastText}`);
+          }
+          h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false, sequence: ++sequence }); h.players.step(.1, true, h.tick());
+        };
+        if (index === 1) {
+          for (let frame = 0; frame < 65 && state.ambushEscape.phase === 'alarm'; frame++) h.players.step(.1, true, h.tick());
+          for (let floor = 0; floor < 5; floor++) {
+            const y = -floor * AMBUSH_STAIRS.rise;
+            for (const [x, height, z] of [[5.5, y, 31.8], [5.5, y - 3.7, 14.5], [-5.5, y - 3.7, 14.5], [-5.5, y - 7.4, 31.8]]) walk(x, height, z);
+          }
+          for (const [x, z] of [[-11, 31.8], [-11, 8], [0, 8], [0, -16], [-18, -16]]) walk(x, -37, z);
+          for (let frame = 0; frame < 180 && state.ambushEscape.phase === 'descending'; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.ambushEscape.phase, 'window'); h.command('act');
+          walk(-18, -37, -13.2); walk(-5.4, -37, -13.2); h.command('act');
+          for (let frame = 0; frame < 56; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.step, 2); assert.equal(state.ambushEscape.phase, 'forming');
+          for (let frame = 0; frame < 180 && state.ambushEscape.phase === 'forming'; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.ambushEscape.phase, 'wetwall');
+        } else {
+          for (const [x, z] of [[-18, -13.2], [-18, -27]]) walk(x, -37, z);
+          for (let frame = 0; frame < 180 && state.ambushEscape.phase !== 'done'; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.ambushEscape.phase, 'done'); assert.equal(state.step, scene.steps.length);
+        }
+        continue;
+      }
       if (scene.id === 'm1_dejavu' && index === 0 && state.ambushApproach) {
         const companyRoute = [[-5.5, 30.8], [-5.5, 14.5], [5.5, 14.5], [5.5, 31.8], [11, 31.8]];
         if (!state.ambushApproach.stairCat) companyRoute.push([11, 8], [0, 8], [0, -8]);

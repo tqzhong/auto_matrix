@@ -22,6 +22,7 @@ export function filmCharacterFates(journey: FilmJourney): Record<string, FilmFat
   for (const [scene, changes] of Object.entries(FILM_CONSEQUENCES)) {
     if (journey.completed.includes(scene)) Object.assign(fates, changes);
   }
+  if (journey.ambushEscape?.mouseDead) fates.mouse = 'dead';
   // Saves from before the shipboard discovery still reached the Logos fight.
   if (journey.completed.includes('m3_bane') && !journey.completed.includes('m3_maggie_discovery')) fates.maggie = 'dead';
   return fates;
