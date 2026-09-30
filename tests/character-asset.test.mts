@@ -8,6 +8,8 @@ import { advanceMotion, newMotion, type MotionInput } from '../packages/client/s
 import { PhoneModel } from '../packages/client/src/agents/PhoneModel.js';
 import { OfficeSetRenderer } from '../packages/client/src/engine/OfficeSetRenderer.js';
 import { NebDeckRenderer } from '../packages/client/src/engine/NebDeckRenderer.js';
+import { createLoungeChair } from '../packages/client/src/engine/LoungeChair.js';
+import { CONSTRUCT, constructGuidePose } from '@auto_matrix/shared';
 import { CABIN, MEDICAL_OPERATOR, cabinBodyPose } from '@auto_matrix/shared';
 import { APARTMENT, FILM_SETS, PILL_ROOM, PILL_TIMING, RECOVERY_BED, awakeningPose, farewellPose, filmPosition, pillRoot, recoveryBodyPose, recoveryCrewPose, type PillGesture, OFFICE_WINDOW, OFFICE_LEDGE_OFFSET, officeWindowPose, officeCrossingPose, type FilmJourney } from '@auto_matrix/shared';
 import { INTERROGATION_ROOM, interrogationRoot } from '@auto_matrix/shared';
@@ -960,6 +962,59 @@ test('Trinity resumes in her club costume and restores her jacket after leaving'
     models.animate(rig, advanceMotion(motion, patient, 0), motion, patient, 0);
     assert.equal(jacket.visible, false, 'restoring the jacket must still respect the existing patient visibility rule');
   } finally { models.dispose(); }
+});
+
+test('Neo touches the Construct leather with both palms while Morpheus sits with grounded feet', async () => {
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: typeof loadGeometry }).load = loadGeometry;
+  const leather = new THREE.MeshStandardMaterial(); const chair = createLoungeChair(leather);
+  const center = FILM_SETS.film_white_construct.center;
+  chair.position.set(center.x + CONSTRUCT.chairX.neo, center.y - 1, center.z + CONSTRUCT.chair.z); chair.rotation.y = Math.PI;
+  chair.updateMatrixWorld(true);
+  try {
+    const neo = (await models.create('neo'))!;
+    neo.root.position.set(center.x + CONSTRUCT.neo.x, center.y - 1, center.z + CONSTRUCT.neo.z); neo.root.rotation.y = CONSTRUCT.neo.yaw;
+    const motion = newMotion(); const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, clubClothes: true,
+      performance: 'construct' as const, reveal: { kind: 'construct' as const, elapsed: 3, role: 'neo' as const, started: true } };
+    models.animate(neo, advanceMotion(motion, input, 0), motion, input, 0); neo.root.updateMatrixWorld(true);
+    assert.equal(motion.seated, 0, 'Neo stands outside the chair instead of floating in a seated pose');
+    const palms: THREE.Vector3[] = [];
+    for (const side of ['L', 'R']) {
+      const palm = neo.bones.get(`wrist_${side}`)!.localToWorld(new THREE.Vector3(side === 'R' ? .09 : -.09, -.18, .02));
+      palms.push(palm);
+      const ray = new THREE.Raycaster(palm.clone().add(new THREE.Vector3(0, .12, 0)), new THREE.Vector3(0, -1, 0), 0, .3);
+      const hit = ray.intersectObject(chair)[0];
+      assert.ok(hit, `${side} palm misses the chair crown at ${palm.clone().sub(new THREE.Vector3(center.x, center.y - 1, center.z)).toArray()}`);
+      assert.ok(Math.abs(hit.distance - .12) < .09, `${side} palm floats above or penetrates the leather by ${hit.distance - .12}`);
+    }
+    assert.ok(palms[0].distanceTo(palms[1]) > .45, 'the hands cannot stack on top of each other');
+    const morpheus = (await models.create('morpheus'))!; const point = new THREE.Vector3();
+    for (const elapsed of [9, 9.4, 9.8, 10.2, 10.6, 11]) {
+      const root = constructGuidePose(elapsed); morpheus.root.position.set(root.x, 0, root.z); morpheus.root.rotation.y = root.yaw;
+      const motion = newMotion(), input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0,
+        construct: { phase: 'approach' as const, elapsed, role: 'morpheus' as const } };
+      models.animate(morpheus, advanceMotion(motion, input, 0), motion, input, 0); morpheus.root.updateMatrixWorld(true);
+      let low = Infinity;
+      for (const { mesh } of morpheus.wardrobe) if (mesh instanceof THREE.SkinnedMesh && mesh.visible) {
+        mesh.skeleton.update();
+        for (let i = 0; i < mesh.geometry.attributes.position.count; i++) {
+          mesh.getVertexPosition(i, point).applyMatrix4(mesh.matrixWorld); low = Math.min(low, point.y);
+        }
+      }
+      assert.ok(low > -.04 && low < .1, `Morpheus feet leave the floor at ${elapsed}s: ${low}`);
+    }
+    const lessonMotion = newMotion(); const lessonInput = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0,
+      performance: 'construct' as const, reveal: { kind: 'construct' as const, role: 'morpheus' as const, elapsed: 3, started: true } };
+    models.animate(morpheus, advanceMotion(lessonMotion, lessonInput, 0), lessonMotion, lessonInput, 0); morpheus.root.updateMatrixWorld(true);
+    const remote = morpheus.root.getObjectByName('construct-held-remote')!;
+    const top = remote.localToWorld(new THREE.Vector3(0, -.225, 0)), base = remote.localToWorld(new THREE.Vector3(0, .225, 0));
+    const towardTV = new THREE.Vector3(CONSTRUCT.television.x, 1.8, CONSTRUCT.television.z).sub(base).normalize();
+    assert.ok(top.clone().sub(base).normalize().dot(towardTV) > .7, 'the remote points toward the CRT instead of above Morpheus’s head');
+  } finally {
+    models.dispose(); const materials = new Set<THREE.Material>();
+    chair.traverse(object => { if (object instanceof THREE.Mesh) { object.geometry.dispose(); materials.add(object.material); } });
+    materials.forEach(material => material.dispose());
+  }
 });
 
 test('Trinity’s fitted outfit has no open waist during the club conversation', async () => {

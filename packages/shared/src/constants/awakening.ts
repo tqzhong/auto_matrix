@@ -1,6 +1,7 @@
 import type { FilmJourney } from './film-story.js';
 import { PILL_ROOM } from './pills.js';
 import { CABIN, cabinBodyPose, cabinSeat } from './cabin.js';
+import { CONSTRUCT } from './construct.js';
 
 export type AwakeningKind = 'mirror' | 'connect' | 'disconnect' | 'rescue' | 'recovery' | 'cabin' | 'core' | 'construct' | 'desert';
 export interface AwakeningBeat { kind: AwakeningKind; elapsed: number; started?: boolean; approach?: { x: number; z: number } }
@@ -56,7 +57,7 @@ export const RECOVERY_CREW = {
   trinity: { start: { x: -10.5, z: -15.5, yaw: 2.7 }, side: -1.32 },
   approach: 6.8, contact: 10.35, release: 11.7,
 } as const;
-export const CONSTRUCT_REVEAL = { neo: { x: 4.4, z: -6.2, yaw: Math.PI }, morpheus: { x: -4.4, z: -6.2, yaw: Math.PI }, television: { x: 0, z: -16 } } as const;
+export const CONSTRUCT_REVEAL = { neo: CONSTRUCT.neo, morpheus: { x: -4.4, z: -6.2, yaw: Math.PI }, television: CONSTRUCT.television } as const;
 export const DESERT_REVEAL = { neo: { x: 1.8, z: -28, yaw: Math.PI }, morpheus: { x: -3.2, z: -26.8, yaw: Math.PI }, towersZ: -70 } as const;
 export type AwakeningPose = 'touch' | 'connect' | 'pod' | 'fall' | 'float' | 'lift' | 'recover' | 'cabin' | 'core' | 'construct' | 'desert';
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
@@ -103,6 +104,7 @@ export function recoveryCrewPose(gesture: RecoveryCrewGesture): { x: number; z: 
 }
 
 export function awakeningLocked(journey: FilmJourney): boolean {
+  if (!journey.visiting && journey.scene === 'm1_construct' && journey.constructArrival) return journey.constructArrival.phase !== 'approach';
   return !journey.visiting && (journey.scene === 'm1_pod' || ['m1_mirror', 'm1_recovery', 'm1_cabin', 'm1_construct', 'm1_desert'].includes(journey.scene)
     && !!journey.awakening && (journey.awakening.elapsed < AWAKENING_SECONDS[journey.awakening.kind]
       || journey.scene === 'm1_construct' && journey.step === 1 && journey.awakening.kind === 'construct' && journey.awakening.started !== false));
@@ -165,12 +167,13 @@ export function awakeningPose(beat?: AwakeningBeat): { x: number; y: number; z: 
         : '连接完成。舱内的光逐渐被无边的白色取代。' };
   }
   if (beat?.kind === 'construct') {
-    const text = beat.started === false ? '白色没有边界。两把旧皮椅与一台电视像被直接写进空间。按 G 请 Morpheus 开始说明。'
-      : beat.elapsed < 2.4 ? '老式电视亮起雪花。Morpheus 正准备切换画面。'
+    const text = beat.started === false ? '皮革有温度，也有凹凸与裂纹。按 G 检查椅背，听 Morpheus 解释这些感受。'
+      : beat.elapsed < 2.4 ? '手掌触到皮革。Morpheus 举起遥控器，老式电视亮起雪花。'
       : beat.elapsed < 6.8 ? '屏幕里是 Thomas Anderson 熟悉的城市。眼睛、气味和触感都可以被系统转换成信号。'
       : beat.elapsed < 7.65 ? '熟悉的街道短暂剥落成代码。熟悉并不能单独证明真实。'
       : 'Morpheus 切换频道：屏幕里的城市已成废墟。镜头不断靠近，仿佛要进入那个世界。';
-    return { x: CONSTRUCT_REVEAL.neo.x, y: 0, z: CONSTRUCT_REVEAL.neo.z, pose: 'construct', text };
+    const from = beat.approach ?? CONSTRUCT.neo, reach = smooth(beat.elapsed / .65);
+    return { x: from.x + (CONSTRUCT.neo.x - from.x) * reach, y: 0, z: from.z + (CONSTRUCT.neo.z - from.z) * reach, pose: 'construct', text };
   }
   if (beat?.kind === 'desert') {
     const text = beat.started === false ? '焦黑城市延伸到灰色天幕。按 G 请 Morpheus 继续这段揭示。'

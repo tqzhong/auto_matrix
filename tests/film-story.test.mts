@@ -1270,12 +1270,55 @@ test('recovery begins on the medical bed, waits for Neo, and resumes its saved p
   h.advance(30); assert.equal(h.sandbox.life.film.state!.step, 0, 'waking in the cabin waits for Neo');
 });
 
+test('a fresh Construct arrival keeps Neo standing and requires inspecting his image and walking to the leather chair', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  Object.assign(state, { scene: 'm1_cabin', actor: 'neo', step: FILM_SCENE_BY_ID.m1_cabin.steps.length, awakening: undefined });
+  h.command('next');
+  assert.equal(h.actor().currentAction?.parameters.seated, false, 'Neo enters the loading space on his feet');
+  assert.equal(state.constructArrival?.phase, 'ready');
+  const start = { ...h.actor().position }; h.advance(30);
+  assert.deepEqual(h.actor().position, start); assert.equal(state.awakening, undefined);
+  h.command('act');
+  for (let frame = 0; frame < 24; frame++) h.players.step(.1, true, h.tick());
+  const elapsed = state.constructArrival!.elapsed;
+  h.players.step(.5, false, h.tick()); assert.equal(state.constructArrival!.elapsed, elapsed);
+  h.players.possess('other-player', 'morpheus', h.tick());
+  for (let frame = 0; frame < 20; frame++) h.players.step(.1, true, h.tick());
+  assert.equal(state.constructArrival!.elapsed, elapsed, 'an occupied guide must not be animated or advance the lesson');
+  assert.match(h.command('act'), /另一位玩家/);
+  h.players.release('other-player', h.tick());
+  const saved = JSON.parse(JSON.stringify(h.sandbox.state));
+  h.sandbox.restore(saved); h.players.release('film-player', h.tick()); h.advance(20);
+  assert.equal(h.sandbox.life.film.state!.constructArrival!.elapsed, elapsed);
+  h.players.possess('film-player', 'neo', h.tick());
+  for (let frame = 0; frame < 90; frame++) h.players.step(.1, true, h.tick());
+  assert.equal(h.sandbox.life.film.state!.constructArrival!.phase, 'approach');
+  assert.match(h.command('act'), /椅背/, 'an interaction at the spawn point cannot skip the walk');
+  assert.equal(h.sandbox.life.film.state!.awakening, undefined);
+  const target = filmStepPosition(FILM_SCENE_BY_ID.m1_construct, FILM_SCENE_BY_ID.m1_construct.steps[0]);
+  for (let frame = 0; frame < 250; frame++) {
+    const dx = target.x - h.actor().position.x, dz = target.z - h.actor().position.z, gap = Math.hypot(dx, dz);
+    if (gap < .2) break;
+    h.players.receiveInput('film-player', { x: dx / Math.max(1, gap), z: dz / Math.max(1, gap), yaw: Math.atan2(dx, dz), sprint: false, jump: false, sequence: frame + 1 });
+    h.players.step(.05, true, h.tick());
+  }
+  assert.ok(Math.hypot(target.x - h.actor().position.x, target.z - h.actor().position.z) < .8, `the furniture blocks the approach: ${JSON.stringify(h.actor().position)}, target ${JSON.stringify(target)}`);
+  h.command('act');
+  assert.equal(h.sandbox.life.film.state!.awakening?.kind, 'construct');
+  assert.equal(h.sandbox.life.film.state!.awakening?.started, true);
+  assert.equal(h.actor().currentAction?.parameters.seated, false, 'Neo examines the chair from behind while Morpheus sits');
+  assert.equal(h.sandbox.state.structures.filter(item => item.id.startsWith('film:construct:')).length, 3);
+});
+
 test('the Construct television and ruined-world lesson wait for Neo and preserve both reveal performances', () => {
   assert.match(awakeningPose({ kind: 'construct', elapsed: 1 }).text, /雪花/);
   assert.match(awakeningPose({ kind: 'construct', elapsed: 10 }).text, /废墟/);
   const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
   Object.assign(state, { scene: 'm1_cabin', actor: 'neo', step: FILM_SCENE_BY_ID.m1_cabin.steps.length, awakening: undefined });
   h.command('next'); assert.equal(state.scene, 'm1_construct');
+  // Exercise the legacy television checkpoint separately from the new arrival above.
+  delete state.constructArrival; state.awakening = { kind: 'construct', elapsed: 0, started: false };
+  h.sandbox.life.film.awakeningFrame(h.actor(), 0, h.tick());
   assert.deepEqual(state.awakening, { kind: 'construct', elapsed: 0, started: false });
   const chair = { ...h.actor().position }; h.advance(20);
   assert.equal(state.step, 0); assert.deepEqual(h.actor().position, chair, 'the television cannot start itself while Neo waits');
@@ -1290,8 +1333,8 @@ test('the Construct television and ruined-world lesson wait for Neo and preserve
   h.actor().position = filmStepPosition(FILM_SCENE_BY_ID.m1_construct, FILM_SCENE_BY_ID.m1_construct.steps[0]);
   h.players.receiveInput('film-player', { x: 1, z: 0, yaw: 0, sprint: true, jump: true, sequence: 1 });
   h.players.step(.1, true, h.tick());
-  assert.deepEqual(h.actor().position, chair, 'Neo remains seated for the on-screen choice after the reveal');
-  assert.equal(h.actor().currentAction?.parameters.seated, true);
+  assert.deepEqual(h.actor().position, chair, 'Neo remains beside the chair for the on-screen choice after the reveal');
+  assert.equal(h.actor().currentAction?.parameters.seated, false);
   h.actor().position = filmStepPosition(FILM_SCENE_BY_ID.m1_construct, FILM_SCENE_BY_ID.m1_construct.steps[0]);
   const agency = h.sandbox.state.neoLife!.philosophy.agency;
   h.command('reflect:agency');
@@ -2645,6 +2688,11 @@ test('the entire film route completes through interactions, driving and real com
           for (let frame = 0; frame < 30; frame++) h.players.step(.1, true, h.tick());
           h.command('act'); for (let frame = 0; frame < 120; frame++) h.players.step(.1, true, h.tick());
         } else if (scene.id === 'm1_office_escape' && index === 2) for (let frame = 0; frame < 40; frame++) h.players.step(.1, true, h.tick());
+        else if (state.constructArrival) {
+          for (let frame = 0; frame < 111; frame++) h.players.step(.1, true, h.tick());
+          actor.position = filmStepPosition(scene, step); h.command('act');
+          for (let frame = 0; frame < 120; frame++) h.players.step(.1, true, h.tick());
+        }
         else if (state.awakening && ['m1_mirror', 'm1_pod', 'm1_recovery', 'm1_cabin', 'm1_construct', 'm1_desert'].includes(scene.id)) for (let frame = 0; frame < 200 && state.scene === scene.id && state.step === index; frame++) h.players.step(.1, true, h.tick());
         else if (index === 0 && ['m1_spoon', 'm1_oracle', 'm1_dejavu'].includes(scene.id)) {
           for (let frame = 0; frame < 110 && state.step === index; frame++) {
@@ -2824,7 +2872,8 @@ test('the entire film route completes through interactions, driving and real com
       }
       if (scene.id === 'm1_recovery' || scene.id === 'm1_cabin' && index === scene.steps.length - 1) {
         assert.equal(state.scene, scene.id === 'm1_recovery' ? 'm1_cabin' : 'm1_construct');
-        assert.equal(state.awakening?.started, false, 'the next performance requires player consent');
+        if (scene.id === 'm1_cabin') assert.equal(state.constructArrival?.phase, 'ready', 'the loading space waits for Neo to inspect his image');
+        else assert.equal(state.awakening?.started, false, 'the next performance requires player consent');
         continue;
       }
       if (scene.id === 'm1_construct' && index === scene.steps.length - 1) {

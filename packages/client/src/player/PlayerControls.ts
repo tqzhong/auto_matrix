@@ -318,6 +318,8 @@ export class PlayerControls {
     if (state.currentAction?.parameters.welcome) this.performing = true;
     if (this.motion.knock !== undefined && state.currentAction?.parameters.knock === undefined) this.performing = false;
     if (state.currentAction?.parameters.knock !== undefined) this.performing = true;
+    if (this.motion.construct && !state.currentAction?.parameters.construct) this.performing = false;
+    if (state.currentAction?.parameters.construct) this.performing = (state.currentAction.parameters.construct as MotionInput['construct'])?.phase !== 'approach';
     if (this.motion.reveal && !state.currentAction?.parameters.reveal) this.performing = false;
     if (state.currentAction?.parameters.reveal) this.performing = true;
     if (this.motion.training && !state.currentAction?.parameters.training) this.performing = false;
@@ -405,6 +407,7 @@ export class PlayerControls {
       this.recoveryYaw = yaw;
     } else this.recoveryYaw = undefined;
     this.motion.reveal = state.currentAction?.parameters.reveal as MotionInput['reveal'];
+    this.motion.construct = state.currentAction?.parameters.construct as MotionInput['construct'];
     this.motion.training = state.currentAction?.parameters.training as MotionInput['training'];
     this.motion.workday = state.currentAction?.parameters.workday as MotionInput['workday'];
     this.motion.contact = state.currentAction?.parameters.contact as MotionInput['contact'];
@@ -478,7 +481,7 @@ export class PlayerControls {
     if (this.motion.pills && (!this.firstPerson || this.motion.pills.phase === 'offering' || this.motion.pills.elapsed > 9.6)) this.yaw = this.movementYaw = state.rotation;
     this.motion.vase = state.currentAction?.parameters.vase as number | undefined;
     this.motion.realWorld = !state.isInMatrix && state.currentLocation !== 'film_real_desert';
-    this.motion.clubClothes = state.currentLocation === 'film_white_rabbit_club';
+    this.motion.clubClothes = state.currentLocation === 'film_white_rabbit_club' || state.id === 'neo' && state.currentLocation === 'film_white_construct' && !state.currentAction?.parameters.rescue;
     this.motion.glasses = !this.motion.clubClothes && (state.id !== 'neo' || state.isAwakened && state.currentLocation !== 'film_oracle_home');
     this.motion.climbing = this.climbing ? Number(this.keys.has('KeyW') || this.keys.has('ArrowUp')) - Number(this.keys.has('KeyS') || this.keys.has('ArrowDown')) : undefined;
     if (this.firing) this.requestShot();
@@ -545,7 +548,7 @@ export class PlayerControls {
     const interviewWide = !this.firstPerson && this.motion.interrogation && (this.motion.interrogation.phase === 'file' || this.motion.interrogation.phase === 'coercion' && this.motion.interrogation.elapsed > 5.3 && this.motion.interrogation.elapsed < 14);
     const interviewApproach = !this.firstPerson && state.currentLocation === 'film_agent_interrogation' && !this.motion.interrogation;
     const welcomeWide = !this.firstPerson && this.motion.welcome && ['approach', 'departing'].includes(this.motion.welcome.phase);
-    const revealWide = !this.firstPerson && Boolean(this.motion.reveal && (this.motion.reveal.kind === 'desert' ? this.motion.reveal.elapsed < 10.2 : this.motion.reveal.elapsed < 2.4));
+    const revealWide = !this.firstPerson && Boolean(this.motion.construct || this.motion.reveal && (this.motion.reveal.kind === 'desert' ? this.motion.reveal.elapsed < 10.2 : this.motion.reveal.elapsed < 7.8));
     const trainingWide = !this.firstPerson && Boolean(this.motion.training && (this.motion.training.kind === 'jump' || this.motion.training.kind === 'red_dress' && this.motion.training.elapsed < 4.8));
     const officeWide = !this.firstPerson && this.motion.workday && this.motion.workday.phase !== 'signing';
     const wakeWide = !this.firstPerson && Boolean(this.motion.wakeCall && ['waking', 'leaving'].includes(this.motion.wakeCall.phase));
@@ -1025,16 +1028,27 @@ export class PlayerControls {
       const focus = (detected ? new THREE.Vector3(0, 5.4, -52) : window ? new THREE.Vector3(0, 5, -55) : new THREE.Vector3(0, 3.1, -39)).add(origin);
       if (resetCamera || gesture.elapsed < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-7 * delta));
       this.camera.lookAt(focus);
+    } else if (this.motion.construct) {
+      const center = FILM_SETS.film_white_construct.center;
+      if (this.firstPerson) {
+        const eye = new THREE.Vector3(this.position.x, this.position.y + 3.02, this.position.z);
+        this.camera.position.copy(eye);
+        this.camera.lookAt(eye.clone().add(new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch))));
+      } else {
+        const ideal = new THREE.Vector3(center.x + 15, center.y + 5.3, center.z - .6);
+        if (resetCamera) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-7 * delta));
+        this.camera.lookAt(center.x + 1.5, center.y + 2.1, center.z + 1.8);
+      }
     } else if (this.motion.reveal) {
       const gesture = this.motion.reveal; const center = FILM_SETS[gesture.kind === 'construct' ? 'film_white_construct' : 'film_real_desert'].center;
       if (this.firstPerson) {
-        const eye = new THREE.Vector3(this.position.x, this.position.y + (gesture.kind === 'construct' ? 2.35 : 3.02), this.position.z);
+        const eye = new THREE.Vector3(this.position.x, this.position.y + 3.02, this.position.z);
         const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
         this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
       } else if (gesture.kind === 'construct') {
-        const boot = THREE.MathUtils.smoothstep(gesture.elapsed, .6, 2.4); const entry = THREE.MathUtils.smoothstep(gesture.elapsed, 8.1, 10.7);
-        const ideal = new THREE.Vector3(13, 4.8, -9.5).lerp(new THREE.Vector3(8.5, 4.7, -1.5), boot).lerp(new THREE.Vector3(0, 3.25, -13.9), entry).add(new THREE.Vector3(center.x, center.y - 1, center.z));
-        const focus = new THREE.Vector3(0, 2.4, -10.5).lerp(new THREE.Vector3(0, 3.1, -15.2), boot).lerp(new THREE.Vector3(0, 3.25, -16.5), entry).add(new THREE.Vector3(center.x, center.y - 1, center.z));
+        const boot = THREE.MathUtils.smoothstep(gesture.elapsed, 4.8, 7.8); const entry = THREE.MathUtils.smoothstep(gesture.elapsed, 8.1, 10.7);
+        const ideal = new THREE.Vector3(12.8, 5.5, -10.8).lerp(new THREE.Vector3(9.5, 5.1, -.5), boot).lerp(new THREE.Vector3(0, 1.8, -10.4), entry).add(new THREE.Vector3(center.x, center.y - 1, center.z));
+        const focus = new THREE.Vector3(.5, 2.5, -6.2).lerp(new THREE.Vector3(0, 1.8, -12), boot).lerp(new THREE.Vector3(0, 1.8, -13), entry).add(new THREE.Vector3(center.x, center.y - 1, center.z));
         if (resetCamera || gesture.elapsed < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-6 * delta));
         this.camera.lookAt(focus);
       } else {

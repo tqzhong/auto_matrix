@@ -42,7 +42,7 @@
 
 - P0 投入最多，已具有可交互的接触、逃亡双分支、赴约和药丸选择；两条路线的浏览器连续人工长玩、人物/场景/演出精度与性能仍未整体验收。
 - P1–P3 已有各自的任务与专用玩法样板，仍包含简化演出、文字承接和场景切换，需要补机制与连续性，而非只调材质。
-- 当前局部制作在第一部镜面觉醒后的现实身体恢复：培养舱、飞船接应与针疗已接通，新增独立舱室醒来、检查颈后接口、跟随 Morpheus 和主动接入核心区的连续状态；正在逐段核验动作接触、双人构图、保存恢复与游玩通路。后续按剧情顺序继续核对，同时保留审计表中的其他未完成项。
+- 当前局部制作推进到第一部白色构造体：接住船舱醒来与核心接入，Neo 站立入场、检查消失的接口，再由玩家步行到皮椅旁触摸皮革；Morpheus 绕过椅子落座、手持遥控器打开电视。正在逐段核验人物/家具接触、双人构图、保存恢复与游玩通路。后续按剧情顺序继续核对，同时保留审计表中的其他未完成项。
 - P4 已有停战尾声和下一轮记录的基础，但还没有完成由经历、关系和哲学选择驱动的完整开放生活循环。
 
 ## 还原方法与取舍
@@ -54,6 +54,8 @@
 用户要求的是高质量还原。程序化原型、任务定义和自动化通关测试只能证明部分基础，不能替代高质量验收；没有实机证据的组不得标记为“全部完成”。
 
 ## 制作记录
+
+- 2026-09-30：继续 1-07 的构造体。依据[修订剧本](https://www.screenwriter.ch/demandit/files/M_BFNO38KLSZ567NYSJ29/dms/File/The_Matrix.pdf)中进入程序后检查形象、Morpheus 落座、Neo 触摸皮椅的顺序，并查看[成片构造体画面](https://reframe.sussex.ac.uk/post-cinema/files/2016/03/Figure_02_The-Construct.png)核对翼背皮椅、木壳电视及两人站位。新存档增加主动身体检查和实际步行接触；旧电视检查点保留原来的进度。复用 Lafayette 的连续软包椅，并将每把椅子的细节按四种材质合批；移除圆桌，缩小电视并加木壳/背板，遥控器随手握持。修正碰撞范围挡住交互点、过渡时一帧误解锁、双手重叠、遥控器朝天、白场地平线和 HUD 遮挡。独立浏览器实际从入场检查、步行、触椅到哲学选择并进入荒漠；较早录像含修正前握持，最终动作另从椅前检查点复查，具体证据与测试范围见[构造体验收记录](../output/gameplay/trilogy-construct-arrival-2026-09-30/README.md)。当前仍为专用样板，未完成演员级人物、真实布料受力、逐镜头尺度/表演、正式声音和稳定帧率，不能把剧情贯通写成三部曲全部制作完成。
 
 - 2026-09-30：继续 1-07 的剧情衔接。参考[第一部修订剧本](https://www.screenwriter.ch/demandit/files/M_BFNO38KLSZ567NYSJ29/dms/File/The_Matrix.pdf)核对针疗、休息、独立舱室醒来、核心接入的顺序；新增 `m1_cabin`，剧情索引为 109 节点，仍为 42 组、63 个场景定义。Dozer 操作实体控制器，Neo 留在医疗床上休息；之后在同一甲板的独立房间坐起、触摸真实颈后接口、听取年代解释，再亲自跟随会等候玩家的 Morpheus。走到连接椅正面后需明确按 G，倒退落座、接线再进入构造体；暂停、断线、人员占用和旧康复存档保留进度。实际蒙皮检查修正起身时裤腿穿床、通用动作覆盖坐姿、过深座垫压住小腿、接口朝上且偏离颈部、插头与手掌脱离；实机修正胸口硬件露在衣服外、对白盖住快捷栏、双人镜头裁掉 Morpheus，以及构造体未恢复头发。房门与柜体使用共享碰撞，普通玩家移动回归已走通床边至核心椅前的路线。此轮仍为专用样板：Dozer 复用已有骨架，衣服为临时替代，换衣通过场景过渡表达；演员级资产、面部/配音、皮肤与布料形变、成片船舱细节和稳定帧率尚未完成。视频与具体检查范围见[船舱验收记录](../output/gameplay/trilogy-cabin-2026-09-30/README.md)。
 
@@ -470,7 +472,7 @@
 - 公寓第二次来电：[1998 年修订剧本](https://www.dailyscript.com/scripts/the_matrix.pdf)，第 22–23 页用于核对 Neo 醒来、座机来电、Morpheus 确认是否仍愿意见面及 Adams Street 地址的事件关系。它是制作期剧本，不等于最终成片逐镜头证据；本项目的中文短对白、可玩走位、电话模型、身体动作与镜头均为游戏实现，仍须核对成片公寓布局、人物表演和道具细节。
 - 特工审讯：[Flashback FM 发布的审讯片段](https://www.youtube.com/watch?v=uXEUW792etk)，不是 Warner 官方上传。本次检查板墙、钢桌、绿色档案、白衬衫/领带，以及封嘴、双臂受控和透明分节追踪器的镜头；游戏几何、动作与道具为本项目制作，仍未达到人物表演和空间比例的逐镜头还原。
 - 车内检查：[ReplaysTV 发布的取虫片段](https://www.youtube.com/watch?v=DIeYzw6HhPY)，不是 Warner 官方上传。本次检查 Switch 在前排警戒、Neo/Trinity 的后排构图，以及带泵杆、透明筒和电路屏的抽取装置。游戏据此制作四座布置与道具动作，未下载电影视频；车辆型号、车身/桥梁比例和人物表演尚未精确还原。
-- 构造体与真实荒漠：[ASC 的摄影回顾](https://theasc.com/articles/flashback-the-matrix)、[1998 年修订剧本](https://www.dailyscript.com/scripts/the_matrix.pdf)和[原制作设计师 Owen Paterson 访谈](https://www.matrixfans.net/interview-with-production-designer-owen-paterson/amp/)。依据白色加载空间、两人落座、电视展示熟悉城市后转入毁坏现实的叙事关系制作；电视内容、废墟几何和演出文本均为游戏内原创资产，没有嵌入电影画面。人物表演、材质、空间尺度及镜头仍需继续对照成片。
+- 构造体与真实荒漠：[ASC 的摄影回顾](https://theasc.com/articles/flashback-the-matrix)、[修订剧本](https://www.screenwriter.ch/demandit/files/M_BFNO38KLSZ567NYSJ29/dms/File/The_Matrix.pdf)、[成片构造体画面](https://reframe.sussex.ac.uk/post-cinema/files/2016/03/Figure_02_The-Construct.png)和[原制作设计师 Owen Paterson 访谈](https://www.matrixfans.net/interview-with-production-designer-owen-paterson/amp/)。2026-09-30 修正此前两人都落座的实现：Neo 站立检查身体、触摸皮椅，Morpheus 落座并操作遥控器，电视展示熟悉城市后转入毁坏现实。电视内容、废墟几何和演出文本均为游戏内原创资产，没有嵌入电影画面；没有观看完整影片，人物表演、材质、空间尺度及镜头仍需继续对照成片。
 
 - Cypher 值班台、牛排交易与船员餐：[1998 年修订剧本](https://www.dailyscript.com/scripts/the_matrix.pdf)与[Warner 教学镜像收录的第一部成片转录](https://dc-mrg.english.ucsb.edu/WarnerTeach/E192/matrix/Matrix.script.html)。用于核对 Cypher 读代码/自制酒、与 Smith 交换遗忘和重新接入、船员谈机器如何定义味觉的事件关系。本次中文短对白、玩家视角、餐厅和飞船道具、人物动作及镜头均为游戏内改编，没有下载或嵌入影片画面；餐厅尺度、演员表演、服装、声音和逐镜头构图仍待成片级对照。
 

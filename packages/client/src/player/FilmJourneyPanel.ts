@@ -1,4 +1,4 @@
-import { nearMetacortexLift } from '@auto_matrix/shared';
+import { nearMetacortexLift, filmStepNear } from '@auto_matrix/shared';
 import { CATCH, RELOADED_FINALE, HEL_COATCHECK, OPENING_ESCAPE, OPENING_HOTEL, catchText, reloadedText } from '@auto_matrix/shared';
 import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_NAMES, ARCHITECT_DOOR_SECONDS, filmReflections, CHARACTERS, filmStepPosition, distance, dockPowerOffline, AWAKENING_SECONDS, oracleActing, helElevatorLocked, helDanceDoorLocked, interrogationLocked, pillLocked, lafayetteWelcomeLocked, phoneLocked, windowOpening, windowCrossing, awakeningWaiting, trainingLocked, trainingWaiting, theOneLocked, type AgentState, type SandboxState } from '@auto_matrix/shared';
 import './film-journey.css';
@@ -414,14 +414,16 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
       : step ? filmStepPosition(scene, step) : undefined;
   const waitingForMorpheus = scene.id === 'm1_mirror' && journey.mirrorGuide && !journey.mirrorGuide.done;
   const meetingAction = scene.id === 'm1_bug' && (journey.meeting?.phase === 'done' && journey.step >= 2 || journey.meeting?.phase === 'parked');
-  const actionLabel = meetingAction ? journey.meeting?.phase === 'parked' ? '打开车门下车' : '启程前往 Lafayette' : step?.label;
-  const close = meetingAction || trainingWaiting(journey) || Boolean(stepPosition && player.isInMatrix === (set.world === 'matrix') && distance(player.position, stepPosition) <= 4);
+  const arrival = scene.id === 'm1_construct' ? journey.constructArrival : undefined;
+  const actionLabel = arrival?.phase === 'ready' ? '检查残余自我影像' : meetingAction ? journey.meeting?.phase === 'parked' ? '打开车门下车' : '启程前往 Lafayette' : step?.label;
+  const close = arrival?.phase === 'ready' || (arrival ? Boolean(step && filmStepNear(scene, step, player.position, player.isInMatrix))
+    : meetingAction || trainingWaiting(journey) || Boolean(stepPosition && player.isInMatrix === (set.world === 'matrix') && distance(player.position, stepPosition) <= 4));
   const current = player.id === journey.actor;
-  const performing = helElevatorLocked(journey) || helDanceDoorLocked(journey) || meetingLocked(journey) && !['ready', 'done', 'parked'].includes(journey.meeting?.phase ?? 'ready') || trainingLocked(journey) || sentinelLocked(journey) || interludeLocked(journey) || rescueLocked(journey) || Boolean(journey.awakening && journey.awakening.elapsed < AWAKENING_SECONDS[journey.awakening.kind]) || oracleActing(journey) || phoneLocked(journey) || wakeCallLocked(journey) || theOneLocked(journey) || windowOpening(journey) || windowCrossing(journey) || pillLocked(journey) || lafayetteWelcomeLocked(journey) || interrogationLocked(journey) && journey.interrogation?.phase !== 'done';
+  const performing = arrival?.phase === 'image' || helElevatorLocked(journey) || helDanceDoorLocked(journey) || meetingLocked(journey) && !['ready', 'done', 'parked'].includes(journey.meeting?.phase ?? 'ready') || trainingLocked(journey) || sentinelLocked(journey) || interludeLocked(journey) || rescueLocked(journey) || Boolean(journey.awakening && journey.awakening.elapsed < AWAKENING_SECONDS[journey.awakening.kind]) || oracleActing(journey) || phoneLocked(journey) || wakeCallLocked(journey) || theOneLocked(journey) || windowOpening(journey) || windowCrossing(journey) || pillLocked(journey) || lafayetteWelcomeLocked(journey) || interrogationLocked(journey) && journey.interrogation?.phase !== 'done';
   const answerPhone = phoneLocked(journey) && journey.phone?.phase === 'ready';
   const answer = answerPhone || awakeningWaiting(journey) || trainingWaiting(journey) || interrogationLocked(journey) && journey.interrogation?.phase === 'response';
   const awakeningAction = journey.awakening?.kind === 'recovery' ? '示意开始恢复肌肉 · G'
-    : journey.awakening?.kind === 'construct' ? '请 Morpheus 打开电视 · G' : '请 Morpheus 继续揭示 · G';
+    : journey.awakening?.kind === 'construct' ? '触摸椅背，听 Morpheus 解释 · G' : '请 Morpheus 继续揭示 · G';
   const trainingAction = journey.training?.kind === 'download' ? '请 Tank 开始上传 · G'
     : journey.training?.kind === 'jump' ? '请 Morpheus 示范跨楼 · G' : '开始注意力测试 · G';
   const escaped = journey.office?.outcome === 'escaped';

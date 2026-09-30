@@ -3,6 +3,24 @@ import test from 'node:test';
 import { build } from 'esbuild';
 import { FILM_SCENE_BY_ID, filmPosition, filmStepPosition, type AgentState, type SandboxState } from '@auto_matrix/shared';
 
+test('the Construct journal distinguishes self inspection from approaching the chair', async () => {
+  const output = await build({ entryPoints: ['packages/client/src/player/FilmJourneyPanel.ts'], bundle: true,
+    platform: 'node', format: 'esm', write: false, loader: { '.css': 'empty' }, logLevel: 'silent' });
+  const { renderFilmJourney } = await import(`data:text/javascript;base64,${Buffer.from(output.outputFiles[0].contents).toString('base64')}`);
+  const scene = FILM_SCENE_BY_ID.m1_construct;
+  const player = { id: 'neo', status: 'alive', isInMatrix: true, position: filmPosition(scene.set, 6.95, 5) } as AgentState;
+  const sandbox = { threats: [], neoLife: { cycle: 1, journey: { scene: scene.id, actor: 'neo', step: 0, completed: [], reflections: {},
+    lastText: '接口消失了。', constructArrival: { phase: 'ready', elapsed: 0 } } } } as SandboxState;
+  const arrival = sandbox.neoLife!.journey!.constructArrival!;
+  assert.match(renderFilmJourney(player, sandbox), /data-target="film:act" >检查残余自我影像/);
+  arrival.phase = 'image'; arrival.elapsed = 2;
+  assert.doesNotMatch(renderFilmJourney(player, sandbox), /data-target="film:act" >/);
+  arrival.phase = 'approach'; arrival.elapsed = 11;
+  assert.match(renderFilmJourney(player, sandbox), /data-target="film:act" disabled>触摸椅背/);
+  player.position = filmStepPosition(scene, scene.steps[0]);
+  assert.match(renderFilmJourney(player, sandbox), /data-target="film:act" >触摸椅背/);
+});
+
 test('the morning journal requires a bedside action, accepts the alarm and offers the actual on-foot commute', async () => {
   const output = await build({ entryPoints: ['packages/client/src/player/FilmJourneyPanel.ts'], bundle: true,
     platform: 'node', format: 'esm', write: false, loader: { '.css': 'empty' }, logLevel: 'silent' });

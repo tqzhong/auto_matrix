@@ -177,6 +177,7 @@ export class PlayerExperience {
     document.body.classList.toggle('film-mirror-scene', this.filmPlaying && neoLife?.journey?.scene === 'm1_mirror' && !neoLife.journey.visiting);
     document.body.classList.toggle('film-pod-scene', this.filmPlaying && neoLife?.journey?.scene === 'm1_pod' && !neoLife.journey.visiting);
     document.body.classList.toggle('film-cabin-scene', this.filmPlaying && neoLife?.journey?.scene === 'm1_cabin' && !neoLife.journey.visiting);
+    document.body.classList.toggle('film-construct-scene', this.filmPlaying && neoLife?.journey?.scene === 'm1_construct' && !neoLife.journey.visiting);
     document.body.classList.toggle('film-reloaded-scene', this.filmPlaying && Boolean(neoLife?.journey?.reloaded) && !neoLife?.journey?.visiting);
     document.body.classList.toggle('film-catch-scene', this.filmPlaying && neoLife?.journey?.scene === 'm2_catch' && !neoLife?.journey?.visiting);
     document.body.classList.toggle('film-burly-scene', this.filmPlaying && neoLife?.journey?.scene === 'm2_burly' && !neoLife.journey.visiting);

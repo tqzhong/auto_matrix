@@ -1015,17 +1015,27 @@ test('the cabin camera stays inside the room and frames Neo during the sit, turn
   } finally { set.dispose(); }
 });
 
+test('the Construct keeps movement locked when inspection hands off directly to the television', t => {
+  const game = setup(t, Math.PI); game.state.currentLocation = 'film_white_construct';
+  game.state.position = filmPosition('film_white_construct', 6.35, -4.75);
+  game.state.currentAction = { type: 'idle', parameters: { construct: { phase: 'image', elapsed: 5, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.step(.1); assert.equal(game.controls.performing, true);
+  game.state.currentAction.parameters = { filmPose: 'construct', seated: false, reveal: { kind: 'construct', elapsed: 1, role: 'neo' } };
+  game.controls.update(1 / 60, game.state, game.group, true);
+  assert.equal(game.controls.performing, true, 'clearing the arrival gesture cannot unlock the television performance');
+});
+
 test('the Construct and desert reveals use authored wide shots while first person remains at Neo eyes', t => {
-  const game = setup(t, Math.PI); const construct = filmPosition('film_white_construct', 4.4, -6.2);
+  const game = setup(t, Math.PI); const construct = filmPosition('film_white_construct', 6.35, -4.75);
   Object.assign(game.state, { position: construct, rotation: Math.PI, isInMatrix: true, currentLocation: 'film_white_construct',
-    currentAction: { type: 'idle', parameters: { filmPose: 'construct', seated: true, reveal: { kind: 'construct', elapsed: 0, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 } });
+    currentAction: { type: 'idle', parameters: { filmPose: 'construct', seated: false, reveal: { kind: 'construct', elapsed: 0, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 } });
   game.controls.possess(game.state); game.controls.performing = true; game.step(.5);
   const constructCenter = FILM_SETS.film_white_construct.center;
   assert.ok(game.camera.position.x > constructCenter.x + 10, 'the waiting two-shot starts beside the chairs instead of hiding both actors behind their backs');
-  assert.ok(Math.abs(game.camera.getWorldDirection(new THREE.Vector3()).z) < .25, 'the waiting shot sees both seated profiles instead of looking into the chair backs');
+  assert.ok(Math.abs(game.camera.getWorldDirection(new THREE.Vector3()).z) < .4, 'the waiting shot sees both actors beside the armchairs');
   assert.ok(game.camera.position.z < constructCenter.z - 8 && game.camera.position.z > constructCenter.z - 12, 'the side angle keeps the television and seated actors in the same shot');
   game.key('KeyV'); game.key('KeyV', false); game.step(.1);
-  assert.ok(Math.abs(game.camera.position.y - construct.y - 2.35) < .05, 'seated first person uses Neo eye height');
+  assert.ok(Math.abs(game.camera.position.y - construct.y - 3.02) < .05, 'first person remains at standing Neo’s eye height');
   assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).z < -.8, 'Neo initially faces the television');
   game.key('KeyW'); game.key('Space'); game.key('KeyF'); game.step(.3);
   assert.deepEqual(game.group.position.toArray(), [construct.x, construct.y, construct.z]); assert.equal(game.actions.length, 0);
@@ -1033,7 +1043,7 @@ test('the Construct and desert reveals use authored wide shots while first perso
   (game.state.currentAction!.parameters.reveal as { elapsed: number }).elapsed = 10.8;
   game.controls.possess(game.state); game.step(1.5);
   assert.ok(Math.abs(game.camera.position.x - constructCenter.x) < 1.5
-    && game.camera.position.z < constructCenter.z - 12.5,
+    && game.camera.position.z < constructCenter.z - 10,
   'the final Construct shot pushes into the television instead of turning back toward the chairs');
   assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).z < -.8, 'the camera enters the televised ruined world');
 

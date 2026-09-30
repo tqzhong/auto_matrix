@@ -3,6 +3,7 @@ import { ReloadedOpeningSystem } from './ReloadedOpeningSystem.js';
 import { ReloadedCatchSystem } from './ReloadedCatchSystem.js';
 import { newReloaded, reloadedLocked, ZION_CAST } from '@auto_matrix/shared';
 import { CABIN, CABIN_ROUTE_LENGTH, MEDICAL_OPERATOR, cabinBodyPose, cabinGuidePose } from '@auto_matrix/shared';
+import { CONSTRUCT, CONSTRUCT_FURNITURE, constructGuidePose, constructArrivalText } from '@auto_matrix/shared';
 import { catchLocked, newCatch } from '@auto_matrix/shared';
 import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_CAST, GRID_WINDOW_SECONDS, GRID_REROUTE_SECONDS, GRID_HACK_SECONDS, ARCHITECT_DOOR_SECONDS, RELOADED_FINALE, BANE_ENCOUNTER, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, filmReflections, CHARACTERS, LOCATIONS, NEO_CHAPTERS, filmCharacterFates, filmEntry, filmPosition, filmStepPosition, filmStepNear, locationEntrance, distance, playerBlocked, newFreewayRide, stepFreeway, OFFICE_LADDER, awakeningLocked, awakeningPose, AWAKENING_SECONDS, MIRROR_TOUCH, MIRROR_TIMING, MIRROR_GUIDE_LENGTH, mirrorGuidePose, mirrorGuideProgress, mirrorSilver, recoveryCrewPose, CONSTRUCT_REVEAL, DESERT_REVEAL, oracleActing,
   AMBUSH_REWRITE, AMBUSH_SECONDS, AMBUSH_SEALS, OFFICE_CONTACT, OFFICE_WINDOW, OFFICE_CROSSING_SECONDS, officeCrossingPose, windowCrossing, phoneLocked, heldPhone, windowOpening, pillLocked, pillRoot, PILL_ROOM, PILL_TIMING, trainingLocked, trainingRoot, trainingText, TRAINING_SECONDS,
@@ -1516,6 +1517,11 @@ export class FilmStorySystem {
     if (state.scene === 'm1_pod' && state.awakening?.kind === 'rescue' && state.awakening.elapsed < AWAKENING_SECONDS.rescue && state.step >= scene.steps.length) {
       state.step = 1; state.completed = state.completed.filter(id => id !== 'm1_pod');
     }
+    if (state.constructArrival && state.scene === 'm1_construct') {
+      const actor = this.world.agents.get(state.actor);
+      if (actor) this.awakeningFrame(actor, 0, this.world.simulationTick);
+      return;
+    }
     if (state.awakening) return;
     const kind = state.scene === 'm1_recovery' && state.step === 0 ? 'recovery'
       : state.scene === 'm1_cabin' && state.step === 0 ? 'cabin'
@@ -2996,6 +3002,26 @@ export class FilmStorySystem {
     return state.lastText;
   }
   awakeningFrame(agent: AgentState, dt: number, tick: number): boolean {
+    if (this.controls(agent) && this.state?.scene === 'm1_construct' && this.state.constructArrival) {
+      const state = this.state, arrival = state.constructArrival!, guide = this.world.agents.get('morpheus')!;
+      if (arrival.phase !== 'ready' && !guide.controller) arrival.elapsed = Math.min(CONSTRUCT.guideSeconds, arrival.elapsed + Math.min(.1, dt));
+      if (arrival.phase === 'image' && arrival.elapsed >= CONSTRUCT.imageSeconds) { arrival.phase = 'approach'; agent.currentAction = null; }
+      if (!guide.controller) {
+        const root = constructGuidePose(arrival.elapsed), before = guide.position;
+        guide.position = filmPosition('film_white_construct', root.x, root.z); guide.rotation = root.yaw;
+        guide.velocity = dt > 0 ? { x: (guide.position.x - before.x) / dt, y: 0, z: (guide.position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
+        guide.currentAction = { type: root.speed > 0 ? 'move_to' : 'idle', parameters: { resolved: true,
+          construct: { ...arrival, role: 'morpheus' }, seated: root.seated > 0 }, startedAt: tick, duration: 1, progress: 0 };
+      }
+      if (arrival.phase !== 'approach') {
+        agent.position = filmPosition('film_white_construct', CONSTRUCT.arrival.x, CONSTRUCT.arrival.z); agent.rotation = CONSTRUCT.arrival.yaw;
+        agent.velocity = { x: 0, y: 0, z: 0 };
+        agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, seated: false,
+          construct: { ...arrival, role: 'neo' } }, startedAt: tick, duration: 1, progress: 0 };
+      }
+      state.lastText = guide.controller ? 'Morpheus 正由另一位玩家控制。观察与引路进度会保留。' : constructArrivalText(arrival);
+      return arrival.phase !== 'approach';
+    }
     if (this.controls(agent) && this.state?.scene === 'm1_cabin' && this.state.step === 1) {
       const state = this.state, escort = state.cabinEscort ??= { progress: 0 }, guide = this.world.agents.get('morpheus')!;
       const root = cabinGuidePose(escort.progress), position = filmPosition(this.scene!.set, root.x, root.z);
@@ -3044,7 +3070,7 @@ export class FilmStorySystem {
       recovery: beat?.kind === 'recovery' ? Math.min(6.8, beat.elapsed) : beat?.kind === 'cabin' ? cabinBodyPose(beat.elapsed).clock : undefined,
       podRescue: beat?.kind === 'rescue' ? beat.elapsed : undefined,
       cabin: cabin ? { kind: beat.kind === 'cabin' ? 'wake' : 'core', elapsed: beat.elapsed, role: 'neo' } : undefined,
-      seated: beat?.kind === 'core' && beat.elapsed >= 1.8 || beat?.kind === 'construct' || beat?.kind === 'mirror' && beat.elapsed >= MIRROR_TIMING.sit,
+      seated: beat?.kind === 'core' && beat.elapsed >= 1.8 || beat?.kind === 'mirror' && beat.elapsed >= MIRROR_TIMING.sit,
       reveal: reveal ? { kind: beat.kind, elapsed: beat.elapsed, role: 'neo' } : undefined }, startedAt: tick, duration: 1, progress: 0 };
     if (beat?.kind === 'mirror' && trinity && !trinity.controller)
       trinity.currentAction = { type: 'idle', parameters: { mirrorCrew: beat.elapsed }, startedAt: tick, duration: 1, progress: 0 };
@@ -4438,6 +4464,20 @@ export class FilmStorySystem {
     }
     const step = this.step;
     if (!step) return '本场景已完成。G 或 J 继续下一段。';
+    if (state.scene === 'm1_construct' && state.constructArrival) {
+      const arrival = state.constructArrival;
+      if (target !== 'act') return constructArrivalText(arrival);
+      if (this.world.agents.get('morpheus')?.controller) return 'Morpheus 正由另一位玩家控制，等待对方结束后再继续。';
+      if (arrival.phase === 'ready') { arrival.phase = 'image'; this.awakeningFrame(agent, 0, tick); return state.lastText; }
+      if (arrival.phase === 'image') return state.lastText;
+      if (!this.near(agent, step)) return '先走到右侧皮椅的外侧椅背旁，再按 G 触摸。';
+      if (arrival.elapsed < CONSTRUCT.guideSeconds) return '等 Morpheus 绕过皮椅坐稳，再开始这段谈话。';
+      const center = FILM_SETS.film_white_construct.center;
+      state.awakening = { kind: 'construct', elapsed: 0, started: true,
+        approach: { x: agent.position.x - center.x, z: agent.position.z - center.z } };
+      delete state.constructArrival;
+      this.awakeningFrame(agent, 0, tick); return state.lastText;
+    }
     if (state.scene === 'm1_room303') {
       this.openingHotel.ensure(tick);
       if (state.openingHotel?.phase === 'failed') return '警员已经封住 303。J 打开手记，从破门检查点重试。';
@@ -4932,7 +4972,9 @@ export class FilmStorySystem {
     delete state.trucks;
     delete state.awakening;
     delete state.cabinEscort;
+    delete state.constructArrival;
     this.sandbox().structures = this.sandbox().structures.filter(item => item.id !== 'film:cabin:door');
+    this.sandbox().structures = this.sandbox().structures.filter(item => !item.id.startsWith('film:construct:'));
     delete state.mirrorGuide;
     delete state.training;
     delete state.dojo;
@@ -5023,7 +5065,7 @@ export class FilmStorySystem {
     for (const other of this.world.agents.values()) if (!other.controller && (other.currentAction?.parameters.theOne || other.currentAction?.parameters.reloaded || other.currentAction?.parameters.catch)) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.smithFinale) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.epilogue) other.currentAction = null;
-    for (const other of this.world.agents.values()) if (!other.controller && (other.currentAction?.parameters.recoveryCrew || other.currentAction?.parameters.medical !== undefined || other.currentAction?.parameters.cabin || other.currentAction?.parameters.cabinGuide)) other.currentAction = null;
+    for (const other of this.world.agents.values()) if (!other.controller && (other.currentAction?.parameters.recoveryCrew || other.currentAction?.parameters.medical !== undefined || other.currentAction?.parameters.cabin || other.currentAction?.parameters.cabinGuide || other.currentAction?.parameters.construct)) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.lobbyEntry) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.riding) { other.currentAction = null; other.velocity = { x: 0, y: 0, z: 0 }; }
     if (scene.id === 'm1_lobby') this.lobby.reset();
@@ -5121,7 +5163,10 @@ export class FilmStorySystem {
       this.awakeningFrame(actor, 0, tick);
     }
     if (scene.id === 'm1_construct') {
-      state.awakening = { kind: 'construct', elapsed: 0, started: false };
+      this.sandbox().structures.push(...CONSTRUCT_FURNITURE.map((part, i) => ({ id: `film:construct:${i}`, kind: 'barricade' as const,
+        owner: 'matrix', matrix: true, health: 1, position: filmPosition(scene.set, part.x, part.z),
+        film: { scene: scene.id, width: part.width, depth: part.depth, height: part.height } })));
+      state.constructArrival = { phase: 'ready', elapsed: 0 };
       this.awakeningFrame(actor, 0, tick);
     }
     if (scene.id === 'm1_download') {

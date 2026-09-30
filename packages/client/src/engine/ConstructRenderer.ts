@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { CONSTRUCT_REVEAL, RESCUE, type FilmJourney, type RescueLoadout } from '@auto_matrix/shared';
+import { CONSTRUCT, CONSTRUCT_REVEAL, RESCUE, type FilmJourney, type RescueLoadout } from '@auto_matrix/shared';
 import { DesertRenderer } from './DesertRenderer.js';
+import { createLoungeChair } from './LoungeChair.js';
 
 const srgbBytes = Uint8Array.from({ length: 256 }, (_, byte) => {
   const linear = byte / 255;
@@ -42,11 +43,12 @@ export class ConstructRenderer {
   private lastFrame = -1;
   private revealElapsed = 0;
   private revealActive = false;
+  private disposed = false;
   private previewImage?: string;
   private preview?: { scene: THREE.Scene; camera: THREE.PerspectiveCamera; target: THREE.WebGLRenderTarget; desert: DesertRenderer; captures: number; capturedAt: number };
-  private white = this.material(new THREE.MeshStandardMaterial({ color: 0xe4e5df, roughness: .96 }));
-  private leather = this.material(new THREE.MeshStandardMaterial({ color: 0x5a1715, roughness: .42, metalness: .03 }));
-  private darkLeather = this.material(new THREE.MeshStandardMaterial({ color: 0x2d0b0a, roughness: .56 }));
+  private white = this.material(new THREE.MeshBasicMaterial({ color: 0xeeeeea, toneMapped: false }));
+  private leather = this.material(new THREE.MeshStandardMaterial({ color: 0xdec6b8, roughness: .94, metalness: .03 }));
+  private wood = this.material(new THREE.MeshStandardMaterial({ color: 0xc4b6a4, roughness: .72 }));
   private black = this.material(new THREE.MeshStandardMaterial({ color: 0x111313, roughness: .36, metalness: .4 }));
   private steel = this.material(new THREE.MeshStandardMaterial({ color: 0x575d5b, roughness: .28, metalness: .86 }));
   private rackRows: { group: THREE.Group; x: number; z: number; index: number }[] = [];
@@ -56,16 +58,29 @@ export class ConstructRenderer {
     this.canvas.width = 768; this.canvas.height = 512;
     this.screenTexture = new THREE.CanvasTexture(this.canvas); this.screenTexture.colorSpace = THREE.SRGBColorSpace;
     this.screenTexture.minFilter = THREE.LinearFilter; this.textures.add(this.screenTexture);
+    if (typeof document.createElementNS === 'function' && sceneId !== 'm1_guns') {
+      this.surface(this.leather, 'leather_red_03'); this.surface(this.wood, 'old_wood_floor');
+    }
     this.floor();
     if (sceneId === 'm1_guns') this.armoury();
     else this.lesson();
     this.screenLight = new THREE.PointLight(0xdceee3, 85, 20, 2); this.screenLight.name = 'construct-screen-light';
-    this.screenLight.position.set(0, 4.2, -12.5); this.root.add(this.screenLight); this.lights.add(this.screenLight);
+    this.screenLight.position.set(0, 2.2, CONSTRUCT.television.z + 1.4); this.root.add(this.screenLight); this.lights.add(this.screenLight);
     const fill = new THREE.HemisphereLight(0xffffff, 0xd4d5cf, 1.45); fill.name = 'construct-shadowless-fill'; this.root.add(fill); this.lights.add(fill);
     this.draw(0, true);
   }
 
   private material<T extends THREE.Material>(value: T): T { this.materials.add(value); return value; }
+  private surface(material: THREE.MeshStandardMaterial, id: string): void {
+    const loader = new THREE.TextureLoader();
+    const load = (kind: string) => {
+      const texture = loader.load(`/assets/film-materials/${id}-${kind}.jpg`, loaded => { if (this.disposed) loaded.dispose(); });
+      texture.wrapS = texture.wrapT = THREE.RepeatWrapping; texture.anisotropy = 8;
+      if (kind === 'color') texture.colorSpace = THREE.SRGBColorSpace;
+      this.textures.add(texture); return texture;
+    };
+    material.map = load('color'); material.normalMap = load('normal'); material.roughnessMap = load('roughness'); material.normalScale.set(.3, .3);
+  }
   get televisionPreviewImage(): string | undefined { return this.previewImage; }
   private geometry<T extends THREE.BufferGeometry>(value: T): T { this.geometries.add(value); return value; }
   private mesh(parent: THREE.Object3D, geometry: THREE.BufferGeometry, material: THREE.Material, name?: string): THREE.Mesh {
@@ -79,54 +94,42 @@ export class ConstructRenderer {
   private cylinder(parent: THREE.Object3D, material: THREE.Material, x: number, y: number, z: number, radius: number, height: number): THREE.Mesh {
     const mesh = this.mesh(parent, new THREE.CylinderGeometry(radius, radius, height, 18), material); mesh.position.set(x, y, z); return mesh;
   }
-  private tube(parent: THREE.Object3D, points: THREE.Vector3[], radius: number, material = this.steel): THREE.Mesh {
-    return this.mesh(parent, new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 20, radius, 8), material);
-  }
-
   private floor(): void {
-    const floor = this.mesh(this.root, new THREE.PlaneGeometry(600, 600), this.white, 'construct-infinite-floor');
-    floor.rotation.x = -Math.PI / 2; floor.position.y = -.02; floor.receiveShadow = true;
+    const floor = this.mesh(this.root, new THREE.PlaneGeometry(6000, 6000), this.white, 'construct-infinite-floor');
+    floor.rotation.x = -Math.PI / 2; floor.position.y = -.02; floor.castShadow = false;
+    const shadows = this.mesh(this.root, new THREE.PlaneGeometry(90, 90), this.material(new THREE.ShadowMaterial({ opacity: .18 })), 'construct-contact-shadows');
+    shadows.rotation.x = -Math.PI / 2; shadows.position.y = -.01; shadows.castShadow = false;
   }
 
   private chair(x: number, name: string): void {
-    const chair = new THREE.Group(); chair.name = name; chair.position.set(x, 0, CONSTRUCT_REVEAL.neo.z + .15); this.root.add(chair);
-    this.box(chair, this.darkLeather, 0, .72, .25, 3.6, 1.3, 3.45, .28);
-    this.box(chair, this.leather, 0, 1.25, -.05, 2.75, .55, 2.65, .24);
-    const back = this.box(chair, this.leather, 0, 2.75, 1.27, 3.1, 3.25, .62, .24); back.rotation.x = -.08;
-    for (const side of [-1, 1]) {
-      this.box(chair, this.leather, side * 1.62, 1.55, .05, .52, 1.45, 3.15, .23);
-      this.cylinder(chair, this.darkLeather, side * 1.35, .25, 1.15, .18, .5);
-    }
-    for (let row = 0; row < 3; row++) for (let column = 0; column < 4; column++) {
-      const button = this.mesh(chair, new THREE.SphereGeometry(.075, 10, 8), this.darkLeather);
-      button.position.set(-1.08 + column * .72, 1.95 + row * .65, .94); button.scale.z = .35;
-    }
+    const chair = createLoungeChair(this.leather); chair.name = name;
+    chair.position.set(x, 0, CONSTRUCT.chair.z); chair.rotation.y = Math.PI;
+    chair.traverse(object => { if (object instanceof THREE.Mesh) { this.geometries.add(object.geometry); this.materials.add(object.material); } });
+    this.root.add(chair);
   }
 
   private television(): void {
     const tv = new THREE.Group(); tv.name = 'construct-television'; tv.position.set(CONSTRUCT_REVEAL.television.x, 0, CONSTRUCT_REVEAL.television.z); this.root.add(tv);
-    this.box(tv, this.black, 0, 3.2, 0, 6.5, 4.7, 2.3, .38);
-    this.box(tv, this.steel, 0, 3.2, 1.17, 5.35, 3.55, .12, .08);
+    this.box(tv, this.wood, 0, 1.4, 0, 3.4, 2.8, 2.25, .06);
+    this.box(tv, this.black, 0, 1.8, 1.13, 3.08, 1.96, .12, .12);
     this.screenMaterial = this.material(new THREE.MeshBasicMaterial({ map: this.screenTexture, toneMapped: false }));
-    const screen = this.mesh(tv, new THREE.PlaneGeometry(4.92, 3.12), this.screenMaterial, 'construct-television-screen'); screen.position.set(-.35, 3.25, 1.245);
-    for (const y of [2.8, 3.25, 3.7]) this.cylinder(tv, this.steel, 2.65, y, 1.24, .18, .08).rotation.x = Math.PI / 2;
-    for (const x of [-2.35, 2.35]) this.tube(tv, [new THREE.Vector3(x, 1, -.45), new THREE.Vector3(x * 1.1, .18, -.2)], .075);
-    this.box(tv, this.steel, 0, .2, -.2, 6.2, .18, 2.3, .06);
-    const aerial = this.tube(tv, [new THREE.Vector3(-.5, 5.6, 0), new THREE.Vector3(-1.6, 7.2, -.2)], .025, this.black); aerial.name = 'construct-tv-aerial';
-    this.tube(tv, [new THREE.Vector3(.5, 5.6, 0), new THREE.Vector3(1.7, 7, -.2)], .025, this.black);
+    const screen = this.mesh(tv, new THREE.PlaneGeometry(2.8, 1.7), this.screenMaterial, 'construct-television-screen'); screen.position.set(0, 1.8, 1.205);
+    for (const x of [-1.22, 1.22]) this.cylinder(tv, this.steel, x, .48, 1.15, .14, .08).rotation.x = Math.PI / 2;
+    for (let i = 0; i < 13; i++) this.box(tv, this.black, -.8 + i * .13, .5, 1.135, .035, .34, .018);
+    const rear = document.createElement('canvas'); rear.width = 512; rear.height = 384;
+    const ctx = rear.getContext('2d')!; ctx.fillStyle = '#42382b'; ctx.fillRect(0, 0, 512, 384);
+    ctx.fillStyle = '#a28d64'; ctx.font = '28px Georgia'; ctx.fillText('DEEP IMAGE', 148, 95); ctx.font = '22px Georgia'; ctx.fillText('RADIO TELEVISION', 126, 280);
+    ctx.beginPath(); ctx.arc(256, 184, 43, 0, Math.PI * 2); ctx.strokeStyle = '#a28d64'; ctx.lineWidth = 5; ctx.stroke();
+    for (let i = 0; i < 25; i++) ctx.fillRect(38 + i * 18, 24, 5, 24);
+    const label = new THREE.CanvasTexture(rear); label.colorSpace = THREE.SRGBColorSpace; this.textures.add(label);
+    const panel = this.mesh(tv, new THREE.PlaneGeometry(3.12, 2.46), this.material(new THREE.MeshStandardMaterial({ map: label, roughness: .92 })), 'construct-tv-rear');
+    panel.position.set(0, 1.4, -1.134); panel.rotation.y = Math.PI;
   }
 
   private lesson(): void {
-    this.chair(CONSTRUCT_REVEAL.morpheus.x, 'construct-chair-morpheus');
-    this.chair(CONSTRUCT_REVEAL.neo.x, 'construct-chair-neo');
+    this.chair(CONSTRUCT.chairX.morpheus, 'construct-chair-morpheus');
+    this.chair(CONSTRUCT.chairX.neo, 'construct-chair-neo');
     this.television();
-    const table = new THREE.Group(); table.name = 'construct-side-table'; table.position.set(0, 0, -7.2); this.root.add(table);
-    this.cylinder(table, this.black, 0, 1.3, 0, 1.35, .16); this.cylinder(table, this.steel, 0, .65, 0, .16, 1.3);
-    const remote = this.box(table, this.black, .15, 1.47, 0, .42, .12, .92, .05, 'construct-remote'); remote.rotation.y = -.18;
-    for (let i = 0; i < 3; i++) {
-      const button = this.mesh(remote, new THREE.SphereGeometry(.035, 8, 6), this.steel);
-      button.position.set(0, .07, -.23 + i * .19); button.scale.y = .35;
-    }
   }
 
   private weapon(parent: THREE.Object3D, x: number, y: number, z: number, long = false): void {
@@ -257,7 +260,7 @@ export class ConstructRenderer {
     const frame = beat ? Math.floor(beat.elapsed * 8) : rescue ? phase * 1000 + Math.floor(rescue.elapsed * 12) : -1;
     if (frame !== this.lastFrame) {
       this.lastFrame = frame;
-      this.draw(beat?.elapsed ?? (this.sceneId === 'm1_guns' ? 9.3 : 4), beat?.started === false);
+      this.draw(beat?.elapsed ?? (this.sceneId === 'm1_guns' ? 9.3 : 0), beat?.started === false || Boolean(journey?.constructArrival));
     }
     if (this.sceneId === 'm1_guns') this.updateArmoury(journey);
   }
@@ -296,6 +299,7 @@ export class ConstructRenderer {
   }
 
   dispose(): void {
+    this.disposed = true;
     if (this.preview) { this.preview.desert.dispose(); this.preview.target.dispose(); this.preview.scene.clear(); this.preview = undefined; }
     this.root.clear(); this.geometries.forEach(value => value.dispose()); this.materials.forEach(value => value.dispose());
     this.textures.forEach(value => value.dispose()); this.lights.forEach(value => value.dispose());

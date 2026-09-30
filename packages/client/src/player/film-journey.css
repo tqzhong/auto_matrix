@@ -22,6 +22,13 @@ body.film-cabin-scene .sandbox-hotbar,body.film-cabin-scene .player-ability { di
 body.film-cabin-scene .sandbox-interact { top:auto; bottom:36px; }
 body.film-cabin-scene:has(#gameplay-recorder) .sandbox-interact { bottom:64px; }
 body.film-cabin-scene:has(#gameplay-recorder) .film-sequence { bottom:125px; }
+body.film-construct-scene .sandbox-hotbar,body.film-construct-scene .game-vitals,body.film-construct-scene .game-map,body.film-construct-scene .game-event,body.film-construct-scene .play-tip { display:none; }
+body.film-construct-scene .game-objective { background:#101c19ed; padding:12px 16px; }
+body.film-construct-scene .sandbox-clock,body.film-construct-scene .sandbox-nav button { color:#304336; }
+body.film-construct-scene .sandbox-interact { top:auto; bottom:28px; }
+body.film-construct-scene .game-controls,body.film-construct-scene .mouse-hint { display:none; }
+body.film-construct-scene:has(#gameplay-recorder) .sandbox-interact { bottom:64px; }
+body.film-construct-scene:has(#gameplay-recorder) .film-sequence { bottom:125px; }
 body.film-rescue-scene .sandbox-hotbar { display:none; }
 body.film-reloaded-scene .sandbox-hotbar,body.film-reloaded-scene .player-ability,body.film-reloaded-scene .game-controls { display:none; }
 body.film-catch-scene .sandbox-hotbar,body.film-catch-scene .player-ability,body.film-catch-scene .game-controls { display:none; }

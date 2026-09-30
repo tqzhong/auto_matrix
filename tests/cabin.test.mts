@@ -67,7 +67,8 @@ test('the cabin escort waits for Neo and the core connection requires consent, s
   h.frames(50);
   assert.equal(h.state().scene, 'm1_construct');
   assert.ok(h.state().completed.includes('m1_recovery') && h.state().completed.includes('m1_cabin'));
-  assert.equal(h.state().awakening?.started, false, 'the television lesson still waits for the player');
+  assert.equal(h.state().constructArrival?.phase, 'ready', 'Neo inspects his image before the television lesson');
+  assert.equal(h.state().awakening, undefined);
   assert.equal(h.sandbox.state.structures.some(item => item.id === 'film:cabin:door'), false);
 });
 

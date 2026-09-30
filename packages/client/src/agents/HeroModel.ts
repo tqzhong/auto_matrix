@@ -18,6 +18,7 @@ import { wireTrackingElectrode } from './TrackingContact.js';
 import { placeHotelFeet } from './HotelFootPlacement.js';
 import { placePodBody } from './PodLandingContact.js';
 import { cabinContact } from './CabinContact.js';
+import { ConstructPerformance } from './ConstructPerformance.js';
 import { clubCloseness } from '@auto_matrix/shared';
 
 export type HeroSupport = 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour' | 'niobe' | 'ballard' | 'ghost' | 'soren' | 'link' | 'dozer';
@@ -94,6 +95,7 @@ export class HeroModels {
   private welcomes = new Map<HeroRig, LafayetteWelcomePerformance>();
   private knocks = new Map<HeroRig, LafayetteKnockPerformance>();
   private recoveries = new Map<HeroRig, RecoveryPerformance>();
+  private constructs = new Map<HeroRig, ConstructPerformance>();
   private workdays = new Map<HeroRig, OfficeWorkdayPerformance>();
   private apartments = new Map<HeroRig, ApartmentPerformance>();
   private wakeCalls = new Map<HeroRig, WakeCallPerformance>();
@@ -730,8 +732,7 @@ export class HeroModels {
         const explain = THREE.MathUtils.smoothstep(t, 2, 3.2) * (1 - THREE.MathUtils.smoothstep(t, 8.2, 9.5));
         const shock = THREE.MathUtils.smoothstep(t, 8.8, 10.4);
         if (role === 'morpheus') {
-          bone('shoulder_R').rotation.x -= explain * .72; bone('shoulder_R').rotation.z -= explain * .42;
-          bone('elbow_R').rotation.x -= explain * .95; bone('head').rotation.y += explain * .16;
+          bone('head').rotation.y += explain * .16;
         } else {
           bone('head').rotation.y -= .18 * explain; bone('spine').rotation.x += .14 * shock; bone('chest').rotation.x += .2 * shock;
           bone('shoulder_L').rotation.x -= .2 * shock; bone('shoulder_R').rotation.x -= .2 * shock;
@@ -747,6 +748,11 @@ export class HeroModels {
           for (const side of ['R', 'L']) bone('shoulder_' + side).rotation.x -= collapse * .42;
         }
       }
+    }
+    if (input.construct?.role === 'neo' && input.construct.phase === 'image') {
+      const t = input.construct.elapsed, inspect = THREE.MathUtils.smoothstep(t, .3, 1) * (1 - THREE.MathUtils.smoothstep(t, 5, 6));
+      bone('shoulder_L').rotation.x -= .65 * inspect; bone('elbow_L').rotation.x -= .65 * inspect;
+      bone('head').rotation.x += .25 * inspect * (1 - THREE.MathUtils.smoothstep(t, 2.5, 3.5));
     }
     if (input.training) {
       const { kind, elapsed: t, role } = input.training;
@@ -914,6 +920,8 @@ export class HeroModels {
     if (input.recovery !== undefined && !this.recoveries.has(rig)) this.recoveries.set(rig, new RecoveryPerformance(rig));
     this.recoveries.get(rig)?.update(input.recovery, input.realWorld, patient);
     if (input.medical !== undefined || input.cabin) cabinContact(rig, input);
+    if ((input.construct || input.reveal?.kind === 'construct') && !this.constructs.has(rig)) this.constructs.set(rig, new ConstructPerformance(rig));
+    this.constructs.get(rig)?.update(input);
     if (input.mirrorCrew !== undefined && input.mirrorContact) wireTrackingElectrode(rig, input.mirrorCrew, input.mirrorContact);
     if (input.farewell) this.farewellContact(rig, input.farewell);
     if (input.pills && !this.pills.has(rig)) this.pills.set(rig, new PillPerformance(rig));
@@ -979,6 +987,7 @@ export class HeroModels {
     this.meetings.forEach(p => p.dispose()); this.meetings.clear();
     this.welcomes.forEach(p => p.dispose()); this.welcomes.clear(); this.knocks.forEach(p => p.dispose()); this.knocks.clear();
     this.recoveries.forEach(p => p.dispose()); this.recoveries.clear();
+    this.constructs.forEach(p => p.dispose()); this.constructs.clear();
     this.workdays.forEach(p => p.dispose()); this.workdays.clear();
     this.apartments.forEach(p => p.dispose()); this.apartments.clear();
     this.wakeCalls.forEach(p => p.dispose()); this.wakeCalls.clear();

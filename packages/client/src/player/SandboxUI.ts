@@ -951,9 +951,20 @@ export class SandboxUI {
       document.getElementById('game-objective-copy')!.textContent = `Seraph 考验 · 两次闪避反击 ${trial.counters}/2`;
       return;
     }
+    if (!journey.visiting && scene.id === 'm1_construct' && journey.constructArrival) {
+      const arrival = journey.constructArrival, ready = arrival.phase === 'ready';
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = ready ? 'G 检查残余自我影像 · V 切换视角'
+        : arrival.phase === 'image' ? '观察身体变化 · V 切换视角 · 进度会保存' : 'WASD 走到右侧皮椅外侧 · G 触摸椅背';
+      document.getElementById('game-objective-copy')!.textContent = ready ? '检查消失的接口与恢复的头发 · 按 G'
+        : arrival.phase === 'image' ? '观察程序中的自己' : '亲自走到皮椅旁，检验触感';
+      if (ready) { this.el('sandbox-interact').classList.remove('hidden'); this.el('sandbox-nearby').textContent = '检查残余自我影像'; }
+      if (arrival.phase === 'image') this.el('sandbox-interact').classList.add('hidden');
+      return;
+    }
     if (journey.awakening && journey.awakening.elapsed < AWAKENING_SECONDS[journey.awakening.kind] && awakeningLocked(journey)) {
       const waiting = awakeningWaiting(journey); const kind = journey.awakening!.kind;
-      const action = kind === 'mirror' ? '继续追踪与触镜' : kind === 'recovery' ? '示意开始恢复肌肉' : kind === 'cabin' ? '起身检查颈后接口' : kind === 'core' ? '坐入连接椅，允许接入' : kind === 'construct' ? '请 Morpheus 打开电视' : '请 Morpheus 继续揭示';
+      const action = kind === 'mirror' ? '继续追踪与触镜' : kind === 'recovery' ? '示意开始恢复肌肉' : kind === 'cabin' ? '起身检查颈后接口' : kind === 'core' ? '坐入连接椅，允许接入' : kind === 'construct' ? '触摸椅背，听 Morpheus 解释' : '请 Morpheus 继续揭示';
       const activity = ({ mirror: journey.awakening!.elapsed < MIRROR_TIMING.touch ? '追踪接线' : '镜面覆盖', connect: '定位连接', disconnect: '培养舱断线', rescue: '飞船救援', recovery: '针疗与休息', cabin: '舱室醒来与身体检查', core: '核心连接', construct: '电视与感官揭示', desert: '真实荒漠讲解' } as const)[kind];
       document.getElementById('game-objective-copy')!.textContent = waiting
         ? `${journey.step + 1}/${scene.steps.length} · ${action} · 按 G`

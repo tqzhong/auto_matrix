@@ -20,7 +20,13 @@ test('the Construct has physical red chairs, an authored CRT reveal and a separa
     assert.ok(root.getObjectByName('construct-chair-neo'));
     assert.ok(root.getObjectByName('construct-chair-morpheus'));
     assert.ok(root.getObjectByName('construct-television-screen'));
-    assert.ok(root.getObjectByName('construct-remote'), 'the physical remote is visible on the table that starts the lesson');
+    assert.equal(root.getObjectByName('construct-side-table'), undefined, 'the loading space retains the two film armchairs and cabinet television');
+    const chair = root.getObjectByName('construct-chair-neo')!;
+    assert.ok(chair.children.length <= 4, 'buttons and upholstery are batched, not a draw call per decoration');
+    root.updateMatrixWorld(true);
+    const chairBox = new THREE.Box3().setFromObject(chair), tvBox = new THREE.Box3().setFromObject(root.getObjectByName('construct-television')!);
+    assert.ok(chairBox.max.y > 3.2 && chairBox.max.y < 3.6, 'the wingback reaches standing Neo’s chest instead of towering over his head');
+    assert.ok(tvBox.max.y < chairBox.max.y && tvBox.getSize(new THREE.Vector3()).x < 3.5, 'the Radiola-like cabinet is lower than the armchairs');
     const light = root.getObjectByName('construct-screen-light') as THREE.PointLight;
     const journey = { version: 1, scene: 'm1_construct', step: 0, actor: 'neo', completed: [], enteredAt: 0, checkpoint: filmPosition('film_white_construct'), reflections: {}, lastText: '',
       awakening: { kind: 'construct', elapsed: 0, started: false } } satisfies FilmJourney;

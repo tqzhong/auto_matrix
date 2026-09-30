@@ -1,4 +1,4 @@
-import { CABIN, CABIN_ROUTE_LENGTH, cabinGuidePose, newReloaded, newFarewell, newDeusPact, newSmithFinale, newTrilogyEpilogue, BURLY, EXILES, CHATEAU, MOUNTAIN, TRUCKS, HEL_COATCHECK } from '@auto_matrix/shared';
+import { CONSTRUCT, CABIN, CABIN_ROUTE_LENGTH, cabinGuidePose, newReloaded, newFarewell, newDeusPact, newSmithFinale, newTrilogyEpilogue, BURLY, EXILES, CHATEAU, MOUNTAIN, TRUCKS, HEL_COATCHECK } from '@auto_matrix/shared';
 // Creates an isolated visual-review save; never writes the player's data directory.
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import os from 'node:os';
@@ -572,6 +572,12 @@ if (scene.id === 'm1_cabin' && ['cabin-inspect', 'core-connect'].includes(proces
     actor.position = filmPosition(scene.set, CABIN.approach.x, CABIN.approach.z); sandbox.life.film.awakeningFrame(actor, 0, 0);
   }
   journey.checkpoint = { ...actor.position };
+}
+if (scene.id === 'm1_construct' && process.argv[3] === 'construct-chair') {
+  actor.controller = 'player'; sandbox.life.film.command(actor, 'act', 0);
+  for (let frame = 0; frame < 111; frame++) sandbox.life.film.awakeningFrame(actor, .1, 0);
+  actor.position = filmPosition(scene.set, CONSTRUCT.approach.x, CONSTRUCT.approach.z);
+  sandbox.life.film.state!.checkpoint = { ...actor.position };
 }
 for (const resident of world.agents.values()) delete resident.controller;
 neo.isAwakened = FILM_SCENES.indexOf(scene) >= FILM_SCENES.findIndex(s => s.id === 'm1_pod');

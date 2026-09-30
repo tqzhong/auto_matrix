@@ -160,6 +160,7 @@ export class AgentRenderer {
         recoveryCrew: state.currentAction?.parameters.recoveryCrew as MotionInput['recoveryCrew'],
         medical: state.currentAction?.parameters.medical as number | undefined,
         cabin: state.currentAction?.parameters.cabin as MotionInput['cabin'],
+        construct: state.currentAction?.parameters.construct as MotionInput['construct'],
         performance: state.currentAction?.parameters.filmPose as MotionInput['performance'],
         mirrorBeat: state.currentAction?.parameters.mirrorBeat as number | undefined,
         mirrorCrew: state.currentAction?.parameters.mirrorCrew as number | undefined,
@@ -204,7 +205,7 @@ export class AgentRenderer {
       input.podRescue = journey?.scene === 'm1_pod' && !journey.visiting && input.performance === 'lift' && journey.awakening?.kind === 'rescue'
         ? journey.awakening.elapsed : undefined;
       input.officeShirt = officeClothing(state.id, state.currentLocation);
-      input.clubClothes = state.currentLocation === 'film_white_rabbit_club';
+      input.clubClothes = state.currentLocation === 'film_white_rabbit_club' || state.id === 'neo' && state.currentLocation === 'film_white_construct' && !state.currentAction?.parameters.rescue;
       input.glasses = !input.clubClothes && (state.id !== 'neo' || state.isAwakened && state.currentLocation !== 'film_oracle_home');
       if (input.recoveryCrew) {
         const neo = this.agents.get('neo'); const shoulder = neo?.rig.hero?.bones.get(input.recoveryCrew.role === 'morpheus' ? 'shoulder_R' : 'shoulder_L');
