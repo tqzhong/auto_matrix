@@ -31,6 +31,7 @@ import { FAREWELL, farewellLocked } from '@auto_matrix/shared';
 import { DEUS_PACT, deusPactLocked } from '@auto_matrix/shared';
 import { SMITH_FINALE, smithFinaleLocked } from '@auto_matrix/shared';
 import { trilogyEpilogueLocked, trilogyEpilogueProgress } from '@auto_matrix/shared';
+import { ambushApproachTarget } from '@auto_matrix/shared';
 
 const escape = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const WEATHER = { clear: '晴朗', rain: '雨', code_storm: '代码风暴' };
@@ -135,7 +136,7 @@ export class SandboxUI {
     this.root.classList.toggle('hidden', !player || !state || !profile);
     this.el('film-phone').classList.add('hidden');
     this.el('film-sequence').classList.add('hidden');
-    this.el('film-sequence').classList.remove('urgent', 'oracle-departure', 'oracle-arrival');
+    this.el('film-sequence').classList.remove('urgent', 'oracle-departure', 'oracle-arrival', 'ambush-company');
     this.el('film-training-actions').classList.add('hidden');
     this.el('film-ride').classList.add('hidden');
     this.el('film-pills').classList.add('hidden');
@@ -201,11 +202,16 @@ export class SandboxUI {
 
   private updateFilm(player: AgentState, state: SandboxState): void {
     const journey = state.neoLife!.journey!; const scene = FILM_SCENE_BY_ID[journey.scene]; const step = scene.steps[journey.step];
+    if (!journey.visiting && scene.id === 'm1_dejavu') this.el('film-sequence').classList.add('ambush-company');
     const escapedScan = scene.id === 'm1_bug' && journey.office?.outcome === 'escaped';
     const stepLabel = escapedScan ? ['配合安全扫描', '重新判断今晚的接头', step?.label][journey.step] : step?.label;
+    const ambushCenter = FILM_SETS.film_ambush_house.center;
+    const ambushGoal = !journey.visiting && scene.id === 'm1_dejavu' && journey.step === 0 && journey.ambushApproach && !journey.ambushApproach.ready
+      ? ambushApproachTarget(player.position.x - ambushCenter.x, player.position.y - ambushCenter.y, player.position.z - ambushCenter.z) : undefined;
     const bridgeDoor = scene.id === 'm1_bridge' && journey.step === 1 && journey.bridgeArrival?.parkedRoadTime !== undefined
       ? meetingBoardPoint(journey.bridgeArrival) : undefined;
-    const stepTarget = bridgeDoor ? filmPosition(scene.set, bridgeDoor.x, bridgeDoor.z)
+    const stepTarget = ambushGoal ? { x: ambushCenter.x + ambushGoal.x, y: ambushCenter.y + ambushGoal.y, z: ambushCenter.z + ambushGoal.z }
+      : bridgeDoor ? filmPosition(scene.set, bridgeDoor.x, bridgeDoor.z)
       : scene.id === 'm1_bug' && journey.step === 1 && journey.meeting?.phase === 'done' ? player.position
         : step ? filmStepPosition(scene, step) : undefined;
     const blackout = this.el('film-blackout');
@@ -254,6 +260,21 @@ export class SandboxUI {
     document.getElementById('game-objective')!.textContent = journey.visiting ? set.name : escapedScan ? '确认没有被追踪'
       : scene.id === 'm1_wake_again' && journey.office?.outcome === 'escaped' ? '第二次来电' : scene.title;
     document.getElementById('game-objective-copy')!.textContent = journey.visiting ? '自由走动，J 返回保存的剧情位置。' : scene.id === 'm3_dock_battle' && journey.dockGunnery?.phase === 'failed' ? 'APU 防线失守 · 从剧情检查点重试' : journey.fighting ? 'F 连击 · X 闪避 · 1 治疗 · 击败追兵后继续' : step ? `${journey.step + 1}/${scene.steps.length} · ${stepLabel} · ${step.kind === 'reach' ? '走到标记旁' : step.kind === 'reflect' ? '靠近后按 J 记录反思' : '靠近后按 G'}` : 'G 继续下一段，J 查看刚刚发生的事。';
+    if (!journey.visiting && scene.id === 'm1_dejavu' && journey.step === 0 && journey.ambushApproach) {
+      const pending = !journey.ambushApproach.ready, observing = journey.ambush !== undefined;
+      const close = distance(player.position, filmStepPosition(scene, step)) <= 4;
+      const direction = Math.atan2(stepTarget!.x - player.position.x, stepTarget!.z - player.position.z) - player.rotation;
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = pending ? 'WASD 跟随同伴上楼 · 在平台换向 · V 切换视角'
+        : observing ? '观察门前黑猫的重复经过 · 鼠标环顾 · V 切换视角' : close ? 'G 留意黑猫 · 鼠标环顾 · V 切换视角' : '走到走廊观察处 · 同伴已到齐';
+      this.el('sandbox-interact').classList.toggle('hidden', pending || observing || !close);
+      this.el('sandbox-nearby').textContent = '留意门前的黑猫';
+      if (observing || pending && close) this.el('sandbox-waypoint').textContent = '';
+      else this.el('sandbox-waypoint').innerHTML = `<span style="transform:rotate(${-direction}rad)">↑</span>${ambushGoal?.label ?? '走廊观察处'} <b>${Math.round(distance(stepTarget!, player.position))} m</b>`;
+      document.getElementById('game-objective-copy')!.textContent = pending ? close ? '等候五名同伴到齐 · 可以自由观察' : '跟随同伴沿木楼梯上楼，绕过电梯井护栏'
+        : observing ? '似曾相识？留意黑猫与同伴的反应' : close ? '同伴已到齐 · 留意门前的黑猫' : '亲自进入走廊，留意门前的黑猫';
+      return;
+    }
     if (!journey.visiting && scene.id === 'm1_bridge' && journey.bridgeTail) {
       const tail = journey.bridgeTail; const failed = tail.phase === 'failed';
       this.el('sandbox-trace').textContent = tail.phase === 'evaded' ? '已甩开尾随' : `尾随警戒 ${Math.round(tail.alert)}%`;
@@ -1613,7 +1634,10 @@ export class SandboxUI {
     if (journey?.actor === player.id && !journey.visiting && scene && step) {
       const door = scene.id === 'm1_bridge' && journey.step === 1 && journey.bridgeArrival?.parkedRoadTime !== undefined
         ? meetingBoardPoint(journey.bridgeArrival) : undefined;
-      const position = door ? filmPosition(scene.set, door.x, door.z)
+      const center = FILM_SETS.film_ambush_house.center;
+      const ambushGoal = scene.id === 'm1_dejavu' && journey.step === 0 && journey.ambushApproach && !journey.ambushApproach.ready
+        ? ambushApproachTarget(player.position.x - center.x, player.position.y - center.y, player.position.z - center.z) : undefined;
+      const position = ambushGoal ? filmPosition(scene.set, ambushGoal.x, ambushGoal.z) : door ? filmPosition(scene.set, door.x, door.z)
         : scene.id === 'm1_bug' && journey.step === 1 && journey.meeting?.phase === 'done' ? player.position : filmStepPosition(scene, step);
       ctx.strokeStyle = '#eac987'; ctx.beginPath(); ctx.arc(180 + (position.x - player.position.x) * .75, 115 + (position.z - player.position.z) * .75, 4, 0, Math.PI * 2); ctx.stroke();
     }

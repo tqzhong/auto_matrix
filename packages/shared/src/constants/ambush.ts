@@ -6,6 +6,60 @@ export const AMBUSH_SECONDS = 9.5;
 // Two playable flights around a caged lift. The corridor stays at its old height
 // so cat, wet-wall and bathroom checkpoints keep their coordinates.
 export const AMBUSH_STAIRS = { rise: 7.4, steps: 12, left: -5.5, right: 5.5, entry: { x: -5.5, z: 32 } } as const;
+export const AMBUSH_COMPANY = {
+  morpheus: { offset: 12.6, x: -8.5, z: -17 }, switch: { offset: 8.4, x: -7.5, z: -12 }, apoc: { offset: 4.2, x: -10, z: -7.5 },
+  trinity: { offset: -4.2, x: -6, z: -3 }, cypher: { offset: -8.4, x: -10, z: 1.5 },
+} as const;
+export type AmbushCompanion = keyof typeof AMBUSH_COMPANY;
+export interface AmbushApproach { ready: boolean; progress: Record<AmbushCompanion, number> }
+export interface AmbushEscort { role: AmbushCompanion; progress: number; watching: boolean }
+export const AMBUSH_ROUTE = [
+  { x: 5.5, y: -7.4, z: 32 }, { x: -5.5, y: -7.4, z: 32 },
+  { x: -5.5, y: -7.4, z: 29 }, { x: -5.5, y: -3.7, z: 17 },
+  { x: -5.5, y: -3.7, z: 14.5 }, { x: 5.5, y: -3.7, z: 14.5 },
+  { x: 5.5, y: -3.7, z: 17 }, { x: 5.5, y: 0, z: 29 },
+  { x: 5.5, y: 0, z: 31.8 }, { x: 11, y: 0, z: 31.8 }, { x: 11, y: 0, z: 8 },
+] as const;
+const companyRoute = (role?: AmbushCompanion) => [...AMBUSH_ROUTE, ...(role ? [
+  { x: AMBUSH_COMPANY[role].x, y: 0, z: 8 }, { x: AMBUSH_COMPANY[role].x, y: 0, z: AMBUSH_COMPANY[role].z },
+] : [{ x: 0, y: 0, z: 8 }, { x: 0, y: 0, z: -8 }])];
+export function ambushRouteLength(role?: AmbushCompanion): number {
+  const route = companyRoute(role); return route.slice(1).reduce((length, point, i) => length + Math.hypot(point.x - route[i].x, point.z - route[i].z), 0);
+}
+export function ambushRouteRoot(progress: number, role?: AmbushCompanion) {
+  const route = companyRoute(role); let remaining = Math.max(0, progress);
+  for (let i = 0; i < route.length - 1; i++) {
+    const a = route[i], b = route[i + 1], length = Math.hypot(b.x - a.x, b.z - a.z);
+    if (remaining > length && i < route.length - 2) { remaining -= length; continue; }
+    const t = Math.min(1, remaining / length), x = a.x + (b.x - a.x) * t, z = a.z + (b.z - a.z) * t;
+    const y = ambushFloor(x, z, a.y + (b.y - a.y) * t) ?? a.y;
+    return { x, y, z, yaw: Math.atan2(b.x - a.x, b.z - a.z) };
+  }
+  return { ...route.at(-1)!, yaw: Math.PI };
+}
+/** Use height as well as the plan view: the two landings share the same x/z. */
+export function ambushRouteProgress(x: number, y: number, z: number): number {
+  const route = companyRoute(); let offset = 0, best = Infinity, progress = 0;
+  for (let i = 0; i < route.length - 1; i++) {
+    const a = route[i], b = route[i + 1], dx = b.x - a.x, dy = b.y - a.y, dz = b.z - a.z;
+    const t = Math.max(0, Math.min(1, ((x - a.x) * dx + (y - a.y) * dy + (z - a.z) * dz) / (dx * dx + dy * dy + dz * dz)));
+    const gap = Math.hypot(x - a.x - dx * t, y - a.y - dy * t, z - a.z - dz * t), length = Math.hypot(dx, dz);
+    if (gap < best) { best = gap; progress = offset + length * t; } offset += length;
+  }
+  return progress;
+}
+export function ambushApproachTarget(x: number, y: number, z: number) {
+  const progress = ambushRouteProgress(x, y, z), route = companyRoute(); let offset = 0;
+  for (let i = 1; i < route.length; i++) {
+    offset += Math.hypot(route[i].x - route[i - 1].x, route[i].z - route[i - 1].z);
+    if (progress < offset - 1 || i === route.length - 1) return { ...route[i],
+      label: i <= 3 ? '左侧木楼梯' : i <= 6 ? '换层平台' : i <= 8 ? '右侧木楼梯' : i <= 10 ? '上层护栏外侧' : '走廊观察处' };
+  }
+  return { ...route.at(-1)!, label: '走廊观察处' };
+}
+export function newAmbushApproach(): AmbushApproach {
+  return { ready: false, progress: Object.fromEntries(Object.entries(AMBUSH_COMPANY).map(([id, role]) => [id, 11 + role.offset])) as AmbushApproach['progress'] };
+}
 export interface AmbushSurface { x: number; z: number; width: number; depth: number; y: number }
 export const AMBUSH_FLOORS: AmbushSurface[] = [
   { x: 0, z: -11, width: 44, depth: 46, y: 0 },

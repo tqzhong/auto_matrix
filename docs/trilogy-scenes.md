@@ -192,7 +192,7 @@
 
 先知局部镜头可在场景参数后使用 `oracle-exam`、`oracle-cookie` 或 `oracle-question`，例如 `node --import tsx scripts/film-review-fixture.mts m1_oracle oracle-question`。这些模式只建立对应动作检查点，不代表从候诊室连续游玩到了该位置。
 
-旧楼入口可使用 `node --import tsx scripts/film-review-fixture.mts m1_dejavu`。Neo 从下层开始，可普通行走上下两段楼梯，绕上层护栏再观察黑猫；台阶暂停刷新与实际移动轨迹见[楼梯入口验收](../output/gameplay/trilogy-ambush-stairs-2026-09-30/README.md)。只补一层差，同行人物/猫下楼和完整追捕仍待制作，不代表这一组已达到电影级。
+旧楼入口可使用 `node --import tsx scripts/film-review-fixture.mts m1_dejavu`。Neo 与五名同伴从下层开始，沿两段楼梯与上层护栏同行；导航指向下一段平台，同伴等候落后的 Neo，到齐后才开放黑猫观察，重复时五人转向 Neo。暂停、断线、读档和重试保留队伍进度，既有黑猫存档不强制重播入口。六名角色的楼梯鞋底/衣摆姿态样本、同一隔离存档的普通移动轨迹、双视角、台阶暂停刷新与随后封锁见[六人同行验收](../output/gameplay/trilogy-ambush-company-2026-09-30/README.md)；此前共享楼梯与洞口验收见[楼梯入口记录](../output/gameplay/trilogy-ambush-stairs-2026-09-30/README.md)。仍只补一层差，猫下楼、跨层连续追捕、演员与成片空间美术、完整连续人工试玩和性能待制作或验收，不代表这一组已达到电影级。
 
 背叛段可使用 `node --import tsx scripts/film-review-fixture.mts m1_bathroom bathroom-hold`、`bathroom-crash`，以及 `node --import tsx scripts/film-review-fixture.mts m1_unplugged unplug-window`、`unplug-counter`、`unplug-reconnect`。它们分别定位坚守、破墙、反击窗口、反击演出和重连检查点，只用于局部动作/画面验收，不能作为从黑猫到营救决定的连续游玩证据。
 

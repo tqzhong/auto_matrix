@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { BURLY, oracleCookieOwner, type AgentState, type RescueLoadout, type ChateauWeapon } from '@auto_matrix/shared';
 import { poseSpoonHands } from './SpoonPerformance.js';
+import { placeAmbushFeet } from './HotelFootPlacement.js';
 import { poseOracleReception, poseOracleWaiting } from './OracleReceptionPerformance.js';
 import { poseOracleCookie } from './OracleCookiePerformance.js';
 import { poseOracleDeparture } from './OracleDeparturePerformance.js';
@@ -664,6 +665,8 @@ export class CharacterModels {
       }
       vertices.needsUpdate = true; panel.mesh.geometry.computeVertexNormals();
     }
+    if (input.grounded && !input.realWorld && !input.seated && !input.floorSeated && !input.performance
+      && !input.windingUp && rig.motion.attackAge > 1 && rig.motion.skillAge > 1 && rig.motion.hitAge > .5) placeAmbushFeet(rig);
     poseSpoonHands(rig, input.spoonLesson);
     poseOracleReception(rig, input.oracleReception);
     poseOracleWaiting(rig, input.oracleWaiting);

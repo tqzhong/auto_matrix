@@ -19,6 +19,7 @@ import { WakeCallPerformance } from './WakeCallPerformance.js';
 import { enableSkinnedCulling } from './SkinnedBounds.js';
 import { wireTrackingElectrode } from './TrackingContact.js';
 import { placeHotelFeet } from './HotelFootPlacement.js';
+import { AMBUSH_STAIRS, ambushFloor } from '@auto_matrix/shared';
 import { placePodBody } from './PodLandingContact.js';
 import { cabinContact } from './CabinContact.js';
 import { ConstructPerformance } from './ConstructPerformance.js';
@@ -953,7 +954,10 @@ export class HeroModels {
     if (input.wakeCall && !this.wakeCalls.has(rig)) this.wakeCalls.set(rig, new WakeCallPerformance(rig));
     this.wakeCalls.get(rig)?.update(input.wakeCall);
     const spoonFloor = input.spoonLesson && spoonLessonSeat(input.spoonLesson) > 0 ? rig.root.getWorldPosition(new THREE.Vector3()).y + .025 : undefined;
-    if (delta <= 0 && spoonFloor === undefined || !rig.panels.some(panel => panel.mesh.visible)) return;
+    const ambushCenter = FILM_SETS.film_ambush_house.center, origin = rig.root.getWorldPosition(new THREE.Vector3());
+    const onStairs = Math.abs(origin.x - ambushCenter.x) <= 9 && origin.z >= ambushCenter.z + 12 && origin.z <= ambushCenter.z + 34
+      && origin.y >= ambushCenter.y - 1 - AMBUSH_STAIRS.rise - .1 && origin.y <= ambushCenter.y - 1 + .1;
+    if (delta <= 0 && spoonFloor === undefined && !onStairs || !rig.panels.some(panel => panel.mesh.visible)) return;
     const dt = Math.max(0, Math.min(delta, 1 / 30));
     // Analytic wind target plus damped springs; the waist is pinned. Thigh and
     // shin capsules stop the running knees from cutting through the coat.
@@ -989,10 +993,12 @@ export class HeroModels {
           position.array[offset] = t < .04 ? panel.rest[offset] : value + panel.velocity[offset] * dt;
           changed ||= position.array[offset] !== value;
         }
-        if (spoonFloor !== undefined) {
+        if (spoonFloor !== undefined || onStairs) {
           this.point.fromBufferAttribute(position, i); panel.mesh.localToWorld(this.point);
-          if (this.point.y < spoonFloor) {
-            this.point.y = spoonFloor; panel.mesh.worldToLocal(this.point); position.setXYZ(i, this.point.x, this.point.y, this.point.z);
+          const tread = onStairs ? ambushFloor(this.point.x - ambushCenter.x, this.point.z - ambushCenter.z, origin.y - ambushCenter.y + 1) : undefined;
+          const floor = spoonFloor ?? (tread === undefined ? undefined : ambushCenter.y - 1 + tread + .025);
+          if (floor !== undefined && this.point.y < floor) {
+            this.point.y = floor; panel.mesh.worldToLocal(this.point); position.setXYZ(i, this.point.x, this.point.y, this.point.z);
             panel.velocity[i * 3 + 1] = 0; changed = true;
           }
         }

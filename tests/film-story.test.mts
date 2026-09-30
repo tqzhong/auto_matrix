@@ -2425,6 +2425,21 @@ test('the entire film route completes through interactions, driving and real com
       assert.equal(state.oracle.arrival.phase, 'done', 'the complete route enters through the door before the spoon lesson');
     }
     for (let index = 0; index < scene.steps.length; index++) {
+      if (scene.id === 'm1_dejavu' && index === 0 && state.ambushApproach) {
+        for (const [x, z] of [[-5.5, 30.8], [-5.5, 14.5], [5.5, 14.5], [5.5, 31.8], [11, 31.8], [11, 8], [0, 8], [0, -8]]) {
+          const target = filmPosition(scene.set, x, z);
+          for (let frame = 0; frame < 600; frame++) {
+            const actor = h.actor(), dx = target.x - actor.position.x, dz = target.z - actor.position.z, gap = Math.hypot(dx, dz);
+            if (gap < .3) break;
+            h.players.receiveInput('film-player', { x: dx / Math.max(1, gap), z: dz / Math.max(1, gap), yaw: Math.atan2(dx, dz), jump: false, sprint: false, sequence: ++sequence });
+            h.players.step(.1, true, h.tick()); assert.ok(frame < 599, `company route blocked at ${x}, ${z}`);
+          }
+          h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false, sequence: ++sequence });
+          h.players.step(.1, true, h.tick());
+        }
+        for (let frame = 0; frame < 400 && !state.ambushApproach.ready; frame++) h.players.step(.1, true, h.tick());
+        assert.equal(state.ambushApproach.ready, true, 'the full trilogy route waits for the same five physical companions');
+      }
       const step = scene.steps[index]; const actor = h.actor(); actor.position = filmStepPosition(scene, step);
       if (scene.id === 'm3_rain') {
         if (index === 0) h.advance();

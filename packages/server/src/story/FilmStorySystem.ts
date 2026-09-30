@@ -24,6 +24,7 @@ import { SENTINEL_CAST, SENTINEL_TIMING, sentinelActive, sentinelDanger, sentine
 import { INTERLUDE_CAST, interludeDuration, interludeKind, interludeLocked, interludeRoot, interludeSeated, interludeText, type InterludeEncounter, type InterludeRole } from '@auto_matrix/shared';
 import { ORACLE_VISIT, ORACLE_DEPARTURE, oracleDepartureRoot, oracleDepartureLocked, oracleDepartureText, oracleDepartureTarget, ORACLE_KITCHEN_CHAIRS, SPOON_LESSON, ORACLE_RECEPTION, ORACLE_RECEPTION_CAST, ORACLE_WAITING_CAST, oracleReceptionRoot, oracleReceptionLength, oracleReceptionText, spoonLessonLocked, spoonLessonRoot, spoonLessonBend, spoonLessonText, oracleLegacyChoice, oracleVisitDuration, oracleVisitLocked, oracleVisitRoot, oracleVisitText, type OracleVisitRole } from '@auto_matrix/shared';
 import { ORACLE_ENTRANCE, oracleArrivalPending, oracleArrivalDoor, oracleArrivalLength, oracleArrivalRoot, oracleArrivalText } from '@auto_matrix/shared';
+import { AMBUSH_COMPANY, newAmbushApproach, ambushRouteRoot, ambushRouteLength, ambushRouteProgress, type AmbushCompanion } from '@auto_matrix/shared';
 import { BETRAYAL, betrayalDuration, betrayalLocked, betrayalRoot, betrayalText, type BetrayalEncounter, type BetrayalRole } from '@auto_matrix/shared';
 import { RESCUE, rescueDuration, rescueLocked, rescueRoot, rescueText, type RescueLoadout, type RescuePreparation, type RescueRole } from '@auto_matrix/shared';
 import { GOVERNMENT_RESCUE, governmentLocked, governmentRoot, governmentText, type GovernmentRescueEncounter, type GovernmentRescueRole } from '@auto_matrix/shared';
@@ -1469,6 +1470,8 @@ export class FilmStorySystem {
     }
     if (this.scene?.set === 'film_ambush_house') migrate(this.state?.checkpoint);
     migrate(this.state?.returnPosition);
+    const actor = this.state && this.world.agents.get(this.state.actor);
+    if (actor) this.ambushFrame(actor, 0, this.world.simulationTick);
   }
   restoreOracleSpace(): void {
     const center = FILM_SETS.film_oracle_home.center;
@@ -1886,7 +1889,40 @@ export class FilmStorySystem {
   }
   ambushFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
-    if (!state || !this.controls(agent) || state.visiting || state.scene !== 'm1_dejavu' || state.step !== 0 || !state.ambush || !this.near(agent, this.step!)) return;
+    if (!state || !this.controls(agent) || state.visiting || state.scene !== 'm1_dejavu') return;
+    const roles = Object.keys(AMBUSH_COMPANY) as AmbushCompanion[];
+    const occupied = roles.some(id => this.world.agents.get(id)?.controller);
+    const approach = state.ambushApproach, delta = Math.max(0, Math.min(.1, dt)), center = FILM_SETS[this.scene!.set].center;
+    if (approach) {
+      const progress = ambushRouteProgress(agent.position.x - center.x, agent.position.y - center.y, agent.position.z - center.z);
+      const arrived = this.near(agent, this.scene!.steps[0]);
+      for (const role of roles) {
+        const actor = this.world.agents.get(role); if (!actor || actor.controller || this.unavailable(role)) continue;
+        const before = { ...actor.position }, length = ambushRouteLength(role);
+        if (!occupied && !approach.ready && state.step === 0 && delta > 0) {
+          const goal = arrived ? length : Math.min(length, progress + AMBUSH_COMPANY[role].offset);
+          const next = Math.min(Math.max(approach.progress[role], goal), approach.progress[role] + Math.max(4.2, Math.hypot(agent.velocity.x, agent.velocity.z) * 1.08) * delta);
+          const root = ambushRouteRoot(next, role), candidate = { ...filmPosition(this.scene!.set, root.x, root.z), y: center.y + root.y };
+          const clear = distance(candidate, agent.position) >= 2.7 || distance(candidate, agent.position) >= distance(before, agent.position);
+          if (clear && !playerBlocked(candidate, true, 1.1, this.sandbox().structures)
+            && roles.every(other => other === role || distance(candidate, this.world.agents.get(other)!.position) >= 2.7)) approach.progress[role] = next;
+        }
+        const root = ambushRouteRoot(approach.progress[role], role), watching = (state.ambush?.elapsed ?? 0) >= 4.5;
+        this.place(actor, this.scene!, { ...filmPosition(this.scene!.set, root.x, root.z), y: center.y + root.y });
+        actor.rotation = watching ? Math.atan2(agent.position.x - actor.position.x, agent.position.z - actor.position.z) : root.yaw;
+        actor.velocity = delta > 0 ? { x: (actor.position.x - before.x) / delta, y: (actor.position.y - before.y) / delta, z: (actor.position.z - before.z) / delta } : { x: 0, y: 0, z: 0 };
+        actor.currentAction = { type: 'idle', parameters: { resolved: true, ambushEscort: { role, progress: approach.progress[role], watching } }, startedAt: tick, duration: 1, progress: 0 };
+      }
+      if (!approach.ready) {
+        approach.ready = roles.every(role => approach.progress[role] >= ambushRouteLength(role) - .001);
+        state.lastText = occupied ? '同行者正由另一位玩家控制，楼梯上的队伍与当前进度已保留。'
+          : approach.ready ? '六人来到上层走廊。留意门前的黑猫，靠近后按 G。'
+            : arrived ? '同伴正在转入上层走廊。留出通道，等队伍到齐再观察门前。'
+              : '跟随前面的同伴，沿电梯旁的两段楼梯上楼，再绕右侧护栏进入走廊。停下时他们会等你。';
+        state.checkpoint = { ...agent.position };
+      }
+    }
+    if (occupied || approach && !approach.ready || state.step !== 0 || !state.ambush || !this.near(agent, this.step!)) return;
     state.ambush.elapsed = Math.min(AMBUSH_SECONDS, state.ambush.elapsed + Math.min(.1, dt));
     const time = state.ambush.elapsed;
     state.lastText = time < 4 ? '一只黑猫从门前经过，伸展身体，继续向右。' : time < 8.3 ? '同一只猫，又做了同样的动作。Trinity 突然停住：系统正在改变这里。' : '外面的光线消失了。门与窗被砖墙封死，原来的出口已经不在了。';
@@ -4499,6 +4535,11 @@ export class FilmStorySystem {
       return `回访${FILM_SETS[visited.set].name}。J 可返回当前剧情，回访不会改写进度。`;
     }
     if (target === 'retry') {
+      if (state.scene === 'm1_dejavu' && state.step === 0 && state.ambushApproach) {
+        agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
+        this.place(agent, this.scene, state.checkpoint); this.ambushFrame(agent, 0, tick);
+        return '已接回旧楼当前站位，同伴爬楼和黑猫观察进度保留。';
+      }
       if (state.scene === 'm1_bridge' && state.bridgeTail?.phase === 'failed') {
         const attempts = state.bridgeTail.attempts + 1;
         this.sandbox().threats = this.sandbox().threats.filter(threat => threat.id !== 'bridge:tail');
@@ -5245,7 +5286,11 @@ export class FilmStorySystem {
       else if (state.phone.phase === 'ready') state.phone = { phase: 'answering', elapsed: 0 };
       this.phoneFrame(agent, 0, tick); return state.lastText;
     }
-    if (state.scene === 'm1_dejavu' && state.step === 0) { state.ambush ??= { elapsed: 0 }; return '留意前方门廊。走远会中断观察，回到这里可以继续。'; }
+    if (state.scene === 'm1_dejavu' && state.step === 0) {
+      if (Object.keys(AMBUSH_COMPANY).some(id => this.world.agents.get(id)?.controller)) return '同行者正由另一位玩家控制，观察进度已保留。';
+      if (state.ambushApproach && !state.ambushApproach.ready) return '先沿楼梯跟上同伴，留出通道，等队伍抵达上层走廊。';
+      state.ambush ??= { elapsed: 0 }; return '留意前方门廊。走远会中断观察，回到这里可以继续。';
+    }
     if (state.scene === 'm1_oracle' && state.step === 0) {
       state.oracle ??= {}; state.oracle.vase ??= 0;
       return '先知提醒你留意花瓶。你的注意转向身后。';
@@ -5393,6 +5438,8 @@ export class FilmStorySystem {
     delete state.mirrorGuide;
     delete state.training;
     delete state.dojo;
+    state.ambushApproach = scene.id === 'm1_dejavu' ? newAmbushApproach() : undefined;
+    if (scene.id === 'm1_dejavu') delete state.ambush;
     delete state.workday;
     delete state.contact;
     delete state.wakeCall;
@@ -5483,6 +5530,7 @@ export class FilmStorySystem {
       }
     }
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.betrayal) other.currentAction = null;
+    for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.ambushEscort) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.rescue) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.government) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.airRescue) other.currentAction = null;
@@ -5513,6 +5561,7 @@ export class FilmStorySystem {
     this.sandbox().weatherUntil = tick + 100000;
     this.stageCast();
     if (scene.id === 'm1_bridge') this.bridgeArrivalFrame(actor, 0, tick);
+    if (scene.id === 'm1_dejavu') this.ambushFrame(actor, 0, tick);
     this.reconcileCast();
     if (scene.id === 'm1_spoon') this.oracleFrame(actor, false, 0, tick);
     if (scene.id === 'm3_oracle_last') {
@@ -5687,6 +5736,7 @@ export class FilmStorySystem {
     scene.cast.forEach((id, i) => {
       const actor = this.world.agents.get(id);
       if (!actor || actor.controller || actor.id === this.state!.actor || this.unavailable(id)) return;
+      if (scene.id === 'm1_dejavu' && this.state!.ambushApproach) return;
       if (id === 'trinity' && this.state?.hotel && scene.id !== 'm1_mirror') return;
       // Cast stands clear of the playable aisle and its interaction targets.
       this.place(actor, scene, filmPosition(scene.set, (i % 2 ? 1 : -1) * (10 + Math.floor(i / 2) * 2), -6 + Math.floor(i / 2) * 8));

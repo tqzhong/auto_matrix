@@ -1,10 +1,13 @@
 import * as THREE from 'three';
-import { FILM_SETS, HOTEL_SURFACES, LAFAYETTE, hotelFloor } from '@auto_matrix/shared';
+import { FILM_SETS, HOTEL_SURFACES, LAFAYETTE, hotelFloor, AMBUSH_FLOORS, AMBUSH_STAIRS, ambushFloor } from '@auto_matrix/shared';
 import type { HeroRig } from './HeroModel.js';
+import type { CharacterRig } from './CharacterModel.js';
+import { reach } from './SpoonPerformance.js';
 
-const center = FILM_SETS.film_lafayette.center;
-const base = center.y - LAFAYETTE.upper - 1;
+const hotelCenter = FILM_SETS.film_lafayette.center;
+const hotelBase = hotelCenter.y - LAFAYETTE.upper - 1;
 const soles = new WeakMap<HeroRig, THREE.Vector3[][]>();
+const proceduralSoles = new WeakMap<CharacterRig, THREE.Vector3[][]>();
 
 function solePoints(rig: HeroRig): THREE.Vector3[][] {
   const saved = soles.get(rig); if (saved) return saved;
@@ -29,12 +32,16 @@ function solePoints(rig: HeroRig): THREE.Vector3[][] {
 // tread height. Keep the gait's raised foot above that tread, not at root level.
 export function placeHotelFeet(rig: HeroRig): void {
   const origin = rig.root.getWorldPosition(new THREE.Vector3());
+  const ambushCenter = FILM_SETS.film_ambush_house.center;
+  const ambush = Math.abs(origin.x - ambushCenter.x) <= 9 && origin.z >= ambushCenter.z + 12 && origin.z <= ambushCenter.z + 34
+    && origin.y >= ambushCenter.y - 1 - AMBUSH_STAIRS.rise - .1 && origin.y <= ambushCenter.y - 1 + .1;
+  const center = ambush ? ambushCenter : hotelCenter, base = ambush ? center.y - 1 : hotelBase;
   const x = origin.x - center.x, y = origin.y - base, z = origin.z - center.z;
-  if (x < 30 || x > 48 || z < -8 || z > 26 || y < -.1 || y > LAFAYETTE.upper + .1) return;
+  if (!ambush && (x < 30 || x > 48 || z < -8 || z > 26 || y < -.1 || y > LAFAYETTE.upper + .1)) return;
   const rotation = rig.root.getWorldQuaternion(new THREE.Quaternion());
   const points = solePoints(rig), sample = new THREE.Vector3();
   // Sample only nearby treads; do not scan all thirteen storeys per shoe vertex.
-  const surfaces = HOTEL_SURFACES.filter(surface => Math.abs(surface.y - y) < 1 && surface.y <= y + .8
+  const surfaces = (ambush ? AMBUSH_FLOORS : HOTEL_SURFACES).filter(surface => Math.abs(surface.y - y) < 1 && surface.y <= y + .8
     && Math.abs(surface.x - x) < surface.width / 2 + 2.5 && Math.abs(surface.z - z) < surface.depth / 2 + 2.5);
   const legs = ['R', 'L'].map((side, index) => {
     const hip = rig.bones.get('hip_' + side)!, knee = rig.bones.get('knee_' + side)!, ankle = rig.bones.get('ankle_' + side)!;
@@ -42,7 +49,7 @@ export function placeHotelFeet(rig: HeroRig): void {
     const hinge = knee.getWorldPosition(new THREE.Vector3());
     const target = ankle.getWorldPosition(new THREE.Vector3());
     const upper = start.distanceTo(hinge), lower = hinge.distanceTo(target);
-    const floor = hotelFloor(target.x - center.x, target.z - center.z, y);
+    const floor = ambush ? ambushFloor(target.x - center.x, target.z - center.z, y) : hotelFloor(target.x - center.x, target.z - center.z, y);
     const lift = Math.max(0, target.y - origin.y - rig.footHeight);
     let support = -Infinity;
     for (const point of points[index]) {
@@ -82,4 +89,52 @@ export function placeHotelFeet(rig: HeroRig): void {
     ankle.quaternion.copy(knee.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rotation));
   }
   rig.root.updateWorldMatrix(true, true);
+}
+
+// Cypher uses the existing procedural rig. Sample its actual boot meshes and
+// solve each leg independently, including the forward rim beside a riser.
+export function placeAmbushFeet(rig: CharacterRig): void {
+  const center = FILM_SETS.film_ambush_house.center, base = center.y - 1;
+  const origin = rig.root.getWorldPosition(new THREE.Vector3()), y = origin.y - base;
+  if (Math.abs(origin.x - center.x) > 9 || origin.z < center.z + 12 || origin.z > center.z + 34 || y < -AMBUSH_STAIRS.rise - .1 || y > .1) return;
+  rig.root.updateWorldMatrix(true, true);
+  let points = proceduralSoles.get(rig);
+  if (!points) {
+    points = rig.ankles.map(ankle => {
+      const result: THREE.Vector3[] = [];
+      ankle.traverse(object => {
+        if (!(object instanceof THREE.Mesh)) return;
+        for (let i = 0; i < object.geometry.attributes.position.count; i++) {
+          const point = object.getVertexPosition(i, new THREE.Vector3()); object.localToWorld(point); ankle.worldToLocal(point);
+          if (point.y < -.05) result.push(point);
+        }
+      });
+      return result;
+    });
+    proceduralSoles.set(rig, points);
+  }
+  const rotation = rig.root.getWorldQuaternion(new THREE.Quaternion());
+  const legs = rig.ankles.map((ankle, i) => {
+    const target = ankle.getWorldPosition(new THREE.Vector3()), lift = Math.max(0, target.y - origin.y - .155);
+    let support = -Infinity;
+    for (const point of points![i]) {
+      const sample = point.clone().applyQuaternion(rotation).add(target);
+      const floor = ambushFloor(sample.x - center.x, sample.z - center.z, y);
+      if (floor !== undefined && Math.abs(floor - y) < 1) support = Math.max(support, base + floor - sample.y + target.y);
+    }
+    target.y = support + lift; return { ankle, target, hip: rig.hips[i], knee: rig.knees[i] };
+  });
+  if (legs.some(leg => !Number.isFinite(leg.target.y))) return;
+  let drop = 0;
+  for (const { hip, knee, ankle, target } of legs) {
+    const start = hip.getWorldPosition(new THREE.Vector3()), length = knee.position.length() + ankle.position.length() - .002;
+    drop = Math.max(drop, start.y - target.y - Math.sqrt(Math.max(0, length * length - (start.x - target.x) ** 2 - (start.z - target.z) ** 2)));
+  }
+  for (const hip of rig.hips) hip.position.y -= drop; rig.torso.position.y -= drop;
+  rig.root.updateWorldMatrix(true, true);
+  for (const { hip, knee, ankle, target } of legs) {
+    reach(hip, knee, ankle.position, target, new THREE.Vector3(0, 0, 1).applyQuaternion(rotation));
+    ankle.quaternion.copy(knee.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rotation));
+    ankle.updateWorldMatrix(false, true);
+  }
 }
