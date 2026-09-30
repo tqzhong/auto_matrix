@@ -10,7 +10,7 @@ import { wakeCallLocked, morningLocked } from '@auto_matrix/shared';
 import { clubLocked } from '@auto_matrix/shared';
 import { sentinelDanger, sentinelLocked } from '@auto_matrix/shared';
 import { interludeDuration, interludeLocked } from '@auto_matrix/shared';
-import { ORACLE_RECEPTION, oracleReceptionText, spoonLessonText, oracleVisitDuration, oracleVisitLocked } from '@auto_matrix/shared';
+import { ORACLE_RECEPTION, oracleReceptionText, spoonLessonText, oracleVisitDuration, oracleVisitLocked, oracleDepartureTarget, oracleDepartureText } from '@auto_matrix/shared';
 import { BETRAYAL, betrayalDuration, betrayalLocked } from '@auto_matrix/shared';
 import { RESCUE, rescueDuration, rescueLoadout, rescueLocked } from '@auto_matrix/shared';
 import { BANE_ENCOUNTER } from '@auto_matrix/shared';
@@ -336,6 +336,18 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
     else action = '<button disabled>演出进行中 · 合上手记观看</button>';
     const progress = interludeLocked(journey) ? `<div class="film-progress"><i style="width:${Math.min(100, encounter.elapsed / interludeDuration(encounter) * 100)}%"></i></div><small>鼠标可以环顾，V 可在主视角与场景镜头间切换；动作进度会自动保存。</small>` : '';
     return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>${names[0]}</h3><p>${names[2]}</p></header><article class="film-now"><div><h3>${names[1]}</h3><p>${journey.lastText}</p>${progress}<div class="film-controls">${action}${!current ? button('resume', `继续 ${journey.actor === 'smith' ? 'Smith' : 'Neo'} 的剧情视角`) : ''}</div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
+  }
+  if (!journey.visiting && journey.scene === 'm1_oracle' && journey.oracle?.departure) {
+    const departure = journey.oracle.departure, current = player.id === journey.actor;
+    const target = oracleDepartureTarget(departure, journey.oracle.reception!);
+    const close = current && distance(player.position, filmPosition(scene.set, target.x, target.z)) <= (departure.phase === 'waiting' ? 2.4 : 1.5);
+    const action = !current ? button('resume', '接回 Neo 的视角') : player.status !== 'alive' ? button('retry', '继续当前送别进度')
+      : departure.phase === 'waiting' ? button('act', '请接待者带路 · G', !close)
+        : departure.phase === 'ready' ? button('act', '听 Morpheus 说完 · G', !close || departure.rise < 3.8)
+          : departure.phase === 'bite_ready' ? button('act', '吃一口饼干 · G')
+            : departure.phase === 'leaving' ? button('act', '确认离开公寓 · G', !close)
+              : departure.phase === 'done' ? button('next', '继续返回路线 →') : '<p>合上手记，跟随接待者或观看当前动作。</p>';
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>先知公寓 · 带着疑问离开</h3><p>Neo 视角 · 预言属于你自己</p></header><article class="film-now"><div><h3>饼干、会合与离场</h3><p>${journey.lastText}</p><p>${oracleDepartureText(departure)}</p><div class="film-controls">${action}</div><small>WASD 自由移动 · 鼠标环顾 · V 切换视角 · 暂停、断线与读档保留送别进度</small></div></article></div>`;
   }
   if (!journey.visiting && journey.scene === 'm1_oracle' && journey.oracle?.consultation) {
     const encounter = journey.oracle.consultation; const current = player.id === journey.actor; const step = scene.steps[journey.step];

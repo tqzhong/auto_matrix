@@ -4,6 +4,7 @@ import { BURLY, oracleCookieOwner, type AgentState, type RescueLoadout, type Cha
 import { poseSpoonHands } from './SpoonPerformance.js';
 import { poseOracleReception, poseOracleWaiting } from './OracleReceptionPerformance.js';
 import { poseOracleCookie } from './OracleCookiePerformance.js';
+import { poseOracleDeparture } from './OracleDeparturePerformance.js';
 import { advanceMotion, newMotion, type MotionInput, type MotionState } from './CharacterMotion.js';
 import { HERO_IDS, HeroModels, type HeroId, type HeroRig, type HeroSupport } from './HeroModel.js';
 import { SpoonModel } from './SpoonModel.js';
@@ -479,18 +480,30 @@ export class CharacterModels {
       rig.phone.root.visible = Boolean(input.phone && (input.phone.phase !== 'pickup' || input.phone.elapsed >= .65));
       rig.phone.update(input.phone?.phase === 'answering' ? Math.min(1, input.phone.elapsed / .4) : input.phone?.phase === 'connected' ? 1 : 0);
     }
-    if (input.oracleVisit && !rig.cookie) {
+    if ((input.oracleVisit || input.oracleDeparture?.role === 'neo') && !rig.cookie) {
       const biscuit = this.material(new THREE.MeshStandardMaterial({ color: '#c98945', roughness: .88 }));
       const chocolate = this.material(new THREE.MeshStandardMaterial({ color: '#342017', roughness: .9 }));
       rig.cookie = new THREE.Group(); rig.cookie.name = 'oracle-cookie';
-      const base = this.mesh(rig.cookie, this.cylinder, biscuit, [0, 0, 0], [.13, .025, .13]); base.rotation.x = Math.PI / 2;
-      for (const [x, y] of [[-.05, .03], [.035, .055], [.058, -.035], [-.02, -.06]]) this.mesh(rig.cookie, this.sphere, chocolate, [x, y, .029], [.018, .018, .009]);
+      const whole = new THREE.Group(); whole.name = 'cookie-whole'; rig.cookie.add(whole);
+      const base = this.mesh(whole, this.cylinder, biscuit, [0, 0, 0], [.13, .025, .13]); base.rotation.x = Math.PI / 2;
+      const outline = new THREE.Shape();
+      for (let i = 0; i <= 32; i++) {
+        const angle = Math.PI / 2 + .62 + (Math.PI * 2 - 1.24) * i / 32, x = Math.cos(angle) * .13, y = Math.sin(angle) * .13;
+        if (!i) outline.moveTo(x, y); else outline.lineTo(x, y);
+      }
+      outline.quadraticCurveTo(.048, .054, .015, .074); outline.quadraticCurveTo(-.025, .048, -.0755, .1058); outline.closePath();
+      const bitten = new THREE.Group(); bitten.name = 'cookie-bitten'; rig.cookie.add(bitten);
+      this.mesh(bitten, this.geometry(new THREE.ExtrudeGeometry(outline, { depth: .045, bevelEnabled: false, curveSegments: 8 })), biscuit, [0, 0, -.0225], [1, 1, 1]);
+      for (const group of [whole, bitten]) for (const [x, y] of [[-.05, .03], [.035, .055], [.058, -.035], [-.02, -.06]]) this.mesh(group, this.sphere, chocolate, [x, y, .029], [.018, .018, .009]);
       const parent = rig.hero?.bones.get('wrist_R') ?? rig.elbows[0];
       rig.cookie.position.set(.02, rig.hero ? -.13 : -.84, .08); rig.cookie.rotation.x = -.18; parent.add(rig.cookie);
     }
     if (rig.cookie) {
       const visit = input.oracleVisit;
-      rig.cookie.visible = Boolean(visit && oracleCookieOwner(visit) === visit.role);
+      const departure = input.oracleDeparture;
+      rig.cookie.visible = Boolean(visit && oracleCookieOwner(visit) === visit.role || departure?.role === 'neo');
+      const bitten = departure?.role === 'neo' && (['leaving', 'done'].includes(departure.phase) || departure.phase === 'biting' && departure.elapsed >= 1.35);
+      rig.cookie.getObjectByName('cookie-whole')!.visible = !bitten; rig.cookie.getObjectByName('cookie-bitten')!.visible = Boolean(bitten);
     }
     const holdsStaff = input.burly?.role === 'neo' && ['staff', 'flight_ready'].includes(input.burly.phase);
     if (holdsStaff && !rig.staff) {
@@ -575,6 +588,7 @@ export class CharacterModels {
       poseOracleReception(rig, input.oracleReception);
       poseOracleWaiting(rig, input.oracleWaiting);
       poseOracleCookie(rig, input.oracleVisit);
+      poseOracleDeparture(rig, input.oracleDeparture);
       if (holdsStaff) {
         rig.hero.bones.get('shoulder_R')!.rotation.x -= .7 + staffSweep * .5;
         rig.hero.bones.get('shoulder_L')!.rotation.x -= .55 + staffSweep * .35;
@@ -652,6 +666,7 @@ export class CharacterModels {
     poseOracleReception(rig, input.oracleReception);
     poseOracleWaiting(rig, input.oracleWaiting);
     poseOracleCookie(rig, input.oracleVisit);
+    poseOracleDeparture(rig, input.oracleDeparture);
     if (input.training?.kind === 'download' && input.training.role === 'tank') {
       const engaged = input.training.elapsed > 0 ? 1 : .35;
       for (let i = 0; i < 2; i++) {

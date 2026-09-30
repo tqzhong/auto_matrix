@@ -3,6 +3,26 @@ import { FILM_SETS, ORACLE_COOKIE, type OracleVisitGesture } from '@auto_matrix/
 import type { CharacterRig } from './CharacterModel.js';
 import { reach } from './SpoonPerformance.js';
 
+export function cookiePinch(rig: CharacterRig): THREE.Vector3 {
+  if (!rig.hero) return new THREE.Vector3(0, -.79, .055);
+  const bones = rig.hero.bones, hand = bones.get('wrist_R')!;
+  for (let finger = 1; finger <= 5; finger++) for (let segment = 1; segment <= 3; segment++)
+    bones.get(`finger${finger}-${segment}_R`)!.rotation.z = finger === 1 ? segment === 1 ? -.28 : .35 : segment === 1 ? .5 : .75;
+  hand.updateWorldMatrix(true, true);
+  return hand.worldToLocal(bones.get('finger1-3_R')!.localToWorld(new THREE.Vector3(.02, -.02, .012))
+    .lerp(bones.get('finger2-3_R')!.localToWorld(new THREE.Vector3(.015, -.015, 0)), .5));
+}
+
+export function holdOracleCookie(rig: CharacterRig, pinch: THREE.Vector3, edge: THREE.Vector3, rotation = new THREE.Quaternion()): void {
+  if (!rig.cookie) return;
+  const hand = rig.hero?.bones.get('wrist_R') ?? rig.elbows[0], cookie = rig.cookie;
+  if (cookie.parent !== hand) hand.add(cookie);
+  const grip = hand.localToWorld(pinch.clone()).sub(edge);
+  cookie.position.copy(hand.worldToLocal(grip));
+  cookie.quaternion.copy(hand.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rotation));
+  cookie.scale.set(1, 1, 1).divide(hand.getWorldScale(new THREE.Vector3()));
+}
+
 export function poseOracleCookie(rig: CharacterRig, gesture?: OracleVisitGesture): void {
   if (!gesture || gesture.phase === 'waiting') return;
   const t = gesture.phase === 'examining' ? gesture.elapsed : 10.8;
@@ -16,15 +36,7 @@ export function poseOracleCookie(rig: CharacterRig, gesture?: OracleVisitGesture
   rig.root.updateWorldMatrix(true, true);
   const upper = rig.hero?.bones.get('shoulder_R') ?? rig.shoulders[0], lower = rig.hero?.bones.get('elbow_R') ?? rig.elbows[0];
   const hand = rig.hero?.bones.get('wrist_R') ?? lower;
-  let pinch = new THREE.Vector3(0, -.79, .055);
-  if (rig.hero) {
-    const bones = rig.hero.bones;
-    for (let finger = 1; finger <= 5; finger++) for (let segment = 1; segment <= 3; segment++)
-      bones.get(`finger${finger}-${segment}_R`)!.rotation.z = finger === 1 ? segment === 1 ? -.28 : .35 : segment === 1 ? .5 : .75;
-    hand.updateWorldMatrix(true, true);
-    pinch = hand.worldToLocal(bones.get('finger1-3_R')!.localToWorld(new THREE.Vector3(.02, -.02, .012))
-      .lerp(bones.get('finger2-3_R')!.localToWorld(new THREE.Vector3(.015, -.015, 0)), .5));
-  }
+  const pinch = cookiePinch(rig);
   if (blend > 0) {
     const rotation = rig.root.getWorldQuaternion(new THREE.Quaternion());
     if (rig.hero) {
@@ -39,12 +51,5 @@ export function poseOracleCookie(rig: CharacterRig, gesture?: OracleVisitGesture
     }
     hand.updateWorldMatrix(false, true);
   }
-  if (rig.cookie) {
-    const cookie = rig.cookie;
-    if (cookie.parent !== hand) hand.add(cookie);
-    const grip = hand.localToWorld(pinch.clone()).sub(edge);
-    cookie.position.copy(hand.worldToLocal(grip));
-    cookie.quaternion.copy(hand.getWorldQuaternion(new THREE.Quaternion()).invert());
-    cookie.scale.set(1, 1, 1).divide(hand.getWorldScale(new THREE.Vector3()));
-  }
+  holdOracleCookie(rig, pinch, edge);
 }

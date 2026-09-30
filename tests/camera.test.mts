@@ -854,6 +854,30 @@ test('the Oracle consultation frames both speakers and V keeps a freely steerabl
   game.state.currentAction = null; game.step(.1); assert.equal(game.controls.performing, false);
 });
 
+test('the Oracle farewell frames both speakers, supports V and returns to freely steered walking', t => {
+  const game = setup(t, -Math.PI / 2), center = FILM_SETS.film_oracle_home.center;
+  Object.assign(game.state, { position: filmPosition('film_oracle_home', -6.8, 10.8), rotation: -Math.PI / 2, currentLocation: 'film_oracle_home',
+    currentAction: { type: 'idle', parameters: { oracleDeparture: { phase: 'talking', elapsed: 3, rise: 3.8, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 } });
+  game.controls.possess(game.state);
+  for (const aspect of [.6, 16 / 9]) {
+    game.camera.aspect = aspect; game.step(1);
+    assert.equal(game.controls.performing, true, 'the shoulder contact owns movement during the farewell');
+    for (const x of [-6.8, -8.2]) {
+      const face = new THREE.Vector3(center.x + x, center.y + 3.03, center.z + 10.8).project(game.camera);
+      assert.ok(Math.abs(face.x) < .88 && Math.abs(face.y) < .82 && face.z > -1 && face.z < 1, 'both speakers must fit in the farewell shot');
+    }
+  }
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+  assert.ok(game.camera.position.distanceTo(new THREE.Vector3(game.state.position.x, game.state.position.y + 2.99, game.state.position.z)) < .06);
+  game.document.pointerLockElement = game.canvas;
+  const direction = game.camera.getWorldDirection(new THREE.Vector3()); game.event(game.document, 'mousemove', { movementX: 170, movementY: -50 }); game.step(.1);
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(direction) > .3, 'the farewell must leave first-person free look available');
+  Object.assign(game.state.currentAction!.parameters.oracleDeparture as object, { phase: 'leaving', elapsed: 0 }); game.step(.1);
+  assert.equal(game.controls.performing, false, 'carrying the bitten cookie must not freeze normal walking');
+  const origin = game.group.position.clone(); game.key('KeyW'); game.step(.4); game.key('KeyW', false);
+  assert.ok(game.group.position.distanceTo(origin) > .3, 'Neo must walk to the exit himself');
+});
+
 test('V during the Oracle vase incident uses Neo eyes and preserves mouse looking', t => {
   const game = setup(t, Math.PI);
   Object.assign(game.state, { position: filmPosition('film_oracle_home', 7, -14), rotation: Math.PI, currentLocation: 'film_oracle_home',

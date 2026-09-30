@@ -166,6 +166,9 @@ test('first-person Neo can see the cookie he accepted, then ordinary body hiding
     const cookie = renderer.getAgent('neo')!.getObjectByName('oracle-cookie')!; assert.ok(cookie);
     for (let parent: THREE.Object3D | null = cookie; parent; parent = parent.parent) assert.equal(parent.visible, true,
       'first person must not hide the cookie through its actor parent');
+    renderer.setPlayerMotion({ ...input, oracleDeparture: { phase: 'guiding', elapsed: 0, rise: 1, role: 'neo' } }); renderer.update(.1);
+    for (let parent: THREE.Object3D | null = cookie; parent; parent = parent.parent) assert.equal(parent.visible, true,
+      'the accepted cookie stays visible while Neo follows the hostess in first person');
     renderer.setPlayerMotion(input); renderer.update(.1);
     assert.equal(cookie.visible, false); assert.equal(renderer.getAgentBody('neo')!.visible, false);
   } finally { renderer.dispose(); globalThis.document = document; }

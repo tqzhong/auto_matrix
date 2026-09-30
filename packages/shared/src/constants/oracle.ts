@@ -75,6 +75,49 @@ export function oracleLegacyChoice(answer: Philosophy): 'doubt' | 'rescue' | 'ob
   return answer === 'agency' ? 'doubt' : answer === 'care' ? 'rescue' : 'observe';
 }
 
+export interface OracleDeparture {
+  phase: 'waiting' | 'guiding' | 'ready' | 'talking' | 'bite_ready' | 'biting' | 'leaving' | 'done';
+  elapsed: number;
+  rise: number;
+  approach?: { x: number; z: number; yaw: number };
+}
+export type OracleDepartureGesture = OracleDeparture & { role: 'neo' | 'morpheus'; target?: { x: number; y: number; z: number } };
+export const ORACLE_DEPARTURE = {
+  neo: { x: -6.8, z: 10.8, yaw: -Math.PI / 2 },
+  morpheus: { x: -8.2, z: 10.8, yaw: Math.PI / 2 },
+  exit: { x: 0, z: 27 }, talking: 6.2, biting: 2.8,
+} as const;
+export function oracleDepartureLocked(departure?: OracleDeparture): boolean {
+  return departure?.phase === 'talking' || departure?.phase === 'biting';
+}
+export function oracleDepartureRoot(departure: OracleDeparture, role: 'neo' | 'morpheus') {
+  const target = ORACLE_DEPARTURE[role];
+  if (role === 'morpheus') {
+    const origin = ORACLE_WAITING_CAST.morpheus;
+    const rise = smooth(departure.rise / 2.2), approach = smooth((departure.rise - 2.2) / 1.6);
+    return { x: origin.x + (target.x - origin.x) * rise, z: origin.z + (target.z - origin.z) * approach, yaw: target.yaw };
+  }
+  const origin = departure.approach ?? target, amount = departure.phase === 'talking' ? smooth(departure.elapsed / 1.2) : 1;
+  if (departure.phase === 'biting') return origin;
+  const turn = Math.atan2(Math.sin(target.yaw - origin.yaw), Math.cos(target.yaw - origin.yaw));
+  return { x: origin.x + (target.x - origin.x) * amount, z: origin.z + (target.z - origin.z) * amount, yaw: origin.yaw + turn * amount };
+}
+export function oracleDepartureText(departure: OracleDeparture): string {
+  if (departure.phase === 'waiting') return '饼干仍在手中。走到厨房门内的白衣接待者旁，按 G 请她带你回客厅。';
+  if (departure.phase === 'guiding') return '自由跟随接待者回到客厅。她会等落后的你；Morpheus 正从沙发起身。';
+  if (departure.phase === 'ready') return 'Morpheus 留出了两人说话的空间。走到他面前，按 G 听他说完。';
+  if (departure.phase === 'talking') return 'Morpheus 把手放在你的肩上：先知说过什么，属于你自己。你不必向任何人交代。';
+  if (departure.phase === 'bite_ready') return '他没有追问你的预言。按 G 点头，亲自尝一口仍温热的饼干。';
+  if (departure.phase === 'biting') return '你点头，把饼干送到嘴边。谈话留下的压力慢慢松开，问题仍由你带走。';
+  if (departure.phase === 'leaving') return '饼干上留下一个缺口。走到公寓出口，按 G 确认离开，再继续返回路线。';
+  return '会面与离场已经记下。先知的回答不会替你决定下一步。';
+}
+
+export function oracleDepartureTarget(departure: OracleDeparture, reception: OracleReception) {
+  if (departure.phase === 'waiting' || departure.phase === 'guiding') return oracleReceptionRoot(reception);
+  return departure.phase === 'leaving' || departure.phase === 'done' ? ORACLE_DEPARTURE.exit : ORACLE_DEPARTURE.neo;
+}
+
 export interface SpoonLesson {
   phase: 'waiting' | 'sitting' | 'demonstrating' | 'offered' | 'receiving' | 'focus' | 'understood' | 'rising' | 'done';
   elapsed: number;
@@ -125,7 +168,7 @@ export function spoonLessonText(lesson: SpoonLesson): string {
 }
 
 export interface OracleReception {
-  phase: 'waiting' | 'approaching' | 'inviting' | 'guiding' | 'ready';
+  phase: 'waiting' | 'approaching' | 'inviting' | 'guiding' | 'ready' | 'returning' | 'returned';
   progress: number;
   elapsed: number;
 }
@@ -144,17 +187,19 @@ export const ORACLE_RECEPTION_CAST = ['oracle_priestess', ...Object.keys(ORACLE_
 export const ORACLE_RECEPTION = {
   approach: [{ x: -2, z: -5.5 }, { x: -2, z: 10.8 }, { x: -6.8, z: 10.3 }],
   guide: [{ x: -6.8, z: 10.3 }, { x: -2, z: 10.8 }, { x: -2, z: -9.6 }, { x: -4.6, z: -10.2 }],
+  returning: [{ x: -4.6, z: -10.2 }, { x: -2, z: -9.6 }, { x: -2, z: 10.8 }, { x: -5.5, z: 10.8 }, { x: -5.5, z: 14.4 }],
   speed: 2.6, invitation: 2.2,
 } as const;
-export function oracleReceptionLength(phase: 'approaching' | 'guiding'): number {
-  const route = phase === 'approaching' ? ORACLE_RECEPTION.approach : ORACLE_RECEPTION.guide;
+export function oracleReceptionLength(phase: 'approaching' | 'guiding' | 'returning'): number {
+  const route = phase === 'approaching' ? ORACLE_RECEPTION.approach : phase === 'returning' ? ORACLE_RECEPTION.returning : ORACLE_RECEPTION.guide;
   return route.slice(1).reduce((length, point, i) => length + Math.hypot(point.x - route[i].x, point.z - route[i].z), 0);
 }
 export function oracleReceptionRoot(reception: OracleReception) {
   if (reception.phase === 'waiting') return { ...ORACLE_RECEPTION.approach[0], yaw: 0 };
   if (reception.phase === 'inviting') return { ...ORACLE_RECEPTION.approach[2], yaw: -Math.PI * .75 };
   if (reception.phase === 'ready') return { ...ORACLE_RECEPTION.guide.at(-1)!, yaw: Math.PI / 2 };
-  const route = reception.phase === 'approaching' ? ORACLE_RECEPTION.approach : ORACLE_RECEPTION.guide;
+  if (reception.phase === 'returned') return { ...ORACLE_RECEPTION.returning.at(-1)!, yaw: Math.PI / 2 };
+  const route = reception.phase === 'approaching' ? ORACLE_RECEPTION.approach : reception.phase === 'returning' ? ORACLE_RECEPTION.returning : ORACLE_RECEPTION.guide;
   let remaining = Math.max(0, reception.progress);
   for (let i = 1; i < route.length; i++) {
     const a = route[i - 1], b = route[i], length = Math.hypot(b.x - a.x, b.z - a.z);

@@ -3,6 +3,48 @@ import test from 'node:test';
 import { build } from 'esbuild';
 import { FILM_SCENE_BY_ID, filmPosition, filmStepPosition, oracleReceptionRoot, type AgentState, type SandboxState } from '@auto_matrix/shared';
 
+test('the Oracle departure journal requires the hostess, privacy, bite and physical exit in order', async () => {
+  const output = await build({ entryPoints: ['packages/client/src/player/FilmJourneyPanel.ts'], bundle: true,
+    platform: 'node', format: 'esm', write: false, loader: { '.css': 'empty' }, logLevel: 'silent' });
+  const { renderFilmJourney } = await import(`data:text/javascript;base64,${Buffer.from(output.outputFiles[0].contents).toString('base64')}`);
+  const player = { id: 'neo', status: 'alive', isInMatrix: true, position: filmPosition('film_oracle_home', -4.6, -10.2) } as AgentState;
+  const sandbox = { threats: [], neoLife: { cycle: 1, journey: { scene: 'm1_oracle', actor: 'neo', step: 2, completed: [], reflections: {}, lastText: '带着饼干离开。',
+    oracle: { consultation: { phase: 'done', elapsed: 4.2 }, departure: { phase: 'waiting', elapsed: 0, rise: 0 }, reception: { phase: 'ready', progress: 0, elapsed: 0 } } } } } as SandboxState;
+  const departure = sandbox.neoLife!.journey!.oracle!.departure!;
+  assert.match(renderFilmJourney(player, sandbox), /data-target="film:act" >请接待者带路/);
+  assert.doesNotMatch(renderFilmJourney(player, sandbox), /data-target="film:next"/);
+  departure.phase = 'guiding'; assert.doesNotMatch(renderFilmJourney(player, sandbox), /data-target="film:act"/);
+  departure.phase = 'bite_ready'; player.position = filmPosition('film_oracle_home', 3, 20);
+  assert.match(renderFilmJourney(player, sandbox), /data-target="film:act" >吃一口饼干/);
+  departure.phase = 'leaving'; assert.match(renderFilmJourney(player, sandbox), /data-target="film:act" disabled>确认离开公寓/);
+  player.position = filmPosition('film_oracle_home', 0, 27); assert.match(renderFilmJourney(player, sandbox), /data-target="film:act" >确认离开公寓/);
+  departure.phase = 'done'; sandbox.neoLife!.journey!.step = 3;
+  assert.match(renderFilmJourney(player, sandbox), /data-target="film:next" >继续返回路线/);
+});
+
+test('Oracle departure navigation follows the returning hostess and only offers local interactions', async t => {
+  const output = await build({ entryPoints: ['packages/client/src/player/SandboxUI.ts'], bundle: true,
+    platform: 'node', format: 'esm', write: false, loader: { '.css': 'empty' }, logLevel: 'silent' });
+  const { SandboxUI } = await import(`data:text/javascript;base64,${Buffer.from(output.outputFiles[0].contents).toString('base64')}`);
+  const elements = new Map();
+  const element = (id: string) => {
+    if (!elements.has(id)) elements.set(id, { textContent: '', innerHTML: '', style: {}, classList: { add() {}, remove() {}, toggle() {} } });
+    return elements.get(id);
+  };
+  const document = globalThis.document; t.after(() => { globalThis.document = document; });
+  globalThis.document = { getElementById: element } as unknown as Document;
+  const ui = Object.assign(Object.create(SandboxUI.prototype), { root: { querySelector: element }, tick: 0 });
+  const player = { id: 'neo', status: 'alive', isInMatrix: true, rotation: 0, position: filmPosition('film_oracle_home', -4.6, -10.2) } as AgentState;
+  const sandbox = { threats: [], neoLife: { journey: { scene: 'm1_oracle', actor: 'neo', step: 2, completed: [], reflections: {}, lastText: '接待者正在等你。',
+    oracle: { consultation: { phase: 'done', elapsed: 4.2 }, departure: { phase: 'guiding', elapsed: 0, rise: 0 }, reception: { phase: 'returning', progress: 3, elapsed: 0 } } } } } as SandboxState;
+  ui.updateFilm(player, sandbox); assert.match(element('#sandbox-waypoint').innerHTML, /白衣接待者/);
+  assert.doesNotMatch(element('#film-sequence-hint').textContent, /G 离开厨房/);
+  sandbox.neoLife!.journey!.oracle!.departure!.phase = 'bite_ready'; ui.updateFilm(player, sandbox);
+  assert.match(element('#sandbox-nearby').textContent, /吃一口饼干/); assert.equal(element('#sandbox-waypoint').textContent, '');
+  sandbox.neoLife!.journey!.oracle!.departure!.phase = 'leaving'; ui.updateFilm(player, sandbox);
+  assert.match(element('#sandbox-waypoint').innerHTML, /公寓出口/);
+});
+
 test('Oracle navigation points to the waiting hostess until she reaches the kitchen', async t => {
   const output = await build({ entryPoints: ['packages/client/src/player/SandboxUI.ts'], bundle: true,
     platform: 'node', format: 'esm', write: false, loader: { '.css': 'empty' }, logLevel: 'silent' });

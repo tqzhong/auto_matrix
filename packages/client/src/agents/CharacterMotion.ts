@@ -44,6 +44,7 @@ export interface MotionInput {
   sentinel?: import('@auto_matrix/shared').SentinelGesture;
   interlude?: import('@auto_matrix/shared').InterludeGesture;
   oracleVisit?: OracleVisitGesture;
+  oracleDeparture?: import('@auto_matrix/shared').OracleDepartureGesture;
   oracleReception?: import('@auto_matrix/shared').OracleReceptionGesture;
   oracleWaiting?: import('@auto_matrix/shared').OracleWaitingGesture;
   betrayal?: BetrayalGesture;
@@ -147,7 +148,8 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const pills = input.pills && pillPose(input.pills);
   const exiting = input.pills?.role === 'neo' && input.pills.phase === 'taking' && input.pills.elapsed > PILL_TIMING.stand && input.pills.elapsed < PILL_TIMING.exit;
   const welcome = input.welcome && lafayetteWelcomePose(input.welcome);
-  const oracle = input.oracleVisit && oracleVisitPose(input.oracleVisit);
+  const oracleGesture = input.oracleVisit ?? (input.oracleDeparture?.role === 'neo' ? { phase: 'responding' as const, elapsed: 4.2, role: 'neo' as const } : undefined);
+  const oracle = oracleGesture && oracleVisitPose(oracleGesture);
   const betrayal = input.betrayal && betrayalPose(input.betrayal);
   const rescue = input.rescue && rescuePose(input.rescue);
   const lobby = input.lobbyEntry && lobbyPose(input.lobbyEntry);
@@ -295,8 +297,8 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     const reach = Math.sin(clamp((input.vase - .6) / 1.8) * Math.PI);
     arms[1].shoulder = mix(arms[1].shoulder, -1.1, reach); arms[1].elbow = mix(arms[1].elbow, -.25, reach);
   }
-  if (oracle && input.oracleVisit) {
-    if (input.oracleVisit.role === 'oracle') {
+  if (oracle && oracleGesture) {
+    if (oracleGesture.role === 'oracle') {
       arms[0].shoulder = mix(arms[0].shoulder, -1.34, oracle.inspect);
       arms[0].elbow = mix(arms[0].elbow, -.18, oracle.inspect);
       arms[0].outward = mix(arms[0].outward, -.08, oracle.inspect);

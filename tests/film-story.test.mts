@@ -2675,6 +2675,17 @@ test('the entire film route completes through interactions, driving and real com
         }
         actor.position = filmStepPosition(scene, step); h.players.step(.1, true, h.tick());
       }
+      else if (scene.id === 'm1_oracle' && index === 2) {
+        actor.position = filmPosition(scene.set, -4.6, -10.2); h.command('act');
+        for (let frame = 0; frame < 300 && state.oracle?.departure?.phase !== 'ready'; frame++) {
+          const guide = h.world.agents.get('oracle_priestess')!;
+          actor.position = { ...guide.position, z: guide.position.z - .5 }; h.players.step(.1, true, h.tick());
+        }
+        actor.position = filmPosition(scene.set, -6.8, 10.8); h.command('act');
+        for (let frame = 0; frame < 70; frame++) h.players.step(.1, true, h.tick());
+        h.command('act'); for (let frame = 0; frame < 30; frame++) h.players.step(.1, true, h.tick());
+        actor.position = filmPosition(scene.set, 0, 27); h.command('act');
+      }
       else if (step.kind === 'reach') h.advance();
       else if (step.kind === 'reflect') {
         if (scene.id === 'm1_oracle') {
