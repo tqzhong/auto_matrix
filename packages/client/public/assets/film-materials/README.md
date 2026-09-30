@@ -1,6 +1,6 @@
 # Film environment materials
 
-Six 1K PBR material sets from [Poly Haven](https://polyhaven.com/), used by FilmSetRenderer. CC0: https://polyhaven.com/license. Source URLs and verified MD5 checksums are recorded in sources.json. Only runtime diffuse, OpenGL normal and roughness maps are included.
+Six 1K PBR material sets from [Poly Haven](https://polyhaven.com/), used by the film-set renderers. CC0: https://polyhaven.com/license. Source URLs and verified MD5 checksums are recorded in sources.json. Only runtime diffuse, OpenGL normal and roughness maps are included.
 
 Lafayette also uses two original generated color textures (1254 × 1254), created with the built-in imagegen tool on 2026-09-28 and encoded as JPEG at quality 90 for the game:
 

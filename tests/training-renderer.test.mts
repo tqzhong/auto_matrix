@@ -44,6 +44,23 @@ test('the dojo, roof gap and red-dress plaza are dedicated physical training set
     assert.ok(dojoRoot.getObjectByName('training-dojo-set'));
     assert.ok(dojoRoot.getObjectByName('dojo-training-light'));
     assert.ok(dojoRoot.getObjectByName('dojo-courtyard'));
+    const eaves = dojoRoot.getObjectByName('dojo-main-eaves')!;
+    const veranda = dojoRoot.getObjectByName('dojo-garden-veranda')!;
+    const garden = dojoRoot.getObjectByName('dojo-garden')!;
+    const pavilion = dojoRoot.getObjectByName('dojo-garden-pavilion')!;
+    const entryGarden = dojoRoot.getObjectByName('dojo-entry-garden')!;
+    const entryGate = dojoRoot.getObjectByName('dojo-entry-gate')!;
+    const entryMatte = dojoRoot.getObjectByName('dojo-entry-matte') as THREE.Mesh;
+    const gardenMatte = dojoRoot.getObjectByName('dojo-garden-matte') as THREE.Mesh;
+    assert.ok(eaves.position.y > 12, 'the sparring floor stays under a visible roof structure');
+    assert.ok(veranda.position.z > 24, 'the mat room opens onto a real veranda instead of ending at a back wall');
+    assert.ok(garden.position.z > veranda.position.z, 'the garden continues beyond the veranda');
+    assert.ok(pavilion.position.z > garden.position.z, 'a distant focal point gives the open side depth');
+    assert.ok(entryGarden.position.z < -42, 'the entrance view has its own exterior instead of a paper wall');
+    assert.ok(entryGate.position.z < entryGarden.position.z, 'the opposite view terminates in a distant framed landmark');
+    assert.equal((entryMatte.material as THREE.MeshBasicMaterial).fog, false, 'the entrance horizon stays readable beyond the local fog');
+    assert.equal((gardenMatte.material as THREE.MeshBasicMaterial).fog, false, 'the garden horizon stays readable beyond the local fog');
+    assert.ok(entryMatte.position.y <= 16 && gardenMatte.position.y <= 16, 'the player sightline must meet the garden, not the matte’s floor edge');
   } finally { dojo.dispose(); }
 
   const jumpRoot = new THREE.Group(); const jump = new TrainingSetRenderer(jumpRoot, 'm1_jump'); jumpRoot.updateMatrixWorld(true);
