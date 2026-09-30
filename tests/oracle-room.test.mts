@@ -3,7 +3,7 @@ import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { FILM_SETS, SPOON_LESSON, ORACLE_WAITING_CAST, oracleReceptionRoot, spoonLessonBend, filmPosition, type SpoonLesson } from '@auto_matrix/shared';
+import { FILM_SETS, ORACLE_VISIT, SPOON_LESSON, ORACLE_WAITING_CAST, oracleReceptionRoot, spoonLessonBend, filmPosition, type SpoonLesson } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -87,6 +87,108 @@ test('Spoon Boy folds both legs above the rug instead of driving his shins throu
         `both folded feet must rest in front of the body, not hang below the pelvis: ${foot.toArray()}`);
       const up = new THREE.Vector3(0, 1, 0).applyQuaternion(ankle.getWorldQuaternion(new THREE.Quaternion()));
       assert.ok(up.y > .98, 'the shoes rest flat while the shins fold across the lap');
+    }
+  } finally { models.dispose(); globalThis.document = document; }
+});
+
+test('the Oracle cookie has one owner and passes continuously to Neo actual skinned hand', async t => {
+  const glb = await readFile(new URL('../packages/client/public/assets/characters/neo.glb', import.meta.url));
+  const length = glb.readUInt32LE(12), source = JSON.parse(glb.subarray(20, 20 + length).toString());
+  for (const material of source.materials) { delete material.pbrMetallicRoughness.baseColorTexture; delete material.normalTexture; }
+  source.images = []; source.textures = [];
+  const json = Buffer.from(JSON.stringify(source)), padded = Buffer.alloc(Math.ceil(json.length / 4) * 4, 32); json.copy(padded);
+  const bin = glb.subarray(20 + length), buffer = Buffer.alloc(20 + padded.length + bin.length);
+  buffer.writeUInt32LE(0x46546c67, 0); buffer.writeUInt32LE(2, 4); buffer.writeUInt32LE(buffer.length, 8);
+  buffer.writeUInt32LE(padded.length, 12); buffer.writeUInt32LE(0x4e4f534a, 16); padded.copy(buffer, 20); bin.copy(buffer, 20 + padded.length);
+  const asset = await new GLTFLoader().parseAsync(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength), '');
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', async () => asset);
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const document = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {} }) }) } as unknown as Document;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const models = new CharacterModels(), neo = models.create(world.agents.get('neo')!), oracle = models.create(world.agents.get('oracle')!);
+  try {
+    models.animate(neo, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, oracleVisit: { phase: 'examining', elapsed: 8.4, role: 'neo' } }, 4);
+    await new Promise(resolve => setImmediate(resolve)); assert.ok(neo.hero);
+    const center = FILM_SETS.film_oracle_home.center, input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, glasses: false };
+    for (const [rig, place] of [[neo, ORACLE_VISIT.neo], [oracle, ORACLE_VISIT.oracle]] as const) {
+      rig.root.position.set(center.x + place.x, center.y - 1, center.z + place.z); rig.root.rotation.y = place.yaw;
+    }
+    let previous: THREE.Vector3 | undefined, previousRotation: THREE.Quaternion | undefined, previousScale: THREE.Vector3 | undefined;
+    for (let frame = 0; frame <= 340; frame++) {
+      const elapsed = 7.5 + frame * .01;
+      for (const [rig, role] of [[neo, 'neo'], [oracle, 'oracle']] as const) {
+        models.animate(rig, 0, { ...input, oracleVisit: { phase: 'examining', elapsed, role } }, 4); rig.root.updateWorldMatrix(true, true);
+      }
+      const owners = [neo, oracle].filter(rig => rig.cookie!.visible);
+      assert.equal(owners.length, 1, `exactly one cookie must exist during the handoff at ${elapsed.toFixed(2)}`);
+      const cookie = owners[0].cookie!, point = cookie.getWorldPosition(new THREE.Vector3()), rotation = cookie.getWorldQuaternion(new THREE.Quaternion()), scale = cookie.getWorldScale(new THREE.Vector3());
+      if (previous) {
+        assert.ok(previous.distanceTo(point) < .055, `the cookie teleports between hands at ${elapsed}: ${previous.distanceTo(point)}`);
+        assert.ok(previousRotation!.angleTo(rotation) < .06, 'the cookie cannot flip at the transfer');
+        assert.ok(previousScale!.distanceTo(scale) < .025, 'both hands must hold the same cookie size');
+      }
+      previous = point; previousRotation = rotation; previousScale = scale;
+    }
+    assert.equal(neo.cookie!.visible, true); assert.equal(oracle.cookie!.visible, false);
+    assert.equal(neo.cookie!.parent, neo.hero.bones.get('wrist_R'));
+    neo.root.updateMatrixWorld(true);
+    const contact = neo.cookie!.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(.1, 0, 0));
+    for (const finger of [1, 2]) {
+      let nearest = Infinity;
+      for (const part of neo.hero.wardrobe) {
+        const mesh = part.mesh;
+        if (!(mesh instanceof THREE.SkinnedMesh) || !mesh.visible || Array.isArray(mesh.material) || mesh.material.name !== 'Skin') continue;
+        const indices = mesh.geometry.attributes.skinIndex, weights = mesh.geometry.attributes.skinWeight, vertex = new THREE.Vector3();
+        for (let i = 0; i < indices.count; i++) {
+          if (![0, 1, 2, 3].some(k => weights.getComponent(i, k) > .2 && mesh.skeleton.bones[indices.getComponent(i, k)]?.name.startsWith(`finger${finger}-`) && mesh.skeleton.bones[indices.getComponent(i, k)].name.endsWith('_R'))) continue;
+          mesh.getVertexPosition(i, vertex); mesh.localToWorld(vertex); nearest = Math.min(nearest, vertex.distanceTo(contact));
+        }
+      }
+      assert.ok(nearest < .05, `Neo finger ${finger} must contact the cookie edge instead of hovering beside it: ${nearest}`);
+    }
+  } finally { models.dispose(); globalThis.document = document; }
+});
+
+test('first-person Neo can see the cookie he accepted, then ordinary body hiding returns', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  const document = globalThis.document;
+  const context = { createRadialGradient: () => ({ addColorStop() {} }), fillRect() {}, strokeRect() {}, fillText() {},
+    createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {} };
+  globalThis.document = { createElement: () => ({ getContext: () => context }) } as unknown as Document;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!; neo.position = filmPosition('film_oracle_home', ORACLE_VISIT.neo.x, ORACLE_VISIT.neo.z); neo.isInMatrix = true;
+  const renderer = new AgentRenderer(new THREE.Scene()), input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 };
+  try {
+    renderer.updateAgent('neo', neo); renderer.setPlayer('neo', true);
+    renderer.setPlayerMotion({ ...input, oracleVisit: { phase: 'question', elapsed: 0, role: 'neo' } }); renderer.update(.1);
+    const cookie = renderer.getAgent('neo')!.getObjectByName('oracle-cookie')!; assert.ok(cookie);
+    for (let parent: THREE.Object3D | null = cookie; parent; parent = parent.parent) assert.equal(parent.visible, true,
+      'first person must not hide the cookie through its actor parent');
+    renderer.setPlayerMotion(input); renderer.update(.1);
+    assert.equal(cookie.visible, false); assert.equal(renderer.getAgentBody('neo')!.visible, false);
+  } finally { renderer.dispose(); globalThis.document = document; }
+});
+
+test('the Oracle blouse cannot poke through the front of her apron', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const document = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {} }) }) } as unknown as Document;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const models = new CharacterModels(), oracle = models.create(world.agents.get('oracle')!);
+  try {
+    models.animate(oracle, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, glasses: false }, 4); oracle.root.updateMatrixWorld(true);
+    for (const y of [2.64, 2.98, 3.15, 3.35]) for (const x of [-.15, 0, .15]) {
+      const ray = new THREE.Raycaster(new THREE.Vector3(x, y, 1), new THREE.Vector3(0, 0, -1), 0, 1);
+      const hit = ray.intersectObject(oracle.root, true).find(hit => {
+        for (let object: THREE.Object3D | null = hit.object; object; object = object.parent) if (!object.visible) return false;
+        return true;
+      });
+      assert.ok(hit, 'the apron needs a continuous front surface');
+      const mesh = hit.object as THREE.Mesh, material = mesh.material as THREE.MeshStandardMaterial, color = material.color.clone();
+      if (material.vertexColors && hit.face) color.multiply(new THREE.Color().fromBufferAttribute(mesh.geometry.attributes.color, hit.face.a));
+      assert.equal(color.getHexString(), 'd7c19a', `the blouse punctures the apron at ${x}, ${y}`);
     }
   } finally { models.dispose(); globalThis.document = document; }
 });

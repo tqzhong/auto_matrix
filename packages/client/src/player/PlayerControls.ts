@@ -1305,10 +1305,16 @@ export class PlayerControls {
       const target = origin.clone().add(new THREE.Vector3(.5, 2.725, -1.39).lerp(new THREE.Vector3(.38, 3.255, -.66), lift).lerp(new THREE.Vector3(.15, 3.65, -.1), call));
       this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta)); this.camera.lookAt(target);
     } else if (this.performing && this.motion.vase !== undefined) {
-      const center = FILM_SETS.film_oracle_home.center;
-      const ideal = new THREE.Vector3(center.x + 1.8, center.y + 4.8, center.z - 8.8);
-      this.camera.position.lerp(ideal, 1 - Math.exp(-7 * delta));
-      this.camera.lookAt(center.x + 7.6, center.y + 1.7, center.z - 11.7);
+      if (this.firstPerson) {
+        const eye = new THREE.Vector3(this.position.x, this.position.y + 2.99, this.position.z);
+        const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
+        this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
+      } else {
+        const center = FILM_SETS.film_oracle_home.center;
+        const ideal = new THREE.Vector3(center.x + 1.8, center.y + 4.8, center.z - 8.8);
+        this.camera.position.lerp(ideal, 1 - Math.exp(-7 * delta));
+        this.camera.lookAt(center.x + 7.6, center.y + 1.7, center.z - 11.7);
+      }
     } else if (spoon) {
       spoon.updateWorldMatrix(true, false);
       const hand = spoon.localToWorld(new THREE.Vector3(.1, .55, 0));

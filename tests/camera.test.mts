@@ -854,6 +854,19 @@ test('the Oracle consultation frames both speakers and V keeps a freely steerabl
   game.state.currentAction = null; game.step(.1); assert.equal(game.controls.performing, false);
 });
 
+test('V during the Oracle vase incident uses Neo eyes and preserves mouse looking', t => {
+  const game = setup(t, Math.PI);
+  Object.assign(game.state, { position: filmPosition('film_oracle_home', 7, -14), rotation: Math.PI, currentLocation: 'film_oracle_home',
+    currentAction: { type: 'idle', parameters: { vase: .8 }, startedAt: 0, duration: 1, progress: 0 } });
+  game.controls.possess(game.state); game.controls.performing = true; game.step(.3);
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+  const eye = new THREE.Vector3(game.state.position.x, game.state.position.y + 2.99, game.state.position.z);
+  assert.ok(game.camera.position.distanceTo(eye) < .06, 'the vase cinematic must release its fixed scene camera in first person');
+  const before = game.camera.getWorldDirection(new THREE.Vector3());
+  game.event(game.canvas, 'mousedown', { button: 2 }); game.event(game.document, 'mousemove', { movementX: 120, movementY: -25 }); game.step(.1);
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(before) > .15, 'Neo can choose where to look while the vase falls');
+});
+
 test('arrival hands back a clear third-person view toward the alley entrance', t => {
   const game = setup(t); game.state.currentLocation = 'film_extraction_car';
   const encounter = { phase: 'outside' as const, elapsed: 0, bugged: false, approach: { ...MEETING_CAR.approach, yaw: Math.PI } };

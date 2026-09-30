@@ -18,6 +18,12 @@ export const ORACLE_VISIT = {
   response: 4.2,
 } as const;
 
+export const ORACLE_COOKIE = { contact: { x: -5.6, y: 3.25, z: -22.05 }, transfer: 9.2 } as const;
+export function oracleCookieOwner(encounter: OracleVisitEncounter): OracleVisitRole | undefined {
+  if (encounter.phase === 'waiting' || encounter.phase === 'examining' && encounter.elapsed < 7.35) return undefined;
+  return encounter.phase === 'examining' && encounter.elapsed < ORACLE_COOKIE.transfer ? 'oracle' : 'neo';
+}
+
 const smooth = (value: number): number => {
   const t = Math.max(0, Math.min(1, value)); return t * t * (3 - 2 * t);
 };

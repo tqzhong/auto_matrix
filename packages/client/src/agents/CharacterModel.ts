@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { BURLY, oracleVisitPose, type AgentState, type RescueLoadout, type ChateauWeapon } from '@auto_matrix/shared';
+import { BURLY, oracleCookieOwner, type AgentState, type RescueLoadout, type ChateauWeapon } from '@auto_matrix/shared';
 import { poseSpoonHands } from './SpoonPerformance.js';
 import { poseOracleReception, poseOracleWaiting } from './OracleReceptionPerformance.js';
+import { poseOracleCookie } from './OracleCookiePerformance.js';
 import { advanceMotion, newMotion, type MotionInput, type MotionState } from './CharacterMotion.js';
 import { HERO_IDS, HeroModels, type HeroId, type HeroRig, type HeroSupport } from './HeroModel.js';
 import { SpoonModel } from './SpoonModel.js';
@@ -30,7 +31,7 @@ const HERO_LOOKS: Record<string, Look> = {
   trinity: { face: 1, width: 0.9, shoulders: 0.53, waist: 0.31, hips: 0.45, skin: '#dcc0aa', cloth: '#141818', leather: true, coat: false, hair: 'pixie', glasses: 'narrow' },
   smith: { face: 2, width: 1.02, shoulders: 0.68, waist: 0.41, hips: 0.46, skin: '#d7b399', cloth: '#252b28', leather: false, coat: false, hair: 'short', glasses: 'square' },
   morpheus: { face: 3, width: 1.13, shoulders: 0.71, waist: 0.44, hips: 0.49, skin: '#89614b', cloth: '#201a18', leather: true, coat: true, hair: 'bald', glasses: 'round' },
-  oracle: { width: 1.05, shoulders: 0.62, waist: 0.43, hips: 0.52, skin: '#77513f', cloth: '#79534a', leather: false, coat: false, hair: 'short', glasses: 'none' },
+  oracle: { width: 1.05, shoulders: 0.62, waist: 0.43, hips: 0.52, skin: '#77513f', cloth: '#66745d', leather: false, coat: false, hair: 'short', glasses: 'none' },
   seraph: { width: .94, shoulders: .58, waist: .34, hips: .4, skin: '#c5a27e', cloth: '#d7d4c6', leather: false, coat: false, hair: 'short', glasses: 'none' },
   merovingian: { width: 1, shoulders: .67, waist: .42, hips: .46, skin: '#d1ad97', cloth: '#171a1b', leather: false, coat: false, hair: 'short', glasses: 'none' },
   persephone: { width: .91, shoulders: .53, waist: .32, hips: .46, skin: '#e1bca9', cloth: '#621923', leather: false, coat: false, hair: 'pixie', glasses: 'none' },
@@ -235,7 +236,7 @@ export class CharacterModels {
     }
     const cloth = this.material(new THREE.MeshPhysicalMaterial({ color: look.cloth, roughness: look.leather ? 0.43 : 0.88,
       metalness: 0, clearcoat: look.leather ? 0.22 : 0, clearcoatRoughness: 0.4, bumpMap: this.fabric, bumpScale: look.leather ? 0.003 : 0.002, side: THREE.DoubleSide }));
-    const trousers = state.id === 'seraph' ? this.material(new THREE.MeshStandardMaterial({ color: '#282c29', roughness: .9, bumpMap: this.fabric, bumpScale: .002 })) : cloth;
+    const trousers = state.id === 'seraph' || state.id === 'oracle' ? this.material(new THREE.MeshStandardMaterial({ color: state.id === 'oracle' ? '#554a40' : '#282c29', roughness: .9, bumpMap: this.fabric, bumpScale: .002 })) : cloth;
     const seams = this.material(new THREE.MeshStandardMaterial({ color: look.leather ? '#292e2a' : '#252c28', roughness: 0.75 }));
     const black = this.material(new THREE.MeshStandardMaterial({ color: '#070b0a', roughness: 0.32 }));
     const metal = this.material(new THREE.MeshStandardMaterial({ color: '#969c90', metalness: 0.88, roughness: 0.24 }));
@@ -254,9 +255,19 @@ export class CharacterModels {
     }
     if (state.id === 'oracle') {
       const apron = this.material(new THREE.MeshStandardMaterial({ color: '#d7c19a', roughness: .93, bumpMap: this.fabric, bumpScale: .002, side: THREE.DoubleSide }));
-      const skirt = this.mesh(torso, this.geometry(new THREE.CylinderGeometry(.43, .55, 1.2, 28, 3, true)), apron, [0, .68, 0], [1, 1, .62]);
-      skirt.name = 'oracle-apron';
-      this.surface(torso, [[-.28, 1.64, .28], [.28, 1.64, .28], [.38, .72, .34], [-.38, .72, .34]], apron);
+      const positions: number[] = [], indices: number[] = [];
+      // Follow the blouse profile; a flat bib cut through its rounded chest.
+      for (const [row, point] of bodyPoints.entries()) for (let column = 0; column <= 12; column++) {
+        const width = Math.min(point.x * .88, point.y > .7 ? .31 : .44), x = (column / 6 - 1) * width;
+        positions.push(x, point.y + .02, Math.sqrt(Math.max(0, point.x * point.x - x * x)) * .59 + .035);
+        if (row > 0 && column < 12) {
+          const a = (row - 1) * 13 + column, b = row * 13 + column;
+          indices.push(a, b, a + 1, b, b + 1, a + 1);
+        }
+      }
+      const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      geometry.setIndex(indices); geometry.computeVertexNormals();
+      const bib = this.mesh(torso, this.geometry(geometry), apron, [0, 0, 0]); bib.name = 'oracle-apron';
       for (const side of [-1, 1]) this.mesh(torso, this.cylinder, apron, [side * .22, 1.7, .22], [.018, .42, .018]).rotation.z = side * .16;
     }
     this.mesh(torso, this.cylinder, skin, [0, 1.79, 0], [0.145, 0.25, 0.135]);
@@ -478,8 +489,8 @@ export class CharacterModels {
       rig.cookie.position.set(.02, rig.hero ? -.13 : -.84, .08); rig.cookie.rotation.x = -.18; parent.add(rig.cookie);
     }
     if (rig.cookie) {
-      const visit = input.oracleVisit; const gesture = visit && oracleVisitPose(visit);
-      rig.cookie.visible = Boolean(visit && gesture && (visit.role === 'oracle' ? gesture.offer > .12 && gesture.receive < .72 : gesture.receive > .55));
+      const visit = input.oracleVisit;
+      rig.cookie.visible = Boolean(visit && oracleCookieOwner(visit) === visit.role);
     }
     const holdsStaff = input.burly?.role === 'neo' && ['staff', 'flight_ready'].includes(input.burly.phase);
     if (holdsStaff && !rig.staff) {
@@ -563,6 +574,7 @@ export class CharacterModels {
       poseSpoonHands(rig, input.spoonLesson);
       poseOracleReception(rig, input.oracleReception);
       poseOracleWaiting(rig, input.oracleWaiting);
+      poseOracleCookie(rig, input.oracleVisit);
       if (holdsStaff) {
         rig.hero.bones.get('shoulder_R')!.rotation.x -= .7 + staffSweep * .5;
         rig.hero.bones.get('shoulder_L')!.rotation.x -= .55 + staffSweep * .35;
@@ -639,6 +651,7 @@ export class CharacterModels {
     poseSpoonHands(rig, input.spoonLesson);
     poseOracleReception(rig, input.oracleReception);
     poseOracleWaiting(rig, input.oracleWaiting);
+    poseOracleCookie(rig, input.oracleVisit);
     if (input.training?.kind === 'download' && input.training.role === 'tank') {
       const engaged = input.training.elapsed > 0 ? 1 : .35;
       for (let i = 0; i < 2; i++) {

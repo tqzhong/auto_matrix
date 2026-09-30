@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { FILM_SETS, groundHeight, mirrorGuidePose, oracleReceptionRoot, officeClothing, type AgentState, type CombatImpact, type FilmJourney } from '@auto_matrix/shared';
+import { FILM_SETS, groundHeight, mirrorGuidePose, oracleCookieOwner, oracleReceptionRoot, officeClothing, type AgentState, type CombatImpact, type FilmJourney } from '@auto_matrix/shared';
 import { trackingContact } from './TrackingContact.js';
 import { CharacterModels, weaponMuzzle, type CharacterRig } from './CharacterModel.js';
 import type { MotionInput } from './CharacterMotion.js';
@@ -113,7 +113,7 @@ export class AgentRenderer {
       const state = entry.state;
       const phoneExit = journey?.scene === 'm1_phone_escape' && journey.actor === id && ['connected', 'done'].includes(journey.openingPhone?.phase ?? '');
       entry.group.visible = state.isInMatrix === this.matrix && state.status !== 'disconnected' && !phoneExit;
-      entry.body.visible = (id !== this.playerId || !this.firstPerson || this.playerMotion?.inspecting === true || this.playerMotion?.spoon !== undefined || this.playerMotion?.spoonLesson !== undefined) && state.status !== 'disconnected' && !state.currentAction?.parameters.filmDuel && !state.currentAction?.parameters.ghostPhase;
+      entry.body.visible = (id !== this.playerId || !this.firstPerson || this.playerMotion?.inspecting === true || this.playerMotion?.spoon !== undefined || this.playerMotion?.spoonLesson !== undefined || Boolean(this.playerMotion?.oracleVisit && oracleCookieOwner(this.playerMotion.oracleVisit) === 'neo')) && state.status !== 'disconnected' && !state.currentAction?.parameters.filmDuel && !state.currentAction?.parameters.ghostPhase;
       const warning = state.currentAction?.type === 'attack' && state.currentAction.target === this.playerId && Number(state.currentAction.parameters.contactTick ?? 0) > tick;
       entry.marker.visible = warning || !this.playerId || id === this.selected;
       (entry.marker.material as THREE.MeshBasicMaterial).color.set(warning ? '#f6b177' : FACTION_COLORS[state.faction] ?? '#91cfb0');
