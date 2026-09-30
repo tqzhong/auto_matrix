@@ -45,7 +45,7 @@ test('all trilogy scenes have distinct stable IDs, existing cast, accessible obj
       // These targets are occupied through boarding, recovery or lying down.
       // Their encounter tests verify entry; character-asset.test checks physical contact.
       const stagedInsideProp = scene.id === 'm1_bug' && scene.steps.indexOf(step) < 2 || ['m1_recovery', 'm1_cabin'].includes(scene.id) && scene.steps.indexOf(step) === 0
-        || scene.id === 'm1_morning' && scene.steps.indexOf(step) === 1;
+        || scene.id === 'm1_truth_return' || scene.id === 'm1_morning' && scene.steps.indexOf(step) === 1;
       assert.equal(playerBlocked(filmStepPosition(scene, step), set.world === 'matrix'), stagedInsideProp, `${scene.id}: ${step.label}`);
     }
     if (scene.steps.some(s => s.kind === 'reflect') && !['m1_pills', 'm1_ledge', 'm1_wake_up'].includes(scene.id)) assert.equal(filmReflections(scene.id).length, 3, `${scene.id}: dialogue must be playable`);
@@ -1352,7 +1352,9 @@ test('the Construct television and ruined-world lesson wait for Neo and preserve
   const overlook = { ...h.actor().position }; h.advance(20); assert.deepEqual(h.actor().position, overlook);
   h.command('act');
   for (let frame = 0; frame < 140 && h.sandbox.life.film.state!.step === 1; frame++) h.players.step(.1, true, h.tick());
-  assert.equal(h.sandbox.life.film.state!.step, 2); assert.ok(h.sandbox.life.film.state!.completed.includes('m1_desert'));
+  assert.equal(h.sandbox.life.film.state!.scene, 'm1_truth_exit');
+  assert.equal(h.sandbox.life.film.state!.truthRecovery?.phase, 'ready');
+  assert.ok(h.sandbox.life.film.state!.completed.includes('m1_desert'));
 });
 
 test('old saves at authored reveal checkpoints are upgraded into explicit player-started performances', () => {
@@ -1369,8 +1371,8 @@ test('old saves at authored reveal checkpoints are upgraded into explicit player
 
 test('training download waits for Neo, pauses with the world, survives reconnect and finishes in the core chair', () => {
   const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
-  const desert = FILM_SCENE_BY_ID.m1_desert;
-  Object.assign(state, { scene: desert.id, actor: 'neo', step: desert.steps.length, awakening: undefined });
+  const recovery = FILM_SCENE_BY_ID.m1_truth_return;
+  Object.assign(state, { scene: recovery.id, actor: 'neo', step: recovery.steps.length, awakening: undefined });
   h.command('next');
   assert.equal(state.scene, 'm1_download');
   assert.deepEqual(state.training, { kind: 'download', elapsed: 0, started: false });
@@ -2693,6 +2695,7 @@ test('the entire film route completes through interactions, driving and real com
           actor.position = filmStepPosition(scene, step); h.command('act');
           for (let frame = 0; frame < 120; frame++) h.players.step(.1, true, h.tick());
         }
+        else if (state.truthRecovery) for (let frame = 0; frame < 200 && state.scene === scene.id && state.step === index; frame++) h.players.step(.1, true, h.tick());
         else if (state.awakening && ['m1_mirror', 'm1_pod', 'm1_recovery', 'm1_cabin', 'm1_construct', 'm1_desert'].includes(scene.id)) for (let frame = 0; frame < 200 && state.scene === scene.id && state.step === index; frame++) h.players.step(.1, true, h.tick());
         else if (index === 0 && ['m1_spoon', 'm1_oracle', 'm1_dejavu'].includes(scene.id)) {
           for (let frame = 0; frame < 110 && state.step === index; frame++) {
@@ -2880,6 +2883,10 @@ test('the entire film route completes through interactions, driving and real com
         assert.equal(state.scene, 'm1_desert', 'the television choice starts the ruined world without another command');
         continue;
       }
+      if (['m1_desert', 'm1_truth_exit', 'm1_truth_return'].includes(scene.id) && index === scene.steps.length - 1) {
+        assert.equal(state.scene, scene.id === 'm1_desert' ? 'm1_truth_exit' : scene.id === 'm1_truth_exit' ? 'm1_truth_return' : 'm1_download');
+        continue;
+      }
       if (scene.id === 'm1_wake_again' && index === scene.steps.length - 1) {
         assert.equal(state.scene, 'm1_bridge', 'walking out of 101 starts the bridge scene without another command');
         continue;
@@ -2892,7 +2899,7 @@ test('the entire film route completes through interactions, driving and real com
     }
     assert.ok(state.completed.includes(scene.id));
     if (scene.id === 'm1_phone_escape') h.advance(3); // Hold the connected booth shot through the truck impact.
-    if (!['m1_bridge', 'm1_bug', 'm1_pills', 'm1_mirror', 'm1_pod', 'm1_recovery', 'm1_cabin', 'm1_construct'].includes(scene.id)) h.command('next');
+    if (!['m1_bridge', 'm1_bug', 'm1_pills', 'm1_mirror', 'm1_pod', 'm1_recovery', 'm1_cabin', 'm1_construct', 'm1_desert', 'm1_truth_exit', 'm1_truth_return'].includes(scene.id)) h.command('next');
     if (scene.id === 'm1_office_escape' && state.office?.crossing !== undefined) for (let frame = 0; frame < 65; frame++) h.players.step(.1, true, h.tick());
   }
   assert.equal(state.finished, true); assert.equal(state.completed.length, FILM_SCENES.length);

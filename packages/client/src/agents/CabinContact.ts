@@ -5,8 +5,9 @@ import type { MotionInput } from './CharacterMotion.js';
 
 /** Palm contact with the medical control, Neo's neck socket, or the core plug. */
 export function cabinContact(rig: HeroRig, input: MotionInput): void {
-  const cabin = input.cabin;
-  const blend = input.medical !== undefined ? medicalControlBlend(input.medical)
+  const cabin = input.cabin, truth = input.truth;
+  const unplug = truth?.phase === 'unplug' && (truth.role === 'trinity' || truth.role === 'dozer');
+  const blend = unplug ? THREE.MathUtils.smoothstep(truth.elapsed, 0, .7) * (1 - THREE.MathUtils.smoothstep(truth.elapsed, 3.2, 4)) : input.medical !== undefined ? medicalControlBlend(input.medical)
     : cabin?.kind === 'wake' && cabin.role === 'neo' ? cabinBodyPose(cabin.elapsed).inspect
       : cabin?.kind === 'core' && cabin.role === 'morpheus' ? THREE.MathUtils.smoothstep(cabin.elapsed, 2.2, 3)
         * (1 - THREE.MathUtils.smoothstep(cabin.elapsed, 5.8, 6.8)) : 0;
@@ -14,7 +15,7 @@ export function cabinContact(rig: HeroRig, input: MotionInput): void {
   rig.root.updateWorldMatrix(true, true);
   const socket = rig.root.getObjectByName('cervical-interface');
   const center = FILM_SETS.film_neb_deck.center;
-  const contact = input.medical !== undefined
+  const contact = unplug && truth.target ? new THREE.Vector3(truth.target.x, truth.target.y, truth.target.z) : input.medical !== undefined
     ? new THREE.Vector3(center.x + MEDICAL_OPERATOR.control.x, center.y - 1 + MEDICAL_OPERATOR.control.y + .12, center.z + MEDICAL_OPERATOR.control.z)
     : cabin?.role === 'neo' ? socket?.getWorldPosition(new THREE.Vector3())
       : cabin?.target ? new THREE.Vector3(cabin.target.x, cabin.target.y, cabin.target.z) : undefined;

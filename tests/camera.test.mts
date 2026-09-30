@@ -7,6 +7,7 @@ import { CameraController } from '../packages/client/src/engine/CameraController
 import { PodSetRenderer } from '../packages/client/src/engine/PodSetRenderer.js';
 import { NebDeckRenderer } from '../packages/client/src/engine/NebDeckRenderer.js';
 import { CABIN, cabinBodyPose } from '@auto_matrix/shared';
+import { truthRoot, TRUTH_BEDSIDE, type TruthGesture } from '@auto_matrix/shared';
 import { awakeningPose, podRescuePose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
 import { MORNING, morningRoot, morningWakePose } from '@auto_matrix/shared';
 import { metacortexPosition } from '@auto_matrix/shared';
@@ -1023,6 +1024,68 @@ test('the Construct keeps movement locked when inspection hands off directly to 
   game.state.currentAction.parameters = { filmPose: 'construct', seated: false, reveal: { kind: 'construct', elapsed: 1, role: 'neo' } };
   game.controls.update(1 / 60, game.state, game.group, true);
   assert.equal(game.controls.performing, true, 'clearing the arrival gesture cannot unlock the television performance');
+});
+
+test('the truth aftermath frames the unplugging and bedside conversation without cabin walls in the sightline', t => {
+  const game = setup(t, Math.PI), center = FILM_SETS.film_neb_deck.center;
+  const stage = new THREE.Group(); stage.position.set(center.x, center.y - 1, center.z); const deck = new NebDeckRenderer(stage);
+  game.state.currentLocation = 'film_neb_deck'; game.state.isInMatrix = false;
+  try {
+    for (const aspect of [16 / 9, 449 / 680]) {
+      game.camera.aspect = aspect;
+      for (const [phase, elapsed] of [['unplug', 1], ['unplug', 5.5], ['unplug', 11], ['rest', 8], ['question', 0]] as const) {
+        const truth: TruthGesture = { phase, elapsed, role: 'neo' }, body = truthRoot(truth, 'neo'), resting = phase !== 'unplug';
+        game.state.position = filmPosition('film_neb_deck', body.x, body.z); game.state.position.y += body.y;
+        game.state.rotation = body.yaw;
+        game.state.currentAction = { type: 'idle', parameters: { truth, filmPose: resting ? 'cabin' : undefined, recovery: resting ? 0 : undefined }, startedAt: 0, duration: 1, progress: 0 };
+        game.controls.possess(game.state); game.step(1);
+        deck.update({ scene: 'm1_truth_return', truthRecovery: truth } as Parameters<NebDeckRenderer['update']>[0], elapsed); stage.updateMatrixWorld(true);
+        const neo = resting ? new THREE.Vector3(12, 1.65, -32.2) : new THREE.Vector3(body.x, elapsed >= 10.8 ? 1.2 : elapsed >= 5.5 ? 3.2 : 2.4, body.z);
+        const partner = resting ? new THREE.Vector3(TRUTH_BEDSIDE.x, 2.7, TRUTH_BEDSIDE.z) : new THREE.Vector3(CABIN.connector.x, 3.2, CABIN.connector.z);
+        for (const point of [neo, partner]) {
+          point.add(new THREE.Vector3(center.x, center.y - 1, center.z));
+          const screen = point.clone().project(game.camera);
+          assert.ok(Math.abs(screen.x) < .9 && screen.y > -.65 && screen.y < .8 && screen.z > -1 && screen.z < 1, `truth crop at ${phase}/${elapsed}s / ${aspect}: ${screen.toArray()}`);
+          const sight = point.sub(game.camera.position);
+          const hit = new THREE.Raycaster(game.camera.position, sight.clone().normalize(), .01, sight.length() - .1).intersectObject(stage, true)
+            .find(hit => /neb-cabin-(wall|door|ceiling|locker)/.test(hit.object.name));
+          assert.ok(!hit, `${hit?.object.name} blocks the truth conversation at ${phase}/${elapsed}s / ${aspect}`);
+        }
+      }
+    }
+  } finally { deck.dispose(); }
+});
+
+test('first-person rest follows the cabin head end, retains free look and releases movement for training', t => {
+  const game = setup(t, Math.PI), truth: TruthGesture = { phase: 'rest', elapsed: 8, role: 'neo' }, body = truthRoot(truth, 'neo');
+  game.state.currentLocation = 'film_neb_deck'; game.state.isInMatrix = false;
+  game.state.position = filmPosition('film_neb_deck', body.x, body.z); game.state.position.y += body.y; game.state.rotation = body.yaw;
+  game.state.currentAction = { type: 'idle', parameters: { truth, filmPose: 'cabin', recovery: 0 }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.key('KeyV'); game.key('KeyV', false); game.step(.3);
+  const eye = new THREE.Vector3(0, 1.7, -1.78).applyAxisAngle(new THREE.Vector3(0, 1, 0), body.yaw)
+    .add(new THREE.Vector3(game.state.position.x, game.state.position.y, game.state.position.z));
+  assert.ok(game.camera.position.distanceTo(eye) < .05, 'the eye must be at the head end of the rotated bed');
+  game.document.pointerLockElement = game.canvas; const before = game.camera.getWorldDirection(new THREE.Vector3());
+  game.event(game.document, 'mousemove', { movementX: 180, movementY: 60 }); game.step(.2);
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(before) > .08, 'bedside first person still permits free look');
+  game.state.currentAction = null; game.step(.2); assert.equal(game.controls.performing, false);
+  game.key('KeyW'); game.step(.2); assert.ok(game.group.position.distanceTo(new THREE.Vector3(game.state.position.x, game.state.position.y, game.state.position.z)) > .1);
+});
+
+test('first person turns with Neo through unplugging and uses the animated head while retaining the mouse offset', t => {
+  const game = setup(t, -Math.PI / 2), truth: TruthGesture = { phase: 'unplug', elapsed: 6, role: 'neo' };
+  game.state.currentLocation = 'film_neb_deck'; game.state.isInMatrix = false;
+  game.state.currentAction = { type: 'idle', parameters: { truth }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.key('KeyV'); game.key('KeyV', false); game.step(.3);
+  game.document.pointerLockElement = game.canvas; game.event(game.document, 'mousemove', { movementX: 100, movementY: 0 }); game.step(.2);
+  const before = game.camera.getWorldDirection(new THREE.Vector3());
+  truth.elapsed = 8.1; game.state.rotation += .35; game.step(.3);
+  const expected = before.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), .35); expected.y = 0;
+  const after = game.camera.getWorldDirection(new THREE.Vector3()); after.y = 0;
+  assert.ok(after.normalize().dot(expected.normalize()) > .999, 'the authored turn adds to, rather than erases or ignores, the player gaze');
+  const head = new THREE.Bone(); head.name = 'head'; head.position.set(.1, .85, .9); game.group.children[0].add(head);
+  truth.elapsed = 11; game.step(.1);
+  assert.ok(game.camera.position.distanceTo(head.localToWorld(new THREE.Vector3(0, .18, .17))) < .001, 'kneeling first person follows the rendered head, not a standing-height estimate');
 });
 
 test('the Construct and desert reveals use authored wide shots while first person remains at Neo eyes', t => {

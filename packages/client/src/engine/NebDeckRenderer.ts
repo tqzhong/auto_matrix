@@ -1,3 +1,4 @@
+import { truthUnplug, truthRest, TRUTH_BEDSIDE } from '@auto_matrix/shared';
 import * as THREE from 'three';
 import { RECOVERY_BED, RECOVERY_CABINET, RECOVERY_FRAME, RESCUE, type FilmJourney } from '@auto_matrix/shared';
 import { CABIN, CABIN_WALLS, MEDICAL_OPERATOR, medicalControlBlend, cabinPlugProgress } from '@auto_matrix/shared';
@@ -20,6 +21,7 @@ export class NebDeckRenderer {
   private gantry = new THREE.Group();
   private cabinDoor!: THREE.Mesh;
   private medicalLever!: THREE.Mesh;
+  private truthSeat = new THREE.Group();
   private corePlug = new THREE.Group();
   private coreCable!: THREE.Mesh;
   private recoverySkin?: THREE.SkinnedMesh;
@@ -186,6 +188,10 @@ export class NebDeckRenderer {
     this.box(this.root, this.screen, 13.2, 6.5, -32, 3.6, .1, .22, 'neb-cabin-light-strip');
     this.pointLight('neb-cabin-light', 0xe0dfcb, 105, 12, 13.2, 5.6, -32);
     this.pointLight('neb-cabin-bounce', 0xb1c4ce, 30, 10, 8.4, 4.8, -29.5);
+    this.truthSeat.name = 'neb-truth-bedside-stool'; this.truthSeat.position.set(TRUTH_BEDSIDE.x, 0, TRUTH_BEDSIDE.z); this.root.add(this.truthSeat);
+    this.cylinder(this.truthSeat, this.dark, 0, 1.12, 0, .68, .22, 'neb-truth-stool-cushion');
+    for (const dx of [-.45, .45]) for (const dz of [-.45, .45]) this.cylinder(this.truthSeat, this.steel, dx, .5, dz, .06, 1);
+    this.truthSeat.visible = false;
     this.corePlug.name = 'neb-first-core-connector'; this.root.add(this.corePlug);
     const plug = this.cylinder(this.corePlug, this.steel, 0, 0, 0, .09, .5); plug.rotation.z = Math.PI / 2;
     const grip = this.cylinder(this.corePlug, this.rubber, .24, 0, 0, .135, .23); grip.rotation.z = Math.PI / 2;
@@ -392,12 +398,15 @@ export class NebDeckRenderer {
     const opened = waking ? THREE.MathUtils.smoothstep(cabin.awakening!.elapsed, 10, 11.6) : 1;
     this.cabinDoor.position.z = CABIN.door.z - opened * 4.7;
     const connecting = cabin?.awakening?.kind === 'core' ? cabin.awakening : undefined;
+    const truth = journey?.scene === 'm1_truth_return' && !journey.visiting ? journey.truthRecovery : undefined;
+    const unplugging = truth?.phase === 'unplug' && truth.elapsed < 4 ? truth : undefined;
+    this.truthSeat.visible = Boolean(truth && truthRest(truth));
     const socket = recoverySubject?.getObjectByName('cervical-interface');
-    this.corePlug.visible = this.coreCable.visible = Boolean(connecting && connecting.elapsed >= 2.2 && socket);
-    if (this.corePlug.visible && socket && connecting) {
+    this.corePlug.visible = this.coreCable.visible = Boolean(socket && (connecting && connecting.elapsed >= 2.2 || unplugging));
+    if (this.corePlug.visible && socket) {
       recoverySubject!.updateWorldMatrix(true, true); this.root.updateWorldMatrix(true, false);
       const point = this.root.worldToLocal(socket.getWorldPosition(new THREE.Vector3()));
-      point.x += .25 + .7 * (1 - cabinPlugProgress(connecting.elapsed));
+      point.x += .25 + .7 * (unplugging ? truthUnplug(unplugging.elapsed) : 1 - cabinPlugProgress(connecting!.elapsed));
       this.corePlug.position.copy(point);
       const anchor = new THREE.Vector3(9.5, .35, -6.4); const direction = point.clone().sub(anchor);
       this.coreCable.position.copy(anchor).add(point).multiplyScalar(.5); this.coreCable.scale.y = direction.length();

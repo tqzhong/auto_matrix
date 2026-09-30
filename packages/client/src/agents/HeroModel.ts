@@ -1,3 +1,5 @@
+import { TruthPerformance } from './TruthPerformance.js';
+import { truthKneel, truthSeat } from '@auto_matrix/shared';
 import * as THREE from 'three';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
@@ -95,6 +97,7 @@ export class HeroModels {
   private welcomes = new Map<HeroRig, LafayetteWelcomePerformance>();
   private knocks = new Map<HeroRig, LafayetteKnockPerformance>();
   private recoveries = new Map<HeroRig, RecoveryPerformance>();
+  private truths = new Map<HeroRig, TruthPerformance>();
   private constructs = new Map<HeroRig, ConstructPerformance>();
   private workdays = new Map<HeroRig, OfficeWorkdayPerformance>();
   private apartments = new Map<HeroRig, ApartmentPerformance>();
@@ -891,8 +894,10 @@ export class HeroModels {
       }
       placePodBody(rig, landing.lower);
     }
+    if (input.truth && !this.truths.has(rig)) this.truths.set(rig, new TruthPerformance(rig));
+    this.truths.get(rig)?.pose(input.truth);
     rig.root.updateWorldMatrix(true, true);
-    if (input.grounded && !input.meeting && !input.interrogation && !(input.wakeCall?.phase === 'waking' && input.wakeCall.elapsed < 3.2) && !input.riding && input.climbing === undefined && (!input.performance || input.performance === 'connect')) {
+    if (!(input.truth?.role === 'neo' && input.truth.phase === 'unplug' && (truthSeat(input.truth.elapsed) > 0 || truthKneel(input.truth.elapsed) > 0)) && input.grounded && !input.meeting && !input.interrogation && !(input.wakeCall?.phase === 'waking' && input.wakeCall.elapsed < 3.2) && !input.riding && input.climbing === undefined && (!input.performance || input.performance === 'connect')) {
       let lowest = Infinity;
       for (const side of ['R', 'L']) {
         this.point.setFromMatrixPosition(bone('ankle_' + side).matrixWorld); rig.root.worldToLocal(this.point);
@@ -919,7 +924,8 @@ export class HeroModels {
     if (input.recoveryCrew) this.supportRecovery(rig, input.recoveryCrew);
     if (input.recovery !== undefined && !this.recoveries.has(rig)) this.recoveries.set(rig, new RecoveryPerformance(rig));
     this.recoveries.get(rig)?.update(input.recovery, input.realWorld, patient);
-    if (input.medical !== undefined || input.cabin) cabinContact(rig, input);
+    if (input.medical !== undefined || input.cabin || input.truth) cabinContact(rig, input);
+    this.truths.get(rig)?.contact(input.truth);
     if ((input.construct || input.reveal?.kind === 'construct') && !this.constructs.has(rig)) this.constructs.set(rig, new ConstructPerformance(rig));
     this.constructs.get(rig)?.update(input);
     if (input.mirrorCrew !== undefined && input.mirrorContact) wireTrackingElectrode(rig, input.mirrorCrew, input.mirrorContact);
@@ -987,6 +993,7 @@ export class HeroModels {
     this.meetings.forEach(p => p.dispose()); this.meetings.clear();
     this.welcomes.forEach(p => p.dispose()); this.welcomes.clear(); this.knocks.forEach(p => p.dispose()); this.knocks.clear();
     this.recoveries.forEach(p => p.dispose()); this.recoveries.clear();
+    this.truths.forEach(p => p.dispose()); this.truths.clear();
     this.constructs.forEach(p => p.dispose()); this.constructs.clear();
     this.workdays.forEach(p => p.dispose()); this.workdays.clear();
     this.apartments.forEach(p => p.dispose()); this.apartments.clear();

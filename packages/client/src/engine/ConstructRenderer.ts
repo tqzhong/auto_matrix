@@ -67,7 +67,7 @@ export class ConstructRenderer {
     this.screenLight = new THREE.PointLight(0xdceee3, 85, 20, 2); this.screenLight.name = 'construct-screen-light';
     this.screenLight.position.set(0, 2.2, CONSTRUCT.television.z + 1.4); this.root.add(this.screenLight); this.lights.add(this.screenLight);
     const fill = new THREE.HemisphereLight(0xffffff, 0xd4d5cf, 1.45); fill.name = 'construct-shadowless-fill'; this.root.add(fill); this.lights.add(fill);
-    this.draw(0, true);
+    this.draw(this.sceneId === 'm1_truth_exit' ? 9.3 : 0, this.sceneId !== 'm1_truth_exit');
   }
 
   private material<T extends THREE.Material>(value: T): T { this.materials.add(value); return value; }
@@ -260,7 +260,7 @@ export class ConstructRenderer {
     const frame = beat ? Math.floor(beat.elapsed * 8) : rescue ? phase * 1000 + Math.floor(rescue.elapsed * 12) : -1;
     if (frame !== this.lastFrame) {
       this.lastFrame = frame;
-      this.draw(beat?.elapsed ?? (this.sceneId === 'm1_guns' ? 9.3 : 0), beat?.started === false || Boolean(journey?.constructArrival));
+      this.draw(beat?.elapsed ?? (this.sceneId === 'm1_guns' || this.sceneId === 'm1_truth_exit' ? 9.3 : 0), beat?.started === false || Boolean(journey?.constructArrival));
     }
     if (this.sceneId === 'm1_guns') this.updateArmoury(journey);
   }

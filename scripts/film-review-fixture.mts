@@ -579,6 +579,13 @@ if (scene.id === 'm1_construct' && process.argv[3] === 'construct-chair') {
   actor.position = filmPosition(scene.set, CONSTRUCT.approach.x, CONSTRUCT.approach.z);
   sandbox.life.film.state!.checkpoint = { ...actor.position };
 }
+if (scene.id === 'm1_truth_return' && ['truth-unplug', 'truth-kneel', 'truth-rest', 'truth-question'].includes(process.argv[3])) {
+  const journey = sandbox.life.film.state!, mode = process.argv[3]; actor.controller = 'player';
+  journey.step = mode === 'truth-question' ? 2 : mode === 'truth-rest' ? 1 : 0;
+  journey.truthRecovery = { phase: mode === 'truth-question' ? 'question' : mode === 'truth-rest' ? 'rest' : 'unplug',
+    elapsed: mode === 'truth-kneel' ? 11 : mode === 'truth-rest' ? 8 : mode === 'truth-unplug' ? 2.5 : 0 };
+  sandbox.life.film.awakeningFrame(actor, 0, 0); journey.checkpoint = { ...actor.position };
+}
 for (const resident of world.agents.values()) delete resident.controller;
 neo.isAwakened = FILM_SCENES.indexOf(scene) >= FILM_SCENES.findIndex(s => s.id === 'm1_pod');
 const nightReview = ['m1_wake_again', 'm1_bridge', 'm1_bug'].includes(scene.id);

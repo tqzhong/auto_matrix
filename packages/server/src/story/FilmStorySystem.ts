@@ -1,3 +1,4 @@
+import { TRUTH_SECONDS, truthScene, truthRoot, truthText, truthRest, type TruthRole } from '@auto_matrix/shared';
 import { METACORTEX, OFFICE_LEDGE_OFFSET, OFFICE_PATROLS, metacortexPosition } from '@auto_matrix/shared';
 import { ReloadedOpeningSystem } from './ReloadedOpeningSystem.js';
 import { ReloadedCatchSystem } from './ReloadedCatchSystem.js';
@@ -1490,6 +1491,12 @@ export class FilmStorySystem {
   restoreAwakeningSpace(): void {
     const state = this.state; const scene = this.scene;
     if (!state || !scene || state.visiting) return;
+    if (truthScene(state.scene)) {
+      state.truthRecovery ??= { phase: state.scene === 'm1_truth_exit' ? 'ready' : state.step >= 2 ? 'question' : state.step === 1 ? 'rest' : 'unplug', elapsed: 0 };
+      const actor = this.world.agents.get(state.actor);
+      if (actor) this.truthFrame(actor, 0, this.world.simulationTick);
+      return;
+    }
     if (state.scene === 'm1_mirror' && state.awakening?.kind === 'mirror') {
       const trinity = this.world.agents.get('trinity');
       if (trinity && !trinity.controller) {
@@ -3001,7 +3008,39 @@ export class FilmStorySystem {
     if (oracleVisitLocked(state)) return '谈话进行中。可以转动视角观察；暂停、断线与重新载入会保留当前动作。';
     return state.lastText;
   }
+  private truthFrame(agent: AgentState, dt: number, tick: number): boolean {
+    const state = this.state, scene = this.scene, truth = state?.truthRecovery;
+    if (!state || !scene || !truth || !truthScene(state.scene) || !this.controls(agent)) return false;
+    const roles: TruthRole[] = state.scene === 'm1_truth_exit' || truthRest(truth) ? ['neo', 'morpheus'] : ['neo', 'morpheus', 'trinity', 'dozer'];
+    const occupied = roles.find(id => id !== agent.id && this.world.agents.get(id)?.controller);
+    const duration = truth.phase === 'ready' || truth.phase === 'question' ? undefined : TRUTH_SECONDS[truth.phase];
+    if (!occupied && duration) truth.elapsed = Math.min(duration, truth.elapsed + Math.min(.1, dt));
+    for (const role of roles) {
+      const actor = this.world.agents.get(role); if (!actor || actor.controller && actor !== agent) continue;
+      const root = truthRoot(truth, role), before = actor.position;
+      actor.position = filmPosition(scene.set, root.x, root.z); actor.position.y += root.y; actor.rotation = root.yaw;
+      actor.currentLocation = scene.set; actor.isInMatrix = FILM_SETS[scene.set].world === 'matrix';
+      actor.velocity = dt > 0 ? { x: (actor.position.x - before.x) / dt, y: 0, z: (actor.position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
+      actor.currentAction = { type: Math.hypot(actor.velocity.x, actor.velocity.z) > .05 ? 'move_to' : 'idle', parameters: {
+        player: role === agent.id, resolved: true, seated: root.seated > 0,
+        truth: { ...truth, role }, recovery: role === 'neo' && truthRest(truth) ? 0 : undefined,
+        filmPose: role === 'neo' && truthRest(truth) ? 'cabin' : undefined,
+      }, startedAt: tick, duration: 1, progress: 0 };
+    }
+    state.checkpoint = { ...agent.position };
+    state.lastText = occupied ? `${this.world.agents.get(occupied)?.name ?? occupied} 正由另一位玩家控制。退出与恢复进度保留。` : truthText(truth);
+    if (!occupied && duration && truth.elapsed >= duration && dt > 0) {
+      this.advance(this.step!.text!, agent, tick);
+      if (truth.phase === 'exit') this.command(agent, 'next', tick);
+      else {
+        truth.phase = truth.phase === 'unplug' ? 'rest' : 'question'; truth.elapsed = 0;
+        this.truthFrame(agent, 0, tick);
+      }
+    }
+    return true;
+  }
   awakeningFrame(agent: AgentState, dt: number, tick: number): boolean {
+    if (this.truthFrame(agent, dt, tick)) return true;
     if (this.controls(agent) && this.state?.scene === 'm1_construct' && this.state.constructArrival) {
       const state = this.state, arrival = state.constructArrival!, guide = this.world.agents.get('morpheus')!;
       if (arrival.phase !== 'ready' && !guide.controller) arrival.elapsed = Math.min(CONSTRUCT.guideSeconds, arrival.elapsed + Math.min(.1, dt));
@@ -3119,7 +3158,10 @@ export class FilmStorySystem {
         const next = FILM_SCENE_BY_ID[beat.kind === 'recovery' ? 'm1_cabin' : 'm1_construct'];
         state.scene = next.id; state.actor = next.actor; state.step = 0; state.lastText = next.context;
         this.enter(next, tick);
-      } else this.advance(this.step!.text!, agent, tick);
+      } else {
+        this.advance(this.step!.text!, agent, tick);
+        if (beat.kind === 'desert') this.command(agent, 'next', tick);
+      }
     }
     return true;
   }
@@ -4338,6 +4380,11 @@ export class FilmStorySystem {
         agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
         this.pillFrame(agent, 0, tick); return '已经接回递药演出，保留原来的选择与动作进度。';
       }
+      if (truthScene(state.scene) && state.truthRecovery) {
+        delete state.visiting; delete state.returnPosition;
+        agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
+        this.truthFrame(agent, 0, tick); return '已接回退出与休息过程，保留人物、接口与回答进度。';
+      }
       if (state.awakening && ['recovery', 'cabin', 'core', 'construct', 'desert'].includes(state.awakening.kind)) {
         agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
         this.awakeningFrame(agent, 0, tick);
@@ -4464,6 +4511,14 @@ export class FilmStorySystem {
     }
     const step = this.step;
     if (!step) return '本场景已完成。G 或 J 继续下一段。';
+    if (truthScene(state.scene) && state.truthRecovery && state.truthRecovery.phase !== 'question') {
+      const truth = state.truthRecovery;
+      const required = state.scene === 'm1_truth_exit' ? ['morpheus', 'trinity', 'dozer'] : truthRest(truth) ? ['morpheus'] : ['morpheus', 'trinity', 'dozer'];
+      const occupied = required.find(id => this.world.agents.get(id)?.controller);
+      if (occupied) return `${this.world.agents.get(occupied)?.name ?? occupied} 正由另一位玩家控制，进度已保留。`;
+      if (truth.phase === 'ready' && target === 'act') { truth.phase = 'exit'; truth.elapsed = 0; this.truthFrame(agent, 0, tick); }
+      return state.lastText;
+    }
     if (state.scene === 'm1_construct' && state.constructArrival) {
       const arrival = state.constructArrival;
       if (target !== 'act') return constructArrivalText(arrival);
@@ -4774,7 +4829,7 @@ export class FilmStorySystem {
       if (reflectedScene === 'm3_dawn' && reflectedStep === 2 && state.epilogue) state.epilogue.phase = 'promise';
       if (['m3_rain', 'm3_surrender'].includes(reflectedScene)) this.placeSmithFinale(agent, tick);
       if (reflectedScene === 'm3_dawn') this.placeEpilogue(agent, tick);
-      if (state.scene === 'm1_construct') this.command(agent, 'next', tick);
+      if (state.scene === 'm1_construct' || state.scene === 'm1_truth_return') this.command(agent, 'next', tick);
       return response;
     }
     if (target !== 'act') return '当前没有这个场景操作。';
@@ -4973,6 +5028,7 @@ export class FilmStorySystem {
     delete state.awakening;
     delete state.cabinEscort;
     delete state.constructArrival;
+    delete state.truthRecovery;
     this.sandbox().structures = this.sandbox().structures.filter(item => item.id !== 'film:cabin:door');
     this.sandbox().structures = this.sandbox().structures.filter(item => !item.id.startsWith('film:construct:'));
     delete state.mirrorGuide;
@@ -5065,7 +5121,7 @@ export class FilmStorySystem {
     for (const other of this.world.agents.values()) if (!other.controller && (other.currentAction?.parameters.theOne || other.currentAction?.parameters.reloaded || other.currentAction?.parameters.catch)) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.smithFinale) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.epilogue) other.currentAction = null;
-    for (const other of this.world.agents.values()) if (!other.controller && (other.currentAction?.parameters.recoveryCrew || other.currentAction?.parameters.medical !== undefined || other.currentAction?.parameters.cabin || other.currentAction?.parameters.cabinGuide || other.currentAction?.parameters.construct)) other.currentAction = null;
+    for (const other of this.world.agents.values()) if (!other.controller && (other.currentAction?.parameters.recoveryCrew || other.currentAction?.parameters.medical !== undefined || other.currentAction?.parameters.cabin || other.currentAction?.parameters.cabinGuide || other.currentAction?.parameters.construct || other.currentAction?.parameters.truth)) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.lobbyEntry) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.riding) { other.currentAction = null; other.velocity = { x: 0, y: 0, z: 0 }; }
     if (scene.id === 'm1_lobby') this.lobby.reset();
@@ -5161,6 +5217,10 @@ export class FilmStorySystem {
     if (scene.id === 'm1_cabin') {
       state.awakening = { kind: 'cabin', elapsed: 0, started: false }; state.cabinEscort = { progress: 0 };
       this.awakeningFrame(actor, 0, tick);
+    }
+    if (truthScene(scene.id)) {
+      state.truthRecovery = { phase: scene.id === 'm1_truth_exit' ? 'ready' : 'unplug', elapsed: 0 };
+      this.truthFrame(actor, 0, tick);
     }
     if (scene.id === 'm1_construct') {
       this.sandbox().structures.push(...CONSTRUCT_FURNITURE.map((part, i) => ({ id: `film:construct:${i}`, kind: 'barricade' as const,

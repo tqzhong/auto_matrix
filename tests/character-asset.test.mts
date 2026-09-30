@@ -11,6 +11,7 @@ import { NebDeckRenderer } from '../packages/client/src/engine/NebDeckRenderer.j
 import { createLoungeChair } from '../packages/client/src/engine/LoungeChair.js';
 import { CONSTRUCT, constructGuidePose } from '@auto_matrix/shared';
 import { CABIN, MEDICAL_OPERATOR, cabinBodyPose } from '@auto_matrix/shared';
+import { truthRoot, truthUnplug, type TruthGesture } from '@auto_matrix/shared';
 import { APARTMENT, FILM_SETS, PILL_ROOM, PILL_TIMING, RECOVERY_BED, awakeningPose, farewellPose, filmPosition, pillRoot, recoveryBodyPose, recoveryCrewPose, type PillGesture, OFFICE_WINDOW, OFFICE_LEDGE_OFFSET, officeWindowPose, officeCrossingPose, type FilmJourney } from '@auto_matrix/shared';
 import { INTERROGATION_ROOM, interrogationRoot } from '@auto_matrix/shared';
 import { MEETING_CAR, meetingRoot, meetingCarPose } from '@auto_matrix/shared';
@@ -886,6 +887,98 @@ test('Dozer touches the treatment control, Neo feels the neck interface and Morp
     const gap = morpheus.bones.get('wrist_R')!.localToWorld(new THREE.Vector3(.09, -.18, .02)).distanceTo(target);
     assert.ok(gap < .035, `Morpheus misses the connector grip by ${gap}`);
   } finally { models.dispose(); }
+});
+
+test('the truth aftermath keeps the shipped body clear of the chair and floor while rising and kneeling', async () => {
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture()), stage = new THREE.Group();
+  const center = FILM_SETS.film_neb_deck.center, floorY = center.y - 1;
+  stage.position.set(center.x, floorY, center.z); const deck = new NebDeckRenderer(stage);
+  (models as unknown as { load: typeof loadGeometry }).load = loadGeometry;
+  try {
+    const rig = (await models.create('neo'))!, chair = stage.getObjectByName('neb-core-chair-neo')!;
+    const point = new THREE.Vector3(), local = new THREE.Vector3(); stage.updateMatrixWorld(true);
+    for (const elapsed of [0, 1, 2.6, 3.2, 4, 4.5, 5, 5.5, 6.5, 7.5, 8, 8.5, 9.5, 10.8, 12]) {
+      const truth: TruthGesture = { phase: 'unplug', elapsed, role: 'neo' }, root = truthRoot(truth, 'neo');
+      rig.root.position.set(center.x + root.x, floorY + root.y, center.z + root.z); rig.root.rotation.y = root.yaw;
+      const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true, truth };
+      const motion = newMotion(); models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
+      let penetration = 0, floor = Infinity, deepest = '', lowest = '';
+      const hands = ['R', 'L'].map(side => ({ side, wrist: rig.bones.get(`wrist_${side}`)!.getWorldPosition(new THREE.Vector3()), floor: Infinity }));
+      for (const { mesh } of rig.wardrobe) if (mesh instanceof THREE.SkinnedMesh && mesh.visible) {
+        mesh.skeleton.update();
+        for (let index = 0; index < mesh.geometry.attributes.position.count; index++) {
+          mesh.getVertexPosition(index, point).applyMatrix4(mesh.matrixWorld);
+          if (point.y - floorY < floor) { floor = point.y - floorY; lowest = `${mesh.name}: ${rig.root.worldToLocal(point.clone()).toArray()}`; }
+          if (mesh.name === 'Anatomical_head_and_hands') for (const hand of hands) if (point.distanceTo(hand.wrist) < .52) hand.floor = Math.min(hand.floor, point.y - floorY);
+          for (const object of chair.children) if (object instanceof THREE.Mesh && object.geometry instanceof THREE.BoxGeometry) {
+            object.geometry.computeBoundingBox(); const box = object.geometry.boundingBox!; object.worldToLocal(local.copy(point));
+            if (!box.containsPoint(local)) continue;
+            const depth = Math.min(local.x - box.min.x, box.max.x - local.x, local.y - box.min.y, box.max.y - local.y, local.z - box.min.z, box.max.z - local.z);
+            if (depth > penetration) { penetration = depth; deepest = `${mesh.name}: ${point.toArray()}`; }
+          }
+        }
+      }
+      assert.ok(penetration < .04, `truth chair penetration ${penetration} at ${elapsed}s: ${deepest}`);
+      assert.ok(floor > -.04, `truth body penetrates the deck by ${-floor} at ${elapsed}s: ${lowest}`);
+      if (elapsed >= 10.8) for (const hand of hands)
+        assert.ok(Math.abs(hand.floor) < .04, `the ${hand.side} palm skin must support the body on the actual deck: ${hand.floor}`);
+    }
+  } finally { deck.dispose(); models.dispose(); }
+});
+
+test('Trinity holds the withdrawing plug and Dozer steadies Neo at the actual shoulder', async () => {
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: typeof loadGeometry }).load = loadGeometry;
+  try {
+    const neo = (await models.create('neo'))!, trinity = (await models.create('trinity'))!, dozer = (await models.create('morpheus', undefined, 'dozer'))!;
+    const center = FILM_SETS.film_neb_deck.center;
+    for (const elapsed of [1, 1.5, 2.6, 3.2]) {
+      for (const [role, rig] of [['neo', neo], ['trinity', trinity], ['dozer', dozer]] as const) {
+        const truth: TruthGesture = { phase: 'unplug', elapsed, role }, root = truthRoot(truth, role);
+        rig.root.position.set(center.x + root.x, center.y - 1 + root.y, center.z + root.z); rig.root.rotation.y = root.yaw;
+        if (role !== 'neo') {
+          truth.target = role === 'trinity' ? neo.root.getObjectByName('cervical-interface')!.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(.49 + .7 * truthUnplug(elapsed), 0, 0))
+            : neo.bones.get('shoulder_R')!.getWorldPosition(new THREE.Vector3());
+        }
+        const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true, truth };
+        const motion = newMotion(); models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
+        if (truth.target) {
+          const palm = rig.bones.get('wrist_R')!.localToWorld(new THREE.Vector3(.09, -.18, .02));
+          const gap = palm.distanceTo(new THREE.Vector3(truth.target.x, truth.target.y, truth.target.z));
+          assert.ok(gap < .04, `${role} misses the contact at ${elapsed}s by ${gap}: shoulder ${rig.root.worldToLocal(rig.bones.get('shoulder_R')!.getWorldPosition(new THREE.Vector3())).toArray()}, target ${rig.root.worldToLocal(new THREE.Vector3(truth.target.x, truth.target.y, truth.target.z)).toArray()}`);
+        }
+      }
+    }
+  } finally { models.dispose(); }
+});
+
+test('the bedside aftermath rests Neo on the mattress and supports Morpheus on his stool', async () => {
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture()), stage = new THREE.Group(), deck = new NebDeckRenderer(stage);
+  (models as unknown as { load: typeof loadGeometry }).load = loadGeometry;
+  try {
+    for (const role of ['neo', 'morpheus'] as const) {
+      const rig = (await models.create(role))!, truth: TruthGesture = { phase: 'rest', elapsed: 8, role }, root = truthRoot(truth, role);
+      rig.root.position.set(root.x, root.y, root.z); rig.root.rotation.y = root.yaw;
+      const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true, truth,
+        performance: role === 'neo' ? 'cabin' as const : undefined, recovery: role === 'neo' ? 0 : undefined };
+      const motion = newMotion(); models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
+      let seat = Infinity; const point = new THREE.Vector3();
+      for (const { mesh } of rig.wardrobe) if (mesh instanceof THREE.SkinnedMesh && mesh.visible) {
+        mesh.skeleton.update();
+        for (let index = 0; index < mesh.geometry.attributes.position.count; index++) {
+          mesh.getVertexPosition(index, point).applyMatrix4(mesh.matrixWorld);
+          if (role === 'neo' && Math.abs(point.x - CABIN.bed.x) < 1.425 && Math.abs(point.z - CABIN.bed.z) < 3.175)
+            assert.ok(point.y > CABIN.bed.surface - .04, `resting ${mesh.name} enters the mattress at ${point.toArray()}`);
+          if (role === 'morpheus' && Math.hypot(point.x - root.x, point.z - root.z) < .58 && point.y > .6 && point.y < 2)
+            seat = Math.min(seat, point.y);
+        }
+      }
+      if (role === 'morpheus') {
+        const cushion = new THREE.Box3().setFromObject(stage.getObjectByName('neb-truth-stool-cushion')!);
+        assert.ok(Math.abs(seat - cushion.max.y) < .04, `Morpheus must sit on, rather than hover above, the stool: ${seat - cushion.max.y}`);
+      }
+    }
+  } finally { deck.dispose(); models.dispose(); }
 });
 
 test('Neo keeps his real-world scalp after waking and restores his hair inside the Matrix', async () => {

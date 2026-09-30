@@ -1,3 +1,4 @@
+import { truthFade } from '@auto_matrix/shared';
 import { nearMetacortexLift, metacortexLiftLocked } from '@auto_matrix/shared';
 import { CATCH, RELOADED, RELOADED_FINALE, HEL_COATCHECK, catchText, reloadedText } from '@auto_matrix/shared';
 import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_NAMES, filmReflections, GRID_HACK_SECONDS, GRID_REROUTE_SECONDS, HEL_ELEVATOR, HEL_DANCE_DOOR, filmStepPosition, filmStepActionReady, helElevatorLocked, helDanceDoorLocked, pillLocked, lafayetteWelcomeLocked, awakeningLocked, awakeningWaiting, podRescuePose, AWAKENING_SECONDS, MIRROR_TOUCH, MIRROR_TIMING, mirrorGuidePose, PILL_ROOM, trainingLocked, trainingWaiting, TRAINING_SECONDS, DOJO_COMBO_WINDOW, windowOpening, windowCrossing, dockPowerOffline, ITEMS, RECIPES, SKILLS, FILMS, MISSIONS, LOCATIONS, CITY_BUILDINGS, NEO_CHAPTERS, LIFE_ACTIONS, lifeActionPosition, lifeRoomCenter, locationEntrance, distance, missionPosition, nearTransit, skillPoints,
@@ -62,6 +63,7 @@ export class SandboxUI {
       <div id="film-meeting" class="film-pills hidden" role="group" aria-label="接头决定"><p>你仍然可以离开</p><div class="film-pill-choices"><button data-action="life" data-target="film:meeting:stay">留在车内 · 接受检查</button><button data-action="life" data-target="film:meeting:leave">推开车门 · 质疑检查</button></div></div>
       <div id="film-meeting-door" class="film-pills hidden" role="group" aria-label="车门前的选择"><p>Trinity 请你想清楚，再决定去留</p><div class="film-pill-choices"><button data-action="life" data-target="film:meeting:stay">信任她 · 关上车门</button><button data-action="life" data-target="film:meeting:depart">离开 · 返回雨中</button></div></div>
       <div id="film-construct-reflection" class="film-pills film-construct-reflection hidden" role="group" aria-label="Neo 对现实的理解"><p>感觉足以证明真实吗？</p><div class="film-pill-choices">${filmReflections('m1_construct').map(choice => `<button data-action="life" data-target="film:reflect:${choice.id}">${escape(choice.label)}</button>`).join('')}</div></div>
+      <div id="film-truth-reflection" class="film-pills film-truth-reflection hidden" role="group" aria-label="Neo 对预言与选择的回答"><p>知道真相之后，选择还属于谁？</p><div class="film-pill-choices">${filmReflections('m1_truth_return').map(choice => `<button data-action="life" data-target="film:reflect:${choice.id}">${escape(choice.label)}</button>`).join('')}</div></div>
       <div id="film-ride" class="film-ride hidden" role="status"><span id="film-ride-title">TRINITY / KEYMAKER</span><strong id="film-ride-speed"></strong><p id="film-ride-health"></p><small id="film-ride-controls">W 加速 · S 刹车 · A / D 转向</small></div>
       <div id="sandbox-interact" class="sandbox-interact hidden"><button data-action="interact"><kbd>G</kbd> <span id="sandbox-nearby"></span></button><div id="sandbox-job"></div></div>
       <div class="sandbox-hotbar" aria-label="物品快捷栏">${(['medkit', 'emp', 'beacon', 'barricade'] as const).map((id, i) => `<button data-action="${i < 2 ? 'use' : 'build'}" data-target="${id}" title="${ITEMS[id].description}"><kbd>${i + 1}</kbd><span class="slot-symbol">${ITEMS[id].symbol}</span><span>${ITEMS[id].name}</span><b id="count-${id}">0</b></button>`).join('')}</div>
@@ -139,6 +141,7 @@ export class SandboxUI {
     this.el('film-meeting').classList.add('hidden');
     this.el('film-meeting-door').classList.add('hidden');
     this.el('film-construct-reflection').classList.add('hidden');
+    this.el('film-truth-reflection').classList.add('hidden');
     this.el('film-blackout').style.opacity = '0';
     if (!player || !state || !profile) return;
     const life = player.id === 'neo' || player.id === state.neoLife?.journey?.actor ? state.neoLife : undefined;
@@ -227,6 +230,7 @@ export class SandboxUI {
         blackout.style.opacity = String(Math.max(0, 1 - journey.awakening.elapsed / .8));
       if (scene.id === 'm1_cabin' && journey.awakening?.kind === 'core')
         blackout.style.opacity = String(Math.max(0, Math.min(1, (journey.awakening.elapsed - 6.5) / 1.3)));
+      if (journey.truthRecovery) blackout.style.opacity = String(truthFade(journey.truthRecovery));
       if (scene.id === 'm1_morning' && journey.morning) {
         const morning = journey.morning;
         blackout.style.opacity = String(morning.phase === 'sleeping' ? Math.min(1, morning.elapsed / .6) : morning.phase === 'alarm' ? Math.max(0, 1 - morning.elapsed / 1.2) : 0);
@@ -949,6 +953,17 @@ export class SandboxUI {
       this.el('sandbox-waypoint').textContent = `读懂攻势并反击 · ${trial.counters}/2`;
       this.el('sandbox-interact').classList.add('hidden');
       document.getElementById('game-objective-copy')!.textContent = `Seraph 考验 · 两次闪避反击 ${trial.counters}/2`;
+      return;
+    }
+    if (!journey.visiting && journey.truthRecovery) {
+      const truth = journey.truthRecovery, ready = truth.phase === 'ready', question = truth.phase === 'question';
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = ready ? 'G 请求退出程序 · V 切换视角' : question ? '选择你的回答 · J 也可打开手记' : '鼠标观察 · V 切换视角 · 暂停或重连会保留动作';
+      document.getElementById('game-objective-copy')!.textContent = ready ? '亲自要求退出程序 · G' : question ? '回答 Morpheus，再开始训练' : truth.phase === 'exit' ? '离开加载程序' : truth.phase === 'unplug' ? '拔线与身体失衡' : '舱室休息 · 关于预言的谈话';
+      this.el('sandbox-waypoint').textContent = '';
+      this.el('sandbox-interact').classList.toggle('hidden', !ready);
+      if (ready) this.el('sandbox-nearby').textContent = '请求退出程序';
+      this.el('film-truth-reflection').classList.toggle('hidden', !question);
       return;
     }
     if (!journey.visiting && scene.id === 'm1_construct' && journey.constructArrival) {

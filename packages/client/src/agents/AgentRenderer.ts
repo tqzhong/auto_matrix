@@ -160,6 +160,7 @@ export class AgentRenderer {
         recoveryCrew: state.currentAction?.parameters.recoveryCrew as MotionInput['recoveryCrew'],
         medical: state.currentAction?.parameters.medical as number | undefined,
         cabin: state.currentAction?.parameters.cabin as MotionInput['cabin'],
+        truth: state.currentAction?.parameters.truth as MotionInput['truth'],
         construct: state.currentAction?.parameters.construct as MotionInput['construct'],
         performance: state.currentAction?.parameters.filmPose as MotionInput['performance'],
         mirrorBeat: state.currentAction?.parameters.mirrorBeat as number | undefined,
@@ -213,6 +214,16 @@ export class AgentRenderer {
           neo.group.updateWorldMatrix(true, true);
           const target = shoulder.localToWorld(new THREE.Vector3(0, -.16, .06));
           input.recoveryCrew = { ...input.recoveryCrew, target: { x: target.x, y: target.y, z: target.z } };
+        }
+      }
+      if (input.truth?.phase === 'unplug' && (input.truth.role === 'trinity' || input.truth.role === 'dozer')) {
+        const neo = this.agents.get('neo');
+        const targetObject = input.truth.role === 'trinity' ? neo?.body.getObjectByName('cervical-interface') : neo?.rig.hero?.bones.get('shoulder_R');
+        if (neo && targetObject) {
+          neo.group.updateWorldMatrix(true, true);
+          const point = targetObject.getWorldPosition(new THREE.Vector3());
+          if (input.truth.role === 'trinity') point.x += .49 + .7 * THREE.MathUtils.smoothstep(input.truth.elapsed, 1.5, 3.2);
+          input.truth = { ...input.truth, target: { x: point.x, y: point.y, z: point.z } };
         }
       }
       if (input.cabin?.kind === 'core' && input.cabin.role === 'morpheus') {

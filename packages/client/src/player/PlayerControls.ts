@@ -1,3 +1,4 @@
+import { truthRest, truthKneel, truthSeat } from '@auto_matrix/shared';
 import { METACORTEX } from '@auto_matrix/shared';
 import { catchLocked, deusPactLocked, deusPactPose, reloadedPhaseLocked, smithFinaleLocked, smithFinalePose, trilogyEpilogueLocked } from '@auto_matrix/shared';
 import { reloadedCamera } from './ReloadedCamera.js';
@@ -14,6 +15,7 @@ export class PlayerControls {
   firstPerson = false;
   private inOfficeLift = false;
   private recoveryYaw: number | undefined;
+  private truthYaw: number | undefined;
   private keys = new Set<string>();
   private yaw = 0;
   private movementYaw = 0;
@@ -90,6 +92,7 @@ export class PlayerControls {
     this.bridgeCaught = undefined;
     this.id = state.id; this.position = { ...state.position }; this.yaw = state.rotation;
     this.recoveryYaw = typeof state.currentAction?.parameters.recovery === 'number' ? recoveryBodyPose(state.currentAction.parameters.recovery).yaw : undefined;
+    this.truthYaw = state.currentAction?.parameters.truth ? state.rotation : undefined;
     this.movementYaw = this.yaw; this.movementForward = 0; this.movementRight = 0;
     this.lastLook = -1000; this.dragging = false;
     this.facing = state.rotation; this.cameraReady = false; this.motion.attack = undefined;
@@ -318,6 +321,8 @@ export class PlayerControls {
     if (state.currentAction?.parameters.welcome) this.performing = true;
     if (this.motion.knock !== undefined && state.currentAction?.parameters.knock === undefined) this.performing = false;
     if (state.currentAction?.parameters.knock !== undefined) this.performing = true;
+    if (this.motion.truth && !state.currentAction?.parameters.truth) this.performing = false;
+    if (state.currentAction?.parameters.truth) this.performing = true;
     if (this.motion.construct && !state.currentAction?.parameters.construct) this.performing = false;
     if (state.currentAction?.parameters.construct) this.performing = (state.currentAction.parameters.construct as MotionInput['construct'])?.phase !== 'approach';
     if (this.motion.reveal && !state.currentAction?.parameters.reveal) this.performing = false;
@@ -407,6 +412,14 @@ export class PlayerControls {
       this.recoveryYaw = yaw;
     } else this.recoveryYaw = undefined;
     this.motion.reveal = state.currentAction?.parameters.reveal as MotionInput['reveal'];
+    this.motion.truth = state.currentAction?.parameters.truth as MotionInput['truth'];
+    if (this.motion.truth) {
+      if (this.truthYaw !== undefined) {
+        const turn = Math.atan2(Math.sin(state.rotation - this.truthYaw), Math.cos(state.rotation - this.truthYaw));
+        this.yaw += turn; this.movementYaw += turn;
+      }
+      this.truthYaw = state.rotation;
+    } else this.truthYaw = undefined;
     this.motion.construct = state.currentAction?.parameters.construct as MotionInput['construct'];
     this.motion.training = state.currentAction?.parameters.training as MotionInput['training'];
     this.motion.workday = state.currentAction?.parameters.workday as MotionInput['workday'];
@@ -548,7 +561,7 @@ export class PlayerControls {
     const interviewWide = !this.firstPerson && this.motion.interrogation && (this.motion.interrogation.phase === 'file' || this.motion.interrogation.phase === 'coercion' && this.motion.interrogation.elapsed > 5.3 && this.motion.interrogation.elapsed < 14);
     const interviewApproach = !this.firstPerson && state.currentLocation === 'film_agent_interrogation' && !this.motion.interrogation;
     const welcomeWide = !this.firstPerson && this.motion.welcome && ['approach', 'departing'].includes(this.motion.welcome.phase);
-    const revealWide = !this.firstPerson && Boolean(this.motion.construct || this.motion.reveal && (this.motion.reveal.kind === 'desert' ? this.motion.reveal.elapsed < 10.2 : this.motion.reveal.elapsed < 7.8));
+    const revealWide = !this.firstPerson && Boolean(this.motion.truth || this.motion.construct || this.motion.reveal && (this.motion.reveal.kind === 'desert' ? this.motion.reveal.elapsed < 10.2 : this.motion.reveal.elapsed < 7.8));
     const trainingWide = !this.firstPerson && Boolean(this.motion.training && (this.motion.training.kind === 'jump' || this.motion.training.kind === 'red_dress' && this.motion.training.elapsed < 4.8));
     const officeWide = !this.firstPerson && this.motion.workday && this.motion.workday.phase !== 'signing';
     const wakeWide = !this.firstPerson && Boolean(this.motion.wakeCall && ['waking', 'leaving'].includes(this.motion.wakeCall.phase));
@@ -569,7 +582,7 @@ export class PlayerControls {
     const pillDepartureWide = !this.firstPerson && this.motion.pills?.phase === 'taking' && this.motion.pills.elapsed >= 10;
     const podWide = !this.firstPerson && this.motion.performance === 'pod';
     const cabinWide = !this.firstPerson && Boolean(this.motion.cabin);
-    this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, inOfficeLift && !this.firstPerson ? 80 : podWide ? 65 : cabinWide ? this.camera.aspect < .85 ? 68 : 58 : smithFinaleWide || epilogueWide ? 64 : ladderWide ? 62 : interviewApproach ? 70 : interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide || sentinelWide || interludeWide || oracleWide || betrayalWide || rescueWide || governmentWide || airRescueWide || escapeWide || oneWide || catchWide || lobbyWide || pillDepartureWide ? 58 : this.motion.inspecting ? 42 : this.firstPerson ? this.motion.mirrorBeat !== undefined ? 78 : sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
+    this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, inOfficeLift && !this.firstPerson ? 80 : podWide ? 65 : this.motion.truth && !this.firstPerson && this.camera.aspect < .85 ? 68 : cabinWide ? this.camera.aspect < .85 ? 68 : 58 : smithFinaleWide || epilogueWide ? 64 : ladderWide ? 62 : interviewApproach ? 70 : interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide || sentinelWide || interludeWide || oracleWide || betrayalWide || rescueWide || governmentWide || airRescueWide || escapeWide || oneWide || catchWide || lobbyWide || pillDepartureWide ? 58 : this.motion.inspecting ? 42 : this.firstPerson ? this.motion.mirrorBeat !== undefined ? 78 : sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
     this.camera.near = this.firstPerson && this.motion.club ? .08 : this.defaultNear;
     this.camera.updateProjectionMatrix();
     this.cameraStep += this.motion.speed * delta;
@@ -1028,6 +1041,29 @@ export class PlayerControls {
       const focus = (detected ? new THREE.Vector3(0, 5.4, -52) : window ? new THREE.Vector3(0, 5, -55) : new THREE.Vector3(0, 3.1, -39)).add(origin);
       if (resetCamera || gesture.elapsed < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-7 * delta));
       this.camera.lookAt(focus);
+    } else if (this.motion.truth) {
+      const truth = this.motion.truth, rest = truthRest(truth), program = truth.phase === 'ready' || truth.phase === 'exit';
+      if (this.firstPerson) {
+        const kneel = truth.phase === 'unplug' ? truthKneel(truth.elapsed) : 0;
+        const height = rest ? 1.7 : 3.02 - (truth.phase === 'unplug' ? truthSeat(truth.elapsed) * .684 : 0) - kneel * 1.9;
+        const eye = new THREE.Vector3(0, height, rest ? -1.78 : 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), this.facing)
+          .add(new THREE.Vector3(this.position.x, this.position.y, this.position.z));
+        const head = truth.phase === 'unplug' ? group.getObjectByName('head') : undefined;
+        if (head) eye.copy(head.localToWorld(new THREE.Vector3(0, .18, .17)));
+        this.camera.position.copy(eye);
+        const pitch = this.pitch + kneel * .5;
+        const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(pitch), -Math.sin(pitch), Math.cos(this.yaw) * Math.cos(pitch));
+        if (rest) forward.multiplyScalar(.24).add(new THREE.Vector3(0, .97, 0)).normalize();
+        this.camera.lookAt(eye.clone().add(forward));
+      } else {
+        const center = FILM_SETS[program ? 'film_white_construct' : 'film_neb_deck'].center;
+        const portrait = this.camera.aspect < .85;
+        const ideal = rest ? portrait ? new THREE.Vector3(7.2, 5.4, -28) : new THREE.Vector3(8.7, 4.6, -30.4) : program ? new THREE.Vector3(13.5, 5.2, -10.5) : new THREE.Vector3(1, portrait ? 6 : 5.1, portrait ? 6 : 1.3);
+        const focus = rest ? new THREE.Vector3(13.5, 1.4, -33) : program ? new THREE.Vector3(1.2, 2.2, -5.5) : new THREE.Vector3(portrait ? 5.2 : 5 - 2 * THREE.MathUtils.smoothstep(truth.elapsed, 5.5, 8), 1.8, -5);
+        ideal.add(new THREE.Vector3(center.x, center.y - 1, center.z)); focus.add(new THREE.Vector3(center.x, center.y - 1, center.z));
+        // The two physical spaces are separated by the authored blackout.
+        this.camera.position.copy(ideal); this.camera.lookAt(focus);
+      }
     } else if (this.motion.construct) {
       const center = FILM_SETS.film_white_construct.center;
       if (this.firstPerson) {

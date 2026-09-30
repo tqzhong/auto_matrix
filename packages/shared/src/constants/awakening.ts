@@ -1,6 +1,7 @@
 import type { FilmJourney } from './film-story.js';
 import { PILL_ROOM } from './pills.js';
 import { CABIN, cabinBodyPose, cabinSeat } from './cabin.js';
+import { truthLocked } from './truth-recovery.js';
 import { CONSTRUCT } from './construct.js';
 
 export type AwakeningKind = 'mirror' | 'connect' | 'disconnect' | 'rescue' | 'recovery' | 'cabin' | 'core' | 'construct' | 'desert';
@@ -104,6 +105,7 @@ export function recoveryCrewPose(gesture: RecoveryCrewGesture): { x: number; z: 
 }
 
 export function awakeningLocked(journey: FilmJourney): boolean {
+  if (truthLocked(journey)) return true;
   if (!journey.visiting && journey.scene === 'm1_construct' && journey.constructArrival) return journey.constructArrival.phase !== 'approach';
   return !journey.visiting && (journey.scene === 'm1_pod' || ['m1_mirror', 'm1_recovery', 'm1_cabin', 'm1_construct', 'm1_desert'].includes(journey.scene)
     && !!journey.awakening && (journey.awakening.elapsed < AWAKENING_SECONDS[journey.awakening.kind]

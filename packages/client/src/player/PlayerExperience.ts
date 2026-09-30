@@ -10,7 +10,7 @@ export function savedEntryCharacter(chosen: string | null, journeyActor: string 
 }
 
 export function cinematicTalkSuppressed(scene: string | undefined, visiting: string | undefined, step?: number): boolean {
-  return !visiting && (scene === 'm1_pod' || scene === 'm1_construct' || scene === 'm1_desert' || scene === 'm1_cabin' || scene === 'm1_recovery' && step === 0);
+  return !visiting && (scene === 'm1_truth_exit' || scene === 'm1_truth_return' || scene === 'm1_pod' || scene === 'm1_construct' || scene === 'm1_desert' || scene === 'm1_cabin' || scene === 'm1_recovery' && step === 0);
 }
 
 export interface PlayerExperienceActions {
@@ -164,7 +164,7 @@ export class PlayerExperience {
     const epilogueScene = Boolean(neoLife?.journey && neoLife.journey.actor === player?.id
       && ['m3_ceasefire', 'm3_neo_carried', 'm3_dawn'].includes(neoLife.journey.scene) && !neoLife.journey.visiting);
     const epiloguePerforming = Boolean(epilogueScene && trilogyEpilogueLocked(neoLife?.journey?.epilogue));
-    const performing = Boolean(farewellPerforming || deusPerforming || smithFinalePerforming || epiloguePerforming || player?.currentAction?.parameters.farewell || player?.currentAction?.parameters.deusPact || player?.currentAction?.parameters.smithFinale || player?.currentAction?.parameters.epilogue || player?.currentAction?.parameters.persephone || player?.currentAction?.parameters.club || player?.currentAction?.parameters.workday || player?.currentAction?.parameters.meeting || player?.currentAction?.parameters.interrogation || player?.currentAction?.parameters.pills || player?.currentAction?.parameters.welcome || player?.currentAction?.parameters.sentinel || player?.currentAction?.parameters.interlude || player?.currentAction?.parameters.oracleVisit || player?.currentAction?.parameters.betrayal || player?.currentAction?.parameters.rescue || player?.currentAction?.parameters.government || player?.currentAction?.parameters.airRescue || player?.currentAction?.parameters.truckPassenger || matrixPerforming || onePerforming || reloadedPerforming || catchPerforming || player?.currentAction?.parameters.lobbyEntry || player?.currentAction?.parameters.filmPose || player?.currentAction?.parameters.spoon !== undefined || player?.currentAction?.parameters.vase !== undefined);
+    const performing = Boolean(player?.currentAction?.parameters.truth || farewellPerforming || deusPerforming || smithFinalePerforming || epiloguePerforming || player?.currentAction?.parameters.farewell || player?.currentAction?.parameters.deusPact || player?.currentAction?.parameters.smithFinale || player?.currentAction?.parameters.epilogue || player?.currentAction?.parameters.persephone || player?.currentAction?.parameters.club || player?.currentAction?.parameters.workday || player?.currentAction?.parameters.meeting || player?.currentAction?.parameters.interrogation || player?.currentAction?.parameters.pills || player?.currentAction?.parameters.welcome || player?.currentAction?.parameters.sentinel || player?.currentAction?.parameters.interlude || player?.currentAction?.parameters.oracleVisit || player?.currentAction?.parameters.betrayal || player?.currentAction?.parameters.rescue || player?.currentAction?.parameters.government || player?.currentAction?.parameters.airRescue || player?.currentAction?.parameters.truckPassenger || matrixPerforming || onePerforming || reloadedPerforming || catchPerforming || player?.currentAction?.parameters.lobbyEntry || player?.currentAction?.parameters.filmPose || player?.currentAction?.parameters.spoon !== undefined || player?.currentAction?.parameters.vase !== undefined);
     document.body.classList.toggle('film-driving', driving);
     document.body.classList.toggle('film-performing', performing);
     document.body.classList.toggle('film-workday-scene', Boolean(player?.currentAction?.parameters.workday));
@@ -176,8 +176,9 @@ export class PlayerExperience {
     document.body.classList.toggle('film-story', this.filmPlaying);
     document.body.classList.toggle('film-mirror-scene', this.filmPlaying && neoLife?.journey?.scene === 'm1_mirror' && !neoLife.journey.visiting);
     document.body.classList.toggle('film-pod-scene', this.filmPlaying && neoLife?.journey?.scene === 'm1_pod' && !neoLife.journey.visiting);
-    document.body.classList.toggle('film-cabin-scene', this.filmPlaying && neoLife?.journey?.scene === 'm1_cabin' && !neoLife.journey.visiting);
-    document.body.classList.toggle('film-construct-scene', this.filmPlaying && neoLife?.journey?.scene === 'm1_construct' && !neoLife.journey.visiting);
+    document.body.classList.toggle('film-cabin-scene', this.filmPlaying && ['m1_cabin', 'm1_truth_return'].includes(neoLife?.journey?.scene ?? '') && !neoLife?.journey?.visiting);
+    document.body.classList.toggle('film-construct-scene', this.filmPlaying && ['m1_construct', 'm1_truth_exit'].includes(neoLife?.journey?.scene ?? '') && !neoLife?.journey?.visiting);
+    document.body.classList.toggle('film-truth-scene', this.filmPlaying && Boolean(player?.currentAction?.parameters.truth));
     document.body.classList.toggle('film-reloaded-scene', this.filmPlaying && Boolean(neoLife?.journey?.reloaded) && !neoLife?.journey?.visiting);
     document.body.classList.toggle('film-catch-scene', this.filmPlaying && neoLife?.journey?.scene === 'm2_catch' && !neoLife?.journey?.visiting);
     document.body.classList.toggle('film-burly-scene', this.filmPlaying && neoLife?.journey?.scene === 'm2_burly' && !neoLife.journey.visiting);

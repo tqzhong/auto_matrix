@@ -116,3 +116,13 @@ body.film-meeting-scene:has(#gameplay-recorder) .sandbox-interact { bottom:64px;
 body.film-meeting-scene:has(#gameplay-recorder) .film-sequence { bottom:125px; }
 body:has(#film-meeting:not(.hidden)) .film-sequence { bottom:155px; }
 #film-meeting button { border-color:#86947a; }
+
+body.film-truth-scene .game-vitals,body.film-truth-scene .game-map,body.film-truth-scene .game-controls,body.film-truth-scene .mouse-hint,body.film-truth-scene .game-event,body.film-truth-scene .game-crosshair,body.film-truth-scene .sandbox-clock,body.film-truth-scene .sandbox-nav { display:none; }
+body.film-truth-scene.film-cabin-scene .film-sequence { bottom:34px; }
+body.film-truth-scene.film-cabin-scene:has(#gameplay-recorder) .film-sequence { bottom:68px; }
+.film-truth-reflection { bottom:34px; top:auto; width:min(850px,calc(100vw - 48px)); }
+.film-truth-reflection .film-pill-choices { grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+.film-truth-reflection .film-pill-choices button { border-color:#819c8d; background:#101c19f2; font-size:13px; line-height:1.5; }
+body.film-truth-scene:has(.film-truth-reflection:not(.hidden)) .film-sequence { display:none; }
+body.film-truth-scene:has(#gameplay-recorder) .film-truth-reflection { bottom:70px; }
+@media(max-width:680px) { .film-truth-reflection .film-pill-choices { grid-template-columns:1fr; gap:6px; }.film-truth-reflection button { padding:9px 12px; } }

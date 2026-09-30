@@ -415,11 +415,12 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
   const waitingForMorpheus = scene.id === 'm1_mirror' && journey.mirrorGuide && !journey.mirrorGuide.done;
   const meetingAction = scene.id === 'm1_bug' && (journey.meeting?.phase === 'done' && journey.step >= 2 || journey.meeting?.phase === 'parked');
   const arrival = scene.id === 'm1_construct' ? journey.constructArrival : undefined;
-  const actionLabel = arrival?.phase === 'ready' ? '检查残余自我影像' : meetingAction ? journey.meeting?.phase === 'parked' ? '打开车门下车' : '启程前往 Lafayette' : step?.label;
-  const close = arrival?.phase === 'ready' || (arrival ? Boolean(step && filmStepNear(scene, step, player.position, player.isInMatrix))
+  const truth = journey.truthRecovery;
+  const actionLabel = truth?.phase === 'ready' ? '请求退出程序' : arrival?.phase === 'ready' ? '检查残余自我影像' : meetingAction ? journey.meeting?.phase === 'parked' ? '打开车门下车' : '启程前往 Lafayette' : step?.label;
+  const close = truth?.phase === 'ready' || arrival?.phase === 'ready' || (arrival ? Boolean(step && filmStepNear(scene, step, player.position, player.isInMatrix))
     : meetingAction || trainingWaiting(journey) || Boolean(stepPosition && player.isInMatrix === (set.world === 'matrix') && distance(player.position, stepPosition) <= 4));
   const current = player.id === journey.actor;
-  const performing = arrival?.phase === 'image' || helElevatorLocked(journey) || helDanceDoorLocked(journey) || meetingLocked(journey) && !['ready', 'done', 'parked'].includes(journey.meeting?.phase ?? 'ready') || trainingLocked(journey) || sentinelLocked(journey) || interludeLocked(journey) || rescueLocked(journey) || Boolean(journey.awakening && journey.awakening.elapsed < AWAKENING_SECONDS[journey.awakening.kind]) || oracleActing(journey) || phoneLocked(journey) || wakeCallLocked(journey) || theOneLocked(journey) || windowOpening(journey) || windowCrossing(journey) || pillLocked(journey) || lafayetteWelcomeLocked(journey) || interrogationLocked(journey) && journey.interrogation?.phase !== 'done';
+  const performing = Boolean(truth && truth.phase !== 'ready' && truth.phase !== 'question') || arrival?.phase === 'image' || helElevatorLocked(journey) || helDanceDoorLocked(journey) || meetingLocked(journey) && !['ready', 'done', 'parked'].includes(journey.meeting?.phase ?? 'ready') || trainingLocked(journey) || sentinelLocked(journey) || interludeLocked(journey) || rescueLocked(journey) || Boolean(journey.awakening && journey.awakening.elapsed < AWAKENING_SECONDS[journey.awakening.kind]) || oracleActing(journey) || phoneLocked(journey) || wakeCallLocked(journey) || theOneLocked(journey) || windowOpening(journey) || windowCrossing(journey) || pillLocked(journey) || lafayetteWelcomeLocked(journey) || interrogationLocked(journey) && journey.interrogation?.phase !== 'done';
   const answerPhone = phoneLocked(journey) && journey.phone?.phase === 'ready';
   const answer = answerPhone || awakeningWaiting(journey) || trainingWaiting(journey) || interrogationLocked(journey) && journey.interrogation?.phase === 'response';
   const awakeningAction = journey.awakening?.kind === 'recovery' ? '示意开始恢复肌肉 · G'

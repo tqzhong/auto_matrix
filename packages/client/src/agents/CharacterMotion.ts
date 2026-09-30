@@ -1,3 +1,4 @@
+import { truthRoot } from '@auto_matrix/shared';
 import { cabinSeat, constructGuidePose, podRescuePose, reloadedPose, type CatchGesture, type ReloadedGesture } from '@auto_matrix/shared';
 import { deusPactLocked, deusPactPose, farewellPose, smithFinaleLocked, smithFinalePose, trilogyEpilogueLocked } from '@auto_matrix/shared';
 import { MELEE_COMBO, COMBO_WINDOW, COMBAT_SKILLS, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED, PILL_TIMING, MIRROR_TIMING, lobbyPose, governmentPose, airRescuePose, matrixEscapePose, theOnePose, recoveryCrewPose, type CombatSkillId, type AwakeningPose, type AwakeningReveal, type RecoveryCrewGesture, type OfficePhone, pillPose, lafayetteWelcomePose, oracleVisitPose, betrayalPose, rescuePose, type PillGesture, type InterrogationGesture, type LafayetteWelcomeGesture, type TrainingGesture, type OracleVisitGesture, type BetrayalGesture, type RescueGesture, type RescueLoadout, type LobbyGesture, type GovernmentRescueGesture, type AirRescueGesture, type MatrixEscapeGesture, type TheOneGesture } from '@auto_matrix/shared';
@@ -30,6 +31,7 @@ export interface MotionInput {
   recoveryCrew?: RecoveryCrewGesture;
   medical?: number;
   cabin?: import('@auto_matrix/shared').CabinGesture;
+  truth?: import('@auto_matrix/shared').TruthGesture;
   construct?: import('@auto_matrix/shared').ConstructGesture;
   reveal?: AwakeningReveal;
   training?: TrainingGesture;
@@ -163,9 +165,12 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   if (input.cabin?.kind === 'core' && input.cabin.role === 'neo') state.speed = 2.2 * smooth(clamp(input.cabin.elapsed / .25)) * (1 - smooth(clamp((input.cabin.elapsed - .65) / .3)));
   const construct = input.construct?.role === 'morpheus' ? constructGuidePose(input.construct.elapsed) : undefined;
   if (construct) state.speed = construct.speed;
+  const truthWalk = input.truth?.phase === 'unplug' && input.truth.role === 'neo' ? clamp((input.truth.elapsed - 5.5) / 2.5) : undefined;
+  if (truthWalk !== undefined) state.speed = 2.35 / 2.5 * 6 * truthWalk * (1 - truthWalk);
   state.climbPhase += (input.climbing ?? 0) * dt * 5;
   state.seated = input.cabin?.kind === 'core' && input.cabin.role === 'neo' ? cabinSeat(input.cabin.elapsed) : deus ? deus.seated : reloaded ? reloaded.seated : pills ? pills.seat : welcome ? welcome.seated : mix(state.seated, input.seated || input.riding || input.performance === 'connect' || input.performance === 'construct' ? 1 : 0, blend);
   if (input.construct || input.reveal?.kind === 'construct') state.seated = construct?.seated ?? (input.reveal?.role === 'morpheus' ? 1 : 0);
+  if (input.truth) state.seated = truthRoot(input.truth, input.truth.role).seated;
   state.turn = mix(state.turn, clamp(input.turn, -3, 3), blend);
   state.airborne = mix(state.airborne, input.grounded ? 0 : 1, 1 - Math.exp(-18 * dt));
   if (dt > 0) {
@@ -190,6 +195,7 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   if (welcomeWalking && input.welcome) state.phase = input.welcome.elapsed * welcomeSpeed / (2 * stride / stance);
   if (exiting) state.phase = (input.pills!.elapsed - PILL_TIMING.stand) * 1.1;
   if (input.cabin?.kind === 'core' && input.cabin.role === 'neo') state.phase = -Math.min(.95, input.cabin.elapsed) * .85;
+  if (truthWalk !== undefined) state.phase = 2.35 * smooth(truthWalk) / (2 * stride / stance);
   const moving = smooth(clamp(state.speed / 2.2));
   const cycle = state.phase * Math.PI * 2;
   const bob = Math.cos(cycle * 2) * mix(.025, .045, run) * moving + Math.sin(state.time * 1.7) * .009 * (1 - moving);
