@@ -59,6 +59,7 @@ players.onReplaced = (socketId, tick) => {
   sockets.getIO().to(socketId).emit('message', { type: 'player_state', data: { agentId: null, message: '已在另一页面继续游玩，进度已保留。当前页面已退出角色控制。' }, tick, timestamp: Date.now() });
 };
 let speed = 1;
+let worldReady = false;
 
 function simulationState(): SimulationState {
   const agents = [...world.agents.values()];
@@ -84,6 +85,7 @@ function snapshot(): WorldStateFull {
 }
 
 async function saveWorld(): Promise<void> {
+  if (!worldReady) return;
   await memory.saveAll();
   await checkpoints.save({ version: 1, tick: simLoop.getTick(), timeOfDay: world.timeOfDay, day: world.day, phase: story.getCurrentPhaseId(),
     agents: Object.fromEntries(world.agents), events: world.globalEvents,
@@ -260,6 +262,7 @@ async function main(): Promise<void> {
     console.log(`[Auto Matrix] Restored world at tick ${checkpoint.tick}`);
   }
   evolution.evaluate(simLoop.getTick(), [...world.agents.values()], world.globalEvents);
+  worldReady = true;
   simLoop.start();
   httpServer.listen(config.server.port, config.server.host, () => console.log(`[Auto Matrix] ${world.agents.size} residents · ${llm.enabled ? 'model-enhanced' : 'local simulation'} · http://localhost:${config.server.port}`));
 }
