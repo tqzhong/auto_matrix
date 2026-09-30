@@ -10,7 +10,7 @@ import { wakeCallLocked, morningLocked } from '@auto_matrix/shared';
 import { clubLocked } from '@auto_matrix/shared';
 import { sentinelDanger, sentinelLocked } from '@auto_matrix/shared';
 import { interludeDuration, interludeLocked } from '@auto_matrix/shared';
-import { oracleVisitDuration, oracleVisitLocked } from '@auto_matrix/shared';
+import { ORACLE_RECEPTION, oracleReceptionText, spoonLessonText, oracleVisitDuration, oracleVisitLocked } from '@auto_matrix/shared';
 import { BETRAYAL, betrayalDuration, betrayalLocked } from '@auto_matrix/shared';
 import { RESCUE, rescueDuration, rescueLoadout, rescueLocked } from '@auto_matrix/shared';
 import { BANE_ENCOUNTER } from '@auto_matrix/shared';
@@ -22,6 +22,18 @@ import { trilogyEpilogueLocked, trilogyEpilogueProgress } from '@auto_matrix/sha
 const button = (target: string, label: string, disabled = false) => `<button data-action="life" data-target="film:${target}" ${disabled ? 'disabled' : ''}>${label}</button>`;
 export function renderFilmJourney(player: AgentState, sandbox: SandboxState): string {
   const life = sandbox.neoLife!; const journey = life.journey!; const scene = FILM_SCENE_BY_ID[journey.scene];
+  if (!journey.visiting && scene.id === 'm1_spoon' && journey.oracle?.spoonLesson) {
+    const lesson = journey.oracle.spoonLesson, reception = journey.oracle.reception, current = player.id === journey.actor;
+    const invited = reception?.phase === 'inviting' && reception.elapsed >= ORACLE_RECEPTION.invitation;
+    const action = !current ? button('resume', '接回 Neo 的视角') : player.status !== 'alive' ? button('retry', '继续当前候客厅进度')
+      : lesson.phase === 'waiting' ? button('act', '坐在孩子面前 · G', distance(player.position, filmStepPosition(scene, scene.steps[0])) > 1.35)
+        : lesson.phase === 'offered' ? button('act', '亲手接过勺子 · G')
+          : lesson.phase === 'focus' ? '<p>合上手记，按住 G 注视勺子；松开时观察金属恢复。</p>'
+            : lesson.phase === 'understood' ? invited ? button('act', '起身去见先知 · G') : '<button disabled>等候接待者的邀请</button>'
+              : lesson.phase === 'done' ? '<p>合上手记，跟随白衣接待者亲自穿过厨房房门。她会等落后的你。</p>' : '<button disabled>动作正在进行</button>';
+    const text = (lesson.phase === 'understood' || lesson.phase === 'done') && reception ? oracleReceptionText(reception) : spoonLessonText(lesson);
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>先知的候客厅</h3><p>认识规则，或重新认识自己</p></header><article class="film-now"><div><h3>${scene.steps[journey.step]?.label ?? scene.title}</h3><p>${journey.lastText}</p><p>${text}</p><div class="film-controls">${action}</div><small>鼠标环顾 · V 切换视角 · 暂停、断线与读档保留当前动作</small></div></article></div>`;
+  }
   if (!journey.visiting && scene.id === 'm1_bridge' && journey.bridgeTail?.phase === 'failed') {
     return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>桥下的车灯</h3><p>Neo 视角 · 追踪器与尾随风险</p></header><article class="film-now"><div><h3>接头被追踪特工阻断</h3><p>${journey.lastText}</p><p>第 ${journey.bridgeTail.attempts + 1} 次尝试 · 追踪器仍在体内</p><div class="film-controls">${player.id === journey.actor ? button('retry', '从桥下入口重试') : button('resume', '接回 Neo 的视角')}<small>重新走近右后车门；上车检查之前，不要在桥下逗留。</small></div></div></article></div>`;
   }

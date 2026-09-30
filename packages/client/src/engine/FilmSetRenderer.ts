@@ -135,6 +135,7 @@ export class FilmSetRenderer {
   private trackingElectrode?: THREE.Group;
   private trackingLead?: THREE.Line;
   private oracleVase?: OracleVase;
+  private oracleBlocks?: THREE.Group;
   private ambush?: AmbushSetRenderer;
   private pillGlass?: THREE.Group;
   private interrogation?: InterrogationSetRenderer;
@@ -508,6 +509,13 @@ export class FilmSetRenderer {
       });
     }
     this.oracleVase?.update(sceneId === 'm1_oracle' ? journey?.visiting || journey!.step > 0 ? 4.5 : journey?.oracle?.vase : undefined);
+    if (this.oracleBlocks) {
+      const time = journey?.oracle?.waitingTime ?? 0;
+      this.oracleBlocks.children.forEach((block, i) => {
+        block.position.y = 1.65 + Math.sin(time * .65 + i * 1.7) * .15;
+        block.rotation.set(Math.sin(time * .23 + i) * .13, time * .18 + i * .7, Math.cos(time * .31 + i) * .08);
+      });
+    }
     const scene = journey && FILM_SCENE_BY_ID[journey.scene]; const step = scene?.steps[journey!.step];
     this.marker.visible = Boolean((set && scene?.set === set.id || scene?.id === 'm1_commute' && player?.isInMatrix) && step && !journey?.visiting && journey?.actor === player?.id);
     if (scene?.id === 'm1_commute' && sandbox?.neoLife?.lift?.passenger) this.marker.visible = false;
@@ -1509,8 +1517,16 @@ export class FilmSetRenderer {
       const bounds = new THREE.Box3().setFromObject(spoon.root); spoon.root.position.y += .055 + Math.floor(i / 3) * .012 - bounds.min.y;
       spoon.root.traverse(object => { if (object instanceof THREE.Mesh) { this.own(object.geometry); this.materials.add(object.material); } }); this.root.add(spoon.root);
     }
+    const blocks = new THREE.Group(); blocks.name = 'oracle-floating-alphabet-blocks'; blocks.userData.dynamic = true; this.root.add(blocks); this.oracleBlocks = blocks;
     for (let i = 0; i < 6; i++) {
-      const block = this.box(this.mat([0x99764d, 0x61786c, 0x975d50][i % 3], .92), 7.4 + i % 3 * .66, .3, 4.2 + Math.floor(i / 3) * .82, .55, .55, .55, .035); block.rotation.y = i * .7;
+      const canvas = document.createElement('canvas'); canvas.width = canvas.height = 128;
+      const ctx = canvas.getContext('2d')!; ctx.fillStyle = '#c3aa82'; ctx.fillRect(0, 0, 128, 128);
+      ctx.strokeStyle = ['#834c41', '#486358', '#817046'][i % 3]; ctx.lineWidth = 6; ctx.strokeRect(7, 7, 114, 114);
+      ctx.fillStyle = ctx.strokeStyle; ctx.font = 'bold 88px Georgia'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('MATRIX'[i], 64, 66);
+      const map = new THREE.CanvasTexture(canvas); map.colorSpace = THREE.SRGBColorSpace; this.textures.add(map);
+      const material = new THREE.MeshStandardMaterial({ map, roughness: .92 }); this.materials.add(material);
+      const block = this.box(material, 6.4 + i % 3 * .72, i < 3 ? 1.65 : .3, 3.15 + Math.floor(i / 3) * .82, .55, .55, .55, .025); block.rotation.y = i * .7;
+      if (i < 3) blocks.add(block);
     }
     this.box(curtain, -9, .048, 8, 2.6, .006, 2.2);
   }
@@ -2463,6 +2479,7 @@ export class FilmSetRenderer {
     this.pillGlass = undefined;
     this.ambush?.dispose(); this.ambush = undefined;
     this.oracleVase?.dispose(); this.oracleVase = undefined;
+    this.oracleBlocks = undefined;
     this.mirror?.dispose(); this.mirror = undefined; this.resetMirrorFrame = undefined; this.mirrorFilament = undefined; this.trackingElectrode = undefined; this.trackingLead = undefined;
     this.pods?.dispose(); this.pods = undefined;
     this.neb?.dispose(); this.neb = undefined;

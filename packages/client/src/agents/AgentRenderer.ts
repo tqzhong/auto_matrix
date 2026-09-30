@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { FILM_SETS, groundHeight, mirrorGuidePose, officeClothing, type AgentState, type CombatImpact, type FilmJourney } from '@auto_matrix/shared';
+import { FILM_SETS, groundHeight, mirrorGuidePose, oracleReceptionRoot, officeClothing, type AgentState, type CombatImpact, type FilmJourney } from '@auto_matrix/shared';
 import { trackingContact } from './TrackingContact.js';
 import { CharacterModels, weaponMuzzle, type CharacterRig } from './CharacterModel.js';
 import type { MotionInput } from './CharacterMotion.js';
@@ -21,6 +21,7 @@ interface Entry {
   shot?: number;
   speech?: { sprite: THREE.Sprite; age: number };
   mirrorGuide?: { from: number; to: number; progress: number; elapsed: number };
+  oracleGuide?: { phase: 'approaching' | 'guiding'; from: number; to: number; progress: number; elapsed: number };
 }
 
 export class AgentRenderer {
@@ -76,6 +77,13 @@ export class AgentRenderer {
         entry.group.position.set(center.x + pose.x, state.position.y, center.z + pose.z);
       } else if (progress !== guide.to) entry.mirrorGuide = { from: guide.progress, to: progress, progress: guide.progress, elapsed: 0 };
     } else entry.mirrorGuide = undefined;
+    const reception = state.currentAction?.parameters.oracleReception as MotionInput['oracleReception'];
+    if (reception && (reception.phase === 'approaching' || reception.phase === 'guiding')) {
+      const guide = entry.oracleGuide, progress = reception.progress;
+      if (!guide || guide.phase !== reception.phase || progress < guide.to || progress - guide.progress > 4)
+        entry.oracleGuide = { phase: reception.phase, from: progress, to: progress, progress, elapsed: .5 };
+      else if (progress !== guide.to) entry.oracleGuide = { ...guide, from: guide.progress, to: progress, elapsed: 0 };
+    } else entry.oracleGuide = undefined;
     entry.state = state;
     entry.group.visible = state.isInMatrix === this.matrix && state.status !== 'disconnected';
   }
@@ -123,7 +131,14 @@ export class AgentRenderer {
           entry.group.position.set(center.x + pose.x, state.position.y, center.z + pose.z);
           guideHeading = pose.yaw;
           if (speed > 0 && delta > 0) guideSpeed = Math.abs(guide.progress - before) / (delta * speed);
-        } else if (state.currentAction?.parameters.passenger && driver?.state.currentAction?.parameters.riding) {
+        } else if (entry.oracleGuide) {
+          const guide = entry.oracleGuide, before = guide.progress;
+          guide.elapsed = Math.min(.5, guide.elapsed + delta * speed); guide.progress = THREE.MathUtils.lerp(guide.from, guide.to, guide.elapsed / .5);
+          const pose = oracleReceptionRoot({ phase: guide.phase, progress: guide.progress, elapsed: 0 }), center = FILM_SETS.film_oracle_home.center;
+          entry.group.position.set(center.x + pose.x, state.position.y, center.z + pose.z); guideHeading = pose.yaw;
+          if (speed > 0 && delta > 0) guideSpeed = Math.abs(guide.progress - before) / (delta * speed);
+        } else if (state.currentAction?.parameters.oracleReception || state.currentAction?.parameters.oracleWaiting) entry.group.position.copy(target);
+        else if (state.currentAction?.parameters.passenger && driver?.state.currentAction?.parameters.riding) {
           target.sub(new THREE.Vector3(driver.state.position.x, driver.state.position.y, driver.state.position.z)).add(driver.group.position);
           entry.group.position.copy(target);
         } else if (state.currentAction?.parameters.openingRoofLeap !== undefined) entry.group.position.copy(target);
@@ -131,7 +146,7 @@ export class AgentRenderer {
         else entry.group.position.lerp(target, 1 - Math.exp(-8 * delta));
       }
       const moving = Math.hypot(state.velocity.x, state.velocity.z) > .1;
-      const heading = guideHeading ?? (moving && !state.currentAction?.parameters.club && !state.currentAction?.parameters.catch && !state.currentAction?.parameters.recoveryCrew && state.currentLocation !== 'film_government_lobby' ? Math.atan2(state.velocity.x, state.velocity.z) : state.rotation);
+      const heading = guideHeading ?? (moving && !state.currentAction?.parameters.oracleReception && !state.currentAction?.parameters.club && !state.currentAction?.parameters.catch && !state.currentAction?.parameters.recoveryCrew && state.currentLocation !== 'film_government_lobby' ? Math.atan2(state.velocity.x, state.velocity.z) : state.rotation);
       let difference = heading - entry.body.rotation.y;
       difference = Math.atan2(Math.sin(difference), Math.cos(difference));
       if (id !== this.playerId) entry.body.rotation.y += difference * (state.currentAction?.parameters.farewell || state.currentAction?.parameters.club || state.currentAction?.parameters.sentinel || state.currentAction?.parameters.interlude || state.currentAction?.parameters.oracleVisit || state.currentAction?.parameters.betrayal || state.currentAction?.parameters.rescue || state.currentAction?.parameters.government || state.currentAction?.parameters.airRescue || state.currentAction?.parameters.matrixEscape || state.currentAction?.parameters.theOne || state.currentAction?.parameters.reloaded || state.currentAction?.parameters.catch || state.currentAction?.parameters.lobbyEntry || state.currentAction?.parameters.meeting || state.currentAction?.parameters.pills || state.currentAction?.parameters.interrogation || state.currentAction?.parameters.welcome || state.currentAction?.parameters.reveal || state.currentAction?.parameters.training || state.currentAction?.parameters.workday || state.currentAction?.parameters.recoveryCrew ? 1 : 1 - Math.exp(-10 * delta));
@@ -140,7 +155,7 @@ export class AgentRenderer {
       const dist = camera ? entry.group.position.distanceTo(camera.position) : 0;
       const floor = groundHeight(state.position, state.isInMatrix);
       const input: MotionInput = id === this.playerId && this.playerMotion ? this.playerMotion : {
-        speed: entry.mirrorGuide ? guideSpeed : velocity, grounded: Boolean(state.currentAction?.parameters.riding || state.currentAction?.parameters.climbing) || state.position.y <= floor + .12, verticalVelocity: state.velocity.y,
+        speed: entry.mirrorGuide || entry.oracleGuide ? guideSpeed : velocity, grounded: Boolean(state.currentAction?.parameters.riding || state.currentAction?.parameters.climbing) || state.position.y <= floor + .12, verticalVelocity: state.velocity.y,
         turn: difference * 8, attack: state.currentAction?.type === 'attack' ? Number(state.currentAction.parameters.contactTick ?? state.currentAction.startedAt) : undefined,
         hit: entry.hit, impact: entry.impact, shot: entry.shot, windingUp: warning,
         armed: state.currentAction?.parameters.armed === true || !state.currentAction?.parameters.lobbyEntry && state.currentLocation === 'film_government_lobby' && ['neo', 'trinity'].includes(id),
@@ -178,6 +193,8 @@ export class AgentRenderer {
         sentinel: state.currentAction?.parameters.sentinel as MotionInput['sentinel'],
         interlude: state.currentAction?.parameters.interlude as MotionInput['interlude'],
         oracleVisit: state.currentAction?.parameters.oracleVisit as MotionInput['oracleVisit'],
+        oracleReception: state.currentAction?.parameters.oracleReception as MotionInput['oracleReception'],
+        oracleWaiting: state.currentAction?.parameters.oracleWaiting as MotionInput['oracleWaiting'],
         betrayal: state.currentAction?.parameters.betrayal as MotionInput['betrayal'],
         rescue: state.currentAction?.parameters.rescue as MotionInput['rescue'],
         government: state.currentAction?.parameters.government as MotionInput['government'],
@@ -209,7 +226,15 @@ export class AgentRenderer {
         ? journey.awakening.elapsed : undefined;
       input.officeShirt = officeClothing(state.id, state.currentLocation);
       input.clubClothes = state.currentLocation === 'film_white_rabbit_club' || state.id === 'neo' && state.currentLocation === 'film_white_construct' && !state.currentAction?.parameters.rescue;
-      input.glasses = !input.clubClothes && (state.id !== 'neo' || state.isAwakened && state.currentLocation !== 'film_oracle_home');
+      input.glasses = !state.id.startsWith('oracle_') && !input.clubClothes && (state.id !== 'neo' || state.isAwakened && state.currentLocation !== 'film_oracle_home');
+      if (input.oracleReception?.phase === 'inviting') {
+        const neo = this.agents.get('neo'), shoulder = neo?.rig.hero?.bones.get('shoulder_R') ?? neo?.rig.shoulders[0];
+        if (neo && shoulder) {
+          neo.group.updateWorldMatrix(true, true);
+          const point = shoulder.localToWorld(new THREE.Vector3(0, -.12, .07));
+          input.oracleReception = { ...input.oracleReception, target: { x: point.x, y: point.y, z: point.z } };
+        }
+      }
       if (input.recoveryCrew) {
         const neo = this.agents.get('neo'); const shoulder = neo?.rig.hero?.bones.get(input.recoveryCrew.role === 'morpheus' ? 'shoulder_R' : 'shoulder_L');
         if (neo && shoulder) {

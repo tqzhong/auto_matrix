@@ -17,6 +17,18 @@ test('the spoon review save reaches each handoff checkpoint through the playable
   }
 });
 
+test('Oracle reception review saves preserve the seated invitation and the start of free following', () => {
+  for (const [mode, reception, lesson] of [['oracle-invitation', 'inviting', 'understood'], ['oracle-guide', 'guiding', 'done']]) {
+    const directory = execFileSync(process.execPath, ['--import', 'tsx', 'scripts/film-review-fixture.mts', 'm1_spoon', mode], { encoding: 'utf8' }).trim();
+    try {
+      const world = JSON.parse(readFileSync(path.join(directory, 'world.json'), 'utf8')), oracle = world.sandbox.neoLife.journey.oracle;
+      assert.equal(oracle.reception.phase, reception); assert.equal(oracle.spoonLesson.phase, lesson);
+      for (const id of ['potential_blocks', 'potential_1', 'potential_2', 'potential_3', 'potential_4', 'oracle_attendant'])
+        assert.ok(world.agents[id].currentAction.parameters.oracleWaiting);
+    } finally { rmSync(directory, { recursive: true, force: true }); }
+  }
+});
+
 test('the successful office escape review save skips interrogation and has no tracker', () => {
   const directory = execFileSync(process.execPath, ['--import', 'tsx', 'scripts/film-review-fixture.mts', 'm1_wake_again', 'wake-clear-ringing'], { encoding: 'utf8' }).trim();
   try {

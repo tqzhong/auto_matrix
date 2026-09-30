@@ -24,7 +24,7 @@ import { cabinContact } from './CabinContact.js';
 import { ConstructPerformance } from './ConstructPerformance.js';
 import { clubCloseness } from '@auto_matrix/shared';
 
-export type HeroSupport = 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour' | 'niobe' | 'ballard' | 'ghost' | 'soren' | 'link' | 'dozer' | 'tank';
+export type HeroSupport = 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour' | 'niobe' | 'ballard' | 'ghost' | 'soren' | 'link' | 'dozer' | 'tank' | 'oracle_priestess' | 'oracle_attendant';
 type Pose = ReturnType<typeof advanceMotion>;
 interface CoatPanel { mesh: THREE.Mesh; rest: Float32Array; velocity: Float32Array }
 export interface HeroRig {
@@ -174,7 +174,8 @@ export class HeroModels {
 
   async create(id: HeroId, guard?: 'agent_jones' | 'agent_brown' | 'agent_johnson' | 'agent_jackson' | 'agent_thompson', support?: HeroSupport): Promise<HeroRig | undefined> {
     const apartmentRole = support === 'choi' || support === 'dujour' ? support : undefined;
-    const [asset, office, tracking, club] = await Promise.all([this.load(support === 'tank' ? 'choi' : apartmentRole ?? id),
+    const oracleStaff = support === 'oracle_priestess' || support === 'oracle_attendant';
+    const [asset, office, tracking, club] = await Promise.all([this.load(oracleStaff ? 'dujour' : support === 'tank' ? 'choi' : apartmentRole ?? id),
       id === 'neo' && !apartmentRole && support !== 'tank' ? this.load('neo-office') : undefined,
       id === 'neo' && !support ? this.load('neo-tracking') : undefined,
       id === 'trinity' && !support ? this.load('trinity-club') : undefined]);
@@ -275,6 +276,7 @@ export class HeroModels {
       }
       if (support === 'courier' && material.name === 'Office cotton') material.color.setHex(0x455c6b);
       if (support === 'rhineheart' && /Coat|Trousers/.test(material.name)) material.color.setHex(0x56594f);
+      if (oracleStaff && /Coat|Trousers/.test(material.name)) { material.color.setHex(support === 'oracle_priestess' ? 0xdedbd0 : 0xc7c5b9); material.roughness = .95; }
       if (support === 'rhineheart' && /Hair|hair|Groom|groom/.test(material.name)) {
         material.onBeforeCompile = shader => { shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', '#include <map_fragment>\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.23, 0.24, 0.21), 0.55);'); };
         material.customProgramCacheKey = () => 'manager-hair-standin';

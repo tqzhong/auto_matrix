@@ -15,7 +15,7 @@ import { wakeCallLocked, morningLocked } from '@auto_matrix/shared';
 import { clubLocked } from '@auto_matrix/shared';
 import { sentinelDanger, sentinelLocked } from '@auto_matrix/shared';
 import { interludeDuration, interludeLocked } from '@auto_matrix/shared';
-import { oracleVisitDuration, oracleVisitLocked, spoonLessonText } from '@auto_matrix/shared';
+import { ORACLE_RECEPTION, oracleReceptionRoot, oracleReceptionText, oracleVisitDuration, oracleVisitLocked, spoonLessonText } from '@auto_matrix/shared';
 import { BETRAYAL, betrayalDuration, betrayalLocked } from '@auto_matrix/shared';
 import { RESCUE, rescueDuration, rescueLoadout, rescueLocked } from '@auto_matrix/shared';
 import { LOBBY_ENTRY, lobbyLocked } from '@auto_matrix/shared';
@@ -1020,14 +1020,27 @@ export class SandboxUI {
     }
     if (!journey.visiting && scene.id === 'm1_spoon' && journey.oracle?.spoonLesson && journey.step === 0) {
       const lesson = journey.oracle.spoonLesson, bend = journey.oracle.spoon ?? 0;
-      const ready = lesson.phase === 'waiting' ? distance(player.position, filmStepPosition(scene, scene.steps[0])) <= 1.35 : ['offered', 'focus', 'understood'].includes(lesson.phase);
+      const reception = journey.oracle.reception, invitationReady = reception?.phase === 'inviting' && reception.elapsed >= ORACLE_RECEPTION.invitation;
+      const text = lesson.phase === 'understood' && reception ? oracleReceptionText(reception) : spoonLessonText(lesson);
+      const ready = lesson.phase === 'waiting' ? distance(player.position, filmStepPosition(scene, scene.steps[0])) <= 1.35 : ['offered', 'focus'].includes(lesson.phase) || lesson.phase === 'understood' && invitationReady;
       this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
       this.el('film-sequence-hint').textContent = lesson.phase === 'focus' ? '按住 G 专注 · 松开 G 恢复 · 鼠标环顾 · V 切换视角'
-        : ['offered', 'understood', 'waiting'].includes(lesson.phase) ? spoonLessonText(lesson) : '鼠标环顾 · V 切换视角 · 暂停与读档会保留当前动作';
+        : ['offered', 'understood', 'waiting'].includes(lesson.phase) ? text : '鼠标环顾 · V 切换视角 · 暂停与读档会保留当前动作';
       this.el('sandbox-interact').classList.toggle('hidden', !ready);
       this.el('sandbox-nearby').textContent = lesson.phase === 'offered' ? '接过勺子' : lesson.phase === 'focus' ? '按住 G 专注' : lesson.phase === 'understood' ? '起身去见先知' : '坐在孩子面前';
       this.el('sandbox-job').style.width = `${bend * 100}%`; this.el('sandbox-waypoint').textContent = '';
-      document.getElementById('game-objective-copy')!.textContent = lesson.phase === 'focus' ? `专注 ${Math.round(bend * 100)}% · 松开按键时观察勺子如何恢复` : spoonLessonText(lesson);
+      document.getElementById('game-objective-copy')!.textContent = lesson.phase === 'focus' ? `专注 ${Math.round(bend * 100)}% · 松开按键时观察勺子如何恢复` : text;
+      return;
+    }
+    if (!journey.visiting && scene.id === 'm1_spoon' && journey.step === 1 && journey.oracle?.reception) {
+      const reception = journey.oracle.reception, ready = reception.phase === 'ready', place = oracleReceptionRoot(reception);
+      const target = ready ? filmStepPosition(scene, scene.steps[1]) : filmPosition(scene.set, place.x, place.z);
+      const gap = distance(target, player.position), direction = Math.atan2(target.x - player.position.x, target.z - player.position.z) - player.rotation;
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = 'WASD 跟随接待者 · 她会等你 · V 切换视角';
+      this.el('sandbox-interact').classList.add('hidden');
+      this.el('sandbox-waypoint').innerHTML = `<span style="transform:rotate(${-direction}rad)">↑</span>${ready ? '厨房入口' : '白衣接待者'} <b>${Math.round(gap)} m</b>`;
+      document.getElementById('game-objective-copy')!.textContent = ready ? '亲自穿过厨房门，去见先知' : gap > 4.5 ? '接待者正在等你 · 回到她身边再一起前往厨房' : '跟随白衣接待者 · 可以自由停留观察';
       return;
     }
     if (!journey.visiting && scene.id === 'm1_spoon' && journey.oracle?.spoon !== undefined) {

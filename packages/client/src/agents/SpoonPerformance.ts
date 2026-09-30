@@ -11,7 +11,7 @@ function aim(joint: THREE.Object3D, child: THREE.Vector3, point: THREE.Vector3):
 }
 
 // Used by the adult's skinned wrist and the child's procedural forearm.
-function reach(upper: THREE.Object3D, lower: THREE.Object3D, end: THREE.Vector3, target: THREE.Vector3, pole: THREE.Vector3): void {
+export function reach(upper: THREE.Object3D, lower: THREE.Object3D, end: THREE.Vector3, target: THREE.Vector3, pole: THREE.Vector3): void {
   const start = upper.getWorldPosition(new THREE.Vector3()), direction = target.clone().sub(start);
   const scale = upper.getWorldScale(new THREE.Vector3()).x;
   const a = lower.position.length() * scale, b = end.length() * scale;

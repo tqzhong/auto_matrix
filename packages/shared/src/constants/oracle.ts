@@ -117,3 +117,54 @@ export function spoonLessonText(lesson: SpoonLesson): string {
   if (lesson.phase === 'rising') return '你带着弯曲的勺子慢慢站起，准备走向厨房。';
   return '勺子已经弯曲。走到厨房门口，亲自与先知会面。';
 }
+
+export interface OracleReception {
+  phase: 'waiting' | 'approaching' | 'inviting' | 'guiding' | 'ready';
+  progress: number;
+  elapsed: number;
+}
+export type OracleReceptionGesture = OracleReception & { target?: { x: number; y: number; z: number }; seated?: boolean; rising?: number };
+export const ORACLE_WAITING_CAST = {
+  morpheus: { x: -10.4, z: 12, yaw: Math.PI / 2, kind: 'watching' },
+  oracle_attendant: { x: -10.4, z: 16, yaw: Math.PI / 2, kind: 'watching' },
+  potential_blocks: { x: 7.2, z: 4.8, yaw: Math.PI, kind: 'blocks' },
+  potential_1: { x: 5.8, z: 14.5, yaw: -Math.PI / 2, kind: 'meditating' },
+  potential_2: { x: 7.8, z: 20.4, yaw: Math.PI, kind: 'playing' },
+  potential_3: { x: -5.8, z: 23, yaw: Math.PI / 2, kind: 'meditating' },
+  potential_4: { x: 4.1, z: 24.3, yaw: Math.PI, kind: 'playing' },
+} as const;
+export type OracleWaitingGesture = { kind: typeof ORACLE_WAITING_CAST[keyof typeof ORACLE_WAITING_CAST]['kind']; elapsed: number };
+export const ORACLE_RECEPTION_CAST = ['oracle_priestess', ...Object.keys(ORACLE_WAITING_CAST)] as const;
+export const ORACLE_RECEPTION = {
+  approach: [{ x: -2, z: -5.5 }, { x: -2, z: 10.8 }, { x: -6.8, z: 10.3 }],
+  guide: [{ x: -6.8, z: 10.3 }, { x: -2, z: 10.8 }, { x: -2, z: -9.6 }, { x: -4.6, z: -10.2 }],
+  speed: 2.6, invitation: 2.2,
+} as const;
+export function oracleReceptionLength(phase: 'approaching' | 'guiding'): number {
+  const route = phase === 'approaching' ? ORACLE_RECEPTION.approach : ORACLE_RECEPTION.guide;
+  return route.slice(1).reduce((length, point, i) => length + Math.hypot(point.x - route[i].x, point.z - route[i].z), 0);
+}
+export function oracleReceptionRoot(reception: OracleReception) {
+  if (reception.phase === 'waiting') return { ...ORACLE_RECEPTION.approach[0], yaw: 0 };
+  if (reception.phase === 'inviting') return { ...ORACLE_RECEPTION.approach[2], yaw: -Math.PI * .75 };
+  if (reception.phase === 'ready') return { ...ORACLE_RECEPTION.guide.at(-1)!, yaw: Math.PI / 2 };
+  const route = reception.phase === 'approaching' ? ORACLE_RECEPTION.approach : ORACLE_RECEPTION.guide;
+  let remaining = Math.max(0, reception.progress);
+  for (let i = 1; i < route.length; i++) {
+    const a = route[i - 1], b = route[i], length = Math.hypot(b.x - a.x, b.z - a.z);
+    if (remaining > length && i < route.length - 1) { remaining -= length; continue; }
+    const t = Math.min(1, remaining / length);
+    return { x: a.x + (b.x - a.x) * t, z: a.z + (b.z - a.z) * t, yaw: Math.atan2(b.x - a.x, b.z - a.z) };
+  }
+  return { ...ORACLE_RECEPTION.guide.at(-1)!, yaw: Math.PI / 2 };
+}
+
+export function oracleReceptionText(reception: OracleReception): string {
+  if (reception.phase === 'approaching') return '勺子保持弯曲。接待者从厨房走来，孩子安静地等在你面前。';
+  if (reception.phase === 'inviting') return reception.elapsed < ORACLE_RECEPTION.invitation
+    ? '接待者轻触你的肩膀，告诉你先知现在愿意见你。'
+    : '先知正在厨房等你。按 G 起身，再跟随接待者穿过房门。';
+  if (reception.phase === 'guiding') return '跟随白衣接待者走向厨房。她会等你，可以自由停留和观察孩子们。';
+  if (reception.phase === 'ready') return '接待者在厨房门内等你。亲自穿过门口，先知正在烤箱旁。';
+  return '';
+}

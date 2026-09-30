@@ -3,7 +3,7 @@ import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { FILM_SETS, SPOON_LESSON, spoonLessonBend, filmPosition, type SpoonLesson } from '@auto_matrix/shared';
+import { FILM_SETS, SPOON_LESSON, ORACLE_WAITING_CAST, oracleReceptionRoot, spoonLessonBend, filmPosition, type SpoonLesson } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -44,6 +44,13 @@ test('the Oracle waiting room has open window apertures, grounded furniture and 
       'the residential room has a lower continuous ceiling instead of an oversized hall');
     for (const y of [1, 3, 5]) assert.equal(blockers(new THREE.Vector3(0, y, -6), new THREE.Vector3(0, 0, -1), 3).length, 0,
       'the existing kitchen passage must remain visibly open');
+    const blocks = renderer.root.getObjectByName('oracle-floating-alphabet-blocks')!;
+    assert.equal(blocks.children.length, 3); assert.equal(blocks.userData.dynamic, true);
+    const transforms = blocks.children.map(block => block.matrix.clone()); renderer.update(neo, undefined, 100); blocks.updateWorldMatrix(true, true);
+    blocks.children.forEach((block, i) => {
+      assert.ok(block.position.y > 1.3 && block.position.y < 2, 'the girl levitates wooden blocks above the floor');
+      assert.ok(block.matrix.equals(transforms[i]), 'the room uses its saved action clock rather than wall time while paused');
+    });
   } finally { renderer.dispose(); globalThis.document = document; }
 });
 
@@ -200,6 +207,89 @@ test('Neo keeps the spoon between his actual thumb and index finger, including a
         panel.mesh.getVertexPosition(i, vertex); panel.mesh.localToWorld(vertex);
         assert.ok(vertex.y >= -.015, `a fresh paused Neo must not load with his coat below the rug: ${vertex.y}`);
       }
+    }
+  } finally { models.dispose(); globalThis.document = document; }
+});
+
+test('the white-clothed hostess touches seated Neo actual shoulder without moving her feet through the floor', async t => {
+  const assets = new Map();
+  for (const name of ['neo', 'dujour', 'morpheus']) {
+    const glb = await readFile(new URL(`../packages/client/public/assets/characters/${name}.glb`, import.meta.url));
+    const length = glb.readUInt32LE(12), source = JSON.parse(glb.subarray(20, 20 + length).toString());
+    for (const material of source.materials) { delete material.pbrMetallicRoughness.baseColorTexture; delete material.normalTexture; }
+    source.images = []; source.textures = [];
+    const json = Buffer.from(JSON.stringify(source)), padded = Buffer.alloc(Math.ceil(json.length / 4) * 4, 32); json.copy(padded);
+    const bin = glb.subarray(20 + length), buffer = Buffer.alloc(20 + padded.length + bin.length);
+    buffer.writeUInt32LE(0x46546c67, 0); buffer.writeUInt32LE(2, 4); buffer.writeUInt32LE(buffer.length, 8);
+    buffer.writeUInt32LE(padded.length, 12); buffer.writeUInt32LE(0x4e4f534a, 16); padded.copy(buffer, 20); bin.copy(buffer, 20 + padded.length);
+    assets.set(name, await new GLTFLoader().parseAsync(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength), ''));
+  }
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', async (url: string) => assets.get(url.includes('dujour') ? 'dujour' : url.includes('morpheus') ? 'morpheus' : 'neo'));
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const document = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {} }) }) } as unknown as Document;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const models = new CharacterModels(), neo = models.create(world.agents.get('neo')!), hostess = models.create(world.agents.get('oracle_priestess')!);
+  try {
+    await new Promise(resolve => setImmediate(resolve)); assert.ok(neo.hero); assert.ok(hostess.hero);
+    const center = FILM_SETS.film_oracle_home.center, place = oracleReceptionRoot({ phase: 'inviting', progress: 0, elapsed: 1 });
+    neo.root.position.set(center.x + SPOON_LESSON.neo.x, center.y - 1, center.z + SPOON_LESSON.neo.z); neo.root.rotation.y = SPOON_LESSON.neo.yaw;
+    hostess.root.position.set(center.x + place.x, center.y - 1, center.z + place.z); hostess.root.rotation.y = place.yaw;
+    const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, glasses: false };
+    models.animate(neo, 0, { ...input, spoonLesson: { phase: 'understood', elapsed: 0, role: 'neo' } }, 4);
+    neo.root.updateWorldMatrix(true, true);
+    const target = neo.hero.bones.get('shoulder_R')!.localToWorld(new THREE.Vector3(0, -.12, .07));
+    models.animate(hostess, 0, { ...input, oracleReception: { phase: 'inviting', progress: 0, elapsed: 1.5, seated: true, target } }, 4);
+    hostess.root.updateWorldMatrix(true, true);
+    const palm = hostess.hero.bones.get('wrist_R')!.localToWorld(new THREE.Vector3(0, -.19, .035));
+    assert.ok(palm.distanceTo(target) < .065, `the hostess hand must touch Neo instead of hovering beside him: ${JSON.stringify({ gap: palm.distanceTo(target), palm: palm.toArray(), target: target.toArray(), shoulder: hostess.hero.bones.get('shoulder_R')!.getWorldPosition(new THREE.Vector3()).toArray(), elbow: hostess.hero.bones.get('elbow_R')!.position.toArray(), wrist: hostess.hero.bones.get('wrist_R')!.position.toArray(), scale: hostess.hero.bones.get('wrist_R')!.getWorldScale(new THREE.Vector3()).toArray() })}`);
+    for (const part of hostess.hero.wardrobe) {
+      const mesh = part.mesh; if (!mesh.visible || Array.isArray(mesh.material)) continue;
+      if (/Coat|Trousers/.test(mesh.material.name)) assert.ok((mesh.material as THREE.MeshStandardMaterial).color.r > .6, 'staff wears white cotton rather than the borrowed dark outfit');
+      const point = new THREE.Vector3();
+      for (let i = 0; i < mesh.geometry.attributes.position.count; i++) {
+        mesh.getVertexPosition(i, point); mesh.localToWorld(point);
+        assert.ok(point.y >= center.y - 1 - .02, `${mesh.name} penetrates the floor during the shoulder touch: ${point.y}`);
+      }
+    }
+    for (const id of ['morpheus', 'oracle_attendant'] as const) {
+      const actor = models.create(world.agents.get(id)!); await new Promise(resolve => setImmediate(resolve)); assert.ok(actor.hero);
+      models.animate(actor, 0, { ...input, seated: true, oracleWaiting: { kind: 'watching', elapsed: 0 } }, 4); actor.root.updateWorldMatrix(true, true);
+      let lowest = Infinity, sole = Infinity;
+      for (const part of actor.hero.wardrobe) {
+        const mesh = part.mesh; if (!mesh.visible || Array.isArray(mesh.material)) continue;
+        const point = new THREE.Vector3();
+        for (let i = 0; i < mesh.geometry.attributes.position.count; i++) {
+          mesh.getVertexPosition(i, point); mesh.localToWorld(point); actor.root.worldToLocal(point);
+          assert.ok(point.y >= -.02, `${id} ${mesh.material.name} must stay above the room floor: ${point.y}`);
+          if (mesh.material.name === 'Trousers' && Math.abs(point.x) < .5 && point.z > -.4 && point.z < .05) lowest = Math.min(lowest, point.y);
+          if (mesh.material.name === 'Boot leather') sole = Math.min(sole, point.y);
+        }
+      }
+      assert.ok(lowest >= 1.60 && lowest <= 1.75, `${id} hips must rest on the 1.65-high sofa cushion instead of sinking through or floating above it: ${lowest}`);
+      assert.ok(sole <= .14, `${id} feet must stay grounded after lifting his hips onto the sofa: ${sole}`);
+    }
+  } finally { models.dispose(); globalThis.document = document; }
+});
+
+test('the other potentials keep seated legs above the rug when a paused room loads', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const document = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {} }) }) } as unknown as Document;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents(); const models = new CharacterModels();
+  try {
+    for (const [id, pose] of Object.entries(ORACLE_WAITING_CAST).filter(([id]) => id.startsWith('potential_'))) {
+      const rig = models.create(world.agents.get(id)!);
+      models.animate(rig, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, seated: true, floorSeated: true, oracleWaiting: { kind: pose.kind, elapsed: 1.5 } }, 4);
+      rig.root.updateWorldMatrix(true, true);
+      for (const hip of rig.hips) hip.traverse(object => {
+        if (!(object instanceof THREE.Mesh)) return;
+        const point = new THREE.Vector3();
+        for (let i = 0; i < object.geometry.attributes.position.count; i++) {
+          object.getVertexPosition(i, point); object.localToWorld(point);
+          assert.ok(point.y >= .035, `${id} shoe / shin penetrates the floor after loading: ${point.y}`);
+        }
+      });
     }
   } finally { models.dispose(); globalThis.document = document; }
 });

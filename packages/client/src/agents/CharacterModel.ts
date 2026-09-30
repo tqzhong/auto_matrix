@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { BURLY, oracleVisitPose, type AgentState, type RescueLoadout, type ChateauWeapon } from '@auto_matrix/shared';
 import { poseSpoonHands } from './SpoonPerformance.js';
+import { poseOracleReception, poseOracleWaiting } from './OracleReceptionPerformance.js';
 import { advanceMotion, newMotion, type MotionInput, type MotionState } from './CharacterMotion.js';
 import { HERO_IDS, HeroModels, type HeroId, type HeroRig, type HeroSupport } from './HeroModel.js';
 import { SpoonModel } from './SpoonModel.js';
@@ -217,6 +218,13 @@ export class CharacterModels {
     }
     const root = new THREE.Group(); const detail = new VisibleGroup(); root.add(detail);
     if (state.id === 'spoon_boy') { root.scale.setScalar(.73); look.cloth = '#d5c7ac'; look.skin = '#d8b99b'; }
+    if (state.id.startsWith('potential_')) {
+      root.scale.setScalar(state.id === 'potential_blocks' ? .65 : .62 + Number(state.id.slice(-1)) * .025);
+      detail.position.y = .04;
+      look.cloth = state.id === 'potential_blocks' ? '#d4cbb7' : '#b6b39f'; look.shoulders = .48; look.waist = .33; look.hips = .37;
+      look.hair = state.id === 'potential_1' || state.id === 'potential_3' ? 'bald' : 'short';
+    }
+    if (state.id.startsWith('oracle_')) { look.cloth = '#dcd9cd'; look.leather = false; look.glasses = 'none'; }
     const torso = this.joint(detail, 0, 1.86); const smallDetails = this.joint(detail, 0, 0);
     const skin = this.material(new THREE.MeshStandardMaterial({ color: look.skin, roughness: 0.64, metalness: 0, bumpMap: this.fabric, bumpScale: 0.0012 }));
     if (look.face !== undefined) {
@@ -342,7 +350,7 @@ export class CharacterModels {
     const distant = this.makeDistant(look, root);
     const rig: CharacterRig = { root, detail, distant, torso, head, shoulders, elbows, fingers, hips, knees, ankles, tails, cloth: clothPanels, motion: newMotion(), smallDetails, rifle: state.id === 'film_soldier' };
     const guard = ['agent_jones', 'agent_brown', 'agent_johnson', 'agent_jackson', 'agent_thompson'].includes(state.id) ? state.id as 'agent_jones' | 'agent_brown' | 'agent_johnson' | 'agent_jackson' | 'agent_thompson' : undefined;
-    const reloadedBase: Record<string, HeroId> = { niobe: 'trinity', ballard: 'morpheus', ghost: 'neo', soren: 'smith', link: 'morpheus', dozer: 'morpheus', tank: 'neo' };
+    const reloadedBase: Record<string, HeroId> = { niobe: 'trinity', ballard: 'morpheus', ghost: 'neo', soren: 'smith', link: 'morpheus', dozer: 'morpheus', tank: 'neo', oracle_priestess: 'trinity', oracle_attendant: 'trinity' };
     const support = state.id === 'switch' || state.id === 'apoc' || state.id === 'rhineheart' || state.id === 'courier' || state.id === 'choi' || state.id === 'dujour' || state.id in reloadedBase ? state.id as HeroSupport : undefined;
     if (HERO_IDS.includes(state.id as HeroId) || guard || support) {
       this.heroes.create(reloadedBase[state.id] ?? (guard || support === 'rhineheart' ? 'smith' : support === 'switch' || support === 'dujour' ? 'trinity' : support === 'apoc' || support === 'courier' || support === 'choi' ? 'neo' : state.id as HeroId), guard, support).then(model => {
@@ -535,6 +543,7 @@ export class CharacterModels {
       rig.infection.scale.setScalar(spread);
       rig.infection.position.y = Math.sin(rig.motion.time * 9) * .015;
     }
+    if (input.oracleWaiting) rig.motion.seated = 1;
     const pose = advanceMotion(rig.motion, input, delta);
     const staffSweep = holdsStaff && rig.motion.attackAge < .65 ? Math.sin(rig.motion.attackAge / .65 * Math.PI) : 0;
     if (rig.staff) rig.staff.rotation.z = Math.PI / 2 + staffSweep * .65;
@@ -552,6 +561,8 @@ export class CharacterModels {
         rig.spoon.root.position.copy(contact.sub(grip));
       }
       poseSpoonHands(rig, input.spoonLesson);
+      poseOracleReception(rig, input.oracleReception);
+      poseOracleWaiting(rig, input.oracleWaiting);
       if (holdsStaff) {
         rig.hero.bones.get('shoulder_R')!.rotation.x -= .7 + staffSweep * .5;
         rig.hero.bones.get('shoulder_L')!.rotation.x -= .55 + staffSweep * .35;
@@ -626,6 +637,8 @@ export class CharacterModels {
       vertices.needsUpdate = true; panel.mesh.geometry.computeVertexNormals();
     }
     poseSpoonHands(rig, input.spoonLesson);
+    poseOracleReception(rig, input.oracleReception);
+    poseOracleWaiting(rig, input.oracleWaiting);
     if (input.training?.kind === 'download' && input.training.role === 'tank') {
       const engaged = input.training.elapsed > 0 ? 1 : .35;
       for (let i = 0; i < 2; i++) {

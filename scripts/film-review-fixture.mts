@@ -259,14 +259,22 @@ if (process.argv[3] === 'ladder' && scene.id === 'm1_ledge') {
   sandbox.life.film.tick(0); sandbox.life.film.command(actor, 'escape:climb', 0);
   for (let frame = 0; frame < 80; frame++) sandbox.life.film.climbFrame(actor, 1, .05, 0);
 }
-if (['spoon', 'spoon-offered', 'spoon-focus'].includes(process.argv[3]) && scene.id === 'm1_spoon') {
+if (['spoon', 'spoon-offered', 'spoon-focus', 'oracle-invitation', 'oracle-guide'].includes(process.argv[3]) && scene.id === 'm1_spoon') {
   actor.controller = 'player'; actor.position = filmStepPosition(scene, scene.steps[0]);
   sandbox.life.film.command(actor, 'act', 0);
   for (let frame = 0; frame < 80; frame++) sandbox.life.film.oracleFrame(actor, false, .1, 0);
   if (process.argv[3] !== 'spoon-offered') {
     sandbox.life.film.command(actor, 'act', 0);
     for (let frame = 0; frame < 25; frame++) sandbox.life.film.oracleFrame(actor, false, .1, 0);
-    if (process.argv[3] === 'spoon') for (let frame = 0; frame < 60; frame++) sandbox.life.film.oracleFrame(actor, true, .1, 0);
+    if (['spoon', 'oracle-invitation', 'oracle-guide'].includes(process.argv[3])) for (let frame = 0; frame < 60; frame++) sandbox.life.film.oracleFrame(actor, true, .1, 0);
+  }
+  if (['oracle-invitation', 'oracle-guide'].includes(process.argv[3])) {
+    for (let frame = 0; frame < 125; frame++) sandbox.life.film.oracleReceptionFrame(actor, .1, 0);
+    if (process.argv[3] === 'oracle-guide') {
+      sandbox.life.film.command(actor, 'act', 0);
+      for (let frame = 0; frame < 30; frame++) { sandbox.life.film.oracleReceptionFrame(actor, .1, 0); sandbox.life.film.oracleFrame(actor, false, .1, 0); }
+      actor.rotation = Math.PI;
+    }
   }
   sandbox.life.film.state!.checkpoint = { ...actor.position };
 }

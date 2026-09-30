@@ -900,6 +900,24 @@ export const CHARACTERS: Record<string, CharacterDef> = {
     allies: ['oracle'],
     enemies: [],
   },
+  oracle_priestess: {
+    id: 'oracle_priestess', name: 'Oracle Priestess', nameCn: '先知接待者', faction: 'oracle',
+    description: 'The woman in white who welcomes visitors and brings Neo to the Oracle kitchen.',
+    initialLocation: 'oracles_apartment', abilities: [], personality: 'Calm, attentive and welcoming.',
+    goals: ['Welcome visitors', 'Care for the Potentials'], isAwakened: true, health: 60, allies: ['oracle'], enemies: [],
+  },
+  oracle_attendant: {
+    id: 'oracle_attendant', name: 'Waiting Room Attendant', nameCn: '候客厅陪同者', faction: 'oracle',
+    description: 'The second woman in white sitting with the children and watching television.',
+    initialLocation: 'oracles_apartment', abilities: [], personality: 'Patient and reassuring.',
+    goals: ['Look after the children'], isAwakened: true, health: 60, allies: ['oracle'], enemies: [],
+  },
+  ...Object.fromEntries(['potential_blocks', 'potential_1', 'potential_2', 'potential_3', 'potential_4'].map((id, i) => [id, {
+    id, name: i === 0 ? 'Block Girl' : `Potential ${i}`, nameCn: i === 0 ? '积木女孩' : `候选者 ${i}`, faction: 'oracle' as const,
+    description: i === 0 ? 'A young girl calmly levitating alphabet blocks.' : 'A child playing or meditating in the Oracle waiting room.',
+    initialLocation: 'oracles_apartment', abilities: ['code_sight'], personality: 'Quiet, curious and at ease with the impossible.',
+    goals: ['Explore the rules of the Matrix'], isAwakened: true, health: 30, allies: ['oracle'], enemies: [],
+  }])),
   rhineheart: {
     id: 'rhineheart',
     name: 'Rhineheart',

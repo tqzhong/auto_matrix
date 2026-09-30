@@ -1,7 +1,45 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { build } from 'esbuild';
-import { FILM_SCENE_BY_ID, filmPosition, filmStepPosition, type AgentState, type SandboxState } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, filmPosition, filmStepPosition, oracleReceptionRoot, type AgentState, type SandboxState } from '@auto_matrix/shared';
+
+test('Oracle navigation points to the waiting hostess until she reaches the kitchen', async t => {
+  const output = await build({ entryPoints: ['packages/client/src/player/SandboxUI.ts'], bundle: true,
+    platform: 'node', format: 'esm', write: false, loader: { '.css': 'empty' }, logLevel: 'silent' });
+  const { SandboxUI } = await import(`data:text/javascript;base64,${Buffer.from(output.outputFiles[0].contents).toString('base64')}`);
+  const elements = new Map();
+  const element = (id: string) => {
+    if (!elements.has(id)) elements.set(id, { textContent: '', innerHTML: '', style: {}, classList: { add() {}, remove() {}, toggle() {} } });
+    return elements.get(id);
+  };
+  const document = globalThis.document; t.after(() => { globalThis.document = document; });
+  globalThis.document = { getElementById: element } as unknown as Document;
+  const ui = Object.assign(Object.create(SandboxUI.prototype), { root: { querySelector: element }, tick: 0 });
+  const reception = { phase: 'guiding' as const, progress: 3.84, elapsed: 2.2 }, place = oracleReceptionRoot(reception);
+  const player = { id: 'neo', status: 'alive', isInMatrix: true, rotation: Math.PI, position: filmPosition('film_oracle_home', 0, -6) } as AgentState;
+  const sandbox = { threats: [], neoLife: { journey: { scene: 'm1_spoon', actor: 'neo', step: 1, completed: [], reflections: {}, lastText: '接待者正在等你。',
+    oracle: { spoon: 1, spoonLesson: { phase: 'done', elapsed: 2.6 }, reception } } } } as SandboxState;
+  ui.updateFilm(player, sandbox);
+  const gap = Math.round(Math.hypot(place.x, place.z + 6));
+  assert.match(element('#sandbox-waypoint').innerHTML, new RegExp(`白衣接待者.*${gap} m`));
+  assert.doesNotMatch(element('game-objective-copy').textContent, /走到标记旁/);
+  sandbox.neoLife!.journey!.oracle!.reception!.phase = 'ready';
+  ui.updateFilm(player, sandbox);
+  assert.match(element('#sandbox-waypoint').innerHTML, /厨房入口.*2 m/);
+});
+
+test('the spoon journal waits for the hostess before offering Neo a standing action', async () => {
+  const output = await build({ entryPoints: ['packages/client/src/player/FilmJourneyPanel.ts'], bundle: true,
+    platform: 'node', format: 'esm', write: false, loader: { '.css': 'empty' }, logLevel: 'silent' });
+  const { renderFilmJourney } = await import(`data:text/javascript;base64,${Buffer.from(output.outputFiles[0].contents).toString('base64')}`);
+  const player = { id: 'neo', status: 'alive', isInMatrix: true, position: filmPosition('film_oracle_home', -7.4, 9.6) } as AgentState;
+  const sandbox = { threats: [], neoLife: { cycle: 1, journey: { scene: 'm1_spoon', actor: 'neo', step: 0, completed: [], reflections: {}, lastText: '接待者从厨房走来。',
+    oracle: { spoon: 1, spoonLesson: { phase: 'understood', elapsed: 0 }, reception: { phase: 'approaching', progress: 2, elapsed: 0 } } } } } as SandboxState;
+  assert.doesNotMatch(renderFilmJourney(player, sandbox), /按住 G/);
+  assert.doesNotMatch(renderFilmJourney(player, sandbox), /data-target="film:act" >起身/);
+  sandbox.neoLife!.journey!.oracle!.reception = { phase: 'inviting', progress: 20, elapsed: 2.2 };
+  assert.match(renderFilmJourney(player, sandbox), /data-target="film:act" >起身去见先知/);
+});
 
 test('the Construct journal distinguishes self inspection from approaching the chair', async () => {
   const output = await build({ entryPoints: ['packages/client/src/player/FilmJourneyPanel.ts'], bundle: true,

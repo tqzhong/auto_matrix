@@ -531,9 +531,77 @@ test('Neo sits for the demonstration, explicitly takes the spoon, focuses and st
   h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); assert.equal(h.sandbox.life.film.state!.oracle!.spoon, paused);
   focus(6); assert.equal(lesson().phase, 'understood'); assert.equal(h.sandbox.life.film.state!.step, 0);
   assert.equal(h.sandbox.life.state!.choices.spoon, 'bent');
+  h.command('act'); assert.equal(lesson().phase, 'understood', 'Neo waits for the hostess invitation before rising');
+  focus(12, false); assert.equal(h.sandbox.life.film.state!.oracle!.reception!.phase, 'inviting');
   h.command('act'); assert.equal(lesson().phase, 'rising');
   focus(3, false); assert.equal(lesson().phase, 'done'); assert.equal(h.sandbox.life.film.state!.step, 1);
   assert.equal(h.sandbox.life.film.performing(h.actor()), false, 'walking returns only after Neo stands');
+});
+
+test('walking from the waiting room into the Oracle kitchen preserves Neo position and heading', () => {
+  const h = setup(); h.command('continue');
+  const scene = FILM_SCENE_BY_ID.m1_spoon;
+  Object.assign(h.sandbox.life.film.state!, { scene: scene.id, actor: 'neo', step: scene.steps.length, oracle: { spoon: 1 } });
+  h.actor().position = filmPosition(scene.set, 0, -8); h.actor().currentLocation = scene.set; h.actor().rotation = -.3;
+  const position = { ...h.actor().position };
+  h.command('next');
+  assert.equal(h.sandbox.life.film.state!.scene, 'm1_oracle');
+  assert.deepEqual(h.actor().position, position, 'the next room in the same apartment must not move Neo back to a scene entrance');
+  assert.equal(h.actor().rotation, -.3);
+});
+
+test('Oracle reception waits for Neo, preserves the invitation on pause and reconnect, and respects a controlled hostess', () => {
+  const h = setup(); h.command('continue');
+  Object.assign(h.sandbox.life.film.state!, { scene: 'm1_spoon', actor: 'neo', step: 0, oracle: { spoon: 1, spoonLesson: { phase: 'understood', elapsed: 0 } } });
+  h.actor().position = filmPosition('film_oracle_home', -7.4, 9.6); h.actor().currentLocation = 'film_oracle_home';
+  const oracle = () => h.sandbox.life.film.state!.oracle!;
+  for (let i = 0; i < 30; i++) h.players.step(.1, true, h.tick());
+  assert.equal(oracle().reception!.phase, 'approaching'); const progress = oracle().reception!.progress, clock = oracle().waitingTime;
+  h.players.step(.1, false, h.tick()); assert.equal(oracle().reception!.progress, progress); assert.equal(oracle().waitingTime, clock);
+  h.players.release('film-player', h.tick()); h.advance(20); assert.equal(oracle().reception!.progress, progress);
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); h.players.possess('film-player', 'neo', h.tick());
+  assert.equal(oracle().reception!.progress, progress);
+  h.players.possess('host-player', 'oracle_priestess', h.tick());
+  const hostess = h.world.agents.get('oracle_priestess')!, position = { ...hostess.position };
+  for (let i = 0; i < 20; i++) h.players.step(.1, true, h.tick());
+  assert.equal(oracle().reception!.progress, progress); assert.deepEqual(hostess.position, position);
+  assert.match(h.command('act'), /另一位玩家/);
+  h.players.release('host-player', h.tick());
+  for (let i = 0; i < 90; i++) h.players.step(.1, true, h.tick());
+  assert.equal(oracle().reception!.phase, 'inviting'); h.command('act');
+  for (let i = 0; i < 60; i++) h.players.step(.1, true, h.tick());
+  assert.equal(oracle().spoonLesson!.phase, 'done'); assert.equal(oracle().reception!.phase, 'guiding');
+  const waiting = oracle().reception!.progress;
+  for (let i = 0; i < 50; i++) h.players.step(.1, true, h.tick());
+  assert.equal(oracle().reception!.progress, waiting, 'the hostess cannot leave a stationary Neo behind');
+});
+
+test('following the Oracle hostess uses ordinary player movement and enters the kitchen without a teleport', () => {
+  const h = setup(); h.command('continue');
+  Object.assign(h.sandbox.life.film.state!, { scene: 'm1_spoon', actor: 'neo', step: 0, oracle: { spoon: 1, spoonLesson: { phase: 'understood', elapsed: 0 } } });
+  h.actor().position = filmPosition('film_oracle_home', -7.4, 9.6); h.actor().currentLocation = 'film_oracle_home';
+  for (let i = 0; i < 125; i++) h.players.step(.1, true, h.tick());
+  h.command('act'); for (let i = 0; i < 30; i++) h.players.step(.1, true, h.tick());
+  let sequence = 0;
+  for (let frame = 0; frame < 500 && h.sandbox.life.film.state!.scene === 'm1_spoon'; frame++) {
+    const state = h.sandbox.life.film.state!, hostess = h.world.agents.get('oracle_priestess')!;
+    const target = state.oracle!.reception!.phase === 'ready' ? filmPosition('film_oracle_home', -1.8, -8.7)
+      : { ...hostess.position, z: hostess.position.z + 1.8 };
+    const dx = target.x - h.actor().position.x, dz = target.z - h.actor().position.z, length = Math.hypot(dx, dz), before = { ...h.actor().position };
+    h.players.receiveInput('film-player', { x: length > .5 ? dx / length : 0, z: length > .5 ? dz / length : 0, yaw: Math.atan2(dx, dz), jump: false, sprint: false, sequence: ++sequence });
+    h.players.step(.1, true, h.tick());
+    assert.ok(Math.hypot(h.actor().position.x - before.x, h.actor().position.z - before.z) < 1, 'walking over the kitchen threshold must remain continuous');
+    assert.equal(playerBlocked(h.actor().position, true), false);
+    if (frame === 100) h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+  }
+  assert.equal(h.sandbox.life.film.state!.scene, 'm1_oracle');
+  assert.ok(h.actor().position.z <= FILM_SETS.film_oracle_home.center.z - 8);
+  assert.equal(h.actor().currentLocation, 'film_oracle_home');
+  const hostess = h.world.agents.get('oracle_priestess')!, walkingLine = filmPosition('film_oracle_home', -2, -9.6);
+  assert.ok(Math.hypot(hostess.position.x - walkingLine.x, hostess.position.z - walkingLine.z) >= 1.45,
+    'the hostess must step aside instead of occupying Neo walking line through the kitchen door');
+  for (const id of ['potential_blocks', 'potential_1', 'potential_2', 'potential_3', 'potential_4', 'oracle_attendant'])
+    assert.ok(h.world.agents.get(id)!.currentAction?.parameters.oracleWaiting, `${id} remains in the waiting room across the kitchen handoff`);
 });
 
 test('the spoon handoff pauses for disconnects and an occupied child, and survives retry without duplicating the prop', () => {
@@ -2600,6 +2668,13 @@ test('the entire film route completes through interactions, driving and real com
         }
         actor.position = filmStepPosition(scene, step); h.players.step(.1, true, h.tick());
       }
+      else if (scene.id === 'm1_spoon' && index === 1) {
+        for (let frame = 0; frame < 300 && state.oracle?.reception?.phase !== 'ready'; frame++) {
+          const guide = h.world.agents.get('oracle_priestess')!;
+          actor.position = { ...guide.position, z: guide.position.z + 2 }; h.players.step(.1, true, h.tick());
+        }
+        actor.position = filmStepPosition(scene, step); h.players.step(.1, true, h.tick());
+      }
       else if (step.kind === 'reach') h.advance();
       else if (step.kind === 'reflect') {
         if (scene.id === 'm1_oracle') {
@@ -2810,6 +2885,7 @@ test('the entire film route completes through interactions, driving and real com
             h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false, focus: true, sequence: ++sequence });
             h.players.step(.1, true, h.tick());
           }
+          for (let frame = 0; frame < 125; frame++) h.players.step(.1, true, h.tick());
           h.command('act'); for (let frame = 0; frame < 30; frame++) h.players.step(.1, true, h.tick());
         }
         else if (index === 0 && ['m1_oracle', 'm1_dejavu'].includes(scene.id)) {
@@ -3005,6 +3081,10 @@ test('the entire film route completes through interactions, driving and real com
       }
       if (scene.id === 'm1_wake_again' && index === scene.steps.length - 1) {
         assert.equal(state.scene, 'm1_bridge', 'walking out of 101 starts the bridge scene without another command');
+        continue;
+      }
+      if (scene.id === 'm1_spoon' && index === scene.steps.length - 1) {
+        assert.equal(state.scene, 'm1_oracle', 'following the hostess across the kitchen door continues without another command');
         continue;
       }
       assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`);
