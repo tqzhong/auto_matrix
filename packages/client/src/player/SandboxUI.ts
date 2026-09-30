@@ -939,16 +939,17 @@ export class SandboxUI {
     if (!journey.visiting && scene.id === 'm1_dojo' && journey.dojo && journey.fighting) {
       const lesson = journey.dojo;
       const windup = state.threats.some(threat => threat.scene === scene.id && threat.character === 'morpheus' && threat.attackAt !== undefined && threat.attackAt > this.tick);
+      const secondsLeft = lesson.counterUntil === undefined ? 0 : Math.max(0, Math.ceil((lesson.counterUntil - this.tick) / 2));
       this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
       this.el('film-sequence').classList.toggle('urgent', windup && !lesson.dodged);
       const actions = this.el('film-training-actions'); const dodge = actions.querySelector<HTMLButtonElement>('[data-combat="dodge"]')!; const attack = actions.querySelector<HTMLButtonElement>('[data-combat="attack"]')!;
       actions.classList.remove('hidden'); dodge.classList.toggle('hidden', lesson.dodged); dodge.disabled = !windup;
       attack.classList.toggle('hidden', !lesson.dodged); attack.querySelector('span')!.textContent = ['刺拳', '直拳', '正蹬'][lesson.combo] ?? '连击';
-      this.el('film-sequence-hint').textContent = !lesson.dodged ? windup ? '现在！按 X 闪避' : '观察 Morpheus 的红色起手提示 · X 闪避' : `F 连击 · ${lesson.combo}/3 · ${DOJO_COMBO_WINDOW} 秒内接续，否则从刺拳重来`;
+      this.el('film-sequence-hint').textContent = !lesson.dodged ? windup ? '现在！按 X 闪避' : '观察 Morpheus 的红色起手提示 · X 闪避' : `F 连击 · ${lesson.combo}/3 · 反击窗口 ${secondsLeft} 秒；每次命中会重置 ${DOJO_COMBO_WINDOW} 秒`;
       this.el('sandbox-job').style.width = `${(lesson.dodged ? 25 : 0) + lesson.combo * 25}%`;
       this.el('sandbox-waypoint').textContent = !lesson.dodged ? '先读懂起手，再离开攻击线' : '刺拳 → 直拳 → 正蹬';
       this.el('sandbox-interact').classList.add('hidden');
-      document.getElementById('game-objective-copy')!.textContent = !lesson.dodged ? windup ? '现在闪避 · X' : '等待 Morpheus 出手 · 看见红色提示后按 X 闪避' : `完成有顺序的三段反击 · ${lesson.combo}/3`;
+      document.getElementById('game-objective-copy')!.textContent = !lesson.dodged ? windup ? '现在闪避 · X' : '等待 Morpheus 出手 · 看见红色提示后按 X 闪避' : `完成有顺序的三段反击 · ${lesson.combo}/3 · 剩余 ${secondsLeft} 秒`;
       return;
     }
     if (!journey.visiting && scene.id === 'm2_seraph' && journey.seraph && journey.fighting) {

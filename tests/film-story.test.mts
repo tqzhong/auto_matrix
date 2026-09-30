@@ -1422,14 +1422,14 @@ test('the dojo requires reading Morpheus attack, dodging it and landing an order
   assert.ok(Math.abs(Math.atan2(Math.sin(h.actor().rotation - targetYaw), Math.cos(h.actor().rotation - targetYaw))) < .01,
     'the lesson keeps Neo facing Morpheus after the dodge so the counter can connect');
   h.players.step(.1, true, h.tick()); h.players.step(.1, true, h.tick());
-  h.advance(20); assert.equal(h.actor().health, health, 'Morpheus holds his guard instead of repeatedly damaging Neo during the counter lesson');
+  h.advance(5); assert.equal(h.actor().health, health, 'Morpheus holds his guard during the counter opening');
   h.actor().position = { ...threat.position, z: threat.position.z + 2 }; h.actor().rotation = 0;
   h.players.receiveInput('film-player', { x: 0, z: 0, yaw: 0, jump: false, sprint: false, sequence: 1 });
   h.players.act('film-player', 'attack', h.tick());
   h.players.receiveInput('film-player', { x: 0, z: 0, yaw: 0, jump: false, sprint: false, sequence: 2 });
   h.players.step(.1, true, h.tick()); h.players.step(.1, true, h.tick());
   assert.equal(state.dojo?.combo, 1, 'the first real attack input locks back onto Morpheus and lands');
-  h.advance(20); assert.equal(h.actor().health, health, 'landing a counter does not release Morpheus from his guard');
+  h.advance(5); assert.equal(h.actor().health, health, 'landing a counter refreshes the guarded counter opening');
   now += 1_600;
   h.actor().position = { ...threat.position, z: threat.position.z + 2 }; h.actor().rotation = 0;
   h.players.receiveInput('film-player', { x: 0, z: 0, yaw: 0, jump: false, sprint: false, sequence: 3 });
@@ -1444,6 +1444,42 @@ test('the dojo requires reading Morpheus attack, dodging it and landing an order
   assert.equal(h.sandbox.life.film.state!.step, 1); assert.equal(h.sandbox.state.threats.length, 0);
   assert.equal(h.world.agents.get('morpheus')!.status, 'alive');
   assert.equal(neoSkillUnlocked(h.sandbox.state.neoLife, 0), true, 'the authored dojo unlocks Neo bullet time too');
+});
+
+test('the dojo preserves a timed counter opening, then returns Morpheus to guard instead of freezing him forever', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  const download = FILM_SCENE_BY_ID.m1_download;
+  Object.assign(state, { scene: download.id, actor: 'neo', step: download.steps.length, training: undefined });
+  h.command('next');
+  h.actor().position = filmStepPosition(FILM_SCENE_BY_ID.m1_dojo, FILM_SCENE_BY_ID.m1_dojo.steps[0]);
+  h.command('act'); const threat = h.sandbox.state.threats[0];
+  h.actor().position = { ...threat.position, z: threat.position.z + 2 }; h.actor().rotation = Math.PI;
+  threat.stunUntil = h.tick(); threat.attackAt = h.tick() + 2; threat.lastStrike = h.tick();
+  h.players.act('film-player', 'dodge', h.tick());
+  const opening = state.dojo as { counterUntil?: number };
+  assert.equal(opening.counterUntil, h.tick() + 6, 'a successful dodge opens a three-second counter window');
+  const saved = JSON.parse(JSON.stringify(h.sandbox.state));
+  h.players.release('film-player', h.tick()); h.advance(20);
+  assert.equal(h.sandbox.life.film.state!.dojo?.dodged, true, 'the opening does not expire while its player is disconnected');
+  h.sandbox.restore(saved); h.players.possess('film-player', 'neo', h.tick()); h.advance(1);
+  assert.equal(h.sandbox.life.film.state!.dojo?.dodged, false, 'missing the opening returns the lesson to Morpheus\' guard');
+  assert.equal(h.sandbox.life.film.state!.dojo?.combo, 0);
+  assert.equal(h.sandbox.state.threats[0].attackAt, undefined, 'Morpheus resets before giving the next readable windup');
+});
+
+test('older dojo saves migrate a frozen counter into a finite counter window', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  const download = FILM_SCENE_BY_ID.m1_download;
+  Object.assign(state, { scene: download.id, actor: 'neo', step: download.steps.length, training: undefined });
+  h.command('next'); h.actor().position = filmStepPosition(FILM_SCENE_BY_ID.m1_dojo, FILM_SCENE_BY_ID.m1_dojo.steps[0]);
+  h.command('act'); const threat = h.sandbox.state.threats[0];
+  threat.stunUntil = h.tick(); threat.attackAt = h.tick() + 2; threat.lastStrike = h.tick();
+  assert.equal(h.sandbox.life.film.trainingDodge(h.actor(), threat, h.tick()), true);
+  const saved = JSON.parse(JSON.stringify(h.sandbox.state)); delete saved.neoLife.journey.dojo.counterUntil;
+  h.sandbox.restore(saved);
+  assert.equal(h.sandbox.life.film.state!.dojo?.counterUntil, h.world.simulationTick + 6, 'an old permanent guard save receives one finite counter window');
+  h.advance(7);
+  assert.equal(h.sandbox.life.film.state!.dojo?.dodged, false, 'the migrated counter returns to a readable retry instead of remaining frozen');
 });
 
 test('Morpheus demonstrates the rooftop jump before Neo can attempt the recoverable gap', () => {
@@ -1517,7 +1553,8 @@ test('Morpheus and Seraph take part in their own nonlethal duels without cloning
     assert.equal(h.sandbox.state.threats.length, 1); const threat = h.sandbox.state.threats[0];
     assert.equal(threat.character, opponent);
     if (id === 'm1_dojo') {
-      h.sandbox.life.film.trainingDodge(h.actor(), threat, h.tick());
+      threat.stunUntil = 0; threat.attackAt = h.tick() + 1;
+      assert.equal(h.sandbox.life.film.trainingDodge(h.actor(), threat, h.tick()), true);
       for (const combo of [0, 1, 2]) {
         h.actor().position = { ...threat.position, z: threat.position.z + 2 }; h.actor().rotation = Math.PI;
         h.sandbox.attack(h.actor(), h.tick(), combo);
@@ -2840,7 +2877,8 @@ test('the entire film route completes through interactions, driving and real com
         }
         if (scene.id === 'm1_dojo') {
           const target = h.sandbox.state.threats[0];
-          h.sandbox.life.film.trainingDodge(actor, target, h.tick());
+          target.stunUntil = 0; target.attackAt = h.tick() + 1;
+          assert.equal(h.sandbox.life.film.trainingDodge(actor, target, h.tick()), true);
           for (const combo of [0, 1, 2]) {
             actor.position = { ...target.position, z: target.position.z + 2 }; actor.rotation = Math.PI;
             h.sandbox.attack(actor, h.tick(), combo);

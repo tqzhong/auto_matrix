@@ -7,7 +7,7 @@ import { CABIN, CABIN_ROUTE_LENGTH, MEDICAL_OPERATOR, cabinBodyPose, cabinGuideP
 import { CONSTRUCT, CONSTRUCT_FURNITURE, constructGuidePose, constructArrivalText } from '@auto_matrix/shared';
 import { catchLocked, newCatch } from '@auto_matrix/shared';
 import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_CAST, GRID_WINDOW_SECONDS, GRID_REROUTE_SECONDS, GRID_HACK_SECONDS, ARCHITECT_DOOR_SECONDS, RELOADED_FINALE, BANE_ENCOUNTER, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, filmReflections, CHARACTERS, LOCATIONS, NEO_CHAPTERS, filmCharacterFates, filmEntry, filmPosition, filmStepPosition, filmStepNear, locationEntrance, distance, playerBlocked, newFreewayRide, stepFreeway, OFFICE_LADDER, awakeningLocked, awakeningPose, AWAKENING_SECONDS, MIRROR_TOUCH, MIRROR_TIMING, MIRROR_GUIDE_LENGTH, mirrorGuidePose, mirrorGuideProgress, mirrorSilver, recoveryCrewPose, CONSTRUCT_REVEAL, DESERT_REVEAL, oracleActing,
-  AMBUSH_REWRITE, AMBUSH_SECONDS, AMBUSH_SEALS, OFFICE_CONTACT, OFFICE_WINDOW, OFFICE_CROSSING_SECONDS, officeCrossingPose, windowCrossing, phoneLocked, heldPhone, windowOpening, pillLocked, pillRoot, PILL_ROOM, PILL_TIMING, trainingLocked, trainingRoot, trainingText, TRAINING_SECONDS,
+  AMBUSH_REWRITE, AMBUSH_SECONDS, AMBUSH_SEALS, OFFICE_CONTACT, OFFICE_WINDOW, OFFICE_CROSSING_SECONDS, officeCrossingPose, windowCrossing, phoneLocked, heldPhone, windowOpening, pillLocked, pillRoot, PILL_ROOM, PILL_TIMING, trainingLocked, trainingRoot, trainingText, TRAINING_SECONDS, DOJO_COMBO_WINDOW,
   lobbyLocked, meleeReach, groundHeight, MIRROR_SEAT, MIRROR_TRINITY, type DriveInput, type AgentState, type FilmScene, type FilmStep, type GridOperation, type SandboxState, type SandboxThreat, type TrainingRole, type CombatImpact } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
 import { LobbyCombatSystem } from './LobbyCombatSystem.js';
@@ -51,6 +51,7 @@ import { OpeningHotelSystem } from './OpeningHotelSystem.js';
 
 const BATHROOM_ROLES = ['neo', 'trinity', 'switch', 'apoc'] as const;
 const UNPLUGGED_ROLES = ['tank', 'cypher', 'dozer', 'apoc', 'switch', 'neo', 'trinity'] as const;
+const DOJO_COUNTER_TICKS = DOJO_COMBO_WINDOW * 2;
 
 export class FilmStorySystem {
   // The controller owns socket sessions. It can refuse a handoff occupied by another player.
@@ -1552,7 +1553,11 @@ export class FilmStorySystem {
         : state.scene === 'm1_red_dress' && state.step === 1 ? 'red_dress' : undefined;
       if (kind) state.training = { kind, elapsed: 0, started: false };
     }
-    if (state.scene === 'm1_dojo' && state.step === 0) state.dojo ??= { dodged: false, combo: 0, hits: 0 };
+    if (state.scene === 'm1_dojo' && state.step === 0) {
+      state.dojo ??= { dodged: false, combo: 0, hits: 0 };
+      if (state.fighting && state.dojo.dodged && !state.dojo.complete && state.dojo.counterUntil === undefined)
+        state.dojo.counterUntil = this.world.simulationTick + DOJO_COUNTER_TICKS;
+    }
     const actor = this.world.agents.get(state.actor);
     if (actor && state.training && (trainingLocked(state) || state.downloadSetup || state.scene === 'm1_download')) this.trainingFrame(actor, 0, this.world.simulationTick);
   }
@@ -3411,10 +3416,10 @@ export class FilmStorySystem {
     }
     if (!state || state.scene !== 'm1_dojo' || state.step !== 0 || threat.scene !== state.scene || threat.character !== 'morpheus') return false;
     const dojo = state.dojo ??= { dodged: false, combo: 0, hits: 0 };
-    if (dojo.dodged) return true;
-    dojo.dodged = true; dojo.combo = 0;
-    threat.stunUntil = Number.MAX_SAFE_INTEGER;
-    state.lastText = '你看见了 Morpheus 的起手并闪到攻击线外。现在按 F 完成刺拳、直拳、正蹬三段反击。';
+    if (dojo.dodged || threat.attackAt === undefined || threat.attackAt <= tick) return false;
+    dojo.dodged = true; dojo.combo = 0; dojo.counterUntil = tick + DOJO_COUNTER_TICKS;
+    threat.stunUntil = dojo.counterUntil;
+    state.lastText = '你看见了 Morpheus 的起手并闪到攻击线外。三秒内按 F 完成刺拳、直拳、正蹬三段反击。';
     agent.currentAction = { type: 'defend', parameters: { player: true, resolved: true }, startedAt: tick, duration: 1, progress: 0 };
     return true;
   }
@@ -3442,21 +3447,37 @@ export class FilmStorySystem {
     if (!dojo.dodged) {
       dojo.combo = 0; state.lastText = 'Morpheus 挡开了进攻。先等红色起手提示出现，用 X 闪避一次，再组织反击。'; return true;
     }
+    if (dojo.counterUntil !== undefined && dojo.counterUntil < tick) {
+      dojo.dodged = false; dojo.combo = 0; delete dojo.counterUntil; dojo.resets = (dojo.resets ?? 0) + 1;
+      threat.stunUntil = tick + 2; threat.lastStrike = tick - 5;
+      state.lastText = '反击窗口已经过去。Morpheus 后撤半步，重新摆好架势；等下一次红色起手再闪避。';
+      return true;
+    }
     const expected = dojo.combo;
     if (combo !== expected) dojo.combo = combo === 0 ? 1 : 0;
     else dojo.combo++;
-    dojo.hits++;
+    dojo.hits++; dojo.counterUntil = tick + DOJO_COUNTER_TICKS; threat.stunUntil = dojo.counterUntil;
     if (dojo.combo < 3) {
       state.lastText = dojo.combo === 1 ? '刺拳命中。保持距离，在连击窗口内继续第二击。'
         : dojo.combo === 2 ? '直拳接上。最后用正蹬结束这一组反击。'
         : '节奏断开了。从刺拳重新开始三段连击。';
       return true;
     }
-    dojo.complete = true; threat.health = 0;
+    dojo.complete = true; delete dojo.counterUntil; threat.health = 0;
     this.sandbox().threats = this.sandbox().threats.filter(item => item !== threat);
     const morpheus = this.world.agents.get('morpheus'); if (morpheus && !morpheus.controller) morpheus.currentAction = null;
     state.lastText = '闪避与三段反击完成。Morpheus 收起架势：下载的知识终于变成了你自己的动作。';
     return true;
+  }
+  private dojoFrame(agent: AgentState, tick: number): void {
+    const state = this.state; const dojo = state?.dojo;
+    if (!state || state.scene !== 'm1_dojo' || state.step !== 0 || !state.fighting || !dojo?.dodged || dojo.complete || dojo.counterUntil === undefined || tick <= dojo.counterUntil) return;
+    dojo.dodged = false; dojo.combo = 0; delete dojo.counterUntil; dojo.resets = (dojo.resets ?? 0) + 1;
+    const threat = this.sandbox().threats.find(candidate => candidate.scene === state.scene && candidate.character === 'morpheus' && candidate.target === agent.id);
+    if (threat) {
+      threat.stunUntil = tick + 2; threat.lastStrike = tick - 5; delete threat.attackAt;
+    }
+    state.lastText = '三秒反击窗口结束。Morpheus 收回脚步重新架势；观察下一次红色起手再闪避。';
   }
   seraphFailed(agent: AgentState): void {
     const state = this.state;
@@ -5847,6 +5868,7 @@ export class FilmStorySystem {
       } else delete state.started;
       return;
     }
+    if (state.scene === 'm1_dojo') this.dojoFrame(actor, tick);
     if (state.scene === 'm2_trucks' && !state.trucks)
       state.trucks = { phase: state.step === 0 ? 'duel' : 'collision', elapsed: 0, lastTick: tick, attempt: 0 };
     if (state.scene === 'm3_dock_battle' && state.dockGunnery?.phase === 'firing') {

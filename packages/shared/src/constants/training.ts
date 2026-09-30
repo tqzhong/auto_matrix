@@ -4,7 +4,7 @@ import { awakeningPose } from './awakening.js';
 
 export type TrainingKind = 'download' | 'jump' | 'red_dress';
 export interface TrainingPerformance { kind: TrainingKind; elapsed: number; started: boolean }
-export interface DojoLesson { dodged: boolean; combo: number; hits: number; complete?: boolean }
+export interface DojoLesson { dodged: boolean; combo: number; hits: number; counterUntil?: number; resets?: number; complete?: boolean }
 export type TrainingRole = 'neo' | 'tank' | 'morpheus' | 'citizen_1' | 'citizen_2' | 'smith';
 export interface TrainingGesture { kind: TrainingKind; elapsed: number; role: TrainingRole }
 export interface DownloadSetup { phase: 'greeting' | 'waking' | 'walk' | 'connecting' | 'ready'; elapsed: number; progress: number; approach?: { x: number; z: number } }
