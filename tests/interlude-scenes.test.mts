@@ -84,7 +84,7 @@ test('the console, crew meal and restaurant own visible, animated physical props
   const consoleJourney: FilmJourney = { version: 1, scene: 'm1_cypher_console', actor: 'neo', step: 0, completed: [], enteredAt: 0,
     reflections: {}, lastText: '', checkpoint: filmPosition('film_neb_deck'), interlude: { kind: 'console', phase: 'ready', elapsed: 0 } };
   try {
-    for (const name of ['neb-cypher-console-scene', 'neb-cypher-console-display', 'neb-cypher-console-desk', 'neb-cypher-console-keyboard', 'neb-cypher-console-task-light', 'neb-cypher-liquor-bottle', 'neb-cypher-shot-glass', 'neb-crew-meal-scene', 'neb-neo-protein-bowl', 'neb-neo-spoon']) assert.ok(nebRoot.getObjectByName(name), name);
+    for (const name of ['neb-cypher-console-scene', 'neb-cypher-console-display', 'neb-cypher-console-desk', 'neb-cypher-console-keyboard', 'neb-cypher-console-task-light', 'neb-cypher-liquor-bottle', 'neb-cypher-shot-glass', 'neb-crew-meal-scene', 'neb-meal-table-runner', 'neb-meal-communal-pot', 'neb-meal-pendant-light', 'neb-neo-protein-bowl', 'neb-neo-spoon']) assert.ok(nebRoot.getObjectByName(name), name);
     neb.update(consoleJourney, 0); const cup = nebRoot.getObjectByName('neb-cypher-shot-glass')!; const resting = cup.position.y;
     const consoleCables: THREE.Object3D[] = []; nebRoot.traverse(object => { if (/^neb-core-chair-.*-cable-/.test(object.name)) consoleCables.push(object); });
     assert.ok(consoleCables.length >= 8, 'the shared deck still owns all operator-chair cables outside Cypher’s scene');
@@ -93,6 +93,8 @@ test('the console, crew meal and restaurant own visible, animated physical props
     const mealJourney: FilmJourney = { ...consoleJourney, scene: 'm1_meal', interlude: { kind: 'meal', phase: 'performing', elapsed: 2.2 } };
     neb.update(mealJourney, 7); const bowl = nebRoot.getObjectByName('neb-neo-protein-bowl')!; assert.ok(bowl.position.x > -4);
     assert.equal(nebRoot.getObjectByName('neb-meal-steam-0')!.visible, true);
+    assert.ok((nebRoot.getObjectByName('neb-meal-pendant-light') as THREE.PointLight).intensity > 100,
+      'the shared meal must use its own warm task light instead of the cold deck wash');
   } finally { neb.dispose(); }
 
   const restaurantRoot = new THREE.Group(); const restaurant = new CypherRestaurantRenderer(restaurantRoot);

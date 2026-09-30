@@ -816,6 +816,20 @@ test('Cypher interludes use directed scene cameras while V keeps a freely steera
   assert.ok(game.camera.position.y > tablePosition.y + 2.55, 'the seated Smith view clears the table and chair back');
 });
 
+test('the crew meal camera keeps Neo’s bowl and opposite diners readable', t => {
+  const game = setup(t, -Math.PI / 2); const center = FILM_SETS.film_neb_deck.center;
+  Object.assign(game.state, { position: filmPosition('film_neb_deck', -1.5, 22), rotation: -Math.PI / 2, isInMatrix: false, currentLocation: 'film_neb_deck',
+    currentAction: { type: 'idle', parameters: { seated: true, interlude: { kind: 'meal', phase: 'performing', elapsed: 5, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 } });
+  for (const aspect of [16 / 9, .72]) {
+    game.camera.aspect = aspect; game.camera.updateProjectionMatrix(); game.controls.possess(game.state); game.step(.5);
+    for (const [x, z] of [[-3.25, 22], [-4.7, 18.7], [-8, 25.3]]) {
+      const point = new THREE.Vector3(center.x + x, center.y + 1.85, center.z + z).project(game.camera);
+      assert.ok(Math.abs(point.x) < .84 && Math.abs(point.y) < .78 && point.z > -1 && point.z < 1,
+        `the handoff bowl and both table sides must stay in frame at ${aspect}: ${point.toArray().join(',')}`);
+    }
+  }
+});
+
 test('the Oracle consultation frames both speakers and V keeps a freely steerable player view', t => {
   const game = setup(t, ORACLE_VISIT.neo.yaw); const center = FILM_SETS.film_oracle_home.center;
   Object.assign(game.state, { position: filmPosition('film_oracle_home', ORACLE_VISIT.neo.x, ORACLE_VISIT.neo.z),
