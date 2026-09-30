@@ -106,6 +106,7 @@ export interface FilmJourney {
   awakening?: import('./awakening.js').AwakeningBeat;
   cabinEscort?: import('./cabin.js').CabinEscort;
   truthRecovery?: import('./truth-recovery.js').TruthRecovery;
+  downloadSetup?: import('./training.js').DownloadSetup;
   constructArrival?: import('./construct.js').ConstructArrival;
   mirrorGuide?: import('./awakening.js').MirrorGuide;
   training?: import('./training.js').TrainingPerformance;

@@ -1,16 +1,24 @@
 import type { FilmJourney } from './film-story.js';
+import { CABIN, CABIN_ROUTE_LENGTH, cabinBodyPose, cabinGuidePose } from './cabin.js';
+import { awakeningPose } from './awakening.js';
 
 export type TrainingKind = 'download' | 'jump' | 'red_dress';
 export interface TrainingPerformance { kind: TrainingKind; elapsed: number; started: boolean }
 export interface DojoLesson { dodged: boolean; combo: number; hits: number; complete?: boolean }
 export type TrainingRole = 'neo' | 'tank' | 'morpheus' | 'citizen_1' | 'citizen_2' | 'smith';
 export interface TrainingGesture { kind: TrainingKind; elapsed: number; role: TrainingRole }
+export interface DownloadSetup { phase: 'greeting' | 'waking' | 'walk' | 'connecting' | 'ready'; elapsed: number; progress: number; approach?: { x: number; z: number } }
+export interface DownloadGesture extends DownloadSetup { role: 'neo' | 'tank'; target?: { x: number; y: number; z: number } }
+export const DOWNLOAD_SETUP_SECONDS = { waking: 12, connecting: 10 } as const;
+export const DOWNLOAD_OPERATOR = { x: 11.8, z: -8, yaw: Math.PI,
+  keyboard: { x: 11.8, y: 2.4, z: -9.05 }, drive: { x: 12.5, y: 2.65, z: -9.4 },
+  desk: { x: 11.8, z: -9.75, width: 3.4, depth: 1.7, height: 2.4 } } as const;
 
 export const TRAINING_SECONDS = { download: 10, jump: 4, red_dress: 12 } as const;
 export const DOJO_COMBO_WINDOW = 3;
 export const DOWNLOAD_CHAIR = {
   neo: { x: 6.5, z: -5, yaw: -Math.PI / 2 },
-  tank: { x: 10.2, z: -5, yaw: -Math.PI / 2 },
+  tank: DOWNLOAD_OPERATOR,
 } as const;
 export const JUMP_PROGRAM = {
   neo: { x: 0, z: -10, yaw: Math.PI },
@@ -28,13 +36,63 @@ export const RED_DRESS_PROGRAM = {
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
 const smooth = (value: number) => { const t = clamp(value); return t * t * (3 - 2 * t); };
 
+export function downloadDiskPose(elapsed: number) {
+  const lift = smooth((elapsed - .35) / .65), insert = smooth((elapsed - 1.15) / .9);
+  return { x: 12.5, y: 2.46 + lift * .64 - insert * .45, z: -9.05 + lift * .3 - insert * .66 };
+}
+
+export function downloadHandPoint(elapsed: number, side: 'R' | 'L') {
+  const key = DOWNLOAD_OPERATOR.keyboard, typing = smooth((elapsed - 2.1) / .55);
+  const disk = downloadDiskPose(elapsed);
+  const tap = elapsed > 2.6 && elapsed < 8.7 ? Math.sin(elapsed * 10 + (side === 'L' ? 2 : 0)) * .025 : 0;
+  return side === 'L' ? { x: key.x - .35, y: key.y + .23 + tap, z: key.z + .08 }
+    : { x: disk.x + (key.x + .35 - disk.x) * typing, y: disk.y + .22 + (key.y + .23 - disk.y - .22) * typing + tap,
+      z: disk.z + .12 + (key.z + .08 - disk.z - .12) * typing };
+}
+
 export function trainingLocked(journey: FilmJourney): boolean {
   const training = journey.training;
+  if (!journey.visiting && journey.downloadSetup && journey.downloadSetup.phase !== 'ready') return journey.downloadSetup.phase !== 'walk';
   return Boolean(!journey.visiting && training && training.elapsed < TRAINING_SECONDS[training.kind]);
 }
 
 export function trainingWaiting(journey: FilmJourney): boolean {
+  if (journey.downloadSetup && journey.downloadSetup.phase !== 'ready') return !journey.visiting && journey.downloadSetup.phase === 'greeting';
   return trainingLocked(journey) && journey.training?.started === false;
+}
+
+export function downloadRoot(setup: DownloadSetup, role: 'neo' | 'tank') {
+  if (role === 'tank') {
+    if (setup.phase === 'greeting' || setup.phase === 'waking') {
+      const turn = setup.phase === 'waking' ? smooth((setup.elapsed - 4) / .7) * (1 - smooth((setup.elapsed - 6.5) / .7)) : 0;
+      return { ...CABIN.morpheus, y: 0, yaw: CABIN.morpheus.yaw + turn * Math.PI };
+    }
+    if (setup.phase === 'walk') {
+      const guide = cabinGuidePose(setup.progress);
+      return { ...guide, x: guide.x - .5 * smooth((setup.progress - CABIN_ROUTE_LENGTH + 3) / 3), y: 0 };
+    }
+    const move = setup.phase === 'ready' ? 1 : smooth((setup.elapsed - 6) / 3);
+    return { x: 8.2 + (DOWNLOAD_OPERATOR.x - 8.2) * move, y: 0, z: CABIN.connector.z + (DOWNLOAD_OPERATOR.z - CABIN.connector.z) * move,
+      yaw: CABIN.connector.yaw + (DOWNLOAD_OPERATOR.yaw - CABIN.connector.yaw) * move };
+  }
+  if (setup.phase === 'greeting' || setup.phase === 'waking') {
+    const body = cabinBodyPose(setup.phase === 'greeting' ? 0 : setup.elapsed);
+    const exitYaw = Math.atan2(CABIN.door.x - body.x, CABIN.door.z - body.z);
+    return { ...body, yaw: body.yaw + (exitYaw - body.yaw) * smooth((setup.elapsed - 10.5) / 1.2) };
+  }
+  if (setup.phase === 'connecting') return { ...awakeningPose({ kind: 'core', elapsed: setup.elapsed, started: true, approach: setup.approach }), yaw: CABIN.chair.yaw };
+  return { ...CABIN.chair, y: 0 };
+}
+
+export function downloadSetupText(setup: DownloadSetup): string {
+  if (setup.phase === 'greeting') return '又一个早晨，Tank 来到舱室：准备好认识训练程序了吗？按 G 起身。';
+  if (setup.phase === 'waking') return setup.elapsed < 4 ? 'Tank 自我介绍。他负责操作台，也会带你完成今天的训练。'
+    : setup.elapsed < 7 ? 'Neo 注意到他没有颈后接口。Tank 转过身：他和哥哥 Dozer 都出生在现实世界。'
+      : setup.elapsed < 10 ? 'Tank 提到锡安，那是幸存的人类城市。他希望有一天能带 Neo 回去看看。' : '舱门外是同一条甲板通道。Tank 在前面等你。';
+  if (setup.phase === 'walk') return '跟随 Tank 穿过舱门和中央通道。走到连接椅前，按 G 坐下；落后时他会等你。';
+  if (setup.phase === 'connecting') return setup.elapsed < 2.2 ? 'Neo 转身坐稳。Tank 从椅后拿起连接线。'
+    : setup.elapsed < 5.8 ? 'Tank 对准颈后的接口，将插头推入并检查锁定。' : 'Tank 回到操作台，准备好格斗程序。连接保持，等待你的确认。';
+  return '接口已连接。按 G 请 Tank 装入格斗程序，开始上传。';
 }
 
 export function trainingText(training: TrainingPerformance): string {

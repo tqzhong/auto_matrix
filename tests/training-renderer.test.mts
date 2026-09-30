@@ -11,20 +11,30 @@ const journey = (scene: string, training?: FilmJourney['training']): FilmJourney
   reflections: {}, lastText: '', training,
 });
 
-test('training download has a physical neural jack, cable and saved upload display', () => {
+test('training uses the actual neck socket, a carried disk and a paused upload display', () => {
   const root = new THREE.Group(); const renderer = new NebDeckRenderer(root);
   try {
+    const subject = new THREE.Group(), socket = new THREE.Object3D(); socket.name = 'cervical-interface'; socket.position.set(7.4, 2.5, -5); subject.add(socket);
     const state = journey('m1_download', { kind: 'download', elapsed: 0, started: false });
-    renderer.update(state, 0);
+    state.downloadSetup = { phase: 'connecting', elapsed: 2.2, progress: 0 };
+    renderer.update(state, 0, subject);
     const rig = root.getObjectByName('neb-training-upload-rig')!;
-    const jack = root.getObjectByName('neb-training-jack')!;
-    assert.ok(rig.visible); assert.ok(root.getObjectByName('neb-training-cable'));
+    const jack = root.getObjectByName('neb-first-core-connector')!;
+    assert.ok(rig.visible); assert.ok(root.getObjectByName('neb-first-core-cable')!.visible);
+    assert.equal(root.getObjectByName('neb-training-overhead-rail'), undefined, 'the training plug is handled behind the neck, not lowered through the head');
     assert.ok(root.getObjectByName('neb-training-progress'));
-    const raised = jack.position.y;
-    state.training!.started = true; state.training!.elapsed = 5; renderer.update(state, 5);
-    assert.ok(jack.position.y < raised - 1.5, 'the plug visibly reaches Neo instead of reporting a text-only upload');
+    const withdrawn = jack.position.x;
+    state.downloadSetup.elapsed = 5; renderer.update(state, 5, subject); root.updateMatrixWorld(true);
+    assert.ok(withdrawn - jack.position.x > .69);
+    assert.ok(jack.localToWorld(new THREE.Vector3(-.25, 0, 0)).distanceTo(socket.getWorldPosition(new THREE.Vector3())) < .001);
+    state.downloadSetup.phase = 'ready'; state.training!.started = true; state.training!.elapsed = 1; renderer.update(state, 5, subject);
+    const disk = root.getObjectByName('neb-training-disk')!, lifted = disk.position.y;
+    state.training!.elapsed = 5; renderer.update(state, 5, subject);
+    assert.ok(lifted - disk.position.y > .1, 'the lifted disk has been inserted into the drive');
     const bars = Array.from({ length: 10 }, (_, index) => root.getObjectByName(`neb-training-bar-${index}`)!);
     assert.ok(bars.filter(bar => bar.visible).length >= 5, 'the console mirrors saved upload progress');
+    const paused = { disk: disk.position.toArray(), bars: bars.map(bar => bar.visible) }; renderer.update(state, 500, subject);
+    assert.deepEqual({ disk: disk.position.toArray(), bars: bars.map(bar => bar.visible) }, paused);
   } finally { renderer.dispose(); }
 });
 

@@ -32,6 +32,7 @@ export interface MotionInput {
   medical?: number;
   cabin?: import('@auto_matrix/shared').CabinGesture;
   truth?: import('@auto_matrix/shared').TruthGesture;
+  download?: import('@auto_matrix/shared').DownloadGesture;
   construct?: import('@auto_matrix/shared').ConstructGesture;
   reveal?: AwakeningReveal;
   training?: TrainingGesture;

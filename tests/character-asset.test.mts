@@ -12,6 +12,7 @@ import { createLoungeChair } from '../packages/client/src/engine/LoungeChair.js'
 import { CONSTRUCT, constructGuidePose } from '@auto_matrix/shared';
 import { CABIN, MEDICAL_OPERATOR, cabinBodyPose } from '@auto_matrix/shared';
 import { truthRoot, truthUnplug, type TruthGesture } from '@auto_matrix/shared';
+import { downloadRoot, downloadHandPoint, DOWNLOAD_OPERATOR, type DownloadGesture } from '@auto_matrix/shared';
 import { APARTMENT, FILM_SETS, PILL_ROOM, PILL_TIMING, RECOVERY_BED, awakeningPose, farewellPose, filmPosition, pillRoot, recoveryBodyPose, recoveryCrewPose, type PillGesture, OFFICE_WINDOW, OFFICE_LEDGE_OFFSET, officeWindowPose, officeCrossingPose, type FilmJourney } from '@auto_matrix/shared';
 import { INTERROGATION_ROOM, interrogationRoot } from '@auto_matrix/shared';
 import { MEETING_CAR, meetingRoot, meetingCarPose } from '@auto_matrix/shared';
@@ -979,6 +980,56 @@ test('the bedside aftermath rests Neo on the mattress and supports Morpheus on h
       }
     }
   } finally { deck.dispose(); models.dispose(); }
+});
+
+test('Tank reaches the actual neck connector and both hands follow the training disk and keyboard', async () => {
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: typeof loadGeometry }).load = loadGeometry;
+  try {
+    const neo = (await models.create('neo'))!, tank = (await models.create('neo', undefined, 'tank'))!;
+    const center = FILM_SETS.film_neb_deck.center;
+    assert.equal(tank.root.getObjectByName('cervical-interface'), undefined, 'Tank was born free and has no neural port');
+    for (const elapsed of [3, 3.6, 4.6, 5.8]) {
+      for (const [role, rig] of [['neo', neo], ['tank', tank]] as const) {
+        const download: DownloadGesture = { phase: 'connecting', elapsed, progress: 0, role }, root = downloadRoot(download, role);
+        rig.root.position.set(center.x + root.x, center.y - 1 + root.y, center.z + root.z); rig.root.rotation.y = root.yaw;
+        if (role === 'tank') download.target = neo.root.getObjectByName('cervical-interface')!.getWorldPosition(new THREE.Vector3())
+          .add(new THREE.Vector3(.49 + .7 * (1 - THREE.MathUtils.smoothstep(elapsed, 3, 4.6)), 0, 0));
+        const input: MotionInput = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true, download,
+          performance: role === 'neo' ? 'core' : undefined, cabin: role === 'neo' ? { kind: 'core', elapsed, role: 'neo' } : undefined };
+        const motion = newMotion(); models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
+        if (download.target) {
+          const palm = rig.bones.get('wrist_R')!.localToWorld(new THREE.Vector3(.09, -.18, .02));
+          const gap = palm.distanceTo(new THREE.Vector3(download.target.x, download.target.y, download.target.z));
+          assert.ok(gap < .04, `Tank misses the plug grip at ${elapsed}s by ${gap}`);
+        }
+      }
+    }
+    tank.root.position.set(center.x + DOWNLOAD_OPERATOR.x, center.y - 1, center.z + DOWNLOAD_OPERATOR.z); tank.root.rotation.y = DOWNLOAD_OPERATOR.yaw;
+    const desk = DOWNLOAD_OPERATOR.desk, point = new THREE.Vector3(), origin = new THREE.Vector3(center.x, center.y - 1, center.z);
+    const tabletop = new THREE.Box3(new THREE.Vector3(desk.x - desk.width / 2, desk.height - .24, desk.z - desk.depth / 2),
+      new THREE.Vector3(desk.x + desk.width / 2, desk.height, desk.z + desk.depth / 2));
+    for (const elapsed of [.35, .8, 1.5, 2.2, 3.2, 6.5]) {
+      const input: MotionInput = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true, training: { kind: 'download', elapsed, role: 'tank' } };
+      const motion = newMotion(); models.animate(tank, advanceMotion(motion, input, 0), motion, input, 0); tank.root.updateMatrixWorld(true);
+      for (const side of ['R', 'L'] as const) {
+        const point = downloadHandPoint(elapsed, side), expected = new THREE.Vector3(center.x + point.x, center.y - 1 + point.y, center.z + point.z);
+        const palm = tank.bones.get(`wrist_${side}`)!.localToWorld(new THREE.Vector3(side === 'R' ? .09 : -.09, -.18, .02));
+        assert.ok(palm.distanceTo(expected) < .04, `Tank ${side} hand misses the disk/keyboard at ${elapsed}s by ${palm.distanceTo(expected)}`);
+      }
+      let penetration = 0, floor = Infinity;
+      for (const { mesh } of tank.wardrobe) if (mesh instanceof THREE.SkinnedMesh && mesh.visible) {
+        mesh.skeleton.update();
+        for (let i = 0; i < mesh.geometry.attributes.position.count; i++) {
+          mesh.getVertexPosition(i, point).applyMatrix4(mesh.matrixWorld).sub(origin); floor = Math.min(floor, point.y);
+          if (tabletop.containsPoint(point)) penetration = Math.max(penetration, Math.min(point.x - tabletop.min.x, tabletop.max.x - point.x,
+            point.y - tabletop.min.y, tabletop.max.y - point.y, point.z - tabletop.min.z, tabletop.max.z - point.z));
+        }
+      }
+      assert.ok(penetration < .04, `Tank penetrates the console at ${elapsed}s by ${penetration}`);
+      assert.ok(floor > -.04, `Tank penetrates the floor at ${elapsed}s by ${-floor}`);
+    }
+  } finally { models.dispose(); }
 });
 
 test('Neo keeps his real-world scalp after waking and restores his hair inside the Matrix', async () => {

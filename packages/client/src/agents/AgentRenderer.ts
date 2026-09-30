@@ -161,6 +161,7 @@ export class AgentRenderer {
         medical: state.currentAction?.parameters.medical as number | undefined,
         cabin: state.currentAction?.parameters.cabin as MotionInput['cabin'],
         truth: state.currentAction?.parameters.truth as MotionInput['truth'],
+        download: state.currentAction?.parameters.download as MotionInput['download'],
         construct: state.currentAction?.parameters.construct as MotionInput['construct'],
         performance: state.currentAction?.parameters.filmPose as MotionInput['performance'],
         mirrorBeat: state.currentAction?.parameters.mirrorBeat as number | undefined,
@@ -224,6 +225,15 @@ export class AgentRenderer {
           const point = targetObject.getWorldPosition(new THREE.Vector3());
           if (input.truth.role === 'trinity') point.x += .49 + .7 * THREE.MathUtils.smoothstep(input.truth.elapsed, 1.5, 3.2);
           input.truth = { ...input.truth, target: { x: point.x, y: point.y, z: point.z } };
+        }
+      }
+      if (input.download?.phase === 'connecting' && input.download.role === 'tank') {
+        const neo = this.agents.get('neo'), socket = neo?.body.getObjectByName('cervical-interface');
+        if (neo && socket) {
+          neo.group.updateWorldMatrix(true, true);
+          const point = socket.getWorldPosition(new THREE.Vector3());
+          point.x += .49 + .7 * (1 - THREE.MathUtils.smoothstep(input.download.elapsed, 3, 4.6));
+          input.download = { ...input.download, target: { x: point.x, y: point.y, z: point.z } };
         }
       }
       if (input.cabin?.kind === 'core' && input.cabin.role === 'morpheus') {

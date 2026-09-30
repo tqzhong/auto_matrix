@@ -1,4 +1,4 @@
-import { truthUnplug, truthRest, TRUTH_BEDSIDE } from '@auto_matrix/shared';
+import { truthUnplug, truthRest, TRUTH_BEDSIDE, DOWNLOAD_OPERATOR, downloadDiskPose } from '@auto_matrix/shared';
 import * as THREE from 'three';
 import { RECOVERY_BED, RECOVERY_CABINET, RECOVERY_FRAME, RESCUE, type FilmJourney } from '@auto_matrix/shared';
 import { CABIN, CABIN_WALLS, MEDICAL_OPERATOR, medicalControlBlend, cabinPlugProgress } from '@auto_matrix/shared';
@@ -28,7 +28,9 @@ export class NebDeckRenderer {
   private skinContacts = new Map<number, THREE.Vector3>();
   private needles: { shaft: THREE.Mesh; tip: THREE.Mesh; hub: THREE.Mesh; support: THREE.Mesh; anchorY: number; bone: string; offset: THREE.Vector3 }[] = [];
   private downloadRig = new THREE.Group();
-  private downloadConnector = new THREE.Group();
+  private downloadDisk = new THREE.Group();
+  private downloadScreen?: THREE.CanvasTexture;
+  private downloadScreenFrame = -1;
   private downloadBars: THREE.Mesh[] = [];
   private downloadPulse = this.material(new THREE.MeshBasicMaterial({ color: 0x8cf4b8, toneMapped: false }));
   private consoleRig = new THREE.Group();
@@ -86,13 +88,14 @@ export class NebDeckRenderer {
     const back = this.box(chair, this.leather, 0, 2.15, -1.22, 2.35, 2.2, .32); back.rotation.x = .28;
     for (const side of [-1, 1]) {
       this.box(chair, this.dark, side * 1.3, 1.35, -.25, .22, 1.7, 1.85);
-      const cable = this.pipe([new THREE.Vector3(x + side * 1.05, 2.9, z + .8), new THREE.Vector3(x + side * 1.2, 5, z + 1.8), new THREE.Vector3(x + side * 2, 7, z + 2.4)], .07, this.rubber);
+      const cable = this.pipe([new THREE.Vector3(side * 1.6, 1.1, -2.05), new THREE.Vector3(side * 2, 5, -2.9), new THREE.Vector3(side * 2.4, 7, -4)]
+        .map(point => point.applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw).add(new THREE.Vector3(x, 0, z))), .07, this.rubber);
       cable.name = `${name}-cable-${side}`;
     }
     this.box(chair, this.steel, 0, .16, 1.45, 1.75, .1, 1, `${name}-footrest`);
   }
   private crt(x: number, y: number, z: number, yaw = 0, amber = false): void {
-    const group = new THREE.Group(); group.position.set(x, y, z); group.rotation.y = yaw; this.root.add(group);
+    const group = new THREE.Group(); group.name = 'neb-core-monitor'; group.position.set(x, y, z); group.rotation.y = yaw; this.root.add(group);
     this.box(group, this.dark, 0, 0, 0, 2.7, 2.1, 1.8);
     const face = this.box(group, amber ? this.amber : this.screen, 0, .08, 1, 2.15, 1.45, .04); face.rotation.x = -.04;
     for (let row = -2; row <= 2; row++) this.box(group, this.dark, 0, row * .25, 1.035, 1.8 - Math.abs(row) * .12, .025, .02);
@@ -270,22 +273,37 @@ export class NebDeckRenderer {
 
   private trainingUpload(): void {
     this.downloadRig.name = 'neb-training-upload-rig'; this.downloadRig.visible = false; this.root.add(this.downloadRig);
-    this.box(this.downloadRig, this.steel, 6.5, 8.8, -5, 5.6, .36, .55, 'neb-training-overhead-rail');
-    this.box(this.downloadRig, this.dark, 6.5, 7.25, -5, .48, 3.2, .48);
-    this.downloadConnector.name = 'neb-training-jack'; this.downloadConnector.position.set(6.5, 5.8, -5); this.downloadRig.add(this.downloadConnector);
-    const collar = this.cylinder(this.downloadConnector, this.steel, 0, 0, 0, .18, .65); collar.rotation.z = Math.PI / 2;
-    const plug = this.cylinder(this.downloadConnector, this.downloadPulse, 0, -.43, 0, .075, .38); plug.rotation.z = Math.PI / 2;
-    const cable = this.mesh(this.downloadRig, new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
-      new THREE.Vector3(6.5, 9, -5), new THREE.Vector3(8.6, 10.8, -5), new THREE.Vector3(11.5, 9.2, -5),
-    ]), 24, .11, 8), this.rubber, 'neb-training-cable'); cable.castShadow = true;
-    const panel = new THREE.Group(); panel.name = 'neb-training-progress'; panel.position.set(10.78, 4.5, -5); panel.rotation.y = -Math.PI / 2; this.downloadRig.add(panel);
-    this.box(panel, this.dark, 0, 0, 0, 2.2, 2.6, .22);
+    const desk = DOWNLOAD_OPERATOR.desk, key = DOWNLOAD_OPERATOR.keyboard, drive = DOWNLOAD_OPERATOR.drive;
+    this.box(this.downloadRig, this.worn, desk.x, desk.height - .12, desk.z, desk.width, .24, desk.depth, 'neb-training-desk');
+    for (const side of [-1, 1]) this.box(this.downloadRig, this.dark, desk.x + side * 1.4, 1.1, desk.z, .18, 2.2, 1.3);
+    this.box(this.downloadRig, this.rubber, key.x, key.y + .02, key.z, 1.7, .09, .48, 'neb-training-keyboard');
+    const keys = new THREE.InstancedMesh(this.geometry(new THREE.BoxGeometry(.095, .035, .08)), this.linen, 48);
+    keys.name = 'neb-training-keys'; keys.castShadow = true;
+    for (let i = 0; i < 48; i++) keys.setMatrixAt(i, new THREE.Matrix4().makeTranslation(key.x - .7 + (i % 12) * .126, key.y + .075, key.z - .15 + Math.floor(i / 12) * .1));
+    this.downloadRig.add(keys);
+    this.box(this.downloadRig, this.dark, drive.x, drive.y, drive.z - .18, .9, .44, .8, 'neb-training-drive');
+    this.box(this.downloadRig, this.rubber, drive.x, drive.y, drive.z + .235, .61, .075, .025, 'neb-training-drive-slot');
+    this.downloadDisk.name = 'neb-training-disk'; this.downloadRig.add(this.downloadDisk);
+    this.box(this.downloadDisk, this.rubber, 0, 0, 0, .44, .045, .45);
+    this.box(this.downloadDisk, this.steel, 0, .025, -.125, .32, .008, .18);
+    this.box(this.downloadDisk, this.linen, 0, .025, .07, .35, .008, .18);
+    for (let row = 0; row < 3; row++) this.box(this.downloadDisk, this.dark, -.02, .031, .02 + row * .045, .23, .003, .014);
+    const panel = new THREE.Group(); panel.name = 'neb-training-progress'; panel.position.set(11.5, 3.72, -10.2); this.downloadRig.add(panel);
+    this.box(panel, this.dark, 0, 0, 0, 2.4, 1.95, 1.25);
+    this.box(panel, this.worn, 0, -.9, .12, 2.55, .14, 1.45);
+    const display = this.material(new THREE.MeshBasicMaterial({ color: 0xc1e3bf, toneMapped: false }));
+    if (typeof document !== 'undefined' && typeof document.createElement === 'function') {
+      const canvas = document.createElement('canvas'); canvas.width = 1024; canvas.height = 640;
+      this.downloadScreen = new THREE.CanvasTexture(canvas); this.downloadScreen.colorSpace = THREE.SRGBColorSpace;
+      display.map = this.downloadScreen;
+    }
+    this.box(panel, display, 0, .08, .638, 2.07, 1.5, .025, 'neb-training-screen');
     for (let i = 0; i < 10; i++) {
-      const bar = this.box(panel, this.downloadPulse, -.72 + i % 2 * .96, .85 - Math.floor(i / 2) * .42, .13, .7, .13, .035, `neb-training-bar-${i}`);
+      const bar = this.box(panel, this.downloadPulse, -.87 + i * .19, -.5, .663, .145, .06, .01, `neb-training-bar-${i}`);
       this.downloadBars.push(bar);
     }
-    for (let i = 0; i < 4; i++) this.cylinder(panel, i === 3 ? this.amber : this.steel, -.75 + i * .5, -1.02, .14, .075, .05).rotation.x = Math.PI / 2;
-    const light = new THREE.PointLight(0x86e9ad, 0, 11, 2); light.name = 'neb-training-jack-light'; light.position.set(6.5, 5, -5); this.downloadRig.add(light); this.lights.add(light);
+    for (let i = 0; i < 3; i++) this.cylinder(panel, i === 2 ? this.amber : this.steel, .55 + i * .17, -.8, .65, .045, .025).rotation.x = Math.PI / 2;
+    const light = new THREE.PointLight(0xb3d7c8, 0, 10, 2); light.name = 'neb-training-jack-light'; light.position.set(10.8, 4.8, -8.8); this.downloadRig.add(light); this.lights.add(light);
   }
 
   private betrayalScene(): void {
@@ -397,16 +415,18 @@ export class NebDeckRenderer {
     const waking = cabin?.awakening?.kind === 'cabin' && cabin.step === 0;
     const opened = waking ? THREE.MathUtils.smoothstep(cabin.awakening!.elapsed, 10, 11.6) : 1;
     this.cabinDoor.position.z = CABIN.door.z - opened * 4.7;
-    const connecting = cabin?.awakening?.kind === 'core' ? cabin.awakening : undefined;
+    const setup = journey?.scene === 'm1_download' && !journey.visiting ? journey.downloadSetup : undefined;
+    const connecting = cabin?.awakening?.kind === 'core' ? cabin.awakening : setup?.phase === 'connecting' ? setup : undefined;
+    const downloadedConnection = journey?.scene === 'm1_download' && !journey.visiting && (!setup || setup.phase === 'ready');
     const truth = journey?.scene === 'm1_truth_return' && !journey.visiting ? journey.truthRecovery : undefined;
     const unplugging = truth?.phase === 'unplug' && truth.elapsed < 4 ? truth : undefined;
     this.truthSeat.visible = Boolean(truth && truthRest(truth));
     const socket = recoverySubject?.getObjectByName('cervical-interface');
-    this.corePlug.visible = this.coreCable.visible = Boolean(socket && (connecting && connecting.elapsed >= 2.2 || unplugging));
+    this.corePlug.visible = this.coreCable.visible = Boolean(socket && (connecting && connecting.elapsed >= 2.2 || unplugging || downloadedConnection));
     if (this.corePlug.visible && socket) {
       recoverySubject!.updateWorldMatrix(true, true); this.root.updateWorldMatrix(true, false);
       const point = this.root.worldToLocal(socket.getWorldPosition(new THREE.Vector3()));
-      point.x += .25 + .7 * (unplugging ? truthUnplug(unplugging.elapsed) : 1 - cabinPlugProgress(connecting!.elapsed));
+      point.x += .25 + .7 * (unplugging ? truthUnplug(unplugging.elapsed) : connecting ? 1 - cabinPlugProgress(connecting.elapsed) : 0);
       this.corePlug.position.copy(point);
       const anchor = new THREE.Vector3(9.5, .35, -6.4); const direction = point.clone().sub(anchor);
       this.coreCable.position.copy(anchor).add(point).multiplyScalar(.5); this.coreCable.scale.y = direction.length();
@@ -458,14 +478,26 @@ export class NebDeckRenderer {
     const training = journey?.scene === 'm1_download' && !journey.visiting && journey.training?.kind === 'download' ? journey.training : undefined;
     this.downloadRig.visible = Boolean(training);
     if (training) {
-      const contact = training.started ? THREE.MathUtils.smoothstep(training.elapsed, .25, 1.7) : 0;
-      this.downloadConnector.position.y = 5.8 - contact * 2.05;
-      this.downloadConnector.rotation.z = Math.sin(training.elapsed * 13) * .015 * contact;
+      const disk = downloadDiskPose(training.elapsed); this.downloadDisk.position.set(disk.x, disk.y, disk.z);
       const filled = Math.floor(training.elapsed / 10 * this.downloadBars.length);
-      this.downloadBars.forEach((bar, index) => { bar.visible = index < filled || training.started && index === filled && Math.sin(elapsed * 10) > 0; });
+      this.downloadBars.forEach((bar, index) => { bar.visible = index < filled || training.started && index === filled && Math.sin(training.elapsed * 10) > 0; });
       const jackLight = this.downloadRig.getObjectByName('neb-training-jack-light') as THREE.PointLight;
-      jackLight.intensity = training.started ? 130 + Math.sin(elapsed * 17) * 22 : 24;
+      jackLight.intensity = training.started ? 48 + Math.sin(training.elapsed * 17) * 4 : 28;
       this.downloadPulse.color.setHex(training.elapsed > 8.8 ? 0xd8ffd9 : 0x8cf4b8);
+      const frame = Math.floor(training.elapsed * 5);
+      if (this.downloadScreen && frame !== this.downloadScreenFrame) {
+        this.downloadScreenFrame = frame; const ctx = (this.downloadScreen.image as HTMLCanvasElement).getContext('2d')!;
+        ctx.fillStyle = '#08110e'; ctx.fillRect(0, 0, 1024, 640); ctx.fillStyle = '#bdddc8'; ctx.font = '28px monospace';
+        ctx.fillText('NEBUCHADNEZZAR / OPERATOR', 45, 64); ctx.fillStyle = '#517262'; ctx.fillRect(45, 88, 934, 2);
+        ctx.fillStyle = '#d1e8ce'; ctx.font = '44px monospace'; ctx.fillText('COMBAT / JIU JITSU', 45, 172);
+        ctx.font = '25px monospace'; ctx.fillStyle = '#8bb89e';
+        ctx.fillText(training.elapsed < 2.2 ? 'MEDIA DRIVE : WAITING' : 'NEURAL CHANNEL : ONLINE', 45, 242);
+        ctx.fillText(`UPLOAD : ${Math.round(training.elapsed * 10).toString().padStart(3, '0')} %`, 45, 294);
+        ctx.strokeStyle = '#648f78'; ctx.lineWidth = 3; ctx.beginPath();
+        for (let x = 45; x <= 979; x += 6) { const y = 370 + Math.sin(x * .02 + training.elapsed * 3) * 14 + Math.sin(x * .081) * 5; if (x === 45) ctx.moveTo(x, y); else ctx.lineTo(x, y); } ctx.stroke();
+        ctx.fillStyle = '#243b30'; for (let y = 0; y < 640; y += 5) ctx.fillRect(0, y, 1024, 1);
+        this.downloadScreen.needsUpdate = true;
+      }
     }
     const consoleBeat = journey?.scene === 'm1_cypher_console' && !journey.visiting && journey.interlude?.kind === 'console' ? journey.interlude : undefined;
     this.consoleRig.visible = Boolean(consoleBeat);
@@ -528,6 +560,7 @@ export class NebDeckRenderer {
   }
 
   dispose(): void {
+    this.downloadScreen?.dispose();
     this.root.clear();
     this.geometries.forEach(geometry => geometry.dispose());
     this.materials.forEach(material => material.dispose());

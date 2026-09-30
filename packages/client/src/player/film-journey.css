@@ -19,6 +19,7 @@ body.film-mirror-scene:has(#gameplay-recorder) .film-sequence { bottom:125px; }
 body.film-driving .game-controls,body.film-driving .player-ability,body.film-driving .sandbox-hotbar,body.film-driving .game-map { display:none; }
 body.film-performing .game-controls,body.film-performing .player-ability,body.film-performing .sandbox-hotbar,body.film-performing .game-map { display:none; }
 body.film-cabin-scene .sandbox-hotbar,body.film-cabin-scene .player-ability { display:none; }
+body.film-download-scene .game-event,body.film-download-scene .game-vitals,body.film-download-scene .game-map,body.film-download-scene .game-controls,body.film-download-scene .mouse-hint,body.film-download-scene .sandbox-nav,body.film-download-scene .sandbox-clock { display:none; }
 body.film-cabin-scene .sandbox-interact { top:auto; bottom:36px; }
 body.film-cabin-scene:has(#gameplay-recorder) .sandbox-interact { bottom:64px; }
 body.film-cabin-scene:has(#gameplay-recorder) .film-sequence { bottom:125px; }

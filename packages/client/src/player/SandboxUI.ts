@@ -1,4 +1,4 @@
-import { truthFade } from '@auto_matrix/shared';
+import { truthFade, CABIN, CABIN_ROUTE_LENGTH } from '@auto_matrix/shared';
 import { nearMetacortexLift, metacortexLiftLocked } from '@auto_matrix/shared';
 import { CATCH, RELOADED, RELOADED_FINALE, HEL_COATCHECK, catchText, reloadedText } from '@auto_matrix/shared';
 import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_NAMES, filmReflections, GRID_HACK_SECONDS, GRID_REROUTE_SECONDS, HEL_ELEVATOR, HEL_DANCE_DOOR, filmStepPosition, filmStepActionReady, helElevatorLocked, helDanceDoorLocked, pillLocked, lafayetteWelcomeLocked, awakeningLocked, awakeningWaiting, podRescuePose, AWAKENING_SECONDS, MIRROR_TOUCH, MIRROR_TIMING, mirrorGuidePose, PILL_ROOM, trainingLocked, trainingWaiting, TRAINING_SECONDS, DOJO_COMBO_WINDOW, windowOpening, windowCrossing, dockPowerOffline, ITEMS, RECIPES, SKILLS, FILMS, MISSIONS, LOCATIONS, CITY_BUILDINGS, NEO_CHAPTERS, LIFE_ACTIONS, lifeActionPosition, lifeRoomCenter, locationEntrance, distance, missionPosition, nearTransit, skillPoints,
@@ -909,6 +909,18 @@ export class SandboxUI {
       this.el('sandbox-nearby').textContent = action;
       if (locked) this.el('sandbox-waypoint').textContent = '';
       document.getElementById('game-objective-copy')!.textContent = phase === 'released' || phase === 'delivery' ? '回到自己的隔间，等待并签收快递。' : locked && phase !== 'answer' ? phase === 'signing' ? '正在签收与接过包裹' : '主管正在训话，听完后回应他。' : action;
+      return;
+    }
+    if (!journey.visiting && journey.downloadSetup && journey.downloadSetup.phase !== 'ready') {
+      const setup = journey.downloadSetup, greeting = setup.phase === 'greeting', walking = setup.phase === 'walk';
+      const chair = filmPosition('film_neb_deck', CABIN.approach.x, CABIN.approach.z);
+      const near = walking && setup.progress >= CABIN_ROUTE_LENGTH && distance(player.position, chair) < 1.8;
+      const action = greeting ? '起身，认识 Tank' : '坐入连接椅，允许接线';
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-hint').textContent = greeting || near ? `G ${action} · V 切换视角` : walking ? 'WASD 跟随 Tank · 鼠标观察 · V 切换视角' : '鼠标观察 · V 切换视角 · 暂停或重连会保留动作';
+      document.getElementById('game-objective-copy')!.textContent = greeting ? '舱室中的新面孔' : walking ? '跟随 Tank 前往连接椅' : setup.phase === 'waking' ? '起身 · 出生在现实世界的人' : '接通颈后接口';
+      this.el('sandbox-interact').classList.toggle('hidden', !greeting && !near); this.el('sandbox-nearby').textContent = action;
+      this.el('sandbox-waypoint').textContent = walking && setup.progress >= CABIN_ROUTE_LENGTH ? `连接椅前 · ${Math.round(distance(player.position, chair))} 米` : '';
       return;
     }
     if (trainingLocked(journey)) {

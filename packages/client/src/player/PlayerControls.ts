@@ -91,7 +91,8 @@ export class PlayerControls {
     this.meetingYaw = undefined; this.welcomeShot = undefined; this.performing = false; this.phoneExit = false;
     this.bridgeCaught = undefined;
     this.id = state.id; this.position = { ...state.position }; this.yaw = state.rotation;
-    this.recoveryYaw = typeof state.currentAction?.parameters.recovery === 'number' ? recoveryBodyPose(state.currentAction.parameters.recovery).yaw : undefined;
+    this.recoveryYaw = typeof state.currentAction?.parameters.recovery === 'number'
+      ? state.currentAction.parameters.download ? state.rotation : recoveryBodyPose(state.currentAction.parameters.recovery).yaw : undefined;
     this.truthYaw = state.currentAction?.parameters.truth ? state.rotation : undefined;
     this.movementYaw = this.yaw; this.movementForward = 0; this.movementRight = 0;
     this.lastLook = -1000; this.dragging = false;
@@ -328,6 +329,8 @@ export class PlayerControls {
     if (this.motion.reveal && !state.currentAction?.parameters.reveal) this.performing = false;
     if (state.currentAction?.parameters.reveal) this.performing = true;
     if (this.motion.training && !state.currentAction?.parameters.training) this.performing = false;
+    if (this.motion.download && !state.currentAction?.parameters.download) this.performing = false;
+    if (state.currentAction?.parameters.download) this.performing = true;
     if (state.currentAction?.parameters.training) this.performing = true;
     if (this.motion.workday && !state.currentAction?.parameters.workday) this.performing = false;
     if (state.currentAction?.parameters.workday) this.performing = true;
@@ -406,9 +409,10 @@ export class PlayerControls {
     this.motion.helDanceDoor = state.currentAction?.parameters.helDanceDoor as number | undefined;
     this.motion.recovery = state.currentAction?.parameters.recovery as number | undefined;
     this.motion.cabin = state.currentAction?.parameters.cabin as MotionInput['cabin'];
+    this.motion.download = state.currentAction?.parameters.download as MotionInput['download'];
     if (this.motion.recovery !== undefined) {
-      const yaw = recoveryBodyPose(this.motion.recovery).yaw;
-      if (this.recoveryYaw !== undefined) this.yaw += yaw - this.recoveryYaw;
+      const yaw = this.motion.download ? state.rotation : recoveryBodyPose(this.motion.recovery).yaw;
+      if (this.recoveryYaw !== undefined) { this.yaw += yaw - this.recoveryYaw; this.movementYaw += yaw - this.recoveryYaw; }
       this.recoveryYaw = yaw;
     } else this.recoveryYaw = undefined;
     this.motion.reveal = state.currentAction?.parameters.reveal as MotionInput['reveal'];
@@ -562,7 +566,7 @@ export class PlayerControls {
     const interviewApproach = !this.firstPerson && state.currentLocation === 'film_agent_interrogation' && !this.motion.interrogation;
     const welcomeWide = !this.firstPerson && this.motion.welcome && ['approach', 'departing'].includes(this.motion.welcome.phase);
     const revealWide = !this.firstPerson && Boolean(this.motion.truth || this.motion.construct || this.motion.reveal && (this.motion.reveal.kind === 'desert' ? this.motion.reveal.elapsed < 10.2 : this.motion.reveal.elapsed < 7.8));
-    const trainingWide = !this.firstPerson && Boolean(this.motion.training && (this.motion.training.kind === 'jump' || this.motion.training.kind === 'red_dress' && this.motion.training.elapsed < 4.8));
+    const trainingWide = !this.firstPerson && Boolean(this.motion.download?.phase === 'connecting' || this.motion.training && (this.motion.training.kind !== 'red_dress' || this.motion.training.elapsed < 4.8));
     const officeWide = !this.firstPerson && this.motion.workday && this.motion.workday.phase !== 'signing';
     const wakeWide = !this.firstPerson && Boolean(this.motion.wakeCall && ['waking', 'leaving'].includes(this.motion.wakeCall.phase));
     const sentinelWide = !this.firstPerson && Boolean(this.motion.sentinel && ['shutdown', 'detected', 'clear'].includes(this.motion.sentinel.phase));
@@ -902,19 +906,20 @@ export class PlayerControls {
       const focus = (signing ? new THREE.Vector3(13.5, 3.15, 7.1) : new THREE.Vector3(-20.5, 3, 27.4)).add(origin);
       if (resetCamera || this.motion.workday.elapsed < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
       this.camera.lookAt(focus);
-    } else if (this.motion.training) {
-      const gesture = this.motion.training; const center = FILM_SETS[state.currentLocation].center;
+    } else if (this.motion.training || this.motion.download?.phase === 'connecting') {
+      const gesture = this.motion.training ?? { kind: 'download', elapsed: this.motion.download!.elapsed }; const center = FILM_SETS[state.currentLocation].center;
       if (this.firstPerson) {
         const seated = gesture.kind === 'download';
-        const eye = new THREE.Vector3(this.position.x, this.position.y + (seated ? 2.15 : 3), this.position.z);
+        const head = seated ? group.getObjectByName('head') : undefined;
+        const eye = head ? head.localToWorld(new THREE.Vector3(0, .18, .17)) : new THREE.Vector3(this.position.x, this.position.y + (seated ? 3.13 - .684 * (this.motion.download ? cabinSeat(gesture.elapsed) : 1) : 3), this.position.z);
         const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
         this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
       } else {
         const origin = new THREE.Vector3(center.x, center.y - 1, center.z); let ideal: THREE.Vector3; let focus: THREE.Vector3;
         if (gesture.kind === 'download') {
-          const close = THREE.MathUtils.smoothstep(gesture.elapsed, .4, 2.2); const wake = THREE.MathUtils.smoothstep(gesture.elapsed, 8.2, 9.8);
-          ideal = new THREE.Vector3(1.2, 5.4, .8).lerp(new THREE.Vector3(8.5, 4.15, .1), close).lerp(new THREE.Vector3(2.3, 4.9, -1), wake);
-          focus = new THREE.Vector3(6.5, 2.35, -5).lerp(new THREE.Vector3(8.6, 3.15, -5), wake);
+          const portrait = this.camera.aspect < .85;
+          ideal = new THREE.Vector3(portrait ? -4 : -1.3, portrait ? 7 : 5.1, 1.3);
+          focus = new THREE.Vector3(9, 2.4, -6.9);
         } else if (gesture.kind === 'jump') {
           const root = trainingRoot({ kind: 'jump', elapsed: gesture.elapsed, started: true }, 'morpheus');
           ideal = new THREE.Vector3(12, 7.8, -17).lerp(new THREE.Vector3(9, 5.8, -28), THREE.MathUtils.smoothstep(gesture.elapsed, 1.1, 3.4));

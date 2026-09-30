@@ -23,7 +23,7 @@ import { cabinContact } from './CabinContact.js';
 import { ConstructPerformance } from './ConstructPerformance.js';
 import { clubCloseness } from '@auto_matrix/shared';
 
-export type HeroSupport = 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour' | 'niobe' | 'ballard' | 'ghost' | 'soren' | 'link' | 'dozer';
+export type HeroSupport = 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour' | 'niobe' | 'ballard' | 'ghost' | 'soren' | 'link' | 'dozer' | 'tank';
 type Pose = ReturnType<typeof advanceMotion>;
 interface CoatPanel { mesh: THREE.Mesh; rest: Float32Array; velocity: Float32Array }
 export interface HeroRig {
@@ -173,8 +173,8 @@ export class HeroModels {
 
   async create(id: HeroId, guard?: 'agent_jones' | 'agent_brown' | 'agent_johnson' | 'agent_jackson' | 'agent_thompson', support?: HeroSupport): Promise<HeroRig | undefined> {
     const apartmentRole = support === 'choi' || support === 'dujour' ? support : undefined;
-    const [asset, office, tracking, club] = await Promise.all([this.load(apartmentRole ?? id),
-      id === 'neo' && !apartmentRole ? this.load('neo-office') : undefined,
+    const [asset, office, tracking, club] = await Promise.all([this.load(support === 'tank' ? 'choi' : apartmentRole ?? id),
+      id === 'neo' && !apartmentRole && support !== 'tank' ? this.load('neo-office') : undefined,
       id === 'neo' && !support ? this.load('neo-tracking') : undefined,
       id === 'trinity' && !support ? this.load('trinity-club') : undefined]);
     if (this.disposed) return;
@@ -248,7 +248,7 @@ export class HeroModels {
     }
     const pelvis = bones.get('pelvis')!;
     const waist = new THREE.Vector3().fromArray(metadata.waist).sub(pelvis.position);
-    const panels = (id === 'neo' || id === 'morpheus') && support !== 'link' && support !== 'dozer' ? [-1, 1].map(side => this.coat(pelvis, waist, side, id)) : [];
+    const panels = (id === 'neo' || id === 'morpheus') && support !== 'link' && support !== 'dozer' && support !== 'tank' ? [-1, 1].map(side => this.coat(pelvis, waist, side, id)) : [];
     const footHeight = this.point.setFromMatrixPosition(bones.get('ankle_L')!.matrixWorld).y;
     const silver = { value: 0 }; const wardrobe: HeroRig['wardrobe'] = [];
     let trackingSkin: HeroRig['trackingSkin'];
@@ -766,6 +766,8 @@ export class HeroModels {
         const tremor = t > 2 && t < 7.4 ? Math.sin(t * 18) * .022 : 0;
         for (const side of ['R', 'L']) { bone('shoulder_' + side).rotation.x -= .18 * connected + tremor; bone('elbow_' + side).rotation.x -= .42 * connected; }
         bone('wrist_R').rotation.z += Math.sin(t * 11) * .025 * connected;
+      } else if (kind === 'download' && role === 'tank') {
+        bone('spine').rotation.x += .12; bone('chest').rotation.x += .08; bone('head').rotation.x += .2;
       } else if (kind === 'jump' && role === 'morpheus') {
         const launch = THREE.MathUtils.smoothstep(t, .65, 1.22); const land = THREE.MathUtils.smoothstep(t, 2.85, 3.35);
         bone('spine').rotation.x -= .34 * launch * (1 - land); bone('chest').rotation.x -= .28 * launch * (1 - land);
@@ -924,7 +926,7 @@ export class HeroModels {
     if (input.recoveryCrew) this.supportRecovery(rig, input.recoveryCrew);
     if (input.recovery !== undefined && !this.recoveries.has(rig)) this.recoveries.set(rig, new RecoveryPerformance(rig));
     this.recoveries.get(rig)?.update(input.recovery, input.realWorld, patient);
-    if (input.medical !== undefined || input.cabin || input.truth) cabinContact(rig, input);
+    if (input.medical !== undefined || input.cabin || input.truth || input.download || input.training?.kind === 'download') cabinContact(rig, input);
     this.truths.get(rig)?.contact(input.truth);
     if ((input.construct || input.reveal?.kind === 'construct') && !this.constructs.has(rig)) this.constructs.set(rig, new ConstructPerformance(rig));
     this.constructs.get(rig)?.update(input);

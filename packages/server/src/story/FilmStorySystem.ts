@@ -1,4 +1,4 @@
-import { TRUTH_SECONDS, truthScene, truthRoot, truthText, truthRest, type TruthRole } from '@auto_matrix/shared';
+import { TRUTH_SECONDS, truthScene, truthRoot, truthText, truthRest, type TruthRole, DOWNLOAD_SETUP_SECONDS, DOWNLOAD_OPERATOR, downloadRoot, downloadSetupText } from '@auto_matrix/shared';
 import { METACORTEX, OFFICE_LEDGE_OFFSET, OFFICE_PATROLS, metacortexPosition } from '@auto_matrix/shared';
 import { ReloadedOpeningSystem } from './ReloadedOpeningSystem.js';
 import { ReloadedCatchSystem } from './ReloadedCatchSystem.js';
@@ -1554,7 +1554,7 @@ export class FilmStorySystem {
     }
     if (state.scene === 'm1_dojo' && state.step === 0) state.dojo ??= { dodged: false, combo: 0, hits: 0 };
     const actor = this.world.agents.get(state.actor);
-    if (actor && state.training && trainingLocked(state)) this.trainingFrame(actor, 0, this.world.simulationTick);
+    if (actor && state.training && (trainingLocked(state) || state.downloadSetup || state.scene === 'm1_download')) this.trainingFrame(actor, 0, this.world.simulationTick);
   }
   meetingFrame(agent: AgentState, focus: boolean, dt: number, tick: number): void {
     const state = this.state;
@@ -3177,12 +3177,20 @@ export class FilmStorySystem {
   }
   trainingFrame(agent: AgentState, dt: number, tick: number): boolean {
     const state = this.state; const training = state?.training;
-    if (!state || !training || !this.controls(agent) || !trainingLocked(state)) return false;
+    if (state?.scene === 'm1_download' && this.controls(agent) && !state.visiting && !this.sandbox().structures.some(item => item.id === 'film:download:desk')) {
+      const desk = DOWNLOAD_OPERATOR.desk;
+      this.sandbox().structures.push({ id: 'film:download:desk', kind: 'barricade', owner: 'matrix', matrix: false, health: 1,
+        position: filmPosition('film_neb_deck', desk.x, desk.z), film: { scene: state.scene, width: desk.width, depth: desk.depth, height: desk.height } });
+    }
+    if (state?.downloadSetup && state.downloadSetup.phase !== 'ready' && this.controls(agent) && !state.visiting)
+      return this.downloadSetupFrame(agent, dt, tick);
+    const holdingDownload = state?.scene === 'm1_download' && !state.visiting && training?.kind === 'download';
+    if (!state || !training || !this.controls(agent) || !trainingLocked(state) && !holdingDownload) return false;
     const roles: TrainingRole[] = training.kind === 'download' ? ['neo', 'tank']
       : training.kind === 'jump' ? ['neo', 'morpheus']
       : ['neo', 'morpheus', 'citizen_1', 'citizen_2', 'smith'];
     const occupied = roles.find(id => id !== agent.id && this.world.agents.get(id)?.controller);
-    const playing = training.started && !occupied;
+    const playing = training.started && !occupied && training.elapsed < TRAINING_SECONDS[training.kind];
     if (playing) training.elapsed = Math.min(TRAINING_SECONDS[training.kind], training.elapsed + Math.min(.1, dt));
     for (const role of roles) {
       const actor = this.world.agents.get(role);
@@ -3208,6 +3216,44 @@ export class FilmStorySystem {
       } else this.advance(this.step!.text!, agent, tick);
     }
     return true;
+  }
+  private downloadSetupFrame(agent: AgentState, dt: number, tick: number): boolean {
+    const state = this.state!, setup = state.downloadSetup!, tank = this.world.agents.get('tank')!;
+    const delta = Math.min(.1, dt), occupied = Boolean(tank.controller);
+    if (!occupied && (setup.phase === 'waking' || setup.phase === 'connecting'))
+      setup.elapsed = Math.min(DOWNLOAD_SETUP_SECONDS[setup.phase], setup.elapsed + delta);
+    if (setup.phase === 'walk' && !occupied) {
+      const guide = downloadRoot(setup, 'tank');
+      if (distance(agent.position, filmPosition(this.scene!.set, guide.x, guide.z)) < 10)
+        setup.progress = Math.min(CABIN_ROUTE_LENGTH, setup.progress + delta * 3.1);
+    }
+    for (const role of ['neo', 'tank'] as const) {
+      const actor = role === 'neo' ? agent : tank;
+      if (role === 'tank' && occupied || role === 'neo' && setup.phase === 'walk') continue;
+      const root = downloadRoot(setup, role), previous = actor.position;
+      actor.position = filmPosition(this.scene!.set, root.x, root.z); actor.position.y += root.y; actor.rotation = root.yaw;
+      actor.currentLocation = this.scene!.set; actor.isInMatrix = false;
+      actor.velocity = dt > 0 ? { x: (actor.position.x - previous.x) / dt, y: 0, z: (actor.position.z - previous.z) / dt } : { x: 0, y: 0, z: 0 };
+      const waking = role === 'neo' && (setup.phase === 'greeting' || setup.phase === 'waking');
+      const connecting = role === 'neo' && setup.phase === 'connecting';
+      actor.currentAction = { type: Math.hypot(actor.velocity.x, actor.velocity.z) > .05 ? 'move_to' : 'idle', parameters: {
+        player: role === 'neo', resolved: true, download: { ...setup, role },
+        recovery: waking ? cabinBodyPose(setup.phase === 'greeting' ? 0 : setup.elapsed).clock : undefined,
+        filmPose: waking ? 'cabin' : connecting ? 'core' : undefined,
+        cabin: waking ? { kind: 'wake', elapsed: setup.phase === 'greeting' ? 0 : setup.elapsed, role: 'neo' }
+          : connecting ? { kind: 'core', elapsed: setup.elapsed, role: 'neo' } : undefined,
+        seated: connecting && setup.elapsed >= 1.8,
+      }, startedAt: tick, duration: 1, progress: 0 };
+    }
+    state.checkpoint = { ...agent.position };
+    state.lastText = occupied ? 'Tank 正由另一位玩家控制。起身、引路和接线进度保留。' : downloadSetupText(setup);
+    if (!occupied && setup.phase === 'waking' && setup.elapsed >= DOWNLOAD_SETUP_SECONDS.waking) {
+      setup.phase = 'walk'; setup.elapsed = 0; agent.currentAction = null; agent.velocity = { x: 0, y: 0, z: 0 };
+      state.lastText = downloadSetupText(setup);
+    } else if (!occupied && setup.phase === 'connecting' && setup.elapsed >= DOWNLOAD_SETUP_SECONDS.connecting) {
+      setup.phase = 'ready'; setup.elapsed = 0; this.trainingFrame(agent, 0, tick); state.lastText = downloadSetupText(setup);
+    }
+    return setup.phase !== 'walk';
   }
   sentinelFrame(agent: AgentState, input: { movement: number; sprint: boolean; jump: boolean }, dt: number, tick: number): boolean {
     const state = this.state;
@@ -4391,7 +4437,7 @@ export class FilmStorySystem {
         return state.scene === 'm1_cabin' ? '已接回船舱与核心连接，保留当前动作和路线进度。'
           : state.awakening.kind === 'recovery' ? '已经接回医疗舱恢复，保留针疗和休息进度。' : '已经接回真相揭示，保留电视、讲解与身体动作进度。';
       }
-      if (state.training && trainingLocked(state)) {
+      if (state.training && (trainingLocked(state) || state.downloadSetup)) {
         agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
         this.trainingFrame(agent, 0, tick);
         return '已经接回训练程序，保留人物位置与演出进度。';
@@ -4713,6 +4759,19 @@ export class FilmStorySystem {
       if (target !== 'act') return state.lastText;
       return this.workdayAct(agent, tick);
     }
+    if (state.downloadSetup && state.downloadSetup.phase !== 'ready') {
+      const setup = state.downloadSetup;
+      if (this.world.agents.get('tank')?.controller) return 'Tank 正由另一位玩家控制，进度保留。';
+      if (target !== 'act') return state.lastText;
+      if (setup.phase === 'greeting') { setup.phase = 'waking'; setup.elapsed = 0; }
+      else if (setup.phase === 'walk') {
+        if (setup.progress < CABIN_ROUTE_LENGTH || distance(agent.position, filmPosition(this.scene!.set, CABIN.approach.x, CABIN.approach.z)) > 1.8)
+          return '先跟随 Tank 到核心区，再走到连接椅正前方。';
+        const center = FILM_SETS[this.scene!.set].center;
+        setup.phase = 'connecting'; setup.elapsed = 0; setup.approach = { x: agent.position.x - center.x, z: agent.position.z - center.z };
+      }
+      this.downloadSetupFrame(agent, 0, tick); return state.lastText;
+    }
     if (state.training && trainingLocked(state)) {
       if (!state.training.started) {
         if (target !== 'act') return trainingText(state.training);
@@ -5029,6 +5088,8 @@ export class FilmStorySystem {
     delete state.cabinEscort;
     delete state.constructArrival;
     delete state.truthRecovery;
+    delete state.downloadSetup;
+    this.sandbox().structures = this.sandbox().structures.filter(item => item.id !== 'film:download:desk');
     this.sandbox().structures = this.sandbox().structures.filter(item => item.id !== 'film:cabin:door');
     this.sandbox().structures = this.sandbox().structures.filter(item => !item.id.startsWith('film:construct:'));
     delete state.mirrorGuide;
@@ -5121,7 +5182,7 @@ export class FilmStorySystem {
     for (const other of this.world.agents.values()) if (!other.controller && (other.currentAction?.parameters.theOne || other.currentAction?.parameters.reloaded || other.currentAction?.parameters.catch)) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.smithFinale) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.epilogue) other.currentAction = null;
-    for (const other of this.world.agents.values()) if (!other.controller && (other.currentAction?.parameters.recoveryCrew || other.currentAction?.parameters.medical !== undefined || other.currentAction?.parameters.cabin || other.currentAction?.parameters.cabinGuide || other.currentAction?.parameters.construct || other.currentAction?.parameters.truth)) other.currentAction = null;
+    for (const other of this.world.agents.values()) if (!other.controller && (other.currentAction?.parameters.recoveryCrew || other.currentAction?.parameters.medical !== undefined || other.currentAction?.parameters.cabin || other.currentAction?.parameters.cabinGuide || other.currentAction?.parameters.construct || other.currentAction?.parameters.truth || other.currentAction?.parameters.download)) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.lobbyEntry) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.riding) { other.currentAction = null; other.velocity = { x: 0, y: 0, z: 0 }; }
     if (scene.id === 'm1_lobby') this.lobby.reset();
@@ -5231,6 +5292,9 @@ export class FilmStorySystem {
     }
     if (scene.id === 'm1_download') {
       state.training = { kind: 'download', elapsed: 0, started: false };
+      state.downloadSetup = { phase: 'greeting', elapsed: 0, progress: 0 };
+      const morpheus = this.world.agents.get('morpheus');
+      if (morpheus && !morpheus.controller && morpheus.status === 'alive') this.place(morpheus, scene, filmPosition(scene.set, -6, 22));
       this.trainingFrame(actor, 0, tick);
     }
     if (scene.id === 'm1_dojo') state.dojo = { dodged: false, combo: 0, hits: 0 };

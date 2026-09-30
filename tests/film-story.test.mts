@@ -1,4 +1,4 @@
-import { CABIN_ROUTE_LENGTH, cabinGuidePose, RELOADED, RELOADED_FINALE } from '@auto_matrix/shared';
+import { CABIN, CABIN_ROUTE_LENGTH, cabinGuidePose, RELOADED, RELOADED_FINALE } from '@auto_matrix/shared';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, RESCUE, RESCUE_LOADOUTS, GOVERNMENT_RESCUE, AIR_RESCUE, MATRIX_ESCAPE, THE_ONE, SMITH_FINALE, OPENING_HOTEL, OPENING_ESCAPE, PILL_ROOM, PILL_TIMING, MIRROR_TOUCH, MIRROR_SEAT, MIRROR_TRINITY, MIRROR_TIMING, DOCK_GUNNERY, awakeningPose, mirrorSilver, filmReflections, filmStepActionReady, filmStepPosition, filmEntry, filmPosition, groundHeight, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, newGarageEscape, stepGarageEscape, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
@@ -1375,6 +1375,8 @@ test('training download waits for Neo, pauses with the world, survives reconnect
   Object.assign(state, { scene: recovery.id, actor: 'neo', step: recovery.steps.length, awakening: undefined });
   h.command('next');
   assert.equal(state.scene, 'm1_download');
+  state.downloadSetup = { phase: 'ready', elapsed: 0, progress: CABIN_ROUTE_LENGTH };
+  h.sandbox.life.film.trainingFrame(h.actor(), 0, h.tick());
   assert.deepEqual(state.training, { kind: 'download', elapsed: 0, started: false });
   const chair = { ...h.actor().position }; h.advance(20);
   assert.deepEqual(h.actor().position, chair, 'the program cannot load before Neo explicitly starts it');
@@ -2591,7 +2593,17 @@ test('the entire film route completes through interactions, driving and real com
         }
         else if (scene.id === 'm3_hel_bargain' && index === 4) { h.advance(4); h.command('act'); }
         else if (scene.id === 'm3_hel_bargain' && index === 5) { actor.rotation = Math.PI; h.command('act'); }
-        else if (scene.id === 'm1_download') for (let frame = 0; frame < 101; frame++) h.players.step(.1, true, h.tick());
+        else if (scene.id === 'm1_download') {
+          for (let frame = 0; frame < 121; frame++) h.players.step(.1, true, h.tick());
+          for (let frame = 0; frame < 500 && state.downloadSetup!.progress < CABIN_ROUTE_LENGTH; frame++) {
+            const guide = cabinGuidePose(state.downloadSetup!.progress);
+            actor.position = filmPosition(scene.set, guide.x, guide.z); h.players.step(.1, true, h.tick());
+          }
+          actor.position = filmPosition(scene.set, CABIN.approach.x, CABIN.approach.z); h.command('act');
+          for (let frame = 0; frame < 101; frame++) h.players.step(.1, true, h.tick());
+          h.command('act');
+          for (let frame = 0; frame < 101; frame++) h.players.step(.1, true, h.tick());
+        }
         else if (scene.id === 'm1_red_dress') for (let frame = 0; frame < 121; frame++) h.players.step(.1, true, h.tick());
         else if (scene.id === 'm1_bridge') {
           for (let frame = 0; frame < 151; frame++) h.players.step(.1, true, h.tick());

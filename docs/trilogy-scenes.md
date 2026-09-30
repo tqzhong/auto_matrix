@@ -186,6 +186,8 @@
 
 ## 独立场景验收存档
 
+训练入口可用 `node --import tsx scripts/film-review-fixture.mts m1_download` 定位舱室与 Tank 见面；追加 `download-chair`、`download-plug` 或 `download-ready` 分别定位椅前、接线中途或上传前。这些是独立检查点，不是连续从真相揭示走到训练的人工通关证据；[本次检查范围与录像](../output/gameplay/trilogy-training-entry-2026-09-30/README.md)单独记录。
+
 命令 `node --import tsx scripts/film-review-fixture.mts m1_lobby` 会生成一个临时目录并打印路径。它开放其他场景的回访，仅用于验收；不要将其复制到用户的 data/world.json。构建后通过 `MATRIX_DATA_DIR=<打印的目录> PORT=3002 HOST=127.0.0.1 LLM_API_KEY= node packages/server/dist/index.js` 启动独立实例，在 http://localhost:3002/ 进入 Neo 即可检查。原服务和原存档可保持不变。
 
 先知局部镜头可在场景参数后使用 `oracle-exam`、`oracle-cookie` 或 `oracle-question`，例如 `node --import tsx scripts/film-review-fixture.mts m1_oracle oracle-question`。这些模式只建立对应动作检查点，不代表从候诊室连续游玩到了该位置。

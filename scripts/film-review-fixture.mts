@@ -587,6 +587,14 @@ if (scene.id === 'm1_truth_return' && ['truth-unplug', 'truth-kneel', 'truth-res
   sandbox.life.film.awakeningFrame(actor, 0, 0); journey.checkpoint = { ...actor.position };
 }
 for (const resident of world.agents.values()) delete resident.controller;
+if (scene.id === 'm1_download') {
+  const journey = sandbox.life.film.state!, mode = process.argv[3]; actor.controller = 'player';
+  journey.training = { kind: 'download', elapsed: 0, started: false };
+  journey.downloadSetup = { phase: mode === 'download-chair' ? 'walk' : mode === 'download-plug' ? 'connecting' : mode === 'download-ready' ? 'ready' : 'greeting',
+    elapsed: mode === 'download-plug' ? 3.5 : 0, progress: mode === 'download-chair' ? CABIN_ROUTE_LENGTH : 0 };
+  if (mode === 'download-chair') actor.position = filmPosition(scene.set, CABIN.approach.x, CABIN.approach.z);
+  sandbox.life.film.trainingFrame(actor, 0, 0); journey.checkpoint = { ...actor.position }; delete actor.controller;
+}
 neo.isAwakened = FILM_SCENES.indexOf(scene) >= FILM_SCENES.findIndex(s => s.id === 'm1_pod');
 const nightReview = ['m1_wake_again', 'm1_bridge', 'm1_bug'].includes(scene.id);
 await writeFile(path.join(directory, 'world.json'), JSON.stringify({ version: 1, tick: 0, timeOfDay: nightReview ? 20500 : 12000, day: 1, phase: 'phase1_normal_life', agents: Object.fromEntries(world.agents), events: [], relationships: [], sandbox: sandbox.state }));

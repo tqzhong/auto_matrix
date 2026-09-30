@@ -6,7 +6,7 @@ import { PlayerControls } from '../packages/client/src/player/PlayerControls.js'
 import { CameraController } from '../packages/client/src/engine/CameraController.js';
 import { PodSetRenderer } from '../packages/client/src/engine/PodSetRenderer.js';
 import { NebDeckRenderer } from '../packages/client/src/engine/NebDeckRenderer.js';
-import { CABIN, cabinBodyPose } from '@auto_matrix/shared';
+import { CABIN, CABIN_ROUTE_LENGTH, cabinBodyPose, downloadRoot, DOWNLOAD_OPERATOR, type DownloadSetup } from '@auto_matrix/shared';
 import { truthRoot, TRUTH_BEDSIDE, type TruthGesture } from '@auto_matrix/shared';
 import { awakeningPose, podRescuePose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
 import { MORNING, morningRoot, morningWakePose } from '@auto_matrix/shared';
@@ -1024,6 +1024,44 @@ test('the Construct keeps movement locked when inspection hands off directly to 
   game.state.currentAction.parameters = { filmPose: 'construct', seated: false, reveal: { kind: 'construct', elapsed: 1, role: 'neo' } };
   game.controls.update(1 / 60, game.state, game.group, true);
   assert.equal(game.controls.performing, true, 'clearing the arrival gesture cannot unlock the television performance');
+});
+
+test('training frames Neo, Tank and the console in wide and narrow views throughout connection and upload', t => {
+  const game = setup(t), center = FILM_SETS.film_neb_deck.center;
+  const stage = new THREE.Group(); stage.position.set(center.x, center.y - 1, center.z);
+  const deck = new NebDeckRenderer(stage); stage.updateMatrixWorld(true); t.after(() => deck.dispose());
+  game.state.currentLocation = 'film_neb_deck'; game.state.isInMatrix = false;
+  for (const aspect of [16 / 9, 449 / 680]) {
+    game.camera.aspect = aspect;
+    for (const [phase, elapsed] of [['connecting', 1], ['connecting', 4], ['connecting', 9], ['ready', 0], ['ready', 5]] as const) {
+      const gesture: DownloadSetup = { phase, elapsed, progress: CABIN_ROUTE_LENGTH, approach: CABIN.approach };
+      const neo = downloadRoot(gesture, 'neo'), tank = downloadRoot(gesture, 'tank');
+      game.state.position = filmPosition('film_neb_deck', neo.x, neo.z); game.state.position.y += neo.y; game.state.rotation = neo.yaw;
+      game.state.currentAction = { type: 'idle', parameters: phase === 'connecting'
+        ? { download: { ...gesture, role: 'neo' }, cabin: { kind: 'core', elapsed, role: 'neo' }, filmPose: 'core' }
+        : { training: { kind: 'download', elapsed, role: 'neo' }, seated: true }, startedAt: 0, duration: 1, progress: 0 };
+      game.controls.possess(game.state); game.step(1);
+      const targets = [[neo.x, elapsed < 1.8 && phase === 'connecting' ? 4 : 3.55, neo.z], [tank.x, 4.1, tank.z]];
+      if (phase === 'ready') targets.push([DOWNLOAD_OPERATOR.x, 3.7, -10.2]);
+      for (const [x, y, z] of targets) {
+        const screen = new THREE.Vector3(center.x + x, center.y - 1 + y, center.z + z).project(game.camera);
+        assert.ok(Math.abs(screen.x) < .9 && screen.y > -.55 && screen.y < .85 && screen.z > -1 && screen.z < 1,
+          `training crop ${phase}/${elapsed}s at ${aspect}: ${screen.toArray()}`);
+      }
+      if (phase === 'ready') for (const x of [6.1, 6.4, 6.7]) for (const y of [3.25, 3.45, 3.65]) for (const z of [-5.2, -5, -4.8]) {
+        const point = new THREE.Vector3(center.x + x, center.y - 1 + y, center.z + z), sight = point.sub(game.camera.position);
+        const hit = new THREE.Raycaster(game.camera.position, sight.clone().normalize(), .01, sight.length() - .1).intersectObject(stage, true)
+          .find(hit => /neb-core-chair-neo-cable/.test(hit.object.name));
+        assert.ok(!hit, `${hit?.object.name} crosses Neo's face at ${aspect}`);
+      }
+      if (phase === 'ready') for (const y of [3.8, 4.1, 4.4]) {
+        const sight = new THREE.Vector3(center.x + tank.x, center.y - 1 + y, center.z + tank.z).sub(game.camera.position);
+        const hit = new THREE.Raycaster(game.camera.position, sight.clone().normalize(), .01, sight.length() - .1).intersectObject(stage, true)
+          .find(hit => hit.object.parent?.name === 'neb-core-monitor');
+        assert.ok(!hit, `the old core monitors hide Tank at ${aspect}`);
+      }
+    }
+  }
 });
 
 test('the truth aftermath frames the unplugging and bedside conversation without cabin walls in the sightline', t => {
