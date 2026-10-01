@@ -213,7 +213,7 @@ sockets.getIO().on('connection', socket => {
           consequence: '接下来 180 个模拟刻暂停主动攻击，人物仍可移动、交谈与恢复。', involvedAgents: [], location: 'times_square', tick: simLoop.getTick(), importance: 8 });
       } else return;
     } else return;
-    sockets.broadcastDelta({ ...sync.calculateDelta(world.agents), simulation: simulationState() }, simLoop.getTick());
+    sockets.broadcastDelta({ ...sync.calculateDelta(world.agents), sandbox: sandbox.state, timeOfDay: world.timeOfDay, simulation: simulationState() }, simLoop.getTick());
   });
   socket.on('disconnect', () => players.release(socket.id, simLoop.getTick()));
 });
@@ -222,6 +222,8 @@ let previousTimeScale = 1;
 let lastPlayerStep = Date.now();
 const playerTimer = setInterval(() => {
   const now = Date.now();
+  const journey = sandbox.life.film.state;
+  const scene = journey?.scene, step = journey?.step, actor = journey?.actor;
   players.step(Math.min(0.1, (now - lastPlayerStep) / 1000), simLoop.isRunning(), simLoop.getTick(), now);
   lastPlayerStep = now;
   const scale = players.timeScale();
@@ -229,6 +231,12 @@ const playerTimer = setInterval(() => {
     previousTimeScale = scale;
     simLoop.setTickRate(config.simulation.tickRateMs / speed / scale);
     sockets.broadcastDelta({ agents: {}, dirtyChunks: {}, events: [], simulation: simulationState() }, simLoop.getTick());
+  }
+  const current = sandbox.life.film.state;
+  if (current?.scene !== scene || current?.step !== step || current?.actor !== actor) {
+    // Publish a story boundary with its poses; the next slow simulation tick may never run after a pause.
+    sockets.broadcastDelta({ ...sync.calculateDelta(world.agents), sandbox: sandbox.state, timeOfDay: world.timeOfDay, simulation: simulationState() }, simLoop.getTick());
+    return;
   }
   const controlled = [...world.agents.entries()].filter(([, agent]) => agent.controller || agent.currentAction?.parameters.workday && sandbox.life.film.state?.scene === 'm1_boss' || agent.currentAction?.parameters.hotelGuide && sandbox.life.film.state?.hotel || agent.currentAction?.parameters.welcome && sandbox.life.film.state?.scene === 'm1_pills' || agent.currentAction?.parameters.meeting && ['m1_bridge', 'm1_bug'].includes(sandbox.life.film.state?.scene ?? '') || agent.currentAction?.parameters.pills && sandbox.life.film.state?.scene === 'm1_pills' || agent.currentAction?.parameters.interrogation && sandbox.life.film.state?.scene === 'm1_interrogation' || (sandbox.life.film.state?.ride?.phase === 'riding' || sandbox.life.film.state?.hammer?.phase === 'riding' || sandbox.life.film.state?.logos?.phase === 'riding') && agent.currentAction?.parameters.passenger);
   if (controlled.length) sockets.broadcastDelta({ agents: Object.fromEntries(controlled), dirtyChunks: {}, events: [] }, simLoop.getTick());
