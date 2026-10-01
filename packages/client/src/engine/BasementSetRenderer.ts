@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BASEMENT, BASEMENT_BOILERS, BASEMENT_GAS, BASEMENT_TUNNEL_FLOORS, WETWALL_SHAFT, type FilmJourney } from '@auto_matrix/shared';
+import { BASEMENT, BASEMENT_BOILERS, BASEMENT_GAS, BASEMENT_GAS_LAUNCH, BASEMENT_TUNNEL_FLOORS, WETWALL_SHAFT, basementGasCanister, type FilmJourney } from '@auto_matrix/shared';
 import { batchStaticGeometry } from './StaticGeometry.js';
 
 /** A ceiling aperture, four boilers and an articulated catch-basin cover. */
@@ -19,7 +19,21 @@ export class BasementSetRenderer {
     // Four concrete rectangles leave the catch basin physically open below the cover.
     for (const [x,z,w,d] of [[-7.35,0,29.3,68],[16.35,0,11.3,68],[9,-4.85,3.4,58.3],[9,30.85,3.4,6.3]]) this.box(concrete,x,floor-.2,z,w,.4,d);
     for (const z of [-34,34]) this.box(concrete,0,floor+4.4,z,44,8.8,.55);
-    for (const x of [-22,22]) this.box(concrete,x,floor+4.4,0,.55,8.8,68);
+    for (const x of [-22,22]) {
+      const doors=BASEMENT_GAS.filter((_,index)=>(index===2?22:-22)===x),half=BASEMENT_GAS_LAUNCH.entryWidth/2;let previous=-34;
+      for(const door of doors){const start=door.z-half,end=door.z+half;this.box(concrete,x,floor+4.4,(previous+start)/2,.55,8.8,start-previous);previous=end;
+        this.box(concrete,x,floor+(BASEMENT_GAS_LAUNCH.entryHeight+8.8)/2,door.z,.55,8.8-BASEMENT_GAS_LAUNCH.entryHeight,half*2);
+        const side=Math.sign(x),depth=BASEMENT_GAS_LAUNCH.entryDepth,entry=new THREE.Group();entry.name='basement-gas-entry';this.root.add(entry);
+        this.box(concrete,x+side*depth/2,floor-.2,door.z,depth,.4,half*2,entry);
+        this.box(concrete,x+side*depth,floor+2.9,door.z,.55,5.8,half*2,entry);
+        for(const z of [door.z-half,door.z+half])this.box(concrete,x+side*depth/2,floor+2.9,z,depth,5.8,.55,entry);
+        this.box(concrete,x+side*depth/2,floor+5.92,door.z,depth,.24,half*2,entry);
+        for(const z of [door.z-half,door.z+half])this.box(iron,x,floor+2.9,z,.65,5.8,.22,entry);
+        this.box(iron,x,floor+5.8,door.z,.65,.22,half*2,entry);
+        const search=new THREE.SpotLight(0xbfcbb8,430,42,.28,.65,2);search.position.set(x+side*1.8,floor+3.8,door.z);search.target.position.set(door.x,floor+1.2,door.z);entry.add(search,search.target);
+      }
+      this.box(concrete,x,floor+4.4,(previous+34)/2,.55,8.8,34-previous);
+    }
     // The pipe shaft reaches the retained fourth-floor waiting height. No slab crosses the falling bodies.
     this.box(concrete,4.5,ceiling+.2,0,35,.4,68);
     this.box(concrete,-17.5,ceiling+.2,1.6,9,.4,64.8);
@@ -78,11 +92,10 @@ export class BasementSetRenderer {
       const shade=this.mesh(new THREE.SphereGeometry(.42,12,8),iron,0,ceiling-1.1,z);shade.scale.y=.35;
       const bulb=new THREE.PointLight(z===26?0xc8cf9e:0xe4cea1,95,30,2);bulb.position.set(0,ceiling-1.65,z);this.root.add(bulb);
     }
-    const entrance=new THREE.SpotLight(0xbfcbb8,700,48,.54,.6,2);entrance.position.set(-19,ceiling+2,-29);entrance.target.position.set(-14,floor,-19);this.root.add(entrance,entrance.target);
-    for(const gas of BASEMENT_GAS){const grenade=this.cylinder(iron,gas.x,floor+.16,gas.z,.12,.35);grenade.name='basement-gas-canister';grenade.rotation.z=Math.PI/2;this.grenades.push(grenade);}
+    for(const gas of BASEMENT_GAS){const grenade=this.cylinder(this.mat(0x42664b,.52,.45),gas.x,floor+.16,gas.z,.12,.35);grenade.name='basement-gas-canister';grenade.rotation.z=Math.PI/2;this.grenades.push(grenade);}
     const pixels=new Uint8Array(32*32*4);
     for(let y=0;y<32;y++)for(let x=0;x<32;x++){const i=(y*32+x)*4,r=Math.hypot((x-15.5)/16,(y-15.5)/16);pixels[i]=pixels[i+1]=pixels[i+2]=210;pixels[i+3]=Math.round(Math.max(0,1-r)**2*200);}
-    const map=new THREE.DataTexture(pixels,32,32);map.needsUpdate=true;this.textures.push(map);
+    const map=new THREE.DataTexture(pixels,32,32);map.minFilter=map.magFilter=THREE.LinearFilter;map.needsUpdate=true;this.textures.push(map);
     const fog=new THREE.MeshBasicMaterial({color:0x9ba991,map,transparent:true,opacity:.28,depthWrite:false,side:THREE.DoubleSide});this.materials.add(fog);
     const geometry=new THREE.PlaneGeometry(1,1);this.geometries.add(geometry);this.smoke=new THREE.InstancedMesh(geometry,fog,72);this.smoke.frustumCulled=false;this.smoke.name='basement-gas-clouds';this.root.add(this.smoke);
     for(const geometry of batchStaticGeometry(this.root,new Set(this.grenades)))this.geometries.add(geometry);
@@ -97,11 +110,11 @@ export class BasementSetRenderer {
     const state=journey?.scene==='m1_basement'&&!journey.visiting?journey.basement:undefined;
     this.cover.rotation.x=-(state?.hatch??0)*BASEMENT.grate.angle;
     const matrix=new THREE.Object3D(),camera=cameraPosition?this.root.worldToLocal(new THREE.Vector3(cameraPosition.x,cameraPosition.y,cameraPosition.z)):new THREE.Vector3(0,BASEMENT.floor+4,0);
-    const time=state?.gas??0;this.smoke.visible=time>2;
-    for(let i=0;i<72;i++){const source=BASEMENT_GAS[i%3],age=Math.max(0,time-source.at),weight=THREE.MathUtils.smoothstep(age,0,12),radius=(1+i%8)*1.25*Math.min(1,age/15),angle=i*2.399;
+    const time=state?.gas??0;this.smoke.visible=BASEMENT_GAS.some((source,index)=>time>source.at&&(!state?.gasShots||state.gasShots[index]));
+    for(let i=0;i<72;i++){const source=BASEMENT_GAS[i%3],age=Math.max(0,time-source.at),weight=state?.gasShots&&!state.gasShots[i%3]?0:THREE.MathUtils.smoothstep(age,0,12),radius=(1+i%8)*1.25*Math.min(1,age/15),angle=i*2.399;
       matrix.position.set(source.x+Math.sin(angle+time*.018)*radius,BASEMENT.floor+1.5+(i%5)*.72,source.z+Math.cos(angle+time*.018)*radius);matrix.lookAt(camera);matrix.scale.setScalar(weight*(6+i%4*1.6));matrix.updateMatrix();this.smoke.setMatrixAt(i,matrix.matrix);}
     this.smoke.instanceMatrix.needsUpdate=true;
-    this.grenades.forEach((grenade,i)=>{grenade.visible=time>=BASEMENT_GAS[i].at;});
+    this.grenades.forEach((grenade,i)=>{const position=basementGasCanister(i,time,state?.gasShots);grenade.visible=Boolean(position);if(position){grenade.position.set(position.x,position.y,position.z);grenade.rotation.set(0,time<BASEMENT_GAS[i].at?time*11:0,Math.PI/2);}});
   }
   dispose():void {this.root.removeFromParent();this.geometries.forEach(geometry=>geometry.dispose());this.materials.forEach(material=>material.dispose());this.textures.forEach(texture=>texture.dispose());this.smoke.dispose();}
 }

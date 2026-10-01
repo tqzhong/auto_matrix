@@ -1,6 +1,6 @@
-import { BASEMENT, BASEMENT_ROLES, BASEMENT_TUNNEL_LENGTH, BETRAYAL, FILM_SETS, FILM_SCENE_BY_ID, TV_EXIT, TV_EXIT_ROLES, TV_EXIT_STREET_ROLES, WETWALL_SHAFT,
+import { BASEMENT, BASEMENT_GAS, BASEMENT_ROLES, BASEMENT_TUNNEL_LENGTH, BETRAYAL, FILM_SETS, FILM_SCENE_BY_ID, TV_EXIT, TV_EXIT_ROLES, TV_EXIT_STREET_ROLES, WETWALL_SHAFT,
   basementDrainRoot, basementGasDensity, basementLandingRoot, basementLifterRoot, basementLocked, basementRouteLength, basementRouteRoot,
-  basementText, basementTunnelProgress, basementTunnelRoot, playerBlocked, tvExitEmergeRoot, tvExitEmergenceFrame, tvExitEmergingRole, tvExitEntered, tvExitLocked, tvExitRoot, tvExitStreetFrame,
+  basementText, basementTunnelProgress, basementTunnelRoot, basementGasLaunch, basementLauncherRoot, playerBlocked, tvExitEmergeRoot, tvExitEmergenceFrame, tvExitEmergingRole, tvExitEntered, tvExitLocked, tvExitRoot, tvExitStreetFrame,
   tvExitStreetRoot, tvExitStreetRouteLength, tvExitText, wetwallEntry,
   ambushCompanyBlocked, ambushCompanyStep, type AgentState, type BasementEncounter, type BasementRole, type PlayerInput,
   type SandboxState, type TvExitRole, type Vector3 } from '@auto_matrix/shared';
@@ -24,7 +24,7 @@ export class BasementEscapeSystem {
       const actor = this.world.agents.get(role)!;
       return [role, { x: actor.position.x - center.x, y: actor.position.y - center.y, z: actor.position.z - center.z, yaw: actor.rotation }];
     })) as BasementEncounter['starts'];
-    this.journey!.basement = { phase: 'ready', elapsed: 0, attempts: 0, air: 100, gas: 0, hatch: 0, separated: false, starts,
+    this.journey!.basement = { phase: 'ready', elapsed: 0, attempts: 0, air: 100, gas: 0, gasShots: [], hatch: 0, separated: false, starts,
       heights: Object.fromEntries(BASEMENT_ROLES.map(role => [role, starts[role].y])) as BasementEncounter['heights'],
       company: Object.fromEntries(BASEMENT_ROLES.map(role => [role, 0])) as BasementEncounter['company'], landings: {}, tunnel: 0, checkpoint: 'shaft' };
     this.frame(this.world.agents.get('neo')!, { yaw: starts.neo.yaw }, 0, this.world.simulationTick);
@@ -38,6 +38,23 @@ export class BasementEscapeSystem {
   }
   private advance(index: number, actor: AgentState, tick: number): void {
     if (this.journey!.step === index) this.onAdvance?.(FILM_SCENE_BY_ID[this.journey!.scene].steps[index].text ?? '抵达下一段路线。', actor, tick);
+  }
+  private stageGas(encounter: BasementEncounter, tick: number): void {
+    if (!encounter.gasShots || !['searching', 'lifting', 'hatch_ready', 'draining', 'failed'].includes(encounter.phase) || encounter.failure === 'fall') return;
+    const center = FILM_SETS.film_ambush_house.center;
+    for (const [index] of BASEMENT_GAS.entries()) {
+      const id = `film:basement:launcher:${index}`, root = basementLauncherRoot(index);
+      let threat = this.sandbox().threats.find(item => item.id === id);
+      if (!encounter.gasActors) {
+        threat = { id, kind: 'soldier', scene: 'm1_basement', patrol: true,
+          position: { x: center.x + root.x, y: center.y + root.y, z: center.z + root.z }, yaw: root.yaw,
+          matrix: true, health: 64, maxHealth: 64, target: 'neo', stunUntil: tick, lastStrike: tick };
+        this.sandbox().threats.push(threat);
+      }
+      if (encounter.gasShots[index] === undefined && encounter.gas >= basementGasLaunch(index).at) encounter.gasShots[index] = Boolean(threat && threat.health > 0);
+      if (threat) threat.basementGas = { index, time: encounter.gas };
+    }
+    encounter.gasActors = true;
   }
   private stage(encounter: BasementEncounter, dt: number, tick: number, crouching: boolean, previous?: Record<BasementRole, Vector3>): void {
     const center = FILM_SETS.film_ambush_house.center, wall = this.journey!.wetwall;
@@ -66,10 +83,12 @@ export class BasementEscapeSystem {
         wetwall: root.hanging && wall ? { role, phase: 'done', elapsed: 0, start: wall.starts[role], entry: wetwallEntry(wall, role),
           progress: wetwallEntry(wall, role) + WETWALL_SHAFT.top - root.y, hanging: true, freed: true, continued: true } : undefined }, startedAt: tick, duration: 1e9, progress: 0 };
     }
+    this.stageGas(encounter, tick);
   }
   movement(actor: AgentState, before: Vector3, after: Vector3): Vector3 {
     if (!this.active(actor) || this.journey!.scene !== 'm1_basement') return after;
-    const positions = BASEMENT_ROLES.filter(role => role !== actor.id).map(role => this.world.agents.get(role)!.position);
+    const positions = BASEMENT_ROLES.filter(role => role !== actor.id).map(role => this.world.agents.get(role)!.position)
+      .concat(this.sandbox().threats.filter(threat => threat.scene === 'm1_basement' && threat.health > 0).map(threat => threat.position));
     return ambushCompanyStep(before, after, positions);
   }
   frame(actor: AgentState, input: Partial<PlayerInput>, dt: number, tick: number): boolean {
@@ -108,7 +127,8 @@ export class BasementEscapeSystem {
     }
     if (['searching', 'lifting', 'hatch_ready'].includes(encounter.phase) && delta > 0) {
       encounter.gas += delta;
-      const density = basementGasDensity(actor.position.x - center.x, actor.position.z - center.z, encounter.gas);
+      this.stageGas(encounter, tick);
+      const density = basementGasDensity(actor.position.x - center.x, actor.position.z - center.z, encounter.gas, encounter.gasShots);
       encounter.air = Math.max(0, encounter.air - density * (input.crouch ? .8 : 4) * delta);
       if (encounter.air === 0) { encounter.phase = 'failed'; encounter.failure = 'gas'; actor.health = 0; actor.status = 'dead'; }
       else {
@@ -215,6 +235,7 @@ export class BasementEscapeSystem {
       if (target === 'retry' && encounter.phase === 'failed') {
         encounter.attempts++; delete encounter.failure; delete encounter.fallY; delete encounter.fallSpeed;
         encounter.elapsed = 0; encounter.air = 100; encounter.gas = 0; encounter.hatch = 0; encounter.separated = false; encounter.paused = false;
+        if (encounter.gasShots) { encounter.gasShots = []; delete encounter.gasActors; this.sandbox().threats = this.sandbox().threats.filter(threat => threat.scene !== 'm1_basement'); }
         actor.health = actor.maxHealth; actor.status = 'alive'; actor.activeEffects = [];
         if (encounter.checkpoint === 'shaft') { encounter.phase = 'ready'; encounter.landings = {}; for (const role of BASEMENT_ROLES) encounter.heights[role] = encounter.starts[role].y; this.journey!.step = 0; }
         else { encounter.phase = 'searching'; for (const role of BASEMENT_ROLES) encounter.company[role] = 0; const root = BASEMENT.landing.neo; actor.position = { x: center.x + root.x, y: center.y + BASEMENT.floor, z: center.z + root.z }; this.journey!.step = 1; }

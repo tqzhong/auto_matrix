@@ -38,6 +38,7 @@ export interface SandboxThreat {
   combo?: number;
   patrol?: boolean;
   ambushPursuit?: number;
+  basementGas?: import('../constants/basement-escape.js').BasementLauncherGesture;
   yaw?: number;
   scene?: string;
   campaign?: 'neo';

@@ -7,6 +7,7 @@ export type BasementRole = typeof BASEMENT_ROLES[number];
 export type BasementPhase = 'ready' | 'descending' | 'landing' | 'searching' | 'lifting' | 'hatch_ready' | 'draining' | 'tunnel' | 'done' | 'failed';
 export interface BasementEncounter {
   phase: BasementPhase; elapsed: number; attempts: number; air: number; gas: number; hatch: number; separated: boolean; paused?: boolean;
+  gasShots?: boolean[]; gasActors?: boolean;
   starts: Record<BasementRole, Vector3 & { yaw: number }>;
   heights: Record<BasementRole, number>; landings: Partial<Record<BasementRole, number>>; company: Record<BasementRole, number>;
   drainStarts?: Record<BasementRole, Vector3 & { yaw: number }>; tunnel: number;
@@ -25,6 +26,30 @@ export const BASEMENT = {
 } as const;
 export const BASEMENT_BOILERS = [-10, 10].flatMap(x => [-12, 12].map(z => ({ x, z, width: 6, depth: 13, height: 6.2 })));
 export const BASEMENT_GAS = [{ x: -17, z: -27, at: 2 }, { x: -1, z: 2, at: 14 }, { x: 11, z: 22, at: 28 }] as const;
+export const BASEMENT_GAS_LAUNCH = { flight: .95, bounce: .55, gravity: 24, entryDepth: 5.2, entryWidth: 4.4, entryHeight: 5.8 } as const;
+export interface BasementLauncherGesture { index: number; time: number }
+export function basementLauncherRoot(index: number) {
+  return { x: index === 2 ? 24.5 : -24.5, y: BASEMENT.floor, z: BASEMENT_GAS[index].z, yaw: index === 2 ? -Math.PI / 2 : Math.PI / 2 };
+}
+export function basementGasLaunch(index: number) {
+  const source = BASEMENT_GAS[index], root = basementLauncherRoot(index), side = index === 2 ? -1 : 1;
+  const muzzle = { x: root.x + side * 1.5, y: BASEMENT.floor + 4, z: root.z + side * .4 };
+  const impact = { x: source.x - side * .75, y: BASEMENT.floor + .16, z: source.z };
+  const { flight, bounce, gravity } = BASEMENT_GAS_LAUNCH;
+  return { muzzle, impact, at: source.at - flight - bounce,
+    velocity: { x: (impact.x - muzzle.x) / flight, y: (impact.y - muzzle.y + gravity * flight * flight / 2) / flight, z: (impact.z - muzzle.z) / flight } };
+}
+export function basementGasCanister(index: number, time: number, shots?: readonly boolean[]): Vector3 | undefined {
+  const source = BASEMENT_GAS[index];
+  // Old floor checkpoints retain their original fixed canisters and exposure clock.
+  if (!shots) return time >= source.at ? { x: source.x, y: BASEMENT.floor + .16, z: source.z } : undefined;
+  const launch = basementGasLaunch(index), age = time - launch.at, { flight, bounce, gravity } = BASEMENT_GAS_LAUNCH;
+  if (!shots[index] || age < 0) return;
+  if (age < flight) return { x: launch.muzzle.x + launch.velocity.x * age, y: launch.muzzle.y + launch.velocity.y * age - gravity * age * age / 2, z: launch.muzzle.z + launch.velocity.z * age };
+  const rebound = Math.min(bounce, age - flight);
+  return { x: launch.impact.x + (source.x - launch.impact.x) * rebound / bounce,
+    y: launch.impact.y + gravity * rebound * (bounce - rebound) / 2, z: source.z };
+}
 export const BASEMENT_TUNNEL = [{ x: 9, z: 26 }, { x: 9, z: 30 }, { x: 0, z: 30 }, { x: 0, z: 32.2 }] as const;
 export const BASEMENT_TUNNEL_FLOORS = [
   { x: 9, z: 28, width: 4.6, depth: 8.6 }, { x: 4.5, z: 30, width: 13.6, depth: 4.6 }, { x: 0, z: 31.1, width: 4.6, depth: 6.8 },
@@ -121,13 +146,19 @@ export function basementDrainRoot(encounter: BasementEncounter, role: BasementRo
   }
   return { x, y, z, yaw, crawling, ended: false };
 }
-export function basementGasDensity(x: number, z: number, time: number): number {
-  return Math.min(1, BASEMENT_GAS.reduce((density, gas) => density + smooth((time - gas.at) / 12) * .75 * Math.exp(-Math.hypot(x - gas.x, z - gas.z) / 18), 0));
+export function basementGasDensity(x: number, z: number, time: number, shots?: readonly boolean[]): number {
+  return Math.min(1, BASEMENT_GAS.reduce((density, gas, index) => density + (!shots || shots[index] ? smooth((time - gas.at) / 12) * .75 * Math.exp(-Math.hypot(x - gas.x, z - gas.z) / 18) : 0), 0));
 }
 export function basementBlocked(x: number, y: number, z: number, radius: number): boolean {
   if (y > BASEMENT.floor + BASEMENT.ceiling - .8) return x < -22 + radius + .15 || x > -13 - radius - .15 || z < -34 + radius + .15 || z > -30.8 - radius - .15;
   if (y < BASEMENT.floor - 2) return !BASEMENT_TUNNEL_FLOORS.some(surface => Math.abs(x - surface.x) <= surface.width / 2 - radius && Math.abs(z - surface.z) <= surface.depth / 2 - radius);
-  if (Math.abs(x) > 22 - radius - .3 || Math.abs(z) > 34 - radius - .3) return true;
+  if (Math.abs(x) > 22 - radius - .3 || Math.abs(z) > 34 - radius - .3) {
+    return !BASEMENT_GAS.some((gas, index) => {
+      const side = index === 2 ? 1 : -1;
+      return side * x >= 22 - radius - .3 && side * x <= 22 + BASEMENT_GAS_LAUNCH.entryDepth - radius - .3
+        && Math.abs(z - gas.z) <= BASEMENT_GAS_LAUNCH.entryWidth / 2 - radius - .3;
+    });
+  }
   // The rim is a traversal boundary: G uses the opened ladder, walking cannot
   // put an upright body through a closed grate or unsupported floor aperture.
   if (Math.abs(x - BASEMENT.grate.x) < BASEMENT.grate.width / 2 + radius && Math.abs(z - BASEMENT.grate.z) < BASEMENT.grate.depth / 2 + radius) return true;

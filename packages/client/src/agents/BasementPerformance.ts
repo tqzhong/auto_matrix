@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { FILM_SETS, TV_EXIT, basementHatchPoint, type BasementGesture, type TvExitGesture } from '@auto_matrix/shared';
+import { FILM_SETS, TV_EXIT, basementGasLaunch, basementHatchPoint, type BasementGesture, type BasementLauncherGesture, type TvExitGesture } from '@auto_matrix/shared';
 import type { CharacterRig } from './CharacterModel.js';
 import { reach } from './SpoonPerformance.js';
 import { groundCharacter } from './GroundContact.js';
@@ -51,6 +51,28 @@ export function poseBasement(rig: CharacterRig, gesture?: BasementGesture): void
       const sign = i ? -1 : 1, crawl = Boolean(gesture.crawling);
       const target = hero.root.localToWorld(new THREE.Vector3(sign * .52, crawl ? .32 : 1.1, crawl ? 1.35 + Math.cos(cycle + i * Math.PI) * .18 : .8));
       hand(rig, side as 'R' | 'L', bone(`wrist_${side}`).localToWorld(new THREE.Vector3(0, -.19, .035)).lerp(target, weight), crawl ? .15 : .6);
+    }
+  }
+}
+
+export function poseBasementLauncher(rig: CharacterRig, gesture?: BasementLauncherGesture): void {
+  if (!gesture || !rig.weapons?.[0]) return;
+  const launch=basementGasLaunch(gesture.index),center=FILM_SETS.film_ambush_house.center,age=gesture.time-launch.at;
+  const recoil=age>=0&&age<.25?Math.sin(age/.25*Math.PI)*.07:0;
+  rig.root.updateWorldMatrix(true,true);
+  const rotation=rig.root.getWorldQuaternion(new THREE.Quaternion()),direction=new THREE.Vector3(launch.velocity.x,launch.velocity.y,launch.velocity.z).normalize();
+  const orientation=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),Math.atan2(direction.x,direction.z))
+    .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),-Math.PI/2-Math.atan2(direction.y,Math.hypot(direction.x,direction.z))));
+  const gun=rig.weapons[0],muzzle=new THREE.Vector3(center.x+launch.muzzle.x,center.y-1+launch.muzzle.y,center.z+launch.muzzle.z);
+  if(gun.parent!==rig.root)rig.root.add(gun);
+  gun.position.copy(rig.root.worldToLocal(muzzle.addScaledVector(direction,-1.455-recoil)));
+  gun.quaternion.copy(rotation.clone().invert().multiply(orientation));gun.scale.setScalar(1/rig.root.getWorldScale(new THREE.Vector3()).x);gun.updateWorldMatrix(false,true);
+  for(const [index,side] of ['R','L'].entries()) {
+    const target=gun.localToWorld(new THREE.Vector3(0,index?-.78:-.08,-.12));
+    if(rig.hero)hand(rig,side as 'R'|'L',target,.85);
+    else {
+      reach(rig.shoulders[index],rig.elbows[index],new THREE.Vector3(0,-.79,.055),target,new THREE.Vector3(index?.7:-.7,-.5,.1).applyQuaternion(rotation));
+      for(const finger of rig.fingers[index])finger.rotation.x=-.65;
     }
   }
 }
