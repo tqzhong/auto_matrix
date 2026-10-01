@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { BASEMENT, BASEMENT_ROLES, BASEMENT_BOILERS, BASEMENT_TUNNEL_LENGTH, TV_EXIT, TV_EXIT_STREET_ROLES, basementRouteLength, basementBlocked, basementTunnelRoot, tvExitStreetRoot, tvExitStreetRouteLength, wetwallPose, playerBlocked, filmEntry, filmGroundHeight, filmPosition, FILM_SETS, FILM_SCENE_BY_ID, WETWALL, WETWALL_ROLES, WETWALL_SHAFT, wetwallEntry,
+import { BASEMENT, BASEMENT_ROLES, BASEMENT_BOILERS, BASEMENT_TUNNEL_LENGTH, TV_EXIT, TV_EXIT_STREET_ROLES, basementRouteLength, basementBlocked, basementTunnelRoot, tvExitEmergeRoot, tvExitStreetRoot, tvExitStreetRouteLength, wetwallPose, playerBlocked, filmEntry, filmGroundHeight, filmPosition, FILM_SETS, FILM_SCENE_BY_ID, WETWALL, WETWALL_ROLES, WETWALL_SHAFT, wetwallEntry,
   type PlayerInput, type WetwallEncounter, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -84,6 +84,14 @@ test('the repaired escape route places the real hardline attempt before Cypher s
   assert.equal(playerBlocked(filmPosition(scene.set, 0, 32), true), false, 'the visible shop doorway is a real opening');
   assert.equal(playerBlocked(filmPosition(scene.set, -11, 32), true), true, 'the display window cannot be walked through');
   for(const role of TV_EXIT_STREET_ROLES)for(let progress=0;progress<=tvExitStreetRouteLength(role);progress+=.2){const root=tvExitStreetRoot(role,progress);assert.equal(playerBlocked(filmPosition(scene.set,root.x,root.z),true),false,`${role} clips a facade or fixture at ${progress.toFixed(1)}`);}
+});
+
+test('the street mantle turns Neo toward his landing before he clears the manhole', () => {
+  const middle=tvExitEmergeRoot('neo',.84),rim=tvExitEmergeRoot('neo',TV_EXIT.emerge.mantleEnd),landing=tvExitEmergeRoot('neo',.94);
+  assert.ok(middle.y<TV_EXIT.emerge.mantleTop&&middle.y>TV_EXIT.emerge.climbTop,'the body rises while both palms remain in reach of the rim');
+  assert.ok(middle.yaw>1.2&&middle.yaw<1.9,'the turn is visible halfway through the mantle instead of being deferred to the final step');
+  assert.ok(Math.abs(rim.yaw-Math.PI)<.001&&Math.abs(landing.yaw-Math.PI)<.001,'the body faces the landing before translating across solid road');
+  for(const progress of [.76,.8,.84,.88,.92]){const root=tvExitEmergeRoot('neo',progress);assert.ok(Math.hypot(root.x-TV_EXIT.street.drain.x,root.z-TV_EXIT.street.drain.z)<=TV_EXIT.emerge.mantleRadius+.01,`body leaves the aperture at ${progress}`);}
 });
 
 test('an old save already inside the repair shop resumes at the aisle instead of returning to the new street entrance', () => {

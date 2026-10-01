@@ -1242,7 +1242,7 @@ export class PlayerControls {
         this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
       } else {
         const role = tvExitEmergingRole(tvExit), progress = role ? tvExit.emerge?.[role] ?? 0 : 1;
-        const root = role ? tvExitEmergeRoot(role, progress) : undefined, climbing = progress < TV_EXIT.emerge.climbEnd;
+        const root = role ? tvExitEmergeRoot(role, progress) : undefined, climbing = progress < TV_EXIT.emerge.mantleEnd;
         const ideal = climbing && root
           ? new THREE.Vector3(center.x + TV_EXIT.street.drain.x + (this.camera.aspect < .85 ? 3.2 : 3.6), center.y + root.y + 2, center.z + TV_EXIT.street.drain.z - (this.camera.aspect < .85 ? 1.4 : 1.8))
           : new THREE.Vector3(center.x + TV_EXIT.street.drain.x + (this.camera.aspect < .85 ? 7.2 : 6), center.y + (this.camera.aspect < .85 ? 7.8 : 6.4), center.z + TV_EXIT.street.drain.z - (this.camera.aspect < .85 ? 8.2 : 6.8));

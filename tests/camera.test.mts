@@ -509,6 +509,11 @@ test('the street-exit shaft frames the current climber in both views and sends W
   assert.ok(Math.abs(climber.x)<.8&&Math.abs(climber.y)<.82&&climber.z>-1&&climber.z<1,`shaft climber is outside the authored frame: ${climber.toArray()}`);
   assert.ok(game.camera.position.y<center.y,'the ladder phase uses the shaft cutaway instead of reducing the climber to a head above the road');
   game.key('KeyW');game.step(.2);game.key('KeyW',false);assert.equal(game.sent.at(-2)?.climb,1);
+  const mantle=tvExitEmergeRoot('neo',.84);game.state.position={x:center.x+mantle.x,y:center.y+mantle.y,z:center.z+mantle.z};
+  game.state.currentAction.parameters.tvExit={phase:'emerging',elapsed:.84,role:'neo',emerge:{neo:.84,trinity:0,apoc:0,switch:0}};game.step(.4);
+  const rimGrip=new THREE.Vector3(center.x+TV_EXIT.street.drain.x,center.y-.85,center.z+TV_EXIT.street.drain.z).project(game.camera);
+  assert.ok(game.camera.position.y<center.y,'the side camera must hold through the hand-on-rim mantle instead of jumping above the street');
+  assert.ok(Math.abs(rimGrip.x)<.8&&Math.abs(rimGrip.y)<.82&&rimGrip.z>-1&&rimGrip.z<1,'the mantle camera keeps the physical rim in frame');
   game.state.position={x:center.x+TV_EXIT.emerge.exits.neo.x,y:center.y,z:center.z+TV_EXIT.emerge.exits.neo.z};
   game.state.currentAction.parameters.tvExit={phase:'emerging',elapsed:1.25,role:'neo',emerge:{neo:1,trinity:.25,apoc:0,switch:0}};
   game.step(.4);const trinity=tvExitEmergeRoot('trinity',.25),next=new THREE.Vector3(center.x+trinity.x,center.y+trinity.y+1.7,center.z+trinity.z).project(game.camera);

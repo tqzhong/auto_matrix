@@ -60,8 +60,25 @@ export function poseHardline(rig: CharacterRig, gesture?: TvExitGesture): void {
   if (!rig.hero || !gesture) return;
   if (gesture.phase === 'emerging') {
     const progress = gesture.emerge?.[gesture.role] ?? 0;
-    if (progress >= TV_EXIT.emerge.climbEnd) return;
     const hero = rig.hero, bones = hero.bones, center = FILM_SETS.film_tv_repair.center;
+    if (progress >= TV_EXIT.emerge.climbEnd) {
+      if (progress >= TV_EXIT.emerge.mantleEnd) return;
+      const planted = THREE.MathUtils.smoothstep(progress, TV_EXIT.emerge.climbEnd + .015, TV_EXIT.emerge.climbEnd + .04)
+        * (1 - THREE.MathUtils.smoothstep(progress, TV_EXIT.emerge.mantleEnd - .06, TV_EXIT.emerge.mantleEnd));
+      bones.get('spine')!.rotation.x = -.32 * planted; bones.get('chest')!.rotation.x = .18 * planted; bones.get('head')!.rotation.x = .08 * planted;
+      rig.root.updateWorldMatrix(true, true);
+      const rotation = rig.root.getWorldQuaternion(new THREE.Quaternion());
+      const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(rotation).setY(0).normalize();
+      const right = new THREE.Vector3(-1, 0, 0).applyQuaternion(rotation).setY(0).normalize();
+      for (const side of ['R', 'L'] as const) {
+        const lateral = side === 'R' ? -1 : 1;
+        const target = new THREE.Vector3(center.x + TV_EXIT.street.drain.x, center.y - .85, center.z + TV_EXIT.street.drain.z)
+          .addScaledVector(forward, 1.02).addScaledVector(right, -lateral * .36);
+        const palm = bones.get(`wrist_${side}`)!.localToWorld(new THREE.Vector3(0, -.19, .035));
+        hand(rig, side, palm.lerp(target, planted), .9 * planted);
+      }
+      return;
+    }
     const ladderZ = center.z + TV_EXIT.street.ladderZ, top = center.y - 1.45, bottom = top - TV_EXIT.street.shaftDepth + .8;
     const rung = (y: number) => THREE.MathUtils.clamp(top - Math.round((top - y) / .55) * .55, bottom, top);
     bones.get('spine')!.rotation.x = -.1; bones.get('chest')!.rotation.x = .14;

@@ -133,6 +133,45 @@ test('Neo’s shipped body grips the physical street ladder without leaving the 
   } finally { models.dispose(); }
 });
 
+test('Neo plants both shipped palms on the physical manhole rim while climbing onto the street', async () => {
+  const asset = await loadGeometry('neo'); const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: () => Promise<typeof asset> }).load = async () => asset;
+  try {
+    const hero = (await models.create('neo'))!, motion = newMotion();
+    const actor = new THREE.Group(), body = new THREE.Group(); actor.add(body); body.position.y = -1; body.add(hero.root);
+    const rig = { root: body, hero, motion } as CharacterRig;
+    const input: MotionInput = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, climbing: 0 };
+    const center = FILM_SETS.film_tv_repair.center, rim = new THREE.Vector3(center.x + TV_EXIT.street.drain.x, center.y - .85, center.z + TV_EXIT.street.drain.z);
+    for (const progress of [.8, .84]) {
+      models.animate(hero, advanceMotion(motion, input, 0), motion, input, 0);
+      const root = tvExitEmergeRoot('neo', progress); actor.position.set(center.x + root.x, center.y + root.y, center.z + root.z); actor.rotation.y = root.yaw;
+      poseHardline(rig, { phase: 'emerging', elapsed: progress, role: 'neo', emerge: { neo: progress, trinity: 0, apoc: 0, switch: 0 } });
+      actor.updateWorldMatrix(true, true);
+      const palms = ['R', 'L'].map(side => hero.bones.get(`wrist_${side}`)!.localToWorld(new THREE.Vector3(0, -.19, .035)));
+      for (const palm of palms) {
+        assert.ok(Math.abs(palm.y - rim.y) < .055, `palm misses the top of the rim by ${Math.abs(palm.y - rim.y)} at ${progress}`);
+        const radius = Math.hypot(palm.x - rim.x, palm.z - rim.z);
+        assert.ok(radius > .93 && radius < 1.25, `palm radius ${radius} does not grip the physical rim at ${progress}`);
+      }
+      assert.ok(palms[0].distanceTo(palms[1]) > .55, `both palms collapse onto one point at ${progress}`);
+      for (const name of ['pelvis', 'chest', 'head']) {
+        const point = hero.bones.get(name)!.getWorldPosition(new THREE.Vector3());
+        if (point.y < center.y - 1.12) assert.ok(Math.hypot(point.x - rim.x, point.z - rim.z) < 1.25, `${name} crosses the solid road while below street level at ${progress}`);
+      }
+    }
+    for (const progress of [.78, .82, .86, .9, .92]) {
+      models.animate(hero, advanceMotion(motion, input, 0), motion, input, 0);
+      const root = tvExitEmergeRoot('neo', progress); actor.position.set(center.x + root.x, center.y + root.y, center.z + root.z); actor.rotation.y = root.yaw;
+      poseHardline(rig, { phase: 'emerging', elapsed: progress, role: 'neo', emerge: { neo: progress, trinity: 0, apoc: 0, switch: 0 } });
+      actor.updateWorldMatrix(true, true);
+      for (const name of ['head', 'chest', 'pelvis', 'wrist_R', 'wrist_L', 'ankle_R', 'ankle_L']) {
+        const point = hero.bones.get(name)!.getWorldPosition(new THREE.Vector3());
+        if (point.y < center.y - 1.12) assert.ok(Math.hypot(point.x - rim.x, point.z - rim.z) < 1.25, `${name} crosses the solid road while below street level at ${progress}`);
+      }
+    }
+  } finally { models.dispose(); }
+});
+
 test('animated heroes leave the draw list behind the camera while every posed vertex remains inside their bounds', async () => {
   const ids = ['neo', 'morpheus', 'trinity', 'smith'] as const;
   const assets = new Map(await Promise.all([...ids, 'neo-office', 'trinity-club'].map(async id => [id, await loadGeometry(id)] as const)));
