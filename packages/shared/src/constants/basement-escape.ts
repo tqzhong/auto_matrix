@@ -164,7 +164,7 @@ export interface TvExitGesture extends TvExitEncounter { role: TvExitRole }
 export const TV_EXIT = { phone: { x: -7, y: 2.7, z: -20 }, approach: { x: -7, z: -18.5 }, pickupSeconds: 4.4, callSeconds: 6.8,
   street: { drain: { x: -7, z: 49 }, curb: { x: -7, z: 41.5 }, door: { x: 0, z: 29.5 }, storefrontZ: 32,
     shaftDepth: 18, ladderZ: 49.76 },
-  emerge: { speed: .28, climbEnd: .76, climbTop: -3.1, top: -4.4, spacing: 4.15,
+  emerge: { speed: .28, climbEnd: .76, mantleEnd: .92, climbTop: -3.1, mantleTop: -.62, mantleRadius: .72, top: -4.4, spacing: 4.15,
     exits: { neo: { x: -4.6, z: 46.8, yaw: Math.PI }, trinity: { x: -3.5, z: 51, yaw: Math.PI },
       apoc: { x: -8.8, z: 52.5, yaw: Math.PI }, switch: { x: -10.5, z: 48.5, yaw: 3.02 } } },
   cast: { trinity: { x: -3.5, z: -14, yaw: -Math.PI / 2 }, apoc: { x: 4.5, z: -11, yaw: Math.PI }, switch: { x: 8.5, z: -9, yaw: Math.PI } } } as const;
@@ -201,10 +201,19 @@ export function tvExitEmergeRoot(role: TvExitRole, progress: number) {
     const climb = smooth(value / edge);
     return { x: TV_EXIT.street.drain.x, y: startY + (TV_EXIT.emerge.climbTop - startY) * climb, z: TV_EXIT.street.drain.z - .2, yaw: 0, climbing: true };
   }
-  const step = smooth((value - edge) / (1 - edge)), exit = TV_EXIT.emerge.exits[role];
-  return { x: TV_EXIT.street.drain.x + (exit.x - TV_EXIT.street.drain.x) * step, y: TV_EXIT.emerge.climbTop * (1 - step),
-    z: TV_EXIT.street.drain.z - .2 + (exit.z - TV_EXIT.street.drain.z + .2) * step,
-    yaw: Math.atan2(Math.sin(exit.yaw) * step, 1 - step + Math.cos(exit.yaw) * step), climbing: value < 1 };
+  const exit = TV_EXIT.emerge.exits[role], dx = exit.x - TV_EXIT.street.drain.x, dz = exit.z - TV_EXIT.street.drain.z;
+  const distance = Math.hypot(dx, dz), outwardX = dx / distance, outwardZ = dz / distance, exitYaw = Math.atan2(Math.sin(exit.yaw), Math.cos(exit.yaw));
+  const mantleX = TV_EXIT.street.drain.x + outwardX * TV_EXIT.emerge.mantleRadius;
+  const mantleZ = TV_EXIT.street.drain.z + outwardZ * TV_EXIT.emerge.mantleRadius;
+  if (value <= TV_EXIT.emerge.mantleEnd) {
+    const step = smooth((value - edge) / (TV_EXIT.emerge.mantleEnd - edge));
+    return { x: TV_EXIT.street.drain.x + (mantleX - TV_EXIT.street.drain.x) * step,
+      y: TV_EXIT.emerge.climbTop + (TV_EXIT.emerge.mantleTop - TV_EXIT.emerge.climbTop) * step * step,
+      z: TV_EXIT.street.drain.z - .2 + (mantleZ - TV_EXIT.street.drain.z + .2) * step, yaw: exitYaw * step, climbing: true };
+  }
+  const step = smooth((value - TV_EXIT.emerge.mantleEnd) / (1 - TV_EXIT.emerge.mantleEnd));
+  return { x: mantleX + (exit.x - mantleX) * step, y: TV_EXIT.emerge.mantleTop * (1 - step), z: mantleZ + (exit.z - mantleZ) * step,
+    yaw: exitYaw, climbing: value < 1 };
 }
 export function tvExitEmergenceFrame(encounter: TvExitEncounter, climb: number, delta: number): void {
   if (!encounter.emerge) encounter.emerge = Object.fromEntries(TV_EXIT_ROLES.map(role => [role, 0])) as Record<TvExitRole, number>;

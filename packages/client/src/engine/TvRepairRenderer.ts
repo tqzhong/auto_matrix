@@ -98,7 +98,9 @@ export class TvRepairRenderer {
   update(journey:FilmJourney|undefined,subject?:THREE.Object3D):void{
     const encounter=(journey?.scene==='m1_tv_exit'||journey?.scene==='m1_unplugged'&&journey.tvExit?.crosscut)&&!journey.visiting?journey.tvExit:undefined;
     const emerging=encounter?.phase==='emerging',role=emerging?tvExitEmergingRole(encounter):undefined;
-    const cutaway=Boolean(role&&(encounter?.emerge?.[role]??0)<TV_EXIT.emerge.climbEnd);this.cutawayRoad.visible=this.cutawayRim.visible=!cutaway;
+    const progress=role?encounter?.emerge?.[role]??0:1;
+    this.cutawayRoad.visible=!role||progress>=TV_EXIT.emerge.mantleEnd;
+    this.cutawayRim.visible=!role||progress>=TV_EXIT.emerge.climbEnd;
     const cut=encounter?.crosscut;
     const held=cut ? cut.phase==='phone'&&encounter!.phase==='pickup'&&cut.elapsed>=.8||cut.phase==='assault'||cut.phase==='call'&&(encounter!.phase==='line_dead'||cut.elapsed<6.6)||cut.phase==='trinity_exit'&&cut.elapsed>=2.8||cut.phase==='neo_exit'&&cut.elapsed>=.8 : encounter&&(encounter.phase==='pickup'?encounter.elapsed>=.8:encounter.phase==='line_dead'||encounter.phase==='calling'&&encounter.elapsed<6.6);
     this.handset.root.visible=!held;
