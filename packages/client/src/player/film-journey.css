@@ -143,3 +143,9 @@ body.film-truth-scene.film-cabin-scene:has(#gameplay-recorder) .film-sequence { 
 body.film-truth-scene:has(.film-truth-reflection:not(.hidden)) .film-sequence { display:none; }
 body.film-truth-scene:has(#gameplay-recorder) .film-truth-reflection { bottom:70px; }
 @media(max-width:680px) { .film-truth-reflection .film-pill-choices { grid-template-columns:1fr; gap:6px; }.film-truth-reflection button { padding:9px 12px; } }
+
+body:has(.film-sequence.basement-escape:not(.hidden), .film-sequence.tv-repair:not(.hidden)) .film-sequence { bottom:88px; width:min(680px,calc(100vw - 36px)); box-sizing:border-box; padding:8px 14px; }
+body:has(.film-sequence.basement-escape:not(.hidden), .film-sequence.tv-repair:not(.hidden)) .sandbox-interact { top:auto; bottom:222px; }
+body:has(.film-sequence.basement-escape:not(.hidden), .film-sequence.tv-repair:not(.hidden)) .sandbox-hotbar,
+body:has(.film-sequence.basement-escape:not(.hidden), .film-sequence.tv-repair:not(.hidden)) .game-interaction,
+body:has(.film-sequence.basement-escape:not(.hidden), .film-sequence.tv-repair:not(.hidden)) .player-ability { display:none; }

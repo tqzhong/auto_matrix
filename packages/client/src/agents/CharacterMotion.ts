@@ -20,6 +20,8 @@ export interface MotionInput {
   wetwall?: import('@auto_matrix/shared').WetwallGesture;
   sixth?: import('@auto_matrix/shared').SixthGesture;
   bathroom?: import('@auto_matrix/shared').BathroomGesture;
+  basement?: import('@auto_matrix/shared').BasementGesture;
+  tvExit?: import('@auto_matrix/shared').TvExitGesture;
   shot?: number;
   crouching?: boolean;
   seated?: boolean;

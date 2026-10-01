@@ -19,6 +19,7 @@ import { TRUCKS } from './trucks.js';
 import { OPENING_ESCAPE } from './opening-escape.js';
 import { hammerHeight } from './hammer-flight.js';
 import { ORACLE_ENTRANCE } from './oracle.js';
+import { BASEMENT, basementBlocked, TV_EXIT_OBSTACLES } from './basement-escape.js';
 
 export type FilmArchitecture = 'hotel' | 'apartment' | 'club' | 'office' | 'interrogation' | 'bridge' | 'car' | 'lafayette' | 'pods' | 'ship' | 'construct' | 'desert' | 'dojo' | 'rooftop' | 'plaza' | 'restaurant' | 'oracle' | 'tenement' | 'lobby' | 'subway' | 'street' | 'zion' | 'temple' | 'engineering' | 'teahouse' | 'backdoors' | 'courtyard' | 'chateau' | 'mountain' | 'workshop' | 'garage' | 'freeway' | 'power' | 'architect' | 'mobil' | 'hel' | 'machine' | 'rain' | 'garden';
 export interface FilmSet {
@@ -94,8 +95,9 @@ const definitions: Omit<FilmSet, 'id' | 'center'>[] = [
   { name: '工业施工层 · 源头之门', film: [2], architecture: 'backdoors', world: 'matrix', width: 28, depth: 112, height: 12, light: 'cold', detail: '裸露混凝土、临时管线、钥匙匠的门户与通往源头的白门' },
   { name: 'Club Hel · 地下车库入口', film: [3], architecture: 'garage', world: 'matrix', width: 56, depth: 72, height: 14, light: 'night', detail: '成排轿车、混凝土柱、入口守卫与通往俱乐部的钢门' },
   { name: 'Hammer · 返回锡安的机械管线', film: [3], architecture: 'engineering', world: 'real', width: 68, depth: 390, height: 36, light: 'cold', detail: '弯曲机械管道、横梁、悬浮飞船与追击的哨兵' },
+  { name: 'Franklin 与 Erie · 电视维修店', film: [1], architecture: 'workshop', world: 'matrix', width: 36, depth: 64, height: 10, light: 'day', detail: '旧电视陈列、木质维修柜台、后间零件架与出口硬线' },
 ];
-const ids = ['heart_hotel', 'hotel_roofs', 'wells_phone', 'anderson_flat', 'white_rabbit_club', 'metacortex_floor', 'office_ledge', 'agent_interrogation', 'adams_bridge', 'extraction_car', 'lafayette', 'power_plant_pods', 'neb_deck', 'white_construct', 'real_desert', 'kungfu_dojo', 'jump_roofs', 'red_dress_plaza', 'cypher_restaurant', 'oracle_home', 'ambush_house', 'government_lobby', 'government_office', 'government_roof', 'subway_platform', 'escape_streets', 'final_phone', 'captains_meeting', 'zion_hangar', 'zion_council', 'zion_residences', 'zion_temple', 'zion_bedroom', 'zion_engineering', 'backdoor_hall', 'seraph_teahouse', 'oracle_courtyard', 'le_vrai', 'chateau_hall', 'keymaker_workshop', 'chateau_garage', 'freeway_101', 'power_station', 'backup_station', 'architect_room', 'trinity_roof', 'service_tunnels', 'hammer_deck', 'mobil_station', 'club_hel', 'logos_deck', 'machine_defense', 'above_clouds', 'logos_wreck', 'machine_core', 'smith_avenue', 'sunrise_garden', 'industrial_loft', 'mountain_range', 'freeway_trucks', 'source_corridor', 'hel_garage', 'hammer_route'];
+const ids = ['heart_hotel', 'hotel_roofs', 'wells_phone', 'anderson_flat', 'white_rabbit_club', 'metacortex_floor', 'office_ledge', 'agent_interrogation', 'adams_bridge', 'extraction_car', 'lafayette', 'power_plant_pods', 'neb_deck', 'white_construct', 'real_desert', 'kungfu_dojo', 'jump_roofs', 'red_dress_plaza', 'cypher_restaurant', 'oracle_home', 'ambush_house', 'government_lobby', 'government_office', 'government_roof', 'subway_platform', 'escape_streets', 'final_phone', 'captains_meeting', 'zion_hangar', 'zion_council', 'zion_residences', 'zion_temple', 'zion_bedroom', 'zion_engineering', 'backdoor_hall', 'seraph_teahouse', 'oracle_courtyard', 'le_vrai', 'chateau_hall', 'keymaker_workshop', 'chateau_garage', 'freeway_101', 'power_station', 'backup_station', 'architect_room', 'trinity_roof', 'service_tunnels', 'hammer_deck', 'mobil_station', 'club_hel', 'logos_deck', 'machine_defense', 'above_clouds', 'logos_wreck', 'machine_core', 'smith_avenue', 'sunrise_garden', 'industrial_loft', 'mountain_range', 'freeway_trucks', 'source_corridor', 'hel_garage', 'hammer_route', 'tv_repair'];
 
 export const FILM_SETS: Record<string, FilmSet> = Object.fromEntries(definitions.map((set, i) => {
   const id = `film_${ids[i]}`;
@@ -155,6 +157,7 @@ export const ORACLE_ENTRANCE_WALLS: FilmObstacle[] = [
 ];
 export const ORACLE_OPEN_DOOR: FilmObstacle = { x: ORACLE_ENTRANCE.door.x, z: ORACLE_ENTRANCE.door.z - ORACLE_ENTRANCE.door.width / 2, width: ORACLE_ENTRANCE.door.depth, depth: ORACLE_ENTRANCE.door.width, height: ORACLE_ENTRANCE.door.height };
 export function filmObstacles(set: FilmSet, movingMeetingCar = false, movingOracleDoor = false): FilmObstacle[] {
+  if (set.id === 'film_tv_repair') return TV_EXIT_OBSTACLES;
   if (set.id === 'film_mobil_station') return [];
   if (set.id === 'film_hel_garage') return [-18, 18].flatMap(x => [-17, 9, 24].map(z => ({ x, z, width: 8.5, depth: 13, height: 5 })));
   if (set.id === 'film_club_hel') return [
@@ -253,6 +256,7 @@ export function filmObstacles(set: FilmSet, movingMeetingCar = false, movingOrac
 
 export function filmBlocked(position: Vector3, set: FilmSet, radius: number, movingMeetingCar = false, movingOracleDoor = false): boolean {
   const x = position.x - set.center.x; const z = position.z - set.center.z;
+  if (set.id === 'film_ambush_house' && position.y - set.center.y < -70) return basementBlocked(x, position.y - set.center.y, z, radius);
   if (set.id === 'film_ambush_house' && Math.abs(position.y - set.center.y - WETWALL_SHAFT.sixth) < .8 && z >= WETWALL_SHAFT.front && z <= -14.8)
     return ambushStairsBlocked(x, z, position.y - set.center.y, radius);
   if (set.id === 'film_ambush_house' && position.y - set.center.y <= WETWALL_SHAFT.top + .8 && x < WETWALL_SHAFT.right && z < WETWALL_SHAFT.front)
@@ -276,6 +280,7 @@ export function filmBlocked(position: Vector3, set: FilmSet, radius: number, mov
 }
 
 export function filmGroundHeight(position: Vector3, set: FilmSet): number {
+  if (set.id === 'film_ambush_house' && position.y - set.center.y < -70) return set.center.y + (position.y - set.center.y < BASEMENT.floor - 2 ? BASEMENT.tunnelFloor : BASEMENT.floor);
   if (set.id === 'film_ambush_house') return set.center.y + (ambushFloor(position.x - set.center.x, position.z - set.center.z, position.y - set.center.y) ?? -AMBUSH_STAIRS.rise * (AMBUSH_STOREYS + 1));
   if (set.id === 'film_hammer_route') return set.center.y + hammerHeight(position.z - set.center.z) - 1.35;
   if (set.id === 'film_hotel_roofs') {

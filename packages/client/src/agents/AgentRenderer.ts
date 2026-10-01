@@ -152,6 +152,7 @@ export class AgentRenderer {
       const bathroomGesture = bathroom && { ...bathroom, elapsed: entry.bathroomElapsed ?? bathroom.elapsed };
       if (sixthRoot?.hidden) entry.body.visible = entry.marker.visible = entry.label.visible = false;
       if (id !== this.playerId) {
+        const previous = entry.group.position.clone();
         const target = new THREE.Vector3(state.position.x, state.position.y, state.position.z);
         const driver = this.playerId ? this.agents.get(this.playerId) : undefined;
         if (bathroomGesture) {
@@ -165,7 +166,7 @@ export class AgentRenderer {
           const wall = state.currentAction.parameters.wetwall as NonNullable<MotionInput['wetwall']>, guide = entry.wetwallGuide, before = guide.progress;
           guide.elapsed = Math.min(.5, guide.elapsed + delta * speed);
           guide.progress = THREE.MathUtils.lerp(guide.from, guide.to, guide.elapsed / .5);
-          const pose = wetwallPose(wall.start, wall.role, guide.progress, wall.phase, wall.elapsed, wall.fallY), center = FILM_SETS.film_ambush_house.center;
+          const pose = wetwallPose(wall.start, wall.role, guide.progress, wall.phase, wall.elapsed, wall.fallY, wall.continued), center = FILM_SETS.film_ambush_house.center;
           entry.group.position.set(center.x + pose.x, center.y + pose.y, center.z + pose.z); guideHeading = pose.yaw;
           if (speed > 0 && delta > 0 && !pose.hanging) guideSpeed = Math.abs(guide.progress - before) / (delta * speed);
         } else if (entry.mirrorGuide) {
@@ -198,6 +199,7 @@ export class AgentRenderer {
         } else if (state.currentAction?.parameters.openingRoofLeap !== undefined) entry.group.position.copy(target);
         else if (state.currentAction?.parameters.truckPassenger || state.currentAction?.parameters.truckFlight || state.currentAction?.parameters.farewell || state.currentAction?.parameters.club || state.currentAction?.parameters.sentinel || state.currentAction?.parameters.interlude || state.currentAction?.parameters.oracleVisit || state.currentAction?.parameters.oracleDeparture || state.currentAction?.parameters.betrayal || state.currentAction?.parameters.rescue || state.currentAction?.parameters.government || state.currentAction?.parameters.airRescue || state.currentAction?.parameters.matrixEscape || state.currentAction?.parameters.theOne || state.currentAction?.parameters.reloaded || state.currentAction?.parameters.catch || state.currentAction?.parameters.lobbyEntry || state.currentAction?.parameters.meeting || state.currentAction?.parameters.pills || state.currentAction?.parameters.interrogation || state.currentAction?.parameters.welcome || state.currentAction?.parameters.reveal || state.currentAction?.parameters.training || state.currentAction?.parameters.workday || state.currentAction?.parameters.recoveryCrew || entry.group.position.distanceTo(target) > 60) entry.group.position.copy(target);
         else entry.group.position.lerp(target, 1 - Math.exp(-8 * delta));
+        if (state.currentAction?.parameters.basement && delta * speed > 0) guideSpeed = entry.group.position.distanceTo(previous) / (delta * speed);
       }
       const moving = Math.hypot(state.velocity.x, state.velocity.z) > .1;
       const heading = guideHeading ?? (moving && !state.currentAction?.parameters.oracleArrival && !state.currentAction?.parameters.oracleReception && !state.currentAction?.parameters.oracleDeparture && !state.currentAction?.parameters.club && !state.currentAction?.parameters.catch && !state.currentAction?.parameters.recoveryCrew && state.currentLocation !== 'film_government_lobby' ? Math.atan2(state.velocity.x, state.velocity.z) : state.rotation);
@@ -210,12 +212,14 @@ export class AgentRenderer {
       const dist = camera ? entry.group.position.distanceTo(camera.position) : 0;
       const floor = groundHeight(state.position, state.isInMatrix);
       const input: MotionInput = id === this.playerId && this.playerMotion ? this.playerMotion : {
-        speed: sixthRoot || entry.mirrorGuide || entry.oracleGuide || entry.ambushGuide || entry.wetwallGuide ? guideSpeed : velocity, grounded: Boolean(state.currentAction?.parameters.riding || state.currentAction?.parameters.climbing || state.currentAction?.parameters.wetwall) || state.position.y <= floor + .12, verticalVelocity: state.velocity.y,
+        speed: state.currentAction?.parameters.basement || sixthRoot || entry.mirrorGuide || entry.oracleGuide || entry.ambushGuide || entry.wetwallGuide ? guideSpeed : velocity, grounded: Boolean(state.currentAction?.parameters.riding || state.currentAction?.parameters.climbing || state.currentAction?.parameters.wetwall) || state.position.y <= floor + .12, verticalVelocity: state.velocity.y,
         turn: difference * 8, attack: state.currentAction?.type === 'attack' ? Number(state.currentAction.parameters.contactTick ?? state.currentAction.startedAt) : undefined,
         hit: entry.hit, impact: entry.impact, shot: entry.shot, windingUp: warning,
         armed: state.currentAction?.parameters.armed === true || !state.currentAction?.parameters.lobbyEntry && state.currentLocation === 'film_government_lobby' && ['neo', 'trinity'].includes(id),
         ambushEscort: state.currentAction?.parameters.ambushEscort as MotionInput['ambushEscort'],
         wetwall: state.currentAction?.parameters.wetwall as MotionInput['wetwall'],
+        basement: state.currentAction?.parameters.basement as MotionInput['basement'],
+        tvExit: state.currentAction?.parameters.tvExit as MotionInput['tvExit'],
         sixth: sixthGesture,
         crouching: state.currentAction?.parameters.crouching === true,
         seated: state.currentAction?.parameters.seated === true,
@@ -284,7 +288,7 @@ export class AgentRenderer {
       // self image even though the represented place is the real world.
       input.realWorld = !state.isInMatrix && state.currentLocation !== 'film_real_desert';
       if (input.wetwall && !input.sixth && id !== this.playerId && entry.wetwallGuide) {
-        const progress = entry.wetwallGuide.progress, wall = input.wetwall, pose = wetwallPose(wall.start, wall.role, progress, wall.phase, wall.elapsed, wall.fallY);
+        const progress = entry.wetwallGuide.progress, wall = input.wetwall, pose = wetwallPose(wall.start, wall.role, progress, wall.phase, wall.elapsed, wall.fallY, wall.continued);
         input.wetwall = { ...wall, progress, hanging: pose.hanging }; input.climbing = pose.hanging ? 0 : undefined;
       }
       input.podRescue = journey?.scene === 'm1_pod' && !journey.visiting && input.performance === 'lift' && journey.awakening?.kind === 'rescue'

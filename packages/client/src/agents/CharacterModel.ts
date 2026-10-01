@@ -10,6 +10,8 @@ import { poseOracleArrival } from './OracleArrivalPerformance.js';
 import { poseWetwall } from './WetwallPerformance.js';
 import { poseSixthFloor } from './SixthFloorPerformance.js';
 import { poseBathroom } from './BathroomPerformance.js';
+import { poseBasement, poseHardline } from './BasementPerformance.js';
+import { HardlineHandset } from './HardlineHandset.js';
 import { advanceMotion, newMotion, type MotionInput, type MotionState } from './CharacterMotion.js';
 import { HERO_IDS, HeroModels, type HeroId, type HeroRig, type HeroSupport } from './HeroModel.js';
 import { SpoonModel } from './SpoonModel.js';
@@ -63,6 +65,7 @@ export interface CharacterRig {
   weapons?: THREE.Group[];
   spoon?: SpoonModel;
   phone?: PhoneModel;
+  handset?: HardlineHandset;
   cookie?: THREE.Group;
   staff?: THREE.Group;
   chateauBlade?: { weapon: ChateauWeapon; model: THREE.Group };
@@ -89,6 +92,7 @@ export class CharacterModels {
   private skeletons = new Set<THREE.Skeleton>();
   private spoons = new Set<SpoonModel>();
   private phones = new Set<PhoneModel>();
+  private handsets = new Set<HardlineHandset>();
   private sphere = this.geometry(new THREE.SphereGeometry(1, 16, 12));
   private cylinder = this.geometry(new THREE.CylinderGeometry(1, 1, 1, 12));
   private box = this.geometry(new THREE.BoxGeometry(1, 1, 1));
@@ -598,6 +602,9 @@ export class CharacterModels {
       poseWetwall(rig, input.wetwall);
       poseSixthFloor(rig, input.sixth);
       poseBathroom(rig, input.bathroom, input.sixth);
+      poseBasement(rig, input.basement);
+      if (input.tvExit?.role === 'neo' && !rig.handset) { rig.handset = new HardlineHandset(); this.handsets.add(rig.handset); rig.hero.bones.get('wrist_R')!.add(rig.handset.root); }
+      poseHardline(rig, input.tvExit);
       if (holdsStaff) {
         rig.hero.bones.get('shoulder_R')!.rotation.x -= .7 + staffSweep * .5;
         rig.hero.bones.get('shoulder_L')!.rotation.x -= .55 + staffSweep * .35;
@@ -681,6 +688,7 @@ export class CharacterModels {
     poseOracleArrival(rig, input.oracleArrival);
     poseWetwall(rig, input.wetwall);
     poseSixthFloor(rig, input.sixth);
+    poseBasement(rig, input.basement);
     if (input.training?.kind === 'download' && input.training.role === 'tank') {
       const engaged = input.training.elapsed > 0 ? 1 : .35;
       for (let i = 0; i < 2; i++) {
@@ -694,6 +702,7 @@ export class CharacterModels {
 
   dispose(): void {
     this.phones.forEach(phone => phone.dispose());
+    this.handsets.forEach(handset => handset.dispose());
     this.spoons.forEach(spoon => spoon.dispose());
     this.heroes.dispose();
     this.geometries.forEach(geometry => geometry.dispose()); this.materials.forEach(material => material.dispose()); this.textures.forEach(texture => texture.dispose()); this.skeletons.forEach(skeleton => skeleton.dispose());

@@ -20,6 +20,7 @@ import { SPOON_LESSON, ORACLE_ENTRANCE, ORACLE_RECEPTION_CAST, spoonLessonLocked
 import { AMBUSH_STAIRS, AMBUSH_CAT_STAIRS } from './ambush.js';
 import { ambushEscapeTarget } from './ambush-escape.js';
 import { WETWALL } from './wetwall.js';
+import { BASEMENT, basementRouteRoot, basementRouteLength, basementTunnelRoot, BASEMENT_TUNNEL_LENGTH, TV_EXIT } from './basement-escape.js';
 
 export type FilmCue = 'night' | 'contact' | 'office' | 'club' | 'awakening' | 'training' | 'oracle' | 'infiltration' | 'combat' | 'the_one' | 'zion' | 'swarm' | 'restaurant' | 'chateau' | 'chase' | 'source' | 'mobil' | 'siege' | 'bane' | 'farewell' | 'final' | 'dawn';
 export interface FilmStep {
@@ -132,6 +133,8 @@ export interface FilmJourney {
   ambushEscape?: import('./ambush-escape.js').AmbushEscape;
   wetwall?: import('./wetwall.js').WetwallEncounter;
   wallExposure?: import('./sixth-floor.js').SixthEncounter;
+  basement?: import('./basement-escape.js').BasementEncounter;
+  tvExit?: import('./basement-escape.js').TvExitEncounter;
   sentinel?: import('./sentinel.js').SentinelEncounter;
   interlude?: import('./interlude.js').InterludeEncounter;
   betrayal?: import('./betrayal.js').BetrayalEncounter;
@@ -255,6 +258,18 @@ export const FILM_SCENES: FilmScene[] = [
     use('留意逼近的特工与 Morpheus 的掩护', 'Smith 抓住 Neo，Morpheus 撞破薄墙，把他带进六楼浴室。', -15.5, -32.2, 0),
   ], ['morpheus', 'trinity', 'apoc', 'switch', 'cypher', 'citizen_4', 'citizen_14', 'smith']),
   scene('m1_bathroom', 1, 'ambush_house', 'morpheus', '为同伴争取时间', 'betrayal', 'combat', 'Morpheus 压制 Smith 并挡住浴室破口，其他人从墙内通道撤离。他必须亲自撑住近身攻防，以被捕换取同伴离开。', [fight('压制 Smith、完成有效反击并掩护同伴撤离', 1, 'smith', 'smith'), use('继续挡住 Smith，把他从撤离线前带开', '同伴继续沿墙内通道撤退，Morpheus 被特工压倒并被捕。争取到的时间没有改写被捕结果，却让其他人继续逃生。', 0, 0)], ['smith', 'neo', 'trinity', 'switch', 'apoc']),
+  scene('m1_basement', 1, 'ambush_house', 'neo', '机械房里的另一条出口', 'betrayal', 'chase', 'Morpheus 留在六楼。Neo 与四名同伴继续沿同一根管道下行，落进锅炉房；搜查者投下烟气，Trinity 正在寻找排水出口。', [
+    use('沿立管下行，落入机械房', '五人落入地下室。Trinity 寻找能通向街外的集水口。', -15.5, -32.2, 0),
+    walk('跟上 Trinity，绕过四台锅炉', 6.8, 26.5),
+    use('示意 Trinity 打开集水口', 'Trinity 抓住侧把手，把沉重的铁格栅撑起。', 9, 22.5, 0),
+    use('让同伴先进入排水道，再下到梯子底端', '四人进入排水道，Cypher 已消失在烟雾里。', 9, 22.5, 0),
+    walk('沿排水道转弯抵达街边出口', 0, 32.2),
+  ], ['trinity', 'apoc', 'switch', 'cypher']),
+  scene('m1_tv_exit', 1, 'tv_repair', 'neo', '电视维修店的硬线', 'betrayal', 'infiltration', 'Tank 提供了 Franklin 与 Erie 的旧电视维修店。Cypher 已先接出，Morpheus 仍活着；Trinity 让 Neo 先使用硬线。', [
+    walk('穿过维修柜台右侧，找到后墙电话', TV_EXIT.approach.x, TV_EXIT.approach.z),
+    use('亲手拿起出口电话', '硬线里的信号消失了，Neo 仍被留在矩阵。', TV_EXIT.approach.x, TV_EXIT.approach.z, 0),
+    use('请 Trinity 联系飞船', 'Cypher 接听了她的手机。他承认背叛，船上的身体正处于危险中。', TV_EXIT.approach.x, TV_EXIT.approach.z, 0),
+  ], ['trinity', 'apoc', 'switch', 'cypher']),
   scene('m1_unplugged', 1, 'neb_deck', 'tank', '背叛发生在现实', 'betrayal', 'bane', 'Cypher 回到飞船袭击 Tank 与 Dozer，并逐一拔除连接。Tank 必须抓住一次短暂的反击窗口，再亲手接回仍有生命信号的 Neo 与 Trinity。', [walk('抵达备用控制台', -7, -14), use('等待枪口偏转，反击并接回两路幸存信号', 'Tank 在短暂窗口内反击，再分别接回 Neo 与 Trinity。Dozer、Apoc 与 Switch 已无法回来。', -7, -14)], ['cypher', 'dozer', 'apoc', 'switch', 'neo', 'trinity']),
   scene('m1_rescue_decision', 1, 'neb_deck', 'neo', '仍然选择去救他', 'rescue', 'oracle', 'Morpheus 面临逼供。Neo 决定返回矩阵营救他，Trinity 坚持同行。', [think('在没有保证时承担责任', '这个决定来自对具体同伴的承诺，而不是已经证明的救世主身份。'), use('请 Tank 准备接入', '两人开始营救准备。', 0, 0)], ['trinity', 'tank']),
   scene('m1_guns', 1, 'white_construct', 'neo', '加载营救装备', 'rescue', 'combat', '构造体里排列着武器架。目标是政府大楼里的 Morpheus。', [use('检查装备架', 'Tank 把大楼入口和撤离路线送入连接。', -7, -12), walk('进入营救程序', 0, -26)], ['trinity']),
@@ -467,6 +482,15 @@ export function oracleActing(journey: FilmJourney): boolean {
       || oracleDepartureLocked(journey.oracle?.departure) || Boolean(journey.oracle?.consultation && !['waiting', 'done'].includes(journey.oracle.consultation.phase))));
 }
 export function filmStepPosition(scene: FilmScene, step: FilmStep, journey?: FilmJourney): Vector3 {
+  if (scene.id === 'm1_basement') {
+    const escape = journey?.basement;
+    const target = escape?.phase === 'tunnel' || escape?.phase === 'done' ? basementTunnelRoot(Math.min(BASEMENT_TUNNEL_LENGTH, (escape.tunnel ?? 0) + 2.5))
+      : escape?.phase === 'searching' ? basementRouteRoot('trinity', Math.min(basementRouteLength('trinity'), escape.company.trinity + 3))
+        : { ...BASEMENT.approach, y: BASEMENT.floor };
+    if (!escape || ['ready', 'descending', 'landing', 'failed'].includes(escape.phase)) return journey ? { ...journey.checkpoint } : filmEntry(scene);
+    return { x: FILM_SETS[scene.set].center.x + target.x, y: FILM_SETS[scene.set].center.y + target.y, z: FILM_SETS[scene.set].center.z + target.z };
+  }
+  if (scene.id === 'm1_tv_exit') return filmPosition(scene.set, TV_EXIT.approach.x, TV_EXIT.approach.z);
   if (scene.id === 'm1_wall_exposed') return journey?.wallExposure ? { ...journey.checkpoint } : { ...filmPosition(scene.set, -15.5, -32.2), y: FILM_SETS[scene.set].center.y - 51.8 };
   if (scene.id === 'm1_bathroom' && journey?.betrayal?.sixth) return { ...filmPosition(scene.set, -15.5, -27.2), y: FILM_SETS[scene.set].center.y - 51.8 };
   if (scene.id === 'm1_wetwall') {
@@ -497,6 +521,8 @@ export function filmStepActionReady(scene: FilmScene, step: FilmStep, position: 
   return step.kind !== 'reach' && step.kind !== 'reflect' && filmStepNear(scene, step, position, matrix, journey);
 }
 export function filmEntry(scene: FilmScene): Vector3 {
+  if (scene.id === 'm1_basement') return { ...filmPosition(scene.set, -15.5, -32.2), y: FILM_SETS[scene.set].center.y - 61.2 };
+  if (scene.id === 'm1_tv_exit') return filmPosition(scene.set, 8.5, 26);
   if (scene.id === 'm1_wall_exposed') return { ...filmPosition(scene.set, -15.5, -32.2), y: FILM_SETS[scene.set].center.y - 51.8 };
   if (scene.id === 'm1_wetwall') return { ...filmPosition(scene.set, -18, -27), y: FILM_SETS[scene.set].center.y + WETWALL.approach.y };
   if (scene.id === 'm1_dejavu') return { ...filmPosition(scene.set, AMBUSH_STAIRS.entry.x, AMBUSH_STAIRS.entry.z), y: FILM_SETS[scene.set].center.y - AMBUSH_STAIRS.rise };

@@ -14,6 +14,7 @@ export interface WetwallEncounter {
 export interface WetwallGesture {
   role: WetwallRole; phase: WetwallPhase; elapsed: number; progress: number; entry: number; hanging: boolean; freed: boolean; start: Vector3;
   fallY?: number;
+  continued?: boolean;
 }
 export const WETWALL = { breakSeconds: 2.6, impact: 1.25, rescueSeconds: 2.4, speed: 1.35, jam: 9.4, spacing: 5.4,
   approach: { x: -18, y: WETWALL_SHAFT.top, z: -28.4 },
@@ -34,7 +35,7 @@ export function wetwallEntry(encounter: WetwallEncounter, role: WetwallRole): nu
 export function wetwallRoot(encounter: WetwallEncounter, role: WetwallRole, progress = encounter.progress[role]) {
   return wetwallPose(encounter.starts[role], role, progress, encounter.phase, encounter.elapsed, encounter.fallY);
 }
-export function wetwallPose(start: Vector3, role: WetwallRole, progress: number, phase: WetwallPhase, elapsed: number, fallY?: number) {
+export function wetwallPose(start: Vector3, role: WetwallRole, progress: number, phase: WetwallPhase, elapsed: number, fallY?: number, continued = false) {
   if (role === 'neo' && phase === 'breaking') {
     const impact = Math.min(1, elapsed / WETWALL.impact), withdraw = Math.max(0, Math.min(1, (elapsed - WETWALL.impact) / (WETWALL.breakSeconds - WETWALL.impact)));
     const z = elapsed < WETWALL.impact ? start.z - .8 * impact : start.z - .8 + (-26.9 - start.z + .8) * withdraw;
@@ -49,7 +50,7 @@ export function wetwallPose(start: Vector3, role: WetwallRole, progress: number,
       yaw: i === points.length - 1 ? Math.PI : Math.atan2(b.x - a.x, b.z - a.z),
       hanging: i === points.length - 1 || a.z + (b.z - a.z) * t < WETWALL_SHAFT.front - 1 };
   }
-  const depth = Math.min(WETWALL_SHAFT.top - WETWALL_SHAFT.low, remaining);
+  const depth = continued ? remaining : Math.min(WETWALL_SHAFT.top - WETWALL_SHAFT.low, remaining);
   const rescue = phase === 'rescuing' ? Math.sin(Math.min(1, elapsed / WETWALL.rescueSeconds) * Math.PI) : 0;
   return { x: WETWALL.lanes[role] + (role === 'trinity' ? rescue * .25 : 0),
     y: role === 'neo' && fallY !== undefined ? fallY : WETWALL_SHAFT.top - depth + (role === 'cypher' ? rescue * .16 : 0),

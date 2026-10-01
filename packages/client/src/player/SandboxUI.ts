@@ -6,6 +6,7 @@ import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_NAMES, filmReflections, 
 import './sandbox.css';
 import { AMBUSH_ESCAPE, ambushEscapeTarget, ambushEscapeText } from '@auto_matrix/shared';
 import { WETWALL, wetwallText, wetwallEntry, sixthText } from '@auto_matrix/shared';
+import { BASEMENT, TV_EXIT, basementRouteLength, basementText, tvExitText } from '@auto_matrix/shared';
 import { renderNeoLife } from './NeoLifePanel.js';
 import { interrogationLocked, interrogationPose } from '@auto_matrix/shared';
 import { meetingBoardPoint, meetingLocked, MEETING_TIMING } from '@auto_matrix/shared';
@@ -208,6 +209,8 @@ export class SandboxUI {
     this.el('film-sequence').classList.toggle('ambush-observing', Boolean(!journey.visiting && scene.id === 'm1_dejavu'
       && journey.step === 0 && journey.ambushApproach?.stairCat && journey.ambush));
     this.el('film-sequence').classList.toggle('bathroom-duel', Boolean(!journey.visiting && scene.id === 'm1_bathroom' && journey.betrayal?.fight));
+    this.el('film-sequence').classList.toggle('basement-escape', Boolean(!journey.visiting && scene.id === 'm1_basement'));
+    this.el('film-sequence').classList.toggle('tv-repair', Boolean(!journey.visiting && scene.id === 'm1_tv_exit'));
     const escapedScan = scene.id === 'm1_bug' && journey.office?.outcome === 'escaped';
     const stepLabel = escapedScan ? ['配合安全扫描', '重新判断今晚的接头', step?.label][journey.step] : step?.label;
     const ambushCenter = FILM_SETS.film_ambush_house.center;
@@ -267,6 +270,36 @@ export class SandboxUI {
     document.getElementById('game-objective')!.textContent = journey.visiting ? set.name : escapedScan ? '确认没有被追踪'
       : scene.id === 'm1_wake_again' && journey.office?.outcome === 'escaped' ? '第二次来电' : scene.title;
     document.getElementById('game-objective-copy')!.textContent = journey.visiting ? '自由走动，J 返回保存的剧情位置。' : scene.id === 'm3_dock_battle' && journey.dockGunnery?.phase === 'failed' ? 'APU 防线失守 · 从剧情检查点重试' : journey.fighting ? 'F 连击 · X 闪避 · 1 治疗 · 击败追兵后继续' : step ? `${journey.step + 1}/${scene.steps.length} · ${stepLabel} · ${step.kind === 'reach' ? '走到标记旁' : step.kind === 'reflect' ? '靠近后按 J 记录反思' : '靠近后按 G'}` : 'G 继续下一段，J 查看刚刚发生的事。';
+    if (!journey.visiting && scene.id === 'm1_basement' && journey.basement) {
+      const encounter = journey.basement, phase = encounter.phase;
+      const gap = Math.hypot(player.position.x - ambushCenter.x - BASEMENT.approach.x, player.position.z - ambushCenter.z - BASEMENT.approach.z);
+      const companyReady = (['apoc', 'switch'] as const).every(role => encounter.company[role] >= basementRouteLength(role) - .05);
+      const acting = !encounter.paused && (phase === 'ready' || phase === 'done' || phase === 'searching' && journey.step === 2 && gap <= 4 || phase === 'hatch_ready' && gap <= 1.2 && companyReady);
+      const hint = encounter.paused ? '等候同行者释放角色 · V 切换视角' : phase === 'failed' ? 'J 手记 · 从撤离检查点重试' : phase === 'descending' ? 'W 下行 · S 退回 · 松开按键抓稳 · 空格松手'
+        : phase === 'searching' ? journey.step === 2 && gap <= 4 ? 'G 请 Trinity 开盖 · Z 压低身体' : 'WASD 跟上 Trinity · 按住 Z 压低身体'
+          : phase === 'hatch_ready' ? companyReady && gap <= 1.2 ? 'G 抓住扶手进入排水道' : '回到洞口前，留出路等待同伴'
+            : phase === 'tunnel' ? 'WASD 低姿移动 · 转过两个弯 · V 切换视角' : phase === 'done' ? 'G 前往电视维修店 · J 手记' : phase === 'ready' ? 'G 抓稳立管继续下行' : '观察同伴动作 · 鼠标环顾 · V 切换视角';
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.toggle('urgent', phase === 'failed' || encounter.air < 35);
+      this.el('film-sequence-line').textContent = basementText(encounter); this.el('film-sequence-hint').textContent = hint;
+      this.el('sandbox-interact').classList.toggle('hidden', !acting); this.el('sandbox-nearby').textContent = phase === 'tunnel' ? '低矮排水道' : '旧楼地下机械房';
+      this.el('sandbox-trace').textContent = `呼吸余量 ${Math.ceil(encounter.air)}% · ${encounter.separated ? 'Cypher 已离队' : '保持同行'}`;
+      this.el('sandbox-job').style.width = `${encounter.air}%`; this.el('sandbox-waypoint').textContent = '';
+      document.getElementById('game-objective')!.textContent = '旧楼伏击 · 地下室撤离'; document.getElementById('game-objective-copy')!.textContent = hint;
+      return;
+    }
+    if (!journey.visiting && scene.id === 'm1_tv_exit' && journey.tvExit) {
+      const encounter = journey.tvExit, center = FILM_SETS.film_tv_repair.center;
+      const close = Math.hypot(player.position.x - center.x - TV_EXIT.approach.x, player.position.z - center.z - TV_EXIT.approach.z) < 1.2;
+      const acting = !encounter.paused && (encounter.phase === 'ready' && journey.step === 1 && close || ['line_dead', 'done'].includes(encounter.phase));
+      const hint = encounter.paused ? '等候同行者释放角色 · V 切换视角' : encounter.phase === 'ready' ? close ? 'G 取下硬线听筒 · V 切换视角' : '从柜台右侧进入维修区，走近后墙电话'
+        : encounter.phase === 'line_dead' ? 'G 请 Trinity 联系船上' : encounter.phase === 'done' ? 'G 切换到 Tank 的现实视角' : '观察电话和同伴的反应 · V 切换视角';
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.toggle('urgent', encounter.phase === 'line_dead');
+      this.el('film-sequence-line').textContent = tvExitText(encounter); this.el('film-sequence-hint').textContent = hint;
+      this.el('sandbox-interact').classList.toggle('hidden', !acting); this.el('sandbox-nearby').textContent = 'Franklin 与 Erie · 电视维修店';
+      this.el('sandbox-trace').textContent = '硬线出口 · Neo 仍在矩阵'; this.el('sandbox-job').style.width = '0'; this.el('sandbox-waypoint').textContent = '';
+      document.getElementById('game-objective')!.textContent = '电视维修店 · 失效的出口'; document.getElementById('game-objective-copy')!.textContent = hint;
+      return;
+    }
     if (!journey.visiting && scene.id === 'm1_wetwall' && journey.wetwall) {
       const wall = journey.wetwall, failed = wall.phase === 'failed', done = wall.phase === 'done';
       const near = distance(player.position, { x: ambushCenter.x + WETWALL.approach.x, y: ambushCenter.y + WETWALL.approach.y, z: ambushCenter.z + WETWALL.approach.z }) <= .65;
@@ -1319,7 +1352,7 @@ export class SandboxUI {
         : journey.step === 0 && !bathroom ? '走到备用控制台 · 到达后自动记录' : '走近目标 · G 继续';
       this.el('sandbox-interact').classList.toggle('hidden', !canAct);
       this.el('sandbox-nearby').textContent = phase === 'window' ? '抓起脉冲步枪反击' : phase === 'reconnect' ? (encounter.rescued ? '接回 Trinity' : '稳住 Neo 的接线')
-        : phase === 'done' ? bathroom ? '转到飞船上的背叛' : '继续营救抉择' : bathroom && phase === 'sacrifice_ready' ? '撞向 Smith' : bathroom ? '开始掩护撤离' : '接通监视画面';
+        : phase === 'done' ? bathroom ? encounter.sixth ? '接回 Neo · 继续地下室撤离' : '转到飞船上的背叛' : '继续营救抉择' : bathroom && phase === 'sacrifice_ready' ? '撞向 Smith' : bathroom ? '开始掩护撤离' : '接通监视画面';
       const duration = phase === 'defending' ? BETRAYAL.bathroom.hold : betrayalDuration(encounter);
       this.el('sandbox-job').style.width = duration > 0 ? `${Math.min(100, encounter.elapsed / duration * 100)}%` : '0';
       if (encounter.sixth || betrayalLocked(journey)) this.el('sandbox-waypoint').textContent = '';

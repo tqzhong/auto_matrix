@@ -1,4 +1,7 @@
 import { createLoungeChair } from './LoungeChair.js';
+import { BasementSetRenderer } from './BasementSetRenderer.js';
+import { TvRepairRenderer } from './TvRepairRenderer.js';
+import { basementLocked, tvExitLocked } from '@auto_matrix/shared';
 import { ReloadedOpeningRenderer } from './ReloadedOpeningRenderer.js';
 import { ReloadedCatchRenderer } from './ReloadedCatchRenderer.js';
 import { ReloadedFinaleRenderer } from './ReloadedFinaleRenderer.js';
@@ -139,6 +142,8 @@ export class FilmSetRenderer {
   private oracleBlocks?: THREE.Group;
   private oracleDoor?: THREE.Group;
   private ambush?: AmbushSetRenderer;
+  private basement?: BasementSetRenderer;
+  private tvRepair?: TvRepairRenderer;
   private pillGlass?: THREE.Group;
   private interrogation?: InterrogationSetRenderer;
   private meeting?: MeetingSetRenderer;
@@ -245,7 +250,9 @@ export class FilmSetRenderer {
         else if (['m3_rain', 'm3_surrender'].includes(sceneId ?? '') && set.id === 'film_smith_avenue') this.smithFinale = new SmithFinaleRenderer(this.root);
         else if (['m1_dojo', 'm1_jump', 'm1_red_dress'].includes(sceneId ?? '')) this.training = new TrainingSetRenderer(this.root, sceneId!);
         else if (sceneId === 'm1_sentinels') this.sentinel = new SentinelSetRenderer(this.root);
+        else if (set.id === 'film_ambush_house' && sceneId === 'm1_basement') this.basement = new BasementSetRenderer(this.root);
         else if (set.id === 'film_ambush_house') this.ambush = new AmbushSetRenderer(this.root);
+        else if (set.id === 'film_tv_repair') this.tvRepair = new TvRepairRenderer(this.root);
         else if (set.id === 'film_agent_interrogation') this.interrogation = new InterrogationSetRenderer(this.root);
         else if (set.id === 'film_adams_bridge' || set.id === 'film_extraction_car') this.meeting = new MeetingSetRenderer(this.root);
         else {
@@ -388,6 +395,8 @@ export class FilmSetRenderer {
     this.sentinel?.update(journey, elapsed);
     this.restaurant?.update(journey, elapsed);
     this.ambush?.update(journey, sandbox?.structures ?? [], elapsed);
+    this.basement?.update(journey, cameraPosition);
+    this.tvRepair?.update(journey, this.recoverySubject);
     this.government?.update(journey, elapsed);
     this.matrixEscape?.update(journey, elapsed);
     this.theOne?.update(journey, elapsed);
@@ -557,6 +566,7 @@ export class FilmSetRenderer {
     if (journey?.scene === 'm2_catch' && journey.catch && !journey.visiting) this.marker.visible = false;
     if (journey?.theOne && ['m1_death', 'm1_return', 'm1_final_call'].includes(journey.scene)) this.marker.visible = false;
     if (journey && phoneLocked(journey)) this.marker.visible = false;
+    if (basementLocked(journey) || tvExitLocked(journey)) this.marker.visible = false;
     if (journey && windowOpening(journey)) this.marker.visible = false;
     if (journey?.scene === 'm1_dejavu' && journey.step === 0 && journey.ambush) this.marker.visible = false;
     if (!journey?.visiting && journey?.scene === 'm1_dejavu' && journey.ambushEscape && ['alarm', 'call', 'failed', 'done'].includes(journey.ambushEscape.phase)) this.marker.visible = false;
@@ -685,6 +695,8 @@ export class FilmSetRenderer {
     if (this.theOne && this.current.id === 'film_final_phone') { fog.density = .0012; fog.color.setHex(0xaebfc0); this.scene.environmentIntensity = .9; return { color: 0xffe5be, ambient: .96, sun: 1.7 }; }
     if (this.hotel) { fog.density = .001; this.scene.environmentIntensity = .36; return { color: 0xc8ceba, ambient: .4, sun: .06 }; }
     if (this.ambush) { this.scene.environmentIntensity = .4; return { color: 0xd4ddbe, ambient: .52, sun: .15 }; }
+    if (this.basement) { fog.color.setHex(0x1a211c); fog.density = .009; this.scene.environmentIntensity = .4; return { color: 0xe0ddc0, ambient: .56, sun: .05 }; }
+    if (this.tvRepair) { fog.color.setHex(0xa6b4a1); fog.density = .0015; this.scene.environmentIntensity = .55; return { color: 0xffebc9, ambient: .8, sun: .2 }; }
     if (this.pods) {
       (this.scene.background as THREE.Color).setHex(0x080f14); fog.color.setHex(0x080f14); fog.density = .005;
       this.scene.environmentIntensity = .45;
@@ -2531,6 +2543,8 @@ export class FilmSetRenderer {
     this.interrogation?.dispose(); this.interrogation = undefined;
     this.pillGlass = undefined;
     this.ambush?.dispose(); this.ambush = undefined;
+    this.basement?.dispose(); this.basement = undefined;
+    this.tvRepair?.dispose(); this.tvRepair = undefined;
     this.oracleVase?.dispose(); this.oracleVase = undefined;
     this.oracleBlocks = undefined;
     this.oracleDoor = undefined;

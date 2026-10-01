@@ -3,6 +3,7 @@ import { CATCH, RELOADED_FINALE, HEL_COATCHECK, OPENING_ESCAPE, OPENING_HOTEL, c
 import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_NAMES, ARCHITECT_DOOR_SECONDS, filmReflections, CHARACTERS, filmStepPosition, distance, dockPowerOffline, AWAKENING_SECONDS, oracleActing, helElevatorLocked, helDanceDoorLocked, interrogationLocked, pillLocked, lafayetteWelcomeLocked, phoneLocked, windowOpening, windowCrossing, awakeningWaiting, trainingLocked, trainingWaiting, theOneLocked, type AgentState, type SandboxState } from '@auto_matrix/shared';
 import './film-journey.css';
 import { ambushEscapeText } from '@auto_matrix/shared';
+import { BASEMENT, TV_EXIT, basementRouteLength, basementText, tvExitText } from '@auto_matrix/shared';
 import { WETWALL, wetwallText, wetwallEntry, sixthText } from '@auto_matrix/shared';
 import { meetingBoardPoint, meetingLocked, MEETING_TIMING } from '@auto_matrix/shared';
 import { filmPosition, HOTEL_DOOR_PROGRESS, CABIN, CABIN_ROUTE_LENGTH } from '@auto_matrix/shared';
@@ -25,6 +26,24 @@ import { trilogyEpilogueLocked, trilogyEpilogueProgress } from '@auto_matrix/sha
 const button = (target: string, label: string, disabled = false) => `<button data-action="life" data-target="film:${target}" ${disabled ? 'disabled' : ''}>${label}</button>`;
 export function renderFilmJourney(player: AgentState, sandbox: SandboxState): string {
   const life = sandbox.neoLife!; const journey = life.journey!; const scene = FILM_SCENE_BY_ID[journey.scene];
+  if (!journey.visiting && scene.id === 'm1_basement' && journey.basement) {
+    const encounter = journey.basement, current = player.id === journey.actor, center = FILM_SETS[scene.set].center;
+    const gap = Math.hypot(player.position.x - center.x - BASEMENT.approach.x, player.position.z - center.z - BASEMENT.approach.z);
+    const crewReady = (['apoc', 'switch'] as const).every(role => encounter.company[role] >= basementRouteLength(role) - .05);
+    const action = !current ? button('resume', '接回 Neo 的视角') : encounter.paused ? '<p>同行者正在被另一位玩家控制，撤离进度已保留。</p>'
+      : encounter.phase === 'failed' ? button('retry', '从撤离检查点重试') : encounter.phase === 'done' ? button('next', '前往电视维修店 →')
+        : encounter.phase === 'ready' ? button('act', '抓稳立管继续下行 · G') : encounter.phase === 'searching' && journey.step === 2 ? button('act', '请 Trinity 打开集水口 · G', gap > 4)
+          : encounter.phase === 'hatch_ready' ? button('act', '抓住扶手进入排水道 · G', gap > 1.2 || !crewReady) : '<p>合上手记继续撤离，等待不会代替行走。</p>';
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>地下机械房 · 排水道</h3><p>Neo 视角 · 烟气与同行者会影响撤离</p></header><article class="film-now"><div><p>${basementText(encounter)}</p><div class="film-controls">${action}</div><small>W / S 沿立管移动 · WASD 走动 · Z 压低身体 · G 开盖与下洞 · V 切换视角<br>呼吸余量 ${Math.ceil(encounter.air)}% · 第 ${encounter.attempts + 1} 次尝试</small></div></article></div>`;
+  }
+  if (!journey.visiting && scene.id === 'm1_tv_exit' && journey.tvExit) {
+    const encounter = journey.tvExit, current = player.id === journey.actor, center = FILM_SETS[scene.set].center;
+    const close = Math.hypot(player.position.x - center.x - TV_EXIT.approach.x, player.position.z - center.z - TV_EXIT.approach.z) < 1.2;
+    const action = !current ? button('resume', '接回 Neo 的视角') : encounter.paused ? '<p>同行者正在被另一位玩家控制，电话动作已保留。</p>'
+      : encounter.phase === 'done' ? button('next', '切换到 Tank 的现实视角 →') : encounter.phase === 'line_dead' ? button('act', '请 Trinity 联系船上 · G')
+        : encounter.phase === 'ready' && journey.step === 1 ? button('act', '取下硬线听筒 · G', !close) : '<p>合上手记，走近电话并观察同伴的反应。</p>';
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>Franklin 与 Erie · 电视维修店</h3><p>硬线失效后，四人仍留在矩阵里</p></header><article class="film-now"><div><p>${tvExitText(encounter)}</p><div class="film-controls">${action}</div><small>WASD 穿过柜台右侧 · G 取听筒 / 联系船上 · V 切换视角</small></div></article></div>`;
+  }
   if (!journey.visiting && scene.id === 'm1_wetwall' && journey.wetwall) {
     const wall = journey.wetwall, current = player.id === journey.actor, center = FILM_SETS[scene.set].center;
     const near = distance(player.position, { x: center.x + WETWALL.approach.x, y: center.y + WETWALL.approach.y, z: center.z + WETWALL.approach.z }) <= .65;
@@ -455,7 +474,7 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
     else if (phase === 'window') action = button('act', '抓起步枪反击 · G', !current);
     else if (phase === 'failed') action = button('retry', '从备用控制台重试', !current);
     else if (phase === 'reconnect') action = button('act', (encounter.rescued ?? 0) ? '接回 Trinity · G' : '稳住 Neo 的接线 · G', !current);
-    else if (phase === 'done') action = button('next', bathroom ? '转到飞船上的背叛 →' : '继续营救抉择 →', !current);
+    else if (phase === 'done') action = button('next', bathroom ? encounter.sixth ? '接回 Neo · 继续地下室撤离 →' : '转到飞船上的背叛 →' : '继续营救抉择 →', !current);
     else action = '<button disabled>合上手记，观察当前动作</button>';
     const duration = phase === 'defending' ? BETRAYAL.bathroom.hold : betrayalDuration(encounter);
     const progress = duration > 0 && (phase === 'defending' || betrayalLocked(journey))

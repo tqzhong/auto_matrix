@@ -13,6 +13,7 @@ import { officeClothing } from '@auto_matrix/shared';
 import { cabinSeat, MORNING, POD_RESCUE, podRescuePose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
 import { ambushCat } from '@auto_matrix/shared';
 import { wetwallPose, sixthPose, bathroomFightRoot, WETWALL, WETWALL_SHAFT, type WetwallPhase } from '@auto_matrix/shared';
+import { BASEMENT, basementBlocked } from '@auto_matrix/shared';
 
 export class PlayerControls {
   id: string | null = null;
@@ -429,6 +430,13 @@ export class PlayerControls {
     if (this.inOfficeLift && !inOfficeLift) this.performing = false;
     if (inOfficeLift) this.performing = true;
     this.inOfficeLift = inOfficeLift;
+    const basement = state.currentAction?.parameters.basement as MotionInput['basement'];
+    const tvExit = state.currentAction?.parameters.tvExit as MotionInput['tvExit'];
+    if (this.motion.basement && !basement || this.motion.tvExit && !tvExit) this.performing = false;
+    if (basement) this.performing = Boolean(basement.paused || ['ready', 'descending', 'landing', 'draining', 'tunnel', 'done', 'failed'].includes(basement.phase));
+    if (tvExit) this.performing = Boolean(tvExit.paused || ['pickup', 'line_dead', 'calling'].includes(tvExit.phase));
+    if (Boolean(this.motion.basement?.crawling) !== Boolean(basement?.crawling)) this.cameraReady = false;
+    this.motion.basement = basement; this.motion.tvExit = tvExit;
     if (this.wasPerforming && !this.performing) this.yaw = this.movementYaw = this.facing;
     if (redPillEnded) this.yaw = this.movementYaw = this.facing = state.rotation;
     if (bridgeCaptureStarting) this.yaw = this.movementYaw = Math.atan2(bridgeCaught!.x - state.position.x, bridgeCaught!.z - state.position.z);
@@ -480,7 +488,7 @@ export class PlayerControls {
       const track = this.wetwallGuide!;
       if (running) track.elapsed = Math.min(.5, track.elapsed + delta);
       track.progress = THREE.MathUtils.lerp(track.from, track.to, track.elapsed / .5);
-      const pose = wetwallPose(wall.start, wall.role, track.progress, wall.phase, wall.elapsed, wall.fallY);
+      const pose = wetwallPose(wall.start, wall.role, track.progress, wall.phase, wall.elapsed, wall.fallY, wall.continued);
       this.motion.wetwall = { ...wall, progress: track.progress, hanging: pose.hanging };
     } else { this.motion.wetwall = undefined; this.wetwallGuide = undefined; }
     this.motion.betrayal = state.currentAction?.parameters.betrayal as MotionInput['betrayal'];
@@ -602,7 +610,7 @@ export class PlayerControls {
       this.position = { x: center.x + pose.x, y: center.y + pose.y, z: center.z + pose.z };
       this.facing = pose.yaw; this.vy = 0; this.planar = { x: 0, z: 0 }; this.localJump = false;
     } else if (wall && wall.phase !== 'sealed' && !['falling', 'failed'].includes(wall.phase)) {
-      const track = this.wetwallGuide!, pose = wetwallPose(wall.start, wall.role, track.progress, wall.phase, wall.elapsed), center = FILM_SETS.film_ambush_house.center;
+      const track = this.wetwallGuide!, pose = wetwallPose(wall.start, wall.role, track.progress, wall.phase, wall.elapsed, wall.fallY, wall.continued), center = FILM_SETS.film_ambush_house.center;
       this.position = { x: center.x + pose.x, y: center.y + pose.y, z: center.z + pose.z };
       this.facing = pose.yaw; this.vy = 0; this.planar = { x: 0, z: 0 }; this.localJump = false;
     } else if (this.ride || this.climbing || this.performing) {
@@ -634,7 +642,7 @@ export class PlayerControls {
     this.hangingWetwall = hanging;
     if (mirrorStarting && this.firstPerson && now - this.lastLook > 900) this.aimAtMirror();
     const dx = this.position.x - previous.x; const dz = this.position.z - previous.z;
-    this.motion.speed = wall && !hanging ? Math.hypot(dx, dz) / Math.max(delta, .001) : this.ride || this.climbing || this.performing ? 0 : Math.hypot(dx, dz) / Math.max(delta, .001);
+    this.motion.speed = basement?.crawling || wall && !hanging ? Math.hypot(dx, dz) / Math.max(delta, .001) : this.ride || this.climbing || this.performing ? 0 : Math.hypot(dx, dz) / Math.max(delta, .001);
     if (this.motion.spoonLesson?.phase === 'sitting' && this.motion.spoonLesson.elapsed < 1.1) this.motion.speed = Math.hypot(state.velocity.x, state.velocity.z);
     if (this.motion.wakeCall?.phase === 'waking' && this.motion.wakeCall.elapsed > 2.7 && this.motion.morning?.phase !== 'lying') this.motion.speed = 1.45;
     if (this.motion.wakeCall?.phase === 'leaving' && this.motion.wakeCall.elapsed > 1.15 && this.motion.wakeCall.elapsed < 3.05) this.motion.speed = 1.35;
@@ -642,7 +650,7 @@ export class PlayerControls {
     this.motion.verticalVelocity = wall?.role === 'neo' && wall.phase === 'falling' ? state.velocity.y : this.vy;
     this.motion.inspecting = Boolean((this.motion.pills || this.motion.interrogation || this.motion.welcome || this.motion.knock !== undefined || this.motion.recovery !== undefined || this.motion.cabin || this.motion.reveal || this.motion.training || this.motion.workday || this.motion.wakeCall || this.motion.sentinel || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || this.motion.lobbyEntry) && !this.firstPerson) || Boolean(this.phone && this.performing && this.motion.window === undefined && this.motion.crossing === undefined) || !this.firstPerson && this.spoon !== undefined && this.enabled && this.motion.speed < .25 && this.motion.grounded;
     const attacking = (now - this.lastAttack) / 1000 < MELEE_COMBO[this.attackCombo].duration;
-    const heading = this.motion.bathroom ? bathroomFightRoot(this.motion.bathroom, this.motion.bathroom.role).yaw : this.motion.sixth ? sixthPose(this.motion.sixth).yaw : this.motion.wetwall && this.wetwallGuide ? wetwallPose(this.motion.wetwall.start, this.motion.wetwall.role, this.wetwallGuide.progress, this.motion.wetwall.phase, this.motion.wetwall.elapsed).yaw
+    const heading = this.motion.bathroom ? bathroomFightRoot(this.motion.bathroom, this.motion.bathroom.role).yaw : this.motion.sixth ? sixthPose(this.motion.sixth).yaw : this.motion.wetwall && this.wetwallGuide ? wetwallPose(this.motion.wetwall.start, this.motion.wetwall.role, this.wetwallGuide.progress, this.motion.wetwall.phase, this.motion.wetwall.elapsed, this.motion.wetwall.fallY, this.motion.wetwall.continued).yaw
       : this.ride || this.climbing || this.performing ? state.rotation : attacking ? this.attackYaw : this.firearm ? this.yaw : this.motion.speed > .1 ? Math.atan2(dx, dz) : this.facing;
     const turn = Math.atan2(Math.sin(heading - this.facing), Math.cos(heading - this.facing));
     this.facing += turn * (this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.welcome || this.motion.knock !== undefined || this.motion.training || this.motion.workday || this.motion.wakeCall || this.motion.sentinel || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || this.motion.lobbyEntry ? 1 : 1 - Math.exp(-14 * delta)); this.motion.turn = turn * 8;
@@ -679,7 +687,7 @@ export class PlayerControls {
     const cabinWide = !this.firstPerson && Boolean(this.motion.cabin);
     const bathroomWide = !this.firstPerson && Boolean(this.motion.bathroom);
     this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, inOfficeLift && !this.firstPerson ? 80 : bathroomWide ? this.camera.aspect < .85 ? 78 : 58 : podWide ? 65 : this.motion.truth && !this.firstPerson && this.camera.aspect < .85 ? 68 : cabinWide ? this.camera.aspect < .85 ? 68 : 58 : smithFinaleWide || epilogueWide ? 64 : ladderWide ? 62 : interviewApproach ? 70 : interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide || sentinelWide || interludeWide || oracleWide || betrayalWide || rescueWide || governmentWide || airRescueWide || escapeWide || oneWide || catchWide || lobbyWide || pillDepartureWide ? 58 : this.motion.inspecting ? 42 : this.firstPerson ? this.motion.mirrorBeat !== undefined ? 78 : sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
-    this.camera.near = this.firstPerson && (this.motion.bathroom || this.motion.sixth || this.motion.wetwall?.hanging) ? .06 : this.firstPerson && this.motion.club ? .08 : this.defaultNear;
+    this.camera.near = basement?.crawling || this.firstPerson && (this.motion.bathroom || this.motion.sixth || this.motion.wetwall?.hanging) ? .06 : this.firstPerson && this.motion.club ? .08 : this.defaultNear;
     this.camera.updateProjectionMatrix();
     this.cameraStep += this.motion.speed * delta;
     const target = new THREE.Vector3(this.position.x, this.position.y + (this.firstPerson ? 2.99 : 2.05) - (this.motion.pills ? .9 : 0) - (this.motion.mirrorBeat !== undefined ? THREE.MathUtils.smoothstep(this.motion.mirrorBeat, .65, MIRROR_TIMING.sit) * .9 : 0) - (this.motion.reveal?.kind === 'construct' ? .62 : 0) - (this.motion.crouching ? 1.1 : 0), this.position.z);
@@ -1146,6 +1154,32 @@ export class PlayerControls {
           : new THREE.Vector3(this.position.x, this.position.y + 2.25, center.z + WETWALL_SHAFT.bodyZ);
         if (resetCamera) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-10 * delta));
         this.camera.lookAt(focus);
+      }
+    } else if (basement?.crawling) {
+      const center = FILM_SETS.film_ambush_house.center, floor = Math.max(center.y - 1 + BASEMENT.tunnelFloor, this.position.y - 1);
+      group.updateWorldMatrix(true, true);
+      const head = group.getObjectByName('head');
+      const focus = new THREE.Vector3(this.position.x, floor + 2.45, this.position.z);
+      const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
+      if (this.firstPerson) {
+        const eye = head ? head.localToWorld(new THREE.Vector3(0, .1, .32)) : focus;
+        eye.y = THREE.MathUtils.clamp(eye.y, floor + .4, floor + BASEMENT.tunnelHeight - .15);
+        this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
+      } else if (basement.phase === 'draining' && this.position.y > center.y + BASEMENT.tunnelFloor + .1) {
+        this.camera.position.set(center.x + BASEMENT.grate.x + .95, center.y - 1 + BASEMENT.floor + 3.15, center.z + BASEMENT.grate.z + .65);
+        this.camera.lookAt(focus);
+      } else {
+        const right = new THREE.Vector3(Math.cos(this.yaw), 0, -Math.sin(this.yaw));
+        const shoulder = focus.clone().addScaledVector(right, .95);
+        const behind = Math.min(2.8, Math.max(1.05, this.position.z - center.z - BASEMENT.grate.z + 1.05));
+        const ideal = shoulder.clone().addScaledVector(forward, -behind); ideal.y = floor + BASEMENT.tunnelHeight - .2;
+        let distance = 0;
+        for (let t = .05; t <= 1; t += .05) {
+          const sample = focus.clone().lerp(ideal, t);
+          if (basementBlocked(sample.x - center.x, sample.y - center.y + 1, sample.z - center.z, .14)) break;
+          distance = t;
+        }
+        this.camera.position.copy(focus.clone().lerp(ideal, distance)); this.camera.lookAt(shoulder.clone().addScaledVector(forward, 2.5));
       }
     } else if (this.motion.wetwall?.hanging) {
       const center = FILM_SETS.film_ambush_house.center;

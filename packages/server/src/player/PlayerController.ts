@@ -56,6 +56,7 @@ export class PlayerController {
     if (SENTINEL_CAST.includes(id as typeof SENTINEL_CAST[number]) && this.sandbox?.life.film.state && sentinelActive(this.sandbox.life.film.state) && this.sandbox.life.film.state.sentinel?.phase !== 'ready') return { error: '这个角色正在参与静默潜航，哨兵离开后可以接入。' };
     const interlude = this.sandbox?.life.film.state;
     const interludeScene = interlude && interludeKind(interlude.scene);
+    if (interlude && !interlude.visiting && ['m1_basement', 'm1_tv_exit'].includes(interlude.scene) && id !== interlude.actor && ['trinity', 'apoc', 'switch', 'cypher'].includes(id)) return { error: '这个角色正在参与旧楼撤离，抵达出口后可以接入。' };
     if (interlude && interludeScene && id !== interlude.actor && (INTERLUDE_CAST[interludeScene] as readonly string[]).includes(id) && interludeLocked(interlude)) return { error: '这个角色正在参与当前电影片段，表演结束后可以接入。' };
     const betrayalRoles = interlude?.betrayal?.kind === 'bathroom' ? ['neo', 'trinity', 'morpheus', 'smith', 'switch', 'apoc', ...(interlude.betrayal.sixth ? ['cypher'] : [])] : ['neo', 'trinity', 'tank', 'cypher', 'dozer', 'switch', 'apoc'];
     const betrayalActive = interlude?.betrayal && !['ready', 'failed', 'done'].includes(interlude.betrayal.phase);
@@ -152,7 +153,7 @@ export class PlayerController {
     this.sandbox?.life.film.oracleFrame(agent, false, 0, tick);
     this.sandbox?.life.film.ambushEscapeFrame(agent, 0, tick);
     this.sandbox?.life.film.wetwall.frame(agent, { climb: 0, jump: false }, 0, tick);
-    this.sandbox?.life.film.sixth.frame(agent, { crouch: false, yaw: agent.rotation }, 0, tick);
+    this.sandbox?.life.film.sixth.frame(agent, { crouch: false, yaw: agent.rotation }, 0, tick); this.sandbox?.life.film.basement.frame(agent, {}, 0, tick);
     this.sandbox?.life.film.betrayalFrame(agent, 0, tick);
     this.sandbox?.life.film.rescueFrame(agent, 0, tick);
     this.sandbox?.life.film.governmentFrame(agent, false, 0, tick);
@@ -192,7 +193,7 @@ export class PlayerController {
       this.sandbox?.life.film.persephoneFrame(agent, 0, tick);
       this.sandbox?.life.film.keymakerFrame(agent, 0, tick);
       this.sandbox?.life.film.interludeFrame(agent, 0, tick);
-      this.sandbox?.life.film.sixth.frame(agent, { crouch: false, yaw: agent.rotation }, 0, tick);
+      this.sandbox?.life.film.sixth.frame(agent, { crouch: false, yaw: agent.rotation }, 0, tick); this.sandbox?.life.film.basement.frame(agent, {}, 0, tick);
       this.sandbox?.life.film.betrayalFrame(agent, 0, tick);
       this.sandbox?.life.film.rescueFrame(agent, 0, tick);
       this.sandbox?.life.film.governmentFrame(agent, false, 0, tick);
@@ -246,7 +247,7 @@ export class PlayerController {
     }
     for (const session of this.sessions.values()) {
       const agent = this.world.agents.get(session.agentId)!;
-      if (!running || agent.status !== 'alive') { this.sandbox?.life.film.sixth.frame(agent, { crouch: false, yaw: agent.rotation }, 0, tick); this.sandbox?.life.film.wetwall.frame(agent, { climb: 0, jump: false }, 0, tick); agent.velocity = { x: 0, y: 0, z: 0 }; this.sandbox?.life.film.hotelFrame(agent, 0, tick); this.sandbox?.life.film.sentinelFrame(agent, { movement: 0, sprint: false, jump: false }, 0, tick); this.sandbox?.life.film.interludeFrame(agent, 0, tick); this.sandbox?.life.film.betrayalFrame(agent, 0, tick); this.sandbox?.life.film.rescueFrame(agent, 0, tick); this.sandbox?.life.film.governmentFrame(agent, false, 0, tick); this.sandbox?.life.film.airRescueFrame(agent, false, 0, tick); this.sandbox?.life.film.matrixEscapeFrame(agent, { movement: 0, sprint: false }, 0, tick); this.sandbox?.life.film.farewellFrame(agent, 0, tick); this.sandbox?.life.film.deusFrame(agent, false, 0, tick); this.sandbox?.life.film.smithFinaleFrame(agent, { focus: false, x: 0, z: 0, yaw: agent.rotation }, 0, tick); this.sandbox?.life.film.epilogueFrame(agent, 0, tick); this.sandbox?.life.film.theOneFrame(agent, { x: 0, z: 0, sprint: false, jump: false, focus: false }, 0, tick); this.sandbox?.life.film.reloaded.frame(agent, { x: 0, focus: false }, 0, tick); this.sandbox?.life.film.catch.frame(agent, { x: 0, z: 0, focus: false }, 0, tick); this.sandbox?.life.film.mountainFrame(agent, { x: 0, z: 0, yaw: agent.rotation, jump: false, sprint: false }, 0, tick); this.sandbox?.life.film.lobby.frame(agent, 0, tick); session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue; }
+      if (!running || agent.status !== 'alive') { this.sandbox?.life.film.sixth.frame(agent, { crouch: false, yaw: agent.rotation }, 0, tick); this.sandbox?.life.film.basement.frame(agent, {}, 0, tick); this.sandbox?.life.film.wetwall.frame(agent, { climb: 0, jump: false }, 0, tick); agent.velocity = { x: 0, y: 0, z: 0 }; this.sandbox?.life.film.hotelFrame(agent, 0, tick); this.sandbox?.life.film.sentinelFrame(agent, { movement: 0, sprint: false, jump: false }, 0, tick); this.sandbox?.life.film.interludeFrame(agent, 0, tick); this.sandbox?.life.film.betrayalFrame(agent, 0, tick); this.sandbox?.life.film.rescueFrame(agent, 0, tick); this.sandbox?.life.film.governmentFrame(agent, false, 0, tick); this.sandbox?.life.film.airRescueFrame(agent, false, 0, tick); this.sandbox?.life.film.matrixEscapeFrame(agent, { movement: 0, sprint: false }, 0, tick); this.sandbox?.life.film.farewellFrame(agent, 0, tick); this.sandbox?.life.film.deusFrame(agent, false, 0, tick); this.sandbox?.life.film.smithFinaleFrame(agent, { focus: false, x: 0, z: 0, yaw: agent.rotation }, 0, tick); this.sandbox?.life.film.epilogueFrame(agent, 0, tick); this.sandbox?.life.film.theOneFrame(agent, { x: 0, z: 0, sprint: false, jump: false, focus: false }, 0, tick); this.sandbox?.life.film.reloaded.frame(agent, { x: 0, focus: false }, 0, tick); this.sandbox?.life.film.catch.frame(agent, { x: 0, z: 0, focus: false }, 0, tick); this.sandbox?.life.film.mountainFrame(agent, { x: 0, z: 0, yaw: agent.rotation, jump: false, sprint: false }, 0, tick); this.sandbox?.life.film.lobby.frame(agent, 0, tick); session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue; }
       session.stagger = Math.max(0, session.stagger - dt);
       const stale = now - session.lastInput > 300;
       let input = stale ? { ...idleInput(), yaw: session.input.yaw } : session.input;
@@ -256,6 +257,9 @@ export class PlayerController {
       if (sparring) {
         const yaw = Math.atan2(sparring.position.x - agent.position.x, sparring.position.z - agent.position.z);
         input = { ...input, yaw }; session.input.yaw = yaw;
+      }
+      if (this.sandbox?.life.film.basement.frame(agent, input, dt, tick)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
       if (this.sandbox?.life.film.sixth.frame(agent, input, dt, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
@@ -417,6 +421,7 @@ export class PlayerController {
           agent.currentAction = { type: moving ? 'move_to' : 'idle', parameters: { player: true, resolved: true, crouching: input.crouch === true }, startedAt: tick, duration: 1, progress: 0 };
         }
       }
+      this.sandbox?.life.film.basement.frame(agent, input, 0, tick);
       this.sandbox?.life.film.oracleFrame(agent, input.focus === true, dt, tick);
       this.sandbox?.life.film.ambushFrame(agent, dt, tick);
       this.sandbox?.life.film.ambushEscapeFrame(agent, dt, tick);
@@ -447,6 +452,7 @@ export class PlayerController {
     const session = this.sessions.get(socketId);
     const agent = this.getAgent(socketId);
     if (!session || !agent || agent.status !== 'alive') return '请先接入一个存活角色。';
+    if (this.sandbox?.life.film.basement.active(agent) && ['attack', 'dodge', 'shoot', 'ability', 'ability2'].includes(kind)) return '先沿撤离路线脱离烟气，保持同伴之间的通道。';
     const sixth = this.sandbox?.life.film.sixth.handle(agent, kind, session.input.yaw, session.input.pitch ?? 0, tick);
     if (sixth !== undefined) return sixth;
     const bathroom = this.sandbox?.life.film.bathroomAction(agent, kind, tick);

@@ -1,3 +1,4 @@
+import { basementLocked, tvExitLocked, BASEMENT_ROLES } from '@auto_matrix/shared';
 import { metacortexLiftLocked } from '@auto_matrix/shared';
 import { spoonLessonBend } from '@auto_matrix/shared';
 import { AMBUSH_ESCAPE } from '@auto_matrix/shared';
@@ -226,6 +227,13 @@ export class Engine {
   private phoneRingAt = -10000;
   setSandbox(state: SandboxState, agents: Record<string, AgentState>): void {
     const before = this.sandbox?.neoLife?.journey; const after = state.neoLife?.journey;
+    if (after?.scene === 'm1_tv_exit' && !after.visiting && after.actor === this.playerControls?.id && this.running && !after.tvExit?.paused) {
+      const current = after.tvExit, previous = before?.scene === after.scene ? before.tvExit : undefined;
+      if (current?.phase === 'pickup' && previous?.phase === 'pickup' && previous.elapsed < .8 && current.elapsed >= .8) this.audio.landlineSound('pickup');
+      if (current?.phase === 'line_dead' && previous?.phase === 'pickup') this.audio.phoneSound(false);
+      if (current?.phase === 'calling' && previous?.phase === 'line_dead') this.audio.governmentSound('phone');
+      if (current?.phase === 'calling' && previous?.phase === 'calling' && previous.elapsed < 6.6 && current.elapsed >= 6.6) this.audio.landlineSound('hangup');
+    }
     if (after?.scene === 'm1_dejavu' && !after.visiting && after.actor === this.playerControls?.id && this.running && !after.ambushEscape?.paused) {
       const previous = before?.scene === after.scene ? before.ambushEscape : undefined, current = after.ambushEscape;
       if (current?.phase === 'alarm' && !previous) this.audio.governmentSound('rotor');
@@ -439,13 +447,13 @@ export class Engine {
       this.playerControls.ambushObservation = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_dejavu'
         && journey.step === 0 && journey.ambushApproach?.stairCat ? journey.ambush?.elapsed : undefined;
       this.playerControls.ambushCompany = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_dejavu' && journey.ambushEscape
-        ? Object.values(agents).filter(actor => actor.status === 'alive' && Boolean((actor.currentAction?.parameters.ambushEscort as { retreat?: boolean } | undefined)?.retreat)).map(actor => actor.position) : [];
+        ? Object.values(agents).filter(actor => actor.status === 'alive' && Boolean((actor.currentAction?.parameters.ambushEscort as { retreat?: boolean } | undefined)?.retreat)).map(actor => actor.position) : journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_basement' ? BASEMENT_ROLES.filter(role => role !== this.playerControls!.id).map(role => agents[role].position) : [];
       this.playerControls.truckRescue = Boolean(journey?.actor === this.playerControls.id && journey.scene === 'm2_trucks' && !journey.visiting && ['rescue', 'rescued'].includes(journey.trucks?.phase ?? ''));
       const gunner = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm3_dock_battle' && journey.dockGunnery?.phase === 'firing';
       this.playerControls.gunner = gunner;
-      this.playerControls.performing = Boolean(this.playerControls.id === 'neo' && metacortexLiftLocked(state.neoLife?.lift)) || Boolean(journey?.actor === this.playerControls.id && (sixthLocked(journey) || wetwallLocked(journey) || gunner || journey.scene === 'm1_room303' && ['breach', 'dive', 'ladder_ready'].includes(journey.openingHotel?.phase ?? '') || journey.trucks?.phase === 'rescue' || helElevatorLocked(journey) || helDanceDoorLocked(journey) || baneLocked(journey) || meetingLocked(journey) || awakeningLocked(journey) || oracleActing(journey) || phoneLocked(journey) || wakeCallLocked(journey) || morningLocked(journey) || sentinelLocked(journey) || interludeLocked(journey) || rescueLocked(journey) || lobbyLocked(journey) || governmentLocked(journey) || airRescueLocked(journey) || matrixEscapeLocked(journey) || theOneLocked(journey) || reloadedLocked(journey) || windowOpening(journey) || windowCrossing(journey) || pillLocked(journey) || interrogationLocked(journey) || lafayetteKnocking(journey) || lafayetteWelcomeLocked(journey)));
+      this.playerControls.performing = Boolean(this.playerControls.id === 'neo' && metacortexLiftLocked(state.neoLife?.lift)) || Boolean(journey?.actor === this.playerControls.id && (basementLocked(journey) || tvExitLocked(journey) || sixthLocked(journey) || wetwallLocked(journey) || gunner || journey.scene === 'm1_room303' && ['breach', 'dive', 'ladder_ready'].includes(journey.openingHotel?.phase ?? '') || journey.trucks?.phase === 'rescue' || helElevatorLocked(journey) || helDanceDoorLocked(journey) || baneLocked(journey) || meetingLocked(journey) || awakeningLocked(journey) || oracleActing(journey) || phoneLocked(journey) || wakeCallLocked(journey) || morningLocked(journey) || sentinelLocked(journey) || interludeLocked(journey) || rescueLocked(journey) || lobbyLocked(journey) || governmentLocked(journey) || airRescueLocked(journey) || matrixEscapeLocked(journey) || theOneLocked(journey) || reloadedLocked(journey) || windowOpening(journey) || windowCrossing(journey) || pillLocked(journey) || interrogationLocked(journey) || lafayetteKnocking(journey) || lafayetteWelcomeLocked(journey)));
       this.playerControls.mirror = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_mirror' ? mirrorSilver(journey.awakening?.elapsed ?? 0) : 0;
-      this.playerControls.climbing = Boolean(journey?.actor === this.playerControls.id && !journey.visiting && (journey.scene === 'm1_wetwall' && ['climbing', 'jammed', 'rescuing', 'done'].includes(journey.wetwall?.phase ?? '') || journey.scene === 'm1_ledge' && journey.step === 1 && journey.office?.climbed !== undefined || journey.scene === 'm1_room303' && journey.openingHotel?.phase === 'climbing'));
+      this.playerControls.climbing = Boolean(journey?.actor === this.playerControls.id && !journey.visiting && (journey.scene === 'm1_basement' && ['ready', 'descending', 'landing'].includes(journey.basement?.phase ?? '') || journey.scene === 'm1_wetwall' && ['climbing', 'jammed', 'rescuing', 'done'].includes(journey.wetwall?.phase ?? '') || journey.scene === 'm1_ledge' && journey.step === 1 && journey.office?.climbed !== undefined || journey.scene === 'm1_room303' && journey.openingHotel?.phase === 'climbing'));
       this.playerControls.ride = rideForPlayer(journey, this.playerControls.id);
       const coatcheck = journey?.scene === 'm3_hel_entry' && journey.step === 1 && Boolean(journey.fighting) && journey.helCoatcheck?.phase === 'combat';
       const hotel = journey?.scene === 'm1_room303' && journey.step === 1 && journey.openingHotel?.phase === 'combat' && journey.openingHotel.disarmed;

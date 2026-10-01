@@ -1,3 +1,4 @@
+import { TV_EXIT, basementRouteLength } from '@auto_matrix/shared';
 import { CABIN, CABIN_ROUTE_LENGTH, cabinGuidePose, RELOADED, RELOADED_FINALE } from '@auto_matrix/shared';
 import assert from 'node:assert/strict';
 import { AMBUSH_STAIRS } from '@auto_matrix/shared';
@@ -2426,7 +2427,35 @@ test('the entire film route completes through interactions, driving and real com
       assert.equal(state.oracle.arrival.phase, 'done', 'the complete route enters through the door before the spoon lesson');
     }
     for (let index = 0; index < scene.steps.length; index++) {
-      if (scene.id === 'm1_bathroom' && state.betrayal?.fight && index === 0) {
+      if (scene.id === 'm1_basement' || scene.id === 'm1_tv_exit') {
+        const frame = (input: Partial<import('@auto_matrix/shared').PlayerInput> = {}) => {
+          h.players.receiveInput('film-player', { x: 0, z: 0, yaw: h.actor().rotation, jump: false, sprint: false, crouch: true, sequence: ++sequence, ...input });
+          h.players.step(.1, true, h.tick());
+        };
+        const walk = (x: number, z: number) => {
+          const target = filmPosition(scene.set, x, z);
+          for (let i = 0; i < 800; i++) {
+            const actor = h.actor(), dx = target.x - actor.position.x, dz = target.z - actor.position.z, gap = Math.hypot(dx, dz);
+            if (gap < .35 || state.basement?.phase === 'done' && gap < .6) { frame(); return; }
+            frame({ x: dx / Math.max(.6, gap), z: dz / Math.max(.6, gap), yaw: Math.atan2(dx, dz) });
+            assert.ok(i < 799, `${scene.id} blocked at ${x}, ${z}: ${state.lastText}`);
+          }
+        };
+        if (scene.id === 'm1_basement') {
+          if (index === 0) { h.command('act'); for (let i = 0; i < 400 && state.basement!.phase !== 'searching'; i++) frame({ climb: 1 }); }
+          else if (index === 1) { for (const [x,z] of [[-18,-25],[-18,2],[0,2],[0,24],[9,22.5]]) walk(x,z); for(let i=0;i<200&&state.step===index;i++)frame(); }
+          else if (index === 2) { h.command('act'); for(let i=0;i<60&&state.step===index;i++)frame(); }
+          else if (index === 3) {
+            for(let i=0;i<180&&(['apoc','switch'] as const).some(role=>state.basement!.company[role]<basementRouteLength(role)-.05);i++)frame();
+            h.command('act'); for(let i=0;i<450&&state.step===index;i++)frame();
+          } else { walk(9,30);walk(0,30);walk(0,32.2); }
+        } else {
+          if (index === 0) { walk(8.5,-3);walk(-7,-3);walk(TV_EXIT.approach.x,TV_EXIT.approach.z); }
+          else { h.command('act');for(let i=0;i<80&&state.step===index;i++)frame(); }
+        }
+        assert.equal(state.step, index + 1, `${scene.id}: ${scene.steps[index].label}`); continue;
+      }
+      if (scene.id === 'm1_bathroom'  && state.betrayal?.fight && index === 0) {
         h.command('act');
         for (let frame = 0; frame < 400 && state.step === index; frame++) {
           const fight = state.betrayal.fight;

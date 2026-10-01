@@ -202,6 +202,10 @@ test('four timed evades and counters grant retreat time without killing Smith an
   assert.equal(fight().phase, 'done'); assert.equal(h.state().step, 2);
   assert.equal(h.sandbox.state.neoLife!.choices.morpheus_captured, 'sacrifice');
   assert.equal(h.world.agents.get('mouse')!.status, 'dead');
+  for (const [first, second] of [['neo', 'switch'], ['trinity', 'apoc']]) {
+    const a = h.world.agents.get(first)!.position, b = h.world.agents.get(second)!.position;
+    assert.ok(Math.abs(a.y - b.y) >= 5, `${first}/${second} must remain separated when the lower pipe clamps the retreat`);
+  }
 });
 
 test('saved ground pressure freezes across pause, disconnection and another player occupying the descending crew', () => {

@@ -4,6 +4,8 @@ import { ReloadedOpeningSystem } from './ReloadedOpeningSystem.js';
 import { ReloadedCatchSystem } from './ReloadedCatchSystem.js';
 import { WetwallEscapeSystem } from './WetwallEscapeSystem.js';
 import { SixthFloorSystem } from './SixthFloorSystem.js';
+import { BasementEscapeSystem } from './BasementEscapeSystem.js';
+import { basementLocked, tvExitLocked } from '@auto_matrix/shared';
 import { sixthLocked, WETWALL_SHAFT, WETWALL_ROLES, wetwallEntry } from '@auto_matrix/shared';
 import { wetwallLocked } from '@auto_matrix/shared';
 import { newReloaded, reloadedLocked, ZION_CAST } from '@auto_matrix/shared';
@@ -70,11 +72,12 @@ export class FilmStorySystem {
   readonly catch: ReloadedCatchSystem;
   readonly wetwall: WetwallEscapeSystem;
   readonly sixth: SixthFloorSystem;
+  readonly basement: BasementEscapeSystem;
   readonly lobby: LobbyCombatSystem;
   readonly coatcheck: HelCoatcheckSystem;
   readonly openingHotel: OpeningHotelSystem;
   readonly office: OfficeEscapeSystem;
-  constructor(private world: WorldState, private sandbox: () => SandboxState, private returnToLife: (tick: number) => void, private elapse: (minutes: number, tick: number) => void) { this.lobby = new LobbyCombatSystem(world, sandbox); this.coatcheck = new HelCoatcheckSystem(world, sandbox); this.openingHotel = new OpeningHotelSystem(sandbox); this.openingHotel.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.openingHotel.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.office = new OfficeEscapeSystem(sandbox); this.reloaded = new ReloadedOpeningSystem(world, sandbox); this.reloaded.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.reloaded.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.catch = new ReloadedCatchSystem(world, sandbox); this.catch.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.wetwall = new WetwallEscapeSystem(world, sandbox); this.wetwall.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sixth = new SixthFloorSystem(world, sandbox); this.sixth.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sixth.onImpact = (impact, tick) => this.onImpact?.(impact, tick); }
+  constructor(private world: WorldState, private sandbox: () => SandboxState, private returnToLife: (tick: number) => void, private elapse: (minutes: number, tick: number) => void) { this.lobby = new LobbyCombatSystem(world, sandbox); this.coatcheck = new HelCoatcheckSystem(world, sandbox); this.openingHotel = new OpeningHotelSystem(sandbox); this.openingHotel.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.openingHotel.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.office = new OfficeEscapeSystem(sandbox); this.reloaded = new ReloadedOpeningSystem(world, sandbox); this.reloaded.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.reloaded.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.catch = new ReloadedCatchSystem(world, sandbox); this.catch.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.wetwall = new WetwallEscapeSystem(world, sandbox); this.wetwall.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sixth = new SixthFloorSystem(world, sandbox); this.sixth.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sixth.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.basement = new BasementEscapeSystem(world, sandbox); this.basement.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); }
   get state() { return this.sandbox().neoLife?.journey; }
   get scene(): FilmScene | undefined { return this.state && FILM_SCENE_BY_ID[this.state.scene]; }
   get step(): FilmStep | undefined { return this.scene?.steps[this.state!.step]; }
@@ -1065,7 +1068,7 @@ export class FilmStorySystem {
         film: { scene: 'm2_architect', width: 5, depth: .5, height: 8 } });
     }
   }
-  performing(agent: AgentState): boolean { return this.controls(agent) && (sixthLocked(this.state) || wetwallLocked(this.state) || this.state!.scene === 'm1_bridge' && this.state!.bridgeTail?.phase === 'failed' || this.state!.scene === 'm1_room303' && ['breach', 'dive', 'ladder_ready'].includes(this.state!.openingHotel?.phase ?? '') || this.state!.scene === 'm1_phone_escape' && ['connected', 'done'].includes(this.state!.openingPhone?.phase ?? '') || helElevatorLocked(this.state!) || helDanceDoorLocked(this.state!) || farewellLocked(this.state!.farewell) || deusPactLocked(this.state!.deus) || smithFinaleLocked(this.state!.smithFinale) || trilogyEpilogueLocked(this.state!.epilogue) || this.state!.scene === 'm3_trainman' && this.state!.mobil?.phase === 'refusing' || this.state!.trucks?.phase === 'rescue' || this.state!.persephone?.phase === 'enacting' || burlyLocked(this.state!) || clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || morningLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || theOneLocked(this.state!) || reloadedLocked(this.state!) || catchLocked(this.state!.catch) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
+  performing(agent: AgentState): boolean { return this.controls(agent) && (basementLocked(this.state) || tvExitLocked(this.state) || sixthLocked(this.state) || wetwallLocked(this.state) || this.state!.scene === 'm1_bridge' && this.state!.bridgeTail?.phase === 'failed' || this.state!.scene === 'm1_room303' && ['breach', 'dive', 'ladder_ready'].includes(this.state!.openingHotel?.phase ?? '') || this.state!.scene === 'm1_phone_escape' && ['connected', 'done'].includes(this.state!.openingPhone?.phase ?? '') || helElevatorLocked(this.state!) || helDanceDoorLocked(this.state!) || farewellLocked(this.state!.farewell) || deusPactLocked(this.state!.deus) || smithFinaleLocked(this.state!.smithFinale) || trilogyEpilogueLocked(this.state!.epilogue) || this.state!.scene === 'm3_trainman' && this.state!.mobil?.phase === 'refusing' || this.state!.trucks?.phase === 'rescue' || this.state!.persephone?.phase === 'enacting' || burlyLocked(this.state!) || clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || morningLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || theOneLocked(this.state!) || reloadedLocked(this.state!) || catchLocked(this.state!.catch) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
   morningFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
     if (state?.scene !== 'm1_morning' || state.visiting || !this.controls(agent)) return;
@@ -1480,7 +1483,7 @@ export class FilmStorySystem {
     if (this.scene?.set === 'film_ambush_house') migrate(this.state?.checkpoint);
     migrate(this.state?.returnPosition);
     const actor = this.state && this.world.agents.get(this.state.actor);
-    if (actor) { this.ambushFrame(actor, 0, this.world.simulationTick); this.ambushEscapeFrame(actor, 0, this.world.simulationTick); this.wetwall.frame(actor, { climb: 0, jump: false }, 0, this.world.simulationTick); this.sixth.frame(actor, { crouch: false, yaw: actor.rotation }, 0, this.world.simulationTick); }
+    if (actor) { this.ambushFrame(actor, 0, this.world.simulationTick); this.ambushEscapeFrame(actor, 0, this.world.simulationTick); this.wetwall.frame(actor, { climb: 0, jump: false }, 0, this.world.simulationTick); this.sixth.frame(actor, { crouch: false, yaw: actor.rotation }, 0, this.world.simulationTick); this.basement.frame(actor, {}, 0, this.world.simulationTick); }
   }
   restoreOracleSpace(): void {
     const center = FILM_SETS.film_oracle_home.center;
@@ -2077,6 +2080,7 @@ export class FilmStorySystem {
     this.ambushEscapeFrame(agent, 0, tick); return this.state!.lastText;
   }
   ambushMovementPosition(agent: AgentState, before: AgentState['position'], after: AgentState['position']): AgentState['position'] {
+    if (this.basement.active(agent)) return this.basement.movement(agent, before, after);
     if (!this.controls(agent) || this.state?.scene !== 'm1_dejavu' || !this.state.ambushEscape || this.state.visiting) return after;
     const position = ambushCompanyStep(before, after, Object.keys(AMBUSH_COMPANY).map(id => this.world.agents.get(id)!).filter(actor => actor.status === 'alive').map(actor => actor.position));
     return playerBlocked(position, true, 1.1, this.sandbox().structures) ? before : position;
@@ -2102,7 +2106,8 @@ export class FilmStorySystem {
     if (encounter.sixth && WETWALL_ROLES.includes(role as typeof WETWALL_ROLES[number]) && role !== 'morpheus') {
       const wall = this.state!.wetwall!, start = this.state!.wallExposure!.starts[role as typeof WETWALL_ROLES[number]], center = FILM_SETS.film_ambush_house.center;
       const elapsed = encounter.fight ? encounter.elapsed : encounter.phase === 'ready' ? 0 : encounter.phase === 'defending' ? encounter.elapsed : BETRAYAL.bathroom.hold;
-      const y = Math.max(WETWALL_SHAFT.low, start.y - Math.min(elapsed, BETRAYAL.bathroom.hold) * 1.35), before = actor.position;
+      const spacing = role === 'neo' || role === 'trinity' ? 5.4 : 0;
+      const y = Math.max(WETWALL_SHAFT.low + spacing, start.y - Math.min(elapsed, BETRAYAL.bathroom.hold) * 1.35), before = actor.position;
       actor.position = { x: center.x + start.x, y: center.y + y, z: center.z + start.z }; actor.rotation = Math.PI;
       actor.velocity = dt ? { x: 0, y: (actor.position.y - before.y) / dt, z: 0 } : { x: 0, y: 0, z: 0 };
       const pipeRole = role as typeof WETWALL_ROLES[number];
@@ -4744,6 +4749,7 @@ export class FilmStorySystem {
       state.visiting = visited.id; this.place(agent, visited, filmEntry(visited));
       return `回访${FILM_SETS[visited.set].name}。J 可返回当前剧情，回访不会改写进度。`;
     }
+    if (this.basement.active(agent) && target === 'retry') return this.basement.command(agent, target, tick);
     if (this.sixth.active(agent) && target === 'retry') return this.sixth.command(agent, target, tick);
     if (this.wetwall.active(agent) && target === 'retry') return this.wetwall.command(agent, target, tick);
     if (target === 'retry') {
@@ -5095,7 +5101,7 @@ export class FilmStorySystem {
         this.crossingFrame(agent, 0, tick); return state.lastText;
       }
       const index = FILM_SCENES.findIndex(s => s.id === state.scene);
-      const branch = state.scene === 'm1_dejavu' && !state.ambushEscape ? 'm1_bathroom' : state.scene === 'm1_office_escape' && state.office?.outcome === 'captured' ? 'm1_interrogation'
+      const branch = state.scene === 'm1_bathroom' && !state.betrayal?.sixth ? 'm1_unplugged' : state.scene === 'm1_dejavu' && !state.ambushEscape ? 'm1_bathroom' : state.scene === 'm1_office_escape' && state.office?.outcome === 'captured' ? 'm1_interrogation'
         : state.scene === 'm1_ledge' && state.office?.outcome === 'escaped' ? 'm1_wake_again'
           : state.scene === 'm3_logos_plan' && !state.completed.includes('m3_oracle_absorbed') ? 'm3_oracle_absorbed'
             : state.scene === 'm3_oracle_absorbed' && state.completed.includes('m3_bane_questions') ? state.completed.includes('m3_logos_plan') ? 'm3_zion_prepare' : 'm3_logos_plan' : undefined;
@@ -5115,7 +5121,7 @@ export class FilmStorySystem {
         || state.scene === 'm1_spoon' && next.id === 'm1_oracle'
         || state.scene === 'm3_mobil' && next.id === 'm3_family' || state.scene === 'm3_family' && next.id === 'm3_trainman'
         || state.scene === 'm3_hel_entry' && next.id === 'm3_hel_bargain';
-      const position = state.scene === 'm1_wall_exposed' && next.id === 'm1_bathroom' ? { ...this.world.agents.get('morpheus')!.position } : sameRoom || state.scene === 'm1_boss' && next.id === 'm1_office_escape' ? { ...agent.position } : undefined;
+      const position = state.scene === 'm1_bathroom' && next.id === 'm1_basement' ? { ...this.world.agents.get('neo')!.position } : state.scene === 'm1_wall_exposed' && next.id === 'm1_bathroom' ? { ...this.world.agents.get('morpheus')!.position } : sameRoom || state.scene === 'm1_boss' && next.id === 'm1_office_escape' ? { ...agent.position } : undefined;
       const facing = agent.rotation;
       state.scene = next.id; state.actor = next.actor; state.step = 0; state.lastText = next.context;
       this.enter(next, tick, position);
@@ -5124,6 +5130,7 @@ export class FilmStorySystem {
     }
     const step = this.step;
     if (!step) return '本场景已完成。G 或 J 继续下一段。';
+    if (this.basement.active(agent)) return this.basement.command(agent, target, tick);
     if (this.sixth.active(agent)) return this.sixth.command(agent, target, tick);
     if (this.wetwall.active(agent)) return this.wetwall.command(agent, target, tick);
     if (truthScene(state.scene) && state.truthRecovery && state.truthRecovery.phase !== 'question') {
@@ -5681,6 +5688,8 @@ export class FilmStorySystem {
     delete state.interlude;
     if (scene.id === 'm1_spoon') state.oracle = { arrival: { phase: 'hallway', elapsed: 0, hostess: 0, morpheus: 0, seating: 0 }, spoonLesson: { phase: 'waiting', elapsed: 0 } };
     delete state.betrayal;
+    if (scene.id !== 'm1_basement' && scene.id !== 'm1_tv_exit') delete state.basement;
+    if (scene.id !== 'm1_tv_exit') delete state.tvExit;
     delete state.government;
     delete state.airRescue;
     delete state.matrixEscape;
@@ -5773,8 +5782,11 @@ export class FilmStorySystem {
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.riding) { other.currentAction = null; other.velocity = { x: 0, y: 0, z: 0 }; }
     if (scene.id === 'm1_lobby') this.lobby.reset();
     const actor = this.world.agents.get(state.actor)!;
+    for (const other of this.world.agents.values()) if (!other.controller && (other.currentAction?.parameters.basement || other.currentAction?.parameters.tvExit)) other.currentAction = null;
     const incomingHealth = actor.health;
-    this.place(actor, scene, state.checkpoint); actor.status = 'alive'; actor.health = scene.id === 'm1_wetwall' || scene.id === 'm1_wall_exposed' || scene.id === 'm1_bathroom' && state.wallExposure?.phase === 'done' ? incomingHealth : actor.maxHealth; actor.activeEffects = [];
+    this.place(actor, scene, state.checkpoint); actor.status = 'alive'; actor.health = scene.id === 'm1_basement' || scene.id === 'm1_tv_exit' || scene.id === 'm1_wetwall' || scene.id === 'm1_wall_exposed' || scene.id === 'm1_bathroom' && state.wallExposure?.phase === 'done' ? incomingHealth : actor.maxHealth; actor.activeEffects = [];
+    if (scene.id === 'm1_basement') this.basement.start();
+    if (scene.id === 'm1_tv_exit') this.basement.startTv();
     if (scene.id === 'm1_wetwall') this.wetwall.start();
     if (scene.id === 'm1_wall_exposed') this.sixth.start();
     if (scene.id === 'm1_interrogation') {
@@ -5966,6 +5978,7 @@ export class FilmStorySystem {
   }
   private stageCast(): void {
     const scene = this.scene!;
+    if (scene.id === 'm1_basement' || scene.id === 'm1_tv_exit') { this.basement.frame(this.world.agents.get(this.state!.actor)!, {}, 0, this.world.simulationTick); return; }
     if (scene.id === 'm1_wall_exposed') { this.sixth.frame(this.world.agents.get(this.state!.actor)!, { crouch: false, yaw: 0 }, 0, this.world.simulationTick); return; }
     if (scene.id === 'm1_bathroom' && this.state!.wallExposure?.phase === 'done') return;
     if (scene.id === 'm1_wetwall') { const actor = this.world.agents.get(this.state!.actor)!; this.wetwall.frame(actor, { climb: 0, jump: false }, 0, this.world.simulationTick); return; }
@@ -6538,6 +6551,7 @@ export class FilmStorySystem {
       this.bridgeTailFrame(actor, tick);
       if (state.bridgeTail?.phase === 'failed') return;
     }
+    if (this.basement.active(actor)) { this.basement.frame(actor, {}, 0, tick); return; }
     if (this.sixth.active(actor)) { this.sixth.frame(actor, { crouch: false, yaw: actor.rotation }, 0, tick); return; }
     if (this.wetwall.active(actor)) { this.wetwall.frame(actor, { climb: 0, jump: false }, 0, tick); return; }
     if (this.reloaded.active(actor)) return;

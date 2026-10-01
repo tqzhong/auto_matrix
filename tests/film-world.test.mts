@@ -8,7 +8,7 @@ import { groundHeight, playerBlocked, stepPlayer } from '../packages/shared/src/
 
 test('film sets admit walking in both worlds and use their own floor', () => {
   for (const set of Object.values(FILM_SETS)) {
-    const position = filmPosition(set.id, set.architecture === 'freeway' ? 14 : set.id === 'film_agent_interrogation' ? INTERROGATION_ROOM.approach.x : 0, set.id === 'film_mountain_range' ? MOUNTAIN.door.z : 0);
+    const position = filmPosition(set.id, set.architecture === 'freeway' ? 14 : set.id === 'film_agent_interrogation' ? INTERROGATION_ROOM.approach.x : set.id === 'film_tv_repair' ? 8.5 : 0, set.id === 'film_mountain_range' ? MOUNTAIN.door.z : 0);
     assert.equal(playerBlocked(position, set.world === 'matrix'), false, set.name);
     assert.equal(groundHeight(position, set.world === 'matrix'), position.y, set.name);
     const next = stepPlayer(position, 0, { x: 0, z: -1, yaw: Math.PI, jump: false, sprint: false, sequence: 1 }, .1, set.world === 'matrix');
