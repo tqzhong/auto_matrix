@@ -143,6 +143,7 @@ export class PlayerController {
     this.sandbox?.life.film.meetingFrame(agent, false, 0, tick);
     this.sandbox?.life.film.hotelFrame(agent, 0, tick);
     this.sandbox?.life.film.workdayFrame(agent, 0, tick);
+    this.sandbox?.life.film.office.phoneFrame(tick, this.world.agents);
     this.sandbox?.life.film.apartmentFrame(agent, 0, tick);
     this.sandbox?.life.film.clubFrame(agent, 0, tick);
     this.sandbox?.life.film.morningFrame(agent, 0, tick);
@@ -360,7 +361,10 @@ export class PlayerController {
         this.sandbox.life.film.truckFrame(agent, dt, tick);
         this.sandbox.life.film.windowFrame(agent, dt, tick);
         this.sandbox.life.film.crossingFrame(agent, dt, tick);
-        this.sandbox.life.film.phoneFrame(agent, dt, tick);
+        if (this.sandbox.life.film.office.phoneFrame(tick, this.world.agents)) {
+          this.sandbox.life.film.phoneFrame(agent, dt, tick);
+          this.sandbox.life.film.office.phoneFrame(tick, this.world.agents);
+        }
         this.sandbox.life.film.pillFrame(agent, dt, tick);
         this.sandbox.life.film.interrogationFrame(agent, dt, tick);
         this.sandbox.life.film.meetingFrame(agent, Boolean(input.focus), dt, tick);
@@ -595,6 +599,7 @@ export class PlayerController {
     const agent = this.getAgent(socketId);
     if (!agent || !this.sandbox) return '请先接入角色。';
     const result = this.sandbox.command(agent, command, tick);
+    if (command.kind === 'life') this.sandbox.life.film.office.phoneFrame(tick, this.world.agents);
     if (command.kind === 'transit' || command.kind === 'life') {
       const session = this.sessions.get(socketId)!;
       session.vy = 0; session.planar = { x: 0, z: 0 }; session.input = { ...idleInput(), yaw: this.getAgent(socketId)!.rotation };
