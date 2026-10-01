@@ -78,5 +78,61 @@ export function createMirrorSurface(): Reflector {
       base.rgb = mix(base.rgb, vec3(.016, .023, .019), seam * .92);
       base.rgb += vec3(.025, .03, .027) * max(0.0, ring);
       base.rgb = mix(base.rgb, vec3(.64, .7, .67), spread * liquidAmount * .14);`);
+  boundMirrorReflection(mirror);
   return mirror;
+}
+
+function boundMirrorReflection(mirror: Reflector): void {
+  mirror.geometry.computeBoundingBox();
+  const bounds = mirror.geometry.boundingBox!;
+  const fracture = mirror.geometry.getAttribute('fracture'); let offsetX = 0, offsetY = 0;
+  for (let i = 0; i < fracture.count; i++) {
+    offsetX = Math.max(offsetX, Math.abs(fracture.getX(i))); offsetY = Math.max(offsetY, Math.abs(fracture.getY(i)));
+  }
+  const corners = [bounds.min.x - offsetX, bounds.max.x + offsetX].flatMap(x =>
+    [bounds.min.y - offsetY, bounds.max.y + offsetY].map(y => new THREE.Vector4(x, y, 0, 1)));
+  const sample = new THREE.Vector4(), crop = new THREE.Matrix4();
+  const target = mirror.getRenderTarget();
+  const textureMatrix = (mirror.material as THREE.ShaderMaterial).uniforms.textureMatrix.value as THREE.Matrix4;
+  const reflect = mirror.onBeforeRender.bind(mirror);
+  mirror.onBeforeRender = (...args) => {
+    const renderer = args[0], render = renderer.render;
+    // Reflector computes its eye, oblique clip plane and texture coordinates
+    // before calling render. Constrain that call while keeping its pixel map.
+    renderer.render = (scene, camera) => {
+      if (camera !== mirror.camera) return render.call(renderer, scene, camera);
+      let left = 1, right = 0, bottom = 1, top = 0;
+      for (const corner of corners) {
+        sample.copy(corner).applyMatrix4(textureMatrix);
+        // A very close grazing view can put a corner behind the eye. The
+        // bounded perspective projection is then invalid; retain the full view.
+        if (sample.w <= 0) return render.call(renderer, scene, camera);
+        left = Math.min(left, sample.x / sample.w); right = Math.max(right, sample.x / sample.w);
+        bottom = Math.min(bottom, sample.y / sample.w); top = Math.max(top, sample.y / sample.w);
+      }
+      // The liquid shader displaces UVs by up to .012 + .003. Two texels
+      // beyond that keep bilinear edge samples inside the freshly painted area.
+      const x = Math.max(0, Math.floor((left - .015) * target.width) - 2);
+      const y = Math.max(0, Math.floor((bottom - .015) * target.height) - 2);
+      const width = Math.min(target.width, Math.ceil((right + .015) * target.width) + 2) - x;
+      const height = Math.min(target.height, Math.ceil((top + .015) * target.height) + 2) - y;
+      if (width <= 0 || height <= 0) return render.call(renderer, scene, camera);
+      const projection = camera.projectionMatrix.clone(), inverse = camera.projectionMatrixInverse.clone();
+      const viewport = target.viewport.clone(), scissor = target.scissor.clone(), scissorTest = target.scissorTest;
+      crop.set(target.width / width, 0, 0, (target.width - 2 * x - width) / width,
+        0, target.height / height, 0, (target.height - 2 * y - height) / height,
+        0, 0, 1, 0, 0, 0, 0, 1);
+      camera.projectionMatrix.premultiply(crop); camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert();
+      target.viewport.set(x, y, width, height); target.scissor.copy(target.viewport); target.scissorTest = true;
+      renderer.setRenderTarget(target);
+      try { render.call(renderer, scene, camera); }
+      finally {
+        camera.projectionMatrix.copy(projection); camera.projectionMatrixInverse.copy(inverse);
+        target.viewport.copy(viewport); target.scissor.copy(scissor); target.scissorTest = scissorTest;
+        renderer.setRenderTarget(target);
+      }
+    };
+    try { reflect(...args); }
+    finally { renderer.render = render; }
+  };
 }
