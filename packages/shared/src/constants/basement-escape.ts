@@ -15,6 +15,7 @@ export interface BasementEncounter {
 }
 export interface BasementGesture {
   role: BasementRole; phase: BasementPhase; elapsed: number; hatch: number; crawling?: boolean; landing?: number; paused?: boolean; crouching?: boolean;
+  drop?: number; start?: Vector3 & { yaw: number };
 }
 export const BASEMENT = {
   floor: -96.2, ceiling: 8.8, tunnelFloor: -102.2, tunnelHeight: 3.35, descentSpeed: 2.7, guideSpeed: 4.1, liftSeconds: 5.2,
@@ -24,6 +25,7 @@ export const BASEMENT = {
     switch: { x: -15.5, z: -25.5 }, cypher: { x: -18, z: -32.2 } },
   waiting: { neo: { x: 9, z: 22.5 }, trinity: { x: 6.8, z: 26.5 }, apoc: { x: 3, z: 29 }, switch: { x: 3, z: 25 }, cypher: { x: 0, z: 14 } },
 } as const;
+export const BASEMENT_DROP = { gravity: 24, recover: .82, walk: 1.25 } as const;
 export const BASEMENT_BOILERS = [-10, 10].flatMap(x => [-12, 12].map(z => ({ x, z, width: 6, depth: 13, height: 6.2 })));
 export const BASEMENT_GAS = [{ x: -17, z: -27, at: 2 }, { x: -1, z: 2, at: 14 }, { x: 11, z: 22, at: 28 }] as const;
 export const BASEMENT_GAS_LAUNCH = { flight: .95, bounce: .55, gravity: 24, entryDepth: 5.2, entryWidth: 4.4, entryHeight: 5.8 } as const;
@@ -94,12 +96,31 @@ export function basementTunnelProgress(x: number, z: number): number {
 }
 export function basementLandingRoot(encounter: BasementEncounter, role: BasementRole) {
   const start = encounter.starts[role], age = encounter.landings[role];
-  if (age === undefined) return { ...start, y: encounter.heights[role], hanging: true, landing: undefined };
-  const fall = Math.max(0, BASEMENT.ceiling - 12 * age * age), landed = Math.sqrt(BASEMENT.ceiling / 12);
-  const move = smooth((age - landed - .5) / 1.6), target = BASEMENT.landing[role];
+  if (age === undefined) return { ...start, y: encounter.heights[role], hanging: true, landing: undefined, drop: undefined, start: undefined };
+  return basementDropRoot(role, start, age);
+}
+export function basementDropPose(age: number) {
+  const impact = Math.sqrt(2 * BASEMENT.ceiling / BASEMENT_DROP.gravity), contact = age - impact;
+  const bend = contact < 0 ? .28 * smooth(age / impact) : contact < .12 ? .28 + .72 * smooth(contact / .12)
+    : 1 - smooth((contact - .12) / (BASEMENT_DROP.recover - .12));
+  return { impact, airborne: contact < 0, height: Math.max(0, BASEMENT.ceiling - BASEMENT_DROP.gravity * age * age / 2),
+    verticalVelocity: contact < 0 ? -BASEMENT_DROP.gravity * age : 0, landing: Math.max(0, contact), bend };
+}
+export function basementDropRoot(role: BasementRole, start: Vector3 & { yaw: number }, age: number) {
+  const pose = basementDropPose(age), target = BASEMENT.landing[role], walkAge = Math.max(0, age - pose.impact - BASEMENT_DROP.recover);
+  const t = Math.min(1, walkAge / BASEMENT_DROP.walk), move = smooth(t), yaw = Math.atan2(target.x - start.x, target.z - start.z);
+  const turn = Math.atan2(Math.sin(yaw - start.yaw), Math.cos(yaw - start.yaw));
   return { x: start.x + (target.x - start.x) * move, z: start.z + (target.z - start.z) * move,
-    y: BASEMENT.floor + fall, yaw: move > 0 ? Math.atan2(target.x - start.x, target.z - start.z) : start.yaw,
-    hanging: false, landing: Math.max(0, age - landed) };
+    y: BASEMENT.floor + pose.height, yaw: start.yaw + turn * smooth(walkAge / .38),
+    hanging: false, landing: pose.landing, drop: age, start, speed: Math.hypot(target.x - start.x, target.z - start.z) * 6 * t * (1 - t) / BASEMENT_DROP.walk };
+}
+export interface BasementDropPlayback { from: number; to: number; age: number; elapsed: number }
+/** Interpolate saved age, never body position separately from the landing pose. */
+export function basementDropPlayback(clock: BasementDropPlayback | undefined, source: number, delta: number, running: boolean): BasementDropPlayback {
+  if (!clock || !running || source < clock.to || source - clock.age > 1.5) return { from: source, to: source, age: source, elapsed: .5 };
+  if (source !== clock.to) clock = { from: clock.age, to: source, age: clock.age, elapsed: 0 };
+  const elapsed = Math.min(.5, clock.elapsed + Math.max(0, delta));
+  return { ...clock, elapsed, age: clock.from + (clock.to - clock.from) * elapsed / .5 };
 }
 export function basementHatchPoint(hatch: number, side = 0): Vector3 {
   const angle = hatch * BASEMENT.grate.angle;

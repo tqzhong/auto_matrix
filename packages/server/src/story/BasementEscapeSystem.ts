@@ -61,7 +61,7 @@ export class BasementEscapeSystem {
     for (const role of BASEMENT_ROLES) {
       const actor = this.world.agents.get(role)!; if (role !== 'neo' && actor.controller) continue;
       const before = previous?.[role] ?? actor.position;
-      let root: Vector3 & { yaw: number; hanging?: boolean; crawling?: boolean; landing?: number };
+      let root: Vector3 & { yaw: number; hanging?: boolean; crawling?: boolean; landing?: number; drop?: number; start?: Vector3 & { yaw: number } };
       if (['ready', 'descending', 'landing'].includes(encounter.phase)) root = basementLandingRoot(encounter, role);
       else if (encounter.failure === 'fall') root = role === 'neo' ? { ...encounter.starts.neo, y: encounter.fallY!, hanging: false } : basementLandingRoot(encounter, role);
       else if (encounter.phase === 'draining') root = basementDrainRoot(encounter, role);
@@ -79,7 +79,7 @@ export class BasementEscapeSystem {
       actor.currentLocation = 'film_ambush_house'; actor.isInMatrix = true; actor.targetPosition = null; actor.currentPath = [];
       actor.currentAction = { type: 'idle', parameters: { resolved: true, crouching: role === 'neo' && crouching,
         basement: { role, phase: encounter.phase, elapsed: encounter.elapsed, hatch: encounter.hatch, paused: encounter.paused,
-          crawling: root.crawling, landing: root.landing, crouching: role === 'neo' && crouching },
+          crawling: root.crawling, landing: root.landing, drop: root.drop, start: root.start, crouching: role === 'neo' && crouching },
         wetwall: root.hanging && wall ? { role, phase: 'done', elapsed: 0, start: wall.starts[role], entry: wetwallEntry(wall, role),
           progress: wetwallEntry(wall, role) + WETWALL_SHAFT.top - root.y, hanging: true, freed: true, continued: true } : undefined }, startedAt: tick, duration: 1e9, progress: 0 };
     }

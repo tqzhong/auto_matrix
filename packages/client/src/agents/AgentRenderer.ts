@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { CONNECTED_ROLES, BETRAYAL, crosscutActive, type CrosscutGesture, FILM_SETS, groundHeight, mirrorGuidePose, ambushRouteRoot, ambushRetreatRoot, wetwallPose, sixthPose, bathroomFightRoot, oracleCookieOwner, oracleReceptionRoot, officeClothing, type AmbushEscort, type AgentState, type CombatImpact, type FilmJourney, type WetwallPhase } from '@auto_matrix/shared';
+import { CONNECTED_ROLES, BETRAYAL, crosscutActive, type CrosscutGesture, FILM_SETS, groundHeight, mirrorGuidePose, ambushRouteRoot, ambushRetreatRoot, wetwallPose, sixthPose, bathroomFightRoot, basementDropPose, basementDropRoot, basementDropPlayback, oracleCookieOwner, oracleReceptionRoot, officeClothing, type AmbushEscort, type AgentState, type CombatImpact, type FilmJourney, type WetwallPhase, type BasementDropPlayback } from '@auto_matrix/shared';
 import { trackingContact } from './TrackingContact.js';
 import { CharacterModels, weaponMuzzle, type CharacterRig } from './CharacterModel.js';
 import type { MotionInput } from './CharacterMotion.js';
@@ -27,6 +27,7 @@ interface Entry {
   wetwallGuide?: { phase: WetwallPhase; from: number; to: number; progress: number; elapsed: number };
   sixthElapsed?: number;
   bathroomElapsed?: number;
+  basementDropClock?: BasementDropPlayback;
 }
 
 export class AgentRenderer {
@@ -160,12 +161,21 @@ export class AgentRenderer {
       if (bathroom && entry.bathroomElapsed !== undefined && this.agents.get('morpheus')?.state.controller && !bathroom.paused && !['ready', 'failed', 'done', 'pinning', 'capture_ready'].includes(bathroom.phase))
         entry.bathroomElapsed = Math.min(bathroom.elapsed + .5, entry.bathroomElapsed + delta * speed);
       const bathroomGesture = bathroom && { ...bathroom, elapsed: entry.bathroomElapsed ?? bathroom.elapsed };
+      let basement = state.currentAction?.parameters.basement as MotionInput['basement'];
+      if (basement?.drop !== undefined && basement.start) {
+        entry.basementDropClock = basementDropPlayback(entry.basementDropClock, basement.drop, delta * speed, speed > 0 && !basement.paused);
+        basement = { ...basement, drop: entry.basementDropClock.age, landing: basementDropPose(entry.basementDropClock.age).landing };
+      } else entry.basementDropClock = undefined;
+      const dropRoot = basement?.drop !== undefined && basement.start ? basementDropRoot(basement.role, basement.start, basement.drop) : undefined;
       if (sixthRoot?.hidden) entry.body.visible = entry.marker.visible = entry.label.visible = false;
       if (id !== this.playerId) {
         const previous = entry.group.position.clone();
         const target = new THREE.Vector3(state.position.x, state.position.y, state.position.z);
         const driver = this.playerId ? this.agents.get(this.playerId) : undefined;
-        if (bathroomGesture) {
+        if (dropRoot) {
+          const center = FILM_SETS.film_ambush_house.center;
+          entry.group.position.set(center.x + dropRoot.x, center.y + dropRoot.y, center.z + dropRoot.z); guideHeading = dropRoot.yaw; guideSpeed = dropRoot.speed;
+        } else if (bathroomGesture) {
           const root = bathroomFightRoot(bathroomGesture, bathroomGesture.role), center = FILM_SETS.film_ambush_house.center;
           entry.group.position.set(center.x + root.x, state.position.y, center.z + root.z); guideHeading = root.yaw;
         } else if (sixthRoot) {
@@ -209,26 +219,26 @@ export class AgentRenderer {
         } else if (state.currentAction?.parameters.openingRoofLeap !== undefined) entry.group.position.copy(target);
         else if (state.currentAction?.parameters.truckPassenger || state.currentAction?.parameters.truckFlight || state.currentAction?.parameters.farewell || state.currentAction?.parameters.club || state.currentAction?.parameters.sentinel || state.currentAction?.parameters.interlude || state.currentAction?.parameters.oracleVisit || state.currentAction?.parameters.oracleDeparture || state.currentAction?.parameters.crosscut || state.currentAction?.parameters.betrayal || state.currentAction?.parameters.rescue || state.currentAction?.parameters.government || state.currentAction?.parameters.airRescue || state.currentAction?.parameters.matrixEscape || state.currentAction?.parameters.theOne || state.currentAction?.parameters.reloaded || state.currentAction?.parameters.catch || state.currentAction?.parameters.lobbyEntry || state.currentAction?.parameters.meeting || state.currentAction?.parameters.pills || state.currentAction?.parameters.interrogation || state.currentAction?.parameters.welcome || state.currentAction?.parameters.reveal || state.currentAction?.parameters.training || state.currentAction?.parameters.workday || state.currentAction?.parameters.recoveryCrew || entry.group.position.distanceTo(target) > 60) entry.group.position.copy(target);
         else entry.group.position.lerp(target, 1 - Math.exp(-8 * delta));
-        if (state.currentAction?.parameters.basement && delta * speed > 0) guideSpeed = entry.group.position.distanceTo(previous) / (delta * speed);
+        if (state.currentAction?.parameters.basement && !dropRoot && delta * speed > 0) guideSpeed = entry.group.position.distanceTo(previous) / (delta * speed);
       }
       const moving = Math.hypot(state.velocity.x, state.velocity.z) > .1;
       const heading = guideHeading ?? (moving && !state.currentAction?.parameters.oracleArrival && !state.currentAction?.parameters.oracleReception && !state.currentAction?.parameters.oracleDeparture && !state.currentAction?.parameters.club && !state.currentAction?.parameters.catch && !state.currentAction?.parameters.recoveryCrew && state.currentLocation !== 'film_government_lobby' ? Math.atan2(state.velocity.x, state.velocity.z) : state.rotation);
       let difference = heading - entry.body.rotation.y;
       difference = Math.atan2(Math.sin(difference), Math.cos(difference));
       const arrival = state.currentAction?.parameters.oracleArrival as MotionInput['oracleArrival'];
-      if (id !== this.playerId) entry.body.rotation.y += difference * (entry.wetwallGuide || entry.ambushGuide && delta === 0 || arrival?.phase === 'opening' || (arrival?.seating ?? 0) > 0 || state.currentAction?.parameters.farewell || state.currentAction?.parameters.club || state.currentAction?.parameters.sentinel || state.currentAction?.parameters.interlude || state.currentAction?.parameters.oracleVisit || state.currentAction?.parameters.oracleDeparture || state.currentAction?.parameters.crosscut || state.currentAction?.parameters.betrayal || state.currentAction?.parameters.rescue || state.currentAction?.parameters.government || state.currentAction?.parameters.airRescue || state.currentAction?.parameters.matrixEscape || state.currentAction?.parameters.theOne || state.currentAction?.parameters.reloaded || state.currentAction?.parameters.catch || state.currentAction?.parameters.lobbyEntry || state.currentAction?.parameters.meeting || state.currentAction?.parameters.pills || state.currentAction?.parameters.interrogation || state.currentAction?.parameters.welcome || state.currentAction?.parameters.reveal || state.currentAction?.parameters.training || state.currentAction?.parameters.workday || state.currentAction?.parameters.recoveryCrew ? 1 : 1 - Math.exp(-10 * delta));
+      if (id !== this.playerId) entry.body.rotation.y += difference * (dropRoot || entry.wetwallGuide || entry.ambushGuide && delta === 0 || arrival?.phase === 'opening' || (arrival?.seating ?? 0) > 0 || state.currentAction?.parameters.farewell || state.currentAction?.parameters.club || state.currentAction?.parameters.sentinel || state.currentAction?.parameters.interlude || state.currentAction?.parameters.oracleVisit || state.currentAction?.parameters.oracleDeparture || state.currentAction?.parameters.crosscut || state.currentAction?.parameters.betrayal || state.currentAction?.parameters.rescue || state.currentAction?.parameters.government || state.currentAction?.parameters.airRescue || state.currentAction?.parameters.matrixEscape || state.currentAction?.parameters.theOne || state.currentAction?.parameters.reloaded || state.currentAction?.parameters.catch || state.currentAction?.parameters.lobbyEntry || state.currentAction?.parameters.meeting || state.currentAction?.parameters.pills || state.currentAction?.parameters.interrogation || state.currentAction?.parameters.welcome || state.currentAction?.parameters.reveal || state.currentAction?.parameters.training || state.currentAction?.parameters.workday || state.currentAction?.parameters.recoveryCrew ? 1 : 1 - Math.exp(-10 * delta));
       const velocity = state.status === 'alive' ? Math.hypot(state.velocity.x, state.velocity.z) : 0;
       entry.body.rotation.z = THREE.MathUtils.lerp(entry.body.rotation.z, state.status === 'dead' && !state.currentAction?.parameters.crosscut && !state.currentAction?.parameters.farewell ? Math.PI / 2 : 0, 1 - Math.exp(-7 * delta));
       const dist = camera ? entry.group.position.distanceTo(camera.position) : 0;
       const floor = groundHeight(state.position, state.isInMatrix);
       const input: MotionInput = id === this.playerId && this.playerMotion ? this.playerMotion : {
-        speed: state.currentAction?.parameters.basement || sixthRoot || entry.mirrorGuide || entry.oracleGuide || entry.ambushGuide || entry.wetwallGuide ? guideSpeed : velocity, grounded: Boolean(state.currentAction?.parameters.riding || state.currentAction?.parameters.climbing || state.currentAction?.parameters.wetwall) || state.position.y <= floor + .12, verticalVelocity: state.velocity.y,
+        speed: state.currentAction?.parameters.basement || sixthRoot || entry.mirrorGuide || entry.oracleGuide || entry.ambushGuide || entry.wetwallGuide ? guideSpeed : velocity, grounded: dropRoot ? !basementDropPose(basement!.drop!).airborne : Boolean(state.currentAction?.parameters.riding || state.currentAction?.parameters.climbing || state.currentAction?.parameters.wetwall) || state.position.y <= floor + .12, verticalVelocity: dropRoot ? basementDropPose(basement!.drop!).verticalVelocity : state.velocity.y,
         turn: difference * 8, attack: state.currentAction?.type === 'attack' ? Number(state.currentAction.parameters.contactTick ?? state.currentAction.startedAt) : undefined,
         hit: entry.hit, impact: entry.impact, shot: entry.shot, windingUp: warning,
         armed: state.currentAction?.parameters.armed === true || !state.currentAction?.parameters.lobbyEntry && state.currentLocation === 'film_government_lobby' && ['neo', 'trinity'].includes(id),
         ambushEscort: state.currentAction?.parameters.ambushEscort as MotionInput['ambushEscort'],
         wetwall: state.currentAction?.parameters.wetwall as MotionInput['wetwall'],
-        basement: state.currentAction?.parameters.basement as MotionInput['basement'],
+        basement,
         tvExit: state.currentAction?.parameters.tvExit as MotionInput['tvExit'],
         crosscut: state.currentAction?.parameters.crosscut as MotionInput['crosscut'],
         sixth: sixthGesture,
