@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BASEMENT, BASEMENT_BOILERS, BASEMENT_GAS, BASEMENT_GAS_LAUNCH, BASEMENT_TUNNEL_FLOORS, WETWALL_SHAFT, basementGasCanister, type FilmJourney } from '@auto_matrix/shared';
+import { BASEMENT, BASEMENT_BOILERS, BASEMENT_CEILING, BASEMENT_GAS, BASEMENT_GAS_LAUNCH, BASEMENT_ROLES, BASEMENT_TUNNEL_FLOORS, WETWALL_SHAFT, basementCeilingAge, basementCeilingFragment, basementDropPlayback, basementDropPose, basementGasCanister, type BasementDropPlayback, type FilmJourney } from '@auto_matrix/shared';
 import { batchStaticGeometry } from './StaticGeometry.js';
 
 /** A ceiling aperture, four boilers and an articulated catch-basin cover. */
@@ -8,6 +8,13 @@ export class BasementSetRenderer {
   private cover = new THREE.Group();
   private smoke: THREE.InstancedMesh;
   private grenades: THREE.Mesh[] = [];
+  private ceilingPanels: THREE.Group[] = [];
+  private ceilingEdges: THREE.Group[] = [];
+  private ceilingWood: THREE.InstancedMesh;
+  private ceilingPlaster: THREE.InstancedMesh;
+  private ceilingDust: THREE.InstancedMesh;
+  private ceilingClocks: (BasementDropPlayback | undefined)[] = [];
+  private impactClocks: (BasementDropPlayback | undefined)[] = [];
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private textures: THREE.Texture[] = [];
@@ -15,7 +22,7 @@ export class BasementSetRenderer {
     this.root.name = 'basement-mechanical-room'; parent.add(this.root);
     const concrete = this.pbr('damaged_plaster', 0x777967, 7), iron = this.pbr('metal_plate', 0x4b5049, 3), rust = this.mat(0x574534, .94, .35);
     const pipe = this.mat(0x696f62, .42, .7), brass = this.mat(0x887450, .48, .7), soot = this.mat(0x171c19, .97);
-    const floor = BASEMENT.floor, ceiling = floor + BASEMENT.ceiling, grate = BASEMENT.grate;
+    const floor = BASEMENT.floor, ceiling = floor + BASEMENT.ceiling, grate = BASEMENT.grate, shaftTop = -48.4;
     // Four concrete rectangles leave the catch basin physically open below the cover.
     for (const [x,z,w,d] of [[-7.35,0,29.3,68],[16.35,0,11.3,68],[9,-4.85,3.4,58.3],[9,30.85,3.4,6.3]]) this.box(concrete,x,floor-.2,z,w,.4,d);
     for (const z of [-34,34]) this.box(concrete,0,floor+4.4,z,44,8.8,.55);
@@ -37,11 +44,38 @@ export class BasementSetRenderer {
     // The pipe shaft reaches the retained fourth-floor waiting height. No slab crosses the falling bodies.
     this.box(concrete,4.5,ceiling+.2,0,35,.4,68);
     this.box(concrete,-17.5,ceiling+.2,1.6,9,.4,64.8);
-    for (const z of [-34.15,-30.65]) this.box(concrete,-17.5,(ceiling-55)/2,z,9,-55-ceiling,.3);
-    for (const x of [-22.15,-12.85]) this.box(concrete,x,(ceiling-55)/2,-32.4,.3,-55-ceiling,3.8);
+    for (const z of [-34.15,-30.65]) this.box(concrete,-17.5,(ceiling+shaftTop)/2,z,9,shaftTop-ceiling,.3);
+    for (const x of [-22.15,-12.85]) this.box(concrete,x,(ceiling+shaftTop)/2,-32.4,.3,shaftTop-ceiling,3.8);
+    this.box(concrete,-17.5,shaftTop+.15,-32.4,9,.3,3.8);
     for (const x of [-20.5,-18,-15.5]) {
       this.cylinder(pipe,x,(floor-54)/2,WETWALL_SHAFT.pipeZ,.25,-54-floor);
       for (let y=ceiling+2; y<-54; y+=3.7) { this.cylinder(rust,x,y,WETWALL_SHAFT.pipeZ,.29,.18); this.box(iron,x,y,-33.9,.8,.18,.3); }
+    }
+    const wood=this.pbr('old_wood_floor',0x756349,2);
+    for(const x of BASEMENT_CEILING.lanes){
+      const panel=new THREE.Group();panel.name='basement-ceiling-lath';this.root.add(panel);this.ceilingPanels.push(panel);
+      // The pipe passes through a real notch, rather than through solid lath.
+      for(let row=0;row<7;row++){
+        const z=-33.76+row*.45;
+        if(Math.abs(z-WETWALL_SHAFT.pipeZ)<.4)for(const side of [-1,1])this.box(wood,x+side*.77,ceiling-.035,z,.9,.07,.32,panel);
+        else this.box(wood,x,ceiling-.035,z,BASEMENT_CEILING.width,.07,.32,panel);
+      }
+      for(const side of [-1,1])this.box(concrete,x+side*.78,ceiling-.12,-33.64,.88,.1,.6,panel);
+      this.box(concrete,x,ceiling-.12,-31.64,BASEMENT_CEILING.width,.1,1.35,panel);
+      for(const side of [-1,1])this.box(wood,x+side*1.19,ceiling+.04,-32.4,.055,.15,BASEMENT_CEILING.depth);
+    }
+    this.ceilingWood=this.fragments(wood,'basement-ceiling-splinters');
+    this.ceilingPlaster=this.fragments(concrete,'basement-ceiling-plaster');
+    for(const x of BASEMENT_CEILING.lanes){
+      const edge=new THREE.Group();edge.name='basement-ceiling-torn-edge';this.ceilingEdges.push(edge);this.root.add(edge);
+      for(const side of [-1,1])for(let i=0;i<7;i++){
+        if(side<0&&i===3)continue;
+        const z=side<0?-33.66:-31.02,offset=(i-3)*.335;
+        const woodEnd=this.mesh(this.ceilingWood.geometry,wood,x+offset,ceiling-.055,z,edge);
+        woodEnd.scale.set(.22,.065,.14+(side>0?i%3*.07:0));woodEnd.rotation.y=i%2?Math.PI:0;
+        const chip=this.mesh(this.ceilingPlaster.geometry,concrete,x+offset,ceiling-.12,z,edge);
+        chip.scale.set(.34,.09,.14+(side>0?i%3*.05:0));chip.rotation.y=i%2?Math.PI:0;
+      }
     }
     for (const z of [-26,-4,20]) {
       this.box(iron,0,ceiling-.45,z,43,.8,.4);
@@ -98,6 +132,8 @@ export class BasementSetRenderer {
     const map=new THREE.DataTexture(pixels,32,32);map.minFilter=map.magFilter=THREE.LinearFilter;map.needsUpdate=true;this.textures.push(map);
     const fog=new THREE.MeshBasicMaterial({color:0x9ba991,map,transparent:true,opacity:.28,depthWrite:false,side:THREE.DoubleSide});this.materials.add(fog);
     const geometry=new THREE.PlaneGeometry(1,1);this.geometries.add(geometry);this.smoke=new THREE.InstancedMesh(geometry,fog,72);this.smoke.frustumCulled=false;this.smoke.name='basement-gas-clouds';this.root.add(this.smoke);
+    const powder=new THREE.MeshBasicMaterial({color:0xb9ab92,map,transparent:true,opacity:.16,depthWrite:false,side:THREE.DoubleSide});this.materials.add(powder);
+    this.ceilingDust=new THREE.InstancedMesh(geometry,powder,68);this.ceilingDust.name='basement-ceiling-dust';this.ceilingDust.frustumCulled=false;this.root.add(this.ceilingDust);
     for(const geometry of batchStaticGeometry(this.root,new Set(this.grenades)))this.geometries.add(geometry);
     this.update(undefined);
   }
@@ -106,15 +142,60 @@ export class BasementSetRenderer {
   private mesh(geometry:THREE.BufferGeometry,material:THREE.Material,x:number,y:number,z:number,parent=this.root){this.geometries.add(geometry);const mesh=new THREE.Mesh(geometry,material);mesh.position.set(x,y,z);mesh.castShadow=mesh.receiveShadow=true;parent.add(mesh);return mesh;}
   private box(material:THREE.Material,x:number,y:number,z:number,w:number,h:number,d:number,parent=this.root){return this.mesh(new THREE.BoxGeometry(w,h,d),material,x,y,z,parent);}
   private cylinder(material:THREE.Material,x:number,y:number,z:number,r:number,h:number,parent=this.root){return this.mesh(new THREE.CylinderGeometry(r,r,h,16),material,x,y,z,parent);}
-  update(journey:FilmJourney|undefined,cameraPosition?:{x:number;y:number;z:number}):void {
+  private fragments(material:THREE.Material,name:string):THREE.InstancedMesh {
+    const shape=new THREE.Shape();shape.moveTo(-.5,-.5);for(const [x,y] of [[.31,-.5],[.5,-.2],[.38,-.13],[.49,.07],[.26,.15],[.39,.5],[-.5,.5]])shape.lineTo(x,y);shape.closePath();
+    const geometry=new THREE.ExtrudeGeometry(shape,{depth:1,bevelEnabled:false,steps:1});geometry.rotateX(Math.PI/2);geometry.translate(0,.5,0);this.geometries.add(geometry);
+    const fragments=new THREE.InstancedMesh(geometry,material,BASEMENT_CEILING.lanes.length*BASEMENT_CEILING.fragments);
+    fragments.name=name;fragments.castShadow=fragments.receiveShadow=true;fragments.frustumCulled=false;this.root.add(fragments);return fragments;
+  }
+  update(journey:FilmJourney|undefined,cameraPosition?:{x:number;y:number;z:number},delta=0):void {
     const state=journey?.scene==='m1_basement'&&!journey.visiting?journey.basement:undefined;
     this.cover.rotation.x=-(state?.hatch??0)*BASEMENT.grate.angle;
     const matrix=new THREE.Object3D(),camera=cameraPosition?this.root.worldToLocal(new THREE.Vector3(cameraPosition.x,cameraPosition.y,cameraPosition.z)):new THREE.Vector3(0,BASEMENT.floor+4,0);
+    this.updateCeiling(journey,camera,delta,matrix);
     const time=state?.gas??0;this.smoke.visible=BASEMENT_GAS.some((source,index)=>time>source.at&&(!state?.gasShots||state.gasShots[index]));
     for(let i=0;i<72;i++){const source=BASEMENT_GAS[i%3],age=Math.max(0,time-source.at),weight=state?.gasShots&&!state.gasShots[i%3]?0:THREE.MathUtils.smoothstep(age,0,12),radius=(1+i%8)*1.25*Math.min(1,age/15),angle=i*2.399;
       matrix.position.set(source.x+Math.sin(angle+time*.018)*radius,BASEMENT.floor+1.5+(i%5)*.72,source.z+Math.cos(angle+time*.018)*radius);matrix.lookAt(camera);matrix.scale.setScalar(weight*(6+i%4*1.6));matrix.updateMatrix();this.smoke.setMatrixAt(i,matrix.matrix);}
     this.smoke.instanceMatrix.needsUpdate=true;
     this.grenades.forEach((grenade,i)=>{const position=basementGasCanister(i,time,state?.gasShots);grenade.visible=Boolean(position);if(position){grenade.position.set(position.x,position.y,position.z);grenade.rotation.set(0,time<BASEMENT_GAS[i].at?time*11:0,Math.PI/2);}});
   }
-  dispose():void {this.root.removeFromParent();this.geometries.forEach(geometry=>geometry.dispose());this.materials.forEach(material=>material.dispose());this.textures.forEach(texture=>texture.dispose());this.smoke.dispose();}
+  private updateCeiling(journey:FilmJourney|undefined,camera:THREE.Vector3,delta:number,matrix:THREE.Object3D):void {
+    const state=journey?.scene==='m1_basement'&&!journey.visiting?journey.basement:undefined;
+    const active=Boolean(state?.landings&&state.starts),ages=BASEMENT_CEILING.lanes.map((_,lane)=>{
+      const source=active?basementCeilingAge(state!,lane):undefined;
+      this.ceilingClocks[lane]=source===undefined?undefined:basementDropPlayback(this.ceilingClocks[lane],source,delta,delta>0&&!state?.paused);
+      return this.ceilingClocks[lane]?.age;
+    });
+    this.ceilingPanels.forEach((panel,lane)=>{panel.visible=active&&ages[lane]===undefined;});
+    this.ceilingEdges.forEach((edge,lane)=>{edge.visible=ages[lane]!==undefined;});
+    this.ceilingWood.visible=this.ceilingPlaster.visible=ages.some(age=>age!==undefined);
+    for(const [lane,age] of ages.entries())for(let i=0;i<BASEMENT_CEILING.fragments;i++)for(const [plaster,mesh] of [[false,this.ceilingWood],[true,this.ceilingPlaster]] as const){
+      matrix.scale.set(0,0,0);
+      if(age!==undefined){
+        const pose=basementCeilingFragment(lane,i,age,plaster);matrix.rotation.set(pose.rotation.x,pose.rotation.y,pose.rotation.z);matrix.scale.set(pose.scale.x,pose.scale.y,pose.scale.z);
+        const e=new THREE.Matrix4().makeRotationFromEuler(matrix.rotation).elements;
+        const half=Math.abs(e[1])*pose.scale.x/2+Math.abs(e[5])*pose.scale.y/2+Math.abs(e[9])*pose.scale.z/2;
+        const halfX=Math.abs(e[0])*pose.scale.x/2+Math.abs(e[4])*pose.scale.y/2+Math.abs(e[8])*pose.scale.z/2;
+        const halfZ=Math.abs(e[2])*pose.scale.x/2+Math.abs(e[6])*pose.scale.y/2+Math.abs(e[10])*pose.scale.z/2;
+        matrix.position.set(THREE.MathUtils.clamp(pose.x,-21.725+halfX+.008,-13.02-halfX-.008),pose.y+half+.008,Math.max(pose.z,-33.725+halfZ+.008));
+      }
+      matrix.updateMatrix();mesh.setMatrixAt(lane*BASEMENT_CEILING.fragments+i,matrix.matrix);
+    }
+    this.ceilingWood.instanceMatrix.needsUpdate=this.ceilingPlaster.instanceMatrix.needsUpdate=true;
+    let dust=0;this.ceilingDust.visible=false;
+    const cloud=(x:number,y:number,z:number,size:number)=>{matrix.position.set(x,y,z);matrix.lookAt(camera);matrix.scale.setScalar(size);matrix.updateMatrix();this.ceilingDust.setMatrixAt(dust++,matrix.matrix);if(size>0)this.ceilingDust.visible=true;};
+    for(const [lane,age] of ages.entries())for(let i=0;i<16;i++){
+      const fade=age===undefined||age>=1.7?0:Math.sin(Math.PI*age/1.7);
+      cloud(BASEMENT_CEILING.lanes[lane]+Math.sin(i*2.4)*(.45+(age??0)*.5),BASEMENT.floor+BASEMENT.ceiling-.35-(age??0)*1.1-i%3*.2,
+        -32.4+Math.cos(i*2.4)*.9,Math.max(0,fade)*(1+(age??0)*1.2));
+    }
+    for(const [index,role] of BASEMENT_ROLES.entries()){
+      const source=active?state!.landings[role]:undefined;this.impactClocks[index]=source===undefined?undefined:basementDropPlayback(this.impactClocks[index],source,delta,delta>0&&!state?.paused);
+      const age=this.impactClocks[index]?.age,contact=age===undefined?-1:age-basementDropPose(age).impact;
+      const fade=contact<0||contact>=1.6?0:Math.sin(Math.PI*contact/1.6);
+      for(let i=0;i<4;i++){const angle=i*Math.PI/2,radius=.5+Math.max(0,contact)*.5;cloud((state?.starts?.[role].x??0)+Math.sin(angle)*radius,BASEMENT.floor+.3+Math.max(0,contact)*.25,-32.2+Math.cos(angle)*radius,Math.max(0,fade)*(1.1+Math.max(0,contact)*1.8));}
+    }
+    this.ceilingDust.instanceMatrix.needsUpdate=true;
+  }
+  dispose():void {this.root.removeFromParent();this.geometries.forEach(geometry=>geometry.dispose());this.materials.forEach(material=>material.dispose());this.textures.forEach(texture=>texture.dispose());this.smoke.dispose();this.ceilingWood.dispose();this.ceilingPlaster.dispose();this.ceilingDust.dispose();}
 }

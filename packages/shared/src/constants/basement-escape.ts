@@ -26,6 +26,7 @@ export const BASEMENT = {
   waiting: { neo: { x: 9, z: 22.5 }, trinity: { x: 6.8, z: 26.5 }, apoc: { x: 3, z: 29 }, switch: { x: 3, z: 25 }, cypher: { x: 0, z: 14 } },
 } as const;
 export const BASEMENT_DROP = { gravity: 24, recover: .82, walk: 1.25 } as const;
+export const BASEMENT_CEILING = { lanes: [-20.5, -18, -15.5], width: 2.45, depth: 3.2, fragments: 14, bounce: .28 } as const;
 export const BASEMENT_BOILERS = [-10, 10].flatMap(x => [-12, 12].map(z => ({ x, z, width: 6, depth: 13, height: 6.2 })));
 export const BASEMENT_GAS = [{ x: -17, z: -27, at: 2 }, { x: -1, z: 2, at: 14 }, { x: 11, z: 22, at: 28 }] as const;
 export const BASEMENT_GAS_LAUNCH = { flight: .95, bounce: .55, gravity: 24, entryDepth: 5.2, entryWidth: 4.4, entryHeight: 5.8 } as const;
@@ -121,6 +122,26 @@ export function basementDropPlayback(clock: BasementDropPlayback | undefined, so
   if (source !== clock.to) clock = { from: clock.age, to: source, age: clock.age, elapsed: 0 };
   const elapsed = Math.min(.5, clock.elapsed + Math.max(0, delta));
   return { ...clock, elapsed, age: clock.from + (clock.to - clock.from) * elapsed / .5 };
+}
+/** Saved drop ages also drive the ceiling; a later body cannot repair an open lane. */
+export function basementCeilingAge(encounter: BasementEncounter, lane: number): number | undefined {
+  const ages = BASEMENT_ROLES.filter(role => Math.abs(encounter.starts[role].x - BASEMENT_CEILING.lanes[lane]) < .5)
+    .map(role => encounter.landings[role]).filter((age): age is number => age !== undefined);
+  if (encounter.failure === 'fall' && Math.abs(encounter.starts.neo.x - BASEMENT_CEILING.lanes[lane]) < .5
+    && encounter.fallY !== undefined && encounter.fallY <= BASEMENT.floor + BASEMENT.ceiling)
+    ages.push(Math.sqrt(2 * (BASEMENT.floor + BASEMENT.ceiling - encounter.fallY) / BASEMENT_DROP.gravity));
+  return ages.length ? Math.max(...ages) : undefined;
+}
+export function basementCeilingFragment(lane: number, index: number, age: number, plaster = false) {
+  const row = Math.floor(index / 2), side = index % 2 ? 1 : -1, gravity = BASEMENT_DROP.gravity;
+  const impact = (-2 + Math.sqrt(4 + 2 * gravity * (BASEMENT.ceiling - .12))) / gravity;
+  const bounce = Math.max(0, Math.min(BASEMENT_CEILING.bounce, age - impact));
+  const travel = Math.min(age, impact) + bounce * .35, settled = smooth((age - impact) / BASEMENT_CEILING.bounce);
+  const rotation = { x: Math.sin(index * 1.9 + age * 8) * .55 * (1 - settled), y: side * age * 2.1, z: side * age * 3 * (1 - settled) };
+  return { x: Math.max(-21.6, Math.min(-13.4, BASEMENT_CEILING.lanes[lane] + side * (.94 + travel * (.65 + row % 3 * .09)))),
+    y: BASEMENT.floor + (age < impact ? Math.max(0, BASEMENT.ceiling - .12 - 2 * age - gravity * age * age / 2) : gravity * bounce * (BASEMENT_CEILING.bounce - bounce) / 2),
+    z: row % 2 ? -30.98 + travel * .35 : -33.55 - travel * .08,
+    rotation, scale: { x: plaster ? .28 + index % 3 * .06 : .55 + index % 3 * .13, y: plaster ? .065 : .055, z: plaster ? .24 : .22 }, impact };
 }
 export function basementHatchPoint(hatch: number, side = 0): Vector3 {
   const angle = hatch * BASEMENT.grate.angle;

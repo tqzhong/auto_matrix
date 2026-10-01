@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { BASEMENT, BASEMENT_GAS, TV_EXIT, BASEMENT_TUNNEL_LENGTH, basementGasCanister, basementGasLaunch, basementTunnelRoot, type FilmJourney } from '@auto_matrix/shared';
+import { BASEMENT, BASEMENT_GAS, TV_EXIT, BASEMENT_TUNNEL_LENGTH, WETWALL_SHAFT, basementGasCanister, basementGasLaunch, basementTunnelRoot, type FilmJourney } from '@auto_matrix/shared';
 import { BasementSetRenderer } from '../packages/client/src/engine/BasementSetRenderer.js';
 import { TvRepairRenderer } from '../packages/client/src/engine/TvRepairRenderer.js';
 
@@ -27,6 +27,86 @@ test('the falling company has a real ceiling aperture and the catch basin opens 
     assert.equal(hits(8.95,BASEMENT.floor+.8,26,new THREE.Vector3(0,-1,0),1).length,0,'opening the cover exposes a physical hole');
     for(const boiler of [0,1,2,3])assert.ok(root.getObjectByName(`basement-boiler-${boiler}`));
   } finally {renderer.dispose();}
+});
+
+test('the basement ceiling breaks at the occupied pipe lanes and keeps the unreleased lane intact',t=>{
+  t.mock.method(THREE.TextureLoader.prototype,'load',()=>new THREE.Texture());
+  const root=new THREE.Group(),renderer=new BasementSetRenderer(root),hits=rays(root),ceiling=BASEMENT.floor+BASEMENT.ceiling;
+  const state={phase:'descending',hatch:0,gas:0,landings:{},starts:{neo:{x:-15.5},trinity:{x:-20.5},apoc:{x:-20.5},switch:{x:-15.5},cypher:{x:-18}},heights:{}};
+  const journey={scene:'m1_basement',basement:state} as unknown as FilmJourney;
+  try {
+    renderer.update(journey);
+    for(const x of [-20.5,-18,-15.5])assert.ok(hits(x,ceiling+1,-31.45,new THREE.Vector3(0,-1,0),1.5).length,'the lath cannot already be an empty aperture before the company arrives');
+    state.landings={apoc:.3,switch:.3};renderer.update(journey);
+    for(const x of [-20.5,-15.5])assert.equal(hits(x,ceiling+1,-31.45,new THREE.Vector3(0,-1,0),1.5).length,0,'the broken ceiling must clear the actual falling lane');
+    assert.ok(hits(-18,ceiling+1,-31.45,new THREE.Vector3(0,-1,0),1.5).length,'Cypher’s lane cannot break before he arrives');
+    const wood=root.getObjectByName('basement-ceiling-splinters') as THREE.InstancedMesh;
+    assert.ok(wood?.visible,'broken lath needs actual falling fragments');
+    const before=Array.from(wood.instanceMatrix.array);for(let i=0;i<8;i++)renderer.update(journey);
+    assert.deepEqual(Array.from(wood.instanceMatrix.array),before,'paused fragments cannot keep falling on a render-only clock');
+    const restored=new BasementSetRenderer(new THREE.Group());try{restored.update(structuredClone(journey));assert.deepEqual(Array.from((restored.root.getObjectByName('basement-ceiling-splinters') as THREE.InstancedMesh).instanceMatrix.array),before,'loading must reproduce the same breakage');}finally{restored.dispose();}
+    state.landings={};renderer.update(journey);assert.equal(wood.visible,false,'shaft retry must restore the ceiling and clear old fragments');
+    assert.ok(hits(-15.5,ceiling+1,-31.45,new THREE.Vector3(0,-1,0),1.5).length);
+  }finally{renderer.dispose();}
+});
+
+test('intact ceiling lath has a real pipe notch and its shards stay inside the mechanical-room surfaces',t=>{
+  t.mock.method(THREE.TextureLoader.prototype,'load',()=>new THREE.Texture());
+  const renderer=new BasementSetRenderer(new THREE.Group()),ceiling=BASEMENT.floor+BASEMENT.ceiling;
+  const state={phase:'landing',hatch:0,gas:0,landings:{},starts:{neo:{x:-15.5},trinity:{x:-20.5},apoc:{x:-20.5},switch:{x:-15.5},cypher:{x:-18}},heights:{}};
+  const journey={scene:'m1_basement',basement:state} as unknown as FilmJourney;
+  try{
+    renderer.update(journey);renderer.root.updateWorldMatrix(true,true);
+    const ray=new THREE.Raycaster(new THREE.Vector3(-15.5,ceiling-.5,WETWALL_SHAFT.pipeZ),new THREE.Vector3(0,1,0),0,1);
+    const panel=renderer.root.getObjectsByProperty('name','basement-ceiling-lath')[2];
+    assert.equal(ray.intersectObject(panel,true).length,0,'plaster as well as wood must leave the actual pipe hole open');
+    const matrix=new THREE.Matrix4(),point=new THREE.Vector3();
+    for(let age=0;age<=3;age+=.025){
+      state.landings={neo:age,trinity:age,apoc:age,switch:age,cypher:age};renderer.update(journey);
+      for(const name of ['basement-ceiling-splinters','basement-ceiling-plaster']){
+        const fragments=renderer.root.getObjectByName(name) as THREE.InstancedMesh,positions=fragments.geometry.attributes.position;
+        for(let i=0;i<fragments.count;i++){
+          fragments.getMatrixAt(i,matrix);
+          for(let v=0;v<positions.count;v++){
+            point.fromBufferAttribute(positions,v).applyMatrix4(matrix);
+            assert.ok(point.y>=BASEMENT.floor-.015,'falling fragments must bounce above the actual floor');
+            assert.ok(point.x>=-21.75&&point.x<=21.75&&point.z>=-33.75&&point.z<=33.75,`fragment crosses concrete at ${age}: ${point.toArray()}`);
+            const distance=Math.hypot(Math.min(...[-20.5,-18,-15.5].map(x=>Math.abs(point.x-x))),point.z-WETWALL_SHAFT.pipeZ);
+            assert.ok(distance>=.225,`fragment crosses a standing pipe at ${age}: ${point.toArray()}`);
+          }
+        }
+      }
+    }
+  }finally{renderer.dispose();}
+});
+
+test('ceiling debris advances between world packets and freezes with the saved paused age',t=>{
+  t.mock.method(THREE.TextureLoader.prototype,'load',()=>new THREE.Texture());
+  const renderer=new BasementSetRenderer(new THREE.Group());
+  const state={phase:'landing',hatch:0,gas:0,paused:false,landings:{apoc:.1},starts:{neo:{x:-15.5},trinity:{x:-20.5},apoc:{x:-20.5},switch:{x:-15.5},cypher:{x:-18}},heights:{}};
+  const journey={scene:'m1_basement',basement:state} as unknown as FilmJourney;
+  const matrices=()=>['basement-ceiling-splinters','basement-ceiling-plaster','basement-ceiling-dust'].map(name=>Array.from((renderer.root.getObjectByName(name) as THREE.InstancedMesh).instanceMatrix.array));
+  try{
+    renderer.update(journey,undefined,.1);state.landings.apoc=.6;renderer.update(journey,undefined,.1);
+    const moving=matrices();renderer.update(journey,undefined,.1);
+    assert.notDeepEqual(matrices(),moving,'the burst must keep moving between server snapshots');
+    state.paused=true;renderer.update(journey,undefined,.1);const paused=matrices();
+    for(let frame=0;frame<8;frame++)renderer.update(journey,undefined,.25);
+    assert.deepEqual(matrices(),paused,'paused debris and dust cannot continue on the browser clock');
+    const restored=new BasementSetRenderer(new THREE.Group());
+    try{restored.update(structuredClone(journey));for(const [index,name] of ['basement-ceiling-splinters','basement-ceiling-plaster','basement-ceiling-dust'].entries())assert.deepEqual(Array.from((restored.root.getObjectByName(name) as THREE.InstancedMesh).instanceMatrix.array),paused[index]);}finally{restored.dispose();}
+    state.landings.apoc=3;renderer.update(journey);
+    assert.equal(renderer.root.getObjectByName('basement-ceiling-dust')!.visible,false,'finished bursts must stop drawing empty dust');
+  }finally{renderer.dispose();}
+});
+
+test('the retained upper pipe chase stays enclosed above the highest hanging crew member',t=>{
+  t.mock.method(THREE.TextureLoader.prototype,'load',()=>new THREE.Texture());
+  const renderer=new BasementSetRenderer(new THREE.Group()),hits=rays(renderer.root);
+  try{
+    assert.ok(hits(-16.4,-51,-32.2,new THREE.Vector3(0,1,0),4).length,'a fall camera must not look through the chase into the city sky');
+    assert.ok(hits(-16.4,-51,-32.2,new THREE.Vector3(0,0,1),2).length,'the upper chase needs the same front enclosure as its lower section');
+  }finally{renderer.dispose();}
 });
 
 test('the drain has a roof and exterior walls while both authored turns remain physically open',t=>{
