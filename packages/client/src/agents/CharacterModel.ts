@@ -10,7 +10,7 @@ import { poseOracleArrival } from './OracleArrivalPerformance.js';
 import { poseWetwall } from './WetwallPerformance.js';
 import { poseSixthFloor } from './SixthFloorPerformance.js';
 import { poseBathroom } from './BathroomPerformance.js';
-import { poseBasement, poseHardline } from './BasementPerformance.js';
+import { poseBasement, poseBasementLauncher, poseHardline } from './BasementPerformance.js';
 import { poseCrosscut, poseCrosscutContact } from './CrosscutPerformance.js';
 import { HardlineHandset } from './HardlineHandset.js';
 import { advanceMotion, newMotion, type MotionInput, type MotionState } from './CharacterMotion.js';
@@ -72,7 +72,7 @@ export interface CharacterRig {
   chateauBlade?: { weapon: ChateauWeapon; model: THREE.Group };
   infection?: THREE.Group;
   rifle?: boolean;
-  weaponStyle?: RescueLoadout | 'pistol' | 'pulse' | 'hel_pistol';
+  weaponStyle?: RescueLoadout | 'pistol' | 'pulse' | 'hel_pistol' | 'gas_launcher';
   muzzleIndex?: number;
 }
 
@@ -80,7 +80,7 @@ export function weaponMuzzle(rig: CharacterRig): THREE.Vector3 | undefined {
   if (!rig.weapons?.length) return;
   const gun = rig.weapons[(rig.muzzleIndex ?? 0) % rig.weapons.length]; rig.muzzleIndex = (rig.muzzleIndex ?? 0) + 1;
   gun.updateWorldMatrix(true, false);
-  const length = rig.weaponStyle === 'compact' ? .72 : rig.weaponStyle === 'breacher' ? 1.34 : ['rifle', 'pulse'].includes(rig.weaponStyle ?? '') ? 1.2 : .5;
+  const length = rig.weaponStyle === 'compact' ? .72 : rig.weaponStyle === 'breacher' || rig.weaponStyle === 'gas_launcher' ? 1.34 : ['rifle', 'pulse'].includes(rig.weaponStyle ?? '') ? 1.2 : .5;
   return gun.localToWorld(new THREE.Vector3(0, -length - .115, 0));
 }
 
@@ -451,15 +451,19 @@ export class CharacterModels {
       const dual = weaponStyle === 'pistol' || weaponStyle === 'compact';
       rig.weaponStyle = weaponStyle;
       rig.weapons = (dual ? [0, 1] : [0]).map(i => {
-        const gun = new THREE.Group(); const length = weaponStyle === 'compact' ? .72 : weaponStyle === 'breacher' ? 1.34 : ['rifle', 'pulse'].includes(weaponStyle) ? 1.2 : .5;
+        const gun = new THREE.Group(); const length = weaponStyle === 'compact' ? .72 : weaponStyle === 'breacher' || weaponStyle === 'gas_launcher' ? 1.34 : ['rifle', 'pulse'].includes(weaponStyle) ? 1.2 : .5;
         gun.name = pulseRifle ? 'neb-pulse-rifle' : `character-${weaponStyle}`;
         this.mesh(gun, this.box, material, [0, -length / 2, 0], [.12, length, .14]);
-        this.mesh(gun, this.cylinder, material, [0, -length, 0], [.045, .23, .045]);
+        this.mesh(gun, this.cylinder, material, [0, -length, 0], [weaponStyle === 'gas_launcher' ? .14 : .045, .23, weaponStyle === 'gas_launcher' ? .14 : .045]);
         this.mesh(gun, this.box, material, [0, -.09, .13], [.105, .18, .27]);
         this.mesh(gun, this.box, material, [0, -length * .5, .08], [.08, .1, dual ? weaponStyle === 'compact' ? .22 : .06 : .35]);
         if (weaponStyle === 'breacher') {
           this.mesh(gun, this.cylinder, material, [0, -1.02, 0], [.075, .52, .075]);
           this.mesh(gun, this.box, material, [0, -.62, .11], [.18, .42, .24]);
+        }
+        if (weaponStyle === 'gas_launcher') {
+          this.mesh(gun, this.cylinder, material, [0, -.88, 0], [.14, .9, .14]);
+          this.mesh(gun, this.box, material, [0, .18, -.1], [.23, .48, .22]);
         }
         if (weaponStyle === 'rifle') this.mesh(gun, this.box, material, [0, -.48, -.14], [.17, .58, .34]);
         if (pulseRifle) {
@@ -604,6 +608,7 @@ export class CharacterModels {
       poseSixthFloor(rig, input.sixth);
       poseBathroom(rig, input.bathroom, input.sixth);
       poseBasement(rig, input.basement);
+      poseBasementLauncher(rig, input.basementGas);
       poseCrosscut(rig, input.crosscut);
       if (input.crosscut?.body) this.heroes.crosscutInterfaces(rig.hero);
       poseCrosscutContact(rig, input.crosscut);
@@ -693,6 +698,7 @@ export class CharacterModels {
     poseWetwall(rig, input.wetwall, input.speed < .05 && Math.abs(input.climbing ?? 0) < .05);
     poseSixthFloor(rig, input.sixth);
     poseBasement(rig, input.basement);
+    poseBasementLauncher(rig, input.basementGas);
     if (input.training?.kind === 'download' && input.training.role === 'tank') {
       const engaged = input.training.elapsed > 0 ? 1 : .35;
       for (let i = 0; i < 2; i++) {

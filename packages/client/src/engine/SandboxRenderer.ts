@@ -136,7 +136,7 @@ export class SandboxRenderer {
           const base = agents[character ?? (scene === 'm2_chateau' ? guardBase : kind === 'escort' ? 'keymaker' : 'smith')] ?? agents.neo;
           if (!base) return;
           rig = this.models.create({ ...base, id: scene === 'm2_chateau' ? `chateau_guard_${style ?? 'unarmed'}` : character ?? (kind === 'soldier' ? 'film_soldier' : kind === 'escort' ? 'keymaker' : 'smith'),
-            faction: scene === 'm2_chateau' ? 'merovingian' : base.faction,
+            faction: scene === 'm2_chateau' ? 'merovingian' : scene === 'm1_basement' ? 'civilians' : base.faction,
             appearance: scene === 'm2_chateau' ? { ...base.appearance, clothing: style === 'axe' ? '#473d31' : style === 'spear' ? '#2e3b3b' : style === 'mace' ? '#52493e' : '#302d31' }
               : scene === 'm1_room303' ? { ...base.appearance, clothing: '#222c36' }
               : kind === 'soldier' ? { ...base.appearance, clothing: '#172121' } : base.appearance }); rig.root.position.y = -1; group.add(rig.root);
@@ -153,6 +153,16 @@ export class SandboxRenderer {
             this.mesh(rig.head, this.orb, this.dark, [0, -.18, .20], [.22, .13, .08]);
             this.mesh(rig.torso, this.box, this.dark, [0, .8, .29], [.9, .95, .25]);
             for (const x of [-.28, 0, .28]) this.mesh(rig.torso, this.box, this.metal, [x, .58, .44], [.2, .34, .09]);
+          }
+          if (scene === 'm1_basement') {
+            const mask=new THREE.Group();mask.name='basement-gas-mask';rig.head.add(mask);
+            this.mesh(mask,this.orb,this.dark,[0,-.065,.24],[.27,.24,.15]);
+            for(const side of [-1,1]) {
+              this.mesh(mask,this.orb,this.metal,[side*.11,.015,.354],[.095,.065,.027]);
+              this.mesh(mask,this.orb,this.dark,[side*.11,.015,.379],[.071,.047,.018]);
+              this.mesh(mask,this.cylinder,this.dark,[side*.25,-.18,.255],[.115,.15,.115]).rotation.z=Math.PI/2;
+            }
+            this.mesh(mask,this.cylinder,this.metal,[0,-.15,.4],[.09,.12,.09]).rotation.x=Math.PI/2;
           }
           if (kind === 'smith' && !character) rig.root.scale.multiplyScalar(1.18);
         }
@@ -208,14 +218,15 @@ export class SandboxRenderer {
         guide.progress = THREE.MathUtils.lerp(guide.from, guide.to, guide.elapsed / .5);
         const root = ambushRetreatRoot(guide.progress), center = FILM_SETS.film_ambush_house.center;
         enemy.group.position.set(center.x + root.x, center.y + root.y, center.z + root.z); enemy.facing = root.yaw;
-      } else enemy.group.position.lerp(enemy.target, running ? 1 - Math.exp(-8 * delta) : 0);
+      } else if(threat?.basementGas)enemy.group.position.copy(enemy.target);
+      else enemy.group.position.lerp(enemy.target, running ? 1 - Math.exp(-8 * delta) : 0);
       if (enemy.rig) {
         const turn = Math.atan2(Math.sin(enemy.facing - enemy.rig.root.rotation.y), Math.cos(enemy.facing - enemy.rig.root.rotation.y));
-        enemy.rig.root.rotation.y += turn * (enemy.ambushGuide && delta === 0 ? 1 : 1 - Math.exp(-12 * delta));
+        enemy.rig.root.rotation.y += turn * (threat?.basementGas || enemy.ambushGuide && delta === 0 ? 1 : 1 - Math.exp(-12 * delta));
       }
       const dist = enemy.group.position.distanceTo(camera.position);
       if (enemy.rig) this.models.animate(enemy.rig, running ? delta : 0, { speed: Math.min(8.4, previous.distanceTo(enemy.group.position) / Math.max(.001, delta)), grounded: true, verticalVelocity: 0, turn: 0,
-        attack: enemy.kind !== 'soldier' && threat && tick - threat.lastStrike < 3 ? threat.lastStrike : undefined, armed: enemy.kind === 'soldier', weaponStyle: enemy.scene === 'm1_room303' ? 'hel_pistol' : undefined, shot: enemy.shot, combo: threat?.combo ?? 0, windingUp: threat?.attackAt !== undefined, hit: enemy.hit, impact: enemy.impact, chateauWeapon: threat?.weapon }, dist);
+        attack: enemy.kind !== 'soldier' && threat && tick - threat.lastStrike < 3 ? threat.lastStrike : undefined, armed: enemy.kind === 'soldier', weaponStyle: enemy.scene === 'm1_room303' ? 'hel_pistol' : enemy.scene === 'm1_basement' ? 'gas_launcher' : undefined, basementGas: threat?.basementGas, shot: enemy.shot, combo: threat?.combo ?? 0, windingUp: threat?.attackAt !== undefined, hit: enemy.hit, impact: enemy.impact, chateauWeapon: threat?.weapon }, dist);
       enemy.label.visible = enemy.scene !== 'm1_room303' && !threat?.patrol && dist < (enemy.kind === 'soldier' ? 30 : 65); enemy.label.scale.set(enemy.kind === 'soldier' ? 3 : 5, enemy.kind === 'soldier' ? .56 : .94, 1);
       enemy.health.visible = enemy.scene !== 'm1_room303' && !threat?.patrol;
       enemy.health.quaternion.copy(camera.quaternion);

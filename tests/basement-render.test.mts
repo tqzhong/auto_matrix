@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { BASEMENT, TV_EXIT, BASEMENT_TUNNEL_LENGTH, basementTunnelRoot, type FilmJourney } from '@auto_matrix/shared';
+import { BASEMENT, BASEMENT_GAS, TV_EXIT, BASEMENT_TUNNEL_LENGTH, basementGasCanister, basementGasLaunch, basementTunnelRoot, type FilmJourney } from '@auto_matrix/shared';
 import { BasementSetRenderer } from '../packages/client/src/engine/BasementSetRenderer.js';
 import { TvRepairRenderer } from '../packages/client/src/engine/TvRepairRenderer.js';
 
@@ -41,6 +41,42 @@ test('the drain has a roof and exterior walls while both authored turns remain p
       assert.equal(hits(a.x,floor+1.4,a.z,delta.clone().normalize(),delta.length()+.01).length,0,`rendered wall blocks the actual turn at ${progress}`);
     }
   } finally {renderer.dispose();}
+});
+
+test('a launched gas canister crosses a real entry before it lands and emits smoke',t=>{
+  t.mock.method(THREE.TextureLoader.prototype,'load',()=>new THREE.Texture());
+  const root=new THREE.Group(),renderer=new BasementSetRenderer(root),hits=rays(root);
+  try {
+    renderer.update({scene:'m1_basement',basement:{hatch:0,gas:1,gasShots:[true]}} as any);
+    const canister=root.getObjectByName('basement-gas-canister')!;
+    assert.ok(canister.visible,'the canister must be visible in flight before the old ground-spawn time');
+    assert.ok(canister.position.y>BASEMENT.floor+.8,'the canister must leave the launcher above the floor');
+    assert.equal(root.getObjectByName('basement-gas-clouds')!.visible,false,'gas cannot bloom in mid-flight');
+    assert.equal(hits(-25,BASEMENT.floor+3.2,-27,new THREE.Vector3(1,0,0),8).length,0,'the launcher cannot shoot through a solid basement wall');
+    renderer.update({scene:'m1_basement',basement:{hatch:0,gas:3,gasShots:[true]}} as any);
+    assert.ok(Math.abs(canister.position.y-BASEMENT.floor-.16)<.001,'the same canister comes to rest above the concrete');
+    assert.ok(root.getObjectByName('basement-gas-clouds')!.visible);
+    renderer.update({scene:'m1_basement',basement:{hatch:0,gas:3,gasShots:[false]}} as any);
+    assert.equal(canister.visible,false,'a cancelled shot cannot create a canister');
+    assert.equal(root.getObjectByName('basement-gas-clouds')!.visible,false,'a cancelled shot cannot create smoke');
+  }finally{renderer.dispose();}
+});
+
+test('all three gas trajectories clear the authored doors, boilers and ceiling before bouncing on concrete',t=>{
+  t.mock.method(THREE.TextureLoader.prototype,'load',()=>new THREE.Texture());
+  const root=new THREE.Group(),renderer=new BasementSetRenderer(root),hits=rays(root);
+  try {
+    for(const [index,gas] of BASEMENT_GAS.entries()) {
+      let previous=basementGasCanister(index,basementGasLaunch(index).at,[true,true,true])!;
+      for(let time=basementGasLaunch(index).at+.025;time<=gas.at+.03;time+=.025) {
+        const point=basementGasCanister(index,time,[true,true,true])!,direction=new THREE.Vector3(point.x-previous.x,point.y-previous.y,point.z-previous.z),length=direction.length();
+        assert.ok(point.y>=BASEMENT.floor+.159&&point.y<BASEMENT.floor+BASEMENT.ceiling-.2,'the canister must stay within the mechanical-room volume');
+        if(length>.001)assert.equal(hits(previous.x,previous.y,previous.z,direction.normalize(),length+.001).length,0,`canister ${index} crosses solid geometry at ${time}`);
+        previous=point;
+      }
+      const rest=basementGasCanister(index,gas.at+1,[true,true,true])!;assert.deepEqual(rest,{x:gas.x,y:BASEMENT.floor+.16,z:gas.z});
+    }
+  }finally{renderer.dispose();}
 });
 
 test('the repair shop leaves the playable counter gap and mounts the receiver beside a real wall',t=>{

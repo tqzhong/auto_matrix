@@ -21,6 +21,7 @@ export interface MotionInput {
   sixth?: import('@auto_matrix/shared').SixthGesture;
   bathroom?: import('@auto_matrix/shared').BathroomGesture;
   basement?: import('@auto_matrix/shared').BasementGesture;
+  basementGas?: import('@auto_matrix/shared').BasementLauncherGesture;
   tvExit?: import('@auto_matrix/shared').TvExitGesture;
   crosscut?: import('@auto_matrix/shared').CrosscutGesture;
   shot?: number;
@@ -76,7 +77,7 @@ export interface MotionInput {
   deusPact?: import('@auto_matrix/shared').DeusPactGesture;
   smithFinale?: import('@auto_matrix/shared').SmithFinaleGesture;
   epilogue?: import('@auto_matrix/shared').TrilogyEpilogueGesture;
-  weaponStyle?: RescueLoadout | 'hel_pistol';
+  weaponStyle?: RescueLoadout | 'hel_pistol' | 'gas_launcher';
   helDanceDoor?: number;
   aimPitch?: number;
   clubClothes?: boolean;

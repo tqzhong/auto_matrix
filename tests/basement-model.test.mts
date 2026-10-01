@@ -3,7 +3,7 @@ import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { BASEMENT, FILM_SETS, TV_EXIT, WETWALL_SHAFT, basementHatchPoint, basementLifterRoot, type BasementGesture, type WetwallGesture } from '@auto_matrix/shared';
+import { BASEMENT, FILM_SETS, TV_EXIT, WETWALL_SHAFT, basementGasLaunch, basementLauncherRoot, basementHatchPoint, basementLifterRoot, type BasementGesture, type WetwallGesture } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { CharacterModels, type CharacterRig } from '../packages/client/src/agents/CharacterModel.js';
@@ -115,6 +115,26 @@ test('Neo holds one real receiver through the dead line and returns it before th
   assert.equal(rig.root.getObjectByName('hardline-handset')!.visible,false);
 });
 
+test('gas-masked launcher bodies hold both grips and fire from the exact shared muzzle',async t=>{
+  const h=await models(t),base=h.world.agents.get('neo')!,rig=h.characters.create({...base,id:'film_soldier',faction:'civilians'});
+  const center=FILM_SETS.film_ambush_house.center;
+  for(const index of [0,1,2]) {
+    const root=basementLauncherRoot(index),launch=basementGasLaunch(index);
+    rig.root.position.set(center.x+root.x,center.y-1+root.y,center.z+root.z);rig.root.rotation.y=root.yaw;
+    for(const offset of [-.1,0,.125,.4]) {
+      h.characters.animate(rig,0,{speed:0,grounded:true,verticalVelocity:0,turn:0,armed:true,weaponStyle:'gas_launcher',basementGas:{index,time:launch.at+offset}},4);
+      rig.root.updateMatrixWorld(true);const gun=rig.weapons![0];
+      const muzzle=gun.localToWorld(new THREE.Vector3(0,-1.455,0)),target=new THREE.Vector3(center.x+launch.muzzle.x,center.y-1+launch.muzzle.y,center.z+launch.muzzle.z);
+      assert.ok(muzzle.distanceTo(target)<.071,`launcher ${index} fires away from the physical barrel: ${muzzle.distanceTo(target)}`);
+      for(const hand of [0,1]) {
+        const grip=gun.localToWorld(new THREE.Vector3(0,hand?-.78:-.08,-.12));
+        const palm=rig.elbows[hand].localToWorld(new THREE.Vector3(0,-.79,.055));
+        assert.ok(palm.distanceTo(grip)<.1,`launcher ${index}/${hand} has a floating support hand: ${palm.distanceTo(grip)}; shoulder distance ${rig.shoulders[hand].getWorldPosition(new THREE.Vector3()).distanceTo(grip)}, reach ${rig.elbows[hand].position.length()+Math.hypot(.79,.055)}; shoulder ${rig.root.worldToLocal(rig.shoulders[hand].getWorldPosition(new THREE.Vector3())).toArray()}, grip ${rig.root.worldToLocal(grip.clone()).toArray()}`);
+      }
+    }
+  }
+});
+
 test('both drain cameras stay below the roof while direction follows the player heading',async t=>{
   const h=await models(t),actor=h.world.agents.get('neo')!,rig=h.characters.create(actor);await new Promise(resolve=>setImmediate(resolve));
   const center=FILM_SETS.film_ambush_house.center,camera=new THREE.PerspectiveCamera(57,16/9,.5,5000),group=new THREE.Group();group.add(rig.root);rig.root.position.y=-1;
@@ -138,4 +158,13 @@ test('both drain cameras stay below the roof while direction follows the player 
       }
     }
   } finally {controls.dispose();}
+});
+
+test('Neo releases the pipe pose on the boiler-room floor instead of holding an absent street ladder',async t=>{
+  const h=await models(t),actor=h.world.agents.get('neo')!,camera=new THREE.PerspectiveCamera(),group=new THREE.Group();
+  actor.position={x:FILM_SETS.film_ambush_house.center.x-15.5,y:FILM_SETS.film_ambush_house.center.y+BASEMENT.floor,z:FILM_SETS.film_ambush_house.center.z-29};
+  actor.currentAction={type:'idle',parameters:{resolved:true,basement:{role:'neo',phase:'searching',elapsed:0,hatch:0}},startedAt:0,duration:1e9,progress:0};
+  const controls=new PlayerControls(h.canvas,camera,()=>{},()=>{});controls.possess(actor);
+  try{controls.update(.1,actor,group,false);assert.equal(controls.motion.climbing,undefined,'an absent emerging role cannot match an absent TV-exit role and raise both arms');}
+  finally{controls.dispose();}
 });

@@ -164,6 +164,35 @@ test('smoke has a real exposure cost, crouching buys time, and failure resumes a
   assert.equal(h.neo.position.y, FILM_SETS.film_ambush_house.center.y + BASEMENT.floor); assert.equal(h.world.agents.get('mouse')!.status, 'dead');
 });
 
+test('basement smoke comes from saved launchers, which freeze with the company and cannot fire after being removed', () => {
+  const h=setup();h.enter();h.descend();
+  const launchers=()=>h.sandbox.state.threats.filter(threat=>threat.scene==='m1_basement');
+  assert.equal(launchers().length,3,'three actual gas-masked attackers must precede the canisters');
+  assert.ok(launchers().every(threat=>threat.patrol),'ordinary threat AI cannot advance the scripted smoke during a pause');
+  const first=launchers()[0];h.sandbox.state.threats=h.sandbox.state.threats.filter(threat=>threat!==first);
+  for(let i=0;i<60;i++)h.frame();
+  assert.equal((h.state().basement as any).gasShots[0],false,'a removed attacker cannot launch an invisible canister');
+  assert.equal(h.state().basement!.air,100,'an unfired canister cannot emit gas');
+  assert.equal(launchers().length,2,'the staging pass cannot respawn a removed attacker');
+  const snapshot=()=>JSON.stringify({basement:h.state().basement,launchers:launchers()});
+  const held=snapshot();h.frame({},false);assert.equal(snapshot(),held);
+  h.sandbox.restore(structuredClone(h.sandbox.state));assert.equal(snapshot(),held,'restoring must preserve the launch decisions and attack clock');
+  h.players.release('escape-player',h.tick());for(let i=0;i<12;i++)h.players.step(.1,true,h.tick());assert.equal(snapshot(),held);
+  h.players.possess('escape-player','neo',h.tick());h.world.agents.get('trinity')!.controller='occupied';h.frame();
+  const occupied=snapshot();for(let i=0;i<12;i++)h.frame();assert.equal(snapshot(),occupied);delete h.world.agents.get('trinity')!.controller;
+});
+
+test('new basement retries reset the launch sequence while old floor saves keep their original smoke clock',()=>{
+  const h=setup();h.enter();h.descend();
+  for(let i=0;i<30;i++)h.frame();assert.equal(h.state().basement!.gasShots?.[0],true);
+  h.state().basement!.air=.01;for(let i=0;i<100&&h.neo.status!=='dead';i++)h.frame();assert.equal(h.neo.status,'dead');
+  h.command('retry');assert.deepEqual(h.state().basement!.gasShots,[]);assert.equal(h.state().basement!.gas,0);
+  assert.equal(h.sandbox.state.threats.filter(threat=>threat.scene==='m1_basement').length,3);
+  const old=setup();old.enter();delete old.state().basement!.gasShots;old.descend();old.state().basement!.gas=9;
+  const air=old.state().basement!.air;old.frame();assert.ok(old.state().basement!.air<air,'legacy smoke must retain its exposure instead of waiting for new launchers');
+  assert.equal(old.sandbox.state.threats.filter(threat=>threat.scene==='m1_basement').length,0,'legacy saves cannot replay a new launch sequence');
+});
+
 test('ordinary movement must follow the company, open the real grate and traverse the low turning drain before the TV-shop cut', () => {
   const h = setup(); h.enter(); h.descend(); h.findHatch();
   const before = { ...h.neo.position }; h.command('next'); assert.equal(h.state().scene, 'm1_basement'); assert.deepEqual(h.neo.position, before);
