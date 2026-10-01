@@ -5,7 +5,7 @@ import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_NAMES, filmReflections, 
   type AgentState, type SandboxState, type SandboxCommand, type ItemId, type SkillId, type Vector3 } from '@auto_matrix/shared';
 import './sandbox.css';
 import { AMBUSH_ESCAPE, ambushEscapeTarget, ambushEscapeText } from '@auto_matrix/shared';
-import { WETWALL, wetwallText, wetwallEntry } from '@auto_matrix/shared';
+import { WETWALL, wetwallText, wetwallEntry, sixthText } from '@auto_matrix/shared';
 import { renderNeoLife } from './NeoLifePanel.js';
 import { interrogationLocked, interrogationPose } from '@auto_matrix/shared';
 import { meetingBoardPoint, meetingLocked, MEETING_TIMING } from '@auto_matrix/shared';
@@ -274,13 +274,26 @@ export class SandboxUI {
       this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.toggle('urgent', failed || wall.phase === 'jammed');
       this.el('film-sequence-line').textContent = wetwallText(wall);
       this.el('film-sequence-hint').textContent = wall.paused ? '等候同行者释放角色 · 鼠标环顾 · V 切换视角' : failed ? 'J 手记 · 从墙内检查点重试'
-        : done ? 'G 继续 Morpheus 的掩护视角 · J 查看手记' : wall.phase === 'sealed' ? near ? 'G 破开灰泥 · V 切换视角' : '走近管线墙 · G 破开灰泥'
+        : done ? 'G 留意六楼 608 室的搜查 · J 查看手记' : wall.phase === 'sealed' ? near ? 'G 破开灰泥 · V 切换视角' : '走近管线墙 · G 破开灰泥'
           : wall.phase === 'jammed' ? 'G 示意 Trinity 解救 Cypher · V 切换视角' : wall.phase === 'climbing' ? 'W 下行 · S 向上退回 · 空格松手 · V 切换视角' : '动作进行中 · 鼠标环顾 · V 切换视角';
       this.el('sandbox-interact').classList.toggle('hidden', !acting); this.el('sandbox-nearby').textContent = wall.phase === 'jammed' ? 'Cypher 被供水管卡住' : `墙内下行 ${depth.toFixed(1)} / 14.8 m`;
       this.el('sandbox-trace').textContent = '808 → 608 · 管线夹层'; this.el('sandbox-job').style.width = `${Math.min(100, depth / 14.8 * 100)}%`;
       this.el('sandbox-waypoint').textContent = '';
       document.getElementById('game-objective')!.textContent = '旧楼伏击 · 墙里的退路';
       document.getElementById('game-objective-copy')!.textContent = failed ? 'Neo 松开了管道 · J 从检查点重试' : wall.phase === 'climbing' ? `沿管线下行 ${depth.toFixed(1)} m · 松开移动键会抓稳等待` : wetwallText(wall);
+      return;
+    }
+    if (!journey.visiting && scene.id === 'm1_wall_exposed' && journey.wallExposure) {
+      const encounter = journey.wallExposure, phase = encounter.phase;
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.toggle('urgent', ['firing', 'grapple', 'failed'].includes(phase));
+      this.el('film-sequence-line').textContent = sixthText(encounter);
+      this.el('film-sequence-hint').textContent = encounter.paused ? '等候同行者释放角色 · V 切换视角' : phase === 'ready' ? 'G 留意搜查 · V 切换视角'
+        : phase === 'firing' ? 'Z 掩护 · 松开 Z 探回破口 · 左键 / T 还击 · V 主视角瞄准' : phase === 'failed' ? 'J 从六楼夹层重试' : phase === 'done' ? 'G 接管 Morpheus 的掩护视角' : '观察墙外动静 · 鼠标环顾 · V 切换视角';
+      this.el('sandbox-interact').classList.toggle('hidden', encounter.paused || !['ready', 'done'].includes(phase));
+      this.el('sandbox-nearby').textContent = '六楼 608 室的薄墙'; this.el('sandbox-trace').textContent = `手枪 ${encounter.ammo}/12 · 六楼夹层`;
+      this.el('sandbox-waypoint').textContent = ''; this.el('sandbox-job').style.width = '0';
+      document.getElementById('game-objective')!.textContent = '旧楼伏击 · 六楼暴露';
+      document.getElementById('game-objective-copy')!.textContent = sixthText(encounter);
       return;
     }
     if (!journey.visiting && scene.id === 'm1_dejavu' && journey.step === 0 && journey.ambushApproach) {
@@ -1279,7 +1292,7 @@ export class SandboxUI {
     }
     if (!journey.visiting && journey.betrayal && ['m1_bathroom', 'm1_unplugged'].includes(scene.id)) {
       const encounter = journey.betrayal; const step = scene.steps[journey.step];
-      const close = !step || distance(player.position, filmStepPosition(scene, step)) <= 4;
+      const close = !step || distance(player.position, filmStepPosition(scene, step, journey)) <= 4;
       const bathroom = encounter.kind === 'bathroom'; const phase = encounter.phase;
       const canAct = close && (phase === 'ready' && (bathroom || journey.step === 1) || phase === 'sacrifice_ready')
         || phase === 'window' || phase === 'reconnect' || phase === 'done';
@@ -1295,7 +1308,7 @@ export class SandboxUI {
         : phase === 'done' ? bathroom ? '转到飞船上的背叛' : '继续营救抉择' : bathroom && phase === 'sacrifice_ready' ? '撞向 Smith' : bathroom ? '开始掩护撤离' : '接通监视画面';
       const duration = phase === 'defending' ? BETRAYAL.bathroom.hold : betrayalDuration(encounter);
       this.el('sandbox-job').style.width = duration > 0 ? `${Math.min(100, encounter.elapsed / duration * 100)}%` : '0';
-      if (betrayalLocked(journey)) this.el('sandbox-waypoint').textContent = '';
+      if (encounter.sixth || betrayalLocked(journey)) this.el('sandbox-waypoint').textContent = '';
       document.getElementById('game-objective-copy')!.textContent = journey.lastText;
       return;
     }

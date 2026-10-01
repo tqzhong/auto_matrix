@@ -25,7 +25,7 @@ import { cabinContact } from './CabinContact.js';
 import { ConstructPerformance } from './ConstructPerformance.js';
 import { clubCloseness } from '@auto_matrix/shared';
 
-export type HeroSupport = 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour' | 'niobe' | 'ballard' | 'ghost' | 'soren' | 'link' | 'dozer' | 'tank' | 'oracle_priestess' | 'oracle_attendant';
+export type HeroSupport = 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour' | 'niobe' | 'ballard' | 'ghost' | 'soren' | 'link' | 'dozer' | 'tank' | 'oracle_priestess' | 'oracle_attendant' | 'citizen_4' | 'citizen_14';
 type Pose = ReturnType<typeof advanceMotion>;
 interface CoatPanel { mesh: THREE.Mesh; rest: Float32Array; velocity: Float32Array }
 export interface HeroRig {
@@ -39,7 +39,7 @@ export interface HeroRig {
   trackingSkin?: { mesh: THREE.SkinnedMesh; original: THREE.BufferGeometry; covered: THREE.BufferGeometry };
   wardrobe: { mesh: THREE.Mesh; color: THREE.Color; map: THREE.Texture | null; bumpMap: THREE.Texture | null; bumpScale: number;
     roughness: number; metalness: number; emissive: THREE.Color; emissiveIntensity: number; outer: boolean; hair: boolean; cloth: boolean }[];
-  officeRole?: 'rhineheart' | 'courier';
+  officeRole?: 'rhineheart' | 'courier' | 'police';
   apartmentRole?: 'choi' | 'dujour';
 }
 
@@ -176,6 +176,7 @@ export class HeroModels {
   async create(id: HeroId, guard?: 'agent_jones' | 'agent_brown' | 'agent_johnson' | 'agent_jackson' | 'agent_thompson', support?: HeroSupport): Promise<HeroRig | undefined> {
     const apartmentRole = support === 'choi' || support === 'dujour' ? support : undefined;
     const oracleStaff = support === 'oracle_priestess' || support === 'oracle_attendant';
+    const police = support === 'citizen_4' || support === 'citizen_14';
     const [asset, office, tracking, club] = await Promise.all([this.load(oracleStaff ? 'dujour' : support === 'tank' ? 'choi' : apartmentRole ?? id),
       id === 'neo' && !apartmentRole && support !== 'tank' ? this.load('neo-office') : undefined,
       id === 'neo' && !support ? this.load('neo-tracking') : undefined,
@@ -244,14 +245,14 @@ export class HeroModels {
     const metadata = asset.parser.json.extras as { eye: number[]; head: number[]; waist: number[] };
     const eye = new THREE.Vector3().fromArray(metadata.eye).sub(new THREE.Vector3().fromArray(metadata.head));
     const glasses = new THREE.Group(); head.add(glasses); this.glasses(glasses, eye, id);
-    if (support === 'courier') {
+    if (support === 'courier' || police) {
       const uniform = new THREE.MeshStandardMaterial({ color: 0x273d4e, roughness: .92 });
       this.mesh(head, new THREE.SphereGeometry(.285, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), uniform).position.set(0, .11, -.01);
       const brim = this.mesh(head, new THREE.SphereGeometry(.28, 24, 12), uniform); brim.scale.set(1, .055, .7); brim.position.set(0, .12, .23);
     }
     const pelvis = bones.get('pelvis')!;
     const waist = new THREE.Vector3().fromArray(metadata.waist).sub(pelvis.position);
-    const panels = (id === 'neo' || id === 'morpheus') && support !== 'link' && support !== 'dozer' && support !== 'tank' ? [-1, 1].map(side => this.coat(pelvis, waist, side, id)) : [];
+    const panels = (id === 'neo' || id === 'morpheus') && !police && support !== 'link' && support !== 'dozer' && support !== 'tank' ? [-1, 1].map(side => this.coat(pelvis, waist, side, id)) : [];
     const footHeight = this.point.setFromMatrixPosition(bones.get('ankle_L')!.matrixWorld).y;
     const silver = { value: 0 }; const wardrobe: HeroRig['wardrobe'] = [];
     let trackingSkin: HeroRig['trackingSkin'];
@@ -276,6 +277,7 @@ export class HeroModels {
         this.geometries.add(dressed); trackingSkin = { mesh: object, original, covered: dressed };
       }
       if (support === 'courier' && material.name === 'Office cotton') material.color.setHex(0x455c6b);
+      if (police && /Office cotton|Trousers/.test(material.name)) material.color.setHex(0x202e36);
       if (support === 'rhineheart' && /Coat|Trousers/.test(material.name)) material.color.setHex(0x56594f);
       if (oracleStaff && /Coat|Trousers/.test(material.name)) { material.color.setHex(support === 'oracle_priestess' ? 0xdedbd0 : 0xc7c5b9); material.roughness = .95; }
       if (support === 'rhineheart' && /Hair|hair|Groom|groom/.test(material.name)) {
@@ -338,7 +340,7 @@ export class HeroModels {
     if (support === 'ballard') {
       const cap = this.mesh(head, new THREE.SphereGeometry(.3, 24, 12), new THREE.MeshStandardMaterial({ color: 0x151813, roughness: .94 })); cap.position.set(.03, .21, -.04); cap.scale.set(1.15, .3, .93); cap.rotation.z = -.17;
     }
-    const rig: HeroRig = { root, bones, rest, panels, footHeight, glasses, silver, trackingSkin, wardrobe, officeRole: support === 'rhineheart' || support === 'courier' ? support : undefined, apartmentRole };
+    const rig: HeroRig = { root, bones, rest, panels, footHeight, glasses, silver, trackingSkin, wardrobe, officeRole: police ? 'police' : support === 'rhineheart' || support === 'courier' ? support : undefined, apartmentRole };
     if (apartmentRole) this.apartments.set(rig, new ApartmentPerformance(rig));
     if (id === 'neo' && !support) this.recoveries.set(rig, new RecoveryPerformance(rig));
     enableSkinnedCulling(root);
@@ -587,7 +589,7 @@ export class HeroModels {
   animate(rig: HeroRig, pose: Pose, motion: MotionState, input: MotionInput, delta: number): void {
     rig.silver.value = input.mirror ?? 0;
     rig.glasses.visible = !rig.officeRole && !rig.apartmentRole && input.glasses !== false && !input.realWorld;
-    const officeShirt = input.officeShirt || rig.officeRole === 'courier';
+    const officeShirt = input.officeShirt || rig.officeRole === 'courier' || rig.officeRole === 'police';
     const trackingShirt = input.performance === 'touch';
     const clubClothes = Boolean(input.clubClothes && !input.realWorld);
     if (rig.trackingSkin) {

@@ -2426,6 +2426,18 @@ test('the entire film route completes through interactions, driving and real com
       assert.equal(state.oracle.arrival.phase, 'done', 'the complete route enters through the door before the spoon lesson');
     }
     for (let index = 0; index < scene.steps.length; index++) {
+      if (scene.id === 'm1_wall_exposed') {
+        const frame = () => {
+          h.players.receiveInput('film-player', { x: 0, z: 0, yaw: 0, pitch: 0, jump: false, sprint: false, sequence: ++sequence });
+          h.players.step(.1, true, h.tick());
+        };
+        if (index === 0) {
+          h.command('act'); for (let i = 0; i < 80 && state.wallExposure!.phase !== 'firing'; i++) frame();
+          assert.equal(state.wallExposure!.phase, 'firing');
+        } else if (index === 1) { frame(); h.players.act('film-player', 'shoot', h.tick()); }
+        else { for (let i = 0; i < 120 && state.wallExposure!.phase !== 'done'; i++) frame(); assert.equal(state.wallExposure!.phase, 'done'); }
+        assert.equal(state.step, index + 1); continue;
+      }
       if (scene.id === 'm1_wetwall') {
         const frame = (climb = 0) => {
           h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, climb, jump: false, sprint: false, sequence: ++sequence });

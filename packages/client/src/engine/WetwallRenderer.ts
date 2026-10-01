@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { WETWALL, WETWALL_SHAFT, type FilmJourney } from '@auto_matrix/shared';
+import { SixthFloorRenderer } from './SixthFloorRenderer.js';
 import { batchStaticGeometry } from './StaticGeometry.js';
 
 /** A hollow pipe chase: the entry wall, open floor and standing pipes have actual depth. */
@@ -8,6 +9,9 @@ export class WetwallRenderer {
   private panel = new THREE.Group();
   private fragments = new THREE.Group();
   private dust = new THREE.Group();
+  private sixthPanel = new THREE.Group();
+  private gunHole = new THREE.Group();
+  private sixth: SixthFloorRenderer;
   private geometries = new Set<THREE.BufferGeometry>();
   private dustMaterial = new THREE.MeshStandardMaterial({ color: 0xb8aa8d, transparent: true, opacity: .16, depthWrite: false, roughness: 1 });
   constructor(parent: THREE.Group, material: { plaster: THREE.Material; wood: THREE.Material; iron: THREE.Material; trim: THREE.Material }) {
@@ -16,7 +20,18 @@ export class WetwallRenderer {
     this.box(material.plaster, -17.5, bottom - .18, -32.4, 9, .36, 3.2);
     this.box(material.plaster, -17.5, (bottom + shaft.top) / 2, shaft.back, 9, shaft.top - bottom, .5);
     for (const x of [shaft.left, shaft.right]) this.box(material.plaster, x, (bottom + shaft.top) / 2, -32.4, .4, shaft.top - bottom, 3.2);
-    this.box(material.plaster, -17.5, (bottom + shaft.top) / 2, shaft.front, 9, shaft.top - bottom, .24);
+    this.box(material.plaster, -17.5, (bottom + shaft.sixth) / 2, shaft.front, 9, shaft.sixth - bottom, .24);
+    this.box(material.plaster, -17.5, (shaft.sixth + 6.1 + shaft.top) / 2, shaft.front, 9, shaft.top - shaft.sixth - 6.1, .24);
+    for (const x of [-21.45, -13.55]) this.box(material.plaster, x, shaft.sixth + 3.05, shaft.front, 1.1, 6.1, .24);
+    this.sixthPanel.name = 'sixth-breakable-plaster'; this.gunHole.name = 'sixth-gunfire-hole'; this.sixthPanel.add(this.gunHole); this.root.add(this.sixthPanel);
+    for (const [x, width] of [[-18.65, 4.5], [-14.35, .5]]) {
+      this.box(material.plaster, x, shaft.sixth + 3.05, shaft.front, width, 6.1, .24, this.sixthPanel);
+      for (let row = 0; row < 14; row++) this.box(material.wood, x, shaft.sixth + .2 + row * .42, shaft.front - .16, width, .12, .12, this.sixthPanel);
+    }
+    for (const [y, height] of [[.65, 1.3], [5.2, 1.8]]) this.box(material.plaster, -15.5, shaft.sixth + y, shaft.front, 1.8, height, .24, this.sixthPanel);
+    this.box(material.plaster, -15.5, shaft.sixth + 2.8, shaft.front, 1.8, 3, .24, this.gunHole);
+    for (let row = 0; row < 7; row++) this.box(material.wood, -15.5, shaft.sixth + 1.45 + row * .42, shaft.front - .16, 1.8, .12, .12, this.gunHole);
+    this.box(material.wood, -16.55, shaft.sixth + 3.05, shaft.front - .16, .24, 6.1, .3, this.sixthPanel);
     for (const [x, width] of [[-20.85, 2.3], [-14.65, 3.3]]) this.box(material.plaster, x, shaft.top + 3.7, shaft.front, width, 7.4, .24);
     this.box(material.plaster, -18, shaft.top + 6.75, shaft.front, shaft.holeWidth, 1.3, .24);
     for (const x of [-19.88, -16.12]) this.box(material.wood, x, shaft.top + 3.05, shaft.front - .12, .18, 6.1, .17);
@@ -56,6 +71,7 @@ export class WetwallRenderer {
     batchStaticGeometry(this.root, new Set()).forEach(geometry => this.geometries.add(geometry));
     const used = new Set<THREE.BufferGeometry>(); this.root.traverse(object => { if (object instanceof THREE.Mesh) used.add(object.geometry); });
     for (const geometry of sources) if (!used.has(geometry)) { geometry.dispose(); this.geometries.delete(geometry); }
+    this.sixth = new SixthFloorRenderer(this.root, material);
     this.panel.name = 'wetwall-entry-plaster'; this.root.add(this.panel, this.fragments, this.dust);
     this.box(material.plaster, -18, shaft.top + shaft.holeHeight / 2, shaft.front, shaft.holeWidth, shaft.holeHeight, .24, this.panel);
     for (let row = 0; row < 14; row++) this.box(material.wood, -18, shaft.top + .2 + row * .42, shaft.front - .16, shaft.holeWidth, .12, .12, this.panel);
@@ -81,7 +97,12 @@ export class WetwallRenderer {
     mesh.position.set(x, y, z); mesh.castShadow = mesh.receiveShadow = true; this.root.add(mesh); return mesh;
   }
   update(journey?: FilmJourney): void {
-    const wall = journey?.wetwall, active = Boolean(wall && ['m1_wetwall', 'm1_bathroom'].includes(journey!.scene));
+    const wall = journey?.wetwall, active = Boolean(wall && ['m1_wetwall', 'm1_wall_exposed', 'm1_bathroom'].includes(journey!.scene));
+    const exposure = journey?.wallExposure;
+    const sixth = Boolean(exposure && ['m1_wall_exposed', 'm1_bathroom'].includes(journey!.scene));
+    this.sixthPanel.visible = !sixth || !['breach', 'done'].includes(exposure!.phase);
+    this.gunHole.visible = !sixth || ['ready', 'searching'].includes(exposure!.phase);
+    this.sixth.update(journey);
     const closed = !active || wall!.phase === 'sealed' || wall!.phase === 'breaking' && wall!.elapsed < WETWALL.impact;
     this.panel.visible = closed; this.fragments.visible = active && !closed;
     const age = wall?.phase === 'breaking' ? Math.max(0, wall.elapsed - WETWALL.impact) : 2;
@@ -97,6 +118,7 @@ export class WetwallRenderer {
     }
   }
   dispose(): void {
+    this.sixth.dispose();
     this.geometries.forEach(geometry => geometry.dispose()); this.dustMaterial.dispose();
     this.root.traverse(object => { if (object instanceof THREE.PointLight) object.dispose(); }); this.root.removeFromParent();
   }

@@ -253,6 +253,8 @@ export function filmObstacles(set: FilmSet, movingMeetingCar = false, movingOrac
 
 export function filmBlocked(position: Vector3, set: FilmSet, radius: number, movingMeetingCar = false, movingOracleDoor = false): boolean {
   const x = position.x - set.center.x; const z = position.z - set.center.z;
+  if (set.id === 'film_ambush_house' && Math.abs(position.y - set.center.y - WETWALL_SHAFT.sixth) < .8 && z >= WETWALL_SHAFT.front && z <= -14.8)
+    return ambushStairsBlocked(x, z, position.y - set.center.y, radius);
   if (set.id === 'film_ambush_house' && position.y - set.center.y <= WETWALL_SHAFT.top + .8 && x < WETWALL_SHAFT.right && z < WETWALL_SHAFT.front)
     return ambushStairsBlocked(x, z, position.y - set.center.y, radius);
   if (set.id === 'film_ambush_house' && ambushStairsBlocked(x, z, position.y - set.center.y, radius)) return true;

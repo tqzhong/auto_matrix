@@ -3,7 +3,7 @@ import { CATCH, RELOADED_FINALE, HEL_COATCHECK, OPENING_ESCAPE, OPENING_HOTEL, c
 import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_NAMES, ARCHITECT_DOOR_SECONDS, filmReflections, CHARACTERS, filmStepPosition, distance, dockPowerOffline, AWAKENING_SECONDS, oracleActing, helElevatorLocked, helDanceDoorLocked, interrogationLocked, pillLocked, lafayetteWelcomeLocked, phoneLocked, windowOpening, windowCrossing, awakeningWaiting, trainingLocked, trainingWaiting, theOneLocked, type AgentState, type SandboxState } from '@auto_matrix/shared';
 import './film-journey.css';
 import { ambushEscapeText } from '@auto_matrix/shared';
-import { WETWALL, wetwallText, wetwallEntry } from '@auto_matrix/shared';
+import { WETWALL, wetwallText, wetwallEntry, sixthText } from '@auto_matrix/shared';
 import { meetingBoardPoint, meetingLocked, MEETING_TIMING } from '@auto_matrix/shared';
 import { filmPosition, HOTEL_DOOR_PROGRESS, CABIN, CABIN_ROUTE_LENGTH } from '@auto_matrix/shared';
 import { workdayLocked } from '@auto_matrix/shared';
@@ -29,11 +29,18 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
     const wall = journey.wetwall, current = player.id === journey.actor, center = FILM_SETS[scene.set].center;
     const near = distance(player.position, { x: center.x + WETWALL.approach.x, y: center.y + WETWALL.approach.y, z: center.z + WETWALL.approach.z }) <= .65;
     const action = !current ? button('resume', '接回 Neo 的视角') : wall.paused ? '<p>等候同行者释放角色；当前高度和队形已保留。</p>'
-      : wall.phase === 'failed' ? button('retry', '从墙内检查点重试') : wall.phase === 'done' ? button('next', '继续 Morpheus 的掩护视角')
+      : wall.phase === 'failed' ? button('retry', '从墙内检查点重试') : wall.phase === 'done' ? button('next', '继续六楼 608 室的搜查')
         : wall.phase === 'sealed' ? button('act', '破开 808 室的灰泥 · G', !near) : wall.phase === 'jammed' ? button('act', '示意 Trinity 解救 Cypher · G')
           : '<p>合上手记继续观察或控制下行。松开移动键会抓稳等待。</p>';
     const depth = Math.max(0, wall.progress.neo - wetwallEntry(wall, 'neo'));
     return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>墙里的退路 · 808 → 608</h3><p>破墙入内、管线下行与同伴解救</p></header><article class="film-now"><div><p>${wetwallText(wall)}</p><div class="film-controls">${action}</div><small>W 下行 · S 向上退回 · 空格松手 · G 示意 Trinity · V 切换视角<br>已下行 ${depth.toFixed(1)} / 14.8 m · 第 ${wall.attempts + 1} 次尝试</small></div></article></div>`;
+  }
+  if (!journey.visiting && scene.id === 'm1_wall_exposed' && journey.wallExposure) {
+    const encounter = journey.wallExposure, current = player.id === journey.actor;
+    const action = !current ? button('resume', '接回 Neo 的视角') : encounter.paused ? '<p>等候同行者释放角色，当前进度已保留。</p>'
+      : encounter.phase === 'failed' ? button('retry', '从六楼夹层重试') : encounter.phase === 'ready' ? button('act', '留意墙外的搜查 · G')
+        : encounter.phase === 'done' ? button('next', '接管 Morpheus 的掩护视角') : '<p>合上手记，观察搜查并亲自还击。</p>';
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>六楼 608 室 · 暴露</h3><p>墙内 Neo 视角 · 搜查、还击与破墙救援</p></header><article class="film-now"><div><p>${sixthText(encounter)}</p><div class="film-controls">${action}</div><small>Z 缩到灰泥后 · 松开 Z 探回破口 · 鼠标转向 · 左键 / T 还击 · V 切换视角<br>弹药 ${encounter.ammo}/12 · 第 ${encounter.attempts + 1} 次尝试 · 暂停与重接保留进度</small></div></article></div>`;
   }
   if (!journey.visiting && scene.id === 'm1_dejavu' && journey.ambushEscape) {
     const escape = journey.ambushEscape, current = player.id === journey.actor;
@@ -427,10 +434,10 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
   }
   if (!journey.visiting && journey.betrayal && ['m1_bathroom', 'm1_unplugged'].includes(journey.scene)) {
     const encounter = journey.betrayal; const current = player.id === journey.actor; const step = scene.steps[journey.step];
-    const close = current && (!step || distance(player.position, filmStepPosition(scene, step)) <= 4);
+    const close = current && (!step || distance(player.position, filmStepPosition(scene, step, journey)) <= 4);
     const bathroom = encounter.kind === 'bathroom'; const phase = encounter.phase;
     const title = bathroom ? phase === 'ready' ? '同伴进入墙内通道' : phase === 'defending' ? '守住浴室门线'
-      : phase === 'sacrifice_ready' ? '最后一次主动选择' : phase === 'sacrifice' ? '撞穿隔墙' : 'Morpheus 被捕'
+      : phase === 'sacrifice_ready' ? '最后一次主动选择' : phase === 'sacrifice' ? encounter.sixth ? '把 Smith 带离破口' : '撞穿隔墙' : 'Morpheus 被捕'
       : journey.step === 0 ? '抵达备用控制台' : phase === 'ready' ? '有人先回到了飞船' : phase === 'unplugging' ? '连接被逐一拔除'
       : phase === 'aiming' ? '等待枪口偏转' : phase === 'window' ? '反击窗口' : phase === 'failed' ? '最后两路信号熄灭'
       : phase === 'countering' ? 'Tank 的反击' : phase === 'reconnect' ? '接回幸存者' : '背叛结束';

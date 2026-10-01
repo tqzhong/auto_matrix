@@ -18,6 +18,7 @@ export interface MotionInput {
   armed?: boolean;
   ambushEscort?: import('@auto_matrix/shared').AmbushEscort;
   wetwall?: import('@auto_matrix/shared').WetwallGesture;
+  sixth?: import('@auto_matrix/shared').SixthGesture;
   shot?: number;
   crouching?: boolean;
   seated?: boolean;

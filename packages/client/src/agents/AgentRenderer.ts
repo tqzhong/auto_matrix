@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { FILM_SETS, groundHeight, mirrorGuidePose, ambushRouteRoot, ambushRetreatRoot, wetwallPose, oracleCookieOwner, oracleReceptionRoot, officeClothing, type AmbushEscort, type AgentState, type CombatImpact, type FilmJourney, type WetwallPhase } from '@auto_matrix/shared';
+import { FILM_SETS, groundHeight, mirrorGuidePose, ambushRouteRoot, ambushRetreatRoot, wetwallPose, sixthPose, oracleCookieOwner, oracleReceptionRoot, officeClothing, type AmbushEscort, type AgentState, type CombatImpact, type FilmJourney, type WetwallPhase } from '@auto_matrix/shared';
 import { trackingContact } from './TrackingContact.js';
 import { CharacterModels, weaponMuzzle, type CharacterRig } from './CharacterModel.js';
 import type { MotionInput } from './CharacterMotion.js';
@@ -24,6 +24,7 @@ interface Entry {
   oracleGuide?: { phase: 'approaching' | 'guiding' | 'returning'; from: number; to: number; progress: number; elapsed: number };
   ambushGuide?: { stairCat?: true; retreat?: true; role: AmbushEscort['role']; from: number; to: number; progress: number; elapsed: number };
   wetwallGuide?: { phase: WetwallPhase; from: number; to: number; progress: number; elapsed: number };
+  sixthElapsed?: number;
 }
 
 export class AgentRenderer {
@@ -100,6 +101,7 @@ export class AgentRenderer {
         entry.wetwallGuide = { phase: wall.phase, from: progress, to: progress, progress, elapsed: .5 };
       else if (progress !== guide.to) entry.wetwallGuide = { ...guide, from: guide.progress, to: progress, elapsed: 0 };
     } else entry.wetwallGuide = undefined;
+    entry.sixthElapsed = (state.currentAction?.parameters.sixth as MotionInput['sixth'])?.elapsed;
     entry.state = state;
     entry.group.visible = state.isInMatrix === this.matrix && state.status !== 'disconnected';
   }
@@ -136,10 +138,20 @@ export class AgentRenderer {
       entry.marker.position.y = this.playerId ? -.94 : .1;
       entry.time += delta * (id === this.playerId ? 1 : speed);
       let guideHeading: number | undefined, guideSpeed = 0;
+      const sixth = state.currentAction?.parameters.sixth as MotionInput['sixth'];
+      if (sixth && entry.sixthElapsed !== undefined && !sixth.paused && !['ready', 'failed', 'done', 'firing'].includes(sixth.phase))
+        entry.sixthElapsed = Math.min(sixth.elapsed + .5, entry.sixthElapsed + delta * speed);
+      const sixthGesture = sixth && { ...sixth, elapsed: entry.sixthElapsed ?? sixth.elapsed };
+      const sixthRoot = sixthGesture && sixthPose(sixthGesture);
+      if (sixthRoot?.hidden) entry.body.visible = entry.marker.visible = entry.label.visible = false;
       if (id !== this.playerId) {
         const target = new THREE.Vector3(state.position.x, state.position.y, state.position.z);
         const driver = this.playerId ? this.agents.get(this.playerId) : undefined;
-        if (entry.wetwallGuide && state.currentAction?.parameters.wetwall) {
+        if (sixthRoot) {
+          const before = entry.group.position.clone(), center = FILM_SETS.film_ambush_house.center;
+          entry.group.position.set(center.x + sixthRoot.x, center.y + sixthRoot.y, center.z + sixthRoot.z); guideHeading = sixthRoot.yaw;
+          if (!sixthRoot.hanging && delta * speed > 0) guideSpeed = entry.group.position.distanceTo(before) / (delta * speed);
+        } else if (entry.wetwallGuide && state.currentAction?.parameters.wetwall) {
           const wall = state.currentAction.parameters.wetwall as NonNullable<MotionInput['wetwall']>, guide = entry.wetwallGuide, before = guide.progress;
           guide.elapsed = Math.min(.5, guide.elapsed + delta * speed);
           guide.progress = THREE.MathUtils.lerp(guide.from, guide.to, guide.elapsed / .5);
@@ -188,12 +200,13 @@ export class AgentRenderer {
       const dist = camera ? entry.group.position.distanceTo(camera.position) : 0;
       const floor = groundHeight(state.position, state.isInMatrix);
       const input: MotionInput = id === this.playerId && this.playerMotion ? this.playerMotion : {
-        speed: entry.mirrorGuide || entry.oracleGuide || entry.ambushGuide || entry.wetwallGuide ? guideSpeed : velocity, grounded: Boolean(state.currentAction?.parameters.riding || state.currentAction?.parameters.climbing || state.currentAction?.parameters.wetwall) || state.position.y <= floor + .12, verticalVelocity: state.velocity.y,
+        speed: sixthRoot || entry.mirrorGuide || entry.oracleGuide || entry.ambushGuide || entry.wetwallGuide ? guideSpeed : velocity, grounded: Boolean(state.currentAction?.parameters.riding || state.currentAction?.parameters.climbing || state.currentAction?.parameters.wetwall) || state.position.y <= floor + .12, verticalVelocity: state.velocity.y,
         turn: difference * 8, attack: state.currentAction?.type === 'attack' ? Number(state.currentAction.parameters.contactTick ?? state.currentAction.startedAt) : undefined,
         hit: entry.hit, impact: entry.impact, shot: entry.shot, windingUp: warning,
         armed: state.currentAction?.parameters.armed === true || !state.currentAction?.parameters.lobbyEntry && state.currentLocation === 'film_government_lobby' && ['neo', 'trinity'].includes(id),
         ambushEscort: state.currentAction?.parameters.ambushEscort as MotionInput['ambushEscort'],
         wetwall: state.currentAction?.parameters.wetwall as MotionInput['wetwall'],
+        sixth: sixthGesture,
         crouching: state.currentAction?.parameters.crouching === true,
         seated: state.currentAction?.parameters.seated === true,
         floorSeated: state.currentAction?.parameters.floorSeated === true,
@@ -259,7 +272,7 @@ export class AgentRenderer {
       // The ruined city is still a loading program: actors keep their residual
       // self image even though the represented place is the real world.
       input.realWorld = !state.isInMatrix && state.currentLocation !== 'film_real_desert';
-      if (input.wetwall && id !== this.playerId && entry.wetwallGuide) {
+      if (input.wetwall && !input.sixth && id !== this.playerId && entry.wetwallGuide) {
         const progress = entry.wetwallGuide.progress, wall = input.wetwall, pose = wetwallPose(wall.start, wall.role, progress, wall.phase, wall.elapsed, wall.fallY);
         input.wetwall = { ...wall, progress, hanging: pose.hanging }; input.climbing = pose.hanging ? 0 : undefined;
       }
@@ -268,6 +281,14 @@ export class AgentRenderer {
       input.officeShirt = officeClothing(state.id, state.currentLocation);
       input.clubClothes = state.currentLocation === 'film_white_rabbit_club' || state.id === 'neo' && state.currentLocation === 'film_white_construct' && !state.currentAction?.parameters.rescue;
       input.glasses = !state.id.startsWith('oracle_') && !input.clubClothes && (state.id !== 'neo' || state.isAwakened && state.currentLocation !== 'film_oracle_home');
+      if (input.sixth?.role === 'smith' && input.sixth.phase === 'grapple') {
+        const neo = this.agents.get('neo'), head = neo?.rig.hero?.bones.get('head');
+        if (head) {
+          neo!.group.updateWorldMatrix(true, true);
+          const point = head.localToWorld(new THREE.Vector3(0, -.17, .04));
+          input.sixth = { ...input.sixth, contact: { x: point.x, y: point.y, z: point.z } };
+        }
+      }
       if (input.oracleDeparture?.role === 'morpheus' && input.oracleDeparture.phase === 'talking') {
         const neo = this.agents.get('neo'), shoulder = neo?.rig.hero?.bones.get('shoulder_R') ?? neo?.rig.shoulders[0];
         if (neo && shoulder) {
@@ -351,10 +372,10 @@ export class AgentRenderer {
           : catchResting || coma || epilogueCarried ? THREE.MathUtils.lerp(entry.body.rotation.x, -Math.PI / 2, 1 - Math.exp(-6 * delta)) : -Math.PI / 2 * podRecline;
       this.models.animate(entry.rig, delta * (id === this.playerId && speed > 0 ? 1 : speed), input, dist);
       entry.shadow.position.y = floor - entry.group.position.y - .97;
-      entry.shadow.visible = state.status !== 'disconnected' && !state.currentAction?.parameters.filmDuel && !mountainFlying && !catchFlying && !coma && !pod && !epilogueCarried && !input.truckPassenger && !input.wetwall?.hanging;
+      entry.shadow.visible = !sixthRoot?.hidden && state.status !== 'disconnected' && !state.currentAction?.parameters.filmDuel && !mountainFlying && !catchFlying && !coma && !pod && !epilogueCarried && !input.truckPassenger && !input.wetwall?.hanging;
       entry.shadow.scale.setScalar(1 + Math.max(0, entry.group.position.y - floor) * .04);
       const selected = id === this.selected;
-      entry.label.visible = id !== this.playerId && state.status === 'alive' && !state.currentAction?.parameters.filmDuel && (selected || (!this.playerId && dist < 90 && (['neo', 'trinity', 'smith', 'morpheus'].includes(id) || state.currentAction?.type === 'talk_to')));
+      entry.label.visible = !sixthRoot?.hidden && id !== this.playerId && state.status === 'alive' && !state.currentAction?.parameters.filmDuel && (selected || (!this.playerId && dist < 90 && (['neo', 'trinity', 'smith', 'morpheus'].includes(id) || state.currentAction?.type === 'talk_to')));
       const labelWidth = this.playerId ? Math.min(7, Math.max(2.5, dist * 0.13)) : 17;
       entry.label.scale.set(labelWidth, labelWidth / 4, 1);
       entry.label.position.y = this.playerId ? 4.4 : 7;

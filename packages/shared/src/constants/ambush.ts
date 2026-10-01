@@ -10,6 +10,18 @@ export const AMBUSH_STAIRS = { rise: 7.4, steps: 12, left: -5.5, right: 5.5, ent
 export const AMBUSH_STOREYS = 5;
 export const WETWALL_SHAFT = { top: -37, sixth: -51.8, low: -66.6, front: -30.8, back: -34,
   left: -22, right: -13, bodyZ: -32.2, pipeZ: -33.35, holeWidth: 3.4, holeHeight: 6.1 } as const;
+export const SIXTH_ROOM = { x: -17.5, z: -22.8, width: 9, depth: 16, height: 7.4, doorZ: -23.4,
+  breachX: -17.5, breachWidth: 6.8, breachHeight: 6.1, morpheus: { x: -15.5, z: -27.2 }, smith: { x: -15.5, z: -24.8 } } as const;
+export const SIXTH_WALLS: FilmObstacle[] = [
+  { x: -22, z: -22.8, width: .4, depth: 16, height: 7.4 },
+  { x: -13, z: -22.8, width: .4, depth: 16, height: 7.4 },
+  { x: -17.5, z: -14.8, width: 9, depth: .4, height: 7.4 },
+  ...[-21.15, -13.85].map(x => ({ x, z: -23.4, width: 1.7, depth: .35, height: 7.4 })),
+];
+export const SIXTH_FIXTURES = {
+  sink: { x: -13.95, z: -27.5, width: .85, depth: 1.5, height: 2.5 },
+  toilet: { x: -20.95, z: -28.25, width: .96, depth: 2.1, height: 2.15 },
+} as const;
 export const AMBUSH_COMPANY = {
   morpheus: { offset: 12.6, x: -8.5, z: -17 }, switch: { offset: 8.4, x: -7.5, z: -12 }, apoc: { offset: 4.2, x: -10, z: -7.5 },
   trinity: { offset: -4.2, x: -6, z: -3 }, cypher: { offset: -8.4, x: -10, z: 1.5 },
@@ -78,6 +90,7 @@ export const AMBUSH_FLOORS: AmbushSurface[] = Array.from({ length: AMBUSH_STOREY
     { x: 0, z: 31.5, width: 44, depth: 5, y }];
 }).flat();
 AMBUSH_FLOORS.push({ x: 0, z: 23, width: 18, depth: 22, y: -AMBUSH_STAIRS.rise * AMBUSH_STOREYS });
+AMBUSH_FLOORS.push({ x: SIXTH_ROOM.x, z: SIXTH_ROOM.z, width: SIXTH_ROOM.width, depth: SIXTH_ROOM.depth, y: WETWALL_SHAFT.sixth });
 export const AMBUSH_TREADS: AmbushSurface[] = [];
 for (let storey = 0; storey < AMBUSH_STOREYS; storey++) {
   const y = -storey * AMBUSH_STAIRS.rise;
@@ -113,8 +126,12 @@ export function ambushStairsBlocked(x: number, z: number, y: number, radius: num
   if (y <= WETWALL_SHAFT.top + .8 && x < WETWALL_SHAFT.right && z < WETWALL_SHAFT.front) {
     return x < WETWALL_SHAFT.left + radius + .15 || x > WETWALL_SHAFT.right - radius - .15 || z < WETWALL_SHAFT.back + radius + .15
       || z > WETWALL_SHAFT.front - radius - .15 && !(Math.abs(y - WETWALL_SHAFT.top) < .8 && Math.abs(x + 18) < WETWALL_SHAFT.holeWidth / 2 - radius)
+        && !(Math.abs(y - WETWALL_SHAFT.sixth) < .8 && Math.abs(x - SIXTH_ROOM.breachX) < SIXTH_ROOM.breachWidth / 2 - radius)
       || y < WETWALL_SHAFT.low;
   }
+  if (Math.abs(y - WETWALL_SHAFT.sixth) < .8 && z >= WETWALL_SHAFT.front && z <= -14.8)
+    return x < -22 + radius + .2 || x > -13 - radius - .2 || z > -14.8 - radius - .2
+      || [...SIXTH_WALLS, ...Object.values(SIXTH_FIXTURES)].some(wall => Math.abs(x - wall.x) < wall.width / 2 + radius && Math.abs(z - wall.z) < wall.depth / 2 + radius);
   if (Math.abs(y - WETWALL_SHAFT.top) < .8 && x < WETWALL_SHAFT.right && Math.abs(z - WETWALL_SHAFT.front) < radius + .12
     && Math.abs(x + 18) > WETWALL_SHAFT.holeWidth / 2 - radius) return true;
   if (Math.abs(x) < 2.5 + radius && Math.abs(z - 23) < 5 + radius) return true;

@@ -43,6 +43,7 @@ export * from './constants/pills.js';
 export * from './constants/ambush.js';
 export * from './constants/ambush-escape.js';
 export * from './constants/wetwall.js';
+export * from './constants/sixth-floor.js';
 export * from './constants/betrayal.js';
 export * from './constants/rescue.js';
 export * from './constants/government-rescue.js';

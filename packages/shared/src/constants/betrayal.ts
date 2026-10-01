@@ -1,4 +1,5 @@
 import type { FilmJourney } from './film-story.js';
+import { SIXTH_ROOM } from './ambush.js';
 
 export type BetrayalKind = 'bathroom' | 'unplugged';
 export type BetrayalPhase = 'ready' | 'defending' | 'sacrifice_ready' | 'sacrifice' | 'unplugging' | 'aiming' | 'window' | 'failed' | 'countering' | 'reconnect' | 'done';
@@ -9,6 +10,7 @@ export interface BetrayalEncounter {
   attempt: number;
   repels?: number;
   rescued?: number;
+  sixth?: true;
 }
 export type BetrayalRole = 'neo' | 'trinity' | 'morpheus' | 'smith' | 'switch' | 'apoc' | 'tank' | 'cypher' | 'dozer';
 export type BetrayalGesture = BetrayalEncounter & { role: BetrayalRole };
@@ -64,6 +66,11 @@ export function bathroomCrewRoot(role: 'neo' | 'trinity' | 'switch' | 'apoc', el
 
 export function betrayalRoot(encounter: BetrayalEncounter, role: BetrayalRole) {
   if (encounter.kind === 'bathroom') {
+    if (encounter.sixth && (role === 'morpheus' || role === 'smith')) {
+      const root = role === 'morpheus' ? { ...SIXTH_ROOM.morpheus, yaw: 0 } : { ...SIXTH_ROOM.smith, yaw: Math.PI };
+      const charge = encounter.phase === 'sacrifice' || encounter.phase === 'done' ? smooth(encounter.elapsed / 2.2) : 0;
+      return { x: root.x - charge * .8, z: root.z + charge * (role === 'morpheus' ? 4.5 : 2.8), yaw: root.yaw };
+    }
     if (['neo', 'trinity', 'switch', 'apoc'].includes(role)) return bathroomCrewRoot(role as 'neo' | 'trinity' | 'switch' | 'apoc', encounter.phase === 'defending' ? encounter.elapsed : BETRAYAL.bathroom.hold);
     const root = BETRAYAL.bathroomRoots[role as 'morpheus' | 'smith'] ?? BETRAYAL.bathroomRoots.morpheus;
     if (encounter.phase !== 'sacrifice' && encounter.phase !== 'done') return root;
@@ -81,16 +88,16 @@ export function betrayalRoot(encounter: BetrayalEncounter, role: BetrayalRole) {
 
 export function betrayalText(encounter: BetrayalEncounter): string {
   if (encounter.kind === 'bathroom') {
-    if (encounter.phase === 'ready') return '同伴正在转入墙内通道。按 G 挡在浴室门线前，让他们先走。';
+    if (encounter.phase === 'ready') return encounter.sixth ? '同伴仍在管线夹层。按 G 挡住六楼浴室的 Smith，让他们继续向下。' : '同伴正在转入墙内通道。按 G 挡在浴室门线前，让他们先走。';
     if (encounter.phase === 'defending') {
       const left = Math.max(0, BETRAYAL.bathroom.requiredRepels - (encounter.repels ?? 0));
       return encounter.elapsed < BETRAYAL.bathroom.hold
         ? `Smith 正逼近撤离线。用 F 反击、X 闪避；还需撑住 ${Math.ceil(BETRAYAL.bathroom.hold - encounter.elapsed)} 秒并完成 ${left} 次有效击退。`
         : `撤离时间已经争取到；还需完成 ${left} 次有效击退，才能把 Smith 从通道前带开。`;
     }
-    if (encounter.phase === 'sacrifice_ready') return '最后一名同伴已经进入墙内通道。按 G 撞向 Smith，把战斗带进浴室并封住追击线。';
-    if (encounter.phase === 'sacrifice') return encounter.elapsed < 2.2 ? 'Morpheus 放弃退路，迎着 Smith 冲上去。' : encounter.elapsed < 4.2 ? '两人撞穿浴室隔墙；碎砖切断了同伴身后的视线。' : 'Smith 重新站起。Morpheus 已经无力离开，但撤离通道争取到了时间。';
-    return 'Morpheus 被特工带走；Neo、Trinity、Switch 与 Apoc 已穿过墙内通道。';
+    if (encounter.phase === 'sacrifice_ready') return encounter.sixth ? '同伴已向下撤离。按 G 把 Smith 从破口前带开，为他们继续争取时间。' : '最后一名同伴已经进入墙内通道。按 G 撞向 Smith，把战斗带进浴室并封住追击线。';
+    if (encounter.phase === 'sacrifice') return encounter.elapsed < 2.2 ? 'Morpheus 放弃退路，迎着 Smith 冲上去。' : encounter.elapsed < 4.2 ? encounter.sixth ? '两人离开管线墙的破口，Smith 被带向门外。同伴继续沿立管下行。' : '两人撞穿浴室隔墙；碎砖切断了同伴身后的视线。' : 'Smith 重新站起。Morpheus 已经无力离开，但撤离通道争取到了时间。';
+    return encounter.sixth ? 'Morpheus 被特工带走；Neo、Trinity、Cypher、Switch 与 Apoc 仍沿夹层向下撤退。' : 'Morpheus 被特工带走；Neo、Trinity、Switch 与 Apoc 已穿过墙内通道。';
   }
   if (encounter.phase === 'ready') return '备用控制台旁传来脚步。按 G 接通监视画面，确认是谁先回到了飞船。';
   if (encounter.phase === 'unplugging') return encounter.elapsed < 2.4 ? 'Cypher 跨过倒下的 Dozer，举起脉冲步枪。Apoc 与 Switch 仍在连接椅上。'

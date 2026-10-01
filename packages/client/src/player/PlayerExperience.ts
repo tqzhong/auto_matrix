@@ -10,7 +10,7 @@ export function savedEntryCharacter(chosen: string | null, journeyActor: string 
 }
 
 export function cinematicTalkSuppressed(scene: string | undefined, visiting: string | undefined, step?: number): boolean {
-  return !visiting && (scene === 'm1_wetwall' || scene === 'm1_download' || scene === 'm1_truth_exit' || scene === 'm1_truth_return' || scene === 'm1_pod' || scene === 'm1_construct' || scene === 'm1_desert' || scene === 'm1_cabin' || (scene === 'm1_recovery' || scene === 'm1_spoon') && step === 0);
+  return !visiting && (scene === 'm1_wall_exposed' || scene === 'm1_wetwall' || scene === 'm1_download' || scene === 'm1_truth_exit' || scene === 'm1_truth_return' || scene === 'm1_pod' || scene === 'm1_construct' || scene === 'm1_desert' || scene === 'm1_cabin' || (scene === 'm1_recovery' || scene === 'm1_spoon') && step === 0);
 }
 
 export interface PlayerExperienceActions {
@@ -176,6 +176,8 @@ export class PlayerExperience {
     document.body.classList.toggle('film-story', this.filmPlaying);
     document.body.classList.toggle('film-mirror-scene', this.filmPlaying && neoLife?.journey?.scene === 'm1_mirror' && !neoLife.journey.visiting);
     document.body.classList.toggle('film-pod-scene', this.filmPlaying && neoLife?.journey?.scene === 'm1_pod' && !neoLife.journey.visiting);
+    document.body.classList.toggle('film-sixth-scene', this.filmPlaying && neoLife?.journey?.scene === 'm1_wall_exposed' && !neoLife.journey.visiting);
+    document.body.classList.toggle('film-sixth-hold', this.filmPlaying && neoLife?.journey?.scene === 'm1_bathroom' && Boolean(neoLife.journey.betrayal?.sixth) && !neoLife.journey.visiting);
     document.body.classList.toggle('film-cabin-scene', this.filmPlaying && ['m1_cabin', 'm1_truth_return', 'm1_download'].includes(neoLife?.journey?.scene ?? '') && !neoLife?.journey?.visiting);
     document.body.classList.toggle('film-download-scene', this.filmPlaying && neoLife?.journey?.scene === 'm1_download' && !neoLife.journey.visiting);
     document.body.classList.toggle('film-construct-scene', this.filmPlaying && ['m1_construct', 'm1_truth_exit'].includes(neoLife?.journey?.scene ?? '') && !neoLife?.journey?.visiting);

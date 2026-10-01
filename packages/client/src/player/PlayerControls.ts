@@ -12,7 +12,7 @@ import { AIR_RESCUE, governmentPose, airRescuePose, airRescueRoot, interrogation
 import { officeClothing } from '@auto_matrix/shared';
 import { cabinSeat, MORNING, POD_RESCUE, podRescuePose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
 import { ambushCat } from '@auto_matrix/shared';
-import { wetwallPose, WETWALL, WETWALL_SHAFT, type WetwallPhase } from '@auto_matrix/shared';
+import { wetwallPose, sixthPose, WETWALL, WETWALL_SHAFT, type WetwallPhase } from '@auto_matrix/shared';
 
 export class PlayerControls {
   id: string | null = null;
@@ -78,6 +78,7 @@ export class PlayerControls {
   private watchingAmbush = false;
   private wetwallGuide?: { phase: WetwallPhase; from: number; to: number; progress: number; elapsed: number };
   private hangingWetwall = false;
+  private sixthGuide?: { source: NonNullable<MotionInput['sixth']>; elapsed: number };
   phone?: OfficePhone;
   private firing = false;
   private lastShot = -1000;
@@ -100,7 +101,7 @@ export class PlayerControls {
     this.meetingYaw = undefined; this.welcomeShot = undefined; this.performing = false; this.phoneExit = false;
     this.bridgeCaught = undefined;
     this.watchingAmbush = false;
-    this.wetwallGuide = undefined; this.hangingWetwall = false;
+    this.wetwallGuide = undefined; this.hangingWetwall = false; this.sixthGuide = undefined; this.motion.sixth = undefined;
     this.id = state.id; this.position = { ...state.position }; this.yaw = state.rotation;
     this.recoveryYaw = typeof state.currentAction?.parameters.recovery === 'number'
       ? state.currentAction.parameters.download ? state.rotation : recoveryBodyPose(state.currentAction.parameters.recovery).yaw : undefined;
@@ -122,7 +123,7 @@ export class PlayerControls {
     this.id = null; this.keys.clear(); this.enabled = true; this.firing = false; this.firearm = false; this.weaponStyle = undefined; this.fireInterval = LOBBY_FIRE_INTERVAL; this.ride = undefined; this.gunner = false; this.climbing = false; this.performing = false; this.phoneExit = false; this.mirror = 0; this.spoon = undefined; this.phone = undefined; this.welcomeShot = undefined;
     this.bridgeCaught = undefined;
     this.ambushObservation = undefined; this.watchingAmbush = false;
-    this.wetwallGuide = undefined; this.hangingWetwall = false;
+    this.wetwallGuide = undefined; this.hangingWetwall = false; this.sixthGuide = undefined; this.motion.sixth = undefined;
     this.camera.near = this.defaultNear; this.camera.fov = 48; this.camera.updateProjectionMatrix();
     if (document.pointerLockElement === this.canvas) document.exitPointerLock();
   }
@@ -311,6 +312,16 @@ export class PlayerControls {
 
   update(delta: number, state: AgentState, group: THREE.Group, running: boolean, phoneExit = false): void {
     if (!this.id) return;
+    const sixth = state.currentAction?.parameters.sixth as MotionInput['sixth'];
+    if (this.motion.sixth && !sixth) this.performing = false;
+    if (sixth && !this.motion.sixth) { this.yaw = this.movementYaw = sixth.role === 'neo' ? 0 : state.rotation; this.pitch = .08; this.cameraReady = false; }
+    if (sixth) {
+      this.performing = true;
+      if (this.sixthGuide?.source !== sixth) this.sixthGuide = { source: sixth, elapsed: sixth.elapsed };
+      const guide = this.sixthGuide!;
+      if (running && !sixth.paused && !['ready', 'failed', 'done', 'firing'].includes(sixth.phase)) guide.elapsed = Math.min(sixth.elapsed + .5, guide.elapsed + delta);
+      this.motion.sixth = { ...sixth, elapsed: guide.elapsed };
+    } else { this.motion.sixth = undefined; this.sixthGuide = undefined; }
     const mirrorStarting = this.motion.mirrorBeat === undefined && state.currentAction?.parameters.mirrorBeat !== undefined;
     const redPillEnded = this.motion.pills?.choice === 'red' && !state.currentAction?.parameters.pills && state.currentLocation === 'film_lafayette';
     if (this.phoneExit && !phoneExit) this.performing = false;
@@ -571,7 +582,11 @@ export class PlayerControls {
       this.cameraReady = false; this.lastLook = now;
     }
     this.watchingAmbush = watchingAmbush;
-    if (wall && wall.phase !== 'sealed' && !['falling', 'failed'].includes(wall.phase)) {
+    if (this.motion.sixth) {
+      const pose = sixthPose(this.motion.sixth), center = FILM_SETS.film_ambush_house.center;
+      this.position = { x: center.x + pose.x, y: center.y + pose.y, z: center.z + pose.z };
+      this.facing = pose.yaw; this.vy = 0; this.planar = { x: 0, z: 0 }; this.localJump = false;
+    } else if (wall && wall.phase !== 'sealed' && !['falling', 'failed'].includes(wall.phase)) {
       const track = this.wetwallGuide!, pose = wetwallPose(wall.start, wall.role, track.progress, wall.phase, wall.elapsed), center = FILM_SETS.film_ambush_house.center;
       this.position = { x: center.x + pose.x, y: center.y + pose.y, z: center.z + pose.z };
       this.facing = pose.yaw; this.vy = 0; this.planar = { x: 0, z: 0 }; this.localJump = false;
@@ -600,7 +615,7 @@ export class PlayerControls {
     }
     group.position.set(this.position.x, this.position.y, this.position.z);
     const hanging = Boolean(this.motion.wetwall?.hanging);
-    if (hanging && !this.hangingWetwall) { this.yaw = this.movementYaw = Math.PI; this.pitch = .65; this.cameraReady = false; }
+    if (hanging && !this.hangingWetwall && !this.motion.sixth) { this.yaw = this.movementYaw = Math.PI; this.pitch = .65; this.cameraReady = false; }
     this.hangingWetwall = hanging;
     if (mirrorStarting && this.firstPerson && now - this.lastLook > 900) this.aimAtMirror();
     const dx = this.position.x - previous.x; const dz = this.position.z - previous.z;
@@ -612,7 +627,7 @@ export class PlayerControls {
     this.motion.verticalVelocity = wall?.role === 'neo' && wall.phase === 'falling' ? state.velocity.y : this.vy;
     this.motion.inspecting = Boolean((this.motion.pills || this.motion.interrogation || this.motion.welcome || this.motion.knock !== undefined || this.motion.recovery !== undefined || this.motion.cabin || this.motion.reveal || this.motion.training || this.motion.workday || this.motion.wakeCall || this.motion.sentinel || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || this.motion.lobbyEntry) && !this.firstPerson) || Boolean(this.phone && this.performing && this.motion.window === undefined && this.motion.crossing === undefined) || !this.firstPerson && this.spoon !== undefined && this.enabled && this.motion.speed < .25 && this.motion.grounded;
     const attacking = (now - this.lastAttack) / 1000 < MELEE_COMBO[this.attackCombo].duration;
-    const heading = this.motion.wetwall && this.wetwallGuide ? wetwallPose(this.motion.wetwall.start, this.motion.wetwall.role, this.wetwallGuide.progress, this.motion.wetwall.phase, this.motion.wetwall.elapsed).yaw
+    const heading = this.motion.sixth ? sixthPose(this.motion.sixth).yaw : this.motion.wetwall && this.wetwallGuide ? wetwallPose(this.motion.wetwall.start, this.motion.wetwall.role, this.wetwallGuide.progress, this.motion.wetwall.phase, this.motion.wetwall.elapsed).yaw
       : this.ride || this.climbing || this.performing ? state.rotation : attacking ? this.attackYaw : this.firearm ? this.yaw : this.motion.speed > .1 ? Math.atan2(dx, dz) : this.facing;
     const turn = Math.atan2(Math.sin(heading - this.facing), Math.cos(heading - this.facing));
     this.facing += turn * (this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.welcome || this.motion.knock !== undefined || this.motion.training || this.motion.workday || this.motion.wakeCall || this.motion.sentinel || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || this.motion.lobbyEntry ? 1 : 1 - Math.exp(-14 * delta)); this.motion.turn = turn * 8;
@@ -648,7 +663,7 @@ export class PlayerControls {
     const podWide = !this.firstPerson && this.motion.performance === 'pod';
     const cabinWide = !this.firstPerson && Boolean(this.motion.cabin);
     this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, inOfficeLift && !this.firstPerson ? 80 : podWide ? 65 : this.motion.truth && !this.firstPerson && this.camera.aspect < .85 ? 68 : cabinWide ? this.camera.aspect < .85 ? 68 : 58 : smithFinaleWide || epilogueWide ? 64 : ladderWide ? 62 : interviewApproach ? 70 : interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide || sentinelWide || interludeWide || oracleWide || betrayalWide || rescueWide || governmentWide || airRescueWide || escapeWide || oneWide || catchWide || lobbyWide || pillDepartureWide ? 58 : this.motion.inspecting ? 42 : this.firstPerson ? this.motion.mirrorBeat !== undefined ? 78 : sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
-    this.camera.near = this.firstPerson && this.motion.wetwall?.hanging ? .06 : this.firstPerson && this.motion.club ? .08 : this.defaultNear;
+    this.camera.near = this.firstPerson && (this.motion.sixth || this.motion.wetwall?.hanging) ? .06 : this.firstPerson && this.motion.club ? .08 : this.defaultNear;
     this.camera.updateProjectionMatrix();
     this.cameraStep += this.motion.speed * delta;
     const target = new THREE.Vector3(this.position.x, this.position.y + (this.firstPerson ? 2.99 : 2.05) - (this.motion.pills ? .9 : 0) - (this.motion.mirrorBeat !== undefined ? THREE.MathUtils.smoothstep(this.motion.mirrorBeat, .65, MIRROR_TIMING.sit) * .9 : 0) - (this.motion.reveal?.kind === 'construct' ? .62 : 0) - (this.motion.crouching ? 1.1 : 0), this.position.z);
@@ -1097,6 +1112,25 @@ export class PlayerControls {
         if (resetCamera || gesture.elapsed < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
         this.camera.lookAt(focus);
       }
+    } else if (this.motion.sixth) {
+      const gesture = this.motion.sixth, center = FILM_SETS.film_ambush_house.center;
+      if (this.firstPerson) {
+        const head = group.getObjectByName('head'); head?.updateWorldMatrix(true, false);
+        const eye = head ? head.localToWorld(new THREE.Vector3(0, .1, 0)) : new THREE.Vector3(this.position.x, this.position.y + 3.1, this.position.z);
+        const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
+        eye.addScaledVector(forward, .85);
+        this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
+      } else {
+        const breach = ['breach', 'done'].includes(gesture.phase), contact = ['rushing', 'grapple'].includes(gesture.phase), origin = new THREE.Vector3(center.x, center.y - 1, center.z);
+        const ideal = breach ? new THREE.Vector3(-20.5, WETWALL_SHAFT.sixth + 5.8, -19.5).add(origin)
+          : contact ? new THREE.Vector3(-14.35, WETWALL_SHAFT.sixth + 3.8, -33.15).add(origin)
+          : new THREE.Vector3(-19.7, WETWALL_SHAFT.sixth + (this.camera.aspect < .85 ? 3.2 : 2.8), -31.35).add(origin);
+        const focus = breach ? new THREE.Vector3(-16.4, WETWALL_SHAFT.sixth + 2.5, -28.3).add(origin)
+          : contact ? new THREE.Vector3(this.position.x, this.position.y + 3.25, center.z + WETWALL_SHAFT.bodyZ + .25)
+          : new THREE.Vector3(this.position.x, this.position.y + 2.25, center.z + WETWALL_SHAFT.bodyZ);
+        if (resetCamera) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-10 * delta));
+        this.camera.lookAt(focus);
+      }
     } else if (this.motion.wetwall?.hanging) {
       const center = FILM_SETS.film_ambush_house.center;
       if (this.firstPerson) {
@@ -1123,8 +1157,8 @@ export class PlayerControls {
         const origin = new THREE.Vector3(center.x, center.y - 1, center.z); let ideal: THREE.Vector3; let focus: THREE.Vector3;
         if (gesture.kind === 'bathroom') {
           const crash = gesture.phase === 'sacrifice' && gesture.elapsed > 2.1;
-          ideal = crash ? new THREE.Vector3(-5.8, 3.7, -1.8) : new THREE.Vector3(9.8, 5.2, 5.8);
-          focus = crash ? new THREE.Vector3(3.2, 2.5, -6.7) : new THREE.Vector3(0, 3, -2.7);
+          ideal = gesture.sixth ? new THREE.Vector3(-20.5, WETWALL_SHAFT.sixth + 5.8, -19.5) : crash ? new THREE.Vector3(-5.8, 3.7, -1.8) : new THREE.Vector3(9.8, 5.2, 5.8);
+          focus = gesture.sixth ? new THREE.Vector3(this.position.x - center.x, WETWALL_SHAFT.sixth + 2.5, this.position.z - center.z + 1.2) : crash ? new THREE.Vector3(3.2, 2.5, -6.7) : new THREE.Vector3(0, 3, -2.7);
         } else if (gesture.phase === 'unplugging') {
           const second = gesture.elapsed > 3.5; ideal = second ? new THREE.Vector3(12.5, 5.1, 1.8) : new THREE.Vector3(-14.5, 5.7, -1.5);
           focus = second ? new THREE.Vector3(3.4, 2.4, 5.5) : new THREE.Vector3(-4.6, 2.55, -5);
@@ -1533,7 +1567,8 @@ export class PlayerControls {
       const offset = new THREE.Vector3(-Math.sin(this.yaw) * Math.cos(this.pitch), Math.sin(this.pitch) + 0.1, -Math.cos(this.yaw) * Math.cos(this.pitch));
       // In the ambush aisle the bathroom partition sits to Neo's right.
       const ambushAisle = state.currentLocation === 'film_ambush_house' && this.position.z < FILM_SETS.film_ambush_house.center.z - 4;
-      const shoulder = new THREE.Vector3(-Math.cos(this.yaw), 0, Math.sin(this.yaw)).multiplyScalar(ambushAisle ? -1.1 : this.camera.aspect < .8 ? .3 : .8);
+      const sixthBathroom = ambushAisle && state.id === 'morpheus' && Math.abs(this.position.y - FILM_SETS.film_ambush_house.center.y - WETWALL_SHAFT.sixth) < 3;
+      const shoulder = new THREE.Vector3(-Math.cos(this.yaw), 0, Math.sin(this.yaw)).multiplyScalar(sixthBathroom ? 2.6 : ambushAisle ? -1.1 : this.camera.aspect < .8 ? .3 : .8);
       const pivot = this.cameraTarget.clone().add(shoulder);
       const followDistance = this.motion.farewell ? 8.5 : this.ride?.mode ? 34 : this.ride ? 22 : this.camera.aspect < .8 ? 13 : 11.5;
       let cameraDistance = followDistance;
@@ -1544,7 +1579,7 @@ export class PlayerControls {
       const ideal = pivot.clone().addScaledVector(offset, cameraDistance);
       if (resetCamera) this.camera.position.copy(ideal);
       else this.camera.position.lerp(ideal, 1 - Math.exp(-20 * delta));
-      this.camera.lookAt(pivot.clone().add(new THREE.Vector3(Math.sin(this.yaw) * 2, -.08, Math.cos(this.yaw) * 2)));
+      this.camera.lookAt((sixthBathroom ? pivot.clone().lerp(this.cameraTarget, .6) : pivot.clone()).add(new THREE.Vector3(Math.sin(this.yaw) * 2, -.08, Math.cos(this.yaw) * 2)));
     }
     this.impactAge += delta;
     if (this.impactAge < .18) {

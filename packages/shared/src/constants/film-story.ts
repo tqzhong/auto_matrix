@@ -131,6 +131,7 @@ export interface FilmJourney {
   ambushApproach?: import('./ambush.js').AmbushApproach;
   ambushEscape?: import('./ambush-escape.js').AmbushEscape;
   wetwall?: import('./wetwall.js').WetwallEncounter;
+  wallExposure?: import('./sixth-floor.js').SixthEncounter;
   sentinel?: import('./sentinel.js').SentinelEncounter;
   interlude?: import('./interlude.js').InterludeEncounter;
   betrayal?: import('./betrayal.js').BetrayalEncounter;
@@ -248,7 +249,12 @@ export const FILM_SCENES: FilmScene[] = [
     use('示意 Trinity 拉出 Cypher', 'Trinity 把 Cypher 拉出管线。响声引起楼下搜查者的注意。', -15.5, -32.5, 0),
     use('继续沿管线下到六楼 608 室', 'Neo 来到 608 室背后的管道。墙外传来搜查脚步，Morpheus 仍在身后掩护。', -15.5, -32.5, 0),
   ], ['apoc', 'switch', 'trinity', 'cypher', 'morpheus']),
-  scene('m1_bathroom', 1, 'ambush_house', 'morpheus', '为同伴争取时间', 'betrayal', 'combat', 'Morpheus 在浴室门线阻挡 Smith，其他人从墙内通道撤离。他必须亲自撑住追击，再决定以被捕换取同伴离开。', [fight('在浴室门线击退 Smith 三次并撑到同伴撤离', 1, 'smith', 'smith'), use('撞向 Smith，把战斗带进浴室', '同伴越过墙内通道后，Morpheus 撞向 Smith 并被捕。争取到的时间没有改写被捕结果，却让其他人离开了旧楼。', 0, 0)], ['smith', 'neo', 'trinity', 'switch', 'apoc']),
+  scene('m1_wall_exposed', 1, 'ambush_house', 'neo', '六楼薄墙外的搜查', 'betrayal', 'infiltration', '解救时的动静传进 608 室。警察搜索薄墙，枪火将暴露队伍；Neo 必须抓稳立管、缩到灰泥后掩护，再探回破口亲自还击。', [
+    use('留意 608 室外的搜查', '警察听见墙内响声，贴近灰泥，发现了躲藏的人。', -15.5, -32.2, 0),
+    use('缩到灰泥后掩护，再向薄墙破口还击', 'Neo 的还击逼得警察退到门外。步枪落地，系统正在替换这个人。', -15.5, -32.2, 0),
+    use('留意逼近的特工与 Morpheus 的掩护', 'Smith 抓住 Neo，Morpheus 撞破薄墙，把他带进六楼浴室。', -15.5, -32.2, 0),
+  ], ['morpheus', 'trinity', 'apoc', 'switch', 'cypher', 'citizen_4', 'citizen_14', 'smith']),
+  scene('m1_bathroom', 1, 'ambush_house', 'morpheus', '为同伴争取时间', 'betrayal', 'combat', 'Morpheus 在浴室门线阻挡 Smith，其他人从墙内通道撤离。他必须亲自撑住追击，再决定以被捕换取同伴离开。', [fight('在浴室门线击退 Smith 三次并撑到同伴撤离', 1, 'smith', 'smith'), use('撞向 Smith，把他从撤离线前带开', '同伴继续沿墙内通道撤退，Morpheus 撞向 Smith 并被捕。争取到的时间没有改写被捕结果，却让其他人继续逃生。', 0, 0)], ['smith', 'neo', 'trinity', 'switch', 'apoc']),
   scene('m1_unplugged', 1, 'neb_deck', 'tank', '背叛发生在现实', 'betrayal', 'bane', 'Cypher 回到飞船袭击 Tank 与 Dozer，并逐一拔除连接。Tank 必须抓住一次短暂的反击窗口，再亲手接回仍有生命信号的 Neo 与 Trinity。', [walk('抵达备用控制台', -7, -14), use('等待枪口偏转，反击并接回两路幸存信号', 'Tank 在短暂窗口内反击，再分别接回 Neo 与 Trinity。Dozer、Apoc 与 Switch 已无法回来。', -7, -14)], ['cypher', 'dozer', 'apoc', 'switch', 'neo', 'trinity']),
   scene('m1_rescue_decision', 1, 'neb_deck', 'neo', '仍然选择去救他', 'rescue', 'oracle', 'Morpheus 面临逼供。Neo 决定返回矩阵营救他，Trinity 坚持同行。', [think('在没有保证时承担责任', '这个决定来自对具体同伴的承诺，而不是已经证明的救世主身份。'), use('请 Tank 准备接入', '两人开始营救准备。', 0, 0)], ['trinity', 'tank']),
   scene('m1_guns', 1, 'white_construct', 'neo', '加载营救装备', 'rescue', 'combat', '构造体里排列着武器架。目标是政府大楼里的 Morpheus。', [use('检查装备架', 'Tank 把大楼入口和撤离路线送入连接。', -7, -12), walk('进入营救程序', 0, -26)], ['trinity']),
@@ -461,6 +467,8 @@ export function oracleActing(journey: FilmJourney): boolean {
       || oracleDepartureLocked(journey.oracle?.departure) || Boolean(journey.oracle?.consultation && !['waiting', 'done'].includes(journey.oracle.consultation.phase))));
 }
 export function filmStepPosition(scene: FilmScene, step: FilmStep, journey?: FilmJourney): Vector3 {
+  if (scene.id === 'm1_wall_exposed') return journey?.wallExposure ? { ...journey.checkpoint } : { ...filmPosition(scene.set, -15.5, -32.2), y: FILM_SETS[scene.set].center.y - 51.8 };
+  if (scene.id === 'm1_bathroom' && journey?.betrayal?.sixth) return { ...filmPosition(scene.set, -15.5, -27.2), y: FILM_SETS[scene.set].center.y - 51.8 };
   if (scene.id === 'm1_wetwall') {
     const position = filmPosition(scene.set, step.x, step.z); position.y += WETWALL.approach.y;
     if (journey?.wetwall && journey.step > 0) return { ...journey.checkpoint };
@@ -489,6 +497,7 @@ export function filmStepActionReady(scene: FilmScene, step: FilmStep, position: 
   return step.kind !== 'reach' && step.kind !== 'reflect' && filmStepNear(scene, step, position, matrix, journey);
 }
 export function filmEntry(scene: FilmScene): Vector3 {
+  if (scene.id === 'm1_wall_exposed') return { ...filmPosition(scene.set, -15.5, -32.2), y: FILM_SETS[scene.set].center.y - 51.8 };
   if (scene.id === 'm1_wetwall') return { ...filmPosition(scene.set, -18, -27), y: FILM_SETS[scene.set].center.y + WETWALL.approach.y };
   if (scene.id === 'm1_dejavu') return { ...filmPosition(scene.set, AMBUSH_STAIRS.entry.x, AMBUSH_STAIRS.entry.z), y: FILM_SETS[scene.set].center.y - AMBUSH_STAIRS.rise };
   if (scene.set === 'film_ambush_house') return filmPosition(scene.set, 0, 8);

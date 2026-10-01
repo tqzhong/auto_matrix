@@ -8,6 +8,7 @@ import { poseOracleCookie } from './OracleCookiePerformance.js';
 import { poseOracleDeparture } from './OracleDeparturePerformance.js';
 import { poseOracleArrival } from './OracleArrivalPerformance.js';
 import { poseWetwall } from './WetwallPerformance.js';
+import { poseSixthFloor } from './SixthFloorPerformance.js';
 import { advanceMotion, newMotion, type MotionInput, type MotionState } from './CharacterMotion.js';
 import { HERO_IDS, HeroModels, type HeroId, type HeroRig, type HeroSupport } from './HeroModel.js';
 import { SpoonModel } from './SpoonModel.js';
@@ -365,7 +366,7 @@ export class CharacterModels {
     const distant = this.makeDistant(look, root);
     const rig: CharacterRig = { root, detail, distant, torso, head, shoulders, elbows, fingers, hips, knees, ankles, tails, cloth: clothPanels, motion: newMotion(), smallDetails, rifle: state.id === 'film_soldier' };
     const guard = ['agent_jones', 'agent_brown', 'agent_johnson', 'agent_jackson', 'agent_thompson'].includes(state.id) ? state.id as 'agent_jones' | 'agent_brown' | 'agent_johnson' | 'agent_jackson' | 'agent_thompson' : undefined;
-    const reloadedBase: Record<string, HeroId> = { niobe: 'trinity', ballard: 'morpheus', ghost: 'neo', soren: 'smith', link: 'morpheus', dozer: 'morpheus', tank: 'neo', oracle_priestess: 'trinity', oracle_attendant: 'trinity' };
+    const reloadedBase: Record<string, HeroId> = { niobe: 'trinity', ballard: 'morpheus', ghost: 'neo', soren: 'smith', link: 'morpheus', dozer: 'morpheus', tank: 'neo', oracle_priestess: 'trinity', oracle_attendant: 'trinity', citizen_4: 'neo', citizen_14: 'neo' };
     const support = state.id === 'switch' || state.id === 'apoc' || state.id === 'rhineheart' || state.id === 'courier' || state.id === 'choi' || state.id === 'dujour' || state.id in reloadedBase ? state.id as HeroSupport : undefined;
     if (HERO_IDS.includes(state.id as HeroId) || guard || support) {
       this.heroes.create(reloadedBase[state.id] ?? (guard || support === 'rhineheart' ? 'smith' : support === 'switch' || support === 'dujour' ? 'trinity' : support === 'apoc' || support === 'courier' || support === 'choi' ? 'neo' : state.id as HeroId), guard, support).then(model => {
@@ -594,6 +595,7 @@ export class CharacterModels {
       poseOracleDeparture(rig, input.oracleDeparture);
       poseOracleArrival(rig, input.oracleArrival);
       poseWetwall(rig, input.wetwall);
+      poseSixthFloor(rig, input.sixth);
       if (holdsStaff) {
         rig.hero.bones.get('shoulder_R')!.rotation.x -= .7 + staffSweep * .5;
         rig.hero.bones.get('shoulder_L')!.rotation.x -= .55 + staffSweep * .35;
@@ -676,6 +678,7 @@ export class CharacterModels {
     poseOracleDeparture(rig, input.oracleDeparture);
     poseOracleArrival(rig, input.oracleArrival);
     poseWetwall(rig, input.wetwall);
+    poseSixthFloor(rig, input.sixth);
     if (input.training?.kind === 'download' && input.training.role === 'tank') {
       const engaged = input.training.elapsed > 0 ? 1 : .35;
       for (let i = 0; i < 2; i++) {
