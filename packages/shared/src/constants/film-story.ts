@@ -266,7 +266,7 @@ export const FILM_SCENES: FilmScene[] = [
     walk('沿排水道转弯抵达街边出口', 0, 32.2),
   ], ['trinity', 'apoc', 'switch', 'cypher']),
   scene('m1_tv_exit', 1, 'tv_repair', 'neo', '电视维修店的硬线', 'betrayal', 'infiltration', 'Tank 提供了 Franklin 与 Erie 的旧电视维修店。Cypher 已先接出，Morpheus 仍活着；Trinity 让 Neo 先使用硬线。', [
-    walk('从出口井穿过白昼街道，走进电视维修店', TV_EXIT.street.door.x, TV_EXIT.street.door.z),
+    walk('沿井梯爬出，穿过白昼街道并走进电视维修店', TV_EXIT.street.door.x, TV_EXIT.street.door.z),
     walk('穿过维修柜台右侧，找到后墙电话', TV_EXIT.approach.x, TV_EXIT.approach.z),
     use('亲手拿起出口电话', '硬线里的信号消失了，Neo 仍被留在矩阵。', TV_EXIT.approach.x, TV_EXIT.approach.z, 0),
     use('请 Trinity 联系飞船', 'Cypher 接听了她的手机。他承认背叛，船上的身体正处于危险中。', TV_EXIT.approach.x, TV_EXIT.approach.z, 0),

@@ -2473,7 +2473,7 @@ test('the entire film route completes through interactions, driving and real com
             h.command('act'); for(let i=0;i<450&&state.step===index;i++)frame();
           } else { walk(9,30);walk(0,30);walk(0,32.2); }
         } else {
-          if (index === 0) { walk(TV_EXIT.street.curb.x,TV_EXIT.street.curb.z);walk(TV_EXIT.street.door.x,TV_EXIT.street.door.z); }
+          if (index === 0) { for(let i=0;i<800&&state.tvExit!.phase!=='ready';i++)frame({climb:1});walk(TV_EXIT.street.curb.x,TV_EXIT.street.curb.z);walk(TV_EXIT.street.door.x,TV_EXIT.street.door.z); }
           else if (index === 1) { walk(8.5,4);walk(8.5,-8);walk(TV_EXIT.approach.x,TV_EXIT.approach.z); }
           else { h.command('act');for(let i=0;i<260&&state.step===index;i++)frame(); }
         }

@@ -14,7 +14,7 @@ import { officeClothing } from '@auto_matrix/shared';
 import { cabinSeat, MORNING, POD_RESCUE, podRescuePose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
 import { ambushCat } from '@auto_matrix/shared';
 import { wetwallPose, sixthPose, bathroomFightRoot, WETWALL, WETWALL_SHAFT, type WetwallPhase } from '@auto_matrix/shared';
-import { BASEMENT, TV_EXIT, basementBlocked } from '@auto_matrix/shared';
+import { BASEMENT, TV_EXIT, basementBlocked, tvExitEmergeRoot, tvExitEmergingRole } from '@auto_matrix/shared';
 
 export class PlayerControls {
   id: string | null = null;
@@ -320,7 +320,7 @@ export class PlayerControls {
     const attacking = (performance.now() - this.lastAttack) / 1000 < MELEE_COMBO[this.attackCombo].duration;
     return { x, z, yaw: attacking ? this.attackYaw : this.yaw, pitch: this.pitch, sprint: this.keys.has('ShiftLeft') || this.keys.has('ShiftRight'), crouch: this.keys.has('KeyZ'), jump,
       drive: this.ride ? { throttle: this.enabled ? Math.max(0, forward) : 0, steer: this.enabled ? right : 0, brake: forward < 0 || !this.enabled } : undefined,
-      climb: this.climbing && this.enabled ? forward : 0, focus: this.enabled && this.running && this.keys.has('KeyG'), sequence: ++this.sequence };
+      climb: (this.climbing || this.motion.tvExit?.phase === 'emerging') && this.enabled ? forward : 0, focus: this.enabled && this.running && this.keys.has('KeyG'), sequence: ++this.sequence };
   }
 
   update(delta: number, state: AgentState, group: THREE.Group, running: boolean, phoneExit = false): void {
@@ -444,7 +444,7 @@ export class PlayerControls {
     const hardlineStarting = Boolean(state.currentAction?.parameters.crosscut && tvExit?.phase === 'pickup' && this.motion.tvExit?.phase !== 'pickup');
     if (this.motion.basement && !basement || this.motion.tvExit && !tvExit) this.performing = false;
     if (basement) this.performing = Boolean(basement.paused || ['ready', 'descending', 'landing', 'draining', 'tunnel', 'done', 'failed'].includes(basement.phase));
-    if (tvExit) this.performing = Boolean(tvExit.paused || ['pickup', 'line_dead', 'calling'].includes(tvExit.phase));
+    if (tvExit) this.performing = Boolean(tvExit.paused || ['emerging', 'pickup', 'line_dead', 'calling'].includes(tvExit.phase));
     if (Boolean(this.motion.basement?.crawling) !== Boolean(basement?.crawling)) this.cameraReady = false;
     this.motion.basement = basement; this.motion.tvExit = tvExit;
     this.motion.crosscut = state.currentAction?.parameters.crosscut as MotionInput['crosscut'];
@@ -582,7 +582,8 @@ export class PlayerControls {
     this.motion.realWorld = !state.isInMatrix && state.currentLocation !== 'film_real_desert';
     this.motion.clubClothes = state.currentLocation === 'film_white_rabbit_club' || state.id === 'neo' && state.currentLocation === 'film_white_construct' && !state.currentAction?.parameters.rescue;
     this.motion.glasses = !this.motion.clubClothes && (state.id !== 'neo' || state.isAwakened && state.currentLocation !== 'film_oracle_home');
-    this.motion.climbing = this.motion.wetwall?.hanging ? 0 : this.climbing && !wall ? Number(this.keys.has('KeyW') || this.keys.has('ArrowUp')) - Number(this.keys.has('KeyS') || this.keys.has('ArrowDown')) : undefined;
+    const shaftRole = this.motion.tvExit?.phase === 'emerging' ? tvExitEmergingRole(this.motion.tvExit) : undefined;
+    this.motion.climbing = this.motion.wetwall?.hanging ? 0 : shaftRole === this.motion.tvExit?.role ? Number(this.keys.has('KeyW') || this.keys.has('ArrowUp')) - Number(this.keys.has('KeyS') || this.keys.has('ArrowDown')) : this.climbing && !wall ? Number(this.keys.has('KeyW') || this.keys.has('ArrowUp')) - Number(this.keys.has('KeyS') || this.keys.has('ArrowDown')) : undefined;
     if (this.firing) this.requestShot();
     const now = performance.now();
     if (!running || !this.enabled || state.status !== 'alive') { this.attackQueuedUntil = 0; this.localJump = false; this.networkJump = false; this.impulse = undefined; }
@@ -699,8 +700,9 @@ export class PlayerControls {
     const podWide = !this.firstPerson && this.motion.performance === 'pod';
     const cabinWide = !this.firstPerson && Boolean(this.motion.cabin);
     const bathroomWide = !this.firstPerson && Boolean(this.motion.bathroom);
-    this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, inOfficeLift && !this.firstPerson ? 80 : bathroomWide ? this.camera.aspect < .85 ? 78 : 58 : podWide ? 65 : this.motion.truth && !this.firstPerson && this.camera.aspect < .85 ? 68 : cabinWide ? this.camera.aspect < .85 ? 68 : 58 : smithFinaleWide || epilogueWide ? 64 : ladderWide ? 62 : interviewApproach ? 70 : interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide || sentinelWide || interludeWide || oracleWide || betrayalWide || rescueWide || governmentWide || airRescueWide || escapeWide || oneWide || catchWide || lobbyWide || pillDepartureWide ? 58 : this.motion.inspecting ? 42 : this.firstPerson ? this.motion.mirrorBeat !== undefined ? 78 : sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
-    this.camera.near = basement?.crawling || this.firstPerson && (this.motion.bathroom || this.motion.sixth || this.motion.wetwall?.hanging) ? .06 : this.firstPerson && this.motion.club ? .08 : this.defaultNear;
+    const streetShaftWide = !this.firstPerson && tvExit?.phase === 'emerging';
+    this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, inOfficeLift && !this.firstPerson ? 80 : bathroomWide ? this.camera.aspect < .85 ? 78 : 58 : streetShaftWide ? this.camera.aspect < .85 ? 68 : 60 : podWide ? 65 : this.motion.truth && !this.firstPerson && this.camera.aspect < .85 ? 68 : cabinWide ? this.camera.aspect < .85 ? 68 : 58 : smithFinaleWide || epilogueWide ? 64 : ladderWide ? 62 : interviewApproach ? 70 : interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide || sentinelWide || interludeWide || oracleWide || betrayalWide || rescueWide || governmentWide || airRescueWide || escapeWide || oneWide || catchWide || lobbyWide || pillDepartureWide ? 58 : this.motion.inspecting ? 42 : this.firstPerson ? this.motion.mirrorBeat !== undefined ? 78 : sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
+    this.camera.near = basement?.crawling || this.firstPerson && (this.motion.bathroom || this.motion.sixth || this.motion.wetwall?.hanging || tvExit?.phase === 'emerging') ? .06 : this.firstPerson && this.motion.club ? .08 : this.defaultNear;
     this.camera.updateProjectionMatrix();
     this.cameraStep += this.motion.speed * delta;
     const target = new THREE.Vector3(this.position.x, this.position.y + (this.firstPerson ? 2.99 : 2.05) - (this.motion.pills ? .9 : 0) - (this.motion.mirrorBeat !== undefined ? THREE.MathUtils.smoothstep(this.motion.mirrorBeat, .65, MIRROR_TIMING.sit) * .9 : 0) - (this.motion.reveal?.kind === 'construct' ? .62 : 0) - (this.motion.crouching ? 1.1 : 0), this.position.z);
@@ -1229,6 +1231,23 @@ export class PlayerControls {
         const ideal = new THREE.Vector3(ground ? -21 : -14.8, ground ? 4.8 : 5.2 + falling * .6, ground ? -26.1 : -26.4 + falling).add(origin);
         const focus = new THREE.Vector3(-17.7 - falling * .9, ground ? 1.2 : 2.4 - falling * .8, -26.9 - falling * 1.3).add(origin);
         if (resetCamera || gesture.elapsed < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
+        this.camera.lookAt(focus);
+      }
+    } else if (tvExit?.phase === 'emerging') {
+      const center = FILM_SETS.film_tv_repair.center;
+      if (this.firstPerson) {
+        const head = group.getObjectByName('head'); group.updateWorldMatrix(true, true);
+        const eye = head ? head.localToWorld(new THREE.Vector3(0, .1, .32)) : new THREE.Vector3(this.position.x, this.position.y + 2.9, this.position.z);
+        const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
+        this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
+      } else {
+        const role = tvExitEmergingRole(tvExit), progress = role ? tvExit.emerge?.[role] ?? 0 : 1;
+        const root = role ? tvExitEmergeRoot(role, progress) : undefined, climbing = progress < TV_EXIT.emerge.climbEnd;
+        const ideal = climbing && root
+          ? new THREE.Vector3(center.x + TV_EXIT.street.drain.x + (this.camera.aspect < .85 ? 3.2 : 3.6), center.y + root.y + 2, center.z + TV_EXIT.street.drain.z - (this.camera.aspect < .85 ? 1.4 : 1.8))
+          : new THREE.Vector3(center.x + TV_EXIT.street.drain.x + (this.camera.aspect < .85 ? 7.2 : 6), center.y + (this.camera.aspect < .85 ? 7.8 : 6.4), center.z + TV_EXIT.street.drain.z - (this.camera.aspect < .85 ? 8.2 : 6.8));
+        const focus = root ? new THREE.Vector3(center.x + root.x, center.y + root.y + (climbing ? 2.45 : 1.7), center.z + root.z) : new THREE.Vector3(this.position.x, this.position.y + 1.7, this.position.z);
+        if (resetCamera) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-9 * delta));
         this.camera.lookAt(focus);
       }
     } else if (this.motion.crosscut && this.performing && !['trinity_ready', 'neo_ready'].includes(this.motion.crosscut.phase)) {

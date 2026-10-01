@@ -21,9 +21,12 @@ import { OfficeWorkdayRenderer } from '../packages/client/src/engine/OfficeWorkd
 import { LAFAYETTE, hotelFloor } from '@auto_matrix/shared';
 import { MORNING, morningRoot, morningWakePose } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
+import { poseHardline } from '../packages/client/src/agents/BasementPerformance.js';
+import type { CharacterRig } from '../packages/client/src/agents/CharacterModel.js';
 import { PodSetRenderer } from '../packages/client/src/engine/PodSetRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
+import { TV_EXIT, tvExitEmergeRoot } from '@auto_matrix/shared';
 
 async function loadGeometry(id = 'neo') {
   const glb = await readFile(new URL(`../packages/client/public/assets/characters/${id}.glb`, import.meta.url));
@@ -90,6 +93,43 @@ test('a settled coat does not upload identical positions and normals every frame
       assert.equal(panel.mesh.geometry.attributes.position.version, before[i].positionVersion, 'identical vertex positions should not upload again');
       assert.equal(panel.mesh.geometry.attributes.normal.version, before[i].normalVersion, 'identical cloth should reuse its existing surface normals');
     });
+  } finally { models.dispose(); }
+});
+
+test('Neo’s shipped body grips the physical street ladder without leaving the shaft', async () => {
+  const asset = await loadGeometry('neo'); const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: () => Promise<typeof asset> }).load = async () => asset;
+  try {
+    const hero = (await models.create('neo'))!, motion = newMotion();
+    const actor = new THREE.Group(), body = new THREE.Group(); actor.add(body); body.position.y = -1; body.add(hero.root);
+    const rig = { root: body, hero, motion } as CharacterRig;
+    const input: MotionInput = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, climbing: 0 };
+    const center = FILM_SETS.film_tv_repair.center, top = center.y - 1.45, bottom = top - TV_EXIT.street.shaftDepth + .8;
+    const rungDistance = (y: number) => Math.abs(y - THREE.MathUtils.clamp(top - Math.round((top - y) / .55) * .55, bottom, top));
+    for (const progress of [.08, .3, .56]) {
+      models.animate(hero, advanceMotion(motion, input, 0), motion, input, 0);
+      const root = tvExitEmergeRoot('neo', progress); actor.position.set(center.x + root.x, center.y + root.y, center.z + root.z); actor.rotation.y = root.yaw;
+      poseHardline(rig, { phase: 'emerging', elapsed: progress, role: 'neo', emerge: { neo: progress, trinity: 0, apoc: 0, switch: 0 } });
+      actor.updateWorldMatrix(true, true);
+      for (const [index, side] of ['R', 'L'].entries()) {
+        const sign = index ? 1 : -1;
+        const wrist = hero.bones.get(`wrist_${side}`)!, palm = wrist.localToWorld(new THREE.Vector3(0, -.19, .035));
+        const palmX = Math.abs(palm.x - center.x - TV_EXIT.street.drain.x - sign * .48), palmZ = Math.abs(palm.z - center.z - TV_EXIT.street.ladderZ), palmRung = rungDistance(palm.y);
+        const shoulder = hero.bones.get(`shoulder_${side}`)!, elbow = hero.bones.get(`elbow_${side}`)!;
+        assert.ok(palmX < .035, `${side} palm misses its rail by ${palmX} at ${progress}; shoulder ${shoulder.getWorldPosition(new THREE.Vector3()).toArray()}, arm ${(elbow.position.length() + wrist.position.length()) * shoulder.getWorldScale(new THREE.Vector3()).x}`);
+        assert.ok(palmZ < .035, `${side} palm floats ${palmZ} away from the ladder at ${progress}`);
+        assert.ok(palmRung < .04, `${side} palm at ${palm.y} misses a rung by ${palmRung} at ${progress}`);
+        const ankle = hero.bones.get(`ankle_${side}`)!.getWorldPosition(new THREE.Vector3());
+        const ankleX = Math.abs(ankle.x - center.x - TV_EXIT.street.drain.x - sign * .43), ankleZ = Math.abs(ankle.z - center.z - TV_EXIT.street.ladderZ + .08), ankleRung = rungDistance(ankle.y);
+        assert.ok(ankleX < .07, `${side} foot misses its rail by ${ankleX} at ${progress}`);
+        assert.ok(ankleZ < .08, `${side} foot floats ${ankleZ} away from the ladder at ${progress}`);
+        assert.ok(ankleRung < .04, `${side} foot at ${ankle.y} misses a rung by ${ankleRung} at ${progress}`);
+      }
+      for (const name of ['head', 'chest', 'pelvis', 'wrist_R', 'wrist_L', 'ankle_R', 'ankle_L']) {
+        const point = hero.bones.get(name)!.getWorldPosition(new THREE.Vector3());
+        if (point.y < center.y - .15) assert.ok(Math.hypot(point.x - center.x - TV_EXIT.street.drain.x, point.z - center.z - TV_EXIT.street.drain.z) < 1.04, `${name} clips through the shaft at ${progress}`);
+      }
+    }
   } finally { models.dispose(); }
 });
 

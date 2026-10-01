@@ -1,7 +1,7 @@
 import { BETRAYAL, CONNECTED_ROLES, CROSSCUT, CROSSCUT_ROLES, FILM_SETS, TV_EXIT, TV_EXIT_STREET_ROLES, crosscutActive, crosscutDeckRoot, crosscutLocked,
-  crosscutText, crosscutTrinityRoot, crosscutView, tvExitEntered, tvExitRoot, tvExitStreetFrame, tvExitStreetRoot, tvExitStreetRouteLength,
+  crosscutText, crosscutTrinityRoot, crosscutView, tvExitEmergeRoot, tvExitEmergenceFrame, tvExitEmergingRole, tvExitEntered, tvExitRoot, tvExitStreetFrame, tvExitStreetRoot, tvExitStreetRouteLength,
   type AgentState, type CombatImpact, type CrosscutRole,
-  type CypherCrosscut, type SandboxState } from '@auto_matrix/shared';
+  type CypherCrosscut, type PlayerInput, type SandboxState, type TvExitGesture, type TvExitRole } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
 
 /** The saved clock drives the physical ship and its still-connected Matrix avatars. */
@@ -23,7 +23,7 @@ export class CypherBetrayalSystem {
     cut.phase = 'counter_ready'; cut.elapsed = 0; cut.view = 'ship';
     this.journey.betrayal = { kind: 'unplugged', phase: 'ready', elapsed: 0, attempt: cut.attempts, rescued: 0 };
     this.journey.step = 1;
-    this.frame(this.world.agents.get('tank')!, 0, tick);
+    this.frame(this.world.agents.get('tank')!, {}, 0, tick);
   }
   private switchView(view: CypherCrosscut['view'], tick: number): boolean {
     const cut = this.journey.tvExit!.crosscut!, id = view === 'ship' ? 'tank' : 'neo';
@@ -42,7 +42,7 @@ export class CypherBetrayalSystem {
     this.onImpact?.({ source, target, position: { ...actor.position, y: actor.position.y + 2 }, direction: { x: 0, y: 0, z: 1 },
       damage, combo: 0, matrix: false, downed: actor.status === 'dead', shot: { from: { ...this.world.agents.get(source)!.position, y: actor.position.y + 3 }, surface: 'body' } }, tick);
   }
-  private stage(dt: number, tick: number): void {
+  private stage(dt: number, tick: number, climb = 0): void {
     const journey = this.journey, tv = journey.tvExit!, cut = tv.crosscut!, shop = FILM_SETS.film_tv_repair.center, deck = FILM_SETS.film_neb_deck.center;
     for (const role of CROSSCUT_ROLES) {
       const actor = this.world.agents.get(role)!; if (role !== journey.actor && actor.controller) continue;
@@ -53,6 +53,9 @@ export class CypherBetrayalSystem {
         const root = crosscutDeckRoot(cut, role);
         actor.position = { x: deck.x + root.x, y: deck.y, z: deck.z + root.z }; actor.rotation = root.yaw;
         actor.currentLocation = 'film_neb_deck'; actor.isInMatrix = false;
+      } else if (connected && tv.phase === 'emerging') {
+        const exitRole = role as TvExitRole, root = tvExitEmergeRoot(exitRole, tv.emerge?.[exitRole] ?? 0);
+        actor.position = { x: shop.x + root.x, y: shop.y + root.y, z: shop.z + root.z }; actor.rotation = root.yaw;
       } else if (role === 'neo' && (['assault', 'call'].includes(cut.phase) || cut.phase === 'phone' && tv.phase === 'pickup' || cut.phase === 'neo_exit')) {
         const root = tvExitRoot({ ...tv, phase: cut.phase === 'phone' || cut.phase === 'neo_exit' ? 'pickup' : 'line_dead', elapsed: cut.elapsed });
         actor.position = { x: shop.x + root.x, y: shop.y + root.y, z: shop.z + root.z }; actor.rotation = root.yaw;
@@ -64,26 +67,29 @@ export class CypherBetrayalSystem {
         actor.position = { x: shop.x + root.x, y: shop.y + root.y, z: shop.z + root.z }; actor.rotation = root.yaw;
       }
       if (connected && !out) { actor.currentLocation = 'film_tv_repair'; actor.isInMatrix = true; }
-      actor.velocity = dt ? { x: (actor.position.x - before.x) / dt, y: 0, z: (actor.position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
+      actor.velocity = dt ? { x: (actor.position.x - before.x) / dt, y: (actor.position.y - before.y) / dt, z: (actor.position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
       actor.targetPosition = null; actor.currentPath = [];
       const dead = role === 'apoc' && cut.apocDead || role === 'switch' && cut.switchDead || role === 'dozer' && cut.dozerDead || role === 'cypher' && cut.cypherDead;
       const fall = dead ? cut.phase === 'call' && (role === 'apoc' || role === 'switch') ? Math.max(0, cut.elapsed - (role === 'apoc' ? CROSSCUT.apocPull : CROSSCUT.switchPull))
         : cut.phase === 'assault' && role === 'dozer' ? Math.max(0, cut.elapsed - CROSSCUT.dozerShot)
           : cut.phase === 'countering' && role === 'cypher' ? Math.max(0, cut.elapsed - 2.2) : 4
         : role === 'tank' && cut.tankHit ? cut.phase === 'assault' ? Math.max(0, cut.elapsed - CROSSCUT.tankShot) : 4 : 0;
-      let hardline;
-      if (role === 'neo' && (cut.phase === 'phone' && tv.phase === 'pickup' || cut.phase === 'neo_exit')) hardline = { phase: 'pickup' as const, elapsed: cut.elapsed, role: 'neo' as const };
+      let hardline: TvExitGesture | undefined;
+      if (connected && tv.phase === 'emerging') hardline = { ...tv, role: role as TvExitRole };
+      else if (role === 'neo' && (cut.phase === 'phone' && tv.phase === 'pickup' || cut.phase === 'neo_exit')) hardline = { phase: 'pickup' as const, elapsed: cut.elapsed, role: 'neo' as const };
       else if (role === 'neo' && cut.phase === 'assault') hardline = { phase: 'line_dead' as const, elapsed: 0, role: 'neo' as const };
       else if (role === 'neo' && cut.phase === 'call' && tv.phase === 'line_dead') hardline = { phase: 'line_dead' as const, elapsed: 0, role: 'neo' as const };
       else if (role === 'neo' && cut.phase === 'call' && cut.elapsed < 6.6) hardline = { phase: 'calling' as const, elapsed: cut.elapsed, role: 'neo' as const };
       else if (role === 'trinity' && cut.phase === 'trinity_exit' && cut.elapsed >= 2) hardline = { phase: 'pickup' as const, elapsed: cut.elapsed - 2, role: 'trinity' as const };
+      const onLadder = connected && tv.phase === 'emerging' && (tv.emerge?.[role as TvExitRole] ?? 1) < TV_EXIT.emerge.climbEnd;
       actor.currentAction = { type: 'idle', parameters: { resolved: true, crosscut: { ...cut, role, fall, body: Boolean(connected && out) },
         seated: Boolean(out), armed: role === 'cypher' && cut.phase === 'assault' || role === 'tank' && cut.phase === 'countering',
+        climbing: onLadder, climbDirection: onLadder && tvExitEmergingRole(tv) === role ? climb : 0,
         tvExit: hardline, phone: role === 'trinity' && cut.phase === 'call' && tv.phase === 'calling' ? { phase: 'connected', slide: 1, elapsed: cut.elapsed } : undefined },
         startedAt: tick, duration: 1e9, progress: 0 };
     }
   }
-  frame(actor: AgentState, dt: number, tick: number): boolean {
+  frame(actor: AgentState, input: Partial<PlayerInput>, dt: number, tick: number): boolean {
     if (!this.active(actor)) return false;
     const journey = this.journey, tv = journey.tvExit!, cut = tv.crosscut!;
     tv.paused = this.occupied();
@@ -92,7 +98,9 @@ export class CypherBetrayalSystem {
     const timed = cut.phase === 'phone' && tv.phase === 'pickup' || cut.phase === 'call' && tv.phase === 'calling'
       || ['assault', 'aiming', 'window', 'countering', 'trinity_exit', 'neo_exit'].includes(cut.phase);
     if (timed) cut.elapsed += delta;
-    if (journey.scene === 'm1_tv_exit' && cut.phase === 'phone' && tv.phase === 'ready') {
+    if (journey.scene === 'm1_tv_exit' && cut.phase === 'phone' && tv.phase === 'emerging') {
+      tvExitEmergenceFrame(tv, input.climb ?? 0, delta);
+    } else if (journey.scene === 'm1_tv_exit' && cut.phase === 'phone' && tv.phase === 'ready') {
       const neo = this.world.agents.get('neo')!, center = FILM_SETS.film_tv_repair.center;
       tvExitStreetFrame(tv, neo.position.x - center.x, neo.position.z - center.z, delta);
     }
@@ -129,21 +137,21 @@ export class CypherBetrayalSystem {
         this.stage(0, tick); this.onAdvance?.('Trinity 先接出，Neo 随后回到现实；伤亡保留。', this.world.agents.get('neo')!, tick);
       }
     }
-    tv.elapsed = cut.elapsed;
+    if (tv.phase !== 'emerging') tv.elapsed = cut.elapsed;
     if (journey.scene === 'm1_unplugged' && journey.betrayal) {
       const betrayal = journey.betrayal;
       betrayal.phase = cut.phase === 'counter_ready' ? 'ready' : ['return', 'trinity_ready', 'trinity_exit', 'neo_ready', 'neo_exit'].includes(cut.phase) ? 'reconnect'
         : cut.phase as 'aiming' | 'window' | 'failed' | 'countering' | 'done';
       betrayal.elapsed = cut.elapsed; betrayal.attempt = cut.attempts; betrayal.rescued = cut.neoOut ? 2 : cut.trinityOut ? 1 : 0;
     }
-    this.stage(delta > 0 && cut.elapsed >= previous ? delta : 0, tick);
+    this.stage(delta > 0 && cut.elapsed >= previous ? delta : 0, tick, input.climb ?? 0);
     journey.checkpoint = { ...this.world.agents.get(journey.actor)!.position }; journey.lastText = crosscutText(journey);
     return crosscutLocked(journey);
   }
   private phoneNear(actor: AgentState): boolean { const c = FILM_SETS.film_tv_repair.center; return Math.hypot(actor.position.x - c.x - TV_EXIT.approach.x, actor.position.z - c.z - TV_EXIT.approach.z) < 1.2; }
   command(actor: AgentState, target: string, tick: number): string {
     const journey = this.journey, tv = journey.tvExit!, cut = tv.crosscut!;
-    if (this.occupied()) { this.frame(actor, 0, tick); return journey.lastText; }
+    if (this.occupied()) { this.frame(actor, {}, 0, tick); return journey.lastText; }
     if (target === 'retry' && cut.phase === 'failed') {
       actor.status = 'alive'; actor.health = cut.tankHealth; actor.activeEffects = [];
       cut.phase = 'counter_ready'; cut.elapsed = 0; cut.attempts++;
@@ -169,6 +177,6 @@ export class CypherBetrayalSystem {
         cut.phase = 'neo_exit'; cut.elapsed = 0;
       }
     }
-    this.frame(this.world.agents.get(journey.actor)!, 0, tick); return journey.lastText;
+    this.frame(this.world.agents.get(journey.actor)!, {}, 0, tick); return journey.lastText;
   }
 }

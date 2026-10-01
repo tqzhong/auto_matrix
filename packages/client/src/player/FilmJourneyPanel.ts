@@ -4,7 +4,7 @@ import { CATCH, RELOADED_FINALE, HEL_COATCHECK, OPENING_ESCAPE, OPENING_HOTEL, c
 import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_NAMES, ARCHITECT_DOOR_SECONDS, filmReflections, CHARACTERS, filmStepPosition, distance, dockPowerOffline, AWAKENING_SECONDS, oracleActing, helElevatorLocked, helDanceDoorLocked, interrogationLocked, pillLocked, lafayetteWelcomeLocked, phoneLocked, windowOpening, windowCrossing, awakeningWaiting, trainingLocked, trainingWaiting, theOneLocked, type AgentState, type SandboxState } from '@auto_matrix/shared';
 import './film-journey.css';
 import { ambushEscapeText } from '@auto_matrix/shared';
-import { BASEMENT, TV_EXIT, basementRouteLength, basementText, tvExitText } from '@auto_matrix/shared';
+import { BASEMENT, TV_EXIT, TV_EXIT_ROLES, basementRouteLength, basementText, tvExitText } from '@auto_matrix/shared';
 import { WETWALL, wetwallText, wetwallEntry, sixthText } from '@auto_matrix/shared';
 import { meetingBoardPoint, meetingLocked, MEETING_TIMING } from '@auto_matrix/shared';
 import { filmPosition, HOTEL_DOOR_PROGRESS, CABIN, CABIN_ROUTE_LENGTH } from '@auto_matrix/shared';
@@ -30,8 +30,9 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
   if (crosscutActive(journey)) {
     const cut = journey.tvExit!.crosscut!, action = crosscutAction(journey, player.position);
     const controls = player.id !== journey.actor ? button('resume', `继续 ${journey.actor === 'tank' ? 'Tank' : 'Neo'} 的保存视角`)
-      : action ? button(action.target, action.label + (action.target === 'retry' ? '' : ' · G')) : '<p>合上手记，观察事件或走向电话；暂停不会跳过事件。</p>';
-    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>同一条接线的两端</h3><p>${cut.view === 'ship' ? '真实飞船 · Tank 视角' : '矩阵 · Neo 视角'}</p></header><article class="film-now"><div><p>${crosscutText(journey)}</p><div class="film-controls">${controls}</div><small>G 明确行动 · WASD 从出口井走入店内 / 走近硬线 · V 切换视角<br>Tank 保存伤势 ${Math.ceil(cut.tankHealth)} · 反击第 ${cut.attempts + 1} 次尝试</small></div></article></div>`;
+      : action ? button(action.target, action.label + (action.target === 'retry' ? '' : ' · G')) : journey.tvExit!.phase === 'emerging' ? '<p>合上手记，按住 W 依次爬出；松开会抓稳当前横档。</p>' : '<p>合上手记，观察事件或走向电话；暂停不会跳过事件。</p>';
+    const climb = journey.tvExit!.emerge ? Math.round(TV_EXIT_ROLES.reduce((sum, role) => sum + journey.tvExit!.emerge![role], 0) / TV_EXIT_ROLES.length * 100) : 100;
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>同一条接线的两端</h3><p>${cut.view === 'ship' ? '真实飞船 · Tank 视角' : '矩阵 · Neo 视角'}</p></header><article class="film-now"><div><p>${crosscutText(journey)}</p><div class="film-controls">${controls}</div><small>W / S 沿出口井梯移动 · WASD 进入店内 / 走近硬线 · G 明确行动 · V 切换视角<br>出井 ${climb}% · Tank 保存伤势 ${Math.ceil(cut.tankHealth)} · 反击第 ${cut.attempts + 1} 次尝试</small></div></article></div>`;
   }
   if (!journey.visiting && scene.id === 'm1_basement' && journey.basement) {
     const encounter = journey.basement, current = player.id === journey.actor, center = FILM_SETS[scene.set].center;
@@ -49,7 +50,7 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
     const action = !current ? button('resume', '接回 Neo 的视角') : encounter.paused ? '<p>同行者正在被另一位玩家控制，电话动作已保留。</p>'
       : encounter.phase === 'done' ? button('next', '切换到 Tank 的现实视角 →') : encounter.phase === 'line_dead' ? button('act', '请 Trinity 联系船上 · G')
         : encounter.phase === 'ready' && journey.step === 2 ? button('act', '取下硬线听筒 · G', !close) : '<p>合上手记，沿街走入店内，再走近后墙电话。</p>';
-    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>Franklin 与 Erie · 电视维修店</h3><p>从街边出口井到硬线，四人保持同行</p></header><article class="film-now"><div><p>${tvExitText(encounter, journey.step)}</p><div class="film-controls">${action}</div><small>WASD 从街道走入店门 / 穿过柜台右侧 · G 取听筒 / 联系船上 · V 切换视角</small></div></article></div>`;
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>Franklin 与 Erie · 电视维修店</h3><p>从街边出口井到硬线，四人保持同行</p></header><article class="film-now"><div><p>${tvExitText(encounter, journey.step)}</p><div class="film-controls">${action}</div><small>W / S 沿井梯移动 · WASD 从街道走入店门 / 穿过柜台右侧 · G 取听筒 / 联系船上 · V 切换视角</small></div></article></div>`;
   }
   if (!journey.visiting && scene.id === 'm1_wetwall' && journey.wetwall) {
     const wall = journey.wetwall, current = player.id === journey.actor, center = FILM_SETS[scene.set].center;

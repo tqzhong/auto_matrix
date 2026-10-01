@@ -1,9 +1,9 @@
-import { BASEMENT, BASEMENT_ROLES, BASEMENT_TUNNEL_LENGTH, BETRAYAL, FILM_SETS, FILM_SCENE_BY_ID, TV_EXIT, TV_EXIT_STREET_ROLES, WETWALL_SHAFT,
+import { BASEMENT, BASEMENT_ROLES, BASEMENT_TUNNEL_LENGTH, BETRAYAL, FILM_SETS, FILM_SCENE_BY_ID, TV_EXIT, TV_EXIT_ROLES, TV_EXIT_STREET_ROLES, WETWALL_SHAFT,
   basementDrainRoot, basementGasDensity, basementLandingRoot, basementLifterRoot, basementLocked, basementRouteLength, basementRouteRoot,
-  basementText, basementTunnelProgress, basementTunnelRoot, playerBlocked, tvExitEntered, tvExitLocked, tvExitRoot, tvExitStreetFrame,
+  basementText, basementTunnelProgress, basementTunnelRoot, playerBlocked, tvExitEmergeRoot, tvExitEmergenceFrame, tvExitEmergingRole, tvExitEntered, tvExitLocked, tvExitRoot, tvExitStreetFrame,
   tvExitStreetRoot, tvExitStreetRouteLength, tvExitText, wetwallEntry,
   ambushCompanyBlocked, ambushCompanyStep, type AgentState, type BasementEncounter, type BasementRole, type PlayerInput,
-  type SandboxState, type Vector3 } from '@auto_matrix/shared';
+  type SandboxState, type TvExitRole, type Vector3 } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
 import { CypherBetrayalSystem } from './CypherBetrayalSystem.js';
 
@@ -30,16 +30,10 @@ export class BasementEscapeSystem {
     this.frame(this.world.agents.get('neo')!, { yaw: starts.neo.yaw }, 0, this.world.simulationTick);
   }
   startTv(): void {
-    this.journey!.tvExit = { phase: 'ready', elapsed: 0,
+    this.journey!.tvExit = { phase: 'emerging', elapsed: 0,
+      emerge: Object.fromEntries(TV_EXIT_ROLES.map(role => [role, 0])) as Record<TvExitRole, number>,
       street: Object.fromEntries(TV_EXIT_STREET_ROLES.map(role => [role, 0])) as Record<typeof TV_EXIT_STREET_ROLES[number], number> };
     this.crosscut.start();
-    const center = FILM_SETS.film_tv_repair.center;
-    for (const id of TV_EXIT_STREET_ROLES) {
-      const root = tvExitStreetRoot(id, 0);
-      const actor = this.world.agents.get(id)!; if (actor.controller) continue;
-      actor.position = { x: center.x + root.x, y: center.y, z: center.z + root.z }; actor.rotation = root.yaw;
-      actor.currentLocation = 'film_tv_repair'; actor.isInMatrix = true;
-    }
     this.frame(this.world.agents.get('neo')!, { yaw: Math.PI }, 0, this.world.simulationTick);
   }
   private advance(index: number, actor: AgentState, tick: number): void {
@@ -80,8 +74,8 @@ export class BasementEscapeSystem {
   }
   frame(actor: AgentState, input: Partial<PlayerInput>, dt: number, tick: number): boolean {
     if (!this.active(actor)) return false;
-    if (this.crosscut.active(actor)) return this.crosscut.frame(actor, dt, tick);
-    if (this.journey!.scene === 'm1_tv_exit') return this.tvFrame(actor, dt, tick);
+    if (this.crosscut.active(actor)) return this.crosscut.frame(actor, input, dt, tick);
+    if (this.journey!.scene === 'm1_tv_exit') return this.tvFrame(actor, input, dt, tick);
     const encounter = this.journey!.basement!, center = FILM_SETS.film_ambush_house.center;
     const previous = Object.fromEntries(BASEMENT_ROLES.map(role => [role, { ...this.world.agents.get(role)!.position }])) as Record<BasementRole, Vector3>;
     encounter.paused = this.occupied();
@@ -155,7 +149,7 @@ export class BasementEscapeSystem {
     this.journey!.checkpoint = { ...actor.position }; this.journey!.lastText = basementText(encounter);
     return basementLocked(this.journey);
   }
-  private tvFrame(actor: AgentState, dt: number, tick: number): boolean {
+  private tvFrame(actor: AgentState, input: Partial<PlayerInput>, dt: number, tick: number): boolean {
     const encounter = this.journey!.tvExit!, center = FILM_SETS.film_tv_repair.center;
     encounter.paused = this.occupied();
     const cypher = this.world.agents.get('cypher')!;
@@ -167,8 +161,11 @@ export class BasementEscapeSystem {
       cypher.currentAction = { type: 'idle', parameters: { resolved: true }, startedAt: tick, duration: 1e9, progress: 0 };
     }
     const delta = encounter.paused || !actor.controller || actor.status !== 'alive' ? 0 : Math.max(0, Math.min(.1, dt));
-    const x = actor.position.x - center.x, z = actor.position.z - center.z;
-    tvExitStreetFrame(encounter, x, z, encounter.phase === 'ready' ? delta : 0);
+    let x = actor.position.x - center.x, z = actor.position.z - center.z;
+    if (encounter.phase === 'emerging') {
+      tvExitEmergenceFrame(encounter, input.climb ?? 0, delta);
+      const root = tvExitEmergeRoot('neo', encounter.emerge!.neo); x = root.x; z = root.z;
+    } else tvExitStreetFrame(encounter, x, z, encounter.phase === 'ready' ? delta : 0);
     if (encounter.phase === 'ready' && delta > 0) {
       if (this.journey!.step === 0 && tvExitEntered(x, z)) this.advance(0, actor, tick);
       else if (this.journey!.step === 1 && Math.hypot(x - TV_EXIT.approach.x, z - TV_EXIT.approach.z) < 1.2) this.advance(1, actor, tick);
@@ -184,13 +181,19 @@ export class BasementEscapeSystem {
     for (const role of ['neo', 'trinity', 'apoc', 'switch'] as const) {
       const other = this.world.agents.get(role)!; if (role !== 'neo' && other.controller) continue;
       other.targetPosition = null; other.currentPath = [];
-      if (role !== 'neo') {
+      if (encounter.phase === 'emerging' || encounter.emerge && encounter.emerge[role] < 1) {
+        const before = other.position, root = tvExitEmergeRoot(role, encounter.emerge![role]);
+        other.position = { x: center.x + root.x, y: center.y + root.y, z: center.z + root.z }; other.rotation = root.yaw;
+        other.velocity = delta ? { x: (other.position.x - before.x) / delta, y: (other.position.y - before.y) / delta, z: (other.position.z - before.z) / delta } : { x: 0, y: 0, z: 0 };
+      } else if (role !== 'neo') {
         const before = other.position, root = tvExitStreetRoot(role, encounter.street![role]);
         other.position = { x: center.x + root.x, y: center.y, z: center.z + root.z }; other.rotation = root.yaw;
-        other.velocity = delta ? { x: (other.position.x - before.x) / delta, y: 0, z: (other.position.z - before.z) / delta } : { x: 0, y: 0, z: 0 };
+        other.velocity = delta ? { x: (other.position.x - before.x) / delta, y: (other.position.y - before.y) / delta, z: (other.position.z - before.z) / delta } : { x: 0, y: 0, z: 0 };
       }
       const calling = role === 'trinity' && encounter.phase === 'calling';
-      other.currentAction = { type: 'idle', parameters: { resolved: true, tvExit: ['neo', 'trinity'].includes(role) ? { ...encounter, role } : undefined,
+      const onLadder = encounter.phase === 'emerging' && encounter.emerge![role] < TV_EXIT.emerge.climbEnd;
+      other.currentAction = { type: 'idle', parameters: { resolved: true, tvExit: encounter.phase === 'emerging' || ['neo', 'trinity'].includes(role) ? { ...encounter, role } : undefined,
+        climbing: onLadder, climbDirection: onLadder && tvExitEmergingRole(encounter) === role ? input.climb ?? 0 : 0,
         phone: calling ? { phase: 'connected', slide: 1, elapsed: encounter.elapsed } : undefined }, startedAt: tick, duration: 1e9, progress: 0 };
     }
     this.journey!.checkpoint = { ...actor.position }; this.journey!.lastText = tvExitText(encounter, this.journey!.step); return tvExitLocked(this.journey);

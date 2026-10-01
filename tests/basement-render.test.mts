@@ -51,7 +51,13 @@ test('the repair shop leaves the playable counter gap and mounts the receiver be
     assert.ok(root.getObjectByName('tv-street-parked-van'),'the exterior must read as a lived-in daylight street');
     assert.equal(hits(0,1.3,39,new THREE.Vector3(0,0,-1),9).length,0,'the open glass door must share the playable entrance gap');
     assert.ok(hits(-11,1.3,39,new THREE.Vector3(0,0,-1),9).length,'the display window must be rendered as a physical facade');
-    assert.ok(hits(TV_EXIT.street.drain.x,2,TV_EXIT.street.drain.z,new THREE.Vector3(0,-1,0),3).length,'the drain exit needs a visible rim and road surface');
+    assert.equal(hits(TV_EXIT.street.drain.x,2,TV_EXIT.street.drain.z,new THREE.Vector3(0,-1,0),3).length,0,'the shaft aperture cannot be capped by the road or a shallow black disc');
+    assert.ok(root.getObjectByName('tv-street-shaft'),'the exit needs a deep visible shaft');
+    assert.ok(root.getObjectByName('tv-street-shaft-masonry'),'the side-on climb camera needs a physical masonry backing instead of empty sky');
+    assert.ok(root.getObjectByName('tv-street-ladder'),'the four bodies need a physical ladder to touch');
+    const cutaway=root.getObjectByName('tv-street-cutaway-road')!,rim=root.getObjectByName('tv-street-cutaway-rim')!;renderer.update({scene:'m1_tv_exit',tvExit:{phase:'emerging',elapsed:0,emerge:{neo:.2,trinity:0,apoc:0,switch:0}}} as FilmJourney);assert.equal(cutaway.visible,false,'the camera-side road section opens only for the ladder cutaway');assert.equal(rim.visible,false,'the cutaway rim cannot cross the climber’s chest');
+    renderer.update({scene:'m1_tv_exit',tvExit:{phase:'ready',elapsed:0}} as FilmJourney);assert.equal(cutaway.visible,true,'the complete road returns before ordinary street movement');assert.equal(rim.visible,true);
+    assert.ok(hits(TV_EXIT.street.drain.x+1.15,2,TV_EXIT.street.drain.z,new THREE.Vector3(0,-1,0),3).length,'the open aperture still needs a visible load-bearing rim');
     assert.equal(hits(8.5,1.3,5,new THREE.Vector3(0,0,-1),8).length,0,'right counter gap must agree with ordinary movement');
     assert.ok(hits(0,1.3,5,new THREE.Vector3(0,0,-1),8).length,'the rest of the counter remains solid');
     assert.ok(hits(TV_EXIT.phone.x,4,TV_EXIT.phone.z+.3,new THREE.Vector3(0,0,-1),1).length,'wall telephone cannot float in empty space');

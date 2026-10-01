@@ -151,16 +151,22 @@ export function basementText(encounter: BasementEncounter): string {
   return '四人抵达通向街面的出口井。Trinity 联系 Tank；下一镜头前往 Franklin 与 Erie 的电视维修店，Cypher 已先取得出口。';
 }
 
-export type TvExitPhase = 'ready' | 'pickup' | 'line_dead' | 'calling' | 'done';
+export type TvExitPhase = 'emerging' | 'ready' | 'pickup' | 'line_dead' | 'calling' | 'done';
+export const TV_EXIT_ROLES = ['neo', 'trinity', 'apoc', 'switch'] as const;
+export type TvExitRole = typeof TV_EXIT_ROLES[number];
 export const TV_EXIT_STREET_ROLES = ['trinity', 'apoc', 'switch'] as const;
 export type TvExitStreetRole = typeof TV_EXIT_STREET_ROLES[number];
 export interface TvExitEncounter {
   phase: TvExitPhase; elapsed: number; paused?: boolean; start?: Vector3 & { yaw: number };
-  street?: Record<TvExitStreetRole, number>; crosscut?: import('./cypher-crosscut.js').CypherCrosscut;
+  emerge?: Record<TvExitRole, number>; street?: Record<TvExitStreetRole, number>; crosscut?: import('./cypher-crosscut.js').CypherCrosscut;
 }
-export interface TvExitGesture extends TvExitEncounter { role: 'neo' | 'trinity' }
+export interface TvExitGesture extends TvExitEncounter { role: TvExitRole }
 export const TV_EXIT = { phone: { x: -7, y: 2.7, z: -20 }, approach: { x: -7, z: -18.5 }, pickupSeconds: 4.4, callSeconds: 6.8,
-  street: { drain: { x: -7, z: 49 }, curb: { x: -7, z: 41.5 }, door: { x: 0, z: 29.5 }, storefrontZ: 32 },
+  street: { drain: { x: -7, z: 49 }, curb: { x: -7, z: 41.5 }, door: { x: 0, z: 29.5 }, storefrontZ: 32,
+    shaftDepth: 18, ladderZ: 49.76 },
+  emerge: { speed: .28, climbEnd: .76, climbTop: -3.1, top: -4.4, spacing: 4.15,
+    exits: { neo: { x: -4.6, z: 46.8, yaw: Math.PI }, trinity: { x: -3.5, z: 51, yaw: Math.PI },
+      apoc: { x: -8.8, z: 52.5, yaw: Math.PI }, switch: { x: -10.5, z: 48.5, yaw: 3.02 } } },
   cast: { trinity: { x: -3.5, z: -14, yaw: -Math.PI / 2 }, apoc: { x: 4.5, z: -11, yaw: Math.PI }, switch: { x: 8.5, z: -9, yaw: Math.PI } } } as const;
 export const TV_EXIT_INTERIOR_OBSTACLES = [
   { x: -13.5, z: -15, width: 3.4, depth: 20, height: 5.2 }, { x: 13.5, z: -15, width: 3.4, depth: 20, height: 5.2 },
@@ -185,6 +191,28 @@ const TV_EXIT_COMPANY_ROUTES: Record<TvExitStreetRole, readonly { x: number; z: 
   switch: [{ x: -10.5, z: 48.5 }, { x: -9.5, z: 40.5 }, { x: -3.5, z: 34.5 }, { x: 2, z: 29.5 }, { x: 10.2, z: 4 }, { x: 10.2, z: -8 }, TV_EXIT.cast.switch],
 };
 export const TV_EXIT_STREET_LENGTH = pathLength(TV_EXIT_PLAYER_ROUTE);
+export function tvExitEmergingRole(encounter: TvExitEncounter): TvExitRole | undefined {
+  return TV_EXIT_ROLES.find(role => (encounter.emerge?.[role] ?? 0) < 1);
+}
+export function tvExitEmergeRoot(role: TvExitRole, progress: number) {
+  const index = TV_EXIT_ROLES.indexOf(role), value = Math.max(0, Math.min(1, progress));
+  const startY = TV_EXIT.emerge.top - index * TV_EXIT.emerge.spacing, edge = TV_EXIT.emerge.climbEnd;
+  if (value <= edge) {
+    const climb = smooth(value / edge);
+    return { x: TV_EXIT.street.drain.x, y: startY + (TV_EXIT.emerge.climbTop - startY) * climb, z: TV_EXIT.street.drain.z - .2, yaw: 0, climbing: true };
+  }
+  const step = smooth((value - edge) / (1 - edge)), exit = TV_EXIT.emerge.exits[role];
+  return { x: TV_EXIT.street.drain.x + (exit.x - TV_EXIT.street.drain.x) * step, y: TV_EXIT.emerge.climbTop * (1 - step),
+    z: TV_EXIT.street.drain.z - .2 + (exit.z - TV_EXIT.street.drain.z + .2) * step,
+    yaw: Math.atan2(Math.sin(exit.yaw) * step, 1 - step + Math.cos(exit.yaw) * step), climbing: value < 1 };
+}
+export function tvExitEmergenceFrame(encounter: TvExitEncounter, climb: number, delta: number): void {
+  if (!encounter.emerge) encounter.emerge = Object.fromEntries(TV_EXIT_ROLES.map(role => [role, 0])) as Record<TvExitRole, number>;
+  const role = tvExitEmergingRole(encounter);
+  if (!role) { encounter.phase = 'ready'; encounter.elapsed = 0; return; }
+  encounter.emerge[role] = Math.max(0, Math.min(1, encounter.emerge[role] + Math.max(-1, Math.min(1, climb)) * TV_EXIT.emerge.speed * Math.max(0, delta)));
+  encounter.elapsed = TV_EXIT_ROLES.reduce((sum, id) => sum + encounter.emerge![id], 0);
+}
 export function tvExitStreetRouteLength(role: TvExitStreetRole): number { return pathLength(TV_EXIT_COMPANY_ROUTES[role]); }
 export function tvExitStreetRoot(role: TvExitStreetRole, progress: number) { return { ...pathRoot(TV_EXIT_COMPANY_ROUTES[role], progress), y: 0 }; }
 export function tvExitStreetProgress(x: number, z: number): number {
@@ -211,14 +239,18 @@ export function tvExitStreetFrame(encounter: TvExitEncounter, x: number, z: numb
     encounter.street[role] = Math.max(encounter.street[role], Math.min(target, encounter.street[role] + 5.2 * Math.max(0, delta)));
   }
 }
-export function tvExitLocked(journey: FilmJourney | undefined): boolean { if (crosscutActive(journey)) return crosscutLocked(journey); return Boolean(journey?.scene === 'm1_tv_exit' && !journey.visiting && journey.tvExit && (journey.tvExit.paused || ['pickup', 'line_dead', 'calling'].includes(journey.tvExit.phase))); }
+export function tvExitLocked(journey: FilmJourney | undefined): boolean { if (crosscutActive(journey)) return crosscutLocked(journey); return Boolean(journey?.scene === 'm1_tv_exit' && !journey.visiting && journey.tvExit && (journey.tvExit.paused || ['emerging', 'pickup', 'line_dead', 'calling'].includes(journey.tvExit.phase))); }
 export function tvExitRoot(encounter: TvExitEncounter) {
   const start = encounter.start ?? { ...TV_EXIT.approach, y: 0, yaw: Math.PI };
   const t = encounter.phase === 'pickup' ? smooth(encounter.elapsed / .8) : 1;
   return { x: start.x + (TV_EXIT.approach.x - start.x) * t, y: start.y, z: start.z + (TV_EXIT.approach.z - start.z) * t, yaw: start.yaw + Math.atan2(Math.sin(Math.PI - start.yaw), Math.cos(Math.PI - start.yaw)) * t };
 }
 export function tvExitText(encounter: TvExitEncounter, step = 2): string {
-  if (encounter.paused) return 'Trinity 或同行者正在由另一位玩家控制，电话动作停在保存的位置。';
+  if (encounter.paused) return encounter.phase === 'emerging' ? '同行角色正在由另一位玩家控制。四人的井梯位置和先后顺序停在保存进度。' : 'Trinity 或同行者正在由另一位玩家控制，电话动作停在保存的位置。';
+  if (encounter.phase === 'emerging') {
+    const role = tvExitEmergingRole(encounter), names: Record<TvExitRole, string> = { neo: 'Neo', trinity: 'Trinity', apoc: 'Apoc', switch: 'Switch' };
+    return role ? `按住 W 让 ${names[role]} 沿井梯上行；松开会抓稳当前横档。四人必须依次离开狭窄井口。` : '四人已经离开出口井。';
+  }
   if (encounter.phase === 'ready') return step === 0 ? '四人从街边出口井回到白昼中的矩阵。沿人行道走进 Franklin 与 Erie 的敞开店门。'
     : step === 1 ? 'Tank 确认 Morpheus 还活着。跟随 Trinity 穿过店门，再从维修柜台右侧走向后墙硬线。'
       : 'Trinity 让 Neo 先接出。走近后墙电话，按 G 亲手取下听筒。';
