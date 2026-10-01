@@ -31,7 +31,7 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
     const cut = journey.tvExit!.crosscut!, action = crosscutAction(journey, player.position);
     const controls = player.id !== journey.actor ? button('resume', `继续 ${journey.actor === 'tank' ? 'Tank' : 'Neo'} 的保存视角`)
       : action ? button(action.target, action.label + (action.target === 'retry' ? '' : ' · G')) : '<p>合上手记，观察事件或走向电话；暂停不会跳过事件。</p>';
-    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>同一条接线的两端</h3><p>${cut.view === 'ship' ? '真实飞船 · Tank 视角' : '矩阵 · Neo 视角'}</p></header><article class="film-now"><div><p>${crosscutText(journey)}</p><div class="film-controls">${controls}</div><small>G 明确行动 · WASD 留出电话通道 / 走近硬线 · V 切换视角<br>Tank 保存伤势 ${Math.ceil(cut.tankHealth)} · 反击第 ${cut.attempts + 1} 次尝试</small></div></article></div>`;
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>同一条接线的两端</h3><p>${cut.view === 'ship' ? '真实飞船 · Tank 视角' : '矩阵 · Neo 视角'}</p></header><article class="film-now"><div><p>${crosscutText(journey)}</p><div class="film-controls">${controls}</div><small>G 明确行动 · WASD 从出口井走入店内 / 走近硬线 · V 切换视角<br>Tank 保存伤势 ${Math.ceil(cut.tankHealth)} · 反击第 ${cut.attempts + 1} 次尝试</small></div></article></div>`;
   }
   if (!journey.visiting && scene.id === 'm1_basement' && journey.basement) {
     const encounter = journey.basement, current = player.id === journey.actor, center = FILM_SETS[scene.set].center;
@@ -48,8 +48,8 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
     const close = Math.hypot(player.position.x - center.x - TV_EXIT.approach.x, player.position.z - center.z - TV_EXIT.approach.z) < 1.2;
     const action = !current ? button('resume', '接回 Neo 的视角') : encounter.paused ? '<p>同行者正在被另一位玩家控制，电话动作已保留。</p>'
       : encounter.phase === 'done' ? button('next', '切换到 Tank 的现实视角 →') : encounter.phase === 'line_dead' ? button('act', '请 Trinity 联系船上 · G')
-        : encounter.phase === 'ready' && journey.step === 1 ? button('act', '取下硬线听筒 · G', !close) : '<p>合上手记，走近电话并观察同伴的反应。</p>';
-    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>Franklin 与 Erie · 电视维修店</h3><p>硬线失效后，四人仍留在矩阵里</p></header><article class="film-now"><div><p>${tvExitText(encounter)}</p><div class="film-controls">${action}</div><small>WASD 穿过柜台右侧 · G 取听筒 / 联系船上 · V 切换视角</small></div></article></div>`;
+        : encounter.phase === 'ready' && journey.step === 2 ? button('act', '取下硬线听筒 · G', !close) : '<p>合上手记，沿街走入店内，再走近后墙电话。</p>';
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>Franklin 与 Erie · 电视维修店</h3><p>从街边出口井到硬线，四人保持同行</p></header><article class="film-now"><div><p>${tvExitText(encounter, journey.step)}</p><div class="film-controls">${action}</div><small>WASD 从街道走入店门 / 穿过柜台右侧 · G 取听筒 / 联系船上 · V 切换视角</small></div></article></div>`;
   }
   if (!journey.visiting && scene.id === 'm1_wetwall' && journey.wetwall) {
     const wall = journey.wetwall, current = player.id === journey.actor, center = FILM_SETS[scene.set].center;

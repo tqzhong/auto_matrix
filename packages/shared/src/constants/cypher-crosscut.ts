@@ -64,7 +64,7 @@ export function crosscutAction(journey: FilmJourney, position: Vector3): { targe
   if (cut.phase === 'failed') return { target: 'retry', label: '从负伤的反击检查点重试' };
   if (cut.phase === 'done') return { target: 'next', label: '回到飞船，决定营救 Morpheus' };
   if (cut.phase === 'call' && tv.phase === 'done') return { target: 'next', label: '明确接管受伤的 Tank' };
-  if (cut.phase === 'phone' && tv.phase === 'ready' && journey.step === 1 && gap < 1.2) return { target: 'act', label: '取下硬线听筒' };
+  if (cut.phase === 'phone' && tv.phase === 'ready' && journey.step === 2 && gap < 1.2) return { target: 'act', label: '取下硬线听筒' };
   if (cut.phase === 'call' && tv.phase === 'line_dead') return { target: 'act', label: '请 Trinity 联系飞船' };
   if (cut.phase === 'counter_ready') return { target: 'act', label: '忍住伤口，准备反击' };
   if (cut.phase === 'window') return { target: 'act', label: '抓住脉冲枪反击' };
@@ -80,7 +80,9 @@ export function crosscutTrinityRoot(cut: CypherCrosscut) {
 export function crosscutText(journey: FilmJourney): string {
   const tv = journey.tvExit!, cut = tv.crosscut!, t = cut.elapsed;
   if (tv.paused) return '参与背叛或撤离的角色正由另一位玩家控制。两边的位置、伤势与接线时钟停在存档处。';
-  if (cut.phase === 'phone') return tv.phase === 'ready' ? 'Trinity 让 Neo 先接出。走近后墙电话，G 亲手取下听筒。' : 'Neo 拿起硬线听筒，等待 Tank 确认出口。';
+  if (cut.phase === 'phone') return tv.phase === 'ready' ? journey.step === 0 ? '四人从街边出口井爬回白昼中的矩阵。沿人行道走进 Franklin 与 Erie 的敞开店门。'
+    : journey.step === 1 ? 'Trinity 确认 Tank 给出的地址。穿过店门和维修柜台右侧，找到后墙硬线。'
+      : 'Trinity 让 Neo 先接出。走近后墙电话，G 亲手取下听筒。' : 'Neo 拿起硬线听筒，等待 Tank 确认出口。';
   if (cut.phase === 'assault') return t < CROSSCUT.tankShot ? '现实飞船：Cypher 趁 Tank 转身，抬起脉冲枪。矩阵里的 Neo 仍在等接线。' : t < CROSSCUT.dozerShot ? 'Tank 中枪倒下。Dozer 离开控制台，冲向 Cypher。' : 'Dozer 也被击倒。没有接线员回应，矩阵的硬线出口随之失效。';
   if (cut.phase === 'call') {
     if (tv.phase === 'line_dead') return '硬线突然失效。G 请 Trinity 用手机联系飞船。';

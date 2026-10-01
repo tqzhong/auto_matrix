@@ -47,6 +47,11 @@ test('the repair shop leaves the playable counter gap and mounts the receiver be
   t.mock.method(THREE.TextureLoader.prototype,'load',()=>new THREE.Texture());
   const root=new THREE.Group(),renderer=new TvRepairRenderer(root),hits=rays(root);
   try {
+    assert.ok(root.getObjectByName('tv-street-drain'),'the street-side sewer exit must be visible at the playable spawn');
+    assert.ok(root.getObjectByName('tv-street-parked-van'),'the exterior must read as a lived-in daylight street');
+    assert.equal(hits(0,1.3,39,new THREE.Vector3(0,0,-1),9).length,0,'the open glass door must share the playable entrance gap');
+    assert.ok(hits(-11,1.3,39,new THREE.Vector3(0,0,-1),9).length,'the display window must be rendered as a physical facade');
+    assert.ok(hits(TV_EXIT.street.drain.x,2,TV_EXIT.street.drain.z,new THREE.Vector3(0,-1,0),3).length,'the drain exit needs a visible rim and road surface');
     assert.equal(hits(8.5,1.3,5,new THREE.Vector3(0,0,-1),8).length,0,'right counter gap must agree with ordinary movement');
     assert.ok(hits(0,1.3,5,new THREE.Vector3(0,0,-1),8).length,'the rest of the counter remains solid');
     assert.ok(hits(TV_EXIT.phone.x,4,TV_EXIT.phone.z+.3,new THREE.Vector3(0,0,-1),1).length,'wall telephone cannot float in empty space');

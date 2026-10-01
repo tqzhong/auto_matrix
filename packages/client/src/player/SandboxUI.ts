@@ -280,7 +280,7 @@ export class SandboxUI {
       this.el('film-sequence-hint').textContent = canAct ? `G ${action.label} · V 切换视角` : cut.phase === 'failed' ? 'J 手记 · 保留原伤势重试' : '鼠标环顾 · V 切换视角 · J 手记';
       this.el('sandbox-interact').classList.toggle('hidden', !canAct);
       this.el('sandbox-nearby').textContent = canAct ? action.label : '';
-      this.el('sandbox-weather').textContent = cut.view === 'ship' ? '真实世界' : '日间 · 电视维修店';
+      this.el('sandbox-weather').textContent = cut.view === 'ship' ? '真实世界' : journey.step === 0 ? '日间 · Franklin 街角' : '日间 · 电视维修店';
       this.el('sandbox-job').style.width = `${cut.phase === 'window' ? Math.max(0, 100 - cut.elapsed / 1.5 * 100) : 0}%`;
       this.el('sandbox-waypoint').textContent = ''; document.getElementById('game-objective-copy')!.textContent = text; return;
     }
@@ -304,11 +304,11 @@ export class SandboxUI {
     if (!journey.visiting && scene.id === 'm1_tv_exit' && journey.tvExit) {
       const encounter = journey.tvExit, center = FILM_SETS.film_tv_repair.center;
       const close = Math.hypot(player.position.x - center.x - TV_EXIT.approach.x, player.position.z - center.z - TV_EXIT.approach.z) < 1.2;
-      const acting = !encounter.paused && (encounter.phase === 'ready' && journey.step === 1 && close || ['line_dead', 'done'].includes(encounter.phase));
-      const hint = encounter.paused ? '等候同行者释放角色 · V 切换视角' : encounter.phase === 'ready' ? close ? 'G 取下硬线听筒 · V 切换视角' : '从柜台右侧进入维修区，走近后墙电话'
+      const acting = !encounter.paused && (encounter.phase === 'ready' && journey.step === 2 && close || ['line_dead', 'done'].includes(encounter.phase));
+      const hint = encounter.paused ? '等候同行者释放角色 · V 切换视角' : encounter.phase === 'ready' ? journey.step === 0 ? 'WASD 离开出口井，穿过人行道走进敞开的店门' : journey.step === 1 ? '跟随同伴进入店内，从柜台右侧走向后墙电话' : close ? 'G 取下硬线听筒 · V 切换视角' : '从柜台右侧进入维修区，走近后墙电话'
         : encounter.phase === 'line_dead' ? 'G 请 Trinity 联系船上' : encounter.phase === 'done' ? 'G 切换到 Tank 的现实视角' : '观察电话和同伴的反应 · V 切换视角';
       this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.toggle('urgent', encounter.phase === 'line_dead');
-      this.el('film-sequence-line').textContent = tvExitText(encounter); this.el('film-sequence-hint').textContent = hint;
+      this.el('film-sequence-line').textContent = tvExitText(encounter, journey.step); this.el('film-sequence-hint').textContent = hint;
       this.el('sandbox-interact').classList.toggle('hidden', !acting); this.el('sandbox-nearby').textContent = 'Franklin 与 Erie · 电视维修店';
       this.el('sandbox-trace').textContent = '硬线出口 · Neo 仍在矩阵'; this.el('sandbox-job').style.width = '0'; this.el('sandbox-waypoint').textContent = '';
       document.getElementById('game-objective')!.textContent = '电视维修店 · 失效的出口'; document.getElementById('game-objective-copy')!.textContent = hint;

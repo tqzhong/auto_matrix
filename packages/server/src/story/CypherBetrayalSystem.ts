@@ -1,5 +1,6 @@
-import { BETRAYAL, CONNECTED_ROLES, CROSSCUT, CROSSCUT_ROLES, FILM_SETS, TV_EXIT, crosscutActive, crosscutDeckRoot, crosscutLocked,
-  crosscutText, crosscutTrinityRoot, crosscutView, tvExitRoot, type AgentState, type CombatImpact, type CrosscutRole,
+import { BETRAYAL, CONNECTED_ROLES, CROSSCUT, CROSSCUT_ROLES, FILM_SETS, TV_EXIT, TV_EXIT_STREET_ROLES, crosscutActive, crosscutDeckRoot, crosscutLocked,
+  crosscutText, crosscutTrinityRoot, crosscutView, tvExitEntered, tvExitRoot, tvExitStreetFrame, tvExitStreetRoot, tvExitStreetRouteLength,
+  type AgentState, type CombatImpact, type CrosscutRole,
   type CypherCrosscut, type SandboxState } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
 
@@ -58,6 +59,9 @@ export class CypherBetrayalSystem {
       } else if (role === 'trinity' && cut.phase === 'trinity_exit') {
         const root = crosscutTrinityRoot(cut);
         actor.position = { x: shop.x + root.x, y: shop.y + root.y, z: shop.z + root.z }; actor.rotation = root.yaw;
+      } else if ((TV_EXIT_STREET_ROLES as readonly string[]).includes(role) && tv.street) {
+        const streetRole = role as typeof TV_EXIT_STREET_ROLES[number], root = tvExitStreetRoot(streetRole, tv.street[streetRole]);
+        actor.position = { x: shop.x + root.x, y: shop.y + root.y, z: shop.z + root.z }; actor.rotation = root.yaw;
       }
       if (connected && !out) { actor.currentLocation = 'film_tv_repair'; actor.isInMatrix = true; }
       actor.velocity = dt ? { x: (actor.position.x - before.x) / dt, y: 0, z: (actor.position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
@@ -88,9 +92,15 @@ export class CypherBetrayalSystem {
     const timed = cut.phase === 'phone' && tv.phase === 'pickup' || cut.phase === 'call' && tv.phase === 'calling'
       || ['assault', 'aiming', 'window', 'countering', 'trinity_exit', 'neo_exit'].includes(cut.phase);
     if (timed) cut.elapsed += delta;
+    if (journey.scene === 'm1_tv_exit' && cut.phase === 'phone' && tv.phase === 'ready') {
+      const neo = this.world.agents.get('neo')!, center = FILM_SETS.film_tv_repair.center;
+      tvExitStreetFrame(tv, neo.position.x - center.x, neo.position.z - center.z, delta);
+    }
     if (delta > 0) {
-      if (cut.phase === 'phone' && tv.phase === 'ready' && this.phoneNear(actor)) {
-        if (journey.step === 0) this.onAdvance?.('Neo 已走近维修店的硬线电话。', actor, tick);
+      if (cut.phase === 'phone' && tv.phase === 'ready') {
+        const center = FILM_SETS.film_tv_repair.center, x = actor.position.x - center.x, z = actor.position.z - center.z;
+        if (journey.step === 0 && tvExitEntered(x, z)) this.onAdvance?.('Neo 与同伴穿过白昼街道，走进 Franklin 与 Erie 的店门。', actor, tick);
+        else if (journey.step === 1 && this.phoneNear(actor)) this.onAdvance?.('Neo 穿过维修柜台，抵达后墙硬线电话。', actor, tick);
       } else if (cut.phase === 'phone' && tv.phase === 'pickup' && cut.elapsed >= CROSSCUT.pickup) {
         cut.phase = 'assault'; cut.elapsed = 0; this.switchView('ship', tick);
       } else if (cut.phase === 'assault') {
@@ -101,13 +111,13 @@ export class CypherBetrayalSystem {
         if (!cut.dozerDead && cut.elapsed >= CROSSCUT.dozerShot) { cut.dozerDead = true; this.death('dozer'); this.shot('dozer', 100, tick); }
         if (cut.elapsed >= CROSSCUT.assault) {
           cut.phase = 'call'; cut.elapsed = 0; tv.phase = 'line_dead'; this.switchView('matrix', tick);
-          if (journey.step === 1) this.onAdvance?.('飞船袭击令硬线无人应答，Neo 仍在矩阵。', this.world.agents.get('neo')!, tick);
+          if (journey.step === 2) this.onAdvance?.('飞船袭击令硬线无人应答，Neo 仍在矩阵。', this.world.agents.get('neo')!, tick);
         }
       } else if (cut.phase === 'call' && tv.phase === 'calling') {
         if (!cut.apocDead && cut.elapsed >= CROSSCUT.apocPull) { cut.apocDead = true; this.death('apoc'); }
         if (!cut.switchDead && cut.elapsed >= CROSSCUT.switchPull) { cut.switchDead = true; this.death('switch'); }
         this.switchView(crosscutView(cut), tick);
-        if (cut.elapsed >= CROSSCUT.call) { cut.elapsed = CROSSCUT.call; tv.phase = 'done'; if (journey.step === 2) this.onAdvance?.('Cypher 威胁最后两条接线。Tank 仍有意识。', this.world.agents.get('neo')!, tick); }
+        if (cut.elapsed >= CROSSCUT.call) { cut.elapsed = CROSSCUT.call; tv.phase = 'done'; if (journey.step === 3) this.onAdvance?.('Cypher 威胁最后两条接线。Tank 仍有意识。', this.world.agents.get('neo')!, tick); }
       } else if (cut.phase === 'aiming' && cut.elapsed >= BETRAYAL.unplugged.aiming) { cut.phase = 'window'; cut.elapsed = 0; }
       else if (cut.phase === 'window' && cut.elapsed >= BETRAYAL.unplugged.window) { cut.phase = 'failed'; this.death('tank'); this.shot('tank', cut.tankHealth, tick); }
       else if (cut.phase === 'countering') {
@@ -138,8 +148,10 @@ export class CypherBetrayalSystem {
       actor.status = 'alive'; actor.health = cut.tankHealth; actor.activeEffects = [];
       cut.phase = 'counter_ready'; cut.elapsed = 0; cut.attempts++;
     } else if (target === 'act') {
-      if (cut.phase === 'phone' && tv.phase === 'ready' && journey.step === 1 && this.phoneNear(actor)) {
+      if (cut.phase === 'phone' && tv.phase === 'ready' && journey.step === 2 && this.phoneNear(actor)) {
         const center = FILM_SETS.film_tv_repair.center;
+        tvExitStreetFrame(tv, actor.position.x - center.x, actor.position.z - center.z, 0);
+        for (const role of TV_EXIT_STREET_ROLES) tv.street![role] = tvExitStreetRouteLength(role);
         tv.start = { x: actor.position.x - center.x, y: actor.position.y - center.y, z: actor.position.z - center.z, yaw: actor.rotation };
         tv.phase = 'pickup'; cut.elapsed = 0;
       } else if (cut.phase === 'call' && tv.phase === 'line_dead') { tv.phase = 'calling'; cut.elapsed = 0; }

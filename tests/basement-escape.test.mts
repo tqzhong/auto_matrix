@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { BASEMENT, BASEMENT_ROLES, BASEMENT_BOILERS, BASEMENT_TUNNEL_LENGTH, TV_EXIT, basementRouteLength, basementBlocked, basementTunnelRoot, wetwallPose, playerBlocked, filmGroundHeight, FILM_SETS, FILM_SCENE_BY_ID, WETWALL, WETWALL_ROLES, WETWALL_SHAFT, wetwallEntry,
+import { BASEMENT, BASEMENT_ROLES, BASEMENT_BOILERS, BASEMENT_TUNNEL_LENGTH, TV_EXIT, TV_EXIT_STREET_ROLES, basementRouteLength, basementBlocked, basementTunnelRoot, tvExitStreetRoot, tvExitStreetRouteLength, wetwallPose, playerBlocked, filmEntry, filmGroundHeight, filmPosition, FILM_SETS, FILM_SCENE_BY_ID, WETWALL, WETWALL_ROLES, WETWALL_SHAFT, wetwallEntry,
   type PlayerInput, type WetwallEncounter, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -74,9 +74,24 @@ test('the sixth-floor capture returns to Neo at his saved hanging height before 
 
 test('the repaired escape route places the real hardline attempt before Cypher shipboard betrayal', () => {
   assert.ok(FILM_SCENE_BY_ID.m1_basement, 'the basement must have its own playable objectives');
-  assert.ok(FILM_SCENE_BY_ID.m1_tv_exit, 'Neo must attempt the television-shop hardline before the shipboard attack');
-  assert.equal(FILM_SCENE_BY_ID.m1_tv_exit.actor, 'neo');
-  assert.notEqual(FILM_SCENE_BY_ID.m1_tv_exit.set, 'film_neb_deck');
+  const scene = FILM_SCENE_BY_ID.m1_tv_exit;
+  const set = FILM_SETS[scene.set];
+  assert.ok(scene, 'Neo must attempt the television-shop hardline before the shipboard attack');
+  assert.equal(scene.actor, 'neo');
+  assert.notEqual(scene.set, 'film_neb_deck');
+  assert.equal(scene.steps.length, 4, 'the street crossing and the shop aisle are separate playable objectives');
+  assert.ok(filmEntry(scene).z > set.center.z + 32, 'the scene begins beside the street drain, outside the storefront');
+  assert.equal(playerBlocked(filmPosition(scene.set, 0, 32), true), false, 'the visible shop doorway is a real opening');
+  assert.equal(playerBlocked(filmPosition(scene.set, -11, 32), true), true, 'the display window cannot be walked through');
+  for(const role of TV_EXIT_STREET_ROLES)for(let progress=0;progress<=tvExitStreetRouteLength(role);progress+=.2){const root=tvExitStreetRoot(role,progress);assert.equal(playerBlocked(filmPosition(scene.set,root.x,root.z),true),false,`${role} clips a facade or fixture at ${progress.toFixed(1)}`);}
+});
+
+test('an old save already inside the repair shop resumes at the aisle instead of returning to the new street entrance', () => {
+  const h=setup();h.enter();const state=h.state(),inside=filmPosition('film_tv_repair',8.5,26);
+  state.scene='m1_tv_exit';state.actor='neo';state.step=0;state.checkpoint={...inside};state.tvExit={phase:'ready',elapsed:0,crosscut:{phase:'phone',elapsed:0,view:'matrix',attempts:0,tankHealth:100,tankHit:false,dozerDead:false,apocDead:false,switchDead:false,cypherDead:false,trinityOut:false,neoOut:false}};
+  h.neo.position={...inside};h.neo.currentLocation='film_tv_repair';h.neo.isInMatrix=true;h.frame();
+  assert.equal(state.step,1);assert.deepEqual(h.neo.position,inside,'migration must preserve the saved player position');
+  for(const role of ['trinity','apoc','switch'] as const)assert.equal(state.tvExit!.street![role],tvExitStreetRouteLength(role));
 });
 
 
@@ -136,8 +151,15 @@ test('ordinary movement must follow the company, open the real grate and travers
   assert.equal(h.world.agents.get('cypher')!.isInMatrix,false,'Cypher has already taken a different exit before the TV-shop hardline fails');
   assert.equal(h.world.agents.get('cypher')!.currentLocation,'film_neb_deck');
   assert.match(h.players.possess('other-player','cypher',h.tick()).error!,/撤离/);
-  h.walk(8.5,-3); h.walk(-7,-3); h.walk(TV_EXIT.approach.x,TV_EXIT.approach.z);
-  assert.equal(h.state().step,1); h.command('act'); assert.equal(h.state().tvExit!.phase,'pickup');
+  const shop=FILM_SETS.film_tv_repair;
+  assert.deepEqual(h.neo.position,filmEntry(FILM_SCENE_BY_ID.m1_tv_exit));assert.equal(h.state().step,0);
+  for(const role of ['trinity','apoc','switch'] as const)assert.ok(h.world.agents.get(role)!.position.z>shop.center.z+32,'the surviving crew emerges on the street with Neo');
+  const trinityStart={...h.world.agents.get('trinity')!.position};
+  h.walk(TV_EXIT.street.curb.x,TV_EXIT.street.curb.z);h.walk(TV_EXIT.street.door.x,TV_EXIT.street.door.z);
+  assert.equal(h.state().step,1);assert.ok(h.world.agents.get('trinity')!.position.z<trinityStart.z,'Trinity walks from the drain instead of teleporting into the shop');
+  h.walk(8.5,4); h.walk(8.5,-8); h.walk(TV_EXIT.approach.x,TV_EXIT.approach.z);
+  assert.equal(h.state().step,2); h.command('act'); assert.equal(h.state().tvExit!.phase,'pickup');
+  for(const role of ['trinity','apoc','switch'] as const){const actor=h.world.agents.get(role)!,root=TV_EXIT.cast[role];assert.ok(Math.hypot(actor.position.x-shop.center.x-root.x,actor.position.z-shop.center.z-root.z)<.01);}
   h.world.agents.get('cypher')!.controller='occupied';
   for(let i=0;i<5;i++)h.frame();assert.equal(h.state().tvExit!.elapsed,0,'an occupied remote caller cannot be pulled into the phone performance');
   delete h.world.agents.get('cypher')!.controller;

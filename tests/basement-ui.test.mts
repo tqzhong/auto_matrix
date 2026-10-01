@@ -22,7 +22,7 @@ test('the journal requires reachable grate, assembled crew and the actual dead-l
   state.phase='draining';assert.doesNotMatch(renderFilmJourney(h.player,h.sandbox),/data-target="film:next"|data-target="film:act"/);
   state.phase='failed';assert.match(renderFilmJourney(h.player,h.sandbox),/data-target="film:retry"/);
   state.paused=true;assert.doesNotMatch(renderFilmJourney(h.player,h.sandbox),/data-target="film:retry"/);
-  h.journey.scene='m1_tv_exit';h.journey.step=1;h.journey.tvExit={phase:'ready',elapsed:0};
+  h.journey.scene='m1_tv_exit';h.journey.step=2;h.journey.tvExit={phase:'ready',elapsed:0};
   h.player.position={x:FILM_SETS.film_tv_repair.center.x+TV_EXIT.approach.x,y:1,z:FILM_SETS.film_tv_repair.center.z+TV_EXIT.approach.z};
   assert.match(renderFilmJourney(h.player,h.sandbox),/取下硬线听筒/);
   h.journey.tvExit.phase='pickup';assert.doesNotMatch(renderFilmJourney(h.player,h.sandbox),/data-target="film:next"|data-target="film:act"/);
@@ -48,7 +48,7 @@ test('the HUD describes pipe and low-drain controls and never offers a distant p
   h.journey.basement!.phase='hatch_ready';ui.updateFilm(h.player,h.sandbox);assert.ok(element('#sandbox-interact').classes.has('hidden'));
   h.journey.basement!.company.apoc=basementRouteLength('apoc');h.journey.basement!.company.switch=basementRouteLength('switch');ui.updateFilm(h.player,h.sandbox);assert.equal(element('#sandbox-interact').classes.has('hidden'),false);
   h.journey.basement!.paused=true;ui.updateFilm(h.player,h.sandbox);assert.ok(element('#sandbox-interact').classes.has('hidden'));
-  h.journey.scene='m1_tv_exit';h.journey.step=1;h.journey.tvExit={phase:'ready',elapsed:0};ui.updateFilm(h.player,h.sandbox);assert.ok(element('#sandbox-interact').classes.has('hidden'));
+  h.journey.scene='m1_tv_exit';h.journey.step=2;h.journey.tvExit={phase:'ready',elapsed:0};ui.updateFilm(h.player,h.sandbox);assert.ok(element('#sandbox-interact').classes.has('hidden'));
   h.journey.tvExit.phase='line_dead';ui.updateFilm(h.player,h.sandbox);assert.equal(element('#sandbox-interact').classes.has('hidden'),false);assert.match(element('#film-sequence-hint').textContent,/Trinity/);
   h.journey.tvExit.phase='calling';ui.updateFilm(h.player,h.sandbox);assert.ok(element('#sandbox-interact').classes.has('hidden'));assert.doesNotMatch(element('game-objective-copy').textContent,/继续下一段/);
 });
@@ -66,7 +66,7 @@ test('crosscut HUD uses existing template elements and presents the currently pl
   const document=globalThis.document;t.after(()=>{globalThis.document=document;});
   globalThis.document={getElementById:(id:string)=>elements.get(id)??null} as unknown as Document;
   const ui=Object.assign(Object.create(SandboxUI.prototype),{root:{querySelector:(selector:string)=>elements.get(selector.slice(1))??null},tick:0}),h=fixture();
-  h.journey.scene='m1_tv_exit';h.journey.step=1;
+  h.journey.scene='m1_tv_exit';h.journey.step=2;
   h.player.position={x:FILM_SETS.film_tv_repair.center.x+TV_EXIT.approach.x,y:1,z:FILM_SETS.film_tv_repair.center.z+TV_EXIT.approach.z};
   h.journey.tvExit={phase:'ready',elapsed:0,crosscut:{phase:'phone',elapsed:0,view:'matrix',attempts:0,tankHealth:100,tankHit:false,dozerDead:false,apocDead:false,switchDead:false,cypherDead:false,trinityOut:false,neoOut:false}};
   assert.doesNotThrow(()=>ui.updateFilm(h.player,h.sandbox));
