@@ -9,6 +9,7 @@ import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { CharacterModels, type CharacterRig } from '../packages/client/src/agents/CharacterModel.js';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
+import { BasementSetRenderer } from '../packages/client/src/engine/BasementSetRenderer.js';
 
 async function models(t: test.TestContext) {
   const assets = new Map();
@@ -212,6 +213,77 @@ test('falling Neo uses the same saved drop clock for his body, eye height and pa
       assert.ok(group.position.distanceTo(before)<.001,'pause cannot finish the recovery interpolation');
     }
   }finally{controls.dispose();}
+});
+
+test('the third-person drop camera sees Neo through his broken ceiling instead of the unopened middle lane',async t=>{
+  const h=await models(t),actor=h.world.agents.get('neo')!,rig=h.characters.create(actor);await new Promise(resolve=>setImmediate(resolve));
+  const center=FILM_SETS.film_ambush_house.center,parent=new THREE.Group();parent.position.set(center.x,center.y-1,center.z);
+  const renderer=new BasementSetRenderer(parent),camera=new THREE.PerspectiveCamera(57,16/9,.5,5000),group=new THREE.Group();group.add(rig.root);rig.root.position.y=-1;
+  const controls=new PlayerControls(h.canvas,camera,()=>{},()=>{}),starts=Object.fromEntries(BASEMENT_ROLES.map(role=>[role,{x:WETWALL.lanes[role],y:BASEMENT.floor+BASEMENT.ceiling,z:WETWALL_SHAFT.bodyZ,yaw:Math.PI}]));
+  try{
+    for(const age of [.04,.12,.223,.3,.6]){
+      const start=starts.neo,root=basementDropRoot('neo',start,age),pose=basementDropPose(age);
+      actor.position={x:center.x+root.x,y:center.y+root.y,z:center.z+root.z};actor.rotation=root.yaw;
+      const basement={role:'neo',phase:'landing',elapsed:0,hatch:0,gas:0,landings:{neo:age,trinity:age,apoc:age+2,switch:age+2},starts,drop:age,start,landing:pose.landing,paused:true};
+      actor.currentAction={type:'idle',parameters:{resolved:true,basement},startedAt:0,duration:1e9,progress:0};
+      renderer.update({scene:'m1_basement',basement} as any);controls.possess(actor);group.position.set(actor.position.x,actor.position.y,actor.position.z);rig.root.rotation.y=root.yaw;
+      h.characters.animate(rig,0,{speed:0,grounded:false,verticalVelocity:pose.verticalVelocity,turn:0,basement} as any,4);controls.update(.1,actor,group,false);parent.updateWorldMatrix(true,true);group.updateWorldMatrix(true,true);
+      for(let frame=0;frame<24;frame++)controls.update(.1,actor,group,false);
+      const head=rig.hero!.bones.get('head')!.getWorldPosition(new THREE.Vector3()),direction=head.clone().sub(camera.position),ray=new THREE.Raycaster(camera.position,direction.clone().normalize(),0,direction.length());
+      const blocked=ray.intersectObject(renderer.root,true).filter(hit=>{
+        for(let object:THREE.Object3D|null=hit.object;object;object=object.parent){if(!object.visible)return false;if(object.name==='basement-ceiling-lath')return true;}
+        return false;
+      });
+      assert.equal(blocked.length,0,`the unopened ceiling hides Neo at drop age ${age}: camera ${camera.position.toArray()} head ${head.toArray()}`);
+      camera.updateWorldMatrix(true,false);
+      const forward=camera.getWorldDirection(new THREE.Vector3());
+      for(const [x,y] of [[-.98,.98],[0,.98],[.98,.98],[-.98,.6],[.98,.6]]){
+        ray.setFromCamera(new THREE.Vector2(x,y),camera);ray.near=0;ray.far=100;
+        const enclosure=ray.intersectObject(renderer.root,true).filter(hit=>{
+          for(let object:THREE.Object3D|null=hit.object;object;object=object.parent)if(!object.visible)return false;
+          return hit.object instanceof THREE.Mesh&&hit.object.castShadow&&hit.distance*ray.ray.direction.dot(forward)>=camera.near;
+        });
+        assert.ok(enclosure.length,`the drop view clips through its enclosure into sky at ${age}/${x}/${y}`);
+      }
+    }
+  }finally{controls.dispose();renderer.dispose();}
+});
+
+test('falling fragments avoid the delivered skin and clothing through contact and departure',async t=>{
+  const h=await models(t),renderer=new BasementSetRenderer(new THREE.Group()),matrix=new THREE.Matrix4(),vertex=new THREE.Vector3(),local=new THREE.Vector3();
+  const starts=Object.fromEntries(BASEMENT_ROLES.map(role=>[role,{x:WETWALL.lanes[role],y:BASEMENT.floor+BASEMENT.ceiling,z:WETWALL_SHAFT.bodyZ,yaw:Math.PI}]));
+  try{
+    for(const role of BASEMENT_ROLES){
+      const rig=h.characters.create(h.world.agents.get(role)!);await new Promise(resolve=>setImmediate(resolve));
+      for(const age of [.02,.12,.3,.6,.86,.98,1.2,1.68,2.1,2.4,2.95]){
+        const start=starts[role],root=basementDropRoot(role,start,age),pose=basementDropPose(age);
+        renderer.update({scene:'m1_basement',basement:{phase:'landing',gas:0,hatch:0,starts,landings:Object.fromEntries(BASEMENT_ROLES.map(id=>[id,age]))}} as any);
+        rig.root.position.set(root.x,root.y,root.z);rig.root.rotation.y=root.yaw;
+        h.characters.animate(rig,.1,{speed:root.speed,grounded:!pose.airborne,verticalVelocity:pose.verticalVelocity,turn:0,basement:{role,phase:'landing',hatch:0,elapsed:0,drop:age,start}} as any,4);
+        const box=bounds(rig),candidates:THREE.Matrix4[]=[];
+        for(const name of ['basement-ceiling-splinters','basement-ceiling-plaster']){
+          const mesh=renderer.root.getObjectByName(name) as THREE.InstancedMesh;
+          for(let i=0;i<mesh.count;i++){mesh.getMatrixAt(i,matrix);const fragment=new THREE.Box3(new THREE.Vector3(-.5,-.5,-.5),new THREE.Vector3(.5,.5,.5)).applyMatrix4(matrix);if(fragment.intersectsBox(box))candidates.push(matrix.clone().invert());}
+        }
+        for(const edge of renderer.root.getObjectsByProperty('name','basement-ceiling-torn-edge'))if(edge.visible){
+          edge.updateWorldMatrix(true,true);
+          for(const object of edge.children)if(object instanceof THREE.Mesh){
+            // The batched mesh spans both rims; its overall bounds include the empty opening.
+            const positions=object.geometry.attributes.position,indices=object.geometry.index,count=indices?.count??positions.count;
+            for(let i=0;i<count;i+=3){
+              const fragment=new THREE.Box3();
+              for(let corner=0;corner<3;corner++){vertex.fromBufferAttribute(positions,indices?indices.getX(i+corner):i+corner).applyMatrix4(object.matrixWorld);fragment.expandByPoint(vertex);}
+              assert.ok(!fragment.intersectsBox(box),`${role}/${age} reaches the torn ceiling edge: body ${box.min.toArray()}/${box.max.toArray()}`);
+            }
+          }
+        }
+        for(const {mesh} of rig.hero!.wardrobe)if(mesh.visible)for(let i=0;i<mesh.geometry.attributes.position.count;i++){
+          mesh.getVertexPosition(i,vertex);mesh.localToWorld(vertex);
+          for(const inverse of candidates){local.copy(vertex).applyMatrix4(inverse);assert.ok(Math.abs(local.x)>=.48||Math.abs(local.y)>=.48||Math.abs(local.z)>=.48,`${role}/${age}/${mesh.name} enters a ceiling fragment: ${vertex.toArray()}`);}
+        }
+      }
+    }
+  }finally{renderer.dispose();}
 });
 
 test('all five delivered landing bodies plant both shoe soles and recover without crossing concrete or pipes',async t=>{

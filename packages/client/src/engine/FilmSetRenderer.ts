@@ -146,6 +146,7 @@ export class FilmSetRenderer {
   private oracleDoor?: THREE.Group;
   private ambush?: AmbushSetRenderer;
   private basement?: BasementSetRenderer;
+  private basementFrame?: number;
   private tvRepair?: TvRepairRenderer;
   private pillGlass?: THREE.Group;
   private interrogation?: InterrogationSetRenderer;
@@ -399,7 +400,8 @@ export class FilmSetRenderer {
     this.sentinel?.update(journey, elapsed);
     this.restaurant?.update(journey, elapsed);
     this.ambush?.update(journey, sandbox?.structures ?? [], elapsed);
-    this.basement?.update(journey, cameraPosition);
+    this.basement?.update(journey, cameraPosition, this.basementFrame === undefined ? 0 : Math.max(0, elapsed - this.basementFrame));
+    this.basementFrame = elapsed;
     this.tvRepair?.update(journey, journey?.tvExit?.crosscut ? this.phoneBodies?.(crosscutPhoneRole(journey.tvExit.crosscut) ?? 'neo') : this.recoverySubject);
     this.government?.update(journey, elapsed);
     this.matrixEscape?.update(journey, elapsed);
@@ -2547,7 +2549,7 @@ export class FilmSetRenderer {
     this.interrogation?.dispose(); this.interrogation = undefined;
     this.pillGlass = undefined;
     this.ambush?.dispose(); this.ambush = undefined;
-    this.basement?.dispose(); this.basement = undefined;
+    this.basement?.dispose(); this.basement = undefined; this.basementFrame = undefined;
     this.tvRepair?.dispose(); this.tvRepair = undefined;
     this.oracleVase?.dispose(); this.oracleVase = undefined;
     this.oracleBlocks = undefined;
