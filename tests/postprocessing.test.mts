@@ -53,3 +53,20 @@ test('the normals pass reuses this frame\'s matrices and shadows, then restores 
     assert.equal(scene.matrixWorldAutoUpdate, true); assert.equal(renderer.shadowMap.autoUpdate, false); assert.equal(renderer.shadowMap.needsUpdate, false);
   } finally { pass.dispose(); }
 });
+
+test('occlusion selects the current camera detail before hiding glass after a more distant mirror view', () => {
+  const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera();
+  const detail = new THREE.LOD(), near = new THREE.Group(), far = new THREE.Group();
+  const clear = new THREE.Mesh(new THREE.PlaneGeometry(), new THREE.MeshPhysicalMaterial({ transmission: .9, depthWrite: false }));
+  const distant = new THREE.Mesh(clear.geometry, new THREE.MeshStandardMaterial({ transparent: true, opacity: .15, depthWrite: false }));
+  near.add(clear); far.add(distant); detail.addLevel(near, 0); detail.addLevel(far, 12); scene.add(detail); scene.updateMatrixWorld(true);
+  const mirrorCamera = new THREE.PerspectiveCamera(); mirrorCamera.position.z = 30; mirrorCamera.updateMatrixWorld(true); detail.update(mirrorCamera);
+  camera.position.z = 3; camera.updateMatrixWorld(true);
+  const pass = new WorldOcclusionPass(scene, camera, 64, 64);
+  try {
+    pass.overrideVisibility(); detail.update(camera);
+    assert.equal(clear.visible, false, 'switching back from the mirror to the main view must not put refractive glass in the normals pass');
+    pass.restoreVisibility();
+    assert.equal(clear.visible, true, 'the close-up glass returns for the next color frame');
+  } finally { pass.dispose(); clear.geometry.dispose(); clear.material.dispose(); distant.material.dispose(); }
+});

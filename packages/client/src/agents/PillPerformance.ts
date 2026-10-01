@@ -4,12 +4,23 @@ import type { HeroRig } from './HeroModel.js';
 
 export function createPillGlass(): THREE.Group {
   const group = new THREE.Group(); group.name = 'pill-water-glass'; group.userData.dynamic = true;
+  const near = new THREE.Group();
   const glass = new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: .025, metalness: 0, transparent: true, opacity: .15, transmission: .92, thickness: .008, ior: 1.46, depthWrite: false });
   const profile = [[0, -.22], [.104, -.22], [.115, .22], [.1, .22], [.09, -.187], [0, -.187]].map(([x, y]) => new THREE.Vector2(x, y));
-  group.add(new THREE.Mesh(new THREE.LatheGeometry(profile, 32), glass));
-  const rim = new THREE.Mesh(new THREE.TorusGeometry(.108, .004, 6, 40), new THREE.MeshStandardMaterial({ color: 0xbcc8bd, roughness: .2, metalness: .3, transparent: true, opacity: .5 })); rim.rotation.x = Math.PI / 2; rim.position.y = .22; group.add(rim);
+  near.add(new THREE.Mesh(new THREE.LatheGeometry(profile, 32), glass));
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(.108, .004, 6, 40), new THREE.MeshStandardMaterial({ color: 0xbcc8bd, roughness: .2, metalness: .3, transparent: true, opacity: .5 })); rim.rotation.x = Math.PI / 2; rim.position.y = .22; near.add(rim);
   const water = new THREE.Mesh(new THREE.CylinderGeometry(.102, .094, .29, 32), new THREE.MeshPhysicalMaterial({ color: 0xc6d2c9, transparent: true, opacity: .12, roughness: .04, metalness: 0, transmission: .9, depthWrite: false }));
-  water.name = 'pill-water-level'; water.position.y = -.04; group.add(water);
+  water.name = 'pill-water-level'; water.position.y = -.04; near.add(water);
+  const far = near.clone();
+  far.traverse(object => {
+    if (!(object instanceof THREE.Mesh) || !(object.material instanceof THREE.MeshPhysicalMaterial)) return;
+    const source = object.material;
+    object.material = new THREE.MeshStandardMaterial({ color: source.color, roughness: source.roughness, metalness: source.metalness,
+      transparent: source.transparent, opacity: source.opacity, depthWrite: source.depthWrite });
+  });
+  // At this distance the cup is about 15 pixels wide in a 720p view. Keep
+  // close-up refraction, without redrawing the opaque room for the tiny glass.
+  const detail = new THREE.LOD(); detail.addLevel(near, 0); detail.addLevel(far, 12, .1); far.visible = false; group.add(detail);
   return group;
 }
 
@@ -137,8 +148,8 @@ export class PillPerformance {
       this.fingers('R', .8);
       this.hand('R', center, rotation, offset, pose.cupReach);
       this.attach(this.cup, 'R', offset); this.cup.quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2); this.cup.visible = pose.holdingCup;
-      const level = this.cup.getObjectByName('pill-water-level')!;
-      const sip = pillEase(time, 6.8, 7.7); level.scale.y = 1 - sip * .55; level.position.y = -.04 - sip * .08;
+      const sip = pillEase(time, 6.8, 7.7);
+      for (const level of this.cup.getObjectsByProperty('name', 'pill-water-level')) { level.scale.y = 1 - sip * .55; level.position.y = -.04 - sip * .08; }
     }
   }
   dispose(): void {

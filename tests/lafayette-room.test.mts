@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { FILM_SETS, PILL_ROOM, filmBlocked, filmPosition } from '@auto_matrix/shared';
+import { FILM_SETS, PILL_ROOM, filmBlocked, filmPosition, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -51,5 +51,18 @@ test('Lafayette windows, fireplace and tracking passage have matching visible ge
       'the upholstered crown must curve down toward its shoulders instead of forming a square slab');
     for (const side of [-1, 1]) assert.ok(blockers(new THREE.Vector3(PILL_ROOM.seat + .9 * .65, 2.3, PILL_ROOM.z + side * 2.2 * .65),
       new THREE.Vector3(0, 0, -side), .6).length > 0, 'the wing upholstery must be closed from both outside views');
+    const journey: FilmJourney = { version: 1, scene: 'm1_pills', actor: 'neo', step: 1, enteredAt: 0, completed: [], reflections: {},
+      checkpoint: { ...neo.position }, lastText: '', pills: { phase: 'done', elapsed: 17, choice: 'red', approach: { x: 1.75, z: -6, yaw: -Math.PI / 2 } } };
+    renderer.update(neo, { neoLife: { journey } } as SandboxState, 0); renderer.root.updateMatrixWorld(true);
+    const usedGlass = renderer.root.getObjectByName('pill-water-glass')!; const camera = new THREE.PerspectiveCamera();
+    for (const distance of [16, 3, 30, 3]) {
+      camera.position.copy(usedGlass.getWorldPosition(new THREE.Vector3())).add(new THREE.Vector3(0, 0, distance)); camera.updateMatrixWorld(true);
+      usedGlass.traverse(object => { if (object instanceof THREE.LOD) object.update(camera); });
+      const levels: THREE.Object3D[] = [];
+      usedGlass.traverseVisible(object => { if (object.name === 'pill-water-level') levels.push(object); });
+      assert.equal(levels.length, 1, 'only one glass and water representation can be drawn per view');
+      assert.equal(levels[0].scale.y, .45, 'changing view distance after drinking must not refill the glass');
+      assert.equal(levels[0].position.y, -.12, 'both views retain the saved water surface height');
+    }
   } finally { renderer.dispose(); globalThis.document = document; }
 });
