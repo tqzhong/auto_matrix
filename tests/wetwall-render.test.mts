@@ -22,7 +22,7 @@ function gesture(wall: WetwallEncounter, role: WetwallRole, depth: number): Wetw
 }
 async function actualModels(t: test.TestContext) {
   const assets = new Map();
-  for (const name of ['neo', 'trinity', 'morpheus']) {
+  for (const name of ['neo', 'trinity', 'morpheus', 'choi']) {
     const glb = await readFile(new URL(`../packages/client/public/assets/characters/${name}.glb`, import.meta.url));
     const length = glb.readUInt32LE(12), source = JSON.parse(glb.subarray(20, 20 + length).toString());
     for (const material of source.materials) { delete material.pbrMetallicRoughness.baseColorTexture; delete material.normalTexture; }
@@ -33,7 +33,7 @@ async function actualModels(t: test.TestContext) {
     buffer.writeUInt32LE(padded.length, 12); buffer.writeUInt32LE(0x4e4f534a, 16); padded.copy(buffer, 20); bin.copy(buffer, 20 + padded.length);
     assets.set(name, await new GLTFLoader().parseAsync(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength), ''));
   }
-  t.mock.method(GLTFLoader.prototype, 'loadAsync', async (url: string) => assets.get(url.includes('morpheus') ? 'morpheus' : url.includes('trinity') ? 'trinity' : 'neo'));
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', async (url: string) => assets.get(url.includes('morpheus') ? 'morpheus' : url.includes('trinity') ? 'trinity' : url.includes('choi') ? 'choi' : 'neo'));
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const document = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({ createRadialGradient: () => ({ addColorStop() {} }), fillRect() {},
@@ -74,7 +74,7 @@ test('actual six-person models grip the stack and keep skin, shoes and coats out
   const errors: string[] = [];
   for (const role of WETWALL_ROLES) {
     const rig = h.models.create(h.world.agents.get(role)!); await new Promise(resolve => setImmediate(resolve));
-    if (role !== 'cypher') assert.ok(rig.hero);
+    assert.ok(rig.hero);
     for (const depth of [0, .08, .32, .56, .81, 1.05, 4, 9.4, 14.8]) {
       const wallGesture = gesture(wall, role, depth), pose = wetwallPose(wallGesture.start, role, wallGesture.progress, wall.phase, 0);
       rig.root.position.set(center.x + pose.x, center.y - 1 + pose.y, center.z + pose.z); rig.root.rotation.y = pose.yaw;
@@ -105,7 +105,7 @@ test('actual six-person models grip the stack and keep skin, shoes and coats out
       if (pipeClearance > .08) errors.push(`${role} depth=${depth} has no actual mesh in contact with the pipe: ${pipeClearance}`);
     }
   }
-  assert.deepEqual(errors, [], 'contact checks use the delivered meshes, including the procedural Cypher fallback');
+  assert.deepEqual(errors, [], 'contact checks use all six delivered meshes, including the new Cypher surrogate');
 });
 
 test('Trinity and Cypher actual hands meet during the rescue without moving their saved pipe height', async t => {
@@ -120,7 +120,7 @@ test('Trinity and Cypher actual hands meet during the rescue without moving thei
     rig.root.updateMatrixWorld(true);
   }
   const hand = trinity.hero!.bones.get('wrist_R')!.localToWorld(new THREE.Vector3(0, -.19, .035));
-  const other = cypher.elbows[1].localToWorld(new THREE.Vector3(0, -.79, .055));
+  const other = cypher.hero!.bones.get('wrist_L')!.localToWorld(new THREE.Vector3(0, -.19, .035));
   assert.ok(hand.distanceTo(other) < .07, `the rescue cannot be two hands reaching separate empty points: ${hand.distanceTo(other)}`);
   const vertex = new THREE.Vector3(); let clearance = Infinity, part = '';
   for (const [role, rig] of [['trinity', trinity], ['cypher', cypher]] as const) rig.root.traverse(object => {

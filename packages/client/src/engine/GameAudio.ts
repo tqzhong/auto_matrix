@@ -85,6 +85,8 @@ export class GameAudio {
     this.running = scene.running; this.playing = Boolean(scene.player);
     const club = scene.player?.currentAction?.parameters.club;
     if (club) this.reading.add('club-conversation'); else this.reading.delete('club-conversation');
+    const crosscut = scene.player?.currentAction?.parameters.crosscut as import('@auto_matrix/shared').CrosscutGesture | undefined;
+    if (crosscut?.phase === 'call') this.reading.add('cypher-call'); else this.reading.delete('cypher-call');
     this.sceneCue = this.director.update(scene, performance.now());
     this.select(this.preview ?? this.sceneCue);
     this.mix(); this.ensureMusic();

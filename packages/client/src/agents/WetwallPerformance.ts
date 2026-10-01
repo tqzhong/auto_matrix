@@ -9,8 +9,8 @@ export function wetwallHand(gesture: WetwallGesture, root: THREE.Vector3, side: 
   if (gesture.progress < gesture.entry) return new THREE.Vector3(root.x + side * .2, center.y - 1 + WETWALL_SHAFT.top + 3.35, center.z + WETWALL_SHAFT.pipeZ + .09);
   const step = depth / .9 + (side > 0 ? .5 : 0), fraction = step % 1;
   const stroke = THREE.MathUtils.smoothstep(fraction, .62, 1), swing = fraction < .62 ? 0 : Math.sin((fraction - .62) / .38 * Math.PI);
-  return new THREE.Vector3(root.x + side * (gesture.role === 'cypher' ? .26 : .31), center.y - 1 + WETWALL_SHAFT.top + 3.35 + (side > 0 ? .45 : 0) - Math.floor(step) * .9 - stroke * .9,
-    center.z + WETWALL_SHAFT.pipeZ + (gesture.role === 'cypher' ? .2 : .25) + swing * .2);
+  return new THREE.Vector3(root.x + side * .31, center.y - 1 + WETWALL_SHAFT.top + 3.35 + (side > 0 ? .45 : 0) - Math.floor(step) * .9 - stroke * .9,
+    center.z + WETWALL_SHAFT.pipeZ + .25 + swing * .2);
 }
 
 /** World-space pipe contacts use saved distance, so stopping and loading do not restart the stroke. */

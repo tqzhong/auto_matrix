@@ -1,3 +1,4 @@
+import { crosscutActive, crosscutAction, crosscutText } from '@auto_matrix/shared';
 import { truthFade, CABIN, CABIN_ROUTE_LENGTH } from '@auto_matrix/shared';
 import { nearMetacortexLift, metacortexLiftLocked } from '@auto_matrix/shared';
 import { CATCH, RELOADED, RELOADED_FINALE, HEL_COATCHECK, catchText, reloadedText } from '@auto_matrix/shared';
@@ -210,7 +211,7 @@ export class SandboxUI {
       && journey.step === 0 && journey.ambushApproach?.stairCat && journey.ambush));
     this.el('film-sequence').classList.toggle('bathroom-duel', Boolean(!journey.visiting && scene.id === 'm1_bathroom' && journey.betrayal?.fight));
     this.el('film-sequence').classList.toggle('basement-escape', Boolean(!journey.visiting && scene.id === 'm1_basement'));
-    this.el('film-sequence').classList.toggle('tv-repair', Boolean(!journey.visiting && scene.id === 'm1_tv_exit'));
+    this.el('film-sequence').classList.toggle('tv-repair', Boolean(!journey.visiting && scene.id === 'm1_tv_exit' || crosscutActive(journey)));
     const escapedScan = scene.id === 'm1_bug' && journey.office?.outcome === 'escaped';
     const stepLabel = escapedScan ? ['配合安全扫描', '重新判断今晚的接头', step?.label][journey.step] : step?.label;
     const ambushCenter = FILM_SETS.film_ambush_house.center;
@@ -270,6 +271,19 @@ export class SandboxUI {
     document.getElementById('game-objective')!.textContent = journey.visiting ? set.name : escapedScan ? '确认没有被追踪'
       : scene.id === 'm1_wake_again' && journey.office?.outcome === 'escaped' ? '第二次来电' : scene.title;
     document.getElementById('game-objective-copy')!.textContent = journey.visiting ? '自由走动，J 返回保存的剧情位置。' : scene.id === 'm3_dock_battle' && journey.dockGunnery?.phase === 'failed' ? 'APU 防线失守 · 从剧情检查点重试' : journey.fighting ? 'F 连击 · X 闪避 · 1 治疗 · 击败追兵后继续' : step ? `${journey.step + 1}/${scene.steps.length} · ${stepLabel} · ${step.kind === 'reach' ? '走到标记旁' : step.kind === 'reflect' ? '靠近后按 J 记录反思' : '靠近后按 G'}` : 'G 继续下一段，J 查看刚刚发生的事。';
+    if (crosscutActive(journey)) {
+      const cut = journey.tvExit!.crosscut!, action = crosscutAction(journey, player.position), text = crosscutText(journey);
+      const canAct = action && action.target !== 'retry' && player.id === journey.actor;
+      this.el('film-sequence').classList.remove('hidden');
+      document.getElementById('game-objective')!.textContent = cut.view === 'ship' ? '现实飞船 · 背叛与反击' : '矩阵 · 维修店硬线';
+      this.el('film-sequence-line').textContent = text;
+      this.el('film-sequence-hint').textContent = canAct ? `G ${action.label} · V 切换视角` : cut.phase === 'failed' ? 'J 手记 · 保留原伤势重试' : '鼠标环顾 · V 切换视角 · J 手记';
+      this.el('sandbox-interact').classList.toggle('hidden', !canAct);
+      this.el('sandbox-nearby').textContent = canAct ? action.label : '';
+      this.el('sandbox-weather').textContent = cut.view === 'ship' ? '真实世界' : '日间 · 电视维修店';
+      this.el('sandbox-job').style.width = `${cut.phase === 'window' ? Math.max(0, 100 - cut.elapsed / 1.5 * 100) : 0}%`;
+      this.el('sandbox-waypoint').textContent = ''; document.getElementById('game-objective-copy')!.textContent = text; return;
+    }
     if (!journey.visiting && scene.id === 'm1_basement' && journey.basement) {
       const encounter = journey.basement, phase = encounter.phase;
       const gap = Math.hypot(player.position.x - ambushCenter.x - BASEMENT.approach.x, player.position.z - ambushCenter.z - BASEMENT.approach.z);

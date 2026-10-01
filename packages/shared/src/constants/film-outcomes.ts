@@ -23,6 +23,8 @@ export function filmCharacterFates(journey: FilmJourney): Record<string, FilmFat
     if (journey.completed.includes(scene)) Object.assign(fates, changes);
   }
   if (journey.ambushEscape?.mouseDead) fates.mouse = 'dead';
+  const cut = journey.tvExit?.crosscut;
+  if (cut) for (const [id, dead] of Object.entries({ dozer: cut.dozerDead, apoc: cut.apocDead, switch: cut.switchDead, cypher: cut.cypherDead })) if (dead) fates[id] = 'dead';
   // Saves from before the shipboard discovery still reached the Logos fight.
   if (journey.completed.includes('m3_bane') && !journey.completed.includes('m3_maggie_discovery')) fates.maggie = 'dead';
   return fates;

@@ -77,7 +77,7 @@ export class FilmStorySystem {
   readonly coatcheck: HelCoatcheckSystem;
   readonly openingHotel: OpeningHotelSystem;
   readonly office: OfficeEscapeSystem;
-  constructor(private world: WorldState, private sandbox: () => SandboxState, private returnToLife: (tick: number) => void, private elapse: (minutes: number, tick: number) => void) { this.lobby = new LobbyCombatSystem(world, sandbox); this.coatcheck = new HelCoatcheckSystem(world, sandbox); this.openingHotel = new OpeningHotelSystem(sandbox); this.openingHotel.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.openingHotel.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.office = new OfficeEscapeSystem(sandbox); this.reloaded = new ReloadedOpeningSystem(world, sandbox); this.reloaded.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.reloaded.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.catch = new ReloadedCatchSystem(world, sandbox); this.catch.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.wetwall = new WetwallEscapeSystem(world, sandbox); this.wetwall.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sixth = new SixthFloorSystem(world, sandbox); this.sixth.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sixth.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.basement = new BasementEscapeSystem(world, sandbox); this.basement.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); }
+  constructor(private world: WorldState, private sandbox: () => SandboxState, private returnToLife: (tick: number) => void, private elapse: (minutes: number, tick: number) => void) { this.lobby = new LobbyCombatSystem(world, sandbox); this.coatcheck = new HelCoatcheckSystem(world, sandbox); this.openingHotel = new OpeningHotelSystem(sandbox); this.openingHotel.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.openingHotel.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.office = new OfficeEscapeSystem(sandbox); this.reloaded = new ReloadedOpeningSystem(world, sandbox); this.reloaded.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.reloaded.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.catch = new ReloadedCatchSystem(world, sandbox); this.catch.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.wetwall = new WetwallEscapeSystem(world, sandbox); this.wetwall.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sixth = new SixthFloorSystem(world, sandbox); this.sixth.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sixth.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.basement = new BasementEscapeSystem(world, sandbox); this.basement.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.basement.crosscut.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.basement.crosscut.onHandoff = (actor, id, tick) => this.changeActor(actor, id, tick); this.basement.crosscut.onImpact = (impact, tick) => this.onImpact?.(impact, tick); }
   get state() { return this.sandbox().neoLife?.journey; }
   get scene(): FilmScene | undefined { return this.state && FILM_SCENE_BY_ID[this.state.scene]; }
   get step(): FilmStep | undefined { return this.scene?.steps[this.state!.step]; }
@@ -2137,6 +2137,7 @@ export class FilmStorySystem {
   betrayalFrame(agent: AgentState, dt: number, tick: number, gripping = false): boolean {
     const state = this.state;
     if (!state || !this.controls(agent) || state.visiting || !['m1_bathroom', 'm1_unplugged'].includes(state.scene)) return false;
+    if (state.scene === 'm1_unplugged' && state.tvExit?.crosscut) return false;
     const encounter = this.ensureBetrayal(state.scene === 'm1_bathroom' ? 'bathroom' : 'unplugged');
     if (encounter.fight) return this.bathroomFightFrame(agent, encounter, gripping, dt, tick);
     if (encounter.phase === 'done') {
@@ -4542,6 +4543,7 @@ export class FilmStorySystem {
       if (!actor || actor.controller || id === 'bane' && fate === 'assimilated') continue;
       actor.status = fate === 'alive' ? 'alive' : fate === 'dead' ? 'dead' : 'disconnected';
       actor.health = fate === 'alive' ? actor.maxHealth : 0;
+      if (actor.currentAction?.parameters.crosscut && ['m1_tv_exit', 'm1_unplugged'].includes(this.state.scene)) continue;
       actor.currentAction = null; actor.targetPosition = null; actor.currentPath = []; actor.velocity = { x: 0, y: 0, z: 0 };
     }
   }
@@ -5617,7 +5619,11 @@ export class FilmStorySystem {
     if (id === agent.id) return true;
     const next = this.world.agents.get(id);
     if (!next || next.controller) return false;
-    return this.handoff?.(agent, id, tick) ?? false;
+    const state = this.state, previous = state?.actor;
+    if (state?.tvExit?.crosscut && ['m1_tv_exit', 'm1_unplugged'].includes(state.scene)) state.actor = id;
+    const changed = this.handoff?.(agent, id, tick) ?? false;
+    if (!changed && state && previous) state.actor = previous;
+    return changed;
   }
   private capture(agent: AgentState, tick: number, text: string): void {
     const state = this.state!;
@@ -5653,6 +5659,7 @@ export class FilmStorySystem {
   }
   private enter(scene: FilmScene, tick: number, position?: AgentState['position']): void {
     const state = this.state!; const life = this.sandbox().neoLife!;
+    const crosscut = state.tvExit?.crosscut;
     const smithFinale = state.smithFinale;
     this.openingHotel.clear();
     this.clearThreats(); state.enteredAt = tick; state.checkpoint = position ?? filmEntry(scene); delete state.started; delete state.fighting;
@@ -5689,7 +5696,7 @@ export class FilmStorySystem {
     if (scene.id === 'm1_spoon') state.oracle = { arrival: { phase: 'hallway', elapsed: 0, hostess: 0, morpheus: 0, seating: 0 }, spoonLesson: { phase: 'waiting', elapsed: 0 } };
     delete state.betrayal;
     if (scene.id !== 'm1_basement' && scene.id !== 'm1_tv_exit') delete state.basement;
-    if (scene.id !== 'm1_tv_exit') delete state.tvExit;
+    if (scene.id !== 'm1_tv_exit' && !(scene.id === 'm1_unplugged' && crosscut)) delete state.tvExit;
     delete state.government;
     delete state.airRescue;
     delete state.matrixEscape;
@@ -5784,9 +5791,10 @@ export class FilmStorySystem {
     const actor = this.world.agents.get(state.actor)!;
     for (const other of this.world.agents.values()) if (!other.controller && (other.currentAction?.parameters.basement || other.currentAction?.parameters.tvExit)) other.currentAction = null;
     const incomingHealth = actor.health;
-    this.place(actor, scene, state.checkpoint); actor.status = 'alive'; actor.health = scene.id === 'm1_basement' || scene.id === 'm1_tv_exit' || scene.id === 'm1_wetwall' || scene.id === 'm1_wall_exposed' || scene.id === 'm1_bathroom' && state.wallExposure?.phase === 'done' ? incomingHealth : actor.maxHealth; actor.activeEffects = [];
+    this.place(actor, scene, state.checkpoint); actor.status = 'alive'; actor.health = crosscut && ['m1_unplugged', 'm1_rescue_decision'].includes(scene.id) || scene.id === 'm1_basement' || scene.id === 'm1_tv_exit' || scene.id === 'm1_wetwall' || scene.id === 'm1_wall_exposed' || scene.id === 'm1_bathroom' && state.wallExposure?.phase === 'done' ? incomingHealth : actor.maxHealth; actor.activeEffects = [];
     if (scene.id === 'm1_basement') this.basement.start();
     if (scene.id === 'm1_tv_exit') this.basement.startTv();
+    if (scene.id === 'm1_unplugged' && crosscut) this.basement.crosscut.startCounter(tick);
     if (scene.id === 'm1_wetwall') this.wetwall.start();
     if (scene.id === 'm1_wall_exposed') this.sixth.start();
     if (scene.id === 'm1_interrogation') {
@@ -5911,7 +5919,7 @@ export class FilmStorySystem {
       state.interlude = { kind: interlude, phase: 'ready', elapsed: 0 };
       this.interludeFrame(actor, 0, tick);
     }
-    if (scene.id === 'm1_bathroom' || scene.id === 'm1_unplugged') {
+    if (scene.id === 'm1_bathroom' || scene.id === 'm1_unplugged' && !crosscut) {
       state.betrayal = { kind: scene.id === 'm1_bathroom' ? 'bathroom' : 'unplugged', phase: 'ready', elapsed: 0, attempt: 0, repels: 0, rescued: 0, sixth: scene.id === 'm1_bathroom' && state.wallExposure?.phase === 'done' ? true : undefined };
       if (state.betrayal.sixth) state.betrayal.fight = newBathroomFight();
       this.betrayalFrame(actor, 0, tick);
@@ -5978,7 +5986,7 @@ export class FilmStorySystem {
   }
   private stageCast(): void {
     const scene = this.scene!;
-    if (scene.id === 'm1_basement' || scene.id === 'm1_tv_exit') { this.basement.frame(this.world.agents.get(this.state!.actor)!, {}, 0, this.world.simulationTick); return; }
+    if (scene.id === 'm1_basement' || scene.id === 'm1_tv_exit' || scene.id === 'm1_unplugged' && this.state!.tvExit?.crosscut) { this.basement.frame(this.world.agents.get(this.state!.actor)!, {}, 0, this.world.simulationTick); return; }
     if (scene.id === 'm1_wall_exposed') { this.sixth.frame(this.world.agents.get(this.state!.actor)!, { crouch: false, yaw: 0 }, 0, this.world.simulationTick); return; }
     if (scene.id === 'm1_bathroom' && this.state!.wallExposure?.phase === 'done') return;
     if (scene.id === 'm1_wetwall') { const actor = this.world.agents.get(this.state!.actor)!; this.wetwall.frame(actor, { climb: 0, jump: false }, 0, this.world.simulationTick); return; }
@@ -6019,7 +6027,8 @@ export class FilmStorySystem {
       }
       if (scene.id === 'm1_construct' && id === 'morpheus') { actor.position = filmPosition(scene.set, CONSTRUCT_REVEAL.morpheus.x, CONSTRUCT_REVEAL.morpheus.z); actor.rotation = CONSTRUCT_REVEAL.morpheus.yaw; }
       if (scene.id === 'm1_desert' && id === 'morpheus') { actor.position = filmPosition(scene.set, DESERT_REVEAL.morpheus.x, DESERT_REVEAL.morpheus.z); actor.rotation = DESERT_REVEAL.morpheus.yaw; }
-      actor.status = 'alive'; actor.health = actor.maxHealth;
+      actor.status = 'alive';
+      if (!(scene.id === 'm1_rescue_decision' && id === 'tank')) actor.health = actor.maxHealth;
       if (['m1_spoon', 'm1_oracle'].includes(scene.id)) {
         const pose = ORACLE_WAITING_CAST[id as keyof typeof ORACLE_WAITING_CAST];
         if (pose) {

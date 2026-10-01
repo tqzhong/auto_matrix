@@ -1,3 +1,4 @@
+import { crosscutActive, crosscutAction, crosscutText } from '@auto_matrix/shared';
 import { nearMetacortexLift, filmStepNear } from '@auto_matrix/shared';
 import { CATCH, RELOADED_FINALE, HEL_COATCHECK, OPENING_ESCAPE, OPENING_HOTEL, catchText, reloadedText } from '@auto_matrix/shared';
 import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_NAMES, ARCHITECT_DOOR_SECONDS, filmReflections, CHARACTERS, filmStepPosition, distance, dockPowerOffline, AWAKENING_SECONDS, oracleActing, helElevatorLocked, helDanceDoorLocked, interrogationLocked, pillLocked, lafayetteWelcomeLocked, phoneLocked, windowOpening, windowCrossing, awakeningWaiting, trainingLocked, trainingWaiting, theOneLocked, type AgentState, type SandboxState } from '@auto_matrix/shared';
@@ -26,6 +27,12 @@ import { trilogyEpilogueLocked, trilogyEpilogueProgress } from '@auto_matrix/sha
 const button = (target: string, label: string, disabled = false) => `<button data-action="life" data-target="film:${target}" ${disabled ? 'disabled' : ''}>${label}</button>`;
 export function renderFilmJourney(player: AgentState, sandbox: SandboxState): string {
   const life = sandbox.neoLife!; const journey = life.journey!; const scene = FILM_SCENE_BY_ID[journey.scene];
+  if (crosscutActive(journey)) {
+    const cut = journey.tvExit!.crosscut!, action = crosscutAction(journey, player.position);
+    const controls = player.id !== journey.actor ? button('resume', `继续 ${journey.actor === 'tank' ? 'Tank' : 'Neo'} 的保存视角`)
+      : action ? button(action.target, action.label + (action.target === 'retry' ? '' : ' · G')) : '<p>合上手记，观察事件或走向电话；暂停不会跳过事件。</p>';
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>同一条接线的两端</h3><p>${cut.view === 'ship' ? '真实飞船 · Tank 视角' : '矩阵 · Neo 视角'}</p></header><article class="film-now"><div><p>${crosscutText(journey)}</p><div class="film-controls">${controls}</div><small>G 明确行动 · WASD 留出电话通道 / 走近硬线 · V 切换视角<br>Tank 保存伤势 ${Math.ceil(cut.tankHealth)} · 反击第 ${cut.attempts + 1} 次尝试</small></div></article></div>`;
+  }
   if (!journey.visiting && scene.id === 'm1_basement' && journey.basement) {
     const encounter = journey.basement, current = player.id === journey.actor, center = FILM_SETS[scene.set].center;
     const gap = Math.hypot(player.position.x - center.x - BASEMENT.approach.x, player.position.z - center.z - BASEMENT.approach.z);

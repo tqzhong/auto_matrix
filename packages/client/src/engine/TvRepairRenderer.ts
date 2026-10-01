@@ -58,8 +58,9 @@ export class TvRepairRenderer {
     for(let slit=0;slit<6;slit++)this.box(black,.74,-.54+slit*.045,.615,.17,.016,.02,unit);
   }
   update(journey:FilmJourney|undefined,subject?:THREE.Object3D):void{
-    const encounter=journey?.scene==='m1_tv_exit'&&!journey.visiting?journey.tvExit:undefined;
-    const held=encounter&&(encounter.phase==='pickup'?encounter.elapsed>=.8:encounter.phase==='line_dead'||encounter.phase==='calling'&&encounter.elapsed<6.6);
+    const encounter=(journey?.scene==='m1_tv_exit'||journey?.scene==='m1_unplugged'&&journey.tvExit?.crosscut)&&!journey.visiting?journey.tvExit:undefined;
+    const cut=encounter?.crosscut;
+    const held=cut ? cut.phase==='phone'&&encounter!.phase==='pickup'&&cut.elapsed>=.8||cut.phase==='assault'||cut.phase==='call'&&(encounter!.phase==='line_dead'||cut.elapsed<6.6)||cut.phase==='trinity_exit'&&cut.elapsed>=2.8||cut.phase==='neo_exit'&&cut.elapsed>=.8 : encounter&&(encounter.phase==='pickup'?encounter.elapsed>=.8:encounter.phase==='line_dead'||encounter.phase==='calling'&&encounter.elapsed<6.6);
     this.handset.root.visible=!held;
     const receiver=held?subject?.getObjectByName('hardline-handset'):undefined;
     this.root.updateWorldMatrix(true,true);const phone=TV_EXIT.phone,from=new THREE.Vector3(phone.x+.3,phone.y-.45,phone.z+.15),to=receiver?this.root.worldToLocal(receiver.getWorldPosition(new THREE.Vector3())):this.handset.root.position.clone();

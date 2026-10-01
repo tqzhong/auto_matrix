@@ -228,6 +228,26 @@ test('audio waits for a gesture, loops a cue once, ducks dialogue, and sends the
   assert.equal(ctx.gains[0].connections[0], ctx.gains[2], 'effects and music use one master');
 });
 
+test('the two-world betrayal uses first-film cues and ducks the whole Cypher call', async t => {
+  const h = audioHarness(t); const game = scene();
+  const journey = game.sandbox!.neoLife!.journey = { scene: 'm1_tv_exit', actor: 'neo', tvExit: { phase: 'calling', crosscut: {
+    phase: 'call', elapsed: 1, view: 'matrix', tankHit: true, apocDead: false, switchDead: false,
+  } } } as FilmJourney;
+  const cut = journey.tvExit!.crosscut!;
+  assert.equal(musicForScene(game), 'matrix');
+  for (const phase of ['assault', 'aiming', 'window', 'countering'] as const) {
+    cut.phase = phase; assert.equal(musicForScene(game), 'combat');
+    assert.equal(FILM_MUSIC[musicForScene(game)].film, 'The Matrix');
+  }
+  cut.phase = 'call'; cut.apocDead = true; assert.equal(musicForScene(game), 'anomaly');
+  assert.equal(FILM_MUSIC[musicForScene(game)].film, 'The Matrix');
+  game.player!.currentAction = { type: 'idle', parameters: { crosscut: { ...cut, role: 'neo' } }, startedAt: 0, duration: 1e9, progress: 0 };
+  h.audio.update(game); await h.audio.resume();
+  assert.equal(h.contexts[0].gains[0].gain.value, .48 * .42);
+  game.player!.currentAction.parameters.crosscut = { ...cut, phase: 'counter_ready', role: 'tank' };
+  h.audio.update(game); assert.equal(h.contexts[0].gains[0].gain.value, .48);
+});
+
 test('government rescue effects cover interrogation machinery, bullets, the phone upload and helicopter rotors', async t => {
   const h = audioHarness(t); await h.audio.resume(); const ctx = h.contexts[0];
   for (const sound of ['earpiece', 'serum', 'alarm', 'gunfire', 'bullet', 'body', 'phone', 'upload', 'rotor'] as const) h.audio.governmentSound(sound);

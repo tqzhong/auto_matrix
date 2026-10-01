@@ -2360,7 +2360,8 @@ test('the entire film route completes through interactions, driving and real com
     assert.equal(state.scene, scene.id); assert.equal(h.actor().id, scene.actor);
     if (scene.id === 'm3_gate') assert.equal(h.world.agents.get('mifune')?.status, 'dead');
     assert.equal(h.actor().isInMatrix, scene.id === 'm2_meeting' ? false : FILM_SETS[scene.set].world === 'matrix');
-    assert.equal(musicForScene({ player: h.actor(), sandbox: h.sandbox.state, time: h.world.timeOfDay, matrix: h.actor().isInMatrix, running: true }), scene.id === 'm2_meeting' ? 'night' : scene.music, `${scene.id}: music follows the active film set at ${h.actor().currentLocation}`);
+    const entryMusic = scene.id === 'm2_meeting' ? 'night' : scene.id === 'm1_tv_exit' ? 'matrix' : scene.id === 'm1_unplugged' && state.tvExit?.crosscut ? 'anomaly' : scene.music;
+    assert.equal(musicForScene({ player: h.actor(), sandbox: h.sandbox.state, time: h.world.timeOfDay, matrix: h.actor().isInMatrix, running: true }), entryMusic, `${scene.id}: music follows the active film entry at ${h.actor().currentLocation}`);
     if (scene.id === 'm1_mirror' && state.mirrorGuide) {
       for (const [x, z] of [[-5, -3.1], [-5, -9.8], [-6, -12.7], [MIRROR_TOUCH.x, MIRROR_TOUCH.z]]) {
         const target = filmPosition(scene.set, x, z);
@@ -2427,7 +2428,29 @@ test('the entire film route completes through interactions, driving and real com
       assert.equal(state.oracle.arrival.phase, 'done', 'the complete route enters through the door before the spoon lesson');
     }
     for (let index = 0; index < scene.steps.length; index++) {
-      if (scene.id === 'm1_basement' || scene.id === 'm1_tv_exit') {
+      if (scene.id === 'm1_unplugged' && state.tvExit?.crosscut) {
+        if (index === 0) { assert.equal(state.step, 1); continue; }
+        const frame = () => { h.players.receiveInput('film-player', { x: 0, z: 0, yaw: h.actor().rotation, jump: false, sprint: false, sequence: ++sequence }); h.players.step(.1, true, h.tick()); };
+        const walk = (x: number, z: number) => {
+          const target = filmPosition('film_tv_repair', x, z);
+          for (let i = 0; i < 200; i++) {
+            const actor = h.actor(), dx = target.x - actor.position.x, dz = target.z - actor.position.z, gap = Math.hypot(dx, dz);
+            if (gap < .35) { frame(); return; }
+            h.players.receiveInput('film-player', { x: dx / Math.max(.6, gap), z: dz / Math.max(.6, gap), yaw: Math.atan2(dx, dz), jump: false, sprint: false, sequence: ++sequence }); h.players.step(.1, true, h.tick());
+          }
+          assert.fail('Neo could not reach the actual restored hardline');
+        };
+        h.command('act'); for (let i = 0; i < 40 && state.betrayal!.phase !== 'window'; i++) frame();
+        assert.equal(state.betrayal!.phase, 'window'); h.command('act');
+        for (let i = 0; i < 60 && state.betrayal!.phase !== 'reconnect'; i++) frame();
+        h.command('act'); assert.equal(h.actor().id, 'neo'); walk(-4, -17); h.command('act');
+        for (let i = 0; i < 60 && !state.tvExit.crosscut.trinityOut; i++) frame();
+        assert.equal(h.world.agents.get('trinity')!.isInMatrix, false); assert.equal(h.actor().isInMatrix, true);
+        walk(TV_EXIT.approach.x, TV_EXIT.approach.z); h.command('act');
+        for (let i = 0; i < 60 && !state.tvExit.crosscut.neoOut; i++) frame();
+        assert.equal(h.actor().isInMatrix, false); assert.equal(state.step, index + 1); continue;
+      }
+      if (scene.id === 'm1_basement'  || scene.id === 'm1_tv_exit') {
         const frame = (input: Partial<import('@auto_matrix/shared').PlayerInput> = {}) => {
           h.players.receiveInput('film-player', { x: 0, z: 0, yaw: h.actor().rotation, jump: false, sprint: false, crouch: true, sequence: ++sequence, ...input });
           h.players.step(.1, true, h.tick());
@@ -2451,7 +2474,7 @@ test('the entire film route completes through interactions, driving and real com
           } else { walk(9,30);walk(0,30);walk(0,32.2); }
         } else {
           if (index === 0) { walk(8.5,-3);walk(-7,-3);walk(TV_EXIT.approach.x,TV_EXIT.approach.z); }
-          else { h.command('act');for(let i=0;i<80&&state.step===index;i++)frame(); }
+          else { h.command('act');for(let i=0;i<260&&state.step===index;i++)frame(); }
         }
         assert.equal(state.step, index + 1, `${scene.id}: ${scene.steps[index].label}`); continue;
       }

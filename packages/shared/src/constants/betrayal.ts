@@ -1,4 +1,5 @@
 import type { FilmJourney } from './film-story.js';
+import { crosscutActive, crosscutLocked } from './cypher-crosscut.js';
 import { SIXTH_ROOM } from './ambush.js';
 import { bathroomFightRoot, bathroomFightText, type BathroomFight } from './bathroom-fight.js';
 
@@ -39,6 +40,7 @@ const clamp = (value: number): number => Math.max(0, Math.min(1, value));
 const smooth = (value: number): number => { const t = clamp(value); return t * t * (3 - 2 * t); };
 
 export function betrayalLocked(journey: FilmJourney): boolean {
+  if (crosscutActive(journey)) return crosscutLocked(journey);
   const encounter = journey.betrayal;
   if (!encounter || journey.visiting) return false;
   if (encounter.kind === 'bathroom') return Boolean(encounter.fight) || encounter.phase === 'sacrifice';

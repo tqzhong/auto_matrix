@@ -55,6 +55,7 @@ export class PlayerController {
     if (MEETING_CAST.includes(id as typeof MEETING_CAST[number]) && this.sandbox?.life.film.state && meetingLocked(this.sandbox.life.film.state)) return { error: '这个角色正在参与接头检查，结束后可以接入。' };
     if (SENTINEL_CAST.includes(id as typeof SENTINEL_CAST[number]) && this.sandbox?.life.film.state && sentinelActive(this.sandbox.life.film.state) && this.sandbox.life.film.state.sentinel?.phase !== 'ready') return { error: '这个角色正在参与静默潜航，哨兵离开后可以接入。' };
     const interlude = this.sandbox?.life.film.state;
+    if (interlude?.tvExit?.crosscut && !interlude.visiting && ['m1_tv_exit', 'm1_unplugged'].includes(interlude.scene) && id !== interlude.actor && ['neo', 'trinity', 'apoc', 'switch', 'cypher', 'tank', 'dozer'].includes(id)) return { error: '这个角色正在参与两世界的背叛与撤离，当前片段结束后可以接入。' };
     const interludeScene = interlude && interludeKind(interlude.scene);
     if (interlude && !interlude.visiting && ['m1_basement', 'm1_tv_exit'].includes(interlude.scene) && id !== interlude.actor && ['trinity', 'apoc', 'switch', 'cypher'].includes(id)) return { error: '这个角色正在参与旧楼撤离，抵达出口后可以接入。' };
     if (interlude && interludeScene && id !== interlude.actor && (INTERLUDE_CAST[interludeScene] as readonly string[]).includes(id) && interludeLocked(interlude)) return { error: '这个角色正在参与当前电影片段，表演结束后可以接入。' };

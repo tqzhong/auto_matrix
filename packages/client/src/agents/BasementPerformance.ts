@@ -57,7 +57,7 @@ export function poseBasement(rig: CharacterRig, gesture?: BasementGesture): void
 
 export function poseHardline(rig: CharacterRig, gesture?: TvExitGesture): void {
   if (rig.handset) rig.handset.root.visible = false;
-  if (!rig.hero || !rig.handset || !gesture || gesture.role !== 'neo' || gesture.phase === 'ready' || gesture.phase === 'done') return;
+  if (!rig.hero || !rig.handset || !gesture || gesture.phase === 'ready' || gesture.phase === 'done') return;
   const returning = gesture.phase === 'calling' ? THREE.MathUtils.smoothstep(gesture.elapsed, 5.3, 6.6) : 0;
   const pickup = gesture.phase === 'pickup' ? THREE.MathUtils.smoothstep(gesture.elapsed, .8, 1.8) : 1;
   const center = FILM_SETS.film_tv_repair.center, phone = TV_EXIT.phone;

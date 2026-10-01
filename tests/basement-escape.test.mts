@@ -135,14 +135,14 @@ test('ordinary movement must follow the company, open the real grate and travers
   h.command('next'); assert.equal(h.state().scene, 'm1_tv_exit'); assert.equal(h.state().actor, 'neo'); assert.equal(h.neo.health, 71);
   assert.equal(h.world.agents.get('cypher')!.isInMatrix,false,'Cypher has already taken a different exit before the TV-shop hardline fails');
   assert.equal(h.world.agents.get('cypher')!.currentLocation,'film_neb_deck');
-  assert.match(h.players.possess('other-player','cypher',h.tick()).error!,/旧楼撤离/);
+  assert.match(h.players.possess('other-player','cypher',h.tick()).error!,/撤离/);
   h.walk(8.5,-3); h.walk(-7,-3); h.walk(TV_EXIT.approach.x,TV_EXIT.approach.z);
   assert.equal(h.state().step,1); h.command('act'); assert.equal(h.state().tvExit!.phase,'pickup');
   h.world.agents.get('cypher')!.controller='occupied';
   for(let i=0;i<5;i++)h.frame();assert.equal(h.state().tvExit!.elapsed,0,'an occupied remote caller cannot be pulled into the phone performance');
   delete h.world.agents.get('cypher')!.controller;
-  for(let i=0;i<50;i++)h.frame(); assert.equal(h.state().tvExit!.phase,'line_dead'); assert.equal(h.neo.isInMatrix,true);
-  h.command('next'); assert.equal(h.state().scene,'m1_tv_exit'); h.command('act'); for(let i=0;i<70;i++)h.frame();
+  for(let i=0;i<120&&h.state().tvExit!.phase!=='line_dead';i++)h.frame(); assert.equal(h.state().tvExit!.phase,'line_dead'); assert.equal(h.neo.isInMatrix,true);
+  h.command('next'); assert.equal(h.state().scene,'m1_tv_exit'); h.command('act'); for(let i=0;i<250&&h.state().tvExit!.phase!=='done';i++)h.frame();
   assert.equal(h.state().tvExit!.phase,'done'); h.command('next'); assert.equal(h.state().scene,'m1_unplugged'); assert.equal(h.players.getAgent('escape-player')!.id,'tank');
 });
 

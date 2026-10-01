@@ -11,6 +11,7 @@ import { poseWetwall } from './WetwallPerformance.js';
 import { poseSixthFloor } from './SixthFloorPerformance.js';
 import { poseBathroom } from './BathroomPerformance.js';
 import { poseBasement, poseHardline } from './BasementPerformance.js';
+import { poseCrosscut, poseCrosscutContact } from './CrosscutPerformance.js';
 import { HardlineHandset } from './HardlineHandset.js';
 import { advanceMotion, newMotion, type MotionInput, type MotionState } from './CharacterMotion.js';
 import { HERO_IDS, HeroModels, type HeroId, type HeroRig, type HeroSupport } from './HeroModel.js';
@@ -371,7 +372,7 @@ export class CharacterModels {
     const distant = this.makeDistant(look, root);
     const rig: CharacterRig = { root, detail, distant, torso, head, shoulders, elbows, fingers, hips, knees, ankles, tails, cloth: clothPanels, motion: newMotion(), smallDetails, rifle: state.id === 'film_soldier' };
     const guard = ['agent_jones', 'agent_brown', 'agent_johnson', 'agent_jackson', 'agent_thompson'].includes(state.id) ? state.id as 'agent_jones' | 'agent_brown' | 'agent_johnson' | 'agent_jackson' | 'agent_thompson' : undefined;
-    const reloadedBase: Record<string, HeroId> = { niobe: 'trinity', ballard: 'morpheus', ghost: 'neo', soren: 'smith', link: 'morpheus', dozer: 'morpheus', tank: 'neo', oracle_priestess: 'trinity', oracle_attendant: 'trinity', citizen_4: 'neo', citizen_14: 'neo' };
+    const reloadedBase: Record<string, HeroId> = { niobe: 'trinity', ballard: 'morpheus', ghost: 'neo', soren: 'smith', link: 'morpheus', dozer: 'morpheus', tank: 'neo', cypher: 'neo', oracle_priestess: 'trinity', oracle_attendant: 'trinity', citizen_4: 'neo', citizen_14: 'neo' };
     const support = state.id === 'switch' || state.id === 'apoc' || state.id === 'rhineheart' || state.id === 'courier' || state.id === 'choi' || state.id === 'dujour' || state.id in reloadedBase ? state.id as HeroSupport : undefined;
     if (HERO_IDS.includes(state.id as HeroId) || guard || support) {
       this.heroes.create(reloadedBase[state.id] ?? (guard || support === 'rhineheart' ? 'smith' : support === 'switch' || support === 'dujour' ? 'trinity' : support === 'apoc' || support === 'courier' || support === 'choi' ? 'neo' : state.id as HeroId), guard, support).then(model => {
@@ -439,7 +440,7 @@ export class CharacterModels {
     const near = distance < 100;
     rig.detail.visible = near; rig.distant.visible = !near;
     if (!near) return;
-    const pulseRifle = Boolean(input.betrayal && ['cypher', 'tank'].includes(input.betrayal.role));
+    const pulseRifle = Boolean(input.crosscut && ['cypher', 'tank'].includes(input.crosscut.role) || input.betrayal && ['cypher', 'tank'].includes(input.betrayal.role));
     const weaponStyle: CharacterRig['weaponStyle'] = pulseRifle ? 'pulse' : input.weaponStyle ?? (rig.rifle ? 'rifle' : 'pistol');
     if (input.armed && rig.weapons && rig.weaponStyle !== weaponStyle) {
       rig.weapons.forEach(gun => gun.removeFromParent()); rig.weapons = undefined;
@@ -603,7 +604,10 @@ export class CharacterModels {
       poseSixthFloor(rig, input.sixth);
       poseBathroom(rig, input.bathroom, input.sixth);
       poseBasement(rig, input.basement);
-      if (input.tvExit?.role === 'neo' && !rig.handset) { rig.handset = new HardlineHandset(); this.handsets.add(rig.handset); rig.hero.bones.get('wrist_R')!.add(rig.handset.root); }
+      poseCrosscut(rig, input.crosscut);
+      if (input.crosscut?.body) this.heroes.crosscutInterfaces(rig.hero);
+      poseCrosscutContact(rig, input.crosscut);
+      if (input.tvExit && !rig.handset) { rig.handset = new HardlineHandset(); this.handsets.add(rig.handset); rig.hero.bones.get('wrist_R')!.add(rig.handset.root); }
       poseHardline(rig, input.tvExit);
       if (holdsStaff) {
         rig.hero.bones.get('shoulder_R')!.rotation.x -= .7 + staffSweep * .5;

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { readFile } from 'node:fs/promises';
 import { build } from 'esbuild';
 import { BASEMENT, TV_EXIT, FILM_SETS, basementRouteLength, type AgentState, type SandboxState } from '@auto_matrix/shared';
 function fixture() {
@@ -50,4 +51,33 @@ test('the HUD describes pipe and low-drain controls and never offers a distant p
   h.journey.scene='m1_tv_exit';h.journey.step=1;h.journey.tvExit={phase:'ready',elapsed:0};ui.updateFilm(h.player,h.sandbox);assert.ok(element('#sandbox-interact').classes.has('hidden'));
   h.journey.tvExit.phase='line_dead';ui.updateFilm(h.player,h.sandbox);assert.equal(element('#sandbox-interact').classes.has('hidden'),false);assert.match(element('#film-sequence-hint').textContent,/Trinity/);
   h.journey.tvExit.phase='calling';ui.updateFilm(h.player,h.sandbox);assert.ok(element('#sandbox-interact').classes.has('hidden'));assert.doesNotMatch(element('game-objective-copy').textContent,/继续下一段/);
+});
+
+test('crosscut HUD uses existing template elements and presents the currently playable action',async t=>{
+  const source=await readFile('packages/client/src/player/SandboxUI.ts','utf8');
+  const ids=new Set([...source.matchAll(/\bid="([\w-]+)"/g)].map(match=>match[1]));
+  const output=await build({entryPoints:['packages/client/src/player/SandboxUI.ts'],bundle:true,platform:'node',format:'esm',write:false,loader:{'.css':'empty'},logLevel:'silent'});
+  const {SandboxUI}=await import(`data:text/javascript;base64,${Buffer.from(output.outputFiles[0].contents).toString('base64')}`);
+  const elements=new Map<string,any>();
+  for(const id of [...ids,'game-objective','game-objective-copy']) {
+    const classes=new Set<string>(id==='film-sequence'?['hidden']:[]);
+    elements.set(id,{textContent:'',style:{},classes,classList:{add:(...values:string[])=>values.forEach(v=>classes.add(v)),remove:(...values:string[])=>values.forEach(v=>classes.delete(v)),toggle:(v:string,force:boolean)=>force?classes.add(v):classes.delete(v)}});
+  }
+  const document=globalThis.document;t.after(()=>{globalThis.document=document;});
+  globalThis.document={getElementById:(id:string)=>elements.get(id)??null} as unknown as Document;
+  const ui=Object.assign(Object.create(SandboxUI.prototype),{root:{querySelector:(selector:string)=>elements.get(selector.slice(1))??null},tick:0}),h=fixture();
+  h.journey.scene='m1_tv_exit';h.journey.step=1;
+  h.player.position={x:FILM_SETS.film_tv_repair.center.x+TV_EXIT.approach.x,y:1,z:FILM_SETS.film_tv_repair.center.z+TV_EXIT.approach.z};
+  h.journey.tvExit={phase:'ready',elapsed:0,crosscut:{phase:'phone',elapsed:0,view:'matrix',attempts:0,tankHealth:100,tankHit:false,dozerDead:false,apocDead:false,switchDead:false,cypherDead:false,trinityOut:false,neoOut:false}};
+  assert.doesNotThrow(()=>ui.updateFilm(h.player,h.sandbox));
+  assert.equal(elements.get('film-sequence').classes.has('hidden'),false);
+  assert.match(elements.get('film-sequence-line').textContent,/Trinity.*Neo/);
+  assert.match(elements.get('film-sequence-hint').textContent,/G.*取下硬线/);
+  const cut=h.journey.tvExit.crosscut!;cut.phase='assault';cut.view='ship';h.journey.actor='tank';h.player.id='tank';
+  ui.updateFilm(h.player,h.sandbox);assert.match(elements.get('game-objective').textContent,/现实飞船/);
+  assert.ok(elements.get('sandbox-interact').classes.has('hidden'));
+  h.journey.scene='m1_unplugged';cut.phase='window';cut.elapsed=.5;
+  ui.updateFilm(h.player,h.sandbox);assert.match(elements.get('film-sequence-hint').textContent,/G.*反击/);
+  cut.phase='failed';ui.updateFilm(h.player,h.sandbox);assert.match(elements.get('film-sequence-hint').textContent,/J.*重试/);
+  assert.ok(elements.get('sandbox-interact').classes.has('hidden'));
 });

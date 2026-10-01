@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { FILM_SETS, groundHeight, mirrorGuidePose, ambushRouteRoot, ambushRetreatRoot, wetwallPose, sixthPose, bathroomFightRoot, oracleCookieOwner, oracleReceptionRoot, officeClothing, type AmbushEscort, type AgentState, type CombatImpact, type FilmJourney, type WetwallPhase } from '@auto_matrix/shared';
+import { CONNECTED_ROLES, BETRAYAL, crosscutActive, type CrosscutGesture, FILM_SETS, groundHeight, mirrorGuidePose, ambushRouteRoot, ambushRetreatRoot, wetwallPose, sixthPose, bathroomFightRoot, oracleCookieOwner, oracleReceptionRoot, officeClothing, type AmbushEscort, type AgentState, type CombatImpact, type FilmJourney, type WetwallPhase } from '@auto_matrix/shared';
 import { trackingContact } from './TrackingContact.js';
 import { CharacterModels, weaponMuzzle, type CharacterRig } from './CharacterModel.js';
 import type { MotionInput } from './CharacterMotion.js';
@@ -119,7 +119,8 @@ export class AgentRenderer {
   getAgent(id: string): THREE.Group | null { return this.agents.get(id)?.group ?? null; }
   getAgentBody(id: string): THREE.Group | undefined { return this.agents.get(id)?.body; }
   getAgentState(id: string): AgentState | null { return this.agents.get(id)?.state ?? null; }
-  getAgentIds(): string[] { return [...this.agents.keys()]; }
+  getAgentIds(): string[] { return [...this.agents.keys()].filter(id => !id.startsWith('body:')); }
+  getPhysicalBody(id: string): THREE.Group | undefined { return this.agents.get(`body:${id}`)?.body ?? this.getAgentBody(id); }
   muzzle(id: string): THREE.Vector3 | undefined { const entry = this.agents.get(id); return entry ? weaponMuzzle(entry.rig) : undefined; }
   updateActionIndicator(_id: string, _type: string): void {}
   impact(hit: CombatImpact): void {
@@ -130,13 +131,22 @@ export class AgentRenderer {
   }
 
   update(delta: number, camera?: THREE.Camera, speed = 1, tick = 0, journey?: FilmJourney): void {
+    const cut = crosscutActive(journey) ? journey!.tvExit!.crosscut : undefined;
+    if (cut) for (const role of CONNECTED_ROLES) {
+      const source = this.agents.get(role)?.state; if (!source) continue;
+      const root = BETRAYAL.deckRoots[role], center = FILM_SETS.film_neb_deck.center;
+      this.updateAgent(`body:${role}`, { ...source, isInMatrix: false, status: 'alive', controller: undefined,
+        position: { x: center.x + root.x, y: center.y, z: center.z + root.z }, rotation: root.yaw, velocity: { x: 0, y: 0, z: 0 },
+        currentAction: { type: 'idle', parameters: { seated: true, crosscut: { ...cut, role, body: true } }, startedAt: tick, duration: 1e9, progress: 0 } });
+    }
     for (const [id, entry] of this.agents) {
-      const state = entry.state;
+      const state = entry.state, physical = id.startsWith('body:');
+      if (physical && (this.matrix || !cut || id === 'body:neo' && cut.neoOut || id === 'body:trinity' && cut.trinityOut)) { entry.group.visible = false; continue; }
       const phoneExit = journey?.scene === 'm1_phone_escape' && journey.actor === id && ['connected', 'done'].includes(journey.openingPhone?.phase ?? '');
       entry.group.visible = state.isInMatrix === this.matrix && state.status !== 'disconnected' && !phoneExit;
       entry.body.visible = (id !== this.playerId || !this.firstPerson || this.playerMotion?.wetwall?.hanging || this.playerMotion?.inspecting === true || this.playerMotion?.spoon !== undefined || this.playerMotion?.spoonLesson !== undefined || Boolean(this.playerMotion?.oracleVisit && oracleCookieOwner(this.playerMotion.oracleVisit) === 'neo') || this.playerMotion?.oracleDeparture?.role === 'neo') && state.status !== 'disconnected' && !state.currentAction?.parameters.filmDuel && !state.currentAction?.parameters.ghostPhase;
       const warning = state.currentAction?.type === 'attack' && state.currentAction.target === this.playerId && Number(state.currentAction.parameters.contactTick ?? 0) > tick;
-      entry.marker.visible = warning || !this.playerId || id === this.selected;
+      entry.marker.visible = !physical && (warning || !this.playerId || id === this.selected);
       (entry.marker.material as THREE.MeshBasicMaterial).color.set(warning ? '#f6b177' : FACTION_COLORS[state.faction] ?? '#91cfb0');
       entry.marker.position.y = this.playerId ? -.94 : .1;
       entry.time += delta * (id === this.playerId ? 1 : speed);
@@ -197,7 +207,7 @@ export class AgentRenderer {
           target.sub(new THREE.Vector3(driver.state.position.x, driver.state.position.y, driver.state.position.z)).add(driver.group.position);
           entry.group.position.copy(target);
         } else if (state.currentAction?.parameters.openingRoofLeap !== undefined) entry.group.position.copy(target);
-        else if (state.currentAction?.parameters.truckPassenger || state.currentAction?.parameters.truckFlight || state.currentAction?.parameters.farewell || state.currentAction?.parameters.club || state.currentAction?.parameters.sentinel || state.currentAction?.parameters.interlude || state.currentAction?.parameters.oracleVisit || state.currentAction?.parameters.oracleDeparture || state.currentAction?.parameters.betrayal || state.currentAction?.parameters.rescue || state.currentAction?.parameters.government || state.currentAction?.parameters.airRescue || state.currentAction?.parameters.matrixEscape || state.currentAction?.parameters.theOne || state.currentAction?.parameters.reloaded || state.currentAction?.parameters.catch || state.currentAction?.parameters.lobbyEntry || state.currentAction?.parameters.meeting || state.currentAction?.parameters.pills || state.currentAction?.parameters.interrogation || state.currentAction?.parameters.welcome || state.currentAction?.parameters.reveal || state.currentAction?.parameters.training || state.currentAction?.parameters.workday || state.currentAction?.parameters.recoveryCrew || entry.group.position.distanceTo(target) > 60) entry.group.position.copy(target);
+        else if (state.currentAction?.parameters.truckPassenger || state.currentAction?.parameters.truckFlight || state.currentAction?.parameters.farewell || state.currentAction?.parameters.club || state.currentAction?.parameters.sentinel || state.currentAction?.parameters.interlude || state.currentAction?.parameters.oracleVisit || state.currentAction?.parameters.oracleDeparture || state.currentAction?.parameters.crosscut || state.currentAction?.parameters.betrayal || state.currentAction?.parameters.rescue || state.currentAction?.parameters.government || state.currentAction?.parameters.airRescue || state.currentAction?.parameters.matrixEscape || state.currentAction?.parameters.theOne || state.currentAction?.parameters.reloaded || state.currentAction?.parameters.catch || state.currentAction?.parameters.lobbyEntry || state.currentAction?.parameters.meeting || state.currentAction?.parameters.pills || state.currentAction?.parameters.interrogation || state.currentAction?.parameters.welcome || state.currentAction?.parameters.reveal || state.currentAction?.parameters.training || state.currentAction?.parameters.workday || state.currentAction?.parameters.recoveryCrew || entry.group.position.distanceTo(target) > 60) entry.group.position.copy(target);
         else entry.group.position.lerp(target, 1 - Math.exp(-8 * delta));
         if (state.currentAction?.parameters.basement && delta * speed > 0) guideSpeed = entry.group.position.distanceTo(previous) / (delta * speed);
       }
@@ -206,9 +216,9 @@ export class AgentRenderer {
       let difference = heading - entry.body.rotation.y;
       difference = Math.atan2(Math.sin(difference), Math.cos(difference));
       const arrival = state.currentAction?.parameters.oracleArrival as MotionInput['oracleArrival'];
-      if (id !== this.playerId) entry.body.rotation.y += difference * (entry.wetwallGuide || entry.ambushGuide && delta === 0 || arrival?.phase === 'opening' || (arrival?.seating ?? 0) > 0 || state.currentAction?.parameters.farewell || state.currentAction?.parameters.club || state.currentAction?.parameters.sentinel || state.currentAction?.parameters.interlude || state.currentAction?.parameters.oracleVisit || state.currentAction?.parameters.oracleDeparture || state.currentAction?.parameters.betrayal || state.currentAction?.parameters.rescue || state.currentAction?.parameters.government || state.currentAction?.parameters.airRescue || state.currentAction?.parameters.matrixEscape || state.currentAction?.parameters.theOne || state.currentAction?.parameters.reloaded || state.currentAction?.parameters.catch || state.currentAction?.parameters.lobbyEntry || state.currentAction?.parameters.meeting || state.currentAction?.parameters.pills || state.currentAction?.parameters.interrogation || state.currentAction?.parameters.welcome || state.currentAction?.parameters.reveal || state.currentAction?.parameters.training || state.currentAction?.parameters.workday || state.currentAction?.parameters.recoveryCrew ? 1 : 1 - Math.exp(-10 * delta));
+      if (id !== this.playerId) entry.body.rotation.y += difference * (entry.wetwallGuide || entry.ambushGuide && delta === 0 || arrival?.phase === 'opening' || (arrival?.seating ?? 0) > 0 || state.currentAction?.parameters.farewell || state.currentAction?.parameters.club || state.currentAction?.parameters.sentinel || state.currentAction?.parameters.interlude || state.currentAction?.parameters.oracleVisit || state.currentAction?.parameters.oracleDeparture || state.currentAction?.parameters.crosscut || state.currentAction?.parameters.betrayal || state.currentAction?.parameters.rescue || state.currentAction?.parameters.government || state.currentAction?.parameters.airRescue || state.currentAction?.parameters.matrixEscape || state.currentAction?.parameters.theOne || state.currentAction?.parameters.reloaded || state.currentAction?.parameters.catch || state.currentAction?.parameters.lobbyEntry || state.currentAction?.parameters.meeting || state.currentAction?.parameters.pills || state.currentAction?.parameters.interrogation || state.currentAction?.parameters.welcome || state.currentAction?.parameters.reveal || state.currentAction?.parameters.training || state.currentAction?.parameters.workday || state.currentAction?.parameters.recoveryCrew ? 1 : 1 - Math.exp(-10 * delta));
       const velocity = state.status === 'alive' ? Math.hypot(state.velocity.x, state.velocity.z) : 0;
-      entry.body.rotation.z = THREE.MathUtils.lerp(entry.body.rotation.z, state.status === 'dead' && !state.currentAction?.parameters.farewell ? Math.PI / 2 : 0, 1 - Math.exp(-7 * delta));
+      entry.body.rotation.z = THREE.MathUtils.lerp(entry.body.rotation.z, state.status === 'dead' && !state.currentAction?.parameters.crosscut && !state.currentAction?.parameters.farewell ? Math.PI / 2 : 0, 1 - Math.exp(-7 * delta));
       const dist = camera ? entry.group.position.distanceTo(camera.position) : 0;
       const floor = groundHeight(state.position, state.isInMatrix);
       const input: MotionInput = id === this.playerId && this.playerMotion ? this.playerMotion : {
@@ -220,6 +230,7 @@ export class AgentRenderer {
         wetwall: state.currentAction?.parameters.wetwall as MotionInput['wetwall'],
         basement: state.currentAction?.parameters.basement as MotionInput['basement'],
         tvExit: state.currentAction?.parameters.tvExit as MotionInput['tvExit'],
+        crosscut: state.currentAction?.parameters.crosscut as MotionInput['crosscut'],
         sixth: sixthGesture,
         crouching: state.currentAction?.parameters.crouching === true,
         seated: state.currentAction?.parameters.seated === true,
@@ -286,6 +297,16 @@ export class AgentRenderer {
       };
       // The ruined city is still a loading program: actors keep their residual
       // self image even though the represented place is the real world.
+      if (input.crosscut?.role === 'cypher' && input.crosscut.phase === 'call') {
+        const role = input.crosscut.elapsed < 14 ? 'apoc' : 'switch', body = this.getPhysicalBody(role);
+        const socket = body?.getObjectByName('cervical-interface') ?? body?.getObjectByName('head');
+        socket?.updateWorldMatrix(true, false); const point = socket?.getWorldPosition(new THREE.Vector3());
+        if (point) input.crosscut = { ...input.crosscut, contact: { x: point.x, y: point.y, z: point.z } };
+      } else if (input.crosscut && input.armed) {
+        const target = input.crosscut.role === 'tank' ? 'cypher' : input.crosscut.elapsed < 4 ? 'tank' : 'dozer';
+        const entry = this.agents.get(target), point = entry?.rig.hero?.bones.get('chest')?.getWorldPosition(new THREE.Vector3());
+        if (point) input.crosscut = { ...input.crosscut, contact: { x: point.x, y: point.y, z: point.z } };
+      }
       input.realWorld = !state.isInMatrix && state.currentLocation !== 'film_real_desert';
       if (input.wetwall && !input.sixth && id !== this.playerId && entry.wetwallGuide) {
         const progress = entry.wetwallGuide.progress, wall = input.wetwall, pose = wetwallPose(wall.start, wall.role, progress, wall.phase, wall.elapsed, wall.fallY, wall.continued);
@@ -390,7 +411,7 @@ export class AgentRenderer {
       entry.shadow.visible = !sixthRoot?.hidden && state.status !== 'disconnected' && !state.currentAction?.parameters.filmDuel && !mountainFlying && !catchFlying && !coma && !pod && !epilogueCarried && !input.truckPassenger && !input.wetwall?.hanging;
       entry.shadow.scale.setScalar(1 + Math.max(0, entry.group.position.y - floor) * .04);
       const selected = id === this.selected;
-      entry.label.visible = !sixthRoot?.hidden && id !== this.playerId && state.status === 'alive' && !state.currentAction?.parameters.filmDuel && (selected || (!this.playerId && dist < 90 && (['neo', 'trinity', 'smith', 'morpheus'].includes(id) || state.currentAction?.type === 'talk_to')));
+      entry.label.visible = !physical && !sixthRoot?.hidden && id !== this.playerId && state.status === 'alive' && !state.currentAction?.parameters.filmDuel && (selected || (!this.playerId && dist < 90 && (['neo', 'trinity', 'smith', 'morpheus'].includes(id) || state.currentAction?.type === 'talk_to')));
       const labelWidth = this.playerId ? Math.min(7, Math.max(2.5, dist * 0.13)) : 17;
       entry.label.scale.set(labelWidth, labelWidth / 4, 1);
       entry.label.position.y = this.playerId ? 4.4 : 7;

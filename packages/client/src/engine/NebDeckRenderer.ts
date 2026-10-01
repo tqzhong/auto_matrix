@@ -1,3 +1,4 @@
+import { crosscutActive } from '@auto_matrix/shared';
 import { truthUnplug, truthRest, TRUTH_BEDSIDE, DOWNLOAD_OPERATOR, downloadDiskPose } from '@auto_matrix/shared';
 import * as THREE from 'three';
 import { RECOVERY_BED, RECOVERY_CABINET, RECOVERY_FRAME, RESCUE, type FilmJourney } from '@auto_matrix/shared';
@@ -440,7 +441,7 @@ export class NebDeckRenderer {
     }
   }
 
-  update(journey: FilmJourney | undefined, elapsed: number, recoverySubject?: THREE.Object3D): void {
+  update(journey: FilmJourney | undefined, elapsed: number, recoverySubject?: THREE.Object3D, bodies?: (id: string) => THREE.Object3D | undefined): void {
     const loss = journey?.scene === 'm2_ship_lost' && !journey.visiting ? journey.shipLoss : undefined;
     this.shipLossRig.visible = Boolean(loss);
     if (loss) {
@@ -572,9 +573,29 @@ export class NebDeckRenderer {
         ring.position.set(this.neoBowl.position.x, 2.1 + cycle * 1.1, 22); ring.scale.setScalar(.65 + cycle * .8); ring.visible = meal.phase === 'performing' && t < 9;
       });
     } else this.mealLamp.intensity = 0;
+    const cut = crosscutActive(journey) ? journey!.tvExit!.crosscut : undefined;
+    if (cut) {
+      this.betrayalRig.visible = true;
+      for (const role of ['neo', 'trinity', 'apoc', 'switch'] as const) {
+        const disconnected = role === 'apoc' ? cut.apocDead : role === 'switch' ? cut.switchDead : role === 'trinity' ? cut.trinityOut : cut.neoOut;
+        const jack = this.betrayalJacks.get(role)!; jack.visible = !disconnected;
+        const body = bodies?.(role), socket = body?.getObjectByName('cervical-interface') ?? body?.getObjectByName('head');
+        if (socket && !disconnected) {
+          socket.updateWorldMatrix(true, false); this.root.updateWorldMatrix(true, false);
+          jack.position.copy(this.root.worldToLocal(socket.getWorldPosition(new THREE.Vector3())));
+          jack.quaternion.copy(this.root.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(socket.getWorldQuaternion(new THREE.Quaternion())));
+        }
+        if (role === 'apoc' || role === 'switch') this.betrayalLoose.get(role)!.visible = disconnected;
+        const signal = this.betrayalSignals.get(role)!;
+        (signal.material as THREE.MeshBasicMaterial).color.setHex(disconnected ? 0x4c1815 : 0x75e7a1);
+        signal.scale.y = disconnected ? .55 : 1;
+      }
+      this.betrayalFlash.visible = false;
+      this.betrayalAlarm.intensity = ['assault', 'aiming', 'window', 'countering'].includes(cut.phase) ? 68 : 18;
+    }
     const betrayal = journey?.scene === 'm1_unplugged' && !journey.visiting && journey.betrayal?.kind === 'unplugged' ? journey.betrayal : undefined;
-    this.betrayalRig.visible = Boolean(betrayal);
-    if (betrayal) {
+    if (!cut) this.betrayalRig.visible = Boolean(betrayal);
+    if (betrayal && !cut) {
       const afterPulls = ['aiming', 'window', 'failed', 'countering', 'reconnect', 'done'].includes(betrayal.phase);
       const disconnected = {
         apoc: afterPulls || betrayal.phase === 'unplugging' && betrayal.elapsed >= 2.25,

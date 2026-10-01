@@ -1,3 +1,4 @@
+import { crosscutView } from '@auto_matrix/shared';
 import { truthRest, truthKneel, truthSeat } from '@auto_matrix/shared';
 import { METACORTEX } from '@auto_matrix/shared';
 import { catchLocked, deusPactLocked, deusPactPose, reloadedPhaseLocked, smithFinaleLocked, smithFinalePose, trilogyEpilogueLocked } from '@auto_matrix/shared';
@@ -13,7 +14,7 @@ import { officeClothing } from '@auto_matrix/shared';
 import { cabinSeat, MORNING, POD_RESCUE, podRescuePose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
 import { ambushCat } from '@auto_matrix/shared';
 import { wetwallPose, sixthPose, bathroomFightRoot, WETWALL, WETWALL_SHAFT, type WetwallPhase } from '@auto_matrix/shared';
-import { BASEMENT, basementBlocked } from '@auto_matrix/shared';
+import { BASEMENT, TV_EXIT, basementBlocked } from '@auto_matrix/shared';
 
 export class PlayerControls {
   id: string | null = null;
@@ -176,6 +177,7 @@ export class PlayerControls {
         if (this.bridgeCaught) this.cameraReady = false;
         if (this.firstPerson && this.motion.mirrorBeat !== undefined) this.aimAtMirror();
         if (this.firstPerson && this.motion.meeting && ['scanning', 'located', 'removing', 'discarding'].includes(this.motion.meeting.phase)) this.aimAtMeetingScanner();
+        if (this.firstPerson && this.motion.crosscut && (this.motion.crosscut.phase === 'phone' || this.motion.crosscut.phase === 'neo_exit')) this.aimAtHardline();
         if (this.firstPerson && this.climbing && this.authoritative?.currentLocation === 'film_office_ledge') {
           this.yaw = -.55; this.pitch = .55;
         }
@@ -215,6 +217,13 @@ export class PlayerControls {
     const eye = this.position.y + 2.99 - THREE.MathUtils.smoothstep(this.motion.mirrorBeat ?? 0, .65, MIRROR_TIMING.sit) * .9;
     this.yaw = this.movementYaw = Math.atan2(x, z);
     this.pitch = -Math.atan2(center.y + 2.1 - eye, Math.hypot(x, z));
+  }
+
+  private aimAtHardline(): void {
+    const center = FILM_SETS.film_tv_repair.center;
+    const x = center.x + TV_EXIT.phone.x + .26 - this.position.x, z = center.z + TV_EXIT.phone.z + .28 - this.position.z;
+    this.yaw = this.movementYaw = Math.atan2(x, z);
+    this.pitch = THREE.MathUtils.clamp(Math.atan2(this.position.y + 2.99 - (center.y - 1 + TV_EXIT.phone.y + .2), Math.hypot(x, z)), -.4, 1.1);
   }
 
   private aimAtMeetingScanner(): void {
@@ -432,11 +441,14 @@ export class PlayerControls {
     this.inOfficeLift = inOfficeLift;
     const basement = state.currentAction?.parameters.basement as MotionInput['basement'];
     const tvExit = state.currentAction?.parameters.tvExit as MotionInput['tvExit'];
+    const hardlineStarting = Boolean(state.currentAction?.parameters.crosscut && tvExit?.phase === 'pickup' && this.motion.tvExit?.phase !== 'pickup');
     if (this.motion.basement && !basement || this.motion.tvExit && !tvExit) this.performing = false;
     if (basement) this.performing = Boolean(basement.paused || ['ready', 'descending', 'landing', 'draining', 'tunnel', 'done', 'failed'].includes(basement.phase));
     if (tvExit) this.performing = Boolean(tvExit.paused || ['pickup', 'line_dead', 'calling'].includes(tvExit.phase));
     if (Boolean(this.motion.basement?.crawling) !== Boolean(basement?.crawling)) this.cameraReady = false;
     this.motion.basement = basement; this.motion.tvExit = tvExit;
+    this.motion.crosscut = state.currentAction?.parameters.crosscut as MotionInput['crosscut'];
+    if (this.motion.crosscut) this.performing = !['phone', 'trinity_ready', 'neo_ready'].includes(this.motion.crosscut.phase) || this.motion.crosscut.phase === 'phone' && Boolean(tvExit);
     if (this.wasPerforming && !this.performing) this.yaw = this.movementYaw = this.facing;
     if (redPillEnded) this.yaw = this.movementYaw = this.facing = state.rotation;
     if (bridgeCaptureStarting) this.yaw = this.movementYaw = Math.atan2(bridgeCaught!.x - state.position.x, bridgeCaught!.z - state.position.z);
@@ -641,6 +653,7 @@ export class PlayerControls {
     if (hanging && !this.hangingWetwall && !this.motion.sixth) { this.yaw = this.movementYaw = Math.PI; this.pitch = .65; this.cameraReady = false; }
     this.hangingWetwall = hanging;
     if (mirrorStarting && this.firstPerson && now - this.lastLook > 900) this.aimAtMirror();
+    if (hardlineStarting && this.firstPerson) this.aimAtHardline();
     const dx = this.position.x - previous.x; const dz = this.position.z - previous.z;
     this.motion.speed = basement?.crawling || wall && !hanging ? Math.hypot(dx, dz) / Math.max(delta, .001) : this.ride || this.climbing || this.performing ? 0 : Math.hypot(dx, dz) / Math.max(delta, .001);
     if (this.motion.spoonLesson?.phase === 'sitting' && this.motion.spoonLesson.elapsed < 1.1) this.motion.speed = Math.hypot(state.velocity.x, state.velocity.z);
@@ -1217,6 +1230,22 @@ export class PlayerControls {
         const focus = new THREE.Vector3(-17.7 - falling * .9, ground ? 1.2 : 2.4 - falling * .8, -26.9 - falling * 1.3).add(origin);
         if (resetCamera || gesture.elapsed < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
         this.camera.lookAt(focus);
+      }
+    } else if (this.motion.crosscut && this.performing && !['trinity_ready', 'neo_ready'].includes(this.motion.crosscut.phase)) {
+      const cut = this.motion.crosscut, ship = crosscutView(cut) === 'ship', center = FILM_SETS[ship ? 'film_neb_deck' : 'film_tv_repair'].center;
+      const origin = new THREE.Vector3(center.x, center.y - 1, center.z);
+      if (this.firstPerson) {
+        const head = group.getObjectByName('head'); group.updateWorldMatrix(true, true);
+        const eye = head ? head.localToWorld(new THREE.Vector3(0, .1, .32)) : new THREE.Vector3(this.position.x, this.position.y + 2.9, this.position.z);
+        const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
+        this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
+      } else {
+        const pulling = ship && cut.phase === 'call', second = pulling && cut.elapsed >= 14;
+        const ideal = cut.phase === 'done' ? new THREE.Vector3(0, 6, -14) : ship ? pulling ? new THREE.Vector3(second ? 0 : -12, 5.5, second ? 11 : 1) : new THREE.Vector3(4, 5.7, -17)
+          : new THREE.Vector3(3.5, 5.2, -16.5);
+        const focus = cut.phase === 'done' ? new THREE.Vector3(2.5, 2.6, -5) : ship ? pulling ? new THREE.Vector3(second ? 6.5 : -6.5, 2.7, second ? 6 : -5) : new THREE.Vector3(-5, 2.5, -10.8)
+          : cut.phase === 'call' && cut.elapsed >= 8.6 ? new THREE.Vector3(cut.elapsed < 17.6 ? 4.5 : 8.5, 1.4, cut.elapsed < 17.6 ? -11 : -9) : new THREE.Vector3(-5.5, 3.1, -17.5);
+        this.camera.position.copy(ideal.add(origin)); this.camera.lookAt(focus.add(origin));
       }
     } else if (this.motion.betrayal) {
       const gesture = this.motion.betrayal; const center = FILM_SETS[state.currentLocation].center;

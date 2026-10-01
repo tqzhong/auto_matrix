@@ -1,5 +1,6 @@
 import type { Vector3 } from '../types/agent.js';
 import type { FilmJourney } from './film-story.js';
+import { crosscutActive, crosscutLocked } from './cypher-crosscut.js';
 
 export const BASEMENT_ROLES = ['neo', 'trinity', 'apoc', 'switch', 'cypher'] as const;
 export type BasementRole = typeof BASEMENT_ROLES[number];
@@ -151,7 +152,7 @@ export function basementText(encounter: BasementEncounter): string {
 }
 
 export type TvExitPhase = 'ready' | 'pickup' | 'line_dead' | 'calling' | 'done';
-export interface TvExitEncounter { phase: TvExitPhase; elapsed: number; paused?: boolean; start?: Vector3 & { yaw: number } }
+export interface TvExitEncounter { phase: TvExitPhase; elapsed: number; paused?: boolean; start?: Vector3 & { yaw: number }; crosscut?: import('./cypher-crosscut.js').CypherCrosscut }
 export interface TvExitGesture extends TvExitEncounter { role: 'neo' | 'trinity' }
 export const TV_EXIT = { phone: { x: -7, y: 2.7, z: -20 }, approach: { x: -7, z: -18.5 }, pickupSeconds: 4.4, callSeconds: 6.8,
   cast: { trinity: { x: -3.5, z: -14, yaw: -Math.PI / 2 }, apoc: { x: 4.5, z: -11, yaw: Math.PI }, switch: { x: 8.5, z: -9, yaw: Math.PI } } } as const;
@@ -162,7 +163,7 @@ export const TV_EXIT_OBSTACLES = [
   { x: -7, z: -20.25, width: 2.4, depth: .4, height: 10 },
   // The stockroom is reached through a real right-hand gap in the counter.
 ].map((obstacle, index) => index === 3 ? { ...obstacle, x: -4.5, width: 22 } : obstacle);
-export function tvExitLocked(journey: FilmJourney | undefined): boolean { return Boolean(journey?.scene === 'm1_tv_exit' && !journey.visiting && journey.tvExit && (journey.tvExit.paused || ['pickup', 'line_dead', 'calling'].includes(journey.tvExit.phase))); }
+export function tvExitLocked(journey: FilmJourney | undefined): boolean { if (crosscutActive(journey)) return crosscutLocked(journey); return Boolean(journey?.scene === 'm1_tv_exit' && !journey.visiting && journey.tvExit && (journey.tvExit.paused || ['pickup', 'line_dead', 'calling'].includes(journey.tvExit.phase))); }
 export function tvExitRoot(encounter: TvExitEncounter) {
   const start = encounter.start ?? { ...TV_EXIT.approach, y: 0, yaw: Math.PI };
   const t = encounter.phase === 'pickup' ? smooth(encounter.elapsed / .8) : 1;

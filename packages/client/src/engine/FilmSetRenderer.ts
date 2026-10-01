@@ -1,3 +1,4 @@
+import { crosscutPhoneRole } from '@auto_matrix/shared';
 import { createLoungeChair } from './LoungeChair.js';
 import { BasementSetRenderer } from './BasementSetRenderer.js';
 import { TvRepairRenderer } from './TvRepairRenderer.js';
@@ -136,6 +137,8 @@ export class FilmSetRenderer {
   private mirrorSubject?: THREE.Object3D;
   private mirrorFilament?: THREE.Mesh;
   private recoverySubject?: THREE.Object3D;
+  private crosscutBodies?: (id: string) => THREE.Object3D | undefined;
+  private phoneBodies?: (id: string) => THREE.Object3D | undefined;
   private trackingElectrode?: THREE.Group;
   private trackingLead?: THREE.Line;
   private oracleVase?: OracleVase;
@@ -211,6 +214,7 @@ export class FilmSetRenderer {
   get televisionPreviewImage(): string | undefined { return this.construct?.televisionPreviewImage; }
   setMirrorSubject(subject?: THREE.Object3D): void { this.mirrorSubject = subject; }
   setRecoverySubject(subject?: THREE.Object3D): void { this.recoverySubject = subject; }
+  setCrosscutSubjects(bodies: (id: string) => THREE.Object3D | undefined, avatars: (id: string) => THREE.Object3D | undefined): void { this.crosscutBodies = bodies; this.phoneBodies = avatars; }
   renderTelevisionPreview(renderer: THREE.WebGLRenderer): void { this.construct?.renderPreview(renderer, this.scene.environment); }
   update(player: AgentState | undefined, sandbox: SandboxState | undefined, elapsed: number, playerPosition?: Vector3, cameraPosition?: Vector3, workday?: OfficeWorkday, firstPerson = false, timeOfDay = 12000): FilmSet | undefined {
     this.resetMirrorFrame?.();
@@ -373,7 +377,7 @@ export class FilmSetRenderer {
     this.club?.update(elapsed);
     this.freeway?.update(journey, elapsed, playerPosition);
     this.pods?.update(journey, elapsed, firstPerson, this.recoverySubject);
-    this.neb?.update(journey, elapsed, this.recoverySubject);
+    this.neb?.update(journey, elapsed, this.recoverySubject, this.crosscutBodies);
     this.finale?.update(journey, elapsed);
     this.revolutionsPrelude?.update(journey, elapsed);
     this.hammerRoute?.update(journey?.scene === 'm3_hammer_tunnels' && !journey.visiting ? journey.hammer : undefined, elapsed, firstPerson);
@@ -396,7 +400,7 @@ export class FilmSetRenderer {
     this.restaurant?.update(journey, elapsed);
     this.ambush?.update(journey, sandbox?.structures ?? [], elapsed);
     this.basement?.update(journey, cameraPosition);
-    this.tvRepair?.update(journey, this.recoverySubject);
+    this.tvRepair?.update(journey, journey?.tvExit?.crosscut ? this.phoneBodies?.(crosscutPhoneRole(journey.tvExit.crosscut) ?? 'neo') : this.recoverySubject);
     this.government?.update(journey, elapsed);
     this.matrixEscape?.update(journey, elapsed);
     this.theOne?.update(journey, elapsed);

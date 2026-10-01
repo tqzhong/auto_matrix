@@ -25,7 +25,7 @@ import { cabinContact } from './CabinContact.js';
 import { ConstructPerformance } from './ConstructPerformance.js';
 import { clubCloseness } from '@auto_matrix/shared';
 
-export type HeroSupport = 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour' | 'niobe' | 'ballard' | 'ghost' | 'soren' | 'link' | 'dozer' | 'tank' | 'oracle_priestess' | 'oracle_attendant' | 'citizen_4' | 'citizen_14';
+export type HeroSupport = 'cypher' | 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour' | 'niobe' | 'ballard' | 'ghost' | 'soren' | 'link' | 'dozer' | 'tank' | 'oracle_priestess' | 'oracle_attendant' | 'citizen_4' | 'citizen_14';
 type Pose = ReturnType<typeof advanceMotion>;
 interface CoatPanel { mesh: THREE.Mesh; rest: Float32Array; velocity: Float32Array }
 export interface HeroRig {
@@ -177,8 +177,8 @@ export class HeroModels {
     const apartmentRole = support === 'choi' || support === 'dujour' ? support : undefined;
     const oracleStaff = support === 'oracle_priestess' || support === 'oracle_attendant';
     const police = support === 'citizen_4' || support === 'citizen_14';
-    const [asset, office, tracking, club] = await Promise.all([this.load(oracleStaff ? 'dujour' : support === 'tank' ? 'choi' : apartmentRole ?? id),
-      id === 'neo' && !apartmentRole && support !== 'tank' ? this.load('neo-office') : undefined,
+    const [asset, office, tracking, club] = await Promise.all([this.load(oracleStaff ? 'dujour' : support === 'tank' || support === 'cypher' ? 'choi' : apartmentRole ?? id),
+      id === 'neo' && !apartmentRole && support !== 'tank' && support !== 'cypher' ? this.load('neo-office') : undefined,
       id === 'neo' && !support ? this.load('neo-tracking') : undefined,
       id === 'trinity' && !support ? this.load('trinity-club') : undefined]);
     if (this.disposed) return;
@@ -252,7 +252,7 @@ export class HeroModels {
     }
     const pelvis = bones.get('pelvis')!;
     const waist = new THREE.Vector3().fromArray(metadata.waist).sub(pelvis.position);
-    const panels = (id === 'neo' || id === 'morpheus') && !police && support !== 'link' && support !== 'dozer' && support !== 'tank' ? [-1, 1].map(side => this.coat(pelvis, waist, side, id)) : [];
+    const panels = (id === 'neo' || id === 'morpheus') && !police && support !== 'link' && support !== 'dozer' && support !== 'tank' && support !== 'cypher' ? [-1, 1].map(side => this.coat(pelvis, waist, side, id)) : [];
     const footHeight = this.point.setFromMatrixPosition(bones.get('ankle_L')!.matrixWorld).y;
     const silver = { value: 0 }; const wardrobe: HeroRig['wardrobe'] = [];
     let trackingSkin: HeroRig['trackingSkin'];
@@ -586,6 +586,11 @@ export class HeroModels {
     for (let finger = 1; finger <= 5; finger++) for (let segment = 1; segment <= 3; segment++)
       rig.bones.get(`finger${finger}-${segment}_R`)!.rotation.z *= 1 - blend;
   }
+  crosscutInterfaces(rig: HeroRig): void {
+    if (!this.recoveries.has(rig)) this.recoveries.set(rig, new RecoveryPerformance(rig));
+    this.recoveries.get(rig)!.update(undefined, true);
+  }
+
   animate(rig: HeroRig, pose: Pose, motion: MotionState, input: MotionInput, delta: number): void {
     rig.silver.value = input.mirror ?? 0;
     rig.glasses.visible = !rig.officeRole && !rig.apartmentRole && input.glasses !== false && !input.realWorld && !(input.bathroom?.role === 'smith' && input.bathroom.headbutt);

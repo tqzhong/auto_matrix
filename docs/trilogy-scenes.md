@@ -2,11 +2,11 @@
 
 更新：2026-10-01。
 
-最新范围已调整为选取关键电影段落，优先做好可玩性与布景，不要求穷举影片所有镜头。大堂营救已增加专用枪战与布景；后续优先级、验收证据和限制见 [关键片段制作记录](key-scenes.md)。下面的 113 段是当前剧情索引。
+最新范围已调整为选取关键电影段落，优先做好可玩性与布景，不要求穷举影片所有镜头。大堂营救已增加专用枪战与布景；后续优先级、验收证据和限制见 [关键片段制作记录](key-scenes.md)。下面的 115 段是当前剧情索引。
 
 ## 当前完成度
 
-这是可运行的三部曲场景原型：113 个剧情段落、63 个可进入场景定义、39 类建筑布局。计数按本项目任务粒度划分，不是电影逐镜头统计，也不代表原片所有室内房间、镜头与动作已经一比一复现。当前空间主要由程序生成的几何与 PBR 材质组成，尚未达到电影级美术验收标准。
+这是可运行的三部曲场景原型：115 个剧情段落、64 个可进入场景定义、39 类建筑布局。计数按本项目任务粒度划分，不是电影逐镜头统计，也不代表原片所有室内房间、镜头与动作已经一比一复现。当前空间主要由程序生成的几何与 PBR 材质组成，尚未达到电影级美术验收标准。
 
 三部影片的事件顺序、主要人物所在地点、营救与背叛、建筑师的选择和停战结局已有路线框架，但许多专用机制、动作及空间衔接仍待补全。成片事件是路线依据；日常养成、蓝色药丸分支、哲学反思记录、场景回访与下一轮生活属于游戏扩展。非 Neo 出场的情节由对应人物游玩，例如 Trinity 的序幕、Morpheus 的营救、Niobe 的电站与归航、Kid 的闸门；角色已被另一玩家控制时保留进度并拒绝强占。
 
@@ -21,10 +21,12 @@
 | 内容 | 文件 |
 | --- | --- |
 | 场景名称、尺寸、世界、光线与共享碰撞 | packages/shared/src/constants/film-sets.ts |
-| 113 段剧情、角色、目标、叙述与音乐匹配 | packages/shared/src/constants/film-story.ts |
+| 115 段剧情、角色、目标、叙述与音乐匹配 | packages/shared/src/constants/film-story.ts |
 | 步骤验证、战斗、检查点、回访与角色交接 | packages/server/src/story/FilmStorySystem.ts |
 | 808 管线下行、608 搜查/还击/替换/破墙与六楼衔接 | packages/server/src/story/WetwallEscapeSystem.ts / packages/server/src/story/SixthFloorSystem.ts |
+| 地下室排水道、维修店与两世界背叛时钟/伤亡/接出 | packages/server/src/story/BasementEscapeSystem.ts / packages/server/src/story/CypherBetrayalSystem.ts / packages/shared/src/constants/cypher-crosscut.ts |
 | 管线墙、薄墙破口与六楼浴室实体渲染 | packages/client/src/engine/WetwallRenderer.ts / packages/client/src/engine/SixthFloorRenderer.ts |
+| 锅炉房/维修店布景、连接椅身体与倒地/接线接触 | packages/client/src/engine/BasementSetRenderer.ts / packages/client/src/engine/TvRepairRenderer.ts / packages/client/src/engine/NebDeckRenderer.ts / packages/client/src/agents/CrosscutPerformance.ts |
 | 城市公司与升降机坐标、实体层门 / 轿厢渲染 | packages/shared/src/constants/metacortex.ts / packages/client/src/engine/MetacortexRenderer.ts |
 | 日常生活、蓝色药丸与循环衔接 | packages/server/src/story/NeoLifeSystem.ts |
 | 建筑、道具、材质、局部灯光与列车动画 | packages/client/src/engine/FilmSetRenderer.ts |
@@ -35,7 +37,7 @@
 | 运行时贴图与来源 | packages/client/public/assets/film-materials/ |
 | 剧情路由测试、地图边界与楼梯测试 | tests/film-story.test.mts / tests/film-world.test.mts |
 
-新区域按当前人物位置加载，离开时释放自身几何、材质与纹理；旧城市继续作为日常生活区域。63 个地点均有对应场景实现，但部分地点仍共用建筑家族，不能据此宣称美术已经逐场验收。
+新区域按当前人物位置加载，离开时释放自身布景几何、材质与纹理；旧城市继续作为日常生活区域。64 个地点均有对应场景实现，但部分地点仍共用建筑家族，不能据此宣称美术已经逐场验收。两世界背叛使用四个缓存的飞船身体替身；离开片段会隐藏，人物资源随 AgentRenderer 释放，并非每次切镜都销毁。
 
 ## 素材与研究依据
 
@@ -50,8 +52,8 @@
 
 ## 仍待完成的电影级还原
 
-1. **逐镜头核对**：需要逐一比对成片的时间码、镜头、空间相邻关系、出场人物与道具。目前的 113 段是剧情索引，不是完整镜头清单。
-2. **美术**：细化实际比例、门窗通道、建筑结构与房间分隔，替换部分程序几何为有依据的 GLB 布景、道具和贴图；目前人物模型未在本轮重做。
+1. **逐镜头核对**：需要逐一比对成片的时间码、镜头、空间相邻关系、出场人物与道具。目前的 115 段是剧情索引，不是完整镜头清单。
+2. **美术**：细化实际比例、门窗通道、建筑结构与房间分隔，替换部分程序几何为有依据的 GLB 布景、道具和贴图；人物仍含通用脸部与替代模型，不能视为电影演员还原。
 3. **动作与载具**：直升机营救、高速追车、空中营救、Logos 航行与 APU 操作已有各自的局部可控机制；仍缺把这些片段串成连续路线的完整动作、摄影、声音与电影级资产。其他若干跳楼、群战和决战飞行仍由通用移动/战斗或定时交互承接。
 4. **场景交互**：目前碰撞覆盖边界、柱列和城堡楼梯；装饰家具大多没有独立碰撞，尚无全面可破坏环境。叙事角色站位用于呈现当前段落，尚无完整表演、口型或原声配音。
 5. **体验调优**：部分段落间仍使用显式继续切换，尚未做到同一无缝大地图。基础验收包含全部路线的服务器测试与部分场景实机检查；不能据此宣称已经手动玩完全部路线或确认所有画面达标。
@@ -60,7 +62,7 @@
 
 下面的「游玩步骤」列出当前已实现的交互类型；定时交互不能等同于其文字所描述的电影动作已经被动画化。
 
-### 1. 黑客帝国（50 段）
+### 1. 黑客帝国（52 段）
 
 | ID | 剧情段落 | 场景 | 操控人物 | 游玩步骤 |
 | --- | --- | --- | --- | --- |
@@ -100,8 +102,10 @@
 | m1_dejavu | 重复经过的黑猫 | 旧楼 · 黑猫与伏击 | Neo | 与五名同伴爬楼 → 平台黑猫两次下楼/砖封 → 硬线切断/Mouse 遇难 → 六人实体撤下五层/追兵 → 八楼检查封窗 → 靠近 Morpheus 冒险通话 → 同伴进入 808 室让开中线 → 管线墙 |
 | m1_wetwall | 墙里的退路 · 808 → 608 | 旧楼 · 管线夹层 | Neo | 明确破墙 → 六人依次入管 → W/S 下行/退回 → 主动让 Trinity 解救 Cypher → 六楼夹层；松手可坠落/失败/重试 |
 | m1_wall_exposed | 六楼薄墙外的搜查 | 旧楼 · 608 室与夹层 | Neo | 搜查/墙面暴露 → Z 掩护/探回破口亲自还击 → 原位特工替换/抓颈/破墙 → G 从六楼落点接管 Morpheus |
-| m1_bathroom | 为同伴争取时间 | 旧楼 · 黑猫与伏击 | Morpheus | 六楼原落点坚守/三次击退、队友继续下行 → 明确冲撞/被捕；旧上层存档保留原破墙样板 |
-| m1_unplugged | 背叛发生在现实 | 尼布甲尼撒号 · 核心与医疗舱 | Tank | 查看拔线 → 1.5 秒反击窗口 → 分别接回 Neo/Trinity |
+| m1_bathroom | 为同伴争取时间 | 旧楼 · 黑猫与伏击 | Morpheus | 六楼原落点跪压/头部反击 → X 闪避/F 四次反击 → 明确被捕；旧存档保留原坚守样板 |
+| m1_basement | 机械房里的另一条出口 | 旧楼 · 黑猫与伏击（地下室与排水道） | Neo | 手动下行/避烟 → 跟随/开格栅 → 四人按序下洞 → 低姿转弯抵达出口 |
+| m1_tv_exit | 电视维修店的硬线 | Franklin 与 Erie · 电视维修店 / 现实飞船 | Neo / Tank | Neo 取听筒 → 飞船袭击/Tank 负伤/Dozer 倒地 → 硬线失效 → Trinity 联系/Cypher 拔线 → Apoc/Switch 在矩阵倒地 → 明确交接 Tank |
+| m1_unplugged | 背叛发生在现实 | 尼布甲尼撒号 / 电视维修店 | Tank / Neo | 负伤反击/1.5 秒窗口 → Cypher 倒地 → 返回 Neo/让出通道 → Trinity 先用硬线接出 → Neo 走回电话接出；旧存档保留原重连样板 |
 | m1_rescue_decision | 仍然选择去救他 | 尼布甲尼撒号 · 核心与医疗舱 | Neo | 反思 → 交互 |
 | m1_guns | 加载营救装备 | 构造体 · 白色空间 | Neo | 交互 → 移动 |
 | m1_lobby | 政府大楼的大堂 | 政府大楼 · 大堂 | Neo | 移动 → 战斗 → 交互 |
@@ -196,9 +200,9 @@
 
 先知局部镜头可在场景参数后使用 `oracle-exam`、`oracle-cookie` 或 `oracle-question`，例如 `node --import tsx scripts/film-review-fixture.mts m1_oracle oracle-question`。这些模式只建立对应动作检查点，不代表从候诊室连续游玩到了该位置。
 
-旧楼入口可使用 `node --import tsx scripts/film-review-fixture.mts m1_dejavu`。Neo 与五名同伴从下层开始，沿两段楼梯与上层护栏同行；导航指向下一段平台，同伴等候落后的 Neo，到齐后在上层观察黑猫伸展、两次沿实际台阶下楼，重复时五人转向 Neo。暂停、断线、读档和重试保留队伍与黑猫进度，既有走廊存档保留原路线及时钟，不强制重播入口。猫的脚掌/身体几何、重复步态、暂停预测、普通控制器轨迹、观察布局与双视角/暂停刷新见[黑猫下楼局部验收](../output/gameplay/trilogy-ambush-cat-2026-10-01/README.md)；六名角色的楼梯鞋底/衣摆姿态样本见[六人同行验收](../output/gameplay/trilogy-ambush-company-2026-09-30/README.md)，共享楼梯与洞口见[楼梯入口记录](../output/gameplay/trilogy-ambush-stairs-2026-09-30/README.md)。新流程已接六人实体撤下五层楼梯、八楼检查封窗、近距离手机通话及队伍让行后进入 808 室；Mouse 的死亡、追兵和楼层检查点保存，旧平层存档保持原流程。下层真实人物脚底/衣摆、低持枪和追兵身体接触有回归；[本轮 834 项回归、双视角、暂停刷新和正常八楼重试证据](../output/gameplay/trilogy-ambush-escape-2026-10-01/README.md)明确区分分段普通输入与完整人工长玩，后续已修复初始化加载完成前的保存，[启动中断与完整世界重启证据](../output/gameplay/trilogy-save-initialization-2026-10-01/README.md)单独记录；不把上一轮阶段快照恢复计为完整世界恢复。后续已接 808 入管、Cypher 卡住/Trinity 解救与玩家下行至六楼，见[墙内下行验收](../output/gameplay/trilogy-wetwall-2026-10-01/README.md)；再接 608 搜查、掩护/还击、原位特工替换、抓颈/破墙和同落点 Morpheus 交接，见[六楼局部验收](../output/gameplay/trilogy-sixth-floor-2026-10-01/README.md)。新六楼地面压制、限时头部反击、读起手/反击及被捕结算见[浴室局部验收](../output/gameplay/trilogy-bathroom-2026-10-01/README.md)；四次反击为游戏化规则，旧存档保留原坚守进度。连续扑倒受力/完整浴室搏斗编排、实体警察拘捕、浴室破坏、地下室煤气与电视维修，以及矩阵逃生到飞船的连续成片衔接仍待制作；队形/遮挡与摄影、演员与成片空间美术、正式声音、完整连续人工试玩和性能仍未验收，不代表这一组已达到电影级。
+旧楼入口可使用 `node --import tsx scripts/film-review-fixture.mts m1_dejavu`。Neo 与五名同伴从下层开始，沿两段楼梯与上层护栏同行；导航指向下一段平台，同伴等候落后的 Neo，到齐后在上层观察黑猫伸展、两次沿实际台阶下楼，重复时五人转向 Neo。暂停、断线、读档和重试保留队伍与黑猫进度，既有走廊存档保留原路线及时钟，不强制重播入口。猫的脚掌/身体几何、重复步态、暂停预测、普通控制器轨迹、观察布局与双视角/暂停刷新见[黑猫下楼局部验收](../output/gameplay/trilogy-ambush-cat-2026-10-01/README.md)；六名角色的楼梯鞋底/衣摆姿态样本见[六人同行验收](../output/gameplay/trilogy-ambush-company-2026-09-30/README.md)，共享楼梯与洞口见[楼梯入口记录](../output/gameplay/trilogy-ambush-stairs-2026-09-30/README.md)。新流程已接六人实体撤下五层楼梯、八楼检查封窗、近距离手机通话及队伍让行后进入 808 室；Mouse 的死亡、追兵和楼层检查点保存，旧平层存档保持原流程。下层真实人物脚底/衣摆、低持枪和追兵身体接触有回归；[本轮 834 项回归、双视角、暂停刷新和正常八楼重试证据](../output/gameplay/trilogy-ambush-escape-2026-10-01/README.md)明确区分分段普通输入与完整人工长玩，后续已修复初始化加载完成前的保存，[启动中断与完整世界重启证据](../output/gameplay/trilogy-save-initialization-2026-10-01/README.md)单独记录；不把上一轮阶段快照恢复计为完整世界恢复。后续已接 808 入管、Cypher 卡住/Trinity 解救与玩家下行至六楼，见[墙内下行验收](../output/gameplay/trilogy-wetwall-2026-10-01/README.md)；再接 608 搜查、掩护/还击、原位特工替换、抓颈/破墙和同落点 Morpheus 交接，见[六楼局部验收](../output/gameplay/trilogy-sixth-floor-2026-10-01/README.md)。新六楼地面压制、限时头部反击、读起手/反击及被捕结算见[浴室局部验收](../output/gameplay/trilogy-bathroom-2026-10-01/README.md)；四次反击为游戏化规则，旧存档保留原坚守进度。后续地下室/排水道、电视维修店与两世界背叛/伤亡/硬线接出已有分段普通输入、局部实机与保存检查，见[本轮接续记录](../output/gameplay/trilogy-crosscut-2026-10-01/README.md)。连续扑倒受力/完整浴室搏斗编排、实体警察拘捕、浴室破坏、追兵投烟、下梯接触、街面步行与矩阵逃生到飞船的电影级连续演出仍待制作；队形/遮挡与摄影、演员与成片空间美术、正式声音、完整连续人工试玩和性能仍未验收，不代表这一组已达到电影级。
 
-背叛段可使用 `node --import tsx scripts/film-review-fixture.mts m1_bathroom bathroom-hold`、`bathroom-crash`，以及 `node --import tsx scripts/film-review-fixture.mts m1_unplugged unplug-window`、`unplug-counter`、`unplug-reconnect`。它们分别定位坚守、破墙、反击窗口、反击演出和重连检查点，只用于局部动作/画面验收，不能作为从黑猫到营救决定的连续游玩证据。
+背叛段可使用 `node --import tsx scripts/film-review-fixture.mts m1_bathroom bathroom-hold`、`bathroom-crash`，以及 `node --import tsx scripts/film-review-fixture.mts m1_unplugged unplug-window`、`unplug-counter`、`unplug-reconnect`。它们分别定位旧版坚守、破墙、反击窗口、反击演出和重连检查点，只用于局部动作/画面验收。新电视维修店路线必须先经历两世界袭击/拔线，再接 Tank 反击和 Trinity 先于 Neo 接出；这些旧版定位档不能作为新路线或从黑猫到营救决定的连续游玩证据。
 
 Logos 告别段可使用 `node --import tsx scripts/film-review-fixture.mts m3_farewell farewell-ready`、`farewell-goodbye` 或 `farewell-still`，分别定位走近残骸、最后告别和死亡后的反思检查点。这些存档用于动作、镜头和恢复验证，不代表从机器城防线连续人工飞行到坠毁。
 

@@ -166,6 +166,7 @@ export class Engine {
     this.agentRenderer.update(delta, this.camera, this.simulationSpeed, this.tick, meeting);
     this.filmSets.setMirrorSubject(this.playerControls?.id ? this.agentRenderer.getAgentBody(this.playerControls.id) : undefined);
     this.filmSets.setRecoverySubject(this.agentRenderer.getAgentBody('neo'));
+    this.filmSets.setCrosscutSubjects(id => this.agentRenderer.getPhysicalBody(id), id => this.agentRenderer.getAgentBody(id));
     measure?.('agents');
     this.voxelRenderer.update(this.elapsed, this.playerControls?.id ? this.camera : undefined);
     const player = this.playerControls?.id ? this.agentRenderer.getAgentState(this.playerControls.id) : undefined;
@@ -233,6 +234,14 @@ export class Engine {
       if (current?.phase === 'line_dead' && previous?.phase === 'pickup') this.audio.phoneSound(false);
       if (current?.phase === 'calling' && previous?.phase === 'line_dead') this.audio.governmentSound('phone');
       if (current?.phase === 'calling' && previous?.phase === 'calling' && previous.elapsed < 6.6 && current.elapsed >= 6.6) this.audio.landlineSound('hangup');
+    }
+    if (after?.tvExit?.crosscut && !after.visiting && this.running) {
+      const cut = after.tvExit.crosscut, old = before?.tvExit?.crosscut;
+      if (old && cut.phase === old.phase && (cut.phase === 'trinity_exit' && old.elapsed < 2.8 && cut.elapsed >= 2.8
+        || cut.phase === 'neo_exit' && old.elapsed < .8 && cut.elapsed >= .8)) this.audio.landlineSound('pickup');
+      if (old && cut.dozerDead !== old.dozerDead) this.audio.theOneSound('flatline');
+      if (old && (cut.apocDead !== old.apocDead || cut.switchDead !== old.switchDead)) this.audio.theOneSound('flatline');
+      if (old && (cut.trinityOut !== old.trinityOut || cut.neoOut !== old.neoOut)) this.audio.landlineSound('hangup');
     }
     if (after?.scene === 'm1_dejavu' && !after.visiting && after.actor === this.playerControls?.id && this.running && !after.ambushEscape?.paused) {
       const previous = before?.scene === after.scene ? before.ambushEscape : undefined, current = after.ambushEscape;

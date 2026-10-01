@@ -4,13 +4,15 @@ import { BASEMENT, BASEMENT_ROLES, BASEMENT_TUNNEL_LENGTH, BETRAYAL, FILM_SETS, 
   ambushCompanyBlocked, ambushCompanyStep, type AgentState, type BasementEncounter, type BasementRole, type PlayerInput,
   type SandboxState, type Vector3 } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
+import { CypherBetrayalSystem } from './CypherBetrayalSystem.js';
 
 /** The lower shaft, boiler room and hardline share the saved company state. */
 export class BasementEscapeSystem {
   onAdvance?: (text: string, actor: AgentState, tick: number) => void;
-  constructor(private world: WorldState, private sandbox: () => SandboxState) {}
+  readonly crosscut: CypherBetrayalSystem;
+  constructor(private world: WorldState, private sandbox: () => SandboxState) { this.crosscut = new CypherBetrayalSystem(world, sandbox); }
   private get journey() { return this.sandbox().neoLife?.journey; }
-  active(actor: AgentState): boolean { return Boolean(this.journey && !this.journey.visiting && ['m1_basement', 'm1_tv_exit'].includes(this.journey.scene) && this.journey.actor === actor.id); }
+  active(actor: AgentState): boolean { return this.crosscut.active(actor) || Boolean(this.journey && !this.journey.visiting && ['m1_basement', 'm1_tv_exit'].includes(this.journey.scene) && this.journey.actor === actor.id); }
   private occupied(): boolean {
     const roles = BASEMENT_ROLES;
     return roles.some(role => role !== 'neo' && this.world.agents.get(role)?.controller);
@@ -28,6 +30,7 @@ export class BasementEscapeSystem {
   }
   startTv(): void {
     this.journey!.tvExit = { phase: 'ready', elapsed: 0 };
+    this.crosscut.start();
     const center = FILM_SETS.film_tv_repair.center;
     for (const [id, root] of Object.entries(TV_EXIT.cast)) {
       const actor = this.world.agents.get(id)!; if (actor.controller) continue;
@@ -74,6 +77,7 @@ export class BasementEscapeSystem {
   }
   frame(actor: AgentState, input: Partial<PlayerInput>, dt: number, tick: number): boolean {
     if (!this.active(actor)) return false;
+    if (this.crosscut.active(actor)) return this.crosscut.frame(actor, dt, tick);
     if (this.journey!.scene === 'm1_tv_exit') return this.tvFrame(actor, dt, tick);
     const encounter = this.journey!.basement!, center = FILM_SETS.film_ambush_house.center;
     const previous = Object.fromEntries(BASEMENT_ROLES.map(role => [role, { ...this.world.agents.get(role)!.position }])) as Record<BasementRole, Vector3>;
@@ -180,6 +184,7 @@ export class BasementEscapeSystem {
     this.journey!.checkpoint = { ...actor.position }; this.journey!.lastText = tvExitText(encounter); return tvExitLocked(this.journey);
   }
   command(actor: AgentState, target: string, tick: number): string {
+    if (this.crosscut.active(actor)) return this.crosscut.command(actor, target, tick);
     if (this.occupied()) { this.frame(actor, {}, 0, tick); return this.journey!.lastText; }
     if (this.journey!.scene === 'm1_tv_exit') {
       const encounter = this.journey!.tvExit!, center = FILM_SETS.film_tv_repair.center;
