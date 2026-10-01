@@ -69,9 +69,10 @@ export class PillPerformance {
     end.quaternion.copy(lower.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rootRotation).multiply(orientation));
     end.updateWorldMatrix(false, true);
   }
-  private fingers(side: 'R' | 'L', grip: number): void {
+  private fingers(side: 'R' | 'L', grip: number, thumb = grip): void {
     for (let finger = 1; finger <= 5; finger++) for (let segment = 1; segment <= 3; segment++) {
-      this.bone(`finger${finger}-${segment}_${side}`).rotation.set(finger === 1 ? grip * .6 : 0, 0, (side === 'R' ? 1 : -1) * grip * (finger === 1 ? .2 : segment === 1 ? .65 : .9));
+      const curl = finger === 1 ? thumb : grip;
+      this.bone(`finger${finger}-${segment}_${side}`).rotation.set(finger === 1 ? curl * .6 : 0, 0, (side === 'R' ? 1 : -1) * curl * (finger === 1 ? .2 : segment === 1 ? .65 : .9));
     }
   }
   private orientation(side: 'R' | 'L', normal: THREE.Vector3, fingers: THREE.Vector3): THREE.Quaternion {
@@ -140,12 +141,13 @@ export class PillPerformance {
       this.attach(pill, side, pinch); pill.visible = pose.holdingPill;
     }
     if (pose.cupReach) {
-      const offset = new THREE.Vector3(.14, -.18, 0);
+      // Fit the shipped hand around the cup wall; keep the same pickup/lip targets.
+      const offset = new THREE.Vector3(.29, -.18, .06);
       const cupRotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(-.55 * pose.tilt, 0, 0));
       const rotation = cupRotation.clone().multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 2));
       const rim = new THREE.Vector3(0, .22, -.1).applyQuaternion(cupRotation);
       const center = this.local(PILL_ROOM.cup).lerp(mouth.clone().sub(rim), pose.drink);
-      this.fingers('R', .8);
+      this.fingers('R', .9, 0);
       this.hand('R', center, rotation, offset, pose.cupReach);
       this.attach(this.cup, 'R', offset); this.cup.quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2); this.cup.visible = pose.holdingCup;
       const sip = pillEase(time, 6.8, 7.7);
