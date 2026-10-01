@@ -923,7 +923,17 @@ export class HeroModels {
         && !input.windingUp && motion.attackAge > 1 && motion.skillAge > 1 && motion.hitAge > .5) placeHotelFeet(rig);
     }
     poseSpoonBody(rig, input.spoonLesson);
-    if (input.phone) this.holdPhone(rig, input.phone);
+    if (input.phone) {
+      this.holdPhone(rig, input.phone);
+      const grip = input.phone.phase === 'pickup' ? THREE.MathUtils.smoothstep(input.phone.elapsed, .25, .65) : 1;
+      // The middle fingers wrap around opposite casing edges, rather than through the screen.
+      for (const finger of [3, 4]) for (let segment = 1; segment <= 3; segment++) {
+        const joint = bone(`finger${finger}-${segment}_R`);
+        joint.rotation.x = (finger === 3 ? -1 : 1) * (segment === 1 ? .82 : segment === 2 ? .08 : 0) * grip;
+        joint.rotation.z = THREE.MathUtils.lerp(joint.rotation.z, segment === 1 ? .2 : segment === 2 ? .36 : .32, grip);
+      }
+      bone('finger1-2_R').rotation.y = .5 * grip;
+    }
     if (input.morning?.phase === 'stopping') this.stopAlarm(rig, input.morning.elapsed);
     if (input.wakeCall && input.wakeCall.phase !== 'waking') {
       if (input.wakeCall.phase === 'pickup') {
