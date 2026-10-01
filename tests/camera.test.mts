@@ -14,7 +14,7 @@ import { awakeningPose, podRescuePose, recoveryBodyPose, recoveryCrewPose } from
 import { MORNING, morningRoot, morningWakePose } from '@auto_matrix/shared';
 import { metacortexPosition } from '@auto_matrix/shared';
 import { SPOON_LESSON, spoonLessonSeat, type SpoonLesson } from '@auto_matrix/shared';
-import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, INTERROGATION_ROOM, pillRoot, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, POD_WATER_DROP, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, airRescueRoot, matrixEscapeRoot, theOneRoot, wakeCallRoot, sentinelMachinePose, type TheOneEncounter } from '@auto_matrix/shared';
+import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, INTERROGATION_ROOM, pillRoot, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, POD_WATER_DROP, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, TV_EXIT, airRescueRoot, matrixEscapeRoot, theOneRoot, tvExitEmergeRoot, wakeCallRoot, sentinelMachinePose, type TheOneEncounter } from '@auto_matrix/shared';
 
 test('observer camera releases drag and ignores pointer capture while a character controls the view', () => {
   let captures = 0;
@@ -497,6 +497,25 @@ test('wetwall V uses the animated eye, sends W/S climb and keeps free look after
   const height = game.group.position.y; game.step(.5, 1 / 60, false); assert.equal(game.group.position.y, height);
   game.key('KeyV'); game.key('KeyV', false); game.step(.2);
   assert.equal(game.controls.firstPerson, false); assert.ok(game.camera.position.distanceTo(game.group.position) > 4);
+});
+
+test('the street-exit shaft frames the current climber in both views and sends W as ladder input', t => {
+  const game=setup(t),center=FILM_SETS.film_tv_repair.center,neo=tvExitEmergeRoot('neo',.25);
+  game.camera.aspect=.72;game.camera.updateProjectionMatrix();game.state.currentLocation='film_tv_repair';
+  game.state.position={x:center.x+neo.x,y:center.y+neo.y,z:center.z+neo.z};game.state.rotation=0;
+  game.state.currentAction={type:'idle',parameters:{resolved:true,tvExit:{phase:'emerging',elapsed:0,role:'neo',emerge:{neo:.25,trinity:0,apoc:0,switch:0}},crosscut:{phase:'phone',elapsed:0,view:'matrix',attempts:0,tankHealth:100,tankHit:false,dozerDead:false,apocDead:false,switchDead:false,cypherDead:false,trinityOut:false,neoOut:false,role:'neo'}},startedAt:0,duration:1,progress:0};
+  game.controls.possess(game.state);game.step(.4);
+  const climber=new THREE.Vector3(game.state.position.x,game.state.position.y+2,game.state.position.z).project(game.camera);
+  assert.ok(Math.abs(climber.x)<.8&&Math.abs(climber.y)<.82&&climber.z>-1&&climber.z<1,`shaft climber is outside the authored frame: ${climber.toArray()}`);
+  assert.ok(game.camera.position.y<center.y,'the ladder phase uses the shaft cutaway instead of reducing the climber to a head above the road');
+  game.key('KeyW');game.step(.2);game.key('KeyW',false);assert.equal(game.sent.at(-2)?.climb,1);
+  game.state.position={x:center.x+TV_EXIT.emerge.exits.neo.x,y:center.y,z:center.z+TV_EXIT.emerge.exits.neo.z};
+  game.state.currentAction.parameters.tvExit={phase:'emerging',elapsed:1.25,role:'neo',emerge:{neo:1,trinity:.25,apoc:0,switch:0}};
+  game.step(.4);const trinity=tvExitEmergeRoot('trinity',.25),next=new THREE.Vector3(center.x+trinity.x,center.y+trinity.y+1.7,center.z+trinity.z).project(game.camera);
+  assert.ok(Math.abs(next.x)<.8&&Math.abs(next.y)<.82&&next.z>-1&&next.z<1,'third person follows the current companion instead of the surfaced player');
+  const head=new THREE.Bone();head.name='head';head.position.set(0,2.9,.1);game.group.children[0].add(head);
+  game.key('KeyV');game.key('KeyV',false);game.step(.2);
+  assert.ok(game.camera.position.distanceTo(head.localToWorld(new THREE.Vector3(0,.1,.32)))<.02,'first person follows the climbing head inside the shaft');
 });
 
 test('both player views predict solid companions on the eighth floor and allow retreat away from them', t => {

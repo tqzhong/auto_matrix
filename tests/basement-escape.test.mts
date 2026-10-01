@@ -94,6 +94,32 @@ test('an old save already inside the repair shop resumes at the aisle instead of
   for(const role of ['trinity','apoc','switch'] as const)assert.equal(state.tvExit!.street![role],tvExitStreetRouteLength(role));
 });
 
+test('a fresh repair-shop transition keeps all four survivors in the saved exit shaft until the player climbs them out', () => {
+  const h=setup();h.enter();h.state().basement!.phase='done';h.state().step=5;h.command('next');
+  const encounter=h.state().tvExit!;
+  const center=FILM_SETS.film_tv_repair.center,roles=['neo','trinity','apoc','switch'] as const;
+  assert.equal(encounter.phase,'emerging');
+  assert.ok(roles.every(role=>h.world.agents.get(role)!.position.y<center.y-2),'the cut cannot place anyone on the road before they climb');
+  const waiting=JSON.stringify({encounter,cast:roles.map(role=>h.world.agents.get(role)!.position)});
+  for(let i=0;i<20;i++)h.frame();
+  assert.equal(JSON.stringify({encounter,cast:roles.map(role=>h.world.agents.get(role)!.position)}),waiting,'waiting must grip the ladder at the saved rung');
+  for(let i=0;i<20;i++)h.frame({climb:1});
+  assert.ok((encounter.emerge?.neo??0)>0,'W advances Neo on the physical ladder');
+  assert.equal(encounter.emerge?.trinity,0,'the queued survivor does not occupy Neo’s body');
+  const snapshot=()=>JSON.stringify({phase:h.state().tvExit!.phase,elapsed:h.state().tvExit!.elapsed,emerge:h.state().tvExit!.emerge,cast:roles.map(role=>h.world.agents.get(role)!.position)});
+  const held=snapshot();h.frame({climb:1},false);assert.equal(snapshot(),held);
+  h.sandbox.restore(structuredClone(h.sandbox.state));assert.equal(snapshot(),held);
+  h.players.release('escape-player',h.tick());for(let i=0;i<12;i++)h.players.step(.1,true,h.tick());assert.equal(snapshot(),held,'disconnecting cannot advance the climb');
+  h.players.possess('escape-player','neo',h.tick());h.world.agents.get('trinity')!.controller='occupied';for(let i=0;i<12;i++)h.frame({climb:1});assert.equal(snapshot(),held,'an occupied companion freezes the shared shaft');delete h.world.agents.get('trinity')!.controller;
+  for(let i=0;i<800&&h.state().tvExit!.phase!=='ready';i++)h.frame({climb:1});
+  assert.equal(h.state().tvExit!.phase,'ready');
+  assert.ok(roles.every(role=>h.state().tvExit!.emerge?.[role]===1));
+  for(let a=0;a<roles.length;a++)for(let b=a+1;b<roles.length;b++){
+    const p=h.world.agents.get(roles[a])!.position,q=h.world.agents.get(roles[b])!.position;
+    assert.ok(Math.hypot(p.x-q.x,p.z-q.z)>2.2,`${roles[a]} and ${roles[b]} overlap after leaving the shaft`);
+  }
+});
+
 
 test('Neo controls the continued descent, while the crew clears the basement ceiling in their saved order', () => {
   const h = setup(); h.enter(); h.command('act'); const before = h.neo.position.y;
@@ -152,8 +178,10 @@ test('ordinary movement must follow the company, open the real grate and travers
   assert.equal(h.world.agents.get('cypher')!.currentLocation,'film_neb_deck');
   assert.match(h.players.possess('other-player','cypher',h.tick()).error!,/撤离/);
   const shop=FILM_SETS.film_tv_repair;
-  assert.deepEqual(h.neo.position,filmEntry(FILM_SCENE_BY_ID.m1_tv_exit));assert.equal(h.state().step,0);
-  for(const role of ['trinity','apoc','switch'] as const)assert.ok(h.world.agents.get(role)!.position.z>shop.center.z+32,'the surviving crew emerges on the street with Neo');
+  assert.equal(h.state().tvExit!.phase,'emerging');assert.equal(h.state().step,0);
+  for(let i=0;i<800&&h.state().tvExit!.phase!=='ready';i++)h.frame({climb:1});
+  assert.equal(h.state().tvExit!.phase,'ready');
+  for(const role of ['trinity','apoc','switch'] as const)assert.ok(h.world.agents.get(role)!.position.z>shop.center.z+32,'the surviving crew physically emerges on the street with Neo');
   const trinityStart={...h.world.agents.get('trinity')!.position};
   h.walk(TV_EXIT.street.curb.x,TV_EXIT.street.curb.z);h.walk(TV_EXIT.street.door.x,TV_EXIT.street.door.z);
   assert.equal(h.state().step,1);assert.ok(h.world.agents.get('trinity')!.position.z<trinityStart.z,'Trinity walks from the drain instead of teleporting into the shop');

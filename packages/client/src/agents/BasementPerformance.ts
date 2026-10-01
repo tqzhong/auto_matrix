@@ -57,7 +57,50 @@ export function poseBasement(rig: CharacterRig, gesture?: BasementGesture): void
 
 export function poseHardline(rig: CharacterRig, gesture?: TvExitGesture): void {
   if (rig.handset) rig.handset.root.visible = false;
-  if (!rig.hero || !rig.handset || !gesture || gesture.phase === 'ready' || gesture.phase === 'done') return;
+  if (!rig.hero || !gesture) return;
+  if (gesture.phase === 'emerging') {
+    const progress = gesture.emerge?.[gesture.role] ?? 0;
+    if (progress >= TV_EXIT.emerge.climbEnd) return;
+    const hero = rig.hero, bones = hero.bones, center = FILM_SETS.film_tv_repair.center;
+    const ladderZ = center.z + TV_EXIT.street.ladderZ, top = center.y - 1.45, bottom = top - TV_EXIT.street.shaftDepth + .8;
+    const rung = (y: number) => THREE.MathUtils.clamp(top - Math.round((top - y) / .55) * .55, bottom, top);
+    bones.get('spine')!.rotation.x = -.1; bones.get('chest')!.rotation.x = .14;
+    rig.root.updateWorldMatrix(true, true);
+    const cycle = Math.floor(progress * 22) % 2;
+    for (const [index, side] of ['R', 'L'].entries()) {
+      const typed = side as 'R' | 'L', sign = index ? 1 : -1, wrist = bones.get(`wrist_${side}`)!, elbow = bones.get(`elbow_${side}`)!, shoulder = bones.get(`shoulder_${side}`)!;
+      const desiredY = wrist.getWorldPosition(new THREE.Vector3()).y + (index === cycle ? .2 : -.35);
+      const scale = shoulder.getWorldScale(new THREE.Vector3()).x, limit = (elbow.position.length() + wrist.position.length()) * scale - .01;
+      const rotation = rig.root.getWorldQuaternion(new THREE.Quaternion());
+      const orientation = rotation.clone().multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2));
+      const palm = new THREE.Vector3(0, -.19, .035).multiply(wrist.getWorldScale(new THREE.Vector3())).applyQuaternion(orientation);
+      const grip = (y: number) => new THREE.Vector3(center.x + TV_EXIT.street.drain.x + sign * .48, y, ladderZ).sub(palm);
+      const candidates: number[] = [];
+      for (let y = top; y >= bottom; y -= .55) if (shoulder.getWorldPosition(new THREE.Vector3()).distanceTo(grip(y)) <= limit) candidates.push(y);
+      const handY = candidates.sort((a, b) => Math.abs(a - desiredY) - Math.abs(b - desiredY))[0] ?? rung(desiredY);
+      hand(rig, typed, new THREE.Vector3(center.x + TV_EXIT.street.drain.x + sign * .48, handY, ladderZ), .9);
+    }
+    rig.root.updateWorldMatrix(true, true);
+    const rotation = rig.root.getWorldQuaternion(new THREE.Quaternion());
+    for (const [index, side] of ['R', 'L'].entries()) {
+      const sign = index ? 1 : -1, hip = bones.get(`hip_${side}`)!, knee = bones.get(`knee_${side}`)!, ankle = bones.get(`ankle_${side}`)!;
+      const targetX = center.x + TV_EXIT.street.drain.x + sign * .43, targetZ = ladderZ - .08;
+      const desiredY = ankle.getWorldPosition(new THREE.Vector3()).y + (index === cycle ? -.35 : .2);
+      const hipPoint = hip.getWorldPosition(new THREE.Vector3()), scale = hip.getWorldScale(new THREE.Vector3()).x;
+      const reachLimit = (knee.position.length() + ankle.position.length()) * scale - .01;
+      const candidates: number[] = [];
+      for (let y = top; y >= bottom; y -= .55) if (hipPoint.distanceTo(new THREE.Vector3(targetX, y, targetZ)) <= reachLimit) candidates.push(y);
+      const footY = candidates.sort((a, b) => Math.abs(a - desiredY) - Math.abs(b - desiredY))[0] ?? rung(desiredY);
+      const target = new THREE.Vector3(targetX, footY, targetZ);
+      const pole = () => new THREE.Vector3(sign * .35, 0, -.25).applyQuaternion(rotation);
+      reach(hip, knee, ankle.position, target, pole()); ankle.updateWorldMatrix(false, true);
+      const correction = target.clone().sub(ankle.getWorldPosition(new THREE.Vector3()));
+      if (correction.lengthSq() > .000025) reach(hip, knee, ankle.position, target.clone().add(correction), pole());
+      ankle.quaternion.copy(knee.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rotation)); ankle.updateWorldMatrix(false, true);
+    }
+    return;
+  }
+  if (!rig.handset || gesture.phase === 'ready' || gesture.phase === 'done') return;
   const returning = gesture.phase === 'calling' ? THREE.MathUtils.smoothstep(gesture.elapsed, 5.3, 6.6) : 0;
   const pickup = gesture.phase === 'pickup' ? THREE.MathUtils.smoothstep(gesture.elapsed, .8, 1.8) : 1;
   const center = FILM_SETS.film_tv_repair.center, phone = TV_EXIT.phone;

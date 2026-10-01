@@ -22,7 +22,9 @@ test('the journal requires reachable grate, assembled crew and the actual dead-l
   state.phase='draining';assert.doesNotMatch(renderFilmJourney(h.player,h.sandbox),/data-target="film:next"|data-target="film:act"/);
   state.phase='failed';assert.match(renderFilmJourney(h.player,h.sandbox),/data-target="film:retry"/);
   state.paused=true;assert.doesNotMatch(renderFilmJourney(h.player,h.sandbox),/data-target="film:retry"/);
-  h.journey.scene='m1_tv_exit';h.journey.step=2;h.journey.tvExit={phase:'ready',elapsed:0};
+  h.journey.scene='m1_tv_exit';h.journey.step=2;h.journey.tvExit={phase:'emerging',elapsed:1,emerge:{neo:1,trinity:0,apoc:0,switch:0},crosscut:{phase:'phone',elapsed:0,view:'matrix',attempts:0,tankHealth:100,tankHit:false,dozerDead:false,apocDead:false,switchDead:false,cypherDead:false,trinityOut:false,neoOut:false}};
+  const emerging=renderFilmJourney(h.player,h.sandbox);assert.match(emerging,/按住 W 依次爬出/);assert.match(emerging,/出井 25%/);
+  h.journey.tvExit={phase:'ready',elapsed:0};
   h.player.position={x:FILM_SETS.film_tv_repair.center.x+TV_EXIT.approach.x,y:1,z:FILM_SETS.film_tv_repair.center.z+TV_EXIT.approach.z};
   assert.match(renderFilmJourney(h.player,h.sandbox),/取下硬线听筒/);
   h.journey.tvExit.phase='pickup';assert.doesNotMatch(renderFilmJourney(h.player,h.sandbox),/data-target="film:next"|data-target="film:act"/);

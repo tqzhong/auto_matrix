@@ -607,7 +607,7 @@ export class CharacterModels {
       poseCrosscut(rig, input.crosscut);
       if (input.crosscut?.body) this.heroes.crosscutInterfaces(rig.hero);
       poseCrosscutContact(rig, input.crosscut);
-      if (input.tvExit && !rig.handset) { rig.handset = new HardlineHandset(); this.handsets.add(rig.handset); rig.hero.bones.get('wrist_R')!.add(rig.handset.root); }
+      if (input.tvExit && input.tvExit.phase !== 'emerging' && !rig.handset) { rig.handset = new HardlineHandset(); this.handsets.add(rig.handset); rig.hero.bones.get('wrist_R')!.add(rig.handset.root); }
       poseHardline(rig, input.tvExit);
       if (holdsStaff) {
         rig.hero.bones.get('shoulder_R')!.rotation.x -= .7 + staffSweep * .5;

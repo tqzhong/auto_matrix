@@ -24,7 +24,7 @@ function setup() {
   command('next');assert.equal(state().scene,'m1_tv_exit');
   const frame=(input:Partial<PlayerInput>={},running=true)=>{const actor=players.getAgent('crosscut-player')!;players.receiveInput('crosscut-player',{x:0,z:0,yaw:actor.rotation,jump:false,sprint:false,sequence:++sequence,...input});players.step(.1,running,++tick);sandbox.tick(tick);};
   const wait=(check:()=>boolean,max=600)=>{for(let i=0;i<max&&!check();i++)frame();assert.ok(check(),state().lastText);};
-  const phone=()=>{const center=FILM_SETS.film_tv_repair.center;neo.position={x:center.x+TV_EXIT.street.door.x,y:center.y,z:center.z+TV_EXIT.street.door.z};frame();neo.position={x:center.x+TV_EXIT.approach.x,y:center.y,z:center.z+TV_EXIT.approach.z};frame();command('act');};
+  const phone=()=>{while(state().tvExit!.phase!=='ready')frame({climb:1});const center=FILM_SETS.film_tv_repair.center;neo.position={x:center.x+TV_EXIT.street.door.x,y:center.y,z:center.z+TV_EXIT.street.door.z};frame();neo.position={x:center.x+TV_EXIT.approach.x,y:center.y,z:center.z+TV_EXIT.approach.z};frame();command('act');};
   return {world,sandbox,players,neo,state,command,frame,wait,phone};
 }
 

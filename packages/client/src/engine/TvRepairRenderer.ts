@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { TV_EXIT, TV_EXIT_INTERIOR_OBSTACLES, type FilmJourney } from '@auto_matrix/shared';
+import { TV_EXIT, TV_EXIT_INTERIOR_OBSTACLES, tvExitEmergingRole, type FilmJourney } from '@auto_matrix/shared';
 import { HardlineHandset } from '../agents/HardlineHandset.js';
 import { batchStaticGeometry } from './StaticGeometry.js';
 
@@ -12,6 +12,8 @@ export class TvRepairRenderer {
   private materials=new Set<THREE.Material>();
   private textures:THREE.Texture[]=[];
   private televisionUnits:THREE.Group[]=[];
+  private cutawayRoad:THREE.Mesh;
+  private cutawayRim:THREE.Mesh;
   constructor(parent:THREE.Group){
     this.root.name='franklin-erie-tv-repair';parent.add(this.root);
     const plaster=this.mat(0x9ca58c,.96),wood=this.mat(0x63543b,.85),iron=this.mat(0x4d5249,.64,.45),black=this.mat(0x1a211e,.68),beige=this.mat(0x8b8a72,.73);
@@ -20,7 +22,12 @@ export class TvRepairRenderer {
     const floor=this.mat(0x797866,.94);floor.map=new THREE.TextureLoader().load('/assets/film-materials/old_wood_floor-color.jpg');floor.map.wrapS=floor.map.wrapT=THREE.RepeatWrapping;floor.map.repeat.set(5,10);floor.map.colorSpace=THREE.SRGBColorSpace;this.textures.push(floor.map);
     this.box(floor,0,-.18,0,36,.36,64);this.box(plaster,0,10.1,0,36,.3,64);
     for(const x of [-18,18])this.box(plaster,x,5,0,.5,10,64);this.box(plaster,0,5,-32,36,10,.5);
-    this.box(asphalt,0,-.28,49,36,.32,14);this.box(concrete,0,-.12,37,36,.24,10);this.box(concrete,0,.06,42,36,.38,.6);
+    const drainHalf=1.32,roadMin=-18,roadMax=18,roadNear=42,roadFar=56,drainX=TV_EXIT.street.drain.x,drainZ=TV_EXIT.street.drain.z;
+    this.box(asphalt,(roadMin+drainX-drainHalf)/2,-.28,49,drainX-drainHalf-roadMin,.32,14);
+    this.cutawayRoad=this.box(asphalt,(drainX+drainHalf+roadMax)/2,-.28,49,roadMax-drainX-drainHalf,.32,14);this.cutawayRoad.name='tv-street-cutaway-road';
+    this.box(asphalt,drainX,-.28,(roadNear+drainZ-drainHalf)/2,drainHalf*2,.32,drainZ-drainHalf-roadNear);
+    this.box(asphalt,drainX,-.28,(drainZ+drainHalf+roadFar)/2,drainHalf*2,.32,roadFar-drainZ-drainHalf);
+    this.box(concrete,0,-.12,37,36,.24,10);this.box(concrete,0,.06,42,36,.38,.6);
     for(const x of [-9,9])this.box(paint,x,-.09,50,.16,.04,7.2);
     this.box(brick,0,12.8,31.9,36,5.6,.5);this.box(paint,0,10.65,31.55,17,2.1,.5);
     for(const x of [-11,11]){this.box(wood,x,4.7,32,14,9.4,.22);this.box(black,x,4.8,31.82,13.2,7.4,.08);}
@@ -43,8 +50,17 @@ export class TvRepairRenderer {
     for(const x of [-13,-5,3,11])this.television(x,4,-25,Math.floor(x),this.root,black,wood,beige,glass);
     for(let i=0;i<18;i++){const board=this.box(i%2?greenBoard:brownBoard,-12+i%9*3,3.22,-25+(i%2-.5)*.8,1.35,.1,.65);board.rotation.y=i*.21;for(let part=0;part<3;part++)this.box(iron,board.position.x-.4+part*.35,3.37,board.position.z,.18,.18,.2);}
     const drain=new THREE.Group();drain.name='tv-street-drain';drain.position.set(TV_EXIT.street.drain.x,.02,TV_EXIT.street.drain.z);this.root.add(drain);
-    const ringGeometry=new THREE.TorusGeometry(1.18,.13,8,32);this.geometries.add(ringGeometry);const ring=new THREE.Mesh(ringGeometry,iron);ring.rotation.x=Math.PI/2;ring.castShadow=ring.receiveShadow=true;drain.add(ring);
-    const shaftGeometry=new THREE.CylinderGeometry(1.03,1.03,.16,32);this.geometries.add(shaftGeometry);const shaft=new THREE.Mesh(shaftGeometry,black);shaft.position.y=-.08;shaft.castShadow=shaft.receiveShadow=true;drain.add(shaft);
+    const ringGeometry=new THREE.TorusGeometry(1.18,.13,8,32);this.geometries.add(ringGeometry);const ring=new THREE.Mesh(ringGeometry,iron);ring.name='tv-street-cutaway-rim';ring.rotation.x=Math.PI/2;ring.castShadow=ring.receiveShadow=true;drain.add(ring);this.cutawayRim=ring;
+    const shaft=new THREE.Group();shaft.name='tv-street-shaft';drain.add(shaft);
+    const shaftMaterial=new THREE.MeshStandardMaterial({color:0x242a27,roughness:.92,side:THREE.BackSide});this.materials.add(shaftMaterial);
+    const shaftGeometry=new THREE.CylinderGeometry(1.05,1.05,TV_EXIT.street.shaftDepth,32,1,true);this.geometries.add(shaftGeometry);
+    const shaftWall=new THREE.Mesh(shaftGeometry,shaftMaterial);shaftWall.position.y=-TV_EXIT.street.shaftDepth/2-.12;shaftWall.castShadow=shaftWall.receiveShadow=true;shaft.add(shaftWall);
+    const masonry=this.box(concrete,-1.28,-TV_EXIT.street.shaftDepth/2-.12,.1,.18,TV_EXIT.street.shaftDepth,4.1,shaft);masonry.name='tv-street-shaft-masonry';
+    const bottomGeometry=new THREE.CircleGeometry(1.03,32);this.geometries.add(bottomGeometry);const bottom=new THREE.Mesh(bottomGeometry,black);bottom.rotation.x=-Math.PI/2;bottom.position.y=-TV_EXIT.street.shaftDepth-.1;bottom.receiveShadow=true;shaft.add(bottom);
+    const ladder=new THREE.Group();ladder.name='tv-street-ladder';ladder.position.z=TV_EXIT.street.ladderZ-TV_EXIT.street.drain.z;drain.add(ladder);
+    for(const x of [-.52,.52]){const geometry=new THREE.CylinderGeometry(.055,.055,TV_EXIT.street.shaftDepth-.65,8);this.geometries.add(geometry);const rail=new THREE.Mesh(geometry,iron);rail.position.set(x,-TV_EXIT.street.shaftDepth/2-.45,0);rail.castShadow=rail.receiveShadow=true;ladder.add(rail);}
+    for(let y=-.45;y>-TV_EXIT.street.shaftDepth+.3;y-=.55){const geometry=new THREE.CylinderGeometry(.045,.045,1.12,8);this.geometries.add(geometry);const rung=new THREE.Mesh(geometry,iron);rung.rotation.z=Math.PI/2;rung.position.y=y;rung.castShadow=rung.receiveShadow=true;ladder.add(rung);}
+    const shaftLight=new THREE.PointLight(0x8fa98b,18,14,2);shaftLight.position.set(0,-4,.15);drain.add(shaftLight);
     const hatch=new THREE.Group();hatch.name='tv-street-hatch';hatch.position.set(TV_EXIT.street.drain.x+2.2,.14,TV_EXIT.street.drain.z+.25);hatch.rotation.set(.08,0,-.18);this.root.add(hatch);
     const hatchGeometry=new THREE.CylinderGeometry(1.02,1.02,.14,32);this.geometries.add(hatchGeometry);const lid=new THREE.Mesh(hatchGeometry,iron);lid.castShadow=lid.receiveShadow=true;hatch.add(lid);
     for(let groove=-.65;groove<=.65;groove+=.26)this.box(black,groove,.09,0,.045,.035,1.5,hatch);
@@ -66,8 +82,8 @@ export class TvRepairRenderer {
     const cord=new THREE.LineBasicMaterial({color:0x242b22});this.materials.add(cord);this.wire=new THREE.Line(cable,cord);this.wire.name='tv-hardline-cord';this.wire.frustumCulled=false;this.root.add(this.wire);
     this.root.updateWorldMatrix(true,true);
     for(const unit of this.televisionUnits){for(const mesh of [...unit.children])this.root.attach(mesh);unit.removeFromParent();}this.televisionUnits=[];
-    const fixedReceiver=new Set<THREE.Mesh>();this.handset.root.traverse(object=>{if(object instanceof THREE.Mesh)fixedReceiver.add(object);});
-    for(const geometry of batchStaticGeometry(this.root,fixedReceiver))this.geometries.add(geometry);
+    const dynamic=new Set<THREE.Mesh>([this.cutawayRoad,this.cutawayRim]);this.handset.root.traverse(object=>{if(object instanceof THREE.Mesh)dynamic.add(object);});
+    for(const geometry of batchStaticGeometry(this.root,dynamic))this.geometries.add(geometry);
     this.update(undefined);
   }
   private mat(color:number,roughness:number,metalness=0){const material=new THREE.MeshStandardMaterial({color,roughness,metalness});this.materials.add(material);return material;}
@@ -81,6 +97,8 @@ export class TvRepairRenderer {
   }
   update(journey:FilmJourney|undefined,subject?:THREE.Object3D):void{
     const encounter=(journey?.scene==='m1_tv_exit'||journey?.scene==='m1_unplugged'&&journey.tvExit?.crosscut)&&!journey.visiting?journey.tvExit:undefined;
+    const emerging=encounter?.phase==='emerging',role=emerging?tvExitEmergingRole(encounter):undefined;
+    const cutaway=Boolean(role&&(encounter?.emerge?.[role]??0)<TV_EXIT.emerge.climbEnd);this.cutawayRoad.visible=this.cutawayRim.visible=!cutaway;
     const cut=encounter?.crosscut;
     const held=cut ? cut.phase==='phone'&&encounter!.phase==='pickup'&&cut.elapsed>=.8||cut.phase==='assault'||cut.phase==='call'&&(encounter!.phase==='line_dead'||cut.elapsed<6.6)||cut.phase==='trinity_exit'&&cut.elapsed>=2.8||cut.phase==='neo_exit'&&cut.elapsed>=.8 : encounter&&(encounter.phase==='pickup'?encounter.elapsed>=.8:encounter.phase==='line_dead'||encounter.phase==='calling'&&encounter.elapsed<6.6);
     this.handset.root.visible=!held;

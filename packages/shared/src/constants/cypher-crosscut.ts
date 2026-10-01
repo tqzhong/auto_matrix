@@ -1,6 +1,6 @@
 import { FILM_SETS } from './film-sets.js';
 import { BETRAYAL } from './betrayal.js';
-import { TV_EXIT } from './basement-escape.js';
+import { TV_EXIT, tvExitEmergingRole, type TvExitRole } from './basement-escape.js';
 import type { FilmJourney } from './film-story.js';
 import type { Vector3 } from '../types/agent.js';
 
@@ -80,6 +80,10 @@ export function crosscutTrinityRoot(cut: CypherCrosscut) {
 export function crosscutText(journey: FilmJourney): string {
   const tv = journey.tvExit!, cut = tv.crosscut!, t = cut.elapsed;
   if (tv.paused) return '参与背叛或撤离的角色正由另一位玩家控制。两边的位置、伤势与接线时钟停在存档处。';
+  if (tv.phase === 'emerging') {
+    const role = tvExitEmergingRole(tv), names: Record<TvExitRole, string> = { neo: 'Neo', trinity: 'Trinity', apoc: 'Apoc', switch: 'Switch' };
+    return role ? `出口井通向白昼街角。按住 W 让 ${names[role]} 沿实体井梯上行；松开会停在已保存的横档。` : '四人已经离开出口井。';
+  }
   if (cut.phase === 'phone') return tv.phase === 'ready' ? journey.step === 0 ? '四人从街边出口井爬回白昼中的矩阵。沿人行道走进 Franklin 与 Erie 的敞开店门。'
     : journey.step === 1 ? 'Trinity 确认 Tank 给出的地址。穿过店门和维修柜台右侧，找到后墙硬线。'
       : 'Trinity 让 Neo 先接出。走近后墙电话，G 亲手取下听筒。' : 'Neo 拿起硬线听筒，等待 Tank 确认出口。';
