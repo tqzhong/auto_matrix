@@ -1,5 +1,6 @@
 import type { FilmJourney } from './film-story.js';
 import { SIXTH_ROOM } from './ambush.js';
+import { bathroomFightRoot, bathroomFightText, type BathroomFight } from './bathroom-fight.js';
 
 export type BetrayalKind = 'bathroom' | 'unplugged';
 export type BetrayalPhase = 'ready' | 'defending' | 'sacrifice_ready' | 'sacrifice' | 'unplugging' | 'aiming' | 'window' | 'failed' | 'countering' | 'reconnect' | 'done';
@@ -11,6 +12,7 @@ export interface BetrayalEncounter {
   repels?: number;
   rescued?: number;
   sixth?: true;
+  fight?: BathroomFight;
 }
 export type BetrayalRole = 'neo' | 'trinity' | 'morpheus' | 'smith' | 'switch' | 'apoc' | 'tank' | 'cypher' | 'dozer';
 export type BetrayalGesture = BetrayalEncounter & { role: BetrayalRole };
@@ -39,7 +41,7 @@ const smooth = (value: number): number => { const t = clamp(value); return t * t
 export function betrayalLocked(journey: FilmJourney): boolean {
   const encounter = journey.betrayal;
   if (!encounter || journey.visiting) return false;
-  if (encounter.kind === 'bathroom') return encounter.phase === 'sacrifice';
+  if (encounter.kind === 'bathroom') return Boolean(encounter.fight) || encounter.phase === 'sacrifice';
   return ['unplugging', 'aiming', 'window', 'countering', 'reconnect'].includes(encounter.phase);
 }
 
@@ -67,6 +69,7 @@ export function bathroomCrewRoot(role: 'neo' | 'trinity' | 'switch' | 'apoc', el
 export function betrayalRoot(encounter: BetrayalEncounter, role: BetrayalRole) {
   if (encounter.kind === 'bathroom') {
     if (encounter.sixth && (role === 'morpheus' || role === 'smith')) {
+      if (encounter.fight) return bathroomFightRoot(encounter.fight, role);
       const root = role === 'morpheus' ? { ...SIXTH_ROOM.morpheus, yaw: 0 } : { ...SIXTH_ROOM.smith, yaw: Math.PI };
       const charge = encounter.phase === 'sacrifice' || encounter.phase === 'done' ? smooth(encounter.elapsed / 2.2) : 0;
       return { x: root.x - charge * .8, z: root.z + charge * (role === 'morpheus' ? 4.5 : 2.8), yaw: root.yaw };
@@ -88,6 +91,7 @@ export function betrayalRoot(encounter: BetrayalEncounter, role: BetrayalRole) {
 
 export function betrayalText(encounter: BetrayalEncounter): string {
   if (encounter.kind === 'bathroom') {
+    if (encounter.fight) return bathroomFightText(encounter.fight);
     if (encounter.phase === 'ready') return encounter.sixth ? '同伴仍在管线夹层。按 G 挡住六楼浴室的 Smith，让他们继续向下。' : '同伴正在转入墙内通道。按 G 挡在浴室门线前，让他们先走。';
     if (encounter.phase === 'defending') {
       const left = Math.max(0, BETRAYAL.bathroom.requiredRepels - (encounter.repels ?? 0));

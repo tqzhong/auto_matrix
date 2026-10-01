@@ -2426,6 +2426,18 @@ test('the entire film route completes through interactions, driving and real com
       assert.equal(state.oracle.arrival.phase, 'done', 'the complete route enters through the door before the spoon lesson');
     }
     for (let index = 0; index < scene.steps.length; index++) {
+      if (scene.id === 'm1_bathroom' && state.betrayal?.fight && index === 0) {
+        h.command('act');
+        for (let frame = 0; frame < 400 && state.step === index; frame++) {
+          const fight = state.betrayal.fight;
+          h.players.receiveInput('film-player', { x: 0, z: 0, yaw: 0, crouch: fight.phase === 'pinning', jump: false, sprint: false, sequence: ++sequence });
+          if (fight.phase === 'breakout' && fight.elapsed >= .7 && !fight.headbutt) h.players.act('film-player', 'attack', h.tick());
+          if (fight.phase === 'windup' && fight.elapsed >= .6 && !fight.evaded) h.players.act('film-player', 'dodge', h.tick());
+          if (fight.phase === 'opening' && fight.evaded) h.players.act('film-player', 'attack', h.tick());
+          h.players.step(.1, true, h.tick());
+        }
+        assert.equal(state.betrayal.fight.counters, 4); assert.equal(state.step, index + 1); continue;
+      }
       if (scene.id === 'm1_wall_exposed') {
         const frame = () => {
           h.players.receiveInput('film-player', { x: 0, z: 0, yaw: 0, pitch: 0, jump: false, sprint: false, sequence: ++sequence });

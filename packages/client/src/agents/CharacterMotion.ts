@@ -19,6 +19,7 @@ export interface MotionInput {
   ambushEscort?: import('@auto_matrix/shared').AmbushEscort;
   wetwall?: import('@auto_matrix/shared').WetwallGesture;
   sixth?: import('@auto_matrix/shared').SixthGesture;
+  bathroom?: import('@auto_matrix/shared').BathroomGesture;
   shot?: number;
   crouching?: boolean;
   seated?: boolean;

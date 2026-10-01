@@ -12,7 +12,7 @@ import { AIR_RESCUE, governmentPose, airRescuePose, airRescueRoot, interrogation
 import { officeClothing } from '@auto_matrix/shared';
 import { cabinSeat, MORNING, POD_RESCUE, podRescuePose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
 import { ambushCat } from '@auto_matrix/shared';
-import { wetwallPose, sixthPose, WETWALL, WETWALL_SHAFT, type WetwallPhase } from '@auto_matrix/shared';
+import { wetwallPose, sixthPose, bathroomFightRoot, WETWALL, WETWALL_SHAFT, type WetwallPhase } from '@auto_matrix/shared';
 
 export class PlayerControls {
   id: string | null = null;
@@ -79,6 +79,7 @@ export class PlayerControls {
   private wetwallGuide?: { phase: WetwallPhase; from: number; to: number; progress: number; elapsed: number };
   private hangingWetwall = false;
   private sixthGuide?: { source: NonNullable<MotionInput['sixth']>; elapsed: number };
+  private bathroomGuide?: { source: NonNullable<MotionInput['bathroom']>; elapsed: number };
   phone?: OfficePhone;
   private firing = false;
   private lastShot = -1000;
@@ -102,6 +103,7 @@ export class PlayerControls {
     this.bridgeCaught = undefined;
     this.watchingAmbush = false;
     this.wetwallGuide = undefined; this.hangingWetwall = false; this.sixthGuide = undefined; this.motion.sixth = undefined;
+    this.bathroomGuide = undefined; this.motion.bathroom = undefined;
     this.id = state.id; this.position = { ...state.position }; this.yaw = state.rotation;
     this.recoveryYaw = typeof state.currentAction?.parameters.recovery === 'number'
       ? state.currentAction.parameters.download ? state.rotation : recoveryBodyPose(state.currentAction.parameters.recovery).yaw : undefined;
@@ -124,6 +126,7 @@ export class PlayerControls {
     this.bridgeCaught = undefined;
     this.ambushObservation = undefined; this.watchingAmbush = false;
     this.wetwallGuide = undefined; this.hangingWetwall = false; this.sixthGuide = undefined; this.motion.sixth = undefined;
+    this.bathroomGuide = undefined; this.motion.bathroom = undefined;
     this.camera.near = this.defaultNear; this.camera.fov = 48; this.camera.updateProjectionMatrix();
     if (document.pointerLockElement === this.canvas) document.exitPointerLock();
   }
@@ -244,7 +247,7 @@ export class PlayerControls {
   }
 
   private requestAttack(guided = false, guidedCombo?: number): boolean {
-    if (this.motion.reloaded?.phase === 'falling' || this.motion.catch?.phase === 'pulse') {
+    if (this.motion.bathroom || this.motion.reloaded?.phase === 'falling' || this.motion.catch?.phase === 'pulse') {
       if (!this.running || !this.enabled || this.authoritative?.status !== 'alive') return false;
       this.send(this.input(false)); this.action('attack'); return true;
     }
@@ -481,6 +484,15 @@ export class PlayerControls {
       this.motion.wetwall = { ...wall, progress: track.progress, hanging: pose.hanging };
     } else { this.motion.wetwall = undefined; this.wetwallGuide = undefined; }
     this.motion.betrayal = state.currentAction?.parameters.betrayal as MotionInput['betrayal'];
+    const bathroom = state.currentAction?.parameters.bathroom as MotionInput['bathroom'];
+    if (bathroom) {
+      if (!this.motion.bathroom) { this.yaw = this.movementYaw = state.rotation; this.pitch = ['ready', 'pinning', 'failed'].includes(bathroom.phase) || bathroom.phase === 'breakout' && bathroom.elapsed < 1.4 ? .65 : .12; this.cameraReady = false; }
+      if (this.bathroomGuide?.source !== bathroom) this.bathroomGuide = { source: bathroom, elapsed: bathroom.elapsed };
+      if (running && !bathroom.paused && !['ready', 'failed', 'done', 'pinning', 'capture_ready'].includes(bathroom.phase))
+        this.bathroomGuide.elapsed = Math.min(bathroom.elapsed + .5, this.bathroomGuide.elapsed + delta);
+      if (bathroom.phase === 'faceoff' && this.motion.bathroom?.phase === 'breakout') { this.yaw = this.movementYaw = state.rotation; this.pitch = .12; }
+      this.motion.bathroom = { ...bathroom, elapsed: this.bathroomGuide.elapsed };
+    } else { this.motion.bathroom = undefined; this.bathroomGuide = undefined; }
     this.motion.rescue = state.currentAction?.parameters.rescue as MotionInput['rescue'];
     this.motion.government = state.currentAction?.parameters.government as MotionInput['government'];
     this.motion.airRescue = state.currentAction?.parameters.airRescue as MotionInput['airRescue'];
@@ -582,7 +594,10 @@ export class PlayerControls {
       this.cameraReady = false; this.lastLook = now;
     }
     this.watchingAmbush = watchingAmbush;
-    if (this.motion.sixth) {
+    if (this.motion.bathroom) {
+      const root = bathroomFightRoot(this.motion.bathroom, this.motion.bathroom.role), center = FILM_SETS.film_ambush_house.center;
+      this.position = { x: center.x + root.x, y: state.position.y, z: center.z + root.z };
+    } else if (this.motion.sixth) {
       const pose = sixthPose(this.motion.sixth), center = FILM_SETS.film_ambush_house.center;
       this.position = { x: center.x + pose.x, y: center.y + pose.y, z: center.z + pose.z };
       this.facing = pose.yaw; this.vy = 0; this.planar = { x: 0, z: 0 }; this.localJump = false;
@@ -627,7 +642,7 @@ export class PlayerControls {
     this.motion.verticalVelocity = wall?.role === 'neo' && wall.phase === 'falling' ? state.velocity.y : this.vy;
     this.motion.inspecting = Boolean((this.motion.pills || this.motion.interrogation || this.motion.welcome || this.motion.knock !== undefined || this.motion.recovery !== undefined || this.motion.cabin || this.motion.reveal || this.motion.training || this.motion.workday || this.motion.wakeCall || this.motion.sentinel || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || this.motion.lobbyEntry) && !this.firstPerson) || Boolean(this.phone && this.performing && this.motion.window === undefined && this.motion.crossing === undefined) || !this.firstPerson && this.spoon !== undefined && this.enabled && this.motion.speed < .25 && this.motion.grounded;
     const attacking = (now - this.lastAttack) / 1000 < MELEE_COMBO[this.attackCombo].duration;
-    const heading = this.motion.sixth ? sixthPose(this.motion.sixth).yaw : this.motion.wetwall && this.wetwallGuide ? wetwallPose(this.motion.wetwall.start, this.motion.wetwall.role, this.wetwallGuide.progress, this.motion.wetwall.phase, this.motion.wetwall.elapsed).yaw
+    const heading = this.motion.bathroom ? bathroomFightRoot(this.motion.bathroom, this.motion.bathroom.role).yaw : this.motion.sixth ? sixthPose(this.motion.sixth).yaw : this.motion.wetwall && this.wetwallGuide ? wetwallPose(this.motion.wetwall.start, this.motion.wetwall.role, this.wetwallGuide.progress, this.motion.wetwall.phase, this.motion.wetwall.elapsed).yaw
       : this.ride || this.climbing || this.performing ? state.rotation : attacking ? this.attackYaw : this.firearm ? this.yaw : this.motion.speed > .1 ? Math.atan2(dx, dz) : this.facing;
     const turn = Math.atan2(Math.sin(heading - this.facing), Math.cos(heading - this.facing));
     this.facing += turn * (this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.welcome || this.motion.knock !== undefined || this.motion.training || this.motion.workday || this.motion.wakeCall || this.motion.sentinel || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || this.motion.lobbyEntry ? 1 : 1 - Math.exp(-14 * delta)); this.motion.turn = turn * 8;
@@ -662,8 +677,9 @@ export class PlayerControls {
     const pillDepartureWide = !this.firstPerson && this.motion.pills?.phase === 'taking' && this.motion.pills.elapsed >= 10;
     const podWide = !this.firstPerson && this.motion.performance === 'pod';
     const cabinWide = !this.firstPerson && Boolean(this.motion.cabin);
-    this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, inOfficeLift && !this.firstPerson ? 80 : podWide ? 65 : this.motion.truth && !this.firstPerson && this.camera.aspect < .85 ? 68 : cabinWide ? this.camera.aspect < .85 ? 68 : 58 : smithFinaleWide || epilogueWide ? 64 : ladderWide ? 62 : interviewApproach ? 70 : interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide || sentinelWide || interludeWide || oracleWide || betrayalWide || rescueWide || governmentWide || airRescueWide || escapeWide || oneWide || catchWide || lobbyWide || pillDepartureWide ? 58 : this.motion.inspecting ? 42 : this.firstPerson ? this.motion.mirrorBeat !== undefined ? 78 : sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
-    this.camera.near = this.firstPerson && (this.motion.sixth || this.motion.wetwall?.hanging) ? .06 : this.firstPerson && this.motion.club ? .08 : this.defaultNear;
+    const bathroomWide = !this.firstPerson && Boolean(this.motion.bathroom);
+    this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, inOfficeLift && !this.firstPerson ? 80 : bathroomWide ? this.camera.aspect < .85 ? 78 : 58 : podWide ? 65 : this.motion.truth && !this.firstPerson && this.camera.aspect < .85 ? 68 : cabinWide ? this.camera.aspect < .85 ? 68 : 58 : smithFinaleWide || epilogueWide ? 64 : ladderWide ? 62 : interviewApproach ? 70 : interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide || sentinelWide || interludeWide || oracleWide || betrayalWide || rescueWide || governmentWide || airRescueWide || escapeWide || oneWide || catchWide || lobbyWide || pillDepartureWide ? 58 : this.motion.inspecting ? 42 : this.firstPerson ? this.motion.mirrorBeat !== undefined ? 78 : sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
+    this.camera.near = this.firstPerson && (this.motion.bathroom || this.motion.sixth || this.motion.wetwall?.hanging) ? .06 : this.firstPerson && this.motion.club ? .08 : this.defaultNear;
     this.camera.updateProjectionMatrix();
     this.cameraStep += this.motion.speed * delta;
     const target = new THREE.Vector3(this.position.x, this.position.y + (this.firstPerson ? 2.99 : 2.05) - (this.motion.pills ? .9 : 0) - (this.motion.mirrorBeat !== undefined ? THREE.MathUtils.smoothstep(this.motion.mirrorBeat, .65, MIRROR_TIMING.sit) * .9 : 0) - (this.motion.reveal?.kind === 'construct' ? .62 : 0) - (this.motion.crouching ? 1.1 : 0), this.position.z);
@@ -1145,6 +1161,28 @@ export class PlayerControls {
         this.camera.lookAt(rescue ? center.x - 19.1 : this.position.x, rescue ? center.y + WETWALL_SHAFT.top - WETWALL.jam + 2.35 : this.position.y + 1.3, center.z + WETWALL_SHAFT.bodyZ);
         this.camera.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), this.yaw - Math.PI));
         this.camera.rotateX(.65 - this.pitch);
+      }
+    } else if (this.motion.bathroom) {
+      const gesture = this.motion.bathroom, center = FILM_SETS.film_ambush_house.center;
+      const ground = ['ready', 'pinning', 'failed'].includes(gesture.phase) || gesture.phase === 'breakout' && gesture.elapsed < 1.4;
+      if (this.firstPerson) {
+        const head = group.getObjectByName('head'); group.updateWorldMatrix(true, true);
+        const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
+        const eye = head ? head.getWorldPosition(new THREE.Vector3()) : new THREE.Vector3(this.position.x, this.position.y + 2.1, this.position.z);
+        if (ground) {
+          const smith = bathroomFightRoot(gesture, 'smith');
+          forward.set(center.x + smith.x, center.y - 1 + WETWALL_SHAFT.sixth + .75, center.z + smith.z - 1.7).sub(eye).normalize();
+          forward.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.yaw - bathroomFightRoot(gesture, gesture.role).yaw);
+          forward.applyAxisAngle(new THREE.Vector3(0, 1, 0).cross(forward).normalize(), this.pitch - .65);
+        }
+        eye.addScaledVector(forward, ground ? .72 : .12); this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
+      } else {
+        const origin = new THREE.Vector3(center.x, center.y - 1 + WETWALL_SHAFT.sixth, center.z);
+        const falling = gesture.phase === 'done' ? 1 : gesture.phase === 'capturing' ? THREE.MathUtils.smoothstep(gesture.elapsed, 1.3, 2.8) : 0;
+        const ideal = new THREE.Vector3(ground ? -21 : -14.8, ground ? 4.8 : 5.2 + falling * .6, ground ? -26.1 : -26.4 + falling).add(origin);
+        const focus = new THREE.Vector3(-17.7 - falling * .9, ground ? 1.2 : 2.4 - falling * .8, -26.9 - falling * 1.3).add(origin);
+        if (resetCamera || gesture.elapsed < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
+        this.camera.lookAt(focus);
       }
     } else if (this.motion.betrayal) {
       const gesture = this.motion.betrayal; const center = FILM_SETS[state.currentLocation].center;

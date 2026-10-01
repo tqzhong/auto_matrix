@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SETS, FILM_SCENE_BY_ID, WETWALL, WETWALL_ROLES, WETWALL_SHAFT, wetwallEntry, wetwallRoot, playerBlocked,
+import { FILM_SETS, FILM_SCENE_BY_ID, WETWALL, WETWALL_ROLES, WETWALL_SHAFT, wetwallEntry, wetwallRoot, bathroomFightRoot, playerBlocked,
   type WetwallEncounter, type FilmJourney, type PlayerInput, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -129,11 +129,11 @@ test('the sixth-floor handoff starts Smith at his actual landing and reserves al
   const smith = h.world.agents.get('smith')!, landing = { ...smith.position };
   h.command('act'); assert.equal(h.state().betrayal!.phase, 'defending');
   const threat = h.sandbox.state.threats.find(item => item.character === 'smith')!;
-  assert.deepEqual(threat.position, landing); assert.equal(playerBlocked(threat.position, true), false);
+  assert.equal(threat, undefined, 'the new duel uses the actual Smith skeleton rather than a second generic threat');
+  assert.deepEqual(smith.position, landing); assert.equal(playerBlocked(smith.position, true), false);
   assert.match(h.players.possess('other-player', 'cypher', h.tick()).error!, /背叛片段/, 'Cypher also occupies the physical pipe during the sixth-floor holdout');
-  threat.stunUntil = Number.MAX_SAFE_INTEGER;
   const cypherY = h.world.agents.get('cypher')!.position.y;
-  for (let i = 0; i < 30; i++) h.frame();
+  for (let i = 0; i < 30; i++) h.frame({ crouch: true });
   assert.ok(h.world.agents.get('cypher')!.position.y < cypherY - 3);
   assert.equal(h.world.agents.get('cypher')!.position.x, FILM_SETS.film_ambush_house.center.x + h.state().wallExposure!.starts.cypher.x);
   assert.equal(h.state().betrayal!.phase, 'defending', 'waiting does not replace the required combat');
@@ -149,4 +149,98 @@ test('a restored bathroom checkpoint infers its sixth-floor staging from the com
   assert.equal(h.state().betrayal!.sixth, true);
   assert.deepEqual(morpheus.position, before);
   assert.ok(h.world.agents.get('neo')!.position.y < FILM_SETS.film_ambush_house.center.y - 50);
+});
+
+test('the new sixth-floor bathroom starts with saved ground restraint and cannot be cleared with generic melee hits', () => {
+  const h = setup(); h.enter(); h.command('act'); h.until('firing');
+  h.players.act('sixth-player', 'shoot', h.tick()); h.until('done'); h.command('next'); h.command('act');
+  const fight = () => h.state().betrayal!.fight!;
+  assert.equal(fight()?.phase, 'pinning', 'the sixth-floor handoff must continue the actual ground restraint');
+  assert.equal(h.sandbox.state.threats.filter(item => item.scene === 'm1_bathroom').length, 0);
+  for (let i = 0; i < 40; i++) h.frame({ crouch: true });
+  assert.equal(fight().phase, 'breakout');
+  for (let i = 0; i < 70 && fight().phase !== 'windup'; i++) h.frame();
+  h.players.act('sixth-player', 'attack', h.tick());
+  assert.equal(fight().counters, 0, 'hitting into the guard is not an effective counter');
+  assert.equal(h.state().step, 0);
+});
+
+test('losing the ground grip fails explicitly and retries on the same sixth floor without reviving Mouse', () => {
+  const h = setup(); h.enter(); h.command('act'); h.until('firing');
+  h.players.act('sixth-player', 'shoot', h.tick()); h.until('done'); h.command('next'); h.command('act');
+  for (let i = 0; i < 35; i++) h.frame();
+  assert.equal(h.state().betrayal!.phase, 'failed', 'waiting without gripping cannot grant the crew a successful retreat');
+  assert.match(h.command('retry'), /六楼地面压制/);
+  assert.equal(h.state().betrayal!.phase, 'ready');
+  assert.equal(h.state().betrayal!.fight!.phase, 'ready');
+  assert.equal(h.world.agents.get('morpheus')!.position.y, FILM_SETS.film_ambush_house.center.y + WETWALL_SHAFT.sixth);
+  assert.equal(h.world.agents.get('mouse')!.status, 'dead');
+});
+
+test('four timed evades and counters grant retreat time without killing Smith and keep the captured outcome', () => {
+  const h = setup(); h.enter(); h.command('act'); h.until('firing');
+  h.players.act('sixth-player', 'shoot', h.tick()); h.until('done'); h.command('next'); h.command('act');
+  const fight = () => h.state().betrayal!.fight!;
+  for (let i = 0; i < 40; i++) h.frame({ crouch: true });
+  for (let i = 0; i < 9; i++) h.frame(); h.players.act('sixth-player', 'attack', h.tick());
+  assert.equal(fight().headbutt, true);
+  for (let exchange = 0; exchange < 4; exchange++) {
+    for (let frame = 0; frame < 80 && !(fight().phase === 'windup' && fight().elapsed >= .6); frame++) h.frame();
+    assert.equal(fight().phase, 'windup'); h.players.act('sixth-player', 'dodge', h.tick());
+    for (let frame = 0; frame < 10 && fight().phase !== 'opening'; frame++) h.frame();
+    h.players.act('sixth-player', 'attack', h.tick());
+    assert.equal(fight().counters, exchange + 1);
+    for (let frame = 0; frame < 10 && fight().phase === 'counter'; frame++) h.frame();
+  }
+  assert.equal(fight().phase, 'capture_ready'); assert.equal(h.state().step, 1);
+  assert.equal(h.world.agents.get('smith')!.status, 'alive'); assert.equal(h.world.agents.get('morpheus')!.status, 'alive');
+  const checkpoint = JSON.stringify({ state: h.state(), positions: ['morpheus', 'smith', 'neo', 'trinity', 'cypher'].map(id => h.world.agents.get(id)!.position) });
+  h.frame({}, false); assert.equal(JSON.stringify({ state: h.state(), positions: ['morpheus', 'smith', 'neo', 'trinity', 'cypher'].map(id => h.world.agents.get(id)!.position) }), checkpoint);
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+  assert.equal(fight().phase, 'capture_ready'); assert.equal(fight().counters, 4);
+  h.command('act'); for (let i = 0; i < 60 && fight().phase !== 'done'; i++) h.frame();
+  assert.equal(fight().phase, 'done'); assert.equal(h.state().step, 2);
+  assert.equal(h.sandbox.state.neoLife!.choices.morpheus_captured, 'sacrifice');
+  assert.equal(h.world.agents.get('mouse')!.status, 'dead');
+});
+
+test('saved ground pressure freezes across pause, disconnection and another player occupying the descending crew', () => {
+  const h = setup(); h.enter(); h.command('act'); h.until('firing');
+  h.players.act('sixth-player', 'shoot', h.tick()); h.until('done'); h.command('next'); h.command('act');
+  for (let i = 0; i < 12; i++) h.frame({ crouch: true });
+  const snapshot = () => JSON.stringify({ betrayal: h.state().betrayal, cast: ['morpheus', 'smith', ...WETWALL_ROLES].map(id => h.world.agents.get(id)!.position) });
+  const before = snapshot(); h.frame({}, false); assert.equal(snapshot(), before);
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); assert.equal(snapshot(), before);
+  h.players.release('sixth-player', h.tick()); for (let i = 0; i < 12; i++) h.players.step(.1, true, h.tick()); assert.equal(snapshot(), before);
+  h.players.possess('sixth-player', 'morpheus', h.tick());
+  h.world.agents.get('cypher')!.controller = 'occupied'; h.frame({ crouch: true });
+  const occupied = snapshot(); for (let i = 0; i < 12; i++) h.frame({ crouch: true }); assert.equal(snapshot(), occupied);
+  delete h.world.agents.get('cypher')!.controller; h.frame({ crouch: true });
+  assert.ok(h.state().betrayal!.fight!.held > 1.2);
+});
+
+test('Smith stands and advances with his saved duel rather than retaining the earlier prone breach pose', () => {
+  const h = setup(); h.enter(); h.command('act'); h.until('firing');
+  h.players.act('sixth-player', 'shoot', h.tick()); h.until('done'); h.command('next'); h.command('act');
+  const fight = () => h.state().betrayal!.fight!;
+  for (let i = 0; i < 40; i++) h.frame({ crouch: true });
+  for (let i = 0; i < 70 && !(fight().phase === 'windup' && fight().elapsed >= .6); i++) h.frame();
+  assert.equal(fight().phase, 'windup');
+  const smith = h.world.agents.get('smith')!, root = bathroomFightRoot(fight(), 'smith'), center = FILM_SETS.film_ambush_house.center;
+  assert.equal((smith.currentAction!.parameters.bathroom as { phase: string }).phase, 'windup');
+  assert.ok(Math.abs(smith.position.z - center.z - root.z) < .001, 'Smith must actually close the distance during his windup');
+  assert.equal(smith.rotation, root.yaw);
+});
+
+test('losing the grip stops the crew at their actual descent height instead of teleporting them to the shaft bottom', () => {
+  const h = setup(); h.enter(); h.command('act'); h.until('firing');
+  h.players.act('sixth-player', 'shoot', h.tick()); h.until('done'); h.command('next'); h.command('act');
+  const neo = h.world.agents.get('neo')!;
+  for (let i = 0; i < 35 && h.state().betrayal!.phase !== 'failed'; i++) {
+    const before = neo.position.y; h.frame();
+    assert.ok(before - neo.position.y <= .14, 'failure must not suddenly finish the unearned retreat');
+  }
+  assert.equal(h.state().betrayal!.phase, 'failed');
+  const stopped = { ...neo.position }; for (let i = 0; i < 10; i++) h.frame();
+  assert.deepEqual(neo.position, stopped);
 });

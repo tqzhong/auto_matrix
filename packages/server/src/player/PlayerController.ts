@@ -285,7 +285,7 @@ export class PlayerController {
       if (this.sandbox?.life.film.interludeFrame(agent, dt, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
-      if (this.sandbox?.life.film.betrayalFrame(agent, dt, tick)) {
+      if (this.sandbox?.life.film.betrayalFrame(agent, dt, tick, Boolean(input.crouch))) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
       if (this.sandbox?.life.film.rescueFrame(agent, dt, tick)) {
@@ -449,6 +449,8 @@ export class PlayerController {
     if (!session || !agent || agent.status !== 'alive') return '请先接入一个存活角色。';
     const sixth = this.sandbox?.life.film.sixth.handle(agent, kind, session.input.yaw, session.input.pitch ?? 0, tick);
     if (sixth !== undefined) return sixth;
+    const bathroom = this.sandbox?.life.film.bathroomAction(agent, kind, tick);
+    if (bathroom !== undefined) return bathroom;
     const reloaded = this.sandbox?.life.film.reloaded.handle(agent, kind, tick);
     if (reloaded !== undefined) return reloaded;
     const catchAction = this.sandbox?.life.film.catch.handle(agent, kind, tick);

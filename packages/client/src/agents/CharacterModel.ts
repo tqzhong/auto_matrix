@@ -9,6 +9,7 @@ import { poseOracleDeparture } from './OracleDeparturePerformance.js';
 import { poseOracleArrival } from './OracleArrivalPerformance.js';
 import { poseWetwall } from './WetwallPerformance.js';
 import { poseSixthFloor } from './SixthFloorPerformance.js';
+import { poseBathroom } from './BathroomPerformance.js';
 import { advanceMotion, newMotion, type MotionInput, type MotionState } from './CharacterMotion.js';
 import { HERO_IDS, HeroModels, type HeroId, type HeroRig, type HeroSupport } from './HeroModel.js';
 import { SpoonModel } from './SpoonModel.js';
@@ -596,6 +597,7 @@ export class CharacterModels {
       poseOracleArrival(rig, input.oracleArrival);
       poseWetwall(rig, input.wetwall);
       poseSixthFloor(rig, input.sixth);
+      poseBathroom(rig, input.bathroom, input.sixth);
       if (holdsStaff) {
         rig.hero.bones.get('shoulder_R')!.rotation.x -= .7 + staffSweep * .5;
         rig.hero.bones.get('shoulder_L')!.rotation.x -= .55 + staffSweep * .35;

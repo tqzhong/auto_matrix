@@ -32,6 +32,7 @@ import { AMBUSH_CAT_STAIRS, AMBUSH_COMPANY, newAmbushApproach, ambushRouteRoot, 
 import { AMBUSH_ESCAPE, AMBUSH_WINDOW_PROGRESS, AMBUSH_RETREAT_LANDINGS, newAmbushEscape, ambushRetreatRoot, ambushRetreatLength, ambushRetreatShift, ambushRetreatProgress, ambushRetreatGoal, ambushEscapeText, ambushCompanyBlocked, ambushCompanyStep } from '@auto_matrix/shared';
 import { combatDisplace } from '@auto_matrix/shared';
 import { BETRAYAL, betrayalDuration, betrayalLocked, betrayalRoot, betrayalText, type BetrayalEncounter, type BetrayalRole } from '@auto_matrix/shared';
+import { newBathroomFight, stepBathroomFight, bathroomFightAction } from '@auto_matrix/shared';
 import { RESCUE, rescueDuration, rescueLocked, rescueRoot, rescueText, type RescueLoadout, type RescuePreparation, type RescueRole } from '@auto_matrix/shared';
 import { GOVERNMENT_RESCUE, governmentLocked, governmentRoot, governmentText, type GovernmentRescueEncounter, type GovernmentRescueRole } from '@auto_matrix/shared';
 import { AIR_RESCUE, airRescueLocked, airRescueRoot, airRescueText, type AirRescueEncounter, type AirRescueRole } from '@auto_matrix/shared';
@@ -2088,6 +2089,7 @@ export class FilmStorySystem {
       state.betrayal = { kind, phase: done ? 'done' : clearedBathroom ? 'sacrifice_ready' : 'ready', elapsed: 0, attempt: 0,
         repels: clearedBathroom || done && kind === 'bathroom' ? BETRAYAL.bathroom.requiredRepels : 0, rescued: done && kind === 'unplugged' ? 2 : 0,
         sixth: kind === 'bathroom' && state.wallExposure?.phase === 'done' ? true : undefined };
+      if (state.betrayal.sixth && !done && !clearedBathroom) state.betrayal.fight = newBathroomFight();
     }
     return state.betrayal;
   }
@@ -2099,7 +2101,7 @@ export class FilmStorySystem {
     const actor = this.world.agents.get(role); if (!actor || actor.controller && actor.id !== this.state!.actor) return;
     if (encounter.sixth && WETWALL_ROLES.includes(role as typeof WETWALL_ROLES[number]) && role !== 'morpheus') {
       const wall = this.state!.wetwall!, start = this.state!.wallExposure!.starts[role as typeof WETWALL_ROLES[number]], center = FILM_SETS.film_ambush_house.center;
-      const elapsed = encounter.phase === 'ready' ? 0 : encounter.phase === 'defending' ? encounter.elapsed : BETRAYAL.bathroom.hold;
+      const elapsed = encounter.fight ? encounter.elapsed : encounter.phase === 'ready' ? 0 : encounter.phase === 'defending' ? encounter.elapsed : BETRAYAL.bathroom.hold;
       const y = Math.max(WETWALL_SHAFT.low, start.y - Math.min(elapsed, BETRAYAL.bathroom.hold) * 1.35), before = actor.position;
       actor.position = { x: center.x + start.x, y: center.y + y, z: center.z + start.z }; actor.rotation = Math.PI;
       actor.velocity = dt ? { x: 0, y: (actor.position.y - before.y) / dt, z: 0 } : { x: 0, y: 0, z: 0 };
@@ -2108,7 +2110,7 @@ export class FilmStorySystem {
         entry: wetwallEntry(wall, pipeRole), progress: wetwallEntry(wall, pipeRole) + WETWALL_SHAFT.top - y, hanging: true, freed: true } }, startedAt: tick, duration: 1e9, progress: 0 };
       return;
     }
-    if (encounter.kind === 'bathroom' && encounter.phase === 'defending' && role === 'smith') return;
+    if (encounter.kind === 'bathroom' && encounter.phase === 'defending' && role === 'smith' && !encounter.fight) return;
     const root = betrayalRoot(encounter, role); const before = { ...actor.position };
     actor.position = filmPosition(this.scene!.set, root.x, root.z); actor.rotation = root.yaw;
     if (encounter.sixth) actor.position.y += WETWALL_SHAFT.sixth;
@@ -2120,16 +2122,18 @@ export class FilmStorySystem {
     actor.currentAction = { type: 'idle', parameters: { player: role === this.state!.actor, resolved: true, seated: connected,
       floorSeated: role === 'dozer' || role === 'tank' && ['unplugging', 'aiming', 'window'].includes(encounter.phase), armed,
       betrayal: { ...encounter, role } }, startedAt: tick, duration: 1, progress: 0 };
+    if (encounter.fight && (role === 'morpheus' || role === 'smith')) actor.currentAction.parameters.bathroom = { ...encounter.fight, role };
   }
   private clearBetrayalActions(): void {
     for (const actor of this.world.agents.values()) if (actor.currentAction?.parameters.betrayal) {
       actor.currentAction = null; actor.velocity = { x: 0, y: 0, z: 0 };
     }
   }
-  betrayalFrame(agent: AgentState, dt: number, tick: number): boolean {
+  betrayalFrame(agent: AgentState, dt: number, tick: number, gripping = false): boolean {
     const state = this.state;
     if (!state || !this.controls(agent) || state.visiting || !['m1_bathroom', 'm1_unplugged'].includes(state.scene)) return false;
     const encounter = this.ensureBetrayal(state.scene === 'm1_bathroom' ? 'bathroom' : 'unplugged');
+    if (encounter.fight) return this.bathroomFightFrame(agent, encounter, gripping, dt, tick);
     if (encounter.phase === 'done') {
       this.clearBetrayalActions(); state.lastText = betrayalText(encounter); return false;
     }
@@ -2176,6 +2180,40 @@ export class FilmStorySystem {
     else if (betrayalLocked(state)) state.checkpoint = { ...agent.position };
     state.lastText = betrayalText(encounter); return betrayalLocked(state);
   }
+  private bathroomFightFrame(agent: AgentState, encounter: BetrayalEncounter, gripping: boolean, dt: number, tick: number): boolean {
+    const state = this.state!, fight = encounter.fight!;
+    fight.paused = Boolean(this.betrayalOccupied(encounter));
+    const delta = fight.paused || !agent.controller || agent.status !== 'alive' ? 0 : Math.max(0, Math.min(.1, dt));
+    const before = fight.phase, damage = stepBathroomFight(fight, gripping, delta);
+    agent.health = Math.max(0, agent.health - damage);
+    if (agent.health <= 0) { agent.status = 'dead'; fight.phase = 'failed'; }
+    if (delta > 0 && !['ready', 'failed', 'capture_ready', 'done'].includes(before)) encounter.elapsed = Math.min(BETRAYAL.bathroom.hold, encounter.elapsed + delta);
+    encounter.phase = fight.phase === 'ready' ? 'ready' : fight.phase === 'failed' ? 'failed' : fight.phase === 'capture_ready' ? 'sacrifice_ready'
+      : fight.phase === 'capturing' ? 'sacrifice' : fight.phase === 'done' ? 'done' : 'defending';
+    if (!fight.paused) {
+      for (const role of ['morpheus', 'smith', ...BATHROOM_ROLES, 'cypher'] as BetrayalRole[]) this.stageBetrayalActor(role, encounter, delta, tick);
+      state.checkpoint = { ...agent.position };
+    }
+    if (damage > 0) this.onImpact?.({ source: 'smith', target: 'morpheus', position: { ...agent.position, y: agent.position.y + 2.5 },
+      direction: { x: 0, y: 0, z: -1 }, damage, combo: 0, matrix: true, downed: agent.health === 0 }, tick);
+    if (before !== 'capture_ready' && fight.phase === 'capture_ready') { this.advance('Morpheus 的反击使五名同伴离开六楼视线，Smith 仍挡在浴室里。', agent, tick); }
+    if (before !== 'done' && fight.phase === 'done') {
+      this.sandbox().neoLife!.choices.morpheus_captured = 'sacrifice';
+      this.advance(this.step!.text!, agent, tick);
+    }
+    state.lastText = betrayalText(encounter); return true;
+  }
+  bathroomAction(agent: AgentState, kind: string, tick: number): string | undefined {
+    const state = this.state, encounter = state?.betrayal, fight = encounter?.fight;
+    if (!state || state.scene !== 'm1_bathroom' || state.visiting || !this.controls(agent) || !fight || !['attack', 'dodge', 'shoot', 'ability', 'ability2'].includes(kind)) return;
+    fight.paused = Boolean(this.betrayalOccupied(encounter!));
+    const result = bathroomFightAction(fight, kind);
+    agent.health = Math.max(0, agent.health - result.damage);
+    if (agent.health === 0) { agent.status = 'dead'; fight.phase = 'failed'; }
+    if (result.impact) this.onImpact?.({ source: 'morpheus', target: 'smith', position: { ...this.world.agents.get('smith')!.position, y: agent.position.y + 2.5 },
+      direction: { x: 0, y: 0, z: 1 }, damage: 0, combo: fight.counters % 3, matrix: true, downed: false }, tick);
+    this.bathroomFightFrame(agent, encounter!, false, 0, tick); return state.lastText;
+  }
   bathroomHit(agent: AgentState, threat: SandboxThreat): boolean {
     const state = this.state; const encounter = state?.betrayal;
     if (!state || state.scene !== 'm1_bathroom' || encounter?.kind !== 'bathroom' || encounter.phase !== 'defending'
@@ -2189,6 +2227,12 @@ export class FilmStorySystem {
     if (target !== 'act') return state.lastText;
     const occupied = this.betrayalOccupied(encounter);
     if (occupied) return `${occupied.name} 正由另一位玩家控制，等待对方结束后再继续。`;
+    if (encounter.fight) {
+      const fight = encounter.fight;
+      if (fight.phase === 'ready') { fight.phase = 'pinning'; fight.elapsed = 0; encounter.elapsed = 0; this.clearThreats(); }
+      else if (fight.phase === 'capture_ready') { fight.phase = 'capturing'; fight.elapsed = 0; }
+      this.bathroomFightFrame(agent, encounter, false, 0, tick); return state.lastText;
+    }
     if (encounter.kind === 'bathroom') {
       if (!this.near(agent, this.step!)) return '先走到浴室门线前，再按 G 挡住 Smith。';
       if (encounter.phase === 'ready') {
@@ -4876,10 +4920,11 @@ export class FilmStorySystem {
         agent.position = { ...state.checkpoint }; agent.velocity = { x: 0, y: 0, z: 0 };
         if (state.betrayal.phase === 'failed' || state.betrayal.phase === 'defending') {
           state.betrayal = { kind: state.scene === 'm1_bathroom' ? 'bathroom' : 'unplugged', phase: 'ready', elapsed: 0,
-            attempt: state.betrayal.attempt + 1, repels: 0, rescued: 0, sixth: state.betrayal.sixth };
+            attempt: state.betrayal.attempt + 1, repels: 0, rescued: 0, sixth: state.betrayal.sixth, fight: state.betrayal.fight ? newBathroomFight() : undefined };
           delete state.fighting;
         }
         this.betrayalFrame(agent, 0, tick);
+        if (state.betrayal.fight) return '已从六楼地面压制重试，保留 Mouse 的死亡；G 接续掩护后按住 Z 稳住抓握。';
         return state.scene === 'm1_bathroom' ? '已从浴室门线重试；撤离目标仍在，重新按 G 开始掩护。' : '已从备用控制台重试；拔线结果尚未结算，重新按 G 等待反击窗口。';
       }
       if (state.rescue && ['m1_rescue_decision', 'm1_guns'].includes(state.scene)) {
@@ -5856,6 +5901,7 @@ export class FilmStorySystem {
     }
     if (scene.id === 'm1_bathroom' || scene.id === 'm1_unplugged') {
       state.betrayal = { kind: scene.id === 'm1_bathroom' ? 'bathroom' : 'unplugged', phase: 'ready', elapsed: 0, attempt: 0, repels: 0, rescued: 0, sixth: scene.id === 'm1_bathroom' && state.wallExposure?.phase === 'done' ? true : undefined };
+      if (state.betrayal.sixth) state.betrayal.fight = newBathroomFight();
       this.betrayalFrame(actor, 0, tick);
     }
     if (scene.id === 'm1_rescue_decision') {

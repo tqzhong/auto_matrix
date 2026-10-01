@@ -43,6 +43,9 @@ body.film-sixth-scene .sandbox-interact { top:auto; bottom:214px; }
 body.film-sixth-hold .film-sequence { bottom:184px; width:min(580px,calc(100vw - 36px)); box-sizing:border-box; padding:8px 14px; }
 body.film-sixth-hold .film-sequence p { margin:3px 0 6px; font-size:13px; line-height:1.5; }
 body.film-sixth-hold .game-event { display:none; }
+body.film-sixth-hold .film-sequence.bathroom-duel { bottom:88px; }
+body:has(.film-sequence.bathroom-duel:not(.hidden)) .sandbox-interact { top:auto; bottom:208px; }
+body:has(.film-sequence.bathroom-duel:not(.hidden)) .sandbox-hotbar,body:has(.film-sequence.bathroom-duel:not(.hidden)) .player-ability { display:none; }
 .film-sequence.oracle-departure,.film-sequence.oracle-arrival,.film-sequence.ambush-company { bottom:180px; width:min(580px,calc(100vw - 36px)); box-sizing:border-box; padding:8px 14px; }
 .film-sequence.oracle-departure p,.film-sequence.oracle-arrival p,.film-sequence.ambush-company p { margin:3px 0 6px; font-size:13px; line-height:1.5; }
 body:has(.film-sequence.oracle-departure:not(.hidden)) .sandbox-interact,body:has(.film-sequence.oracle-arrival:not(.hidden)) .sandbox-interact,body:has(.film-sequence.ambush-company:not(.hidden)) .sandbox-interact { top:auto; bottom:310px; }

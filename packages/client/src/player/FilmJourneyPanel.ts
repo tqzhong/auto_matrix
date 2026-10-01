@@ -434,6 +434,12 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
   }
   if (!journey.visiting && journey.betrayal && ['m1_bathroom', 'm1_unplugged'].includes(journey.scene)) {
     const encounter = journey.betrayal; const current = player.id === journey.actor; const step = scene.steps[journey.step];
+    if (encounter.fight) {
+      const fight = encounter.fight, ready = ['ready', 'capture_ready'].includes(fight.phase);
+      const action = !current ? button('resume', '继续 Morpheus 的剧情视角') : fight.phase === 'failed' ? button('retry', '从六楼地面压制重试')
+        : fight.phase === 'done' ? button('next', '继续撤离后的剧情 →') : ready ? button('act', fight.phase === 'ready' ? '接续地面掩护 · G' : '继续挡住 Smith · G') : '';
+      return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>六楼 608 · 近身掩护</h3><p>Morpheus 视角 · 动作、伤势与队友下行进度保存</p></header><article class="film-now"><div><h3>${fight.phase === 'pinning' || fight.phase === 'ready' ? '压制地面的 Smith' : fight.phase === 'failed' ? '掩护中断' : fight.phase === 'done' ? 'Morpheus 被捕' : '为同伴争取撤离时间'}</h3><p>${journey.lastText}</p><p>地面压制 ${fight.held.toFixed(1)} / 4 秒 · 有效反击 ${fight.counters} / 4 · 尝试 ${encounter.attempt + 1}</p><div class="film-controls">${action}<small>Z 稳住抓握 · X 在起手后半段闪避 · F 在落空窗口反击 · V 双视角。普通射击和角色技能不能跳过这一段。</small></div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
+    }
     const close = current && (!step || distance(player.position, filmStepPosition(scene, step, journey)) <= 4);
     const bathroom = encounter.kind === 'bathroom'; const phase = encounter.phase;
     const title = bathroom ? phase === 'ready' ? '同伴进入墙内通道' : phase === 'defending' ? '守住浴室门线'

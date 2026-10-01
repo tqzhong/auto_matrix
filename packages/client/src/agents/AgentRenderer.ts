@@ -1,8 +1,9 @@
 import * as THREE from 'three';
-import { FILM_SETS, groundHeight, mirrorGuidePose, ambushRouteRoot, ambushRetreatRoot, wetwallPose, sixthPose, oracleCookieOwner, oracleReceptionRoot, officeClothing, type AmbushEscort, type AgentState, type CombatImpact, type FilmJourney, type WetwallPhase } from '@auto_matrix/shared';
+import { FILM_SETS, groundHeight, mirrorGuidePose, ambushRouteRoot, ambushRetreatRoot, wetwallPose, sixthPose, bathroomFightRoot, oracleCookieOwner, oracleReceptionRoot, officeClothing, type AmbushEscort, type AgentState, type CombatImpact, type FilmJourney, type WetwallPhase } from '@auto_matrix/shared';
 import { trackingContact } from './TrackingContact.js';
 import { CharacterModels, weaponMuzzle, type CharacterRig } from './CharacterModel.js';
 import type { MotionInput } from './CharacterMotion.js';
+import { poseBathroom } from './BathroomPerformance.js';
 
 export const FACTION_COLORS: Record<string, string> = {
   zion: '#90d7b1', civilians: '#d0c8a3', machines: '#ee8773', oracle: '#c6b1e7', merovingian: '#cda96c', exiles: '#88b5c5', smith_virus: '#f07565',
@@ -25,6 +26,7 @@ interface Entry {
   ambushGuide?: { stairCat?: true; retreat?: true; role: AmbushEscort['role']; from: number; to: number; progress: number; elapsed: number };
   wetwallGuide?: { phase: WetwallPhase; from: number; to: number; progress: number; elapsed: number };
   sixthElapsed?: number;
+  bathroomElapsed?: number;
 }
 
 export class AgentRenderer {
@@ -102,6 +104,7 @@ export class AgentRenderer {
       else if (progress !== guide.to) entry.wetwallGuide = { ...guide, from: guide.progress, to: progress, elapsed: 0 };
     } else entry.wetwallGuide = undefined;
     entry.sixthElapsed = (state.currentAction?.parameters.sixth as MotionInput['sixth'])?.elapsed;
+    entry.bathroomElapsed = (state.currentAction?.parameters.bathroom as MotionInput['bathroom'])?.elapsed;
     entry.state = state;
     entry.group.visible = state.isInMatrix === this.matrix && state.status !== 'disconnected';
   }
@@ -143,11 +146,18 @@ export class AgentRenderer {
         entry.sixthElapsed = Math.min(sixth.elapsed + .5, entry.sixthElapsed + delta * speed);
       const sixthGesture = sixth && { ...sixth, elapsed: entry.sixthElapsed ?? sixth.elapsed };
       const sixthRoot = sixthGesture && sixthPose(sixthGesture);
+      const bathroom = state.currentAction?.parameters.bathroom as MotionInput['bathroom'];
+      if (bathroom && entry.bathroomElapsed !== undefined && this.agents.get('morpheus')?.state.controller && !bathroom.paused && !['ready', 'failed', 'done', 'pinning', 'capture_ready'].includes(bathroom.phase))
+        entry.bathroomElapsed = Math.min(bathroom.elapsed + .5, entry.bathroomElapsed + delta * speed);
+      const bathroomGesture = bathroom && { ...bathroom, elapsed: entry.bathroomElapsed ?? bathroom.elapsed };
       if (sixthRoot?.hidden) entry.body.visible = entry.marker.visible = entry.label.visible = false;
       if (id !== this.playerId) {
         const target = new THREE.Vector3(state.position.x, state.position.y, state.position.z);
         const driver = this.playerId ? this.agents.get(this.playerId) : undefined;
-        if (sixthRoot) {
+        if (bathroomGesture) {
+          const root = bathroomFightRoot(bathroomGesture, bathroomGesture.role), center = FILM_SETS.film_ambush_house.center;
+          entry.group.position.set(center.x + root.x, state.position.y, center.z + root.z); guideHeading = root.yaw;
+        } else if (sixthRoot) {
           const before = entry.group.position.clone(), center = FILM_SETS.film_ambush_house.center;
           entry.group.position.set(center.x + sixthRoot.x, center.y + sixthRoot.y, center.z + sixthRoot.z); guideHeading = sixthRoot.yaw;
           if (!sixthRoot.hanging && delta * speed > 0) guideSpeed = entry.group.position.distanceTo(before) / (delta * speed);
@@ -246,6 +256,7 @@ export class AgentRenderer {
         oracleReception: state.currentAction?.parameters.oracleReception as MotionInput['oracleReception'],
         oracleWaiting: state.currentAction?.parameters.oracleWaiting as MotionInput['oracleWaiting'],
         betrayal: state.currentAction?.parameters.betrayal as MotionInput['betrayal'],
+        bathroom: bathroomGesture,
         rescue: state.currentAction?.parameters.rescue as MotionInput['rescue'],
         government: state.currentAction?.parameters.government as MotionInput['government'],
         airRescue: state.currentAction?.parameters.airRescue as MotionInput['airRescue'],
@@ -387,6 +398,19 @@ export class AgentRenderer {
         entry.speech.age += delta;
         entry.speech.sprite.visible = !this.playerId && (dist < 240 || selected);
         if (entry.speech.age > 8) { this.disposeSprite(entry.speech.sprite); entry.speech = undefined; }
+      }
+    }
+    const morpheus = this.agents.get('morpheus'), smith = this.agents.get('smith');
+    if (morpheus?.rig.hero && smith?.rig.hero) {
+      const bathroom = (this.playerId === 'morpheus' ? this.playerMotion?.bathroom : morpheus.state.currentAction?.parameters.bathroom) as MotionInput['bathroom'];
+      const sixth = morpheus.state.currentAction?.parameters.sixth as MotionInput['sixth'];
+      if (bathroom || sixth && ['breach', 'done'].includes(sixth.phase)) {
+        smith.group.updateWorldMatrix(true, true);
+        const neck = bathroom?.phase === 'counter' ? smith.rig.hero.bones.get('chest')!.localToWorld(new THREE.Vector3(0, .08, .23))
+          : smith.rig.hero.bones.get('head')!.localToWorld(new THREE.Vector3(0, -.17, .04));
+        poseBathroom(morpheus.rig, { ...(bathroom ?? { phase: 'ready', elapsed: 0, held: 0, grip: 1, counters: 0, evaded: false, headbutt: false, cooldown: 0 }),
+          elapsed: this.playerId === 'morpheus' ? bathroom?.elapsed ?? 0 : morpheus.bathroomElapsed ?? bathroom?.elapsed ?? 0,
+          role: 'morpheus', contact: { x: neck.x, y: neck.y, z: neck.z } }, sixth);
       }
     }
   }

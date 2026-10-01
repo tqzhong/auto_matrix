@@ -207,6 +207,7 @@ export class SandboxUI {
     if (!journey.visiting && ['m1_dejavu', 'm1_wetwall'].includes(scene.id)) this.el('film-sequence').classList.add('ambush-company');
     this.el('film-sequence').classList.toggle('ambush-observing', Boolean(!journey.visiting && scene.id === 'm1_dejavu'
       && journey.step === 0 && journey.ambushApproach?.stairCat && journey.ambush));
+    this.el('film-sequence').classList.toggle('bathroom-duel', Boolean(!journey.visiting && scene.id === 'm1_bathroom' && journey.betrayal?.fight));
     const escapedScan = scene.id === 'm1_bug' && journey.office?.outcome === 'escaped';
     const stepLabel = escapedScan ? ['配合安全扫描', '重新判断今晚的接头', step?.label][journey.step] : step?.label;
     const ambushCenter = FILM_SETS.film_ambush_house.center;
@@ -1292,6 +1293,19 @@ export class SandboxUI {
     }
     if (!journey.visiting && journey.betrayal && ['m1_bathroom', 'm1_unplugged'].includes(scene.id)) {
       const encounter = journey.betrayal; const step = scene.steps[journey.step];
+      if (encounter.fight) {
+        const fight = encounter.fight, canAct = ['ready', 'capture_ready', 'done'].includes(fight.phase);
+        this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
+        this.el('film-sequence-hint').textContent = fight.paused ? '等候同行者释放角色 · 鼠标环顾 · V 切换视角'
+          : fight.phase === 'pinning' ? `按住 Z · 抓握 ${Math.round(fight.grip * 100)}% · 压制 ${fight.held.toFixed(1)}/4 秒`
+          : fight.phase === 'failed' ? 'J 打开手记，从六楼地面压制重试'
+          : fight.phase === 'breakout' ? 'F 在双手被掰开时反击 · V 切换视角'
+          : canAct ? 'G 继续 · V 切换视角 · J 查看手记' : `X 读起手闪避 · F 反击 · 有效反击 ${fight.counters}/4 · V 切换视角`;
+        this.el('sandbox-interact').classList.toggle('hidden', !canAct);
+        this.el('sandbox-nearby').textContent = fight.phase === 'ready' ? '接续地面掩护' : fight.phase === 'capture_ready' ? '继续挡住 Smith' : '继续撤离后的剧情';
+        this.el('sandbox-job').style.width = `${fight.phase === 'pinning' ? Math.min(100, fight.held / 4 * 100) : Math.min(100, fight.counters / 4 * 100)}%`;
+        this.el('sandbox-waypoint').textContent = ''; document.getElementById('game-objective-copy')!.textContent = journey.lastText; return;
+      }
       const close = !step || distance(player.position, filmStepPosition(scene, step, journey)) <= 4;
       const bathroom = encounter.kind === 'bathroom'; const phase = encounter.phase;
       const canAct = close && (phase === 'ready' && (bathroom || journey.step === 1) || phase === 'sacrifice_ready')

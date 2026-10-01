@@ -588,7 +588,7 @@ export class HeroModels {
   }
   animate(rig: HeroRig, pose: Pose, motion: MotionState, input: MotionInput, delta: number): void {
     rig.silver.value = input.mirror ?? 0;
-    rig.glasses.visible = !rig.officeRole && !rig.apartmentRole && input.glasses !== false && !input.realWorld;
+    rig.glasses.visible = !rig.officeRole && !rig.apartmentRole && input.glasses !== false && !input.realWorld && !(input.bathroom?.role === 'smith' && input.bathroom.headbutt);
     const officeShirt = input.officeShirt || rig.officeRole === 'courier' || rig.officeRole === 'police';
     const trackingShirt = input.performance === 'touch';
     const clubClothes = Boolean(input.clubClothes && !input.realWorld);
@@ -607,6 +607,7 @@ export class HeroModels {
       const patientSurface = patient && (material.name === 'Skin' || patientLegs || patientTorso);
       part.mesh.visible = !part.mesh.userData.reloadedHidden && !(part.outer && (input.realWorld || input.clubClothes || input.pills?.role === 'neo' || input.meeting || input.wakeCall) || part.hair && (pod || input.realWorld && completePatientBody))
         && (!patient || material.name === 'Skin' || patientLegs || patientTorso);
+      if (part.outer && (input.bathroom?.role === 'morpheus' || input.sixth?.role === 'morpheus' && ['breach', 'done'].includes(input.sixth.phase))) part.mesh.visible = false;
       if (part.mesh.userData.office) part.mesh.visible = Boolean(patientTorso || officeShirt || input.meeting?.role === 'neo' && (part.mesh.material as THREE.Material).name === 'Office skin');
       else if (part.mesh.userData.patientBody) part.mesh.visible = patient;
       else if (part.mesh.userData.tracking) part.mesh.visible = trackingShirt;

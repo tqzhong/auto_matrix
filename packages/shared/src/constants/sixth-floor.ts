@@ -1,7 +1,8 @@
 import type { Vector3 } from '../types/agent.js';
 import type { FilmJourney } from './film-story.js';
-import { SIXTH_ROOM, WETWALL_SHAFT } from './ambush.js';
+import { WETWALL_SHAFT } from './ambush.js';
 import { WETWALL_ROLES } from './wetwall.js';
+import { BATHROOM_FIGHT } from './bathroom-fight.js';
 
 export const SIXTH_ROLES = [...WETWALL_ROLES, 'citizen_4', 'citizen_14', 'smith'] as const;
 export type SixthRole = typeof SIXTH_ROLES[number];
@@ -34,14 +35,19 @@ export function sixthPose(gesture: SixthGesture) {
     if (role === 'smith' && afterReplacement) {
       const t = phase === 'rushing' ? Math.min(1, elapsed / SIXTH.rushSeconds) : 1;
       position = t < .45 ? approach(cover, corner, smooth(t / .45)) : approach(corner, { x: -15.5, y, z: WETWALL_SHAFT.front }, smooth((t - .45) / .55));
-      if (phase === 'breach' || phase === 'done') position.z = WETWALL_SHAFT.front + 6 * (phase === 'done' ? 1 : smooth(elapsed / 1.8));
+      if (phase === 'breach' || phase === 'done') {
+        const end = BATHROOM_FIGHT.pinned.smith;
+        position = approach(position, { x: end.x, y, z: end.z }, phase === 'done' ? 1 : smooth(elapsed / 1.8));
+        yaw = phase === 'done' ? end.yaw : Math.PI * (1 - smooth(elapsed / 1.8));
+      }
     }
-    yaw = Math.PI;
+    if (!['breach', 'done'].includes(phase)) yaw = Math.PI;
   } else if (role === 'morpheus') {
     if (afterReplacement) position.y = phase === 'rushing' ? start.y + (y + 1 - start.y) * smooth(elapsed / SIXTH.rushSeconds) : y + 1;
     if (phase === 'breach' || phase === 'done') {
-      position = approach({ x: start.x, y: y + 1, z: start.z }, { x: SIXTH_ROOM.morpheus.x, y, z: SIXTH_ROOM.morpheus.z }, phase === 'done' ? 1 : smooth(elapsed / 1.8));
-      yaw = 0;
+      const end = BATHROOM_FIGHT.pinned.morpheus, weight = phase === 'done' ? 1 : smooth(elapsed / 1.8);
+      position = approach({ x: start.x, y: y + 1, z: start.z }, { x: end.x, y, z: end.z }, weight);
+      position.y += Math.sin(weight * Math.PI) * .6; yaw = end.yaw * weight;
     }
   } else if (role === 'citizen_14') {
     const scan = phase === 'searching' ? Math.sin(elapsed * .7) : 0; yaw = Math.PI + scan * .35;
