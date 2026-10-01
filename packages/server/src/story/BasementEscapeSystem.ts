@@ -1,5 +1,5 @@
 import { BASEMENT, BASEMENT_GAS, BASEMENT_ROLES, BASEMENT_TUNNEL_LENGTH, BETRAYAL, FILM_SETS, FILM_SCENE_BY_ID, TV_EXIT, TV_EXIT_ROLES, TV_EXIT_STREET_ROLES, WETWALL_SHAFT,
-  basementDrainRoot, basementGasDensity, basementLandingRoot, basementLifterRoot, basementLocked, basementRouteLength, basementRouteRoot,
+  basementDrainRoot, basementGasDensity, basementGasTime, basementLandingRoot, basementLifterRoot, basementLocked, basementRouteLength, basementRouteRoot,
   basementText, basementTunnelProgress, basementTunnelRoot, basementGasLaunch, basementLauncherRoot, playerBlocked, tvExitEmergeRoot, tvExitEmergenceFrame, tvExitEmergingRole, tvExitEntered, tvExitLocked, tvExitRoot, tvExitStreetFrame,
   tvExitStreetRoot, tvExitStreetRouteLength, tvExitText, wetwallEntry,
   ambushCompanyBlocked, ambushCompanyStep, type AgentState, type BasementEncounter, type BasementRole, type PlayerInput,
@@ -24,7 +24,7 @@ export class BasementEscapeSystem {
       const actor = this.world.agents.get(role)!;
       return [role, { x: actor.position.x - center.x, y: actor.position.y - center.y, z: actor.position.z - center.z, yaw: actor.rotation }];
     })) as BasementEncounter['starts'];
-    this.journey!.basement = { phase: 'ready', elapsed: 0, attempts: 0, air: 100, gas: 0, gasShots: [], hatch: 0, separated: false, starts,
+    this.journey!.basement = { phase: 'ready', elapsed: 0, attempts: 0, air: 100, gas: 0, gasShots: [], gasEntry: true, hatch: 0, separated: false, starts,
       heights: Object.fromEntries(BASEMENT_ROLES.map(role => [role, starts[role].y])) as BasementEncounter['heights'],
       company: Object.fromEntries(BASEMENT_ROLES.map(role => [role, 0])) as BasementEncounter['company'], landings: {}, tunnel: 0, checkpoint: 'shaft' };
     this.frame(this.world.agents.get('neo')!, { yaw: starts.neo.yaw }, 0, this.world.simulationTick);
@@ -40,10 +40,14 @@ export class BasementEscapeSystem {
     if (this.journey!.step === index) this.onAdvance?.(FILM_SCENE_BY_ID[this.journey!.scene].steps[index].text ?? '抵达下一段路线。', actor, tick);
   }
   private stageGas(encounter: BasementEncounter, tick: number): void {
-    if (!encounter.gasShots || !['searching', 'lifting', 'hatch_ready', 'draining', 'failed'].includes(encounter.phase) || encounter.failure === 'fall') return;
+    const dropping = ['descending', 'landing'].includes(encounter.phase), ages = Object.values(encounter.landings);
+    if (!encounter.gasShots || encounter.failure === 'fall' || (dropping ? !encounter.gasEntry || !ages.length
+      : !['searching', 'lifting', 'hatch_ready', 'draining', 'failed'].includes(encounter.phase))) return;
+    // Approach begins with the first broken ceiling, but firing waits for Neo's floor checkpoint.
+    const time = basementGasTime(encounter);
     const center = FILM_SETS.film_ambush_house.center;
     for (const [index] of BASEMENT_GAS.entries()) {
-      const id = `film:basement:launcher:${index}`, root = basementLauncherRoot(index);
+      const id = `film:basement:launcher:${index}`, root = basementLauncherRoot(index, time, encounter.gasEntry);
       let threat = this.sandbox().threats.find(item => item.id === id);
       if (!encounter.gasActors) {
         threat = { id, kind: 'soldier', scene: 'm1_basement', patrol: true,
@@ -51,8 +55,11 @@ export class BasementEscapeSystem {
           matrix: true, health: 64, maxHealth: 64, target: 'neo', stunUntil: tick, lastStrike: tick };
         this.sandbox().threats.push(threat);
       }
-      if (encounter.gasShots[index] === undefined && encounter.gas >= basementGasLaunch(index).at) encounter.gasShots[index] = Boolean(threat && threat.health > 0);
-      if (threat) threat.basementGas = { index, time: encounter.gas };
+      if (encounter.gasShots[index] === undefined && time >= basementGasLaunch(index, encounter.gasEntry).at) encounter.gasShots[index] = Boolean(threat && threat.health > 0);
+      if (threat) {
+        threat.position = { x: center.x + root.x, y: center.y + root.y, z: center.z + root.z }; threat.yaw = root.yaw;
+        threat.basementGas = { index, time, entry: encounter.gasEntry, paused: encounter.paused };
+      }
     }
     encounter.gasActors = true;
   }

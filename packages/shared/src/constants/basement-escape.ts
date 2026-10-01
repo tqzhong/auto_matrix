@@ -7,7 +7,7 @@ export type BasementRole = typeof BASEMENT_ROLES[number];
 export type BasementPhase = 'ready' | 'descending' | 'landing' | 'searching' | 'lifting' | 'hatch_ready' | 'draining' | 'tunnel' | 'done' | 'failed';
 export interface BasementEncounter {
   phase: BasementPhase; elapsed: number; attempts: number; air: number; gas: number; hatch: number; separated: boolean; paused?: boolean;
-  gasShots?: boolean[]; gasActors?: boolean;
+  gasShots?: boolean[]; gasActors?: boolean; gasEntry?: boolean;
   starts: Record<BasementRole, Vector3 & { yaw: number }>;
   heights: Record<BasementRole, number>; landings: Partial<Record<BasementRole, number>>; company: Record<BasementRole, number>;
   drainStarts?: Record<BasementRole, Vector3 & { yaw: number }>; tunnel: number;
@@ -30,23 +30,31 @@ export const BASEMENT_CEILING = { lanes: [-20.5, -18, -15.5], width: 2.45, depth
 export const BASEMENT_BOILERS = [-10, 10].flatMap(x => [-12, 12].map(z => ({ x, z, width: 6, depth: 13, height: 6.2 })));
 export const BASEMENT_GAS = [{ x: -17, z: -27, at: 2 }, { x: -1, z: 2, at: 14 }, { x: 11, z: 22, at: 28 }] as const;
 export const BASEMENT_GAS_LAUNCH = { flight: .95, bounce: .55, gravity: 24, entryDepth: 5.2, entryWidth: 4.4, entryHeight: 5.8 } as const;
-export interface BasementLauncherGesture { index: number; time: number }
-export function basementLauncherRoot(index: number) {
-  return { x: index === 2 ? 24.5 : -24.5, y: BASEMENT.floor, z: BASEMENT_GAS[index].z, yaw: index === 2 ? -Math.PI / 2 : Math.PI / 2 };
+export interface BasementLauncherGesture { index: number; time: number; entry?: boolean; paused?: boolean }
+export function basementGasTime(encounter: BasementEncounter): number {
+  return encounter.gasEntry && ['ready', 'descending', 'landing'].includes(encounter.phase)
+    ? Math.min(0, Math.max(0, ...Object.values(encounter.landings)) - 1.45) : encounter.gas;
 }
-export function basementGasLaunch(index: number) {
-  const source = BASEMENT_GAS[index], root = basementLauncherRoot(index), side = index === 2 ? -1 : 1;
+export function basementLauncherRoot(index: number, time = Infinity, entry = false) {
+  const side = index === 2 ? 1 : -1;
+  const at = BASEMENT_GAS[index].at - BASEMENT_GAS_LAUNCH.flight - BASEMENT_GAS_LAUNCH.bounce;
+  const progress = entry ? Math.max(0, Math.min(1, (time - at + 1.45) / .8)) : 0;
+  return { x: side * (entry ? 25.15 - 2.3 * smooth(progress) : 24.5), y: BASEMENT.floor, z: BASEMENT_GAS[index].z, yaw: -side * Math.PI / 2,
+    speed: entry ? 2.3 * 6 * progress * (1 - progress) / .8 : 0, progress };
+}
+export function basementGasLaunch(index: number, entry = false) {
+  const source = BASEMENT_GAS[index], root = basementLauncherRoot(index, Infinity, entry), side = index === 2 ? -1 : 1;
   const muzzle = { x: root.x + side * 1.5, y: BASEMENT.floor + 4, z: root.z + side * .4 };
   const impact = { x: source.x - side * .75, y: BASEMENT.floor + .16, z: source.z };
   const { flight, bounce, gravity } = BASEMENT_GAS_LAUNCH;
   return { muzzle, impact, at: source.at - flight - bounce,
     velocity: { x: (impact.x - muzzle.x) / flight, y: (impact.y - muzzle.y + gravity * flight * flight / 2) / flight, z: (impact.z - muzzle.z) / flight } };
 }
-export function basementGasCanister(index: number, time: number, shots?: readonly boolean[]): Vector3 | undefined {
+export function basementGasCanister(index: number, time: number, shots?: readonly boolean[], entry = false): Vector3 | undefined {
   const source = BASEMENT_GAS[index];
   // Old floor checkpoints retain their original fixed canisters and exposure clock.
   if (!shots) return time >= source.at ? { x: source.x, y: BASEMENT.floor + .16, z: source.z } : undefined;
-  const launch = basementGasLaunch(index), age = time - launch.at, { flight, bounce, gravity } = BASEMENT_GAS_LAUNCH;
+  const launch = basementGasLaunch(index, entry), age = time - launch.at, { flight, bounce, gravity } = BASEMENT_GAS_LAUNCH;
   if (!shots[index] || age < 0) return;
   if (age < flight) return { x: launch.muzzle.x + launch.velocity.x * age, y: launch.muzzle.y + launch.velocity.y * age - gravity * age * age / 2, z: launch.muzzle.z + launch.velocity.z * age };
   const rebound = Math.min(bounce, age - flight);

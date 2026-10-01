@@ -10,6 +10,7 @@ import { CharacterModels, type CharacterRig } from '../packages/client/src/agent
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { BasementSetRenderer } from '../packages/client/src/engine/BasementSetRenderer.js';
+import { SandboxRenderer } from '../packages/client/src/engine/SandboxRenderer.js';
 
 async function models(t: test.TestContext) {
   const assets = new Map();
@@ -135,6 +136,90 @@ test('gas-masked launcher bodies hold both grips and fire from the exact shared 
       }
     }
   }
+});
+
+test('entering basement pursuers raise a supported launcher before firing and lower it for the search',async t=>{
+  const h=await models(t),rig=h.characters.create({...h.world.agents.get('neo')!,id:'film_soldier',faction:'civilians'}),center=FILM_SETS.film_ambush_house.center;
+  for(const index of [0,1,2]) {
+    const launch=(basementGasLaunch as any)(index,true),heights:number[]=[],positions:number[]=[];
+    for(const offset of [-1.45,-1.1,-.9,-.65,-.3,0,.125,.4,1.5,3]) {
+      const time=launch.at+offset,root=(basementLauncherRoot as any)(index,time,true);
+      rig.root.position.set(center.x+root.x,center.y-1+root.y,center.z+root.z);rig.root.rotation.y=root.yaw;
+      h.characters.animate(rig,0,{speed:0,grounded:true,verticalVelocity:0,turn:0,armed:true,weaponStyle:'gas_launcher',basementGas:{index,time,entry:true}} as any,4);
+      rig.root.updateMatrixWorld(true);const gun=rig.weapons![0],muzzle=gun.localToWorld(new THREE.Vector3(0,-1.455,0));
+      heights.push(muzzle.y);positions.push(root.x);
+      if(offset===0)assert.ok(muzzle.distanceTo(new THREE.Vector3(center.x+launch.muzzle.x,center.y-1+launch.muzzle.y,center.z+launch.muzzle.z))<.001,'the firing frame must match the shared projectile origin');
+      for(const hand of [0,1]){
+        const grip=gun.localToWorld(new THREE.Vector3(0,hand?-.78:-.08,-.12)),palm=rig.elbows[hand].localToWorld(new THREE.Vector3(0,-.79,.055));
+        assert.ok(palm.distanceTo(grip)<.1,`entry ${index}/${offset}/${hand} leaves a hand off the weapon: ${palm.distanceTo(grip)}`);
+      }
+    }
+    assert.ok(Math.abs(positions[5]-positions[0])>2,'the visible body has to approach the door');
+    assert.ok(heights[5]-heights[0]>.7,'the muzzle rises from low ready before the shot');
+    assert.ok(heights[5]-heights.at(-1)!>.7,'the pursuer lowers the weapon after the shot');
+  }
+});
+
+test('basement pursuer movement and full weapon pose interpolate together and restore the paused source clock',async t=>{
+  const h=await models(t),scene=new THREE.Scene(),renderer=new SandboxRenderer(scene),camera=new THREE.PerspectiveCamera(),center=FILM_SETS.film_ambush_house.center;
+  camera.position.set(center.x-17,center.y+BASEMENT.floor+3,center.z-26);
+  const actors=Object.fromEntries(h.world.agents),id='entry-police';
+  const snapshot=(time:number)=>{
+    const root=(basementLauncherRoot as any)(0,time,true);
+    renderer.sync({nodes:[],structures:[],incidents:[],missions:{},threats:[{id,kind:'soldier',scene:'m1_basement',patrol:true,matrix:true,health:64,maxHealth:64,target:'neo',stunUntil:0,lastStrike:-100,
+      position:{x:center.x+root.x,y:center.y+root.y,z:center.z+root.z},yaw:root.yaw,basementGas:{index:0,time,entry:true}}]} as any,actors);
+  };
+  const enemy=()=> (renderer as any).enemies.get(id) as {group:THREE.Group;rig:CharacterRig};
+  const pose=()=>{scene.updateWorldMatrix(true,true);return [enemy().group.position.toArray(),renderer.muzzle(id)!.toArray(),...enemy().rig.ankles.map(bone=>bone.getWorldPosition(new THREE.Vector3()).toArray())];};
+  try{
+    snapshot(-.85);renderer.update(0,camera,true,0,true);const before=enemy().group.position.x;
+    snapshot(-.35);renderer.update(.1,camera,true,0,true);
+    const middle=enemy().group.position.x,goal=(basementLauncherRoot as any)(0,-.35,true);
+    assert.ok(middle>before&&middle<center.x+goal.x,'the entry cannot snap to the next world packet');
+    const moving=pose();renderer.update(.1,camera,true,0,true);assert.notDeepEqual(pose(),moving,'the body and gun must continue between world packets');
+    renderer.update(.1,camera,true,0,false);const paused=pose();
+    for(let i=0;i<8;i++)renderer.update(.2,camera,true,0,false);assert.deepEqual(pose(),paused,'paused police cannot keep moving or swaying');
+    const restoredScene=new THREE.Scene(),restored=new SandboxRenderer(restoredScene);
+    try{
+      const state=(renderer as any).state;restored.sync(structuredClone(state),actors);restored.update(0,camera,true,0,false);restoredScene.updateWorldMatrix(true,true);
+      const other=(restored as any).enemies.get(id) as {group:THREE.Group;rig:CharacterRig};
+      const loaded=[other.group.position.toArray(),restored.muzzle(id)!.toArray(),...other.rig.ankles.map(bone=>bone.getWorldPosition(new THREE.Vector3()).toArray())];
+      for(let part=0;part<loaded.length;part++)assert.ok(new THREE.Vector3(...loaded[part]).distanceTo(new THREE.Vector3(...paused[part]))<.001,'refresh cannot change the footsteps or barrel pose');
+    }finally{restored.dispose();}
+  }finally{renderer.dispose();}
+});
+
+test('rendered entry police, both hands and launcher clear the corridor walls, door lintels and boiler-room floor',async t=>{
+  const h=await models(t),scene=new THREE.Scene(),renderer=new SandboxRenderer(scene),camera=new THREE.PerspectiveCamera(),center=FILM_SETS.film_ambush_house.center,point=new THREE.Vector3();
+  const actors=Object.fromEntries(h.world.agents);
+  try{
+    for(const index of [0,1,2])for(let offset=-1.45;offset<=2.5;offset+=.05){
+      const time=basementGasLaunch(index,true).at+offset,root=basementLauncherRoot(index,time,true),id='door-contact';
+      camera.position.set(center.x+root.x+(index===2?-6:6),center.y+BASEMENT.floor+3,center.z+root.z);
+      renderer.sync({nodes:[],structures:[],incidents:[],missions:{},threats:[{id,kind:'soldier',scene:'m1_basement',patrol:true,matrix:true,health:64,maxHealth:64,target:'neo',stunUntil:0,lastStrike:-100,
+        position:{x:center.x+root.x,y:center.y+root.y,z:center.z+root.z},yaw:root.yaw,basementGas:{index,time,entry:true}}]} as any,actors);
+      renderer.update(0,camera,true,0,false);scene.updateWorldMatrix(true,true);
+      const enemy=(renderer as any).enemies.get(id) as {rig:CharacterRig};
+      for(const hand of [0,1]){
+        const grip=enemy.rig.weapons![0].localToWorld(new THREE.Vector3(0,hand?-.78:-.08,-.12)),palm=enemy.rig.elbows[hand].localToWorld(new THREE.Vector3(0,-.79,.055));
+        assert.ok(palm.distanceTo(grip)<.1,`moving police ${index}/${offset}/${hand} loses its real grip: ${palm.distanceTo(grip)}`);
+      }
+      enemy.rig.root.traverse(object=>{
+        if(!(object instanceof THREE.Mesh))return;
+        for(let parent:THREE.Object3D|null=object;parent;parent=parent.parent)if(!parent.visible)return;
+        const positions=object.geometry.attributes.position;
+        for(let vertex=0;vertex<positions.count;vertex++){
+          point.fromBufferAttribute(positions,vertex).applyMatrix4(object.matrixWorld).sub(new THREE.Vector3(center.x,center.y-1,center.z));
+          assert.ok(point.y>=BASEMENT.floor-.025,`police ${index}/${offset}/${object.name} crosses concrete: ${point.toArray()}`);
+          if(Math.abs(point.x)>=21.675){
+            assert.ok(Math.abs(point.x)<=26.875,`police ${index}/${offset} crosses the corridor back wall: ${point.toArray()}`);
+            assert.ok(Math.abs(point.z-root.z)<=1.875,`police ${index}/${offset} crosses a jamb: ${point.toArray()}`);
+            assert.ok(point.y<=BASEMENT.floor+5.685,`police ${index}/${offset} crosses the lintel: ${point.toArray()}`);
+          }
+        }
+      });
+    }
+  }finally{renderer.dispose();}
 });
 
 test('both drain cameras stay below the roof while direction follows the player heading',async t=>{

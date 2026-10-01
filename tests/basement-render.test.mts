@@ -142,19 +142,37 @@ test('a launched gas canister crosses a real entry before it lands and emits smo
   }finally{renderer.dispose();}
 });
 
+test('an entering pursuer’s canister waits for the interpolated firing pose and restores the exact paused trajectory',t=>{
+  t.mock.method(THREE.TextureLoader.prototype,'load',()=>new THREE.Texture());
+  const renderer=new BasementSetRenderer(new THREE.Group()),state={phase:'searching',hatch:0,gas:0,gasEntry:true,gasShots:[] as boolean[]};
+  const journey={scene:'m1_basement',basement:state} as unknown as FilmJourney;
+  try{
+    renderer.update(journey,undefined,.1);state.gas=.6;state.gasShots=[true];renderer.update(journey,undefined,.1);
+    const canister=renderer.root.getObjectByName('basement-gas-canister')!;
+    assert.equal(canister.visible,false,'the canister must not leave before the smooth body reaches its actual firing age');
+    for(let frame=0;frame<4;frame++)renderer.update(journey,undefined,.1);
+    assert.equal(canister.visible,true,'the same saved shot becomes visible after the body reaches the barrel release');
+    const point=basementGasCanister(0,.6,[true],true)!;assert.ok(canister.position.distanceTo(new THREE.Vector3(point.x,point.y,point.z))<.001);
+    state.gas=1.1;renderer.update(journey);const paused=canister.position.clone();
+    for(let frame=0;frame<8;frame++)renderer.update(journey);assert.ok(canister.position.distanceTo(paused)<.001);
+    const restored=new BasementSetRenderer(new THREE.Group());
+    try{restored.update(structuredClone(journey));assert.ok(restored.root.getObjectByName('basement-gas-canister')!.position.distanceTo(paused)<.001,'load cannot move the projectile back to the old muzzle');}finally{restored.dispose();}
+  }finally{renderer.dispose();}
+});
+
 test('all three gas trajectories clear the authored doors, boilers and ceiling before bouncing on concrete',t=>{
   t.mock.method(THREE.TextureLoader.prototype,'load',()=>new THREE.Texture());
   const root=new THREE.Group(),renderer=new BasementSetRenderer(root),hits=rays(root);
   try {
-    for(const [index,gas] of BASEMENT_GAS.entries()) {
-      let previous=basementGasCanister(index,basementGasLaunch(index).at,[true,true,true])!;
-      for(let time=basementGasLaunch(index).at+.025;time<=gas.at+.03;time+=.025) {
-        const point=basementGasCanister(index,time,[true,true,true])!,direction=new THREE.Vector3(point.x-previous.x,point.y-previous.y,point.z-previous.z),length=direction.length();
+    for(const entry of [false,true])for(const [index,gas] of BASEMENT_GAS.entries()) {
+      let previous=basementGasCanister(index,basementGasLaunch(index,entry).at,[true,true,true],entry)!;
+      for(let time=basementGasLaunch(index,entry).at+.025;time<=gas.at+.03;time+=.025) {
+        const point=basementGasCanister(index,time,[true,true,true],entry)!,direction=new THREE.Vector3(point.x-previous.x,point.y-previous.y,point.z-previous.z),length=direction.length();
         assert.ok(point.y>=BASEMENT.floor+.159&&point.y<BASEMENT.floor+BASEMENT.ceiling-.2,'the canister must stay within the mechanical-room volume');
         if(length>.001)assert.equal(hits(previous.x,previous.y,previous.z,direction.normalize(),length+.001).length,0,`canister ${index} crosses solid geometry at ${time}`);
         previous=point;
       }
-      const rest=basementGasCanister(index,gas.at+1,[true,true,true])!;assert.deepEqual(rest,{x:gas.x,y:BASEMENT.floor+.16,z:gas.z});
+      const rest=basementGasCanister(index,gas.at+1,[true,true,true],entry)!;assert.deepEqual(rest,{x:gas.x,y:BASEMENT.floor+.16,z:gas.z});
     }
   }finally{renderer.dispose();}
 });

@@ -61,13 +61,21 @@ export function poseBasement(rig: CharacterRig, gesture?: BasementGesture): void
 
 export function poseBasementLauncher(rig: CharacterRig, gesture?: BasementLauncherGesture): void {
   if (!gesture || !rig.weapons?.[0]) return;
-  const launch=basementGasLaunch(gesture.index),center=FILM_SETS.film_ambush_house.center,age=gesture.time-launch.at;
+  const launch=basementGasLaunch(gesture.index,gesture.entry),center=FILM_SETS.film_ambush_house.center,age=gesture.time-launch.at;
   const recoil=age>=0&&age<.25?Math.sin(age/.25*Math.PI)*.07:0;
+  const aim=THREE.MathUtils.smoothstep(age,-.65,-.08)*(1-THREE.MathUtils.smoothstep(age,.65,1.5));
+  if(gesture.entry){rig.head.rotation.x-=aim*.22;rig.head.rotation.y+=Math.sin(age*.85+gesture.index)*.18*THREE.MathUtils.smoothstep(age,1.5,2.3);}
   rig.root.updateWorldMatrix(true,true);
   const rotation=rig.root.getWorldQuaternion(new THREE.Quaternion()),direction=new THREE.Vector3(launch.velocity.x,launch.velocity.y,launch.velocity.z).normalize();
+  const muzzle=new THREE.Vector3(center.x+launch.muzzle.x,center.y-1+launch.muzzle.y,center.z+launch.muzzle.z);
+  if(gesture.entry){
+    const side=gesture.index===2?-1:1,root=rig.root.getWorldPosition(new THREE.Vector3());
+    muzzle.copy(root).add(new THREE.Vector3(side*THREE.MathUtils.lerp(.9,1.5,aim),3+aim,side*THREE.MathUtils.lerp(.1,.4,aim)));
+    direction.copy(new THREE.Vector3(side,-.25,0).normalize().lerp(direction,aim).normalize());
+  }
   const orientation=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),Math.atan2(direction.x,direction.z))
     .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),-Math.PI/2-Math.atan2(direction.y,Math.hypot(direction.x,direction.z))));
-  const gun=rig.weapons[0],muzzle=new THREE.Vector3(center.x+launch.muzzle.x,center.y-1+launch.muzzle.y,center.z+launch.muzzle.z);
+  const gun=rig.weapons[0];
   if(gun.parent!==rig.root)rig.root.add(gun);
   gun.position.copy(rig.root.worldToLocal(muzzle.addScaledVector(direction,-1.455-recoil)));
   gun.quaternion.copy(rotation.clone().invert().multiply(orientation));gun.scale.setScalar(1/rig.root.getWorldScale(new THREE.Vector3()).x);gun.updateWorldMatrix(false,true);
