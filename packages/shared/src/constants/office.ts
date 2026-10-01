@@ -73,11 +73,37 @@ export const OFFICE_PATROLS = [
   [{ x: 3, z: -23 }, { x: 24, z: 20 }],
   [{ x: -3, z: -23 }, { x: 0, z: 20 }],
 ];
+export const OFFICE_AGENT_ROLES = ['smith', 'agent_brown', 'agent_jones'] as const;
+// The call clock also drives the elevator exit. Patrol begins at these same endpoints.
+export function officeArrivalPose(index: number, elapsed: number): { x: number; z: number; yaw: number } {
+  // Keep the central lane clear for the courier returning to the elevator.
+  const x = index === 1 ? 1.8 : -1.8;
+  const z = index === 0 ? -27.7 : index === 1 ? -30 : -31.3;
+  const corner = index === 2 ? -25.4 : -24;
+  const route = OFFICE_PATROLS[index];
+  const end = index === 0 ? { x: -3, z: -23 } : route[0];
+  const facing = Math.atan2(route[1].x - route[0].x, route[1].z - route[0].z);
+  if (index === 0 && elapsed >= 7.5) {
+    const distance = (elapsed - 7.5) * 2.1;
+    return { x: -3 + Math.min(3, distance), z: -23,
+      yaw: Math.PI / 2 + (facing - Math.PI / 2) * Math.max(0, Math.min(1, (distance - 3) / .8)) };
+  }
+  const distance = Math.max(0, elapsed - 2 - index * .55) * 2.1;
+  const first = corner - z, last = Math.hypot(end.x - x, end.z - corner);
+  // Jones waits beside the landing until the courier has passed, then crosses the aisle.
+  const fan = index === 2 ? Math.max(0, elapsed - 9.25) * 2.1 : distance - first;
+  const t = Math.max(0, Math.min(1, fan / last));
+  const turn = Math.atan2(end.x - x, end.z - corner);
+  const look = Math.max(0, Math.min(1, (fan - last) / .8));
+  return { x: x + (end.x - x) * t, z: distance < first ? z + distance : corner + (end.z - corner) * t,
+    yaw: turn * Math.max(0, Math.min(1, (distance - first + .6) / .6)) + (facing - turn) * look };
+}
 export interface OfficeEncounter {
   alert: number;
   waypoints: number[];
   suspicion: number[];
   lastTick: number;
+  arrival?: number;
   searchAt?: number;
   patrolWait?: number[];
   searches?: (OfficeSearch | null)[];

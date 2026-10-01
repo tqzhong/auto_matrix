@@ -1,16 +1,46 @@
-import { OFFICE_PATROLS, FILM_SETS, filmPosition, officeOccluded, playerBlocked, type AgentState, type SandboxState, type OfficeEncounter } from '@auto_matrix/shared';
+import { OFFICE_PATROLS, OFFICE_AGENT_ROLES, METACORTEX, FILM_SETS, filmPosition, officeArrivalPose, officeOccluded, playerBlocked, type AgentState, type SandboxState, type OfficeEncounter } from '@auto_matrix/shared';
 import { officeNextPoint } from './OfficeNavigation.js';
 
 export class OfficeEscapeSystem {
   constructor(private sandbox: () => SandboxState) {}
+  phoneFrame(tick: number, actors: Map<string, AgentState>): boolean {
+    const state = this.sandbox(), journey = state.neoLife?.journey;
+    if (!journey || journey.visiting || journey.scene !== 'm1_boss') return true;
+    const phone = journey.phone;
+    if (!phone || !['answering', 'connected'].includes(phone.phase)) {
+      if (journey.office?.arrival !== undefined) {
+        state.threats = state.threats.filter(threat => !threat.id.startsWith('office:'));
+        delete journey.office;
+      }
+      return true;
+    }
+    if (OFFICE_AGENT_ROLES.some(id => actors.get(id)?.controller)) {
+      journey.lastText = '另一位玩家正在控制到场的特工。通话和进场停在当前一拍，释放角色后继续。';
+      return false;
+    }
+    if (!journey.office || journey.office.arrival === undefined || OFFICE_PATROLS.some((_, i) => !state.threats.some(threat => threat.id === `office:${i}`))) this.start(tick);
+    journey.office!.arrival = phone.elapsed;
+    state.neoLife!.lift = { floor: 1, target: 1, phase: phone.elapsed < METACORTEX.doorSeconds ? 'opening' : 'idle', elapsed: phone.elapsed < METACORTEX.doorSeconds ? phone.elapsed : 0 };
+    OFFICE_PATROLS.forEach((_, i) => {
+      const guard = state.threats.find(threat => threat.id === `office:${i}`)!;
+      const pose = officeArrivalPose(i, phone.elapsed);
+      guard.position = filmPosition('film_metacortex_floor', pose.x, pose.z); guard.yaw = pose.yaw;
+    });
+    return true;
+  }
   start(tick: number): void {
     const state = this.sandbox(); const journey = state.neoLife!.journey!;
-    journey.office = { alert: 0, waypoints: [1, 1, 1], suspicion: [0, 0, 0], searches: [null, null, null], patrolWait: [16, 12, 24], lastTick: tick, searchAt: tick + 8, guide: 'MORPHEUS · 他们正在门口问你的工位。放低身体，趁现在换到对面的空隔间。' };
-    OFFICE_PATROLS.forEach((route, i) => state.threats.push({
-      id: `office:${i}`, scene: journey.scene, kind: 'agent', patrol: true, yaw: Math.atan2(route[1].x - route[0].x, route[1].z - route[0].z),
-      position: filmPosition('film_metacortex_floor', route[0].x, route[0].z), matrix: true,
-      health: 100, maxHealth: 100, target: 'neo', stunUntil: tick, lastStrike: tick - 10,
-    }));
+    const arrival = journey.office?.arrival;
+    journey.office = { alert: 0, waypoints: [1, 1, 1], suspicion: [0, 0, 0], searches: [null, null, null], patrolWait: [16, 12, 24], lastTick: tick, arrival, searchAt: tick + 8, guide: 'MORPHEUS · 他们正在门口问你的工位。放低身体，趁现在换到对面的空隔间。' };
+    state.threats = state.threats.filter(threat => !threat.id.startsWith('office:'));
+    OFFICE_PATROLS.forEach((route, i) => {
+      const pose = arrival === undefined ? { ...route[0], yaw: Math.atan2(route[1].x - route[0].x, route[1].z - route[0].z) } : officeArrivalPose(i, arrival);
+      state.threats.push({
+        id: `office:${i}`, scene: journey.scene, character: OFFICE_AGENT_ROLES[i], kind: 'agent', patrol: true, yaw: pose.yaw,
+        position: filmPosition('film_metacortex_floor', pose.x, pose.z), matrix: true,
+        health: 100, maxHealth: 100, target: 'neo', stunUntil: tick, lastStrike: tick - 10,
+      });
+    });
   }
   tick(actor: AgentState, tick: number): boolean {
     const journey = this.sandbox().neoLife!.journey!;

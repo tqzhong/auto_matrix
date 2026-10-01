@@ -44,6 +44,7 @@ export class SandboxSystem {
     for (const [id, progress] of Object.entries(defaults.missions)) this.state.missions[id] ??= progress;
     this.life.film.restoreApartmentSpace();
     this.life.film.restoreOfficeSpace();
+    this.life.film.office.phoneFrame(this.world.simulationTick, this.world.agents);
     const neo = this.world.agents.get('neo'); if (neo) this.life.liftFrame(neo, 0, this.world.simulationTick);
     this.life.film.restoreHotelSpace();
     this.life.film.restoreAwakeningSpace();
