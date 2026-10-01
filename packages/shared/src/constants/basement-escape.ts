@@ -152,26 +152,76 @@ export function basementText(encounter: BasementEncounter): string {
 }
 
 export type TvExitPhase = 'ready' | 'pickup' | 'line_dead' | 'calling' | 'done';
-export interface TvExitEncounter { phase: TvExitPhase; elapsed: number; paused?: boolean; start?: Vector3 & { yaw: number }; crosscut?: import('./cypher-crosscut.js').CypherCrosscut }
+export const TV_EXIT_STREET_ROLES = ['trinity', 'apoc', 'switch'] as const;
+export type TvExitStreetRole = typeof TV_EXIT_STREET_ROLES[number];
+export interface TvExitEncounter {
+  phase: TvExitPhase; elapsed: number; paused?: boolean; start?: Vector3 & { yaw: number };
+  street?: Record<TvExitStreetRole, number>; crosscut?: import('./cypher-crosscut.js').CypherCrosscut;
+}
 export interface TvExitGesture extends TvExitEncounter { role: 'neo' | 'trinity' }
 export const TV_EXIT = { phone: { x: -7, y: 2.7, z: -20 }, approach: { x: -7, z: -18.5 }, pickupSeconds: 4.4, callSeconds: 6.8,
+  street: { drain: { x: -7, z: 49 }, curb: { x: -7, z: 41.5 }, door: { x: 0, z: 29.5 }, storefrontZ: 32 },
   cast: { trinity: { x: -3.5, z: -14, yaw: -Math.PI / 2 }, apoc: { x: 4.5, z: -11, yaw: Math.PI }, switch: { x: 8.5, z: -9, yaw: Math.PI } } } as const;
-export const TV_EXIT_OBSTACLES = [
+export const TV_EXIT_INTERIOR_OBSTACLES = [
   { x: -13.5, z: -15, width: 3.4, depth: 20, height: 5.2 }, { x: 13.5, z: -15, width: 3.4, depth: 20, height: 5.2 },
   { x: 0, z: -25, width: 32, depth: 3, height: 3.1 }, { x: 0, z: 2, width: 32, depth: 2.2, height: 3.2 },
   { x: -13.5, z: 17, width: 3.4, depth: 18, height: 4.3 }, { x: 13.5, z: 17, width: 3.4, depth: 18, height: 4.3 },
   { x: -7, z: -20.25, width: 2.4, depth: .4, height: 10 },
   // The stockroom is reached through a real right-hand gap in the counter.
 ].map((obstacle, index) => index === 3 ? { ...obstacle, x: -4.5, width: 22 } : obstacle);
+export const TV_EXIT_STREET_OBSTACLES = [
+  { x: -11, z: TV_EXIT.street.storefrontZ, width: 14, depth: .55, height: 10 },
+  { x: 11, z: TV_EXIT.street.storefrontZ, width: 14, depth: .55, height: 10 },
+  { x: 11.8, z: 48.5, width: 5.8, depth: 10, height: 3.5 },
+  { x: -15.2, z: 38.8, width: 1.35, depth: 1.25, height: 2.1 },
+];
+export const TV_EXIT_OBSTACLES = [...TV_EXIT_INTERIOR_OBSTACLES, ...TV_EXIT_STREET_OBSTACLES];
+
+const TV_EXIT_PLAYER_ROUTE = [TV_EXIT.street.drain, TV_EXIT.street.curb, { x: -2, z: 35 }, TV_EXIT.street.door,
+  { x: 0, z: 25 }, { x: 8.5, z: 4 }, { x: 8.5, z: -8 }, TV_EXIT.approach] as const;
+const TV_EXIT_COMPANY_ROUTES: Record<TvExitStreetRole, readonly { x: number; z: number }[]> = {
+  trinity: [{ x: -3.5, z: 51 }, { x: -4, z: 41 }, { x: -2, z: 35 }, { x: -.8, z: 29.5 }, { x: 8.1, z: 4 }, { x: 8.1, z: -8 }, TV_EXIT.cast.trinity],
+  apoc: [{ x: -8.8, z: 52.5 }, { x: -8.5, z: 42 }, { x: -3, z: 35.5 }, { x: .6, z: 29.5 }, { x: 9.6, z: 4 }, { x: 9.6, z: -9 }, TV_EXIT.cast.apoc],
+  switch: [{ x: -10.5, z: 48.5 }, { x: -9.5, z: 40.5 }, { x: -3.5, z: 34.5 }, { x: 2, z: 29.5 }, { x: 10.2, z: 4 }, { x: 10.2, z: -8 }, TV_EXIT.cast.switch],
+};
+export const TV_EXIT_STREET_LENGTH = pathLength(TV_EXIT_PLAYER_ROUTE);
+export function tvExitStreetRouteLength(role: TvExitStreetRole): number { return pathLength(TV_EXIT_COMPANY_ROUTES[role]); }
+export function tvExitStreetRoot(role: TvExitStreetRole, progress: number) { return { ...pathRoot(TV_EXIT_COMPANY_ROUTES[role], progress), y: 0 }; }
+export function tvExitStreetProgress(x: number, z: number): number {
+  let offset = 0, best = Infinity, result = 0;
+  for (let i = 1; i < TV_EXIT_PLAYER_ROUTE.length; i++) {
+    const a = TV_EXIT_PLAYER_ROUTE[i - 1], b = TV_EXIT_PLAYER_ROUTE[i], dx = b.x - a.x, dz = b.z - a.z, span = Math.hypot(dx, dz);
+    const t = Math.max(0, Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / (span * span)));
+    const gap = Math.hypot(x - a.x - dx * t, z - a.z - dz * t);
+    if (gap < best) { best = gap; result = offset + span * t; }
+    offset += span;
+  }
+  return result;
+}
+export function tvExitEntered(_x: number, z: number): boolean { return z <= TV_EXIT.street.storefrontZ - 1.4; }
+export function tvExitStreetFrame(encounter: TvExitEncounter, x: number, z: number, delta: number): void {
+  if (!encounter.street) {
+    const restoredInside = tvExitEntered(x, z);
+    encounter.street = Object.fromEntries(TV_EXIT_STREET_ROLES.map(role => [role, restoredInside ? tvExitStreetRouteLength(role) : 0])) as Record<TvExitStreetRole, number>;
+  }
+  const leader = tvExitStreetProgress(x, z);
+  for (const [index, role] of TV_EXIT_STREET_ROLES.entries()) {
+    const delay = 2 + index * 1.8, length = tvExitStreetRouteLength(role);
+    const target = length * Math.max(0, Math.min(1, (leader - delay) / (TV_EXIT_STREET_LENGTH - delay)));
+    encounter.street[role] = Math.max(encounter.street[role], Math.min(target, encounter.street[role] + 5.2 * Math.max(0, delta)));
+  }
+}
 export function tvExitLocked(journey: FilmJourney | undefined): boolean { if (crosscutActive(journey)) return crosscutLocked(journey); return Boolean(journey?.scene === 'm1_tv_exit' && !journey.visiting && journey.tvExit && (journey.tvExit.paused || ['pickup', 'line_dead', 'calling'].includes(journey.tvExit.phase))); }
 export function tvExitRoot(encounter: TvExitEncounter) {
   const start = encounter.start ?? { ...TV_EXIT.approach, y: 0, yaw: Math.PI };
   const t = encounter.phase === 'pickup' ? smooth(encounter.elapsed / .8) : 1;
   return { x: start.x + (TV_EXIT.approach.x - start.x) * t, y: start.y, z: start.z + (TV_EXIT.approach.z - start.z) * t, yaw: start.yaw + Math.atan2(Math.sin(Math.PI - start.yaw), Math.cos(Math.PI - start.yaw)) * t };
 }
-export function tvExitText(encounter: TvExitEncounter): string {
+export function tvExitText(encounter: TvExitEncounter, step = 2): string {
   if (encounter.paused) return 'Trinity 或同行者正在由另一位玩家控制，电话动作停在保存的位置。';
-  if (encounter.phase === 'ready') return 'Tank 确认 Morpheus 还活着。Trinity 让 Neo 先接出：穿过维修柜台右侧，走近后墙的硬线电话并按 G。';
+  if (encounter.phase === 'ready') return step === 0 ? '四人从街边出口井回到白昼中的矩阵。沿人行道走进 Franklin 与 Erie 的敞开店门。'
+    : step === 1 ? 'Tank 确认 Morpheus 还活着。跟随 Trinity 穿过店门，再从维修柜台右侧走向后墙硬线。'
+      : 'Trinity 让 Neo 先接出。走近后墙电话，按 G 亲手取下听筒。';
   if (encounter.phase === 'pickup') return encounter.elapsed < 1.8 ? 'Neo 把听筒从托架取下，等待接线员确认出口。' : '听筒里的信号忽然消失。Neo 仍在矩阵中，不能从已经失效的线路接出。';
   if (encounter.phase === 'line_dead') return '硬线断了。G 请 Trinity 用手机联系船上，确认 Tank 为什么没有回应。';
   if (encounter.phase === 'calling') return encounter.elapsed < 3.2 ? 'Trinity 拨通飞船。接听的人不是 Tank。' : 'Cypher 承认自己选择了重新接入矩阵；他把其他人的身体留在了接线另一端。';

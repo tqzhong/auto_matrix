@@ -1,6 +1,7 @@
-import { BASEMENT, BASEMENT_ROLES, BASEMENT_TUNNEL_LENGTH, BETRAYAL, FILM_SETS, FILM_SCENE_BY_ID, TV_EXIT, WETWALL_SHAFT,
+import { BASEMENT, BASEMENT_ROLES, BASEMENT_TUNNEL_LENGTH, BETRAYAL, FILM_SETS, FILM_SCENE_BY_ID, TV_EXIT, TV_EXIT_STREET_ROLES, WETWALL_SHAFT,
   basementDrainRoot, basementGasDensity, basementLandingRoot, basementLifterRoot, basementLocked, basementRouteLength, basementRouteRoot,
-  basementText, basementTunnelProgress, basementTunnelRoot, playerBlocked, tvExitLocked, tvExitRoot, tvExitText, wetwallEntry,
+  basementText, basementTunnelProgress, basementTunnelRoot, playerBlocked, tvExitEntered, tvExitLocked, tvExitRoot, tvExitStreetFrame,
+  tvExitStreetRoot, tvExitStreetRouteLength, tvExitText, wetwallEntry,
   ambushCompanyBlocked, ambushCompanyStep, type AgentState, type BasementEncounter, type BasementRole, type PlayerInput,
   type SandboxState, type Vector3 } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
@@ -29,10 +30,12 @@ export class BasementEscapeSystem {
     this.frame(this.world.agents.get('neo')!, { yaw: starts.neo.yaw }, 0, this.world.simulationTick);
   }
   startTv(): void {
-    this.journey!.tvExit = { phase: 'ready', elapsed: 0 };
+    this.journey!.tvExit = { phase: 'ready', elapsed: 0,
+      street: Object.fromEntries(TV_EXIT_STREET_ROLES.map(role => [role, 0])) as Record<typeof TV_EXIT_STREET_ROLES[number], number> };
     this.crosscut.start();
     const center = FILM_SETS.film_tv_repair.center;
-    for (const [id, root] of Object.entries(TV_EXIT.cast)) {
+    for (const id of TV_EXIT_STREET_ROLES) {
+      const root = tvExitStreetRoot(id, 0);
       const actor = this.world.agents.get(id)!; if (actor.controller) continue;
       actor.position = { x: center.x + root.x, y: center.y, z: center.z + root.z }; actor.rotation = root.yaw;
       actor.currentLocation = 'film_tv_repair'; actor.isInMatrix = true;
@@ -164,10 +167,15 @@ export class BasementEscapeSystem {
       cypher.currentAction = { type: 'idle', parameters: { resolved: true }, startedAt: tick, duration: 1e9, progress: 0 };
     }
     const delta = encounter.paused || !actor.controller || actor.status !== 'alive' ? 0 : Math.max(0, Math.min(.1, dt));
-    if (encounter.phase === 'ready' && delta > 0 && Math.hypot(actor.position.x - center.x - TV_EXIT.approach.x, actor.position.z - center.z - TV_EXIT.approach.z) < 1.2) this.advance(0, actor, tick);
+    const x = actor.position.x - center.x, z = actor.position.z - center.z;
+    tvExitStreetFrame(encounter, x, z, encounter.phase === 'ready' ? delta : 0);
+    if (encounter.phase === 'ready' && delta > 0) {
+      if (this.journey!.step === 0 && tvExitEntered(x, z)) this.advance(0, actor, tick);
+      else if (this.journey!.step === 1 && Math.hypot(x - TV_EXIT.approach.x, z - TV_EXIT.approach.z) < 1.2) this.advance(1, actor, tick);
+    }
     if (['pickup', 'calling'].includes(encounter.phase)) encounter.elapsed += delta;
-    if (encounter.phase === 'pickup' && encounter.elapsed >= TV_EXIT.pickupSeconds) { encounter.phase = 'line_dead'; encounter.elapsed = 0; this.advance(1, actor, tick); }
-    else if (encounter.phase === 'calling' && encounter.elapsed >= TV_EXIT.callSeconds) { encounter.phase = 'done'; this.advance(2, actor, tick); }
+    if (encounter.phase === 'pickup' && encounter.elapsed >= TV_EXIT.pickupSeconds) { encounter.phase = 'line_dead'; encounter.elapsed = 0; this.advance(2, actor, tick); }
+    else if (encounter.phase === 'calling' && encounter.elapsed >= TV_EXIT.callSeconds) { encounter.phase = 'done'; this.advance(3, actor, tick); }
     if (encounter.start && !['ready', 'done'].includes(encounter.phase)) {
       const root = tvExitRoot(encounter), before = actor.position;
       actor.position = { x: center.x + root.x, y: center.y + root.y, z: center.z + root.z }; actor.rotation = root.yaw;
@@ -176,20 +184,26 @@ export class BasementEscapeSystem {
     for (const role of ['neo', 'trinity', 'apoc', 'switch'] as const) {
       const other = this.world.agents.get(role)!; if (role !== 'neo' && other.controller) continue;
       other.targetPosition = null; other.currentPath = [];
-      if (role !== 'neo') other.velocity = { x: 0, y: 0, z: 0 };
+      if (role !== 'neo') {
+        const before = other.position, root = tvExitStreetRoot(role, encounter.street![role]);
+        other.position = { x: center.x + root.x, y: center.y, z: center.z + root.z }; other.rotation = root.yaw;
+        other.velocity = delta ? { x: (other.position.x - before.x) / delta, y: 0, z: (other.position.z - before.z) / delta } : { x: 0, y: 0, z: 0 };
+      }
       const calling = role === 'trinity' && encounter.phase === 'calling';
       other.currentAction = { type: 'idle', parameters: { resolved: true, tvExit: ['neo', 'trinity'].includes(role) ? { ...encounter, role } : undefined,
         phone: calling ? { phase: 'connected', slide: 1, elapsed: encounter.elapsed } : undefined }, startedAt: tick, duration: 1e9, progress: 0 };
     }
-    this.journey!.checkpoint = { ...actor.position }; this.journey!.lastText = tvExitText(encounter); return tvExitLocked(this.journey);
+    this.journey!.checkpoint = { ...actor.position }; this.journey!.lastText = tvExitText(encounter, this.journey!.step); return tvExitLocked(this.journey);
   }
   command(actor: AgentState, target: string, tick: number): string {
     if (this.crosscut.active(actor)) return this.crosscut.command(actor, target, tick);
     if (this.occupied()) { this.frame(actor, {}, 0, tick); return this.journey!.lastText; }
     if (this.journey!.scene === 'm1_tv_exit') {
       const encounter = this.journey!.tvExit!, center = FILM_SETS.film_tv_repair.center;
-      if (target === 'act' && encounter.phase === 'ready' && this.journey!.step === 1) {
+      if (target === 'act' && encounter.phase === 'ready' && this.journey!.step === 2) {
         if (Math.hypot(actor.position.x - center.x - TV_EXIT.approach.x, actor.position.z - center.z - TV_EXIT.approach.z) >= 1.2) return '走近后墙的硬线电话，再亲手拿起听筒。';
+        tvExitStreetFrame(encounter, actor.position.x - center.x, actor.position.z - center.z, 0);
+        for (const role of TV_EXIT_STREET_ROLES) encounter.street![role] = tvExitStreetRouteLength(role);
         encounter.start = { x: actor.position.x - center.x, y: actor.position.y - center.y, z: actor.position.z - center.z, yaw: actor.rotation };
         encounter.phase = 'pickup'; encounter.elapsed = 0;
       } else if (target === 'act' && encounter.phase === 'line_dead') { encounter.phase = 'calling'; encounter.elapsed = 0; }

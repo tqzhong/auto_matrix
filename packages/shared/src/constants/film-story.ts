@@ -266,6 +266,7 @@ export const FILM_SCENES: FilmScene[] = [
     walk('沿排水道转弯抵达街边出口', 0, 32.2),
   ], ['trinity', 'apoc', 'switch', 'cypher']),
   scene('m1_tv_exit', 1, 'tv_repair', 'neo', '电视维修店的硬线', 'betrayal', 'infiltration', 'Tank 提供了 Franklin 与 Erie 的旧电视维修店。Cypher 已先接出，Morpheus 仍活着；Trinity 让 Neo 先使用硬线。', [
+    walk('从出口井穿过白昼街道，走进电视维修店', TV_EXIT.street.door.x, TV_EXIT.street.door.z),
     walk('穿过维修柜台右侧，找到后墙电话', TV_EXIT.approach.x, TV_EXIT.approach.z),
     use('亲手拿起出口电话', '硬线里的信号消失了，Neo 仍被留在矩阵。', TV_EXIT.approach.x, TV_EXIT.approach.z, 0),
     use('请 Trinity 联系飞船', 'Cypher 接听了她的手机。他承认背叛，船上的身体正处于危险中。', TV_EXIT.approach.x, TV_EXIT.approach.z, 0),
@@ -490,7 +491,6 @@ export function filmStepPosition(scene: FilmScene, step: FilmStep, journey?: Fil
     if (!escape || ['ready', 'descending', 'landing', 'failed'].includes(escape.phase)) return journey ? { ...journey.checkpoint } : filmEntry(scene);
     return { x: FILM_SETS[scene.set].center.x + target.x, y: FILM_SETS[scene.set].center.y + target.y, z: FILM_SETS[scene.set].center.z + target.z };
   }
-  if (scene.id === 'm1_tv_exit') return filmPosition(scene.set, TV_EXIT.approach.x, TV_EXIT.approach.z);
   if (scene.id === 'm1_wall_exposed') return journey?.wallExposure ? { ...journey.checkpoint } : { ...filmPosition(scene.set, -15.5, -32.2), y: FILM_SETS[scene.set].center.y - 51.8 };
   if (scene.id === 'm1_bathroom' && journey?.betrayal?.sixth) return { ...filmPosition(scene.set, -15.5, -27.2), y: FILM_SETS[scene.set].center.y - 51.8 };
   if (scene.id === 'm1_wetwall') {
@@ -522,7 +522,7 @@ export function filmStepActionReady(scene: FilmScene, step: FilmStep, position: 
 }
 export function filmEntry(scene: FilmScene): Vector3 {
   if (scene.id === 'm1_basement') return { ...filmPosition(scene.set, -15.5, -32.2), y: FILM_SETS[scene.set].center.y - 61.2 };
-  if (scene.id === 'm1_tv_exit') return filmPosition(scene.set, 8.5, 26);
+  if (scene.id === 'm1_tv_exit') return filmPosition(scene.set, TV_EXIT.street.drain.x, TV_EXIT.street.drain.z);
   if (scene.id === 'm1_wall_exposed') return { ...filmPosition(scene.set, -15.5, -32.2), y: FILM_SETS[scene.set].center.y - 51.8 };
   if (scene.id === 'm1_wetwall') return { ...filmPosition(scene.set, -18, -27), y: FILM_SETS[scene.set].center.y + WETWALL.approach.y };
   if (scene.id === 'm1_dejavu') return { ...filmPosition(scene.set, AMBUSH_STAIRS.entry.x, AMBUSH_STAIRS.entry.z), y: FILM_SETS[scene.set].center.y - AMBUSH_STAIRS.rise };
