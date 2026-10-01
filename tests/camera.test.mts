@@ -491,7 +491,8 @@ test('wetwall V uses the animated eye, sends W/S climb and keeps free look after
   game.document.pointerLockElement = game.canvas;
   const before = game.camera.getWorldDirection(new THREE.Vector3()); game.event(game.document, 'mousemove', { movementX: 100, movementY: -70 }); game.step(.2);
   const looked = game.camera.getWorldDirection(new THREE.Vector3()); assert.ok(looked.distanceTo(before) > .2);
-  game.key('KeyW'); game.step(2); game.key('KeyW', false);
+  game.key('KeyW'); game.step(2);assert.equal(game.controls.motion.climbing,1,'the rendered pipe stroke follows the held descent input');game.key('KeyW', false);game.step(.05);
+  assert.equal(game.controls.motion.climbing,0,'releasing W settles the physical grip without moving the saved height');
   assert.equal(game.sent.at(-2)?.climb, 1); assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(looked) < .001);
   game.key('KeyS'); game.step(.2); game.key('KeyS', false); assert.equal(game.sent.at(-2)?.climb, -1);
   const height = game.group.position.y; game.step(.5, 1 / 60, false); assert.equal(game.group.position.y, height);

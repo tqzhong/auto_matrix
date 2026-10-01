@@ -3,7 +3,7 @@ import { CONSTRUCT, CABIN, CABIN_ROUTE_LENGTH, cabinGuidePose, newReloaded, newF
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { FILM_SCENES, FILM_SETS, RESCUE, GOVERNMENT_RESCUE, AIR_RESCUE, MIRROR_TOUCH, PILL_ROOM, filmEntry, filmStepPosition, filmPosition, playerBlocked, stepPlayer, NEO_CHAPTERS, MEETING_DRIVE_SECONDS, type MatrixEscapeEncounter, type TheOneEncounter, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENES, FILM_SETS, RESCUE, GOVERNMENT_RESCUE, AIR_RESCUE, MIRROR_TOUCH, PILL_ROOM, WETWALL, WETWALL_ROLES, WETWALL_SHAFT, filmEntry, filmStepPosition, filmPosition, playerBlocked, stepPlayer, wetwallEntry, NEO_CHAPTERS, MEETING_DRIVE_SECONDS, type MatrixEscapeEncounter, type TheOneEncounter, type WetwallEncounter, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -33,6 +33,19 @@ if (previous) {
   if (scene.id === 'm1_wake_again') sandbox.state.neoLife!.journey!.office = { alert: 0, suspicion: [], waypoints: [], lastTick: 0,
     guide: '', outcome: clearWake ? 'escaped' : 'captured', bugged: !clearWake };
   if (scene.id === 'm1_ledge') actor.position = filmStepPosition(previous, previous.steps[2]);
+  if (scene.id === 'm1_basement') {
+    const journey = sandbox.state.neoLife!.journey!;
+    journey.betrayal = { kind: 'bathroom', phase: 'done', elapsed: 12, attempt: 0, sixth: true };
+    const starts = Object.fromEntries(WETWALL_ROLES.map(role => [role, { x: WETWALL.lanes[role], y: WETWALL_SHAFT.top, z: -26.9 }])) as WetwallEncounter['starts'];
+    const wall = { phase: 'done', elapsed: 0, attempts: 0, freed: true, starts, progress: {} } as WetwallEncounter;
+    for (const role of WETWALL_ROLES) wall.progress[role] = wetwallEntry(wall, role) + 29.6;
+    wall.checkpoint = { progress: { ...wall.progress }, freed: true }; journey.wetwall = wall;
+    for (const role of ['neo', 'apoc', 'switch', 'trinity', 'cypher'] as const) {
+      const resident = world.agents.get(role)!, offset = role === 'neo' || role === 'trinity' ? 5.4 : role === 'cypher' ? 10.8 : 0;
+      resident.position = filmPosition('film_ambush_house', WETWALL.lanes[role], WETWALL_SHAFT.bodyZ);
+      resident.position.y = FILM_SETS.film_ambush_house.center.y + WETWALL_SHAFT.low + offset; resident.rotation = Math.PI;
+    }
+  }
   sandbox.life.film.command(world.agents.get(previous.actor)!, 'next', 0);
   if (scene.id === 'm1_ledge') for (let frame = 0; frame < 65; frame++) sandbox.life.film.crossingFrame(actor, .1, 0);
 } else {

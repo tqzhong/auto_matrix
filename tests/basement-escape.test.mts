@@ -136,6 +136,7 @@ test('Neo controls the continued descent, while the crew clears the basement cei
   assert.ok(h.neo.position.y < before - 18); assert.ok(h.neo.position.y < WETWALL_SHAFT.low);
   const gesture = h.neo.currentAction!.parameters.wetwall as Parameters<typeof wetwallPose>[0] & { start: Parameters<typeof wetwallPose>[0]; role: 'neo'; progress: number; phase: 'done'; elapsed: number; continued: boolean };
   assert.ok(gesture.continued); assert.equal(wetwallPose(gesture.start, 'neo', gesture.progress, 'done', 0, undefined, true).y, h.neo.position.y - FILM_SETS.film_ambush_house.center.y);
+  const held=h.neo.position.y;h.frame();assert.equal(h.neo.position.y,held,'releasing W preserves the exact pipe height while the client settles the grip');
   for (let i = 0; i < 350 && h.state().basement!.phase !== 'searching'; i++) h.frame({ climb: 1 });
   assert.equal(h.state().basement!.phase, 'searching'); assert.equal(h.state().step, 1);
   for (const role of BASEMENT_ROLES) { const actor = h.world.agents.get(role)!; assert.equal(actor.position.y, FILM_SETS.film_ambush_house.center.y + BASEMENT.floor); assert.equal(playerBlocked(actor.position, true), false); }

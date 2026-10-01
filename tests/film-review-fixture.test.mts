@@ -70,3 +70,16 @@ test('the apartment review save can freeze the closing door before the bridge cu
     assert.ok(!world.sandbox.structures.some((structure: { id: string }) => structure.id === 'film:apartment:door'));
   } finally { rmSync(directory, { recursive: true, force: true }); }
 });
+
+test('the basement review save follows the sixth-floor escape instead of the legacy ship handoff', () => {
+  const directory = execFileSync(process.execPath, ['--import', 'tsx', 'scripts/film-review-fixture.mts', 'm1_basement'], { encoding: 'utf8' }).trim();
+  try {
+    const world = JSON.parse(readFileSync(path.join(directory, 'world.json'), 'utf8'));
+    const journey = world.sandbox.neoLife.journey;
+    assert.equal(journey.scene, 'm1_basement');
+    assert.equal(journey.basement?.phase, 'ready');
+    assert.equal(journey.basement?.checkpoint, 'shaft');
+    assert.equal(journey.wetwall?.phase, 'done');
+    assert.ok(world.agents.neo.position.y < -50, 'Neo must retain the lower pipe checkpoint');
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+});

@@ -3,7 +3,7 @@ import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { BASEMENT, FILM_SETS, TV_EXIT, basementHatchPoint, basementLifterRoot, type BasementGesture } from '@auto_matrix/shared';
+import { BASEMENT, FILM_SETS, TV_EXIT, WETWALL_SHAFT, basementHatchPoint, basementLifterRoot, type BasementGesture, type WetwallGesture } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { CharacterModels, type CharacterRig } from '../packages/client/src/agents/CharacterModel.js';
@@ -71,6 +71,31 @@ test('Trinity grips the moving catch-basin handles on her actual skeleton',async
       const target=basementHatchPoint(hatch,i),point=new THREE.Vector3(center.x+target.x,center.y-1+target.y,center.z+target.z);
       const palm=rig.hero!.bones.get(`wrist_${side}`)!.localToWorld(new THREE.Vector3(0,-.19,.035));
       assert.ok(palm.distanceTo(point)<.16,`${side} hatch/${hatch} misses real handle: ${palm.distanceTo(point)} palm=${palm.toArray()} target=${point.toArray()} shoulder=${rig.hero!.bones.get(`shoulder_${side}`)!.getWorldPosition(new THREE.Vector3()).toArray()}`);
+    }
+  }
+});
+
+test('Neo keeps both hands and shoes on the physical lower stack throughout the basement descent',async t=>{
+  const h=await models(t),rig=h.characters.create(h.world.agents.get('neo')!);await new Promise(resolve=>setImmediate(resolve));
+  assert.ok(rig.hero);const center=FILM_SETS.film_ambush_house.center,pipeX=-15.5,pipeZ=WETWALL_SHAFT.pipeZ,pipeRadius=.25;
+  const shoes=rig.hero.root.getObjectByName('shoes01') as THREE.SkinnedMesh,vertex=new THREE.Vector3();
+  for(const y of [-60,-72,-84,BASEMENT.floor+BASEMENT.ceiling]) {
+    rig.root.position.set(center.x+pipeX,center.y-1+y,center.z+WETWALL_SHAFT.bodyZ);rig.root.rotation.y=Math.PI;
+    const depth=WETWALL_SHAFT.top-y,wetwall:WetwallGesture={role:'neo',phase:'done',elapsed:0,progress:depth,entry:0,hanging:true,freed:true,continued:true,start:{x:pipeX,y:WETWALL_SHAFT.top,z:WETWALL_SHAFT.bodyZ}};
+    h.characters.animate(rig,0,{speed:0,grounded:true,verticalVelocity:0,turn:0,climbing:0,wetwall,
+      basement:{role:'neo',phase:'descending',elapsed:depth,hatch:0}} as any,4);rig.root.updateMatrixWorld(true);
+    for(const side of ['R','L'] as const) {
+      const palm=rig.hero.bones.get(`wrist_${side}`)!.localToWorld(new THREE.Vector3(0,-.19,.035));
+      const palmRadius=Math.hypot(palm.x-center.x-pipeX,palm.z-center.z-pipeZ);
+      assert.ok(palmRadius>=pipeRadius-.025&&palmRadius<=pipeRadius+.18,`${side} palm leaves the lower pipe at y=${y}: ${palmRadius}`);
+      const ankle=rig.hero.bones.get(`ankle_${side}`)!,joint=shoes.skeleton.bones.indexOf(ankle),indices=shoes.geometry.attributes.skinIndex,weights=shoes.geometry.attributes.skinWeight;
+      let clearance=Infinity;
+      for(let i=0;i<shoes.geometry.attributes.position.count;i++) {
+        if(![0,1,2,3].some(slot=>indices.getComponent(i,slot)===joint&&weights.getComponent(i,slot)>.5))continue;
+        shoes.getVertexPosition(i,vertex);shoes.localToWorld(vertex);
+        clearance=Math.min(clearance,Math.hypot(vertex.x-center.x-pipeX,vertex.z-center.z-pipeZ)-pipeRadius);
+      }
+      assert.ok(clearance>=-.025&&clearance<=.08,`${side} shoe misses or penetrates the lower pipe at y=${y}: ${clearance}`);
     }
   }
 });

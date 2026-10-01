@@ -7,6 +7,7 @@ export function wetwallHand(gesture: WetwallGesture, root: THREE.Vector3, side: 
   const center = FILM_SETS.film_ambush_house.center, depth = Math.max(0, gesture.progress - gesture.entry);
   if (gesture.phase === 'breaking') return new THREE.Vector3(center.x - 18 + side * .23, center.y - 1 + WETWALL_SHAFT.top + 3.05, center.z + WETWALL_SHAFT.front + .13);
   if (gesture.progress < gesture.entry) return new THREE.Vector3(root.x + side * .2, center.y - 1 + WETWALL_SHAFT.top + 3.35, center.z + WETWALL_SHAFT.pipeZ + .09);
+  if (gesture.grip) return new THREE.Vector3(root.x + side * .31, root.y + 3.15 + (side > 0 ? .45 : 0), center.z + WETWALL_SHAFT.pipeZ + .25);
   const step = depth / .9 + (side > 0 ? .5 : 0), fraction = step % 1;
   const stroke = THREE.MathUtils.smoothstep(fraction, .62, 1), swing = fraction < .62 ? 0 : Math.sin((fraction - .62) / .38 * Math.PI);
   return new THREE.Vector3(root.x + side * .31, center.y - 1 + WETWALL_SHAFT.top + 3.35 + (side > 0 ? .45 : 0) - Math.floor(step) * .9 - stroke * .9,
@@ -14,8 +15,9 @@ export function wetwallHand(gesture: WetwallGesture, root: THREE.Vector3, side: 
 }
 
 /** World-space pipe contacts use saved distance, so stopping and loading do not restart the stroke. */
-export function poseWetwall(rig: CharacterRig, gesture?: WetwallGesture): void {
+export function poseWetwall(rig: CharacterRig, gesture?: WetwallGesture, holding = false): void {
   if (!gesture || (!gesture.hanging && !(gesture.role === 'neo' && gesture.phase === 'breaking')) || gesture.role === 'neo' && ['falling', 'failed'].includes(gesture.phase)) return;
+  if (gesture.continued && holding && !gesture.grip) gesture = { ...gesture, grip: true };
   rig.root.updateWorldMatrix(true, true);
   const root = rig.root.getWorldPosition(new THREE.Vector3()), rotation = rig.root.getWorldQuaternion(new THREE.Quaternion());
   const breaking = gesture.role === 'neo' && gesture.phase === 'breaking';
@@ -46,7 +48,8 @@ export function poseWetwall(rig: CharacterRig, gesture?: WetwallGesture): void {
       wrist.updateWorldMatrix(false, true);
       if (gesture.hanging) {
         const hip = bone(`hip_${side}`), knee = bone(`knee_${side}`), ankle = bone(`ankle_${side}`);
-        const foot = new THREE.Vector3(root.x + sign * .33, root.y + .6 + .22 * Math.sin((gesture.progress - gesture.entry) / .9 * Math.PI + i * Math.PI), FILM_SETS.film_ambush_house.center.z + WETWALL_SHAFT.pipeZ + .55);
+        const step = gesture.grip ? 0 : .22 * Math.sin((gesture.progress - gesture.entry) / .9 * Math.PI + i * Math.PI);
+        const foot = new THREE.Vector3(root.x + sign * .33, root.y + .6 + step, FILM_SETS.film_ambush_house.center.z + WETWALL_SHAFT.pipeZ + .55);
         reach(hip, knee, ankle.position, foot, new THREE.Vector3(sign, .1, -.25));
         ankle.quaternion.copy(knee.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rotation)); ankle.updateWorldMatrix(false, true);
       }
@@ -64,7 +67,8 @@ export function poseWetwall(rig: CharacterRig, gesture?: WetwallGesture): void {
       for (const finger of rig.fingers[i]) finger.rotation.x = -1.7;
       if (gesture.hanging) {
         const ankle = rig.ankles[i], knee = rig.knees[i], hip = rig.hips[i];
-        const foot = new THREE.Vector3(root.x + sign * .33, root.y + .6, FILM_SETS.film_ambush_house.center.z + WETWALL_SHAFT.pipeZ + .55);
+        const step = gesture.grip ? 0 : .22 * Math.sin((gesture.progress - gesture.entry) / .9 * Math.PI + i * Math.PI);
+        const foot = new THREE.Vector3(root.x + sign * .33, root.y + .6 + step, FILM_SETS.film_ambush_house.center.z + WETWALL_SHAFT.pipeZ + .55);
         reach(hip, knee, ankle.position, foot, new THREE.Vector3(sign, .1, -.25));
         ankle.quaternion.copy(knee.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rotation)); ankle.updateWorldMatrix(false, true);
       }
