@@ -342,8 +342,7 @@ export class FilmSetRenderer {
       const pose = gesture ? pillPose(gesture) : undefined;
       this.pillGlass.visible = !pose?.holdingCup;
       const used = pose?.cupUsed || journey?.pills?.phase === 'done';
-      const water = this.pillGlass.getObjectByName('pill-water-level')!;
-      water.scale.y = used ? .45 : 1; water.position.y = used ? -.12 : -.04;
+      for (const water of this.pillGlass.getObjectsByProperty('name', 'pill-water-level')) { water.scale.y = used ? .45 : 1; water.position.y = used ? -.12 : -.04; }
     }
     this.lobby?.update(journey, elapsed);
     this.interrogation?.update(journey);

@@ -13,6 +13,8 @@ export class WorldOcclusionPass extends GTAOPass {
     // The city remains loaded behind film interiors. Hidden branches cannot
     // contribute normals, so don't traverse or cache their individual objects.
     this.scene.traverseVisible(object => {
+      // A mirror may have selected another detail level in the color pass.
+      if (object instanceof THREE.LOD && object.autoUpdate) object.update(this.camera);
       if (object instanceof THREE.Points || object instanceof THREE.Line || object instanceof THREE.Sprite || (object instanceof THREE.Mesh && !Array.isArray(object.material) && !object.material.depthWrite)) {
         object.visible = false; this.suppressed.push(object);
       }

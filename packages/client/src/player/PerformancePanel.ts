@@ -1,4 +1,5 @@
 import type { Engine, FrameProfile } from '../engine/Engine.js';
+import type { Object3D } from 'three';
 
 // Opt-in development measurement. It observes actual frames without creating a
 // capture canvas, encoding video, changing the camera, or advancing the story.
@@ -11,6 +12,7 @@ export class PerformancePanel {
   private restoreMatrices?: Engine['scene']['updateMatrixWorld'];
   private restoreDraw?: Engine['renderer']['renderBufferDirect'];
   private drawTotals: Record<string, { calls: number; triangles: number }> = {};
+  private meshTotals = new Map<Object3D, { calls: number; triangles: number }>();
 
   constructor(private engine: Engine) {
     this.panel.id = 'performance-panel';
@@ -22,12 +24,13 @@ export class PerformancePanel {
 
   private status(text: string): void { this.panel.querySelector('[role="status"]')!.textContent = text; }
   private start(): void {
-    this.frames = []; this.passes = {}; this.drawTotals = {}; this.startAt = performance.now();
+    this.frames = []; this.passes = {}; this.drawTotals = {}; this.meshTotals.clear(); this.startAt = performance.now();
     this.restoreAutoReset = this.engine.renderer.info.autoReset; this.engine.renderer.info.autoReset = false;
     let frameDraws: typeof this.drawTotals = {};
+    let frameMeshes: typeof this.meshTotals = new Map();
     const renderer = this.engine.renderer; const draw = renderer.renderBufferDirect; this.restoreDraw = draw;
     renderer.renderBufferDirect = (...args) => {
-      const [camera, , , material] = args;
+      const [camera, , , material, object] = args;
       const pass = material.type === 'MeshDepthMaterial' || material.type === 'MeshDistanceMaterial' ? 'shadows'
         : material.type === 'MeshNormalMaterial' ? 'occlusion' : camera === this.engine.camera ? 'scene'
           : camera.type === 'PerspectiveCamera' ? 'reflectionOrPreview' : 'postprocessing';
@@ -35,6 +38,9 @@ export class PerformancePanel {
       draw.apply(renderer, args);
       const total = frameDraws[pass] ??= { calls: 0, triangles: 0 };
       total.calls += renderer.info.render.calls - calls; total.triangles += renderer.info.render.triangles - triangles;
+      const mesh = frameMeshes.get(object) ?? { calls: 0, triangles: 0 };
+      mesh.calls += renderer.info.render.calls - calls; mesh.triangles += renderer.info.render.triangles - triangles;
+      frameMeshes.set(object, mesh);
     };
     this.restoreMatrices = this.engine.scene.updateMatrixWorld;
     const matrices = this.restoreMatrices;
@@ -49,10 +55,15 @@ export class PerformancePanel {
     this.engine.onProfile = frame => {
       const elapsed = frame.at - this.startAt;
       const draws = frameDraws; frameDraws = {};
+      const meshes = frameMeshes; frameMeshes = new Map();
       if (elapsed < 3000) return;
       for (const [name, count] of Object.entries(draws)) {
         const total = this.drawTotals[name] ??= { calls: 0, triangles: 0 };
         total.calls += count.calls; total.triangles += count.triangles;
+      }
+      for (const [mesh, count] of meshes) {
+        const total = this.meshTotals.get(mesh) ?? { calls: 0, triangles: 0 };
+        total.calls += count.calls; total.triangles += count.triangles; this.meshTotals.set(mesh, total);
       }
       this.frames.push(frame);
       if (this.frames.length % 30 === 0) this.status(`采样 ${Math.min(15, Math.round((elapsed - 3000) / 1000))} / 15 秒 · ${this.frames.length} 帧`);
@@ -84,10 +95,15 @@ export class PerformancePanel {
       drawsPerFrame: Object.fromEntries(Object.entries(this.drawTotals).map(([name, total]) => [name, {
         calls: total.calls / this.frames.length, triangles: total.triangles / this.frames.length,
       }])),
+      heaviestMeshes: [...this.meshTotals].sort((a, b) => b[1].triangles - a[1].triangles).slice(0, 20).map(([mesh, total]) => ({
+        name: mesh.name, parent: mesh.parent?.name, type: mesh.type,
+        calls: total.calls / this.frames.length, triangles: total.triangles / this.frames.length,
+      })),
       gpu: debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) as string : 'unavailable',
       recordingActive: Boolean(this.engine.onRendered), engineFpsDisplay: this.engine.fps,
       objects, visibleObjects,
     };
+    this.meshTotals.clear();
     this.status(`${report.fps.toFixed(1)} fps · p95 ${frameTime.p95.toFixed(1)} ms\n${Object.entries(sections).map(([name, time]) => `${name}: ${time.mean.toFixed(2)} ms`).join('\n')}\n提交绘制 ${report.calls.mean.toFixed(0)} 次 / 帧\n保存报告中…`);
     try {
       const filename = `neo-${report.measuredAt.replace(/[:.]/g, '-')}.json`;
