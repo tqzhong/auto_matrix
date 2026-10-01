@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BASEMENT, BASEMENT_BOILERS, BASEMENT_CEILING, BASEMENT_GAS, BASEMENT_GAS_LAUNCH, BASEMENT_ROLES, BASEMENT_TUNNEL_FLOORS, WETWALL_SHAFT, basementCeilingAge, basementCeilingFragment, basementDropPlayback, basementDropPose, basementGasCanister, type BasementDropPlayback, type FilmJourney } from '@auto_matrix/shared';
+import { BASEMENT, BASEMENT_BOILERS, BASEMENT_CEILING, BASEMENT_GAS, BASEMENT_GAS_LAUNCH, BASEMENT_ROLES, BASEMENT_TUNNEL_FLOORS, WETWALL_SHAFT, basementCeilingAge, basementCeilingFragment, basementDropPlayback, basementDropPose, basementGasCanister, basementGasTime, type BasementDropPlayback, type FilmJourney } from '@auto_matrix/shared';
 import { batchStaticGeometry } from './StaticGeometry.js';
 
 /** A ceiling aperture, four boilers and an articulated catch-basin cover. */
@@ -15,6 +15,7 @@ export class BasementSetRenderer {
   private ceilingDust: THREE.InstancedMesh;
   private ceilingClocks: (BasementDropPlayback | undefined)[] = [];
   private impactClocks: (BasementDropPlayback | undefined)[] = [];
+  private gasClock?: BasementDropPlayback;
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private textures: THREE.Texture[] = [];
@@ -153,11 +154,12 @@ export class BasementSetRenderer {
     this.cover.rotation.x=-(state?.hatch??0)*BASEMENT.grate.angle;
     const matrix=new THREE.Object3D(),camera=cameraPosition?this.root.worldToLocal(new THREE.Vector3(cameraPosition.x,cameraPosition.y,cameraPosition.z)):new THREE.Vector3(0,BASEMENT.floor+4,0);
     this.updateCeiling(journey,camera,delta,matrix);
-    const time=state?.gas??0;this.smoke.visible=BASEMENT_GAS.some((source,index)=>time>source.at&&(!state?.gasShots||state.gasShots[index]));
+    this.gasClock=state?.gasEntry?basementDropPlayback(this.gasClock,basementGasTime(state),delta,delta>0&&!state.paused):undefined;
+    const time=this.gasClock?.age??state?.gas??0;this.smoke.visible=BASEMENT_GAS.some((source,index)=>time>source.at&&(!state?.gasShots||state.gasShots[index]));
     for(let i=0;i<72;i++){const source=BASEMENT_GAS[i%3],age=Math.max(0,time-source.at),weight=state?.gasShots&&!state.gasShots[i%3]?0:THREE.MathUtils.smoothstep(age,0,12),radius=(1+i%8)*1.25*Math.min(1,age/15),angle=i*2.399;
       matrix.position.set(source.x+Math.sin(angle+time*.018)*radius,BASEMENT.floor+1.5+(i%5)*.72,source.z+Math.cos(angle+time*.018)*radius);matrix.lookAt(camera);matrix.scale.setScalar(weight*(6+i%4*1.6));matrix.updateMatrix();this.smoke.setMatrixAt(i,matrix.matrix);}
     this.smoke.instanceMatrix.needsUpdate=true;
-    this.grenades.forEach((grenade,i)=>{const position=basementGasCanister(i,time,state?.gasShots);grenade.visible=Boolean(position);if(position){grenade.position.set(position.x,position.y,position.z);grenade.rotation.set(0,time<BASEMENT_GAS[i].at?time*11:0,Math.PI/2);}});
+    this.grenades.forEach((grenade,i)=>{const position=basementGasCanister(i,time,state?.gasShots,state?.gasEntry);grenade.visible=Boolean(position);if(position){grenade.position.set(position.x,position.y,position.z);grenade.rotation.set(0,time<BASEMENT_GAS[i].at?time*11:0,Math.PI/2);}});
   }
   private updateCeiling(journey:FilmJourney|undefined,camera:THREE.Vector3,delta:number,matrix:THREE.Object3D):void {
     const state=journey?.scene==='m1_basement'&&!journey.visiting?journey.basement:undefined;

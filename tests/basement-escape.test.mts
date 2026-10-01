@@ -200,6 +200,37 @@ test('basement smoke comes from saved launchers, which freeze with the company a
   const occupied=snapshot();for(let i=0;i<12;i++)h.frame();assert.equal(snapshot(),occupied);delete h.world.agents.get('trinity')!.controller;
 });
 
+test('the first released crew member brings the basement pursuers forward while Neo still grips the pipe',()=>{
+  const h=setup();h.enter();h.command('act');
+  const launchers=()=>h.sandbox.state.threats.filter(threat=>threat.scene==='m1_basement');
+  assert.equal(launchers().length,0,'police cannot appear before anyone reaches the ceiling');
+  for(let i=0;i<400&&h.state().basement!.landings.apoc===undefined;i++)h.frame({climb:1});
+  assert.equal(h.state().basement!.landings.neo,undefined,'Neo must still be holding the pipe during the first entry');
+  assert.equal(launchers().length,3,'the entering police must be visible during the company drop rather than pop in afterwards');
+  const before=launchers()[0].position.x;
+  for(let i=0;i<12;i++)h.frame();
+  assert.ok(launchers()[0].position.x>before+.5,'the first pursuer must walk through the entry corridor');
+  assert.equal(h.state().basement!.gas,0,'the approach cannot consume Neo’s escape air while he waits on the pipe');
+  assert.deepEqual(h.state().basement!.gasShots,[],'approaching is separate from firing');
+  const snapshot=()=>JSON.stringify({basement:h.state().basement,launchers:launchers()});
+  const held=snapshot();h.frame({},false);assert.equal(snapshot(),held);
+  h.sandbox.restore(structuredClone(h.sandbox.state));h.frame({},false);assert.equal(snapshot(),held,'load cannot restart the door approach');
+  h.players.release('escape-player',h.tick());for(let i=0;i<8;i++)h.players.step(.1,true,h.tick());assert.equal(snapshot(),held);
+  h.players.possess('escape-player','neo',h.tick());h.world.agents.get('trinity')!.controller='occupied';h.frame();
+  const occupied=snapshot();for(let i=0;i<8;i++)h.frame();assert.equal(snapshot(),occupied);delete h.world.agents.get('trinity')!.controller;
+  h.neo.status='dead';h.state().basement!.phase='failed';h.state().basement!.failure='fall';h.state().basement!.fallY=BASEMENT.floor;
+  h.command('retry');assert.equal(launchers().length,0,'a shaft retry clears the old entry actors');
+  assert.equal(h.world.agents.get('mouse')!.status,'dead');
+});
+
+test('a saved older launcher encounter keeps its existing actors and muzzle positions instead of replaying entry',()=>{
+  const h=setup();h.enter();delete (h.state().basement as any).gasEntry;h.descend();
+  const first=h.sandbox.state.threats.find(threat=>threat.scene==='m1_basement')!;
+  assert.equal(first.position.x,FILM_SETS.film_ambush_house.center.x-24.5);
+  const before={...first.position};for(let i=0;i<20;i++)h.frame();
+  assert.deepEqual(first.position,before,'old in-flight canisters retain their launch origin');
+});
+
 test('new basement retries reset the launch sequence while old floor saves keep their original smoke clock',()=>{
   const h=setup();h.enter();h.descend();
   for(let i=0;i<30;i++)h.frame();assert.equal(h.state().basement!.gasShots?.[0],true);

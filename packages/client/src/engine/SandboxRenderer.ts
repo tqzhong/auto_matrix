@@ -2,11 +2,11 @@ import * as THREE from 'three';
 import type { AgentState, SandboxState, SandboxThreat, WorldNode, WorldStructure, WorldIncident, Vector3, CombatImpact, ChateauWeapon } from '@auto_matrix/shared';
 import { CharacterModels, weaponMuzzle, type CharacterRig } from '../agents/CharacterModel.js';
 import { newMotion } from '../agents/CharacterMotion.js';
-import { FILM_SETS, ambushRetreatRoot } from '@auto_matrix/shared';
+import { FILM_SETS, ambushRetreatRoot, basementDropPlayback, basementLauncherRoot, type BasementDropPlayback } from '@auto_matrix/shared';
 
 type WorldObject = WorldNode | WorldStructure | WorldIncident;
 interface Prop { group: THREE.Group; label: THREE.Sprite; data: WorldObject; accent: THREE.Mesh; }
-interface Enemy { group: THREE.Group; rig?: CharacterRig; kind: SandboxThreat['kind'] | 'escort'; character?: string; scene?: string; style?: ChateauWeapon; bornAt: number; replicate: THREE.Mesh; health: THREE.Mesh; label: THREE.Sprite; target: THREE.Vector3; telegraph: THREE.Mesh; aimLine: THREE.Line; hit?: number; impact?: number; shot?: number; fallen?: number; facing: number; ambushGuide?: { from: number; to: number; progress: number; elapsed: number }; }
+interface Enemy { group: THREE.Group; rig?: CharacterRig; kind: SandboxThreat['kind'] | 'escort'; character?: string; scene?: string; style?: ChateauWeapon; bornAt: number; replicate: THREE.Mesh; health: THREE.Mesh; label: THREE.Sprite; target: THREE.Vector3; telegraph: THREE.Mesh; aimLine: THREE.Line; hit?: number; impact?: number; shot?: number; fallen?: number; facing: number; ambushGuide?: { from: number; to: number; progress: number; elapsed: number }; gasClock?: BasementDropPlayback; }
 
 export class SandboxRenderer {
   private state?: SandboxState;
@@ -177,6 +177,7 @@ export class SandboxRenderer {
       }
       enemy.group.position.set(position.x, position.y, position.z); enemy.group.rotation.set(0, 0, 0); enemy.group.scale.setScalar(1);
       enemy.fallen = undefined; enemy.hit = enemy.impact = enemy.shot = undefined; enemy.health.visible = character !== 'seraph'; enemy.bornAt = this.elapsed;
+      enemy.gasClock = undefined;
       if (enemy.rig) { enemy.rig.motion = newMotion(); enemy.rig.root.rotation.set(0, 0, 0); }
       this.scene.add(enemy.group); this.enemies.set(id, enemy);
     }
@@ -213,20 +214,27 @@ export class SandboxRenderer {
       if (toward.lengthSq() > .01) enemy.facing = Math.atan2(toward.x, toward.z);
       if (threat?.patrol) enemy.facing = threat.yaw ?? 0;
       const previous = enemy.group.position.clone();
+      let gas = threat?.basementGas, gasSpeed: number | undefined;
       if (enemy.ambushGuide) {
         const guide = enemy.ambushGuide; guide.elapsed = Math.min(.5, guide.elapsed + (running ? delta : 0));
         guide.progress = THREE.MathUtils.lerp(guide.from, guide.to, guide.elapsed / .5);
         const root = ambushRetreatRoot(guide.progress), center = FILM_SETS.film_ambush_house.center;
         enemy.group.position.set(center.x + root.x, center.y + root.y, center.z + root.z); enemy.facing = root.yaw;
-      } else if(threat?.basementGas)enemy.group.position.copy(enemy.target);
+      } else if(gas?.entry) {
+        enemy.gasClock = basementDropPlayback(enemy.gasClock,gas.time,delta,running&&!gas.paused);
+        gas = {...gas,time:enemy.gasClock.age};
+        const root = basementLauncherRoot(gas.index,gas.time,true),center=FILM_SETS.film_ambush_house.center;
+        enemy.group.position.set(center.x+root.x,center.y+root.y,center.z+root.z);enemy.facing=root.yaw;gasSpeed=root.speed;
+        if(enemy.rig){enemy.rig.motion.time=gas.time;enemy.rig.motion.speed=root.speed;enemy.rig.motion.phase=root.progress*2.3/(2*.84/.6);}
+      } else if(gas){enemy.gasClock=undefined;enemy.group.position.copy(enemy.target);}
       else enemy.group.position.lerp(enemy.target, running ? 1 - Math.exp(-8 * delta) : 0);
       if (enemy.rig) {
         const turn = Math.atan2(Math.sin(enemy.facing - enemy.rig.root.rotation.y), Math.cos(enemy.facing - enemy.rig.root.rotation.y));
         enemy.rig.root.rotation.y += turn * (threat?.basementGas || enemy.ambushGuide && delta === 0 ? 1 : 1 - Math.exp(-12 * delta));
       }
       const dist = enemy.group.position.distanceTo(camera.position);
-      if (enemy.rig) this.models.animate(enemy.rig, running ? delta : 0, { speed: Math.min(8.4, previous.distanceTo(enemy.group.position) / Math.max(.001, delta)), grounded: true, verticalVelocity: 0, turn: 0,
-        attack: enemy.kind !== 'soldier' && threat && tick - threat.lastStrike < 3 ? threat.lastStrike : undefined, armed: enemy.kind === 'soldier', weaponStyle: enemy.scene === 'm1_room303' ? 'hel_pistol' : enemy.scene === 'm1_basement' ? 'gas_launcher' : undefined, basementGas: threat?.basementGas, shot: enemy.shot, combo: threat?.combo ?? 0, windingUp: threat?.attackAt !== undefined, hit: enemy.hit, impact: enemy.impact, chateauWeapon: threat?.weapon }, dist);
+      if (enemy.rig) this.models.animate(enemy.rig, gas?.entry ? 0 : running ? delta : 0, { speed: gasSpeed ?? Math.min(8.4, previous.distanceTo(enemy.group.position) / Math.max(.001, delta)), grounded: true, verticalVelocity: 0, turn: 0,
+        attack: enemy.kind !== 'soldier' && threat && tick - threat.lastStrike < 3 ? threat.lastStrike : undefined, armed: enemy.kind === 'soldier', weaponStyle: enemy.scene === 'm1_room303' ? 'hel_pistol' : enemy.scene === 'm1_basement' ? 'gas_launcher' : undefined, basementGas: gas, shot: enemy.shot, combo: threat?.combo ?? 0, windingUp: threat?.attackAt !== undefined, hit: enemy.hit, impact: enemy.impact, chateauWeapon: threat?.weapon }, dist);
       enemy.label.visible = enemy.scene !== 'm1_room303' && !threat?.patrol && dist < (enemy.kind === 'soldier' ? 30 : 65); enemy.label.scale.set(enemy.kind === 'soldier' ? 3 : 5, enemy.kind === 'soldier' ? .56 : .94, 1);
       enemy.health.visible = enemy.scene !== 'm1_room303' && !threat?.patrol;
       enemy.health.quaternion.copy(camera.quaternion);
