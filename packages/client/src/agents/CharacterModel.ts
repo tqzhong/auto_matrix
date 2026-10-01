@@ -600,7 +600,7 @@ export class CharacterModels {
       poseOracleCookie(rig, input.oracleVisit);
       poseOracleDeparture(rig, input.oracleDeparture);
       poseOracleArrival(rig, input.oracleArrival);
-      poseWetwall(rig, input.wetwall);
+      poseWetwall(rig, input.wetwall, input.speed < .05 && Math.abs(input.climbing ?? 0) < .05);
       poseSixthFloor(rig, input.sixth);
       poseBathroom(rig, input.bathroom, input.sixth);
       poseBasement(rig, input.basement);
@@ -690,7 +690,7 @@ export class CharacterModels {
     poseOracleCookie(rig, input.oracleVisit);
     poseOracleDeparture(rig, input.oracleDeparture);
     poseOracleArrival(rig, input.oracleArrival);
-    poseWetwall(rig, input.wetwall);
+    poseWetwall(rig, input.wetwall, input.speed < .05 && Math.abs(input.climbing ?? 0) < .05);
     poseSixthFloor(rig, input.sixth);
     poseBasement(rig, input.basement);
     if (input.training?.kind === 'download' && input.training.role === 'tank') {

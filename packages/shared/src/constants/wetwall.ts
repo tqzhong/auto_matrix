@@ -15,6 +15,7 @@ export interface WetwallGesture {
   role: WetwallRole; phase: WetwallPhase; elapsed: number; progress: number; entry: number; hanging: boolean; freed: boolean; start: Vector3;
   fallY?: number;
   continued?: boolean;
+  grip?: boolean;
 }
 export const WETWALL = { breakSeconds: 2.6, impact: 1.25, rescueSeconds: 2.4, speed: 1.35, jam: 9.4, spacing: 5.4,
   approach: { x: -18, y: WETWALL_SHAFT.top, z: -28.4 },

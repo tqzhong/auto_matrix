@@ -583,7 +583,7 @@ export class PlayerControls {
     this.motion.clubClothes = state.currentLocation === 'film_white_rabbit_club' || state.id === 'neo' && state.currentLocation === 'film_white_construct' && !state.currentAction?.parameters.rescue;
     this.motion.glasses = !this.motion.clubClothes && (state.id !== 'neo' || state.isAwakened && state.currentLocation !== 'film_oracle_home');
     const shaftRole = this.motion.tvExit?.phase === 'emerging' ? tvExitEmergingRole(this.motion.tvExit) : undefined;
-    this.motion.climbing = this.motion.wetwall?.hanging ? 0 : shaftRole === this.motion.tvExit?.role ? Number(this.keys.has('KeyW') || this.keys.has('ArrowUp')) - Number(this.keys.has('KeyS') || this.keys.has('ArrowDown')) : this.climbing && !wall ? Number(this.keys.has('KeyW') || this.keys.has('ArrowUp')) - Number(this.keys.has('KeyS') || this.keys.has('ArrowDown')) : undefined;
+    this.motion.climbing = this.motion.wetwall?.hanging ? Number(this.keys.has('KeyW') || this.keys.has('ArrowUp')) - Number(this.keys.has('KeyS') || this.keys.has('ArrowDown')) : shaftRole === this.motion.tvExit?.role ? Number(this.keys.has('KeyW') || this.keys.has('ArrowUp')) - Number(this.keys.has('KeyS') || this.keys.has('ArrowDown')) : this.climbing && !wall ? Number(this.keys.has('KeyW') || this.keys.has('ArrowUp')) - Number(this.keys.has('KeyS') || this.keys.has('ArrowDown')) : undefined;
     if (this.firing) this.requestShot();
     const now = performance.now();
     if (!running || !this.enabled || state.status !== 'alive') { this.attackQueuedUntil = 0; this.localJump = false; this.networkJump = false; this.impulse = undefined; }
