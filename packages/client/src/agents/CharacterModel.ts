@@ -488,7 +488,7 @@ export class CharacterModels {
     if (rig.spoon) { rig.spoon.root.visible = input.spoon !== undefined; rig.spoon.setBend(input.spoon ?? 0); }
     if (input.phone && rig.hero && !rig.phone) {
       rig.phone = new PhoneModel(); this.phones.add(rig.phone);
-      rig.phone.root.position.set(.09, -.19, 0); rig.phone.root.rotation.set(0, Math.PI / 2, Math.PI); rig.hero.bones.get('wrist_R')!.add(rig.phone.root);
+      rig.phone.root.position.set(.14, -.19, 0); rig.phone.root.rotation.set(0, Math.PI / 2, Math.PI); rig.hero.bones.get('wrist_R')!.add(rig.phone.root);
     }
     if (rig.phone) {
       rig.phone.root.visible = Boolean(input.phone && (input.phone.phase !== 'pickup' || input.phone.elapsed >= .65));
