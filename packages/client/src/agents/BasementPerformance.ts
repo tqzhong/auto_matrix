@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { FILM_SETS, TV_EXIT, basementGasLaunch, basementHatchPoint, type BasementGesture, type BasementLauncherGesture, type TvExitGesture } from '@auto_matrix/shared';
+import { FILM_SETS, TV_EXIT, basementDropPose, basementGasLaunch, basementHatchPoint, type BasementGesture, type BasementLauncherGesture, type TvExitGesture } from '@auto_matrix/shared';
 import type { CharacterRig } from './CharacterModel.js';
 import { reach } from './SpoonPerformance.js';
 import { groundCharacter } from './GroundContact.js';
@@ -21,7 +21,8 @@ function hand(rig: CharacterRig, side: 'R' | 'L', target: THREE.Vector3, grip: n
 export function poseBasement(rig: CharacterRig, gesture?: BasementGesture): void {
   if (!gesture) return;
   const lifting = gesture.role === 'trinity' && ['lifting', 'hatch_ready'].includes(gesture.phase);
-  const landing = gesture.landing === undefined ? 0 : 1 - THREE.MathUtils.smoothstep(gesture.landing, .4, 2.1);
+  const drop = gesture.drop === undefined ? undefined : basementDropPose(gesture.drop);
+  const landing = drop ? drop.bend : gesture.landing === undefined ? 0 : 1 - THREE.MathUtils.smoothstep(gesture.landing, .4, 2.1);
   const weight = gesture.crawling || lifting ? 1 : Math.max(gesture.crouching ? .65 : 0, landing);
   if (!weight) return;
   if (!rig.hero) {
@@ -30,18 +31,21 @@ export function poseBasement(rig: CharacterRig, gesture?: BasementGesture): void
     return;
   }
   const hero = rig.hero, bone = (name: string) => hero.bones.get(name)!, pelvis = bone('pelvis');
-  pelvis.position.copy(hero.rest.get('pelvis')!); pelvis.position.y = THREE.MathUtils.lerp(pelvis.position.y, lifting ? .55 : 1.05, weight);
-  pelvis.rotation.set(0, 0, 0); bone('spine').rotation.set(1.05 * weight, 0, 0); bone('chest').rotation.set(.28 * weight, 0, 0); bone('head').rotation.set(-.7 * weight, 0, 0);
+  pelvis.position.copy(hero.rest.get('pelvis')!); pelvis.position.y = THREE.MathUtils.lerp(pelvis.position.y, drop ? pelvis.position.y - .7 : lifting ? .55 : 1.05, weight);
+  pelvis.rotation.set(0, 0, 0); bone('spine').rotation.set((drop ? .12 : 1.05) * weight, 0, 0); bone('chest').rotation.set(.28 * weight, 0, 0); bone('head').rotation.set((drop ? -.38 : -.7) * weight, 0, 0);
   const rotation = rig.root.getWorldQuaternion(new THREE.Quaternion()), cycle = rig.motion.phase * Math.PI * 2;
-  for (const [i, side] of ['R', 'L'].entries()) {
+  const plantFeet = () => { for (const [i, side] of ['R', 'L'].entries()) {
     const sign = i ? -1 : 1, hip = bone(`hip_${side}`), knee = bone(`knee_${side}`), ankle = bone(`ankle_${side}`);
     hip.rotation.set(0, 0, 0); knee.rotation.set(0, 0, 0); ankle.rotation.set(0, 0, 0); rig.root.updateWorldMatrix(true, true);
     const stride = gesture.crawling ? Math.cos(cycle + i * Math.PI) * .22 : 0;
-    const target = ankle.getWorldPosition(new THREE.Vector3()).lerp(hero.root.localToWorld(new THREE.Vector3(sign * .52, hero.footHeight + .08, -.7 + stride)), weight);
+    const contact = hero.root.localToWorld(new THREE.Vector3(sign * (drop ? .3 : .52), hero.footHeight + (drop ? .015 : .08), drop ? .05 : -.7 + stride));
+    const target = drop ? contact : ankle.getWorldPosition(new THREE.Vector3()).lerp(contact, weight);
     reach(hip, knee, ankle.position, target, new THREE.Vector3(sign * .4, -.2, 1).applyQuaternion(rotation));
     ankle.quaternion.copy(knee.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rotation)); ankle.updateWorldMatrix(false, true);
-  }
+  } };
+  plantFeet();
   groundCharacter(rig);
+  if (drop) plantFeet();
   rig.root.updateWorldMatrix(true, true);
   for (const [i, side] of ['R', 'L'].entries()) {
     if (lifting) {
@@ -49,7 +53,7 @@ export function poseBasement(rig: CharacterRig, gesture?: BasementGesture): void
       hand(rig, side as 'R' | 'L', new THREE.Vector3(center.x + target.x, center.y - 1 + target.y, center.z + target.z), .75);
     } else {
       const sign = i ? -1 : 1, crawl = Boolean(gesture.crawling);
-      const target = hero.root.localToWorld(new THREE.Vector3(sign * .52, crawl ? .32 : 1.1, crawl ? 1.35 + Math.cos(cycle + i * Math.PI) * .18 : .8));
+      const target = hero.root.localToWorld(new THREE.Vector3(sign * (drop ? .62 : .52), crawl ? .32 : drop ? 2.1 - weight * .8 : 1.1, crawl ? 1.35 + Math.cos(cycle + i * Math.PI) * .18 : .8));
       hand(rig, side as 'R' | 'L', bone(`wrist_${side}`).localToWorld(new THREE.Vector3(0, -.19, .035)).lerp(target, weight), crawl ? .15 : .6);
     }
   }

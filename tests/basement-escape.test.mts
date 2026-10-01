@@ -143,6 +143,24 @@ test('Neo controls the continued descent, while the crew clears the basement cei
   assert.equal(h.neo.health, 71);
 });
 
+test('the drop preserves each body’s contact clock through pause, occupation and restored recovery',()=>{
+  const h=setup();h.enter();h.command('act');
+  for(let i=0;i<400&&(h.state().basement!.landings.neo??0)<.3;i++)h.frame({climb:1});
+  assert.ok((h.state().basement!.landings.neo??0)>=.3);
+  const gesture=h.neo.currentAction!.parameters.basement as {drop:number;start:{x:number;y:number;z:number;yaw:number}};
+  assert.equal(gesture.drop,h.state().basement!.landings.neo,'the renderer needs the actual fall age, not a clamped zero before contact');
+  assert.deepEqual(gesture.start,h.state().basement!.starts.neo);
+  const snapshot=()=>JSON.stringify({basement:h.state().basement,cast:BASEMENT_ROLES.map(role=>({position:h.world.agents.get(role)!.position,gesture:h.world.agents.get(role)!.currentAction!.parameters.basement}))});
+  const held=snapshot();h.frame({climb:1},false);assert.equal(snapshot(),held);
+  h.sandbox.restore(structuredClone(h.sandbox.state));h.frame({},false);assert.equal(snapshot(),held);
+  h.players.release('escape-player',h.tick());for(let i=0;i<8;i++)h.players.step(.1,true,h.tick());assert.equal(snapshot(),held);
+  h.players.possess('escape-player','neo',h.tick());h.world.agents.get('trinity')!.controller='occupied';h.frame();const occupied=snapshot();
+  for(let i=0;i<8;i++)h.frame({climb:1});assert.equal(snapshot(),occupied);delete h.world.agents.get('trinity')!.controller;
+  for(let i=0;i<200&&h.state().basement!.phase!=='searching';i++)h.frame({climb:1});
+  assert.equal(h.state().basement!.phase,'searching');assert.equal(h.neo.health,71);assert.equal(h.world.agents.get('mouse')!.status,'dead');
+  for(const role of BASEMENT_ROLES)assert.equal((h.world.agents.get(role)!.currentAction!.parameters.basement as {drop?:number}).drop,undefined,'ordinary movement must release the completed drop pose');
+});
+
 test('letting go fails by gravity and retries at the original pipe height without undoing deaths or capture', () => {
   const h = setup(); h.enter(); const before = { ...h.neo.position }; h.command('act'); h.frame({ climb: 1, jump: true });
   for (let i = 0; i < 40 && h.neo.status !== 'dead'; i++) h.frame();
