@@ -5053,7 +5053,9 @@ export class FilmStorySystem {
       const custody = state.office!.custody!;
       if (custody.paused) return state.lastText;
       if (custody.phase === 'ready' && (target === 'act' || target === 'next')) { this.custody.board(agent, tick); return state.lastText; }
-      if (custody.phase !== 'outside') return state.lastText;
+      if (custody.phase === 'outside' && (target === 'act' || target === 'next')) { this.custody.startStreet(agent, tick); return state.lastText; }
+      if (custody.phase === 'street' && custody.street?.phase === 'ready' && (target === 'act' || target === 'next')) { this.custody.enterStreet(agent, tick); return state.lastText; }
+      if (custody.phase !== 'street' || custody.street?.phase !== 'done') return state.lastText;
       if (target === 'act') target = 'next';
     }
     if (state.visiting) return '回访期间不推进主线。J 返回当前剧情。';
@@ -5770,6 +5772,7 @@ export class FilmStorySystem {
     this.sandbox().structures = this.sandbox().structures.filter(structure => structure.id !== 'film:library:bookdoor');
     this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== 'film:apartment:door');
     this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== 'film:bridge:car');
+    this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== 'film:office:arrest-car');
     delete state.pills;
     delete state.interrogation;
     if (!['m1_pills', 'm1_mirror'].includes(scene.id)) { delete state.hotel; this.sealHotelDoor(); }

@@ -213,7 +213,7 @@ export class AgentRenderer {
           entry.group.position.set(center.x + pose.x, center.y + pose.y, center.z + pose.z);
           guideHeading = (state.currentAction?.parameters.ambushEscort as AmbushEscort).watching ? state.rotation : pose.yaw;
           if (speed > 0 && delta > 0) guideSpeed = Math.abs(guide.progress - before) / (delta * speed);
-        } else if (state.currentAction?.parameters.metacortexLift || state.currentAction?.parameters.officeCustody && delta * speed === 0) entry.group.position.copy(target);
+        } else if (state.currentAction?.parameters.metacortexLift || state.currentAction?.parameters.officeCustody && (delta * speed === 0 || (state.currentAction.parameters.officeCustody as MotionInput['officeCustody'])?.street?.phase !== undefined && (state.currentAction.parameters.officeCustody as MotionInput['officeCustody'])?.street?.phase !== 'approaching')) entry.group.position.copy(target);
         else if (state.currentAction?.parameters.oracleReception || state.currentAction?.parameters.oracleWaiting
           || (state.currentAction?.parameters.oracleArrival as MotionInput['oracleArrival'])?.phase === 'opening'
           || ((state.currentAction?.parameters.oracleArrival as MotionInput['oracleArrival'])?.seating ?? 0) > 0) entry.group.position.copy(target);
@@ -229,7 +229,7 @@ export class AgentRenderer {
       const heading = guideHeading ?? (moving && !state.currentAction?.parameters.officeCustody && !state.currentAction?.parameters.oracleArrival && !state.currentAction?.parameters.oracleReception && !state.currentAction?.parameters.oracleDeparture && !state.currentAction?.parameters.club && !state.currentAction?.parameters.catch && !state.currentAction?.parameters.recoveryCrew && state.currentLocation !== 'film_government_lobby' ? Math.atan2(state.velocity.x, state.velocity.z) : state.rotation);
       let difference = heading - entry.body.rotation.y;
       difference = Math.atan2(Math.sin(difference), Math.cos(difference));
-      if (id !== this.playerId && state.currentAction?.parameters.officeCustody && delta * speed === 0) { entry.body.rotation.y = heading; difference = 0; }
+      if (id !== this.playerId && state.currentAction?.parameters.officeCustody && (delta * speed === 0 || (state.currentAction.parameters.officeCustody as MotionInput['officeCustody'])?.street)) { entry.body.rotation.y = heading; difference = 0; }
       const arrival = state.currentAction?.parameters.oracleArrival as MotionInput['oracleArrival'];
       if (id !== this.playerId) entry.body.rotation.y += difference * (dropRoot || entry.wetwallGuide || entry.ambushGuide && delta === 0 || arrival?.phase === 'opening' || (arrival?.seating ?? 0) > 0 || state.currentAction?.parameters.farewell || state.currentAction?.parameters.club || state.currentAction?.parameters.sentinel || state.currentAction?.parameters.interlude || state.currentAction?.parameters.oracleVisit || state.currentAction?.parameters.oracleDeparture || state.currentAction?.parameters.crosscut || state.currentAction?.parameters.betrayal || state.currentAction?.parameters.rescue || state.currentAction?.parameters.government || state.currentAction?.parameters.airRescue || state.currentAction?.parameters.matrixEscape || state.currentAction?.parameters.theOne || state.currentAction?.parameters.reloaded || state.currentAction?.parameters.catch || state.currentAction?.parameters.lobbyEntry || state.currentAction?.parameters.meeting || state.currentAction?.parameters.pills || state.currentAction?.parameters.interrogation || state.currentAction?.parameters.welcome || state.currentAction?.parameters.reveal || state.currentAction?.parameters.training || state.currentAction?.parameters.workday || state.currentAction?.parameters.recoveryCrew ? 1 : 1 - Math.exp(-10 * delta));
       const velocity = state.status === 'alive' ? Math.hypot(state.velocity.x, state.velocity.z) : 0;
@@ -442,7 +442,10 @@ export class AgentRenderer {
     }
     const morpheus = this.agents.get('morpheus'), smith = this.agents.get('smith');
     const custody = officeCustodyActive(journey) ? journey!.office!.custody : undefined;
-    this.custody.update(this.agents.get('neo')?.rig.hero, custody ? this.agents.get(custody.catcher)?.rig.hero : undefined, custody, custody ? this.agents.get(custody.leader)?.rig.hero : undefined);
+    const front = custody && Object.keys(custody.bodies).find(role => role !== custody.leader && role !== custody.catcher);
+    const lookout = this.agents.get('trinity');
+    this.custody.update(this.agents.get('neo')?.rig.hero, custody ? this.agents.get(custody.catcher)?.rig.hero : undefined, custody, custody ? this.agents.get(custody.leader)?.rig.hero : undefined,
+      front ? this.agents.get(front)?.rig.hero : undefined, lookout?.state.status === 'alive' && !lookout.state.controller ? lookout.rig.hero : undefined);
     if (morpheus?.rig.hero && smith?.rig.hero) {
       const bathroom = (this.playerId === 'morpheus' ? this.playerMotion?.bathroom : morpheus.state.currentAction?.parameters.bathroom) as MotionInput['bathroom'];
       const sixth = morpheus.state.currentAction?.parameters.sixth as MotionInput['sixth'];

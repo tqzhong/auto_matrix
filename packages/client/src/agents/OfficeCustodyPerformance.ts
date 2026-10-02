@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { METACORTEX, OFFICE_CUSTODY_CAR, type OfficeCustody } from '@auto_matrix/shared';
 import type { HeroRig } from './HeroModel.js';
+import { ARREST_CAR, ARREST_BIKE, arrestCarPoint, arrestBikePoint, arrestPose } from '@auto_matrix/shared';
 
 /** Uses the displayed skeletons for cuff placement and upper-arm contact. */
 export class OfficeCustodyPerformance {
@@ -51,15 +52,55 @@ export class OfficeCustodyPerformance {
     }
     rig.root.updateWorldMatrix(true, true);
   }
-  update(neo: HeroRig | undefined, catcher: HeroRig | undefined, custody?: OfficeCustody, leader?: HeroRig): void {
+  private seated(rig: HeroRig, seat: number, duck: number, bike = false): void {
+    const bone = (name: string) => rig.bones.get(name)!;
+    const pelvis = bone('pelvis'); pelvis.position.copy(rig.rest.get('pelvis')!);
+    pelvis.position.y = THREE.MathUtils.lerp(pelvis.position.y, bike ? 2.5 : 1.56, seat) - duck * .4;
+    pelvis.rotation.set(0, 0, 0);
+    bone('spine').rotation.set(duck * .7 + (bike ? .18 : .02), 0, 0);
+    bone('chest').rotation.set(duck * .2 + (bike ? .14 : 0), 0, 0);
+    bone('head').rotation.set(-duck * .3 + (bike ? .18 : 0), bike ? -.35 : 0, 0);
+    const crouch = Math.acos(1 - .4 * duck / (bone('knee_R').position.length() + bone('ankle_R').position.length())) * (1 - seat);
+    for (const side of ['R', 'L']) {
+      bone('hip_' + side).rotation.set((bike ? -1.13 : -1.35) * seat - crouch, 0, bike ? (side === 'R' ? -.45 : .45) : 0);
+      bone('knee_' + side).rotation.set((bike ? 1.7 : 1.52) * seat + crouch * 2, 0, 0);
+      bone('ankle_' + side).rotation.set(-.17 * seat - crouch, 0, 0);
+      bone('shoulder_' + side).rotation.set(-.36, 0, side === 'R' ? -.06 : .06); bone('elbow_' + side).rotation.set(-1, 0, 0);
+    }
+    rig.root.updateWorldMatrix(true, true);
+    if (!bike) {
+      const car = arrestCarPoint(0, 0); let clearance = Infinity;
+      for (const side of ['R', 'L']) {
+        const foot = bone('ankle_' + side).getWorldPosition(new THREE.Vector3());
+        const dx = foot.x - car.x, dz = foot.z - car.z;
+        const x = Math.cos(ARREST_CAR.yaw) * dx - Math.sin(ARREST_CAR.yaw) * dz, z = Math.sin(ARREST_CAR.yaw) * dx + Math.cos(ARREST_CAR.yaw) * dz;
+        const floor = Math.abs(x) < 2.75 && Math.abs(z) < 6.8 ? .3 : 0;
+        clearance = Math.min(clearance, foot.y - rig.footHeight - floor - .012);
+      }
+      if (clearance < 0) { pelvis.position.y -= clearance; rig.root.updateWorldMatrix(true, true); }
+    }
+  }
+  update(neo: HeroRig | undefined, catcher: HeroRig | undefined, custody?: OfficeCustody, leader?: HeroRig, front?: HeroRig, trinity?: HeroRig): void {
     if (neo && this.neo !== neo && custody) this.bind(neo);
     this.cuffs.forEach(cuff => { cuff.visible = Boolean(neo && custody && custody.elapsed >= 2.4); });
     if (this.chain) this.chain.visible = Boolean(neo && custody && custody.elapsed >= 2.4);
     if (!neo || !custody) return;
+    for (const [role, rig] of [['neo', neo], [custody.catcher, catcher], [custody.leader, leader], [Object.keys(custody.bodies).find(role => role !== custody.leader && role !== custody.catcher)!, front]] as const) {
+      const pose = arrestPose(custody, role as 'neo' | OfficeCustody['catcher']);
+      if (rig && pose) this.seated(rig, pose.seated, pose.duck);
+    }
+    if (trinity && custody.watcher) {
+      this.seated(trinity, 1, 0, true);
+      for (const side of ['R', 'L'] as const) {
+        const point = arrestBikePoint(side === 'R' ? .93 : -.93, ARREST_BIKE.handleZ); point.y = 2.94;
+        const orientation = trinity.root.getWorldQuaternion(new THREE.Quaternion());
+        this.hand(trinity, side, new THREE.Vector3(point.x, point.y, point.z), orientation, 1, .6);
+      }
+    }
     const blend = THREE.MathUtils.smoothstep(custody.elapsed, .25, 2.7);
     const pelvis = neo.bones.get('pelvis')!;
     for (const side of ['R', 'L'] as const) {
-      const point = pelvis.localToWorld(new THREE.Vector3(side === 'R' ? -.15 : .15, -.04, -.42));
+      const point = pelvis.localToWorld(new THREE.Vector3(side === 'R' ? -.25 : .25, -.04, -.42));
       const orientation = neo.root.getWorldQuaternion(new THREE.Quaternion()).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(.15, 0, side === 'R' ? -Math.PI / 2 : Math.PI / 2)));
       this.hand(neo, side, point, orientation, blend, .32);
     }
@@ -82,6 +123,22 @@ export class OfficeCustodyPerformance {
       this.hand(leader, 'R', contact, orientation, press, 0, 'finger2-3_R');
     }
     if (!catcher) return;
+    if (custody.street) {
+      if (['opening', 'ready', 'entering'].includes(custody.street.phase)) {
+        for (const side of ['R', 'L']) { catcher.bones.get('shoulder_' + side)!.rotation.set(0, 0, 0); catcher.bones.get('elbow_' + side)!.rotation.set(-.15, 0, 0); }
+        catcher.root.updateWorldMatrix(true, true);
+      }
+      if (custody.street.phase === 'entering') {
+        const age = custody.street.elapsed;
+        const press = THREE.MathUtils.smoothstep(age, .45, 1) * (1 - THREE.MathUtils.smoothstep(age, 1.5, 2.2));
+        const contact = neo.bones.get('head')!.localToWorld(new THREE.Vector3(0, .35, -.02));
+        const side = ['R', 'L'].sort((a, b) => catcher.bones.get(`shoulder_${a}`)!.getWorldPosition(new THREE.Vector3()).distanceToSquared(contact) - catcher.bones.get(`shoulder_${b}`)!.getWorldPosition(new THREE.Vector3()).distanceToSquared(contact))[0] as 'R' | 'L';
+        const x = new THREE.Vector3(side === 'R' ? 1 : -1, 0, 0), y = new THREE.Vector3(0, 0, 1);
+        const orientation = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(x, y, x.clone().cross(y)));
+        if (press) this.hand(catcher, side, contact, orientation, press, .12);
+      }
+      return;
+    }
     const side = ['R', 'L'].sort((a, b) => neo.bones.get(`elbow_${a}`)!.getWorldPosition(new THREE.Vector3()).distanceToSquared(catcher.root.getWorldPosition(new THREE.Vector3()))
       - neo.bones.get(`elbow_${b}`)!.getWorldPosition(new THREE.Vector3()).distanceToSquared(catcher.root.getWorldPosition(new THREE.Vector3())))[0];
     const upper = neo.bones.get(`shoulder_${side}`)!.getWorldPosition(new THREE.Vector3()), elbow = neo.bones.get(`elbow_${side}`)!.getWorldPosition(new THREE.Vector3());

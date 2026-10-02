@@ -19,3 +19,20 @@ export function exitOfficeCustody(neo: AgentState, journey: () => FilmJourney, i
   }
   assert.fail(`custody exit stalled: ${JSON.stringify({ neo: neo.position, custody: journey().office!.custody })}`);
 }
+
+/** Reach the street car through the same controller and confirmation gates as a player. */
+export function boardOfficeArrest(neo: AgentState, journey: () => FilmJourney, input: (values?: Partial<PlayerInput>) => void, command: (target: string) => unknown,
+  sample: () => void = () => {}): void {
+  if (journey().office!.custody!.phase === 'outside') command('act');
+  for (let i = 0; i < 5000; i++) {
+    const custody = journey().office!.custody!;
+    if (custody.street?.phase === 'done') { input(); sample(); return; }
+    if (custody.street?.phase === 'ready') { command('act'); input(); sample(); continue; }
+    const target = officeCustodyTarget(custody);
+    const point = target && !officeCustodyHeld(custody) ? officeNextPoint(neo.position, target, 1.15, Object.values(custody.bodies).map(body => body.position)) : undefined;
+    if (!point) { input(); sample(); continue; }
+    const dx = point.x - neo.position.x, dz = point.z - neo.position.z, length = Math.max(1, Math.hypot(dx, dz));
+    input({ x: dx / length, z: dz / length, yaw: Math.atan2(dx, dz) }); sample();
+  }
+  assert.fail(`street arrest stalled: ${JSON.stringify({ neo: neo.position, custody: journey().office!.custody })}`);
+}

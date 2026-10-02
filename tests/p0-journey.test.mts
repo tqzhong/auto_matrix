@@ -27,7 +27,7 @@ import { PlayerController } from '../packages/server/src/player/PlayerController
 import type { ConversationEngine } from '../packages/server/src/agents/ConversationEngine.js';
 import type { ActionExecutor } from '../packages/server/src/agents/ActionExecutor.js';
 import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
-import { exitOfficeCustody } from './helpers/office-custody-route.mts';
+import { exitOfficeCustody, boardOfficeArrest } from './helpers/office-custody-route.mts';
 
 function setup() {
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
@@ -217,6 +217,7 @@ test('P0 runs continuously from daily contact through capture, tracker removal a
     `the running player must stop before entering an agent: ${JSON.stringify({ neo: h.neo.position, guard: body.position })}`);
   exitOfficeCustody(h.neo, h.state, h.frame, h.command);
   assert.equal(h.state().office!.custody!.phase, 'outside');
+  boardOfficeArrest(h.neo, h.state, h.frame, h.command);
   h.command('next'); assert.equal(h.state().scene, 'm1_interrogation');
   h.walk(filmStepPosition(FILM_SCENE_BY_ID.m1_interrogation, FILM_SCENE_BY_ID.m1_interrogation.steps[0]));
   h.command('act'); h.frames(7); assert.equal(h.state().step, 1); h.command('act'); h.frames(25);
