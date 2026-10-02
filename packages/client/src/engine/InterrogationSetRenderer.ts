@@ -14,11 +14,11 @@ export class InterrogationSetRenderer {
   constructor(parent: THREE.Group) {
     parent.add(this.root);
     const { width: w, depth: d, height: h, table } = INTERROGATION_ROOM;
-    const wall = this.mat(0x8d9984, .84); const floor = this.mat(0xb2b3a0, .7); const trim = this.mat(0x53604c, .6);
-    const metal = this.mat(0x86948b, .24, .82); const dark = this.mat(0x29332b, .54); const paint = this.mat(0x727e6b, .48);
+    const wall = this.mat(0xc2c4b8, .9); const floor = this.mat(0xaeb0a6, .76); const trim = this.mat(0x737c6e, .7); const mortar = this.mat(0x9ca293, .96);
+    const metal = this.mat(0x86948b, .24, .82); const dark = this.mat(0x29332b, .54); const paint = this.mat(0xa4aea0, .68);
     const grain = new Uint8Array(128 * 128 * 4);
     for (let y = 0; y < 128; y++) for (let x = 0; x < 128; x++) {
-      const i = (y * 128 + x) * 4; const value = 185 + ((x * 17 + y * 3) % 47);
+      const i = (y * 128 + x) * 4; let hash = Math.imul(x + y * 128 + 1, 1597334677); hash = Math.imul(hash ^ hash >>> 16, 2246822519); const value = 185 + ((hash >>> 0) % 47);
       grain[i] = grain[i + 1] = grain[i + 2] = value; grain[i + 3] = 255;
     }
     const map = new THREE.DataTexture(grain, 128, 128); map.wrapS = map.wrapT = THREE.RepeatWrapping; map.repeat.set(6, 1); map.needsUpdate = true; this.textures.add(map);
@@ -26,13 +26,19 @@ export class InterrogationSetRenderer {
     this.box(floor, 0, -.16, 0, w, .3, d);
     for (let x = -w / 2 + 1; x < w / 2; x += 2) for (let z = -d / 2 + 1; z < d / 2; z += 2) this.box(floor, x, .005, z, 1.986, .04, 1.986);
     for (const x of [-w / 2, w / 2]) {
-      this.box(trim, x, h / 2, 0, .3, h, d);
-      for (let z = -d / 2 + 1.375; z < d / 2; z += 2.75) for (let y = 1.05; y < h; y += 2.1) this.box(wall, x - Math.sign(x) * .17, y, z, .12, 2.087, 2.737);
+      this.box(mortar, x, h / 2, 0, .3, h, d);
+      for (let row = 0; row * .7 < h - .01; row++) for (let z = -d / 2 - (row % 2) * .7; z < d / 2; z += 1.4) {
+        const from = Math.max(-d / 2, z), to = Math.min(d / 2, z + 1.4);
+        this.box(wall, x - Math.sign(x) * .17, row * .7 + .35, (from + to) / 2, .12, .686, to - from - .014);
+      }
       this.box(trim, x - Math.sign(x) * .25, .16, 0, .09, .32, d);
     }
     for (const z of [-d / 2, d / 2]) {
-      this.box(trim, 0, h / 2, z, w, h, .3);
-      for (let x = -w / 2 + 1; x < w / 2; x += 2) for (let y = 1.05; y < h; y += 2.1) this.box(wall, x, y, z - Math.sign(z) * .17, 1.987, 2.087, .12);
+      this.box(mortar, 0, h / 2, z, w, h, .3);
+      for (let row = 0; row * .7 < h - .01; row++) for (let x = -w / 2 - (row % 2) * .7; x < w / 2; x += 1.4) {
+        const from = Math.max(-w / 2, x), to = Math.min(w / 2, x + 1.4);
+        this.box(wall, (from + to) / 2, row * .7 + .35, z - Math.sign(z) * .17, to - from - .014, .686, .12);
+      }
       this.box(trim, 0, .16, z - Math.sign(z) * .25, w, .32, .09);
     }
     this.box(wall, 0, h + .15, 0, w, .3, d);
@@ -46,8 +52,10 @@ export class InterrogationSetRenderer {
       light.shadow.mapSize.set(1024, 1024); light.shadow.normalBias = .025; light.shadow.bias = -.00015; this.root.add(light, light.target);
     }
     const bounce = new THREE.PointLight(0xd6dfc5, 25, 20, 2); bounce.position.set(3.7, 4.3, 2); this.root.add(bounce);
-    this.box(dark, -5.7, 3, -d / 2 + .3, 3.8, 6, .2);
-    this.box(paint, -5.7, 2.9, -d / 2 + .43, 3.43, 5.78, .09);
+    this.box(paint, -5.7, 3, -d / 2 + .28, 3.75, 6, .16);
+    this.box(dark, -5.7, 2.95, -d / 2 + .38, 3.47, 5.83, .04);
+    this.box(paint, -5.7, 2.95, -d / 2 + .41, 3.43, 5.78, .05);
+    for (const y of [.8, 3, 5.2]) this.box(metal, -7.42, y, -d / 2 + .47, .065, .24, .065, .02);
     this.box(metal, -4.45, 2.8, -d / 2 + .52, .08, .2, .16);
     this.box(metal, -4.65, 2.8, -d / 2 + .63, .5, .07, .08, .03);
     this.box(dark, 1.4, 4.4, -d / 2 + .3, 7.9, 3.7, .24);

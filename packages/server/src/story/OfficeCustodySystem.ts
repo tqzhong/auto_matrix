@@ -2,7 +2,7 @@ import { OFFICE_AGENT_ROLES, OFFICE_PATROLS, OFFICE_CUSTODY, OFFICE_CUSTODY_CAR,
 import type { WorldState } from '../world/WorldState.js';
 import { officeNextPoint } from './OfficeNavigation.js';
 import { updateMetacortexDoors } from './MetacortexDoors.js';
-import { ARREST_CAR, ARREST_BIKE, ARREST_TIMING, arrestDriveSeconds, arrestCarPoint, arrestCarPose, arrestCarBounds, arrestBikePoint, arrestPose, arrestMirrorShot, type OfficeArrest } from '@auto_matrix/shared';
+import { ARREST_CAR, ARREST_BIKE, ARREST_TIMING, arrestDriveSeconds, arrestCarPoint, arrestCarPose, arrestCarBounds, arrestBikePoint, arrestPose, arrestMirrorShot, cityVehicleBlocked, type OfficeArrest } from '@auto_matrix/shared';
 
 const planar = (a: Vector3, b: Vector3) => Math.hypot(a.x - b.x, a.z - b.z);
 
@@ -166,7 +166,15 @@ export class OfficeCustodySystem {
   private move(agent: AgentState, custody: OfficeCustody, role: string, body: OfficeCustodyBody, destination: Vector3, delta: number): void {
     if (!delta) return;
     const before = { ...body.position }, blockers = this.blockers(agent, custody, role);
-    const point = officeNextPoint(before, destination, .71, blockers, custody.street);
+    const traffic = custody.phase === 'street' ? this.sandbox().structures.filter(item => item.id.startsWith('traffic:')) : [];
+    const occupied = traffic.find(item => cityVehicleBlocked(destination, destination, true, [item]));
+    if (occupied) {
+      // Wait on the sedan side of the lane, clear of traffic's pedestrian braking margin.
+      const car = arrestCarPoint(0, 0, custody.street), horizontal = occupied.film!.width > occupied.film!.depth;
+      destination = horizontal ? { ...destination, x: before.x, z: occupied.position.z + Math.sign(car.z - occupied.position.z) * (occupied.film!.depth / 2 + 1.5) }
+        : { ...destination, z: before.z, x: occupied.position.x + Math.sign(car.x - occupied.position.x) * (occupied.film!.width / 2 + 1.5) };
+    }
+    const point = officeNextPoint(before, destination, .71, blockers, custody.street, traffic);
     if (point) {
       const length = planar(before, point), stride = Math.min(length, OFFICE_CUSTODY.speed * delta);
       const candidate = length > .001 ? { ...before, x: before.x + (point.x - before.x) / length * stride, z: before.z + (point.z - before.z) / length * stride } : before;

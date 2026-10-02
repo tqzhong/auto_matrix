@@ -330,7 +330,7 @@ export class PlayerControls {
     const length = Math.hypot(x, z);
     if (length > 1) { x /= length; z /= length; }
     const attacking = (performance.now() - this.lastAttack) / 1000 < MELEE_COMBO[this.attackCombo].duration;
-    return { x, z, yaw: attacking ? this.attackYaw : this.yaw, pitch: this.pitch, sprint: !this.motion.officeCustody && (this.keys.has('ShiftLeft') || this.keys.has('ShiftRight')), crouch: !this.motion.officeCustody && this.keys.has('KeyZ'), jump: !this.motion.officeCustody && jump,
+    return { x, z, yaw: attacking ? this.attackYaw : this.yaw, location: this.authoritative?.currentLocation, pitch: this.pitch, sprint: !this.motion.officeCustody && (this.keys.has('ShiftLeft') || this.keys.has('ShiftRight')), crouch: !this.motion.officeCustody && this.keys.has('KeyZ'), jump: !this.motion.officeCustody && jump,
       drive: this.ride ? { throttle: this.enabled ? Math.max(0, forward) : 0, steer: this.enabled ? right : 0, brake: forward < 0 || !this.enabled } : undefined,
       climb: (this.climbing || this.motion.tvExit?.phase === 'emerging') && this.enabled ? forward : 0, focus: this.enabled && this.running && this.keys.has('KeyG'), sequence: ++this.sequence };
   }
@@ -621,6 +621,7 @@ export class PlayerControls {
         this.position = { ...state.position }; this.vy = 0; this.planar = { x: 0, z: 0 }; this.cameraReady = false;
         if (state.currentLocation !== this.authoritative?.currentLocation && (FILM_SETS[state.currentLocation] || FILM_SETS[this.authoritative?.currentLocation ?? ''])) {
           this.yaw = this.facing = this.movementYaw = state.rotation;
+          if (state.currentLocation === 'film_agent_interrogation') this.pitch = .12;
           this.keys.clear(); this.movementForward = this.movementRight = 0; this.lastLook = -1000;
           this.lastAttack = -1000; this.attackQueuedUntil = 0; this.localJump = this.networkJump = false; this.impulse = undefined;
         }
