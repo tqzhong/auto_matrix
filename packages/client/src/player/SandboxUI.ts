@@ -1720,7 +1720,7 @@ export class SandboxUI {
     if (!this.panel || !this.player || !this.state) return;
     const player = this.player; const state = this.state; const profile = state.profiles[player.id];
     const life = player.id === 'neo' || player.id === state.neoLife?.journey?.actor ? state.neoLife : undefined;
-    const signature = JSON.stringify([this.panel, this.selectedFilm, profile.inventory, profile.xp, profile.skills, profile.trackedMission, profile.visited, state.missions, state.structures, state.incidents, Math.round(player.position.x), Math.round(player.position.z), state.ending,
+    const signature = JSON.stringify([this.panel, this.selectedFilm, profile.inventory, profile.xp, profile.skills, profile.trackedMission, profile.visited, state.missions, state.structures.filter(s => !s.film), state.incidents, Math.round(player.position.x), Math.round(player.position.z), state.ending,
       life && [life.chapter, life.day, life.money, life.cycle, Math.floor(this.time / 500), life.anomaly, life.activity, life.journal[0], life.appointment, life.journey, player.status, state.threats.length]]);
     if (signature === this.signature) return;
     this.signature = signature;

@@ -84,12 +84,13 @@ function snapshot(): WorldStateFull {
     phase: story.getCurrentPhaseId(), timeOfDay: world.timeOfDay, events: world.getRecentEvents(100), simulation: simulationState(), sandbox: sandbox.state };
 }
 
-async function saveWorld(): Promise<void> {
+async function saveWorld(running = simLoop.isRunning()): Promise<void> {
   if (!worldReady) return;
-  await memory.saveAll();
-  await checkpoints.save({ version: 1, tick: simLoop.getTick(), timeOfDay: world.timeOfDay, day: world.day, phase: story.getCurrentPhaseId(),
+  // Serialize at the control boundary, before disk I/O can let another tick run.
+  await Promise.all([memory.saveAll(), checkpoints.save({ version: 1, tick: simLoop.getTick(), timeOfDay: world.timeOfDay, day: world.day,
+    simulation: { running, speed }, phase: story.getCurrentPhaseId(),
     agents: Object.fromEntries(world.agents), events: world.globalEvents,
-    relationships: [...world.agents.keys()].flatMap(id => relationships.getRelationshipsForAgent(id)), sandbox: sandbox.state });
+    relationships: [...world.agents.keys()].flatMap(id => relationships.getRelationshipsForAgent(id)), sandbox: sandbox.state })]);
 }
 
 const simLoop = new SimulationLoop(config.simulation.tickRateMs, config.simulation.agentDecisionIntervalTicks,
@@ -213,6 +214,7 @@ sockets.getIO().on('connection', socket => {
           consequence: '接下来 180 个模拟刻暂停主动攻击，人物仍可移动、交谈与恢复。', involvedAgents: [], location: 'times_square', tick: simLoop.getTick(), importance: 8 });
       } else return;
     } else return;
+    if (type === 'pause' || type === 'resume' || type === 'set_speed') void saveWorld().catch(error => console.error('[Save] Failed:', error));
     sockets.broadcastDelta({ ...sync.calculateDelta(world.agents), sandbox: sandbox.state, timeOfDay: world.timeOfDay, simulation: simulationState() }, simLoop.getTick());
   });
   socket.on('disconnect', () => players.release(socket.id, simLoop.getTick()));
@@ -266,19 +268,22 @@ async function main(): Promise<void> {
     world.globalEvents = checkpoint.events.slice(-100);
     if (checkpoint.sandbox) sandbox.restore(checkpoint.sandbox);
     relationships.restore(checkpoint.relationships);
+    speed = checkpoint.simulation?.speed ?? 1;
     story.restorePhase(checkpoint.phase);
     world.setPhase(checkpoint.phase);
     console.log(`[Auto Matrix] Restored world at tick ${checkpoint.tick}`);
   }
   evolution.evaluate(simLoop.getTick(), [...world.agents.values()], world.globalEvents);
   worldReady = true;
-  simLoop.start();
+  simLoop.setTickRate(config.simulation.tickRateMs / speed);
+  if (checkpoint?.simulation?.running !== false) simLoop.start();
   httpServer.listen(config.server.port, config.server.host, () => console.log(`[Auto Matrix] ${world.agents.size} residents · ${llm.enabled ? 'model-enhanced' : 'local simulation'} · http://localhost:${config.server.port}`));
 }
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) process.once(signal, () => {
+  const running = simLoop.isRunning();
   simLoop.stop();
   clearInterval(playerTimer);
-  void saveWorld().catch(error => console.error('[Save] Failed:', error)).finally(() => { sockets.getIO().close(); httpServer.close(); process.exit(0); });
+  void saveWorld(running).catch(error => console.error('[Save] Failed:', error)).finally(() => { sockets.getIO().close(); httpServer.close(); process.exit(0); });
 });
 main().catch(error => { console.error(error); process.exitCode = 1; });
