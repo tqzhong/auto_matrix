@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { METACORTEX, METACORTEX_LOBBY, OFFICE_CUSTODY_CAR, metacortexLiftPose, type MetacortexLift, type OfficeCustody } from '@auto_matrix/shared';
 import { batchStaticGeometry } from './StaticGeometry.js';
+import { CustodyStreetRenderer } from './CustodyStreetRenderer.js';
 
 /** Lobby and moving car stay in the city while the office is streamed above. */
 export class MetacortexRenderer {
@@ -14,6 +15,7 @@ export class MetacortexRenderer {
   private displays: { canvas: HTMLCanvasElement; texture: THREE.CanvasTexture }[] = [];
   private lights: THREE.PointLight[] = [];
   private display = '';
+  private street?: CustodyStreetRenderer;
   constructor(parent: THREE.Group) {
     this.root.name = 'metacortex-city-lobby'; parent.add(this.root);
     const stone = 0xc9c5b5, metal = 0x686e69, dark = 0x303a36, brass = 0x9e8d5e;
@@ -95,7 +97,10 @@ export class MetacortexRenderer {
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, display ? .7 : width / 8), material); mesh.position.set(x, y, z); parent.add(mesh);
     if (display) this.displays.push({ canvas, texture });
   }
-  update(lift?: MetacortexLift, nearby = false, custody?: OfficeCustody): void {
+  update(lift?: MetacortexLift, nearby = false, custody?: OfficeCustody, subject?: THREE.Object3D): void {
+    if (custody?.lift && !this.street) this.street = new CustodyStreetRenderer(this.root);
+    if (!custody && this.street) { this.street.dispose(); this.street = undefined; }
+    this.street?.update(custody, subject);
     const pose = metacortexLiftPose(lift); this.car.position.y = pose.height;
     const pressing = custody?.phase === 'selecting' && (custody.transportElapsed ?? 0) >= .65 && (custody.transportElapsed ?? 0) <= 1.1;
     this.lobbyButton.position.x = OFFICE_CUSTODY_CAR.button.x + .02 + (pressing ? .015 : 0);
@@ -113,6 +118,7 @@ export class MetacortexRenderer {
     this.lights.forEach(light => { light.visible = nearby; });
   }
   dispose(): void {
+    this.street?.dispose();
     this.root.traverse(object => { if (object instanceof THREE.Mesh && object.geometry !== this.geometry) {
       object.geometry.dispose();
       if (![...this.materials.values()].includes(object.material as THREE.MeshStandardMaterial)) (object.material as THREE.Material).dispose();

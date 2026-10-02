@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SCENE_BY_ID, FILM_SETS, PILL_TIMING, WAKE_CALL, filmStepPosition, filmPosition, officeOccluded, playerBlocked, stepPlayer, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, PILL_TIMING, WAKE_CALL, filmStepPosition, filmPosition, officeOccluded, playerBlocked, stepPlayer, type WorldEvent, type PlayerInput } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
 import { PlayerController } from '../packages/server/src/player/PlayerController.js';
 import { OfficeEscapeSystem } from '../packages/server/src/story/OfficeEscapeSystem.js';
-import { exitOfficeCustody } from './helpers/office-custody-route.mts';
+import { exitOfficeCustody, boardOfficeArrest } from './helpers/office-custody-route.mts';
 import type { ConversationEngine } from '../packages/server/src/agents/ConversationEngine.js';
 import type { ActionExecutor } from '../packages/server/src/agents/ActionExecutor.js';
 import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
@@ -79,10 +79,12 @@ function setup() {
   };
   const escort = () => {
     assert.ok(sandbox.life.film.state!.office?.custody); frame(3.3);
-    exitOfficeCustody(neo(), () => sandbox.life.film.state!, (input = {}) => {
+    const inputFrame = (input: Partial<PlayerInput> = {}) => {
       players.receiveInput('neo-player', { x: 0, z: 0, yaw: neo().rotation, sprint: false, jump: false, ...input, sequence: ++sequence });
       players.step(.05, true, tick); if (++movementFrames % 10 === 0) advance();
-    }, command);
+    };
+    exitOfficeCustody(neo(), () => sandbox.life.film.state!, inputFrame, command);
+    boardOfficeArrest(neo(), () => sandbox.life.film.state!, inputFrame, command);
   };
   return { world, sandbox, players, command, advance, neo, scene, goal, finish, office, delivery, crossWindow, climb, move, escort, maximumAlert: () => maximumAlert, state: () => sandbox.life.film.state!, tick: () => tick };
 }

@@ -2,6 +2,7 @@ import { crosscutView } from '@auto_matrix/shared';
 import { truthRest, truthKneel, truthSeat } from '@auto_matrix/shared';
 import { METACORTEX } from '@auto_matrix/shared';
 import { OFFICE_CUSTODY, officeCustodyStep } from '@auto_matrix/shared';
+import { ARREST_BIKE, arrestCarPoint, arrestBikePoint, arrestMirrorShot } from '@auto_matrix/shared';
 import { catchLocked, deusPactLocked, deusPactPose, reloadedPhaseLocked, smithFinaleLocked, smithFinalePose, trilogyEpilogueLocked } from '@auto_matrix/shared';
 import { reloadedCamera } from './ReloadedCamera.js';
 import * as THREE from 'three';
@@ -76,6 +77,7 @@ export class PlayerControls {
   truckRescue = false;
   private wasPerforming = false;
   private meetingYaw?: number;
+  private arrestYaw?: number;
   mirror = 0;
   spoon?: number;
   ambushObservation?: number;
@@ -105,7 +107,7 @@ export class PlayerControls {
 
   possess(state: AgentState): void {
     this.custodyBodies = undefined; this.motion.officeCustody = undefined;
-    this.meetingYaw = undefined; this.welcomeShot = undefined; this.performing = false; this.phoneExit = false;
+    this.meetingYaw = undefined; this.arrestYaw = undefined; this.welcomeShot = undefined; this.performing = false; this.phoneExit = false;
     this.bridgeCaught = undefined;
     this.watchingAmbush = false;
     this.wetwallGuide = undefined; this.hangingWetwall = false; this.sixthGuide = undefined; this.motion.sixth = undefined;
@@ -185,6 +187,7 @@ export class PlayerControls {
         if (this.firstPerson && this.motion.mirrorBeat !== undefined) this.aimAtMirror();
         if (this.firstPerson && this.motion.meeting && ['scanning', 'located', 'removing', 'discarding'].includes(this.motion.meeting.phase)) this.aimAtMeetingScanner();
         if (this.firstPerson && this.motion.crosscut && (this.motion.crosscut.phase === 'phone' || this.motion.crosscut.phase === 'neo_exit')) this.aimAtHardline();
+        if (this.firstPerson && this.motion.officeCustody?.street) { this.yaw = this.movementYaw = this.facing; this.pitch = .12; }
         if (this.firstPerson && this.climbing && this.authoritative?.currentLocation === 'film_office_ledge') {
           this.yaw = -.55; this.pitch = .55;
         }
@@ -554,6 +557,12 @@ export class PlayerControls {
     this.motion.spoon = this.spoon;
     this.motion.phone = this.phone;
     this.motion.officeCustody = custody;
+    const arrestYaw = custody?.street && custody.street.phase !== 'approaching' ? state.rotation : undefined;
+    if (arrestYaw !== undefined && this.arrestYaw !== undefined && this.firstPerson) {
+      const turn = Math.atan2(Math.sin(arrestYaw - this.arrestYaw), Math.cos(arrestYaw - this.arrestYaw));
+      this.yaw += turn; this.movementYaw += turn;
+    }
+    this.arrestYaw = arrestYaw;
     this.motion.window = this.performing ? state.currentAction?.parameters.window as number | undefined : undefined;
     this.motion.crossing = this.performing ? state.currentAction?.parameters.crossing as number | undefined : undefined;
     if (this.motion.crossing !== undefined && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
@@ -649,7 +658,7 @@ export class PlayerControls {
       this.position = { x: center.x + dropRoot.x, y: center.y + dropRoot.y, z: center.z + dropRoot.z };
       this.vy = basementDropPose(basement!.drop!).verticalVelocity; this.planar = { x: 0, z: 0 }; this.localJump = false;
     } else if (this.ride || this.climbing || this.performing) {
-      const blend = inOfficeLift || this.motion.truckPassenger || this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.training || this.motion.workday || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || catchCinematic || smithFinaleLocked(this.motion.smithFinale) || this.motion.lobbyEntry ? 1 : 1 - Math.exp(-20 * delta);
+      const blend = inOfficeLift || this.motion.officeCustody?.street || this.motion.truckPassenger || this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.training || this.motion.workday || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || catchCinematic || smithFinaleLocked(this.motion.smithFinale) || this.motion.lobbyEntry ? 1 : 1 - Math.exp(-20 * delta);
       this.position.x += (state.position.x - this.position.x) * blend; this.position.y += (state.position.y - this.position.y) * blend; this.position.z += (state.position.z - this.position.z) * blend;
       this.vy = 0; this.planar = { x: 0, z: 0 }; this.localJump = false;
     } else if (running && this.enabled && state.status === 'alive') {
@@ -693,7 +702,7 @@ export class PlayerControls {
     const heading = dropRoot ? dropRoot.yaw : this.motion.bathroom ? bathroomFightRoot(this.motion.bathroom, this.motion.bathroom.role).yaw : this.motion.sixth ? sixthPose(this.motion.sixth).yaw : this.motion.wetwall && this.wetwallGuide ? wetwallPose(this.motion.wetwall.start, this.motion.wetwall.role, this.wetwallGuide.progress, this.motion.wetwall.phase, this.motion.wetwall.elapsed, this.motion.wetwall.fallY, this.motion.wetwall.continued).yaw
       : this.ride || this.climbing || this.performing ? state.rotation : attacking ? this.attackYaw : this.firearm ? this.yaw : this.motion.speed > .1 ? Math.atan2(dx, dz) : this.facing;
     const turn = Math.atan2(Math.sin(heading - this.facing), Math.cos(heading - this.facing));
-    this.facing += turn * (dropRoot || this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.welcome || this.motion.knock !== undefined || this.motion.training || this.motion.workday || this.motion.wakeCall || this.motion.sentinel || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || this.motion.lobbyEntry ? 1 : 1 - Math.exp(-14 * delta)); this.motion.turn = turn * 8;
+    this.facing += turn * (dropRoot || this.motion.officeCustody?.street || this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.welcome || this.motion.knock !== undefined || this.motion.training || this.motion.workday || this.motion.wakeCall || this.motion.sentinel || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || this.motion.lobbyEntry ? 1 : 1 - Math.exp(-14 * delta)); this.motion.turn = turn * 8;
     if (running && this.enabled && !this.motion.wetwall && (this.motion.speed > .1 || this.ride || this.climbing) && !(this.firstPerson && this.climbing && state.currentLocation === 'film_office_ledge') && !this.dragging && performance.now() - this.lastLook > 900) {
       const cameraTurn = Math.atan2(Math.sin(this.facing - this.yaw), Math.cos(this.facing - this.yaw));
       this.yaw += cameraTurn * (1 - Math.exp(-5 * delta));
@@ -730,6 +739,11 @@ export class PlayerControls {
     const streetShaftWide = !this.firstPerson && tvExit?.phase === 'emerging';
     this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, inOfficeLift && !this.firstPerson ? 80 : basementWide ? this.camera.aspect < .85 ? 82 : 78 : bathroomWide ? this.camera.aspect < .85 ? 78 : 58 : streetShaftWide ? this.camera.aspect < .85 ? 68 : 60 : podWide ? 65 : this.motion.truth && !this.firstPerson && this.camera.aspect < .85 ? 68 : cabinWide ? this.camera.aspect < .85 ? 68 : 58 : smithFinaleWide || epilogueWide ? 64 : ladderWide ? 62 : interviewApproach ? 70 : interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide || sentinelWide || interludeWide || oracleWide || betrayalWide || rescueWide || governmentWide || airRescueWide || escapeWide || oneWide || catchWide || lobbyWide || pillDepartureWide ? 58 : this.motion.inspecting && !this.firstPerson ? 42 : this.firstPerson ? this.motion.mirrorBeat !== undefined ? 78 : sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
     this.camera.near = basement?.crawling || Boolean(dropRoot) || this.firstPerson && (this.motion.pills || this.motion.bathroom || this.motion.sixth || this.motion.wetwall?.hanging || tvExit?.phase === 'emerging') ? .06 : this.firstPerson && this.motion.club ? .08 : this.defaultNear;
+    const arrest = this.motion.officeCustody?.street;
+    if (arrest && arrest.phase !== 'approaching') {
+      this.camera.fov = this.firstPerson ? 68 : arrestMirrorShot(arrest) ? this.camera.aspect < .85 ? 60 : 38 : this.camera.aspect < .85 ? 64 : 54;
+      this.camera.near = .06;
+    }
     this.camera.updateProjectionMatrix();
     this.cameraStep += this.motion.speed * delta;
     const target = new THREE.Vector3(this.position.x, this.position.y + (this.firstPerson ? 2.99 : 2.05) - (this.motion.pills ? .9 : 0) - (this.motion.mirrorBeat !== undefined ? THREE.MathUtils.smoothstep(this.motion.mirrorBeat, .65, MIRROR_TIMING.sit) * .9 : 0) - (this.motion.reveal?.kind === 'construct' ? .62 : 0) - (this.motion.crouching ? 1.1 : 0), this.position.z);
@@ -756,7 +770,21 @@ export class PlayerControls {
     const verticalTarget = THREE.MathUtils.lerp(this.cameraTarget.y, target.y, 1 - Math.exp(-8 * delta));
     this.cameraTarget.lerp(target, 1 - Math.exp(-22 * delta)); this.cameraTarget.y = verticalTarget;
     const spoon = this.motion.inspecting && group.getObjectByName('held-spoon');
-    if (this.bridgeCaught) {
+    if (arrest && arrest.phase !== 'approaching') {
+      const head = group.getObjectByName('head'); group.updateWorldMatrix(true, true);
+      const eye = head ? head.localToWorld(new THREE.Vector3(0, .1, .32)) : new THREE.Vector3(this.position.x, this.position.y + 2.2, this.position.z);
+      if (this.firstPerson) {
+        const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
+        this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
+      } else if (arrestMirrorShot(arrest) && arrest.observed) {
+        const mirror = arrestBikePoint(ARREST_BIKE.mirror.x, ARREST_BIKE.mirror.z); mirror.y = ARREST_BIKE.mirror.y;
+        const view = arrestBikePoint(ARREST_BIKE.view.x, ARREST_BIKE.view.z);
+        this.camera.position.set(view.x, ARREST_BIKE.view.y, view.z); this.camera.lookAt(mirror.x, mirror.y, mirror.z);
+      } else {
+        const point = arrestCarPoint(this.camera.aspect < .85 ? -11 : -9, 4.5);
+        this.camera.position.set(point.x, 3.7, point.z); this.camera.lookAt(eye);
+      }
+    } else if (this.bridgeCaught) {
       const pursuer = new THREE.Vector3(this.bridgeCaught.x, this.position.y, this.bridgeCaught.z);
       if (this.firstPerson) {
         const eye = new THREE.Vector3(this.position.x, this.position.y + 2.99, this.position.z);

@@ -2,13 +2,14 @@ import { OFFICE_AGENT_ROLES, OFFICE_PATROLS, OFFICE_CUSTODY, OFFICE_CUSTODY_CAR,
 import type { WorldState } from '../world/WorldState.js';
 import { officeNextPoint } from './OfficeNavigation.js';
 import { updateMetacortexDoors } from './MetacortexDoors.js';
+import { ARREST_CAR, ARREST_BIKE, ARREST_OBSTACLE, ARREST_TIMING, arrestCarPoint, arrestBikePoint, arrestPose, arrestMirrorShot } from '@auto_matrix/shared';
 
 const planar = (a: Vector3, b: Vector3) => Math.hypot(a.x - b.x, a.z - b.z);
 
 export class OfficeCustodySystem {
   constructor(private world: WorldState, private sandbox: () => SandboxState) {}
   active(agent: AgentState): boolean { return agent.id === this.sandbox().neoLife?.journey?.actor && officeCustodyActive(this.sandbox().neoLife?.journey); }
-  reserved(id: string): boolean { return officeCustodyActive(this.sandbox().neoLife?.journey) && (OFFICE_AGENT_ROLES.includes(id as OfficeCustodyRole) || id === 'courier' && Boolean(this.sandbox().neoLife?.journey?.office?.custody?.courier)); }
+  reserved(id: string): boolean { return officeCustodyActive(this.sandbox().neoLife?.journey) && (OFFICE_AGENT_ROLES.includes(id as OfficeCustodyRole) || id === 'courier' && Boolean(this.sandbox().neoLife?.journey?.office?.custody?.courier) || id === 'trinity' && Boolean(this.sandbox().neoLife?.journey?.office?.custody?.watcher)); }
   begin(agent: AgentState, tick: number): void {
     const state = this.sandbox(), journey = state.neoLife!.journey!;
     const bodies = Object.fromEntries(OFFICE_AGENT_ROLES.map((role, i) => {
@@ -23,10 +24,72 @@ export class OfficeCustodySystem {
     const custody = this.sandbox().neoLife!.journey!.office!.custody!;
     custody.phase = 'clearing'; custody.boarded = 0;
     custody.lift = { floor: 1, target: 1, phase: 'idle', elapsed: 0 };
+    this.stageStreet(custody);
     const courier = this.world.agents.get('courier')!;
     if (Math.abs(courier.position.y - agent.position.y) < 3 && Math.abs(courier.position.x - METACORTEX.center.x) < 3 && Math.abs(courier.position.z - METACORTEX.center.z - METACORTEX.liftZ) < 3.5)
       custody.courier = { position: { ...courier.position }, yaw: courier.rotation, velocity: { x: 0, y: 0, z: 0 } };
     this.frame(agent, 0, tick);
+  }
+  private stageStreet(custody: OfficeCustody): void {
+    const trinity = this.world.agents.get('trinity');
+    // Stage the existing lookout while Neo is still upstairs, without healing or stealing a player body.
+    if (!custody.watcher && trinity?.status === 'alive' && !trinity.controller)
+      custody.watcher = { position: arrestBikePoint(), yaw: ARREST_BIKE.yaw + Math.PI, velocity: { x: 0, y: 0, z: 0 } };
+    if (!this.sandbox().structures.some(item => item.id === 'film:office:arrest-car')) this.sandbox().structures.push({ id: 'film:office:arrest-car', kind: 'barricade', owner: 'matrix', matrix: true, health: 99999,
+      position: metacortexPosition(ARREST_OBSTACLE.x, ARREST_OBSTACLE.z), film: { scene: 'm1_office_escape', width: ARREST_OBSTACLE.width, depth: ARREST_OBSTACLE.depth, height: ARREST_OBSTACLE.height } });
+  }
+  startStreet(agent: AgentState, tick: number): void {
+    const custody = this.sandbox().neoLife!.journey!.office!.custody!;
+    custody.phase = 'street'; custody.street = { phase: 'approaching', elapsed: 0 };
+    this.stageStreet(custody); this.frame(agent, 0, tick);
+  }
+  enterStreet(agent: AgentState, tick: number): void {
+    const custody = this.sandbox().neoLife!.journey!.office!.custody!;
+    custody.street!.phase = 'entering'; custody.street!.elapsed = 0;
+    custody.street!.from = { neo: { position: { ...agent.position }, yaw: agent.rotation },
+      ...Object.fromEntries(OFFICE_AGENT_ROLES.map(role => [role, { position: { ...custody.bodies[role].position }, yaw: custody.bodies[role].yaw }])) };
+    this.frame(agent, 0, tick);
+  }
+  private street(agent: AgentState, custody: OfficeCustody, delta: number): void {
+    const street = custody.street!, front = OFFICE_AGENT_ROLES.find(role => role !== custody.leader && role !== custody.catcher)!;
+    const targets = { [custody.leader]: ARREST_CAR.driver, [front]: ARREST_CAR.front, [custody.catcher]: ARREST_CAR.catcher };
+    if (delta) for (const role of OFFICE_AGENT_ROLES) custody.bodies[role].velocity = { x: 0, y: 0, z: 0 };
+    if (street.phase === 'approaching') {
+      for (const role of [custody.leader, front, custody.catcher]) {
+        const point = targets[role]; this.move(agent, custody, role, custody.bodies[role], arrestCarPoint(point.x, point.z), delta);
+      }
+      if (planar(agent.position, arrestCarPoint(ARREST_CAR.approach.x, ARREST_CAR.approach.z)) < .12
+        && OFFICE_AGENT_ROLES.every(role => planar(custody.bodies[role].position, arrestCarPoint(targets[role].x, targets[role].z)) < .16)) {
+        street.phase = 'opening'; street.elapsed = 0;
+      }
+    } else if (street.phase === 'rear_approach') {
+      const target = arrestCarPoint(ARREST_CAR.rear.x, ARREST_CAR.rear.z), body = custody.bodies[custody.catcher];
+      this.move(agent, custody, custody.catcher, body, target, delta);
+      if (planar(body.position, target) < .16) {
+        street.from![custody.catcher] = { position: { ...body.position }, yaw: body.yaw };
+        street.phase = 'rear_entering'; street.elapsed = 0;
+      }
+    } else if (street.phase !== 'ready' && street.phase !== 'done') {
+      const phase = street.phase as keyof typeof ARREST_TIMING;
+      street.elapsed = Math.min(ARREST_TIMING[phase], street.elapsed + delta);
+      if (street.phase === 'entering' && arrestMirrorShot(street) && custody.watcher && this.world.agents.get('trinity')?.status === 'alive') street.observed = true;
+      // Evaluate the last entry pose before resetting the clock for the next stage.
+    }
+    for (const role of ['neo', ...OFFICE_AGENT_ROLES] as const) {
+      const pose = arrestPose(custody, role);
+      if (!pose) continue;
+      if (role === 'neo') { agent.position = pose.position; agent.rotation = pose.yaw; }
+      else { custody.bodies[role].position = pose.position; custody.bodies[role].yaw = pose.yaw; }
+    }
+    if (['opening', 'ready', 'entering'].includes(street.phase)) {
+      const body = custody.bodies[custody.catcher], heading = Math.atan2(agent.position.x - body.position.x, agent.position.z - body.position.z);
+      const angle = Math.atan2(Math.sin(heading - body.yaw), Math.cos(heading - body.yaw));
+      body.yaw += Math.max(-3 * delta, Math.min(3 * delta, angle));
+    }
+    if (street.phase === 'opening' && street.elapsed >= ARREST_TIMING.opening) { street.phase = 'ready'; street.elapsed = 0; }
+    else if (street.phase === 'entering' && street.elapsed >= ARREST_TIMING.entering) { street.phase = 'rear_approach'; street.elapsed = 0; }
+    else if (street.phase === 'rear_entering' && street.elapsed >= ARREST_TIMING.rear_entering) { street.phase = 'closing'; street.elapsed = 0; }
+    else if (street.phase === 'closing' && street.elapsed >= ARREST_TIMING.closing) { street.phase = 'done'; street.elapsed = 0; }
   }
   private blockers(agent: AgentState, custody: OfficeCustody, role: string): Vector3[] {
     return [agent.position, ...OFFICE_AGENT_ROLES.filter(other => other !== role).map(other => custody.bodies[other].position),
@@ -50,7 +113,7 @@ export class OfficeCustodySystem {
       body.yaw += Math.max(-3 * delta, Math.min(3 * delta, angle));
     }
   }
-  private publish(role: OfficeCustodyRole | 'courier', body: OfficeCustodyBody, custody: OfficeCustody, tick: number): void {
+  private publish(role: OfficeCustodyRole | 'courier' | 'trinity', body: OfficeCustodyBody, custody: OfficeCustody, tick: number): void {
     const guard = this.world.agents.get(role)!;
     if (guard.controller) return;
     guard.position = { ...body.position }; guard.rotation = body.yaw; guard.isInMatrix = true;
@@ -58,7 +121,7 @@ export class OfficeCustodySystem {
     guard.velocity = { ...(body.velocity ?? { x: 0, y: 0, z: 0 }) };
     guard.currentAction = { type: Math.hypot(guard.velocity.x, guard.velocity.z) > .01 ? 'move_to' : 'idle', parameters: { resolved: true,
       ...(custody.phase === 'riding' && role !== 'courier' ? { metacortexLift: true } : {}),
-      officeCustody: { role, phase: custody.phase, elapsed: custody.elapsed } }, startedAt: tick, duration: 1, progress: 0 };
+      officeCustody: { role, phase: custody.phase, elapsed: custody.elapsed, street: custody.street } }, startedAt: tick, duration: 1, progress: 0 };
   }
   private transport(agent: AgentState, custody: OfficeCustody, delta: number, tick: number): void {
     const lift = custody.lift!;
@@ -125,7 +188,8 @@ export class OfficeCustodySystem {
   frame(agent: AgentState, dt: number, tick: number): boolean {
     if (!this.active(agent)) return false;
     const state = this.sandbox(), journey = state.neoLife!.journey!, custody = journey.office!.custody!;
-    custody.paused = OFFICE_AGENT_ROLES.some(role => this.world.agents.get(role)?.controller) || Boolean(custody.courier && this.world.agents.get('courier')?.controller);
+    if (custody.lift) this.stageStreet(custody);
+    custody.paused = OFFICE_AGENT_ROLES.some(role => this.world.agents.get(role)?.controller) || Boolean(custody.courier && this.world.agents.get('courier')?.controller) || Boolean(custody.lift && this.world.agents.get('trinity')?.controller);
     const delta = custody.paused || !agent.controller || agent.status !== 'alive' ? 0 : Math.max(0, Math.min(.1, dt));
     const exit = filmPosition('film_metacortex_floor', OFFICE_CUSTODY.exit.x, OFFICE_CUSTODY.exit.z);
     if (custody.phase === 'securing') {
@@ -144,7 +208,8 @@ export class OfficeCustodySystem {
         .sort((a, b) => planar(a, body.position) - planar(b, body.position))[0] ?? body.position;
     };
     const transporting = ['clearing', 'boarding', 'selecting', 'riding', 'lobby', 'outside'].includes(custody.phase);
-    if (transporting) this.transport(agent, custody, delta, tick);
+    if (custody.phase === 'street') this.street(agent, custody, delta);
+    else if (transporting) this.transport(agent, custody, delta, tick);
     else for (const role of [custody.leader, custody.catcher, ...OFFICE_AGENT_ROLES.filter(role => role !== custody.leader && role !== custody.catcher)]) {
       const body = custody.bodies[role], before = { ...body.position };
       const leading = role === custody.leader;
@@ -168,13 +233,14 @@ export class OfficeCustodySystem {
       body.yaw += Math.max(-3 * delta, Math.min(3 * delta, angle));
       if (delta) body.velocity = { x: (body.position.x - before.x) / delta, y: 0, z: (body.position.z - before.z) / delta };
     }
-    if (!transporting && custody.phase !== 'securing') custody.phase = planar(agent.position, exit) <= OFFICE_CUSTODY.range && OFFICE_AGENT_ROLES.every(role => planar(custody.bodies[role].position, exit) < 8) ? 'ready' : 'escorting';
+    if (!transporting && custody.phase !== 'street' && custody.phase !== 'securing') custody.phase = planar(agent.position, exit) <= OFFICE_CUSTODY.range && OFFICE_AGENT_ROLES.every(role => planar(custody.bodies[role].position, exit) < 8) ? 'ready' : 'escorting';
     for (const role of OFFICE_AGENT_ROLES) this.publish(role, custody.bodies[role], custody, tick);
+    if (custody.watcher) this.publish('trinity', custody.watcher, custody, tick);
     if (officeCustodyLocked(journey)) { agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true }, startedAt: tick, duration: 1, progress: 0 }; }
     agent.currentAction ??= { type: 'idle', parameters: { player: true }, startedAt: tick, duration: 1, progress: 0 };
     if (custody.phase === 'riding') agent.currentAction.parameters.metacortexLift = true;
     else delete agent.currentAction.parameters.metacortexLift;
-    agent.currentAction.parameters.officeCustody = { role: 'neo', phase: custody.phase, elapsed: custody.elapsed, paused: custody.paused, locked: officeCustodyLocked(journey) };
+    agent.currentAction.parameters.officeCustody = { role: 'neo', phase: custody.phase, elapsed: custody.elapsed, paused: custody.paused, locked: officeCustodyLocked(journey), street: custody.street };
     journey.checkpoint = { ...agent.position }; journey.lastText = journey.office!.guide = officeCustodyText(custody);
     return officeCustodyLocked(journey);
   }

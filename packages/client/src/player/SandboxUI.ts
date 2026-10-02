@@ -1574,8 +1574,8 @@ export class SandboxUI {
       this.el('sandbox-trace').textContent = journey.office.spotted ? '特工看到了你 · 立即换位' : journey.office.searches?.some(Boolean) ? '检查最后踪迹 · 避开原位置' : '特工巡逻中 · 留意朝向';
     }
     if (officeCustodyActive(journey)) {
-      const custody = journey.office!.custody!, ready = ['ready', 'outside'].includes(custody.phase) && !custody.paused;
-      const action = custody.phase === 'ready' ? '随队下楼' : '继续审讯';
+      const custody = journey.office!.custody!, ready = (['ready', 'outside'].includes(custody.phase) || custody.street?.phase === 'ready' || custody.street?.phase === 'done') && !custody.paused;
+      const action = custody.phase === 'ready' ? '随队下楼' : custody.phase === 'outside' ? '走向轿车' : custody.street?.phase === 'ready' ? '低头进入轿车' : '继续审讯';
       this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = officeCustodyText(custody);
       this.el('film-sequence-hint').textContent = ready ? `G ${action} · V 切换视角 · 当前进度自动保存` : officeCustodyHeld(custody) ? '鼠标观察 · V 切换视角 · 暂停会保留这一拍' : 'WASD 跟随队伍 · 停下时队伍等候 · 双手被扣住，无法奔跑或攻击';
       this.el('sandbox-interact').classList.toggle('hidden', !ready); this.el('sandbox-nearby').textContent = action;
@@ -1584,7 +1584,7 @@ export class SandboxUI {
       this.el('sandbox-trace').textContent = custody.paused ? '押送暂停 · 角色被占用' : '被捕分支 · 生活与线索保留';
       const target = officeCustodyTarget(custody);
       const direction = target ? Math.atan2(target.x - player.position.x, target.z - player.position.z) - player.rotation : 0;
-      const label = custody.phase === 'clearing' ? '等候区' : custody.phase === 'boarding' ? '轿厢左前方' : custody.phase === 'lobby' ? '公司正门' : '电梯旁';
+      const label = custody.phase === 'street' ? '后排车门' : custody.phase === 'clearing' ? '等候区' : custody.phase === 'boarding' ? '轿厢左前方' : custody.phase === 'lobby' ? '公司正门' : '电梯旁';
       this.el('sandbox-waypoint').innerHTML = ready || !target ? '' : `<span style="transform:rotate(${-direction}rad)">↑</span>${label} <b>${Math.round(distance(target, player.position))} m</b>`;
       return;
     }

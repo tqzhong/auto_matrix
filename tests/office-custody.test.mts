@@ -10,6 +10,8 @@ import type { ActionExecutor } from '../packages/server/src/agents/ActionExecuto
 import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
 import { officeNextPoint } from '../packages/server/src/story/OfficeNavigation.js';
 import { exitOfficeCustody } from './helpers/office-custody-route.mts';
+import { boardOfficeArrest } from './helpers/office-custody-route.mts';
+import { ARREST_CAR, arrestCarPoint, arrestDoor, arrestPose } from '@auto_matrix/shared';
 
 function setup() {
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
@@ -195,7 +197,7 @@ test('the cuffed party boards in order, shares the moving car and walks out thro
   assert.ok(riding >= (METACORTEX.travelSeconds + METACORTEX.doorSeconds * 2) * 20 - 4, 'the lift must not be advanced by two clocks');
   assert.equal(h.neo.position.y, 1); assert.ok(h.neo.position.z > METACORTEX.center.z + 34);
   assert.equal(h.sandbox.life.state!.money, money); assert.deepEqual(h.sandbox.life.state!.evidence, ['clock']);
-  assert.equal(h.state().scene, 'm1_office_escape'); h.command('act'); assert.equal(h.state().scene, 'm1_interrogation');
+  assert.equal(h.state().scene, 'm1_office_escape'); boardOfficeArrest(h.neo, h.state, h.input, h.command); h.command('act'); assert.equal(h.state().scene, 'm1_interrogation');
   assert.equal(h.neo.currentAction?.parameters.officeCustody, undefined); assert.equal(h.sandbox.life.state!.lift!.passenger, undefined);
 });
 
@@ -225,4 +227,73 @@ test('the shared escorted elevator preserves time, doors and all bodies across p
     delete guard.controller; h.sandbox.life.film.custody.frame(h.neo, 0, h.tick()); assert.equal(guard.health, 43);
   });
   assert.ok(stopped); assert.equal(h.state().office!.custody!.phase, 'outside');
+});
+
+test('leaving the company must approach and board the sedan before interrogation', () => {
+  const h = setup(); exitOfficeCustody(h.neo, h.state, h.input, h.command);
+  const before = { ...h.neo.position };
+  h.command('act');
+  assert.equal(h.state().scene, 'm1_office_escape', 'the street arrest cannot be skipped by the old G transition');
+  assert.equal(h.state().office!.custody!.phase, 'street');
+  assert.deepEqual(h.neo.position, before, 'starting the street escort cannot teleport Neo into the car');
+  h.command('next'); h.frame(20);
+  assert.equal(h.state().scene, 'm1_office_escape');
+  assert.deepEqual(h.neo.position, before, 'waiting cannot complete the approach on the player’s behalf');
+});
+
+test('the street escort boards the same cuffed actors through open doors and records the real lookout', () => {
+  const h = setup(); exitOfficeCustody(h.neo, h.state, h.input, h.command);
+  const money = h.sandbox.life.state!.money; h.sandbox.life.state!.evidence = ['clock'];
+  const trinity = h.world.agents.get('trinity')!; trinity.health = 43;
+  const seen = new Set<string>(); let mirror = false;
+  let previous = ['neo', ...OFFICE_AGENT_ROLES].map(id => ({ ...h.world.agents.get(id)!.position }));
+  boardOfficeArrest(h.neo, h.state, h.input, h.command, () => {
+    const custody = h.state().office!.custody!, street = custody.street!; seen.add(street.phase);
+    const actors = ['neo', ...OFFICE_AGENT_ROLES].map(id => h.world.agents.get(id)!);
+    actors.forEach((actor, i) => {
+      assert.ok(Math.hypot(actor.position.x - previous[i].x, actor.position.z - previous[i].z) < .19, `continuous street motion: ${actor.id}`);
+      for (const other of actors.slice(i + 1)) assert.ok(Math.hypot(actor.position.x - other.position.x, actor.position.z - other.position.z) >= OFFICE_CUSTODY.spacing - .001, `separate street bodies: ${JSON.stringify({ phase: street.phase, age: street.elapsed, a: actor.id, b: other.id, from: actor.position, to: other.position })}`);
+      if (!arrestPose(custody, actor.id as 'neo' | typeof custody.leader)) assert.equal(playerBlocked(actor.position, true, .7, h.sandbox.state.structures), false, `street furniture/car collision: ${actor.id}`);
+    });
+    if (street.phase === 'entering' && street.elapsed > 1.4 && street.elapsed < 4.6) {
+      assert.ok(arrestDoor(street, -1, true) > .99, 'Neo must enter through an open rear door');
+      assert.ok(arrestPose(custody, 'neo')!.duck > .9, 'the body must duck before crossing the roof edge');
+    }
+    if (street.observed) { mirror = true; assert.ok(custody.watcher); assert.ok(trinity.currentAction?.parameters.officeCustody); }
+    previous = actors.map(actor => ({ ...actor.position }));
+    if (street.phase !== 'done') { h.command('next'); assert.equal(h.state().scene, 'm1_office_escape', 'next cannot bypass an active entry'); }
+  });
+  for (const phase of ['approaching', 'opening', 'entering', 'rear_approach', 'rear_entering', 'closing', 'done']) assert.ok(seen.has(phase), `missing street stage: ${phase}`);
+  assert.ok(mirror); assert.equal(trinity.health, 43, 'the existing lookout is not healed or duplicated');
+  assert.equal(h.world.agents.size, 85);
+  assert.deepEqual(h.neo.position, arrestCarPoint(ARREST_CAR.seats.neo.x, ARREST_CAR.seats.neo.z));
+  assert.equal(arrestDoor(h.state().office!.custody!.street, 1, true), 0);
+  assert.equal(h.sandbox.life.state!.money, money); assert.deepEqual(h.sandbox.life.state!.evidence, ['clock']);
+  h.command('act'); assert.equal(h.state().scene, 'm1_interrogation');
+  assert.equal(h.sandbox.state.structures.some(item => item.id === 'film:office:arrest-car'), false);
+  assert.equal(trinity.currentAction?.parameters.officeCustody, undefined, 'finishing the scene releases the lookout');
+});
+
+test('street entry, cuffs and the mirror moment survive pause, disconnect, occupied lookout, restore and retry', () => {
+  const h = setup(); exitOfficeCustody(h.neo, h.state, h.input, h.command);
+  let checked = false;
+  boardOfficeArrest(h.neo, h.state, h.input, h.command, () => {
+    const custody = h.state().office!.custody!;
+    if (checked || custody.street?.phase !== 'entering' || custody.street.elapsed < 3) return;
+    checked = true;
+    const snapshot = () => ({ custody: structuredClone(h.state().office!.custody), actors: ['neo', ...OFFICE_AGENT_ROLES, 'trinity'].map(id => {
+      const actor = h.world.agents.get(id)!;
+      return { position: { ...actor.position }, yaw: actor.rotation, gesture: structuredClone(actor.currentAction?.parameters.officeCustody), health: actor.health };
+    }) });
+    const before = snapshot(); h.frame(3, false); assert.deepEqual(snapshot(), before);
+    h.players.release('neo-player', h.tick()); h.frame(3); assert.deepEqual(snapshot(), before);
+    h.sandbox.restore(structuredClone(h.sandbox.state)); h.players.possess('neo-player', 'neo', h.tick()); assert.deepEqual(snapshot(), before);
+    h.command('retry'); assert.deepEqual(snapshot(), before);
+    const trinity = h.world.agents.get('trinity')!; trinity.controller = 'other'; const external = { ...trinity.position, x: trinity.position.x + 20 }; trinity.position = external; trinity.health = 38;
+    const age = custody.street!.elapsed, neo = { ...h.neo.position };
+    h.frame(3); h.command('act'); assert.equal(h.state().office!.custody!.street!.elapsed, age); assert.deepEqual(h.neo.position, neo);
+    assert.deepEqual(trinity.position, external); assert.equal(trinity.health, 38); assert.equal(trinity.controller, 'other');
+    delete trinity.controller; h.sandbox.life.film.custody.frame(h.neo, 0, h.tick()); assert.equal(trinity.health, 38);
+  });
+  assert.ok(checked); assert.equal(h.state().office!.custody!.street!.phase, 'done');
 });
