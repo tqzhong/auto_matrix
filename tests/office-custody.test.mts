@@ -10,11 +10,16 @@ import type { ActionExecutor } from '../packages/server/src/agents/ActionExecuto
 import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
 import { officeNextPoint } from '../packages/server/src/story/OfficeNavigation.js';
 import { exitOfficeCustody } from './helpers/office-custody-route.mts';
-import { boardOfficeArrest } from './helpers/office-custody-route.mts';
-import { ARREST_CAR, arrestCarPoint, arrestDoor, arrestPose } from '@auto_matrix/shared';
+import { boardOfficeArrest, departOfficeArrest } from './helpers/office-custody-route.mts';
+import { ARREST_CAR, arrestCarPoint, arrestCarPose, arrestDoor, arrestPose, locationEntrance } from '@auto_matrix/shared';
 
 function setup() {
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  // This controller fixture does not run background NPC walking; keep its street clear.
+  const entry = locationEntrance('metacortex_office');
+  ['choi', 'citizen_1', 'citizen_12'].forEach((id, i) => {
+    world.agents.get(id)!.position = { ...entry, x: entry.x - i * 3 };
+  });
   const dynamics = { record: (event: Omit<WorldEvent, 'id'>) => world.addWorldEvent(event) } as WorldDynamics;
   const sandbox = new SandboxSystem(world, dynamics, 42);
   const players = new PlayerController(world, { interrupt() {}, isAgentInConversation: () => false } as unknown as ConversationEngine, {} as ActionExecutor, dynamics, sandbox);
@@ -197,7 +202,7 @@ test('the cuffed party boards in order, shares the moving car and walks out thro
   assert.ok(riding >= (METACORTEX.travelSeconds + METACORTEX.doorSeconds * 2) * 20 - 4, 'the lift must not be advanced by two clocks');
   assert.equal(h.neo.position.y, 1); assert.ok(h.neo.position.z > METACORTEX.center.z + 34);
   assert.equal(h.sandbox.life.state!.money, money); assert.deepEqual(h.sandbox.life.state!.evidence, ['clock']);
-  assert.equal(h.state().scene, 'm1_office_escape'); boardOfficeArrest(h.neo, h.state, h.input, h.command); h.command('act'); assert.equal(h.state().scene, 'm1_interrogation');
+  assert.equal(h.state().scene, 'm1_office_escape'); boardOfficeArrest(h.neo, h.state, h.input, h.command); departOfficeArrest(h.state, h.input, h.command); assert.equal(h.state().scene, 'm1_interrogation');
   assert.equal(h.neo.currentAction?.parameters.officeCustody, undefined); assert.equal(h.sandbox.life.state!.lift!.passenger, undefined);
 });
 
@@ -269,7 +274,7 @@ test('the street escort boards the same cuffed actors through open doors and rec
   assert.deepEqual(h.neo.position, arrestCarPoint(ARREST_CAR.seats.neo.x, ARREST_CAR.seats.neo.z));
   assert.equal(arrestDoor(h.state().office!.custody!.street, 1, true), 0);
   assert.equal(h.sandbox.life.state!.money, money); assert.deepEqual(h.sandbox.life.state!.evidence, ['clock']);
-  h.command('act'); assert.equal(h.state().scene, 'm1_interrogation');
+  departOfficeArrest(h.state, h.input, h.command); assert.equal(h.state().scene, 'm1_interrogation');
   assert.equal(h.sandbox.state.structures.some(item => item.id === 'film:office:arrest-car'), false);
   assert.equal(trinity.currentAction?.parameters.officeCustody, undefined, 'finishing the scene releases the lookout');
 });
@@ -296,4 +301,77 @@ test('street entry, cuffs and the mirror moment survive pause, disconnect, occup
     delete trinity.controller; h.sandbox.life.film.custody.frame(h.neo, 0, h.tick()); assert.equal(trinity.health, 38);
   });
   assert.ok(checked); assert.equal(h.state().office!.custody!.street!.phase, 'done');
+});
+
+test('the closed arrest car must leave with its four seated bodies before interrogation', () => {
+  const h = setup(); exitOfficeCustody(h.neo, h.state, h.input, h.command);
+  boardOfficeArrest(h.neo, h.state, h.input, h.command);
+  const positions = ['neo', ...OFFICE_AGENT_ROLES].map(id => ({ ...h.world.agents.get(id)!.position }));
+  h.neo.health = 64;
+  const injuries = OFFICE_AGENT_ROLES.map((role, i) => { const actor = h.world.agents.get(role)!; actor.health = 51 + i; return [role, actor.health] as const; });
+  const money = h.sandbox.life.state!.money; h.sandbox.life.state!.evidence = ['clock'];
+  h.command('act');
+  assert.equal(h.state().scene, 'm1_office_escape', 'closing the doors cannot skip the physical departure');
+  assert.equal(h.state().office!.custody!.street!.phase, 'departing');
+  h.frame(2);
+  assert.ok(Math.hypot(h.neo.position.x - positions[0].x, h.neo.position.z - positions[0].z) > 2, 'Neo travels in the same city with the sedan');
+  const snapshot = () => ({ custody: structuredClone(h.state().office!.custody), actors: ['neo', ...OFFICE_AGENT_ROLES].map(id => {
+    const actor = h.world.agents.get(id)!; return { position: { ...actor.position }, yaw: actor.rotation, health: actor.health };
+  }), car: structuredClone(h.sandbox.state.structures.find(item => item.id === 'film:office:arrest-car')) });
+  const before = snapshot(); h.frame(3, false); assert.deepEqual(snapshot(), before);
+  h.players.release('neo-player', h.tick()); h.frame(3); assert.deepEqual(snapshot(), before);
+  h.sandbox.restore(structuredClone(h.sandbox.state)); h.players.possess('neo-player', 'neo', h.tick()); assert.deepEqual(snapshot(), before);
+  h.command('next'); assert.equal(h.state().scene, 'm1_office_escape', 'next cannot skip a moving car');
+  h.frame(4);
+  const turning = snapshot(); h.frame(2, false); assert.deepEqual(snapshot(), turning);
+  h.sandbox.restore(structuredClone(h.sandbox.state)); h.command('retry'); assert.deepEqual(snapshot(), turning);
+  const car = h.sandbox.state.structures.find(item => item.id === 'film:office:arrest-car')!;
+  assert.deepEqual(car.position, arrestCarPoint(0, 0, h.state().office!.custody!.street));
+  assert.ok(playerBlocked(h.neo.position, true, 0, [car]), 'the occupied seat remains within the moving collider');
+  assert.equal(playerBlocked(arrestCarPoint(0, 0), true, 0, [car]), false, 'the departed car releases its old street space');
+  const actors = ['neo', ...OFFICE_AGENT_ROLES].map(id => h.world.agents.get(id)!);
+  for (let i = 0; i < actors.length; i++) for (let j = i + 1; j < actors.length; j++) {
+    assert.ok(Math.abs(Math.hypot(actors[i].position.x - actors[j].position.x, actors[i].position.z - actors[j].position.z)
+      - Math.hypot(positions[i].x - positions[j].x, positions[i].z - positions[j].z)) < .001, 'turning cannot detach any passenger from their seat');
+  }
+  h.frame(20);
+  assert.equal(h.state().scene, 'm1_interrogation', 'the actual departure ends at the interrogation transition');
+  for (const [role, health] of injuries) assert.equal(h.world.agents.get(role)!.health, health, 'the agents keep their injuries through the scene cut');
+  assert.equal(h.neo.health, 64, 'a live passenger is not healed by the scene cut');
+  assert.equal(h.sandbox.life.state!.money, money); assert.deepEqual(h.sandbox.life.state!.evidence, ['clock']);
+  assert.equal(h.sandbox.state.structures.some(item => item.id === 'film:office:arrest-car'), false);
+});
+
+test('retrying an alive cuffed Neo retains his injury instead of healing a saved performance', () => {
+  const h = setup(); h.neo.health = 64; h.frame(1);
+  const custody = structuredClone(h.state().office!.custody), position = { ...h.neo.position };
+  h.command('retry');
+  assert.equal(h.neo.health, 64, 'resuming a live arrest is not a death retry');
+  assert.deepEqual(h.neo.position, position); assert.deepEqual(h.state().office!.custody, custody);
+});
+
+test('the driver waits for a crossing body and a player barricade without moving or healing them', () => {
+  const h = setup(); exitOfficeCustody(h.neo, h.state, h.input, h.command); boardOfficeArrest(h.neo, h.state, h.input, h.command);
+  h.command('act'); h.frame(2);
+  const street = h.state().office!.custody!.street!, crossing = h.world.agents.get('rhineheart')!;
+  crossing.isInMatrix = true; crossing.position = arrestCarPoint(0, -10, street); crossing.health = 51;
+  const age = street.elapsed, position = { ...h.neo.position }, pedestrian = { ...crossing.position };
+  h.frame(2); assert.equal(street.blocked, true); assert.equal(street.elapsed, age); assert.deepEqual(h.neo.position, position);
+  assert.equal(arrestCarPose(street).speed, 0); assert.deepEqual(crossing.position, pedestrian); assert.equal(crossing.health, 51);
+  crossing.position = arrestCarPoint(-20, -10, street);
+  const barrier = { id: 'player:road', kind: 'barricade' as const, owner: 'neo', matrix: true, health: 100, position: pedestrian };
+  h.sandbox.state.structures.push(barrier); h.frame(2);
+  assert.equal(street.elapsed, age); assert.deepEqual(h.neo.position, position); assert.equal(barrier.health, 100);
+  h.sandbox.state.structures = h.sandbox.state.structures.filter(item => item.id !== barrier.id);
+  h.frame(1); assert.equal(street.blocked, false); assert.ok(street.elapsed > age); assert.equal(crossing.health, 51);
+});
+
+test('a pedestrian beside the rear bumper does not trap a car that is moving away', () => {
+  const h = setup(); exitOfficeCustody(h.neo, h.state, h.input, h.command); boardOfficeArrest(h.neo, h.state, h.input, h.command);
+  const choi = h.world.agents.get('choi')!;
+  choi.position = arrestCarPoint(-4.2, 4); choi.health = 21;
+  assert.equal(playerBlocked(choi.position, true, .6, h.sandbox.state.structures), false, 'the pedestrian starts outside the actual car');
+  const before = { ...choi.position }; h.command('act'); h.frame(1);
+  assert.ok(h.state().office!.custody!.street!.elapsed > .9, 'a widening gap behind the car cannot stop departure');
+  assert.deepEqual(choi.position, before); assert.equal(choi.health, 21);
 });

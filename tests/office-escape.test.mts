@@ -1,18 +1,23 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SCENE_BY_ID, FILM_SETS, PILL_TIMING, WAKE_CALL, filmStepPosition, filmPosition, officeOccluded, playerBlocked, stepPlayer, type WorldEvent, type PlayerInput } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, PILL_TIMING, WAKE_CALL, filmStepPosition, filmPosition, locationEntrance, officeOccluded, playerBlocked, stepPlayer, type WorldEvent, type PlayerInput } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
 import { PlayerController } from '../packages/server/src/player/PlayerController.js';
 import { OfficeEscapeSystem } from '../packages/server/src/story/OfficeEscapeSystem.js';
-import { exitOfficeCustody, boardOfficeArrest } from './helpers/office-custody-route.mts';
+import { exitOfficeCustody, boardOfficeArrest, departOfficeArrest } from './helpers/office-custody-route.mts';
 import type { ConversationEngine } from '../packages/server/src/agents/ConversationEngine.js';
 import type { ActionExecutor } from '../packages/server/src/agents/ActionExecutor.js';
 import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
 
 function setup() {
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  // This controller fixture does not run background NPC walking; keep its street clear.
+  const entry = locationEntrance('metacortex_office');
+  ['choi', 'citizen_1', 'citizen_12'].forEach((id, i) => {
+    world.agents.get(id)!.position = { ...entry, x: entry.x - i * 3 };
+  });
   const dynamics = { record: (e: Omit<WorldEvent, 'id'>) => world.addWorldEvent(e) } as WorldDynamics;
   const sandbox = new SandboxSystem(world, dynamics, 42);
   const players = new PlayerController(world, { interrupt() {}, isAgentInConversation: () => false } as unknown as ConversationEngine, {} as ActionExecutor, dynamics, sandbox);
@@ -85,6 +90,7 @@ function setup() {
     };
     exitOfficeCustody(neo(), () => sandbox.life.film.state!, inputFrame, command);
     boardOfficeArrest(neo(), () => sandbox.life.film.state!, inputFrame, command);
+    departOfficeArrest(() => sandbox.life.film.state!, inputFrame, command);
   };
   return { world, sandbox, players, command, advance, neo, scene, goal, finish, office, delivery, crossWindow, climb, move, escort, maximumAlert: () => maximumAlert, state: () => sandbox.life.film.state!, tick: () => tick };
 }
@@ -147,8 +153,8 @@ test('capture transition faces Smith instead of inheriting the office pursuit he
   const guard = h.sandbox.state.threats.find(t => t.id === 'office:0')!;
   h.neo().position = { ...guard.position, z: guard.position.z + 3 }; guard.yaw = 0;
   h.advance(6); assert.equal(h.state().office?.outcome, 'captured');
-  h.escort();
   h.neo().rotation = 0;
+  h.escort();
   h.command('next');
   const smith = h.world.agents.get('smith')!;
   const dx = smith.position.x - h.neo().position.x; const dz = smith.position.z - h.neo().position.z;

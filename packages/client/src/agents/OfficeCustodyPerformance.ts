@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { METACORTEX, OFFICE_CUSTODY_CAR, type OfficeCustody } from '@auto_matrix/shared';
 import type { HeroRig } from './HeroModel.js';
-import { ARREST_CAR, ARREST_BIKE, arrestCarPoint, arrestBikePoint, arrestPose } from '@auto_matrix/shared';
+import { ARREST_BIKE, ARREST_WHEEL, arrestCarPoint, arrestCarPose, arrestWheelPoint, arrestBikePoint, arrestPose, type OfficeArrest } from '@auto_matrix/shared';
 
 /** Uses the displayed skeletons for cuff placement and upper-arm contact. */
 export class OfficeCustodyPerformance {
@@ -52,7 +52,7 @@ export class OfficeCustodyPerformance {
     }
     rig.root.updateWorldMatrix(true, true);
   }
-  private seated(rig: HeroRig, seat: number, duck: number, bike = false): void {
+  private seated(rig: HeroRig, seat: number, duck: number, bike = false, street?: OfficeArrest): void {
     const bone = (name: string) => rig.bones.get(name)!;
     const pelvis = bone('pelvis'); pelvis.position.copy(rig.rest.get('pelvis')!);
     pelvis.position.y = THREE.MathUtils.lerp(pelvis.position.y, bike ? 2.5 : 1.56, seat) - duck * .4;
@@ -69,11 +69,11 @@ export class OfficeCustodyPerformance {
     }
     rig.root.updateWorldMatrix(true, true);
     if (!bike) {
-      const car = arrestCarPoint(0, 0); let clearance = Infinity;
+      const car = arrestCarPoint(0, 0, street), yaw = arrestCarPose(street).yaw; let clearance = Infinity;
       for (const side of ['R', 'L']) {
         const foot = bone('ankle_' + side).getWorldPosition(new THREE.Vector3());
         const dx = foot.x - car.x, dz = foot.z - car.z;
-        const x = Math.cos(ARREST_CAR.yaw) * dx - Math.sin(ARREST_CAR.yaw) * dz, z = Math.sin(ARREST_CAR.yaw) * dx + Math.cos(ARREST_CAR.yaw) * dz;
+        const x = Math.cos(yaw) * dx - Math.sin(yaw) * dz, z = Math.sin(yaw) * dx + Math.cos(yaw) * dz;
         const floor = Math.abs(x) < 2.75 && Math.abs(z) < 6.8 ? .3 : 0;
         clearance = Math.min(clearance, foot.y - rig.footHeight - floor - .012);
       }
@@ -87,7 +87,19 @@ export class OfficeCustodyPerformance {
     if (!neo || !custody) return;
     for (const [role, rig] of [['neo', neo], [custody.catcher, catcher], [custody.leader, leader], [Object.keys(custody.bodies).find(role => role !== custody.leader && role !== custody.catcher)!, front]] as const) {
       const pose = arrestPose(custody, role as 'neo' | OfficeCustody['catcher']);
-      if (rig && pose) this.seated(rig, pose.seated, pose.duck);
+      if (rig && pose) {
+        this.seated(rig, pose.seated, pose.duck, false, custody.street);
+        if (role === custody.leader) for (const side of ['R', 'L'] as const) {
+          const point = arrestWheelPoint(custody.street, side), car = arrestCarPose(custody.street);
+          // Turn each wrist toward the hub in the wheel's tilted, steered plane.
+          const orientation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), car.yaw)
+            .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), ARREST_WHEEL.tilt))
+            .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), (side === 'R' ? Math.PI / 6 : Math.PI * 5 / 6) + car.steering - Math.PI / 2))
+            .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI))
+            .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), .3));
+          this.hand(rig, side, new THREE.Vector3(point.x, point.y, point.z), orientation, THREE.MathUtils.smoothstep(pose.seated, .75, 1), .5);
+        }
+      }
     }
     if (trinity && custody.watcher) {
       this.seated(trinity, 1, 0, true);

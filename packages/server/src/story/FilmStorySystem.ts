@@ -79,7 +79,7 @@ export class FilmStorySystem {
   readonly openingHotel: OpeningHotelSystem;
   readonly office: OfficeEscapeSystem;
   readonly custody: OfficeCustodySystem;
-  constructor(private world: WorldState, private sandbox: () => SandboxState, private returnToLife: (tick: number) => void, private elapse: (minutes: number, tick: number) => void) { this.lobby = new LobbyCombatSystem(world, sandbox); this.coatcheck = new HelCoatcheckSystem(world, sandbox); this.openingHotel = new OpeningHotelSystem(sandbox); this.openingHotel.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.openingHotel.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.office = new OfficeEscapeSystem(sandbox); this.custody = new OfficeCustodySystem(world, sandbox); this.reloaded = new ReloadedOpeningSystem(world, sandbox); this.reloaded.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.reloaded.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.catch = new ReloadedCatchSystem(world, sandbox); this.catch.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.wetwall = new WetwallEscapeSystem(world, sandbox); this.wetwall.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sixth = new SixthFloorSystem(world, sandbox); this.sixth.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sixth.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.basement = new BasementEscapeSystem(world, sandbox); this.basement.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.basement.crosscut.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.basement.crosscut.onHandoff = (actor, id, tick) => this.changeActor(actor, id, tick); this.basement.crosscut.onImpact = (impact, tick) => this.onImpact?.(impact, tick); }
+  constructor(private world: WorldState, private sandbox: () => SandboxState, private returnToLife: (tick: number) => void, private elapse: (minutes: number, tick: number) => void) { this.lobby = new LobbyCombatSystem(world, sandbox); this.coatcheck = new HelCoatcheckSystem(world, sandbox); this.openingHotel = new OpeningHotelSystem(sandbox); this.openingHotel.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.openingHotel.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.office = new OfficeEscapeSystem(sandbox); this.custody = new OfficeCustodySystem(world, sandbox); this.custody.onDeparted = (agent, tick) => { this.command(agent, 'next', tick); }; this.reloaded = new ReloadedOpeningSystem(world, sandbox); this.reloaded.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.reloaded.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.catch = new ReloadedCatchSystem(world, sandbox); this.catch.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.wetwall = new WetwallEscapeSystem(world, sandbox); this.wetwall.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sixth = new SixthFloorSystem(world, sandbox); this.sixth.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sixth.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.basement = new BasementEscapeSystem(world, sandbox); this.basement.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.basement.crosscut.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.basement.crosscut.onHandoff = (actor, id, tick) => this.changeActor(actor, id, tick); this.basement.crosscut.onImpact = (impact, tick) => this.onImpact?.(impact, tick); }
   get state() { return this.sandbox().neoLife?.journey; }
   get scene(): FilmScene | undefined { return this.state && FILM_SCENE_BY_ID[this.state.scene]; }
   get step(): FilmStep | undefined { return this.scene?.steps[this.state!.step]; }
@@ -5016,7 +5016,7 @@ export class FilmStorySystem {
         return '已经接回训练程序，保留人物位置与演出进度。';
       }
       if (this.custody.active(agent)) {
-        agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
+        if (agent.status !== 'alive') { agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = []; }
         this.custody.frame(agent, 0, tick); return '已接回办公室拘捕与押送，保留人物位置和当前进度。';
       }
       this.clearThreats();
@@ -5055,7 +5055,8 @@ export class FilmStorySystem {
       if (custody.phase === 'ready' && (target === 'act' || target === 'next')) { this.custody.board(agent, tick); return state.lastText; }
       if (custody.phase === 'outside' && (target === 'act' || target === 'next')) { this.custody.startStreet(agent, tick); return state.lastText; }
       if (custody.phase === 'street' && custody.street?.phase === 'ready' && (target === 'act' || target === 'next')) { this.custody.enterStreet(agent, tick); return state.lastText; }
-      if (custody.phase !== 'street' || custody.street?.phase !== 'done') return state.lastText;
+      if (custody.phase === 'street' && custody.street?.phase === 'done' && (target === 'act' || target === 'next')) { this.custody.departStreet(agent, tick); return state.lastText; }
+      if (custody.phase !== 'street' || custody.street?.phase !== 'departed') return state.lastText;
       if (target === 'act') target = 'next';
     }
     if (state.visiting) return '回访期间不推进主线。J 返回当前剧情。';
@@ -5676,6 +5677,7 @@ export class FilmStorySystem {
   }
   private enter(scene: FilmScene, tick: number, position?: AgentState['position']): void {
     const state = this.state!; const life = this.sandbox().neoLife!;
+    const custodyArrival = scene.id === 'm1_interrogation' && state.office?.outcome === 'captured';
     const crosscut = state.tvExit?.crosscut;
     const smithFinale = state.smithFinale;
     this.openingHotel.clear();
@@ -5810,7 +5812,7 @@ export class FilmStorySystem {
     const actor = this.world.agents.get(state.actor)!;
     for (const other of this.world.agents.values()) if (!other.controller && (other.currentAction?.parameters.basement || other.currentAction?.parameters.tvExit)) other.currentAction = null;
     const incomingHealth = actor.health;
-    this.place(actor, scene, state.checkpoint); actor.status = 'alive'; actor.health = crosscut && ['m1_unplugged', 'm1_rescue_decision'].includes(scene.id) || scene.id === 'm1_basement' || scene.id === 'm1_tv_exit' || scene.id === 'm1_wetwall' || scene.id === 'm1_wall_exposed' || scene.id === 'm1_bathroom' && state.wallExposure?.phase === 'done' ? incomingHealth : actor.maxHealth; actor.activeEffects = [];
+    this.place(actor, scene, state.checkpoint); actor.status = 'alive'; actor.health = custodyArrival || crosscut && ['m1_unplugged', 'm1_rescue_decision'].includes(scene.id) || scene.id === 'm1_basement' || scene.id === 'm1_tv_exit' || scene.id === 'm1_wetwall' || scene.id === 'm1_wall_exposed' || scene.id === 'm1_bathroom' && state.wallExposure?.phase === 'done' ? incomingHealth : actor.maxHealth; if (!custodyArrival) actor.activeEffects = [];
     if (scene.id === 'm1_basement') this.basement.start();
     if (scene.id === 'm1_tv_exit') this.basement.startTv();
     if (scene.id === 'm1_unplugged' && crosscut) this.basement.crosscut.startCounter(tick);
@@ -6046,8 +6048,10 @@ export class FilmStorySystem {
       }
       if (scene.id === 'm1_construct' && id === 'morpheus') { actor.position = filmPosition(scene.set, CONSTRUCT_REVEAL.morpheus.x, CONSTRUCT_REVEAL.morpheus.z); actor.rotation = CONSTRUCT_REVEAL.morpheus.yaw; }
       if (scene.id === 'm1_desert' && id === 'morpheus') { actor.position = filmPosition(scene.set, DESERT_REVEAL.morpheus.x, DESERT_REVEAL.morpheus.z); actor.rotation = DESERT_REVEAL.morpheus.yaw; }
-      actor.status = 'alive';
-      if (!(scene.id === 'm1_rescue_decision' && id === 'tank')) actor.health = actor.maxHealth;
+      if (!(scene.id === 'm1_interrogation' && this.state!.office?.outcome === 'captured')) {
+        actor.status = 'alive';
+        if (!(scene.id === 'm1_rescue_decision' && id === 'tank')) actor.health = actor.maxHealth;
+      }
       if (['m1_spoon', 'm1_oracle'].includes(scene.id)) {
         const pose = ORACLE_WAITING_CAST[id as keyof typeof ORACLE_WAITING_CAST];
         if (pose) {

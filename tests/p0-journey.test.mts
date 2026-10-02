@@ -17,6 +17,7 @@ import {
   filmPosition,
   filmStepPosition,
   lifeRoomCenter,
+  locationEntrance,
   type Vector3,
   type WorldEvent,
 } from '@auto_matrix/shared';
@@ -27,10 +28,15 @@ import { PlayerController } from '../packages/server/src/player/PlayerController
 import type { ConversationEngine } from '../packages/server/src/agents/ConversationEngine.js';
 import type { ActionExecutor } from '../packages/server/src/agents/ActionExecutor.js';
 import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
-import { exitOfficeCustody, boardOfficeArrest } from './helpers/office-custody-route.mts';
+import { exitOfficeCustody, boardOfficeArrest, departOfficeArrest } from './helpers/office-custody-route.mts';
 
 function setup() {
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  // This controller fixture does not run background NPC walking; keep its street clear.
+  const entry = locationEntrance('metacortex_office');
+  ['choi', 'citizen_1', 'citizen_12'].forEach((id, i) => {
+    world.agents.get(id)!.position = { ...entry, x: entry.x - i * 3 };
+  });
   const dynamics = { record: (event: Omit<WorldEvent, 'id'>) => world.addWorldEvent(event) } as WorldDynamics;
   const sandbox = new SandboxSystem(world, dynamics, 42);
   const players = new PlayerController(world, { interrupt() {}, isAgentInConversation: () => false } as unknown as ConversationEngine,
@@ -218,7 +224,7 @@ test('P0 runs continuously from daily contact through capture, tracker removal a
   exitOfficeCustody(h.neo, h.state, h.frame, h.command);
   assert.equal(h.state().office!.custody!.phase, 'outside');
   boardOfficeArrest(h.neo, h.state, h.frame, h.command);
-  h.command('next'); assert.equal(h.state().scene, 'm1_interrogation');
+  departOfficeArrest(h.state, h.frame, h.command); assert.equal(h.state().scene, 'm1_interrogation');
   h.walk(filmStepPosition(FILM_SCENE_BY_ID.m1_interrogation, FILM_SCENE_BY_ID.m1_interrogation.steps[0]));
   h.command('act'); h.frames(7); assert.equal(h.state().step, 1); h.command('act'); h.frames(25);
   assert.equal(h.state().office?.bugged, true); assert.equal(h.state().step, 2); h.command('next');

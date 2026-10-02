@@ -50,7 +50,7 @@ export function officeCustodyTarget(custody: OfficeCustody): Vector3 | undefined
   if (custody.phase === 'escorting' || custody.phase === 'ready') return metacortexPosition(OFFICE_CUSTODY.exit.x, OFFICE_CUSTODY.exit.z, 1);
 }
 export function officeCustodyText(custody: OfficeCustody): string {
-  if (custody.paused) return '一名押送参与者正在由另一位玩家控制。队伍和电梯停在当前一拍，释放角色后继续。';
+  if (custody.paused) return '一名押送参与者正在由另一位玩家控制。队伍与车辆停在当前一拍，释放角色后继续。';
   if (custody.phase === 'street') {
     const phase = custody.street!.phase;
     if (phase === 'approaching') return '黑色轿车停在公司门外。WASD 随队走到后排车门旁，特工正移到两侧。';
@@ -59,7 +59,9 @@ export function officeCustodyText(custody: OfficeCustody): string {
     if (phase === 'entering') return custody.street!.observed ? '有人从摩托车的后视镜里看见了这次拘捕。你的双手仍被扣住。' : '特工压低你的头，将你送进后排。可以观察车厢，V 保留 Neo 的第一人称。';
     if (phase === 'rear_approach' || phase === 'rear_entering') return '特工绕到另一侧的后排车门，坐到你身旁。';
     if (phase === 'closing') return '车门正在关上。特工坐在身旁，双手仍被扣在背后。';
-    return '车门合上了。按 G 继续审讯，你的日常生活和调查记录保留。';
+    if (phase === 'departing') return custody.street!.blocked ? '前方有人或路障，特工停车等待。可以环顾车内；道路清空后继续。' : '轿车驶离公司，特工正在驾驶。鼠标环顾，V 切换乘客视角；生活与线索保留。';
+    if (phase === 'departed') return '轿车已停下，接入审讯。你的日常生活与调查记录保留。';
+    return '车门合上了。按 G 随车离开公司，你的日常生活和调查记录保留。';
   }
   if (custody.phase === 'clearing') return 'WASD 后退到电梯前的等候区。特工会移到两侧，让快递员先走出轿厢。';
   if (custody.phase === 'boarding') return custody.courier && !custody.courier.clear ? '快递员正从轿厢让路。等他走出，特工会依次入梯。'
