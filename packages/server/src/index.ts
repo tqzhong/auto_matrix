@@ -3,7 +3,7 @@ import { createServer } from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { SimulationState, WorldStateFull, SandboxCommand } from '@auto_matrix/shared';
-import { NEO_CAST, FILM_CAST } from '@auto_matrix/shared';
+import { NEO_CAST, FILM_CAST, cityVehicleBlocked } from '@auto_matrix/shared';
 import { config } from './config.js';
 import { EventBus } from './simulation/EventBus.js';
 import { SimulationLoop } from './simulation/SimulationLoop.js';
@@ -106,7 +106,7 @@ const simLoop = new SimulationLoop(config.simulation.tickRateMs, config.simulati
       const action = agent.state.currentAction;
       if (action && action.progress < 1) actions.execute(agent.state, action, world.agents, tick);
     }
-    manager.updateAllAgents(tick);
+    manager.updateAllAgents(tick, (from, to, matrix) => cityVehicleBlocked(from, to, matrix, sandbox.state.structures));
     dynamics.tick(tick);
     sandbox.tick(tick);
     if (sandbox.state.ending === 'peace') story.setCeasefire(tick);
@@ -222,6 +222,7 @@ let previousTimeScale = 1;
 let lastPlayerStep = Date.now();
 const playerTimer = setInterval(() => {
   const now = Date.now();
+  if (!worldReady) { lastPlayerStep = now; return; }
   const journey = sandbox.life.film.state;
   const scene = journey?.scene, step = journey?.step, actor = journey?.actor;
   players.step(Math.min(0.1, (now - lastPlayerStep) / 1000), simLoop.isRunning(), simLoop.getTick(), now);
@@ -239,7 +240,7 @@ const playerTimer = setInterval(() => {
     return;
   }
   const controlled = [...world.agents.entries()].filter(([, agent]) => agent.controller || agent.currentAction?.parameters.workday && sandbox.life.film.state?.scene === 'm1_boss' || agent.currentAction?.parameters.hotelGuide && sandbox.life.film.state?.hotel || agent.currentAction?.parameters.welcome && sandbox.life.film.state?.scene === 'm1_pills' || agent.currentAction?.parameters.meeting && ['m1_bridge', 'm1_bug'].includes(sandbox.life.film.state?.scene ?? '') || agent.currentAction?.parameters.pills && sandbox.life.film.state?.scene === 'm1_pills' || agent.currentAction?.parameters.interrogation && sandbox.life.film.state?.scene === 'm1_interrogation' || (sandbox.life.film.state?.ride?.phase === 'riding' || sandbox.life.film.state?.hammer?.phase === 'riding' || sandbox.life.film.state?.logos?.phase === 'riding') && agent.currentAction?.parameters.passenger);
-  if (controlled.length) sockets.broadcastDelta({ agents: Object.fromEntries(controlled), dirtyChunks: {}, events: [] }, simLoop.getTick());
+  if (controlled.length || simLoop.isRunning()) sockets.broadcastDelta({ agents: Object.fromEntries(controlled), dirtyChunks: {}, events: [], traffic: sandbox.state.traffic }, simLoop.getTick());
 }, 50);
 
 async function main(): Promise<void> {

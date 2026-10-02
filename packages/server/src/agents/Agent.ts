@@ -14,11 +14,11 @@ export class Agent {
     this.personalityPrompt = personalityPrompt;
   }
 
-  update(tick: number): void {
+  update(tick: number, blocked?: (from: Vector3, to: Vector3, matrix: boolean) => boolean): void {
     if (this.state.status !== 'alive') return;
     if (!this.state.controller) {
       this.updateAction(tick);
-      this.updateMovement();
+      this.updateMovement(blocked);
     }
     this.updateEffects();
     this.updateCooldowns();
@@ -34,9 +34,14 @@ export class Agent {
     this.state.currentAction.progress = clamp(elapsed / this.state.currentAction.duration, 0, 1);
   }
 
-  private updateMovement(): void {
+  private updateMovement(blocked?: (from: Vector3, to: Vector3, matrix: boolean) => boolean): void {
     if (!this.state.targetPosition) return;
     const dist = distance(this.state.position, this.state.targetPosition);
+    const target = this.state.currentPath[0] ?? this.state.targetPosition;
+    const stride = Math.min(1, 4 / Math.max(.001, distance(this.state.position, target)));
+    const candidate = { x: this.state.position.x + (target.x - this.state.position.x) * stride,
+      y: this.state.position.y + (target.y - this.state.position.y) * stride, z: this.state.position.z + (target.z - this.state.position.z) * stride };
+    if (blocked?.(this.state.position, candidate, this.state.isInMatrix)) { this.state.velocity = { x: 0, y: 0, z: 0 }; return; }
     if (dist < 0.5) {
       this.state.position = { ...this.state.targetPosition };
       this.state.targetPosition = null;

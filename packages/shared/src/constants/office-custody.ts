@@ -43,7 +43,7 @@ export function officeCustodyHeld(custody: OfficeCustody): boolean {
     || custody.phase === 'street' && custody.street?.phase !== 'approaching';
 }
 export function officeCustodyTarget(custody: OfficeCustody): Vector3 | undefined {
-  if (custody.phase === 'street' && custody.street?.phase === 'approaching') return arrestCarPoint(ARREST_CAR.approach.x, ARREST_CAR.approach.z);
+  if (custody.phase === 'street' && custody.street?.phase === 'approaching' && !custody.street.waitingForParking) return arrestCarPoint(ARREST_CAR.approach.x, ARREST_CAR.approach.z, custody.street);
   if (custody.phase === 'clearing') return metacortexPosition(OFFICE_CUSTODY_CAR.waiting.x, OFFICE_CUSTODY_CAR.waiting.z, 1);
   if (custody.phase === 'lobby' || custody.phase === 'outside') return metacortexPosition(OFFICE_CUSTODY_CAR.outside.x, OFFICE_CUSTODY_CAR.outside.z);
   if (custody.phase === 'boarding' && custody.boarded === 3) return metacortexPosition(OFFICE_CUSTODY_CAR.neo.x, OFFICE_CUSTODY_CAR.neo.z, 1);
@@ -52,6 +52,7 @@ export function officeCustodyTarget(custody: OfficeCustody): Vector3 | undefined
 export function officeCustodyText(custody: OfficeCustody): string {
   if (custody.paused) return '一名押送参与者正在由另一位玩家控制。队伍与车辆停在当前一拍，释放角色后继续。';
   if (custody.phase === 'street') {
+    if (custody.street!.waitingForParking) return '街边暂时没有足够空间停车。队伍等候，行人与车辆让出位置后继续。';
     const phase = custody.street!.phase;
     if (phase === 'approaching') return '黑色轿车停在公司门外。WASD 随队走到后排车门旁，特工正移到两侧。';
     if (phase === 'opening') return '特工拉开车门。双手仍扣在背后，先停在门旁。';

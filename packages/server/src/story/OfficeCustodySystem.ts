@@ -2,7 +2,7 @@ import { OFFICE_AGENT_ROLES, OFFICE_PATROLS, OFFICE_CUSTODY, OFFICE_CUSTODY_CAR,
 import type { WorldState } from '../world/WorldState.js';
 import { officeNextPoint } from './OfficeNavigation.js';
 import { updateMetacortexDoors } from './MetacortexDoors.js';
-import { ARREST_CAR, ARREST_BIKE, ARREST_TIMING, ARREST_DRIVE_SECONDS, arrestCarPoint, arrestCarPose, arrestCarBounds, arrestBikePoint, arrestPose, arrestMirrorShot, type OfficeArrest } from '@auto_matrix/shared';
+import { ARREST_CAR, ARREST_BIKE, ARREST_TIMING, arrestDriveSeconds, arrestCarPoint, arrestCarPose, arrestCarBounds, arrestBikePoint, arrestPose, arrestMirrorShot, type OfficeArrest } from '@auto_matrix/shared';
 
 const planar = (a: Vector3, b: Vector3) => Math.hypot(a.x - b.x, a.z - b.z);
 
@@ -25,13 +25,34 @@ export class OfficeCustodySystem {
     const custody = this.sandbox().neoLife!.journey!.office!.custody!;
     custody.phase = 'clearing'; custody.boarded = 0;
     custody.lift = { floor: 1, target: 1, phase: 'idle', elapsed: 0 };
-    this.stageStreet(custody);
+    custody.street = { phase: 'approaching', elapsed: 0, waitingForParking: true };
+    this.stageStreet(custody, true);
     const courier = this.world.agents.get('courier')!;
     if (Math.abs(courier.position.y - agent.position.y) < 3 && Math.abs(courier.position.x - METACORTEX.center.x) < 3 && Math.abs(courier.position.z - METACORTEX.center.z - METACORTEX.liftZ) < 3.5)
       custody.courier = { position: { ...courier.position }, yaw: courier.rotation, velocity: { x: 0, y: 0, z: 0 } };
     this.frame(agent, 0, tick);
   }
-  private stageStreet(custody: OfficeCustody): void {
+  private stageStreet(custody: OfficeCustody, place = false): void {
+    custody.street ??= { phase: 'approaching', elapsed: 0 };
+    if (custody.street.waitingForParking) {
+      const street = custody.street;
+      if (!place) return;
+      const parking = [13, 25, -40].map(x => ({ x, z: ARREST_CAR.z })).find(parking => {
+        const bounds = arrestCarBounds({ ...street, parking });
+        const bodies = [...this.world.agents.values()].filter(actor => actor.status === 'alive' && actor.isInMatrix && Math.abs(actor.position.y - 1) < 3);
+        if (bodies.some(actor => Math.abs(actor.position.x - bounds.position.x) < bounds.width / 2 + 2 && Math.abs(actor.position.z - bounds.position.z) < 8.5)) return false;
+        if (this.sandbox().structures.some(item => item.kind === 'barricade' && item.matrix && item.health > 0
+          && Math.abs(item.position.x - bounds.position.x) < bounds.width / 2 + (item.film?.width ?? 8) / 2 + 1
+          && Math.abs(item.position.z - bounds.position.z) < 7.5 + (item.film?.depth ?? 2.4) / 2)) return false;
+        for (const x of [-1, 0, 1]) for (const z of [-1, 0, 1]) {
+          const point = { ...bounds.position, x: bounds.position.x + x * (bounds.width / 2 + 1), z: bounds.position.z + z * 7.5 };
+          if (playerBlocked(point, true, 0, this.sandbox().structures)) return false;
+        }
+        return true;
+      });
+      if (!parking) return;
+      street.parking = parking; delete street.waitingForParking;
+    }
     const trinity = this.world.agents.get('trinity');
     // Stage the existing lookout while Neo is still upstairs, without healing or stealing a player body.
     if (!custody.watcher && trinity?.status === 'alive' && !trinity.controller)
@@ -43,7 +64,7 @@ export class OfficeCustodySystem {
   }
   startStreet(agent: AgentState, tick: number): void {
     const custody = this.sandbox().neoLife!.journey!.office!.custody!;
-    custody.phase = 'street'; custody.street = { phase: 'approaching', elapsed: 0 };
+    custody.phase = 'street'; custody.street ??= { phase: 'approaching', elapsed: 0, waitingForParking: true };
     this.stageStreet(custody); this.frame(agent, 0, tick);
   }
   enterStreet(agent: AgentState, tick: number): void {
@@ -63,7 +84,7 @@ export class OfficeCustodySystem {
     const before = arrestCarPose(custody.street), origin = arrestCarPoint(0, 0, custody.street);
     // Look a second ahead, sweeping the mirrors and bumpers as well as the cabin.
     for (let ahead = 0; ahead <= 1; ahead += .25) {
-      const pose = { ...street, elapsed: Math.min(ARREST_DRIVE_SECONDS, street.elapsed + ahead) }, car = arrestCarPose(pose), center = arrestCarPoint(0, 0, pose);
+      const pose = { ...street, elapsed: Math.min(arrestDriveSeconds(street), street.elapsed + ahead) }, car = arrestCarPose(pose), center = arrestCarPoint(0, 0, pose);
       for (const other of this.world.agents.values()) {
         if (other.id === this.sandbox().neoLife!.journey!.actor || OFFICE_AGENT_ROLES.includes(other.id as OfficeCustodyRole) || other.id === 'trinity' && custody.watcher || other.status !== 'alive' || !other.isInMatrix || Math.abs(other.position.y - 1) > 3) continue;
         const dx = other.position.x - center.x, dz = other.position.z - center.z;
@@ -83,18 +104,19 @@ export class OfficeCustodySystem {
   }
   private street(agent: AgentState, custody: OfficeCustody, delta: number): void {
     const street = custody.street!, front = OFFICE_AGENT_ROLES.find(role => role !== custody.leader && role !== custody.catcher)!;
+    if (street.waitingForParking) return;
     const targets = { [custody.leader]: ARREST_CAR.driver, [front]: ARREST_CAR.front, [custody.catcher]: ARREST_CAR.catcher };
     if (delta) for (const role of OFFICE_AGENT_ROLES) custody.bodies[role].velocity = { x: 0, y: 0, z: 0 };
     if (street.phase === 'approaching') {
       for (const role of [custody.leader, front, custody.catcher]) {
-        const point = targets[role]; this.move(agent, custody, role, custody.bodies[role], arrestCarPoint(point.x, point.z), delta);
+        const point = targets[role]; this.move(agent, custody, role, custody.bodies[role], arrestCarPoint(point.x, point.z, street), delta);
       }
-      if (planar(agent.position, arrestCarPoint(ARREST_CAR.approach.x, ARREST_CAR.approach.z)) < .12
-        && OFFICE_AGENT_ROLES.every(role => planar(custody.bodies[role].position, arrestCarPoint(targets[role].x, targets[role].z)) < .16)) {
+      if (planar(agent.position, arrestCarPoint(ARREST_CAR.approach.x, ARREST_CAR.approach.z, street)) < .12
+        && OFFICE_AGENT_ROLES.every(role => planar(custody.bodies[role].position, arrestCarPoint(targets[role].x, targets[role].z, street)) < .16)) {
         street.phase = 'opening'; street.elapsed = 0;
       }
     } else if (street.phase === 'rear_approach') {
-      const target = arrestCarPoint(ARREST_CAR.rear.x, ARREST_CAR.rear.z), body = custody.bodies[custody.catcher];
+      const target = arrestCarPoint(ARREST_CAR.rear.x, ARREST_CAR.rear.z, street), body = custody.bodies[custody.catcher];
       this.move(agent, custody, custody.catcher, body, target, delta);
       if (planar(body.position, target) < .16) {
         street.from![custody.catcher] = { position: { ...body.position }, yaw: body.yaw };
@@ -102,7 +124,7 @@ export class OfficeCustodySystem {
       }
     } else if (street.phase === 'departing') {
       if (delta) {
-        const candidate = { ...street, elapsed: Math.min(ARREST_DRIVE_SECONDS, street.elapsed + delta) };
+        const candidate = { ...street, elapsed: Math.min(arrestDriveSeconds(street), street.elapsed + delta) };
         street.blocked = this.driveBlocked(custody, candidate);
         if (!street.blocked) street.elapsed = candidate.elapsed;
       }
@@ -127,20 +149,24 @@ export class OfficeCustodySystem {
     else if (street.phase === 'entering' && street.elapsed >= ARREST_TIMING.entering) { street.phase = 'rear_approach'; street.elapsed = 0; }
     else if (street.phase === 'rear_entering' && street.elapsed >= ARREST_TIMING.rear_entering) { street.phase = 'closing'; street.elapsed = 0; }
     else if (street.phase === 'closing' && street.elapsed >= ARREST_TIMING.closing) { street.phase = 'done'; street.elapsed = 0; }
-    else if (street.phase === 'departing' && street.elapsed >= ARREST_DRIVE_SECONDS) street.phase = 'departed';
+    else if (street.phase === 'departing' && street.elapsed >= arrestDriveSeconds(street)) street.phase = 'departed';
     this.stageStreet(custody);
   }
   private blockers(agent: AgentState, custody: OfficeCustody, role: string): Vector3[] {
     return [agent.position, ...OFFICE_AGENT_ROLES.filter(other => other !== role).map(other => custody.bodies[other].position),
-      ...['courier', 'rhineheart'].flatMap(id => {
+      ...[...this.world.agents.keys()].filter(id => custody.phase === 'street'
+        ? id !== agent.id && !OFFICE_AGENT_ROLES.includes(id as OfficeCustodyRole) && (id !== 'trinity' || !custody.watcher)
+        : ['courier', 'rhineheart'].includes(id)).flatMap(id => {
         const other = this.world.agents.get(id);
-        return other && id !== role && Math.abs(other.position.y - agent.position.y) < 3 ? [other.position] : [];
+        const nearby = other && (custody.phase !== 'street' || Math.min(planar(other.position, agent.position),
+          planar(other.position, custody.bodies[role as OfficeCustodyRole]?.position ?? agent.position), planar(other.position, arrestCarPoint(0, 0, custody.street))) < 24);
+        return other && nearby && other.status === 'alive' && other.isInMatrix && id !== role && Math.abs(other.position.y - agent.position.y) < 3 ? [other.position] : [];
       })];
   }
   private move(agent: AgentState, custody: OfficeCustody, role: string, body: OfficeCustodyBody, destination: Vector3, delta: number): void {
     if (!delta) return;
     const before = { ...body.position }, blockers = this.blockers(agent, custody, role);
-    const point = officeNextPoint(before, destination, .71, blockers);
+    const point = officeNextPoint(before, destination, .71, blockers, custody.street);
     if (point) {
       const length = planar(before, point), stride = Math.min(length, OFFICE_CUSTODY.speed * delta);
       const candidate = length > .001 ? { ...before, x: before.x + (point.x - before.x) / length * stride, z: before.z + (point.z - before.z) / length * stride } : before;
@@ -227,9 +253,9 @@ export class OfficeCustodySystem {
   frame(agent: AgentState, dt: number, tick: number): boolean {
     if (!this.active(agent)) return false;
     const state = this.sandbox(), journey = state.neoLife!.journey!, custody = journey.office!.custody!;
-    if (custody.lift) this.stageStreet(custody);
     custody.paused = OFFICE_AGENT_ROLES.some(role => this.world.agents.get(role)?.controller) || Boolean(custody.courier && this.world.agents.get('courier')?.controller) || Boolean(custody.lift && this.world.agents.get('trinity')?.controller);
     const delta = custody.paused || !agent.controller || agent.status !== 'alive' ? 0 : Math.max(0, Math.min(.1, dt));
+    if (custody.lift) this.stageStreet(custody, delta > 0);
     const exit = filmPosition('film_metacortex_floor', OFFICE_CUSTODY.exit.x, OFFICE_CUSTODY.exit.z);
     if (custody.phase === 'securing') {
       custody.elapsed = Math.min(OFFICE_CUSTODY.securing, custody.elapsed + delta);

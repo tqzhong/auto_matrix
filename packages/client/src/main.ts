@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { AgentState, SimulationState, WorldEvent, SandboxState } from '@auto_matrix/shared';
+import { cityTrafficStructures } from '@auto_matrix/shared';
 import { Engine } from './engine/Engine.js';
 import { SocketClient } from './network/SocketClient.js';
 import { ObserverUI } from './ui/ObserverUI.js';
@@ -179,6 +180,10 @@ const socket = new SocketClient({
     if (data.timeOfDay !== undefined) timeOfDay = data.timeOfDay;
     if (data.simulation) simulation = data.simulation;
     if (data.sandbox) sandbox = data.sandbox;
+    if (data.traffic && sandbox) {
+      sandbox.traffic = data.traffic;
+      sandbox.structures = [...sandbox.structures.filter(item => !item.id.startsWith('traffic:')), ...cityTrafficStructures(data.traffic)];
+    }
     if (simulation) simulation.tick = tick;
     if (data.events.length) ui.addEvents(data.events);
     for (const event of data.events) {

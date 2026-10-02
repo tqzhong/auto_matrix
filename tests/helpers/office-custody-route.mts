@@ -12,7 +12,7 @@ export function exitOfficeCustody(neo: AgentState, journey: () => FilmJourney, i
     const target = officeCustodyTarget(custody);
     if (!target || officeCustodyHeld(custody)) { input(); sample(); continue; }
     const bodies = [...Object.values(custody.bodies).map(body => body.position), ...(custody.courier ? [custody.courier.position] : [])];
-    const point = officeNextPoint(neo.position, target, 1.15, custody.phase === 'escorting' ? [] : bodies);
+    const point = officeNextPoint(neo.position, target, 1.15, custody.phase === 'escorting' ? [] : bodies, custody.street);
     if (!point) { input(); sample(); continue; }
     const dx = point.x - neo.position.x, dz = point.z - neo.position.z, length = Math.max(1, Math.hypot(dx, dz));
     input({ x: dx / length, z: dz / length, yaw: Math.atan2(dx, dz) }); sample();
@@ -29,7 +29,7 @@ export function boardOfficeArrest(neo: AgentState, journey: () => FilmJourney, i
     if (custody.street?.phase === 'done') { input(); sample(); return; }
     if (custody.street?.phase === 'ready') { command('act'); input(); sample(); continue; }
     const target = officeCustodyTarget(custody);
-    const point = target && !officeCustodyHeld(custody) ? officeNextPoint(neo.position, target, 1.15, Object.values(custody.bodies).map(body => body.position)) : undefined;
+    const point = target && !officeCustodyHeld(custody) ? officeNextPoint(neo.position, target, 1.15, Object.values(custody.bodies).map(body => body.position), custody.street) : undefined;
     if (!point) { input(); sample(); continue; }
     const dx = point.x - neo.position.x, dz = point.z - neo.position.z, length = Math.max(1, Math.hypot(dx, dz));
     input({ x: dx / length, z: dz / length, yaw: Math.atan2(dx, dz) }); sample();

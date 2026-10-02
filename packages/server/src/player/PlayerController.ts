@@ -244,6 +244,7 @@ export class PlayerController {
 
   step(dt: number, running: boolean, tick: number, now = Date.now()): void {
     dt = Math.min(dt, .1);
+    this.sandbox?.traffic.frame(running ? dt * this.timeScale() : 0);
     if (running) for (const agent of this.world.agents.values()) {
       for (const id of Object.keys(agent.combatCooldowns ?? {})) agent.combatCooldowns![id] = Math.max(0, agent.combatCooldowns![id] - dt);
       agent.activeEffects = agent.activeEffects.filter(effect => {

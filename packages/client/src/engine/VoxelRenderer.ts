@@ -1,4 +1,4 @@
-import { METACORTEX } from '@auto_matrix/shared';
+import { METACORTEX, CITY_TRAFFIC_ROUTES, cityTrafficPose, cityTrafficSignal, type CityTrafficState } from '@auto_matrix/shared';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { FILM_SETS, LOCATIONS, LIFE_ROOMS, STREET_SPACING, locationEntrance, CITY_BUILDINGS, cityNoise as noise } from '@auto_matrix/shared';
@@ -14,6 +14,8 @@ export class VoxelRenderer {
   private textures: THREE.Texture[] = [];
   private traffic: THREE.InstancedMesh | null = null;
   private headlights: THREE.InstancedMesh | null = null;
+  private trafficSignals?: THREE.InstancedMesh;
+  private signalPhase = '';
   private materials = new UrbanMaterials();
   private markers: THREE.Mesh[] = [];
   private signs: { sprite: THREE.Sprite; width: number }[] = [];
@@ -127,10 +129,33 @@ export class VoxelRenderer {
     }
     const geometry = mergeGeometries(pieces)!; const lightGeometry = mergeGeometries(lamps)!;
     [...pieces, ...lamps].forEach(piece => piece.dispose());
-    this.traffic = new THREE.InstancedMesh(geometry, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .38, metalness: .48 }), 64);
+    this.traffic = new THREE.InstancedMesh(geometry, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .38, metalness: .48 }), CITY_TRAFFIC_ROUTES.length);
+    this.traffic.name = 'city-traffic-cars';
     this.traffic.castShadow = this.traffic.receiveShadow = true;
     this.headlights = new THREE.InstancedMesh(lightGeometry, new THREE.MeshBasicMaterial({ vertexColors: true, color: 0xffffff, toneMapped: false }), 64);
+    this.headlights.name = 'city-traffic-lamps';
     this.matrix.add(this.traffic, this.headlights);
+    const pole = new THREE.InstancedMesh(new THREE.BoxGeometry(.24, 4.4, .24), new THREE.MeshStandardMaterial({ color: 0x363c3b, metalness: .6, roughness: .5 }), 1600);
+    const heads = new THREE.InstancedMesh(new THREE.BoxGeometry(.7, 1.65, .45), new THREE.MeshStandardMaterial({ color: 0x171d1b }), 1600);
+    const lens = new THREE.CircleGeometry(.16, 12); lens.rotateY(Math.PI);
+    this.trafficSignals = new THREE.InstancedMesh(lens, new THREE.MeshBasicMaterial(), 4800);
+    this.trafficSignals.name = 'city-traffic-signals';
+    let index = 0;
+    for (let x = 320; x <= 1840; x += 80) for (let z = 320; z <= 1840; z += 80) for (let side = 0; side < 4; side++) {
+      const axis = side % 2, direction = side < 2 ? 1 : -1;
+      this.transform.rotation.y = (axis ? 0 : Math.PI / 2) + (direction > 0 ? 0 : Math.PI);
+      this.transform.position.set(x + (axis ? direction * 10 : -direction * 10), 2.2, z - direction * 10);
+      this.transform.scale.set(1, 1, 1); this.transform.updateMatrix(); pole.setMatrixAt(index, this.transform.matrix);
+      this.transform.position.y = 4.1; this.transform.updateMatrix(); heads.setMatrixAt(index, this.transform.matrix);
+      const front = new THREE.Vector3(0, 0, -.25).applyAxisAngle(new THREE.Vector3(0, 1, 0), this.transform.rotation.y);
+      this.transform.position.add(front);
+      for (let lamp = 0; lamp < 3; lamp++) {
+        this.transform.position.y = 4.62 - lamp * .5; this.transform.updateMatrix(); this.trafficSignals.setMatrixAt(index * 3 + lamp, this.transform.matrix);
+      }
+      index++;
+    }
+    pole.castShadow = heads.castShadow = true; this.matrix.add(pole, heads, this.trafficSignals);
+    this.transform.rotation.y = 0;
   }
 
   private buildStreets(): void {
@@ -432,7 +457,7 @@ export class VoxelRenderer {
   setWorld(matrix: boolean): void { this.matrix.visible = matrix; this.real.visible = !matrix; }
   setWeather(wet: boolean): void { this.materials.setWet(wet); }
 
-  update(elapsed: number, playerCamera?: THREE.Camera): void {
+  update(_elapsed: number, playerCamera?: THREE.Camera, traffic?: CityTrafficState): void {
     for (const marker of this.markers) marker.visible = !playerCamera;
     for (const { sprite, width } of this.signs) {
       const distance = playerCamera ? sprite.position.distanceTo(playerCamera.position) : Infinity;
@@ -441,21 +466,31 @@ export class VoxelRenderer {
       sprite.scale.set(size, size / 6.4, 1);
     }
     if (!this.traffic) return;
-    for (let i = 0; i < 64; i++) {
-      const axis = i % 2;
-      const lane = 640 + (i % 12) * 80 + (i % 4 < 2 ? 4 : -4);
-      const forward = i % 4 < 2;
-      const progress = 300 + ((elapsed * (10 + i % 7) + i * 83) % 1550);
-      const route = forward ? progress : 2150 - progress;
-      this.transform.position.set(axis ? lane : route, .05, axis ? route : lane);
-      this.transform.rotation.y = (axis ? 0 : Math.PI / 2) + (forward ? 0 : Math.PI);
-      this.transform.scale.set(1, 1, 1);
+    this.traffic.count = this.headlights!.count = traffic?.cars.length ?? 0;
+    for (let i = 0; i < (traffic?.cars.length ?? 0); i++) {
+      const pose = cityTrafficPose(i, traffic!.cars[i]);
+      this.transform.position.set(pose.position.x, .05, pose.position.z);
+      this.transform.rotation.y = pose.yaw;
+      const scale = traffic!.cars[i].waiting ? 0 : 1;
+      this.transform.scale.set(scale, scale, scale);
       this.transform.updateMatrix();
       this.traffic.setMatrixAt(i, this.transform.matrix);
       this.headlights?.setMatrixAt(i, this.transform.matrix);
     }
     this.traffic.instanceMatrix.needsUpdate = true;
+    this.traffic.boundingSphere = null;
     if (this.headlights) this.headlights.instanceMatrix.needsUpdate = true;
+    if (this.headlights) this.headlights.boundingSphere = null;
+    const phase = `${cityTrafficSignal(0, traffic?.elapsed ?? 0)}:${cityTrafficSignal(1, traffic?.elapsed ?? 0)}`;
+    if (this.trafficSignals && phase !== this.signalPhase) {
+      this.signalPhase = phase;
+      const colors = [0xf05a42, 0xf2b640, 0x65d8a3], color = new THREE.Color();
+      for (let i = 0; i < this.trafficSignals.count; i++) {
+        const signal = cityTrafficSignal(Math.floor(i / 3) % 2, traffic?.elapsed ?? 0), active = signal === 'red' ? 0 : signal === 'amber' ? 1 : 2;
+        color.setHex(colors[i % 3]).multiplyScalar(i % 3 === active ? 1 : .07); this.trafficSignals.setColorAt(i, color);
+      }
+      this.trafficSignals.instanceColor!.needsUpdate = true;
+    }
     this.transform.rotation.y = 0;
   }
 

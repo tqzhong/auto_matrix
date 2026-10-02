@@ -170,7 +170,7 @@ export class Engine {
     this.filmSets.setRecoverySubject(this.agentRenderer.getAgentBody('neo'));
     this.filmSets.setCrosscutSubjects(id => this.agentRenderer.getPhysicalBody(id), id => this.agentRenderer.getAgentBody(id));
     measure?.('agents');
-    this.voxelRenderer.update(this.elapsed, this.playerControls?.id ? this.camera : undefined);
+    this.voxelRenderer.update(this.elapsed, this.playerControls?.id ? this.camera : undefined, this.sandbox?.traffic);
     const player = this.playerControls?.id ? this.agentRenderer.getAgentState(this.playerControls.id) : undefined;
     this.audio.carEngine(this.running && player?.id === meeting?.actor && !meeting?.visiting
       ? meeting?.meeting ? meetingCarPose(meeting.meeting).speed : meeting?.office?.custody?.street?.phase === 'departing' && !meeting.office.custody.paused ? arrestCarPose(meeting.office.custody.street).speed : undefined : undefined);
