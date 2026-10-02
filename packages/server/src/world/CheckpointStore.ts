@@ -7,6 +7,7 @@ export interface WorldCheckpoint {
   tick: number;
   timeOfDay?: number;
   day?: number;
+  simulation?: { running: boolean; speed: number };
   phase: StoryPhaseId;
   agents: Record<string, AgentState>;
   events: WorldEvent[];
@@ -22,6 +23,7 @@ export class CheckpointStore {
     try {
       const checkpoint = JSON.parse(await fs.readFile(this.file, 'utf8')) as WorldCheckpoint;
       if (checkpoint.version !== 1 || !Number.isSafeInteger(checkpoint.tick) || checkpoint.tick < 0 || !checkpoint.agents || !Array.isArray(checkpoint.events) || !Array.isArray(checkpoint.relationships)) throw new Error('Unsupported world checkpoint');
+      if (checkpoint.simulation !== undefined && (!checkpoint.simulation || typeof checkpoint.simulation.running !== 'boolean' || ![0.5, 1, 2, 4, 8].includes(checkpoint.simulation.speed))) throw new Error('Unsupported world checkpoint');
       return checkpoint;
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;

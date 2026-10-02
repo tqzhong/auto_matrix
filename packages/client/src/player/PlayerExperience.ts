@@ -49,12 +49,12 @@ export class PlayerExperience {
     this.root.innerHTML = `
       <section class="landing-screen" id="landing-screen">
         <header class="landing-top"><a class="play-brand" href="#">Ⅲ <span>MATRIX<small>AN AUTONOMOUS OPEN WORLD</small></span></a><span class="landing-live"><i></i><span id="landing-live">正在连接世界</span></span></header>
-        <div class="landing-copy"><div class="eyebrow">THE SIMULATION IS ALREADY RUNNING</div><h1>世界正在运行。<br><em>现在，进入其中。</em></h1><p>从 Neo 一个普通的早晨开始。<br>上班、回家、见朋友，也留意现实的裂缝。<br>你做的每一个选择，都会成为这个世界的记忆。</p>
+        <div class="landing-copy"><div id="landing-status" class="eyebrow">THE SIMULATION IS ALREADY RUNNING</div><h1 id="landing-title">世界正在运行。<br><em>现在，进入其中。</em></h1><p>从 Neo 一个普通的早晨开始。<br>上班、回家、见朋友，也留意现实的裂缝。<br>你做的每一个选择，都会成为这个世界的记忆。</p>
           <div class="landing-roles" aria-label="选择角色">${[['neo', 'NEO', '尼奥', '寻找真相'], ['trinity', 'TRINITY', '崔妮蒂', '黑客入侵'], ['smith', 'SMITH', '史密斯', '特工协议']].map(([id, name, cn, ability]) => `<button data-choose="${id}" class="hero-role ${id === this.chosen ? 'active' : ''}"><span class="role-number">${id === 'neo' ? '01' : id === 'trinity' ? '02' : '03'}</span><strong>${name}</strong><span>${cn}</span><small>${ability}</small></button>`).join('')}</div>
           <div class="landing-actions"><button id="enter-world" class="enter-world" disabled>进入角色 <span>↗</span></button><button id="choose-any" class="choose-any">选择任意角色 <span id="roster-count">74</span> →</button></div>
           <div class="landing-secondary"><button id="inspect-character" class="observe-link">检视三维人物 ↗</button><button id="observe-from-landing" class="observe-link">先观察这个世界 ↗</button><button id="landing-sound" class="observe-link" aria-label="音乐与音效设置">♫ 声音</button></div>
         </div>
-        <div class="landing-world-label"><span class="live-square"></span><span>MEGACITY / MATRIX 01</span><p>一座从不为你停下的城市</p></div>
+        <div class="landing-world-label"><span class="live-square"></span><span>MEGACITY / MATRIX 01</span><p id="landing-world-state">一座从不为你停下的城市</p></div>
         <footer class="landing-footer"><span>WASD 移动 <b>·</b> 鼠标视角 <b>·</b> 任意角色接入</span><span>OPEN WORLD / LIVE SIMULATION</span></footer>
       </section>
       <section id="game-hud" class="game-hud hidden">
@@ -142,7 +142,11 @@ export class PlayerExperience {
     this.chosen = savedEntryCharacter(this.chosen, this.storyActor ?? undefined, this.entryExplicit || Boolean(this.controlled));
     this.root.querySelectorAll<HTMLElement>('[data-choose]').forEach(role => role.classList.toggle('active', role.dataset.choose === this.chosen));
     this.updateEntry();
-    this.el('landing-live').textContent = `${simulation.population} 个角色正在生活`;
+    this.el('landing-live').textContent = `${simulation.population} 个角色${simulation.running ? '正在生活' : ' · 世界已暂停'}`;
+    this.el('landing-status').textContent = simulation.running ? 'THE SIMULATION IS ALREADY RUNNING' : 'THE SIMULATION IS PAUSED';
+    const title = this.el('landing-title'), copy = simulation.running ? '世界正在运行。<br><em>现在，进入其中。</em>' : '世界已暂停。<br><em>继续你的进度。</em>';
+    if (title.innerHTML !== copy) title.innerHTML = copy;
+    this.el('landing-world-state').textContent = simulation.running ? '一座从不为你停下的城市' : '接入角色后，点击 ▶ 继续时间。';
     this.el('roster-count').textContent = String(Object.keys(agents).length);
     if (performance.now() > this.tipUntil) this.el('play-tip').classList.add('hidden');
     if (this.menuOpen && performance.now() - this.lastRender > 1000) this.renderRoster();
@@ -240,6 +244,8 @@ export class PlayerExperience {
     this.el('game-location').textContent = LOCATIONS[player.currentLocation]?.nameCn ?? '城市街道';
     this.el('game-population').textContent = `${simulation.population} SIGNALS`;
     this.el('game-pause').textContent = simulation.running ? 'Ⅱ' : '▶';
+    this.el('game-pause').title = simulation.running ? '暂停世界' : '继续世界时间';
+    this.el('game-pause').setAttribute('aria-label', this.el('game-pause').title);
     this.el('player-death').classList.toggle('hidden', player.status !== 'dead');
     this.el('death-rebuild').textContent = this.filmPlaying ? '从剧情检查点重试 ↗' : '重建这个角色 ↗';
     this.el('player-death').querySelector('p')!.textContent = this.filmPlaying ? '恢复生命并返回当前目标，已完成的剧情会保留。' : '重建角色会恢复生命，并保留已有的记忆与关系。';

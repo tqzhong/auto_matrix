@@ -5,7 +5,10 @@ import { createHash } from 'node:crypto';
 import { readFile, writeFile, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { io } from 'socket.io-client';
+import type { WorldStateFull } from '@auto_matrix/shared';
 import { PersistentMemoryManager } from '../packages/server/src/memory/PersistentMemoryManager.js';
+import { CheckpointStore } from '../packages/server/src/world/CheckpointStore.js';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const fingerprint = (data: string) => createHash('sha256').update(data).digest('hex');
@@ -48,6 +51,25 @@ function start(t: TestContext, directory: string, mode: string) {
     assert.equal(await Promise.race([finished, new Promise(resolve => setTimeout(() => resolve('shutdown timeout'), 5000).unref())]), 0, output);
   };
   return { waitFor, stop, output: () => output };
+}
+
+async function controls(t: TestContext, server: ReturnType<typeof start>) {
+  const address = JSON.parse(server.output().match(/STARTUP_LISTENING (\{[^\n]+\})/)![1]);
+  const base = `http://127.0.0.1:${address.port}`;
+  const socket = io(base, { autoConnect: false, transports: ['websocket'] });
+  t.after(() => socket.disconnect());
+  const connected = new Promise<void>((resolve, reject) => { socket.once('connect', resolve); socket.once('connect_error', reject); });
+  socket.connect(); await connected;
+  const world = async () => await (await fetch(`${base}/api/world`)).json() as WorldStateFull;
+  const command = async (type: string, data: unknown, ready: (state: WorldStateFull) => boolean) => {
+    socket.emit('message', { type, data }); const end = Date.now() + 5000;
+    for (;;) {
+      const state = await world(); if (ready(state)) return state;
+      assert.ok(Date.now() < end, `${type} was not acknowledged`);
+      await new Promise(resolve => setTimeout(resolve, 20));
+    }
+  };
+  return { socket, world, command };
 }
 
 for (const [mode, signal] of [['memories', 'SIGTERM'], ['checkpoint', 'SIGINT']] as const) {
@@ -95,4 +117,60 @@ test('a first startup without a world checkpoint still saves a usable new world'
   assert.ok(Array.isArray(saved.events) && Array.isArray(saved.relationships));
   const restored = start(t, f.directory, 'normal'); await restored.waitFor('Restored world at tick 0');
   await restored.waitFor('STARTUP_LISTENING'); await restored.stop();
+});
+
+test('a paused world keeps its clock, selected speed and story across a server restart', { timeout: 30000 }, async t => {
+  const f = await fixture(t), server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING');
+  const client = await controls(t, server);
+  await client.command('set_speed', { speed: 4 }, state => state.simulation!.speed === 4);
+  const paused = await client.command('pause', {}, state => !state.simulation!.running);
+  client.socket.disconnect(); await server.stop();
+  const restored = start(t, f.directory, 'normal'); await restored.waitFor('STARTUP_LISTENING');
+  const next = await controls(t, restored), world = await next.world();
+  assert.equal(world.simulation!.running, false, 'reading a paused save must not restart time');
+  assert.equal(world.simulation!.speed, 4, 'the selected time multiplier belongs to the same save');
+  assert.equal(world.simulation!.tick, paused.simulation!.tick); assert.equal(world.timeOfDay, paused.timeOfDay);
+  assert.deepEqual(world.sandbox!.neoLife, paused.sandbox!.neoLife);
+  assert.equal(world.agents.neo.health, paused.agents.neo.health); assert.equal(world.agents.mouse.status, 'dead');
+  assert.deepEqual(world.sandbox!.structures, paused.sandbox!.structures); assert.deepEqual(world.sandbox!.traffic, paused.sandbox!.traffic);
+  const resumed = await next.command('resume', {}, state => state.simulation!.running);
+  assert.equal(resumed.simulation!.tick, paused.simulation!.tick, 'continuing must start from the saved clock');
+  next.socket.disconnect(); await restored.stop();
+});
+
+test('a running world restarts running at its selected speed instead of being saved as paused by shutdown', { timeout: 30000 }, async t => {
+  const f = await fixture(t), server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING');
+  const client = await controls(t, server);
+  await client.command('set_speed', { speed: 2 }, state => state.simulation!.speed === 2);
+  await client.command('pause', {}, state => !state.simulation!.running);
+  await client.command('resume', {}, state => state.simulation!.running);
+  client.socket.disconnect(); await server.stop();
+  const restored = start(t, f.directory, 'normal'); await restored.waitFor('STARTUP_LISTENING');
+  const next = await controls(t, restored), world = await next.world();
+  assert.equal(world.simulation!.running, true, 'shutdown must remember whether the player had paused');
+  assert.equal(world.simulation!.speed, 2);
+  next.socket.disconnect(); await restored.stop();
+});
+
+test('an explicit pause reaches the atomic world checkpoint before the process shuts down', { timeout: 30000 }, async t => {
+  const f = await fixture(t), server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING');
+  const client = await controls(t, server), paused = await client.command('pause', {}, state => !state.simulation!.running);
+  const end = Date.now() + 5000;
+  let saved = JSON.parse(await readFile(f.file, 'utf8'));
+  while (saved.simulation?.running !== false) {
+    assert.ok(Date.now() < end, 'pause is only in memory; the world checkpoint was never updated');
+    await new Promise(resolve => setTimeout(resolve, 20)); saved = JSON.parse(await readFile(f.file, 'utf8'));
+  }
+  assert.equal(saved.tick, paused.simulation!.tick); assert.equal(saved.timeOfDay, paused.timeOfDay);
+  assert.deepEqual(saved.sandbox.neoLife, paused.sandbox!.neoLife);
+  client.socket.disconnect(); await server.stop();
+});
+
+test('invalid saved time controls are rejected without overwriting the recoverable checkpoint', async t => {
+  const f = await fixture(t), store = new CheckpointStore(f.file);
+  for (const simulation of [{ running: 'false', speed: 1 }, { running: false, speed: 3 }, null]) {
+    const data = JSON.stringify({ ...f.checkpoint, simulation }); await writeFile(f.file, data);
+    await assert.rejects(store.load(), /Unsupported world checkpoint/);
+    assert.equal(await readFile(f.file, 'utf8'), data);
+  }
 });
