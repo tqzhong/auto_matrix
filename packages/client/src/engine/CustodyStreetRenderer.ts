@@ -120,6 +120,7 @@ export class CustodyStreetRenderer {
   }
   update(custody?: OfficeCustody, subject?: THREE.Object3D): void {
     this.root.visible = Boolean(custody?.lift); this.bike.visible = Boolean(custody?.watcher);
+    this.car.visible = !custody?.street?.waitingForParking;
     const car = arrestCarPose(custody?.street);
     this.car.position.set(car.x, 0, car.z); this.car.rotation.y = car.yaw;
     this.steering.rotation.z = car.steering;
@@ -127,7 +128,7 @@ export class CustodyStreetRenderer {
     for (const door of this.doors) door.hinge.rotation.y = door.side * arrestDoor(custody?.street, door.side, door.rear) * (door.rear ? 1.3 : 1.54);
     this.mirror.visible = this.bike.visible && arrestMirrorShot(custody?.street);
     if (!this.mirror.visible) return;
-    const slot = ARREST_CAR.seats.neo, neo = arrestCarPoint(slot.x, slot.z);
+    const slot = ARREST_CAR.seats.neo, neo = arrestCarPoint(slot.x, slot.z, custody?.street);
     const world = this.mirror.getWorldPosition(new THREE.Vector3());
     const view = this.bike.localToWorld(new THREE.Vector3(ARREST_BIKE.view.x, ARREST_BIKE.view.y, ARREST_BIKE.view.z));
     const head = subject?.getObjectByName('head'); subject?.updateWorldMatrix(true, true);

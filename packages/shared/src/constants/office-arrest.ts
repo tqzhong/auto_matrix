@@ -14,31 +14,39 @@ export interface OfficeArrest {
   from?: Record<string, { position: Vector3; yaw: number }>;
   observed?: boolean;
   blocked?: boolean;
+  parking?: { x: number; z: number };
+  waitingForParking?: boolean;
 }
 export const ARREST_TIMING = { opening: 1.4, entering: 7, rear_entering: 6, closing: 1.4 } as const;
 export const ARREST_DRIVE_SECONDS = 5 + Math.PI * 10 / 7 + 6;
+export function arrestDriveSeconds(street?: OfficeArrest): number {
+  return street?.parking ? 5 * (36 - street.parking.x) / 23 + Math.PI * 14 / 7 + 6 : ARREST_DRIVE_SECONDS;
+}
 export const ARREST_WHEEL = { x: -1.3, y: 2.74, z: -2.52, radius: .49, tilt: -.3 } as const;
 const ease = (time: number, from: number, to: number) => { const t = Math.max(0, Math.min(1, (time - from) / (to - from))); return t * t * (3 - 2 * t); };
 /** A short game bridge: the screenplay cuts directly from the parked sedan to interrogation. */
 export function arrestCarPose(street?: OfficeArrest) {
-  if (!street || !['departing', 'departed'].includes(street.phase)) return { x: ARREST_CAR.x as number, z: ARREST_CAR.z as number, yaw: ARREST_CAR.yaw, distance: 0, speed: 0, steering: 0, fade: 0 };
-  const age = Math.min(ARREST_DRIVE_SECONDS, street.phase === 'departed' ? ARREST_DRIVE_SECONDS : street.elapsed), turnEnd = ARREST_DRIVE_SECONDS - 6;
+  const parked = street?.parking ?? ARREST_CAR;
+  if (!street || !['departing', 'departed'].includes(street.phase)) return { x: parked.x as number, z: parked.z as number, yaw: ARREST_CAR.yaw, distance: 0, speed: 0, steering: 0, fade: 0 };
+  const seconds = arrestDriveSeconds(street), first = street.parking ? 5 * (36 - parked.x) / 23 : 5, radius = street.parking ? 28 : 20;
+  const age = Math.min(seconds, street.phase === 'departed' ? seconds : street.elapsed), turnEnd = seconds - 6, straight = 36 - parked.x;
   let x: number, z: number, yaw: number, distance: number, speed: number;
-  if (age < 5) {
-    const t = age / 5; distance = -11 * t ** 3 + 34 * t ** 2; speed = (-33 * t * t + 68 * t) / 5;
-    x = ARREST_CAR.x + distance; z = ARREST_CAR.z; yaw = ARREST_CAR.yaw;
+  if (age < first) {
+    const t = age / first, a = first * 7 - 2 * straight, b = 3 * straight - first * 7;
+    distance = a * t ** 3 + b * t ** 2; speed = (3 * a * t * t + 2 * b * t) / first;
+    x = parked.x + distance; z = parked.z; yaw = ARREST_CAR.yaw;
   } else if (age < turnEnd) {
-    const angle = -Math.PI / 2 + (age - 5) * 7 / 20;
-    x = 36 + 20 * Math.cos(angle); z = 69 + 20 * Math.sin(angle); yaw = -angle - Math.PI;
-    distance = 23 + (age - 5) * 7; speed = 7;
+    const angle = -Math.PI / 2 + (age - first) * 7 / radius;
+    x = 36 + radius * Math.cos(angle); z = parked.z + radius + radius * Math.sin(angle); yaw = -angle - Math.PI;
+    distance = straight + (age - first) * 7; speed = 7;
   } else {
     const t = (age - turnEnd) / 6, travel = -22 * t ** 3 + 12 * t * t + 42 * t;
-    x = 56; z = 69 + travel; yaw = -Math.PI; distance = 23 + Math.PI * 10 + travel;
+    x = 36 + radius; z = parked.z + radius + travel; yaw = -Math.PI; distance = straight + Math.PI * radius / 2 + travel;
     speed = (-66 * t * t + 24 * t + 42) / 6;
   }
   return { x, z, yaw, distance, speed: street.blocked ? 0 : speed,
-    steering: -Math.atan(9.7 / 20) * ease(age, 4.6, 5.1) * (1 - ease(age, turnEnd - .2, turnEnd + .4)),
-    fade: ease(age, ARREST_DRIVE_SECONDS - .6, ARREST_DRIVE_SECONDS) };
+    steering: -Math.atan(9.7 / radius) * ease(age, first - .4, first + .1) * (1 - ease(age, turnEnd - .2, turnEnd + .4)),
+    fade: ease(age, seconds - .6, seconds) };
 }
 export function arrestCarPoint(x: number, z: number, street?: OfficeArrest): Vector3 {
   const car = arrestCarPose(street);
@@ -75,7 +83,7 @@ export function arrestPose(custody: OfficeCustody, role: 'neo' | OfficeCustodyRo
   }
   const entering = street.phase === 'entering' && role !== custody.catcher || street.phase === 'rear_entering' && role === custody.catcher;
   const age = entering ? street.elapsed : 7;
-  const from = street.from![role], slot = arrestSeat(custody, role), target = arrestCarPoint(slot.x, slot.z);
+  const from = street.from![role], slot = arrestSeat(custody, role), target = arrestCarPoint(slot.x, slot.z, street);
   const moving = ease(age, 1.4, 4.6), seated = ease(age, 3.1, 6), duck = ease(age, .1, 1.2) * (1 - ease(age, 4.6, 6));
   const yaw = ARREST_CAR.yaw + Math.PI;
   const arc = slot.z < 0 ? 0 : Math.sin(moving * Math.PI) * .95;

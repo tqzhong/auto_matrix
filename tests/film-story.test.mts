@@ -1910,7 +1910,10 @@ test('Neo must inspect the mountain exit, call Link, then steer a saved flight s
   h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
   assert.equal(h.sandbox.life.film.state?.mountain?.z, before);
   h.players.receiveInput('film-player', { ...flightInput, jump: false, sequence: 2 });
-  for (let frame = 0; frame < 180 && h.sandbox.life.film.state?.step === 2; frame++) h.players.step(.1, true, h.tick());
+  for (let frame = 0; frame < 180 && h.sandbox.life.film.state?.step === 2; frame++) {
+    h.players.receiveInput('film-player', { ...flightInput, jump: false, sequence: frame + 3 });
+    h.players.step(.1, true, h.tick());
+  }
   assert.equal(h.sandbox.life.film.state?.step, 3);
   assert.equal(h.sandbox.life.film.state?.mountain?.phase, 'arrived');
   h.command('next'); assert.equal(h.sandbox.life.film.state?.scene, 'm2_garage');
@@ -1942,8 +1945,10 @@ test('Smith assimilation is reversible at the ending, without reviving Trinity',
     if (id === 'm3_surrender') {
       h.sandbox.state.neoLife!.choices.machine_pact = 'peace'; h.sandbox.state.neoLife!.choices.machine_connection = 'active';
       h.command('act');
-      h.players.receiveInput('film-player', { x: 0, z: 0, yaw: 0, jump: false, sprint: false, focus: true, sequence: 1 });
-      for (let frame = 0; frame < 100 && state.step < scene.steps.length; frame++) h.players.step(.1, true, h.tick());
+      for (let frame = 0; frame < 100 && state.step < scene.steps.length; frame++) {
+        h.players.receiveInput('film-player', { x: 0, z: 0, yaw: 0, jump: false, sprint: false, focus: true, sequence: frame + 1 });
+        h.players.step(.1, true, h.tick());
+      }
     } else { h.command(scene.steps[state.step].kind === 'reflect' ? 'reflect:care' : 'act'); h.advance(20); }
   };
   playLast('m3_oracle_absorbed'); h.command('next');
@@ -2913,7 +2918,10 @@ test('the entire film route completes through interactions, driving and real com
           h.players.receiveInput('film-player', { x: 0, z: -1, yaw: Math.PI, jump: true, sprint: true, sequence: ++sequence });
           h.players.step(.1, true, h.tick());
           h.players.receiveInput('film-player', { x: 0, z: -1, yaw: Math.PI, jump: false, sprint: true, sequence: ++sequence });
-          for (let frame = 0; frame < 180 && state.step === index; frame++) h.players.step(.1, true, h.tick());
+          for (let frame = 0; frame < 180 && state.step === index; frame++) {
+            h.players.receiveInput('film-player', { x: 0, z: -1, yaw: Math.PI, jump: false, sprint: true, sequence: ++sequence });
+            h.players.step(.1, true, h.tick());
+          }
           assert.equal(state.step, index + 1); continue;
         }
         if (scene.id === 'm2_persephone' && index === 2) {

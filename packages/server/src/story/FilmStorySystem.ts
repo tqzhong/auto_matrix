@@ -4550,7 +4550,7 @@ export class FilmStorySystem {
     }
   }
   releaseCast(reset = false): void {
-    if (reset) this.sandbox().structures = this.sandbox().structures.filter(s => !s.film);
+    if (reset) this.sandbox().structures = this.sandbox().structures.filter(s => !s.film || s.id.startsWith('traffic:'));
     for (const id of FILM_CAST) {
       const actor = this.world.agents.get(id);
       if (!actor || actor.controller || !reset && !FILM_SETS[actor.currentLocation]) continue;

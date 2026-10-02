@@ -1,4 +1,4 @@
-import { CHARACTERS, LOCATIONS, ABILITIES, locationEntrance, type AgentState, type AgentId, type Ability, type AppearanceConfig, type CharacterDef } from '@auto_matrix/shared';
+import { CHARACTERS, LOCATIONS, ABILITIES, locationEntrance, type AgentState, type AgentId, type Ability, type AppearanceConfig, type CharacterDef, type Vector3 } from '@auto_matrix/shared';
 import { Agent } from './Agent.js';
 import { WorldState } from '../world/WorldState.js';
 
@@ -149,10 +149,10 @@ export class AgentManager {
     this.worldState.updateAgent(agentId, agent.state);
   }
 
-  updateAllAgents(tick: number): void {
+  updateAllAgents(tick: number, blocked?: (from: Vector3, to: Vector3, matrix: boolean) => boolean): void {
     for (const agent of this.agents.values()) {
       if (agent.state.status === 'dead') continue;
-      agent.update(tick);
+      agent.update(tick, blocked);
       this.worldState.updateAgent(agent.id, agent.state);
     }
   }

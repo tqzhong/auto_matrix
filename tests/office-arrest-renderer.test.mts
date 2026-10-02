@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { METACORTEX, ARREST_CAR, ARREST_BIKE, ARREST_DRIVE_SECONDS, arrestCarBounds, arrestCarPoint, arrestBikePoint, playerBlocked, type OfficeCustody } from '@auto_matrix/shared';
+import { METACORTEX, ARREST_CAR, ARREST_BIKE, ARREST_DRIVE_SECONDS, arrestDriveSeconds, arrestCarBounds, arrestCarPoint, arrestBikePoint, playerBlocked, type OfficeCustody } from '@auto_matrix/shared';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { CustodyStreetRenderer } from '../packages/client/src/engine/CustodyStreetRenderer.js';
 
@@ -85,5 +85,30 @@ test('the whole rendered sedan follows a clear street turn inside its moving col
     assert.ok(Math.abs(wheel.rotation.y) > .1, 'front tires steer through the corner');
     const stopped = wheel.children[0].rotation.x; renderer.update(custody); assert.equal(wheel.children[0].rotation.x, stopped, 'an unchanged saved time cannot roll a paused tire');
     custody.street!.elapsed = 7; renderer.update(custody); assert.ok(Math.abs(wheel.children[0].rotation.x - stopped) > 6, 'visible spokes roll with traveled distance');
+  } finally { renderer.dispose(); }
+});
+
+test('alternate safe parking routes keep real sedan surfaces inside their colliders and end in the matching traffic lane', () => {
+  const root = new THREE.Group(); root.position.set(METACORTEX.center.x, 0, METACORTEX.center.z);
+  const renderer = new CustodyStreetRenderer(root), custody = { phase: 'street', elapsed: 3.2, lift: {}, street: { phase: 'departing', elapsed: 0 } } as OfficeCustody;
+  const car = root.getObjectByName('office-arrest-sedan')!;
+  try {
+    for (const x of [13, 25, -40]) {
+      custody.street!.parking = { x, z: 49 }; const seconds = arrestDriveSeconds(custody.street);
+      for (let sample = 0; sample <= 16; sample++) {
+        custody.street!.elapsed = seconds * sample / 16; renderer.update(custody); root.updateMatrixWorld(true);
+        const bounds = arrestCarBounds(custody.street);
+        car.traverse(mesh => {
+          if (!(mesh instanceof THREE.Mesh)) return;
+          const vertices = mesh.geometry.attributes.position;
+          for (let i = 0; i < vertices.count; i += 23) {
+            const point = mesh.localToWorld(new THREE.Vector3().fromBufferAttribute(vertices, i));
+            assert.ok(Math.abs(point.x - bounds.position.x) <= bounds.width / 2 + .003 && Math.abs(point.z - bounds.position.z) <= bounds.depth / 2 + .003);
+            assert.equal(playerBlocked({ x: point.x, y: 1, z: point.z }, true, 0), false, `new route clips the city: ${x}/${sample}/${point.toArray()}`);
+          }
+        });
+      }
+      assert.ok(Math.abs(arrestCarPoint(0, 0, custody.street).x - 1204) < .001, 'new departures must join the +Z lane');
+    }
   } finally { renderer.dispose(); }
 });

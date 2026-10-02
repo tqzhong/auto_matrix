@@ -44,6 +44,7 @@ export interface WorldStateFull {
 }
 
 export interface WorldStateDelta {
+  traffic?: import('../constants/city-traffic.js').CityTrafficState;
   agents: Record<string, Partial<AgentState>>;
   dirtyChunks: Record<string, { blocks: number[] }>;
   events: WorldEvent[];

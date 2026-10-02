@@ -11,15 +11,10 @@ import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.j
 import { officeNextPoint } from '../packages/server/src/story/OfficeNavigation.js';
 import { exitOfficeCustody } from './helpers/office-custody-route.mts';
 import { boardOfficeArrest, departOfficeArrest } from './helpers/office-custody-route.mts';
-import { ARREST_CAR, arrestCarPoint, arrestCarPose, arrestDoor, arrestPose, locationEntrance } from '@auto_matrix/shared';
+import { ARREST_CAR, arrestCarPoint, arrestCarPose, arrestDoor, arrestPose } from '@auto_matrix/shared';
 
 function setup() {
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
-  // This controller fixture does not run background NPC walking; keep its street clear.
-  const entry = locationEntrance('metacortex_office');
-  ['choi', 'citizen_1', 'citizen_12'].forEach((id, i) => {
-    world.agents.get(id)!.position = { ...entry, x: entry.x - i * 3 };
-  });
   const dynamics = { record: (event: Omit<WorldEvent, 'id'>) => world.addWorldEvent(event) } as WorldDynamics;
   const sandbox = new SandboxSystem(world, dynamics, 42);
   const players = new PlayerController(world, { interrupt() {}, isAgentInConversation: () => false } as unknown as ConversationEngine, {} as ActionExecutor, dynamics, sandbox);
@@ -55,6 +50,34 @@ function setup() {
   };
   return { world, sandbox, players, neo, state, command, frame, input, walk, capturePoint, tick: () => tick };
 }
+
+test('parking beside an existing injured resident cannot enclose or relocate that body', () => {
+  const h = setup(), resident = h.world.agents.get('choi')!;
+  resident.position = { x: 1148.7, y: 1, z: 872.9 }; resident.health = 21;
+  const before = structuredClone(resident.position);
+  exitOfficeCustody(h.neo, h.state, h.input, h.command);
+  const car = h.sandbox.state.structures.find(item => item.id === 'film:office:arrest-car')!;
+  assert.equal(playerBlocked(resident.position, true, .7, [car]), false, 'the sedan must choose an unoccupied parking footprint');
+  assert.deepEqual(resident.position, before); assert.equal(resident.health, 21);
+});
+
+test('occupied parking stays empty through pause and recovery until an actual space becomes free', () => {
+  const h = setup(), residents = ['choi', 'citizen_1', 'citizen_12'].map(id => h.world.agents.get(id)!);
+  residents.forEach((resident, i) => { resident.position = metacortexPosition([13, 25, -40][i], ARREST_CAR.z); resident.health = 21; });
+  const before = residents.map(resident => ({ position: { ...resident.position }, health: resident.health }));
+  h.walk(); h.command('act');
+  assert.equal(h.state().office!.custody!.street!.waitingForParking, true);
+  assert.equal(h.sandbox.state.structures.some(item => item.id === 'film:office:arrest-car'), false);
+  h.frame(1, false); h.sandbox.restore(structuredClone(h.sandbox.state)); h.frame(1, false);
+  assert.equal(h.state().office!.custody!.street!.waitingForParking, true);
+  assert.deepEqual(residents.map(resident => ({ position: { ...resident.position }, health: resident.health })), before);
+  residents[1].position.z += 20; h.input();
+  assert.equal(h.state().office!.custody!.street!.waitingForParking, undefined);
+  assert.deepEqual(h.state().office!.custody!.street!.parking, { x: 25, z: ARREST_CAR.z });
+  assert.equal(h.sandbox.state.structures.some(item => item.id === 'film:office:arrest-car'), true);
+  assert.deepEqual(residents.map(resident => ({ position: { ...resident.position }, health: resident.health })),
+    before.map((resident, i) => i === 1 ? { ...resident, position: { ...resident.position, z: resident.position.z + 20 } } : resident));
+});
 
 test('capture preserves Neo and the agents at their physical encounter instead of returning to the checkpoint', () => {
   const h = setup();
@@ -271,7 +294,7 @@ test('the street escort boards the same cuffed actors through open doors and rec
   for (const phase of ['approaching', 'opening', 'entering', 'rear_approach', 'rear_entering', 'closing', 'done']) assert.ok(seen.has(phase), `missing street stage: ${phase}`);
   assert.ok(mirror); assert.equal(trinity.health, 43, 'the existing lookout is not healed or duplicated');
   assert.equal(h.world.agents.size, 85);
-  assert.deepEqual(h.neo.position, arrestCarPoint(ARREST_CAR.seats.neo.x, ARREST_CAR.seats.neo.z));
+  assert.deepEqual(h.neo.position, arrestCarPoint(ARREST_CAR.seats.neo.x, ARREST_CAR.seats.neo.z, h.state().office!.custody!.street));
   assert.equal(arrestDoor(h.state().office!.custody!.street, 1, true), 0);
   assert.equal(h.sandbox.life.state!.money, money); assert.deepEqual(h.sandbox.life.state!.evidence, ['clock']);
   departOfficeArrest(h.state, h.input, h.command); assert.equal(h.state().scene, 'm1_interrogation');
@@ -369,7 +392,7 @@ test('the driver waits for a crossing body and a player barricade without moving
 test('a pedestrian beside the rear bumper does not trap a car that is moving away', () => {
   const h = setup(); exitOfficeCustody(h.neo, h.state, h.input, h.command); boardOfficeArrest(h.neo, h.state, h.input, h.command);
   const choi = h.world.agents.get('choi')!;
-  choi.position = arrestCarPoint(-4.2, 4); choi.health = 21;
+  choi.position = arrestCarPoint(-4.2, 4, h.state().office!.custody!.street); choi.health = 21;
   assert.equal(playerBlocked(choi.position, true, .6, h.sandbox.state.structures), false, 'the pedestrian starts outside the actual car');
   const before = { ...choi.position }; h.command('act'); h.frame(1);
   assert.ok(h.state().office!.custody!.street!.elapsed > .9, 'a widening gap behind the car cannot stop departure');

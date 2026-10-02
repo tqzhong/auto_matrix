@@ -77,6 +77,7 @@ export interface MissionProgress {
   escort?: { position: Vector3; health: number };
 }
 export interface SandboxState {
+  traffic?: import('../constants/city-traffic.js').CityTrafficState;
   neoLife?: import('./neo-life.js').NeoLifeState;
   version: 1;
   seed: number;

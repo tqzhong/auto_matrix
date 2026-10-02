@@ -3,14 +3,17 @@ import { FILM_SETS, ITEMS, RECIPES, SKILLS, MISSIONS, NEO_MISSIONS, LOCATIONS, M
 import type { WorldState } from '../world/WorldState.js';
 import type { WorldDynamics } from '../story/WorldDynamics.js';
 import { NeoLifeSystem } from '../story/NeoLifeSystem.js';
+import { CityTrafficSystem } from './CityTrafficSystem.js';
 
 export class SandboxSystem {
   state: SandboxState;
   readonly life: NeoLifeSystem;
+  readonly traffic: CityTrafficSystem;
   onImpact?: (impact: CombatImpact, tick: number) => void;
 
   constructor(private world: WorldState, private dynamics: WorldDynamics, seed = Date.now() >>> 0) {
     this.life = new NeoLifeSystem(world, dynamics, () => this.state);
+    this.traffic = new CityTrafficSystem(world, () => this.state);
     this.life.film.onImpact = (impact, tick) => this.onImpact?.(impact, tick);
     this.life.film.lobby.onImpact = (impact, tick) => this.onImpact?.(impact, tick);
     this.life.film.lobby.onHit = (actor, target, damage, tick) => { this.enterIfNeeded(actor); this.hit(actor, target, damage, tick); };
@@ -73,6 +76,7 @@ export class SandboxSystem {
     if (journey) this.life.film.theOneFrame(this.world.agents.get(journey.actor)!, { x: 0, z: 0, sprint: false, jump: false, focus: false }, 0, this.world.simulationTick);
     if (journey) this.life.film.catch.frame(this.world.agents.get(journey.actor)!, { x: 0, z: 0, focus: false }, 0, this.world.simulationTick);
     if (journey) this.life.film.lobby.frame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);
+    if (this.state.traffic) this.traffic.restore();
   }
   missionsFor(agent: AgentState) { return agent.id === 'neo' && this.state.neoLife ? this.state.neoLife.missions : this.state.missions; }
   private random(): number {

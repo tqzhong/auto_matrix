@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SCENE_BY_ID, FILM_SETS, PILL_TIMING, WAKE_CALL, filmStepPosition, filmPosition, locationEntrance, officeOccluded, playerBlocked, stepPlayer, type WorldEvent, type PlayerInput } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, PILL_TIMING, WAKE_CALL, filmStepPosition, filmPosition, officeOccluded, playerBlocked, stepPlayer, type WorldEvent, type PlayerInput } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -13,11 +13,6 @@ import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.j
 
 function setup() {
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
-  // This controller fixture does not run background NPC walking; keep its street clear.
-  const entry = locationEntrance('metacortex_office');
-  ['choi', 'citizen_1', 'citizen_12'].forEach((id, i) => {
-    world.agents.get(id)!.position = { ...entry, x: entry.x - i * 3 };
-  });
   const dynamics = { record: (e: Omit<WorldEvent, 'id'>) => world.addWorldEvent(e) } as WorldDynamics;
   const sandbox = new SandboxSystem(world, dynamics, 42);
   const players = new PlayerController(world, { interrupt() {}, isAgentInConversation: () => false } as unknown as ConversationEngine, {} as ActionExecutor, dynamics, sandbox);

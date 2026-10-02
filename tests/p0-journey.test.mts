@@ -17,7 +17,6 @@ import {
   filmPosition,
   filmStepPosition,
   lifeRoomCenter,
-  locationEntrance,
   type Vector3,
   type WorldEvent,
 } from '@auto_matrix/shared';
@@ -32,11 +31,6 @@ import { exitOfficeCustody, boardOfficeArrest, departOfficeArrest } from './help
 
 function setup() {
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
-  // This controller fixture does not run background NPC walking; keep its street clear.
-  const entry = locationEntrance('metacortex_office');
-  ['choi', 'citizen_1', 'citizen_12'].forEach((id, i) => {
-    world.agents.get(id)!.position = { ...entry, x: entry.x - i * 3 };
-  });
   const dynamics = { record: (event: Omit<WorldEvent, 'id'>) => world.addWorldEvent(event) } as WorldDynamics;
   const sandbox = new SandboxSystem(world, dynamics, 42);
   const players = new PlayerController(world, { interrupt() {}, isAgentInConversation: () => false } as unknown as ConversationEngine,
