@@ -1,6 +1,7 @@
 import { crosscutView } from '@auto_matrix/shared';
 import { truthRest, truthKneel, truthSeat } from '@auto_matrix/shared';
 import { METACORTEX } from '@auto_matrix/shared';
+import { OFFICE_CUSTODY, officeCustodyStep } from '@auto_matrix/shared';
 import { catchLocked, deusPactLocked, deusPactPose, reloadedPhaseLocked, smithFinaleLocked, smithFinalePose, trilogyEpilogueLocked } from '@auto_matrix/shared';
 import { reloadedCamera } from './ReloadedCamera.js';
 import * as THREE from 'three';
@@ -19,6 +20,7 @@ import { BASEMENT, TV_EXIT, basementBlocked, basementDropPose, basementDropRoot,
 export class PlayerControls {
   id: string | null = null;
   firstPerson = false;
+  custodyBodies?: Vector3[];
   private inOfficeLift = false;
   private recoveryYaw: number | undefined;
   private truthYaw: number | undefined;
@@ -102,6 +104,7 @@ export class PlayerControls {
   }
 
   possess(state: AgentState): void {
+    this.custodyBodies = undefined; this.motion.officeCustody = undefined;
     this.meetingYaw = undefined; this.welcomeShot = undefined; this.performing = false; this.phoneExit = false;
     this.bridgeCaught = undefined;
     this.watchingAmbush = false;
@@ -126,6 +129,7 @@ export class PlayerControls {
     this.onViewChange?.(false);
   }
   release(): void {
+    this.custodyBodies = undefined; this.motion.officeCustody = undefined;
     this.id = null; this.keys.clear(); this.enabled = true; this.firing = false; this.firearm = false; this.weaponStyle = undefined; this.fireInterval = LOBBY_FIRE_INTERVAL; this.ride = undefined; this.gunner = false; this.climbing = false; this.performing = false; this.phoneExit = false; this.mirror = 0; this.spoon = undefined; this.phone = undefined; this.welcomeShot = undefined;
     this.bridgeCaught = undefined;
     this.ambushObservation = undefined; this.watchingAmbush = false;
@@ -165,7 +169,7 @@ export class PlayerControls {
       if (event.code === 'KeyF') this.triggerCombat('attack');
       if (event.code === 'KeyH') this.onHUD?.();
       if (event.code === 'KeyX') this.triggerCombat('dodge');
-      if (['KeyQ', 'KeyC'].includes(event.code) && this.running && this.authoritative?.status === 'alive') {
+      if (['KeyQ', 'KeyC'].includes(event.code) && !this.motion.officeCustody && this.running && this.authoritative?.status === 'alive') {
         this.send(this.input(false)); this.action(event.code === 'KeyQ' ? 'ability' : event.code === 'KeyC' ? 'ability2' : 'dodge');
       }
       if (event.code === 'KeyT' && this.firearm) { this.firing = true; this.requestShot(); }
@@ -253,6 +257,7 @@ export class PlayerControls {
   }
 
   triggerCombat(kind: 'attack' | 'dodge', guided = false, guidedCombo?: number): boolean {
+    if (this.motion.officeCustody) return false;
     if (kind === 'attack') return this.requestAttack(guided, guidedCombo);
     if (!this.running || !this.enabled || this.authoritative?.status !== 'alive') return false;
     this.send(this.input(false)); this.action('dodge');
@@ -260,6 +265,7 @@ export class PlayerControls {
   }
 
   private requestAttack(guided = false, guidedCombo?: number): boolean {
+    if (this.motion.officeCustody) return false;
     if (this.motion.bathroom || this.motion.reloaded?.phase === 'falling' || this.motion.catch?.phase === 'pulse') {
       if (!this.running || !this.enabled || this.authoritative?.status !== 'alive') return false;
       this.send(this.input(false)); this.action('attack'); return true;
@@ -284,7 +290,7 @@ export class PlayerControls {
   }
 
   private requestShot(): void {
-    if (!this.firearm || !this.enabled || !this.running || this.authoritative?.status !== 'alive' || performance.now() - this.lastShot < this.fireInterval * 1000) return;
+    if (this.motion.officeCustody || !this.firearm || !this.enabled || !this.running || this.authoritative?.status !== 'alive' || performance.now() - this.lastShot < this.fireInterval * 1000) return;
     this.lastShot = performance.now(); this.send(this.input(false)); this.action('shoot');
   }
 
@@ -321,7 +327,7 @@ export class PlayerControls {
     const length = Math.hypot(x, z);
     if (length > 1) { x /= length; z /= length; }
     const attacking = (performance.now() - this.lastAttack) / 1000 < MELEE_COMBO[this.attackCombo].duration;
-    return { x, z, yaw: attacking ? this.attackYaw : this.yaw, pitch: this.pitch, sprint: this.keys.has('ShiftLeft') || this.keys.has('ShiftRight'), crouch: this.keys.has('KeyZ'), jump,
+    return { x, z, yaw: attacking ? this.attackYaw : this.yaw, pitch: this.pitch, sprint: !this.motion.officeCustody && (this.keys.has('ShiftLeft') || this.keys.has('ShiftRight')), crouch: !this.motion.officeCustody && this.keys.has('KeyZ'), jump: !this.motion.officeCustody && jump,
       drive: this.ride ? { throttle: this.enabled ? Math.max(0, forward) : 0, steer: this.enabled ? right : 0, brake: forward < 0 || !this.enabled } : undefined,
       climb: (this.climbing || this.motion.tvExit?.phase === 'emerging') && this.enabled ? forward : 0, focus: this.enabled && this.running && this.keys.has('KeyG'), sequence: ++this.sequence };
   }
@@ -374,6 +380,9 @@ export class PlayerControls {
     if (state.currentAction?.parameters.training) this.performing = true;
     if (this.motion.workday && !state.currentAction?.parameters.workday) this.performing = false;
     if (state.currentAction?.parameters.workday) this.performing = true;
+    if (this.motion.officeCustody && !state.currentAction?.parameters.officeCustody) this.performing = false;
+    const custody = state.currentAction?.parameters.officeCustody as MotionInput['officeCustody'];
+    if (custody) this.performing = custody.phase === 'securing' || Boolean(custody.paused);
     if (this.motion.contact && !state.currentAction?.parameters.contact) this.performing = false;
     if (state.currentAction?.parameters.contact) this.performing = true;
     if (this.motion.wakeCall && !state.currentAction?.parameters.wakeCall) this.performing = false;
@@ -465,7 +474,7 @@ export class PlayerControls {
     this.motion.seated = state.currentAction?.parameters.seated === true;
     this.motion.floorSeated = state.currentAction?.parameters.floorSeated === true;
     this.motion.weaponStyle = state.currentAction?.parameters.weaponStyle as MotionInput['weaponStyle'] ?? (this.firearm ? this.weaponStyle : undefined);
-    this.motion.crouching = farewell?.role === 'neo' || this.enabled && !this.performing && this.keys.has('KeyZ');
+    this.motion.crouching = farewell?.role === 'neo' || !custody && this.enabled && !this.performing && this.keys.has('KeyZ');
     this.motion.riding = Boolean(this.ride || this.gunner);
     this.motion.performance = this.performing ? state.currentAction?.parameters.filmPose as AwakeningPose : undefined;
     this.motion.mirrorBeat = state.currentAction?.parameters.mirrorBeat as number | undefined;
@@ -544,6 +553,7 @@ export class PlayerControls {
     this.motion.podRescue = state.currentAction?.parameters.podRescue as number | undefined;
     this.motion.spoon = this.spoon;
     this.motion.phone = this.phone;
+    this.motion.officeCustody = custody;
     this.motion.window = this.performing ? state.currentAction?.parameters.window as number | undefined : undefined;
     this.motion.crossing = this.performing ? state.currentAction?.parameters.crossing as number | undefined : undefined;
     if (this.motion.crossing !== undefined && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
@@ -643,7 +653,7 @@ export class PlayerControls {
       this.position.x += (state.position.x - this.position.x) * blend; this.position.y += (state.position.y - this.position.y) * blend; this.position.z += (state.position.z - this.position.z) * blend;
       this.vy = 0; this.planar = { x: 0, z: 0 }; this.localJump = false;
     } else if (running && this.enabled && state.status === 'alive') {
-      const boost = state.activeEffects.some(effect => ['speed_blur', 'agent_dodge', 'phase_shift'].includes(effect.visualEffect)) ? 1.8 : 1;
+      const boost = this.motion.officeCustody ? OFFICE_CUSTODY.speed / PLAYER_WALK_SPEED : state.activeEffects.some(effect => ['speed_blur', 'agent_dodge', 'phase_shift'].includes(effect.visualEffect)) ? 1.8 : 1;
       const input = this.input(this.localJump);
       const attackScale = this.impulse || now - (this.motion.hit ?? -1000) < 220 ? 0 : (now - this.lastAttack) / 1000 < MELEE_COMBO[this.attackCombo].duration ? .4 : 1;
       const previous = this.position;
@@ -656,6 +666,10 @@ export class PlayerControls {
       }
       const separated = ambushCompanyStep(previous, this.position, this.ambushCompany);
       if (separated !== this.position) { this.position = playerBlocked(separated, state.isInMatrix, 1.1, this.structures) ? previous : separated; this.planar = { x: 0, z: 0 }; this.vy = 0; }
+      if (this.custodyBodies) {
+        const restrained = officeCustodyStep(previous, this.position, this.custodyBodies);
+        if (restrained !== this.position) { this.position = restrained; this.planar = { x: 0, z: 0 }; this.vy = 0; }
+      }
     }
     if (performance.now() - this.lastSent >= 50) {
       this.send(this.input(this.networkJump && running && this.enabled));

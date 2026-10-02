@@ -1,0 +1,168 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { FILM_SCENE_BY_ID, OFFICE_AGENT_ROLES, OFFICE_CUSTODY, officeCustodyStep, filmPosition, filmStepPosition, playerBlocked, type PlayerInput, type Vector3, type WorldEvent } from '@auto_matrix/shared';
+import { WorldState } from '../packages/server/src/world/WorldState.js';
+import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
+import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
+import { PlayerController } from '../packages/server/src/player/PlayerController.js';
+import type { ConversationEngine } from '../packages/server/src/agents/ConversationEngine.js';
+import type { ActionExecutor } from '../packages/server/src/agents/ActionExecutor.js';
+import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
+import { officeNextPoint } from '../packages/server/src/story/OfficeNavigation.js';
+
+function setup() {
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const dynamics = { record: (event: Omit<WorldEvent, 'id'>) => world.addWorldEvent(event) } as WorldDynamics;
+  const sandbox = new SandboxSystem(world, dynamics, 42);
+  const players = new PlayerController(world, { interrupt() {}, isAgentInConversation: () => false } as unknown as ConversationEngine, {} as ActionExecutor, dynamics, sandbox);
+  players.possess('neo-player', 'neo', 0); sandbox.life.begin(world.agents.get('neo')!, 0); sandbox.state.neoLife!.chapter = 2;
+  let tick = 0, sequence = 0;
+  const neo = world.agents.get('neo')!;
+  const state = () => sandbox.life.film.state!;
+  const command = (target: string) => players.sandboxAction('neo-player', { kind: 'life', target: `film:${target}` }, ++tick);
+  const frame = (seconds: number, running = true) => { for (let i = 0; i < Math.round(seconds * 20); i++) players.step(.05, running, tick); };
+  const goal = () => { neo.position = filmStepPosition(sandbox.life.film.scene!, sandbox.life.film.step!); };
+  command('continue'); goal(); command('act'); frame(10); command('act');
+  goal(); command('act'); frame(11); command('act'); frame(4.1);
+  goal(); command('act'); frame(3); command('act'); frame(12); command('next');
+  assert.equal(state().scene, 'm1_office_escape');
+  const capturePoint = filmPosition('film_metacortex_floor', 0, -20);
+  neo.position = { ...capturePoint }; neo.rotation = Math.PI;
+  for (let i = 0; i < 14 && !state().office?.outcome; i++) sandbox.tick(++tick);
+  assert.equal(state().office?.outcome, 'captured');
+  const input = (values: Partial<PlayerInput> = {}, running = true) => {
+    players.receiveInput('neo-player', { x: 0, z: 0, yaw: neo.rotation, sprint: false, jump: false, ...values, sequence: ++sequence });
+    players.step(.05, running, tick);
+    if (running && sequence % 10 === 0) sandbox.tick(++tick);
+  };
+  const walk = (target = filmPosition('film_metacortex_floor', OFFICE_CUSTODY.exit.x, OFFICE_CUSTODY.exit.z)) => {
+    for (let i = 0; i < 2400; i++) {
+      if (Math.hypot(target.x - neo.position.x, target.z - neo.position.z) < .3) { input(); return; }
+      const point = officeNextPoint(neo.position, target, 1.15)!;
+      assert.ok(point, 'the office must have a walkable route to the elevator');
+      const dx = point.x - neo.position.x, dz = point.z - neo.position.z, length = Math.hypot(dx, dz);
+      input({ x: dx / Math.max(1, length), z: dz / Math.max(1, length), yaw: Math.atan2(dx, dz) });
+    }
+    assert.fail(`escort stalled: ${JSON.stringify({ neo: neo.position, custody: state().office!.custody })}`);
+  };
+  return { world, sandbox, players, neo, state, command, frame, input, walk, capturePoint, tick: () => tick };
+}
+
+test('capture preserves Neo and the agents at their physical encounter instead of returning to the checkpoint', () => {
+  const h = setup();
+  assert.deepEqual(h.neo.position, h.capturePoint, 'being caught must not teleport Neo back to his desk');
+  for (const role of OFFICE_AGENT_ROLES) {
+    const agent = h.world.agents.get(role)!;
+    assert.equal(agent.currentLocation, 'film_metacortex_floor');
+    assert.ok(agent.currentAction?.parameters.officeCustody, 'the existing role must remain a visible participant in the arrest');
+    assert.ok(Math.hypot(agent.position.x - h.neo.position.x, agent.position.z - h.neo.position.z) >= 1.7, 'the arrest cannot begin with the guard inside Neo');
+  }
+  assert.equal(h.neo.health, 100);
+  assert.equal(h.sandbox.state.threats.some(threat => OFFICE_AGENT_ROLES.includes(threat.character as typeof OFFICE_AGENT_ROLES[number])), false, 'there must be one body per role');
+});
+
+test('being caught cannot skip the physical escort with next or act', () => {
+  const h = setup();
+  h.command('next'); assert.equal(h.state().scene, 'm1_office_escape');
+  h.command('act'); assert.equal(h.state().scene, 'm1_office_escape');
+  h.frame(20);
+  assert.equal(h.state().scene, 'm1_office_escape');
+  assert.equal(h.state().office?.custody?.phase, 'escorting', 'waiting at the capture point cannot walk Neo to the elevator');
+  assert.equal(h.state().completed.includes(FILM_SCENE_BY_ID.m1_interrogation.id), false);
+});
+
+test('ordinary movement reaches the elevator with the guards, then continues to interrogation', () => {
+  const h = setup(); h.frame(4);
+  const catcher = h.state().office!.custody!.bodies[h.state().office!.custody!.catcher];
+  assert.ok((catcher.position.x - h.neo.position.x) * Math.sin(h.neo.rotation) + (catcher.position.z - h.neo.position.z) * Math.cos(h.neo.rotation) <= .11,
+    'the captor must approach the upper arm from beside or behind Neo');
+  h.walk();
+  assert.equal(h.state().office?.custody?.phase, 'ready');
+  assert.equal(h.state().scene, 'm1_office_escape', 'reaching the lift still waits for the player');
+  const money = h.sandbox.state.neoLife!.money; h.sandbox.state.neoLife!.evidence = ['clock'];
+  h.command('act'); assert.equal(h.state().scene, 'm1_interrogation');
+  assert.equal(h.neo.currentAction?.parameters.officeCustody, undefined);
+  assert.ok(h.state().skipped?.includes('m1_ledge'));
+  assert.equal(h.sandbox.state.neoLife!.money, money); assert.deepEqual(h.sandbox.state.neoLife!.evidence, ['clock']);
+});
+
+test('cuff age, participant poses and the capture point survive pause, disconnect, restore and retry', () => {
+  const h = setup(); h.frame(1.6);
+  const poses = () => ['neo', ...OFFICE_AGENT_ROLES].map(id => {
+    const actor = h.world.agents.get(id)!;
+    return { position: { ...actor.position }, rotation: actor.rotation, gesture: structuredClone(actor.currentAction?.parameters.officeCustody), status: actor.status, health: actor.health };
+  });
+  const before = { custody: structuredClone(h.state().office!.custody), poses: poses() };
+  h.frame(2, false); assert.deepEqual({ custody: h.state().office!.custody, poses: poses() }, before);
+  h.players.release('neo-player', h.tick()); h.frame(3); h.sandbox.tick(h.tick() + 50);
+  assert.deepEqual({ custody: h.state().office!.custody, poses: poses() }, before);
+  h.sandbox.restore(structuredClone(h.sandbox.state)); h.players.possess('neo-player', 'neo', h.tick());
+  assert.deepEqual({ custody: h.state().office!.custody, poses: poses() }, before);
+  h.command('retry'); assert.deepEqual({ custody: h.state().office!.custody, poses: poses() }, before);
+  h.frame(3); assert.equal(h.state().office!.custody!.phase, 'escorting');
+});
+
+test('custody reserves the same actors, and an occupied actor pauses a restored escort', () => {
+  const h = setup(); h.frame(1);
+  for (const role of OFFICE_AGENT_ROLES) assert.match(h.players.possess('other', role, h.tick()).error!, /拘捕|押送/);
+  const saved = structuredClone(h.sandbox.state), brown = h.world.agents.get('agent_brown')!;
+  brown.controller = 'other'; brown.position = filmPosition('film_metacortex_floor', 24, 20); brown.health = 43;
+  const occupied = { ...brown.position };
+  h.sandbox.restore(saved); const bodies = structuredClone(h.state().office!.custody!.bodies), neo = { ...h.neo.position };
+  h.frame(10); h.input({ x: 1, z: 1, jump: true, sprint: true }); h.command('next');
+  assert.equal(h.state().office!.custody!.elapsed, saved.neoLife!.journey!.office!.custody!.elapsed);
+  assert.deepEqual(brown.position, occupied); assert.equal(brown.health, 43); assert.equal(brown.controller, 'other');
+  assert.deepEqual(h.state().office!.custody!.bodies, bodies); assert.deepEqual(h.neo.position, neo);
+  delete brown.controller; h.frame(4); assert.equal(h.state().office!.custody!.phase, 'escorting');
+  assert.equal(brown.health, 43, 'rejoining the escort does not revive or heal the role');
+});
+
+test('cuffed Neo cannot sprint, jump, crouch, fight or travel, and prediction preserves body clearance', () => {
+  const h = setup(); h.frame(4); const start = { ...h.neo.position };
+  for (let i = 0; i < 20; i++) h.input({ x: 1, z: 0, yaw: Math.PI / 2, sprint: true, jump: true, crouch: true });
+  assert.equal(h.neo.position.y, start.y);
+  assert.ok(Math.hypot(h.neo.position.x - start.x, h.neo.position.z - start.z) <= OFFICE_CUSTODY.speed + .001);
+  assert.equal(h.neo.currentAction?.parameters.crouching, false);
+  for (const kind of ['attack', 'shoot', 'ability', 'ability2', 'dodge', 'travel']) assert.match(h.players.act('neo-player', kind, h.tick()), /双手/);
+  const body: Vector3 = { ...start, x: start.x + 2 };
+  assert.deepEqual(officeCustodyStep(start, { ...start, x: start.x + 1 }, [body]), start);
+  assert.deepEqual(officeCustodyStep(start, { ...start, x: start.x - 1 }, [body]), { ...start, x: start.x - 1 });
+});
+
+test('an escort stays out of solid furniture and keeps separate bodies at every movement frame', () => {
+  const h = setup();
+  for (let i = 0; i < 400; i++) {
+    const previous = OFFICE_AGENT_ROLES.map(role => ({ ...h.world.agents.get(role)!.position }));
+    h.input(i > 80 ? { x: 0, z: -1, yaw: Math.PI } : {});
+    const actors = [h.neo, ...OFFICE_AGENT_ROLES.map(role => h.world.agents.get(role)!)];
+    actors.forEach((actor, j) => {
+      assert.equal(playerBlocked(actor.position, true, .7, h.sandbox.state.structures), false);
+      for (const other of actors.slice(j + 1)) assert.ok(Math.hypot(actor.position.x - other.position.x, actor.position.z - other.position.z) >= OFFICE_CUSTODY.spacing - .001,
+        `body intersection: ${actor.id}, ${other.id}`);
+    });
+    OFFICE_AGENT_ROLES.forEach((role, j) => assert.ok(Math.hypot(h.world.agents.get(role)!.position.x - previous[j].x, h.world.agents.get(role)!.position.z - previous[j].z) <= .106, 'escort bodies cannot teleport'));
+    if (h.state().office!.custody!.phase === 'ready') break;
+  }
+});
+
+test('the escort routes around Rhineheart using the actual office supervisor role', () => {
+  const h = setup(), supervisor = h.world.agents.get('rhineheart')!;
+  supervisor.position = filmPosition('film_metacortex_floor', OFFICE_CUSTODY.exit.x, OFFICE_CUSTODY.exit.z);
+  supervisor.currentLocation = 'film_metacortex_floor'; supervisor.isInMatrix = true;
+  for (let i = 0; i < 240; i++) {
+    h.input();
+    for (const role of OFFICE_AGENT_ROLES) {
+      const body = h.world.agents.get(role)!;
+      assert.ok(Math.hypot(body.position.x - supervisor.position.x, body.position.z - supervisor.position.z) >= OFFICE_CUSTODY.spacing - .001,
+        'the actual supervisor body must participate in escort navigation');
+    }
+  }
+});
+
+test('the lift prompt closes when Neo walks away, and old captured saves still continue', () => {
+  const h = setup(); h.frame(4); h.walk(); assert.equal(h.state().office!.custody!.phase, 'ready');
+  h.walk(filmPosition('film_metacortex_floor', 5, -20)); h.command('next');
+  assert.equal(h.state().scene, 'm1_office_escape', 'a past visit to the lift cannot authorize advancing from anywhere');
+  delete h.state().office!.custody;
+  h.command('next'); assert.equal(h.state().scene, 'm1_interrogation', 'already-captured legacy saves retain their old route');
+});

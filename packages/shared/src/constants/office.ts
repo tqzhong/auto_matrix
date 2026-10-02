@@ -3,6 +3,7 @@ import { rayBox } from './lobby.js';
 import type { FilmJourney } from './film-story.js';
 import { OFFICE_MANAGER_FURNITURE } from './office-workday.js';
 import { METACORTEX_SHAFT } from './metacortex.js';
+import type { OfficeCustody } from './office-custody.js';
 
 export const OFFICE_CONTACT = { x: 14, z: 6.7, parcelX: 14.5, parcelZ: 5.31, pickupSeconds: 2.2, answerSeconds: 11 };
 export interface OfficePhone { phase: 'pickup' | 'ready' | 'answering' | 'connected'; elapsed: number }
@@ -104,6 +105,7 @@ export interface OfficeEncounter {
   suspicion: number[];
   lastTick: number;
   arrival?: number;
+  custody?: OfficeCustody;
   searchAt?: number;
   patrolWait?: number[];
   searches?: (OfficeSearch | null)[];

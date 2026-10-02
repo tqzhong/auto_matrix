@@ -4,6 +4,8 @@ import { trackingContact } from './TrackingContact.js';
 import { CharacterModels, weaponMuzzle, type CharacterRig } from './CharacterModel.js';
 import type { MotionInput } from './CharacterMotion.js';
 import { poseBathroom } from './BathroomPerformance.js';
+import { officeCustodyActive } from '@auto_matrix/shared';
+import { OfficeCustodyPerformance } from './OfficeCustodyPerformance.js';
 
 export const FACTION_COLORS: Record<string, string> = {
   zion: '#90d7b1', civilians: '#d0c8a3', machines: '#ee8773', oracle: '#c6b1e7', merovingian: '#cda96c', exiles: '#88b5c5', smith_virus: '#f07565',
@@ -38,6 +40,7 @@ export class AgentRenderer {
   private matrix = true;
   private playerMotion?: MotionInput;
   private models = new CharacterModels();
+  private custody = new OfficeCustodyPerformance();
   private markerGeometry = new THREE.RingGeometry(2.1, 2.5, 32);
   private shadowGeometry = new THREE.PlaneGeometry(3, 3);
   private shadowTexture: THREE.CanvasTexture;
@@ -210,7 +213,8 @@ export class AgentRenderer {
           entry.group.position.set(center.x + pose.x, center.y + pose.y, center.z + pose.z);
           guideHeading = (state.currentAction?.parameters.ambushEscort as AmbushEscort).watching ? state.rotation : pose.yaw;
           if (speed > 0 && delta > 0) guideSpeed = Math.abs(guide.progress - before) / (delta * speed);
-        } else if (state.currentAction?.parameters.oracleReception || state.currentAction?.parameters.oracleWaiting
+        } else if (state.currentAction?.parameters.officeCustody && delta * speed === 0) entry.group.position.copy(target);
+        else if (state.currentAction?.parameters.oracleReception || state.currentAction?.parameters.oracleWaiting
           || (state.currentAction?.parameters.oracleArrival as MotionInput['oracleArrival'])?.phase === 'opening'
           || ((state.currentAction?.parameters.oracleArrival as MotionInput['oracleArrival'])?.seating ?? 0) > 0) entry.group.position.copy(target);
         else if (state.currentAction?.parameters.passenger && driver?.state.currentAction?.parameters.riding) {
@@ -222,9 +226,10 @@ export class AgentRenderer {
         if (state.currentAction?.parameters.basement && !dropRoot && delta * speed > 0) guideSpeed = entry.group.position.distanceTo(previous) / (delta * speed);
       }
       const moving = Math.hypot(state.velocity.x, state.velocity.z) > .1;
-      const heading = guideHeading ?? (moving && !state.currentAction?.parameters.oracleArrival && !state.currentAction?.parameters.oracleReception && !state.currentAction?.parameters.oracleDeparture && !state.currentAction?.parameters.club && !state.currentAction?.parameters.catch && !state.currentAction?.parameters.recoveryCrew && state.currentLocation !== 'film_government_lobby' ? Math.atan2(state.velocity.x, state.velocity.z) : state.rotation);
+      const heading = guideHeading ?? (moving && !state.currentAction?.parameters.officeCustody && !state.currentAction?.parameters.oracleArrival && !state.currentAction?.parameters.oracleReception && !state.currentAction?.parameters.oracleDeparture && !state.currentAction?.parameters.club && !state.currentAction?.parameters.catch && !state.currentAction?.parameters.recoveryCrew && state.currentLocation !== 'film_government_lobby' ? Math.atan2(state.velocity.x, state.velocity.z) : state.rotation);
       let difference = heading - entry.body.rotation.y;
       difference = Math.atan2(Math.sin(difference), Math.cos(difference));
+      if (id !== this.playerId && state.currentAction?.parameters.officeCustody && delta * speed === 0) { entry.body.rotation.y = heading; difference = 0; }
       const arrival = state.currentAction?.parameters.oracleArrival as MotionInput['oracleArrival'];
       if (id !== this.playerId) entry.body.rotation.y += difference * (dropRoot || entry.wetwallGuide || entry.ambushGuide && delta === 0 || arrival?.phase === 'opening' || (arrival?.seating ?? 0) > 0 || state.currentAction?.parameters.farewell || state.currentAction?.parameters.club || state.currentAction?.parameters.sentinel || state.currentAction?.parameters.interlude || state.currentAction?.parameters.oracleVisit || state.currentAction?.parameters.oracleDeparture || state.currentAction?.parameters.crosscut || state.currentAction?.parameters.betrayal || state.currentAction?.parameters.rescue || state.currentAction?.parameters.government || state.currentAction?.parameters.airRescue || state.currentAction?.parameters.matrixEscape || state.currentAction?.parameters.theOne || state.currentAction?.parameters.reloaded || state.currentAction?.parameters.catch || state.currentAction?.parameters.lobbyEntry || state.currentAction?.parameters.meeting || state.currentAction?.parameters.pills || state.currentAction?.parameters.interrogation || state.currentAction?.parameters.welcome || state.currentAction?.parameters.reveal || state.currentAction?.parameters.training || state.currentAction?.parameters.workday || state.currentAction?.parameters.recoveryCrew ? 1 : 1 - Math.exp(-10 * delta));
       const velocity = state.status === 'alive' ? Math.hypot(state.velocity.x, state.velocity.z) : 0;
@@ -436,6 +441,8 @@ export class AgentRenderer {
       }
     }
     const morpheus = this.agents.get('morpheus'), smith = this.agents.get('smith');
+    const custody = officeCustodyActive(journey) ? journey!.office!.custody : undefined;
+    this.custody.update(this.agents.get('neo')?.rig.hero, custody ? this.agents.get(custody.catcher)?.rig.hero : undefined, custody);
     if (morpheus?.rig.hero && smith?.rig.hero) {
       const bathroom = (this.playerId === 'morpheus' ? this.playerMotion?.bathroom : morpheus.state.currentAction?.parameters.bathroom) as MotionInput['bathroom'];
       const sixth = morpheus.state.currentAction?.parameters.sixth as MotionInput['sixth'];
@@ -492,6 +499,7 @@ export class AgentRenderer {
     this.agents.delete(id);
   }
   dispose(): void {
+    this.custody.dispose();
     for (const id of this.agents.keys()) this.removeAgent(id);
     this.models.dispose(); this.markerGeometry.dispose(); this.shadowGeometry.dispose(); this.shadowMaterial.dispose(); this.shadowTexture.dispose();
   }

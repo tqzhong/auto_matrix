@@ -1,4 +1,5 @@
 import { metacortexLiftLocked } from '@auto_matrix/shared';
+import { OFFICE_CUSTODY, PLAYER_WALK_SPEED } from '@auto_matrix/shared';
 import { RELOADED, HEL_COATCHECK } from '@auto_matrix/shared';
 import { LOCATIONS, heldPhone, pillLocked, lobbyLocked, governmentLocked, airRescueLocked, filmSetAt, FILM_SETS, FILM_CAST, NEO_CAST, neoSkillUnlocked, insideLifeRoom, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, rescueLoadout, rescueLocked, COMBAT_SKILLS, playerSkills, dodgeDirection, combatDisplace, groundHeight, meleeReach, distance, locationEntrance, playerBlocked, stepPlayer, type AgentState, type PlayerInput, type SandboxCommand, type SkillCast, type Vector3, type CombatSkillId } from '@auto_matrix/shared';
 import type { SandboxSystem } from './SandboxSystem.js';
@@ -100,6 +101,7 @@ export class PlayerController {
     if (interlude?.scene === 'm3_bane' && interlude.bane && interlude.bane.phase !== 'ready' && !interlude.completed.includes('m3_bane')
       && id !== interlude.actor && ['bane', 'trinity'].includes(id)) return { error: '这个角色正在参与 Logos 船上的剧情交手，片段结束后可以接入。' };
     if (this.sandbox?.state.threats.some(t => t.character === id)) return { error: '这个角色正在剧情交手，结束后可以接入。' };
+    if (this.sandbox?.life.film.custody.reserved(id)) return { error: '这个角色正在办公室拘捕与押送中，片段结束后可以接入。' };
     const restarting = newCycle && id === 'neo' && this.sandbox?.life.film.state?.finished;
     if (!restarting && this.sandbox?.life.film.unavailable(id) && !this.sandbox.life.film.controls(agent)) return { error: '这个角色在本轮故事中已无法接入；新循环会恢复。' };
     const owner = this.owners.get(id);
@@ -144,6 +146,7 @@ export class PlayerController {
     this.sandbox?.life.film.hotelFrame(agent, 0, tick);
     this.sandbox?.life.film.workdayFrame(agent, 0, tick);
     this.sandbox?.life.film.office.phoneFrame(tick, this.world.agents);
+    this.sandbox?.life.film.custody.frame(agent, 0, tick);
     this.sandbox?.life.film.apartmentFrame(agent, 0, tick);
     this.sandbox?.life.film.clubFrame(agent, 0, tick);
     this.sandbox?.life.film.morningFrame(agent, 0, tick);
@@ -188,6 +191,7 @@ export class PlayerController {
       this.sandbox?.life.film.meetingFrame(agent, false, 0, tick);
       this.sandbox?.life.film.hotelFrame(agent, 0, tick);
       this.sandbox?.life.film.workdayFrame(agent, 0, tick);
+      this.sandbox?.life.film.custody.frame(agent, 0, tick);
       this.sandbox?.life.film.apartmentFrame(agent, 0, tick);
       this.sandbox?.life.film.clubFrame(agent, 0, tick);
       this.sandbox?.life.film.morningFrame(agent, 0, tick);
@@ -356,6 +360,9 @@ export class PlayerController {
       if (this.sandbox?.life.film.spoonFrame(agent, Boolean(input.focus) && Math.hypot(input.x, input.z) < .05 && !input.jump, dt, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
+      if (this.sandbox?.life.film.custody.frame(agent, dt, tick)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
       if (this.sandbox?.life.film.performing(agent)) {
         this.sandbox.life.film.openingHotel.frame(agent);
         this.sandbox.life.film.truckFrame(agent, dt, tick);
@@ -381,9 +388,11 @@ export class PlayerController {
         continue;
       }
       const previous = agent.position;
-      const boost = agent.activeEffects.some(effect => ['speed_blur', 'agent_dodge', 'phase_shift'].includes(effect.visualEffect)) ? 1.8 : 1;
+      const custody = this.sandbox?.life.film.custody.active(agent);
+      const boost = custody ? OFFICE_CUSTODY.speed / PLAYER_WALK_SPEED : agent.activeEffects.some(effect => ['speed_blur', 'agent_dodge', 'phase_shift'].includes(effect.visualEffect)) ? 1.8 : 1;
       const attackScale = session.impulse || session.stagger > 0 ? 0 : session.strike ? .4 : 1;
-      const movement = stepPlayer(previous, session.vy, { ...input, x: input.x * attackScale, z: input.z * attackScale }, Math.min(dt, 0.1), agent.isInMatrix, this.sandbox?.state.structures, stale ? undefined : session.planar, boost);
+      const movement = stepPlayer(previous, session.vy, { ...input, x: input.x * attackScale, z: input.z * attackScale,
+        ...(custody ? { sprint: false, jump: false, crouch: false } : {}) }, Math.min(dt, 0.1), agent.isInMatrix, this.sandbox?.state.structures, stale ? undefined : session.planar, boost);
       agent.position = movement.position; session.vy = movement.verticalVelocity; session.planar = movement.horizontalVelocity; session.input.jump = false;
       agent.rotation = input.yaw;
       if (session.impulse) {
@@ -397,6 +406,10 @@ export class PlayerController {
       }
       const separated = this.sandbox?.life.film.ambushMovementPosition(agent, previous, agent.position);
       if (separated && separated !== agent.position) { agent.position = separated; session.planar = { x: 0, z: 0 }; session.vy = 0; }
+      const officeStep = this.sandbox?.life.film.office.constrain(agent, previous, agent.position);
+      if (officeStep && officeStep !== agent.position) { agent.position = officeStep; session.planar = { x: 0, z: 0 }; session.vy = 0; }
+      const escorted = this.sandbox?.life.film.custody.constrain(agent, previous, agent.position);
+      if (escorted && escorted !== agent.position) { agent.position = escorted; session.planar = { x: 0, z: 0 }; session.vy = 0; }
       agent.velocity = { x: (agent.position.x - previous.x) / dt, y: session.vy, z: (agent.position.z - previous.z) / dt };
       if (session.palm) {
         session.palm.remaining -= dt;
@@ -423,7 +436,7 @@ export class PlayerController {
       if (!this.conversations.isAgentInConversation(agent.id)) {
         const moving = Math.hypot(input.x, input.z) > 0.05;
         if (!session.strike) {
-          agent.currentAction = { type: moving ? 'move_to' : 'idle', parameters: { player: true, resolved: true, crouching: input.crouch === true }, startedAt: tick, duration: 1, progress: 0 };
+          agent.currentAction = { type: moving ? 'move_to' : 'idle', parameters: { player: true, resolved: true, crouching: !custody && input.crouch === true }, startedAt: tick, duration: 1, progress: 0 };
         }
       }
       this.sandbox?.life.film.basement.frame(agent, input, 0, tick);
@@ -438,6 +451,7 @@ export class PlayerController {
       this.sandbox?.life.film.helBargainFrame(agent, tick);
       const journey = this.sandbox?.life.film.state;
       if (journey?.actor === agent.id && agent.currentAction && heldPhone(journey)) agent.currentAction.parameters.phone = { ...heldPhone(journey)! };
+      this.sandbox?.life.film.custody.frame(agent, 0, tick);
       const nearbyLocation = Object.values(LOCATIONS).filter(location => location.id !== 'downtown' && location.id !== 'film_anderson_flat' && (location.world === 'matrix') === agent.isInMatrix)
         .find(location => distance(locationEntrance(location.id), agent.position) < 42);
       const room = agent.isInMatrix ? insideLifeRoom(agent.position) : undefined;
@@ -457,6 +471,7 @@ export class PlayerController {
     const session = this.sessions.get(socketId);
     const agent = this.getAgent(socketId);
     if (!session || !agent || agent.status !== 'alive') return '请先接入一个存活角色。';
+    if (this.sandbox?.life.film.custody.active(agent) && ['attack', 'shoot', 'ability', 'ability2', 'dodge', 'travel'].includes(kind)) return '双手已被扣住。跟随特工走到电梯，按 G 继续故事。';
     if (this.sandbox?.life.film.basement.active(agent) && ['attack', 'dodge', 'shoot', 'ability', 'ability2'].includes(kind)) return '先沿撤离路线脱离烟气，保持同伴之间的通道。';
     const sixth = this.sandbox?.life.film.sixth.handle(agent, kind, session.input.yaw, session.input.pitch ?? 0, tick);
     if (sixth !== undefined) return sixth;
