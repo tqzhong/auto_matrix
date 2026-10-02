@@ -1,4 +1,4 @@
-import { FILM_SETS, OFFICE_OBSTACLES, OFFICE_MANAGER_WALLS, OFFICE_MANAGER_FURNITURE, METACORTEX_SHAFT, METACORTEX_LOBBY, OFFICE_CUSTODY, ARREST_OBSTACLE, metacortexPosition, playerBlocked, rayBox, type Vector3, type OfficeArrest } from '@auto_matrix/shared';
+import { FILM_SETS, OFFICE_OBSTACLES, OFFICE_MANAGER_WALLS, OFFICE_MANAGER_FURNITURE, METACORTEX_SHAFT, METACORTEX_LOBBY, OFFICE_CUSTODY, ARREST_OBSTACLE, metacortexPosition, playerBlocked, rayBox, type Vector3, type OfficeArrest, type WorldStructure } from '@auto_matrix/shared';
 
 const center = FILM_SETS.film_metacortex_floor.center;
 const distance = (a: Vector3, b: Vector3) => Math.hypot(a.x - b.x, a.z - b.z);
@@ -34,8 +34,13 @@ function navigation(radius: number, floor: number, layout: { x: number; z: numbe
 }
 
 /** Next unobstructed corner on the shortest route to a position the guard knows. */
-export function officeNextPoint(from: Vector3, to: Vector3, radius = .71, bodies: Vector3[] = [], arrest?: OfficeArrest): Vector3 | undefined {
-  const layout = from.y < 32 ? street.map(item => item === ARREST_OBSTACLE && arrest?.parking ? { ...item, ...arrest.parking } : item) : obstacles;
+export function officeNextPoint(from: Vector3, to: Vector3, radius = .71, bodies: Vector3[] = [], arrest?: OfficeArrest, traffic: WorldStructure[] = []): Vector3 | undefined {
+  const base = from.y < 32 ? street.map(item => item === ARREST_OBSTACLE && arrest?.parking ? { ...item, ...arrest.parking } : item) : obstacles;
+  const vehicles = from.y < 32 ? traffic.filter(item => item.health > 0 && item.matrix && item.film && Math.abs(item.position.y - from.y) < 3
+    && Math.abs(item.position.x - (from.x + to.x) / 2) < Math.abs(from.x - to.x) / 2 + item.film.width / 2 + 12
+    && Math.abs(item.position.z - (from.z + to.z) / 2) < Math.abs(from.z - to.z) / 2 + item.film.depth / 2 + 12)
+    .map(item => ({ x: item.position.x - center.x, z: item.position.z - center.z, width: item.film!.width, depth: item.film!.depth })) : [];
+  const layout = [...base, ...vehicles];
   bodies = bodies.filter(body => Math.abs(body.y - from.y) < 3);
   const clearBodies = (a: Vector3, b: Vector3) => !bodies.some(body => {
     const dx = b.x - a.x, dz = b.z - a.z, length = dx * dx + dz * dz;
@@ -45,14 +50,16 @@ export function officeNextPoint(from: Vector3, to: Vector3, radius = .71, bodies
   const traversable = (a: Vector3, b: Vector3) => clear(a, b, radius, layout) && clearBodies(a, b);
   if (!clearBodies(to, to)) return;
   if (traversable(from, to)) return to;
-  const fixed = navigation(radius, from.y < 32 ? 0 : 1, layout, arrest);
-  const around = bodies.flatMap(body => Array.from({ length: 8 }, (_, i) => ({ ...body,
+  const fixed = navigation(radius, from.y < 32 ? 0 : 1, base, arrest);
+  const around = [...vehicles.flatMap(o => [-1, 1].flatMap(x => [-1, 1].map(z =>
+    metacortexPosition(o.x + x * (o.width / 2 + radius + .04), o.z + z * (o.depth / 2 + radius + .04)),
+  ))), ...bodies.flatMap(body => Array.from({ length: 8 }, (_, i) => ({ ...body,
     x: body.x + Math.sin(i * Math.PI / 4) * (OFFICE_CUSTODY.spacing / Math.cos(Math.PI / 8) + .03),
-    z: body.z + Math.cos(i * Math.PI / 4) * (OFFICE_CUSTODY.spacing / Math.cos(Math.PI / 8) + .03) })))
-    .filter(point => !playerBlocked(point, true, radius + .01) && clearBodies(point, point));
+    z: body.z + Math.cos(i * Math.PI / 4) * (OFFICE_CUSTODY.spacing / Math.cos(Math.PI / 8) + .03) })))]
+    .filter(point => !playerBlocked(point, true, radius + .01, traffic) && clearBodies(point, point));
   const corners = [...fixed.corners, ...around];
   const links = corners.map((from, i) => i < fixed.corners.length
-    ? [...fixed.links[i].filter(link => clearBodies(from, corners[link.index])), ...around.flatMap((to, j) => traversable(from, to) ? [{ index: fixed.corners.length + j, length: distance(from, to) }] : [])]
+    ? [...fixed.links[i].filter(link => clear(from, corners[link.index], radius, vehicles) && clearBodies(from, corners[link.index])), ...around.flatMap((to, j) => traversable(from, to) ? [{ index: fixed.corners.length + j, length: distance(from, to) }] : [])]
     : corners.flatMap((to, j) => i !== j && traversable(from, to) ? [{ index: j, length: distance(from, to) }] : []));
   const start = corners.length; const end = start + 1; const points = [...corners, from, to];
   const costs = points.map(() => Infinity); costs[start] = 0;

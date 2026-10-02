@@ -225,8 +225,9 @@ export class PlayerController {
     if (!session || !value || typeof value !== 'object') return;
     const input = value as PlayerInput;
     if (![input.x, input.z, input.yaw, input.sequence].every(Number.isFinite) || input.pitch !== undefined && !Number.isFinite(input.pitch) || Math.abs(input.x) > 1 || Math.abs(input.z) > 1 || input.sequence < session.input.sequence) return;
+    if (input.location !== undefined && (typeof input.location !== 'string' || input.location !== this.world.agents.get(session.agentId)!.currentLocation)) return;
     const drive = input.drive && Number.isFinite(input.drive.throttle) && Number.isFinite(input.drive.steer) ? { throttle: Math.max(0, Math.min(1, input.drive.throttle)), steer: Math.max(-1, Math.min(1, input.drive.steer)), brake: input.drive.brake === true } : undefined;
-    session.input = { x: input.x, z: input.z, yaw: input.yaw, pitch: Math.max(-1.35, Math.min(1.35, input.pitch ?? 0)), sprint: input.sprint === true, crouch: input.crouch === true, jump: input.jump === true || session.input.jump, drive, climb: Number.isFinite(input.climb) ? Math.max(-1, Math.min(1, input.climb!)) : 0, focus: input.focus === true, sequence: input.sequence };
+    session.input = { x: input.x, z: input.z, yaw: input.yaw, location: input.location, pitch: Math.max(-1.35, Math.min(1.35, input.pitch ?? 0)), sprint: input.sprint === true, crouch: input.crouch === true, jump: input.jump === true || session.input.jump, drive, climb: Number.isFinite(input.climb) ? Math.max(-1, Math.min(1, input.climb!)) : 0, focus: input.focus === true, sequence: input.sequence };
     session.lastInput = Date.now();
   }
 
@@ -257,7 +258,8 @@ export class PlayerController {
       if (!running || agent.status !== 'alive') { this.sandbox?.life.film.sixth.frame(agent, { crouch: false, yaw: agent.rotation }, 0, tick); this.sandbox?.life.film.basement.frame(agent, {}, 0, tick); this.sandbox?.life.film.wetwall.frame(agent, { climb: 0, jump: false }, 0, tick); agent.velocity = { x: 0, y: 0, z: 0 }; this.sandbox?.life.film.hotelFrame(agent, 0, tick); this.sandbox?.life.film.sentinelFrame(agent, { movement: 0, sprint: false, jump: false }, 0, tick); this.sandbox?.life.film.interludeFrame(agent, 0, tick); this.sandbox?.life.film.betrayalFrame(agent, 0, tick); this.sandbox?.life.film.rescueFrame(agent, 0, tick); this.sandbox?.life.film.governmentFrame(agent, false, 0, tick); this.sandbox?.life.film.airRescueFrame(agent, false, 0, tick); this.sandbox?.life.film.matrixEscapeFrame(agent, { movement: 0, sprint: false }, 0, tick); this.sandbox?.life.film.farewellFrame(agent, 0, tick); this.sandbox?.life.film.deusFrame(agent, false, 0, tick); this.sandbox?.life.film.smithFinaleFrame(agent, { focus: false, x: 0, z: 0, yaw: agent.rotation }, 0, tick); this.sandbox?.life.film.epilogueFrame(agent, 0, tick); this.sandbox?.life.film.theOneFrame(agent, { x: 0, z: 0, sprint: false, jump: false, focus: false }, 0, tick); this.sandbox?.life.film.reloaded.frame(agent, { x: 0, focus: false }, 0, tick); this.sandbox?.life.film.catch.frame(agent, { x: 0, z: 0, focus: false }, 0, tick); this.sandbox?.life.film.mountainFrame(agent, { x: 0, z: 0, yaw: agent.rotation, jump: false, sprint: false }, 0, tick); this.sandbox?.life.film.lobby.frame(agent, 0, tick); session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue; }
       session.stagger = Math.max(0, session.stagger - dt);
       const stale = now - session.lastInput > 300;
-      let input = stale ? { ...idleInput(), yaw: session.input.yaw } : session.input;
+      const changedLocation = session.input.location !== undefined && session.input.location !== agent.currentLocation;
+      let input = stale || changedLocation ? { ...idleInput(), yaw: changedLocation ? agent.rotation : session.input.yaw } : session.input;
       const lesson = this.sandbox?.life.film.state;
       const sparring = session.strike && lesson?.scene === 'm1_dojo' && lesson.dojo?.dodged
         ? this.sandbox!.state.threats.find(threat => threat.scene === lesson.scene && threat.character === 'morpheus') : undefined;
