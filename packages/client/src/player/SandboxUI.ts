@@ -1,7 +1,7 @@
 import { crosscutActive, crosscutAction, crosscutText } from '@auto_matrix/shared';
 import { truthFade, CABIN, CABIN_ROUTE_LENGTH } from '@auto_matrix/shared';
 import { nearMetacortexLift, metacortexLiftLocked } from '@auto_matrix/shared';
-import { OFFICE_CUSTODY, officeCustodyActive, officeCustodyText } from '@auto_matrix/shared';
+import { officeCustodyActive, officeCustodyHeld, officeCustodyTarget, officeCustodyText } from '@auto_matrix/shared';
 import { CATCH, RELOADED, RELOADED_FINALE, HEL_COATCHECK, catchText, reloadedText } from '@auto_matrix/shared';
 import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_NAMES, filmReflections, GRID_HACK_SECONDS, GRID_REROUTE_SECONDS, HEL_ELEVATOR, HEL_DANCE_DOOR, filmStepPosition, filmStepActionReady, helElevatorLocked, helDanceDoorLocked, pillLocked, lafayetteWelcomeLocked, awakeningLocked, awakeningWaiting, podRescuePose, AWAKENING_SECONDS, MIRROR_TOUCH, MIRROR_TIMING, mirrorGuidePose, PILL_ROOM, trainingLocked, trainingWaiting, TRAINING_SECONDS, DOJO_COMBO_WINDOW, windowOpening, windowCrossing, dockPowerOffline, ITEMS, RECIPES, SKILLS, FILMS, MISSIONS, LOCATIONS, CITY_BUILDINGS, NEO_CHAPTERS, LIFE_ACTIONS, lifeActionPosition, lifeRoomCenter, locationEntrance, distance, missionPosition, nearTransit, skillPoints,
   type AgentState, type SandboxState, type SandboxCommand, type ItemId, type SkillId, type Vector3 } from '@auto_matrix/shared';
@@ -1574,16 +1574,18 @@ export class SandboxUI {
       this.el('sandbox-trace').textContent = journey.office.spotted ? '特工看到了你 · 立即换位' : journey.office.searches?.some(Boolean) ? '检查最后踪迹 · 避开原位置' : '特工巡逻中 · 留意朝向';
     }
     if (officeCustodyActive(journey)) {
-      const custody = journey.office!.custody!, ready = custody.phase === 'ready' && !custody.paused;
+      const custody = journey.office!.custody!, ready = ['ready', 'outside'].includes(custody.phase) && !custody.paused;
+      const action = custody.phase === 'ready' ? '随队下楼' : '继续审讯';
       this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = officeCustodyText(custody);
-      this.el('film-sequence-hint').textContent = ready ? 'G 继续审讯 · V 切换视角 · 当前进度自动保存' : custody.phase === 'securing' || custody.paused ? '鼠标观察 · V 切换视角 · 暂停会保留这一拍' : 'WASD 跟随至电梯 · 停下时队伍等候 · 双手被扣住，无法奔跑或攻击';
-      this.el('sandbox-interact').classList.toggle('hidden', !ready); this.el('sandbox-nearby').textContent = '继续审讯';
+      this.el('film-sequence-hint').textContent = ready ? `G ${action} · V 切换视角 · 当前进度自动保存` : officeCustodyHeld(custody) ? '鼠标观察 · V 切换视角 · 暂停会保留这一拍' : 'WASD 跟随队伍 · 停下时队伍等候 · 双手被扣住，无法奔跑或攻击';
+      this.el('sandbox-interact').classList.toggle('hidden', !ready); this.el('sandbox-nearby').textContent = action;
       document.getElementById('game-objective')!.textContent = '办公室 · 被捕与押送';
-      document.getElementById('game-objective-copy')!.textContent = ready ? '已抵达电梯旁 · G 继续' : officeCustodyText(custody);
+      document.getElementById('game-objective-copy')!.textContent = ready ? `G ${action}` : officeCustodyText(custody);
       this.el('sandbox-trace').textContent = custody.paused ? '押送暂停 · 角色被占用' : '被捕分支 · 生活与线索保留';
-      const target = filmPosition('film_metacortex_floor', OFFICE_CUSTODY.exit.x, OFFICE_CUSTODY.exit.z);
-      const direction = Math.atan2(target.x - player.position.x, target.z - player.position.z) - player.rotation;
-      this.el('sandbox-waypoint').innerHTML = ready || custody.phase === 'securing' ? '' : `<span style="transform:rotate(${-direction}rad)">↑</span>电梯旁 <b>${Math.round(distance(target, player.position))} m</b>`;
+      const target = officeCustodyTarget(custody);
+      const direction = target ? Math.atan2(target.x - player.position.x, target.z - player.position.z) - player.rotation : 0;
+      const label = custody.phase === 'clearing' ? '等候区' : custody.phase === 'boarding' ? '轿厢左前方' : custody.phase === 'lobby' ? '公司正门' : '电梯旁';
+      this.el('sandbox-waypoint').innerHTML = ready || !target ? '' : `<span style="transform:rotate(${-direction}rad)">↑</span>${label} <b>${Math.round(distance(target, player.position))} m</b>`;
       return;
     }
     if (['m1_office_escape', 'm1_ledge'].includes(scene.id) && journey.office?.outcome === 'captured' && !step && !journey.visiting) {

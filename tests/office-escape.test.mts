@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SCENE_BY_ID, FILM_SETS, PILL_TIMING, WAKE_CALL, OFFICE_CUSTODY, filmStepPosition, filmPosition, officeOccluded, playerBlocked, stepPlayer, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, PILL_TIMING, WAKE_CALL, filmStepPosition, filmPosition, officeOccluded, playerBlocked, stepPlayer, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
 import { PlayerController } from '../packages/server/src/player/PlayerController.js';
 import { OfficeEscapeSystem } from '../packages/server/src/story/OfficeEscapeSystem.js';
-import { officeNextPoint } from '../packages/server/src/story/OfficeNavigation.js';
+import { exitOfficeCustody } from './helpers/office-custody-route.mts';
 import type { ConversationEngine } from '../packages/server/src/agents/ConversationEngine.js';
 import type { ActionExecutor } from '../packages/server/src/agents/ActionExecutor.js';
 import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
@@ -79,16 +79,10 @@ function setup() {
   };
   const escort = () => {
     assert.ok(sandbox.life.film.state!.office?.custody); frame(3.3);
-    const exit = filmPosition('film_metacortex_floor', OFFICE_CUSTODY.exit.x, OFFICE_CUSTODY.exit.z);
-    for (let i = 0; i < 2400; i++) {
-      if (sandbox.life.film.state!.office!.custody!.phase === 'ready') return;
-      const point = officeNextPoint(neo().position, exit, 1.15)!;
-      assert.ok(point, 'the capture point must have a route to the lift');
-      const dx = point.x - neo().position.x, dz = point.z - neo().position.z, length = Math.hypot(dx, dz);
-      players.receiveInput('neo-player', { x: dx / Math.max(1, length), z: dz / Math.max(1, length), yaw: Math.atan2(dx, dz), sprint: false, jump: false, sequence: ++sequence });
+    exitOfficeCustody(neo(), () => sandbox.life.film.state!, (input = {}) => {
+      players.receiveInput('neo-player', { x: 0, z: 0, yaw: neo().rotation, sprint: false, jump: false, ...input, sequence: ++sequence });
       players.step(.05, true, tick); if (++movementFrames % 10 === 0) advance();
-    }
-    assert.fail(`escort stalled: ${JSON.stringify({ neo: neo().position, custody: sandbox.life.film.state!.office!.custody })}`);
+    }, command);
   };
   return { world, sandbox, players, command, advance, neo, scene, goal, finish, office, delivery, crossWindow, climb, move, escort, maximumAlert: () => maximumAlert, state: () => sandbox.life.film.state!, tick: () => tick };
 }

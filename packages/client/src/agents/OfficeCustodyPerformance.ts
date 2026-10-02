@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { OfficeCustody } from '@auto_matrix/shared';
+import { METACORTEX, OFFICE_CUSTODY_CAR, type OfficeCustody } from '@auto_matrix/shared';
 import type { HeroRig } from './HeroModel.js';
 
 /** Uses the displayed skeletons for cuff placement and upper-arm contact. */
@@ -22,10 +22,13 @@ export class OfficeCustodyPerformance {
     const link = this.geometry(new THREE.TorusGeometry(.032, .008, 6, 14));
     for (let i = 0; i < 6; i++) { const mesh = new THREE.Mesh(link, this.material); mesh.castShadow = true; this.chain.add(mesh); }
   }
-  private hand(rig: HeroRig, side: 'R' | 'L', contact: THREE.Vector3, orientation: THREE.Quaternion, blend: number, curl: number): void {
+  private hand(rig: HeroRig, side: 'R' | 'L', contact: THREE.Vector3, orientation: THREE.Quaternion, blend: number, curl: number, fingertip?: string): void {
     const upper = rig.bones.get(`shoulder_${side}`)!, lower = rig.bones.get(`elbow_${side}`)!, end = rig.bones.get(`wrist_${side}`)!;
+    if (fingertip) for (let finger = 2; finger <= 5; finger++) for (let segment = 1; segment <= 3; segment++) {
+      const joint = rig.bones.get(`finger${finger}-${segment}_${side}`)!; joint.rotation.x = 0; joint.rotation.z = 0;
+    }
     rig.root.updateWorldMatrix(true, true);
-    const palm = new THREE.Vector3(side === 'R' ? .065 : -.065, -.17, .01);
+    const palm = fingertip ? end.worldToLocal(rig.bones.get(fingertip)!.getWorldPosition(new THREE.Vector3())) : new THREE.Vector3(side === 'R' ? .065 : -.065, -.17, .01);
     const rotation = end.getWorldQuaternion(new THREE.Quaternion()).slerp(orientation, blend);
     const target = end.localToWorld(palm.clone()).lerp(contact, blend).sub(palm.clone().applyQuaternion(rotation));
     const start = upper.getWorldPosition(new THREE.Vector3()), direction = target.clone().sub(start);
@@ -48,7 +51,7 @@ export class OfficeCustodyPerformance {
     }
     rig.root.updateWorldMatrix(true, true);
   }
-  update(neo: HeroRig | undefined, catcher: HeroRig | undefined, custody?: OfficeCustody): void {
+  update(neo: HeroRig | undefined, catcher: HeroRig | undefined, custody?: OfficeCustody, leader?: HeroRig): void {
     if (neo && this.neo !== neo && custody) this.bind(neo);
     this.cuffs.forEach(cuff => { cuff.visible = Boolean(neo && custody && custody.elapsed >= 2.4); });
     if (this.chain) this.chain.visible = Boolean(neo && custody && custody.elapsed >= 2.4);
@@ -69,6 +72,14 @@ export class OfficeCustodyPerformance {
         link.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
         if (i % 2) link.rotateY(Math.PI / 2);
       });
+    }
+    if (leader && custody.phase === 'selecting') {
+      const age = custody.transportElapsed ?? 0;
+      const press = THREE.MathUtils.smoothstep(age, .15, .65) * (1 - THREE.MathUtils.smoothstep(age, 1.1, OFFICE_CUSTODY_CAR.selecting));
+      const button = OFFICE_CUSTODY_CAR.button, floor = custody.bodies[custody.leader].position.y - 1;
+      const contact = new THREE.Vector3(METACORTEX.center.x + button.x + (age >= .65 && age <= 1.1 ? .015 : 0), floor + button.y, METACORTEX.center.z + button.z);
+      const orientation = leader.root.getWorldQuaternion(new THREE.Quaternion());
+      this.hand(leader, 'R', contact, orientation, press, 0, 'finger2-3_R');
     }
     if (!catcher) return;
     const side = ['R', 'L'].sort((a, b) => neo.bones.get(`elbow_${a}`)!.getWorldPosition(new THREE.Vector3()).distanceToSquared(catcher.root.getWorldPosition(new THREE.Vector3()))

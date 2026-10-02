@@ -5050,7 +5050,10 @@ export class FilmStorySystem {
     }
     if (this.custody.active(agent)) {
       this.custody.frame(agent, 0, tick);
-      if (state.office!.custody!.phase !== 'ready' || state.office!.custody!.paused) return state.lastText;
+      const custody = state.office!.custody!;
+      if (custody.paused) return state.lastText;
+      if (custody.phase === 'ready' && (target === 'act' || target === 'next')) { this.custody.board(agent, tick); return state.lastText; }
+      if (custody.phase !== 'outside') return state.lastText;
       if (target === 'act') target = 'next';
     }
     if (state.visiting) return '回访期间不推进主线。J 返回当前剧情。';
