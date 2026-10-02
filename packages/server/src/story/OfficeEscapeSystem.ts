@@ -1,8 +1,13 @@
-import { OFFICE_PATROLS, OFFICE_AGENT_ROLES, METACORTEX, FILM_SETS, filmPosition, officeArrivalPose, officeOccluded, playerBlocked, type AgentState, type SandboxState, type OfficeEncounter } from '@auto_matrix/shared';
+import { OFFICE_PATROLS, OFFICE_AGENT_ROLES, METACORTEX, FILM_SETS, filmPosition, officeArrivalPose, officeOccluded, officeCustodyStep, playerBlocked, type AgentState, type SandboxState, type OfficeEncounter, type Vector3 } from '@auto_matrix/shared';
 import { officeNextPoint } from './OfficeNavigation.js';
 
 export class OfficeEscapeSystem {
   constructor(private sandbox: () => SandboxState) {}
+  constrain(actor: AgentState, previous: Vector3, candidate: Vector3): Vector3 {
+    const state = this.sandbox(), journey = state.neoLife?.journey;
+    if (journey?.actor !== actor.id || journey.visiting || journey.scene !== 'm1_office_escape' || journey.office?.outcome) return candidate;
+    return officeCustodyStep(previous, candidate, state.threats.filter(threat => threat.patrol).map(threat => threat.position));
+  }
   phoneFrame(tick: number, actors: Map<string, AgentState>): boolean {
     const state = this.sandbox(), journey = state.neoLife?.journey;
     if (!journey || journey.visiting || journey.scene !== 'm1_boss') return true;
@@ -85,15 +90,16 @@ export class OfficeEscapeSystem {
         } else { state.waypoints[i] = 1 - state.waypoints[i]; state.patrolWait[i] = 16; }
         continue;
       }
-      const point = officeNextPoint(guard.position, destination);
+      const bodies = this.sandbox().threats.filter(other => other.patrol && other.id !== guard.id).map(other => other.position);
+      const point = officeNextPoint(guard.position, destination, .71, bodies);
       if (!point) continue;
       const px = point.x - guard.position.x; const pz = point.z - guard.position.z; const length = Math.hypot(px, pz);
       if (length > .01) {
         const angle = Math.atan2(px, pz) - (guard.yaw ?? 0);
         guard.yaw = (guard.yaw ?? 0) + Math.max(-.75, Math.min(.75, Math.atan2(Math.sin(angle), Math.cos(angle))));
-        const stride = Math.min(length, search ? search.source === 'sight' ? 1.7 : 1.2 : 1.05);
+        const stride = Math.min(length, search ? search.source === 'sight' ? 1.7 : 1.2 : 1.05, seen ? Math.max(0, range - 1.85) : Infinity);
         const next = { ...guard.position, x: guard.position.x + px / length * stride, z: guard.position.z + pz / length * stride };
-        if (!playerBlocked(next, true, .7)) guard.position = next;
+        if (officeCustodyStep(guard.position, next, bodies) === next && !playerBlocked(next, true, .7)) guard.position = next;
       }
     }
     state.alert = Math.max(...state.suspicion);

@@ -19,6 +19,7 @@ import type { WorldState } from '../world/WorldState.js';
 import { LobbyCombatSystem } from './LobbyCombatSystem.js';
 import { HelCoatcheckSystem } from './HelCoatcheckSystem.js';
 import { OfficeEscapeSystem } from './OfficeEscapeSystem.js';
+import { OfficeCustodySystem } from './OfficeCustodySystem.js';
 import { INTERROGATION_CAST, INTERROGATION_ROOM, INTERROGATION_TIMING, interrogationLocked, interrogationRoot } from '@auto_matrix/shared';
 import { BRIDGE_TAIL, BRIDGE_ARRIVAL_SECONDS, MEETING_CAR, MEETING_CAST, MEETING_DRIVE_SECONDS, MEETING_TIMING, bridgeArrivalPose, meetingBoardPoint, meetingCarPose, meetingLocked, meetingRollRoadTime, meetingRoot, type MeetingEncounter } from '@auto_matrix/shared';
 import { LAFAYETTE, LAFAYETTE_WELCOME, LAFAYETTE_KNOCK_SECONDS, HOTEL_ROUTE_LENGTH, HOTEL_DOOR_PROGRESS, hotelRoutePose, hotelRouteProgress, lafayetteKnocking, lafayetteKnockRoot, lafayetteWelcomeLocked, lafayetteWelcomeRoot, filmSetAt } from '@auto_matrix/shared';
@@ -77,7 +78,8 @@ export class FilmStorySystem {
   readonly coatcheck: HelCoatcheckSystem;
   readonly openingHotel: OpeningHotelSystem;
   readonly office: OfficeEscapeSystem;
-  constructor(private world: WorldState, private sandbox: () => SandboxState, private returnToLife: (tick: number) => void, private elapse: (minutes: number, tick: number) => void) { this.lobby = new LobbyCombatSystem(world, sandbox); this.coatcheck = new HelCoatcheckSystem(world, sandbox); this.openingHotel = new OpeningHotelSystem(sandbox); this.openingHotel.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.openingHotel.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.office = new OfficeEscapeSystem(sandbox); this.reloaded = new ReloadedOpeningSystem(world, sandbox); this.reloaded.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.reloaded.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.catch = new ReloadedCatchSystem(world, sandbox); this.catch.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.wetwall = new WetwallEscapeSystem(world, sandbox); this.wetwall.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sixth = new SixthFloorSystem(world, sandbox); this.sixth.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sixth.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.basement = new BasementEscapeSystem(world, sandbox); this.basement.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.basement.crosscut.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.basement.crosscut.onHandoff = (actor, id, tick) => this.changeActor(actor, id, tick); this.basement.crosscut.onImpact = (impact, tick) => this.onImpact?.(impact, tick); }
+  readonly custody: OfficeCustodySystem;
+  constructor(private world: WorldState, private sandbox: () => SandboxState, private returnToLife: (tick: number) => void, private elapse: (minutes: number, tick: number) => void) { this.lobby = new LobbyCombatSystem(world, sandbox); this.coatcheck = new HelCoatcheckSystem(world, sandbox); this.openingHotel = new OpeningHotelSystem(sandbox); this.openingHotel.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.openingHotel.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.office = new OfficeEscapeSystem(sandbox); this.custody = new OfficeCustodySystem(world, sandbox); this.reloaded = new ReloadedOpeningSystem(world, sandbox); this.reloaded.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.reloaded.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.catch = new ReloadedCatchSystem(world, sandbox); this.catch.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.wetwall = new WetwallEscapeSystem(world, sandbox); this.wetwall.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sixth = new SixthFloorSystem(world, sandbox); this.sixth.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sixth.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.basement = new BasementEscapeSystem(world, sandbox); this.basement.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.basement.crosscut.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.basement.crosscut.onHandoff = (actor, id, tick) => this.changeActor(actor, id, tick); this.basement.crosscut.onImpact = (impact, tick) => this.onImpact?.(impact, tick); }
   get state() { return this.sandbox().neoLife?.journey; }
   get scene(): FilmScene | undefined { return this.state && FILM_SCENE_BY_ID[this.state.scene]; }
   get step(): FilmStep | undefined { return this.scene?.steps[this.state!.step]; }
@@ -5013,6 +5015,10 @@ export class FilmStorySystem {
         this.trainingFrame(agent, 0, tick);
         return '已经接回训练程序，保留人物位置与演出进度。';
       }
+      if (this.custody.active(agent)) {
+        agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
+        this.custody.frame(agent, 0, tick); return '已接回办公室拘捕与押送，保留人物位置和当前进度。';
+      }
       this.clearThreats();
       delete state.ride;
       delete state.garage;
@@ -5041,6 +5047,11 @@ export class FilmStorySystem {
       this.stageCast();
       state.lastText = '已恢复当前目标的检查点；完成过的目标保留。';
       return state.lastText;
+    }
+    if (this.custody.active(agent)) {
+      this.custody.frame(agent, 0, tick);
+      if (state.office!.custody!.phase !== 'ready' || state.office!.custody!.paused) return state.lastText;
+      if (target === 'act') target = 'next';
     }
     if (state.visiting) return '回访期间不推进主线。J 返回当前剧情。';
     if (state.finished) return '三部曲已完成。可回访场景，或在手记中开始下一轮生活。';
@@ -5632,8 +5643,9 @@ export class FilmStorySystem {
     delete state.office.climbed;
     delete state.office.crossing;
     this.sandbox().neoLife!.choices.office_escape = 'captured';
+    if (state.scene === 'm1_office_escape') this.custody.begin(agent, tick);
     this.clearThreats(); agent.velocity = { x: 0, y: 0, z: 0 };
-    agent.position = { ...state.checkpoint };
+    if (!state.office.custody) agent.position = { ...state.checkpoint };
     state.step = this.scene!.steps.length - 1;
     this.advance(text, agent, tick);
   }
@@ -5763,6 +5775,7 @@ export class FilmStorySystem {
       for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.meeting) other.currentAction = null;
     }
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.interrogation) other.currentAction = null;
+    for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.officeCustody) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.sentinel) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.interlude) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && (other.currentAction?.parameters.oracleVisit || other.currentAction?.parameters.oracleDeparture)) other.currentAction = null;

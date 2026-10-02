@@ -13,6 +13,7 @@ import {
   PILL_ROOM,
   PILL_TIMING,
   WAKE_CALL,
+  OFFICE_CUSTODY,
   filmPosition,
   filmStepPosition,
   lifeRoomCenter,
@@ -26,6 +27,7 @@ import { PlayerController } from '../packages/server/src/player/PlayerController
 import type { ConversationEngine } from '../packages/server/src/agents/ConversationEngine.js';
 import type { ActionExecutor } from '../packages/server/src/agents/ActionExecutor.js';
 import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
+import { officeNextPoint } from '../packages/server/src/story/OfficeNavigation.js';
 
 function setup() {
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
@@ -210,7 +212,18 @@ test('P0 runs continuously from daily contact through capture, tracker removal a
     const dx = guard.position.x - h.neo.position.x, dz = guard.position.z - h.neo.position.z; const gap = Math.max(1, Math.hypot(dx, dz));
     h.frame({ x: dx / gap, z: dz / gap, yaw: Math.atan2(dx, dz), sprint: true });
   }
-  assert.equal(h.state().office?.outcome, 'captured'); h.command('next'); assert.equal(h.state().scene, 'm1_interrogation');
+  assert.equal(h.state().office?.outcome, 'captured');
+  for (const body of Object.values(h.state().office!.custody!.bodies)) assert.ok(Math.hypot(body.position.x - h.neo.position.x, body.position.z - h.neo.position.z) >= OFFICE_CUSTODY.spacing - .001,
+    `the running player must stop before entering an agent: ${JSON.stringify({ neo: h.neo.position, guard: body.position })}`);
+  h.frames(3.3);
+  const exit = filmPosition('film_metacortex_floor', OFFICE_CUSTODY.exit.x, OFFICE_CUSTODY.exit.z);
+  for (let i = 0; i < 2400 && h.state().office!.custody!.phase !== 'ready'; i++) {
+    const point = officeNextPoint(h.neo.position, exit, 1.15)!; assert.ok(point);
+    const dx = point.x - h.neo.position.x, dz = point.z - h.neo.position.z, length = Math.max(1, Math.hypot(dx, dz));
+    h.frame({ x: dx / length, z: dz / length, yaw: Math.atan2(dx, dz) });
+  }
+  assert.equal(h.state().office!.custody!.phase, 'ready', JSON.stringify({ neo: h.neo.position, custody: h.state().office!.custody }));
+  h.command('next'); assert.equal(h.state().scene, 'm1_interrogation');
   h.walk(filmStepPosition(FILM_SCENE_BY_ID.m1_interrogation, FILM_SCENE_BY_ID.m1_interrogation.steps[0]));
   h.command('act'); h.frames(7); assert.equal(h.state().step, 1); h.command('act'); h.frames(25);
   assert.equal(h.state().office?.bugged, true); assert.equal(h.state().step, 2); h.command('next');

@@ -12,7 +12,7 @@ import { WETWALL, WETWALL_SHAFT, WETWALL_ROLES, wetwallEntry, wetwallPose, type 
 import { truthRoot, TRUTH_BEDSIDE, type TruthGesture } from '@auto_matrix/shared';
 import { awakeningPose, podRescuePose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
 import { MORNING, morningRoot, morningWakePose } from '@auto_matrix/shared';
-import { metacortexPosition } from '@auto_matrix/shared';
+import { metacortexPosition, OFFICE_CUSTODY } from '@auto_matrix/shared';
 import { SPOON_LESSON, spoonLessonSeat, type SpoonLesson } from '@auto_matrix/shared';
 import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, INTERROGATION_ROOM, pillRoot, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, POD_WATER_DROP, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, TV_EXIT, airRescueRoot, matrixEscapeRoot, theOneRoot, tvExitEmergeRoot, wakeCallRoot, sentinelMachinePose, type TheOneEncounter } from '@auto_matrix/shared';
 
@@ -35,6 +35,35 @@ test('mouse pitch is included in authoritative player input', t => {
   game.document.pointerLockElement = game.canvas;
   game.event(game.document, 'mousemove', { movementX: 0, movementY: -240 }); game.step(.1);
   assert.ok((game.sent.at(-1)?.pitch ?? 0) < -.15, 'upward camera input must reach server-side ballistics');
+});
+
+test('cuffed movement predicts a slow walk, preserves body space and keeps both views steerable', t => {
+  const game = setup(t, Math.PI); game.state.currentLocation = 'film_metacortex_floor';
+  game.state.position = filmPosition('film_metacortex_floor', 0, -20);
+  game.state.currentAction = { type: 'idle', parameters: { officeCustody: { role: 'neo', phase: 'securing', elapsed: 1 } }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.step(.1);
+  const start = game.group.position.clone(); game.key('KeyW'); game.key('ShiftLeft'); game.key('Space'); game.key('KeyZ'); game.step(.5);
+  assert.deepEqual(game.group.position, start, 'securing the cuffs locks movement');
+  game.state.currentAction.parameters.officeCustody = { role: 'neo', phase: 'escorting', elapsed: 3.2 }; game.step(.5);
+  assert.equal(game.controls.motion.crouching, false, 'cuffs cannot retain a crouched animation while walking upright');
+  assert.equal(game.controls.motion.grounded, true);
+  assert.ok(game.group.position.distanceTo(start) > .3 && game.group.position.distanceTo(start) <= OFFICE_CUSTODY.speed * .5 + .01);
+  game.controls.custodyBodies = [{ ...game.state.position, z: game.state.position.z - 3.5 }]; game.step(.5);
+  assert.ok(game.group.position.z > game.state.position.z - 1.76, 'prediction cannot walk through the leading body');
+  game.key('KeyW', false); game.key('Space', false); game.key('KeyZ', false); game.key('ShiftLeft', false);
+  assert.equal(game.controls.triggerCombat('attack'), false, 'cuffs must not preview a punch before the server rejects it');
+  assert.equal(game.controls.triggerCombat('dodge'), false);
+  const actions = game.actions.length; game.controls.firearm = true;
+  for (const key of ['KeyT', 'KeyQ', 'KeyC']) { game.key(key); game.key(key, false); }
+  assert.equal(game.actions.length, actions, 'cuffed input cannot send shooting or skill actions');
+  game.document.pointerLockElement = game.canvas;
+  for (let view = 0; view < 2; view++) {
+    const direction = game.camera.getWorldDirection(new THREE.Vector3());
+    game.event(game.document, 'mousemove', { movementX: 200, movementY: -40 }); game.step(.3, 1 / 60, false);
+    assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(direction) > .3);
+    game.key('KeyV'); game.key('KeyV', false); game.step(.2);
+  }
+  game.controls.release(); assert.equal(game.controls.custodyBodies, undefined);
 });
 
 test('elevator cameras stay inside the car, support V and looking around, then release movement at the landing', t => {

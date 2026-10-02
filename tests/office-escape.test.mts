@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SCENE_BY_ID, FILM_SETS, PILL_TIMING, WAKE_CALL, filmStepPosition, filmPosition, officeOccluded, playerBlocked, stepPlayer, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, PILL_TIMING, WAKE_CALL, OFFICE_CUSTODY, filmStepPosition, filmPosition, officeOccluded, playerBlocked, stepPlayer, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
 import { PlayerController } from '../packages/server/src/player/PlayerController.js';
 import { OfficeEscapeSystem } from '../packages/server/src/story/OfficeEscapeSystem.js';
+import { officeNextPoint } from '../packages/server/src/story/OfficeNavigation.js';
 import type { ConversationEngine } from '../packages/server/src/agents/ConversationEngine.js';
 import type { ActionExecutor } from '../packages/server/src/agents/ActionExecutor.js';
 import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
@@ -76,7 +77,20 @@ function setup() {
     }
     assert.fail(`could not walk to ${x}, ${z} from ${JSON.stringify(neo().position)}`);
   };
-  return { world, sandbox, players, command, advance, neo, scene, goal, finish, office, delivery, crossWindow, climb, move, maximumAlert: () => maximumAlert, state: () => sandbox.life.film.state!, tick: () => tick };
+  const escort = () => {
+    assert.ok(sandbox.life.film.state!.office?.custody); frame(3.3);
+    const exit = filmPosition('film_metacortex_floor', OFFICE_CUSTODY.exit.x, OFFICE_CUSTODY.exit.z);
+    for (let i = 0; i < 2400; i++) {
+      if (sandbox.life.film.state!.office!.custody!.phase === 'ready') return;
+      const point = officeNextPoint(neo().position, exit, 1.15)!;
+      assert.ok(point, 'the capture point must have a route to the lift');
+      const dx = point.x - neo().position.x, dz = point.z - neo().position.z, length = Math.hypot(dx, dz);
+      players.receiveInput('neo-player', { x: dx / Math.max(1, length), z: dz / Math.max(1, length), yaw: Math.atan2(dx, dz), sprint: false, jump: false, sequence: ++sequence });
+      players.step(.05, true, tick); if (++movementFrames % 10 === 0) advance();
+    }
+    assert.fail(`escort stalled: ${JSON.stringify({ neo: neo().position, custody: sandbox.life.film.state!.office!.custody })}`);
+  };
+  return { world, sandbox, players, command, advance, neo, scene, goal, finish, office, delivery, crossWindow, climb, move, escort, maximumAlert: () => maximumAlert, state: () => sandbox.life.film.state!, tick: () => tick };
 }
 
 test('the delivered phone requires picking up and answering; waiting cannot skip the call', () => {
@@ -126,7 +140,7 @@ test('exposure triggers capture rather than death; interrogation persists the tr
   h.advance(6);
   assert.equal(h.state().office?.outcome, 'captured'); assert.equal(h.neo().status, 'alive');
   assert.equal(h.state().step, h.scene().steps.length); assert.equal(h.sandbox.state.threats.filter(t => t.patrol).length, 0);
-  h.command('next'); assert.equal(h.scene().id, 'm1_interrogation'); assert.ok(h.state().skipped?.includes('m1_ledge'));
+  h.escort(); h.command('next'); assert.equal(h.scene().id, 'm1_interrogation'); assert.ok(h.state().skipped?.includes('m1_ledge'));
   h.finish(); assert.equal(h.state().office?.bugged, true);
   const saved = JSON.parse(JSON.stringify(h.sandbox.state)); h.sandbox.restore(saved);
   assert.equal(h.state().office?.bugged, true); h.command('next'); assert.equal(h.scene().id, 'm1_wake_again');
@@ -137,6 +151,7 @@ test('capture transition faces Smith instead of inheriting the office pursuit he
   const guard = h.sandbox.state.threats.find(t => t.id === 'office:0')!;
   h.neo().position = { ...guard.position, z: guard.position.z + 3 }; guard.yaw = 0;
   h.advance(6); assert.equal(h.state().office?.outcome, 'captured');
+  h.escort();
   h.neo().rotation = 0;
   h.command('next');
   const smith = h.world.agents.get('smith')!;
@@ -235,7 +250,7 @@ test('rushing up the exposed central aisle draws the agents and can end in captu
   for (const [x, z] of [[-16, 11], [-8, 11], [-8, -13], [-16, -13], [-8, -13], [-8, -24], [-24, -27]]) if (!h.move(x, z, false)) break;
   assert.equal(h.maximumAlert(), 100);
   assert.equal(h.state().office?.outcome, 'captured'); assert.equal(h.neo().status, 'alive');
-  h.command('next'); assert.equal(h.scene().id, 'm1_interrogation');
+  h.escort(); h.command('next'); assert.equal(h.scene().id, 'm1_interrogation');
 });
 
 test('Neo can creep from his phone through the empty cubicle and along the windows without being spotted', () => {
@@ -275,10 +290,10 @@ test('opening the window does not make Neo immune to an agent who reaches him', 
   const h = setup(); h.office(); h.goal(); h.advance(); h.goal(); h.advance(); h.goal(); h.command('act');
   h.players.step(.1, true, h.tick());
   const guard = h.sandbox.state.threats.find(t => t.id === 'office:0')!;
-  guard.position = { ...h.neo().position, x: h.neo().position.x + 1 }; guard.yaw = -Math.PI / 2;
+  guard.position = { ...h.neo().position, x: h.neo().position.x + 1.9 }; guard.yaw = -Math.PI / 2;
   h.state().office!.searchAt = h.tick(); h.advance(3);
   assert.equal(h.state().office!.outcome, 'captured');
-  h.command('next'); assert.equal(h.scene().id, 'm1_interrogation');
+  h.escort(); h.command('next'); assert.equal(h.scene().id, 'm1_interrogation');
 });
 
 test('agents keep searching after the window opens, and leaving requires returning to that window', () => {
@@ -287,10 +302,10 @@ test('agents keep searching after the window opens, and leaving requires returni
   h.neo().position = filmPosition(h.scene().set, -24, 5);
   assert.match(h.command('next'), /窗口/); assert.equal(h.scene().id, 'm1_office_escape');
   const guard = h.sandbox.state.threats.find(t => t.id === 'office:0')!;
-  guard.position = { ...h.neo().position, z: h.neo().position.z - 1 }; guard.yaw = 0;
+  guard.position = { ...h.neo().position, z: h.neo().position.z - 1.9 }; guard.yaw = 0;
   h.state().office!.searchAt = h.tick(); h.advance(3);
   assert.equal(h.state().office!.outcome, 'captured');
-  h.command('next'); assert.equal(h.scene().id, 'm1_interrogation');
+  h.escort(); h.command('next'); assert.equal(h.scene().id, 'm1_interrogation');
 });
 
 test('Neo crosses the sill before reaching the ledge, with continuous position and a saved handhold', () => {
@@ -323,10 +338,10 @@ test('an agent reaching Neo before he clears the window interrupts the crossing'
   const h = setup(); h.office(); h.finish(); h.command('next'); h.players.step(.1, true, h.tick());
   const guard = h.sandbox.state.threats.find(t => t.id === 'office:0')!;
   assert.ok(guard, 'pursuers stay in the office until Neo has crossed the window');
-  guard.position = { ...h.neo().position, x: h.neo().position.x + 1 }; guard.yaw = -Math.PI / 2;
+  guard.position = { ...h.neo().position, x: h.neo().position.x + 1.9 }; guard.yaw = -Math.PI / 2;
   h.state().office!.searchAt = h.tick(); h.advance(3);
   assert.equal(h.state().office!.outcome, 'captured'); assert.equal(h.state().office!.crossing, undefined);
-  h.command('next'); assert.equal(h.scene().id, 'm1_interrogation');
+  h.escort(); h.command('next'); assert.equal(h.scene().id, 'm1_interrogation');
 });
 
 test('retrying a crossing returns to the open window without erasing the search', () => {

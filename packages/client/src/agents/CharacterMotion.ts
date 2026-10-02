@@ -85,6 +85,7 @@ export interface MotionInput {
   spoon?: number;
   spoonLesson?: import('@auto_matrix/shared').SpoonGesture;
   phone?: OfficePhone;
+  officeCustody?: import('@auto_matrix/shared').OfficeCustodyGesture;
   window?: number;
   crossing?: number;
   pills?: PillGesture;
