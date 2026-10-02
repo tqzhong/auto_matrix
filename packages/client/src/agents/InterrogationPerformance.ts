@@ -17,7 +17,9 @@ export class InterrogationPerformance {
   constructor(private rig: HeroRig) {
     const metal = new THREE.MeshStandardMaterial({ color: 0x728079, metalness: .86, roughness: .24 });
     const black = new THREE.MeshStandardMaterial({ color: 0x121a17, roughness: .52 });
-    const glass = new THREE.MeshPhysicalMaterial({ color: 0xb0c5b4, roughness: .12, transmission: .68, thickness: .025, transparent: true, opacity: .8 });
+    // This slender shell needs transparent highlights, not another full-room
+    // transmission pass over all four skinned actors.
+    const glass = new THREE.MeshPhysicalMaterial({ color: 0xb0c5b4, roughness: .12, metalness: .05, clearcoat: .8, clearcoatRoughness: .08, transparent: true, opacity: .32, depthWrite: false });
     const core = new THREE.MeshStandardMaterial({ color: 0x601e16, emissive: 0x731307, emissiveIntensity: .28, roughness: .35 });
     const shell = this.mesh(this.tracker, new THREE.LatheGeometry([[0, -.19], [.02, -.185], [.031, -.15], [.034, -.11], [.03, -.08], [.037, -.04], [.033, 0], [.032, .07], [.023, .13], [0, .19]].map(([r, z]) => new THREE.Vector2(r, z)), 24), glass); shell.rotation.x = Math.PI / 2;
     for (let i = 0; i < 6; i++) {
@@ -126,6 +128,35 @@ export class InterrogationPerformance {
     aim(upper, lower, hinge); aim(lower, end, start.addScaledVector(direction, length));
     end.quaternion.copy(lower.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rootRotation).multiply(rotation)); end.updateWorldMatrix(false, true);
   }
+  private feet(): void {
+    const root = this.rig.root; root.updateWorldMatrix(true, true);
+    const rotation = root.getWorldQuaternion(new THREE.Quaternion());
+    const floor = root.getWorldPosition(new THREE.Vector3()).y + this.rig.footHeight + .015;
+    const legs = ['R', 'L'].map(side => {
+      const hip = this.bone('hip_' + side), knee = this.bone('knee_' + side), ankle = this.bone('ankle_' + side);
+      const target = ankle.getWorldPosition(new THREE.Vector3()); target.y = floor;
+      return { hip, knee, ankle, target, a: knee.position.length(), b: ankle.position.length() };
+    });
+    let drop = 0;
+    for (const { hip, target, a, b } of legs) {
+      const start = hip.getWorldPosition(new THREE.Vector3());
+      const horizontal = (start.x - target.x) ** 2 + (start.z - target.z) ** 2;
+      drop = Math.max(drop, start.y - target.y - Math.sqrt(Math.max(0, (a + b - .002) ** 2 - horizontal)));
+    }
+    this.bone('pelvis').position.y -= drop; root.updateWorldMatrix(true, true);
+    for (const { hip, knee, ankle, target, a, b } of legs) {
+      const start = hip.getWorldPosition(new THREE.Vector3()); const direction = target.clone().sub(start);
+      const length = THREE.MathUtils.clamp(direction.length(), .02, a + b - .002); direction.normalize();
+      const along = (a * a - b * b + length * length) / (2 * length);
+      const bend = new THREE.Vector3(0, 0, 1).applyQuaternion(rotation); bend.addScaledVector(direction, -bend.dot(direction)).normalize();
+      const hinge = start.clone().addScaledVector(direction, along).addScaledVector(bend, Math.sqrt(Math.max(0, a * a - along * along)));
+      const aim = (joint: THREE.Bone, child: THREE.Bone, point: THREE.Vector3) => {
+        joint.quaternion.setFromUnitVectors(child.position.clone().normalize(), joint.parent!.worldToLocal(point.clone()).sub(joint.position).normalize()); joint.updateWorldMatrix(false, true);
+      };
+      aim(hip, knee, hinge); aim(knee, ankle, start.addScaledVector(direction, length));
+      ankle.quaternion.copy(knee.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rotation)); ankle.updateWorldMatrix(false, true);
+    }
+  }
   update(gesture?: InterrogationGesture, officeShirt = false): void {
     this.tracker.visible = this.case.visible = false; this.tie.visible = officeShirt;
     this.seal.value = 0; this.openShirt.value = 0; this.tie.rotation.z = 0; this.tracker.scale.setScalar(1);
@@ -137,16 +168,19 @@ export class InterrogationPerformance {
     this.bone('spine').rotation.set(neo ? .08 * (1 - pose.pinned) : smith ? .03 + .2 * pose.device : .22 * pose.restrain, 0, 0);
     this.bone('chest').rotation.set(neo ? 0 : smith ? .1 * pose.device : .12 * pose.restrain, 0, 0);
     this.bone('head').rotation.set(neo ? -.12 * pose.touch + pose.pinned * .05 : .04, neo ? 0 : -.12 * pose.device, 0);
-    if (neo) pelvis.position.y = THREE.MathUtils.lerp(pelvis.position.y, INTERROGATION_ROOM.table.height + .29, pose.pinned);
+    // Lift the legs clear of the steel before drawing Neo across its edge.
+    // Rotating a standing body while translating its root cuts both legs through the top.
+    if (neo) pelvis.position.y = THREE.MathUtils.lerp(pelvis.position.y, INTERROGATION_ROOM.table.height + .29, pose.lift);
     for (const [i, side] of ['R', 'L'].entries()) {
       const sway = pose.gait * (i ? 1 : -1);
-      this.bone('hip_' + side).rotation.set(THREE.MathUtils.lerp(-1.37 * pose.seated + sway * .32, 0, neo ? pose.pinned : 0), 0, 0);
-      this.bone('knee_' + side).rotation.set(THREE.MathUtils.lerp(1.46 * pose.seated + Math.max(0, -sway) * .35, .05, neo ? pose.pinned : 0), 0, 0);
+      this.bone('hip_' + side).rotation.set(THREE.MathUtils.lerp(-1.37 * pose.seated + sway * .32, -Math.PI / 2 * (1 - pose.pinned), neo ? pose.lift : 0), 0, 0);
+      this.bone('knee_' + side).rotation.set(THREE.MathUtils.lerp(1.46 * pose.seated + Math.max(0, -sway) * .35, .05, neo ? pose.lift : 0), 0, 0);
       this.bone('ankle_' + side).rotation.set(-.09 * pose.seated, 0, 0);
       this.bone('shoulder_' + side).rotation.set(-.15 - pose.seated * .2 - sway * .2, 0, i ? .05 : -.05);
       this.bone('elbow_' + side).rotation.set(-.2 - pose.seated * .9, 0, 0);
       for (let f = 1; f <= 5; f++) for (let s = 1; s <= 3; s++) this.bone(`finger${f}-${s}_${side}`).rotation.set(f === 1 ? .2 : 0, 0, (i ? -1 : 1) * (f === 1 ? .1 : .22));
     }
+    if (!neo || pose.lift === 0) this.feet();
     root.updateWorldMatrix(true, true);
     const up = new THREE.Vector3(0, 1, 0); const forward = new THREE.Vector3(0, 0, 1);
     if (neo) {
@@ -156,19 +190,30 @@ export class InterrogationPerformance {
         const sign = side === 'R' ? -1 : 1;
         const lap = new THREE.Vector3(sign * .36, 1.54, .63);
         this.hand(side, lap, up.clone(), forward, pose.seated * (1 - pose.touch));
-        if (pose.pinned) this.hand(side, this.point(.35, 2.62, sign * 1.03), up.clone().negate(), new THREE.Vector3(0, 0, -1), pose.pinned, true);
+        if (pose.lift) {
+          const body = interrogationRoot({ ...gesture, approach: { x: 0, z: 0, yaw: 0 } }, 'neo');
+          this.hand(side, this.point(body.x + 1.4 * pose.pinned, 2.62, sign * 1.03), up.clone().negate(), new THREE.Vector3(0, 0, -1), pose.lift, true);
+        }
       }
       if (pose.touch) {
         const mouth = root.worldToLocal(this.bone('head').localToWorld(new THREE.Vector3(.015, -.13, .28)));
         this.hand('R', mouth, new THREE.Vector3(0, 0, -1), up.clone(), pose.touch);
       }
     } else if (smith) {
-      const file = this.point(-2.6, INTERROGATION_ROOM.table.height + .17, .1);
-      this.hand('R', file, up.clone().negate(), forward, pose.seated * (gesture.phase === 'file' ? smooth(t, .7, 2) : 1), true);
+      for (const side of ['R', 'L'] as const) {
+        const sign = side === 'R' ? -1 : 1;
+        const lap = new THREE.Vector3(sign * .36, 1.54, .63).lerp(new THREE.Vector3(sign * .55, 2.15, .08), 1 - pose.seated);
+        this.hand(side, lap, new THREE.Vector3(-sign, 0, 0), up.clone().negate());
+      }
+      const retract = gesture.phase === 'coercion' ? smooth(t, 6.6, 7.2) : gesture.phase === 'done' ? 1 : 0;
+      const file = this.point(-2.6 - retract * 1.15, INTERROGATION_ROOM.table.height + .42, .1);
+      const review = gesture.phase === 'file' ? smooth(t, .7, 2) : gesture.phase === 'coercion' ? 1 - smooth(t, 7.2, 7.6) : gesture.phase === 'response' ? 1 : 0;
+      this.hand('R', file, up.clone().negate(), forward, pose.seated * review, true);
       if (pose.device) {
         const offer = this.point(-.9, 3.45, -.85).lerp(this.point(-.43, 3.1, .01), smooth(t, 15.6, 17.6)); const hand = this.bone('wrist_R');
         const pinch = new THREE.Vector3(.14, -.32, .12);
         this.hand('R', offer, up.clone(), forward, pose.device, false, pinch);
+        this.hand('L', this.point(.63, 3.1, -.86), up.clone(), forward, pose.device);
         for (let f = 3; f <= 5; f++) for (let s = 1; s <= 3; s++) this.bone(`finger${f}-${s}_R`).rotation.z = s === 1 ? .65 : .9;
         for (const f of [1, 2]) {
           const chain = [1, 2, 3].map(s => this.bone(`finger${f}-${s}_R`)); chain.forEach(joint => joint.quaternion.identity());
@@ -179,15 +224,17 @@ export class InterrogationPerformance {
           }
         }
         if (this.case.parent !== this.bone('wrist_L')) this.bone('wrist_L').add(this.case);
-        this.case.position.set(-.065, -.17, .01); this.case.rotation.set(Math.PI / 2, 0, 0); this.case.visible = true;
+        this.case.position.set(-.115, -.17, .01); this.case.rotation.set(0, 0, Math.PI / 2); this.case.visible = true;
         this.tracker.visible = pose.implant < 1;
         if (!pose.release) {
-          hand.add(this.tracker); this.tracker.position.copy(pinch); this.tracker.rotation.set(0, 0, 0);
+          hand.add(this.tracker); this.tracker.position.copy(pinch);
+          const upright = new THREE.Quaternion().setFromAxisAngle(up, .3).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2));
+          this.tracker.quaternion.copy(hand.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(upright));
         } else {
           root.add(this.tracker);
           const start = this.point(-.43, 3.1, .01); const end = this.point(-.43, 2.94, .01);
           this.tracker.position.copy(start.lerp(end, smooth(t, 17.6, 18.8))); this.tracker.position.y -= smooth(t, 20.1, 21.5) * .27;
-          this.tracker.rotation.set(0, .3 + Math.sin(t * 7) * .08, 0); this.tracker.scale.setScalar(1 - smooth(t, 20.8, 21.5) * .9);
+          this.tracker.rotation.set(-Math.PI / 2 * (1 - smooth(t, 17.6, 18.8)), .3 + Math.sin(t * 7) * .08 * smooth(t, 17.6, 18.8), 0, 'YXZ'); this.tracker.scale.setScalar(1 - smooth(t, 20.8, 21.5) * .9);
         }
         this.legs.forEach((leg, i) => { leg.rotation.z = Math.sin(t * 16 + i * 2.1) * .38; });
       }

@@ -23,7 +23,7 @@ export function interrogationPose(gesture: InterrogationGesture) {
   const rise = action ? ease(t, 5.1, 6.6) : 0;
   const pinned = action ? ease(t, 10.4, 12.7) : 0;
   const seated = gesture.role === 'neo' ? gesture.phase === 'file' ? ease(t, .4, 1.8) : (1 - rise) : gesture.role === 'smith' ? action ? 1 - ease(t, 7, 8.5) : 1 : 0;
-  return { seated, pinned, rise,
+  return { seated, pinned, rise, lift: action ? ease(t, 9.8, 10.4) : 0,
     seal: action ? ease(t, 2.4, 4.8) : 0,
     touch: action ? ease(t, 3.1, 4.2) * (1 - ease(t, 6.3, 7.2)) : 0,
     restrain: action ? ease(t, 8.6, 9.8) : 0,
@@ -47,13 +47,14 @@ export function interrogationRoot(encounter: InterrogationEncounter, role: Inter
       const turn = Math.atan2(Math.sin(-Math.PI / 2 - encounter.approach.yaw), Math.cos(-Math.PI / 2 - encounter.approach.yaw));
       return { x: mix(encounter.approach.x, seat, blend), z: mix(encounter.approach.z, 0, blend), yaw: encounter.approach.yaw + turn * blend };
     }
-    return { x: action ? mix(mix(seat, 5.35, ease(t, 6.2, 7.8)), -1.05, ease(t, 9.8, 12.7)) : seat, z: 0, yaw: -Math.PI / 2 };
+    return { x: action ? mix(mix(seat, 5.35, ease(t, 6.2, 7.8)), -1.05, ease(t, 10.4, 12.7)) : seat, z: 0, yaw: -Math.PI / 2 };
   }
   const bedside = INTERROGATION_ROOM.table.depth / 2 + .55;
-  if (role === 'smith') return { x: action ? mix(-seat, -.05, ease(t, 9.5, 11)) : -seat, z: action ? mix(0, -bedside, ease(t, 8.5, 9.5)) : 0,
+  // Keep the lowered hands clear of the edge; step in as the tracker is raised.
+  if (role === 'smith') return { x: action ? mix(-seat, -.05, ease(t, 9.5, 11)) : -seat, z: action ? mix(0, -bedside - .25 * (1 - ease(t, 13.8, 15.3)), ease(t, 8.5, 9.5)) : 0,
     yaw: action ? Math.PI / 2 + ease(t, 8.2, 8.6) * Math.PI / 2 - ease(t, 9.3, 9.7) * Math.PI / 2 - ease(t, 10.8, 11.5) * Math.PI / 2 : Math.PI / 2 };
   const side = role === 'agent_jones' ? -1 : 1;
   if (!action) return { x: -5.6, z: side * 4.3, yaw: Math.PI / 2 };
-  const cross = ease(t, 6.4, 8.6); const close = ease(t, 8.6, 9.6); const pin = ease(t, 9.8, 12.7);
+  const cross = ease(t, 6.4, 8.6); const close = ease(t, 8.6, 9.6); const pin = ease(t, 10.4, 12.7);
   return { x: mix(mix(-5.6, 5.35, cross), 1.2, pin), z: side * mix(4.3, bedside, close), yaw: mix(Math.PI / 2, side === 1 ? Math.PI : 0, ease(t, 8.4, 9.6)) };
 }
