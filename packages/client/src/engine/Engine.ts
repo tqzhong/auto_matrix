@@ -1,6 +1,7 @@
 import { basementLocked, tvExitLocked, BASEMENT_ROLES } from '@auto_matrix/shared';
 import { metacortexLiftLocked } from '@auto_matrix/shared';
 import { officeCustodyActive, officeCustodyLocked } from '@auto_matrix/shared';
+import { arrestCarPose } from '@auto_matrix/shared';
 import { spoonLessonBend } from '@auto_matrix/shared';
 import { AMBUSH_ESCAPE } from '@auto_matrix/shared';
 import { wetwallLocked, sixthLocked, SIXTH } from '@auto_matrix/shared';
@@ -171,7 +172,8 @@ export class Engine {
     measure?.('agents');
     this.voxelRenderer.update(this.elapsed, this.playerControls?.id ? this.camera : undefined);
     const player = this.playerControls?.id ? this.agentRenderer.getAgentState(this.playerControls.id) : undefined;
-    this.audio.carEngine(this.running && player?.id === meeting?.actor && !meeting?.visiting && meeting?.meeting ? meetingCarPose(meeting.meeting).speed : undefined);
+    this.audio.carEngine(this.running && player?.id === meeting?.actor && !meeting?.visiting
+      ? meeting?.meeting ? meetingCarPose(meeting.meeting).speed : meeting?.office?.custody?.street?.phase === 'departing' && !meeting.office.custody.paused ? arrestCarPose(meeting.office.custody.street).speed : undefined : undefined);
     this.voxelRenderer.interiors.update(this.timeOfDay, player?.position, this.sandbox?.neoLife, this.camera.position, this.agentRenderer.getAgentBody('neo'));
     measure?.('city');
     const workday = this.agentRenderer.getAgentState('courier')?.currentAction?.parameters.workday as OfficeWorkday | undefined;
@@ -424,6 +426,11 @@ export class Engine {
       const previous = before.office?.window ?? 0; const current = after.office?.window ?? 0;
       if (previous < .7 && current >= .7) this.audio.windowSound(false);
       if (previous < 1.2 && current >= 1.2) this.audio.windowSound(true);
+    }
+    if (after?.scene === 'm1_office_escape' && !after.visiting && after.actor === this.playerControls?.id && this.running) {
+      const previous = before?.office?.custody?.street, current = after.office?.custody?.street;
+      if (current?.phase === 'departing' && previous?.phase === 'done') this.audio.meetingSound('approach');
+      if (current?.phase === 'departing' && previous?.phase === 'departing' && !previous.blocked && current.blocked) this.audio.meetingSound('brake');
     }
     if (after && ['m1_bridge', 'm1_bug'].includes(after.scene) && !after.visiting && after.actor === this.playerControls?.id && this.running) {
       if (after.scene === 'm1_bridge' && after.bridgeArrival?.phase === 'approaching' && before?.scene !== after.scene) this.audio.meetingSound('approach');

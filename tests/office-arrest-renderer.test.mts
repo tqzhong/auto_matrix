@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { METACORTEX, ARREST_CAR, ARREST_BIKE, arrestCarPoint, arrestBikePoint, type OfficeCustody } from '@auto_matrix/shared';
+import { METACORTEX, ARREST_CAR, ARREST_BIKE, ARREST_DRIVE_SECONDS, arrestCarBounds, arrestCarPoint, arrestBikePoint, playerBlocked, type OfficeCustody } from '@auto_matrix/shared';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { CustodyStreetRenderer } from '../packages/client/src/engine/CustodyStreetRenderer.js';
 
@@ -57,5 +57,33 @@ test('the rearview aims at the displayed Neo and its frame fits both player view
         assert.ok(Math.abs(point.x) < .96 && Math.abs(point.y) < .96, `the motorcycle mirror frame must remain visible: ${aspect}/${point.toArray()}`);
       }
     }
+  } finally { renderer.dispose(); }
+});
+
+test('the whole rendered sedan follows a clear street turn inside its moving collision bounds', () => {
+  const root = new THREE.Group(); root.position.set(METACORTEX.center.x, 0, METACORTEX.center.z);
+  const renderer = new CustodyStreetRenderer(root), custody = { phase: 'street', elapsed: 3.2, lift: {}, street: { phase: 'departing', elapsed: 0 } } as OfficeCustody;
+  const car = root.getObjectByName('office-arrest-sedan')!, wheel = root.getObjectByName('office-arrest-wheel--1-front')!;
+  let vertices = 0;
+  try {
+    for (let age = 0; age <= ARREST_DRIVE_SECONDS; age += .125) {
+      custody.street!.elapsed = age; renderer.update(custody); root.updateMatrixWorld(true);
+      const bounds = arrestCarBounds(custody.street);
+      car.traverse(mesh => {
+        if (!(mesh instanceof THREE.Mesh)) return;
+        const positions = mesh.geometry.attributes.position;
+        for (let i = 0; i < positions.count; i += 11) {
+          const point = mesh.localToWorld(new THREE.Vector3().fromBufferAttribute(positions, i)); vertices++;
+          assert.ok(Math.abs(point.x - bounds.position.x) <= bounds.width / 2 + .003 && Math.abs(point.z - bounds.position.z) <= bounds.depth / 2 + .003,
+            `rendered bumper/mirror/wheel leaves its collider: ${age}/${mesh.name}/${point.toArray()}/${JSON.stringify(bounds)}`);
+          assert.equal(playerBlocked({ x: point.x, y: 1, z: point.z }, true, 0), false, `rendered car clips the static city: ${age}/${point.toArray()}`);
+        }
+      });
+    }
+    assert.ok(vertices > 20000, 'inspect actual sedan surfaces throughout the turn');
+    custody.street!.elapsed = 6; renderer.update(custody);
+    assert.ok(Math.abs(wheel.rotation.y) > .1, 'front tires steer through the corner');
+    const stopped = wheel.children[0].rotation.x; renderer.update(custody); assert.equal(wheel.children[0].rotation.x, stopped, 'an unchanged saved time cannot roll a paused tire');
+    custody.street!.elapsed = 7; renderer.update(custody); assert.ok(Math.abs(wheel.children[0].rotation.x - stopped) > 6, 'visible spokes roll with traveled distance');
   } finally { renderer.dispose(); }
 });

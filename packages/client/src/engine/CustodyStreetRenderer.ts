@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
-import { ARREST_CAR, ARREST_BIKE, arrestCarPoint, arrestDoor, arrestMirrorShot, type OfficeCustody } from '@auto_matrix/shared';
+import { ARREST_CAR, ARREST_BIKE, ARREST_WHEEL, arrestCarPose, arrestCarPoint, arrestDoor, arrestMirrorShot, type OfficeCustody } from '@auto_matrix/shared';
 import { batchStaticGeometry } from './StaticGeometry.js';
 
-/** The sedan is parked in the existing city; four hinged doors leave a real cabin. */
+/** The sedan moves through the existing city; four hinged doors leave a real cabin. */
 export class CustodyStreetRenderer {
   private root = new THREE.Group();
   private car = new THREE.Group();
@@ -12,6 +12,8 @@ export class CustodyStreetRenderer {
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private doors: { hinge: THREE.Group; side: number; rear: boolean }[] = [];
+  private wheels: { pivot: THREE.Group; rotor: THREE.Group; front: boolean }[] = [];
+  private steering: THREE.Mesh;
   private mirror: Reflector;
   private mirrorFrame = new THREE.Group();
   constructor(parent: THREE.Group) {
@@ -45,9 +47,15 @@ export class CustodyStreetRenderer {
         this.box(hinge, -side * .2, 2.1, 1.48, .28, .16, 1.45, leather, .06);
       }
       for (const z of [-4.9, 4.8]) {
-        const tire = this.cylinder(this.car, side * 2.59, .98, z, 1, .54, rubber); tire.rotation.z = Math.PI / 2;
-        const hub = this.cylinder(this.car, side * 2.88, .98, z, .67, .055, chrome); hub.rotation.z = Math.PI / 2;
-        const axle = this.cylinder(this.car, side * 2.92, .98, z, .24, .06, black); axle.rotation.z = Math.PI / 2;
+        const pivot = new THREE.Group(), rotor = new THREE.Group(); pivot.name = `office-arrest-wheel-${side}-${z < 0 ? 'front' : 'rear'}`;
+        pivot.position.set(side * 2.59, .98, z); pivot.add(rotor); this.car.add(pivot); this.wheels.push({ pivot, rotor, front: z < 0 });
+        this.cylinder(rotor, 0, 0, 0, 1, .54, rubber).rotation.z = Math.PI / 2;
+        this.cylinder(rotor, side * .29, 0, 0, .67, .055, black).rotation.z = Math.PI / 2;
+        this.cylinder(rotor, side * .33, 0, 0, .24, .06, chrome).rotation.z = Math.PI / 2;
+        for (let i = 0; i < 6; i++) {
+          const angle = i * Math.PI / 3;
+          this.box(rotor, side * .32, Math.cos(angle) * .35, Math.sin(angle) * .35, .06, .58, .075, chrome, .02).rotation.x = angle;
+        }
       }
       box(side * 1.9, 2.13, -6.89, 1.25, .55, .1, light); box(side * 2.08, 2.18, 6.91, .96, .52, .09, red);
       box(side * 2.95, 3.25, -2.85, .55, .34, .62, paint, .09);
@@ -63,7 +71,9 @@ export class CustodyStreetRenderer {
     for (let x = -.98; x <= .98; x += .18) box(x, 2.1, -7.02, .04, .41, .025, chrome, .005);
     box(0, 1.73, 7.02, 1.48, .39, .025, light); box(0, 1.71, -7.03, 1.48, .35, .025, light);
     box(0, .91, -.7, .48, 1.15, 4.25, black); box(0, 2.61, -2.96, 5.2, .61, .75, black, .14);
-    const wheel = this.mesh(this.car, new THREE.TorusGeometry(.49, .045, 10, 32), rubber, -1.3, 2.74, -2.52); wheel.rotation.x = -.3;
+    this.steering = this.mesh(this.car, new THREE.TorusGeometry(ARREST_WHEEL.radius, .045, 10, 32), rubber, ARREST_WHEEL.x, ARREST_WHEEL.y, ARREST_WHEEL.z);
+    this.steering.name = 'office-arrest-steering-wheel'; this.steering.rotation.x = ARREST_WHEEL.tilt;
+    for (const x of [-.22, .22]) this.box(this.steering, x, 0, 0, .48, .06, .06, chrome).rotation.z = x < 0 ? -.12 : .12;
     box(-1.3, 2.75, -2.76, 1.38, .31, .06, chrome);
     // Separate fairings, saddle, forks and foot pegs leave space for the lookout's actual limbs.
     this.box(this.bike, 0, 1.91, -.84, 1.45, 1.16, 2.4, paint, .23);
@@ -99,10 +109,10 @@ export class CustodyStreetRenderer {
   private mat(color: number, roughness: number, metalness = 0): THREE.MeshStandardMaterial {
     const material = new THREE.MeshStandardMaterial({ color, roughness, metalness }); this.materials.add(material); return material;
   }
-  private mesh(parent: THREE.Group, geometry: THREE.BufferGeometry, material: THREE.Material, x: number, y: number, z: number): THREE.Mesh {
+  private mesh(parent: THREE.Object3D, geometry: THREE.BufferGeometry, material: THREE.Material, x: number, y: number, z: number): THREE.Mesh {
     this.geometries.add(geometry); const mesh = new THREE.Mesh(geometry, material); mesh.position.set(x, y, z); mesh.castShadow = mesh.receiveShadow = true; parent.add(mesh); return mesh;
   }
-  private box(parent: THREE.Group, x: number, y: number, z: number, w: number, h: number, d: number, material: THREE.Material, radius = .04): THREE.Mesh {
+  private box(parent: THREE.Object3D, x: number, y: number, z: number, w: number, h: number, d: number, material: THREE.Material, radius = .04): THREE.Mesh {
     return this.mesh(parent, new RoundedBoxGeometry(w, h, d, 2, Math.min(radius, w / 2, h / 2, d / 2)), material, x, y, z);
   }
   private cylinder(parent: THREE.Group, x: number, y: number, z: number, radius: number, height: number, material: THREE.Material): THREE.Mesh {
@@ -110,6 +120,10 @@ export class CustodyStreetRenderer {
   }
   update(custody?: OfficeCustody, subject?: THREE.Object3D): void {
     this.root.visible = Boolean(custody?.lift); this.bike.visible = Boolean(custody?.watcher);
+    const car = arrestCarPose(custody?.street);
+    this.car.position.set(car.x, 0, car.z); this.car.rotation.y = car.yaw;
+    this.steering.rotation.z = car.steering;
+    for (const wheel of this.wheels) { wheel.pivot.rotation.y = wheel.front ? car.steering : 0; wheel.rotor.rotation.x = -car.distance; }
     for (const door of this.doors) door.hinge.rotation.y = door.side * arrestDoor(custody?.street, door.side, door.rear) * (door.rear ? 1.3 : 1.54);
     this.mirror.visible = this.bike.visible && arrestMirrorShot(custody?.street);
     if (!this.mirror.visible) return;

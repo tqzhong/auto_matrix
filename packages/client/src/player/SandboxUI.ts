@@ -2,6 +2,7 @@ import { crosscutActive, crosscutAction, crosscutText } from '@auto_matrix/share
 import { truthFade, CABIN, CABIN_ROUTE_LENGTH } from '@auto_matrix/shared';
 import { nearMetacortexLift, metacortexLiftLocked } from '@auto_matrix/shared';
 import { officeCustodyActive, officeCustodyHeld, officeCustodyTarget, officeCustodyText } from '@auto_matrix/shared';
+import { arrestCarPose } from '@auto_matrix/shared';
 import { CATCH, RELOADED, RELOADED_FINALE, HEL_COATCHECK, catchText, reloadedText } from '@auto_matrix/shared';
 import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_NAMES, filmReflections, GRID_HACK_SECONDS, GRID_REROUTE_SECONDS, HEL_ELEVATOR, HEL_DANCE_DOOR, filmStepPosition, filmStepActionReady, helElevatorLocked, helDanceDoorLocked, pillLocked, lafayetteWelcomeLocked, awakeningLocked, awakeningWaiting, podRescuePose, AWAKENING_SECONDS, MIRROR_TOUCH, MIRROR_TIMING, mirrorGuidePose, PILL_ROOM, trainingLocked, trainingWaiting, TRAINING_SECONDS, DOJO_COMBO_WINDOW, windowOpening, windowCrossing, dockPowerOffline, ITEMS, RECIPES, SKILLS, FILMS, MISSIONS, LOCATIONS, CITY_BUILDINGS, NEO_CHAPTERS, LIFE_ACTIONS, lifeActionPosition, lifeRoomCenter, locationEntrance, distance, missionPosition, nearTransit, skillPoints,
   type AgentState, type SandboxState, type SandboxCommand, type ItemId, type SkillId, type Vector3 } from '@auto_matrix/shared';
@@ -1575,7 +1576,8 @@ export class SandboxUI {
     }
     if (officeCustodyActive(journey)) {
       const custody = journey.office!.custody!, ready = (['ready', 'outside'].includes(custody.phase) || custody.street?.phase === 'ready' || custody.street?.phase === 'done') && !custody.paused;
-      const action = custody.phase === 'ready' ? '随队下楼' : custody.phase === 'outside' ? '走向轿车' : custody.street?.phase === 'ready' ? '低头进入轿车' : '继续审讯';
+      const action = custody.phase === 'ready' ? '随队下楼' : custody.phase === 'outside' ? '走向轿车' : custody.street?.phase === 'ready' ? '低头进入轿车' : '随车离开';
+      this.el('film-blackout').style.opacity = String(arrestCarPose(custody.street).fade);
       this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = officeCustodyText(custody);
       this.el('film-sequence-hint').textContent = ready ? `G ${action} · V 切换视角 · 当前进度自动保存` : officeCustodyHeld(custody) ? '鼠标观察 · V 切换视角 · 暂停会保留这一拍' : 'WASD 跟随队伍 · 停下时队伍等候 · 双手被扣住，无法奔跑或攻击';
       this.el('sandbox-interact').classList.toggle('hidden', !ready); this.el('sandbox-nearby').textContent = action;

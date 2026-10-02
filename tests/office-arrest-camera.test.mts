@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { ARREST_CAR, ARREST_BIKE, arrestCarPoint, arrestBikePoint, type OfficeArrest } from '@auto_matrix/shared';
+import { ARREST_CAR, ARREST_BIKE, arrestCarPose, arrestCarPoint, arrestBikePoint, type OfficeArrest } from '@auto_matrix/shared';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 
-for (const [phase, elapsed] of [['ready', 0], ['entering', 1.2], ['entering', 3.2], ['done', 0]] as const) {
+for (const [phase, elapsed] of [['ready', 0], ['entering', 1.2], ['entering', 3.2], ['done', 0], ['departing', 6], ['departing', 12]] as const) {
   test(`V leaves the ${phase}/${elapsed} arrest shot for Neo's steerable eyes while paused`, t => {
     class InputTarget extends EventTarget { matches() { return false; } }
     const window = new InputTarget(), canvas = new InputTarget();
@@ -17,8 +17,8 @@ for (const [phase, elapsed] of [['ready', 0], ['entering', 1.2], ['entering', 3.
     const camera = new THREE.PerspectiveCamera(57, 16 / 9, .5, 5000), group = new THREE.Group(), body = new THREE.Group(), head = new THREE.Bone();
     head.name = 'head'; head.position.set(0, 2.25, .1); body.add(head); group.add(body);
     const world = new WorldState(); new AgentManager(world).initializeAllAgents();
-    const neo = world.agents.get('neo')!; neo.currentLocation = 'metacortex_office'; neo.position = arrestCarPoint(ARREST_CAR.seats.neo.x, ARREST_CAR.seats.neo.z); neo.rotation = ARREST_CAR.yaw + Math.PI;
     const street: OfficeArrest = { phase, elapsed, observed: true };
+    const neo = world.agents.get('neo')!; neo.currentLocation = 'metacortex_office'; neo.position = arrestCarPoint(ARREST_CAR.seats.neo.x, ARREST_CAR.seats.neo.z, street); neo.rotation = arrestCarPose(street).yaw + Math.PI;
     neo.currentAction = { type: 'idle', parameters: { officeCustody: { role: 'neo', phase: 'street', elapsed: 3.2, locked: true, street } }, startedAt: 0, duration: 1, progress: 0 };
     const controls = new PlayerControls(canvas as unknown as HTMLCanvasElement, camera, () => {}, () => {});
     t.after(() => {
@@ -44,5 +44,13 @@ for (const [phase, elapsed] of [['ready', 0], ['entering', 1.2], ['entering', 3.
     const looking = camera.getWorldDirection(new THREE.Vector3()); neo.rotation += .6; step();
     assert.ok(camera.getWorldDirection(new THREE.Vector3()).distanceTo(looking.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), .6)) < .001, 'a body turn carries the eye view while retaining the player’s look offset');
     toggle(); step(); assert.equal(controls.firstPerson, false); assert.ok(camera.position.distanceTo(cinematic) < .001);
+    if (phase === 'departing') {
+      toggle(); step(); const from = camera.getWorldDirection(new THREE.Vector3()), yaw = neo.rotation;
+      street.elapsed += 1; neo.position = arrestCarPoint(ARREST_CAR.seats.neo.x, ARREST_CAR.seats.neo.z, street); neo.rotation = arrestCarPose(street).yaw + Math.PI; step();
+      assert.ok(camera.position.distanceTo(head.localToWorld(new THREE.Vector3(0, .1, .32))) < .001, 'the eyes travel with the displayed passenger through the street turn');
+      assert.ok(camera.getWorldDirection(new THREE.Vector3()).distanceTo(from.applyAxisAngle(new THREE.Vector3(0, 1, 0), neo.rotation - yaw)) < .001, 'a car turn preserves the passenger’s look offset');
+      toggle(); step(); const point = arrestCarPoint(-9, 4.5, street);
+      assert.ok(camera.position.distanceTo(new THREE.Vector3(point.x, 3.7, point.z)) < .001, 'V returns to a shot mounted on the moving sedan');
+    }
   });
 }

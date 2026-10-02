@@ -145,7 +145,7 @@ test('the shipped cuffed body keeps bone lengths, puts the palms behind the shir
     for (const [id, slot] of Object.entries(placements)) custody.street.from![id] = { position: arrestCarPoint(slot.x, slot.z), yaw: id === 'smith' ? Math.atan2(ARREST_CAR.approach.x - slot.x, ARREST_CAR.approach.z - slot.z) + ARREST_CAR.yaw : ARREST_CAR.yaw + Math.PI };
     let streetVertices = 0;
     try {
-      for (const phase of ['entering', 'rear_entering'] as const) for (const age of [0, .5, 1, 1.4, 2, 2.5, 3, 3.5, 4, 4.6, 5, 5.5, 6, 7]) {
+      for (const phase of ['entering', 'rear_entering', 'departing'] as const) for (const age of [0, .5, 1, 1.4, 2, 2.5, 3, 3.5, 4, 4.6, 5, 5.5, 6, 7, 9, 12, 15, 16]) {
         custody.street.phase = phase; custody.street.elapsed = age;
         if (phase === 'rear_entering') custody.street.from!.smith = { position: arrestCarPoint(ARREST_CAR.rear.x, ARREST_CAR.rear.z), yaw: ARREST_CAR.yaw };
         for (const [id, rig] of rigs) {
@@ -158,7 +158,31 @@ test('the shipped cuffed body keeps bone lengths, puts the palms behind the shir
         trinity.root.position.set(custody.watcher.position.x, 0, custody.watcher.position.z); trinity.root.rotation.y = custody.watcher.yaw;
         models.animate(trinity, .05, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 }, 0);
         performance.update(neo.hero, rigs.get('smith')!.hero, custody, rigs.get('agent_brown')!.hero, rigs.get('agent_jones')!.hero, trinity.hero);
+        for (const rig of rigs.values()) rig.root.updateMatrixWorld(true);
         streetRenderer.update(custody, neo.hero!.root); streetRoot.updateMatrixWorld(true);
+        if (phase === 'departing' || phase === 'entering' && age >= 6) {
+          const wheel = streetRoot.getObjectByName('office-arrest-steering-wheel')!;
+          for (const side of ['R', 'L']) {
+            const bones = rigs.get(custody.leader)!.hero!.bones;
+            assert.ok(bones.get(`elbow_${side}`)!.position.distanceTo(rigs.get(custody.leader)!.hero!.rest.get(`elbow_${side}`)!) < 1e-7);
+            assert.ok(bones.get(`wrist_${side}`)!.position.distanceTo(rigs.get(custody.leader)!.hero!.rest.get(`wrist_${side}`)!) < 1e-7);
+            let skinContact = Infinity, handVertices = 0;
+            rigs.get(custody.leader)!.hero!.root.traverse(mesh => {
+              if (!(mesh instanceof THREE.SkinnedMesh) || !mesh.visible) return;
+              mesh.skeleton.update();
+              const indices = mesh.geometry.attributes.skinIndex, weights = mesh.geometry.attributes.skinWeight;
+              for (let i = 0; i < indices.count; i++) {
+                if (![0, 1, 2, 3].some(j => weights.getComponent(i, j) > .25 && /^(wrist_|finger)/.test(mesh.skeleton.bones[indices.getComponent(i, j)].name) && mesh.skeleton.bones[indices.getComponent(i, j)].name.endsWith(`_${side}`))) continue;
+                const point = wheel.worldToLocal(mesh.localToWorld(mesh.getVertexPosition(i, new THREE.Vector3())));
+                const tube = Math.hypot(Math.hypot(point.x, point.y) - .49, point.z); handVertices++;
+                skinContact = Math.min(skinContact, Math.abs(tube - .045));
+                assert.ok(tube >= .04,
+                  `the driver's actual hand surface clips the steering rim: ${age}/${side}/${point.toArray()}`);
+              }
+            });
+            assert.ok(handVertices > 50); assert.ok(skinContact < .025, `the actual hand skin floats above the rim: ${phase}/${age}/${side}/${skinContact}`);
+          }
+        }
         if (phase === 'entering' && age >= 2.5 && age <= 3.5) {
           const mirror = streetRoot.getObjectByName('office-arrest-rearview')!.getWorldPosition(new THREE.Vector3());
           const head = neo.hero!.bones.get('head')!.localToWorld(new THREE.Vector3(0, .2, .06)), direction = head.clone().sub(mirror);

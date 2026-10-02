@@ -36,3 +36,10 @@ export function boardOfficeArrest(neo: AgentState, journey: () => FilmJourney, i
   }
   assert.fail(`street arrest stalled: ${JSON.stringify({ neo: neo.position, custody: journey().office!.custody })}`);
 }
+
+/** Remain a passenger until the real street departure reaches the scene cut. */
+export function departOfficeArrest(journey: () => FilmJourney, input: (values?: Partial<PlayerInput>) => void, command: (target: string) => unknown): void {
+  assert.equal(journey().office!.custody!.street!.phase, 'done'); command('act');
+  for (let i = 0; i < 800 && journey().scene === 'm1_office_escape'; i++) input();
+  assert.equal(journey().scene, 'm1_interrogation', `departure stalled: ${JSON.stringify(journey().office!.custody)}`);
+}

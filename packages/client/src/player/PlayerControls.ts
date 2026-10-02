@@ -781,7 +781,7 @@ export class PlayerControls {
         const view = arrestBikePoint(ARREST_BIKE.view.x, ARREST_BIKE.view.z);
         this.camera.position.set(view.x, ARREST_BIKE.view.y, view.z); this.camera.lookAt(mirror.x, mirror.y, mirror.z);
       } else {
-        const point = arrestCarPoint(this.camera.aspect < .85 ? -11 : -9, 4.5);
+        const point = arrestCarPoint(this.camera.aspect < .85 ? -11 : -9, 4.5, arrest);
         this.camera.position.set(point.x, 3.7, point.z); this.camera.lookAt(eye);
       }
     } else if (this.bridgeCaught) {
