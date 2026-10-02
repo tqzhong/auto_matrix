@@ -382,7 +382,7 @@ export class PlayerControls {
     if (state.currentAction?.parameters.workday) this.performing = true;
     if (this.motion.officeCustody && !state.currentAction?.parameters.officeCustody) this.performing = false;
     const custody = state.currentAction?.parameters.officeCustody as MotionInput['officeCustody'];
-    if (custody) this.performing = custody.phase === 'securing' || Boolean(custody.paused);
+    if (custody) this.performing = custody.locked ?? (custody.phase === 'securing' || Boolean(custody.paused));
     if (this.motion.contact && !state.currentAction?.parameters.contact) this.performing = false;
     if (state.currentAction?.parameters.contact) this.performing = true;
     if (this.motion.wakeCall && !state.currentAction?.parameters.wakeCall) this.performing = false;
@@ -649,7 +649,7 @@ export class PlayerControls {
       this.position = { x: center.x + dropRoot.x, y: center.y + dropRoot.y, z: center.z + dropRoot.z };
       this.vy = basementDropPose(basement!.drop!).verticalVelocity; this.planar = { x: 0, z: 0 }; this.localJump = false;
     } else if (this.ride || this.climbing || this.performing) {
-      const blend = this.motion.truckPassenger || this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.training || this.motion.workday || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || catchCinematic || smithFinaleLocked(this.motion.smithFinale) || this.motion.lobbyEntry ? 1 : 1 - Math.exp(-20 * delta);
+      const blend = inOfficeLift || this.motion.truckPassenger || this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.training || this.motion.workday || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || catchCinematic || smithFinaleLocked(this.motion.smithFinale) || this.motion.lobbyEntry ? 1 : 1 - Math.exp(-20 * delta);
       this.position.x += (state.position.x - this.position.x) * blend; this.position.y += (state.position.y - this.position.y) * blend; this.position.z += (state.position.z - this.position.z) * blend;
       this.vy = 0; this.planar = { x: 0, z: 0 }; this.localJump = false;
     } else if (running && this.enabled && state.status === 'alive') {

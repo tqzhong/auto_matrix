@@ -81,6 +81,8 @@ test('elevator cameras stay inside the car, support V and looking around, then r
     }
   }
   const parked = game.group.position.clone(); game.key('KeyW'); game.step(.3); game.key('KeyW', false); assert.deepEqual(game.group.position, parked);
+  game.state.position.y -= .7; game.step(.016);
+  assert.equal(game.group.position.y, game.state.position.y, 'the displayed player and lift must share one height on every snapshot');
   game.key('KeyV'); game.key('KeyV', false); game.step(.1);
   assert.ok(game.camera.position.y > game.state.position.y + 2 && game.camera.position.y < game.state.position.y + 4);
   const direction = game.camera.getWorldDirection(new THREE.Vector3()); game.event(game.document, 'mousemove', { movementX: 200, movementY: -60 }); game.step(.2);

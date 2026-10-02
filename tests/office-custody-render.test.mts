@@ -24,5 +24,9 @@ test('pausing an escort aligns the displayed body and heading with the saved pos
     renderer.update(0, undefined, 0);
     assert.deepEqual(renderer.getAgent('smith')!.position.toArray(), [smith.position.x, smith.position.y, smith.position.z]);
     assert.ok(Math.abs(renderer.getAgentBody('smith')!.rotation.y - smith.rotation) < .001, 'a pause must not leave the body facing velocity rather than the saved yaw');
+    smith.currentAction.parameters.metacortexLift = true;
+    smith.position.y -= .7;
+    renderer.updateAgent('smith', structuredClone(smith)); renderer.update(.016);
+    assert.equal(renderer.getAgent('smith')!.position.y, smith.position.y, 'interpolating the body independently from the car would bury the feet during descent');
   } finally { renderer.dispose(); globalThis.document = previous; }
 });

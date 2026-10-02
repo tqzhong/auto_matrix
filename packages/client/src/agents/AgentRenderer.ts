@@ -213,7 +213,7 @@ export class AgentRenderer {
           entry.group.position.set(center.x + pose.x, center.y + pose.y, center.z + pose.z);
           guideHeading = (state.currentAction?.parameters.ambushEscort as AmbushEscort).watching ? state.rotation : pose.yaw;
           if (speed > 0 && delta > 0) guideSpeed = Math.abs(guide.progress - before) / (delta * speed);
-        } else if (state.currentAction?.parameters.officeCustody && delta * speed === 0) entry.group.position.copy(target);
+        } else if (state.currentAction?.parameters.metacortexLift || state.currentAction?.parameters.officeCustody && delta * speed === 0) entry.group.position.copy(target);
         else if (state.currentAction?.parameters.oracleReception || state.currentAction?.parameters.oracleWaiting
           || (state.currentAction?.parameters.oracleArrival as MotionInput['oracleArrival'])?.phase === 'opening'
           || ((state.currentAction?.parameters.oracleArrival as MotionInput['oracleArrival'])?.seating ?? 0) > 0) entry.group.position.copy(target);
@@ -442,7 +442,7 @@ export class AgentRenderer {
     }
     const morpheus = this.agents.get('morpheus'), smith = this.agents.get('smith');
     const custody = officeCustodyActive(journey) ? journey!.office!.custody : undefined;
-    this.custody.update(this.agents.get('neo')?.rig.hero, custody ? this.agents.get(custody.catcher)?.rig.hero : undefined, custody);
+    this.custody.update(this.agents.get('neo')?.rig.hero, custody ? this.agents.get(custody.catcher)?.rig.hero : undefined, custody, custody ? this.agents.get(custody.leader)?.rig.hero : undefined);
     if (morpheus?.rig.hero && smith?.rig.hero) {
       const bathroom = (this.playerId === 'morpheus' ? this.playerMotion?.bathroom : morpheus.state.currentAction?.parameters.bathroom) as MotionInput['bathroom'];
       const sixth = morpheus.state.currentAction?.parameters.sixth as MotionInput['sixth'];

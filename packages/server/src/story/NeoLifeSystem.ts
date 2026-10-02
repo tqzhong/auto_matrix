@@ -2,7 +2,8 @@ import { LIFE_ACTIONS, LIFE_DESTINATIONS, NEO_ANOMALIES, NEO_CAST, NEO_CHAPTERS,
   distance, insideLifeRoom, lifeActionPosition, lifeRoomCenter, locationEntrance, missionPosition,
   type AgentState, type NeoLifeState, type SandboxState, type Vector3, type Philosophy } from '@auto_matrix/shared';
 import { FilmStorySystem } from './FilmStorySystem.js';
-import { METACORTEX, metacortexFloor, metacortexPosition, metacortexLiftPose, metacortexLiftLocked, nearMetacortexLift } from '@auto_matrix/shared';
+import { updateMetacortexDoors } from './MetacortexDoors.js';
+import { METACORTEX, metacortexFloor, metacortexLiftPose, metacortexLiftLocked, nearMetacortexLift } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
 import type { WorldDynamics } from './WorldDynamics.js';
 
@@ -99,7 +100,7 @@ export class NeoLifeSystem {
 
   command(agent: AgentState, target: string, tick: number): string {
     if (agent.id === 'neo' && this.state && (target === 'lift' || target === 'film:act' && this.film.state?.scene === 'm1_commute' && this.film.state.step === 1)) return this.useLift(agent, tick);
-    if (agent.id === 'neo' && metacortexLiftLocked(this.state?.lift) && target !== 'film:retry') return '电梯正在运行。可以环顾轿厢，到站开门后再离开。';
+    if (agent.id === 'neo' && !this.film.custody.active(agent) && metacortexLiftLocked(this.state?.lift) && target !== 'film:retry') return '电梯正在运行。可以环顾轿厢，到站开门后再离开。';
     if (target.startsWith('film:')) {
       if (target === 'film:cycle' && this.state?.journey?.finished && this.film.controls(agent)) {
         if (agent.id !== 'neo' && !this.film.handoff?.(agent, 'neo', tick, true)) return 'Neo 正由另一位玩家控制，暂时无法开始下一轮。';
@@ -155,6 +156,7 @@ export class NeoLifeSystem {
 
   liftFrame(agent: AgentState, dt: number, tick: number): boolean {
     if (agent.id !== 'neo' || !this.state) return false;
+    if (this.film.custody.active(agent)) return false;
     const lift = this.state.lift;
     const carrying = metacortexLiftLocked(lift);
     if (lift && lift.phase !== 'idle' && agent.controller) {
@@ -173,13 +175,7 @@ export class NeoLifeSystem {
       if (this.film.state?.scene === 'm1_commute') this.film.state.checkpoint = { ...agent.position };
       if (lift.phase === 'idle') { delete lift.passenger; agent.currentAction = null; }
     }
-    for (const floor of [0, 1] as const) {
-      const id = `city:metacortex:door:${floor}`;
-      const open = Math.abs(pose.height - floor * METACORTEX.upper) < .01 && pose.door > .97;
-      if (open) this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== id);
-      else if (!this.sandbox().structures.some(s => s.id === id)) this.sandbox().structures.push({ id, owner: 'world', kind: 'barricade', position: metacortexPosition(0, METACORTEX.doorZ, floor), matrix: true, health: 99999,
-        film: { scene: 'm1_commute', width: 6.4, depth: .3, height: 7 } });
-    }
+    updateMetacortexDoors(this.sandbox(), lift);
     return carrying;
   }
 

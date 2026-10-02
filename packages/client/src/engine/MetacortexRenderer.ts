@@ -1,11 +1,12 @@
 import * as THREE from 'three';
-import { METACORTEX, METACORTEX_LOBBY, metacortexLiftPose, type MetacortexLift } from '@auto_matrix/shared';
+import { METACORTEX, METACORTEX_LOBBY, OFFICE_CUSTODY_CAR, metacortexLiftPose, type MetacortexLift, type OfficeCustody } from '@auto_matrix/shared';
 import { batchStaticGeometry } from './StaticGeometry.js';
 
 /** Lobby and moving car stay in the city while the office is streamed above. */
 export class MetacortexRenderer {
   private root = new THREE.Group();
   private car = new THREE.Group();
+  private lobbyButton!: THREE.Mesh;
   private doors: { mesh: THREE.Mesh; side: number; floor?: number }[] = [];
   private geometry = new THREE.BoxGeometry(1, 1, 1);
   private materials = new Map<number, THREE.MeshStandardMaterial>();
@@ -71,11 +72,15 @@ export class MetacortexRenderer {
       this.doors.push({ mesh: door, side });
     }
     this.box(this.car, 0, 7.1, -29, 4.8, .12, 4.8, 0xece1c7);
+    const button = OFFICE_CUSTODY_CAR.button;
+    this.box(this.car, 2.92, button.y, button.z, .2, 1.2, .65, dark);
+    this.lobbyButton = this.box(this.car, button.x + .02, button.y, button.z, .04, .24, .24, 0xc5b783);
+    this.lobbyButton.name = 'metacortex-lobby-button';
     this.label(this.car, 'G  /  LOBBY - DEVELOPMENT', 0, 1.3, -31.8, 4.8);
     for (const [parent, y, z, power, range] of [[this.root, 8, 15, 200, 40], [this.root, 8, -15, 190, 38], [this.car, 6.7, -29, 55, 10]] as const) {
       const light = new THREE.PointLight(0xffefcf, power, range, 2); light.position.set(0, y, z); parent.add(light); this.lights.push(light);
     }
-    batchStaticGeometry(this.root, new Set(this.doors.map(door => door.mesh)));
+    batchStaticGeometry(this.root, new Set([...this.doors.map(door => door.mesh), this.lobbyButton]));
     this.update(undefined);
   }
   private box(parent: THREE.Group, x: number, y: number, z: number, w: number, h: number, d: number, color: number): THREE.Mesh {
@@ -90,8 +95,10 @@ export class MetacortexRenderer {
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, display ? .7 : width / 8), material); mesh.position.set(x, y, z); parent.add(mesh);
     if (display) this.displays.push({ canvas, texture });
   }
-  update(lift?: MetacortexLift, nearby = false): void {
+  update(lift?: MetacortexLift, nearby = false, custody?: OfficeCustody): void {
     const pose = metacortexLiftPose(lift); this.car.position.y = pose.height;
+    const pressing = custody?.phase === 'selecting' && (custody.transportElapsed ?? 0) >= .65 && (custody.transportElapsed ?? 0) <= 1.1;
+    this.lobbyButton.position.x = OFFICE_CUSTODY_CAR.button.x + .02 + (pressing ? .015 : 0);
     for (const door of this.doors) {
       const open = door.floor === undefined || Math.abs(pose.height - door.floor * METACORTEX.upper) < .01 ? pose.door : 0;
       door.mesh.position.x = door.side * (1.5 + open * 3.1);

@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { OFFICE_AGENT_ROLES, type OfficeCustody } from '@auto_matrix/shared';
+import { OFFICE_AGENT_ROLES, OFFICE_CUSTODY_CAR, METACORTEX, metacortexPosition, type OfficeCustody } from '@auto_matrix/shared';
 import { CharacterModels } from '../packages/client/src/agents/CharacterModel.js';
 import { OfficeCustodyPerformance } from '../packages/client/src/agents/OfficeCustodyPerformance.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
@@ -96,6 +96,35 @@ test('the shipped cuffed body keeps bone lengths, puts the palms behind the shir
     }
     assert.ok(vertices > 10000);
     assert.ok(cuffVertices > 1000, 'check actual wrist skin against both visible cuffs');
+    custody.phase = 'selecting'; custody.elapsed = 3.2; custody.catcher = 'smith'; custody.leader = 'agent_brown';
+    for (const age of [0, .15, .4, .65, .9, 1.1, 1.4, 1.6]) {
+      custody.transportElapsed = age;
+      for (const [id, rig] of rigs) {
+        const slot = id === 'neo' ? OFFICE_CUSTODY_CAR.neo : id === custody.leader ? OFFICE_CUSTODY_CAR.leader : id === custody.catcher ? OFFICE_CUSTODY_CAR.catcher : OFFICE_CUSTODY_CAR.rear;
+        const position = metacortexPosition(slot.x, slot.z, 1);
+        rig.root.position.set(position.x, position.y - 1, position.z); rig.root.rotation.y = id === custody.leader ? Math.PI / 2 : Math.PI;
+        if (id !== 'neo') custody.bodies[id as typeof custody.leader].position = position;
+        models.animate(rig, .05, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, officeShirt: id === 'neo', officeCustody: { role: id as 'neo' | typeof custody.leader, phase: 'selecting', elapsed: 3.2 } }, 0);
+      }
+      performance.update(neo.hero, rigs.get(custody.catcher)!.hero, custody, rigs.get(custody.leader)!.hero);
+      if (age >= .65 && age <= 1.1) {
+        const palm = rigs.get(custody.leader)!.hero!.bones.get('finger2-3_R')!.getWorldPosition(new THREE.Vector3());
+        const button = OFFICE_CUSTODY_CAR.button;
+        const target = new THREE.Vector3(METACORTEX.center.x + button.x + .015, METACORTEX.upper + button.y, METACORTEX.center.z + button.z);
+        const bones = rigs.get(custody.leader)!.hero!.bones;
+        assert.ok(palm.distanceTo(target) < .04, `button contact: age ${age}, palm ${palm.toArray()}, target ${target.toArray()}, shoulder ${bones.get('shoulder_R')!.getWorldPosition(new THREE.Vector3()).toArray()}, lengths ${bones.get('elbow_R')!.position.length()}/${bones.get('wrist_R')!.position.length()}`);
+      }
+      for (const [id, rig] of rigs) { rig.root.updateMatrixWorld(true); rig.hero!.root.traverse(mesh => {
+        if (!(mesh instanceof THREE.SkinnedMesh) || !mesh.visible) return;
+        mesh.skeleton.update();
+        for (let i = 0; i < mesh.geometry.attributes.position.count; i += 7) {
+          const point = mesh.localToWorld(mesh.getVertexPosition(i, new THREE.Vector3()));
+          assert.ok(point.x > METACORTEX.center.x - 2.91 && point.x < METACORTEX.center.x + 2.91, `car side intersection: ${id}/${mesh.name}/${age}: ${point.toArray()}`);
+          assert.ok(point.z > METACORTEX.center.z - 31.96 && point.z < METACORTEX.center.z - 26.07, `car wall/closed door intersection: ${id}/${mesh.name}/${age}: ${point.toArray()}`);
+          assert.ok(point.y >= METACORTEX.upper - .025, `car floor intersection: ${id}/${mesh.name}/${age}: ${point.toArray()}`);
+        }
+      }); }
+    }
     performance.update(neo.hero, undefined, undefined);
     assert.equal(neo.hero!.bones.get('wrist_R')!.getObjectByName('office-cuff-R')!.visible, false);
     performance.dispose(); assert.equal(neo.hero!.root.getObjectByName('office-cuff-chain'), undefined);

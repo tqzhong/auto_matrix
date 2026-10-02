@@ -129,7 +129,7 @@ export class LifeInteriors {
     for (const entry of this.lights) entry.light.visible = entry.location === room;
     for (const hand of this.clocks) hand.rotation.z = -time / 1000 * Math.PI * 2 + (life?.anomaly?.id === 'clock' ? Math.sin(time * 3) * .2 : 0);
     const office = lifeRoomCenter('metacortex_office')!;
-    this.metacortex.update(life?.lift, Boolean(player && Math.hypot(player.x - office.x, player.z - office.z) < 70));
+    this.metacortex.update(life?.lift, Boolean(player && Math.hypot(player.x - office.x, player.z - office.z) < 70), life?.journey?.office?.custody);
     this.cats.visible = life?.anomaly?.id === 'cat';
     if (life?.anomaly) this.cats.position.set(life.anomaly.position.x - 2, 0, life.anomaly.position.z - 4);
   }

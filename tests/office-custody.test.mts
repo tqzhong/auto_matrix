@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SCENE_BY_ID, OFFICE_AGENT_ROLES, OFFICE_CUSTODY, officeCustodyStep, filmPosition, filmStepPosition, playerBlocked, type PlayerInput, type Vector3, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, OFFICE_AGENT_ROLES, OFFICE_CUSTODY, METACORTEX, metacortexLiftPose, metacortexPosition, officeCustodyStep, filmPosition, filmStepPosition, playerBlocked, type PlayerInput, type Vector3, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -9,6 +9,7 @@ import type { ConversationEngine } from '../packages/server/src/agents/Conversat
 import type { ActionExecutor } from '../packages/server/src/agents/ActionExecutor.js';
 import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
 import { officeNextPoint } from '../packages/server/src/story/OfficeNavigation.js';
+import { exitOfficeCustody } from './helpers/office-custody-route.mts';
 
 function setup() {
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
@@ -71,7 +72,7 @@ test('being caught cannot skip the physical escort with next or act', () => {
   assert.equal(h.state().completed.includes(FILM_SCENE_BY_ID.m1_interrogation.id), false);
 });
 
-test('ordinary movement reaches the elevator with the guards, then continues to interrogation', () => {
+test('reaching the elevator starts physical boarding instead of skipping the ride and lobby', () => {
   const h = setup(); h.frame(4);
   const catcher = h.state().office!.custody!.bodies[h.state().office!.custody!.catcher];
   assert.ok((catcher.position.x - h.neo.position.x) * Math.sin(h.neo.rotation) + (catcher.position.z - h.neo.position.z) * Math.cos(h.neo.rotation) <= .11,
@@ -80,9 +81,11 @@ test('ordinary movement reaches the elevator with the guards, then continues to 
   assert.equal(h.state().office?.custody?.phase, 'ready');
   assert.equal(h.state().scene, 'm1_office_escape', 'reaching the lift still waits for the player');
   const money = h.sandbox.state.neoLife!.money; h.sandbox.state.neoLife!.evidence = ['clock'];
-  h.command('act'); assert.equal(h.state().scene, 'm1_interrogation');
-  assert.equal(h.neo.currentAction?.parameters.officeCustody, undefined);
-  assert.ok(h.state().skipped?.includes('m1_ledge'));
+  const before = { ...h.neo.position };
+  h.command('act'); assert.equal(h.state().scene, 'm1_office_escape');
+  assert.equal(h.state().office!.custody!.phase, 'clearing');
+  assert.deepEqual(h.neo.position, before, 'confirming the lift cannot move Neo into it');
+  h.command('next'); assert.equal(h.state().scene, 'm1_office_escape');
   assert.equal(h.sandbox.state.neoLife!.money, money); assert.deepEqual(h.sandbox.state.neoLife!.evidence, ['clock']);
 });
 
@@ -165,4 +168,61 @@ test('the lift prompt closes when Neo walks away, and old captured saves still c
   assert.equal(h.state().scene, 'm1_office_escape', 'a past visit to the lift cannot authorize advancing from anywhere');
   delete h.state().office!.custody;
   h.command('next'); assert.equal(h.state().scene, 'm1_interrogation', 'already-captured legacy saves retain their old route');
+});
+
+test('the cuffed party boards in order, shares the moving car and walks out through the actual lobby', () => {
+  const h = setup(), seen = new Set<string>(), money = h.sandbox.life.state!.money;
+  h.sandbox.life.state!.evidence = ['clock'];
+  let previous = ['neo', ...OFFICE_AGENT_ROLES, 'courier'].map(id => ({ ...h.world.agents.get(id)!.position }));
+  let riding = 0;
+  exitOfficeCustody(h.neo, h.state, h.input, h.command, () => {
+    const custody = h.state().office!.custody!; seen.add(custody.phase);
+    const actors = ['neo', ...OFFICE_AGENT_ROLES, 'courier'].map(id => h.world.agents.get(id)!);
+    for (let i = 0; i < actors.length; i++) {
+      const actor = actors[i];
+      assert.ok(Math.hypot(actor.position.x - previous[i].x, actor.position.z - previous[i].z) <= .106, `no horizontal teleport: ${actor.id}`);
+      if (custody.phase !== 'riding') assert.equal(playerBlocked(actor.position, true, .7, h.sandbox.state.structures), false, `solid intersection: ${actor.id}`);
+      for (const other of actors.slice(i + 1)) if (Math.abs(actor.position.y - other.position.y) < 3) assert.ok(Math.hypot(actor.position.x - other.position.x, actor.position.z - other.position.z) >= OFFICE_CUSTODY.spacing - .001, `body intersection: ${actor.id}/${other.id}`);
+    }
+    if (custody.phase === 'riding') {
+      riding++;
+      const height = 1 + metacortexLiftPose(custody.lift).height;
+      for (const actor of actors.slice(0, 4)) assert.equal(actor.position.y, height, 'all four feet ride the same physical car');
+    }
+    previous = actors.map(actor => ({ ...actor.position }));
+  });
+  for (const phase of ['securing', 'escorting', 'clearing', 'boarding', 'selecting', 'riding', 'lobby', 'outside']) assert.ok(seen.has(phase), `missing physical stage: ${phase}`);
+  assert.ok(riding >= (METACORTEX.travelSeconds + METACORTEX.doorSeconds * 2) * 20 - 4, 'the lift must not be advanced by two clocks');
+  assert.equal(h.neo.position.y, 1); assert.ok(h.neo.position.z > METACORTEX.center.z + 34);
+  assert.equal(h.sandbox.life.state!.money, money); assert.deepEqual(h.sandbox.life.state!.evidence, ['clock']);
+  assert.equal(h.state().scene, 'm1_office_escape'); h.command('act'); assert.equal(h.state().scene, 'm1_interrogation');
+  assert.equal(h.neo.currentAction?.parameters.officeCustody, undefined); assert.equal(h.sandbox.life.state!.lift!.passenger, undefined);
+});
+
+test('the shared escorted elevator preserves time, doors and all bodies across pause, disconnect, retry and restore', () => {
+  const h = setup();
+  let stopped = false;
+  exitOfficeCustody(h.neo, h.state, h.input, h.command, () => {
+    const custody = h.state().office!.custody!;
+    if (stopped || custody.lift?.phase !== 'travel' || custody.lift.elapsed < 3) return;
+    stopped = true;
+    const snapshot = () => ({ custody: structuredClone(h.state().office!.custody), lift: structuredClone(h.sandbox.life.state!.lift),
+      actors: ['neo', ...OFFICE_AGENT_ROLES, 'courier'].map(id => {
+        const actor = h.world.agents.get(id)!;
+        return { position: { ...actor.position }, yaw: actor.rotation, gesture: structuredClone(actor.currentAction?.parameters.officeCustody), health: actor.health };
+      }), doors: structuredClone(h.sandbox.state.structures.filter(s => s.id.startsWith('city:metacortex:door:'))) });
+    const before = snapshot();
+    h.frame(4, false); assert.deepEqual(snapshot(), before);
+    h.players.release('neo-player', h.tick()); h.frame(4); assert.deepEqual(snapshot(), before);
+    h.sandbox.restore(structuredClone(h.sandbox.state)); h.players.possess('neo-player', 'neo', h.tick());
+    assert.deepEqual(snapshot(), before); h.command('retry'); assert.deepEqual(snapshot(), before);
+    h.command('next'); assert.equal(h.state().scene, 'm1_office_escape');
+    assert.equal(h.state().office!.custody!.lift!.elapsed, before.custody!.lift!.elapsed);
+    for (const floor of [0, 1]) assert.equal(playerBlocked(metacortexPosition(0, METACORTEX.doorZ, floor), true, .7, h.sandbox.state.structures), true);
+    const guard = h.world.agents.get('agent_brown')!; guard.controller = 'other'; const external = { ...guard.position, x: guard.position.x + 12 }; guard.position = external; guard.health = 43;
+    const lift = structuredClone(h.state().office!.custody!.lift), neo = { ...h.neo.position };
+    h.frame(4); assert.deepEqual(h.state().office!.custody!.lift, lift); assert.deepEqual(h.neo.position, neo); assert.deepEqual(guard.position, external); assert.equal(guard.health, 43);
+    delete guard.controller; h.sandbox.life.film.custody.frame(h.neo, 0, h.tick()); assert.equal(guard.health, 43);
+  });
+  assert.ok(stopped); assert.equal(h.state().office!.custody!.phase, 'outside');
 });

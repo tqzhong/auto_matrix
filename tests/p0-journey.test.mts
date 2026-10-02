@@ -27,7 +27,7 @@ import { PlayerController } from '../packages/server/src/player/PlayerController
 import type { ConversationEngine } from '../packages/server/src/agents/ConversationEngine.js';
 import type { ActionExecutor } from '../packages/server/src/agents/ActionExecutor.js';
 import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
-import { officeNextPoint } from '../packages/server/src/story/OfficeNavigation.js';
+import { exitOfficeCustody } from './helpers/office-custody-route.mts';
 
 function setup() {
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
@@ -215,14 +215,8 @@ test('P0 runs continuously from daily contact through capture, tracker removal a
   assert.equal(h.state().office?.outcome, 'captured');
   for (const body of Object.values(h.state().office!.custody!.bodies)) assert.ok(Math.hypot(body.position.x - h.neo.position.x, body.position.z - h.neo.position.z) >= OFFICE_CUSTODY.spacing - .001,
     `the running player must stop before entering an agent: ${JSON.stringify({ neo: h.neo.position, guard: body.position })}`);
-  h.frames(3.3);
-  const exit = filmPosition('film_metacortex_floor', OFFICE_CUSTODY.exit.x, OFFICE_CUSTODY.exit.z);
-  for (let i = 0; i < 2400 && h.state().office!.custody!.phase !== 'ready'; i++) {
-    const point = officeNextPoint(h.neo.position, exit, 1.15)!; assert.ok(point);
-    const dx = point.x - h.neo.position.x, dz = point.z - h.neo.position.z, length = Math.max(1, Math.hypot(dx, dz));
-    h.frame({ x: dx / length, z: dz / length, yaw: Math.atan2(dx, dz) });
-  }
-  assert.equal(h.state().office!.custody!.phase, 'ready', JSON.stringify({ neo: h.neo.position, custody: h.state().office!.custody }));
+  exitOfficeCustody(h.neo, h.state, h.frame, h.command);
+  assert.equal(h.state().office!.custody!.phase, 'outside');
   h.command('next'); assert.equal(h.state().scene, 'm1_interrogation');
   h.walk(filmStepPosition(FILM_SCENE_BY_ID.m1_interrogation, FILM_SCENE_BY_ID.m1_interrogation.steps[0]));
   h.command('act'); h.frames(7); assert.equal(h.state().step, 1); h.command('act'); h.frames(25);
