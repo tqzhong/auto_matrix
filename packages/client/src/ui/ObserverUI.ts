@@ -144,7 +144,7 @@ export class ObserverUI {
     this.active('[data-speed]', 'speed', String(sim.speed));
     const seconds = Math.floor(time / 24000 * 86400);
     this.el('sim-time').textContent = `${String(Math.floor(seconds / 3600)).padStart(2, '0')}:${String(Math.floor(seconds / 60) % 60).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
-    this.el('sim-day').textContent = `DAY ${String(1 + Math.floor((21000 + sim.tick * 12) / 24000)).padStart(2, '0')}`;
+    this.el('sim-day').textContent = `DAY ${String(sim.day ?? 1 + Math.floor((21000 + sim.tick * 12) / 24000)).padStart(2, '0')}`;
     this.el('latest-tick').textContent = `T + ${String(sim.tick).padStart(6, '0')}`;
     this.root.querySelector('.nav-count')!.textContent = String(Object.keys(agents).length);
     if (this.selected) this.renderAgent();
