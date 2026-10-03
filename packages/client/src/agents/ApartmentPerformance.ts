@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { FILM_SETS, apartmentAfter, apartmentDoor, type ApartmentGesture } from '@auto_matrix/shared';
+import { FILM_SETS, APARTMENT_NETWORK, computerCheckLocked, computerNetworkPull, apartmentAfter, apartmentDoor, type ApartmentGesture, type ComputerInvestigation } from '@auto_matrix/shared';
 import type { HeroRig } from './HeroModel.js';
 
 export class ApartmentPerformance {
@@ -73,8 +73,18 @@ export class ApartmentPerformance {
     wrist.quaternion.copy(lower.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rotation).multiply(desired));
     for (let finger = 1; finger <= 5; finger++) for (let segment = 1; segment <= 3; segment++) this.bone(`finger${finger}-${segment}_${side}`).rotation.z = (side === 'R' ? 1 : -1) * (typing ? .06 : .28) * blend;
   }
-  update(gesture?: ApartmentGesture): void {
-    this.disk.visible = this.cash.visible = false; if (!gesture) return;
+  update(gesture?: ApartmentGesture, check?: ComputerInvestigation): void {
+    this.disk.visible = this.cash.visible = false;
+    if (computerCheckLocked(check)) {
+      const t = check!.elapsed, pull = computerNetworkPull(check);
+      const hold = THREE.MathUtils.smoothstep(t, .1, .45) * (1 - THREE.MathUtils.smoothstep(t, 1.2, APARTMENT_NETWORK.seconds));
+      const clearance = 1 - THREE.MathUtils.smoothstep(t, .35, .5) + THREE.MathUtils.smoothstep(t, 1.12, 1.38);
+      this.bone('spine').rotation.x += .04 * hold; this.bone('chest').rotation.x += .06 * hold; this.bone('head').rotation.x += .15 * hold;
+      this.rig.root.updateWorldMatrix(true, true);
+      this.hand('R', this.local(APARTMENT_NETWORK.plug.x, APARTMENT_NETWORK.plug.y - .16 * pull + APARTMENT_NETWORK.gripHeight + .32 * clearance, APARTMENT_NETWORK.plug.z + .31 * pull + .38 * clearance), hold, true);
+      return;
+    }
+    if (!gesture) return;
     const { role, phase, elapsed: t } = gesture; const root = this.rig.root;
     const smooth = THREE.MathUtils.smoothstep;
     if (role === 'neo' && ['signal', 'reply', 'knocking'].includes(phase)) {

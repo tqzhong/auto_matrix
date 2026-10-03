@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { APARTMENT, APARTMENT_ROOM, MORNING, apartmentAfter, apartmentDoor, wakeCallDoor, wakeCallHandsetHeld, type FilmJourney } from '@auto_matrix/shared';
+import { APARTMENT, APARTMENT_NETWORK, APARTMENT_ROOM, MORNING, apartmentAfter, apartmentDoor, computerNetworkPull, wakeCallDoor, wakeCallHandsetHeld, type ComputerInvestigation, type FilmJourney, type NeoLifeState } from '@auto_matrix/shared';
 
 /** Anderson's workroom and the shared landing. Props use the shared interaction layout. */
 export class ApartmentSetRenderer {
@@ -18,6 +18,9 @@ export class ApartmentSetRenderer {
   private canvas = document.createElement('canvas');
   private screen: THREE.CanvasTexture;
   private screenKey = '';
+  private networkPlug = new THREE.Group();
+  private networkLed = new THREE.MeshBasicMaterial({ color: 0x94bb77, toneMapped: false });
+  private networkCord: THREE.Line;
   private clockCanvas = document.createElement('canvas');
   private clockScreen: THREE.CanvasTexture;
   private clockKey = '';
@@ -89,7 +92,7 @@ export class ApartmentSetRenderer {
     this.canvas.width = 1024; this.canvas.height = 640;
     this.screen = new THREE.CanvasTexture(this.canvas); this.screen.colorSpace = THREE.SRGBColorSpace; this.textures.add(this.screen);
     const crt = new THREE.MeshBasicMaterial({ map: this.screen, toneMapped: false }); this.materials.add(crt);
-    const monitor = this.mesh(new THREE.PlaneGeometry(2.055, 1.275, 32, 16), crt, -9, 3.33, -11.595);
+    const monitor = this.mesh(new THREE.PlaneGeometry(2.055, 1.275, 32, 16), crt, APARTMENT_NETWORK.screen.x, APARTMENT_NETWORK.screen.y, APARTMENT_NETWORK.screen.z);
     const vertices = monitor.geometry.attributes.position;
     for (let i = 0; i < vertices.count; i++) vertices.setZ(i, .045 * (1 - (vertices.getX(i) / 1.4) ** 2 - (vertices.getY(i) / .9) ** 2));
     monitor.geometry.computeVertexNormals();
@@ -98,6 +101,17 @@ export class ApartmentSetRenderer {
     this.box(dark, -7.2, 2.42, -10.77, .22, .07, .32, .045);
     this.tube([[-9, 2.4, -13], [-9, 1.1, -14], [-7, .1, -14.3], [-5.8, .12, -12.8]], dark, .035);
     this.tube([[-9.8, 2.5, -10.7], [-10, 2.46, -12], [-8.1, 2.41, -12.7]], dark, .018);
+    const modem = new THREE.Group(); modem.name = 'apartment-network-modem'; modem.userData.dynamic = true; this.root.add(modem);
+    this.mesh(new RoundedBoxGeometry(.8, .2, .44, 2, .04), plastic, -6.9, 2.52, -10.45, modem);
+    this.mesh(new THREE.BoxGeometry(.22, .09, .018), dark, -6.9, 2.65, -10.21, modem);
+    this.materials.add(this.networkLed);
+    this.mesh(new THREE.BoxGeometry(.04, .04, .022), this.networkLed, -6.65, 2.56, -10.218, modem);
+    this.networkPlug.name = 'apartment-network-plug'; this.networkPlug.userData.dynamic = true; this.root.add(this.networkPlug);
+    this.mesh(new THREE.BoxGeometry(.16, .08, .2), metal, 0, 0, 0, this.networkPlug);
+    this.mesh(new RoundedBoxGeometry(.18, .095, .12, 2, .015), dark, 0, 0, .14, this.networkPlug);
+    const networkGeometry = new THREE.BufferGeometry(); networkGeometry.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(25 * 3), 3)); this.geometries.add(networkGeometry);
+    const networkMaterial = new THREE.LineBasicMaterial({ color: 0x161c18 }); this.materials.add(networkMaterial);
+    this.networkCord = new THREE.Line(networkGeometry, networkMaterial); this.networkCord.name = 'apartment-network-cable'; this.networkCord.frustumCulled = false; this.root.add(this.networkCord);
     this.glow.position.set(-9, 3.8, -10.9); this.root.add(this.glow);
     for (let i = 0; i < 12; i++) {
       this.box(i % 3 ? plastic : dark, -12.25, 2.45 + i * .06, -12, 1.15, .048, 1.03);
@@ -229,7 +243,7 @@ export class ApartmentSetRenderer {
     const map = new THREE.CanvasTexture(canvas); map.colorSpace = THREE.SRGBColorSpace; this.textures.add(map);
     const mat = new THREE.MeshStandardMaterial({ map, roughness: .8 }); this.materials.add(mat); return this.mesh(new THREE.PlaneGeometry(w, h), mat, 0, 0, 0);
   }
-  update(journey?: FilmJourney, time = 22000, nearby = true, contactSignal = false): void {
+  update(journey?: FilmJourney, time = 22000, nearby = true, contactSignal = false, life?: NeoLifeState, check: ComputerInvestigation | undefined = life?.computerCheck): void {
     const daylight = Math.max(0, Math.sin((time / 24000 - .25) * Math.PI * 2));
     this.windowGlass.emissiveIntensity = .025 + daylight * .55;
     for (const light of this.roomLights) light.visible = nearby;
@@ -269,7 +283,24 @@ export class ApartmentSetRenderer {
         THREE.MathUtils.lerp(start.y, end.y, t) + sag, THREE.MathUtils.lerp(start.z, end.z, t));
     }
     cord.needsUpdate = true;
+    const pull = computerNetworkPull(check);
+    this.networkPlug.position.set(APARTMENT_NETWORK.plug.x, APARTMENT_NETWORK.plug.y - .16 * pull, APARTMENT_NETWORK.plug.z + .31 * pull);
+    this.networkLed.color.setHex(pull >= .9 ? 0x293329 : 0x94bb77);
+    const networkCord = this.networkCord.geometry.attributes.position as THREE.BufferAttribute;
+    for (let i = 0; i < networkCord.count; i++) {
+      const t = i / (networkCord.count - 1), plug = this.networkPlug.position;
+      networkCord.setXYZ(i, THREE.MathUtils.lerp(plug.x, -6, t), THREE.MathUtils.lerp(plug.y, 1.82, t) - Math.sin(t * Math.PI) * .5, THREE.MathUtils.lerp(plug.z + .2, -10.72, t));
+    }
+    networkCord.needsUpdate = true;
     let text = contact || contactSignal ? 'SEARCH: MORPHEUS\n\nconnection waiting_' : 'THOMAS ANDERSON\n\nMAIL / WORK / CONTACTS\n2 unread messages_';
+    if (!contact && !contactSignal && !journey) {
+      if (life?.anomaly?.id === 'screen' && life.anomaly.location === 'neo_apartment') text = 'MAIL / WORK / CONTACTS\n\nUNREGISTERED WINDOW\nNo sender. No process._';
+      if (check?.phase === 'reading') text = 'ACTIVE TASKS / 03\nMAIL   WORK   SYSTEM\n\nUNREGISTERED WINDOW\nSender: --  Process: --';
+      else if (check?.phase === 'offline' || check?.phase === 'evidence') {
+        const echo = check.phase === 'evidence' ? 'STILL HERE.' : 'STILL HERE.'.slice(0, Math.max(0, Math.floor((check.elapsed - 1.6) * 8)));
+        text = `NETWORK: DISCONNECTED\n\n${echo ? 'unregistered> ' + echo : 'No matching task_'}${check.phase === 'evidence' ? '\nLOCAL LOG / 101\ntask: -- / sender: --' : ''}`;
+      } else if (check?.phase === 'saved') text = 'LOCAL FRAME SAVED / 101\nNETWORK: DISCONNECTED\n\nMAIL / WORK / CONTACTS\ncached inbox_';
+    }
     if (contact?.phase === 'signal') {
       const t = contact.elapsed; const start = t < 2.8 ? 0 : t < 5.6 ? 2.8 : 5.6;
       const line = start === 0 ? 'Wake up, Neo.' : start === 2.8 ? 'The Matrix has you.' : 'Follow the white rabbit.';
@@ -297,7 +328,7 @@ export class ApartmentSetRenderer {
     });
     removed.forEach(mesh => mesh.removeFromParent());
     for (const [mat, parts] of batches) { this.mesh(mergeGeometries(parts)!, mat, 0, 0, 0); parts.forEach(p => p.dispose()); }
-    const live = new Set<THREE.BufferGeometry>(); this.root.traverse(object => { if (object instanceof THREE.Mesh) live.add(object.geometry); });
+    const live = new Set<THREE.BufferGeometry>(); this.root.traverse(object => { if (object instanceof THREE.Mesh || object instanceof THREE.Line) live.add(object.geometry); });
     for (const geo of this.geometries) if (!live.has(geo)) { geo.dispose(); this.geometries.delete(geo); }
   }
   dispose(): void {

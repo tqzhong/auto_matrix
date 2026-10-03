@@ -3,6 +3,14 @@ import type { FilmJourney } from './film-story.js';
 export type ApartmentPhase = 'idle' | 'signal' | 'reply' | 'knocking' | 'door' | 'opening' | 'book' | 'retrieving' | 'disk' | 'handover' | 'invitation' | 'inspecting' | 'noticed' | 'accepted';
 export interface ApartmentContact { phase: ApartmentPhase; elapsed: number; paid?: boolean }
 export interface ApartmentGesture extends ApartmentContact { role: 'neo' | 'choi' | 'dujour' }
+export interface ComputerInvestigation { phase: 'reading' | 'unplugging' | 'offline' | 'evidence' | 'saved' | 'replugging'; elapsed: number }
+export const APARTMENT_NETWORK = { screen: { x: -9, y: 3.33, z: -11.595 }, screenApproach: { x: -11.6, z: -8.8 }, approach: { x: -6.9, z: -9.15, yaw: Math.PI }, plug: { x: -6.9, y: 2.65, z: -10.09 }, gripHeight: .17, seconds: 1.8, echoSeconds: 4.2 } as const;
+export function computerCheckLocked(check?: ComputerInvestigation): boolean { return check?.phase === 'unplugging' || check?.phase === 'replugging'; }
+export function computerNetworkPull(check?: ComputerInvestigation): number {
+  if (!check || check.phase === 'reading') return 0;
+  const t = smooth(Math.max(0, Math.min(1, (check.elapsed - .6) / .4)));
+  return check.phase === 'unplugging' ? t : check.phase === 'replugging' ? 1 - t : 1;
+}
 export type WakeCallPhase = 'waking' | 'ringing' | 'pickup' | 'listening' | 'decision' | 'reply' | 'done' | 'leaving';
 export interface WakeCall { phase: WakeCallPhase; elapsed: number; nightmare: boolean }
 export interface MorningRoutine {
@@ -26,6 +34,14 @@ export const APARTMENT = {
   signal: 8, knocking: 4, opening: 2.4, retrieving: 3.2, handover: 4.5,
 } as const;
 export const WAKE_CALL = { waking: 5.6, pickup: 2.2, listening: 8.6, reply: 4.2, leaving: 4.4 } as const;
+export function computerInvestigationStep(check?: ComputerInvestigation) {
+  const cable = check?.phase === 'reading' || check?.phase === 'saved' || computerCheckLocked(check);
+  const point = cable ? APARTMENT_NETWORK.approach : APARTMENT_NETWORK.screenApproach;
+  const target = !check ? 'anomaly:test' : check.phase === 'reading' ? 'computer:disconnect' : check.phase === 'evidence' ? 'computer:capture' : check.phase === 'saved' ? 'computer:reconnect' : undefined;
+  const label = !check ? '查看显示器里的陌生文字' : check.phase === 'reading' ? '到桌边断开网线' : check.phase === 'unplugging' ? 'Neo 正在拔下网线'
+    : check.phase === 'offline' ? '网络已断开，回到显示器前观察' : check.phase === 'evidence' ? '保存断网后的画面与本地日志' : check.phase === 'saved' ? '回到桌边重新接好网线' : 'Neo 正在接好网线';
+  return { target, label, radius: .75, position: { x: APARTMENT_ROOM.center.x + point.x, y: 1, z: APARTMENT_ROOM.center.z + point.z } };
+}
 export const APARTMENT_FURNITURE = [
   { x: -9, z: -12, width: 8, depth: 3.4, height: 2.4 },
   { x: 10.2, z: -9, width: 6.2, depth: 10, height: 1.5 },

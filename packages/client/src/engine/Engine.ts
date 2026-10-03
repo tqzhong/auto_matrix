@@ -8,7 +8,7 @@ import { wetwallLocked, sixthLocked, SIXTH } from '@auto_matrix/shared';
 import { reloadedLocked } from '@auto_matrix/shared';
 import { morningLocked } from '@auto_matrix/shared';
 import * as THREE from 'three';
-import type { OfficeWorkday } from '@auto_matrix/shared';
+import type { ComputerInvestigation, OfficeWorkday } from '@auto_matrix/shared';
 import type { AgentState, WorldEvent, SimulationState, SandboxState, CombatImpact, SkillCast, FilmJourney } from '@auto_matrix/shared';
 import { insideLifeRoom, meetingLocked, meetingCarPose, interrogationLocked, pillLocked, lafayetteKnocking, lafayetteWelcomeLocked, awakeningLocked, mirrorSilver, oracleActing, phoneLocked, heldPhone, wakeCallLocked, sentinelLocked, interludeLocked, rescueLocked, lobbyLocked, governmentLocked, airRescueLocked, matrixEscapeLocked, theOneLocked, baneLocked, helElevatorLocked, helDanceDoorLocked, rescueLoadout, windowOpening, windowCrossing, OFFICE_CONTACT, LOBBY_ENTRY, GOVERNMENT_RESCUE, FILM_SETS, HEL_COATCHECK } from '@auto_matrix/shared';
 import { FilmSetRenderer } from './FilmSetRenderer.js';
@@ -174,7 +174,7 @@ export class Engine {
     const player = this.playerControls?.id ? this.agentRenderer.getAgentState(this.playerControls.id) : undefined;
     this.audio.carEngine(this.running && player?.id === meeting?.actor && !meeting?.visiting
       ? meeting?.meeting ? meetingCarPose(meeting.meeting).speed : meeting?.office?.custody?.street?.phase === 'departing' && !meeting.office.custody.paused ? arrestCarPose(meeting.office.custody.street).speed : undefined : undefined);
-    this.voxelRenderer.interiors.update(this.timeOfDay, player?.position, this.sandbox?.neoLife, this.camera.position, this.agentRenderer.getAgentBody('neo'));
+    this.voxelRenderer.interiors.update(this.timeOfDay, player?.position, this.sandbox?.neoLife, this.camera.position, this.agentRenderer.getAgentBody('neo'), this.agentRenderer.getAgentState('neo')?.currentAction?.parameters.computerCheck as ComputerInvestigation | undefined);
     measure?.('city');
     const workday = this.agentRenderer.getAgentState('courier')?.currentAction?.parameters.workday as OfficeWorkday | undefined;
     const previousSet = this.filmSets.active;

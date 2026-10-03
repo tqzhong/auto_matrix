@@ -148,7 +148,7 @@ export class AgentRenderer {
       if (physical && (this.matrix || !cut || id === 'body:neo' && cut.neoOut || id === 'body:trinity' && cut.trinityOut)) { entry.group.visible = false; continue; }
       const phoneExit = journey?.scene === 'm1_phone_escape' && journey.actor === id && ['connected', 'done'].includes(journey.openingPhone?.phase ?? '');
       entry.group.visible = state.isInMatrix === this.matrix && state.status !== 'disconnected' && !phoneExit;
-      entry.body.visible = (id !== this.playerId || !this.firstPerson || this.playerMotion?.pills !== undefined || this.playerMotion?.wetwall?.hanging || this.playerMotion?.inspecting === true || this.playerMotion?.spoon !== undefined || this.playerMotion?.spoonLesson !== undefined || Boolean(this.playerMotion?.oracleVisit && oracleCookieOwner(this.playerMotion.oracleVisit) === 'neo') || this.playerMotion?.oracleDeparture?.role === 'neo') && state.status !== 'disconnected' && !state.currentAction?.parameters.filmDuel && !state.currentAction?.parameters.ghostPhase;
+      entry.body.visible = (id !== this.playerId || !this.firstPerson || this.playerMotion?.computerCheck !== undefined || this.playerMotion?.pills !== undefined || this.playerMotion?.wetwall?.hanging || this.playerMotion?.inspecting === true || this.playerMotion?.spoon !== undefined || this.playerMotion?.spoonLesson !== undefined || Boolean(this.playerMotion?.oracleVisit && oracleCookieOwner(this.playerMotion.oracleVisit) === 'neo') || this.playerMotion?.oracleDeparture?.role === 'neo') && state.status !== 'disconnected' && !state.currentAction?.parameters.filmDuel && !state.currentAction?.parameters.ghostPhase;
       const warning = state.currentAction?.type === 'attack' && state.currentAction.target === this.playerId && Number(state.currentAction.parameters.contactTick ?? 0) > tick;
       entry.marker.visible = !physical && (warning || !this.playerId || id === this.selected);
       (entry.marker.material as THREE.MeshBasicMaterial).color.set(warning ? '#f6b177' : FACTION_COLORS[state.faction] ?? '#91cfb0');
@@ -275,6 +275,7 @@ export class AgentRenderer {
         training: state.currentAction?.parameters.training as MotionInput['training'],
         workday: state.currentAction?.parameters.workday as MotionInput['workday'],
         contact: state.currentAction?.parameters.contact as MotionInput['contact'],
+        computerCheck: state.currentAction?.parameters.computerCheck as MotionInput['computerCheck'],
         wakeCall: state.currentAction?.parameters.wakeCall as MotionInput['wakeCall'],
         morning: state.currentAction?.parameters.morning as MotionInput['morning'],
         club: state.currentAction?.parameters.club as MotionInput['club'],

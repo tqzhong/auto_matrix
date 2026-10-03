@@ -16,7 +16,7 @@ import { meetingBoardPoint, meetingLocked, MEETING_TIMING } from '@auto_matrix/s
 import { filmPosition, HOTEL_DOOR_PROGRESS } from '@auto_matrix/shared';
 import { CHATEAU, MOUNTAIN, GARAGE, TRUCKS } from '@auto_matrix/shared';
 import { workdayLocked } from '@auto_matrix/shared';
-import { apartmentLocked } from '@auto_matrix/shared';
+import { apartmentLocked, computerInvestigationStep } from '@auto_matrix/shared';
 import { wakeCallLocked, morningLocked } from '@auto_matrix/shared';
 import { clubLocked } from '@auto_matrix/shared';
 import { sentinelDanger, sentinelLocked } from '@auto_matrix/shared';
@@ -101,7 +101,7 @@ export class SandboxUI {
       if (button.dataset.action === 'interact' && !button.dataset.target && (this.player?.id === 'neo' || this.player?.id === this.state?.neoLife?.journey?.actor) && this.state?.neoLife) { this.interact(); return; }
       if (button.dataset.action === 'track') this.waypoint = null;
       this.send({ kind: button.dataset.action as SandboxCommand['kind'], target: button.dataset.target ?? (button.dataset.action === 'interact' ? this.nearest : undefined) });
-      if (button.dataset.action === 'life' && (button.dataset.target?.startsWith('film:') || button.dataset.target?.startsWith('go:') || LIFE_ACTIONS.some(a => a.id === button.dataset.target))) this.close();
+      if (button.dataset.action === 'life' && (button.dataset.target?.startsWith('film:') || button.dataset.target?.startsWith('go:') || button.dataset.target?.startsWith('computer:') || button.dataset.target === 'anomaly:test' || LIFE_ACTIONS.some(a => a.id === button.dataset.target))) this.close();
       if (button.dataset.action === 'interact' && (this.player?.id === 'neo' || this.player?.id === this.state?.neoLife?.journey?.actor) && this.state?.neoLife) this.close();
       if (['build', 'transit', 'track'].includes(button.dataset.action)) this.close();
     });
@@ -125,6 +125,14 @@ export class SandboxUI {
       return;
     }
     if (this.player?.id === 'neo' && this.state?.neoLife && this.player.isInMatrix && nearMetacortexLift(this.player.position)) { this.send({ kind: 'life', target: 'lift' }); return; }
+    const life = this.state?.neoLife;
+    if (this.player?.id === 'neo' && life && !life.journey && (!life.anomaly && life.computerCheck || life.anomaly?.id === 'screen' && life.anomaly.location === 'neo_apartment')) {
+      const step = computerInvestigationStep(life.computerCheck);
+      if (this.player.isInMatrix && distance(this.player.position, step.position) < step.radius) {
+        if (step.target) this.send({ kind: 'life', target: step.target });
+        return;
+      }
+    }
     if ((this.player?.id === 'neo' || this.player?.id === this.state?.neoLife?.journey?.actor) && this.state?.neoLife) { this.open('journal'); return; }
     const node = this.state?.nodes.find(n => n.id === this.nearest);
     if (node?.kind === 'phone') { this.open('map'); return; }
@@ -153,6 +161,7 @@ export class SandboxUI {
     this.el('film-blackout').style.opacity = '0';
     if (!player || !state || !profile) return;
     const life = player.id === 'neo' || player.id === state.neoLife?.journey?.actor ? state.neoLife : undefined;
+    const computer = life && !life.journey && (!life.anomaly && life.computerCheck || life.anomaly?.id === 'screen' && life.anomaly.location === 'neo_apartment') ? computerInvestigationStep(life.computerCheck) : undefined;
     const baseChapter = life ? NEO_CHAPTERS[life.chapter] : undefined;
     const chapter = life?.chapter === 1 && life.contactSignal ? { ...baseChapter!, location: 'neo_apartment',
       title: life.deferredContact ? '白兔的邀请还在' : '电脑中的陌生信号',
@@ -187,11 +196,15 @@ export class SandboxUI {
       this.el('sandbox-job').style.width = life.activity ? `${Math.min(100, (tick - life.activity.startedAt) / (life.activity.endsAt - life.activity.startedAt) * 100)}%` : '0';
       const objective = document.getElementById('game-objective')!;
       objective.textContent = chapter.title;
-      document.getElementById('game-objective-copy')!.textContent = life.anomaly ? '有一件事似乎不太对。J 打开手记，决定是否追查。' : chapter.objective;
+      document.getElementById('game-objective-copy')!.textContent = computer && life.chapter === 0 ? computer.label : life.anomaly ? '有一件事似乎不太对。J 打开手记，决定是否追查。' : chapter.objective;
+      if (computer && !life.activity && player.isInMatrix && distance(player.position, computer.position) < computer.radius) {
+        this.el('sandbox-interact').classList.toggle('hidden', !computer.target);
+        this.el('sandbox-nearby').textContent = computer.label;
+      }
     }
     const mission = MISSIONS.find(m => m.id === profile.trackedMission);
     const escort = state.missions[chapter?.mission ?? profile.trackedMission]?.escort;
-    const target = escort ? { position: escort.position, matrix: true, name: '钥匙匠 · 留在 32 米内' } : this.waypoint ?? (chapter && life?.chapter ? { position: chapter.mission ? missionPosition(chapter.mission) : lifeRoomCenter(chapter.location) ?? locationEntrance(chapter.location), matrix: LOCATIONS[chapter.location].world === 'matrix', name: chapter.title } : mission ? { position: missionPosition(mission.id), matrix: LOCATIONS[mission.location].world === 'matrix', name: mission.name } : null);
+    const target = escort ? { position: escort.position, matrix: true, name: '钥匙匠 · 留在 32 米内' } : this.waypoint ?? (computer && life?.chapter === 0 ? { position: computer.position, matrix: true, name: computer.label } : chapter && life?.chapter ? { position: chapter.mission ? missionPosition(chapter.mission) : lifeRoomCenter(chapter.location) ?? locationEntrance(chapter.location), matrix: LOCATIONS[chapter.location].world === 'matrix', name: chapter.title } : mission ? { position: missionPosition(mission.id), matrix: LOCATIONS[mission.location].world === 'matrix', name: mission.name } : null);
     if (target) {
       const direction = Math.atan2(target.position.x - player.position.x, target.position.z - player.position.z) - player.rotation;
       this.el('sandbox-waypoint').innerHTML = `<span style="transform:rotate(${-direction}rad)">↑</span>${escape(target.name)} <b>${target.matrix === player.isInMatrix ? `${Math.round(distance(target.position, player.position))} m` : '跨世界 · 经电话接入'}</b>`;
@@ -1721,7 +1734,7 @@ export class SandboxUI {
     const player = this.player; const state = this.state; const profile = state.profiles[player.id];
     const life = player.id === 'neo' || player.id === state.neoLife?.journey?.actor ? state.neoLife : undefined;
     const signature = JSON.stringify([this.panel, this.selectedFilm, profile.inventory, profile.xp, profile.skills, profile.trackedMission, profile.visited, state.missions, state.structures.filter(s => !s.film), state.incidents, Math.round(player.position.x), Math.round(player.position.z), state.ending,
-      life && [life.chapter, life.day, life.money, life.cycle, Math.floor(this.time / 500), life.anomaly, life.activity, life.journal[0], life.appointment, life.journey, player.status, state.threats.length]]);
+      life && [life.chapter, life.day, life.money, life.cycle, Math.floor(this.time / 500), life.anomaly, life.computerCheck?.phase, life.activity, life.journal[0], life.appointment, life.journey, player.status, state.threats.length]]);
     if (signature === this.signature) return;
     this.signature = signature;
     const body = this.el('sandbox-panel-body'); const scroll = body.scrollTop;

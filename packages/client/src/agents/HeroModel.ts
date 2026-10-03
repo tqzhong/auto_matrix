@@ -967,8 +967,8 @@ export class HeroModels {
     this.knocks.get(rig)?.update(input.knock);
     if (input.workday && !this.workdays.has(rig)) this.workdays.set(rig, new OfficeWorkdayPerformance(rig));
     this.workdays.get(rig)?.update(input.workday);
-    if (input.contact && !this.apartments.has(rig)) this.apartments.set(rig, new ApartmentPerformance(rig));
-    this.apartments.get(rig)?.update(input.contact);
+    if ((input.contact || input.computerCheck) && !this.apartments.has(rig)) this.apartments.set(rig, new ApartmentPerformance(rig));
+    this.apartments.get(rig)?.update(input.contact, input.computerCheck);
     if (input.wakeCall && !this.wakeCalls.has(rig)) this.wakeCalls.set(rig, new WakeCallPerformance(rig));
     this.wakeCalls.get(rig)?.update(input.wakeCall);
     const spoonFloor = input.spoonLesson && spoonLessonSeat(input.spoonLesson) > 0 ? rig.root.getWorldPosition(new THREE.Vector3()).y + .025 : undefined;

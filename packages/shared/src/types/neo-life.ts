@@ -8,6 +8,7 @@ export interface NeoCycle {
   choices: Record<string, string>; evidence: string[];
 }
 export interface NeoLifeState {
+  computerCheck?: import('../constants/apartment.js').ComputerInvestigation;
   lift?: import('../constants/metacortex.js').MetacortexLift;
   journey?: import('../constants/film-story.js').FilmJourney;
   contactSignal?: boolean;

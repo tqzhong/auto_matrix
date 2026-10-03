@@ -4,6 +4,7 @@ import { LIFE_ACTIONS, LIFE_DESTINATIONS, NEO_ANOMALIES, NEO_CAST, NEO_CHAPTERS,
 import { FilmStorySystem } from './FilmStorySystem.js';
 import { updateMetacortexDoors } from './MetacortexDoors.js';
 import { METACORTEX, metacortexFloor, metacortexLiftPose, metacortexLiftLocked, nearMetacortexLift } from '@auto_matrix/shared';
+import { APARTMENT_NETWORK, APARTMENT_ROOM, computerCheckLocked } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
 import type { WorldDynamics } from './WorldDynamics.js';
 
@@ -99,6 +100,7 @@ export class NeoLifeSystem {
   }
 
   command(agent: AgentState, target: string, tick: number): string {
+    if (agent.id === 'neo' && computerCheckLocked(this.state?.computerCheck)) return 'Neo 正在操作桌边的网线，等他松手后再行动。';
     if (agent.id === 'neo' && this.state && (target === 'lift' || target === 'film:act' && this.film.state?.scene === 'm1_commute' && this.film.state.step === 1)) return this.useLift(agent, tick);
     if (agent.id === 'neo' && !this.film.custody.active(agent) && metacortexLiftLocked(this.state?.lift) && target !== 'film:retry') return '电梯正在运行。可以环顾轿厢，到站开门后再离开。';
     if (target.startsWith('film:')) {
@@ -118,6 +120,7 @@ export class NeoLifeSystem {
     if (!this.state) { this.begin(agent, tick); return '07:30，新的一天从家中开始。J 打开生活手记。'; }
     const state = this.state; this.updateNeeds(tick);
     if (state.activity) return '正在进行日常活动；移动离开可中断。';
+    if (target.startsWith('computer:')) return this.computerCommand(agent, target.slice(9), tick);
     if (target.startsWith('go:')) return this.travel(agent, target.slice(3), tick);
     if (target.startsWith('anomaly:')) return this.investigate(agent, target.slice(8), tick);
     if (target.startsWith('choice:')) return this.choose(agent, target.slice(7), tick);
@@ -218,7 +221,16 @@ export class NeoLifeSystem {
   private investigate(agent: AgentState, choice: string, tick: number): string {
     const state = this.state!; const signal = state.anomaly;
     if (!signal || !['ignore', 'observe', 'test'].includes(choice)) return '眼前没有尚未处理的异常。';
-    if (!agent.isInMatrix || distance(agent.position, signal.position) > 18) return '回到发现异常的地方，才能核对它。';
+    const computer = signal.id === 'screen' && signal.location === 'neo_apartment' && choice === 'test';
+    if (!agent.isInMatrix || !computer && distance(agent.position, signal.position) > 18) return '回到发现异常的地方，才能核对它。';
+    if (computer) {
+      if (!this.nearComputer(agent, APARTMENT_NETWORK.screenApproach, .75)) return '走到电脑书桌左侧，避开椅子，亲自查看显示器。';
+      if (state.computerCheck?.phase !== 'evidence') {
+        if (!state.computerCheck) state.computerCheck = { phase: 'reading', elapsed: 0 };
+        return '任务列表没有对应进程。走到书桌右侧的网线旁，按 G 断开网络，再看它是否仍然出现。';
+      }
+      state.computerCheck = { phase: 'saved', elapsed: 0 };
+    } else if (signal.id === 'screen' && state.computerCheck) state.computerCheck = state.computerCheck.phase === 'reading' ? undefined : { phase: 'saved', elapsed: 0 };
     const anomaly = NEO_ANOMALIES.find(a => a.id === signal.id)!;
     delete state.anomaly;
     if (choice === 'ignore') { state.doubt = clamp(state.doubt - 2); this.note('也许只是太累', '你选择继续今天的生活。这并不关闭之后调查其他异常的机会。', tick); return '生活继续。'; }
@@ -230,6 +242,44 @@ export class NeoLifeSystem {
     this.note(choice === 'test' ? '一条经过核对的线索' : '把不确定记下来', choice === 'test' ? anomaly.inspect : '你没有急着解释，而是保存了亲历的细节。它还需要更多证据。', tick);
     this.checkContact(tick);
     return '线索已记入手记。';
+  }
+  private nearComputer(agent: AgentState, point: { x: number; z: number }, radius: number): boolean {
+    return agent.isInMatrix && insideLifeRoom(agent.position) === 'neo_apartment'
+      && distance(agent.position, { x: APARTMENT_ROOM.center.x + point.x, y: 1, z: APARTMENT_ROOM.center.z + point.z }) < radius;
+  }
+  private computerCommand(agent: AgentState, choice: string, tick: number): string {
+    const state = this.state!, check = state.computerCheck;
+    const signal = state.anomaly?.id === 'screen' && state.anomaly.location === 'neo_apartment';
+    if (choice === 'capture') {
+      if (!signal || check?.phase !== 'evidence') return '先断开网络，并等待显示器里的字再次出现，才能核对证据。';
+      return this.investigate(agent, 'test', tick);
+    }
+    if (choice === 'disconnect' && (!signal || check?.phase !== 'reading') || choice === 'reconnect' && check?.phase !== 'saved'
+      || !['disconnect', 'reconnect'].includes(choice)) return '这一步电脑操作还不能进行。';
+    if (!this.nearComputer(agent, APARTMENT_NETWORK.approach, .75)) return '走到书桌右侧的网线旁，再操作实际插头。';
+    state.computerCheck = { phase: choice === 'disconnect' ? 'unplugging' : 'replugging', elapsed: 0 };
+    this.computerFrame(agent, 0, tick);
+    return choice === 'disconnect' ? 'Neo 伸手断开网络。留意电脑是否还会收到字。' : 'Neo 把网线重新接好，日常生活继续。';
+  }
+  computerFrame(agent: AgentState, dt: number, tick: number): boolean {
+    const check = agent.id === 'neo' && !this.state?.journey ? this.state?.computerCheck : undefined;
+    if (!check) return false;
+    const locked = computerCheckLocked(check);
+    if (agent.controller && agent.status === 'alive' && (locked || check.phase === 'offline')) {
+      const duration = locked ? APARTMENT_NETWORK.seconds : APARTMENT_NETWORK.echoSeconds;
+      check.elapsed = Math.min(duration, check.elapsed + Math.max(0, Math.min(.1, dt)));
+      if (check.elapsed >= duration - 1e-8) {
+        if (check.phase === 'replugging') delete this.state!.computerCheck;
+        else { check.phase = check.phase === 'unplugging' ? 'offline' : 'evidence'; check.elapsed = 0; }
+      }
+    }
+    if (locked) {
+      agent.position = { x: APARTMENT_ROOM.center.x + APARTMENT_NETWORK.approach.x, y: 1, z: APARTMENT_ROOM.center.z + APARTMENT_NETWORK.approach.z };
+      agent.rotation = APARTMENT_NETWORK.approach.yaw; agent.velocity = { x: 0, y: 0, z: 0 };
+      agent.targetPosition = null; agent.currentPath = [];
+      agent.currentAction = computerCheckLocked(this.state?.computerCheck) ? { type: 'idle', parameters: { player: true, resolved: true, computerCheck: { ...check } }, startedAt: tick, duration: 1, progress: 0 } : null;
+    }
+    return locked;
   }
   private checkContact(tick: number): void {
     const state = this.state!;

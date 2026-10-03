@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
-import { LIFE_ACTIONS, LIFE_ROOMS, NEO_CHAPTERS, NEO_MISSIONS, LOCATIONS, lifeActionPosition, lifeRoomCenter, locationEntrance, missionPosition, playerBlocked, neoSkillUnlocked, type WorldEvent } from '@auto_matrix/shared';
+import { APARTMENT_NETWORK, filmPosition, LIFE_ACTIONS, LIFE_ROOMS, NEO_CHAPTERS, NEO_MISSIONS, LOCATIONS, lifeActionPosition, lifeRoomCenter, locationEntrance, missionPosition, playerBlocked, neoSkillUnlocked, type WorldEvent } from '@auto_matrix/shared';
 import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
 
 function setup(seed = 42) {
@@ -99,7 +99,15 @@ function discover(set: ReturnType<typeof setup>) {
       const action = LIFE_ACTIONS.find(a => a.id === id)!;
       if (action.window && world.timeOfDay < action.window[0] * 1000) world.advanceMinutes((action.window[0] * 1000 - world.timeOfDay) * .06);
       run(id);
-      if (sandbox.life.state!.anomaly) sandbox.command(neo, { kind: 'life', target: 'anomaly:test' }, nextTick());
+      if (sandbox.life.state!.anomaly?.id === 'screen' && sandbox.life.state!.anomaly.location === 'neo_apartment') {
+        neo.position = filmPosition('film_anderson_flat', APARTMENT_NETWORK.screenApproach.x, APARTMENT_NETWORK.screenApproach.z);
+        sandbox.command(neo, { kind: 'life', target: 'anomaly:test' }, nextTick());
+        neo.position = filmPosition('film_anderson_flat', APARTMENT_NETWORK.approach.x, APARTMENT_NETWORK.approach.z);
+        sandbox.command(neo, { kind: 'life', target: 'computer:disconnect' }, nextTick());
+        for (let frame = 0; frame < 60; frame++) sandbox.life.computerFrame(neo, .1, nextTick());
+        neo.position = filmPosition('film_anderson_flat', APARTMENT_NETWORK.screenApproach.x, APARTMENT_NETWORK.screenApproach.z);
+        sandbox.command(neo, { kind: 'life', target: 'computer:capture' }, nextTick());
+      } else if (sandbox.life.state!.anomaly) sandbox.command(neo, { kind: 'life', target: 'anomaly:test' }, nextTick());
       if (sandbox.life.state!.chapter) break;
     }
     if (!sandbox.life.state!.chapter) run('sleep');
