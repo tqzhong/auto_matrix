@@ -1,6 +1,7 @@
 import { truthRoot } from '@auto_matrix/shared';
 import { cabinSeat, constructGuidePose, podRescuePose, reloadedPose, type CatchGesture, type ReloadedGesture } from '@auto_matrix/shared';
 import { deusPactLocked, deusPactPose, farewellPose, smithFinaleLocked, smithFinalePose, trilogyEpilogueLocked } from '@auto_matrix/shared';
+import { mirrorEntryPose } from '@auto_matrix/shared';
 import { MELEE_COMBO, COMBO_WINDOW, COMBAT_SKILLS, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED, PILL_TIMING, MIRROR_TIMING, lobbyPose, governmentPose, airRescuePose, matrixEscapePose, theOnePose, recoveryCrewPose, type CombatSkillId, type AwakeningPose, type AwakeningReveal, type RecoveryCrewGesture, type OfficePhone, pillPose, lafayetteWelcomePose, oracleVisitPose, betrayalPose, rescuePose, type PillGesture, type InterrogationGesture, type LafayetteWelcomeGesture, type TrainingGesture, type OracleVisitGesture, type BetrayalGesture, type RescueGesture, type RescueLoadout, type LobbyGesture, type GovernmentRescueGesture, type AirRescueGesture, type MatrixEscapeGesture, type TheOneGesture } from '@auto_matrix/shared';
 
 export interface MotionInput {
@@ -33,6 +34,7 @@ export interface MotionInput {
   performance?: AwakeningPose;
   podRescue?: number;
   mirrorBeat?: number;
+  mirrorEntry?: import('@auto_matrix/shared').AwakeningBeat;
   mirrorRise?: number;
   mirrorCrew?: number;
   mirrorContact?: { x: number; y: number; z: number };
@@ -187,6 +189,10 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   if (construct) state.speed = construct.speed;
   const truthWalk = input.truth?.phase === 'unplug' && input.truth.role === 'neo' ? clamp((input.truth.elapsed - 5.5) / 2.5) : undefined;
   if (truthWalk !== undefined) state.speed = 2.35 / 2.5 * 6 * truthWalk * (1 - truthWalk);
+  if (input.mirrorEntry) {
+    state.speed = 1.4 * mirrorEntryPose(input.mirrorEntry).walking;
+    state.time = input.mirrorEntry.elapsed;
+  }
   state.climbPhase += (input.climbing ?? 0) * dt * 5;
   state.seated = input.cabin?.kind === 'core' && input.cabin.role === 'neo' ? cabinSeat(input.cabin.elapsed) : deus ? deus.seated : reloaded ? reloaded.seated : pills ? pills.seat : welcome ? welcome.seated : mix(state.seated, input.seated || input.riding || input.performance === 'connect' || input.performance === 'construct' ? 1 : 0, blend);
   if (input.performance === 'touch') state.seated = smooth(clamp(((input.mirrorBeat ?? MIRROR_TIMING.sit) - .65) / (MIRROR_TIMING.sit - .65)));
@@ -195,6 +201,7 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   if (input.truth) state.seated = truthRoot(input.truth, input.truth.role).seated;
   if (input.spoonLesson?.role === 'boy') state.seated = 1;
   state.turn = mix(state.turn, clamp(input.turn, -3, 3), blend);
+  if (input.mirrorEntry) state.turn = 0;
   state.airborne = mix(state.airborne, input.grounded ? 0 : 1, 1 - Math.exp(-18 * dt));
   if (dt > 0) {
     if (input.grounded && !state.wasGrounded) state.landing = clamp(Math.abs(state.verticalVelocity) / 14, .25, 1);
@@ -219,9 +226,10 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   if (exiting) state.phase = (input.pills!.elapsed - PILL_TIMING.stand) * 1.1;
   if (input.cabin?.kind === 'core' && input.cabin.role === 'neo') state.phase = -Math.min(.95, input.cabin.elapsed) * .85;
   if (truthWalk !== undefined) state.phase = 2.35 * smooth(truthWalk) / (2 * stride / stance);
+  if (input.mirrorEntry) state.phase = input.mirrorEntry.elapsed / .88;
   const moving = smooth(clamp(state.speed / 2.2));
   const cycle = state.phase * Math.PI * 2;
-  const bob = Math.cos(cycle * 2) * mix(.025, .045, run) * moving + Math.sin(state.time * 1.7) * .009 * (1 - moving);
+  const bob = (Math.cos(cycle * 2) * mix(.025, .045, run) * moving + Math.sin(state.time * 1.7) * .009 * (1 - moving)) * (input.mirrorEntry ? 1 - state.seated : 1);
   const strike = MELEE_COMBO[state.combo];
   const age = state.attackAge;
   const skillDuration = state.skill ? COMBAT_SKILLS[state.skill].duration : 0;
@@ -295,6 +303,11 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     arms[i].shoulder = -2.2 - pull * .55; arms[i].elbow = -.65 + pull * .5; arms[i].grip = 1;
   }
   if (input.performance === 'touch') {
+    if (input.mirrorEntry) for (const [index, arm] of arms.entries()) {
+      const sidestep = mirrorEntryPose(input.mirrorEntry).sideways;
+      arm.shoulder = mix(mix(.14 + Math.sin(input.mirrorEntry.elapsed / .88 * Math.PI * 2 + index * Math.PI) * .05, .8, sidestep), -.32, state.seated);
+      arm.elbow = mix(mix(-.08, -1.4, sidestep), -1.1, state.seated); arm.grip = .15 * (1 - state.seated);
+    }
     const reach = smooth(clamp(((input.mirrorBeat ?? MIRROR_TIMING.touch) - MIRROR_TIMING.wired) / (MIRROR_TIMING.touch - MIRROR_TIMING.wired)));
     arms[0].shoulder = mix(arms[0].shoulder, -1.5, reach);
     arms[0].elbow = mix(arms[0].elbow, -.65, reach);

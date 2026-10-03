@@ -1,6 +1,7 @@
 import { TV_EXIT, basementRouteLength } from '@auto_matrix/shared';
 import { CABIN, CABIN_ROUTE_LENGTH, cabinGuidePose, RELOADED, RELOADED_FINALE } from '@auto_matrix/shared';
 import assert from 'node:assert/strict';
+import { mirrorEntryPose, awakeningDuration } from '@auto_matrix/shared';
 import { AMBUSH_STAIRS } from '@auto_matrix/shared';
 import test from 'node:test';
 import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, RESCUE, RESCUE_LOADOUTS, GOVERNMENT_RESCUE, AIR_RESCUE, MATRIX_ESCAPE, THE_ONE, SMITH_FINALE, OPENING_HOTEL, OPENING_ESCAPE, PILL_ROOM, PILL_TIMING, MIRROR_TOUCH, MIRROR_SEAT, MIRROR_TRINITY, MIRROR_TIMING, DOCK_GUNNERY, awakeningPose, mirrorSilver, filmReflections, filmStepActionReady, filmStepPosition, filmEntry, filmPosition, groundHeight, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, newGarageEscape, stepGarageEscape, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
@@ -1221,7 +1222,9 @@ test('touching the mirror is a saved seated performance that freezes on pause an
   h.actor().position = target;
   h.command('act'); assert.equal(state.awakening?.kind, 'mirror');
   assert.deepEqual(h.actor().position, target, 'the performance starts at Neo’s actual position');
-  for (let i = 0; i < 30; i++) h.players.step(.1, true, h.tick());
+  assert.equal(state.awakening!.chairMotion, 'stepping');
+  const entry = mirrorEntryPose(state.awakening!);
+  for (let i = 0; i < Math.ceil((entry.duration + .55) * 10); i++) h.players.step(.1, true, h.tick());
   assert.deepEqual(h.actor().position, filmPosition('film_lafayette', MIRROR_SEAT.x, MIRROR_SEAT.z));
   assert.equal(h.actor().currentAction?.parameters.seated, true);
   assert.equal(h.actor().currentAction?.parameters.mirror, 0);
@@ -1258,6 +1261,33 @@ test('Trinity being player-controlled pauses the electrode beat without advancin
   assert.equal(state.awakening!.elapsed, elapsed);
   h.players.release('other', h.tick()); h.players.step(.1, true, h.tick());
   assert.ok(state.awakening!.elapsed > elapsed);
+});
+
+test('a tracking-chair turn keeps its saved position, feet clock and heading through pause and reconnect', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  Object.assign(state, { scene: 'm1_pills', actor: 'neo', step: 2 }); h.command('next');
+  h.actor().position = filmStepPosition(FILM_SCENE_BY_ID.m1_mirror, FILM_SCENE_BY_ID.m1_mirror.steps[0]);
+  h.actor().rotation = -2.6137389711102355; h.command('act');
+  for (let i = 0; i < 45; i++) h.players.step(.1, true, h.tick());
+  const saved = JSON.parse(JSON.stringify(h.sandbox.state)), position = { ...h.actor().position }, yaw = h.actor().rotation;
+  const beat = { ...state.awakening! }; const pose = mirrorEntryPose(beat);
+  assert.deepEqual(position, filmPosition('film_lafayette', pose.x, pose.z));
+  assert.equal(yaw, pose.yaw); assert.equal(h.actor().currentAction?.parameters.mirrorBeat, 0);
+  assert.equal(h.actor().currentAction?.parameters.seated, false);
+  h.players.step(.1, false, h.tick()); assert.deepEqual(state.awakening, beat);
+  h.sandbox.restore(saved); h.players.release('film-player', h.tick()); h.advance(30);
+  assert.deepEqual(h.sandbox.life.film.state!.awakening, beat);
+  h.players.possess('film-player', 'neo', h.tick()); h.players.step(0, false, h.tick());
+  assert.deepEqual(h.actor().position, position); assert.equal(h.actor().rotation, yaw);
+  assert.deepEqual(h.actor().currentAction?.parameters.mirrorEntry, beat);
+  for (let i = 0; i < 36; i++) h.players.step(.1, true, h.tick());
+  const restored = h.sandbox.life.film.state!;
+  assert.equal(restored.scene, 'm1_mirror', 'the old eight-second deadline cannot cut away during the new entry');
+  const elapsed = restored.awakening!.elapsed;
+  assert.match(h.command('act'), /演出/); assert.equal(restored.awakening!.elapsed, elapsed, 'G cannot restart an in-progress entry');
+  const remaining = Math.ceil((awakeningDuration(restored.awakening!) - elapsed + .1) * 10);
+  for (let i = 0; i < remaining; i++) h.players.step(.1, true, h.tick());
+  assert.equal(h.sandbox.life.film.state!.scene, 'm1_pod');
 });
 
 test('old mirror saves after the touch resume in the pod instead of requiring the removed chair beat', () => {

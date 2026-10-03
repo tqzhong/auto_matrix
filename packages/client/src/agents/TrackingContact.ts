@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { MIRROR_TIMING } from '@auto_matrix/shared';
+import { MIRROR_TIMING, mirrorEntryPose, type AwakeningBeat } from '@auto_matrix/shared';
 import type { HeroRig } from './HeroModel.js';
 import { reach } from './SpoonPerformance.js';
 
@@ -9,16 +9,36 @@ export function trackingContact(subject: THREE.Object3D): THREE.Vector3 | undefi
   return elbow.getWorldPosition(new THREE.Vector3()).lerp(wrist.getWorldPosition(new THREE.Vector3()), .35).add(new THREE.Vector3(0, .13, 0));
 }
 
-export function placeTrackingFeet(rig: HeroRig, time: number = MIRROR_TIMING.sit): void {
+export function placeTrackingFeet(rig: HeroRig, time: number = MIRROR_TIMING.sit, entry?: AwakeningBeat): void {
   const seated = THREE.MathUtils.smoothstep(time, .65, MIRROR_TIMING.sit);
-  if (!seated) return;
+  if (!seated && !entry) return;
   rig.root.updateWorldMatrix(true, true);
   const rotation = rig.root.getWorldQuaternion(new THREE.Quaternion());
-  const floor = rig.root.getWorldPosition(new THREE.Vector3()).y + rig.footHeight + .015;
+  const root = rig.root.getWorldPosition(new THREE.Vector3()), floor = root.y + rig.footHeight + .015;
+  const pose = entry && mirrorEntryPose(entry);
+  if (pose?.sideways) {
+    // A narrow sidestep needs a tall support leg, rather than a running knee
+    // swinging into the nearby glass. Height comes from the shipped leg lengths.
+    let rise = Infinity;
+    for (const side of ['R', 'L'] as const) {
+      const foot = pose.feet[side]; if (foot.lift > .001) continue;
+      const hip = rig.bones.get('hip_' + side)!, knee = rig.bones.get('knee_' + side)!, ankle = rig.bones.get('ankle_' + side)!;
+      const at = hip.getWorldPosition(new THREE.Vector3()), length = knee.position.length() + ankle.position.length() - .025;
+      const horizontal = (root.x - pose.x + foot.x - at.x) ** 2 + (root.z - pose.z + foot.z - at.z) ** 2;
+      rise = Math.min(rise, floor + Math.sqrt(Math.max(0, length ** 2 - horizontal)) - at.y);
+    }
+    rig.bones.get('pelvis')!.position.y += Math.max(0, Math.min(.2, rise)) * pose.sideways;
+    rig.root.updateWorldMatrix(true, true);
+  }
   for (const side of ['R', 'L']) {
     const hip = rig.bones.get('hip_' + side)!, knee = rig.bones.get('knee_' + side)!, ankle = rig.bones.get('ankle_' + side)!;
     const target = ankle.getWorldPosition(new THREE.Vector3()); target.y = THREE.MathUtils.lerp(target.y, floor, seated);
     const orientation = ankle.getWorldQuaternion(new THREE.Quaternion()).slerp(rotation, seated);
+    if (pose) {
+      const foot = pose.feet[side as 'R' | 'L'];
+      target.set(root.x - pose.x + foot.x, floor + foot.lift, root.z - pose.z + foot.z);
+      orientation.setFromAxisAngle(new THREE.Vector3(0, 1, 0), foot.yaw);
+    }
     reach(hip, knee, ankle.position, target, new THREE.Vector3(0, .1, 1).applyQuaternion(rotation));
     ankle.quaternion.copy(knee.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation));
     ankle.updateWorldMatrix(false, true);

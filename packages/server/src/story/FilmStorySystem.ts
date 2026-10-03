@@ -12,6 +12,7 @@ import { newReloaded, reloadedLocked, ZION_CAST } from '@auto_matrix/shared';
 import { CABIN, CABIN_ROUTE_LENGTH, MEDICAL_OPERATOR, cabinBodyPose, cabinGuidePose } from '@auto_matrix/shared';
 import { CONSTRUCT, CONSTRUCT_FURNITURE, constructGuidePose, constructArrivalText } from '@auto_matrix/shared';
 import { catchLocked, newCatch } from '@auto_matrix/shared';
+import { awakeningDuration, mirrorTime } from '@auto_matrix/shared';
 import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_CAST, GRID_WINDOW_SECONDS, GRID_REROUTE_SECONDS, GRID_HACK_SECONDS, ARCHITECT_DOOR_SECONDS, RELOADED_FINALE, BANE_ENCOUNTER, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, filmReflections, CHARACTERS, LOCATIONS, NEO_CHAPTERS, filmCharacterFates, filmEntry, filmPosition, filmStepPosition, filmStepNear, locationEntrance, distance, playerBlocked, newFreewayRide, stepFreeway, OFFICE_LADDER, awakeningLocked, awakeningPose, AWAKENING_SECONDS, MIRROR_TOUCH, MIRROR_TIMING, MIRROR_GUIDE_LENGTH, mirrorGuidePose, mirrorGuideProgress, mirrorSilver, recoveryCrewPose, CONSTRUCT_REVEAL, DESERT_REVEAL, oracleActing,
   AMBUSH_REWRITE, AMBUSH_SECONDS, AMBUSH_SEALS, OFFICE_CONTACT, OFFICE_WINDOW, OFFICE_CROSSING_SECONDS, officeCrossingPose, windowCrossing, phoneLocked, heldPhone, windowOpening, pillLocked, pillRoot, PILL_ROOM, PILL_TIMING, trainingLocked, trainingRoot, trainingText, TRAINING_SECONDS, DOJO_COMBO_WINDOW,
   lobbyLocked, meleeReach, groundHeight, MIRROR_SEAT, MIRROR_TRINITY, type DriveInput, type AgentState, type FilmScene, type FilmStep, type GridOperation, type SandboxState, type SandboxThreat, type TrainingRole, type CombatImpact } from '@auto_matrix/shared';
@@ -3625,8 +3626,8 @@ export class FilmStorySystem {
     const trinity = beat?.kind === 'mirror' ? this.world.agents.get('trinity') : undefined;
     const bedside = beat?.kind === 'rescue' ? ['morpheus', 'trinity'] as const : beat?.kind === 'recovery' ? ['morpheus', 'dozer'] as const : [];
     const occupied = bedside.find(id => this.world.agents.get(id)?.controller);
-    const wasPlaying = beat && beat.elapsed < AWAKENING_SECONDS[beat.kind] && beat.started !== false && !morpheus?.controller && !trinity?.controller && !occupied;
-    if (wasPlaying) beat.elapsed = Math.min(AWAKENING_SECONDS[beat.kind], beat.elapsed + Math.min(.1, dt));
+    const wasPlaying = beat && beat.elapsed < awakeningDuration(beat) && beat.started !== false && !morpheus?.controller && !trinity?.controller && !occupied;
+    if (wasPlaying) beat.elapsed = Math.min(awakeningDuration(beat), beat.elapsed + Math.min(.1, dt));
     const doorId = 'film:cabin:door';
     if (beat?.kind === 'cabin') {
       const opening = Math.max(0, Math.min(1, (beat.elapsed - 10) / 1.6)); const slide = opening * opening * (3 - 2 * opening);
@@ -3637,19 +3638,20 @@ export class FilmStorySystem {
     }
     const pose = awakeningPose(beat); const previous = agent.position;
     agent.position = filmPosition(this.scene!.set, pose.x, pose.z); agent.position.y += pose.y;
-    agent.rotation = beat?.kind === 'cabin' ? cabinBodyPose(beat.elapsed).yaw : beat?.kind === 'core' ? CABIN.chair.yaw
-      : beat?.kind === 'construct' ? CONSTRUCT_REVEAL.neo.yaw : beat?.kind === 'desert' ? DESERT_REVEAL.neo.yaw : Math.PI;
+    agent.rotation = pose.yaw ?? (beat?.kind === 'cabin' ? cabinBodyPose(beat.elapsed).yaw : beat?.kind === 'core' ? CABIN.chair.yaw
+      : beat?.kind === 'construct' ? CONSTRUCT_REVEAL.neo.yaw : beat?.kind === 'desert' ? DESERT_REVEAL.neo.yaw : Math.PI);
     agent.velocity = dt > 0 ? { x: beat?.kind === 'mirror' || beat?.kind === 'core' ? (agent.position.x - previous.x) / dt : 0,
       y: (agent.position.y - previous.y) / dt, z: beat?.kind === 'mirror' || beat?.kind === 'core' ? (agent.position.z - previous.z) / dt : 0 } : { x: 0, y: 0, z: 0 };
     agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, filmPose: pose.pose,
-      mirror: beat?.kind === 'mirror' ? mirrorSilver(beat.elapsed) : 0, mirrorBeat: beat?.kind === 'mirror' ? beat.elapsed : undefined,
+      mirror: beat?.kind === 'mirror' ? mirrorSilver(mirrorTime(beat)) : 0, mirrorBeat: beat?.kind === 'mirror' ? mirrorTime(beat) : undefined,
+      mirrorEntry: beat?.kind === 'mirror' && beat.chairMotion === 'stepping' ? { ...beat } : undefined,
       recovery: beat?.kind === 'recovery' ? Math.min(6.8, beat.elapsed) : beat?.kind === 'cabin' ? cabinBodyPose(beat.elapsed).clock : undefined,
       podRescue: beat?.kind === 'rescue' ? beat.elapsed : undefined,
       cabin: cabin ? { kind: beat.kind === 'cabin' ? 'wake' : 'core', elapsed: beat.elapsed, role: 'neo' } : undefined,
-      seated: beat?.kind === 'core' && beat.elapsed >= 1.8 || beat?.kind === 'mirror' && beat.elapsed >= MIRROR_TIMING.sit,
+      seated: beat?.kind === 'core' && beat.elapsed >= 1.8 || beat?.kind === 'mirror' && mirrorTime(beat) >= MIRROR_TIMING.sit,
       reveal: reveal ? { kind: beat.kind, elapsed: beat.elapsed, role: 'neo' } : undefined }, startedAt: tick, duration: 1, progress: 0 };
     if (beat?.kind === 'mirror' && trinity && !trinity.controller)
-      trinity.currentAction = { type: 'idle', parameters: { mirrorCrew: beat.elapsed }, startedAt: tick, duration: 1, progress: 0 };
+      trinity.currentAction = { type: 'idle', parameters: { mirrorCrew: mirrorTime(beat) }, startedAt: tick, duration: 1, progress: 0 };
     if (beat?.kind === 'rescue') for (const role of ['morpheus', 'trinity'] as const) {
       const crew = this.world.agents.get(role); if (!crew || crew.controller) continue;
       const gesture = { elapsed: beat.elapsed, role, ...(beat.kind === 'rescue' ? { boarding: true } : {}) };
@@ -3683,7 +3685,7 @@ export class FilmStorySystem {
     state.lastText = occupied ? `${beat?.kind === 'rescue' ? '救援' : '恢复'}暂停在当前动作：${this.world.agents.get(occupied)?.name ?? occupied} 正由另一位玩家控制。`
       : morpheus?.controller ? '揭示暂停在当前画面：Morpheus 正由另一位玩家控制。'
         : trinity?.controller ? '追踪暂停在当前画面：Trinity 正由另一位玩家控制。' : pose.text;
-    if (wasPlaying && beat.elapsed >= AWAKENING_SECONDS[beat.kind]) {
+    if (wasPlaying && beat.elapsed >= awakeningDuration(beat)) {
       if (beat.kind === 'mirror') this.finishMirror(agent, tick);
       else if (beat.kind === 'rescue') {
         this.advance(this.step!.text!, agent, tick);
@@ -5406,7 +5408,7 @@ export class FilmStorySystem {
       }
       state.awakening.started = true; this.awakeningFrame(agent, 0, tick); return state.lastText;
     }
-    if (state.awakening && state.awakening.elapsed < AWAKENING_SECONDS[state.awakening.kind]) return '演出进行中，可以转动视角观察；进度会自动保存。';
+    if (state.awakening && state.awakening.elapsed < awakeningDuration(state.awakening)) return '演出进行中，可以转动视角观察；进度会自动保存。';
     if (state.scene === 'm1_cabin' && state.step === 1 && (state.cabinEscort?.progress ?? 0) < CABIN_ROUTE_LENGTH) return '沿舱门和中央通道跟随 Morpheus，等他到达连接椅后再接入。';
     if (state.scene === 'm2_architect' && state.architect?.phase === 'failed') return 'Trinity 的信号已经消失。按 J 从抉择检查点重试。';
     if (!this.near(agent, step) && !(state.scene === 'm1_construct' && step.kind === 'reflect')) return state.scene === 'm1_mirror' && state.step === 0 ? '穿过会客厅后方的门，走到追踪椅右侧再按 G。'
@@ -5569,7 +5571,8 @@ export class FilmStorySystem {
       if (state.scene === 'm1_mirror' && this.world.agents.get('trinity')?.controller) return 'Trinity 正由另一位玩家控制；接线会在她空闲后继续。';
       const center = FILM_SETS[this.scene!.set].center;
       state.awakening = { kind: state.scene === 'm1_mirror' ? 'mirror' : state.step === 0 ? 'disconnect' : 'rescue', elapsed: 0,
-        approach: state.scene === 'm1_mirror' ? { x: agent.position.x - center.x, z: agent.position.z - center.z } : undefined };
+        ...(state.scene === 'm1_mirror' ? { chairMotion: 'stepping' as const } : {}),
+        approach: state.scene === 'm1_mirror' ? { x: agent.position.x - center.x, z: agent.position.z - center.z, yaw: agent.rotation } : undefined };
       this.awakeningFrame(agent, 0, tick);
       return state.lastText;
     }

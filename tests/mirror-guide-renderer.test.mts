@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { filmPosition, mirrorGuidePose } from '@auto_matrix/shared';
+import { filmPosition, mirrorGuidePose, mirrorEntryPose, mirrorTime } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -57,5 +57,34 @@ test('Morpheus walks the tracking-room route evenly between snapshots and stops 
     const paused = group.position.clone();
     snapshot(4.8, 3); renderer.update(.2, undefined, 0);
     assert.ok(group.position.distanceTo(paused) < .001, 'pausing the simulation freezes the guide between snapshots');
+  } finally { renderer.dispose(); globalThis.document = document; }
+});
+
+test('a remote Neo keeps his saved chair heading and planted root while sidestepping', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  const document = globalThis.document;
+  const context = { createRadialGradient: () => ({ addColorStop() {} }), fillRect() {}, strokeRect() {}, fillText() {},
+    createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }), putImageData() {} };
+  globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => context }) } as unknown as Document;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!;
+  neo.currentLocation = 'film_lafayette'; neo.isInMatrix = true; neo.controller = 'another-player';
+  neo.position = filmPosition('film_lafayette', -7.05949, -14.53079);
+  const renderer = new AgentRenderer(new THREE.Scene()), violations: string[] = [];
+  try {
+    renderer.updateAgent('neo', neo);
+    for (const elapsed of [.2, 1.7, 4.6, 9.2]) for (const speed of [0, 1]) {
+      const beat = { kind: 'mirror' as const, elapsed, chairMotion: 'stepping' as const,
+        approach: { x: -7.05949, z: -14.53079, yaw: -2.61374 } }, pose = mirrorEntryPose(beat);
+      neo.position = filmPosition('film_lafayette', pose.x, pose.z); neo.rotation = pose.yaw;
+      neo.velocity = { x: -1.4, y: 0, z: 0 };
+      neo.currentAction = { type: 'idle', parameters: { filmPose: 'touch', mirrorBeat: mirrorTime(beat), mirrorEntry: beat }, startedAt: 0, duration: 1, progress: 0 };
+      renderer.updateAgent('neo', neo); renderer.update(.02, undefined, speed);
+      const group = renderer.getAgent('neo')!, body = renderer.getAgentBody('neo')!;
+      if (group.position.distanceTo(new THREE.Vector3(neo.position.x, neo.position.y, neo.position.z)) > 1e-8) violations.push(`root lags at ${elapsed}s, speed ${speed}`);
+      if (Math.abs(Math.atan2(Math.sin(body.rotation.y - pose.yaw), Math.cos(body.rotation.y - pose.yaw))) > 1e-8) violations.push(`body faces velocity at ${elapsed}s, speed ${speed}`);
+    }
+    assert.deepEqual(violations, []);
   } finally { renderer.dispose(); globalThis.document = document; }
 });

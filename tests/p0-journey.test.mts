@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { awakeningDuration } from '@auto_matrix/shared';
 import test from 'node:test';
 import {
   APARTMENT,
@@ -200,7 +201,7 @@ test('P0 runs continuously from daily contact through a clean escape and the red
   h.frames(10); assert.equal(h.state().mirrorGuide?.done, true, JSON.stringify({ guide: h.state().mirrorGuide,
     neo: h.neo.position, morpheus: h.world.agents.get('morpheus')?.position }));
   h.command('act'); assert.equal(h.state().awakening?.kind, 'mirror');
-  h.frames(8.2); assert.equal(h.state().scene, 'm1_pod');
+  h.frames(awakeningDuration(h.state().awakening!) + .2); assert.equal(h.state().scene, 'm1_pod');
   assert.ok(h.state().completed.includes('m1_mirror'));
 });
 

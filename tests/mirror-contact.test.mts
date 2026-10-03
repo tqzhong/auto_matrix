@@ -3,13 +3,41 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, MIRROR_TRINITY, PILL_ROOM, FILM_SETS, filmBlocked, filmPosition, type SandboxState, type FilmJourney } from '@auto_matrix/shared';
+import { MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, MIRROR_TRINITY, PILL_ROOM, FILM_SETS, awakeningPose, playerBlocked, filmBlocked, filmPosition, type SandboxState, type FilmJourney } from '@auto_matrix/shared';
 import { HeroModels } from '../packages/client/src/agents/HeroModel.js';
 import { advanceMotion, newMotion } from '../packages/client/src/agents/CharacterMotion.js';
 import { FilmSetRenderer, mirrorSurfacePoint } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
+import { mirrorEntryPose, mirrorTime, awakeningDuration } from '@auto_matrix/shared';
+
+test('a new tracking-chair approach walks around the chair before lowering into it', () => {
+  const beat = { kind: 'mirror' as const, elapsed: 0, chairMotion: 'stepping' as const, approach: { x: -7.1, z: -14.6, yaw: .45 } };
+  for (const elapsed of [0, .3, .65, .9, 1.35, 2]) {
+    const pose = awakeningPose({ ...beat, elapsed });
+    assert.equal(playerBlocked(filmPosition('film_lafayette', pose.x, pose.z), true, .5), false,
+      `the standing approach crosses the chair at ${elapsed}s: ${pose.x}, ${pose.z}`);
+  }
+  const start = awakeningPose(beat) as ReturnType<typeof awakeningPose> & { yaw?: number };
+  assert.equal(start.yaw, beat.approach.yaw, 'starting G must preserve the player’s heading before the first step');
+});
+
+test('turning toward the chair cannot cross Neo’s feet when G starts from a different heading', () => {
+  for (const yaw of [0, .45, Math.PI / 2, -Math.PI / 2, -2.6137389711102355]) {
+    const beat = { kind: 'mirror' as const, elapsed: 0, chairMotion: 'stepping' as const, approach: { x: -7.1, z: -14.6, yaw } };
+    const duration = mirrorEntryPose(beat).duration;
+    for (let elapsed = 0; elapsed <= duration; elapsed += .02) {
+      const { feet } = mirrorEntryPose({ ...beat, elapsed });
+      assert.ok(Math.hypot(feet.R.x - feet.L.x, feet.R.z - feet.L.z) > .35, `feet cross at ${elapsed}s from yaw ${yaw}`);
+    }
+  }
+});
+
+test('the new mirror clock reaches the seated boundary exactly', () => {
+  const beat = { kind: 'mirror' as const, elapsed: 0, chairMotion: 'stepping' as const };
+  assert.equal(mirrorTime({ ...beat, elapsed: mirrorEntryPose(beat).duration }), MIRROR_TIMING.sit);
+});
 
 test('the tracking-room mirror has straight carved sides and glass across all four corners', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
@@ -150,6 +178,115 @@ test('Neo’s shipped shoes rest on the tracking-room floor throughout the seate
       }
     }
   } finally { models.dispose(); }
+});
+
+test('tracking-chair footsteps keep the shipped support shoe planted and restore the whole body at a paused turn', async () => {
+  const assets = new Map(await Promise.all(['neo', 'neo-office', 'neo-tracking'].map(async id => [id, await heroAsset(id)] as const)));
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: (id: string) => Promise<Awaited<ReturnType<typeof heroAsset>>> }).load = async id => assets.get(id)!;
+  try {
+    const [rig, restored] = await Promise.all([models.create('neo'), models.create('neo')]);
+    const beat = { kind: 'mirror' as const, elapsed: 0, chairMotion: 'stepping' as const, approach: { x: -7.1, z: -14.6, yaw: .45 } };
+    const entry = mirrorEntryPose(beat), shoes = rig!.root.getObjectByName('shoes01') as THREE.SkinnedMesh;
+    const indices = shoes.geometry.attributes.skinIndex, weights = shoes.geometry.attributes.skinWeight;
+    const soleIndices = new Map(['R', 'L'].map(side => {
+      const joint = shoes.skeleton.bones.indexOf(rig!.bones.get('ankle_' + side)!);
+      return [side, Array.from({ length: indices.count }, (_, i) => i).filter(i => [0, 1, 2, 3].some(j => indices.getComponent(i, j) === joint && weights.getComponent(i, j) > .5))] as const;
+    }));
+    const times = Array.from({ length: Math.ceil(entry.duration / .11) + 1 }, (_, i) => Math.min(entry.duration, i * .11));
+    times.push(entry.duration + .853, entry.duration + MIRROR_TIMING.touch - MIRROR_TIMING.sit, awakeningDuration(beat) - .2);
+    const prior = newMotion(), point = new THREE.Vector3();
+    for (const elapsed of times) {
+      const saved = { ...beat, elapsed }, pose = mirrorEntryPose(saved);
+      const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, performance: 'touch' as const, mirrorBeat: mirrorTime(saved), mirrorEntry: saved };
+      for (const body of [rig!, restored!]) { body.root.position.set(pose.x, -1, pose.z); body.root.rotation.y = pose.yaw; }
+      models.animate(rig!, advanceMotion(prior, input, .11), prior, input, .11);
+      const fresh = newMotion(); models.animate(restored!, advanceMotion(fresh, input, 0), fresh, input, 0);
+      rig!.root.updateMatrixWorld(true); restored!.root.updateMatrixWorld(true); shoes.skeleton.update();
+      assert.equal(fresh.seated, prior.seated, `paused seating differs at ${elapsed}s`);
+      for (const name of ['pelvis', 'head', 'ankle_L', 'ankle_R', 'elbow_L', 'wrist_L', 'finger2-3_R'])
+        assert.ok(rig!.bones.get(name)!.getWorldPosition(new THREE.Vector3()).distanceTo(restored!.bones.get(name)!.getWorldPosition(new THREE.Vector3())) < 1e-6,
+          `${name} jumps when the ${elapsed}s entry is reloaded`);
+      for (const side of ['R', 'L'] as const) {
+        const foot = pose.feet[side], ankle = rig!.bones.get('ankle_' + side)!.getWorldPosition(new THREE.Vector3());
+        assert.ok(Math.hypot(ankle.x - foot.x, ankle.z - foot.z) < .025, `${side} loses its authored contact at ${elapsed}s: ${ankle.toArray()}`);
+        let lowest = Infinity;
+        for (const i of soleIndices.get(side)!) { shoes.localToWorld(shoes.getVertexPosition(i, point)); lowest = Math.min(lowest, point.y); }
+        assert.ok(lowest > -1.004 + foot.lift && lowest < -.95 + foot.lift, `${side} sole floats or crosses the floor at ${elapsed}s: ${lowest} / ${foot.lift}`);
+      }
+    }
+  } finally { models.dispose(); }
+});
+
+test('the entry keeps the shipped body outside the actual chair solids while turning and sitting', async t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const document = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, stroke() {}, fill() {} }) }) } as unknown as Document;
+  const assets = new Map(await Promise.all(['neo', 'neo-office', 'neo-tracking'].map(async id => [id, await heroAsset(id)] as const)));
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: (id: string) => Promise<Awaited<ReturnType<typeof heroAsset>>> }).load = async id => assets.get(id)!;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!; neo.position = filmPosition('film_lafayette', MIRROR_SEAT.x, MIRROR_SEAT.z); neo.currentLocation = 'film_lafayette'; neo.isInMatrix = true;
+  const renderer = new FilmSetRenderer(new THREE.Scene());
+  const solids: { mesh: THREE.Mesh; box: THREE.Box3; kind: 'chair' | 'mirror frame' }[] = [];
+  const batching = renderer as unknown as { batch(): void; leather: THREE.Material; metal: THREE.Material }, batch = batching.batch;
+  t.mock.method(batching, 'batch', () => {
+    // Snapshot the actual components before production merges them by material.
+    renderer.root.updateMatrixWorld(true);
+    renderer.root.traverse(object => {
+      if (!(object instanceof THREE.Mesh) || object.userData.dynamic || object instanceof Reflector) return;
+      const box = new THREE.Box3().setFromObject(object), center = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3());
+      const chair = (object.material === batching.leather || object.material === batching.metal)
+        && Math.abs(center.x - neo.position.x) < 1.3 && Math.abs(center.z - neo.position.z) < 1.3 && size.x < 3 && size.z < 3 && size.y < 4;
+      const frame = Math.abs(center.x - FILM_SETS.film_lafayette.center.x - PILL_ROOM.mirror.x) < 2.6
+        && Math.abs(center.z - FILM_SETS.film_lafayette.center.z - PILL_ROOM.mirror.z) < .6 && size.z < .85;
+      if (chair || frame) {
+        const mesh = new THREE.Mesh(object.geometry.clone(), object.material); mesh.matrixAutoUpdate = false; mesh.matrix.copy(object.matrixWorld); mesh.updateMatrixWorld(true);
+        solids.push({ mesh, box: box.clone().expandByScalar(-.03), kind: chair ? 'chair' : 'mirror frame' });
+      }
+    });
+    batch.call(renderer);
+  });
+  try {
+    renderer.update(neo, undefined, 0); renderer.root.updateMatrixWorld(true);
+    assert.equal(solids.filter(solid => solid.kind === 'chair').length, 12, 'the check includes the cushion, frame, back, headrest, arms and four legs');
+    assert.ok(solids.filter(solid => solid.kind === 'mirror frame').length > 10, 'the glass cannot stand in for the carved frame and backing');
+    const mirror = renderer.root.children.find(child => child instanceof Reflector) as Reflector;
+    const onGlass = new THREE.Vector3();
+    const rig = (await models.create('neo'))!, center = FILM_SETS.film_lafayette.center, point = new THREE.Vector3();
+    for (const approach of [{ x: -7.1, z: -14.6, yaw: .45 },
+      { x: -7.0594900428505, z: -14.53079340651, yaw: -2.6137389711102355 }]) {
+      const beat = { kind: 'mirror' as const, elapsed: 0, chairMotion: 'stepping' as const, approach };
+      const entry = mirrorEntryPose(beat);
+      const times = Array.from({ length: Math.ceil(entry.duration / .11) + 1 }, (_, i) => Math.min(entry.duration, i * .11));
+      times.push(entry.duration + .853, entry.duration + MIRROR_TIMING.touch - MIRROR_TIMING.sit);
+      for (const elapsed of times) {
+        const saved = { ...beat, elapsed }, pose = mirrorEntryPose(saved);
+        rig.root.position.set(center.x + pose.x, center.y - 1, center.z + pose.z); rig.root.rotation.y = pose.yaw;
+        const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, performance: 'touch' as const, mirrorBeat: mirrorTime(saved), mirrorEntry: saved };
+        const motion = newMotion(); models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
+        for (const part of rig.wardrobe) {
+          const mesh = part.mesh; if (!mesh.visible || !(mesh instanceof THREE.SkinnedMesh)) continue;
+          mesh.skeleton.update();
+          for (let i = 0; i < mesh.geometry.attributes.position.count; i++) {
+            mesh.localToWorld(mesh.getVertexPosition(i, point));
+            if (elapsed < entry.duration) {
+              mirror.worldToLocal(onGlass.copy(point));
+              if (Math.abs(onGlass.x) < 1 && Math.abs(onGlass.y) < 1)
+                assert.ok(onGlass.z > -.015, `${mesh.name} walks behind the actual mirror at ${elapsed}s: ${onGlass.toArray()}`);
+            }
+            for (const { mesh: solid, box, kind } of solids) {
+              if (!box.containsPoint(point)) continue;
+              const top = new THREE.Raycaster(new THREE.Vector3(point.x, box.max.y + 1, point.z), new THREE.Vector3(0, -1, 0), 0, box.max.y - box.min.y + 2).intersectObject(solid)[0];
+              const bottom = new THREE.Raycaster(new THREE.Vector3(point.x, box.min.y - 1, point.z), new THREE.Vector3(0, 1, 0), 0, box.max.y - box.min.y + 2).intersectObject(solid)[0];
+              assert.ok(!top || !bottom || point.y >= top.point.y - .035 || point.y <= bottom.point.y + .035,
+                `${mesh.name} penetrates the ${kind} at ${elapsed}s: ${point.toArray()} / ${box.min.toArray()}, ${box.max.toArray()}`);
+            }
+          }
+        }
+      }
+    }
+  } finally { solids.forEach(solid => solid.mesh.geometry.dispose()); renderer.dispose(); models.dispose(); globalThis.document = document; }
 });
 
 test('the actual tracking-chair cushion supports Neo’s trousers without swallowing his thighs', async t => {
