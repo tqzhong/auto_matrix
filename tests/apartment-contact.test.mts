@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { APARTMENT, FILM_SCENE_BY_ID, filmStepPosition, filmPosition, lifeRoomCenter, playerBlocked, type WorldEvent } from '@auto_matrix/shared';
+import { APARTMENT, apartmentComputerPose, FILM_SCENE_BY_ID, filmStepPosition, filmPosition, lifeRoomCenter, playerBlocked, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -89,6 +89,19 @@ test('Neo enters and leaves the computer chair continuously before ordinary move
   assert.ok(h.neo.position.z > z + 1, 'the player must be able to walk to 101 after getting up');
 });
 
+test('new chair performances step in front of the seat before lowering, then stand before walking out', () => {
+  const h = setup(); h.near(); h.command('act'); h.frames(.6);
+  assert.equal(h.state().contact?.chairMotion, 'stepping');
+  const entering = apartmentComputerPose(h.state().contact!);
+  assert.equal(entering.seated, 0, 'the body cannot lower through the side of the seat while still approaching');
+  assert.ok(entering.yaw < Math.PI - .5, 'Neo must turn toward the walking direction');
+  h.frames(8); h.command('act'); h.frames(2.2);
+  const standing = apartmentComputerPose(h.state().contact!);
+  assert.equal(standing.seated, 0);
+  assert.ok(Math.abs(standing.x + 9) < .01, 'the hips must rise clear before the sideward steps begin');
+  assert.ok(standing.z < -9.5, 'getting up must first bring the weight over the planted feet in front of the seat');
+});
+
 test('an unfinished chair exit keeps its clock and root through pause, disconnection and save restore', () => {
   const h = setup(); h.near(); h.command('act'); h.frames(9); h.command('act'); h.frames(2.7);
   const contact = structuredClone(h.state().contact), position = { ...h.neo.position };
@@ -97,6 +110,19 @@ test('an unfinished chair exit keeps its clock and root through pause, disconnec
   h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); h.players.possess('apartment-player', 'neo', 1);
   assert.deepEqual(h.state().contact, contact); assert.deepEqual(h.neo.position, position);
   h.frames(2); assert.equal(h.state().contact?.phase, 'door');
+  assert.equal(playerBlocked(h.neo.position, true, 1.1, h.sandbox.state.structures), false);
+});
+
+test('a saved legacy chair performance finishes with its original motion instead of adopting new footstep positions', () => {
+  const h = setup(); h.state().contact = { phase: 'signal', elapsed: .75 };
+  const pose = apartmentComputerPose(h.state().contact!); h.neo.position = filmPosition('film_anderson_flat', pose.x, pose.z); h.neo.rotation = pose.yaw;
+  const position = { ...h.neo.position };
+  h.players.release('apartment-player', 1); h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); h.players.possess('apartment-player', 'neo', 1);
+  assert.deepEqual(h.neo.position, position); assert.equal(h.state().contact?.chairMotion, undefined);
+  h.frames(.7); assert.equal(apartmentComputerPose(h.state().contact!).seated, 1);
+  assert.ok(Math.abs(h.neo.position.x - filmPosition('film_anderson_flat', -9).x) < .01);
+  h.frames(8); h.command('act'); assert.equal(h.state().contact?.phase, 'knocking'); assert.equal(h.state().contact?.chairMotion, undefined);
+  h.frames(4); assert.equal(h.state().contact?.phase, 'door');
   assert.equal(playerBlocked(h.neo.position, true, 1.1, h.sandbox.state.structures), false);
 });
 

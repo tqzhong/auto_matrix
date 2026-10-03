@@ -5,6 +5,7 @@ import type { AgentState, PlayerInput } from '@auto_matrix/shared';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { CameraController } from '../packages/client/src/engine/CameraController.js';
 import { PodSetRenderer } from '../packages/client/src/engine/PodSetRenderer.js';
+import { ApartmentSetRenderer } from '../packages/client/src/engine/ApartmentSetRenderer.js';
 import { NebDeckRenderer } from '../packages/client/src/engine/NebDeckRenderer.js';
 import { AmbushSetRenderer } from '../packages/client/src/engine/AmbushSetRenderer.js';
 import { CABIN, CABIN_ROUTE_LENGTH, cabinBodyPose, downloadRoot, DOWNLOAD_OPERATOR, type DownloadSetup } from '@auto_matrix/shared';
@@ -653,6 +654,53 @@ test('the first-person computer view lowers with the seated body and stays steer
   assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(direction) > .2);
   game.state.currentAction = null; game.step(.1, 1 / 60, false);
   assert.equal(game.controls.performing, false); assert.ok(Math.abs(game.camera.position.y - standing) < .005);
+});
+
+test('the chair step turns first person with the saved body, preserves free look and freezes the body while paused', t => {
+  const game = setup(t, Math.PI); game.state.currentLocation = 'film_anderson_flat';
+  const frame = (elapsed: number) => {
+    const contact = { role: 'neo', phase: 'signal', elapsed, chairMotion: 'stepping' } as const, pose = apartmentComputerPose(contact);
+    game.state.position = filmPosition('film_anderson_flat', pose.x, pose.z); game.state.rotation = pose.yaw;
+    game.state.currentAction = { type: 'idle', parameters: { contact }, startedAt: 0, duration: 1, progress: 0 };
+    game.step(.05, .05, false); return pose;
+  };
+  frame(0); game.controls.firstPerson = true; game.document.pointerLockElement = game.canvas;
+  game.event(game.document, 'mousemove', { movementX: 100, movementY: -20 }); game.step(.05, .05, false);
+  const offset = angle(game.yaw(), Math.PI);
+  for (const elapsed of [.15, .3, .5, .9, 1.3, 1.7, 2.4, 3.1]) {
+    const pose = frame(elapsed);
+    assert.ok(Math.abs(angle(game.group.children[0].rotation.y, pose.yaw)) < .001, 'the paused body must already use the same authored turn as its foot contacts');
+    assert.ok(Math.abs(angle(game.yaw(), pose.yaw) - offset) < .001, 'the body turn must carry the mouse look offset with it');
+  }
+  const body = game.group.children[0].rotation.y; game.step(.6, 1 / 60, false); assert.equal(game.group.children[0].rotation.y, body);
+  game.controls.release(); game.controls.possess(game.state); game.key('KeyV'); game.key('KeyV', false); game.step(.1, .05, false);
+  assert.ok(Math.abs(angle(game.yaw(), game.state.rotation)) < .001, 'reconnecting midway must begin at the saved heading without applying the last turn twice');
+});
+
+test('the wider chair approach camera includes Neo’s head and planted feet before closing on the CRT', t => {
+  const game = setup(t, Math.PI); game.state.currentLocation = 'film_anderson_flat';
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const center = FILM_SETS.film_anderson_flat.center, room = new THREE.Group(); room.position.set(center.x, center.y - 1, center.z);
+  const renderer = new ApartmentSetRenderer(room); room.updateMatrixWorld(true); t.after(() => renderer.dispose());
+  for (const aspect of [.72, 16 / 9]) for (const elapsed of [0, .3, .8, 1.3, 1.75]) {
+    const contact = { role: 'neo', phase: 'signal', elapsed, chairMotion: 'stepping' } as const, pose = apartmentComputerPose(contact);
+    game.camera.aspect = aspect; game.camera.updateProjectionMatrix();
+    game.state.position = filmPosition('film_anderson_flat', pose.x, pose.z); game.state.rotation = pose.yaw;
+    game.state.currentAction = { type: 'idle', parameters: { contact }, startedAt: 0, duration: 1, progress: 0 };
+    game.controls.possess(game.state); game.step(.3, .05, false); game.camera.updateMatrixWorld(true);
+    for (const y of [0, 4.4]) {
+      const point = new THREE.Vector3(game.state.position.x, y, game.state.position.z).project(game.camera);
+      assert.ok(Math.abs(point.x) < .94 && Math.abs(point.y) < .94 && point.z > -1 && point.z < 1, `${aspect} ${elapsed}: the approach crops the ${y ? 'head' : 'feet'} at ${point.toArray()}`);
+      if (!y) assert.ok(point.y > -.48, `${aspect} ${elapsed}: the lower story HUD covers the footwork at ${point.y}`);
+    }
+    for (const foot of Object.values(pose.feet!)) {
+      const point = new THREE.Vector3(center.x + foot.x, .2 + foot.lift, center.z + foot.z), direction = point.clone().sub(game.camera.position);
+      const sole = new THREE.Vector3(center.x + foot.x, foot.lift, center.z + foot.z).project(game.camera);
+      assert.ok(sole.y > -.48, `${aspect} ${elapsed}: the story HUD hides the actual planted shoe at ${sole.y}`);
+      const hits = new THREE.Raycaster(game.camera.position, direction.clone().normalize(), .01, direction.length() - .1).intersectObject(room, true).filter(hit => hit.object instanceof THREE.Mesh && hit.object.castShadow);
+      assert.equal(hits.length, 0, `${aspect} ${elapsed}: room furniture hides a stepping shoe at ${hits.map(hit => hit.point.toArray())}`);
+    }
+  }
 });
 
 test('the white-rabbit close-up clears the visitor beside the door and releases control afterwards', t => {
