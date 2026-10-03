@@ -1138,10 +1138,10 @@ export class SandboxUI {
       if (arrival.phase === 'image') this.el('sandbox-interact').classList.add('hidden');
       return;
     }
-    if (journey.awakening && journey.awakening.elapsed < awakeningDuration(journey.awakening) && awakeningLocked(journey)) {
+    if (journey.awakening && (journey.awakening.elapsed < awakeningDuration(journey.awakening) || awakeningWaiting(journey)) && awakeningLocked(journey)) {
       const waiting = awakeningWaiting(journey); const kind = journey.awakening!.kind;
-      const action = kind === 'mirror' ? '继续追踪与触镜' : kind === 'recovery' ? '示意开始恢复肌肉' : kind === 'cabin' ? '起身检查颈后接口' : kind === 'core' ? '坐入连接椅，允许接入' : kind === 'construct' ? '触摸椅背，听 Morpheus 解释' : '请 Morpheus 继续揭示';
-      const activity = ({ mirror: journey.awakening.chairMotion && journey.awakening.elapsed < mirrorEntryPose(journey.awakening).duration ? '入椅' : mirrorTime(journey.awakening) < MIRROR_TIMING.touch ? '追踪接线' : '镜面覆盖', connect: '定位连接', disconnect: '培养舱断线', rescue: '飞船救援', recovery: '针疗与休息', cabin: '舱室醒来与身体检查', core: '核心连接', construct: '电视与感官揭示', desert: '真实荒漠讲解' } as const)[kind];
+      const action = kind === 'breather' ? '检查后颈接口' : kind === 'mirror' ? '继续追踪与触镜' : kind === 'recovery' ? '示意开始恢复肌肉' : kind === 'cabin' ? '起身检查颈后接口' : kind === 'core' ? '坐入连接椅，允许接入' : kind === 'construct' ? '触摸椅背，听 Morpheus 解释' : '请 Morpheus 继续揭示';
+      const activity = ({ mirror: journey.awakening.chairMotion && journey.awakening.elapsed < mirrorEntryPose(journey.awakening).duration ? '入椅' : mirrorTime(journey.awakening) < MIRROR_TIMING.touch ? '追踪接线' : '镜面覆盖', connect: '定位连接', breather: '拔出口部呼吸管', disconnect: '培养舱断线', rescue: '飞船救援', recovery: '针疗与休息', cabin: '舱室醒来与身体检查', core: '核心连接', construct: '电视与感官揭示', desert: '真实荒漠讲解' } as const)[kind];
       document.getElementById('game-objective-copy')!.textContent = waiting
         ? `${journey.step + 1}/${scene.steps.length} · ${action} · 按 G`
         : `${journey.step + 1}/${scene.steps.length} · ${activity}进行中 · ${Math.round(journey.awakening!.elapsed / awakeningDuration(journey.awakening) * 100)}%`;

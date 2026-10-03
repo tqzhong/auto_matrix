@@ -908,7 +908,7 @@ export class HeroModels {
         bone('shoulder_R').rotation.x -= .18 * emphasis; bone('elbow_R').rotation.x -= .23 * emphasis;
       }
     }
-    posePodWake(rig, input.podWake);
+    posePodWake(rig, input.podWake, input.podBreather);
     if (input.podRescue !== undefined) {
       const landing = podRescuePose(input.podRescue);
       bone('spine').rotation.x += .3 * landing.settle; bone('chest').rotation.x += .25 * landing.settle;

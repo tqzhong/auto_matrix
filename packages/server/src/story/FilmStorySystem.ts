@@ -3686,7 +3686,8 @@ export class FilmStorySystem {
       : morpheus?.controller ? '揭示暂停在当前画面：Morpheus 正由另一位玩家控制。'
         : trinity?.controller ? '追踪暂停在当前画面：Trinity 正由另一位玩家控制。' : pose.text;
     if (wasPlaying && beat.elapsed >= awakeningDuration(beat)) {
-      if (beat.kind === 'mirror') this.finishMirror(agent, tick);
+      if (beat.kind === 'breather') beat.started = false;
+      else if (beat.kind === 'mirror') this.finishMirror(agent, tick);
       else if (beat.kind === 'rescue') {
         this.advance(this.step!.text!, agent, tick);
         const recovery = FILM_SCENE_BY_ID.m1_recovery;
@@ -5018,11 +5019,12 @@ export class FilmStorySystem {
         agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
         this.truthFrame(agent, 0, tick); return '已接回退出与休息过程，保留人物、接口与回答进度。';
       }
-      if (state.awakening && ['recovery', 'cabin', 'core', 'construct', 'desert'].includes(state.awakening.kind)) {
+      if (state.awakening && ['breather', 'recovery', 'cabin', 'core', 'construct', 'desert'].includes(state.awakening.kind)) {
         agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
         this.awakeningFrame(agent, 0, tick);
         return state.scene === 'm1_cabin' ? '已接回船舱与核心连接，保留当前动作和路线进度。'
-          : state.awakening.kind === 'recovery' ? '已经接回医疗舱恢复，保留针疗和休息进度。' : '已经接回真相揭示，保留电视、讲解与身体动作进度。';
+          : state.awakening.kind === 'breather' ? '已接回口部呼吸管动作，保留双手和管线的当前进度。'
+            : state.awakening.kind === 'recovery' ? '已经接回医疗舱恢复，保留针疗和休息进度。' : '已经接回真相揭示，保留电视、讲解与身体动作进度。';
       }
       if (state.training && (trainingLocked(state) || state.downloadSetup)) {
         agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
@@ -5395,11 +5397,16 @@ export class FilmStorySystem {
       return '训练演出进行中，可以转动视角观察；进度会自动保存。';
     }
     if (state.awakening?.started === false) {
-      const prompt = state.awakening.kind === 'mirror' ? 'Neo 坐在追踪椅上。按 G 继续接线和触镜。'
+      const prompt = state.awakening.kind === 'breather' ? awakeningPose(state.awakening).text
+        : state.awakening.kind === 'mirror' ? 'Neo 坐在追踪椅上。按 G 继续接线和触镜。'
         : state.awakening.kind === 'cabin' || state.awakening.kind === 'core' ? awakeningPose(state.awakening).text
         : state.awakening.kind === 'recovery' ? '身体仍躺在医疗床上。按 G 示意船员开始恢复肌肉。'
         : state.awakening.kind === 'construct' ? '电视仍然关闭。按 G 请 Morpheus 开始说明。' : '灰烬中的讲解正在等待。按 G 请 Morpheus 继续。';
       if (target !== 'act') return prompt;
+      if (state.awakening.kind === 'breather') {
+        state.awakening = { kind: 'disconnect', elapsed: 0, breatherRemoved: true };
+        this.awakeningFrame(agent, 0, tick); return state.lastText;
+      }
       if (['cabin', 'core', 'construct', 'desert'].includes(state.awakening.kind) && this.world.agents.get('morpheus')?.controller) return 'Morpheus 正由另一位玩家控制，演出停在当前画面。';
       if (state.awakening.kind === 'mirror' && this.world.agents.get('trinity')?.controller) return 'Trinity 正由另一位玩家控制，接线停在当前画面。';
       if (state.awakening.kind === 'recovery') {
@@ -5570,7 +5577,7 @@ export class FilmStorySystem {
         return 'Morpheus 正从会客厅带路。沿后门跟上他，等他走到追踪室再坐下。';
       if (state.scene === 'm1_mirror' && this.world.agents.get('trinity')?.controller) return 'Trinity 正由另一位玩家控制；接线会在她空闲后继续。';
       const center = FILM_SETS[this.scene!.set].center;
-      state.awakening = { kind: state.scene === 'm1_mirror' ? 'mirror' : state.step === 0 ? 'disconnect' : 'rescue', elapsed: 0,
+      state.awakening = { kind: state.scene === 'm1_mirror' ? 'mirror' : state.step === 0 ? 'breather' : 'rescue', elapsed: 0,
         ...(state.scene === 'm1_mirror' ? { chairMotion: 'stepping' as const } : {}),
         approach: state.scene === 'm1_mirror' ? { x: agent.position.x - center.x, z: agent.position.z - center.z, yaw: agent.rotation } : undefined };
       this.awakeningFrame(agent, 0, tick);

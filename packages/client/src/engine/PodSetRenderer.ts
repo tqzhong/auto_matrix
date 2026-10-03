@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { POD_WATER_DROP, POD_RESCUE, awakeningPose, podRescuePose, type FilmJourney } from '@auto_matrix/shared';
+import { POD_WATER_DROP, POD_RESCUE, POD_BREATHER, AWAKENING_SECONDS, awakeningPose, podRescuePose, podBreatherPose, type FilmJourney } from '@auto_matrix/shared';
 import { batchStaticGeometry } from './StaticGeometry.js';
 
 /** A single awakening set: the foreground tank, drain and rescue share story coordinates. */
@@ -18,7 +18,12 @@ export class PodSetRenderer {
   private clawCollar: THREE.Mesh;
   private grippers: { pad: THREE.Mesh; links: THREE.Mesh[]; hinges: THREE.Mesh[]; offset: THREE.Vector3; angle: number }[] = [];
   private hatches: THREE.Group[] = [];
+  private bay = new THREE.Group();
   private connections = new THREE.Group();
+  private breather = new THREE.Group();
+  private oralTube: THREE.Mesh<THREE.TubeGeometry>;
+  private oralCore: THREE.Mesh<THREE.TubeGeometry>;
+  private mouthpiece = new THREE.Group();
   private feeds: { mesh: THREE.Mesh<THREE.TubeGeometry>; plug: THREE.Mesh; start: THREE.Vector3 }[] = [];
   private neckTube: THREE.Mesh<THREE.TubeGeometry>;
   private water: THREE.Mesh;
@@ -59,6 +64,17 @@ export class PodSetRenderer {
     }
     this.neckTube = this.tube([[0, 1.7, -16.3], [0, 1.25, -15.9], [0, 1.5, -15.2], [0, 1.94, -14.78]], .12, rubber, this.connections);
     this.neckTube.name = 'pod-neck-feed';
+    this.root.add(this.breather); this.breather.name = 'pod-breather'; this.breather.add(this.mouthpiece);
+    this.mouthpiece.name = 'pod-oral-mouthpiece';
+    const oralGlass = new THREE.MeshPhysicalMaterial({ color: 0xb8c6c3, roughness: .17, transparent: true, opacity: .52, clearcoat: 1, depthWrite: false }); this.materials.add(oralGlass);
+    const oralFluid = this.mat(0x843239, .3, .08); oralFluid.emissive.setHex(0x38151d); oralFluid.emissiveIntensity = .2;
+    const oralPath = [[-1.5, 1.9, -14.8], [-1.5, 1.6, -11.4], [0, 3.1, -12.35], [0, 3.1, -13.05], [0, 3.1, -13.7]];
+    this.oralTube = this.tube(oralPath, POD_BREATHER.radius, oralGlass, this.breather); this.oralTube.name = 'pod-oral-feed';
+    this.oralCore = this.tube(oralPath, .035, oralFluid, this.breather); this.oralCore.name = 'pod-oral-core';
+    this.mesh(new THREE.CylinderGeometry(.083, .068, .22, 20), rubber, 0, .11, 0, this.mouthpiece).name = 'pod-oral-nozzle';
+    for (const y of [.065, .18]) {
+      const cuff = this.mesh(new THREE.TorusGeometry(.085, .012, 6, 24), this.steel, 0, y, 0, this.mouthpiece); cuff.rotation.x = Math.PI / 2;
+    }
     this.towers(pink);
     this.nearBank();
     // A concave runoff channel descends to the water rather than an invisible flat floor.
@@ -152,7 +168,9 @@ export class PodSetRenderer {
   private bend(mesh: THREE.Mesh<THREE.TubeGeometry>, points: THREE.Vector3[]): void {
     const geometry = mesh.geometry, { tubularSegments, radialSegments, radius } = geometry.parameters;
     const path = geometry.parameters.path as THREE.CatmullRomCurve3;
-    if (points.every((point, i) => path.points[i].distanceToSquared(point) < 1e-12)) return;
+    if (points.length === path.points.length && points.every((point, i) => path.points[i].distanceToSquared(point) < 1e-12)) return;
+    while (path.points.length < points.length) path.points.push(new THREE.Vector3());
+    path.points.length = points.length;
     points.forEach((point, i) => path.points[i].copy(point)); path.updateArcLengths();
     const frames = path.computeFrenetFrames(tubularSegments, false);
     const position = geometry.getAttribute('position'), normal = geometry.getAttribute('normal'), center = new THREE.Vector3(), direction = new THREE.Vector3();
@@ -168,7 +186,7 @@ export class PodSetRenderer {
     position.needsUpdate = normal.needsUpdate = true; geometry.computeBoundingSphere(); geometry.computeBoundingBox();
   }
   private rescueBay(): void {
-    const bay = new THREE.Group(); bay.name = 'pod-rescue-bay'; this.root.add(bay);
+    const bay = this.bay; bay.name = 'pod-rescue-bay'; bay.position.set(96, 0, 36); this.root.add(bay);
     const deck = this.mat(0x525b58, .78, .45), hull = this.mat(0x283333, .66, .62), trim = this.mat(0x777a69, .57, .55);
     const lamp = new THREE.MeshBasicMaterial({ color: 0xd2dfbc, toneMapped: false }); this.materials.add(lamp);
     const warning = this.mat(0x92784a, .78, .25);
@@ -325,6 +343,8 @@ export class PodSetRenderer {
     const beat = journey?.visiting ? undefined : journey?.awakening;
     const disconnect = beat?.kind === 'disconnect' ? beat.elapsed : beat?.kind === 'rescue' ? 9 : 0;
     const clock = beat ? (beat.kind === 'rescue' ? 9 : 0) + beat.elapsed : journey?.scene === 'm1_pod' ? 0 : elapsed;
+    const arrival = THREE.MathUtils.smoothstep(disconnect, 4.5, 7);
+    this.bay.position.set(96 * (1 - arrival), 0, 36 * (1 - arrival));
     this.root.updateWorldMatrix(true, false); subject?.updateWorldMatrix(true, true);
     this.robot.position.y = 10 - Math.min(1, disconnect / 2) * 1.2 + Math.max(0, disconnect - 4) * 1.5;
     const socket = subject?.getObjectByName('cervical-interface');
@@ -354,6 +374,7 @@ export class PodSetRenderer {
       clamp.hinges.forEach((hinge, i) => { hinge.visible = disconnect < 4; hinge.position.copy(nodes[i + 1]); });
     });
     const thoracic = subject?.getObjectByName('thoracic-interfaces');
+    const oralEntry = !beat || beat.kind === 'breather' || beat.breatherRemoved === true;
     this.feeds.forEach((feed, i) => {
       const port = thoracic?.children[i * 2 + 1];
       const outward = port ? new THREE.Vector3(0, 1, 0).applyQuaternion(port.getWorldQuaternion(new THREE.Quaternion()))
@@ -363,9 +384,30 @@ export class PodSetRenderer {
       const release = THREE.MathUtils.smoothstep(disconnect, 3.05 + i * .16, 3.3 + i * .16);
       const end = contact.addScaledVector(outward, .12 + release * .3).lerp(start.clone().add(new THREE.Vector3(-side * .05, -.45, 0)), release);
       feed.plug.position.copy(end).addScaledVector(outward, -.06); feed.plug.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), outward);
-      if (disconnect < 4) this.bend(feed.mesh, [start, start.clone().add(new THREE.Vector3(-side * .05, -.4, 1.7)), end.clone().addScaledVector(outward, .6 * (1 - release)), end]);
+      // The loops flex as the hands lower, then return when Neo braces the rim again.
+      const deflect = beat?.kind === 'breather'
+        ? THREE.MathUtils.smoothstep(beat.elapsed, 3.2, 3.8) * (1 - THREE.MathUtils.smoothstep(beat.elapsed, 4.6, 5.1)) : 0;
+      if (disconnect < 4) this.bend(feed.mesh, [start, start.clone().add(new THREE.Vector3(-side * .05, oralEntry ? .3 : -.4, 1.7)),
+        end.clone().addScaledVector(outward, (oralEntry ? .25 : .6) * (1 - release))
+          .add(new THREE.Vector3(oralEntry ? side * (-.18 + (i < 2 ? .58 * deflect : 0)) * (1 - release) : 0,
+            !oralEntry ? 0 : (i < 2 ? .5 * deflect : -.15) * (1 - release), oralEntry && i < 2 ? -.2 * deflect * (1 - release) : 0)),
+        ...(oralEntry && i < 2 ? [end.clone().addScaledVector(outward, .12 * (1 - release))] : []), end]);
     });
     this.connections.visible = disconnect < 4;
+    this.breather.visible = !beat || beat.kind === 'breather' || beat.kind === 'disconnect' && beat.breatherRemoved === true && disconnect < 4;
+    if (this.breather.visible) {
+      const oralTime = beat?.kind === 'breather' ? beat.elapsed : beat?.breatherRemoved ? AWAKENING_SECONDS.breather : 0;
+      const oral = podBreatherPose(oralTime), head = subject?.getObjectByName('head');
+      const rotation = head ? this.root.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(head.getWorldQuaternion(new THREE.Quaternion()))
+        : new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
+      rotation.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), oral.tilt));
+      const axis = new THREE.Vector3(0, 0, 1).applyQuaternion(rotation), start = new THREE.Vector3(POD_BREATHER.anchor.x, POD_BREATHER.anchor.y, POD_BREATHER.anchor.z);
+      const end = (head ? this.root.worldToLocal(head.localToWorld(new THREE.Vector3(oral.x, oral.y, oral.z))) : new THREE.Vector3(0, 2.15, -14.7))
+        .lerp(new THREE.Vector3(POD_BREATHER.resting.x, POD_BREATHER.resting.y, POD_BREATHER.resting.z), oral.drop);
+      this.mouthpiece.position.copy(end); this.mouthpiece.quaternion.copy(rotation).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2));
+      const points = [start, start.clone().add(new THREE.Vector3(-.1, -.35, 3.4)), end.clone().addScaledVector(axis, 1.35), end.clone().addScaledVector(axis, .65), end];
+      this.bend(this.oralTube, points); this.bend(this.oralCore, points);
+    }
     this.neckTube.visible = !firstPerson;
     this.liquid.visible = disconnect < 5; this.liquid.position.y = 1.9 - Math.max(0, disconnect - 4) * 2 + Math.sin(clock * 1.6) * .018;
     const nodes = [new THREE.Vector3(0, 17, -23), new THREE.Vector3(3, 14, -20), new THREE.Vector3(0, 13, -16), this.robot.position];
@@ -390,7 +432,8 @@ export class PodSetRenderer {
       gripper.hinges.forEach((hinge, i) => hinge.position.copy(nodes[i + 1]));
       gripper.pad.position.copy(tip); gripper.pad.rotation.y = gripper.angle;
     });
-    this.cable.visible = this.claw.visible; this.link(this.cable, new THREE.Vector3(0, 8.1, 12), this.claw.position);
+    this.cable.visible = this.claw.visible; this.link(this.cable, this.bay.position.clone().add(new THREE.Vector3(0, 8.1, 12)), this.claw.position);
+    this.scan.position.copy(this.bay.position).add(new THREE.Vector3(0, 10, 12));
     this.scan.target.position.copy(center);
     this.scan.intensity = this.claw.visible ? 2300 * (1 - rescue.board) : 0;
     const rippleSize = 1 + clock % 2.8 * 1.6; this.ripple.visible = disconnect >= 7 || rescuing;

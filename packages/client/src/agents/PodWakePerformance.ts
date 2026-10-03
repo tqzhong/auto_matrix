@@ -1,10 +1,10 @@
 import * as THREE from 'three';
-import { FILM_SETS } from '@auto_matrix/shared';
+import { FILM_SETS, POD_BREATHER, podBreatherPose } from '@auto_matrix/shared';
 import type { HeroRig } from './HeroModel.js';
 import { reach } from './SpoonPerformance.js';
 
 /** The saved disconnection clock drives the supported body, including paused loads. */
-export function posePodWake(rig: HeroRig, elapsed: number | undefined): void {
+export function posePodWake(rig: HeroRig, elapsed: number | undefined, breather?: number): void {
   if (elapsed === undefined) return;
   const smooth = THREE.MathUtils.smoothstep, t = elapsed;
   const sitting = smooth(t, .1, 1.35) * (1 - smooth(t, 3.8, 5.2));
@@ -44,5 +44,36 @@ export function posePodWake(rig: HeroRig, elapsed: number | undefined): void {
     reach(shoulder, elbow, wrist.position, target, new THREE.Vector3(sign, .2, -.45));
     wrist.quaternion.copy(elbow.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation));
     wrist.updateWorldMatrix(false, true);
+  }
+  if (breather === undefined) return;
+  const pose = podBreatherPose(breather), head = bone('head');
+  const orientation = head.getWorldQuaternion(new THREE.Quaternion()).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), pose.tilt));
+  const axis = new THREE.Vector3(0, 0, 1).applyQuaternion(orientation), lateral = new THREE.Vector3(1, 0, 0).applyQuaternion(orientation);
+  const end = head.localToWorld(new THREE.Vector3(pose.x, pose.y, pose.z));
+  for (const [i, side] of ['R', 'L'].entries()) {
+    const sign = i ? 1 : -1, blend = i ? pose.reachL : pose.reachR;
+    if (!blend) continue;
+    const shoulder = bone(`shoulder_${side}`), elbow = bone(`elbow_${side}`), wrist = bone(`wrist_${side}`);
+    const rotation = wrist.getWorldQuaternion(new THREE.Quaternion()).slerp(orientation, blend);
+    const palm = new THREE.Vector3(-sign * .2, -.18, .13);
+    const contact = end.clone().addScaledVector(axis, i ? .44 : .15).addScaledVector(lateral, sign * POD_BREATHER.radius);
+    const target = wrist.localToWorld(palm.clone()).lerp(contact, blend).sub(palm.applyQuaternion(rotation));
+    reach(shoulder, elbow, wrist.position, target, lateral.clone().multiplyScalar(sign).add(new THREE.Vector3(0, -.7, 0)));
+    wrist.quaternion.copy(elbow.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rotation));
+    for (let finger = 1; finger <= 5; finger++) for (let segment = 1; segment <= 3; segment++)
+      bone(`finger${finger}-${segment}_${side}`).rotation.set(finger === 1 ? .1 * blend : 0, 0,
+        -sign * THREE.MathUtils.lerp(finger === 1 ? .15 : .25, finger === 1 ? .15 : segment === 1 ? .3 : .42, blend));
+    wrist.updateWorldMatrix(false, true);
+    const thumb = [1, 2, 3].map(segment => bone(`finger1-${segment}_${side}`));
+    const tip = new THREE.Vector3(-sign * .02, -.02, .012);
+    const thumbContact = end.clone().addScaledVector(axis, i ? .44 : .15)
+      .addScaledVector(new THREE.Vector3(0, 1, 0).applyQuaternion(orientation), -POD_BREATHER.radius - .055);
+    const thumbTarget = thumb[2].localToWorld(tip.clone()).lerp(thumbContact, blend);
+    for (let iteration = 0; iteration < 8; iteration++) for (const joint of [...thumb].reverse()) {
+      const current = joint.worldToLocal(thumb[2].localToWorld(tip.clone())).normalize();
+      const desired = joint.worldToLocal(thumbTarget.clone()).normalize();
+      joint.quaternion.multiply(new THREE.Quaternion().setFromUnitVectors(current, desired));
+      joint.updateWorldMatrix(false, true);
+    }
   }
 }

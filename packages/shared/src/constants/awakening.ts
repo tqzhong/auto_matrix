@@ -4,12 +4,12 @@ import { CABIN, cabinBodyPose, cabinSeat } from './cabin.js';
 import { truthLocked } from './truth-recovery.js';
 import { CONSTRUCT } from './construct.js';
 
-export type AwakeningKind = 'mirror' | 'connect' | 'disconnect' | 'rescue' | 'recovery' | 'cabin' | 'core' | 'construct' | 'desert';
-export interface AwakeningBeat { kind: AwakeningKind; elapsed: number; started?: boolean; approach?: { x: number; z: number; yaw?: number }; chairMotion?: 'stepping' }
+export type AwakeningKind = 'mirror' | 'connect' | 'breather' | 'disconnect' | 'rescue' | 'recovery' | 'cabin' | 'core' | 'construct' | 'desert';
+export interface AwakeningBeat { kind: AwakeningKind; elapsed: number; started?: boolean; approach?: { x: number; z: number; yaw?: number }; chairMotion?: 'stepping'; breatherRemoved?: boolean }
 export interface AwakeningReveal { kind: 'construct' | 'desert'; elapsed: number; role: 'neo' | 'morpheus' }
 export type RecoveryCrewRole = 'morpheus' | 'trinity';
 export interface RecoveryCrewGesture { elapsed: number; role: RecoveryCrewRole; boarding?: boolean; target?: { x: number; y: number; z: number } }
-export const AWAKENING_SECONDS = { mirror: 8, connect: 4, disconnect: 9, rescue: 14, recovery: 12, cabin: 12, core: 8, construct: 11, desert: 13 } as const;
+export const AWAKENING_SECONDS = { mirror: 8, connect: 4, breather: 5.5, disconnect: 9, rescue: 14, recovery: 12, cabin: 12, core: 8, construct: 11, desert: 13 } as const;
 export const MIRROR_TOUCH = { x: -7.1, z: -14.6, radius: 1.25 } as const;
 export const MIRROR_SEAT = { x: -9.5, z: -16.05 } as const;
 export const MIRROR_FACE = { y: 2.8, radiusX: 1.85, radiusY: 2.65 } as const;
@@ -50,6 +50,8 @@ export function mirrorGuideProgress(point: { x: number; z: number }): number {
 export const POD_WATER_DROP = 18;
 export const POD_RESCUE = { immersion: 1.8, descend: 1, secured: 1.65, hoisted: 5, cleared: 7, closed: 7.8, lowered: 8.6, release: 9.4, fade: 13,
   hatch: { x: 0, y: 0, z: 12, half: 2.8 } } as const;
+export const POD_BREATHER = { mouth: { x: 0, y: -.12, z: .267 }, radius: .085, anchor: { x: -1.5, y: 1.9, z: -14.8 },
+  resting: { x: -1.25, y: 1.97, z: -13.1 } } as const;
 export const RECOVERY_BED = { x: -7, z: -22, standingX: -3.6, surface: 1.11 } as const;
 export const RECOVERY_CABINET = { x: -15.6, y: 3.4, z: -22, width: 6.2, height: 6.5, depth: 10.5 } as const;
 export const RECOVERY_FRAME = { halfWidth: 2.45, halfLength: 3.35, height: 12.6, post: .14 } as const;
@@ -63,6 +65,12 @@ export const DESERT_REVEAL = { neo: { x: 1.8, z: -28, yaw: Math.PI }, morpheus: 
 export type AwakeningPose = 'touch' | 'connect' | 'pod' | 'fall' | 'float' | 'lift' | 'recover' | 'cabin' | 'core' | 'construct' | 'desert';
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
 const smooth = (value: number) => { const t = clamp(value); return t * t * (3 - 2 * t); };
+export function podBreatherPose(elapsed: number) {
+  const pull = smooth((elapsed - 2.05) / 1.15), lower = smooth((elapsed - 3.45) / 1.15), drop = smooth((elapsed - 4.85) / .65);
+  const release = smooth((elapsed - 4.55) / .55);
+  return { x: POD_BREATHER.mouth.x - .45 * lower, y: POD_BREATHER.mouth.y - .55 * lower, z: POD_BREATHER.mouth.z + .5 * pull - .23 * lower,
+    tilt: .85 * lower, drop, reachR: smooth((elapsed - 1.05) / .65) * (1 - release), reachL: smooth((elapsed - 1.4) / .6) * (1 - release) };
+}
 export const mirrorSilver = (elapsed: number): number => clamp((elapsed - MIRROR_TIMING.touch) / (AWAKENING_SECONDS.mirror - MIRROR_TIMING.touch));
 
 export function mirrorEntryPose(beat: AwakeningBeat) {
@@ -194,6 +202,12 @@ export function awakeningPose(beat?: AwakeningBeat): { x: number; y: number; z: 
         : time < 5.8 ? '冰冷的银色镜面粘住指尖，沿手臂与颈部蔓延。' : 'Neo 惊恐地仰头；房间的声音和光线正在消失。' };
   }
   if (beat?.kind === 'connect') return { x: 8, y: 0, z: 5, pose: 'connect', text: '坐稳。接线组已经找到你，连接正在从模拟世界转向真实身体。' };
+  if (beat?.kind === 'breather') return { x: 0, y: 0, z: -12, pose: 'pod', text: beat.elapsed < 1.35
+    ? '撑住舱沿抬起上身。口中的管线让你无法呼吸。'
+    : beat.elapsed < 2.05 ? '右手先抓住管口，左手扶住外侧软管。'
+      : beat.elapsed < 3.45 ? '双手缓慢向外拔出呼吸管，空气第一次进入肺部。'
+        : beat.elapsed < AWAKENING_SECONDS.breather ? '把松开的管线放回液面，重新撑住舱沿。'
+          : '呼吸恢复了。观察培养塔；按 G 检查后颈仍然连接的接口。' };
   if (beat?.kind === 'rescue') {
     const rescue = podRescuePose(beat.elapsed);
     return { x: 0, y: -POD_WATER_DROP - POD_RESCUE.immersion + rescue.lift * (14 + POD_RESCUE.immersion) + rescue.board * 5.25 - rescue.lower * 1.25, z: POD_RESCUE.hatch.z, pose: 'lift',
@@ -251,5 +265,5 @@ export function awakeningPose(beat?: AwakeningBeat): { x: number; y: number; z: 
   const fall = clamp(((beat?.elapsed ?? 0) - 4) / 3);
   const immersion = POD_RESCUE.immersion * smooth(((beat?.elapsed ?? 0) - 6.8) / 1.2);
   return { x: 0, y: -POD_WATER_DROP * fall * fall - immersion, z: -12 + 24 * fall, pose: fall === 1 ? 'float' : fall > 0 ? 'fall' : 'pod',
-    text: !beat ? '转动视角观察培养塔。G 检查仍连接在身上的管线。' : beat.elapsed < 2 ? '维护机器锁定了异常信号，正在靠近培养舱。' : beat.elapsed < 4 ? '固定臂扶住后颈，连接管线逐一脱开。' : fall < 1 ? '舱底打开。水流把你冲入排放管道。' : '上方出现了探照灯。G 抓住下降的救援装置。' };
+    text: !beat ? '转动视角观察培养塔。G 撑起身体，拔出口中的呼吸管。' : beat.elapsed < 2 ? '维护机器锁定了异常信号，正在靠近培养舱。' : beat.elapsed < 4 ? '固定臂扶住后颈，连接管线逐一脱开。' : fall < 1 ? '舱底打开。水流把你冲入排放管道。' : '上方出现了探照灯。G 抓住下降的救援装置。' };
 }
