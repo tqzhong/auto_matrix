@@ -81,9 +81,11 @@ function completeContactAndClub(h: Harness) {
   h.command('act'); h.frames(5); assert.equal(h.state().contact?.phase, 'door');
   h.walkLocal('film_anderson_flat', APARTMENT.door.x, APARTMENT.door.z);
   h.command('act'); h.frames(3); assert.equal(h.state().contact?.phase, 'book');
-  h.walkLocal('film_anderson_flat', 3, 3); h.walkLocal('film_anderson_flat', APARTMENT.book.x, APARTMENT.book.z);
+  h.walkLocal('film_anderson_flat', 3, 3); h.walkLocal('film_anderson_flat', 3, APARTMENT.book.z);
+  h.walkLocal('film_anderson_flat', APARTMENT.book.x, APARTMENT.book.z);
   h.command('act'); h.frames(4); assert.equal(h.state().contact?.phase, 'disk');
-  h.walkLocal('film_anderson_flat', 3, 3); h.walkLocal('film_anderson_flat', APARTMENT.door.x, APARTMENT.door.z);
+  h.walkLocal('film_anderson_flat', 3, APARTMENT.book.z); h.walkLocal('film_anderson_flat', 3, 3);
+  h.walkLocal('film_anderson_flat', APARTMENT.door.x, APARTMENT.door.z);
   const cash = h.sandbox.state.neoLife!.money;
   h.command('act'); h.frames(5); assert.equal(h.state().contact?.phase, 'invitation');
   assert.equal(h.sandbox.state.neoLife!.money, cash + 2000);

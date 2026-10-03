@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { APARTMENT, apartmentComputerPose, FILM_SCENE_BY_ID, filmStepPosition, filmPosition, lifeRoomCenter, playerBlocked, type WorldEvent } from '@auto_matrix/shared';
+import { APARTMENT, APARTMENT_BOOK, apartmentComputerPose, FILM_SCENE_BY_ID, filmStepPosition, filmPosition, lifeRoomCenter, playerBlocked, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -167,6 +167,23 @@ test('disk trade, rabbit investigation and following the invitation are separate
   assert.equal(h.sandbox.state.structures.some(s => s.id === 'film:apartment:door'), false);
 });
 
+test('the collected data disc stays attached to Neo while ordinary walking back to Choi remains available', () => {
+  const h = setup(); atBook(h); h.near(); h.command('act'); h.frames(4);
+  assert.equal(h.state().contact?.phase, 'disk');
+  const start = { ...h.neo.position };
+  for (let i = 0; i < 12; i++) {
+    h.players.receiveInput('apartment-player', { x: -1, z: 0, yaw: -Math.PI / 2, sprint: false, jump: false, sequence: i });
+    h.players.step(.05, true, i);
+    assert.equal((h.neo.currentAction?.parameters.contact as { phase: string } | undefined)?.phase, 'disk', 'normal movement must retain the saved disc owner instead of hiding the prop');
+    assert.equal(h.sandbox.life.film.performing(h.neo), false, 'carrying the disc cannot lock walking');
+  }
+  assert.ok(h.neo.position.x < start.x - .5);
+  const contact = structuredClone(h.state().contact);
+  h.players.release('apartment-player', 1); h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); h.players.possess('apartment-player', 'neo', 1);
+  assert.deepEqual(h.state().contact, contact);
+  assert.equal((h.neo.currentAction?.parameters.contact as { phase: string } | undefined)?.phase, 'disk');
+});
+
 test('declining preserves ordinary life and resumes the invitation without a second payout or replacing history', () => {
   const h = setup(); atInvitation(h); h.near(); h.command('act'); h.frames(4);
   const life = h.sandbox.life.state!; const cash = life.money; const evidence = [...life.evidence];
@@ -215,7 +232,8 @@ test('the apartment door is solid until opened and the player can walk from each
   const h = setup(); const door = filmPosition('film_anderson_flat', 0, 12);
   assert.equal(playerBlocked(door, true, 1.1, h.sandbox.state.structures), true);
   atBook(h); assert.equal(playerBlocked(door, true, 1.1, h.sandbox.state.structures), false);
-  for (const [a, b] of [[[0, 1], [APARTMENT.computer.x, 1]], [[APARTMENT.computer.x, 1], [APARTMENT.computer.x, APARTMENT.computer.z]], [[APARTMENT.computer.x, APARTMENT.computer.z], [APARTMENT.computer.x, 1]], [[APARTMENT.computer.x, 1], [0, 1]], [[0, 1], [0, 10.2]], [[0, 10.2], [3, 3]], [[3, 3], [6, 3.4]]]) {
+  assert.equal(playerBlocked(filmPosition('film_anderson_flat', APARTMENT_BOOK.x, APARTMENT_BOOK.z), true), true, 'the floor book must remain solid instead of disappearing to make a straight route pass');
+  for (const [a, b] of [[[0, 1], [APARTMENT.computer.x, 1]], [[APARTMENT.computer.x, 1], [APARTMENT.computer.x, APARTMENT.computer.z]], [[APARTMENT.computer.x, APARTMENT.computer.z], [APARTMENT.computer.x, 1]], [[APARTMENT.computer.x, 1], [0, 1]], [[0, 1], [0, 10.2]], [[0, 10.2], [3, 3]], [[3, 3], [3, APARTMENT.book.z]], [[3, APARTMENT.book.z], [APARTMENT.book.x, APARTMENT.book.z]]]) {
     for (let i = 0; i <= 100; i++) assert.equal(playerBlocked(filmPosition('film_anderson_flat', a[0] + (b[0] - a[0]) * i / 100, a[1] + (b[1] - a[1]) * i / 100), true), false);
   }
 });

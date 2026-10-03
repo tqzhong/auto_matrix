@@ -1,21 +1,20 @@
 import * as THREE from 'three';
-import { FILM_SETS, APARTMENT_NETWORK, computerCheckLocked, computerNetworkPull, apartmentAfter, apartmentDoor, apartmentComputerPose, type ApartmentGesture, type ComputerInvestigation } from '@auto_matrix/shared';
+import { FILM_SETS, APARTMENT_BOOK, APARTMENT_NETWORK, computerCheckLocked, computerNetworkPull, apartmentAfter, apartmentDoor, apartmentComputerPose, apartmentBookCrouch, type ApartmentGesture, type ComputerInvestigation } from '@auto_matrix/shared';
+import { apartmentDisc } from './ApartmentDisc.js';
 import type { HeroRig } from './HeroModel.js';
 
 export class ApartmentPerformance {
-  private disk = new THREE.Group();
+  private disk = apartmentDisc();
   private cash = new THREE.Group();
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private tattoo?: THREE.CanvasTexture;
   constructor(private rig: HeroRig) {
-    const silver = new THREE.MeshStandardMaterial({ color: 0xb0b6b3, metalness: .88, roughness: .18 });
-    const hole = new THREE.MeshStandardMaterial({ color: 0x343b31, roughness: .9 });
-    this.mesh(this.disk, new THREE.CylinderGeometry(.46, .46, .02, 48), silver);
-    this.mesh(this.disk, new THREE.CylinderGeometry(.085, .085, .024, 16), hole);
+    this.disk.name = 'apartment-held-disc'; this.cash.name = 'apartment-held-cash';
+    this.disk.traverse(object => { if (object instanceof THREE.Mesh) { this.geometries.add(object.geometry); this.materials.add(object.material as THREE.Material); } });
     const money = new THREE.MeshStandardMaterial({ color: 0x8b9677, roughness: .95 });
-    this.mesh(this.cash, new THREE.BoxGeometry(.78, .055, .34), money);
-    this.mesh(this.cash, new THREE.BoxGeometry(.17, .06, .35), new THREE.MeshStandardMaterial({ color: 0xc4bfa5, roughness: .98 }));
+    this.mesh(this.cash, new THREE.BoxGeometry(.36, .04, .18), money);
+    this.mesh(this.cash, new THREE.BoxGeometry(.08, .045, .19), new THREE.MeshStandardMaterial({ color: 0xc4bfa5, roughness: .98 }));
     rig.root.add(this.disk, this.cash);
     if (rig.apartmentRole === 'dujour') {
       const canvas = document.createElement('canvas'); canvas.width = canvas.height = 256;
@@ -52,12 +51,13 @@ export class ApartmentPerformance {
     const center = FILM_SETS.film_anderson_flat.center;
     return this.rig.root.worldToLocal(new THREE.Vector3(center.x + x, center.y - 1 + y, center.z + z));
   }
-  private hand(side: 'R' | 'L', point: THREE.Vector3, blend: number, typing = false): void {
+  private hand(side: 'R' | 'L', point: THREE.Vector3, blend: number, typing = false, tilt = 0): void {
     if (blend <= 0) return;
     const root = this.rig.root; root.updateWorldMatrix(true, true);
     const upper = this.bone('shoulder_' + side); const lower = this.bone('elbow_' + side); const wrist = this.bone('wrist_' + side);
     const rotation = root.getWorldQuaternion(new THREE.Quaternion());
     const palm = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, typing ? 0 : side === 'R' ? Math.PI / 2 : -Math.PI / 2));
+    if (tilt) palm.premultiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, tilt)));
     const desired = rotation.clone().invert().multiply(wrist.getWorldQuaternion(new THREE.Quaternion())).slerp(palm, blend);
     const offset = new THREE.Vector3(side === 'R' ? .065 : -.065, -.17, .01);
     const target = root.worldToLocal(wrist.localToWorld(offset.clone())).lerp(point, blend).sub(offset.clone().applyQuaternion(desired)); root.localToWorld(target);
@@ -73,7 +73,7 @@ export class ApartmentPerformance {
     wrist.quaternion.copy(lower.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rotation).multiply(desired));
     for (let finger = 1; finger <= 5; finger++) for (let segment = 1; segment <= 3; segment++) this.bone(`finger${finger}-${segment}_${side}`).rotation.z = (side === 'R' ? 1 : -1) * (typing ? .06 : .28) * blend;
   }
-  private feet(seated: number, contacts?: ReturnType<typeof apartmentComputerPose>['feet']): void {
+  private feet(seated: number, contacts?: Record<'R' | 'L', { x: number; z: number; yaw: number; lift: number }>): void {
     const root = this.rig.root; root.updateWorldMatrix(true, true);
     const rotation = root.getWorldQuaternion(new THREE.Quaternion());
     const forward = new THREE.Vector3(0, 0, 1.2 * seated).applyQuaternion(rotation);
@@ -110,6 +110,11 @@ export class ApartmentPerformance {
     if (!gesture) return;
     const { role, phase, elapsed: t } = gesture; const root = this.rig.root;
     const smooth = THREE.MathUtils.smoothstep;
+    const cartridge = gesture.propMotion === 'minidisc';
+    const ownsDisk = cartridge && (role === 'neo' && (phase === 'retrieving' && t >= APARTMENT_BOOK.pickup || phase === 'disk' || phase === 'handover' && t < 2.3)
+      || role === 'choi' && (phase === 'handover' && t >= 2.3 || apartmentAfter(gesture, 'invitation')));
+    const diskSide = role === 'choi' ? 'L' : 'R', cashSide = role === 'choi' ? 'R' : 'L';
+    if (ownsDisk && phase !== 'retrieving') this.hand(diskSide, new THREE.Vector3(diskSide === 'R' ? -.5 : .5, 2.5, .38), 1, true);
     if (role === 'neo' && ['signal', 'reply', 'knocking'].includes(phase)) {
       const pose = apartmentComputerPose(gesture), { seated, walking } = pose;
       const pelvis = this.bone('pelvis'); pelvis.position.copy(this.rig.rest.get('pelvis')!); pelvis.position.y = THREE.MathUtils.lerp(pelvis.position.y - .25 * walking, pose.feet ? 1.65 : 1.6, seated);
@@ -129,6 +134,19 @@ export class ApartmentPerformance {
       const angle = apartmentDoor(gesture) * 1.42; const hold = smooth(t, 0, .3) * (1 - smooth(t, 1.1, 1.6));
       this.bone('chest').rotation.y -= angle * .12;
       root.updateWorldMatrix(true, true); this.hand('L', this.local(-1.9 + Math.cos(angle) * 3.3 - Math.sin(angle) * .26, 2.85, 12 - Math.sin(angle) * 3.3 - Math.cos(angle) * .26), hold);
+    } else if (role === 'neo' && phase === 'retrieving' && cartridge) {
+      const crouch = apartmentBookCrouch(gesture), pelvis = this.bone('pelvis');
+      pelvis.position.y = THREE.MathUtils.lerp(pelvis.position.y, .88, crouch); pelvis.position.z += .15 * crouch;
+      pelvis.rotation.set(0, 0, 0); this.bone('spine').rotation.x += 1.5 * crouch; this.bone('chest').rotation.x += .12 * crouch; this.bone('head').rotation.x += .12 * crouch;
+      const approach = APARTMENT_BOOK.approach;
+      this.feet(0, { R: { x: approach.x - .276, z: approach.z, yaw: 0, lift: 0 }, L: { x: approach.x + .276, z: approach.z, yaw: 0, lift: 0 } });
+      const angle = smooth(Math.min(t, .8), .35, 1.35) * 2.88, size = APARTMENT_BOOK.scale, withdraw = smooth(t, .8, 1.1);
+      root.updateWorldMatrix(true, true);
+      this.hand('L', this.local(6 + (-.84 + .35 * Math.cos(angle)) * size - Math.sin(angle) * .21 - .4 * withdraw,
+        APARTMENT_BOOK.y + (.39 + .35 * Math.sin(angle)) * size + Math.cos(angle) * .21 + .3 * withdraw, APARTMENT_BOOK.z - .3 - .45 * withdraw), smooth(t, .25, .55) * (1 - smooth(t, 1.1, 1.5)), true, angle);
+      const grip = this.local(6, APARTMENT_BOOK.y + .09 * size + .17 + .45 * (1 - smooth(t, 1.75, APARTMENT_BOOK.pickup)), APARTMENT_BOOK.z);
+      grip.lerp(new THREE.Vector3(-.5, 2.5, .38), smooth(t, APARTMENT_BOOK.pickup, 3.1));
+      this.hand('R', grip, smooth(t, 1.35, 1.8), true);
     } else if (role === 'neo' && phase === 'retrieving') {
       const lean = smooth(t, 0, .65) * (1 - smooth(t, 2.5, 3.2));
       this.bone('spine').rotation.x += .26 * lean; this.bone('chest').rotation.x += .36 * lean; this.bone('head').rotation.x += .2 * lean;
@@ -145,13 +163,33 @@ export class ApartmentPerformance {
       const hold = smooth(t, .2, 1.5) * (1 - smooth(t, 3, 4));
       this.bone('spine').rotation.x += .12 * hold; this.bone('chest').rotation.x += .14 * hold;
       root.updateWorldMatrix(true, true);
-      this.hand('R', this.local(-.35, 2.9, 11.65), hold);
-      this.hand('L', this.local(.4, 2.82, 11.65), hold);
+      const diskGrip = new THREE.Vector3(0, .17, diskSide === 'R' ? -.125 : .125), cashGrip = new THREE.Vector3(cashSide === 'R' ? -.18 : .18, .17, 0);
+      if (cartridge) this.hand(cashSide, new THREE.Vector3(cashSide === 'R' ? -.5 : .5, 2.5, .38), 1, true);
+      this.hand(cartridge ? diskSide : 'R', this.local(-.35, 2.9 + (cartridge ? diskGrip.y : 0), 11.65 + (cartridge ? diskGrip.z : 0)), hold, cartridge);
+      this.hand(cartridge ? cashSide : 'L', this.local(.4 + (cartridge ? cashGrip.x : 0), 2.82 + (cartridge ? cashGrip.y : 0), 11.65), hold, cartridge);
       root.updateWorldMatrix(true, true);
-      if (role === (t < 2.3 ? 'neo' : 'choi')) { this.disk.visible = true; this.disk.position.copy(root.worldToLocal(this.bone('wrist_R').localToWorld(new THREE.Vector3(.065, -.17, .01)))); }
-      if (role === (t < 2.3 ? 'choi' : 'neo')) { this.cash.visible = true; this.cash.position.copy(root.worldToLocal(this.bone('wrist_L').localToWorld(new THREE.Vector3(-.065, -.17, .01)))); }
+      if (!cartridge && role === (t < 2.3 ? 'neo' : 'choi')) { this.disk.visible = true; this.disk.position.copy(root.worldToLocal(this.bone('wrist_R').localToWorld(new THREE.Vector3(.065, -.17, .01)))); }
+      if (role === (t < 2.3 ? 'choi' : 'neo')) {
+        this.cash.visible = true; const side = cartridge ? cashSide : 'L';
+        const position = this.bone('wrist_' + side).localToWorld(new THREE.Vector3(side === 'R' ? .065 : -.065, -.17, .01));
+        if (cartridge) {
+          const rotation = this.bone('wrist_' + side).getWorldQuaternion(new THREE.Quaternion()).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0)));
+          rotation.copy(new THREE.Quaternion().slerp(rotation, smooth(t, 3, 4))); position.sub(cashGrip.clone().applyQuaternion(rotation));
+          this.cash.quaternion.copy(root.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rotation));
+        }
+        this.cash.position.copy(root.worldToLocal(position));
+      }
     } else if (role === 'choi' && apartmentAfter(gesture, 'invitation')) this.bone('head').rotation.y -= .24;
     root.updateWorldMatrix(true, true);
+    if (ownsDisk) {
+      const heading = root.getWorldQuaternion(new THREE.Quaternion()), wrist = this.bone('wrist_' + diskSide);
+      const rotation = wrist.getWorldQuaternion(new THREE.Quaternion()).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0)));
+      if (phase === 'handover') rotation.copy(new THREE.Quaternion().slerp(rotation, smooth(t, 3, 4)));
+      const gripZ = (diskSide === 'R' ? -.125 : .125) * (phase === 'retrieving' ? smooth(t, APARTMENT_BOOK.pickup, 3.1) : 1);
+      const position = wrist.localToWorld(new THREE.Vector3(diskSide === 'R' ? .065 : -.065, -.17, .01)).sub(new THREE.Vector3(0, .17, gripZ).applyQuaternion(rotation));
+      this.disk.position.copy(root.worldToLocal(position)); this.disk.visible = true;
+      this.disk.quaternion.copy(heading.invert().multiply(rotation));
+    }
   }
   dispose(): void { this.disk.removeFromParent(); this.cash.removeFromParent(); this.geometries.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); this.tattoo?.dispose(); }
 }

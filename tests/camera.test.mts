@@ -15,7 +15,7 @@ import { awakeningPose, podRescuePose, recoveryBodyPose, recoveryCrewPose } from
 import { MORNING, morningRoot, morningWakePose } from '@auto_matrix/shared';
 import { metacortexPosition, OFFICE_CUSTODY } from '@auto_matrix/shared';
 import { SPOON_LESSON, spoonLessonSeat, type SpoonLesson } from '@auto_matrix/shared';
-import { APARTMENT, apartmentComputerPose, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, INTERROGATION_ROOM, pillRoot, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, POD_WATER_DROP, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, TV_EXIT, airRescueRoot, matrixEscapeRoot, theOneRoot, tvExitEmergeRoot, wakeCallRoot, sentinelMachinePose, type TheOneEncounter } from '@auto_matrix/shared';
+import { APARTMENT, playerBlocked, apartmentComputerPose, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, INTERROGATION_ROOM, pillRoot, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, POD_WATER_DROP, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, TV_EXIT, airRescueRoot, matrixEscapeRoot, theOneRoot, tvExitEmergeRoot, wakeCallRoot, sentinelMachinePose, type TheOneEncounter } from '@auto_matrix/shared';
 
 test('observer camera releases drag and ignores pointer capture while a character controls the view', () => {
   let captures = 0;
@@ -716,6 +716,39 @@ test('the white-rabbit close-up clears the visitor beside the door and releases 
   game.state.currentAction = null; game.step(.1); assert.equal(game.controls.performing, false);
   const start = game.group.position.clone(); game.key('KeyS'); game.step(.3);
   assert.ok(game.group.position.distanceTo(start) > .2, 'finishing the inspection restores walking');
+});
+
+test('carrying the apartment disc keeps ordinary movement and the player camera available', t => {
+  const game = setup(t, 0); game.state.currentLocation = 'film_anderson_flat';
+  game.state.position = filmPosition('film_anderson_flat', APARTMENT.book.x, APARTMENT.book.z);
+  game.state.currentAction = { type: 'idle', parameters: { contact: { role: 'neo', phase: 'disk', elapsed: 0, propMotion: 'minidisc' } }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); const start = game.state.position.z;
+  assert.equal(playerBlocked(game.state.position, true), false, 'finishing the retrieval must leave Neo outside the bed and the floor book colliders');
+  game.key('KeyW'); game.step(.1, .05, true);
+  assert.equal(game.controls.performing, false, 'an owned disc cannot turn the carry phase into a locked cinematic');
+  assert.ok(game.group.position.z > start, `the player must be able to walk back from the book: ${start} -> ${game.group.position.toArray()}, input ${JSON.stringify(game.sent.at(-1))}`);
+  const player = game.group.position.clone().add(new THREE.Vector3(0, 2, 0)).project(game.camera);
+  assert.ok(Math.abs(player.x) < .85 && Math.abs(player.y) < .85 && player.z < 1, 'the ordinary camera must follow Neo rather than remaining at the doorway');
+});
+
+test('the floor-book camera shows the cartridge beside the bed in both aspect ratios and V lowers with the crouch', t => {
+  const game = setup(t, 0), center = FILM_SETS.film_anderson_flat.center;
+  game.state.currentLocation = 'film_anderson_flat'; game.state.position = filmPosition('film_anderson_flat', APARTMENT.book.x, APARTMENT.book.z);
+  game.state.currentAction = { type: 'idle', parameters: { contact: { role: 'neo', phase: 'retrieving', elapsed: 1.9, propMotion: 'minidisc' } }, startedAt: 0, duration: 1, progress: 0 };
+  for (const aspect of [16 / 9, 426 / 680]) {
+    game.controls.possess(game.state); game.camera.aspect = aspect; game.step(.5);
+    const book = new THREE.Vector3(center.x + 6, center.y - 1 + .2, center.z - 5.3).project(game.camera);
+    assert.ok(Math.abs(book.x) < .8 && Math.abs(book.y) < .8 && book.z > -1 && book.z < 1, `the floor cartridge must be inside the usable frame at ${aspect}: ${book.toArray()}`);
+    assert.ok(game.camera.position.x < center.x + 7.1, 'the camera cannot look through the bed from its far side');
+    game.key('KeyV'); game.key('KeyV', false); game.step(.2);
+    assert.ok(game.camera.position.y < game.state.position.y + 2, 'first person must follow Neo down instead of floating above a crouched body');
+    const firstPersonBook = new THREE.Vector3(center.x + 6, center.y - 1 + .2, center.z - 5.3).project(game.camera);
+    assert.ok(Math.abs(firstPersonBook.x) < .8 && Math.abs(firstPersonBook.y) < .8 && firstPersonBook.z > -1 && firstPersonBook.z < 1, `V must initially show the floor book: ${firstPersonBook.toArray()}`);
+    game.document.pointerLockElement = game.canvas;
+    const direction = game.camera.getWorldDirection(new THREE.Vector3());
+    game.event(game.document, 'mousemove', { movementX: 100, movementY: -50 }); game.step(.1);
+    assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(direction) > .1, 'the first-person look remains steerable during retrieval');
+  }
 });
 
 test('the morning camera shows the bedside clock in portrait and landscape and V follows the reclining eyes', t => {

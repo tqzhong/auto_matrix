@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { APARTMENT, APARTMENT_CHAIR, APARTMENT_NETWORK, APARTMENT_ROOM, MORNING, apartmentAfter, apartmentDoor, computerNetworkPull, wakeCallDoor, wakeCallHandsetHeld, type ComputerInvestigation, type FilmJourney, type NeoLifeState } from '@auto_matrix/shared';
+import { APARTMENT, APARTMENT_BOOK, APARTMENT_CHAIR, APARTMENT_NETWORK, APARTMENT_ROOM, MORNING, apartmentAfter, apartmentDoor, computerNetworkPull, wakeCallDoor, wakeCallHandsetHeld, type ComputerInvestigation, type FilmJourney, type NeoLifeState } from '@auto_matrix/shared';
+import { apartmentDisc } from '../agents/ApartmentDisc.js';
 
 /** Anderson's workroom and the shared landing. Props use the shared interaction layout. */
 export class ApartmentSetRenderer {
@@ -11,7 +12,8 @@ export class ApartmentSetRenderer {
   private textures = new Set<THREE.Texture>();
   private door = new THREE.Group();
   private cover = new THREE.Group();
-  private disk = new THREE.Group();
+  private book = new THREE.Group();
+  private disk = apartmentDisc();
   private phoneBase = new THREE.Group();
   private phoneHandset = new THREE.Group();
   private phoneCord: THREE.Line;
@@ -180,15 +182,15 @@ export class ApartmentSetRenderer {
     this.box(walnut, 6, 1.68, 6.2, 2.8, .22, 1.8, .035);
     for (const x of [4.85, 7.15]) for (const z of [5.45, 6.95]) this.box(metal, x, .78, z, .1, 1.55, .1);
     const book = this.mat(0x403b31, .96);
-    this.box(book, 6, 1.85, 6.2, 1.65, .08, 2.05);
-    for (const x of [5.31, 6.69]) this.box(paper, x, 2.05, 6.2, .23, .31, 1.92);
-    for (const z of [5.35, 7.05]) this.box(paper, 6, 2.05, z, 1.4, .31, .23);
-    this.cover.position.set(5.16, 2.24, 6.2); this.cover.userData.dynamic = true; this.root.add(this.cover);
+    this.book.name = 'apartment-hollow-book'; this.book.userData.dynamic = true; this.root.add(this.book);
+    this.mesh(new THREE.BoxGeometry(1.65, .08, 2.05), book, 0, 0, 0, this.book);
+    for (const x of [-.69, .69]) this.mesh(new THREE.BoxGeometry(.23, .31, 1.92), paper, x, .2, 0, this.book);
+    for (const z of [-.85, .85]) this.mesh(new THREE.BoxGeometry(1.4, .31, .23), paper, 0, .2, z, this.book);
+    this.cover.position.set(-.84, .39, 0); this.cover.userData.dynamic = true; this.book.add(this.cover);
     this.mesh(new THREE.BoxGeometry(1.65, .06, 2.05), book, .84, 0, 0, this.cover);
     const title = this.label('SIMULACRA\nAND SIMULATION', 1.42, 1.65, '#c0b799', '#403b31', 256); title.position.set(.84, .035, 0); title.rotation.x = -Math.PI / 2; this.cover.add(title);
-    this.disk.userData.dynamic = true; this.disk.position.set(6, 1.94, 6.2); this.root.add(this.disk);
-    this.mesh(new THREE.CylinderGeometry(.46, .46, .018, 48), this.mat(0xa3b3b0, .18, .94), 0, 0, 0, this.disk);
-    this.mesh(new THREE.CylinderGeometry(.085, .085, .02, 24), dark, 0, .004, 0, this.disk);
+    this.disk.name = 'apartment-book-disc'; this.disk.userData.dynamic = true; this.root.add(this.disk);
+    this.disk.traverse(object => { if (object instanceof THREE.Mesh) { this.geometries.add(object.geometry); this.materials.add(object.material as THREE.Material); } });
     for (let shelf = 0; shelf < 5; shelf++) {
       this.box(walnut, -15.7, .3 + shelf * 1.2, -4, 1.6, .12, 8);
       for (let i = 0; i < 20; i++) this.box(i % 3 ? paper : trim, -15.5, .77 + shelf * 1.2, -7.55 + i * .36, .94, .8 + (i % 3) * .08, .21);
@@ -267,9 +269,13 @@ export class ApartmentSetRenderer {
     this.door.rotation.y = (contact ? apartmentDoor(contact) : 1) * 1.42;
     if (journey?.scene === 'm1_wake_again') this.door.rotation.y = (journey.visiting || journey.step >= 2 ? 1 : wakeCallDoor(call)) * 1.42;
     else if (journey?.visiting) this.door.rotation.y = 1.42;
-    const opening = contact?.phase === 'retrieving' ? THREE.MathUtils.smoothstep(contact.elapsed, .3, 1.65) : contact && apartmentAfter(contact, 'disk') ? 1 : 0;
+    const legacyBook = contact?.phase === 'retrieving' && contact.propMotion !== 'minidisc';
+    this.book.position.set(6, legacyBook ? 1.85 : APARTMENT_BOOK.y, legacyBook ? 6.2 : APARTMENT_BOOK.z);
+    this.book.scale.setScalar(legacyBook ? 1 : APARTMENT_BOOK.scale);
+    this.disk.position.set(6, legacyBook ? 1.94 : APARTMENT_BOOK.y + .09 * APARTMENT_BOOK.scale, legacyBook ? 6.2 : APARTMENT_BOOK.z);
+    const opening = contact?.phase === 'retrieving' ? THREE.MathUtils.smoothstep(contact.elapsed, legacyBook ? .3 : .35, legacyBook ? 1.65 : 1.35) : contact && apartmentAfter(contact, 'disk') ? 1 : 0;
     this.cover.rotation.z = opening * 2.88;
-    this.disk.visible = !(contact && (apartmentAfter(contact, 'disk') || contact.phase === 'retrieving' && contact.elapsed > 2.3));
+    this.disk.visible = !(contact && (apartmentAfter(contact, 'disk') || contact.phase === 'retrieving' && contact.elapsed >= (legacyBook ? 2.3 : APARTMENT_BOOK.pickup)));
     const held = wakeCallHandsetHeld(call); this.phoneHandset.visible = !held;
     this.phoneHandset.position.set(APARTMENT.phone.x, APARTMENT.phone.y + .48, APARTMENT.phone.z + .22);
     this.phoneHandset.rotation.set(0, 0, call?.phase === 'ringing' ? Math.sin(call.elapsed * 52) * .045 : 0);

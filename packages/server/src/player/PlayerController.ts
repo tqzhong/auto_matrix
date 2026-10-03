@@ -458,6 +458,8 @@ export class PlayerController {
       this.sandbox?.life.film.helBargainFrame(agent, tick);
       const journey = this.sandbox?.life.film.state;
       if (journey?.actor === agent.id && agent.currentAction && heldPhone(journey)) agent.currentAction.parameters.phone = { ...heldPhone(journey)! };
+      if (journey?.actor === agent.id && journey.scene === 'm1_wake_up' && journey.contact?.phase === 'disk' && agent.currentAction)
+        agent.currentAction.parameters.contact = { ...journey.contact, role: 'neo' };
       this.sandbox?.life.film.custody.frame(agent, 0, tick);
       const nearbyLocation = Object.values(LOCATIONS).filter(location => location.id !== 'downtown' && location.id !== 'film_anderson_flat' && (location.world === 'matrix') === agent.isInMatrix)
         .find(location => distance(locationEntrance(location.id), agent.position) < 42);
