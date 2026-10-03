@@ -1667,7 +1667,7 @@ export class PlayerControls {
       } else {
         const ideal = new THREE.Vector3(center.x + 5.8, center.y + 8.2, center.z - 6.5);
         if (resetCamera) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
-        this.camera.lookAt(center.x, center.y + 4.9, center.z - 12.5);
+        this.camera.lookAt(center.x, center.y + 3.45, center.z - 12.5);
       }
     } else if (this.firstPerson && state.currentLocation === 'film_power_plant_pods' &&
       (this.motion.performance === 'float' || this.motion.performance === 'lift')) {
