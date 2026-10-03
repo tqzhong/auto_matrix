@@ -170,9 +170,10 @@ const socket = new SocketClient({
     sandbox = data.sandbox;
     if (simulation) simulation.tick = tick;
     ui.addEvents(data.events ?? [], true);
-    update();
+    update(true);
   },
   onWorldStateDelta: (data, tick) => {
+    const refreshUI = Boolean(data.simulation && (data.simulation.running !== simulation?.running || data.simulation.speed !== simulation?.speed || data.simulation.day !== simulation?.day));
     for (const [id, state] of Object.entries(data.agents)) {
       if (agents[id]) agents[id] = { ...agents[id], ...state };
       else if (state.id && state.name && state.position) agents[id] = state as AgentState;
@@ -193,7 +194,7 @@ const socket = new SocketClient({
         focusEvent(event); lastCut = performance.now(); engine.cameraController.director = true;
       }
     }
-    update();
+    update(refreshUI);
   },
   onAgentUpdate: data => { if (agents[data.id]) { agents[data.id] = { ...agents[data.id], ...data.state }; update(); } },
   onConversationStart: () => {},
