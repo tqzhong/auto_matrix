@@ -75,6 +75,18 @@ test('sleeping after midnight advances to this morning rather than skipping an e
   assert.equal(h.state().morning?.phase, 'alarm'); assert.equal(h.world.day, 5); assert.equal(h.world.timeOfDay, 9250);
 });
 
+test('resting starts at the actual bedside approach without snapping the player to a different position or heading', () => {
+  const h = setup(); h.command('next'); h.walk(5.15, -8.8);
+  const position = { ...h.neo.position }, yaw = h.neo.rotation;
+  h.command('act');
+  assert.equal(h.state().morning?.phase, 'lying');
+  assert.deepEqual(h.neo.position, position);
+  assert.ok(Math.abs(Math.atan2(Math.sin(h.neo.rotation - yaw), Math.cos(h.neo.rotation - yaw))) < 1e-10);
+  h.frames(1); const saved = structuredClone(h.state().morning);
+  h.sandbox.restore(structuredClone(h.sandbox.state));
+  h.frames(1, false); assert.deepEqual(h.state().morning, saved);
+});
+
 test('postponing first contact retains ordinary attendance consequences exactly once per day', () => {
   const h = setup(); const life = h.sandbox.life.state!; delete life.journey;
   const career = life.career; h.world.timeOfDay = 19000; h.sandbox.tick(100); h.sandbox.tick(101);

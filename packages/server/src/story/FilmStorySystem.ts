@@ -1112,6 +1112,8 @@ export class FilmStorySystem {
     if (target !== 'act') return state.lastText;
     if (morning.phase === 'home') {
       if (!this.near(agent, this.step!)) return '先走到床边，再决定休息。';
+      const center = FILM_SETS[this.scene!.set].center;
+      morning.approach = { x: agent.position.x - center.x, z: agent.position.z - center.z, yaw: agent.rotation };
       morning.wakeAt = (this.world.day - 1) * 1440 + (this.world.timeOfDay < 6000 ? 9250 : 33250) * .06;
       morning.phase = 'lying'; morning.elapsed = 0;
     } else if (morning.phase === 'alarm') { morning.phase = 'stopping'; morning.elapsed = 0; }
