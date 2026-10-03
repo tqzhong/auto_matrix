@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { FILM_SETS, APARTMENT_NETWORK, computerCheckLocked, computerNetworkPull, apartmentAfter, apartmentDoor, type ApartmentGesture, type ComputerInvestigation } from '@auto_matrix/shared';
+import { FILM_SETS, APARTMENT_NETWORK, computerCheckLocked, computerNetworkPull, apartmentAfter, apartmentDoor, apartmentComputerPose, type ApartmentGesture, type ComputerInvestigation } from '@auto_matrix/shared';
 import type { HeroRig } from './HeroModel.js';
 
 export class ApartmentPerformance {
@@ -73,6 +73,26 @@ export class ApartmentPerformance {
     wrist.quaternion.copy(lower.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rotation).multiply(desired));
     for (let finger = 1; finger <= 5; finger++) for (let segment = 1; segment <= 3; segment++) this.bone(`finger${finger}-${segment}_${side}`).rotation.z = (side === 'R' ? 1 : -1) * (typing ? .06 : .28) * blend;
   }
+  private feet(seated: number): void {
+    const root = this.rig.root; root.updateWorldMatrix(true, true);
+    const rotation = root.getWorldQuaternion(new THREE.Quaternion());
+    const forward = new THREE.Vector3(0, 0, 1.2 * seated).applyQuaternion(rotation);
+    const floor = root.getWorldPosition(new THREE.Vector3()).y + this.rig.footHeight + .015;
+    for (const side of ['R', 'L']) {
+      const hip = this.bone('hip_' + side), knee = this.bone('knee_' + side), ankle = this.bone('ankle_' + side);
+      const start = hip.getWorldPosition(new THREE.Vector3()), target = start.clone().add(forward); target.y = floor;
+      const direction = target.clone().sub(start), a = knee.position.length(), b = ankle.position.length();
+      const length = THREE.MathUtils.clamp(direction.length(), .02, a + b - .002); direction.normalize();
+      const along = (a * a - b * b + length * length) / (2 * length);
+      const pole = new THREE.Vector3(0, .1, 1).applyQuaternion(rotation); pole.addScaledVector(direction, -pole.dot(direction)).normalize();
+      const hinge = start.clone().addScaledVector(direction, along).addScaledVector(pole, Math.sqrt(Math.max(0, a * a - along * along)));
+      const aim = (joint: THREE.Bone, child: THREE.Bone, point: THREE.Vector3) => {
+        joint.quaternion.setFromUnitVectors(child.position.clone().normalize(), joint.parent!.worldToLocal(point.clone()).sub(joint.position).normalize()); joint.updateWorldMatrix(false, true);
+      };
+      aim(hip, knee, hinge); aim(knee, ankle, start.addScaledVector(direction, length));
+      ankle.quaternion.copy(knee.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rotation)); ankle.updateWorldMatrix(false, true);
+    }
+  }
   update(gesture?: ApartmentGesture, check?: ComputerInvestigation): void {
     this.disk.visible = this.cash.visible = false;
     if (computerCheckLocked(check)) {
@@ -88,13 +108,12 @@ export class ApartmentPerformance {
     const { role, phase, elapsed: t } = gesture; const root = this.rig.root;
     const smooth = THREE.MathUtils.smoothstep;
     if (role === 'neo' && ['signal', 'reply', 'knocking'].includes(phase)) {
-      const pelvis = this.bone('pelvis'); pelvis.position.copy(this.rig.rest.get('pelvis')!); pelvis.position.y = 1.72;
-      for (const side of ['R', 'L']) {
-        this.bone('hip_' + side).rotation.set(-1.3, 0, 0); this.bone('knee_' + side).rotation.set(1.42, 0, 0); this.bone('ankle_' + side).rotation.set(-.12, 0, 0);
-      }
-      this.bone('spine').rotation.x += .12; this.bone('chest').rotation.x += .18; this.bone('head').rotation.x += .12;
+      const seated = apartmentComputerPose(gesture).seated;
+      const pelvis = this.bone('pelvis'); pelvis.position.copy(this.rig.rest.get('pelvis')!); pelvis.position.y = THREE.MathUtils.lerp(pelvis.position.y, 1.6, seated);
+      this.feet(seated);
+      this.bone('spine').rotation.x += .16 * seated; this.bone('chest').rotation.x += .2 * seated; this.bone('head').rotation.x += .12 * seated;
       root.updateWorldMatrix(true, true);
-      for (const side of ['R', 'L'] as const) this.hand(side, this.local(-9 + (side === 'R' ? .6 : -.6), 2.65 + (phase === 'knocking' && t < .6 ? Math.sin(t * 28) * .025 : 0), -10.5), 1, true);
+      for (const side of ['R', 'L'] as const) this.hand(side, this.local(-9 + (side === 'R' ? .6 : -.6), 2.65 + .45 * Math.sin(Math.PI * seated) + (phase === 'knocking' && t < .6 ? Math.sin(t * 28) * .025 : 0), -10.49 + .6 * (1 - seated)), seated, true);
     } else if (role === 'neo' && phase === 'opening') {
       const angle = apartmentDoor(gesture) * 1.42; const hold = smooth(t, 0, .3) * (1 - smooth(t, 1.1, 1.6));
       this.bone('chest').rotation.y -= angle * .12;

@@ -275,6 +275,7 @@ export class AgentRenderer {
         training: state.currentAction?.parameters.training as MotionInput['training'],
         workday: state.currentAction?.parameters.workday as MotionInput['workday'],
         contact: state.currentAction?.parameters.contact as MotionInput['contact'],
+        homeClothes: id === 'neo' && ['neo_apartment', 'film_anderson_flat'].includes(state.currentLocation),
         computerCheck: state.currentAction?.parameters.computerCheck as MotionInput['computerCheck'],
         wakeCall: state.currentAction?.parameters.wakeCall as MotionInput['wakeCall'],
         morning: state.currentAction?.parameters.morning as MotionInput['morning'],

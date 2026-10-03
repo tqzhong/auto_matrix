@@ -4,7 +4,7 @@ export type ApartmentPhase = 'idle' | 'signal' | 'reply' | 'knocking' | 'door' |
 export interface ApartmentContact { phase: ApartmentPhase; elapsed: number; paid?: boolean }
 export interface ApartmentGesture extends ApartmentContact { role: 'neo' | 'choi' | 'dujour' }
 export interface ComputerInvestigation { phase: 'reading' | 'unplugging' | 'offline' | 'evidence' | 'saved' | 'replugging'; elapsed: number }
-export const APARTMENT_NETWORK = { screen: { x: -9, y: 3.33, z: -11.595 }, screenApproach: { x: -11.6, z: -8.8 }, approach: { x: -6.9, z: -9.15, yaw: Math.PI }, plug: { x: -6.9, y: 2.65, z: -10.09 }, gripHeight: .17, seconds: 1.8, echoSeconds: 4.2 } as const;
+export const APARTMENT_NETWORK = { screen: { x: -9, y: 3.33, z: -11.595 }, screenApproach: { x: -11.6, z: -8.8 }, approach: { x: -6.65, z: -9.15, yaw: Math.PI }, plug: { x: -6.9, y: 2.65, z: -10.09 }, gripHeight: .17, seconds: 1.8, echoSeconds: 4.2 } as const;
 export function computerCheckLocked(check?: ComputerInvestigation): boolean { return check?.phase === 'unplugging' || check?.phase === 'replugging'; }
 export function computerNetworkPull(check?: ComputerInvestigation): number {
   if (!check || check.phase === 'reading') return 0;
@@ -20,8 +20,9 @@ export interface MorningRoutine {
 export const MORNING = { lying: 3.2, sleeping: 1.8, stopping: 1.1, bedX: 8.05,
   alarm: { x: 6.45, y: 1.85, z: -10.75 }, exit: { x: 0, z: 23 } } as const;
 export const APARTMENT_ROOM = { width: 34, depth: 40, exitWidth: 10, center: { x: 1210, y: 1, z: 690 } } as const;
+export const APARTMENT_CHAIR = { x: -9, z: -8.4, width: 2, depth: 1.84, height: 2.75, seatY: 1.1, seatDepth: 1.75, backZ: -7.6 } as const;
 export const APARTMENT = {
-  computer: { x: -9, z: -8.8, yaw: Math.PI },
+  computer: { ...APARTMENT_NETWORK.screenApproach, yaw: Math.PI },
   bed: { x: 10.2, z: -9, yaw: 0 },
   bedside: { x: 5.5, z: -9, yaw: -Math.PI / 2 },
   breakfast: { x: -7, z: 3.7 },
@@ -44,6 +45,7 @@ export function computerInvestigationStep(check?: ComputerInvestigation) {
 }
 export const APARTMENT_FURNITURE = [
   { x: -9, z: -12, width: 8, depth: 3.4, height: 2.4 },
+  APARTMENT_CHAIR,
   { x: 10.2, z: -9, width: 6.2, depth: 10, height: 1.5 },
   { x: 6.35, z: -10.75, width: 1.45, depth: 1.1, height: 1.62 },
   { x: 6, z: 6.2, width: 2.8, depth: 1.8, height: 1.8 },
@@ -53,6 +55,14 @@ export const APARTMENT_FURNITURE = [
   { x: 9.5, z: 12, width: 15, depth: .4, height: 8.8 },
 ];
 const phases: ApartmentPhase[] = ['idle', 'signal', 'reply', 'knocking', 'door', 'opening', 'book', 'retrieving', 'disk', 'handover', 'invitation', 'inspecting', 'noticed', 'accepted'];
+export function apartmentComputerPose(contact: ApartmentContact) {
+  const t = contact.elapsed;
+  const seat = contact.phase === 'signal' ? smooth(Math.max(0, Math.min(1, (t - .2) / 1.2)))
+    : contact.phase === 'knocking' ? 1 - smooth(Math.max(0, Math.min(1, (t - 2) / 1.2))) : 1;
+  const move = contact.phase === 'signal' ? smooth(Math.max(0, Math.min(1, t / 1.3)))
+    : contact.phase === 'knocking' ? 1 - smooth(Math.max(0, Math.min(1, (t - 2) / 1.4))) : 1;
+  return { x: APARTMENT.computer.x + (APARTMENT_CHAIR.x - APARTMENT.computer.x) * move, z: APARTMENT.computer.z, yaw: APARTMENT.computer.yaw, seated: seat };
+}
 export function apartmentAfter(contact: ApartmentContact, phase: ApartmentPhase): boolean { return phases.indexOf(contact.phase) >= phases.indexOf(phase); }
 export function apartmentDoor(contact?: ApartmentContact): number {
   if (!contact || !apartmentAfter(contact, 'opening')) return 0;

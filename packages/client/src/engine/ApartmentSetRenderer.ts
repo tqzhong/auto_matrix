@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { APARTMENT, APARTMENT_NETWORK, APARTMENT_ROOM, MORNING, apartmentAfter, apartmentDoor, computerNetworkPull, wakeCallDoor, wakeCallHandsetHeld, type ComputerInvestigation, type FilmJourney, type NeoLifeState } from '@auto_matrix/shared';
+import { APARTMENT, APARTMENT_CHAIR, APARTMENT_NETWORK, APARTMENT_ROOM, MORNING, apartmentAfter, apartmentDoor, computerNetworkPull, wakeCallDoor, wakeCallHandsetHeld, type ComputerInvestigation, type FilmJourney, type NeoLifeState } from '@auto_matrix/shared';
 
 /** Anderson's workroom and the shared landing. Props use the shared interaction layout. */
 export class ApartmentSetRenderer {
@@ -150,10 +150,11 @@ export class ApartmentSetRenderer {
     const phoneLight = new THREE.PointLight(0xffd69c, 75, 9, 2);
     phoneLight.name = 'apartment-phone-task-light'; phoneLight.position.set(-5.95, 3.6, -11.42); this.root.add(phoneLight);
     const chair = this.mat(0x292f2b, .92);
-    this.box(chair, -9, 1.5, -8.4, 2, .3, 1.75, .14);
-    this.box(chair, -9, 2.4, -7.6, 1.94, 1.5, .24, .13);
-    this.box(metal, -9, .71, -8.4, .14, 1.4, .14);
-    for (let i = 0; i < 5; i++) { const a = i * Math.PI * .4; this.tube([[-9, .3, -8.4], [-9 + Math.sin(a), .15, -8.4 + Math.cos(a)]], metal, .045); }
+    chair.name = 'apartment-computer-chair';
+    this.box(chair, APARTMENT_CHAIR.x, APARTMENT_CHAIR.seatY, APARTMENT_CHAIR.z, APARTMENT_CHAIR.width, .3, APARTMENT_CHAIR.seatDepth, .14);
+    this.box(chair, APARTMENT_CHAIR.x, APARTMENT_CHAIR.height - .75, APARTMENT_CHAIR.backZ, APARTMENT_CHAIR.width - .06, 1.5, .24, .13);
+    this.box(metal, APARTMENT_CHAIR.x, (APARTMENT_CHAIR.seatY - .1) / 2, APARTMENT_CHAIR.z, .14, APARTMENT_CHAIR.seatY - .1, .14);
+    for (let i = 0; i < 5; i++) { const a = i * Math.PI * .4; this.tube([[APARTMENT_CHAIR.x, .3, APARTMENT_CHAIR.z], [APARTMENT_CHAIR.x + Math.sin(a), .15, APARTMENT_CHAIR.z + Math.cos(a)]], metal, .045); }
     // Mattress and creased blanket; the book has an actual hollow cavity.
     const sheet = this.mat(0x777c69, .98); const blanket = this.mat(0x3c4a43, .99);
     this.box(walnut, 10.2, .45, -9, 6.2, .75, 10, .05);

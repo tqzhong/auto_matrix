@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SCENE_BY_ID, filmStepPosition, filmPosition, lifeRoomCenter, playerBlocked, type WorldEvent } from '@auto_matrix/shared';
+import { APARTMENT, FILM_SCENE_BY_ID, filmStepPosition, filmPosition, lifeRoomCenter, playerBlocked, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -48,6 +48,81 @@ function atInvitation(h: ReturnType<typeof setup>) {
   h.near(); h.command('act'); h.frames(5);
   assert.equal(h.state().contact?.phase, 'invitation');
 }
+
+test('approaching the real chair stops ordinary walking while the computer target stays beside it', () => {
+  const h = setup();
+  assert.equal(playerBlocked(filmPosition('film_anderson_flat', -9, -8.4), true), true, 'the visible seat must be solid in ordinary walking');
+  assert.equal(playerBlocked(filmPosition('film_anderson_flat', APARTMENT.computer.x, APARTMENT.computer.z), true), false);
+  assert.ok(APARTMENT.computer.x < -11.1, 'the standing computer target must not be inside the chair');
+  h.neo.position = filmPosition('film_anderson_flat', -9, -5.5);
+  for (let i = 0; i < 40; i++) {
+    h.players.receiveInput('apartment-player', { x: 0, z: -1, yaw: Math.PI, sprint: false, jump: false, sequence: i });
+    h.players.step(.05, true, i);
+  }
+  assert.ok(h.neo.position.z >= filmPosition('film_anderson_flat', 0, -6.38).z, 'normal movement cannot pass into the chair back or seat');
+});
+
+test('Neo enters and leaves the computer chair continuously before ordinary movement resumes', () => {
+  const h = setup(); h.neo.position = filmPosition('film_anderson_flat', -11.6, -8.8);
+  const start = { ...h.neo.position }; h.command('act');
+  assert.deepEqual(h.neo.position, start, 'reading the CRT cannot teleport from the clear standing point into the seat');
+  let previous = { ...h.neo.position };
+  for (let i = 0; i < 81; i++) {
+    h.frames(.1);
+    assert.ok(Math.hypot(h.neo.position.x - previous.x, h.neo.position.z - previous.z) < .4, 'the saved signal clock must drive a continuous entry');
+    previous = { ...h.neo.position };
+  }
+  assert.equal(h.state().contact?.phase, 'reply'); assert.ok(Math.abs(h.neo.position.x - filmPosition('film_anderson_flat', -9).x) < .01);
+  h.command('act');
+  for (let i = 0; i < 40; i++) {
+    h.frames(.1);
+    assert.ok(Math.hypot(h.neo.position.x - previous.x, h.neo.position.z - previous.z) < .4, 'he must leave the seat before the knocking performance unlocks');
+    previous = { ...h.neo.position };
+  }
+  assert.equal(h.state().contact?.phase, 'door');
+  assert.equal(playerBlocked(h.neo.position, true, 1.1, h.sandbox.state.structures), false);
+  const z = h.neo.position.z;
+  for (let i = 0; i < 20; i++) {
+    h.players.receiveInput('apartment-player', { x: 0, z: 1, yaw: 0, sprint: false, jump: false, sequence: i });
+    h.players.step(.05, true, i);
+  }
+  assert.ok(h.neo.position.z > z + 1, 'the player must be able to walk to 101 after getting up');
+});
+
+test('an unfinished chair exit keeps its clock and root through pause, disconnection and save restore', () => {
+  const h = setup(); h.near(); h.command('act'); h.frames(9); h.command('act'); h.frames(2.7);
+  const contact = structuredClone(h.state().contact), position = { ...h.neo.position };
+  h.frames(3, false); assert.deepEqual(h.state().contact, contact); assert.deepEqual(h.neo.position, position);
+  h.players.release('apartment-player', 1); h.frames(3); assert.deepEqual(h.state().contact, contact);
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); h.players.possess('apartment-player', 'neo', 1);
+  assert.deepEqual(h.state().contact, contact); assert.deepEqual(h.neo.position, position);
+  h.frames(2); assert.equal(h.state().contact?.phase, 'door');
+  assert.equal(playerBlocked(h.neo.position, true, 1.1, h.sandbox.state.structures), false);
+});
+
+test('a legacy unlocked actor standing in the chair restores beside it without losing life or replaying contact', () => {
+  const h = setup(); h.state().step = 1; h.state().contact = { phase: 'door', elapsed: 0 };
+  h.neo.position = filmPosition('film_anderson_flat', -9, -8.8); h.neo.health = 51; h.neo.rotation = .7;
+  h.state().checkpoint = { ...h.neo.position };
+  const cash = h.sandbox.life.state!.money, other = structuredClone(h.world.agents.get('trinity'));
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+  assert.equal(playerBlocked(h.neo.position, true, 1.1, h.sandbox.state.structures), false, 'an old standing body cannot restore trapped in the new solid chair');
+  assert.equal(h.state().contact?.phase, 'door'); assert.equal(h.state().step, 1);
+  assert.deepEqual(h.state().checkpoint, h.neo.position); assert.equal(h.neo.rotation, .7);
+  assert.equal(h.neo.health, 51); assert.equal(h.sandbox.life.state!.money, cash); assert.deepEqual(h.world.agents.get('trinity'), other);
+});
+
+test('freeing an old chair position during an apartment revisit preserves the active story checkpoint', () => {
+  const h = setup(); h.state().step = 1; h.state().contact = { phase: 'door', elapsed: 0 };
+  h.state().visiting = 'm1_wake_up'; h.state().completed = ['m1_wake_up'];
+  h.state().checkpoint = filmPosition('film_anderson_flat', 0, 10.2); h.state().returnPosition = { ...h.state().checkpoint };
+  const checkpoint = { ...h.state().checkpoint }, returnPosition = { ...h.state().returnPosition };
+  h.neo.position = filmPosition('film_anderson_flat', -9, -8.8);
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+  assert.equal(playerBlocked(h.neo.position, true, 1.1, h.sandbox.state.structures), false);
+  assert.deepEqual(h.state().checkpoint, checkpoint); assert.deepEqual(h.state().returnPosition, returnPosition);
+  assert.equal(h.state().visiting, 'm1_wake_up'); assert.equal(h.state().step, 1);
+});
 
 test('disk trade, rabbit investigation and following the invitation are separate deliberate actions', () => {
   const h = setup(); const cash = h.sandbox.life.state!.money; const items = structuredClone(h.sandbox.state.profiles.neo.inventory);
@@ -114,7 +189,7 @@ test('the apartment door is solid until opened and the player can walk from each
   const h = setup(); const door = filmPosition('film_anderson_flat', 0, 12);
   assert.equal(playerBlocked(door, true, 1.1, h.sandbox.state.structures), true);
   atBook(h); assert.equal(playerBlocked(door, true, 1.1, h.sandbox.state.structures), false);
-  for (const [a, b] of [[[0, 1], [-9, -8.8]], [[-9, -8.8], [0, 10.2]], [[0, 10.2], [3, 3]], [[3, 3], [6, 3.4]]]) {
+  for (const [a, b] of [[[0, 1], [APARTMENT.computer.x, 1]], [[APARTMENT.computer.x, 1], [APARTMENT.computer.x, APARTMENT.computer.z]], [[APARTMENT.computer.x, APARTMENT.computer.z], [APARTMENT.computer.x, 1]], [[APARTMENT.computer.x, 1], [0, 1]], [[0, 1], [0, 10.2]], [[0, 10.2], [3, 3]], [[3, 3], [6, 3.4]]]) {
     for (let i = 0; i <= 100; i++) assert.equal(playerBlocked(filmPosition('film_anderson_flat', a[0] + (b[0] - a[0]) * i / 100, a[1] + (b[1] - a[1]) * i / 100), true), false);
   }
 });
