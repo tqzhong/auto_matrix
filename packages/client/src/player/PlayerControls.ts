@@ -13,6 +13,7 @@ import type { MotionInput } from '../agents/CharacterMotion.js';
 import { ambushCompanyStep } from '@auto_matrix/shared';
 import { AIR_RESCUE, governmentPose, airRescuePose, airRescueRoot, interrogationPose, meetingPose, meetingCarPose, meetingCarPoint, MEETING_TIMING } from '@auto_matrix/shared';
 import { officeClothing } from '@auto_matrix/shared';
+import { officeClipboardPoint } from '@auto_matrix/shared';
 import { APARTMENT_BOOK, APARTMENT_NETWORK, APARTMENT_ROOM, apartmentComputerPose, apartmentBookCrouch, cabinSeat, computerCheckLocked, computerNetworkPull, MORNING, POD_RESCUE, podRescuePose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
 import { ambushCat } from '@auto_matrix/shared';
 import { wetwallPose, sixthPose, bathroomFightRoot, WETWALL, WETWALL_SHAFT, type WetwallPhase } from '@auto_matrix/shared';
@@ -35,6 +36,7 @@ export class PlayerControls {
   private cableAim = false;
   private bookAim = false;
   private morningAim = false;
+  private signingAim = false;
   private cablePitch?: number;
   private position: Vector3 = { x: 0, y: 1, z: 0 };
   private vy = 0;
@@ -127,7 +129,7 @@ export class PlayerControls {
     this.lastLook = -1000; this.dragging = false;
     this.facing = state.rotation; this.cameraReady = false; this.motion.attack = undefined;
     this.motion.computerCheck = undefined;
-    this.cableAim = this.bookAim = this.morningAim = false;
+    this.cableAim = this.bookAim = this.morningAim = this.signingAim = false;
     if (this.cablePitch !== undefined) this.pitch = this.cablePitch;
     this.cablePitch = undefined;
     this.lastAttack = -1000; this.attackQueuedUntil = 0; this.attackCombo = 0;
@@ -194,6 +196,7 @@ export class PlayerControls {
       if (event.code === 'KeyV') {
         this.firstPerson = !this.firstPerson;
         this.morningAim = this.firstPerson && Boolean(this.motion.morning);
+        this.signingAim = this.firstPerson && this.motion.workday?.role === 'neo' && this.motion.workday.phase === 'signing';
         if (this.bridgeCaught) this.cameraReady = false;
         if (this.firstPerson && this.motion.mirrorBeat !== undefined) this.aimAtMirror();
         if (this.firstPerson && this.motion.computerCheck) this.cableAim = true;
@@ -532,7 +535,9 @@ export class PlayerControls {
     } else this.truthYaw = undefined;
     this.motion.construct = state.currentAction?.parameters.construct as MotionInput['construct'];
     this.motion.training = state.currentAction?.parameters.training as MotionInput['training'];
+    const signingStarting = this.motion.workday?.phase !== 'signing';
     this.motion.workday = state.currentAction?.parameters.workday as MotionInput['workday'];
+    if (signingStarting && this.firstPerson && this.motion.workday?.role === 'neo' && this.motion.workday.phase === 'signing') this.signingAim = true;
     const floorBookStarting = this.motion.contact?.phase !== 'retrieving' && (state.currentAction?.parameters.contact as MotionInput['contact'])?.phase === 'retrieving';
     this.motion.contact = state.currentAction?.parameters.contact as MotionInput['contact'];
     if (floorBookStarting && this.firstPerson && this.motion.contact?.propMotion === 'minidisc') this.bookAim = true;
@@ -782,7 +787,7 @@ export class PlayerControls {
     const basementWide = !this.firstPerson && Boolean(dropRoot);
     const streetShaftWide = !this.firstPerson && tvExit?.phase === 'emerging';
     this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, inOfficeLift && !this.firstPerson ? 80 : basementWide ? this.camera.aspect < .85 ? 82 : 78 : bathroomWide ? this.camera.aspect < .85 ? 78 : 58 : streetShaftWide ? this.camera.aspect < .85 ? 68 : 60 : podWide ? 65 : this.motion.truth && !this.firstPerson && this.camera.aspect < .85 ? 68 : cabinWide ? this.camera.aspect < .85 ? 68 : 58 : smithFinaleWide || epilogueWide ? 64 : ladderWide ? 62 : interviewApproach ? 70 : interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide || sentinelWide || interludeWide || oracleWide || betrayalWide || rescueWide || governmentWide || airRescueWide || escapeWide || oneWide || catchWide || lobbyWide || pillDepartureWide ? 58 : this.motion.inspecting && !this.firstPerson ? 42 : this.firstPerson ? this.motion.mirrorBeat !== undefined ? 78 : sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
-    this.camera.near = basement?.crawling || Boolean(dropRoot) || this.firstPerson && (this.motion.morning || this.motion.computerCheck || this.motion.contact?.propMotion === 'minidisc' && ['retrieving', 'disk', 'handover'].includes(this.motion.contact.phase) || this.motion.pills || this.motion.bathroom || this.motion.sixth || this.motion.wetwall?.hanging || tvExit?.phase === 'emerging') ? .06 : this.firstPerson && this.motion.club ? .08 : this.defaultNear;
+    this.camera.near = basement?.crawling || Boolean(dropRoot) || this.firstPerson && (this.motion.morning || this.motion.workday?.role === 'neo' && this.motion.workday.phase === 'signing' || this.motion.computerCheck || this.motion.contact?.propMotion === 'minidisc' && ['retrieving', 'disk', 'handover'].includes(this.motion.contact.phase) || this.motion.pills || this.motion.bathroom || this.motion.sixth || this.motion.wetwall?.hanging || tvExit?.phase === 'emerging') ? .06 : this.firstPerson && this.motion.club ? .08 : this.defaultNear;
     const arrest = this.motion.officeCustody?.street;
     if (arrest && arrest.phase !== 'approaching') {
       this.camera.fov = this.firstPerson ? 68 : arrestMirrorShot(arrest) ? this.camera.aspect < .85 ? 60 : 38 : this.camera.aspect < .85 ? 64 : 54;
@@ -1134,6 +1139,17 @@ export class PlayerControls {
       if (phase === 'inspecting') { ideal.copy(origin).add(new THREE.Vector3(-1.45, 4, 12.7)); focus.copy(origin).add(new THREE.Vector3(-.65, 3.42, 14.38)); }
       if (resetCamera || this.motion.contact.elapsed < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
       this.camera.lookAt(focus);
+    } else if (this.motion.workday?.role === 'neo' && this.motion.workday.phase === 'signing' && this.firstPerson) {
+      const head = group.getObjectByName('head'); group.updateWorldMatrix(true, true);
+      const eye = head ? head.localToWorld(new THREE.Vector3(0, .1, .23)) : target;
+      if (this.signingAim) {
+        const board = officeClipboardPoint(this.motion.workday), center = FILM_SETS.film_metacortex_floor.center;
+        const x = center.x + board.x - eye.x, z = center.z + board.z - eye.z;
+        this.yaw = this.movementYaw = Math.atan2(x, z);
+        this.pitch = Math.atan2(eye.y - center.y + 1 - board.y, Math.hypot(x, z)); this.signingAim = false;
+      }
+      const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
+      this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
     } else if (this.motion.workday && !this.firstPerson) {
       const signing = this.motion.workday.phase === 'signing'; const center = FILM_SETS.film_metacortex_floor.center;
       const origin = new THREE.Vector3(center.x, center.y - 1, center.z);

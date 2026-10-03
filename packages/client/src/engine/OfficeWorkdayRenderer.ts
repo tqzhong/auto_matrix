@@ -64,13 +64,15 @@ export class OfficeWorkdayRenderer {
     const task = new THREE.PointLight(0xf4eacb, 18, 10, 2); task.position.set(-21, 5, 27.4); this.root.add(task);
     this.batch();
     this.root.add(this.clipboard); this.clipboard.name = 'delivery-clipboard';
-    this.box(this.clipboard, wood, 0, 0, 0, .85, .045, 1.05, .035);
-    this.box(this.clipboard, paper, 0, .029, 0, .76, .012, .96);
-    this.box(this.clipboard, metal, 0, .046, -.45, .28, .035, .1, .012);
-    for (const z of [-.25, -.17, -.09, .23]) this.box(this.clipboard, dark, 0, .039, z, z === .23 ? .58 : .4, .002, .009);
+    this.box(this.clipboard, dark, 0, -.005, 0, .85, .055, 1.05, .035);
+    const screen = this.mat(0x91a492, .55);
+    this.box(this.clipboard, screen, 0, .029, 0, .69, .014, .72, .012).name = 'delivery-signature-screen';
+    this.label('DELIVERY', 'SIGN HERE', .6, .16, this.clipboard, 0, .038, .24, 0, '#293d30', '#91a492').rotation.set(-Math.PI / 2, 0, Math.PI);
+    this.box(this.clipboard, dark, 0, .039, .23, .56, .002, .009);
+    for (const x of [-.2, 0, .2]) this.box(this.clipboard, metal, x, .026, .43, .11, .02, .04, .008);
     const points = Array.from({ length: 48 }, (_, i) => { const t = i / 47; return new THREE.Vector3(-.17 + t * .34, .042, Math.sin(t * 38) * .055); });
     const ink = new THREE.LineBasicMaterial({ color: 0x172c40 }); this.materials.add(ink);
-    this.signature = new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), ink); this.clipboard.add(this.signature);
+    this.signature = new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), ink); this.signature.name = 'delivery-signature-stroke'; this.clipboard.add(this.signature);
   }
   private mat(color: number, roughness: number, metalness = 0) {
     const material = new THREE.MeshStandardMaterial({ color, roughness, metalness }); this.materials.add(material); return material;
@@ -86,6 +88,7 @@ export class OfficeWorkdayRenderer {
     const map = new THREE.CanvasTexture(canvas); map.colorSpace = THREE.SRGBColorSpace; this.textures.add(map);
     const material = new THREE.MeshStandardMaterial({ map, roughness: .64, side: THREE.DoubleSide }); this.materials.add(material);
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, height), material); mesh.position.set(x, y, z); mesh.rotation.y = yaw; parent.add(mesh);
+    return mesh;
   }
   update(journey?: FilmJourney): void {
     const workday = journey?.scene === 'm1_boss' && !journey.visiting ? journey.workday : undefined;
