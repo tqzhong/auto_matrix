@@ -37,17 +37,17 @@ async function setup(t: TestContext) {
   const scene = new THREE.Scene(), renderer = new AgentRenderer(scene), root = new THREE.Group(); scene.add(root);
   const center = FILM_SETS.film_power_plant_pods.center; root.position.set(center.x, center.y - 1, center.z);
   const set = new PodSetRenderer(root);
-  const at = (elapsed: number, wallTime = 100) => {
+  const at = (elapsed: number, wallTime = 100, firstPerson = false) => {
     const awakening = { kind: 'disconnect' as const, elapsed }, pose = awakeningPose(awakening);
     const journey = { scene: 'm1_pod', awakening } as FilmJourney;
     neo.position = filmPosition(neo.currentLocation, pose.x, pose.z); neo.position.y += pose.y;
     neo.currentAction = { type: 'idle', parameters: { filmPose: pose.pose }, startedAt: 0, duration: 1, progress: 0 };
-    renderer.updateAgent('neo', neo); renderer.setWorld(false); renderer.setPlayer('neo');
+    renderer.updateAgent('neo', neo); renderer.setWorld(false); renderer.setPlayer('neo', firstPerson);
     renderer.getAgent('neo')!.position.set(neo.position.x, neo.position.y, neo.position.z);
     renderer.getAgentBody('neo')!.rotation.y = Math.PI;
     renderer.update(0, undefined, 0, 0, journey);
     const body = renderer.getAgentBody('neo')!;
-    set.update(journey, wallTime, false, body); scene.updateMatrixWorld(true);
+    set.update(journey, wallTime, firstPerson, body); scene.updateMatrixWorld(true);
     return body;
   };
   at(0); await new Promise(resolve => setImmediate(resolve)); at(0);
@@ -192,4 +192,146 @@ test('the pod disconnection camera keeps the real head and chest above the subti
       } finally { controls.dispose(); }
     }
   } finally { globalThis.window = previous; }
+});
+
+test('Neo sits up inside the pod while his hips and lower body remain supported in the basin', async t => {
+  const h = await setup(t), body = h.at(0);
+  const startHead = body.getObjectByName('head')!.getWorldPosition(new THREE.Vector3());
+  const hips = body.getObjectByName('pelvis')!.getWorldPosition(new THREE.Vector3());
+  h.at(1.7);
+  const head = body.getObjectByName('head')!.getWorldPosition(new THREE.Vector3());
+  assert.ok(head.y - startHead.y > 1, `the head must rise out of the fluid instead of remaining horizontal: ${head.y - startHead.y}`);
+  assert.ok(body.getObjectByName('pelvis')!.getWorldPosition(new THREE.Vector3()).distanceTo(hips) < .12, 'sitting up must pivot at supported hips, not raise the entire body');
+  for (const side of ['R', 'L']) {
+    const ankle = h.root.worldToLocal(body.getObjectByName(`ankle_${side}`)!.getWorldPosition(new THREE.Vector3()));
+    assert.ok(Math.abs(ankle.x) < 1.3 && ankle.z > -15.9 && ankle.z < -9.7 && ankle.y < 2.3, `the lower body must remain inside the fluid basin: ${side} ${ankle.toArray()}`);
+  }
+});
+
+test('Neo braces both palms on the real pod rim during the sit-up', async t => {
+  const h = await setup(t);
+  for (const elapsed of [.7, 1.2, 1.7, 2.4]) {
+    const body = h.at(elapsed);
+    for (const side of ['R', 'L']) {
+      const wrist = body.getObjectByName(`wrist_${side}`)!;
+      const palm = wrist.localToWorld(new THREE.Vector3(side === 'R' ? .09 : -.09, -.18, .15));
+      const hit = new THREE.Raycaster(palm.clone().add(new THREE.Vector3(0, .07, 0)), new THREE.Vector3(0, -1, 0), 0, .14).intersectObject(h.root, true)
+        .find(hit => hit.object instanceof THREE.Mesh && (hit.object.material as THREE.MeshStandardMaterial).color?.getHex() === 0x46565b);
+      assert.ok(hit && Math.abs(hit.point.y - palm.y) < .04, `${side} palm at ${elapsed}s must press the actual rim, instead of floating above the body: ${h.root.worldToLocal(palm).toArray()}`);
+    }
+  }
+});
+
+test('the connected hose routes remain outside the shipped skin as Neo rises', async t => {
+  const h = await setup(t);
+  for (const elapsed of [.4, .7, 1, 1.3, 1.7, 2.4, 2.8, 3.2]) {
+    const body = h.at(elapsed), skin: THREE.Mesh[] = [];
+    body.traverse(object => {
+      if (object instanceof THREE.SkinnedMesh && object.visible && (object.userData.patientBody || (object.material as THREE.Material).name === 'Skin')) {
+        // Bake this actual pose once; repeated SkinnedMesh rays otherwise reskin every triangle.
+        const geometry = new THREE.BufferGeometry(), positions = object.geometry.getAttribute('position'), posed = new THREE.Float32BufferAttribute(new Float32Array(positions.count * 3), 3);
+        const point = new THREE.Vector3();
+        for (let i = 0; i < positions.count; i++) { object.getVertexPosition(i, point); posed.setXYZ(i, point.x, point.y, point.z); }
+        geometry.setAttribute('position', posed); geometry.setIndex(object.geometry.index); geometry.computeBoundingBox(); geometry.computeBoundingSphere();
+        const mesh = new THREE.Mesh(geometry, object.material); mesh.matrixWorld.copy(object.matrixWorld); skin.push(mesh);
+      }
+    });
+    for (const name of ['pod-neck-feed', ...Array.from({ length: 4 }, (_, i) => `pod-body-feed-${i}`)]) {
+      const hose = h.root.getObjectByName(name) as THREE.Mesh<THREE.TubeGeometry>;
+      for (let i = 0; i < 24; i++) {
+        const from = hose.localToWorld(hose.geometry.parameters.path.getPoint(i / 24));
+        const delta = hose.localToWorld(hose.geometry.parameters.path.getPoint((i + 1) / 24)).sub(from);
+        const hit = new THREE.Raycaster(from, delta.clone().normalize(), .002, delta.length()).intersectObjects(skin)[0];
+        assert.ok(!hit, `${name} crosses the actual body at ${elapsed}s, segment ${i}: ${hit ? h.root.worldToLocal(hit.point.clone()).toArray() : 'none'}`);
+      }
+    }
+    skin.forEach(mesh => mesh.geometry.dispose());
+  }
+});
+
+test('the saved pod body pose is independent of wall time, earlier frames and a newly loaded model', async t => {
+  const h = await setup(t);
+  const bones = () => {
+    const result: number[][] = []; h.renderer.getAgentBody('neo')!.traverse(object => { if (object instanceof THREE.Bone) result.push(object.matrixWorld.toArray()); }); return result;
+  };
+  h.at(1.7); const first = bones();
+  h.renderer.update(.35, undefined, 1, 0, { scene: 'm1_pod', awakening: { kind: 'disconnect', elapsed: 1.7 } } as FilmJourney);
+  h.at(1.7, 500);
+  assert.deepEqual(bones(), first, 'generic idle breathing and accumulated motion cannot shift a paused story pose');
+  await t.test('cold loading restores the same supported pose', async t => {
+    const restored = await setup(t); restored.at(1.7, 900);
+    const result: number[][] = []; restored.renderer.getAgentBody('neo')!.traverse(object => { if (object instanceof THREE.Bone) result.push(object.matrixWorld.toArray()); });
+    assert.deepEqual(result, first);
+  });
+});
+
+test('the shipped support-hand surfaces do not sit inside the solid pod rim', async t => {
+  const h = await setup(t), metal = new Set<THREE.Material>(), solids: THREE.Mesh[] = [];
+  h.root.traverse(object => {
+    if (object instanceof THREE.Mesh && !(object instanceof THREE.InstancedMesh) && (object.material as THREE.MeshStandardMaterial).color?.getHex() === 0x46565b) {
+      metal.add(object.material as THREE.Material); solids.push(object); object.geometry.computeBoundingBox();
+    }
+  });
+  for (const material of metal) material.side = THREE.DoubleSide;
+  for (const elapsed of [.7, .95, 1.2, 1.45, 1.7, 2, 2.4]) {
+    const body = h.at(elapsed), inside: number[][] = [];
+    body.traverse(object => {
+      if (!(object instanceof THREE.SkinnedMesh) || !object.visible || (object.material as THREE.Material).name !== 'Skin') return;
+      const index = object.geometry.getAttribute('skinIndex'), weight = object.geometry.getAttribute('skinWeight');
+      for (let i = 0; i < index.count; i++) {
+        if (!Array.from({ length: 4 }, (_, j) => weight.getComponent(i, j) > .2 && /^(wrist_|finger)/.test(object.skeleton.bones[index.getComponent(i, j)].name)).some(Boolean)) continue;
+        const point = object.localToWorld(object.getVertexPosition(i, new THREE.Vector3()));
+        const local = h.root.worldToLocal(point.clone());
+        if (Math.abs(local.x) < 1.3 || local.y < 2.02 || local.y > 2.2 || local.z < -14 || local.z > -12.8) continue;
+        const hits = new THREE.Raycaster(point.clone().add(new THREE.Vector3(0, .3, 0)), new THREE.Vector3(0, -1, 0), 0, .6).intersectObjects(solids);
+        let entry: THREE.Intersection | undefined;
+        const normalMatrix = new THREE.Matrix3();
+        for (const hit of hits) {
+          const normal = hit.face!.normal.clone().applyNormalMatrix(normalMatrix.getNormalMatrix(hit.object.matrixWorld));
+          if (normal.y > .01) entry = hit;
+          else if (normal.y < -.01 && entry) {
+            if (entry.point.y - point.y > .005 && point.y - hit.point.y > .005) {
+              const wrist = body.getObjectByName(local.x < 0 ? 'wrist_R' : 'wrist_L')!;
+              inside.push([...local.toArray(), ...wrist.worldToLocal(point.clone()).toArray()]); break;
+            }
+            entry = undefined;
+          }
+        }
+      }
+    });
+    assert.equal(inside.length, 0, `support skin penetrates the rim at ${elapsed}s: ${JSON.stringify(inside.slice(0, 4))}`);
+  }
+});
+
+test('the pod first-person eye follows the shipped head and keeps the support hands visible', async t => {
+  const h = await setup(t);
+  class InputTarget extends EventTarget { matches() { return false; } }
+  const window = new InputTarget(), canvas = new InputTarget(), document = new InputTarget(), previous = globalThis.window;
+  globalThis.window = window as unknown as Window & typeof globalThis;
+  Object.assign(globalThis.document, { pointerLockElement: canvas, exitPointerLock() {}, hidden: false,
+    addEventListener: document.addEventListener.bind(document), removeEventListener: document.removeEventListener.bind(document) });
+  const camera = new THREE.PerspectiveCamera(57, 16 / 9, .5, 5000), controls = new PlayerControls(canvas as unknown as HTMLCanvasElement, camera, () => {}, () => {});
+  try {
+    for (const elapsed of [0, .6, 1.3, 2.4]) {
+      const body = h.at(elapsed); controls.possess(h.neo); controls.performing = true; controls.firstPerson = true;
+      controls.update(1 / 60, h.neo, h.renderer.getAgent('neo')!, false);
+      const eye = body.getObjectByName('head')!.localToWorld(new THREE.Vector3(0, .1, .32));
+      assert.ok(camera.position.distanceTo(eye) < .05, `at ${elapsed}s the view must follow the actual eyes, gap ${camera.position.distanceTo(eye)}`);
+      h.renderer.setPlayerMotion(controls.motion); h.at(elapsed, 100, true);
+      assert.equal(body.visible, true, 'first person must retain the real hands and body while hiding the head surface');
+      const head = body.getObjectByName('head')!, skin: THREE.SkinnedMesh[] = [];
+      body.traverse(object => {
+        if (object instanceof THREE.SkinnedMesh && object.visible && (object.userData.patientBody || (object.material as THREE.Material).name === 'Skin')) {
+          object.skeleton.update(); object.computeBoundingSphere(); skin.push(object);
+        }
+      });
+      const face = new THREE.Raycaster(head.localToWorld(new THREE.Vector3(0, .1, .8)), new THREE.Vector3(0, 0, -1).applyQuaternion(head.getWorldQuaternion(new THREE.Quaternion())), 0, .7).intersectObjects(skin);
+      assert.equal(face.length, 0, 'the retained body cannot render its own face into the first-person eye');
+    }
+    const direction = camera.getWorldDirection(new THREE.Vector3()), rotation = h.renderer.getAgentBody('neo')!.quaternion.clone();
+    document.dispatchEvent(Object.assign(new Event('mousemove'), { movementX: 180, movementY: -80 }));
+    controls.update(1 / 60, h.neo, h.renderer.getAgent('neo')!, false);
+    assert.ok(camera.getWorldDirection(new THREE.Vector3()).distanceTo(direction) > .25, 'the supported body must still allow free observation while paused');
+    assert.ok(h.renderer.getAgentBody('neo')!.quaternion.angleTo(rotation) < 1e-7, 'free observation cannot rotate the reclined body away from its saved support');
+  } finally { controls.dispose(); globalThis.window = previous; }
 });

@@ -363,7 +363,7 @@ export class PodSetRenderer {
       const release = THREE.MathUtils.smoothstep(disconnect, 3.05 + i * .16, 3.3 + i * .16);
       const end = contact.addScaledVector(outward, .12 + release * .3).lerp(start.clone().add(new THREE.Vector3(-side * .05, -.45, 0)), release);
       feed.plug.position.copy(end).addScaledVector(outward, -.06); feed.plug.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), outward);
-      if (disconnect < 4) this.bend(feed.mesh, [start, start.clone().add(new THREE.Vector3(-side * .15, .55, -.2)), end.clone().addScaledVector(outward, .3 * (1 - release)), end]);
+      if (disconnect < 4) this.bend(feed.mesh, [start, start.clone().add(new THREE.Vector3(-side * .05, -.4, 1.7)), end.clone().addScaledVector(outward, .6 * (1 - release)), end]);
     });
     this.connections.visible = disconnect < 4;
     this.neckTube.visible = !firstPerson;

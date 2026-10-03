@@ -1,6 +1,7 @@
 import { TruthPerformance } from './TruthPerformance.js';
 import { poseSpoonBody } from './SpoonPerformance.js';
 import { poseMorningBody } from './MorningPerformance.js';
+import { posePodWake } from './PodWakePerformance.js';
 import { truthKneel, truthSeat, spoonLessonSeat } from '@auto_matrix/shared';
 import * as THREE from 'three';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
@@ -600,7 +601,7 @@ export class HeroModels {
   }
 
   animate(rig: HeroRig, pose: Pose, motion: MotionState, input: MotionInput, delta: number): void {
-    const interactionView = Boolean(input.firstPerson && (input.morning || input.workday?.role === 'neo' && input.workday.phase === 'signing'));
+    const interactionView = Boolean(input.firstPerson && (input.morning || input.podWake !== undefined || input.workday?.role === 'neo' && input.workday.phase === 'signing'));
     rig.silver.value = input.mirror ?? 0;
     rig.glasses.visible = !interactionView && !rig.officeRole && !rig.apartmentRole && input.glasses !== false && !input.realWorld && !(input.bathroom?.role === 'smith' && input.bathroom.headbutt);
     const officeShirt = input.officeShirt || rig.officeRole === 'courier' || rig.officeRole === 'police';
@@ -907,6 +908,7 @@ export class HeroModels {
         bone('shoulder_R').rotation.x -= .18 * emphasis; bone('elbow_R').rotation.x -= .23 * emphasis;
       }
     }
+    posePodWake(rig, input.podWake);
     if (input.podRescue !== undefined) {
       const landing = podRescuePose(input.podRescue);
       bone('spine').rotation.x += .3 * landing.settle; bone('chest').rotation.x += .25 * landing.settle;
