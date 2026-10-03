@@ -1,5 +1,6 @@
 import { TruthPerformance } from './TruthPerformance.js';
 import { poseSpoonBody } from './SpoonPerformance.js';
+import { poseMorningBody } from './MorningPerformance.js';
 import { truthKneel, truthSeat, spoonLessonSeat } from '@auto_matrix/shared';
 import * as THREE from 'three';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
@@ -36,7 +37,7 @@ export interface HeroRig {
   footHeight: number;
   glasses: THREE.Group;
   silver: { value: number };
-  trackingSkin?: { mesh: THREE.SkinnedMesh; original: THREE.BufferGeometry; covered: THREE.BufferGeometry };
+  trackingSkin?: { mesh: THREE.SkinnedMesh; original: THREE.BufferGeometry; covered: THREE.BufferGeometry; firstPerson: THREE.BufferGeometry };
   wardrobe: { mesh: THREE.Mesh; color: THREE.Color; map: THREE.Texture | null; bumpMap: THREE.Texture | null; bumpScale: number;
     roughness: number; metalness: number; emissive: THREE.Color; emissiveIntensity: number; outer: boolean; hair: boolean; cloth: boolean }[];
   officeRole?: 'rhineheart' | 'courier' | 'police';
@@ -274,7 +275,14 @@ export class HeroModels {
         // Both index buffers belong to disposable geometries, avoiding orphaned
         // GPU buffers when the outfit changes repeatedly.
         dressed.attributes = original.attributes;
-        this.geometries.add(dressed); trackingSkin = { mesh: object, original, covered: dressed };
+        const firstPerson = new THREE.BufferGeometry(), hands: number[] = [];
+        const joints = original.attributes.skinIndex, weights = original.attributes.skinWeight;
+        const head = (vertex: number) => [0, 1, 2, 3].some(i => weights.getComponent(vertex, i) > .05 && /^(head|neck)$/.test(object.skeleton.bones[joints.getComponent(vertex, i)].name));
+        for (let i = 0; i < indices.length; i += 3) {
+          const triangle = indices.slice(i, i + 3); if (!triangle.some(head)) hands.push(...triangle);
+        }
+        firstPerson.setIndex(hands); firstPerson.attributes = original.attributes;
+        this.geometries.add(dressed); this.geometries.add(firstPerson); trackingSkin = { mesh: object, original, covered: dressed, firstPerson };
       }
       if (support === 'courier' && material.name === 'Office cotton') material.color.setHex(0x455c6b);
       if (police && /Office cotton|Trousers/.test(material.name)) material.color.setHex(0x202e36);
@@ -592,13 +600,14 @@ export class HeroModels {
   }
 
   animate(rig: HeroRig, pose: Pose, motion: MotionState, input: MotionInput, delta: number): void {
+    const morningView = Boolean(input.morning && input.firstPerson);
     rig.silver.value = input.mirror ?? 0;
-    rig.glasses.visible = !rig.officeRole && !rig.apartmentRole && input.glasses !== false && !input.realWorld && !(input.bathroom?.role === 'smith' && input.bathroom.headbutt);
+    rig.glasses.visible = !morningView && !rig.officeRole && !rig.apartmentRole && input.glasses !== false && !input.realWorld && !(input.bathroom?.role === 'smith' && input.bathroom.headbutt);
     const officeShirt = input.officeShirt || rig.officeRole === 'courier' || rig.officeRole === 'police';
     const trackingShirt = input.performance === 'touch' || input.homeClothes === true;
     const clubClothes = Boolean(input.clubClothes && !input.realWorld);
     if (rig.trackingSkin) {
-      const skin = rig.trackingSkin; skin.mesh.geometry = trackingShirt ? skin.covered : skin.original;
+      const skin = rig.trackingSkin; skin.mesh.geometry = morningView ? skin.firstPerson : trackingShirt ? skin.covered : skin.original;
     }
     const pod = input.performance && ['pod', 'fall', 'float', 'lift', 'recover'].includes(input.performance);
     const recoveryComplete = input.performance === 'recover' && input.recovery !== undefined && input.recovery >= 11.7;
@@ -628,6 +637,7 @@ export class HeroModels {
       if (patientLegs) material.color.setHex(0xa97c70);
       else if (part.cloth && input.realWorld) material.color.setHex(0x706c62);
       else material.color.copy(part.color);
+      if ((part.hair || material.name === 'Eyes') && morningView) part.mesh.visible = false;
     }
     const bone = (name: string) => rig.bones.get(name)!;
     const pelvis = bone('pelvis');
@@ -934,6 +944,7 @@ export class HeroModels {
       }
       bone('finger1-2_R').rotation.y = .5 * grip;
     }
+    poseMorningBody(rig, input.morning);
     if (input.morning?.phase === 'stopping') this.stopAlarm(rig, input.morning.elapsed);
     if (input.wakeCall && input.wakeCall.phase !== 'waking') {
       if (input.wakeCall.phase === 'pickup') {

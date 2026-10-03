@@ -50,6 +50,7 @@ export interface MotionInput {
   computerCheck?: import('@auto_matrix/shared').ComputerInvestigation;
   wakeCall?: import('@auto_matrix/shared').WakeCall;
   morning?: import('@auto_matrix/shared').MorningRoutine;
+  firstPerson?: boolean;
   club?: import('@auto_matrix/shared').ClubGesture;
   sentinel?: import('@auto_matrix/shared').SentinelGesture;
   interlude?: import('@auto_matrix/shared').InterludeGesture;

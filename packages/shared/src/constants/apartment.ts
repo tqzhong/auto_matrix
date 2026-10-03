@@ -16,8 +16,10 @@ export interface WakeCall { phase: WakeCallPhase; elapsed: number; nightmare: bo
 export interface MorningRoutine {
   phase: 'home' | 'lying' | 'sleeping' | 'alarm' | 'stopping' | 'rising' | 'ready' | 'done';
   elapsed: number; wakeAt?: number;
+  approach?: { x: number; z: number; yaw: number };
 }
 export const MORNING = { lying: 3.2, sleeping: 1.8, stopping: 1.1, bedX: 8.05,
+  mattressY: 1.385, pelvisY: 1.7, edgeX: 7.6, floorFootX: 6.67,
   alarm: { x: 6.45, y: 1.85, z: -10.75 }, exit: { x: 0, z: 23 } } as const;
 export const APARTMENT_ROOM = { width: 34, depth: 40, exitWidth: 10, center: { x: 1210, y: 1, z: 690 } } as const;
 export const APARTMENT_CHAIR = { x: -9, z: -8.4, width: 2, depth: 1.84, height: 2.75, seatY: 1.1, seatDepth: 1.6, backZ: -7.6 } as const;
@@ -112,11 +114,36 @@ export function morningWakePose(morning: MorningRoutine): WakeCall {
     ? WAKE_CALL.waking * (1 - Math.min(1, morning.elapsed / MORNING.lying))
     : morning.phase === 'rising' ? morning.elapsed : 0 };
 }
+export function morningBedPose(morning: MorningRoutine) {
+  const t = morningWakePose(morning).elapsed;
+  const blend = (start: number, end: number) => smooth(Math.max(0, Math.min(1, (t - start) / (end - start))));
+  const turn = blend(.75, 2.1), rise = blend(2.65, 3.7), recline = 1 - blend(.25, 1.6);
+  const approach = morning.phase === 'lying' ? morning.approach ?? APARTMENT.bedside : APARTMENT.bedside;
+  let yaw = -Math.PI / 2 * turn;
+  const sourceTurn = blend(5.1, WAKE_CALL.waking);
+  yaw += Math.atan2(Math.sin(approach.yaw + Math.PI / 2), Math.cos(approach.yaw + Math.PI / 2)) * sourceTurn;
+  const feet = (['R', 'L'] as const).map((side, i) => {
+    const lower = blend(i ? 1.95 : 1.75, i ? 2.6 : 2.35), sign = i ? 1 : -1;
+    const x = MORNING.bedX + (MORNING.edgeX - MORNING.bedX) * turn;
+    const foot = { x: x + sign * .276 * Math.cos(yaw) + 2.13 * Math.sin(yaw),
+      y: MORNING.pelvisY + .2 * Math.sin(Math.PI * lower), z: APARTMENT.bed.z - sign * .276 * Math.sin(yaw) + 2.13 * Math.cos(yaw),
+      yaw, recline: 1 - lower, lift: 0 };
+    foot.x += (MORNING.floorFootX - foot.x) * lower; foot.y += (.206 - foot.y) * lower;
+    foot.z += (APARTMENT.bed.z + sign * .276 - foot.z) * lower;
+    const step = blend(i ? 4.65 : 3.85, i ? 5.4 : 4.6);
+    const targetX = approach.x + sign * .276 * Math.cos(approach.yaw), targetZ = approach.z - sign * .276 * Math.sin(approach.yaw);
+    foot.x += (targetX - foot.x) * step; foot.z += (targetZ - foot.z) * step;
+    foot.y += .18 * Math.sin(Math.PI * step); foot.lift = .18 * Math.sin(Math.PI * step);
+    foot.yaw += Math.atan2(Math.sin(approach.yaw - foot.yaw), Math.cos(approach.yaw - foot.yaw)) * step;
+    return foot;
+  });
+  let x = MORNING.bedX + (MORNING.edgeX - MORNING.bedX) * turn;
+  x += (MORNING.floorFootX - x) * rise;
+  if (t >= 3.7) x = (feet[0].x + feet[1].x) / 2;
+  return { x, z: t >= 3.7 ? (feet[0].z + feet[1].z) / 2 : APARTMENT.bed.z, yaw: Math.atan2(Math.sin(yaw), Math.cos(yaw)), recline, rise, feet };
+}
 export function morningRoot(morning: MorningRoutine): { x: number; z: number; yaw: number } {
-  const call = morningWakePose(morning); const root = wakeCallRoot(call);
-  const bedside = smooth(Math.max(0, Math.min(1, (call.elapsed - 2.7) / (WAKE_CALL.waking - 2.7))));
-  root.x += (MORNING.bedX - APARTMENT.bed.x) * (1 - bedside);
-  return root;
+  const { x, z, yaw } = morningBedPose(morning); return { x, z, yaw };
 }
 export function morningText(morning: MorningRoutine): string {
   switch (morning.phase) {

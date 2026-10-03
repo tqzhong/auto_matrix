@@ -514,6 +514,7 @@ export function filmStepPosition(scene: FilmScene, step: FilmStep, journey?: Fil
 }
 export function filmStepNear(scene: FilmScene, step: FilmStep, position: Vector3, matrix: boolean, journey?: FilmJourney): boolean {
   const radius = scene.id === 'm1_mirror' && step === scene.steps[0] ? MIRROR_TOUCH.radius
+    : scene.id === 'm1_morning' && step === scene.steps[0] ? .85
     : scene.id === 'm1_cabin' && step !== scene.steps[0] || scene.id === 'm1_construct' && step === scene.steps[0] ? .8 : 4;
   return matrix === (FILM_SETS[scene.set].world === 'matrix') && distance(position, filmStepPosition(scene, step, journey)) <= radius;
 }

@@ -160,12 +160,12 @@ export class ApartmentSetRenderer {
     // Mattress and creased blanket; the book has an actual hollow cavity.
     const sheet = this.mat(0x777c69, .98); const blanket = this.mat(0x3c4a43, .99);
     this.box(walnut, 10.2, .45, -9, 6.2, .75, 10, .05);
-    this.box(sheet, 10.2, 1.09, -9, 6.05, .59, 9.85, .2);
+    this.box(sheet, 10.2, MORNING.mattressY - .295, -9, 6.05, .59, 9.85, .2);
     const cloth = new THREE.PlaneGeometry(6.18, 7.2, 28, 34); cloth.rotateX(-Math.PI / 2);
     const folds = cloth.attributes.position;
     for (let i = 0; i < folds.count; i++) { const x = folds.getX(i); const z = folds.getZ(i); folds.setY(i, .055 * Math.sin(x * 6 + z * 1.7) + .035 * Math.sin(z * 9) - Math.max(0, Math.abs(x) - 2.65) * .95); }
     cloth.computeVertexNormals(); blanket.side = THREE.DoubleSide; this.mesh(cloth, blanket, 10.2, 1.44, -7.5);
-    this.box(sheet, 10.2, 1.56, -12.3, 3.8, .36, 1.95, .18).rotation.y = -.13;
+    this.box(sheet, MORNING.bedX, 1.49, -10.75, 1.65, .22, 1.5, .11).rotation.y = -.06;
     // The clock sits on an actual cabinet within the reclining actor's reach.
     this.box(walnut, 6.35, .79, -10.75, 1.45, 1.58, 1.1, .05);
     this.box(trim, 6.35, 1.01, -10.17, 1.19, .53, .08, .025);
