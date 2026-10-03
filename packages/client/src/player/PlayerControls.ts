@@ -80,6 +80,7 @@ export class PlayerControls {
   private wasPerforming = false;
   private meetingYaw?: number;
   private arrestYaw?: number;
+  private chairYaw?: number;
   mirror = 0;
   spoon?: number;
   ambushObservation?: number;
@@ -110,6 +111,7 @@ export class PlayerControls {
   possess(state: AgentState): void {
     this.custodyBodies = undefined; this.motion.officeCustody = undefined;
     this.meetingYaw = undefined; this.arrestYaw = undefined; this.welcomeShot = undefined; this.performing = false; this.phoneExit = false;
+    this.chairYaw = undefined;
     this.bridgeCaught = undefined;
     this.watchingAmbush = false;
     this.wetwallGuide = undefined; this.hangingWetwall = false; this.sixthGuide = undefined; this.motion.sixth = undefined;
@@ -528,6 +530,12 @@ export class PlayerControls {
     this.motion.training = state.currentAction?.parameters.training as MotionInput['training'];
     this.motion.workday = state.currentAction?.parameters.workday as MotionInput['workday'];
     this.motion.contact = state.currentAction?.parameters.contact as MotionInput['contact'];
+    const chairYaw = this.motion.contact?.chairMotion === 'stepping' && ['signal', 'reply', 'knocking'].includes(this.motion.contact.phase) ? state.rotation : undefined;
+    if (chairYaw !== undefined && this.chairYaw !== undefined && this.firstPerson) {
+      const turn = Math.atan2(Math.sin(chairYaw - this.chairYaw), Math.cos(chairYaw - this.chairYaw));
+      this.yaw += turn; this.movementYaw += turn;
+    }
+    this.chairYaw = chairYaw;
     this.motion.computerCheck = computerCheck;
     this.motion.wakeCall = state.currentAction?.parameters.wakeCall as MotionInput['wakeCall'];
     this.motion.morning = state.currentAction?.parameters.morning as MotionInput['morning'];
@@ -731,7 +739,7 @@ export class PlayerControls {
     const heading = dropRoot ? dropRoot.yaw : this.motion.bathroom ? bathroomFightRoot(this.motion.bathroom, this.motion.bathroom.role).yaw : this.motion.sixth ? sixthPose(this.motion.sixth).yaw : this.motion.wetwall && this.wetwallGuide ? wetwallPose(this.motion.wetwall.start, this.motion.wetwall.role, this.wetwallGuide.progress, this.motion.wetwall.phase, this.motion.wetwall.elapsed, this.motion.wetwall.fallY, this.motion.wetwall.continued).yaw
       : this.ride || this.climbing || this.performing ? state.rotation : attacking ? this.attackYaw : this.firearm ? this.yaw : this.motion.speed > .1 ? Math.atan2(dx, dz) : this.facing;
     const turn = Math.atan2(Math.sin(heading - this.facing), Math.cos(heading - this.facing));
-    this.facing += turn * (computerCheckLocked(computerCheck) || dropRoot || this.motion.officeCustody?.street || this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.welcome || this.motion.knock !== undefined || this.motion.training || this.motion.workday || this.motion.wakeCall || this.motion.sentinel || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || this.motion.lobbyEntry ? 1 : 1 - Math.exp(-14 * delta)); this.motion.turn = turn * 8;
+    this.facing += turn * (chairYaw !== undefined || computerCheckLocked(computerCheck) || dropRoot || this.motion.officeCustody?.street || this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.welcome || this.motion.knock !== undefined || this.motion.training || this.motion.workday || this.motion.wakeCall || this.motion.sentinel || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || this.motion.lobbyEntry ? 1 : 1 - Math.exp(-14 * delta)); this.motion.turn = turn * 8;
     if (running && this.enabled && !this.motion.wetwall && (this.motion.speed > .1 || this.ride || this.climbing) && !(this.firstPerson && this.climbing && state.currentLocation === 'film_office_ledge') && !this.dragging && performance.now() - this.lastLook > 900) {
       const cameraTurn = Math.atan2(Math.sin(this.facing - this.yaw), Math.cos(this.facing - this.yaw));
       this.yaw += cameraTurn * (1 - Math.exp(-5 * delta));
@@ -1095,6 +1103,11 @@ export class PlayerControls {
       const origin = new THREE.Vector3(center.x, center.y - 1, center.z);
       const ideal = (computer ? new THREE.Vector3(-6.6, 4.7, -7.1) : book ? new THREE.Vector3(9.3, 4.9, 3.1) : new THREE.Vector3(4.2, 5.4, 7.4)).add(origin);
       const focus = (computer ? new THREE.Vector3(-9, 2.9, -11.8) : book ? new THREE.Vector3(6, 2.1, 6) : new THREE.Vector3(0, 3.5, 12.3)).add(origin);
+      if (computer && this.motion.contact.chairMotion === 'stepping') {
+        const pose = apartmentComputerPose(this.motion.contact);
+        ideal.lerp(new THREE.Vector3(-16, 5.6, -8.8).add(origin), 1 - pose.seated);
+        focus.lerp(new THREE.Vector3(pose.x, 1.6, pose.z).add(origin), 1 - pose.seated);
+      }
       if (phase === 'inspecting') { ideal.copy(origin).add(new THREE.Vector3(-1.45, 4, 12.7)); focus.copy(origin).add(new THREE.Vector3(-.65, 3.42, 14.38)); }
       if (resetCamera || this.motion.contact.elapsed < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
       this.camera.lookAt(focus);

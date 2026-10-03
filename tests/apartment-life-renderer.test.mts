@@ -23,6 +23,8 @@ test('the rendered computer seat and back agree with their shared walking collid
     assert.ok(Math.abs(bounds.max.y - shared.height) < .005);
     const seat = new THREE.Raycaster(new THREE.Vector3(shared.x, 4, shared.z), new THREE.Vector3(0, -1, 0)).intersectObject(chair)[0];
     assert.ok(seat && Math.abs(seat.point.y - shared.seatY - .15) < .005, 'the lowered seat must match the contact animation');
+    const front = new THREE.Raycaster(new THREE.Vector3(shared.x, shared.seatY, shared.z - 1.5), new THREE.Vector3(0, 0, 1)).intersectObject(chair)[0];
+    assert.ok(front && Math.abs(front.point.z - shared.z + shared.seatDepth / 2) < .005, 'the shorter cushion must leave the bending trouser legs in front of its real edge');
     const back = new THREE.Raycaster(new THREE.Vector3(shared.x, shared.height - .75, shared.z - 1.5), new THREE.Vector3(0, 0, 1)).intersectObject(chair)[0];
     assert.ok(back && Math.abs(back.point.z - shared.backZ + .12) < .005);
     assert.equal(playerBlocked(filmPosition('film_anderson_flat', shared.x, shared.z), true), true);

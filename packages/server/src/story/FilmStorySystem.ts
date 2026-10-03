@@ -1299,6 +1299,7 @@ export class FilmStorySystem {
     const phase = next[contact.phase];
     if (phase) {
       contact.phase = phase; contact.elapsed = 0;
+      if (phase === 'signal') contact.chairMotion = 'stepping';
       if (phase === 'inspecting') {
         const life = this.sandbox().neoLife!; if (!life.evidence.includes('white_rabbit')) life.evidence.push('white_rabbit');
       }

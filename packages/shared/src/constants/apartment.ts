@@ -1,7 +1,7 @@
 import type { FilmJourney } from './film-story.js';
 
 export type ApartmentPhase = 'idle' | 'signal' | 'reply' | 'knocking' | 'door' | 'opening' | 'book' | 'retrieving' | 'disk' | 'handover' | 'invitation' | 'inspecting' | 'noticed' | 'accepted';
-export interface ApartmentContact { phase: ApartmentPhase; elapsed: number; paid?: boolean }
+export interface ApartmentContact { phase: ApartmentPhase; elapsed: number; paid?: boolean; chairMotion?: 'stepping' }
 export interface ApartmentGesture extends ApartmentContact { role: 'neo' | 'choi' | 'dujour' }
 export interface ComputerInvestigation { phase: 'reading' | 'unplugging' | 'offline' | 'evidence' | 'saved' | 'replugging'; elapsed: number }
 export const APARTMENT_NETWORK = { screen: { x: -9, y: 3.33, z: -11.595 }, screenApproach: { x: -11.6, z: -8.8 }, approach: { x: -6.65, z: -9.15, yaw: Math.PI }, plug: { x: -6.9, y: 2.65, z: -10.09 }, gripHeight: .17, seconds: 1.8, echoSeconds: 4.2 } as const;
@@ -20,7 +20,7 @@ export interface MorningRoutine {
 export const MORNING = { lying: 3.2, sleeping: 1.8, stopping: 1.1, bedX: 8.05,
   alarm: { x: 6.45, y: 1.85, z: -10.75 }, exit: { x: 0, z: 23 } } as const;
 export const APARTMENT_ROOM = { width: 34, depth: 40, exitWidth: 10, center: { x: 1210, y: 1, z: 690 } } as const;
-export const APARTMENT_CHAIR = { x: -9, z: -8.4, width: 2, depth: 1.84, height: 2.75, seatY: 1.1, seatDepth: 1.75, backZ: -7.6 } as const;
+export const APARTMENT_CHAIR = { x: -9, z: -8.4, width: 2, depth: 1.84, height: 2.75, seatY: 1.1, seatDepth: 1.6, backZ: -7.6 } as const;
 export const APARTMENT = {
   computer: { ...APARTMENT_NETWORK.screenApproach, yaw: Math.PI },
   bed: { x: 10.2, z: -9, yaw: 0 },
@@ -55,13 +55,38 @@ export const APARTMENT_FURNITURE = [
   { x: 9.5, z: 12, width: 15, depth: .4, height: 8.8 },
 ];
 const phases: ApartmentPhase[] = ['idle', 'signal', 'reply', 'knocking', 'door', 'opening', 'book', 'retrieving', 'disk', 'handover', 'invitation', 'inspecting', 'noticed', 'accepted'];
+function computerFoot(t: number, side: 'R' | 'L') {
+  const sign = side === 'R' ? 1 : -1;
+  let x = APARTMENT.computer.x + sign * .276, z = APARTMENT.computer.z, yaw = Math.PI, lift = 0;
+  const steps = side === 'R' ? [[.12, .5, APARTMENT.computer.x + 1, APARTMENT.computer.z - .9, Math.PI / 2], [.92, 1.3, APARTMENT_CHAIR.x + .276, APARTMENT.computer.z - 1.2, Math.PI]]
+    : [[.52, .9, APARTMENT.computer.x + 1.5, APARTMENT.computer.z - .95, Math.PI / 2], [1.32, 1.72, APARTMENT_CHAIR.x - .276, APARTMENT.computer.z - 1.2, Math.PI]];
+  for (const [start, end, tx, tz, heading] of steps) {
+    const p = Math.max(0, Math.min(1, (t - start) / (end - start))), blend = smooth(p);
+    x += (tx - x) * blend; z += (tz - z) * blend; yaw += (heading - yaw) * blend;
+    if (t >= start && t <= end) lift = .2 * Math.sin(Math.PI * p);
+  }
+  return { x, z, yaw, lift };
+}
 export function apartmentComputerPose(contact: ApartmentContact) {
   const t = contact.elapsed;
+  if (contact.chairMotion === 'stepping') {
+    const stepTime = contact.phase === 'signal' ? Math.min(1.72, t) : contact.phase === 'knocking' ? Math.max(0, Math.min(1.72, 3.97 - t)) : 1.72;
+    const feet = { R: computerFoot(stepTime, 'R'), L: computerFoot(stepTime, 'L') };
+    if (contact.phase === 'knocking') for (const foot of Object.values(feet)) foot.yaw = Math.PI * 2 - foot.yaw;
+    const seated = contact.phase === 'signal' ? smooth(Math.max(0, Math.min(1, (t - 1.85) / 1.2)))
+      : contact.phase === 'knocking' ? 1 - smooth(Math.max(0, Math.min(1, (t - 1.4) / .8))) : 1;
+    const approach = smooth(Math.max(0, Math.min(1, stepTime / 1.72)));
+    const turn = smooth(Math.max(0, Math.min(1, stepTime / .32))) * (1 - smooth(Math.max(0, Math.min(1, (stepTime - 1.1) / .5))));
+    const walking = smooth(Math.max(0, Math.min(1, stepTime / .12))) * (1 - smooth(Math.max(0, Math.min(1, (stepTime - 1.65) / .2))));
+    return { x: (feet.R.x + feet.L.x) / 2, z: (feet.R.z + feet.L.z) / 2 + .35 * approach + .85 * seated,
+      yaw: Math.PI + (contact.phase === 'knocking' ? 1 : -1) * Math.PI / 2 * turn, seated, feet, walking };
+  }
+  // Already saved performances finish with their original choreography.
   const seat = contact.phase === 'signal' ? smooth(Math.max(0, Math.min(1, (t - .2) / 1.2)))
     : contact.phase === 'knocking' ? 1 - smooth(Math.max(0, Math.min(1, (t - 2) / 1.2))) : 1;
   const move = contact.phase === 'signal' ? smooth(Math.max(0, Math.min(1, t / 1.3)))
     : contact.phase === 'knocking' ? 1 - smooth(Math.max(0, Math.min(1, (t - 2) / 1.4))) : 1;
-  return { x: APARTMENT.computer.x + (APARTMENT_CHAIR.x - APARTMENT.computer.x) * move, z: APARTMENT.computer.z, yaw: APARTMENT.computer.yaw, seated: seat };
+  return { x: APARTMENT.computer.x + (APARTMENT_CHAIR.x - APARTMENT.computer.x) * move, z: APARTMENT.computer.z, yaw: APARTMENT.computer.yaw, seated: seat, feet: undefined, walking: 0 };
 }
 export function apartmentAfter(contact: ApartmentContact, phase: ApartmentPhase): boolean { return phases.indexOf(contact.phase) >= phases.indexOf(phase); }
 export function apartmentDoor(contact?: ApartmentContact): number {

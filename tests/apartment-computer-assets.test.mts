@@ -37,6 +37,37 @@ test('Neo uses his existing plain home shirt consistently while approaching, rea
   } finally { models.dispose(); }
 });
 
+test('the chair approach lifts one real shoe while the supporting ankle stays planted through the saved step', async () => {
+  const assets = new Map(await Promise.all(['neo', 'neo-office', 'neo-tracking'].map(async id => [id, await loadGeometry(id)] as const)));
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: (id: string) => Promise<NonNullable<ReturnType<typeof assets.get>>> }).load = async id => assets.get(id)!;
+  const rig = (await models.create('neo'))!, origin = new THREE.Vector3(APARTMENT_ROOM.center.x, 0, APARTMENT_ROOM.center.z);
+  const frame = (phase: 'signal' | 'knocking', elapsed: number) => {
+    const contact = { role: 'neo', phase, elapsed, chairMotion: 'stepping' } as ApartmentGesture, pose = apartmentComputerPose(contact);
+    rig.root.position.copy(origin).add(new THREE.Vector3(pose.x, 0, pose.z)); rig.root.rotation.y = pose.yaw;
+    const motion = newMotion(), input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, homeClothes: true, contact };
+    models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
+    return Object.fromEntries(['R', 'L'].map(side => [side, rig.bones.get('ankle_' + side)!.getWorldPosition(new THREE.Vector3())])) as Record<'R' | 'L', THREE.Vector3>;
+  };
+  try {
+    for (const [phase, a, b, support] of [
+      ['signal', .22, .3, 'L'], ['signal', .6, .7, 'R'], ['signal', 1, 1.1, 'L'], ['signal', 1.4, 1.5, 'R'],
+      ['knocking', 2.35, 2.45, 'R'], ['knocking', 2.75, 2.85, 'L'], ['knocking', 3.15, 3.25, 'R'], ['knocking', 3.55, 3.63, 'L'],
+    ] as const) {
+      const first = frame(phase, a), second = frame(phase, b);
+      const moving = support === 'R' ? 'L' : 'R';
+      assert.ok(first[support].distanceTo(second[support]) < .012, `${phase} ${a}: the planted ankle slides ${first[support].distanceTo(second[support])} with the root`);
+      assert.ok(second[moving].y - second[support].y > .09, `${phase} ${b}: the moving shoe must lift instead of sliding across the floor`);
+      assert.ok(first[moving].distanceTo(second[moving]) > .08, `${phase} ${a}: the swinging foot must travel while the other foot supports the body`);
+      const restored = frame(phase, b);
+      assert.ok(restored.R.distanceTo(second.R) < .00001 && restored.L.distanceTo(second.L) < .00001, 'reconstructing the same saved clock must reproduce both foot contacts');
+    }
+    frame('knocking', 3);
+    const toe = new THREE.Vector3(0, 0, 1).applyQuaternion(rig.bones.get('ankle_L')!.getWorldQuaternion(new THREE.Quaternion()));
+    assert.ok(toe.x < -.9, 'the exit supporting foot must point toward the leftward steps rather than twisting backwards');
+  } finally { models.dispose(); }
+});
+
 test('the delivered home body stays clear of the chair and workbench while sitting down and getting up', async () => {
   const assets = new Map(await Promise.all(['neo', 'neo-office', 'neo-tracking'].map(async id => [id, await loadGeometry(id)] as const)));
   const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
@@ -46,6 +77,7 @@ test('the delivered home body stays clear of the chair and workbench while sitti
     ...[0, .2, .4, .6, .8, 1, 1.2, 1.4, 2, 4, 7.9].map(elapsed => ({ role: 'neo', phase: 'signal', elapsed } as const)),
     { role: 'neo', phase: 'reply', elapsed: 0 },
     ...[.5, 1, 1.8, 2, 2.2, 2.4, 2.6, 2.8, 3, 3.2, 3.4, 3.8].map(elapsed => ({ role: 'neo', phase: 'knocking', elapsed } as const)),
+    ...(['signal', 'knocking'] as const).flatMap(phase => Array.from({ length: 80 }, (_, i) => ({ role: 'neo', phase, elapsed: i * .05, chairMotion: 'stepping' } as const))),
   ];
   try {
     for (const contact of samples) {
@@ -62,7 +94,7 @@ test('the delivered home body stays clear of the chair and workbench while sitti
         for (const i of used) {
           mesh.getVertexPosition(i, point); mesh.localToWorld(point); point.sub(origin);
           if (mesh.name === 'shoes01') shoeFloor = Math.min(shoeFloor, point.y);
-          const insideSeat = point.x > -9.98 && point.x < -8.02 && Math.abs(point.y - APARTMENT_CHAIR.seatY) < .13 && point.z > -9.255 && point.z < -7.545;
+          const insideSeat = point.x > -9.98 && point.x < -8.02 && Math.abs(point.y - APARTMENT_CHAIR.seatY) < (contact.chairMotion ? .145 : .13) && Math.abs(point.z - APARTMENT_CHAIR.z) < APARTMENT_CHAIR.seatDepth / 2 - .02;
           const insideBack = point.x > -9.94 && point.x < -8.06 && point.y > APARTMENT_CHAIR.height - 1.48 && point.y < APARTMENT_CHAIR.height - .02 && point.z > -7.70 && point.z < -7.50;
           const insideDesk = point.x > -12.98 && point.x < -5.02 && point.z > -13.68 && point.z < -10.32 && point.y > 2.12 && point.y < 2.38;
           assert.equal(insideSeat || insideBack || insideDesk, false, `${contact.phase} ${contact.elapsed}: ${mesh.name} vertex ${i} clips ${insideSeat ? 'seat' : insideBack ? 'back' : 'desk'} at ${point.toArray()}`);
