@@ -13,7 +13,7 @@ import { EvolutionEngine } from '../packages/server/src/story/EvolutionEngine.js
 import { EventBus } from '../packages/server/src/simulation/EventBus.js';
 import { LLMClient } from '../packages/server/src/llm/LLMClient.js';
 import type { SocketServer } from '../packages/server/src/network/SocketServer.js';
-import { LOCATIONS, type WorldEvent } from '@auto_matrix/shared';
+import { LOCATIONS, type ServerMessage, type WorldEvent } from '@auto_matrix/shared';
 
 function setup() {
   const world = new WorldState();
@@ -151,6 +151,96 @@ test('a delayed model dialogue is used without blocking ticks; unavailable model
   for (const tick of [42, 46, 50]) await stalled.tickConversations(world.agents, tick);
   assert.equal(stalled.getActiveConversations().length, 0, 'model latency must not leave characters stuck');
   assert.equal(emitted.filter(message => message.type === 'conversation_message').length, 6);
+});
+
+for (const spoken of [0, 1, 2]) test(`restoring after ${spoken} NPC turns preserves the remaining script, timing and cooldown`, async () => {
+  const { world, conversations, memory, relationships, story, dynamics } = setup();
+  const a = world.agents.get('neo')!, b = world.agents.get('trinity')!;
+  b.isInMatrix = a.isInMatrix; b.position = { ...a.position };
+  const trust = relationships.getRelationship(a.id, b.id)!.trust;
+  const id = conversations.startConversation(a.id, b.id, a, b, '核实线索', 10)!;
+  for (const tick of [11, 15].slice(0, spoken)) await conversations.tickConversations(world.agents, tick);
+  const checkpoint = JSON.parse(JSON.stringify(conversations.getCheckpoint()));
+  const messages: ServerMessage[] = [], socket = { broadcastMessage: (message: ServerMessage) => messages.push(message) } as unknown as SocketServer;
+  const restored = new ConversationEngine({ enabled: false } as LLMClient, memory, relationships, socket, story);
+  let completions = 0;
+  restored.onComplete = (a, b, summary, tick) => { completions++; dynamics.resolveConversation(a, b, summary, tick); };
+  restored.restore(checkpoint);
+  checkpoint.active[0].lines[spoken] = '外部快照修改不能覆盖已恢复的剧本';
+  const nextTurn = 11 + spoken * 4;
+  await restored.tickConversations(world.agents, nextTurn - 1);
+  assert.equal(messages.length, 0, 'restoration must not bring the next utterance forward');
+  for (let tick = nextTurn; tick <= 19; tick += 4) await restored.tickConversations(world.agents, tick);
+  assert.deepEqual(messages.filter(message => message.type === 'conversation_message').map(message => (message.data as { content: string }).content), conversations.getCheckpoint().active[0].lines.slice(spoken));
+  assert.equal(restored.getActiveConversations().length, 0); assert.equal(completions, 1);
+  assert.equal(relationships.getRelationship(a.id, b.id)!.trust, Math.min(100, trust + 6));
+  assert.equal(memory.getAllMemories(a.id).filter(memory => memory.type === 'conversation').length, 1);
+  const finished = new ConversationEngine({ enabled: false } as LLMClient, memory, relationships, socket, story);
+  finished.restore(JSON.parse(JSON.stringify(restored.getCheckpoint())));
+  assert.equal(finished.startConversation(a.id, b.id, a, b, undefined, 53), null, 'the persisted cooldown must prevent immediately repeating the same exchange');
+  assert.ok(finished.startConversation(a.id, b.id, a, b, undefined, 54));
+  await restored.tickConversations(world.agents, 54);
+  assert.equal(completions, 1); assert.equal(messages.filter(message => message.type === 'conversation_end' && (message.data as { conversationId: string }).conversationId === id).length, 1);
+});
+
+test('a restored pending model request uses its original fallback deadline and ignores the previous process response', async () => {
+  const { world, memory, relationships, story } = setup();
+  const a = world.agents.get('neo')!, b = world.agents.get('trinity')!;
+  b.isInMatrix = a.isInMatrix; b.position = { ...a.position };
+  let resolve!: (result: { content: string }) => void, requests = 0;
+  const model = { enabled: true, complete: () => { requests++; return new Promise(done => { resolve = done; }); } } as unknown as LLMClient;
+  const messages: ServerMessage[] = [], socket = { broadcastMessage: (message: ServerMessage) => messages.push(message) } as unknown as SocketServer;
+  const previous = new ConversationEngine(model, memory, relationships, socket, story);
+  previous.startConversation(a.id, b.id, a, b, undefined, 10);
+  const saved = JSON.parse(JSON.stringify(previous.getCheckpoint())), local = saved.active[0].lines;
+  const restored = new ConversationEngine(model, memory, relationships, socket, story); restored.restore(saved);
+  resolve({ content: JSON.stringify(['这是旧请求。', '不能改变新的会话。', '保留本地剧本。']) });
+  await Promise.resolve(); await Promise.resolve();
+  await restored.tickConversations(world.agents, 21);
+  assert.equal(messages.filter(message => message.type === 'conversation_message').length, 0);
+  for (const tick of [22, 26, 30]) await restored.tickConversations(world.agents, tick);
+  assert.deepEqual(messages.filter(message => message.type === 'conversation_message').map(message => (message.data as { content: string }).content), local);
+  assert.equal(requests, 1, 'loading must not submit a second model request');
+  assert.equal(restored.getActiveConversations().length, 0, 'a saved pending request must not leave the participants stuck');
+});
+
+test('an already received model script survives saving before and between its utterances', async () => {
+  const { world, memory, relationships, story } = setup();
+  const a = world.agents.get('neo')!, b = world.agents.get('trinity')!;
+  b.isInMatrix = a.isInMatrix; b.position = { ...a.position };
+  const lines = ['我记得那通电话。', '去出口核实一下。', '一起去。'];
+  let requests = 0;
+  const model = { enabled: true, complete: async () => { requests++; return { content: JSON.stringify(lines) }; } } as unknown as LLMClient;
+  const messages: ServerMessage[] = [], socket = { broadcastMessage: (message: ServerMessage) => messages.push(message) } as unknown as SocketServer;
+  let conversation = new ConversationEngine(model, memory, relationships, socket, story);
+  conversation.startConversation(a.id, b.id, a, b, undefined, 10);
+  await Promise.resolve(); await Promise.resolve();
+  for (const tick of [11, 15, 19]) {
+    const saved = JSON.parse(JSON.stringify(conversation.getCheckpoint()));
+    conversation = new ConversationEngine(model, memory, relationships, socket, story); conversation.restore(saved);
+    await conversation.tickConversations(world.agents, tick);
+  }
+  assert.deepEqual(messages.filter(message => message.type === 'conversation_message').map(message => (message.data as { content: string }).content), lines);
+  assert.equal(requests, 1); assert.equal(conversation.getActiveConversations().length, 0);
+});
+
+for (const cause of ['distance', 'death', 'ordinary-life-change']) test(`a restored conversation still stops on ${cause} without completion rewards`, async () => {
+  const { world, conversations, memory, relationships, story } = setup();
+  const a = world.agents.get('neo')!, b = world.agents.get('trinity')!;
+  b.isInMatrix = a.isInMatrix; b.position = { ...a.position };
+  const trust = relationships.getRelationship(a.id, b.id)!.trust;
+  conversations.startConversation(a.id, b.id, a, b, undefined, 10);
+  await conversations.tickConversations(world.agents, 11);
+  const restored = new ConversationEngine({ enabled: false } as LLMClient, memory, relationships, { broadcastMessage() {} } as unknown as SocketServer, story);
+  restored.restore(conversations.getCheckpoint());
+  if (cause === 'distance') b.position.x += 30;
+  else if (cause === 'death') b.status = 'dead';
+  else restored.ordinaryLife = true;
+  restored.onComplete = () => assert.fail('an interrupted dialogue must not complete');
+  await restored.tickConversations(world.agents, 12);
+  assert.equal(restored.getActiveConversations().length, 0); assert.equal(a.currentAction, null);
+  assert.equal(relationships.getRelationship(a.id, b.id)!.trust, trust); assert.equal(memory.getAllMemories(a.id).length, 0);
+  assert.equal(restored.isOnCooldown(a.id, 46), true); assert.equal(restored.isOnCooldown(a.id, 47), false);
 });
 
 test('offline world runs 1200 ticks with conversations, travel, memories and consequences', async () => {
