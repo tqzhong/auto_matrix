@@ -771,7 +771,7 @@ export class PlayerControls {
       this.yaw += cameraTurn * (1 - Math.exp(-5 * delta));
     }
     const body = group.children[0];
-    if (body) body.rotation.y = this.firstPerson && !this.performing ? this.yaw : this.facing;
+    if (body && !(state.currentLocation === 'film_power_plant_pods' && this.motion.performance === 'pod')) body.rotation.y = this.firstPerson && !this.performing ? this.yaw : this.facing;
     const sprint = this.motion.speed > PLAYER_WALK_SPEED * 1.6 || Boolean(this.ride && this.ride.speed > 20);
     const interviewWide = !this.firstPerson && this.motion.interrogation && (this.motion.interrogation.phase === 'file' || this.motion.interrogation.phase === 'coercion' && this.motion.interrogation.elapsed > 5.3 && this.motion.interrogation.elapsed < 14);
     const interviewApproach = !this.firstPerson && state.currentLocation === 'film_agent_interrogation' && !this.motion.interrogation;
@@ -1660,9 +1660,11 @@ export class PlayerControls {
     } else if (this.motion.performance === 'pod' && state.currentLocation === 'film_power_plant_pods') {
       const center = FILM_SETS.film_power_plant_pods.center;
       if (this.firstPerson) {
-        const eye = new THREE.Vector3(center.x, center.y + 1.45, center.z - 15);
-        const pitch = this.pitch - 1.47, yaw = this.yaw - .12;
-        const forward = new THREE.Vector3(Math.sin(yaw) * Math.cos(pitch), -Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch));
+        const head = group.getObjectByName('head'); group.updateWorldMatrix(true, true);
+        const eye = head ? head.localToWorld(new THREE.Vector3(0, .1, .32)) : new THREE.Vector3(center.x, center.y + 1.45, center.z - 15);
+        const forward = head ? new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(1, 0, 0), this.pitch)
+          .applyQuaternion(head.getWorldQuaternion(new THREE.Quaternion())).applyAxisAngle(new THREE.Vector3(0, 1, 0), this.yaw - state.rotation)
+          : new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch - 1.47), -Math.sin(this.pitch - 1.47), Math.cos(this.yaw) * Math.cos(this.pitch - 1.47));
         this.camera.position.copy(eye); this.camera.lookAt(eye.add(forward));
       } else {
         const ideal = new THREE.Vector3(center.x + 5.8, center.y + 8.2, center.z - 6.5);
