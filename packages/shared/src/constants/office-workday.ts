@@ -69,8 +69,8 @@ export function workdayText(workday: OfficeWorkday): string {
   if (workday.phase === 'answer') return 'Rhineheart 停下打字，抬头等你回应。按 G 表示明白，再回自己的隔间。';
   if (workday.phase === 'released') return '回到自己的工位。写着 Thomas Anderson 的快递正送往这一层。';
   if (workday.phase === 'delivery') return '快递员从电梯走向你的隔间，手里拿着一个薄包裹。';
-  if (workday.phase === 'signature') return '快递员确认收件人并递出签收板。靠近自己的工位，按 G 签收。';
-  if (workday.phase === 'signing') return workday.elapsed < 2.5 ? '你接过笔，在签收单上留下姓名。' : '快递员把包裹放在桌边，收回签收板。里面传来手机铃声。';
+  if (workday.phase === 'signature') return '快递员确认收件人并递出电子签收板。靠近自己的工位，按 G 签收。';
+  if (workday.phase === 'signing') return workday.elapsed < 2.5 ? '你接过触控笔，在电子签收板上留下姓名。' : '快递员把包裹放在桌边，收回签收板。里面传来手机铃声。';
   return '包裹已交到你桌上。按 G 打开，再决定是否接听。';
 }
 export function officeClothing(id: string, location: string): boolean {
