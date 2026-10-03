@@ -595,7 +595,7 @@ export class HeroModels {
     rig.silver.value = input.mirror ?? 0;
     rig.glasses.visible = !rig.officeRole && !rig.apartmentRole && input.glasses !== false && !input.realWorld && !(input.bathroom?.role === 'smith' && input.bathroom.headbutt);
     const officeShirt = input.officeShirt || rig.officeRole === 'courier' || rig.officeRole === 'police';
-    const trackingShirt = input.performance === 'touch';
+    const trackingShirt = input.performance === 'touch' || input.homeClothes === true;
     const clubClothes = Boolean(input.clubClothes && !input.realWorld);
     if (rig.trackingSkin) {
       const skin = rig.trackingSkin; skin.mesh.geometry = trackingShirt ? skin.covered : skin.original;

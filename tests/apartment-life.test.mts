@@ -97,7 +97,7 @@ test('legacy remote apartment saves migrate actors, paths, checkpoints and barri
     position: { ...old, z: old.z + 12 }, film: { scene: 'm1_wake_up', width: 3.8, depth: .28, height: 6.5 } }];
   const trinity = h.world.agents.get('trinity')!; trinity.position = filmPosition('film_white_rabbit_club');
   const other = { ...trinity.position }; h.sandbox.restore(saved);
-  assert.ok(distance(h.neo.position, filmPosition('film_anderson_flat', -9, -8.8)) < 1e-9);
+  assert.ok(distance(h.neo.position, filmPosition('film_anderson_flat', APARTMENT.computer.x, APARTMENT.computer.z)) < 1e-9, 'the former chair position restores beside the new solid seat');
   assert.equal(h.neo.rotation, .7); assert.deepEqual(h.neo.targetPosition, filmPosition('film_anderson_flat'));
   assert.deepEqual(h.neo.currentPath, [filmPosition('film_anderson_flat', 0, 10)]);
   assert.deepEqual(h.sandbox.life.state!.journey!.returnPosition, filmPosition('film_anderson_flat'));

@@ -24,7 +24,7 @@ import { INTERROGATION_CAST, INTERROGATION_ROOM, INTERROGATION_TIMING, interroga
 import { BRIDGE_TAIL, BRIDGE_ARRIVAL_SECONDS, MEETING_CAR, MEETING_CAST, MEETING_DRIVE_SECONDS, MEETING_TIMING, bridgeArrivalPose, meetingBoardPoint, meetingCarPose, meetingLocked, meetingRollRoadTime, meetingRoot, type MeetingEncounter } from '@auto_matrix/shared';
 import { LAFAYETTE, LAFAYETTE_WELCOME, LAFAYETTE_KNOCK_SECONDS, HOTEL_ROUTE_LENGTH, HOTEL_DOOR_PROGRESS, hotelRoutePose, hotelRouteProgress, lafayetteKnocking, lafayetteKnockRoot, lafayetteWelcomeLocked, lafayetteWelcomeRoot, filmSetAt } from '@auto_matrix/shared';
 import { OFFICE_WORKDAY, OFFICE_DELIVERY_SECONDS, officeCourierRoot, officeRecipientRoot, workdayLocked, workdayText } from '@auto_matrix/shared';
-import { APARTMENT, WAKE_CALL, apartmentAfter, apartmentDoor, apartmentLocked, apartmentText, wakeCallDoor, wakeCallLocked, wakeCallRoot, wakeCallText, lifeRoomCenter, insideLifeRoom, type ApartmentPhase, type WakeCallPhase } from '@auto_matrix/shared';
+import { APARTMENT, WAKE_CALL, apartmentAfter, apartmentDoor, apartmentLocked, apartmentComputerPose, apartmentText, wakeCallDoor, wakeCallLocked, wakeCallRoot, wakeCallText, lifeRoomCenter, insideLifeRoom, type ApartmentPhase, type WakeCallPhase } from '@auto_matrix/shared';
 import { CLUB, clubLocked, clubRoot, clubText, type ClubPhase } from '@auto_matrix/shared';
 import { MORNING, morningLocked, morningRoot, morningWakePose, morningText } from '@auto_matrix/shared';
 import { SENTINEL_CAST, SENTINEL_TIMING, sentinelActive, sentinelDanger, sentinelLocked, sentinelRoot, sentinelText, type SentinelRole } from '@auto_matrix/shared';
@@ -1212,7 +1212,7 @@ export class FilmStorySystem {
       actor.currentAction = { type: 'idle', parameters: { resolved: true, contact: { ...contact, role: actor.id } }, startedAt: tick, duration: 1, progress: 0 };
     }
     if (apartmentLocked(state)) {
-      const pose = ['signal', 'reply', 'knocking'].includes(contact.phase) ? APARTMENT.computer : contact.phase === 'retrieving' ? { x: 6, z: 3.95, yaw: 0 } : contact.phase === 'opening' ? { x: 1.4, z: 10.6, yaw: 0 } : APARTMENT.door;
+      const pose = ['signal', 'reply', 'knocking'].includes(contact.phase) ? apartmentComputerPose(contact) : contact.phase === 'retrieving' ? { x: 6, z: 3.95, yaw: 0 } : contact.phase === 'opening' ? { x: 1.4, z: 10.6, yaw: 0 } : APARTMENT.door;
       agent.position = filmPosition(this.scene!.set, pose.x, pose.z); agent.rotation = pose.yaw; agent.velocity = { x: 0, y: 0, z: 0 };
       agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, contact: { ...contact, role: 'neo' } }, startedAt: tick, duration: 1, progress: 0 };
       state.checkpoint = { ...agent.position };
@@ -1516,10 +1516,13 @@ export class FilmStorySystem {
     };
     for (const actor of this.world.agents.values()) if (actor.isInMatrix) {
       migrate(actor.position); migrate(actor.targetPosition); actor.currentPath.forEach(migrate);
-      // The former daily room had different furniture. Preserve clear saved positions,
-      // but move an ordinary resident out of a newly solid bed, desk or counter.
-      if (actor.currentLocation === 'neo_apartment' && life?.journey?.actor !== actor.id && insideLifeRoom(actor.position) === 'neo_apartment' && playerBlocked(actor.position, true)) {
-        actor.position = lifeRoomCenter('neo_apartment')!; actor.velocity = { x: 0, y: 0, z: 0 }; actor.targetPosition = null; actor.currentPath = [];
+      // Preserve scripted seated poses, but free a standing actor from newly solid furniture.
+      const standingContact = life?.journey?.actor === actor.id && life.journey.scene === 'm1_wake_up' && !apartmentLocked(life.journey);
+      if (['neo_apartment', 'film_anderson_flat'].includes(actor.currentLocation) && (life?.journey?.actor !== actor.id || standingContact) && insideLifeRoom(actor.position) === 'neo_apartment' && playerBlocked(actor.position, true)) {
+        actor.position = standingContact ? filmPosition('film_anderson_flat', APARTMENT.computer.x, APARTMENT.computer.z) : lifeRoomCenter('neo_apartment')!;
+        actor.velocity = { x: 0, y: 0, z: 0 };
+        if (!standingContact) { actor.targetPosition = null; actor.currentPath = []; }
+        if (standingContact && !life!.journey!.visiting) life!.journey!.checkpoint = { ...actor.position };
         if (actor.id === 'neo' && life?.activity) life.activity.position = { ...actor.position };
       }
     }

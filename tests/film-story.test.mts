@@ -275,22 +275,27 @@ test('303 breach saves its timing, then Trinity disarms, shoots and reaches the 
   assert.equal(state.openingHotel?.phase, 'done'); assert.ok(state.completed.includes('m1_room303'));
 });
 
-test('303 fire escape requires upward input and preserves climbing progress through a save and disconnect', () => {
+test('303 fire escape requires upward input and preserves climbing progress through a save and disconnect', t => {
+  let now = 10000; t.mock.method(Date, 'now', () => now);
   const h = setup(); h.command('start'); let state = h.sandbox.life.film.state!;
   state.step = 5; state.openingHotel!.phase = 'ladder_ready';
   h.actor().position = filmPosition('film_heart_hotel', 0, -30);
   h.command('act'); assert.equal(state.openingHotel?.phase, 'climbing');
   h.advance(20); assert.equal(state.openingHotel?.climbed, 0, 'waiting cannot climb the fire escape');
-  h.players.receiveInput('film-player', { x: 0, z: 0, yaw: 0, jump: false, sprint: false, climb: 1, sequence: 1 });
-  for (let frame = 0; frame < 10; frame++) h.players.step(.1, true, h.tick());
+  let sequence = 0;
+  const climb = () => {
+    now += 20;
+    h.players.receiveInput('film-player', { x: 0, z: 0, yaw: 0, jump: false, sprint: false, climb: 1, sequence: ++sequence });
+    h.players.step(.1, true, h.tick());
+  };
+  for (let frame = 0; frame < 10; frame++) climb();
   const progress = state.openingHotel!.climbed!; assert.ok(progress > 1);
   h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); state = h.sandbox.life.film.state!;
   h.advance(20); assert.equal(state.openingHotel?.climbed, progress);
   h.players.release('film-player', h.tick()); h.advance(20);
   assert.equal(state.openingHotel?.climbed, progress);
   h.players.possess('film-player', 'trinity', h.tick());
-  h.players.receiveInput('film-player', { x: 0, z: 0, yaw: 0, jump: false, sprint: false, climb: 1, sequence: 2 });
-  for (let frame = 0; frame < 50 && state.openingHotel?.phase === 'climbing'; frame++) h.players.step(.1, true, h.tick());
+  for (let frame = 0; frame < 50 && state.openingHotel?.phase === 'climbing'; frame++) climb();
   assert.ok(state.completed.includes('m1_room303'));
 });
 

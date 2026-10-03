@@ -1,12 +1,33 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { filmPosition, lifeRoomCenter, type FilmJourney, type NeoLifeState, type SandboxState } from '@auto_matrix/shared';
+import { APARTMENT_CHAIR, filmPosition, lifeRoomCenter, playerBlocked, type FilmJourney, type NeoLifeState, type SandboxState } from '@auto_matrix/shared';
 import { LifeInteriors } from '../packages/client/src/engine/LifeInteriors.js';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { ApartmentSetRenderer } from '../packages/client/src/engine/ApartmentSetRenderer.js';
+
+test('the rendered computer seat and back agree with their shared walking collider', t => {
+  const original = globalThis.document;
+  globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ({ fillRect() {}, fillText() {} }) }) } as unknown as Document;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const root = new THREE.Group(), renderer = new ApartmentSetRenderer(root); root.updateMatrixWorld(true);
+  try {
+    let chair: THREE.Mesh | undefined;
+    root.traverse(object => { if (object instanceof THREE.Mesh && object.material.name === 'apartment-computer-chair') chair = object; });
+    assert.ok(chair);
+    const bounds = new THREE.Box3().setFromObject(chair), shared = APARTMENT_CHAIR;
+    assert.ok(bounds.min.x >= shared.x - shared.width / 2 - .005 && bounds.max.x <= shared.x + shared.width / 2 + .005);
+    assert.ok(bounds.min.z >= shared.z - shared.depth / 2 - .005 && bounds.max.z <= shared.z + shared.depth / 2 + .005);
+    assert.ok(Math.abs(bounds.max.y - shared.height) < .005);
+    const seat = new THREE.Raycaster(new THREE.Vector3(shared.x, 4, shared.z), new THREE.Vector3(0, -1, 0)).intersectObject(chair)[0];
+    assert.ok(seat && Math.abs(seat.point.y - shared.seatY - .15) < .005, 'the lowered seat must match the contact animation');
+    const back = new THREE.Raycaster(new THREE.Vector3(shared.x, shared.height - .75, shared.z - 1.5), new THREE.Vector3(0, 0, 1)).intersectObject(chair)[0];
+    assert.ok(back && Math.abs(back.point.z - shared.backZ + .12) < .005);
+    assert.equal(playerBlocked(filmPosition('film_anderson_flat', shared.x, shared.z), true), true);
+  } finally { renderer.dispose(); globalThis.document = original; }
+});
 
 test('the physical bedside clock shows world time, flashes while ringing and depresses under Neo’s hand', t => {
   const original = globalThis.document; const text: string[] = [];

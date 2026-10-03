@@ -14,7 +14,7 @@ import { awakeningPose, podRescuePose, recoveryBodyPose, recoveryCrewPose } from
 import { MORNING, morningRoot, morningWakePose } from '@auto_matrix/shared';
 import { metacortexPosition, OFFICE_CUSTODY } from '@auto_matrix/shared';
 import { SPOON_LESSON, spoonLessonSeat, type SpoonLesson } from '@auto_matrix/shared';
-import { APARTMENT, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, INTERROGATION_ROOM, pillRoot, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, POD_WATER_DROP, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, TV_EXIT, airRescueRoot, matrixEscapeRoot, theOneRoot, tvExitEmergeRoot, wakeCallRoot, sentinelMachinePose, type TheOneEncounter } from '@auto_matrix/shared';
+import { APARTMENT, apartmentComputerPose, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, INTERROGATION_ROOM, pillRoot, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, POD_WATER_DROP, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, TV_EXIT, airRescueRoot, matrixEscapeRoot, theOneRoot, tvExitEmergeRoot, wakeCallRoot, sentinelMachinePose, type TheOneEncounter } from '@auto_matrix/shared';
 
 test('observer camera releases drag and ignores pointer capture while a character controls the view', () => {
   let captures = 0;
@@ -626,6 +626,33 @@ test('the club whisper keeps Trinity visible beside Neo and first person can sti
   game.event(game.document, 'mousemove', { movementX: 80, movementY: 0 }); game.step(.1);
   assert.ok(Math.abs(angle(game.yaw(), initial)) > .08);
   game.state.currentAction = null; game.step(.1); assert.equal(game.controls.performing, false);
+});
+
+test('the first-person computer view lowers with the seated body and stays steerable while paused', t => {
+  const game = setup(t, Math.PI); game.state.currentLocation = 'film_anderson_flat';
+  game.state.position = filmPosition('film_anderson_flat', APARTMENT.computer.x, APARTMENT.computer.z);
+  game.controls.possess(game.state); game.controls.firstPerson = true; game.step(.1, 1 / 60, false);
+  const standing = game.camera.position.y;
+  for (const phase of ['signal', 'knocking'] as const) {
+    let previous = phase === 'signal' ? standing : standing - .65;
+    for (let i = 0; i <= 28; i++) {
+      const elapsed = (phase === 'signal' ? 0 : 2) + i * .05, contact = { phase, elapsed, role: 'neo' };
+      const pose = apartmentComputerPose(contact);
+      game.state.position = filmPosition('film_anderson_flat', pose.x, pose.z);
+      game.state.currentAction = { type: 'idle', parameters: { contact }, startedAt: 0, duration: 1, progress: 0 };
+      game.step(.05, .05, false);
+      assert.ok(Math.abs(game.camera.position.y - previous) < .05, `${phase} ${elapsed}: the eye drops before the character sits`);
+      assert.ok(Math.abs(game.camera.position.y - (standing - .65 * pose.seated)) < .005);
+      previous = game.camera.position.y;
+    }
+  }
+  const position = game.group.position.clone(), direction = game.camera.getWorldDirection(new THREE.Vector3()), elapsed = game.controls.motion.contact!.elapsed;
+  game.document.pointerLockElement = game.canvas;
+  game.event(game.document, 'mousemove', { movementX: 160, movementY: -60 }); game.step(.3, 1 / 60, false);
+  assert.deepEqual(game.group.position, position); assert.equal(game.controls.motion.contact?.elapsed, elapsed);
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(direction) > .2);
+  game.state.currentAction = null; game.step(.1, 1 / 60, false);
+  assert.equal(game.controls.performing, false); assert.ok(Math.abs(game.camera.position.y - standing) < .005);
 });
 
 test('the white-rabbit close-up clears the visitor beside the door and releases control afterwards', t => {
