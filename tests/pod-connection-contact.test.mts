@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { test, type TestContext } from 'node:test';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { FILM_SETS, awakeningPose, filmPosition, type FilmJourney } from '@auto_matrix/shared';
+import { FILM_SETS, POD_BREATHER, podBreatherPose, awakeningPose, filmPosition, type FilmJourney, type AwakeningBeat } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { PodSetRenderer } from '../packages/client/src/engine/PodSetRenderer.js';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
@@ -37,8 +37,8 @@ async function setup(t: TestContext) {
   const scene = new THREE.Scene(), renderer = new AgentRenderer(scene), root = new THREE.Group(); scene.add(root);
   const center = FILM_SETS.film_power_plant_pods.center; root.position.set(center.x, center.y - 1, center.z);
   const set = new PodSetRenderer(root);
-  const at = (elapsed: number, wallTime = 100, firstPerson = false) => {
-    const awakening = { kind: 'disconnect' as const, elapsed }, pose = awakeningPose(awakening);
+  const at = (elapsed: number, wallTime = 100, firstPerson = false, saved?: AwakeningBeat) => {
+    const awakening = saved ?? { kind: 'disconnect' as const, elapsed }, pose = awakeningPose(awakening);
     const journey = { scene: 'm1_pod', awakening } as FilmJourney;
     neo.position = filmPosition(neo.currentLocation, pose.x, pose.z); neo.position.y += pose.y;
     neo.currentAction = { type: 'idle', parameters: { filmPose: pose.pose }, startedAt: 0, duration: 1, progress: 0 };
@@ -333,5 +333,203 @@ test('the pod first-person eye follows the shipped head and keeps the support ha
     controls.update(1 / 60, h.neo, h.renderer.getAgent('neo')!, false);
     assert.ok(camera.getWorldDirection(new THREE.Vector3()).distanceTo(direction) > .25, 'the supported body must still allow free observation while paused');
     assert.ok(h.renderer.getAgentBody('neo')!.quaternion.angleTo(rotation) < 1e-7, 'free observation cannot rotate the reclined body away from its saved support');
+  } finally { controls.dispose(); globalThis.window = previous; }
+});
+
+test('the rescue ship does not cover the awakening view and reaches the water before hoisting Neo', async t => {
+  const h = await setup(t), camera = new THREE.PerspectiveCamera(57, 16 / 9, .5, 5000);
+  const bay = h.root.getObjectByName('pod-rescue-bay'); assert.ok(bay);
+  for (const elapsed of [.9, 1.35, 1.832, 2.4]) {
+    const head = h.at(elapsed).getObjectByName('head')!;
+    camera.position.copy(head.localToWorld(new THREE.Vector3(0, .1, .32)));
+    camera.lookAt(camera.position.clone().add(new THREE.Vector3(0, 0, 1).applyQuaternion(head.getWorldQuaternion(new THREE.Quaternion()))));
+    camera.updateMatrixWorld(true);
+    for (const y of [.35, .65]) for (const x of [-.4, 0, .4]) {
+      const ray = new THREE.Raycaster(); ray.setFromCamera(new THREE.Vector2(x, y), camera); ray.far = 40;
+      assert.equal(ray.intersectObject(bay, true).length, 0, `the ship blocks the cultivation towers at ${elapsed}s, screen ${x}/${y}`);
+    }
+  }
+  h.at(5); const approaching = bay.position.clone();
+  assert.ok(approaching.length() > 40, 'the ship is still approaching while Neo enters the runoff channel');
+  h.at(7);
+  assert.ok(bay.position.length() < 1e-8, 'the hatch must be over the water when the rescue claw is lowered');
+  h.at(5, 500);
+  assert.deepEqual(bay.position.toArray(), approaching.toArray(), 'loading an earlier clock restores the ship flight without frame history');
+});
+
+test('the breathing tube follows the actual lips, both grasping palms and the saved release clock', async t => {
+  const h = await setup(t), mouthpiece = h.root.getObjectByName('pod-oral-mouthpiece'); assert.ok(mouthpiece);
+  const at = (elapsed: number) => h.at(elapsed, 100, false, { kind: 'breather', elapsed });
+  for (const elapsed of [0, .6, 1.35, 2]) {
+    const head = at(elapsed).getObjectByName('head')!;
+    const mouth = head.localToWorld(new THREE.Vector3(POD_BREATHER.mouth.x, POD_BREATHER.mouth.y, POD_BREATHER.mouth.z));
+    assert.ok(mouthpiece.getWorldPosition(new THREE.Vector3()).distanceTo(mouth) < 1e-5, `the tube must follow the rising lips at ${elapsed}s`);
+  }
+  for (const elapsed of [2, 2.4, 2.8, 3.2, 3.6, 4, 4.5]) {
+    const body = at(elapsed), pose = podBreatherPose(elapsed), end = mouthpiece.getWorldPosition(new THREE.Vector3());
+    const head = body.getObjectByName('head')!, rotation = head.getWorldQuaternion(new THREE.Quaternion()).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), pose.tilt));
+    const axis = new THREE.Vector3(0, 0, 1).applyQuaternion(rotation), lateral = new THREE.Vector3(1, 0, 0).applyQuaternion(rotation);
+    for (const [i, side] of ['R', 'L'].entries()) {
+      const sign = i ? 1 : -1, wrist = body.getObjectByName(`wrist_${side}`)!;
+      const contact = end.clone().addScaledVector(axis, i ? .44 : .15).addScaledVector(lateral, sign * POD_BREATHER.radius);
+      const palm = wrist.localToWorld(new THREE.Vector3(-sign * .2, -.18, .13));
+      assert.ok(palm.distanceTo(contact) < .035, `the ${side} palm must hold the real tube at ${elapsed}s, gap ${palm.distanceTo(contact)}`);
+    }
+  }
+  at(5.5); const resting = mouthpiece.getWorldPosition(new THREE.Vector3()), body = h.renderer.getAgentBody('neo')!, headBefore = body.getObjectByName('head')!.getWorldPosition(new THREE.Vector3());
+  const point = POD_BREATHER.resting;
+  assert.ok(h.root.localToWorld(new THREE.Vector3(point.x, point.y, point.z)).distanceTo(resting) < 1e-5, 'the released pipe rests at the fluid surface');
+  h.at(0, 100, false, { kind: 'disconnect', elapsed: 0, breatherRemoved: true });
+  assert.ok(body.getObjectByName('head')!.getWorldPosition(new THREE.Vector3()).distanceTo(headBefore) < 1e-5, 'starting maintenance cannot lay the sitting Neo down again');
+  assert.ok(mouthpiece.getWorldPosition(new THREE.Vector3()).distanceTo(resting) < 1e-5, 'a removed pipe cannot return to the mouth');
+  at(2.4); const before = mouthpiece.matrixWorld.toArray(), positions = Array.from((h.root.getObjectByName('pod-oral-feed') as THREE.Mesh).geometry.getAttribute('position').array);
+  h.at(2.4, 700, false, { kind: 'breather', elapsed: 2.4 });
+  assert.deepEqual(mouthpiece.matrixWorld.toArray(), before);
+  assert.deepEqual(Array.from((h.root.getObjectByName('pod-oral-feed') as THREE.Mesh).geometry.getAttribute('position').array), positions);
+  const bones: number[][] = [];
+  h.renderer.getAgentBody('neo')!.traverse(object => { if (object instanceof THREE.Bone) bones.push(object.matrixWorld.toArray()); });
+  await t.test('cold loading recreates the saved grasp and the same pipe surface', async cold => {
+    const restored = await setup(cold); restored.at(2.4, 900, false, { kind: 'breather', elapsed: 2.4 });
+    const restoredBones: number[][] = [];
+    restored.renderer.getAgentBody('neo')!.traverse(object => { if (object instanceof THREE.Bone) restoredBones.push(object.matrixWorld.toArray()); });
+    assert.equal(restoredBones.length, bones.length);
+    assert.ok(Math.max(...restoredBones.flatMap((matrix, i) => matrix.map((value, j) => Math.abs(value - bones[i][j])))) < 1e-7);
+    assert.deepEqual(restored.root.getObjectByName('pod-oral-mouthpiece')!.matrixWorld.toArray(), before);
+    assert.deepEqual(Array.from((restored.root.getObjectByName('pod-oral-feed') as THREE.Mesh).geometry.getAttribute('position').array), positions);
+  });
+  h.at(2.4); assert.equal(h.root.getObjectByName('pod-breather')!.visible, false, 'old disconnection saves have already removed the oral tube');
+});
+
+test('the grasping hand skin stays outside the breathing tube wall', async t => {
+  const h = await setup(t), hose = h.root.getObjectByName('pod-oral-feed') as THREE.Mesh<THREE.TubeGeometry>;
+  const mouthpiece = h.root.getObjectByName('pod-oral-mouthpiece')!;
+  for (const elapsed of [2, 2.4, 3.2, 4, 4.5]) {
+    const body = h.at(elapsed, 100, false, { kind: 'breather', elapsed }), inside: number[][] = [], gaps = [Infinity, Infinity];
+    const points = Array.from({ length: 129 }, (_, i) => hose.localToWorld(hose.geometry.parameters.path.getPoint(i / 128)));
+    body.traverse(object => {
+      if (!(object instanceof THREE.SkinnedMesh) || !object.visible || (object.material as THREE.Material).name !== 'Skin') return;
+      const index = object.geometry.getAttribute('skinIndex'), weight = object.geometry.getAttribute('skinWeight');
+      for (let i = 0; i < index.count; i++) {
+        const hand = ['R', 'L'].findIndex(side => Array.from({ length: 4 }, (_, j) => weight.getComponent(i, j) > .2
+          && /^(wrist_|finger)/.test(object.skeleton.bones[index.getComponent(i, j)].name)
+          && object.skeleton.bones[index.getComponent(i, j)].name.endsWith(`_${side}`)).some(Boolean));
+        if (hand < 0) continue;
+        const point = object.localToWorld(object.getVertexPosition(i, new THREE.Vector3())), local = mouthpiece.worldToLocal(point.clone());
+        if (local.y < .03 || local.y > .62) continue;
+        let distance = Infinity;
+        for (let segment = 0; segment < 128; segment++) {
+          const start = points[segment], delta = points[segment + 1].clone().sub(start);
+          const contact = start.clone().addScaledVector(delta, THREE.MathUtils.clamp(point.clone().sub(start).dot(delta) / delta.lengthSq(), 0, 1));
+          distance = Math.min(distance, point.distanceTo(contact));
+        }
+        const gap = distance - POD_BREATHER.radius; gaps[hand] = Math.min(gaps[hand], Math.abs(gap));
+        if (gap < -.012) inside.push([hand, ...local.toArray()]);
+      }
+    });
+    assert.equal(inside.length, 0, `hand skin penetrates the pipe wall at ${elapsed}s: ${JSON.stringify(inside.slice(0, 4))}`);
+    assert.ok(gaps.every(gap => gap < .035), `both hands need actual skin contact at ${elapsed}s, gaps ${gaps}`);
+  }
+});
+
+test('the attached breathing nozzle touches the shipped mouth surface instead of floating below the jaw', async t => {
+  const h = await setup(t), nozzle = h.root.getObjectByName('pod-oral-mouthpiece')!;
+  for (const elapsed of [0, .7, 1.35, 2]) {
+    const body = h.at(elapsed, 100, false, { kind: 'breather', elapsed }), head = body.getObjectByName('head')!, skin: THREE.SkinnedMesh[] = [];
+    body.traverse(object => {
+      if (object instanceof THREE.SkinnedMesh && object.visible && (object.material as THREE.Material).name === 'Skin') {
+        object.skeleton.update(); object.computeBoundingBox(); object.computeBoundingSphere(); skin.push(object);
+      }
+    });
+    const point = POD_BREATHER.mouth;
+    const from = head.localToWorld(new THREE.Vector3(point.x, point.y, .8));
+    const normal = new THREE.Vector3(0, 0, 1).applyQuaternion(head.getWorldQuaternion(new THREE.Quaternion()));
+    const contact = new THREE.Raycaster(from, normal.clone().negate(), 0, .7).intersectObjects(skin)[0];
+    assert.ok(contact, `there must be a lip surface at the nozzle height at ${elapsed}s`);
+    const gap = nozzle.getWorldPosition(new THREE.Vector3()).sub(contact.point).dot(normal);
+    assert.ok(gap >= -.004 && gap < .025, `the mouthpiece floats ${gap} units from the actual mouth at ${elapsed}s`);
+  }
+});
+
+test('the chest feed surfaces avoid the moving arms during oral removal and release', async t => {
+  const h = await setup(t);
+  const beats: AwakeningBeat[] = [0, .4, .75, 1.35, 1.7, 2.4, 3.2, 3.6, 4, 4.5, 4.8, 5, 5.5].map(elapsed => ({ kind: 'breather', elapsed }));
+  beats.push(...[0, 1.8, 3.5].map(elapsed => ({ kind: 'disconnect' as const, elapsed, breatherRemoved: true })));
+  for (const beat of beats) {
+    const body = h.at(beat.elapsed, 100, false, beat), skin: THREE.Mesh[] = [];
+    body.traverse(object => {
+      if (object instanceof THREE.SkinnedMesh && object.visible && (object.userData.patientBody || (object.material as THREE.Material).name === 'Skin')) {
+        const geometry = new THREE.BufferGeometry(), source = object.geometry.getAttribute('position'), positions = new THREE.Float32BufferAttribute(new Float32Array(source.count * 3), 3), point = new THREE.Vector3();
+        for (let i = 0; i < source.count; i++) { object.getVertexPosition(i, point); positions.setXYZ(i, point.x, point.y, point.z); }
+        geometry.setAttribute('position', positions); geometry.setIndex(object.geometry.index); geometry.computeBoundingBox(); geometry.computeBoundingSphere();
+        const mesh = new THREE.Mesh(geometry, object.material); mesh.matrixWorld.copy(object.matrixWorld); skin.push(mesh);
+      }
+    });
+    try {
+      for (let feed = 0; feed < 4; feed++) {
+        const hose = h.root.getObjectByName(`pod-body-feed-${feed}`) as THREE.Mesh<THREE.TubeGeometry>, positions = hose.geometry.getAttribute('position');
+        for (const radial of [0, 2, 4, 6]) for (let segment = 0; segment < 24; segment++) {
+          const from = hose.localToWorld(new THREE.Vector3().fromBufferAttribute(positions, segment * 9 + radial));
+          const delta = hose.localToWorld(new THREE.Vector3().fromBufferAttribute(positions, (segment + 1) * 9 + radial)).sub(from);
+          const hit = new THREE.Raycaster(from, delta.clone().normalize(), .002, delta.length() - .002).intersectObjects(skin)[0];
+          assert.ok(!hit, `feed ${feed} crosses the actual skin during ${beat.kind} at ${beat.elapsed}s, side ${radial}, segment ${segment}: ${hit ? h.root.worldToLocal(hit.point.clone()).toArray() : 'none'}`);
+        }
+      }
+    } finally { skin.forEach(mesh => mesh.geometry.dispose()); }
+  }
+});
+
+test('the eye camera retains the near mouthpiece during the grasp and restores its ordinary clipping distance', async t => {
+  const h = await setup(t);
+  class InputTarget extends EventTarget { matches() { return false; } }
+  const window = new InputTarget(), canvas = new InputTarget(), document = new InputTarget(), previous = globalThis.window;
+  globalThis.window = window as unknown as Window & typeof globalThis;
+  Object.assign(globalThis.document, { pointerLockElement: canvas, exitPointerLock() {}, hidden: false,
+    addEventListener: document.addEventListener.bind(document), removeEventListener: document.removeEventListener.bind(document) });
+  const camera = new THREE.PerspectiveCamera(57, 16 / 9, .5, 5000), controls = new PlayerControls(canvas as unknown as HTMLCanvasElement, camera, () => {}, () => {});
+  try {
+    for (const elapsed of [1.8, 2.05, 2.4, 2.8]) {
+      h.at(elapsed, 100, false, { kind: 'breather', elapsed });
+      controls.possess(h.neo); controls.performing = true; controls.firstPerson = true;
+      controls.update(1 / 60, h.neo, h.renderer.getAgent('neo')!, false); camera.updateMatrixWorld(true);
+      const grip = h.root.getObjectByName('pod-oral-mouthpiece')!.localToWorld(new THREE.Vector3(0, .15, 0)).project(camera);
+      assert.ok(grip.z >= -1 && grip.z < 1, `the close grasp is cut by the eye camera at ${elapsed}s, depth ${grip.z}`);
+    }
+    controls.firstPerson = false; controls.update(1 / 60, h.neo, h.renderer.getAgent('neo')!, false);
+    assert.equal(camera.near, .5, 'third-person keeps the ordinary depth precision');
+    await t.test('first-person patient shoulders retain the same skin surface as third person', () => {
+      const body = h.at(2.4, 100, false, { kind: 'breather', elapsed: 2.4 });
+      const surfaces = () => {
+        const skin: THREE.SkinnedMesh[] = [];
+        body.traverse(object => {
+          if (object instanceof THREE.SkinnedMesh && object.visible && (object.material as THREE.Material).name === 'Skin') {
+            object.skeleton.update(); object.computeBoundingBox(); object.computeBoundingSphere(); skin.push(object);
+          }
+        }); return skin;
+      };
+      const skin = surfaces(), rays: { ray: THREE.Raycaster; point: THREE.Vector3 }[] = [];
+      for (const mesh of skin) {
+        const index = mesh.geometry.index!, joints = mesh.geometry.getAttribute('skinIndex'), weights = mesh.geometry.getAttribute('skinWeight');
+        for (const side of ['R', 'L']) {
+          let samples = 0;
+          for (let triangle = 0; triangle < index.count && samples < 12; triangle += 3) {
+            const vertices = [0, 1, 2].map(i => index.getX(triangle + i));
+            if (!vertices.every(vertex => [0, 1, 2, 3].some(i => weights.getComponent(vertex, i) > .6 && mesh.skeleton.bones[joints.getComponent(vertex, i)].name === `shoulder_${side}`))) continue;
+            const [a, b, c] = vertices.map(vertex => mesh.localToWorld(mesh.getVertexPosition(vertex, new THREE.Vector3())));
+            const normal = b.clone().sub(a).cross(c.clone().sub(a)).normalize(), point = a.clone().add(b).add(c).multiplyScalar(1 / 3);
+            const ray = new THREE.Raycaster(point.clone().addScaledVector(normal, .025), normal.negate(), 0, .05);
+            const hit = ray.intersectObjects(skin)[0];
+            if (hit && hit.point.distanceTo(point) < .01) { rays.push({ ray, point: hit.point.clone() }); samples++; }
+          }
+        }
+      }
+      assert.ok(rays.length >= 16, 'the reference pose must contain real shoulder skin, sampled from its actual triangles');
+      controls.firstPerson = true; h.renderer.setPlayerMotion(controls.motion);
+      h.at(2.4, 100, true, { kind: 'breather', elapsed: 2.4 });
+      for (const { ray, point } of rays) {
+        const hit = ray.intersectObjects(surfaces())[0];
+        assert.ok(hit && hit.point.distanceTo(point) < .025, 'hiding the head cannot cut away shoulder skin when there are no sleeves');
+      }
+    });
+    controls.release(); assert.equal(camera.near, .5, 'leaving the character restores the camera');
   } finally { controls.dispose(); globalThis.window = previous; }
 });

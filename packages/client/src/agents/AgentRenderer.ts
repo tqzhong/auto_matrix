@@ -363,9 +363,12 @@ export class AgentRenderer {
         const progress = entry.wetwallGuide.progress, wall = input.wetwall, pose = wetwallPose(wall.start, wall.role, progress, wall.phase, wall.elapsed, wall.fallY, wall.continued);
         input.wetwall = { ...wall, progress, hanging: pose.hanging }; input.climbing = pose.hanging ? 0 : undefined;
       }
-      input.podWake = state.id === 'neo' && state.currentLocation === 'film_power_plant_pods' && journey?.scene === 'm1_pod' && !journey.visiting
-        && (input.performance === 'pod' || journey.awakening?.kind === 'disconnect' && journey.awakening.elapsed < 5.2)
-        ? journey.awakening?.kind === 'disconnect' ? journey.awakening.elapsed : 0 : undefined;
+      const podBeat = journey?.scene === 'm1_pod' && !journey.visiting ? journey.awakening : undefined;
+      const podBody = state.id === 'neo' && state.currentLocation === 'film_power_plant_pods' && journey?.scene === 'm1_pod' && !journey.visiting;
+      input.podWake = podBody && (input.performance === 'pod' || podBeat?.kind === 'disconnect' && podBeat.elapsed < 5.2)
+        ? podBeat?.kind === 'breather' ? Math.min(1.35, podBeat.elapsed)
+          : podBeat?.kind === 'disconnect' ? Math.max(podBeat.breatherRemoved ? 1.35 : 0, podBeat.elapsed) : 0 : undefined;
+      input.podBreather = podBody && podBeat?.kind === 'breather' ? podBeat.elapsed : undefined;
       input.podRescue = journey?.scene === 'm1_pod' && !journey.visiting && input.performance === 'lift' && journey.awakening?.kind === 'rescue'
         ? journey.awakening.elapsed : undefined;
       input.officeShirt = officeClothing(state.id, state.currentLocation);

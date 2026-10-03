@@ -1341,10 +1341,54 @@ test('the rescue holds Neo at the waterline until the claw has descended and clo
   assert.ok(previous > water.y + 13);
 });
 
+test('Neo removes the breathing tube before the player starts maintenance, preserving a paused grasp across reconnects', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  Object.assign(state, { scene: 'm1_mirror', actor: 'neo', step: 1 }); h.command('next');
+  h.players.step(.1, true, h.tick()); assert.equal(state.awakening, undefined, 'waking does not remove the tube without input');
+  h.command('act'); assert.equal(state.awakening?.kind, 'breather');
+  for (let i = 0; i < 24; i++) h.players.step(.1, true, h.tick());
+  const saved = JSON.parse(JSON.stringify(h.sandbox.state)), beat = JSON.stringify(state.awakening), position = { ...h.actor().position };
+  h.players.step(.5, false, h.tick()); assert.equal(JSON.stringify(state.awakening), beat);
+  assert.match(h.command('act'), /演出/); assert.equal(JSON.stringify(state.awakening), beat, 'G cannot restart a hand already grasping the tube');
+  h.players.release('film-player', h.tick()); h.players.step(.1, true, h.tick());
+  assert.equal(JSON.stringify(state.awakening), beat, 'an unpossessed Neo cannot finish this body action');
+  h.sandbox.restore(saved); h.players.possess('film-player', 'neo', h.tick());
+  const restored = h.sandbox.life.film.state!;
+  assert.equal(JSON.stringify(restored.awakening), beat); assert.deepEqual(h.actor().position, position);
+  assert.match(h.command('retry'), /呼吸管/); assert.equal(JSON.stringify(restored.awakening), beat, 'returning to the action retains the saved grasp');
+  for (let i = 0; i < 100; i++) h.players.step(.1, true, h.tick());
+  assert.equal(restored.step, 0); assert.equal(restored.awakening?.kind, 'breather');
+  assert.equal(restored.awakening?.started, false); assert.equal(restored.completed.includes('m1_pod'), false);
+  assert.deepEqual(h.actor().position, position, 'waiting after breathing cannot flush Neo automatically');
+  assert.match(restored.lastText, /后颈/);
+  h.command('act'); assert.equal(restored.awakening?.kind, 'disconnect');
+  assert.equal(restored.awakening?.elapsed, 0); assert.equal(restored.awakening?.breatherRemoved, true);
+});
+
+test('old pod disconnection saves continue unplugging without inserting the new oral action', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  Object.assign(state, { scene: 'm1_mirror', actor: 'neo', step: 1 }); h.command('next');
+  state.awakening = { kind: 'disconnect', elapsed: 1.832 };
+  h.sandbox.life.film.awakeningFrame(h.actor(), 0, h.tick());
+  const saved = JSON.parse(JSON.stringify(h.sandbox.state)), position = { ...h.actor().position };
+  h.players.release('film-player', h.tick()); h.sandbox.restore(saved); h.players.possess('film-player', 'neo', h.tick());
+  const restored = h.sandbox.life.film.state!;
+  h.players.step(.1, false, h.tick());
+  assert.deepEqual(restored.awakening, { kind: 'disconnect', elapsed: 1.832 });
+  assert.deepEqual(h.actor().position, position);
+  assert.match(h.command('act'), /演出/);
+  for (let i = 0; i < 80; i++) h.players.step(.1, true, h.tick());
+  assert.equal(restored.step, 1); assert.equal(restored.awakening!.kind, 'disconnect');
+  assert.equal(restored.awakening!.elapsed, 9); assert.equal(restored.awakening!.breatherRemoved, undefined);
+  h.command('act'); assert.equal(restored.awakening!.kind, 'rescue');
+});
+
 test('pod disconnection moves Neo down the drain; rescue must be started in the water and lifts the body', () => {
   const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
   Object.assign(state, { scene: 'm1_mirror', actor: 'neo', step: 1 }); h.command('next');
   const start = { ...h.actor().position };
+  h.command('act'); assert.equal(state.awakening?.kind, 'breather');
+  for (let i = 0; i < 60; i++) h.players.step(.1, true, h.tick());
   h.command('act'); assert.equal(state.awakening?.kind, 'disconnect');
   for (let i = 0; i < 100; i++) h.players.step(.1, true, h.tick());
   assert.equal(state.step, 1); assert.ok(h.actor().position.y < start.y - 16);
@@ -3104,7 +3148,10 @@ test('the entire film route completes through interactions, driving and real com
           for (let frame = 0; frame < 120; frame++) h.players.step(.1, true, h.tick());
         }
         else if (state.truthRecovery) for (let frame = 0; frame < 200 && state.scene === scene.id && state.step === index; frame++) h.players.step(.1, true, h.tick());
-        else if (state.awakening && ['m1_mirror', 'm1_pod', 'm1_recovery', 'm1_cabin', 'm1_construct', 'm1_desert'].includes(scene.id)) for (let frame = 0; frame < 200 && state.scene === scene.id && state.step === index; frame++) h.players.step(.1, true, h.tick());
+        else if (state.awakening && ['m1_mirror', 'm1_pod', 'm1_recovery', 'm1_cabin', 'm1_construct', 'm1_desert'].includes(scene.id)) for (let frame = 0; frame < 200 && state.scene === scene.id && state.step === index; frame++) {
+          if (state.awakening?.kind === 'breather' && state.awakening.started === false) h.command('act');
+          h.players.step(.1, true, h.tick());
+        }
         else if (index === 0 && scene.id === 'm1_spoon') {
           for (let frame = 0; frame < 80; frame++) h.players.step(.1, true, h.tick());
           h.command('act');

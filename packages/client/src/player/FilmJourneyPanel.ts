@@ -529,7 +529,7 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
   const performing = Boolean(truth && truth.phase !== 'ready' && truth.phase !== 'question') || arrival?.phase === 'image' || helElevatorLocked(journey) || helDanceDoorLocked(journey) || meetingLocked(journey) && !['ready', 'done', 'parked'].includes(journey.meeting?.phase ?? 'ready') || trainingLocked(journey) || sentinelLocked(journey) || interludeLocked(journey) || rescueLocked(journey) || Boolean(journey.awakening && journey.awakening.elapsed < awakeningDuration(journey.awakening)) || oracleActing(journey) || phoneLocked(journey) || wakeCallLocked(journey) || theOneLocked(journey) || windowOpening(journey) || windowCrossing(journey) || pillLocked(journey) || lafayetteWelcomeLocked(journey) || interrogationLocked(journey) && journey.interrogation?.phase !== 'done';
   const answerPhone = phoneLocked(journey) && journey.phone?.phase === 'ready';
   const answer = answerPhone || awakeningWaiting(journey) || trainingWaiting(journey) || interrogationLocked(journey) && journey.interrogation?.phase === 'response';
-  const awakeningAction = journey.awakening?.kind === 'recovery' ? '示意开始恢复肌肉 · G'
+  const awakeningAction = journey.awakening?.kind === 'breather' ? '检查后颈接口 · G' : journey.awakening?.kind === 'recovery' ? '示意开始恢复肌肉 · G'
     : journey.awakening?.kind === 'construct' ? '触摸椅背，听 Morpheus 解释 · G' : '请 Morpheus 继续揭示 · G';
   const trainingAction = journey.downloadSetup?.phase === 'greeting' ? '起身，认识 Tank · G' : journey.training?.kind === 'download' ? '请 Tank 开始上传 · G'
     : journey.training?.kind === 'jump' ? '请 Morpheus 示范跨楼 · G' : '开始注意力测试 · G';

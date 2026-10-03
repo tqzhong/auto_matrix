@@ -33,6 +33,7 @@ export interface MotionInput {
   climbing?: number;
   performance?: AwakeningPose;
   podWake?: number;
+  podBreather?: number;
   podRescue?: number;
   mirrorBeat?: number;
   mirrorEntry?: import('@auto_matrix/shared').AwakeningBeat;

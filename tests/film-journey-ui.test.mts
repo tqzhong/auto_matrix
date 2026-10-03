@@ -233,6 +233,42 @@ test('tracking progress follows the saved chair entry before wiring and mirror c
   assert.match(element('game-objective-copy').textContent, /镜面覆盖进行中 · 50%/);
 });
 
+test('the completed oral removal offers a new neck inspection in both the journal and the game HUD', async t => {
+  const outputs = await Promise.all(['FilmJourneyPanel', 'SandboxUI'].map(name => build({ entryPoints: [`packages/client/src/player/${name}.ts`], bundle: true,
+    platform: 'node', format: 'esm', write: false, loader: { '.css': 'empty' }, logLevel: 'silent' })));
+  const [journal, hud] = await Promise.all(outputs.map(output => import(`data:text/javascript;base64,${Buffer.from(output.outputFiles[0].contents).toString('base64')}`)));
+  const elements = new Map();
+  const element = (id: string) => {
+    if (!elements.has(id)) {
+      const classes = new Set<string>();
+      elements.set(id, { textContent: '', innerHTML: '', style: {}, classes, classList: {
+        add: (name: string) => classes.add(name), remove: (name: string) => classes.delete(name),
+        toggle: (name: string, force?: boolean) => (force ?? !classes.has(name)) ? classes.add(name) : classes.delete(name),
+      } });
+    }
+    return elements.get(id);
+  };
+  const document = globalThis.document; t.after(() => { globalThis.document = document; });
+  globalThis.document = { getElementById: element } as unknown as Document;
+  const ui = Object.assign(Object.create(hud.SandboxUI.prototype), { root: { querySelector: element }, tick: 0 });
+  const scene = FILM_SCENE_BY_ID.m1_pod;
+  const player = { id: 'neo', status: 'alive', isInMatrix: false, position: filmStepPosition(scene, scene.steps[0]) } as AgentState;
+  const sandbox = { threats: [], neoLife: { cycle: 1, journey: { scene: scene.id, actor: 'neo', step: 0, completed: [], reflections: {},
+    lastText: '双手仍握着口部呼吸管。', awakening: { kind: 'breather', elapsed: 2.4 } } } } as SandboxState;
+  ui.updateFilm(player, sandbox);
+  assert.match(element('game-objective-copy').textContent, /拔出口部呼吸管进行中/);
+  assert.equal(element('#sandbox-interact').classes.has('hidden'), true, 'another G cannot interrupt the grasp');
+  assert.doesNotMatch(journal.renderFilmJourney(player, sandbox), /data-target="film:act" >检查后颈接口/);
+  sandbox.neoLife!.journey!.awakening = { kind: 'breather', elapsed: 5.5, started: false };
+  ui.updateFilm(player, sandbox);
+  assert.match(element('game-objective-copy').textContent, /检查后颈接口 · 按 G/);
+  assert.match(element('#film-sequence-hint').textContent, /G 检查后颈接口/);
+  assert.equal(element('#sandbox-interact').classes.has('hidden'), false, 'the finished action must expose its next input');
+  assert.equal(element('#sandbox-nearby').textContent, '检查后颈接口');
+  assert.match(journal.renderFilmJourney(player, sandbox), /data-target="film:act" >检查后颈接口 · G/);
+  assert.doesNotMatch(journal.renderFilmJourney(player, sandbox), /data-target="film:next"/);
+});
+
 test('the pill choice clears the central subtitle over Morpheus palms and restores it for the taking action', async t => {
   const output = await build({ entryPoints: ['packages/client/src/player/SandboxUI.ts'], bundle: true,
     platform: 'node', format: 'esm', write: false, loader: { '.css': 'empty' }, logLevel: 'silent' });
