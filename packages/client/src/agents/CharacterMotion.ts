@@ -33,6 +33,7 @@ export interface MotionInput {
   performance?: AwakeningPose;
   podRescue?: number;
   mirrorBeat?: number;
+  mirrorRise?: number;
   mirrorCrew?: number;
   mirrorContact?: { x: number; y: number; z: number };
   recovery?: number;
@@ -188,6 +189,8 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   if (truthWalk !== undefined) state.speed = 2.35 / 2.5 * 6 * truthWalk * (1 - truthWalk);
   state.climbPhase += (input.climbing ?? 0) * dt * 5;
   state.seated = input.cabin?.kind === 'core' && input.cabin.role === 'neo' ? cabinSeat(input.cabin.elapsed) : deus ? deus.seated : reloaded ? reloaded.seated : pills ? pills.seat : welcome ? welcome.seated : mix(state.seated, input.seated || input.riding || input.performance === 'connect' || input.performance === 'construct' ? 1 : 0, blend);
+  if (input.performance === 'touch') state.seated = smooth(clamp(((input.mirrorBeat ?? MIRROR_TIMING.sit) - .65) / (MIRROR_TIMING.sit - .65)));
+  if (input.mirrorRise !== undefined) state.seated = 1 - smooth(clamp(input.mirrorRise));
   if (input.construct || input.reveal?.kind === 'construct') state.seated = construct?.seated ?? (input.reveal?.role === 'morpheus' ? 1 : 0);
   if (input.truth) state.seated = truthRoot(input.truth, input.truth.role).seated;
   if (input.spoonLesson?.role === 'boy') state.seated = 1;

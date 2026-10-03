@@ -1291,9 +1291,9 @@ export class FilmSetRenderer {
       this.box(trim, -6, 9.1, -11.5, 4.4, .35, .9);
       this.box(rug, -7, .035, -17, 19, .055, 14);
       const chairX = MIRROR_SEAT.x; const chairZ = MIRROR_SEAT.z;
-      this.box(this.metal, chairX, .35, chairZ, 2.1, .28, 2.1, .12);
-      for (const dx of [-.85, .85]) for (const dz of [-.85, .85]) this.cylinder(this.metal, chairX + dx, .75, chairZ + dz, .075, 1.5);
-      this.box(this.leather, chairX, 1.58, chairZ, 2.12, .4, 2.1, .16);
+      this.box(this.metal, chairX, .98, chairZ + .15, 2.02, .12, 1.4, .04);
+      for (const dx of [-.85, .85]) for (const dz of [-.55, .85]) this.cylinder(this.metal, chairX + dx, .475, chairZ + dz, .075, .95);
+      this.box(this.leather, chairX, 1.18, chairZ + .25, 2.12, .32, 1.18, .12);
       this.box(this.leather, chairX, 2.48, chairZ + .92, 2.12, 2.1, .38, .17);
       this.box(this.leather, chairX, 3.47, chairZ + 1.03, 1.35, .5, .46, .16);
       for (const dx of [-1.1, 1.1]) {

@@ -1476,7 +1476,8 @@ export class FilmStorySystem {
     morpheus.currentLocation = 'film_lafayette'; morpheus.isInMatrix = true;
     morpheus.velocity = dt > 0 ? { x: (pose.x - before.x) / dt, y: 0, z: (pose.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
     morpheus.currentAction = { type: guide.done || dt === 0 || guide.progress === 0 ? 'idle' : 'move_to',
-      parameters: { resolved: true, seated: guide.progress === 0 && (guide.rise ?? 0) === 0, mirrorGuide: guide.progress }, startedAt: tick, duration: 1, progress: 0 };
+      parameters: { resolved: true, seated: guide.progress === 0 && (guide.rise ?? 0) === 0, mirrorGuide: guide.progress,
+        mirrorRise: guide.rise ?? (guide.progress > 0 ? 1 : 0) }, startedAt: tick, duration: 1, progress: 0 };
     if (!guide.done) state.lastText = 'Morpheus 起身，穿过会客厅后门走向追踪室。跟上他；你落后时他会停下等你。';
     else state.lastText = 'Morpheus 已在追踪室等候。走到椅子右侧按 G 坐下，Trinity 会接上电极。';
   }
@@ -6101,7 +6102,7 @@ export class FilmStorySystem {
           const pose = mirrorGuidePose(this.state.mirrorGuide.progress);
           actor.position = filmPosition(scene.set, pose.x, pose.z); actor.rotation = pose.yaw;
           actor.currentAction = { type: 'idle', parameters: { seated: this.state.mirrorGuide.progress === 0 && (this.state.mirrorGuide.rise ?? 0) === 0,
-            mirrorGuide: this.state.mirrorGuide.progress }, startedAt: this.state.enteredAt, duration: 100000, progress: 0 };
+            mirrorGuide: this.state.mirrorGuide.progress, mirrorRise: this.state.mirrorGuide.rise ?? (this.state.mirrorGuide.progress > 0 ? 1 : 0) }, startedAt: this.state.enteredAt, duration: 100000, progress: 0 };
         }
       }
       if (scene.id === 'm1_interrogation' && INTERROGATION_CAST.includes(id as typeof INTERROGATION_CAST[number])) {

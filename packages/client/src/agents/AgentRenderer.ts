@@ -281,6 +281,7 @@ export class AgentRenderer {
         sixth: sixthGesture,
         crouching: state.currentAction?.parameters.crouching === true,
         seated: state.currentAction?.parameters.seated === true,
+        mirrorRise: entry.mirrorGuide ? Number(state.currentAction?.parameters.mirrorRise ?? (state.currentAction?.parameters.seated ? 0 : 1)) : undefined,
         floorSeated: state.currentAction?.parameters.floorSeated === true,
         spoon: state.currentAction?.parameters.spoon as number | undefined,
         spoonLesson: state.currentAction?.parameters.spoonLesson as MotionInput['spoonLesson'],

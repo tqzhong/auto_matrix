@@ -104,6 +104,95 @@ async function heroAsset(id = 'neo') {
   return new GLTFLoader().parseAsync(result.buffer.slice(result.byteOffset, result.byteOffset + result.byteLength), '');
 }
 
+test('reloading a paused mirror beat restores Neo’s seated body and reaching hand immediately', async () => {
+  const assets = new Map(await Promise.all(['neo', 'neo-office', 'neo-tracking'].map(async id => [id, await heroAsset(id)] as const)));
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: (id: string) => Promise<Awaited<ReturnType<typeof heroAsset>>> }).load = async id => assets.get(id)!;
+  try {
+    const [playing, restored] = await Promise.all([models.create('neo'), models.create('neo')]);
+    for (const rig of [playing!, restored!]) { rig.root.position.set(MIRROR_SEAT.x, -1, MIRROR_SEAT.z); rig.root.rotation.y = Math.PI; }
+    for (const mirrorBeat of [1.9, 2.203, MIRROR_TIMING.touch, 6.3]) {
+      const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, seated: true, performance: 'touch' as const, mirrorBeat };
+      const prior = newMotion(); prior.seated = 1;
+      const fresh = newMotion();
+      models.animate(playing!, advanceMotion(prior, input, 0), prior, input, 0);
+      models.animate(restored!, advanceMotion(fresh, input, 0), fresh, input, 0);
+      playing!.root.updateMatrixWorld(true); restored!.root.updateMatrixWorld(true);
+      assert.equal(fresh.seated, 1, `a ${mirrorBeat}s save cannot wait for live frames to bend the legs`);
+      for (const name of ['pelvis', 'head', 'ankle_L', 'ankle_R', 'elbow_L', 'wrist_L', 'finger2-3_R']) {
+        const expected = playing!.bones.get(name)!.getWorldPosition(new THREE.Vector3());
+        const actual = restored!.bones.get(name)!.getWorldPosition(new THREE.Vector3());
+        assert.ok(actual.distanceTo(expected) < 1e-6, `${name} changes when the paused ${mirrorBeat}s beat is reloaded`);
+      }
+    }
+  } finally { models.dispose(); }
+});
+
+test('Neo’s shipped shoes rest on the tracking-room floor throughout the seated mirror performance', async () => {
+  const assets = new Map(await Promise.all(['neo', 'neo-office', 'neo-tracking'].map(async id => [id, await heroAsset(id)] as const)));
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: (id: string) => Promise<Awaited<ReturnType<typeof heroAsset>>> }).load = async id => assets.get(id)!;
+  try {
+    const rig = (await models.create('neo'))!; rig.root.position.set(MIRROR_SEAT.x, -1, MIRROR_SEAT.z); rig.root.rotation.y = Math.PI;
+    const shoes = rig.root.getObjectByName('shoes01') as THREE.SkinnedMesh;
+    const indices = shoes.geometry.attributes.skinIndex, weights = shoes.geometry.attributes.skinWeight;
+    const point = new THREE.Vector3();
+    for (const mirrorBeat of [MIRROR_TIMING.sit, 2.203, MIRROR_TIMING.touch, 4.8, 6.3]) {
+      const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, seated: true, performance: 'touch' as const, mirrorBeat };
+      const motion = newMotion(); models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true); shoes.skeleton.update();
+      for (const side of ['R', 'L']) {
+        const joint = shoes.skeleton.bones.indexOf(rig.bones.get('ankle_' + side)!); let lowest = Infinity;
+        for (let i = 0; i < indices.count; i++) {
+          if (![0, 1, 2, 3].some(j => indices.getComponent(i, j) === joint && weights.getComponent(i, j) > .5)) continue;
+          shoes.localToWorld(shoes.getVertexPosition(i, point)); lowest = Math.min(lowest, point.y);
+        }
+        assert.ok(lowest > -1.002 && lowest < -.95, `${side} sole is ${lowest + 1} units above the floor at ${mirrorBeat}s`);
+      }
+    }
+  } finally { models.dispose(); }
+});
+
+test('the actual tracking-chair cushion supports Neo’s trousers without swallowing his thighs', async t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const document = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, stroke() {}, fill() {} }) }) } as unknown as Document;
+  const assets = new Map(await Promise.all(['neo', 'neo-office', 'neo-tracking'].map(async id => [id, await heroAsset(id)] as const)));
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: (id: string) => Promise<Awaited<ReturnType<typeof heroAsset>>> }).load = async id => assets.get(id)!;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!; neo.position = filmPosition('film_lafayette', MIRROR_SEAT.x, MIRROR_SEAT.z); neo.currentLocation = 'film_lafayette'; neo.isInMatrix = true;
+  const renderer = new FilmSetRenderer(new THREE.Scene());
+  try {
+    renderer.update(neo, undefined, 0); renderer.root.updateMatrixWorld(true);
+    const materials = renderer as unknown as { leather: THREE.Material; metal: THREE.Material };
+    const chairMeshes: THREE.Mesh[] = [];
+    renderer.root.traverse(object => { if (object instanceof THREE.Mesh && (object.material === materials.leather || object.material === materials.metal)) chairMeshes.push(object); });
+    const rig = (await models.create('neo'))!; rig.root.position.set(neo.position.x, neo.position.y - 1, neo.position.z); rig.root.rotation.y = Math.PI;
+    const trousers = rig.root.getObjectByName('Tailored_trousers') as THREE.SkinnedMesh;
+    const point = new THREE.Vector3(), surfaces = new Map<string, number>();
+    for (const mirrorBeat of [MIRROR_TIMING.sit, 2.203, MIRROR_TIMING.touch, 4.8, 6.3]) {
+      const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, seated: true, performance: 'touch' as const, mirrorBeat };
+      const motion = newMotion(); models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true); trousers.skeleton.update();
+      let support = Infinity;
+      for (let i = 0; i < trousers.geometry.attributes.position.count; i++) {
+        trousers.localToWorld(trousers.getVertexPosition(i, point));
+        if (Math.abs(point.x - neo.position.x) > .6 || Math.abs(point.z - neo.position.z) > .85) continue;
+        const key = `${point.x.toFixed(6)},${point.z.toFixed(6)}`;
+        let surface = surfaces.get(key);
+        if (surface === undefined) {
+          const hit = new THREE.Raycaster(point.clone().add(new THREE.Vector3(0, 2, 0)), new THREE.Vector3(0, -1, 0), 0, 3).intersectObjects(chairMeshes, true)[0];
+          if (!hit) continue;
+          surface = hit.point.y; surfaces.set(key, surface);
+        }
+        const clearance = point.y - surface;
+        assert.ok(clearance > -.035, `the chair penetrates the trousers by ${-clearance} units at ${mirrorBeat}s: ${point.toArray()} / ${surface}`);
+        support = Math.min(support, clearance);
+      }
+      assert.ok(support < .1, `lowering the cushion cannot leave the seated body floating ${support} units above it`);
+    }
+  } finally { renderer.dispose(); models.dispose(); globalThis.document = document; }
+});
+
 test('Neo reaches the actual mirror smoothly without passing through it', async () => {
   const asset = await heroAsset(); const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
   (models as unknown as { load: () => Promise<typeof asset> }).load = async () => asset;

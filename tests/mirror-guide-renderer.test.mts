@@ -18,12 +18,16 @@ test('Morpheus walks the tracking-room route evenly between snapshots and stops 
   const morpheus = world.agents.get('morpheus')!;
   morpheus.position = filmPosition('film_lafayette', mirrorGuidePose(0).x, mirrorGuidePose(0).z);
   morpheus.currentLocation = 'film_lafayette'; morpheus.isInMatrix = true;
-  morpheus.currentAction = { type: 'idle', parameters: { mirrorGuide: 0, seated: true }, startedAt: 0, duration: 1, progress: 0 };
+  morpheus.currentAction = { type: 'idle', parameters: { mirrorGuide: 0, mirrorRise: 0, seated: true }, startedAt: 0, duration: 1, progress: 0 };
   const renderer = new AgentRenderer(new THREE.Scene());
   try {
     renderer.updateAgent('morpheus', morpheus);
     const group = renderer.getAgent('morpheus')!;
-    const rig = (renderer as unknown as { agents: Map<string, { rig: { motion: { speed: number } } }> }).agents.get('morpheus')!.rig;
+    const rig = (renderer as unknown as { agents: Map<string, { rig: { motion: { speed: number; seated: number } } }> }).agents.get('morpheus')!.rig;
+    renderer.update(.1, undefined, 0);
+    assert.equal(rig.motion.seated, 1, 'a paused red-pill exit restores Morpheus in his chair');
+    morpheus.currentAction.parameters.mirrorRise = .5; renderer.updateAgent('morpheus', morpheus); renderer.update(.1, undefined, 0);
+    assert.equal(rig.motion.seated, .5, 'rising resumes from the saved halfway pose without live frames');
     const snapshot = (progress: number, tick: number) => {
       const pose = mirrorGuidePose(progress);
       morpheus.position = filmPosition('film_lafayette', pose.x, pose.z);
