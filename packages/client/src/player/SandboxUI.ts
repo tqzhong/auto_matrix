@@ -67,7 +67,7 @@ export class SandboxUI {
       <div id="film-phone" class="film-phone hidden"><span>SECURE LINE / MORPHEUS</span><p id="film-phone-line"></p><div><i id="film-alert"></i></div><small id="film-alert-label"></small></div>
       <div id="film-sequence" class="film-sequence hidden"><p id="film-sequence-line"></p><small id="film-sequence-hint">鼠标观察 · V 切换视角 · J 手记</small></div>
       <div id="film-training-actions" class="film-training-actions hidden"><button data-combat="dodge"><kbd>X</kbd> 现在闪避</button><button data-combat="attack"><kbd>F</kbd> <span>刺拳</span></button></div>
-      <div id="film-pills" class="film-pills hidden" role="group" aria-label="选择药丸"><p>选择仍然属于你</p><div class="film-pill-choices"><button data-action="life" data-target="film:pill:red">红色 · 继续追问</button><button data-action="life" data-target="film:blue">蓝色 · 回到日常</button></div></div>
+      <div id="film-pills" class="film-pills hidden" role="group" aria-label="选择药丸"><p>选择仍然属于你 · 等待不会替你决定</p><div class="film-pill-choices"><button data-action="life" data-target="film:pill:red">红色 · 继续追问</button><button data-action="life" data-target="film:blue">蓝色 · 回到日常</button></div></div>
       <div id="film-meeting" class="film-pills hidden" role="group" aria-label="接头决定"><p>你仍然可以离开</p><div class="film-pill-choices"><button data-action="life" data-target="film:meeting:stay">留在车内 · 接受检查</button><button data-action="life" data-target="film:meeting:leave">推开车门 · 质疑检查</button></div></div>
       <div id="film-meeting-door" class="film-pills hidden" role="group" aria-label="车门前的选择"><p>Trinity 请你想清楚，再决定去留</p><div class="film-pill-choices"><button data-action="life" data-target="film:meeting:stay">信任她 · 关上车门</button><button data-action="life" data-target="film:meeting:depart">离开 · 返回雨中</button></div></div>
       <div id="film-construct-reflection" class="film-pills film-construct-reflection hidden" role="group" aria-label="Neo 对现实的理解"><p>感觉足以证明真实吗？</p><div class="film-pill-choices">${filmReflections('m1_construct').map(choice => `<button data-action="life" data-target="film:reflect:${choice.id}">${escape(choice.label)}</button>`).join('')}</div></div>
@@ -1246,7 +1246,7 @@ export class SandboxUI {
     }
     if (pillLocked(journey)) {
       const choosing = journey.pills!.phase === 'choice';
-      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = choosing ? '红色继续追问；蓝色回到日常。你可以慢慢决定。' : journey.lastText;
+      this.el('film-sequence').classList.toggle('hidden', choosing); this.el('film-sequence-line').textContent = choosing ? '红色继续追问；蓝色回到日常。你可以慢慢决定。' : journey.lastText;
       this.el('film-sequence-hint').textContent = choosing ? '两种选择都会保存 · 等待不会自动作出决定' : 'V 切换视角 · 暂停、重连会保留动作进度';
       this.el('film-pills').classList.toggle('hidden', !choosing);
       if (choosing && document.pointerLockElement) document.exitPointerLock();
@@ -1580,12 +1580,24 @@ export class SandboxUI {
         document.getElementById('game-objective-copy')!.textContent = '正在跨窗 · 动作进度自动保存'; return;
       }
       const opening = windowOpening(journey);
-      this.el('sandbox-interact').classList.toggle('hidden', opening || step?.kind === 'reach' || distance(player.position, filmStepPosition(scene, step ?? scene.steps[2])) > 4);
+      const windowTarget = filmStepPosition(scene, step ?? scene.steps[2]);
+      const close = player.isInMatrix && distance(player.position, windowTarget) <= 4;
+      this.el('sandbox-interact').classList.toggle('hidden', opening || step?.kind === 'reach' || !close);
       this.el('film-phone').classList.remove('hidden');
-      this.el('film-phone-line').textContent = opening && !journey.office.spotted ? journey.lastText : journey.office.guide.replace('MORPHEUS · ', '');
+      this.el('film-phone-line').textContent = !step && !journey.office.spotted && !journey.office.searches?.some(Boolean)
+        ? '窗口已经打开。撑住窗沿，翻到外侧窄台；别停在办公室里。'
+        : opening && !journey.office.spotted ? journey.lastText : journey.office.guide.replace('MORPHEUS · ', '');
       this.el('film-alert').style.width = `${journey.office.alert}%`;
       this.el('film-alert-label').textContent = `${journey.office.spotted && journey.office.alert >= 65 ? '已被认出 · 拉开距离，绕到遮挡后' : `警觉 ${Math.round(journey.office.alert)}% · ${opening ? '转动把手、推开窗扇' : '按住 Z 潜行'}`} · 特工靠近才会被捕`;
       this.el('sandbox-trace').textContent = journey.office.spotted ? '特工看到了你 · 立即换位' : journey.office.searches?.some(Boolean) ? '检查最后踪迹 · 避开原位置' : '特工巡逻中 · 留意朝向';
+      if (!step) {
+        this.el('sandbox-nearby').textContent = '翻过窗台，落到外侧窄台';
+        document.getElementById('game-objective-copy')!.textContent = close ? 'G 翻过窗台，落到外侧窄台 · V 切换视角'
+          : '沿百叶窗回到已打开的窗口，再翻到外侧窄台';
+        const direction = Math.atan2(windowTarget.x - player.position.x, windowTarget.z - player.position.z) - player.rotation;
+        this.el('sandbox-waypoint').innerHTML = close ? '' : `<span style="transform:rotate(${-direction}rad)">↑</span>已打开的窗口 <b>${Math.round(distance(windowTarget, player.position))} m</b>`;
+        return;
+      }
     }
     if (officeCustodyActive(journey)) {
       const custody = journey.office!.custody!, ready = (['ready', 'outside'].includes(custody.phase) || custody.street?.phase === 'ready' || custody.street?.phase === 'done') && !custody.paused;

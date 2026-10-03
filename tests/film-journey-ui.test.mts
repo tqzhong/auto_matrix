@@ -177,3 +177,36 @@ test('the negative scan journal does not claim Neo was interrogated or needed an
   assert.match(html, /第二次来电/);
   assert.doesNotMatch(html, /噩梦|并非一场梦|配合扫描与抽取|取出追踪器/);
 });
+
+test('the pill choice clears the central subtitle over Morpheus palms and restores it for the taking action', async t => {
+  const output = await build({ entryPoints: ['packages/client/src/player/SandboxUI.ts'], bundle: true,
+    platform: 'node', format: 'esm', write: false, loader: { '.css': 'empty' }, logLevel: 'silent' });
+  const { SandboxUI } = await import(`data:text/javascript;base64,${Buffer.from(output.outputFiles[0].contents).toString('base64')}`);
+  const elements = new Map();
+  const element = (id: string) => {
+    if (!elements.has(id)) {
+      const classes = new Set<string>();
+      elements.set(id, { textContent: '', innerHTML: '', style: {}, classes, classList: {
+        add: (name: string) => classes.add(name), remove: (name: string) => classes.delete(name),
+        toggle: (name: string, force?: boolean) => (force ?? !classes.has(name)) ? classes.add(name) : classes.delete(name),
+      } });
+    }
+    return elements.get(id);
+  };
+  const document = globalThis.document; t.after(() => { globalThis.document = document; });
+  globalThis.document = { getElementById: element } as unknown as Document;
+  const ui = Object.assign(Object.create(SandboxUI.prototype), { root: { querySelector: element }, tick: 0 });
+  const player = { id: 'neo', isInMatrix: true, rotation: -Math.PI / 2, position: filmPosition('film_lafayette', 1.75, -6) } as AgentState;
+  const sandbox = { threats: [], neoLife: { journey: { scene: 'm1_pills', actor: 'neo', step: 1, completed: [], reflections: {},
+    lastText: 'Morpheus 解释两种选择。', pills: { phase: 'offering', elapsed: 2, approach: { x: 1.75, z: -6, yaw: -Math.PI / 2 } } } } } as SandboxState;
+  ui.updateFilm(player, sandbox);
+  assert.equal(element('#film-sequence').classes.has('hidden'), false, 'Morpheus introduction remains subtitled');
+  assert.equal(element('#film-pills').classes.has('hidden'), true, 'the player waits for the offered choice');
+  const pills = sandbox.neoLife!.journey!.pills!; pills.phase = 'choice'; ui.updateFilm(player, sandbox);
+  assert.equal(element('#film-sequence').classes.has('hidden'), true, 'the central subtitle must clear the visible capsules while waiting');
+  assert.equal(element('#film-pills').classes.has('hidden'), false, 'both explicit choices remain available');
+  pills.phase = 'taking'; pills.choice = 'red'; sandbox.neoLife!.journey!.lastText = 'Neo 用水吞服。'; ui.updateFilm(player, sandbox);
+  assert.equal(element('#film-sequence').classes.has('hidden'), false);
+  assert.equal(element('#film-pills').classes.has('hidden'), true, 'taking cannot offer a second decision');
+  assert.equal(element('#film-sequence-line').textContent, 'Neo 用水吞服。');
+});
