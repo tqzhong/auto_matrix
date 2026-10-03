@@ -11,7 +11,7 @@ import { AmbushSetRenderer } from '../packages/client/src/engine/AmbushSetRender
 import { CABIN, CABIN_ROUTE_LENGTH, cabinBodyPose, downloadRoot, DOWNLOAD_OPERATOR, type DownloadSetup } from '@auto_matrix/shared';
 import { WETWALL, WETWALL_SHAFT, WETWALL_ROLES, wetwallEntry, wetwallPose, type WetwallEncounter, type WetwallGesture } from '@auto_matrix/shared';
 import { truthRoot, TRUTH_BEDSIDE, type TruthGesture } from '@auto_matrix/shared';
-import { awakeningPose, podRescuePose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
+import { awakeningPose, podRescuePose, recoveryBodyPose, recoveryCrewPose, mirrorEntryPose, mirrorTime } from '@auto_matrix/shared';
 import { MORNING, morningRoot, morningWakePose } from '@auto_matrix/shared';
 import { metacortexPosition, OFFICE_CUSTODY } from '@auto_matrix/shared';
 import { SPOON_LESSON, spoonLessonSeat, type SpoonLesson } from '@auto_matrix/shared';
@@ -1824,6 +1824,95 @@ test('the red pill hands the first-person camera to the tracking-room doorway wh
   assert.ok(Math.abs(angle(game.yaw(), doorYaw)) < .05, 'the first-person view should follow Morpheus through the rear doorway');
   game.key('KeyV'); game.key('KeyV', false); game.step(.6);
   assert.ok(Math.abs(angle(game.yaw(), doorYaw)) < .15, 'third person should keep the doorway in front of Neo');
+});
+
+test('the tracking-chair entry carries first-person free look through the saved body turn', t => {
+  const game = setup(t, .45); game.state.currentLocation = 'film_lafayette';
+  game.state.position = filmPosition('film_lafayette', -7.1, -14.6);
+  game.state.currentAction = { type: 'idle', parameters: { filmPose: 'touch', mirrorBeat: 0,
+    mirrorEntry: { kind: 'mirror', elapsed: 0, chairMotion: 'stepping', approach: { x: -7.1, z: -14.6, yaw: .45 } } }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.controls.performing = true; game.step(.05, .05, false);
+  game.key('KeyV'); game.key('KeyV', false); game.step(.05, .05, false);
+  assert.ok(Math.abs(angle(game.yaw(), .45)) < .001, 'V during entry must look along the saved body rather than snap to the mirror');
+  game.document.pointerLockElement = game.canvas;
+  game.event(game.document, 'mousemove', { movementX: 100, movementY: -20 }); game.step(.05, .05, false);
+  const offset = angle(game.yaw(), .45);
+  for (const yaw of [1.2, 2.4, Math.PI, -2.1, -Math.PI / 2]) {
+    game.state.rotation = yaw;
+    game.state.currentAction.parameters.mirrorEntry = { ...game.state.currentAction.parameters.mirrorEntry as object, elapsed: 1 };
+    game.step(.05, .05, false);
+    assert.ok(Math.abs(angle(game.yaw(), yaw) - offset) < .001, 'saved turns must carry the mouse look offset without replaying motion');
+  }
+  const body = game.group.children[0].rotation.y; game.step(.6, 1 / 60, false);
+  assert.equal(game.group.children[0].rotation.y, body, 'pausing cannot advance the entry turn');
+});
+
+test('the tracking-chair entry frames the head and planted feet in narrow and wide views', t => {
+  const game = setup(t), beat = { kind: 'mirror' as const, elapsed: 0, chairMotion: 'stepping' as const,
+    approach: { x: -7.1, z: -14.6, yaw: -2.61 } };
+  game.state.currentLocation = 'film_lafayette';
+  for (const aspect of [440 / 670, 16 / 9]) {
+    game.camera.aspect = aspect; game.camera.updateProjectionMatrix();
+    for (const elapsed of [0, .7, 2.6, 3.5, 5.2, mirrorEntryPose(beat).seatStart]) {
+      const saved = { ...beat, elapsed }, pose = mirrorEntryPose(saved);
+      game.state.position = filmPosition('film_lafayette', pose.x, pose.z); game.state.rotation = pose.yaw;
+      game.state.currentAction = { type: 'idle', parameters: { filmPose: 'touch', mirrorBeat: mirrorTime(saved), mirrorEntry: saved }, startedAt: 0, duration: 1, progress: 0 };
+      game.controls.possess(game.state); game.controls.performing = true; game.step(.5, 1 / 60, false);
+      for (const y of [-.95, 3.1]) {
+        const screen = new THREE.Vector3(game.state.position.x, game.state.position.y + y, game.state.position.z).project(game.camera);
+        assert.ok(Math.abs(screen.x) < .9 && Math.abs(screen.y) < .9 && screen.z > -1 && screen.z < 1,
+          `entry head/feet leave the view at aspect ${aspect}, ${elapsed}s: ${screen.toArray()}`);
+      }
+      const center = FILM_SETS.film_lafayette.center;
+      const glass = new THREE.Vector3(center.x + PILL_ROOM.mirror.x, center.y + MIRROR_FACE.y, center.z + PILL_ROOM.mirror.z);
+      const towardCamera = game.camera.position.clone().sub(glass).normalize();
+      assert.ok(towardCamera.z > .28, `the entry sees the glass edge-on at ${elapsed}s: ${towardCamera.toArray()}`);
+      assert.ok(game.camera.position.z < center.z - 11.8, 'the entry camera must stay behind the tracking-room partition');
+      const screen = glass.project(game.camera);
+      assert.ok(Math.abs(screen.x) < .95 && Math.abs(screen.y) < .95 && screen.z > -1 && screen.z < 1,
+        `the mirror leaves the entry shot at aspect ${aspect}, ${elapsed}s: ${screen.toArray()}`);
+    }
+  }
+});
+
+test('the paused tracking-chair body uses the saved position on the first rendered frame', t => {
+  const game = setup(t, Math.PI), beat = { kind: 'mirror' as const, elapsed: 0, chairMotion: 'stepping' as const, approach: { x: -7.1, z: -14.6, yaw: Math.PI } };
+  game.state.currentLocation = 'film_lafayette'; game.state.position = filmPosition('film_lafayette', beat.approach.x, beat.approach.z);
+  game.controls.possess(game.state); game.controls.performing = true;
+  for (const elapsed of [.1, .35, 3.5, 4.6]) {
+    const saved = { ...beat, elapsed }, pose = mirrorEntryPose(saved);
+    game.state.position = filmPosition('film_lafayette', pose.x, pose.z); game.state.rotation = pose.yaw;
+    game.state.currentAction = { type: 'idle', parameters: { filmPose: 'touch', mirrorBeat: mirrorTime(saved), mirrorEntry: saved }, startedAt: 0, duration: 1, progress: 0 };
+    game.step(.02, .02, false);
+    assert.ok(game.group.position.distanceTo(new THREE.Vector3(game.state.position.x, game.state.position.y, game.state.position.z)) < 1e-8,
+      `the authored feet cannot follow an interpolating body at ${elapsed}s`);
+  }
+});
+
+test('first-person entry finds the mirror once Neo sits and leaves later free look alone', t => {
+  const game = setup(t, Math.PI), center = FILM_SETS.film_lafayette.center;
+  const head = new THREE.Bone(); head.name = 'head'; head.position.y = 2.4; game.group.children[0].add(head);
+  const beat = { kind: 'mirror' as const, elapsed: 0, chairMotion: 'stepping' as const, approach: { x: -7.1, z: -14.6, yaw: Math.PI } };
+  game.state.currentLocation = 'film_lafayette'; game.state.position = filmPosition('film_lafayette', beat.approach.x, beat.approach.z);
+  game.state.currentAction = { type: 'idle', parameters: { filmPose: 'touch', mirrorBeat: 0, mirrorEntry: beat }, startedAt: 0, duration: 1, progress: 0 };
+  game.controls.possess(game.state); game.controls.performing = true; game.step(.1, .1, false);
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1, .1, false);
+  const duration = mirrorEntryPose(beat).duration;
+  for (let i = 1; i <= Math.ceil(duration / .1); i++) {
+    const saved = { ...beat, elapsed: Math.min(duration, i * .1) }, pose = mirrorEntryPose(saved);
+    game.state.position = filmPosition('film_lafayette', pose.x, pose.z); game.state.rotation = pose.yaw;
+    head.position.y = 2.4 - .66 * pose.seated;
+    game.state.currentAction.parameters.mirrorEntry = saved;
+    game.state.currentAction.parameters.mirrorBeat = mirrorTime(saved); game.state.currentAction.parameters.seated = pose.seated === 1;
+    game.step(.1, .1, false);
+  }
+  game.camera.updateMatrixWorld();
+  const glass = new THREE.Vector3(center.x + PILL_ROOM.mirror.x, center.y + MIRROR_FACE.y, center.z + PILL_ROOM.mirror.z).project(game.camera);
+  assert.ok(Math.abs(glass.x) < .85 && Math.abs(glass.y) < .85 && glass.z > -1 && glass.z < 1, `seated entry looks below the glass: ${glass.toArray()}`);
+  game.document.pointerLockElement = game.canvas;
+  game.event(game.document, 'mousemove', { movementX: 140, movementY: -40 }); game.step(.1, .1, false);
+  const view = game.camera.getWorldDirection(new THREE.Vector3()); game.step(1, .1, false);
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(view) < .001, 'the mirror aim cannot override the player every frame');
 });
 
 test('the tracking-chair shot contains Neo and the mirror while V lowers to seated eye height', t => {

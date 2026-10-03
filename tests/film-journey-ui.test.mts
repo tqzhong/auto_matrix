@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { build } from 'esbuild';
-import { FILM_SCENE_BY_ID, filmPosition, filmStepPosition, oracleReceptionRoot, type AgentState, type SandboxState } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, filmPosition, filmStepPosition, oracleReceptionRoot, mirrorEntryPose, awakeningDuration, MIRROR_TIMING, type AgentState, type SandboxState } from '@auto_matrix/shared';
 
 test('the Oracle departure journal requires the hostess, privacy, bite and physical exit in order', async () => {
   const output = await build({ entryPoints: ['packages/client/src/player/FilmJourneyPanel.ts'], bundle: true,
@@ -176,6 +176,61 @@ test('the negative scan journal does not claim Neo was interrogated or needed an
   assert.match(html, /先核对扫描结果，再问接头为什么仍要检查/);
   assert.match(html, /第二次来电/);
   assert.doesNotMatch(html, /噩梦|并非一场梦|配合扫描与抽取|取出追踪器/);
+});
+
+test('the tracking journal keeps new entries locked beyond the legacy eight seconds', async () => {
+  const output = await build({ entryPoints: ['packages/client/src/player/FilmJourneyPanel.ts'], bundle: true,
+    platform: 'node', format: 'esm', write: false, loader: { '.css': 'empty' }, logLevel: 'silent' });
+  const { renderFilmJourney } = await import(`data:text/javascript;base64,${Buffer.from(output.outputFiles[0].contents).toString('base64')}`);
+  const scene = FILM_SCENE_BY_ID.m1_mirror;
+  const player = { id: 'neo', status: 'alive', isInMatrix: true, position: filmStepPosition(scene, scene.steps[0]) } as AgentState;
+  const beat = { kind: 'mirror' as const, elapsed: 10, chairMotion: 'stepping' as const,
+    approach: { x: -7.05949, z: -14.53079, yaw: -2.61374 } };
+  const sandbox = { threats: [], neoLife: { cycle: 1, journey: { scene: scene.id, actor: 'neo', step: 0, completed: [], reflections: {},
+    lastText: 'Trinity 正在接线。', awakening: beat } } } as SandboxState;
+  assert.match(renderFilmJourney(player, sandbox), /data-target="film:act" disabled>演出进行中/);
+  assert.doesNotMatch(renderFilmJourney(player, sandbox), /data-target="film:act" >.*G/);
+  sandbox.neoLife!.journey!.awakening = { kind: 'mirror', elapsed: 4 };
+  assert.match(renderFilmJourney(player, sandbox), /data-target="film:act" disabled>演出进行中/);
+});
+
+test('tracking progress follows the saved chair entry before wiring and mirror coverage', async t => {
+  const output = await build({ entryPoints: ['packages/client/src/player/SandboxUI.ts'], bundle: true,
+    platform: 'node', format: 'esm', write: false, loader: { '.css': 'empty' }, logLevel: 'silent' });
+  const { SandboxUI } = await import(`data:text/javascript;base64,${Buffer.from(output.outputFiles[0].contents).toString('base64')}`);
+  const elements = new Map();
+  const element = (id: string) => {
+    if (!elements.has(id)) {
+      const classes = new Set<string>();
+      elements.set(id, { textContent: '', innerHTML: '', style: {}, classes, classList: {
+        add: (name: string) => classes.add(name), remove: (name: string) => classes.delete(name),
+        toggle: (name: string, force?: boolean) => (force ?? !classes.has(name)) ? classes.add(name) : classes.delete(name),
+      } });
+    }
+    return elements.get(id);
+  };
+  const document = globalThis.document; t.after(() => { globalThis.document = document; });
+  globalThis.document = { getElementById: element } as unknown as Document;
+  const ui = Object.assign(Object.create(SandboxUI.prototype), { root: { querySelector: element }, tick: 0 });
+  const beat = { kind: 'mirror' as const, elapsed: 4.558, chairMotion: 'stepping' as const,
+    approach: { x: -7.05949, z: -14.53079, yaw: -2.61374 } };
+  const player = { id: 'neo', isInMatrix: true, rotation: Math.PI, position: filmPosition('film_lafayette', -7.7, -16.95) } as AgentState;
+  const sandbox = { threats: [], neoLife: { journey: { scene: 'm1_mirror', actor: 'neo', step: 0, completed: [], reflections: {},
+    lastText: 'Neo 走到追踪椅前。', awakening: beat } } } as SandboxState;
+  ui.updateFilm(player, sandbox);
+  assert.match(element('game-objective-copy').textContent, /入椅进行中/);
+  assert.match(element('game-objective-copy').textContent, new RegExp(`${Math.round(beat.elapsed / awakeningDuration(beat) * 100)}%`));
+  assert.equal(element('#sandbox-interact').classes.has('hidden'), true, 'the entry cannot offer a second G action');
+  beat.elapsed = mirrorEntryPose(beat).duration + .75;
+  ui.updateFilm(player, sandbox);
+  assert.match(element('game-objective-copy').textContent, /追踪接线进行中/);
+  assert.equal(element('#sandbox-interact').classes.has('hidden'), true, 'the old eight-second limit cannot release a new entry');
+  beat.elapsed = mirrorEntryPose(beat).duration + MIRROR_TIMING.touch - MIRROR_TIMING.sit;
+  ui.updateFilm(player, sandbox);
+  assert.match(element('game-objective-copy').textContent, /镜面覆盖进行中/);
+  sandbox.neoLife!.journey!.awakening = { kind: 'mirror', elapsed: 4 };
+  ui.updateFilm(player, sandbox);
+  assert.match(element('game-objective-copy').textContent, /镜面覆盖进行中 · 50%/);
 });
 
 test('the pill choice clears the central subtitle over Morpheus palms and restores it for the taking action', async t => {

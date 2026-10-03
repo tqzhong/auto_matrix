@@ -5,7 +5,7 @@ import { truthLocked } from './truth-recovery.js';
 import { CONSTRUCT } from './construct.js';
 
 export type AwakeningKind = 'mirror' | 'connect' | 'disconnect' | 'rescue' | 'recovery' | 'cabin' | 'core' | 'construct' | 'desert';
-export interface AwakeningBeat { kind: AwakeningKind; elapsed: number; started?: boolean; approach?: { x: number; z: number } }
+export interface AwakeningBeat { kind: AwakeningKind; elapsed: number; started?: boolean; approach?: { x: number; z: number; yaw?: number }; chairMotion?: 'stepping' }
 export interface AwakeningReveal { kind: 'construct' | 'desert'; elapsed: number; role: 'neo' | 'morpheus' }
 export type RecoveryCrewRole = 'morpheus' | 'trinity';
 export interface RecoveryCrewGesture { elapsed: number; role: RecoveryCrewRole; boarding?: boolean; target?: { x: number; y: number; z: number } }
@@ -65,6 +65,67 @@ const clamp = (value: number) => Math.max(0, Math.min(1, value));
 const smooth = (value: number) => { const t = clamp(value); return t * t * (3 - 2 * t); };
 export const mirrorSilver = (elapsed: number): number => clamp((elapsed - MIRROR_TIMING.touch) / (AWAKENING_SECONDS.mirror - MIRROR_TIMING.touch));
 
+export function mirrorEntryPose(beat: AwakeningBeat) {
+  const from = beat.approach ?? MIRROR_TOUCH, yaw = 'yaw' in from ? from.yaw ?? Math.PI : Math.PI;
+  const front = MIRROR_SEAT.z - .9;
+  const route = [from, { x: -7.15, z: from.z }, { x: -7.15, z: front }];
+  const lengths = route.slice(1).map((point, i) => Math.hypot(point.x - route[i].x, point.z - route[i].z));
+  const length = lengths.reduce((sum, value) => sum + value, 0), count = Math.ceil(length / .55);
+  const turn = (a: number, b: number, t: number) => a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * t;
+  const pointAt = (distance: number) => {
+    let remaining = distance;
+    for (let i = 0; i < lengths.length; i++) {
+      if (remaining > lengths[i] && i < lengths.length - 1 || lengths[i] < .001) { remaining -= lengths[i]; continue; }
+      const a = route[i], b = route[i + 1], t = clamp(remaining / lengths[i]);
+      return { x: a.x + (b.x - a.x) * t, z: a.z + (b.z - a.z) * t, yaw: Math.atan2(b.x - a.x, b.z - a.z) };
+    }
+    return { ...route[route.length - 1], yaw: Math.PI };
+  };
+  const contact = (point: { x: number; z: number; yaw: number }, side: 'R' | 'L') => {
+    const lateral = side === 'R' ? -.276 : .276;
+    return { x: point.x + lateral * Math.cos(point.yaw), z: point.z - lateral * Math.sin(point.yaw), yaw: point.yaw, lift: 0 };
+  };
+  const feet = { R: contact({ ...from, yaw }, 'R'), L: contact({ ...from, yaw }, 'L') };
+  const steps: { side: 'R' | 'L'; x: number; z: number; yaw: number; lift: number }[] = [];
+  const firstYaw = pointAt(length / count).yaw, angle = Math.atan2(Math.sin(firstYaw - yaw), Math.cos(firstYaw - yaw));
+  const pivots = Math.ceil(Math.abs(angle) / (Math.PI / 2));
+  for (let i = 1; i <= pivots; i++) for (const side of ['R', 'L'] as const)
+    steps.push({ side, x: from.x, z: from.z, yaw: yaw + angle * i / pivots, lift: .08 });
+  for (let i = 0; i <= count; i++) steps.push({ side: i % 2 ? 'L' : 'R', ...pointAt(Math.min(length, (i + 1) * length / count)), lift: .19 });
+  const walkSteps = steps.length;
+  // The mirror leaves too little depth to turn the shoulders sideways.
+  // Face the glass and lead with the left foot; the right closes without crossing it.
+  const sideSteps = Math.ceil((route[2].x - MIRROR_SEAT.x) / .55);
+  for (let i = 1; i <= sideSteps; i++) for (const side of ['L', 'R'] as const)
+    steps.push({ side, x: route[2].x + (MIRROR_SEAT.x - route[2].x) * i / sideSteps, z: front, yaw: Math.PI, lift: .025 });
+  const seatStart = steps.length * .44, duration = seatStart + 1.2;
+  for (const [index, step] of steps.entries()) {
+    const { side } = step, start = index * .44, end = start + .38, t = clamp((beat.elapsed - start) / (end - start));
+    const target = contact(step, side);
+    const foot = feet[side], blend = smooth(t);
+    foot.x += (target.x - foot.x) * blend; foot.z += (target.z - foot.z) * blend;
+    foot.yaw = turn(foot.yaw, target.yaw, blend);
+    if (beat.elapsed >= start && beat.elapsed <= end) foot.lift = step.lift * Math.sin(Math.PI * t);
+  }
+  const seatProgress = clamp((beat.elapsed - seatStart) / 1.2), seated = smooth(seatProgress);
+  return { x: (feet.R.x + feet.L.x) / 2, z: (feet.R.z + feet.L.z) / 2 + .9 * seated,
+    yaw: turn(feet.R.yaw, feet.L.yaw, .5), feet, seated, seatProgress, seatStart, duration,
+    sideways: smooth((beat.elapsed - (walkSteps - 1) * .44) / .3) * (1 - smooth((beat.elapsed - seatStart) / .3)),
+    walking: smooth(beat.elapsed / .15) * (1 - smooth((beat.elapsed - seatStart + .2) / .2)) };
+}
+
+export function mirrorTime(beat?: AwakeningBeat): number {
+  if (!beat || beat.kind !== 'mirror') return 0;
+  if (beat.chairMotion !== 'stepping') return beat.elapsed;
+  const entry = mirrorEntryPose(beat);
+  return beat.elapsed < entry.seatStart ? 0 : beat.elapsed < entry.duration ? .65 + (MIRROR_TIMING.sit - .65) * entry.seatProgress
+    : MIRROR_TIMING.sit + (beat.elapsed - entry.duration);
+}
+
+export function awakeningDuration(beat: AwakeningBeat): number {
+  return beat.kind === 'mirror' && beat.chairMotion === 'stepping' ? mirrorEntryPose(beat).duration + AWAKENING_SECONDS.mirror - MIRROR_TIMING.sit : AWAKENING_SECONDS[beat.kind];
+}
+
 export function podRescuePose(elapsed: number): { descend: number; grip: number; lift: number; board: number; hatch: number; lower: number; release: number; settle: number; fade: number } {
   return { descend: smooth(elapsed / POD_RESCUE.descend),
     grip: smooth((elapsed - POD_RESCUE.descend) / (POD_RESCUE.secured - POD_RESCUE.descend)),
@@ -108,7 +169,7 @@ export function awakeningLocked(journey: FilmJourney): boolean {
   if (truthLocked(journey)) return true;
   if (!journey.visiting && journey.scene === 'm1_construct' && journey.constructArrival) return journey.constructArrival.phase !== 'approach';
   return !journey.visiting && (journey.scene === 'm1_pod' || ['m1_mirror', 'm1_recovery', 'm1_cabin', 'm1_construct', 'm1_desert'].includes(journey.scene)
-    && !!journey.awakening && (journey.awakening.elapsed < AWAKENING_SECONDS[journey.awakening.kind]
+    && !!journey.awakening && (journey.awakening.elapsed < awakeningDuration(journey.awakening)
       || journey.scene === 'm1_construct' && journey.step === 1 && journey.awakening.kind === 'construct' && journey.awakening.started !== false));
 }
 
@@ -121,14 +182,16 @@ export function awakeningWaiting(journey: FilmJourney): boolean {
 }
 
 // Local coordinates are also used by the pod, drainage channel and rescue claw.
-export function awakeningPose(beat?: AwakeningBeat): { x: number; y: number; z: number; pose: AwakeningPose; text: string } {
+export function awakeningPose(beat?: AwakeningBeat): { x: number; y: number; z: number; yaw?: number; pose: AwakeningPose; text: string } {
   if (beat?.kind === 'mirror') {
+    const entry = beat.chairMotion === 'stepping' ? mirrorEntryPose(beat) : undefined, time = mirrorTime(beat);
     const from = beat.approach ?? MIRROR_TOUCH;
-    const sit = smooth(beat.elapsed / MIRROR_TIMING.sit);
-    return { x: from.x + (MIRROR_SEAT.x - from.x) * sit, y: 0, z: from.z + (MIRROR_SEAT.z - from.z) * sit, pose: 'touch',
-      text: beat.elapsed < MIRROR_TIMING.sit ? '走到追踪椅旁坐下。' : beat.elapsed < MIRROR_TIMING.wired ? 'Trinity 将电极接到手臂；屏幕开始追踪信号。'
-        : beat.elapsed < MIRROR_TIMING.touch ? '裂镜里的倒影正在复原。Neo 从椅上伸出手。'
-        : beat.elapsed < 5.8 ? '冰冷的银色镜面粘住指尖，沿手臂与颈部蔓延。' : 'Neo 惊恐地仰头；房间的声音和光线正在消失。' };
+    const sit = smooth(time / MIRROR_TIMING.sit);
+    return { x: entry?.x ?? from.x + (MIRROR_SEAT.x - from.x) * sit, y: 0, z: entry?.z ?? from.z + (MIRROR_SEAT.z - from.z) * sit,
+      ...(entry ? { yaw: entry.yaw } : {}), pose: 'touch',
+      text: entry && beat.elapsed < entry.seatStart ? 'Neo 绕到追踪椅前，转身站稳。' : time < MIRROR_TIMING.sit ? '双脚踩稳地面，慢慢向后坐下。' : time < MIRROR_TIMING.wired ? 'Trinity 将电极接到手臂；屏幕开始追踪信号。'
+        : time < MIRROR_TIMING.touch ? '裂镜里的倒影正在复原。Neo 从椅上伸出手。'
+        : time < 5.8 ? '冰冷的银色镜面粘住指尖，沿手臂与颈部蔓延。' : 'Neo 惊恐地仰头；房间的声音和光线正在消失。' };
   }
   if (beat?.kind === 'connect') return { x: 8, y: 0, z: 5, pose: 'connect', text: '坐稳。接线组已经找到你，连接正在从模拟世界转向真实身体。' };
   if (beat?.kind === 'rescue') {

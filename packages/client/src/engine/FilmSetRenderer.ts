@@ -15,7 +15,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { createMirrorSurface } from './MirrorSurface.js';
 import { trackingContact } from '../agents/TrackingContact.js';
-import { MIRROR_FRAME } from '@auto_matrix/shared';
+import { MIRROR_FRAME, mirrorTime } from '@auto_matrix/shared';
 import { ambushApproachTarget, ambushEscapeTarget } from '@auto_matrix/shared';
 import { ORACLE_WAITING_FURNITURE, ORACLE_KITCHEN_CHAIRS, ORACLE_ENTRANCE, ORACLE_ENTRANCE_WALLS, oracleArrivalDoor, oracleArrivalPending, oracleArrivalTarget } from '@auto_matrix/shared';
 import { SpoonModel } from '../agents/SpoonModel.js';
@@ -298,7 +298,7 @@ export class FilmSetRenderer {
     }
     if (this.mirror) {
       const healing = journey?.scene === 'm1_mirror' && !journey.visiting;
-      const time = journey?.awakening?.elapsed ?? 0;
+      const time = mirrorTime(journey?.awakening);
       const progress = !healing ? 0 : journey!.step > 0 ? 1 : THREE.MathUtils.smoothstep(time, MIRROR_TIMING.wired, MIRROR_TIMING.touch - .12);
       const shader = this.mirror.material as THREE.ShaderMaterial;
       shader.uniforms.healProgress.value = progress;
@@ -324,7 +324,7 @@ export class FilmSetRenderer {
     }
     if (this.trackingElectrode && this.trackingLead) {
       const contact = this.mirrorSubject && trackingContact(this.mirrorSubject);
-      const visible = Boolean(contact && journey?.scene === 'm1_mirror' && !journey.visiting && (journey.awakening?.elapsed ?? 0) >= MIRROR_TIMING.sit);
+      const visible = Boolean(contact && journey?.scene === 'm1_mirror' && !journey.visiting && mirrorTime(journey.awakening) >= MIRROR_TIMING.sit);
       this.trackingElectrode.userData.active = this.trackingLead.userData.active = visible;
       this.trackingElectrode.visible = this.trackingLead.visible = visible && this.mirrorSubject?.visible !== false;
       if (visible) {
@@ -1297,7 +1297,7 @@ export class FilmSetRenderer {
       this.box(this.leather, chairX, 2.48, chairZ + .92, 2.12, 2.1, .38, .17);
       this.box(this.leather, chairX, 3.47, chairZ + 1.03, 1.35, .5, .46, .16);
       for (const dx of [-1.1, 1.1]) {
-        this.box(this.metal, chairX + dx, 1.72, chairZ, .18, .18, 2.05, .04);
+        this.box(this.metal, chairX + dx, 1.72, chairZ + .1, .18, .18, 1.65, .04);
         this.box(this.leather, chairX + dx, 1.82, chairZ, .28, .14, 1.45, .06);
       }
       const electrodeStart = this.root.children.length;
@@ -1359,7 +1359,7 @@ export class FilmSetRenderer {
             const leaf = this.mesh(leafGeometry, relief, x, y, -17.405); leaf.rotation.z = turn * .85; leaf.scale.set(.62, .74, .5);
           }
         }
-        for (const offset of [2.79, 2.98]) this.box(offset < 2.9 ? mirrorWood : relief, mx, mirrorY + side * offset, -17.5, 4.68, offset < 2.9 ? .28 : .1, .28, .025);
+        for (const offset of [2.79, 2.98]) this.box(offset < 2.9 ? mirrorWood : relief, mx, mirrorY + side * offset, side < 0 ? PILL_ROOM.mirror.z : -17.5, 4.68, offset < 2.9 ? .28 : .1, .28, .025);
         this.box(relief, mx, mirrorY + side * 2.68, -17.49, 3.84, .04, .045);
       }
       this.mirror = createMirrorSurface(); this.own(this.mirror.geometry);

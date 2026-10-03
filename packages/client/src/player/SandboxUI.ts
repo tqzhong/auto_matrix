@@ -1,5 +1,6 @@
 import { crosscutActive, crosscutAction, crosscutText } from '@auto_matrix/shared';
 import { truthFade, CABIN, CABIN_ROUTE_LENGTH } from '@auto_matrix/shared';
+import { mirrorTime, mirrorEntryPose, awakeningDuration } from '@auto_matrix/shared';
 import { nearMetacortexLift, metacortexLiftLocked } from '@auto_matrix/shared';
 import { officeCustodyActive, officeCustodyHeld, officeCustodyTarget, officeCustodyText } from '@auto_matrix/shared';
 import { arrestCarPose } from '@auto_matrix/shared';
@@ -254,7 +255,7 @@ export class SandboxUI {
       if (scene.id !== 'm1_desert') { blackout.classList.remove('desert-reveal'); blackout.style.backgroundImage = ''; }
       this.previousFilmScene = scene.id;
       if (scene.id === 'm1_mirror' && journey.awakening?.kind === 'mirror')
-        blackout.style.opacity = String(Math.min(.96, Math.max(0, (journey.awakening.elapsed - MIRROR_TIMING.fade) / (AWAKENING_SECONDS.mirror - MIRROR_TIMING.fade))));
+        blackout.style.opacity = String(Math.min(.96, Math.max(0, (mirrorTime(journey.awakening) - MIRROR_TIMING.fade) / (AWAKENING_SECONDS.mirror - MIRROR_TIMING.fade))));
       if (scene.id === 'm1_pod' && journey.awakening?.kind === 'rescue')
         blackout.style.opacity = String(podRescuePose(journey.awakening.elapsed).fade);
       if (scene.id === 'm1_recovery' && journey.awakening?.kind === 'recovery')
@@ -1137,13 +1138,13 @@ export class SandboxUI {
       if (arrival.phase === 'image') this.el('sandbox-interact').classList.add('hidden');
       return;
     }
-    if (journey.awakening && journey.awakening.elapsed < AWAKENING_SECONDS[journey.awakening.kind] && awakeningLocked(journey)) {
+    if (journey.awakening && journey.awakening.elapsed < awakeningDuration(journey.awakening) && awakeningLocked(journey)) {
       const waiting = awakeningWaiting(journey); const kind = journey.awakening!.kind;
       const action = kind === 'mirror' ? '继续追踪与触镜' : kind === 'recovery' ? '示意开始恢复肌肉' : kind === 'cabin' ? '起身检查颈后接口' : kind === 'core' ? '坐入连接椅，允许接入' : kind === 'construct' ? '触摸椅背，听 Morpheus 解释' : '请 Morpheus 继续揭示';
-      const activity = ({ mirror: journey.awakening!.elapsed < MIRROR_TIMING.touch ? '追踪接线' : '镜面覆盖', connect: '定位连接', disconnect: '培养舱断线', rescue: '飞船救援', recovery: '针疗与休息', cabin: '舱室醒来与身体检查', core: '核心连接', construct: '电视与感官揭示', desert: '真实荒漠讲解' } as const)[kind];
+      const activity = ({ mirror: journey.awakening.chairMotion && journey.awakening.elapsed < mirrorEntryPose(journey.awakening).duration ? '入椅' : mirrorTime(journey.awakening) < MIRROR_TIMING.touch ? '追踪接线' : '镜面覆盖', connect: '定位连接', disconnect: '培养舱断线', rescue: '飞船救援', recovery: '针疗与休息', cabin: '舱室醒来与身体检查', core: '核心连接', construct: '电视与感官揭示', desert: '真实荒漠讲解' } as const)[kind];
       document.getElementById('game-objective-copy')!.textContent = waiting
         ? `${journey.step + 1}/${scene.steps.length} · ${action} · 按 G`
-        : `${journey.step + 1}/${scene.steps.length} · ${activity}进行中 · ${Math.round(journey.awakening!.elapsed / AWAKENING_SECONDS[kind] * 100)}%`;
+        : `${journey.step + 1}/${scene.steps.length} · ${activity}进行中 · ${Math.round(journey.awakening!.elapsed / awakeningDuration(journey.awakening) * 100)}%`;
       this.el('film-sequence-hint').textContent = waiting ? `G ${action} · 鼠标观察 · V 切换视角` : '鼠标观察 · V 切换视角 · 暂停或重连会保留动作';
       this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
       this.el('sandbox-waypoint').textContent = '';
