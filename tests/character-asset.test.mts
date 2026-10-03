@@ -284,18 +284,28 @@ test('Neo’s new forearms remain skinned, joined to the hands and exposed throu
         const elbow = rig.bones.get(`elbow_${side}`)!.getWorldPosition(new THREE.Vector3());
         const shoulder = rig.bones.get(`shoulder_${side}`)!.getWorldPosition(new THREE.Vector3());
         const axis = elbow.clone().sub(shoulder).normalize();
-        // A long front-to-back ray also hits the raised forearm in front of
-        // this shoulder. Probe the front and outside, perpendicular to the arm;
-        // its inward surface joins the torso rather than a separate sleeve.
-        for (const view of [new THREE.Vector3(0, 0, 1), new THREE.Vector3(side === 'L' ? 1 : -1, 0, 0)]) {
-          const direction = view.clone().addScaledVector(axis, -view.dot(axis)).normalize();
+        // Follow the anatomical front as the arm rises; projecting world Z
+        // onto a nearly horizontal arm can point inward through the armpit.
+        const sign = side === 'L' ? 1 : -1;
+        const outside = new THREE.Vector3(sign, 0, 0); outside.addScaledVector(axis, -outside.dot(axis)).normalize();
+        const front = axis.clone().cross(outside).multiplyScalar(sign);
+        for (const view of [front, outside]) {
+          const direction = view.clone();
           const sleeve = shoulder.clone().lerp(elbow, .25).addScaledVector(direction, .3);
           const hits = new THREE.Raycaster(sleeve, direction.negate(), 0, .3).intersectObjects(visible);
           assert.equal(((hits[0]?.object as THREE.Mesh)?.material as THREE.Material)?.name, 'Tracking cotton', `the ${side} upper arm must remain inside its sleeve at ${time}s (${view.toArray()}): ${hits.map(hit => `${hit.object.name} ${hit.distance.toFixed(3)}`).join(', ')}`);
         }
         const center = rig.bones.get(`wrist_${side}`)!.getWorldPosition(new THREE.Vector3()).lerp(elbow, .5);
-        const hit = new THREE.Raycaster(center.clone().add(new THREE.Vector3(0, 0, .75)), new THREE.Vector3(0, 0, -1), 0, 1.5).intersectObjects(visible)[0];
-        assert.equal(hit?.object, arms, `the ${side} forearm at ${time}s must show anatomical skin instead of a hole or long sleeve`);
+        const forearm = rig.bones.get(`wrist_${side}`)!.getWorldPosition(new THREE.Vector3()).sub(elbow).normalize();
+        // In the seated pose a world-Z ray runs along the forearm into the
+        // hand. Probe its front and outside cross-section as for the sleeve.
+        const forearmOutside = new THREE.Vector3(sign, 0, 0); forearmOutside.addScaledVector(forearm, -forearmOutside.dot(forearm)).normalize();
+        const forearmFront = forearm.clone().cross(forearmOutside).multiplyScalar(sign);
+        for (const view of [forearmFront, forearmOutside]) {
+          const direction = view.clone();
+          const hit = new THREE.Raycaster(center.clone().addScaledVector(direction, .25), direction.negate(), 0, .45).intersectObjects(visible)[0];
+          assert.ok(hit?.object === arms, `the ${side} forearm at ${time}s must show anatomical skin instead of a hole or long sleeve; hit ${hit?.object.name} at ${hit?.distance}`);
+        }
       }
       for (let i = 0; i < positions.count; i++) {
         point.fromBufferAttribute(positions, i); arms.applyBoneTransform(i, point);

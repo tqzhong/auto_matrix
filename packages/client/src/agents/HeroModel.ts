@@ -18,7 +18,7 @@ import { OfficeWorkdayPerformance } from './OfficeWorkdayPerformance.js';
 import { ApartmentPerformance } from './ApartmentPerformance.js';
 import { WakeCallPerformance } from './WakeCallPerformance.js';
 import { enableSkinnedCulling } from './SkinnedBounds.js';
-import { wireTrackingElectrode } from './TrackingContact.js';
+import { placeTrackingFeet, wireTrackingElectrode } from './TrackingContact.js';
 import { placeHotelFeet } from './HotelFootPlacement.js';
 import { AMBUSH_STAIRS, AMBUSH_STOREYS, ambushFloor } from '@auto_matrix/shared';
 import { placePodBody } from './PodLandingContact.js';
@@ -921,6 +921,7 @@ export class HeroModels {
     if (input.truth && !this.truths.has(rig)) this.truths.set(rig, new TruthPerformance(rig));
     this.truths.get(rig)?.pose(input.truth);
     rig.root.updateWorldMatrix(true, true);
+    if (input.performance === 'touch') placeTrackingFeet(rig, input.mirrorBeat);
     if (!(input.truth?.role === 'neo' && input.truth.phase === 'unplug' && (truthSeat(input.truth.elapsed) > 0 || truthKneel(input.truth.elapsed) > 0)) && input.grounded && !input.meeting && !input.interrogation && !(input.wakeCall?.phase === 'waking' && input.wakeCall.elapsed < 3.2) && !input.riding && input.climbing === undefined && (!input.performance || input.performance === 'connect')) {
       let lowest = Infinity;
       for (const side of ['R', 'L']) {

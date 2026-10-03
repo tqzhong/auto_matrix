@@ -1,11 +1,28 @@
 import * as THREE from 'three';
 import { MIRROR_TIMING } from '@auto_matrix/shared';
 import type { HeroRig } from './HeroModel.js';
+import { reach } from './SpoonPerformance.js';
 
 export function trackingContact(subject: THREE.Object3D): THREE.Vector3 | undefined {
   const elbow = subject.getObjectByName('elbow_L'), wrist = subject.getObjectByName('wrist_L');
   if (!elbow || !wrist) return;
   return elbow.getWorldPosition(new THREE.Vector3()).lerp(wrist.getWorldPosition(new THREE.Vector3()), .35).add(new THREE.Vector3(0, .13, 0));
+}
+
+export function placeTrackingFeet(rig: HeroRig, time: number = MIRROR_TIMING.sit): void {
+  const seated = THREE.MathUtils.smoothstep(time, .65, MIRROR_TIMING.sit);
+  if (!seated) return;
+  rig.root.updateWorldMatrix(true, true);
+  const rotation = rig.root.getWorldQuaternion(new THREE.Quaternion());
+  const floor = rig.root.getWorldPosition(new THREE.Vector3()).y + rig.footHeight + .015;
+  for (const side of ['R', 'L']) {
+    const hip = rig.bones.get('hip_' + side)!, knee = rig.bones.get('knee_' + side)!, ankle = rig.bones.get('ankle_' + side)!;
+    const target = ankle.getWorldPosition(new THREE.Vector3()); target.y = THREE.MathUtils.lerp(target.y, floor, seated);
+    const orientation = ankle.getWorldQuaternion(new THREE.Quaternion()).slerp(rotation, seated);
+    reach(hip, knee, ankle.position, target, new THREE.Vector3(0, .1, 1).applyQuaternion(rotation));
+    ankle.quaternion.copy(knee.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation));
+    ankle.updateWorldMatrix(false, true);
+  }
 }
 
 export function wireTrackingElectrode(rig: HeroRig, time: number, contact: { x: number; y: number; z: number }): void {
