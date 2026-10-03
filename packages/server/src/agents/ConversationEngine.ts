@@ -15,6 +15,11 @@ interface ActiveConversation {
   awaitingModel: boolean;
 }
 
+export interface ConversationCheckpoint {
+  active: ActiveConversation[];
+  cooldowns: [AgentId, number][];
+}
+
 export class ConversationEngine {
   ordinaryLife = false;
   private active = new Map<string, ActiveConversation>();
@@ -125,5 +130,14 @@ export class ConversationEngine {
   isAgentInConversation(id: string): boolean { return [...this.active.values()].some(c => c.record.participants.includes(id)); }
   isOnCooldown(id: string, tick: number): boolean { return tick < (this.cooldowns.get(id) ?? 0); }
   getActiveConversations(): ConversationRecord[] { return [...this.active.values()].map(c => structuredClone(c.record)); }
+  getCheckpoint(): ConversationCheckpoint { return structuredClone({ active: [...this.active.values()], cooldowns: [...this.cooldowns] }); }
+  restore(checkpoint?: ConversationCheckpoint): void {
+    this.active.clear(); this.cooldowns.clear();
+    if (!checkpoint) return;
+    const saved = structuredClone(checkpoint);
+    for (const conv of saved.active) this.active.set(conv.record.id, conv);
+    for (const [id, until] of saved.cooldowns) this.cooldowns.set(id, until);
+    // An in-flight request cannot survive a restart; its original 12-tick fallback deadline still applies.
+  }
   getConversationHistory(a: string, b: string): Memory[] { return this.memoryManager.getMemoriesInvolvingAgent(a, b).filter(m => m.type === 'conversation'); }
 }

@@ -2,7 +2,7 @@ import express from 'express';
 import { createServer } from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { SimulationState, WorldStateFull, SandboxCommand } from '@auto_matrix/shared';
+import type { ServerMessage, SimulationState, WorldStateFull, SandboxCommand } from '@auto_matrix/shared';
 import { NEO_CAST, FILM_CAST, cityVehicleBlocked } from '@auto_matrix/shared';
 import { config } from './config.js';
 import { EventBus } from './simulation/EventBus.js';
@@ -90,7 +90,7 @@ async function saveWorld(running = simLoop.isRunning()): Promise<void> {
   await Promise.all([memory.saveAll(), checkpoints.save({ version: 1, tick: simLoop.getTick(), timeOfDay: world.timeOfDay, day: world.day,
     simulation: { running, speed }, phase: story.getCurrentPhaseId(),
     agents: Object.fromEntries(world.agents), events: world.globalEvents,
-    relationships: [...world.agents.keys()].flatMap(id => relationships.getRelationshipsForAgent(id)), sandbox: sandbox.state })]);
+    relationships: [...world.agents.keys()].flatMap(id => relationships.getRelationshipsForAgent(id)), sandbox: sandbox.state, conversations: conversations.getCheckpoint() })]);
 }
 
 const simLoop = new SimulationLoop(config.simulation.tickRateMs, config.simulation.agentDecisionIntervalTicks,
@@ -152,6 +152,10 @@ players.onStoryRole = (socketId, agentId, tick) => {
 
 sockets.getIO().on('connection', socket => {
   sockets.sendFullState(socket.id, snapshot(), simLoop.getTick());
+  for (const record of conversations.getActiveConversations()) {
+    socket.emit('message', { type: 'conversation_start', data: { id: record.id, participants: record.participants, location: record.location }, tick: record.startTick, timestamp: Date.now() } satisfies ServerMessage);
+    for (const line of record.messages) socket.emit('message', { type: 'conversation_message', data: { conversationId: record.id, speaker: line.speaker, content: line.content, tone: line.tone }, tick: line.tick, timestamp: Date.now() } satisfies ServerMessage);
+  }
   socket.on('message', (message: unknown) => {
     if (!message || typeof message !== 'object') return;
     const { type, data } = message as { type?: string; data?: { speed?: number; kind?: string; agentId?: string; target?: string; takeover?: boolean } };
@@ -251,12 +255,13 @@ async function main(): Promise<void> {
   await memory.loadAll();
   const checkpoint = await checkpoints.load();
   if (checkpoint) {
+    conversations.restore(checkpoint.conversations);
     for (const [id, saved] of Object.entries(checkpoint.agents)) {
       const agent = manager.getAgent(id);
       if (!agent) continue;
       Object.assign(agent.state, saved);
       delete agent.state.controller;
-      if (agent.state.currentAction?.type === 'talk_to' || agent.state.currentAction?.parameters.player) {
+      if (agent.state.currentAction?.type === 'talk_to' && !checkpoint.conversations || agent.state.currentAction?.parameters.player) {
         agent.state.currentAction = null; agent.state.targetPosition = null; agent.state.currentPath = [];
         agent.state.velocity = { x: 0, y: 0, z: 0 };
       }
