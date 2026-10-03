@@ -13,7 +13,7 @@ import type { MotionInput } from '../agents/CharacterMotion.js';
 import { ambushCompanyStep } from '@auto_matrix/shared';
 import { AIR_RESCUE, governmentPose, airRescuePose, airRescueRoot, interrogationPose, meetingPose, meetingCarPose, meetingCarPoint, MEETING_TIMING } from '@auto_matrix/shared';
 import { officeClothing } from '@auto_matrix/shared';
-import { cabinSeat, MORNING, POD_RESCUE, podRescuePose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
+import { APARTMENT_NETWORK, APARTMENT_ROOM, cabinSeat, computerCheckLocked, computerNetworkPull, MORNING, POD_RESCUE, podRescuePose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
 import { ambushCat } from '@auto_matrix/shared';
 import { wetwallPose, sixthPose, bathroomFightRoot, WETWALL, WETWALL_SHAFT, type WetwallPhase } from '@auto_matrix/shared';
 import { BASEMENT, TV_EXIT, basementBlocked, basementDropPose, basementDropRoot, basementDropPlayback, tvExitEmergeRoot, tvExitEmergingRole, type BasementDropPlayback } from '@auto_matrix/shared';
@@ -32,6 +32,8 @@ export class PlayerControls {
   private movementRight = 0;
   private lastLook = -1000;
   private pitch = 0.24;
+  private cableAim = false;
+  private cablePitch?: number;
   private position: Vector3 = { x: 0, y: 1, z: 0 };
   private vy = 0;
   private planar = { x: 0, z: 0 };
@@ -120,6 +122,10 @@ export class PlayerControls {
     this.movementYaw = this.yaw; this.movementForward = 0; this.movementRight = 0;
     this.lastLook = -1000; this.dragging = false;
     this.facing = state.rotation; this.cameraReady = false; this.motion.attack = undefined;
+    this.motion.computerCheck = undefined;
+    this.cableAim = false;
+    if (this.cablePitch !== undefined) this.pitch = this.cablePitch;
+    this.cablePitch = undefined;
     this.lastAttack = -1000; this.attackQueuedUntil = 0; this.attackCombo = 0;
     this.motion.hit = this.motion.impact = undefined; this.impactAge = 10;
     this.motion.cast = undefined; this.motion.skill = undefined; this.impulse = undefined;
@@ -185,6 +191,14 @@ export class PlayerControls {
         this.firstPerson = !this.firstPerson;
         if (this.bridgeCaught) this.cameraReady = false;
         if (this.firstPerson && this.motion.mirrorBeat !== undefined) this.aimAtMirror();
+        if (this.firstPerson && this.motion.computerCheck) this.cableAim = true;
+        else if (this.firstPerson && this.authoritative?.currentLocation === 'neo_apartment'
+          && Math.hypot(this.position.x - APARTMENT_ROOM.center.x - APARTMENT_NETWORK.screenApproach.x, this.position.z - APARTMENT_ROOM.center.z - APARTMENT_NETWORK.screenApproach.z) < .75) {
+          const x = APARTMENT_ROOM.center.x + APARTMENT_NETWORK.screen.x - this.position.x;
+          const z = APARTMENT_ROOM.center.z + APARTMENT_NETWORK.screen.z - this.position.z;
+          this.yaw = this.movementYaw = Math.atan2(x, z);
+          this.pitch = Math.atan2(this.position.y + 2.99 - APARTMENT_NETWORK.screen.y, Math.hypot(x, z));
+        }
         if (this.firstPerson && this.motion.meeting && ['scanning', 'located', 'removing', 'discarding'].includes(this.motion.meeting.phase)) this.aimAtMeetingScanner();
         if (this.firstPerson && this.motion.crosscut && (this.motion.crosscut.phase === 'phone' || this.motion.crosscut.phase === 'neo_exit')) this.aimAtHardline();
         if (this.firstPerson && this.motion.officeCustody?.street) { this.yaw = this.movementYaw = this.facing; this.pitch = .12; }
@@ -215,7 +229,7 @@ export class PlayerControls {
     const turn = -event.movementX * 0.0028;
     this.yaw += turn;
     if (!this.dragging) this.movementYaw += turn;
-    this.pitch = THREE.MathUtils.clamp(this.pitch + event.movementY * 0.002, this.motion.mirrorBeat !== undefined ? -.9 : -.4, 1.1);
+    this.pitch = THREE.MathUtils.clamp(this.pitch + event.movementY * 0.002, this.motion.mirrorBeat !== undefined ? -.9 : -.4, this.motion.computerCheck ? 1.5 : 1.1);
     this.lastLook = performance.now();
   };
   private click = (): void => { if (this.id && this.enabled && document.pointerLockElement !== this.canvas) this.lockPointer(); };
@@ -388,6 +402,17 @@ export class PlayerControls {
     if (custody) this.performing = custody.locked ?? (custody.phase === 'securing' || Boolean(custody.paused));
     if (this.motion.contact && !state.currentAction?.parameters.contact) this.performing = false;
     if (state.currentAction?.parameters.contact) this.performing = true;
+    const computerCheck = state.currentAction?.parameters.computerCheck as MotionInput['computerCheck'];
+    const computerStarting = Boolean(computerCheck && !this.motion.computerCheck);
+    if (this.motion.computerCheck && !computerCheckLocked(computerCheck)) {
+      this.performing = false;
+      if (this.cablePitch !== undefined) this.pitch = this.cablePitch;
+      this.cablePitch = undefined;
+    }
+    if (computerCheckLocked(computerCheck)) {
+      this.performing = true; this.motion.attack = undefined; this.attackQueuedUntil = 0;
+      this.localJump = this.networkJump = false; this.impulse = undefined;
+    }
     if (this.motion.wakeCall && !state.currentAction?.parameters.wakeCall) this.performing = false;
     if (state.currentAction?.parameters.wakeCall) this.performing = true;
     if (this.motion.club && !state.currentAction?.parameters.club) this.performing = false;
@@ -503,6 +528,7 @@ export class PlayerControls {
     this.motion.training = state.currentAction?.parameters.training as MotionInput['training'];
     this.motion.workday = state.currentAction?.parameters.workday as MotionInput['workday'];
     this.motion.contact = state.currentAction?.parameters.contact as MotionInput['contact'];
+    this.motion.computerCheck = computerCheck;
     this.motion.wakeCall = state.currentAction?.parameters.wakeCall as MotionInput['wakeCall'];
     this.motion.morning = state.currentAction?.parameters.morning as MotionInput['morning'];
     this.motion.club = state.currentAction?.parameters.club as MotionInput['club'];
@@ -659,7 +685,7 @@ export class PlayerControls {
       this.position = { x: center.x + dropRoot.x, y: center.y + dropRoot.y, z: center.z + dropRoot.z };
       this.vy = basementDropPose(basement!.drop!).verticalVelocity; this.planar = { x: 0, z: 0 }; this.localJump = false;
     } else if (this.ride || this.climbing || this.performing) {
-      const blend = inOfficeLift || this.motion.officeCustody?.street || this.motion.truckPassenger || this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.training || this.motion.workday || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || catchCinematic || smithFinaleLocked(this.motion.smithFinale) || this.motion.lobbyEntry ? 1 : 1 - Math.exp(-20 * delta);
+      const blend = computerCheckLocked(computerCheck) || inOfficeLift || this.motion.officeCustody?.street || this.motion.truckPassenger || this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.training || this.motion.workday || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || catchCinematic || smithFinaleLocked(this.motion.smithFinale) || this.motion.lobbyEntry ? 1 : 1 - Math.exp(-20 * delta);
       this.position.x += (state.position.x - this.position.x) * blend; this.position.y += (state.position.y - this.position.y) * blend; this.position.z += (state.position.z - this.position.z) * blend;
       this.vy = 0; this.planar = { x: 0, z: 0 }; this.localJump = false;
     } else if (running && this.enabled && state.status === 'alive') {
@@ -686,6 +712,7 @@ export class PlayerControls {
       this.networkJump = false; this.lastSent = performance.now();
     }
     group.position.set(this.position.x, this.position.y, this.position.z);
+    if (computerStarting && this.firstPerson) this.cableAim = true;
     const hanging = Boolean(this.motion.wetwall?.hanging);
     if (hanging && !this.hangingWetwall && !this.motion.sixth) { this.yaw = this.movementYaw = Math.PI; this.pitch = .65; this.cameraReady = false; }
     this.hangingWetwall = hanging;
@@ -703,7 +730,7 @@ export class PlayerControls {
     const heading = dropRoot ? dropRoot.yaw : this.motion.bathroom ? bathroomFightRoot(this.motion.bathroom, this.motion.bathroom.role).yaw : this.motion.sixth ? sixthPose(this.motion.sixth).yaw : this.motion.wetwall && this.wetwallGuide ? wetwallPose(this.motion.wetwall.start, this.motion.wetwall.role, this.wetwallGuide.progress, this.motion.wetwall.phase, this.motion.wetwall.elapsed, this.motion.wetwall.fallY, this.motion.wetwall.continued).yaw
       : this.ride || this.climbing || this.performing ? state.rotation : attacking ? this.attackYaw : this.firearm ? this.yaw : this.motion.speed > .1 ? Math.atan2(dx, dz) : this.facing;
     const turn = Math.atan2(Math.sin(heading - this.facing), Math.cos(heading - this.facing));
-    this.facing += turn * (dropRoot || this.motion.officeCustody?.street || this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.welcome || this.motion.knock !== undefined || this.motion.training || this.motion.workday || this.motion.wakeCall || this.motion.sentinel || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || this.motion.lobbyEntry ? 1 : 1 - Math.exp(-14 * delta)); this.motion.turn = turn * 8;
+    this.facing += turn * (computerCheckLocked(computerCheck) || dropRoot || this.motion.officeCustody?.street || this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.welcome || this.motion.knock !== undefined || this.motion.training || this.motion.workday || this.motion.wakeCall || this.motion.sentinel || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || this.motion.lobbyEntry ? 1 : 1 - Math.exp(-14 * delta)); this.motion.turn = turn * 8;
     if (running && this.enabled && !this.motion.wetwall && (this.motion.speed > .1 || this.ride || this.climbing) && !(this.firstPerson && this.climbing && state.currentLocation === 'film_office_ledge') && !this.dragging && performance.now() - this.lastLook > 900) {
       const cameraTurn = Math.atan2(Math.sin(this.facing - this.yaw), Math.cos(this.facing - this.yaw));
       this.yaw += cameraTurn * (1 - Math.exp(-5 * delta));
@@ -739,7 +766,7 @@ export class PlayerControls {
     const basementWide = !this.firstPerson && Boolean(dropRoot);
     const streetShaftWide = !this.firstPerson && tvExit?.phase === 'emerging';
     this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, inOfficeLift && !this.firstPerson ? 80 : basementWide ? this.camera.aspect < .85 ? 82 : 78 : bathroomWide ? this.camera.aspect < .85 ? 78 : 58 : streetShaftWide ? this.camera.aspect < .85 ? 68 : 60 : podWide ? 65 : this.motion.truth && !this.firstPerson && this.camera.aspect < .85 ? 68 : cabinWide ? this.camera.aspect < .85 ? 68 : 58 : smithFinaleWide || epilogueWide ? 64 : ladderWide ? 62 : interviewApproach ? 70 : interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide || sentinelWide || interludeWide || oracleWide || betrayalWide || rescueWide || governmentWide || airRescueWide || escapeWide || oneWide || catchWide || lobbyWide || pillDepartureWide ? 58 : this.motion.inspecting && !this.firstPerson ? 42 : this.firstPerson ? this.motion.mirrorBeat !== undefined ? 78 : sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
-    this.camera.near = basement?.crawling || Boolean(dropRoot) || this.firstPerson && (this.motion.pills || this.motion.bathroom || this.motion.sixth || this.motion.wetwall?.hanging || tvExit?.phase === 'emerging') ? .06 : this.firstPerson && this.motion.club ? .08 : this.defaultNear;
+    this.camera.near = basement?.crawling || Boolean(dropRoot) || this.firstPerson && (this.motion.computerCheck || this.motion.pills || this.motion.bathroom || this.motion.sixth || this.motion.wetwall?.hanging || tvExit?.phase === 'emerging') ? .06 : this.firstPerson && this.motion.club ? .08 : this.defaultNear;
     const arrest = this.motion.officeCustody?.street;
     if (arrest && arrest.phase !== 'approaching') {
       this.camera.fov = this.firstPerson ? 68 : arrestMirrorShot(arrest) ? this.camera.aspect < .85 ? 60 : 38 : this.camera.aspect < .85 ? 64 : 54;
@@ -1758,6 +1785,21 @@ export class PlayerControls {
       ideal.x = THREE.MathUtils.clamp(ideal.x, METACORTEX.center.x - 2.65, METACORTEX.center.x + 2.65);
       ideal.z = THREE.MathUtils.clamp(ideal.z, METACORTEX.center.z - 31.65, METACORTEX.center.z - 26.2);
       this.camera.position.copy(ideal); this.camera.lookAt(focus);
+    } else if (this.firstPerson && this.motion.computerCheck) {
+      const head = group.getObjectByName('head'); group.updateWorldMatrix(true, true);
+      const eye = head ? head.localToWorld(new THREE.Vector3(0, .1, .44)) : target;
+      if (this.cableAim) {
+        this.cablePitch ??= this.pitch;
+        const pull = computerNetworkPull(this.motion.computerCheck);
+        const x = APARTMENT_ROOM.center.x + APARTMENT_NETWORK.plug.x - eye.x;
+        const z = APARTMENT_ROOM.center.z + APARTMENT_NETWORK.plug.z + .31 * pull - eye.z;
+        this.yaw = this.movementYaw = Math.atan2(x, z);
+        this.pitch = THREE.MathUtils.clamp(Math.atan2(eye.y - APARTMENT_NETWORK.plug.y + .16 * pull - APARTMENT_NETWORK.gripHeight, Math.hypot(x, z)), -.4, 1.5);
+        this.cableAim = false;
+      }
+      this.camera.position.copy(eye);
+      const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
+      this.camera.lookAt(eye.clone().add(forward));
     } else if (this.firstPerson) {
       this.camera.position.copy(target);
       if (this.motion.grounded && this.motion.speed > .1) this.camera.position.y += Math.sin(this.cameraStep * 2) * .018;

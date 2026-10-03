@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { build } from 'esbuild';
+import { APARTMENT_NETWORK, filmPosition } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -76,4 +77,27 @@ test('inventory ignores moving scene colliders but keeps nearby player structure
   assert.match(body.innerHTML, /耐久 100/); assert.ok(body.action('build:1'));
   sandbox.state.structures[1].health = 80; ui.renderPanel();
   assert.match(body.innerHTML, /耐久 80/); assert.ok(body.action('build:1'));
+});
+
+test('a saved computer performance clock does not repeatedly detach the open journal, but a new phase updates its action', () => {
+  const { ui, body, sandbox } = fixture();
+  sandbox.state.neoLife!.anomaly = { id: 'screen', location: 'neo_apartment', position: { ...ui.player.position } };
+  sandbox.state.neoLife!.computerCheck = { phase: 'offline', elapsed: 0 }; ui.renderPanel();
+  const ignore = body.action('anomaly:ignore'); assert.ok(ignore);
+  for (let frame = 1; frame <= 20; frame++) { sandbox.state.neoLife!.computerCheck!.elapsed = frame / 10; ui.renderPanel(); }
+  assert.equal(body.action('anomaly:ignore'), ignore); assert.equal(ignore.connected, true);
+  sandbox.state.neoLife!.computerCheck = { phase: 'evidence', elapsed: 0 }; ui.renderPanel();
+  assert.equal(ignore.connected, false); assert.match(body.innerHTML, /data-target="computer:capture"/);
+});
+
+test('the G key offers the same anomaly as the journal after an earlier offline frame was saved', () => {
+  const { ui, sandbox, player } = fixture(), sent: object[] = [], opened: string[] = [];
+  player.position = filmPosition('film_anderson_flat', APARTMENT_NETWORK.approach.x, APARTMENT_NETWORK.approach.z);
+  sandbox.state.neoLife!.computerCheck = { phase: 'saved', elapsed: 0 };
+  sandbox.state.neoLife!.anomaly = { id: 'clock', location: 'neo_apartment', position: { ...player.position } };
+  ui.send = (command: object) => sent.push(command); ui.open = (panel: string) => opened.push(panel);
+  ui.interact(); assert.deepEqual(sent, []); assert.deepEqual(opened, ['journal']);
+  sandbox.state.neoLife!.anomaly = { id: 'screen', location: 'neo_apartment', position: { ...player.position } };
+  sandbox.state.neoLife!.computerCheck = { phase: 'reading', elapsed: 0 };
+  ui.interact(); assert.deepEqual(sent, [{ kind: 'life', target: 'computer:disconnect' }]);
 });
