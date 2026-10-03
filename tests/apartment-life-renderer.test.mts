@@ -8,6 +8,19 @@ import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { ApartmentSetRenderer } from '../packages/client/src/engine/ApartmentSetRenderer.js';
 
+test('the hollow book is a small floor prop beside the bed, rather than a large book on a raised table', t => {
+  const original = globalThis.document;
+  globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ({ fillRect() {}, fillText() {} }) }) } as unknown as Document;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const root = new THREE.Group(), renderer = new ApartmentSetRenderer(root); root.updateMatrixWorld(true);
+  try {
+    const cover = (renderer as unknown as { cover: THREE.Group }).cover, bounds = new THREE.Box3().setFromObject(cover);
+    assert.ok(bounds.min.y >= -.005 && bounds.max.y < .25, 'the closed book must rest just above the apartment floor');
+    assert.ok(bounds.max.x - bounds.min.x < .8 && bounds.max.z - bounds.min.z < 1, 'the cover must be proportionate to the delivered human hands');
+    assert.ok(bounds.min.z < -4 && bounds.max.x < 7.1, 'the floor book belongs beside the left edge of the bed');
+  } finally { renderer.dispose(); globalThis.document = original; }
+});
+
 test('the rendered computer seat and back agree with their shared walking collider', t => {
   const original = globalThis.document;
   globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ({ fillRect() {}, fillText() {} }) }) } as unknown as Document;

@@ -1,7 +1,7 @@
 import type { FilmJourney } from './film-story.js';
 
 export type ApartmentPhase = 'idle' | 'signal' | 'reply' | 'knocking' | 'door' | 'opening' | 'book' | 'retrieving' | 'disk' | 'handover' | 'invitation' | 'inspecting' | 'noticed' | 'accepted';
-export interface ApartmentContact { phase: ApartmentPhase; elapsed: number; paid?: boolean; chairMotion?: 'stepping' }
+export interface ApartmentContact { phase: ApartmentPhase; elapsed: number; paid?: boolean; chairMotion?: 'stepping'; propMotion?: 'minidisc' }
 export interface ApartmentGesture extends ApartmentContact { role: 'neo' | 'choi' | 'dujour' }
 export interface ComputerInvestigation { phase: 'reading' | 'unplugging' | 'offline' | 'evidence' | 'saved' | 'replugging'; elapsed: number }
 export const APARTMENT_NETWORK = { screen: { x: -9, y: 3.33, z: -11.595 }, screenApproach: { x: -11.6, z: -8.8 }, approach: { x: -6.65, z: -9.15, yaw: Math.PI }, plug: { x: -6.9, y: 2.65, z: -10.09 }, gripHeight: .17, seconds: 1.8, echoSeconds: 4.2 } as const;
@@ -21,6 +21,7 @@ export const MORNING = { lying: 3.2, sleeping: 1.8, stopping: 1.1, bedX: 8.05,
   alarm: { x: 6.45, y: 1.85, z: -10.75 }, exit: { x: 0, z: 23 } } as const;
 export const APARTMENT_ROOM = { width: 34, depth: 40, exitWidth: 10, center: { x: 1210, y: 1, z: 690 } } as const;
 export const APARTMENT_CHAIR = { x: -9, z: -8.4, width: 2, depth: 1.84, height: 2.75, seatY: 1.1, seatDepth: 1.6, backZ: -7.6 } as const;
+export const APARTMENT_BOOK = { x: 6, y: .016, z: -5.3, scale: .4, pickup: 1.95, approach: { x: 5.9, z: -6.95, yaw: 0 } } as const;
 export const APARTMENT = {
   computer: { ...APARTMENT_NETWORK.screenApproach, yaw: Math.PI },
   bed: { x: 10.2, z: -9, yaw: 0 },
@@ -28,7 +29,7 @@ export const APARTMENT = {
   breakfast: { x: -7, z: 3.7 },
   phone: { x: -5.78, y: 2.62, z: -10.45, approachX: -5.8, approachZ: -9.15, yaw: Math.PI },
   door: { x: 0, z: 10.2, yaw: 0 },
-  book: { x: 6, z: 3.4, yaw: 0 },
+  book: APARTMENT_BOOK.approach,
   choi: { x: 0, z: 13, yaw: Math.PI },
   dujour: { x: -1.1, z: 14.5, yaw: Math.PI - .4 },
   doorZ: 12, doorWidth: 3.8,
@@ -49,6 +50,7 @@ export const APARTMENT_FURNITURE = [
   { x: 10.2, z: -9, width: 6.2, depth: 10, height: 1.5 },
   { x: 6.35, z: -10.75, width: 1.45, depth: 1.1, height: 1.62 },
   { x: 6, z: 6.2, width: 2.8, depth: 1.8, height: 1.8 },
+  { x: APARTMENT_BOOK.x, z: APARTMENT_BOOK.z, width: .66, depth: .82, height: .2 },
   { x: -15.7, z: -4, width: 1.6, depth: 8, height: 5.3 },
   { x: -10, z: 6.8, width: 8, depth: 2.8, height: 2.9 },
   { x: -9.5, z: 12, width: 15, depth: .4, height: 8.8 },
@@ -89,6 +91,9 @@ export function apartmentComputerPose(contact: ApartmentContact) {
   return { x: APARTMENT.computer.x + (APARTMENT_CHAIR.x - APARTMENT.computer.x) * move, z: APARTMENT.computer.z, yaw: APARTMENT.computer.yaw, seated: seat, feet: undefined, walking: 0 };
 }
 export function apartmentAfter(contact: ApartmentContact, phase: ApartmentPhase): boolean { return phases.indexOf(contact.phase) >= phases.indexOf(phase); }
+export function apartmentBookCrouch(contact: ApartmentContact): number {
+  return contact.phase === 'retrieving' ? smooth(Math.max(0, Math.min(1, contact.elapsed / .9))) * (1 - smooth(Math.max(0, Math.min(1, (contact.elapsed - 2.15) / 1.05)))) : 0;
+}
 export function apartmentDoor(contact?: ApartmentContact): number {
   if (!contact || !apartmentAfter(contact, 'opening')) return 0;
   return contact.phase === 'opening' ? Math.min(1, contact.elapsed / APARTMENT.opening) : 1;

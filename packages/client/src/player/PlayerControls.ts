@@ -13,7 +13,7 @@ import type { MotionInput } from '../agents/CharacterMotion.js';
 import { ambushCompanyStep } from '@auto_matrix/shared';
 import { AIR_RESCUE, governmentPose, airRescuePose, airRescueRoot, interrogationPose, meetingPose, meetingCarPose, meetingCarPoint, MEETING_TIMING } from '@auto_matrix/shared';
 import { officeClothing } from '@auto_matrix/shared';
-import { APARTMENT_NETWORK, APARTMENT_ROOM, apartmentComputerPose, cabinSeat, computerCheckLocked, computerNetworkPull, MORNING, POD_RESCUE, podRescuePose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
+import { APARTMENT_BOOK, APARTMENT_NETWORK, APARTMENT_ROOM, apartmentComputerPose, apartmentBookCrouch, cabinSeat, computerCheckLocked, computerNetworkPull, MORNING, POD_RESCUE, podRescuePose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
 import { ambushCat } from '@auto_matrix/shared';
 import { wetwallPose, sixthPose, bathroomFightRoot, WETWALL, WETWALL_SHAFT, type WetwallPhase } from '@auto_matrix/shared';
 import { BASEMENT, TV_EXIT, basementBlocked, basementDropPose, basementDropRoot, basementDropPlayback, tvExitEmergeRoot, tvExitEmergingRole, type BasementDropPlayback } from '@auto_matrix/shared';
@@ -33,6 +33,7 @@ export class PlayerControls {
   private lastLook = -1000;
   private pitch = 0.24;
   private cableAim = false;
+  private bookAim = false;
   private cablePitch?: number;
   private position: Vector3 = { x: 0, y: 1, z: 0 };
   private vy = 0;
@@ -125,7 +126,7 @@ export class PlayerControls {
     this.lastLook = -1000; this.dragging = false;
     this.facing = state.rotation; this.cameraReady = false; this.motion.attack = undefined;
     this.motion.computerCheck = undefined;
-    this.cableAim = false;
+    this.cableAim = this.bookAim = false;
     if (this.cablePitch !== undefined) this.pitch = this.cablePitch;
     this.cablePitch = undefined;
     this.lastAttack = -1000; this.attackQueuedUntil = 0; this.attackCombo = 0;
@@ -194,6 +195,7 @@ export class PlayerControls {
         if (this.bridgeCaught) this.cameraReady = false;
         if (this.firstPerson && this.motion.mirrorBeat !== undefined) this.aimAtMirror();
         if (this.firstPerson && this.motion.computerCheck) this.cableAim = true;
+        if (this.firstPerson && this.motion.contact?.phase === 'retrieving' && this.motion.contact.propMotion === 'minidisc') this.bookAim = true;
         else if (this.firstPerson && this.authoritative?.currentLocation === 'neo_apartment'
           && Math.hypot(this.position.x - APARTMENT_ROOM.center.x - APARTMENT_NETWORK.screenApproach.x, this.position.z - APARTMENT_ROOM.center.z - APARTMENT_NETWORK.screenApproach.z) < .75) {
           const x = APARTMENT_ROOM.center.x + APARTMENT_NETWORK.screen.x - this.position.x;
@@ -403,7 +405,7 @@ export class PlayerControls {
     const custody = state.currentAction?.parameters.officeCustody as MotionInput['officeCustody'];
     if (custody) this.performing = custody.locked ?? (custody.phase === 'securing' || Boolean(custody.paused));
     if (this.motion.contact && !state.currentAction?.parameters.contact) this.performing = false;
-    if (state.currentAction?.parameters.contact) this.performing = true;
+    if (state.currentAction?.parameters.contact) this.performing = ['signal', 'reply', 'knocking', 'opening', 'retrieving', 'handover', 'inspecting'].includes((state.currentAction.parameters.contact as NonNullable<MotionInput['contact']>).phase);
     const computerCheck = state.currentAction?.parameters.computerCheck as MotionInput['computerCheck'];
     const computerStarting = Boolean(computerCheck && !this.motion.computerCheck);
     if (this.motion.computerCheck && !computerCheckLocked(computerCheck)) {
@@ -529,7 +531,9 @@ export class PlayerControls {
     this.motion.construct = state.currentAction?.parameters.construct as MotionInput['construct'];
     this.motion.training = state.currentAction?.parameters.training as MotionInput['training'];
     this.motion.workday = state.currentAction?.parameters.workday as MotionInput['workday'];
+    const floorBookStarting = this.motion.contact?.phase !== 'retrieving' && (state.currentAction?.parameters.contact as MotionInput['contact'])?.phase === 'retrieving';
     this.motion.contact = state.currentAction?.parameters.contact as MotionInput['contact'];
+    if (floorBookStarting && this.firstPerson && this.motion.contact?.propMotion === 'minidisc') this.bookAim = true;
     const chairYaw = this.motion.contact?.chairMotion === 'stepping' && ['signal', 'reply', 'knocking'].includes(this.motion.contact.phase) ? state.rotation : undefined;
     if (chairYaw !== undefined && this.chairYaw !== undefined && this.firstPerson) {
       const turn = Math.atan2(Math.sin(chairYaw - this.chairYaw), Math.cos(chairYaw - this.chairYaw));
@@ -617,7 +621,7 @@ export class PlayerControls {
     if (this.motion.reveal && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
     if (this.motion.training && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
     if (this.motion.workday && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
-    if (this.motion.contact && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
+    if (this.motion.contact && this.performing && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
     if (this.motion.wakeCall && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
     if (this.motion.club && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
     if (this.motion.sentinel && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
@@ -775,7 +779,7 @@ export class PlayerControls {
     const basementWide = !this.firstPerson && Boolean(dropRoot);
     const streetShaftWide = !this.firstPerson && tvExit?.phase === 'emerging';
     this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, inOfficeLift && !this.firstPerson ? 80 : basementWide ? this.camera.aspect < .85 ? 82 : 78 : bathroomWide ? this.camera.aspect < .85 ? 78 : 58 : streetShaftWide ? this.camera.aspect < .85 ? 68 : 60 : podWide ? 65 : this.motion.truth && !this.firstPerson && this.camera.aspect < .85 ? 68 : cabinWide ? this.camera.aspect < .85 ? 68 : 58 : smithFinaleWide || epilogueWide ? 64 : ladderWide ? 62 : interviewApproach ? 70 : interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide || sentinelWide || interludeWide || oracleWide || betrayalWide || rescueWide || governmentWide || airRescueWide || escapeWide || oneWide || catchWide || lobbyWide || pillDepartureWide ? 58 : this.motion.inspecting && !this.firstPerson ? 42 : this.firstPerson ? this.motion.mirrorBeat !== undefined ? 78 : sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
-    this.camera.near = basement?.crawling || Boolean(dropRoot) || this.firstPerson && (this.motion.computerCheck || this.motion.pills || this.motion.bathroom || this.motion.sixth || this.motion.wetwall?.hanging || tvExit?.phase === 'emerging') ? .06 : this.firstPerson && this.motion.club ? .08 : this.defaultNear;
+    this.camera.near = basement?.crawling || Boolean(dropRoot) || this.firstPerson && (this.motion.computerCheck || this.motion.contact?.propMotion === 'minidisc' && ['retrieving', 'disk', 'handover'].includes(this.motion.contact.phase) || this.motion.pills || this.motion.bathroom || this.motion.sixth || this.motion.wetwall?.hanging || tvExit?.phase === 'emerging') ? .06 : this.firstPerson && this.motion.club ? .08 : this.defaultNear;
     const arrest = this.motion.officeCustody?.street;
     if (arrest && arrest.phase !== 'approaching') {
       this.camera.fov = this.firstPerson ? 68 : arrestMirrorShot(arrest) ? this.camera.aspect < .85 ? 60 : 38 : this.camera.aspect < .85 ? 64 : 54;
@@ -785,6 +789,7 @@ export class PlayerControls {
     this.cameraStep += this.motion.speed * delta;
     const target = new THREE.Vector3(this.position.x, this.position.y + (this.firstPerson ? 2.99 : 2.05) - (this.motion.pills ? .9 : 0) - (this.motion.mirrorBeat !== undefined ? THREE.MathUtils.smoothstep(this.motion.mirrorBeat, .65, MIRROR_TIMING.sit) * .9 : 0) - (this.motion.reveal?.kind === 'construct' ? .62 : 0) - (this.motion.crouching ? 1.1 : 0), this.position.z);
     if (this.motion.contact && ['signal', 'reply', 'knocking'].includes(this.motion.contact.phase)) target.y -= .65 * apartmentComputerPose(this.motion.contact).seated;
+    if (this.firstPerson && this.motion.contact?.propMotion === 'minidisc') target.y -= 2.6 * apartmentBookCrouch(this.motion.contact);
     if (this.motion.wakeCall?.phase === 'waking') target.y -= (1 - THREE.MathUtils.smoothstep(this.motion.wakeCall.elapsed, 1.3, 3.1)) * 1.35;
     if (this.firstPerson && this.motion.morning && this.motion.wakeCall) {
       const reclining = 1 - THREE.MathUtils.smoothstep(this.motion.wakeCall.elapsed, 1.3, 3.1);
@@ -1097,7 +1102,7 @@ export class PlayerControls {
       }
       if (resetCamera || call.elapsed < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-7 * delta));
       this.camera.lookAt(focus);
-    } else if (this.motion.contact && !this.firstPerson) {
+    } else if (this.motion.contact && this.performing && !this.firstPerson) {
       const phase = this.motion.contact.phase; const center = FILM_SETS.film_anderson_flat.center;
       const computer = ['signal', 'reply', 'knocking'].includes(phase); const book = phase === 'retrieving';
       const origin = new THREE.Vector3(center.x, center.y - 1, center.z);
@@ -1107,6 +1112,11 @@ export class PlayerControls {
         const pose = apartmentComputerPose(this.motion.contact);
         ideal.lerp(new THREE.Vector3(-16, 5.6, -8.8).add(origin), 1 - pose.seated);
         focus.lerp(new THREE.Vector3(pose.x, 1.6, pose.z).add(origin), 1 - pose.seated);
+      }
+      if (book && this.motion.contact.propMotion === 'minidisc') {
+        const crouch = apartmentBookCrouch(this.motion.contact);
+        ideal.copy(new THREE.Vector3(this.camera.aspect < .85 ? 2 : 2.8, 4.6, -3.5).lerp(new THREE.Vector3(this.camera.aspect < .85 ? 2.8 : 3.6, 2.6, -3.6), crouch).add(origin));
+        focus.copy(new THREE.Vector3(5.8, 2, -6.35).lerp(new THREE.Vector3(5.8, .75, -5.95), crouch).add(origin));
       }
       if (phase === 'inspecting') { ideal.copy(origin).add(new THREE.Vector3(-1.45, 4, 12.7)); focus.copy(origin).add(new THREE.Vector3(-.65, 3.42, 14.38)); }
       if (resetCamera || this.motion.contact.elapsed < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
@@ -1799,6 +1809,17 @@ export class PlayerControls {
       ideal.x = THREE.MathUtils.clamp(ideal.x, METACORTEX.center.x - 2.65, METACORTEX.center.x + 2.65);
       ideal.z = THREE.MathUtils.clamp(ideal.z, METACORTEX.center.z - 31.65, METACORTEX.center.z - 26.2);
       this.camera.position.copy(ideal); this.camera.lookAt(focus);
+    } else if (this.firstPerson && this.motion.contact?.propMotion === 'minidisc' && ['retrieving', 'disk', 'handover'].includes(this.motion.contact.phase)) {
+      const head = group.getObjectByName('head'); group.updateWorldMatrix(true, true);
+      const eye = head ? head.localToWorld(new THREE.Vector3(0, .1, .44)) : target;
+      if (this.bookAim) {
+        const x = APARTMENT_ROOM.center.x + APARTMENT_BOOK.x - eye.x, z = APARTMENT_ROOM.center.z + APARTMENT_BOOK.z - eye.z;
+        this.yaw = this.movementYaw = Math.atan2(x, z);
+        this.pitch = Math.atan2(eye.y - APARTMENT_BOOK.y - .2, Math.hypot(x, z)); this.bookAim = false;
+      }
+      this.camera.position.copy(eye);
+      const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
+      this.camera.lookAt(eye.clone().add(forward));
     } else if (this.firstPerson && this.motion.computerCheck) {
       const head = group.getObjectByName('head'); group.updateWorldMatrix(true, true);
       const eye = head ? head.localToWorld(new THREE.Vector3(0, .1, .44)) : target;

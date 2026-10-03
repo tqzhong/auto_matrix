@@ -1212,10 +1212,14 @@ export class FilmStorySystem {
       actor.currentAction = { type: 'idle', parameters: { resolved: true, contact: { ...contact, role: actor.id } }, startedAt: tick, duration: 1, progress: 0 };
     }
     if (apartmentLocked(state)) {
-      const pose = ['signal', 'reply', 'knocking'].includes(contact.phase) ? apartmentComputerPose(contact) : contact.phase === 'retrieving' ? { x: 6, z: 3.95, yaw: 0 } : contact.phase === 'opening' ? { x: 1.4, z: 10.6, yaw: 0 } : APARTMENT.door;
+      const pose = ['signal', 'reply', 'knocking'].includes(contact.phase) ? apartmentComputerPose(contact) : contact.phase === 'retrieving' ? contact.propMotion === 'minidisc' ? APARTMENT.book : { x: 6, z: 3.95, yaw: 0 } : contact.phase === 'opening' ? { x: 1.4, z: 10.6, yaw: 0 } : APARTMENT.door;
       agent.position = filmPosition(this.scene!.set, pose.x, pose.z); agent.rotation = pose.yaw; agent.velocity = { x: 0, y: 0, z: 0 };
       agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, contact: { ...contact, role: 'neo' } }, startedAt: tick, duration: 1, progress: 0 };
       state.checkpoint = { ...agent.position };
+    }
+    if (contact.phase === 'disk') {
+      agent.currentAction ??= { type: 'idle', parameters: { player: true, resolved: true }, startedAt: tick, duration: 1, progress: 0 };
+      agent.currentAction.parameters.contact = { ...contact, role: 'neo' };
     }
     const seal = 'film:apartment:door';
     if (apartmentDoor(contact) >= .8) this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== seal);
@@ -1300,6 +1304,7 @@ export class FilmStorySystem {
     if (phase) {
       contact.phase = phase; contact.elapsed = 0;
       if (phase === 'signal') contact.chairMotion = 'stepping';
+      if (phase === 'signal' || phase === 'retrieving') contact.propMotion = 'minidisc';
       if (phase === 'inspecting') {
         const life = this.sandbox().neoLife!; if (!life.evidence.includes('white_rabbit')) life.evidence.push('white_rabbit');
       }
