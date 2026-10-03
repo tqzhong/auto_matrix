@@ -8,8 +8,10 @@ export class PodSetRenderer {
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private robot = new THREE.Group();
+  private neckFrame = new THREE.Group();
   private rotor = new THREE.Group();
-  private fingers: THREE.Mesh[] = [];
+  private neckPlug = new THREE.Group();
+  private clamps: { side: number; pad: THREE.Mesh; links: THREE.Mesh[]; hinges: THREE.Mesh[] }[] = [];
   private needle: THREE.Mesh;
   private claw = new THREE.Group();
   private clawHousing: THREE.Mesh;
@@ -17,7 +19,8 @@ export class PodSetRenderer {
   private grippers: { pad: THREE.Mesh; links: THREE.Mesh[]; hinges: THREE.Mesh[]; offset: THREE.Vector3; angle: number }[] = [];
   private hatches: THREE.Group[] = [];
   private connections = new THREE.Group();
-  private neckTube: THREE.Mesh;
+  private feeds: { mesh: THREE.Mesh<THREE.TubeGeometry>; plug: THREE.Mesh; start: THREE.Vector3 }[] = [];
+  private neckTube: THREE.Mesh<THREE.TubeGeometry>;
   private water: THREE.Mesh;
   private ripple: THREE.Mesh;
   private liquid: THREE.Mesh;
@@ -46,11 +49,16 @@ export class PodSetRenderer {
       this.mesh(new THREE.SphereGeometry(.065, 8, 6), this.steel, x, 2.15, z);
     }
     this.root.add(this.connections);
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 4; i++) {
       const side = i % 2 ? 1 : -1; const z = -14.2 + Math.floor(i / 2) * 1.25;
-      this.tube([[side * 1.5, 1.9, z], [side * 1.05, 2.45, z - .4], [side * .36, 2.06, z]], .065, rubber, this.connections);
+      const start = new THREE.Vector3(side * 1.5, 1.9, z);
+      const mesh = this.tube([start.toArray(), [side * 1.05, 2.45, z - .4], [side * .5, 2.4, z], [side * .36, 2.06, z]], .048, rubber, this.connections);
+      mesh.name = `pod-body-feed-${i}`;
+      const plug = this.mesh(new THREE.CylinderGeometry(.048, .06, .12, 12), this.steel, 0, 0, 0, this.connections); plug.name = `pod-body-plug-${i}`;
+      this.feeds.push({ mesh, plug, start });
     }
-    this.neckTube = this.tube([[0, 1.7, -16.3], [0, 2.7, -16.6], [0, 2.3, -15.7], [0, 1.94, -14.78]], .12, rubber, this.connections);
+    this.neckTube = this.tube([[0, 1.7, -16.3], [0, 1.25, -15.9], [0, 1.5, -15.2], [0, 1.94, -14.78]], .12, rubber, this.connections);
+    this.neckTube.name = 'pod-neck-feed';
     this.towers(pink);
     this.nearBank();
     // A concave runoff channel descends to the water rather than an invisible flat floor.
@@ -75,23 +83,31 @@ export class PodSetRenderer {
     this.root.add(this.robot); this.robot.position.set(0, 10, -14);
     this.mesh(new THREE.CylinderGeometry(1.12, 1.25, .58, 24), this.dark, 0, 0, 0, this.robot);
     const collar = this.mesh(new THREE.TorusGeometry(.92, .08, 8, 32), this.steel, 0, -.34, 0, this.robot); collar.rotation.x = Math.PI / 2;
-    this.robot.add(this.rotor); this.rotor.position.y = -.4;
-    const inner = this.mesh(new THREE.TorusGeometry(.42, .045, 8, 24), this.steel, 0, 0, 0, this.rotor); inner.rotation.x = Math.PI / 2;
-    const fingerGeometry = new THREE.BoxGeometry(.16, .1, .72);
+    this.root.add(this.neckFrame); this.neckFrame.name = 'pod-neck-connection';
+    this.neckFrame.add(this.rotor, this.neckPlug); this.neckPlug.name = 'pod-neck-plug';
+    this.mesh(new THREE.TorusGeometry(.15, .034, 8, 28), this.steel, 0, 0, .027, this.rotor);
     for (let i = 0; i < 3; i++) {
       const angle = i / 3 * Math.PI * 2;
-      const finger = this.mesh(fingerGeometry, this.steel, Math.sin(angle) * .35, -.04, Math.cos(angle) * .35, this.rotor);
-      finger.rotation.y = angle; this.fingers.push(finger);
+      const tab = this.mesh(new THREE.BoxGeometry(.055, .065, .09), this.dark, Math.sin(angle) * .15, Math.cos(angle) * .15, .055, this.rotor); tab.rotation.z = -angle;
     }
-    this.needle = this.mesh(new THREE.CylinderGeometry(.028, .055, .95, 8), this.steel, 0, -.76, 0, this.rotor);
+    const plug = this.mesh(new THREE.CylinderGeometry(.085, .11, .18, 16), rubber, 0, 0, .09, this.neckPlug); plug.rotation.x = Math.PI / 2;
+    const clear = new THREE.MeshPhysicalMaterial({ color: 0xc1d6d9, metalness: .1, roughness: .12, transparent: true, opacity: .72, clearcoat: 1 }); this.materials.add(clear);
+    this.needle = this.mesh(new THREE.CylinderGeometry(.024, .024, 1, 12), clear, 0, 0, 0, this.neckPlug);
+    this.needle.name = 'pod-neck-needle'; this.needle.rotation.x = Math.PI / 2;
     const red = this.mat(0xeb6a51, .2, .3); red.emissive.setHex(0xff4422); red.emissiveIntensity = 2.5;
     for (let i = 0; i < 3; i++) {
       const angle = i / 3 * Math.PI * 2;
       this.mesh(new THREE.SphereGeometry(.095, 10, 6), red, Math.sin(angle) * .98, -.38, Math.cos(angle) * .98, this.robot);
     }
     for (const side of [-1, 1]) {
-      this.tube([[side * 1.1, 0, 0], [side * 2.6, -1.2, .7], [side * 1.8, -3.5, 1.5], [side * .55, -4.2, 1.8]], .11, this.steel, this.robot);
-      for (let i = 0; i < 3; i++) this.tube([[side * .55, -4.2, 1.65 + i * .2], [side * .25, -4.45, 1.65 + i * .2]], .05, this.steel, this.robot);
+      const pad = this.mesh(new THREE.BoxGeometry(.08, .22, .16), rubber, 0, 0, 0); pad.name = `pod-maintenance-pad-${side}`;
+      const links = Array.from({ length: 3 }, (_, i) => {
+        const link = this.mesh(new THREE.CylinderGeometry(.065, .065, 1, 10), this.steel, 0, 0, 0); link.name = `pod-maintenance-link-${side}-${i}`; return link;
+      });
+      const hinges = Array.from({ length: 2 }, (_, i) => {
+        const hinge = this.mesh(new THREE.SphereGeometry(.11, 10, 6), this.dark, 0, 0, 0); hinge.name = `pod-maintenance-hinge-${side}-${i}`; return hinge;
+      });
+      this.clamps.push({ side, pad, links, hinges });
     }
     for (let i = 0; i < 3; i++) this.arm.push(this.mesh(new THREE.CylinderGeometry(.16, .16, 1, 12), this.steel, 0, 0, 0));
     this.root.add(this.claw); this.claw.name = 'pod-rescue-claw';
@@ -120,7 +136,7 @@ export class PodSetRenderer {
     mistGeometry.setAttribute('position', new THREE.Float32BufferAttribute(particles, 3)); this.geometries.add(mistGeometry);
     const mistMaterial = new THREE.PointsMaterial({ color: 0x91a1a2, size: .09, transparent: true, opacity: .25, depthWrite: false }); this.materials.add(mistMaterial);
     this.mist = new THREE.Points(mistGeometry, mistMaterial); this.root.add(this.mist);
-    const movable = new Set([this.liquid, this.neckTube, this.needle, this.clawHousing, this.clawCollar, this.cable, this.ripple, ...this.fingers, ...this.arm,
+    const movable = new Set([this.liquid, this.neckTube, this.needle, this.clawHousing, this.clawCollar, this.cable, this.ripple, ...this.arm,
       ...this.grippers.flatMap(gripper => [gripper.pad, ...gripper.links, ...gripper.hinges])]);
     batchStaticGeometry(this.root, movable).forEach(geometry => this.geometries.add(geometry));
   }
@@ -130,8 +146,26 @@ export class PodSetRenderer {
   private mesh(geometry: THREE.BufferGeometry, material: THREE.Material, x: number, y: number, z: number, parent = this.root): THREE.Mesh {
     this.geometries.add(geometry); const mesh = new THREE.Mesh(geometry, material); mesh.position.set(x, y, z); mesh.castShadow = mesh.receiveShadow = true; parent.add(mesh); return mesh;
   }
-  private tube(points: number[][], radius: number, material: THREE.Material, parent = this.root): THREE.Mesh {
-    return this.mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points.map(p => new THREE.Vector3(...p as [number, number, number]))), 24, radius, 8, false), material, 0, 0, 0, parent);
+  private tube(points: number[][], radius: number, material: THREE.Material, parent = this.root): THREE.Mesh<THREE.TubeGeometry> {
+    return this.mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points.map(p => new THREE.Vector3(...p as [number, number, number]))), 24, radius, 8, false), material, 0, 0, 0, parent) as THREE.Mesh<THREE.TubeGeometry>;
+  }
+  private bend(mesh: THREE.Mesh<THREE.TubeGeometry>, points: THREE.Vector3[]): void {
+    const geometry = mesh.geometry, { tubularSegments, radialSegments, radius } = geometry.parameters;
+    const path = geometry.parameters.path as THREE.CatmullRomCurve3;
+    if (points.every((point, i) => path.points[i].distanceToSquared(point) < 1e-12)) return;
+    points.forEach((point, i) => path.points[i].copy(point)); path.updateArcLengths();
+    const frames = path.computeFrenetFrames(tubularSegments, false);
+    const position = geometry.getAttribute('position'), normal = geometry.getAttribute('normal'), center = new THREE.Vector3(), direction = new THREE.Vector3();
+    for (let i = 0; i <= tubularSegments; i++) {
+      path.getPointAt(i / tubularSegments, center);
+      for (let j = 0; j <= radialSegments; j++) {
+        const angle = j / radialSegments * Math.PI * 2, index = i * (radialSegments + 1) + j;
+        direction.copy(frames.normals[i]).multiplyScalar(-Math.cos(angle)).addScaledVector(frames.binormals[i], Math.sin(angle)).normalize();
+        normal.setXYZ(index, direction.x, direction.y, direction.z);
+        position.setXYZ(index, center.x + direction.x * radius, center.y + direction.y * radius, center.z + direction.z * radius);
+      }
+    }
+    position.needsUpdate = normal.needsUpdate = true; geometry.computeBoundingSphere(); geometry.computeBoundingBox();
   }
   private rescueBay(): void {
     const bay = new THREE.Group(); bay.name = 'pod-rescue-bay'; this.root.add(bay);
@@ -290,17 +324,50 @@ export class PodSetRenderer {
   update(journey: FilmJourney | undefined, elapsed: number, firstPerson = false, subject?: THREE.Object3D): void {
     const beat = journey?.visiting ? undefined : journey?.awakening;
     const disconnect = beat?.kind === 'disconnect' ? beat.elapsed : beat?.kind === 'rescue' ? 9 : 0;
+    const clock = beat ? (beat.kind === 'rescue' ? 9 : 0) + beat.elapsed : journey?.scene === 'm1_pod' ? 0 : elapsed;
+    this.root.updateWorldMatrix(true, false); subject?.updateWorldMatrix(true, true);
     this.robot.position.y = 10 - Math.min(1, disconnect / 2) * 1.2 + Math.max(0, disconnect - 4) * 1.5;
-    const open = THREE.MathUtils.smoothstep(disconnect, 1.2, 3.8);
-    this.rotor.rotation.y = elapsed * (disconnect < 4 ? 2.2 : .3);
-    this.fingers.forEach((finger, i) => {
-      const angle = i / 3 * Math.PI * 2; const radius = .35 + open * .38;
-      finger.position.set(Math.sin(angle) * radius, -.04, Math.cos(angle) * radius);
+    const socket = subject?.getObjectByName('cervical-interface');
+    this.neckFrame.position.copy(socket ? this.root.worldToLocal(socket.localToWorld(new THREE.Vector3(0, 0, .025))) : new THREE.Vector3(0, 1.94, -14.78));
+    this.neckFrame.quaternion.copy(socket ? this.root.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(socket.getWorldQuaternion(new THREE.Quaternion()))
+      : new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2));
+    const axis = new THREE.Vector3(0, 0, 1).applyQuaternion(this.neckFrame.quaternion);
+    const withdraw = .95 * THREE.MathUtils.smoothstep(disconnect, 2.75, 3.55), retract = THREE.MathUtils.smoothstep(disconnect, 3.55, 3.92);
+    const start = new THREE.Vector3(0, 1.7, -16.3);
+    const end = this.neckFrame.position.clone().addScaledVector(axis, withdraw).lerp(start.clone().add(new THREE.Vector3(0, -.35, .1)), retract);
+    this.neckPlug.position.copy(end).sub(this.neckFrame.position).applyQuaternion(this.neckFrame.quaternion.clone().invert());
+    this.neckFrame.visible = disconnect < 4;
+    this.rotor.position.copy(this.neckPlug.position); this.rotor.rotation.z = THREE.MathUtils.smoothstep(disconnect, 2.05, 2.75) * Math.PI * 1.25;
+    const exposed = Math.min(.7, withdraw);
+    this.needle.visible = exposed > .001 && retract < .5; this.needle.scale.y = exposed; this.needle.position.z = -exposed / 2;
+    if (disconnect < 4) this.bend(this.neckTube, [start, new THREE.Vector3(0, 1.25, -15.9), end.clone().addScaledVector(axis, .45 * (1 - retract)), end]);
+    const grip = THREE.MathUtils.smoothstep(disconnect, .8, 1.8) * (1 - retract);
+    const lateral = new THREE.Vector3(1, 0, 0).applyQuaternion(this.neckFrame.quaternion);
+    this.clamps.forEach(clamp => {
+      const tip = new THREE.Vector3(clamp.side * (.224 + .7 * (1 - grip)), 0, .055).applyQuaternion(this.neckFrame.quaternion).add(end);
+      const nodes = [this.robot.position.clone().addScaledVector(lateral, clamp.side * .9).add(new THREE.Vector3(0, -.1, 0)),
+        this.robot.position.clone().addScaledVector(lateral, clamp.side * 1.55).add(new THREE.Vector3(0, -2.8, -2.2)),
+        tip.clone().add(new THREE.Vector3(clamp.side * .4, 0, .8).applyQuaternion(this.neckFrame.quaternion)), tip];
+      clamp.pad.visible = disconnect < 4;
+      clamp.pad.position.copy(tip); clamp.pad.quaternion.copy(this.neckFrame.quaternion);
+      clamp.links.forEach((link, i) => { link.visible = disconnect < 4; this.link(link, nodes[i], nodes[i + 1]); });
+      clamp.hinges.forEach((hinge, i) => { hinge.visible = disconnect < 4; hinge.position.copy(nodes[i + 1]); });
     });
-    this.needle.position.y = -.76 + open * .52; this.needle.visible = disconnect < 4.5;
-    this.connections.visible = disconnect < 4; this.connections.scale.y = disconnect < 3 ? 1 : Math.max(.15, 1 - (disconnect - 3) * .85);
+    const thoracic = subject?.getObjectByName('thoracic-interfaces');
+    this.feeds.forEach((feed, i) => {
+      const port = thoracic?.children[i * 2 + 1];
+      const outward = port ? new THREE.Vector3(0, 1, 0).applyQuaternion(port.getWorldQuaternion(new THREE.Quaternion()))
+        .applyQuaternion(this.root.getWorldQuaternion(new THREE.Quaternion()).invert()) : new THREE.Vector3(0, 1, 0);
+      const contact = port ? this.root.worldToLocal(port.localToWorld(new THREE.Vector3(0, .0225, 0))) : new THREE.Vector3(i % 2 ? .36 : -.36, 2.06, feed.start.z);
+      const side = Math.sign(contact.x) || (i % 2 ? 1 : -1), start = feed.start.clone().setX(side * 1.5);
+      const release = THREE.MathUtils.smoothstep(disconnect, 3.05 + i * .16, 3.3 + i * .16);
+      const end = contact.addScaledVector(outward, .12 + release * .3).lerp(start.clone().add(new THREE.Vector3(-side * .05, -.45, 0)), release);
+      feed.plug.position.copy(end).addScaledVector(outward, -.06); feed.plug.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), outward);
+      if (disconnect < 4) this.bend(feed.mesh, [start, start.clone().add(new THREE.Vector3(-side * .15, .55, -.2)), end.clone().addScaledVector(outward, .3 * (1 - release)), end]);
+    });
+    this.connections.visible = disconnect < 4;
     this.neckTube.visible = !firstPerson;
-    this.liquid.visible = disconnect < 5; this.liquid.position.y = 1.9 - Math.max(0, disconnect - 4) * 2 + Math.sin(elapsed * 1.6) * .018;
+    this.liquid.visible = disconnect < 5; this.liquid.position.y = 1.9 - Math.max(0, disconnect - 4) * 2 + Math.sin(clock * 1.6) * .018;
     const nodes = [new THREE.Vector3(0, 17, -23), new THREE.Vector3(3, 14, -20), new THREE.Vector3(0, 13, -16), this.robot.position];
     this.arm.forEach((link, i) => this.link(link, nodes[i], nodes[i + 1]));
     const rescuing = beat?.kind === 'rescue'; const pose = awakeningPose(rescuing ? beat : { kind: 'disconnect', elapsed: 9 });
@@ -326,9 +393,9 @@ export class PodSetRenderer {
     this.cable.visible = this.claw.visible; this.link(this.cable, new THREE.Vector3(0, 8.1, 12), this.claw.position);
     this.scan.target.position.copy(center);
     this.scan.intensity = this.claw.visible ? 2300 * (1 - rescue.board) : 0;
-    const rippleSize = 1 + elapsed % 2.8 * 1.6; this.ripple.visible = disconnect >= 7 || rescuing;
-    this.ripple.scale.setScalar(rippleSize); (this.ripple.material as THREE.MeshBasicMaterial).opacity = .3 * (1 - elapsed % 2.8 / 2.8);
-    this.mist.position.x = Math.sin(elapsed * .13) * 2;
+    const rippleSize = 1 + clock % 2.8 * 1.6; this.ripple.visible = disconnect >= 7 || rescuing;
+    this.ripple.scale.setScalar(rippleSize); (this.ripple.material as THREE.MeshBasicMaterial).opacity = .3 * (1 - clock % 2.8 / 2.8);
+    this.mist.position.x = Math.sin(clock * .13) * 2;
   }
   dispose(): void {
     this.root.traverse(object => { if (object instanceof THREE.InstancedMesh || object instanceof THREE.PointLight || object instanceof THREE.SpotLight) object.dispose(); });
