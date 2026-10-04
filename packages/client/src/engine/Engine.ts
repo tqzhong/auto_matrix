@@ -188,7 +188,8 @@ export class Engine {
     this.rain.visible = cinematicSet ? cinematicSet.light === 'storm' : this.matrix && this.weather !== 'clear' && !(player && insideLifeRoom(player.position));
     this.sandboxRenderer.update(delta, this.camera, this.matrix, this.tick, this.running);
     this.lightingSystem.setTime(cinematicSet ? ({ day: 12000, night: 22000, warm: 11000, cold: 10000, white: 12000, storm: 19000, sunrise: 7000 })[cinematicSet.light] : this.timeOfDay);
-    this.lightingSystem.update(this.elapsed, this.playerControls?.id ? this.camera : undefined);
+    this.lightingSystem.update(this.elapsed, this.playerControls?.id ? this.camera : undefined,
+      Boolean(filmSet?.id === 'film_neb_deck' && meeting && !meeting.visiting && ['m1_recovery', 'm1_cabin'].includes(meeting.scene)));
     const atmosphere = this.filmSets.atmosphere();
     if (atmosphere) {
       this.lightingSystem.ambientLight.intensity = atmosphere.ambient;

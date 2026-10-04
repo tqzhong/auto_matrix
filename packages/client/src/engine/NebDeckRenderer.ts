@@ -11,6 +11,7 @@ export class NebDeckRenderer {
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private lights = new Set<THREE.Light>();
+  private roomKeys: THREE.SpotLight[] = [];
   private dark = this.material(new THREE.MeshStandardMaterial({ color: 0x27312f, metalness: .72, roughness: .48 }));
   private steel = this.material(new THREE.MeshStandardMaterial({ color: 0x596764, metalness: .82, roughness: .3 }));
   private worn = this.material(new THREE.MeshStandardMaterial({ color: 0x4b5753, metalness: .48, roughness: .72 }));
@@ -85,6 +86,13 @@ export class NebDeckRenderer {
   private pointLight(name: string, color: number, intensity: number, distance: number, x: number, y: number, z: number): THREE.PointLight {
     const light = new THREE.PointLight(color, intensity, distance, 2); light.name = name; light.position.set(x, y, z);
     this.root.add(light); this.lights.add(light); return light;
+  }
+  private roomKey(name: string, color: number, intensity: number, distance: number, position: THREE.Vector3, target: THREE.Vector3, angle = Math.PI / 3): void {
+    const light = new THREE.SpotLight(color, intensity, distance, angle, .6, 2);
+    light.name = name; light.position.copy(position); light.target.position.copy(target); light.visible = false;
+    light.shadow.mapSize.set(1024, 1024); light.shadow.camera.near = .35;
+    light.shadow.bias = -.0004; light.shadow.normalBias = .025;
+    this.root.add(light, light.target); this.lights.add(light); this.roomKeys.push(light);
   }
   private chair(x: number, z: number, yaw: number, name: string): void {
     const chair = new THREE.Group(); chair.name = name; chair.position.set(x, 0, z); chair.rotation.y = yaw; this.root.add(chair);
@@ -165,6 +173,7 @@ export class NebDeckRenderer {
     }
     const curtain = this.box(this.root, this.glass, -1.1, 4.3, -22, .06, 7.4, 11); curtain.name = 'neb-medical-curtain';
     this.pointLight('neb-medical-task-light', 0xd9e6dc, 260, 22, -5.5, 9.2, -20.5);
+    this.roomKey('neb-medical-key-light', 0xd9e6dc, 140, 18, new THREE.Vector3(-5.5, 9.2, -20.5), new THREE.Vector3(-7, 1.1, -22));
     const control = MEDICAL_OPERATOR.control;
     this.box(this.root, this.dark, control.x, 1.12, control.z - .3, 1.4, 2.2, .8, 'neb-medical-controls');
     this.box(this.root, this.worn, control.x, 2.25, control.z - .3, 1.5, .15, .9);
@@ -200,6 +209,7 @@ export class NebDeckRenderer {
     this.box(this.root, this.screen, 13.2, 6.5, -32, 3.6, .1, .22, 'neb-cabin-light-strip');
     this.pointLight('neb-cabin-light', 0xe0dfcb, 105, 12, 13.2, 5.6, -32);
     this.pointLight('neb-cabin-bounce', 0xb1c4ce, 30, 10, 8.4, 4.8, -29.5);
+    this.roomKey('neb-cabin-key-light', 0xe0dfcb, 80, 12, new THREE.Vector3(13.2, 6.35, -32), new THREE.Vector3(12, 1.1, -32), Math.PI * .4);
     this.truthSeat.name = 'neb-truth-bedside-stool'; this.truthSeat.position.set(TRUTH_BEDSIDE.x, 0, TRUTH_BEDSIDE.z); this.root.add(this.truthSeat);
     this.cylinder(this.truthSeat, this.dark, 0, 1.12, 0, .68, .22, 'neb-truth-stool-cushion');
     for (const dx of [-.45, .45]) for (const dz of [-.45, .45]) this.cylinder(this.truthSeat, this.steel, dx, .5, dz, .06, 1);
@@ -224,6 +234,7 @@ export class NebDeckRenderer {
       this.cylinder(this.root, i % 4 === 0 ? this.amber : this.screen, Math.sin(angle) * 9.5, .18, Math.cos(angle) * 9.5, .05, .22);
     }
     this.pointLight('neb-core-task-light', 0xb9d8cb, 210, 28, 0, 10, 0);
+    this.roomKey('neb-core-key-light', 0xb9d8cb, 140, 18, new THREE.Vector3(0, 10, -.8), new THREE.Vector3(0, 1.1, -4));
     this.trainingUpload();
     this.cypherConsole();
     this.betrayalScene();
@@ -446,6 +457,12 @@ export class NebDeckRenderer {
   }
 
   update(journey: FilmJourney | undefined, elapsed: number, recoverySubject?: THREE.Object3D, bodies?: (id: string) => THREE.Object3D | undefined): void {
+    const localShadows = Boolean(journey && !journey.visiting && ['m1_recovery', 'm1_cabin'].includes(journey.scene));
+    const subject = recoverySubject ? this.root.worldToLocal(recoverySubject.getWorldPosition(new THREE.Vector3())) : undefined;
+    const room = journey?.scene === 'm1_recovery' ? 0 : subject ? subject.x > 5.5 && subject.z < -25.5 ? 1 : subject.z < -14 ? 0 : 2 : journey?.step === 0 ? 1 : 2;
+    // Treatment lights the bed and helpers; the later escort needs the doorway and central aisle.
+    this.roomKeys[0].target.position.x = journey?.scene === 'm1_recovery' ? -7 : -1;
+    this.roomKeys.forEach((light, index) => { light.visible = localShadows; light.castShadow = localShadows && index === room; });
     const loss = journey?.scene === 'm2_ship_lost' && !journey.visiting ? journey.shipLoss : undefined;
     this.shipLossRig.visible = Boolean(loss);
     if (loss) {
@@ -644,7 +661,7 @@ export class NebDeckRenderer {
     this.geometries.forEach(geometry => geometry.dispose());
     this.materials.forEach(material => material.dispose());
     this.lights.forEach(light => light.dispose());
-    this.geometries.clear(); this.materials.clear(); this.lights.clear(); this.needles = []; this.downloadBars = []; this.operatorCables = [];
+    this.geometries.clear(); this.materials.clear(); this.lights.clear(); this.roomKeys = []; this.needles = []; this.downloadBars = []; this.operatorCables = [];
     this.betrayalJacks.clear(); this.betrayalLoose.clear(); this.betrayalSignals.clear();
   }
 }

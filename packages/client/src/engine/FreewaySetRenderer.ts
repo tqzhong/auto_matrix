@@ -17,6 +17,8 @@ export class FreewaySetRenderer {
   private impact?: THREE.Group;
   private fire?: THREE.Group;
   private smoke?: THREE.Group;
+  private fragments?: THREE.Group;
+  private crumple: THREE.Mesh[] = [];
   private wheels: THREE.Mesh[] = [];
   private traffic: { mesh: THREE.InstancedMesh; part: THREE.Matrix4; truck: boolean; paint: boolean }[] = [];
   private previousElapsed = 0;
@@ -177,6 +179,22 @@ export class FreewaySetRenderer {
         const hub = this.cylinder(this.steel, side * 2.88, 1, z, .57, .04, rig); hub.rotation.z = Math.PI / 2;
       }
       this.box(this.steel, 0, 1.8, -13.9, 5.8, .5, .3, rig, .08);
+      // Only the front cab folds: the occupied trailer retains its server-supported roof.
+      rig.traverse(object => {
+        if (!(object instanceof THREE.Mesh) || object.position.z > -8 || object.position.y < 1.4) return;
+        const position = object.geometry.getAttribute('position'), folded = position.clone();
+        for (let i = 0; i < position.count; i++) {
+          const x = position.getX(i) + object.position.x, y = position.getY(i) + object.position.y, z = position.getZ(i) + object.position.z;
+          const front = THREE.MathUtils.clamp((-z - 7) / 7, 0, 1), height = THREE.MathUtils.clamp((y - 1.4) / 4.2, 0, 1);
+          folded.setXYZ(i, position.getX(i) + Math.sign(x) * front * (.36 + .28 * Math.sin(y * 4 + Math.abs(z))),
+            position.getY(i) + front * (.45 - height * 1.4 + .15 * Math.sin(x * 3.8)),
+            position.getZ(i) + front * (1.35 + height * 1.8 + .25 * Math.sin(y * 3.7)));
+        }
+        const normals = object.geometry.clone(); normals.setAttribute('position', folded); normals.computeVertexNormals();
+        object.geometry.morphAttributes.position = [folded];
+        object.geometry.morphAttributes.normal = [normals.getAttribute('normal').clone()]; normals.dispose();
+        object.updateMorphTargets(); this.crumple.push(object);
+      });
       return rig;
     };
     this.heroTruck = buildRig(cab, 'matrix-freeway-hero-truck'); this.heroTruck.position.set(TRUCKS.roof.x, 0, TRUCKS.morpheus.z);
@@ -197,17 +215,29 @@ export class FreewaySetRenderer {
       const ring = this.mesh(new THREE.TorusGeometry(.55 + i * .27, .045, 5, 24), trailMat, 0, 0, i * 2.5, this.neoTrail);
       ring.rotation.y = Math.PI / 2;
     }
-    this.impact = new THREE.Group(); this.impact.name = 'matrix-freeway-collision'; this.root.add(this.impact); this.impact.position.set(TRUCKS.roof.x, 7.5, 11.5);
+    this.impact = new THREE.Group(); this.impact.name = 'matrix-freeway-collision'; this.root.add(this.impact); this.impact.position.set(TRUCKS.roof.x, 3.2, 11.5);
     this.fire = new THREE.Group(); this.impact.add(this.fire);
     this.smoke = new THREE.Group(); this.impact.add(this.smoke);
-    const flare = new THREE.MeshBasicMaterial({ color: 0xffad46, transparent: true, opacity: .38, depthWrite: false, blending: THREE.AdditiveBlending }); this.materials.add(flare);
-    for (let i = 0; i < 5; i++) {
-      const angle = i * Math.PI * 2 / 5;
-      const flame = this.mesh(new THREE.IcosahedronGeometry(1.05 + i % 2 * .45, 1), flare,
-        Math.sin(angle) * 1.55, Math.cos(angle) * .8, Math.cos(angle) * 1.55, this.fire);
-      flame.castShadow = flame.receiveShadow = false;
+    const fireCanvas = document.createElement('canvas'); fireCanvas.width = fireCanvas.height = 128;
+    const fireContext = fireCanvas.getContext('2d')!, firePixels = fireContext.createImageData(128, 128);
+    for (let y = 0; y < 128; y++) for (let x = 0; x < 128; x++) {
+      const nx = (x - 64) / 62, ny = (y - 64) / 62;
+      const noise = Math.sin(x * .19 + Math.sin(y * .14) * 2) * Math.sin(y * .21 + Math.sin(x * .12));
+      const heat = Math.max(0, 1 - Math.hypot(nx, ny) * (1 + noise * .15));
+      const edge = THREE.MathUtils.clamp((1 - Math.hypot(nx, ny)) * 5, 0, 1);
+      const offset = (y * 128 + x) * 4;
+      firePixels.data.set([255, 82 + heat * 173, 8 + Math.pow(heat, 3) * 188,
+        Math.pow(heat, 1.15) * (180 + noise * 45) * edge], offset);
     }
-    const flash = this.mesh(new THREE.TorusGeometry(3.6, .1, 8, 32), flare, 0, .7, 0, this.fire); flash.rotation.x = Math.PI / 2;
+    fireContext.putImageData(firePixels, 0, 0);
+    const fireTexture = new THREE.CanvasTexture(fireCanvas); fireTexture.colorSpace = THREE.SRGBColorSpace; this.textures.add(fireTexture);
+    const flare = new THREE.SpriteMaterial({ map: fireTexture, transparent: true, opacity: .85, depthWrite: false,
+      blending: THREE.AdditiveBlending, toneMapped: false }); this.materials.add(flare);
+    for (let i = 0; i < 14; i++) {
+      const flame = new THREE.Sprite(flare), angle = i * 2.399963;
+      flame.position.set(Math.sin(angle) * (i < 7 ? 1.45 : .85), i < 7 ? -.25 : .9, Math.cos(angle) * 1.1);
+      flame.scale.set(i < 7 ? 2.8 : 1.7, i < 7 ? 2.2 : 3.2, 1); this.fire.add(flame);
+    }
     const smokeCanvas = document.createElement('canvas'); smokeCanvas.width = smokeCanvas.height = 64;
     const smokeContext = smokeCanvas.getContext('2d')!;
     const gradient = smokeContext.createRadialGradient(32, 32, 3, 32, 32, 31);
@@ -220,12 +250,25 @@ export class FreewaySetRenderer {
       puff.position.set(Math.sin(i * 2.4) * (1 + i * .34), 1 + i * 1.15, Math.cos(i * 2.4) * (1 + i * .28));
       puff.scale.set(5 + i * .55, 5 + i * .65, 1);
     }
+    this.fragments = new THREE.Group(); this.fragments.name = 'matrix-freeway-crash-fragments'; this.impact.add(this.fragments);
+    const glass = this.mat(0xa5c1b6, .16, .6); glass.side = THREE.DoubleSide;
+    const sheet = this.mat(0x7c867e, .42, .7); sheet.side = THREE.DoubleSide;
+    for (let i = 0; i < 32; i++) {
+      const shard = this.mesh(new THREE.PlaneGeometry(i % 3 === 0 ? .65 : .28, i % 3 === 0 ? 1.1 : .45),
+        i % 3 === 0 ? sheet : glass, 0, 0, 0, this.fragments);
+      shard.name = `matrix-freeway-crash-shard-${i}`;
+    }
     this.impact.visible = false; this.neoTrail.visible = false;
   }
   update(journey: FilmJourney | undefined, elapsed: number, playerPosition?: Vector3): void {
     const ride = journey?.ride;
+    const trucks = journey?.scene === 'm2_trucks' && !journey.visiting ? journey.trucks : undefined;
+    const crashed = trucks?.phase === 'rescue' || trucks?.phase === 'rescued' || trucks?.phase === 'failed';
+    const crashTime = !crashed ? 0 : trucks.phase === 'rescue' ? trucks.rescueElapsed ?? 0 : TRUCKS.rescueSeconds;
+    // The encounter owns its time after the duel. Render time must not restart a saved explosion.
+    const truckClock = trucks && trucks.phase !== 'duel' ? trucks.elapsed + crashTime : elapsed;
     if (ride && ride.elapsed !== this.previousElapsed) { this.clock = ride.elapsed; this.previousElapsed = ride.elapsed; this.syncAt = elapsed; }
-    const traffic = freewayTraffic(ride ? this.clock + (ride.phase === 'riding' ? Math.min(.5, elapsed - this.syncAt) : 0) : elapsed);
+    const traffic = freewayTraffic(this.oncomingTruck ? truckClock : ride ? this.clock + (ride.phase === 'riding' ? Math.min(.5, elapsed - this.syncAt) : 0) : elapsed);
     const pose = new THREE.Object3D();
     for (const batch of this.traffic) {
       let i = 0;
@@ -243,14 +286,33 @@ export class FreewaySetRenderer {
     this.bike.rotation.y = ride ? -Math.atan2(ride.lateral, Math.max(1, ride.speed)) : 0;
     this.bike.rotation.z = ride ? -ride.lateral * .025 : 0;
     for (const wheel of this.wheels) wheel.rotation.x = -(FREEWAY_START - (ride?.z ?? FREEWAY_START));
-    const trucks = journey?.scene === 'm2_trucks' && !journey.visiting ? journey.trucks : undefined;
     if (this.oncomingTruck) {
       const progress = trucks?.phase === 'duel' || !trucks ? 0 : Math.min(1, trucks.elapsed / TRUCKS.collisionSeconds);
       this.oncomingTruck.position.z = TRUCKS.oncomingStart + (TRUCKS.oncomingEnd - TRUCKS.oncomingStart) * progress;
-      this.niobeCar!.position.z = TRUCKS.niobe.z + Math.sin(elapsed * 1.7) * .45;
-      this.impact!.visible = trucks?.phase === 'rescue' || trucks?.phase === 'rescued' || trucks?.phase === 'failed';
-      this.fire!.visible = trucks?.phase === 'rescue' || trucks?.phase === 'failed';
-      if (this.fire!.visible) this.fire!.scale.setScalar(1 + Math.sin(elapsed * 7) * .08);
+      this.niobeCar!.position.z = TRUCKS.niobe.z + Math.sin(truckClock * 1.7) * .45;
+      const fold = THREE.MathUtils.smoothstep(crashTime, 0, 1.15);
+      for (const mesh of this.crumple) mesh.morphTargetInfluences![0] = fold;
+      this.impact!.visible = crashed;
+      const fireTime = Math.max(0, crashTime - .55);
+      this.fire!.visible = crashed && fireTime > 0;
+      this.fire!.scale.set(1 + fireTime * .85, 1 + fireTime * 1.1, 1 + fireTime * .7);
+      this.fire!.rotation.y = fireTime * .4;
+      this.smoke!.position.y = crashTime * 2.3;
+      this.smoke!.scale.setScalar(.55 + crashTime * .48);
+      this.smoke!.visible = crashTime > .25;
+      this.fragments!.visible = crashed;
+      for (let i = 0; i < this.fragments!.children.length; i++) {
+        const shard = this.fragments!.children[i], angle = i * 2.399963;
+        // Paired outward trajectories keep debris out of the occupied trailer behind the cab.
+        const side = i % 2 ? 1 : -1, speed = 3 + i % 7 * .42;
+        const travel = crashTime * speed;
+        shard.rotation.set(angle + crashTime * side * 1.6, angle * .6 + crashTime * 2, angle * .3);
+        this.matrix.makeRotationFromEuler(shard.rotation);
+        const width = i % 3 === 0 ? .65 : .28, height = i % 3 === 0 ? 1.1 : .45;
+        const extent = (Math.abs(this.matrix.elements[1]) * width + Math.abs(this.matrix.elements[5]) * height) / 2;
+        shard.position.set(side * (1.2 + travel), Math.max(-this.impact!.position.y + extent + .025,
+          .4 + (3 + i % 5 * .7) * crashTime - 2.8 * crashTime * crashTime), Math.sin(angle) * (1 + travel * .5));
+      }
       this.neoTrail!.visible = Boolean(trucks && trucks.phase === 'collision' && trucks.elapsed > 5.5);
       if (this.neoTrail!.visible) this.neoTrail!.position.set(TRUCKS.roof.x, 13 + (trucks!.elapsed - 5.5) * -1.5,
         -58 + (trucks!.elapsed - 5.5) * 20);

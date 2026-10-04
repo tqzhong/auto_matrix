@@ -711,13 +711,13 @@ export class HeroModels {
         const tremor = t > 2 && t < 7 ? Math.sin(t * 7 + i * 2.1) * .025 : 0;
         bone('shoulder_' + side).rotation.set(-.14 - seated * .22 + tremor, 0, (i ? 1 : -1) * (.32 * lie + .1));
         bone('elbow_' + side).rotation.x = -.24 - seated * .78;
-        if (input.performance === 'recover') {
+        if (input.performance === 'recover' || input.cabin?.kind === 'wake') {
           // Rest the patient's forearms on the mattress instead of holding the standing arm pose in midair.
-          bone('shoulder_' + side).rotation.x = THREE.MathUtils.lerp(bone('shoulder_' + side).rotation.x, .146 + tremor * .1, lie);
+          bone('shoulder_' + side).rotation.x = THREE.MathUtils.lerp(bone('shoulder_' + side).rotation.x, (input.cabin?.kind === 'wake' ? .17 : .146) + tremor * .1, lie);
           bone('elbow_' + side).rotation.x *= 1 - lie;
         }
       }
-      const inspect = THREE.MathUtils.smoothstep(t, 6.8, 7.8) * (1 - THREE.MathUtils.smoothstep(t, 8.7, 9.3));
+      const inspect = input.cabin?.kind === 'wake' ? 0 : THREE.MathUtils.smoothstep(t, 6.8, 7.8) * (1 - THREE.MathUtils.smoothstep(t, 8.7, 9.3));
       bone('shoulder_R').rotation.x -= inspect * .72; bone('elbow_R').rotation.x -= inspect * 1.05;
       bone('head').rotation.y += inspect * .28;
     }

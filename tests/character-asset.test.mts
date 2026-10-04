@@ -1002,6 +1002,37 @@ test('Neo keeps his dressed body above the mattress until his legs clear the sid
   } finally { models.dispose(); }
 });
 
+test('Neo rests both shipped hands on the cabin mattress before sitting up', async () => {
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: typeof loadGeometry }).load = loadGeometry;
+  try {
+    const rig = (await models.create('neo'))!;
+    for (const elapsed of [0, .4, .9, 1]) {
+      const root = cabinBodyPose(elapsed); rig.root.position.set(root.x, root.y, root.z); rig.root.rotation.y = root.yaw;
+      const motion = newMotion(); const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true,
+        performance: 'cabin' as const, recovery: root.clock, cabin: { kind: 'wake' as const, elapsed, role: 'neo' as const } };
+      models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
+      const hands = new Map<string, THREE.Vector3>();
+      for (const { mesh } of rig.wardrobe) {
+        if (!(mesh instanceof THREE.SkinnedMesh) || !mesh.visible || (mesh.material as THREE.Material).name !== 'Skin') continue;
+        mesh.skeleton.update(); const { position, skinIndex, skinWeight } = mesh.geometry.attributes;
+        for (let i = 0; i < position.count; i++) for (let j = 0; j < 4; j++) {
+          const name = mesh.skeleton.bones[skinIndex.getComponent(i, j)].name;
+          if (skinWeight.getComponent(i, j) < .5 || !/^(wrist|finger\d-\d)_[RL]$/.test(name)) continue;
+          const hand = name.endsWith('_R') ? 'right' : 'left';
+          const point = mesh.getVertexPosition(i, new THREE.Vector3()).applyMatrix4(mesh.matrixWorld);
+          if (!hands.has(hand) || point.y < hands.get(hand)!.y) hands.set(hand, point);
+        }
+      }
+      assert.equal(hands.size, 2, 'check both visible hands, not just the wrist bones');
+      for (const [name, point] of hands) {
+        assert.ok(Math.abs(point.x - CABIN.bed.x) < 1.425 && Math.abs(point.z - CABIN.bed.z) < 3.175, `${name} rests outside the mattress`);
+        assert.ok(Math.abs(point.y - CABIN.bed.surface) < .025, `${name} hand floats or penetrates the cabin mattress by ${point.y - CABIN.bed.surface} at ${elapsed}s`);
+      }
+    }
+  } finally { models.dispose(); }
+});
+
 test('the first core connection restores a seated body without penetrating the chair or floor', async () => {
   const models = new HeroModels(new THREE.Texture(), new THREE.Texture()); const stage = new THREE.Group(); const deck = new NebDeckRenderer(stage);
   (models as unknown as { load: typeof loadGeometry }).load = loadGeometry;
