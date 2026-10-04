@@ -597,8 +597,10 @@ export class SandboxUI {
                 : phase === 'air_warning' ? 'Smith 从雨云上方俯冲 · 准备闪避'
                   : phase === 'air_dodge' ? `现在按 X 在空中错开 · 剩余 ${Math.max(0, SMITH_FINALE.air.dodge - finale.elapsed).toFixed(1)} 秒`
                     : phase === 'air_counter' ? `现在按 F 空中反击 · 剩余 ${Math.max(0, SMITH_FINALE.air.counter - finale.elapsed).toFixed(1)} 秒`
-                      : phase === 'descent' ? `按住 G 稳住坠落姿态 · ${Math.round(finale.focus / SMITH_FINALE.descent.braceSeconds * 100)}%`
-                        : phase === 'crater' ? `按住 G 从坑底站起 · ${Math.round(finale.focus / SMITH_FINALE.crater.riseSeconds * 100)}%`
+                      : phase === 'descent' ? finale.focus >= SMITH_FINALE.descent.braceSeconds ? '姿态已稳住 · 保持 G，等待落地'
+                        : `按住 G 稳住坠落姿态 · ${Math.round(finale.focus / SMITH_FINALE.descent.braceSeconds * 100)}%`
+                        : phase === 'crater' ? finale.elapsed < SMITH_FINALE.crater.settleSeconds ? '撞击余波尚未平息 · 稍后按住 G 撑起身体'
+                          : `按住 G 从坑底站起 · ${Math.round(finale.focus / SMITH_FINALE.crater.riseSeconds * 100)}%`
                           : phase === 'choice' ? 'J 打开手记，亲自回答为什么仍要继续'
                             : phase === 'rain_done' ? '按 G 继续，听完 Smith 最后的预见'
                               : phase === 'assault_ready' ? '靠近 Smith 按 G，让最后猛攻开始'
@@ -1767,7 +1769,7 @@ export class SandboxUI {
           const item = ITEMS[id as ItemId]; const enough = Object.entries(cost!).every(([part, n]) => profile.inventory[part as ItemId] >= n!);
           return `<article class="craft-card"><span class="craft-icon">${item.symbol}</span><div><h3>${item.name} <small>×${profile.inventory[id as ItemId]}</small></h3><p>${item.description}</p><div class="craft-cost">${Object.entries(cost!).map(([part, n]) => `${ITEMS[part as ItemId].name} ${profile.inventory[part as ItemId]}/${n}`).join(' · ')}</div></div><button data-action="craft" data-target="${id}" ${enough ? '' : 'disabled'}>制作</button></article>`;
         }).join('')}</div><h3 class="sandbox-section-label">能力下载</h3><div class="skill-grid">${Object.entries(SKILLS).map(([id, skill]) => `<article><h3>${skill.name} <small>${profile.skills[id as SkillId]} / 3</small></h3><p>${skill.description}</p><button data-action="upgrade" data-target="${id}" ${skillPoints(profile) > 0 && profile.skills[id as SkillId] < 3 ? '' : 'disabled'}>下载 · 1 技能点</button></article>`).join('')}</div>
-        <h3 class="sandbox-section-label">附近的设施</h3><div class="structure-list">${state.structures.filter(s => !s.film && s.matrix === player.isInMatrix && distance(s.position, player.position) < 50).map(s => `<div>${ITEMS[s.kind].name} · 耐久 ${s.health}<button data-action="dismantle" data-target="${s.id}" ${s.owner === player.id && distance(s.position, player.position) < 16 ? '' : 'disabled'}>拆回背包</button></div>`).join('') || '<p>附近没有设施。按 3 搭建安全屋，按 4 放置路障。</p>'}</div>`;
+        <h3 class="sandbox-section-label">附近的设施</h3><div class="structure-list">${state.structures.filter(s => !s.film && s.matrix === player.isInMatrix && distance(s.position, player.position) < 50).map(s => s.kind === 'crater' ? '' : `<div>${ITEMS[s.kind].name} · 耐久 ${s.health}<button data-action="dismantle" data-target="${s.id}" ${s.owner === player.id && distance(s.position, player.position) < 16 ? '' : 'disabled'}>拆回背包</button></div>`).join('') || '<p>附近没有设施。按 3 搭建安全屋，按 4 放置路障。</p>'}</div>`;
     } else if (this.panel === 'journal') {
       body.innerHTML = `<div class="trilogy-tabs">${FILMS.map(film => `<button data-film="${film.number}" class="${film.number === this.selectedFilm ? 'active' : ''}"><small>0${film.number} / ${film.subtitle}</small><strong>${film.title}</strong><span>${film.theme}</span></button>`).join('')}</div>
         <div class="world-stakes"><span>系统警戒 <b>${state.security}%</b></span><span>Smith 感染 <b>${state.corruption}%</b></span><span>锡安防御 <b>${state.zion}%</b></span></div>

@@ -24,7 +24,7 @@ export interface WorldNode {
 }
 export interface WorldStructure {
   id: string;
-  kind: 'beacon' | 'barricade';
+  kind: 'beacon' | 'barricade' | 'crater';
   owner: string;
   position: Vector3;
   matrix: boolean;

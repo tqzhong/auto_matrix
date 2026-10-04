@@ -2,8 +2,10 @@ import * as THREE from 'three';
 import { smithFinalePose, type SmithFinaleEncounter } from '@auto_matrix/shared';
 import type { HeroRig } from './HeroModel.js';
 import { reach } from './SpoonPerformance.js';
+import { poseSmithCraterBody } from './SmithCraterPerformance.js';
 
 export function poseSmithFinaleContact(neo: HeroRig, smith: HeroRig, encounter: SmithFinaleEncounter): void {
+  poseSmithCraterBody(neo, encounter, true); poseSmithCraterBody(smith, encounter, false);
   if (encounter.phase !== 'ground_counter' && encounter.phase !== 'shockwave') return;
   const blend = smithFinalePose(encounter).strike;
   if (blend < .00001) return;

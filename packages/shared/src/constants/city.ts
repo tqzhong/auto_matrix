@@ -96,9 +96,9 @@ export interface PlayerInput {
   sequence: number;
 }
 
-export function groundHeight(position: Vector3, matrix: boolean): number {
+export function groundHeight(position: Vector3, matrix: boolean, structures: WorldStructure[] = []): number {
   const set = filmSetAt(position, matrix);
-  if (set) return filmGroundHeight(position, set);
+  if (set) return filmGroundHeight(position, set, structures.find(s => s.id === 'film:smith:crater' && s.kind === 'crater')?.film?.height);
   if (matrix) {
     // Rooftops support characters who reach them by jumping or flight.
     let floor = 1;
@@ -118,7 +118,7 @@ export function groundHeight(position: Vector3, matrix: boolean): number {
 export function playerBlocked(position: Vector3, matrix: boolean, radius = 1.1, structures: WorldStructure[] = []): boolean {
   if (structures.some(s => s.kind === 'barricade' && s.matrix === matrix && s.health > 0 && position.y < s.position.y + (s.film?.height ?? 3) && position.y > s.position.y - 3 && Math.abs(position.x - s.position.x) < (s.film ? s.film.width / 2 : 4) + radius && Math.abs(position.z - s.position.z) < (s.film ? s.film.depth / 2 : 1.2) + radius)) return true;
   const set = filmSetAt(position, matrix);
-  if (set) return filmBlocked(position, set, radius, structures.some(s => s.id === 'film:bridge:car'), structures.some(s => s.id === 'film:oracle:door'));
+  if (set) return filmBlocked(position, set, radius, structures.some(s => s.id === 'film:bridge:car'), structures.some(s => s.id === 'film:oracle:door'), structures.find(s => s.id === 'film:smith:crater' && s.kind === 'crater')?.film?.height);
   if (!matrix) return Math.hypot(position.x - 2170, position.z - 2390) > 440;
   if (position.x < 0 || position.x > 2560 || position.z < 0 || position.z > 2560) return true;
   return CITY_BUILDINGS.some(building => {
@@ -137,7 +137,7 @@ export function stepPlayer(position: Vector3, verticalVelocity: number, input: P
   const next = { ...position };
   const length = Math.hypot(input.x, input.z);
   const speed = (input.crouch ? PLAYER_WALK_SPEED * .48 : input.sprint ? PLAYER_RUN_SPEED : PLAYER_WALK_SPEED) * speedScale;
-  const floor = groundHeight(position, matrix);
+  const floor = groundHeight(position, matrix, structures);
   let vy = verticalVelocity;
   if (input.jump && !input.crouch && position.y <= floor + 0.1 && verticalVelocity <= 0) vy = PLAYER_JUMP_SPEED;
   const nextY = next.y + vy * dt - .5 * PLAYER_GRAVITY * dt * dt;

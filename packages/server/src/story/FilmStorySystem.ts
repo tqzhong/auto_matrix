@@ -52,7 +52,7 @@ import { newLogosFlight, stepLogosFlight } from '@auto_matrix/shared';
 import { farewellLocked, farewellPose, newFarewell, stepFarewell } from '@auto_matrix/shared';
 import { DEUS_PACT, deusPactLocked, deusPactPose, newDeusPact, stepDeusPact } from '@auto_matrix/shared';
 import { SMITH_FINALE, newSmithFinale, retrySmithFinale, smithFinaleAction as reduceSmithFinaleAction,
-  smithFinaleLocked, smithFinalePose, stepSmithFinale } from '@auto_matrix/shared';
+  smithFinaleLocked, smithFinalePose, smithCraterAmount, stepSmithFinale } from '@auto_matrix/shared';
 import { newTrilogyEpilogue, stepTrilogyEpilogue, trilogyEpilogueLocked, trilogyEpilogueProgress,
   type TrilogyEpilogueKind } from '@auto_matrix/shared';
 import { newApuRun, stepApuRun } from '@auto_matrix/shared';
@@ -326,6 +326,14 @@ export class FilmStorySystem {
   private placeSmithFinale(agent: AgentState, tick: number): void {
     this.ensureSmithFinale(); const state = this.state; const encounter = state?.smithFinale;
     if (!state || !encounter || !['m3_rain', 'm3_surrender'].includes(state.scene)) return;
+    const amount = smithCraterAmount(encounter), structures = this.sandbox().structures;
+    const terrain = structures.find(s => s.id === 'film:smith:crater');
+    if (amount > 0) {
+      if (terrain) terrain.film!.height = SMITH_FINALE.crater.depth * amount;
+      else structures.push({ id: 'film:smith:crater', kind: 'crater', owner: 'matrix', matrix: true, health: 1,
+        position: filmPosition(this.scene!.set, SMITH_FINALE.crater.x, SMITH_FINALE.crater.z),
+        film: { scene: state.scene, width: 38, depth: 38, height: SMITH_FINALE.crater.depth * amount } });
+    } else if (terrain) structures.splice(structures.indexOf(terrain), 1);
     const pose = smithFinalePose(encounter); const smith = this.world.agents.get('smith');
     if (smith && !smith.controller) {
       smith.position = filmPosition(this.scene!.set, pose.smith.x, pose.smith.z); smith.position.y += pose.smith.y;

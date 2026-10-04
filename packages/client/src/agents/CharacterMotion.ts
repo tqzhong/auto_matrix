@@ -199,6 +199,7 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const deus = input.deusPact && deusPactPose(input.deusPact);
   const deusLocked = deusPactLocked(input.deusPact);
   const smithFinale = input.smithFinale && smithFinalePose(input.smithFinale);
+  if (smithFinale && input.smithFinale?.role === 'smith') smithFinale.fallen = 0;
   const smithLocked = smithFinaleLocked(input.smithFinale);
   const welcomeWalking = input.welcome?.phase === 'approach' || input.welcome?.phase === 'departing' && input.welcome.role !== 'neo';
   const welcomeSpeed = input.welcome?.role === 'morpheus' ? 2.6 : input.welcome?.role === 'neo' ? 2.3 : 1.8;

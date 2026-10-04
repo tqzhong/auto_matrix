@@ -3,7 +3,7 @@ import { truthRest, truthKneel, truthSeat } from '@auto_matrix/shared';
 import { METACORTEX } from '@auto_matrix/shared';
 import { OFFICE_CUSTODY, officeCustodyStep } from '@auto_matrix/shared';
 import { ARREST_BIKE, arrestCarPoint, arrestBikePoint, arrestMirrorShot } from '@auto_matrix/shared';
-import { catchLocked, deusPactLocked, deusPactPose, reloadedPhaseLocked, smithFinaleLocked, smithFinalePose, trilogyEpilogueLocked } from '@auto_matrix/shared';
+import { catchLocked, deusPactLocked, deusPactPose, reloadedPhaseLocked, smithFinaleLocked, smithFinalePose, smithCraterAmount, smithCraterFloor, trilogyEpilogueLocked } from '@auto_matrix/shared';
 import { reloadedCamera } from './ReloadedCamera.js';
 import * as THREE from 'three';
 import { spoonLessonSeat, oracleDepartureLocked, pillPose } from '@auto_matrix/shared';
@@ -766,7 +766,7 @@ export class PlayerControls {
     if (this.motion.wakeCall?.phase === 'waking' && this.motion.wakeCall.elapsed > 2.7 && this.motion.morning?.phase !== 'lying') this.motion.speed = 1.45;
     if (this.motion.wakeCall?.phase === 'leaving' && this.motion.wakeCall.elapsed > 1.15 && this.motion.wakeCall.elapsed < 3.05) this.motion.speed = 1.35;
     this.motion.firstPerson = this.firstPerson;
-    this.motion.grounded = dropRoot ? !basementDropPose(basement!.drop!).airborne : wall?.role === 'neo' && wall.phase === 'falling' ? false : Boolean(this.ride || this.gunner) || this.climbing || this.performing || this.position.y <= groundHeight(this.position, state.isInMatrix) + .12;
+    this.motion.grounded = dropRoot ? !basementDropPose(basement!.drop!).airborne : wall?.role === 'neo' && wall.phase === 'falling' ? false : Boolean(this.ride || this.gunner) || this.climbing || this.performing || this.position.y <= groundHeight(this.position, state.isInMatrix, this.structures) + .12;
     this.motion.verticalVelocity = wall?.role === 'neo' && wall.phase === 'falling' ? state.velocity.y : this.vy;
     this.motion.inspecting = Boolean((this.motion.pills || this.motion.interrogation || this.motion.welcome || this.motion.knock !== undefined || this.motion.recovery !== undefined || this.motion.cabin || this.motion.reveal || this.motion.training || this.motion.workday || this.motion.wakeCall || this.motion.sentinel || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || this.motion.lobbyEntry) && !this.firstPerson) || Boolean(this.phone && this.performing && this.motion.window === undefined && this.motion.crossing === undefined) || !this.firstPerson && this.spoon !== undefined && this.enabled && this.motion.speed < .25 && this.motion.grounded;
     const attacking = (now - this.lastAttack) / 1000 < MELEE_COMBO[this.attackCombo].duration;
@@ -1831,19 +1831,22 @@ export class PlayerControls {
     } else if (this.motion.smithFinale && smithFinaleLocked(this.motion.smithFinale) && this.firstPerson) {
       const pose = smithFinalePose(this.motion.smithFinale);
       const eye = new THREE.Vector3(this.position.x, this.position.y + 2.32 - pose.fallen * 1.05, this.position.z);
-      const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
+      const pitch = this.pitch - pose.fallen * .44;
+      const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(pitch), -Math.sin(pitch), Math.cos(this.yaw) * Math.cos(pitch));
       this.camera.position.copy(eye); this.camera.lookAt(eye.clone().addScaledVector(forward, 18));
     } else if (this.motion.smithFinale && smithFinaleLocked(this.motion.smithFinale)) {
       const gesture = this.motion.smithFinale; const pose = smithFinalePose(gesture); const center = FILM_SETS.film_smith_avenue.center;
       const neo = new THREE.Vector3(center.x + pose.neo.x, center.y + pose.neo.y + 1.7, center.z + pose.neo.z);
       const smith = new THREE.Vector3(center.x + pose.smith.x, center.y + pose.smith.y + 1.7, center.z + pose.smith.z);
-      const focus = neo.clone().lerp(smith, gesture.phase === 'surrender' || gesture.phase === 'assimilating' ? .56 : .5);
-      const crater = ['crater', 'choice', 'vision', 'understanding', 'surrender', 'assimilating', 'purging'].includes(gesture.phase);
-      const distance = THREE.MathUtils.lerp(crater ? 11 : 14, 18, pose.flight);
-      const height = THREE.MathUtils.lerp(crater ? 4.8 : 6.4, 7.5, pose.flight);
-      const side = THREE.MathUtils.lerp(crater ? 4.2 : 5.5, 5, pose.flight);
+      const crater = smithCraterAmount(gesture);
+      neo.y -= pose.fallen * 1.1;
+      const focus = neo.clone().lerp(smith, gesture.phase === 'surrender' || gesture.phase === 'assimilating' ? .56 : .5 - crater * .15);
+      const distance = THREE.MathUtils.lerp(14, 18, pose.flight);
+      const height = THREE.MathUtils.lerp(THREE.MathUtils.lerp(6.4, 10, crater), 7.5, pose.flight);
+      const side = THREE.MathUtils.lerp(THREE.MathUtils.lerp(5.5, 7.5, crater), 5, pose.flight);
       const forward = new THREE.Vector3(Math.sin(this.yaw), 0, Math.cos(this.yaw)); const right = new THREE.Vector3(Math.cos(this.yaw), 0, -Math.sin(this.yaw));
       const ideal = focus.clone().addScaledVector(forward, -distance).addScaledVector(right, side); ideal.y += height;
+      if (crater > 0) ideal.y = Math.max(ideal.y, center.y + smithCraterFloor(ideal.x - center.x, ideal.z - center.z) * crater + .6);
       this.camera.position.copy(ideal);
       this.camera.lookAt(focus);
     } else if (this.motion.deusPact && deusPactLocked(this.motion.deusPact) && this.firstPerson) {
@@ -1968,7 +1971,8 @@ export class PlayerControls {
     const localEye = head.userData.cameraEye as THREE.Vector3 | undefined;
     if (!localEye) return;
     const eye = head.localToWorld(localEye.clone());
-    const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
+    const pitch = this.pitch - smithFinalePose(this.motion.smithFinale!).fallen * .44;
+    const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(pitch), -Math.sin(pitch), Math.cos(this.yaw) * Math.cos(pitch));
     this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
   }
 

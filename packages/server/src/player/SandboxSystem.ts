@@ -159,7 +159,9 @@ export class SandboxSystem {
     if (command.kind === 'dismantle') {
       const index = this.state.structures.findIndex(s => s.id === target && s.owner === agent.id && s.matrix === agent.isInMatrix && distance(s.position, agent.position) < 16);
       if (index < 0) return '需要靠近自己建造的设施才能拆回。';
-      const [structure] = this.state.structures.splice(index, 1); profile.inventory[structure.kind]++;
+      const structure = this.state.structures[index];
+      if (structure.kind === 'crater') return '破裂的路面不能拆回背包。';
+      this.state.structures.splice(index, 1); profile.inventory[structure.kind]++;
       return '设施已拆回背包。';
     }
     if (command.kind === 'transit') {
