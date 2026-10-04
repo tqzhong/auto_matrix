@@ -15,6 +15,7 @@ import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.j
 import { musicForScene } from '../packages/client/src/engine/Soundtrack.js';
 import { HOTEL_ROUTE, HOTEL_DOOR_PROGRESS } from '@auto_matrix/shared';
 import { hammerCenter, LOGOS_DEFENSE, AMBUSH_CAT_STAIRS } from '@auto_matrix/shared';
+import { TRUCKS, truckApproachPose, truckRescuePose, type TruckEncounter, type TruckRescueRole } from '@auto_matrix/shared';
 
 function setup() {
   const world = new WorldState(); const manager = new AgentManager(world); manager.initializeAllAgents();
@@ -2207,6 +2208,186 @@ test('an older truck checkpoint on the shared freeway moves onto the new trailer
   assert.deepEqual(h.actor().position, filmEntry(scene));
   assert.deepEqual(state.checkpoint, filmEntry(scene));
   assert.equal(state.step, 1); assert.equal(state.trucks?.phase, 'collision');
+});
+
+function truckRescueSetup() {
+  const h = setup(); h.command('start'); const state = h.sandbox.life.film.state!;
+  const scene = FILM_SCENE_BY_ID.m2_trucks; const center = FILM_SETS[scene.set].center;
+  Object.assign(state, { scene: scene.id, actor: scene.actor, step: 2,
+    trucks: { phase: 'rescue', elapsed: 10, lastTick: h.tick(), attempt: 0, rescueElapsed: 0, origin: { x: 14.2, z: 32.5 } } });
+  const poses = { morpheus: [14.2, 6.6, 32.5, .2], keymaker: [12.5, 6.6, 32.5, -.3], neo: [14, 18, -35, .5] };
+  for (const [id, [x, y, z, yaw]] of Object.entries(poses)) Object.assign(h.world.agents.get(id)!, {
+    position: { x: center.x + x, y: center.y + y, z: center.z + z }, rotation: yaw,
+    currentLocation: scene.set, isInMatrix: true, status: 'alive', health: 100,
+  });
+  h.players.possess('film-player', 'morpheus', h.tick());
+  state.checkpoint = { ...h.actor().position };
+  return h;
+}
+
+test('truck rescue preserves all three actual positions and headings at the catch handoff', () => {
+  const h = truckRescueSetup();
+  const before = ['morpheus', 'keymaker', 'neo'].map(id => {
+    const actor = h.world.agents.get(id)!; return { id, position: { ...actor.position }, rotation: actor.rotation };
+  });
+  h.sandbox.life.film.truckFrame(h.actor(), 0, h.tick());
+  for (const actor of before) {
+    assert.deepEqual(h.world.agents.get(actor.id)!.position, actor.position, `${actor.id} must not teleport when the rescue starts`);
+    assert.equal(h.world.agents.get(actor.id)!.rotation, actor.rotation, `${actor.id} must not snap to a new heading`);
+  }
+});
+
+test('truck rescue sends separated passengers clear of the roof before Neo catches them and never collapses the crew roots', () => {
+  const h = truckRescueSetup(); const roof = h.actor().position.y;
+  for (let frame = 0; frame < 300; frame++) {
+    h.sandbox.life.film.truckFrame(h.actor(), .01, h.tick());
+    const cast = ['morpheus', 'keymaker', 'neo'].map(id => h.world.agents.get(id)!);
+    if (frame === 30) for (const passenger of cast.slice(0, 2)) assert.ok(passenger.position.y > roof + 1, 'the passengers jump clear before Neo catches their shoulders');
+    for (let a = 0; a < cast.length; a++) for (let b = a + 1; b < cast.length; b++) {
+      const delta = Math.hypot(cast[a].position.x - cast[b].position.x, cast[a].position.y - cast[b].position.y, cast[a].position.z - cast[b].position.z);
+      assert.ok(delta >= 1.3, `${cast[a].id}/${cast[b].id} roots overlap at rescue frame ${frame}: ${delta}`);
+    }
+  }
+});
+
+test('truck rescue pauses without its player or while a passenger is occupied and cannot carry a dead passenger to success', () => {
+  const h = truckRescueSetup(); const state = h.sandbox.life.film.state!;
+  const before = ['morpheus', 'keymaker', 'neo'].map(id => ({ ...h.world.agents.get(id)!.position }));
+  h.actor().controller = undefined; h.sandbox.life.film.truckFrame(h.actor(), .1, h.tick());
+  assert.equal(state.trucks!.rescueElapsed, 0);
+  h.actor().controller = 'film-player'; h.world.agents.get('keymaker')!.controller = 'other';
+  h.sandbox.life.film.truckFrame(h.actor(), .1, h.tick()); assert.equal(state.trucks!.rescueElapsed, 0);
+  ['morpheus', 'keymaker', 'neo'].forEach((id, i) => assert.deepEqual(h.world.agents.get(id)!.position, before[i]));
+  h.world.agents.get('keymaker')!.controller = undefined; h.world.agents.get('keymaker')!.status = 'dead';
+  h.sandbox.life.film.truckFrame(h.actor(), .1, h.tick());
+  assert.equal(state.trucks!.phase, 'failed'); assert.equal(state.completed.includes('m2_trucks'), false);
+});
+
+test('truck rescue cold save reconstructs the same separated flight without replaying the pickup', () => {
+  const h = truckRescueSetup();
+  for (let i = 0; i < 17; i++) h.sandbox.life.film.truckFrame(h.actor(), .1, h.tick());
+  const saved = JSON.parse(JSON.stringify(h.sandbox.state));
+  const cast = ['morpheus', 'keymaker', 'neo'].map(id => JSON.parse(JSON.stringify(h.world.agents.get(id)!)));
+  const loaded = setup(); loaded.command('start');
+  for (const actor of cast) {
+    const restored = loaded.world.agents.get(actor.id)!; Object.assign(restored, actor); delete restored.controller;
+    if (restored.currentAction?.parameters.player) restored.currentAction = null;
+  }
+  loaded.sandbox.restore(saved);
+  assert.ok(loaded.world.agents.get('morpheus')!.currentAction?.parameters.truckRescue, 'a paused cold load must restore the carried body before the player reconnects');
+  loaded.players.possess('film-player', 'morpheus', loaded.tick());
+  loaded.sandbox.life.film.truckFrame(loaded.actor(), 0, loaded.tick());
+  for (const actor of cast) assert.deepEqual(loaded.world.agents.get(actor.id)!.position, actor.position);
+  assert.equal(loaded.sandbox.life.film.state!.trucks!.rescueElapsed, saved.neoLife.journey.trucks.rescueElapsed);
+  for (let frame = 0; frame < 16; frame++) {
+    h.sandbox.life.film.truckFrame(h.actor(), .1, h.tick());
+    loaded.sandbox.life.film.truckFrame(loaded.actor(), .1, loaded.tick());
+    for (const id of ['morpheus', 'keymaker', 'neo']) assert.deepEqual(loaded.world.agents.get(id)!.position, h.world.agents.get(id)!.position);
+  }
+});
+
+test('truck rescue resumes an older in-flight save from its saved roots without snapping or resetting time', () => {
+  const h = truckRescueSetup(); const state = h.sandbox.life.film.state!;
+  state.trucks!.rescueElapsed = 1.5; delete state.trucks!.starts; delete state.trucks!.startElapsed;
+  const cast = ['morpheus', 'keymaker', 'neo'].map(id => ({ id, position: { ...h.world.agents.get(id)!.position } }));
+  h.sandbox.life.film.truckFrame(h.actor(), 0, h.tick());
+  for (const actor of cast) assert.deepEqual(h.world.agents.get(actor.id)!.position, actor.position);
+  assert.equal(state.trucks!.rescueElapsed, 1.5);
+  for (let frame = 0; frame < 16; frame++) h.sandbox.life.film.truckFrame(h.actor(), .1, h.tick());
+  assert.equal(state.trucks!.phase, 'rescued');
+});
+
+test('older truck saves retain the carrying or landing phase without standing up or replaying the jump', () => {
+  for (const savedClock of [1.5, 2.8, 2.99]) {
+    const h = truckRescueSetup(), state = h.sandbox.life.film.state!, base = FILM_SETS.film_freeway_trucks.center;
+    const origin = { x: 12.5, z: 32.5 }, t = savedClock / 3, progress = t * t * (3 - 2 * t);
+    Object.assign(state.trucks!, { rescueElapsed: savedClock, origin }); delete state.trucks!.starts; delete state.trucks!.startElapsed;
+    // Reconstruct the actual pre-fix flight, including its asymmetric spacing.
+    const roles = ['morpheus', 'keymaker', 'neo'] as const;
+    for (const [i, role] of roles.entries()) {
+      const actor = h.world.agents.get(role)!;
+      actor.position = { x: base.x + 12.5 + 7.5 * progress + [0, -1.5, 1.4][i] * progress,
+        y: base.y + 6.6 * (1 - progress) + (11 + [0, 0, .8][i]) * Math.sin(Math.PI * progress),
+        z: base.z + 32.5 + 13.5 * progress + [0, 1, -1][i] * progress };
+      actor.rotation = Math.atan2(7.5, 13.5);
+    }
+    const before = roles.map(role => ({ ...h.world.agents.get(role)!.position }));
+    h.sandbox.life.film.truckFrame(h.actor(), 0, h.tick());
+    for (const [i, role] of roles.entries()) {
+      assert.deepEqual(h.world.agents.get(role)!.position, before[i]);
+      const pose = truckRescuePose(state.trucks!, role);
+      assert.ok(pose.flight > 0 && pose.approach === 1, 'an old airborne save must stay after the pickup rather than approach again');
+      assert.ok(Math.abs(pose.tumble) < .0001, 'the passengers must not replay their roof departure tumble');
+      if (savedClock === 1.5) assert.equal(pose.hold, 1, 'the original carrying moment must still hold both shoulders');
+      if (role !== 'neo' && savedClock === 1.5) assert.equal(pose.airborne, 1, 'a carried passenger cannot stand upright while restoring');
+    }
+    let previous = roles.map(role => truckRescuePose(state.trucks!, role));
+    for (let frame = 0; frame < 151 && state.trucks!.phase === 'rescue'; frame++) {
+      h.sandbox.life.film.truckFrame(h.actor(), .01, h.tick());
+      const poses = roles.map(role => truckRescuePose(state.trucks!, role));
+      for (let i = 0; i < poses.length; i++) {
+        assert.ok(poses[i].airborne <= previous[i].airborne + .0001 && poses[i].hold <= previous[i].hold + .0001,
+          'a resumed carrying/landing phase cannot stand up and then grab the shoulders again');
+        assert.ok(Math.hypot(poses[i].x - previous[i].x, poses[i].y - previous[i].y, poses[i].z - previous[i].z) < .4,
+          `legacy ${savedClock}s/${roles[i]} snaps during the remaining flight`);
+      }
+      previous = poses;
+    }
+    assert.equal(state.trucks!.phase, 'rescued');
+    for (const role of roles) assert.equal(h.world.agents.get(role)!.position.y, base.y);
+  }
+});
+
+test('truck rescue retry resumes a living saved flight and a failed passenger returns to a roof checkpoint', () => {
+  const h = truckRescueSetup(); let state = h.sandbox.life.film.state!;
+  for (let frame = 0; frame < 15; frame++) h.sandbox.life.film.truckFrame(h.actor(), .1, h.tick());
+  const before = { ...h.actor().position }; const elapsed = state.trucks!.rescueElapsed;
+  h.command('retry');
+  assert.equal(state.trucks!.phase, 'rescue'); assert.equal(state.trucks!.rescueElapsed, elapsed);
+  assert.deepEqual(h.actor().position, before);
+  h.world.agents.get('keymaker')!.status = 'dead'; h.sandbox.life.film.truckFrame(h.actor(), .1, h.tick());
+  h.command('retry'); state = h.sandbox.life.film.state!;
+  assert.equal(state.trucks!.phase, 'collision'); assert.equal(h.world.agents.get('keymaker')!.status, 'alive');
+  assert.equal(h.actor().position.y, FILM_SETS.film_freeway_trucks.center.y + 6.6);
+});
+
+test('truck pickup marker never asks Morpheus to stand inside the Keymaker', () => {
+  const scene = FILM_SCENE_BY_ID.m2_trucks;
+  const keymaker = { ...filmPosition(scene.set, 12.5, 32.5), y: FILM_SETS[scene.set].center.y + 6.6 };
+  assert.equal(filmStepActionReady(scene, scene.steps[2], keymaker, true), false);
+  assert.equal(filmStepActionReady(scene, scene.steps[2], filmStepPosition(scene, scene.steps[2]), true), true);
+});
+
+test('truck rescue stays continuous and separated across the full pickup area and early or late Neo arrivals', () => {
+  const roles: TruckRescueRole[] = ['morpheus', 'keymaker', 'neo'];
+  for (let angle = 0; angle < 16; angle++) for (const arrival of [3, 6, 9.5]) {
+    const encounter: TruckEncounter = { phase: 'rescue', elapsed: arrival, lastTick: 0, attempt: 0, rescueElapsed: 0,
+      starts: { morpheus: { x: TRUCKS.rescueApproach.x + .7 * Math.cos(angle * Math.PI / 8), y: 6.6,
+        z: TRUCKS.rescueApproach.z + .7 * Math.sin(angle * Math.PI / 8), yaw: angle * Math.PI / 8 },
+      keymaker: { ...TRUCKS.keymaker, y: 6.6, yaw: Math.PI }, neo: truckApproachPose(arrival) } };
+    let previous = roles.map(role => truckRescuePose(encounter, role));
+    for (let frame = 1; frame <= 300; frame++) {
+      encounter.rescueElapsed = frame / 100;
+      const poses = roles.map(role => truckRescuePose(encounter, role));
+      for (let a = 0; a < roles.length; a++) {
+        assert.ok(Math.hypot(poses[a].x - previous[a].x, poses[a].y - previous[a].y, poses[a].z - previous[a].z) < 1.7,
+          `${roles[a]} teleports between adjacent saved frames: arrival ${arrival}, start ${angle}, frame ${frame}`);
+        for (let b = a + 1; b < roles.length; b++) assert.ok(Math.hypot(poses[a].x - poses[b].x, poses[a].y - poses[b].y, poses[a].z - poses[b].z) > 1.3,
+          `${roles[a]}/${roles[b]} roots collapse: arrival ${arrival}, start ${angle}, frame ${frame}`);
+      }
+      previous = poses;
+    }
+  }
+});
+
+test('truck rescue pauses the approach and held action while a pre-existing player owns a passenger', () => {
+  const h = truckRescueSetup(); const state = h.sandbox.life.film.state!;
+  state.trucks!.phase = 'collision'; state.trucks!.elapsed = 3; state.trucks!.lastTick = h.tick();
+  h.actor().position = filmStepPosition(FILM_SCENE_BY_ID.m2_trucks, FILM_SCENE_BY_ID.m2_trucks.steps[2]);
+  h.command('act'); const started = state.started!;
+  h.world.agents.get('neo')!.controller = 'other'; const before = { ...h.world.agents.get('neo')!.position };
+  h.advance(8); assert.equal(state.trucks!.elapsed, 3); assert.ok(state.started! > started);
+  assert.deepEqual(h.world.agents.get('neo')!.position, before);
 });
 
 test('Niobe arms the main station, Vigilant loss requires Trinity, and only both cuts open the 314-second door window', () => {

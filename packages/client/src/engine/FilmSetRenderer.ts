@@ -25,6 +25,7 @@ import { meetingBoardPoint, meetingRoot } from '@auto_matrix/shared';
 import { LobbySetRenderer } from './LobbySetRenderer.js';
 import { OfficeSetRenderer } from './OfficeSetRenderer.js';
 import { FreewaySetRenderer } from './FreewaySetRenderer.js';
+import type { TruckEncounter } from '@auto_matrix/shared';
 import { PodSetRenderer } from './PodSetRenderer.js';
 import { NebDeckRenderer } from './NebDeckRenderer.js';
 import { ConstructRenderer } from './ConstructRenderer.js';
@@ -375,7 +376,8 @@ export class FilmSetRenderer {
       this.openingGlass.scale.setScalar(Math.max(.01, strike));
     }
     this.club?.update(elapsed);
-    this.freeway?.update(journey, elapsed, playerPosition);
+    this.freeway?.update(journey, elapsed, playerPosition, player?.id === 'morpheus' && player.id === journey?.actor
+      ? player.currentAction?.parameters.truckRescue as TruckEncounter | undefined : undefined);
     this.pods?.update(journey, elapsed, firstPerson, this.recoverySubject);
     this.neb?.update(journey, elapsed, this.recoverySubject, this.crosscutBodies);
     this.finale?.update(journey, elapsed);
@@ -383,7 +385,7 @@ export class FilmSetRenderer {
     this.hammerRoute?.update(journey?.scene === 'm3_hammer_tunnels' && !journey.visiting ? journey.hammer : undefined, elapsed, firstPerson);
     this.logosStage = journey?.logos?.stage;
     this.logosFlight?.update(['m3_defense', 'm3_sun'].includes(journey?.scene ?? '') && !journey?.visiting ? journey?.logos : undefined, elapsed, firstPerson);
-    this.logosWreck?.update(journey?.scene === 'm3_farewell' && !journey.visiting ? journey.farewell : undefined, elapsed, firstPerson);
+    this.logosWreck?.update(journey?.scene === 'm3_farewell' && !journey.visiting ? journey.farewell : undefined, elapsed, firstPerson, firstPerson && player?.id === 'neo');
     this.machineCore?.update(journey?.scene === 'm3_deus' && !journey.visiting ? journey.deus : undefined, elapsed, firstPerson, {
       x: (playerPosition?.x ?? this.current?.center.x ?? 0) - (this.current?.center.x ?? 0),
       z: (playerPosition?.z ?? this.current?.center.z ?? 0) - (this.current?.center.z ?? 0),

@@ -162,6 +162,7 @@ export class PlayerController {
     this.sandbox?.life.film.sixth.frame(agent, { crouch: false, yaw: agent.rotation }, 0, tick); this.sandbox?.life.film.basement.frame(agent, {}, 0, tick);
     this.sandbox?.life.film.betrayalFrame(agent, 0, tick);
     this.sandbox?.life.film.rescueFrame(agent, 0, tick);
+    this.sandbox?.life.film.truckFrame(agent, 0, tick);
     this.sandbox?.life.film.governmentFrame(agent, false, 0, tick);
     this.sandbox?.life.film.airRescueFrame(agent, false, 0, tick);
     this.sandbox?.life.film.matrixEscapeFrame(agent, { movement: 0, sprint: false }, 0, tick);

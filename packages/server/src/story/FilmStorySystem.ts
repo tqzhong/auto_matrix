@@ -58,7 +58,7 @@ import { newTrilogyEpilogue, stepTrilogyEpilogue, trilogyEpilogueLocked, trilogy
 import { newApuRun, stepApuRun } from '@auto_matrix/shared';
 import { DOCK_GUNNERY, newDockGunnery, fireDockGunnery, stepDockGunnery } from '@auto_matrix/shared';
 import { TEMPLE_SEAL_SECONDS } from '@auto_matrix/shared';
-import { TRUCKS } from '@auto_matrix/shared';
+import { TRUCKS, truckApproachPose, truckRescuePose } from '@auto_matrix/shared';
 import { OPENING_ESCAPE } from '@auto_matrix/shared';
 import { OpeningHotelSystem } from './OpeningHotelSystem.js';
 
@@ -4341,29 +4341,35 @@ export class FilmStorySystem {
     const state = this.state;
     if (state?.scene !== 'm2_trucks' || state.visiting || !this.controls(agent) || state.trucks?.phase !== 'rescue') return false;
     const rescue = state.trucks;
+    const base = FILM_SETS[this.scene!.set].center;
+    const passengers = [
+      [agent, 'morpheus'], [this.world.agents.get('keymaker'), 'keymaker'], [this.world.agents.get('neo'), 'neo'],
+    ] as const;
+    if (passengers.some(([passenger]) => !passenger || passenger.status !== 'alive')) {
+      rescue.phase = 'failed'; agent.status = 'dead'; agent.health = 0; delete state.started;
+      state.lastText = '接应中有同伴倒下。按 J 从车顶检查点重试。'; return true;
+    }
+    if (dt > 0 && !agent.controller || passengers.some(([passenger, role]) => role !== 'morpheus' && passenger!.controller)) return true;
+    if (!rescue.starts) {
+      rescue.starts = Object.fromEntries(passengers.map(([passenger, role]) => [role, {
+        x: passenger!.position.x - base.x, y: passenger!.position.y - base.y, z: passenger!.position.z - base.z, yaw: passenger!.rotation,
+      }])) as NonNullable<typeof rescue.starts>;
+      rescue.startElapsed = rescue.rescueElapsed ?? 0;
+    }
     rescue.rescueElapsed = Math.min(TRUCKS.rescueSeconds, (rescue.rescueElapsed ?? 0) + Math.max(0, Math.min(.1, dt)));
     const t = rescue.rescueElapsed / TRUCKS.rescueSeconds;
-    const progress = t * t * (3 - 2 * t);
-    const origin = rescue.origin ?? { x: TRUCKS.keymaker.x, z: TRUCKS.keymaker.z };
-    const base = FILM_SETS[this.scene!.set].center;
-    const x = origin.x + (20 - origin.x) * progress;
-    const z = origin.z + (46 - origin.z) * progress;
-    const y = t >= 1 ? base.y : base.y + TRUCKS.roof.height * (1 - progress) + 11 * Math.sin(Math.PI * progress);
-    const passengers = [
-      [agent, 0, 0, 0, 'morpheus'],
-      [this.world.agents.get('keymaker'), -1.5, 1, 0, 'keymaker'],
-      [this.world.agents.get('neo'), 1.4, -1, .8, 'neo'],
-    ] as const;
-    for (const [passenger, dx, dz, dy, role] of passengers) {
-      if (!passenger || role !== 'morpheus' && passenger.controller) continue;
+    for (const [passenger, role] of passengers) {
+      if (!passenger) continue;
+      const pose = truckRescuePose(rescue, role);
       const before = { ...passenger.position };
-      passenger.position = { x: base.x + x + dx * progress, y: t >= 1 ? base.y : y + dy * Math.sin(Math.PI * progress), z: base.z + z + dz * progress };
+      passenger.position = { x: base.x + pose.x, y: base.y + pose.y, z: base.z + pose.z };
       passenger.velocity = dt > 0 ? { x: (passenger.position.x - before.x) / dt, y: (passenger.position.y - before.y) / dt, z: (passenger.position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
-      passenger.rotation = Math.atan2(20 - origin.x, 46 - origin.z);
-      passenger.currentAction = { type: 'move_to', parameters: { resolved: true, player: role === 'morpheus', truckFlight: role === 'neo', truckPassenger: role !== 'neo' }, startedAt: tick, duration: 1, progress: t };
+      passenger.rotation = pose.yaw; passenger.currentLocation = this.scene!.set; passenger.isInMatrix = true;
+      passenger.targetPosition = null; passenger.currentPath = [];
+      passenger.currentAction = { type: 'move_to', parameters: { resolved: true, player: role === 'morpheus', truckFlight: role === 'neo', truckPassenger: role !== 'neo', truckRescue: { ...rescue, role } }, startedAt: tick, duration: 100000, progress: t };
     }
     state.checkpoint = { ...agent.position };
-    state.lastText = 'Neo 接住 Morpheus 与钥匙匠，带两人离开相撞的卡车。';
+    state.lastText = rescue.rescueElapsed < TRUCKS.catchSeconds ? '两人在撞击前跃离车顶，Neo 正从后上方赶来。' : 'Neo 抓住两人的肩领，带他们离开爆炸，再降落到路肩。';
     if (t >= 1) {
       rescue.phase = 'rescued';
       for (const [passenger] of passengers) if (passenger) { passenger.velocity = { x: 0, y: 0, z: 0 }; passenger.currentAction = null; }
@@ -4562,6 +4568,10 @@ export class FilmStorySystem {
       actor.health = fate === 'alive' ? actor.maxHealth : 0;
       if (actor.currentAction?.parameters.crosscut && ['m1_tv_exit', 'm1_unplugged'].includes(this.state.scene)) continue;
       actor.currentAction = null; actor.targetPosition = null; actor.currentPath = []; actor.velocity = { x: 0, y: 0, z: 0 };
+    }
+    if (this.state.scene === 'm2_trucks' && this.state.trucks?.phase === 'rescue') {
+      const actor = this.world.agents.get(this.state.actor);
+      if (actor?.currentLocation === this.scene!.set) this.truckFrame(actor, 0, this.world.simulationTick);
     }
   }
   releaseCast(reset = false): void {
@@ -5041,7 +5051,20 @@ export class FilmStorySystem {
       delete state.hammer;
       delete state.logos;
       delete state.apu;
-      if (state.scene === 'm2_trucks') state.trucks = { phase: state.step === 0 ? 'duel' : 'collision', elapsed: 0, lastTick: tick, attempt: (state.trucks?.attempt ?? 0) + 1 };
+      if (state.scene === 'm2_trucks') {
+        if (state.trucks?.phase === 'rescue' && agent.status === 'alive') {
+          this.truckFrame(agent, 0, tick); return '已接回空中接应，保留三人的位置和动作进度。';
+        }
+        if (state.trucks?.starts) {
+          const root = state.trucks.starts.morpheus;
+          state.checkpoint = { ...filmPosition(this.scene.set, root.x, root.z), y: FILM_SETS[this.scene.set].center.y + TRUCKS.roof.height };
+        }
+        for (const id of ['neo', 'keymaker']) {
+          const passenger = this.world.agents.get(id);
+          if (passenger && !passenger.controller && !this.unavailable(id)) { passenger.status = 'alive'; passenger.health = passenger.maxHealth; }
+        }
+        state.trucks = { phase: state.step === 0 ? 'duel' : 'collision', elapsed: 0, lastTick: tick, attempt: (state.trucks?.attempt ?? 0) + 1 };
+      }
       if (state.scene === 'm1_spoon' && state.step === 0 && state.oracle) delete state.oracle.spoon;
       if (state.scene === 'm1_oracle' && state.step === 0 && state.oracle) delete state.oracle.vase;
       if (state.scene === 'm1_dejavu' && state.step === 0) { delete state.ambush; this.sandbox().structures = this.sandbox().structures.filter(s => s.film?.scene !== 'm1_dejavu'); }
@@ -6568,14 +6591,18 @@ export class FilmStorySystem {
     if (state.scene === 'm3_hel_entry') { this.ensureHelDanceDoor(tick); this.helElevatorTick(actor, tick); this.helDanceDoorTick(actor, tick); this.helDanceAlliesTick(actor, tick); this.sealHelElevator(); this.sealHelDanceDoor(); }
     if (state.scene === 'm3_hel_bargain') this.helBargainTick(actor, tick);
     if (state.scene === 'm2_trucks' && state.trucks?.phase === 'collision') {
-      state.trucks.elapsed = Math.min(TRUCKS.collisionSeconds, state.trucks.elapsed + Math.max(0, tick - state.trucks.lastTick) * .5);
+      const gap = Math.max(0, tick - state.trucks.lastTick);
       state.trucks.lastTick = tick;
+      if (['neo', 'keymaker'].some(id => this.world.agents.get(id)?.controller)) {
+        if (state.started !== undefined) state.started += gap;
+        state.lastText = '接应角色正由其他玩家控制，倒计时与当前动作已保留。'; return;
+      }
+      state.trucks.elapsed = Math.min(TRUCKS.collisionSeconds, state.trucks.elapsed + gap * .5);
       const neo = this.world.agents.get('neo');
       if (neo && !neo.controller && state.trucks.elapsed >= 5.5) {
-        const approach = (state.trucks.elapsed - 5.5) / (TRUCKS.collisionSeconds - 5.5);
-        neo.position = { ...filmPosition(this.scene.set, TRUCKS.roof.x, -58 + approach * 91),
-          y: FILM_SETS[this.scene.set].center.y + 23 - approach * 12 };
-        neo.velocity = { x: 0, y: -12 / 4.5, z: 91 / 4.5 };
+        const approach = truckApproachPose(state.trucks.elapsed);
+        neo.position = { ...filmPosition(this.scene.set, approach.x, approach.z), y: FILM_SETS[this.scene.set].center.y + approach.y };
+        neo.rotation = approach.yaw; neo.velocity = { x: 0, y: -12 / 4.5, z: 91 / 4.5 };
       }
       if (state.trucks.elapsed >= TRUCKS.collisionSeconds) {
         state.trucks.phase = 'failed'; actor.status = 'dead'; actor.health = 0; delete state.started;

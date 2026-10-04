@@ -604,6 +604,8 @@ export class PlayerControls {
     this.motion.chateauWeapon = state.currentAction?.parameters.chateauWeapon as MotionInput['chateauWeapon'];
     this.motion.mountainFlight = state.currentAction?.parameters.mountainFlight as MotionInput['mountainFlight'];
     this.motion.truckPassenger = state.currentAction?.parameters.truckPassenger as boolean | undefined;
+    this.motion.truckFlight = state.currentAction?.parameters.truckFlight as boolean | undefined;
+    this.motion.truckRescue = state.currentAction?.parameters.truckRescue as MotionInput['truckRescue'];
     this.motion.persephone = state.currentAction?.parameters.persephone as MotionInput['persephone'];
     this.motion.farewell = farewell;
     this.motion.deusPact = deusPact;
@@ -1765,6 +1767,14 @@ export class PlayerControls {
         else this.camera.position.lerp(ideal, 1 - Math.exp(-9 * delta));
         this.camera.lookAt(focus);
       }
+    } else if (this.motion.truckRescue && this.firstPerson) {
+      this.camera.position.copy(target);
+      this.syncTruckRescueCamera(group);
+    } else if (this.motion.truckRescue) {
+      const ideal = new THREE.Vector3(this.position.x + 9, this.position.y + 5, this.position.z + 13);
+      const focus = new THREE.Vector3(this.position.x - 1.4, this.position.y - .2, this.position.z + 2.3);
+      if (resetCamera) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
+      this.camera.lookAt(focus);
     } else if (state.currentLocation === 'film_freeway_trucks' && this.truckRescue && !this.firstPerson) {
       const ideal = new THREE.Vector3(this.position.x + 8, this.position.y + 8, this.position.z + 12);
       const focus = new THREE.Vector3(this.position.x, this.position.y + 1.8, this.position.z - 3);
@@ -1919,6 +1929,15 @@ export class PlayerControls {
       this.camera.position.x += Math.cos(this.yaw) * Math.sin(this.impactAge * 95) * kick;
       this.camera.position.y += Math.sin(this.impactAge * 80) * kick * .6;
     }
+  }
+
+  syncTruckRescueCamera(group: THREE.Group): void {
+    if (!this.firstPerson || !this.motion.truckRescue) return;
+    // AgentRenderer poses the body after controls; resample its current head before rendering.
+    const head = group.getObjectByName('head'); group.updateWorldMatrix(true, true);
+    const eye = head ? head.localToWorld(new THREE.Vector3(0, .1, .32)) : this.camera.position;
+    const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
+    this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
   }
 
   dispose(): void {

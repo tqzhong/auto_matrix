@@ -167,6 +167,10 @@ export class Engine {
     }
     measure?.('controls');
     this.agentRenderer.update(delta, this.camera, this.simulationSpeed, this.tick, meeting);
+    if (this.playerControls?.id) {
+      const group = this.agentRenderer.getAgent(this.playerControls.id);
+      if (group) this.playerControls.syncTruckRescueCamera(group);
+    }
     this.filmSets.setMirrorSubject(this.playerControls?.id ? this.agentRenderer.getAgentBody(this.playerControls.id) : undefined);
     this.filmSets.setRecoverySubject(this.agentRenderer.getAgentBody('neo'));
     this.filmSets.setCrosscutSubjects(id => this.agentRenderer.getPhysicalBody(id), id => this.agentRenderer.getAgentBody(id));

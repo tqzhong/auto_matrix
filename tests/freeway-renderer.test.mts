@@ -2,8 +2,11 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import test from 'node:test';
 import * as THREE from 'three';
-import { FILM_SETS, TRUCKS, filmPosition, type FilmJourney } from '@auto_matrix/shared';
+import { FILM_SETS, TRUCKS, filmPosition, truckApproachPose, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FreewaySetRenderer } from '../packages/client/src/engine/FreewaySetRenderer.js';
+import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
+import { WorldState } from '../packages/server/src/world/WorldState.js';
+import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 
 const canvasDocument = () => ({ createElement: () => ({ width: 0, height: 0, getContext: () => ({
   createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }),
@@ -29,6 +32,18 @@ function cabVertices(rig: THREE.Object3D): THREE.Vector3[] {
   });
   return points;
 }
+
+test('Neo’s approach trail follows the same saved flight path as his body', t => {
+  const { root, renderer } = setup(t), state = journey();
+  for (const elapsed of [5.6, 7, 9.9]) {
+    state.trucks!.elapsed = elapsed; renderer.update(state, 500);
+    const trail = root.getObjectByName('matrix-freeway-neo-trail')!, pose = truckApproachPose(elapsed);
+    assert.ok(trail.visible);
+    assert.ok(trail.position.distanceTo(new THREE.Vector3(pose.x, pose.y, pose.z)) < .01,
+      'a separate approximate trail trajectory detaches from Neo during approach');
+    assert.ok(trail.children.every(ring => ring.position.z <= 0), 'the wake extends behind the forward-moving body');
+  }
+});
 function snapshot(root: THREE.Group): string {
   const hash = createHash('sha256'); root.updateMatrixWorld(true);
   root.traverse(object => {
@@ -111,4 +126,50 @@ test('crash fragments clear the occupied trailer and never settle through the as
       }
     }
   }
+});
+
+test('the real freeway fire and smoke use Morpheus’s fast rescue clock and reject old actions after retry or completion', t => {
+  const original = globalThis.document; globalThis.document = canvasDocument();
+  const scene = new THREE.Scene(), renderer = new FilmSetRenderer(scene);
+  t.after(() => { renderer.dispose(); globalThis.document = original; });
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const player = world.agents.get('morpheus')!;
+  Object.assign(player, { position: filmPosition('film_freeway_trucks', 14.6, 32.5), isInMatrix: true, currentLocation: 'film_freeway_trucks' });
+  const state = journey(); state.step = 2;
+  state.trucks = { ...state.trucks!, phase: 'rescue', elapsed: 10, rescueElapsed: .2 };
+  const fast = { ...state.trucks, role: 'morpheus', rescueElapsed: .4 };
+  player.currentAction = { type: 'move_to', parameters: { truckRescue: fast }, startedAt: 0, duration: 100000, progress: 0 };
+  const sandbox = { neoLife: { journey: state } } as SandboxState;
+  renderer.update(player, sandbox, 0, player.position);
+  const impact = scene.getObjectByName('matrix-freeway-collision')!, fire = impact.children[0], smoke = impact.children[1];
+  assert.equal(fire.visible, false);
+  fast.rescueElapsed = 1.4; renderer.update(player, sandbox, .05, player.position);
+  assert.equal(fire.visible, true, 'the slow journey snapshot cannot hold back the explosion after the carried bodies have moved');
+  assert.ok(Math.abs(smoke.position.y - 1.4 * 2.3) < .001, 'smoke and all three actors must use one rescued frame');
+  const freeway = scene.getObjectByName('matrix-freeway-hero-truck')!.parent as THREE.Group;
+  const paused = snapshot(freeway); renderer.update(player, sandbox, 9000, player.position);
+  assert.equal(snapshot(freeway), paused, 'only a new saved actor clock may advance the paused explosion');
+  assert.equal(state.trucks.rescueElapsed, .2, 'rendering must not mutate the authoritative journey snapshot');
+
+  state.trucks = { phase: 'collision', elapsed: 0, attempt: 1, lastTick: 10 };
+  renderer.update(player, sandbox, 9001, player.position);
+  assert.equal(impact.visible, false, 'an old rescue action cannot replay the previous explosion after retry');
+  state.trucks = { phase: 'rescue', elapsed: 10, rescueElapsed: .1, attempt: 1, lastTick: 11 };
+  renderer.update(player, sandbox, 9002, player.position);
+  assert.equal(fire.visible, false, 'an earlier attempt cannot override the new rescue even when the phase matches');
+  state.trucks = { phase: 'rescued', elapsed: 10, rescueElapsed: 3, attempt: 0, lastTick: 12 };
+  renderer.update(player, sandbox, 9003, player.position);
+  assert.ok(Math.abs(smoke.position.y - 3 * 2.3) < .001, 'a carried-pose packet cannot rewind the completed explosion');
+  state.trucks.phase = 'rescue'; state.trucks.rescueElapsed = 2;
+  renderer.update(player, sandbox, 9004, player.position);
+  assert.ok(Math.abs(smoke.position.y - 2 * 2.3) < .001, 'a newer authoritative save wins over an older actor packet');
+  state.trucks.rescueElapsed = .2;
+  const other = world.agents.get('neo')!;
+  Object.assign(other, { position: { ...player.position }, currentLocation: player.currentLocation, isInMatrix: true, currentAction: player.currentAction });
+  renderer.update(other, sandbox, 9005, other.position);
+  assert.equal(fire.visible, false, 'another selected character cannot supply Morpheus’s scene clock');
+  state.visiting = 'm2_trucks'; renderer.update(player, sandbox, 9006, player.position);
+  assert.equal(impact.visible, false, 'a visit cannot replay a saved active rescue');
+  delete state.visiting; state.scene = 'm2_freeway'; renderer.update(player, sandbox, 9007, player.position);
+  assert.equal(scene.getObjectByName('matrix-freeway-collision')!.visible, false, 'a different chapter cannot consume the stale truck pose');
 });

@@ -81,10 +81,18 @@ export class LogosWreckRenderer {
     }
 
     const rebar = new THREE.Group(); rebar.name = 'logos-wreck-rebar'; this.group.add(rebar);
-    for (let i = 0; i < 7; i++) {
-      const shaft = this.mesh(new THREE.CylinderGeometry(.075 + i % 2 * .025, .11, 12 + i % 3 * 2.1, 8), torn, rebar);
-      shaft.position.set(-3.4 + i * 1.12, 4.4 + i % 3 * .6, -16 + Math.sin(i * 1.9) * 1.4);
-      shaft.rotation.set(.62 + i % 2 * .18, -.32 + i * .12, -.65 + i * .2);
+    // Intrusions from the broken windscreen remain fixed around the actual seated torso.
+    // Keep their exposed ends behind the hands Neo reaches for, not across the kiss.
+    const shafts = [
+      [[-2.8, 4.8, -20.5], [-.42, 2.18, -15.62]],
+      [[2.9, 4.1, -21], [.37, 2.68, -15.82]],
+      [[.8, 3.8, -20], [.05, 2, -15.85]],
+    ];
+    for (const [index, [start, end]] of shafts.entries()) {
+      const a = new THREE.Vector3(...start), b = new THREE.Vector3(...end), direction = b.clone().sub(a);
+      const shaft = this.mesh(new THREE.CylinderGeometry(.075, .085, direction.length(), 10), torn, rebar, `logos-wreck-shaft-${index}`);
+      shaft.position.copy(a).add(b).multiplyScalar(.5);
+      shaft.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
     }
 
     this.fire.name = 'logos-wreck-fire';
@@ -124,21 +132,22 @@ export class LogosWreckRenderer {
     }
   }
 
-  update(encounter: FarewellEncounter | undefined, elapsed: number, firstPerson = false): void {
+  update(encounter: FarewellEncounter | undefined, elapsed: number, firstPerson = false, neoFirstPerson = false): void {
     const state = encounter ?? newFarewell(); const pose = farewellPose(state);
+    const time = encounter?.total ?? elapsed;
     this.foreground.visible = !firstPerson;
-    this.golden.visible = Boolean(encounter);
-    this.golden.rotation.y = Math.sin(elapsed * .13) * .025;
+    this.golden.visible = Boolean(encounter && neoFirstPerson);
+    this.golden.rotation.y = Math.sin(time * .13) * .025;
     this.golden.children.forEach((child, index) => {
-      child.scale.setScalar(.92 + Math.sin(elapsed * 2.2 + index * .7) * .08);
+      child.scale.setScalar(.92 + Math.sin(time * 2.2 + index * .7) * .08);
     });
     const quiet = state.phase === 'still' ? .32 : 1;
     this.flames.forEach((flame, index) => {
-      flame.scale.set(.8 + Math.sin(elapsed * 9 + index) * .2, quiet * (.72 + Math.sin(elapsed * 12 + index * 2) * .24), .8);
+      flame.scale.set(.8 + Math.sin(time * 9 + index) * .2, quiet * (.72 + Math.sin(time * 12 + index * 2) * .24), .8);
     });
-    this.fireLights.forEach((light, index) => { light.intensity = quiet * (15 + Math.sin(elapsed * 11 + index) * 5); });
+    this.fireLights.forEach((light, index) => { light.intensity = quiet * (15 + Math.sin(time * 11 + index) * 5); });
     this.sparks.forEach((spark, index) => {
-      const cycle = (elapsed * (.7 + index % 4 * .12) + index * .37) % 1;
+      const cycle = (time * (.7 + index % 4 * .12) + index * .37) % 1;
       spark.position.y = .7 + cycle * (3.5 + index % 5); spark.visible = cycle < quiet * .88;
     });
     this.fire.position.y = pose.trinity.breath * .03;

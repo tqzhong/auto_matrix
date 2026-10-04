@@ -313,8 +313,8 @@ export const FILM_SCENES: FilmScene[] = [
   scene('m2_freeway', 2, 'freeway_101', 'trinity', '逆向的高速路', 'freeway', 'chase', 'Trinity 骑摩托车带着钥匙匠逆向穿过车流。W 加速，S 刹车，A / D 转向；碰撞会损伤车辆和乘员。', [walk('靠近接应摩托车', 14, 660), { kind: 'drive', label: '驾驶摩托车护送钥匙匠', x: 14, z: 660 }, use('把钥匙匠交给 Morpheus', '两人抵达接应区。Morpheus 接过护送任务，追逐转向重型卡车。', 14, -660)], ['keymaker', 'morpheus']),
   scene('m2_trucks', 2, 'freeway_trucks', 'morpheus', '两辆卡车之间', 'freeway', 'chase', 'Morpheus 在疾驰的十八轮卡车车顶抵挡 Johnson。F 连击、X 闪避；把他击退后，赶到钥匙匠身边，在卡车相撞前按 G 稳住两人，等待 Neo 飞来。', [
     { ...fight('在卡车顶击退 Johnson', 1, 'agent', 'agent_johnson'), ...TRUCKS.morpheus },
-    walk('赶到钥匙匠身边', TRUCKS.keymaker.x, TRUCKS.keymaker.z),
-    use('抓住钥匙匠，迎接 Neo', '两辆货车正面相撞。Neo 掠过车顶，在爆炸前带走 Morpheus 与钥匙匠。', TRUCKS.keymaker.x, TRUCKS.keymaker.z, 1.5),
+    walk('赶到钥匙匠身边', TRUCKS.rescueApproach.x, TRUCKS.rescueApproach.z),
+    use('抓住钥匙匠，迎接 Neo', '两辆货车正面相撞。Neo 掠过车顶，在爆炸前带走 Morpheus 与钥匙匠。', TRUCKS.rescueApproach.x, TRUCKS.rescueApproach.z, 1.5),
   ], ['keymaker', 'agent_johnson', 'niobe', 'neo']),
   scene('m2_plan', 2, 'neb_deck', 'neo', '钥匙匠的路线', 'architect', 'infiltration', '打开通往源头的门需要同步切断主电源与备用电源。几艘船分头行动。', [use('核对电站示意图', 'Niobe 的队伍负责发电厂，另一支队伍负责备用电源；Neo 与 Morpheus 护送钥匙匠。', 0, -16), think('合作如何改变可能的选择？', '这条路线无法靠一个人的力量完成。')], ['keymaker', 'morpheus', 'trinity']),
   scene('m2_power', 2, 'power_station', 'niobe', '主电网的倒计时', 'architect', 'infiltration', 'Niobe 与 Ghost 进入发电厂，在换班前安放同步爆破装置。备用系统未关闭前，主网仍受保护。', [fight('清除配电区守卫', 2), use('设定同步爆破装置', '主网装置已武装；必须等应急系统也停用，才能同时解除源头的保护。', 0, -29, 6)], ['ghost']),
@@ -514,6 +514,7 @@ export function filmStepPosition(scene: FilmScene, step: FilmStep, journey?: Fil
 }
 export function filmStepNear(scene: FilmScene, step: FilmStep, position: Vector3, matrix: boolean, journey?: FilmJourney): boolean {
   const radius = scene.id === 'm1_mirror' && step === scene.steps[0] ? MIRROR_TOUCH.radius
+    : scene.id === 'm2_trucks' && step !== scene.steps[0] ? .7
     : scene.id === 'm1_morning' && step === scene.steps[0] ? .85
     : scene.id === 'm1_cabin' && step !== scene.steps[0] || scene.id === 'm1_construct' && step === scene.steps[0] ? .8 : 4;
   return matrix === (FILM_SETS[scene.set].world === 'matrix') && distance(position, filmStepPosition(scene, step, journey)) <= radius;

@@ -413,6 +413,23 @@ test('the truck rescue camera keeps the landed crew clear of the wrecked trailer
   assert.ok(Math.abs(crew.x) < .5 && Math.abs(crew.y) < .5 && crew.z > -1 && crew.z < 1);
 });
 
+test('V during truck rescue follows the prone head and still permits free looking', t => {
+  const game = setup(t);
+  Object.assign(game.state, { id: 'morpheus', currentLocation: 'film_freeway_trucks',
+    position: { ...filmPosition('film_freeway_trucks', 15, 36), y: 20 }, rotation: 0 });
+  game.state.currentAction = { type: 'move_to', parameters: { truckPassenger: true,
+    truckRescue: { role: 'morpheus', phase: 'rescue', elapsed: 10, rescueElapsed: 1.5, lastTick: 0, attempt: 0 } }, startedAt: 0, duration: 10, progress: .5 };
+  const head = new THREE.Group(); head.name = 'head'; head.position.set(0, -.8, 4); head.rotation.x = .52; game.group.add(head);
+  game.controls.possess(game.state); game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+  const eye = head.localToWorld(new THREE.Vector3(0, .1, .32));
+  assert.ok(game.camera.position.distanceTo(eye) < .01, 'a horizontal passenger cannot use a standing eye-height offset');
+  const before = game.camera.getWorldDirection(new THREE.Vector3());
+  game.document.pointerLockElement = game.canvas;
+  game.event(game.document, 'mousemove', { movementX: 100, movementY: -50 }); game.step(.1);
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(before) > .1);
+  assert.ok(game.camera.position.distanceTo(eye) < .01);
+});
+
 test('the room 303 entry frames Neo and the pursuing possession in depth', t => {
   const game = setup(t, Math.PI); const center = FILM_SETS.film_escape_streets.center;
   game.state.currentLocation = 'film_escape_streets';
