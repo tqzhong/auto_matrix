@@ -58,7 +58,7 @@ import { HammerRouteRenderer } from './HammerRouteRenderer.js';
 import { LogosFlightRenderer } from './LogosFlightRenderer.js';
 import { LogosWreckRenderer } from './LogosWreckRenderer.js';
 import { MachineCoreRenderer } from './MachineCoreRenderer.js';
-import { deusPactLocked } from '@auto_matrix/shared';
+import { deusPactLocked, type DeusPactEncounter } from '@auto_matrix/shared';
 import { SmithFinaleRenderer } from './SmithFinaleRenderer.js';
 import { smithFinaleLocked } from '@auto_matrix/shared';
 import { trilogyEpilogueLocked } from '@auto_matrix/shared';
@@ -386,10 +386,15 @@ export class FilmSetRenderer {
     this.logosStage = journey?.logos?.stage;
     this.logosFlight?.update(['m3_defense', 'm3_sun'].includes(journey?.scene ?? '') && !journey?.visiting ? journey?.logos : undefined, elapsed, firstPerson);
     this.logosWreck?.update(journey?.scene === 'm3_farewell' && !journey.visiting ? journey.farewell : undefined, elapsed, firstPerson, firstPerson && player?.id === 'neo');
-    this.machineCore?.update(journey?.scene === 'm3_deus' && !journey.visiting ? journey.deus : undefined, elapsed, firstPerson, {
+    const savedDeus = journey?.scene === 'm3_deus' && !journey.visiting ? journey.deus : undefined;
+    const fastDeus = player?.id === 'neo' && player.id === journey?.actor && player.currentLocation === 'film_machine_core'
+      ? player.currentAction?.parameters.deusPact as DeusPactEncounter | undefined : undefined;
+    const deus = savedDeus && fastDeus?.phase === savedDeus.phase && fastDeus.attempts === savedDeus.attempts
+      && fastDeus.total >= savedDeus.total ? fastDeus : savedDeus;
+    this.machineCore?.update(deus, elapsed, firstPerson && player?.id === 'neo' && !player.isInMatrix, {
       x: (playerPosition?.x ?? this.current?.center.x ?? 0) - (this.current?.center.x ?? 0),
       z: (playerPosition?.z ?? this.current?.center.z ?? 0) - (this.current?.center.z ?? 0),
-    });
+    }, this.recoverySubject);
     this.smithFinale?.update(['m3_rain', 'm3_surrender'].includes(journey?.scene ?? '') && !journey?.visiting ? journey?.smithFinale : undefined,
       firstPerson, { x: (playerPosition?.x ?? this.current?.center.x ?? 0) - (this.current?.center.x ?? 0),
         z: (playerPosition?.z ?? this.current?.center.z ?? 0) - (this.current?.center.z ?? 0) });
@@ -648,8 +653,8 @@ export class FilmSetRenderer {
       this.scene.environmentIntensity = .34; return { color: 0x96b5cf, ambient: .42, sun: .16 };
     }
     if (this.machineCore) {
-      fog.density = .0065; fog.color.setHex(0x090806); (this.scene.background as THREE.Color).copy(fog.color);
-      this.scene.environmentIntensity = .22; return { color: 0xffb044, ambient: .28, sun: .08 };
+      fog.density = .0065; fog.color.setHex(0x090d16); (this.scene.background as THREE.Color).copy(fog.color);
+      this.scene.environmentIntensity = .38; return { color: 0x9dbbd5, ambient: .42, sun: .12 };
     }
     if (this.hammerRoute) {
       fog.density = .003; fog.color.setHex(0x1b2a2c); (this.scene.background as THREE.Color).copy(fog.color);

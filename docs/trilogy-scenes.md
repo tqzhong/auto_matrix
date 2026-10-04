@@ -185,7 +185,7 @@
 | m3_defense | 机器城的防线 | 机器城 · 防线与乌云 | Trinity | 启航 → A/D 横移、W/S 调整高度 → G 消耗 Neo 感知击碎部分机器 → 爬升入云；碰撞/超时可失败重试 |
 | m3_sun | 第一次看见太阳 | 云层之上 · 最后的阳光 | Trinity | 启航 → W 拉升穿云 → 阳光窗口 → 引擎失速与重力坠落 |
 | m3_farewell | 坠落之后 | 机器城 · 撞毁的 Logos | Neo | 沿金色余光穿过残骸 → 跪到 Trinity 身边按 G → 握手/发现伤势/听取托付/触脸/最后一吻 → J 反思 |
-| m3_deus | 共同的威胁 | 机器核心 · Deus Ex Machina | Neo | 穿过发光通道 → 按住 G 抵住机器群并请求说话（可失败/重试）→ 看机器组成集体面孔 → J 提出清除 Smith 换和平 → 停战信号先行 → 进入连接座 → 按住 G 同意颈后接入 |
+| m3_deus | 共同的威胁 | 机器核心 · Deus Ex Machina | Neo | 穿过实体金属通道（现实世界 Neo 第一人称另有金色感知）→ 按住 G 抵住机器群并请求说话（可失败/重试）→ 看小机器汇聚成有体积的集体面孔 → J 提出清除 Smith 换和平 → 停战信号先行 → 坐靠开放托架并连接身体接口 → 按住 G 同意颈后接入 |
 | m3_rain | 暴雨中的大道 | Smith 大道 · 暴雨决战 | Neo | 穿过复制体队列 → G 迎战 → X 闪开地面攻击 → F 两次反击 → 冲击波升空 → X 空中闪避 → F 空中反击 → 按住 G 保持连接坠入街面 → 按住 G 从陨石坑起身 → J 回答为何坚持；失败可从地面或高空检查点重试 |
 | m3_surrender | 理解最后的选择 | Smith 大道 · 暴雨决战 | Neo | 靠近 Smith 并按 G 承受最后猛攻 → 看见他从先知复制来的预见 → J 判断他为何迟疑 → G 放下抵抗 → 按住 G 明确同意被同化 → 机器沿 Neo 的连接清除全部 Smith |
 | m3_ceasefire | 机器退去 | 锡安 · 神庙洞窟 | Kid | 走到入口 → 按 G 目击 18 只哨兵撤退 → 跑回人群按 G 报信 → 看 Morpheus/Niobe 与 Zee/Link 重逢 |
@@ -205,6 +205,8 @@
 背叛段可使用 `node --import tsx scripts/film-review-fixture.mts m1_bathroom bathroom-hold`、`bathroom-crash`，以及 `node --import tsx scripts/film-review-fixture.mts m1_unplugged unplug-window`、`unplug-counter`、`unplug-reconnect`。它们分别定位旧版坚守、破墙、反击窗口、反击演出和重连检查点，只用于局部动作/画面验收。新电视维修店路线必须先经历两世界袭击/拔线，再接 Tank 反击和 Trinity 先于 Neo 接出；这些旧版定位档不能作为新路线或从黑猫到营救决定的连续游玩证据。
 
 Logos 告别段可使用 `node --import tsx scripts/film-review-fixture.mts m3_farewell farewell-ready`、`farewell-goodbye` 或 `farewell-still`，分别定位走近残骸、最后告别和死亡后的反思检查点。这些存档用于动作、镜头和恢复验证，不代表从机器城防线连续人工飞行到坠毁。
+
+机器核心本轮接续上轮真实告别存档，以普通输入走到谈判平台，再混合普通持续按键与原生失败重试、care 保护锡安菜单操作并开始接线。实际头骨眼位、托架与身体接头/后颈探针、玩家/旁观及暂停/冷载姿态已有有限模型检查；冷色实体布景与 Neo 主观金光分离，等待选择时集体面孔仍按保存时钟微动。接线 1.502 秒 / tick 1481 真实 SIGTERM 重启后，完整 neoLife 与 Neo、Trinity、Deus 的位置、朝向、速度、状态、生命、地点、矩阵标志和动作均相同，详见[本轮画面与恢复证据](../output/gameplay/trilogy-machine-core-2026-10-04/README.md)及其中 `native-restart-validation.json`。近景/格栅支撑已修正；最终续接同意接入并原生进入暴雨大道入口tick1535，最后剧情/重启16/16与渲染/真实身体/镜头27/27、最终类型检查与构建通过（未重复全量）；本轮参考含制作报道图片，未观看完整原片，仅接到暴雨大道入口，未开始本轮Smith战斗。机器资产、真实服装/表演/声音、完整主观感知与性能仍有缺口，3-10 保持专用样板，不代表三部曲完成。
 
 尾声可分别使用 `node --import tsx scripts/film-review-fixture.mts m3_ceasefire ceasefire-retreat`、`node --import tsx scripts/film-review-fixture.mts m3_neo_carried neo-barge` 和 `node --import tsx scripts/film-review-fixture.mts m3_dawn dawn-sunrise`，定位哨兵撤退、Neo 转运和 Sati 日出的局部检查点。它们用于动作、镜头和存档恢复验收，不代表从 Smith 终局连续人工通关到最终确认。
 

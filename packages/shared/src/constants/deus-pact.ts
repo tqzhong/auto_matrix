@@ -43,8 +43,9 @@ export function deusPactLocked(encounter?: DeusPactEncounter): boolean {
 }
 
 export function stepDeusPact(encounter: DeusPactEncounter, focus: boolean, delta: number): DeusPactEncounter {
-  if (!deusPactLocked(encounter) || ['terms', 'pact', 'connected'].includes(encounter.phase)) return encounter;
+  if (!deusPactLocked(encounter)) return encounter;
   const dt = Math.max(0, Math.min(.1, delta));
+  if (['terms', 'pact', 'connected'].includes(encounter.phase)) return { ...encounter, total: encounter.total + dt };
   const next = { ...encounter, elapsed: encounter.elapsed + dt, total: encounter.total + dt };
   if (next.phase === 'swarm') {
     next.resolve = Math.max(0, Math.min(DEUS_PACT.resolveSeconds, next.resolve + (focus ? dt : -dt * .42)));

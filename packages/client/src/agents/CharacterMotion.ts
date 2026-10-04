@@ -197,11 +197,12 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const boardingCrouch = input.recoveryCrew?.boarding ? podRescuePose(input.recoveryCrew.elapsed).settle : 0;
   const farewell = input.farewell && farewellPose(input.farewell);
   const deus = input.deusPact && deusPactPose(input.deusPact);
+  const deusLocked = deusPactLocked(input.deusPact);
   const smithFinale = input.smithFinale && smithFinalePose(input.smithFinale);
   const welcomeWalking = input.welcome?.phase === 'approach' || input.welcome?.phase === 'departing' && input.welcome.role !== 'neo';
   const welcomeSpeed = input.welcome?.role === 'morpheus' ? 2.6 : input.welcome?.role === 'neo' ? 2.3 : 1.8;
   const speed = input.farewell || deusPactLocked(input.deusPact) || smithFinaleLocked(input.smithFinale) || trilogyEpilogueLocked(input.epilogue) ? 0 : input.pills ? exiting ? 1.7 : 0 : welcomeWalking ? welcomeSpeed : input.speed;
-  state.time = input.farewell ? input.farewell.total : state.time + dt;
+  state.time = input.farewell ? input.farewell.total : deusLocked ? input.deusPact!.total : state.time + dt;
   state.speed = mix(state.speed, input.riding || input.climbing !== undefined ? 0 : speed, blend);
   if (input.farewell) { state.speed = 0; state.airborne = 0; state.seated = 0; }
   if (input.cabin?.kind === 'core' && input.cabin.role === 'neo') state.speed = 2.2 * smooth(clamp(input.cabin.elapsed / .25)) * (1 - smooth(clamp((input.cabin.elapsed - .65) / .3)));
@@ -238,11 +239,12 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
       state.attackId = input.attack; state.attackAge = 0;
     } else state.attackAge += dt * (input.windingUp ? .28 : 1);
   }
-  if (input.farewell) {
+  if (input.farewell || deusLocked) {
     state.landing = 0;
     state.attackAge = state.hitAge = state.skillAge = state.shotAge = 10;
     state.hitPause = 0; state.skill = undefined;
   }
+  if (deusLocked) { state.speed = 0; state.turn = 0; state.airborne = 0; state.phase = 0; }
   const run = smooth(clamp((state.speed - PLAYER_WALK_SPEED) / (PLAYER_RUN_SPEED - PLAYER_WALK_SPEED)));
   const stride = mix(.84, 1.22, run);
   const stance = mix(.6, .42, run);
