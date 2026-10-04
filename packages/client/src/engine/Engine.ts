@@ -172,6 +172,7 @@ export class Engine {
       if (group) {
         this.playerControls.syncTruckRescueCamera(group);
         this.playerControls.syncFarewellCamera(group);
+        this.playerControls.syncDeusCamera(group);
       }
     }
     this.filmSets.setMirrorSubject(this.playerControls?.id ? this.agentRenderer.getAgentBody(this.playerControls.id) : undefined);

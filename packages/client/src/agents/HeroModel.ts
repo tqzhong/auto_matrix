@@ -1036,6 +1036,8 @@ export class HeroModels {
         lowest = Math.min(lowest, this.point.y - rig.footHeight);
       }
       pelvis.position.y -= lowest;
+      // Machine-core deck is .025 above the nominal floor; allow the boot sole's .005 extension.
+      if (input.deusPact) pelvis.position.y += .03;
       rig.root.updateWorldMatrix(true, true);
       if (!input.realWorld && !input.seated && !input.floorSeated && motion.seated < .01 && !input.performance
         && !input.windingUp && motion.attackAge > 1 && motion.skillAge > 1 && motion.hitAge > .5) placeHotelFeet(rig);

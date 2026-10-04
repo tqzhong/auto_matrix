@@ -342,6 +342,7 @@ export class AgentRenderer {
         truckRescue: state.currentAction?.parameters.truckRescue as MotionInput['truckRescue'],
         persephone: state.currentAction?.parameters.persephone as MotionInput['persephone'],
         farewell: state.currentAction?.parameters.farewell as MotionInput['farewell'],
+        deusPact: state.currentAction?.parameters.deusPact as MotionInput['deusPact'],
         epilogue: state.currentAction?.parameters.epilogue as MotionInput['epilogue'],
         lobbyEntry: state.currentAction?.parameters.lobbyEntry as MotionInput['lobbyEntry'],
         weaponStyle: state.currentAction?.parameters.weaponStyle as MotionInput['weaponStyle'],

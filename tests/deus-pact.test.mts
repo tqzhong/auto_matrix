@@ -139,3 +139,14 @@ test('the Deus journal exposes the hold, failure, philosophy and consent states'
   html = renderFilmJourney(player, { neoLife: { journey: { ...base, step: 3, deus: { ...base.deus, phase: 'consent' } } } } as unknown as SandboxState);
   assert.match(html, /颈后|接入|G/);
 });
+
+test('waiting for an explicit peace choice keeps the saved machine animation alive without making that choice', () => {
+  for (const phase of ['terms', 'pact', 'connected'] as const) {
+    const initial = { ...newDeusPact(), phase, total: 18, resolve: 3 };
+    const next = stepDeusPact(initial, false, .1);
+    assert.equal(next.phase, phase);
+    assert.equal(next.elapsed, initial.elapsed, 'waiting does not advance the scripted action');
+    assert.ok(next.total > initial.total, 'ambient machine movement must not freeze while the world runs');
+    assert.deepEqual(stepDeusPact(next, true, 0), next, 'a paused clock changes neither pose nor choice');
+  }
+});

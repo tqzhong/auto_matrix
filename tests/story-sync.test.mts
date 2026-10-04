@@ -5,7 +5,7 @@ import { readFile, writeFile, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { io } from 'socket.io-client';
-import { FILM_SCENE_BY_ID, FILM_SETS, TRUCKS, truckApproachPose, truckRescuePose, type FarewellEncounter, type TruckEncounter, type ServerMessage, type WorldStateFull, type WorldStateDelta } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, TRUCKS, truckApproachPose, truckRescuePose, type DeusPactEncounter, type FarewellEncounter, type TruckEncounter, type ServerMessage, type WorldStateFull, type WorldStateDelta } from '@auto_matrix/shared';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const waitFor = async (ready: () => boolean, description: string, timeout = 5000) => {
@@ -17,7 +17,8 @@ const waitFor = async (ready: () => boolean, description: string, timeout = 5000
 };
 
 async function server(t: TestContext, elapsed: number, scene = 'm1_mirror') {
-  const directory = execFileSync(process.execPath, ['--import', 'tsx', 'scripts/film-review-fixture.mts', scene, scene === 'm3_farewell' ? 'farewell-goodbye' : 'mirror-thread'], { cwd: root, encoding: 'utf8' }).trim();
+  const directory = execFileSync(process.execPath, ['--import', 'tsx', 'scripts/film-review-fixture.mts', scene,
+    scene === 'm3_deus' ? 'deus-cabling' : scene === 'm3_farewell' ? 'farewell-goodbye' : 'mirror-thread'], { cwd: root, encoding: 'utf8' }).trim();
   const file = path.join(directory, 'world.json');
   const checkpoint = JSON.parse(await readFile(file, 'utf8'));
   if (scene === 'm2_trucks') {
@@ -35,6 +36,8 @@ async function server(t: TestContext, elapsed: number, scene = 'm1_mirror') {
     Object.assign(checkpoint.sandbox.neoLife, { day: 7, money: 1320, energy: 47, doubt: 63, philosophy: { agency: 6, care: 8, trust: 5 },
       evidence: ['black-cat', 'office-loop'], choices: { neo_eyes: 'burned', architect_door: 'matrix', oracle_first: 'care' },
       journal: [{ day: 6, time: 15000, title: '冷重启前的生活记录', text: '已经作出的选择不能被片段重建覆盖。' }] });
+  } else if (scene === 'm3_deus') {
+    Object.assign(checkpoint.sandbox.neoLife.journey.deus, { elapsed, total: 9.4 + elapsed });
   } else {
     checkpoint.sandbox.neoLife.journey.awakening.elapsed = elapsed;
     delete checkpoint.sandbox.neoLife.journey.awakening.started;
@@ -118,6 +121,70 @@ test('a paused performance publishes its exact story clock together with the sto
   await waitFor(() => restored.messages.slice(marker).some(message => message.type === 'world_state_delta' && (message.data as WorldStateDelta).simulation?.running === true), 'resume was not acknowledged');
   const resumed = restored.messages.slice(marker).find(message => message.type === 'world_state_delta' && (message.data as WorldStateDelta).simulation?.running === true)!.data as WorldStateDelta;
   assert.equal(resumed.sandbox!.neoLife!.journey!.awakening!.elapsed, clock, 'resume starts from the same authoritative beat');
+});
+
+test('a real machine-core restart preserves the paused connection before possession and settles only after renewed consent', { timeout: 30000 }, async t => {
+  const h = await server(t, 1.1, 'm3_deus'), client = await h.connect();
+  client.socket.emit('message', { type: 'play_as', data: { agentId: 'neo' } });
+  await waitFor(() => ((client.state().agents.neo.currentAction?.parameters.deusPact as DeusPactEncounter | undefined)?.elapsed ?? 0) > 1.4, 'Neo did not reach the middle of body cabling');
+  client.socket.emit('message', { type: 'pause', data: {} });
+  await waitFor(() => client.state().simulation?.running === false, 'the physical connection did not pause');
+  const before = await (await fetch(`${h.base}/api/world`)).json() as WorldStateFull;
+  assert.equal(before.sandbox!.neoLife!.journey!.deus!.phase, 'cabling');
+  const body = (world: WorldStateFull, id: string) => {
+    const agent = world.agents[id];
+    return { position: agent.position, rotation: agent.rotation, velocity: agent.velocity, currentAction: agent.currentAction,
+      currentLocation: agent.currentLocation, isInMatrix: agent.isInMatrix, status: agent.status, health: agent.health };
+  };
+  const takeover = await h.connect();
+  takeover.socket.emit('message', { type: 'play_as', data: { agentId: 'neo', takeover: true } });
+  await waitFor(() => takeover.messages.some(message => message.type === 'player_state' && (message.data as { agentId?: string }).agentId === 'neo'), 'the paused connection was not handed over');
+  assert.deepEqual(takeover.state().sandbox!.neoLife, before.sandbox!.neoLife);
+  assert.deepEqual(body(takeover.state(), 'neo'), body(before, 'neo'));
+  takeover.socket.emit('message', { type: 'leave_character', data: {} });
+  await waitFor(() => takeover.messages.some(message => message.type === 'player_state' && (message.data as { agentId?: string | null }).agentId === null), 'Neo was not released');
+  const observer = await (await fetch(`${h.base}/api/world`)).json() as WorldStateFull;
+  assert.deepEqual(body(observer, 'neo'), body(before, 'neo'), 'releasing the stopped connection cannot remove its pose');
+  const restored = await h.restart();
+  const cold = await (await fetch(`${restored.base}/api/world`)).json() as WorldStateFull;
+  assert.equal(cold.simulation!.running, false); assert.equal(cold.simulation!.tick, before.simulation!.tick);
+  assert.deepEqual(cold.sandbox!.neoLife, before.sandbox!.neoLife, 'life history, pact choice and exact connection clock survive SIGTERM and a new process');
+  for (const id of ['neo', 'deus_ex_machina']) {
+    assert.equal(cold.agents[id].controller, undefined);
+    assert.deepEqual(body(cold, id), body(before, id), `${id} lost its saved pose before any client reconnected`);
+  }
+  const next = await restored.connect();
+  next.socket.emit('message', { type: 'play_as', data: { agentId: 'neo' } });
+  await waitFor(() => next.messages.some(message => message.type === 'player_state' && (message.data as { agentId?: string }).agentId === 'neo'), 'Neo did not reconnect');
+  const pausedMarker = next.messages.length;
+  await waitFor(() => next.messages.length > pausedMarker + 4, 'paused connection snapshots did not arrive');
+  assert.deepEqual(next.state().sandbox!.neoLife, before.sandbox!.neoLife);
+  assert.deepEqual(body(next.state(), 'neo'), body(before, 'neo'));
+  next.socket.emit('message', { type: 'resume', data: {} });
+  await waitFor(() => (next.state().agents.neo.currentAction?.parameters.deusPact as DeusPactEncounter | undefined)?.phase === 'consent', 'the probe did not resume to the consent boundary');
+  const consentMarker = next.messages.length;
+  await waitFor(() => next.messages.length > consentMarker + 8, 'waiting probe snapshots did not arrive');
+  assert.equal((next.state().agents.neo.currentAction!.parameters.deusPact as DeusPactEncounter).phase, 'consent');
+  assert.equal(next.state().sandbox!.neoLife!.choices.machine_connection, undefined, 'a reload is not consent to connect');
+  let sequence = 0;
+  const input = setInterval(() => next.socket.emit('message', { type: 'player_input', data:
+    { x: 0, z: 0, yaw: Math.PI, sprint: false, jump: false, focus: true, sequence: ++sequence } }), 50);
+  t.after(() => clearInterval(input));
+  await waitFor(() => next.state().sandbox!.neoLife!.journey!.deus!.phase === 'connected', 'explicit renewed consent did not finish connecting', 6000);
+  clearInterval(input);
+  const settled = structuredClone(next.state());
+  assert.equal(settled.sandbox!.neoLife!.choices.machine_pact, 'peace');
+  assert.equal(settled.sandbox!.neoLife!.choices.machine_connection, 'active');
+  assert.equal(settled.sandbox!.neoLife!.journey!.step, FILM_SCENE_BY_ID.m3_deus.steps.length);
+  assert.equal(settled.sandbox!.neoLife!.journey!.completed.filter(id => id === 'm3_deus').length, 1);
+  assert.equal(settled.sandbox!.neoLife!.journal.filter(entry => entry.title === FILM_SCENE_BY_ID.m3_deus.title).length, 1);
+  const settledMarker = next.messages.length;
+  await waitFor(() => next.messages.length > settledMarker + 6, 'settled connection snapshots did not arrive');
+  assert.deepEqual(next.state().sandbox!.neoLife, settled.sandbox!.neoLife, 'connected cannot settle or award the scene again');
+  assert.equal(next.state().sandbox!.profiles.neo.xp, settled.sandbox!.profiles.neo.xp);
+  next.socket.emit('message', { type: 'sandbox_action', data: { kind: 'life', target: 'film:next' } });
+  await waitFor(() => next.state().sandbox!.neoLife!.journey!.scene === 'm3_rain', 'the restored connection did not allow entering the final duel');
+  assert.equal(next.state().agents.trinity.status, 'dead');
 });
 
 test('the first packet moving Neo into the real-world pod also switches the story, objective and fade state', { timeout: 30000 }, async t => {
