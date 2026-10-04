@@ -60,7 +60,7 @@ import { LogosWreckRenderer } from './LogosWreckRenderer.js';
 import { MachineCoreRenderer } from './MachineCoreRenderer.js';
 import { deusPactLocked, type DeusPactEncounter } from '@auto_matrix/shared';
 import { SmithFinaleRenderer } from './SmithFinaleRenderer.js';
-import { smithFinaleLocked } from '@auto_matrix/shared';
+import { smithFinaleLocked, type SmithFinaleEncounter } from '@auto_matrix/shared';
 import { trilogyEpilogueLocked } from '@auto_matrix/shared';
 import { TrilogyEpilogueRenderer } from './TrilogyEpilogueRenderer.js';
 
@@ -395,7 +395,12 @@ export class FilmSetRenderer {
       x: (playerPosition?.x ?? this.current?.center.x ?? 0) - (this.current?.center.x ?? 0),
       z: (playerPosition?.z ?? this.current?.center.z ?? 0) - (this.current?.center.z ?? 0),
     }, this.recoverySubject);
-    this.smithFinale?.update(['m3_rain', 'm3_surrender'].includes(journey?.scene ?? '') && !journey?.visiting ? journey?.smithFinale : undefined,
+    const savedSmith = ['m3_rain', 'm3_surrender'].includes(journey?.scene ?? '') && !journey?.visiting ? journey?.smithFinale : undefined;
+    const fastSmith = player?.id === 'neo' && player.id === journey?.actor && player.currentLocation === 'film_smith_avenue'
+      ? player.currentAction?.parameters.smithFinale as SmithFinaleEncounter | undefined : undefined;
+    const smith = savedSmith && fastSmith?.phase === savedSmith.phase && fastSmith.attempts === savedSmith.attempts
+      && fastSmith.total >= savedSmith.total ? fastSmith : savedSmith;
+    this.smithFinale?.update(smith,
       firstPerson, { x: (playerPosition?.x ?? this.current?.center.x ?? 0) - (this.current?.center.x ?? 0),
         z: (playerPosition?.z ?? this.current?.center.z ?? 0) - (this.current?.center.z ?? 0) });
     this.trilogyEpilogue?.update(['m3_ceasefire', 'm3_neo_carried', 'm3_dawn'].includes(journey?.scene ?? '') && !journey?.visiting ? journey?.epilogue : undefined, elapsed);
@@ -655,6 +660,10 @@ export class FilmSetRenderer {
     if (this.machineCore) {
       fog.density = .0065; fog.color.setHex(0x090d16); (this.scene.background as THREE.Color).copy(fog.color);
       this.scene.environmentIntensity = .38; return { color: 0x9dbbd5, ambient: .42, sun: .12 };
+    }
+    if (this.smithFinale) {
+      fog.density = .006; fog.color.setHex(0x14211f); (this.scene.background as THREE.Color).copy(fog.color);
+      this.scene.environmentIntensity = .72; return { color: 0xc3d2bd, ambient: .68, sun: .2 };
     }
     if (this.hammerRoute) {
       fog.density = .003; fog.color.setHex(0x1b2a2c); (this.scene.background as THREE.Color).copy(fog.color);

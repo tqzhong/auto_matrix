@@ -85,7 +85,9 @@ export function smithFinaleAction(encounter: SmithFinaleEncounter, action: Smith
 }
 
 export function stepSmithFinale(encounter: SmithFinaleEncounter, input: SmithFinaleInput, delta: number): SmithFinaleEncounter {
-  if (!smithFinaleLocked(encounter) || ['choice', 'vision', 'understanding'].includes(encounter.phase)) return encounter;
+  if (!smithFinaleLocked(encounter)) return ['approach', 'ready', 'rain_done', 'assault_ready'].includes(encounter.phase)
+    ? { ...encounter, total: encounter.total + Math.max(0, delta) } : encounter;
+  if (['choice', 'vision', 'understanding'].includes(encounter.phase)) return { ...encounter, total: encounter.total + Math.max(0, delta) };
   const dt = Math.max(0, delta); const next = { ...encounter, elapsed: encounter.elapsed + dt, total: encounter.total + dt };
   if (['air_warning', 'air_dodge', 'air_counter', 'building', 'descent'].includes(next.phase))
     next.lane = clamp(next.lane + input.x * dt * .75, -1, 1);
@@ -124,18 +126,27 @@ export function stepSmithFinale(encounter: SmithFinaleEncounter, input: SmithFin
 
 export function smithFinalePose(encounter: SmithFinaleEncounter): SmithFinalePose {
   const phase = encounter.phase; const t = encounter.elapsed;
+  const punchAge = phase === 'ground_counter' && encounter.lastStrike >= 0 ? t - encounter.lastStrike : phase === 'shockwave' ? t : -1;
+  const punch = punchAge < 0 ? 0 : Math.sin(clamp(punchAge / .34) * Math.PI);
+  const airNeoY = 22 + Math.sin(encounter.total * 1.8) * 1.2;
+  const airSmithY = 23.5 + Math.sin(encounter.total * 1.8 + 1) * 1.1;
   const neo: SmithFinalePose['neo'] = { x: encounter.lane * 4, y: 0, z: SMITH_FINALE.avenue.neoZ, yaw: 0 };
   const smith: SmithFinalePose['smith'] = { x: 0, y: 0, z: SMITH_FINALE.avenue.smithZ, yaw: Math.PI };
   if (phase === 'ground_dodge') neo.x -= Math.sin(clamp(t / SMITH_FINALE.ground.dodge) * Math.PI) * 2.8;
-  if (phase === 'ground_counter') { neo.z = -12.5; smith.z = -8.8; }
+  if (phase === 'ground_counter') { neo.z = -12.5 + punch * 1.9; smith.z = -8.8; }
   if (phase === 'shockwave') {
-    const p = smooth(t / SMITH_FINALE.shockwave);
-    neo.z = -12.5 - p * 13; smith.z = -8.8 + p * 12; neo.y = smith.y = Math.sin(p * Math.PI) * 4;
+    const p = smooth((t - .34) / (SMITH_FINALE.shockwave - .34));
+    // The blast separates them before they curve upward into the saved air
+    // checkpoint. Its endpoint must use the same clock, height and lane.
+    const rise = smooth((p - .28) / .72), recoil = Math.sin(p * Math.PI);
+    neo.x = encounter.lane * (4 + p * 3); smith.x = (encounter.lane * 2 + 2) * p;
+    neo.z = -12.5 + punch * 1.9 - p * 12.5; smith.z = -8.8 + recoil * 12 - p * 3.2;
+    neo.y = recoil * 4 + airNeoY * rise; smith.y = recoil * 4 + airSmithY * rise;
   }
   if (['air_warning', 'air_dodge', 'air_counter'].includes(phase)) {
     const drift = phase === 'air_dodge' ? Math.sin(clamp(t / SMITH_FINALE.air.dodge) * Math.PI) * 4 : 0;
-    neo.x = encounter.lane * 7 - drift; neo.y = 22 + Math.sin(encounter.total * 1.8) * 1.2; neo.z = -25;
-    smith.x = encounter.lane * 2 + 2; smith.y = 23.5 + Math.sin(encounter.total * 1.8 + 1) * 1.1; smith.z = -12;
+    neo.x = encounter.lane * 7 - drift; neo.y = airNeoY; neo.z = -25;
+    smith.x = encounter.lane * 2 + 2; smith.y = airSmithY; smith.z = -12;
   }
   if (phase === 'building') {
     const p = smooth(t / SMITH_FINALE.building);
@@ -160,12 +171,13 @@ export function smithFinalePose(encounter: SmithFinaleEncounter): SmithFinalePos
   const groundWindow = phase === 'ground_warning' || phase === 'ground_dodge' || phase === 'ground_counter';
   return {
     neo, smith,
-    guard: groundWindow ? .8 : phase === 'air_warning' || phase === 'air_dodge' || phase === 'air_counter' ? .55 : 0,
+    guard: groundWindow ? .8 : phase === 'shockwave' ? .8 * (1 - smooth((t - .17) / .17)) + .55 * smooth((t - .6) / (SMITH_FINALE.shockwave - .6))
+      : phase === 'air_warning' || phase === 'air_dodge' || phase === 'air_counter' ? .55 : 0,
     dodge: phase === 'ground_dodge' ? Math.sin(clamp(t / SMITH_FINALE.ground.dodge) * Math.PI)
       : phase === 'air_dodge' ? Math.sin(clamp(t / SMITH_FINALE.air.dodge) * Math.PI) : 0,
-    strike: phase === 'ground_counter' ? Math.sin(clamp(t / .34) * Math.PI)
+    strike: phase === 'ground_counter' || phase === 'shockwave' ? punch
       : phase === 'air_counter' ? Math.sin(clamp(t / .5) * Math.PI) : phase === 'assault' ? Math.max(0, Math.sin(t * 4.5)) : 0,
-    flight: ['shockwave', 'air_warning', 'air_dodge', 'air_counter', 'building', 'descent'].includes(phase) ? 1 : 0,
+    flight: phase === 'shockwave' ? smooth((t - .34) / .18) : ['air_warning', 'air_dodge', 'air_counter', 'building', 'descent'].includes(phase) ? 1 : 0,
     impact: phase === 'descent' ? smooth(t / SMITH_FINALE.descent.seconds) : phase === 'crater' ? 1 : 0,
     rise: phase === 'crater' ? smooth(encounter.focus / SMITH_FINALE.crater.riseSeconds) : ['choice', 'rain_done', 'assault_ready', 'assault', 'vision', 'understanding', 'surrender', 'assimilating', 'purging', 'done'].includes(phase) ? 1 : 0,
     fallen: phase === 'crater' ? 1 - smooth(encounter.focus / SMITH_FINALE.crater.riseSeconds) : phase === 'assault' ? .25 + Math.max(0, Math.sin(t * 4.5)) * .45 : 0,

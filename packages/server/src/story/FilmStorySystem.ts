@@ -347,7 +347,9 @@ export class FilmStorySystem {
   smithFinaleFrame(agent: AgentState, input: { focus: boolean; x: number; z: number; yaw: number }, dt: number, tick: number): boolean {
     if (!this.controls(agent) || !['m3_rain', 'm3_surrender'].includes(this.state?.scene ?? '') || this.state?.visiting) return false;
     this.ensureSmithFinale(); const state = this.state!; const encounter = state.smithFinale!;
-    if (!smithFinaleLocked(encounter)) { this.placeSmithFinale(agent, tick); return false; }
+    if (!smithFinaleLocked(encounter)) {
+      state.smithFinale = stepSmithFinale(encounter, input, dt); this.placeSmithFinale(agent, tick); return false;
+    }
     if (this.world.agents.get('smith')?.controller) {
       state.lastText = 'Smith 正由另一位玩家控制。终局停在当前一拍，等待他空闲后继续。';
       this.placeSmithFinale(agent, tick); return true;
@@ -4581,6 +4583,10 @@ export class FilmStorySystem {
       const actor = this.world.agents.get(this.state.actor);
       if (actor?.currentLocation === this.scene!.set) this.placeDeus(actor, this.world.simulationTick);
     }
+    if (['m3_rain', 'm3_surrender'].includes(this.state.scene) && !this.state.visiting) {
+      const actor = this.world.agents.get(this.state.actor);
+      if (actor?.currentLocation === this.scene!.set) this.placeSmithFinale(actor, this.world.simulationTick);
+    }
   }
   releaseCast(reset = false): void {
     if (reset) this.sandbox().structures = this.sandbox().structures.filter(s => !s.film || s.id.startsWith('traffic:'));
@@ -5186,6 +5192,7 @@ export class FilmStorySystem {
         || state.scene === 'm1_dejavu' && next.id === 'm1_wetwall' || state.scene === 'm1_wetwall' && next.id === 'm1_wall_exposed'
         || state.scene === 'm1_spoon' && next.id === 'm1_oracle'
         || state.scene === 'm3_mobil' && next.id === 'm3_family' || state.scene === 'm3_family' && next.id === 'm3_trainman'
+        || state.scene === 'm3_rain' && next.id === 'm3_surrender'
         || state.scene === 'm3_hel_entry' && next.id === 'm3_hel_bargain';
       const position = state.scene === 'm1_bathroom' && next.id === 'm1_basement' ? { ...this.world.agents.get('neo')!.position } : state.scene === 'm1_wall_exposed' && next.id === 'm1_bathroom' ? { ...this.world.agents.get('morpheus')!.position } : sameRoom || state.scene === 'm1_boss' && next.id === 'm1_office_escape' ? { ...agent.position } : undefined;
       const facing = agent.rotation;
@@ -5865,7 +5872,7 @@ export class FilmStorySystem {
     const actor = this.world.agents.get(state.actor)!;
     for (const other of this.world.agents.values()) if (!other.controller && (other.currentAction?.parameters.basement || other.currentAction?.parameters.tvExit)) other.currentAction = null;
     const incomingHealth = actor.health;
-    this.place(actor, scene, state.checkpoint); actor.status = 'alive'; actor.health = custodyArrival || crosscut && ['m1_unplugged', 'm1_rescue_decision'].includes(scene.id) || scene.id === 'm1_basement' || scene.id === 'm1_tv_exit' || scene.id === 'm1_wetwall' || scene.id === 'm1_wall_exposed' || scene.id === 'm1_bathroom' && state.wallExposure?.phase === 'done' ? incomingHealth : actor.maxHealth; if (!custodyArrival) actor.activeEffects = [];
+    this.place(actor, scene, state.checkpoint); actor.status = 'alive'; actor.health = custodyArrival || scene.id === 'm3_surrender' || crosscut && ['m1_unplugged', 'm1_rescue_decision'].includes(scene.id) || scene.id === 'm1_basement' || scene.id === 'm1_tv_exit' || scene.id === 'm1_wetwall' || scene.id === 'm1_wall_exposed' || scene.id === 'm1_bathroom' && state.wallExposure?.phase === 'done' ? incomingHealth : actor.maxHealth; if (!custodyArrival) actor.activeEffects = [];
     if (scene.id === 'm1_basement') this.basement.start();
     if (scene.id === 'm1_tv_exit') this.basement.startTv();
     if (scene.id === 'm1_unplugged' && crosscut) this.basement.crosscut.startCounter(tick);

@@ -5,7 +5,7 @@ import { readFile, writeFile, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { io } from 'socket.io-client';
-import { FILM_SCENE_BY_ID, FILM_SETS, TRUCKS, truckApproachPose, truckRescuePose, type DeusPactEncounter, type FarewellEncounter, type TruckEncounter, type ServerMessage, type WorldStateFull, type WorldStateDelta } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, TRUCKS, smithFinalePose, truckApproachPose, truckRescuePose, type DeusPactEncounter, type FarewellEncounter, type SmithFinaleEncounter, type TruckEncounter, type ServerMessage, type WorldStateFull, type WorldStateDelta } from '@auto_matrix/shared';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const waitFor = async (ready: () => boolean, description: string, timeout = 5000) => {
@@ -18,7 +18,8 @@ const waitFor = async (ready: () => boolean, description: string, timeout = 5000
 
 async function server(t: TestContext, elapsed: number, scene = 'm1_mirror') {
   const directory = execFileSync(process.execPath, ['--import', 'tsx', 'scripts/film-review-fixture.mts', scene,
-    scene === 'm3_deus' ? 'deus-cabling' : scene === 'm3_farewell' ? 'farewell-goodbye' : 'mirror-thread'], { cwd: root, encoding: 'utf8' }).trim();
+    scene === 'm3_deus' ? 'deus-cabling' : scene === 'm3_farewell' ? 'farewell-goodbye' : scene === 'm3_rain' ? 'smith-air'
+      : scene === 'm3_surrender' ? 'smith-assimilation' : 'mirror-thread'], { cwd: root, encoding: 'utf8' }).trim();
   const file = path.join(directory, 'world.json');
   const checkpoint = JSON.parse(await readFile(file, 'utf8'));
   if (scene === 'm2_trucks') {
@@ -38,6 +39,8 @@ async function server(t: TestContext, elapsed: number, scene = 'm1_mirror') {
       journal: [{ day: 6, time: 15000, title: '冷重启前的生活记录', text: '已经作出的选择不能被片段重建覆盖。' }] });
   } else if (scene === 'm3_deus') {
     Object.assign(checkpoint.sandbox.neoLife.journey.deus, { elapsed, total: 9.4 + elapsed });
+  } else if (scene === 'm3_rain' || scene === 'm3_surrender') {
+    Object.assign(checkpoint.sandbox.neoLife.journey.smithFinale, { elapsed, total: 4 + elapsed });
   } else {
     checkpoint.sandbox.neoLife.journey.awakening.elapsed = elapsed;
     delete checkpoint.sandbox.neoLife.journey.awakening.started;
@@ -186,6 +189,71 @@ test('a real machine-core restart preserves the paused connection before possess
   await waitFor(() => next.state().sandbox!.neoLife!.journey!.scene === 'm3_rain', 'the restored connection did not allow entering the final duel');
   assert.equal(next.state().agents.trinity.status, 'dead');
 });
+
+for (const [scene, phase, elapsed] of [['m3_rain', 'air_dodge', .2], ['m3_surrender', 'assimilating', 1.6]] as const) {
+  test(`every fast Smith finale packet carries both bodies at the same saved clock during ${phase}`, { timeout: 30000 }, async t => {
+    const h = await server(t, elapsed, scene), client = await h.connect();
+    client.socket.emit('message', { type: 'play_as', data: { agentId: 'neo' } });
+    await waitFor(() => client.messages.some(message => message.type === 'player_state' && (message.data as { agentId?: string }).agentId === 'neo'), 'Neo was not connected');
+    const connected = client.messages.length;
+    const packets = () => client.messages.slice(connected).filter(message => message.type === 'world_state_delta'
+      && !(message.data as WorldStateDelta).sandbox && (message.data as WorldStateDelta).agents.neo);
+    await waitFor(() => packets().length >= 5, 'the fast finale packets did not arrive');
+    let previous = elapsed;
+    for (const message of packets()) {
+      const delta = message.data as WorldStateDelta;
+      assert.equal(message.tick, 0, 'both bodies must move before the deliberately slow world tick');
+      const encounter = delta.agents.neo.currentAction!.parameters.smithFinale as SmithFinaleEncounter;
+      assert.equal(encounter.phase, phase); assert.ok(encounter.elapsed > previous); previous = encounter.elapsed;
+      const poses = smithFinalePose(encounter), base = FILM_SETS.film_smith_avenue.center;
+      for (const role of ['neo', 'smith'] as const) {
+        assert.ok(delta.agents[role], `${role} is missing from a fast finale packet`);
+        const gesture = delta.agents[role].currentAction!.parameters.smithFinale as SmithFinaleEncounter & { role: string };
+        assert.deepEqual(gesture, { ...encounter, role }, 'the two rendered bodies must share phase, elapsed and total in the same packet');
+        assert.deepEqual(delta.agents[role].position, { x: base.x + poses[role].x, y: base.y + poses[role].y, z: base.z + poses[role].z });
+      }
+      assert.equal(delta.agents.trinity, undefined, 'unrelated NPCs do not join the fast finale stream');
+    }
+  });
+
+  test(`a real Smith finale restart restores both paused bodies during ${phase} before possession`, { timeout: 30000 }, async t => {
+    const h = await server(t, elapsed, scene), client = await h.connect();
+    client.socket.emit('message', { type: 'play_as', data: { agentId: 'neo' } });
+    await waitFor(() => ((client.state().agents.neo.currentAction?.parameters.smithFinale as SmithFinaleEncounter | undefined)?.elapsed ?? 0) > elapsed + .15, 'Neo did not reach the middle of the saved Smith beat');
+    client.socket.emit('message', { type: 'pause', data: {} });
+    await waitFor(() => client.state().simulation?.running === false, 'the Smith finale did not pause');
+    const before = await (await fetch(`${h.base}/api/world`)).json() as WorldStateFull;
+    const encounter = before.sandbox!.neoLife!.journey!.smithFinale!;
+    assert.equal(encounter.phase, phase);
+    const body = (world: WorldStateFull, id: string) => {
+      const agent = world.agents[id];
+      return { position: agent.position, rotation: agent.rotation, velocity: agent.velocity, currentAction: agent.currentAction,
+        currentLocation: agent.currentLocation, isInMatrix: agent.isInMatrix, status: agent.status, health: agent.health };
+    };
+    client.socket.emit('message', { type: 'leave_character', data: {} });
+    await waitFor(() => client.messages.some(message => message.type === 'player_state' && (message.data as { agentId?: string | null }).agentId === null), 'Neo was not released');
+    const observer = await (await fetch(`${h.base}/api/world`)).json() as WorldStateFull;
+    for (const id of ['neo', 'smith']) assert.deepEqual(body(observer, id), body(before, id), 'releasing Neo cannot remove either stopped pose');
+    const restored = await h.restart();
+    const cold = await (await fetch(`${restored.base}/api/world`)).json() as WorldStateFull;
+    assert.equal(cold.simulation!.running, false); assert.equal(cold.simulation!.tick, before.simulation!.tick);
+    assert.deepEqual(cold.sandbox!.neoLife, before.sandbox!.neoLife, 'life history, choices and the exact finale beat survive SIGTERM and a new process');
+    for (const id of ['neo', 'smith']) {
+      assert.equal(cold.agents[id].controller, undefined);
+      assert.deepEqual(body(cold, id), body(before, id), `${id} lost its saved pose before any client reconnected`);
+    }
+    const next = await restored.connect();
+    next.socket.emit('message', { type: 'play_as', data: { agentId: 'neo' } });
+    await waitFor(() => next.messages.some(message => message.type === 'player_state' && (message.data as { agentId?: string }).agentId === 'neo'), 'Neo did not reconnect');
+    const marker = next.messages.length;
+    await waitFor(() => next.messages.length >= marker + 4, 'paused finale snapshots did not arrive');
+    assert.deepEqual(next.state().sandbox!.neoLife, before.sandbox!.neoLife);
+    for (const id of ['neo', 'smith']) assert.deepEqual(body(next.state(), id), body(before, id));
+    next.socket.emit('message', { type: 'resume', data: {} });
+    await waitFor(() => ((next.state().agents.neo.currentAction?.parameters.smithFinale as SmithFinaleEncounter | undefined)?.total ?? 0) > encounter.total, 'the restored Smith beat did not resume');
+    assert.equal((next.state().agents.neo.currentAction!.parameters.smithFinale as SmithFinaleEncounter).phase, phase);
+  });
+}
 
 test('the first packet moving Neo into the real-world pod also switches the story, objective and fade state', { timeout: 30000 }, async t => {
   const h = await server(t, 7.96), client = await h.connect();
