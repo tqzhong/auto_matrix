@@ -112,7 +112,8 @@ test('Neo must finish the pact, duel, reflection, surrender and purge as one sav
   h.command('act'); h.frame(90); assert.equal(h.state().smithFinale?.phase, 'vision'); assert.equal(h.state().step, 1);
   h.command('reflect:trust'); assert.equal(h.state().smithFinale?.phase, 'understanding'); assert.equal(h.state().step, 2);
   h.command('act'); h.frame(45, false); assert.equal(h.state().smithFinale?.phase, 'surrender');
-  h.frame(40, true); h.frame(150, true); assert.equal(h.state().smithFinale?.phase, 'done');
+  h.frame(40, true); h.frame(Math.ceil((SMITH_FINALE.surrender.assimilationSeconds + SMITH_FINALE.surrender.purgeSeconds) / .05), true);
+  assert.equal(h.state().smithFinale?.phase, 'done');
   assert.equal(h.state().step, FILM_SCENE_BY_ID.m3_surrender.steps.length);
   assert.equal(h.sandbox.state.neoLife!.choices.smith_resolution, 'connection');
 });
@@ -139,7 +140,7 @@ test('the dedicated avenue renders the crowd, aerial collision, crater and purge
   const root = new THREE.Group(); const renderer = new SmithFinaleRenderer(root);
   for (const name of ['smith-finale-avenue', 'smith-finale-crowd', 'smith-finale-rain', 'smith-finale-lightning',
     'smith-finale-shockwave', 'smith-finale-air-trails', 'smith-finale-building-breach', 'smith-finale-crater',
-    'smith-finale-assimilation', 'smith-finale-purge']) assert.ok(root.getObjectByName(name), name);
+    'smith-finale-purge']) assert.ok(root.getObjectByName(name), name);
   const encounter = { ...newSmithFinale(), phase: 'shockwave' as const, elapsed: .8, total: 2 };
   renderer.update(encounter, false, { x: 0, z: -15 });
   assert.equal(root.getObjectByName('smith-finale-shockwave')!.visible, true);
@@ -148,7 +149,7 @@ test('the dedicated avenue renders the crowd, aerial collision, crater and purge
   renderer.update({ ...encounter, phase: 'crater', elapsed: 0 }, false, { x: 0, z: -38 });
   assert.equal(root.getObjectByName('smith-finale-crater')!.visible, true);
   renderer.update({ ...encounter, phase: 'assimilating', elapsed: 2 }, true, { x: 0, z: -38 });
-  assert.equal(root.getObjectByName('smith-finale-assimilation')!.visible, true);
+  assert.equal(root.getObjectByName('smith-finale-code-shell'), undefined, 'coating belongs to the real character surfaces');
   renderer.update({ ...encounter, phase: 'purging', elapsed: 1.3 }, false, { x: 0, z: -38 });
   assert.equal(root.getObjectByName('smith-finale-purge')!.visible, true);
   const disposed: string[] = []; root.traverse(object => { if (object instanceof THREE.Mesh) object.geometry.addEventListener('dispose', () => disposed.push(object.uuid)); });

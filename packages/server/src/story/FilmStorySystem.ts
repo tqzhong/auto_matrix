@@ -340,7 +340,7 @@ export class FilmStorySystem {
       smith.rotation = pose.smith.yaw; smith.currentLocation = this.scene!.set; smith.isInMatrix = true;
       smith.status = encounter.phase === 'done' ? 'dead' : 'alive'; smith.health = encounter.phase === 'done' ? 0 : smith.maxHealth;
       smith.velocity = { x: 0, y: 0, z: 0 };
-      smith.currentAction = encounter.phase === 'done' ? null : { type: pose.strike > .05 ? 'attack' : 'idle', target: agent.id,
+      smith.currentAction = { type: pose.strike > .05 ? 'attack' : 'idle', target: agent.id,
         parameters: { resolved: true, smithFinale: { ...encounter, role: 'smith' } }, startedAt: tick, duration: 1, progress: 0 };
     }
     if (!smithFinaleLocked(encounter)) {
@@ -374,7 +374,7 @@ export class FilmStorySystem {
                 : phase === 'choice' ? 'Smith 问他为何还要坚持。Neo 已经站起，但理由必须由玩家在手记中亲自选择。'
                   : phase === 'vision' ? '最后一轮猛攻停下。Smith 说出从先知那里复制来的预见，又因为眼前一切完全重合而迟疑。'
                     : phase === 'assimilating' ? 'Neo 明确放下抵抗。Smith 的黑色代码从胸口与面部扩散，直到两具身体共享同一份感染。'
-                      : phase === 'purging' ? '机器沿着 Neo 仍然开放的连接抵达感染核心。金色能量从内部贯穿所有 Smith 复制体。'
+                      : phase === 'purging' ? '机器沿着 Neo 仍然开放的连接抵达感染核心。白光从复制体的眼睛与裂隙透出，再沿 Smith 网络传遍大道。'
                         : phase === 'done' ? 'Smith 的网络同时崩解。复制体倒下，暴雨停住；机器已完成停战协议中的另一半。'
                           : '交锋窗口已经错过。J 打开手记，从保存的战斗检查点重试。';
       if (phase === 'choice' && state.scene === 'm3_rain' && state.step === 1) this.advance(state.lastText, agent, tick);

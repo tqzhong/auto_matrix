@@ -7,7 +7,7 @@ export const SMITH_FINALE = {
   descent: { seconds: 3.4, impact: 2.85, braceSeconds: 1.4 },
   crater: { x: 0, z: -38, depth: 12, radius: 17, floorRadius: 9, settleSeconds: .7, riseSeconds: 1.8 },
   assault: 3.5,
-  surrender: { consentSeconds: 1.6, assimilationSeconds: 3.6, purgeSeconds: 2.8 },
+  surrender: { consentSeconds: 1.6, assimilationSeconds: 8.4, purgeSeconds: 8 },
 } as const;
 
 export type SmithFinaleCheckpoint = 'ground' | 'air';
@@ -78,9 +78,30 @@ export function newSmithFinale(): SmithFinaleEncounter {
   return { phase: 'approach', elapsed: 0, total: 0, focus: 0, hits: 0, lastStrike: -1, lane: 0, checkpoint: 'ground', attempts: 0 };
 }
 
+/** All surfaces and bodies use the saved scene clock, including a cold load. */
+export function smithEndingPose(encounter: SmithFinaleEncounter) {
+  const assimilating = encounter.phase === 'assimilating';
+  const after = encounter.phase === 'purging' || encounter.phase === 'done';
+  const t = assimilating ? encounter.elapsed : after ? SMITH_FINALE.surrender.assimilationSeconds : 0;
+  const purge = encounter.phase === 'purging' ? encounter.elapsed : encounter.phase === 'done' ? SMITH_FINALE.surrender.purgeSeconds : 0;
+  return {
+    contact: (assimilating || after ? smooth(t / .55) : 0) * (1 - smooth((t - 5.4) / 1.1)),
+    coating: smooth((t - .45) / 3.4),
+    replacement: smooth((t - 3.9) / 1.6),
+    retreat: smooth((t - 6.5) / 1.2),
+    shield: smooth((purge - .35) / .65) * (1 - smooth((purge - 3.3) / .6)),
+    neoPulse: smooth(purge / 1.2) * (1 - smooth((purge - 2.2) / .8)),
+    neoErase: smooth((purge - 1.6) / 1.4),
+    smithPulse: smooth((purge - 2.5) / 1.1) * (1 - smooth((purge - 4.1) / .9)),
+    smithErase: smooth((purge - 3.8) / 1.2),
+    crowd: smooth((purge - 4.2) / 2.1),
+    rain: 1 - smooth((purge - 5.6) / 2.4),
+  };
+}
+
 export function smithFinaleLocked(encounter?: SmithFinaleEncounter): boolean {
   return Boolean(encounter && (encounter.phase === 'failed' && encounter.impactAt !== undefined
-    || !['approach', 'ready', 'assault_ready', 'rain_done', 'done', 'failed'].includes(encounter.phase)));
+    || !['approach', 'ready', 'assault_ready', 'rain_done', 'failed'].includes(encounter.phase)));
 }
 
 function failed(encounter: SmithFinaleEncounter, checkpoint: SmithFinaleCheckpoint): SmithFinaleEncounter {
@@ -112,7 +133,7 @@ export function stepSmithFinale(encounter: SmithFinaleEncounter, input: SmithFin
   if (encounter.phase === 'failed') return encounter;
   if (!smithFinaleLocked(encounter)) return ['approach', 'ready', 'rain_done', 'assault_ready'].includes(encounter.phase)
     ? { ...encounter, total: encounter.total + Math.max(0, delta) } : encounter;
-  if (['choice', 'vision', 'understanding'].includes(encounter.phase)) return { ...encounter, total: encounter.total + Math.max(0, delta) };
+  if (['choice', 'vision', 'understanding', 'done'].includes(encounter.phase)) return { ...encounter, total: encounter.total + Math.max(0, delta) };
   const dt = Math.max(0, delta); const next = { ...encounter, elapsed: encounter.elapsed + dt, total: encounter.total + dt };
   if (['air_warning', 'air_dodge', 'air_counter'].includes(next.phase))
     next.lane = clamp(next.lane + input.x * dt * .75, -1, 1);
@@ -203,11 +224,14 @@ export function smithFinalePose(encounter: SmithFinaleEncounter): SmithFinalePos
     smith.x = 0; smith.y = neo.y; smith.z = -31.5; smith.yaw = Math.PI;
   }
   if (phase === 'assault') {
-    const hit = Math.sin(clamp(t / SMITH_FINALE.assault) * Math.PI * 5);
-    smith.z = -34.4 - Math.max(0, hit) * 1.2; neo.z = -38.3 - Math.max(0, hit) * .4;
+    smith.z = -31.5 - smooth(t / .9) * 4.3 + smooth((t - 2.9) / .6);
   }
-  if (phase === 'surrender') smith.z = -32.2 - smooth(encounter.focus / SMITH_FINALE.surrender.consentSeconds) * 3.2;
-  if (['assimilating', 'purging', 'done'].includes(phase)) smith.z = -37.1;
+  if (['vision', 'understanding', 'surrender', 'assimilating', 'purging', 'done'].includes(phase)) smith.z = -34.8;
+  if (phase === 'surrender') neo.z += smooth(encounter.focus / SMITH_FINALE.surrender.consentSeconds);
+  if (['assimilating', 'purging', 'done'].includes(phase)) {
+    neo.z = -37; smith.z += smithEndingPose(encounter).retreat * 1.6;
+  }
+  const lastAttack = phase === 'assault' ? Math.max(0, Math.sin(clamp((t - .9) / 2) * Math.PI * 3)) : 0;
   const groundWindow = phase === 'ground_warning' || phase === 'ground_dodge' || phase === 'ground_counter';
   return {
     neo, smith,
@@ -216,11 +240,11 @@ export function smithFinalePose(encounter: SmithFinaleEncounter): SmithFinalePos
     dodge: phase === 'ground_dodge' ? Math.sin(clamp(t / SMITH_FINALE.ground.dodge) * Math.PI)
       : phase === 'air_dodge' ? Math.sin(clamp(t / SMITH_FINALE.air.dodge) * Math.PI) : 0,
     strike: phase === 'ground_counter' || phase === 'shockwave' ? punch
-      : phase === 'air_counter' ? Math.sin(clamp(t / .5) * Math.PI) : phase === 'assault' ? Math.max(0, Math.sin(t * 4.5)) : 0,
+      : phase === 'air_counter' ? Math.sin(clamp(t / .5) * Math.PI) : lastAttack,
     flight: phase === 'shockwave' ? smooth((t - .34) / .18) : phase === 'descent' ? 1 - collapse : ['air_warning', 'air_dodge', 'air_counter', 'building'].includes(phase) ? 1 : 0,
     impact: phase === 'descent' ? collapse : phase === 'crater' ? 1 - smooth(t / SMITH_FINALE.crater.settleSeconds) : 0,
     rise: phase === 'crater' ? smooth(encounter.focus / SMITH_FINALE.crater.riseSeconds) : ['choice', 'rain_done', 'assault_ready', 'assault', 'vision', 'understanding', 'surrender', 'assimilating', 'purging', 'done'].includes(phase) ? 1 : 0,
-    fallen: phase === 'descent' ? collapse : phase === 'crater' ? 1 - smooth(encounter.focus / SMITH_FINALE.crater.riseSeconds) : phase === 'assault' ? .25 + Math.max(0, Math.sin(t * 4.5)) * .45 : 0,
+    fallen: phase === 'descent' ? collapse : phase === 'crater' ? 1 - smooth(encounter.focus / SMITH_FINALE.crater.riseSeconds) : lastAttack * .18,
     surrender: phase === 'surrender' ? smooth(encounter.focus / SMITH_FINALE.surrender.consentSeconds) : ['assimilating', 'purging', 'done'].includes(phase) ? 1 : 0,
     assimilation: phase === 'assimilating' ? smooth(t / SMITH_FINALE.surrender.assimilationSeconds) : ['purging', 'done'].includes(phase) ? 1 : 0,
     purge: phase === 'purging' ? smooth(t / SMITH_FINALE.surrender.purgeSeconds) : phase === 'done' ? 1 : 0,

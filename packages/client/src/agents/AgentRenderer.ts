@@ -9,6 +9,7 @@ import { OfficeCustodyPerformance } from './OfficeCustodyPerformance.js';
 import { poseClub } from './ClubPerformance.js';
 import { poseTruckRescue } from './TruckRescueContact.js';
 import { poseSmithFinaleContact } from './SmithFinaleContact.js';
+import { SmithEndingAppearance } from './SmithEndingAppearance.js';
 
 export const FACTION_COLORS: Record<string, string> = {
   zion: '#90d7b1', civilians: '#d0c8a3', machines: '#ee8773', oracle: '#c6b1e7', merovingian: '#cda96c', exiles: '#88b5c5', smith_virus: '#f07565',
@@ -45,6 +46,7 @@ export class AgentRenderer {
   private playerMotion?: MotionInput;
   private models = new CharacterModels();
   private custody = new OfficeCustodyPerformance();
+  private smithEnding?: SmithEndingAppearance;
   private markerGeometry = new THREE.RingGeometry(2.1, 2.5, 32);
   private shadowGeometry = new THREE.PlaneGeometry(3, 3);
   private shadowTexture: THREE.CanvasTexture;
@@ -543,6 +545,11 @@ export class AgentRenderer {
     const smithFinale = (this.playerId === 'neo' ? this.playerMotion?.smithFinale : neo?.state.currentAction?.parameters.smithFinale) as MotionInput['smithFinale'];
     if (smithFinale && neo?.rig.hero && smith?.rig.hero && smith.state.currentAction?.parameters.smithFinale) {
       poseSmithFinaleContact(neo.rig.hero, smith.rig.hero, smithFinale);
+      this.smithEnding ??= new SmithEndingAppearance(neo.rig.hero, smith.rig.hero);
+      this.smithEnding.update(smithFinale, this.playerId === 'neo' && this.firstPerson);
+      if (smithFinale.phase === 'done') { neo.shadow.visible = false; smith.shadow.visible = false; }
+    } else if (this.smithEnding) {
+      this.smithEnding.dispose(); this.smithEnding = undefined;
     }
     const truckRescue = morpheus?.state.currentAction?.parameters.truckRescue as MotionInput['truckRescue'];
     if (truckRescue && neo?.rig.hero && morpheus && keymaker
@@ -607,6 +614,9 @@ export class AgentRenderer {
   removeAgent(id: string): void {
     const entry = this.agents.get(id);
     if (!entry) return;
+    if (this.smithEnding && (id === 'neo' || id === 'smith')) {
+      this.smithEnding.dispose(); this.smithEnding = undefined;
+    }
     this.scene.remove(entry.group);
     this.disposeSprite(entry.label);
     if (entry.speech) this.disposeSprite(entry.speech.sprite);
@@ -614,6 +624,7 @@ export class AgentRenderer {
     this.agents.delete(id);
   }
   dispose(): void {
+    this.smithEnding?.dispose(); this.smithEnding = undefined;
     this.custody.dispose();
     for (const id of this.agents.keys()) this.removeAgent(id);
     this.models.dispose(); this.markerGeometry.dispose(); this.shadowGeometry.dispose(); this.shadowMaterial.dispose(); this.shadowTexture.dispose();

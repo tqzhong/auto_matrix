@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { SmithCrowdRenderer } from './SmithCrowdRenderer.js';
-import { SMITH_FINALE, newSmithFinale, smithFinalePose, smithCraterAmount, smithCraterFloor, smithCraterRim, type SmithFinaleEncounter } from '@auto_matrix/shared';
+import { SMITH_FINALE, newSmithFinale, smithFinalePose, smithEndingPose, smithCraterAmount, smithCraterFloor, smithCraterRim, type SmithFinaleEncounter } from '@auto_matrix/shared';
 
 /** Procedural production sample for the Revolutions rain duel.
  * Character rigs remain owned by AgentRenderer; this class owns the avenue,
@@ -27,15 +27,13 @@ export class SmithFinaleRenderer {
   private trails = new THREE.Group();
   private breach = new THREE.Group();
   private crater = new THREE.Group();
-  private assimilation = new THREE.Group();
   private purge = new THREE.Group();
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private lights: THREE.Light[] = [];
   private shockShell!: THREE.LineSegments;
   private flightSpray!: THREE.LineSegments;
-  private purgeShell!: THREE.Mesh;
-  private assimilationShell!: THREE.Mesh;
+  private purgeDust!: THREE.Points;
   private puddles!: THREE.InstancedMesh;
   private rippleMatrix = new THREE.Object3D();
   private debris: THREE.Mesh[] = [];
@@ -47,9 +45,9 @@ export class SmithFinaleRenderer {
     this.group.name = 'smith-finale-avenue'; this.rain.name = 'smith-finale-rain';
     this.lightning.name = 'smith-finale-lightning'; this.shockwave.name = 'smith-finale-shockwave';
     this.trails.name = 'smith-finale-air-trails'; this.breach.name = 'smith-finale-building-breach';
-    this.crater.name = 'smith-finale-crater'; this.assimilation.name = 'smith-finale-assimilation'; this.purge.name = 'smith-finale-purge';
+    this.crater.name = 'smith-finale-crater'; this.purge.name = 'smith-finale-purge';
     root.add(this.group); this.group.add(this.rain, this.lightning, this.shockwave, this.trails,
-      this.breach, this.crater, this.assimilation, this.purge);
+      this.breach, this.crater, this.purge);
     this.buildAvenue();
     if (typeof window !== 'undefined') this.audience = new SmithCrowdRenderer(this.group);
     else { const crowd = new THREE.Group(); crowd.name = 'smith-finale-crowd'; this.group.add(crowd); }
@@ -383,22 +381,15 @@ export class SmithFinaleRenderer {
   }
 
   private buildConnection(): void {
-    const black = this.basic({ color: 0x06100b, transparent: true, opacity: .72, wireframe: true, depthWrite: false });
-    this.assimilationShell = this.mesh(new THREE.SphereGeometry(1.45, 18, 12), black, this.assimilation, 0, 1.85, -38, 'smith-finale-code-shell');
-    for (let i = 0; i < 9; i++) {
-      const ring = this.mesh(new THREE.TorusGeometry(.65 + i * .16, .025, 6, 36), black, this.assimilation, 0, .65 + i * .34, -38, 'smith-finale-code-ring');
-      ring.rotation.x = Math.PI / 2; ring.rotation.z = i * .34;
-    }
-    const gold = this.basic({ color: 0xffbd55, transparent: true, opacity: .58, wireframe: true, depthWrite: false, toneMapped: false });
-    this.purgeShell = this.mesh(new THREE.SphereGeometry(1, 24, 14), gold, this.purge, 0, 2.1, -38, 'smith-finale-gold-purge');
-    for (let i = 0; i < 32; i++) {
-      const angle = i / 32 * Math.PI * 2; const up = ((i * 7) % 13 - 6) / 8;
-      const length = 8 + i % 5 * 2.2;
-      const geometry = this.geometry(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 2.1, -38),
-        new THREE.Vector3(Math.sin(angle) * length, 2.1 + up * length, -38 + Math.cos(angle) * length)]));
-      const ray = new THREE.Line(geometry, gold); ray.name = 'smith-finale-purge-ray'; this.purge.add(ray);
-    }
-    const goldLight = new THREE.PointLight(0xffbd55, 0, 90, 2); goldLight.position.set(0, 3, -38); this.purge.add(goldLight); this.lights.push(goldLight);
+    const light = new THREE.PointLight(0xe5f3ff, 0, 50, 2); this.purge.add(light); this.lights.push(light);
+    const material = new THREE.PointsMaterial({ color: 0xd0ded8, size: .065, transparent: true, opacity: .6, depthWrite: false });
+    material.onBeforeCompile = shader => {
+      shader.fragmentShader = shader.fragmentShader.replace('#include <clipping_planes_fragment>',
+        '#include <clipping_planes_fragment>\nif (length(gl_PointCoord - .5) > .5) discard;');
+    };
+    this.materials.add(material);
+    const dust = this.geometry(new THREE.BufferGeometry()); dust.setAttribute('position', new THREE.BufferAttribute(new Float32Array(480 * 3), 3).setUsage(THREE.DynamicDrawUsage));
+    this.purgeDust = new THREE.Points(dust, material); this.purgeDust.name = 'smith-finale-purge-dust'; this.purgeDust.frustumCulled = false; this.purge.add(this.purgeDust);
   }
 
   update(encounter: SmithFinaleEncounter | undefined, firstPerson: boolean, player: { x: number; z: number }): void {
@@ -411,8 +402,10 @@ export class SmithFinaleRenderer {
     this.water!.geometry = crater > 0 ? this.poolWater : this.intactRoad;
     this.water!.position.y = -SMITH_FINALE.crater.depth * crater + .035;
     this.pitWater.value = crater;
-    this.weatherTime.value = state.total; this.rain.visible = phase !== 'done';
-    const flash = (Math.sin(state.total * 1.73 + 1.2) > .965 || ['shockwave', 'purging'].includes(phase));
+    const ending = smithEndingPose(state);
+    this.weatherTime.value = state.total; this.rain.visible = ending.rain > 0;
+    (this.rain.children[0] as THREE.LineSegments<THREE.BufferGeometry, THREE.MeshBasicMaterial>).material.opacity = .4 * ending.rain;
+    const flash = (Math.sin(state.total * 1.73 + 1.2) > .965 || phase === 'shockwave');
     this.lightning.visible = flash && phase !== 'done';
     const flashLight = this.lightning.children.find(child => child instanceof THREE.PointLight) as THREE.PointLight | undefined;
     if (flashLight) flashLight.intensity = flash ? phase === 'purging' ? 1800 : 780 : 0;
@@ -469,18 +462,19 @@ export class SmithFinaleRenderer {
       }
       points.needsUpdate = true;
     }
-    this.assimilation.position.y = this.purge.position.y = (-SMITH_FINALE.crater.depth + .025) * crater;
-
-    this.assimilation.visible = ['assimilating', 'purging'].includes(phase);
-    if (this.assimilation.visible) {
-      const scale = phase === 'assimilating' ? .5 + smithFinalePose(state).assimilation * 1.35 : 1.85;
-      this.assimilationShell.scale.setScalar(scale); this.assimilation.rotation.y = state.elapsed * 1.8;
-    }
     this.purge.visible = phase === 'purging';
     if (this.purge.visible) {
-      const amount = smithFinalePose(state).purge; this.purgeShell.scale.setScalar(.2 + amount * 18);
-      (this.purge.children.find(child => child instanceof THREE.PointLight) as THREE.PointLight).intensity = 1200 * (1 - amount * .72);
-      this.purge.rotation.y = state.elapsed * .6;
+      const body = state.elapsed < 2.5 ? pose.neo : pose.smith;
+      this.purge.position.set(body.x, body.y + 2.8, body.z);
+      (this.purge.children.find(child => child instanceof THREE.PointLight) as THREE.PointLight).intensity = Math.max(ending.neoPulse, ending.smithPulse) * 180;
+      const age = Math.max(0, state.elapsed - (state.elapsed < 2.5 ? 1.6 : 3.8));
+      const points = this.purgeDust.geometry.getAttribute('position') as THREE.BufferAttribute;
+      this.purgeDust.visible = age > 0 && age < 2;
+      for (let i = 0; i < points.count; i++) {
+        const angle = i * 2.399963, radius = age * (1 + i % 7 * .22), y = (i * .618 % 1) * 3.2 - 2;
+        points.setXYZ(i, Math.cos(angle) * radius, Math.max(-2.78, y + age * .6 - age * age * 1.7), Math.sin(angle) * radius);
+      }
+      points.needsUpdate = true; (this.purgeDust.material as THREE.PointsMaterial).opacity = .5 * Math.max(0, 1 - age / 2);
     }
     this.audience?.update(state, player);
 

@@ -672,7 +672,7 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   if (smithFinale && input.smithFinale) {
     const neo = input.smithFinale.role === 'neo';
     const counter = input.smithFinale.phase === 'ground_counter' || input.smithFinale.phase === 'shockwave';
-    const attack = counter && !neo ? 0 : smithFinale.strike;
+    const attack = counter && !neo || neo && input.smithFinale.phase === 'assault' ? 0 : smithFinale.strike;
     for (let i = 0; i < 2; i++) {
       arms[i].shoulder = mix(arms[i].shoulder, -.82, smithFinale.guard);
       arms[i].elbow = mix(arms[i].elbow, -1.28, smithFinale.guard);
@@ -700,15 +700,10 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
       arms[1 - strikingArm].elbow = mix(arms[1 - strikingArm].elbow, -1.85, attack);
     }
     if (smithFinale.surrender) for (let i = 0; i < 2; i++) {
-      arms[i].shoulder = mix(arms[i].shoulder, neo ? -.08 : -1.18, smithFinale.surrender);
-      arms[i].elbow = mix(arms[i].elbow, neo ? -.12 : -.45, smithFinale.surrender);
-      arms[i].outward = mix(arms[i].outward, (i ? 1 : -1) * (neo ? .08 : .22), smithFinale.surrender);
+      arms[i].shoulder = mix(arms[i].shoulder, -.08, smithFinale.surrender);
+      arms[i].elbow = mix(arms[i].elbow, -.12, smithFinale.surrender);
+      arms[i].outward = mix(arms[i].outward, (i ? 1 : -1) * .08, smithFinale.surrender);
       arms[i].grip = mix(arms[i].grip, neo ? .02 : .8, smithFinale.surrender);
-    }
-    if (smithFinale.assimilation || smithFinale.purge) for (let i = 0; i < 2; i++) {
-      const strain = Math.max(smithFinale.assimilation, smithFinale.purge);
-      arms[i].shoulder = mix(arms[i].shoulder, -.52, strain); arms[i].elbow = mix(arms[i].elbow, -.3, strain);
-      arms[i].outward = mix(arms[i].outward, (i ? 1 : -1) * .78, strain); arms[i].grip = mix(arms[i].grip, .85, strain);
     }
   }
   if (input.epilogue) {

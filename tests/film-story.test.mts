@@ -2033,10 +2033,12 @@ test('Smith assimilation is reversible at the ending, without reviving Trinity',
     if (id === 'm3_surrender') {
       h.sandbox.state.neoLife!.choices.machine_pact = 'peace'; h.sandbox.state.neoLife!.choices.machine_connection = 'active';
       h.command('act');
-      for (let frame = 0; frame < 100 && state.step < scene.steps.length; frame++) {
+      const endingSeconds = SMITH_FINALE.surrender.consentSeconds + SMITH_FINALE.surrender.assimilationSeconds + SMITH_FINALE.surrender.purgeSeconds;
+      for (let frame = 0; frame < Math.ceil(endingSeconds / .1) + 4 && state.step < scene.steps.length; frame++) {
         h.players.receiveInput('film-player', { x: 0, z: 0, yaw: 0, jump: false, sprint: false, focus: true, sequence: frame + 1 });
         h.players.step(.1, true, h.tick());
       }
+      assert.equal(state.smithFinale?.phase, 'done', 'restoration follows the completed purge');
     } else { h.command(scene.steps[state.step].kind === 'reflect' ? 'reflect:care' : 'act'); h.advance(20); }
   };
   playLast('m3_oracle_absorbed'); h.command('next');
@@ -2881,7 +2883,7 @@ test('the entire film route completes through interactions, driving and real com
         } else if (index === 1) h.command('reflect:agency');
         else {
           h.command('act');
-          for (let frame = 0; frame < 100 && state.step === index; frame++) {
+          for (let frame = 0; frame < Math.ceil((SMITH_FINALE.surrender.consentSeconds + SMITH_FINALE.surrender.assimilationSeconds + SMITH_FINALE.surrender.purgeSeconds) / .1) + 4 && state.step === index; frame++) {
             h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false, focus: true, sequence: ++sequence });
             h.players.step(.1, true, h.tick());
           }

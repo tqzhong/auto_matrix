@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { newSmithFinale, smithFinalePose, type SmithFinaleEncounter } from '@auto_matrix/shared';
+import { newSmithFinale, smithEndingPose, type SmithFinaleEncounter } from '@auto_matrix/shared';
+import { smithCodeSurface, smithCodeUniforms } from './SmithCodeSurface.js';
 
 /** Static, posed Smith replicas. Shared surfaces avoid hundreds of skeleton updates. */
 export class SmithCrowdRenderer {
@@ -9,6 +10,7 @@ export class SmithCrowdRenderer {
   private state = newSmithFinale();
   private player = { x: 0, z: 30 };
   private disposed = false;
+  private code = smithCodeUniforms();
   private batches: { mesh: THREE.InstancedMesh; near: THREE.BufferGeometry; far: THREE.BufferGeometry; z: number }[] = [];
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
@@ -32,6 +34,7 @@ export class SmithCrowdRenderer {
         if (material instanceof THREE.MeshStandardMaterial) {
           material.envMapIntensity = 1.15;
           if (material.name === 'Hair cards') material.alphaToCoverage = true;
+          smithCodeSurface(material, this.code);
         }
       }
     });
@@ -79,7 +82,8 @@ export class SmithCrowdRenderer {
     this.state = { ...encounter };
     this.player = { ...player };
     this.group.visible = encounter.phase !== 'done';
-    this.group.scale.y = encounter.phase === 'purging' ? Math.max(.02, 1 - smithFinalePose(encounter).purge) : 1;
+    this.code.smithCrowd.value = smithEndingPose(encounter).crowd;
+    this.group.getWorldPosition(this.code.smithOrigin.value);
     for (const batch of this.batches) {
       const geometry = player.x ** 2 + (player.z - batch.z) ** 2 > 50 ** 2 ? batch.far : batch.near;
       if (batch.mesh.geometry === geometry) continue;
