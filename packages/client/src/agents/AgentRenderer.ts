@@ -4,9 +4,10 @@ import { trackingContact } from './TrackingContact.js';
 import { CharacterModels, weaponMuzzle, type CharacterRig } from './CharacterModel.js';
 import type { MotionInput } from './CharacterMotion.js';
 import { poseBathroom } from './BathroomPerformance.js';
-import { officeCustodyActive } from '@auto_matrix/shared';
+import { officeCustodyActive, truckRescuePose } from '@auto_matrix/shared';
 import { OfficeCustodyPerformance } from './OfficeCustodyPerformance.js';
 import { poseClub } from './ClubPerformance.js';
+import { poseTruckRescue } from './TruckRescueContact.js';
 
 export const FACTION_COLORS: Record<string, string> = {
   zion: '#90d7b1', civilians: '#d0c8a3', machines: '#ee8773', oracle: '#c6b1e7', merovingian: '#cda96c', exiles: '#88b5c5', smith_virus: '#f07565',
@@ -257,7 +258,7 @@ export class AgentRenderer {
         if (state.currentAction?.parameters.basement && !dropRoot && delta * speed > 0) guideSpeed = entry.group.position.distanceTo(previous) / (delta * speed);
       }
       const moving = Math.hypot(state.velocity.x, state.velocity.z) > .1;
-      const heading = guideHeading ?? (moving && !state.currentAction?.parameters.mirrorEntry && !state.currentAction?.parameters.officeCustody && !state.currentAction?.parameters.oracleArrival && !state.currentAction?.parameters.oracleReception && !state.currentAction?.parameters.oracleDeparture && !state.currentAction?.parameters.club && !state.currentAction?.parameters.catch && !state.currentAction?.parameters.recoveryCrew && state.currentLocation !== 'film_government_lobby' ? Math.atan2(state.velocity.x, state.velocity.z) : state.rotation);
+      const heading = guideHeading ?? (moving && !state.currentAction?.parameters.mirrorEntry && !state.currentAction?.parameters.officeCustody && !state.currentAction?.parameters.oracleArrival && !state.currentAction?.parameters.oracleReception && !state.currentAction?.parameters.oracleDeparture && !state.currentAction?.parameters.club && !state.currentAction?.parameters.catch && !state.currentAction?.parameters.truckRescue && !state.currentAction?.parameters.recoveryCrew && state.currentLocation !== 'film_government_lobby' ? Math.atan2(state.velocity.x, state.velocity.z) : state.rotation);
       let difference = heading - entry.body.rotation.y;
       difference = Math.atan2(Math.sin(difference), Math.cos(difference));
       if (id !== this.playerId && state.currentAction?.parameters.officeCustody && (delta * speed === 0 || (state.currentAction.parameters.officeCustody as MotionInput['officeCustody'])?.street)) { entry.body.rotation.y = heading; difference = 0; }
@@ -337,6 +338,7 @@ export class AgentRenderer {
         mountainFlight: state.currentAction?.parameters.mountainFlight as MotionInput['mountainFlight'],
         truckFlight: state.currentAction?.parameters.truckFlight as boolean | undefined,
         truckPassenger: state.currentAction?.parameters.truckPassenger as boolean | undefined,
+        truckRescue: state.currentAction?.parameters.truckRescue as MotionInput['truckRescue'],
         persephone: state.currentAction?.parameters.persephone as MotionInput['persephone'],
         farewell: state.currentAction?.parameters.farewell as MotionInput['farewell'],
         epilogue: state.currentAction?.parameters.epilogue as MotionInput['epilogue'],
@@ -459,11 +461,18 @@ export class AgentRenderer {
       entry.body.position.y = epilogueCarried ? 1.3 : coma ? 2.62 : THREE.MathUtils.lerp(-1, .9, podRecline);
       entry.body.position.z = podRecline * 1.2;
       if (podRecline) entry.body.rotation.y = state.rotation * (1 - podRecline);
-      entry.body.rotation.x = input.farewell?.role === 'trinity' ? THREE.MathUtils.lerp(entry.body.rotation.x, -.48, 1 - Math.exp(-6 * delta))
+      const truckPose = input.truckRescue ? truckRescuePose(input.truckRescue, input.truckRescue.role)
+        : input.truckFlight ? { yaw: state.rotation, airborne: 1, tumble: 0 } : undefined;
+      if (truckPose) { entry.body.rotation.y = truckPose.yaw; entry.body.rotation.z = truckPose.tumble; }
+      entry.body.rotation.x = truckPose ? Math.PI / 2 * truckPose.airborne : input.farewell?.role === 'trinity' ? THREE.MathUtils.lerp(entry.body.rotation.x, -.48, 1 - Math.exp(-6 * delta))
         : mountainFlying || catchFlying && input.catch?.role === 'neo' ? THREE.MathUtils.lerp(entry.body.rotation.x, 1.05, 1 - Math.exp(-6 * delta))
         : catchFlying && input.catch?.role === 'trinity' ? THREE.MathUtils.lerp(entry.body.rotation.x, -1.05, 1 - Math.exp(-6 * delta))
           : catchResting || coma || epilogueCarried ? THREE.MathUtils.lerp(entry.body.rotation.x, -Math.PI / 2, 1 - Math.exp(-6 * delta)) : -Math.PI / 2 * podRecline;
       this.models.animate(entry.rig, delta * (id === this.playerId && speed > 0 ? 1 : speed), input, dist);
+      if (truckPose) {
+        const head = entry.rig.hero?.bones.get('head') ?? entry.rig.head;
+        head.rotation.x = -1.05 * truckPose.airborne;
+      }
       entry.shadow.position.y = floor - entry.group.position.y - .97;
       entry.shadow.visible = !sixthRoot?.hidden && state.status !== 'disconnected' && !state.currentAction?.parameters.filmDuel && !mountainFlying && !catchFlying && !coma && !pod && !epilogueCarried && !input.truckPassenger && !input.wetwall?.hanging;
       entry.shadow.scale.setScalar(1 + Math.max(0, entry.group.position.y - floor) * .04);
@@ -483,6 +492,12 @@ export class AgentRenderer {
       }
     }
     const morpheus = this.agents.get('morpheus'), smith = this.agents.get('smith');
+    const neo = this.agents.get('neo'), keymaker = this.agents.get('keymaker');
+    const truckRescue = morpheus?.state.currentAction?.parameters.truckRescue as MotionInput['truckRescue'];
+    if (truckRescue && neo?.rig.hero && morpheus && keymaker
+      && neo.state.currentAction?.parameters.truckRescue && keymaker.state.currentAction?.parameters.truckRescue) {
+      poseTruckRescue(neo.rig.hero, morpheus.rig, keymaker.rig, truckRescue);
+    }
     const custody = officeCustodyActive(journey) ? journey!.office!.custody : undefined;
     const front = custody && Object.keys(custody.bodies).find(role => role !== custody.leader && role !== custody.catcher);
     const lookout = this.agents.get('trinity');

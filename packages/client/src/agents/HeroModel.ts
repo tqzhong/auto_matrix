@@ -994,7 +994,7 @@ export class HeroModels {
     const ambushCenter = FILM_SETS.film_ambush_house.center, origin = rig.root.getWorldPosition(new THREE.Vector3());
     const onStairs = Math.abs(origin.x - ambushCenter.x) <= 9 && origin.z >= ambushCenter.z + 12 && origin.z <= ambushCenter.z + 34
       && origin.y >= ambushCenter.y - 1 - AMBUSH_STAIRS.rise * AMBUSH_STOREYS - .1 && origin.y <= ambushCenter.y - 1 + .1;
-    if (delta <= 0 && spoonFloor === undefined && !onStairs || !rig.panels.some(panel => panel.mesh.visible)) return;
+    if (delta <= 0 && !input.truckRescue && spoonFloor === undefined && !onStairs || !rig.panels.some(panel => panel.mesh.visible)) return;
     const dt = Math.max(0, Math.min(delta, 1 / 30));
     // Analytic wind target plus damped springs; the waist is pinned. Thigh and
     // shin capsules stop the running knees from cutting through the coat.
@@ -1026,8 +1026,8 @@ export class HeroModels {
         this.point.sub(panel.mesh.position);
         for (let axis = 0; axis < 3; axis++) {
           const offset = i * 3 + axis; const value = position.array[offset]; const target = this.point.getComponent(axis);
-          panel.velocity[offset] += ((target - value) * 150 - panel.velocity[offset] * 24) * dt;
-          position.array[offset] = t < .04 ? panel.rest[offset] : value + panel.velocity[offset] * dt;
+          panel.velocity[offset] = input.truckRescue ? 0 : panel.velocity[offset] + ((target - value) * 150 - panel.velocity[offset] * 24) * dt;
+          position.array[offset] = t < .04 ? panel.rest[offset] : input.truckRescue ? target : value + panel.velocity[offset] * dt;
           changed ||= position.array[offset] !== value;
         }
         if (spoonFloor !== undefined || onStairs) {

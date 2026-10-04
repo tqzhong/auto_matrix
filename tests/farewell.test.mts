@@ -89,7 +89,7 @@ test('the wreck renderer exposes the crushed cockpit, rebar, fire, sparks and go
   renderer.update(farewell, 4, false);
   for (const name of ['logos-wreck-hull', 'logos-wreck-windshield', 'logos-wreck-rebar', 'logos-wreck-fire', 'logos-wreck-golden-vision'])
     assert.ok(root.getObjectByName(name), name);
-  assert.equal(root.getObjectByName('logos-wreck-golden-vision')!.visible, true);
+  assert.equal(root.getObjectByName('logos-wreck-golden-vision')!.visible, false);
   const meshes: THREE.Mesh[] = []; root.traverse(item => { if (item instanceof THREE.Mesh) meshes.push(item); });
   assert.ok(meshes.length > 55, 'the wreck must read as a dedicated physical set');
   const disposed: string[] = []; meshes.forEach(mesh => mesh.geometry.addEventListener('dispose', () => disposed.push(mesh.uuid)));

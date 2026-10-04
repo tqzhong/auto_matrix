@@ -1,4 +1,4 @@
-import { truthRoot } from '@auto_matrix/shared';
+import { truthRoot, truckRescuePose } from '@auto_matrix/shared';
 import { cabinSeat, constructGuidePose, podRescuePose, reloadedPose, type CatchGesture, type ReloadedGesture } from '@auto_matrix/shared';
 import { deusPactLocked, deusPactPose, farewellPose, smithFinaleLocked, smithFinalePose, trilogyEpilogueLocked } from '@auto_matrix/shared';
 import { mirrorEntryPose } from '@auto_matrix/shared';
@@ -80,6 +80,7 @@ export interface MotionInput {
   mountainFlight?: import('@auto_matrix/shared').MountainFlight;
   truckFlight?: boolean;
   truckPassenger?: boolean;
+  truckRescue?: import('@auto_matrix/shared').TruckEncounter & { role: import('@auto_matrix/shared').TruckRescueRole };
   persephone?: import('@auto_matrix/shared').PersephoneEncounter & { role: 'neo' | 'persephone' };
   farewell?: import('@auto_matrix/shared').FarewellGesture;
   deusPact?: import('@auto_matrix/shared').DeusPactGesture;
@@ -157,6 +158,21 @@ export function solveLeg(z: number, height: number): { hip: number; knee: number
 
 export function advanceMotion(state: MotionState, input: MotionInput, delta: number) {
   let dt = clamp(delta, 0, .1);
+  if (input.truckRescue || input.truckFlight) {
+    const gesture = input.truckRescue ?? { phase: 'rescue', elapsed: 10, rescueElapsed: 0, lastTick: 0, attempt: 0, role: 'neo' } as const;
+    const pose = truckRescuePose(gesture, gesture.role);
+    const neo = gesture.role === 'neo', air = pose.airborne;
+    state.time = gesture.rescueElapsed ?? 0; state.phase = 0; state.speed = 0;
+    state.turn = 0; state.seated = 0; state.airborne = air; state.landing = 0;
+    const standing = solveLeg(0, 1.83);
+    const legs = [0, 1].map(i => ({ hip: mix(standing.hip, i ? -.08 : .06, air),
+      knee: mix(standing.knee, i ? .24 : .13, air), ankle: mix(standing.ankle, -.08, air) }));
+    const arms = [0, 1].map(i => ({ shoulder: mix(0, neo && input.truckRescue ? -1.55 : -2.95, air),
+      elbow: mix(-.22, neo ? -.35 : -.18, air), outward: (i ? 1 : -1) * mix(.075, neo ? .42 : .16, air),
+      grip: neo ? .5 * pose.hold : .12 * air }));
+    return { legs, arms, hipHeight: 1.98, twist: 0, lean: 0, sway: 0, lunge: 0,
+      roll: 0, headTurn: 0, moving: 0, run: 0, airborne: air, coat: .22 * air, impact: 0, landing: 0 };
+  }
   if (dt > 0) {
     if (input.hit !== undefined && input.hit !== state.hitId) { state.hitId = input.hit; state.hitAge = 0; state.hitPause = .045; }
     if (input.impact !== undefined && input.impact !== state.impactId) { state.impactId = input.impact; state.hitPause = .035; }

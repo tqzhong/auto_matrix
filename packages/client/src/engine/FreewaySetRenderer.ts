@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { FREEWAY_START, FREEWAY_FINISH, TRUCKS, freewayTraffic, filmObstacles, type FilmSet, type FilmJourney, type Vector3 } from '@auto_matrix/shared';
+import { FREEWAY_START, FREEWAY_FINISH, TRUCKS, truckApproachPose, freewayTraffic, filmObstacles, type FilmSet, type FilmJourney, type Vector3, type TruckEncounter } from '@auto_matrix/shared';
 
 /** The ride, traffic and roadside barriers share the server's road coordinates. */
 export class FreewaySetRenderer {
@@ -212,7 +212,7 @@ export class FreewaySetRenderer {
     this.neoTrail = new THREE.Group(); this.neoTrail.name = 'matrix-freeway-neo-trail'; this.root.add(this.neoTrail);
     const trailMat = new THREE.MeshBasicMaterial({ color: 0xdcead8, transparent: true, opacity: .4, depthWrite: false }); this.materials.add(trailMat);
     for (let i = 0; i < 5; i++) {
-      const ring = this.mesh(new THREE.TorusGeometry(.55 + i * .27, .045, 5, 24), trailMat, 0, 0, i * 2.5, this.neoTrail);
+      const ring = this.mesh(new THREE.TorusGeometry(.55 + i * .27, .045, 5, 24), trailMat, 0, 0, -i * 2.5, this.neoTrail);
       ring.rotation.y = Math.PI / 2;
     }
     this.impact = new THREE.Group(); this.impact.name = 'matrix-freeway-collision'; this.root.add(this.impact); this.impact.position.set(TRUCKS.roof.x, 3.2, 11.5);
@@ -260,9 +260,11 @@ export class FreewaySetRenderer {
     }
     this.impact.visible = false; this.neoTrail.visible = false;
   }
-  update(journey: FilmJourney | undefined, elapsed: number, playerPosition?: Vector3): void {
+  update(journey: FilmJourney | undefined, elapsed: number, playerPosition?: Vector3, rescuePose?: TruckEncounter): void {
     const ride = journey?.ride;
-    const trucks = journey?.scene === 'm2_trucks' && !journey.visiting ? journey.trucks : undefined;
+    const savedTrucks = journey?.scene === 'm2_trucks' && !journey.visiting ? journey.trucks : undefined;
+    const trucks = savedTrucks?.phase === 'rescue' && rescuePose?.phase === 'rescue' && rescuePose.attempt === savedTrucks.attempt
+      && (rescuePose.rescueElapsed ?? 0) >= (savedTrucks.rescueElapsed ?? 0) ? rescuePose : savedTrucks;
     const crashed = trucks?.phase === 'rescue' || trucks?.phase === 'rescued' || trucks?.phase === 'failed';
     const crashTime = !crashed ? 0 : trucks.phase === 'rescue' ? trucks.rescueElapsed ?? 0 : TRUCKS.rescueSeconds;
     // The encounter owns its time after the duel. Render time must not restart a saved explosion.
@@ -314,8 +316,10 @@ export class FreewaySetRenderer {
           .4 + (3 + i % 5 * .7) * crashTime - 2.8 * crashTime * crashTime), Math.sin(angle) * (1 + travel * .5));
       }
       this.neoTrail!.visible = Boolean(trucks && trucks.phase === 'collision' && trucks.elapsed > 5.5);
-      if (this.neoTrail!.visible) this.neoTrail!.position.set(TRUCKS.roof.x, 13 + (trucks!.elapsed - 5.5) * -1.5,
-        -58 + (trucks!.elapsed - 5.5) * 20);
+      if (this.neoTrail!.visible) {
+        const pose = truckApproachPose(trucks!.elapsed);
+        this.neoTrail!.position.set(pose.x, pose.y, pose.z);
+      }
     }
   }
   private batch(parent = this.root): void {

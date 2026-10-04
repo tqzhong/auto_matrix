@@ -3,6 +3,21 @@ import { test } from 'node:test';
 import { advanceMotion, footTrajectory, newMotion, solveLeg } from '../packages/client/src/agents/CharacterMotion.js';
 import { MELEE_COMBO } from '@auto_matrix/shared';
 
+test('truck rescue reconstructs the airborne pose from saved time instead of prior running or browser time', () => {
+  const encounter = { phase: 'rescue' as const, elapsed: 10, rescueElapsed: 1.5, attempt: 0, lastTick: 0 };
+  for (const role of ['neo', 'morpheus', 'keymaker'] as const) {
+    const input = { speed: 30, grounded: false, verticalVelocity: 8, turn: 2,
+      truckRescue: { ...encounter, role }, truckFlight: role === 'neo', truckPassenger: role !== 'neo' };
+    const warm = newMotion();
+    for (let i = 0; i < 40; i++) advanceMotion(warm, { speed: 12, grounded: true, verticalVelocity: 0, turn: 1 }, .03);
+    const pose = advanceMotion(warm, input, .016);
+    assert.deepEqual(pose, advanceMotion(newMotion(), input, 0), `${role} must cold-load the same saved flying pose`);
+    assert.deepEqual(advanceMotion(warm, input, 1), pose, `${role} cannot animate while its saved clock is paused`);
+    assert.ok(pose.legs.every(leg => leg.knee < .5), 'passengers fly prone rather than sitting in mid-air');
+    if (role !== 'neo') assert.ok(pose.arms.every(arm => arm.shoulder < -2.5), 'passengers reach forward in the flight direction');
+  }
+});
+
 test('stance keeps the sole planted and the return stroke lifts clear of the ground', () => {
   const start = footTrajectory(.1, .8, .6); const end = footTrajectory(.3, .8, .6);
   assert.equal(start.lift, 0); assert.equal(end.lift, 0);
