@@ -53,6 +53,52 @@ test('the epilogue reducer preserves authored phase boundaries', () => {
   assert.equal(trilogyEpilogueLocked(dawn), false, 'the Architect cannot choose the meaning of peace for the player');
 });
 
+test('Neo remains unresponsive while the transport is waiting or finished without advancing its clock', () => {
+  for (const phase of ['ready', 'done'] as const) {
+    const encounter = { ...newTrilogyEpilogue('neo_carried'), phase, total: 14.3 };
+    assert.equal(trilogyEpilogueLocked(encounter), true, `${phase}: Neo cannot stand up between transport beats`);
+    assert.deepEqual(stepTrilogyEpilogue(encounter, .1), encounter, `${phase}: the player still chooses when to continue`);
+  }
+});
+
+test('the Smith ending leaves a persistent real-world body while Kid witnesses the ceasefire', () => {
+  const h = game(); const surrender = FILM_SCENE_BY_ID.m3_surrender;
+  Object.assign(h.state(), { scene: surrender.id, actor: 'neo', step: surrender.steps.length, completed: [surrender.id],
+    smithFinale: { phase: 'done', elapsed: 0, total: 30, focus: 0, hits: 2, lastStrike: 0, lane: 0, checkpoint: 'air', attempts: 0 } });
+  const neo = h.actor(); neo.currentLocation = surrender.set; neo.isInMatrix = true;
+  h.command('next');
+  assert.equal(h.actor().id, 'kid');
+  assert.equal(neo.currentLocation, 'film_machine_core', 'the avatar must not be mistaken for the physical body');
+  assert.equal(neo.isInMatrix, false);
+  assert.equal(neo.currentAction?.parameters.finaleComa, true);
+  const body = structuredClone({ position: neo.position, action: neo.currentAction });
+  assert.ok(h.players.possess('other', 'neo', h.tick()).error, 'ordinary possession must not revive Neo');
+  h.frame(20); assert.deepEqual(neo.position, body.position);
+  const save = structuredClone(h.sandbox.state); h.players.release('p', h.tick()); h.sandbox.restore(save);
+  assert.equal(neo.currentLocation, 'film_machine_core'); assert.equal(neo.currentAction?.parameters.finaleComa, true);
+  h.players.possess('p', 'kid', h.tick());
+  Object.assign(h.state(), { step: FILM_SCENE_BY_ID.m3_ceasefire.steps.length,
+    epilogue: { ...newTrilogyEpilogue('ceasefire'), phase: 'done' } });
+  h.command('next');
+  assert.equal(h.actor().id, 'neo', 'the authored transport viewpoint must remain accessible');
+  assert.equal(h.state().scene, 'm3_neo_carried');
+  const ready = structuredClone(neo.position);
+  h.players.receiveInput('p', { x: 1, z: 1, yaw: 1, sprint: true, jump: true, sequence: 100 });
+  h.players.step(.1, true, h.tick()); assert.deepEqual(neo.position, ready, 'movement and jump cannot animate the unresponsive body');
+  assert.match(h.players.act('p', 'attack', h.tick()), /动作|观察|演出|互动|片段/);
+  h.frame(10);
+  assert.deepEqual(neo.position, ready); assert.equal(h.state().epilogue?.phase, 'ready');
+  assert.match(h.players.sandboxAction('p', { kind: 'craft', target: 'medkit' }, h.tick()), /回应|身体/);
+  h.command('act'); h.frame(310);
+  assert.equal(h.state().epilogue?.phase, 'done');
+  const end = structuredClone(neo.position); h.frame(10); assert.deepEqual(neo.position, end);
+  const completed = structuredClone(h.state()); h.command('retry'); assert.deepEqual(h.state(), completed, 'retry must not replay the ending or refill life');
+  assert.ok(end.z < ready.z - 28, 'the body must remain aboard the departed vessel instead of snapping back');
+  assert.equal(neo.currentAction?.parameters.finaleComa, true);
+  h.command('next'); assert.equal(h.actor().id, 'oracle');
+  assert.deepEqual(neo.position, end, 'cutting to the park must not return the body to the apartment');
+});
+
 test('ceasefire, Neo transport and dawn form a saved playable epilogue without auto-starting a new cycle', () => {
   const h = game(); const surrender = FILM_SCENE_BY_ID.m3_surrender; const state = h.state();
   Object.assign(state, { scene: surrender.id, actor: 'neo', step: surrender.steps.length,
@@ -132,7 +178,7 @@ test('saved epilogue actions reach NPC animation and carry Neo flat on the machi
   const renderer = new AgentRenderer(new THREE.Scene());
   try {
     renderer.updateAgent('neo', neo); renderer.updateAgent('morpheus', morpheus); renderer.update(.3);
-    assert.ok(renderer.getAgentBody('neo')!.rotation.x < -1.2, 'Neo should lie flat instead of bending only at the waist');
+    assert.ok(renderer.getAgentBody('neo')!.rotation.x > 1.2, 'Neo should lie face up on the machine tray');
     assert.ok(renderer.getAgentBody('neo')!.position.y > 1.2, 'Neo should rest on top of the tray instead of below the floor');
     const entries = (renderer as unknown as { agents: Map<string, { rig: { shoulders: THREE.Group[] }; shadow: THREE.Mesh }> }).agents;
     assert.equal(entries.get('neo')!.shadow.visible, false);

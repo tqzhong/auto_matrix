@@ -217,7 +217,7 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
         : ceasefire && journey.step === 0 ? '<p>合上手记，亲自走到神庙入口。</p>'
           : ceasefire && journey.step === 1 && epilogue.phase === 'ready' ? button('act', '亲眼确认哨兵撤离 · G', !close)
             : ceasefire && journey.step === 2 && epilogue.phase === 'message_ready' ? button('act', '向所有人宣布战争结束 · G', !close)
-              : carried && epilogue.phase === 'ready' ? button('act', '目送机器带走 Neo · G', !close)
+              : carried && epilogue.phase === 'ready' ? button('act', '目送机器带走 Neo · G')
                 : !ceasefire && !carried && journey.step === 0 ? '<p>合上手记，走到恢复后的长椅。</p>'
                   : !ceasefire && !carried && journey.step === 1 && epilogue.phase === 'ready' ? button('act', '观察矩阵重置 · G', !close)
                     : !ceasefire && !carried && journey.step === 2 && epilogue.phase === 'choice' ? filmReflections(scene.id).map(choice => button(`reflect:${choice.id}`, choice.label)).join('')
@@ -227,7 +227,7 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
     const progress = trilogyEpilogueProgress(epilogue) * 100;
     const title = ceasefire ? '锡安神庙 · 停战消息' : carried ? '机器城 · 光中的身体' : '矩阵公园 · 新的清晨';
     const perspective = ceasefire ? 'Kid' : carried ? 'Neo' : '先知';
-    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / EPILOGUE</span><h3>${title}</h3><p>${perspective} 视角 · 世界变化、人物表演与当前节拍自动保存</p></header><article class="film-now"><div><h3>${step?.label ?? '本段已经完成'}</h3><p>${journey.lastText}</p><p>${labels[epilogue.phase] ?? epilogue.phase}</p>${trilogyEpilogueLocked(epilogue) ? `<div class="film-progress"><i style="width:${progress}%"></i></div>` : ''}<div class="film-controls">${action}<small>撤军、报信、遗体运输、矩阵重置和日出都是真实场景过程；暂停或断线会保留当前一拍，下一轮不会自动开始。</small></div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / EPILOGUE</span><h3>${title}</h3><p>${perspective} 视角 · 世界变化、人物表演与当前节拍自动保存</p></header><article class="film-now"><div><h3>${step?.label ?? '本段已经完成'}</h3><p>${journey.lastText}</p><p>${labels[epilogue.phase] ?? epilogue.phase}</p>${trilogyEpilogueLocked(epilogue) ? `<div class="film-progress"><i style="width:${progress}%"></i></div>` : ''}<div class="film-controls">${action}<small>撤军、报信、身体运送、矩阵重置和日出都是真实场景过程；暂停或断线会保留当前一拍，下一轮不会自动开始。</small></div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
   }
   if (!journey.visiting && scene.id === 'm1_room303' && journey.openingHotel) {
     const hotel = journey.openingHotel; const step = scene.steps[journey.step]; const current = player.id === journey.actor;

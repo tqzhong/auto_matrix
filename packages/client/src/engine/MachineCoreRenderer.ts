@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { DEUS_PACT, deusPactPose, newDeusPact, type DeusPactEncounter } from '@auto_matrix/shared';
+import { DEUS_PACT, deusPactPose, newDeusPact, neoCarryPose, type DeusPactEncounter, type TrilogyEpilogueEncounter } from '@auto_matrix/shared';
 import { MachineUplinkContacts } from './MachineUplinkContacts.js';
 
 /** The Machine City audience chamber: energy tunnel, collective face and physical Matrix uplink. */
@@ -290,8 +290,9 @@ export class MachineCoreRenderer {
     position.needsUpdate = normal.needsUpdate = true; geometry.computeBoundingSphere(); geometry.computeBoundingBox();
   }
 
-  private updateUplink(state: DeusPactEncounter, subject?: THREE.Object3D): void {
+  private updateUplink(state: DeusPactEncounter, subject?: THREE.Object3D, carried?: TrilogyEpilogueEncounter): void {
     const pose = deusPactPose(state);
+    if (carried) { pose.seated = 1; pose.cables = pose.probe = neoCarryPose(carried).connection; }
     this.seat.visible = pose.seated > .001;
     this.bodyJacks.visible = pose.cables > .001; this.neckProbe.visible = pose.probe > .001;
     if (!subject || !this.seat.visible) return;
@@ -301,7 +302,8 @@ export class MachineCoreRenderer {
     const local = (point: THREE.Vector3) => this.group.worldToLocal(point.clone());
     const normal = (direction: THREE.Vector3) => direction.clone().applyQuaternion(rotation).normalize();
     const rearZ = local(subject.getWorldPosition(new THREE.Vector3())).z + 1.8;
-    [...contacts.seat, ...contacts.back].forEach((contact, i) => {
+    this.supportPads.forEach(pad => { pad.visible = !carried; }); this.supportStruts.forEach(strut => { strut.visible = !carried; });
+    if (!carried) [...contacts.seat, ...contacts.back].forEach((contact, i) => {
       const pad = this.supportPads[i], strut = this.supportStruts[i], side = i % 2 ? 1 : -1;
       const axis = normal(contact.normal), surface = local(contact.point);
       const foot = new THREE.Vector3(side * .85, .085, rearZ + (i < 2 ? 0 : .35));
@@ -317,7 +319,9 @@ export class MachineCoreRenderer {
       const tip = surface.clone().addScaledVector(axis, .018 + (1 - pose.cables) * 1.35);
       feed.plug.position.copy(tip).addScaledVector(axis, .09); feed.plug.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), axis.clone().negate());
       const end = tip.clone().addScaledVector(axis, .18);
-      this.bendUplink(feed.tube, [new THREE.Vector3(side * 1.1, .12, rearZ + .5), new THREE.Vector3(side * 1.1, end.y + .15, rearZ + .25), end.clone().addScaledVector(axis, .45), end]);
+      this.bendUplink(feed.tube, carried
+        ? [new THREE.Vector3(Math.sign(surface.x) * 3.2, .12, surface.z), new THREE.Vector3(Math.sign(surface.x) * 3.2, end.y - .75, surface.z), end.clone().addScaledVector(axis, .45), end]
+        : [new THREE.Vector3(side * 1.1, .12, rearZ + .5), new THREE.Vector3(side * 1.1, end.y + .15, rearZ + .25), end.clone().addScaledVector(axis, .45), end]);
       feed.tube.visible = feed.plug.visible = feed.port.visible = true;
     });
     const socket = subject.getObjectByName('cervical-interface');
@@ -326,22 +330,24 @@ export class MachineCoreRenderer {
       const surface = local(socket.getWorldPosition(new THREE.Vector3()));
       const axis = normal(new THREE.Vector3(0, 0, 1).transformDirection(socket.matrixWorld));
       const insert = state.phase === 'connecting' ? THREE.MathUtils.smoothstep(state.elapsed, 0, .55) : state.phase === 'connected' ? 1 : 0;
-      const gap = state.phase === 'consent' ? .2 + (1 - pose.probe) * .8 : THREE.MathUtils.lerp(.2, -.018, insert);
+      const gap = carried ? -.018 + (1 - pose.probe) * 1.6 : state.phase === 'consent' ? .2 + (1 - pose.probe) * .8 : THREE.MathUtils.lerp(.2, -.018, insert);
       const tip = surface.clone().addScaledVector(axis, gap);
       this.probeTip.position.copy(tip).addScaledVector(axis, .14);
       this.probeTip.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), axis.clone().negate());
       const end = tip.clone().addScaledVector(axis, .28);
-      this.bendUplink(this.probeTube, [new THREE.Vector3(1.45, .2, rearZ + .8), new THREE.Vector3(.9, end.y + .8, rearZ + .4), end.clone().addScaledVector(axis, .65), end]);
+      this.bendUplink(this.probeTube, carried
+        ? [new THREE.Vector3(0, .12, surface.z + 1), new THREE.Vector3(0, end.y - .7, surface.z + .8), end.clone().addScaledVector(axis, .65), end]
+        : [new THREE.Vector3(1.45, .2, rearZ + .8), new THREE.Vector3(.9, end.y + .8, rearZ + .4), end.clone().addScaledVector(axis, .65), end]);
       this.probeTube.visible = this.probeTip.visible = true;
     }
   }
 
   update(encounter: DeusPactEncounter | undefined, elapsed: number, firstPerson: boolean,
-    player: { x: number; z: number }, subject?: THREE.Object3D): void {
+    player: { x: number; z: number }, subject?: THREE.Object3D, carried?: TrilogyEpilogueEncounter): void {
     const state = encounter ?? newDeusPact(); const pose = deusPactPose(state);
     const time = encounter?.total ?? elapsed;
     this.setPerception(firstPerson);
-    this.ripples.visible = firstPerson;
+    this.ripples.visible = firstPerson && !carried;
     this.ripples.children.forEach((child, index) => {
       const cycle = (elapsed * .58 + index / this.ripples.children.length) % 1;
       child.position.x = player.x; child.position.z = player.z;
@@ -362,7 +368,7 @@ export class MachineCoreRenderer {
     this.face.visible = pose.face > .001;
     this.face.scale.setScalar(1);
     this.updateCollective(time, pose.face);
-    this.updateUplink(state, subject);
+    this.updateUplink(state, subject, carried);
     this.connection.visible = pose.pulse > .001;
     this.connection.scale.setScalar(.35 + pose.pulse * (firstPerson ? 1.7 : 2.6));
     const pulseMaterial = (this.connection.children[0] as THREE.Mesh).material as THREE.Material;

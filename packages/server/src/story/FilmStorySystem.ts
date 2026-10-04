@@ -53,8 +53,8 @@ import { farewellLocked, farewellPose, newFarewell, stepFarewell } from '@auto_m
 import { DEUS_PACT, deusPactLocked, deusPactPose, newDeusPact, stepDeusPact } from '@auto_matrix/shared';
 import { SMITH_FINALE, newSmithFinale, retrySmithFinale, smithFinaleAction as reduceSmithFinaleAction,
   smithFinaleLocked, smithFinalePose, smithCraterAmount, stepSmithFinale } from '@auto_matrix/shared';
-import { newTrilogyEpilogue, stepTrilogyEpilogue, trilogyEpilogueLocked, trilogyEpilogueProgress,
-  type TrilogyEpilogueKind } from '@auto_matrix/shared';
+import { newTrilogyEpilogue, stepTrilogyEpilogue, trilogyEpilogueLocked, trilogyEpilogueProgress, neoCarryPose,
+  type TrilogyEpilogueKind, type TrilogyEpilogueEncounter } from '@auto_matrix/shared';
 import { newApuRun, stepApuRun } from '@auto_matrix/shared';
 import { DOCK_GUNNERY, newDockGunnery, fireDockGunnery, stepDockGunnery } from '@auto_matrix/shared';
 import { TEMPLE_SEAL_SECONDS } from '@auto_matrix/shared';
@@ -426,6 +426,14 @@ export class FilmStorySystem {
         : kind === 'neo_carried' ? '旧存档已接回机器核心。连接、放低身体和驳船离开现在会完整呈现。'
           : '旧存档已接回重建后的公园。黑猫、协议与日出现在会逐拍呈现。';
   }
+  private placeNeoBody(agent: AgentState, encounter: TrilogyEpilogueEncounter, tick: number): void {
+    const pose = neoCarryPose(encounter);
+    agent.position = filmPosition('film_machine_core', pose.x, pose.z); agent.position.y += pose.y;
+    agent.currentLocation = 'film_machine_core'; agent.isInMatrix = false; agent.rotation = Math.PI;
+    agent.velocity = { x: 0, y: 0, z: 0 }; agent.targetPosition = null; agent.currentPath = [];
+    agent.currentAction = { type: 'idle', parameters: { resolved: true, finaleComa: true,
+      epilogue: { ...encounter, role: 'neo' } }, startedAt: tick, duration: 100000, progress: 0 };
+  }
   private placeEpilogue(agent: AgentState, tick: number): void {
     this.ensureEpilogue(); const state = this.state; const encounter = state?.epilogue;
     if (!state || !encounter || !this.epilogueKind()) return;
@@ -450,13 +458,7 @@ export class FilmStorySystem {
         agent.position = filmPosition(set, 0, z); agent.rotation = 0; agent.velocity = { x: 0, y: 0, z: 0 };
       }
     } else if (encounter.kind === 'neo_carried') {
-      if (trilogyEpilogueLocked(encounter)) {
-        const lowering = encounter.phase === 'lowering' ? progress : ['transfer', 'departing'].includes(encounter.phase) ? 1 : 0;
-        const transfer = encounter.phase === 'transfer' ? progress : encounter.phase === 'departing' ? 1 : 0;
-        const depart = encounter.phase === 'departing' ? progress : 0;
-        agent.position = filmPosition(set, 0, -25 - transfer * 9 - depart * 20); agent.position.y += 2.4 * (1 - lowering) + depart * 1.2;
-        agent.rotation = Math.PI; agent.velocity = { x: 0, y: 0, z: 0 };
-      }
+      this.placeNeoBody(agent, encounter, tick); return;
     } else {
       const cast: Record<string, [number, number, number]> = {
         architect: [-3.2, -15.5, Math.PI], sati: [1.5, -10, Math.PI], seraph: [5.2, -9, Math.PI],
@@ -4548,6 +4550,8 @@ export class FilmStorySystem {
   }
 
   unavailable(id: string): boolean {
+    if (id === 'neo' && this.state && (['m3_ceasefire', 'm3_neo_carried', 'm3_dawn'].includes(this.state.scene)
+      || this.state.completed.includes('m3_surrender'))) return true;
     const fate = this.state && filmCharacterFates(this.state)[id];
     // Bane remains active as Smith's host, unlike the programs consumed inside the Matrix.
     return Boolean(fate && fate !== 'alive' && !(id === 'bane' && fate === 'assimilated'));
@@ -4594,6 +4598,13 @@ export class FilmStorySystem {
     if (['m3_rain', 'm3_surrender'].includes(this.state.scene) && !this.state.visiting) {
       const actor = this.world.agents.get(this.state.actor);
       if (actor?.currentLocation === this.scene!.set) this.placeSmithFinale(actor, this.world.simulationTick);
+    }
+    const neo = this.world.agents.get('neo');
+    if (neo && !neo.controller && (['m3_ceasefire', 'm3_neo_carried', 'm3_dawn'].includes(this.state.scene)
+      || this.state.completed.includes('m3_neo_carried'))) {
+      const encounter = this.state.scene === 'm3_neo_carried' ? this.state.epilogue ?? newTrilogyEpilogue('neo_carried')
+        : { ...newTrilogyEpilogue('neo_carried'), phase: this.state.scene === 'm3_dawn' || this.state.completed.includes('m3_neo_carried') ? 'done' as const : 'ready' as const };
+      this.placeNeoBody(neo, encounter, this.world.simulationTick);
     }
   }
   releaseCast(reset = false): void {
@@ -4804,6 +4815,7 @@ export class FilmStorySystem {
     if (this.sixth.active(agent) && target === 'retry') return this.sixth.command(agent, target, tick);
     if (this.wetwall.active(agent) && target === 'retry') return this.wetwall.command(agent, target, tick);
     if (target === 'retry') {
+      if (state.scene === 'm3_neo_carried') { this.placeEpilogue(agent, tick); return 'Neo 的身体仍没有回应；已保留当前运送进度。'; }
       if (state.scene === 'm1_dejavu' && state.ambushEscape) {
         const escape = state.ambushEscape, checkpoint = escape.checkpoint;
         if (Object.keys(AMBUSH_COMPANY).some(id => this.world.agents.get(id)?.controller)) return '同行者正由另一位玩家控制，请等他释放角色后再重试。';
@@ -5355,7 +5367,6 @@ export class FilmStorySystem {
       this.ensureEpilogue(); const encounter = state.epilogue!;
       if (encounter.phase !== 'ready') return state.lastText;
       if (target !== 'act') return '留在机器核心，按 G 目送连接断开。';
-      if (!this.near(agent, step)) return '先走回连接平台中央。';
       encounter.phase = 'disconnecting'; encounter.elapsed = 0; encounter.total = 0; state.checkpoint = { ...agent.position };
       state.lastText = 'Neo 已经没有回应。机器开始逐条收回连接，金色光仍沿身体上的接口缓慢退去。';
       this.placeEpilogue(agent, tick); return state.lastText;
@@ -5705,7 +5716,8 @@ export class FilmStorySystem {
     const next = this.world.agents.get(id);
     if (!next || next.controller) return false;
     const state = this.state, previous = state?.actor;
-    if (state?.tvExit?.crosscut && ['m1_tv_exit', 'm1_unplugged'].includes(state.scene)) state.actor = id;
+    if (state?.tvExit?.crosscut && ['m1_tv_exit', 'm1_unplugged'].includes(state.scene)
+      || state?.scene === 'm3_ceasefire' && !this.step && id === 'neo') state!.actor = id;
     const changed = this.handoff?.(agent, id, tick) ?? false;
     if (!changed && state && previous) state.actor = previous;
     return changed;

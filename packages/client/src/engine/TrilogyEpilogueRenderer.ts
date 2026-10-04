@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { newTrilogyEpilogue, trilogyEpilogueProgress, type TrilogyEpilogueEncounter, type TrilogyEpilogueKind } from '@auto_matrix/shared';
+import { neoCarryPose, newTrilogyEpilogue, trilogyEpilogueProgress, type TrilogyEpilogueEncounter, type TrilogyEpilogueKind } from '@auto_matrix/shared';
+import { MachineUplinkContacts } from './MachineUplinkContacts.js';
 
 /** Physical epilogue beats layered over the existing Zion, Machine City and park sets. */
 export class TrilogyEpilogueRenderer {
@@ -11,7 +12,14 @@ export class TrilogyEpilogueRenderer {
   private barge?: THREE.Group;
   private tray?: THREE.Group;
   private bodyLight?: THREE.PointLight;
-  private cables: THREE.Mesh[] = [];
+  private deck?: THREE.Mesh;
+  private hull?: THREE.Mesh;
+  private rails: THREE.Mesh[] = [];
+  private braces: THREE.Mesh[] = [];
+  private supports: THREE.Mesh[] = [];
+  private liftArms: { lower: THREE.Mesh; upper: THREE.Mesh; end: THREE.Mesh }[] = [];
+  private bargePosts: THREE.Mesh[] = [];
+  private fittedBody?: THREE.Object3D;
   private cat?: THREE.Group;
   private catEcho?: THREE.Group;
   private resetTiles: THREE.Mesh[] = [];
@@ -59,29 +67,84 @@ export class TrilogyEpilogueRenderer {
   }
 
   private buildCarried(): void {
-    const gold = this.material(0xf0b55c, .25, .75, 0xffa83a, 3.2); const dark = this.material(0x262d2a, .3, .88);
-    const traySurface = this.material(0x465049, .48, .58, 0x6f4a24, .18);
+    const iron = this.material(0x3f515e, .38, .83), dark = this.material(0x19232b, .45, .78);
+    const inset = this.material(0x202b32, .64, .25), signal = this.material(0xcba977, .4, .6, 0xffac42, .45);
     this.barge = new THREE.Group(); this.barge.name = 'neo-machine-funeral-barge'; this.group.add(this.barge);
-    const hull = this.mesh(new THREE.CapsuleGeometry(2.5, 8, 6, 16), dark, this.barge); hull.rotation.x = Math.PI / 2; hull.scale.set(1, .42, .34);
-    for (const side of [-1, 1]) for (const z of [-3.4, 0, 3.4]) {
-      const rib = this.mesh(new THREE.TorusGeometry(2.2, .12, 8, 24, Math.PI), gold, this.barge); rib.position.set(0, .5, z); rib.rotation.set(Math.PI / 2, 0, side > 0 ? 0 : Math.PI);
+    this.hull = this.mesh(new THREE.SphereGeometry(1, 24, 12), dark, this.barge);
+    this.hull.scale.set(3.4, .42, 3.3); this.hull.position.set(0, .1, 2);
+    for (const side of [-1, 1]) for (let i = 0; i < 5; i++) {
+      const fin = this.mesh(new THREE.BoxGeometry(.65, .14, 1.5), iron, this.barge);
+      fin.position.set(side * (2.5 + Math.sin(i / 4 * Math.PI) * .35), .22, -.2 + i * 1.1); fin.rotation.z = side * .15;
+      const light = this.mesh(new THREE.BoxGeometry(.035, .05, .7), signal, this.barge); light.position.set(side * 2.85, .34, i * 1.1);
     }
     this.tray = new THREE.Group(); this.tray.name = 'neo-body-transfer-tray'; this.group.add(this.tray);
-    const bed = this.mesh(new THREE.CapsuleGeometry(.82, 3.8, 5, 16), traySurface, this.tray); bed.rotation.x = Math.PI / 2; bed.scale.y = .3;
+    this.deck = this.mesh(new THREE.BoxGeometry(1, 1, 1), inset, this.tray); this.deck.name = 'neo-carry-deck';
+    this.deck.scale.set(6.2, .1, 5.8); this.deck.position.set(0, .88, 2);
     for (const side of [-1, 1]) {
-      const rail = this.mesh(new THREE.BoxGeometry(.08, .1, 5.1), gold, this.tray); rail.name = `neo-tray-rim-${side < 0 ? 'left' : 'right'}`;
-      rail.position.set(side * 1.02, .25, 0);
+      const rail = this.mesh(new THREE.BoxGeometry(.08, .1, 1), iron, this.tray); rail.name = `neo-tray-rim-${side < 0 ? 'left' : 'right'}`;
+      this.rails.push(rail);
     }
-    this.bodyLight = new THREE.PointLight(0xffd7ad, 420, 18, 2); this.bodyLight.name = 'neo-tray-body-light';
-    this.bodyLight.position.set(2.8, 4.2, 1.8); this.tray.add(this.bodyLight); this.lights.add(this.bodyLight);
+    for (let i = 0; i < 24; i++) this.braces.push(this.mesh(new THREE.BoxGeometry(1, .075, .07), iron, this.tray));
     for (let i = 0; i < 7; i++) {
-      const cable = this.mesh(new THREE.CylinderGeometry(.045, .08, 8, 8), gold); cable.position.set(-1.5 + i * .5, 4.2, -25 + Math.sin(i) * .7); cable.rotation.x = .12 + i * .025; this.cables.push(cable);
+      const pad = this.mesh(new THREE.SphereGeometry(1, 14, 10), inset, this.tray); pad.name = `neo-carry-support-${i}`;
+      pad.visible = false; this.supports.push(pad);
     }
-    for (const x of [-18, -13, 13, 18]) for (const z of [-42, -28, -12]) {
-      const spine = this.mesh(new THREE.CylinderGeometry(.18, .6, 15 + (x + z + 80) % 7, 8), dark); spine.position.set(x, 7, z);
-      const node = this.mesh(new THREE.SphereGeometry(.45, 10, 8), gold); node.position.set(x, 13.5, z);
+    for (let i = 0; i < 4; i++) {
+      const lower = this.mesh(new THREE.CylinderGeometry(.1, .15, 1, 10), dark);
+      const upper = this.mesh(new THREE.CylinderGeometry(.07, .095, 1, 10), iron);
+      const end = this.mesh(new THREE.SphereGeometry(.14, 10, 8), iron);
+      lower.name = `neo-transfer-manipulator-${i}`; this.liftArms.push({ lower, upper, end });
+      this.bargePosts.push(this.mesh(new THREE.CylinderGeometry(.1, .18, 1, 10), iron, this.barge));
     }
-    const light = new THREE.PointLight(0xffb24f, 750, 55, 2); light.position.set(0, 11, -32); this.group.add(light); this.lights.add(light);
+    this.bodyLight = new THREE.PointLight(0xafcfe3, 240, 18, 2); this.bodyLight.name = 'neo-tray-body-light';
+    this.bodyLight.position.set(2.8, 4.2, 1.8); this.tray.add(this.bodyLight); this.lights.add(this.bodyLight);
+  }
+
+  private fitBody(subject?: THREE.Object3D): void {
+    if (!subject?.getObjectByName('pelvis') || this.fittedBody === subject || !this.tray || !this.deck) return;
+    subject.updateWorldMatrix(true, false); subject.updateMatrixWorld(true); this.tray.updateWorldMatrix(true, true);
+    const points: THREE.Vector3[] = [], bounds = new THREE.Box3();
+    subject.traverse(object => {
+      if (!(object instanceof THREE.SkinnedMesh)) return;
+      for (let parent: THREE.Object3D | null = object; parent && parent !== subject; parent = parent.parent) if (!parent.visible) return;
+      object.skeleton.update();
+      for (let i = 0; i < object.geometry.attributes.position.count; i++) {
+        const point = this.tray!.worldToLocal(object.localToWorld(object.getVertexPosition(i, new THREE.Vector3())));
+        points.push(point); bounds.expandByPoint(point);
+      }
+    });
+    if (!points.length) return;
+    this.fittedBody = subject;
+    const size = bounds.getSize(new THREE.Vector3()), center = bounds.getCenter(new THREE.Vector3()), top = bounds.min.y - .006;
+    const width = size.x + .4, length = size.z + .4, shape = new THREE.Shape();
+    shape.moveTo(-width / 2, -length / 2); shape.lineTo(width / 2, -length / 2); shape.lineTo(width / 2, length / 2);
+    shape.lineTo(-width / 2, length / 2); shape.closePath();
+    const contacts = new MachineUplinkContacts().sample(subject);
+    for (const contact of contacts?.ports ?? []) {
+      const p = this.tray.worldToLocal(contact.point.clone()), opening = new THREE.Path();
+      opening.absarc(p.x - center.x, center.z - p.z, .14, 0, Math.PI * 2, true); shape.holes.push(opening);
+    }
+    const neck = subject.getObjectByName('cervical-interface');
+    if (neck) { const p = this.tray.worldToLocal(neck.getWorldPosition(new THREE.Vector3())), opening = new THREE.Path();
+      opening.absarc(p.x - center.x, center.z - p.z, .17, 0, Math.PI * 2, true); shape.holes.push(opening); }
+    const deck = new THREE.ExtrudeGeometry(shape, { depth: .1, bevelEnabled: false, curveSegments: 12 }); deck.rotateX(-Math.PI / 2);
+    this.geometries.delete(this.deck.geometry); this.deck.geometry.dispose(); this.geometries.add(deck); this.deck.geometry = deck;
+    this.deck.scale.setScalar(1); this.deck.position.set(center.x, top - .1, center.z);
+    this.rails.forEach((rail, i) => { rail.scale.z = size.z + .65; rail.position.set(center.x + (i ? 1 : -1) * (size.x / 2 + .24), top + .035, center.z); });
+    this.braces.forEach((rib, i) => { rib.scale.x = size.x + .42; rib.position.set(center.x, top - .14, bounds.min.z - .15 + i / 23 * (size.z + .3)); });
+    if (this.hull) { this.hull.position.z = center.z; this.hull.scale.x = size.x / 2 + .4; this.hull.scale.z = size.z / 2 + .65; }
+    ['head', 'chest', 'pelvis', 'wrist_L', 'wrist_R', 'ankle_L', 'ankle_R'].forEach((name, i) => {
+      const bone = subject.getObjectByName(name); if (!bone) return;
+      const position = this.tray!.worldToLocal(bone.getWorldPosition(new THREE.Vector3()));
+      const rx = i === 1 || i === 2 ? .48 : .22, rz = i === 1 || i === 2 ? .38 : .22, ry = .12;
+      let y = Infinity;
+      for (const point of points) {
+        const radial = ((point.x - position.x) / rx) ** 2 + ((point.z - position.z) / rz) ** 2;
+        if (radial < 1) y = Math.min(y, point.y - ry * Math.sqrt(1 - radial) - .004);
+      }
+      const pad = this.supports[i]; pad.visible = Number.isFinite(y);
+      if (pad.visible) { pad.position.set(position.x, y, position.z); pad.scale.set(rx, ry, rz); }
+    });
   }
 
   private catModel(material: THREE.Material): THREE.Group {
@@ -111,7 +174,7 @@ export class TrilogyEpilogueRenderer {
     const warm = new THREE.PointLight(0xffae72, 0, 100, 1.2); warm.position.set(0, 18, -38); this.group.add(warm); this.lights.add(warm);
   }
 
-  update(encounter: TrilogyEpilogueEncounter | undefined, elapsed: number): void {
+  update(encounter: TrilogyEpilogueEncounter | undefined, elapsed: number, subject?: THREE.Object3D): void {
     const state = encounter ?? newTrilogyEpilogue(this.kind); const phase = state.phase; const progress = trilogyEpilogueProgress(state);
     if (this.kind === 'ceasefire') {
       const retreat = phase === 'retreat' ? progress : ['message_ready', 'running', 'announcement', 'embrace', 'done'].includes(phase) ? 1 : 0;
@@ -123,12 +186,29 @@ export class TrilogyEpilogueRenderer {
       });
       const beacon = [...this.lights][0]; if (beacon) beacon.intensity = retreat * 420;
     } else if (this.kind === 'neo_carried' && this.barge && this.tray) {
-      const lowering = phase === 'lowering' ? progress : ['transfer', 'departing', 'done'].includes(phase) ? 1 : 0;
-      const transfer = phase === 'transfer' ? progress : ['departing', 'done'].includes(phase) ? 1 : 0;
-      const depart = phase === 'departing' ? progress : phase === 'done' ? 1 : 0;
-      this.tray.position.set(0, 1.05 + (1 - lowering) * 2.4 + depart * 1.2, -25 - transfer * 9 - depart * 20);
-      this.barge.position.set(0, .05 + depart * 1.2, -34 - depart * 20); this.barge.rotation.z = Math.sin(elapsed * .35) * .025;
-      this.cables.forEach((cable, i) => { cable.visible = phase === 'ready' || phase === 'disconnecting'; cable.scale.y = phase === 'disconnecting' ? Math.max(.03, 1 - progress - i * .035) : 1; });
+      const pose = neoCarryPose(state);
+      this.tray.position.set(pose.x, 1.05 + pose.y, pose.z);
+      this.barge.position.set(pose.x, pose.bargeY, pose.bargeZ);
+      this.fitBody(subject);
+      if (this.deck) {
+        this.deck.geometry.computeBoundingBox(); const deck = this.deck.geometry.boundingBox!;
+        const halfWidth = (deck.max.x - deck.min.x) * this.deck.scale.x / 2 - .14;
+        const top = this.tray.position.y + this.deck.position.y - .14;
+        const release = THREE.MathUtils.smoothstep(pose.transfer, .84, 1);
+        const rod = (mesh: THREE.Mesh, start: THREE.Vector3, end: THREE.Vector3) => {
+          const direction = end.clone().sub(start); mesh.position.copy(start).addScaledVector(direction, .5);
+          mesh.scale.y = direction.length(); mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
+        };
+        this.liftArms.forEach((arm, i) => {
+          const side = i % 2 ? 1 : -1, z = this.deck!.position.z + (i < 2 ? -1.3 : 1.3);
+          const foot = new THREE.Vector3(side * (halfWidth + 1.4), .12, -25 + z);
+          const elbow = new THREE.Vector3(side * (halfWidth + .75), 1.1, -25 + z);
+          const end = new THREE.Vector3(pose.x + side * halfWidth, top, pose.z + z).lerp(elbow, release);
+          rod(arm.lower, foot, elbow); rod(arm.upper, elbow, end); arm.end.position.copy(end);
+          const post = this.bargePosts[i], height = 1.05 + this.deck!.position.y - .05 - .35;
+          post.position.set(side * halfWidth, .35 + height / 2, z); post.scale.y = height;
+        });
+      }
     } else if (this.kind === 'dawn' && this.cat && this.catEcho && this.sunrise && this.sun) {
       const catActive = phase === 'cat'; const catProgress = catActive ? progress : ['architect', 'choice', 'promise', 'sati', 'sunrise', 'belief', 'done'].includes(phase) ? 1 : 0;
       this.cat.visible = catActive; this.cat.position.set(-15 + catProgress * 24, 0, -25); this.cat.rotation.y = Math.PI / 2;
