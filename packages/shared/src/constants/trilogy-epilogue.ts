@@ -8,24 +8,28 @@ export const TRILOGY_EPILOGUE = {
     lowering: 3.1,
     transfer: 3.2,
     departing: 5.2,
-    cat: 2.4,
+    waking: 3.2,
+    cat: 6,
+    sitting: 2.4,
     architect: 5.4,
-    sati: 2.2,
+    leaving: 4.8,
+    sati: 9.2,
     sunrise: 6.2,
     belief: 3.6,
   },
 } as const;
 
-export type TrilogyEpilogueKind = 'ceasefire' | 'neo_carried' | 'dawn';
+export type TrilogyEpilogueKind = 'ceasefire' | 'neo_carried' | 'reset' | 'dawn';
 export type TrilogyEpiloguePhase = 'ready' | 'retreat' | 'message_ready' | 'running' | 'announcement' | 'embrace'
   | 'disconnecting' | 'lowering' | 'transfer' | 'departing'
-  | 'cat' | 'architect' | 'choice' | 'promise' | 'sati' | 'sunrise' | 'belief' | 'done';
+  | 'waking' | 'cat' | 'sitting' | 'architect' | 'choice' | 'leaving' | 'promise' | 'sati' | 'sunrise' | 'belief' | 'done';
 
 export interface TrilogyEpilogueEncounter {
   kind: TrilogyEpilogueKind;
   phase: TrilogyEpiloguePhase;
   elapsed: number;
   total: number;
+  parkApproach?: { x: number; z: number; yaw: number };
 }
 
 export interface TrilogyEpilogueGesture extends TrilogyEpilogueEncounter {
@@ -34,7 +38,7 @@ export interface TrilogyEpilogueGesture extends TrilogyEpilogueEncounter {
 
 const running = new Set<TrilogyEpiloguePhase>([
   'retreat', 'running', 'announcement', 'embrace', 'disconnecting', 'lowering', 'transfer', 'departing',
-  'cat', 'architect', 'sati', 'sunrise', 'belief',
+  'waking', 'cat', 'sitting', 'architect', 'leaving', 'sati', 'sunrise', 'belief',
 ]);
 
 export function newTrilogyEpilogue(kind: TrilogyEpilogueKind): TrilogyEpilogueEncounter {
@@ -42,7 +46,8 @@ export function newTrilogyEpilogue(kind: TrilogyEpilogueKind): TrilogyEpilogueEn
 }
 
 export function trilogyEpilogueLocked(encounter?: TrilogyEpilogueEncounter): boolean {
-  return Boolean(encounter && (encounter.kind === 'neo_carried' || running.has(encounter.phase)));
+  return Boolean(encounter && (encounter.kind === 'neo_carried' || encounter.kind === 'reset'
+    || encounter.kind === 'dawn' && encounter.phase !== 'ready' || running.has(encounter.phase)));
 }
 
 /** The physical body and its carrier share one saved trajectory, including the final resting frame. */
@@ -71,7 +76,8 @@ export function stepTrilogyEpilogue(encounter: TrilogyEpilogueEncounter, delta: 
     ? { retreat: 'message_ready', running: 'announcement', announcement: 'embrace', embrace: 'done' }
     : next.kind === 'neo_carried'
       ? { disconnecting: 'lowering', lowering: 'transfer', transfer: 'departing', departing: 'done' }
-      : { cat: 'architect', architect: 'choice', sati: 'sunrise', sunrise: 'belief', belief: 'done' };
+      : next.kind === 'reset' ? { waking: 'cat', cat: 'done' }
+        : { cat: 'architect', sitting: 'architect', architect: 'choice', leaving: 'promise', sati: 'sunrise', sunrise: 'belief', belief: 'done' };
   next.phase = after[next.phase] ?? next.phase;
   next.elapsed = 0;
   return next;

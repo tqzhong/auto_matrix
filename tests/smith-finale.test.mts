@@ -144,7 +144,10 @@ test('the cleared Smith host restores the same Oracle in the crater and preserve
   h.command('next'); assert.equal(h.state().scene, 'm3_ceasefire'); assert.deepEqual(oracle.position, restored);
   assert.equal(oracle.currentAction?.parameters.oracleRestored, true);
   Object.assign(h.state(), { scene: 'm3_neo_carried', actor: 'kid', step: FILM_SCENE_BY_ID.m3_neo_carried.steps.length });
-  h.command('next'); assert.equal(h.actor().id, 'oracle'); assert.equal(h.state().scene, 'm3_dawn');
+  h.command('next'); assert.equal(h.actor().id, 'sati'); assert.equal(h.state().scene, 'm3_reset');
+  assert.equal(oracle.currentAction?.parameters.oracleRestored, true, 'the street reset does not replay the Oracle’s arrival');
+  h.command('act'); h.frame(190); h.command('next');
+  assert.equal(h.actor().id, 'oracle'); assert.equal(h.state().scene, 'm3_dawn');
   assert.equal(oracle.currentAction?.parameters.oracleRestored, undefined, 'the later park scene must release the lying pose');
 });
 

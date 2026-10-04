@@ -47,10 +47,11 @@ test('the epilogue reducer preserves authored phase boundaries', () => {
   assert.equal(ceasefire.phase, 'retreat');
   ceasefire = stepTrilogyEpilogue(ceasefire, .1); assert.equal(ceasefire.phase, 'message_ready');
   assert.equal(trilogyEpilogueLocked(ceasefire), false, 'Kid must physically carry the news after the retreat');
-  let dawn = { ...newTrilogyEpilogue('dawn'), phase: 'cat' as const };
+  let dawn = { ...newTrilogyEpilogue('dawn'), phase: 'sitting' as const };
   for (let i = 0; i < 79; i++) dawn = stepTrilogyEpilogue(dawn, .1);
   assert.equal(dawn.phase, 'choice');
-  assert.equal(trilogyEpilogueLocked(dawn), false, 'the Architect cannot choose the meaning of peace for the player');
+  assert.equal(trilogyEpilogueLocked(dawn), true, 'the Oracle stays physically seated while the player decides');
+  assert.deepEqual(stepTrilogyEpilogue(dawn, .1), dawn, 'the Architect cannot choose the meaning of peace for the player');
 });
 
 test('Neo remains unresponsive while the transport is waiting or finished without advancing its clock', () => {
@@ -59,6 +60,21 @@ test('Neo remains unresponsive while the transport is waiting or finished withou
     assert.equal(trilogyEpilogueLocked(encounter), true, `${phase}: Neo cannot stand up between transport beats`);
     assert.deepEqual(stepTrilogyEpilogue(encounter, .1), encounter, `${phase}: the player still chooses when to continue`);
   }
+});
+
+test('the Oracle stays seated while the player considers the Architect’s promise', () => {
+  const h = game(), scene = FILM_SCENE_BY_ID.m3_dawn;
+  Object.assign(h.state(), { scene: scene.id, actor: 'oracle', step: 2,
+    epilogue: { ...newTrilogyEpilogue('dawn'), phase: 'choice' } });
+  h.players.possess('p', 'oracle', h.tick()); h.frame();
+  const seat = structuredClone(h.actor().position), encounter = structuredClone(h.state().epilogue);
+  h.players.receiveInput('p', { x: 1, z: 1, yaw: 1, sprint: true, jump: true, sequence: 100 });
+  h.players.step(.1, true, h.tick());
+  assert.deepEqual(h.actor().position, seat, 'waiting for a philosophical answer must not turn the seated Oracle into a running avatar');
+  assert.deepEqual(h.state().epilogue, encounter, 'the decision has no countdown');
+  assert.equal(h.actor().currentAction?.parameters.epilogue?.phase, 'choice');
+  h.command('reflect:trust');
+  assert.equal(h.state().step, 3, 'seated movement locking must still allow the explicit answer');
 });
 
 test('the Smith ending leaves a persistent real-world body while Kid witnesses the ceasefire', () => {
@@ -95,7 +111,8 @@ test('the Smith ending leaves a persistent real-world body while Kid witnesses t
   const completed = structuredClone(h.state()); h.command('retry'); assert.deepEqual(h.state(), completed, 'retry must not replay the ending or refill life');
   assert.ok(end.z < ready.z - 28, 'the body must remain aboard the departed vessel instead of snapping back');
   assert.equal(neo.currentAction?.parameters.finaleComa, true);
-  h.command('next'); assert.equal(h.actor().id, 'oracle');
+  h.command('next'); assert.equal(h.actor().id, 'sati');
+  h.command('act'); h.frame(190); h.command('next'); assert.equal(h.actor().id, 'oracle');
   assert.deepEqual(neo.position, end, 'cutting to the park must not return the body to the apartment');
 });
 
@@ -113,7 +130,9 @@ test('reconnecting after the transport can hand off to the Oracle without revivi
   assert.deepEqual(h.sandbox.state.profiles.neo.inventory, inventory);
   assert.equal(neo.health, body.health);
   h.command('next');
-  assert.equal(h.state().scene, 'm3_dawn', 'a saved completed transport must remain continuable');
+  assert.equal(h.state().scene, 'm3_reset', 'a saved completed transport must remain continuable');
+  assert.equal(h.actor().id, 'sati'); h.command('act'); h.frame(190); h.command('next');
+  assert.equal(h.state().scene, 'm3_dawn');
   assert.equal(h.actor().id, 'oracle');
   assert.equal(h.actor().currentAction?.parameters.oracleRestored, undefined);
   assert.equal(neo.status, 'disconnected'); assert.equal(neo.isInMatrix, false);
@@ -141,16 +160,31 @@ test('ceasefire, Neo transport and dawn form a saved playable epilogue without a
   h.actor().position = filmStepPosition(carried, carried.steps[0]); h.command('act'); h.frame(310);
   assert.equal(h.state().epilogue?.phase, 'done'); assert.equal(h.state().step, carried.steps.length);
 
+  h.command('next');
+  assert.equal(h.state().scene, 'm3_reset'); assert.equal(h.actor().id, 'sati');
+  assert.equal(h.actor().currentLocation, 'film_escape_streets', 'Sati wakes on the street, before the park');
+  h.command('act'); h.frame(100);
+  const resetSave = structuredClone(h.sandbox.state), resetClock = structuredClone(h.state().epilogue);
+  h.players.release('p', h.tick()); h.sandbox.restore(resetSave); h.players.possess('p', 'sati', h.tick());
+  assert.deepEqual(h.state().epilogue, resetClock); h.frame(90);
+  assert.equal(h.state().epilogue?.phase, 'done');
   h.command('next'); const dawn = FILM_SCENE_BY_ID.m3_dawn;
   assert.equal(h.state().scene, dawn.id); assert.equal(h.actor().id, 'oracle');
   h.actor().position = filmStepPosition(dawn, dawn.steps[0]); h.frame(); assert.equal(h.state().step, 1);
   h.actor().position = filmStepPosition(dawn, dawn.steps[1]); h.command('act'); h.frame(170);
   assert.equal(h.state().epilogue?.phase, 'choice'); assert.equal(h.state().step, 2);
-  h.command('reflect:trust'); assert.equal(h.state().epilogue?.phase, 'promise'); assert.equal(h.state().step, 3);
-  h.actor().position = filmStepPosition(dawn, dawn.steps[3]); h.command('act'); h.frame(255);
+  h.command('reflect:trust'); assert.equal(h.state().epilogue?.phase, 'leaving'); assert.equal(h.state().step, 3);
+  h.command('act'); assert.equal(h.state().epilogue?.phase, 'leaving', 'wait for the Architect to leave');
+  h.frame(100); assert.equal(h.state().epilogue?.phase, 'promise');
+  h.command('act'); h.frame(400);
   assert.equal(h.state().epilogue?.phase, 'done'); assert.equal(h.state().step, dawn.steps.length);
   assert.equal(h.state().finished, undefined, 'watching the sunrise must not silently start another cycle');
   h.command('next'); assert.equal(h.state().finished, true); assert.equal(h.sandbox.state.ending, 'peace');
+  const finalSeat = structuredClone(h.actor().position);
+  h.state().completed.push('m1_lobby'); h.command('visit:m1_lobby');
+  assert.equal(h.actor().currentLocation, 'film_government_lobby', 'confirmed ending must allow the existing scene revisit');
+  h.command('return'); assert.deepEqual(h.actor().position, finalSeat);
+  h.command('cycle'); assert.equal(h.actor().id, 'neo'); assert.equal(h.sandbox.state.neoLife!.cycle, 2);
 });
 
 test('Kid keeps the run performed by the player instead of teleporting back to replay it', () => {
@@ -163,11 +197,13 @@ test('Kid keeps the run performed by the player instead of teleporting back to r
   assert.equal(h.actor().position.z, target.z, 'starting the announcement must not move Kid back to the temple entrance');
 });
 
-test('each dedicated epilogue layer renders and disposes its physical story objects', () => {
+test('each dedicated epilogue layer renders and disposes its physical story objects', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const expectations = [
     ['ceasefire', 'ceasefire-retreating-sentinel-1'],
     ['neo_carried', 'neo-machine-funeral-barge'],
-    ['dawn', 'matrix-reset-black-cat'],
+    ['reset', 'matrix-reset-black-cat'],
+    ['dawn', 'oracle-waterfront-bench'],
   ] as const;
   for (const [kind, name] of expectations) {
     const root = new THREE.Group(); const renderer = new TrilogyEpilogueRenderer(root, kind);
@@ -176,7 +212,7 @@ test('each dedicated epilogue layer renders and disposes its physical story obje
       assert.ok(root.getObjectByName('neo-tray-rim-left'), 'the dark tray needs a visible silhouette');
       assert.ok(root.getObjectByName('neo-tray-body-light'), 'carried Neo needs a local key light');
     }
-    const state = newTrilogyEpilogue(kind); state.phase = kind === 'ceasefire' ? 'retreat' : kind === 'neo_carried' ? 'departing' : 'sunrise'; state.elapsed = 1;
+    const state = newTrilogyEpilogue(kind); state.phase = kind === 'ceasefire' ? 'retreat' : kind === 'neo_carried' ? 'departing' : kind === 'reset' ? 'cat' : 'sunrise'; state.elapsed = 1;
     renderer.update(state, 2);
     if (kind === 'neo_carried') assert.ok(root.getObjectByName('neo-body-transfer-tray')!.position.y > 1.05,
       'the tray must rise with the departing barge');

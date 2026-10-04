@@ -166,7 +166,7 @@ export class PlayerExperience {
       && ['m3_rain', 'm3_surrender'].includes(neoLife.journey.scene) && !neoLife.journey.visiting);
     const smithFinalePerforming = Boolean(smithFinaleScene && smithFinaleLocked(neoLife?.journey?.smithFinale));
     const epilogueScene = Boolean(neoLife?.journey && neoLife.journey.actor === player?.id
-      && ['m3_ceasefire', 'm3_neo_carried', 'm3_dawn'].includes(neoLife.journey.scene) && !neoLife.journey.visiting);
+      && ['m3_ceasefire', 'm3_neo_carried', 'm3_reset', 'm3_dawn'].includes(neoLife.journey.scene) && !neoLife.journey.visiting);
     const epiloguePerforming = Boolean(epilogueScene && trilogyEpilogueLocked(neoLife?.journey?.epilogue));
     const performing = Boolean(player?.currentAction?.parameters.truth || farewellPerforming || deusPerforming || smithFinalePerforming || epiloguePerforming || player?.currentAction?.parameters.farewell || player?.currentAction?.parameters.deusPact || player?.currentAction?.parameters.smithFinale || player?.currentAction?.parameters.epilogue || player?.currentAction?.parameters.persephone || player?.currentAction?.parameters.club || player?.currentAction?.parameters.workday || player?.currentAction?.parameters.meeting || player?.currentAction?.parameters.interrogation || player?.currentAction?.parameters.pills || player?.currentAction?.parameters.welcome || player?.currentAction?.parameters.sentinel || player?.currentAction?.parameters.interlude || player?.currentAction?.parameters.oracleVisit || player?.currentAction?.parameters.betrayal || player?.currentAction?.parameters.rescue || player?.currentAction?.parameters.government || player?.currentAction?.parameters.airRescue || player?.currentAction?.parameters.truckPassenger || matrixPerforming || onePerforming || reloadedPerforming || catchPerforming || player?.currentAction?.parameters.lobbyEntry || player?.currentAction?.parameters.filmPose || player?.currentAction?.parameters.spoon !== undefined || player?.currentAction?.parameters.vase !== undefined);
     document.body.classList.toggle('film-driving', driving);
@@ -253,7 +253,8 @@ export class PlayerExperience {
     this.el('death-rebuild').textContent = this.filmPlaying ? '从剧情检查点重试 ↗' : '重建这个角色 ↗';
     this.el('player-death').querySelector('p')!.textContent = this.filmPlaying ? '恢复生命并返回当前目标，已完成的剧情会保留。' : '重建角色会恢复生命，并保留已有的记忆与关系。';
     this.el('game-event').querySelector('.eyebrow')!.textContent = this.filmPlaying ? 'SCENE MEMORY' : 'SOMEWHERE IN THE CITY';
-    if (this.filmPlaying) this.el('game-event').querySelector('p')!.textContent = neoLife!.journey!.lastText;
+    if (this.filmPlaying) this.el('game-event').querySelector('p')!.textContent = neoLife!.journey!.finished
+      ? '停战与本轮反思已经保存。下一轮生活由你在手记中主动开始。' : neoLife!.journey!.lastText;
     playerSkills(player).forEach((id, slot) => {
       const skill = COMBAT_SKILLS[id]; const cooldown = player.combatCooldowns?.[id] ?? 0;
       const locked = player.id === 'neo' && !neoSkillUnlocked(neoLife, slot);

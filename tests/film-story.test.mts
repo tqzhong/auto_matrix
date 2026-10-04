@@ -49,7 +49,8 @@ test('all trilogy scenes have distinct stable IDs, existing cast, accessible obj
       // These targets are occupied through boarding, recovery or lying down.
       // Their encounter tests verify entry; character-asset.test checks physical contact.
       const stagedInsideProp = scene.id === 'm1_bug' && scene.steps.indexOf(step) < 2 || ['m1_recovery', 'm1_cabin'].includes(scene.id) && scene.steps.indexOf(step) === 0
-        || scene.id === 'm1_truth_return' || scene.id === 'm1_morning' && scene.steps.indexOf(step) === 1;
+        || scene.id === 'm1_truth_return' || scene.id === 'm1_morning' && scene.steps.indexOf(step) === 1
+        || scene.id === 'm3_dawn' && scene.steps.indexOf(step) >= 2;
       // Pit objectives use the persistent collapsed road, not the avenue's
       // original surface. Keep testing reachability against the real terrain.
       const terrain: WorldStructure[] = scene.set === 'film_smith_avenue' && step.z === SMITH_FINALE.crater.z
@@ -2913,10 +2914,12 @@ test('the entire film route completes through interactions, driving and real com
         }
         assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`); continue;
       }
-      if (['m3_ceasefire', 'm3_neo_carried', 'm3_dawn'].includes(scene.id)) {
+      if (['m3_ceasefire', 'm3_neo_carried', 'm3_reset', 'm3_dawn'].includes(scene.id)) {
         if (step.kind === 'reach') h.advance();
         else if (step.kind === 'reflect') h.command(`reflect:${filmReflections(scene.id)[0].id}`);
         else {
+          if (scene.id === 'm3_dawn' && state.epilogue?.phase === 'leaving')
+            for (let frame = 0; frame < 50; frame++) h.players.step(.1, true, h.tick());
           h.command('act');
           for (let frame = 0; frame < 320 && state.step === index; frame++) h.players.step(.1, true, h.tick());
         }

@@ -1,0 +1,77 @@
+[
+  {
+    "file": "grass_ground-color.jpg",
+    "asset": "grass_ground",
+    "page": "https://polyhaven.com/a/grass_ground",
+    "author": {
+      "Charlotte Baglioni": "All"
+    },
+    "license": "CC0",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/grass_ground/grass_ground_diff_1k.jpg",
+    "md5": "299047258586c762735b7284d3c662c3",
+    "bytes": 876584
+  },
+  {
+    "file": "grass_ground-normal.jpg",
+    "asset": "grass_ground",
+    "page": "https://polyhaven.com/a/grass_ground",
+    "author": {
+      "Charlotte Baglioni": "All"
+    },
+    "license": "CC0",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/grass_ground/grass_ground_nor_gl_1k.jpg",
+    "md5": "d518c5b2af6f2c0297bc807b351f511f",
+    "bytes": 1310516
+  },
+  {
+    "file": "grass_ground-roughness.jpg",
+    "asset": "grass_ground",
+    "page": "https://polyhaven.com/a/grass_ground",
+    "author": {
+      "Charlotte Baglioni": "All"
+    },
+    "license": "CC0",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/grass_ground/grass_ground_rough_1k.jpg",
+    "md5": "2e6afca246cf6b80bdb53f46fe7e5ce5",
+    "bytes": 328190
+  },
+  {
+    "file": "bark_willow-color.jpg",
+    "asset": "bark_willow",
+    "page": "https://polyhaven.com/a/bark_willow",
+    "author": {
+      "Dario Barresi": "Processing",
+      "Dimitrios Savva": "Photography"
+    },
+    "license": "CC0",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/bark_willow/bark_willow_diff_1k.jpg",
+    "md5": "792d4f8467fe360092eee335ee60b698",
+    "bytes": 779438
+  },
+  {
+    "file": "bark_willow-normal.jpg",
+    "asset": "bark_willow",
+    "page": "https://polyhaven.com/a/bark_willow",
+    "author": {
+      "Dario Barresi": "Processing",
+      "Dimitrios Savva": "Photography"
+    },
+    "license": "CC0",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/bark_willow/bark_willow_nor_gl_1k.jpg",
+    "md5": "91ffa6e3a1ba8cccb714908ef50122d5",
+    "bytes": 1438304
+  },
+  {
+    "file": "bark_willow-roughness.jpg",
+    "asset": "bark_willow",
+    "page": "https://polyhaven.com/a/bark_willow",
+    "author": {
+      "Dario Barresi": "Processing",
+      "Dimitrios Savva": "Photography"
+    },
+    "license": "CC0",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/bark_willow/bark_willow_rough_1k.jpg",
+    "md5": "794115a3942e6e435274aabfa0967818",
+    "bytes": 372597
+  }
+]

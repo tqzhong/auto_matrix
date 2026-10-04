@@ -255,6 +255,7 @@ export class FilmSetRenderer {
         else if (set.id === 'film_logos_wreck') this.logosWreck = new LogosWreckRenderer(this.root);
         else if (['m3_deus', 'm3_neo_carried'].includes(sceneId ?? '') && set.id === 'film_machine_core') this.machineCore = new MachineCoreRenderer(this.root);
         else if (set.id === 'film_smith_avenue') this.smithFinale = new SmithFinaleRenderer(this.root);
+        else if (set.id === 'film_sunrise_garden') this.trilogyEpilogue = new TrilogyEpilogueRenderer(this.root, 'dawn');
         else if (['m1_dojo', 'm1_jump', 'm1_red_dress'].includes(sceneId ?? '')) this.training = new TrainingSetRenderer(this.root, sceneId!);
         else if (sceneId === 'm1_sentinels') this.sentinel = new SentinelSetRenderer(this.root);
         else if (set.id === 'film_ambush_house' && sceneId === 'm1_basement') this.basement = new BasementSetRenderer(this.root);
@@ -295,7 +296,7 @@ export class FilmSetRenderer {
         if (!this.theOne && ['m1_death', 'm1_return'].includes(sceneId ?? '') && set.id === 'film_neb_deck') this.theOne = new TheOneRenderer(this.root, set.id);
         if (sceneId === 'm3_ceasefire') this.trilogyEpilogue = new TrilogyEpilogueRenderer(this.root, 'ceasefire');
         if (sceneId === 'm3_neo_carried') this.trilogyEpilogue = new TrilogyEpilogueRenderer(this.root, 'neo_carried');
-        if (sceneId === 'm3_dawn') this.trilogyEpilogue = new TrilogyEpilogueRenderer(this.root, 'dawn');
+        if (sceneId === 'm3_reset') this.trilogyEpilogue = new TrilogyEpilogueRenderer(this.root, 'reset');
       }
     }
     if (this.mirror) {
@@ -392,7 +393,7 @@ export class FilmSetRenderer {
       ? player.currentAction?.parameters.deusPact as DeusPactEncounter | undefined : undefined;
     const deus = savedDeus && fastDeus?.phase === savedDeus.phase && fastDeus.attempts === savedDeus.attempts
       && fastDeus.total >= savedDeus.total ? fastDeus : savedDeus;
-    const savedEpilogue = ['m3_ceasefire', 'm3_neo_carried', 'm3_dawn'].includes(journey?.scene ?? '') && !journey?.visiting ? journey?.epilogue : undefined;
+    const savedEpilogue = ['m3_ceasefire', 'm3_neo_carried', 'm3_reset', 'm3_dawn'].includes(journey?.scene ?? '') && !journey?.visiting ? journey?.epilogue : undefined;
     const fastEpilogue = player?.id === journey?.actor ? player?.currentAction?.parameters.epilogue as TrilogyEpilogueEncounter | undefined : undefined;
     const epilogue = savedEpilogue && fastEpilogue?.kind === savedEpilogue.kind && fastEpilogue.phase === savedEpilogue.phase
       && fastEpilogue.total >= savedEpilogue.total ? fastEpilogue : savedEpilogue;
@@ -626,6 +627,12 @@ export class FilmSetRenderer {
     (this.scene.background as THREE.Color).setHex(palette.sky);
     const fog = this.scene.fog as THREE.FogExp2; fog.color.setHex(palette.sky); fog.density = palette.fog;
     this.scene.environmentIntensity = outdoor.has(this.current.architecture) ? .8 : .6;
+    const park = this.trilogyEpilogue?.parkAtmosphere();
+    if (park) { fog.density = .0009; fog.color.setHex(0x8ba6b2); this.scene.environmentIntensity = .55; return park; }
+    if (this.currentScene === 'm3_reset') {
+      fog.density = .003; fog.color.setHex(0x8a9b9c); (this.scene.background as THREE.Color).copy(fog.color);
+      return { color: 0xe0e1cd, ambient: .95, sun: 1.1 };
+    }
     if (this.revolutionsPrelude && this.currentScene === 'm3_oracle_absorbed') {
       const dark = this.revolutionsPrelude.consumed;
       fog.color.setHex(dark ? 0x101e19 : 0x333d31); fog.density = dark ? .006 : .003;
