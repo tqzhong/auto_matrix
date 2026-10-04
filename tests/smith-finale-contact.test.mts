@@ -79,7 +79,7 @@ function fist(body: THREE.Group, side: 'R' | 'L') {
 
 function chest(body: THREE.Group) {
   const bone = body.getObjectByName('chest')!, mesh = body.getObjectByName('Tailored_coat_upper') as THREE.SkinnedMesh;
-  assert.ok(mesh instanceof THREE.SkinnedMesh && (mesh.material as THREE.Material).name === 'Charcoal suit and shirt');
+  assert.ok(mesh instanceof THREE.SkinnedMesh && ['Charcoal suit and shirt', 'Coat wool'].includes((mesh.material as THREE.Material).name));
   const positions = mesh.geometry.attributes.position, points: THREE.Vector3[] = [];
   for (let i = 0; i < positions.count; i++) points.push(bone.worldToLocal(mesh.localToWorld(mesh.getVertexPosition(i, new THREE.Vector3()))));
   const index = mesh.geometry.index!, triangles: THREE.Triangle[] = [];
@@ -307,4 +307,97 @@ test('the actual wrists and contact surfaces match after cold loading and revers
       same(snapshot(cold, side), forward, `${side} first cold peak`);
     } finally { cold.dispose(); }
   }
+});
+
+test('Smith’s single right hand touches Neo’s actual coat throughout the assimilation hold', async t => {
+  const h = await setup(t);
+  for (const elapsed of [.6, 1.2, 2.7, 3.8, 5.3]) {
+    h.frame({ ...newSmithFinale(), phase: 'assimilating', elapsed, total: 50 + elapsed });
+    const measured = contact(h.smith, h.neo, 'R');
+    assert.ok(measured.gap < .08, `assimilation ${elapsed}: right hand floats ${measured.gap} off Neo’s coat`);
+    assert.ok(measured.penetration < .04, `assimilation ${elapsed}: fingers penetrate Neo’s coat by ${measured.penetration}`);
+    assert.ok(contact(h.smith, h.neo, 'L').gap > .3, 'the left hand cannot duplicate the right-hand thrust');
+    t.diagnostic(`${elapsed}: gap ${measured.gap}; penetration ${measured.penetration}`);
+  }
+});
+
+test('the actual final-contact bodies resume identically and do not snap at consent, withdrawal or clearing', async t => {
+  const h = await setup(t);
+  const snapshot = (renderer = h.renderer) => ['neo', 'smith'].flatMap(id => ['head', 'wrist_R', 'wrist_L', 'ankle_R', 'ankle_L']
+    .map(name => renderer.getAgentBody(id)!.getObjectByName(name)!.getWorldPosition(new THREE.Vector3())));
+  for (const phase of ['surrender', 'assimilating', 'purging'] as const) {
+    const duration = phase === 'surrender' ? SMITH_FINALE.surrender.consentSeconds
+      : phase === 'assimilating' ? SMITH_FINALE.surrender.assimilationSeconds : SMITH_FINALE.surrender.purgeSeconds;
+    const beat = { ...newSmithFinale(), phase, elapsed: duration - .00001, focus: duration - .00001, total: 60 };
+    h.frame(beat); const before = snapshot();
+    h.frame(stepSmithFinale(beat, { focus: true, x: 0, z: 0 }, .00001));
+    snapshot().forEach((point, i) => assert.ok(point.distanceTo(before[i]) < .025, `${phase} ending: body ${i} jumps ${point.distanceTo(before[i])}`));
+  }
+  const beat: SmithFinaleEncounter = { ...newSmithFinale(), phase: 'assimilating', elapsed: 2.1, total: 51 };
+  h.frame(beat); const warm = snapshot();
+  const cold = new AgentRenderer(new THREE.Scene());
+  try {
+    h.save(beat, cold); await new Promise(resolve => setImmediate(resolve)); h.frame(beat, cold);
+    snapshot(cold).forEach((point, i) => assert.ok(point.distanceTo(warm[i]) < .00001, `cold contact body ${i} moved`));
+    h.frame({ ...beat, elapsed: 6 }); h.frame(beat);
+    snapshot().forEach((point, i) => assert.ok(point.distanceTo(warm[i]) < .00001, `reverse contact body ${i} moved`));
+  } finally { cold.dispose(); }
+});
+
+test('Smith raises an open hand against the white light without passing the delivered skin through his face', async t => {
+  const h = await setup(t);
+  for (const elapsed of [.1, .5, .8, 1.2, 2.2, 3.5, 3.9]) {
+    h.frame({ ...newSmithFinale(), phase: 'purging', elapsed, total: 70 + elapsed });
+    const head = h.smith.getObjectByName('head')!, wrist = h.smith.getObjectByName('wrist_R')!;
+    const hand = new THREE.Box3(), face = new THREE.Box3();
+    h.smith.traverseVisible(object => {
+      if (!(object instanceof THREE.SkinnedMesh) || (object.material as THREE.Material).name !== 'Skin') return;
+      const joints = object.geometry.attributes.skinIndex, weights = object.geometry.attributes.skinWeight;
+      for (let i = 0; i < object.geometry.attributes.position.count; i++) {
+        let headWeight = 0, handWeight = 0;
+        for (let k = 0; k < 4; k++) {
+          const name = object.skeleton.bones[joints.getComponent(i, k)].name, weight = weights.getComponent(i, k);
+          if (name === 'head') headWeight += weight;
+          if (/^(wrist_R|finger[1-5]-[1-3]_R)$/.test(name)) handWeight += weight;
+        }
+        if (headWeight < .7 && handWeight < .7) continue;
+        const point = head.worldToLocal(object.localToWorld(object.getVertexPosition(i, new THREE.Vector3())));
+        if (headWeight >= .7) face.expandByPoint(point);
+        if (handWeight >= .7) hand.expandByPoint(point);
+      }
+    });
+    assert.ok(!hand.isEmpty() && !face.isEmpty(), 'measure both real skin surfaces');
+    assert.equal(hand.intersectsBox(face), false, `${elapsed}: the shielding hand crosses the head envelope`);
+    if (elapsed === 1.2 || elapsed === 2.2) {
+      const palm = head.worldToLocal(wrist.localToWorld(new THREE.Vector3(.08, -.14, 0)));
+      assert.ok(palm.y > -.3 && palm.y < .35 && palm.z > .45 && palm.z < .95, `${elapsed}: the shielding palm must reach eye level in front of the face: ${palm.toArray()}`);
+      assert.ok(hand.max.y - hand.min.y > .45, 'the fingers are open rather than retaining the assimilation fist');
+    }
+  }
+});
+
+test('replacing a streamed Smith releases the temporary duplicate and restores Neo’s original materials', async t => {
+  const h = await setup(t);
+  const mesh = h.neo.getObjectByName('Tailored_coat_upper') as THREE.Mesh, original = mesh.material;
+  h.frame({ ...newSmithFinale(), phase: 'purging', elapsed: 1.2, total: 70 });
+  assert.ok(h.neo.getObjectByName('smith-assimilated-neo'), 'the replacement uses an actual Smith body');
+  assert.notEqual(mesh.material, original);
+  h.renderer.removeAgent('smith');
+  assert.equal(Boolean(h.neo.getObjectByName('smith-assimilated-neo')), false, 'a removed participant cannot leave its duplicate in another character');
+  assert.ok(mesh.material === original, 'the remaining actor must not retain the discarded body shader');
+});
+
+test('switching to Neo’s eyes keeps Smith’s internal light visible while hiding the duplicate player body', async t => {
+  const h = await setup(t), beat: SmithFinaleEncounter = { ...newSmithFinale(), phase: 'purging', elapsed: 3.5, total: 75 };
+  h.frame(beat);
+  const duplicate = h.neo.getObjectByName('smith-assimilated-neo')!;
+  const light = h.renderer.getAgent('neo')!.getObjectByName('smith-ending-smith-inner-light')
+    ?? h.renderer.getAgent('smith')!.getObjectByName('smith-ending-smith-inner-light');
+  assert.ok(light);
+  h.renderer.setPlayer('neo', true);
+  h.renderer.setPlayerMotion({ speed: 0, grounded: true, verticalVelocity: 0, turn: 0, smithFinale: { ...beat, role: 'neo' } });
+  h.frame(beat);
+  assert.equal(duplicate.visible, false);
+  for (let parent: THREE.Object3D | null = light; parent; parent = parent.parent)
+    assert.equal(parent.visible, true, `Smith’s face light is hidden by ${parent.name || parent.type} in first person`);
 });

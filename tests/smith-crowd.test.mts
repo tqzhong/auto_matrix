@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { newSmithFinale } from '@auto_matrix/shared';
+import { newSmithFinale, smithEndingPose } from '@auto_matrix/shared';
 import { SmithCrowdRenderer } from '../packages/client/src/engine/SmithCrowdRenderer.js';
 
 async function loadCrowd(far = false) {
@@ -56,10 +56,19 @@ test('Smith spectators stand in three staggered rows on both curbs facing the op
   const { asset } = await loadCrowd(); const distant = await loadCrowd(true);
   let finish!: (value: typeof asset) => void;
   t.mock.method(GLTFLoader.prototype, 'loadAsync', (url: string) => url.endsWith('-far.glb') ? Promise.resolve(distant.asset) : new Promise<typeof asset>(resolve => { finish = resolve; }));
-  const root = new THREE.Group(); const crowd = new SmithCrowdRenderer(root);
-  crowd.update({ ...newSmithFinale(), phase: 'purging', elapsed: 1.3, total: 60 });
+  const root = new THREE.Group(); root.position.set(6300, 1, 6000);
+  const crowd = new SmithCrowdRenderer(root);
+  const saved = { ...newSmithFinale(), phase: 'purging' as const, elapsed: 5.3, total: 60 };
+  crowd.update(saved);
   finish(asset); await crowd.ready;
-  assert.ok(crowd.group.scale.y < 1, 'an async load must keep the already resumed purge pose');
+  assert.equal(crowd.group.scale.y, 1, 'purging must retain full body proportions');
+  const material = (crowd.group.children[0] as THREE.Mesh).material as THREE.Material;
+  const shader = { uniforms: {}, vertexShader: THREE.ShaderLib.standard.vertexShader, fragmentShader: THREE.ShaderLib.standard.fragmentShader };
+  material.onBeforeCompile(shader as THREE.WebGLProgramParametersWithUniforms, {} as THREE.WebGLRenderer);
+  assert.equal((shader.uniforms as Record<string, { value: number }>).smithCrowd.value, smithEndingPose(saved).crowd,
+    'an async load restores the saved surface-clearing wave, not a fresh uninfected crowd');
+  assert.deepEqual((shader.uniforms as Record<string, { value: THREE.Vector3 }>).smithOrigin.value.toArray(), [6300, 1, 6000],
+    'dissolve noise must use avenue-local positions instead of losing fragment precision at distant world coordinates');
   crowd.update(newSmithFinale());
   const batches = crowd.group.children as THREE.InstancedMesh[];
   assert.equal(batches.length, 48, 'eight shared surfaces in six cullable avenue sections');

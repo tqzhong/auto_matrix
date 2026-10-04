@@ -194,7 +194,7 @@ export class Engine {
     if (!cinematicSet && previousSet?.id !== filmSet?.id) this.updateAtmosphere();
     this.voxelRenderer.matrix.visible = this.matrix && !cinematicSet; this.voxelRenderer.real.visible = !this.matrix && !cinematicSet;
     measure?.('film');
-    this.rain.visible = cinematicSet ? cinematicSet.light === 'storm' : this.matrix && this.weather !== 'clear' && !(player && insideLifeRoom(player.position));
+    this.rain.visible = cinematicSet ? cinematicSet.light === 'storm' && cinematicSet.id !== 'film_smith_avenue' : this.matrix && this.weather !== 'clear' && !(player && insideLifeRoom(player.position));
     this.sandboxRenderer.update(delta, this.camera, this.matrix, this.tick, this.running);
     this.lightingSystem.setTime(cinematicSet ? ({ day: 12000, night: 22000, warm: 11000, cold: 10000, white: 12000, storm: 19000, sunrise: 7000 })[cinematicSet.light] : this.timeOfDay);
     this.lightingSystem.update(this.elapsed, this.playerControls?.id ? this.camera : undefined,

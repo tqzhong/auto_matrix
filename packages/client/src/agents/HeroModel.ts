@@ -701,7 +701,7 @@ export class HeroModels {
   animate(rig: HeroRig, pose: Pose, motion: MotionState, input: MotionInput, delta: number): void {
     const interactionView = Boolean(input.firstPerson && (input.morning || input.podWake !== undefined || input.workday?.role === 'neo' && input.workday.phase === 'signing'));
     rig.silver.value = input.mirror ?? 0;
-    rig.glasses.visible = !interactionView && !rig.officeRole && !rig.apartmentRole && input.glasses !== false && !input.realWorld && !(input.bathroom?.role === 'smith' && input.bathroom.headbutt);
+    rig.glasses.visible = !interactionView && !rig.officeRole && !rig.apartmentRole && input.glasses !== false && !input.realWorld && !input.smithFinale && !(input.bathroom?.role === 'smith' && input.bathroom.headbutt);
     const officeShirt = input.officeShirt || rig.officeRole === 'courier' || rig.officeRole === 'police';
     const trackingShirt = input.performance === 'touch' || input.homeClothes === true;
     const clubClothes = Boolean(input.clubClothes && !input.realWorld);

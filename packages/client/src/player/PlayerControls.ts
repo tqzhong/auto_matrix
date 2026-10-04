@@ -1846,6 +1846,14 @@ export class PlayerControls {
       const side = THREE.MathUtils.lerp(THREE.MathUtils.lerp(5.5, 7.5, crater), 5, pose.flight);
       const forward = new THREE.Vector3(Math.sin(this.yaw), 0, Math.cos(this.yaw)); const right = new THREE.Vector3(Math.cos(this.yaw), 0, -Math.sin(this.yaw));
       const ideal = focus.clone().addScaledVector(forward, -distance).addScaledVector(right, side); ideal.y += height;
+      if (['vision', 'understanding', 'surrender', 'assimilating', 'purging', 'done'].includes(gesture.phase)) {
+        const midZ = (pose.neo.z + pose.smith.z) / 2;
+        focus.set(center.x, center.y + pose.neo.y + 1.65, center.z + midZ);
+        ideal.set(center.x + (this.camera.aspect < 1 ? 9 : 6.8), center.y + pose.neo.y + 3.1, center.z + midZ - 1.3);
+        const reveal = gesture.phase === 'done' ? 1 : gesture.phase === 'purging' ? THREE.MathUtils.smoothstep(gesture.elapsed, 4.2, 6.2) : 0;
+        focus.lerp(new THREE.Vector3(center.x, center.y + 3, center.z + 6), reveal);
+        ideal.lerp(new THREE.Vector3(center.x + 6, center.y + 22, center.z - (this.camera.aspect < 1 ? 100 : 80)), reveal);
+      }
       if (crater > 0) ideal.y = Math.max(ideal.y, center.y + smithCraterFloor(ideal.x - center.x, ideal.z - center.z) * crater + .6);
       this.camera.position.copy(ideal);
       this.camera.lookAt(focus);

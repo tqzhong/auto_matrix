@@ -143,6 +143,27 @@ test('the lying first-person view lifts toward Smith while keeping mouse look av
   assert.ok(h.camera.getWorldDirection(new THREE.Vector3()).distanceTo(before) > .1, 'the resting view cannot lock out mouse look');
 });
 
+test('the clearing shot rises out of the pit to show both ranks while retaining a continuous saved camera', async t => {
+  const h = await setup(t), center = FILM_SETS.film_smith_avenue.center;
+  for (const aspect of [16 / 9, 4 / 3, 9 / 16]) {
+    h.camera.aspect = aspect;
+    for (const elapsed of [5.3, 6.2, 8]) {
+      h.frame({ ...newSmithFinale(), phase: 'purging', elapsed, total: 60 + elapsed });
+      assert.ok(h.camera.position.y > center.y + 2, 'the street-wide clearance cannot remain hidden behind the pit walls');
+      for (const x of [-20, 20]) {
+        const head = new THREE.Vector3(center.x + x, center.y + 4, center.z + 6).project(h.camera);
+        assert.ok(Math.abs(head.x) < .95 && Math.abs(head.y) < .75 && head.z < 1, `${aspect}/${elapsed}: audience row ${x} is outside the clearing shot`);
+      }
+      const before = h.camera.position.clone();
+      h.frame({ ...newSmithFinale(), phase: 'purging', elapsed: elapsed + .001, total: 60 + elapsed + .001 });
+      assert.ok(h.camera.position.distanceTo(before) < .08, 'the crane movement cannot cut through a sudden camera jump');
+    }
+    const end = h.camera.position.clone();
+    h.frame({ ...newSmithFinale(), phase: 'done', total: 70 });
+    assert.ok(h.camera.position.distanceTo(end) < .00001, 'the completed street view cannot snap back into the empty pit');
+  }
+});
+
 test('real finale GLB head, hands and feet cold-load identically after running and reverse saved-frame seeking', async t => {
   const h = await setup(t);
   for (const actor of h.actors) actor.velocity = { x: 0, y: 0, z: 12 };
