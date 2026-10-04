@@ -20,6 +20,7 @@ import { OPENING_ESCAPE } from './opening-escape.js';
 import { hammerHeight } from './hammer-flight.js';
 import { ORACLE_ENTRANCE } from './oracle.js';
 import { BASEMENT, basementBlocked, TV_EXIT_OBSTACLES } from './basement-escape.js';
+import { SMITH_FINALE, smithCraterFloor } from './smith-finale.js';
 
 export type FilmArchitecture = 'hotel' | 'apartment' | 'club' | 'office' | 'interrogation' | 'bridge' | 'car' | 'lafayette' | 'pods' | 'ship' | 'construct' | 'desert' | 'dojo' | 'rooftop' | 'plaza' | 'restaurant' | 'oracle' | 'tenement' | 'lobby' | 'subway' | 'street' | 'zion' | 'temple' | 'engineering' | 'teahouse' | 'backdoors' | 'courtyard' | 'chateau' | 'mountain' | 'workshop' | 'garage' | 'freeway' | 'power' | 'architect' | 'mobil' | 'hel' | 'machine' | 'rain' | 'garden';
 export interface FilmSet {
@@ -254,7 +255,7 @@ export function filmObstacles(set: FilmSet, movingMeetingCar = false, movingOrac
   return columns;
 }
 
-export function filmBlocked(position: Vector3, set: FilmSet, radius: number, movingMeetingCar = false, movingOracleDoor = false): boolean {
+export function filmBlocked(position: Vector3, set: FilmSet, radius: number, movingMeetingCar = false, movingOracleDoor = false, craterDepth = 0): boolean {
   const x = position.x - set.center.x; const z = position.z - set.center.z;
   if (set.id === 'film_ambush_house' && position.y - set.center.y < -70) return basementBlocked(x, position.y - set.center.y, z, radius);
   if (set.id === 'film_ambush_house' && Math.abs(position.y - set.center.y - WETWALL_SHAFT.sixth) < .8 && z >= WETWALL_SHAFT.front && z <= -14.8)
@@ -275,11 +276,19 @@ export function filmBlocked(position: Vector3, set: FilmSet, radius: number, mov
   if (set.id === 'film_extraction_car' || set.id === 'film_adams_bridge') {
     if (!meetingRoadContains(x, z, radius)) return true;
   } else if (!hotelEscape && !oracleHall && (Math.abs(x) > set.width / 2 - radius - perimeter || !apartmentExit && Math.abs(z) > set.depth / 2 - radius - perimeter)) return true;
-  if (position.y < filmGroundHeight(position, set) - .8) return true;
+  if (set.id === 'film_smith_avenue' && craterDepth > 0 && position.y < set.center.y - craterDepth + 2.5) {
+    const fromImpact = Math.hypot(x - SMITH_FINALE.crater.x, z - SMITH_FINALE.crater.z);
+    if (fromImpact > SMITH_FINALE.crater.floorRadius - radius && fromImpact < SMITH_FINALE.crater.radius + radius) return true;
+  }
+  if (position.y < filmGroundHeight(position, set, craterDepth) - .8) return true;
   return filmObstacles(set, movingMeetingCar, movingOracleDoor).some(o => Math.abs(x - o.x) < o.width / 2 + radius && Math.abs(z - o.z) < o.depth / 2 + radius && position.y < set.center.y + o.height);
 }
 
-export function filmGroundHeight(position: Vector3, set: FilmSet): number {
+export function filmGroundHeight(position: Vector3, set: FilmSet, craterDepth = 0): number {
+  if (set.id === 'film_smith_avenue' && craterDepth > 0) {
+    const floor = smithCraterFloor(position.x - set.center.x, position.z - set.center.z);
+    return set.center.y + (floor < 0 ? (floor + .025) * craterDepth / SMITH_FINALE.crater.depth : 0);
+  }
   if (set.id === 'film_ambush_house' && position.y - set.center.y < -70) return set.center.y + (position.y - set.center.y < BASEMENT.floor - 2 ? BASEMENT.tunnelFloor : BASEMENT.floor);
   if (set.id === 'film_ambush_house') return set.center.y + (ambushFloor(position.x - set.center.x, position.z - set.center.z, position.y - set.center.y) ?? -AMBUSH_STAIRS.rise * (AMBUSH_STOREYS + 1));
   if (set.id === 'film_hammer_route') return set.center.y + hammerHeight(position.z - set.center.z) - 1.35;

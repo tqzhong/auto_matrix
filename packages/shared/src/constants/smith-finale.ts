@@ -4,8 +4,8 @@ export const SMITH_FINALE = {
   shockwave: 1.6,
   air: { warning: .8, dodge: 1.2, counter: 3.4 },
   building: 1.5,
-  descent: { seconds: 3.4, braceSeconds: 1.4 },
-  crater: { riseSeconds: 1.8 },
+  descent: { seconds: 3.4, impact: 2.85, braceSeconds: 1.4 },
+  crater: { x: 0, z: -38, depth: 12, radius: 17, floorRadius: 9, settleSeconds: .7, riseSeconds: 1.8 },
   assault: 3.5,
   surrender: { consentSeconds: 1.6, assimilationSeconds: 3.6, purgeSeconds: 2.8 },
 } as const;
@@ -26,6 +26,7 @@ export interface SmithFinaleEncounter {
   lane: number;
   checkpoint: SmithFinaleCheckpoint;
   attempts: number;
+  impactAt?: number;
 }
 
 export interface SmithFinaleGesture extends SmithFinaleEncounter { role: 'neo' | 'smith' }
@@ -51,12 +52,35 @@ export type SmithFinaleAction = 'attack' | 'dodge';
 const clamp = (value: number, low = 0, high = 1): number => Math.max(low, Math.min(high, value));
 const smooth = (value: number): number => { const t = clamp(value); return t * t * (3 - 2 * t); };
 
+export function smithCraterRim(angle: number): number {
+  return SMITH_FINALE.crater.radius + Math.sin(angle * 3 + .7) * .7 + Math.sin(angle * 7 - .4) * .4;
+}
+
+/** Avenue-local surface shared by the broken mesh, movement and camera. */
+export function smithCraterFloor(x: number, z: number): number {
+  const dx = x - SMITH_FINALE.crater.x, dz = z - SMITH_FINALE.crater.z;
+  const radius = Math.hypot(dx, dz), rim = smithCraterRim(Math.atan2(dz, dx));
+  const slope = clamp((radius - SMITH_FINALE.crater.floorRadius) / (rim - SMITH_FINALE.crater.floorRadius));
+  const base = -SMITH_FINALE.crater.depth * (1 - smooth(slope));
+  const fracture = Math.sin(x * 1.8 + Math.sin(z * .7)) * .28 + Math.sin(x * 4.6 - z * 3.2) * .12
+    + Math.sin(base * 3.3 + Math.sin(x * .7 + z * .3)) * .2;
+  return base + fracture * 4 * slope * (1 - slope);
+}
+
+export function smithCraterAmount(encounter: SmithFinaleEncounter): number {
+  if (encounter.phase === 'descent') return smooth((encounter.elapsed - SMITH_FINALE.descent.impact)
+    / (SMITH_FINALE.descent.seconds - SMITH_FINALE.descent.impact));
+  return encounter.impactAt !== undefined || ['crater', 'choice', 'rain_done', 'assault_ready', 'assault', 'vision',
+    'understanding', 'surrender', 'assimilating', 'purging', 'done'].includes(encounter.phase) ? 1 : 0;
+}
+
 export function newSmithFinale(): SmithFinaleEncounter {
   return { phase: 'approach', elapsed: 0, total: 0, focus: 0, hits: 0, lastStrike: -1, lane: 0, checkpoint: 'ground', attempts: 0 };
 }
 
 export function smithFinaleLocked(encounter?: SmithFinaleEncounter): boolean {
-  return Boolean(encounter && !['approach', 'ready', 'assault_ready', 'rain_done', 'done', 'failed'].includes(encounter.phase));
+  return Boolean(encounter && (encounter.phase === 'failed' && encounter.impactAt !== undefined
+    || !['approach', 'ready', 'assault_ready', 'rain_done', 'done', 'failed'].includes(encounter.phase)));
 }
 
 function failed(encounter: SmithFinaleEncounter, checkpoint: SmithFinaleCheckpoint): SmithFinaleEncounter {
@@ -66,7 +90,7 @@ function failed(encounter: SmithFinaleEncounter, checkpoint: SmithFinaleCheckpoi
 export function retrySmithFinale(encounter: SmithFinaleEncounter): SmithFinaleEncounter {
   const air = encounter.checkpoint === 'air';
   return { ...encounter, phase: air ? 'air_warning' : 'ready', elapsed: 0, focus: 0, hits: 0,
-    lastStrike: -1, lane: 0, attempts: encounter.attempts + 1 };
+    lastStrike: -1, lane: 0, attempts: encounter.attempts + 1, impactAt: undefined };
 }
 
 export function smithFinaleAction(encounter: SmithFinaleEncounter, action: SmithFinaleAction): SmithFinaleEncounter {
@@ -85,11 +109,12 @@ export function smithFinaleAction(encounter: SmithFinaleEncounter, action: Smith
 }
 
 export function stepSmithFinale(encounter: SmithFinaleEncounter, input: SmithFinaleInput, delta: number): SmithFinaleEncounter {
+  if (encounter.phase === 'failed') return encounter;
   if (!smithFinaleLocked(encounter)) return ['approach', 'ready', 'rain_done', 'assault_ready'].includes(encounter.phase)
     ? { ...encounter, total: encounter.total + Math.max(0, delta) } : encounter;
   if (['choice', 'vision', 'understanding'].includes(encounter.phase)) return { ...encounter, total: encounter.total + Math.max(0, delta) };
   const dt = Math.max(0, delta); const next = { ...encounter, elapsed: encounter.elapsed + dt, total: encounter.total + dt };
-  if (['air_warning', 'air_dodge', 'air_counter', 'building', 'descent'].includes(next.phase))
+  if (['air_warning', 'air_dodge', 'air_counter'].includes(next.phase))
     next.lane = clamp(next.lane + input.x * dt * .75, -1, 1);
   if (next.phase === 'ground_warning' && next.elapsed + 1e-6 >= SMITH_FINALE.ground.warning) {
     next.phase = 'ground_dodge'; next.elapsed = 0;
@@ -105,11 +130,15 @@ export function stepSmithFinale(encounter: SmithFinaleEncounter, input: SmithFin
     next.phase = 'descent'; next.elapsed = 0; next.focus = 0;
   } else if (next.phase === 'descent') {
     next.focus = clamp(next.focus + (input.focus ? dt : -dt * .42), 0, SMITH_FINALE.descent.braceSeconds);
-    if (next.focus + 1e-6 >= SMITH_FINALE.descent.braceSeconds) {
+    if (next.elapsed >= SMITH_FINALE.descent.impact && next.impactAt === undefined)
+      next.impactAt = next.total - (next.elapsed - SMITH_FINALE.descent.impact);
+    if (next.elapsed + 1e-6 >= SMITH_FINALE.descent.seconds) {
+      if (next.focus + 1e-6 < SMITH_FINALE.descent.braceSeconds) return failed(next, 'air');
       next.phase = 'crater'; next.elapsed = 0; next.focus = 0;
-    } else if (next.elapsed + 1e-6 >= SMITH_FINALE.descent.seconds) return failed(next, 'air');
+    }
   } else if (next.phase === 'crater') {
-    next.focus = clamp(next.focus + (input.focus ? dt : -dt * .18), 0, SMITH_FINALE.crater.riseSeconds);
+    const active = Math.max(0, next.elapsed - Math.max(encounter.elapsed, SMITH_FINALE.crater.settleSeconds));
+    next.focus = clamp(next.focus + (input.focus ? active : -active * .18), 0, SMITH_FINALE.crater.riseSeconds);
     if (next.focus + 1e-6 >= SMITH_FINALE.crater.riseSeconds) { next.phase = 'choice'; next.elapsed = 0; }
   } else if (next.phase === 'assault' && next.elapsed + 1e-6 >= SMITH_FINALE.assault) {
     next.phase = 'vision'; next.elapsed = 0;
@@ -125,7 +154,8 @@ export function stepSmithFinale(encounter: SmithFinaleEncounter, input: SmithFin
 }
 
 export function smithFinalePose(encounter: SmithFinaleEncounter): SmithFinalePose {
-  const phase = encounter.phase; const t = encounter.elapsed;
+  const phase = encounter.phase === 'failed' && encounter.impactAt !== undefined ? 'crater' : encounter.phase;
+  const t = encounter.elapsed;
   const punchAge = phase === 'ground_counter' && encounter.lastStrike >= 0 ? t - encounter.lastStrike : phase === 'shockwave' ? t : -1;
   const punch = punchAge < 0 ? 0 : Math.sin(clamp(punchAge / .34) * Math.PI);
   const airNeoY = 22 + Math.sin(encounter.total * 1.8) * 1.2;
@@ -150,17 +180,27 @@ export function smithFinalePose(encounter: SmithFinaleEncounter): SmithFinalePos
   }
   if (phase === 'building') {
     const p = smooth(t / SMITH_FINALE.building);
-    neo.x = encounter.lane * 4 - p * 26; neo.y = 20 - p * 5; neo.z = -23 - p * 5; neo.yaw = -Math.PI / 2;
-    smith.x = encounter.lane * 2 - p * 18; smith.y = 21 - p * 4; smith.z = -17 - p * 7; smith.yaw = -Math.PI / 2;
+    const start = encounter.total - t;
+    neo.x = encounter.lane * (7 - 3 * p) - p * 26; neo.y = (22 + Math.sin(start * 1.8) * 1.2) * (1 - p) + 15 * p;
+    neo.z = -25 - p * 3; neo.yaw = -Math.PI / 2 * p;
+    smith.x = encounter.lane * 2 + 2 - p * 20; smith.y = (23.5 + Math.sin(start * 1.8 + 1) * 1.1) * (1 - p) + 17 * p;
+    smith.z = -12 - p * 12; smith.yaw = Math.PI + Math.PI / 2 * p;
   }
+  const collapse = smithCraterAmount(encounter);
   if (phase === 'descent') {
-    const p = smooth(t / SMITH_FINALE.descent.seconds);
-    neo.x = encounter.lane * 6; neo.y = 30 * (1 - p); neo.z = -25 - p * 13; neo.yaw = Math.PI;
-    smith.x = encounter.lane * 4; smith.y = 33 * (1 - p); smith.z = -20 - p * 14; smith.yaw = Math.PI;
+    const p = clamp(t / SMITH_FINALE.descent.impact), turn = smooth(p);
+    // Leave the same broken facade, arc back over the avenue, then accelerate
+    // downward. The final .55 seconds collapse the road and bodies together.
+    neo.x = (encounter.lane * 4 - 26) * (1 - turn); neo.z = -28 - turn * 10;
+    neo.y = 15 * (1 - p * p) + 17 * Math.sin(p * Math.PI) + (-SMITH_FINALE.crater.depth + .025) * collapse;
+    neo.yaw = -Math.PI / 2 * (1 - turn);
+    smith.x = (encounter.lane * 2 - 18) * (1 - turn); smith.z = -24 - turn * 10 + collapse * 2.5;
+    smith.y = 17 * (1 - p * p) + 19 * Math.sin(p * Math.PI) + 3 * turn * (1 - collapse) + (-SMITH_FINALE.crater.depth + .025) * collapse;
+    smith.yaw = -Math.PI / 2 - Math.PI / 2 * turn;
   }
   if (['crater', 'choice', 'rain_done', 'assault_ready', 'assault', 'vision', 'understanding', 'surrender', 'assimilating', 'purging', 'done'].includes(phase)) {
-    neo.x = 0; neo.y = phase === 'crater' ? -1.15 + smooth(encounter.focus / SMITH_FINALE.crater.riseSeconds) * 1.15 : 0; neo.z = -38; neo.yaw = 0;
-    smith.x = 0; smith.y = 0; smith.z = -31.5; smith.yaw = Math.PI;
+    neo.x = 0; neo.y = -SMITH_FINALE.crater.depth + .025; neo.z = -38; neo.yaw = 0;
+    smith.x = 0; smith.y = neo.y; smith.z = -31.5; smith.yaw = Math.PI;
   }
   if (phase === 'assault') {
     const hit = Math.sin(clamp(t / SMITH_FINALE.assault) * Math.PI * 5);
@@ -177,10 +217,10 @@ export function smithFinalePose(encounter: SmithFinaleEncounter): SmithFinalePos
       : phase === 'air_dodge' ? Math.sin(clamp(t / SMITH_FINALE.air.dodge) * Math.PI) : 0,
     strike: phase === 'ground_counter' || phase === 'shockwave' ? punch
       : phase === 'air_counter' ? Math.sin(clamp(t / .5) * Math.PI) : phase === 'assault' ? Math.max(0, Math.sin(t * 4.5)) : 0,
-    flight: phase === 'shockwave' ? smooth((t - .34) / .18) : ['air_warning', 'air_dodge', 'air_counter', 'building', 'descent'].includes(phase) ? 1 : 0,
-    impact: phase === 'descent' ? smooth(t / SMITH_FINALE.descent.seconds) : phase === 'crater' ? 1 : 0,
+    flight: phase === 'shockwave' ? smooth((t - .34) / .18) : phase === 'descent' ? 1 - collapse : ['air_warning', 'air_dodge', 'air_counter', 'building'].includes(phase) ? 1 : 0,
+    impact: phase === 'descent' ? collapse : phase === 'crater' ? 1 - smooth(t / SMITH_FINALE.crater.settleSeconds) : 0,
     rise: phase === 'crater' ? smooth(encounter.focus / SMITH_FINALE.crater.riseSeconds) : ['choice', 'rain_done', 'assault_ready', 'assault', 'vision', 'understanding', 'surrender', 'assimilating', 'purging', 'done'].includes(phase) ? 1 : 0,
-    fallen: phase === 'crater' ? 1 - smooth(encounter.focus / SMITH_FINALE.crater.riseSeconds) : phase === 'assault' ? .25 + Math.max(0, Math.sin(t * 4.5)) * .45 : 0,
+    fallen: phase === 'descent' ? collapse : phase === 'crater' ? 1 - smooth(encounter.focus / SMITH_FINALE.crater.riseSeconds) : phase === 'assault' ? .25 + Math.max(0, Math.sin(t * 4.5)) * .45 : 0,
     surrender: phase === 'surrender' ? smooth(encounter.focus / SMITH_FINALE.surrender.consentSeconds) : ['assimilating', 'purging', 'done'].includes(phase) ? 1 : 0,
     assimilation: phase === 'assimilating' ? smooth(t / SMITH_FINALE.surrender.assimilationSeconds) : ['purging', 'done'].includes(phase) ? 1 : 0,
     purge: phase === 'purging' ? smooth(t / SMITH_FINALE.surrender.purgeSeconds) : phase === 'done' ? 1 : 0,

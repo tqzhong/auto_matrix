@@ -40,5 +40,26 @@
     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/concrete_pavement_03/concrete_pavement_03_rough_1k.jpg",
     "license": "CC0-1.0",
     "md5": "5717742054eb658673277f5999a09a37"
+  },
+  {
+    "name": "seaside_rock-color.jpg",
+    "source": "https://polyhaven.com/a/seaside_rock",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/seaside_rock/seaside_rock_diff_2k.jpg",
+    "license": "CC0-1.0",
+    "md5": "f70bd6084c9b634daaea40b0cee34c20"
+  },
+  {
+    "name": "seaside_rock-normal.jpg",
+    "source": "https://polyhaven.com/a/seaside_rock",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/seaside_rock/seaside_rock_nor_gl_2k.jpg",
+    "license": "CC0-1.0",
+    "md5": "28f8bd7b913f55b92d333217d02e8d1a"
+  },
+  {
+    "name": "seaside_rock-roughness.jpg",
+    "source": "https://polyhaven.com/a/seaside_rock",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/seaside_rock/seaside_rock_rough_2k.jpg",
+    "license": "CC0-1.0",
+    "md5": "08323a44503ccc4c1b922396455881cc"
   }
 ]

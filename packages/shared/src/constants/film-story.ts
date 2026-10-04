@@ -1,5 +1,6 @@
 import { METACORTEX, metacortexPosition } from './metacortex.js';
 import { FILM_SETS, filmPosition } from './film-sets.js';
+import { SMITH_FINALE, smithCraterAmount } from './smith-finale.js';
 import { CONSTRUCT_REVEAL, MIRROR_TOUCH, RECOVERY_BED } from './awakening.js';
 import { CABIN } from './cabin.js';
 import { CONSTRUCT } from './construct.js';
@@ -506,6 +507,8 @@ export function filmStepPosition(scene: FilmScene, step: FilmStep, journey?: Fil
     const target = AMBUSH_CAT_STAIRS.observation; return filmPosition(scene.set, target.x, target.z);
   }
   const position = filmPosition(scene.set, step.x, step.z);
+  if (scene.set === 'film_smith_avenue' && step.z === SMITH_FINALE.crater.z)
+    position.y += (-SMITH_FINALE.crater.depth + .025) * (journey?.smithFinale ? smithCraterAmount(journey.smithFinale) : 1);
   if (scene.id === 'm1_commute' && step !== scene.steps[2]) position.y = METACORTEX.center.y;
   if (scene.id === 'm2_trucks') position.y += TRUCKS.roof.height;
   if (scene.id === 'm2_chateau' && step.z < -30) position.y += 10;

@@ -253,7 +253,7 @@ export class FilmSetRenderer {
         else if (set.id === 'film_machine_defense' || set.id === 'film_above_clouds') this.logosFlight = new LogosFlightRenderer(this.root, set.id === 'film_machine_defense' ? 'defense' : 'sun');
         else if (set.id === 'film_logos_wreck') this.logosWreck = new LogosWreckRenderer(this.root);
         else if (['m3_deus', 'm3_neo_carried'].includes(sceneId ?? '') && set.id === 'film_machine_core') this.machineCore = new MachineCoreRenderer(this.root);
-        else if (['m3_rain', 'm3_surrender'].includes(sceneId ?? '') && set.id === 'film_smith_avenue') this.smithFinale = new SmithFinaleRenderer(this.root);
+        else if (set.id === 'film_smith_avenue') this.smithFinale = new SmithFinaleRenderer(this.root);
         else if (['m1_dojo', 'm1_jump', 'm1_red_dress'].includes(sceneId ?? '')) this.training = new TrainingSetRenderer(this.root, sceneId!);
         else if (sceneId === 'm1_sentinels') this.sentinel = new SentinelSetRenderer(this.root);
         else if (set.id === 'film_ambush_house' && sceneId === 'm1_basement') this.basement = new BasementSetRenderer(this.root);
@@ -400,7 +400,8 @@ export class FilmSetRenderer {
       ? player.currentAction?.parameters.smithFinale as SmithFinaleEncounter | undefined : undefined;
     const smith = savedSmith && fastSmith?.phase === savedSmith.phase && fastSmith.attempts === savedSmith.attempts
       && fastSmith.total >= savedSmith.total ? fastSmith : savedSmith;
-    this.smithFinale?.update(smith,
+    this.smithFinale?.update(smith ?? (sandbox?.structures.some(s => s.id === 'film:smith:crater')
+      ? { phase: 'done', elapsed: 0, total: elapsed, focus: 0, hits: 0, lastStrike: -1, lane: 0, checkpoint: 'air', attempts: 0 } : undefined),
       firstPerson, { x: (playerPosition?.x ?? this.current?.center.x ?? 0) - (this.current?.center.x ?? 0),
         z: (playerPosition?.z ?? this.current?.center.z ?? 0) - (this.current?.center.z ?? 0) });
     this.trilogyEpilogue?.update(['m3_ceasefire', 'm3_neo_carried', 'm3_dawn'].includes(journey?.scene ?? '') && !journey?.visiting ? journey?.epilogue : undefined, elapsed);

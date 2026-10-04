@@ -111,6 +111,73 @@ const neutral = { focus: false, x: 0, z: 0 };
 const counter = () => smithFinaleAction({ ...newSmithFinale(), phase: 'ground_dodge' }, 'dodge');
 const advance = (beat: SmithFinaleEncounter, dt: number) => stepSmithFinale(beat, neutral, dt);
 
+test('impact leaves Neo lying in the water while Smith stands, and rising keeps real surfaces above the floor', async t => {
+  const h = await setup(t), floor = FILM_SETS.film_smith_avenue.center.y - 1 - SMITH_FINALE.crater.depth + .025;
+  let worst = Infinity;
+  for (const focus of [0, .3, .65, 1, 1.4, 1.8]) {
+    const beat: SmithFinaleEncounter = { ...newSmithFinale(), phase: 'crater', elapsed: 3, total: 23, focus };
+    h.frame(beat);
+    if (focus === 0) {
+      assert.ok(h.neo.getObjectByName('head')!.getWorldPosition(new THREE.Vector3()).y < floor + 1.3, 'Neo should be lying after impact, not hovering in a bent standing pose');
+      assert.ok(h.smith.getObjectByName('head')!.getWorldPosition(new THREE.Vector3()).y > floor + 2.8, 'Smith stands over Neo rather than copying his collapse');
+      for (const side of ['R', 'L']) assert.ok(h.neo.getObjectByName(`wrist_${side}`)!.getWorldPosition(new THREE.Vector3()).y < floor + .28,
+        `the resting ${side} hand cannot hang in the air above the water`);
+    }
+    for (const [role, body] of [['Neo', h.neo], ['Smith', h.smith]] as const) {
+      let lowest = Infinity;
+      body.traverseVisible(object => {
+        if (!(object instanceof THREE.Mesh)) return;
+        for (let i = 0; i < object.geometry.attributes.position.count; i++) {
+          const point = object.localToWorld(object.getVertexPosition(i, new THREE.Vector3()));
+          lowest = Math.min(lowest, point.y - floor);
+        }
+      });
+      worst = Math.min(worst, lowest);
+      assert.ok(lowest >= -.04, `${role}, rise ${focus}: visible body penetrates the bottom by ${-lowest}`);
+      assert.ok(lowest < .08, `${role}, rise ${focus}: visible body floats ${lowest} over the bottom`);
+    }
+  }
+  t.diagnostic(`Lowest actual skin/clothing/sole distance from the pit floor: ${worst}`);
+});
+
+test('the delivered bodies keep their support and orientation across impact, failure and standing', async t => {
+  const h = await setup(t);
+  const transitions: SmithFinaleEncounter[] = [
+    { ...newSmithFinale(), phase: 'descent', elapsed: SMITH_FINALE.descent.seconds - .00001, total: 23, focus: SMITH_FINALE.descent.braceSeconds },
+    { ...newSmithFinale(), phase: 'descent', elapsed: SMITH_FINALE.descent.seconds - .00001, total: 23, focus: 0 },
+    { ...newSmithFinale(), phase: 'crater', elapsed: 3, total: 26, focus: SMITH_FINALE.crater.riseSeconds - .00001 },
+  ];
+  const points = () => [h.neo, h.smith].flatMap(body => ['head', 'wrist_R', 'wrist_L', 'ankle_R', 'ankle_L']
+    .map(name => body.getObjectByName(name)!.getWorldPosition(new THREE.Vector3())));
+  for (const before of transitions) {
+    h.frame(before); const old = points();
+    const next = stepSmithFinale(before, { focus: before.focus > 0, x: 0, z: 0 }, .00001);
+    h.frame(next);
+    points().forEach((point, i) => assert.ok(point.distanceTo(old[i]) < .004,
+      `${before.phase} → ${next.phase}: body point ${i} jumps ${point.distanceTo(old[i])}`));
+  }
+});
+
+test('getting up plants the delivered boots before releasing the supporting hands', async t => {
+  const h = await setup(t), floor = FILM_SETS.film_smith_avenue.center.y - 1 - SMITH_FINALE.crater.depth + .025;
+  for (const rise of [.35, .5, .65, .8, .95]) {
+    h.frame({ ...newSmithFinale(), phase: 'crater', elapsed: 3, total: 23, focus: rise * SMITH_FINALE.crater.riseSeconds });
+    const feet = [Infinity, Infinity];
+    h.neo.traverseVisible(object => {
+      if (!(object instanceof THREE.Mesh) || !/shoes/i.test(object.name)) return;
+      const position = object.geometry.attributes.position;
+      for (let i = 0; i < position.count; i++) {
+        const side = position.getX(i) > 0 ? 1 : 0;
+        const point = object.localToWorld(object.getVertexPosition(i, new THREE.Vector3()));
+        feet[side] = Math.min(feet[side], point.y - floor);
+      }
+    });
+    assert.ok(Math.min(...feet) < .08, `rise ${rise}: both boots float above the water: ${feet}`);
+    assert.ok(Math.min(...feet) >= -.04, `rise ${rise}: a boot penetrates the bottom: ${feet}`);
+    if (rise >= .65) assert.ok(Math.max(...feet) < .08, `rise ${rise}: the second foot must land before straightening up: ${feet}`);
+  }
+});
+
 test('the shockwave reaches the aerial checkpoint without teleporting either actual body', async t => {
   const h = await setup(t);
   for (const lane of [-1, 0, .6]) for (const total of [4, 37]) {

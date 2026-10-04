@@ -118,6 +118,31 @@ test('the third-person lens opens continuously as the two fighters start flying'
     `the camera jumps ${h.camera.position.distanceTo(before)} while opening the aerial framing`);
 });
 
+test('the crater shot keeps both real bodies above the subtitle area, including Neo lying down', async t => {
+  const h = await setup(t);
+  for (const aspect of [16 / 9, 4 / 3]) for (const focus of [0, .7, 1.8]) {
+    h.camera.aspect = aspect;
+    h.frame({ ...newSmithFinale(), phase: 'crater', elapsed: 3, total: 25, focus });
+    for (const id of ['neo', 'smith']) for (const name of ['head', 'wrist_R', 'wrist_L', 'ankle_R', 'ankle_L']) {
+      const body = h.renderer.getAgentBody(id)!;
+      const point = body.getObjectByName(name)!.getWorldPosition(new THREE.Vector3()).project(h.camera);
+      assert.ok(Math.abs(point.x) < .82 && point.y > -.48 && point.y < .77,
+        `${aspect}/${focus}/${id}/${name}: body cropped or covered by subtitles at ${point.toArray()}`);
+    }
+  }
+});
+
+test('the lying first-person view lifts toward Smith while keeping mouse look available', async t => {
+  const h = await setup(t), beat: SmithFinaleEncounter = { ...newSmithFinale(), phase: 'crater', elapsed: 1, total: 15 };
+  h.frame(beat); h.key('KeyV'); h.frame(beat);
+  const smith = h.renderer.getAgentBody('smith')!.getObjectByName('head')!;
+  const point = smith.getWorldPosition(new THREE.Vector3()).project(h.camera);
+  assert.ok(point.y > -.5 && point.y < .72, `lying view crops Smith's head at ${point.y}`);
+  const before = h.camera.getWorldDirection(new THREE.Vector3());
+  h.look(); h.frame(beat);
+  assert.ok(h.camera.getWorldDirection(new THREE.Vector3()).distanceTo(before) > .1, 'the resting view cannot lock out mouse look');
+});
+
 test('real finale GLB head, hands and feet cold-load identically after running and reverse saved-frame seeking', async t => {
   const h = await setup(t);
   for (const actor of h.actors) actor.velocity = { x: 0, y: 0, z: 12 };

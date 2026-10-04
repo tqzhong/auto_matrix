@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { SmithCrowdRenderer } from './SmithCrowdRenderer.js';
-import { SMITH_FINALE, newSmithFinale, smithFinalePose, type SmithFinaleEncounter } from '@auto_matrix/shared';
+import { SMITH_FINALE, newSmithFinale, smithFinalePose, smithCraterAmount, smithCraterFloor, smithCraterRim, type SmithFinaleEncounter } from '@auto_matrix/shared';
 
 /** Procedural production sample for the Revolutions rain duel.
  * Character rigs remain owned by AgentRenderer; this class owns the avenue,
@@ -12,7 +12,14 @@ export class SmithFinaleRenderer {
   private audience?: SmithCrowdRenderer;
   private avenue = new THREE.Group();
   private water?: Reflector;
+  private road!: THREE.Mesh;
+  private paint!: THREE.Mesh;
+  private intactRoad!: THREE.BufferGeometry;
+  private brokenRoad!: THREE.BufferGeometry;
+  private poolWater!: THREE.BufferGeometry;
+  private disposed = false;
   private weatherTime = { value: 0 };
+  private pitWater = { value: 0 };
   private textures = new Set<THREE.Texture>();
   private rain = new THREE.Group();
   private lightning = new THREE.Group();
@@ -32,6 +39,9 @@ export class SmithFinaleRenderer {
   private puddles!: THREE.InstancedMesh;
   private rippleMatrix = new THREE.Object3D();
   private debris: THREE.Mesh[] = [];
+  private rubble!: THREE.InstancedMesh;
+  private runoff!: THREE.LineSegments;
+  private drains: THREE.Vector3[] = [];
 
   constructor(root: THREE.Group) {
     this.group.name = 'smith-finale-avenue'; this.rain.name = 'smith-finale-rain';
@@ -57,6 +67,22 @@ export class SmithFinaleRenderer {
 
   private geometry<T extends THREE.BufferGeometry>(geometry: T): T { this.geometries.add(geometry); return geometry; }
 
+  private rockMaps(materials: THREE.MeshStandardMaterial[]): void {
+    if (typeof document === 'undefined') return;
+    let ready = 0; const maps: THREE.Texture[] = [];
+    for (const kind of ['color', 'normal', 'roughness']) {
+      const texture = new THREE.TextureLoader().load(`/assets/surfaces/seaside_rock-${kind}.jpg`, () => {
+        if (++ready !== 3 || this.disposed) return;
+        for (const material of materials) {
+          [material.map, material.normalMap, material.roughnessMap] = maps; material.needsUpdate = true;
+        }
+      });
+      texture.wrapS = texture.wrapT = THREE.RepeatWrapping; texture.anisotropy = 8;
+      if (kind === 'color') texture.colorSpace = THREE.SRGBColorSpace;
+      maps.push(texture); this.textures.add(texture);
+    }
+  }
+
   private mesh(geometry: THREE.BufferGeometry, material: THREE.Material, parent: THREE.Object3D,
     x = 0, y = 0, z = 0, name?: string): THREE.Mesh {
     const mesh = new THREE.Mesh(this.geometry(geometry), material); mesh.position.set(x, y, z); if (name) mesh.name = name;
@@ -79,26 +105,37 @@ export class SmithFinaleRenderer {
     const dark = this.material({ color: 0x18211e, metalness: .48, roughness: .36 });
     const glass = this.material({ color: 0x182725, metalness: .68, roughness: .2 });
     const lit = this.material({ color: 0x7d9080, emissive: 0x718571, emissiveIntensity: .32, roughness: .45 });
-    const road = this.mesh(new THREE.PlaneGeometry(42, 190), wet, this.group, 0, .025, 0, 'smith-finale-flooded-road');
-    road.rotation.x = -Math.PI / 2;
+    this.intactRoad = this.geometry(new THREE.PlaneGeometry(42, 190));
+    const outline = new THREE.Shape(); outline.moveTo(-21, -95); outline.lineTo(21, -95); outline.lineTo(21, 95); outline.lineTo(-21, 95); outline.closePath();
+    const hole = new THREE.Path();
+    for (let i = 0; i <= 96; i++) {
+      const angle = i / 96 * Math.PI * 2, radius = smithCraterRim(angle);
+      const x = Math.cos(angle) * radius, y = -SMITH_FINALE.crater.z - Math.sin(angle) * radius;
+      if (i === 0) hole.moveTo(x, y); else hole.lineTo(x, y);
+    }
+    outline.holes.push(hole); this.brokenRoad = this.geometry(new THREE.ShapeGeometry(outline));
+    const positions = this.brokenRoad.getAttribute('position'), uv = this.brokenRoad.getAttribute('uv');
+    for (let i = 0; i < positions.count; i++) uv.setXY(i, positions.getX(i) / 42 + .5, positions.getY(i) / 190 + .5);
+    this.road = this.mesh(this.intactRoad, wet, this.group, 0, .025, 0, 'smith-finale-flooded-road');
+    this.road.rotation.x = -Math.PI / 2;
     // A single low-resolution reflected pass gives the water real silhouettes.
     // The irregular translucent surface leaves the asphalt visible beneath it.
-    this.water = new Reflector(this.geometry(new THREE.PlaneGeometry(41.9, 189.9)), {
+    this.water = new Reflector(this.intactRoad, {
       color: 0x8a9a91, textureWidth: 512, textureHeight: 512, multisample: 0, clipBias: .003,
     });
     const waterMaterial = this.water.material as THREE.ShaderMaterial;
     waterMaterial.vertexShader = waterMaterial.vertexShader.replace('varying vec4 vUv;', 'varying vec4 vUv; varying vec2 streetUv;')
       .replace('vUv = textureMatrix', 'streetUv = uv; vUv = textureMatrix');
-    waterMaterial.fragmentShader = waterMaterial.fragmentShader.replace('varying vec4 vUv;', 'varying vec4 vUv; varying vec2 streetUv; uniform float weatherTime;')
+    waterMaterial.fragmentShader = waterMaterial.fragmentShader.replace('varying vec4 vUv;', 'varying vec4 vUv; varying vec2 streetUv; uniform float weatherTime; uniform float pitWater;')
       .replace('vec4 base = texture2DProj( tDiffuse, vUv );', `
         vec4 reflected = vUv;
         reflected.x += sin(streetUv.y * 1700.0 + weatherTime * 3.0) * .00055 * reflected.w;
         reflected.y += sin(streetUv.x * 910.0 - weatherTime * 2.0) * .00025 * reflected.w;
         vec4 base = texture2DProj(tDiffuse, reflected);`)
       .replace('gl_FragColor = vec4( blendOverlay( base.rgb, color ), 1.0 );',
-        'gl_FragColor = vec4(blendOverlay(base.rgb, color), .38 + .18 * sin(streetUv.x * 57.0 + sin(streetUv.y * 71.0)));');
+        'gl_FragColor = vec4(blendOverlay(base.rgb, color), mix(.38 + .18 * sin(streetUv.x * 57.0 + sin(streetUv.y * 71.0)), .28, pitWater));');
     this.water.name = 'smith-finale-reflected-water'; this.water.rotation.x = -Math.PI / 2; this.water.position.y = .035;
-    waterMaterial.transparent = true; waterMaterial.depthWrite = false; waterMaterial.uniforms.weatherTime = this.weatherTime;
+    waterMaterial.transparent = true; waterMaterial.depthWrite = false; waterMaterial.uniforms.weatherTime = this.weatherTime; waterMaterial.uniforms.pitWater = this.pitWater;
     this.group.add(this.water);
     const box = (w: number, h: number, d: number, mat: THREE.Material, x: number, y: number, z: number, name: string) =>
       this.mesh(new THREE.BoxGeometry(w, h, d), mat, this.avenue, x, y, z, name);
@@ -133,15 +170,26 @@ export class SmithFinaleRenderer {
       for (let z = -90; z < 96; z += 4) box(4.6, .014, .055, dark, side * 23.4, .298, z, 'smith-finale-paving-joint');
     }
     const stripe = this.material({ color: 0xb1ad86, transparent: true, opacity: .62, roughness: .4 });
-    for (const x of [-.22, .22, -16.8, 16.8]) for (let z = -90; z < 94; z += 10)
-      box(.12, .012, x * x < 1 ? 9.9 : 4.8, stripe, x, .051, z, 'smith-finale-road-stripe');
+    stripe.onBeforeCompile = shader => {
+      shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 roadPoint;')
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\nroadPoint = position.xy;');
+      shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec2 roadPoint;')
+        .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
+          bool centerLine = abs(abs(roadPoint.x) - .22) < .06;
+          bool edgeLine = abs(abs(roadPoint.x) - 16.8) < .06 && mod(-roadPoint.y + 92.4, 10.0) < 4.8;
+          if (!centerLine && !edgeLine) discard;`);
+    };
+    this.paint = this.mesh(this.intactRoad, stripe, this.group, 0, .051, 0, 'smith-finale-road-stripe'); this.paint.rotation.x = -Math.PI / 2;
     const ripple = this.basic({ color: 0x93a8a0, transparent: true, opacity: .17, side: THREE.DoubleSide, depthWrite: false });
     const ringGeometry = this.geometry(new THREE.RingGeometry(.18, .195, 16));
-    this.puddles = new THREE.InstancedMesh(ringGeometry, ripple, 120); this.puddles.name = 'smith-finale-puddle-ripples';
+    this.puddles = new THREE.InstancedMesh(ringGeometry, ripple, 216); this.puddles.name = 'smith-finale-puddle-ripples';
     this.puddles.instanceMatrix.setUsage(THREE.DynamicDrawUsage); this.group.add(this.puddles);
     const ambient = new THREE.HemisphereLight(0xbbc8b4, 0x152320, .85); this.group.add(ambient); this.lights.push(ambient);
     const backlight = new THREE.DirectionalLight(0xd4e0d0, 1.7); backlight.position.set(-18, 48, -65);
-    backlight.target.position.set(0, 0, 8); this.group.add(backlight, backlight.target); this.lights.push(backlight);
+    backlight.target.position.set(0, -6, -30); backlight.castShadow = true;
+    Object.assign(backlight.shadow.camera, { left: -24, right: 24, top: 24, bottom: -24, near: 1, far: 110 });
+    backlight.shadow.mapSize.set(1024, 1024); backlight.shadow.bias = -.00008; backlight.shadow.normalBias = .025;
+    this.group.add(backlight, backlight.target); this.lights.push(backlight);
     for (const side of [-1, 1]) for (let z = -72; z < 87; z += 30) {
       const x = side * 20.4;
       const lamp = new THREE.PointLight(0xc6d4b9, 220, 30, 2); lamp.position.set(x - side * 1.2, 9.3, z); this.group.add(lamp); this.lights.push(lamp);
@@ -152,19 +200,19 @@ export class SmithFinaleRenderer {
     this.batchAvenue();
   }
 
-  private batchAvenue(): void {
-    this.avenue.updateMatrixWorld(true);
-    const inverse = this.avenue.matrixWorld.clone().invert(), batches = new Map<THREE.Material, THREE.BufferGeometry[]>();
-    this.avenue.traverse(object => {
+  private batchAvenue(parent = this.avenue): void {
+    parent.updateMatrixWorld(true);
+    const inverse = parent.matrixWorld.clone().invert(), batches = new Map<THREE.Material, THREE.BufferGeometry[]>();
+    parent.traverse(object => {
       if (!(object instanceof THREE.Mesh)) return;
       const geometry = object.geometry.clone().applyMatrix4(inverse.clone().multiply(object.matrixWorld));
       const parts = batches.get(object.material as THREE.Material) ?? []; parts.push(geometry); batches.set(object.material as THREE.Material, parts);
     });
-    this.avenue.clear();
+    parent.clear();
     for (const [material, parts] of batches) {
       const geometry = mergeGeometries(parts); parts.forEach(part => part.dispose());
       if (!geometry) continue;
-      const mesh = this.mesh(geometry, material, this.avenue, 0, 0, 0, 'smith-finale-static-facade'); mesh.castShadow = false;
+      const mesh = this.mesh(geometry, material, parent, 0, 0, 0, parent === this.avenue ? 'smith-finale-static-facade' : 'smith-finale-exposed-utilities'); mesh.castShadow = false;
     }
   }
 
@@ -172,17 +220,17 @@ export class SmithFinaleRenderer {
     const rainMaterial = this.basic({ color: 0xa8c2ba, transparent: true, opacity: .4, depthWrite: false });
     const points: number[] = [], phases: number[] = [];
     for (let i = 0; i < 3200; i++) {
-      const x = -34 + (i * 17.37) % 68; const y = (i * 11.23) % 48; const z = -74 + (i * 29.11) % 148;
+      const x = -34 + (i * 17.37) % 68; const y = (i * 11.23) % 60; const z = -74 + (i * 29.11) % 148;
       points.push(x, 48, z, x - .08, 48 - 1.2 - i % 4 * .28, z + .18); phases.push(y, y);
     }
     rainMaterial.onBeforeCompile = shader => {
       shader.uniforms.weatherTime = this.weatherTime;
       shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nuniform float weatherTime; attribute float rainPhase;')
-        .replace('#include <begin_vertex>', '#include <begin_vertex>\ntransformed.y -= mod(weatherTime * 24.0 + rainPhase, 48.0);');
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\ntransformed.y -= mod(weatherTime * 24.0 + rainPhase, 60.0);');
     };
     const geometry = this.geometry(new THREE.BufferGeometry()); geometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
     geometry.setAttribute('rainPhase', new THREE.Float32BufferAttribute(phases, 1));
-    const streaks = new THREE.LineSegments(geometry, rainMaterial); streaks.name = 'smith-finale-rain-streaks'; this.rain.add(streaks);
+    const streaks = new THREE.LineSegments(geometry, rainMaterial); streaks.name = 'smith-finale-rain-streaks'; streaks.frustumCulled = false; this.rain.add(streaks);
     const lightningMaterial = this.basic({ color: 0xddeee9, transparent: true, opacity: .95, toneMapped: false });
     for (const side of [-1, 1]) {
       const vertices: number[] = []; let x = side * 19; let y = 42; let z = -54;
@@ -223,19 +271,115 @@ export class SmithFinaleRenderer {
         -24 + (i % 7) * 1.2, 4 + Math.floor(i / 7) * 3.1, -33 + (i * 2.3) % 13, 'smith-finale-facade-debris');
       chunk.rotation.set(i * .37, i * .71, i * .19); this.debris.push(chunk);
     }
-    const asphalt = this.material({ color: 0x101819, metalness: .16, roughness: .78 });
-    const craterFloor = this.mesh(new THREE.CircleGeometry(10, 48), asphalt, this.crater, 0, -.18, -38, 'smith-finale-crater-floor'); craterFloor.rotation.x = -Math.PI / 2;
+    this.buildCrater();
+  }
+
+  private buildCrater(): void {
+    const { depth, z: centerZ } = SMITH_FINALE.crater;
+    const grain = new Uint8Array(128 * 128 * 4);
+    for (let y = 0; y < 128; y++) for (let x = 0; x < 128; x++) {
+      const seam = Math.pow(Math.abs(Math.sin(x * .16 + Math.sin(y * .13) * 2.2)), 16);
+      const value = 135 - seam * 90 + Math.sin(x * 9.1 + y * 13.7) * 24;
+      const i = (y * 128 + x) * 4; grain[i] = grain[i + 1] = grain[i + 2] = value; grain[i + 3] = 255;
+    }
+    const fracture = new THREE.DataTexture(grain, 128, 128); fracture.wrapS = fracture.wrapT = THREE.RepeatWrapping;
+    fracture.needsUpdate = true; this.textures.add(fracture);
+    const rock = this.material({ color: 0xb5b9b2, vertexColors: true, roughness: .58, metalness: .04,
+      bumpMap: fracture, bumpScale: .12, normalScale: new THREE.Vector2(.8, .8) });
+    const positions: number[] = [], colors: number[] = [], uv: number[] = [], indices: number[] = [];
+    const rings = 64, segments = 144;
+    for (let ring = 0; ring <= rings; ring++) for (let segment = 0; segment <= segments; segment++) {
+      const angle = segment / segments * Math.PI * 2, radius = smithCraterRim(angle) * ring / rings;
+      const x = Math.cos(angle) * radius, z = centerZ + Math.sin(angle) * radius, y = smithCraterFloor(x, z);
+      positions.push(x, y, z); uv.push(segment / segments * 22, (y + depth + radius * .25) / 5);
+      const shade = .81 + .08 * Math.sin(ring * 2.7 + segment * 8.3) + .09 * Math.sin(y * 3.8);
+      colors.push(shade * .86, shade, shade * .93);
+      if (ring < rings && segment < segments) {
+        const a = ring * (segments + 1) + segment, b = a + segments + 1;
+        indices.push(a, a + 1, b, a + 1, b + 1, b);
+      }
+    }
+    const bowl = new THREE.BufferGeometry(); bowl.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    bowl.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3)); bowl.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    bowl.setIndex(indices); bowl.computeVertexNormals();
+    this.mesh(bowl, rock, this.crater, 0, 0, 0, 'smith-finale-crater-floor');
+    const mud = this.material({ color: 0x38433d, metalness: .12, roughness: .3, bumpMap: fracture, bumpScale: .018 });
+    const pool = this.mesh(new THREE.CircleGeometry(8.9, 96), mud, this.crater, 0, -depth + .025, centerZ, 'smith-finale-crater-water');
+    pool.rotation.x = -Math.PI / 2; pool.castShadow = false;
+    this.poolWater = this.geometry(new THREE.CircleGeometry(8.9, 96).translate(0, -centerZ, 0));
+    const poolPoints = this.poolWater.getAttribute('position'), poolUV = this.poolWater.getAttribute('uv');
+    for (let i = 0; i < poolPoints.count; i++) poolUV.setXY(i, poolPoints.getX(i) / 42 + .5, poolPoints.getY(i) / 190 + .5);
+    const concrete = this.material({ color: 0xa9ada7, roughness: .64, metalness: .04, normalScale: new THREE.Vector2(.7, .7) });
+    this.rockMaps([rock, concrete]);
+    const slab = this.geometry(new THREE.IcosahedronGeometry(1, 1)), vertices = slab.getAttribute('position');
+    for (let i = 0; i < vertices.count; i++) {
+      const x = vertices.getX(i), y = vertices.getY(i), z = vertices.getZ(i);
+      const irregular = 1 + Math.sin(x * 5.7 + y * 7.3 + z * 4.2) * .15;
+      vertices.setXYZ(i, x * irregular, y * .55 * irregular, z * irregular);
+    }
+    slab.computeVertexNormals();
+    this.rubble = new THREE.InstancedMesh(slab, concrete, 280); this.rubble.name = 'smith-finale-crater-rubble';
+    this.rubble.castShadow = true; this.rubble.receiveShadow = true; this.crater.add(this.rubble);
+    const transform = new THREE.Object3D(), normal = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
+    for (let i = 0; i < this.rubble.count; i++) {
+      const angle = i * 2.399963, radius = 10.2 + (i * .713) % 6.4;
+      const x = Math.cos(angle) * radius, z = centerZ + Math.sin(angle) * radius;
+      const size = .35 + (i % 7) * .18;
+      normal.set(smithCraterFloor(x - .2, z) - smithCraterFloor(x + .2, z), .4,
+        smithCraterFloor(x, z - .2) - smithCraterFloor(x, z + .2)).normalize();
+      transform.position.set(x, smithCraterFloor(x, z), z);
+      // Half-buried fragments conform to the bank rather than perching on a
+      // single high corner with their lower faces suspended over empty air.
+      transform.quaternion.setFromUnitVectors(up, normal); transform.rotateY(angle);
+      transform.scale.set(size * 1.3, size, size * (.7 + i % 4 * .13)); transform.updateMatrix();
+      this.rubble.setMatrixAt(i, transform.matrix);
+      this.rubble.setColorAt(i, new THREE.Color().setScalar(.68 + i % 6 * .055));
+    }
+    const utilities = new THREE.Group(); this.crater.add(utilities);
+    const asphalt = this.material({ color: 0x252e2a, roughness: .77, bumpMap: fracture, bumpScale: .09 });
     for (let i = 0; i < 24; i++) {
-      const angle = i / 24 * Math.PI * 2; const radius = 8.3 + i % 3 * 1.1;
-      const chunk = this.mesh(new THREE.BoxGeometry(1.3 + i % 4 * .35, .55 + i % 3 * .25, 2.4), asphalt, this.crater,
-        Math.sin(angle) * radius, .05 + i % 3 * .18, -38 + Math.cos(angle) * radius, 'smith-finale-crater-rubble');
-      chunk.rotation.set((i % 3 - 1) * .25, angle, (i % 5 - 2) * .18); this.debris.push(chunk);
+      const angle = i * 2.399963 + .2, radius = 11.3 + i % 4 * 1.3;
+      const x = Math.cos(angle) * radius, z = centerZ + Math.sin(angle) * radius;
+      const fragment = new THREE.Group(); fragment.position.set(x, smithCraterFloor(x, z), z);
+      fragment.rotation.set(.2 + i % 3 * .3, angle, .25); utilities.add(fragment);
+      const shape = new THREE.BoxGeometry(2.3 + i % 3 * .3, .55, 1.8, 2, 1, 2), points = shape.getAttribute('position');
+      for (let v = 0; v < points.count; v++) {
+        const px = points.getX(v), py = points.getY(v), pz = points.getZ(v);
+        points.setXYZ(v, px + Math.sin(pz * 7.8 + py * 6.1) * .12, py + Math.sin(px * 4.4 + pz * 5.3) * .07, pz + Math.sin(px * 6.2) * .11);
+      }
+      shape.computeVertexNormals(); this.mesh(shape, concrete, fragment);
+      this.mesh(new THREE.BoxGeometry(2.1 + i % 3 * .3, .1, 1.6), asphalt, fragment, 0, .3, 0);
     }
-    const pipe = this.material({ color: 0x626f6b, metalness: .82, roughness: .35 });
-    for (const [x, z, angle] of [[-5.5, -41, .4], [4.8, -35, -.55], [-1.8, -31.5, .18]] as const) {
-      const tube = this.mesh(new THREE.CylinderGeometry(.28, .34, 9, 10), pipe, this.crater, x, 1.2, z, 'smith-finale-broken-pipe');
-      tube.rotation.set(Math.PI / 2 + angle, 0, angle);
+    const iron = this.material({ color: 0x56615b, metalness: .74, roughness: .44 });
+    const inside = this.material({ color: 0x101b17, metalness: .35, roughness: .85, side: THREE.BackSide });
+    const pipe = (angle: number, radius: number) => {
+      const start = new THREE.Vector3(Math.cos(angle) * 16.6, -3.2, centerZ + Math.sin(angle) * 16.6);
+      const end = new THREE.Vector3(Math.cos(angle) * 12.2, -6.2, centerZ + Math.sin(angle) * 12.2);
+      const direction = end.clone().sub(start), midpoint = start.clone().lerp(end, .5);
+      for (const [r, material] of [[radius, concrete], [radius - .14, inside]] as const) {
+        const tube = this.mesh(new THREE.CylinderGeometry(r, r, direction.length(), 24, 1, true), material, utilities, midpoint.x, midpoint.y, midpoint.z);
+        tube.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize());
+      }
+      const lip = this.mesh(new THREE.TorusGeometry(radius - .07, .07, 6, 24), concrete, utilities, end.x, end.y, end.z);
+      lip.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), direction.normalize());
+      this.drains.push(end.clone().add(new THREE.Vector3(0, -radius + .15, 0)));
+    };
+    pipe(.2, 1.32); pipe(2.8, .76);
+    // Torn reinforcement cages and broken road substructure around the lip.
+    for (let i = 0; i < 8; i++) {
+      const angle = i * .79 + .45, radius = 12.2 + i % 3, x = Math.cos(angle) * radius, z = centerZ + Math.sin(angle) * radius;
+      const cage = new THREE.Group(); cage.position.set(x, smithCraterFloor(x, z) + 1.1, z); cage.rotation.set(.2 + i % 3 * .3, angle, .35); utilities.add(cage);
+      for (const offset of [-.9, -.3, .3, .9]) {
+        const vertical = this.mesh(new THREE.CylinderGeometry(.035, .035, 2.8, 5), iron, cage, offset, 0, 0); vertical.castShadow = false;
+        const horizontal = this.mesh(new THREE.CylinderGeometry(.035, .035, 2.2, 5), iron, cage, 0, offset, 0);
+        horizontal.rotation.z = Math.PI / 2; horizontal.castShadow = false;
+      }
     }
+    this.batchAvenue(utilities);
+    const runoffMaterial = new THREE.LineBasicMaterial({ color: 0xaebfb5, transparent: true, opacity: .46, depthWrite: false }); this.materials.add(runoffMaterial);
+    const runoff = this.geometry(new THREE.BufferGeometry());
+    runoff.setAttribute('position', new THREE.BufferAttribute(new Float32Array(2 * 96 * 6), 3).setUsage(THREE.DynamicDrawUsage));
+    this.runoff = new THREE.LineSegments(runoff, runoffMaterial); this.runoff.name = 'smith-finale-crater-runoff'; this.runoff.frustumCulled = false; this.crater.add(this.runoff);
   }
 
   private buildConnection(): void {
@@ -259,6 +403,14 @@ export class SmithFinaleRenderer {
 
   update(encounter: SmithFinaleEncounter | undefined, firstPerson: boolean, player: { x: number; z: number }): void {
     const state = encounter ?? newSmithFinale(); const pose = smithFinalePose(state); const phase = state.phase;
+    const crater = smithCraterAmount(state);
+    this.crater.visible = crater > 0; this.crater.scale.y = crater;
+    this.road.geometry = this.paint.geometry = crater > 0 ? this.brokenRoad : this.intactRoad;
+    // Reuse the single reflection pass at the pit bottom instead of adding a
+    // second full scene render while the camera follows the two fighters down.
+    this.water!.geometry = crater > 0 ? this.poolWater : this.intactRoad;
+    this.water!.position.y = -SMITH_FINALE.crater.depth * crater + .035;
+    this.pitWater.value = crater;
     this.weatherTime.value = state.total; this.rain.visible = phase !== 'done';
     const flash = (Math.sin(state.total * 1.73 + 1.2) > .965 || ['shockwave', 'purging'].includes(phase));
     this.lightning.visible = flash && phase !== 'done';
@@ -266,8 +418,14 @@ export class SmithFinaleRenderer {
     if (flashLight) flashLight.intensity = flash ? phase === 'purging' ? 1800 : 780 : 0;
     for (let index = 0; index < this.puddles.count; index++) {
       const scale = .5 + ((state.total * 2.2 + index * .37) % 1) * 2.4;
-      this.rippleMatrix.position.set(-19 + (index * 7.7) % 38, .064, -88 + (index * 17.3) % 176);
-      this.rippleMatrix.rotation.x = -Math.PI / 2; this.rippleMatrix.scale.setScalar(scale); this.rippleMatrix.updateMatrix();
+      const radius = Math.sqrt((index * .618) % 1) * 8.6, angle = index * 2.399963;
+      const x = index < 120 ? -19 + (index * 7.7) % 38 : Math.cos(angle) * radius;
+      const z = index < 120 ? -88 + (index * 17.3) % 176 : SMITH_FINALE.crater.z + Math.sin(angle) * radius;
+      const floor = smithCraterFloor(x, z);
+      this.rippleMatrix.position.set(x, .064 + floor * crater, z);
+      this.rippleMatrix.rotation.x = -Math.PI / 2;
+      this.rippleMatrix.scale.setScalar(crater > 0 && floor < -.01 && floor > -11.99 ? 0 : scale * (crater > 0 && floor <= -11.99 ? .34 : 1));
+      this.rippleMatrix.updateMatrix();
       this.puddles.setMatrixAt(index, this.rippleMatrix.matrix);
     }
     this.puddles.instanceMatrix.needsUpdate = true; this.puddles.computeBoundingSphere();
@@ -299,15 +457,26 @@ export class SmithFinaleRenderer {
       }
       positions.needsUpdate = true; this.flightSpray.geometry.computeBoundingSphere();
     }
-    const destroyed = ['building', 'descent', 'crater', 'choice', 'rain_done', 'assault_ready', 'assault', 'vision', 'understanding', 'surrender', 'assimilating', 'purging', 'done'].includes(phase);
-    this.breach.visible = destroyed; this.crater.visible = ['descent', 'crater', 'choice', 'rain_done', 'assault_ready', 'assault', 'vision', 'understanding', 'surrender', 'assimilating', 'purging', 'done'].includes(phase);
+    const destroyed = crater > 0 || ['building', 'descent'].includes(phase);
+    this.breach.visible = destroyed;
+    if (crater > 0) {
+      const points = this.runoff.geometry.getAttribute('position') as THREE.BufferAttribute;
+      for (let drain = 0; drain < this.drains.length; drain++) for (let i = 0; i < 96; i++) {
+        const start = this.drains[drain], age = (state.total * .85 + i * .618) % 1, inward = drain === 0 ? -1 : 1;
+        const x = start.x + inward * age * 1.8 + Math.sin(i * 2.4) * .16, y = Math.max(-11.97, start.y - age * age * 5.6);
+        const z = start.z + Math.cos(i * 2.4) * .2, index = (drain * 96 + i) * 2;
+        points.setXYZ(index, x, y, z); points.setXYZ(index + 1, x + inward * .04, Math.max(-11.97, y - .17), z);
+      }
+      points.needsUpdate = true;
+    }
+    this.assimilation.position.y = this.purge.position.y = (-SMITH_FINALE.crater.depth + .025) * crater;
 
     this.assimilation.visible = ['assimilating', 'purging'].includes(phase);
     if (this.assimilation.visible) {
       const scale = phase === 'assimilating' ? .5 + smithFinalePose(state).assimilation * 1.35 : 1.85;
       this.assimilationShell.scale.setScalar(scale); this.assimilation.rotation.y = state.elapsed * 1.8;
     }
-    this.purge.visible = phase === 'purging' || phase === 'done';
+    this.purge.visible = phase === 'purging';
     if (this.purge.visible) {
       const amount = smithFinalePose(state).purge; this.purgeShell.scale.setScalar(.2 + amount * 18);
       (this.purge.children.find(child => child instanceof THREE.PointLight) as THREE.PointLight).intensity = 1200 * (1 - amount * .72);
@@ -318,9 +487,10 @@ export class SmithFinaleRenderer {
   }
 
   dispose(): void {
+    this.disposed = true;
     this.group.removeFromParent(); this.group.clear(); this.geometries.forEach(geometry => geometry.dispose());
     this.materials.forEach(material => material.dispose()); this.lights.forEach(light => light.dispose());
     this.textures.forEach(texture => texture.dispose()); this.water?.dispose();
-    this.audience?.dispose(); this.puddles.dispose();
+    this.audience?.dispose(); this.puddles.dispose(); this.rubble.dispose();
   }
 }

@@ -15,7 +15,7 @@ import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.j
 import { musicForScene } from '../packages/client/src/engine/Soundtrack.js';
 import { HOTEL_ROUTE, HOTEL_DOOR_PROGRESS } from '@auto_matrix/shared';
 import { hammerCenter, LOGOS_DEFENSE, AMBUSH_CAT_STAIRS } from '@auto_matrix/shared';
-import { TRUCKS, truckApproachPose, truckRescuePose, type TruckEncounter, type TruckRescueRole } from '@auto_matrix/shared';
+import { TRUCKS, truckApproachPose, truckRescuePose, type TruckEncounter, type TruckRescueRole, type WorldStructure } from '@auto_matrix/shared';
 
 function setup() {
   const world = new WorldState(); const manager = new AgentManager(world); manager.initializeAllAgents();
@@ -50,7 +50,15 @@ test('all trilogy scenes have distinct stable IDs, existing cast, accessible obj
       // Their encounter tests verify entry; character-asset.test checks physical contact.
       const stagedInsideProp = scene.id === 'm1_bug' && scene.steps.indexOf(step) < 2 || ['m1_recovery', 'm1_cabin'].includes(scene.id) && scene.steps.indexOf(step) === 0
         || scene.id === 'm1_truth_return' || scene.id === 'm1_morning' && scene.steps.indexOf(step) === 1;
-      assert.equal(playerBlocked(filmStepPosition(scene, step), set.world === 'matrix'), stagedInsideProp, `${scene.id}: ${step.label}`);
+      // Pit objectives use the persistent collapsed road, not the avenue's
+      // original surface. Keep testing reachability against the real terrain.
+      const terrain: WorldStructure[] = scene.set === 'film_smith_avenue' && step.z === SMITH_FINALE.crater.z
+        ? [{ id: 'film:smith:crater', kind: 'crater', owner: 'matrix', matrix: true, health: 1,
+          position: filmPosition(scene.set, SMITH_FINALE.crater.x, SMITH_FINALE.crater.z),
+          film: { scene: scene.id, width: 38, depth: 38, height: SMITH_FINALE.crater.depth } }] : [];
+      const target = filmStepPosition(scene, step);
+      assert.equal(playerBlocked(target, set.world === 'matrix', 1.1, terrain), stagedInsideProp, `${scene.id}: ${step.label}`);
+      if (terrain.length) assert.equal(target.y, groundHeight(target, true, terrain), `${scene.id}: the objective must lie on the collapsed floor`);
     }
     if (scene.steps.some(s => s.kind === 'reflect') && !['m1_pills', 'm1_ledge', 'm1_wake_up'].includes(scene.id)) assert.equal(filmReflections(scene.id).length, 3, `${scene.id}: dialogue must be playable`);
   }

@@ -63,7 +63,9 @@ test('the Smith finale has action windows, an air checkpoint and a deliberate cr
   duel = stepSmithFinale(duel, { focus: false, x: 0, z: 0 }, SMITH_FINALE.building);
   assert.equal(duel.phase, 'descent');
   duel = stepSmithFinale(duel, { focus: true, x: .5, z: 1 }, SMITH_FINALE.descent.braceSeconds);
-  assert.equal(duel.phase, 'crater'); assert.ok(duel.lane > 0);
+  assert.equal(duel.phase, 'descent');
+  duel = stepSmithFinale(duel, { focus: true, x: 0, z: 0 }, SMITH_FINALE.descent.seconds - duel.elapsed);
+  assert.equal(duel.phase, 'crater');
   duel = stepSmithFinale(duel, { focus: false, x: 0, z: 0 }, 4);
   assert.equal(duel.phase, 'crater', 'the game cannot choose to rise for Neo');
   duel = stepSmithFinale(duel, { focus: true, x: 0, z: 0 }, SMITH_FINALE.crater.riseSeconds);
@@ -88,10 +90,12 @@ test('Neo must finish the pact, duel, reflection, surrender and purge as one sav
   h.action('attack'); h.frame(8); h.action('attack');
   for (let i = 0; i < 80 && state.smithFinale?.phase !== 'air_dodge'; i++) h.frame();
   assert.equal(state.smithFinale?.phase, 'air_dodge'); h.action('dodge'); h.action('attack');
-  h.frame(35); h.frame(35, true, .5, 1); h.frame(45, true);
+  for (let i = 0; i < 180 && state.smithFinale?.phase !== 'choice'; i++) h.frame(1, true, .5, 1);
   assert.equal(state.smithFinale?.phase, 'choice'); assert.equal(state.step, 2);
   const saved = structuredClone(h.sandbox.state); h.players.release('p', h.tick()); h.sandbox.restore(saved); h.players.possess('p', 'neo', h.tick());
   assert.equal(h.state().smithFinale?.phase, 'choice');
+  assert.equal(h.sandbox.state.structures.filter(s => s.id === 'film:smith:crater').length, 1, 'restoring must not duplicate the crater');
+  assert.equal(h.sandbox.state.structures.find(s => s.id === 'film:smith:crater')!.film!.height, SMITH_FINALE.crater.depth);
   h.command('reflect:agency'); assert.equal(h.state().step, rain.steps.length);
   const crater = { position: { ...h.actor().position }, rotation: h.actor().rotation, smith: { ...h.world.agents.get('smith')!.position } };
   h.actor().health = 73;
@@ -100,12 +104,35 @@ test('Neo must finish the pact, duel, reflection, surrender and purge as one sav
   assert.equal(h.actor().rotation, crater.rotation, 'the same conversation cannot turn Neo away from Smith');
   assert.deepEqual(h.world.agents.get('smith')!.position, crater.smith);
   assert.equal(h.actor().health, 73, 'entering the next part of the same fight cannot erase injuries');
+  h.frame(8, false, .5, 0);
+  assert.ok(Math.abs(h.actor().position.y - crater.position.y) < .01, 'ordinary movement between the two chapters stays on the broken surface');
+  const walked = { ...h.actor().position };
+  h.players.release('p', h.tick()); h.players.possess('p', 'neo', h.tick());
+  assert.deepEqual(h.actor().position, walked, 'reconnecting on the broken road must retain ordinary movement, not return to the entrance');
   h.command('act'); h.frame(90); assert.equal(h.state().smithFinale?.phase, 'vision'); assert.equal(h.state().step, 1);
   h.command('reflect:trust'); assert.equal(h.state().smithFinale?.phase, 'understanding'); assert.equal(h.state().step, 2);
   h.command('act'); h.frame(45, false); assert.equal(h.state().smithFinale?.phase, 'surrender');
   h.frame(40, true); h.frame(150, true); assert.equal(h.state().smithFinale?.phase, 'done');
   assert.equal(h.state().step, FILM_SCENE_BY_ID.m3_surrender.steps.length);
   assert.equal(h.sandbox.state.neoLife!.choices.smith_resolution, 'connection');
+});
+
+test('a missed landing reconnects to the same failed pose and only retry restores the road', () => {
+  const h = game(), state = h.state();
+  Object.assign(state, { scene: 'm3_rain', step: 1, actor: 'neo', smithFinale: {
+    ...newSmithFinale(), phase: 'descent', elapsed: SMITH_FINALE.descent.seconds - .02, total: 12, checkpoint: 'air',
+  } });
+  h.actor().currentLocation = 'film_smith_avenue'; h.frame();
+  assert.equal(state.smithFinale!.phase, 'failed');
+  assert.ok(h.actor().currentAction?.parameters.smithFinale, 'failed impact must retain its body pose');
+  const position = { ...h.actor().position }, smith = { ...h.world.agents.get('smith')!.position };
+  h.frame(10, true, 1, 1);
+  assert.deepEqual(h.actor().position, position);
+  h.players.release('p', h.tick()); h.players.possess('p', 'neo', h.tick());
+  assert.deepEqual(h.actor().position, position); assert.deepEqual(h.world.agents.get('smith')!.position, smith);
+  assert.equal(h.sandbox.state.structures.find(s => s.id === 'film:smith:crater')!.film!.height, SMITH_FINALE.crater.depth);
+  h.command('retry'); assert.equal(state.smithFinale!.phase, 'air_warning');
+  assert.equal(h.sandbox.state.structures.some(s => s.id === 'film:smith:crater'), false);
 });
 
 test('the dedicated avenue renders the crowd, aerial collision, crater and purge from saved state', () => {
@@ -117,6 +144,8 @@ test('the dedicated avenue renders the crowd, aerial collision, crater and purge
   renderer.update(encounter, false, { x: 0, z: -15 });
   assert.equal(root.getObjectByName('smith-finale-shockwave')!.visible, true);
   renderer.update({ ...encounter, phase: 'descent', elapsed: 1.2 }, false, { x: 0, z: -30 });
+  assert.equal(root.getObjectByName('smith-finale-crater')!.visible, false, 'the street is intact before the fighters reach it');
+  renderer.update({ ...encounter, phase: 'crater', elapsed: 0 }, false, { x: 0, z: -38 });
   assert.equal(root.getObjectByName('smith-finale-crater')!.visible, true);
   renderer.update({ ...encounter, phase: 'assimilating', elapsed: 2 }, true, { x: 0, z: -38 });
   assert.equal(root.getObjectByName('smith-finale-assimilation')!.visible, true);

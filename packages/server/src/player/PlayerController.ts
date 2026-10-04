@@ -132,7 +132,7 @@ export class PlayerController {
     }
     agent.controller = 'player';
     this.sandbox?.enter(agent);
-    if (!(agent.id === 'neo' && metacortexLiftLocked(this.sandbox?.state.neoLife?.lift)) && !this.sandbox?.life.film.performing(agent) && playerBlocked(agent.position, agent.isInMatrix)) agent.position = locationEntrance(agent.currentLocation);
+    if (!(agent.id === 'neo' && metacortexLiftLocked(this.sandbox?.state.neoLife?.lift)) && !this.sandbox?.life.film.performing(agent) && playerBlocked(agent.position, agent.isInMatrix, 1.1, this.sandbox?.state.structures)) agent.position = locationEntrance(agent.currentLocation);
     agent.currentAction = null; agent.targetPosition = null; agent.currentPath = [];
     agent.velocity = { x: 0, y: 0, z: 0 };
     this.sessions.set(socketId, { agentId: id, input: { ...idleInput(), yaw: agent.rotation }, lastInput: Date.now(), vy: 0, planar: { x: 0, z: 0 }, lastAttack: 0, combo: 0, stagger: 0 });
@@ -596,7 +596,7 @@ export class PlayerController {
     if (skill.matrixOnly && !agent.isInMatrix) return '这项程序能力需要接入 Matrix。';
     if ((agent.combatCooldowns?.[id] ?? 0) > 0) return `${skill.name}冷却中：${Math.ceil(agent.combatCooldowns![id])} 秒。`;
     if (session.stagger > 0 || session.impulse || session.palm) return '';
-    if (['dodge', 'scorpion_dash'].includes(id) && agent.position.y > groundHeight(agent.position, agent.isInMatrix) + .15) return '落地后才能突进或闪避。';
+    if (['dodge', 'scorpion_dash'].includes(id) && agent.position.y > groundHeight(agent.position, agent.isInMatrix, this.sandbox?.state.structures) + .15) return '落地后才能突进或闪避。';
     agent.combatCooldowns ??= {}; agent.combatCooldowns[id] = skill.cooldown;
     agent.rotation = session.input.yaw;
     session.strike = undefined;
