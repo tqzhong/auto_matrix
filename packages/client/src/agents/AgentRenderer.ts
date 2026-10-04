@@ -4,10 +4,11 @@ import { trackingContact } from './TrackingContact.js';
 import { CharacterModels, weaponMuzzle, type CharacterRig } from './CharacterModel.js';
 import type { MotionInput } from './CharacterMotion.js';
 import { poseBathroom } from './BathroomPerformance.js';
-import { officeCustodyActive, truckRescuePose } from '@auto_matrix/shared';
+import { officeCustodyActive, smithFinaleLocked, truckRescuePose } from '@auto_matrix/shared';
 import { OfficeCustodyPerformance } from './OfficeCustodyPerformance.js';
 import { poseClub } from './ClubPerformance.js';
 import { poseTruckRescue } from './TruckRescueContact.js';
+import { poseSmithFinaleContact } from './SmithFinaleContact.js';
 
 export const FACTION_COLORS: Record<string, string> = {
   zion: '#90d7b1', civilians: '#d0c8a3', machines: '#ee8773', oracle: '#c6b1e7', merovingian: '#cda96c', exiles: '#88b5c5', smith_virus: '#f07565',
@@ -160,6 +161,7 @@ export class AgentRenderer {
     }
     for (const [id, entry] of this.agents) {
       const state = entry.state, physical = id.startsWith('body:');
+      const smithLocked = smithFinaleLocked(state.currentAction?.parameters.smithFinale as MotionInput['smithFinale']);
       if (physical && (this.matrix || !cut || id === 'body:neo' && cut.neoOut || id === 'body:trinity' && cut.trinityOut)) { entry.group.visible = false; continue; }
       const phoneExit = journey?.scene === 'm1_phone_escape' && journey.actor === id && ['connected', 'done'].includes(journey.openingPhone?.phase ?? '');
       entry.group.visible = state.isInMatrix === this.matrix && state.status !== 'disconnected' && !phoneExit;
@@ -253,16 +255,16 @@ export class AgentRenderer {
         else if (state.currentAction?.parameters.passenger && driver?.state.currentAction?.parameters.riding) {
           target.sub(new THREE.Vector3(driver.state.position.x, driver.state.position.y, driver.state.position.z)).add(driver.group.position);
           entry.group.position.copy(target);
-        } else if (state.currentAction?.parameters.openingRoofLeap !== undefined) entry.group.position.copy(target);
+        } else if (smithLocked || state.currentAction?.parameters.openingRoofLeap !== undefined) entry.group.position.copy(target);
         else if (state.currentAction?.parameters.truckPassenger || state.currentAction?.parameters.truckFlight || state.currentAction?.parameters.farewell || state.currentAction?.parameters.club || state.currentAction?.parameters.sentinel || state.currentAction?.parameters.interlude || state.currentAction?.parameters.oracleVisit || state.currentAction?.parameters.oracleDeparture || state.currentAction?.parameters.crosscut || state.currentAction?.parameters.betrayal || state.currentAction?.parameters.rescue || state.currentAction?.parameters.government || state.currentAction?.parameters.airRescue || state.currentAction?.parameters.matrixEscape || state.currentAction?.parameters.theOne || state.currentAction?.parameters.reloaded || state.currentAction?.parameters.catch || state.currentAction?.parameters.lobbyEntry || state.currentAction?.parameters.meeting || state.currentAction?.parameters.pills || state.currentAction?.parameters.interrogation || state.currentAction?.parameters.welcome || state.currentAction?.parameters.reveal || state.currentAction?.parameters.training || state.currentAction?.parameters.workday || state.currentAction?.parameters.recoveryCrew || state.currentAction?.parameters.mirrorEntry || entry.group.position.distanceTo(target) > 60) entry.group.position.copy(target);
         else entry.group.position.lerp(target, 1 - Math.exp(-8 * delta));
         if (state.currentAction?.parameters.basement && !dropRoot && delta * speed > 0) guideSpeed = entry.group.position.distanceTo(previous) / (delta * speed);
       }
       const moving = Math.hypot(state.velocity.x, state.velocity.z) > .1;
-      const heading = guideHeading ?? (moving && !state.currentAction?.parameters.mirrorEntry && !state.currentAction?.parameters.officeCustody && !state.currentAction?.parameters.oracleArrival && !state.currentAction?.parameters.oracleReception && !state.currentAction?.parameters.oracleDeparture && !state.currentAction?.parameters.club && !state.currentAction?.parameters.catch && !state.currentAction?.parameters.truckRescue && !state.currentAction?.parameters.recoveryCrew && state.currentLocation !== 'film_government_lobby' ? Math.atan2(state.velocity.x, state.velocity.z) : state.rotation);
+      const heading = guideHeading ?? (moving && !smithLocked && !state.currentAction?.parameters.mirrorEntry && !state.currentAction?.parameters.officeCustody && !state.currentAction?.parameters.oracleArrival && !state.currentAction?.parameters.oracleReception && !state.currentAction?.parameters.oracleDeparture && !state.currentAction?.parameters.club && !state.currentAction?.parameters.catch && !state.currentAction?.parameters.truckRescue && !state.currentAction?.parameters.recoveryCrew && state.currentLocation !== 'film_government_lobby' ? Math.atan2(state.velocity.x, state.velocity.z) : state.rotation);
       let difference = heading - entry.body.rotation.y;
       difference = Math.atan2(Math.sin(difference), Math.cos(difference));
-      if (id !== this.playerId && state.currentAction?.parameters.officeCustody && (delta * speed === 0 || (state.currentAction.parameters.officeCustody as MotionInput['officeCustody'])?.street)) { entry.body.rotation.y = heading; difference = 0; }
+      if (id !== this.playerId && (smithLocked || state.currentAction?.parameters.officeCustody && (delta * speed === 0 || (state.currentAction.parameters.officeCustody as MotionInput['officeCustody'])?.street))) { entry.body.rotation.y = heading; difference = 0; }
       const arrival = state.currentAction?.parameters.oracleArrival as MotionInput['oracleArrival'];
       if (id !== this.playerId && clubGesture) entry.body.rotation.y += delta * speed > 0 ? Math.sign(difference) * Math.min(Math.abs(difference), 2.4 * delta * speed) : difference;
       else if (id !== this.playerId) entry.body.rotation.y += difference * (dropRoot || entry.wetwallGuide || entry.ambushGuide && delta === 0 || arrival?.phase === 'opening' || (arrival?.seating ?? 0) > 0 || state.currentAction?.parameters.farewell || state.currentAction?.parameters.sentinel || state.currentAction?.parameters.interlude || state.currentAction?.parameters.oracleVisit || state.currentAction?.parameters.oracleDeparture || state.currentAction?.parameters.crosscut || state.currentAction?.parameters.betrayal || state.currentAction?.parameters.rescue || state.currentAction?.parameters.government || state.currentAction?.parameters.airRescue || state.currentAction?.parameters.matrixEscape || state.currentAction?.parameters.theOne || state.currentAction?.parameters.reloaded || state.currentAction?.parameters.catch || state.currentAction?.parameters.lobbyEntry || state.currentAction?.parameters.meeting || state.currentAction?.parameters.pills || state.currentAction?.parameters.interrogation || state.currentAction?.parameters.welcome || state.currentAction?.parameters.reveal || state.currentAction?.parameters.training || state.currentAction?.parameters.workday || state.currentAction?.parameters.recoveryCrew || state.currentAction?.parameters.mirrorEntry ? 1 : 1 - Math.exp(-10 * delta));
@@ -343,6 +345,7 @@ export class AgentRenderer {
         persephone: state.currentAction?.parameters.persephone as MotionInput['persephone'],
         farewell: state.currentAction?.parameters.farewell as MotionInput['farewell'],
         deusPact: state.currentAction?.parameters.deusPact as MotionInput['deusPact'],
+        smithFinale: state.currentAction?.parameters.smithFinale as MotionInput['smithFinale'],
         epilogue: state.currentAction?.parameters.epilogue as MotionInput['epilogue'],
         lobbyEntry: state.currentAction?.parameters.lobbyEntry as MotionInput['lobbyEntry'],
         weaponStyle: state.currentAction?.parameters.weaponStyle as MotionInput['weaponStyle'],
@@ -537,6 +540,10 @@ export class AgentRenderer {
     }
     const morpheus = this.agents.get('morpheus'), smith = this.agents.get('smith');
     const neo = this.agents.get('neo'), keymaker = this.agents.get('keymaker');
+    const smithFinale = (this.playerId === 'neo' ? this.playerMotion?.smithFinale : neo?.state.currentAction?.parameters.smithFinale) as MotionInput['smithFinale'];
+    if (smithFinale && neo?.rig.hero && smith?.rig.hero && smith.state.currentAction?.parameters.smithFinale) {
+      poseSmithFinaleContact(neo.rig.hero, smith.rig.hero, smithFinale);
+    }
     const truckRescue = morpheus?.state.currentAction?.parameters.truckRescue as MotionInput['truckRescue'];
     if (truckRescue && neo?.rig.hero && morpheus && keymaker
       && neo.state.currentAction?.parameters.truckRescue && keymaker.state.currentAction?.parameters.truckRescue) {

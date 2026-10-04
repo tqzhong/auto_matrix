@@ -199,10 +199,11 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const deus = input.deusPact && deusPactPose(input.deusPact);
   const deusLocked = deusPactLocked(input.deusPact);
   const smithFinale = input.smithFinale && smithFinalePose(input.smithFinale);
+  const smithLocked = smithFinaleLocked(input.smithFinale);
   const welcomeWalking = input.welcome?.phase === 'approach' || input.welcome?.phase === 'departing' && input.welcome.role !== 'neo';
   const welcomeSpeed = input.welcome?.role === 'morpheus' ? 2.6 : input.welcome?.role === 'neo' ? 2.3 : 1.8;
   const speed = input.farewell || deusPactLocked(input.deusPact) || smithFinaleLocked(input.smithFinale) || trilogyEpilogueLocked(input.epilogue) ? 0 : input.pills ? exiting ? 1.7 : 0 : welcomeWalking ? welcomeSpeed : input.speed;
-  state.time = input.farewell ? input.farewell.total : deusLocked ? input.deusPact!.total : state.time + dt;
+  state.time = input.farewell ? input.farewell.total : deusLocked ? input.deusPact!.total : smithLocked ? input.smithFinale!.total : state.time + dt;
   state.speed = mix(state.speed, input.riding || input.climbing !== undefined ? 0 : speed, blend);
   if (input.farewell) { state.speed = 0; state.airborne = 0; state.seated = 0; }
   if (input.cabin?.kind === 'core' && input.cabin.role === 'neo') state.speed = 2.2 * smooth(clamp(input.cabin.elapsed / .25)) * (1 - smooth(clamp((input.cabin.elapsed - .65) / .3)));
@@ -239,12 +240,13 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
       state.attackId = input.attack; state.attackAge = 0;
     } else state.attackAge += dt * (input.windingUp ? .28 : 1);
   }
-  if (input.farewell || deusLocked) {
+  if (input.farewell || deusLocked || smithLocked) {
     state.landing = 0;
     state.attackAge = state.hitAge = state.skillAge = state.shotAge = 10;
     state.hitPause = 0; state.skill = undefined;
   }
-  if (deusLocked) { state.speed = 0; state.turn = 0; state.airborne = 0; state.phase = 0; }
+  if (deusLocked || smithLocked) { state.speed = 0; state.turn = 0; state.airborne = 0; state.phase = 0; }
+  if (smithLocked) { state.seated = 0; state.combo = 0; }
   const run = smooth(clamp((state.speed - PLAYER_WALK_SPEED) / (PLAYER_RUN_SPEED - PLAYER_WALK_SPEED)));
   const stride = mix(.84, 1.22, run);
   const stance = mix(.6, .42, run);
@@ -667,7 +669,9 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     }
   }
   if (smithFinale && input.smithFinale) {
-    const neo = input.smithFinale.role === 'neo'; const attack = smithFinale.strike;
+    const neo = input.smithFinale.role === 'neo';
+    const counter = input.smithFinale.phase === 'ground_counter' || input.smithFinale.phase === 'shockwave';
+    const attack = counter && !neo ? 0 : smithFinale.strike;
     for (let i = 0; i < 2; i++) {
       arms[i].shoulder = mix(arms[i].shoulder, -.82, smithFinale.guard);
       arms[i].elbow = mix(arms[i].elbow, -1.28, smithFinale.guard);
@@ -686,10 +690,14 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
         legs[i].knee = mix(legs[i].knee, i ? 1.48 : 1.1, smithFinale.fallen);
       }
     }
-    const strikingArm = neo ? 0 : 1;
+    const strikingArm = neo ? counter && input.smithFinale.hits % 2 === 0 ? 1 : 0 : 1;
     arms[strikingArm].shoulder = mix(arms[strikingArm].shoulder, -1.55, attack);
     arms[strikingArm].elbow = mix(arms[strikingArm].elbow, -.08, attack);
     arms[strikingArm].grip = mix(arms[strikingArm].grip, 1, attack);
+    if (neo && counter) {
+      arms[1 - strikingArm].shoulder = mix(arms[1 - strikingArm].shoulder, -.25, attack);
+      arms[1 - strikingArm].elbow = mix(arms[1 - strikingArm].elbow, -1.85, attack);
+    }
     if (smithFinale.surrender) for (let i = 0; i < 2; i++) {
       arms[i].shoulder = mix(arms[i].shoulder, neo ? -.08 : -1.18, smithFinale.surrender);
       arms[i].elbow = mix(arms[i].elbow, neo ? -.12 : -.45, smithFinale.surrender);

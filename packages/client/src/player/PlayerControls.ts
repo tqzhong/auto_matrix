@@ -482,6 +482,9 @@ export class PlayerControls {
     if (deusPactLocked(deusPact)) this.performing = true;
     const smithFinale = state.currentAction?.parameters.smithFinale as MotionInput['smithFinale'];
     if (this.motion.smithFinale && !smithFinaleLocked(smithFinale)) this.performing = false;
+    if (smithFinaleLocked(smithFinale) && !smithFinaleLocked(this.motion.smithFinale)) {
+      this.yaw = this.movementYaw = state.rotation; this.pitch = .24; this.cameraReady = false;
+    }
     if (smithFinaleLocked(smithFinale)) this.performing = true;
     const epilogue = state.currentAction?.parameters.epilogue as MotionInput['epilogue'];
     if (this.motion.epilogue && !trilogyEpilogueLocked(epilogue)) this.performing = false;
@@ -770,7 +773,7 @@ export class PlayerControls {
     const heading = dropRoot ? dropRoot.yaw : this.motion.bathroom ? bathroomFightRoot(this.motion.bathroom, this.motion.bathroom.role).yaw : this.motion.sixth ? sixthPose(this.motion.sixth).yaw : this.motion.wetwall && this.wetwallGuide ? wetwallPose(this.motion.wetwall.start, this.motion.wetwall.role, this.wetwallGuide.progress, this.motion.wetwall.phase, this.motion.wetwall.elapsed, this.motion.wetwall.fallY, this.motion.wetwall.continued).yaw
       : this.ride || this.climbing || this.performing ? state.rotation : attacking ? this.attackYaw : this.firearm ? this.yaw : this.motion.speed > .1 ? Math.atan2(dx, dz) : this.facing;
     const turn = Math.atan2(Math.sin(heading - this.facing), Math.cos(heading - this.facing));
-    this.facing += turn * (deusPactLocked(this.motion.deusPact) || this.motion.farewell || mirrorYaw !== undefined || chairYaw !== undefined || computerCheckLocked(computerCheck) || dropRoot || this.motion.officeCustody?.street || this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.welcome || this.motion.knock !== undefined || this.motion.training || this.motion.workday || this.motion.wakeCall || this.motion.sentinel || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || this.motion.lobbyEntry ? 1 : 1 - Math.exp(-14 * delta)); this.motion.turn = turn * 8;
+    this.facing += turn * (smithFinaleLocked(this.motion.smithFinale) || deusPactLocked(this.motion.deusPact) || this.motion.farewell || mirrorYaw !== undefined || chairYaw !== undefined || computerCheckLocked(computerCheck) || dropRoot || this.motion.officeCustody?.street || this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.welcome || this.motion.knock !== undefined || this.motion.training || this.motion.workday || this.motion.wakeCall || this.motion.sentinel || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || this.motion.lobbyEntry ? 1 : 1 - Math.exp(-14 * delta)); this.motion.turn = turn * 8;
     if (running && this.enabled && !this.motion.wetwall && (this.motion.speed > .1 || this.ride || this.climbing) && !(this.firstPerson && this.climbing && state.currentLocation === 'film_office_ledge') && !this.dragging && performance.now() - this.lastLook > 900) {
       const cameraTurn = Math.atan2(Math.sin(this.facing - this.yaw), Math.cos(this.facing - this.yaw));
       this.yaw += cameraTurn * (1 - Math.exp(-5 * delta));
@@ -806,9 +809,10 @@ export class PlayerControls {
     const basementWide = !this.firstPerson && Boolean(dropRoot);
     const streetShaftWide = !this.firstPerson && tvExit?.phase === 'emerging';
     this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, inOfficeLift && !this.firstPerson ? 80 : basementWide ? this.camera.aspect < .85 ? 82 : 78 : bathroomWide ? this.camera.aspect < .85 ? 78 : 58 : streetShaftWide ? this.camera.aspect < .85 ? 68 : 60 : podWide ? 65 : this.motion.truth && !this.firstPerson && this.camera.aspect < .85 ? 68 : cabinWide ? this.camera.aspect < .85 ? 68 : 58 : smithFinaleWide || epilogueWide ? 64 : ladderWide ? 62 : interviewApproach ? 70 : interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide || sentinelWide || interludeWide || oracleWide || betrayalWide || rescueWide || governmentWide || airRescueWide || escapeWide || oneWide || catchWide || lobbyWide || pillDepartureWide ? 58 : this.motion.inspecting && !this.firstPerson ? 42 : this.firstPerson ? this.motion.mirrorBeat !== undefined ? 78 : sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
-    this.camera.near = basement?.crawling || Boolean(dropRoot) || this.firstPerson && (this.motion.performance === 'pod' && state.currentLocation === 'film_power_plant_pods' || this.motion.morning || this.motion.workday?.role === 'neo' && this.motion.workday.phase === 'signing' || this.motion.computerCheck || this.motion.contact?.propMotion === 'minidisc' && ['retrieving', 'disk', 'handover'].includes(this.motion.contact.phase) || this.motion.pills || this.motion.farewell || deusPactLocked(this.motion.deusPact) || this.motion.bathroom || this.motion.sixth || this.motion.wetwall?.hanging || tvExit?.phase === 'emerging') ? .06 : this.firstPerson && this.motion.club ? .08 : this.defaultNear;
+    this.camera.near = basement?.crawling || Boolean(dropRoot) || this.firstPerson && (this.motion.performance === 'pod' && state.currentLocation === 'film_power_plant_pods' || this.motion.morning || this.motion.workday?.role === 'neo' && this.motion.workday.phase === 'signing' || this.motion.computerCheck || this.motion.contact?.propMotion === 'minidisc' && ['retrieving', 'disk', 'handover'].includes(this.motion.contact.phase) || this.motion.pills || this.motion.farewell || deusPactLocked(this.motion.deusPact) || smithFinaleLocked(this.motion.smithFinale) || this.motion.bathroom || this.motion.sixth || this.motion.wetwall?.hanging || tvExit?.phase === 'emerging') ? .06 : this.firstPerson && this.motion.club ? .08 : this.defaultNear;
     const arrest = this.motion.officeCustody?.street;
     if (deusPactLocked(this.motion.deusPact)) this.camera.fov = this.firstPerson ? 68 : 57;
+    if (smithFinaleLocked(this.motion.smithFinale)) this.camera.fov = this.firstPerson ? 68 : 64;
     if (arrest && arrest.phase !== 'approaching') {
       this.camera.fov = this.firstPerson ? 68 : arrestMirrorShot(arrest) ? this.camera.aspect < .85 ? 60 : 38 : this.camera.aspect < .85 ? 64 : 54;
       this.camera.near = .06;
@@ -1834,12 +1838,13 @@ export class PlayerControls {
       const neo = new THREE.Vector3(center.x + pose.neo.x, center.y + pose.neo.y + 1.7, center.z + pose.neo.z);
       const smith = new THREE.Vector3(center.x + pose.smith.x, center.y + pose.smith.y + 1.7, center.z + pose.smith.z);
       const focus = neo.clone().lerp(smith, gesture.phase === 'surrender' || gesture.phase === 'assimilating' ? .56 : .5);
-      const flying = pose.flight > .1; const crater = ['crater', 'choice', 'vision', 'understanding', 'surrender', 'assimilating', 'purging'].includes(gesture.phase);
-      const distance = flying ? 18 : crater ? 11 : 14; const height = flying ? 7.5 : crater ? 4.8 : 6.4; const side = flying ? 5 : crater ? 4.2 : 5.5;
+      const crater = ['crater', 'choice', 'vision', 'understanding', 'surrender', 'assimilating', 'purging'].includes(gesture.phase);
+      const distance = THREE.MathUtils.lerp(crater ? 11 : 14, 18, pose.flight);
+      const height = THREE.MathUtils.lerp(crater ? 4.8 : 6.4, 7.5, pose.flight);
+      const side = THREE.MathUtils.lerp(crater ? 4.2 : 5.5, 5, pose.flight);
       const forward = new THREE.Vector3(Math.sin(this.yaw), 0, Math.cos(this.yaw)); const right = new THREE.Vector3(Math.cos(this.yaw), 0, -Math.sin(this.yaw));
       const ideal = focus.clone().addScaledVector(forward, -distance).addScaledVector(right, side); ideal.y += height;
-      if (resetCamera || gesture.elapsed < .08) this.camera.position.copy(ideal);
-      else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
+      this.camera.position.copy(ideal);
       this.camera.lookAt(focus);
     } else if (this.motion.deusPact && deusPactLocked(this.motion.deusPact) && this.firstPerson) {
       const pose = deusPactPose(this.motion.deusPact);
@@ -1950,6 +1955,19 @@ export class PlayerControls {
     group.updateWorldMatrix(true, true);
     const localEye = head.userData.cameraEye as THREE.Vector3 | undefined;
     const eye = head.localToWorld(localEye?.clone() ?? new THREE.Vector3(0, .1, .32));
+    const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
+    this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
+  }
+
+  syncSmithFinaleCamera(group: THREE.Group): void {
+    if (!this.firstPerson || !smithFinaleLocked(this.motion.smithFinale)
+      || this.authoritative?.currentLocation !== 'film_smith_avenue') return;
+    const head = group.getObjectByName('head'); if (!head) return;
+    // Controls run before the saved flight/fall pose is applied to the GLB.
+    group.updateWorldMatrix(true, true);
+    const localEye = head.userData.cameraEye as THREE.Vector3 | undefined;
+    if (!localEye) return;
+    const eye = head.localToWorld(localEye.clone());
     const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
     this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
   }

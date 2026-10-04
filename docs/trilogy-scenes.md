@@ -1,6 +1,6 @@
 # 三部曲场景与剧情实施记录
 
-更新：2026-10-01。
+更新：2026-10-04。
 
 最新范围已调整为选取关键电影段落，优先做好可玩性与布景，不要求穷举影片所有镜头。大堂营救已增加专用枪战与布景；后续优先级、验收证据和限制见 [关键片段制作记录](key-scenes.md)。下面的 115 段是当前剧情索引。
 
@@ -207,6 +207,8 @@
 Logos 告别段可使用 `node --import tsx scripts/film-review-fixture.mts m3_farewell farewell-ready`、`farewell-goodbye` 或 `farewell-still`，分别定位走近残骸、最后告别和死亡后的反思检查点。这些存档用于动作、镜头和恢复验证，不代表从机器城防线连续人工飞行到坠毁。
 
 机器核心本轮接续上轮真实告别存档，以普通输入走到谈判平台，再混合普通持续按键与原生失败重试、care 保护锡安菜单操作并开始接线。实际头骨眼位、托架与身体接头/后颈探针、玩家/旁观及暂停/冷载姿态已有有限模型检查；冷色实体布景与 Neo 主观金光分离，等待选择时集体面孔仍按保存时钟微动。接线 1.502 秒 / tick 1481 真实 SIGTERM 重启后，完整 neoLife 与 Neo、Trinity、Deus 的位置、朝向、速度、状态、生命、地点、矩阵标志和动作均相同，详见[本轮画面与恢复证据](../output/gameplay/trilogy-machine-core-2026-10-04/README.md)及其中 `native-restart-validation.json`。近景/格栅支撑已修正；最终续接同意接入并原生进入暴雨大道入口tick1535，最后剧情/重启16/16与渲染/真实身体/镜头27/27、最终类型检查与构建通过（未重复全量）；本轮参考含制作报道图片，未观看完整原片，仅接到暴雨大道入口，未开始本轮Smith战斗。机器资产、真实服装/表演/声音、完整主观感知与性能仍有缺口，3-10 保持专用样板，不代表三部曲完成。
+
+暴雨决战本轮续接上述机器核心检查档，增加324个完整Smith实例及近远模型、街谷与反射浅水、保存时钟雨水冲击和飞行水滴尾迹；校准左右拳/西服接触，并修正双方动作同步、实际眼位、暂停/冷载、升空及镜头跳变。普通输入与原生界面混合验证失败重试、反击、升空、起身和选择；第一拳tick1791真实关闭/重启保持完整neoLife与两人八类状态字段。实机又复现最后选择把Neo送回大道入口，修复后用本轮choice公开快照另建局部检查档，原生确认位置/朝向/健康及Smith位置保留；该重放不含NPC会话/关系/外置记忆，不能替代完整世界恢复证据。[本轮记录](../output/gameplay/trilogy-rain-fidelity-2026-10-04/README.md)保留38/38、最后切段后14/14及实测约20.0fps的范围。真实凹坑、楼内交锋/再次升空、后续动作/同化/清除、成片资产/声音、稳定性能与完整连续人工长玩仍缺，3-11保持专用样板。
 
 尾声可分别使用 `node --import tsx scripts/film-review-fixture.mts m3_ceasefire ceasefire-retreat`、`node --import tsx scripts/film-review-fixture.mts m3_neo_carried neo-barge` 和 `node --import tsx scripts/film-review-fixture.mts m3_dawn dawn-sunrise`，定位哨兵撤退、Neo 转运和 Sati 日出的局部检查点。它们用于动作、镜头和存档恢复验收，不代表从 Smith 终局连续人工通关到最终确认。
 

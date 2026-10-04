@@ -93,8 +93,13 @@ test('Neo must finish the pact, duel, reflection, surrender and purge as one sav
   const saved = structuredClone(h.sandbox.state); h.players.release('p', h.tick()); h.sandbox.restore(saved); h.players.possess('p', 'neo', h.tick());
   assert.equal(h.state().smithFinale?.phase, 'choice');
   h.command('reflect:agency'); assert.equal(h.state().step, rain.steps.length);
+  const crater = { position: { ...h.actor().position }, rotation: h.actor().rotation, smith: { ...h.world.agents.get('smith')!.position } };
+  h.actor().health = 73;
   h.command('next'); assert.equal(h.state().scene, 'm3_surrender'); assert.equal(h.state().smithFinale?.phase, 'assault_ready');
-  h.actor().position = filmStepPosition(FILM_SCENE_BY_ID.m3_surrender, FILM_SCENE_BY_ID.m3_surrender.steps[0]);
+  assert.deepEqual(h.actor().position, crater.position, 'the last exchange continues in the crater instead of sending Neo back to the avenue entrance');
+  assert.equal(h.actor().rotation, crater.rotation, 'the same conversation cannot turn Neo away from Smith');
+  assert.deepEqual(h.world.agents.get('smith')!.position, crater.smith);
+  assert.equal(h.actor().health, 73, 'entering the next part of the same fight cannot erase injuries');
   h.command('act'); h.frame(90); assert.equal(h.state().smithFinale?.phase, 'vision'); assert.equal(h.state().step, 1);
   h.command('reflect:trust'); assert.equal(h.state().smithFinale?.phase, 'understanding'); assert.equal(h.state().step, 2);
   h.command('act'); h.frame(45, false); assert.equal(h.state().smithFinale?.phase, 'surrender');
