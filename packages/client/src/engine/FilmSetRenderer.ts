@@ -1,3 +1,4 @@
+import { type TrilogyEpilogueEncounter } from '@auto_matrix/shared';
 import { crosscutPhoneRole } from '@auto_matrix/shared';
 import { createLoungeChair } from './LoungeChair.js';
 import { BasementSetRenderer } from './BasementSetRenderer.js';
@@ -391,10 +392,14 @@ export class FilmSetRenderer {
       ? player.currentAction?.parameters.deusPact as DeusPactEncounter | undefined : undefined;
     const deus = savedDeus && fastDeus?.phase === savedDeus.phase && fastDeus.attempts === savedDeus.attempts
       && fastDeus.total >= savedDeus.total ? fastDeus : savedDeus;
+    const savedEpilogue = ['m3_ceasefire', 'm3_neo_carried', 'm3_dawn'].includes(journey?.scene ?? '') && !journey?.visiting ? journey?.epilogue : undefined;
+    const fastEpilogue = player?.id === journey?.actor ? player?.currentAction?.parameters.epilogue as TrilogyEpilogueEncounter | undefined : undefined;
+    const epilogue = savedEpilogue && fastEpilogue?.kind === savedEpilogue.kind && fastEpilogue.phase === savedEpilogue.phase
+      && fastEpilogue.total >= savedEpilogue.total ? fastEpilogue : savedEpilogue;
     this.machineCore?.update(deus, elapsed, firstPerson && player?.id === 'neo' && !player.isInMatrix, {
       x: (playerPosition?.x ?? this.current?.center.x ?? 0) - (this.current?.center.x ?? 0),
       z: (playerPosition?.z ?? this.current?.center.z ?? 0) - (this.current?.center.z ?? 0),
-    }, this.recoverySubject);
+    }, this.recoverySubject, epilogue?.kind === 'neo_carried' ? epilogue : undefined);
     const savedSmith = ['m3_rain', 'm3_surrender'].includes(journey?.scene ?? '') && !journey?.visiting ? journey?.smithFinale : undefined;
     const fastSmith = player?.id === 'neo' && player.id === journey?.actor && player.currentLocation === 'film_smith_avenue'
       ? player.currentAction?.parameters.smithFinale as SmithFinaleEncounter | undefined : undefined;
@@ -404,7 +409,7 @@ export class FilmSetRenderer {
       ? { phase: 'done', elapsed: 0, total: elapsed, focus: 0, hits: 0, lastStrike: -1, lane: 0, checkpoint: 'air', attempts: 0 } : undefined),
       firstPerson, { x: (playerPosition?.x ?? this.current?.center.x ?? 0) - (this.current?.center.x ?? 0),
         z: (playerPosition?.z ?? this.current?.center.z ?? 0) - (this.current?.center.z ?? 0) });
-    this.trilogyEpilogue?.update(['m3_ceasefire', 'm3_neo_carried', 'm3_dawn'].includes(journey?.scene ?? '') && !journey?.visiting ? journey?.epilogue : undefined, elapsed);
+    this.trilogyEpilogue?.update(epilogue, elapsed, this.recoverySubject);
     this.construct?.update(journey);
     this.desert?.update(journey, elapsed);
     this.mountain?.update(journey?.scene === 'm2_mountain' && !journey.visiting ? journey.mountain : undefined, elapsed);

@@ -237,9 +237,10 @@ export class PlayerExperience {
     if (!player) return;
     this.el('player-name').textContent = player.name.toUpperCase();
     this.el('player-initial').textContent = player.name[0];
-    this.el('player-identity').textContent = `${CHARACTERS[player.id]?.nameCn ?? player.name} / ${player.faction === 'machines' ? '安全程序' : player.isAwakened ? '已觉醒' : '尚未觉醒'}`;
-    this.el('player-health').style.width = `${player.health / player.maxHealth * 100}%`;
-    this.el('player-health-value').textContent = String(Math.ceil(player.health));
+    const unresponsive = player.currentAction?.parameters.finaleComa === true;
+    this.el('player-identity').textContent = `${CHARACTERS[player.id]?.nameCn ?? player.name} / ${unresponsive ? '身体没有回应' : player.faction === 'machines' ? '安全程序' : player.isAwakened ? '已觉醒' : '尚未觉醒'}`;
+    this.el('player-health').style.width = unresponsive ? '0%' : `${player.health / player.maxHealth * 100}%`;
+    this.el('player-health-value').textContent = unresponsive ? '未明' : String(Math.ceil(player.health));
     this.el('player-energy').style.width = `${player.mind?.energy ?? 100}%`;
     this.el('game-world').textContent = player.isInMatrix ? 'MATRIX / 01' : 'REAL WORLD / ZION';
     this.el('game-location').textContent = LOCATIONS[player.currentLocation]?.nameCn ?? '城市街道';

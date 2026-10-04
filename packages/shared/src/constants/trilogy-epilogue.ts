@@ -42,7 +42,18 @@ export function newTrilogyEpilogue(kind: TrilogyEpilogueKind): TrilogyEpilogueEn
 }
 
 export function trilogyEpilogueLocked(encounter?: TrilogyEpilogueEncounter): boolean {
-  return Boolean(encounter && running.has(encounter.phase));
+  return Boolean(encounter && (encounter.kind === 'neo_carried' || running.has(encounter.phase)));
+}
+
+/** The physical body and its carrier share one saved trajectory, including the final resting frame. */
+export function neoCarryPose(encounter: TrilogyEpilogueEncounter) {
+  const progress = trilogyEpilogueProgress(encounter), eased = progress * progress * (3 - 2 * progress);
+  const lowering = encounter.phase === 'lowering' ? eased : ['transfer', 'departing', 'done'].includes(encounter.phase) ? 1 : 0;
+  const transfer = encounter.phase === 'transfer' ? eased : ['departing', 'done'].includes(encounter.phase) ? 1 : 0;
+  const depart = encounter.phase === 'departing' ? eased : encounter.phase === 'done' ? 1 : 0;
+  return { x: depart * 14, y: 2.4 * (1 - lowering) + depart * 1.2, z: -25 - transfer * 9 - depart * 20,
+    bargeY: .05 + depart * 1.2, bargeZ: -34 - depart * 20, transfer, depart,
+    connection: encounter.phase === 'ready' ? 1 : encounter.phase === 'disconnecting' ? 1 - eased : 0 };
 }
 
 export function trilogyEpilogueProgress(encounter: TrilogyEpilogueEncounter): number {
@@ -51,7 +62,7 @@ export function trilogyEpilogueProgress(encounter: TrilogyEpilogueEncounter): nu
 }
 
 export function stepTrilogyEpilogue(encounter: TrilogyEpilogueEncounter, delta: number): TrilogyEpilogueEncounter {
-  if (!trilogyEpilogueLocked(encounter)) return encounter;
+  if (!running.has(encounter.phase)) return encounter;
   const dt = Math.max(0, Math.min(.1, delta));
   const next = { ...encounter, elapsed: encounter.elapsed + dt, total: encounter.total + dt };
   const seconds = TRILOGY_EPILOGUE.seconds[next.phase as keyof typeof TRILOGY_EPILOGUE.seconds];

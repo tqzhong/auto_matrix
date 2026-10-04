@@ -654,13 +654,14 @@ export class SandboxUI {
       const epilogue = journey.epilogue; const phase = epilogue.phase;
       const near = Boolean(step && distance(player.position, filmStepPosition(scene, step)) <= 4);
       const names: Record<string, string> = { ready: '等待行动', retreat: '哨兵撤离', message_ready: '带回消息', running: '奔向人群', announcement: '宣布停战', embrace: '幸存者重逢', disconnecting: '连接断开', lowering: '放低身体', transfer: '转上驳船', departing: '驶入机器城', cat: '既视感与重置', architect: '停战协议', choice: '离开的权利', promise: '承诺已记录', sati: 'Sati 的礼物', sunrise: '新的日出', belief: '我相信', done: '尾声完成' };
-      const hint = trilogyEpilogueLocked(epilogue) ? `${names[phase]} · 鼠标观察 · V 切换视角 · 当前一拍自动保存`
+      const hint = epilogue.kind === 'neo_carried' && phase === 'ready' ? 'Neo 已失去回应 · G 目送身体运送 · V 切换视角'
+        : phase === 'done' ? 'G 或 J 继续；到最终场景后仍需亲自确认本轮结束'
+        : trilogyEpilogueLocked(epilogue) ? `${names[phase]} · 鼠标观察 · V 切换视角 · 当前一拍自动保存`
         : phase === 'choice' ? 'J 打开手记，要求建筑师明确谁可以离开矩阵'
           : phase === 'message_ready' ? 'WASD 跑回神庙人群 · 靠近后按 G 亲口报信'
             : phase === 'promise' ? 'WASD 走向 Sati · 靠近后按 G 看她留下的日出'
-              : phase === 'done' ? 'G 或 J 继续；到最终场景后仍需亲自确认本轮结束'
-                : 'WASD 前往标记 · 靠近后按 G';
-      const interactive = near && ['ready', 'message_ready', 'promise'].includes(phase) || phase === 'done';
+              : 'WASD 前往标记 · 靠近后按 G';
+      const interactive = (near || epilogue.kind === 'neo_carried') && ['ready', 'message_ready', 'promise'].includes(phase) || phase === 'done';
       this.el('film-sequence').classList.remove('hidden');
       this.el('film-sequence').classList.toggle('urgent', false);
       this.el('film-sequence-line').textContent = journey.lastText;

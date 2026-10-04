@@ -1029,7 +1029,7 @@ export class HeroModels {
     this.truths.get(rig)?.pose(input.truth);
     rig.root.updateWorldMatrix(true, true);
     if (input.performance === 'touch') placeTrackingFeet(rig, input.mirrorBeat, input.mirrorEntry);
-    if (!input.farewell && !(input.truth?.role === 'neo' && input.truth.phase === 'unplug' && (truthSeat(input.truth.elapsed) > 0 || truthKneel(input.truth.elapsed) > 0)) && input.grounded && !input.meeting && !input.interrogation && !(input.wakeCall?.phase === 'waking' && input.wakeCall.elapsed < 3.2) && !input.riding && input.climbing === undefined && (!input.performance || input.performance === 'connect')) {
+    if (input.epilogue?.kind !== 'neo_carried' && !input.farewell && !(input.truth?.role === 'neo' && input.truth.phase === 'unplug' && (truthSeat(input.truth.elapsed) > 0 || truthKneel(input.truth.elapsed) > 0)) && input.grounded && !input.meeting && !input.interrogation && !(input.wakeCall?.phase === 'waking' && input.wakeCall.elapsed < 3.2) && !input.riding && input.climbing === undefined && (!input.performance || input.performance === 'connect')) {
       let lowest = Infinity;
       for (const side of ['R', 'L']) {
         this.point.setFromMatrixPosition(bone('ankle_' + side).matrixWorld); rig.root.worldToLocal(this.point);

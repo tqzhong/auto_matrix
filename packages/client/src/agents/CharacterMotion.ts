@@ -159,6 +159,13 @@ export function solveLeg(z: number, height: number): { hip: number; knee: number
 
 export function advanceMotion(state: MotionState, input: MotionInput, delta: number) {
   let dt = clamp(delta, 0, .1);
+  if (input.epilogue?.kind === 'neo_carried' && input.epilogue.role === 'neo') {
+    Object.assign(state, newMotion(), { time: input.epilogue.total });
+    return { legs: [0, 1].map(() => ({ hip: 0, knee: .04, ankle: 0 })),
+      arms: [0, 1].map(i => ({ shoulder: .02, elbow: -.08, outward: (i ? 1 : -1) * 1.3, grip: 0 })),
+      hipHeight: 1.98, twist: 0, lean: 0, sway: 0, lunge: 0, roll: 0, headTurn: 0,
+      moving: 0, run: 0, airborne: 0, coat: 0, impact: 0, landing: 0 };
+  }
   if (input.truckRescue || input.truckFlight) {
     const gesture = input.truckRescue ?? { phase: 'rescue', elapsed: 10, rescueElapsed: 0, lastTick: 0, attempt: 0, role: 'neo' } as const;
     const pose = truckRescuePose(gesture, gesture.role);

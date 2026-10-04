@@ -3,7 +3,7 @@ import test, { type TestContext } from 'node:test';
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { DEUS_PACT, FILM_SETS, newDeusPact, type DeusPactEncounter } from '@auto_matrix/shared';
+import { DEUS_PACT, FILM_SETS, newDeusPact, neoCarryPose, newTrilogyEpilogue, type DeusPactEncounter } from '@auto_matrix/shared';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { MachineCoreRenderer } from '../packages/client/src/engine/MachineCoreRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
@@ -271,4 +271,43 @@ test('the close connection shot keeps Neo’s actual head, feet and support abov
       }
     }
   }
+});
+
+test('the carried body keeps its saved root and actual eye through waiting, transport, pause and V switching', async t => {
+  const h = setup(t), asset = await geometry('neo');
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', async () => asset);
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const renderer = new AgentRenderer(new THREE.Scene()); renderer.setWorld(false); t.after(() => renderer.dispose());
+  const stage = new THREE.Group(); stage.position.set(h.center.x, h.center.y - 1, h.center.z);
+  const machine = new MachineCoreRenderer(stage); t.after(() => machine.dispose());
+  renderer.updateAgent('neo', h.actor); await new Promise(resolve => setImmediate(resolve));
+  const group = renderer.getAgent('neo')!, head = group.getObjectByName('head')!;
+  const frame = (phase: 'ready' | 'transfer' | 'done') => {
+    const beat = { ...newTrilogyEpilogue('neo_carried'), phase, elapsed: phase === 'transfer' ? 1.6 : 0, total: 7.5 }, pose = neoCarryPose(beat);
+    h.actor.position = { x: h.center.x + (pose.x ?? 0), y: h.center.y + pose.y, z: h.center.z + pose.z }; h.actor.rotation = Math.PI;
+    h.actor.currentAction = { type: 'idle', parameters: { finaleComa: true, epilogue: { ...beat, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
+    renderer.updateAgent('neo', h.actor); h.controls.update(.02, h.actor, group, false);
+    renderer.setPlayer('neo', h.controls.firstPerson); renderer.setPlayerMotion(h.controls.motion); renderer.update(.02, h.camera, 0);
+    h.controls.syncNeoCarryCamera(group); h.camera.updateMatrixWorld();
+    machine.update(undefined, 0, false, { x: pose.x ?? 0, z: pose.z }, renderer.getAgentBody('neo'), beat); stage.updateMatrixWorld(true);
+    if (!h.controls.firstPerson) for (const name of ['head', 'chest', 'pelvis']) {
+      const target = group.getObjectByName(name)!.getWorldPosition(new THREE.Vector3()), direction = target.clone().sub(h.camera.position);
+      const hits = new THREE.Raycaster(h.camera.position, direction.clone().normalize(), 0, direction.length() - .05).intersectObject(stage, true)
+        .filter(hit => { for (let p: THREE.Object3D | null = hit.object; p; p = p.parent) if (!p.visible) return false; return true; });
+      assert.equal(hits.length, 0, `${phase}: machine scenery blocks the camera's view of ${name}`);
+    }
+    assert.ok(group.position.distanceTo(new THREE.Vector3(h.actor.position.x, h.actor.position.y, h.actor.position.z)) < .00001);
+    assert.equal(group.children[0].rotation.y, Math.PI, 'observing cannot turn the unresponsive body');
+    if (h.controls.firstPerson) assert.ok(h.camera.position.distanceTo(head.localToWorld((head.userData.cameraEye as THREE.Vector3).clone())) < .00001);
+  };
+  for (const phase of ['ready', 'transfer', 'done'] as const) {
+    for (const firstPerson of [false, true]) {
+      h.controls.firstPerson = firstPerson; frame(phase);
+      const position = h.camera.position.clone(), rotation = h.camera.quaternion.clone(), fov = h.camera.fov;
+      frame(phase); assert.ok(h.camera.position.distanceTo(position) < .00001); assert.ok(h.camera.quaternion.angleTo(rotation) < .00001); assert.equal(h.camera.fov, fov);
+    }
+  }
+  const before = h.camera.getWorldDirection(new THREE.Vector3()); h.look(); frame('done');
+  assert.ok(h.camera.getWorldDirection(new THREE.Vector3()).distanceTo(before) > .1);
+  h.key('KeyV'); h.key('KeyV', false); assert.equal(h.controls.firstPerson, false); frame('done');
 });
