@@ -544,6 +544,7 @@ export class FilmSetRenderer {
     if (journey?.scene === 'm2_chateau' && journey.step === 0 && !['ready', 'landing'].includes(journey.chateau?.phase ?? 'ready')) this.marker.visible = false;
     if (journey?.scene === 'm2_mountain' && journey.step === 2 && !['ready', 'failed'].includes(journey.mountain?.phase ?? 'ready')) this.marker.visible = false;
     if (journey?.scene === 'm3_bane' && journey.step === 1 && journey.bane?.phase !== 'ready') this.marker.visible = false;
+    if (journey?.scene === 'm3_farewell' && journey.farewell && journey.farewell.phase !== 'ready') this.marker.visible = false;
     if (journey?.scene === 'm3_deus' && deusPactLocked(journey.deus)) this.marker.visible = false;
     if (['m3_rain', 'm3_surrender'].includes(journey?.scene ?? '') && smithFinaleLocked(journey?.smithFinale)) this.marker.visible = false;
     if (trilogyEpilogueLocked(journey?.epilogue)) this.marker.visible = false;
@@ -643,8 +644,8 @@ export class FilmSetRenderer {
       return { color: lit ? 0xffe3b2 : 0xb8cad2, ambient: lit ? 1.45 : .86, sun: lit ? 3.1 : .42 };
     }
     if (this.logosWreck) {
-      fog.density = .008; fog.color.setHex(0x130f0b); (this.scene.background as THREE.Color).copy(fog.color);
-      this.scene.environmentIntensity = .34; return { color: 0xd39a52, ambient: .42, sun: .16 };
+      fog.density = .008; fog.color.setHex(0x0b121b); (this.scene.background as THREE.Color).copy(fog.color);
+      this.scene.environmentIntensity = .34; return { color: 0x96b5cf, ambient: .42, sun: .16 };
     }
     if (this.machineCore) {
       fog.density = .0065; fog.color.setHex(0x090806); (this.scene.background as THREE.Color).copy(fog.color);

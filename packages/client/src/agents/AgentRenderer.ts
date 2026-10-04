@@ -149,6 +149,7 @@ export class AgentRenderer {
   }
 
   update(delta: number, camera?: THREE.Camera, speed = 1, tick = 0, journey?: FilmJourney): void {
+    const farewellFrames: { entry: Entry; gesture: NonNullable<MotionInput['farewell']> }[] = [];
     const cut = crosscutActive(journey) ? journey!.tvExit!.crosscut : undefined;
     if (cut) for (const role of CONNECTED_ROLES) {
       const source = this.agents.get(role)?.state; if (!source) continue;
@@ -361,6 +362,8 @@ export class AgentRenderer {
         if (point) input.crosscut = { ...input.crosscut, contact: { x: point.x, y: point.y, z: point.z } };
       }
       input.realWorld = !state.isInMatrix && state.currentLocation !== 'film_real_desert';
+      input.farewellOutfit = input.realWorld && (id === 'neo' || id === 'trinity')
+        && (state.currentLocation === 'film_logos_wreck' || id === 'neo' && state.currentLocation === 'film_machine_core') ? id : undefined;
       if (input.wetwall && !input.sixth && id !== this.playerId && entry.wetwallGuide) {
         const progress = entry.wetwallGuide.progress, wall = input.wetwall, pose = wetwallPose(wall.start, wall.role, progress, wall.phase, wall.elapsed, wall.fallY, wall.continued);
         input.wetwall = { ...wall, progress, hanging: pose.hanging }; input.climbing = pose.hanging ? 0 : undefined;
@@ -437,14 +440,8 @@ export class AgentRenderer {
         }
       }
       if (input.farewell) {
-        const other = this.agents.get(input.farewell.role === 'neo' ? 'trinity' : 'neo');
-        const targetBone = other?.rig.hero?.bones.get(input.farewell.role === 'neo' ? 'wrist_R' : 'head');
-        if (other && targetBone) {
-          other.group.updateWorldMatrix(true, true);
-          const offset = input.farewell.role === 'neo' ? new THREE.Vector3(0, -.08, .04) : new THREE.Vector3(0, .1, .08);
-          const target = targetBone.localToWorld(offset);
-          input.farewell = { ...input.farewell, target: { x: target.x, y: target.y, z: target.z } };
-        }
+        farewellFrames.push({ entry, gesture: input.farewell });
+        input.farewell = { ...input.farewell, target: undefined };
       }
       if (input.mirrorCrew !== undefined) {
         const neo = this.agents.get('neo');
@@ -464,7 +461,8 @@ export class AgentRenderer {
       const truckPose = input.truckRescue ? truckRescuePose(input.truckRescue, input.truckRescue.role)
         : input.truckFlight ? { yaw: state.rotation, airborne: 1, tumble: 0 } : undefined;
       if (truckPose) { entry.body.rotation.y = truckPose.yaw; entry.body.rotation.z = truckPose.tumble; }
-      entry.body.rotation.x = truckPose ? Math.PI / 2 * truckPose.airborne : input.farewell?.role === 'trinity' ? THREE.MathUtils.lerp(entry.body.rotation.x, -.48, 1 - Math.exp(-6 * delta))
+      if (input.farewell) entry.body.rotation.z = 0;
+      entry.body.rotation.x = truckPose ? Math.PI / 2 * truckPose.airborne : input.farewell?.role === 'trinity' ? -.48
         : mountainFlying || catchFlying && input.catch?.role === 'neo' ? THREE.MathUtils.lerp(entry.body.rotation.x, 1.05, 1 - Math.exp(-6 * delta))
         : catchFlying && input.catch?.role === 'trinity' ? THREE.MathUtils.lerp(entry.body.rotation.x, -1.05, 1 - Math.exp(-6 * delta))
           : catchResting || coma || epilogueCarried ? THREE.MathUtils.lerp(entry.body.rotation.x, -Math.PI / 2, 1 - Math.exp(-6 * delta)) : -Math.PI / 2 * podRecline;
@@ -490,6 +488,51 @@ export class AgentRenderer {
         entry.speech.sprite.visible = !this.playerId && (dist < 240 || selected);
         if (entry.speech.age > 8) { this.disposeSprite(entry.speech.sprite); entry.speech = undefined; }
       }
+    }
+    // Both base poses must exist before either hand reads the other actor's bones.
+    for (const { entry, gesture } of farewellFrames) {
+      const other = this.agents.get(gesture.role === 'neo' ? 'trinity' : 'neo');
+      const targetBone = other?.rig.hero?.bones.get(gesture.role === 'neo' ? 'wrist_R' : 'head');
+      if (!other || !targetBone) continue;
+      other.group.updateMatrixWorld(true);
+      const offset = gesture.role === 'neo' ? new THREE.Vector3(0, -.08, .04) : new THREE.Vector3(0, .1, .08);
+      const target = targetBone.localToWorld(offset);
+      let normal: THREE.Vector3 | undefined;
+      let up: THREE.Vector3 | undefined;
+      if (gesture.role === 'trinity') {
+        let cheek = targetBone.userData.farewellCheek as { point: THREE.Vector3; normal: THREE.Vector3 } | undefined;
+        if (!cheek) {
+          const ray = new THREE.Ray(new THREE.Vector3(-1.2, -.05, .17), new THREE.Vector3(1, 0, 0));
+          let distance = Infinity;
+          for (const part of other.rig.hero!.wardrobe) {
+            if (!(part.mesh instanceof THREE.SkinnedMesh) || (part.mesh.material as THREE.Material).name !== 'Skin') continue;
+            const mesh = part.mesh, index = mesh.geometry.index!, ids = mesh.geometry.attributes.skinIndex, weights = mesh.geometry.attributes.skinWeight;
+            const bone = mesh.skeleton.bones.indexOf(targetBone as THREE.Bone), points = new Map<number, THREE.Vector3>();
+            // Read the delivered cheek in bind space so its landmark is identical on every saved frame.
+            for (let i = 0; i < ids.count; i++) {
+              let weight = 0;
+              for (let k = 0; k < 4; k++) if (ids.getComponent(i, k) === bone) weight += weights.getComponent(i, k);
+              if (weight > .999) points.set(i, new THREE.Vector3().fromBufferAttribute(mesh.geometry.attributes.position, i)
+                .applyMatrix4(mesh.bindMatrix).applyMatrix4(mesh.skeleton.boneInverses[bone]));
+            }
+            for (let i = 0; i < index.count; i += 3) {
+              const a = points.get(index.getX(i)), b = points.get(index.getX(i + 1)), c = points.get(index.getX(i + 2));
+              if (!a || !b || !c) continue;
+              const hit = ray.intersectTriangle(a, b, c, false, new THREE.Vector3());
+              if (hit && hit.distanceTo(ray.origin) < distance) {
+                distance = hit.distanceTo(ray.origin); cheek = { point: hit, normal: THREE.Triangle.getNormal(a, b, c, new THREE.Vector3()) };
+              }
+            }
+          }
+          targetBone.userData.farewellCheek = cheek;
+        }
+        if (cheek) {
+          target.copy(targetBone.localToWorld(cheek.point.clone()));
+          normal = cheek.normal.clone().applyQuaternion(targetBone.getWorldQuaternion(new THREE.Quaternion()));
+          up = new THREE.Vector3(0, 1, 0).applyQuaternion(targetBone.getWorldQuaternion(new THREE.Quaternion()));
+        }
+      }
+      this.models.refreshFarewellContact(entry.rig, { ...gesture, target: { x: target.x, y: target.y, z: target.z } }, normal, up);
     }
     const morpheus = this.agents.get('morpheus'), smith = this.agents.get('smith');
     const neo = this.agents.get('neo'), keymaker = this.agents.get('keymaker');

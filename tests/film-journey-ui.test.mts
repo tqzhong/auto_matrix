@@ -301,3 +301,42 @@ test('the pill choice clears the central subtitle over Morpheus palms and restor
   assert.equal(element('#film-pills').classes.has('hidden'), true, 'taking cannot offer a second decision');
   assert.equal(element('#film-sequence-line').textContent, 'Neo 用水吞服。');
 });
+
+test('the completed farewell guides Neo to the machine city instead of asking for another reflection', async t => {
+  const outputs = await Promise.all(['SandboxUI', 'PlayerExperience'].map(name => build({ entryPoints: [`packages/client/src/player/${name}.ts`], bundle: true,
+    platform: 'node', format: 'esm', write: false, loader: { '.css': 'empty' }, logLevel: 'silent' })));
+  const [hud, experience] = await Promise.all(outputs.map(output => import(`data:text/javascript;base64,${Buffer.from(output.outputFiles[0].contents).toString('base64')}`)));
+  const elements = new Map();
+  const element = (selector: string) => {
+    const id = selector.replace(/^#/, '');
+    if (!elements.has(id)) elements.set(id, { textContent: '', innerHTML: '', style: { setProperty() {} }, setAttribute() {},
+      classList: { add() {}, remove() {}, toggle() {} }, querySelector: (child: string) => element(`${id} ${child}`) });
+    return elements.get(id);
+  };
+  const document = globalThis.document; t.after(() => { globalThis.document = document; });
+  globalThis.document = { getElementById: element, body: { classList: { toggle() {} } } } as unknown as Document;
+  const root = { querySelector: element, querySelectorAll: () => [] };
+  const ui = Object.assign(Object.create(hud.SandboxUI.prototype), { root, tick: 0 });
+  const playerUI = Object.assign(Object.create(experience.PlayerExperience.prototype), { root, controlled: 'neo', chosen: 'neo', lastPlayed: 'neo',
+    menuOpen: false, entryExplicit: false, tipUntil: Infinity, drawMap() {} });
+  const player = { id: 'neo', name: 'Neo', faction: 'zion', status: 'alive', health: 100, maxHealth: 100, isAwakened: true,
+    isInMatrix: false, rotation: Math.PI, activeEffects: [], currentLocation: 'film_logos_wreck', position: filmPosition('film_logos_wreck', 0, -14.4) } as AgentState;
+  const sandbox = { threats: [], neoLife: { journey: { scene: 'm3_farewell', actor: 'neo', step: 2, completed: [], reflections: {},
+    lastText: 'Trinity 的手失去力量。', farewell: { phase: 'still', elapsed: 0, total: 18.4 } } } } as SandboxState;
+  const render = () => { playerUI.update({ neo: player }, { running: true, population: 1 }, sandbox.neoLife); ui.updateFilm(player, sandbox); };
+  render();
+  assert.match(element('mouse-hint').textContent, /记录 Neo.*理解/);
+  assert.match(element('game-objective-copy').textContent, /留下 Neo.*理解/);
+  assert.match(element('film-sequence-hint').textContent, /留下 Neo.*理解/);
+  const journey = sandbox.neoLife!.journey!;
+  journey.completed.push('m3_farewell'); render();
+  assert.match(element('mouse-hint').textContent, /记录 Neo.*理解/, 'historical completion cannot skip the current reflection');
+  assert.match(element('game-objective-copy').textContent, /留下 Neo.*理解/);
+  journey.step = FILM_SCENE_BY_ID.m3_farewell.steps.length; journey.reflections['m3_farewell:2'] = 'care';
+  render();
+  assert.equal(element('game-objective').textContent, '前往机器城');
+  for (const id of ['mouse-hint', 'game-objective-copy', 'film-sequence-hint']) {
+    assert.match(element(id).textContent, /J.*继续下一段.*机器城/, `${id} must show the available next action`);
+    assert.doesNotMatch(element(id).textContent, /记录|留下.*理解|反思/, `${id} cannot ask for the completed choice again`);
+  }
+});

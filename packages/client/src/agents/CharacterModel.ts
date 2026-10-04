@@ -710,6 +710,10 @@ export class CharacterModels {
     }
   }
 
+  refreshFarewellContact(rig: CharacterRig, gesture: NonNullable<MotionInput['farewell']>, normal?: THREE.Vector3, up?: THREE.Vector3): void {
+    if (rig.hero) this.heroes.farewellContact(rig.hero, gesture, normal, up);
+  }
+
   dispose(): void {
     this.phones.forEach(phone => phone.dispose());
     this.handsets.forEach(handset => handset.dispose());

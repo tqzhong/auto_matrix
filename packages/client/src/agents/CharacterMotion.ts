@@ -83,6 +83,7 @@ export interface MotionInput {
   truckRescue?: import('@auto_matrix/shared').TruckEncounter & { role: import('@auto_matrix/shared').TruckRescueRole };
   persephone?: import('@auto_matrix/shared').PersephoneEncounter & { role: 'neo' | 'persephone' };
   farewell?: import('@auto_matrix/shared').FarewellGesture;
+  farewellOutfit?: 'neo' | 'trinity';
   deusPact?: import('@auto_matrix/shared').DeusPactGesture;
   smithFinale?: import('@auto_matrix/shared').SmithFinaleGesture;
   epilogue?: import('@auto_matrix/shared').TrilogyEpilogueGesture;
@@ -200,8 +201,9 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const welcomeWalking = input.welcome?.phase === 'approach' || input.welcome?.phase === 'departing' && input.welcome.role !== 'neo';
   const welcomeSpeed = input.welcome?.role === 'morpheus' ? 2.6 : input.welcome?.role === 'neo' ? 2.3 : 1.8;
   const speed = input.farewell || deusPactLocked(input.deusPact) || smithFinaleLocked(input.smithFinale) || trilogyEpilogueLocked(input.epilogue) ? 0 : input.pills ? exiting ? 1.7 : 0 : welcomeWalking ? welcomeSpeed : input.speed;
-  state.time += dt;
+  state.time = input.farewell ? input.farewell.total : state.time + dt;
   state.speed = mix(state.speed, input.riding || input.climbing !== undefined ? 0 : speed, blend);
+  if (input.farewell) { state.speed = 0; state.airborne = 0; state.seated = 0; }
   if (input.cabin?.kind === 'core' && input.cabin.role === 'neo') state.speed = 2.2 * smooth(clamp(input.cabin.elapsed / .25)) * (1 - smooth(clamp((input.cabin.elapsed - .65) / .3)));
   const construct = input.construct?.role === 'morpheus' ? constructGuidePose(input.construct.elapsed) : undefined;
   if (construct) state.speed = construct.speed;
@@ -235,6 +237,11 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
       state.combo = input.combo ?? (state.attackAge < COMBO_WINDOW ? (state.combo + 1) % 3 : 0);
       state.attackId = input.attack; state.attackAge = 0;
     } else state.attackAge += dt * (input.windingUp ? .28 : 1);
+  }
+  if (input.farewell) {
+    state.landing = 0;
+    state.attackAge = state.hitAge = state.skillAge = state.shotAge = 10;
+    state.hitPause = 0; state.skill = undefined;
   }
   const run = smooth(clamp((state.speed - PLAYER_WALK_SPEED) / (PLAYER_RUN_SPEED - PLAYER_WALK_SPEED)));
   const stride = mix(.84, 1.22, run);
@@ -635,7 +642,13 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
       arms[i].outward = mix(arms[i].outward, (i ? 1 : -1) * (neo ? .25 : .18), contact);
       arms[i].grip = mix(arms[i].grip, neo ? .38 : .12, contact);
     }
+    if (neo) {
+      arms[1].shoulder = mix(arms[1].shoulder, -.78, farewell.neo.kneel);
+      arms[1].elbow = mix(arms[1].elbow, -1.95, farewell.neo.kneel);
+      arms[1].outward = mix(arms[1].outward, .7, farewell.neo.kneel);
+    }
     if (!neo) {
+      for (const arm of arms) { arm.shoulder = -.52; arm.elbow = -.88; arm.grip = .12; }
       legs[0].hip = -.5; legs[1].hip = .16; legs[0].knee = 1.02; legs[1].knee = .72;
     }
   }
@@ -757,7 +770,7 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const escapeRoll = matrixEscape ? matrixEscape.wall * (input.matrixEscape?.role === 'smith' ? -.68 : .52) + matrixEscape.brace * 1.05 + matrixEscape.transform * Math.sin(input.matrixEscape!.elapsed * 18) * .12 : 0;
   const theOneLean = theOne ? theOne.wound * .92 + theOne.fallen * 1.35 + theOne.kiss * .45 - theOne.revive * .18 + theOne.block * .18 - theOne.dive * .72 + theOne.burst * .32 - theOne.flight * .58 : 0;
   const hotelLean = input.hotel303?.phase === 'dive' ? -.68 : 0;
-  const farewellLean = farewell && input.farewell ? input.farewell.role === 'neo' ? farewell.neo.lean : .68 * farewell.trinity.recline : 0;
+  const farewellLean = farewell && input.farewell ? input.farewell.role === 'neo' ? farewell.neo.kneel * .22 : .68 * farewell.trinity.recline : 0;
   const farewellRoll = farewell && input.farewell?.role === 'trinity' ? -.18 * farewell.trinity.recline : 0;
   const deusLean = deus ? deus.seated * .32 - deus.brace * .08 + deus.pulse * .18 : 0;
   const smithLean = smithFinale ? smithFinale.fallen * 1.25 - smithFinale.flight * .62 + smithFinale.impact * .3 + smithFinale.purge * .22 : 0;

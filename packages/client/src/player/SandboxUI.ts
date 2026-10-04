@@ -513,7 +513,7 @@ export class SandboxUI {
       const progress = Math.min(100, farewell.total / FAREWELL.minimumSeconds * 100);
       const near = Boolean(step && distance(player.position, filmStepPosition(scene, step)) <= 4);
       const locked = farewellLocked(farewell);
-      const hint = journey.step === 0 ? 'WASD 沿金色余光穿过残骸'
+      const hint = !step ? 'J 打开手记，继续下一段 · 前往机器城' : journey.step === 0 ? 'WASD 沿金色余光穿过残骸'
         : phase === 'ready' ? '走到 Trinity 身边按 G · 她会等你主动开始'
           : phase === 'still' ? 'J 打开手记，留下 Neo 对这一刻的理解'
             : `${phaseName} · ${Math.round(progress)}% · 鼠标观察 · V 切换视角 · 当前一拍自动保存`;
@@ -526,7 +526,7 @@ export class SandboxUI {
       this.el('sandbox-interact').classList.toggle('hidden', locked || phase === 'still' || !near);
       this.el('sandbox-nearby').textContent = journey.step === 1 ? '跪到 Trinity 身边' : step?.label ?? '继续';
       if (locked || phase === 'still') this.el('sandbox-waypoint').textContent = '';
-      document.getElementById('game-objective')!.textContent = phase === 'still' ? '告别之后' : 'Logos 残骸 · Trinity';
+      document.getElementById('game-objective')!.textContent = !step ? '前往机器城' : phase === 'still' ? '告别之后' : 'Logos 残骸 · Trinity';
       document.getElementById('game-objective-copy')!.textContent = hint;
       return;
     }

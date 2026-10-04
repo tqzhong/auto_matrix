@@ -4573,6 +4573,10 @@ export class FilmStorySystem {
       const actor = this.world.agents.get(this.state.actor);
       if (actor?.currentLocation === this.scene!.set) this.truckFrame(actor, 0, this.world.simulationTick);
     }
+    if (this.state.scene === 'm3_farewell' && !this.state.visiting) {
+      const actor = this.world.agents.get(this.state.actor);
+      if (actor?.currentLocation === this.scene!.set) this.placeFarewell(actor, this.world.simulationTick);
+    }
   }
   releaseCast(reset = false): void {
     if (reset) this.sandbox().structures = this.sandbox().structures.filter(s => !s.film || s.id.startsWith('traffic:'));

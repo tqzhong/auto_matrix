@@ -26,6 +26,7 @@ import { placePodBody } from './PodLandingContact.js';
 import { cabinContact } from './CabinContact.js';
 import { ConstructPerformance } from './ConstructPerformance.js';
 import { clubCloseness } from '@auto_matrix/shared';
+import { FarewellAppearance } from './FarewellAppearance.js';
 
 export type HeroSupport = 'cypher' | 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour' | 'niobe' | 'ballard' | 'ghost' | 'soren' | 'link' | 'dozer' | 'tank' | 'oracle_priestess' | 'oracle_attendant' | 'citizen_4' | 'citizen_14';
 type Pose = ReturnType<typeof advanceMotion>;
@@ -106,6 +107,7 @@ export class HeroModels {
   private workdays = new Map<HeroRig, OfficeWorkdayPerformance>();
   private apartments = new Map<HeroRig, ApartmentPerformance>();
   private wakeCalls = new Map<HeroRig, WakeCallPerformance>();
+  private farewellAppearances = new Map<HeroRig, FarewellAppearance>();
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private textures = new Set<THREE.Texture>();
@@ -246,6 +248,7 @@ export class HeroModels {
     const head = bones.get('head')!;
     const metadata = asset.parser.json.extras as { eye: number[]; head: number[]; waist: number[] };
     const eye = new THREE.Vector3().fromArray(metadata.eye).sub(new THREE.Vector3().fromArray(metadata.head));
+    head.userData.cameraEye = eye.clone().setX(0);
     const glasses = new THREE.Group(); head.add(glasses); this.glasses(glasses, eye, id);
     if (support === 'courier' || police) {
       const uniform = new THREE.MeshStandardMaterial({ color: 0x273d4e, roughness: .92 });
@@ -352,6 +355,7 @@ export class HeroModels {
     const rig: HeroRig = { root, bones, rest, panels, footHeight, glasses, silver, trackingSkin, wardrobe, officeRole: police ? 'police' : support === 'rhineheart' || support === 'courier' ? support : undefined, apartmentRole };
     if (apartmentRole) this.apartments.set(rig, new ApartmentPerformance(rig));
     if (id === 'neo' && !support) this.recoveries.set(rig, new RecoveryPerformance(rig));
+    if ((id === 'neo' || id === 'trinity') && !support) this.farewellAppearances.set(rig, new FarewellAppearance(rig, id, eye));
     enableSkinnedCulling(root);
     return rig;
   }
@@ -543,7 +547,56 @@ export class HeroModels {
     }
   }
 
-  private farewellContact(rig: HeroRig, gesture: NonNullable<MotionInput['farewell']>): void {
+  private farewellSupport(rig: HeroRig, gesture: NonNullable<MotionInput['farewell']>): void {
+    const trinity = gesture.role === 'trinity', pose = farewellPose(gesture);
+    const kiss = gesture.phase === 'kiss' ? THREE.MathUtils.smoothstep(gesture.elapsed, 0, 1.25)
+      * (1 - THREE.MathUtils.smoothstep(gesture.elapsed, 2.18, 2.8)) : 0;
+    // Preserve the pinned upper body while solving the legs against the tilted deck.
+    // Standing ankle-height grounding would lift the seat or sink the downhill shoe.
+    const pelvis = rig.bones.get('pelvis')!;
+    pelvis.position.y = trinity ? 1.875 : THREE.MathUtils.lerp(1.315, 1.8631, kiss);
+    if (trinity) rig.bones.get('head')!.rotation.x -= .18 * kiss;
+    else {
+      // Rise from the low kneel onto planted feet, then incline from above. A
+      // deeper standing-style bow would put his lips below the seated face.
+      pelvis.position.x = THREE.MathUtils.lerp(pelvis.position.x, .0006, kiss);
+      pelvis.position.z = THREE.MathUtils.lerp(pelvis.position.z, .3763, kiss);
+      const spine = rig.bones.get('spine')!, chest = rig.bones.get('chest')!, head = rig.bones.get('head')!;
+      spine.rotation.x = THREE.MathUtils.lerp(spine.rotation.x, .275, kiss); spine.rotation.z = .135 * kiss;
+      chest.rotation.x = THREE.MathUtils.lerp(chest.rotation.x, .03, kiss); chest.rotation.z = -.02 * kiss;
+      head.rotation.x = THREE.MathUtils.lerp(head.rotation.x, .0575, kiss);
+      head.rotation.y = 0; head.rotation.z = -.9 * kiss;
+    }
+    const origin = rig.root.getWorldPosition(new THREE.Vector3());
+    for (const side of ['R', 'L']) {
+      rig.root.updateWorldMatrix(true, true);
+      const hip = rig.bones.get(`hip_${side}`)!, knee = rig.bones.get(`knee_${side}`)!, ankle = rig.bones.get(`ankle_${side}`)!;
+      const plant = !trinity && gesture.phase === 'kiss'
+        ? THREE.MathUtils.smoothstep(gesture.elapsed, side === 'L' ? 0 : .58, side === 'L' ? .58 : 1.18)
+          * (1 - THREE.MathUtils.smoothstep(gesture.elapsed, side === 'L' ? 2.18 : 2.48, side === 'L' ? 2.48 : 2.8)) : 0;
+      const x = (side === 'R' ? -1 : 1) * (trinity ? .55 : -THREE.MathUtils.lerp(.42, .98, plant));
+      const floor = -Math.tan(.035) * (pose[gesture.role].x + x) + .35 / Math.cos(.035) - .35;
+      const target = new THREE.Vector3(origin.x + x, origin.y + floor + .2 + Math.sin(plant * Math.PI) * .4,
+        origin.z + (trinity ? .2 : THREE.MathUtils.lerp(THREE.MathUtils.lerp(.07, 1.05, pose.neo.kneel), side === 'R' ? -.55 : -.05, plant)));
+      const start = hip.getWorldPosition(new THREE.Vector3()), direction = target.clone().sub(start);
+      const upper = knee.position.length(), lower = ankle.position.length();
+      const reach = THREE.MathUtils.clamp(direction.length(), .02, upper + lower - .001); direction.normalize();
+      const along = (upper * upper - lower * lower + reach * reach) / (2 * reach);
+      const bend = new THREE.Vector3((side === 'R' ? 1 : -1) * plant * 2, trinity ? 1 : -1, trinity ? 1 : -.2);
+      bend.addScaledVector(direction, -bend.dot(direction)).normalize();
+      const hinge = start.clone().addScaledVector(direction, along).addScaledVector(bend, Math.sqrt(Math.max(0, upper * upper - along * along)));
+      const aim = (joint: THREE.Bone, child: THREE.Bone, point: THREE.Vector3) => {
+        joint.quaternion.setFromUnitVectors(child.position.clone().normalize(), joint.parent!.worldToLocal(point.clone()).sub(joint.position).normalize());
+        joint.updateWorldMatrix(false, true);
+      };
+      aim(hip, knee, hinge); aim(knee, ankle, target);
+      ankle.quaternion.copy(knee.getWorldQuaternion(new THREE.Quaternion()).invert()
+        .multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0, trinity ? 0 : Math.PI, -.035, 'ZYX'))));
+    }
+    rig.root.updateWorldMatrix(true, true);
+  }
+
+  farewellContact(rig: HeroRig, gesture: NonNullable<MotionInput['farewell']>, normal?: THREE.Vector3, up?: THREE.Vector3): void {
     if (!gesture.target) return;
     const pose = farewellPose(gesture); const neo = gesture.role === 'neo';
     const blend = neo ? pose.neo.hold : pose.trinity.reach;
@@ -551,7 +604,40 @@ export class HeroModels {
     const side = neo ? 'R' : 'L';
     rig.root.updateWorldMatrix(true, true);
     const shoulder = rig.bones.get(`shoulder_${side}`)!; const elbow = rig.bones.get(`elbow_${side}`)!; const wrist = rig.bones.get(`wrist_${side}`)!;
-    const target = wrist.getWorldPosition(new THREE.Vector3()).lerp(new THREE.Vector3(gesture.target.x, gesture.target.y, gesture.target.z), blend);
+    const contact = new THREE.Vector3(gesture.target.x, gesture.target.y, gesture.target.z);
+    let orientation: THREE.Quaternion | undefined;
+    // Keep the palm facing the cheek until the hand has withdrawn clear of it.
+    const palmBlend = THREE.MathUtils.smoothstep(blend, 0, .5);
+    if (!neo && normal) {
+      let palm = wrist.userData.farewellPalm as THREE.Vector3 | undefined;
+      if (!palm) {
+        let closest = Infinity;
+        for (const part of rig.wardrobe) {
+          if (!(part.mesh instanceof THREE.SkinnedMesh) || (part.mesh.material as THREE.Material).name !== 'Skin') continue;
+          const mesh = part.mesh, ids = mesh.geometry.attributes.skinIndex, weights = mesh.geometry.attributes.skinWeight;
+          const bone = mesh.skeleton.bones.indexOf(wrist);
+          for (let i = 0; i < ids.count; i++) {
+            let weight = 0;
+            for (let k = 0; k < 4; k++) if (mesh.skeleton.bones[ids.getComponent(i, k)] === wrist) weight += weights.getComponent(i, k);
+            if (weight < .999) continue;
+            const point = new THREE.Vector3().fromBufferAttribute(mesh.geometry.attributes.position, i)
+              .applyMatrix4(mesh.bindMatrix).applyMatrix4(mesh.skeleton.boneInverses[bone]);
+            const distance = point.distanceToSquared(new THREE.Vector3(-.044, -.16, .009));
+            if (distance < closest) { closest = distance; palm = point; }
+          }
+        }
+        wrist.userData.farewellPalm = palm;
+      }
+      if (palm) {
+        // The delivered left palm faces local -X; its fingers extend along -Y.
+        const x = normal.clone().normalize(), y = up ? up.clone().negate() : new THREE.Vector3(0, -1, 0);
+        y.addScaledVector(x, -y.dot(x)).normalize(); const z = x.clone().cross(y).normalize();
+        const desired = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(x, y, z));
+        orientation = wrist.getWorldQuaternion(new THREE.Quaternion()).slerp(desired, palmBlend);
+        contact.addScaledVector(x, .032).sub(palm.clone().multiply(wrist.getWorldScale(new THREE.Vector3())).applyQuaternion(orientation));
+      }
+    }
+    const target = wrist.getWorldPosition(new THREE.Vector3()).lerp(contact, blend);
     const start = shoulder.getWorldPosition(new THREE.Vector3()); const direction = target.clone().sub(start);
     const upper = elbow.position.length(); const lower = wrist.position.length();
     const reach = THREE.MathUtils.clamp(direction.length(), .02, upper + lower - .001); direction.normalize();
@@ -565,9 +651,21 @@ export class HeroModels {
       joint.quaternion.setFromUnitVectors(child.position.clone().normalize(), axis); joint.updateWorldMatrix(false, true);
     };
     aim(shoulder, elbow, hinge); aim(elbow, wrist, target);
-    wrist.rotation.z += (side === 'L' ? -.16 : .16) * blend;
+    if (orientation) wrist.quaternion.copy(elbow.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation));
+    else wrist.rotation.z += (side === 'L' ? -.16 : .16) * blend;
     for (let finger = 1; finger <= 5; finger++) for (let segment = 1; segment <= 3; segment++) {
-      const joint = rig.bones.get(`finger${finger}-${segment}_${side}`); if (joint) joint.rotation.z *= 1 - blend * .76;
+      const joint = rig.bones.get(`finger${finger}-${segment}_${side}`);
+      if (joint) { joint.rotation.z *= 1 - (orientation ? palmBlend : blend * .76); if (orientation) joint.rotation.x *= 1 - palmBlend; }
+    }
+    // Open the delivered curled thumb and fingers along the cheek's tangent plane.
+    if (orientation) rig.bones.get('finger1-1_L')!.rotation.z += .9 * palmBlend;
+    if (orientation) for (let finger = 2; finger <= 5; finger++) for (let segment = 1; segment <= 3; segment++) {
+      const joint = rig.bones.get(`finger${finger}-${segment}_L`)!;
+      const axis = rig.bones.get(`finger${finger}-${Math.min(3, segment + 1)}_L`)!.position.clone();
+      const direction = axis.clone().setX(0).normalize().applyQuaternion(orientation)
+        .applyQuaternion(joint.parent!.getWorldQuaternion(new THREE.Quaternion()).invert());
+      joint.quaternion.slerp(new THREE.Quaternion().setFromUnitVectors(axis.normalize(), direction), palmBlend);
+      joint.updateWorldMatrix(false, true);
     }
   }
 
@@ -615,6 +713,7 @@ export class HeroModels {
     const patient = Boolean(input.performance && ['pod', 'fall', 'float', 'lift', 'recover'].includes(input.performance)
       && !recoveryComplete);
     const completePatientBody = rig.wardrobe.some(part => part.mesh.userData.patientBody);
+    const farewellAppearance = this.farewellAppearances.get(rig);
     for (const part of rig.wardrobe) {
       const material = part.mesh.material as THREE.MeshStandardMaterial;
       const patientLegs = Boolean(patient && !completePatientBody && material.name === 'Trousers' && /Tailored.trousers/i.test(part.mesh.name));
@@ -630,7 +729,7 @@ export class HeroModels {
       else if (part.mesh.userData.clubJacket && clubClothes) part.mesh.visible = false;
       else if ((officeShirt || trackingShirt) && (part.outer || /Tailored.coat.upper|Black.crew.neck/i.test(part.mesh.name))) part.mesh.visible = false;
       const map = patientLegs ? this.patientSkin : part.map; const bumpMap = patientLegs ? this.patientSkin : part.bumpMap;
-      if (material.map !== map || material.bumpMap !== bumpMap) { material.map = map; material.bumpMap = bumpMap; material.needsUpdate = true; }
+      if (!farewellAppearance?.garment(part.mesh, input) && (material.map !== map || material.bumpMap !== bumpMap)) { material.map = map; material.bumpMap = bumpMap; material.needsUpdate = true; }
       material.bumpScale = patientLegs ? .0013 : part.bumpScale;
       material.roughness = patientSurface ? .43 : part.roughness; material.metalness = patientSurface ? .01 : part.metalness;
       if (patientSurface) material.emissive.setHex(0x160708); else material.emissive.copy(part.emissive);
@@ -640,6 +739,7 @@ export class HeroModels {
       else material.color.copy(part.color);
       if ((part.hair || material.name === 'Eyes') && interactionView) part.mesh.visible = false;
     }
+    farewellAppearance?.update(input);
     const bone = (name: string) => rig.bones.get(name)!;
     const pelvis = bone('pelvis');
     pelvis.position.copy(rig.rest.get('pelvis')!);
@@ -929,7 +1029,7 @@ export class HeroModels {
     this.truths.get(rig)?.pose(input.truth);
     rig.root.updateWorldMatrix(true, true);
     if (input.performance === 'touch') placeTrackingFeet(rig, input.mirrorBeat, input.mirrorEntry);
-    if (!(input.truth?.role === 'neo' && input.truth.phase === 'unplug' && (truthSeat(input.truth.elapsed) > 0 || truthKneel(input.truth.elapsed) > 0)) && input.grounded && !input.meeting && !input.interrogation && !(input.wakeCall?.phase === 'waking' && input.wakeCall.elapsed < 3.2) && !input.riding && input.climbing === undefined && (!input.performance || input.performance === 'connect')) {
+    if (!input.farewell && !(input.truth?.role === 'neo' && input.truth.phase === 'unplug' && (truthSeat(input.truth.elapsed) > 0 || truthKneel(input.truth.elapsed) > 0)) && input.grounded && !input.meeting && !input.interrogation && !(input.wakeCall?.phase === 'waking' && input.wakeCall.elapsed < 3.2) && !input.riding && input.climbing === undefined && (!input.performance || input.performance === 'connect')) {
       let lowest = Infinity;
       for (const side of ['R', 'L']) {
         this.point.setFromMatrixPosition(bone('ankle_' + side).matrixWorld); rig.root.worldToLocal(this.point);
@@ -973,7 +1073,7 @@ export class HeroModels {
     if ((input.construct || input.reveal?.kind === 'construct') && !this.constructs.has(rig)) this.constructs.set(rig, new ConstructPerformance(rig));
     this.constructs.get(rig)?.update(input);
     if (input.mirrorCrew !== undefined && input.mirrorContact) wireTrackingElectrode(rig, input.mirrorCrew, input.mirrorContact);
-    if (input.farewell) this.farewellContact(rig, input.farewell);
+    if (input.farewell) { this.farewellSupport(rig, input.farewell); this.farewellContact(rig, input.farewell); }
     if (input.pills && !this.pills.has(rig)) this.pills.set(rig, new PillPerformance(rig));
     this.pills.get(rig)?.update(input.pills);
     if ((input.interrogation || input.officeShirt) && !this.interrogations.has(rig)) this.interrogations.set(rig, new InterrogationPerformance(rig));
@@ -1055,6 +1155,7 @@ export class HeroModels {
     this.workdays.forEach(p => p.dispose()); this.workdays.clear();
     this.apartments.forEach(p => p.dispose()); this.apartments.clear();
     this.wakeCalls.forEach(p => p.dispose()); this.wakeCalls.clear();
+    this.farewellAppearances.forEach(p => p.dispose()); this.farewellAppearances.clear();
     this.geometries.forEach(value => value.dispose()); this.materials.forEach(value => value.dispose());
     this.textures.forEach(value => value.dispose()); this.skeletons.forEach(value => value.dispose());
     this.geometries.clear(); this.materials.clear(); this.textures.clear(); this.skeletons.clear();
