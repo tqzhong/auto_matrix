@@ -1,6 +1,7 @@
 import { crosscutActive } from '@auto_matrix/shared';
 import { truthUnplug, truthRest, TRUTH_BEDSIDE, DOWNLOAD_OPERATOR, downloadDiskPose } from '@auto_matrix/shared';
 import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { RECOVERY_BED, RECOVERY_CABINET, RECOVERY_FRAME, RESCUE, type FilmJourney } from '@auto_matrix/shared';
 import { CABIN, CABIN_WALLS, MEDICAL_OPERATOR, medicalControlBlend, cabinPlugProgress } from '@auto_matrix/shared';
 
@@ -131,7 +132,9 @@ export class NebDeckRenderer {
     this.box(bed, this.dark, 0, .32, 0, 2.65, .54, 6.7);
     this.box(bed, this.steel, 0, .66, 0, 3.15, .14, 6.95);
     this.box(bed, this.linen, 0, RECOVERY_BED.surface - .19, 0, 2.85, .38, 6.35);
-    const pillow = this.box(bed, this.linen, 0, 1.24, 2.05, 1.55, .24, .95, 'neb-medical-pillow'); pillow.rotation.x = .08;
+    // Compressed cloth supports the actual occiput; the old tilted block cut through it.
+    const pillow = this.mesh(bed, new RoundedBoxGeometry(1.55, .15, 1.12, 4, .07), this.linen, 'neb-medical-pillow');
+    pillow.position.set(0, RECOVERY_BED.surface + .075, 2.05);
     for (const x of [-1.35, 1.35]) for (const z of [-2.6, 2.6]) {
       this.cylinder(bed, this.steel, x, .5, z, .12, 1);
       const wheel = this.mesh(bed, new THREE.TorusGeometry(.24, .055, 8, 20), this.rubber); wheel.position.set(x, .12, z); wheel.rotation.y = Math.PI / 2;
@@ -185,7 +188,8 @@ export class NebDeckRenderer {
     this.box(this.root, this.dark, x, .32, z, 2.65, .54, 6.7, 'neb-cabin-bed-base');
     this.box(this.root, this.steel, x, .66, z, 3.15, .14, 6.95, 'neb-cabin-bed-frame');
     this.box(this.root, bedding, x, surface - .19, z, 2.85, .38, 6.35, 'neb-cabin-mattress');
-    const pillow = this.box(this.root, this.linen, x, 1.24, z + 2.05, 1.55, .24, .95, 'neb-cabin-pillow'); pillow.rotation.x = .08;
+    const pillow = this.mesh(this.root, new RoundedBoxGeometry(1.55, .2, 1.12, 4, .07), this.linen, 'neb-cabin-pillow');
+    pillow.position.set(x, surface + .1, z + 2.05);
     const blanket = this.box(this.root, this.linen, x, 1.21, z - 2.5, 2.72, .17, .9, 'neb-cabin-folded-blanket'); blanket.rotation.y = .025;
     for (let row = 0; row < 6; row++) this.box(this.root, this.rubber, 12, 5.2 + row * .1, -39.78, 2.4, .035, .07);
     const locker = CABIN.locker;
