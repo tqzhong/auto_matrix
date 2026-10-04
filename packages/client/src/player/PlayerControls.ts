@@ -3,7 +3,7 @@ import { truthRest, truthKneel, truthSeat } from '@auto_matrix/shared';
 import { METACORTEX } from '@auto_matrix/shared';
 import { OFFICE_CUSTODY, officeCustodyStep } from '@auto_matrix/shared';
 import { ARREST_BIKE, arrestCarPoint, arrestBikePoint, arrestMirrorShot } from '@auto_matrix/shared';
-import { catchLocked, deusPactLocked, deusPactPose, reloadedPhaseLocked, smithFinaleLocked, smithFinalePose, smithCraterAmount, smithCraterFloor, trilogyEpilogueLocked } from '@auto_matrix/shared';
+import { catchLocked, deusPactLocked, deusPactPose, reloadedPhaseLocked, SMITH_FINALE, smithFinaleLocked, smithFinalePose, smithCraterAmount, smithCraterFloor, smithOracleRestored, trilogyEpilogueLocked } from '@auto_matrix/shared';
 import { reloadedCamera } from './ReloadedCamera.js';
 import * as THREE from 'three';
 import { spoonLessonSeat, oracleDepartureLocked, pillPose } from '@auto_matrix/shared';
@@ -813,7 +813,7 @@ export class PlayerControls {
     const arrest = this.motion.officeCustody?.street;
     if (this.motion.epilogue?.kind === 'neo_carried') this.camera.fov = this.firstPerson ? 68 : 58;
     if (deusPactLocked(this.motion.deusPact)) this.camera.fov = this.firstPerson ? 68 : 57;
-    if (smithFinaleLocked(this.motion.smithFinale)) this.camera.fov = this.firstPerson ? 68 : 64;
+    if (smithFinaleLocked(this.motion.smithFinale)) this.camera.fov = this.firstPerson && !smithOracleRestored(this.motion.smithFinale) ? 68 : 64;
     if (arrest && arrest.phase !== 'approaching') {
       this.camera.fov = this.firstPerson ? 68 : arrestMirrorShot(arrest) ? this.camera.aspect < .85 ? 60 : 38 : this.camera.aspect < .85 ? 64 : 54;
       this.camera.near = .06;
@@ -1829,7 +1829,7 @@ export class PlayerControls {
       if (carried || resetCamera || gesture.elapsed < .08) this.camera.position.copy(ideal);
       else this.camera.position.lerp(ideal, 1 - Math.exp(-7 * delta));
       this.camera.lookAt(focus);
-    } else if (this.motion.smithFinale && smithFinaleLocked(this.motion.smithFinale) && this.firstPerson) {
+    } else if (this.motion.smithFinale && smithFinaleLocked(this.motion.smithFinale) && this.firstPerson && !smithOracleRestored(this.motion.smithFinale)) {
       const pose = smithFinalePose(this.motion.smithFinale);
       const eye = new THREE.Vector3(this.position.x, this.position.y + 2.32 - pose.fallen * 1.05, this.position.z);
       const pitch = this.pitch - pose.fallen * .44;
@@ -1854,6 +1854,10 @@ export class PlayerControls {
         const reveal = gesture.phase === 'done' ? 1 : gesture.phase === 'purging' ? THREE.MathUtils.smoothstep(gesture.elapsed, 4.2, 6.2) : 0;
         focus.lerp(new THREE.Vector3(center.x, center.y + 3, center.z + 6), reveal);
         ideal.lerp(new THREE.Vector3(center.x + 6, center.y + 22, center.z - (this.camera.aspect < 1 ? 100 : 80)), reveal);
+        const restore = gesture.phase === 'done' ? 1 : gesture.phase === 'purging' ? THREE.MathUtils.smoothstep(gesture.elapsed, 8.2, 10.5) : 0;
+        const host = SMITH_FINALE.oracle, portrait = this.camera.aspect < 1 ? 2.1 : 1;
+        focus.lerp(new THREE.Vector3(center.x + host.x - 2.1, center.y - SMITH_FINALE.crater.depth - .2, center.z + host.z), restore);
+        ideal.lerp(new THREE.Vector3(center.x + host.x - 1.3, center.y - SMITH_FINALE.crater.depth + 1.6 * portrait, center.z + host.z - 5.3 * portrait), restore);
       }
       if (crater > 0) ideal.y = Math.max(ideal.y, center.y + smithCraterFloor(ideal.x - center.x, ideal.z - center.z) * crater + .6);
       this.camera.position.copy(ideal);
@@ -1973,6 +1977,7 @@ export class PlayerControls {
 
   syncSmithFinaleCamera(group: THREE.Group): void {
     if (!this.firstPerson || !smithFinaleLocked(this.motion.smithFinale)
+      || smithOracleRestored(this.motion.smithFinale)
       || this.authoritative?.currentLocation !== 'film_smith_avenue') return;
     const head = group.getObjectByName('head'); if (!head) return;
     // Controls run before the saved flight/fall pose is applied to the GLB.

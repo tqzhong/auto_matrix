@@ -1,4 +1,4 @@
-import { catchLocked, deusPactLocked, farewellLocked, helElevatorLocked, helDanceDoorLocked, reloadedLocked, smithFinaleLocked, trilogyEpilogueLocked } from '@auto_matrix/shared';
+import { catchLocked, deusPactLocked, farewellLocked, helElevatorLocked, helDanceDoorLocked, reloadedLocked, smithFinaleLocked, smithOracleRestored, trilogyEpilogueLocked } from '@auto_matrix/shared';
 import { COMBAT_SKILLS, playerSkills, neoSkillUnlocked, CHARACTERS, LOCATIONS, FILM_SCENE_BY_ID, filmSetAt, filmObstacles, distance, matrixEscapeLocked, theOneLocked, type AgentState, type SimulationState, type WorldEvent, type NeoLifeState } from '@auto_matrix/shared';
 import { FACTION_COLORS } from '../agents/AgentRenderer.js';
 
@@ -219,7 +219,8 @@ export class PlayerExperience {
           : deusPerforming ? '鼠标观察 · V 切换视角 · 当前谈判动作自动保存' : 'WASD 穿过光廊 · 靠近平台后按 G';
     if (smithFinaleScene) {
       const phase = neoLife?.journey?.smithFinale?.phase;
-      this.el('mouse-hint').textContent = phase === 'ground_dodge' || phase === 'air_dodge' ? '现在按 X 闪避 · V 切换视角'
+      this.el('mouse-hint').textContent = smithOracleRestored(neoLife?.journey?.smithFinale) ? '剧情观察 · 先知从感染中恢复 · 当前进度自动保存'
+        : phase === 'ground_dodge' || phase === 'air_dodge' ? '现在按 X 闪避 · V 切换视角'
         : phase === 'ground_counter' || phase === 'air_counter' ? '现在按 F 反击 · V 切换视角'
           : phase === 'descent' ? '按住 G 调整坠落姿态 · V 切换视角'
             : phase === 'crater' ? '按住 G 从陨石坑站起 · V 切换视角'

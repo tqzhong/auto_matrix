@@ -118,6 +118,36 @@ test('Neo must finish the pact, duel, reflection, surrender and purge as one sav
   assert.equal(h.sandbox.state.neoLife!.choices.smith_resolution, 'connection');
 });
 
+test('the cleared Smith host restores the same Oracle in the crater and preserves her until the park handoff', () => {
+  const h = game(), state = h.state(), oracle = h.world.agents.get('oracle')!;
+  Object.assign(state, { scene: 'm3_surrender', actor: 'neo', step: 2, completed: ['m3_oracle_absorbed'],
+    smithFinale: { ...newSmithFinale(), phase: 'purging', elapsed: 7.85, total: 30, impactAt: 10 } });
+  h.actor().currentLocation = 'film_smith_avenue'; h.sandbox.life.film.reconcileCast();
+  assert.equal(oracle.status, 'disconnected', 'the host must not reappear before the infection is cleared');
+  const before = structuredClone(oracle.position), clock = structuredClone(state.smithFinale);
+  oracle.controller = 'other'; h.frame(5);
+  assert.deepEqual(oracle.position, before, 'restoration cannot move another player');
+  assert.equal(state.smithFinale!.phase, 'purging', 'do not complete the ending while its host is occupied');
+  assert.ok(state.smithFinale!.elapsed < 8, 'wait before restoring an occupied host');
+  oracle.controller = undefined; h.frame(5);
+  assert.equal(oracle.currentLocation, 'film_smith_avenue', 'the restored host belongs in the real crater, not her apartment');
+  assert.equal(oracle.status, 'alive'); assert.equal(oracle.isInMatrix, true);
+  assert.equal(oracle.currentAction?.parameters.oracleRestored, true);
+  assert.equal(state.step, 2, 'hold the restoration shot before completing the scene');
+  const restored = structuredClone(oracle.position);
+  assert.ok(restored.y < h.actor().position.y + 1, 'the Oracle must lie on the crater floor');
+  assert.ok(h.players.possess('other', 'oracle', h.tick()).error, 'a recovered, unconscious host cannot be made to walk away');
+  const save = structuredClone(h.sandbox.state); h.players.release('p', h.tick()); h.sandbox.restore(save); h.players.possess('p', 'neo', h.tick());
+  assert.deepEqual(oracle.position, restored); assert.equal(oracle.currentAction?.parameters.oracleRestored, true);
+  assert.ok(h.state().smithFinale!.total > clock!.total);
+  h.frame(160); assert.equal(h.state().smithFinale!.phase, 'done');
+  h.command('next'); assert.equal(h.state().scene, 'm3_ceasefire'); assert.deepEqual(oracle.position, restored);
+  assert.equal(oracle.currentAction?.parameters.oracleRestored, true);
+  Object.assign(h.state(), { scene: 'm3_neo_carried', actor: 'kid', step: FILM_SCENE_BY_ID.m3_neo_carried.steps.length });
+  h.command('next'); assert.equal(h.actor().id, 'oracle'); assert.equal(h.state().scene, 'm3_dawn');
+  assert.equal(oracle.currentAction?.parameters.oracleRestored, undefined, 'the later park scene must release the lying pose');
+});
+
 test('a missed landing reconnects to the same failed pose and only retry restores the road', () => {
   const h = game(), state = h.state();
   Object.assign(state, { scene: 'm3_rain', step: 1, actor: 'neo', smithFinale: {

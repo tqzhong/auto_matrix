@@ -257,7 +257,7 @@ export class AgentRenderer {
         else if (state.currentAction?.parameters.passenger && driver?.state.currentAction?.parameters.riding) {
           target.sub(new THREE.Vector3(driver.state.position.x, driver.state.position.y, driver.state.position.z)).add(driver.group.position);
           entry.group.position.copy(target);
-        } else if (smithLocked || state.currentAction?.parameters.epilogue || state.currentAction?.parameters.openingRoofLeap !== undefined) entry.group.position.copy(target);
+        } else if (smithLocked || state.currentAction?.parameters.oracleRestored || state.currentAction?.parameters.epilogue || state.currentAction?.parameters.openingRoofLeap !== undefined) entry.group.position.copy(target);
         else if (state.currentAction?.parameters.truckPassenger || state.currentAction?.parameters.truckFlight || state.currentAction?.parameters.farewell || state.currentAction?.parameters.club || state.currentAction?.parameters.sentinel || state.currentAction?.parameters.interlude || state.currentAction?.parameters.oracleVisit || state.currentAction?.parameters.oracleDeparture || state.currentAction?.parameters.crosscut || state.currentAction?.parameters.betrayal || state.currentAction?.parameters.rescue || state.currentAction?.parameters.government || state.currentAction?.parameters.airRescue || state.currentAction?.parameters.matrixEscape || state.currentAction?.parameters.theOne || state.currentAction?.parameters.reloaded || state.currentAction?.parameters.catch || state.currentAction?.parameters.lobbyEntry || state.currentAction?.parameters.meeting || state.currentAction?.parameters.pills || state.currentAction?.parameters.interrogation || state.currentAction?.parameters.welcome || state.currentAction?.parameters.reveal || state.currentAction?.parameters.training || state.currentAction?.parameters.workday || state.currentAction?.parameters.recoveryCrew || state.currentAction?.parameters.mirrorEntry || entry.group.position.distanceTo(target) > 60) entry.group.position.copy(target);
         else entry.group.position.lerp(target, 1 - Math.exp(-8 * delta));
         if (state.currentAction?.parameters.basement && !dropRoot && delta * speed > 0) guideSpeed = entry.group.position.distanceTo(previous) / (delta * speed);
@@ -266,7 +266,7 @@ export class AgentRenderer {
       const heading = guideHeading ?? (moving && !smithLocked && !state.currentAction?.parameters.mirrorEntry && !state.currentAction?.parameters.officeCustody && !state.currentAction?.parameters.oracleArrival && !state.currentAction?.parameters.oracleReception && !state.currentAction?.parameters.oracleDeparture && !state.currentAction?.parameters.club && !state.currentAction?.parameters.catch && !state.currentAction?.parameters.truckRescue && !state.currentAction?.parameters.recoveryCrew && state.currentLocation !== 'film_government_lobby' ? Math.atan2(state.velocity.x, state.velocity.z) : state.rotation);
       let difference = heading - entry.body.rotation.y;
       difference = Math.atan2(Math.sin(difference), Math.cos(difference));
-      if (id !== this.playerId && (smithLocked || state.currentAction?.parameters.epilogue || state.currentAction?.parameters.officeCustody && (delta * speed === 0 || (state.currentAction.parameters.officeCustody as MotionInput['officeCustody'])?.street))) { entry.body.rotation.y = heading; difference = 0; }
+      if (id !== this.playerId && (smithLocked || state.currentAction?.parameters.oracleRestored || state.currentAction?.parameters.epilogue || state.currentAction?.parameters.officeCustody && (delta * speed === 0 || (state.currentAction.parameters.officeCustody as MotionInput['officeCustody'])?.street))) { entry.body.rotation.y = heading; difference = 0; }
       const arrival = state.currentAction?.parameters.oracleArrival as MotionInput['oracleArrival'];
       if (id !== this.playerId && clubGesture) entry.body.rotation.y += delta * speed > 0 ? Math.sign(difference) * Math.min(Math.abs(difference), 2.4 * delta * speed) : difference;
       else if (id !== this.playerId) entry.body.rotation.y += difference * (dropRoot || entry.wetwallGuide || entry.ambushGuide && delta === 0 || arrival?.phase === 'opening' || (arrival?.seating ?? 0) > 0 || state.currentAction?.parameters.farewell || state.currentAction?.parameters.sentinel || state.currentAction?.parameters.interlude || state.currentAction?.parameters.oracleVisit || state.currentAction?.parameters.oracleDeparture || state.currentAction?.parameters.crosscut || state.currentAction?.parameters.betrayal || state.currentAction?.parameters.rescue || state.currentAction?.parameters.government || state.currentAction?.parameters.airRescue || state.currentAction?.parameters.matrixEscape || state.currentAction?.parameters.theOne || state.currentAction?.parameters.reloaded || state.currentAction?.parameters.catch || state.currentAction?.parameters.lobbyEntry || state.currentAction?.parameters.meeting || state.currentAction?.parameters.pills || state.currentAction?.parameters.interrogation || state.currentAction?.parameters.welcome || state.currentAction?.parameters.reveal || state.currentAction?.parameters.training || state.currentAction?.parameters.workday || state.currentAction?.parameters.recoveryCrew || state.currentAction?.parameters.mirrorEntry ? 1 : 1 - Math.exp(-10 * delta));
@@ -327,6 +327,7 @@ export class AgentRenderer {
         oracleArrival: state.currentAction?.parameters.oracleArrival as MotionInput['oracleArrival'],
         oracleReception: state.currentAction?.parameters.oracleReception as MotionInput['oracleReception'],
         oracleWaiting: state.currentAction?.parameters.oracleWaiting as MotionInput['oracleWaiting'],
+        oracleRestored: state.currentAction?.parameters.oracleRestored as boolean | undefined,
         betrayal: state.currentAction?.parameters.betrayal as MotionInput['betrayal'],
         bathroom: bathroomGesture,
         rescue: state.currentAction?.parameters.rescue as MotionInput['rescue'],
@@ -467,7 +468,7 @@ export class AgentRenderer {
       const truckPose = input.truckRescue ? truckRescuePose(input.truckRescue, input.truckRescue.role)
         : input.truckFlight ? { yaw: state.rotation, airborne: 1, tumble: 0 } : undefined;
       if (truckPose) { entry.body.rotation.y = truckPose.yaw; entry.body.rotation.z = truckPose.tumble; }
-      if (input.farewell || epilogueCarried) entry.body.rotation.z = 0;
+      if (input.farewell || epilogueCarried || input.oracleRestored) entry.body.rotation.z = 0;
       entry.body.rotation.x = epilogueCarried ? Math.PI / 2 : truckPose ? Math.PI / 2 * truckPose.airborne : input.farewell?.role === 'trinity' ? -.48
         : mountainFlying || catchFlying && input.catch?.role === 'neo' ? THREE.MathUtils.lerp(entry.body.rotation.x, 1.05, 1 - Math.exp(-6 * delta))
         : catchFlying && input.catch?.role === 'trinity' ? THREE.MathUtils.lerp(entry.body.rotation.x, -1.05, 1 - Math.exp(-6 * delta))
@@ -478,7 +479,7 @@ export class AgentRenderer {
         head.rotation.x = -1.05 * truckPose.airborne;
       }
       entry.shadow.position.y = floor - entry.group.position.y - .97;
-      entry.shadow.visible = !sixthRoot?.hidden && state.status !== 'disconnected' && !state.currentAction?.parameters.filmDuel && !mountainFlying && !catchFlying && !coma && !pod && !epilogueCarried && !input.truckPassenger && !input.wetwall?.hanging;
+      entry.shadow.visible = !input.oracleRestored && !sixthRoot?.hidden && state.status !== 'disconnected' && !state.currentAction?.parameters.filmDuel && !mountainFlying && !catchFlying && !coma && !pod && !epilogueCarried && !input.truckPassenger && !input.wetwall?.hanging;
       entry.shadow.scale.setScalar(1 + Math.max(0, entry.group.position.y - floor) * .04);
       const selected = id === this.selected;
       entry.label.visible = !physical && !sixthRoot?.hidden && id !== this.playerId && state.status === 'alive' && !state.currentAction?.parameters.filmDuel && (selected || (!this.playerId && dist < 90 && (['neo', 'trinity', 'smith', 'morpheus'].includes(id) || state.currentAction?.type === 'talk_to')));

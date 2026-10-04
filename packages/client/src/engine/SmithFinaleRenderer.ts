@@ -406,9 +406,9 @@ export class SmithFinaleRenderer {
     this.weatherTime.value = state.total; this.rain.visible = ending.rain > 0;
     (this.rain.children[0] as THREE.LineSegments<THREE.BufferGeometry, THREE.MeshBasicMaterial>).material.opacity = .4 * ending.rain;
     const flash = (Math.sin(state.total * 1.73 + 1.2) > .965 || phase === 'shockwave');
-    this.lightning.visible = flash && phase !== 'done';
+    this.lightning.visible = flash && ending.rain > 0;
     const flashLight = this.lightning.children.find(child => child instanceof THREE.PointLight) as THREE.PointLight | undefined;
-    if (flashLight) flashLight.intensity = flash ? phase === 'purging' ? 1800 : 780 : 0;
+    if (flashLight) flashLight.intensity = this.lightning.visible ? phase === 'purging' ? 1800 : 780 : 0;
     for (let index = 0; index < this.puddles.count; index++) {
       const scale = .5 + ((state.total * 2.2 + index * .37) % 1) * 2.4;
       const radius = Math.sqrt((index * .618) % 1) * 8.6, angle = index * 2.399963;

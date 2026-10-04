@@ -7,6 +7,7 @@ import { poseOracleReception, poseOracleWaiting } from './OracleReceptionPerform
 import { poseOracleCookie } from './OracleCookiePerformance.js';
 import { poseOracleDeparture } from './OracleDeparturePerformance.js';
 import { poseOracleArrival } from './OracleArrivalPerformance.js';
+import { poseOracleRestored } from './OracleRestorationPerformance.js';
 import { poseWetwall } from './WetwallPerformance.js';
 import { poseSixthFloor } from './SixthFloorPerformance.js';
 import { poseBathroom } from './BathroomPerformance.js';
@@ -62,6 +63,7 @@ export interface CharacterRig {
   cloth: { mesh: THREE.Mesh; rest: Float32Array }[];
   motion: MotionState;
   smallDetails: THREE.Group;
+  oracleClothing?: { blouse: THREE.MeshStandardMaterial; trousers: THREE.MeshStandardMaterial; dry: THREE.Color[] };
   hero?: HeroRig;
   weapons?: THREE.Group[];
   spoon?: SpoonModel;
@@ -265,6 +267,7 @@ export class CharacterModels {
       skirt.name = 'persephone-dress'; skirt.scale.z = .7;
     }
     if (state.id === 'oracle') {
+      const apronGroup = new THREE.Group(); apronGroup.name = 'oracle-apron-group'; torso.add(apronGroup);
       const apron = this.material(new THREE.MeshStandardMaterial({ color: '#d7c19a', roughness: .93, bumpMap: this.fabric, bumpScale: .002, side: THREE.DoubleSide }));
       const positions: number[] = [], indices: number[] = [];
       // Follow the blouse profile; a flat bib cut through its rounded chest.
@@ -278,8 +281,8 @@ export class CharacterModels {
       }
       const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
       geometry.setIndex(indices); geometry.computeVertexNormals();
-      const bib = this.mesh(torso, this.geometry(geometry), apron, [0, 0, 0]); bib.name = 'oracle-apron';
-      for (const side of [-1, 1]) this.mesh(torso, this.cylinder, apron, [side * .22, 1.7, .22], [.018, .42, .018]).rotation.z = side * .16;
+      const bib = this.mesh(apronGroup, this.geometry(geometry), apron, [0, 0, 0]); bib.name = 'oracle-apron';
+      for (const side of [-1, 1]) this.mesh(apronGroup, this.cylinder, apron, [side * .22, 1.7, .22], [.018, .42, .018]).rotation.z = side * .16;
     }
     this.mesh(torso, this.cylinder, skin, [0, 1.79, 0], [0.145, 0.25, 0.135]);
     // Raised collars, seams, belt and tailored panels are visible from all sides.
@@ -300,6 +303,7 @@ export class CharacterModels {
       for (const y of [0.45, 0.67]) this.mesh(torso, this.sphere, black, [0.095, y, 0.26], [0.027, 0.027, 0.014]);
     }
     const head = this.joint(torso, 0, 2.13);
+    if (state.id === 'oracle') head.name = 'oracle-head';
     let face = skin;
     if (look.face !== undefined) {
       const texture = this.atlas.clone();
@@ -313,8 +317,14 @@ export class CharacterModels {
     }
     if (look.face === undefined) {
       for (const side of [-1, 1]) {
-        this.mesh(head, this.sphere, shirt, [side * 0.10, -0.012, 0.219], [0.058, 0.021, 0.016]);
-        this.mesh(head, this.sphere, black, [side * 0.10, -0.012, 0.233], [0.018, 0.019, 0.009]);
+        const eye = state.id === 'oracle' ? this.joint(head, 0, 0) : head;
+        if (state.id === 'oracle') {
+          eye.name = 'oracle-open-eye';
+          const lid = this.mesh(head, this.sphere, skin, [side * .10, -.012, .222], [.058, .021, .016]);
+          lid.name = 'oracle-closed-eye'; lid.visible = false;
+        }
+        this.mesh(eye, this.sphere, shirt, [side * 0.10, -0.012, 0.219], [0.058, 0.021, 0.016]);
+        this.mesh(eye, this.sphere, black, [side * 0.10, -0.012, 0.233], [0.018, 0.019, 0.009]);
         this.mesh(head, this.box, black, [side * 0.105, 0.036, 0.22], [0.1, 0.016, 0.017]);
       }
       this.mesh(head, this.sphere, this.material(new THREE.MeshStandardMaterial({ color: '#916756', roughness: 0.7 })), [0, -0.24, 0.224], [0.078, 0.014, 0.012]);
@@ -371,6 +381,7 @@ export class CharacterModels {
     }
     const distant = this.makeDistant(look, root);
     const rig: CharacterRig = { root, detail, distant, torso, head, shoulders, elbows, fingers, hips, knees, ankles, tails, cloth: clothPanels, motion: newMotion(), smallDetails, rifle: state.id === 'film_soldier' };
+    if (state.id === 'oracle') rig.oracleClothing = { blouse: cloth, trousers, dry: [cloth.color.clone(), trousers.color.clone()] };
     const guard = ['agent_jones', 'agent_brown', 'agent_johnson', 'agent_jackson', 'agent_thompson'].includes(state.id) ? state.id as 'agent_jones' | 'agent_brown' | 'agent_johnson' | 'agent_jackson' | 'agent_thompson' : undefined;
     const reloadedBase: Record<string, HeroId> = { niobe: 'trinity', ballard: 'morpheus', ghost: 'neo', soren: 'smith', link: 'morpheus', dozer: 'morpheus', tank: 'neo', cypher: 'neo', oracle_priestess: 'trinity', oracle_attendant: 'trinity', citizen_4: 'neo', citizen_14: 'neo' };
     const support = state.id === 'switch' || state.id === 'apoc' || state.id === 'rhineheart' || state.id === 'courier' || state.id === 'choi' || state.id === 'dujour' || state.id in reloadedBase ? state.id as HeroSupport : undefined;
@@ -437,9 +448,10 @@ export class CharacterModels {
   }
 
   animate(rig: CharacterRig, delta: number, input: MotionInput, distance: number): void {
-    const near = distance < 100;
+    const near = distance < 100 || Boolean(input.oracleRestored);
     rig.detail.visible = near; rig.distant.visible = !near;
     if (!near) return;
+    if (poseOracleRestored(rig, input.oracleRestored)) return;
     const pulseRifle = Boolean(input.crosscut && ['cypher', 'tank'].includes(input.crosscut.role) || input.betrayal && ['cypher', 'tank'].includes(input.betrayal.role));
     const weaponStyle: CharacterRig['weaponStyle'] = pulseRifle ? 'pulse' : input.weaponStyle ?? (rig.rifle ? 'rifle' : 'pistol');
     if (input.armed && rig.weapons && rig.weaponStyle !== weaponStyle) {

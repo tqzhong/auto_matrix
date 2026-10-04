@@ -21,7 +21,7 @@ import { RESCUE, rescueDuration, rescueLoadout, rescueLocked } from '@auto_matri
 import { BANE_ENCOUNTER } from '@auto_matrix/shared';
 import { FAREWELL, farewellLocked } from '@auto_matrix/shared';
 import { DEUS_PACT, deusPactLocked } from '@auto_matrix/shared';
-import { SMITH_FINALE, smithFinaleLocked } from '@auto_matrix/shared';
+import { SMITH_FINALE, smithFinaleLocked, smithOracleRestored } from '@auto_matrix/shared';
 import { trilogyEpilogueLocked, trilogyEpilogueProgress } from '@auto_matrix/shared';
 
 const button = (target: string, label: string, disabled = false) => `<button data-action="life" data-target="film:${target}" ${disabled ? 'disabled' : ''}>${label}</button>`;
@@ -192,7 +192,7 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
                 : finale.phase === 'choice' ? '为什么继续？由你选择' : finale.phase === 'assault_ready' ? '等待最后猛攻'
                   : finale.phase === 'assault' ? '最后猛攻' : finale.phase === 'vision' ? 'Smith 的预见正在重合'
                     : finale.phase === 'understanding' ? '停手是 Neo 的选择' : finale.phase === 'surrender' ? '明确停止抵抗'
-                      : finale.phase === 'assimilating' ? 'Smith 同化 Neo' : finale.phase === 'purging' ? '机器清除感染' : finale.phase === 'done' ? '暴雨停止' : '交锋失败';
+                      : finale.phase === 'assimilating' ? 'Smith 同化 Neo' : smithOracleRestored(finale) ? '先知恢复 · 雨已停' : finale.phase === 'purging' ? '机器清除感染' : '交锋失败';
     const progress = finale.phase === 'ground_warning' ? finale.elapsed / SMITH_FINALE.ground.warning * 100
       : finale.phase === 'ground_dodge' ? (SMITH_FINALE.ground.dodge - finale.elapsed) / SMITH_FINALE.ground.dodge * 100
         : finale.phase === 'ground_counter' ? (SMITH_FINALE.ground.counter - finale.elapsed) / SMITH_FINALE.ground.counter * 100

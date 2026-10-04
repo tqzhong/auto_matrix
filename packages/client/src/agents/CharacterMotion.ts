@@ -64,6 +64,7 @@ export interface MotionInput {
   oracleDeparture?: import('@auto_matrix/shared').OracleDepartureGesture;
   oracleReception?: import('@auto_matrix/shared').OracleReceptionGesture;
   oracleWaiting?: import('@auto_matrix/shared').OracleWaitingGesture;
+  oracleRestored?: boolean;
   betrayal?: BetrayalGesture;
   rescue?: RescueGesture;
   lobbyEntry?: LobbyGesture;

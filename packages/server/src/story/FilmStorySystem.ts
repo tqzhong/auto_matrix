@@ -52,7 +52,7 @@ import { newLogosFlight, stepLogosFlight } from '@auto_matrix/shared';
 import { farewellLocked, farewellPose, newFarewell, stepFarewell } from '@auto_matrix/shared';
 import { DEUS_PACT, deusPactLocked, deusPactPose, newDeusPact, stepDeusPact } from '@auto_matrix/shared';
 import { SMITH_FINALE, newSmithFinale, retrySmithFinale, smithFinaleAction as reduceSmithFinaleAction,
-  smithFinaleLocked, smithFinalePose, smithCraterAmount, stepSmithFinale } from '@auto_matrix/shared';
+  smithFinaleLocked, smithFinalePose, smithCraterAmount, smithOracleRestored, stepSmithFinale } from '@auto_matrix/shared';
 import { newTrilogyEpilogue, stepTrilogyEpilogue, trilogyEpilogueLocked, trilogyEpilogueProgress, neoCarryPose,
   type TrilogyEpilogueKind, type TrilogyEpilogueEncounter } from '@auto_matrix/shared';
 import { newApuRun, stepApuRun } from '@auto_matrix/shared';
@@ -326,6 +326,7 @@ export class FilmStorySystem {
   private placeSmithFinale(agent: AgentState, tick: number): void {
     this.ensureSmithFinale(); const state = this.state; const encounter = state?.smithFinale;
     if (!state || !encounter || !['m3_rain', 'm3_surrender'].includes(state.scene)) return;
+    if (smithOracleRestored(encounter)) this.placeRestoredOracle(tick);
     const amount = smithCraterAmount(encounter), structures = this.sandbox().structures;
     const terrain = structures.find(s => s.id === 'film:smith:crater');
     if (amount > 0) {
@@ -338,7 +339,7 @@ export class FilmStorySystem {
     if (smith && !smith.controller) {
       smith.position = filmPosition(this.scene!.set, pose.smith.x, pose.smith.z); smith.position.y += pose.smith.y;
       smith.rotation = pose.smith.yaw; smith.currentLocation = this.scene!.set; smith.isInMatrix = true;
-      smith.status = encounter.phase === 'done' ? 'dead' : 'alive'; smith.health = encounter.phase === 'done' ? 0 : smith.maxHealth;
+      smith.status = smithOracleRestored(encounter) ? 'dead' : 'alive'; smith.health = smithOracleRestored(encounter) ? 0 : smith.maxHealth;
       smith.velocity = { x: 0, y: 0, z: 0 };
       smith.currentAction = { type: pose.strike > .05 ? 'attack' : 'idle', target: agent.id,
         parameters: { resolved: true, smithFinale: { ...encounter, role: 'smith' } }, startedAt: tick, duration: 1, progress: 0 };
@@ -352,6 +353,16 @@ export class FilmStorySystem {
     agent.currentAction = { type: pose.strike > .05 && encounter.phase !== 'assault' ? 'attack' : 'idle', target: smith?.id,
       parameters: { player: true, resolved: true, smithFinale: { ...encounter, role: 'neo' } }, startedAt: tick, duration: 1, progress: 0 };
   }
+  private placeRestoredOracle(tick: number): void {
+    const oracle = this.world.agents.get('oracle'); if (!oracle || oracle.controller) return;
+    const pose = SMITH_FINALE.oracle;
+    oracle.position = filmPosition('film_smith_avenue', pose.x, pose.z); oracle.position.y -= SMITH_FINALE.crater.depth - .025;
+    oracle.rotation = pose.yaw; oracle.currentLocation = 'film_smith_avenue'; oracle.isInMatrix = true;
+    oracle.status = 'alive'; oracle.health = oracle.maxHealth;
+    oracle.velocity = { x: 0, y: 0, z: 0 }; oracle.targetPosition = null; oracle.currentPath = [];
+    oracle.currentAction = { type: 'idle', parameters: { resolved: true, oracleRestored: true },
+      startedAt: tick, duration: 100000, progress: 0 };
+  }
   smithFinaleFrame(agent: AgentState, input: { focus: boolean; x: number; z: number; yaw: number }, dt: number, tick: number): boolean {
     if (!this.controls(agent) || !['m3_rain', 'm3_surrender'].includes(this.state?.scene ?? '') || this.state?.visiting) return false;
     this.ensureSmithFinale(); const state = this.state!; const encounter = state.smithFinale!;
@@ -362,9 +373,16 @@ export class FilmStorySystem {
       state.lastText = 'Smith 正由另一位玩家控制。终局停在当前一拍，等待他空闲后继续。';
       this.placeSmithFinale(agent, tick); return true;
     }
+    if (encounter.phase === 'purging' && encounter.elapsed + dt >= SMITH_FINALE.surrender.restoreAt
+      && this.world.agents.get('oracle')?.controller) {
+      state.lastText = '先知正由另一位玩家控制。清除停在恢复身体之前，等待她空闲后继续。';
+      return true;
+    }
     const before = encounter.phase;
     state.smithFinale = stepSmithFinale(encounter, { focus: input.focus, x: input.x, z: input.z }, dt);
     const phase = state.smithFinale.phase;
+    if (!smithOracleRestored(encounter) && smithOracleRestored(state.smithFinale))
+      state.lastText = '白光散去，先知的身体重新出现在坑底的积水里。与 Neo 交战的 Smith 曾经覆盖了她；现在感染已经解除。';
     if (phase !== before) {
       state.lastText = phase === 'ground_dodge' ? 'Smith 的拳头穿过雨幕。现在按 X 侧闪，错过窗口会回到大道中央。'
         : phase === 'air_warning' ? '第一轮对拳压出球形冲击波。两个人冲上高空，Smith 正从雨云后再度逼近。'
@@ -375,7 +393,7 @@ export class FilmStorySystem {
                   : phase === 'vision' ? '最后一轮猛攻停下。Smith 说出从先知那里复制来的预见，又因为眼前一切完全重合而迟疑。'
                     : phase === 'assimilating' ? 'Neo 明确放下抵抗。Smith 的黑色代码从胸口与面部扩散，直到两具身体共享同一份感染。'
                       : phase === 'purging' ? '机器沿着 Neo 仍然开放的连接抵达感染核心。白光从复制体的眼睛与裂隙透出，再沿 Smith 网络传遍大道。'
-                        : phase === 'done' ? 'Smith 的网络同时崩解。复制体倒下，暴雨停住；机器已完成停战协议中的另一半。'
+                        : phase === 'done' ? 'Smith 的网络已经崩解，雨停了。先知仍躺在坑底的积水中；机器开始履行停战协议。'
                           : '交锋窗口已经错过。J 打开手记，从保存的战斗检查点重试。';
       if (phase === 'choice' && state.scene === 'm3_rain' && state.step === 1) this.advance(state.lastText, agent, tick);
       if (phase === 'vision' && state.scene === 'm3_surrender' && state.step === 0) this.advance(state.lastText, agent, tick);
@@ -4550,6 +4568,7 @@ export class FilmStorySystem {
   }
 
   unavailable(id: string): boolean {
+    if (id === 'oracle' && this.world.agents.get(id)?.currentAction?.parameters.oracleRestored) return true;
     if (id === 'neo' && this.state && (['m3_ceasefire', 'm3_neo_carried', 'm3_dawn'].includes(this.state.scene)
       || this.state.completed.includes('m3_surrender'))) return true;
     const fate = this.state && filmCharacterFates(this.state)[id];
@@ -4599,6 +4618,7 @@ export class FilmStorySystem {
       const actor = this.world.agents.get(this.state.actor);
       if (actor?.currentLocation === this.scene!.set) this.placeSmithFinale(actor, this.world.simulationTick);
     }
+    if (['m3_ceasefire', 'm3_neo_carried'].includes(this.state.scene)) this.placeRestoredOracle(this.world.simulationTick);
     const neo = this.world.agents.get('neo');
     if (neo && !neo.controller && (['m3_ceasefire', 'm3_neo_carried', 'm3_dawn'].includes(this.state.scene)
       || this.state.completed.includes('m3_neo_carried'))) {
@@ -5717,7 +5737,8 @@ export class FilmStorySystem {
     if (!next || next.controller) return false;
     const state = this.state, previous = state?.actor;
     if (state?.tvExit?.crosscut && ['m1_tv_exit', 'm1_unplugged'].includes(state.scene)
-      || state?.scene === 'm3_ceasefire' && !this.step && id === 'neo') state!.actor = id;
+      || state?.scene === 'm3_ceasefire' && !this.step && id === 'neo'
+      || state?.scene === 'm3_neo_carried' && !this.step && id === 'oracle') state!.actor = id;
     const changed = this.handoff?.(agent, id, tick) ?? false;
     if (!changed && state && previous) state.actor = previous;
     return changed;
