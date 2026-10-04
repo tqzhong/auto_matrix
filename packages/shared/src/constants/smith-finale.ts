@@ -7,7 +7,8 @@ export const SMITH_FINALE = {
   descent: { seconds: 3.4, impact: 2.85, braceSeconds: 1.4 },
   crater: { x: 0, z: -38, depth: 12, radius: 17, floorRadius: 9, settleSeconds: .7, riseSeconds: 1.8 },
   assault: 3.5,
-  surrender: { consentSeconds: 1.6, assimilationSeconds: 8.4, purgeSeconds: 8 },
+  surrender: { consentSeconds: 1.6, assimilationSeconds: 8.4, restoreAt: 8, purgeSeconds: 12 },
+  oracle: { x: 0, z: -33.2, yaw: Math.PI / 2 },
 } as const;
 
 export type SmithFinaleCheckpoint = 'ground' | 'air';
@@ -76,6 +77,11 @@ export function smithCraterAmount(encounter: SmithFinaleEncounter): number {
 
 export function newSmithFinale(): SmithFinaleEncounter {
   return { phase: 'approach', elapsed: 0, total: 0, focus: 0, hits: 0, lastStrike: -1, lane: 0, checkpoint: 'ground', attempts: 0 };
+}
+
+export function smithOracleRestored(encounter?: SmithFinaleEncounter): boolean {
+  return Boolean(encounter && (encounter.phase === 'done'
+    || encounter.phase === 'purging' && encounter.elapsed >= SMITH_FINALE.surrender.restoreAt));
 }
 
 /** All surfaces and bodies use the saved scene clock, including a cold load. */

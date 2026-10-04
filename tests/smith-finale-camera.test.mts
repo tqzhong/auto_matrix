@@ -3,7 +3,7 @@ import test, { type TestContext } from 'node:test';
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { FILM_SETS, newSmithFinale, smithFinalePose, type SmithFinaleEncounter } from '@auto_matrix/shared';
+import { FILM_SETS, SMITH_FINALE, newSmithFinale, smithFinalePose, smithCraterFloor, type SmithFinaleEncounter } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { advanceMotion, newMotion } from '../packages/client/src/agents/CharacterMotion.js';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
@@ -76,7 +76,7 @@ async function setup(t: TestContext) {
   t.after(() => { controls.dispose(); renderer.dispose(); ['window', 'document'].forEach((key, i) => {
     if (previous[i]) Object.defineProperty(globalThis, key, previous[i]!); else Reflect.deleteProperty(globalThis, key);
   }); });
-  return { actors, controls, renderer, group, head, camera, frame, setBeat, sync, look, key };
+  return { world, actors, controls, renderer, group, head, camera, frame, setBeat, sync, look, key };
 }
 
 test('the first paused finale frame restores both actual bodies and the camera without frame-rate settling', async t => {
@@ -158,9 +158,39 @@ test('the clearing shot rises out of the pit to show both ranks while retaining 
       h.frame({ ...newSmithFinale(), phase: 'purging', elapsed: elapsed + .001, total: 60 + elapsed + .001 });
       assert.ok(h.camera.position.distanceTo(before) < .08, 'the crane movement cannot cut through a sudden camera jump');
     }
+    h.frame({ ...newSmithFinale(), phase: 'purging', elapsed: SMITH_FINALE.surrender.purgeSeconds, total: 72 });
     const end = h.camera.position.clone();
     h.frame({ ...newSmithFinale(), phase: 'done', total: 70 });
-    assert.ok(h.camera.position.distanceTo(end) < .00001, 'the completed street view cannot snap back into the empty pit');
+    assert.ok(h.camera.position.distanceTo(end) < .00001, 'completion must hold the final restoration shot');
+  }
+});
+
+test('the ending camera returns to the actual restored Oracle without clipping the pit or reverting to vanished Neo eyes', async t => {
+  const h = await setup(t), center = FILM_SETS.film_smith_avenue.center, oracle = h.world.agents.get('oracle')!;
+  oracle.currentLocation = 'film_smith_avenue'; oracle.isInMatrix = true; oracle.rotation = SMITH_FINALE.oracle.yaw;
+  oracle.position = { x: center.x + SMITH_FINALE.oracle.x, y: center.y - SMITH_FINALE.crater.depth + .025, z: center.z + SMITH_FINALE.oracle.z };
+  oracle.currentAction = { type: 'idle', parameters: { oracleRestored: true }, startedAt: 0, duration: 100000, progress: 0 };
+  h.renderer.updateAgent('oracle', oracle);
+  for (const aspect of [16 / 9, 4 / 3, 9 / 16]) for (const firstPerson of [false, true]) {
+    h.camera.aspect = aspect; h.controls.firstPerson = firstPerson;
+    h.frame({ ...newSmithFinale(), phase: 'purging', elapsed: 11.8, total: 71.8 });
+    const body = h.renderer.getAgentBody('oracle')!; body.updateWorldMatrix(true, true);
+    const box = new THREE.Box3(); body.traverseVisible(object => {
+      if (!(object instanceof THREE.Mesh)) return;
+      object.updateMatrixWorld(true); if (object instanceof THREE.SkinnedMesh) object.skeleton.update();
+      for (let i = 0; i < object.geometry.attributes.position.count; i++) box.expandByPoint(object.localToWorld(object.getVertexPosition(i, new THREE.Vector3())));
+    });
+    for (const x of [box.min.x, box.max.x]) for (const y of [box.min.y, box.max.y]) for (const z of [box.min.z, box.max.z]) {
+      const corner = new THREE.Vector3(x, y, z), projected = corner.clone().project(h.camera);
+      assert.ok(Math.abs(projected.x) < .86 && projected.y > -.48 && projected.y < .82 && projected.z < 1,
+        `${aspect}/${firstPerson}: the actual recovered body is cropped or behind the camera at ${projected.toArray()}`);
+      for (let sample = 0; sample < 30; sample++) {
+        const point = h.camera.position.clone().lerp(corner, sample / 30);
+        assert.ok(point.y >= center.y - 1 + smithCraterFloor(point.x - center.x, point.z - center.z), 'the pit wall blocks the restoration shot');
+      }
+    }
+    const previous = h.camera.position.clone(); h.frame({ ...newSmithFinale(), phase: 'done', total: 72 });
+    assert.ok(previous.distanceTo(h.camera.position) < .00001, 'completion cannot reset the saved restoration lens');
   }
 });
 

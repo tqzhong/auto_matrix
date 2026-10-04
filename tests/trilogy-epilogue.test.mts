@@ -99,6 +99,27 @@ test('the Smith ending leaves a persistent real-world body while Kid witnesses t
   assert.deepEqual(neo.position, end, 'cutting to the park must not return the body to the apartment');
 });
 
+test('reconnecting after the transport can hand off to the Oracle without reviving Neo', () => {
+  const h = game(), scene = FILM_SCENE_BY_ID.m3_neo_carried, neo = h.actor();
+  Object.assign(h.state(), { scene: scene.id, actor: 'neo', step: scene.steps.length,
+    completed: ['m3_surrender', scene.id], epilogue: { ...newTrilogyEpilogue('neo_carried'), phase: 'done' } });
+  const save = structuredClone(h.sandbox.state); h.players.release('p', h.tick()); h.sandbox.restore(save);
+  assert.equal(neo.status, 'disconnected');
+  const body = structuredClone({ position: neo.position, health: neo.health });
+  assert.equal(h.players.possess('p', 'neo', h.tick()).error, undefined);
+  assert.equal(neo.status, 'disconnected', 'the story observer must not revive the body');
+  const inventory = structuredClone(h.sandbox.state.profiles.neo.inventory);
+  h.players.sandboxAction('p', { kind: 'use', target: 'medkit' }, h.tick());
+  assert.deepEqual(h.sandbox.state.profiles.neo.inventory, inventory);
+  assert.equal(neo.health, body.health);
+  h.command('next');
+  assert.equal(h.state().scene, 'm3_dawn', 'a saved completed transport must remain continuable');
+  assert.equal(h.actor().id, 'oracle');
+  assert.equal(h.actor().currentAction?.parameters.oracleRestored, undefined);
+  assert.equal(neo.status, 'disconnected'); assert.equal(neo.isInMatrix, false);
+  assert.deepEqual(neo.position, body.position);
+});
+
 test('ceasefire, Neo transport and dawn form a saved playable epilogue without auto-starting a new cycle', () => {
   const h = game(); const surrender = FILM_SCENE_BY_ID.m3_surrender; const state = h.state();
   Object.assign(state, { scene: surrender.id, actor: 'neo', step: surrender.steps.length,

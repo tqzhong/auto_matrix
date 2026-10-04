@@ -103,6 +103,8 @@ export class PlayerController {
     if (this.sandbox?.state.threats.some(t => t.character === id)) return { error: '这个角色正在剧情交手，结束后可以接入。' };
     if (this.sandbox?.life.film.custody.reserved(id)) return { error: '这个角色正在办公室拘捕与押送中，片段结束后可以接入。' };
     const restarting = newCycle && id === 'neo' && this.sandbox?.life.film.state?.finished;
+    if (id === 'oracle' && agent.currentAction?.parameters.oracleRestored && !this.sandbox?.life.film.controls(agent))
+      return { error: '先知刚从同化中恢复，仍躺在坑底；故事进入公园尾声后可以接入。' };
     if (!restarting && this.sandbox?.life.film.unavailable(id) && !this.sandbox.life.film.controls(agent)) return { error: '这个角色在本轮故事中已无法接入；新循环会恢复。' };
     const owner = this.owners.get(id);
     if (owner && owner !== socketId) {

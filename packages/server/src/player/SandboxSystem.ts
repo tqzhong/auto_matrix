@@ -107,6 +107,8 @@ export class SandboxSystem {
 
   command(agent: AgentState, command: SandboxCommand, tick: number): string {
     if (agent.controller && command.kind === 'life' && command.target === 'film:retry') return this.life.film.command(agent, 'retry', tick);
+    if (agent.controller && command.kind === 'life' && command.target === 'film:next'
+      && this.life.film.controls(agent) && this.life.film.state?.scene === 'm3_neo_carried') return this.life.film.command(agent, 'next', tick);
     if (agent.status !== 'alive' || !agent.controller) return '先接入一个存活角色。';
     if (agent.currentAction?.parameters.finaleComa && command.kind !== 'life') return 'Neo 的身体没有回应；可以观察或继续当前尾声，不能使用物品与程序工具。';
     this.enterIfNeeded(agent);

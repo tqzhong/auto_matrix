@@ -36,7 +36,7 @@ import { BANE_ENCOUNTER } from '@auto_matrix/shared';
 import { LOGOS_DEFENSE } from '@auto_matrix/shared';
 import { FAREWELL, farewellLocked } from '@auto_matrix/shared';
 import { DEUS_PACT, deusPactLocked } from '@auto_matrix/shared';
-import { SMITH_FINALE, smithFinaleLocked } from '@auto_matrix/shared';
+import { SMITH_FINALE, smithFinaleLocked, smithOracleRestored } from '@auto_matrix/shared';
 import { trilogyEpilogueLocked, trilogyEpilogueProgress } from '@auto_matrix/shared';
 import { ambushApproachTarget } from '@auto_matrix/shared';
 
@@ -274,6 +274,7 @@ export class SandboxUI {
     const shown = journey.visiting ? FILM_SCENE_BY_ID[journey.visiting] : scene;
     this.el('sandbox-clock').textContent = `${FILM_NAMES[shown.film]} · 第 ${FILM_SCENES.indexOf(shown) + 1} 段`;
     this.el('sandbox-weather').textContent = set.world === 'real' ? '真实世界' : ({ day: '日间', night: '夜间', warm: '室内', cold: '室内', white: '程序空间', storm: '暴雨', sunrise: '日出' })[set.light];
+    if (!journey.visiting && set.id === 'film_smith_avenue' && smithOracleRestored(journey.smithFinale)) this.el('sandbox-weather').textContent = '雨已停';
     if (set.id === 'film_anderson_flat') {
       const minutes = Math.floor(this.time * .06);
       this.el('sandbox-clock').textContent = `第 ${state.neoLife!.day} 天 · ${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
@@ -588,7 +589,7 @@ export class SandboxUI {
                     : phase === 'assault_ready' ? '最后猛攻' : phase === 'assault' ? '预见重合'
                       : phase === 'vision' ? 'Smith 的恐惧' : phase === 'understanding' ? '停手的意义'
                         : phase === 'surrender' ? '主动停止抵抗' : phase === 'assimilating' ? 'Smith 同化'
-                          : phase === 'purging' ? '机器清除感染' : phase === 'done' ? '暴雨停止' : '交锋失败';
+                          : smithOracleRestored(finale) ? '先知恢复 · 雨已停' : phase === 'purging' ? '机器清除感染' : '交锋失败';
       const hint = phase === 'approach' ? 'WASD 穿过两列 Smith，走到大道中央'
         : phase === 'ready' ? '靠近大道中央按 G 开始最后交锋'
           : phase === 'ground_warning' ? '看清 Smith 的起手，等闪避窗口亮起'
@@ -608,7 +609,7 @@ export class SandboxUI {
                                   : phase === 'understanding' ? '靠近 Smith 按 G，主动放下拳头'
                                     : phase === 'surrender' ? `按住 G 明确接受同化 · ${Math.round(finale.focus / SMITH_FINALE.surrender.consentSeconds * 100)}%`
                                       : phase === 'failed' ? `J 打开手记，从${finale.checkpoint === 'air' ? '高空' : '大道中央'}检查点重试`
-                                        : phase === 'done' ? '按 G 进入停战之后' : '鼠标观察 · V 切换视角 · 当前一拍自动保存';
+                                        : phase === 'done' ? '按 G 进入停战之后' : smithOracleRestored(finale) ? '先知仍躺在坑底 · 等待镜头结束' : '鼠标观察 · V 切换视角 · 当前一拍自动保存';
       const progress = phase === 'ground_warning' ? finale.elapsed / SMITH_FINALE.ground.warning * 100
         : phase === 'ground_dodge' ? (SMITH_FINALE.ground.dodge - finale.elapsed) / SMITH_FINALE.ground.dodge * 100
           : phase === 'ground_counter' ? (SMITH_FINALE.ground.counter - finale.elapsed) / SMITH_FINALE.ground.counter * 100

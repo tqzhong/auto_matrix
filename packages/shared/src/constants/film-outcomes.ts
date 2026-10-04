@@ -1,4 +1,5 @@
 import type { FilmJourney } from './film-story.js';
+import { smithOracleRestored } from './smith-finale.js';
 
 export type FilmFate = 'dead' | 'assimilated' | 'missing' | 'alive';
 // Ordered by the released films. Deriving from completed scenes also upgrades old saves.
@@ -23,6 +24,8 @@ export function filmCharacterFates(journey: FilmJourney): Record<string, FilmFat
     if (journey.completed.includes(scene)) Object.assign(fates, changes);
   }
   if (journey.ambushEscape?.mouseDead) fates.mouse = 'dead';
+  if (journey.scene === 'm3_surrender' && smithOracleRestored(journey.smithFinale))
+    Object.assign(fates, FILM_CONSEQUENCES.m3_surrender);
   const cut = journey.tvExit?.crosscut;
   if (cut) for (const [id, dead] of Object.entries({ dozer: cut.dozerDead, apoc: cut.apocDead, switch: cut.switchDead, cypher: cut.cypherDead })) if (dead) fates[id] = 'dead';
   // Saves from before the shipboard discovery still reached the Logos fight.
