@@ -21,6 +21,7 @@ import { hammerHeight } from './hammer-flight.js';
 import { ORACLE_ENTRANCE } from './oracle.js';
 import { BASEMENT, basementBlocked, TV_EXIT_OBSTACLES } from './basement-escape.js';
 import { SMITH_FINALE, smithCraterFloor } from './smith-finale.js';
+import { SUNRISE_GARDEN } from './sunrise-garden.js';
 
 export type FilmArchitecture = 'hotel' | 'apartment' | 'club' | 'office' | 'interrogation' | 'bridge' | 'car' | 'lafayette' | 'pods' | 'ship' | 'construct' | 'desert' | 'dojo' | 'rooftop' | 'plaza' | 'restaurant' | 'oracle' | 'tenement' | 'lobby' | 'subway' | 'street' | 'zion' | 'temple' | 'engineering' | 'teahouse' | 'backdoors' | 'courtyard' | 'chateau' | 'mountain' | 'workshop' | 'garage' | 'freeway' | 'power' | 'architect' | 'mobil' | 'hel' | 'machine' | 'rain' | 'garden';
 export interface FilmSet {
@@ -58,7 +59,7 @@ const definitions: Omit<FilmSet, 'id' | 'center'>[] = [
   { name: '政府大楼 · 审讯层', film: [1], architecture: 'office', world: 'matrix', width: 48, depth: 54, height: 14, light: 'day', detail: '整面玻璃窗、审讯椅与破裂玻璃' },
   { name: '政府大楼 · 屋顶与直升机', film: [1], architecture: 'rooftop', world: 'matrix', width: 62, depth: 90, height: 28, light: 'day', detail: '通风井、直升机、绳索与密集天际线' },
   { name: '地铁站 · Neo 与 Smith', film: [1, 3], architecture: 'subway', world: 'matrix', width: 46, depth: 104, height: 16, light: 'cold', detail: '拱顶、铆钉柱、轨道、出口电话与列车' },
-  { name: '城市街巷 · 接线员撤离路线', film: [1], architecture: 'street', world: 'matrix', width: 48, depth: 112, height: 26, light: 'day', detail: '市场、窄巷、住户门窗、电话线路' },
+  { name: '城市街巷 · 接线员撤离路线', film: [1, 3], architecture: 'street', world: 'matrix', width: 48, depth: 112, height: 26, light: 'day', detail: '市场、窄巷、住户门窗、电话线路' },
   { name: '城市电话亭 · 第一部尾声', film: [1], architecture: 'street', world: 'matrix', width: 54, depth: 86, height: 28, light: 'day', detail: '街角电话亭、上班人流与城市天空' },
   { name: '反抗军船长 · 秘密会议', film: [2], architecture: 'tenement', world: 'matrix', width: 46, depth: 80, height: 16, light: 'night', detail: '地下交通砖砌拱廊、长桌地热图、双侧出口、铁门与地面窄巷' },
   { name: '锡安 · 船坞', film: [2, 3], architecture: 'zion', world: 'real', width: 108, depth: 138, height: 65, light: 'warm', detail: '巨大圆形船坞、钢桁架、悬桥、APU 与闸门' },
@@ -158,6 +159,11 @@ export const ORACLE_ENTRANCE_WALLS: FilmObstacle[] = [
 ];
 export const ORACLE_OPEN_DOOR: FilmObstacle = { x: ORACLE_ENTRANCE.door.x, z: ORACLE_ENTRANCE.door.z - ORACLE_ENTRANCE.door.width / 2, width: ORACLE_ENTRANCE.door.depth, depth: ORACLE_ENTRANCE.door.width, height: ORACLE_ENTRANCE.door.height };
 export function filmObstacles(set: FilmSet, movingMeetingCar = false, movingOracleDoor = false): FilmObstacle[] {
+  if (set.id === 'film_sunrise_garden') return [
+    SUNRISE_GARDEN.bench,
+    { x: 0, z: SUNRISE_GARDEN.shore - 20, width: 90, depth: 40, height: 100 },
+    ...SUNRISE_GARDEN.trees.map(([x, z, scale]) => ({ x, z, width: scale * 1.25, depth: scale * 1.25, height: 12 })),
+  ];
   if (set.id === 'film_tv_repair') return TV_EXIT_OBSTACLES;
   if (set.id === 'film_mobil_station') return [];
   if (set.id === 'film_hel_garage') return [-18, 18].flatMap(x => [-17, 9, 24].map(z => ({ x, z, width: 8.5, depth: 13, height: 5 })));

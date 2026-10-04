@@ -369,6 +369,7 @@ export class AgentRenderer {
         if (point) input.crosscut = { ...input.crosscut, contact: { x: point.x, y: point.y, z: point.z } };
       }
       input.realWorld = !state.isInMatrix && state.currentLocation !== 'film_real_desert';
+      input.parkOutfit = state.currentLocation === 'film_sunrise_garden';
       input.farewellOutfit = input.realWorld && (id === 'neo' || id === 'trinity')
         && (state.currentLocation === 'film_logos_wreck' || id === 'neo' && state.currentLocation === 'film_machine_core') ? id : undefined;
       if (input.wetwall && !input.sixth && id !== this.playerId && entry.wetwallGuide) {

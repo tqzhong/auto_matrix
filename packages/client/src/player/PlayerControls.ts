@@ -488,6 +488,10 @@ export class PlayerControls {
     if (smithFinaleLocked(smithFinale)) this.performing = true;
     const epilogue = state.currentAction?.parameters.epilogue as MotionInput['epilogue'];
     if (this.motion.epilogue && !trilogyEpilogueLocked(epilogue)) this.performing = false;
+    if (trilogyEpilogueLocked(epilogue) && (!trilogyEpilogueLocked(this.motion.epilogue)
+      || epilogue?.kind === 'dawn' && epilogue.phase === 'architect' && this.motion.epilogue?.phase === 'sitting')) {
+      this.yaw = this.movementYaw = state.rotation; this.pitch = .06; this.cameraReady = false;
+    }
     if (trilogyEpilogueLocked(epilogue)) this.performing = true;
     if (this.motion.lobbyEntry && !state.currentAction?.parameters.lobbyEntry) this.performing = false;
     if ((state.currentAction?.parameters.lobbyEntry as MotionInput['lobbyEntry'])?.phase === 'checkpoint') this.performing = true;
@@ -1821,11 +1825,20 @@ export class PlayerControls {
       const gesture = this.motion.epilogue; const center = FILM_SETS[state.currentLocation].center;
       const carried = gesture.kind === 'neo_carried'; const dawn = gesture.kind === 'dawn';
       const focus = carried ? new THREE.Vector3(this.position.x, this.position.y + .4, this.position.z + 1.8)
-        : dawn ? new THREE.Vector3(center.x, center.y + 8, center.z - 28)
+        : dawn ? new THREE.Vector3(center.x - 6.4, center.y + 1.9, center.z - 22.4)
+          : gesture.kind === 'reset' ? new THREE.Vector3(this.position.x + .9, this.position.y - .45, this.position.z)
           : new THREE.Vector3(center.x, center.y + 5.5, center.z + (gesture.phase === 'retreat' ? -42 : 14));
       const ideal = carried ? new THREE.Vector3(this.position.x + 9.4, this.position.y + 6.4, this.position.z - 6)
-        : dawn ? new THREE.Vector3(center.x + 17, center.y + 9, center.z + 1)
+        : dawn ? new THREE.Vector3(center.x + 1, center.y + 4.1, center.z - 29)
+          : gesture.kind === 'reset' ? new THREE.Vector3(this.position.x + 6, this.position.y + 3.4, this.position.z + 6)
           : new THREE.Vector3(center.x + 15, center.y + 9, center.z + (gesture.phase === 'retreat' ? -20 : 31));
+      if (carried) ideal.sub(focus).multiplyScalar(Math.max(1, .92 / this.camera.aspect)).add(focus);
+      if (dawn) {
+        const sunrise = gesture.phase === 'sunrise' ? THREE.MathUtils.smoothstep(gesture.elapsed, 0, 6.2) : ['belief', 'done'].includes(gesture.phase) ? 1 : 0;
+        focus.lerp(new THREE.Vector3(center.x + 1, center.y + 10, center.z - 110), sunrise);
+        ideal.lerp(new THREE.Vector3(center.x - 6, center.y + 5.3, center.z - 5), sunrise);
+        if (this.camera.aspect < 1) ideal.x += 3;
+      }
       if (carried || resetCamera || gesture.elapsed < .08) this.camera.position.copy(ideal);
       else this.camera.position.lerp(ideal, 1 - Math.exp(-7 * delta));
       this.camera.lookAt(focus);
@@ -1991,7 +2004,15 @@ export class PlayerControls {
   }
 
   syncNeoCarryCamera(group: THREE.Group): void {
-    if (!this.firstPerson || this.motion.epilogue?.kind !== 'neo_carried') return;
+    if (!this.firstPerson || !this.motion.epilogue) return;
+    if (['dawn', 'reset'].includes(this.motion.epilogue.kind)) {
+      const head = group.getObjectByName(this.motion.epilogue.kind === 'dawn' ? 'oracle-head' : 'sati-head'); if (!head) return;
+      group.updateWorldMatrix(true, true);
+      const eye = head.localToWorld(new THREE.Vector3(0, 0, .27));
+      const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
+      this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward)); return;
+    }
+    if (this.motion.epilogue.kind !== 'neo_carried') return;
     const head = group.getObjectByName('head'); if (!head) return;
     group.updateWorldMatrix(true, true);
     const localEye = head.userData.cameraEye as THREE.Vector3 | undefined; if (!localEye) return;

@@ -8,6 +8,7 @@ import { poseOracleCookie } from './OracleCookiePerformance.js';
 import { poseOracleDeparture } from './OracleDeparturePerformance.js';
 import { poseOracleArrival } from './OracleArrivalPerformance.js';
 import { poseOracleRestored } from './OracleRestorationPerformance.js';
+import { poseGarden } from './GardenPerformance.js';
 import { poseWetwall } from './WetwallPerformance.js';
 import { poseSixthFloor } from './SixthFloorPerformance.js';
 import { poseBathroom } from './BathroomPerformance.js';
@@ -42,6 +43,8 @@ const HERO_LOOKS: Record<string, Look> = {
   smith: { face: 2, width: 1.02, shoulders: 0.68, waist: 0.41, hips: 0.46, skin: '#d7b399', cloth: '#252b28', leather: false, coat: false, hair: 'short', glasses: 'square' },
   morpheus: { face: 3, width: 1.13, shoulders: 0.71, waist: 0.44, hips: 0.49, skin: '#89614b', cloth: '#201a18', leather: true, coat: true, hair: 'bald', glasses: 'round' },
   oracle: { width: 1.05, shoulders: 0.62, waist: 0.43, hips: 0.52, skin: '#77513f', cloth: '#66745d', leather: false, coat: false, hair: 'short', glasses: 'none' },
+  architect: { width: 1.02, shoulders: .65, waist: .43, hips: .46, skin: '#c8b19b', cloth: '#a9b1aa', leather: false, coat: false, hair: 'short', glasses: 'none' },
+  sati: { width: 1.03, shoulders: .52, waist: .39, hips: .43, skin: '#aa7955', cloth: '#b4be92', leather: false, coat: false, hair: 'pixie', glasses: 'none' },
   seraph: { width: .94, shoulders: .58, waist: .34, hips: .4, skin: '#c5a27e', cloth: '#d7d4c6', leather: false, coat: false, hair: 'short', glasses: 'none' },
   merovingian: { width: 1, shoulders: .67, waist: .42, hips: .46, skin: '#d1ad97', cloth: '#171a1b', leather: false, coat: false, hair: 'short', glasses: 'none' },
   persephone: { width: .91, shoulders: .53, waist: .32, hips: .46, skin: '#e1bca9', cloth: '#621923', leather: false, coat: false, hair: 'pixie', glasses: 'none' },
@@ -231,6 +234,7 @@ export class CharacterModels {
       look.shoulders = state.id.endsWith('mace') ? .69 : .61;
     }
     const root = new THREE.Group(); const detail = new VisibleGroup(); root.add(detail);
+    if (state.id === 'sati') root.scale.setScalar(.64);
     if (state.id === 'spoon_boy') { root.scale.setScalar(.73); look.cloth = '#d5c7ac'; look.skin = '#d8b99b'; }
     if (state.id.startsWith('potential_')) {
       root.scale.setScalar(state.id === 'potential_blocks' ? .65 : .62 + Number(state.id.slice(-1)) * .025);
@@ -249,7 +253,7 @@ export class CharacterModels {
     }
     const cloth = this.material(new THREE.MeshPhysicalMaterial({ color: look.cloth, roughness: look.leather ? 0.43 : 0.88,
       metalness: 0, clearcoat: look.leather ? 0.22 : 0, clearcoatRoughness: 0.4, bumpMap: this.fabric, bumpScale: look.leather ? 0.003 : 0.002, side: THREE.DoubleSide }));
-    const trousers = state.id === 'seraph' || state.id === 'oracle' ? this.material(new THREE.MeshStandardMaterial({ color: state.id === 'oracle' ? '#554a40' : '#282c29', roughness: .9, bumpMap: this.fabric, bumpScale: .002 })) : cloth;
+    const trousers = state.id === 'sati' ? skin : state.id === 'seraph' || state.id === 'oracle' ? this.material(new THREE.MeshStandardMaterial({ color: state.id === 'oracle' ? '#554a40' : '#282c29', roughness: .9, bumpMap: this.fabric, bumpScale: .002 })) : cloth;
     const seams = this.material(new THREE.MeshStandardMaterial({ color: look.leather ? '#292e2a' : '#252c28', roughness: 0.75 }));
     const black = this.material(new THREE.MeshStandardMaterial({ color: '#070b0a', roughness: 0.32 }));
     const metal = this.material(new THREE.MeshStandardMaterial({ color: '#969c90', metalness: 0.88, roughness: 0.24 }));
@@ -284,6 +288,23 @@ export class CharacterModels {
       const bib = this.mesh(apronGroup, this.geometry(geometry), apron, [0, 0, 0]); bib.name = 'oracle-apron';
       for (const side of [-1, 1]) this.mesh(apronGroup, this.cylinder, apron, [side * .22, 1.7, .22], [.018, .42, .018]).rotation.z = side * .16;
     }
+    if (state.id === 'oracle' || state.id === 'sati') {
+      const outfit = new THREE.Group(); outfit.name = `${state.id}-park-outfit`; outfit.visible = state.id === 'sati'; detail.add(outfit);
+      const dress = this.material(new THREE.MeshStandardMaterial({ color: state.id === 'sati' ? '#a8b791' : '#809085', roughness: .95, side: THREE.DoubleSide, bumpMap: this.fabric, bumpScale: .0015 }));
+      const geometry = new THREE.CylinderGeometry(.51, .7, 1.58, 32, 10, true);
+      const skirt = this.mesh(outfit, this.geometry(geometry), dress, [0, 0, 0]); skirt.name = state.id === 'oracle' ? 'oracle-park-skirt' : 'sati-skirt';
+      // Keep the neutral dress valid outside an epilogue pose as well.
+      geometry.translate(0, 1.19, 0);
+      skirt.userData.standing = Float32Array.from(geometry.attributes.position.array);
+      if (state.id === 'oracle') {
+        const bag = new THREE.Group(); bag.name = 'oracle-park-handbag'; outfit.add(bag);
+        const leather = this.material(new THREE.MeshStandardMaterial({ color: '#393e36', roughness: .65 }));
+        this.mesh(bag, this.sphere, leather, [0, 0, 0], [.48, .29, .19]);
+        const strap = new THREE.EllipseCurve(0, 0, .36, .4, 0, Math.PI * 2, false, 0);
+        const curve = new THREE.CatmullRomCurve3(strap.getPoints(32).map(p => new THREE.Vector3(p.x, p.y + .25, 0)));
+        this.mesh(bag, this.geometry(new THREE.TubeGeometry(curve, 32, .018, 6, true)), leather, [0, 0, 0]);
+      }
+    }
     this.mesh(torso, this.cylinder, skin, [0, 1.79, 0], [0.145, 0.25, 0.135]);
     // Raised collars, seams, belt and tailored panels are visible from all sides.
     if (state.faction !== 'machines') {
@@ -304,6 +325,7 @@ export class CharacterModels {
     }
     const head = this.joint(torso, 0, 2.13);
     if (state.id === 'oracle') head.name = 'oracle-head';
+    if (state.id === 'sati') head.name = 'sati-head';
     let face = skin;
     if (look.face !== undefined) {
       const texture = this.atlas.clone();
@@ -329,7 +351,14 @@ export class CharacterModels {
       }
       this.mesh(head, this.sphere, this.material(new THREE.MeshStandardMaterial({ color: '#916756', roughness: 0.7 })), [0, -0.24, 0.224], [0.078, 0.014, 0.012]);
     }
-    if (look.hair !== 'bald') this.addHair(head, look);
+    if (look.hair !== 'bald') this.addHair(head, look, state.id === 'architect' ? '#c4c5bc' : '#100f0d');
+    if (state.id === 'architect') {
+      const beard = this.material(new THREE.MeshStandardMaterial({ color: '#c4c5bc', roughness: .96 }));
+      for (let i = 0; i < 15; i++) {
+        const angle = -1.15 + i / 14 * 2.3;
+        this.mesh(head, this.sphere, beard, [Math.sin(angle) * .18, -.26 - Math.cos(angle) * .04, Math.cos(angle) * .19], [.07, .09, .055]);
+      }
+    }
     if (state.id === 'persephone') {
       this.mesh(head, this.sphere, black, [0, .20, -.19], [.27, .25, .19]);
       this.mesh(head, this.sphere, black, [0, .28, .13], [.27, .10, .15]);
@@ -352,7 +381,7 @@ export class CharacterModels {
     for (const side of [-1, 1]) {
       const shoulder = this.joint(torso, side * look.shoulders * 0.87, 1.39);
       shoulders.push(shoulder);
-      const elbow = this.limb(shoulder, [[.10, -1.43], [.115, -1.23], [.14, -1.03], [.15, -.91], [.16, -.82], [.155, -.73], [.17, -.62], [.18, -.45], [.195, -.24], [.215, -.04], [.19, .08], [.10, .15], [.002, .18]], .81, cloth, .94);
+      const elbow = this.limb(shoulder, [[.10, -1.43], [.115, -1.23], [.14, -1.03], [.15, -.91], [.16, -.82], [.155, -.73], [.17, -.62], [.18, -.45], [.195, -.24], [.215, -.04], [.19, .08], [.10, .15], [.002, .18]], .81, state.id === 'sati' ? skin : cloth, .94);
       elbows.push(elbow);
       this.mesh(elbow, this.cylinder, seams, [0, -0.56, 0], [0.13, 0.045, 0.14]);
       const handMaterial = look.leather ? black : skin;
@@ -400,8 +429,8 @@ export class CharacterModels {
     return rig;
   }
 
-  private addHair(head: THREE.Group, look: Look): void {
-    const material = this.material(new THREE.MeshStandardMaterial({ color: '#100f0d', roughness: 0.84, bumpMap: this.fabric, bumpScale: 0.003 }));
+  private addHair(head: THREE.Group, look: Look, color: string): void {
+    const material = this.material(new THREE.MeshStandardMaterial({ color, roughness: 0.84, bumpMap: this.fabric, bumpScale: 0.003 }));
     // The front uses the albedo hairline. Only the back needs a separate cap.
     const back = new THREE.SphereGeometry(1, 24, 16, Math.PI, Math.PI, 0, Math.PI * 0.76);
     this.mesh(head, this.geometry(back), material, [0, 0.03, -0.015], [0.275 * look.width, 0.32, 0.235]);
@@ -707,6 +736,7 @@ export class CharacterModels {
     poseOracleCookie(rig, input.oracleVisit);
     poseOracleDeparture(rig, input.oracleDeparture);
     poseOracleArrival(rig, input.oracleArrival);
+    poseGarden(rig, input.epilogue, input.parkOutfit);
     poseWetwall(rig, input.wetwall, input.speed < .05 && Math.abs(input.climbing ?? 0) < .05);
     poseSixthFloor(rig, input.sixth);
     poseBasement(rig, input.basement);

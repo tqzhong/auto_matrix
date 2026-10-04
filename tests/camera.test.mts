@@ -8,6 +8,7 @@ import { PodSetRenderer } from '../packages/client/src/engine/PodSetRenderer.js'
 import { ApartmentSetRenderer } from '../packages/client/src/engine/ApartmentSetRenderer.js';
 import { NebDeckRenderer } from '../packages/client/src/engine/NebDeckRenderer.js';
 import { AmbushSetRenderer } from '../packages/client/src/engine/AmbushSetRenderer.js';
+import { MachineCoreRenderer } from '../packages/client/src/engine/MachineCoreRenderer.js';
 import { CABIN, CABIN_ROUTE_LENGTH, cabinBodyPose, downloadRoot, DOWNLOAD_OPERATOR, type DownloadSetup } from '@auto_matrix/shared';
 import { WETWALL, WETWALL_SHAFT, WETWALL_ROLES, wetwallEntry, wetwallPose, type WetwallEncounter, type WetwallGesture } from '@auto_matrix/shared';
 import { truthRoot, TRUTH_BEDSIDE, type TruthGesture } from '@auto_matrix/shared';
@@ -15,6 +16,7 @@ import { awakeningPose, podRescuePose, recoveryBodyPose, recoveryCrewPose, mirro
 import { MORNING, morningRoot, morningWakePose } from '@auto_matrix/shared';
 import { metacortexPosition, OFFICE_CUSTODY } from '@auto_matrix/shared';
 import { SPOON_LESSON, spoonLessonSeat, type SpoonLesson } from '@auto_matrix/shared';
+import { gardenPose, newTrilogyEpilogue } from '@auto_matrix/shared';
 import { APARTMENT, playerBlocked, apartmentComputerPose, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, INTERROGATION_ROOM, pillRoot, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, POD_WATER_DROP, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, TV_EXIT, airRescueRoot, matrixEscapeRoot, theOneRoot, tvExitEmergeRoot, wakeCallRoot, sentinelMachinePose, type TheOneEncounter } from '@auto_matrix/shared';
 
 test('observer camera releases drag and ignores pointer capture while a character controls the view', () => {
@@ -2169,18 +2171,49 @@ test('the machine funeral camera keeps carried Neo readable inside the central a
     kind: 'neo_carried', phase: 'transfer', elapsed: 1.6, total: 7.5, role: 'neo',
   } }, startedAt: 0, duration: 1, progress: 0 };
   game.controls.possess(game.state); game.step(.5);
-  assert.ok(game.camera.position.x > center.x + 11 && game.camera.position.x < center.x + 14,
-    'the carried shot must use the unobstructed aisle between the machine pillars');
+  const stage = new THREE.Group(); stage.position.set(center.x, center.y - 1, center.z);
+  const machine = new MachineCoreRenderer(stage); t.after(() => machine.dispose()); stage.updateMatrixWorld(true);
   const body = new THREE.Vector3(game.state.position.x, game.state.position.y + 1.1, game.state.position.z - .5).project(game.camera);
   assert.ok(Math.abs(body.x) < .55 && Math.abs(body.y) < .6 && body.z > -1 && body.z < 1,
     `Neo must remain the subject of the funeral shot: ${body.toArray().join(',')}`);
   for (const z of [-3, 3]) {
-    const end = new THREE.Vector3(game.state.position.x, game.state.position.y + .4, game.state.position.z + z).project(game.camera);
+    const target = new THREE.Vector3(game.state.position.x, game.state.position.y + .4, game.state.position.z + z);
+    const direction = target.clone().sub(game.camera.position);
+    const hits = new THREE.Raycaster(game.camera.position, direction.clone().normalize(), .06, direction.length() - .05)
+      .intersectObject(stage, true).filter(hit => {
+        for (let object: THREE.Object3D | null = hit.object; object; object = object.parent) if (!object.visible) return false;
+        return true;
+      });
+    assert.equal(hits.length, 0, 'the machine scenery must not obscure either end of the carried body');
+    const end = target.project(game.camera);
     assert.ok(Math.abs(end.x) < .8 && Math.abs(end.y) < .76, `the whole carried silhouette must fit: ${end.toArray().join(',')}`);
   }
   game.key('KeyV'); game.key('KeyV', false); game.step(.1);
   assert.ok(game.camera.position.distanceTo(new THREE.Vector3(game.state.position.x, game.state.position.y + 1.25, game.state.position.z + .7)) < .08,
     'first person must stay at Neo eye height while the barge carries him');
+});
+
+test('the park conversation frames its speakers and V follows the seated Oracle’s actual eye line', t => {
+  const game = setup(t, Math.PI), center = FILM_SETS.film_sunrise_garden.center;
+  const encounter = { ...newTrilogyEpilogue('dawn'), phase: 'choice' as const }, oracle = gardenPose(encounter, 'oracle');
+  game.state.id = 'oracle'; game.state.currentLocation = 'film_sunrise_garden';
+  game.state.position = filmPosition(game.state.currentLocation, oracle.x, oracle.z); game.state.rotation = oracle.yaw;
+  game.state.currentAction = { type: 'idle', parameters: { epilogue: { ...encounter, role: 'oracle' } }, startedAt: 0, duration: 1, progress: 0 };
+  for (const aspect of [16 / 9, 4 / 3, 9 / 16]) {
+    game.camera.aspect = aspect; game.camera.updateProjectionMatrix(); game.controls.possess(game.state); game.step(.3);
+    for (const role of ['oracle', 'architect'] as const) {
+      const pose = gardenPose(encounter, role), subject = new THREE.Vector3(center.x + pose.x, center.y + (role === 'oracle' ? 1.5 : 1.9), center.z + pose.z).project(game.camera);
+      assert.ok(Math.abs(subject.x) < .95 && Math.abs(subject.y) < .9 && subject.z > -1 && subject.z < 1, `${aspect}: ${role} missing from conversation ${subject.toArray()}`);
+    }
+  }
+  const head = new THREE.Group(); head.name = 'oracle-head'; head.position.set(0, 2.05, 0); game.group.add(head);
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1); game.controls.syncNeoCarryCamera(game.group);
+  const eye = head.localToWorld(new THREE.Vector3(0, 0, .27));
+  assert.ok(game.camera.position.distanceTo(eye) < .001, 'sitting first person must use the animated head, not a standing camera offset');
+  const direction = game.camera.getWorldDirection(new THREE.Vector3());
+  game.document.pointerLockElement = game.canvas;
+  game.event(game.document, 'mousemove', { movementX: 160, movementY: 30 }); game.step(.1); game.controls.syncNeoCarryCamera(game.group);
+  assert.ok(direction.distanceTo(game.camera.getWorldDirection(new THREE.Vector3())) > .1, 'seated first person remains lookable');
 });
 
 test('mountain return flight keeps Neo and the southern route in frame in both views', t => {

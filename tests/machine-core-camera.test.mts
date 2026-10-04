@@ -300,7 +300,8 @@ test('the carried body keeps its saved root and actual eye through waiting, tran
     assert.equal(group.children[0].rotation.y, Math.PI, 'observing cannot turn the unresponsive body');
     if (h.controls.firstPerson) assert.ok(h.camera.position.distanceTo(head.localToWorld((head.userData.cameraEye as THREE.Vector3).clone())) < .00001);
   };
-  for (const phase of ['ready', 'transfer', 'done'] as const) {
+  for (const aspect of [16 / 9, 4 / 3, 9 / 16]) for (const phase of ['ready', 'transfer', 'done'] as const) {
+    h.camera.aspect = aspect; h.camera.updateProjectionMatrix();
     for (const firstPerson of [false, true]) {
       h.controls.firstPerson = firstPerson; frame(phase);
       const position = h.camera.position.clone(), rotation = h.camera.quaternion.clone(), fov = h.camera.fov;

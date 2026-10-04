@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { neoCarryPose, newTrilogyEpilogue, trilogyEpilogueProgress, type TrilogyEpilogueEncounter, type TrilogyEpilogueKind } from '@auto_matrix/shared';
 import { MachineUplinkContacts } from './MachineUplinkContacts.js';
+import { SunriseGardenRenderer } from './SunriseGardenRenderer.js';
 
 /** Physical epilogue beats layered over the existing Zion, Machine City and park sets. */
 export class TrilogyEpilogueRenderer {
@@ -21,25 +22,19 @@ export class TrilogyEpilogueRenderer {
   private bargePosts: THREE.Mesh[] = [];
   private fittedBody?: THREE.Object3D;
   private cat?: THREE.Group;
-  private catEcho?: THREE.Group;
   private resetTiles: THREE.Mesh[] = [];
-  private sun?: THREE.Mesh;
-  private sunrise?: THREE.MeshBasicMaterial;
-  private rays: THREE.Mesh[] = [];
+  private park?: SunriseGardenRenderer;
 
   constructor(root: THREE.Group, private kind: TrilogyEpilogueKind) {
     root.add(this.group); this.group.name = `trilogy-epilogue-${kind}`;
     if (kind === 'ceasefire') this.buildCeasefire();
     else if (kind === 'neo_carried') this.buildCarried();
-    else this.buildDawn();
+    else if (kind === 'reset') this.buildReset();
+    else this.park = new SunriseGardenRenderer(this.group);
   }
 
   private material(color: number, roughness = .55, metalness = .15, emissive = 0, intensity = 0): THREE.MeshStandardMaterial {
     const material = new THREE.MeshStandardMaterial({ color, roughness, metalness, emissive, emissiveIntensity: intensity });
-    this.materials.add(material); return material;
-  }
-  private basic(color: number, opacity = 1): THREE.MeshBasicMaterial {
-    const material = new THREE.MeshBasicMaterial({ color, transparent: opacity < 1, opacity, depthWrite: opacity >= 1, side: THREE.DoubleSide });
     this.materials.add(material); return material;
   }
   private mesh(geometry: THREE.BufferGeometry, material: THREE.Material, parent = this.group): THREE.Mesh {
@@ -149,29 +144,25 @@ export class TrilogyEpilogueRenderer {
 
   private catModel(material: THREE.Material): THREE.Group {
     const cat = new THREE.Group();
-    const body = this.mesh(new THREE.CapsuleGeometry(.28, .8, 4, 10), material, cat); body.rotation.z = Math.PI / 2; body.position.y = .52;
+    const body = this.mesh(new THREE.CapsuleGeometry(.23, .65, 4, 12), material, cat); body.rotation.x = Math.PI / 2; body.position.y = .52;
     const head = this.mesh(new THREE.SphereGeometry(.35, 12, 9), material, cat); head.position.set(0, .7, -.62);
     for (const side of [-1, 1]) { const ear = this.mesh(new THREE.ConeGeometry(.15, .34, 4), material, cat); ear.position.set(side * .2, 1.02, -.65); }
-    for (const x of [-.34, .34]) for (const z of [-.35, .35]) { const leg = this.mesh(new THREE.CylinderGeometry(.055, .07, .48, 6), material, cat); leg.position.set(x, .25, z); }
+    for (const x of [-.16, .16]) for (const z of [-.35, .35]) {
+      const leg = new THREE.Group(); leg.name = 'reset-cat-leg'; leg.position.set(x, .5, z); cat.add(leg);
+      const shin = this.mesh(new THREE.CylinderGeometry(.055, .07, .43, 8), material, leg); shin.position.y = -.215;
+      const paw = this.mesh(new THREE.SphereGeometry(.07, 8, 6), material, leg); paw.position.set(0, -.44, -.025); paw.scale.z = 1.4;
+    }
     const tail = this.mesh(new THREE.TorusGeometry(.65, .055, 6, 18, Math.PI * 1.3), material, cat); tail.rotation.set(Math.PI / 2, 0, -.5); tail.position.set(.65, .72, .25);
     return cat;
   }
 
-  private buildDawn(): void {
+  private buildReset(): void {
     const black = this.material(0x111817, .82, .05); this.cat = this.catModel(black); this.cat.name = 'matrix-reset-black-cat'; this.group.add(this.cat);
-    const echoMaterial = this.basic(0x9ee8c3, .3); this.catEcho = this.catModel(echoMaterial); this.catEcho.name = 'matrix-reset-deja-vu-echo'; this.group.add(this.catEcho);
     const stone = this.material(0x7c8580, .94);
     for (let i = 0; i < 15; i++) {
-      const tile = this.mesh(new THREE.BoxGeometry(2.6 + i % 3, .2, 2.2 + (i * 2) % 3), stone); tile.position.set(-12 + i % 5 * 5.6, .08, -29 + Math.floor(i / 5) * 4.8);
+      const tile = this.mesh(new THREE.BoxGeometry(2.6 + i % 3, .2, 2.2 + (i * 2) % 3), stone); tile.position.set(-12 + i % 5 * 5.6, .1, -24 + Math.floor(i / 5) * 4.8);
       tile.rotation.y = (i % 3 - 1) * .14; tile.rotation.x = (i % 2 ? 1 : -1) * .09; this.resetTiles.push(tile);
     }
-    this.sunrise = this.basic(0xffba70, .02);
-    this.sun = this.mesh(new THREE.CircleGeometry(8, 48), this.sunrise); this.sun.name = 'sati-sunrise'; this.sun.position.set(0, 20, -52);
-    for (let i = 0; i < 7; i++) {
-      const material = this.basic(i % 2 ? 0xff87aa : 0xffc56d, .01);
-      const ray = this.mesh(new THREE.PlaneGeometry(4 + i * 1.6, 44), material); ray.position.set((i - 3) * 4.5, 15, -49 - i * .05); ray.rotation.z = (i - 3) * .09; this.rays.push(ray);
-    }
-    const warm = new THREE.PointLight(0xffae72, 0, 100, 1.2); warm.position.set(0, 18, -38); this.group.add(warm); this.lights.add(warm);
   }
 
   update(encounter: TrilogyEpilogueEncounter | undefined, elapsed: number, subject?: THREE.Object3D): void {
@@ -209,19 +200,20 @@ export class TrilogyEpilogueRenderer {
           post.position.set(side * halfWidth, .35 + height / 2, z); post.scale.y = height;
         });
       }
-    } else if (this.kind === 'dawn' && this.cat && this.catEcho && this.sunrise && this.sun) {
-      const catActive = phase === 'cat'; const catProgress = catActive ? progress : ['architect', 'choice', 'promise', 'sati', 'sunrise', 'belief', 'done'].includes(phase) ? 1 : 0;
-      this.cat.visible = catActive; this.cat.position.set(-15 + catProgress * 24, 0, -25); this.cat.rotation.y = Math.PI / 2;
-      this.catEcho.visible = catActive && progress > .34 && progress < .9; this.catEcho.position.set(-15 + Math.max(0, progress - .28) * 24, .02, -25); this.catEcho.rotation.y = Math.PI / 2;
-      this.resetTiles.forEach((tile, i) => { const reset = Math.max(0, Math.min(1, catProgress * 1.8 - i * .035)); tile.rotation.x = (i % 2 ? 1 : -1) * .09 * (1 - reset); tile.rotation.z = (i % 2 ? 1 : -1) * .08 * (1 - reset); tile.position.y = .08 + Math.sin(reset * Math.PI) * .42; });
-      const rise = phase === 'sunrise' ? progress : ['belief', 'done'].includes(phase) ? 1 : 0;
-      this.sunrise.opacity = .02 + rise * .96; this.sun.scale.setScalar(.3 + rise * .7); this.sun.position.y = 9 + rise * 11;
-      this.rays.forEach((ray, i) => { const material = ray.material as THREE.MeshBasicMaterial; material.opacity = rise * (.1 + i % 3 * .035); ray.scale.x = .25 + rise * .75; });
-      for (const light of this.lights) light.intensity = rise * 1250;
+    } else if (this.kind === 'reset' && this.cat) {
+      const catProgress = phase === 'cat' ? progress : phase === 'done' ? 1 : 0;
+      this.cat.visible = phase !== 'ready'; this.cat.position.set(-8 + Math.min(1, catProgress * 1.4) * 10, 0, -13); this.cat.rotation.y = -Math.PI / 2;
+      this.cat.getObjectsByProperty('name', 'reset-cat-leg').forEach((leg, i) => { leg.rotation.x = catProgress < .72 ? Math.sin(state.total * 8 + i % 3 * Math.PI) * .35 : 0; });
+      this.resetTiles.forEach((tile, i) => { const reset = Math.max(0, Math.min(1, catProgress * 2 - i * .035));
+        tile.visible = reset < .99; tile.rotation.x = (i % 2 ? 1 : -1) * .09 * (1 - reset); tile.position.y = .1 * (1 - reset); });
     }
+    this.park?.update(state);
   }
 
+  parkAtmosphere(): { color: number; ambient: number; sun: number } | undefined { return this.park?.atmosphere(); }
+
   dispose(): void {
+    this.park?.dispose();
     this.group.removeFromParent(); this.group.clear(); this.geometries.forEach(value => value.dispose());
     this.materials.forEach(value => value.dispose()); this.lights.forEach(value => value.dispose());
     this.geometries.clear(); this.materials.clear(); this.lights.clear();

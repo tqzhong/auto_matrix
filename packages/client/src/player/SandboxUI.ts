@@ -651,18 +651,28 @@ export class SandboxUI {
       document.getElementById('game-objective-copy')!.textContent = hint;
       return;
     }
-    if (!journey.visiting && ['m3_ceasefire', 'm3_neo_carried', 'm3_dawn'].includes(scene.id) && journey.epilogue) {
+    if (journey.finished && !journey.visiting) {
+      this.el('film-sequence').classList.add('hidden');
+      this.el('sandbox-waypoint').textContent = '';
+      this.el('sandbox-trace').textContent = '三部曲已完成';
+      document.getElementById('game-objective')!.textContent = '停战与本轮记忆已保存';
+      document.getElementById('game-objective-copy')!.textContent = 'J 查看手记、回访场景，或主动开始下一轮生活。';
+      return;
+    }
+    if (!journey.visiting && ['m3_ceasefire', 'm3_neo_carried', 'm3_reset', 'm3_dawn'].includes(scene.id) && journey.epilogue) {
       const epilogue = journey.epilogue; const phase = epilogue.phase;
       const near = Boolean(step && distance(player.position, filmStepPosition(scene, step)) <= 4);
       const names: Record<string, string> = { ready: '等待行动', retreat: '哨兵撤离', message_ready: '带回消息', running: '奔向人群', announcement: '宣布停战', embrace: '幸存者重逢', disconnecting: '连接断开', lowering: '放低身体', transfer: '转上驳船', departing: '驶入机器城', cat: '既视感与重置', architect: '停战协议', choice: '离开的权利', promise: '承诺已记录', sati: 'Sati 的礼物', sunrise: '新的日出', belief: '我相信', done: '尾声完成' };
+      Object.assign(names, { waking: 'Sati 醒来', cat: '街区恢复', sitting: '先知落座', leaving: '建筑师离开', sati: 'Sati 与先知重逢' });
       const hint = epilogue.kind === 'neo_carried' && phase === 'ready' ? 'Neo 已失去回应 · G 目送身体运送 · V 切换视角'
+        : epilogue.kind === 'reset' && phase === 'ready' ? 'G 睁开眼睛 · V 切换视角'
         : phase === 'done' ? 'G 或 J 继续；到最终场景后仍需亲自确认本轮结束'
-        : trilogyEpilogueLocked(epilogue) ? `${names[phase]} · 鼠标观察 · V 切换视角 · 当前一拍自动保存`
         : phase === 'choice' ? 'J 打开手记，要求建筑师明确谁可以离开矩阵'
           : phase === 'message_ready' ? 'WASD 跑回神庙人群 · 靠近后按 G 亲口报信'
-            : phase === 'promise' ? 'WASD 走向 Sati · 靠近后按 G 看她留下的日出'
+            : phase === 'promise' ? '留在长椅上 · G 迎接 Sati 与 Seraph'
+              : trilogyEpilogueLocked(epilogue) ? `${names[phase]} · 鼠标观察 · V 切换视角 · 当前一拍自动保存`
               : 'WASD 前往标记 · 靠近后按 G';
-      const interactive = (near || epilogue.kind === 'neo_carried') && ['ready', 'message_ready', 'promise'].includes(phase) || phase === 'done';
+      const interactive = (near || ['neo_carried', 'reset'].includes(epilogue.kind)) && ['ready', 'message_ready', 'promise'].includes(phase) || phase === 'done';
       this.el('film-sequence').classList.remove('hidden');
       this.el('film-sequence').classList.toggle('urgent', false);
       this.el('film-sequence-line').textContent = journey.lastText;

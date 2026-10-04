@@ -340,3 +340,31 @@ test('the completed farewell guides Neo to the machine city instead of asking fo
     assert.doesNotMatch(element(id).textContent, /记录|留下.*理解|反思/, `${id} cannot ask for the completed choice again`);
   }
 });
+
+test('confirming the sunrise replaces the final confirmation with saved completion and optional replay controls', async t => {
+  const outputs = await Promise.all(['FilmJourneyPanel', 'SandboxUI'].map(name => build({ entryPoints: [`packages/client/src/player/${name}.ts`], bundle: true,
+    platform: 'node', format: 'esm', write: false, loader: { '.css': 'empty' }, logLevel: 'silent' })));
+  const [journal, hud] = await Promise.all(outputs.map(output => import(`data:text/javascript;base64,${Buffer.from(output.outputFiles[0].contents).toString('base64')}`)));
+  const elements = new Map();
+  const element = (id: string) => {
+    if (!elements.has(id)) elements.set(id, { textContent: '', innerHTML: '', style: {}, classList: { add() {}, remove() {}, toggle() {} } });
+    return elements.get(id);
+  };
+  const document = globalThis.document; t.after(() => { globalThis.document = document; });
+  globalThis.document = { getElementById: element } as unknown as Document;
+  const ui = Object.assign(Object.create(hud.SandboxUI.prototype), { root: { querySelector: element }, tick: 0 });
+  const scene = FILM_SCENE_BY_ID.m3_dawn;
+  const player = { id: 'oracle', status: 'alive', isInMatrix: true, position: filmPosition(scene.set, -7, -20) } as AgentState;
+  const sandbox = { threats: [], neoLife: { cycle: 1, journey: { scene: scene.id, actor: 'oracle', step: scene.steps.length,
+    completed: [scene.id], reflections: {}, lastText: '需要确认本轮结束。', epilogue: { kind: 'dawn', phase: 'done', elapsed: 0, total: 40 } } } } as SandboxState;
+  assert.match(journal.renderFilmJourney(player, sandbox), /data-target="film:next" >确认完成本轮三部曲/);
+  sandbox.neoLife!.journey!.finished = true;
+  const html = journal.renderFilmJourney(player, sandbox);
+  assert.doesNotMatch(html, /确认.*本轮|data-target="film:next"/);
+  assert.match(html, /data-target="film:cycle" >保存记忆/);
+  assert.match(html, /data-target="film:visit:m3_dawn" >回访/);
+  ui.updateFilm(player, sandbox);
+  assert.match(element('#sandbox-nearby').textContent, /三部曲已完成/);
+  assert.match(element('game-objective-copy').textContent, /J.*回访.*下一轮/);
+  assert.doesNotMatch(element('game-objective-copy').textContent, /确认.*结束|G.*继续/);
+});
