@@ -862,6 +862,93 @@ test('Neo and Trinity make physical hand and face contact during the Logos farew
   } finally { models.dispose(); }
 });
 
+test('Neo rests his shipped occiput on both ship pillows without sinking into their surfaces', async () => {
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture()); const stage = new THREE.Group(); const deck = new NebDeckRenderer(stage);
+  (models as unknown as { load: typeof loadGeometry }).load = loadGeometry;
+  try {
+    const rig = (await models.create('neo'))!;
+    for (const room of ['medical', 'cabin'] as const) for (const elapsed of room === 'medical' ? [0, 2, 4, 6.8] : [0, .4, .9]) {
+      const root = room === 'medical' ? { ...recoveryBodyPose(0), z: RECOVERY_BED.z } : cabinBodyPose(elapsed);
+      rig.root.position.set(root.x, root.y, root.z); rig.root.rotation.y = root.yaw;
+      const pillow = stage.getObjectByName(`neb-${room}-pillow`)!; stage.updateMatrixWorld(true);
+      const pillowTop = new THREE.Box3().setFromObject(pillow).max.y;
+      const motion = newMotion(); const input: MotionInput = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true,
+        performance: room === 'medical' ? 'recover' : 'cabin', recovery: room === 'medical' ? elapsed : cabinBodyPose(elapsed).clock,
+        cabin: room === 'cabin' ? { kind: 'wake', elapsed, role: 'neo' } : undefined };
+      models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
+      let lowest = new THREE.Vector3(0, Infinity, 0); const skull: THREE.Vector3[] = [];
+      for (const { mesh } of rig.wardrobe) {
+        if (!(mesh instanceof THREE.SkinnedMesh) || !mesh.visible || (mesh.material as THREE.Material).name !== 'Skin') continue;
+        mesh.updateMatrixWorld(true); mesh.skeleton.update();
+        const { position, skinIndex, skinWeight } = mesh.geometry.attributes;
+        for (let i = 0; i < position.count; i++) {
+          if (![0, 1, 2, 3].some(j => skinWeight.getComponent(i, j) > .8 && mesh.skeleton.bones[skinIndex.getComponent(i, j)].name === 'head')) continue;
+          const point = mesh.getVertexPosition(i, new THREE.Vector3()).applyMatrix4(mesh.matrixWorld); skull.push(point);
+          if (point.y < lowest.y) lowest = point;
+        }
+      }
+      assert.ok(skull.length > 100, 'check the actual shipped head surface');
+      const surface = new THREE.Raycaster(lowest.clone().add(new THREE.Vector3(0, 2, 0)), new THREE.Vector3(0, -1, 0), 0, 3).intersectObject(pillow, true)[0];
+      assert.ok(surface, `the occiput has no ${room} pillow underneath at ${elapsed}s`);
+      const gap = lowest.y - surface.point.y;
+      assert.ok(Math.abs(gap) < .025, `the occiput floats or penetrates the ${room} pillow by ${gap} at ${elapsed}s`);
+      for (const point of skull) {
+        if (point.y > pillowTop + .025) continue;
+        const below = new THREE.Raycaster(point.clone().add(new THREE.Vector3(0, 2, 0)), new THREE.Vector3(0, -1, 0), 0, 3).intersectObject(pillow, true)[0];
+        if (below) assert.ok(point.y >= below.point.y - .025, `the head penetrates the pillow at ${elapsed}s: ${point.toArray()}`);
+      }
+    }
+  } finally { deck.dispose(); models.dispose(); }
+});
+
+test('the resting patient has supported hands and heels and stays outside the medical mattress', async () => {
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture()); const stage = new THREE.Group(); const deck = new NebDeckRenderer(stage);
+  (models as unknown as { load: typeof loadGeometry }).load = loadGeometry;
+  try {
+    const rig = (await models.create('neo'))!; const root = recoveryBodyPose(0);
+    rig.root.position.set(root.x, root.y, RECOVERY_BED.z); rig.root.rotation.y = root.yaw; stage.updateMatrixWorld(true);
+    const body = rig.wardrobe.find(part => part.mesh.userData.patientBody)!.mesh as THREE.SkinnedMesh;
+    for (const elapsed of [0, 2.1, 4, 6.8]) {
+      const motion = newMotion(); const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true,
+        performance: 'recover' as const, recovery: elapsed };
+      models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true); body.skeleton.update();
+      const contacts = new Map<string, THREE.Vector3>(); const { position, skinIndex, skinWeight } = body.geometry.attributes;
+      for (let i = 0; i < position.count; i++) {
+        const point = body.getVertexPosition(i, new THREE.Vector3()).applyMatrix4(body.matrixWorld);
+        if (Math.abs(point.x - RECOVERY_BED.x) < 1.425 && Math.abs(point.z - RECOVERY_BED.z) < 3.175)
+          assert.ok(point.y >= RECOVERY_BED.surface - .025, `the patient penetrates the mattress at ${elapsed}s: ${point.toArray()}`);
+        for (let j = 0; j < 4; j++) {
+          if (skinWeight.getComponent(i, j) < .5) continue;
+          const name = body.skeleton.bones[skinIndex.getComponent(i, j)].name;
+          if (!/^(wrist|ankle)_[RL]$/.test(name)) continue;
+          if (!contacts.has(name) || point.y < contacts.get(name)!.y) contacts.set(name, point);
+        }
+      }
+      for (const { mesh } of rig.wardrobe) {
+        if (!(mesh instanceof THREE.SkinnedMesh) || !mesh.visible || (mesh.material as THREE.Material).name !== 'Skin') continue;
+        mesh.updateMatrixWorld(true); mesh.skeleton.update();
+        for (let i = 0; i < mesh.geometry.attributes.position.count; i++) {
+          const point = mesh.getVertexPosition(i, new THREE.Vector3()).applyMatrix4(mesh.matrixWorld);
+          if (Math.abs(point.x - RECOVERY_BED.x) < 1.425 && Math.abs(point.z - RECOVERY_BED.z) < 3.175)
+            assert.ok(point.y >= RECOVERY_BED.surface - .025, `the visible skin penetrates the mattress at ${elapsed}s: ${point.toArray()}`);
+          const { skinIndex, skinWeight } = mesh.geometry.attributes;
+          for (let j = 0; j < 4; j++) {
+            const name = mesh.skeleton.bones[skinIndex.getComponent(i, j)].name;
+            if (skinWeight.getComponent(i, j) >= .5 && /^wrist_[RL]$/.test(name) && point.y < contacts.get(name)!.y) contacts.set(name, point);
+          }
+        }
+      }
+      assert.equal(contacts.size, 4, 'use both hands, including the separate palm skin, and both heels');
+      for (const [name, point] of contacts) {
+        const surface = new THREE.Raycaster(point.clone().add(new THREE.Vector3(0, 2, 0)), new THREE.Vector3(0, -1, 0), 0, 3)
+          .intersectObject(stage.getObjectByName('neb-medical-bed')!, true)[0];
+        assert.ok(surface, `${name} hangs outside the bed at ${elapsed}s`);
+        assert.ok(Math.abs(point.y - surface.point.y) < .055, `${name} is unsupported by ${point.y - surface.point.y} at ${elapsed}s`);
+      }
+    }
+  } finally { deck.dispose(); models.dispose(); }
+});
+
 test('the recovery needles stop at the shipped patient skin instead of penetrating to the bones', async () => {
   const models = new HeroModels(new THREE.Texture(), new THREE.Texture()); const set = new THREE.Group(); const medical = new NebDeckRenderer(set);
   (models as unknown as { load: typeof loadGeometry }).load = loadGeometry;
