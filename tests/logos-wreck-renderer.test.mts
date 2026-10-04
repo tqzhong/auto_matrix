@@ -5,7 +5,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { HeroModels } from '../packages/client/src/agents/HeroModel.js';
 import { advanceMotion, newMotion } from '../packages/client/src/agents/CharacterMotion.js';
 import * as THREE from 'three';
-import { farewellPose, newFarewell } from '@auto_matrix/shared';
+import { farewellPose, newFarewell, FILM_SCENE_BY_ID, FILM_SETS, filmEntry } from '@auto_matrix/shared';
 import { LogosWreckRenderer } from '../packages/client/src/engine/LogosWreckRenderer.js';
 
 function capture(root: THREE.Group) {
@@ -17,6 +17,84 @@ function capture(root: THREE.Group) {
   });
   return state;
 }
+
+test('the cockpit key light keeps its local downward direction at the actual distant film set', () => {
+  const root = new THREE.Group(), renderer = new LogosWreckRenderer(root);
+  try {
+    let key!: THREE.DirectionalLight;
+    root.traverse(object => { if (object instanceof THREE.DirectionalLight) key = object; });
+    const direction = () => {
+      root.updateMatrixWorld(true); key.target.updateWorldMatrix(true, false);
+      return key.target.getWorldPosition(new THREE.Vector3()).sub(key.getWorldPosition(new THREE.Vector3())).normalize();
+    };
+    const local = direction();
+    const center = FILM_SETS.film_logos_wreck.center;
+    root.position.set(center.x, center.y - 1, center.z);
+    const placed = direction();
+    assert.ok(placed.distanceTo(local) < .0001, `placing the set changes its key direction by ${placed.distanceTo(local)}`);
+    assert.ok(placed.y < -.7, 'the broken windshield light must reach the seated bodies and deck from above');
+  } finally { renderer.dispose(); }
+});
+
+test('cockpit ribs leave the entry route and both farewell camera sightlines clear', () => {
+  const root = new THREE.Group(), renderer = new LogosWreckRenderer(root);
+  try {
+    root.updateMatrixWorld(true);
+    const structure: THREE.Mesh[] = [];
+    root.traverse(item => {
+      if (item instanceof THREE.Mesh && item.geometry instanceof THREE.TorusGeometry && item.geometry.parameters.radius === 7.65) structure.push(item);
+    });
+    structure.push(root.getObjectByName('logos-wreck-windshield') as THREE.Mesh);
+    const scene = FILM_SCENE_BY_ID.m3_farewell, set = FILM_SETS[scene.set];
+    const entryZ = filmEntry(scene).z - set.center.z, reachZ = scene.steps[0].z!;
+    // Renderer origin is one metre below the shared scene floor. These are the
+    // actual standing and follow-camera offsets used by PlayerControls.
+    const pitch = .24, head = new THREE.Vector3(.2, 3.28, -15.96);
+    const assertClear = (eye: THREE.Vector3, target: THREE.Vector3, label: string) => {
+      const delta = target.clone().sub(eye);
+      const hits = new THREE.Raycaster(eye, delta.clone().normalize(), 0, delta.length()).intersectObjects(structure, false);
+      assert.equal(hits.length, 0, `${label}: frame blocks view at ${hits.map(hit => hit.point.toArray().map(n => n.toFixed(2)))}`);
+    };
+    for (let step = 0; step <= 24; step++) {
+      const z = THREE.MathUtils.lerp(entryZ, reachZ, step / 24);
+      const eyes = new THREE.Vector3(0, 3.99, z);
+      assertClear(eyes, head, `first person at ${z.toFixed(2)}`);
+      for (const narrow of [false, true]) {
+        const follow = narrow ? 13 : 11.5;
+        const camera = new THREE.Vector3(narrow ? .3 : .8, 3.05 + (Math.sin(pitch) + .1) * follow, z + Math.cos(pitch) * follow);
+        assertClear(camera, eyes, `follow camera at ${z.toFixed(2)}`);
+        assertClear(camera, head, `Trinity ahead at ${z.toFixed(2)}`);
+      }
+    }
+    for (const phase of ['ready', 'reaching', 'goodbye', 'kiss', 'still'] as const) {
+      const pose = farewellPose({ ...newFarewell(), phase, elapsed: 1.5 });
+      for (const side of [4.8, 5.8]) {
+        assertClear(new THREE.Vector3(pose.neo.x + side, 5.4, pose.neo.z + 3.2), head, `${phase} Trinity face`);
+      }
+    }
+  } finally { renderer.dispose(); }
+});
+
+test('cockpit ribs remain solid transverse roof and side supports outside the walkable aisle', () => {
+  const root = new THREE.Group(), renderer = new LogosWreckRenderer(root);
+  try {
+    root.updateMatrixWorld(true);
+    const ribs: THREE.Mesh[] = [];
+    root.traverse(item => {
+      if (item instanceof THREE.Mesh && item.geometry instanceof THREE.TorusGeometry && item.geometry.parameters.radius === 7.65 && item.visible && item.parent!.visible) ribs.push(item);
+    });
+    // Probe the structural bays even if geometry is removed: the roof and both
+    // side supports must still be hittable, not hidden to clear the view.
+    for (let bay = 0; bay < 12; bay++) {
+      const z = -16 + bay * 2.85, origin = new THREE.Vector3(0, 3.99, z);
+      for (const direction of [new THREE.Vector3(0, 1, 0), new THREE.Vector3(1, 0, 0), new THREE.Vector3(-1, 0, 0)]) {
+        const hits = new THREE.Raycaster(origin, direction, 0, 9).intersectObjects(ribs, false);
+        assert.ok(hits.length, `missing structural support at z=${z}, direction=${direction.toArray()}`);
+        assert.ok(hits[0].distance > (direction.y ? 3 : 5.5), `rib intrudes into the aisle at ${hits[0].point.toArray()}`);
+      }
+    }
+  } finally { renderer.dispose(); }
+});
 
 test('wreck fire and machine sight retain the saved farewell beat across pauses and reloads', () => {
   const root = new THREE.Group(), restored = new THREE.Group();

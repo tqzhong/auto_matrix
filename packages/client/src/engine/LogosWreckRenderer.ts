@@ -48,9 +48,11 @@ export class LogosWreckRenderer {
     const deck = this.mesh(new THREE.BoxGeometry(14.5, .7, 37), black); deck.position.set(0, -.35, -1); deck.rotation.z = -.035;
 
     for (let i = 0; i < 12; i++) {
-      const rib = this.mesh(new THREE.TorusGeometry(7.65, .19, 7, 24, Math.PI * 1.08), i % 3 ? hull : torn);
-      rib.position.set((i % 2 ? -.22 : .18) * (i / 12), 5.25 + Math.sin(i * 1.8) * .12, -16 + i * 2.85);
-      rib.rotation.set(Math.PI / 2, 0, Math.PI / 2 + (i % 4 - 1.5) * .025);
+      // Torus arcs already lie in XY: upright cross-sections around the Z aisle.
+      // Small offsets and roll retain the buckled hull without rings across faces.
+      const rib = this.mesh(new THREE.TorusGeometry(7.65, .19, 7, 24, Math.PI), i % 3 ? hull : torn);
+      rib.position.set((i % 2 ? -.22 : .18) * (i / 12), .25 + Math.sin(i * 1.8) * .12, -16 + i * 2.85);
+      rib.rotation.z = (i % 4 - 1.5) * .025;
     }
     for (let i = 0; i < 16; i++) {
       const panel = this.mesh(new THREE.BoxGeometry(2.2 + i % 4 * .7, .18 + i % 3 * .08, 3.8 + i % 5 * .65), i % 3 ? hull : torn,
@@ -60,16 +62,19 @@ export class LogosWreckRenderer {
       panel.rotation.set((i % 5 - 2) * .11, side * (.12 + i % 4 * .08), side * (.08 + i % 3 * .06));
     }
 
-    const console = this.mesh(new THREE.BoxGeometry(10.8, 2.1, 3.8), hull); console.position.set(0, 1.05, -18.2); console.rotation.x = -.2;
+    const console = this.mesh(new THREE.BoxGeometry(10.8, 2.1, 3.8), hull, this.group, 'logos-wreck-console'); console.position.set(0, 1.05, -19.2); console.rotation.x = -.2;
     for (let i = -3; i <= 3; i++) {
       const screen = this.mesh(new THREE.BoxGeometry(1.15, .08, .78), deadScreen);
-      screen.position.set(i * 1.45, 2.18 + Math.abs(i) * .05, -17.45); screen.rotation.x = -.88;
+      screen.position.set(i * 1.45, 2.18 + Math.abs(i) * .05, -18.45); screen.rotation.x = -.88;
       if (i === -2 || i === 1) screen.rotation.z = i * .08;
     }
-    for (const side of [-1, 1]) {
-      const chair = this.mesh(new THREE.BoxGeometry(2.25, .42, 3.2), black); chair.position.set(side * 2.65, .55, -12.8); chair.rotation.x = -.18;
-      const back = this.mesh(new THREE.BoxGeometry(2.25, 3.2, .42), black); back.position.set(side * 2.65, 2.05, -11.55); back.rotation.x = -.28;
-    }
+    // The displaced pilot chair supports Trinity's actual pelvis and upper back.
+    // Its short front edge leaves her bent thighs and Neo's approach unobstructed.
+    const chair = this.mesh(new THREE.BoxGeometry(1.65, .3, .85), black, this.group, 'logos-wreck-trinity-seat'); chair.position.set(0, 1.2, -15.98);
+    const back = this.mesh(new THREE.BoxGeometry(1.65, 1.45, .25), black, this.group, 'logos-wreck-trinity-back'); back.position.set(.08, 2.55, -16.5); back.rotation.x = -.18;
+    const mount = this.mesh(new THREE.BoxGeometry(1.1, 1.05, .62), hull, this.group, 'logos-wreck-chair-mount'); mount.position.set(0, .525, -16.05);
+    const otherSeat = this.mesh(new THREE.BoxGeometry(2.25, .42, 3.2), black); otherSeat.position.set(2.65, .55, -12.8); otherSeat.rotation.x = -.18;
+    const otherBack = this.mesh(new THREE.BoxGeometry(2.25, 3.2, .42), black); otherBack.position.set(2.65, 2.05, -11.55); otherBack.rotation.x = -.28;
 
     const windshield = this.mesh(new THREE.TorusGeometry(6.1, .26, 8, 30, Math.PI * 1.1), torn, this.group, 'logos-wreck-windshield');
     windshield.position.set(0, 6.2, -21); windshield.rotation.set(Math.PI / 2, 0, -.05);
@@ -112,7 +117,8 @@ export class LogosWreckRenderer {
     }
 
     const cold = new THREE.HemisphereLight(0x78969a, 0x090d0e, .6); this.group.add(cold); this.lights.push(cold);
-    const slit = new THREE.DirectionalLight(0xd4a05c, 1.5); slit.position.set(-8, 18, -24); this.group.add(slit); this.lights.push(slit);
+    const slit = new THREE.DirectionalLight(0x94b7cc, 1.1); slit.position.set(-8, 18, -24); slit.target.position.set(0, 1.8, -15);
+    this.group.add(slit, slit.target); this.lights.push(slit);
   }
 
   private buildMachineSight(): void {

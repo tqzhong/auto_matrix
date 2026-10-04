@@ -169,7 +169,10 @@ export class Engine {
     this.agentRenderer.update(delta, this.camera, this.simulationSpeed, this.tick, meeting);
     if (this.playerControls?.id) {
       const group = this.agentRenderer.getAgent(this.playerControls.id);
-      if (group) this.playerControls.syncTruckRescueCamera(group);
+      if (group) {
+        this.playerControls.syncTruckRescueCamera(group);
+        this.playerControls.syncFarewellCamera(group);
+      }
     }
     this.filmSets.setMirrorSubject(this.playerControls?.id ? this.agentRenderer.getAgentBody(this.playerControls.id) : undefined);
     this.filmSets.setRecoverySubject(this.agentRenderer.getAgentBody('neo'));

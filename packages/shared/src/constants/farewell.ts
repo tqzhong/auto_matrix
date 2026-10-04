@@ -63,7 +63,7 @@ export function farewellPose(encounter: FarewellEncounter): FarewellPose {
   return {
     neo: {
       x: FAREWELL.neo.x,
-      z: FAREWELL.neo.z - reaching * 1.45 - kiss * .18,
+      z: FAREWELL.neo.z - reaching * 1.45 - kiss * .18 * (1 - release),
       yaw: FAREWELL.neo.yaw,
       kneel: reaching,
       lean: holding * .22 + kiss * .62,

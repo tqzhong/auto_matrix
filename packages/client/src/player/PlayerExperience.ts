@@ -1,5 +1,5 @@
 import { catchLocked, deusPactLocked, farewellLocked, helElevatorLocked, helDanceDoorLocked, reloadedLocked, smithFinaleLocked, trilogyEpilogueLocked } from '@auto_matrix/shared';
-import { COMBAT_SKILLS, playerSkills, neoSkillUnlocked, CHARACTERS, LOCATIONS, filmSetAt, filmObstacles, distance, matrixEscapeLocked, theOneLocked, type AgentState, type SimulationState, type WorldEvent, type NeoLifeState } from '@auto_matrix/shared';
+import { COMBAT_SKILLS, playerSkills, neoSkillUnlocked, CHARACTERS, LOCATIONS, FILM_SCENE_BY_ID, filmSetAt, filmObstacles, distance, matrixEscapeLocked, theOneLocked, type AgentState, type SimulationState, type WorldEvent, type NeoLifeState } from '@auto_matrix/shared';
 import { FACTION_COLORS } from '../agents/AgentRenderer.js';
 
 const escape = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]!));
@@ -208,8 +208,9 @@ export class PlayerExperience {
     if (neoLife?.journey?.logos?.phase === 'riding') this.el('mouse-hint').textContent = neoLife.journey.logos.mode === 'defense'
       ? 'W 爬升 · S 俯冲 · A / D 横移 · G / 右键 Neo 感知 · V 切换视角'
       : 'W 爬升穿云 · A / D 修正姿态 · V 切换视角 · J 手记';
-    if (neoLife?.journey?.scene === 'm3_farewell' && !neoLife.journey.visiting) this.el('mouse-hint').textContent = neoLife.journey.farewell?.phase === 'still'
-      ? 'J 打开手记，记录 Neo 对告别的理解 · V 切换视角'
+    if (neoLife?.journey?.scene === 'm3_farewell' && !neoLife.journey.visiting) this.el('mouse-hint').textContent = neoLife.journey.step >= FILM_SCENE_BY_ID.m3_farewell.steps.length
+      ? 'J 打开手记，继续下一段 · 前往机器城 · V 切换视角'
+      : neoLife.journey.farewell?.phase === 'still' ? 'J 打开手记，记录 Neo 对告别的理解 · V 切换视角'
       : farewellPerforming ? '鼠标观察 · V 切换视角 · 当前告别动作自动保存' : 'WASD 穿过残骸 · 靠近 Trinity 后按 G';
     if (neoLife?.journey?.scene === 'm3_deus' && !neoLife.journey.visiting) this.el('mouse-hint').textContent = neoLife.journey.deus?.phase === 'swarm'
       ? '继续按住 G 站稳 · 松开会失去谈判机会 · V 切换视角'

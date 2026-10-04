@@ -7,12 +7,16 @@ import {
   FILM_SETS,
   farewellLocked,
   farewellPose,
+  filmEntry,
   filmStepPosition,
   newFarewell,
   stepFarewell,
   type WorldEvent,
+  type FilmJourney,
+  type SandboxState,
 } from '@auto_matrix/shared';
 import { LogosWreckRenderer } from '../packages/client/src/engine/LogosWreckRenderer.js';
+import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -94,4 +98,28 @@ test('the wreck renderer exposes the crushed cockpit, rebar, fire, sparks and go
   assert.ok(meshes.length > 55, 'the wreck must read as a dedicated physical set');
   const disposed: string[] = []; meshes.forEach(mesh => mesh.geometry.addEventListener('dispose', () => disposed.push(mesh.uuid)));
   renderer.dispose(); assert.equal(root.children.length, 0); assert.ok(disposed.length > 0);
+});
+
+test('the approach waypoint leaves the bodies and lighting clear throughout the farewell', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const player = world.agents.get('neo')!, scene = new THREE.Scene(), renderer = new FilmSetRenderer(scene);
+  player.position = filmEntry(FILM_SCENE_BY_ID.m3_farewell); player.currentLocation = 'film_logos_wreck'; player.isInMatrix = false;
+  const journey: FilmJourney = { version: 1, scene: 'm3_farewell', actor: 'neo', step: 1, completed: [],
+    enteredAt: 0, reflections: {}, lastText: '', checkpoint: player.position, farewell: newFarewell() };
+  const sandbox = { neoLife: { journey }, structures: [] } as unknown as SandboxState;
+  try {
+    const marker = scene.children.find(object => object instanceof THREE.Mesh && object.geometry instanceof THREE.TorusGeometry)!;
+    const light = scene.children.find(object => object instanceof THREE.PointLight)!;
+    renderer.update(player, sandbox, 0); assert.equal(marker.visible, true); assert.equal(light.visible, true);
+    for (const phase of ['reaching', 'discovery', 'promise', 'goodbye', 'kiss', 'still'] as const) {
+      journey.farewell = { phase, elapsed: 1.5, total: 17.1 };
+      for (const time of [4, 200]) {
+        renderer.update(player, sandbox, time);
+        assert.equal(marker.visible, false, `${phase}: the pulsing waypoint must not overlap the actors during a locked or paused farewell`);
+        assert.equal(light.visible, false, `${phase}: the waypoint light must not tint the saved performance`);
+      }
+    }
+    journey.farewell = newFarewell(); renderer.update(player, sandbox, 201); assert.equal(marker.visible, true);
+  } finally { renderer.dispose(); }
 });
