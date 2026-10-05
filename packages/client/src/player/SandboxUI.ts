@@ -1,4 +1,5 @@
 import { crosscutActive, crosscutAction, crosscutText } from '@auto_matrix/shared';
+import { DOCK_RELOAD, dockReloadActive, dockReloadText } from '@auto_matrix/shared';
 import { truthFade, CABIN, CABIN_ROUTE_LENGTH } from '@auto_matrix/shared';
 import { mirrorTime, mirrorEntryPose, awakeningDuration } from '@auto_matrix/shared';
 import { nearMetacortexLift, metacortexLiftLocked } from '@auto_matrix/shared';
@@ -1649,6 +1650,20 @@ export class SandboxUI {
       this.el('film-alert-label').textContent = `已下降 ${Math.round(journey.office.climbed / 2)} / 16 m · W 向下 · S 向上 · 松手停留`;
       document.getElementById('game-objective-copy')!.textContent = '沿维修梯抵达下方平台 · 可停在横档上观察';
       this.el('sandbox-waypoint').textContent = '↓ 维修平台'; this.el('sandbox-interact').classList.add('hidden'); return;
+    }
+    if (dockReloadActive(journey)) {
+      const reload = journey.dockReload, center = FILM_SETS[scene.set].center;
+      const gap = Math.hypot(player.position.x - center.x - DOCK_RELOAD.entry.x, player.position.z - center.z - DOCK_RELOAD.entry.z);
+      const approach = journey.actor === 'kid' && (!reload || reload.phase === 'approach');
+      this.el('film-ride').classList.remove('hidden');
+      this.el('film-ride-title').textContent = 'KID / APU 装填';
+      this.el('film-ride-speed').textContent = reload ? `${Math.ceil(reload.remaining)} 秒` : '送弹抵达';
+      this.el('film-ride-health').textContent = reload ? `提升 ${Math.round(reload.lift * 100)}% · 攀爬 ${Math.round(reload.climb * 100)}% · 支撑 ${Math.round(reload.brace / DOCK_RELOAD.braceSeconds * 100)}%` : 'G 接管 Kid';
+      this.el('film-ride-controls').textContent = dockReloadText(reload);
+      this.el('sandbox-interact').classList.toggle('hidden', !(journey.actor === 'mifune' || approach && gap <= 1.5));
+      this.el('sandbox-nearby').textContent = journey.actor === 'mifune' ? '接管 Kid' : 'APU 后部装填架';
+      this.el('sandbox-waypoint').textContent = approach ? `后部装填架 ↑ ${Math.ceil(gap)} m` : '';
+      document.getElementById('game-objective-copy')!.textContent = reload?.phase === 'failed' ? 'J 打开手记，从装填重试' : dockReloadText(reload); return;
     }
     if (scene.id === 'm3_dock_battle' && journey.dockGunnery?.phase === 'firing' && !journey.visiting) {
       const gunner = journey.dockGunnery;

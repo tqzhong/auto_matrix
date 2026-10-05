@@ -9,6 +9,7 @@ import { poseOracleDeparture } from './OracleDeparturePerformance.js';
 import { poseOracleArrival } from './OracleArrivalPerformance.js';
 import { poseOracleRestored } from './OracleRestorationPerformance.js';
 import { poseGarden } from './GardenPerformance.js';
+import { poseDockReload } from './DockReloadPerformance.js';
 import { EpilogueHeads } from './EpilogueHeads.js';
 import { poseWetwall } from './WetwallPerformance.js';
 import { poseSixthFloor } from './SixthFloorPerformance.js';
@@ -783,6 +784,7 @@ export class CharacterModels {
     poseOracleDeparture(rig, input.oracleDeparture);
     poseOracleArrival(rig, input.oracleArrival);
     poseGarden(rig, input.epilogue, input.parkOutfit);
+    poseDockReload(rig, input.dockReload);
     poseWetwall(rig, input.wetwall, input.speed < .05 && Math.abs(input.climbing ?? 0) < .05);
     poseSixthFloor(rig, input.sixth);
     poseBasement(rig, input.basement);

@@ -39,6 +39,7 @@ export * from './constants/trilogy-epilogue.js';
 export * from './constants/sunrise-garden.js';
 export * from './constants/dock-apu.js';
 export * from './constants/dock-gunnery.js';
+export * from './constants/dock-reload.js';
 export * from './constants/trucks.js';
 export * from './constants/awakening.js';
 export * from './constants/cabin.js';

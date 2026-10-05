@@ -1,3 +1,4 @@
+import { DOCK_RELOAD, dockReloadActive } from './dock-reload.js';
 import { METACORTEX, metacortexPosition } from './metacortex.js';
 import { FILM_SETS, filmPosition } from './film-sets.js';
 import { SMITH_FINALE, smithCraterAmount } from './smith-finale.js';
@@ -107,6 +108,7 @@ export interface FilmJourney {
   epilogue?: import('./trilogy-epilogue.js').TrilogyEpilogueEncounter;
   apu?: import('./dock-apu.js').ApuRun;
   dockGunnery?: import('./dock-gunnery.js').DockGunnery;
+  dockReload?: import('./dock-reload.js').DockReload;
   emp?: { firedAt: number };
   templeSeal?: { phase: 'running' | 'failed' | 'sealed'; remaining: number; lastTick: number; attempts: number };
   trucks?: import('./trucks.js').TruckEncounter;
@@ -418,7 +420,7 @@ export const FILM_SCENES: FilmScene[] = [
     use('让 Morpheus 接管侧向推进器', '船员就位。保持速度穿过弯道和横向管梁；太慢会让哨兵追上。', 0, 175, 1.5),
     { kind: 'drive', label: '驾驶 Hammer 穿过机械管线', x: 0, z: 175 },
   ], ['morpheus', 'roland']),
-  scene('m3_dock_battle', 3, 'zion_hangar', 'mifune', '船坞的弹药与钢铁', 'siege', 'siege', '钻头突破穹顶，哨兵涌入船坞。Mifune 驾驶 APU 为推送弹药车的 Kid 扫清航路。', [fight('以 APU 双炮掩护 Kid 的弹药车', 4, 'sentinel'), use('让 Kid 装入卡住的弹箱', 'Kid 爬上 APU，把卡住的弹箱踢入位。更多哨兵从穹顶涌来，Mifune 把打开闸门的任务交给他。', 0, 12, 2)], ['kid', 'zee', 'charra']),
+  scene('m3_dock_battle', 3, 'zion_hangar', 'mifune', '船坞的弹药与钢铁', 'siege', 'siege', '钻头突破穹顶，哨兵涌入船坞。Mifune 驾驶 APU 为推送弹药车的 Kid 扫清航路。', [fight('以 APU 双炮掩护 Kid 的弹药车', 4, 'sentinel'), use('接管 Kid，升箱、攀爬并踢入卡住的弹箱', 'Kid 抓稳 APU 后架，把卡住的弹箱踢入导轨，再爬回地面。船坞防线仍在遭受攻击。', -.95, 16.25)], ['kid', 'zee', 'charra']),
   scene('m3_gate', 3, 'zion_hangar', 'kid', '打开三号闸门', 'siege', 'siege', 'Mifune 受致命伤，把打开闸门的任务交给 Kid。', [
     fight('突破闸门附近的哨兵', 2, 'sentinel'),
     { kind: 'drive', label: '接管受损 APU，冲向三号闸门', x: 0, z: 12 },
@@ -488,6 +490,7 @@ export function oracleActing(journey: FilmJourney): boolean {
       || oracleDepartureLocked(journey.oracle?.departure) || Boolean(journey.oracle?.consultation && !['waiting', 'done'].includes(journey.oracle.consultation.phase))));
 }
 export function filmStepPosition(scene: FilmScene, step: FilmStep, journey?: FilmJourney): Vector3 {
+  if (dockReloadActive(journey) && journey?.actor === 'kid') return filmPosition(scene.set, DOCK_RELOAD.entry.x, DOCK_RELOAD.entry.z);
   if (scene.id === 'm1_basement') {
     const escape = journey?.basement;
     const target = escape?.phase === 'tunnel' || escape?.phase === 'done' ? basementTunnelRoot(Math.min(BASEMENT_TUNNEL_LENGTH, (escape.tunnel ?? 0) + 2.5))

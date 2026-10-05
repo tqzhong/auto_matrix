@@ -1,3 +1,4 @@
+import { dockReloadLocked } from '@auto_matrix/shared';
 import { type TrilogyEpilogueEncounter } from '@auto_matrix/shared';
 import { crosscutPhoneRole } from '@auto_matrix/shared';
 import { createLoungeChair } from './LoungeChair.js';
@@ -569,7 +570,7 @@ export class FilmSetRenderer {
     if (journey?.scene === 'm3_hammer_tunnels' && journey.hammer?.phase === 'riding') this.marker.visible = false;
     if (['m3_defense', 'm3_sun'].includes(journey?.scene ?? '') && journey?.logos?.phase === 'riding') this.marker.visible = false;
     if (journey?.scene === 'm3_gate' && journey.apu?.phase === 'riding') this.marker.visible = false;
-    if (journey?.scene === 'm3_dock_battle' && journey.dockGunnery?.phase === 'firing') this.marker.visible = false;
+    if (journey?.scene === 'm3_dock_battle' && (journey.dockGunnery?.phase === 'firing' || dockReloadLocked(journey.dockReload))) this.marker.visible = false;
     if (journey && pillLocked(journey)) this.marker.visible = false;
     if (journey && interrogationLocked(journey)) this.marker.visible = false;
     if (journey && meetingLocked(journey)) this.marker.visible = false;

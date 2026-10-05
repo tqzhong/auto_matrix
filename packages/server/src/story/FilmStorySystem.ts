@@ -2,6 +2,8 @@ import { TRUTH_SECONDS, truthScene, truthRoot, truthText, truthRest, type TruthR
 import { METACORTEX, OFFICE_LEDGE_OFFSET, OFFICE_PATROLS, metacortexPosition } from '@auto_matrix/shared';
 import { ReloadedOpeningSystem } from './ReloadedOpeningSystem.js';
 import { ReloadedCatchSystem } from './ReloadedCatchSystem.js';
+import { DockReloadSystem } from './DockReloadSystem.js';
+import { dockReloadActive, dockReloadLocked } from '@auto_matrix/shared';
 import { WetwallEscapeSystem } from './WetwallEscapeSystem.js';
 import { SixthFloorSystem } from './SixthFloorSystem.js';
 import { BasementEscapeSystem } from './BasementEscapeSystem.js';
@@ -73,6 +75,7 @@ export class FilmStorySystem {
   onImpact?: (impact: CombatImpact, tick: number) => void;
   readonly reloaded: ReloadedOpeningSystem;
   readonly catch: ReloadedCatchSystem;
+  readonly dockReload: DockReloadSystem;
   readonly wetwall: WetwallEscapeSystem;
   readonly sixth: SixthFloorSystem;
   readonly basement: BasementEscapeSystem;
@@ -81,7 +84,7 @@ export class FilmStorySystem {
   readonly openingHotel: OpeningHotelSystem;
   readonly office: OfficeEscapeSystem;
   readonly custody: OfficeCustodySystem;
-  constructor(private world: WorldState, private sandbox: () => SandboxState, private returnToLife: (tick: number) => void, private elapse: (minutes: number, tick: number) => void) { this.lobby = new LobbyCombatSystem(world, sandbox); this.coatcheck = new HelCoatcheckSystem(world, sandbox); this.openingHotel = new OpeningHotelSystem(sandbox); this.openingHotel.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.openingHotel.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.office = new OfficeEscapeSystem(sandbox); this.custody = new OfficeCustodySystem(world, sandbox); this.custody.onDeparted = (agent, tick) => { this.command(agent, 'next', tick); }; this.reloaded = new ReloadedOpeningSystem(world, sandbox); this.reloaded.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.reloaded.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.catch = new ReloadedCatchSystem(world, sandbox); this.catch.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.wetwall = new WetwallEscapeSystem(world, sandbox); this.wetwall.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sixth = new SixthFloorSystem(world, sandbox); this.sixth.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sixth.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.basement = new BasementEscapeSystem(world, sandbox); this.basement.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.basement.crosscut.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.basement.crosscut.onHandoff = (actor, id, tick) => this.changeActor(actor, id, tick); this.basement.crosscut.onImpact = (impact, tick) => this.onImpact?.(impact, tick); }
+  constructor(private world: WorldState, private sandbox: () => SandboxState, private returnToLife: (tick: number) => void, private elapse: (minutes: number, tick: number) => void) { this.lobby = new LobbyCombatSystem(world, sandbox); this.coatcheck = new HelCoatcheckSystem(world, sandbox); this.openingHotel = new OpeningHotelSystem(sandbox); this.openingHotel.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.openingHotel.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.office = new OfficeEscapeSystem(sandbox); this.custody = new OfficeCustodySystem(world, sandbox); this.custody.onDeparted = (agent, tick) => { this.command(agent, 'next', tick); }; this.reloaded = new ReloadedOpeningSystem(world, sandbox); this.reloaded.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.reloaded.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.dockReload = new DockReloadSystem(world, sandbox); this.dockReload.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.dockReload.onHandoff = (actor, id, tick) => this.changeActor(actor, id, tick); this.catch = new ReloadedCatchSystem(world, sandbox); this.catch.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.wetwall = new WetwallEscapeSystem(world, sandbox); this.wetwall.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sixth = new SixthFloorSystem(world, sandbox); this.sixth.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sixth.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.basement = new BasementEscapeSystem(world, sandbox); this.basement.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.basement.crosscut.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.basement.crosscut.onHandoff = (actor, id, tick) => this.changeActor(actor, id, tick); this.basement.crosscut.onImpact = (impact, tick) => this.onImpact?.(impact, tick); }
   get state() { return this.sandbox().neoLife?.journey; }
   get scene(): FilmScene | undefined { return this.state && FILM_SCENE_BY_ID[this.state.scene]; }
   get step(): FilmStep | undefined { return this.scene?.steps[this.state!.step]; }
@@ -1120,7 +1123,7 @@ export class FilmStorySystem {
         film: { scene: 'm2_architect', width: 5, depth: .5, height: 8 } });
     }
   }
-  performing(agent: AgentState): boolean { return this.controls(agent) && (basementLocked(this.state) || tvExitLocked(this.state) || sixthLocked(this.state) || wetwallLocked(this.state) || this.state!.scene === 'm1_bridge' && this.state!.bridgeTail?.phase === 'failed' || this.state!.scene === 'm1_room303' && ['breach', 'dive', 'ladder_ready'].includes(this.state!.openingHotel?.phase ?? '') || this.state!.scene === 'm1_phone_escape' && ['connected', 'done'].includes(this.state!.openingPhone?.phase ?? '') || helElevatorLocked(this.state!) || helDanceDoorLocked(this.state!) || farewellLocked(this.state!.farewell) || deusPactLocked(this.state!.deus) || smithFinaleLocked(this.state!.smithFinale) || trilogyEpilogueLocked(this.state!.epilogue) || this.state!.scene === 'm3_trainman' && this.state!.mobil?.phase === 'refusing' || this.state!.trucks?.phase === 'rescue' || this.state!.persephone?.phase === 'enacting' || burlyLocked(this.state!) || clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || morningLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || theOneLocked(this.state!) || reloadedLocked(this.state!) || catchLocked(this.state!.catch) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
+  performing(agent: AgentState): boolean { return this.controls(agent) && (dockReloadActive(this.state) && (this.state!.actor === 'mifune' || dockReloadLocked(this.state!.dockReload)) || basementLocked(this.state) || tvExitLocked(this.state) || sixthLocked(this.state) || wetwallLocked(this.state) || this.state!.scene === 'm1_bridge' && this.state!.bridgeTail?.phase === 'failed' || this.state!.scene === 'm1_room303' && ['breach', 'dive', 'ladder_ready'].includes(this.state!.openingHotel?.phase ?? '') || this.state!.scene === 'm1_phone_escape' && ['connected', 'done'].includes(this.state!.openingPhone?.phase ?? '') || helElevatorLocked(this.state!) || helDanceDoorLocked(this.state!) || farewellLocked(this.state!.farewell) || deusPactLocked(this.state!.deus) || smithFinaleLocked(this.state!.smithFinale) || trilogyEpilogueLocked(this.state!.epilogue) || this.state!.scene === 'm3_trainman' && this.state!.mobil?.phase === 'refusing' || this.state!.trucks?.phase === 'rescue' || this.state!.persephone?.phase === 'enacting' || burlyLocked(this.state!) || clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || morningLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || theOneLocked(this.state!) || reloadedLocked(this.state!) || catchLocked(this.state!.catch) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
   morningFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
     if (state?.scene !== 'm1_morning' || state.visiting || !this.controls(agent)) return;
@@ -4616,6 +4619,7 @@ export class FilmStorySystem {
   }
   reconcileCast(): void {
     if (!this.state) return;
+    this.dockReload.stage(this.world.simulationTick);
     this.sealResetFacade();
     this.ensureHelDanceDoor(this.world.simulationTick);
     this.sealAmbush(); this.wetwall.seal(); this.sixth.seal(); this.sealZionMessageDoor(); this.sealArchitectDoors(); this.sealHelElevator(); this.sealHelDanceDoor();
@@ -4946,6 +4950,7 @@ export class FilmStorySystem {
       }
       if (this.reloaded.active(agent)) return this.reloaded.command(agent, target, tick);
       if (this.catch.active(agent)) return this.catch.command(agent, target, tick);
+      if (this.dockReload.active(agent)) return this.dockReload.command(agent, target, tick);
       if (state.scene === 'm1_room303' && (state.openingHotel?.phase === 'failed' || agent.status !== 'alive')) return this.openingHotel.retry(agent, tick);
       if (state.scene === 'm1_roofs' && state.openingRoof?.phase === 'failed') {
         state.openingRoof = { phase: 'running', lastTick: tick, attempts: state.openingRoof.attempts + 1 };
@@ -5453,6 +5458,7 @@ export class FilmStorySystem {
     }
     if (this.reloaded.active(agent)) return this.reloaded.command(agent, target, tick);
     if (this.catch.active(agent)) return this.catch.command(agent, target, tick);
+    if (this.dockReload.active(agent)) return this.dockReload.command(agent, target, tick);
     if (state.scene === 'm2_ship_lost' && state.shipLoss?.phase === 'failed' || state.scene === 'm2_stop_sentinels' && state.tunnel?.phase === 'failed') return '当前检查点失败。按 J 打开手记并重试。';
     if (state.scene === 'm3_trainman' && state.step === 1 && state.mobil?.phase !== 'stopped') return '列车仍在进站，等车门完全打开。';
     if (helElevatorLocked(state)) return '电梯正在下降。到站开门后再进入衣帽间。';
@@ -5832,6 +5838,7 @@ export class FilmStorySystem {
     delete state.logos;
     delete state.apu;
     delete state.dockGunnery;
+    delete state.dockReload;
     delete state.trucks;
     delete state.awakening;
     delete state.cabinEscort;
@@ -6667,12 +6674,13 @@ export class FilmStorySystem {
         state.lastText = gunner.kidHealth <= 0 ? 'Kid 的弹药车被哨兵截住。按 J 从 APU 炮位重试。'
           : '哨兵冲破了炮位，或弹药耗尽。按 J 从 APU 炮位重试。';
       } else if (gunner.phase === 'cleared') {
-        actor.position = filmPosition(this.scene.set, 0, DOCK_GUNNERY.apuZ);
+        actor.position = filmPosition(this.scene.set, 0, DOCK_GUNNERY.apuZ); actor.position.y += 2.2;
         this.advance('Mifune 的双炮压住第一波哨兵；Kid 把弹药车推到了 APU 脚下。', actor, tick);
       }
       return;
     }
     if (state.scene === 'm3_dock_battle' && state.dockGunnery?.phase === 'failed') return;
+    if (dockReloadActive(state)) { this.dockReload.frame(actor, { focus: false, climb: 0 }, 0, tick); return; }
     if (state.scene === 'm1_mirror' && state.mirrorGuide && !state.awakening) this.mirrorGuideFrame(actor, tick);
     if (state.scene === 'm3_temple_defense' && state.templeSeal?.phase === 'running') {
       const seal = state.templeSeal;
