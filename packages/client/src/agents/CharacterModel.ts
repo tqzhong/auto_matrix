@@ -9,6 +9,7 @@ import { poseOracleDeparture } from './OracleDeparturePerformance.js';
 import { poseOracleArrival } from './OracleArrivalPerformance.js';
 import { poseOracleRestored } from './OracleRestorationPerformance.js';
 import { poseGarden } from './GardenPerformance.js';
+import { EpilogueHeads } from './EpilogueHeads.js';
 import { poseWetwall } from './WetwallPerformance.js';
 import { poseSixthFloor } from './SixthFloorPerformance.js';
 import { poseBathroom } from './BathroomPerformance.js';
@@ -44,7 +45,7 @@ const HERO_LOOKS: Record<string, Look> = {
   morpheus: { face: 3, width: 1.13, shoulders: 0.71, waist: 0.44, hips: 0.49, skin: '#89614b', cloth: '#201a18', leather: true, coat: true, hair: 'bald', glasses: 'round' },
   oracle: { width: 1.05, shoulders: 0.62, waist: 0.43, hips: 0.52, skin: '#77513f', cloth: '#66745d', leather: false, coat: false, hair: 'short', glasses: 'none' },
   architect: { width: 1.02, shoulders: .65, waist: .43, hips: .46, skin: '#c8b19b', cloth: '#a9b1aa', leather: false, coat: false, hair: 'short', glasses: 'none' },
-  sati: { width: 1.03, shoulders: .52, waist: .39, hips: .43, skin: '#aa7955', cloth: '#b4be92', leather: false, coat: false, hair: 'pixie', glasses: 'none' },
+  sati: { width: 1.03, shoulders: .46, waist: .36, hips: .43, skin: '#976e50', cloth: '#b4be92', leather: false, coat: false, hair: 'pixie', glasses: 'none' },
   seraph: { width: .94, shoulders: .58, waist: .34, hips: .4, skin: '#c5a27e', cloth: '#d7d4c6', leather: false, coat: false, hair: 'short', glasses: 'none' },
   merovingian: { width: 1, shoulders: .67, waist: .42, hips: .46, skin: '#d1ad97', cloth: '#171a1b', leather: false, coat: false, hair: 'short', glasses: 'none' },
   persephone: { width: .91, shoulders: .53, waist: .32, hips: .46, skin: '#e1bca9', cloth: '#621923', leather: false, coat: false, hair: 'pixie', glasses: 'none' },
@@ -105,6 +106,7 @@ export class CharacterModels {
   private atlas: THREE.Texture;
   private fabric: THREE.CanvasTexture;
   private heroes: HeroModels;
+  private epilogueHeads = new EpilogueHeads();
 
   constructor() {
     this.atlas = new THREE.TextureLoader().load('/assets/characters/matrix-faces.png');
@@ -253,6 +255,7 @@ export class CharacterModels {
     }
     const cloth = this.material(new THREE.MeshPhysicalMaterial({ color: look.cloth, roughness: look.leather ? 0.43 : 0.88,
       metalness: 0, clearcoat: look.leather ? 0.22 : 0, clearcoatRoughness: 0.4, bumpMap: this.fabric, bumpScale: look.leather ? 0.003 : 0.002, side: THREE.DoubleSide }));
+    if (state.id === 'sati') { cloth.map = this.satiPlaid(); cloth.color.set(0xffffff); }
     const trousers = state.id === 'sati' ? skin : state.id === 'seraph' || state.id === 'oracle' ? this.material(new THREE.MeshStandardMaterial({ color: state.id === 'oracle' ? '#554a40' : '#282c29', roughness: .9, bumpMap: this.fabric, bumpScale: .002 })) : cloth;
     const seams = this.material(new THREE.MeshStandardMaterial({ color: look.leather ? '#292e2a' : '#252c28', roughness: 0.75 }));
     const black = this.material(new THREE.MeshStandardMaterial({ color: '#070b0a', roughness: 0.32 }));
@@ -260,6 +263,16 @@ export class CharacterModels {
     const shirt = this.material(new THREE.MeshStandardMaterial({ color: '#dbd9c8', roughness: 0.8, side: THREE.DoubleSide }));
     const bodyPoints = [[look.hips, 0], [look.hips + .01, .18], [look.waist + 0.02, 0.35], [look.waist, 0.63], [look.shoulders * .74, .9], [look.shoulders * 0.83, 1.15], [look.shoulders * .88, 1.39], [look.shoulders * .76, 1.52], [0.21, 1.66]].map(([r, y]) => new THREE.Vector2(r, y));
     const jacket = this.geometry(new THREE.LatheGeometry(bodyPoints, 40));
+    if (state.id === 'sati') {
+      const position = jacket.attributes.position;
+      for (let i = 0; i < position.count; i++) {
+        const front = Math.max(0, position.getZ(i) / Math.max(.01, Math.hypot(position.getX(i), position.getZ(i))));
+        position.setY(i, position.getY(i) - .20 * front ** 4 * THREE.MathUtils.smoothstep(position.getY(i), 1.3, 1.66));
+      }
+      jacket.computeVertexNormals();
+      const neckline = this.geometry(new THREE.LatheGeometry([[.255, 1.45], [.24, 1.5], [.16, 1.59], [.135, 1.68], [.13, 1.75]].map(([x, y]) => new THREE.Vector2(x, y)), 40));
+      this.mesh(torso, neckline, skin, [0, 0, 0], [1, 1, .65]);
+    }
     this.mesh(torso, jacket, cloth, [0, 0, 0], [1, 1, 0.59]);
     this.mesh(torso, this.sphere, cloth, [0, .02, 0], [look.hips, .22, look.hips * .59]);
     if (state.id === 'citizen_2') {
@@ -290,11 +303,13 @@ export class CharacterModels {
     }
     if (state.id === 'oracle' || state.id === 'sati') {
       const outfit = new THREE.Group(); outfit.name = `${state.id}-park-outfit`; outfit.visible = state.id === 'sati'; detail.add(outfit);
-      const dress = this.material(new THREE.MeshStandardMaterial({ color: state.id === 'sati' ? '#a8b791' : '#809085', roughness: .95, side: THREE.DoubleSide, bumpMap: this.fabric, bumpScale: .0015 }));
-      const geometry = new THREE.CylinderGeometry(.51, .7, 1.58, 32, 10, true);
+      const dress = state.id === 'sati' ? cloth : this.material(new THREE.MeshStandardMaterial({ color: '#536765', roughness: .95, side: THREE.DoubleSide, bumpMap: this.fabric, bumpScale: .0015 }));
+      const geometry = new THREE.CylinderGeometry(.51, .7, 1.58, state.id === 'sati' ? 64 : 32, state.id === 'sati' ? 16 : 10, true);
       const skirt = this.mesh(outfit, this.geometry(geometry), dress, [0, 0, 0]); skirt.name = state.id === 'oracle' ? 'oracle-park-skirt' : 'sati-skirt';
       // Keep the neutral dress valid outside an epilogue pose as well.
-      geometry.translate(0, 1.19, 0);
+      if (state.id === 'sati') {
+        geometry.scale(.95, 1.07 / 1.58, .66); geometry.translate(0, 1.565, 0);
+      } else geometry.translate(0, 1.19, 0);
       skirt.userData.standing = Float32Array.from(geometry.attributes.position.array);
       if (state.id === 'oracle') {
         const bag = new THREE.Group(); bag.name = 'oracle-park-handbag'; outfit.add(bag);
@@ -305,15 +320,18 @@ export class CharacterModels {
         this.mesh(bag, this.geometry(new THREE.TubeGeometry(curve, 32, .018, 6, true)), leather, [0, 0, 0]);
       }
     }
-    this.mesh(torso, this.cylinder, skin, [0, 1.79, 0], [0.145, 0.25, 0.135]);
+    const neck = this.mesh(torso, this.cylinder, skin, [0, 1.79, 0], [0.145, 0.25, 0.135]);
+    if (state.id === 'oracle' || state.id === 'sati') neck.name = `${state.id}-neck`;
     // Raised collars, seams, belt and tailored panels are visible from all sides.
-    if (state.faction !== 'machines') {
+    if (state.faction !== 'machines' && state.id !== 'sati') {
       const collar = this.geometry(new THREE.CylinderGeometry(0.17, 0.195, state.id === 'neo' ? 0.15 : 0.095, 24, 1, true));
       this.mesh(torso, collar, cloth, [0, state.id === 'neo' ? 1.71 : 1.64, 0], [1, 1, 0.86]);
     }
-    this.mesh(torso, this.cylinder, black, [0, 0.24, 0], [look.hips + 0.018, 0.10, (look.hips + 0.018) * 0.6]);
-    this.mesh(torso, this.box, metal, [0, 0.24, look.hips * 0.6 + 0.022], [0.16, 0.1, 0.018]);
-    this.mesh(torso, this.cylinder, seams, [0, 0.99, look.waist * 0.6 + 0.015], [0.008, 1.1, 0.008]);
+    if (state.id !== 'sati') {
+      this.mesh(torso, this.cylinder, black, [0, 0.24, 0], [look.hips + 0.018, 0.10, (look.hips + 0.018) * 0.6]);
+      this.mesh(torso, this.box, metal, [0, 0.24, look.hips * 0.6 + 0.022], [0.16, 0.1, 0.018]);
+      this.mesh(torso, this.cylinder, seams, [0, 0.99, look.waist * 0.6 + 0.015], [0.008, 1.1, 0.008]);
+    }
     if (state.id === 'smith' || state.id === 'merovingian' || state.faction === 'machines') {
       this.surface(torso, [[-0.18, 1.76, 0.19], [0.18, 1.76, 0.19], [0.10, 0.7, 0.32], [-0.10, 0.7, 0.32]], shirt);
       this.surface(torso, [[-0.28, 1.62, 0.23], [-0.45, 1.25, 0.23], [-0.12, 0.61, 0.32], [-0.02, 1.26, 0.33]], cloth);
@@ -325,7 +343,7 @@ export class CharacterModels {
     }
     const head = this.joint(torso, 0, 2.13);
     if (state.id === 'oracle') head.name = 'oracle-head';
-    if (state.id === 'sati') head.name = 'sati-head';
+    if (state.id === 'sati') { head.name = 'sati-head'; head.position.y = 1.99; }
     let face = skin;
     if (look.face !== undefined) {
       const texture = this.atlas.clone();
@@ -381,9 +399,11 @@ export class CharacterModels {
     for (const side of [-1, 1]) {
       const shoulder = this.joint(torso, side * look.shoulders * 0.87, 1.39);
       shoulders.push(shoulder);
-      const elbow = this.limb(shoulder, [[.10, -1.43], [.115, -1.23], [.14, -1.03], [.15, -.91], [.16, -.82], [.155, -.73], [.17, -.62], [.18, -.45], [.195, -.24], [.215, -.04], [.19, .08], [.10, .15], [.002, .18]], .81, state.id === 'sati' ? skin : cloth, .94);
+      const arm = [[.10, -1.43], [.115, -1.23], [.14, -1.03], [.15, -.91], [.16, -.82], [.155, -.73], [.17, -.62], [.18, -.45], [.195, -.24], [.215, -.04], [.19, .08], [.10, .15], [.002, .18]];
+      if (state.id === 'sati') for (const point of arm) point[0] *= .78;
+      const elbow = this.limb(shoulder, arm, .81, state.id === 'sati' ? skin : cloth, .94);
       elbows.push(elbow);
-      this.mesh(elbow, this.cylinder, seams, [0, -0.56, 0], [0.13, 0.045, 0.14]);
+      if (state.id !== 'sati') this.mesh(elbow, this.cylinder, seams, [0, -0.56, 0], [0.13, 0.045, 0.14]);
       const handMaterial = look.leather ? black : skin;
       this.mesh(elbow, this.sphere, handMaterial, [0, -0.75, 0.005], [0.095, 0.145, 0.055]);
       const handFingers: THREE.Group[] = [];
@@ -396,7 +416,9 @@ export class CharacterModels {
       const thumb = this.mesh(elbow, this.sphere, handMaterial, [side * -0.10, -0.75, 0.02], [0.03, 0.08, 0.03]); thumb.rotation.z = side * 0.5;
 
       const hip = this.joint(detail, side * 0.225, 1.86); hips.push(hip);
-      const knee = this.limb(hip, [[.125, -1.8], [.14, -1.63], [.155, -1.39], [.165, -1.17], [.15, -1.03], [.16, -.94], [.17, -.85], [.185, -.68], [.21, -.40], [.24, -.13], [.22, .04], [.002, .1]], .94, trousers, 1.13);
+      const leg = [[.125, -1.8], [.14, -1.63], [.155, -1.39], [.165, -1.17], [.15, -1.03], [.16, -.94], [.17, -.85], [.185, -.68], [.21, -.40], [.24, -.13], [.22, .04], [.002, .1]];
+      if (state.id === 'sati') for (const point of leg) point[0] *= 1 - .23 * THREE.MathUtils.smoothstep(point[1], -.7, -.13);
+      const knee = this.limb(hip, leg, .94, trousers, 1.13);
       knees.push(knee);
       const ankle = this.joint(knee, 0, -.9); ankles.push(ankle);
       this.mesh(ankle, this.cylinder, black, [0, .1, 0], [.14, look.leather ? .4 : .20, .17]);
@@ -425,15 +447,35 @@ export class CharacterModels {
       }).catch(error => console.warn(`${state.id} asset could not load; retaining the procedural character.`, error));
     }
     batchStaticGeometry(detail, new Set(clothPanels.map(panel => panel.mesh))).forEach(geometry => this.geometries.add(geometry));
+    if (state.id === 'oracle' || state.id === 'sati') this.epilogueHeads.track(rig, state.id);
     enableSkinnedCulling(detail);
     return rig;
   }
 
   private addHair(head: THREE.Group, look: Look, color: string): void {
     const material = this.material(new THREE.MeshStandardMaterial({ color, roughness: 0.84, bumpMap: this.fabric, bumpScale: 0.003 }));
-    // The front uses the albedo hairline. Only the back needs a separate cap.
+    // Portraits already contain a frontal hairline; untextured residents need
+    // a complete crown outside the skin, including while a detailed head loads.
+    if (look.face === undefined) this.mesh(head, this.geometry(new THREE.SphereGeometry(1, 32, 16, 0, Math.PI * 2, 0, Math.PI * .35)), material,
+      [0, .03, -.015], [.288 * look.width, .365, .27]);
     const back = new THREE.SphereGeometry(1, 24, 16, Math.PI, Math.PI, 0, Math.PI * 0.76);
     this.mesh(head, this.geometry(back), material, [0, 0.03, -0.015], [0.275 * look.width, 0.32, 0.235]);
+  }
+
+  private satiPlaid(): THREE.DataTexture {
+    const size = 128, pixels = new Uint8Array(size * size * 4);
+    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+      let color = [224, 226, 202];
+      if (x % 64 < 25 || y % 64 < 25) color = [201, 213, 196];
+      if ([0, 4, 25, 29].includes(x % 64) || [0, 4, 25, 29].includes(y % 64)) color = [115, 143, 156];
+      if (x % 64 === 43 || y % 64 === 43) color = [176, 166, 121];
+      const weave = ((x + y) % 2 ? 2 : -2) + Math.sin(x * 7.13 + y * 5.37) * 2;
+      pixels.set([...color.map(value => value + weave), 255], (y * size + x) * 4);
+    }
+    const texture = new THREE.DataTexture(pixels, size, size); texture.colorSpace = THREE.SRGBColorSpace;
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping; texture.repeat.set(5, 4); texture.anisotropy = 8;
+    texture.magFilter = THREE.LinearFilter; texture.minFilter = THREE.LinearMipmapLinearFilter; texture.generateMipmaps = true;
+    texture.needsUpdate = true; this.textures.add(texture); return texture;
   }
 
   private addGlasses(head: THREE.Group, look: Look, black: THREE.Material, metal: THREE.Material): void {
@@ -480,6 +522,7 @@ export class CharacterModels {
     const near = distance < 100 || Boolean(input.oracleRestored);
     rig.detail.visible = near; rig.distant.visible = !near;
     if (!near) return;
+    this.epilogueHeads.update(rig, input);
     if (poseOracleRestored(rig, input.oracleRestored)) return;
     const pulseRifle = Boolean(input.crosscut && ['cypher', 'tank'].includes(input.crosscut.role) || input.betrayal && ['cypher', 'tank'].includes(input.betrayal.role));
     const weaponStyle: CharacterRig['weaponStyle'] = pulseRifle ? 'pulse' : input.weaponStyle ?? (rig.rifle ? 'rifle' : 'pistol');
@@ -761,6 +804,7 @@ export class CharacterModels {
     this.handsets.forEach(handset => handset.dispose());
     this.spoons.forEach(spoon => spoon.dispose());
     this.heroes.dispose();
+    this.epilogueHeads.dispose();
     this.geometries.forEach(geometry => geometry.dispose()); this.materials.forEach(material => material.dispose()); this.textures.forEach(texture => texture.dispose()); this.skeletons.forEach(skeleton => skeleton.dispose());
   }
 }

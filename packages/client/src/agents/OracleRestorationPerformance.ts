@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import type { CharacterRig } from './CharacterModel.js';
 import { newMotion } from './CharacterMotion.js';
 
-const supports = new WeakMap<CharacterRig, number>();
+const supports = new WeakMap<CharacterRig, { height: number; surfaceVersion: number }>();
 const wetBlouse = new THREE.Color('#28312c'), wetTrousers = new THREE.Color('#292621');
 
 /** The cleared host rests face-up; the same rig is released at the park handoff. */
@@ -13,7 +13,7 @@ export function poseOracleRestored(rig: CharacterRig, restored = false): boolean
   const clothing = rig.oracleClothing!;
   clothing.blouse.color.copy(restored ? wetBlouse : clothing.dry[0]);
   clothing.trousers.color.copy(restored ? wetTrousers : clothing.dry[1]);
-  rig.head.children.forEach(child => {
+  rig.head.traverse(child => {
     if (child.name === 'oracle-open-eye') child.visible = !restored;
     if (child.name === 'oracle-closed-eye') child.visible = restored;
   });
@@ -24,6 +24,7 @@ export function poseOracleRestored(rig: CharacterRig, restored = false): boolean
     }
     return false;
   }
+  const parkOutfit = rig.root.getObjectByName('oracle-park-outfit'); if (parkOutfit) parkOutfit.visible = false;
   Object.assign(rig.motion, newMotion());
   rig.detail.rotation.set(-Math.PI / 2, 0, 0); rig.detail.position.y = 0;
   rig.torso.position.set(0, 1.86, 0); rig.torso.rotation.set(0, 0, 0);
@@ -37,7 +38,8 @@ export function poseOracleRestored(rig: CharacterRig, restored = false): boolean
     rig.fingers[i].forEach(finger => { finger.rotation.x = -.09; });
   }
   let support = supports.get(rig);
-  if (support === undefined) {
+  const surfaceVersion = Number(rig.head.userData.surfaceVersion ?? 0);
+  if (support === undefined || support.surfaceVersion !== surfaceVersion) {
     rig.root.updateWorldMatrix(true, true);
     const inverse = rig.root.matrixWorld.clone().invert(), point = new THREE.Vector3(); let lowest = Infinity;
     rig.detail.traverseVisible(object => {
@@ -47,9 +49,9 @@ export function poseOracleRestored(rig: CharacterRig, restored = false): boolean
       for (let i = 0; i < object.geometry.attributes.position.count; i++)
         lowest = Math.min(lowest, object.getVertexPosition(i, point).applyMatrix4(transform).y);
     });
-    support = -lowest; supports.set(rig, support);
+    support = { height: -lowest, surfaceVersion }; supports.set(rig, support);
   }
-  rig.detail.position.y = support;
+  rig.detail.position.y = support.height;
   rig.root.updateWorldMatrix(true, true);
   return true;
 }
