@@ -3,6 +3,50 @@ import { gardenPose, SUNRISE_GARDEN, type TrilogyEpilogueGesture } from '@auto_m
 import type { CharacterRig } from './CharacterModel.js';
 import { reach } from './SpoonPerformance.js';
 
+const wakeSupports = new WeakMap<CharacterRig, { rising: number; surfaceVersion: number; height: number }>();
+
+function drapeSatiSkirt(rig: CharacterRig): void {
+  const skirt = rig.root.getObjectByName('sati-skirt') as THREE.Mesh | undefined; if (!skirt) return;
+  const vertices = skirt.geometry.attributes.position, hip = rig.torso.position.y;
+  const { radialSegments: columns, heightSegments: rows } = (skirt.geometry as THREE.CylinderGeometry).parameters;
+  rig.root.updateWorldMatrix(true, true);
+  const inverse = rig.detail.matrixWorld.clone().invert();
+  const bodice = inverse.clone().multiply(rig.torso.matrixWorld), seam = new THREE.Vector3();
+  const capsules: { point: THREE.Vector3; radius: number }[] = [];
+  for (let leg = 0; leg < 2; leg++) {
+    const joints = [rig.hips[leg], rig.knees[leg], rig.ankles[leg]].map(joint => joint.getWorldPosition(new THREE.Vector3()).applyMatrix4(inverse));
+    for (let part = 0; part < 2; part++) for (let sample = 0; sample <= 12; sample++) {
+      const t = sample / 12;
+      capsules.push({ point: joints[part].clone().lerp(joints[part + 1], t), radius: part ? .21 - .045 * t : .29 - .065 * t });
+    }
+  }
+  for (let row = 0; row <= rows; row++) {
+    const t = row / rows, y = hip + .12 - t * 1.07;
+    const sections = capsules.flatMap(({ point, radius }) => {
+      const squared = radius * radius - (y - point.y) ** 2;
+      return squared > 0 ? [{ x: point.x, z: point.z, squared }] : [];
+    });
+    const width = Math.max(.48 + t * .18, ...sections.map(section => Math.abs(section.x) + Math.sqrt(section.squared) + .025));
+    for (let column = 0; column <= columns; column++) {
+      const angle = column / columns * Math.PI * 2, side = Math.cos(angle) >= 0 ? 1 : -1;
+      const pleat = Math.cos(angle * 12) * .013 * t, x = Math.sin(angle) * (width + pleat);
+      let z = Math.cos(angle) * (.30 + t * .13 + pleat);
+      for (const section of sections) {
+        const depth = section.squared - (x - section.x) ** 2;
+        if (depth > 0) z = side * Math.max(side * z, side * section.z + Math.sqrt(depth) + .06);
+      }
+      // The upper ring shares the bodice's actual cross-section and rotation.
+      // Only the fabric below it is displaced around the walking legs.
+      const pin = 1 - THREE.MathUtils.smoothstep(t, 0, .08);
+      seam.set(Math.sin(angle) * (.43 + .01 * .12 / .18), .12 - t * 1.07,
+        Math.cos(angle) * (.43 + .01 * .12 / .18) * .59).applyMatrix4(bodice);
+      vertices.setXYZ(row * (columns + 1) + column, THREE.MathUtils.lerp(x, seam.x, pin),
+        THREE.MathUtils.lerp(y, seam.y, pin), THREE.MathUtils.lerp(z, seam.z, pin));
+    }
+  }
+  vertices.needsUpdate = true; skirt.geometry.computeVertexNormals(); skirt.geometry.computeBoundingSphere();
+}
+
 /** Authored body poses use the saved story clock, including stationary dialogue. */
 export function poseGarden(rig: CharacterRig, gesture?: TrilogyEpilogueGesture, parkOutfit = false): void {
   const park = parkOutfit || gesture?.kind === 'dawn';
@@ -20,6 +64,7 @@ export function poseGarden(rig: CharacterRig, gesture?: TrilogyEpilogueGesture, 
       }
     }
     const bag = rig.root.getObjectByName('oracle-park-handbag'); if (bag) bag.visible = false;
+    drapeSatiSkirt(rig);
     return;
   }
   rig.detail.userData.epiloguePose = true; rig.detail.rotation.set(0, 0, 0); rig.detail.position.y = 0;
@@ -62,7 +107,7 @@ export function poseGarden(rig: CharacterRig, gesture?: TrilogyEpilogueGesture, 
     }
   }
   // The coat/dress follows the lap instead of leaving a rigid standing cylinder through the bench.
-  const skirt = rig.root.getObjectByName(gesture.role === 'oracle' ? 'oracle-park-skirt' : 'sati-skirt') as THREE.Mesh | undefined;
+  const skirt = gesture.role === 'oracle' ? rig.root.getObjectByName('oracle-park-skirt') as THREE.Mesh | undefined : undefined;
   if (skirt) {
     const positions = skirt.geometry.attributes.position;
     for (let row = 0; row <= 10; row++) for (let column = 0; column <= 32; column++) {
@@ -76,21 +121,27 @@ export function poseGarden(rig: CharacterRig, gesture?: TrilogyEpilogueGesture, 
     }
     positions.needsUpdate = true; skirt.geometry.computeVertexNormals();
   }
+  drapeSatiSkirt(rig);
   const bag = rig.root.getObjectByName('oracle-park-handbag');
   if (bag) { bag.visible = seated > .05; bag.position.set(0, hip + .35, .42); bag.scale.setScalar(seated); }
   if (reset) {
     rig.detail.rotation.x = -Math.PI / 2 * (1 - rising);
     rig.torso.rotation.x = Math.sin(rising * Math.PI) * .55;
     rig.knees.forEach(knee => { knee.rotation.x = Math.sin(rising * Math.PI) * .8; });
-    rig.root.updateWorldMatrix(true, true);
-    const inverse = rig.root.matrixWorld.clone().invert(), point = new THREE.Vector3(); let lowest = Infinity;
-    rig.detail.traverseVisible(object => {
-      if (!(object instanceof THREE.Mesh)) return;
-      object.updateMatrixWorld(true);
-      if (object instanceof THREE.SkinnedMesh) object.skeleton.update();
-      const matrix = inverse.clone().multiply(object.matrixWorld);
-      for (let i = 0; i < object.geometry.attributes.position.count; i++) lowest = Math.min(lowest, object.getVertexPosition(i, point).applyMatrix4(matrix).y);
-    });
-    if (Number.isFinite(lowest)) rig.detail.position.y = -lowest;
+    const surfaceVersion = Number(rig.head.userData.surfaceVersion ?? 0);
+    let support = wakeSupports.get(rig);
+    if (!support || support.rising !== rising || support.surfaceVersion !== surfaceVersion) {
+      rig.root.updateWorldMatrix(true, true);
+      const inverse = rig.root.matrixWorld.clone().invert(), point = new THREE.Vector3(); let lowest = Infinity;
+      rig.detail.traverseVisible(object => {
+        if (!(object instanceof THREE.Mesh)) return;
+        object.updateMatrixWorld(true);
+        if (object instanceof THREE.SkinnedMesh) object.skeleton.update();
+        const matrix = inverse.clone().multiply(object.matrixWorld);
+        for (let i = 0; i < object.geometry.attributes.position.count; i++) lowest = Math.min(lowest, object.getVertexPosition(i, point).applyMatrix4(matrix).y);
+      });
+      support = { rising, surfaceVersion, height: Number.isFinite(lowest) ? -lowest : 0 }; wakeSupports.set(rig, support);
+    }
+    rig.detail.position.y = support.height;
   }
 }
