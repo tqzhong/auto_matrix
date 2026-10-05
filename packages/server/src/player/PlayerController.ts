@@ -91,8 +91,8 @@ export class PlayerController {
     if (id === 'smith' && ['m3_rain', 'm3_surrender'].includes(this.sandbox?.life.film.state?.scene ?? '')
       && smithFinaleLocked(this.sandbox?.life.film.state?.smithFinale)) return { error: 'Smith 正在与 Neo 进行最后交锋，当前节拍结束后可以接入。' };
     if (id === 'kid' && this.sandbox?.life.film.state?.dockGunnery?.phase === 'firing') return { error: 'Kid 正在船坞推送弹药车。掩护完成后可以接入。' };
-    if (id === 'mifune' && interlude?.scene === 'm3_dock_battle' && !interlude.visiting && interlude.actor === 'kid' && interlude.step === 1)
-      return { error: 'Mifune 正在炮位掩护 Kid 装填，完成后可以接入。' };
+    if (id === 'mifune' && interlude?.scene === 'm3_dock_battle' && !interlude.visiting && interlude.actor === 'kid' && interlude.step >= 1 && !interlude.completed.includes(interlude.scene))
+      return { error: 'Mifune 正在参与船坞战与最后交接，当前不能接管。' };
     if (['keymaker', 'neo', 'agent_johnson'].includes(id) && ['collision', 'rescue'].includes(this.sandbox?.life.film.state?.trucks?.phase ?? '')) return { error: '这个角色正在卡车对撞接应中，抵达安全地点后可以接入。' };
     if (['trainman', 'rama_kandra', 'kamala', 'sati'].includes(id) && this.sandbox?.life.film.state?.scene === 'm3_trainman'
       && this.sandbox.life.film.state.mobil?.phase !== 'gone') return { error: '这个角色正在 Mobil Ave 的列车片段中，驶离后可以接入。' };
@@ -177,6 +177,7 @@ export class PlayerController {
     this.sandbox?.life.film.theOneFrame(agent, { x: 0, z: 0, sprint: false, jump: false, focus: false }, 0, tick); this.sandbox?.life.film.reloaded.frame(agent, { x: 0, focus: false }, 0, tick);
     this.sandbox?.life.film.catch.frame(agent, { x: 0, z: 0, focus: false }, 0, tick);
     this.sandbox?.life.film.dockReload.frame(agent, { focus: false, climb: 0 }, 0, tick);
+    this.sandbox?.life.film.dockLastStand.frame(agent, 0, tick);
     this.sandbox?.life.film.lobby.frame(agent, 0, tick);
     if (agent.mind) agent.mind.thought = '由玩家决定下一步行动。';
     return { agentId: id };
@@ -364,6 +365,10 @@ export class PlayerController {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false;
         session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
+      if (this.sandbox?.life.film.dockLastStand.frame(agent, dt, tick)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false;
+        session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
       if (this.sandbox?.life.film.sentinelFrame(agent, { movement: Math.hypot(input.x, input.z), sprint: input.sprint, jump: input.jump }, dt, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
@@ -500,6 +505,8 @@ export class PlayerController {
     if (reloaded !== undefined) return reloaded;
     const catchAction = this.sandbox?.life.film.catch.handle(agent, kind, tick);
     if (catchAction !== undefined) return catchAction;
+    const lastStandAction = this.sandbox?.life.film.dockLastStand.handle(agent, kind);
+    if (lastStandAction !== undefined) return lastStandAction;
     const reloadAction = this.sandbox?.life.film.dockReload.handle(agent, kind, tick);
     if (reloadAction !== undefined) return reloadAction;
     const baneAction = this.sandbox?.life.film.baneAction(agent, kind, tick);

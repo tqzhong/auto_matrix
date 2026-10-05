@@ -1,4 +1,4 @@
-import { DOCK_RELOAD } from '@auto_matrix/shared';
+import { DOCK_RELOAD, DOCK_LAST_STAND } from '@auto_matrix/shared';
 import { TV_EXIT, basementRouteLength } from '@auto_matrix/shared';
 import { CABIN, CABIN_ROUTE_LENGTH, cabinGuidePose, RELOADED, RELOADED_FINALE } from '@auto_matrix/shared';
 import assert from 'node:assert/strict';
@@ -3156,6 +3156,16 @@ test('the entire film route completes through interactions, driving and real com
         if (scene.id === 'm1_cypher_console') for (let frame = 0; frame < 48; frame++) h.players.step(.1, true, h.tick());
       }
       else if (step.kind === 'interact') {
+        if (scene.id === 'm3_dock_battle' && index === 2) {
+          h.command('act');
+          for (let frame = 0; frame < 53; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.dockLastStand?.phase, 'wounded');
+          h.actor().position = filmPosition(scene.set, DOCK_LAST_STAND.kid.x, DOCK_LAST_STAND.kid.z); h.command('act');
+          for (let frame = 0; frame < 68; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.dockLastStand?.phase, 'response'); h.command('act');
+          for (let frame = 0; frame < 73; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.dockLastStand?.phase, 'done'); assert.equal(state.step, index + 1); continue;
+        }
         if (scene.id === 'm3_dock_battle' && index === 1) {
           h.command('act'); assert.equal(h.actor().id, 'kid');
           h.actor().position = filmPosition(scene.set, DOCK_RELOAD.entry.x, DOCK_RELOAD.entry.z); h.command('act');

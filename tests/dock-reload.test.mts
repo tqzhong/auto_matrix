@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { DOCK_GUNNERY, DOCK_RELOAD, FILM_SCENE_BY_ID, filmPosition, newDockGunnery, type WorldEvent } from '@auto_matrix/shared';
+import { DOCK_GUNNERY, DOCK_RELOAD, DOCK_LAST_STAND, FILM_SCENE_BY_ID, filmPosition, newDockGunnery, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -79,16 +79,15 @@ test('Kid must reach the loader, lift the box, climb, brace and kick, then desce
   frames(h, 1.2); assert.equal(h.state.dockReload?.phase, 'descending');
   assert.equal(h.state.step, 1, 'Kid still needs to get off the APU');
   frames(h, 3.3, { climb: -1 }); assert.equal(h.state.dockReload?.phase, 'done'); assert.equal(h.state.step, 2);
-  assert.equal(h.mifune.status, 'dead');
-  assert.equal(h.mifune.position.y, filmPosition(h.scene.set, 0, 0).y + .6, 'the existing death result must not leave Mifune floating at seated APU height');
-  assert.ok(h.mifune.position.x > filmPosition(h.scene.set, 4, 0).x, 'the fallen body must clear the APU armour');
+  assert.equal(h.mifune.status, 'alive');
+  assert.equal(h.state.completed.includes(h.scene.id), false, 'Mifune still has to give Kid the last orders');
   h.players.receiveInput('p', { x: 1, z: 0, yaw: Math.PI / 2, jump: false, sprint: false, focus: false, climb: 0, sequence: ++h.sequence });
   h.players.step(.1, true, 89);
   const walked = { ...h.kid.position };
   h.players.release('p', 90); h.players.possess('p', 'kid', 91);
   assert.deepEqual(h.kid.position, walked, 'rejoining after loading must preserve free walking rather than snap Kid back onto the loader');
   assert.equal(h.kid.currentAction?.parameters.dockReload, undefined, 'the completed loader pose must release the body');
-  h.command('next', 90); assert.equal(h.state.scene, 'm3_gate'); assert.equal(h.state.actor, 'kid');
+  h.command('next', 90); assert.equal(h.state.scene, 'm3_dock_battle'); assert.equal(h.state.actor, 'kid');
 });
 
 test('load timeout retries only loading and leaves the cleared cannon wave intact', () => {
@@ -98,6 +97,82 @@ test('load timeout retries only loading and leaves the cleared cannon wave intac
   assert.equal(h.state.dockReload?.phase, 'approach'); assert.equal(h.state.dockReload?.attempts, 1);
   assert.deepEqual(h.state.dockGunnery, wave); assert.equal(h.state.step, 1);
   assert.equal(h.state.completed.includes(h.scene.id), false);
+});
+
+test('seating the ammunition cannot silently kill Mifune or skip his last orders', () => {
+  const h = game(); jammed(h); frames(h, .7, { focus: true }); h.players.act('p', 'attack', 71);
+  frames(h, 1.2); frames(h, 3.3, { climb: -1 });
+  assert.equal(h.mifune.status, 'alive', 'Mifune must survive the reload until the visible sentinel attack and final handoff');
+  assert.equal(h.state.completed.includes(h.scene.id), false, 'loading is not the end of the dock scene');
+  h.command('next', 90);
+  assert.equal(h.state.scene, 'm3_dock_battle', 'the player cannot skip the last stand by continuing to Gate Three');
+});
+
+function afterReload() {
+  const h = game(); jammed(h); frames(h, .7, { focus: true }); h.players.act('p', 'attack', 71);
+  frames(h, 1.2); frames(h, 3.3, { climb: -1 }); return h;
+}
+
+test('rebuilding a fallen Kid during the handoff restores only Kid and keeps Mifune’s saved injuries', () => {
+  const h = afterReload(); h.command('act', 90); frames(h, 5.3);
+  const saved = structuredClone(h.state.dockLastStand), body = structuredClone(h.mifune.position), health = h.mifune.health;
+  h.kid.status = 'dead'; h.kid.health = 0; h.players.release('p', 100); h.players.possess('p', 'kid', 101);
+  assert.equal(h.kid.status, 'alive'); assert.equal(h.kid.health, h.kid.maxHealth);
+  assert.deepEqual(h.state.dockLastStand, saved); assert.deepEqual(h.mifune.position, body); assert.equal(h.mifune.health, health);
+  assert.equal(h.state.completed.includes(h.scene.id), false);
+});
+
+test('Kid witnesses the attack, physically approaches Mifune and answers before the irreversible gate handoff', () => {
+  const h = afterReload(); const loaded = structuredClone(h.state.dockReload);
+  h.command('act', 90); assert.equal(h.state.dockLastStand?.phase, 'attack');
+  frames(h, 2); assert.equal(h.mifune.status, 'alive'); assert.equal(h.mifune.health, 1);
+  frames(h, 3.3); assert.equal(h.state.dockLastStand?.phase, 'wounded');
+  assert.equal(h.mifune.position.y, filmPosition(h.scene.set, 0, 0).y);
+  h.command('act', 100); assert.equal(h.state.dockLastStand?.phase, 'wounded', 'interaction from the rear must not teleport Kid');
+  // Real controller movement along the outside of the APU, then its front.
+  for (const [x, z] of [[-4.3, 16.25], [-4.3, 6.3], [DOCK_LAST_STAND.kid.x, DOCK_LAST_STAND.kid.z]]) {
+    const target = filmPosition(h.scene.set, x, z);
+    for (let frame = 0; frame < 240; frame++) {
+      const dx = target.x - h.kid.position.x, dz = target.z - h.kid.position.z, gap = Math.hypot(dx, dz);
+      if (gap < .25) break;
+      h.players.receiveInput('p', { x: dx / gap, z: dz / gap, yaw: Math.atan2(dx, dz), jump: false, sprint: false, sequence: ++h.sequence });
+      h.players.step(.05, true, 110 + frame);
+    }
+    assert.ok(Math.hypot(target.x - h.kid.position.x, target.z - h.kid.position.z) < .25, 'the wounded captain must be reachable around the APU');
+  }
+  h.command('act', 400); assert.equal(h.state.dockLastStand?.phase, 'kneeling');
+  frames(h, 6.8); assert.equal(h.state.dockLastStand?.phase, 'response');
+  frames(h, 30); h.command('next', 450);
+  assert.equal(h.state.scene, 'm3_dock_battle'); assert.equal(h.mifune.status, 'alive', 'waiting cannot supply Kid’s response');
+  h.command('act', 451); frames(h, 3.3); assert.equal(h.state.dockLastStand?.phase, 'dying');
+  frames(h, 4.2); assert.equal(h.state.dockLastStand?.phase, 'done'); assert.equal(h.state.step, 3);
+  assert.equal(h.mifune.status, 'dead'); assert.equal(h.mifune.health, 0);
+  assert.deepEqual(h.state.dockReload, loaded, 'the last stand cannot replay the successful reload');
+  const body = structuredClone(h.mifune.position), kid = structuredClone(h.kid.position), xp = h.sandbox.state.profiles.kid.xp;
+  h.sandbox.tick(480); h.sandbox.life.film.reconcileCast(); assert.equal(h.sandbox.state.profiles.kid.xp, xp);
+  h.command('next', 481); assert.equal(h.state.scene, 'm3_gate');
+  assert.deepEqual(h.kid.position, kid, 'Kid must stay beside Mifune when the gate mission starts');
+  assert.deepEqual(h.mifune.position, body, 'the dead captain must remain in the dock rather than return to an initial spawn');
+  assert.equal(h.mifune.status, 'dead');
+});
+
+test('attack and final dialogue resume their saved poses without advancing during pause or disconnect', () => {
+  const h = afterReload(); h.command('act', 90); frames(h, 3.4);
+  const saved = structuredClone(h.sandbox.state), body = structuredClone(h.mifune), kid = structuredClone(h.kid.position);
+  h.players.step(.1, false, 150);
+  assert.deepEqual(h.state.dockLastStand, saved.neoLife!.journey!.dockLastStand);
+  h.players.release('p', 151); h.sandbox.tick(180); frames(h, 3);
+  assert.deepEqual(h.state.dockLastStand, saved.neoLife!.journey!.dockLastStand);
+  h.sandbox.restore(saved); h.players.possess('p', 'kid', 181);
+  assert.deepEqual(h.kid.position, kid); assert.deepEqual(h.mifune.position, body.position);
+  assert.deepEqual(h.mifune.currentAction?.parameters.dockLastStand, body.currentAction?.parameters.dockLastStand);
+  frames(h, 2); const state = h.sandbox.life.film.state!;
+  assert.equal(state.dockLastStand?.phase, 'wounded');
+  h.kid.position = filmPosition(h.scene.set, DOCK_LAST_STAND.kid.x, DOCK_LAST_STAND.kid.z);
+  h.command('act', 190); frames(h, 6.8); assert.equal(state.dockLastStand?.phase, 'response');
+  const question = structuredClone(h.sandbox.state); h.sandbox.restore(question); h.command('retry', 200);
+  assert.deepEqual(h.sandbox.state.neoLife, question.neoLife, 'retry at a preserved conversation must not reset orders or grant rewards');
+  assert.match(h.players.possess('other', 'mifune', 201).error ?? '', /不能接管/);
 });
 
 test('Kid walks around the APU body to the rear loader instead of through its armour', () => {

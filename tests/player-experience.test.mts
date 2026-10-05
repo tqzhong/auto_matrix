@@ -34,7 +34,7 @@ test('wall escape keeps ambient conversation out of breaking, climbing and rescu
 
 test('APU loading keeps ambient talk out of the handhold and kick controls', () => {
   assert.equal(cinematicTalkSuppressed('m3_dock_battle', undefined, 1), true);
-  assert.equal(cinematicTalkSuppressed('m3_dock_battle', undefined, 2), false);
+  assert.equal(cinematicTalkSuppressed('m3_dock_battle', undefined, 2), true, 'Mifune’s last orders use the specific G action');
   assert.equal(cinematicTalkSuppressed('m3_dock_battle', 'film_zion_hangar', 1), false);
 });
 

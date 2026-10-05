@@ -89,6 +89,7 @@ export interface MotionInput {
   smithFinale?: import('@auto_matrix/shared').SmithFinaleGesture;
   epilogue?: import('@auto_matrix/shared').TrilogyEpilogueGesture;
   dockReload?: import('@auto_matrix/shared').DockReloadGesture;
+  dockLastStand?: import('@auto_matrix/shared').DockLastStandGesture;
   parkOutfit?: boolean;
   weaponStyle?: RescueLoadout | 'hel_pistol' | 'gas_launcher';
   helDanceDoor?: number;

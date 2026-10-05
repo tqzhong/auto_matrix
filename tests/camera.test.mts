@@ -17,6 +17,8 @@ import { MORNING, morningRoot, morningWakePose } from '@auto_matrix/shared';
 import { metacortexPosition, OFFICE_CUSTODY } from '@auto_matrix/shared';
 import { SPOON_LESSON, spoonLessonSeat, type SpoonLesson } from '@auto_matrix/shared';
 import { gardenPose, newTrilogyEpilogue } from '@auto_matrix/shared';
+import { newDockLastStand } from '@auto_matrix/shared';
+import { ZionHomecomingRenderer } from '../packages/client/src/engine/ZionHomecomingRenderer.js';
 import { APARTMENT, playerBlocked, apartmentComputerPose, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, INTERROGATION_ROOM, pillRoot, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, POD_WATER_DROP, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, TV_EXIT, airRescueRoot, matrixEscapeRoot, theOneRoot, tvExitEmergeRoot, wakeCallRoot, sentinelMachinePose, type TheOneEncounter } from '@auto_matrix/shared';
 
 test('observer camera releases drag and ignores pointer capture while a character controls the view', () => {
@@ -112,6 +114,43 @@ test('the riding camera frames Neo from head to shoes instead of filling the vie
   }
   game.state.position = metacortexPosition(0, -22, 1); game.state.currentAction = null; game.step(2);
   assert.ok(Math.abs(game.camera.fov - 57) < .1, 'leaving the car restores the ordinary walking lens');
+});
+
+test('the last stand camera sees Mifune past the APU armour and preserves a freely turning first-person eye', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const game = setup(t), center = FILM_SETS.film_zion_hangar.center;
+  game.state.id = 'kid'; game.state.currentLocation = 'film_zion_hangar'; game.state.isInMatrix = false;
+  game.state.position = filmPosition('film_zion_hangar', -1.55, 6.3); game.state.rotation = Math.PI / 2;
+  const stage = new THREE.Group(); stage.position.set(center.x, center.y - 1, center.z);
+  const set = new ZionHomecomingRenderer(stage, 'film_zion_hangar'); t.after(() => set.dispose());
+  set.update(undefined, 0); stage.updateMatrixWorld(true);
+  const apu = stage.getObjectByName('zion-kid-apu')!;
+  const head = new THREE.Group(); head.name = 'kid-head'; head.position.y = 3.1; game.group.children[0].add(head);
+  const encounter = { ...newDockLastStand(), phase: 'attack' as const, elapsed: 1.7, total: 1.7, role: 'kid' as const };
+  game.state.currentAction = { type: 'idle', parameters: { dockLastStand: encounter }, startedAt: 0, duration: 1, progress: 0 };
+  for (const aspect of [16 / 9, .72]) {
+    game.camera.aspect = aspect; game.controls.possess(game.state); game.step(.02, .02, false); game.camera.updateMatrixWorld();
+    const face = new THREE.Vector3(center.x, center.y + 6.0, center.z + 11.8);
+    const projection = face.clone().project(game.camera);
+    assert.ok(Math.abs(projection.x) < .85 && Math.abs(projection.y) < .7, 'the captain must stay inside the playable frame');
+    const sight = face.clone().sub(game.camera.position), ray = new THREE.Raycaster(game.camera.position, sight.clone().normalize(), 0, sight.length() - .2);
+    assert.equal(ray.intersectObject(apu, true).length, 0, 'the APU armour cannot hide the captain during the attack');
+  }
+  Object.assign(encounter, { phase: 'orders', elapsed: 1.2, total: 8 });
+  game.controls.possess(game.state); game.step(.02, .02, false); game.camera.updateMatrixWorld();
+  const body = new THREE.Vector3(center.x, center.y - .4, center.z + 6.3), sight = body.clone().sub(game.camera.position);
+  const props: THREE.Mesh[] = []; stage.traverseVisible(object => { if (object instanceof THREE.Mesh) props.push(object); });
+  assert.equal(new THREE.Raycaster(game.camera.position, sight.clone().normalize(), 0, sight.length() - .2).intersectObjects(props, false).length, 0,
+    'the walkway railings cannot cover the final conversation');
+  game.controls.firstPerson = true; game.step(.02, .02, false); game.controls.syncDockLastStandCamera(game.group);
+  const eye = head.localToWorld(new THREE.Vector3(0, -.005, .275)); assert.ok(game.camera.position.distanceTo(eye) < 1e-8);
+  game.camera.updateMatrixWorld();
+  const woundedFace = new THREE.Vector3(center.x, center.y - .4, center.z + 5.1).project(game.camera);
+  assert.ok(Math.abs(woundedFace.x) < .8 && Math.abs(woundedFace.y) < .8, 'entering first person must look toward the wounded captain instead of the empty floor');
+  const direction = game.camera.getWorldDirection(new THREE.Vector3()); game.document.pointerLockElement = game.canvas;
+  game.event(game.document, 'mousemove', { movementX: 200, movementY: -50 }); game.step(.02, .02, false); game.controls.syncDockLastStandCamera(game.group);
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(direction) > .2);
+  assert.ok(game.camera.position.distanceTo(eye) < 1e-8, 'looking around cannot leave the saved eye');
 });
 
 test('the dock APU gunner sees past the frame, can turn the aim and fire from both views', t => {

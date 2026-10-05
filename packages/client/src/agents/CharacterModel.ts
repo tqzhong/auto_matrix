@@ -10,6 +10,7 @@ import { poseOracleArrival } from './OracleArrivalPerformance.js';
 import { poseOracleRestored } from './OracleRestorationPerformance.js';
 import { poseGarden } from './GardenPerformance.js';
 import { poseDockReload } from './DockReloadPerformance.js';
+import { poseDockLastStand } from './DockLastStandPerformance.js';
 import { EpilogueHeads } from './EpilogueHeads.js';
 import { poseWetwall } from './WetwallPerformance.js';
 import { poseSixthFloor } from './SixthFloorPerformance.js';
@@ -343,7 +344,7 @@ export class CharacterModels {
       for (const y of [0.45, 0.67]) this.mesh(torso, this.sphere, black, [0.095, y, 0.26], [0.027, 0.027, 0.014]);
     }
     const head = this.joint(torso, 0, 2.13);
-    if (state.id === 'oracle') head.name = 'oracle-head';
+    if (['oracle', 'mifune', 'kid'].includes(state.id)) head.name = `${state.id}-head`;
     if (state.id === 'sati') { head.name = 'sati-head'; head.position.y = 1.99; }
     let face = skin;
     if (look.face !== undefined) {
@@ -358,11 +359,11 @@ export class CharacterModels {
     }
     if (look.face === undefined) {
       for (const side of [-1, 1]) {
-        const eye = state.id === 'oracle' ? this.joint(head, 0, 0) : head;
-        if (state.id === 'oracle') {
-          eye.name = 'oracle-open-eye';
+        const eye = ['oracle', 'mifune'].includes(state.id) ? this.joint(head, 0, 0) : head;
+        if (['oracle', 'mifune'].includes(state.id)) {
+          eye.name = `${state.id}-open-eye`;
           const lid = this.mesh(head, this.sphere, skin, [side * .10, -.012, .222], [.058, .021, .016]);
-          lid.name = 'oracle-closed-eye'; lid.visible = false;
+          lid.name = `${state.id}-closed-eye`; lid.visible = false;
         }
         this.mesh(eye, this.sphere, shirt, [side * 0.10, -0.012, 0.219], [0.058, 0.021, 0.016]);
         this.mesh(eye, this.sphere, black, [side * 0.10, -0.012, 0.233], [0.018, 0.019, 0.009]);
@@ -785,6 +786,7 @@ export class CharacterModels {
     poseOracleArrival(rig, input.oracleArrival);
     poseGarden(rig, input.epilogue, input.parkOutfit);
     poseDockReload(rig, input.dockReload);
+    poseDockLastStand(rig, input.dockLastStand);
     poseWetwall(rig, input.wetwall, input.speed < .05 && Math.abs(input.climbing ?? 0) < .05);
     poseSixthFloor(rig, input.sixth);
     poseBasement(rig, input.basement);

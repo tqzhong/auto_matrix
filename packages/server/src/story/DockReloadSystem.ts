@@ -24,7 +24,7 @@ export class DockReloadSystem {
         film: { scene: 'm3_dock_battle', width: body.width, depth: body.depth, height: body.height } });
     }
     const mifune = this.world.agents.get('mifune')!;
-    if (!mifune.controller || journey.actor === 'mifune') {
+    if (!journey.dockLastStand && (!mifune.controller || journey.actor === 'mifune')) {
       const fallen = journey.completed.includes('m3_dock_battle');
       mifune.position = filmPosition('film_zion_hangar', fallen ? 4.7 : 0, DOCK_GUNNERY.apuZ); mifune.position.y += fallen ? .6 : 2.2;
       mifune.rotation = fallen ? Math.PI / 2 : Math.PI; mifune.currentLocation = 'film_zion_hangar'; mifune.isInMatrix = false;

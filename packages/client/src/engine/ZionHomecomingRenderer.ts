@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { APU_ROUTE, DOCK_GUNNERY, ZION_OBSTACLES, dockPowerOffline, type FilmJourney } from '@auto_matrix/shared';
+import { dockLastStandPose } from '@auto_matrix/shared';
+import { DockLastStandRenderer } from './DockLastStandRenderer.js';
 import { DOCK_RELOAD, dockReloadBox } from '@auto_matrix/shared';
 
 /** Six authored Zion interiors share rock, metal and service-light materials, not a generic cave layout. */
@@ -17,6 +19,7 @@ export class ZionHomecomingRenderer {
   private messageDoor?: THREE.Group;
   private departureGifts?: { charm: THREE.Group; spoon: THREE.Group; engines: THREE.MeshStandardMaterial };
   private apu?: THREE.Group;
+  private lastStand?: DockLastStandRenderer;
   private gateLeaf?: THREE.Group;
   private gateLift = 0;
   private sentinelDives: THREE.Group[] = [];
@@ -149,7 +152,7 @@ export class ZionHomecomingRenderer {
     this.apu = new THREE.Group(); this.apu.name = 'zion-kid-apu'; this.moving.add(this.apu);
     const armor = this.material(0x58625f, .44, .72), joint = this.material(0x242b2a, .58, .65);
     this.box(joint, 0, 2.9, .4, 3.1, 1.3, 2.1, this.apu);
-    this.box(armor, 0, 6.8, 1.1, 4.8, .55, .7, this.apu);
+    this.box(armor, 0, 6.8, 1.1, 4.8, .55, .7, this.apu, 'apu-upper-rail');
     this.box(joint, 0, 4.1, -1.15, 2.1, 1.25, 1.1, this.apu);
     for (const side of [-1, 1]) {
       this.box(armor, side * 2.2, 5.2, .75, .72, 3.6, 1.1, this.apu);
@@ -161,8 +164,10 @@ export class ZionHomecomingRenderer {
       this.pipe(armor, [side * 3.6, 5.9, -.5], [side * 3.6, 5.9, -5.2], .23, this.apu);
       this.box(lit, side * 3.1, 5.55, -5.2, .65, .13, .1, this.apu);
       const flash = this.mesh(new THREE.SphereGeometry(.48, 10, 8), lit, this.apu);
+      flash.name = `apu-muzzle-${side}`;
       flash.position.set(side * 3.1, 5.6, -5.55); flash.visible = false; this.muzzleFlashes.push(flash);
     }
+    this.lastStand = new DockLastStandRenderer(this.moving);
     this.ammoCart = new THREE.Group(); this.ammoCart.name = 'zion-ammo-cart'; this.moving.add(this.ammoCart);
     this.box(iron, 0, .85, 0, 2.4, .3, 3.3, this.ammoCart);
     for (const side of [-1, 1]) {
@@ -386,6 +391,12 @@ export class ZionHomecomingRenderer {
       this.apu.position.set(journey?.scene === 'm3_gate' ? journey.apu?.x ?? 0 : 0, .9, journey?.scene === 'm3_gate' ? journey.apu?.z ?? APU_ROUTE.start : APU_ROUTE.start);
       this.apu.rotation.z = journey?.apu?.phase === 'riding' ? Math.sin(elapsed * 11) * .015 : 0;
     }
+    this.lastStand?.update(journey);
+    if (this.apu) {
+      const rail = this.apu.getObjectByName('apu-upper-rail')!;
+      const damage = journey?.dockLastStand ? dockLastStandPose(journey.dockLastStand).fallen : 0;
+      rail.rotation.z = -.19 * damage; rail.position.x = .4 * damage;
+    }
     if (this.ammoCart) {
       this.ammoCart.visible = journey?.scene === 'm3_dock_battle' && !journey.visiting;
       this.ammoCart.position.set(-5, .15, journey?.dockGunnery?.kidZ ?? DOCK_GUNNERY.kidStart);
@@ -405,8 +416,10 @@ export class ZionHomecomingRenderer {
     const shots = journey?.scene === 'm3_dock_battle' ? journey.dockGunnery?.shots ?? 0 : 0;
     if (shots > this.lastGunneryShots) this.muzzleUntil = elapsed + .14;
     this.lastGunneryShots = shots;
+    const lastStand = journey?.dockLastStand;
+    const lastShots = lastStand?.phase === 'attack' && lastStand.elapsed < 1.45 ? Math.floor(lastStand.elapsed * 18) : -1;
     this.muzzleFlashes.forEach((flash, index) => flash.visible = journey?.scene === 'm3_dock_battle'
-      && elapsed < this.muzzleUntil && index === shots % 2);
+      && (lastStand ? lastShots >= 0 && index === lastShots % 2 : elapsed < this.muzzleUntil && index === shots % 2));
     for (const [index, sentinel] of this.sentinelDives.entries()) {
       const gunner = journey?.scene === 'm3_dock_battle' && !journey.visiting ? journey.dockGunnery : undefined;
       const target = gunner?.targets[index];
@@ -464,6 +477,7 @@ export class ZionHomecomingRenderer {
     }
   }
   dispose(): void {
+    this.lastStand?.dispose();
     this.disposed = true; this.group.removeFromParent(); this.group.clear();
     this.geometries.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); this.textures.forEach(t => t.dispose()); this.lights.forEach(l => l.dispose());
     this.geometries.clear(); this.materials.clear(); this.textures.clear(); this.lights.clear();
