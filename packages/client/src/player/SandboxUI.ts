@@ -1,5 +1,6 @@
 import { crosscutActive, crosscutAction, crosscutText } from '@auto_matrix/shared';
 import { DOCK_RELOAD, dockReloadActive, dockReloadText } from '@auto_matrix/shared';
+import { DOCK_GATE, dockGateActive, dockGateText } from '@auto_matrix/shared';
 import { DOCK_LAST_STAND, dockLastStandActive, dockLastStandText } from '@auto_matrix/shared';
 import { truthFade, CABIN, CABIN_ROUTE_LENGTH } from '@auto_matrix/shared';
 import { mirrorTime, mirrorEntryPose, awakeningDuration } from '@auto_matrix/shared';
@@ -1651,6 +1652,20 @@ export class SandboxUI {
       this.el('film-alert-label').textContent = `已下降 ${Math.round(journey.office.climbed / 2)} / 16 m · W 向下 · S 向上 · 松手停留`;
       document.getElementById('game-objective-copy')!.textContent = '沿维修梯抵达下方平台 · 可停在横档上观察';
       this.el('sandbox-waypoint').textContent = '↓ 维修平台'; this.el('sandbox-interact').classList.add('hidden'); return;
+    }
+    if (dockGateActive(journey) && journey.dockGate) {
+      const gate = journey.dockGate;
+      this.el('film-ride').classList.remove('hidden');
+      this.el('film-ride-title').textContent = 'KID / 三号闸门';
+      this.el('film-ride-speed').textContent = `${Math.ceil(gate.remaining)} 秒`;
+      this.el('film-ride-health').textContent = `缆索损伤 ${gate.hits}/${DOCK_GATE.hits} · 弹药 ${gate.ammo}`;
+      this.el('film-ride-controls').textContent = gate.phase === 'aiming' ? '鼠标瞄准 · 左键 / T 开炮 · V 切换视角' : dockGateText(gate);
+      this.el('sandbox-interact').classList.toggle('hidden', gate.phase !== 'ready');
+      this.el('sandbox-nearby').textContent = '接管 APU 机炮'; this.el('sandbox-waypoint').textContent = '';
+      this.el('film-sequence').classList.toggle('hidden', gate.phase === 'aiming' || gate.phase === 'ready');
+      this.el('film-sequence-line').textContent = dockGateText(gate);
+      this.el('film-sequence-hint').textContent = gate.phase === 'failed' ? 'J 从闸门炮位重试' : 'V 切换视角';
+      document.getElementById('game-objective-copy')!.textContent = gate.phase === 'aiming' ? '瞄准右上方钢缆 · 门控失效，必须让配重牵开闸门' : dockGateText(gate); return;
     }
     if (dockLastStandActive(journey)) {
       const phase = journey.dockLastStand?.phase ?? 'ready', center = FILM_SETS[scene.set].center;

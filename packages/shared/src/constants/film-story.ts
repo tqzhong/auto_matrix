@@ -111,6 +111,7 @@ export interface FilmJourney {
   dockGunnery?: import('./dock-gunnery.js').DockGunnery;
   dockReload?: import('./dock-reload.js').DockReload;
   dockLastStand?: import('./dock-last-stand.js').DockLastStand;
+  dockGate?: import('./dock-gate.js').DockGate;
   emp?: { firedAt: number };
   templeSeal?: { phase: 'running' | 'failed' | 'sealed'; remaining: number; lastTick: number; attempts: number };
   trucks?: import('./trucks.js').TruckEncounter;
@@ -427,7 +428,7 @@ export const FILM_SCENES: FilmScene[] = [
   scene('m3_gate', 3, 'zion_hangar', 'kid', '打开三号闸门', 'siege', 'siege', 'Mifune 受致命伤，把打开闸门的任务交给 Kid。', [
     fight('突破闸门附近的哨兵', 2, 'sentinel'),
     { kind: 'drive', label: '接管受损 APU，冲向三号闸门', x: 0, z: 12 },
-    use('操作三号闸门，让 Hammer 冲入船坞', 'Kid 用受损的 APU 拉起闸门。Hammer 冲进船坞；在里面启动 EMP 会同时瘫痪锡安自己的防御系统。', 0, -50, 7),
+    use('用 APU 机炮击断配重缆索，接应 Hammer', 'Kid 击断承重缆索，配重沿导轨下落并牵开门叶。Hammer 穿过闸门；进入船坞后 Link 才能启动 EMP。', 0, -50),
   ], ['zee']),
   scene('m3_emp', 3, 'hammer_deck', 'link', '代价高昂的援军', 'siege', 'siege', 'Hammer 刚穿过打开的闸门，Link 的 EMP 已充满。哨兵涌入船坞；启动它会同时烧毁锡安自己的防御设备。', [
     use('启动 EMP，清除船坞里的哨兵', '白色电磁波席卷船坞。哨兵坠落，APU 与自动防御也全部熄灭；下一波机器仍会到来。', 0, -16, 2),

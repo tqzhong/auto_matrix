@@ -18,6 +18,7 @@ import { metacortexPosition, OFFICE_CUSTODY } from '@auto_matrix/shared';
 import { SPOON_LESSON, spoonLessonSeat, type SpoonLesson } from '@auto_matrix/shared';
 import { gardenPose, newTrilogyEpilogue } from '@auto_matrix/shared';
 import { newDockLastStand } from '@auto_matrix/shared';
+import { DOCK_GATE, dockGateAim, dockGateEye, fireDockGate, newDockGate, newApuRun } from '@auto_matrix/shared';
 import { ZionHomecomingRenderer } from '../packages/client/src/engine/ZionHomecomingRenderer.js';
 import { APARTMENT, playerBlocked, apartmentComputerPose, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, INTERROGATION_ROOM, pillRoot, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, POD_WATER_DROP, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, TV_EXIT, airRescueRoot, matrixEscapeRoot, theOneRoot, tvExitEmergeRoot, wakeCallRoot, sentinelMachinePose, type TheOneEncounter } from '@auto_matrix/shared';
 
@@ -40,6 +41,60 @@ test('mouse pitch is included in authoritative player input', t => {
   game.document.pointerLockElement = game.canvas;
   game.event(game.document, 'mousemove', { movementX: 0, movementY: -240 }); game.step(.1);
   assert.ok((game.sent.at(-1)?.pitch ?? 0) < -.15, 'upward camera input must reach server-side ballistics');
+});
+
+for (const firstPerson of [false, true]) test(`Gate Three ${firstPerson ? 'first' : 'third'} person can aim and fire at the actual high cable`, t => {
+  const game = setup(t, Math.PI), center = FILM_SETS.film_zion_hangar.center;
+  const gate = newDockGate(5, -50); gate.phase = 'aiming';
+  game.state.id = 'kid'; game.state.currentLocation = 'film_zion_hangar'; game.state.isInMatrix = false;
+  game.state.position = filmPosition('film_zion_hangar', gate.x, gate.z); game.state.position.y += 2.2;
+  game.state.currentAction = { type: 'idle', parameters: { dockGate: gate, riding: true, seated: true }, startedAt: 0, duration: 1e9, progress: 0 };
+  game.controls.possess(game.state); game.controls.gunner = true; game.controls.performing = true; game.controls.firearm = true;
+  game.step(.1); if (firstPerson) { game.key('KeyV'); game.key('KeyV', false); }
+  const eye = dockGateEye(gate), dx = DOCK_GATE.cable.x - eye.x, dz = DOCK_GATE.cable.z - eye.z;
+  const yaw = Math.atan2(dx, dz), pitch = -Math.atan2(32 - eye.y, Math.hypot(dx, dz));
+  game.document.pointerLockElement = game.canvas;
+  game.event(game.document, 'mousemove', { movementX: (gate.yaw - yaw) / .0028, movementY: (pitch - gate.pitch) / .002 });
+  game.step(.1); game.key('KeyT'); game.key('KeyT', false);
+  const input = game.sent.at(-1)!;
+  assert.ok(game.actions.includes('shoot')); assert.equal(fireDockGate(gate, input.yaw, input.pitch!), true, 'real mouse pitch must reach the upper cable');
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const stage = new THREE.Group(); stage.position.set(center.x, center.y - 1, center.z);
+  const renderer = new ZionHomecomingRenderer(stage, 'film_zion_hangar'); t.after(() => renderer.dispose());
+  renderer.update({ scene: 'm3_gate', actor: 'kid', step: 2, completed: [], dockGate: gate, apu: { ...newApuRun(), x: gate.x, z: gate.z, phase: 'arrived' } } as import('@auto_matrix/shared').FilmJourney, 0);
+  stage.updateMatrixWorld(true);
+  for (const aspect of [.6, 16 / 9]) {
+    game.camera.aspect = aspect; game.camera.updateProjectionMatrix(); game.step(.1); game.camera.updateMatrixWorld();
+    const target = new THREE.Vector3().copy(dockGateAim({ ...gate, yaw: input.yaw, pitch: input.pitch! })).add(new THREE.Vector3(center.x, center.y - 1, center.z)).project(game.camera);
+    assert.ok(Math.hypot(target.x, target.y) < .001 && target.z > -1 && target.z < 1, `crosshair and impact plane agree: ${target.toArray()}`);
+    if (!firstPerson) {
+      const pilot = new THREE.Vector3(eye.x + center.x, eye.y + center.y - 1, eye.z + center.z).project(game.camera);
+      assert.ok(Math.abs(pilot.x) < .85 && pilot.y > -.85 && pilot.y < .85, `third person must retain the pilot while aiming upward: ${pilot.toArray()}`);
+      const direction = new THREE.Vector3(eye.x + center.x, eye.y + center.y - 1, eye.z + center.z).sub(game.camera.position);
+      const blocked = new THREE.Raycaster(game.camera.position, direction.clone().normalize(), 0, direction.length() - .3).intersectObject(stage, true)[0];
+      assert.ok(!blocked, `the APU frame cannot cover the pilot's eye: ${blocked?.point.toArray()}`);
+    }
+  }
+  const position = game.group.position.clone(); game.key('KeyW'); game.key('Space'); game.step(.2);
+  assert.deepEqual(game.group.position, position, 'shooting cannot move the pilot out of the APU');
+  const retry = newDockGate(gate.x, gate.z); game.state.currentAction.parameters.dockGate = retry;
+  game.step(.1); assert.ok(Math.abs(game.sent.at(-1)!.yaw - retry.yaw) < .001, 'retry must face the visible counterweight instead of retaining a failed aim');
+  if (!firstPerson) {
+    for (const aspect of [.6, 16 / 9]) for (const elapsed of [0, 1, 2.1, 3, 4, 5.5, 6]) {
+      game.camera.aspect = aspect;
+      const arriving = { ...gate, phase: 'entering' as const, elapsed };
+      game.state.currentAction.parameters.dockGate = arriving; game.step(.1);
+      renderer.update({ scene: 'm3_gate', actor: 'kid', step: 2, completed: [], dockGate: arriving } as import('@auto_matrix/shared').FilmJourney, 0);
+      stage.updateMatrixWorld(true); game.camera.updateMatrixWorld();
+      const ship = stage.getObjectByName('gate-three-hammer')!.getWorldPosition(new THREE.Vector3()).project(game.camera);
+      assert.ok(Math.abs(ship.x) < .5 && Math.abs(ship.y) < .7 && ship.z > -1 && ship.z < 1, `the camera follows Hammer into the dock: ${ship.toArray()}`);
+      const bounds = new THREE.Box3().setFromObject(stage.getObjectByName('gate-three-hammer')!);
+      for (const x of [bounds.min.x, bounds.max.x]) for (const y of [bounds.min.y, bounds.max.y]) for (const z of [bounds.min.z, bounds.max.z]) {
+        const edge = new THREE.Vector3(x, y, z).project(game.camera);
+        assert.ok(Math.abs(edge.x) < .98 && Math.abs(edge.y) < .98 && edge.z > -1 && edge.z < 1, `Hammer must fit the shot at ${elapsed}s / ${aspect}: ${edge.toArray()}`);
+      }
+    }
+  }
 });
 
 test('cuffed movement predicts a slow walk, preserves body space and keeps both views steerable', t => {

@@ -1,4 +1,4 @@
-import { dockLastStandActive, dockLastStandLocked } from '@auto_matrix/shared';
+import { dockGateActive, dockLastStandActive, dockLastStandLocked } from '@auto_matrix/shared';
 import { dockReloadActive, dockReloadLocked } from '@auto_matrix/shared';
 import { basementLocked, tvExitLocked, BASEMENT_ROLES } from '@auto_matrix/shared';
 import { mirrorTime } from '@auto_matrix/shared';
@@ -437,6 +437,11 @@ export class Engine {
       && after.emp?.firedAt !== undefined && after.actor === this.playerControls?.id && this.running) this.audio.theOneSound('emp');
     if (after?.scene === 'm3_dock_battle' && before?.scene === after.scene && after.actor === this.playerControls?.id && this.running
       && (after.dockGunnery?.shots ?? 0) > (before.dockGunnery?.shots ?? 0)) this.audio.governmentSound('minigun');
+    if (after?.scene === 'm3_gate' && before?.scene === after.scene && !after.visiting && after.actor === this.playerControls?.id && this.running) {
+      if ((after.dockGate?.shots ?? 0) > (before.dockGate?.shots ?? 0)) this.audio.governmentSound('minigun');
+      if (after.dockGate?.phase === 'opening' && before.dockGate?.phase === 'aiming') this.audio.governmentSound('cut');
+      if (after.dockGate?.phase === 'entering' && before.dockGate?.phase === 'opening') this.audio.governmentSound('crash');
+    }
     if (after?.scene === 'm1_office_escape' && !after.visiting && after.actor === this.playerControls?.id && before?.scene === after.scene && !after.office?.outcome && this.running) {
       const previous = before.office?.window ?? 0; const current = after.office?.window ?? 0;
       if (previous < .7 && current >= .7) this.audio.windowSound(false);
@@ -481,7 +486,7 @@ export class Engine {
       this.playerControls.ambushCompany = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_dejavu' && journey.ambushEscape
         ? Object.values(agents).filter(actor => actor.status === 'alive' && Boolean((actor.currentAction?.parameters.ambushEscort as { retreat?: boolean } | undefined)?.retreat)).map(actor => actor.position) : journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_basement' ? BASEMENT_ROLES.filter(role => role !== this.playerControls!.id).map(role => agents[role].position) : [];
       this.playerControls.truckRescue = Boolean(journey?.actor === this.playerControls.id && journey.scene === 'm2_trucks' && !journey.visiting && ['rescue', 'rescued'].includes(journey.trucks?.phase ?? ''));
-      const gunner = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm3_dock_battle' && journey.dockGunnery?.phase === 'firing';
+      const gunner = journey?.actor === this.playerControls.id && !journey.visiting && (dockGateActive(journey) || journey.scene === 'm3_dock_battle' && journey.dockGunnery?.phase === 'firing');
       this.playerControls.gunner = gunner;
       this.playerControls.custodyBodies = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_office_escape'
         ? officeCustodyActive(journey) ? [...Object.values(journey.office!.custody!.bodies).map(body => body.position), ...(journey.office!.custody!.courier ? [journey.office!.custody!.courier!.position] : [])] : state.threats.filter(threat => threat.patrol).map(threat => threat.position) : undefined;

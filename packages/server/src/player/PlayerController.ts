@@ -178,6 +178,7 @@ export class PlayerController {
     this.sandbox?.life.film.catch.frame(agent, { x: 0, z: 0, focus: false }, 0, tick);
     this.sandbox?.life.film.dockReload.frame(agent, { focus: false, climb: 0 }, 0, tick);
     this.sandbox?.life.film.dockLastStand.frame(agent, 0, tick);
+    this.sandbox?.life.film.dockGate.frame(agent, 0, tick);
     this.sandbox?.life.film.lobby.frame(agent, 0, tick);
     if (agent.mind) agent.mind.thought = '由玩家决定下一步行动。';
     return { agentId: id };
@@ -365,6 +366,10 @@ export class PlayerController {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false;
         session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
+      if (this.sandbox?.life.film.dockGate.frame(agent, dt, tick, input.yaw, input.pitch ?? 0)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false;
+        session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
       if (this.sandbox?.life.film.dockLastStand.frame(agent, dt, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false;
         session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
@@ -536,6 +541,10 @@ export class PlayerController {
     if (this.sandbox?.life.film.controls(agent) && this.sandbox.life.film.state?.scene === 'm3_hel_bargain'
       && ['attack', 'shoot', 'ability', 'ability2', 'dodge'].includes(kind)) return '人群封住了射线。按当前剧情提示行动，不能用普通攻击跳过谈判。';
     if (agent.id === 'neo' && metacortexLiftLocked(this.sandbox?.state.neoLife?.lift)) return '电梯运行中，请等候到站。';
+    if (this.sandbox?.life.film.dockGate.active(agent) && kind !== 'interact') {
+      if (kind === 'shoot') return this.sandbox.life.film.dockGate.shoot(agent, session.input.yaw, session.input.pitch ?? 0, tick);
+      return '留在受损 APU 内，用鼠标瞄准承重缆索，左键或 T 开炮。';
+    }
     if (this.sandbox?.life.film.performing(agent) && kind !== 'interact') return '演出进行中，可以转动视角观察；进度会自动保存。';
     if (this.sandbox?.life.film.state && sentinelActive(this.sandbox.life.film.state) && ['attack', 'shoot', 'ability', 'ability2', 'dodge', 'travel'].includes(kind)) return '哨兵正在附近扫描。保持安静，武器和能力会暴露整艘船。';
     if (this.sandbox?.life.film.driving(agent) && ['attack', 'shoot', 'ability', 'ability2', 'dodge', 'travel'].includes(kind)) return this.sandbox.life.film.state?.scene === 'm3_hammer_tunnels'

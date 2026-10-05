@@ -1,5 +1,6 @@
 import { crosscutActive, crosscutAction, crosscutText } from '@auto_matrix/shared';
 import { DOCK_RELOAD, dockReloadActive, dockReloadText } from '@auto_matrix/shared';
+import { DOCK_GATE, dockGateActive, dockGateText } from '@auto_matrix/shared';
 import { DOCK_LAST_STAND, dockLastStandActive, dockLastStandText } from '@auto_matrix/shared';
 import { nearMetacortexLift, filmStepNear, awakeningDuration } from '@auto_matrix/shared';
 import { CATCH, RELOADED_FINALE, HEL_COATCHECK, OPENING_ESCAPE, OPENING_HOTEL, catchText, reloadedText } from '@auto_matrix/shared';
@@ -29,6 +30,12 @@ import { trilogyEpilogueLocked, trilogyEpilogueProgress } from '@auto_matrix/sha
 const button = (target: string, label: string, disabled = false) => `<button data-action="life" data-target="film:${target}" ${disabled ? 'disabled' : ''}>${label}</button>`;
 export function renderFilmJourney(player: AgentState, sandbox: SandboxState): string {
   const life = sandbox.neoLife!; const journey = life.journey!; const scene = FILM_SCENE_BY_ID[journey.scene];
+  if (dockGateActive(journey) && journey.dockGate) {
+    const gate = journey.dockGate, current = player.id === journey.actor;
+    const action = !current ? button('resume', '接回 Kid 的炮位') : gate.phase === 'failed' ? button('retry', '从闸门炮位重试 · 保留驾驶结果')
+      : gate.phase === 'ready' ? button('act', '接管机炮 · G') : gate.phase === 'done' ? button('next', '交接 Link · 准备 EMP →') : '<p>合上手记，用鼠标瞄准并开炮。</p>';
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>三号闸门 · 承重缆索</h3><p>Kid 留在受损 APU 内，切断配重让 Hammer 进入</p></header><article class="film-now"><div><p>${dockGateText(gate)}</p><div class="film-controls">${action}</div><small>有效命中 ${gate.hits}/${DOCK_GATE.hits} · 弹药 ${gate.ammo} · 剩余 ${Math.ceil(gate.remaining)} 秒<br>鼠标上下左右瞄准 · 左键 / T 开炮 · V 切换视角</small></div></article></div>`;
+  }
   if (dockLastStandActive(journey)) {
     const phase = journey.dockLastStand?.phase ?? 'ready', center = FILM_SETS[scene.set].center;
     const close = Math.hypot(player.position.x - center.x - DOCK_LAST_STAND.kid.x, player.position.z - center.z - DOCK_LAST_STAND.kid.z) <= 1.2;

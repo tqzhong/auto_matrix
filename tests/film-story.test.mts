@@ -1,4 +1,4 @@
-import { DOCK_RELOAD, DOCK_LAST_STAND } from '@auto_matrix/shared';
+import { DOCK_GATE, dockGateEye, DOCK_RELOAD, DOCK_LAST_STAND } from '@auto_matrix/shared';
 import { TV_EXIT, basementRouteLength } from '@auto_matrix/shared';
 import { CABIN, CABIN_ROUTE_LENGTH, cabinGuidePose, RELOADED, RELOADED_FINALE } from '@auto_matrix/shared';
 import assert from 'node:assert/strict';
@@ -3247,6 +3247,15 @@ test('the entire film route completes through interactions, driving and real com
         else if (scene.id === 'm3_hel_bargain' && index === 3) {
           h.advance(2); h.players.act('film-player', 'dodge', h.tick());
           actor.rotation = Math.PI; h.players.act('film-player', 'attack', h.tick());
+        }
+        else if (scene.id === 'm3_gate' && index === 2) {
+          const gate = state.dockGate!, eye = dockGateEye(gate), dx = DOCK_GATE.cable.x - eye.x, dz = DOCK_GATE.cable.z - eye.z;
+          const yaw = Math.atan2(dx, dz), pitch = -Math.atan2(32 - eye.y, Math.hypot(dx, dz));
+          for (let burst = 0; burst < DOCK_GATE.hits; burst++) {
+            h.sandbox.life.film.dockGate.frame(actor, .1, h.tick());
+            h.sandbox.life.film.dockGate.shoot(actor, yaw, pitch, h.tick());
+          }
+          for (let frame = 0; frame < 115; frame++) h.players.step(.1, true, h.tick());
         }
         else if (scene.id === 'm3_hel_bargain' && index === 4) { h.advance(4); h.command('act'); }
         else if (scene.id === 'm3_hel_bargain' && index === 5) { actor.rotation = Math.PI; h.command('act'); }
