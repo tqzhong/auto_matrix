@@ -11,6 +11,7 @@ import { poseOracleRestored } from './OracleRestorationPerformance.js';
 import { poseGarden } from './GardenPerformance.js';
 import { poseDockReload } from './DockReloadPerformance.js';
 import { poseDockLastStand } from './DockLastStandPerformance.js';
+import { poseDockGate } from './DockGatePerformance.js';
 import { EpilogueHeads } from './EpilogueHeads.js';
 import { poseWetwall } from './WetwallPerformance.js';
 import { poseSixthFloor } from './SixthFloorPerformance.js';
@@ -48,6 +49,7 @@ const HERO_LOOKS: Record<string, Look> = {
   oracle: { width: 1.05, shoulders: 0.62, waist: 0.43, hips: 0.52, skin: '#77513f', cloth: '#66745d', leather: false, coat: false, hair: 'short', glasses: 'none' },
   architect: { width: 1.02, shoulders: .65, waist: .43, hips: .46, skin: '#c8b19b', cloth: '#a9b1aa', leather: false, coat: false, hair: 'short', glasses: 'none' },
   sati: { width: 1.03, shoulders: .46, waist: .36, hips: .43, skin: '#976e50', cloth: '#b4be92', leather: false, coat: false, hair: 'pixie', glasses: 'none' },
+  zee: { width: .97, shoulders: .5, waist: .33, hips: .45, skin: '#87583e', cloth: '#75684d', leather: false, coat: false, hair: 'pixie', glasses: 'none' },
   seraph: { width: .94, shoulders: .58, waist: .34, hips: .4, skin: '#c5a27e', cloth: '#d7d4c6', leather: false, coat: false, hair: 'short', glasses: 'none' },
   merovingian: { width: 1, shoulders: .67, waist: .42, hips: .46, skin: '#d1ad97', cloth: '#171a1b', leather: false, coat: false, hair: 'short', glasses: 'none' },
   persephone: { width: .91, shoulders: .53, waist: .32, hips: .46, skin: '#e1bca9', cloth: '#621923', leather: false, coat: false, hair: 'pixie', glasses: 'none' },
@@ -82,6 +84,7 @@ export interface CharacterRig {
   rifle?: boolean;
   weaponStyle?: RescueLoadout | 'pistol' | 'pulse' | 'hel_pistol' | 'gas_launcher';
   muzzleIndex?: number;
+  gateBolt?: THREE.Mesh;
 }
 
 export function weaponMuzzle(rig: CharacterRig): THREE.Vector3 | undefined {
@@ -529,7 +532,7 @@ export class CharacterModels {
     if (!near) return;
     this.epilogueHeads.update(rig, input);
     if (poseOracleRestored(rig, input.oracleRestored)) return;
-    const pulseRifle = Boolean(input.crosscut && ['cypher', 'tank'].includes(input.crosscut.role) || input.betrayal && ['cypher', 'tank'].includes(input.betrayal.role));
+    const pulseRifle = Boolean(input.dockGateCover || input.crosscut && ['cypher', 'tank'].includes(input.crosscut.role) || input.betrayal && ['cypher', 'tank'].includes(input.betrayal.role));
     const weaponStyle: CharacterRig['weaponStyle'] = pulseRifle ? 'pulse' : input.weaponStyle ?? (rig.rifle ? 'rifle' : 'pistol');
     if (input.armed && rig.weapons && rig.weaponStyle !== weaponStyle) {
       rig.weapons.forEach(gun => gun.removeFromParent()); rig.weapons = undefined;
@@ -566,6 +569,11 @@ export class CharacterModels {
       });
     }
     rig.weapons?.forEach(gun => { gun.visible = Boolean(input.armed); });
+    if (input.dockGateCover && !rig.gateBolt) {
+      rig.gateBolt = this.mesh(rig.root, this.geometry(new THREE.CylinderGeometry(.025, .045, 1, 6)),
+        this.material(new THREE.MeshBasicMaterial({ color: 0xb8e7ff, toneMapped: false })), [0, 0, 0]);
+      rig.gateBolt.name = 'zee-rescue-discharge'; rig.gateBolt.castShadow = false;
+    }
     if (input.spoon !== undefined && !rig.spoon) {
       rig.spoon = new SpoonModel(); this.spoons.add(rig.spoon);
       rig.spoon.root.name = 'held-spoon';
@@ -787,6 +795,7 @@ export class CharacterModels {
     poseGarden(rig, input.epilogue, input.parkOutfit);
     poseDockReload(rig, input.dockReload);
     poseDockLastStand(rig, input.dockLastStand);
+    poseDockGate(rig, input.dockGate, input.dockGateCover);
     poseWetwall(rig, input.wetwall, input.speed < .05 && Math.abs(input.climbing ?? 0) < .05);
     poseSixthFloor(rig, input.sixth);
     poseBasement(rig, input.basement);

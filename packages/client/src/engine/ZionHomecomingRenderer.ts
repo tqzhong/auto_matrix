@@ -4,7 +4,8 @@ import { APU_ROUTE, DOCK_GUNNERY, ZION_OBSTACLES, dockPowerOffline, type FilmJou
 import { dockLastStandPose } from '@auto_matrix/shared';
 import { DockLastStandRenderer } from './DockLastStandRenderer.js';
 import { DockGateRenderer } from './DockGateRenderer.js';
-import { dockGateAim } from '@auto_matrix/shared';
+import { DockGateRescueRenderer } from './DockGateRescueRenderer.js';
+import { dockGateAim, dockGatePose } from '@auto_matrix/shared';
 import { DOCK_RELOAD, dockReloadBox } from '@auto_matrix/shared';
 
 /** Six authored Zion interiors share rock, metal and service-light materials, not a generic cave layout. */
@@ -23,6 +24,7 @@ export class ZionHomecomingRenderer {
   private apu?: THREE.Group;
   private lastStand?: DockLastStandRenderer;
   private gate?: DockGateRenderer;
+  private gateRescue?: DockGateRescueRenderer;
   private cannons: THREE.Group[] = [];
   private sentinelDives: THREE.Group[] = [];
   private ammoCart?: THREE.Group;
@@ -149,17 +151,22 @@ export class ZionHomecomingRenderer {
     this.obstacles(iron); for (const x of [-24, 18]) for (let i = 0; i < 3; i++) this.box(metal, x, 2 + i * 1.5, -18 + i * 3, 7, .2, 4);
     this.box(metal, 11.5, -.04, 17, 8, .18, 3.2, this.static, 'zion-ship-gangway');
     this.apu = new THREE.Group(); this.apu.name = 'zion-kid-apu'; this.moving.add(this.apu);
-    const armor = this.material(0x58625f, .44, .72), joint = this.material(0x242b2a, .58, .65);
-    this.box(joint, 0, 2.9, .4, 3.1, 1.3, 2.1, this.apu);
+    const armor = this.surface('metal_plate', 0x69746b, 1), joint = this.material(0x343d39, .58, .65);
+    this.box(joint, 0, 2.05, .4, 3.1, .3, 2.1, this.apu, 'apu-seat-platform');
+    this.box(joint, 0, 2.28, .14, 1.25, .14, .65, this.apu, 'apu-seat-pan');
+    this.box(joint, 0, 3.25, .42, 1.25, 1.6, .14, this.apu, 'apu-seat-back');
     this.box(armor, 0, 6.8, 1.1, 4.8, .55, .7, this.apu, 'apu-upper-rail');
-    this.box(joint, 0, 4.1, -1.15, 2.1, 1.25, 1.1, this.apu);
+    this.box(joint, 0, 3.35, -.85, 2.1, .35, .36, this.apu, 'apu-control-panel');
     for (const side of [-1, 1]) {
+      this.pipe(joint, [side * .62, 3.32, -1], [side * .62, 3.88, -1], .065, this.apu).name = `apu-control-${side}`;
+      this.pipe(joint, [side * 1.8, 2.6, .2], [side * 1.8, 5.4, .2], .15, this.apu);
+      this.pipe(metal, [side * 1.8, 3.1, .2], [side * 1.8, 4.9, .2], .08, this.apu);
       this.box(armor, side * 2.2, 5.2, .75, .72, 3.6, 1.1, this.apu);
       this.box(armor, side * 1.55, 1.2, .4, 1.45, 2.4, 2.2, this.apu);
       this.box(joint, side * 1.55, 2.5, .45, 1.4, 1, 1.7, this.apu);
       this.box(armor, side * 1.55, .16, -.55, 2.25, .35, 3, this.apu);
       const cannon = new THREE.Group(); cannon.name = `apu-cannon-${side}`; cannon.position.set(side * 3.1, 5.7, -.4); this.apu.add(cannon); this.cannons.push(cannon);
-      this.box(joint, 0, 0, 0, 1.5, 1.5, 2.4, cannon);
+      this.box(joint, side * 3.1, 5.7, -.4, 1.5, 1.5, 2.4, this.apu, `apu-cannon-mount-${side}`);
       this.pipe(armor, [0, -.1, -.1], [0, -.1, -4.8], .48, cannon);
       this.pipe(armor, [side * .5, .2, -.1], [side * .5, .2, -4.8], .23, cannon);
       this.box(lit, 0, -.15, -4.8, .65, .13, .1, cannon);
@@ -168,6 +175,7 @@ export class ZionHomecomingRenderer {
       flash.position.set(0, -.1, -5.15); flash.visible = false; this.muzzleFlashes.push(flash);
     }
     this.lastStand = new DockLastStandRenderer(this.moving);
+    this.gateRescue = new DockGateRescueRenderer(this.moving);
     this.ammoCart = new THREE.Group(); this.ammoCart.name = 'zion-ammo-cart'; this.moving.add(this.ammoCart);
     this.box(iron, 0, .85, 0, 2.4, .3, 3.3, this.ammoCart);
     for (const side of [-1, 1]) {
@@ -389,13 +397,22 @@ export class ZionHomecomingRenderer {
       const battle = !journey?.visiting && ['m3_dock_battle', 'm3_gate'].includes(journey?.scene ?? '');
       this.apu.visible = battle;
       this.apu.position.set(journey?.scene === 'm3_gate' ? journey.apu?.x ?? 0 : 0, .9, journey?.scene === 'm3_gate' ? journey.apu?.z ?? APU_ROUTE.start : APU_ROUTE.start);
-      this.apu.rotation.z = journey?.apu?.phase === 'riding' ? Math.sin(elapsed * 11) * .015 : 0;
+      this.apu.rotation.set(0, 0, journey?.apu?.phase === 'riding' ? Math.sin(elapsed * 11) * .015 : 0);
+      if (journey?.scene === 'm3_gate' && journey.dockGate) {
+        const pose = dockGatePose(journey.dockGate);
+        this.apu.position.set(pose.x, pose.y, pose.z); this.apu.rotation.set(pose.pitch, 0, pose.roll);
+      }
     }
     this.lastStand?.update(journey);
+    this.gateRescue?.update(journey);
     for (const cannon of this.cannons) {
       if (journey?.scene === 'm3_gate' && journey.dockGate) {
-        const aim = dockGateAim(journey.dockGate);
-        const direction = new THREE.Vector3(aim.x, aim.y, aim.z).sub(this.apu!.position).sub(cannon.position).normalize();
+        const state = journey.dockGate, aim = dockGateAim(state);
+        const target = new THREE.Vector3(aim.x, aim.y, aim.z);
+        if (state.toppled && ['falling', 'rescue', 'braced'].includes(state.phase)) {
+          target.lerp(new THREE.Vector3(state.x, 3.5, state.z - 12), 1 - (state.brace ?? 0));
+        }
+        const direction = target.sub(this.apu!.position).applyQuaternion(this.apu!.quaternion.clone().invert()).sub(cannon.position).normalize();
         cannon.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
       } else cannon.quaternion.identity();
     }
@@ -487,6 +504,7 @@ export class ZionHomecomingRenderer {
   }
   dispose(): void {
     this.lastStand?.dispose();
+    this.gateRescue?.dispose();
     this.gate?.dispose();
     this.disposed = true; this.group.removeFromParent(); this.group.clear();
     this.geometries.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); this.textures.forEach(t => t.dispose()); this.lights.forEach(l => l.dispose());

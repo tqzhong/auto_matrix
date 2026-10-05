@@ -439,6 +439,10 @@ export class Engine {
       && (after.dockGunnery?.shots ?? 0) > (before.dockGunnery?.shots ?? 0)) this.audio.governmentSound('minigun');
     if (after?.scene === 'm3_gate' && before?.scene === after.scene && !after.visiting && after.actor === this.playerControls?.id && this.running) {
       if ((after.dockGate?.shots ?? 0) > (before.dockGate?.shots ?? 0)) this.audio.governmentSound('minigun');
+      const previous = before.dockGate, current = after.dockGate;
+      if (current?.phase === 'falling' && previous?.phase === 'falling' && previous.elapsed < 2.65 && current.elapsed >= 2.65) this.audio.governmentSound('crash');
+      if (current?.phase === 'rescue' && previous?.phase === 'rescue') for (const at of [.75, 1.55])
+        if (previous.elapsed < at && current.elapsed >= at) this.audio.governmentSound('bullet');
       if (after.dockGate?.phase === 'opening' && before.dockGate?.phase === 'aiming') this.audio.governmentSound('cut');
       if (after.dockGate?.phase === 'entering' && before.dockGate?.phase === 'opening') this.audio.governmentSound('crash');
     }

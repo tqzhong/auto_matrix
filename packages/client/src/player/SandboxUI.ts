@@ -1664,7 +1664,7 @@ export class SandboxUI {
       this.el('sandbox-nearby').textContent = '接管 APU 机炮'; this.el('sandbox-waypoint').textContent = '';
       this.el('film-sequence').classList.toggle('hidden', gate.phase === 'aiming' || gate.phase === 'ready');
       this.el('film-sequence-line').textContent = dockGateText(gate);
-      this.el('film-sequence-hint').textContent = gate.phase === 'failed' ? 'J 从闸门炮位重试' : 'V 切换视角';
+      this.el('film-sequence-hint').textContent = gate.phase === 'failed' ? 'J 从闸门炮位重试' : gate.phase === 'braced' ? '按住 G 抬炮 · 松开会失去支撑 · V 切换视角' : 'V 切换视角';
       document.getElementById('game-objective-copy')!.textContent = gate.phase === 'aiming' ? '瞄准右上方钢缆 · 门控失效，必须让配重牵开闸门' : dockGateText(gate); return;
     }
     if (dockLastStandActive(journey)) {

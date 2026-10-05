@@ -33,7 +33,7 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
   if (dockGateActive(journey) && journey.dockGate) {
     const gate = journey.dockGate, current = player.id === journey.actor;
     const action = !current ? button('resume', '接回 Kid 的炮位') : gate.phase === 'failed' ? button('retry', '从闸门炮位重试 · 保留驾驶结果')
-      : gate.phase === 'ready' ? button('act', '接管机炮 · G') : gate.phase === 'done' ? button('next', '交接 Link · 准备 EMP →') : '<p>合上手记，用鼠标瞄准并开炮。</p>';
+      : gate.phase === 'ready' ? button('act', '接管机炮 · G') : gate.phase === 'done' ? button('next', '交接 Link · 准备 EMP →') : gate.phase === 'braced' ? '<p>合上手记，按住 G 抬起机炮。</p>' : gate.phase === 'aiming' ? '<p>合上手记，用鼠标瞄准并开炮。</p>' : '<p>可按 V 切换视角，救援进度自动保存。</p>';
     return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>三号闸门 · 承重缆索</h3><p>Kid 留在受损 APU 内，切断配重让 Hammer 进入</p></header><article class="film-now"><div><p>${dockGateText(gate)}</p><div class="film-controls">${action}</div><small>有效命中 ${gate.hits}/${DOCK_GATE.hits} · 弹药 ${gate.ammo} · 剩余 ${Math.ceil(gate.remaining)} 秒<br>鼠标上下左右瞄准 · 左键 / T 开炮 · V 切换视角</small></div></article></div>`;
   }
   if (dockLastStandActive(journey)) {
