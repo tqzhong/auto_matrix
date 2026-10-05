@@ -27,7 +27,7 @@ test('Kid must steer the damaged APU past sentinel dives to reach Gate Three', (
   assert.ok(evasive.hull > 0);
 });
 
-test('the APU ride saves, retries and hands Kid to the physical gate control', () => {
+test('the APU ride saves, retries and hands Kid to the counterweight firing station', () => {
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
   const dynamics = { record: (event: Omit<WorldEvent, 'id'>) => world.addWorldEvent(event) } as WorldDynamics;
   const sandbox = new SandboxSystem(world, dynamics, 42);
@@ -60,9 +60,10 @@ test('the APU ride saves, retries and hands Kid to the physical gate control', (
   assert.equal(run.phase, 'arrived'); sandbox.tick(550); assert.equal(state.step, 2);
   kid.position = filmStepPosition(scene, scene.steps[2]); command('act', 551);
   for (let tick = 552; tick <= 565; tick++) sandbox.tick(tick);
-  assert.equal(state.step, scene.steps.length); assert.ok(state.completed.includes(scene.id));
+  assert.equal(state.step, 2); assert.equal(state.dockGate?.phase, 'aiming');
+  assert.equal(state.completed.includes(scene.id), false, 'the arrival does not cut the cable');
 
-  state.step = 1; state.apu = { ...newApuRun(), x: 0, z: -29, speed: 12, hull: 20 };
+  delete state.dockGate; state.step = 1; state.apu = { ...newApuRun(), x: 0, z: -29, speed: 12, hull: 20 };
   kid.position = filmStepPosition(scene, scene.steps[1]);
   for (let frame = 0; frame < 60 && state.apu.phase === 'riding'; frame++)
     sandbox.life.film.driveFrame(kid, { throttle: 1, steer: 0, brake: false }, .05, 566 + frame);
@@ -80,8 +81,8 @@ test('the Zion dock renders a damaged APU and opens Gate Three after Kid succeed
   const gate = root.getObjectByName('zion-gate-three')!;
   assert.equal(apu.visible, true); assert.equal(apu.position.x, 4); assert.equal(apu.position.z, -12);
   assert.equal(gate.position.y, 0);
-  journey.step = scene.steps.length; renderer.update(journey, 2);
-  assert.ok(gate.position.y > 0);
+  journey.step = scene.steps.length; journey.completed.push(scene.id); renderer.update(journey, 2);
+  assert.ok(gate.position.x > 0); assert.equal(gate.position.y, 0, 'the gate slides along its horizontal channel');
   renderer.dispose(); assert.equal(root.children.length, 0);
 });
 

@@ -20,8 +20,10 @@ export class DockLastStandSystem {
     mifune.rotation = pose.mifune.yaw; mifune.currentLocation = 'film_zion_hangar'; mifune.isInMatrix = false;
     mifune.status = pose.dead >= 1 ? 'dead' : 'alive'; mifune.health = pose.dead >= 1 ? 0 : pose.injured ? 1 : mifune.health;
     mifune.velocity = { x: 0, y: 0, z: 0 }; mifune.targetPosition = null; mifune.currentPath = [];
+    const previous = mifune.currentAction?.parameters.dockLastStand as { phase: string } | undefined;
+    const startedAt = encounter.phase === 'done' && previous?.phase === 'done' ? mifune.currentAction!.startedAt : tick;
     mifune.currentAction = { type: 'idle', parameters: { resolved: true, riding: !pose.fallen, seated: !pose.fallen,
-      dockLastStand: { ...encounter, role: 'mifune' } }, startedAt: tick, duration: 1e9, progress: 0 };
+      dockLastStand: { ...encounter, role: 'mifune' } }, startedAt, duration: 1e9, progress: 0 };
     const kid = this.world.agents.get('kid')!;
     if (journey.actor !== 'kid' || journey.scene !== 'm3_dock_battle' || !dockLastStandLocked(encounter)) return;
     if (encounter.approach && encounter.phase !== 'attack') {

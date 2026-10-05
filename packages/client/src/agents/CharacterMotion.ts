@@ -90,6 +90,7 @@ export interface MotionInput {
   epilogue?: import('@auto_matrix/shared').TrilogyEpilogueGesture;
   dockReload?: import('@auto_matrix/shared').DockReloadGesture;
   dockLastStand?: import('@auto_matrix/shared').DockLastStandGesture;
+  dockGate?: import('@auto_matrix/shared').DockGate;
   parkOutfit?: boolean;
   weaponStyle?: RescueLoadout | 'hel_pistol' | 'gas_launcher';
   helDanceDoor?: number;

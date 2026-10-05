@@ -1,5 +1,5 @@
 import { dockReloadHeight, dockReloadLocked } from '@auto_matrix/shared';
-import { dockLastStandLocked, dockLastStandPose } from '@auto_matrix/shared';
+import { dockGateEye, dockGateAim, dockGateShip, dockLastStandLocked, dockLastStandPose } from '@auto_matrix/shared';
 import { crosscutView } from '@auto_matrix/shared';
 import { truthRest, truthKneel, truthSeat } from '@auto_matrix/shared';
 import { METACORTEX } from '@auto_matrix/shared';
@@ -248,7 +248,7 @@ export class PlayerControls {
     const turn = -event.movementX * 0.0028;
     this.yaw += turn;
     if (!this.dragging) this.movementYaw += turn;
-    this.pitch = THREE.MathUtils.clamp(this.pitch + event.movementY * 0.002, this.motion.mirrorBeat !== undefined ? -.9 : -.4, this.motion.computerCheck ? 1.5 : 1.1);
+    this.pitch = THREE.MathUtils.clamp(this.pitch + event.movementY * 0.002, this.motion.dockGate ? -1.35 : this.motion.mirrorBeat !== undefined ? -.9 : -.4, this.motion.dockGate ? 1.35 : this.motion.computerCheck ? 1.5 : 1.1);
     this.lastLook = performance.now();
   };
   private click = (): void => { if (this.id && this.enabled && document.pointerLockElement !== this.canvas) this.lockPointer(); };
@@ -491,6 +491,9 @@ export class PlayerControls {
     }
     if (smithFinaleLocked(smithFinale)) this.performing = true;
     const dockReload = state.currentAction?.parameters.dockReload as MotionInput['dockReload'];
+    const gate = state.currentAction?.parameters.dockGate as MotionInput['dockGate'];
+    if (gate && (!this.motion.dockGate || gate.phase === 'ready' && this.motion.dockGate.phase !== 'ready')) { this.yaw = this.movementYaw = gate.yaw; this.pitch = gate.pitch; this.cameraReady = false; }
+    this.motion.dockGate = gate;
     const lastStand = state.currentAction?.parameters.dockLastStand as MotionInput['dockLastStand'];
     if (this.motion.dockLastStand && !dockLastStandLocked(lastStand)) this.performing = false;
     if (dockLastStandLocked(lastStand)) {
@@ -543,7 +546,7 @@ export class PlayerControls {
     if (redPillEnded) this.yaw = this.movementYaw = this.facing = state.rotation;
     if (bridgeCaptureStarting) this.yaw = this.movementYaw = Math.atan2(bridgeCaught!.x - state.position.x, bridgeCaught!.z - state.position.z);
     this.wasPerforming = this.performing;
-    this.motion.armed = this.firearm || state.currentAction?.parameters.armed === true;
+    this.motion.armed = !gate && (this.firearm || state.currentAction?.parameters.armed === true);
     this.motion.seated = state.currentAction?.parameters.seated === true;
     this.motion.floorSeated = state.currentAction?.parameters.floorSeated === true;
     this.motion.weaponStyle = state.currentAction?.parameters.weaponStyle as MotionInput['weaponStyle'] ?? (this.firearm ? this.weaponStyle : undefined);
@@ -752,7 +755,7 @@ export class PlayerControls {
       this.position = { x: center.x + dropRoot.x, y: center.y + dropRoot.y, z: center.z + dropRoot.z };
       this.vy = basementDropPose(basement!.drop!).verticalVelocity; this.planar = { x: 0, z: 0 }; this.localJump = false;
     } else if (this.ride || this.climbing || this.performing) {
-      const blend = dockLastStandLocked(this.motion.dockLastStand) || dockReloadLocked(this.motion.dockReload) || computerCheckLocked(computerCheck) || this.motion.contact || inOfficeLift || this.motion.officeCustody?.street || this.motion.truckPassenger || this.motion.farewell || this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.training || this.motion.workday || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || catchCinematic || deusPactLocked(this.motion.deusPact) || smithFinaleLocked(this.motion.smithFinale) || trilogyEpilogueLocked(this.motion.epilogue) || this.motion.mirrorEntry || this.motion.lobbyEntry ? 1 : 1 - Math.exp(-20 * delta);
+      const blend = this.motion.dockGate || dockLastStandLocked(this.motion.dockLastStand) || dockReloadLocked(this.motion.dockReload) || computerCheckLocked(computerCheck) || this.motion.contact || inOfficeLift || this.motion.officeCustody?.street || this.motion.truckPassenger || this.motion.farewell || this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.training || this.motion.workday || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || catchCinematic || deusPactLocked(this.motion.deusPact) || smithFinaleLocked(this.motion.smithFinale) || trilogyEpilogueLocked(this.motion.epilogue) || this.motion.mirrorEntry || this.motion.lobbyEntry ? 1 : 1 - Math.exp(-20 * delta);
       this.position.x += (state.position.x - this.position.x) * blend; this.position.y += (state.position.y - this.position.y) * blend; this.position.z += (state.position.z - this.position.z) * blend;
       this.vy = 0; this.planar = { x: 0, z: 0 }; this.localJump = false;
     } else if (running && this.enabled && state.status === 'alive') {
@@ -834,7 +837,7 @@ export class PlayerControls {
     const basementWide = !this.firstPerson && Boolean(dropRoot);
     const streetShaftWide = !this.firstPerson && tvExit?.phase === 'emerging';
     this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, inOfficeLift && !this.firstPerson ? 80 : basementWide ? this.camera.aspect < .85 ? 82 : 78 : bathroomWide ? this.camera.aspect < .85 ? 78 : 58 : streetShaftWide ? this.camera.aspect < .85 ? 68 : 60 : podWide ? 65 : this.motion.truth && !this.firstPerson && this.camera.aspect < .85 ? 68 : cabinWide ? this.camera.aspect < .85 ? 68 : 58 : smithFinaleWide || epilogueWide ? 64 : ladderWide ? 62 : interviewApproach ? 70 : interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide || sentinelWide || interludeWide || oracleWide || betrayalWide || rescueWide || governmentWide || airRescueWide || escapeWide || oneWide || catchWide || lobbyWide || pillDepartureWide ? 58 : this.motion.inspecting && !this.firstPerson ? 42 : this.firstPerson ? this.motion.mirrorBeat !== undefined ? 78 : sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
-    this.camera.near = basement?.crawling || Boolean(dropRoot) || this.firstPerson && (this.motion.performance === 'pod' && state.currentLocation === 'film_power_plant_pods' || this.motion.morning || this.motion.workday?.role === 'neo' && this.motion.workday.phase === 'signing' || this.motion.computerCheck || this.motion.contact?.propMotion === 'minidisc' && ['retrieving', 'disk', 'handover'].includes(this.motion.contact.phase) || this.motion.pills || this.motion.farewell || this.motion.dockLastStand || deusPactLocked(this.motion.deusPact) || smithFinaleLocked(this.motion.smithFinale) || this.motion.bathroom || this.motion.sixth || this.motion.wetwall?.hanging || tvExit?.phase === 'emerging') ? .06 : this.firstPerson && this.motion.club ? .08 : this.defaultNear;
+    this.camera.near = basement?.crawling || Boolean(dropRoot) || this.firstPerson && (this.motion.performance === 'pod' && state.currentLocation === 'film_power_plant_pods' || this.motion.morning || this.motion.workday?.role === 'neo' && this.motion.workday.phase === 'signing' || this.motion.computerCheck || this.motion.contact?.propMotion === 'minidisc' && ['retrieving', 'disk', 'handover'].includes(this.motion.contact.phase) || this.motion.pills || this.motion.farewell || this.motion.dockGate || this.motion.dockLastStand || deusPactLocked(this.motion.deusPact) || smithFinaleLocked(this.motion.smithFinale) || this.motion.bathroom || this.motion.sixth || this.motion.wetwall?.hanging || tvExit?.phase === 'emerging') ? .06 : this.firstPerson && this.motion.club ? .08 : this.defaultNear;
     const arrest = this.motion.officeCustody?.street;
     if (this.motion.epilogue?.kind === 'neo_carried') this.camera.fov = this.firstPerson ? 68 : 58;
     if (deusPactLocked(this.motion.deusPact)) this.camera.fov = this.firstPerson ? 68 : 57;
@@ -1851,6 +1854,23 @@ export class PlayerControls {
         if (resetCamera) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
         this.camera.lookAt(focus);
       }
+    } else if (this.motion.dockGate) {
+      const gate = this.motion.dockGate, center = FILM_SETS.film_zion_hangar.center;
+      const origin = new THREE.Vector3(center.x, center.y - 1, center.z);
+      const eye = new THREE.Vector3().copy(dockGateEye(gate)).add(origin);
+      const target = new THREE.Vector3().copy(dockGateAim({ ...gate, yaw: this.yaw, pitch: this.pitch })).add(origin);
+      const shoulder = this.yaw + .68;
+      const ideal = this.firstPerson ? eye : eye.clone().add(new THREE.Vector3(-Math.sin(shoulder) * 56, 5, -Math.cos(shoulder) * 56));
+      ideal.y = Math.max(center.y + 2, ideal.y);
+      if (!this.firstPerson && ['opening', 'entering', 'done'].includes(gate.phase)) {
+        this.camera.fov = this.camera.aspect < .85 ? 80 : 64;
+        ideal.set(center.x - 34, center.y + 31, center.z);
+        target.set(center.x + 13, center.y + 26, center.z - 64);
+        if (gate.phase !== 'opening') {
+          const ship = dockGateShip(gate); target.set(center.x + ship.x, center.y - 1 + ship.y, center.z + ship.z);
+        }
+      }
+      this.camera.position.copy(ideal); this.camera.lookAt(target);
     } else if (this.gunner) {
       const forward = new THREE.Vector3(Math.sin(this.yaw), 0, Math.cos(this.yaw));
       const side = new THREE.Vector3(Math.cos(this.yaw), 0, -Math.sin(this.yaw));

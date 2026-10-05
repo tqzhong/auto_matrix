@@ -352,6 +352,7 @@ export class AgentRenderer {
         epilogue: state.currentAction?.parameters.epilogue as MotionInput['epilogue'],
         dockReload: state.currentAction?.parameters.dockReload as MotionInput['dockReload'],
         dockLastStand: state.currentAction?.parameters.dockLastStand as MotionInput['dockLastStand'],
+        dockGate: state.currentAction?.parameters.dockGate as MotionInput['dockGate'],
         lobbyEntry: state.currentAction?.parameters.lobbyEntry as MotionInput['lobbyEntry'],
         weaponStyle: state.currentAction?.parameters.weaponStyle as MotionInput['weaponStyle'],
         vase: state.currentAction?.parameters.vase as number | undefined,

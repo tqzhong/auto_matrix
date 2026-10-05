@@ -4,6 +4,8 @@ import { ReloadedOpeningSystem } from './ReloadedOpeningSystem.js';
 import { ReloadedCatchSystem } from './ReloadedCatchSystem.js';
 import { DockReloadSystem } from './DockReloadSystem.js';
 import { DockLastStandSystem } from './DockLastStandSystem.js';
+import { DockGateSystem } from './DockGateSystem.js';
+import { dockGateActive } from '@auto_matrix/shared';
 import { dockLastStandActive, dockLastStandLocked } from '@auto_matrix/shared';
 import { dockReloadActive, dockReloadLocked } from '@auto_matrix/shared';
 import { WetwallEscapeSystem } from './WetwallEscapeSystem.js';
@@ -79,6 +81,7 @@ export class FilmStorySystem {
   readonly catch: ReloadedCatchSystem;
   readonly dockReload: DockReloadSystem;
   readonly dockLastStand: DockLastStandSystem;
+  readonly dockGate: DockGateSystem;
   readonly wetwall: WetwallEscapeSystem;
   readonly sixth: SixthFloorSystem;
   readonly basement: BasementEscapeSystem;
@@ -87,7 +90,7 @@ export class FilmStorySystem {
   readonly openingHotel: OpeningHotelSystem;
   readonly office: OfficeEscapeSystem;
   readonly custody: OfficeCustodySystem;
-  constructor(private world: WorldState, private sandbox: () => SandboxState, private returnToLife: (tick: number) => void, private elapse: (minutes: number, tick: number) => void) { this.lobby = new LobbyCombatSystem(world, sandbox); this.coatcheck = new HelCoatcheckSystem(world, sandbox); this.openingHotel = new OpeningHotelSystem(sandbox); this.openingHotel.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.openingHotel.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.office = new OfficeEscapeSystem(sandbox); this.custody = new OfficeCustodySystem(world, sandbox); this.custody.onDeparted = (agent, tick) => { this.command(agent, 'next', tick); }; this.reloaded = new ReloadedOpeningSystem(world, sandbox); this.reloaded.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.reloaded.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.dockLastStand = new DockLastStandSystem(world, sandbox); this.dockLastStand.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.dockReload = new DockReloadSystem(world, sandbox); this.dockReload.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.dockReload.onHandoff = (actor, id, tick) => this.changeActor(actor, id, tick); this.catch = new ReloadedCatchSystem(world, sandbox); this.catch.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.wetwall = new WetwallEscapeSystem(world, sandbox); this.wetwall.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sixth = new SixthFloorSystem(world, sandbox); this.sixth.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sixth.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.basement = new BasementEscapeSystem(world, sandbox); this.basement.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.basement.crosscut.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.basement.crosscut.onHandoff = (actor, id, tick) => this.changeActor(actor, id, tick); this.basement.crosscut.onImpact = (impact, tick) => this.onImpact?.(impact, tick); }
+  constructor(private world: WorldState, private sandbox: () => SandboxState, private returnToLife: (tick: number) => void, private elapse: (minutes: number, tick: number) => void) { this.lobby = new LobbyCombatSystem(world, sandbox); this.coatcheck = new HelCoatcheckSystem(world, sandbox); this.openingHotel = new OpeningHotelSystem(sandbox); this.openingHotel.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.openingHotel.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.office = new OfficeEscapeSystem(sandbox); this.custody = new OfficeCustodySystem(world, sandbox); this.custody.onDeparted = (agent, tick) => { this.command(agent, 'next', tick); }; this.reloaded = new ReloadedOpeningSystem(world, sandbox); this.reloaded.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.reloaded.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.dockGate = new DockGateSystem(world, sandbox); this.dockGate.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.dockLastStand = new DockLastStandSystem(world, sandbox); this.dockLastStand.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.dockReload = new DockReloadSystem(world, sandbox); this.dockReload.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.dockReload.onHandoff = (actor, id, tick) => this.changeActor(actor, id, tick); this.catch = new ReloadedCatchSystem(world, sandbox); this.catch.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.wetwall = new WetwallEscapeSystem(world, sandbox); this.wetwall.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sixth = new SixthFloorSystem(world, sandbox); this.sixth.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sixth.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.basement = new BasementEscapeSystem(world, sandbox); this.basement.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.basement.crosscut.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.basement.crosscut.onHandoff = (actor, id, tick) => this.changeActor(actor, id, tick); this.basement.crosscut.onImpact = (impact, tick) => this.onImpact?.(impact, tick); }
   get state() { return this.sandbox().neoLife?.journey; }
   get scene(): FilmScene | undefined { return this.state && FILM_SCENE_BY_ID[this.state.scene]; }
   get step(): FilmStep | undefined { return this.scene?.steps[this.state!.step]; }
@@ -1126,7 +1129,7 @@ export class FilmStorySystem {
         film: { scene: 'm2_architect', width: 5, depth: .5, height: 8 } });
     }
   }
-  performing(agent: AgentState): boolean { return this.controls(agent) && (dockLastStandActive(this.state) && dockLastStandLocked(this.state?.dockLastStand) || dockReloadActive(this.state) && (this.state!.actor === 'mifune' || dockReloadLocked(this.state!.dockReload)) || basementLocked(this.state) || tvExitLocked(this.state) || sixthLocked(this.state) || wetwallLocked(this.state) || this.state!.scene === 'm1_bridge' && this.state!.bridgeTail?.phase === 'failed' || this.state!.scene === 'm1_room303' && ['breach', 'dive', 'ladder_ready'].includes(this.state!.openingHotel?.phase ?? '') || this.state!.scene === 'm1_phone_escape' && ['connected', 'done'].includes(this.state!.openingPhone?.phase ?? '') || helElevatorLocked(this.state!) || helDanceDoorLocked(this.state!) || farewellLocked(this.state!.farewell) || deusPactLocked(this.state!.deus) || smithFinaleLocked(this.state!.smithFinale) || trilogyEpilogueLocked(this.state!.epilogue) || this.state!.scene === 'm3_trainman' && this.state!.mobil?.phase === 'refusing' || this.state!.trucks?.phase === 'rescue' || this.state!.persephone?.phase === 'enacting' || burlyLocked(this.state!) || clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || morningLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || theOneLocked(this.state!) || reloadedLocked(this.state!) || catchLocked(this.state!.catch) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
+  performing(agent: AgentState): boolean { return this.controls(agent) && (dockGateActive(this.state) || dockLastStandActive(this.state) && dockLastStandLocked(this.state?.dockLastStand) || dockReloadActive(this.state) && (this.state!.actor === 'mifune' || dockReloadLocked(this.state!.dockReload)) || basementLocked(this.state) || tvExitLocked(this.state) || sixthLocked(this.state) || wetwallLocked(this.state) || this.state!.scene === 'm1_bridge' && this.state!.bridgeTail?.phase === 'failed' || this.state!.scene === 'm1_room303' && ['breach', 'dive', 'ladder_ready'].includes(this.state!.openingHotel?.phase ?? '') || this.state!.scene === 'm1_phone_escape' && ['connected', 'done'].includes(this.state!.openingPhone?.phase ?? '') || helElevatorLocked(this.state!) || helDanceDoorLocked(this.state!) || farewellLocked(this.state!.farewell) || deusPactLocked(this.state!.deus) || smithFinaleLocked(this.state!.smithFinale) || trilogyEpilogueLocked(this.state!.epilogue) || this.state!.scene === 'm3_trainman' && this.state!.mobil?.phase === 'refusing' || this.state!.trucks?.phase === 'rescue' || this.state!.persephone?.phase === 'enacting' || burlyLocked(this.state!) || clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || morningLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || theOneLocked(this.state!) || reloadedLocked(this.state!) || catchLocked(this.state!.catch) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
   morningFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
     if (state?.scene !== 'm1_morning' || state.visiting || !this.controls(agent)) return;
@@ -4639,9 +4642,12 @@ export class FilmStorySystem {
       actor.status = fate === 'alive' ? 'alive' : fate === 'dead' ? 'dead' : 'disconnected';
       actor.health = fate === 'alive' ? actor.maxHealth : 0;
       if (actor.currentAction?.parameters.crosscut && ['m1_tv_exit', 'm1_unplugged'].includes(this.state.scene)) continue;
+      if (id === 'mifune' && !this.state.visiting && ['m3_dock_battle', 'm3_gate'].includes(this.state.scene)
+        && this.state.dockLastStand?.phase === 'done' && actor.currentAction?.parameters.dockLastStand) continue;
       actor.currentAction = null; actor.targetPosition = null; actor.currentPath = []; actor.velocity = { x: 0, y: 0, z: 0 };
     }
     this.dockLastStand.stage(this.world.simulationTick);
+    if (dockGateActive(this.state)) this.dockGate.stage(this.world.agents.get(this.state.actor)!, this.world.simulationTick);
     if (this.state.scene === 'm2_trucks' && this.state.trucks?.phase === 'rescue') {
       const actor = this.world.agents.get(this.state.actor);
       if (actor?.currentLocation === this.scene!.set) this.truckFrame(actor, 0, this.world.simulationTick);
@@ -4954,6 +4960,7 @@ export class FilmStorySystem {
       }
       if (this.reloaded.active(agent)) return this.reloaded.command(agent, target, tick);
       if (this.catch.active(agent)) return this.catch.command(agent, target, tick);
+      if (this.dockGate.active(agent)) return this.dockGate.command(agent, target, tick);
       if (this.dockLastStand.active(agent)) return this.dockLastStand.command(agent, target, tick);
       if (this.dockReload.active(agent)) return this.dockReload.command(agent, target, tick);
       if (state.scene === 'm1_room303' && (state.openingHotel?.phase === 'failed' || agent.status !== 'alive')) return this.openingHotel.retry(agent, tick);
@@ -5466,6 +5473,7 @@ export class FilmStorySystem {
     if (this.reloaded.active(agent)) return this.reloaded.command(agent, target, tick);
     if (this.catch.active(agent)) return this.catch.command(agent, target, tick);
     if (this.dockReload.active(agent)) return this.dockReload.command(agent, target, tick);
+    if (this.dockGate.active(agent)) return this.dockGate.command(agent, target, tick);
     if (this.dockLastStand.active(agent)) return this.dockLastStand.command(agent, target, tick);
     if (state.scene === 'm2_ship_lost' && state.shipLoss?.phase === 'failed' || state.scene === 'm2_stop_sentinels' && state.tunnel?.phase === 'failed') return '当前检查点失败。按 J 打开手记并重试。';
     if (state.scene === 'm3_trainman' && state.step === 1 && state.mobil?.phase !== 'stopped') return '列车仍在进站，等车门完全打开。';
@@ -5848,6 +5856,7 @@ export class FilmStorySystem {
     delete state.dockGunnery;
     delete state.dockReload;
     if (scene.id !== 'm3_gate') delete state.dockLastStand;
+    if (scene.id !== 'm3_emp') delete state.dockGate;
     delete state.trucks;
     delete state.awakening;
     delete state.cabinEscort;
@@ -6691,6 +6700,7 @@ export class FilmStorySystem {
     if (state.scene === 'm3_dock_battle' && state.dockGunnery?.phase === 'failed') return;
     if (dockReloadActive(state)) { this.dockReload.frame(actor, { focus: false, climb: 0 }, 0, tick); return; }
     if (dockLastStandActive(state)) { this.dockLastStand.frame(actor, 0, tick); return; }
+    if (dockGateActive(state)) { this.dockGate.frame(actor, 0, tick); return; }
     if (state.scene === 'm1_mirror' && state.mirrorGuide && !state.awakening) this.mirrorGuideFrame(actor, tick);
     if (state.scene === 'm3_temple_defense' && state.templeSeal?.phase === 'running') {
       const seal = state.templeSeal;
@@ -6779,8 +6789,9 @@ export class FilmStorySystem {
         return;
       }
       if (state.scene === 'm3_gate' && state.apu?.phase === 'arrived') {
-        actor.position.y = FILM_SETS[this.scene.set].center.y; actor.velocity = { x: 0, y: 0, z: 0 }; actor.currentAction = null;
-        this.advance('受损 APU 已到达三号闸门。Kid 必须亲手操作门控，Hammer 才能进入船坞。', actor, tick);
+        actor.velocity = { x: 0, y: 0, z: 0 };
+        this.advance('受损 APU 已到达三号闸门。门控已经失效，必须用机炮击断承重缆索。', actor, tick);
+        this.dockGate.stage(actor, tick);
         return;
       }
       if (state.scene === 'm3_hammer_tunnels' && state.hammer?.phase === 'arrived') {

@@ -1,4 +1,4 @@
-import { dockLastStandActive, dockLastStandLocked, dockReloadActive, dockReloadLocked, dockReloadText, catchLocked, deusPactLocked, farewellLocked, helElevatorLocked, helDanceDoorLocked, reloadedLocked, smithFinaleLocked, smithOracleRestored, trilogyEpilogueLocked } from '@auto_matrix/shared';
+import { dockGateActive, dockLastStandActive, dockLastStandLocked, dockReloadActive, dockReloadLocked, dockReloadText, catchLocked, deusPactLocked, farewellLocked, helElevatorLocked, helDanceDoorLocked, reloadedLocked, smithFinaleLocked, smithOracleRestored, trilogyEpilogueLocked } from '@auto_matrix/shared';
 import { COMBAT_SKILLS, playerSkills, neoSkillUnlocked, CHARACTERS, LOCATIONS, FILM_SCENE_BY_ID, filmSetAt, filmObstacles, distance, matrixEscapeLocked, theOneLocked, type AgentState, type SimulationState, type WorldEvent, type NeoLifeState } from '@auto_matrix/shared';
 import { FACTION_COLORS } from '../agents/AgentRenderer.js';
 
@@ -152,7 +152,7 @@ export class PlayerExperience {
     if (this.menuOpen && performance.now() - this.lastRender > 1000) this.renderRoster();
     const player = this.controlled ? agents[this.controlled] : undefined;
     const gunner = Boolean(player && neoLife?.journey?.actor === player.id && !neoLife.journey.visiting
-      && neoLife.journey.scene === 'm3_dock_battle' && neoLife.journey.dockGunnery?.phase === 'firing');
+      && (dockGateActive(neoLife.journey) || neoLife.journey.scene === 'm3_dock_battle' && neoLife.journey.dockGunnery?.phase === 'firing'));
     const driving = Boolean(player?.currentAction?.parameters.riding || gunner);
     const matrixPerforming = Boolean(neoLife?.journey && neoLife.journey.actor === player?.id && matrixEscapeLocked(neoLife.journey));
     const onePerforming = Boolean(neoLife?.journey && neoLife.journey.actor === player?.id && theOneLocked(neoLife.journey));
@@ -238,7 +238,7 @@ export class PlayerExperience {
       : neoLife?.journey?.epilogue?.phase === 'choice' ? 'J 打开手记，要求建筑师说明和平条件'
         : 'WASD 前往当前目标 · 靠近后按 G · J 查看手记';
     if (dockReloadScene) this.el('mouse-hint').textContent = dockReloadText(neoLife?.journey?.dockReload) + ' · V 切换视角';
-    if (gunner) this.el('mouse-hint').textContent = '鼠标左右瞄准 · 左键 / T 开炮 · V 切换视角 · J 手记';
+    if (gunner) this.el('mouse-hint').textContent = '鼠标瞄准 · 左键 / T 开炮 · V 切换视角 · J 手记';
     document.body.classList.toggle('neo-daily', Boolean(player?.id === 'neo' && neoLife && !player.isAwakened));
     if (!player) return;
     this.el('player-name').textContent = player.name.toUpperCase();

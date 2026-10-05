@@ -3,6 +3,8 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { APU_ROUTE, DOCK_GUNNERY, ZION_OBSTACLES, dockPowerOffline, type FilmJourney } from '@auto_matrix/shared';
 import { dockLastStandPose } from '@auto_matrix/shared';
 import { DockLastStandRenderer } from './DockLastStandRenderer.js';
+import { DockGateRenderer } from './DockGateRenderer.js';
+import { dockGateAim } from '@auto_matrix/shared';
 import { DOCK_RELOAD, dockReloadBox } from '@auto_matrix/shared';
 
 /** Six authored Zion interiors share rock, metal and service-light materials, not a generic cave layout. */
@@ -20,8 +22,8 @@ export class ZionHomecomingRenderer {
   private departureGifts?: { charm: THREE.Group; spoon: THREE.Group; engines: THREE.MeshStandardMaterial };
   private apu?: THREE.Group;
   private lastStand?: DockLastStandRenderer;
-  private gateLeaf?: THREE.Group;
-  private gateLift = 0;
+  private gate?: DockGateRenderer;
+  private cannons: THREE.Group[] = [];
   private sentinelDives: THREE.Group[] = [];
   private ammoCart?: THREE.Group;
   private loader?: THREE.Group;
@@ -125,10 +127,10 @@ export class ZionHomecomingRenderer {
     const stone = this.surface('damaged_plaster', 0x706252, 6), metal = this.surface('metal_plate', 0x6d7770, 3);
     const iron = this.material(0x252e2d, .48, .68), lit = this.material(0xcebda0, .4, .25, 0xeaba72, 2);
     const engine = this.material(0x96c1a6, .28, .34, 0x7dc2aa, 1.2);
-    this.rockShell(108, 138, 65, stone); this.grating(15, 108, metal, 3);
+    this.rockShell(108, 138, 65, stone); this.grating(24, 108, metal, 3);
     for (const side of [-1, 1]) {
-      this.box(iron, side * 7.5, 1.2, 3, .6, 2.4, 108);
-      for (let z = -50; z < 59; z += 9) { this.pipe(metal, [side * 8, 1, z], [side * 8, 7, z], .15); this.lamp(side * 12, z, 9, 80); }
+      this.box(iron, side * 12, 1.2, 3, .6, 2.4, 108);
+      for (let z = -50; z < 59; z += 9) { this.pipe(metal, [side * 12.5, 1, z], [side * 12.5, 7, z], .15); this.lamp(side * 16, z, 9, 80); }
     }
     // Ship is anchored beyond the walkway, with actual thruster housings and a landing truss.
     const ship = new THREE.Group(); ship.name = 'zion-docked-nebuchadnezzar'; ship.position.set(20, 11, 17); ship.userData.dynamic = true; this.moving.add(ship);
@@ -141,12 +143,9 @@ export class ZionHomecomingRenderer {
       this.box(iron, side * 7.5, 2.8, -4, 10, .7, 5, ship);
     }
     for (let i = 0; i < 8; i++) { const z = -48 + i * 12; this.pipe(metal, [-43, 34, z], [43, 34, z], .28); this.pipe(iron, [-43, 34, z], [-12, 2, z], .18); this.pipe(iron, [43, 34, z], [12, 2, z], .18); }
-    const gate = this.mesh(new THREE.TorusGeometry(27, 2.5, 12, 48), metal); gate.position.set(0, 28, -61);
-    this.gateLeaf = new THREE.Group(); this.gateLeaf.name = 'zion-gate-three'; this.moving.add(this.gateLeaf);
-    this.box(iron, 0, 29, -64, 48, 53, 1.1, this.gateLeaf);
-    for (let a = 0; a < 16; a++) { const angle = a / 16 * Math.PI * 2; const x = Math.sin(angle) * 26, y = 28 + Math.cos(angle) * 26;
-      const spoke = this.box(lit, x, y, -62.5, .85, 3.4, .35); spoke.rotation.z = -angle; }
-    this.sign('DOCK 03 / BAY 07', 0, 10, -57, 12); this.sign('NEBUCHADNEZZAR', 18, 5, -11, 10, 1.5, -Math.PI / 2);
+    this.gate = new DockGateRenderer(this.moving, metal, iron);
+    this.glow(0xb9cee0, 2500, 48, 29, 38, -50); this.glow(0xe7a75f, 1200, 36, 25, 13, -52);
+    this.sign('GATE 03', -10, 28, -61.6, 8, 2.5); this.sign('NEBUCHADNEZZAR', 18, 5, -11, 10, 1.5, -Math.PI / 2);
     this.obstacles(iron); for (const x of [-24, 18]) for (let i = 0; i < 3; i++) this.box(metal, x, 2 + i * 1.5, -18 + i * 3, 7, .2, 4);
     this.box(metal, 11.5, -.04, 17, 8, .18, 3.2, this.static, 'zion-ship-gangway');
     this.apu = new THREE.Group(); this.apu.name = 'zion-kid-apu'; this.moving.add(this.apu);
@@ -159,13 +158,14 @@ export class ZionHomecomingRenderer {
       this.box(armor, side * 1.55, 1.2, .4, 1.45, 2.4, 2.2, this.apu);
       this.box(joint, side * 1.55, 2.5, .45, 1.4, 1, 1.7, this.apu);
       this.box(armor, side * 1.55, .16, -.55, 2.25, .35, 3, this.apu);
-      this.box(joint, side * 3.1, 5.7, -.4, 1.5, 1.5, 2.4, this.apu);
-      this.pipe(armor, [side * 3.1, 5.6, -.5], [side * 3.1, 5.6, -5.2], .48, this.apu);
-      this.pipe(armor, [side * 3.6, 5.9, -.5], [side * 3.6, 5.9, -5.2], .23, this.apu);
-      this.box(lit, side * 3.1, 5.55, -5.2, .65, .13, .1, this.apu);
-      const flash = this.mesh(new THREE.SphereGeometry(.48, 10, 8), lit, this.apu);
+      const cannon = new THREE.Group(); cannon.name = `apu-cannon-${side}`; cannon.position.set(side * 3.1, 5.7, -.4); this.apu.add(cannon); this.cannons.push(cannon);
+      this.box(joint, 0, 0, 0, 1.5, 1.5, 2.4, cannon);
+      this.pipe(armor, [0, -.1, -.1], [0, -.1, -4.8], .48, cannon);
+      this.pipe(armor, [side * .5, .2, -.1], [side * .5, .2, -4.8], .23, cannon);
+      this.box(lit, 0, -.15, -4.8, .65, .13, .1, cannon);
+      const flash = this.mesh(new THREE.SphereGeometry(.48, 10, 8), lit, cannon);
       flash.name = `apu-muzzle-${side}`;
-      flash.position.set(side * 3.1, 5.6, -5.55); flash.visible = false; this.muzzleFlashes.push(flash);
+      flash.position.set(0, -.1, -5.15); flash.visible = false; this.muzzleFlashes.push(flash);
     }
     this.lastStand = new DockLastStandRenderer(this.moving);
     this.ammoCart = new THREE.Group(); this.ammoCart.name = 'zion-ammo-cart'; this.moving.add(this.ammoCart);
@@ -392,6 +392,19 @@ export class ZionHomecomingRenderer {
       this.apu.rotation.z = journey?.apu?.phase === 'riding' ? Math.sin(elapsed * 11) * .015 : 0;
     }
     this.lastStand?.update(journey);
+    for (const cannon of this.cannons) {
+      if (journey?.scene === 'm3_gate' && journey.dockGate) {
+        const aim = dockGateAim(journey.dockGate);
+        const direction = new THREE.Vector3(aim.x, aim.y, aim.z).sub(this.apu!.position).sub(cannon.position).normalize();
+        cannon.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
+      } else cannon.quaternion.identity();
+    }
+    if (this.gate) {
+      const state = journey?.dockGate;
+      const muzzle = state?.lastShot && state.total - state.lastShot.at < .1
+        ? this.gate.group.worldToLocal(this.muzzleFlashes[state.shots % 2].getWorldPosition(new THREE.Vector3())) : undefined;
+      this.gate.update(journey, muzzle);
+    }
     if (this.apu) {
       const rail = this.apu.getObjectByName('apu-upper-rail')!;
       const damage = journey?.dockLastStand ? dockLastStandPose(journey.dockLastStand).fallen : 0;
@@ -419,7 +432,8 @@ export class ZionHomecomingRenderer {
     const lastStand = journey?.dockLastStand;
     const lastShots = lastStand?.phase === 'attack' && lastStand.elapsed < 1.45 ? Math.floor(lastStand.elapsed * 18) : -1;
     this.muzzleFlashes.forEach((flash, index) => flash.visible = journey?.scene === 'm3_dock_battle'
-      && (lastStand ? lastShots >= 0 && index === lastShots % 2 : elapsed < this.muzzleUntil && index === shots % 2));
+      && (lastStand ? lastShots >= 0 && index === lastShots % 2 : elapsed < this.muzzleUntil && index === shots % 2)
+      || journey?.scene === 'm3_gate' && Boolean(journey.dockGate?.lastShot && journey.dockGate.total - journey.dockGate.lastShot.at < .1 && index === journey.dockGate.shots % 2));
     for (const [index, sentinel] of this.sentinelDives.entries()) {
       const gunner = journey?.scene === 'm3_dock_battle' && !journey.visiting ? journey.dockGunnery : undefined;
       const target = gunner?.targets[index];
@@ -428,11 +442,6 @@ export class ZionHomecomingRenderer {
       sentinel.position.x = target?.x ?? APU_ROUTE.dives[index].x;
       sentinel.position.z = target?.z ?? APU_ROUTE.dives[index].z;
       sentinel.position.y = 11 + Math.sin(elapsed * 3 + index) * 1.3;
-    }
-    if (this.gateLeaf) {
-      const open = journey?.completed.includes('m3_gate') || journey?.scene === 'm3_gate' && journey.step >= 3;
-      this.gateLift += (open ? 31 - this.gateLift : -this.gateLift) * .08;
-      this.gateLeaf.position.y = this.gateLift;
     }
     if (this.templeBulkhead) {
       const defense = journey?.scene === 'm3_temple_defense' && !journey.visiting;
@@ -478,6 +487,7 @@ export class ZionHomecomingRenderer {
   }
   dispose(): void {
     this.lastStand?.dispose();
+    this.gate?.dispose();
     this.disposed = true; this.group.removeFromParent(); this.group.clear();
     this.geometries.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); this.textures.forEach(t => t.dispose()); this.lights.forEach(l => l.dispose());
     this.geometries.clear(); this.materials.clear(); this.textures.clear(); this.lights.clear();
