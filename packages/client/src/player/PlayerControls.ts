@@ -1833,6 +1833,13 @@ export class PlayerControls {
           : gesture.kind === 'reset' ? new THREE.Vector3(this.position.x + 6, this.position.y + 3.4, this.position.z + 6)
           : new THREE.Vector3(center.x + 15, center.y + 9, center.z + (gesture.phase === 'retreat' ? -20 : 31));
       if (carried) ideal.sub(focus).multiplyScalar(Math.max(1, .92 / this.camera.aspect)).add(focus);
+      if (gesture.kind === 'reset' && gesture.resetVersion === 2) {
+        const approach = gesture.phase === 'ready' ? 0 : gesture.phase === 'cat' ? THREE.MathUtils.smoothstep(gesture.elapsed, 0, 8.8) : 1;
+        focus.set(this.position.x + THREE.MathUtils.lerp(-3, .7, approach), this.position.y - .3, this.position.z);
+        ideal.set(this.position.x + THREE.MathUtils.lerp(-1.6, 4.1, approach),
+          this.position.y + THREE.MathUtils.lerp(.65, 1.6, approach), this.position.z + THREE.MathUtils.lerp(8.8, 5.2, approach));
+        ideal.sub(focus).multiplyScalar(Math.max(1, 1.15 / this.camera.aspect)).add(focus);
+      }
       if (dawn) {
         const sunrise = gesture.phase === 'sunrise' ? THREE.MathUtils.smoothstep(gesture.elapsed, 0, 6.2) : ['belief', 'done'].includes(gesture.phase) ? 1 : 0;
         focus.lerp(new THREE.Vector3(center.x + 1, center.y + 10, center.z - 110), sunrise);

@@ -1,6 +1,7 @@
 import { METACORTEX, metacortexPosition } from './metacortex.js';
 import { FILM_SETS, filmPosition } from './film-sets.js';
 import { SMITH_FINALE, smithCraterAmount } from './smith-finale.js';
+import { STREET_RESET } from './trilogy-epilogue.js';
 import { CONSTRUCT_REVEAL, MIRROR_TOUCH, RECOVERY_BED } from './awakening.js';
 import { CABIN } from './cabin.js';
 import { CONSTRUCT } from './construct.js';
@@ -467,8 +468,8 @@ export const FILM_SCENES: FilmScene[] = [
   scene('m3_neo_carried', 3, 'machine_core', 'neo', '光中的身体', 'source', 'dawn', '连接另一端已经没有回应。机器收回接口、放低 Neo 的身体，再用发光的运输平台把他带入机器城深处。', [
     use('目送连接断开与机器驳船离开', '身体被金色机器光托住。停战成立，但 Neo 的去向没有被胜利叙事抹去。', 0, -25, 0),
   ]),
-  scene('m3_reset', 3, 'escape_streets', 'sati', '重新醒来的城市', 'dawn', 'dawn', 'Sati 在街道上醒来。一只黑猫走近她，失去颜色的街区开始恢复；公园里的会面尚未发生。', [
-    use('睁开眼睛，看清重新出现的黑猫', 'Sati 撑起身体，黑猫走过街面，损坏的道路逐渐恢复。', 0, -12, 0),
+  scene('m3_reset', 3, 'escape_streets', 'sati', '重新醒来的城市', 'dawn', 'dawn', 'Sati 侧卧在人行道上。黑猫走过，破损的铺地逐渐复原；她随后醒来，公园里的会面尚未发生。', [
+    use('听见脚步，重新醒来', '黑猫走过恢复中的街面，Sati 随后睁眼、撑地并站起。', 0, -12, 0),
   ]),
   scene('m3_dawn', 3, 'sunrise_garden', 'oracle', 'Sati 留下的日出', 'dawn', 'dawn', '矩阵已经恢复。先知坐在水岸公园的长椅上，等待建筑师说明停战协议的边界。', [
     walk('绕到水岸长椅前', -7, -23.1),
@@ -529,6 +530,7 @@ export function filmStepActionReady(scene: FilmScene, step: FilmStep, position: 
   return step.kind !== 'reach' && step.kind !== 'reflect' && filmStepNear(scene, step, position, matrix, journey);
 }
 export function filmEntry(scene: FilmScene): Vector3 {
+  if (scene.id === 'm3_reset') return { ...filmPosition(scene.set, STREET_RESET.entry.x, STREET_RESET.entry.z), y: FILM_SETS[scene.set].center.y - STREET_RESET.roadDrop };
   if (scene.id === 'm1_basement') return { ...filmPosition(scene.set, -15.5, -32.2), y: FILM_SETS[scene.set].center.y - 61.2 };
   if (scene.id === 'm1_tv_exit') return filmPosition(scene.set, TV_EXIT.street.drain.x, TV_EXIT.street.drain.z);
   if (scene.id === 'm1_wall_exposed') return { ...filmPosition(scene.set, -15.5, -32.2), y: FILM_SETS[scene.set].center.y - 51.8 };

@@ -2,10 +2,11 @@ import * as THREE from 'three';
 import { gardenPose, SUNRISE_GARDEN, type TrilogyEpilogueGesture } from '@auto_matrix/shared';
 import type { CharacterRig } from './CharacterModel.js';
 import { reach } from './SpoonPerformance.js';
+import { poseStreetWake } from './StreetWakePerformance.js';
 
 const wakeSupports = new WeakMap<CharacterRig, { rising: number; surfaceVersion: number; height: number }>();
 
-function drapeSatiSkirt(rig: CharacterRig): void {
+function drapeSatiSkirt(rig: CharacterRig, street = false): void {
   const skirt = rig.root.getObjectByName('sati-skirt') as THREE.Mesh | undefined; if (!skirt) return;
   const vertices = skirt.geometry.attributes.position, hip = rig.torso.position.y;
   const { radialSegments: columns, heightSegments: rows } = (skirt.geometry as THREE.CylinderGeometry).parameters;
@@ -16,32 +17,47 @@ function drapeSatiSkirt(rig: CharacterRig): void {
   for (let leg = 0; leg < 2; leg++) {
     const joints = [rig.hips[leg], rig.knees[leg], rig.ankles[leg]].map(joint => joint.getWorldPosition(new THREE.Vector3()).applyMatrix4(inverse));
     for (let part = 0; part < 2; part++) for (let sample = 0; sample <= 12; sample++) {
+      if (street && part === 1) continue;
       const t = sample / 12;
       capsules.push({ point: joints[part].clone().lerp(joints[part + 1], t), radius: part ? .21 - .045 * t : .29 - .065 * t });
     }
   }
+  const seamY = street ? .30 : .12, seamRadius = street ? .44 + (.38 - .44) * (.30 - .18) / (.35 - .18) : .43 + .01 * .12 / .18;
+  const top = new THREE.Vector3(0, seamY, 0).applyMatrix4(bodice);
+  const knee = rig.knees[0].getWorldPosition(new THREE.Vector3()).lerp(rig.knees[1].getWorldPosition(new THREE.Vector3()), .5).applyMatrix4(inverse);
+  const curve = new THREE.CubicBezierCurve3(top, top.clone().lerp(knee, .25), top.clone().lerp(knee, .75), knee);
+  const right = new THREE.Vector3(), up = new THREE.Vector3(), forward = new THREE.Vector3(), point = new THREE.Vector3();
   for (let row = 0; row <= rows; row++) {
     const t = row / rows, y = hip + .12 - t * 1.07;
+    const center = street ? curve.getPoint(t) : new THREE.Vector3(0, y, 0);
+    up.copy(street ? curve.getTangent(t).negate() : new THREE.Vector3(0, 1, 0));
+    if (street) up.lerp(new THREE.Vector3(0, 1, 0).applyQuaternion(rig.torso.quaternion),
+      1 - THREE.MathUtils.smoothstep(t, 0, .65)).normalize();
+    right.set(1, 0, 0); if (street) right.applyQuaternion(rig.torso.quaternion);
+    right.addScaledVector(up, -right.dot(up)).normalize(); forward.crossVectors(right, up).normalize();
     const sections = capsules.flatMap(({ point, radius }) => {
-      const squared = radius * radius - (y - point.y) ** 2;
-      return squared > 0 ? [{ x: point.x, z: point.z, squared }] : [];
+      const offset = point.clone().sub(center), squared = radius * radius - offset.dot(up) ** 2;
+      return squared > 0 ? [{ x: offset.dot(right), z: offset.dot(forward), squared }] : [];
     });
-    const width = Math.max(.48 + t * .18, ...sections.map(section => Math.abs(section.x) + Math.sqrt(section.squared) + .025));
+    const width = Math.max(.48 + t * .18, ...sections.map(section => Math.abs(section.x) + Math.sqrt(section.squared) + (street ? .05 : .025)));
     for (let column = 0; column <= columns; column++) {
       const angle = column / columns * Math.PI * 2, side = Math.cos(angle) >= 0 ? 1 : -1;
       const pleat = Math.cos(angle * 12) * .013 * t, x = Math.sin(angle) * (width + pleat);
       let z = Math.cos(angle) * (.30 + t * .13 + pleat);
       for (const section of sections) {
         const depth = section.squared - (x - section.x) ** 2;
-        if (depth > 0) z = side * Math.max(side * z, side * section.z + Math.sqrt(depth) + .06);
+        if (depth > 0) z = side * Math.max(side * z, side * section.z + Math.sqrt(depth) + (street ? .10 : .06));
       }
       // The upper ring shares the bodice's actual cross-section and rotation.
       // Only the fabric below it is displaced around the walking legs.
       const pin = 1 - THREE.MathUtils.smoothstep(t, 0, .08);
-      seam.set(Math.sin(angle) * (.43 + .01 * .12 / .18), .12 - t * 1.07,
-        Math.cos(angle) * (.43 + .01 * .12 / .18) * .59).applyMatrix4(bodice);
-      vertices.setXYZ(row * (columns + 1) + column, THREE.MathUtils.lerp(x, seam.x, pin),
-        THREE.MathUtils.lerp(y, seam.y, pin), THREE.MathUtils.lerp(z, seam.z, pin));
+      seam.set(Math.sin(angle) * seamRadius, seamY - t * 1.07,
+        Math.cos(angle) * seamRadius * .59).applyMatrix4(bodice);
+      point.copy(center).addScaledVector(right, x).addScaledVector(forward, z).lerp(seam, pin);
+      // Cloth can spread across the pavement as the knees gather, rather than
+      // pushing the character upward to accommodate a rigid standing hem.
+      if (street) point.y = Math.max(.008, point.y);
+      vertices.setXYZ(row * (columns + 1) + column, point.x, point.y, point.z);
     }
   }
   vertices.needsUpdate = true; skirt.geometry.computeVertexNormals(); skirt.geometry.computeBoundingSphere();
@@ -58,6 +74,9 @@ export function poseGarden(rig: CharacterRig, gesture?: TrilogyEpilogueGesture, 
   if (!gesture || !['dawn', 'reset'].includes(gesture.kind) || rig.hero) {
     if (rig.detail.userData.epiloguePose) {
       rig.detail.position.y = 0; rig.detail.rotation.set(0, 0, 0); delete rig.detail.userData.epiloguePose;
+      rig.hips.forEach((joint, i) => { joint.position.x = (i ? 1 : -1) * .225; joint.position.z = 0; });
+      if (rig.head.name === 'sati-head') rig.head.position.set(0, 1.99, 0);
+      for (const side of [-1, 1]) rig.root.getObjectByName(`sati-hand-${side}`)?.rotation.set(0, 0, 0);
       for (const name of ['oracle-park-skirt', 'sati-skirt']) {
         const skirt = rig.root.getObjectByName(name) as THREE.Mesh | undefined;
         if (skirt) { skirt.geometry.attributes.position.array.set(skirt.userData.standing); skirt.geometry.attributes.position.needsUpdate = true; skirt.geometry.computeVertexNormals(); }
@@ -68,6 +87,11 @@ export function poseGarden(rig: CharacterRig, gesture?: TrilogyEpilogueGesture, 
     return;
   }
   rig.detail.userData.epiloguePose = true; rig.detail.rotation.set(0, 0, 0); rig.detail.position.y = 0;
+  if (rig.head.name === 'sati-head') rig.head.position.set(0, 1.99, 0);
+  if (gesture.kind === 'reset' && gesture.resetVersion === 2 && gesture.role === 'sati') {
+    poseStreetWake(rig, gesture); drapeSatiSkirt(rig, true);
+    return;
+  }
   const pose = gardenPose(gesture, gesture.role), time = gesture.total;
   const reset = gesture.kind === 'reset';
   const rising = reset ? gesture.phase === 'ready' ? 0 : gesture.phase === 'waking' ? THREE.MathUtils.smoothstep(gesture.elapsed, 0, 3.2) : 1 : 1;

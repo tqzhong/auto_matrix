@@ -256,6 +256,7 @@ export class FilmSetRenderer {
         else if (['m3_deus', 'm3_neo_carried'].includes(sceneId ?? '') && set.id === 'film_machine_core') this.machineCore = new MachineCoreRenderer(this.root);
         else if (set.id === 'film_smith_avenue') this.smithFinale = new SmithFinaleRenderer(this.root);
         else if (set.id === 'film_sunrise_garden') this.trilogyEpilogue = new TrilogyEpilogueRenderer(this.root, 'dawn');
+        else if (sceneId === 'm3_reset' && set.id === 'film_escape_streets') this.trilogyEpilogue = new TrilogyEpilogueRenderer(this.root, 'reset');
         else if (['m1_dojo', 'm1_jump', 'm1_red_dress'].includes(sceneId ?? '')) this.training = new TrainingSetRenderer(this.root, sceneId!);
         else if (sceneId === 'm1_sentinels') this.sentinel = new SentinelSetRenderer(this.root);
         else if (set.id === 'film_ambush_house' && sceneId === 'm1_basement') this.basement = new BasementSetRenderer(this.root);
@@ -296,7 +297,6 @@ export class FilmSetRenderer {
         if (!this.theOne && ['m1_death', 'm1_return'].includes(sceneId ?? '') && set.id === 'film_neb_deck') this.theOne = new TheOneRenderer(this.root, set.id);
         if (sceneId === 'm3_ceasefire') this.trilogyEpilogue = new TrilogyEpilogueRenderer(this.root, 'ceasefire');
         if (sceneId === 'm3_neo_carried') this.trilogyEpilogue = new TrilogyEpilogueRenderer(this.root, 'neo_carried');
-        if (sceneId === 'm3_reset') this.trilogyEpilogue = new TrilogyEpilogueRenderer(this.root, 'reset');
       }
     }
     if (this.mirror) {
@@ -630,8 +630,9 @@ export class FilmSetRenderer {
     const park = this.trilogyEpilogue?.parkAtmosphere();
     if (park) { fog.density = .0009; fog.color.setHex(0x8ba6b2); this.scene.environmentIntensity = .55; return park; }
     if (this.currentScene === 'm3_reset') {
-      fog.density = .003; fog.color.setHex(0x8a9b9c); (this.scene.background as THREE.Color).copy(fog.color);
-      return { color: 0xe0e1cd, ambient: .95, sun: 1.1 };
+      fog.density = .008; fog.color.setHex(0x0b171d); (this.scene.background as THREE.Color).copy(fog.color);
+      this.scene.environmentIntensity = .18;
+      return { color: 0x8aa8b8, ambient: .25, sun: .05 };
     }
     if (this.revolutionsPrelude && this.currentScene === 'm3_oracle_absorbed') {
       const dark = this.revolutionsPrelude.consumed;

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { FILM_SETS, SUNRISE_GARDEN, filmPosition, gardenPose, newTrilogyEpilogue, type TrilogyEpilogueEncounter } from '@auto_matrix/shared';
+import { FILM_SETS, SUNRISE_GARDEN, filmPosition, gardenPose, streetResetPose, newTrilogyEpilogue, type TrilogyEpilogueEncounter } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
@@ -56,7 +56,7 @@ test('saved park poses support the seated Oracle and standing Sati without putti
     }
     const sati = world.agents.get('sati')!;
     sati.currentLocation = 'film_escape_streets'; sati.position = filmPosition(sati.currentLocation, 0, -12); sati.rotation = -Math.PI / 2;
-    for (const elapsed of [0, .4, 1.6, 2.6, 3.2]) {
+    for (const elapsed of [0, .4, 1.6, 2.6, 3.2, 4, 4.6, 5.2, 6.4, 7.2]) {
       sati.currentAction = { type: 'idle', parameters: { epilogue: { ...newTrilogyEpilogue('reset'), phase: 'waking', elapsed, total: elapsed, role: 'sati' } }, startedAt: 0, duration: 1, progress: 0 };
       warm.updateAgent('sati', sati); warm.update(0);
       const floor = FILM_SETS.film_escape_streets.center.y - 1;
@@ -83,7 +83,7 @@ test('the street waking shot keeps Sati’s real head and torso above the lower 
   actor.position = filmPosition(actor.currentLocation, 0, -12); actor.rotation = -Math.PI / 2;
   actor.velocity = { x: 0, y: 0, z: 0 }; controls.possess(actor);
   try {
-    for (const aspect of [16 / 9, 4 / 3, 9 / 16]) for (const elapsed of [0, .4, 1.6, 2.6, 3.2]) {
+    for (const aspect of [16 / 9, 4 / 3, 9 / 16]) for (const elapsed of [0, .4, 1.6, 2.6, 3.2, 4, 5.2, 6.4, 7.2]) {
       actor.currentAction = { type: 'idle', parameters: { epilogue: { ...newTrilogyEpilogue('reset'), phase: 'waking', elapsed, total: elapsed, role: 'sati' } }, startedAt: 0, duration: 1, progress: 0 };
       renderer.updateAgent('sati', actor); const group = renderer.getAgent('sati')!;
       camera.aspect = aspect; camera.updateProjectionMatrix(); controls.update(.1, actor, group, false);
@@ -95,6 +95,15 @@ test('the street waking shot keeps Sati’s real head and torso above the lower 
         assert.ok(Math.abs(screen.x) < .8 && screen.y > -.38 && screen.y < .8 && Math.abs(screen.z) < 1,
           `${aspect} waking ${elapsed}: ${name} hidden by caption or cropped: ${screen.toArray()}`);
       }
+    }
+    for (const aspect of [16 / 9, 4 / 3, 9 / 16]) for (const elapsed of [0, 2, 5, 8.8]) {
+      const epilogue = { ...newTrilogyEpilogue('reset'), phase: 'cat' as const, elapsed, total: elapsed, role: 'sati' as const };
+      actor.currentAction!.parameters.epilogue = epilogue;
+      camera.aspect = aspect; camera.updateProjectionMatrix(); renderer.updateAgent('sati', actor);
+      controls.update(1, actor, renderer.getAgent('sati')!, false); camera.updateMatrixWorld();
+      const cat = streetResetPose(epilogue), center = FILM_SETS.film_escape_streets.center;
+      const screen = new THREE.Vector3(center.x + cat.catX, center.y - .5, center.z + cat.catZ).project(camera);
+      assert.ok(Math.abs(screen.x) < .94 && screen.y > -.38 && screen.y < .8, `${aspect} cat ${elapsed}: the approaching cat is outside the story frame ${screen.toArray()}`);
     }
   } finally { controls.dispose(); renderer.dispose(); Object.assign(globalThis, previous); }
 });
