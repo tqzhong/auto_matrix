@@ -1,5 +1,6 @@
 import { crosscutActive, crosscutAction, crosscutText } from '@auto_matrix/shared';
 import { DOCK_RELOAD, dockReloadActive, dockReloadText } from '@auto_matrix/shared';
+import { DOCK_LAST_STAND, dockLastStandActive, dockLastStandText } from '@auto_matrix/shared';
 import { truthFade, CABIN, CABIN_ROUTE_LENGTH } from '@auto_matrix/shared';
 import { mirrorTime, mirrorEntryPose, awakeningDuration } from '@auto_matrix/shared';
 import { nearMetacortexLift, metacortexLiftLocked } from '@auto_matrix/shared';
@@ -1650,6 +1651,18 @@ export class SandboxUI {
       this.el('film-alert-label').textContent = `已下降 ${Math.round(journey.office.climbed / 2)} / 16 m · W 向下 · S 向上 · 松手停留`;
       document.getElementById('game-objective-copy')!.textContent = '沿维修梯抵达下方平台 · 可停在横档上观察';
       this.el('sandbox-waypoint').textContent = '↓ 维修平台'; this.el('sandbox-interact').classList.add('hidden'); return;
+    }
+    if (dockLastStandActive(journey)) {
+      const phase = journey.dockLastStand?.phase ?? 'ready', center = FILM_SETS[scene.set].center;
+      const gap = Math.hypot(player.position.x - center.x - DOCK_LAST_STAND.kid.x, player.position.z - center.z - DOCK_LAST_STAND.kid.z);
+      const text = dockLastStandText(journey.dockLastStand);
+      this.el('film-sequence').classList.remove('hidden');
+      this.el('film-sequence-line').textContent = text;
+      this.el('film-sequence-hint').textContent = phase === 'wounded' ? 'WASD 走近 · G 蹲下' : phase === 'response' ? 'G 回应 · V 切换视角' : 'V 切换视角';
+      this.el('sandbox-interact').classList.toggle('hidden', !(phase === 'ready' || phase === 'response' || phase === 'wounded' && gap <= 1.2));
+      this.el('sandbox-nearby').textContent = phase === 'response' ? '告诉 Mifune：还没完成训练' : phase === 'ready' ? '接续最后防线' : '蹲到 Mifune 身旁';
+      this.el('sandbox-waypoint').textContent = phase === 'wounded' ? `队长身旁 ↑ ${Math.ceil(gap)} m` : '';
+      document.getElementById('game-objective-copy')!.textContent = phase === 'wounded' ? '绕到机甲前方，走近 Mifune' : '听完开闸的交代'; return;
     }
     if (dockReloadActive(journey)) {
       const reload = journey.dockReload, center = FILM_SETS[scene.set].center;

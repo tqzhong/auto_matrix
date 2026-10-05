@@ -1,4 +1,4 @@
-import { dockReloadActive, dockReloadLocked, dockReloadText, catchLocked, deusPactLocked, farewellLocked, helElevatorLocked, helDanceDoorLocked, reloadedLocked, smithFinaleLocked, smithOracleRestored, trilogyEpilogueLocked } from '@auto_matrix/shared';
+import { dockLastStandActive, dockLastStandLocked, dockReloadActive, dockReloadLocked, dockReloadText, catchLocked, deusPactLocked, farewellLocked, helElevatorLocked, helDanceDoorLocked, reloadedLocked, smithFinaleLocked, smithOracleRestored, trilogyEpilogueLocked } from '@auto_matrix/shared';
 import { COMBAT_SKILLS, playerSkills, neoSkillUnlocked, CHARACTERS, LOCATIONS, FILM_SCENE_BY_ID, filmSetAt, filmObstacles, distance, matrixEscapeLocked, theOneLocked, type AgentState, type SimulationState, type WorldEvent, type NeoLifeState } from '@auto_matrix/shared';
 import { FACTION_COLORS } from '../agents/AgentRenderer.js';
 
@@ -10,7 +10,7 @@ export function savedEntryCharacter(chosen: string | null, journeyActor: string 
 }
 
 export function cinematicTalkSuppressed(scene: string | undefined, visiting: string | undefined, step?: number): boolean {
-  return !visiting && (scene === 'm1_wall_exposed' || scene === 'm1_wetwall' || scene === 'm1_download' || scene === 'm1_truth_exit' || scene === 'm1_truth_return' || scene === 'm1_pod' || scene === 'm1_construct' || scene === 'm1_desert' || scene === 'm1_cabin' || (scene === 'm1_recovery' || scene === 'm1_spoon') && step === 0 || scene === 'm3_dock_battle' && step === 1);
+  return !visiting && (scene === 'm1_wall_exposed' || scene === 'm1_wetwall' || scene === 'm1_download' || scene === 'm1_truth_exit' || scene === 'm1_truth_return' || scene === 'm1_pod' || scene === 'm1_construct' || scene === 'm1_desert' || scene === 'm1_cabin' || (scene === 'm1_recovery' || scene === 'm1_spoon') && step === 0 || scene === 'm3_dock_battle' && (step ?? 0) >= 1);
 }
 
 export interface PlayerExperienceActions {
@@ -168,9 +168,11 @@ export class PlayerExperience {
     const epilogueScene = Boolean(neoLife?.journey && neoLife.journey.actor === player?.id
       && ['m3_ceasefire', 'm3_neo_carried', 'm3_reset', 'm3_dawn'].includes(neoLife.journey.scene) && !neoLife.journey.visiting);
     const epiloguePerforming = Boolean(epilogueScene && trilogyEpilogueLocked(neoLife?.journey?.epilogue));
+    const lastStandScene = player?.id === neoLife?.journey?.actor && dockLastStandActive(neoLife?.journey);
+    document.body.classList.toggle('film-last-stand', lastStandScene);
     const dockReloadScene = player?.id === neoLife?.journey?.actor && dockReloadActive(neoLife?.journey);
     const dockReloadPerforming = dockReloadScene && (player?.id === 'mifune' || dockReloadLocked(neoLife?.journey?.dockReload));
-    const performing = Boolean(dockReloadPerforming || player?.currentAction?.parameters.truth || farewellPerforming || deusPerforming || smithFinalePerforming || epiloguePerforming || player?.currentAction?.parameters.farewell || player?.currentAction?.parameters.deusPact || player?.currentAction?.parameters.smithFinale || player?.currentAction?.parameters.epilogue || player?.currentAction?.parameters.persephone || player?.currentAction?.parameters.club || player?.currentAction?.parameters.workday || player?.currentAction?.parameters.meeting || player?.currentAction?.parameters.interrogation || player?.currentAction?.parameters.pills || player?.currentAction?.parameters.welcome || player?.currentAction?.parameters.sentinel || player?.currentAction?.parameters.interlude || player?.currentAction?.parameters.oracleVisit || player?.currentAction?.parameters.betrayal || player?.currentAction?.parameters.rescue || player?.currentAction?.parameters.government || player?.currentAction?.parameters.airRescue || player?.currentAction?.parameters.truckPassenger || matrixPerforming || onePerforming || reloadedPerforming || catchPerforming || player?.currentAction?.parameters.lobbyEntry || player?.currentAction?.parameters.filmPose || player?.currentAction?.parameters.spoon !== undefined || player?.currentAction?.parameters.vase !== undefined);
+    const performing = Boolean(lastStandScene && dockLastStandLocked(neoLife?.journey?.dockLastStand) || dockReloadPerforming || player?.currentAction?.parameters.truth || farewellPerforming || deusPerforming || smithFinalePerforming || epiloguePerforming || player?.currentAction?.parameters.farewell || player?.currentAction?.parameters.deusPact || player?.currentAction?.parameters.smithFinale || player?.currentAction?.parameters.epilogue || player?.currentAction?.parameters.persephone || player?.currentAction?.parameters.club || player?.currentAction?.parameters.workday || player?.currentAction?.parameters.meeting || player?.currentAction?.parameters.interrogation || player?.currentAction?.parameters.pills || player?.currentAction?.parameters.welcome || player?.currentAction?.parameters.sentinel || player?.currentAction?.parameters.interlude || player?.currentAction?.parameters.oracleVisit || player?.currentAction?.parameters.betrayal || player?.currentAction?.parameters.rescue || player?.currentAction?.parameters.government || player?.currentAction?.parameters.airRescue || player?.currentAction?.parameters.truckPassenger || matrixPerforming || onePerforming || reloadedPerforming || catchPerforming || player?.currentAction?.parameters.lobbyEntry || player?.currentAction?.parameters.filmPose || player?.currentAction?.parameters.spoon !== undefined || player?.currentAction?.parameters.vase !== undefined);
     document.body.classList.toggle('film-driving', driving);
     document.body.classList.toggle('film-performing', performing || Boolean(player?.currentAction?.parameters.spoonLesson));
     document.body.classList.toggle('film-workday-scene', Boolean(player?.currentAction?.parameters.workday));
@@ -268,7 +270,7 @@ export class PlayerExperience {
       this.el(`skill-detail-${slot}`).textContent = skill.description;
       this.el(`skill-status-${slot}`).textContent = mobilBound ? '线路封锁' : seraphDuel ? '近身考验' : locked ? '剧情解锁' : skill.matrixOnly && !player.isInMatrix ? '矩阵内' : cooldown > 0 ? `${Math.ceil(cooldown)}s` : '就绪';
       const button = this.root.querySelector<HTMLButtonElement>(`[data-skill="${slot}"]`)!;
-      button.disabled = driving || dockReloadScene || farewellPerforming || smithFinalePerforming || mobilBound || seraphDuel || locked || cooldown > 0 || !simulation.running || player.status !== 'alive' || skill.matrixOnly && !player.isInMatrix;
+      button.disabled = driving || lastStandScene || dockReloadScene || farewellPerforming || smithFinalePerforming || mobilBound || seraphDuel || locked || cooldown > 0 || !simulation.running || player.status !== 'alive' || skill.matrixOnly && !player.isInMatrix;
       button.title = skill.description;
       button.style.setProperty('--cooldown', `${cooldown / skill.cooldown * 100}%`);
     });
