@@ -214,7 +214,7 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
     const ceasefire = epilogue.kind === 'ceasefire'; const carried = epilogue.kind === 'neo_carried'; const reset = epilogue.kind === 'reset';
     const action = !current ? button('resume', `接回 ${ceasefire ? 'Kid' : carried ? 'Neo' : reset ? 'Sati' : '先知'} 的视角`)
       : !step ? button('next', scene.id === 'm3_dawn' ? '确认完成本轮三部曲 →' : '继续尾声 →')
-        : reset ? epilogue.phase === 'ready' ? button('act', '醒来，看看身边的黑猫 · G') : '<button disabled>城市正在恢复 · 自动保存</button>'
+        : reset ? epilogue.phase === 'ready' ? button('act', '听见脚步，重新醒来 · G') : '<button disabled>城市正在恢复 · 自动保存</button>'
         : ceasefire && journey.step === 0 ? '<p>合上手记，亲自走到神庙入口。</p>'
           : ceasefire && journey.step === 1 && epilogue.phase === 'ready' ? button('act', '亲眼确认哨兵撤离 · G', !close)
             : ceasefire && journey.step === 2 && epilogue.phase === 'message_ready' ? button('act', '向所有人宣布战争结束 · G', !close)

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { streetResetPose } from '@auto_matrix/shared';
 import type { CharacterRig } from './CharacterModel.js';
 import type { MotionInput } from './CharacterMotion.js';
 
@@ -35,7 +36,7 @@ export class EpilogueHeads {
     // Mary Alice's appearance belongs to Revolutions. Earlier Oracle scenes
     // retain their existing head until their own likeness asset is authored.
     entry.active = entry.role === 'sati' || Boolean(input.oracleRestored || input.parkOutfit || input.epilogue?.kind === 'dawn');
-    entry.closed.value = input.oracleRestored ? 1 : 0;
+    entry.closed.value = input.oracleRestored ? 1 : entry.role === 'sati' && input.epilogue?.kind === 'reset' ? streetResetPose(input.epilogue).closedEyes : 0;
     if (entry.active && !entry.loading) {
       entry.loading = true;
       this.load(rig, entry).catch(error => console.warn(`${entry.role} detailed head could not load; retaining its fallback.`, error));
@@ -46,7 +47,7 @@ export class EpilogueHeads {
     if (entry.neck) entry.neck.visible = !visible;
     if (entry.model) entry.model.visible = visible;
     if (entry.face?.morphTargetInfluences) entry.face.morphTargetInfluences[0] = entry.closed.value;
-    if (entry.eyes) entry.eyes.visible = !entry.closed.value;
+    if (entry.eyes) entry.eyes.visible = entry.closed.value < .98;
   }
 
   private async load(rig: CharacterRig, entry: HeadEntry): Promise<void> {

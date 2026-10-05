@@ -1,3 +1,8 @@
+export const STREET_RESET = {
+  facade: { x: 0, z: -15, width: 122, depth: 1.2, height: 15 },
+  curb: 9.35, roadDrop: .15, entry: { x: 0, z: -7 },
+} as const;
+
 export const TRILOGY_EPILOGUE = {
   seconds: {
     retreat: 5.2,
@@ -30,6 +35,8 @@ export interface TrilogyEpilogueEncounter {
   elapsed: number;
   total: number;
   parkApproach?: { x: number; z: number; yaw: number };
+  /** Existing active saves retain the earlier wake-first timing. */
+  resetVersion?: 2;
 }
 
 export interface TrilogyEpilogueGesture extends TrilogyEpilogueEncounter {
@@ -42,7 +49,32 @@ const running = new Set<TrilogyEpiloguePhase>([
 ]);
 
 export function newTrilogyEpilogue(kind: TrilogyEpilogueKind): TrilogyEpilogueEncounter {
-  return { kind, phase: 'ready', elapsed: 0, total: 0 };
+  return { kind, phase: 'ready', elapsed: 0, total: 0, ...(kind === 'reset' ? { resetVersion: 2 as const } : {}) };
+}
+
+function epilogueSeconds(encounter: TrilogyEpilogueEncounter): number | undefined {
+  if (encounter.kind === 'reset' && encounter.resetVersion === 2) {
+    if (encounter.phase === 'cat') return 8.8;
+    if (encounter.phase === 'waking') return 7.2;
+  }
+  return TRILOGY_EPILOGUE.seconds[encounter.phase as keyof typeof TRILOGY_EPILOGUE.seconds];
+}
+
+/** One saved clock drives the street, cat, eyelids and body; renderer time cannot advance it. */
+export function streetResetPose(encounter: TrilogyEpilogueEncounter) {
+  const smooth = (value: number, start: number, end: number) => {
+    const t = Math.max(0, Math.min(1, (value - start) / (end - start))); return t * t * (3 - 2 * t);
+  };
+  const modern = encounter.resetVersion === 2, progress = trilogyEpilogueProgress(encounter);
+  const rising = encounter.phase === 'ready' || modern && encounter.phase === 'cat' ? 0
+    : encounter.phase === 'waking' ? progress : 1;
+  const cat = encounter.phase === 'cat' ? progress : encounter.phase === 'done' || modern && encounter.phase === 'waking' ? 1 : 0;
+  const leaving = modern && encounter.phase === 'waking' ? smooth(encounter.elapsed, 1.2, 6.4) : modern && encounter.phase === 'done' ? 1 : 0;
+  return { rising, pavement: smooth(cat, 0, .78),
+    closedEyes: modern && (encounter.phase === 'ready' || encounter.phase === 'cat') ? 1 - smooth(encounter.elapsed, 7.4, 8.8) : 0,
+    catX: -8 + smooth(cat, 0, 1) * 10.4 + leaving * 4.6, catZ: -10.9 - leaving * 1.2,
+    catYaw: leaving * .25, catWalk: encounter.phase === 'cat' ? Math.sin(progress * Math.PI) : Math.sin(leaving * Math.PI),
+    catClock: encounter.total, visible: encounter.phase !== 'ready' };
 }
 
 export function trilogyEpilogueLocked(encounter?: TrilogyEpilogueEncounter): boolean {
@@ -62,7 +94,7 @@ export function neoCarryPose(encounter: TrilogyEpilogueEncounter) {
 }
 
 export function trilogyEpilogueProgress(encounter: TrilogyEpilogueEncounter): number {
-  const seconds = TRILOGY_EPILOGUE.seconds[encounter.phase as keyof typeof TRILOGY_EPILOGUE.seconds];
+  const seconds = epilogueSeconds(encounter);
   return seconds ? Math.max(0, Math.min(1, encounter.elapsed / seconds)) : 0;
 }
 
@@ -70,13 +102,13 @@ export function stepTrilogyEpilogue(encounter: TrilogyEpilogueEncounter, delta: 
   if (!running.has(encounter.phase)) return encounter;
   const dt = Math.max(0, Math.min(.1, delta));
   const next = { ...encounter, elapsed: encounter.elapsed + dt, total: encounter.total + dt };
-  const seconds = TRILOGY_EPILOGUE.seconds[next.phase as keyof typeof TRILOGY_EPILOGUE.seconds];
+  const seconds = epilogueSeconds(next);
   if (seconds === undefined || next.elapsed + 1e-6 < seconds) return next;
   const after: Partial<Record<TrilogyEpiloguePhase, TrilogyEpiloguePhase>> = next.kind === 'ceasefire'
     ? { retreat: 'message_ready', running: 'announcement', announcement: 'embrace', embrace: 'done' }
     : next.kind === 'neo_carried'
       ? { disconnecting: 'lowering', lowering: 'transfer', transfer: 'departing', departing: 'done' }
-      : next.kind === 'reset' ? { waking: 'cat', cat: 'done' }
+      : next.kind === 'reset' ? next.resetVersion === 2 ? { cat: 'waking', waking: 'done' } : { waking: 'cat', cat: 'done' }
         : { cat: 'architect', sitting: 'architect', architect: 'choice', leaving: 'promise', sati: 'sunrise', sunrise: 'belief', belief: 'done' };
   next.phase = after[next.phase] ?? next.phase;
   next.elapsed = 0;

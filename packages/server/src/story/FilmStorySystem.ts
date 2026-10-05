@@ -53,7 +53,7 @@ import { farewellLocked, farewellPose, newFarewell, stepFarewell } from '@auto_m
 import { DEUS_PACT, deusPactLocked, deusPactPose, newDeusPact, stepDeusPact } from '@auto_matrix/shared';
 import { SMITH_FINALE, newSmithFinale, retrySmithFinale, smithFinaleAction as reduceSmithFinaleAction,
   smithFinaleLocked, smithFinalePose, smithCraterAmount, smithOracleRestored, stepSmithFinale } from '@auto_matrix/shared';
-import { newTrilogyEpilogue, stepTrilogyEpilogue, trilogyEpilogueLocked, trilogyEpilogueProgress, neoCarryPose,
+import { STREET_RESET, newTrilogyEpilogue, stepTrilogyEpilogue, trilogyEpilogueLocked, trilogyEpilogueProgress, neoCarryPose,
   type TrilogyEpilogueKind, type TrilogyEpilogueEncounter } from '@auto_matrix/shared';
 import { gardenPose, SUNRISE_GARDEN } from '@auto_matrix/shared';
 import { newApuRun, stepApuRun } from '@auto_matrix/shared';
@@ -528,7 +528,8 @@ export class FilmStorySystem {
             : phase === 'lowering' ? '最后的接口从 Neo 身上松开。机器触须没有抛下他，而是缓慢放低失去回应的身体。'
               : phase === 'transfer' ? '发光的机械托架接住 Neo，把身体转移到等待的机器驳船上。'
                 : phase === 'departing' ? '驳船沿金色机器城的脉络远去。没有人宣布他的命运，只有停战仍在继续。'
-                  : phase === 'cat' ? '黑猫走到 Sati 身边。她认出了它；灰败的道路和建筑开始恢复原来的样子。'
+                  : phase === 'cat' ? '黑猫走过街面，损坏的道路逐渐恢复。'
+                    : phase === 'waking' && encounter.kind === 'reset' ? 'Sati 睁开眼睛，看见身边的黑猫。她撑住地面，收起双腿，慢慢站起。'
                   : phase === 'architect' ? '建筑师从水岸走向长椅，承认先知玩了一场危险的游戏。先知把问题留给了眼前仍须履行的承诺。'
                     : phase === 'choice' ? '建筑师承诺：凡是愿意离开矩阵的人，系统都会放行。先知仍要决定怎样理解一份没有永久保证的和平。'
                       : phase === 'promise' ? '建筑师已经离开。先知留在长椅上，看见 Sati 和 Seraph 从树荫下走来。按 G 迎接他们。'
@@ -4601,8 +4602,21 @@ export class FilmStorySystem {
         film: { scene: 'm2_oracle_message', width: 4.2, depth: .35, height: 8.8 } });
     } else this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== id);
   }
+  private sealResetFacade(): void {
+    const id = 'film:reset:facade';
+    if ((this.state?.visiting ?? this.state?.scene) === 'm3_reset') {
+      const wall = STREET_RESET.facade;
+      for (const side of [1, -1]) {
+        const key = side === 1 ? id : `${id}:opposite`;
+        if (!this.sandbox().structures.some(s => s.id === key)) this.sandbox().structures.push({ id: key, kind: 'barricade', owner: 'matrix',
+          position: filmPosition('film_escape_streets', wall.x, wall.z * side), matrix: true, health: 1,
+          film: { scene: 'm3_reset', width: wall.width, depth: wall.depth, height: wall.height } });
+      }
+    } else this.sandbox().structures = this.sandbox().structures.filter(s => !s.id.startsWith(id));
+  }
   reconcileCast(): void {
     if (!this.state) return;
+    this.sealResetFacade();
     this.ensureHelDanceDoor(this.world.simulationTick);
     this.sealAmbush(); this.wetwall.seal(); this.sixth.seal(); this.sealZionMessageDoor(); this.sealArchitectDoors(); this.sealHelElevator(); this.sealHelDanceDoor();
     const bane = this.world.agents.get('bane');
@@ -5412,8 +5426,8 @@ export class FilmStorySystem {
     if (state.scene === 'm3_reset' && state.step === 0) {
       this.ensureEpilogue(); const encounter = state.epilogue!;
       if (encounter.phase !== 'ready' || target !== 'act') return state.lastText;
-      encounter.phase = 'waking'; encounter.elapsed = 0; encounter.total = 0;
-      state.lastText = '街道重新安静下来。Sati 睁开眼，撑起身体，看见一只熟悉的黑猫。';
+      encounter.resetVersion = 2; encounter.phase = 'cat'; encounter.elapsed = 0; encounter.total = 0;
+      state.lastText = 'Sati 仍侧卧在路边。黑猫从碎裂的街面走来，铺路石随着它的脚步重新合拢。';
       this.placeEpilogue(agent, tick); return state.lastText;
     }
     if (state.scene === 'm3_dawn' && state.step === 1) {
@@ -5784,6 +5798,7 @@ export class FilmStorySystem {
     this.advance(text, agent, tick);
   }
   private place(agent: AgentState, scene: FilmScene, position: AgentState['position']): void {
+    this.sealResetFacade();
     agent.position = { ...position }; agent.isInMatrix = FILM_SETS[scene.set].world === 'matrix'; agent.currentLocation = scene.set;
     agent.rotation = Math.PI; agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentAction = null; agent.targetPosition = null; agent.currentPath = [];
   }
@@ -6135,6 +6150,7 @@ export class FilmStorySystem {
     if (scene.id === 'm1_bug' && state.office?.outcome === 'escaped') state.lastText = '你没有被特工带走。Switch 仍要求做安全检查，确认没有追踪装置。';
   }
   private stageCast(): void {
+    this.sealResetFacade();
     const scene = this.scene!;
     if (scene.id === 'm1_basement' || scene.id === 'm1_tv_exit' || scene.id === 'm1_unplugged' && this.state!.tvExit?.crosscut) { this.basement.frame(this.world.agents.get(this.state!.actor)!, {}, 0, this.world.simulationTick); return; }
     if (scene.id === 'm1_wall_exposed') { this.sixth.frame(this.world.agents.get(this.state!.actor)!, { crouch: false, yaw: 0 }, 0, this.world.simulationTick); return; }

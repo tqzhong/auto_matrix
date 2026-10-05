@@ -1,13 +1,16 @@
 import * as THREE from 'three';
-import { neoCarryPose, newTrilogyEpilogue, trilogyEpilogueProgress, type TrilogyEpilogueEncounter, type TrilogyEpilogueKind } from '@auto_matrix/shared';
+import { STREET_RESET, neoCarryPose, newTrilogyEpilogue, streetResetPose, trilogyEpilogueProgress, type TrilogyEpilogueEncounter, type TrilogyEpilogueKind } from '@auto_matrix/shared';
 import { MachineUplinkContacts } from './MachineUplinkContacts.js';
 import { SunriseGardenRenderer } from './SunriseGardenRenderer.js';
+import { reach } from '../agents/SpoonPerformance.js';
+import { batchStaticGeometry } from './StaticGeometry.js';
 
 /** Physical epilogue beats layered over the existing Zion, Machine City and park sets. */
 export class TrilogyEpilogueRenderer {
   private group = new THREE.Group();
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
+  private textures = new Set<THREE.Texture>();
   private lights = new Set<THREE.Light>();
   private sentinels: THREE.Group[] = [];
   private barge?: THREE.Group;
@@ -22,6 +25,7 @@ export class TrilogyEpilogueRenderer {
   private bargePosts: THREE.Mesh[] = [];
   private fittedBody?: THREE.Object3D;
   private cat?: THREE.Group;
+  private catLegs: { hip: THREE.Group; knee: THREE.Group; ankle: THREE.Group; rear: boolean; side: number }[] = [];
   private resetTiles: THREE.Mesh[] = [];
   private park?: SunriseGardenRenderer;
 
@@ -144,25 +148,113 @@ export class TrilogyEpilogueRenderer {
 
   private catModel(material: THREE.Material): THREE.Group {
     const cat = new THREE.Group();
-    const body = this.mesh(new THREE.CapsuleGeometry(.23, .65, 4, 12), material, cat); body.rotation.x = Math.PI / 2; body.position.y = .52;
-    const head = this.mesh(new THREE.SphereGeometry(.35, 12, 9), material, cat); head.position.set(0, .7, -.62);
-    for (const side of [-1, 1]) { const ear = this.mesh(new THREE.ConeGeometry(.15, .34, 4), material, cat); ear.position.set(side * .2, 1.02, -.65); }
-    for (const x of [-.16, .16]) for (const z of [-.35, .35]) {
-      const leg = new THREE.Group(); leg.name = 'reset-cat-leg'; leg.position.set(x, .5, z); cat.add(leg);
-      const shin = this.mesh(new THREE.CylinderGeometry(.055, .07, .43, 8), material, leg); shin.position.y = -.215;
-      const paw = this.mesh(new THREE.SphereGeometry(.07, 8, 6), material, leg); paw.position.set(0, -.44, -.025); paw.scale.z = 1.4;
+    const sphere = new THREE.SphereGeometry(1, 20, 14);
+    const oval = (parent: THREE.Group, position: number[], size: number[], surface = material) => {
+      const mesh = this.mesh(sphere, surface, parent); mesh.position.fromArray(position); mesh.scale.fromArray(size); return mesh;
+    };
+    oval(cat, [0, .48, 0], [.48, .19, .20]); oval(cat, [.35, .54, 0], [.20, .26, .21]);
+    const head = new THREE.Group(); head.name = 'reset-cat-head'; head.position.set(.55, .67, 0); cat.add(head);
+    oval(head, [0, 0, 0], [.19, .18, .18]); oval(head, [.15, -.07, 0], [.11, .075, .12]);
+    const eye = this.material(0x8f9256, .32), nose = this.material(0x24221f, .65);
+    oval(head, [.24, -.055, 0], [.032, .025, .035], nose);
+    for (const side of [-1, 1]) {
+      const ear = this.mesh(new THREE.ConeGeometry(.095, .20, 8), material, head); ear.position.set(-.02, .20, side * .11); ear.rotation.x = side * .18;
+      oval(head, [.12, .035, side * .13], [.028, .025, .015], eye);
+      oval(head, [.13, .035, side * .143], [.008, .022, .004]);
+      for (const rear of [false, true]) {
+        const hip = new THREE.Group(); hip.position.set(rear ? -.36 : .34, .46, side * .13); cat.add(hip);
+        oval(hip, [0, -.12, 0], [rear ? .10 : .063, .16, .066]);
+        const knee = new THREE.Group(); knee.position.y = -.24; hip.add(knee);
+        oval(knee, [0, -.11, 0], [.040, .135, .045]);
+        const ankle = new THREE.Group(); ankle.position.y = -.24; knee.add(ankle);
+        oval(ankle, [.025, 0, 0], [.10, .048, .063]).name = 'reset-cat-paw';
+        this.catLegs.push({ hip, knee, ankle, rear, side });
+      }
     }
-    const tail = this.mesh(new THREE.TorusGeometry(.65, .055, 6, 18, Math.PI * 1.3), material, cat); tail.rotation.set(Math.PI / 2, 0, -.5); tail.position.set(.65, .72, .25);
+    const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(-.42,.52,0), new THREE.Vector3(-.72,.63,.03), new THREE.Vector3(-.87,.98,.08), new THREE.Vector3(-.80,1.15,.10)]);
+    this.mesh(new THREE.TubeGeometry(curve, 28, .043, 8, false), material, cat).name = 'reset-cat-tail';
     return cat;
   }
 
   private buildReset(): void {
     const black = this.material(0x111817, .82, .05); this.cat = this.catModel(black); this.cat.name = 'matrix-reset-black-cat'; this.group.add(this.cat);
-    const stone = this.material(0x7c8580, .94);
-    for (let i = 0; i < 15; i++) {
-      const tile = this.mesh(new THREE.BoxGeometry(2.6 + i % 3, .2, 2.2 + (i * 2) % 3), stone); tile.position.set(-12 + i % 5 * 5.6, .1, -24 + Math.floor(i / 5) * 4.8);
-      tile.rotation.y = (i % 3 - 1) * .14; tile.rotation.x = (i % 2 ? 1 : -1) * .09; this.resetTiles.push(tile);
+    const pbr = (folder: string, name: string, color: number, repeatX: number, repeatY: number) => {
+      const material = this.material(color, .87, 0);
+      for (const [key, suffix] of [['map', 'color'], ['normalMap', 'normal'], ['roughnessMap', 'roughness']] as const) {
+        const texture = new THREE.TextureLoader().load(`/assets/${folder}/${name}-${suffix}.jpg`);
+        texture.wrapS = texture.wrapT = THREE.RepeatWrapping; texture.repeat.set(repeatX, repeatY); texture.anisotropy = 8;
+        if (key === 'map') texture.colorSpace = THREE.SRGBColorSpace;
+        material[key] = texture; this.textures.add(texture);
+      }
+      material.normalScale.set(.45, .45); return material;
+    };
+    const pavement = pbr('surfaces', 'concrete_pavement_03', 0x919993, 90, 1.5);
+    const slab = pbr('surfaces', 'concrete_pavement_03', 0x919993, .75, .75);
+    const asphalt = pbr('surfaces', 'asphalt_02', 0x707b7d, 82.5, 6);
+    const plaster = pbr('film-materials', 'damaged_plaster', 0x7e8179, 3, 1);
+    const stone = this.material(0x777b74, .94, 0), iron = this.material(0x1b2428, .72, .35);
+    const recess = this.material(0x080f13, .93, 0), glass = this.material(0x344543, .38, .12, 0x243631, .16);
+    const cube = new THREE.BoxGeometry(1, 1, 1);
+    const box = (x: number, y: number, z: number, w: number, h: number, d: number, material: THREE.Material, parent = this.group) => {
+      const mesh = this.mesh(cube, material, parent); mesh.position.set(x, y, z); mesh.scale.set(w, h, d); return mesh;
+    };
+    const sidewalk = this.mesh(new THREE.PlaneGeometry(600, 5.2), pavement); sidewalk.name = 'reset-sidewalk';
+    sidewalk.rotation.x = -Math.PI / 2; sidewalk.position.set(0, -.006, -12);
+    const across = sidewalk.clone(); across.name = 'reset-opposite-sidewalk'; across.position.z = 12; this.group.add(across);
+    const road = this.mesh(new THREE.PlaneGeometry(600, STREET_RESET.curb * 2), asphalt); road.rotation.x = -Math.PI / 2; road.position.set(0, -STREET_RESET.roadDrop, 0);
+    for (const side of [-1, 1]) box(0, -.12, STREET_RESET.curb * side, 600, .24, .28, stone);
+    const facade = new THREE.Group(); facade.name = 'reset-basement-front'; facade.position.z = STREET_RESET.facade.z; this.group.add(facade);
+    // The sleeping child stays on the original save coordinates. The street is
+    // built around that body, with low barred windows immediately behind it.
+    for (let bay = -8; bay <= 8; bay++) {
+      const x = 2.5 + bay * 6.8;
+      box(x, 8.2, -0.10, 6.76, 13.6, .5, plaster, facade);
+      box(x, .76, -0.35, 6.76, 1.52, .25, recess, facade);
+      for (const side of [-1, 1]) box(x + side * 2.88, .76, 0.08, 1.02, 1.52, .7, stone, facade);
+      box(x, .08, 0.28, 4.82, .16, .55, stone, facade);
+      box(x, 1.46, 0.26, 4.86, .22, .6, stone, facade);
+      box(x, .77, -0.15, 4.73, 1.15, .05, glass, facade);
+      for (let bar = -3; bar <= 3; bar++) box(x + bar * .62, .78, 0.22, .047, 1.17, .07, iron, facade);
+      box(x, .85, 0.22, 4.75, .055, .07, iron, facade);
+      for (const y of [3.35, 6.9, 10.45]) {
+        box(x, y, 0.19, 2.15, 2.72, .13, recess, facade);
+        box(x, y, 0.30, 1.96, 2.53, .035, glass, facade);
+        for (const side of [-1, 1]) box(x + side * 1.1, y, 0.38, .11, 2.94, .16, stone, facade);
+        box(x, y, 0.43, .075, 2.6, .12, iron, facade);
+        box(x, y + .1, 0.43, 2.03, .07, .12, iron, facade);
+        box(x, y - 1.42, 0.48, 2.46, .15, .5, stone, facade);
+      }
     }
+    box(0, 1.67, 0.20, STREET_RESET.facade.width, .18, .56, stone, facade);
+    box(0, 5.2, 0.18, STREET_RESET.facade.width, .10, .48, stone, facade);
+    for (const x of [-18, 16]) {
+      box(x, 3, 0.55, .13, 6, .13, iron, facade);
+      const elbow = this.mesh(new THREE.TorusGeometry(.22, .065, 8, 12, Math.PI / 2), iron, facade);
+      elbow.position.set(x + .22, .24, 0.55); elbow.rotation.z = Math.PI;
+    }
+    const tiles = new THREE.Group(); tiles.name = 'reset-paving-slabs'; this.group.add(tiles);
+    for (let row = 0; row < 3; row++) for (let column = 0; column < 13; column++) {
+      const x = -10.8 + column * 1.7, z = -13.7 + row * 1.7;
+      // A stationary support patch remains beneath Sati's body and gathering legs.
+      if (row < 2 && x > -1.8 && x < 4) continue;
+      const tile = this.mesh(new THREE.BoxGeometry(1.68, .12, 1.68), slab, tiles);
+      tile.position.set(x, -.06, z); this.resetTiles.push(tile);
+    }
+    const key = new THREE.DirectionalLight(0x91bfd4, 2.1); key.position.set(-9, 9, -3); key.target.position.set(0, 0, -12);
+    key.castShadow = true; key.shadow.mapSize.set(1024, 1024); key.shadow.normalBias = .018; key.shadow.bias = -.0002;
+    Object.assign(key.shadow.camera, { left: -14, right: 14, top: 9, bottom: -9, near: .1, far: 40 });
+    this.group.add(key, key.target); this.lights.add(key);
+    const fill = new THREE.HemisphereLight(0x86a3bb, 0x252923, .32); this.group.add(fill); this.lights.add(fill);
+    batchStaticGeometry(this.group, new Set(this.resetTiles)).forEach(geometry => this.geometries.add(geometry));
+    // Reuse the already batched geometry for the surrounding street, including
+    // views away from the child. These distant copies add no texture allocations.
+    for (const side of [-1, 1]) for (const offset of [-2, -1, 0, 1, 2]) {
+      if (side === 1 && offset === 0) continue;
+      const block = facade.clone(); block.name = 'reset-surrounding-block';
+      block.position.set(offset * 115.6, 0, STREET_RESET.facade.z * side); block.rotation.y = side === 1 ? 0 : Math.PI;
+      this.group.add(block);
+    }
+    this.update(newTrilogyEpilogue('reset'), 0);
   }
 
   update(encounter: TrilogyEpilogueEncounter | undefined, elapsed: number, subject?: THREE.Object3D): void {
@@ -201,11 +293,23 @@ export class TrilogyEpilogueRenderer {
         });
       }
     } else if (this.kind === 'reset' && this.cat) {
-      const catProgress = phase === 'cat' ? progress : phase === 'done' ? 1 : 0;
-      this.cat.visible = phase !== 'ready'; this.cat.position.set(-8 + Math.min(1, catProgress * 1.4) * 10, 0, -13); this.cat.rotation.y = -Math.PI / 2;
-      this.cat.getObjectsByProperty('name', 'reset-cat-leg').forEach((leg, i) => { leg.rotation.x = catProgress < .72 ? Math.sin(state.total * 8 + i % 3 * Math.PI) * .35 : 0; });
-      this.resetTiles.forEach((tile, i) => { const reset = Math.max(0, Math.min(1, catProgress * 2 - i * .035));
-        tile.visible = reset < .99; tile.rotation.x = (i % 2 ? 1 : -1) * .09 * (1 - reset); tile.position.y = .1 * (1 - reset); });
+      const pose = streetResetPose(state);
+      this.cat.visible = pose.visible; this.cat.position.set(pose.catX, 0, pose.catZ); this.cat.rotation.y = pose.catYaw;
+      this.cat.getObjectByName('reset-cat-head')!.rotation.y = phase === 'waking' ? -.4 * (1 - THREE.MathUtils.smoothstep(state.elapsed, 0, 2)) : 0;
+      this.cat.updateWorldMatrix(true, true); const rotation = this.cat.getWorldQuaternion(new THREE.Quaternion());
+      this.catLegs.forEach(({ hip, knee, ankle, rear, side }) => {
+        const cycle = pose.catClock * 8 + (rear ? Math.PI : 0) + (side > 0 ? Math.PI : 0);
+        const stride = Math.sin(cycle) * .14 * pose.catWalk, lift = Math.max(0, Math.cos(cycle)) * .07 * pose.catWalk;
+        const target = this.cat!.localToWorld(new THREE.Vector3(hip.position.x + stride, .048 + lift, hip.position.z));
+        reach(hip, knee, ankle.position, target, new THREE.Vector3(rear ? 1 : -1, 0, 0).applyQuaternion(rotation));
+        ankle.quaternion.copy(knee.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rotation));
+      });
+      this.resetTiles.forEach((tile, i) => {
+        const front = -6 + pose.pavement * 20;
+        const broken = 1 - THREE.MathUtils.smoothstep(front, tile.position.x - 1.3, tile.position.x + 1.3);
+        tile.rotation.set((i % 2 ? 1 : -1) * .13 * broken, 0, (i % 3 - 1) * .1 * broken);
+        tile.position.y = -.06 + (.18 + i % 3 * .06) * broken;
+      });
     }
     this.park?.update(state);
   }
@@ -216,6 +320,7 @@ export class TrilogyEpilogueRenderer {
     this.park?.dispose();
     this.group.removeFromParent(); this.group.clear(); this.geometries.forEach(value => value.dispose());
     this.materials.forEach(value => value.dispose()); this.lights.forEach(value => value.dispose());
-    this.geometries.clear(); this.materials.clear(); this.lights.clear();
+    this.textures.forEach(value => value.dispose());
+    this.geometries.clear(); this.materials.clear(); this.lights.clear(); this.textures.clear();
   }
 }

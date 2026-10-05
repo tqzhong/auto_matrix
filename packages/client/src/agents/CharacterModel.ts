@@ -405,15 +405,18 @@ export class CharacterModels {
       elbows.push(elbow);
       if (state.id !== 'sati') this.mesh(elbow, this.cylinder, seams, [0, -0.56, 0], [0.13, 0.045, 0.14]);
       const handMaterial = look.leather ? black : skin;
-      this.mesh(elbow, this.sphere, handMaterial, [0, -0.75, 0.005], [0.095, 0.145, 0.055]);
+      const hand = state.id === 'sati' ? this.joint(elbow, 0, -.68) : elbow;
+      const wristOffset = state.id === 'sati' ? .68 : 0;
+      if (state.id === 'sati') hand.name = `sati-hand-${side}`;
+      this.mesh(hand, this.sphere, handMaterial, [0, -0.75 + wristOffset, 0.005], [0.095, 0.145, 0.055]);
       const handFingers: THREE.Group[] = [];
       for (let finger = 0; finger < 4; finger++) {
-        const joint = this.joint(elbow, -0.063 + finger * 0.041, -.82, .01);
+        const joint = this.joint(hand, -0.063 + finger * 0.041, -.82 + wristOffset, .01);
         this.mesh(joint, this.sphere, handMaterial, [0, -.055, 0], [.024, .073 - Math.abs(1.5 - finger) * .009, .027]);
         handFingers.push(joint);
       }
       fingers.push(handFingers);
-      const thumb = this.mesh(elbow, this.sphere, handMaterial, [side * -0.10, -0.75, 0.02], [0.03, 0.08, 0.03]); thumb.rotation.z = side * 0.5;
+      const thumb = this.mesh(hand, this.sphere, handMaterial, [side * -0.10, -0.75 + wristOffset, 0.02], [0.03, 0.08, 0.03]); thumb.rotation.z = side * 0.5;
 
       const hip = this.joint(detail, side * 0.225, 1.86); hips.push(hip);
       const leg = [[.125, -1.8], [.14, -1.63], [.155, -1.39], [.165, -1.17], [.15, -1.03], [.16, -.94], [.17, -.85], [.185, -.68], [.21, -.40], [.24, -.13], [.22, .04], [.002, .1]];

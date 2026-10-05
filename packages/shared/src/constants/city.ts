@@ -4,6 +4,7 @@ import { LIFE_ROOMS, lifeRoomCenter } from './life-world.js';
 import { FILM_SETS, filmSetAt, filmBlocked, filmGroundHeight } from './film-sets.js';
 import type { Vector3 } from '../types/agent.js';
 import type { WorldStructure } from '../types/sandbox.js';
+import { STREET_RESET } from './trilogy-epilogue.js';
 
 export const STREET_SPACING = 80;
 export const CITY_CENTER = { x: 1120, y: 1, z: 920 };
@@ -98,6 +99,8 @@ export interface PlayerInput {
 
 export function groundHeight(position: Vector3, matrix: boolean, structures: WorldStructure[] = []): number {
   const set = filmSetAt(position, matrix);
+  if (set?.id === 'film_escape_streets' && structures.some(s => s.id === 'film:reset:facade'))
+    return set.center.y - (Math.abs(position.z - set.center.z) < STREET_RESET.curb ? STREET_RESET.roadDrop : 0);
   if (set) return filmGroundHeight(position, set, structures.find(s => s.id === 'film:smith:crater' && s.kind === 'crater')?.film?.height);
   if (matrix) {
     // Rooftops support characters who reach them by jumping or flight.
@@ -118,6 +121,8 @@ export function groundHeight(position: Vector3, matrix: boolean, structures: Wor
 export function playerBlocked(position: Vector3, matrix: boolean, radius = 1.1, structures: WorldStructure[] = []): boolean {
   if (structures.some(s => s.kind === 'barricade' && s.matrix === matrix && s.health > 0 && position.y < s.position.y + (s.film?.height ?? 3) && position.y > s.position.y - 3 && Math.abs(position.x - s.position.x) < (s.film ? s.film.width / 2 : 4) + radius && Math.abs(position.z - s.position.z) < (s.film ? s.film.depth / 2 : 1.2) + radius)) return true;
   const set = filmSetAt(position, matrix);
+  if (set?.id === 'film_escape_streets' && structures.some(s => s.id === 'film:reset:facade'))
+    return Math.abs(position.x - set.center.x) > set.width / 2 - radius - .6 || Math.abs(position.z - set.center.z) > set.depth / 2 - radius - .6;
   if (set) return filmBlocked(position, set, radius, structures.some(s => s.id === 'film:bridge:car'), structures.some(s => s.id === 'film:oracle:door'), structures.find(s => s.id === 'film:smith:crater' && s.kind === 'crater')?.film?.height);
   if (!matrix) return Math.hypot(position.x - 2170, position.z - 2390) > 440;
   if (position.x < 0 || position.x > 2560 || position.z < 0 || position.z > 2560) return true;

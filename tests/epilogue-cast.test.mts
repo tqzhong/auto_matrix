@@ -6,6 +6,50 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { CharacterModels } from '../packages/client/src/agents/CharacterModel.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
+import { newTrilogyEpilogue } from '@auto_matrix/shared';
+
+test('Sati waits on her side with closed eyes, then gathers her legs and plants her hands before standing', async t => {
+  const asset = await shippedHead('sati');
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', async () => asset);
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const previous = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {} }) }) } as unknown as Document;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents(); const models = new CharacterModels();
+  try {
+    const rig = models.create(world.agents.get('sati')!);
+    const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0,
+      epilogue: { ...newTrilogyEpilogue('reset'), role: 'sati' as const, phase: 'cat' as const, elapsed: 2, total: 2 } };
+    models.animate(rig, 0, input, 1); await new Promise(resolve => setImmediate(resolve)); models.animate(rig, 0, input, 1);
+    rig.root.updateWorldMatrix(true, true);
+    const head = rig.root.getObjectByName('sati-anatomical-head') as THREE.Mesh;
+    assert.equal(head.morphTargetInfluences![0], 1, 'sleeping Sati must not stare with open eyes');
+    const shoulders = rig.shoulders.map(joint => joint.getWorldPosition(new THREE.Vector3()));
+    assert.ok(Math.abs(shoulders[0].y - shoulders[1].y) > .4, 'the opening pose is side-lying, not a standing body tipped onto its back');
+    for (const elapsed of [3.2, 3.6, 4]) {
+      models.animate(rig, 0, { ...input, epilogue: { ...input.epilogue, phase: 'waking', elapsed, total: 8.8 + elapsed } }, 1);
+      rig.root.updateWorldMatrix(true, true);
+      for (const side of [-1, 1]) {
+        const hand = rig.root.getObjectByName(`sati-hand-${side}`); assert.ok(hand, 'the supported palm needs an articulated wrist');
+        const palm = hand.localToWorld(new THREE.Vector3(0, -.07, .055));
+        assert.ok(Math.abs(palm.y) < .02, `waking ${elapsed}: palm contact is ${palm.y} above street`);
+      }
+      assert.ok(rig.knees.some(knee => Math.abs(knee.rotation.x) > .3), 'the legs must gather before the body rises');
+      const before = rig.torso.getWorldPosition(new THREE.Vector3()); models.animate(rig, .1, { ...input, epilogue: { ...input.epilogue, phase: 'waking', elapsed, total: 8.8 + elapsed } }, 1);
+      assert.ok(before.distanceTo(rig.torso.getWorldPosition(new THREE.Vector3())) < 1e-6, 'paused support must not drift with render time');
+    }
+    for (const elapsed of [0, .4, .8, 1.2, 1.6, 2, 2.6, 3.2, 3.6, 4, 4.6, 5.2, 6.4, 7.2]) {
+      models.animate(rig, 0, { ...input, epilogue: { ...input.epilogue, phase: 'waking', elapsed, total: 8.8 + elapsed } }, 1);
+      rig.root.updateWorldMatrix(true, true); let lowest = Infinity;
+      rig.detail.traverseVisible(object => {
+        if (!(object instanceof THREE.Mesh)) return;
+        object.updateMatrixWorld(true); if (object instanceof THREE.SkinnedMesh) object.skeleton.update();
+        for (let vertex = 0; vertex < object.geometry.attributes.position.count; vertex++)
+          lowest = Math.min(lowest, object.localToWorld(object.getVertexPosition(vertex, new THREE.Vector3())).y);
+      });
+      assert.ok(lowest > -.005 && lowest < .015, `waking ${elapsed}: actual head, limbs, dress and hands need street support, gap ${lowest}`);
+    }
+  } finally { models.dispose(); globalThis.document = previous; }
+});
 
 test('Oracle and Sati have a front hairline while their detailed assets load', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
@@ -170,6 +214,48 @@ test('Sati’s skirt stays attached to the bodice while the torso sways', t => {
           `skirt seam separates from the actual bodice section: ${top.toArray()}, radius ${radius}`);
       }
     }
+  } finally { models.dispose(); globalThis.document = previous; }
+});
+
+test('the folded waking dress covers the actual upper thighs through the waist bend', t => {
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const previous = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {} }) }) } as unknown as Document;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents(); const models = new CharacterModels();
+  try {
+    const rig = models.create(world.agents.get('sati')!), skirt = rig.root.getObjectByName('sati-skirt') as THREE.Mesh;
+    const dress = [skirt, ...rig.torso.children.filter(object => object instanceof THREE.Mesh && object.material === skirt.material)];
+    const ray = new THREE.Raycaster(), point = new THREE.Vector3(), center = new THREE.Vector3();
+    const exposed: { elapsed: number; point: number[]; gap: number | null }[] = [];
+    for (const elapsed of [0, 1.2, 2.7, 3.2, 3.6, 4, 4.6, 5.2, 7.2]) {
+      models.animate(rig, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0,
+        epilogue: { ...newTrilogyEpilogue('reset'), role: 'sati', phase: 'waking', elapsed, total: 8.8 + elapsed } }, 1);
+      rig.root.updateWorldMatrix(true, true); skirt.geometry.computeBoundingSphere();
+      for (const hip of rig.hips) hip.traverse(object => {
+        if (!(object instanceof THREE.SkinnedMesh)) return;
+        object.updateMatrixWorld(true); object.skeleton.update(); const rest = object.geometry.attributes.position;
+        for (let i = 0; i < rest.count; i += 3) {
+          const y = rest.getY(i); if (y < -.7 || y > .05) continue;
+          object.localToWorld(object.getVertexPosition(i, point));
+          // A thigh's radial ray can leave through the open neck after the
+          // waist bends. First classify skin inside the actual bodice section.
+          const local = rig.torso.worldToLocal(point.clone());
+          if (local.y >= 0 && local.y <= 1.5) {
+            const outward = new THREE.Vector3(local.x, 0, local.z).normalize().applyQuaternion(rig.torso.getWorldQuaternion(new THREE.Quaternion()));
+            ray.set(point.clone().addScaledVector(outward, 3), outward.clone().negate());
+            const cover = ray.intersectObjects(dress.slice(1), false)[0];
+            if (cover && cover.distance <= 3.008) continue;
+          }
+          object.localToWorld(object.applyBoneTransform(i, center.set(0, y, 0)));
+          const normal = point.clone().sub(center).normalize();
+          ray.set(point.clone().addScaledVector(normal, 3), normal.clone().negate());
+          const hit = ray.intersectObjects(dress, false)[0];
+          if (!hit || hit.distance > 3.008) exposed.push({ elapsed, point: point.toArray(), gap: hit ? hit.distance - 3 : null });
+        }
+      });
+    }
+    assert.equal(exposed.length, 0, `upper thigh skin crosses the dress: ${JSON.stringify(exposed.slice(0, 6))}`);
   } finally { models.dispose(); globalThis.document = previous; }
 });
 

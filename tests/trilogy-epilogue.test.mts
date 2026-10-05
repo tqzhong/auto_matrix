@@ -6,6 +6,10 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import {
   FILM_SCENE_BY_ID,
   filmStepPosition,
+  filmPosition,
+  playerBlocked,
+  groundHeight,
+  stepPlayer,
   newTrilogyEpilogue,
   stepTrilogyEpilogue,
   trilogyEpilogueLocked,
@@ -52,6 +56,47 @@ test('the epilogue reducer preserves authored phase boundaries', () => {
   assert.equal(dawn.phase, 'choice');
   assert.equal(trilogyEpilogueLocked(dawn), true, 'the Oracle stays physically seated while the player decides');
   assert.deepEqual(stepTrilogyEpilogue(dawn, .1), dawn, 'the Architect cannot choose the meaning of peace for the player');
+});
+
+test('new street resets restore the pavement and bring the cat before Sati rises, while active legacy saves keep their beat', () => {
+  const h = game(), scene = FILM_SCENE_BY_ID.m3_reset;
+  Object.assign(h.state(), { scene: scene.id, actor: 'sati', step: 0, epilogue: newTrilogyEpilogue('reset') });
+  h.players.possess('p', 'sati', h.tick()); h.command('act');
+  assert.equal(h.state().epilogue?.phase, 'cat', 'Sati must still be lying down during the street restoration');
+  h.frame(176); assert.equal(h.state().epilogue?.phase, 'waking');
+  h.frame(44); const saved = structuredClone(h.sandbox.state), pose = structuredClone(h.state().epilogue);
+  h.frame(15, false); assert.deepEqual(h.state().epilogue, pose);
+  h.players.release('p', h.tick()); h.sandbox.restore(saved); h.players.possess('p', 'sati', h.tick());
+  assert.deepEqual(h.state().epilogue, pose, 'rejoining must preserve the partially supported waking pose');
+  h.frame(100); assert.equal(h.state().epilogue?.phase, 'done');
+  h.command('next'); assert.equal(h.state().scene, 'm3_dawn');
+  let legacy = { kind: 'reset', phase: 'waking', elapsed: 3.1, total: 3.1 } as const;
+  const oldCat = stepTrilogyEpilogue(legacy, .1);
+  assert.equal(oldCat.phase, 'cat', 'an old active save must finish its original order instead of skipping its cat beat');
+  assert.equal(stepTrilogyEpilogue({ ...oldCat, elapsed: 5.9 }, .1).phase, 'done');
+});
+
+test('the reset facade blocks a scene revisit and is removed when returning to the saved park', () => {
+  const h = game(), scene = FILM_SCENE_BY_ID.m3_dawn;
+  Object.assign(h.state(), { scene: scene.id, actor: 'oracle', step: scene.steps.length, finished: true,
+    completed: ['m3_reset', scene.id], epilogue: { ...newTrilogyEpilogue('dawn'), phase: 'done' } });
+  h.players.possess('p', 'oracle', h.tick()); h.command('visit:m3_reset');
+  assert.equal(h.state().visiting, 'm3_reset');
+  assert.ok(Math.abs(h.actor().position.z - filmPosition('film_escape_streets', 0, 0).z) < 9, 'revisiting must enter the street instead of spawning behind the opposite building');
+  assert.equal(playerBlocked(filmPosition('film_escape_streets', 2, -14.8), true, 1.1, h.sandbox.state.structures), true, 'the visible low window cannot be walked through');
+  assert.equal(playerBlocked(filmPosition('film_escape_streets', 1, -12), true, 1.1, h.sandbox.state.structures), false, 'the waking area remains open');
+  assert.equal(playerBlocked(filmPosition('film_escape_streets', 0, 14.8), true, 1.1, h.sandbox.state.structures), true, 'the opposite facade also has collision');
+  assert.equal(groundHeight(filmPosition('film_escape_streets', 0, 0), true, h.sandbox.state.structures), filmPosition('film_escape_streets', 0, 0).y - .15);
+  let position = { ...h.actor().position }, velocity = { x: 0, z: 0 }, vertical = 0;
+  const target = filmPosition('film_escape_streets', 0, -12);
+  for (let frame = 0; frame < 180 && Math.abs(position.z - target.z) > .2; frame++) {
+    const next = stepPlayer(position, vertical, { x: 0, z: -1, yaw: Math.PI, sprint: false, jump: false }, .05, true, h.sandbox.state.structures, velocity);
+    position = next.position; velocity = next.horizontalVelocity; vertical = next.verticalVelocity;
+  }
+  assert.ok(Math.abs(position.z - target.z) < .2 && Math.abs(position.y - target.y) < .01, 'normal walking must step from the road up to the same body-support pavement');
+  h.command('return');
+  assert.equal(h.state().visiting, undefined); assert.equal(h.state().scene, scene.id);
+  assert.equal(h.sandbox.state.structures.some(item => item.id.startsWith('film:reset:facade')), false, 'the later facade cannot block the first-film escape route');
 });
 
 test('Neo remains unresponsive while the transport is waiting or finished without advancing its clock', () => {
@@ -112,7 +157,7 @@ test('the Smith ending leaves a persistent real-world body while Kid witnesses t
   assert.ok(end.z < ready.z - 28, 'the body must remain aboard the departed vessel instead of snapping back');
   assert.equal(neo.currentAction?.parameters.finaleComa, true);
   h.command('next'); assert.equal(h.actor().id, 'sati');
-  h.command('act'); h.frame(190); h.command('next'); assert.equal(h.actor().id, 'oracle');
+  h.command('act'); h.frame(330); h.command('next'); assert.equal(h.actor().id, 'oracle');
   assert.deepEqual(neo.position, end, 'cutting to the park must not return the body to the apartment');
 });
 
@@ -131,7 +176,7 @@ test('reconnecting after the transport can hand off to the Oracle without revivi
   assert.equal(neo.health, body.health);
   h.command('next');
   assert.equal(h.state().scene, 'm3_reset', 'a saved completed transport must remain continuable');
-  assert.equal(h.actor().id, 'sati'); h.command('act'); h.frame(190); h.command('next');
+  assert.equal(h.actor().id, 'sati'); h.command('act'); h.frame(330); h.command('next');
   assert.equal(h.state().scene, 'm3_dawn');
   assert.equal(h.actor().id, 'oracle');
   assert.equal(h.actor().currentAction?.parameters.oracleRestored, undefined);
@@ -166,7 +211,7 @@ test('ceasefire, Neo transport and dawn form a saved playable epilogue without a
   h.command('act'); h.frame(100);
   const resetSave = structuredClone(h.sandbox.state), resetClock = structuredClone(h.state().epilogue);
   h.players.release('p', h.tick()); h.sandbox.restore(resetSave); h.players.possess('p', 'sati', h.tick());
-  assert.deepEqual(h.state().epilogue, resetClock); h.frame(90);
+  assert.deepEqual(h.state().epilogue, resetClock); h.frame(230);
   assert.equal(h.state().epilogue?.phase, 'done');
   h.command('next'); const dawn = FILM_SCENE_BY_ID.m3_dawn;
   assert.equal(h.state().scene, dawn.id); assert.equal(h.actor().id, 'oracle');
@@ -219,6 +264,48 @@ test('each dedicated epilogue layer renders and disposes its physical story obje
     const disposed: string[] = []; root.traverse(object => { if (object instanceof THREE.Mesh) object.geometry.addEventListener('dispose', () => disposed.push(object.uuid)); });
     renderer.dispose(); assert.equal(root.children.length, 0); assert.ok(disposed.length > 0);
   }
+});
+
+test('the resetting sidewalk supports the cat and Sati, restores ahead of the paws, and resumes from the saved clock', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const root = new THREE.Group(), restored = new THREE.Group();
+  const renderer = new TrilogyEpilogueRenderer(root, 'reset'), cold = new TrilogyEpilogueRenderer(restored, 'reset');
+  try {
+    const pavement = root.getObjectByName('reset-sidewalk'); assert.ok(pavement, 'Sati needs the street-side pavement rather than the escape road');
+    const wall = root.getObjectByName('reset-basement-front'); assert.ok(wall, 'the low windows must sit behind the sleeping child');
+    root.updateMatrixWorld(true);
+    const across = new THREE.Raycaster(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 1)).intersectObject(root, true)[0];
+    assert.ok(across && across.distance < 20, 'turning toward the road needs the opposite block rather than an empty backdrop');
+    const tiles = root.getObjectByName('reset-paving-slabs')!;
+    for (const elapsed of [0, 1.3, 3.2, 5.7, 7.8, 8.8]) {
+      const state = { ...newTrilogyEpilogue('reset'), phase: 'cat' as const, elapsed, total: elapsed };
+      renderer.update(state, elapsed + 100); cold.update(structuredClone(state), 0);
+      root.updateMatrixWorld(true); restored.updateMatrixWorld(true);
+      const cat = root.getObjectByName('matrix-reset-black-cat')!;
+      const paws: THREE.Vector3[] = [];
+      cat.traverse(object => { if (object.name === 'reset-cat-paw') {
+        const paw = object as THREE.Mesh; let low = Infinity;
+        for (let i = 0; i < paw.geometry.attributes.position.count; i++) low = Math.min(low, paw.localToWorld(paw.getVertexPosition(i, new THREE.Vector3())).y);
+        const p = paw.getWorldPosition(new THREE.Vector3()); p.y = low; paws.push(p);
+      } });
+      assert.equal(paws.length, 4);
+      assert.ok(paws.every(p => p.y >= -.003), `cat ${elapsed}: a paw penetrates the pavement`);
+      assert.ok(Math.min(...paws.map(p => p.y)) < .012, `cat ${elapsed}: the cat floats without a planted paw`);
+      const floor = new THREE.Raycaster(new THREE.Vector3(cat.position.x, 2, cat.position.z), new THREE.Vector3(0, -1, 0)).intersectObjects([pavement, tiles], true)[0];
+      assert.ok(floor && Math.abs(floor.point.y) < .008, `cat ${elapsed}: the restoring slabs must settle before the cat steps on them`);
+      assert.deepEqual(cat.position.toArray(), restored.getObjectByName('matrix-reset-black-cat')!.position.toArray());
+      const matrices = tiles.children.map(tile => tile.matrixWorld.toArray()); renderer.update(state, 987); root.updateMatrixWorld(true);
+      assert.deepEqual(tiles.children.map(tile => tile.matrixWorld.toArray()), matrices, 'pausing cannot advance restoration');
+      assert.deepEqual(restored.getObjectByName('reset-paving-slabs')!.children.map(tile => tile.matrixWorld.toArray()), matrices, 'cold loading must reconstruct the same pavement');
+    }
+    const support = new THREE.Raycaster(new THREE.Vector3(1, 2, -12), new THREE.Vector3(0, -1, 0)).intersectObjects([pavement, tiles], true)[0];
+    assert.ok(support && Math.abs(support.point.y) < .008, 'Sati’s body support stays at its saved floor height');
+    const textures = new Set<THREE.Texture>(); root.traverse(object => { if (object instanceof THREE.Mesh) {
+      for (const material of Array.isArray(object.material) ? object.material : [object.material]) for (const value of Object.values(material)) if (value instanceof THREE.Texture) textures.add(value);
+    } });
+    let disposed = 0; textures.forEach(texture => texture.addEventListener('dispose', () => disposed++)); renderer.dispose();
+    assert.ok(textures.size >= 6); assert.equal(disposed, textures.size, 'leaving the street must release its textures');
+  } finally { if (root.children.length) renderer.dispose(); cold.dispose(); }
 });
 
 test('saved epilogue actions reach NPC animation and carry Neo flat on the machine tray', t => {

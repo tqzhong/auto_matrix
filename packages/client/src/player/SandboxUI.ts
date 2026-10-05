@@ -274,6 +274,10 @@ export class SandboxUI {
     const shown = journey.visiting ? FILM_SCENE_BY_ID[journey.visiting] : scene;
     this.el('sandbox-clock').textContent = `${FILM_NAMES[shown.film]} · 第 ${FILM_SCENES.indexOf(shown) + 1} 段`;
     this.el('sandbox-weather').textContent = set.world === 'real' ? '真实世界' : ({ day: '日间', night: '夜间', warm: '室内', cold: '室内', white: '程序空间', storm: '暴雨', sunrise: '日出' })[set.light];
+    if (shown.id === 'm3_reset') {
+      this.el('sandbox-weather').textContent = '黎明前 · 街道恢复';
+      document.getElementById('game-location')!.textContent = '街边 · 重新醒来的矩阵';
+    }
     if (!journey.visiting && set.id === 'film_smith_avenue' && smithOracleRestored(journey.smithFinale)) this.el('sandbox-weather').textContent = '雨已停';
     if (set.id === 'film_anderson_flat') {
       const minutes = Math.floor(this.time * .06);
@@ -665,7 +669,7 @@ export class SandboxUI {
       const names: Record<string, string> = { ready: '等待行动', retreat: '哨兵撤离', message_ready: '带回消息', running: '奔向人群', announcement: '宣布停战', embrace: '幸存者重逢', disconnecting: '连接断开', lowering: '放低身体', transfer: '转上驳船', departing: '驶入机器城', cat: '既视感与重置', architect: '停战协议', choice: '离开的权利', promise: '承诺已记录', sati: 'Sati 的礼物', sunrise: '新的日出', belief: '我相信', done: '尾声完成' };
       Object.assign(names, { waking: 'Sati 醒来', cat: '街区恢复', sitting: '先知落座', leaving: '建筑师离开', sati: 'Sati 与先知重逢' });
       const hint = epilogue.kind === 'neo_carried' && phase === 'ready' ? 'Neo 已失去回应 · G 目送身体运送 · V 切换视角'
-        : epilogue.kind === 'reset' && phase === 'ready' ? 'G 睁开眼睛 · V 切换视角'
+        : epilogue.kind === 'reset' && phase === 'ready' ? 'G 听见脚步，重新醒来 · V 切换视角'
         : phase === 'done' ? 'G 或 J 继续；到最终场景后仍需亲自确认本轮结束'
         : phase === 'choice' ? 'J 打开手记，要求建筑师明确谁可以离开矩阵'
           : phase === 'message_ready' ? 'WASD 跑回神庙人群 · 靠近后按 G 亲口报信'
