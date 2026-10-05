@@ -18,7 +18,7 @@ import { metacortexPosition, OFFICE_CUSTODY } from '@auto_matrix/shared';
 import { SPOON_LESSON, spoonLessonSeat, type SpoonLesson } from '@auto_matrix/shared';
 import { gardenPose, newTrilogyEpilogue } from '@auto_matrix/shared';
 import { newDockLastStand } from '@auto_matrix/shared';
-import { DOCK_GATE, dockGateAim, dockGateEye, fireDockGate, newDockGate, newApuRun } from '@auto_matrix/shared';
+import { DOCK_GATE, dockGateAim, dockGateEye, dockGatePoint, dockGateAttacker, dockGateZee, fireDockGate, newDockGate, newApuRun } from '@auto_matrix/shared';
 import { ZionHomecomingRenderer } from '../packages/client/src/engine/ZionHomecomingRenderer.js';
 import { APARTMENT, playerBlocked, apartmentComputerPose, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, INTERROGATION_ROOM, pillRoot, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, POD_WATER_DROP, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, TV_EXIT, airRescueRoot, matrixEscapeRoot, theOneRoot, tvExitEmergeRoot, wakeCallRoot, sentinelMachinePose, type TheOneEncounter } from '@auto_matrix/shared';
 
@@ -43,11 +43,12 @@ test('mouse pitch is included in authoritative player input', t => {
   assert.ok((game.sent.at(-1)?.pitch ?? 0) < -.15, 'upward camera input must reach server-side ballistics');
 });
 
-for (const firstPerson of [false, true]) test(`Gate Three ${firstPerson ? 'first' : 'third'} person can aim and fire at the actual high cable`, t => {
+for (const toppled of [false, true]) for (const firstPerson of [false, true]) test(`Gate Three ${toppled ? 'fallen' : 'upright'} ${firstPerson ? 'first' : 'third'} person can aim and fire at the actual high cable`, t => {
   const game = setup(t, Math.PI), center = FILM_SETS.film_zion_hangar.center;
-  const gate = newDockGate(5, -50); gate.phase = 'aiming';
+  const gate = newDockGate(5, -50); gate.phase = 'aiming'; gate.toppled = toppled;
   game.state.id = 'kid'; game.state.currentLocation = 'film_zion_hangar'; game.state.isInMatrix = false;
-  game.state.position = filmPosition('film_zion_hangar', gate.x, gate.z); game.state.position.y += 2.2;
+  const pilot = dockGatePoint(gate, { x: 0, y: 1.3, z: 0 });
+  game.state.position = filmPosition('film_zion_hangar', pilot.x, pilot.z); game.state.position.y += pilot.y;
   game.state.currentAction = { type: 'idle', parameters: { dockGate: gate, riding: true, seated: true }, startedAt: 0, duration: 1e9, progress: 0 };
   game.controls.possess(game.state); game.controls.gunner = true; game.controls.performing = true; game.controls.firearm = true;
   game.step(.1); if (firstPerson) { game.key('KeyV'); game.key('KeyV', false); }
@@ -77,7 +78,10 @@ for (const firstPerson of [false, true]) test(`Gate Three ${firstPerson ? 'first
   }
   const position = game.group.position.clone(); game.key('KeyW'); game.key('Space'); game.step(.2);
   assert.deepEqual(game.group.position, position, 'shooting cannot move the pilot out of the APU');
-  const retry = newDockGate(gate.x, gate.z); game.state.currentAction.parameters.dockGate = retry;
+  game.state.currentAction.parameters.dockGate = { ...gate, phase: 'failed' }; game.step(.1);
+  const retry = newDockGate(gate.x, gate.z);
+  if (toppled) Object.assign(retry, { phase: 'braced', toppled: true, brace: 0 });
+  game.state.currentAction.parameters.dockGate = retry;
   game.step(.1); assert.ok(Math.abs(game.sent.at(-1)!.yaw - retry.yaw) < .001, 'retry must face the visible counterweight instead of retaining a failed aim');
   if (!firstPerson) {
     for (const aspect of [.6, 16 / 9]) for (const elapsed of [0, 1, 2.1, 3, 4, 5.5, 6]) {
@@ -94,6 +98,60 @@ for (const firstPerson of [false, true]) test(`Gate Three ${firstPerson ? 'first
         assert.ok(Math.abs(edge.x) < .98 && Math.abs(edge.y) < .98 && edge.z > -1 && edge.z < 1, `Hammer must fit the shot at ${elapsed}s / ${aspect}: ${edge.toArray()}`);
       }
     }
+  }
+});
+
+test('the fallen pilot can see the cable through the actual APU from his first person eye', t => {
+  const game = setup(t, Math.PI), center = FILM_SETS.film_zion_hangar.center;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const stage = new THREE.Group(); stage.position.set(center.x, center.y - 1, center.z);
+  const renderer = new ZionHomecomingRenderer(stage, 'film_zion_hangar'); t.after(() => renderer.dispose());
+  game.state.id = 'kid'; game.state.currentLocation = 'film_zion_hangar'; game.state.isInMatrix = false;
+  for (const x of [5, 7.2]) for (const height of [26, 32, 37]) {
+    const gate = { ...newDockGate(x, -50), toppled: true, phase: 'aiming' as const };
+    const eye = dockGateEye(gate), pilot = dockGatePoint(gate, { x: 0, y: 1.3, z: 0 });
+    gate.yaw = Math.atan2(DOCK_GATE.cable.x - eye.x, DOCK_GATE.cable.z - eye.z);
+    gate.pitch = -Math.atan2(height - eye.y, Math.hypot(DOCK_GATE.cable.x - eye.x, DOCK_GATE.cable.z - eye.z));
+    game.state.position = filmPosition('film_zion_hangar', pilot.x, pilot.z); game.state.position.y += pilot.y;
+    game.state.currentAction = { type: 'idle', parameters: { dockGate: gate, riding: true, seated: true }, startedAt: 0, duration: 1e9, progress: 0 };
+    game.controls.release(); game.controls.possess(game.state); game.controls.gunner = true; game.controls.performing = true;
+    game.step(.1); game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+    renderer.update({ scene: 'm3_gate', step: 2, completed: [], actor: 'kid', dockGate: gate } as import('@auto_matrix/shared').FilmJourney, 0);
+    stage.updateMatrixWorld(true); game.camera.updateMatrixWorld(true);
+    assert.ok(game.camera.position.distanceTo(new THREE.Vector3().copy(eye).add(stage.position)) < 1e-5, 'view must remain at the seated pilot eye');
+    const target = new THREE.Vector3(DOCK_GATE.cable.x, height, DOCK_GATE.cable.z).add(stage.position);
+    const projected = target.clone().project(game.camera);
+    assert.ok(Math.hypot(projected.x, projected.y) < .001, 'reconnecting must restore the saved aim, including when the previous session also used this APU');
+    const direction = target.sub(game.camera.position);
+    const blocked = new THREE.Raycaster(game.camera.position, direction.clone().normalize(), 0, direction.length() - 1)
+      .intersectObject(stage.getObjectByName('zion-kid-apu')!, true)[0];
+    assert.ok(!blocked, `cable height ${height} is blocked by APU ${blocked?.object.name} at ${blocked?.point.clone().sub(stage.position).toArray()}`);
+  }
+});
+
+test('the gate rescue frames the fallen pilot, Zee and her target without hiding them behind the APU frame', t => {
+  const game = setup(t, Math.PI), center = FILM_SETS.film_zion_hangar.center;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const stage = new THREE.Group(); stage.position.set(center.x, center.y - 1, center.z);
+  const renderer = new ZionHomecomingRenderer(stage, 'film_zion_hangar'); t.after(() => renderer.dispose());
+  const gate = { ...newDockGate(7.2, -50), toppled: true, phase: 'rescue' as const, elapsed: .8 };
+  const pilot = dockGatePoint(gate, { x: 0, y: 1.3, z: 0 }), zee = dockGateZee(gate);
+  game.state.id = 'kid'; game.state.currentLocation = 'film_zion_hangar'; game.state.isInMatrix = false;
+  game.state.position = filmPosition('film_zion_hangar', pilot.x, pilot.z); game.state.position.y += pilot.y;
+  game.state.currentAction = { type: 'idle', parameters: { dockGate: gate, riding: true, seated: true }, startedAt: 0, duration: 1e9, progress: 0 };
+  game.controls.possess(game.state); game.controls.gunner = true; game.controls.performing = true;
+  renderer.update({ scene: 'm3_gate', step: 2, completed: [], actor: 'kid', dockGate: gate } as import('@auto_matrix/shared').FilmJourney, 0); stage.updateMatrixWorld(true);
+  const points = [dockGateEye(gate), { x: zee.x, y: 3.5, z: zee.z }, dockGateAttacker(gate)];
+  for (const aspect of [.6, 16 / 9]) {
+    game.camera.aspect = aspect; game.step(.1); game.camera.updateMatrixWorld(true);
+    points.forEach((point, index) => {
+      const target = new THREE.Vector3().copy(point).add(stage.position), projected = target.clone().project(game.camera);
+      assert.ok(Math.abs(projected.x) < .9 && projected.y > -.5 && projected.y < .7, `rescue subject ${index} lies behind HUD/outside frame: ${projected.toArray()}`);
+      const direction = target.clone().sub(game.camera.position);
+      const hit = new THREE.Raycaster(game.camera.position, direction.clone().normalize(), 0, direction.length() - (index === 2 ? 1.8 : .3))
+        .intersectObject(stage, true).find(hit => { let object: THREE.Object3D | null = hit.object; while (object) { if (!object.visible) return false; object = object.parent; } return true; });
+      assert.ok(!hit, `rescue subject ${index} is hidden by ${hit?.object.name} at ${hit?.point.toArray()}`);
+    });
   }
 });
 

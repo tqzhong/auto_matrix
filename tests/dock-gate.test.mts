@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { FILM_SCENE_BY_ID, filmStepPosition, newApuRun, type WorldEvent } from '@auto_matrix/shared';
-import { DOCK_GATE, dockGateEye, dockGateOpen, fireDockGate, newDockGate, stepDockGate } from '@auto_matrix/shared';
+import { DOCK_GATE, type DockGate, dockGateEye, dockGateOpen, fireDockGate, newDockGate, stepDockGate } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -27,8 +27,29 @@ function setup() {
   return { world, sandbox, players, journey, kid, command };
 }
 
+function frames(h: ReturnType<typeof setup>, count: number, focus = false) {
+  for (let i = 0; i < count; i++) h.sandbox.life.film.dockGate.frame(h.kid, .1, 4 + i, undefined, undefined, focus);
+}
+function startAiming(h: ReturnType<typeof setup>) {
+  h.command('act'); frames(h, 65); frames(h, 12, true);
+  assert.equal(h.journey.dockGate?.phase, 'aiming');
+}
+
+test('held focus from the real player controller raises the fallen cannon and pauses with the world', () => {
+  const h = setup(); h.command('act'); frames(h, 65);
+  assert.equal(h.journey.dockGate?.phase, 'braced');
+  const input = { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false, focus: true, sequence: 1 };
+  h.players.receiveInput('p', input); h.players.step(.1, true, 80);
+  const brace = h.journey.dockGate!.brace!; assert.ok(brace > 0);
+  h.players.step(.1, false, 80); assert.equal(h.journey.dockGate!.brace, brace);
+  for (let sequence = 2; sequence <= 13; sequence++) {
+    h.players.receiveInput('p', { ...input, sequence }); h.players.step(.1, true, 80 + sequence);
+  }
+  assert.equal(h.journey.dockGate?.phase, 'aiming');
+});
+
 test('Gate Three cannot be opened by waiting at a console; the counterweight cable must be shot', () => {
-  const h = setup(); h.command('act');
+  const h = setup(); startAiming(h);
   assert.equal(h.journey.dockGate?.phase, 'aiming');
   for (let tick = 4; tick < 80; tick++) h.sandbox.tick(tick);
   assert.equal(h.journey.step, 2, 'elapsed time and G must not replace cutting the actual cable');
@@ -36,10 +57,38 @@ test('Gate Three cannot be opened by waiting at a console; the counterweight cab
   assert.equal(h.kid.currentAction?.parameters.riding, true, 'Kid must remain in the APU at the gate');
 });
 
-function aim(gate: { x: number; z: number }) {
+function aim(gate: DockGate) {
   const eye = dockGateEye(gate), dx = DOCK_GATE.cable.x - eye.x, dz = DOCK_GATE.cable.z - eye.z;
   return { yaw: Math.atan2(dx, dz), pitch: -Math.atan2(32 - eye.y, Math.hypot(dx, dz)) };
 }
+
+test('the ambushed APU falls before Zee clears the attacker, and Kid must brace before firing', () => {
+  const h = setup(); h.command('act');
+  assert.equal(h.journey.dockGate?.phase, 'falling');
+  const ammo = h.journey.dockGate!.ammo;
+  h.sandbox.life.film.dockGate.shoot(h.kid, 0, 0, 4);
+  assert.equal(h.journey.dockGate!.ammo, ammo, 'the pinned pilot cannot shoot through the rescue');
+  frames(h, 20); const saved = structuredClone(h.sandbox.state);
+  h.players.step(.1, false, 30); assert.deepEqual(h.journey.dockGate, saved.neoLife.journey.dockGate);
+  h.players.release('p', 31); frames(h, 20); assert.deepEqual(h.journey.dockGate, saved.neoLife.journey.dockGate);
+  h.sandbox.restore(saved); h.players.possess('p', 'kid', 32);
+  const journey = h.sandbox.life.film.state!;
+  assert.deepEqual(journey.dockGate, saved.neoLife.journey.dockGate);
+  h.world.agents.get('zee')!.controller = 'other'; frames(h, 40);
+  assert.deepEqual(journey.dockGate, saved.neoLife.journey.dockGate, 'a controlled Zee cannot be commandeered');
+  delete h.world.agents.get('zee')!.controller;
+  frames(h, 45); assert.equal(journey.dockGate!.phase, 'braced');
+  const covered = h.world.agents.get('zee')!.currentAction!.parameters.dockGateCover as DockGate;
+  assert.equal(covered.phase, 'braced');
+  frames(h, 10); assert.equal(journey.dockGate!.brace, 0, 'waiting alone cannot lift the cannon');
+  frames(h, 5, true); const raised = journey.dockGate!.brace!;
+  frames(h, 2); assert.ok(journey.dockGate!.brace! < raised, 'letting go loses support');
+  frames(h, 12, true); assert.equal(journey.dockGate!.phase, 'aiming');
+  const target = aim(journey.dockGate!);
+  h.sandbox.life.film.dockGate.shoot(h.kid, target.yaw, target.pitch, 80);
+  assert.equal(journey.dockGate!.hits, 1);
+
+});
 
 test('only aimed bursts damage the visible vertical cable; misses, pitch and duplicate shots matter', () => {
   const gate = newDockGate(5, -50); gate.phase = 'aiming'; const target = aim(gate);
@@ -55,7 +104,7 @@ test('only aimed bursts damage the visible vertical cable; misses, pitch and dup
 });
 
 test('the real controller preserves the damaged cable through pause, disconnect and restore, then hands off only after Hammer clears the gate', () => {
-  const h = setup(); h.command('act'); const target = aim(h.journey.dockGate!);
+  const h = setup(); startAiming(h); const target = aim(h.journey.dockGate!);
   h.sandbox.life.film.dockGate.shoot(h.kid, target.yaw, target.pitch, 4);
   const saved = structuredClone(h.sandbox.state), position = { ...h.kid.position };
   h.players.step(.1, false, 5); assert.deepEqual(h.journey.dockGate, saved.neoLife.journey.dockGate);
@@ -84,10 +133,10 @@ test('the real controller preserves the damaged cable through pause, disconnect 
 
 test('an exhausted or timed out gunner retries at the gate without replaying the drive or resurrecting Mifune', () => {
   const h = setup(); h.world.agents.get('mifune')!.status = 'dead'; h.world.agents.get('mifune')!.health = 0;
-  h.command('act'); const gate = h.journey.dockGate!, savedRide = structuredClone(h.journey.apu);
+  startAiming(h); const gate = h.journey.dockGate!, savedRide = structuredClone(h.journey.apu);
   for (let i = 0; i < DOCK_GATE.ammo; i++) { h.sandbox.life.film.dockGate.frame(h.kid, .1, 5 + i); h.sandbox.life.film.dockGate.shoot(h.kid, 0, 0, 5 + i); }
   assert.equal(gate.phase, 'failed'); h.command('retry', 100);
-  assert.equal(h.journey.dockGate?.phase, 'ready'); assert.equal(h.journey.step, 2); assert.deepEqual(h.journey.apu, savedRide);
+  assert.equal(h.journey.dockGate?.phase, 'braced'); assert.equal(h.journey.step, 2); assert.deepEqual(h.journey.apu, savedRide);
   assert.equal(h.world.agents.get('mifune')!.status, 'dead'); assert.equal(h.world.agents.get('mifune')!.health, 0);
   h.command('act', 101); h.journey.dockGate!.remaining = .04;
   h.sandbox.life.film.dockGate.frame(h.kid, .1, 102); assert.equal(h.journey.dockGate?.phase, 'failed');
@@ -101,4 +150,14 @@ test('reconciling a gate save does not restart the completed Mifune body action'
   const action = structuredClone(mifune.currentAction);
   h.world.simulationTick = 548; h.sandbox.life.film.reconcileCast();
   assert.deepEqual(mifune.currentAction, action); assert.equal(mifune.status, 'dead'); assert.equal(mifune.health, 0);
+});
+
+test('old aiming and opening saves retain their upright progress and do not replay the ambush', () => {
+  for (const phase of ['aiming', 'opening'] as const) {
+    const h = setup(); h.journey.dockGate = { ...newDockGate(5, -50), phase, elapsed: 1.7, hits: phase === 'opening' ? 8 : 3 };
+    const saved = structuredClone(h.sandbox.state); h.sandbox.restore(saved); h.players.possess('p', 'kid', 40);
+    const gate = h.sandbox.life.film.state!.dockGate!;
+    assert.deepEqual(gate, saved.neoLife.journey.dockGate); assert.equal(gate.toppled, undefined);
+    frames(h, 1); assert.equal(gate.phase, phase);
+  }
 });

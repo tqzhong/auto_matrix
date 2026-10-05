@@ -60,7 +60,7 @@ test('the APU ride saves, retries and hands Kid to the counterweight firing stat
   assert.equal(run.phase, 'arrived'); sandbox.tick(550); assert.equal(state.step, 2);
   kid.position = filmStepPosition(scene, scene.steps[2]); command('act', 551);
   for (let tick = 552; tick <= 565; tick++) sandbox.tick(tick);
-  assert.equal(state.step, 2); assert.equal(state.dockGate?.phase, 'aiming');
+  assert.equal(state.step, 2); assert.equal(state.dockGate?.phase, 'falling');
   assert.equal(state.completed.includes(scene.id), false, 'the arrival does not cut the cable');
 
   delete state.dockGate; state.step = 1; state.apu = { ...newApuRun(), x: 0, z: -29, speed: 12, hull: 20 };

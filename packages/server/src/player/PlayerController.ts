@@ -366,7 +366,7 @@ export class PlayerController {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false;
         session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
-      if (this.sandbox?.life.film.dockGate.frame(agent, dt, tick, input.yaw, input.pitch ?? 0)) {
+      if (this.sandbox?.life.film.dockGate.frame(agent, dt, tick, input.yaw, input.pitch ?? 0, input.focus)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false;
         session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }

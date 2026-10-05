@@ -142,6 +142,7 @@ export class PlayerControls {
     this.motion.hit = this.motion.impact = undefined; this.impactAge = 10;
     this.motion.cast = undefined; this.motion.skill = undefined; this.impulse = undefined;
     this.motion.shot = undefined;
+    this.motion.dockGate = undefined;
     this.vy = 0; this.planar = { x: 0, z: 0 }; this.authoritative = state; this.firstPerson = false; this.enabled = true;
     this.keys.clear(); this.lastSent = 0; this.sequence = 0;
     this.firing = false; this.lastShot = -1000;
@@ -492,7 +493,7 @@ export class PlayerControls {
     if (smithFinaleLocked(smithFinale)) this.performing = true;
     const dockReload = state.currentAction?.parameters.dockReload as MotionInput['dockReload'];
     const gate = state.currentAction?.parameters.dockGate as MotionInput['dockGate'];
-    if (gate && (!this.motion.dockGate || gate.phase === 'ready' && this.motion.dockGate.phase !== 'ready')) { this.yaw = this.movementYaw = gate.yaw; this.pitch = gate.pitch; this.cameraReady = false; }
+    if (gate && (!this.motion.dockGate || ['ready', 'braced'].includes(gate.phase) && this.motion.dockGate.phase !== gate.phase || gate.phase === 'aiming' && this.motion.dockGate.phase === 'braced')) { this.yaw = this.movementYaw = gate.yaw; this.pitch = gate.pitch; this.cameraReady = false; }
     this.motion.dockGate = gate;
     const lastStand = state.currentAction?.parameters.dockLastStand as MotionInput['dockLastStand'];
     if (this.motion.dockLastStand && !dockLastStandLocked(lastStand)) this.performing = false;
@@ -801,7 +802,7 @@ export class PlayerControls {
     const heading = dropRoot ? dropRoot.yaw : this.motion.bathroom ? bathroomFightRoot(this.motion.bathroom, this.motion.bathroom.role).yaw : this.motion.sixth ? sixthPose(this.motion.sixth).yaw : this.motion.wetwall && this.wetwallGuide ? wetwallPose(this.motion.wetwall.start, this.motion.wetwall.role, this.wetwallGuide.progress, this.motion.wetwall.phase, this.motion.wetwall.elapsed, this.motion.wetwall.fallY, this.motion.wetwall.continued).yaw
       : this.ride || this.climbing || this.performing ? state.rotation : attacking ? this.attackYaw : this.firearm ? this.yaw : this.motion.speed > .1 ? Math.atan2(dx, dz) : this.facing;
     const turn = Math.atan2(Math.sin(heading - this.facing), Math.cos(heading - this.facing));
-    this.facing += turn * (dockLastStandLocked(this.motion.dockLastStand) || dockReloadLocked(this.motion.dockReload) || smithFinaleLocked(this.motion.smithFinale) || trilogyEpilogueLocked(this.motion.epilogue) || deusPactLocked(this.motion.deusPact) || this.motion.farewell || mirrorYaw !== undefined || chairYaw !== undefined || computerCheckLocked(computerCheck) || dropRoot || this.motion.officeCustody?.street || this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.welcome || this.motion.knock !== undefined || this.motion.training || this.motion.workday || this.motion.wakeCall || this.motion.sentinel || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || this.motion.lobbyEntry ? 1 : 1 - Math.exp(-14 * delta)); this.motion.turn = turn * 8;
+    this.facing += turn * (this.motion.dockGate || dockLastStandLocked(this.motion.dockLastStand) || dockReloadLocked(this.motion.dockReload) || smithFinaleLocked(this.motion.smithFinale) || trilogyEpilogueLocked(this.motion.epilogue) || deusPactLocked(this.motion.deusPact) || this.motion.farewell || mirrorYaw !== undefined || chairYaw !== undefined || computerCheckLocked(computerCheck) || dropRoot || this.motion.officeCustody?.street || this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.welcome || this.motion.knock !== undefined || this.motion.training || this.motion.workday || this.motion.wakeCall || this.motion.sentinel || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || this.motion.lobbyEntry ? 1 : 1 - Math.exp(-14 * delta)); this.motion.turn = turn * 8;
     if (running && this.enabled && !this.motion.wetwall && (this.motion.speed > .1 || this.ride || this.climbing) && !(this.firstPerson && this.climbing && state.currentLocation === 'film_office_ledge') && !this.dragging && performance.now() - this.lastLook > 900) {
       const cameraTurn = Math.atan2(Math.sin(this.facing - this.yaw), Math.cos(this.facing - this.yaw));
       this.yaw += cameraTurn * (1 - Math.exp(-5 * delta));
@@ -1862,6 +1863,16 @@ export class PlayerControls {
       const shoulder = this.yaw + .68;
       const ideal = this.firstPerson ? eye : eye.clone().add(new THREE.Vector3(-Math.sin(shoulder) * 56, 5, -Math.cos(shoulder) * 56));
       ideal.y = Math.max(center.y + 2, ideal.y);
+      if (!this.firstPerson && ['falling', 'rescue', 'braced'].includes(gate.phase)) {
+        target.set(center.x + gate.x - 1, center.y + 3.2, center.z + gate.z + 2);
+        ideal.set(center.x + gate.x - 11, center.y + 9, center.z + gate.z - 10);
+        if (gate.phase !== 'falling') {
+          this.camera.fov = 66;
+          target.set(center.x + gate.x - 3.3, center.y + 3.1, center.z + gate.z + 4.3);
+          ideal.set(center.x + gate.x - 9.2, center.y + 9, center.z + gate.z);
+        }
+        ideal.sub(target).multiplyScalar(Math.max(1, 1 / this.camera.aspect)).add(target);
+      }
       if (!this.firstPerson && ['opening', 'entering', 'done'].includes(gate.phase)) {
         this.camera.fov = this.camera.aspect < .85 ? 80 : 64;
         ideal.set(center.x - 34, center.y + 31, center.z);
