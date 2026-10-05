@@ -1,3 +1,4 @@
+import { DOCK_RELOAD } from '@auto_matrix/shared';
 import { TV_EXIT, basementRouteLength } from '@auto_matrix/shared';
 import { CABIN, CABIN_ROUTE_LENGTH, cabinGuidePose, RELOADED, RELOADED_FINALE } from '@auto_matrix/shared';
 import assert from 'node:assert/strict';
@@ -3155,6 +3156,18 @@ test('the entire film route completes through interactions, driving and real com
         if (scene.id === 'm1_cypher_console') for (let frame = 0; frame < 48; frame++) h.players.step(.1, true, h.tick());
       }
       else if (step.kind === 'interact') {
+        if (scene.id === 'm3_dock_battle' && index === 1) {
+          h.command('act'); assert.equal(h.actor().id, 'kid');
+          h.actor().position = filmPosition(scene.set, DOCK_RELOAD.entry.x, DOCK_RELOAD.entry.z); h.command('act');
+          for (let frame = 0; frame < 350 && state.step === index; frame++) {
+            const phase = state.dockReload!.phase;
+            h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false,
+              focus: phase === 'hoisting' || phase === 'jammed', climb: phase === 'climbing' ? 1 : phase === 'descending' ? -1 : 0, sequence: ++sequence });
+            h.players.step(.05, true, h.tick());
+            if (phase === 'jammed' && state.dockReload!.brace >= DOCK_RELOAD.braceSeconds) h.players.act('film-player', 'attack', h.tick());
+          }
+          assert.equal(state.dockReload?.phase, 'done'); assert.equal(state.step, index + 1); continue;
+        }
         if (scene.id === 'm3_farewell' && index === 1) {
           h.command('act');
           for (let frame = 0; frame < 500 && state.farewell?.phase !== 'still'; frame++) h.players.step(.05, true, h.tick());

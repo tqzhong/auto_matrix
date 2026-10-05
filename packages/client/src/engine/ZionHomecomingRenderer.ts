@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { APU_ROUTE, DOCK_GUNNERY, ZION_OBSTACLES, dockPowerOffline, type FilmJourney } from '@auto_matrix/shared';
+import { DOCK_RELOAD, dockReloadBox } from '@auto_matrix/shared';
 
 /** Six authored Zion interiors share rock, metal and service-light materials, not a generic cave layout. */
 export class ZionHomecomingRenderer {
@@ -20,6 +21,10 @@ export class ZionHomecomingRenderer {
   private gateLift = 0;
   private sentinelDives: THREE.Group[] = [];
   private ammoCart?: THREE.Group;
+  private loader?: THREE.Group;
+  private reloadBox?: THREE.Group;
+  private reloadCable?: THREE.Mesh;
+  private reloadLatch?: THREE.Mesh;
   private muzzleFlashes: THREE.Mesh[] = [];
   private lastGunneryShots = 0;
   private muzzleUntil = 0;
@@ -164,9 +169,46 @@ export class ZionHomecomingRenderer {
       const wheel = this.mesh(new THREE.CylinderGeometry(.48, .48, .27, 12), joint, this.ammoCart);
       wheel.position.set(side * 1.12, .5, 0); wheel.rotation.z = Math.PI / 2;
     }
-    for (const z of [-.7, .7]) this.box(armor, 0, 1.8, z, 1.8, 1.6, 1.05, this.ammoCart);
+    this.box(armor, 0, 1.8, -.7, 1.8, 1.6, 1.05, this.ammoCart);
     this.pipe(iron, [-.9, 1, 1.5], [-.9, 1, 3.3], .12, this.ammoCart);
     this.pipe(iron, [.9, 1, 1.5], [.9, 1, 3.3], .12, this.ammoCart);
+    this.loader = new THREE.Group(); this.loader.name = 'zion-apu-loader'; this.moving.add(this.loader);
+    const brass = this.material(0xb49b61, .48, .72);
+    const workLight = new THREE.PointLight(0xe3d4b4, 24, 11, 2);
+    workLight.name = 'apu-loader-work-light'; workLight.position.set(-.95, 5.9, 17.6);
+    this.loader.add(workLight); this.lights.add(workLight);
+    this.box(joint, -.95, 6.02, 17.6, .7, .15, .28, this.loader);
+    this.box(lit, -.95, 5.91, 17.6, .54, .035, .2, this.loader);
+    this.pipe(joint, [-2, 5.65, 15.65], [-.95, 6.12, 17.6], .055, this.loader);
+    for (const x of [-.95, .95]) {
+      const port = new THREE.Group(); port.name = `apu-ammo-port-${x < 0 ? 'left' : 'right'}`; this.loader.add(port);
+      for (const side of [-1, 1]) {
+        this.box(metal, x + side * .87, 4.1, 13.95, .12, 1.55, 1.85, port);
+        this.box(joint, x, 4.1 + side * .76, 13.95, 1.85, .12, 1.85, port);
+      }
+      for (let z = 13.15; z < 14.7; z += .3) this.pipe(brass, [x - .72, 3.42, z], [x + .72, 3.42, z], .06, port);
+      for (let side of [-1, 1]) this.pipe(joint, [x + side * .68, 4.65, 13.2], [x + side * 1.7, 5.85, 11.8], .12, port);
+      if (x > 0) this.box(armor, x, 4.1, DOCK_RELOAD.seatedZ, 1.6, 1.35, 1.25, port);
+    }
+    for (const x of [-2, .1]) this.pipe(metal, [x, .1, 15.65], [x, 5.65, 15.65], .08, this.loader);
+    for (const y of [.05, .9, 1.8]) this.box(joint, -.95, y - .04, 15.7, 2, .08, .45, this.loader, `apu-loader-footrest-${y}`);
+    this.pipe(metal, [-2, 5.15, 15.65], [.1, 5.15, 15.65], .08, this.loader);
+    this.pipe(metal, [-2, 3.25, 15.65], [.1, 3.25, 15.65], .08, this.loader);
+    this.pipe(metal, [-2, 4.15, 15.65], [.1, 4.15, 15.65], .08, this.loader);
+    this.pipe(brass, [.05, 2.15, 15.65], [.05, 2.52, 15.65], .07, this.loader);
+    this.box(joint, .05, 2.3, 15.55, .35, .48, .25, this.loader);
+    this.pipe(metal, [1.6, 3.8, 14.7], [1.6, 8, 14.7], .14, this.loader);
+    this.pipe(metal, [1.6, 8, 14.7], [-5, 8, 14.7], .18, this.loader);
+    this.pipe(joint, [1.6, 5.8, 14.7], [-2.5, 8, 14.7], .1, this.loader);
+    this.reloadCable = this.mesh(new THREE.CylinderGeometry(.035, .035, 1, 8), joint, this.loader);
+    this.reloadCable.name = 'apu-loader-hoist-cable';
+    this.reloadBox = new THREE.Group(); this.reloadBox.name = 'apu-reload-ammo-box'; this.moving.add(this.reloadBox);
+    this.box(metal, 0, 0, 0, 1.6, 1.35, 1.25, this.reloadBox, 'apu-reload-shell');
+    for (const x of [-.62, 0, .62]) this.box(joint, x, 0, .639, .08, 1.25, .028, this.reloadBox);
+    for (const y of [-.5, .5]) this.box(metal, 0, y, .665, 1.45, .06, .06, this.reloadBox);
+    this.box(brass, 0, .28, .67, .65, .15, .045, this.reloadBox);
+    for (const x of [-.54, .54]) this.pipe(metal, [x, .69, -.32], [x, .69, .32], .05, this.reloadBox);
+    this.reloadLatch = this.box(brass, -.95, 4.86, 14.4, .45, .08, .55, this.loader, 'apu-loader-lock');
     const warning = this.material(0xe67955, .45, .15, 0xff5836, 3.4);
     const sentinelShell = this.material(0x58665f, .35, .65);
     for (const dive of APU_ROUTE.dives) {
@@ -334,7 +376,10 @@ export class ZionHomecomingRenderer {
     for (const geometry of this.geometries) if (!live.has(geometry)) { geometry.dispose(); this.geometries.delete(geometry); }
   }
   update(journey: FilmJourney | undefined, elapsed: number): void {
-    const ship = this.moving.getObjectByName('zion-docked-nebuchadnezzar'); if (ship) ship.position.y = 11 + Math.sin(elapsed * .45) * .24;
+    const ship = this.moving.getObjectByName('zion-docked-nebuchadnezzar'); if (ship) {
+      ship.position.y = 11 + Math.sin(elapsed * .45) * .24;
+      ship.visible = !journey || !['m3_dock_battle', 'm3_gate', 'm3_emp'].includes(journey.scene);
+    }
     if (this.apu) {
       const battle = !journey?.visiting && ['m3_dock_battle', 'm3_gate'].includes(journey?.scene ?? '');
       this.apu.visible = battle;
@@ -344,6 +389,18 @@ export class ZionHomecomingRenderer {
     if (this.ammoCart) {
       this.ammoCart.visible = journey?.scene === 'm3_dock_battle' && !journey.visiting;
       this.ammoCart.position.set(-5, .15, journey?.dockGunnery?.kidZ ?? DOCK_GUNNERY.kidStart);
+    }
+    if (this.loader && this.reloadBox && this.reloadCable && this.reloadLatch) {
+      const active = journey?.scene === 'm3_dock_battle' && !journey.visiting;
+      this.loader.visible = active; this.reloadBox.visible = active;
+      const pose = dockReloadBox(journey?.dockReload);
+      this.reloadBox.position.set(pose.x, pose.y, journey?.dockReload ? pose.z : (journey?.dockGunnery?.kidZ ?? DOCK_GUNNERY.kidStart) + .7);
+      const top = new THREE.Vector3(pose.x, 8, 14.7), bottom = new THREE.Vector3(pose.x, pose.y + .72, pose.z);
+      const delta = top.clone().sub(bottom);
+      this.reloadCable.position.copy(top).add(bottom).multiplyScalar(.5); this.reloadCable.scale.y = delta.length();
+      this.reloadCable.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), delta.normalize());
+      this.reloadCable.visible = Boolean(journey?.dockReload && journey.dockReload.phase === 'hoisting' && journey.dockReload.lift > 0);
+      this.reloadLatch.rotation.x = (1 - pose.seated) * -.65;
     }
     const shots = journey?.scene === 'm3_dock_battle' ? journey.dockGunnery?.shots ?? 0 : 0;
     if (shots > this.lastGunneryShots) this.muzzleUntil = elapsed + .14;

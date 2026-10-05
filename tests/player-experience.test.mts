@@ -32,6 +32,12 @@ test('wall escape keeps ambient conversation out of breaking, climbing and rescu
   assert.equal(cinematicTalkSuppressed('m1_wetwall', 'film_ambush_house', 1), false, 'visiting outside the escape keeps ordinary conversation');
 });
 
+test('APU loading keeps ambient talk out of the handhold and kick controls', () => {
+  assert.equal(cinematicTalkSuppressed('m3_dock_battle', undefined, 1), true);
+  assert.equal(cinematicTalkSuppressed('m3_dock_battle', undefined, 2), false);
+  assert.equal(cinematicTalkSuppressed('m3_dock_battle', 'film_zion_hangar', 1), false);
+});
+
 test('a paused save is presented as paused before entry and its landing status follows resume', t => {
   const elements = new Map<string, { textContent: string; innerHTML: string; classList: { add(): void } }>();
   const element = (id: string) => {

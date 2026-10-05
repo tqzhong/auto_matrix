@@ -1,4 +1,5 @@
 import { crosscutActive, crosscutAction, crosscutText } from '@auto_matrix/shared';
+import { DOCK_RELOAD, dockReloadActive, dockReloadText } from '@auto_matrix/shared';
 import { nearMetacortexLift, filmStepNear, awakeningDuration } from '@auto_matrix/shared';
 import { CATCH, RELOADED_FINALE, HEL_COATCHECK, OPENING_ESCAPE, OPENING_HOTEL, catchText, reloadedText } from '@auto_matrix/shared';
 import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_NAMES, ARCHITECT_DOOR_SECONDS, filmReflections, CHARACTERS, filmStepPosition, distance, dockPowerOffline, oracleActing, helElevatorLocked, helDanceDoorLocked, interrogationLocked, pillLocked, lafayetteWelcomeLocked, phoneLocked, windowOpening, windowCrossing, awakeningWaiting, trainingLocked, trainingWaiting, theOneLocked, type AgentState, type SandboxState } from '@auto_matrix/shared';
@@ -27,6 +28,15 @@ import { trilogyEpilogueLocked, trilogyEpilogueProgress } from '@auto_matrix/sha
 const button = (target: string, label: string, disabled = false) => `<button data-action="life" data-target="film:${target}" ${disabled ? 'disabled' : ''}>${label}</button>`;
 export function renderFilmJourney(player: AgentState, sandbox: SandboxState): string {
   const life = sandbox.neoLife!; const journey = life.journey!; const scene = FILM_SCENE_BY_ID[journey.scene];
+  if (dockReloadActive(journey)) {
+    const reload = journey.dockReload, current = player.id === journey.actor;
+    const close = Math.hypot(player.position.x - FILM_SETS[scene.set].center.x - DOCK_RELOAD.entry.x,
+      player.position.z - FILM_SETS[scene.set].center.z - DOCK_RELOAD.entry.z) <= 1.5;
+    const action = !current ? button('resume', '继续保存的船坞视角') : journey.actor === 'mifune' ? button('act', '接管 Kid · 前往装填架')
+      : reload?.phase === 'failed' ? button('retry', '从装填重试 · 保留炮位胜利')
+        : !reload || reload.phase === 'approach' ? button('act', '握住升降手柄 · G', !close) : '<p>合上手记，按画面提示操作。</p>';
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>Kid · 卡住的弹箱</h3><p>已完成炮位掩护 · 装填检查点独立保存</p></header><article class="film-now"><div><p>${dockReloadText(reload)}</p><div class="film-controls">${action}</div><small>G 操作升降机 / 抓稳 · W 爬上 · F 踢入 · S 爬下 · V 切换视角<br>${reload ? `剩余 ${Math.ceil(reload.remaining)} 秒 · 未抓稳 ${reload.misses}/3 · 第 ${reload.attempts + 1} 次尝试` : '由玩家明确切换到 Kid，其他玩家占用时等候。'}</small></div></article></div>`;
+  }
   if (crosscutActive(journey)) {
     const cut = journey.tvExit!.crosscut!, action = crosscutAction(journey, player.position);
     const controls = player.id !== journey.actor ? button('resume', `继续 ${journey.actor === 'tank' ? 'Tank' : 'Neo'} 的保存视角`)
