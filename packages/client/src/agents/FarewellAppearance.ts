@@ -18,7 +18,7 @@ export class FarewellAppearance {
     }
     this.weave = new THREE.DataTexture(pixels, size, size, THREE.RGBAFormat);
     this.weave.name = `${role}-farewell-knit`; this.weave.wrapS = this.weave.wrapT = THREE.RepeatWrapping;
-    this.weave.repeat.set(2, 2); this.weave.needsUpdate = true;
+    this.weave.repeat.set(role === 'morpheus' ? 12 : 2, role === 'morpheus' ? 12 : 2); this.weave.needsUpdate = true;
     if (role !== 'neo') return;
     const head = rig.bones.get('head')!;
     rig.root.updateMatrixWorld(true);
@@ -84,7 +84,8 @@ export class FarewellAppearance {
   garment(mesh: THREE.Mesh, input: MotionInput): 'upper' | 'trousers' | undefined {
     const outfit = input.farewellOutfit ?? input.farewell?.role ?? input.nebCrew;
     if (input.realWorld !== true || (this.role === 'morpheus' ? !input.hammerBriefing : outfit !== this.role && !(this.role === 'trinity' && !outfit))) return;
-    const upper = this.role !== 'trinity' ? /Tailored.coat.upper|Black.crew.neck/i.test(mesh.name) : /Fitted.leather.jacket/i.test(mesh.name);
+    const upper = this.role === 'morpheus' ? mesh.userData.hammerBriefingCostume === true
+      : this.role === 'neo' ? /Tailored.coat.upper|Black.crew.neck/i.test(mesh.name) : /Fitted.leather.jacket/i.test(mesh.name);
     return upper ? 'upper' : /Tailored.trousers/i.test(mesh.name) ? 'trousers' : undefined;
   }
 
@@ -95,6 +96,10 @@ export class FarewellAppearance {
     if (!active) return;
     for (const part of this.rig.wardrobe) {
       if (part.hair) part.mesh.visible = !input.firstPerson;
+      if (this.role === 'morpheus') {
+        if (part.mesh.userData.hammerBriefingCostume) part.mesh.visible = true;
+        else if (/Tailored.coat.upper|Black.crew.neck/i.test(part.mesh.name)) part.mesh.visible = false;
+      }
       const garment = this.garment(part.mesh, input);
       if (!garment) continue;
       const upper = garment === 'upper';
@@ -102,9 +107,9 @@ export class FarewellAppearance {
       if (material.map !== null || material.bumpMap !== this.weave) {
         material.map = null; material.bumpMap = this.weave; material.needsUpdate = true;
       }
-      material.bumpScale = upper ? .009 : .003;
+      const collar = this.role === 'morpheus' && part.mesh.name === 'morpheus-hammer-collar';
+      material.bumpScale = upper ? collar ? .002 : .009 : .003;
       material.roughness = .97; material.metalness = 0;
-      const collar = this.role === 'morpheus' && /Black.crew.neck/i.test(part.mesh.name);
       material.color.setHex(upper ? this.role === 'neo' ? 0x393c3a : this.role === 'morpheus' ? collar ? 0xa7a295 : 0x55343d : 0xa6a59a : 0x333631);
     }
   }
