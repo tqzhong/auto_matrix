@@ -73,10 +73,11 @@ test('the actual shipped meeting bodies keep their soles on the floor, stay apar
   assert.ok(h.rigs.neo.hero, 'validate the delivered Neo, not only his fallback');
   assert.ok(h.rigs.neo.hero!.wardrobe.filter(part => part.hair).every(part => part.mesh.visible));
   assert.equal(h.rigs.neo.root.getObjectByName('neo-farewell-eye-band')?.visible, false, 'healthy Neo cannot wear his later injury band');
-  const cloth = h.rigs.morpheus.hero!.wardrobe.find(part => /Tailored.coat.upper/.test(part.mesh.name))!.mesh.material as THREE.MeshStandardMaterial;
-  assert.ok(cloth.roughness >= .94 && cloth.color.r > cloth.color.g, 'Morpheus wears the maroon rough knit seen in this meeting');
-  const collar = h.rigs.morpheus.hero!.wardrobe.find(part => /Black.crew.neck/.test(part.mesh.name))!.mesh.material as THREE.MeshStandardMaterial;
-  assert.ok(collar.color.r > cloth.color.r && collar.color.g > cloth.color.g, 'retain Morpheus’s light undershirt collar instead of recoloring every layer maroon');
+  const cloth = h.rigs.morpheus.root.getObjectByName('morpheus-hammer-sweater') as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
+  assert.ok(cloth?.visible);
+  assert.ok(cloth.material.roughness >= .94 && cloth.material.color.r > cloth.material.color.g, 'Morpheus wears the maroon rough knit seen in this meeting');
+  const collar = (h.rigs.morpheus.root.getObjectByName('morpheus-hammer-collar') as THREE.Mesh).material as THREE.MeshStandardMaterial;
+  assert.ok(collar.color.r > cloth.material.color.r && collar.color.g > cloth.material.color.g, 'retain Morpheus’s light undershirt collar instead of recoloring every layer maroon');
 });
 
 test('Neo’s actual hand and body stay in front of the physical terminal during route inspection', async t => {
@@ -112,6 +113,132 @@ test('Niobe’s meeting sweater covers both forearms and restores her dock top o
   }
   h.models.animate(rig, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true }, 0);
   assert.equal(sweater.visible, false); assert.equal(top.visible, true, 'retain Niobe’s existing dock wardrobe');
+});
+
+test('Morpheus wears a closed crew-neck sweater with two sleeves and restores his Matrix coat outside the meeting', async t => {
+  const h = await setup(t), rig = h.rigs.morpheus;
+  const sweater = rig.root.getObjectByName('morpheus-hammer-sweater') as THREE.SkinnedMesh;
+  const collar = rig.root.getObjectByName('morpheus-hammer-collar') as THREE.SkinnedMesh;
+  assert.ok(sweater instanceof THREE.SkinnedMesh, 'a recolored open coat is still standing in for the film’s closed sweater');
+  assert.ok(collar instanceof THREE.SkinnedMesh, 'the light inner collar must be a narrow separate garment');
+  const old = rig.hero!.wardrobe.filter(part => /Tailored.coat.upper|Black.crew.neck/i.test(part.mesh.name));
+  const chest = rig.hero!.bones.get('chest')!;
+  for (const [phase, elapsed] of [['proposal', 6.6], ['proposal', 8.8], ['loan', 14.2], ['belief', 1.1], ['belief', 9.9], ['responding', .617], ['responding', 4.4]] as const) {
+    h.pose('morpheus', phase, elapsed);
+    assert.equal(sweater.visible, true); assert.equal(collar.visible, true);
+    assert.ok(old.every(part => !part.mesh.visible), 'the old pale shirt and V-shaped lapels cannot show through the sweater');
+    const direction = new THREE.Vector3(0, 0, -1).transformDirection(chest.matrixWorld);
+    for (const x of [-.22, 0, .22]) for (const y of [-.22, 0, .2, .34]) {
+      const origin = chest.localToWorld(new THREE.Vector3(x, y, 1));
+      const ray = new THREE.Raycaster(origin, direction, 0, 1.5);
+      assert.ok(ray.intersectObject(sweater, false).length > 0, `${phase}/${elapsed}: an opening remains across the chest at ${x},${y}`);
+      const rim = ray.intersectObject(collar, false)[0];
+      assert.equal(rim, undefined, 'the undershirt may show at the neck, not as a pale chest patch');
+    }
+    for (const side of ['R', 'L']) {
+      const elbow = rig.hero!.bones.get(`elbow_${side}`)!;
+      const direction = new THREE.Vector3(0, 0, -1).transformDirection(elbow.matrixWorld);
+      const origin = elbow.localToWorld(new THREE.Vector3(0, -.38, .6));
+      assert.ok(new THREE.Raycaster(origin, direction, 0, 1).intersectObject(sweater, false).length,
+        `${phase}/${elapsed}: ${side} forearm is not covered by a real sleeve`);
+    }
+  }
+  const bounds = new THREE.Box3().setFromBufferAttribute(sweater.geometry.attributes.position as THREE.BufferAttribute);
+  assert.ok(bounds.min.y < 2.5 && bounds.max.y < 4, 'fit the garment to Morpheus rather than scaling a different body');
+  h.models.animate(rig, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: false }, 0);
+  assert.equal(sweater.visible, false); assert.equal(collar.visible, false);
+  assert.ok(old.every(part => part.mesh.visible), 'leaving the meeting restores both original Matrix layers');
+});
+
+test('the meeting costume keeps paused materials stable, stays out of other ship scenes and releases its owned resources once', async t => {
+  const h = await setup(t), rig = h.rigs.morpheus;
+  const meshes = ['morpheus-hammer-sweater', 'morpheus-hammer-collar'].map(name => rig.root.getObjectByName(name) as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>);
+  const versions = meshes.map(mesh => mesh.material.version), weave = meshes[0].material.bumpMap!;
+  const geometries = meshes.map(mesh => mesh.geometry);
+  assert.equal(meshes[1].material.bumpMap, weave, 'reuse the owned knit instead of allocating a second weave');
+  for (let frame = 0; frame < 20; frame++) {
+    h.pose('morpheus', 'proposal', 8.8, .4);
+    assert.deepEqual(meshes.map(mesh => mesh.material.version), versions);
+    assert.deepEqual(meshes.map(mesh => mesh.geometry), geometries);
+  }
+  h.models.animate(rig, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true, nebCrew: 'morpheus' }, 0);
+  assert.ok(meshes.every(mesh => !mesh.visible), 'the Hammer meeting cannot change all real-world scenes');
+  h.pose('morpheus'); assert.ok(meshes.every(mesh => mesh.visible));
+  const counts = { geometry: 0, material: 0, weave: 0 };
+  meshes.forEach(mesh => { mesh.geometry.addEventListener('dispose', () => counts.geometry++); mesh.material.addEventListener('dispose', () => counts.material++); });
+  weave.addEventListener('dispose', () => counts.weave++);
+  h.models.dispose(); h.models.dispose();
+  assert.deepEqual(counts, { geometry: 2, material: 2, weave: 1 });
+});
+
+test('both sweater cuffs overlap the delivered wrist skin while Morpheus speaks', async t => {
+  const h = await setup(t), rig = h.rigs.morpheus;
+  const sweater = rig.root.getObjectByName('morpheus-hammer-sweater') as THREE.SkinnedMesh;
+  const skin = rig.hero!.wardrobe.find(part => (part.mesh.material as THREE.Material).name === 'Skin')!.mesh as THREE.SkinnedMesh;
+  for (const [phase, elapsed] of [['proposal', 6.6], ['loan', 14.2], ['belief', 1.1], ['belief', 9.9]] as const) {
+    h.pose('morpheus', phase, elapsed);
+    for (const side of ['R', 'L']) {
+      const wrist = rig.hero!.bones.get(`wrist_${side}`)!;
+      const positions = skin.geometry.attributes.position, joints = skin.geometry.attributes.skinIndex, weights = skin.geometry.attributes.skinWeight;
+      let highest = -Infinity;
+      for (let i = 0; i < positions.count; i++) {
+        const hand = [0, 1, 2, 3].reduce((sum, n) => {
+          const name = skin.skeleton.bones[joints.getComponent(i, n)].name;
+          return sum + (/^(wrist|finger)/.test(name) && name.endsWith(`_${side}`) ? weights.getComponent(i, n) : 0);
+        }, 0);
+        if (hand > .5) highest = Math.max(highest, positions.getY(i));
+      }
+      const bindY = skin.skeleton.boneInverses[skin.skeleton.bones.indexOf(wrist)].clone().invert().elements[13];
+      assert.ok(Number.isFinite(highest));
+      const direction = new THREE.Vector3(0, 0, -1).transformDirection(wrist.matrixWorld);
+      const overlap = [.008, .03, .055].some(inset => {
+        const y = highest - bindY - inset;
+        const ray = new THREE.Raycaster(wrist.localToWorld(new THREE.Vector3(0, y, .6)), direction, 0, .9);
+        const fabric = ray.intersectObject(sweater, false)[0], body = ray.intersectObject(skin, false)[0];
+        return fabric && body && fabric.distance < body.distance;
+      });
+      assert.ok(overlap, `${phase}/${elapsed}: ${side} cuff leaves a gap at the actual wrist`);
+    }
+  }
+});
+
+test('Morpheus’s delivered hands stay outside the sweater through saved speaking gestures', async t => {
+  const h = await setup(t), rig = h.rigs.morpheus, hero = rig.hero!;
+  const sweater = rig.root.getObjectByName('morpheus-hammer-sweater') as THREE.SkinnedMesh;
+  const skin = hero.wardrobe.find(part => (part.mesh.material as THREE.Material).name === 'Skin')!.mesh as THREE.SkinnedMesh;
+  const position = skin.geometry.attributes.position, joints = skin.geometry.attributes.skinIndex, weights = skin.geometry.attributes.skinWeight;
+  const fingers: number[] = [];
+  for (let i = 0; i < position.count; i++) {
+    const hand = [0, 1, 2, 3].reduce((sum, n) => sum + (/^finger/.test(skin.skeleton.bones[joints.getComponent(i, n)].name) ? weights.getComponent(i, n) : 0), 0);
+    if (hand > .85) fingers.push(i);
+  }
+  assert.ok(fingers.length > 100, 'sample the shipped fingers rather than attachment origins');
+  // Cache each posed surface once; raycasting the skinned mesh would skin the
+  // same twenty thousand triangles again for every finger sample.
+  const geometry = new THREE.BufferGeometry(), material = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide });
+  geometry.setIndex(sweater.geometry.index!.clone());
+  const cloth = new THREE.Mesh(geometry, material), ray = new THREE.Raycaster();
+  let samples = 0;
+  try {
+    for (const [phase, elapsed] of [['proposal', 6.6], ['proposal', 8.8], ['loan', 14.2], ['belief', 1.1], ['belief', 9.9], ['responding', .617], ['responding', 4.4]] as const) {
+      h.pose('morpheus', phase, elapsed);
+      const positions = new Float32Array(sweater.geometry.attributes.position.count * 3);
+      for (let i = 0; i < positions.length / 3; i++) {
+        const point = rig.root.worldToLocal(sweater.localToWorld(sweater.getVertexPosition(i, new THREE.Vector3())));
+        positions.set(point.toArray(), i * 3);
+      }
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3)); geometry.computeBoundingSphere();
+      for (let n = 0; n < fingers.length; n += Math.ceil(fingers.length / 36)) {
+        const point = rig.root.worldToLocal(skin.localToWorld(skin.getVertexPosition(fingers[n], new THREE.Vector3())));
+        ray.set(point.clone().add(new THREE.Vector3(0, 0, 2)), new THREE.Vector3(0, 0, -1));
+        const distances = ray.intersectObject(cloth, false).map(hit => hit.distance);
+        const crossings = distances.filter((distance, i) => distance < 2 - .008 && (i === 0 || distance - distances[i - 1] > 1e-5));
+        assert.equal(crossings.length % 2, 0, `${phase}/${elapsed}: a shipped finger penetrates knit at ${point.toArray()}`);
+        samples++;
+      }
+    }
+    assert.ok(samples >= 200);
+  } finally { geometry.dispose(); material.dispose(); }
 });
 
 test('cold first-person route inspection frames the entire terminal and retains free mouse look', async t => {
