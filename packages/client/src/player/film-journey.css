@@ -13,6 +13,7 @@ body:has(.film-sequence.mobil-reunion:not(.hidden)) :is(.game-objective,.game-ev
 body:has(.film-sequence.mobil-family:not(.hidden)) .sandbox-interact { top:auto; bottom:64px; }
 .film-sequence.oracle-request { bottom:110px; box-sizing:border-box; width:min(650px,calc(100vw - 36px)); padding:12px 18px; background:#0a1510f2; }
 .film-sequence.oracle-request p { margin:3px 0 8px; font-size:15px; line-height:1.7; }
+.film-sequence.oracle-request.bane-inquiry { top:126px; bottom:auto; padding:8px 16px; }
 .film-sequence.trainman-chase { bottom:108px; box-sizing:border-box; width:min(590px,calc(100vw - 36px)); padding:10px 16px; background:#142219ee; }
 .film-sequence.trainman-chase p { margin:3px 0 7px; font-size:13px; line-height:1.6; }
 body:has(.film-sequence.trainman-chase:not(.hidden)) :is(.sandbox-hotbar,.player-ability,.game-interaction,.game-map,.game-event) { display:none; }

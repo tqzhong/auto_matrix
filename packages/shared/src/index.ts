@@ -101,6 +101,7 @@ export * from './constants/source-briefing.js';
 export * from './constants/oracle-request.js';
 export * from './constants/oracle-last.js';
 export * from './constants/oracle-absorption.js';
+export * from './constants/bane-inquiry.js';
 export * from './constants/trinity-terminal.js';
 export * from './constants/source-portal.js';
 export * from './constants/architect-room.js';

@@ -8,6 +8,7 @@ import { ARCHITECT_ROOM, type ArchitectRoomState } from './architect-room.js';
 import { ORACLE_REQUEST, oracleRequestLocked } from './oracle-request.js';
 import { ORACLE_LAST, oracleLastLocked } from './oracle-last.js';
 import { ORACLE_ABSORPTION, oracleAbsorptionLocked } from './oracle-absorption.js';
+import { BANE_INQUIRY, baneInquiryLocked, baneInquiryRoot } from './bane-inquiry.js';
 import { SOURCE_BRIEFING, sourceBriefingTarget, sourceBriefingLocked } from './source-briefing.js';
 import { PRIMARY_DEMOLITION, primaryActive, primaryTarget, primaryFloor, primaryLocked } from './primary-demolition.js';
 import { TRINITY_TERMINAL, trinityTerminalActive, trinityTerminalLocked } from './trinity-terminal.js';
@@ -124,6 +125,7 @@ export interface FilmJourney {
   oracleRequest?: import('./oracle-request.js').OracleRequest;
   oracleLast?: import('./oracle-last.js').OracleLast;
   oracleAbsorption?: import('./oracle-absorption.js').OracleAbsorption;
+  baneInquiry?: import('./bane-inquiry.js').BaneInquiry;
   helGarage?: import('./hel-garage.js').HelGarageEncounter;
   sourceBriefing?: import('./source-briefing.js').SourceBriefing;
   primaryDemolition?: import('./primary-demolition.js').PrimaryDemolition;
@@ -445,13 +447,14 @@ export const FILM_SCENES: FilmScene[] = [
     think('无法看见终点的赌注', '她选择把自己留在 Smith 面前；这不是保证能救下所有人的预言。', ORACLE_ABSORPTION.seat.x, ORACLE_ABSORPTION.seat.z),
     use('留在厨房，面对走进来的 Smith', 'Smith 同化先知，也夺取了自己尚不能理解的预见。Neo 此时并不知道这里发生的一切。', ORACLE_ABSORPTION.seat.x, ORACLE_ABSORPTION.seat.z, 0),
   ], ['sati', 'seraph', 'smith']),
-  scene('m3_bane_questions', 3, 'hammer_deck', 'roland', '幸存者的说法', 'bane', 'bane', 'Bane 醒来后声称记不得舰队为何提前触发 EMP。Roland 与 Maggie 要把伤口、医疗扫描和舰队记录放在一起核对。', [
-    walk('走进 Hammer 的医疗舱，查看 Bane', 0, -18),
-    use('检查 Bane 手臂上的旧割伤', 'Maggie 判断伤口可能由他自己造成；Bane 却说不记得缘由。', -7, -25, 1.5),
-    use('对照舰队记录，追问过早触发的 EMP', '舰队的预定进攻与实际爆发不符。Bane 是唯一被救回的人，却仍坚持失忆。', 0, -18, 1.5),
-    use('复核 VDT 与异常神经活动', '检测没有发现 VDT；神经扫描仍有异常放电与新近创伤。Maggie 要继续观察。', -7, -25, 1.5),
-    think('疑点应怎样处理？', '证据足以继续调查，尚不足以证明他如何生还，更不能提前知道他会登上哪艘船。', 0, -18),
-  ], ['bane', 'maggie']),
+  scene('m3_bane_questions', 3, 'hammer_deck', 'roland', '幸存者的说法', 'bane', 'bane', 'Bane 已醒来，坐在 Hammer 餐厅长桌旁。Roland 要当面核对他的说法，Maggie 与 Morpheus 在场。', [
+    walk('走到 Hammer 餐桌另一侧，查看 Bane', BANE_INQUIRY.approach.x, BANE_INQUIRY.approach.z),
+    use('坐下询问记忆与手臂上的旧割伤', 'Bane 查看手臂上的割痕，却说记不起缘由。', BANE_INQUIRY.roots.roland.x, BANE_INQUIRY.roots.roland.z, 0),
+    use('对照舰队记录，追问过早触发的 EMP', '舰队的预定进攻与实际爆发不符。Bane 是唯一被救回的人，却仍坚持失忆。', BANE_INQUIRY.roots.roland.x, BANE_INQUIRY.roots.roland.z, 0),
+    use('询问 Maggie，亲自核对两页检查单', 'VDT 阴性；神经扫描有异常放电与新近创伤。异常尚不能解释 Bane 如何生还。', BANE_INQUIRY.roots.roland.x, BANE_INQUIRY.roots.roland.z, 0),
+    think('疑点应怎样处理？', '证据足以继续调查，尚不足以证明他如何生还，更不能提前知道他会登上哪艘船。', BANE_INQUIRY.roots.roland.x, BANE_INQUIRY.roots.roland.z),
+    walk('起身离开餐桌，让 Maggie 继续观察 Bane', BANE_INQUIRY.exit.x, BANE_INQUIRY.exit.z),
+  ], ['bane', 'maggie', 'morpheus']),
   scene('m3_logos_plan', 3, 'hammer_deck', 'neo', '分开的两条航线', 'last_sky', 'zion', '失踪的 Logos 已被找到。Hammer 的船员讨论返航路线，Neo 进来提出另一条路：去机器城寻找停战可能。', [
     walk('进入 Hammer 的航路会议区', 0, -12),
     use('向众人说明要去机器城，而非返回锡安', 'Roland 不肯交出 Hammer。Niobe 听完后，决定把自己的 Logos 借给 Neo。', 0, -16, 1.5),
@@ -615,6 +618,9 @@ export function filmStepPosition(scene: FilmScene, step: FilmStep, journey?: Fil
     const target = step === scene.steps[0] ? sourceBriefingTarget(journey?.sourceBriefing) : SOURCE_BRIEFING.question;
     return filmPosition(scene.set, target.x, target.z);
   }
+  if (scene.id === 'm3_bane_questions' && journey?.baneInquiry && ![scene.steps[0], scene.steps[5]].includes(step)) {
+    const root = baneInquiryRoot(journey.baneInquiry, 'roland'); return filmPosition(scene.set, root.x, root.z);
+  }
   if (scene.id === 'm2_trucks' && journey?.trucks?.road) {
     const root = truckRoadPoint(journey.trucks.road, { x: step.x, z: step.z });
     return { ...filmPosition('film_freeway_101', root.x, root.z), y: FILM_SETS.film_freeway_101.center.y + TRUCKS.roof.height };
@@ -677,6 +683,7 @@ export function filmStepPosition(scene: FilmScene, step: FilmStep, journey?: Fil
 }
 export function filmStepNear(scene: FilmScene, step: FilmStep, position: Vector3, matrix: boolean, journey?: FilmJourney): boolean {
   const radius = scene.id === 'm3_hel_garage' ? journey?.helGarage?.phase === 'cleared' ? 1.05 : 1.6 : primaryActive(journey) ? .8 : scene.id === 'm2_plan' || scene.id === 'm3_oracle_request' || scene.id === 'm3_oracle_last' || scene.id === 'm3_oracle_absorbed' ? 1.6 : scene.id === 'm1_mirror' && step === scene.steps[0] ? MIRROR_TOUCH.radius
+    : scene.id === 'm3_bane_questions' ? step === scene.steps[5] ? 1.1 : step === scene.steps[0] ? 1.05 : 1.4
     : scene.id === 'm3_hel_entry' && step === scene.steps[0] ? 1.1
     : scene.id === 'm3_dock_evacuation' || scene.id === 'm3_shaft_seal' ? 1.2
     : scene.id === 'm3_dock_reunion' || scene.id === 'm3_dock_briefing' ? 2
@@ -696,12 +703,14 @@ export function filmStepActionReady(scene: FilmScene, step: FilmStep, position: 
   if (scene.id === 'm3_oracle_request' && oracleRequestLocked(journey?.oracleRequest)) return false;
   if (scene.id === 'm3_oracle_absorbed' && oracleAbsorptionLocked(journey?.oracleAbsorption) && journey?.oracleAbsorption?.phase !== 'waiting') return false;
   if (scene.id === 'm3_oracle_last' && (oracleLastLocked(journey?.oracleLast) || !['ready', 'reflection', 'leaving', 'done'].includes(journey?.oracleLast?.phase ?? 'waiting'))) return false;
+  if (scene.id === 'm3_bane_questions' && baneInquiryLocked(journey?.baneInquiry) && !['ready', 'reviewing'].includes(journey?.baneInquiry?.phase ?? '')) return false;
   if (scene.id === 'm2_plan' && sourceBriefingLocked(journey?.sourceBriefing)) return false;
   if (trinityTerminalActive(journey) && trinityTerminalLocked(journey?.trinityTerminal) && !['armed', 'deployed'].includes(journey?.trinityTerminal?.phase ?? '')) return false;
   if (primaryActive(journey) && primaryLocked(journey?.primaryDemolition) || trinityRelayActive(journey) && trinityRelayLocked(journey?.trinityRelay)) return false;
   return step.kind !== 'reach' && step.kind !== 'reflect' && filmStepNear(scene, step, position, matrix, journey);
 }
 export function filmEntry(scene: FilmScene): Vector3 {
+  if (scene.id === 'm3_bane_questions') return filmPosition(scene.set, BANE_INQUIRY.entry.x, BANE_INQUIRY.entry.z);
   if (scene.id === 'm3_hel_entry') return { ...filmPosition(scene.set, 0, 33.8), y: FILM_SETS[scene.set].center.y + HEL_ELEVATOR.upper };
   if (scene.id === 'm3_trainman_chase') return filmPosition(scene.set, TRAINMAN_CHASE.entry.x, TRAINMAN_CHASE.entry.z);
   if (scene.id === 'm2_catch') return { ...filmPosition(scene.set, CATCH.start.x, CATCH.start.z), y: FILM_SETS[scene.set].center.y + CATCH.start.y };

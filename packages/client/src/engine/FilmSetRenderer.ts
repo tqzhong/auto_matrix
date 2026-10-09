@@ -54,6 +54,8 @@ import { ConstructRenderer } from './ConstructRenderer.js';
 import { DesertRenderer } from './DesertRenderer.js';
 import { TrainingSetRenderer } from './TrainingSetRenderer.js';
 import { OracleVase } from './OracleVase.js';
+import { BaneInquiryRenderer } from './BaneInquiryRenderer.js';
+import { baneInquiryLocked } from '@auto_matrix/shared';
 import { OracleLastRenderer } from './OracleLastRenderer.js';
 import { OracleAbsorptionRenderer } from './OracleAbsorptionRenderer.js';
 import { ORACLE_LAST, oracleLastLocked } from '@auto_matrix/shared';
@@ -174,6 +176,7 @@ export class FilmSetRenderer {
   private trackingElectrode?: THREE.Group;
   private trackingLead?: THREE.Line;
   private oracleVase?: OracleVase;
+  private baneInquiry?: BaneInquiryRenderer;
   private oracleLast?: OracleLastRenderer;
   private oracleAbsorption?: OracleAbsorptionRenderer;
   private oracleBlocks?: THREE.Group;
@@ -273,6 +276,7 @@ export class FilmSetRenderer {
         if (['film_metacortex_floor', 'film_office_ledge'].includes(set.id)) this.office = new OfficeSetRenderer(this.root, set);
         else if (set.id === 'film_white_rabbit_club') { this.club = new ClubSetRenderer(this.root); void this.club.ready.catch(error => console.error('夜店人群加载失败', error)); }
         else if (set.id === 'film_government_office' || set.id === 'film_government_roof') this.government = new GovernmentSetRenderer(this.root, set.id);
+        else if (sceneId === 'm3_bane_questions' && set.id === 'film_hammer_deck') this.baneInquiry = new BaneInquiryRenderer(this.root);
         else if (set.id === 'film_trainman_subway') this.trainmanChase = new TrainmanChaseRenderer(this.root);
         else if (set.id === 'film_hel_garage') this.helGarage = new HelGarageRenderer(this.root, player!);
         else if (sceneId === 'm1_subway' && set.id === 'film_subway_platform' || sceneId === 'm1_city_chase' && set.id === 'film_escape_streets') this.matrixEscape = new MatrixEscapeRenderer(this.root, set.id as 'film_subway_platform' | 'film_escape_streets');
@@ -447,6 +451,7 @@ export class FilmSetRenderer {
       empJourney = { ...empJourney, empOperator: player.currentAction.parameters.empOperator as FilmJourney['empOperator'] };
     this.revolutionsPrelude?.update(empJourney, elapsed);
     this.oracleLast?.update(this.currentScene === 'm3_oracle_last' ? journey?.oracleLast : undefined);
+    this.baneInquiry?.update(journey?.baneInquiry);
     this.oracleAbsorption?.update(journey?.oracleAbsorption);
     this.dockEvacuation?.update(player?.currentAction?.parameters.dockEvacuation as FilmJourney['dockEvacuation'] ?? journey?.dockEvacuation,
       player?.currentAction?.parameters.shaftSeal as FilmJourney['shaftSeal'] ?? journey?.shaftSeal);
@@ -643,6 +648,7 @@ export class FilmSetRenderer {
     this.marker.visible = Boolean((set && scene?.set === set.id || scene?.id === 'm1_commute' && player?.isInMatrix) && step && !journey?.visiting && journey?.actor === player?.id);
     if (scene?.id === 'm1_commute' && sandbox?.neoLife?.lift?.passenger) this.marker.visible = false;
     if (oracleRequestLocked(journey?.scene === 'm3_oracle_request' ? journey.oracleRequest : undefined)) this.marker.visible = false;
+    if (journey?.scene === 'm3_bane_questions' && baneInquiryLocked(journey.baneInquiry)) this.marker.visible = false;
     if (journey?.scene === 'm3_oracle_last' && (oracleLastLocked(journey.oracleLast) || journey.oracleLast?.phase === 'greeting')) this.marker.visible = false;
     if (journey?.scene === 'm3_trainman_chase' && !journey.visiting && trainmanChaseLocked(journey.helChase?.performance)) this.marker.visible = false;
     if (journey?.scene === 'm3_hel_garage' && helGarageLocked(journey.helGarage)) this.marker.visible = false;
@@ -2601,6 +2607,7 @@ export class FilmSetRenderer {
     this.logosBane?.dispose(); this.logosBane = undefined; this.logosBanePhase = undefined;
     this.revolutionsPrelude?.dispose(); this.revolutionsPrelude = undefined;
     this.oracleLast?.dispose(); this.oracleLast = undefined;
+    this.baneInquiry?.dispose(); this.baneInquiry = undefined;
     this.oracleAbsorption?.dispose(); this.oracleAbsorption = undefined;
     this.dockEvacuation?.dispose(); this.dockEvacuation = undefined;
     this.dockBriefing?.dispose(); this.dockBriefing = undefined;

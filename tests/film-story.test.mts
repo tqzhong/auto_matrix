@@ -28,6 +28,7 @@ import { NEB_CREW, NEB_ESCAPE } from '@auto_matrix/shared';
 import { MOBIL_FAMILY_QUESTIONS, TRAINMAN_CHASE } from '@auto_matrix/shared';
 import { HEL_ELEVATOR } from '@auto_matrix/shared';
 import { ORACLE_LAST, oracleLastLines, distance } from '@auto_matrix/shared';
+import { BANE_INQUIRY, baneInquiryLines } from '@auto_matrix/shared';
 import { ORACLE_ABSORPTION } from '@auto_matrix/shared';
 
 function setup() {
@@ -172,6 +173,25 @@ function completeOracleAbsorption(h: ReturnType<typeof setup>, nextSequence: () 
   frames(Math.ceil((ORACLE_ABSORPTION.contactSeconds + ORACLE_ABSORPTION.coatingSeconds + ORACLE_ABSORPTION.laughSeconds) / .1) + 4);
   assert.equal(state.oracleAbsorption?.phase, 'done'); assert.equal(state.step, scene.steps.length);
   for (const id of ['oracle', 'sati', 'seraph']) assert.equal(h.world.agents.get(id)!.status, 'disconnected', id);
+}
+function completeBaneInquiry(h: ReturnType<typeof setup>, nextSequence: () => number) {
+  const scene = FILM_SCENE_BY_ID.m3_bane_questions, state = h.sandbox.life.film.state!;
+  const walk = (target: { x: number; z: number }) => {
+    const point = filmPosition(scene.set, target.x, target.z);
+    for (let frame = 0; frame < 400 && distance(h.actor().position, point) > .4; frame++) {
+      if (state.step === 1 && state.baneInquiry?.phase === 'ready' || state.baneInquiry?.phase === 'done') break;
+      const dx = point.x - h.actor().position.x, dz = point.z - h.actor().position.z, gap = Math.hypot(dx, dz);
+      h.players.receiveInput('film-player', { x: dx / Math.max(1, gap), z: dz / Math.max(1, gap), yaw: Math.atan2(dx, dz), sequence: nextSequence() });
+      portalFrames(h, 1);
+    }
+  };
+  walk(BANE_INQUIRY.approach); assert.equal(state.step, 1);
+  for (const step of [1, 2, 3]) {
+    h.command('act'); portalFrames(h, Math.ceil((baneInquiryLines(step).length * BANE_INQUIRY.lineSeconds + (step === 1 ? BANE_INQUIRY.sitSeconds : 0)) / .1) + 2);
+  }
+  assert.equal(state.baneInquiry?.phase, 'reviewing'); h.command('review:negative'); h.command('review:abnormal');
+  h.command('reflect:care'); portalFrames(h, Math.ceil((BANE_INQUIRY.lineSeconds + BANE_INQUIRY.riseSeconds) / .1) + 2);
+  assert.equal(state.step, 5); walk(BANE_INQUIRY.exit); assert.equal(state.step, 6);
 }
 function completePortalStep(h: ReturnType<typeof setup>, index: number) {
   h.command('act');
@@ -3106,6 +3126,7 @@ test('the entire film route completes through interactions, driving and real com
     if (scene.id === 'm3_hel_garage') { completeHelGarage(h, () => ++sequence); h.command('next'); continue; }
     if (scene.id === 'm3_oracle_last') { completeOracleLast(h, () => ++sequence); h.command('next'); continue; }
     if (scene.id === 'm3_oracle_absorbed') { completeOracleAbsorption(h, () => ++sequence); h.command('next'); continue; }
+    if (scene.id === 'm3_bane_questions') { completeBaneInquiry(h, () => ++sequence); h.command('next'); continue; }
     if (scene.id === 'm2_trucks' && state.trucks?.road) {
       h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false, sequence: ++sequence });
       for (let frame = 0; frame < 110 && state.trucks.road.phase !== 'ready'; frame++) h.players.step(.05, true, h.tick());

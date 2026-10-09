@@ -33,6 +33,8 @@ import { helDanceDoorContact, helDanceDoorRoot, type HelDanceDoorEncounter } fro
 import { dockReunionRoot, type DockReunion } from '@auto_matrix/shared';
 import { mobilReunionRoot, type MobilReunion } from '@auto_matrix/shared';
 import { ORACLE_LAST, newOracleLast } from '@auto_matrix/shared';
+import { BANE_INQUIRY, newBaneInquiry } from '@auto_matrix/shared';
+import { BaneInquiryRenderer } from '../packages/client/src/engine/BaneInquiryRenderer.js';
 import { ORACLE_ABSORPTION, newOracleAbsorption } from '@auto_matrix/shared';
 import { DOCK_BRIEFING, dockBriefingRoot, type DockBriefing } from '@auto_matrix/shared';
 import { DockBriefingRenderer } from '../packages/client/src/engine/DockBriefingRenderer.js';
@@ -3440,4 +3442,36 @@ test('the rescue first-person camera preserves nearby sleeves and restores its r
   assert.equal(game.camera.near, regular, 'third-person rescue keeps its regular clipping plane');
   game.state.currentAction = null; game.controls.firstPerson = true; game.step(.1, .1, false);
   assert.equal(game.camera.near, regular, 'the close-interaction setting must not leak into ordinary play');
+});
+
+
+test('Roland’s table camera shows the interview across window shapes and V retains the actual seated eye and free mouse look', t => {
+  const game = setup(t), center = FILM_SETS.film_hammer_deck.center;
+  const visit = { ...newBaneInquiry(1,37), phase:'hearing' as const, role:'roland' as const, step:1, elapsed:13 };
+  Object.assign(game.state,{id:'roland',position:filmPosition('film_hammer_deck',2.8,-18.7),rotation:-Math.PI/2,currentLocation:'film_hammer_deck',isInMatrix:false,
+    currentAction:{type:'idle',parameters:{baneInquiry:visit},startedAt:0,duration:1e9,progress:0}});
+  const head = new THREE.Group(); head.name='head';head.position.set(0,2.7,0);head.userData.cameraEye=new THREE.Vector3(0,.1,.22);game.group.children[0].add(head);
+  game.controls.possess(game.state);game.step(.1,.05,false);
+  const position=game.group.position.clone();game.key('KeyW');game.key('Space');game.step(.2);game.key('KeyW',false);game.key('Space',false);
+  assert.ok(game.group.position.distanceTo(position)<.01,'predicted movement cannot walk or jump through the chair');
+  t.mock.method(THREE.TextureLoader.prototype,'load',()=>new THREE.Texture());
+  game.document.createElement=()=>({getContext:()=>({fillRect(){},fillText(){},beginPath(){},moveTo(){},lineTo(){},stroke(){}})});
+  const room=new THREE.Group();room.position.set(center.x,center.y-1,center.z);const renderer=new BaneInquiryRenderer(room);
+  try {
+    for(const aspect of [16/9,.8]) {
+      game.camera.aspect=aspect;game.camera.updateProjectionMatrix();game.step(.2,.05,false);game.controls.syncTrainmanChaseCamera(game.group,room);
+      room.updateMatrixWorld(true);
+      for(const role of ['bane','morpheus','maggie'] as const) {
+        const root=BANE_INQUIRY.roots[role], face=new THREE.Vector3(center.x+root.x,center.y-1+3.45,center.z+root.z);
+        const screen=face.clone().project(game.camera);assert.ok(Math.abs(screen.x)<.9&&Math.abs(screen.y)<.83,`${role}: face outside screen at ${aspect}`);
+        const direction=face.clone().sub(game.camera.position),hits=new THREE.Raycaster(game.camera.position,direction.clone().normalize(),0,direction.length()-.2).intersectObject(room,true);
+        assert.equal(hits.length,0,`${role}: furniture blocks the interview face`);
+      }
+    }
+    game.key('KeyV');game.key('KeyV',false);game.step(.1);game.controls.syncTrainmanChaseCamera(game.group,room);
+    const eye=head.localToWorld(head.userData.cameraEye.clone());assert.ok(game.camera.position.distanceTo(eye)<1e-6);
+    const yaw=game.yaw();game.event(game.canvas,'mousedown',{button:2});game.event(game.document,'mousemove',{movementX:100,movementY:20});game.step(.1);
+    assert.ok(Math.abs(angle(game.yaw(),yaw))>.08,'seated mouse look must remain free');
+    game.state.currentAction=null;game.step(.1);assert.equal(game.controls.performing,false,'rising releases normal walking');
+  } finally {renderer.dispose();}
 });
