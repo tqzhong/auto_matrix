@@ -30,6 +30,7 @@ import { oracleRequestActive, oracleRequestLocked, oracleRequestText } from '@au
 import { oracleLastActive, oracleLastLocked, oracleLastText } from '@auto_matrix/shared';
 import { baneInquiryActive, baneInquiryLocked, baneInquiryText } from '@auto_matrix/shared';
 import { hammerBriefingActive, hammerBriefingLocked, hammerBriefingText } from '@auto_matrix/shared';
+import { zionDeploymentActive, zionDeploymentLocked, zionDeploymentText } from '@auto_matrix/shared';
 import { oracleAbsorptionActive, oracleAbsorptionLocked, oracleAbsorptionText } from '@auto_matrix/shared';
 import { TRAINMAN_CHASE, trainmanChaseActive, trainmanChaseCanAct, trainmanChaseText } from '@auto_matrix/shared';
 import { HEL_GARAGE, helGarageActive, helGarageText } from '@auto_matrix/shared';
@@ -156,6 +157,10 @@ export class SandboxUI {
       const step = filmSceneForJourney(journey)!.steps[journey.step];
       if (!journey.visiting && journey.scene === 'm3_family' && journey.step === 1 && journey.mobil?.family?.phase !== 'reflection') {
         this.send({ kind: 'life', target: 'film:act' }); return;
+      }
+      if (zionDeploymentActive(journey)) {
+        if (journey.zionDeployment?.phase === 'hope') { this.send({ kind: 'life', target: 'film:act' }); return; }
+        if (journey.zionDeployment?.phase === 'allocating' || journey.zionDeployment?.phase === 'reflection') { this.open('journal'); return; }
       }
       if (hammerBriefingActive(journey) && journey.hammerBriefing?.phase === 'faith') {
         this.send({ kind: 'life', target: 'film:act' }); return;
@@ -409,6 +414,22 @@ export class SandboxUI {
         : phase === 'cover' ? 'WASD 贴住柱后 · X 闪避 · V 切换视角' : phase === 'running' ? 'WASD 移动 · Shift 奔跑 · G 翻越闸机 · V 切换视角'
           : acting ? 'G 操作 · 鼠标环顾 · V 切换视角' : '鼠标环顾 · V 切换视角 · 暂停保留进度';
       this.el('sandbox-job').style.width = phase === 'running' || phase === 'vaulting' ? `${(chase?.remaining ?? 0) / TRAINMAN_CHASE.pursuitSeconds * 100}%` : '0';
+      return;
+    }
+    if (zionDeploymentActive(journey)) {
+      const visit = journey.zionDeployment, text = zionDeploymentText(visit), finished = visit?.phase === 'done';
+      const acting = !visit?.paused && !visit?.unavailable && (finished || Boolean(step && filmStepActionReady(scene, step, player.position, player.isInMatrix, journey)));
+      document.getElementById('game-location')!.textContent = '锡安 · 防守议会';
+      document.getElementById('game-objective-copy')!.textContent = text;
+      this.el('sandbox-interact').classList.toggle('hidden', !acting);
+      this.el('sandbox-nearby').textContent = finished ? '转到 Hammer 航行中的另一视角' : visit?.phase === 'question' ? '主动答复兵力质询'
+        : visit?.phase === 'review' ? '打开部署图核对' : visit?.phase === 'hope' ? '回应 Hamann 的消息询问' : '报告船坞防守方案';
+      if (zionDeploymentLocked(visit) || finished) {
+        this.el('sandbox-waypoint').textContent = ''; this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.add('oracle-request');
+        this.el('film-sequence-line').textContent = text;
+        this.el('film-sequence-hint').textContent = visit?.phase === 'allocating' ? 'J 核对三项部署 · V 切换视角'
+          : visit?.phase === 'reflection' ? 'J 记录判断 · V 切换视角' : acting ? 'G 主动回应 · J 手记 · V 切换视角' : '鼠标观察 · V 切换视角 · 暂停保留问答';
+      }
       return;
     }
     if (hammerBriefingActive(journey)) {

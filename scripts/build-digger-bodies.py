@@ -27,6 +27,11 @@ PROGRAMS = {
     'kamala': {'shoulders': .51, 'race': 'asian', 'sex': 'female'},
     'trainman': {'shoulders': .54, 'race': 'caucasian', 'sex': 'male'},
 }
+COUNCILLORS = {
+    'hamann': {'shoulders': .59, 'race': 'caucasian', 'sex': 'male'},
+    'west': {'shoulders': .66, 'race': 'african', 'sex': 'male'},
+    'dillard': {'shoulders': .52, 'race': 'caucasian', 'sex': 'female'},
+}
 
 
 def normals(points, faces):
@@ -110,7 +115,8 @@ def head_neck_section(role):
 
 def main(source, output, role):
     program = PROGRAMS.get(role)
-    captain = CAPTAINS.get(role); profile = captain or program; sleeved = bool(profile and (profile['sex'] == 'male' or role == 'kamala'))
+    council = COUNCILLORS.get(role)
+    captain = CAPTAINS.get(role); profile = captain or program or council; sleeved = bool(profile and (profile['sex'] == 'male' or role == 'kamala' or council))
     sex = profile['sex'] if profile else 'female'; race = profile['race'] if profile else 'african' if role == 'zee' else 'caucasian'
     targets = {'macrodetails/' + race + '-' + sex + '-young': 1,
                'macrodetails/universal-' + sex + '-young-averagemuscle-averageweight': .7,
@@ -118,6 +124,11 @@ def main(source, output, role):
     if role in ['architect', 'keymaker', 'rama_kandra', 'trainman']:
         targets['macrodetails/universal-male-young-averagemuscle-averageweight'] = .92
         targets['macrodetails/universal-male-young-maxmuscle-averageweight'] = .08
+    if council:
+        targets['macrodetails/' + race + '-' + sex + '-young'] = .20
+        targets['macrodetails/' + race + '-' + sex + '-old'] = .80
+        targets['macrodetails/universal-' + sex + '-young-averagemuscle-averageweight'] = 1
+        targets['macrodetails/universal-' + sex + '-young-maxmuscle-averageweight'] = 0
     files = {'base.obj': '3dobjs/base.obj', 'default.mhskel': 'rigs/default.mhskel',
              'default_weights.mhw': 'rigs/default_weights.mhw'}
     files.update({name + '.target': 'targets/' + name + '.target' for name in targets})
@@ -274,7 +285,7 @@ def main(source, output, role):
             blend = np.clip((p[vi, 1] - 3.22) / .24, 0, 1)[:, None]
             neck_uv = np.column_stack(((.25 + p[vi, 0] * .10 - .232) / .035,
                                        (.445 + np.clip(3.69 - p[vi, 1], 0, .2) * .12 - .452) / .02))
-            if captain or program:
+            if captain or program or council:
                 neck_uv[:, 1] = (.002 + np.clip(3.69 - p[vi, 1], 0, .2) * .03) / .012
             fitted_uv = fitted_uv * (1 - blend) + neck_uv * blend
         attrs = {'POSITION': accessor(p[vi], 'VEC3'), 'NORMAL': accessor(n[vi], 'VEC3'), 'TEXCOORD_0': accessor(fitted_uv, 'VEC2'),
@@ -301,6 +312,9 @@ def main(source, output, role):
         # jacket closes at the throat; his park jacket opens onto a dark top.
         neck_height = 3.45 - (.78 * np.clip(1 - np.abs(x) / .30, 0, 1) * np.clip((z + .02) / .14, 0, 1) if role in ['architect', 'keymaker', 'rama_kandra', 'trainman'] else 0)
         covered = np.minimum(neck_height - y, y - np.where(arms > .3, 1.82, 1.82 if role in ['architect', 'keymaker', 'rama_kandra', 'kamala', 'trainman'] else 1.98))
+    if council:
+        neck_height = 3.43 - .085 * np.exp(-(x / .19) ** 4) * np.clip((z + .1) / .22, 0, 1)
+        covered = np.minimum(neck_height - y, y - np.where(arms > .3, 1.82, 1.88))
     skin_covered = np.minimum(3.44 - y, y - np.where(arms > .3, 1.82, 1.97)) if program else covered
     skin_p, skin_uv, skin_faces, skin_w = builder.trim_neckline(points, uv, faces, weights, y + skin_covered - .008, above=True)
     skin_p, skin_uv, skin_faces, skin_w = builder.trim_neckline(skin_p, skin_uv, skin_faces, skin_w, 1.96, above=True,
@@ -368,7 +382,7 @@ def main(source, output, role):
             ef.append([(j, j) for j in ids])
     export(role + '-sewn-bindings', np.array(ep), np.array(eu), ef, np.array(ew), 4, 'matrix' if role == 'seraph' else 'dock' if role == 'niobe' else None)
 
-    if sleeved and not program:
+    if sleeved and not program and not council:
         # Woven layered V collars and a diagonal wrap seam belong to Zion,
         # rather than a modern buttoned military uniform. Fit each strip to
         # the actual garment front and carry its neighboring skin weights.
@@ -570,7 +584,7 @@ def main(source, output, role):
                         ids = [a, a + 1, a + 8, a + 7]
                         if sign < 0: ids.reverse()
                         pocket_faces.append([(j, j) for j in ids])
-    if not program: export(role + '-cargo-pockets', np.array(pocket_points), np.array(pocket_uv), pocket_faces, np.array(pocket_weights), 2)
+    if not program and not council: export(role + '-cargo-pockets', np.array(pocket_points), np.array(pocket_uv), pocket_faces, np.array(pocket_weights), 2)
 
     # Built over a flat sole, with a rounded toe box instead of enlarged toes.
     bp, bu, bf, bw = [], [], [], []
@@ -600,6 +614,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--source', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
-    parser.add_argument('--roles', nargs='+', choices=['zee', 'charra', *CAPTAINS, *PROGRAMS], default=['zee', 'charra'])
+    parser.add_argument('--roles', nargs='+', choices=['zee', 'charra', *CAPTAINS, *PROGRAMS, *COUNCILLORS], default=['zee', 'charra'])
     args = parser.parse_args()
     for role in args.roles: main(args.source, args.output, role)

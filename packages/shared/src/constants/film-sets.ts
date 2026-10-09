@@ -1,4 +1,5 @@
 import { METACORTEX, METACORTEX_SHAFT, metacortexPosition } from './metacortex.js';
+import { ZION_DEPLOYMENT } from './zion-deployment.js';
 import { PRIMARY_DEMOLITION, primaryFloor } from './primary-demolition.js';
 import { SOURCE_PORTAL } from './source-portal.js';
 import { ARCHITECT_ROOM, architectRoomContains } from './architect-room.js';
@@ -117,10 +118,12 @@ const definitions: Omit<FilmSet, 'id' | 'center'>[] = [
   { name: '锡安 · 封井指挥所', film: [3], architecture: 'engineering', world: 'real', width: 36, depth: 38, height: 10, light: 'cold', detail: '人员清空信号、机械起爆杆、指挥台与井道连续爆破' },
   { name: '废弃公寓 · 三船行动会议', film: [2], architecture: 'apartment', world: 'matrix', width: 32, depth: 32, height: 7.5, light: 'warm', detail: '破损灰墙、旧木地板、红褐皮椅、三条纸质路线与窗外街灯' },
   { name: 'Stellma · Trainman 的地铁线路', film: [3], architecture: 'subway', world: 'matrix', width: 96, depth: 150, height: 16, light: 'cold', detail: '银色车厢、双月台、楼梯站厅、旧式闸机与不停站列车' },
+  { name: '锡安 · 防守议会', film: [3], architecture: 'zion', world: 'real', width: 26, depth: 32, height: 11.5, light: 'cold', detail: '石质墙面、圆弧议席、站立报告区与便携部署图' },
 ];
 const ids = ['heart_hotel', 'hotel_roofs', 'wells_phone', 'anderson_flat', 'white_rabbit_club', 'metacortex_floor', 'office_ledge', 'agent_interrogation', 'adams_bridge', 'extraction_car', 'lafayette', 'power_plant_pods', 'neb_deck', 'white_construct', 'real_desert', 'kungfu_dojo', 'jump_roofs', 'red_dress_plaza', 'cypher_restaurant', 'oracle_home', 'ambush_house', 'government_lobby', 'government_office', 'government_roof', 'subway_platform', 'escape_streets', 'final_phone', 'captains_meeting', 'zion_hangar', 'zion_council', 'zion_residences', 'zion_temple', 'zion_bedroom', 'zion_engineering', 'backdoor_hall', 'seraph_teahouse', 'oracle_courtyard', 'le_vrai', 'chateau_hall', 'keymaker_workshop', 'chateau_garage', 'freeway_101', 'power_station', 'backup_station', 'architect_room', 'trinity_roof', 'service_tunnels', 'hammer_deck', 'mobil_station', 'club_hel', 'logos_deck', 'machine_defense', 'above_clouds', 'logos_wreck', 'machine_core', 'smith_avenue', 'sunrise_garden', 'industrial_loft', 'mountain_range', 'freeway_trucks', 'source_corridor', 'hel_garage', 'hammer_route', 'tv_repair', 'zion_personnel', 'zion_dock_exit', 'zion_command_bunker', 'operation_room'];
 
 ids.push('trainman_subway');
+ids.push('zion_defense_council');
 
 export const FILM_SETS: Record<string, FilmSet> = Object.fromEntries(definitions.map((set, i) => {
   const id = `film_${ids[i]}`;
@@ -186,6 +189,8 @@ export const ORACLE_ENTRANCE_WALLS: FilmObstacle[] = [
 ];
 export const ORACLE_OPEN_DOOR: FilmObstacle = { x: ORACLE_ENTRANCE.door.x, z: ORACLE_ENTRANCE.door.z - ORACLE_ENTRANCE.door.width / 2, width: ORACLE_ENTRANCE.door.depth, depth: ORACLE_ENTRANCE.door.width, height: ORACLE_ENTRANCE.door.height };
 export function filmObstacles(set: FilmSet, movingMeetingCar = false, movingOracleDoor = false, oracleLastKitchen = false): FilmObstacle[] {
+  if (set.id === 'film_zion_defense_council') return [{ ...ZION_DEPLOYMENT.map, height: 4.7 }, ...ZION_DEPLOYMENT.walls,
+    ...Object.values(ZION_DEPLOYMENT.roots).map(root => ({ x: root.x, z: root.z, width: 2.8, depth: 2.8, height: 3.5 }))];
   if (set.id === 'film_architect_room') return [{ x: ARCHITECT_ROOM.chair.x, z: ARCHITECT_ROOM.chair.z, width: 3, depth: 2.4, height: ARCHITECT_ROOM.chair.back }];
   if (set.id === 'film_source_corridor') return [...SOURCE_PORTAL.walls];
   if (set.id === 'film_backup_station') return [TRINITY_TERMINAL.desk, ...TRINITY_TERMINAL.desks, ...TRINITY_TERMINAL.walls];

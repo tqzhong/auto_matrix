@@ -44,6 +44,21 @@ python3 scripts/build-epilogue-heads.py --source output/characters/epilogue-sour
 
 The script downloads only the pinned base mesh, rig definition and four required morph targets if absent. Review the staged GLBs with the checked-in atlas before replacing the runtime files. `tests/epilogue-cast.test.mts` loads the real shipped geometry to check closed eyelids, late-load floor support, earlier-Oracle fallback, unchanged paused poses, sampled walking dress coverage/attachment and clear ear surfaces. Native model views and the paused park save were also inspected; these finite samples do not prove every pose, likeness, frame rate or a continuous trilogy playthrough.
 
+## Zion defense councillors
+
+`hamann-head.glb`, `west-head.glb` and `dillard-head.glb` provide distinct continuous head/ear/neck surfaces. The adjacent `zion-council-faces.png` is a 1,024 × 1,536 front/profile atlas generated with the built-in image tool; the exact prompt is in `zion-council-generation-prompt.txt`. These are approximate generated interpretations of Anthony Zerbe, Cornel West and Robyn Nevin, not actor scans or verified likenesses. The heads use the same pinned CC0 MakeHuman base and age/face morphs credited below. The three matching `*-body.glb` files have continuous skin, separate long sleeves, trousers and boots bound to the existing supporting-character joints. Existing principal-character assets are not rebuilt.
+
+`EpilogueHeads.ts` supplies fitted eyes, silver receding hair for Hamann, short gray hair for Dillard and dark curls with a gray beard for West. `CharacterModel.ts` samples neck color from the atlas and supplies an owned woven cloth texture. Hamann's blue-gray clothing is informed by an early third-film close-up; the current tops and trousers still do not reproduce the film's full robes. The standalone three-chair arrangement is also provisional: neither that close-up nor the later Lock close-up establishes the early council's complete space. Facial proportions, UV seams, hair, hands, cloth, full council seating and natural expressions remain below the film-fidelity target.
+
+Rebuild only these assets into staging using the existing Python/numpy toolchain:
+
+```sh
+python3 scripts/build-epilogue-heads.py --source output/characters/zion-council-source --output output/characters/zion-council-staging --roles hamann west dillard
+python3 scripts/build-digger-bodies.py --source output/characters/zion-council-source --output output/characters/zion-council-staging --roles hamann west dillard
+```
+
+The builders fetch missing pinned CC0 source files into the selected cache. Review staging before copying the six GLBs; the head files require the checked-in atlas beside them. No Python, Blender, generation service or additional package is needed at game runtime. `tests/zion-deployment-render.test.mts` loads all four delivered head/body pairs, including Lock, and checks finite geometry, grounded soles, unchanged paused joints, actor separation and seven sampled furniture clearances. Native paused report and plan views were also reviewed. These checks do not prove arbitrary-pose clearance, movie likeness, stable frame performance or a continuous trilogy playthrough. Local images, exact checkpoint comparisons and remaining work are in `output/gameplay/trilogy-zion-deployment-2026-10-10/`.
+
 ## Editable Blender project
 
 The finishing script can generate `output/characters/matrix-cast.blend` (relative to the repository root), containing all four rigs, outfits, editable glasses/coat counterparts, packed materials and the frontal reference atlas. Generated Blender projects and intermediate meshes are not retained or committed. Local inspection captures under `output/` are not shipped with the game. In the game, glasses and coat panels are managed by `HeroModel.ts` so the cloth can keep responding to movement.
