@@ -202,6 +202,7 @@ export class PlayerController {
     this.sandbox?.life.film.oracleRequest.frame(agent, 0, tick);
     this.sandbox?.life.film.oracleLast.frame(agent, 0, tick);
     this.sandbox?.life.film.baneInquiry.frame(agent, 0, tick);
+    this.sandbox?.life.film.hammerBriefing.frame(agent, 0, tick);
     this.sandbox?.life.film.oracleAbsorption.frame(agent, 0, tick);
     this.sandbox?.life.film.trainmanChase.frame(agent, 0, tick);
     this.sandbox?.life.film.helGarage.frame(agent, 0, tick);
@@ -359,6 +360,9 @@ export class PlayerController {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
       if (this.sandbox?.life.film.baneInquiry.frame(agent, running && agent.status === 'alive' ? dt : 0, tick)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
+      if (this.sandbox?.life.film.hammerBriefing.frame(agent, running && agent.status === 'alive' ? dt : 0, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
       if (this.sandbox?.life.film.oracleLast.frame(agent, running && agent.status === 'alive' ? dt : 0, tick)) {

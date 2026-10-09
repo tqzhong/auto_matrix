@@ -55,7 +55,9 @@ import { DesertRenderer } from './DesertRenderer.js';
 import { TrainingSetRenderer } from './TrainingSetRenderer.js';
 import { OracleVase } from './OracleVase.js';
 import { BaneInquiryRenderer } from './BaneInquiryRenderer.js';
+import { HammerBriefingRenderer } from './HammerBriefingRenderer.js';
 import { baneInquiryLocked } from '@auto_matrix/shared';
+import { hammerBriefingLocked } from '@auto_matrix/shared';
 import { OracleLastRenderer } from './OracleLastRenderer.js';
 import { OracleAbsorptionRenderer } from './OracleAbsorptionRenderer.js';
 import { ORACLE_LAST, oracleLastLocked } from '@auto_matrix/shared';
@@ -177,6 +179,7 @@ export class FilmSetRenderer {
   private trackingLead?: THREE.Line;
   private oracleVase?: OracleVase;
   private baneInquiry?: BaneInquiryRenderer;
+  private hammerBriefing?: HammerBriefingRenderer;
   private oracleLast?: OracleLastRenderer;
   private oracleAbsorption?: OracleAbsorptionRenderer;
   private oracleBlocks?: THREE.Group;
@@ -277,6 +280,7 @@ export class FilmSetRenderer {
         else if (set.id === 'film_white_rabbit_club') { this.club = new ClubSetRenderer(this.root); void this.club.ready.catch(error => console.error('夜店人群加载失败', error)); }
         else if (set.id === 'film_government_office' || set.id === 'film_government_roof') this.government = new GovernmentSetRenderer(this.root, set.id);
         else if (sceneId === 'm3_bane_questions' && set.id === 'film_hammer_deck') this.baneInquiry = new BaneInquiryRenderer(this.root);
+        else if (sceneId === 'm3_logos_plan' && set.id === 'film_hammer_deck') this.hammerBriefing = new HammerBriefingRenderer(this.root);
         else if (set.id === 'film_trainman_subway') this.trainmanChase = new TrainmanChaseRenderer(this.root);
         else if (set.id === 'film_hel_garage') this.helGarage = new HelGarageRenderer(this.root, player!);
         else if (sceneId === 'm1_subway' && set.id === 'film_subway_platform' || sceneId === 'm1_city_chase' && set.id === 'film_escape_streets') this.matrixEscape = new MatrixEscapeRenderer(this.root, set.id as 'film_subway_platform' | 'film_escape_streets');
@@ -452,6 +456,7 @@ export class FilmSetRenderer {
     this.revolutionsPrelude?.update(empJourney, elapsed);
     this.oracleLast?.update(this.currentScene === 'm3_oracle_last' ? journey?.oracleLast : undefined);
     this.baneInquiry?.update(journey?.baneInquiry);
+    this.hammerBriefing?.update(journey?.hammerBriefing);
     this.oracleAbsorption?.update(journey?.oracleAbsorption);
     this.dockEvacuation?.update(player?.currentAction?.parameters.dockEvacuation as FilmJourney['dockEvacuation'] ?? journey?.dockEvacuation,
       player?.currentAction?.parameters.shaftSeal as FilmJourney['shaftSeal'] ?? journey?.shaftSeal);
@@ -649,6 +654,7 @@ export class FilmSetRenderer {
     if (scene?.id === 'm1_commute' && sandbox?.neoLife?.lift?.passenger) this.marker.visible = false;
     if (oracleRequestLocked(journey?.scene === 'm3_oracle_request' ? journey.oracleRequest : undefined)) this.marker.visible = false;
     if (journey?.scene === 'm3_bane_questions' && baneInquiryLocked(journey.baneInquiry)) this.marker.visible = false;
+    if (journey?.scene === 'm3_logos_plan' && hammerBriefingLocked(journey.hammerBriefing)) this.marker.visible = false;
     if (journey?.scene === 'm3_oracle_last' && (oracleLastLocked(journey.oracleLast) || journey.oracleLast?.phase === 'greeting')) this.marker.visible = false;
     if (journey?.scene === 'm3_trainman_chase' && !journey.visiting && trainmanChaseLocked(journey.helChase?.performance)) this.marker.visible = false;
     if (journey?.scene === 'm3_hel_garage' && helGarageLocked(journey.helGarage)) this.marker.visible = false;
@@ -758,6 +764,10 @@ export class FilmSetRenderer {
       }
       this.scene.environmentIntensity = .7;
       return { color: 0x9bbacb, ambient: .9, sun: .12 };
+    }
+    if (this.hammerBriefing) {
+      fog.color.setHex(0x17242d); fog.density = .0015; (this.scene.background as THREE.Color).copy(fog.color);
+      this.scene.environmentIntensity = .62; return { color: 0xbdcdd4, ambient: .78, sun: .04 };
     }
     if (this.sourceBriefing) {
       fog.color.setHex(0x1d251f); fog.density = .002; (this.scene.background as THREE.Color).copy(fog.color);
@@ -2608,6 +2618,7 @@ export class FilmSetRenderer {
     this.revolutionsPrelude?.dispose(); this.revolutionsPrelude = undefined;
     this.oracleLast?.dispose(); this.oracleLast = undefined;
     this.baneInquiry?.dispose(); this.baneInquiry = undefined;
+    this.hammerBriefing?.dispose(); this.hammerBriefing = undefined;
     this.oracleAbsorption?.dispose(); this.oracleAbsorption = undefined;
     this.dockEvacuation?.dispose(); this.dockEvacuation = undefined;
     this.dockBriefing?.dispose(); this.dockBriefing = undefined;

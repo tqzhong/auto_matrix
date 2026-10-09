@@ -1,5 +1,6 @@
 import { poseOracleRequest } from './OracleRequestPerformance.js';
 import { poseBaneInquiry } from './BaneInquiryPerformance.js';
+import { poseHammerBriefing } from './HammerBriefingPerformance.js';
 import { poseOracleLast } from './OracleLastPerformance.js';
 import { poseOracleAbsorption } from './OracleAbsorptionPerformance.js';
 import { poseTrainmanChase } from './TrainmanChasePerformance.js';
@@ -634,7 +635,7 @@ export class CharacterModels {
       }
       if (state.id !== 'sati' && !digger && !sealOperator) this.mesh(elbow, this.cylinder, seams, [0, -0.56, 0], [0.13, 0.045, 0.14]);
       const handMaterial = look.leather ? black : skin;
-      const parentHand = state.id === 'oracle' || state.id.startsWith('hel_garage_guard_') || ['rama_kandra', 'kamala', 'trainman', 'seraph', 'bane', 'maggie', 'roland', 'morpheus'].includes(state.id);
+      const parentHand = state.id === 'oracle' || state.id.startsWith('hel_garage_guard_') || ['rama_kandra', 'kamala', 'trainman', 'seraph', 'bane', 'maggie', 'roland', 'morpheus', 'niobe'].includes(state.id);
       const wristOffset = state.id === 'sati' ? .68 : parentHand ? .65 : 0;
       const hand = wristOffset ? this.joint(elbow, 0, -wristOffset) : elbow;
       if (parentHand) { hand.name = `${state.id === 'oracle' ? 'oracle-hand' : 'mobil-palm'}-${side < 0 ? 'R' : 'L'}`; if (state.id !== 'oracle') mobilWrists.push(hand); }
@@ -1134,6 +1135,7 @@ export class CharacterModels {
       poseOracleLast(rig, input.oracleLast);
       poseOracleAbsorption(rig, input.oracleAbsorption);
       poseBaneInquiry(rig, input.baneInquiry);
+      poseHammerBriefing(rig, input.hammerBriefing);
       return;
     }
     rig.torso.position.y = pose.hipHeight;
@@ -1207,6 +1209,7 @@ export class CharacterModels {
     poseOracleLast(rig, input.oracleLast);
     poseOracleAbsorption(rig, input.oracleAbsorption);
     poseBaneInquiry(rig, input.baneInquiry);
+    poseHammerBriefing(rig, input.hammerBriefing);
     poseDiggers(rig, input.diggers);
     poseUpperDigger(rig, input.upperDigger);
     poseDockReload(rig, input.dockReload);
@@ -1245,7 +1248,7 @@ export class CharacterModels {
     if (armed && helPistol && input.helDanceDoor === undefined && !input.helDisarm) poseHelPistol(rig, input.aimPitch);
     poseHelDisarm(rig, input.helDisarm);
     poseHelBreakout(rig, input.helBreakout);
-    this.diggerBodies.update(rig, true, Boolean(input.parkOutfit || input.epilogue?.kind === 'dawn'));
+    this.diggerBodies.update(rig, true, Boolean(input.parkOutfit || input.epilogue?.kind === 'dawn'), Boolean(input.hammerBriefing));
   }
 
   refreshFarewellContact(rig: CharacterRig, gesture: NonNullable<MotionInput['farewell']>, normal?: THREE.Vector3, up?: THREE.Vector3): void {

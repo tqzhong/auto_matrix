@@ -11,6 +11,7 @@ interface BodyEntry {
   loading: boolean;
   active: boolean;
   park: boolean;
+  briefing: boolean;
   dryColor?: THREE.Color;
 }
 
@@ -26,14 +27,15 @@ export class DiggerBodies {
     const headObjects = new Set<THREE.Object3D>(); rig.head.traverse(object => headObjects.add(object));
     const fallback: THREE.Mesh[] = [];
     rig.detail.traverse(object => { if (object instanceof THREE.Mesh && !headObjects.has(object) && object.name !== 'kamala-skirt') fallback.push(object); });
-    this.entries.set(rig, { role, fallback, materials: [skin, cloth, trousers], loading: false, active: true, park: false,
+    this.entries.set(rig, { role, fallback, materials: [skin, cloth, trousers], loading: false, active: true, park: false, briefing: false,
       dryColor: role === 'seraph' ? (cloth as THREE.MeshStandardMaterial).color.clone() : undefined });
   }
 
-  update(rig: CharacterRig, active = true, park = false): void {
+  update(rig: CharacterRig, active = true, park = false, briefing = false): void {
     const entry = this.entries.get(rig); if (!entry) return;
     entry.active = active;
     entry.park = park;
+    entry.briefing = briefing;
     if (!active) { if (entry.model) entry.model.visible = false; return; }
     if (!entry.loading) {
       entry.loading = true;
@@ -47,6 +49,9 @@ export class DiggerBodies {
         if (park) cloth.color.set('#969d9f'); else cloth.color.copy(entry.dryColor!);
         entry.model.traverse(object => { if (object.userData.wardrobe) object.visible = object.userData.wardrobe === (park ? 'park' : 'matrix'); });
       }
+      if (entry.role === 'niobe') entry.model.traverse(object => {
+        if (object.userData.wardrobe) object.visible = object.userData.wardrobe === (briefing ? 'briefing' : 'dock');
+      });
       rig.root.updateWorldMatrix(true, true);
       entry.model.updateMatrixWorld(true);
     }
@@ -108,7 +113,7 @@ export class DiggerBodies {
     enableSkinnedCulling(model);
     const update = model.updateMatrixWorld.bind(model);
     model.updateMatrixWorld = force => { synchronize(); update(force); };
-    this.update(rig, entry.active, entry.park);
+    this.update(rig, entry.active, entry.park, entry.briefing);
   }
 
   private release(): void {

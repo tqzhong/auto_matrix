@@ -9,6 +9,7 @@ import { ORACLE_REQUEST, oracleRequestLocked } from './oracle-request.js';
 import { ORACLE_LAST, oracleLastLocked } from './oracle-last.js';
 import { ORACLE_ABSORPTION, oracleAbsorptionLocked } from './oracle-absorption.js';
 import { BANE_INQUIRY, baneInquiryLocked, baneInquiryRoot } from './bane-inquiry.js';
+import { HAMMER_BRIEFING, hammerBriefingTarget } from './hammer-briefing.js';
 import { SOURCE_BRIEFING, sourceBriefingTarget, sourceBriefingLocked } from './source-briefing.js';
 import { PRIMARY_DEMOLITION, primaryActive, primaryTarget, primaryFloor, primaryLocked } from './primary-demolition.js';
 import { TRINITY_TERMINAL, trinityTerminalActive, trinityTerminalLocked } from './trinity-terminal.js';
@@ -126,6 +127,7 @@ export interface FilmJourney {
   oracleLast?: import('./oracle-last.js').OracleLast;
   oracleAbsorption?: import('./oracle-absorption.js').OracleAbsorption;
   baneInquiry?: import('./bane-inquiry.js').BaneInquiry;
+  hammerBriefing?: import('./hammer-briefing.js').HammerBriefing;
   helGarage?: import('./hel-garage.js').HelGarageEncounter;
   sourceBriefing?: import('./source-briefing.js').SourceBriefing;
   primaryDemolition?: import('./primary-demolition.js').PrimaryDemolition;
@@ -456,11 +458,11 @@ export const FILM_SCENES: FilmScene[] = [
     walk('起身离开餐桌，让 Maggie 继续观察 Bane', BANE_INQUIRY.exit.x, BANE_INQUIRY.exit.z),
   ], ['bane', 'maggie', 'morpheus']),
   scene('m3_logos_plan', 3, 'hammer_deck', 'neo', '分开的两条航线', 'last_sky', 'zion', '失踪的 Logos 已被找到。Hammer 的船员讨论返航路线，Neo 进来提出另一条路：去机器城寻找停战可能。', [
-    walk('进入 Hammer 的航路会议区', 0, -12),
-    use('向众人说明要去机器城，而非返回锡安', 'Roland 不肯交出 Hammer。Niobe 听完后，决定把自己的 Logos 借给 Neo。', 0, -16, 1.5),
-    use('核对两船燃料、补给与船员去向', 'Hammer 携带防守补给，由 Niobe 驾驶返航锡安；Logos 留给 Neo 与自愿同行的 Trinity。', -7, -25, 1.5),
-    think('信任来自预言还是行动？', 'Niobe 并非因为相信救世主预言才借船。她信任的是作出这个决定的人。', 0, -16),
-    walk('穿过货舱，和 Trinity 一起登上 Logos', 0, 27),
+    walk('走进围站的船员中，参加航路会议', HAMMER_BRIEFING.approach.x, HAMMER_BRIEFING.approach.z),
+    use('提出赴机器城的请求，听取反对，再坚持自己的选择', 'Roland 不肯交出 Hammer。Niobe 听完后，决定把自己的 Logos 借给 Neo。', HAMMER_BRIEFING.approach.x, HAMMER_BRIEFING.approach.z, 0),
+    use('在航路终端确认两船目的地与同行者', 'Niobe 驾驶 Hammer 返回锡安；Trinity 自愿陪 Neo 驾驶 Logos 前往机器城。Neo 不带弹药。', HAMMER_BRIEFING.inspection.x, HAMMER_BRIEFING.inspection.z, 0),
+    think('听完 Niobe 与 Morpheus 的分歧，判断信任的依据', 'Niobe 并非因为相信救世主预言才借船。她信任的是作出这个决定的人。', HAMMER_BRIEFING.approach.x, HAMMER_BRIEFING.approach.z),
+    walk('与 Trinity 离开会议，准备登上 Logos', HAMMER_BRIEFING.exit.x, HAMMER_BRIEFING.exit.z),
   ], ['niobe', 'trinity', 'morpheus', 'roland']),
   scene('m3_zion_prepare', 3, 'zion_council', 'lock', '最后的防守部署', 'siege', 'siege', '机器接近船坞。议会组织撤离，Lock 与 Mifune 将防守集中在闸门附近。', [use('确认船坞部署', 'APU 队伍负责火力，补给人员运送弹药，居民撤向神庙。', 0, -18), walk('前往船坞防线', 0, 22)], ['mifune', 'hamann']),
   scene('m3_maggie_discovery', 3, 'hammer_deck', 'roland', '空出的医疗舱', 'bane', 'bane', '另一视角：Hammer 已经启航。船员呼叫 Roland；医疗舱里出了事，而 Logos 已走上另一条航线。', [
@@ -618,6 +620,9 @@ export function filmStepPosition(scene: FilmScene, step: FilmStep, journey?: Fil
     const target = step === scene.steps[0] ? sourceBriefingTarget(journey?.sourceBriefing) : SOURCE_BRIEFING.question;
     return filmPosition(scene.set, target.x, target.z);
   }
+  if (scene.id === 'm3_logos_plan' && journey?.hammerBriefing) {
+    const target = hammerBriefingTarget(journey.hammerBriefing); return filmPosition(scene.set, target.x, target.z);
+  }
   if (scene.id === 'm3_bane_questions' && journey?.baneInquiry && ![scene.steps[0], scene.steps[5]].includes(step)) {
     const root = baneInquiryRoot(journey.baneInquiry, 'roland'); return filmPosition(scene.set, root.x, root.z);
   }
@@ -683,6 +688,7 @@ export function filmStepPosition(scene: FilmScene, step: FilmStep, journey?: Fil
 }
 export function filmStepNear(scene: FilmScene, step: FilmStep, position: Vector3, matrix: boolean, journey?: FilmJourney): boolean {
   const radius = scene.id === 'm3_hel_garage' ? journey?.helGarage?.phase === 'cleared' ? 1.05 : 1.6 : primaryActive(journey) ? .8 : scene.id === 'm2_plan' || scene.id === 'm3_oracle_request' || scene.id === 'm3_oracle_last' || scene.id === 'm3_oracle_absorbed' ? 1.6 : scene.id === 'm1_mirror' && step === scene.steps[0] ? MIRROR_TOUCH.radius
+    : scene.id === 'm3_logos_plan' ? step.kind === 'reach' ? 1.1 : 1.6
     : scene.id === 'm3_bane_questions' ? step === scene.steps[5] ? 1.1 : step === scene.steps[0] ? 1.05 : 1.4
     : scene.id === 'm3_hel_entry' && step === scene.steps[0] ? 1.1
     : scene.id === 'm3_dock_evacuation' || scene.id === 'm3_shaft_seal' ? 1.2
@@ -694,6 +700,8 @@ export function filmStepNear(scene: FilmScene, step: FilmStep, position: Vector3
   return matrix === (FILM_SETS[scene.set].world === 'matrix') && distance(position, filmStepPosition(scene, step, journey)) <= radius;
 }
 export function filmStepActionReady(scene: FilmScene, step: FilmStep, position: Vector3, matrix: boolean, journey?: FilmJourney): boolean {
+  if (scene.id === 'm3_logos_plan') return Boolean(journey?.hammerBriefing && ['ready', 'objection', 'route', 'faith'].includes(journey.hammerBriefing.phase)
+    && !journey.hammerBriefing.paused && !journey.hammerBriefing.unavailable && filmStepNear(scene, step, position, matrix, journey));
   if (scene.id === 'm3_hel_bargain' && journey?.helBargain?.phase === 'disarming') return false;
   if (scene.id === 'm3_hel_entry' && step === scene.steps[0] && (helElevatorLocked(journey) || journey?.helElevator?.paused || journey?.helElevator?.unavailable)) return false;
   if (scene.id === 'm3_hel_garage' && (journey?.helGarage?.paused || journey?.helGarage?.unavailable || !['ready', 'cleared'].includes(journey?.helGarage?.phase ?? 'ready'))) return false;
@@ -710,6 +718,7 @@ export function filmStepActionReady(scene: FilmScene, step: FilmStep, position: 
   return step.kind !== 'reach' && step.kind !== 'reflect' && filmStepNear(scene, step, position, matrix, journey);
 }
 export function filmEntry(scene: FilmScene): Vector3 {
+  if (scene.id === 'm3_logos_plan') return filmPosition(scene.set, HAMMER_BRIEFING.entry.x, HAMMER_BRIEFING.entry.z);
   if (scene.id === 'm3_bane_questions') return filmPosition(scene.set, BANE_INQUIRY.entry.x, BANE_INQUIRY.entry.z);
   if (scene.id === 'm3_hel_entry') return { ...filmPosition(scene.set, 0, 33.8), y: FILM_SETS[scene.set].center.y + HEL_ELEVATOR.upper };
   if (scene.id === 'm3_trainman_chase') return filmPosition(scene.set, TRAINMAN_CHASE.entry.x, TRAINMAN_CHASE.entry.z);

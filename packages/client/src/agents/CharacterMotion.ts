@@ -80,6 +80,7 @@ export interface MotionInput {
   oracleRequest?: import('@auto_matrix/shared').OracleRequestGesture;
   oracleLast?: import('@auto_matrix/shared').OracleLastGesture;
   baneInquiry?: import('@auto_matrix/shared').BaneInquiryGesture;
+  hammerBriefing?: import('@auto_matrix/shared').HammerBriefingGesture;
   oracleAbsorption?: import('@auto_matrix/shared').OracleAbsorptionGesture;
   trainmanChase?: import('@auto_matrix/shared').TrainmanChaseGesture;
   helGarage?: import('@auto_matrix/shared').HelGarageGesture;
@@ -295,6 +296,15 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
       arms: [0, 1].map(i => ({ shoulder: 0, elbow: 0, outward: (i ? 1 : -1) * .12, grip: 0 })),
       hipHeight: 1.98, twist: 0, lean: 0, sway: 0, lunge: 0, roll: 0, headTurn: 0,
       moving: 0, run: 0, airborne: 0, coat: 0, impact: 0, landing: 0 };
+  }
+  if (input.hammerBriefing) {
+    const walking = input.hammerBriefing.role === 'trinity' && input.hammerBriefing.phase === 'leaving' ? Math.min(1, input.speed / 3) : 0;
+    const cycle = input.hammerBriefing.elapsed * .72;
+    Object.assign(state, newMotion(), { time: input.hammerBriefing.elapsed, phase: cycle });
+    return { legs: [0, 1].map(i => { const foot = footTrajectory(cycle + i * .5, walking * .7, .32); return solveLeg(foot.z, 1.98 - foot.lift * walking); }),
+      arms: [0, 1].map(i => ({ shoulder: Math.sin((cycle + i * .5) * Math.PI * 2) * walking * .22, elbow: -.16 * walking, outward: (i ? 1 : -1) * .12, grip: 0 })),
+      hipHeight: 1.98, twist: 0, lean: 0, sway: 0, lunge: 0, roll: 0, headTurn: 0,
+      moving: walking, run: 0, airborne: 0, coat: 0, impact: 0, landing: 0 };
   }
   if (input.oracleAbsorption) {
     const h = input.oracleAbsorption, moving = h.role === 'sati' || h.role === 'seraph' ? h.escape > 0 && h.escape < 23
