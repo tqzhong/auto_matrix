@@ -20,12 +20,17 @@ export class LightingSystem {
     scene.add(this.ambientLight, this.directionalLight, this.directionalLight.target, this.fill, this.fill.target);
   }
   setTime(time: number): void { this.timeOfDay = time; }
-  update(_elapsed: number, camera?: THREE.Camera, interiorShadows = false): void {
-    this.directionalLight.castShadow = !interiorShadows;
+  update(_elapsed: number, camera?: THREE.Camera, interiorShadows = false, atmosphere?: { ambient: number; sun: number; color: number }): void {
     const daylight = Math.max(0, Math.sin((this.timeOfDay / 24000 - 0.25) * Math.PI * 2));
     this.ambientLight.intensity = .5 + daylight * 1.1;
     this.directionalLight.intensity = .35 + daylight * 2.6;
     this.directionalLight.color.setHex(0xffd7a7).lerp(new THREE.Color(0xfff7e6), daylight);
+    if (atmosphere) {
+      this.ambientLight.intensity = atmosphere.ambient;
+      this.directionalLight.intensity = atmosphere.sun;
+      this.directionalLight.color.setHex(atmosphere.color);
+    }
+    this.directionalLight.castShadow = !interiorShadows && this.directionalLight.intensity > 0;
     if (this.closeShadows !== Boolean(camera)) {
       this.closeShadows = Boolean(camera);
       const extent = camera ? 75 : 650;

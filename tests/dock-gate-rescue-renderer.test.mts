@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { FILM_SETS, dockGatePoint, dockGateEye, dockGateZee, newDockGate, type DockGate, type FilmJourney } from '@auto_matrix/shared';
+import { APU_RIG, FILM_SETS, dockGatePoint, dockGateEye, dockGateZee, newDockGate, type DockGate, type FilmJourney } from '@auto_matrix/shared';
 import { CharacterModels } from '../packages/client/src/agents/CharacterModel.js';
 import { ZionHomecomingRenderer } from '../packages/client/src/engine/ZionHomecomingRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
@@ -10,10 +10,14 @@ import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 function vertices(root: THREE.Object3D) {
   const points: THREE.Vector3[] = []; root.updateWorldMatrix(true, true);
   root.traverseVisible(object => {
-    if (!(object instanceof THREE.Mesh) || object instanceof THREE.InstancedMesh) return;
+    if (!(object instanceof THREE.Mesh)) return;
     object.updateMatrixWorld(true);
     if (object instanceof THREE.SkinnedMesh) object.skeleton.update();
-    for (let i = 0; i < object.geometry.attributes.position.count; i++) points.push(object.localToWorld(object.getVertexPosition(i, new THREE.Vector3())));
+    for (let instance = 0; instance < (object instanceof THREE.InstancedMesh ? object.count : 1); instance++) {
+      const matrix = new THREE.Matrix4(); if (object instanceof THREE.InstancedMesh) object.getMatrixAt(instance, matrix);
+      for (let i = 0; i < object.geometry.attributes.position.count; i++)
+        points.push(object.localToWorld(object.getVertexPosition(i, new THREE.Vector3()).applyMatrix4(matrix)));
+    }
   });
   return points;
 }
@@ -43,7 +47,7 @@ test('the fallen pilot remains inside his seat with both hands on the controls a
     const gate = { ...newDockGate(5, -50), toppled: true }, journey = { scene: 'm3_gate', actor: 'kid', step: 2, completed: [], dockGate: gate } as FilmJourney;
     const apu = root.getObjectByName('zion-kid-apu')!;
     const draw = (state: DockGate) => {
-      const p = dockGatePoint(state, { x: 0, y: 1.3, z: 0 }), z = dockGateZee(state);
+      const p = dockGatePoint(state, APU_RIG.pilot), z = dockGateZee(state);
       kid.root.position.set(center.x + p.x, center.y - 1 + p.y, center.z + p.z); kid.root.rotation.y = Math.PI;
       zee.root.position.set(center.x + z.x, center.y - 1, center.z + z.z); zee.root.rotation.y = z.yaw;
       const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true };
@@ -55,7 +59,7 @@ test('the fallen pilot remains inside his seat with both hands on the controls a
       gate.phase = phase; gate.elapsed = elapsed; draw(gate);
       const body = vertices(kid.detail), lowest = Math.min(...body.map(p => p.y - center.y + 1));
       assert.ok(lowest >= -.025, `${phase}/${elapsed}: Kid clips through the floor by ${lowest}`);
-      const apuBottom = Math.min(...vertices(apu).map(p => p.y - center.y + 1));
+      const apuBottom = vertices(apu).reduce((lowest, p) => Math.min(lowest, p.y - center.y + 1), Infinity);
       assert.ok(apuBottom >= -.04, `${phase}/${elapsed}: the machine penetrates the floor by ${apuBottom}`);
       if (phase !== 'falling') assert.ok(apuBottom < .1, `fallen APU floats ${apuBottom}`);
       const eye = kid.head.localToWorld(new THREE.Vector3(0, -.005, .275));
@@ -64,6 +68,9 @@ test('the fallen pilot remains inside his seat with both hands on the controls a
         const palm = kid.elbows[i].localToWorld(new THREE.Vector3(0, -.79, .055));
         const handle = apu.getObjectByName(`apu-control-${i ? -1 : 1}`)!.getWorldPosition(new THREE.Vector3());
         assert.ok(palm.distanceTo(handle) < .04, `Kid releases control ${i}: ${palm.distanceTo(handle)}`);
+        const sole = kid.ankles[i].localToWorld(new THREE.Vector3(0, -.155, .13));
+        const pedal = apu.getObjectByName(`apu-pedal-${i ? -1 : 1}`)!;
+        assert.ok(sole.distanceTo(pedal.localToWorld(new THREE.Vector3(0, .06, 0))) < .025, 'the pilot’s shoes stay on the actual pedals while the APU topples');
       }
       for (const name of ['apu-seat-pan', 'apu-seat-back', 'apu-seat-platform']) {
         const seat = apu.getObjectByName(name) as THREE.Mesh; seat.geometry.computeBoundingBox();

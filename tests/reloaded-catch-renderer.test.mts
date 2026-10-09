@@ -24,3 +24,37 @@ test('Trinity catch set shows the flyable city, saved fall, rooftop bullet and r
   assert.ok(renderer.group.getObjectByName('catch-extracted-bullet')!.parent!.visible);
   renderer.dispose(); assert.equal(root.children.length, 0); assert.ok(disposed.length > 0);
 });
+
+test('the launch has a visible supporting floor and an actual openable facade aperture', async () => {
+  const { CATCH, catchRoot } = await import('@auto_matrix/shared');
+  const root = new THREE.Group(), renderer = new ReloadedCatchRenderer(root);
+  renderer.update({ scene: 'm2_catch', catch: newCatch() } as FilmJourney); root.updateMatrixWorld(true);
+  const at = catchRoot(newCatch(), 'neo');
+  const ray = new THREE.Raycaster(new THREE.Vector3(at.x, at.y + .2, at.z), new THREE.Vector3(0, -1, 0));
+  const floor = ray.intersectObject(renderer.group, true).find(hit => Math.abs(hit.point.y - at.y) < .08);
+  assert.ok(floor, `no supporting floor at ${JSON.stringify(at)}`);
+  const state = newCatch(); state.phase = 'flight'; renderer.update({ scene: 'm2_catch', catch: state } as FilmJourney); root.updateMatrixWorld(true);
+  const throughWindow = new THREE.Raycaster(new THREE.Vector3(0, CATCH.start.y + 2.4, 47), new THREE.Vector3(0, 0, -1));
+  assert.ok(!throughWindow.intersectObject(renderer.group, true).filter(hit => { for (let object: THREE.Object3D | null = hit.object; object; object = object.parent) if (!object.visible) return false; return true; }).some(hit => hit.point.z > 43 && hit.point.z < 44.5), 'a full opaque box still blocks the launch aperture');
+  renderer.dispose();
+});
+
+test('front facade windows face the street rather than being culled from the player view', () => {
+  const root = new THREE.Group(), renderer = new ReloadedCatchRenderer(root); root.updateMatrixWorld(true);
+  const windows = root.getObjectByName('catch-lit-window-grid') as THREE.InstancedMesh;
+  const matrix = new THREE.Matrix4(), point = new THREE.Vector3(); let front = 0;
+  for (let i = 0; i < windows.count; i++) {
+    windows.getMatrixAt(i, matrix); point.setFromMatrixPosition(matrix);
+    if (Math.abs(point.z - (2 - 14 / 2 - .04)) > .01 || Math.abs(point.x) > 3.5) continue;
+    const normal = new THREE.Vector3(0, 0, 1).transformDirection(matrix); assert.ok(normal.z < -.99, 'front glass faces into its tower'); front++;
+  }
+  assert.ok(front > 5); renderer.dispose();
+});
+
+test('the intact exit glass lets the player see the city before committing to the leap', () => {
+  const root = new THREE.Group(), renderer = new ReloadedCatchRenderer(root);
+  const pane = root.getObjectByName('catch-burning-exit') as THREE.Mesh;
+  const material = pane.material as THREE.MeshStandardMaterial;
+  assert.ok(material.transparent && material.opacity < .4, 'the launch window is an opaque painted rectangle');
+  renderer.dispose();
+});

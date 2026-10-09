@@ -4,6 +4,7 @@ import { MachineUplinkContacts } from './MachineUplinkContacts.js';
 import { SunriseGardenRenderer } from './SunriseGardenRenderer.js';
 import { reach } from '../agents/SpoonPerformance.js';
 import { batchStaticGeometry } from './StaticGeometry.js';
+import { CeasefireSentinels } from './CeasefireSentinels.js';
 
 /** Physical epilogue beats layered over the existing Zion, Machine City and park sets. */
 export class TrilogyEpilogueRenderer {
@@ -12,9 +13,10 @@ export class TrilogyEpilogueRenderer {
   private materials = new Set<THREE.Material>();
   private textures = new Set<THREE.Texture>();
   private lights = new Set<THREE.Light>();
-  private sentinels: THREE.Group[] = [];
+  private sentinels?: CeasefireSentinels;
   private barge?: THREE.Group;
   private tray?: THREE.Group;
+  private cradle?: THREE.Group;
   private bodyLight?: THREE.PointLight;
   private deck?: THREE.Mesh;
   private hull?: THREE.Mesh;
@@ -44,29 +46,19 @@ export class TrilogyEpilogueRenderer {
   private mesh(geometry: THREE.BufferGeometry, material: THREE.Material, parent = this.group): THREE.Mesh {
     this.geometries.add(geometry); const mesh = new THREE.Mesh(geometry, material); mesh.castShadow = true; mesh.receiveShadow = true; parent.add(mesh); return mesh;
   }
-  private cylinderBetween(a: THREE.Vector3, b: THREE.Vector3, radius: number, material: THREE.Material, parent: THREE.Group): THREE.Mesh {
-    const midpoint = a.clone().add(b).multiplyScalar(.5); const mesh = this.mesh(new THREE.CylinderGeometry(radius, radius, a.distanceTo(b), 7), material, parent);
-    mesh.position.copy(midpoint); mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize()); return mesh;
-  }
-
   private buildCeasefire(): void {
-    const shell = this.material(0x394844, .28, .72); const eye = this.material(0xff7152, .3, .25, 0xff2d19, 5.5);
-    for (let i = 0; i < 18; i++) {
-      const sentinel = new THREE.Group(); sentinel.name = `ceasefire-retreating-sentinel-${i + 1}`; this.group.add(sentinel);
-      const body = this.mesh(new THREE.IcosahedronGeometry(.8 + i % 3 * .08, 1), shell, sentinel); body.scale.set(1.45, .58, 1.7);
-      const lamp = this.mesh(new THREE.SphereGeometry(.22, 8, 6), eye, sentinel); lamp.position.z = -1.35;
-      for (const side of [-1, 1]) for (let arm = 0; arm < 3; arm++) {
-        const start = new THREE.Vector3(side * (.4 + arm * .22), -.2, .5);
-        const end = new THREE.Vector3(side * (1.4 + arm * .55), -1.1 - arm * .36, 2 + arm * .8);
-        this.cylinderBetween(start, end, .055, shell, sentinel);
-      }
-      this.sentinels.push(sentinel);
-    }
+    this.sentinels = new CeasefireSentinels(this.group);
     const beacon = new THREE.PointLight(0x87dfaa, 0, 52, 2); beacon.position.set(0, 15, -45); this.group.add(beacon); this.lights.add(beacon);
   }
 
   private buildCarried(): void {
-    const iron = this.material(0x3f515e, .38, .83), dark = this.material(0x19232b, .45, .78);
+    const iron = this.material(0x465663, .44, .54), dark = this.material(0x19232b, .45, .78);
+    for (const [key, suffix] of [['normalMap', 'normal'], ['roughnessMap', 'roughness']] as const) {
+      const texture = new THREE.TextureLoader().load(`/assets/film-materials/metal_plate-${suffix}.jpg`);
+      texture.wrapS = texture.wrapT = THREE.RepeatWrapping; texture.repeat.set(3, 3); texture.anisotropy = 8;
+      iron[key] = texture; this.textures.add(texture);
+    }
+    iron.normalScale.set(.25, .25);
     const inset = this.material(0x202b32, .64, .25), signal = this.material(0xcba977, .4, .6, 0xffac42, .45);
     this.barge = new THREE.Group(); this.barge.name = 'neo-machine-funeral-barge'; this.group.add(this.barge);
     this.hull = this.mesh(new THREE.SphereGeometry(1, 24, 12), dark, this.barge);
@@ -77,10 +69,11 @@ export class TrilogyEpilogueRenderer {
       const light = this.mesh(new THREE.BoxGeometry(.035, .05, .7), signal, this.barge); light.position.set(side * 2.85, .34, i * 1.1);
     }
     this.tray = new THREE.Group(); this.tray.name = 'neo-body-transfer-tray'; this.group.add(this.tray);
-    this.deck = this.mesh(new THREE.BoxGeometry(1, 1, 1), inset, this.tray); this.deck.name = 'neo-carry-deck';
+    this.deck = this.mesh(new THREE.BoxGeometry(1, 1, 1), iron, this.tray); this.deck.name = 'neo-carry-deck';
     this.deck.scale.set(6.2, .1, 5.8); this.deck.position.set(0, .88, 2);
     for (const side of [-1, 1]) {
-      const rail = this.mesh(new THREE.BoxGeometry(.08, .1, 1), iron, this.tray); rail.name = `neo-tray-rim-${side < 0 ? 'left' : 'right'}`;
+      const rail = this.mesh(new THREE.CylinderGeometry(.055, .055, 1, 10), iron, this.tray); rail.rotation.x = Math.PI / 2;
+      rail.name = `neo-tray-rim-${side < 0 ? 'left' : 'right'}`;
       this.rails.push(rail);
     }
     for (let i = 0; i < 24; i++) this.braces.push(this.mesh(new THREE.BoxGeometry(1, .075, .07), iron, this.tray));
@@ -88,6 +81,7 @@ export class TrilogyEpilogueRenderer {
       const pad = this.mesh(new THREE.SphereGeometry(1, 14, 10), inset, this.tray); pad.name = `neo-carry-support-${i}`;
       pad.visible = false; this.supports.push(pad);
     }
+    this.cradle = new THREE.Group(); this.cradle.name = 'neo-carry-ribbed-cradle'; this.tray.add(this.cradle);
     for (let i = 0; i < 4; i++) {
       const lower = this.mesh(new THREE.CylinderGeometry(.1, .15, 1, 10), dark);
       const upper = this.mesh(new THREE.CylinderGeometry(.07, .095, 1, 10), iron);
@@ -97,6 +91,43 @@ export class TrilogyEpilogueRenderer {
     }
     this.bodyLight = new THREE.PointLight(0xafcfe3, 240, 18, 2); this.bodyLight.name = 'neo-tray-body-light';
     this.bodyLight.position.set(2.8, 4.2, 1.8); this.tray.add(this.bodyLight); this.lights.add(this.bodyLight);
+  }
+
+  private fitCradle(bounds: THREE.Box3, top: number): void {
+    if (!this.cradle || !this.deck) return;
+    const iron = this.deck.material as THREE.MeshStandardMaterial, dark = this.hull!.material as THREE.Material;
+    const size = bounds.getSize(new THREE.Vector3()), center = bounds.getCenter(new THREE.Vector3());
+    this.cradle.position.set(center.x, top - .18, center.z);
+    const tube = (points: number[][], radius: number, material = dark) => {
+      const curve = new THREE.CatmullRomCurve3(points.map(point => new THREE.Vector3().fromArray(point)));
+      return this.mesh(new THREE.TubeGeometry(curve, 32, radius, 8, false), material, this.cradle!);
+    };
+    // Ribs and conduits stay below the lowest delivered skin/cloth surface.
+    // The seven fitted saddles carry the body; these parts carry the saddles.
+    for (let i = 0; i < 13; i++) {
+      const z = -size.z / 2 + i / 12 * size.z, half = size.x / 2 + .17;
+      tube([[-half, -.03, z], [-half * .82, -.33, z], [0, -.52, z], [half * .82, -.33, z], [half, -.03, z]], .045, iron);
+    }
+    for (const side of [-1, 1]) {
+      const x = side * (size.x / 2 + .08);
+      tube([[x, -.04, -size.z / 2], [x, -.22, -size.z / 4], [x, -.24, size.z / 4], [x, -.04, size.z / 2]], .08, iron);
+      for (let i = 0; i < 6; i++) {
+        const z = -size.z / 2 + .15 + i / 5 * (size.z - .3);
+        tube([[side * .22, -.44, z + .1], [side * .55, -.35, z - .08], [x - side * .15, -.08, z + .12],
+          [x + side * .28, -.08, z], [x + side * .35, -.3, z - .2]], .035);
+        const valve = this.mesh(new THREE.TorusGeometry(.09, .026, 6, 12), iron, this.cradle);
+        valve.position.set(x + side * .28, -.1, z); valve.rotation.x = Math.PI / 2;
+      }
+      for (const end of [-1, 1]) {
+        const pump = this.mesh(new THREE.CylinderGeometry(.14, .17, .48, 12), dark, this.cradle);
+        pump.position.set(x + side * .2, -.22, end * (size.z / 2 - .25));
+        for (let ring = 0; ring < 4; ring++) {
+          const collar = this.mesh(new THREE.TorusGeometry(.15, .022, 6, 12), iron, this.cradle);
+          collar.rotation.x = Math.PI / 2; collar.position.copy(pump.position); collar.position.y += -.17 + ring * .11;
+        }
+      }
+    }
+    batchStaticGeometry(this.cradle, new Set()).forEach(geometry => this.geometries.add(geometry));
   }
 
   private fitBody(subject?: THREE.Object3D): void {
@@ -115,23 +146,36 @@ export class TrilogyEpilogueRenderer {
     if (!points.length) return;
     this.fittedBody = subject;
     const size = bounds.getSize(new THREE.Vector3()), center = bounds.getCenter(new THREE.Vector3()), top = bounds.min.y - .006;
-    const width = size.x + .4, length = size.z + .4, shape = new THREE.Shape();
-    shape.moveTo(-width / 2, -length / 2); shape.lineTo(width / 2, -length / 2); shape.lineTo(width / 2, length / 2);
-    shape.lineTo(-width / 2, length / 2); shape.closePath();
+    const width = size.x + .4, length = size.z + .4, shape = new THREE.Shape(), corner = .32;
+    shape.moveTo(-width / 2 + corner, -length / 2); shape.lineTo(width / 2 - corner, -length / 2);
+    shape.quadraticCurveTo(width / 2, -length / 2, width / 2, -length / 2 + corner);
+    shape.lineTo(width / 2, length / 2 - corner); shape.quadraticCurveTo(width / 2, length / 2, width / 2 - corner, length / 2);
+    shape.lineTo(-width / 2 + corner, length / 2); shape.quadraticCurveTo(-width / 2, length / 2, -width / 2, length / 2 - corner);
+    shape.lineTo(-width / 2, -length / 2 + corner); shape.quadraticCurveTo(-width / 2, -length / 2, -width / 2 + corner, -length / 2);
+    shape.closePath();
+    const ports: { x: number; z: number; radius: number }[] = [];
     const contacts = new MachineUplinkContacts().sample(subject);
     for (const contact of contacts?.ports ?? []) {
-      const p = this.tray.worldToLocal(contact.point.clone()), opening = new THREE.Path();
-      opening.absarc(p.x - center.x, center.z - p.z, .14, 0, Math.PI * 2, true); shape.holes.push(opening);
+      const p = this.tray.worldToLocal(contact.point.clone()); ports.push({ x: p.x - center.x, z: center.z - p.z, radius: .14 });
     }
     const neck = subject.getObjectByName('cervical-interface');
-    if (neck) { const p = this.tray.worldToLocal(neck.getWorldPosition(new THREE.Vector3())), opening = new THREE.Path();
-      opening.absarc(p.x - center.x, center.z - p.z, .17, 0, Math.PI * 2, true); shape.holes.push(opening); }
+    if (neck) { const p = this.tray.worldToLocal(neck.getWorldPosition(new THREE.Vector3()));
+      ports.push({ x: p.x - center.x, z: center.z - p.z, radius: .17 }); }
+    for (const port of ports) {
+      const opening = new THREE.Path(); opening.absarc(port.x, port.z, port.radius, 0, Math.PI * 2, true); shape.holes.push(opening);
+    }
+    for (let x = -width / 2 + .28; x < width / 2 - .25; x += .28) for (let z = -length / 2 + .28; z < length / 2 - .25; z += .32) {
+      if (ports.some(port => Math.abs(x - port.x) < port.radius + .12 && Math.abs(z - port.z) < port.radius + .14)) continue;
+      const opening = new THREE.Path(); opening.moveTo(x - .09, z - .105); opening.lineTo(x - .09, z + .105);
+      opening.lineTo(x + .09, z + .105); opening.lineTo(x + .09, z - .105); opening.closePath(); shape.holes.push(opening);
+    }
     const deck = new THREE.ExtrudeGeometry(shape, { depth: .1, bevelEnabled: false, curveSegments: 12 }); deck.rotateX(-Math.PI / 2);
     this.geometries.delete(this.deck.geometry); this.deck.geometry.dispose(); this.geometries.add(deck); this.deck.geometry = deck;
     this.deck.scale.setScalar(1); this.deck.position.set(center.x, top - .1, center.z);
-    this.rails.forEach((rail, i) => { rail.scale.z = size.z + .65; rail.position.set(center.x + (i ? 1 : -1) * (size.x / 2 + .24), top + .035, center.z); });
+    this.rails.forEach((rail, i) => { rail.scale.y = size.z + .3; rail.position.set(center.x + (i ? 1 : -1) * (size.x / 2 + .24), top - .08, center.z); });
     this.braces.forEach((rib, i) => { rib.scale.x = size.x + .42; rib.position.set(center.x, top - .14, bounds.min.z - .15 + i / 23 * (size.z + .3)); });
     if (this.hull) { this.hull.position.z = center.z; this.hull.scale.x = size.x / 2 + .4; this.hull.scale.z = size.z / 2 + .65; }
+    this.fitCradle(bounds, top);
     ['head', 'chest', 'pelvis', 'wrist_L', 'wrist_R', 'ankle_L', 'ankle_R'].forEach((name, i) => {
       const bone = subject.getObjectByName(name); if (!bone) return;
       const position = this.tray!.worldToLocal(bone.getWorldPosition(new THREE.Vector3()));
@@ -257,16 +301,11 @@ export class TrilogyEpilogueRenderer {
     this.update(newTrilogyEpilogue('reset'), 0);
   }
 
-  update(encounter: TrilogyEpilogueEncounter | undefined, elapsed: number, subject?: THREE.Object3D): void {
+  update(encounter: TrilogyEpilogueEncounter | undefined, _elapsed: number, subject?: THREE.Object3D): void {
     const state = encounter ?? newTrilogyEpilogue(this.kind); const phase = state.phase; const progress = trilogyEpilogueProgress(state);
     if (this.kind === 'ceasefire') {
       const retreat = phase === 'retreat' ? progress : ['message_ready', 'running', 'announcement', 'embrace', 'done'].includes(phase) ? 1 : 0;
-      this.sentinels.forEach((sentinel, i) => {
-        const row = Math.floor(i / 6), column = i % 6;
-        sentinel.visible = retreat < .995; sentinel.position.set((column - 2.5) * 5.4 + row % 2 * 1.8,
-          9 + row * 4 + retreat * (27 + row * 5), -48 - row * 5 - retreat * (22 + row * 6));
-        sentinel.rotation.set(-.25 - retreat * .65, Math.PI + Math.sin(elapsed * 1.4 + i) * .2, Math.sin(elapsed * 2 + i) * .08);
-      });
+      this.sentinels?.update(state);
       const beacon = [...this.lights][0]; if (beacon) beacon.intensity = retreat * 420;
     } else if (this.kind === 'neo_carried' && this.barge && this.tray) {
       const pose = neoCarryPose(state);
@@ -318,6 +357,7 @@ export class TrilogyEpilogueRenderer {
 
   dispose(): void {
     this.park?.dispose();
+    this.sentinels?.dispose();
     this.group.removeFromParent(); this.group.clear(); this.geometries.forEach(value => value.dispose());
     this.materials.forEach(value => value.dispose()); this.lights.forEach(value => value.dispose());
     this.textures.forEach(value => value.dispose());

@@ -64,7 +64,7 @@ test('Niobe drives Hammer with crew, save restore, failure retry and a dock hand
   }
   assert.equal(flight.phase, 'arrived'); assert.equal(h.world.agents.get('morpheus')!.currentLocation, scene.set);
   h.advance(); assert.equal(h.state().step, scene.steps.length);
-  h.command('next'); assert.equal(h.state().scene, 'm3_dock_battle'); assert.equal(h.state().hammer, undefined);
+  h.command('next'); assert.equal(h.state().scene, 'm3_diggers'); assert.equal(h.state().hammer, undefined);
   state = h.state(); state.scene = scene.id; state.actor = scene.actor; state.step = 2; state.hammer = { ...newHammerFlight(), hull: 1, speed: 35, x: 9 };
   h.players.possess('p', 'niobe', h.tick()); h.actor().currentLocation = scene.set;
   h.sandbox.life.film.driveFrame(h.actor(), { throttle: 1, steer: 1, brake: false }, .1, h.tick());

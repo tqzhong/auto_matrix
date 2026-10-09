@@ -16,6 +16,17 @@ export const TRUCKS = {
 export type TruckRescueRole = 'morpheus' | 'keymaker' | 'neo';
 export interface TruckRoot { x: number; y: number; z: number; yaw: number }
 
+export const TRUCK_ROAD = { speed: 24, approach: 3, drop: (4.5 + Math.sqrt(4.5 ** 2 + 320)) / 16, landing: .4, bridgeHeight: 16.6 } as const;
+export interface TruckRoad {
+  truck: { x: number; z: number };
+  elapsed: number;
+  bridgeZ: number;
+  phase: 'approach' | 'dropping' | 'landing' | 'ready';
+  checkpoint: { morpheus: TruckRoot; keymaker: TruckRoot; health: number };
+  paused?: string;
+  unavailable?: string;
+}
+
 export interface TruckEncounter {
   phase: 'duel' | 'collision' | 'rescue' | 'rescued' | 'failed';
   elapsed: number;
@@ -26,6 +37,33 @@ export interface TruckEncounter {
   starts?: Record<TruckRescueRole, TruckRoot>;
   // Old mid-flight saves acquire roots at their saved clock, without rewinding.
   startElapsed?: number;
+  // Only new, completed motorcycle handoffs use the continuous freeway.
+  road?: TruckRoad;
+  weapons?: import('./truck-weapons.js').TruckWeapons;
+  hood?: import('./truck-hood.js').TruckHood;
+}
+
+export function newTruckRoad(truck: { x: number; z: number }, morpheus: TruckRoot, keymaker: TruckRoot, health: number): TruckRoad {
+  return { truck: { ...truck }, elapsed: 0, bridgeZ: truck.z + TRUCK_ROAD.speed * (TRUCK_ROAD.approach + TRUCK_ROAD.drop) + .3,
+    phase: 'approach', checkpoint: { morpheus: { ...morpheus }, keymaker: { ...keymaker }, health } };
+}
+
+/** Convert the legacy truck's forward direction to the handoff truck's direction. */
+export function truckRoadPoint<T extends { x: number; z: number; yaw?: number }>(road: TruckRoad | undefined, point: T): T {
+  return road ? { ...point, x: road.truck.x - (point.x - TRUCKS.morpheus.x), z: road.truck.z - (point.z - TRUCKS.morpheus.z),
+    ...(point.yaw === undefined ? {} : { yaw: point.yaw + Math.PI }) } : { ...point };
+}
+
+export function truckRoadRoot(road: TruckRoad, role: 'keymaker' | 'agent_johnson'): TruckRoot {
+  if (role === 'keymaker') {
+    const t = Math.max(0, Math.min(1, road.elapsed / TRUCK_ROAD.approach));
+    const start = road.checkpoint.keymaker;
+    return { x: road.truck.x + mix(start.x, 1.3, t), y: TRUCKS.roof.height,
+      z: road.truck.z + mix(start.z, -10.2, t), yaw: road.elapsed === 0 ? start.yaw : road.phase === 'ready' ? 0 : Math.PI };
+  }
+  const drop = Math.max(0, Math.min(TRUCK_ROAD.drop, road.elapsed - TRUCK_ROAD.approach));
+  return { x: road.truck.x, y: Math.max(TRUCKS.roof.height, TRUCK_ROAD.bridgeHeight + 4.5 * drop - 8 * drop * drop),
+    z: drop < TRUCK_ROAD.drop ? road.bridgeZ - 6.3 - 1.5 * smooth(drop, 0, .22) : road.truck.z - 7.5, yaw: 0 };
 }
 
 const smooth = (time: number, start: number, end: number) => {
@@ -35,14 +73,31 @@ const smooth = (time: number, start: number, end: number) => {
 const mix = (a: number, b: number, t: number) => a + (b - a) * t;
 const angle = (a: number, b: number, t: number) => a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * t;
 
-export function truckApproachPose(elapsed: number): TruckRoot {
+export function truckApproachPose(elapsed: number, road?: TruckRoad): TruckRoot {
   const progress = Math.max(0, Math.min(1, (elapsed - 5.5) / (TRUCKS.collisionSeconds - 5.5)));
-  return { x: TRUCKS.roof.x, y: 23 - progress * 12, z: -58 + progress * 91, yaw: 0 };
+  return truckRoadPoint(road, { x: TRUCKS.roof.x, y: 23 - progress * 12, z: -58 + progress * 91, yaw: 0 });
 }
 
 export function truckRescuePose(encounter: TruckEncounter, role: TruckRescueRole): TruckRoot & {
   approach: number; hold: number; flight: number; landing: number; airborne: number; tumble: number;
 } {
+  if (encounter.road) {
+    const road = encounter.road;
+    const inverse = (root: TruckRoot) => ({ ...root, x: TRUCKS.morpheus.x - (root.x - road.truck.x),
+      z: TRUCKS.morpheus.z - (root.z - road.truck.z), yaw: root.yaw - Math.PI });
+    const starts = encounter.starts && Object.fromEntries(Object.entries(encounter.starts).map(([role, root]) => [role, inverse(root)])) as TruckEncounter['starts'];
+    const origin = encounter.origin && { x: TRUCKS.morpheus.x - (encounter.origin.x - road.truck.x), z: TRUCKS.morpheus.z - (encounter.origin.z - road.truck.z) };
+    const pose = truckRescuePose({ ...encounter, road: undefined, starts, origin }, role);
+    // On the continuous highway, carry both passengers below the solid overpasses.
+    let lift = pose.flight < 1 ? 5 * Math.sin(Math.PI * pose.flight) : 0;
+    if (encounter.starts && (encounter.startElapsed ?? 0) > 0) {
+      const restoredAt = encounter.startElapsed!, elapsed = Math.max(0, Math.min(TRUCKS.rescueSeconds, encounter.rescueElapsed ?? 0));
+      const anchor = smooth(restoredAt, TRUCKS.liftSeconds, TRUCKS.rescueSeconds);
+      const savedLift = anchor < 1 ? 5 * Math.sin(Math.PI * anchor) : 0;
+      lift = elapsed <= restoredAt ? 0 : lift - savedLift * (1 - smooth(elapsed, restoredAt, Math.min(TRUCKS.rescueSeconds, restoredAt + .6)));
+    }
+    return truckRoadPoint(road, { ...pose, y: pose.y - lift });
+  }
   const elapsed = Math.max(0, Math.min(TRUCKS.rescueSeconds, encounter.rescueElapsed ?? 0));
   if (encounter.starts && (encounter.startElapsed ?? 0) > 0) {
     const restoredAt = encounter.startElapsed!;

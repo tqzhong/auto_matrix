@@ -12,6 +12,7 @@ export const FILM_CONSEQUENCES: Record<string, Record<string, FilmFate>> = {
   m3_maggie_discovery: { maggie: 'dead' },
   m3_oracle_absorbed: { oracle: 'assimilated', sati: 'assimilated', seraph: 'assimilated' },
   m3_bane: { bane: 'dead' },
+  m3_upper_digger: { charra: 'dead' },
   m3_dock_battle: { charra: 'dead', mifune: 'dead' },
   m3_farewell: { trinity: 'dead' },
   m3_surrender: { smith: 'dead', oracle: 'alive', sati: 'alive', seraph: 'alive' },
@@ -23,6 +24,7 @@ export function filmCharacterFates(journey: FilmJourney): Record<string, FilmFat
   for (const [scene, changes] of Object.entries(FILM_CONSEQUENCES)) {
     if (journey.completed.includes(scene)) Object.assign(fates, changes);
   }
+  if (journey.upperDigger?.charraDead) fates.charra = 'dead';
   if (journey.ambushEscape?.mouseDead) fates.mouse = 'dead';
   if (journey.scene === 'm3_surrender' && smithOracleRestored(journey.smithFinale))
     Object.assign(fates, FILM_CONSEQUENCES.m3_surrender);

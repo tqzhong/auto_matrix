@@ -55,15 +55,17 @@ test('the machine collective requires Neo to hold his ground before it hears the
   for (let i = 0; i < 200 && pact.phase !== 'terms'; i++) {
     pact = stepDeusPact(pact, true, .1); phases.add(pact.phase);
   }
-  assert.deepEqual([...phases], ['swarm', 'forming', 'warning', 'terms']);
+  assert.deepEqual([...phases], ['swarm', 'forming', 'warning', 'challenge', 'question', 'terms']);
   assert.ok(pact.resolve >= DEUS_PACT.resolveSeconds);
   const warning = deusPactPose({ ...pact, phase: 'warning', elapsed: DEUS_PACT.seconds.warning * .7 });
   assert.ok(warning.face > .95 && warning.brace > .4 && warning.seated < .01);
 });
 
 test('the pact stops Zion before Neo consents to the physical connection, and resumes exact saves', () => {
-  const h = game(); const previous = FILM_SCENE_BY_ID.m3_farewell; const scene = FILM_SCENE_BY_ID.m3_deus;
+  const h = game(); const previous = FILM_SCENE_BY_ID.m3_temple_breach; const scene = FILM_SCENE_BY_ID.m3_deus;
   const state = h.state(); state.scene = previous.id; state.actor = previous.actor; state.step = previous.steps.length;
+  state.templeBreach = { phase: 'done', elapsed: 0 }; state.completed.push(previous.id);
+  h.players.possess('p', previous.actor, h.tick());
   h.actor().currentLocation = previous.set; h.actor().isInMatrix = false;
   h.command('next');
   assert.equal(state.scene, scene.id); assert.equal(state.deus?.phase, 'approach');
@@ -78,13 +80,13 @@ test('the pact stops Zion before Neo consents to the physical connection, and re
   h.frame(155, false); assert.equal(state.deus?.phase, 'failed');
   assert.match(h.command('retry'), /谈判平台/); assert.equal(state.deus?.phase, 'ready');
 
-  h.command('act'); h.frame(240, true);
+  h.command('act'); h.frame(400, true);
   assert.equal(state.deus?.phase, 'terms'); assert.equal(state.step, 2);
   assert.ok(h.actor().currentAction?.parameters.deusPact, 'Neo keeps a saved negotiation pose');
   h.command('reflect:care');
   assert.equal(state.step, 3); assert.equal(state.deus?.phase, 'pact');
   assert.equal(h.sandbox.state.neoLife!.choices.machine_pact, 'peace');
-  assert.match(state.lastText, /停止|暂缓/);
+  assert.match(state.lastText, /停止|暂缓|暂停进攻/);
 
   assert.match(h.command('act'), /连接座/); assert.equal(state.deus?.phase, 'seating');
   h.frame(80, false); assert.equal(state.deus?.phase, 'cabling');
@@ -93,6 +95,11 @@ test('the pact stops Zion before Neo consents to the physical connection, and re
   h.sandbox.restore(saved); h.players.possess('p', 'neo', h.tick());
   assert.deepEqual(h.state().deus, beat); assert.ok(h.actor().currentAction?.parameters.deusPact);
 
+  h.frame(25, true); assert.equal(h.state().deus?.phase, 'assurance');
+  h.command('act'); assert.equal(h.state().deus?.phase, 'assurance', 'G cannot skip the failure-risk exchange');
+  assert.equal(h.state().deus?.consent, 0, 'the question comes before neck consent');
+  const supported = deusPactPose(h.state().deus!);
+  assert.equal(supported.seated, 1); assert.equal(supported.cables, 1);
   h.frame(160, false); assert.equal(h.state().deus?.phase, 'consent');
   h.frame(50, false); assert.equal(h.state().deus?.phase, 'consent', 'the neck probe waits for player consent');
   h.frame(50, true); assert.equal(h.state().deus?.phase, 'connecting');

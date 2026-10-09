@@ -1,7 +1,8 @@
-import { truthRoot, truckRescuePose } from '@auto_matrix/shared';
-import { cabinSeat, constructGuidePose, podRescuePose, reloadedPose, type CatchGesture, type ReloadedGesture } from '@auto_matrix/shared';
+import { TRUCK_ROAD, truthRoot, truckRescuePose, FREEWAY_HANDOFF, truckHoodBack, MOBIL_STATION, trainmanVaultLift } from '@auto_matrix/shared';
+import { trinityRelaySeat, cabinSeat, constructGuidePose, podRescuePose, reloadedPose, type CatchGesture, type ReloadedGesture } from '@auto_matrix/shared';
 import { deusPactLocked, deusPactPose, farewellPose, smithFinaleLocked, smithFinalePose, trilogyEpilogueLocked } from '@auto_matrix/shared';
 import { mirrorEntryPose } from '@auto_matrix/shared';
+import { HEL_DOOR_PUSH, helDanceDoorGrip } from '@auto_matrix/shared';
 import { MELEE_COMBO, COMBO_WINDOW, COMBAT_SKILLS, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED, PILL_TIMING, MIRROR_TIMING, lobbyPose, governmentPose, airRescuePose, matrixEscapePose, theOnePose, recoveryCrewPose, type CombatSkillId, type AwakeningPose, type AwakeningReveal, type RecoveryCrewGesture, type OfficePhone, pillPose, lafayetteWelcomePose, oracleVisitPose, betrayalPose, rescuePose, type PillGesture, type InterrogationGesture, type LafayetteWelcomeGesture, type TrainingGesture, type OracleVisitGesture, type BetrayalGesture, type RescueGesture, type RescueLoadout, type LobbyGesture, type GovernmentRescueGesture, type AirRescueGesture, type MatrixEscapeGesture, type TheOneGesture } from '@auto_matrix/shared';
 
 export interface MotionInput {
@@ -28,8 +29,18 @@ export interface MotionInput {
   shot?: number;
   crouching?: boolean;
   seated?: boolean;
+  sourceBriefing?: import('@auto_matrix/shared').SourceBriefingGesture;
+  trinityRelay?: import('@auto_matrix/shared').TrinityRelayGesture;
+  trinityTerminal?: import('@auto_matrix/shared').TrinityTerminal;
+  sourcePortal?: import('@auto_matrix/shared').SourcePortalGesture;
+  architect?: import('@auto_matrix/shared').ArchitectGesture;
+  primaryDemolition?: import('@auto_matrix/shared').PrimaryDemolition;
   floorSeated?: boolean;
   riding?: boolean;
+  freewayPickup?: import('@auto_matrix/shared').FreewayPickup & { role: 'trinity' | 'keymaker'; walking: number };
+  freewayDriver?: import('@auto_matrix/shared').FreewayPickup;
+  freewayHandoff?: import('@auto_matrix/shared').FreewayHandoff & { role: import('@auto_matrix/shared').FreewayHandoffRole };
+  freewayRide?: import('@auto_matrix/shared').FreewayRide & { role: 'trinity' | 'keymaker' };
   climbing?: number;
   performance?: AwakeningPose;
   podWake?: number;
@@ -65,6 +76,16 @@ export interface MotionInput {
   oracleReception?: import('@auto_matrix/shared').OracleReceptionGesture;
   oracleWaiting?: import('@auto_matrix/shared').OracleWaitingGesture;
   oracleRestored?: boolean;
+  oracleRevolutions?: boolean;
+  oracleRequest?: import('@auto_matrix/shared').OracleRequestGesture;
+  oracleLast?: import('@auto_matrix/shared').OracleLastGesture;
+  oracleAbsorption?: import('@auto_matrix/shared').OracleAbsorptionGesture;
+  trainmanChase?: import('@auto_matrix/shared').TrainmanChaseGesture;
+  helGarage?: import('@auto_matrix/shared').HelGarageGesture;
+  helElevator?: import('@auto_matrix/shared').HelElevatorGesture;
+  helDoorPush?: import('@auto_matrix/shared').HelDanceDoorEncounter;
+  helDisarm?: import('@auto_matrix/shared').HelDisarmGesture;
+  helBreakout?: import('@auto_matrix/shared').HelBreakoutGesture;
   betrayal?: BetrayalGesture;
   rescue?: RescueGesture;
   lobbyEntry?: LobbyGesture;
@@ -81,19 +102,36 @@ export interface MotionInput {
   mountainFlight?: import('@auto_matrix/shared').MountainFlight;
   truckFlight?: boolean;
   truckPassenger?: boolean;
+  truckRoad?: import('@auto_matrix/shared').TruckRoad & { role: string };
+  truckWeapons?: import('@auto_matrix/shared').TruckWeaponGesture;
+  truckHood?: import('@auto_matrix/shared').TruckHoodGesture;
   truckRescue?: import('@auto_matrix/shared').TruckEncounter & { role: import('@auto_matrix/shared').TruckRescueRole };
   persephone?: import('@auto_matrix/shared').PersephoneEncounter & { role: 'neo' | 'persephone' };
   farewell?: import('@auto_matrix/shared').FarewellGesture;
   farewellOutfit?: 'neo' | 'trinity';
+  nebCrew?: import('@auto_matrix/shared').NebCrewRole;
+  signal?: import('@auto_matrix/shared').TunnelEncounter;
   deusPact?: import('@auto_matrix/shared').DeusPactGesture;
   smithFinale?: import('@auto_matrix/shared').SmithFinaleGesture;
   epilogue?: import('@auto_matrix/shared').TrilogyEpilogueGesture;
+  diggers?: import('@auto_matrix/shared').DiggerGesture;
+  upperDigger?: import('@auto_matrix/shared').UpperDiggerGesture;
   dockReload?: import('@auto_matrix/shared').DockReloadGesture;
   dockLastStand?: import('@auto_matrix/shared').DockLastStandGesture;
   dockGate?: import('@auto_matrix/shared').DockGate;
+  dockGunnery?: { yaw: number; pitch: number };
+  apuDriving?: boolean;
+  dockEmp?: number;
+  empOperator?: import('@auto_matrix/shared').EmpOperator;
+  dockReunion?: import('@auto_matrix/shared').DockReunionGesture;
+  dockDeparture?: import('@auto_matrix/shared').DockDepartureGesture;
+  dockBriefing?: import('@auto_matrix/shared').DockBriefingGesture;
+  dockEvacuation?: import('@auto_matrix/shared').DockEvacuationGesture;
+  shaftSeal?: import('@auto_matrix/shared').ShaftSealGesture;
+  templeDefense?: import('@auto_matrix/shared').TempleDefenseGesture;
   dockGateCover?: import('@auto_matrix/shared').DockGate;
   parkOutfit?: boolean;
-  weaponStyle?: RescueLoadout | 'hel_pistol' | 'gas_launcher';
+  weaponStyle?: RescueLoadout | 'hel_pistol' | 'gas_launcher' | 'revolver';
   helDanceDoor?: number;
   aimPitch?: number;
   clubClothes?: boolean;
@@ -114,6 +152,12 @@ export interface MotionInput {
   vase?: number;
   realWorld?: boolean;
   glasses?: boolean;
+  mobilStation?: boolean;
+  mobilSeat?: number;
+  mobilRefusal?: { role: 'neo' | 'trainman'; elapsed: number };
+  mobilFamily?: import('@auto_matrix/shared').MobilFamilyGesture;
+  mobilLuggage?: import('@auto_matrix/shared').MobilLuggageGesture;
+  mobilReunion?: import('@auto_matrix/shared').MobilReunionGesture;
 }
 
 export interface MotionState {
@@ -164,7 +208,279 @@ export function solveLeg(z: number, height: number): { hip: number; knee: number
 }
 
 export function advanceMotion(state: MotionState, input: MotionInput, delta: number) {
+  if (input.helDisarm || input.helBreakout) {
+    Object.assign(state, newMotion(), { time: input.helDisarm?.elapsed ?? input.helBreakout!.elapsed });
+    return { legs: [0, 1].map(() => ({ hip: 0, knee: 0, ankle: 0 })),
+      arms: [0, 1].map(i => ({ shoulder: -.04, elbow: -.2, outward: (i ? 1 : -1) * .12, grip: .1 })),
+      hipHeight: 1.98, twist: 0, lean: 0, sway: 0, lunge: 0, roll: 0, headTurn: 0,
+      moving: 0, run: 0, airborne: 0, coat: 0, impact: 0, landing: 0 };
+  }
+  if (input.helDoorPush) {
+    const door = input.helDoorPush, grip = helDanceDoorGrip(door), moving = door.elapsed < HEL_DOOR_PUSH.approach
+      ? Math.sin(Math.PI * door.elapsed / HEL_DOOR_PUSH.approach) * .65 : 0, cycle = door.elapsed / HEL_DOOR_PUSH.approach;
+    Object.assign(state, newMotion(), { time: door.elapsed, phase: cycle });
+    return { legs: [0, 1].map(i => { const foot = footTrajectory(cycle + i * .5, .4 * moving, .57);
+      return solveLeg(foot.z + (i ? -.1 : .1) * grip, 1.82 - foot.lift * .2 * moving); }),
+      arms: [0, 1].map(i => ({ shoulder: -.04 - Math.sin((cycle + i * .5) * Math.PI * 2) * moving * .35,
+        elbow: -.2, outward: (i ? 1 : -1) * .12, grip: 0 })),
+      hipHeight: 1.98, twist: 0, lean: grip * .12 + moving * .08, sway: 0, lunge: 0, roll: 0,
+      headTurn: 0, moving, run: 0, airborne: 0, coat: moving * .3, impact: 0, landing: 0 };
+  }
+  if (input.helElevator) {
+    const h = input.helElevator, walk = h.role === 'trinity' && h.phase === 'descending' && h.elapsed > .85 && h.elapsed < 2.1;
+    const moving = walk ? .65 : 0, cycle = h.elapsed * 2;
+    Object.assign(state, newMotion(), { time: h.elapsed, phase: cycle });
+    return { legs: [0, 1].map(i => {
+      const foot = footTrajectory(cycle + i * .5, .36 * moving, .57);
+      return solveLeg(foot.z, 1.82 - foot.lift * .2 * moving);
+    }), arms: [0, 1].map(i => ({ shoulder: -.04 - Math.sin((cycle + i * .5) * Math.PI * 2) * moving * .35,
+      elbow: -.2, outward: (i ? 1 : -1) * .12, grip: .12 })),
+      hipHeight: 1.98, twist: 0, lean: moving * .08, sway: 0, lunge: 0, roll: 0,
+      headTurn: h.role === 'seraph' && h.phase === 'descending' ? -.2 : 0, moving, run: 0, airborne: 0, coat: moving * .3, impact: 0, landing: 0 };
+  }
+  if (input.helGarage) {
+    const h = input.helGarage, guard = h.role === 'guard';
+    const relaxed = ['ready', 'talking'].includes(h.phase) || !guard && h.phase === 'opening' && (h.role !== 'trinity' || h.door >= .24);
+    const free = ['ready', 'cleared', 'exit', 'done'].includes(h.phase) && !guard;
+    const moving = free || h.phase === 'talking' ? clamp(input.speed / PLAYER_WALK_SPEED) : 0;
+    const cycle = h.age * input.speed / 4.2, strike = h.phase === 'striking' ? Math.sin(Math.PI * clamp(h.elapsed / .85)) : 0;
+    const fall = h.phase === 'falling' ? smooth(clamp(h.elapsed / 1.5)) : ['cleared', 'opening', 'exit', 'done'].includes(h.phase) ? 1 : 0;
+    Object.assign(state, newMotion(), { time: h.age, phase: cycle, speed: input.speed });
+    return { legs: [0, 1].map(i => {
+      const foot = footTrajectory(cycle + i * .5, .48 * moving, .57);
+      return solveLeg(foot.z + (free ? 0 : i ? -.25 : .27), 1.82 - foot.lift * .25 * moving - (free ? 0 : .1));
+    }), arms: [0, 1].map(i => ({ shoulder: relaxed ? -.05 - Math.sin((cycle + i * .5) * Math.PI * 2) * moving * .4 : -.3 - (free ? Math.sin((cycle + i * .5) * Math.PI * 2) * moving * .5 : .75),
+      elbow: relaxed ? -.2 - moving * .4 : free ? -.35 - moving * .6 : -1, outward: (i ? 1 : -1) * .16, grip: free || relaxed ? .15 : .8 })),
+      hipHeight: 1.98 - (free ? 0 : .1), twist: guard ? strike * -.16 : strike * (h.hits % 2 ? -.24 : .24),
+      lean: moving * .12 + (guard ? -strike * .22 - fall * .1 : strike * .15), sway: 0, lunge: 0, roll: 0,
+      headTurn: 0, moving, run: clamp(input.speed / PLAYER_RUN_SPEED), airborne: 0, coat: moving * .45 + strike * .15, impact: 0, landing: 0 };
+  }
+  if (input.trainmanChase) {
+    const chase = input.trainmanChase, seated = chase.role === 'trainman' ? chase.phase === 'ready' ? 1 : chase.phase === 'confronting' ? 1 - smooth(clamp(chase.elapsed / 1.4)) : 0 : 0;
+    const vault = chase.vault === undefined ? 0 : Math.sin(Math.PI * chase.vault), brace = chase.bracing ? Math.sin(clamp(chase.elapsed / 3.2) * Math.PI) : 0;
+    const plant = chase.vault === undefined ? 0 : smooth(clamp(chase.vault / .22)) * (1 - smooth(clamp((chase.vault - .28) / .4)));
+    const air = chase.vault === undefined ? 0 : trainmanVaultLift(chase.vault) / 2.3;
+    const dodge = chase.dodging === undefined ? 0 : Math.sin(Math.PI * clamp(chase.dodging));
+    const moving = seated || chase.vault !== undefined || chase.bracing ? 0 : clamp(input.speed / PLAYER_WALK_SPEED), cycle = (chase.stride ?? chase.age * input.speed) / 4.2;
+    const hipHeight = 1.98 - seated * .53 - vault * .4 - plant * .5 - brace * .15 - dodge * .65;
+    Object.assign(state, newMotion(), { time: chase.age, phase: cycle, speed: input.speed, seated });
+    return { legs: [0, 1].map(i => {
+      const foot = footTrajectory(cycle + i * .5, .48 * moving, .57);
+      return solveLeg(seated ? .98 : foot.z - plant * .35 - air * (i ? .55 : .3), hipHeight - .16 - foot.lift * .3 * moving - air * .55);
+    }), arms: [0, 1].map(i => ({ shoulder: seated ? -.36 : -Math.sin((cycle + i * .5) * Math.PI * 2) * moving * .5 - vault * (i ? -.65 : 1.5) - brace * 1.7,
+      elbow: seated ? -.95 : -.35 - moving * .6 - vault * .4, outward: (i ? 1 : -1) * (.12 + vault * .18), grip: brace ? .85 : .12 })),
+      hipHeight, twist: 0, lean: moving * .14 + brace * .16 + vault * .4, sway: dodge * .6, lunge: 0, roll: dodge * -.2,
+      headTurn: 0, moving, run: clamp(input.speed / PLAYER_RUN_SPEED), airborne: vault, coat: moving * .6 + vault * .4, impact: 0, landing: 0 };
+  }
+  if (input.mobilLuggage && (input.mobilLuggage.luggage.phase === 'lifting'
+    || input.mobilLuggage.role === 'rama_kandra' && input.mobilLuggage.luggage.phase === 'retrieving' && input.mobilLuggage.luggage.elapsed >= (input.mobilLuggage.luggage.walk ?? .7))) {
+    Object.assign(state, newMotion());
+    return { legs: [0, 1].map(() => ({ hip: 0, knee: 0, ankle: 0 })),
+      arms: [0, 1].map(i => ({ shoulder: .03, elbow: .08, outward: (i ? 1 : -1) * .14, grip: 0 })),
+      hipHeight: 1.98, twist: 0, lean: 0, sway: 0, lunge: 0, roll: 0, headTurn: 0,
+      moving: 0, run: 0, airborne: 0, coat: 0, impact: 0, landing: 0 };
+  }
+  if (input.mobilStation && (input.seated || input.mobilSeat !== undefined && (input.mobilSeat > 0 || input.speed === 0))) {
+    const seated = input.mobilSeat ?? 1, hipHeight = mix(1.98, MOBIL_STATION.bench.seat + .2, seated);
+    Object.assign(state, newMotion(), { seated });
+    return { legs: [0, 1].map(() => solveLeg(.75 * seated, hipHeight - .16)),
+      arms: [0, 1].map(i => ({ shoulder: -.43 * seated, elbow: -.82 * seated, outward: (i ? 1 : -1) * .12, grip: .05 })),
+      hipHeight, twist: 0, lean: Math.sin(seated * Math.PI) * .16, sway: 0, lunge: 0, roll: 0, headTurn: 0,
+      moving: 0, run: 0, airborne: 0, coat: 0, impact: 0, landing: 0 };
+  }
+  if (input.oracleAbsorption) {
+    const h = input.oracleAbsorption, moving = h.role === 'sati' || h.role === 'seraph' ? h.escape > 0 && h.escape < 23
+      : h.role === 'oracle' ? h.escape > 24 && h.escape < 27
+        : h.invasion > 0 && h.invasion < 14 || h.invasion > 18.2 && h.invasion < 20.7 || h.invasion > 22.4 && h.invasion < 25.4;
+    const clock = h.farewell + h.escape + h.invasion + h.elapsed, cycle = clock * .38;
+    Object.assign(state, newMotion(), { time: clock, phase: cycle });
+    return { legs: [0, 1].map(i => { const foot = footTrajectory(cycle + i * .5, moving ? .55 : 0, .57); return solveLeg(foot.z, 1.86 - (moving ? foot.lift * .06 : 0)); }),
+      arms: [0, 1].map(i => ({ shoulder: -.05, elbow: -.2, outward: (i ? 1 : -1) * .14, grip: .12 })),
+      hipHeight: 1.98, twist: 0, lean: 0, sway: 0, lunge: 0, roll: 0, headTurn: 0,
+      moving: moving ? .35 : 0, run: 0, airborne: 0, coat: 0, impact: 0, landing: 0 };
+  }
+  if (input.oracleLast) {
+    const h = input.oracleLast, walking = h.role === 'sati' ? h.arrival > 5 && h.arrival < 28
+      : h.role === 'oracle' && (h.arrival > 4 && h.arrival < 8.8 || h.arrival > 12.8 && h.arrival < 17.6);
+    const moving = walking ? .3 : 0, cycle = h.arrival * .32;
+    Object.assign(state, newMotion(), { time: h.arrival + h.elapsed, phase: cycle });
+    return { legs: [0, 1].map(i => {
+      const foot = footTrajectory(cycle + i * .5, .48 * moving, .57);
+      return solveLeg(foot.z, 1.86 - foot.lift * .14 * moving);
+    }), arms: [0, 1].map(i => ({ shoulder: -.05, elbow: -.2, outward: (i ? 1 : -1) * .14, grip: .15 })),
+      hipHeight: 1.98, twist: 0, lean: 0, sway: 0, lunge: 0, roll: 0, headTurn: 0,
+      moving, run: 0, airborne: 0, coat: 0, impact: 0, landing: 0 };
+  }
+  if (input.mobilRefusal || input.mobilFamily && !input.seated || input.mobilReunion?.reunion.phase === 'embracing') {
+    Object.assign(state, newMotion(), { time: input.mobilRefusal?.elapsed ?? input.mobilReunion?.reunion.elapsed ?? input.mobilFamily!.elapsed });
+    return { legs: [0, 1].map(() => ({ hip: 0, knee: 0, ankle: 0 })),
+      arms: [0, 1].map(i => ({ shoulder: .03, elbow: .08, outward: (i ? 1 : -1) * .14, grip: 0 })),
+      hipHeight: 1.98, twist: 0, lean: 0, sway: 0, lunge: 0, roll: 0, headTurn: 0,
+      moving: 0, run: 0, airborne: 0, coat: 0, impact: 0, landing: 0 };
+  }
+  if (input.signal) {
+    Object.assign(state, newMotion(), { time: input.signal.age ?? 0 });
+    return { legs: [0, 1].map(() => ({ hip: 0, knee: 0, ankle: 0 })),
+      arms: [0, 1].map(i => ({ shoulder: .03, elbow: .08, outward: (i ? 1 : -1) * .14, grip: 0 })),
+      hipHeight: 1.98, twist: 0, lean: 0, sway: 0, lunge: 0, roll: 0, headTurn: 0,
+      moving: 0, run: 0, airborne: 0, coat: 0, impact: 0, landing: 0 };
+  }
   let dt = clamp(delta, 0, .1);
+  if (input.primaryDemolition?.blast && ['countdown', 'blast'].includes(input.primaryDemolition.blast.phase)) {
+    const blast = input.primaryDemolition.blast;
+    Object.assign(state, newMotion(), { time: blast.elapsed });
+    const brace = blast.phase === 'blast' ? Math.sin(Math.min(1, blast.elapsed / 1.5) * Math.PI) * .08 : 0;
+    return { legs: [0, 1].map(() => ({ hip: -.025, knee: .055, ankle: -.03 })),
+      arms: [0, 1].map(i => ({ shoulder: -.08 - brace, elbow: -.2, outward: (i ? 1 : -1) * .1, grip: .08 })),
+      hipHeight: 1.98, twist: 0, lean: brace, sway: 0, lunge: 0, roll: 0, headTurn: 0,
+      moving: 0, run: 0, airborne: 0, coat: 0, impact: 0, landing: 0 };
+  }
+  if (input.primaryDemolition?.phase === 'mounting') {
+    Object.assign(state, newMotion(), { time: input.primaryDemolition.elapsed });
+    return { legs: [0, 1].map(() => ({ hip: -.025, knee: .055, ankle: -.03 })),
+      arms: [0, 1].map(i => ({ shoulder: -.5, elbow: -.8, outward: (i ? 1 : -1) * .13, grip: .12 })),
+      hipHeight: 1.98, twist: 0, lean: 0, sway: 0, lunge: 0, roll: 0, headTurn: 0,
+      moving: 0, run: 0, airborne: 0, coat: 0, impact: 0, landing: 0 };
+  }
+  if (input.architect) {
+    const seated = input.architect.role === 'architect';
+    Object.assign(state, newMotion(), { time: input.architect.elapsed, seated: seated ? 1 : 0 });
+    return { legs: [0, 1].map(() => ({ hip: 0, knee: .1, ankle: 0 })),
+      arms: [0, 1].map(i => ({ shoulder: -.15, elbow: -.32, outward: (i ? 1 : -1) * .12, grip: .08 })),
+      hipHeight: seated ? 1.48 : 1.98, twist: 0, lean: 0, sway: 0, lunge: 0, roll: 0, headTurn: 0,
+      moving: 0, run: 0, airborne: 0, coat: 0, impact: 0, landing: 0 };
+  }
+  if (input.sourcePortal) {
+    const s = input.sourcePortal, stride = s.phase === 'escaping' ? Math.sin(s.elapsed * 10) * .55 : 0;
+    Object.assign(state, newMotion(), { time: s.elapsed });
+    return { legs: [0, 1].map(i => ({ hip: (i ? 1 : -1) * stride, knee: .16 + Math.abs(stride), ankle: -.08 })),
+      arms: [0, 1].map(i => ({ shoulder: -.4 + (i ? 1 : -1) * stride, elbow: -.7, outward: (i ? 1 : -1) * .15, grip: .1 })),
+      hipHeight: 1.98, twist: 0, lean: s.phase === 'escaping' ? .2 : 0, sway: 0, lunge: 0, roll: 0, headTurn: 0,
+      moving: stride ? 1 : 0, run: stride ? .6 : 0, airborne: 0, coat: .1, impact: 0, landing: 0 };
+  }
+  if (input.trinityTerminal) {
+    Object.assign(state, newMotion(), { time: input.trinityTerminal.elapsed });
+    return { legs: [0, 1].map(() => ({ hip: -.025, knee: .055, ankle: -.03 })),
+      arms: [0, 1].map(i => ({ shoulder: -.5, elbow: -.7, outward: (i ? 1 : -1) * .1, grip: .08 })),
+      hipHeight: 1.98, twist: 0, lean: .14, sway: 0, lunge: 0, roll: 0, headTurn: 0,
+      moving: 0, run: 0, airborne: 0, coat: 0, impact: 0, landing: 0 };
+  }
+  if (input.trinityRelay && (input.trinityRelay.role === 'trinity' || input.trinityRelay.phase !== 'connecting' || input.trinityRelay.elapsed < 1.6 || input.trinityRelay.elapsed > 13.2)) {
+    const relay = input.trinityRelay, seated = trinityRelaySeat(relay);
+    Object.assign(state, newMotion(), { time: relay.elapsed, seated });
+    return { legs: [0, 1].map(() => ({ hip: -.025 - seated * 1.175, knee: .055 + seated * 1.245, ankle: -.03 - seated * .07 })),
+      arms: [0, 1].map(i => ({ shoulder: .05 - seated * .37, elbow: -.13 - seated * .97, outward: (i ? 1 : -1) * .16, grip: .1 })),
+      hipHeight: 1.98 - seated * .6, twist: 0, lean: seated * -.12, sway: 0, lunge: 0, roll: 0, headTurn: 0,
+      moving: 0, run: 0, airborne: 0, coat: 0, impact: 0, landing: 0 };
+  }
+  if (input.sourceBriefing) {
+    const briefing = input.sourceBriefing, seated = briefing.role === 'keymaker';
+    Object.assign(state, newMotion(), { time: briefing.elapsed, seated: seated ? 1 : 0 });
+    const speaking = !briefing.paused && !briefing.unavailable && (briefing.phase === 'hearing' && seated
+      || briefing.phase === 'captains' && (briefing.elapsed < 4 ? briefing.role === 'keymaker' : briefing.elapsed < 8 ? briefing.role === 'morpheus' : briefing.role === 'niobe'));
+    const beat = speaking ? .5 + .5 * Math.sin(briefing.elapsed * 1.7) : 0;
+    return { legs: [0, 1].map(() => ({ hip: seated ? -1.2 : -.025, knee: seated ? 1.3 : .055, ankle: seated ? -.1 : -.03 })),
+      arms: [0, 1].map(i => ({ shoulder: seated ? -.32 - beat * .16 : .05 - (i ? 0 : beat * .5), elbow: seated ? -1.1 : -.13 - (i ? 0 : beat * .45),
+        outward: (i ? 1 : -1) * (seated ? .16 : .09 + (i ? 0 : beat * .05)), grip: .1 })),
+      hipHeight: seated ? 1.38 : 1.98, twist: 0, lean: seated ? .02 : beat * .015, sway: 0, lunge: 0, roll: 0,
+      headTurn: seated ? Math.sin(briefing.elapsed * .6) * .025 : beat * .018, moving: 0, run: 0, airborne: 0, coat: 0, impact: 0, landing: 0 };
+  }
+  if (input.truckHood) {
+    const h = input.truckHood, driver = h.role === 'niobe' || h.role === 'ghost', morpheus = h.role === 'morpheus';
+    Object.assign(state, newMotion(), { time: h.total, seated: driver ? 1 : 0 });
+    const back = morpheus ? truckHoodBack(h) : 0;
+    const braced = morpheus && h.phase === 'impact' ? 1 - back : morpheus && h.phase === 'hood' ? 1 : morpheus && h.phase === 'passing' ? 1 - clamp(h.elapsed / .7) : 0;
+    const crouch = braced * 1.58 + (morpheus && h.phase === 'running' ? .35 : 0) + (morpheus && h.phase === 'landing' ? .6 * (1 - clamp(h.elapsed / .55)) : 0);
+    const flight = morpheus && h.phase === 'flight' ? 1 : 0, kick = flight * clamp((h.elapsed - .9) / .6);
+    const falling = morpheus && ['falling', 'slipping'].includes(h.phase) ? 1 : 0;
+    const stride = morpheus && h.phase === 'running' ? Math.sin(h.elapsed / .44 * Math.PI * 2) : 0;
+    return { legs: [0, 1].map(i => driver ? solveLeg(.9, .25) : ({ hip: -.2 - (i ? .3 : 1.2) * kick,
+        knee: .4 + (i ? 1.2 : -.3) * kick + crouch, ankle: -.2 })),
+      arms: [0, 1].map(i => ({ shoulder: driver ? -.9 : -.5 - falling * .65 - flight * .6 + (i ? -1 : 1) * stride * .5, elbow: driver ? -.8 : -.8,
+        outward: (i ? 1 : -1) * (falling || flight || back ? .9 : .25), grip: driver ? .8 : braced || falling ? .04 : .15 })),
+      hipHeight: driver ? .52 : 1.98 - crouch, twist: 0, lean: driver ? .12 : braced * 1.6 + (crouch - braced * 1.58) * .65 + flight * -.3,
+      sway: 0, lunge: 0, roll: morpheus && h.phase === 'kick' ? -.3 * Math.sin(Math.PI * clamp(h.elapsed / .75)) : 0,
+      headTurn: 0, moving: 0, run: 0, airborne: flight || falling, coat: flight || falling, impact: crouch, landing: crouch };
+  }
+  if (input.truckRoad?.role === 'niobe') {
+    Object.assign(state, newMotion(), { seated: 1 });
+    return { legs: [0, 1].map(() => solveLeg(.88, .22)),
+      arms: [0, 1].map(i => ({ shoulder: -.9, elbow: -.8, outward: (i ? 1 : -1) * .2, grip: 1 })),
+      hipHeight: .52, twist: 0, lean: .25, sway: 0, lunge: 0, roll: 0, headTurn: 0,
+      moving: 0, run: 0, airborne: 0, coat: 0, impact: 0, landing: 0 };
+  }
+  if (input.truckWeapons && input.truckWeapons.phase !== 'unarmed') {
+    const w = input.truckWeapons, johnson = w.role === 'agent_johnson';
+    Object.assign(state, newMotion(), { time: w.total });
+    const swing = w.phase === 'slash' ? Math.sin(Math.PI * clamp(w.elapsed / .65)) : 0;
+    const evade = johnson && w.phase === 'gun' && w.shotAt !== undefined ? Math.sin(Math.PI * clamp((w.total - w.shotAt) / .3)) : 0;
+    const counter = w.phase === 'counter' ? Math.sin(Math.PI * clamp(w.elapsed)) : 0;
+    return { legs: [0, 1].map(i => solveLeg(i ? -.25 : .25, 1.7)),
+      arms: [0, 1].map(i => ({ shoulder: -.7 - counter * .4, elbow: -1.1, outward: (i ? 1 : -1) * .15, grip: 1 })),
+      hipHeight: 1.83, twist: swing * (johnson ? -.4 : .3), lean: counter * .12, sway: evade * .18, lunge: 0, roll: evade * -.22,
+      headTurn: 0, moving: 0, run: 0, airborne: 0, coat: 0, impact: 0, landing: 0 };
+  }
+  if (input.truckRoad && ['keymaker', 'agent_johnson'].includes(input.truckRoad.role) && input.attack === undefined && !input.truckRescue && !input.truckWeapons) {
+    const road = input.truckRoad, keymaker = road.role === 'keymaker';
+    const walking = keymaker && road.elapsed < TRUCK_ROAD.approach ? 1 : 0;
+    const landing = keymaker ? 0 : Math.sin(Math.PI * clamp((road.elapsed - TRUCK_ROAD.approach - TRUCK_ROAD.drop) / TRUCK_ROAD.landing, 0, 1));
+    const dropping = !keymaker && road.phase === 'dropping' ? 1 : 0;
+    const cycle = road.elapsed * 1.5;
+    return { legs: [0, 1].map(i => { const foot = footTrajectory(cycle + i * .5, .6 * walking, .65);
+        return { hip: solveLeg(foot.z, 1.83 - foot.lift * .2).hip - dropping * .45 - landing * .7,
+          knee: solveLeg(foot.z, 1.83 - foot.lift * .2).knee + dropping * .7 + landing * 1.2, ankle: landing * -.4 }; }),
+      arms: [0, 1].map(i => ({ shoulder: -.3 - dropping * .7 - landing * .4 + Math.sin(cycle * Math.PI * 2 + i * Math.PI) * .3 * walking,
+        elbow: -.7, outward: (i ? 1 : -1) * (.15 + dropping * .2), grip: .8 })),
+      hipHeight: (keymaker ? 1.98 : 1.83) - landing * .5, twist: 0, lean: landing * .2, sway: 0, lunge: 0, roll: 0, headTurn: 0,
+      moving: walking, run: 0, airborne: dropping, coat: dropping, impact: landing, landing };
+  }
+  if (input.freewayHandoff && !input.freewayRide) {
+    const gesture = input.freewayHandoff;
+    Object.assign(state, newMotion(), { time: gesture.total });
+    const progress = clamp(gesture.elapsed / FREEWAY_HANDOFF.exit), distance = 2.9 * smooth(progress);
+    const walking = gesture.role === 'keymaker' && gesture.phase === 'departing' ? 6 * progress * (1 - progress) * 2.9 / FREEWAY_HANDOFF.exit / 2.3 : 0;
+    const legs = [0, 1].map(i => { const foot = footTrajectory(distance / 2.6 + i * .5, .6 * walking, .65);
+      return solveLeg(foot.z, 1.83 - foot.lift * .2 * walking); });
+    return { legs,
+      arms: [0, 1].map(i => ({ shoulder: -.35 + Math.sin(distance / 2.6 * Math.PI * 2 + i * Math.PI) * .3 * walking, elbow: -.7, outward: (i ? 1 : -1) * .15, grip: .8 })),
+      hipHeight: gesture.role === 'keymaker' ? 1.98 : 1.83, twist: 0, lean: 0, sway: 0, lunge: 0, roll: 0, headTurn: 0,
+      moving: walking, run: 0, airborne: Number(gesture.role === 'keymaker' && gesture.phase === 'lifting'), coat: 0, impact: 0, landing: 0 };
+  }
+  if (input.freewayRide) {
+    const ride = input.freewayRide;
+    Object.assign(state, newMotion(), { time: ride.elapsed, seated: 1 });
+    return { legs: [0, 1].map(() => solveLeg(.95, 1.22)),
+      arms: [0, 1].map(i => ({ shoulder: ride.role === 'trinity' ? -1.25 : -.85, elbow: -.65, outward: (i ? 1 : -1) * .13, grip: .8 })),
+      hipHeight: 1.38, twist: 0, lean: ride.role === 'trinity' ? 1.05 : .32, sway: 0, lunge: 0, roll: 0, headTurn: 0,
+      moving: 0, run: 0, airborne: 0, coat: 0, impact: 0, landing: 0 };
+  }
+  if (input.freewayDriver) {
+    Object.assign(state, newMotion(), { time: input.freewayDriver.total, seated: 1 });
+    return { legs: [0, 1].map(() => solveLeg(.95, 1.22)),
+      arms: [0, 1].map(i => ({ shoulder: -.9, elbow: -.65, outward: (i ? 1 : -1) * .16, grip: .8 })),
+      hipHeight: 1.38, twist: 0, lean: .2, sway: 0, lunge: 0, roll: 0, headTurn: 0,
+      moving: 0, run: 0, airborne: 0, coat: 0, impact: 0, landing: 0 };
+  }
+  if (input.freewayPickup) {
+    const pickup = input.freewayPickup;
+    const failedSeat = pickup.phase === 'failed' && pickup.failedBike && pickup.failedRoots
+      && Math.abs(pickup.failedRoots[pickup.role].y - pickup.failedBike.y - .9) < .001;
+    const mount = pickup.phase === 'mounting' ? smooth(pickup.elapsed / 2.4) : failedSeat || ['mounted', 'shooting', 'launching', 'merging', 'done'].includes(pickup.phase) ? 1 : 0;
+    const air = pickup.phase === 'jumping' ? 1 : 0, walking = clamp(pickup.walking / 3), cycle = pickup.stride / 3.2 * Math.PI * 2;
+    Object.assign(state, newMotion(), { time: pickup.total, phase: pickup.stride / 3.2, speed: pickup.walking, airborne: air, seated: mount });
+    const legs = [0, 1].map(i => {
+      const stride = Math.sin(cycle + i * Math.PI) * .55 * walking;
+      const standing = solveLeg(stride, 1.83 - Math.max(0, Math.cos(cycle + i * Math.PI)) * .16 * walking);
+      const sitting = solveLeg(.95, 1.22);
+      return { hip: mix(mix(standing.hip, -.65 + i * .16, air), sitting.hip, mount),
+        knee: mix(mix(standing.knee, 1.05, air), sitting.knee, mount), ankle: mix(mix(standing.ankle, -.15, air), sitting.ankle, mount) };
+    });
+    const arms = [0, 1].map(i => ({ shoulder: mix(mix(Math.cos(cycle + i * Math.PI) * .3 * walking, -1.65, air), pickup.role === 'trinity' ? -1.25 : -.85, mount),
+      elbow: mix(mix(-.18, -.75, air), -.65, mount), outward: (i ? 1 : -1) * mix(.075 + air * .25, .13, mount), grip: mount * .8 }));
+    if (pickup.phase === 'key') { arms[0].shoulder = -1.05; arms[0].elbow = -.95; arms[0].grip = .45; }
+    return { legs, arms, hipHeight: 1.98 - mount * .6, twist: Math.sin(cycle) * .04 * walking, lean: mount * (pickup.role === 'trinity' ? 1.05 : .32),
+      sway: 0, lunge: 0, roll: 0, headTurn: 0, moving: walking, run: 0, airborne: air, coat: air * .2, impact: 0, landing: 0 };
+  }
   if (input.epilogue?.kind === 'neo_carried' && input.epilogue.role === 'neo') {
     Object.assign(state, newMotion(), { time: input.epilogue.total });
     return { legs: [0, 1].map(() => ({ hip: 0, knee: .04, ankle: 0 })),
@@ -259,12 +575,13 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     state.attackAge = state.hitAge = state.skillAge = state.shotAge = 10;
     state.hitPause = 0; state.skill = undefined;
   }
-  if (deusLocked || smithLocked) { state.speed = 0; state.turn = 0; state.airborne = 0; state.phase = 0; }
+  if (deusLocked || smithLocked) { state.speed = smithFinale?.[input.smithFinale!.role].speed ?? 0; state.turn = 0; state.airborne = 0; state.phase = 0; }
   if (smithLocked) { state.seated = 0; state.combo = 0; }
   const run = smooth(clamp((state.speed - PLAYER_WALK_SPEED) / (PLAYER_RUN_SPEED - PLAYER_WALK_SPEED)));
   const stride = mix(.84, 1.22, run);
   const stance = mix(.6, .42, run);
   if (input.grounded) state.phase += speed * dt / (2 * stride / stance);
+  if (smithLocked) state.phase = (smithFinale![input.smithFinale!.role].travel ?? 0) / (2 * stride / stance);
   if (welcomeWalking && input.welcome) state.phase = input.welcome.elapsed * welcomeSpeed / (2 * stride / stance);
   if (exiting) state.phase = (input.pills!.elapsed - PILL_TIMING.stand) * 1.1;
   if (input.cabin?.kind === 'core' && input.cabin.role === 'neo') state.phase = -Math.min(.95, input.cabin.elapsed) * .85;
@@ -627,7 +944,7 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     }
   }
   const catching = input.catch;
-  const catchFlying = catching && ['flight', 'ascent'].includes(catching.phase);
+  const catchFlying = catching && ['departing', 'flight', 'catching', 'ascent'].includes(catching.phase);
   if (catchFlying) for (let i = 0; i < 2; i++) {
     arms[i].shoulder = catching.role === 'trinity' ? -.7 : catching.phase === 'ascent' ? -1.1 : -1.9;
     arms[i].elbow = catching.phase === 'ascent' ? -.85 : -.25;
@@ -635,10 +952,10 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     arms[i].grip = catching.role === 'neo' ? .75 : .1;
     legs[i].hip = i ? -.42 : .15; legs[i].knee = i ? .9 : .25;
   }
-  if (catching?.role === 'trinity' && ['extract_ready', 'extracting', 'pulse', 'done'].includes(catching.phase)) for (let i = 0; i < 2; i++) {
+  if (catching?.role === 'trinity' && (['landing', 'extract_ready', 'extracting', 'pulse', 'reviving', 'done'].includes(catching.phase) || catching.phase === 'failed' && catching.checkpoint === 'pulse')) for (let i = 0; i < 2; i++) {
     arms[i].shoulder = -.55; arms[i].elbow = -.25; legs[i].hip = i ? -.18 : .12; legs[i].knee = i ? .38 : .22;
   }
-  if (catching?.role === 'neo' && ['extracting', 'pulse'].includes(catching.phase)) for (let i = 0; i < 2; i++) {
+  if (catching?.role === 'neo' && ['extract_ready', 'extracting', 'pulse', 'reviving'].includes(catching.phase)) for (let i = 0; i < 2; i++) {
     arms[i].shoulder = catching.phase === 'pulse' ? i ? -.55 : -1.25 : -1.25;
     arms[i].elbow = catching.phase === 'pulse' ? i ? -.45 : -.25 : -1.15;
     arms[i].outward = (i ? 1 : -1) * .3; arms[i].grip = .6;
@@ -685,7 +1002,9 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   if (smithFinale && input.smithFinale) {
     const neo = input.smithFinale.role === 'neo';
     const counter = input.smithFinale.phase === 'ground_counter' || input.smithFinale.phase === 'shockwave';
-    const attack = counter && !neo || neo && input.smithFinale.phase === 'assault' ? 0 : smithFinale.strike;
+    const pit = input.smithFinale.phase.startsWith('pit_') || input.smithFinale.failedPhase?.startsWith('pit_');
+    const attack = pit ? neo ? smithFinale.facePunch : smithFinale.smithPunch
+      : counter && !neo || neo && input.smithFinale.phase === 'assault' ? 0 : smithFinale.strike;
     for (let i = 0; i < 2; i++) {
       arms[i].shoulder = mix(arms[i].shoulder, -.82, smithFinale.guard);
       arms[i].elbow = mix(arms[i].elbow, -1.28, smithFinale.guard);
@@ -704,13 +1023,21 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
         legs[i].knee = mix(legs[i].knee, i ? 1.48 : 1.1, smithFinale.fallen);
       }
     }
-    const strikingArm = neo ? counter && input.smithFinale.hits % 2 === 0 ? 1 : 0 : 1;
+    const strikingArm = neo ? counter && input.smithFinale.hits % 2 === 0 ? 1 : 0
+      : pit ? input.smithFinale.phase === 'pit_retaliation' && input.smithFinale.elapsed > 1.25 && input.smithFinale.elapsed < 1.9 ? 1 : 0 : 1;
     arms[strikingArm].shoulder = mix(arms[strikingArm].shoulder, -1.55, attack);
     arms[strikingArm].elbow = mix(arms[strikingArm].elbow, -.08, attack);
     arms[strikingArm].grip = mix(arms[strikingArm].grip, 1, attack);
-    if (neo && counter) {
+    if (neo && counter || pit) {
       arms[1 - strikingArm].shoulder = mix(arms[1 - strikingArm].shoulder, -.25, attack);
       arms[1 - strikingArm].elbow = mix(arms[1 - strikingArm].elbow, -1.85, attack);
+    }
+    if (neo && smithFinale.kick) {
+      legs[0].hip = mix(legs[0].hip, -1.6, smithFinale.kick);
+      legs[0].knee = mix(legs[0].knee, .12, smithFinale.kick);
+      legs[0].ankle = mix(legs[0].ankle, .2, smithFinale.kick);
+      arms[0].shoulder = mix(arms[0].shoulder, -.6, smithFinale.kick);
+      arms[1].shoulder = mix(arms[1].shoulder, .35, smithFinale.kick);
     }
     if (smithFinale.surrender) for (let i = 0; i < 2; i++) {
       arms[i].shoulder = mix(arms[i].shoulder, -.08, smithFinale.surrender);
@@ -792,8 +1119,11 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const farewellLean = farewell && input.farewell ? input.farewell.role === 'neo' ? farewell.neo.kneel * .22 : .68 * farewell.trinity.recline : 0;
   const farewellRoll = farewell && input.farewell?.role === 'trinity' ? -.18 * farewell.trinity.recline : 0;
   const deusLean = deus ? deus.seated * .32 - deus.brace * .08 + deus.pulse * .18 : 0;
-  const smithLean = smithFinale ? smithFinale.fallen * 1.25 - smithFinale.flight * .62 + smithFinale.impact * .3 + smithFinale.purge * .22 : 0;
-  const smithRoll = smithFinale ? -smithFinale.dodge * .78 + smithFinale.fallen * .82 + smithFinale.flight * Math.sin(input.smithFinale!.total * 1.7) * .09 : 0;
+  const smithLean = smithFinale ? smithFinale.fallen * 1.25 - smithFinale.flight * .62 + smithFinale.impact * .3 + smithFinale.purge * .22
+    - (input.smithFinale?.role === 'smith' ? smithFinale.stagger * .22 : smithFinale.facePunch * .12) : 0;
+  const smithRoll = smithFinale ? -(input.smithFinale?.role === 'smith' && (input.smithFinale.phase.startsWith('pit_') || input.smithFinale.failedPhase?.startsWith('pit_'))
+    ? smithFinale.stagger * .18 : smithFinale.dodge * .78)
+    + smithFinale.fallen * .82 + smithFinale.flight * Math.sin(input.smithFinale!.total * 1.7) * .09 : 0;
   const epilogueLean = input.epilogue?.role === 'kid' && input.epilogue.phase === 'running' ? -.18 : 0;
   const theOneRoll = theOne ? theOne.wound * .58 + theOne.fallen * 1.08 + theOne.burst * (.18 + Math.sin(input.theOne!.elapsed * 11) * .12) + theOne.flight * Math.sin(input.theOne!.elapsed * .8) * .08 : 0;
   return { legs, arms, hipHeight, twist, lean: boardingCrouch * .18 + run * .12 + state.landing * .12 + state.airborne * .04 + extension * .10 - kick * .27 - recoil * .35 + (input.crouching ? .26 : 0) + (input.riding ? .2 : 0) + doorPush * .38 + oracleLean + betrayalLean + rescueLean + lobbyLean + governmentLean + airRescueLean + escapeLean + theOneLean + hotelLean + farewellLean + deusLean + smithLean + epilogueLean + (recoveryCrew?.support ?? 0) * .1 - roofLeap * .45 - (reloaded?.falling ?? 0) * .85 + (reloaded?.dreamAgent ?? 0) * 2 + (reloaded?.down ?? 0) * 1.25 - (reloaded?.flight ?? 0) * .65 - (catchFlying && catching?.role === 'neo' ? .45 : 0) + (catching?.role === 'trinity' && catching.phase === 'flight' ? .25 : 0),

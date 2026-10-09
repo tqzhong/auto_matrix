@@ -1,12 +1,19 @@
+import { DiggersRenderer } from './DiggersRenderer.js';
+import { ApuModel } from './ApuModel.js';
+import { batchStaticGeometry } from './StaticGeometry.js';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { APU_ROUTE, DOCK_GUNNERY, ZION_OBSTACLES, dockPowerOffline, type FilmJourney } from '@auto_matrix/shared';
+import { APU_RIG, APU_ROUTE, DOCK_GUNNERY, ZION_OBSTACLES, dockPowerOffline, type FilmJourney, type Vector3 } from '@auto_matrix/shared';
 import { dockLastStandPose } from '@auto_matrix/shared';
 import { DockLastStandRenderer } from './DockLastStandRenderer.js';
 import { DockGateRenderer } from './DockGateRenderer.js';
 import { DockGateRescueRenderer } from './DockGateRescueRenderer.js';
+import { DockGunneryRenderer } from './DockGunneryRenderer.js';
+import { dockGunneryAim } from '@auto_matrix/shared';
 import { dockGateAim, dockGatePose } from '@auto_matrix/shared';
 import { DOCK_RELOAD, dockReloadBox } from '@auto_matrix/shared';
+import { TempleDefenseRenderer } from './TempleDefenseRenderer.js';
+import { ZionCrowdRenderer } from './ZionCrowdRenderer.js';
 
 /** Six authored Zion interiors share rock, metal and service-light materials, not a generic cave layout. */
 export class ZionHomecomingRenderer {
@@ -22,9 +29,17 @@ export class ZionHomecomingRenderer {
   private messageDoor?: THREE.Group;
   private departureGifts?: { charm: THREE.Group; spoon: THREE.Group; engines: THREE.MeshStandardMaterial };
   private apu?: THREE.Group;
+  private apuModel?: ApuModel;
+  private diggers?: DiggersRenderer;
+  private dockEast?: THREE.Group;
+  private dockRoof?: THREE.Group;
+  private dockLamps: THREE.PointLight[] = [];
+  private culledLights: THREE.PointLight[] = [];
+  private lampMaterials?: [THREE.MeshStandardMaterial, THREE.MeshStandardMaterial];
   private lastStand?: DockLastStandRenderer;
   private gate?: DockGateRenderer;
   private gateRescue?: DockGateRescueRenderer;
+  private gunnery?: DockGunneryRenderer;
   private cannons: THREE.Group[] = [];
   private sentinelDives: THREE.Group[] = [];
   private ammoCart?: THREE.Group;
@@ -33,13 +48,9 @@ export class ZionHomecomingRenderer {
   private reloadCable?: THREE.Mesh;
   private reloadLatch?: THREE.Mesh;
   private muzzleFlashes: THREE.Mesh[] = [];
-  private lastGunneryShots = 0;
-  private muzzleUntil = 0;
   private dockElectrical?: { lights: [THREE.Light, number][]; lit: THREE.MeshStandardMaterial; engines: THREE.MeshStandardMaterial };
-  private templeBulkhead?: THREE.Group;
-  private templeLevers: THREE.Group[] = [];
-  private templeLift = 10;
-  private crowd?: { bodies: THREE.InstancedMesh; heads: THREE.InstancedMesh; arms: THREE.InstancedMesh; poses: [number, number, number][] };
+  private templeDefense?: TempleDefenseRenderer;
+  private crowd?: ZionCrowdRenderer;
   private disposed = false;
   constructor(root: THREE.Group, readonly set: string) {
     this.group.name = 'zion-homecoming-set'; root.add(this.group); this.group.add(this.static, this.moving);
@@ -50,6 +61,7 @@ export class ZionHomecomingRenderer {
     if (set === 'film_zion_bedroom') this.room();
     if (set === 'film_zion_engineering') this.engineering();
     this.batch();
+    for (const group of [this.dockEast, this.dockRoof]) if (group) batchStaticGeometry(group, new Set()).forEach(g => this.geometries.add(g));
   }
   private material(color: number, roughness = .85, metalness = .04, emissive = 0, power = 0): THREE.MeshStandardMaterial {
     const mat = new THREE.MeshStandardMaterial({ color, roughness, metalness, emissive, emissiveIntensity: power });
@@ -81,10 +93,11 @@ export class ZionHomecomingRenderer {
     const mesh = this.mesh(new THREE.CylinderGeometry(radius, radius, delta.length(), 10), mat, parent);
     mesh.position.copy(start).addScaledVector(delta, .5); mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), delta.normalize()); return mesh;
   }
-  private glow(color: number, power: number, radius: number, x: number, y: number, z: number): void {
+  private glow(color: number, power: number, radius: number, x: number, y: number, z: number): THREE.PointLight {
     const light = new THREE.PointLight(color, power, radius, 2); light.position.set(x, y, z); this.group.add(light); this.lights.add(light);
+    return light;
   }
-  private sign(text: string, x: number, y: number, z: number, w: number, h = 1.7, rotate = 0): void {
+  private sign(text: string, x: number, y: number, z: number, w: number, h = 1.7, rotate = 0, parent: THREE.Object3D = this.static): void {
     const material = this.material(0xd5d0af, .8);
     if (typeof document !== 'undefined') {
       const canvas = document.createElement('canvas'); canvas.width = 1024; canvas.height = 256;
@@ -93,16 +106,22 @@ export class ZionHomecomingRenderer {
       ctx.fillStyle = '#d4d0b4'; ctx.font = 'bold 68px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, 512, 130, 960);
       const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; this.textures.add(texture); material.map = texture;
     }
-    const panel = this.mesh(new THREE.PlaneGeometry(w, h), material); panel.position.set(x, y, z); panel.rotation.y = rotate;
+    const panel = this.mesh(new THREE.PlaneGeometry(w, h), material, parent); panel.position.set(x, y, z); panel.rotation.y = rotate;
   }
   private rockShell(width: number, depth: number, height: number, stone: THREE.Material): void {
-    const dark = this.material(0x251f1b, 1); this.box(dark, 0, -.5, 0, width, 1, depth);
+    const dark = this.material(0x251f1b, 1); this.box(dark, 0, this.set === 'film_zion_temple' ? -.56 : -.5, 0, width, 1, depth);
     for (let side of [-1, 1]) for (let i = 0; i < 28; i++) {
       const z = -depth / 2 + 2 + i * (depth - 4) / 27;
       const uneven = Math.sin(i * 2.7 + side) * 2.1;
-      const wall = this.mesh(new THREE.DodecahedronGeometry(4 + i % 4, 0), stone);
+      const parent = side > 0 && this.dockEast ? this.dockEast : this.static;
+      const wall = this.mesh(new THREE.DodecahedronGeometry(4 + i % 4, 0), stone, parent);
       wall.position.set(side * (width / 2 - 2), 4 + i % 5 * 2, z + uneven); wall.scale.set(.85, 1.8 + i % 3 * .25, 1.4); wall.rotation.set(i * .27, i * .49, i * .13);
-      if (height >= 20 && i % 2 === 0) { const high = this.mesh(new THREE.DodecahedronGeometry(5 + i % 3, 0), stone);
+      if (this.set === 'film_zion_hangar' && side < 0 && z > -38 && z < 49) {
+        wall.geometry.computeBoundingBox(); wall.updateMatrix();
+        const edge = wall.geometry.boundingBox!.clone().applyMatrix4(wall.matrix).max.x;
+        wall.position.x -= Math.max(0, edge + 48.4);
+      }
+      if (height >= 20 && i % 2 === 0) { const high = this.mesh(new THREE.DodecahedronGeometry(5 + i % 3, 0), stone, parent);
         high.position.set(side * (width / 2 - 7 - i % 3), height - 8 + Math.sin(i) * 2, z); high.scale.set(1.5, .8, 1.6); high.rotation.z = i * .39; }
     }
     for (let i = 0; i < 13; i++) {
@@ -113,9 +132,11 @@ export class ZionHomecomingRenderer {
     }
   }
   private lamp(x: number, z: number, y = 7, strength = 110): void {
-    const rim = this.material(0x36332c, .45, .7); const ember = this.material(0xffc278, .4, .05, 0xff934a, 2.5);
+    const [rim, ember] = this.lampMaterials ??= [this.material(0x36332c, .45, .7), this.material(0xffc278, .4, .05, 0xff934a, 2.5)];
     this.pipe(rim, [x, y + 2, z], [x, y, z], .12); this.cylinder(rim, x, y, z, .9, .4);
-    this.box(ember, x, y - .28, z, 1.15, .08, 1.15); this.glow(0xffbd83, strength, 23, x, y - .45, z);
+    this.box(ember, x, y - .28, z, 1.15, .08, 1.15);
+    const light = this.glow(0xffbd83, strength, 23, x, y - .45, z);
+    if (this.set === 'film_zion_hangar') this.dockLamps.push(light);
   }
   private grating(width: number, depth: number, steel: THREE.Material, zCenter = 0): void {
     const black = this.material(0x171c1c, .7, .55); this.box(black, 0, -.28, zCenter, width, .18, depth);
@@ -123,12 +144,15 @@ export class ZionHomecomingRenderer {
     for (let x = -width / 2; x <= width / 2; x += 1.4) this.box(steel, x, -.1, zCenter, .06, .06, depth);
   }
   private obstacles(mat: THREE.Material): void {
-    for (const o of ZION_OBSTACLES[this.set] ?? []) this.box(mat, o.x, o.height / 2, o.z, o.width, o.height, o.depth);
+    for (const o of ZION_OBSTACLES[this.set] ?? []) this.box(mat, o.x, o.height / 2, o.z, o.width, o.height, o.depth,
+      this.set === 'film_zion_hangar' && o.x > 0 ? this.moving.getObjectByName('zion-drill-cargo')! : this.static);
   }
   private dock(): void {
     const stone = this.surface('damaged_plaster', 0x706252, 6), metal = this.surface('metal_plate', 0x6d7770, 3);
     const iron = this.material(0x252e2d, .48, .68), lit = this.material(0xcebda0, .4, .25, 0xeaba72, 2);
     const engine = this.material(0x96c1a6, .28, .34, 0x7dc2aa, 1.2);
+    this.dockEast = new THREE.Group(); this.dockEast.name = 'zion-dock-east-shell'; this.moving.add(this.dockEast);
+    this.dockRoof = new THREE.Group(); this.dockRoof.name = 'zion-dock-roof'; this.moving.add(this.dockRoof);
     this.rockShell(108, 138, 65, stone); this.grating(24, 108, metal, 3);
     for (const side of [-1, 1]) {
       this.box(iron, side * 12, 1.2, 3, .6, 2.4, 108);
@@ -144,38 +168,26 @@ export class ZionHomecomingRenderer {
       this.box(engine, side * 5.4, -.5, 13.3, 2.6, .18, .1, ship);
       this.box(iron, side * 7.5, 2.8, -4, 10, .7, 5, ship);
     }
-    for (let i = 0; i < 8; i++) { const z = -48 + i * 12; this.pipe(metal, [-43, 34, z], [43, 34, z], .28); this.pipe(iron, [-43, 34, z], [-12, 2, z], .18); this.pipe(iron, [43, 34, z], [12, 2, z], .18); }
+    for (let i = 0; i < 8; i++) {
+      const z = -48 + i * 12; this.pipe(metal, [-43, 34, z], [43, 34, z], .28, this.dockRoof); this.pipe(iron, [-43, 34, z], [-12, 2, z], .18, this.dockRoof);
+      this.pipe(iron, [43, 34, z], [12, 2, z], .18, this.dockRoof);
+    }
     this.gate = new DockGateRenderer(this.moving, metal, iron);
     this.glow(0xb9cee0, 2500, 48, 29, 38, -50); this.glow(0xe7a75f, 1200, 36, 25, 13, -52);
-    this.sign('GATE 03', -10, 28, -61.6, 8, 2.5); this.sign('NEBUCHADNEZZAR', 18, 5, -11, 10, 1.5, -Math.PI / 2);
-    this.obstacles(iron); for (const x of [-24, 18]) for (let i = 0; i < 3; i++) this.box(metal, x, 2 + i * 1.5, -18 + i * 3, 7, .2, 4);
-    this.box(metal, 11.5, -.04, 17, 8, .18, 3.2, this.static, 'zion-ship-gangway');
-    this.apu = new THREE.Group(); this.apu.name = 'zion-kid-apu'; this.moving.add(this.apu);
-    const armor = this.surface('metal_plate', 0x69746b, 1), joint = this.material(0x343d39, .58, .65);
-    this.box(joint, 0, 2.05, .4, 3.1, .3, 2.1, this.apu, 'apu-seat-platform');
-    this.box(joint, 0, 2.28, .14, 1.25, .14, .65, this.apu, 'apu-seat-pan');
-    this.box(joint, 0, 3.25, .42, 1.25, 1.6, .14, this.apu, 'apu-seat-back');
-    this.box(armor, 0, 6.8, 1.1, 4.8, .55, .7, this.apu, 'apu-upper-rail');
-    this.box(joint, 0, 3.35, -.85, 2.1, .35, .36, this.apu, 'apu-control-panel');
-    for (const side of [-1, 1]) {
-      this.pipe(joint, [side * .62, 3.32, -1], [side * .62, 3.88, -1], .065, this.apu).name = `apu-control-${side}`;
-      this.pipe(joint, [side * 1.8, 2.6, .2], [side * 1.8, 5.4, .2], .15, this.apu);
-      this.pipe(metal, [side * 1.8, 3.1, .2], [side * 1.8, 4.9, .2], .08, this.apu);
-      this.box(armor, side * 2.2, 5.2, .75, .72, 3.6, 1.1, this.apu);
-      this.box(armor, side * 1.55, 1.2, .4, 1.45, 2.4, 2.2, this.apu);
-      this.box(joint, side * 1.55, 2.5, .45, 1.4, 1, 1.7, this.apu);
-      this.box(armor, side * 1.55, .16, -.55, 2.25, .35, 3, this.apu);
-      const cannon = new THREE.Group(); cannon.name = `apu-cannon-${side}`; cannon.position.set(side * 3.1, 5.7, -.4); this.apu.add(cannon); this.cannons.push(cannon);
-      this.box(joint, side * 3.1, 5.7, -.4, 1.5, 1.5, 2.4, this.apu, `apu-cannon-mount-${side}`);
-      this.pipe(armor, [0, -.1, -.1], [0, -.1, -4.8], .48, cannon);
-      this.pipe(armor, [side * .5, .2, -.1], [side * .5, .2, -4.8], .23, cannon);
-      this.box(lit, 0, -.15, -4.8, .65, .13, .1, cannon);
-      const flash = this.mesh(new THREE.SphereGeometry(.48, 10, 8), lit, cannon);
-      flash.name = `apu-muzzle-${side}`;
-      flash.position.set(0, -.1, -5.15); flash.visible = false; this.muzzleFlashes.push(flash);
+    const cargo = new THREE.Group(); cargo.name = 'zion-drill-cargo'; this.moving.add(cargo);
+    this.sign('GATE 03', -10, 28, -61.6, 8, 2.5); this.sign('NEBUCHADNEZZAR', 18, 5, -11, 10, 1.5, -Math.PI / 2, cargo);
+    this.obstacles(iron); for (const x of [-24, 18]) for (let i = 0; i < 3; i++) {
+      const height = 2 + i * 1.5, z = -18 + i * 3, parent = x > 0 ? cargo : this.static;
+      this.box(metal, x, height, z, 7, .2, 4, parent);
+      for (const side of [-1, 1]) for (const end of [-1, 1]) this.box(iron, x + side * 3.15, height / 2, z + end * 1.6, .2, height, .2, parent);
     }
+    this.box(metal, 11.5, -.04, 17, 8, .18, 3.2, this.static, 'zion-ship-gangway');
+    const armor = this.surface('metal_plate', 0x69746b, 1), joint = this.material(0x343d39, .58, .65);
+    this.apuModel = new ApuModel(this.moving, lit);
+    this.apu = this.apuModel.group; this.cannons = this.apuModel.cannons; this.muzzleFlashes = this.apuModel.flashes;
     this.lastStand = new DockLastStandRenderer(this.moving);
     this.gateRescue = new DockGateRescueRenderer(this.moving);
+    this.gunnery = new DockGunneryRenderer(this.moving);
     this.ammoCart = new THREE.Group(); this.ammoCart.name = 'zion-ammo-cart'; this.moving.add(this.ammoCart);
     this.box(iron, 0, .85, 0, 2.4, .3, 3.3, this.ammoCart);
     for (const side of [-1, 1]) {
@@ -225,7 +237,7 @@ export class ZionHomecomingRenderer {
     const warning = this.material(0xe67955, .45, .15, 0xff5836, 3.4);
     const sentinelShell = this.material(0x58665f, .35, .65);
     for (const dive of APU_ROUTE.dives) {
-      const sentinel = new THREE.Group(); sentinel.name = `zion-dock-sentinel-${this.sentinelDives.length + 1}`;
+      const sentinel = new THREE.Group(); sentinel.name = `zion-gate-sentinel-${this.sentinelDives.length + 1}`;
       sentinel.position.set(dive.x, 11, dive.z); this.moving.add(sentinel);
       const body = this.mesh(new THREE.IcosahedronGeometry(1.15, 1), sentinelShell, sentinel); body.scale.set(1.35, .7, 1.5);
       this.mesh(new THREE.SphereGeometry(.45, 12, 8), warning, sentinel).position.set(0, -.05, -1.45);
@@ -294,36 +306,9 @@ export class ZionHomecomingRenderer {
     }
     this.box(cloth, 0, .12, -17, 10, .06, 55);
     this.box(iron, 0, 3.1, -41, 10.3, .35, 4.5, this.static, 'zion-assembly-rostrum');
-    this.templeBulkhead = new THREE.Group(); this.templeBulkhead.name = 'zion-temple-bulkhead';
-    this.templeBulkhead.position.y = this.templeLift; this.moving.add(this.templeBulkhead);
-    this.box(iron, 0, 5.2, -52, 14, 10, .9, this.templeBulkhead);
-    for (const x of [-8, 8]) {
-      const lever = new THREE.Group(); lever.name = `zion-temple-latch-${x < 0 ? 'left' : 'right'}`;
-      lever.position.set(x, 2.5, -45); this.moving.add(lever);
-      this.box(iron, 0, -.8, 0, .9, 1.5, .8, lever);
-      this.pipe(amber, [0, 0, 0], [0, 1.2, 0], .13, lever);
-      this.templeLevers.push(lever);
-    }
+    this.templeDefense = new TempleDefenseRenderer(this.moving);
     for (const x of [-17, 17]) { this.cylinder(iron, x, 1.4, -23, 2.1, 2.8); this.cylinder(cloth, x, 2.85, -23, 2.15, .16); }
-    // Background residents dance only after the speech. Instancing keeps the crowd inexpensive.
-    const poses: [number, number, number][] = [];
-    for (let row = 0; row < 6; row++) for (let col = 0; col < 16; col++) {
-      const x = -39 + col * 5.1 + Math.sin(row * 11 + col) * .9, z = 13 + row * 6 + Math.cos(col * 4) * .8;
-      if (Math.abs(x) >= 5) poses.push([x, z, 3.2 + (row * 17 + col * 13) % 6 * .13]);
-    }
-    const bodies = new THREE.InstancedMesh(new THREE.CylinderGeometry(.43, .72, 1, 7), this.material(0xb6aaa0, 1), poses.length);
-    const heads = new THREE.InstancedMesh(new THREE.SphereGeometry(.36, 8, 7), this.material(0xffffff, 1), poses.length);
-    const arms = new THREE.InstancedMesh(new THREE.CylinderGeometry(.12, .15, 1, 6), this.material(0xb8a98f, 1), poses.length * 2);
-    for (const [mesh, count] of [[bodies, poses.length], [heads, poses.length], [arms, poses.length * 2]] as const) {
-      mesh.userData.dynamic = true; mesh.castShadow = true; mesh.receiveShadow = true; this.moving.add(mesh);
-      this.geometries.add(mesh.geometry);
-      for (let i = 0; i < count; i++) {
-        const palette = mesh === heads ? [0xa87e65, 0x634c3d, 0xd2a687] : [0x635347, 0x8c755d, 0x3d423c];
-        mesh.setColorAt(i, new THREE.Color(palette[(i * 7 + Math.floor(i / 16)) % 3]));
-      }
-    }
-    this.crowd = { bodies, heads, arms, poses }; this.update(undefined, 0);
-    this.sign('TEMPLE / ZION', 0, 9, -52, 13);
+    this.crowd = new ZionCrowdRenderer(this.moving);
     this.glow(0xf4b369, 1500, 90, 0, 34, -30); this.glow(0xe6a476, 1100, 75, 0, 22, 34);
   }
   private room(): void {
@@ -388,21 +373,34 @@ export class ZionHomecomingRenderer {
     const live = new Set<THREE.BufferGeometry>(); this.group.traverse(object => { if (object instanceof THREE.Mesh) live.add(object.geometry); });
     for (const geometry of this.geometries) if (!live.has(geometry)) { geometry.dispose(); this.geometries.delete(geometry); }
   }
-  update(journey: FilmJourney | undefined, elapsed: number): void {
+  update(journey: FilmJourney | undefined, elapsed: number, cameraPosition?: Vector3, camera?: THREE.Camera): void {
+    for (const light of this.culledLights) light.visible = true;
+    this.culledLights.length = 0;
+    if (this.dockLamps.length) {
+      const viewer = cameraPosition ? this.group.worldToLocal(new THREE.Vector3().copy(cameraPosition)) : new THREE.Vector3();
+      // The emissive fixtures remain visible. Only nearby bulbs need a full PBR light loop.
+      const nearest = [...this.dockLamps].sort((a, b) => a.position.distanceToSquared(viewer) - b.position.distanceToSquared(viewer)).slice(0, 6);
+      for (const light of this.dockLamps) light.visible = nearest.includes(light);
+    }
     const ship = this.moving.getObjectByName('zion-docked-nebuchadnezzar'); if (ship) {
       ship.position.y = 11 + Math.sin(elapsed * .45) * .24;
-      ship.visible = !journey || !['m3_dock_battle', 'm3_gate', 'm3_emp'].includes(journey.scene);
+      ship.visible = !journey || !['m3_diggers', 'm3_upper_digger', 'm3_dock_battle', 'm3_gate', 'm3_emp', 'm3_dock_reunion'].includes(journey.scene);
     }
     if (this.apu) {
-      const battle = !journey?.visiting && ['m3_dock_battle', 'm3_gate'].includes(journey?.scene ?? '');
+      const battle = !journey?.visiting && ['m3_dock_battle', 'm3_gate', 'm3_emp'].includes(journey?.scene ?? '');
       this.apu.visible = battle;
-      this.apu.position.set(journey?.scene === 'm3_gate' ? journey.apu?.x ?? 0 : 0, .9, journey?.scene === 'm3_gate' ? journey.apu?.z ?? APU_ROUTE.start : APU_ROUTE.start);
-      this.apu.rotation.set(0, 0, journey?.apu?.phase === 'riding' ? Math.sin(elapsed * 11) * .015 : 0);
-      if (journey?.scene === 'm3_gate' && journey.dockGate) {
+      this.apu.position.set(journey?.scene === 'm3_gate' ? journey.apu?.x ?? 0 : 0, APU_RIG.floor, journey?.scene === 'm3_gate' ? journey.apu?.z ?? APU_ROUTE.start : APU_ROUTE.start);
+      this.apu.rotation.set(0, 0, 0);
+      if (['m3_gate', 'm3_emp'].includes(journey?.scene ?? '') && journey?.dockGate) {
         const pose = dockGatePose(journey.dockGate);
         this.apu.position.set(pose.x, pose.y, pose.z); this.apu.rotation.set(pose.pitch, 0, pose.roll);
       }
     }
+    if (journey?.diggers && !this.diggers && this.set === 'film_zion_hangar') this.diggers = new DiggersRenderer(this.moving);
+    this.diggers?.update(journey);
+    if (this.dockEast) this.dockEast.visible = !this.diggers?.group.visible;
+    if (this.dockRoof) this.dockRoof.visible = !this.diggers?.group.visible;
+    const drillCargo = this.moving.getObjectByName('zion-drill-cargo'); if (drillCargo) drillCargo.visible = !this.diggers?.group.visible;
     this.lastStand?.update(journey);
     this.gateRescue?.update(journey);
     for (const cannon of this.cannons) {
@@ -414,8 +412,15 @@ export class ZionHomecomingRenderer {
         }
         const direction = target.sub(this.apu!.position).applyQuaternion(this.apu!.quaternion.clone().invert()).sub(cannon.position).normalize();
         cannon.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
+      } else if (journey?.scene === 'm3_dock_battle' && journey.dockGunnery && !journey.dockLastStand) {
+        const aim = dockGunneryAim(journey.dockGunnery), direction = new THREE.Vector3(aim.x, aim.y, aim.z).sub(this.apu!.position).sub(cannon.position).normalize();
+        cannon.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
       } else cannon.quaternion.identity();
     }
+    this.apuModel?.update(journey?.scene === 'm3_gate' && !journey.dockGate ? journey.apu : undefined);
+    const gunner = journey?.scene === 'm3_dock_battle' ? journey.dockGunnery : undefined;
+    const gunneryMuzzle = gunner?.lastShot ? this.group.worldToLocal(this.muzzleFlashes[gunner.shots % 2].getWorldPosition(new THREE.Vector3())) : undefined;
+    this.gunnery?.update(journey, gunneryMuzzle);
     if (this.gate) {
       const state = journey?.dockGate;
       const muzzle = state?.lastShot && state.total - state.lastShot.at < .1
@@ -444,29 +449,18 @@ export class ZionHomecomingRenderer {
       this.reloadLatch.rotation.x = (1 - pose.seated) * -.65;
     }
     const shots = journey?.scene === 'm3_dock_battle' ? journey.dockGunnery?.shots ?? 0 : 0;
-    if (shots > this.lastGunneryShots) this.muzzleUntil = elapsed + .14;
-    this.lastGunneryShots = shots;
     const lastStand = journey?.dockLastStand;
     const lastShots = lastStand?.phase === 'attack' && lastStand.elapsed < 1.45 ? Math.floor(lastStand.elapsed * 18) : -1;
     this.muzzleFlashes.forEach((flash, index) => flash.visible = journey?.scene === 'm3_dock_battle'
-      && (lastStand ? lastShots >= 0 && index === lastShots % 2 : elapsed < this.muzzleUntil && index === shots % 2)
+      && (lastStand ? lastShots >= 0 && index === lastShots % 2 : Boolean(gunner?.lastShot && gunner.elapsed - gunner.lastShot.at < .16) && index === shots % 2)
       || journey?.scene === 'm3_gate' && Boolean(journey.dockGate?.lastShot && journey.dockGate.total - journey.dockGate.lastShot.at < .1 && index === journey.dockGate.shots % 2));
     for (const [index, sentinel] of this.sentinelDives.entries()) {
-      const gunner = journey?.scene === 'm3_dock_battle' && !journey.visiting ? journey.dockGunnery : undefined;
-      const target = gunner?.targets[index];
-      sentinel.visible = Boolean(target && target.health > 0 && target.spawnAt <= gunner!.elapsed)
-        || journey?.scene === 'm3_gate' && !journey.visiting && (journey.apu?.phase === 'riding' || journey.apu === undefined) && !((journey.apu?.dives ?? 0) & (1 << index));
-      sentinel.position.x = target?.x ?? APU_ROUTE.dives[index].x;
-      sentinel.position.z = target?.z ?? APU_ROUTE.dives[index].z;
+      sentinel.visible = journey?.scene === 'm3_gate' && !journey.visiting && (journey.apu?.phase === 'riding' || journey.apu === undefined) && !((journey.apu?.dives ?? 0) & (1 << index));
+      sentinel.position.x = APU_ROUTE.dives[index].x;
+      sentinel.position.z = APU_ROUTE.dives[index].z;
       sentinel.position.y = 11 + Math.sin(elapsed * 3 + index) * 1.3;
     }
-    if (this.templeBulkhead) {
-      const defense = journey?.scene === 'm3_temple_defense' && !journey.visiting;
-      const sealed = journey?.completed.includes('m3_temple_defense') || defense && journey.step >= 3;
-      this.templeLift += ((sealed ? 0 : 10) - this.templeLift) * .12;
-      this.templeBulkhead.position.y = this.templeLift;
-      this.templeLevers.forEach((lever, index) => lever.rotation.z = defense && journey.step >= index + 2 || sealed ? -.85 : 0);
-    }
+    this.templeDefense?.update(journey);
     const wheel = this.moving.getObjectByName('zion-recycler-flywheel'); if (wheel) wheel.rotation.x = elapsed * .3;
     if (this.messageDoor) this.messageDoor.rotation.y = journey?.scene === 'm2_oracle_message' && journey.step >= 1 ? -.85 : 0;
     if (this.messageDisk) this.messageDisk.visible = journey?.scene === 'm2_oracle_message' && journey.step < 2;
@@ -478,33 +472,35 @@ export class ZionHomecomingRenderer {
     }
     if (this.dockElectrical) {
       const offline = dockPowerOffline(journey);
-      for (const [light, power] of this.dockElectrical.lights) light.intensity = offline ? power * .08 : power;
+      for (const [light, power] of this.dockElectrical.lights) light.intensity = offline ? power * .08 : journey?.scene === 'm3_diggers' ? power * .35 : power;
       this.dockElectrical.lit.emissiveIntensity = offline ? .05 : 2;
       if (offline) this.dockElectrical.engines.emissiveIntensity = .05;
     }
+    if (this.lampMaterials && this.set === 'film_zion_hangar') this.lampMaterials[1].emissiveIntensity = dockPowerOffline(journey) ? 0 : 2.5;
     if (this.signals.length) for (const signal of this.signals) signal.emissiveIntensity = journey?.scene === 'm2_hamann' && journey.step >= 3 ? 3 : .55 + Math.sin(elapsed * 2) * .25;
-    if (this.crowd) {
-      const { bodies, heads, arms, poses } = this.crowd;
-      const dancing = journey?.scene === 'm2_temple' && journey.step >= 2 && !journey.visiting;
-      const matrix = new THREE.Matrix4(), position = new THREE.Vector3(), scale = new THREE.Vector3(), rotation = new THREE.Quaternion();
-      for (let i = 0; i < poses.length; i++) {
-        const [x, z, h] = poses[i]; const wave = dancing ? Math.sin(elapsed * 4.6 + i * .53) : Math.sin(elapsed * .7 + i) * .12;
-        const rise = dancing ? Math.max(0, wave) * .32 : 0; rotation.setFromEuler(new THREE.Euler(0, Math.sin(elapsed * .35 + i) * .1, dancing ? wave * .13 : 0));
-        position.set(x, h * .4 + rise, z); scale.set(1, h * .75, 1); matrix.compose(position, rotation, scale); bodies.setMatrixAt(i, matrix);
-        position.set(x, h - .25 + rise, z); scale.setScalar(1); matrix.compose(position, rotation, scale); heads.setMatrixAt(i, matrix);
-        for (const side of [-1, 1]) {
-          const angle = dancing ? side * (.2 + (wave + 1) * .35) : side * .18;
-          position.set(x + side * .55, h * .64 + rise + Math.abs(Math.sin(angle)) * .18, z);
-          rotation.setFromEuler(new THREE.Euler(0, 0, angle)); scale.set(1, h * .44, 1); matrix.compose(position, rotation, scale);
-          arms.setMatrixAt(i * 2 + (side + 1) / 2, matrix);
+    this.crowd?.update(journey, elapsed);
+    if (camera && this.set === 'film_zion_hangar') {
+      camera.updateWorldMatrix(true, false);
+      const frustum = new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
+      const range = new THREE.Sphere();
+      this.group.traverseVisible(object => {
+        if (!(object instanceof THREE.PointLight)) return;
+        object.getWorldPosition(range.center); range.radius = object.distance;
+        // A light outside the picture may still illuminate it; test its entire influence volume.
+        if (object.intensity === 0 || object.distance > 0 && !frustum.intersectsSphere(range)) {
+          object.visible = false; this.culledLights.push(object);
         }
-      }
-      bodies.instanceMatrix.needsUpdate = heads.instanceMatrix.needsUpdate = arms.instanceMatrix.needsUpdate = true;
+      });
     }
   }
   dispose(): void {
+    this.crowd?.dispose();
+    this.templeDefense?.dispose();
+    this.apuModel?.dispose();
+    this.diggers?.dispose();
     this.lastStand?.dispose();
     this.gateRescue?.dispose();
+    this.gunnery?.dispose();
     this.gate?.dispose();
     this.disposed = true; this.group.removeFromParent(); this.group.clear();
     this.geometries.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); this.textures.forEach(t => t.dispose()); this.lights.forEach(l => l.dispose());

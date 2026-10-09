@@ -9,12 +9,23 @@ import { advanceMotion, newMotion } from '../packages/client/src/agents/Characte
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
+import { SmithFinaleRenderer } from '../packages/client/src/engine/SmithFinaleRenderer.js';
 
 const beats: SmithFinaleEncounter[] = [
+  { ...newSmithFinale(), phase: 'entrance', elapsed: 3.4, total: 5.4 },
+  { ...newSmithFinale(), phase: 'reply', elapsed: 0, total: 14.2 },
+  { ...newSmithFinale(), phase: 'charging', elapsed: .7, total: 20.7 },
   { ...newSmithFinale(), phase: 'building', elapsed: .7, total: 7.2, lane: .4 },
   { ...newSmithFinale(), phase: 'ground_counter', elapsed: .16, total: 2.4, hits: 1, lastStrike: 0 },
   { ...newSmithFinale(), phase: 'crater', elapsed: 1.1, total: 12.5, focus: .5 },
   { ...newSmithFinale(), phase: 'air_dodge', elapsed: .4, total: 5.8, lane: -.3 },
+  { ...newSmithFinale(), phase: 'interior_counter', elapsed: .4, total: 35.4, checkpoint: 'interior', breachedAt: 30 },
+  { ...newSmithFinale(), phase: 'interior_kick', elapsed: .55, total: 40.55, checkpoint: 'interior', breachedAt: 30 },
+  { ...newSmithFinale(), phase: 'relaunch', elapsed: 1.8, total: 44, checkpoint: 'interior', breachedAt: 30 },
+  { ...newSmithFinale(), phase: 'sky_grapple', elapsed: 1.6, total: 50, checkpoint: 'sky', breachedAt: 30 },
+  ...(['pit_warning', 'pit_dodge', 'pit_evade', 'pit_counter', 'pit_punch', 'pit_retaliation', 'pit_recovery', 'vision'] as const)
+    .map(phase => ({ ...newSmithFinale(), phase, elapsed: phase === 'pit_retaliation' ? 3.5 : .8,
+      total: 70, impactAt: 50, pitFight: true, focus: phase === 'pit_recovery' ? .7 : 0, checkpoint: 'pit' as const })),
   { ...newSmithFinale(), phase: 'surrender', elapsed: .8, total: 20.4, focus: .8 },
 ];
 
@@ -45,6 +56,7 @@ async function setup(t: TestContext) {
   const actors = ['neo', 'smith'].map(id => world.agents.get(id)!), center = FILM_SETS.film_smith_avenue.center;
   for (const actor of actors) {
     actor.currentLocation = 'film_smith_avenue'; actor.isInMatrix = true; actor.rotation = .4;
+    if (actor.id === 'neo') actor.isAwakened = true;
     actor.position = { x: center.x + 1, y: center.y, z: center.z - 15 };
   }
   const camera = new THREE.PerspectiveCamera(57, 16 / 9, .5, 5000), renderer = new AgentRenderer(new THREE.Scene());
@@ -106,6 +118,58 @@ test('saved finale motion replaces prior running, jumping and combat instead of 
     const pose = advanceMotion(warm, input, 0);
     assert.deepEqual(pose, advanceMotion(newMotion(), input, 0), `${role}/${beat.phase}: paused cold loading must reproduce the same limbs`);
     assert.deepEqual(advanceMotion(warm, input, .05), pose, `${role}/${beat.phase}: only saved encounter time may animate the pose`);
+  }
+});
+
+test('the opening keeps Neo and the distant speaking Smith inside the playable view', async t => {
+  const h = await setup(t);
+  for (const phase of ['entrance', 'greeting', 'reply', 'prediction', 'charge_ready', 'charging'] as const) {
+    for (const elapsed of phase === 'entrance' ? [0, 2, 6.79] : phase === 'charging' ? [0, .8, 1.79] : [0]) {
+      h.frame({ ...newSmithFinale(), phase, elapsed, total: 15 + elapsed });
+      for (const actor of h.actors) {
+        const point = new THREE.Vector3(actor.position.x, actor.position.y + 2.7, actor.position.z).project(h.camera);
+        assert.ok(Math.abs(point.x) < .94 && point.y > -.45 && point.y < .8 && point.z > -1 && point.z < 1,
+          `${phase}/${elapsed}/${actor.id}: face-off body outside the view ${point.toArray()}`);
+      }
+    }
+  }
+});
+
+test('opening sunglasses follow the film stages, and the main Smith exposes his face after the crater impact', async t => {
+  const h = await setup(t);
+  for (const phase of ['entrance', 'reply', 'charging', 'building', 'crater', 'pit_punch', 'vision'] as const) {
+    h.frame({ ...newSmithFinale(), phase, elapsed: .8, total: 15 });
+    for (const actor of h.actors) {
+      const head = h.renderer.getAgentBody(actor.id)!.getObjectByName('head')!;
+      const glasses = head.children.find(child => child instanceof THREE.Group
+        && child.children.filter(part => part instanceof THREE.Mesh && part.material instanceof THREE.MeshPhysicalMaterial).length === 2);
+      assert.ok(glasses, 'inspect the actual attached pair of lenses');
+      assert.equal(glasses.visible, ['entrance', 'reply', 'charging'].includes(phase) || actor.id === 'smith' && phase === 'building', `${actor.id}/${phase}: sunglasses must follow the film event`);
+    }
+  }
+});
+
+test('the actual boots clear the wet road and retain a supporting foot throughout the saved walk and charge', async t => {
+  const h = await setup(t), floor = FILM_SETS.film_smith_avenue.center.y - 1 + .035;
+  for (const phase of ['entrance', 'charging'] as const) {
+    const seconds = phase === 'entrance' ? SMITH_FINALE.entrance.seconds : SMITH_FINALE.entrance.charge;
+    for (let elapsed = 0; elapsed <= seconds; elapsed += .23) {
+      h.frame({ ...newSmithFinale(), phase, elapsed, total: 14 + elapsed });
+      for (const actor of h.actors) {
+        const body = h.renderer.getAgentBody(actor.id)!; let sole = Infinity;
+        body.traverse(object => {
+          if (!(object instanceof THREE.Mesh) || !/shoes/i.test(object.name)) return;
+          if (object instanceof THREE.SkinnedMesh) object.skeleton.update();
+          for (let vertex = 0; vertex < object.geometry.attributes.position.count; vertex++) {
+            const point = object.localToWorld(object.getVertexPosition(vertex, new THREE.Vector3()));
+            sole = Math.min(sole, point.y);
+          }
+        });
+        assert.ok(Number.isFinite(sole), 'measure the delivered boot surface');
+        assert.ok(sole >= floor - .035 && sole <= floor + .15,
+          `${actor.id}/${phase}/${elapsed}: actual lowest sole ${sole} must sit on the ${floor} road`);
+      }
+    }
   }
 });
 
@@ -246,4 +310,104 @@ test('finale first person follows the currently posed real eyes while keeping fr
   const position = h.group.position.clone(); h.key('KeyW'); h.controls.update(.05, h.actors[0], h.group, true); h.key('KeyW', false);
   assert.ok(Math.hypot(h.group.position.x - position.x, h.group.position.z - position.z) > .001, 'leaving the finale must release walking');
   t.diagnostic(`Maximum camera distance from the actual skinned eyeball center: ${maxEyeError}`);
+});
+
+test('both interior fighters fit a camera inside the actual hollow building, including narrow windows', async t => {
+  const h = await setup(t), center = FILM_SETS.film_smith_avenue.center;
+  const stage = new THREE.Group(); stage.position.set(center.x, center.y - 1, center.z);
+  const renderer = new SmithFinaleRenderer(stage);
+  try {
+    for (const aspect of [16 / 9, 4 / 3, 9 / 16]) for (const phase of ['interior_warning', 'interior_dodge', 'interior_counter'] as const) {
+      h.camera.aspect = aspect;
+      const beat: SmithFinaleEncounter = { ...newSmithFinale(), phase, elapsed: .5, total: 35.5, checkpoint: 'interior', breachedAt: 30 };
+      renderer.update(beat, false, { x: -32.5, z: -28 }); stage.updateMatrixWorld(true); h.frame(beat);
+      assert.ok(h.camera.position.x > center.x - 38.93 && h.camera.position.x < center.x - 25.9, 'camera must stay inside the room’s walls');
+      for (const actor of h.actors) for (const name of ['head', 'ankle_R', 'ankle_L']) {
+        const world = h.renderer.getAgentBody(actor.id)!.getObjectByName(name)!.getWorldPosition(new THREE.Vector3());
+        const screen = world.clone().project(h.camera);
+        assert.ok(Math.abs(screen.x) < .94 && screen.y > -.5 && screen.y < .85 && screen.z < 1,
+          `${aspect}/${phase}/${actor.id}/${name}: interior body cropped ${screen.toArray()}`);
+        const direction = world.clone().sub(h.camera.position), distance = direction.length();
+        const ray = new THREE.Raycaster(h.camera.position, direction.normalize(), .05, distance - .1);
+        const surfaces: THREE.Mesh[] = [];
+        stage.traverseVisible(object => { if (object instanceof THREE.Mesh && /static-facade|interior/.test(object.name)) surfaces.push(object); });
+        assert.equal(ray.intersectObjects(surfaces, false).length, 0, `${phase}/${actor.id}: room geometry blocks the player view`);
+      }
+    }
+  } finally { renderer.dispose(); }
+});
+
+test('renewed flight keeps the real bodies in view instead of moving the camera through Neo', async t => {
+  const h = await setup(t), failures: string[] = [];
+  for (const aspect of [16 / 9, 4 / 3]) for (const elapsed of [0, .6, 1.1, 1.7, 2.3, 3, SMITH_FINALE.relaunch]) {
+    h.camera.aspect = aspect;
+    h.frame({ ...newSmithFinale(), phase: 'relaunch', elapsed, total: 40 + elapsed, checkpoint: 'interior', breachedAt: 30 });
+    for (const actor of h.actors) for (const name of ['head', 'wrist_R', 'wrist_L', 'ankle_R', 'ankle_L']) {
+      const point = h.renderer.getAgentBody(actor.id)!.getObjectByName(name)!.getWorldPosition(new THREE.Vector3());
+      const screen = point.clone().project(h.camera);
+      if (!(Math.abs(screen.x) < .94 && screen.y > -.5 && screen.y < .85 && screen.z < 1))
+        failures.push(`${aspect}/${elapsed}/${actor.id}/${name}: renewed flight crops a body at ${screen.toArray()}`);
+      if (point.distanceTo(h.camera.position) <= 4) failures.push(`${elapsed}/${actor.id}: camera passes too close to the actor`);
+    }
+  }
+  assert.deepEqual(failures, []);
+});
+
+test('the final pit counter, recognition and player rise frame the actual faces and contact hands inside the crater', async t => {
+  const h = await setup(t), center = FILM_SETS.film_smith_avenue.center;
+  for (const aspect of [16 / 9, 4 / 3, 9 / 16]) for (const [phase, elapsed, focus] of [
+    ['pit_warning', .5, 0], ['pit_evade', .325, 0], ['pit_punch', .8, 0], ['pit_punch', .95, 0],
+    ['pit_retaliation', 2.425, 0], ['vision', 0, 0], ['pit_recovery', 1, .7], ['understanding', 0, 1.8],
+  ] as const) {
+    h.camera.aspect = aspect;
+    h.frame({ ...newSmithFinale(), phase, elapsed, focus, total: 70, impactAt: 51, checkpoint: 'pit', pitFight: true });
+    for (const actor of h.actors) for (const name of ['head', 'wrist_R']) {
+      const point = h.renderer.getAgentBody(actor.id)!.getObjectByName(name)!.getWorldPosition(new THREE.Vector3());
+      const screen = point.clone().project(h.camera);
+      assert.ok(Math.abs(screen.x) < .94 && screen.y > -.5 && screen.y < .85 && screen.z < 1,
+        `${aspect}/${phase}/${elapsed}/${actor.id}/${name}: actual body cropped at ${screen.toArray()}`);
+      for (let sample = 0; sample < 30; sample++) {
+        const ray = h.camera.position.clone().lerp(point, sample / 30);
+        assert.ok(ray.y > center.y - 1 + smithCraterFloor(ray.x - center.x, ray.z - center.z), 'the actual pit blocks the final counter camera');
+      }
+    }
+  }
+});
+
+test('the first-person pit punch keeps Neo’s actual fist visible while removing his own face', async t => {
+  const h = await setup(t); h.controls.firstPerson = true;
+  const beat: SmithFinaleEncounter = { ...newSmithFinale(), phase: 'pit_punch', elapsed: .8,
+    total: 70, impactAt: 51, checkpoint: 'pit', pitFight: true };
+  h.frame(beat);
+  const body = h.renderer.getAgentBody('neo')!;
+  assert.equal(body.visible, true, 'a first-person punch must not hide the whole player body');
+  const skins: THREE.SkinnedMesh[] = [];
+  body.traverseVisible(object => {
+    if (object instanceof THREE.SkinnedMesh && (object.material as THREE.Material).name === 'Skin') skins.push(object);
+  });
+  assert.ok(skins.length, 'inspect the delivered hand/face skin');
+  let handVertices = 0;
+  for (const skin of skins) {
+    const indices = skin.geometry.index!, joints = skin.geometry.attributes.skinIndex, weights = skin.geometry.attributes.skinWeight;
+    for (let i = 0; i < indices.count; i++) {
+      const vertex = indices.getX(i);
+      for (let slot = 0; slot < 4; slot++) if (weights.getComponent(vertex, slot) > .05) {
+        const name = skin.skeleton.bones[joints.getComponent(vertex, slot)].name;
+        assert.ok(!/^(head|neck)$/.test(name), 'own face/neck triangles cannot enter the eye camera');
+        if (/^(wrist|finger)/.test(name)) handVertices++;
+      }
+    }
+  }
+  assert.ok(handVertices > 0, 'the view must retain actual hand geometry');
+  const point = body.getObjectByName('wrist_R')!.localToWorld(new THREE.Vector3(.08182, -.326, 0));
+  const screen = point.clone().project(h.camera);
+  assert.ok(Math.abs(screen.x) < .9 && Math.abs(screen.y) < .9 && screen.z > -1 && screen.z < 1,
+    `Neo’s striking knuckles are outside the first-person frame: ${screen.toArray()}`);
+  h.controls.firstPerson = false; h.frame(beat);
+  assert.equal(body.visible, true, 'V must restore the complete third-person body');
+  const skin = skins[0], index = skin.geometry.index!; let headVertices = 0;
+  for (let i = 0; i < index.count; i++) for (let slot = 0; slot < 4; slot++)
+    if (skin.geometry.attributes.skinWeight.getComponent(index.getX(i), slot) > .05
+      && skin.skeleton.bones[skin.geometry.attributes.skinIndex.getComponent(index.getX(i), slot)].name === 'head') headVertices++;
+  assert.ok(headVertices > 0, 'switching back must restore face triangles');
 });

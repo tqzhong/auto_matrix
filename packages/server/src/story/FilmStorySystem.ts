@@ -1,3 +1,45 @@
+import { SourcePortalSystem } from './SourcePortalSystem.js';
+import { HAMMER_MEDICAL, HAMMER_MEDICAL_BEDS, HAMMER_MEDICAL_SUPPLIES } from '@auto_matrix/shared';
+import { MOBIL_STATION, MOBIL_REFUSAL, MOBIL_FAMILY, MOBIL_FAMILY_QUESTIONS, MOBIL_LUGGAGE, MOBIL_REUNION, mobilReunionRoot, mobilReunionText, mobilLuggagePose, mobilLuggageParent, mobilFamilyLine, mobilFamilyDuration, mobilFamilyText, mobilRefusalPose, mobilTrainPose, mobilPassengerPose, mobilTrainObstacles } from '@auto_matrix/shared';
+import { ARCHITECT_ROOM, architectDoorAngle, architectDoorLocked, architectExitRoot, type ArchitectGesture } from '@auto_matrix/shared';
+import { SOURCE_PORTAL, sourcePortalAngle, sourcePortalSourceAngle, sourcePortalLocked } from '@auto_matrix/shared';
+import { TruckRoadSystem } from './TruckRoadSystem.js';
+import { OracleRequestSystem } from './OracleRequestSystem.js';
+import { OracleLastSystem } from './OracleLastSystem.js';
+import { OracleAbsorptionSystem } from './OracleAbsorptionSystem.js';
+import { oracleAbsorptionLocked, oracleAbsorptionActive } from '@auto_matrix/shared';
+import { oracleLastLocked } from '@auto_matrix/shared';
+import { oracleRequestLocked, trainmanChaseLocked } from '@auto_matrix/shared';
+import { TrainmanChaseSystem } from './TrainmanChaseSystem.js';
+import { HelGarageSystem } from './HelGarageSystem.js';
+import { helGarageLocked, newHelGarage } from '@auto_matrix/shared';
+import { helElevatorFloor, helElevatorText, helElevatorTrinityRoot } from '@auto_matrix/shared';
+import { helDanceDoorDuration, helDanceDoorRoot, helDanceDoorText } from '@auto_matrix/shared';
+import { HEL_DISARM, HEL_TRIO, HEL_BREAKOUT, helDisarmText, helDisarmGun, helBreakoutGun, type HelDisarm } from '@auto_matrix/shared';
+import { SourceBriefingSystem } from './SourceBriefingSystem.js';
+import { PrimaryDemolitionSystem } from './PrimaryDemolitionSystem.js';
+import { TrinityTerminalSystem } from './TrinityTerminalSystem.js';
+import { trinityTerminalLocked } from '@auto_matrix/shared';
+import { TrinityRelaySystem } from './TrinityRelaySystem.js';
+import { TRINITY_RELAY } from '@auto_matrix/shared';
+import { PRIMARY_DEMOLITION, primaryActive, primaryLocked } from '@auto_matrix/shared';
+import { newTruckRoad, filmSceneForJourney } from '@auto_matrix/shared';
+import { FreewayHandoffSystem } from './FreewayHandoffSystem.js';
+import { newFreewayHandoff } from '@auto_matrix/shared';
+import { FreewayPickupSystem } from './FreewayPickupSystem.js';
+import { newFreewayPickup, freewayRideRoot } from '@auto_matrix/shared';
+import { UpperDiggerSystem } from './UpperDiggerSystem.js';
+import { DockBriefingSystem } from './DockBriefingSystem.js';
+import { DockEvacuationSystem } from './DockEvacuationSystem.js';
+import { TempleDefenseSystem } from './TempleDefenseSystem.js';
+import { templeDefenseActive, templeDefenseLocked, newTempleDefense } from '@auto_matrix/shared';
+import { dockEvacuationActive, dockEvacuationLocked, shaftSealActive, shaftSealLocked } from '@auto_matrix/shared';
+import { dockBriefingActive, dockBriefingLocked } from '@auto_matrix/shared';
+import { DOCK_EMP, EMP_OPERATOR, dockEmpLocked, empOperatorPose, empOperatorText } from '@auto_matrix/shared';
+import { DOCK_REUNION, dockDepartureFinished, dockDepartureRoot, dockReunionLocked, dockReunionRoot, dockReunionText } from '@auto_matrix/shared';
+import { newUpperDigger, upperDiggerActive, upperDiggerLocked } from '@auto_matrix/shared';
+import { diggersActive, diggersLocked, newDiggers } from '@auto_matrix/shared';
+import { DiggersSystem } from './DiggersSystem.js';
 import { TRUTH_SECONDS, truthScene, truthRoot, truthText, truthRest, type TruthRole, DOWNLOAD_SETUP_SECONDS, DOWNLOAD_OPERATOR, downloadRoot, downloadSetupText } from '@auto_matrix/shared';
 import { METACORTEX, OFFICE_LEDGE_OFFSET, OFFICE_PATROLS, metacortexPosition } from '@auto_matrix/shared';
 import { ReloadedOpeningSystem } from './ReloadedOpeningSystem.js';
@@ -19,6 +61,7 @@ import { CABIN, CABIN_ROUTE_LENGTH, MEDICAL_OPERATOR, cabinBodyPose, cabinGuideP
 import { CONSTRUCT, CONSTRUCT_FURNITURE, constructGuidePose, constructArrivalText } from '@auto_matrix/shared';
 import { catchLocked, newCatch } from '@auto_matrix/shared';
 import { awakeningDuration, mirrorTime } from '@auto_matrix/shared';
+import { SENTINEL_SIGNAL, SIGNAL_OBSTACLES, signalLocked, type WorldStructure } from '@auto_matrix/shared';
 import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_CAST, GRID_WINDOW_SECONDS, GRID_REROUTE_SECONDS, GRID_HACK_SECONDS, ARCHITECT_DOOR_SECONDS, RELOADED_FINALE, BANE_ENCOUNTER, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, filmReflections, CHARACTERS, LOCATIONS, NEO_CHAPTERS, filmCharacterFates, filmEntry, filmPosition, filmStepPosition, filmStepNear, locationEntrance, distance, playerBlocked, newFreewayRide, stepFreeway, OFFICE_LADDER, awakeningLocked, awakeningPose, AWAKENING_SECONDS, MIRROR_TOUCH, MIRROR_TIMING, MIRROR_GUIDE_LENGTH, mirrorGuidePose, mirrorGuideProgress, mirrorSilver, recoveryCrewPose, CONSTRUCT_REVEAL, DESERT_REVEAL, oracleActing,
   AMBUSH_REWRITE, AMBUSH_SECONDS, AMBUSH_SEALS, OFFICE_CONTACT, OFFICE_WINDOW, OFFICE_CROSSING_SECONDS, officeCrossingPose, windowCrossing, phoneLocked, heldPhone, windowOpening, pillLocked, pillRoot, PILL_ROOM, PILL_TIMING, trainingLocked, trainingRoot, trainingText, TRAINING_SECONDS, DOJO_COMBO_WINDOW,
   lobbyLocked, meleeReach, groundHeight, MIRROR_SEAT, MIRROR_TRINITY, type DriveInput, type AgentState, type FilmScene, type FilmStep, type GridOperation, type SandboxState, type SandboxThreat, type TrainingRole, type CombatImpact } from '@auto_matrix/shared';
@@ -56,29 +99,52 @@ import { GARAGE, newGarageEscape, stepGarageEscape } from '@auto_matrix/shared';
 import { newHammerFlight, stepHammerFlight } from '@auto_matrix/shared';
 import { newLogosFlight, stepLogosFlight } from '@auto_matrix/shared';
 import { farewellLocked, farewellPose, newFarewell, stepFarewell } from '@auto_matrix/shared';
-import { DEUS_PACT, deusPactLocked, deusPactPose, newDeusPact, stepDeusPact } from '@auto_matrix/shared';
+import { DEUS_PACT, deusPactDialogue, deusPactLocked, deusPactPose, newDeusPact, stepDeusPact } from '@auto_matrix/shared';
 import { SMITH_FINALE, newSmithFinale, retrySmithFinale, smithFinaleAction as reduceSmithFinaleAction,
-  smithFinaleLocked, smithFinalePose, smithCraterAmount, smithOracleRestored, stepSmithFinale } from '@auto_matrix/shared';
-import { STREET_RESET, newTrilogyEpilogue, stepTrilogyEpilogue, trilogyEpilogueLocked, trilogyEpilogueProgress, neoCarryPose,
+  smithFinaleLocked, smithFinalePose, smithFinaleDialogue, smithCraterAmount, smithOracleRestored, stepSmithFinale } from '@auto_matrix/shared';
+import { STREET_RESET, newTrilogyEpilogue, stepTrilogyEpilogue, trilogyEpilogueLocked, trilogyEpilogueProgress, neoCarryPose, ceasefireReunionPose,
   type TrilogyEpilogueKind, type TrilogyEpilogueEncounter } from '@auto_matrix/shared';
 import { gardenPose, SUNRISE_GARDEN } from '@auto_matrix/shared';
 import { newApuRun, stepApuRun } from '@auto_matrix/shared';
-import { DOCK_GUNNERY, newDockGunnery, fireDockGunnery, stepDockGunnery } from '@auto_matrix/shared';
-import { TEMPLE_SEAL_SECONDS } from '@auto_matrix/shared';
+import { APU_RIG, DOCK_GUNNERY, dockGunneryAngles, newDockGunnery, fireDockGunnery, stepDockGunnery } from '@auto_matrix/shared';
 import { TRUCKS, truckApproachPose, truckRescuePose } from '@auto_matrix/shared';
 import { OPENING_ESCAPE } from '@auto_matrix/shared';
 import { OpeningHotelSystem } from './OpeningHotelSystem.js';
+import { NebEscapeSystem } from './NebEscapeSystem.js';
+import { nebEscapeLocked } from '@auto_matrix/shared';
 
 const BATHROOM_ROLES = ['neo', 'trinity', 'switch', 'apoc'] as const;
 const UNPLUGGED_ROLES = ['tank', 'cypher', 'dozer', 'apoc', 'switch', 'neo', 'trinity'] as const;
 const DOJO_COUNTER_TICKS = DOJO_COMBO_WINDOW * 2;
 
 export class FilmStorySystem {
+  private helElevatorFrames = false;
+  private helDanceDoorFrames = false;
+  private helDisarmFrames = false;
+  private helBreakoutFrames = false;
   // The controller owns socket sessions. It can refuse a handoff occupied by another player.
   handoff?: (from: AgentState, to: string, tick: number, newCycle?: boolean) => boolean;
   onImpact?: (impact: CombatImpact, tick: number) => void;
   readonly reloaded: ReloadedOpeningSystem;
   readonly catch: ReloadedCatchSystem;
+  readonly diggers: DiggersSystem;
+  readonly upperDigger: UpperDiggerSystem;
+  readonly freewayPickup: FreewayPickupSystem;
+  readonly truckRoad: TruckRoadSystem;
+  readonly freewayHandoff: FreewayHandoffSystem;
+  readonly dockBriefing: DockBriefingSystem;
+  readonly oracleRequest: OracleRequestSystem;
+  readonly oracleLast: OracleLastSystem;
+  readonly oracleAbsorption: OracleAbsorptionSystem;
+  readonly trainmanChase: TrainmanChaseSystem;
+  readonly helGarage: HelGarageSystem;
+  readonly sourceBriefing: SourceBriefingSystem;
+  readonly primaryDemolition: PrimaryDemolitionSystem;
+  readonly trinityTerminal: TrinityTerminalSystem;
+  readonly sourcePortal: SourcePortalSystem;
+  readonly trinityRelay: TrinityRelaySystem;
+  readonly dockEvacuation: DockEvacuationSystem;
+  readonly templeDefense: TempleDefenseSystem;
   readonly dockReload: DockReloadSystem;
   readonly dockLastStand: DockLastStandSystem;
   readonly dockGate: DockGateSystem;
@@ -90,9 +156,10 @@ export class FilmStorySystem {
   readonly openingHotel: OpeningHotelSystem;
   readonly office: OfficeEscapeSystem;
   readonly custody: OfficeCustodySystem;
-  constructor(private world: WorldState, private sandbox: () => SandboxState, private returnToLife: (tick: number) => void, private elapse: (minutes: number, tick: number) => void) { this.lobby = new LobbyCombatSystem(world, sandbox); this.coatcheck = new HelCoatcheckSystem(world, sandbox); this.openingHotel = new OpeningHotelSystem(sandbox); this.openingHotel.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.openingHotel.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.office = new OfficeEscapeSystem(sandbox); this.custody = new OfficeCustodySystem(world, sandbox); this.custody.onDeparted = (agent, tick) => { this.command(agent, 'next', tick); }; this.reloaded = new ReloadedOpeningSystem(world, sandbox); this.reloaded.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.reloaded.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.dockGate = new DockGateSystem(world, sandbox); this.dockGate.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.dockLastStand = new DockLastStandSystem(world, sandbox); this.dockLastStand.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.dockReload = new DockReloadSystem(world, sandbox); this.dockReload.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.dockReload.onHandoff = (actor, id, tick) => this.changeActor(actor, id, tick); this.catch = new ReloadedCatchSystem(world, sandbox); this.catch.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.wetwall = new WetwallEscapeSystem(world, sandbox); this.wetwall.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sixth = new SixthFloorSystem(world, sandbox); this.sixth.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sixth.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.basement = new BasementEscapeSystem(world, sandbox); this.basement.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.basement.crosscut.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.basement.crosscut.onHandoff = (actor, id, tick) => this.changeActor(actor, id, tick); this.basement.crosscut.onImpact = (impact, tick) => this.onImpact?.(impact, tick); }
+  readonly nebEscape: NebEscapeSystem;
+  constructor(private world: WorldState, private sandbox: () => SandboxState, private returnToLife: (tick: number) => void, private elapse: (minutes: number, tick: number) => void) { this.nebEscape = new NebEscapeSystem(world, sandbox); this.nebEscape.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sourcePortal = new SourcePortalSystem(world, sandbox); this.sourcePortal.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.trinityTerminal = new TrinityTerminalSystem(world, sandbox); this.trinityTerminal.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.trinityRelay = new TrinityRelaySystem(world, sandbox); this.trinityRelay.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.primaryDemolition = new PrimaryDemolitionSystem(world, sandbox); this.primaryDemolition.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.helGarage = new HelGarageSystem(world, sandbox); this.helGarage.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.helGarage.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.trainmanChase = new TrainmanChaseSystem(world, sandbox); this.trainmanChase.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.oracleLast = new OracleLastSystem(world, sandbox); this.oracleLast.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.oracleAbsorption = new OracleAbsorptionSystem(world, sandbox); this.oracleAbsorption.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.oracleRequest = new OracleRequestSystem(world, sandbox); this.oracleRequest.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sourceBriefing = new SourceBriefingSystem(world, sandbox); this.sourceBriefing.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.truckRoad = new TruckRoadSystem(world, sandbox); this.truckRoad.hood.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.truckRoad.hood.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.truckRoad.weapons.onUnarmed = (actor, tick) => this.spawn(actor, this.step!, tick); this.truckRoad.weapons.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.freewayHandoff = new FreewayHandoffSystem(world, sandbox); this.freewayHandoff.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.freewayPickup = new FreewayPickupSystem(world, sandbox); this.freewayPickup.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.templeDefense = new TempleDefenseSystem(world, sandbox); this.templeDefense.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.dockEvacuation = new DockEvacuationSystem(world, sandbox); this.dockEvacuation.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.dockBriefing = new DockBriefingSystem(world, sandbox); this.dockBriefing.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.upperDigger = new UpperDiggerSystem(world, sandbox); this.upperDigger.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.diggers = new DiggersSystem(world, sandbox); this.diggers.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.lobby = new LobbyCombatSystem(world, sandbox); this.coatcheck = new HelCoatcheckSystem(world, sandbox); this.openingHotel = new OpeningHotelSystem(sandbox); this.openingHotel.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.openingHotel.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.office = new OfficeEscapeSystem(sandbox); this.custody = new OfficeCustodySystem(world, sandbox); this.custody.onDeparted = (agent, tick) => { this.command(agent, 'next', tick); }; this.reloaded = new ReloadedOpeningSystem(world, sandbox); this.reloaded.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.reloaded.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.dockGate = new DockGateSystem(world, sandbox); this.dockGate.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.dockLastStand = new DockLastStandSystem(world, sandbox); this.dockLastStand.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.dockReload = new DockReloadSystem(world, sandbox); this.dockReload.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.dockReload.onHandoff = (actor, id, tick) => this.changeActor(actor, id, tick); this.catch = new ReloadedCatchSystem(world, sandbox); this.catch.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.wetwall = new WetwallEscapeSystem(world, sandbox); this.wetwall.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sixth = new SixthFloorSystem(world, sandbox); this.sixth.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sixth.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.basement = new BasementEscapeSystem(world, sandbox); this.basement.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.basement.crosscut.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.basement.crosscut.onHandoff = (actor, id, tick) => this.changeActor(actor, id, tick); this.basement.crosscut.onImpact = (impact, tick) => this.onImpact?.(impact, tick); }
   get state() { return this.sandbox().neoLife?.journey; }
-  get scene(): FilmScene | undefined { return this.state && FILM_SCENE_BY_ID[this.state.scene]; }
+  get scene(): FilmScene | undefined { return this.state && filmSceneForJourney(this.state); }
   get step(): FilmStep | undefined { return this.scene?.steps[this.state!.step]; }
   controls(agent: AgentState): boolean { return Boolean(this.state && this.state.actor === agent.id); }
   private ensureBane(tick: number): void {
@@ -302,14 +369,13 @@ export class FilmStorySystem {
     }
     const before = encounter.phase; state.deus = stepDeusPact(encounter, focus, dt);
     if (state.deus.phase !== before) {
-      state.lastText = state.deus.phase === 'forming' ? 'Neo 没有退开。环绕他的机器散开又重组，一张由无数机械个体构成的面孔开始升起。'
-        : state.deus.phase === 'warning' ? '机器集体允许他说下去。Neo 指出 Smith 已脱离控制，并会从矩阵继续扩散到机器城。'
-          : state.deus.phase === 'terms' ? '机器无法靠自身清除 Smith；Neo 可以尝试，但交换条件必须现在说清。J 打开手记，选择如何提出和平。'
+      state.lastText = deusPactDialogue(state.deus) ?? (state.deus.phase === 'forming' ? 'Neo 没有退开。环绕他的机器散开又重组，一张由无数机械个体构成的面孔开始升起。'
+        : state.deus.phase === 'terms' ? '机器无法靠自身清除 Smith；Neo 可以尝试，但交换条件必须现在说清。J 打开手记，选择如何提出和平。'
+            : state.deus.phase === 'pact' ? '机器接受这项有限交换；锡安方向的哨兵停止，连接平台开始展开。'
             : state.deus.phase === 'cabling' ? '平台的机械触须托住 Neo；多条接线寻找他身体上的旧插口。'
-              : state.deus.phase === 'consent' ? '最后一条蛇形探针停在颈后。按住 G 明确同意接入；松开不会替 Neo 作出决定。'
                 : state.deus.phase === 'connecting' ? '探针刺入颈后接口。机器城的金色能量沿身体插口同时点亮。'
                   : state.deus.phase === 'connected' ? '连接完成。机器把 Neo 送入被 Smith 占据的矩阵，停战协议已经先于决战生效。'
-                    : '机器群压过平台。Neo 没能让集体听完交换条件；J 打开手记，从谈判平台重试。';
+                    : '机器群压过平台。Neo 没能让集体听完交换条件；J 打开手记，从谈判平台重试。');
       if (state.deus.phase === 'terms' && state.step === 1)
         this.advance(state.lastText, agent, tick);
       if (state.deus.phase === 'connected' && state.step === 3) {
@@ -322,7 +388,14 @@ export class FilmStorySystem {
   }
   private ensureSmithFinale(): void {
     const state = this.state;
-    if (!state || state.visiting || !['m3_rain', 'm3_surrender'].includes(state.scene) || state.smithFinale) return;
+    if (!state || state.visiting || !['m3_rain', 'm3_surrender'].includes(state.scene)) return;
+    if (state.smithFinale) {
+      const encounter = state.smithFinale;
+      // Join before the collision; never rewind an existing descent or ending.
+      if (encounter.roomFight === undefined && ['approach', 'entrance', 'greeting', 'reply', 'prediction', 'charge_ready',
+        'charging', 'ready', 'ground_warning', 'ground_dodge', 'ground_counter', 'shockwave', 'air_warning', 'air_dodge', 'air_counter'].includes(encounter.phase)) encounter.roomFight = true;
+      return;
+    }
     const encounter = newSmithFinale();
     if (state.scene === 'm3_rain') encounter.phase = state.step === 0 ? 'approach' : state.step === 1 ? 'ready' : 'choice';
     else encounter.phase = state.step === 0 ? 'assault_ready' : state.step === 1 ? 'vision' : state.step === 2 ? 'understanding' : 'done';
@@ -351,7 +424,7 @@ export class FilmStorySystem {
       smith.rotation = pose.smith.yaw; smith.currentLocation = this.scene!.set; smith.isInMatrix = true;
       smith.status = smithOracleRestored(encounter) ? 'dead' : 'alive'; smith.health = smithOracleRestored(encounter) ? 0 : smith.maxHealth;
       smith.velocity = { x: 0, y: 0, z: 0 };
-      smith.currentAction = { type: pose.strike > .05 ? 'attack' : 'idle', target: agent.id,
+      smith.currentAction = { type: (encounter.phase.startsWith('pit_') ? pose.smithPunch : pose.strike) > .05 ? 'attack' : 'idle', target: agent.id,
         parameters: { resolved: true, smithFinale: { ...encounter, role: 'smith' } }, startedAt: tick, duration: 1, progress: 0 };
     }
     if (!smithFinaleLocked(encounter)) {
@@ -394,17 +467,29 @@ export class FilmStorySystem {
     if (!smithOracleRestored(encounter) && smithOracleRestored(state.smithFinale))
       state.lastText = '白光散去，先知的身体重新出现在坑底的积水里。与 Neo 交战的 Smith 曾经覆盖了她；现在感染已经解除。';
     if (phase !== before) {
-      state.lastText = phase === 'ground_dodge' ? 'Smith 的拳头穿过雨幕。现在按 X 侧闪，错过窗口会回到大道中央。'
+      state.lastText = smithFinaleDialogue(state.smithFinale) ?? (phase === 'ground_warning' ? '两个人冲向大道中央。看清 Smith 的起手，攻击窗口亮起时按 X 闪避。'
+        : phase === 'charge_ready' ? 'Smith 把先知的预见当成必胜的证明。按 G 主动迎战；其他复制体仍在两侧旁观。'
+        : phase === 'ground_dodge' ? 'Smith 的拳头穿过雨幕。现在按 X 侧闪，错过窗口会回到大道中央。'
         : phase === 'air_warning' ? '第一轮对拳压出球形冲击波。两个人冲上高空，Smith 正从雨云后再度逼近。'
           : phase === 'air_dodge' ? 'Smith 从上方俯冲。现在按 X 在空中错开正面撞击。'
+            : phase === 'interior_warning' ? 'Neo 落在楼内的混凝土地板上。Smith 穿过破窗追进来，等他出拳时再闪避。'
+              : phase === 'interior_dodge' ? 'Smith 沿着窗前逼近。现在按 X 避开这一拳。'
+                : phase === 'relaunch' ? 'Neo 的高踢把 Smith 送出破窗；先穿过窗洞，再升向大楼上方的雨幕。'
+                  : phase === 'sky_warning' ? '两个人在楼顶上方再次相撞。准备躲开 Smith 的第二轮攻击。'
+                    : phase === 'sky_dodge' ? 'Smith 从雨幕中逼近。现在按 X 错开，再用 F 反击。'
             : phase === 'descent' ? 'Smith 把 Neo 向街面压下。按住 G 稳住意识，让连接在坠落中保持清醒。'
               : phase === 'crater' ? '撞击掀开路面、管线与下层结构。按住 G 从坑底站起来；松开不会替 Neo 继续。'
                 : phase === 'choice' ? 'Smith 问他为何还要坚持。Neo 已经站起，但理由必须由玩家在手记中亲自选择。'
+                  : phase === 'pit_dodge' ? 'Smith 再次扑向 Neo。现在按 X 错开拳锋，准备最后的反击。'
+                    : phase === 'pit_counter' ? 'Neo 已经站稳。按 F 主动打出最后的重拳；等待不会替你还击。'
+                      : phase === 'pit_retaliation' ? '重拳让 Smith 的脸偏向一侧，但没有解除感染。他再次逼近，把 Neo 压回积水中。'
+                        : phase === 'pit_recovery' ? 'Neo 倒在坑底，连接还在。按住 G 撑起身体；松开会停在当前姿态。'
+                          : phase === 'understanding' ? 'Neo 再次站起。他已经看见 Smith 的盲点；按 G 主动放下抵抗，承担最后的选择。'
                   : phase === 'vision' ? '最后一轮猛攻停下。Smith 说出从先知那里复制来的预见，又因为眼前一切完全重合而迟疑。'
                     : phase === 'assimilating' ? 'Neo 明确放下抵抗。Smith 的黑色代码从胸口与面部扩散，直到两具身体共享同一份感染。'
                       : phase === 'purging' ? '机器沿着 Neo 仍然开放的连接抵达感染核心。白光从复制体的眼睛与裂隙透出，再沿 Smith 网络传遍大道。'
                         : phase === 'done' ? 'Smith 的网络已经崩解，雨停了。先知仍躺在坑底的积水中；机器开始履行停战协议。'
-                          : '交锋窗口已经错过。J 打开手记，从保存的战斗检查点重试。';
+                          : '交锋窗口已经错过。J 打开手记，从保存的战斗检查点重试。');
       if (phase === 'choice' && state.scene === 'm3_rain' && state.step === 1) this.advance(state.lastText, agent, tick);
       if (phase === 'vision' && state.scene === 'm3_surrender' && state.step === 0) this.advance(state.lastText, agent, tick);
       if (phase === 'done' && state.scene === 'm3_surrender' && state.step === 2) {
@@ -426,13 +511,19 @@ export class FilmStorySystem {
       state.lastText = next.phase === 'ground_counter' ? 'Smith 的拳锋擦过外套。WASD 调整站位，面向他用 F 完成两次有效反击。'
         : next.phase === 'shockwave' ? '第二次反击与 Smith 同时命中。冲击波推开积水、雨滴和街边的复制体，两个人被抛向高空。'
           : next.phase === 'air_counter' ? 'Neo 在俯冲线外翻身。现在按 F 在空中反击，把交锋推向楼体。'
+            : next.phase === 'interior_counter' ? 'Neo 避开了楼内追击。现在按 F 高踢反击；等待会失去窗口。'
+              : next.phase === 'interior_kick' ? 'Neo 踏稳支撑脚，抬腿踢向 Smith，再把他送出破窗。'
+                : next.phase === 'sky_counter' ? '第二轮空中窗口已经打开。现在按 F 反击。'
+                  : next.phase === 'sky_grapple' ? '反击后 Smith 近身抓住 Neo，翻转交锋并压向下面的街道。'
+                    : next.phase === 'pit_evade' ? 'Neo 侧身错开 Smith 的起手，双脚仍落在坑底。'
+                      : next.phase === 'pit_punch' ? 'Neo 把最后的力量送进右拳，穿过雨幕击向 Smith 的面部。'
             : next.phase === 'building' ? '反击命中，Smith 随即把 Neo 砸穿侧面楼体。碎石与玻璃落向积水中的大道。'
               : `反击 ${next.hits}/${SMITH_FINALE.ground.hits} 命中。拉开一拍，再按 F 完成下一击。`;
       this.placeSmithFinale(agent, tick); return state.lastText;
     }
-    return encounter.phase === 'ground_dodge' || encounter.phase === 'air_dodge' ? '观察 Smith 的攻击窗口，按 X 闪避。'
+    return ['ground_dodge', 'air_dodge', 'interior_dodge', 'sky_dodge', 'pit_dodge'].includes(encounter.phase) ? '观察 Smith 的攻击窗口，按 X 闪避。'
       : encounter.phase === 'ground_counter' ? '面向 Smith，用 F 反击；连续点击不能跳过动作间隔。'
-        : encounter.phase === 'air_counter' ? '空中窗口已经打开，用 F 反击。'
+        : ['air_counter', 'interior_counter', 'sky_counter', 'pit_counter'].includes(encounter.phase) ? '窗口已经打开，用 F 反击。'
           : encounter.phase === 'failed' ? '这一轮交锋已经失败。J 打开手记，从战斗检查点重试。'
             : '按当前终局提示行动；普通攻击不能跳过哲学选择或同化确认。';
   }
@@ -467,11 +558,13 @@ export class FilmStorySystem {
   }
   private placeNeoBody(agent: AgentState, encounter: TrilogyEpilogueEncounter, tick: number): void {
     const pose = neoCarryPose(encounter);
+    const action = agent.currentAction, saved = action?.parameters.epilogue as TrilogyEpilogueEncounter | undefined;
+    const startedAt = action?.parameters.finaleComa && saved?.kind === encounter.kind && saved.phase === encounter.phase ? action.startedAt : tick;
     agent.position = filmPosition('film_machine_core', pose.x, pose.z); agent.position.y += pose.y;
     agent.currentLocation = 'film_machine_core'; agent.isInMatrix = false; agent.rotation = Math.PI;
     agent.velocity = { x: 0, y: 0, z: 0 }; agent.targetPosition = null; agent.currentPath = [];
     agent.currentAction = { type: 'idle', parameters: { resolved: true, finaleComa: true,
-      epilogue: { ...encounter, role: 'neo' } }, startedAt: tick, duration: 100000, progress: 0 };
+      epilogue: { ...encounter, role: 'neo' } }, startedAt, duration: 100000, progress: 0 };
   }
   private placeEpilogue(agent: AgentState, tick: number): void {
     this.ensureEpilogue(); const state = this.state; const encounter = state?.epilogue;
@@ -479,22 +572,16 @@ export class FilmStorySystem {
     const progress = trilogyEpilogueProgress(encounter);
     const set = this.scene!.set;
     if (encounter.kind === 'ceasefire') {
-      const stations: Record<string, [number, number, number]> = {
-        morpheus: [-6, 17, Math.PI / 2], niobe: [-2.2, 17, -Math.PI / 2],
-        link: [3, 19, Math.PI / 2], zee: [6.5, 19, -Math.PI / 2],
-      };
-      const embracing = encounter.phase === 'embrace' || encounter.phase === 'done';
-      for (const [id, station] of Object.entries(stations)) {
-        const member = this.world.agents.get(id); if (!member || member.controller) continue;
-        const pair = id === 'morpheus' || id === 'niobe';
-        const x = embracing ? pair ? id === 'morpheus' ? -4.35 : -3.75 : id === 'link' ? 4.35 : 4.95 : station[0];
-        member.position = filmPosition(set, x, station[1]); member.rotation = station[2]; member.currentLocation = set; member.isInMatrix = false;
+      for (const id of ['morpheus', 'niobe', 'link', 'zee'] as const) {
+        const member = this.world.agents.get(id); if (!member || member.controller || member.status !== 'alive') continue;
+        const pose = ceasefireReunionPose(encounter, id);
+        member.position = filmPosition(set, pose.x, pose.z); member.rotation = pose.yaw; member.currentLocation = set; member.isInMatrix = false;
         member.velocity = { x: 0, y: 0, z: 0 }; member.currentAction = { type: 'idle', parameters: { resolved: true,
           epilogue: { ...encounter, role: id } }, startedAt: tick, duration: 1, progress: 0 };
       }
       if (trilogyEpilogueLocked(encounter)) {
         const z = encounter.phase === 'running' ? -30 + progress * 44 : ['announcement', 'embrace'].includes(encounter.phase) ? 14 : -30;
-        agent.position = filmPosition(set, 0, z); agent.rotation = 0; agent.velocity = { x: 0, y: 0, z: 0 };
+        agent.position = filmPosition(set, 0, z); agent.rotation = encounter.phase === 'retreat' ? Math.PI : 0; agent.velocity = { x: 0, y: 0, z: 0 };
       }
     } else if (encounter.kind === 'neo_carried') {
       this.placeNeoBody(agent, encounter, tick); return;
@@ -634,29 +721,10 @@ export class FilmStorySystem {
   }
   private ensureMobil(tick: number): void {
     const state = this.state;
-    if (!state || !['m3_mobil', 'm3_family', 'm3_trainman', 'm3_mobil_release'].includes(state.scene) || state.mobil) return;
+    if (!state || !['m3_mobil', 'm3_family', 'm3_trainman', 'm3_mobil_release'].includes(state.scene)) return;
     // A save from the original two-step station can continue at its recorded scene.
-    state.mobil = { phase: state.scene === 'm3_mobil_release' || state.scene === 'm3_trainman' && state.step > 0 ? 'approaching' : 'waiting', elapsed: 0, lastTick: tick, loops: 0 };
-  }
-  private helChaseTick(tick: number): void {
-    const state = this.state!;
-    state.helChase ??= { phase: state.step > 0 ? 'running' : 'sighting', elapsed: 0, lastTick: tick };
-    const chase = state.helChase;
-    const trainman = this.world.agents.get('trainman');
-    if (trainman?.controller) { chase.lastTick = tick; return; }
-    if (chase.phase === 'running') chase.elapsed = Math.min(6, chase.elapsed + Math.max(0, tick - chase.lastTick) * .5);
-    chase.lastTick = tick;
-    if (chase.phase === 'running' && chase.elapsed >= 6) {
-      chase.phase = 'escaped'; state.lastText = '列车没有停。Trainman 从钢柱后跃过轨道，消失在驶过的车厢另一侧。';
-    }
-    if (trainman) {
-      const progress = Math.min(1, chase.elapsed / 6);
-      trainman.position = filmPosition(this.scene!.set, chase.phase === 'escaped' ? 26 : progress > .72 ? (progress - .72) / .28 * 26 : 0,
-        chase.phase === 'sighting' ? 10 : 10 - progress * 49);
-      trainman.rotation = Math.PI; trainman.velocity = { x: 0, y: 0, z: 0 };
-      trainman.currentAction = { type: chase.phase === 'escaped' ? 'idle' : 'move_to',
-        parameters: { resolved: true, helChase: chase.phase }, startedAt: tick, duration: 1, progress };
-    }
+    state.mobil ??= { phase: state.scene === 'm3_mobil_release' || state.scene === 'm3_trainman' && state.step > 0 ? 'approaching' : 'waiting', elapsed: 0, lastTick: tick, loops: 0 };
+    if (state.scene === 'm3_trainman' && state.step === 0) state.mobil.luggage ??= { phase: 'ready', elapsed: 0 };
   }
   private sealHelElevator(): void {
     const id = 'film:hel:elevator-door'; const state = this.state;
@@ -665,23 +733,85 @@ export class FilmStorySystem {
     }
     if (!this.sandbox().structures.some(s => s.id === id)) this.sandbox().structures.push({ id, kind: 'barricade', owner: 'matrix',
       position: filmPosition('film_club_hel', 0, HEL_ELEVATOR.doorZ), matrix: true, health: 999,
-      film: { scene: 'm3_hel_entry', width: HEL_ELEVATOR.doorWidth, depth: .4, height: HEL_ELEVATOR.doorHeight } });
+      film: { scene: 'm3_hel_entry', width: HEL_ELEVATOR.doorWidth, depth: .4, height: HEL_ELEVATOR.doorHeight + HEL_ELEVATOR.upper } });
+  }
+  helElevatorFrame(actor: AgentState, dt: number, tick: number): boolean {
+    const state = this.state;
+    if (state?.scene !== 'm3_hel_entry' || state.visiting || state.step > 0 || actor.id !== state.actor || actor.currentLocation !== 'film_club_hel') return false;
+    state.helElevator ??= { phase: 'ready', elapsed: 0, lastTick: tick };
+    const lift = state.helElevator;
+    if (!lift.physical && lift.phase === 'descending') return true; // Keep a pre-upgrade ride at its existing level.
+    if (!lift.physical && lift.phase === 'ready') {
+      lift.physical = true; actor.position.y = FILM_SETS.film_club_hel.center.y + HEL_ELEVATOR.upper;
+      state.checkpoint = { ...actor.position };
+    }
+    if (dt > 0) this.helElevatorFrames = true;
+    lift.paused = ['morpheus', 'seraph'].map(id => this.world.agents.get(id)).find(member => member?.controller)?.name;
+    lift.unavailable = ['morpheus', 'seraph'].map(id => this.world.agents.get(id)).find(member => !member || member.status !== 'alive')?.name;
+    const locked = lift.phase === 'descending' || lift.phase === 'opening';
+    if (lift.paused || lift.unavailable) { state.lastText = helElevatorText(lift); return locked; }
+    const delta = actor.controller && actor.status === 'alive' ? Math.max(0, dt) : 0;
+    if (lift.phase === 'descending') {
+      lift.elapsed = Math.min(HEL_ELEVATOR.seconds, lift.elapsed + delta);
+      if (lift.elapsed >= HEL_ELEVATOR.seconds) lift.phase = 'arrived';
+    } else if (lift.phase === 'opening') {
+      lift.gateElapsed = Math.min(HEL_ELEVATOR.opening, (lift.gateElapsed ?? 0) + delta);
+      if (lift.gateElapsed >= HEL_ELEVATOR.opening) lift.phase = 'open';
+    }
+    const floor = helElevatorFloor(lift), center = FILM_SETS.film_club_hel.center;
+    for (const id of ['trinity', 'morpheus', 'seraph'] as const) {
+      const member = this.world.agents.get(id)!;
+      if (member.status !== 'alive' || member.controller && member !== actor) continue;
+      member.currentLocation = 'film_club_hel'; member.isInMatrix = true;
+      if (id === 'trinity') {
+        if (lift.phase === 'descending') {
+          const root = helElevatorTrinityRoot(lift);
+          member.position = filmPosition('film_club_hel', root.x, root.z); member.rotation = root.yaw;
+        } else if (lift.phase === 'opening') {
+          const root = helElevatorTrinityRoot(lift);
+          member.position = filmPosition('film_club_hel', root.x, root.z); member.rotation = root.yaw;
+        }
+        if (locked) { member.position.y = center.y + floor; state.checkpoint = { ...member.position }; }
+      } else {
+        const p = HEL_ELEVATOR.passengers[id]; member.position = filmPosition('film_club_hel', p.x, p.z); member.position.y += floor;
+        member.rotation = id === 'seraph' && lift.phase === 'descending' ? -Math.PI * .8 : Math.PI;
+      }
+      if (locked || member !== actor) {
+        member.velocity = { x: 0, y: 0, z: 0 };
+        member.currentAction = { type: 'idle', parameters: { player: member === actor, resolved: true,
+          helElevator: { role: id, phase: lift.phase, elapsed: lift.elapsed, gateElapsed: lift.gateElapsed ?? 0 } },
+          startedAt: state.enteredAt, duration: 1e9, progress: 0 };
+      } else if (member.currentAction?.parameters.helElevator) member.currentAction = null;
+    }
+    this.sealHelElevator(); state.lastText = helElevatorText(lift);
+    if (lift.phase === 'open') {
+      actor.currentAction = null;
+      this.advance('Trinity 亲自拉开铁门。三人走到衣帽间，发现守卫比预计的更多。', actor, tick);
+      for (const id of ['morpheus', 'seraph']) {
+        const member = this.world.agents.get(id)!; if (member.currentAction?.parameters.helElevator) member.currentAction = null;
+      }
+    }
+    return lift.phase === 'descending' || lift.phase === 'opening';
   }
   private helElevatorTick(actor: AgentState, tick: number): void {
     const state = this.state!;
     if (!state.helElevator) { state.helElevator = { phase: state.step ? 'open' : 'ready', elapsed: 0, lastTick: tick }; delete state.started; }
     const lift = state.helElevator;
-    if (lift.phase === 'descending') {
-      lift.elapsed = Math.min(HEL_ELEVATOR.seconds, lift.elapsed + Math.max(0, tick - lift.lastTick) * .5);
+    if (!lift.physical && lift.phase === 'descending') {
+      lift.elapsed = Math.min(4.2, lift.elapsed + Math.max(0, tick - lift.lastTick) * .5);
       actor.velocity = { x: 0, y: 0, z: 0 };
       actor.currentAction = { type: 'idle', parameters: { player: true, resolved: true, helElevator: lift.elapsed / HEL_ELEVATOR.seconds },
         startedAt: tick, duration: 1, progress: lift.elapsed / HEL_ELEVATOR.seconds };
       state.checkpoint = { ...actor.position };
-      if (lift.elapsed >= HEL_ELEVATOR.seconds) {
+      if (lift.elapsed >= 4.2) {
         lift.phase = 'open'; actor.currentAction = null;
         this.sealHelElevator();
         this.advance('铁笼到达 Club Hel。前门滑开，衣帽间的守卫拦住去路。', actor, tick);
       }
+    } else {
+      const framed = this.helElevatorFrames;
+      this.helElevatorFrame(actor, framed ? 0 : Math.max(0, tick - lift.lastTick) * .5, tick);
+      this.helElevatorFrames = framed;
     }
     lift.lastTick = tick;
   }
@@ -702,10 +832,36 @@ export class FilmStorySystem {
       position: filmPosition('film_club_hel', 0, HEL_DANCE_DOOR.z), matrix: true, health: 999,
       film: { scene: 'm3_hel_entry', width: HEL_DANCE_DOOR.width, depth: .5, height: HEL_DANCE_DOOR.height } });
   }
+  helDanceDoorFrame(actor: AgentState, dt: number, tick: number): boolean {
+    const state = this.state, door = state?.helDanceDoor;
+    if (state?.scene !== 'm3_hel_entry' || state.visiting || state.step !== 3 || actor.id !== state.actor
+      || actor.currentLocation !== 'film_club_hel' || !door?.physical || door.phase !== 'opening') return false;
+    if (actor.status !== 'alive') return true;
+    const delta = actor.controller ? Math.max(0, dt) : 0;
+    if (delta > 0) this.helDanceDoorFrames = true;
+    const before = { ...actor.position }, duration = helDanceDoorDuration(door);
+    door.elapsed = Math.min(duration, door.elapsed + delta);
+    const root = helDanceDoorRoot(door), center = FILM_SETS.film_club_hel.center;
+    actor.position = { x: center.x + root.x, y: center.y, z: center.z + root.z }; actor.rotation = root.yaw;
+    actor.velocity = { x: delta ? (actor.position.x - before.x) / delta : 0, y: 0, z: delta ? (actor.position.z - before.z) / delta : 0 };
+    actor.currentAction = { type: 'idle', parameters: { player: true, resolved: true,
+      helDoorPush: { ...door }, helDanceDoor: door.elapsed / duration }, startedAt: state.enteredAt, duration, progress: door.elapsed / duration };
+    state.checkpoint = { ...actor.position }; state.lastText = helDanceDoorText(door); this.sealHelDanceDoor();
+    if (door.elapsed >= duration) {
+      door.phase = 'open'; actor.currentAction = null;
+      this.advance('重门向内打开。舞曲盖过身后的枪声，穿过人群去见 Merovingian。', actor, tick);
+      this.sealHelDanceDoor();
+    }
+    return door.phase === 'opening';
+  }
   private helDanceDoorTick(actor: AgentState, tick: number): void {
     const state = this.state!; const door = state.helDanceDoor;
     if (!door) return;
-    if (door.phase === 'opening') {
+    if (door.physical) {
+      const framed = this.helDanceDoorFrames;
+      this.helDanceDoorFrame(actor, framed ? 0 : Math.max(0, tick - door.lastTick) * .5, tick);
+      this.helDanceDoorFrames = framed;
+    } else if (door.phase === 'opening') {
       door.elapsed = Math.min(HEL_DANCE_DOOR.seconds, door.elapsed + Math.max(0, tick - door.lastTick) * .5);
       actor.velocity = { x: 0, y: 0, z: 0 }; actor.rotation = Math.PI;
       actor.currentAction = { type: 'idle', parameters: { player: true, resolved: true, helDanceDoor: door.elapsed / HEL_DANCE_DOOR.seconds },
@@ -736,6 +892,7 @@ export class FilmStorySystem {
         ally.position.x += dx / length * travel; ally.position.z += dz / length * travel;
         ally.rotation = Math.atan2(dx, dz);
       }
+      ally.position.y = groundHeight(ally.position, true);
       ally.velocity = { x: dt ? dx / Math.max(length, .01) * travel / dt : 0, y: 0, z: dt ? dz / Math.max(length, .01) * travel / dt : 0 };
       ally.currentAction = { type: travel > .01 ? 'move_to' : 'idle', parameters: { resolved: true, armed: true, weaponStyle: 'hel_pistol' },
         startedAt: tick, duration: 1, progress: 0 };
@@ -756,9 +913,37 @@ export class FilmStorySystem {
   }
   restoreHelBargain(tick: number): void {
     this.ensureHelBargain(tick);
+    if (this.state?.scene === 'm3_hel_bargain' && !this.state.visiting) {
+      const actor = this.world.agents.get(this.state.actor)!;
+      this.helDisarmFrame(actor, 0, tick); this.helBargainFrame(actor, tick);
+    }
   }
   private helBargainOccupied(): boolean {
-    return ['merovingian', 'persephone', 'trainman'].some(id => Boolean(this.world.agents.get(id)?.controller));
+    return ['morpheus', 'seraph', 'merovingian', 'persephone', 'trainman'].some(id => Boolean(this.world.agents.get(id)?.controller));
+  }
+  helDisarmFrame(actor: AgentState, dt: number, tick: number): boolean {
+    const state = this.state, bargain = state?.helBargain, disarm = bargain?.disarm;
+    if (state?.scene !== 'm3_hel_bargain' || state.visiting || actor.id !== state.actor || bargain?.phase !== 'disarming' || !disarm) return false;
+    const available = actor.status === 'alive' && HEL_TRIO.every(id => {
+      const member = this.world.agents.get(id);
+      return member?.status === 'alive' && member.currentLocation === this.scene!.set && (id === actor.id || !member.controller);
+    }) && !this.helBargainOccupied();
+    const delta = actor.controller && available ? Math.max(0, dt) : 0;
+    if (delta > 0) this.helDisarmFrames = true;
+    disarm.elapsed = Math.min(HEL_DISARM.seconds, disarm.elapsed + delta);
+    if (available) for (const role of HEL_TRIO) {
+      const member = this.world.agents.get(role)!, start = disarm.starts[role], center = FILM_SETS.film_club_hel.center;
+      member.position = { x: center.x + start.x, y: center.y + start.y, z: center.z + start.z }; member.rotation = start.yaw;
+      member.velocity = { x: 0, y: 0, z: 0 };
+    }
+    state.lastText = available ? helDisarmText(disarm.elapsed) : '同伴的信号暂不可用，缴枪停在当前动作。';
+    state.checkpoint = { ...actor.position }; this.helBargainFrame(actor, tick);
+    if (disarm.elapsed >= HEL_DISARM.seconds) {
+      bargain.phase = 'disarmed';
+      this.advance('三人慢慢放低枪口，松手让武器落地。周围的人收走枪，Merovingian 让他们靠近高台。', actor, tick);
+      this.helBargainFrame(actor, tick);
+    }
+    return bargain.phase === 'disarming';
   }
   private helBargainTick(actor: AgentState, tick: number): void {
     this.ensureHelBargain(tick);
@@ -766,6 +951,13 @@ export class FilmStorySystem {
     if (this.helBargainOccupied()) { bargain.lastTick = tick; this.helBargainFrame(actor, tick); return; }
     const delta = Math.max(0, tick - bargain.lastTick) * .5;
     bargain.lastTick = tick;
+    if (bargain.phase === 'disarming') {
+      const framed = this.helDisarmFrames; this.helDisarmFrame(actor, framed ? 0 : delta, tick); this.helDisarmFrames = framed; return;
+    }
+    if (bargain.breakout && ['airborne', 'catching'].includes(bargain.phase)) {
+      const framed = this.helBreakoutFrames;
+      this.helBreakoutFrame(actor, framed ? 0 : delta, tick); this.helBreakoutFrames = framed; return;
+    }
     if (bargain.phase === 'windup' && (bargain.elapsed += delta) >= .7) {
       bargain.phase = 'evade'; bargain.elapsed = 0;
       state.lastText = '前排守卫向 Trinity 挥拳。现在按 X 闪避，再面朝高台反击。';
@@ -778,10 +970,67 @@ export class FilmStorySystem {
     }
     this.helBargainFrame(actor, tick);
   }
+  helBreakoutFrame(actor: AgentState, dt: number, tick: number): boolean {
+    const state = this.state, bargain = state?.helBargain, breakout = bargain?.breakout;
+    if (state?.scene !== 'm3_hel_bargain' || state.visiting || actor.id !== state.actor || !breakout
+      || !['airborne', 'catching'].includes(bargain!.phase)) return false;
+    const available = actor.status === 'alive' && HEL_TRIO.every(id => {
+      const member = this.world.agents.get(id);
+      return member?.status === 'alive' && member.currentLocation === this.scene!.set && (id === actor.id || !member.controller);
+    }) && !this.helBargainOccupied();
+    const delta = actor.controller && available ? Math.max(0, dt) : 0;
+    if (delta > 0) this.helBreakoutFrames = true;
+    bargain!.elapsed += delta;
+    const center = FILM_SETS.film_club_hel.center;
+    if (available && bargain!.phase === 'catching' && breakout.catchRoot) {
+      const at = breakout.catchRoot;
+      actor.position = { x: center.x + at.x, y: center.y + at.y, z: center.z + at.z }; actor.rotation = at.yaw;
+      actor.velocity = { x: 0, y: 0, z: 0 };
+    }
+    if (!available) state.lastText = '同伴的信号暂不可用，踢枪与接枪停在当前动作。';
+    if (bargain!.phase === 'catching' && bargain!.elapsed >= HEL_BREAKOUT.catch) {
+      bargain!.phase = 'gunpoint'; bargain!.elapsed = 0;
+      this.advance('Trinity 抓住枪柄，收拢手指，转向 Merovingian。亲自走近高台提出要求。', actor, tick);
+    } else if (bargain!.phase === 'airborne' && bargain!.elapsed >= HEL_BREAKOUT.kick + HEL_BREAKOUT.flight) {
+      bargain!.phase = 'failed'; bargain!.elapsed = 0; actor.currentAction = null;
+      state.lastText = '没有及时接住枪，包围圈重新合拢。J 打开手记，从突围前重试。';
+    }
+    state.checkpoint = { ...actor.position }; this.helBargainFrame(actor, tick);
+    return !available || bargain!.phase === 'catching' || bargain!.phase === 'airborne' && bargain!.elapsed < HEL_BREAKOUT.recover;
+  }
   helBargainFrame(actor: AgentState, tick: number): void {
     const state = this.state;
-    if (state?.scene !== 'm3_hel_bargain' || !this.controls(actor) || !state.helBargain) return;
+    if (state?.scene !== 'm3_hel_bargain' || state.visiting || !this.controls(actor) || actor.status !== 'alive' || !state.helBargain) return;
     const bargain = state.helBargain;
+    for (const id of [...HEL_TRIO, 'merovingian', 'persephone', 'trainman']) {
+      const member = this.world.agents.get(id);
+      if (member?.status === 'alive' && member.currentLocation === this.scene!.set && (id === actor.id || !member.controller)) member.position.y = groundHeight(member.position, true);
+    }
+    if (bargain.phase === 'disarming' && bargain.disarm) {
+      for (const role of HEL_TRIO) {
+        const member = this.world.agents.get(role)!;
+        if (member.status !== 'alive' || member.currentLocation !== this.scene!.set || role !== actor.id && member.controller) continue;
+        member.currentAction = { type: 'idle', parameters: { resolved: true, player: role === actor.id,
+          armed: bargain.disarm.elapsed < HEL_DISARM.release, weaponStyle: 'hel_pistol', helDisarm: { ...bargain.disarm, role } },
+          startedAt: state.enteredAt, duration: HEL_DISARM.seconds, progress: bargain.disarm.elapsed / HEL_DISARM.seconds };
+      }
+      return;
+    }
+    if (bargain.breakout && ['airborne', 'catching'].includes(bargain.phase)) {
+      for (const role of ['trinity', 'seraph'] as const) {
+        const member = this.world.agents.get(role)!;
+        if (member.status !== 'alive' || member.currentLocation !== this.scene!.set || role !== actor.id && member.controller) continue;
+        member.currentAction = { type: 'idle', parameters: { resolved: true, player: role === actor.id,
+          armed: role === 'trinity' && bargain.phase === 'catching', weaponStyle: 'hel_pistol',
+          helBreakout: { role, phase: bargain.phase, elapsed: bargain.elapsed, breakout: bargain.breakout } },
+          startedAt: state.enteredAt, duration: HEL_BREAKOUT.kick + HEL_BREAKOUT.flight, progress: 0 };
+      }
+      return;
+    }
+    for (const role of ['trinity', 'seraph']) {
+      const member = this.world.agents.get(role);
+      if (member?.status === 'alive' && !member.controller && member.currentAction?.parameters.helBreakout) member.currentAction = null;
+    }
     if (bargain.phase === 'gunpoint') actor.currentAction = { type: 'idle',
       parameters: { player: true, resolved: true, armed: true, weaponStyle: 'hel_pistol' }, startedAt: tick, duration: 1, progress: 0 };
     else if (bargain.phase === 'armed') actor.currentAction = { type: 'idle',
@@ -789,7 +1038,7 @@ export class FilmStorySystem {
     else if (actor.currentAction?.parameters.weaponStyle === 'hel_pistol') actor.currentAction = null;
     for (const id of ['morpheus', 'seraph']) {
       const companion = this.world.agents.get(id);
-      if (!companion || companion.controller || companion.currentLocation !== this.scene!.set) continue;
+      if (!companion || companion.status !== 'alive' || companion.controller || companion.currentLocation !== this.scene!.set) continue;
       if (bargain.phase === 'armed') companion.currentAction = { type: 'idle',
         parameters: { resolved: true, armed: true, weaponStyle: 'hel_pistol' }, startedAt: tick, duration: 1, progress: 0 };
       else if (companion.currentAction?.parameters.weaponStyle === 'hel_pistol') companion.currentAction = null;
@@ -815,33 +1064,62 @@ export class FilmStorySystem {
     const bargain = state.helBargain!;
     if (this.helBargainOccupied()) return '对峙中的角色由另一位玩家控制，动作窗口已暂停。';
     if (bargain.phase !== 'counter') return bargain.phase === 'failed' ? '突围失败。J 打开手记重试。' : '先等守卫出拳，用 X 闪避后再按 F。';
+    if (HEL_TRIO.some(id => this.world.agents.get(id)?.status !== 'alive' || this.world.agents.get(id)?.currentLocation !== this.scene!.set)) return '等待同伴在场，再一起突破人墙。';
     if (!this.near(agent, this.step!)) return '守卫还在舞池中央，靠近后再反击。';
     const vip = filmPosition(this.scene!.set, 0, -35);
     const dx = vip.x - agent.position.x; const dz = vip.z - agent.position.z;
     if ((Math.sin(agent.rotation) * dx + Math.cos(agent.rotation) * dz) / Math.hypot(dx, dz) < .55) return '转身面朝 VIP 高台，再用 F 打开缺口。';
     bargain.phase = 'airborne'; bargain.elapsed = 0; bargain.lastTick = tick;
-    agent.currentAction = { type: 'attack', parameters: { player: true, resolved: true, combo: 2 }, startedAt: tick, duration: .8, progress: 0 };
-    const seraph = this.world.agents.get('seraph');
-    if (seraph && !seraph.controller) seraph.currentAction = { type: 'attack', parameters: { resolved: true, combo: 2 }, startedAt: tick, duration: .8, progress: 0 };
-    this.advance('Trinity 打开人墙；Seraph 踢起手枪。枪正在空中，快按 G 接住。', agent, tick);
+    const center = FILM_SETS.film_club_hel.center;
+    const starts = Object.fromEntries(HEL_TRIO.map(id => {
+      const member = this.world.agents.get(id)!; member.position.y = groundHeight(member.position, true);
+      return [id, { x: member.position.x - center.x, y: member.position.y - center.y, z: member.position.z - center.z, yaw: member.rotation }];
+    })) as HelDisarm['starts'];
+    bargain.breakout = { starts, guard: bargain.rush ?? starts.trinity, source: helDisarmGun(bargain.disarm ?? { starts, elapsed: HEL_DISARM.seconds }, 'seraph') };
+    this.helBreakoutFrames = false;
+    this.advance('Trinity 打开缺口；Seraph 抬腿踢向持枪者。看清枪的弧线，到手边时按 G 接住。', agent, tick);
+    this.helBargainFrame(agent, tick);
     return state.lastText;
   }
   private helBargainAct(agent: AgentState, tick: number): string {
     const state = this.state!; const bargain = state.helBargain!; const step = this.step!;
     if (bargain.phase === 'failed') return '突围失败。J 打开手记，选择从当前检查点重试。';
+    if (bargain.phase === 'disarming' || bargain.phase === 'catching') return state.lastText;
     if (state.step === 3 && bargain.phase !== 'ready') return bargain.phase === 'windup' || bargain.phase === 'evade'
       ? '守卫正在出拳，按 X 闪避。' : '闪避之后面朝高台，按 F 反击。';
     if (!this.near(agent, step)) return '靠近舞池里的当前目标（4 米内）再按 G。';
     if (state.step === 0) {
-      bargain.phase = 'disarmed'; this.advance('舞曲骤停。Trinity、Morpheus 与 Seraph 放下枪，武装人群没有立刻开火。', agent, tick);
+      if (this.helBargainOccupied() || HEL_TRIO.some(id => {
+        const member = this.world.agents.get(id); return member?.status !== 'alive' || member.currentLocation !== this.scene!.set;
+      })) return '等待同伴在场且空闲，再一起放下武器。';
+      const center = FILM_SETS.film_club_hel.center;
+      bargain.disarm = { elapsed: 0, starts: Object.fromEntries(HEL_TRIO.map(id => {
+        const member = this.world.agents.get(id)!; member.position.y = groundHeight(member.position, true);
+        return [id, { x: member.position.x - center.x, y: member.position.y - center.y, z: member.position.z - center.z, yaw: member.rotation }];
+      })) as HelDisarm['starts'] };
+      bargain.phase = 'disarming'; bargain.lastTick = tick; this.helDisarmFrames = false; this.helDisarmFrame(agent, 0, tick);
     } else if (state.step === 1) {
       bargain.phase = 'offered'; this.advance('Merovingian 要先知的双眼，才肯让 Trainman 带回 Neo。', agent, tick);
     } else if (state.step === 3) {
       if (this.helBargainOccupied()) return '对峙中的角色由另一位玩家控制，突围暂时停在检查点。';
       bargain.phase = 'windup'; bargain.elapsed = 0; bargain.lastTick = tick;
+      const center = FILM_SETS.film_club_hel.center;
+      bargain.rush = { x: agent.position.x - center.x, y: agent.position.y - center.y, z: agent.position.z - center.z, yaw: agent.rotation };
       state.lastText = 'Trinity 拒绝交易，向前冲入人群。前排守卫开始起手；等拳锋逼近再闪避。';
     } else if (state.step === 4) {
       if (bargain.phase !== 'airborne') return '枪还没被踢起。';
+      if (bargain.breakout) {
+        if (this.helBargainOccupied() || HEL_TRIO.some(id => this.world.agents.get(id)?.status !== 'alive')) return '同伴的信号暂不可用，接枪停在当前动作。';
+        const gun = helBreakoutGun(bargain.breakout, bargain.elapsed), center = FILM_SETS.film_club_hel.center;
+        const point = { x: agent.position.x - center.x - .5 * Math.cos(agent.rotation) + 1.05 * Math.sin(agent.rotation),
+          y: agent.position.y - center.y + 3.6, z: agent.position.z - center.z + .5 * Math.sin(agent.rotation) + 1.05 * Math.cos(agent.rotation) };
+        if (bargain.elapsed < HEL_BREAKOUT.kick || Math.hypot(point.x - gun.x, point.y - gun.y, point.z - gun.z) > .9)
+          return '枪还没有飞到手边。面朝枪的弧线，靠近后再按 G。';
+        bargain.breakout.caught = gun;
+        bargain.breakout.catchRoot = { x: agent.position.x - center.x, y: agent.position.y - center.y, z: agent.position.z - center.z, yaw: agent.rotation };
+        bargain.phase = 'catching'; bargain.elapsed = 0; bargain.lastTick = tick;
+        state.lastText = 'Trinity 伸手接住枪柄，正把枪收回瞄准位置。'; this.helBargainFrame(agent, tick); return state.lastText;
+      }
       const flight = Math.min(1, bargain.elapsed / 2.8);
       const gun = filmPosition(this.scene!.set, 3.2 * (1 - flight), -27 - 4 * flight);
       if (Math.hypot(agent.position.x - gun.x, agent.position.z - gun.z) > 2.2) return '枪还没有飞到手边。盯住空中的轨迹，再按 G 接住。';
@@ -858,58 +1136,206 @@ export class FilmStorySystem {
     }
     return state.lastText;
   }
-  private mobilPassengers(progress: number, tick: number): void {
+  private mobilPassengers(progress: number, tick: number, dt = 0): void {
     const encounter = this.state!.mobil!;
     encounter.boarding = Math.max(encounter.boarding ?? 0, Math.min(1, progress));
     const boarding = encounter.boarding;
-    for (const [id, x, z, offset] of [['rama_kandra', -12, -8, -1], ['kamala', -10, -8, 0], ['sati', -5, -8, 1]] as const) {
-      const passenger = this.world.agents.get(id);
-      if (!passenger || passenger.controller) continue;
-      const approach = Math.min(1, boarding / .7); const entering = Math.max(0, (boarding - .7) / .3);
-      const px = x + (6.5 - x) * approach + entering * 6;
-      const pz = z + (-20 + offset * 2 - z) * approach;
-      passenger.position = filmPosition(this.scene!.set, px, pz);
-      if (px > 8) passenger.position.y -= 1.35;
-      passenger.rotation = Math.PI / 2; passenger.velocity = { x: 0, y: 0, z: 0 };
-      passenger.currentAction = { type: boarding > 0 && boarding < 1 ? 'move_to' : 'idle',
-        parameters: { resolved: true, mobilBoarding: boarding }, startedAt: tick, duration: 1, progress: boarding };
+    for (let index = 0; index < MOBIL_FAMILY.length; index++) {
+      const passenger = this.world.agents.get(MOBIL_FAMILY[index].id);
+      if (!passenger || passenger.controller || passenger.status !== 'alive') continue;
+      const luggage = encounter.luggage;
+      const parent = index === 0 && luggage && ['retrieving', 'returned'].includes(luggage.phase);
+      const pose = parent ? { ...mobilLuggageParent(luggage!), seated: 0 }
+        : mobilPassengerPose(index, index === 0 && luggage ? Math.min(.58, boarding) : boarding);
+      if (index === 0 && luggage && !parent) {
+        const start = MOBIL_FAMILY[0], p = Math.min(1, boarding / .58);
+        pose.x = start.x + (6.1 - start.x) * p; pose.z = start.z + (-16.7 - start.z) * p;
+        pose.yaw = p > 0 && p < 1 ? Math.atan2(6.1 - start.x, -16.7 - start.z) : Math.PI / 2;
+        pose.moving = p > 0 && p < 1;
+      }
+      const previous = passenger.position;
+      passenger.position = filmPosition(this.scene!.set, pose.x, pose.z);
+      passenger.rotation = pose.yaw;
+      passenger.velocity = { x: dt > 0 ? (passenger.position.x - previous.x) / dt : 0, y: 0, z: dt > 0 ? (passenger.position.z - previous.z) / dt : 0 };
+      passenger.currentAction = { type: pose.moving ? 'move_to' : 'idle',
+        parameters: { resolved: true, mobilBoarding: boarding, mobilSeat: passenger.id === 'kamala' ? pose.seated : undefined,
+          mobilLuggage: parent ? { role: 'rama_kandra', luggage } : undefined,
+          seated: passenger.id === 'kamala' && pose.seated > .5 }, startedAt: tick, duration: 1, progress: boarding };
     }
+  }
+  private mobilCastBlocked(): boolean {
+    const state = this.state;
+    if (!state || state.visiting || state.scene === 'm3_trainman' && state.mobil?.phase === 'gone') return false;
+    const roles = state.scene === 'm3_mobil' ? ['sati'] : state.scene === 'm3_family' ? ['rama_kandra', 'kamala', 'sati']
+      : state.scene === 'm3_trainman' ? ['trainman', 'rama_kandra', 'kamala', 'sati'] : state.scene === 'm3_mobil_release' ? ['trainman', 'trinity'] : [];
+    const unavailable = roles.find(id => this.world.agents.get(id)?.status !== 'alive' || this.world.agents.get(id)!.health <= 0);
+    if (unavailable) { state.lastText = `${this.world.agents.get(unavailable)?.name ?? unavailable} 无法参与这段车站事件；当前检查点保持，不能自动改写角色的命运。`; return true; }
+    const occupied = roles.find(id => this.world.agents.get(id)?.controller);
+    if (occupied) { state.lastText = '车站中的角色由其他玩家控制，当前列车与登车动作已暂停。'; return true; }
+    return false;
+  }
+  private mobilFamilyFrame(agent: AgentState, dt: number, tick: number): boolean {
+    const state = this.state!; this.ensureMobil(tick);
+    const family = state.mobil!.family ??= { phase: state.step >= 2 ? 'done' : state.reflections['m3_family:1'] ? 'reflection' : 'questions',
+      answered: state.step >= 2 || state.reflections['m3_family:1'] ? MOBIL_FAMILY_QUESTIONS.map(item => item.id) : [], elapsed: 0 };
+    const unavailable = MOBIL_FAMILY.find(spot => this.world.agents.get(spot.id)?.status !== 'alive');
+    const occupied = MOBIL_FAMILY.find(spot => this.world.agents.get(spot.id)?.controller);
+    family.unavailable = unavailable ? this.world.agents.get(unavailable.id)?.name ?? unavailable.id : undefined;
+    family.paused = occupied ? this.world.agents.get(occupied.id)!.name : undefined;
+    if (family.phase === 'hearing' && !family.paused && !family.unavailable && agent.controller && agent.status === 'alive') {
+      family.elapsed = Math.min(mobilFamilyDuration(family), family.elapsed + Math.max(0, Math.min(.1, dt)));
+      if (family.elapsed >= mobilFamilyDuration(family)) {
+        if (family.selected && !family.answered.includes(family.selected)) family.answered.push(family.selected);
+        delete family.selected; family.elapsed = 0;
+        family.phase = family.answered.length === MOBIL_FAMILY_QUESTIONS.length ? 'reflection' : 'questions';
+      }
+    }
+    if (state.step >= 2) family.phase = 'done';
+    const line = mobilFamilyLine(family), speaker = line?.speaker ?? 'neo';
+    const speakerAgent = this.world.agents.get(speaker)!, speakerHeight = speaker === 'kamala' ? 3.25 : 4.05;
+    const look = { x: speakerAgent.position.x, y: speakerAgent.position.y + speakerHeight, z: speakerAgent.position.z };
+    for (const spot of MOBIL_FAMILY) {
+      const member = this.world.agents.get(spot.id);
+      if (!member || member.controller || member.status !== 'alive') continue;
+      member.position = filmPosition(this.scene!.set, spot.x, spot.z); member.rotation = Math.PI / 2;
+      member.velocity = { x: 0, y: 0, z: 0 }; member.targetPosition = null; member.currentPath = [];
+      member.currentAction = { type: 'idle', parameters: { resolved: true, seated: spot.id === 'kamala',
+        mobilFamily: { role: spot.id, phase: family.phase, elapsed: line?.elapsed ?? 0, speaker,
+          look: spot.id === speaker ? { x: agent.position.x, y: agent.position.y + 4.05, z: agent.position.z } : look } },
+        startedAt: state.enteredAt, duration: 1e9, progress: 0 };
+    }
+    if (family.phase === 'hearing') {
+      agent.velocity = { x: 0, y: 0, z: 0 };
+      agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, mobilFamily: { role: 'neo', phase: family.phase,
+        elapsed: line?.elapsed ?? 0, speaker, look } }, startedAt: state.enteredAt, duration: 1e9, progress: 0 };
+    } else if (agent.currentAction?.parameters.mobilFamily) agent.currentAction = null;
+    if (state.step > 0) state.lastText = mobilFamilyText(family);
+    delete state.started;
+    return family.phase === 'hearing' || Boolean(family.paused || family.unavailable);
+  }
+  private mobilFamilyCommand(agent: AgentState, target: string, tick: number): string | undefined {
+    const state = this.state;
+    if (!state || state.visiting || state.scene !== 'm3_family') return;
+    this.mobilFamilyFrame(agent, 0, tick);
+    const family = state.mobil!.family!;
+    if (family.paused || family.unavailable || family.phase === 'hearing') return state.lastText;
+    if (state.step === 0 || state.step >= 2) return;
+    if (target.startsWith('reflect:') && family.phase !== 'reflection') return '先听完这一家关于身份、用途、爱与告别的回答，再记录自己的理解。';
+    if (target !== 'act' && !target.startsWith('family:ask:')) return;
+    if (family.phase === 'reflection') return target === 'act' ? 'J 亲自选择你如何理解这段关系。' : state.lastText;
+    if (!this.near(agent, this.step!)) return '先走到长椅旁，再向 Sati 的父母提问。';
+    const question = target === 'act' ? MOBIL_FAMILY_QUESTIONS.find(item => !family.answered.includes(item.id))
+      : MOBIL_FAMILY_QUESTIONS.find(item => item.id === target.slice(11));
+    if (!question || family.answered.includes(question.id)) return '这个问题已经听过；可以继续询问其他问题。';
+    family.phase = 'hearing'; family.selected = question.id; family.elapsed = 0; state.checkpoint = { ...agent.position };
+    this.mobilFamilyFrame(agent, 0, tick); return state.lastText;
+  }
+  private mobilLuggageFrame(agent: AgentState, dt: number, tick: number): boolean {
+    const state = this.state!, luggage = state.mobil!.luggage;
+    if (!luggage) return false;
+    const center = FILM_SETS[this.scene!.set].center;
+    if (luggage.phase === 'lifting') {
+      luggage.elapsed = Math.min(MOBIL_LUGGAGE.lift, luggage.elapsed + dt);
+      agent.position = filmPosition(this.scene!.set, luggage.approach!.x, luggage.approach!.z);
+      agent.rotation = luggage.approach!.yaw; agent.velocity = { x: 0, y: 0, z: 0 };
+      agent.currentAction = { type: 'idle', parameters: { resolved: true, player: true }, startedAt: tick, duration: MOBIL_LUGGAGE.lift, progress: luggage.elapsed / MOBIL_LUGGAGE.lift };
+      if (luggage.elapsed >= MOBIL_LUGGAGE.lift) {
+        luggage.phase = 'carried'; luggage.elapsed = 0;
+        this.advance('你提起 Rama 的箱子。跟在家人身边，亲自走到打开的车门。', agent, tick);
+      }
+      return true;
+    }
+    if (luggage.phase === 'dropped') {
+      luggage.elapsed += dt;
+      if (luggage.elapsed >= .75) {
+        const floor = mobilLuggagePose(luggage), parent = this.world.agents.get('rama_kandra')!;
+        luggage.floor = { x: floor.x, z: floor.z, yaw: floor.yaw };
+        luggage.parentFrom = { x: parent.position.x - center.x, z: parent.position.z - center.z, yaw: parent.rotation };
+        luggage.walk = Math.max(MOBIL_LUGGAGE.walk, Math.hypot(floor.x - 1.25 - luggage.parentFrom.x, floor.z - luggage.parentFrom.z) / 2.8);
+        luggage.phase = 'retrieving'; luggage.elapsed = 0;
+      }
+    } else if (luggage.phase === 'retrieving') {
+      const walk = luggage.walk ?? MOBIL_LUGGAGE.walk;
+      luggage.elapsed = Math.min(walk + MOBIL_LUGGAGE.lift, luggage.elapsed + dt);
+      if (luggage.elapsed >= walk + MOBIL_LUGGAGE.lift) { luggage.phase = 'returned'; luggage.elapsed = 0; }
+    } else if (luggage.phase === 'returned') luggage.elapsed = Math.min(MOBIL_LUGGAGE.return, luggage.elapsed + dt);
+    return false;
   }
   mobilFrame(agent: AgentState, dt: number, tick: number): boolean {
     const state = this.state;
-    if (!state || state.visiting || state.scene !== 'm3_trainman' || !this.controls(agent)) return false;
+    if (!state || state.visiting || !this.controls(agent)) return false;
+    if (state.scene === 'm3_family') return this.mobilFamilyFrame(agent, dt, tick);
+    if (!['m3_trainman', 'm3_mobil_release'].includes(state.scene)) return false;
     this.ensureMobil(tick);
+    if (this.mobilCastBlocked()) return true;
+    this.mobilTick(agent, tick, dt);
+    if (state.scene === 'm3_mobil_release') return state.mobil?.reunion?.phase === 'embracing';
+    if (this.mobilLuggageFrame(agent, Math.max(0, dt), tick)) return true;
     const encounter = state.mobil!;
-    if (encounter.phase !== 'refusing') return false;
-    if (['trainman', 'rama_kandra', 'kamala', 'sati'].some(id => this.world.agents.get(id)?.controller)) {
-      state.lastText = '车门旁的角色由其他玩家控制，登车片段停在这里。'; return true;
-    }
-    const previous = encounter.elapsed;
-    encounter.elapsed = Math.min(2.2, encounter.elapsed + Math.max(0, dt));
-    this.mobilPassengers((encounter.boarding ?? 0) + Math.max(0, dt) / 2.2, tick);
     const center = FILM_SETS[this.scene!.set].center;
-    const impact = Math.max(0, Math.min(1, (encounter.elapsed - .35) / 1.2));
-    agent.position = { x: center.x + (encounter.approach?.x ?? 6) - impact * 4.2, y: center.y,
-      z: center.z + (encounter.approach?.z ?? -20) + impact * 2.5 };
-    agent.rotation = encounter.approach?.yaw ?? Math.PI / 2;
+    if (dt > 0 && state.step === 2 && encounter.phase === 'stopped' && encounter.elapsed >= .65
+      && agent.position.x >= center.x + 6.4 && Math.abs(agent.position.z - center.z - MOBIL_STATION.train.stop) < 1.65) {
+      if (this.mobilCastBlocked()) return true;
+      encounter.phase = 'refusing'; encounter.elapsed = 0; encounter.refusalStartedAt = tick;
+      if (encounter.luggage) encounter.closeElapsed = 0;
+      encounter.approach = { x: agent.position.x - center.x, z: agent.position.z - center.z, yaw: agent.rotation };
+      state.lastText = 'Trainman 挡住车门。这条线路不允许 Neo 离开。';
+    }
+    if (encounter.phase !== 'refusing') return false;
+    if (this.mobilCastBlocked()) return true;
+    const previous = encounter.elapsed;
+    encounter.elapsed = Math.min(MOBIL_REFUSAL.seconds, encounter.elapsed + Math.max(0, dt));
+    if (previous < MOBIL_REFUSAL.punch && encounter.elapsed >= MOBIL_REFUSAL.punch && encounter.luggage?.phase === 'carried') {
+      const held = mobilLuggagePose(encounter.luggage, { ...encounter.approach!, y: 0 });
+      encounter.luggage.phase = 'dropped'; encounter.luggage.elapsed = 0;
+      encounter.luggage.drop = { x: held.x, y: held.y, z: held.z, yaw: held.yaw };
+    }
+    this.mobilPassengers((encounter.boarding ?? 0) + Math.max(0, dt) / 2.2, tick, dt);
+    const bagOnTrain = !encounter.luggage || encounter.luggage.phase === 'returned' && encounter.luggage.elapsed >= MOBIL_LUGGAGE.return;
+    if (encounter.luggage && bagOnTrain && encounter.boarding === 1) encounter.closeElapsed = Math.min(.65, (encounter.closeElapsed ?? 0) + Math.max(0, dt));
+    this.sealMobil();
+    const pose = mobilRefusalPose(encounter.elapsed, encounter.approach);
+    agent.position = { x: center.x + pose.x, y: center.y + pose.y, z: center.z + pose.z };
+    agent.rotation = pose.yaw;
     agent.velocity = { x: 0, y: 0, z: 0 };
-    agent.currentAction = { type: 'defend', parameters: { player: true, resolved: true, mobilRefusal: encounter.elapsed }, startedAt: tick, duration: 1, progress: impact };
+    encounter.refusalStartedAt ??= tick;
+    agent.currentAction = { type: 'defend', parameters: { player: true, resolved: true, mobilRefusal: { role: 'neo', elapsed: encounter.elapsed } },
+      startedAt: encounter.refusalStartedAt, duration: MOBIL_REFUSAL.seconds, progress: encounter.elapsed / MOBIL_REFUSAL.seconds };
     const trainman = this.world.agents.get('trainman');
-    if (trainman && !trainman.controller) trainman.currentAction = { type: 'attack', target: agent.id,
-      parameters: { resolved: true, contactTick: tick + 1 }, startedAt: tick, duration: 1, progress: impact };
-    if (previous < .35 && encounter.elapsed >= .35) this.onImpact?.({ source: 'trainman', target: agent.id,
-      position: { ...agent.position }, direction: { x: -1, y: 0, z: .2 }, damage: 10, combo: 0, matrix: true, downed: false }, tick);
-    if (encounter.elapsed >= 2.2) {
+    if (trainman && !trainman.controller) {
+      const step = Math.min(1, encounter.elapsed / .3);
+      trainman.position = filmPosition(this.scene!.set, 6.9 + .15 * step, (encounter.approach?.z ?? -20) - 2.5 + 1.2 * step);
+      trainman.rotation = -Math.PI / 2;
+      trainman.currentAction = { type: 'attack', target: agent.id,
+        parameters: { resolved: true, mobilRefusal: { role: 'trainman', elapsed: encounter.elapsed } },
+        startedAt: encounter.refusalStartedAt, duration: MOBIL_REFUSAL.seconds, progress: pose.punch };
+    }
+    if (previous < MOBIL_REFUSAL.punch && encounter.elapsed >= MOBIL_REFUSAL.punch) this.onImpact?.({ source: 'trainman', target: agent.id,
+      position: { ...agent.position }, direction: { x: -1, y: .35, z: 0 }, damage: 10, combo: 0, matrix: true, downed: true }, tick);
+    if (encounter.elapsed >= MOBIL_REFUSAL.seconds && bagOnTrain && (!encounter.luggage || encounter.closeElapsed! >= .65)) {
       agent.health = Math.max(1, agent.health - 10);
       this.advance('Trainman 挡住 Neo：这条线路由他定规矩。Sati 一家已经上车，车门在 Neo 面前关闭。', agent, tick);
       encounter.phase = 'departing'; encounter.elapsed = 0; encounter.lastTick = tick;
+      if (trainman && !trainman.controller) trainman.currentAction = null;
     }
     return true;
   }
-  private mobilTick(actor: AgentState, tick: number): void {
+  private mobilTick(actor: AgentState, tick: number, frame = 0): void {
     const state = this.state!; this.ensureMobil(tick);
     const encounter = state.mobil!;
-    const elapsed = Math.max(0, tick - encounter.lastTick) * .5; encounter.lastTick = tick;
+    if (state.scene === 'm3_family') { this.mobilFamilyFrame(actor, 0, tick); encounter.lastTick = tick; return; }
+    const elapsed = ['m3_trainman', 'm3_mobil_release'].includes(state.scene) ? Math.max(0, frame) : Math.max(0, tick - encounter.lastTick) * .5; encounter.lastTick = tick;
+    if (state.scene === 'm3_trainman' && encounter.phase === 'waiting' && elapsed > 0) {
+      encounter.phase = 'approaching'; encounter.elapsed = 0;
+      state.lastText = 'Sati 听见轨道深处的声音。迟到的列车正在进站；等车门打开，再帮父亲提起行李。';
+    }
+    if (encounter.phase === 'waiting' && ['m3_family', 'm3_trainman'].includes(state.scene)) {
+      for (const spot of MOBIL_FAMILY) {
+        const person = this.world.agents.get(spot.id); if (!person || person.controller || person.status !== 'alive') continue;
+        person.position = filmPosition(this.scene!.set, spot.x, spot.z); person.rotation = Math.PI / 2;
+        person.currentAction = { type: 'idle', parameters: { resolved: true, seated: spot.id === 'kamala' }, startedAt: state.enteredAt, duration: 1e9, progress: 0 };
+      }
+    }
     if (encounter.phase === 'approaching' || encounter.phase === 'departing' || encounter.phase === 'stopped') encounter.elapsed += elapsed;
     if (encounter.phase === 'approaching' && encounter.elapsed >= 4.5) {
       encounter.phase = 'stopped'; encounter.elapsed = 0;
@@ -919,43 +1345,37 @@ export class FilmStorySystem {
       encounter.phase = 'gone'; encounter.elapsed = 0;
       state.lastText = '尾灯消失在隧道中。两端都没有楼梯；只剩下铁轨。';
     }
-    if (encounter.phase === 'stopped' && state.scene === 'm3_trainman') this.mobilPassengers(encounter.elapsed / 5, tick);
+    if (encounter.phase === 'stopped' && state.scene === 'm3_trainman') this.mobilPassengers((encounter.boarding ?? 0) + (state.step > 0 && encounter.elapsed >= .65 ? elapsed / 6 : 0), tick, elapsed);
+    if (encounter.phase === 'refusing') return;
+    this.sealMobil();
+    const trainPose = mobilTrainPose(encounter);
     if (state.scene === 'm3_mobil_release') {
       const trainman = this.world.agents.get('trainman');
       if (trainman && !trainman.controller) {
-        trainman.position = filmPosition(this.scene!.set, 13, encounter.phase === 'approaching' ? -80 + Math.min(1, encounter.elapsed / 4.5) * 60 : -20);
-        trainman.position.y -= 1.35; trainman.rotation = -Math.PI / 2;
+        trainman.position = filmPosition(this.scene!.set, 10.85, trainPose.z - 6);
+        trainman.rotation = -Math.PI / 2;
       }
-      const trinity = this.world.agents.get('trinity');
-      if (trinity && !trinity.controller) {
-        const arrival = encounter.phase === 'stopped' ? Math.min(1, encounter.elapsed / 2) : 0;
-        const x = 12 - arrival * 10;
-        const z = encounter.phase === 'approaching' ? -80 + Math.min(1, encounter.elapsed / 4.5) * 60 : -20 + arrival * 2;
-        trinity.position = filmPosition(this.scene!.set, x, z);
-        if (x > 8) trinity.position.y -= 1.35;
-        trinity.rotation = -Math.PI / 2; trinity.velocity = { x: 0, y: 0, z: 0 };
-        trinity.currentAction = { type: arrival > 0 && arrival < 1 ? 'move_to' : 'idle',
-          parameters: { resolved: true, mobilRelease: arrival }, startedAt: tick, duration: 1, progress: arrival };
-      }
+      this.mobilReunionFrame(actor, elapsed, tick);
       return;
     }
     const trainman = this.world.agents.get('trainman');
-    if (trainman && !trainman.controller && state.scene === 'm3_trainman') {
-      const boarding = encounter.phase === 'stopped' || encounter.phase === 'refusing';
-      trainman.position = filmPosition(this.scene!.set, boarding ? 7.4 : 12,
-        boarding ? -20 : encounter.phase === 'departing' ? -20 - Math.min(3, encounter.elapsed) * 20 : -80);
-      if (!boarding) trainman.position.y -= 1.35;
+    if (trainman && !trainman.controller && trainman.status === 'alive' && state.scene === 'm3_trainman') {
+      const boarding = encounter.phase === 'stopped';
+      trainman.position = filmPosition(this.scene!.set, boarding ? 6.9 : 10.85, trainPose.z - (boarding ? 2.5 : 6));
       trainman.rotation = -Math.PI / 2;
     }
     if (encounter.phase === 'departing' || encounter.phase === 'gone') {
-      for (const [id, offset] of [['rama_kandra', -1], ['kamala', 0], ['sati', 1]] as const) {
-        const passenger = this.world.agents.get(id);
-        if (passenger && !passenger.controller) {
-          passenger.position = filmPosition(this.scene!.set, 12.5, -20 + offset * 2 - Math.min(3, encounter.elapsed) * 18);
-          if (encounter.phase === 'gone') passenger.position.z = FILM_SETS[this.scene!.set].center.z - 80;
-          passenger.position.y -= 1.35;
+      for (let index = 0; index < MOBIL_FAMILY.length; index++) {
+        const passenger = this.world.agents.get(MOBIL_FAMILY[index].id);
+        if (passenger && !passenger.controller && passenger.status === 'alive') {
+          const pose = mobilPassengerPose(index, 1, trainPose.z);
+          passenger.position = filmPosition(this.scene!.set, pose.x, pose.z);
           passenger.rotation = Math.PI / 2; passenger.velocity = { x: 0, y: 0, z: 0 };
         }
+      }
+      if (encounter.luggage?.phase === 'returned') {
+        const parent = this.world.agents.get('rama_kandra');
+        if (parent && !parent.controller && parent.status === 'alive') parent.currentAction = { type: 'idle', parameters: { resolved: true }, startedAt: tick, duration: 1e9, progress: 0 };
       }
     }
     if (state.scene !== 'm3_trainman' || encounter.phase !== 'gone') return;
@@ -970,6 +1390,70 @@ export class FilmStorySystem {
       this.advance('另一端也返回 Mobil Ave。空间被 Trainman 折成闭环，Neo 必须等外面的人来开门。', actor, tick);
     }
   }
+  private mobilReunionFrame(actor: AgentState, dt: number, tick: number): void {
+    const state = this.state!, encounter = state.mobil!, trinity = this.world.agents.get('trinity')!;
+    const center = FILM_SETS[this.scene!.set].center, train = mobilTrainPose(encounter);
+    const reunion = encounter.reunion ??= { phase: 'exiting', elapsed: 0,
+      trinity: { x: 10.85, z: MOBIL_STATION.train.stop, yaw: -Math.PI / 2 } };
+    const previous = { ...trinity.position };
+    if (encounter.phase !== 'stopped') {
+      trinity.position = filmPosition(this.scene!.set, 10.85, train.z); trinity.rotation = -Math.PI / 2;
+    } else {
+      const embracing = reunion.phase === 'embracing';
+      if (reunion.phase === 'exiting' && encounter.elapsed >= .65) {
+        reunion.elapsed = Math.min(MOBIL_REUNION.exit, reunion.elapsed + dt);
+        reunion.trinity.x = 10.85 - 5.05 * reunion.elapsed / MOBIL_REUNION.exit;
+        if (reunion.elapsed >= MOBIL_REUNION.exit) { reunion.phase = 'approaching'; reunion.elapsed = 0; }
+      } else if (reunion.phase === 'approaching' || reunion.phase === 'ready') {
+        const dx = actor.position.x - center.x - reunion.trinity.x, dz = actor.position.z - center.z - reunion.trinity.z;
+        const gap = Math.hypot(dx, dz), walk = Math.min(Math.max(0, gap - MOBIL_REUNION.gap), MOBIL_REUNION.speed * dt);
+        if (gap > .01) {
+          const next = filmPosition(this.scene!.set, reunion.trinity.x + dx / gap * walk, reunion.trinity.z + dz / gap * walk);
+          if (actor.position.x < center.x + MOBIL_STATION.edge - 1 && !playerBlocked(next, true, 1.1, this.sandbox().structures)) {
+            reunion.trinity.x = next.x - center.x; reunion.trinity.z = next.z - center.z;
+            reunion.trinity.yaw = Math.atan2(dx, dz);
+            reunion.phase = gap - walk <= MOBIL_REUNION.gap + .03 ? 'ready' : 'approaching';
+          } else reunion.phase = 'approaching';
+        }
+      } else if (reunion.phase === 'embracing') {
+        reunion.elapsed = Math.min(MOBIL_REUNION.seconds, reunion.elapsed + dt);
+        if (reunion.elapsed >= MOBIL_REUNION.seconds) reunion.phase = 'together';
+      }
+      const pose = mobilReunionRoot(reunion, 'trinity');
+      trinity.position = filmPosition(this.scene!.set, pose.x, pose.z); trinity.rotation = pose.yaw;
+      if (embracing) {
+        const neo = mobilReunionRoot(reunion, 'neo');
+        actor.position = filmPosition(this.scene!.set, neo.x, neo.z); actor.rotation = neo.yaw;
+        actor.velocity = { x: 0, y: 0, z: 0 };
+        actor.currentAction = { type: 'idle', parameters: { player: true, resolved: true, mobilReunion: { role: 'neo', reunion } },
+          startedAt: state.enteredAt, duration: MOBIL_REUNION.seconds, progress: reunion.elapsed / MOBIL_REUNION.seconds };
+      }
+    }
+    trinity.velocity = dt > 0 ? { x: (trinity.position.x - previous.x) / dt, y: 0, z: (trinity.position.z - previous.z) / dt } : { x: 0, y: 0, z: 0 };
+    trinity.targetPosition = null; trinity.currentPath = [];
+    trinity.currentAction = { type: Math.hypot(trinity.velocity.x, trinity.velocity.z) > .1 ? 'move_to' : 'idle',
+      parameters: { resolved: true, mobilReunion: { role: 'trinity', reunion } }, startedAt: state.enteredAt, duration: 1e9, progress: 0 };
+    state.lastText = mobilReunionText(encounter, state.step); delete state.started;
+  }
+  private sealMobil(): void {
+    const prefix = 'film:mobil:', wanted: WorldStructure[] = [], state = this.state;
+    if (state && !state.visiting && ['m3_mobil', 'm3_family', 'm3_trainman', 'm3_mobil_release'].includes(state.scene)) {
+      const pose = mobilTrainPose(state.mobil);
+      if (pose.visible) {
+        wanted.push({ id: `${prefix}floor`, kind: 'barricade', owner: 'matrix', matrix: true, health: 999,
+          position: filmPosition('film_mobil_station', pose.x, pose.z),
+          film: { scene: state.scene, width: MOBIL_STATION.train.width + .3, depth: MOBIL_STATION.train.length, height: 0 } });
+        for (const obstacle of mobilTrainObstacles(state.mobil)) wanted.push({ id: `${prefix}${obstacle.id}`, kind: 'barricade', owner: 'matrix', matrix: true, health: 999,
+          position: filmPosition('film_mobil_station', obstacle.x, obstacle.z),
+          film: { scene: state.scene, width: obstacle.width, depth: obstacle.depth, height: obstacle.height } });
+      }
+    }
+    this.sandbox().structures = this.sandbox().structures.filter(s => !s.id.startsWith(prefix) || wanted.some(w => w.id === s.id));
+    for (const structure of wanted) {
+      const saved = this.sandbox().structures.find(s => s.id === structure.id);
+      if (saved) Object.assign(saved, structure); else this.sandbox().structures.push(structure);
+    }
+  }
   private ensureFinale(tick: number): void {
     const state = this.state; if (!state || state.visiting) return;
     if (state.scene === 'm2_ship_lost' && !state.shipLoss) state.shipLoss = {
@@ -981,35 +1465,86 @@ export class FilmStorySystem {
       remaining: RELOADED_FINALE.sentinelSeconds, focus: 0, lastTick: tick, attempts: 0,
     };
   }
+  private sealSignal(): void {
+    const prefix = 'film:sentinel-signal:', wanted: WorldStructure[] = [];
+    if (this.state?.scene === 'm2_stop_sentinels' && !this.state.visiting) {
+      wanted.push({ id: `${prefix}route`, kind: 'beacon', owner: 'matrix', position: { ...FILM_SETS.film_service_tunnels.center }, matrix: false, health: 999 });
+      for (const [index, obstacle] of SIGNAL_OBSTACLES.entries()) wanted.push({ id: `${prefix}${index}`, kind: 'barricade', owner: 'matrix',
+        position: filmPosition('film_service_tunnels', obstacle.x, obstacle.z), matrix: false, health: 999,
+        film: { scene: 'm2_stop_sentinels', width: obstacle.width, depth: obstacle.depth, height: obstacle.height } });
+    }
+    this.sandbox().structures = this.sandbox().structures.filter(s => !s.id.startsWith(prefix) || wanted.some(w => w.id === s.id));
+    for (const structure of wanted) if (!this.sandbox().structures.some(s => s.id === structure.id)) this.sandbox().structures.push(structure);
+  }
+  private sealMedical(): void {
+    const prefix = 'film:hammer-medical:', wanted: WorldStructure[] = [];
+    if ((this.state?.visiting ?? this.state?.scene) === 'm2_medical') {
+      for (const bed of HAMMER_MEDICAL_BEDS) {
+        wanted.push({ id: `${prefix}bed:${bed.role}`, kind: 'barricade', owner: 'matrix', position: filmPosition('film_hammer_deck', bed.x, bed.z), matrix: false, health: 999,
+          film: { scene: 'm2_medical', width: HAMMER_MEDICAL.width + .5, depth: HAMMER_MEDICAL.length, height: HAMMER_MEDICAL.mattressTop } });
+        for (const side of [-1, 1]) wanted.push({ id: `${prefix}monitor:${bed.role}:${side}`, kind: 'barricade', owner: 'matrix',
+          position: filmPosition('film_hammer_deck', bed.x + side * 1.7, bed.z - Math.cos(bed.yaw) * 3.8), matrix: false, health: 999,
+          film: { scene: 'm2_medical', width: 2.35, depth: .8, height: 4 } });
+      }
+      for (const cabinet of HAMMER_MEDICAL_SUPPLIES) wanted.push({ id: `${prefix}cabinet:${cabinet.x}`, kind: 'barricade', owner: 'matrix',
+        position: filmPosition('film_hammer_deck', cabinet.x, cabinet.z), matrix: false, health: 999,
+        film: { scene: 'm2_medical', width: cabinet.width, depth: cabinet.depth, height: cabinet.height } });
+    }
+    this.sandbox().structures = this.sandbox().structures.filter(s => !s.id.startsWith(prefix) || wanted.some(w => w.id === s.id));
+    for (const structure of wanted) if (!this.sandbox().structures.some(s => s.id === structure.id)) this.sandbox().structures.push(structure);
+  }
   finaleFrame(agent: AgentState, focus: boolean, yaw: number, dt: number, tick: number): boolean {
     const state = this.state;
     if (!state || state.visiting || !this.controls(agent)) return false;
     this.ensureFinale(tick);
-    if (state.scene === 'm2_ship_lost' && state.shipLoss?.phase === 'evacuating') {
-      for (const [id, side, lag] of [['neo', -1, 5], ['trinity', 1, 8], ['link', 0, 11]] as const) {
-        const crew = this.world.agents.get(id);
-        if (!crew || crew.controller) continue;
-        const target = filmPosition(this.scene!.set, side * 4, Math.max(-4, Math.min(31, agent.position.z - FILM_SETS[this.scene!.set].center.z - lag)));
-        const before = { ...crew.position }; const blend = Math.min(1, dt * 3);
-        crew.position.x += (target.x - crew.position.x) * blend; crew.position.z += (target.z - crew.position.z) * blend;
-        crew.velocity = dt > 0 ? { x: (crew.position.x - before.x) / dt, y: 0, z: (crew.position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
-        crew.rotation = 0; crew.currentAction = { type: 'move_to', parameters: { resolved: true }, startedAt: tick, duration: 100000, progress: 0 };
-      }
+    if (state.scene === 'm2_ship_lost') return this.nebEscape.frame(agent, dt, tick, yaw);
+    if (state.scene !== 'm2_stop_sentinels' || !state.tunnel) return false;
+    const encounter = state.tunnel;
+    const crew = ['trinity', 'morpheus', 'link'].map(id => this.world.agents.get(id));
+    encounter.paused = crew.find(member => member?.controller)?.name;
+    encounter.unavailable = crew.find(member => !member || member.status !== 'alive' || member.health <= 0)?.name;
+    const unavailable = crew.some(member => !member || member.status !== 'alive' || member.health <= 0);
+    const elapsed = agent.controller && agent.status === 'alive' && !encounter.paused && !unavailable ? Math.max(0, Math.min(.1, dt)) : 0;
+    if (encounter.paused || unavailable) {
+      state.lastText = encounter.paused ? `${encounter.paused} 由其他玩家控制；哨兵与身体停在保存的一拍。` : '有同伴无法参与；保留已有伤亡，当前一拍暂停。'; return true;
+    }
+    if (encounter.phase !== 'running') agent.currentAction = { type: 'move_to', parameters: { resolved: true, signal: { ...encounter }, ...(encounter.phase === 'collapsed' ? { finaleCollapse: true } : {}) }, startedAt: state.enteredAt, duration: 1e9, progress: 0 };
+    if (encounter.phase === 'collapsed' || encounter.phase === 'failed') { agent.velocity = { x: 0, y: 0, z: 0 }; return true; }
+    encounter.age = (encounter.age ?? RELOADED_FINALE.sentinelSeconds - encounter.remaining) + elapsed;
+    if (encounter.phase === 'running') {
+      if (elapsed > 0) encounter.pursuit = Math.max(encounter.pursuit ?? 0, 46 - (agent.position.z - FILM_SETS.film_service_tunnels.center.z));
       return false;
     }
-    if (state.scene !== 'm2_stop_sentinels' || !state.tunnel || state.tunnel.phase !== 'sensing' || state.step !== 1) return false;
-    const encounter = state.tunnel;
-    agent.rotation = yaw; agent.velocity = { x: 0, y: 0, z: 0 };
-    if (['trinity', 'morpheus', 'link'].some(id => this.world.agents.get(id)?.controller)) {
-      state.lastText = '同伴由另一位玩家控制；哨兵的追击停在当前检查点。'; return true;
+    if (elapsed > 0 && encounter.phase === 'sensing') agent.rotation = yaw;
+    agent.velocity = { x: 0, y: 0, z: 0 };
+    if (encounter.phase === 'stopping' || encounter.phase === 'collapsing') {
+      encounter.elapsed = (encounter.elapsed ?? 0) + elapsed;
+      for (const member of crew) if (member && !member.controller && member.status === 'alive') {
+        if (elapsed > 0 && member.id === 'trinity') {
+          const target = { x: agent.position.x - 2.8, z: agent.position.z + .6 }, length = Math.hypot(target.x - member.position.x, target.z - member.position.z);
+          const travel = Math.min(length, elapsed * 4.2);
+          if (length > .01) { member.position.x += (target.x - member.position.x) / length * travel; member.position.z += (target.z - member.position.z) / length * travel; }
+        }
+        if (elapsed > 0) member.rotation = Math.atan2(agent.position.x - member.position.x, agent.position.z - member.position.z);
+        member.velocity = { x: 0, y: 0, z: 0 }; member.targetPosition = null;
+        member.currentAction = { type: 'move_to', parameters: { resolved: true, signalWitness: true }, startedAt: state.enteredAt, duration: 1e9, progress: 0 };
+      }
+      if (encounter.phase === 'stopping' && encounter.elapsed >= SENTINEL_SIGNAL.stopSeconds - 1e-8) {
+        encounter.phase = 'collapsing'; encounter.elapsed = 0;
+        state.lastText = '哨兵落在管道旁，红色光点熄灭。Neo 放下手，失去平衡；Trinity 回身赶来。';
+      } else if (encounter.phase === 'collapsing' && encounter.elapsed >= SENTINEL_SIGNAL.collapseSeconds - 1e-8) {
+        encounter.phase = 'collapsed'; encounter.elapsed = SENTINEL_SIGNAL.collapseSeconds; agent.health = Math.min(agent.health, 1);
+        this.advance('Neo 倒下。Morpheus 追问发生了什么，Trinity 也无法解释；Link 发现 Hammer 的探照灯。', agent, tick);
+        agent.currentAction = { type: 'move_to', parameters: { resolved: true, finaleCollapse: true, signal: { ...encounter } }, startedAt: tick, duration: 1e9, progress: 0 };
+      }
+      return true;
     }
     const nearSignal = this.near(agent, this.step!); const facing = Math.cos(agent.rotation) > .45;
-    if (nearSignal && focus && facing) encounter.focus = Math.min(RELOADED_FINALE.signalSeconds, encounter.focus + Math.max(0, Math.min(.1, dt)));
-    else if (!focus) encounter.focus = Math.max(0, encounter.focus - Math.max(0, dt) * .25);
+    if (nearSignal && focus && facing) encounter.focus = Math.min(RELOADED_FINALE.signalSeconds, encounter.focus + elapsed);
+    else if (!focus) encounter.focus = Math.max(0, encounter.focus - elapsed * .25);
     if (encounter.focus >= RELOADED_FINALE.signalSeconds) {
-      encounter.phase = 'collapsed'; agent.health = Math.max(1, Math.min(agent.health, 1));
-      this.advance('三只哨兵逐一失去动力。Neo 在现实中触及机器信号，却耗尽体力倒下；Hammer 的探照灯照进隧道。', agent, tick);
-      agent.currentAction = { type: 'idle', parameters: { resolved: true, finaleCollapse: true }, startedAt: tick, duration: 100000, progress: 0 };
+      encounter.phase = 'stopping'; encounter.elapsed = 0;
+      state.lastText = 'Neo 伸手感到机器的连接。哨兵失去动力，正在向地面坠落。';
       return true;
     }
     state.lastText = !nearSignal ? '跑到窄口，再回身面对追来的哨兵。' : !facing ? '哨兵在身后。转身朝向它们，再按住 G 感知连接。' : '面对哨兵，按住 G；信号不在矩阵里，Neo 的身体正承受代价。';
@@ -1017,15 +1552,10 @@ export class FilmStorySystem {
   }
   private finaleTick(actor: AgentState | undefined, tick: number): void {
     const state = this.state!;
-    if (state.scene === 'm2_ship_lost' && state.shipLoss?.phase === 'evacuating') {
-      const loss = state.shipLoss; const elapsed = Math.max(0, tick - loss.lastTick) * .5; loss.lastTick = tick;
-      if (!actor?.controller || ['neo', 'trinity', 'link'].some(id => this.world.agents.get(id)?.controller)) return;
-      loss.remaining = Math.max(0, loss.remaining - elapsed);
-      if (loss.remaining === 0) { loss.phase = 'failed'; state.lastText = '炸弹击中船体，货舱出口关闭。按 J 从弃船命令检查点重试。'; }
-    }
+    this.nebEscape.tick(actor, tick);
     if (state.scene === 'm2_stop_sentinels' && state.tunnel?.phase === 'sensing') {
       const encounter = state.tunnel; const elapsed = Math.max(0, tick - encounter.lastTick) * .5; encounter.lastTick = tick;
-      if (!actor?.controller || ['trinity', 'morpheus', 'link'].some(id => this.world.agents.get(id)?.controller)) return;
+      if (!actor?.controller || ['trinity', 'morpheus', 'link'].some(id => { const member = this.world.agents.get(id); return !member || member.controller || member.status !== 'alive' || member.health <= 0; })) return;
       encounter.remaining = Math.max(0, encounter.remaining - elapsed);
       if (encounter.remaining === 0) { encounter.phase = 'failed'; state.lastText = '哨兵逼到身前，Neo 失去接触信号的机会。按 J 从隧道窄口重试。'; }
     }
@@ -1040,7 +1570,7 @@ export class FilmStorySystem {
       const backup = reached('m2_backup');
       state.grid = { primary: backup ? 'off' : reached('m2_power') ? 'armed' : 'online', emergency: backup ? 'off' : 'online',
         vigilant: reached('m2_vigilant') || state.scene === 'm2_vigilant' && state.step > 0 ? 'lost' : 'active',
-        trinity: reached('m2_vigilant') ? 'connected' : 'waiting',
+        trinity: reached('m2_relay') || backup ? 'connected' : 'waiting',
         phase: reached('m2_key_door') ? 'opened' : backup ? 'window' : 'preparing',
         remaining: GRID_WINDOW_SECONDS, lastTick: tick, reroute: 0, attempts: 0 };
     }
@@ -1079,7 +1609,7 @@ export class FilmStorySystem {
   }
   private architect(tick: number): void {
     const state = this.state!;
-    if (state.architect) return;
+    if (state.architect) { state.architect.room ??= { elapsed: 0, chairYaw: 0 }; return; }
     // The original scene had only walk, reflection and a right-hand exit.
     // Re-enter the conversation so an old save sees both doors and their costs.
     if (state.step >= 3) state.step = FILM_SCENE_BY_ID.m2_architect.steps.length;
@@ -1094,11 +1624,11 @@ export class FilmStorySystem {
     state.architect = { phase: state.step >= FILM_SCENE_BY_ID.m2_architect.steps.length ? 'done' : 'cycles',
       sourceReviewed: state.step >= FILM_SCENE_BY_ID.m2_architect.steps.length,
       trinityReviewed: state.step >= FILM_SCENE_BY_ID.m2_architect.steps.length,
-      remaining: ARCHITECT_DOOR_SECONDS, lastTick: tick, attempts: 0,
+      remaining: ARCHITECT_DOOR_SECONDS, lastTick: tick, attempts: 0, room: { elapsed: 0, chairYaw: 0 },
       door: state.step >= FILM_SCENE_BY_ID.m2_architect.steps.length ? 'matrix' : undefined };
     if (state.architect.door) this.sandbox().neoLife!.choices.architect_door = 'matrix';
     const performer = this.world.agents.get('architect');
-    if (performer && !performer.controller) {
+    if (performer?.status === 'alive' && !performer.controller) {
       this.place(performer, FILM_SCENE_BY_ID.m2_architect, filmPosition('film_architect_room', 0, -14));
       performer.rotation = 0;
       performer.currentAction = { type: 'idle', parameters: { seated: true }, startedAt: state.enteredAt, duration: 100000, progress: 0 };
@@ -1107,29 +1637,67 @@ export class FilmStorySystem {
   }
   private architectTick(actor: AgentState | undefined, tick: number): void {
     this.architect(tick);
+    if (actor) this.architectFrame(actor, 0, tick);
     const state = this.state!; const encounter = state.architect!;
     const elapsed = Math.max(0, tick - encounter.lastTick) * .5;
     encounter.lastTick = tick;
     if (state.step !== FILM_SCENE_BY_ID.m2_architect.steps.length - 1 || encounter.phase !== 'decision' || !actor?.controller || actor.status !== 'alive') return;
-    if (this.world.agents.get('trinity')?.controller) return;
+    if (encounter.room?.exit || this.world.agents.get('trinity')?.controller || this.world.agents.get('architect')?.controller || this.world.agents.get('architect')?.status !== 'alive') return;
     encounter.remaining = Math.max(0, encounter.remaining - elapsed);
     if (encounter.remaining === 0) {
       encounter.phase = 'failed'; delete state.started;
       state.lastText = 'Trinity 的信号在屏幕中消失。按 J 从抉择检查点重试；关于循环与两扇门的了解会保留。';
     }
   }
+  architectFrame(actor: AgentState, dt: number, tick: number): boolean {
+    const state = this.state;
+    if (state?.scene !== 'm2_architect' || state.visiting || !this.controls(actor) || actor.currentLocation !== this.scene!.set) return false;
+    this.architect(tick);
+    const encounter = state.architect!, room = encounter.room!, performer = this.world.agents.get('architect');
+    const available = actor.status === 'alive' && Boolean(actor.controller) && performer?.status === 'alive' && !performer.controller
+      && !this.world.agents.get('trinity')?.controller;
+    const delta = available ? Math.max(0, Math.min(.1, dt)) : 0;
+    room.elapsed += delta;
+    if (performer?.status === 'alive' && !performer.controller) {
+      const yaw = Math.max(-.65, Math.min(.65, Math.atan2(actor.position.x - FILM_SETS[this.scene!.set].center.x - ARCHITECT_ROOM.chair.x,
+        actor.position.z - FILM_SETS[this.scene!.set].center.z - ARCHITECT_ROOM.chair.z)));
+      room.chairYaw += (yaw - room.chairYaw) * (1 - Math.exp(-delta * 2));
+      this.place(performer, this.scene!, filmPosition(this.scene!.set, ARCHITECT_ROOM.chair.x, ARCHITECT_ROOM.chair.z));
+      performer.rotation = room.chairYaw; performer.velocity = { x: 0, y: 0, z: 0 };
+      const gesture: ArchitectGesture = { role: 'architect', phase: encounter.phase, elapsed: room.elapsed, chairYaw: room.chairYaw };
+      performer.currentAction = { type: 'idle', parameters: { architect: gesture, seated: true, resolved: true }, startedAt: state.enteredAt, duration: 100000, progress: 0 };
+    }
+    const locked = architectDoorLocked(encounter);
+    if (room.exit && encounter.phase === 'decision') {
+      room.exit.elapsed = Math.min(ARCHITECT_ROOM.openingSeconds, room.exit.elapsed + delta);
+      if (locked && actor.status === 'alive') {
+        const root = architectExitRoot(room.exit); actor.position = filmPosition(this.scene!.set, root.x, root.z); actor.rotation = root.yaw;
+        actor.velocity = { x: 0, y: 0, z: 0 };
+        const gesture: ArchitectGesture = { role: 'neo', phase: encounter.phase, elapsed: room.elapsed, chairYaw: 0, opening: room.exit.elapsed, start: { x: room.exit.x, z: room.exit.z } };
+        actor.currentAction = { type: 'idle', parameters: { architect: gesture, resolved: true }, startedAt: tick, duration: 100000, progress: 0 };
+      } else if (actor.currentAction?.parameters.architect) actor.currentAction = null;
+      this.sealArchitectDoors();
+      const c = FILM_SETS[this.scene!.set].center, door = ARCHITECT_ROOM.doors.matrix;
+      if (available && !architectDoorLocked(encounter) && Math.abs(actor.position.x - c.x - door.x) < ARCHITECT_ROOM.doorWidth / 2 - .7
+        && actor.position.z - c.z < door.z - .85) {
+        this.advance('Neo 亲自跨过左门，返回矩阵。源头提出的重置没有执行；下一步是追上正在坠落的 Trinity。', actor, tick);
+        actor.currentAction = null;
+      }
+    }
+    return locked;
+  }
   private sealArchitectDoors(): void {
     const state = this.state; const prefix = 'film:architect:';
     this.sandbox().structures = this.sandbox().structures.filter(s => !s.id.startsWith(prefix));
     if (state?.scene !== 'm2_architect' || state.visiting) return;
     for (const [side, x] of [['source', 8], ['matrix', -8]] as const) {
-      if (side === 'matrix' && state.architect?.door === 'matrix') continue;
+      if (side === 'matrix' && architectDoorAngle(state.architect) > 1.45) continue;
       this.sandbox().structures.push({ id: `${prefix}${side}`, kind: 'barricade', owner: 'matrix',
-        position: filmPosition('film_architect_room', x, -28.2), matrix: true, health: 999,
-        film: { scene: 'm2_architect', width: 5, depth: .5, height: 8 } });
+        position: filmPosition('film_architect_room', x, ARCHITECT_ROOM.doors[side].z), matrix: true, health: 999,
+        film: { scene: 'm2_architect', width: ARCHITECT_ROOM.doorWidth, depth: .23, height: ARCHITECT_ROOM.doorHeight } });
     }
   }
-  performing(agent: AgentState): boolean { return this.controls(agent) && (dockGateActive(this.state) || dockLastStandActive(this.state) && dockLastStandLocked(this.state?.dockLastStand) || dockReloadActive(this.state) && (this.state!.actor === 'mifune' || dockReloadLocked(this.state!.dockReload)) || basementLocked(this.state) || tvExitLocked(this.state) || sixthLocked(this.state) || wetwallLocked(this.state) || this.state!.scene === 'm1_bridge' && this.state!.bridgeTail?.phase === 'failed' || this.state!.scene === 'm1_room303' && ['breach', 'dive', 'ladder_ready'].includes(this.state!.openingHotel?.phase ?? '') || this.state!.scene === 'm1_phone_escape' && ['connected', 'done'].includes(this.state!.openingPhone?.phase ?? '') || helElevatorLocked(this.state!) || helDanceDoorLocked(this.state!) || farewellLocked(this.state!.farewell) || deusPactLocked(this.state!.deus) || smithFinaleLocked(this.state!.smithFinale) || trilogyEpilogueLocked(this.state!.epilogue) || this.state!.scene === 'm3_trainman' && this.state!.mobil?.phase === 'refusing' || this.state!.trucks?.phase === 'rescue' || this.state!.persephone?.phase === 'enacting' || burlyLocked(this.state!) || clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || morningLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || theOneLocked(this.state!) || reloadedLocked(this.state!) || catchLocked(this.state!.catch) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
+  performing(agent: AgentState): boolean { return this.controls(agent) && (this.helGarage.active(agent) && helGarageLocked(this.state?.helGarage) || this.trainmanChase.active(agent) && trainmanChaseLocked(this.state?.helChase?.performance) || this.oracleLast.active(agent) && oracleLastLocked(this.state?.oracleLast) || oracleAbsorptionActive(this.state) && oracleAbsorptionLocked(this.state?.oracleAbsorption) || this.oracleRequest.active(agent) && oracleRequestLocked(this.state?.oracleRequest) || this.state?.scene === 'm3_family' && !this.state.visiting && this.state.mobil?.family?.phase === 'hearing' || this.state?.scene === 'm2_stop_sentinels' && !this.state.visiting && signalLocked(this.state.tunnel) || this.nebEscape.active(agent) && nebEscapeLocked(this.state?.shipLoss) || this.state?.scene === 'm2_architect' && !this.state.visiting && architectDoorLocked(this.state.architect) || this.sourcePortal.active(agent) && sourcePortalLocked(this.state?.keyDoor?.performance) || this.trinityTerminal.active(agent) && trinityTerminalLocked(this.state?.trinityTerminal) || this.trinityRelay.active(agent) && ['hearing', 'connecting', 'connected'].includes(this.state?.trinityRelay?.phase ?? '') || primaryActive(this.state) && primaryLocked(this.state?.primaryDemolition) || this.truckRoad.locked(agent) || this.freewayHandoff.active(agent) || this.freewayPickup.active(agent) || templeDefenseActive(this.state) && templeDefenseLocked(this.state?.templeSeal, this.state?.templeBreach) || dockEvacuationActive(this.state) && dockEvacuationLocked(this.state?.dockEvacuation) || shaftSealActive(this.state) && shaftSealLocked(this.state?.shaftSeal) || dockBriefingActive(this.state) && dockBriefingLocked(this.state?.dockBriefing) || this.state!.scene === 'm3_dock_reunion' && dockReunionLocked(this.state!.dockReunion) || dockEmpLocked(this.state) || upperDiggerActive(this.state) && upperDiggerLocked(this.state?.upperDigger) || diggersActive(this.state) && diggersLocked(this.state?.diggers) || dockGateActive(this.state) || dockLastStandActive(this.state) && dockLastStandLocked(this.state?.dockLastStand) || dockReloadActive(this.state) && (this.state!.actor === 'mifune' || dockReloadLocked(this.state!.dockReload)) || basementLocked(this.state) || tvExitLocked(this.state) || sixthLocked(this.state) || wetwallLocked(this.state) || this.state!.scene === 'm1_bridge' && this.state!.bridgeTail?.phase === 'failed' || this.state!.scene === 'm1_room303' && ['breach', 'dive', 'ladder_ready'].includes(this.state!.openingHotel?.phase ?? '') || this.state!.scene === 'm1_phone_escape' && ['connected', 'done'].includes(this.state!.openingPhone?.phase ?? '') || helElevatorLocked(this.state!) || helDanceDoorLocked(this.state!) || this.state!.scene === 'm3_hel_bargain' && !this.state!.visiting && (['disarming', 'catching'].includes(this.state!.helBargain?.phase ?? '') || this.state!.helBargain?.phase === 'airborne' && Boolean(this.state!.helBargain.breakout) && this.state!.helBargain.elapsed < HEL_BREAKOUT.recover) || farewellLocked(this.state!.farewell) || deusPactLocked(this.state!.deus) || smithFinaleLocked(this.state!.smithFinale) || trilogyEpilogueLocked(this.state!.epilogue) || this.state!.scene === 'm3_trainman' && (this.state!.mobil?.phase === 'refusing' || this.state!.mobil?.luggage?.phase === 'lifting') || this.state!.trucks?.phase === 'rescue' || this.state!.persephone?.phase === 'enacting' || burlyLocked(this.state!) || clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || morningLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || theOneLocked(this.state!) || reloadedLocked(this.state!) || catchLocked(this.state!.catch) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
   morningFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
     if (state?.scene !== 'm1_morning' || state.visiting || !this.controls(agent)) return;
@@ -1569,7 +2137,8 @@ export class FilmStorySystem {
       if (playerBlocked(position, true)) position.x = center.x;
       return true;
     };
-    for (const actor of this.world.agents.values()) if (actor.currentLocation === 'film_oracle_home' && migrate(actor.position)) {
+    for (const actor of this.world.agents.values()) if (actor.currentLocation === 'film_oracle_home'
+      && !(actor.id === 'oracle' && (actor.currentAction?.parameters.oracleRequest || actor.currentAction?.parameters.oracleLast)) && migrate(actor.position)) {
       actor.velocity = { x: 0, y: 0, z: 0 }; actor.targetPosition = null; actor.currentPath = [];
     }
     if (this.scene?.set === 'film_oracle_home') migrate(this.state?.checkpoint);
@@ -4449,7 +5018,12 @@ export class FilmStorySystem {
   }
   private ensureApuGate(): void {
     const state = this.state;
-    if (state?.scene !== 'm3_gate') return;
+    if (state?.scene !== 'm3_gate' || state.visiting) return;
+    if (state.step === 0 && state.fighting) {
+      this.sandbox().threats = this.sandbox().threats.filter(t => t.scene !== state.scene);
+      delete state.fighting; delete state.started;
+      state.lastText = '队长的交代已经记下。绕到 APU 左侧接管机甲，赶往三号闸门。';
+    }
     if (state.step === 2 && state.completed.includes('m3_gate')) { state.step = this.scene!.steps.length; return; }
     const actor = this.world.agents.get(state.actor);
     if (state.step !== 1 || state.apu || actor?.currentLocation !== this.scene!.set
@@ -4459,11 +5033,8 @@ export class FilmStorySystem {
     state.lastText = '旧版门控检查点已接回 Kid 的 APU 冲刺；已完成的船坞战保留。';
   }
   private ensureTempleSeal(tick: number): void {
-    const state = this.state;
-    if (state?.scene !== 'm3_temple_defense') return;
-    if (state.step === 2 && state.completed.includes(state.scene)) state.step = this.scene!.steps.length;
-    state.templeSeal ??= { phase: state.step >= this.scene!.steps.length ? 'sealed' : 'running',
-      remaining: TEMPLE_SEAL_SECONDS, lastTick: tick, attempts: 0 };
+    const actor = this.state && this.world.agents.get(this.state.actor);
+    if (actor) this.templeDefense.frame(actor, 0, tick);
   }
   private ensureDockGunnery(tick: number): void {
     const state = this.state;
@@ -4477,19 +5048,22 @@ export class FilmStorySystem {
       state.lastText = '旧版船坞交战检查点已接回 APU 炮位。Mifune 需要亲自掩护 Kid 送弹。';
     }
   }
-  dockGunneryFrame(agent: AgentState, tick: number): boolean {
+  dockGunneryFrame(agent: AgentState, tick: number, input?: PlayerInput): boolean {
     const state = this.state;
     if (state?.scene !== 'm3_dock_battle' || !this.controls(agent) || state.visiting || state.dockGunnery?.phase !== 'firing') return false;
-    agent.position = { ...filmPosition(this.scene!.set, 0, DOCK_GUNNERY.apuZ), y: FILM_SETS[this.scene!.set].center.y + 2.2 };
-    agent.velocity = { x: 0, y: 0, z: 0 };
-    agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, riding: true, seated: true }, startedAt: tick, duration: 1, progress: 0 };
+    agent.position = { ...filmPosition(this.scene!.set, 0, DOCK_GUNNERY.apuZ), y: FILM_SETS[this.scene!.set].center.y + APU_RIG.floor + APU_RIG.pilot.y };
+    const encounter = state.dockGunnery;
+    if (input) Object.assign(encounter, dockGunneryAngles(input.yaw, input.pitch ?? 0), { firstPerson: input.firstPerson === true });
+    agent.velocity = { x: 0, y: 0, z: 0 }; agent.rotation = Math.PI;
+    agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, riding: true, seated: true,
+      dockGunnery: { yaw: encounter.yaw ?? Math.PI, pitch: encounter.pitch ?? -.16 } }, startedAt: tick, duration: 1, progress: 0 };
     return true;
   }
-  dockShoot(agent: AgentState, yaw: number, pitch: number, tick: number): string {
+  dockShoot(agent: AgentState, yaw: number, pitch: number, tick: number, firstPerson = true): string {
     const state = this.state, encounter = state?.dockGunnery;
     if (state?.scene !== 'm3_dock_battle' || !this.controls(agent) || !encounter || encounter.phase !== 'firing') return '';
     if (!Number.isFinite(pitch)) return '';
-    const hit = fireDockGunnery(encounter, yaw, tick); agent.rotation = yaw;
+    const hit = fireDockGunnery(encounter, yaw, tick, pitch, firstPerson); this.dockGunneryFrame(agent, tick);
     if (!encounter.ammo && encounter.kills < encounter.targets.length) {
       agent.health = 0; agent.status = 'dead';
       state.lastText = 'APU 弹箱耗尽，Kid 仍暴露在哨兵面前。按 J 从炮位重试。';
@@ -4497,8 +5071,123 @@ export class FilmStorySystem {
     else if (hit) state.lastText = `机炮击中哨兵 · 击落 ${encounter.kills}/${encounter.targets.length} · 剩余 ${encounter.ammo} 发`;
     return hit ? 'APU 机炮击中哨兵。' : '机炮弹幕掠过船坞。';
   }
+  dockReunionFrame(agent: AgentState, dt: number, tick: number, focus = false): boolean {
+    const state = this.state;
+    if (!this.controls(agent) || state?.scene !== 'm3_dock_reunion' || state.visiting) return false;
+    const reunion = state.dockReunion ??= { phase: state.step ? 'walking' : 'ready', elapsed: 0, floor: state.diggers ? 1 : 0 };
+    if (!this.sandbox().structures.some(s => s.id === 'film:reunion:hull')) this.sandbox().structures.push({
+      id: 'film:reunion:hull', kind: 'barricade', owner: 'matrix', position: filmPosition(this.scene!.set, 20, 38), matrix: false, health: 1,
+      film: { scene: state.scene, width: 15.6, depth: 34.4, height: 14 },
+    });
+    const zee = this.world.agents.get('zee')!;
+    const paired = !['ready', 'disembarking', 'exiting', 'walking', 'done'].includes(reunion.phase);
+    const unavailable = paired && (zee.controller || zee.status !== 'alive');
+    const crewOccupied = reunion.departure !== undefined && DOCK_REUNION.crew.some(id => {
+      const member = this.world.agents.get(id)!;
+      return member.status === 'alive' && member.controller && !dockDepartureFinished(reunion.departure!, id);
+    });
+    dt = agent.controller && agent.status === 'alive' && !unavailable && !crewOccupied ? Math.max(0, Math.min(.1, dt)) : 0;
+    const departing = reunion.phase === 'disembarking';
+    if (reunion.departure !== undefined && reunion.phase !== 'ready') {
+      // Colt waits beside the opening until Link has passed; released input cannot make them walk into him.
+      if (departing || reunion.phase !== 'exiting' || focus && reunion.elapsed >= 2.6)
+        reunion.departure = Math.min(departing ? DOCK_REUNION.departure.prelude : DOCK_REUNION.departure.seconds, reunion.departure + dt);
+      if (departing && reunion.departure + 1e-6 >= DOCK_REUNION.departure.prelude) { reunion.phase = 'exiting'; reunion.elapsed = 0; }
+    }
+    if (!departing && (reunion.phase === 'exiting' && focus || ['approaching', 'embrace', 'kiss', 'charm', 'parting'].includes(reunion.phase))) reunion.elapsed += dt;
+    if (reunion.phase === 'exiting' && reunion.elapsed + 1e-6 >= DOCK_REUNION.exitSeconds) {
+      reunion.elapsed = DOCK_REUNION.exitSeconds;
+      const pose = dockReunionRoot(reunion, 'link'), center = FILM_SETS[this.scene!.set].center;
+      agent.position = { x: center.x + pose.x, y: center.y + pose.y, z: center.z + pose.z };
+      reunion.phase = 'walking'; this.advance(this.scene!.steps[0].text!, agent, tick);
+    } else {
+      const seconds = DOCK_REUNION.seconds[reunion.phase as keyof typeof DOCK_REUNION.seconds];
+      if (seconds !== undefined && reunion.elapsed + 1e-6 >= seconds) {
+        const next = { approaching: 'embrace', embrace: 'kiss', kiss: 'promise', charm: 'parting', parting: 'done' } as const;
+        reunion.phase = next[reunion.phase as keyof typeof next]; reunion.elapsed = 0;
+        if (reunion.phase === 'done') {
+          this.sandbox().neoLife!.choices.link_zee_reunion = 'promise_kept';
+          this.advance(this.scene!.steps[2].text!, agent, tick);
+        }
+      }
+    }
+    const locked = dockReunionLocked(reunion);
+    for (const member of [agent, zee]) {
+      if (member === zee && (member.controller || member.status !== 'alive')) continue;
+      if (member === zee || locked) {
+        const pose = dockReunionRoot(reunion, member === zee ? 'zee' : 'link'), center = FILM_SETS[this.scene!.set].center;
+        member.position = { x: center.x + pose.x, y: center.y + pose.y, z: center.z + pose.z };
+        member.rotation = pose.yaw; member.currentLocation = this.scene!.set; member.isInMatrix = false;
+        member.velocity = { x: 0, y: 0, z: 0 }; member.targetPosition = null; member.currentPath = [];
+      }
+      member.currentAction = { type: member === agent && !locked && Math.hypot(member.velocity.x, member.velocity.z) > .05 ? 'move_to' : 'idle',
+        parameters: { player: member === agent, resolved: true, dockReunion: { ...reunion, approach: reunion.approach && { ...reunion.approach }, role: member === zee ? 'zee' : 'link' } },
+        startedAt: tick, duration: 1e9, progress: 0 };
+    }
+    if (reunion.departure !== undefined) for (const role of DOCK_REUNION.crew) {
+      const member = this.world.agents.get(role)!;
+      if (member.status !== 'alive' || member.controller) continue;
+      const gesture = { role, elapsed: reunion.departure, floor: reunion.floor,
+        assisted: ['colt', 'roland'].every(id => this.world.agents.get(id)?.status === 'alive') };
+      const pose = dockDepartureRoot(gesture), center = FILM_SETS[this.scene!.set].center;
+      member.position = { x: center.x + pose.x, y: center.y + pose.y, z: center.z + pose.z };
+      member.rotation = pose.yaw; member.currentLocation = this.scene!.set; member.isInMatrix = false;
+      member.velocity = { x: 0, y: 0, z: 0 }; member.targetPosition = null; member.currentPath = [];
+      member.currentAction = { type: 'idle', parameters: { resolved: true, dockDeparture: gesture }, startedAt: tick, duration: 1e9, progress: 0 };
+    }
+    state.lastText = crewOccupied ? '出舱船员正由另一位玩家控制。动作进度已保留，等待通道让开。'
+      : unavailable ? 'Zee 正由另一位玩家控制或无法参与。动作进度已保留，等待她回来。' : dockReunionText(reunion);
+    return locked;
+  }
+  empFrame(agent: AgentState, dt: number, tick: number, focus = false): boolean {
+    const state = this.state;
+    if (!this.controls(agent) || state?.scene !== 'm3_emp' || state.visiting) return false;
+    if (!state.empOperator && !state.emp && state.step === 0) {
+      const center = FILM_SETS[this.scene!.set].center;
+      if (Math.abs(agent.position.x - center.x) < 1.3 && Math.abs(agent.position.z - center.z + 15.8) < 1.2) {
+        agent.position = filmPosition(this.scene!.set, EMP_OPERATOR.entry.x, EMP_OPERATOR.entry.z);
+        state.checkpoint = { ...agent.position }; delete state.started;
+      }
+    }
+    const housing = EMP_OPERATOR.console;
+    for (const [id, x, z, width, depth, height] of [['chair', 0, -15.8, 2.1, 1.8, 3.8], ['console', housing.x, housing.z, housing.width, housing.depth, housing.height]] as const) {
+      const existing = this.sandbox().structures.find(s => s.id === `film:emp:${id}`);
+      const position = filmPosition(this.scene!.set, x, z), film = { scene: state.scene, width, depth, height };
+      if (existing) Object.assign(existing, { position, film });
+      else this.sandbox().structures.push({ id: `film:emp:${id}`, kind: 'barricade', owner: 'matrix', position, matrix: false, health: 1, film });
+    }
+    if (!dockEmpLocked(state)) return false;
+    dt = agent.controller && agent.status === 'alive' ? Math.max(0, Math.min(.1, dt)) : 0;
+    const operator = state.empOperator;
+    if (operator && operator.phase !== 'done') {
+      if (operator.phase === 'ready' && focus && dt > 0) { operator.phase = 'turning'; operator.elapsed = 0; }
+      if (operator.phase === 'seating' || operator.phase === 'rising' || operator.phase === 'turning' && focus) operator.elapsed += dt;
+      if (operator.phase === 'seating' && operator.elapsed >= EMP_OPERATOR.seating) { operator.phase = 'ready'; operator.elapsed = 0; }
+      else if (operator.phase === 'turning' && operator.elapsed >= EMP_OPERATOR.reaching + EMP_OPERATOR.turning) {
+        operator.phase = 'fired'; operator.elapsed = 0;
+        this.advance(this.scene!.steps[0].text!, agent, tick);
+      } else if (operator.phase === 'rising' && operator.elapsed >= EMP_OPERATOR.rising) { operator.phase = 'done'; operator.elapsed = EMP_OPERATOR.rising; }
+      const pose = empOperatorPose(operator);
+      agent.position = filmPosition(this.scene!.set, pose.x, pose.z); agent.rotation = Math.PI;
+    }
+    const emp = state.emp;
+    if (emp?.elapsed !== undefined && emp.elapsed < DOCK_EMP.seconds) {
+      emp.elapsed = Math.min(DOCK_EMP.seconds, emp.elapsed + dt);
+      if (emp.elapsed === DOCK_EMP.seconds && operator?.phase === 'fired') { operator.phase = 'rising'; operator.elapsed = 0; }
+    }
+    agent.velocity = { x: 0, y: 0, z: 0 }; agent.targetPosition = null; agent.currentPath = [];
+    agent.currentAction = dockEmpLocked(state)
+      ? { type: 'idle', parameters: { player: true, resolved: true,
+        ...(emp?.elapsed !== undefined && emp.elapsed < DOCK_EMP.seconds ? { dockEmp: emp.elapsed } : {}),
+        ...(operator ? { empOperator: { ...operator, approach: { ...operator.approach } } } : {}) }, startedAt: tick, duration: 1e9, progress: 0 } : null;
+    if (operator) state.lastText = empOperatorText(operator);
+    else if (emp?.elapsed === DOCK_EMP.seconds) state.lastText = '哨兵落地，船坞陷入停电。援军争取了时间，但 APU 和自动防御也已失效。J 记录这次选择的代价。';
+    return true;
+  }
   driveFrame(agent: AgentState, input: DriveInput, dt: number, tick: number, focus = false): boolean {
-    if (!this.driving(agent)) return false;
+    const waitingAtGate = this.controls(agent) && !this.state?.visiting && this.state?.scene === 'm3_gate'
+      && this.state.apu?.phase === 'arrived' && !this.state.dockGate;
+    if (!this.driving(agent) && !waitingAtGate) return false;
     if (this.state!.scene === 'm3_defense' || this.state!.scene === 'm3_sun') {
       const state = this.state!; const before = state.logos!;
       const flight = state.logos = stepLogosFlight(before, input, dt, focus);
@@ -4530,10 +5219,10 @@ export class FilmStorySystem {
     if (this.state!.scene === 'm3_gate') {
       const state = this.state!; const before = state.apu!;
       const run = state.apu = stepApuRun(before, input, dt);
-      agent.position = { ...filmPosition(this.scene!.set, run.x, run.z), y: FILM_SETS[this.scene!.set].center.y + 2.2 };
+      agent.position = { ...filmPosition(this.scene!.set, run.x, run.z), y: FILM_SETS[this.scene!.set].center.y + APU_RIG.floor + APU_RIG.pilot.y };
       agent.velocity = { x: run.lateral, y: 0, z: -run.speed };
-      agent.rotation = Math.PI - Math.atan2(run.lateral, Math.max(1, run.speed));
-      agent.currentAction = { type: 'idle', parameters: { riding: true, seated: true }, startedAt: tick, duration: 1, progress: 0 };
+      agent.rotation = Math.PI;
+      agent.currentAction = { type: 'idle', parameters: { riding: true, seated: true, apuDriving: true }, startedAt: tick, duration: 1, progress: 0 };
       if (run.hits > before.hits) state.lastText = '哨兵撞上 APU 装甲。Kid 稳住机器，绕开下一次俯冲，闸门就在前方。';
       if (run.phase === 'wrecked') { agent.health = 0; agent.status = 'dead'; agent.velocity = { x: 0, y: 0, z: 0 }; state.lastText = '受损 APU 没能抵达三号闸门。按 J 从接管机甲的检查点重试。'; }
       return true;
@@ -4580,15 +5269,20 @@ export class FilmStorySystem {
       return true;
     }
     const state = this.state!; const before = state.ride!;
-    const ride = state.ride = stepFreeway(before, input, dt);
-    agent.position = { ...filmPosition(this.scene!.set, ride.x, ride.z), y: FILM_SETS[this.scene!.set].center.y + .65 };
-    agent.velocity = { x: ride.lateral, y: 0, z: -ride.speed }; agent.rotation = Math.PI - Math.atan2(ride.lateral, Math.max(1, ride.speed));
-    agent.currentAction = { type: 'move_to', parameters: { player: true, resolved: true, riding: true }, startedAt: tick, duration: 1, progress: 0 };
     const passenger = this.world.agents.get('keymaker');
-    if (passenger && !passenger.controller) {
-      passenger.position = { ...agent.position, z: agent.position.z + 1.25 };
-      passenger.velocity = { ...agent.velocity }; passenger.rotation = agent.rotation;
-      passenger.currentAction = { type: 'idle', parameters: { riding: true, passenger: true }, startedAt: tick, duration: 1, progress: 0 };
+    if (!passenger || passenger.controller || passenger.status !== 'alive') {
+      state.lastText = passenger?.controller ? '钥匙匠正由另一位玩家控制，护送进度已保留。' : '钥匙匠无法继续护送，当前进度已保留。';
+      agent.velocity = { x: 0, y: 0, z: 0 }; return true;
+    }
+    const ride = state.ride = stepFreeway(before, input, dt);
+    if (ride.startedAt === undefined && dt > 0) ride.startedAt = tick;
+    for (const [member, role] of [[agent, 'trinity'], [passenger, 'keymaker']] as const) {
+      const root = freewayRideRoot(ride, role), center = FILM_SETS[this.scene!.set].center;
+      member.position = { x: center.x + root.x, y: center.y + root.y, z: center.z + root.z };
+      member.currentLocation = this.scene!.set; member.isInMatrix = true; member.targetPosition = null; member.currentPath = [];
+      member.velocity = { x: ride.lateral, y: 0, z: -ride.speed }; member.rotation = root.yaw;
+      member.currentAction = { type: 'idle', parameters: { player: member === agent && Boolean(member.controller), resolved: true, riding: true, seated: true,
+        passenger: member !== agent, freewayRide: { ...ride, role } }, startedAt: ride.startedAt ?? tick, duration: 1e9, progress: 0 };
     }
     if (ride.hits > before.hits) state.lastText = '车身受到撞击。先松开油门或按 S 刹车，寻找下一条车道；钥匙匠仍在后座。';
     if (ride.phase === 'wrecked') { agent.health = 0; agent.status = 'dead'; agent.velocity = { x: 0, y: 0, z: 0 }; state.lastText = '摩托车无法继续。J 从护送开始处重试，之前的剧情仍然保留。'; }
@@ -4625,10 +5319,20 @@ export class FilmStorySystem {
   }
   reconcileCast(): void {
     if (!this.state) return;
+    this.diggers.stage(this.world.simulationTick);
     this.dockReload.stage(this.world.simulationTick);
     this.sealResetFacade();
+    this.nebEscape.seal(); this.sealSignal(); this.sealMedical(); this.sealMobil();
     this.ensureHelDanceDoor(this.world.simulationTick);
     this.sealAmbush(); this.wetwall.seal(); this.sixth.seal(); this.sealZionMessageDoor(); this.sealArchitectDoors(); this.sealHelElevator(); this.sealHelDanceDoor();
+    if (this.state.scene === 'm3_hel_entry' && !this.state.visiting && this.state.step >= 4) {
+      for (const id of HEL_TRIO) {
+        const member = this.world.agents.get(id);
+        if (member?.status === 'alive' && !member.controller && member.currentLocation === 'film_club_hel')
+          member.position.y = groundHeight(member.position, true);
+      }
+      this.state.checkpoint.y = groundHeight(this.state.checkpoint, true);
+    }
     const bane = this.world.agents.get('bane');
     if (bane) {
       const infected = Boolean(this.sandbox().neoLife?.choices.bane_infected || this.state.completed.includes('m2_bane_copy'));
@@ -4641,13 +5345,31 @@ export class FilmStorySystem {
       if (!actor || actor.controller || id === 'bane' && fate === 'assimilated') continue;
       actor.status = fate === 'alive' ? 'alive' : fate === 'dead' ? 'dead' : 'disconnected';
       actor.health = fate === 'alive' ? actor.maxHealth : 0;
+      if (id === 'neo' && actor.currentAction?.parameters.finaleComa
+        && (actor.currentAction.parameters.epilogue as TrilogyEpilogueEncounter | undefined)?.kind === 'neo_carried') continue;
       if (actor.currentAction?.parameters.crosscut && ['m1_tv_exit', 'm1_unplugged'].includes(this.state.scene)) continue;
+      if (id === 'charra' && this.state.upperDigger?.charraDead && actor.currentAction?.parameters.upperDigger) continue;
       if (id === 'mifune' && !this.state.visiting && ['m3_dock_battle', 'm3_gate'].includes(this.state.scene)
         && this.state.dockLastStand?.phase === 'done' && actor.currentAction?.parameters.dockLastStand) continue;
       actor.currentAction = null; actor.targetPosition = null; actor.currentPath = []; actor.velocity = { x: 0, y: 0, z: 0 };
     }
+    const pickupActor = this.world.agents.get(this.state.actor);
+    this.oracleRequest.restoreSeat(this.world.simulationTick);
+    if (pickupActor) this.oracleRequest.frame(pickupActor, 0, this.world.simulationTick);
+    if (pickupActor) this.oracleLast.frame(pickupActor, 0, this.world.simulationTick);
+    if (pickupActor) this.oracleAbsorption.frame(pickupActor, 0, this.world.simulationTick);
+    if (pickupActor) this.trainmanChase.frame(pickupActor, 0, this.world.simulationTick);
+    if (pickupActor) this.helGarage.frame(pickupActor, 0, this.world.simulationTick);
+    if (pickupActor) this.helElevatorFrame(pickupActor, 0, this.world.simulationTick);
+    if (pickupActor) this.helDanceDoorFrame(pickupActor, 0, this.world.simulationTick);
+    if (pickupActor) { this.freewayPickup.frame(pickupActor, {}, 0, this.world.simulationTick); this.freewayHandoff.frame(pickupActor, {}, 0, this.world.simulationTick); this.primaryDemolition.frame(pickupActor, 0, this.world.simulationTick); this.trinityRelay.frame(pickupActor, 0, this.world.simulationTick); this.trinityTerminal.frame(pickupActor, 0, this.world.simulationTick); this.sourcePortal.frame(pickupActor, 0, this.world.simulationTick); }
+    if (pickupActor && ['m3_family', 'm3_trainman', 'm3_mobil_release'].includes(this.state.scene)) this.mobilFrame(pickupActor, 0, this.world.simulationTick);
+    const templeActor = this.world.agents.get(this.state.actor);
+    if (templeActor) this.templeDefense.frame(templeActor, 0, this.world.simulationTick);
+    this.upperDigger.stage(this.world.simulationTick);
     this.dockLastStand.stage(this.world.simulationTick);
     if (dockGateActive(this.state)) this.dockGate.stage(this.world.agents.get(this.state.actor)!, this.world.simulationTick);
+    if (this.state.scene === 'm2_trucks' && this.state.trucks?.road) this.truckRoad.frame(this.world.agents.get(this.state.actor)!, 0, this.world.simulationTick);
     if (this.state.scene === 'm2_trucks' && this.state.trucks?.phase === 'rescue') {
       const actor = this.world.agents.get(this.state.actor);
       if (actor?.currentLocation === this.scene!.set) this.truckFrame(actor, 0, this.world.simulationTick);
@@ -4668,8 +5390,10 @@ export class FilmStorySystem {
     const neo = this.world.agents.get('neo');
     if (neo && !neo.controller && (['m3_ceasefire', 'm3_neo_carried', 'm3_reset', 'm3_dawn'].includes(this.state.scene)
       || this.state.completed.includes('m3_neo_carried'))) {
+      const saved = neo.currentAction?.parameters.epilogue as TrilogyEpilogueEncounter | undefined;
+      const phase = this.state.scene === 'm3_dawn' || this.state.completed.includes('m3_neo_carried') ? 'done' as const : 'ready' as const;
       const encounter = this.state.scene === 'm3_neo_carried' ? this.state.epilogue ?? newTrilogyEpilogue('neo_carried')
-        : { ...newTrilogyEpilogue('neo_carried'), phase: this.state.scene === 'm3_dawn' || this.state.completed.includes('m3_neo_carried') ? 'done' as const : 'ready' as const };
+        : saved?.kind === 'neo_carried' && saved.phase === phase ? saved : { ...newTrilogyEpilogue('neo_carried'), phase };
       this.placeNeoBody(neo, encounter, this.world.simulationTick);
     }
   }
@@ -4797,7 +5521,7 @@ export class FilmStorySystem {
     this.sealSourceDoor();
     if (state.keyDoor.keyTaken) {
       const keymaker = this.world.agents.get('keymaker');
-      if (keymaker && !keymaker.controller) { keymaker.status = 'dead'; keymaker.health = 0; keymaker.currentAction = null; }
+      if (keymaker && !keymaker.controller) { keymaker.status = 'dead'; keymaker.health = 0; if (!state.keyDoor.performance) keymaker.currentAction = null; }
     }
   }
   private sealSourceDoor(): void {
@@ -4805,15 +5529,17 @@ export class FilmStorySystem {
     if (state?.scene !== 'm2_key_door' || state.visiting) {
       this.sandbox().structures = this.sandbox().structures.filter(s => !s.id.startsWith(prefix)); return;
     }
-    const closed = !state.keyDoor?.portalOpened;
-    this.sandbox().structures = this.sandbox().structures.filter(s => !s.id.startsWith(prefix) || s.id !== `${prefix}portal` || closed);
-    const barriers: [string, number, number][] = [['left', -8.7, 10.6], ['right', 8.7, 10.6]];
-    if (closed) barriers.push(['portal', 0, 6.8]);
-    for (const [id, x, width] of barriers) {
+    const closed = state.keyDoor?.performance ? sourcePortalAngle(state.keyDoor) < .9 : !state.keyDoor?.portalOpened;
+    const sourceClosed = state.keyDoor?.performance ? sourcePortalSourceAngle(state.keyDoor) < .9 : state.grid?.phase !== 'opened';
+    this.sandbox().structures = this.sandbox().structures.filter(s => !s.id.startsWith(prefix) || (s.id !== `${prefix}portal` || closed) && (s.id !== `${prefix}source` || sourceClosed));
+    const barriers: [string, number, number, number][] = [['left', -8.7, 10.6, -39], ['right', 8.7, 10.6, -39]];
+    if (closed) barriers.push(['portal', 0, SOURCE_PORTAL.door.width, SOURCE_PORTAL.door.z]);
+    if (sourceClosed) barriers.push(['source', 0, SOURCE_PORTAL.source.width, SOURCE_PORTAL.source.z]);
+    for (const [id, x, width, z] of barriers) {
       const existing = this.sandbox().structures.find(s => s.id === `${prefix}${id}`);
-      if (existing) { existing.position = filmPosition('film_source_corridor', x, -39); continue; }
+      if (existing) { existing.position = filmPosition('film_source_corridor', x, z); continue; }
       this.sandbox().structures.push({ id: `${prefix}${id}`, kind: 'barricade', owner: 'matrix',
-        position: filmPosition('film_source_corridor', x, -39), matrix: true, health: 999,
+        position: filmPosition('film_source_corridor', x, z), matrix: true, health: 999,
         film: { scene: 'm2_key_door', width, depth: .6, height: 12 } });
     }
   }
@@ -4848,11 +5574,68 @@ export class FilmStorySystem {
     this.ensureApuGate();
     this.ensureDockGunnery(tick);
     this.ensureTempleSeal(tick);
+    if (target === 'neo-view' && state.scene === 'm2_ship_lost' && state.step < 3 && this.controls(agent)) {
+      const neo = this.world.agents.get('neo');
+      if (!neo || neo.status !== 'alive' || neo.health <= 0 || neo.controller || neo.currentLocation !== this.scene.set || neo.isInMatrix)
+        return 'Neo 当前无法接管；原角色、剧情和位置保持。';
+      if (!this.changeActor(agent, 'neo', tick)) return 'Neo 当前无法接管；原角色、剧情和位置保持。';
+      state.actor = 'neo'; state.checkpoint = { ...neo.position }; this.nebEscape.seal();
+      return state.lastText = '从 Neo 的现有位置继续这一段。此前剧情、伤势和选择保留；先向 Morpheus 说明源头真相。';
+    }
+    const evacuation = this.nebEscape.command(agent, target, tick);
+    if (evacuation !== undefined) return evacuation;
     if (target === 'resume' && agent.id === 'neo' && agent.id !== state.actor) {
       if (!this.changeActor(agent, state.actor, tick)) return '当前剧情角色正在由另一位玩家控制。';
       return '已继续保存的剧情视角与位置。';
     }
     if (!this.controls(agent)) return '请接入当前剧情角色，或以 Neo 继续电影进度。';
+    const familyCommand = this.mobilFamilyCommand(agent, target, tick);
+    if (familyCommand !== undefined) return familyCommand;
+    const portalCommand = this.sourcePortal.command(agent, target, tick);
+    if (portalCommand !== undefined) { this.sealSourceDoor(); return portalCommand; }
+    const terminalCommand = this.trinityTerminal.command(agent, target, tick);
+    if (terminalCommand !== undefined) return terminalCommand;
+    const relayCommand = this.trinityRelay.command(agent, target, tick);
+    if (relayCommand !== undefined) return relayCommand;
+    const garageCommand = this.helGarage.command(agent, target, tick);
+    if (garageCommand !== undefined) return garageCommand;
+    const chaseCommand = this.trainmanChase.command(agent, target, tick);
+    if (chaseCommand !== undefined) return chaseCommand;
+    const absorptionCommand = this.oracleAbsorption.command(agent, target, tick);
+    if (absorptionCommand !== undefined) return absorptionCommand;
+    const lastCommand = this.oracleLast.command(agent, target, tick);
+    if (lastCommand !== undefined) return lastCommand;
+    const requestCommand = this.oracleRequest.command(agent, target, tick);
+    if (requestCommand !== undefined) return requestCommand;
+    const sourceCommand = this.sourceBriefing.command(agent, target, tick);
+    if (sourceCommand !== undefined) return sourceCommand;
+    const primaryCommand = this.primaryDemolition.command(agent, target, tick);
+    if (primaryCommand !== undefined) return primaryCommand;
+    const roadCommand = this.truckRoad.command(agent, target, tick);
+    if (roadCommand !== undefined) return roadCommand;
+    const handoffCommand = this.freewayHandoff.command(agent, target, tick);
+    if (handoffCommand !== undefined) return handoffCommand;
+    const pickupCommand = this.freewayPickup.command(agent, target, tick);
+    if (pickupCommand !== undefined) return pickupCommand;
+    const templeCommand = this.templeDefense.command(agent, target, tick);
+    if (templeCommand !== undefined) return templeCommand;
+    const evacuationCommand = this.dockEvacuation.command(agent, target, tick);
+    if (evacuationCommand !== undefined) return evacuationCommand;
+    const briefingCommand = this.dockBriefing.command(agent, target, tick);
+    if (briefingCommand !== undefined) return briefingCommand;
+    if (state.scene === 'm3_dock_reunion' && !state.visiting && target === 'retry') {
+      if (agent.status !== 'alive') { agent.status = 'alive'; agent.health = agent.maxHealth; }
+      if (state.dockReunion?.phase === 'walking' || state.dockReunion?.phase === 'done') this.place(agent, this.scene, state.checkpoint);
+      this.dockReunionFrame(agent, 0, tick); return '已保留出舱与重逢的进度；EMP、牺牲者和承诺不会被重置。';
+    }
+    if (state.scene === 'm3_emp' && !state.visiting && state.emp?.firedAt !== undefined && target === 'retry') {
+      if (agent.status !== 'alive') { agent.status = 'alive'; agent.health = agent.maxHealth; }
+      this.empFrame(agent, 0, tick); return 'EMP 已经释放；当前坠落进度与防御失效的结果保留。';
+    }
+    if (dockEmpLocked(state)) {
+      if (target === 'retry' && agent.status !== 'alive') { agent.status = 'alive'; agent.health = agent.maxHealth; this.empFrame(agent, 0, tick); }
+      return state.empOperator ? empOperatorText(state.empOperator) : '电磁脉冲正在席卷船坞。鼠标观察，V 切换 Link 视角；结束后再记录反思。';
+    }
     this.ensureHelBargain(tick);
     this.ensureFinale(tick);
     if (state.scene === 'm3_bane' && !state.visiting) this.ensureBane(tick);
@@ -4860,7 +5643,21 @@ export class FilmStorySystem {
     if (['m3_rain', 'm3_surrender'].includes(state.scene) && !state.visiting) this.ensureSmithFinale();
     if (['m3_ceasefire', 'm3_neo_carried', 'm3_reset', 'm3_dawn'].includes(state.scene) && !state.visiting) this.ensureEpilogue();
     if (state.scene === 'm2_key_door' && !state.visiting) this.sourceDoor();
-    if (state.scene === 'm2_architect' && !state.visiting) { this.architect(tick); this.sealArchitectDoors(); }
+    if (state.scene === 'm2_architect' && !state.visiting) {
+      this.architectFrame(agent, 0, tick); this.sealArchitectDoors();
+      if (target === 'act' && state.step === 5) {
+        const encounter = state.architect!;
+        if (['architect', 'trinity'].some(id => this.world.agents.get(id)?.controller)) return '会面中的人物正由另一位玩家控制，等待对方结束后再开门。';
+        if (encounter.phase !== 'decision' || !encounter.sourceReviewed || !encounter.trinityReviewed) return '先了解两扇门的代价并记录反思；信号中断时按 J 重试。';
+        if (this.world.agents.get('architect')?.status !== 'alive' || agent.status !== 'alive') return '会面人物无法继续当前行动。';
+        if (encounter.room!.exit) return state.lastText;
+        if (!this.near(agent, this.step!)) return '走近左门，再亲自打开。';
+        const c = FILM_SETS[this.scene!.set].center;
+        encounter.room!.exit = { elapsed: 0, x: agent.position.x - c.x, z: agent.position.z - c.z };
+        delete state.started; this.architectFrame(agent, 0, tick);
+        return state.lastText = 'Neo 选择返回矩阵。他伸手开门；门打开后，用 WASD 亲自跨过门槛。';
+      }
+    }
     if (target === 'return' && state.visiting) {
       agent.position = { ...(state.returnPosition ?? state.checkpoint) }; agent.currentLocation = this.scene.set;
       agent.isInMatrix = FILM_SETS[this.scene.set].world === 'matrix';
@@ -4918,14 +5715,6 @@ export class FilmStorySystem {
         this.dockGunneryFrame(agent, tick); state.checkpoint = { ...agent.position };
         return state.lastText = 'Mifune 回到 APU 炮位。用鼠标瞄准哨兵，左键或 T 开火；保护 Kid 的弹药车。';
       }
-      if (state.scene === 'm3_temple_defense' && state.templeSeal?.phase === 'failed') {
-        state.templeSeal = { phase: 'running', remaining: TEMPLE_SEAL_SECONDS, lastTick: tick,
-          attempts: state.templeSeal.attempts + 1 };
-        state.step = 0; state.checkpoint = filmEntry(this.scene); delete state.started;
-        agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
-        this.place(agent, this.scene, state.checkpoint);
-        return state.lastText = '从神庙入口重试。自动防御已熄灭；赶在下一波哨兵抵达前，手动锁住两侧卡榫。';
-      }
       if (state.scene === 'm3_bane' && state.bane?.phase === 'failed') {
         const encounter = state.bane; encounter.phase = encounter.checkpoint === 'gun' ? 'gun_warning' : 'blind';
         encounter.elapsed = 0; encounter.focus = 0; encounter.hits = 0; encounter.counters = 0; encounter.lastStrike = -1;
@@ -4952,12 +5741,17 @@ export class FilmStorySystem {
         state.smithFinale = retrySmithFinale(state.smithFinale);
         const checkpoint = state.smithFinale.checkpoint;
         state.step = state.scene === 'm3_rain' ? 1 : 0; delete state.started; delete state.fighting;
-        agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
+        agent.status = 'alive'; if (checkpoint !== 'pit') { agent.health = agent.maxHealth; agent.activeEffects = []; }
         this.clearThreats(); this.placeSmithFinale(agent, tick); state.checkpoint = { ...agent.position };
         return state.lastText = checkpoint === 'air'
           ? '已从高空检查点重试。Smith 正从雨云后俯冲；攻击窗口亮起时按 X，再用 F 反击。'
+          : checkpoint === 'interior' ? '已回到楼内检查点，破窗仍在。观察 Smith 的起手，按 X 闪开后用 F 高踢。'
+            : checkpoint === 'sky' ? '已回到第二轮高空检查点。按 X 闪避、F 反击，再在坠落时按住 G。'
+              : checkpoint === 'pit' ? '已回到坑底最后交锋，前面的选择、破窗、坑洞与伤势保留。起手时按 X，站稳后按 F 打出重拳。'
           : '已回到大道中央。按 G 重新开始；Smith 出拳时按 X，闪开后靠近用 F 反击。';
       }
+      if (this.upperDigger.active(agent)) return this.upperDigger.command(agent, target, tick);
+      if (this.diggers.active(agent)) return this.diggers.command(agent, target, tick);
       if (this.reloaded.active(agent)) return this.reloaded.command(agent, target, tick);
       if (this.catch.active(agent)) return this.catch.command(agent, target, tick);
       if (this.dockGate.active(agent)) return this.dockGate.command(agent, target, tick);
@@ -4982,27 +5776,24 @@ export class FilmStorySystem {
         return state.lastText = '线路重新响起，卡车正在掉头。Shift 奔跑，到电话亭后立即按 G 接起。';
       }
       if (state.scene === 'm3_hel_bargain' && state.helBargain?.phase === 'failed') {
-        state.helBargain = { phase: 'ready', elapsed: 0, lastTick: tick, attempts: state.helBargain.attempts + 1 };
-        state.step = 3; agent.status = 'alive'; agent.health = agent.maxHealth;
+        state.helBargain = { phase: 'ready', elapsed: 0, lastTick: tick, attempts: state.helBargain.attempts + 1, disarm: state.helBargain.disarm };
+        state.step = 3;
+        if (agent.status === 'dead') { agent.status = 'alive'; agent.health = agent.maxHealth; }
         agent.position = filmStepPosition(this.scene!, this.scene!.steps[3]); agent.rotation = Math.PI;
         agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentAction = null;
         state.checkpoint = { ...agent.position };
         state.lastText = '回到舞池包围圈。之前的拒绝仍保留；按 G 再次突围。'; return state.lastText;
       }
-      if (state.scene === 'm2_ship_lost' && state.shipLoss?.phase === 'failed') {
-        state.shipLoss = { phase: 'evacuating', remaining: RELOADED_FINALE.evacuationSeconds, lastTick: tick, attempts: state.shipLoss.attempts + 1 };
-        agent.position = { ...state.checkpoint }; agent.velocity = { x: 0, y: 0, z: 0 };
-        state.lastText = '从弃船命令检查点重试。带同伴穿过船尾货舱，别回去启动无效的 EMP。'; return state.lastText;
-      }
       if (state.scene === 'm2_stop_sentinels' && state.tunnel?.phase === 'failed') {
-        state.tunnel = { phase: 'sensing', remaining: RELOADED_FINALE.sentinelSeconds, focus: 0, lastTick: tick, attempts: state.tunnel.attempts + 1 };
-        agent.position = { ...state.checkpoint }; agent.rotation = 0; agent.velocity = { x: 0, y: 0, z: 0 };
+        state.tunnel = { phase: 'sensing', remaining: RELOADED_FINALE.sentinelSeconds, focus: 0, lastTick: tick, attempts: state.tunnel.attempts + 1, age: 0, elapsed: 0, pursuit: 71 };
+        agent.position = filmStepPosition(this.scene!, this.scene!.steps[1]); state.checkpoint = { ...agent.position };
+        agent.rotation = 0; agent.velocity = { x: 0, y: 0, z: 0 };
         state.lastText = '回到隧道窄口。面朝哨兵，按住 G 聚焦；现实中的能力会使 Neo 昏迷。'; return state.lastText;
       }
       if (state.scene === 'm2_architect' && state.architect?.phase === 'failed') {
         state.architect.phase = 'decision'; state.architect.remaining = ARCHITECT_DOOR_SECONDS;
         state.architect.lastTick = tick; state.architect.attempts++;
-        agent.status = 'alive'; agent.health = agent.maxHealth;
+        if (agent.status !== 'alive') { agent.status = 'alive'; agent.health = agent.maxHealth; }
         agent.position = { ...state.checkpoint }; agent.velocity = { x: 0, y: 0, z: 0 };
         delete state.started;
         state.lastText = '抉择窗口已重置。屏幕、两扇门与之前的反思仍然保留；赶往左门救 Trinity。';
@@ -5149,6 +5940,7 @@ export class FilmStorySystem {
         this.custody.frame(agent, 0, tick); return '已接回办公室拘捕与押送，保留人物位置和当前进度。';
       }
       this.clearThreats();
+      if (state.scene === 'm2_freeway' && this.step?.kind === 'drive') state.checkpoint = filmStepPosition(this.scene!, this.step);
       delete state.ride;
       delete state.garage;
       delete state.hammer;
@@ -5273,6 +6065,24 @@ export class FilmStorySystem {
         state.skipped = [...new Set([...(state.skipped ?? []), ...skipped])];
       }
       if (!next) { state.finished = true; life.ending = 'peace'; this.sandbox().ending = 'peace'; return '三部曲通关。停战与本轮反思已经保存。'; }
+      if (['m3_dock_evacuation', 'm3_shaft_seal'].includes(next.id) && this.world.agents.get(next.actor)?.status !== 'alive') return '下一段角色的信号无法接入，撤离进度已保留。先重建他的信号，再继续。';
+      if (next.id === 'm3_shaft_seal' && state.dockEvacuation?.phase !== 'clear') return '最后一班升降梯尚未清空，不能封井。';
+      if (next.id === 'm3_dock_briefing' && this.world.agents.get(next.actor)?.status !== 'alive') return 'Niobe 的信号无法接入，已保留船坞进度。先重建她的信号，再继续简报。';
+      const handoff = state.scene === 'm2_freeway' && next.id === 'm2_trucks' && state.freewayHandoff?.phase === 'done' ? state.freewayHandoff : undefined;
+      const roadCenter = FILM_SETS.film_freeway_101.center;
+      const roadRoot = (id: string) => { const member = this.world.agents.get(id)!; return { x: member.position.x - roadCenter.x - handoff!.truck.x,
+        y: member.position.y - roadCenter.y, z: member.position.z - roadCenter.z - handoff!.truck.z, yaw: member.rotation }; };
+      if (handoff && ['morpheus', 'keymaker', 'agent_johnson'].some(id => { const member = this.world.agents.get(id); return !member || member.status !== 'alive' || member.controller; }))
+        return '车顶接应同伴的信号暂不可用；保留当前卡车、位置和伤势。';
+      if (['m3_hel_bargain', 'm3_mobil_release', 'm3_oracle_last', 'm3_oracle_absorbed'].includes(next.id) && [next.actor, ...next.cast].some(id => {
+        const member = this.world.agents.get(id);
+        return !member || member.status !== 'alive' || member.health <= 0 || id !== agent.id && member.controller;
+      })) return next.id === 'm3_oracle_last' ? '先知会面的参与者暂不可用；保留当前伤势和进度，等待他们能够参与。' : '交涉中的人物暂不可用；保留当前队伍、伤势和进度，等待他们能够参与。';
+      if (next.id === 'm3_hel_bargain' && ['morpheus', 'seraph'].some(id => {
+        const member = this.world.agents.get(id)!;
+        return member.currentLocation !== next.set || Math.hypot(member.position.x - agent.position.x, member.position.z - agent.position.z) > 8;
+      })) return '先在高台前等 Morpheus 和 Seraph 跟上，再一起与 Merovingian 交涉。';
+      const road = handoff ? newTruckRoad(handoff.truck, roadRoot('morpheus'), roadRoot('keymaker'), this.world.agents.get('morpheus')!.health) : undefined;
       if (!this.changeActor(agent, next.actor, tick)) return '下一段的角色正在由另一位玩家控制，进度已保留。';
       if (state.scene === 'm1_wake_up' && next.id === 'm1_club') {
         this.elapse(this.world.timeOfDay >= 6000 && this.world.timeOfDay < 20500 ? (20500 - this.world.timeOfDay) * .06 : 20, tick);
@@ -5285,15 +6095,48 @@ export class FilmStorySystem {
         || state.scene === 'm3_rain' && next.id === 'm3_surrender'
         || state.scene === 'm3_dock_battle' && next.id === 'm3_gate'
         || state.scene === 'm3_hel_entry' && next.id === 'm3_hel_bargain';
-      const position = state.scene === 'm1_bathroom' && next.id === 'm1_basement' ? { ...this.world.agents.get('neo')!.position } : state.scene === 'm1_wall_exposed' && next.id === 'm1_bathroom' ? { ...this.world.agents.get('morpheus')!.position } : sameRoom || state.scene === 'm1_boss' && next.id === 'm1_office_escape' ? { ...agent.position } : undefined;
+      const position = road ? { ...this.world.agents.get('morpheus')!.position } : state.scene === 'm1_bathroom' && next.id === 'm1_basement' ? { ...this.world.agents.get('neo')!.position } : state.scene === 'm1_wall_exposed' && next.id === 'm1_bathroom' ? { ...this.world.agents.get('morpheus')!.position } : sameRoom || state.scene === 'm1_boss' && next.id === 'm1_office_escape' ? { ...agent.position } : undefined;
       const facing = agent.rotation;
+      const helCompanions = state.scene === 'm3_hel_entry' && next.id === 'm3_hel_bargain'
+        ? ['morpheus', 'seraph'].map(id => this.world.agents.get(id)!).filter(member => member.status === 'alive' && !member.controller
+          && member.currentLocation === next.set).map(member => ({ member, position: { ...member.position }, yaw: member.rotation })) : [];
       state.scene = next.id; state.actor = next.actor; state.step = 0; state.lastText = next.context;
-      this.enter(next, tick, position);
+      this.enter(road ? { ...next, set: 'film_freeway_101' } : next, tick, position, road);
       if (sameRoom) agent.rotation = facing;
+      for (const saved of helCompanions) { saved.member.position = saved.position; saved.member.rotation = saved.yaw; }
+      if (helCompanions.length) this.helBargainFrame(agent, tick);
       return `${next.title} · ${FILM_SETS[next.set].name}。`;
     }
     const step = this.step;
     if (!step) return '本场景已完成。G 或 J 继续下一段。';
+    if (state.scene === 'm3_dock_reunion' && !state.visiting) {
+      this.dockReunionFrame(agent, 0, tick);
+      const reunion = state.dockReunion!;
+      if (target !== 'act') return state.lastText;
+      if (reunion.phase === 'ready') {
+        if (reunion.departure !== undefined && DOCK_REUNION.crew.some(id => {
+          const member = this.world.agents.get(id)!; return member.status === 'alive' && member.controller;
+        })) return state.lastText;
+        reunion.phase = reunion.departure === undefined ? 'exiting' : 'disembarking'; reunion.elapsed = 0;
+      }
+      else if (reunion.phase === 'walking' && state.step === 2) {
+        if (this.world.agents.get('zee')?.controller || this.world.agents.get('zee')?.status !== 'alive') return '等待 Zee 结束其他玩家的控制后再重逢，进度已经保留。';
+        if (distance(agent.position, filmStepPosition(this.scene, step)) > 2.2) return '先走近呼唤你的 Zee，再按 G 回应。';
+        const center = FILM_SETS[this.scene.set].center;
+        reunion.approach = { x: agent.position.x - center.x, z: agent.position.z - center.z, yaw: agent.rotation };
+        reunion.phase = 'approaching'; reunion.elapsed = 0;
+      } else if (reunion.phase === 'promise') {
+        if (this.world.agents.get('zee')?.controller || this.world.agents.get('zee')?.status !== 'alive') return state.lastText;
+        reunion.phase = 'charm'; reunion.elapsed = 0;
+      }
+      this.dockReunionFrame(agent, 0, tick); return state.lastText;
+    }
+    if (state.scene === 'm3_emp' && state.step === 0 && !state.emp) {
+      if (target !== 'act' || distance(agent.position, filmStepPosition(this.scene, step)) > 1.25) return '走到操作椅左侧的金色标记旁，再按 G 落座。';
+      const center = FILM_SETS[this.scene.set].center;
+      state.empOperator = { phase: 'seating', elapsed: 0, approach: { x: agent.position.x - center.x, z: agent.position.z - center.z } };
+      delete state.started; this.empFrame(agent, 0, tick); return state.lastText;
+    }
     if (this.basement.active(agent)) return this.basement.command(agent, target, tick);
     if (this.sixth.active(agent)) return this.sixth.command(agent, target, tick);
     if (this.wetwall.active(agent)) return this.wetwall.command(agent, target, tick);
@@ -5378,6 +6221,15 @@ export class FilmStorySystem {
     if (state.scene === 'm3_rain' && state.step === 1) {
       this.ensureSmithFinale(); const encounter = state.smithFinale!;
       if (encounter.phase === 'failed') return '本轮交锋已失败。J 打开手记，从保存的战斗检查点重试。';
+      if (encounter.phase === 'reply' || encounter.phase === 'charge_ready') {
+        if (target !== 'act') return state.lastText;
+        if (encounter.phase === 'charge_ready' && (life.choices.machine_pact !== 'peace' || life.choices.machine_connection !== 'active'))
+          return '机器端的连接还没有建立；先完成与机器集体的交换。';
+        if (this.world.agents.get('smith')?.controller) return 'Smith 正由另一位玩家控制；等待他空闲后再继续。';
+        state.smithFinale = { ...encounter, phase: encounter.phase === 'reply' ? 'prediction' : 'charging', elapsed: 0 };
+        state.lastText = smithFinaleDialogue(state.smithFinale) ?? 'Neo 主动迎向 Smith。两个人穿过雨幕，冲向大道中央。';
+        this.placeSmithFinale(agent, tick); return state.lastText;
+      }
       if (encounter.phase !== 'ready') return state.lastText;
       if (target !== 'act') return '走到大道中央，按 G 面对 Smith。';
       if (!this.near(agent, step)) return '先穿过两列复制体，走到大道中央。';
@@ -5397,9 +6249,11 @@ export class FilmStorySystem {
       if (target !== 'act') return '靠近 Smith，按 G 让最后的猛攻开始。';
       if (!this.near(agent, step)) return '先走到坑底中央，面对 Smith。';
       if (this.world.agents.get('smith')?.controller) return 'Smith 正由另一位玩家控制；等待他空闲后再继续。';
-      state.smithFinale = { ...encounter, phase: 'assault', elapsed: 0, focus: 0 };
+      const center = FILM_SETS[this.scene.set].center;
+      state.smithFinale = { ...encounter, phase: 'pit_warning', elapsed: 0, focus: 0, checkpoint: 'pit', pitFight: true,
+        pitApproach: { x: agent.position.x - center.x, z: agent.position.z - center.z, yaw: agent.rotation } };
       state.checkpoint = { ...agent.position };
-      state.lastText = 'Smith 把预见当成必胜的证明，连续把 Neo 击回坑底。这一拍不是血条消耗；看他为什么在结局到来时犹豫。';
+      state.lastText = 'Smith 再次冲向 Neo。看清起手，用 X 错开攻击，站稳后用 F 亲自打出最后的重拳。';
       this.placeSmithFinale(agent, tick); return state.lastText;
     }
     if (state.scene === 'm3_surrender' && state.step === 1 && state.smithFinale?.phase !== 'vision')
@@ -5473,14 +6327,41 @@ export class FilmStorySystem {
     if (this.reloaded.active(agent)) return this.reloaded.command(agent, target, tick);
     if (this.catch.active(agent)) return this.catch.command(agent, target, tick);
     if (this.dockReload.active(agent)) return this.dockReload.command(agent, target, tick);
+    if (this.upperDigger.active(agent)) return this.upperDigger.command(agent, target, tick);
+    if (this.diggers.active(agent)) return this.diggers.command(agent, target, tick);
     if (this.dockGate.active(agent)) return this.dockGate.command(agent, target, tick);
     if (this.dockLastStand.active(agent)) return this.dockLastStand.command(agent, target, tick);
     if (state.scene === 'm2_ship_lost' && state.shipLoss?.phase === 'failed' || state.scene === 'm2_stop_sentinels' && state.tunnel?.phase === 'failed') return '当前检查点失败。按 J 打开手记并重试。';
-    if (state.scene === 'm3_trainman' && state.step === 1 && state.mobil?.phase !== 'stopped') return '列车仍在进站，等车门完全打开。';
+    if (state.scene === 'm3_trainman' && state.step <= 1 && (state.mobil?.phase !== 'stopped' || state.mobil.elapsed < .65)) return '列车仍在进站，等车门完全打开。';
+    if (state.scene === 'm3_trainman' && state.step === 0) {
+      this.ensureMobil(tick);
+      if (this.mobilCastBlocked()) return state.lastText;
+      if (state.mobil!.luggage!.phase !== 'ready') return '正在提起行李；暂停会保留当前动作。';
+      if (!this.near(agent, this.scene!.steps[0])) return '先走近长椅旁的箱子。';
+      const center = FILM_SETS[this.scene!.set].center;
+      const gap = Math.hypot(agent.position.x - center.x - MOBIL_LUGGAGE.x, agent.position.z - center.z - MOBIL_LUGGAGE.z);
+      if (gap > 1.45 || gap < .72) return '站到箱子旁边，留出俯身提起它的位置。';
+      state.mobil!.luggage = { phase: 'lifting', elapsed: 0,
+        approach: { x: agent.position.x - center.x, z: agent.position.z - center.z,
+          yaw: Math.atan2(center.x + MOBIL_LUGGAGE.x - agent.position.x, center.z + MOBIL_LUGGAGE.z - agent.position.z) } };
+      delete state.started; this.mobilFrame(agent, 0, tick); return 'Neo 俯身握住箱子的提手。';
+    }
     if (helElevatorLocked(state)) return '电梯正在下降。到站开门后再进入衣帽间。';
     if (helDanceDoorLocked(state)) return '重门正在打开。留在门前，等舞池入口完全敞开。';
     if (state.scene === 'm3_trainman_chase' && state.step === 2 && state.helChase?.phase !== 'escaped') return 'Trainman 正穿过对向站台；等驶过的列车遮断视线。';
-    if (state.scene === 'm3_mobil_release' && state.step === 0 && state.mobil?.phase !== 'stopped') return '列车仍在进站，等 Trinity 下车。';
+    if (state.scene === 'm3_mobil_release' && state.step < 2) {
+      if (this.mobilCastBlocked()) return state.lastText;
+      this.mobilFrame(agent, 0, tick);
+      const reunion = state.mobil!.reunion!, trinity = this.world.agents.get('trinity')!;
+      if (state.step === 0 || reunion.phase === 'embracing' || !['ready', 'together'].includes(reunion.phase)) return state.lastText;
+      const gap = distance(agent.position, trinity.position);
+      if (gap > 2.8 || reunion.phase === 'ready' && gap < 1.6) return '先靠近 Trinity，留出两人相拥的位置。';
+      if (reunion.phase === 'together') { this.advance('两人终于重逢。Neo 回到矩阵，决定先去见先知。', agent, tick); return state.lastText; }
+      reunion.neo = { x: agent.position.x - FILM_SETS[this.scene!.set].center.x,
+        z: agent.position.z - FILM_SETS[this.scene!.set].center.z, yaw: agent.rotation };
+      reunion.phase = 'embracing'; reunion.elapsed = 0; state.checkpoint = { ...agent.position };
+      this.mobilFrame(agent, 0, tick); return state.lastText;
+    }
     if (state.scene === 'm2_burly') return this.burlyAct(agent, target, tick);
     if (state.scene === 'm2_chateau' && state.step === 0) return this.chateauAct(agent, target, tick);
     if (state.scene === 'm2_mountain' && state.step === 2) return state.mountain?.phase === 'failed' && target === 'act' ? this.retryMountain(agent) : '站在山崖起飞点按 Space，随后按住 W 向南飞，A / D 调整航线。';
@@ -5568,9 +6449,9 @@ export class FilmStorySystem {
     if (state.scene === 'm1_room303' && state.step === 4 && target === 'act') return this.openingHotel.dive(agent, tick);
     if (state.scene === 'm1_room303' && state.step === 5 && target === 'act') return this.openingHotel.beginClimb(agent);
     if (state.scene === 'm2_ship_lost' && state.step === 2 && target === 'act') {
-      if (['neo', 'trinity', 'link'].some(id => this.world.agents.get(id)?.controller)) return '船员正在由其他玩家控制，弃船命令先停在这里。';
-      state.shipLoss = { phase: 'evacuating', remaining: RELOADED_FINALE.evacuationSeconds, lastTick: tick, attempts: state.shipLoss?.attempts ?? 0 };
-      this.advance(step.text!, agent, tick); return state.lastText;
+      if (['neo', 'morpheus', 'trinity', 'link'].filter(id => id !== agent.id).some(id => this.world.agents.get(id)?.controller)) return '船员正在由其他玩家控制，弃船命令先停在这里。';
+      state.shipLoss = { phase: 'evacuating', remaining: RELOADED_FINALE.evacuationSeconds, lastTick: tick, attempts: state.shipLoss?.attempts ?? 0, age: 0, elapsed: 0 };
+      this.advance(step.text!, agent, tick); this.nebEscape.seal(); return state.lastText;
     }
     if (state.scene === 'm2_stop_sentinels' && state.step === 1) return '面向身后追来的哨兵，按住 G 保持连接；松开会渐渐失去聚焦。';
     if (state.scene === 'm2_key_door' && [3, 5].includes(state.step)) {
@@ -5599,15 +6480,25 @@ export class FilmStorySystem {
       if (target !== 'act') return '靠近舞池重门，按 G 推开。';
       state.helDanceDoor ??= { phase: 'sealed', elapsed: 0, lastTick: tick };
       state.helDanceDoor.phase = 'opening'; state.helDanceDoor.elapsed = 0; state.helDanceDoor.lastTick = tick;
-      agent.rotation = Math.PI;
-      state.lastText = 'Trinity 抵住门板；铰链缓缓转动，红色灯光和低音从门缝里涌出。';
+      state.helDanceDoor.physical = true; this.helDanceDoorFrames = false;
+      const center = FILM_SETS.film_club_hel.center;
+      state.helDanceDoor.approach = { x: agent.position.x - center.x, z: agent.position.z - center.z, yaw: agent.rotation };
+      this.helDanceDoorFrame(agent, 0, tick);
       return state.lastText;
     }
     if (state.scene === 'm3_hel_entry' && state.step === 0) {
       if (target !== 'act') return '走近电梯按钮，按 G 开始下降。';
       state.helElevator ??= { phase: 'ready', elapsed: 0, lastTick: tick };
+      this.helElevatorFrame(agent, 0, tick);
+      if (state.helElevator.paused || state.helElevator.unavailable) return helElevatorText(state.helElevator);
+      state.helElevator.approach = { x: agent.position.x - FILM_SETS.film_club_hel.center.x, z: agent.position.z - FILM_SETS.film_club_hel.center.z, yaw: agent.rotation };
+      if (state.helElevator.phase === 'arrived') {
+        state.helElevator.phase = 'opening'; state.helElevator.gateElapsed = 0;
+        this.helElevatorFrame(agent, 0, tick); return state.lastText;
+      }
+      if (state.helElevator.phase !== 'ready') return state.lastText;
       state.helElevator.phase = 'descending'; state.helElevator.elapsed = 0; state.helElevator.lastTick = tick;
-      state.lastText = '铁笼门锁住。电梯沿井道下降，外侧灯带一层层向上掠过。';
+      this.helElevatorFrame(agent, 0, tick);
       return state.lastText;
     }
     if (state.scene === 'm1_ledge' && step.kind === 'reflect') {
@@ -5642,7 +6533,11 @@ export class FilmStorySystem {
       const reflectedScene = state.scene; const reflectedStep = state.step;
       this.advance(`${step.text} ${response}`, agent, tick);
       if (reflectedScene === 'm3_rain' && reflectedStep === 2 && state.smithFinale) state.smithFinale.phase = 'rain_done';
-      if (reflectedScene === 'm3_surrender' && reflectedStep === 1 && state.smithFinale) state.smithFinale.phase = 'understanding';
+      if (reflectedScene === 'm3_surrender' && reflectedStep === 1 && state.smithFinale) {
+        state.smithFinale.phase = state.smithFinale.pitFight ? 'pit_recovery' : 'understanding';
+        state.smithFinale.elapsed = 0; state.smithFinale.focus = 0;
+        if (state.smithFinale.pitFight) state.lastText = `${response} Neo 仍倒在积水中。按住 G 亲自撑起身体，再面对 Smith 作出最后的选择。`;
+      }
       if (reflectedScene === 'm3_dawn' && reflectedStep === 2 && state.epilogue) { state.epilogue.phase = 'leaving'; state.epilogue.elapsed = 0; }
       if (['m3_rain', 'm3_surrender'].includes(reflectedScene)) this.placeSmithFinale(agent, tick);
       if (reflectedScene === 'm3_dawn') this.placeEpilogue(agent, tick);
@@ -5723,11 +6618,12 @@ export class FilmStorySystem {
       return state.lastText;
     }
     if (state.scene === 'm3_trainman' && state.step === 2) {
-      if (['trainman', 'rama_kandra', 'kamala', 'sati'].some(id => this.world.agents.get(id)?.controller)) return '车门旁的角色正由其他玩家控制，等待他们完成行动。';
+      if (this.mobilCastBlocked()) return state.lastText;
       this.ensureMobil(tick);
       if (state.mobil?.phase !== 'stopped') return '等车停稳，Trainman 才会打开车门。';
       const center = FILM_SETS[this.scene!.set].center;
-      state.mobil.phase = 'refusing'; state.mobil.elapsed = 0;
+      state.mobil.phase = 'refusing'; state.mobil.elapsed = 0; state.mobil.refusalStartedAt = tick;
+      if (state.mobil.luggage) state.mobil.closeElapsed = 0;
       state.mobil.approach = { x: agent.position.x - center.x, z: agent.position.z - center.z, yaw: agent.rotation };
       this.mobilFrame(agent, 0, tick); return 'Trainman 伸手拦住你。';
     }
@@ -5748,7 +6644,8 @@ export class FilmStorySystem {
       if (state.scene === 'm3_gate') {
         if (!state.apu) state.apu = newApuRun();
         state.checkpoint = filmStepPosition(this.scene!, step);
-        return 'Kid 接管 Mifune 留下的受损 APU。W 前进、S 制动、A / D 横向避开哨兵，赶到三号闸门。';
+        this.driveFrame(agent, { throttle: 0, steer: 0, brake: false }, 0, tick);
+        return 'Kid 接管 Mifune 留下的受损 APU。先按 W 跨过队长，再用 A / D 横向避开哨兵；S 制动，赶到三号闸门。';
       }
       if (state.scene === 'm3_hammer_tunnels') {
         if (['morpheus', 'roland'].some(id => this.world.agents.get(id)?.controller)) return '舰桥船员正由另一位玩家控制，等待他们结束当前行动。';
@@ -5782,6 +6679,9 @@ export class FilmStorySystem {
         return state.lastText;
       }
       if (state.scene === 'm3_hel_entry') {
+        const seraph = this.world.agents.get('seraph');
+        if (!state.fighting && (!seraph || seraph.controller || seraph.status !== 'alive' || !seraph.isInMatrix || seraph.currentLocation !== this.scene.set))
+          return '需要 Seraph 在场且空闲，才能保护衣帽间女侍。保留当前进度，等待同伴。';
         if (!state.fighting) { state.fighting = true; this.coatcheck.start(agent, tick); }
         return state.lastText;
       }
@@ -5840,24 +6740,68 @@ export class FilmStorySystem {
     life.journal.unshift({ day: life.day, time: this.world.timeOfDay, title: '先知的提醒成为准备', text });
     this.state!.lastText = `${this.state!.lastText} ${text}`;
   }
-  private enter(scene: FilmScene, tick: number, position?: AgentState['position']): void {
+  private enter(scene: FilmScene, tick: number, position?: AgentState['position'], road?: import('@auto_matrix/shared').TruckRoad): void {
     const state = this.state!; const life = this.sandbox().neoLife!;
     const custodyArrival = scene.id === 'm1_interrogation' && state.office?.outcome === 'captured';
     const crosscut = state.tvExit?.crosscut;
     const smithFinale = state.smithFinale;
     this.openingHotel.clear();
+    this.sourcePortal.clear();
+    this.trinityTerminal.clear();
+    if (scene.id === 'm2_backup') state.trinityTerminal = { phase: 'ready', elapsed: 0, attempts: 0 };
+    this.trinityRelay.clear();
+    if (scene.id === 'm2_relay') state.trinityRelay = { phase: 'review', elapsed: 0 };
+    this.trainmanChase.clear();
+    this.helGarage.clear();
+    state.helGarage = scene.id === 'm3_hel_garage' ? newHelGarage() : undefined;
+    this.oracleRequest.clear();
+    this.oracleLast.clear();
+    this.oracleAbsorption.clear();
+    if (scene.id === 'm3_oracle_absorbed') delete state.oracleAbsorption;
+    if (scene.id === 'm3_oracle_last') delete state.oracleLast;
+    if (scene.id === 'm3_oracle_request') state.oracleRequest = { phase: 'ready', elapsed: 0, guide: 0 };
+    this.sourceBriefing.clear();
+    if (scene.id === 'm2_plan') state.sourceBriefing = { phase: 'review', reviewed: [], elapsed: 0 };
+    this.primaryDemolition.clear();
+    if (scene.id === 'm2_power') state.primaryDemolition = { phase: 'install', installed: [], elapsed: 0, remaining: PRIMARY_DEMOLITION.retreatSeconds, attempts: 0 };
+    if (scene.id === 'm2_blackout') {
+      state.primaryDemolition ??= { phase: 'done', installed: PRIMARY_DEMOLITION.sites.map(site => site.id), elapsed: 0, remaining: 0, attempts: 0 };
+      state.primaryDemolition.blast ??= { phase: 'ready', elapsed: 0 };
+    }
     this.clearThreats(); state.enteredAt = tick; state.checkpoint = position ?? filmEntry(scene); delete state.started; delete state.fighting;
     delete state.lobby;
     delete state.ride;
+    delete state.freewayHandoff;
+    this.freewayPickup.clear();
+    state.freewayPickup = scene.id === 'm2_freeway' ? newFreewayPickup() : undefined;
     delete state.garage;
     delete state.hammer;
     delete state.logos;
     delete state.apu;
+    if (state.diggers?.phase !== 'done' && !['m3_upper_digger', 'm3_dock_battle', 'm3_gate'].includes(scene.id)) delete state.diggers;
+    if (!state.upperDigger?.charraDead && !['m3_dock_battle', 'm3_gate'].includes(scene.id)) delete state.upperDigger;
     delete state.dockGunnery;
     delete state.dockReload;
     if (scene.id !== 'm3_gate') delete state.dockLastStand;
-    if (scene.id !== 'm3_emp') delete state.dockGate;
-    delete state.trucks;
+    if (!['m3_emp', 'm3_dock_reunion'].includes(scene.id)) delete state.dockGate;
+    delete state.empOperator;
+    this.dockEvacuation.clear();
+    if (scene.id === 'm3_dock_evacuation') state.dockEvacuation = { phase: 'supplies', elapsed: 0, crewAge: 0, remaining: 26, attempts: 0, delivered: false };
+    if (scene.id === 'm3_shaft_seal') state.shaftSeal = { phase: 'ready', elapsed: 0, turn: 0 };
+    this.dockBriefing.clear();
+    state.dockBriefing = scene.id === 'm3_dock_briefing' ? { phase: 'ready', elapsed: 0, escort: 0 } : undefined;
+    if (scene.id !== 'm3_dock_reunion') for (const other of this.world.agents.values())
+      if (!other.controller && (other.currentAction?.parameters.dockDeparture || other.currentAction?.parameters.dockReunion)) other.currentAction = null;
+    if (scene.id === 'm3_dock_reunion') {
+      state.dockReunion = { phase: 'ready', elapsed: 0, floor: state.diggers ? 1 : 0, departure: 0 };
+      const pose = dockReunionRoot(state.dockReunion, 'link'), center = FILM_SETS[scene.set].center;
+      state.checkpoint = { x: center.x + pose.x, y: center.y + pose.y, z: center.z + pose.z };
+    } else delete state.dockReunion;
+    this.sandbox().structures = this.sandbox().structures.filter(s => !s.id.startsWith('film:reunion:'));
+    this.sandbox().structures = this.sandbox().structures.filter(s => !s.id.startsWith('film:emp:'));
+    state.trucks = road ? { phase: 'duel', elapsed: 0, lastTick: tick, attempt: 0, road } : undefined;
+    this.sandbox().structures = this.sandbox().structures.filter(item => item.id !== 'film:truck-road:roof');
+    for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.truckRoad) other.currentAction = null;
     delete state.awakening;
     delete state.cabinEscort;
     delete state.constructArrival;
@@ -5900,9 +6844,10 @@ export class FilmStorySystem {
     delete state.deus;
     delete state.smithFinale;
     delete state.epilogue;
-    delete state.templeSeal;
+    this.templeDefense.clear();
+    if (scene.id === 'm3_temple_breach') state.templeBreach = { phase: 'ready', elapsed: 0 };
     if (scene.id === 'm3_temple_defense') {
-      state.templeSeal = { phase: 'running', remaining: TEMPLE_SEAL_SECONDS, lastTick: tick, attempts: 0 };
+      state.templeSeal = newTempleDefense(tick);
       if (state.completed.includes('m3_emp') && !state.emp) this.sandbox().zion = Math.min(this.sandbox().zion, 15);
     }
     if (scene.id === 'm3_farewell') state.farewell = newFarewell();
@@ -5922,7 +6867,7 @@ export class FilmStorySystem {
     else if (!['m3_family', 'm3_trainman'].includes(scene.id)) delete state.mobil;
     if (scene.id === 'm3_trainman_chase') state.helChase = { phase: 'sighting', elapsed: 0, lastTick: tick };
     else delete state.helChase;
-    if (scene.id === 'm3_hel_entry') state.helElevator = { phase: 'ready', elapsed: 0, lastTick: tick };
+    if (scene.id === 'm3_hel_entry') { state.helElevator = { phase: 'ready', elapsed: 0, lastTick: tick }; this.helElevatorFrames = false; }
     else delete state.helElevator;
     if (scene.id === 'm3_hel_entry') state.helDanceDoor = { phase: 'sealed', elapsed: 0, lastTick: tick };
     else delete state.helDanceDoor;
@@ -5972,6 +6917,7 @@ export class FilmStorySystem {
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.airRescue) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.matrixEscape) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && (other.currentAction?.parameters.theOne || other.currentAction?.parameters.reloaded || other.currentAction?.parameters.catch)) other.currentAction = null;
+    for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.architect) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.smithFinale) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.epilogue) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && (other.currentAction?.parameters.recoveryCrew || other.currentAction?.parameters.medical !== undefined || other.currentAction?.parameters.cabin || other.currentAction?.parameters.cabinGuide || other.currentAction?.parameters.construct || other.currentAction?.parameters.truth || other.currentAction?.parameters.download)) other.currentAction = null;
@@ -5981,7 +6927,8 @@ export class FilmStorySystem {
     const actor = this.world.agents.get(state.actor)!;
     for (const other of this.world.agents.values()) if (!other.controller && (other.currentAction?.parameters.basement || other.currentAction?.parameters.tvExit)) other.currentAction = null;
     const incomingHealth = actor.health;
-    this.place(actor, scene, state.checkpoint); actor.status = 'alive'; actor.health = custodyArrival || scene.id === 'm3_surrender' || crosscut && ['m1_unplugged', 'm1_rescue_decision'].includes(scene.id) || scene.id === 'm1_basement' || scene.id === 'm1_tv_exit' || scene.id === 'm1_wetwall' || scene.id === 'm1_wall_exposed' || scene.id === 'm1_bathroom' && state.wallExposure?.phase === 'done' ? incomingHealth : actor.maxHealth; if (!custodyArrival) actor.activeEffects = [];
+    this.place(actor, scene, state.checkpoint); actor.status = 'alive'; actor.health = ['m2_architect', 'm2_catch', 'm2_stop_sentinels', 'm2_medical', 'm3_hel_bargain', 'm3_mobil_release', 'm3_oracle_last', 'm3_oracle_absorbed'].includes(scene.id) || road || custodyArrival || scene.id === 'm3_dock_reunion' || scene.id === 'm3_dock_briefing' || scene.id === 'm3_dock_evacuation' || scene.id === 'm3_shaft_seal' || scene.id === 'm3_temple_defense' || scene.id === 'm3_temple_breach' || scene.id === 'm3_surrender' || crosscut && ['m1_unplugged', 'm1_rescue_decision'].includes(scene.id) || scene.id === 'm1_basement' || scene.id === 'm1_tv_exit' || scene.id === 'm1_wetwall' || scene.id === 'm1_wall_exposed' || scene.id === 'm1_bathroom' && state.wallExposure?.phase === 'done' ? incomingHealth : actor.maxHealth; if (!custodyArrival && !['m2_architect', 'm2_catch', 'm3_dock_briefing', 'm3_dock_evacuation', 'm3_shaft_seal', 'm3_temple_defense', 'm3_temple_breach', 'm3_hel_bargain', 'm3_mobil_release', 'm3_oracle_last', 'm3_oracle_absorbed'].includes(scene.id)) actor.activeEffects = [];
+    if (scene.id === 'm3_rain') { actor.position = filmPosition(scene.set, 0, -78); actor.rotation = 0; state.checkpoint = { ...actor.position }; }
     if (scene.id === 'm1_basement') this.basement.start();
     if (scene.id === 'm1_tv_exit') this.basement.startTv();
     if (scene.id === 'm1_unplugged' && crosscut) this.basement.crosscut.startCounter(tick);
@@ -5993,17 +6940,22 @@ export class FilmStorySystem {
     }
     if (scene.id === 'm2_room') actor.rotation = Math.PI;
     if (scene.id === 'm2_mountain') actor.rotation = 0;
-    if (scene.id === 'm2_trucks') actor.rotation = Math.PI;
+    if (scene.id === 'm2_trucks' && !road) actor.rotation = Math.PI;
     if (scene.id === 'm2_oracle_message') actor.rotation = 0;
     life.chapter = NEO_CHAPTERS.findIndex(c => c.id === scene.chapter);
     const neo = this.world.agents.get('neo')!;
-    neo.isAwakened = FILM_SCENES.indexOf(scene) >= FILM_SCENES.findIndex(s => s.id === 'm1_pod');
+    neo.isAwakened = FILM_SCENES.findIndex(item => item.id === scene.id) >= FILM_SCENES.findIndex(s => s.id === 'm1_pod');
     const profile = this.sandbox().profiles[actor.id];
-    if (profile) { profile.trackedMission = ''; profile.trace = 0; profile.inventory.medkit = Math.max(profile.inventory.medkit, 2); delete profile.job; if (!profile.visited.includes(scene.set)) profile.visited.push(scene.set); }
+    if (profile) { profile.trackedMission = ''; profile.trace = 0; if (!['m2_architect', 'm3_hel_bargain', 'm3_mobil_release', 'm3_oracle_last', 'm3_oracle_absorbed'].includes(scene.id)) profile.inventory.medkit = Math.max(profile.inventory.medkit, 2); delete profile.job; if (!profile.visited.includes(scene.set)) profile.visited.push(scene.set); }
     this.sandbox().weather = FILM_SETS[scene.set].light === 'storm' || ['m1_bridge', 'm1_bug'].includes(scene.id) ? 'rain' : 'clear';
     this.sandbox().weatherUntil = tick + 100000;
     this.stageCast();
+    if (scene.id === 'm3_oracle_absorbed') { actor.position = filmPosition(scene.set, -3.5, -24); actor.rotation = 0; state.checkpoint = { ...actor.position }; }
+    this.dockEvacuation.frame(actor, 0, tick);
+    this.templeDefense.frame(actor, 0, tick);
+    if (scene.id === 'm3_dock_briefing') this.dockBriefing.frame(actor, 0, tick);
     if (scene.id === 'm1_bridge') this.bridgeArrivalFrame(actor, 0, tick);
+    if (scene.id === 'm3_dock_reunion') this.dockReunionFrame(actor, 0, tick);
     if (scene.id === 'm1_dejavu') this.ambushFrame(actor, 0, tick);
     this.reconcileCast();
     if (scene.id === 'm1_spoon') this.oracleFrame(actor, false, 0, tick);
@@ -6029,14 +6981,17 @@ export class FilmStorySystem {
       }
     }
     if (scene.id === 'm2_chateau') state.chateau = { phase: 'ready', wave: 1, parries: 0, disarms: 0, attempts: 0, wounded: false };
-    if (scene.id === 'm2_trucks') state.trucks = { phase: 'duel', elapsed: 0, lastTick: tick, attempt: 0 };
+    if (scene.id === 'm2_trucks' && !state.trucks) state.trucks = { phase: 'duel', elapsed: 0, lastTick: tick, attempt: 0 };
+    if (scene.id === 'm3_upper_digger') { state.upperDigger = newUpperDigger(); this.upperDigger.stage(tick); }
+    if (scene.id === 'm3_diggers') { state.diggers = newDiggers(); this.diggers.stage(tick); }
     if (scene.id === 'm3_dock_battle') state.dockGunnery = newDockGunnery(tick);
     if (scene.id === 'm2_plan') state.grid = { primary: 'online', emergency: 'online', vigilant: 'active', trinity: 'waiting', phase: 'preparing',
       remaining: GRID_WINDOW_SECONDS, lastTick: tick, reroute: 0, attempts: 0 };
-    if (['m2_power', 'm2_vigilant', 'm2_backup', 'm2_key_door'].includes(scene.id)) this.grid(tick);
+    if (['m2_power', 'm2_vigilant', 'm2_blackout', 'm2_relay', 'm2_backup', 'm2_key_door'].includes(scene.id)) this.grid(tick);
     if (scene.id === 'm2_key_door') state.keyDoor = { portalOpened: false, keyTaken: false };
     if (scene.id === 'm2_architect') state.architect = { phase: 'cycles', sourceReviewed: false, trinityReviewed: false,
-      remaining: ARCHITECT_DOOR_SECONDS, lastTick: tick, attempts: 0 };
+      remaining: ARCHITECT_DOOR_SECONDS, lastTick: tick, attempts: 0, room: { elapsed: 0, chairYaw: 0 } };
+    if (scene.id === 'm2_architect') this.architectFrame(actor, 0, tick);
     this.sealSourceDoor();
     this.sealArchitectDoors();
     if (scene.id === 'm2_mountain') state.mountain = { phase: 'ground', elapsed: 0, x: MOUNTAIN.launch.x, z: MOUNTAIN.launch.z, altitude: 0, attempt: 0 };
@@ -6177,14 +7132,43 @@ export class FilmStorySystem {
   private stageCast(): void {
     this.sealResetFacade();
     const scene = this.scene!;
+    this.nebEscape.seal(); this.sealSignal(); this.sealMedical(); this.sealMobil();
+    if (scene.id === 'm2_vigilant') {
+      const link = this.world.agents.get('link');
+      if (link && link.status === 'alive' && !link.controller) {
+        this.place(link, scene, filmPosition(scene.set, TRINITY_RELAY.link.x, TRINITY_RELAY.link.z)); link.rotation = TRINITY_RELAY.link.yaw;
+        link.currentAction = { type: 'idle', parameters: { resolved: true, trinityRelay: { phase: 'review', elapsed: 0, role: 'link' } }, startedAt: this.state!.enteredAt, duration: 1e9, progress: 0 };
+      }
+      return;
+    }
+    if (scene.id === 'm2_relay') { this.trinityRelay.frame(this.world.agents.get(this.state!.actor)!, 0, this.world.simulationTick); return; }
+    if (scene.id === 'm3_oracle_request') { this.oracleRequest.frame(this.world.agents.get(this.state!.actor)!, 0, this.world.simulationTick); return; }
+    if (scene.id === 'm3_oracle_last') { this.oracleLast.frame(this.world.agents.get(this.state!.actor)!, 0, this.world.simulationTick); return; }
+    if (scene.id === 'm3_oracle_absorbed') { this.oracleAbsorption.frame(this.world.agents.get(this.state!.actor)!, 0, this.world.simulationTick); return; }
+    if (scene.id === 'm3_hel_garage') { this.helGarage.frame(this.world.agents.get(this.state!.actor)!, 0, this.world.simulationTick); return; }
+    if (scene.id === 'm3_hel_entry' && this.state!.step === 0) { this.helElevatorFrame(this.world.agents.get(this.state!.actor)!, 0, this.world.simulationTick); this.sealHelDanceDoor(); return; }
+    if (scene.id === 'm3_trainman_chase') { this.trainmanChase.frame(this.world.agents.get(this.state!.actor)!, 0, this.world.simulationTick); return; }
+    if (scene.id === 'm2_plan') { this.sourceBriefing.frame(this.world.agents.get(this.state!.actor)!, 0, this.world.simulationTick); return; }
+    if (scene.id === 'm2_power') {
+      const ghost = this.world.agents.get('ghost');
+      if (ghost && ghost.status === 'alive' && !ghost.controller) this.place(ghost, scene, filmPosition(scene.set, 5, 15));
+      return;
+    }
+    if (scene.id === 'm2_blackout') { this.primaryDemolition.frame(this.world.agents.get(this.state!.actor)!, 0, this.world.simulationTick); return; }
+    if (['m3_dock_briefing', 'm3_dock_evacuation', 'm3_shaft_seal', 'm3_temple_defense', 'm3_temple_breach'].includes(scene.id)) return;
     if (scene.id === 'm1_basement' || scene.id === 'm1_tv_exit' || scene.id === 'm1_unplugged' && this.state!.tvExit?.crosscut) { this.basement.frame(this.world.agents.get(this.state!.actor)!, {}, 0, this.world.simulationTick); return; }
     if (scene.id === 'm1_wall_exposed') { this.sixth.frame(this.world.agents.get(this.state!.actor)!, { crouch: false, yaw: 0 }, 0, this.world.simulationTick); return; }
     if (scene.id === 'm1_bathroom' && this.state!.wallExposure?.phase === 'done') return;
     if (scene.id === 'm1_wetwall') { const actor = this.world.agents.get(this.state!.actor)!; this.wetwall.frame(actor, { climb: 0, jump: false }, 0, this.world.simulationTick); return; }
     if (['m1_death', 'm1_return', 'm1_final_call', 'm2_dream', 'm2_meeting', 'm2_catch'].includes(scene.id)) return;
+    if (scene.id === 'm2_trucks' && this.state!.trucks?.road) { this.truckRoad.frame(this.world.agents.get(this.state!.actor)!, 0, this.world.simulationTick); return; }
     scene.cast.forEach((id, i) => {
       const actor = this.world.agents.get(id);
-      if (!actor || actor.controller || actor.id === this.state!.actor || this.unavailable(id)) return;
+      if (!actor || actor.controller || actor.id === this.state!.actor || this.unavailable(id)
+        || ['m2_stop_sentinels', 'm2_medical', 'm3_hel_bargain', 'm3_mobil_release', 'm3_oracle_last'].includes(scene.id) && (actor.status !== 'alive' || actor.health <= 0)) return;
+      if (scene.id === 'm2_architect' && actor.status !== 'alive') return;
+      if (scene.id === 'm2_ship_lost' && actor.status !== 'alive') return;
+      if (scene.id === 'm3_dock_reunion' && (id === 'zee' || DOCK_REUNION.crew.includes(id as typeof DOCK_REUNION.crew[number]))) return;
       if (scene.id === 'm1_dejavu' && this.state!.ambushApproach) return;
       if (id === 'trinity' && this.state?.hotel && scene.id !== 'm1_mirror') return;
       // Cast stands clear of the playable aisle and its interaction targets.
@@ -6218,7 +7202,7 @@ export class FilmStorySystem {
       }
       if (scene.id === 'm1_construct' && id === 'morpheus') { actor.position = filmPosition(scene.set, CONSTRUCT_REVEAL.morpheus.x, CONSTRUCT_REVEAL.morpheus.z); actor.rotation = CONSTRUCT_REVEAL.morpheus.yaw; }
       if (scene.id === 'm1_desert' && id === 'morpheus') { actor.position = filmPosition(scene.set, DESERT_REVEAL.morpheus.x, DESERT_REVEAL.morpheus.z); actor.rotation = DESERT_REVEAL.morpheus.yaw; }
-      if (!(scene.id === 'm1_interrogation' && this.state!.office?.outcome === 'captured')) {
+      if (!['m2_architect', 'm2_stop_sentinels', 'm2_medical', 'm3_hel_bargain', 'm3_mobil_release', 'm3_oracle_last'].includes(scene.id) && !(scene.id === 'm1_interrogation' && this.state!.office?.outcome === 'captured')) {
         actor.status = 'alive';
         if (!(scene.id === 'm1_rescue_decision' && id === 'tank')) actor.health = actor.maxHealth;
       }
@@ -6303,8 +7287,10 @@ export class FilmStorySystem {
       }
       if (scene.id === 'm2_backdoors' && id === 'seraph') { actor.position = filmPosition(scene.set, 2.5, -30); actor.rotation = Math.PI; }
       if (scene.id === 'm2_architect' && id === 'architect') {
-        actor.position = filmPosition(scene.set, 0, -14); actor.rotation = 0;
-        actor.currentAction = { type: 'idle', parameters: { seated: true }, startedAt: this.state!.enteredAt, duration: 100000, progress: 0 };
+        const encounter = this.state!.architect, room = encounter?.room;
+        actor.position = filmPosition(scene.set, ARCHITECT_ROOM.chair.x, ARCHITECT_ROOM.chair.z); actor.rotation = room?.chairYaw ?? 0;
+        actor.currentAction = { type: 'idle', parameters: { seated: true, resolved: true,
+          architect: { role: 'architect', phase: encounter?.phase ?? 'cycles', elapsed: room?.elapsed ?? 0, chairYaw: room?.chairYaw ?? 0 } satisfies ArchitectGesture }, startedAt: this.state!.enteredAt, duration: 100000, progress: 0 };
       }
       if (scene.id === 'm2_key_door') {
         const positions: Record<string, [number, number, number]> = { keymaker: [2, -37, 0], morpheus: [-2, -31, 0], smith: [0, -25, 0] };
@@ -6351,7 +7337,7 @@ export class FilmStorySystem {
         }
       }
       if (scene.id === 'm2_ship_lost') {
-        const spots: Record<string, [number, number, number]> = { neo: [2, 22, 0], trinity: [5, 24, 0], link: [4, 1, Math.PI] };
+        const spots: Record<string, [number, number, number]> = { neo: [2, 22, 0], morpheus: [-1.5, 24, 0], trinity: [5, 24, 0], link: [4, 1, Math.PI] };
         const spot = spots[id]; if (spot) { actor.position = filmPosition(scene.set, spot[0], spot[1]); actor.rotation = spot[2]; }
       }
       if (scene.id === 'm2_stop_sentinels') {
@@ -6361,7 +7347,7 @@ export class FilmStorySystem {
       if (scene.id === 'm2_medical') {
         const spots: Record<string, [number, number, number]> = { neo: [-10, -23, 0], bane: [10, -23, 0], maggie: [-13, -21, Math.PI], morpheus: [2, -16, Math.PI], roland: [0, -18, 0] };
         const spot = spots[id]; if (spot) { actor.position = filmPosition(scene.set, spot[0], spot[1]); actor.rotation = spot[2]; }
-        if (id === 'neo' || id === 'bane') actor.currentAction = { type: 'idle', parameters: { resolved: true, finaleComa: true }, startedAt: this.state!.enteredAt, duration: 100000, progress: 0 };
+        if (id === 'neo' || id === 'bane') actor.currentAction = { type: 'move_to', parameters: { resolved: true, finaleComa: true }, startedAt: this.state!.enteredAt, duration: 1e9, progress: 0 };
       }
       if (scene.id === 'm3_bane_questions') {
         const spots: Record<string, [number, number, number]> = { bane: [8, -19, Math.PI], maggie: [-12, -24, Math.PI / 2] };
@@ -6373,21 +7359,16 @@ export class FilmStorySystem {
       }
       if (scene.id === 'm3_maggie_discovery' && id === 'morpheus') { actor.position = filmPosition(scene.set, 6, -18); actor.rotation = Math.PI; }
       if (['m3_mobil', 'm3_family', 'm3_trainman'].includes(scene.id)) {
-        const spots: Record<string, [number, number, number]> = { sati: [-5, scene.id === 'm3_mobil' ? 12 : -8, 0],
-          rama_kandra: [-12, -8, Math.PI / 2], kamala: [-10, -8, Math.PI / 2], trainman: [12, -80, -Math.PI / 2] };
+        const spots: Record<string, [number, number, number]> = Object.fromEntries(MOBIL_FAMILY.map(spot => [spot.id, [spot.x, spot.z, Math.PI / 2]]));
+        spots.trainman = [12, -80, -Math.PI / 2]; if (scene.id === 'm3_mobil') spots.sati = [-5, 12, 0];
         const spot = spots[id]; if (spot) { actor.position = filmPosition(scene.set, spot[0], spot[1]); actor.rotation = spot[2]; }
-        if (scene.id === 'm3_family' && id === 'kamala') actor.currentAction = { type: 'idle', parameters: { seated: true }, startedAt: this.state!.enteredAt, duration: 100000, progress: 0 };
-      }
-      if (scene.id === 'm3_trainman_chase') {
-        const spots: Record<string, [number, number, number]> = { trainman: [0, 10, Math.PI], trinity: [-4, 22, Math.PI], morpheus: [4, 22, Math.PI] };
-        const spot = spots[id]; if (spot) { actor.position = filmPosition(scene.set, spot[0], spot[1]); actor.rotation = spot[2]; }
+        if (id === 'kamala') actor.currentAction = { type: 'idle', parameters: { seated: true }, startedAt: this.state!.enteredAt, duration: 100000, progress: 0 };
       }
       if (['m3_hel_garage', 'm3_hel_entry', 'm3_hel_bargain'].includes(scene.id)) {
         const z = scene.id === 'm3_hel_garage' ? 23 : scene.id === 'm3_hel_entry' ? 34 : -27;
         const spots: Record<string, [number, number, number]> = { morpheus: [-4, z, Math.PI], seraph: [4, z, Math.PI],
           merovingian: [0, -35, 0], persephone: [5, -35, 0], trainman: [-9, -32, 0] };
         const spot = spots[id]; if (spot) { actor.position = filmPosition(scene.set, spot[0], spot[1]); actor.rotation = spot[2]; }
-        if (spot && scene.id === 'm3_hel_bargain' && spot[1] < -28) actor.position.y += .6;
       }
       if (scene.id === 'm3_mobil_release') {
         const spot: [number, number, number] = id === 'trainman' ? [13, -80, -Math.PI / 2] : [12, -80, -Math.PI / 2];
@@ -6423,14 +7404,14 @@ export class FilmStorySystem {
     }
     if (state.scene === 'm2_backup' && state.step === 1) {
       const grid = this.grid(tick);
-      if (grid.primary !== 'armed' || grid.vigilant !== 'lost' || grid.trinity !== 'connected') {
+      if (grid.primary !== (state.trinityTerminal?.phase === 'deployed' || state.primaryDemolition?.blast?.phase === 'done' ? 'off' : 'armed') || grid.vigilant !== 'lost' || grid.trinity !== 'connected') {
         state.lastText = '主网装置、Vigilant 的失联确认和 Trinity 的补位尚未全部完成。'; delete state.started; return;
       }
       grid.primary = 'off'; grid.emergency = 'online'; grid.phase = 'emergency'; grid.hackRemaining = GRID_HACK_SECONDS; grid.lastTick = tick;
     }
     if (state.scene === 'm2_key_door' && [3, 5].includes(state.step)) {
       const grid = this.grid(tick);
-      if (grid.phase !== 'window') { state.lastText = '连接窗口已经关闭。先在门前完成改线。'; delete state.started; return; }
+      if (grid.phase !== 'window' && !(state.step === 3 && state.keyDoor?.performance?.phase === 'wounded') && !(state.step === 5 && grid.phase === 'opened' && state.keyDoor?.performance?.phase === 'done')) { state.lastText = '连接窗口已经关闭。先在门前完成改线。'; delete state.started; return; }
       if (state.step === 5) grid.phase = 'opened';
     }
     if (state.scene === 'm2_key_door' && state.keyDoor) {
@@ -6438,22 +7419,22 @@ export class FilmStorySystem {
       if (state.step === 2) {
         if (morpheus && !morpheus.controller) morpheus.position = filmPosition(this.scene!.set, -2, -37);
       }
-      if (state.step === 3) {
+      if (state.step === 3 && !state.keyDoor.performance) {
         state.keyDoor.portalOpened = true;
         if (keymaker && !keymaker.controller) {
-          keymaker.position = filmPosition(this.scene!.set, 1, -45); keymaker.health = Math.max(1, Math.round(keymaker.maxHealth * .18));
+          keymaker.position = filmPosition(this.scene!.set, 1, -45); keymaker.health = Math.min(keymaker.health, Math.max(1, Math.round(keymaker.maxHealth * .18)));
           keymaker.currentAction = { type: 'idle', parameters: { crouching: true, resolved: true }, startedAt: tick, duration: 100000, progress: 0 };
         }
         if (morpheus && !morpheus.controller) morpheus.position = filmPosition(this.scene!.set, -2, -43);
       }
-      if (state.step === 4) {
+      if (state.step === 4 && !state.keyDoor.performance) {
         state.keyDoor.keyTaken = true;
         if (keymaker && !keymaker.controller) { keymaker.status = 'dead'; keymaker.health = 0; keymaker.currentAction = null; }
       }
     }
     if (state.scene === 'm2_power' && state.step === 1) this.grid(tick).primary = 'armed';
     if (state.scene === 'm2_vigilant' && state.step === 0) this.grid(tick).vigilant = 'lost';
-    if (state.scene === 'm2_vigilant' && state.step === 1) this.grid(tick).trinity = 'connected';
+    if (state.scene === 'm2_vigilant' && state.step === 1) this.grid(tick).trinity = 'waiting';
     if (state.scene === 'm2_library' && state.keymaker) {
       if (state.step === 1) {
         const cain = this.world.agents.get('cain'); if (cain && !cain.controller) { cain.status = 'dead'; cain.currentAction = null; }
@@ -6514,48 +7495,41 @@ export class FilmStorySystem {
     }
     if (state.scene === 'm3_trainman' && state.step === 0) {
       this.ensureMobil(tick);
-      state.mobil!.phase = 'approaching'; state.mobil!.elapsed = 0; state.mobil!.lastTick = tick;
-      text = '你接过 Rama 的箱子。轨道深处亮起两束车灯，迟到的单节列车终于来了。';
-    }
-    if (state.scene === 'm3_trainman_chase' && state.step === 0) {
-      state.helChase ??= { phase: 'sighting', elapsed: 0, lastTick: tick };
-      state.helChase.phase = 'running'; state.helChase.elapsed = 0; state.helChase.lastTick = tick;
-      text = 'Trainman 拉下紧急制动，朝对向站台冲去；Seraph 追出车厢。';
+      state.mobil!.boarding = 0; state.mobil!.lastTick = tick;
+      text = '列车已经停稳。你接过 Rama 的箱子，陪一家人走向打开的车门。';
     }
     if (state.scene === 'm3_bane_questions') {
       if (state.step === 1) life.choices.bane_wounds = 'self_inflicted';
       if (state.step === 2) life.choices.bane_emp_record = 'unexplained';
       if (state.step === 3) life.choices.bane_neural_scan = 'abnormal';
     }
-    if (state.scene === 'm3_oracle_absorbed' && state.step === 2) {
-      const smith = this.world.agents.get('smith');
-      if (smith && !smith.controller) { smith.position = filmPosition(this.scene!.set, -4, -13); smith.rotation = Math.PI; }
-    }
+
     if (state.scene === 'm3_logos_plan') {
       if (state.step === 2) { life.choices.logos_assignment = 'neo_trinity'; life.choices.hammer_assignment = 'niobe_zion'; }
       if (state.step === 4) life.choices.hammer_supplies = 'loaded';
     }
     if (state.scene === 'm3_maggie_discovery' && state.step === 1) life.choices.bane_escape_route = 'logos_suspected';
     if (state.scene === 'm3_emp' && state.step === 0) {
-      state.emp = { firedAt: tick }; this.sandbox().zion = Math.min(this.sandbox().zion, 15);
+      state.emp = { firedAt: tick, elapsed: 0 }; this.sandbox().zion = Math.min(this.sandbox().zion, 15);
     }
-    if (state.scene === 'm3_temple_defense' && state.step === 2 && state.templeSeal) state.templeSeal.phase = 'sealed';
     if (state.scene === 'm3_hel_bargain' && state.step === 2 && state.helBargain) state.helBargain.phase = 'ready';
     if (state.scene === 'm3_hel_bargain' && state.step === 5) life.choices.neo_release = 'trinity_refused_trade';
     if (state.scene === 'm3_deus' && state.deus) {
       if (state.step === 0) state.deus.phase = 'ready';
       if (state.step === 2) {
-        state.deus.phase = 'pact'; state.deus.elapsed = 0; life.choices.machine_pact = 'peace';
-        text = `${text} 机器接受这项有限交换；锡安方向的哨兵立即停止，连接平台开始展开。`;
+        state.deus.phase = 'pact'; state.deus.elapsed = 0;
+        life.choices.machine_pact = 'peace';
+        text = 'Neo 提出以清除 Smith 换取和平。机器向锡安发出暂停进攻的信号，随后允许他进入连接座。';
       }
       if (state.step === 3) life.choices.machine_connection = 'active';
     }
     if (state.scene === 'm3_rain' && state.smithFinale && state.step === 0) {
-      state.smithFinale.phase = 'ready'; state.smithFinale.elapsed = 0;
-      text = `${text} Smith 从两列复制体中独自走出；这场交锋会保存动作窗口与高空检查点。`;
+      state.smithFinale.phase = 'entrance'; state.smithFinale.elapsed = 0;
+      text = 'Neo 在大道中央停步。一个 Smith 从右侧队列独自走出，其他复制体留在路旁；出列和对话会逐拍保存。';
     }
     if (state.scene === 'm1_bug' && state.step === 0 && state.office?.outcome === 'escaped') text = '扫描完成，没有发现追踪装置。Trinity 收起仪器，确认接头安全，继续前往 Morpheus 的房间。';
     state.lastText = text; state.step++; state.checkpoint = { ...agent.position }; delete state.started; delete state.fighting;
+    if (dockEmpLocked(state)) this.empFrame(agent, 0, tick);
     if (state.scene === 'm1_dejavu' && state.step === 1 && state.ambushApproach?.stairCat) {
       state.ambushEscape = newAmbushEscape(); this.ambushEscapeFrame(agent, 0, tick); return;
     }
@@ -6615,7 +7589,8 @@ export class FilmStorySystem {
         ? { ...agent.position, x: agent.position.x + Math.sin(facing) * 6, z: agent.position.z + Math.cos(facing) * 6 }
         : filmPosition(this.scene!.set, step.x + Math.sin(angle) * 9, step.z + Math.cos(angle) * 9);
       if (this.state?.scene === 'm1_bathroom' && this.state.betrayal?.sixth) position = { ...this.world.agents.get('smith')!.position };
-      if (this.state?.scene === 'm2_trucks') position = { ...filmPosition(this.scene!.set, TRUCKS.johnson.x, TRUCKS.johnson.z), y: FILM_SETS[this.scene!.set].center.y + TRUCKS.roof.height };
+      if (this.state?.scene === 'm2_trucks' && this.state.trucks?.road) position = { ...this.world.agents.get('agent_johnson')!.position };
+      else if (this.state?.scene === 'm2_trucks') position = { ...filmPosition(this.scene!.set, TRUCKS.johnson.x, TRUCKS.johnson.z), y: FILM_SETS[this.scene!.set].center.y + TRUCKS.roof.height };
       if (playerBlocked(position, agent.isInMatrix)) position = filmPosition(this.scene!.set, step.x, step.z - 5 - i * 3);
       this.sandbox().threats.push({ id: `film:${++this.sandbox().serial}`, scene: this.state!.scene, kind, character: step.opponent, position, matrix: agent.isInMatrix,
         health, maxHealth: health, target: agent.id, stunUntil: tick + 4, lastStrike: tick });
@@ -6642,10 +7617,11 @@ export class FilmStorySystem {
     if (['m3_rain', 'm3_surrender'].includes(state.scene) && actor) this.placeSmithFinale(actor, tick);
     if (['m3_ceasefire', 'm3_neo_carried', 'm3_reset', 'm3_dawn'].includes(state.scene) && actor) this.placeEpilogue(actor, tick);
     this.finaleTick(actor, tick);
+    if (state.scene === 'm2_ship_lost' && state.step >= 3 && state.shipLoss?.phase !== 'escaped') return;
     if (state.scene === 'm2_ship_lost' && state.shipLoss?.phase === 'failed' || state.scene === 'm2_stop_sentinels' && state.tunnel?.phase === 'failed') return;
     if (state.scene === 'm2_architect') this.architectTick(actor, tick);
     if (['m2_plan', 'm2_power', 'm2_vigilant', 'm2_backup', 'm2_key_door'].includes(state.scene)) this.gridTick(actor, tick);
-    if (state.scene === 'm2_trucks' && actor?.currentLocation === 'film_freeway_101') {
+    if (state.scene === 'm2_trucks' && !state.trucks?.road && actor?.currentLocation === 'film_freeway_101') {
       const roof = filmEntry(this.scene);
       this.place(actor, this.scene, roof); state.checkpoint = { ...roof };
       if (state.step >= 2) state.step = this.scene.steps.length;
@@ -6662,6 +7638,7 @@ export class FilmStorySystem {
       if (state.mobil) state.mobil.lastTick = tick;
       if (state.helChase) state.helChase.lastTick = tick;
       if (state.helElevator) state.helElevator.lastTick = tick;
+      if (state.helCoatcheck) state.helCoatcheck.rescueLastTick = tick;
       if (state.helDanceDoor) state.helDanceDoor.lastTick = tick;
       if (state.helDanceDoor) state.helDanceDoor.allyTick = tick;
       if (state.templeSeal) state.templeSeal.lastTick = tick;
@@ -6692,32 +7669,33 @@ export class FilmStorySystem {
         state.lastText = gunner.kidHealth <= 0 ? 'Kid 的弹药车被哨兵截住。按 J 从 APU 炮位重试。'
           : '哨兵冲破了炮位，或弹药耗尽。按 J 从 APU 炮位重试。';
       } else if (gunner.phase === 'cleared') {
-        actor.position = filmPosition(this.scene.set, 0, DOCK_GUNNERY.apuZ); actor.position.y += 2.2;
+        actor.position = filmPosition(this.scene.set, 0, DOCK_GUNNERY.apuZ); actor.position.y += APU_RIG.floor + APU_RIG.pilot.y;
         this.advance('Mifune 的双炮压住第一波哨兵；Kid 把弹药车推到了 APU 脚下。', actor, tick);
       }
       return;
     }
     if (state.scene === 'm3_dock_battle' && state.dockGunnery?.phase === 'failed') return;
+    if (upperDiggerActive(state)) { this.upperDigger.frame(actor, 0, tick); return; }
+    if (diggersActive(state)) { this.diggers.frame(actor, 0, tick); return; }
     if (dockReloadActive(state)) { this.dockReload.frame(actor, { focus: false, climb: 0 }, 0, tick); return; }
     if (dockLastStandActive(state)) { this.dockLastStand.frame(actor, 0, tick); return; }
     if (dockGateActive(state)) { this.dockGate.frame(actor, 0, tick); return; }
     if (state.scene === 'm1_mirror' && state.mirrorGuide && !state.awakening) this.mirrorGuideFrame(actor, tick);
-    if (state.scene === 'm3_temple_defense' && state.templeSeal?.phase === 'running') {
-      const seal = state.templeSeal;
-      seal.remaining = Math.max(0, seal.remaining - Math.max(0, tick - seal.lastTick) * .5); seal.lastTick = tick;
-      if (!seal.remaining) {
-        seal.phase = 'failed'; actor.health = 0; actor.status = 'dead'; delete state.started;
-        state.lastText = '自动防御已停，下一波哨兵抢先抵达。按 J 从神庙入口重试，亲手锁住两侧卡榫。';
-        return;
-      }
-    }
     if (state.scene === 'm1_roofs') { this.openingRoofTick(actor, tick); if (state.openingRoof?.phase === 'failed') return; }
     if (state.scene === 'm1_phone_escape') { this.openingPhoneTick(tick); if (state.openingPhone?.phase === 'failed') return; }
     if (state.scene === 'm1_room303' && this.openingHotel.tick(actor, tick)) return;
-    if (['m3_mobil', 'm3_family', 'm3_trainman', 'm3_mobil_release'].includes(state.scene)) this.mobilTick(actor, tick);
-    if (state.scene === 'm3_trainman_chase') this.helChaseTick(tick);
+    if (['m3_mobil', 'm3_family', 'm3_trainman', 'm3_mobil_release'].includes(state.scene)) {
+      if (this.mobilCastBlocked()) {
+        if (state.mobil) { if (state.started !== undefined) state.started += Math.max(0, tick - state.mobil.lastTick); state.mobil.lastTick = tick; }
+        return;
+      }
+      this.mobilTick(actor, tick);
+    }
+    if (state.scene === 'm3_hel_garage') { this.helGarage.frame(actor, 0, tick); return; }
+    if (state.scene === 'm3_trainman_chase') { this.trainmanChase.frame(actor, 0, tick); return; }
     if (state.scene === 'm3_hel_entry') { this.ensureHelDanceDoor(tick); this.helElevatorTick(actor, tick); this.helDanceDoorTick(actor, tick); this.helDanceAlliesTick(actor, tick); this.sealHelElevator(); this.sealHelDanceDoor(); }
     if (state.scene === 'm3_hel_bargain') this.helBargainTick(actor, tick);
+    if (state.scene === 'm2_trucks' && state.trucks?.road) { this.truckRoad.frame(actor, 0, tick); if (state.trucks.road.paused || state.trucks.road.unavailable || this.truckRoad.hood.active(actor)) { state.trucks.lastTick = tick; return; } }
     if (state.scene === 'm2_trucks' && state.trucks?.phase === 'collision') {
       const gap = Math.max(0, tick - state.trucks.lastTick);
       state.trucks.lastTick = tick;
@@ -6728,7 +7706,7 @@ export class FilmStorySystem {
       state.trucks.elapsed = Math.min(TRUCKS.collisionSeconds, state.trucks.elapsed + gap * .5);
       const neo = this.world.agents.get('neo');
       if (neo && !neo.controller && state.trucks.elapsed >= 5.5) {
-        const approach = truckApproachPose(state.trucks.elapsed);
+        const approach = truckApproachPose(state.trucks.elapsed, state.trucks.road);
         neo.position = { ...filmPosition(this.scene.set, approach.x, approach.z), y: FILM_SETS[this.scene.set].center.y + approach.y };
         neo.rotation = approach.yaw; neo.velocity = { x: 0, y: -12 / 4.5, z: 91 / 4.5 };
       }
@@ -6769,7 +7747,20 @@ export class FilmStorySystem {
     if (state.theOne && ['m1_death', 'm1_return', 'm1_final_call'].includes(state.scene)) return;
     if (state.scene === 'm1_dejavu' && state.ambushEscape) { this.ambushEscapeFrame(actor, 0, tick); return; }
     const step = this.step; if (!step) return;
-    if (state.scene === 'm1_wake_up' || state.scene === 'm1_morning') { delete state.started; return; }
+    if (this.templeDefense.active(actor)) { this.templeDefense.frame(actor, 0, tick); return; }
+    if (this.dockEvacuation.active(actor)) { this.dockEvacuation.frame(actor, 0, tick); return; }
+    if (this.freewayHandoff.active(actor)) { this.freewayHandoff.frame(actor, {}, 0, tick); return; }
+    if (this.freewayPickup.active(actor)) { this.freewayPickup.frame(actor, {}, 0, tick); return; }
+    if (this.dockBriefing.active(actor)) { this.dockBriefing.frame(actor, 0, tick); return; }
+    if (this.sourcePortal.active(actor)) { this.sourcePortal.frame(actor, 0, tick); this.sealSourceDoor(); return; }
+    if (this.trinityTerminal.active(actor)) { this.trinityTerminal.frame(actor, 0, tick); return; }
+    if (this.trinityRelay.active(actor)) { this.trinityRelay.frame(actor, 0, tick); return; }
+    if (this.oracleRequest.active(actor)) { this.oracleRequest.frame(actor, 0, tick); return; }
+    if (this.oracleLast.active(actor)) { this.oracleLast.frame(actor, 0, tick); return; }
+    if (this.oracleAbsorption.active(actor)) { this.oracleAbsorption.frame(actor, 0, tick); return; }
+    if (this.sourceBriefing.active(actor)) { this.sourceBriefing.frame(actor, 0, tick); return; }
+    if (this.primaryDemolition.active(actor)) { this.primaryDemolition.frame(actor, 0, tick); return; }
+    if (state.scene === 'm1_wake_up' || state.scene === 'm1_morning' || state.scene === 'm3_emp' && state.step === 0 || state.scene === 'm3_dock_reunion' && state.step !== 1) { delete state.started; return; }
     if (state.scene === 'm1_commute' && state.step === 1) {
       delete state.started; const lift = this.sandbox().neoLife?.lift;
       if (lift?.floor === 1 && lift.phase === 'idle' && distance(actor.position, metacortexPosition(0, METACORTEX.liftZ, 1)) < 3) this.advance('电梯到站。走出轿厢，去主管办公室。', actor, tick);
@@ -6811,10 +7802,9 @@ export class FilmStorySystem {
         return;
       }
       if (state.ride?.phase === 'arrived') {
-        actor.position.y = FILM_SETS[this.scene.set].center.y; actor.velocity = { x: 0, y: 0, z: 0 }; actor.currentAction = null;
-        const passenger = this.world.agents.get('keymaker');
-        if (passenger && !passenger.controller) { passenger.position = filmPosition(this.scene.set, 20, -660); passenger.velocity = { x: 0, y: 0, z: 0 }; passenger.currentAction = null; }
-        this.advance('你把钥匙匠安全带过车流。Morpheus 正在护栏旁等待，先下车与他汇合。', actor, tick);
+        state.freewayHandoff = newFreewayHandoff(state.ride);
+        this.advance('Morpheus 在迎面驶来的十八轮卡车上接应。保持骑乘，靠近右侧，经过他身旁时按 G。', actor, tick);
+        this.freewayHandoff.frame(actor, {}, 0, tick);
       }
       return;
     }
@@ -6825,7 +7815,13 @@ export class FilmStorySystem {
     }
     if (state.scene === 'm3_trainman' && state.step === 1 && state.mobil?.phase !== 'stopped') return;
     if (state.scene === 'm3_trainman' && state.step >= 3) return;
-    if (state.scene === 'm3_mobil_release' && state.step === 0 && state.mobil?.phase !== 'stopped') return;
+    if (state.scene === 'm3_mobil_release') {
+      if (state.mobil?.phase !== 'stopped') return;
+      if (state.step === 0) {
+        if (state.mobil.reunion?.phase === 'ready') this.advance('Trinity 已走到 Neo 身边。亲自接住她的拥抱，再一同离站。', actor, tick);
+        return;
+      }
+    }
     if (state.scene === 'm1_ledge' && actor.position.y < FILM_SETS[this.scene.set].center.y - 6) {
       this.capture(actor, tick, '你失足抓住下方维修架，赶来的保安将你带回室内。被捕之后，故事仍会继续。'); return;
     }
@@ -6852,7 +7848,8 @@ export class FilmStorySystem {
           delete state.started; this.truckFrame(actor, 0, tick);
         } else this.advance(step.text ?? step.label, actor, tick);
       }
-    } else if (step.kind === 'fight' && state.fighting && !this.sandbox().threats.some(t => t.scene === state.scene)) {
+    } else if (step.kind === 'fight' && state.fighting && !(state.scene === 'm2_trucks' && state.trucks?.weapons && state.trucks.weapons.phase !== 'unarmed') && !this.sandbox().threats.some(t => t.scene === state.scene)) {
+      if (state.scene === 'm2_trucks' && state.trucks?.road && state.trucks.weapons?.phase === 'unarmed') { this.truckRoad.hood.start(actor, tick); return; }
       this.clearThreats();
       this.advance(step.enemy === 'training' ? '对练结束，对手收起架势。可以继续交谈。' : '通路已经打开。继续完成本场景的目标。', actor, tick);
     }

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { SmithCrowdRenderer } from './SmithCrowdRenderer.js';
-import { SMITH_FINALE, newSmithFinale, smithFinalePose, smithEndingPose, smithCraterAmount, smithCraterFloor, smithCraterRim, type SmithFinaleEncounter } from '@auto_matrix/shared';
+import { SMITH_FINALE, newSmithFinale, smithFinaleBeat, smithFinalePose, smithEndingPose, smithCraterAmount, smithCraterFloor, smithCraterRim, type SmithFinaleEncounter } from '@auto_matrix/shared';
 
 /** Procedural production sample for the Revolutions rain duel.
  * Character rigs remain owned by AgentRenderer; this class owns the avenue,
@@ -26,11 +26,14 @@ export class SmithFinaleRenderer {
   private shockwave = new THREE.Group();
   private trails = new THREE.Group();
   private breach = new THREE.Group();
+  private interior = new THREE.Group();
+  private windowOpening = new THREE.Group();
   private crater = new THREE.Group();
   private purge = new THREE.Group();
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private lights: THREE.Light[] = [];
+  private backlight!: THREE.DirectionalLight;
   private shockShell!: THREE.LineSegments;
   private flightSpray!: THREE.LineSegments;
   private purgeDust!: THREE.Points;
@@ -45,13 +48,14 @@ export class SmithFinaleRenderer {
     this.group.name = 'smith-finale-avenue'; this.rain.name = 'smith-finale-rain';
     this.lightning.name = 'smith-finale-lightning'; this.shockwave.name = 'smith-finale-shockwave';
     this.trails.name = 'smith-finale-air-trails'; this.breach.name = 'smith-finale-building-breach';
+    this.interior.name = 'smith-finale-interior'; this.windowOpening.name = 'smith-finale-interior-breakable-window';
     this.crater.name = 'smith-finale-crater'; this.purge.name = 'smith-finale-purge';
     root.add(this.group); this.group.add(this.rain, this.lightning, this.shockwave, this.trails,
-      this.breach, this.crater, this.purge);
+      this.breach, this.interior, this.crater, this.purge);
     this.buildAvenue();
     if (typeof window !== 'undefined') this.audience = new SmithCrowdRenderer(this.group);
     else { const crowd = new THREE.Group(); crowd.name = 'smith-finale-crowd'; this.group.add(crowd); }
-    this.buildWeather(); this.buildDestruction(); this.buildConnection();
+    this.buildInterior(); this.buildWeather(); this.buildDestruction(); this.buildConnection();
     this.update(undefined, false, { x: 0, z: 30 });
   }
 
@@ -142,10 +146,18 @@ export class SmithFinaleRenderer {
       for (let segment = 0; segment < 12; segment++) {
         const z = -82.5 + segment * 15, height = 33 + segment % 4 * 6;
         const wall = segment % 3 ? stone : sandstone;
-        box(13.5, height, 14.6, wall, side * 32.5, height / 2, z, 'smith-finale-building');
+        const room = side === -1 && (segment === 3 || segment === 4);
+        if (room) {
+          const baseHeight = SMITH_FINALE.interior.floor - .35;
+          box(13.5, baseHeight, 14.6, wall, -32.5, baseHeight / 2, z, 'smith-finale-building');
+          const upper = height - SMITH_FINALE.interior.ceiling;
+          box(13.5, upper, 14.6, wall, -32.5, SMITH_FINALE.interior.ceiling + upper / 2, z, 'smith-finale-building');
+          box(.35, 7.8, 14.6, wall, -39.1, 18.9, z, 'smith-finale-building-back');
+        } else box(13.5, height, 14.6, wall, side * 32.5, height / 2, z, 'smith-finale-building');
         // Deep reveals, mullions, stone sills and uneven dark windows.
         for (let floor = 7.8; floor < height - 2; floor += 3.5) for (let column = 0; column < 4; column++) {
           const wz = z - 5.4 + column * 3.6;
+          if (room && floor >= 14 && floor <= 22) continue;
           box(.12, 2.1, 1.65, ((column + segment + Math.floor(floor)) % 7 === 0) ? lit : glass,
             side * 25.68, floor, wz, 'smith-finale-window');
           for (const edge of [-1, 1]) box(.32, 2.35, .14, dark, side * 25.55, floor, wz + edge * .88, 'smith-finale-window-reveal');
@@ -153,7 +165,7 @@ export class SmithFinaleRenderer {
           box(.16, 2.1, .075, dark, side * 25.5, floor, wz, 'smith-finale-window-mullion');
         }
         for (const level of [5.8, height - .6, height + .1]) box(.7, .35, 14.8, curb, side * 25.45, level, z, 'smith-finale-cornice');
-        for (const edge of [-1, 1]) box(.52, height, .7, wall, side * 25.4, height / 2, z + edge * 7.05, 'smith-finale-pilaster');
+        for (const edge of [-1, 1]) if (!room) box(.52, height, .7, wall, side * 25.4, height / 2, z + edge * 7.05, 'smith-finale-pilaster');
         for (let bay = 0; bay < 3; bay++) {
           const bz = z - 4.7 + bay * 4.7;
           box(.16, 4.6, 4.0, glass, side * 25.62, 2.7, bz, 'smith-finale-storefront');
@@ -184,9 +196,11 @@ export class SmithFinaleRenderer {
     this.puddles.instanceMatrix.setUsage(THREE.DynamicDrawUsage); this.group.add(this.puddles);
     const ambient = new THREE.HemisphereLight(0xbbc8b4, 0x152320, .85); this.group.add(ambient); this.lights.push(ambient);
     const backlight = new THREE.DirectionalLight(0xd4e0d0, 1.7); backlight.position.set(-18, 48, -65);
+    this.backlight = backlight;
     backlight.target.position.set(0, -6, -30); backlight.castShadow = true;
     Object.assign(backlight.shadow.camera, { left: -24, right: 24, top: 24, bottom: -24, near: 1, far: 110 });
-    backlight.shadow.mapSize.set(1024, 1024); backlight.shadow.bias = -.00008; backlight.shadow.normalBias = .025;
+    backlight.shadow.camera.updateProjectionMatrix();
+    backlight.shadow.mapSize.set(2048, 2048); backlight.shadow.bias = -.00008; backlight.shadow.normalBias = .025;
     this.group.add(backlight, backlight.target); this.lights.push(backlight);
     for (const side of [-1, 1]) for (let z = -72; z < 87; z += 30) {
       const x = side * 20.4;
@@ -196,6 +210,44 @@ export class SmithFinaleRenderer {
       box(.9, .12, .46, lit, x - side * 1.2, 9.25, z, 'smith-finale-lamp-head');
     }
     this.batchAvenue();
+  }
+
+  private buildInterior(): void {
+    const room = SMITH_FINALE.interior;
+    const concrete = this.material({ color: 0x818b87, roughness: .84, normalScale: new THREE.Vector2(.6, .6) });
+    const iron = this.material({ color: 0x243438, metalness: .75, roughness: .35 });
+    const glass = this.material({ color: 0x6d9baf, emissive: 0x5c8a9c, emissiveIntensity: .62,
+      metalness: .25, roughness: .26, side: THREE.DoubleSide });
+    if (typeof document !== 'undefined') for (const kind of ['color', 'normal', 'roughness']) {
+      const texture = new THREE.TextureLoader().load(`/assets/surfaces/concrete_pavement_03-${kind}.jpg`, () => {
+        if (!this.disposed) concrete.needsUpdate = true;
+      });
+      texture.wrapS = texture.wrapT = THREE.RepeatWrapping; texture.repeat.set(2, 4); texture.anisotropy = 8;
+      if (kind === 'color') { texture.colorSpace = THREE.SRGBColorSpace; concrete.map = texture; }
+      else if (kind === 'normal') concrete.normalMap = texture; else concrete.roughnessMap = texture;
+      this.textures.add(texture);
+    }
+    const box = (w: number, h: number, d: number, mat: THREE.Material, parent: THREE.Group,
+      x: number, y: number, z: number, name: string) => this.mesh(new THREE.BoxGeometry(w, h, d), mat, parent, x, y, z, name);
+    box(13.5, .35, 30, concrete, this.interior, room.x, room.floor - .175, -30, 'smith-finale-interior-floor');
+    for (const z of [-44.5, -15.5]) {
+      box(13.5, 7.8, .35, concrete, this.interior, room.x, 18.9, z, 'smith-finale-interior-end-wall');
+      box(.55, 7.8, .55, concrete, this.interior, -34.8, 18.9, z + (z < -30 ? .6 : -.6), 'smith-finale-interior-column');
+    }
+    const grids = new THREE.Group(); grids.name = 'smith-finale-interior-window-grid'; this.interior.add(grids, this.windowOpening);
+    for (let z = -44; z < -15.9; z += 3.9) {
+      const breakable = z > -34 && z < -22;
+      const parent = breakable ? this.windowOpening : grids;
+      box(.16, 7.4, .12, iron, parent, -25.65, 18.9, z, 'smith-finale-interior-window-mullion');
+      for (const y of [16.6, 19, 21.4]) {
+        box(.08, 2.24, 3.73, glass, parent, -25.7, y, z + 1.95, 'smith-finale-interior-window-pane').castShadow = false;
+        box(.18, .12, 3.9, iron, parent, -25.65, y - 1.18, z + 1.95, 'smith-finale-interior-window-crossbar');
+      }
+    }
+    for (const y of [room.floor, room.ceiling]) box(.4, .28, 29.6, concrete, this.interior, -25.6, y, -30, 'smith-finale-interior-window-frame');
+    const blue = new THREE.SpotLight(0xa7cee0, 380, 24, Math.PI / 3, .8, 2);
+    blue.position.set(-23.2, 21.7, -26); blue.target.position.set(-37, 17.2, -26);
+    this.group.add(blue, blue.target); this.lights.push(blue);
   }
 
   private batchAvenue(parent = this.avenue): void {
@@ -223,8 +275,12 @@ export class SmithFinaleRenderer {
     }
     rainMaterial.onBeforeCompile = shader => {
       shader.uniforms.weatherTime = this.weatherTime;
-      shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nuniform float weatherTime; attribute float rainPhase;')
-        .replace('#include <begin_vertex>', '#include <begin_vertex>\ntransformed.y -= mod(weatherTime * 24.0 + rainPhase, 60.0);');
+      shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nuniform float weatherTime; attribute float rainPhase; varying vec3 rainPoint;')
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\ntransformed.y -= mod(weatherTime * 24.0 + rainPhase, 60.0); rainPoint = transformed;');
+      shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 rainPoint;')
+        .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
+          if (rainPoint.x < -25.75 && rainPoint.x > -39.25 && rainPoint.z > -45.0 && rainPoint.z < -15.0
+            && rainPoint.y >= ${SMITH_FINALE.interior.floor.toFixed(1)} && rainPoint.y <= ${SMITH_FINALE.interior.ceiling.toFixed(1)}) discard;`);
     };
     const geometry = this.geometry(new THREE.BufferGeometry()); geometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
     geometry.setAttribute('rainPhase', new THREE.Float32BufferAttribute(phases, 1));
@@ -263,7 +319,6 @@ export class SmithFinaleRenderer {
     this.flightSpray = new THREE.LineSegments(trailGeometry, trail); this.flightSpray.name = 'smith-finale-flight-spray';
     this.trails.add(this.flightSpray);
     const concrete = this.material({ color: 0x4b5553, metalness: .08, roughness: .9 });
-    this.mesh(new THREE.BoxGeometry(2, 20, 24), concrete, this.breach, -26.5, 12, -27, 'smith-finale-breached-facade');
     for (let i = 0; i < 28; i++) {
       const chunk = this.mesh(new THREE.TetrahedronGeometry(.4 + i % 5 * .16), concrete, this.breach,
         -24 + (i % 7) * 1.2, 4 + Math.floor(i / 7) * 3.1, -33 + (i * 2.3) % 13, 'smith-finale-facade-debris');
@@ -394,6 +449,10 @@ export class SmithFinaleRenderer {
 
   update(encounter: SmithFinaleEncounter | undefined, firstPerson: boolean, player: { x: number; z: number }): void {
     const state = encounter ?? newSmithFinale(); const pose = smithFinalePose(state); const phase = state.phase;
+    const beat = smithFinaleBeat(state), roomLight = beat.roomFight && (beat.phase.startsWith('interior_') || beat.phase === 'building' || beat.phase === 'relaunch');
+    if (roomLight) this.backlight.target.position.set((pose.neo.x + pose.smith.x) / 2, (pose.neo.y + pose.smith.y) / 2 + 1.7, (pose.neo.z + pose.smith.z) / 2);
+    else this.backlight.target.position.set(0, -6, -30);
+    this.backlight.position.copy(this.backlight.target.position).add(new THREE.Vector3(-18, 54, -35));
     const crater = smithCraterAmount(state);
     this.crater.visible = crater > 0; this.crater.scale.y = crater;
     this.road.geometry = this.paint.geometry = crater > 0 ? this.brokenRoad : this.intactRoad;
@@ -450,8 +509,15 @@ export class SmithFinaleRenderer {
       }
       positions.needsUpdate = true; this.flightSpray.geometry.computeBoundingSphere();
     }
-    const destroyed = crater > 0 || ['building', 'descent'].includes(phase);
+    const destroyed = state.breachedAt !== undefined || crater > 0 || phase === 'descent' || phase === 'building' && state.elapsed >= .95;
     this.breach.visible = destroyed;
+    this.windowOpening.visible = !destroyed;
+    for (let i = 0; i < this.debris.length; i++) {
+      const age = Math.max(0, state.total - (state.breachedAt ?? state.total - state.elapsed + .95)), flight = Math.min(2.2, age);
+      const chunk = this.debris[i], floor = .32 + i % 4 * .11;
+      chunk.position.set(-25.4 + flight * (2 + i % 7 * .45), Math.max(floor, 18.4 + i % 4 * .4 + flight * (i % 3 - 1) - 4.9 * flight * flight), -30 + i % 7 * 1.4);
+      chunk.rotation.set(i * .37 + flight * 1.7, i * .71 + flight, i * .19 + flight * 2.1);
+    }
     if (crater > 0) {
       const points = this.runoff.geometry.getAttribute('position') as THREE.BufferAttribute;
       for (let drain = 0; drain < this.drains.length; drain++) for (let i = 0; i < 96; i++) {

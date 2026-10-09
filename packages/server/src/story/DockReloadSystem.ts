@@ -1,4 +1,4 @@
-import { DOCK_RELOAD, DOCK_GUNNERY, FILM_SETS, dockReloadActive, dockReloadHeight, dockReloadLocked, dockReloadText, filmPosition,
+import { APU_RIG, DOCK_RELOAD, DOCK_GUNNERY, FILM_SETS, dockReloadActive, dockReloadHeight, dockReloadLocked, dockReloadText, filmPosition,
   kickDockReload, newDockReload, stepDockReload, type AgentState, type SandboxState } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
 
@@ -26,10 +26,11 @@ export class DockReloadSystem {
     const mifune = this.world.agents.get('mifune')!;
     if (!journey.dockLastStand && (!mifune.controller || journey.actor === 'mifune')) {
       const fallen = journey.completed.includes('m3_dock_battle');
-      mifune.position = filmPosition('film_zion_hangar', fallen ? 4.7 : 0, DOCK_GUNNERY.apuZ); mifune.position.y += fallen ? .6 : 2.2;
+      mifune.position = filmPosition('film_zion_hangar', fallen ? 4.7 : 0, DOCK_GUNNERY.apuZ); mifune.position.y += fallen ? .6 : APU_RIG.floor + APU_RIG.pilot.y;
       mifune.rotation = fallen ? Math.PI / 2 : Math.PI; mifune.currentLocation = 'film_zion_hangar'; mifune.isInMatrix = false;
       mifune.velocity = { x: 0, y: 0, z: 0 }; mifune.targetPosition = null; mifune.currentPath = [];
-      mifune.currentAction = fallen ? null : { type: 'idle', parameters: { resolved: true, riding: true, seated: true }, startedAt: tick, duration: 1e9, progress: 0 };
+      mifune.currentAction = fallen ? null : { type: 'idle', parameters: { resolved: true, riding: true, seated: true,
+        dockGunnery: { yaw: journey.dockGunnery.yaw ?? Math.PI, pitch: journey.dockGunnery.pitch ?? -.16 } }, startedAt: tick, duration: 1e9, progress: 0 };
     }
     const encounter = journey.dockReload, kid = this.world.agents.get('kid')!;
     if (!encounter || journey.actor !== 'kid') return;

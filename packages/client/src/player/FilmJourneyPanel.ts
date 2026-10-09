@@ -1,14 +1,28 @@
+import { catchLaunchReady, catchDistance } from '@auto_matrix/shared';
+import { filmSceneForJourney } from '@auto_matrix/shared';
+import { oracleRequestActive, oracleRequestLocked, oracleRequestText } from '@auto_matrix/shared';
+import { oracleLastActive, oracleLastLocked, oracleLastText } from '@auto_matrix/shared';
+import { trainmanChaseActive, trainmanChaseCanAct, trainmanChaseLocked, trainmanChaseText } from '@auto_matrix/shared';
+import { helGarageActive, helGarageText } from '@auto_matrix/shared';
+import { SOURCE_BRIEFING, sourceBriefingActive, sourceBriefingLocked, sourceBriefingText } from '@auto_matrix/shared';
+import { PRIMARY_DEMOLITION, primaryActive, primaryLocked, primaryText } from '@auto_matrix/shared';
+import { upperDiggerActive, upperDiggerText } from '@auto_matrix/shared';
+import { dockBriefingActive, dockBriefingLocked, dockBriefingText } from '@auto_matrix/shared';
+import { templeDefenseActive, templeDefenseLocked, templeDefenseText } from '@auto_matrix/shared';
+import { DOCK_EVACUATION, dockEvacuationActive, dockEvacuationText, shaftSealActive, shaftSealText } from '@auto_matrix/shared';
+import { diggersActive, diggersText } from '@auto_matrix/shared';
 import { crosscutActive, crosscutAction, crosscutText } from '@auto_matrix/shared';
 import { DOCK_RELOAD, dockReloadActive, dockReloadText } from '@auto_matrix/shared';
 import { DOCK_GATE, dockGateActive, dockGateText } from '@auto_matrix/shared';
 import { DOCK_LAST_STAND, dockLastStandActive, dockLastStandText } from '@auto_matrix/shared';
 import { nearMetacortexLift, filmStepNear, awakeningDuration } from '@auto_matrix/shared';
 import { CATCH, RELOADED_FINALE, HEL_COATCHECK, OPENING_ESCAPE, OPENING_HOTEL, catchText, reloadedText } from '@auto_matrix/shared';
-import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_NAMES, ARCHITECT_DOOR_SECONDS, filmReflections, CHARACTERS, filmStepPosition, distance, dockPowerOffline, oracleActing, helElevatorLocked, helDanceDoorLocked, interrogationLocked, pillLocked, lafayetteWelcomeLocked, phoneLocked, windowOpening, windowCrossing, awakeningWaiting, trainingLocked, trainingWaiting, theOneLocked, type AgentState, type SandboxState } from '@auto_matrix/shared';
+import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_NAMES, ARCHITECT_DOOR_SECONDS, ARCHITECT_ROOM, filmReflections, CHARACTERS, filmStepPosition, distance, dockPowerOffline, oracleActing, helElevatorLocked, helDanceDoorLocked, interrogationLocked, pillLocked, lafayetteWelcomeLocked, phoneLocked, windowOpening, windowCrossing, awakeningWaiting, trainingLocked, trainingWaiting, theOneLocked, type AgentState, type SandboxState } from '@auto_matrix/shared';
 import './film-journey.css';
 import { ambushEscapeText } from '@auto_matrix/shared';
 import { BASEMENT, TV_EXIT, TV_EXIT_ROLES, basementRouteLength, basementText, tvExitText } from '@auto_matrix/shared';
 import { WETWALL, wetwallText, wetwallEntry, sixthText } from '@auto_matrix/shared';
+import { oracleAbsorptionActive, oracleAbsorptionLocked, oracleAbsorptionText } from '@auto_matrix/shared';
 import { meetingBoardPoint, meetingLocked, MEETING_TIMING } from '@auto_matrix/shared';
 import { filmPosition, HOTEL_DOOR_PROGRESS, CABIN, CABIN_ROUTE_LENGTH } from '@auto_matrix/shared';
 import { workdayLocked } from '@auto_matrix/shared';
@@ -23,13 +37,195 @@ import { BETRAYAL, betrayalDuration, betrayalLocked } from '@auto_matrix/shared'
 import { RESCUE, rescueDuration, rescueLoadout, rescueLocked } from '@auto_matrix/shared';
 import { BANE_ENCOUNTER } from '@auto_matrix/shared';
 import { FAREWELL, farewellLocked } from '@auto_matrix/shared';
-import { DEUS_PACT, deusPactLocked } from '@auto_matrix/shared';
-import { SMITH_FINALE, smithFinaleLocked, smithOracleRestored } from '@auto_matrix/shared';
+import { DEUS_PACT, deusPactDialogue, deusPactLocked } from '@auto_matrix/shared';
+import { SMITH_FINALE, smithFinaleLocked, smithFinaleDialogue, smithOracleRestored } from '@auto_matrix/shared';
 import { trilogyEpilogueLocked, trilogyEpilogueProgress } from '@auto_matrix/shared';
+import { truckWeaponsText, truckHoodText } from '@auto_matrix/shared';
+import { MOBIL_FAMILY_QUESTIONS, MOBIL_LUGGAGE, mobilFamilyText, mobilLuggageText, mobilReunionRoot, mobilReunionText } from '@auto_matrix/shared';
 
 const button = (target: string, label: string, disabled = false) => `<button data-action="life" data-target="film:${target}" ${disabled ? 'disabled' : ''}>${label}</button>`;
 export function renderFilmJourney(player: AgentState, sandbox: SandboxState): string {
-  const life = sandbox.neoLife!; const journey = life.journey!; const scene = FILM_SCENE_BY_ID[journey.scene];
+  const life = sandbox.neoLife!; const journey = life.journey!; const scene = filmSceneForJourney(journey)!;
+  if (helGarageActive(journey)) {
+    const state = journey.helGarage, phase = state?.phase ?? 'ready';
+    const close = filmStepNear(scene, scene.steps[Math.min(journey.step, 1)], player.position, player.isInMatrix, journey);
+    const action = player.id !== journey.actor ? button('resume', '接回 Trinity 的视角')
+      : state?.paused || state?.unavailable ? '<p>当前进度保留，等同行者可以继续行动。</p>'
+        : journey.step >= scene.steps.length ? button('next', '乘电梯，前往衣帽间 →')
+          : phase === 'failed' ? button('retry', '重试当前入口交战')
+            : phase === 'ready' ? button('act', '回应入口守卫 · G', !close)
+              : phase === 'cleared' ? button('act', '推开钢门 · G', !close)
+                : ['evade', 'counter', 'combo'].includes(phase) ? '<p>合上手记，按 X 闪避、F 缴械和反击。</p>'
+                  : phase === 'exit' ? '<p>WASD 亲自跨过门槛，走进铁笼电梯。</p>' : '<p>鼠标观察 · V 切换视角 · 等当前动作完成</p>';
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>Club Hel · 地下车库入口</h3><p>Trinity 视角 · Seraph 与 Morpheus 同行</p></header><article class="film-now"><div><p>${helGarageText(state)}</p><div class="film-controls">${action}</div><small>WASD 移动 · X 避开枪口 · F 缴械与反击 · G 开门 · V 切换视角</small></div></article></div>`;
+  }
+  if (trainmanChaseActive(journey)) {
+    const state = journey.helChase?.performance, close = trainmanChaseCanAct(state, player.position, FILM_SETS[scene.set].center);
+    const action = player.id !== journey.actor ? button('resume', '接回 Seraph 的追逐视角')
+      : journey.step >= scene.steps.length ? button('next', '接回 Trinity，前往 Hel →')
+        : state?.phase === 'failed' ? button('retry', '重试当前追逐')
+          : trainmanChaseLocked(state) ? '<p>鼠标观察 · V 切换视角 · 等候当前动作完成</p>'
+            : !state || state.phase === 'ready' ? button('act', '请 Trainman 帮忙 · G', !close)
+              : state.phase === 'escaped' ? button('act', '与同行者商量 · G', !close)
+                : state.phase === 'running' && !state.passedGate && state.routeStage >= 2 ? button('act', '翻越闸机 · G', !close)
+                  : '<p>合上手记，跟上 Trainman；利用钢柱和 X 闪避枪击。</p>';
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>Stellma · 逃走的列车管理员</h3><p>Seraph 视角 · Trinity 与 Morpheus 同行</p></header><article class="film-now"><div><p>${trainmanChaseText(state)}</p><div class="film-controls">${action}</div><small>WASD 移动 · Shift 奔跑 · G 翻越闸机 · X 避弹 · V 切换视角</small></div></article></div>`;
+  }
+  if (scene.id === 'm3_mobil_release' && !journey.visiting && journey.mobil) {
+    const reunion = journey.mobil.reunion, partner = reunion && mobilReunionRoot(reunion, 'trinity'), center = FILM_SETS[scene.set].center;
+    const close = partner && Math.hypot(player.position.x - center.x - partner.x, player.position.z - center.z - partner.z) <= 2.8;
+    const action = player.id !== journey.actor ? button('resume', '接回 Neo 的视角')
+      : journey.step >= scene.steps.length ? button('next', '返回矩阵，去见先知 →')
+        : journey.step === 1 && reunion?.phase === 'ready' ? button('act', '接住 Trinity 的拥抱 · G', !close)
+          : reunion?.phase === 'together' ? button('act', '与 Trinity 离站 · G', !close)
+            : '<p>鼠标环顾 · V 切换视角 · 等候同行者</p>';
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>Mobil Ave · 终于重逢</h3><p>Neo 视角 · 回到她身边</p></header><article class="film-now"><div><p>${mobilReunionText(journey.mobil, journey.step)}</p><div class="film-controls">${action}</div></div></article></div>`;
+  }
+  if (scene.id === 'm3_trainman' && !journey.visiting && journey.step <= 2 && journey.mobil) {
+    const state = journey.mobil, step = scene.steps[journey.step], close = filmStepNear(scene, step, player.position, player.isInMatrix, journey);
+    const center = FILM_SETS[scene.set].center, gap = Math.hypot(player.position.x - center.x - MOBIL_LUGGAGE.x, player.position.z - center.z - MOBIL_LUGGAGE.z);
+    const action = player.id !== journey.actor ? button('resume', '接回 Neo 的视角')
+      : state.phase !== 'stopped' || state.elapsed < .65 || state.luggage?.phase === 'lifting' ? '<p>鼠标观察 · V 切换视角 · 暂停保留当前动作</p>'
+        : journey.step === 0 ? button('act', '握住提手，提起箱子', !close || gap > 1.45 || gap < .72)
+          : journey.step === 1 ? '<p>WASD 提着行李走到车门，鼠标观察，V 切换视角。</p>' : button('act', '尝试跟随家人登车', !close);
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>Mobil Ave · 迟到的列车</h3><p>Neo 视角 · 一家人的行李与出路</p></header><article class="film-now"><div><p>${mobilLuggageText(state, journey.step)}</p><div class="film-controls">${action}</div></div></article></div>`;
+  }
+  if (scene.id === 'm3_family' && !journey.visiting) {
+    const family = journey.mobil?.family, close = filmStepNear(scene, scene.steps[1], player.position, player.isInMatrix, journey);
+    const action = player.id !== journey.actor ? button('resume', '接回 Neo 的视角')
+      : journey.step >= scene.steps.length ? button('next', '继续等候列车 →')
+        : journey.step === 0 ? '<p>先走到长椅旁，与这一家见面。</p>'
+          : family?.paused || family?.unavailable ? '<p>谈话进度已保留，等待家人的信号。</p>'
+            : family?.phase === 'hearing' ? '<p>合上手记，听当前回答；鼠标环顾，V 切换视角。</p>'
+              : family?.phase === 'reflection' ? filmReflections(scene.id).map(choice => button(`reflect:${choice.id}`, choice.label, !close)).join('')
+                : MOBIL_FAMILY_QUESTIONS.map(question => button(`family:ask:${question.id}`,
+                  `${family?.answered.includes(question.id) ? '✓ ' : ''}${question.label}`, !close || Boolean(family?.answered.includes(question.id)))).join('');
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>Mobil Ave · 一家人的离别</h3><p>Neo 视角 · 身份、用途与爱</p></header><article class="film-now"><div><p>${mobilFamilyText(family)}</p><div class="film-controls">${action}</div><small>可以主动选择问题；暂停、断线与读档保留已听过的问题和回答进度。</small></div></article></div>`;
+  }
+  if (primaryActive(journey)) {
+    const state = journey.primaryDemolition, step = scene.steps[journey.step], close = Boolean(step && filmStepNear(scene, step, player.position, player.isInMatrix, journey));
+    const action = player.id !== journey.actor ? button('resume', '接回 Niobe 的行动视角') : state?.paused || state?.unavailable ? '<p>等待同行者信号，装置和撤离时钟已保留。</p>'
+      : state?.phase === 'failed' || player.status !== 'alive' ? button('retry', '重试当前撤离检查点')
+        : state?.phase === 'done' ? button('next', '接回 Trinity，核对 Vigilant 的信号 →')
+          : primaryLocked(state) ? '<p>合上手记，按住 G 固定装置；松手保留进度。</p>'
+            : button('act', state?.phase === 'sync' ? '绿色窗口校准 · G' : state?.phase === 'retreat' ? '确认两人安全撤出 · G' : '安装当前同步装置 · G', !close);
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX RELOADED / 02</span><h3>Niobe · 主电网同步行动</h3><p>发电厂 · Logos 队伍</p></header><article class="film-now"><div><p>${primaryText(state)}</p><ol class="film-objectives">${PRIMARY_DEMOLITION.sites.map(site => `<li class="${state?.installed.includes(site.id) ? 'done' : ''}"><b>${state?.installed.includes(site.id) ? '✓' : '○'}</b><span>${site.name}</span></li>`).join('')}</ol><div class="film-controls">${action}</div><small>WASD 移动 · Shift 奔跑 · G 操作 · V 切换视角。换班同步和先撤离的顺序来自电影，三个安装点、观察桥路线与失败重试为游戏改编。</small></div></article></div>`;
+  }
+  if (oracleAbsorptionActive(journey)) {
+    const state = journey.oracleAbsorption, step = scene.steps[journey.step], close = Boolean(step && filmStepNear(scene, step, player.position, player.isInMatrix, journey));
+    const action = player.id !== journey.actor ? button('resume', '接回先知的另一视角')
+      : state?.phase === 'done' ? button('next', '返回 Hammer，听幸存者的说法 →')
+        : state?.paused || state?.unavailable ? '<p>保留当前动作，等待参与者信号。</p>'
+          : player.status !== 'alive' ? button('retry', '接回先知的当前检查点')
+            : state?.phase === 'reflection' ? filmReflections(scene.id).map(choice => button(`reflect:${choice.id}`, choice.label, !close)).join('')
+              : oracleAbsorptionLocked(state) ? '<p>合上手记，观察当前动作；同化前按住 G 作出决定。V 切换视角。</p>'
+                : button('act', journey.step === 0 ? '请 Sati 带饼干离开 · G' : journey.step === 1 ? '确认两人开始撤离 · G' : '留在厨房面对 Smith · G', !close);
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>先知厨房 · 等待 Smith</h3><p>先知的另一视角 · Neo 此时不在这里</p></header><article class="film-now"><div><p>${oracleAbsorptionText(state)}</p><div class="film-controls">${action}</div><small>G 主动送别与面对来客 · J 记录自己的判断 · 同化前按住 G · V 切换视角。保存动作、物品与选择，另一视角记录不会成为 Neo 的已知经历。</small></div></article></div>`;
+  }
+  if (oracleLastActive(journey)) {
+    const state = journey.oracleLast, step = scene.steps[journey.step], close = Boolean(step && filmStepNear(scene, step, player.position, player.isInMatrix, journey));
+    const action = player.id !== journey.actor ? button('resume', '接回 Neo 的视角')
+      : state?.paused || state?.unavailable ? '<p>会面进度保留，等同行者可以继续。</p>'
+        : player.status !== 'alive' ? button('retry', '接回 Neo 的会面检查点')
+          : oracleLastLocked(state) ? '<p>合上手记，听当前回应；鼠标环顾，V 切换视角。</p>'
+            : journey.step >= scene.steps.length ? button('next', '继续另一视角，观察先知留下后的事 →')
+              : journey.step === 3 ? filmReflections(scene.id).map(choice => button(`reflect:${choice.id}`, choice.label, !close)).join('')
+                : journey.step === 0 || state?.phase === 'greeting' ? '<p>合上手记，走进厨房；等先知洗手、落座。</p>'
+                  : journey.step === 4 ? '<p>WASD 亲自离开厨房，走回候诊室。</p>'
+                    : button('act', journey.step === 1 ? '询问先知身份与此前的真相 · G' : '追问源头与 Smith · G', !close);
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>先知厨房 · 没有保证的未来</h3><p>Neo 视角 · 再次面对自己的选择</p></header><article class="film-now"><div><p>${oracleLastText(state, journey.step)}</p><div class="film-controls">${action}</div><small>WASD 亲自行走 · G 主动提问 · J 记录反思 · V 切换视角。暂停、断线与读档保留动作和已听回答。</small></div></article></div>`;
+  }
+  if (oracleRequestActive(journey)) {
+    const state = journey.oracleRequest, step = scene.steps[journey.step], close = Boolean(step && filmStepNear(scene, step, player.position, player.isInMatrix, journey));
+    const action = player.id !== journey.actor ? button('resume', '接回 Trinity 的求援视角')
+      : oracleRequestLocked(state) ? '<p>合上手记，听当前回应；鼠标环顾，V 切换视角。</p>'
+        : journey.step >= scene.steps.length ? button('next', '跟随 Seraph 寻找 Trainman →')
+          : journey.step === 2 ? filmReflections(scene.id).map(choice => button(`reflect:${choice.id}`, choice.label, !close)).join('')
+            : journey.step === 3 ? '<p>WASD 跟随同行者，亲自跨过公寓门槛。</p>' : button('act', journey.step === 0 ? '确认先知身份 · G' : '询问 Neo 的下落 · G', !close);
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>先知客厅 · 另一边的营救</h3><p>Trinity 视角 · 求援与信任</p></header><article class="film-now"><div><p>${oracleRequestText(state, journey.step)}</p><div class="film-controls">${action}</div><small>G 明确开始提问，听完 Morpheus 的疑问后按 J 记录理解。暂停、断线与读档保留回答和带路进度。</small></div></article></div>`;
+  }
+  if (sourceBriefingActive(journey)) {
+    const state = journey.sourceBriefing, step = scene.steps[journey.step], close = Boolean(step && filmStepNear(scene, step, player.position, player.isInMatrix, journey));
+    const action = player.id !== journey.actor ? button('resume', '接回 Neo 的会议视角') : player.status !== 'alive' ? button('retry', '接回会议检查点')
+      : sourceBriefingLocked(state) ? '<p>合上手记，听船长们的回应；鼠标观察，V 切换视角。</p>'
+        : journey.step >= scene.steps.length ? button('next', '接入 Niobe 的发电厂路线 →')
+          : step?.kind === 'reflect' ? filmReflections(scene.id).map(choice => button(`reflect:${choice.id}`, choice.label, !close)).join('')
+            : button('act', state?.phase === 'question' ? '听取关于预言的质疑 · G' : '检查当前纸质计划 · G', !close);
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX RELOADED / 02</span><h3>废弃公寓 · 三船行动会议</h3><p>Neo 视角 · 矩阵内</p></header><article class="film-now"><div><p>${sourceBriefingText(state)}</p><ol class="film-objectives">${SOURCE_BRIEFING.routes.map(route => `<li class="${state?.reviewed.includes(route.id) ? 'done' : state?.selected === route.id ? 'current' : ''}"><b>${state?.reviewed.includes(route.id) ? '✓' : '○'}</b><span>${route.name}</span></li>`).join('')}</ol><div class="film-controls">${action}</div><small>三份纸质计划是游戏中的检查工具。WASD 绕桌检查，G 明确开始，J 记录反思；暂停、断线和读档保留已核对路线。</small></div></article></div>`;
+  }
+  if (journey.scene === 'm2_trucks' && !journey.visiting && journey.step === 0 && journey.trucks?.hood && journey.trucks.hood.phase !== 'done') {
+    const h = journey.trucks.hood, road = journey.trucks.road!;
+    const action = player.id !== journey.actor ? button('resume', '接回 Morpheus') : player.status !== 'alive' ? button('retry', '重试车盖检查点')
+      : road.paused || road.unavailable ? '<p>接应角色信号未就绪，动作和车体已暂停。</p>' : '<p>合上手记，在车盖上站稳，再借车回到卡车。</p>';
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX RELOADED / 02</span><h3>Niobe · 车盖接应</h3></header><article class="film-now"><div><p>${truckHoodText(h)}</p><div class="film-controls">${action}</div><small>A / D 重心 · 按住 G 抓稳 · 空格起跳 · F 飞踢 · V 切换视角</small></div></article></div>`;
+  }
+  if (journey.scene === 'm2_trucks' && !journey.visiting && journey.step === 0 && journey.trucks?.weapons) {
+    const w = journey.trucks.weapons, road = journey.trucks.road!;
+    const action = player.id !== journey.actor ? button('resume', '接回 Morpheus 的车顶视角') : player.status !== 'alive' ? button('retry', '重试当前车顶检查点')
+      : road.paused || road.unavailable ? '<p>等候同行者的信号；车体与攻防进度已保留。</p>' : '<p>合上手记，亲自瞄准、挥刀与格挡。</p>';
+    const controls = w.phase === 'unarmed' ? 'F 连击 · X 闪避' : w.phase === 'gun' ? '鼠标瞄准 · 左键 / T 射击' : 'F 挥刀 · X 限时格挡';
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX RELOADED / 02</span><h3>Morpheus · 车顶枪刀交锋</h3><p>保护钥匙匠 · 从武器攻防转入徒手</p></header><article class="film-now"><div><p>${truckWeaponsText(w)}</p><div class="film-controls">${action}</div><small>${controls} · V 切换视角<br>弹药 ${w.rounds} / 8 · 挥刀 ${w.slashes} · 有效格挡 ${w.parries} / 2 · 第 ${journey.trucks.attempt + 1} 次尝试</small></div></article></div>`;
+  }
+  if (templeDefenseActive(journey)) {
+    const seal = journey.templeSeal, breach = journey.scene === 'm3_temple_breach' ? journey.templeBreach : undefined, step = scene.steps[journey.step];
+    const close = Boolean(step && filmStepNear(scene, step, player.position, player.isInMatrix, journey));
+    const action = player.id !== journey.actor ? button('resume', '接回保存的神庙视角')
+      : seal?.paused || seal?.unavailable || breach?.paused || breach?.unavailable ? '<p>等候同行者的信号；当前动作与时钟已保留。</p>'
+        : player.status !== 'alive' ? button('retry', '从入口检查点重试 · 保留既有结果')
+          : !step ? button('next', breach ? '接回机器城的 Neo →' : '转入 Logos 航线 →')
+            : templeDefenseLocked(seal, breach) ? breach ? '<p>合上手记观看城市失守与人群等待；V 切换视角，鼠标环顾。</p>' : '<p>合上手记观看；固定炮架时按住 G，松手保留角度。</p>'
+              : step.kind === 'interact' ? button('act', breach ? '确认最后的部署 · G' : '握住炮架手轮 · G', !close)
+                : '<p>合上手记，沿目标路线亲自行走。</p>';
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>${scene.title}</h3><p>${breach ? 'Lock 视角 · Trinity 告别之后' : 'Zee 视角 · 最后的入口防线'}</p></header><article class="film-now"><div><p>${templeDefenseText(seal, breach)}</p><div class="film-controls">${action}</div><small>WASD 行走 · G 固定 / 明确开始 · V 切换视角<br>炮位 ${seal?.turns?.filter(turn => turn === 1).length ?? 0}/2 · ${breach ? '暂停、断线与读档保留城市失守进度' : `准备时间 ${Math.ceil(seal?.remaining ?? 42)} 秒 · 入口保持敞开`}</small></div></article></div>`;
+  }
+  if (dockEvacuationActive(journey)) {
+    const state = journey.dockEvacuation, phase = state?.phase ?? 'supplies', step = scene.steps[journey.step];
+    const close = Boolean(step && filmStepNear(scene, step, player.position, player.isInMatrix, journey));
+    const action = player.id !== journey.actor ? button('resume', '接回 Kid 的撤离视角')
+      : state?.paused || state?.unavailable ? '<p>等候同行者的信号；撤离时钟和补给进度已保留。</p>'
+        : player.status !== 'alive' || phase === 'failed' ? button('retry', '从来袭检查点重试 · 保留补给与伤亡')
+          : phase === 'clear' ? button('next', '人员清空，接管封井操作员 →')
+            : phase === 'supplies' || phase === 'carrying' ? button('act', phase === 'supplies' ? '抬起补给箱 · G' : '放下补给箱 · G', !close)
+              : phase === 'waiting' && state!.crewAge >= DOCK_EVACUATION.crewSeconds ? button('act', '关闭笼门并下降 · G', !close)
+                : '<p>合上手记，按画面提示搬运、撤退或等候人员上梯。</p>';
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>Kid · 最后一班升降梯</h3><p>卸货 → 新波来袭 → 人员撤退</p></header><article class="film-now"><div><p>${dockEvacuationText(state)}</p><div class="film-controls">${action}</div><small>WASD 搬运 / 撤退 · Shift 空手奔跑 · G 抬起 / 放下 / 关门 · V 切换视角<br>补给${state?.delivered ? '已搬下' : '待搬运'} · 剩余 ${Math.ceil(state?.remaining ?? DOCK_EVACUATION.retreatSeconds)} 秒 · 第 ${(state?.attempts ?? 0) + 1} 次尝试 · EMP 与既有伤亡保留</small></div></article></div>`;
+  }
+  if (shaftSealActive(journey) && !(journey.shaftSeal?.phase === 'done' && journey.step === 2)) {
+    const state = journey.shaftSeal, phase = state?.phase ?? 'ready', step = scene.steps[journey.step];
+    const close = Boolean(step && filmStepNear(scene, step, player.position, player.isInMatrix, journey));
+    const action = player.id !== journey.actor ? button('resume', '接回封井操作员的视角')
+      : state?.paused || state?.unavailable ? '<p>等候人员清空与同行者信号；起爆杆保留当前角度。</p>'
+        : player.status !== 'alive' ? button('retry', '接回保存的起爆位置')
+          : phase === 'done' && !step ? button('next', '继续最后防线 →')
+            : phase === 'ready' && journey.step === 1 ? button('act', '握住起爆手柄 · G', !close)
+              : phase === 'armed' || phase === 'throwing' ? '<p>合上手记，按住 G 拉下起爆杆；松手停留。</p>'
+                : '<p>合上手记，走到操作台或观察封井过程。</p>';
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>封井操作员 · 为防线争取时间</h3><p>确认最后一班升降梯已经撤离</p></header><article class="film-now"><div><p>${shaftSealText(state)}</p><div class="film-controls">${action}</div><small>WASD 接近起爆台 · G 握住手柄 / 持续下拉 · V 切换视角<br>起爆杆 ${Math.round((state?.turn ?? 0) * 100)}% · 暂停、断线与读档保留手柄位置</small></div></article></div>`;
+  }
+  if (dockBriefingActive(journey) && (journey.dockBriefing?.phase !== 'reflection' || journey.dockBriefing.paused || journey.dockBriefing.unavailable)) {
+    const state = journey.dockBriefing, phase = state?.phase ?? 'ready';
+    const close = filmStepNear(scene, scene.steps[2], player.position, player.isInMatrix, journey);
+    const action = player.id !== journey.actor ? button('resume', '接回 Niobe 的视角') : player.status !== 'alive' ? button('retry', '接回保存的简报')
+      : state?.unavailable ? '<p>简报不会复活其他人物。通过角色选择明确重建缺失的信号后，再接回 Niobe。</p>'
+        : state?.paused ? '<p>等候同行者释放角色；当前升降高度与对白进度已保留。</p>'
+        : phase === 'ready' ? button('act', '下降到指挥层 · G') : phase === 'done' ? button('next', '继续后续路线 →')
+          : phase === 'reply' || phase === 'walking' && journey.step === 2 ? button('act', phase === 'reply' ? '以 Niobe 回应 · G' : '听 Lock 的质问 · G', !close)
+            : '<p>合上手记，按画面提示行走或观察。</p>';
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>指挥层人员闸口 · 救援的代价</h3><p>Niobe 视角 · EMP 后的三位船长</p></header><article class="film-now"><div><p>${dockBriefingText(state)}</p><div class="film-controls">${action}</div><small>${dockBriefingLocked(state) ? 'V 切换视角 · 暂停和重接保留当前进度' : 'WASD 亲自行走 · G 明确回应 · J 记录反思'}<br>不会重置 EMP 或替同行船长治疗伤势。</small></div></article></div>`;
+  }
+  if (upperDiggerActive(journey)) {
+    const state = journey.upperDigger, phase = state?.phase ?? 'approach';
+    const action = player.id !== journey.actor ? button('resume', '接回 Zee 的视角') : phase === 'failed' ? button('retry', '从上层检查点重试')
+      : ['approach', 'ready', 'hatch'].includes(phase) ? button('act', phase === 'approach' ? '抓住维修梯 · G' : phase === 'ready' ? '抓住 Charra 的腰带 · G' : '进入维修舱口 · G')
+        : '<p>合上手记，按画面提示攀爬、抓稳或撤退；等待不会代替移动。</p>';
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>上层管线 · 最后的两发</h3><p>Zee 视角 · 第一台钻机已倒下</p></header><article class="film-now"><div><p>${upperDiggerText(state)}</p><div class="film-controls">${action}</div><small>W / S 攀爬与爬行 · Z 压低身体 · G 抓稳 / 进入舱口 · V 切换视角<br>${state?.charraDead ? 'Charra 已遇难 · 重试保留人物结果' : 'Charra 与 Zee 协作'} · 第 ${(state?.attempts ?? 0) + 1} 次尝试</small></div></article></div>`;
+  }
+  if (diggersActive(journey)) {
+    const drill = journey.diggers, current = player.id === journey.actor;
+    const action = !current ? button('resume', '继续 Charra 的射击任务') : drill?.phase === 'failed' ? button('retry', '重试当前射击口 · 保留支腿损伤')
+      : !drill || ['approach', 'relocate'].includes(drill.phase) ? button('act', '到射击口架起发射器 · G') : '<p>合上手记，按提示配合 Zee 装弹和瞄准。</p>';
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>Charra 与 Zee · 第一台钻机</h3><p>打断外侧关节，沿防御通道转移阵位</p></header><article class="film-now"><div><p>${diggersText(drill)}</p><div class="film-controls">${action}</div><small>G 架炮 / 持续装弹 · 鼠标瞄准 · 左键 / T 双发 · V 切换视角<br>火箭 ${drill?.rounds ?? 6} · 剩余 ${Math.ceil(drill?.remaining ?? 90)} 秒</small></div></article></div>`;
+  }
   if (dockGateActive(journey) && journey.dockGate) {
     const gate = journey.dockGate, current = player.id === journey.actor;
     const action = !current ? button('resume', '接回 Kid 的炮位') : gate.phase === 'failed' ? button('retry', '从闸门炮位重试 · 保留驾驶结果')
@@ -155,7 +351,7 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
     const farewell = journey.farewell; const step = scene.steps[journey.step]; const current = player.id === journey.actor;
     const close = current && Boolean(step && distance(player.position, filmStepPosition(scene, step)) <= 4);
     const action = !current ? button('resume', '接回 Neo 的视角')
-      : !step ? button('next', '独自走向机器核心 →')
+      : !step ? button('next', '转入锡安的最后防线 →')
         : journey.step === 0 ? '<p>合上手记，沿金色结构穿过撞毁的驾驶舱。</p>'
           : journey.step === 1 && farewell.phase === 'ready' ? button('act', '跪到 Trinity 身边 · G', !close)
             : journey.step === 2 ? filmReflections(scene.id).map(choice => button(`reflect:${choice.id}`, choice.label)).join('')
@@ -174,65 +370,99 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
         : !step ? button('next', '接入暴雨中的矩阵 →')
           : journey.step === 0 ? '<p>合上手记，沿发光通道亲自走到机器核心。</p>'
             : journey.step === 1 && pact.phase === 'ready' ? button('act', '请求机器集体听你说话 · G', !close)
-              : journey.step === 1 ? '<button disabled>机器群正在收拢 · 按住 G 站稳</button>'
+              : journey.step === 1 ? pact.phase === 'swarm' ? '<button disabled>机器群正在收拢 · 按住 G 站稳</button>' : '<p>合上手记观看并聆听；V 切换视角，鼠标环顾。</p>'
                 : journey.step === 2 ? filmReflections(scene.id).map(choice => button(`reflect:${choice.id}`, choice.label)).join('')
                   : pact.phase === 'pact' ? button('act', '进入连接座 · G', !close)
-                    : pact.phase === 'consent' ? '<p>最后一条探针停在颈后。按住 G，明确同意接入。</p>'
+                    : pact.phase === 'assurance' ? '<p>合上手记聆听双方对失败风险的回应；身体已经接线，颈后探针仍在等待。</p>'
+                      : pact.phase === 'consent' ? '<p>最后一条探针停在颈后。按住 G，明确同意接入。</p>'
                       : '<button disabled>物理接入进行中 · 自动保存</button>';
     const phase = pact.phase === 'approach' ? '穿过光廊' : pact.phase === 'ready' ? '等待 Neo 开口'
       : pact.phase === 'swarm' ? '在机器群中站稳' : pact.phase === 'forming' ? '集体面孔正在成形'
-        : pact.phase === 'warning' ? '说明 Smith 已失控' : pact.phase === 'terms' ? '提出和平条件'
+        : pact.phase === 'challenge' ? '机器集体的质疑' : pact.phase === 'warning' ? '说明 Smith 已失控'
+          : pact.phase === 'question' ? '机器集体询问条件' : pact.phase === 'terms' ? '提出和平条件' : pact.phase === 'assurance' ? '承担失败的风险'
           : pact.phase === 'pact' ? '锡安停火' : pact.phase === 'seating' ? '连接座升起'
             : pact.phase === 'cabling' ? '身体插口接线' : pact.phase === 'consent' ? '等待颈后接入同意'
               : pact.phase === 'connecting' ? '机器能量接通' : pact.phase === 'connected' ? '连接完成' : '谈判未被听见';
     const progress = pact.phase === 'swarm' ? pact.resolve / DEUS_PACT.resolveSeconds * 100
       : pact.phase === 'consent' ? pact.consent / DEUS_PACT.consentSeconds * 100
         : pact.phase === 'forming' ? pact.elapsed / DEUS_PACT.seconds.forming * 100
+          : pact.phase === 'challenge' ? pact.elapsed / DEUS_PACT.seconds.challenge * 100
+            : pact.phase === 'question' ? pact.elapsed / DEUS_PACT.seconds.question * 100
+              : pact.phase === 'assurance' ? pact.elapsed / DEUS_PACT.seconds.assurance * 100
           : pact.phase === 'warning' ? pact.elapsed / DEUS_PACT.seconds.warning * 100
             : pact.phase === 'seating' ? pact.elapsed / DEUS_PACT.seconds.seating * 100
               : pact.phase === 'cabling' ? pact.elapsed / DEUS_PACT.seconds.cabling * 100
                 : pact.phase === 'connecting' ? pact.elapsed / DEUS_PACT.seconds.connecting * 100 : 0;
-    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>机器核心 · 共同的威胁</h3><p>Neo 视角 · 谈判、停火与身体接入逐拍自动保存</p></header><article class="film-now"><div><h3>${step?.label ?? '暴雨中的矩阵正在等待'}</h3><p>${journey.lastText}</p><p>${phase}${pact.phase === 'failed' ? ` · 第 ${pact.attempts + 1} 次尝试` : ''}</p>${deusPactLocked(pact) && !['terms', 'pact', 'connected'].includes(pact.phase) ? `<div class="film-progress"><i style="width:${Math.max(0, Math.min(100, progress))}%"></i></div>` : ''}<div class="film-controls">${action}<small>机器群靠近时按住 G 让它听完警告；提出和平条件后，连接座会先确认停火，再等待你同意颈后接入。V 可以随时切换视角。</small></div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>机器核心 · 共同的威胁</h3><p>Neo 视角 · 谈判、停火与身体接入逐拍自动保存</p></header><article class="film-now"><div><h3>${step?.label ?? '暴雨中的矩阵正在等待'}</h3><p>${deusPactDialogue(pact) ?? journey.lastText}</p><p>${phase}${pact.phase === 'failed' ? ` · 第 ${pact.attempts + 1} 次尝试` : ''}</p>${deusPactLocked(pact) && !['terms', 'pact', 'connected'].includes(pact.phase) ? `<div class="film-progress"><i style="width:${Math.max(0, Math.min(100, progress))}%"></i></div>` : ''}<div class="film-controls">${action}<small>只在最初的包围阶段按住 G 站稳；面孔形成后聆听双方回应，再用 J 提出条件。停火后展开托架与身体接线，再确认失败风险；颈后接入仍由玩家明确同意。V 切换视角。</small></div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
   }
   if (!journey.visiting && ['m3_rain', 'm3_surrender'].includes(scene.id) && journey.smithFinale) {
     const finale = journey.smithFinale; const step = scene.steps[journey.step]; const current = player.id === journey.actor;
     const close = current && Boolean(step && distance(player.position, filmStepPosition(scene, step)) <= 4);
     const rain = scene.id === 'm3_rain';
     const action = !current ? button('resume', '接回 Neo 的视角')
-      : finale.phase === 'failed' ? button('retry', `从${finale.checkpoint === 'air' ? '高空' : '大道中央'}检查点重试`)
+      : finale.phase === 'failed' ? button('retry', `从${finale.checkpoint === 'pit' ? '坑底' : finale.checkpoint === 'interior' ? '楼内' : finale.checkpoint === 'sky' ? '第二轮高空' : finale.checkpoint === 'air' ? '高空' : '大道中央'}检查点重试`)
         : !step ? button('next', rain ? '继续最后的选择 →' : '进入停战之后 →')
           : rain && journey.step === 0 ? '<p>合上手记，亲自穿过两列 Smith 复制体。</p>'
+            : rain && finale.phase === 'reply' ? button('act', '回答 Smith：今晚结束这一切 · G')
+              : rain && finale.phase === 'charge_ready' ? button('act', '主动迎战 · G')
             : rain && journey.step === 1 && finale.phase === 'ready' ? button('act', '开始最后交锋 · G', !close)
               : rain && journey.step === 2 && finale.phase === 'choice' ? filmReflections(scene.id).map(choice => button(`reflect:${choice.id}`, choice.label)).join('')
-                : !rain && journey.step === 0 && finale.phase === 'assault_ready' ? button('act', '让 Smith 的预见说完 · G', !close)
+                : !rain && journey.step === 0 && finale.phase === 'assault_ready' ? button('act', '再次迎战 · G', !close)
                   : !rain && journey.step === 1 && finale.phase === 'vision' ? filmReflections(scene.id).map(choice => button(`reflect:${choice.id}`, choice.label)).join('')
                     : !rain && journey.step === 2 && finale.phase === 'understanding' ? button('act', '停止抵抗，接受同化 · G', !close)
+                      : finale.phase === 'pit_dodge' ? '<p>合上手记，现在按 X 错开 Smith 的起手。</p>'
+                        : finale.phase === 'pit_counter' ? '<p>合上手记，按 F 亲自打出最后的重拳。</p>'
+                          : finale.phase === 'pit_recovery' ? '<p>按住 G 从坑底再次站起；松开会保留当前姿态。</p>'
                       : finale.phase === 'surrender' ? '<p>按住 G，明确接受同化并完成与机器的协议。</p>'
                         : '<button disabled>终局动作进行中 · 自动保存</button>';
-    const phase = finale.phase === 'approach' ? '穿过复制体' : finale.phase === 'ready' ? '大道中央'
+    const phase = finale.phase === 'approach' ? '穿过复制体' : finale.phase === 'entrance' ? 'Smith 从队列走出'
+      : finale.phase === 'greeting' ? 'Smith 的迎接' : finale.phase === 'reply' ? '等待 Neo 亲自回应'
+        : finale.phase === 'prediction' ? 'Smith 的必胜预见' : finale.phase === 'charge_ready' ? '对峙 · 主动迎战'
+          : finale.phase === 'charging' ? '两人冲向大道中央' : finale.phase === 'ready' ? '大道中央'
       : finale.phase === 'ground_warning' ? '地面交锋 · Smith 起手' : finale.phase === 'ground_dodge' ? '地面交锋 · 现在按 X'
         : finale.phase === 'ground_counter' ? `地面交锋 · F 反击 ${finale.hits}/${SMITH_FINALE.ground.hits}` : finale.phase === 'shockwave' ? '对拳冲击波'
           : finale.phase === 'air_warning' ? '高空交锋 · Smith 俯冲' : finale.phase === 'air_dodge' ? '高空交锋 · 现在按 X'
             : finale.phase === 'air_counter' ? '高空交锋 · 现在按 F' : finale.phase === 'building' ? '撞穿楼体'
+              : finale.phase === 'interior_warning' ? '楼内追击 · Smith 起手' : finale.phase === 'interior_dodge' ? '楼内追击 · 现在按 X'
+                : finale.phase === 'interior_counter' ? '楼内高踢 · 现在按 F' : finale.phase === 'interior_kick' ? '踢出破窗'
+                  : finale.phase === 'relaunch' ? '穿过破窗 · 再次升空' : finale.phase === 'sky_warning' ? '第二轮空战 · 准备闪避'
+                    : finale.phase === 'sky_dodge' ? '第二轮空战 · 现在按 X' : finale.phase === 'sky_counter' ? '第二轮空战 · 现在按 F'
+                      : finale.phase === 'sky_grapple' ? 'Smith 近身抓握'
               : finale.phase === 'descent' ? '向街面坠落 · 按住 G' : finale.phase === 'crater' ? '从陨石坑站起 · 按住 G'
                 : finale.phase === 'choice' ? '为什么继续？由你选择' : finale.phase === 'assault_ready' ? '等待最后猛攻'
+                  : finale.phase === 'pit_warning' ? '坑底交锋 · Smith 起手' : finale.phase === 'pit_dodge' ? '坑底交锋 · 现在按 X'
+                    : finale.phase === 'pit_evade' ? '错开拳锋' : finale.phase === 'pit_counter' ? '最后的重拳 · 现在按 F'
+                      : finale.phase === 'pit_punch' ? 'Neo 的面部重拳' : finale.phase === 'pit_retaliation' ? 'Smith 再次压制'
+                        : finale.phase === 'pit_recovery' ? '再次站起 · 按住 G'
                   : finale.phase === 'assault' ? '最后猛攻' : finale.phase === 'vision' ? 'Smith 的预见正在重合'
                     : finale.phase === 'understanding' ? '停手是 Neo 的选择' : finale.phase === 'surrender' ? '明确停止抵抗'
                       : finale.phase === 'assimilating' ? 'Smith 同化 Neo' : smithOracleRestored(finale) ? '先知恢复 · 雨已停' : finale.phase === 'purging' ? '机器清除感染' : '交锋失败';
-    const progress = finale.phase === 'ground_warning' ? finale.elapsed / SMITH_FINALE.ground.warning * 100
+    const progress = finale.phase === 'entrance' ? finale.elapsed / SMITH_FINALE.entrance.seconds * 100
+      : finale.phase === 'greeting' ? finale.elapsed / SMITH_FINALE.entrance.greeting * 100
+        : finale.phase === 'prediction' ? finale.elapsed / SMITH_FINALE.entrance.prediction * 100
+          : finale.phase === 'charging' ? finale.elapsed / SMITH_FINALE.entrance.charge * 100
+            : finale.phase === 'ground_warning' ? finale.elapsed / SMITH_FINALE.ground.warning * 100
       : finale.phase === 'ground_dodge' ? (SMITH_FINALE.ground.dodge - finale.elapsed) / SMITH_FINALE.ground.dodge * 100
         : finale.phase === 'ground_counter' ? (SMITH_FINALE.ground.counter - finale.elapsed) / SMITH_FINALE.ground.counter * 100
           : finale.phase === 'shockwave' ? finale.elapsed / SMITH_FINALE.shockwave * 100
             : finale.phase === 'air_warning' ? finale.elapsed / SMITH_FINALE.air.warning * 100
               : finale.phase === 'air_dodge' ? (SMITH_FINALE.air.dodge - finale.elapsed) / SMITH_FINALE.air.dodge * 100
                 : finale.phase === 'air_counter' ? (SMITH_FINALE.air.counter - finale.elapsed) / SMITH_FINALE.air.counter * 100
+                  : finale.phase === 'interior_warning' ? finale.elapsed / SMITH_FINALE.interior.warning * 100
+                    : finale.phase === 'interior_dodge' ? (SMITH_FINALE.interior.dodge - finale.elapsed) / SMITH_FINALE.interior.dodge * 100
+                      : finale.phase === 'interior_counter' ? (SMITH_FINALE.interior.counter - finale.elapsed) / SMITH_FINALE.interior.counter * 100
+                        : finale.phase === 'sky_dodge' ? (SMITH_FINALE.air.dodge - finale.elapsed) / SMITH_FINALE.air.dodge * 100
+                          : finale.phase === 'sky_counter' ? (SMITH_FINALE.air.counter - finale.elapsed) / SMITH_FINALE.air.counter * 100
                   : finale.phase === 'descent' ? finale.focus / SMITH_FINALE.descent.braceSeconds * 100
                     : finale.phase === 'crater' ? finale.focus / SMITH_FINALE.crater.riseSeconds * 100
+                      : finale.phase === 'pit_dodge' ? (SMITH_FINALE.pit.dodge - finale.elapsed) / SMITH_FINALE.pit.dodge * 100
+                        : finale.phase === 'pit_counter' ? (SMITH_FINALE.pit.counter - finale.elapsed) / SMITH_FINALE.pit.counter * 100
+                          : finale.phase === 'pit_recovery' ? finale.focus / SMITH_FINALE.crater.riseSeconds * 100
                       : finale.phase === 'assault' ? finale.elapsed / SMITH_FINALE.assault * 100
                         : finale.phase === 'surrender' ? finale.focus / SMITH_FINALE.surrender.consentSeconds * 100
                           : finale.phase === 'assimilating' ? finale.elapsed / SMITH_FINALE.surrender.assimilationSeconds * 100
                             : finale.phase === 'purging' ? finale.elapsed / SMITH_FINALE.surrender.purgeSeconds * 100 : 0;
-    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>${rain ? '暴雨大道 · 最后交锋' : '陨石坑 · 最后的选择'}</h3><p>Neo 视角 · 动作窗口、哲学选择与机器协议逐拍保存</p></header><article class="film-now"><div><h3>${step?.label ?? '终局已完成'}</h3><p>${journey.lastText}</p><p>${phase}${finale.phase === 'failed' ? ` · 第 ${finale.attempts + 1} 次尝试` : ''}</p>${smithFinaleLocked(finale) && !['choice', 'vision', 'understanding'].includes(finale.phase) ? `<div class="film-progress"><i style="width:${Math.max(0, Math.min(100, progress))}%"></i></div>` : ''}<div class="film-controls">${action}<small>地面与高空攻击窗口用 X 闪避、F 反击；坠落、站起和最后停手都要按住 G。停止抵抗是玩家明确作出的选择，不会由倒计时代替。</small></div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>${rain ? '暴雨大道 · 最后交锋' : '陨石坑 · 最后的选择'}</h3><p>Neo 视角 · 动作窗口、哲学选择与机器协议逐拍保存</p></header><article class="film-now"><div><h3>${step?.label ?? '终局已完成'}</h3><p>${smithFinaleDialogue(finale) ?? journey.lastText}</p><p>${phase}${finale.phase === 'failed' ? ` · 第 ${finale.attempts + 1} 次尝试` : ''}</p>${smithFinaleLocked(finale) && !['reply', 'charge_ready', 'choice', 'vision', 'understanding'].includes(finale.phase) ? `<div class="film-progress"><i style="width:${Math.max(0, Math.min(100, progress))}%"></i></div>` : ''}<div class="film-controls">${action}<small>地面与高空攻击窗口用 X 闪避、F 反击；坠落、站起和最后停手都要按住 G。停止抵抗是玩家明确作出的选择，不会由倒计时代替。</small></div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
   }
   if (!journey.finished && !journey.visiting && ['m3_ceasefire', 'm3_neo_carried', 'm3_reset', 'm3_dawn'].includes(scene.id) && journey.epilogue) {
     const epilogue = journey.epilogue; const step = scene.steps[journey.step]; const current = player.id === journey.actor;
@@ -293,9 +523,10 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
       : bargain.phase === 'failed' ? button('retry', '从舞池突围前重试')
         : !step ? button('next', '返回 Mobil Ave，接应 Neo →')
           : step.kind === 'reflect' ? filmReflections(scene.id).map(choice => button(`reflect:${choice.id}`, choice.label, !close)).join('')
+            : bargain.phase === 'catching' ? '<p>Trinity 正在握紧枪柄。合上手记观看，V 切换视角。</p>'
             : journey.step === 3 && bargain.phase !== 'ready' ? `<p>${bargain.phase === 'counter' ? '合上手记，面朝高台按 F 反击。' : '合上手记，等守卫挥拳后按 X 闪避。'}倒计时会自动保存。</p>`
               : button('act', `${step.label} · G`, !close);
-    const window = bargain.phase === 'evade' ? 3 : bargain.phase === 'counter' ? 2.4 : bargain.phase === 'airborne' ? 2.8 : 0;
+    const window = bargain.phase === 'evade' ? 3 : bargain.phase === 'counter' ? 2.4 : bargain.phase === 'airborne' ? bargain.breakout ? 3.35 : 2.8 : 0;
     return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>Club Hel · 不接受的交换</h3><p>Trinity 视角 · 缴枪、突围、接枪与拒绝自动保存</p></header><article class="film-now"><div><h3>${step?.label ?? 'Trainman 已答应带 Neo 回来'}</h3><p>${journey.lastText}</p>${window ? `<p>剩余 ${(window - bargain.elapsed).toFixed(1)} 秒 · 第 ${bargain.attempts + 1} 次尝试</p><div class="film-progress"><i style="width:${Math.max(0, (window - bargain.elapsed) / window * 100)}%"></i></div>` : ''}<div class="film-controls">${action}<small>先放下武器，再听清 Merovingian 的条件。X 闪避、F 反击、G 接枪；失败只重试突围。</small></div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
   }
   if (!journey.visiting && scene.id === 'm2_architect' && journey.architect) {
@@ -304,6 +535,7 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
     const action = !current ? button('resume', '接回 Neo 的视角')
       : encounter.phase === 'failed' ? button('retry', '从抉择检查点重试')
         : !step ? button('next', '赶往 Trinity 坠落处 →')
+          : encounter.room?.exit ? encounter.room.exit.elapsed < ARCHITECT_ROOM.openingSeconds ? '<p>Neo 正在开门。合上手记观看，V 切换视角。</p>' : '<p>合上手记，用 WASD 亲自跨过左门门槛。</p>'
           : step.kind === 'reach' ? '<p>合上手记，走到建筑师面前。</p>'
             : step.kind === 'reflect' ? filmReflections(scene.id).map(choice => button(`reflect:${choice.id}`, choice.label, !close || Boolean(journey.reflections['m2_architect:4'] && journey.reflections['m2_architect:4'] !== choice.id))).join('')
               : button('act', `${step.label} · G`, !close || journey.started !== undefined);
@@ -314,11 +546,11 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
   }
   if (!journey.visiting && scene.id === 'm2_catch' && journey.catch) {
     const encounter = journey.catch; const step = scene.steps[journey.step]; const current = player.id === journey.actor;
-    const gap = Math.hypot(encounter.x - CATCH.trinity.x, encounter.z - CATCH.trinity.z);
+    const gap = catchDistance(encounter);
     const action = !current ? button('resume', '接回 Neo 的视角')
       : encounter.phase === 'failed' ? button('retry', encounter.checkpoint === 'pulse' ? '从心跳检查点重试' : '从冲出大楼处重试')
         : encounter.phase === 'done' ? button('next', '返回尼布甲尼撒号 →')
-          : encounter.phase === 'launch' ? button('act', '冲出大楼 · G')
+          : encounter.phase === 'launch' ? catchLaunchReady(encounter) ? button('act', '冲破窗口 · G') : '<p>合上手记，用 W 走到前方窗口。</p>'
             : encounter.phase === 'flight' ? `<p>W 飞行 · A / D 调整航线 · 距 Trinity ${gap.toFixed(1)} 米。接近后按 G 抓住她。</p>`
               : encounter.phase === 'extract_ready' ? button('act', '开始聚焦代码 · 按住 G')
                 : encounter.phase === 'extracting' ? '<p>继续按住 G，直到子弹离开伤口。</p>'
@@ -334,17 +566,24 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
     const step = scene.steps[journey.step]; const current = player.id === journey.actor;
     const close = current && Boolean(step && distance(player.position, filmStepPosition(scene, step)) <= 4);
     const failed = ship ? loss?.phase === 'failed' : tunnel?.phase === 'failed';
-    const action = !current ? button('resume', `接回 ${ship ? 'Morpheus' : 'Neo'} 的视角`)
+    const action = !current ? button('resume', `接回 ${journey.actor === 'morpheus' ? 'Morpheus' : 'Neo'} 的视角`)
       : failed ? button('retry', ship ? '从弃船命令重试' : '从隧道窄口重试')
         : !step ? button('next', ship ? '进入隧道，继续逃亡 →' : '登上 Hammer →')
-          : step.kind === 'reach' ? `<p>合上手记，${ship ? '带船员跑向船尾货舱' : '沿管道跑到窄口'}。</p>`
+          : ship && loss?.phase === 'destroying' ? '<p>全员已经出船。可以转头观察船体毁坏；当前一拍会自动保存。</p>'
+          : !ship && ['stopping', 'collapsing'].includes(tunnel?.phase ?? '') ? '<p>连接已经切断。哨兵和 Neo 的动作会连续完成；当前一拍自动保存。</p>'
+          : step.kind === 'reach' ? `<p>合上手记，${ship ? '穿过船尾出口，继续走到船外安全位置；等待同伴通过' : '沿管道跑到窄口'}。</p>`
             : !ship && journey.step === 1 ? '<p>合上手记，面朝追来的哨兵，按住 G 聚焦连接。松开会失去聚焦；这会让 Neo 昏迷。</p>'
               : button('act', `${step.label} · G`, !close || journey.started !== undefined);
-    const status = ship ? loss?.phase === 'evacuating' ? `炸弹到达前 ${Math.ceil(loss.remaining)} 秒 · 撤离尝试 ${loss.attempts + 1}` : 'EMP 够不到远处的哨兵；必须弃船。'
-      : tunnel?.phase === 'sensing' ? `哨兵逼近 ${Math.ceil(tunnel.remaining)} 秒 · 信号 ${Math.round(tunnel.focus / RELOADED_FINALE.signalSeconds * 100)}%` : '旧船已经被摧毁；Hammer 正在搜索幸存者。';
+    const status = ship ? loss?.paused ? `${loss.paused} 的玩家尚未交还角色；当前进度保留` : loss?.unavailable ? `${loss.unavailable} 无法参与；已有伤亡保留`
+      : loss?.phase === 'evacuating' ? `炸弹到达前 ${Math.ceil(loss.remaining)} 秒 · 撤离尝试 ${loss.attempts + 1}`
+        : loss?.phase === 'destroying' ? '船体正在解体，先留在安全位置' : loss?.phase === 'mourning' ? '旧船已毁 · G 听 Morpheus 的回应' : 'EMP 够不到远处的哨兵；必须弃船。'
+      : tunnel?.paused ? `${tunnel.paused} 的玩家尚未交还角色；当前一拍保留`
+        : tunnel?.phase === 'stopping' ? '红色光学眼正在熄灭，机器失去动力'
+          : tunnel?.phase === 'collapsing' ? 'Neo 失去意识，Trinity 回身赶来'
+            : tunnel?.phase === 'sensing' ? `哨兵逼近 ${Math.ceil(tunnel.remaining)} 秒 · 信号 ${Math.round(tunnel.focus / RELOADED_FINALE.signalSeconds * 100)}%` : '旧船已经被摧毁；Hammer 正在搜索幸存者。';
     const progress = ship && loss?.phase === 'evacuating' ? 100 * loss.remaining / RELOADED_FINALE.evacuationSeconds
       : !ship && tunnel?.phase === 'sensing' ? 100 * tunnel.focus / RELOADED_FINALE.signalSeconds : 0;
-    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX RELOADED / 02</span><h3>${scene.title}</h3><p>${ship ? 'Morpheus · 失去旧船' : 'Neo · 现实中的代价'} · 检查点自动保存</p></header><article class="film-now"><div><h3>${step?.label ?? '本段完成'}</h3><p>${journey.lastText}</p><p>${status}</p>${progress ? `<div class="film-progress"><i style="width:${Math.max(0, progress)}%"></i></div>` : ''}<div class="film-controls">${action}</div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX RELOADED / 02</span><h3>${scene.title}</h3><p>${ship ? `${journey.actor === 'morpheus' ? 'Morpheus' : 'Neo'} · 失去旧船` : 'Neo · 现实中的代价'} · 检查点自动保存</p></header><article class="film-now"><div><h3>${step?.label ?? '本段完成'}</h3><p>${journey.lastText}</p><p>${status}</p>${progress ? `<div class="film-progress"><i style="width:${Math.max(0, progress)}%"></i></div>` : ''}<div class="film-controls">${action}${ship && current && journey.actor === 'morpheus' && journey.step < 3 ? button('neo-view', '切回 Neo 继续这一段') : ''}</div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
   }
   if (!journey.visiting && scene.id === 'm2_persephone' && journey.persephone) {
     const step = scene.steps[journey.step]; const current = player.id === journey.actor;
@@ -542,19 +781,21 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
   const chairApproach = journey.downloadSetup?.phase === 'walk';
   const stepPosition = chairApproach ? filmPosition(scene.set, CABIN.approach.x, CABIN.approach.z) : bridgeDoor ? filmPosition(scene.set, bridgeDoor.x, bridgeDoor.z)
     : scene.id === 'm1_bug' && journey.step === 1 && journey.meeting?.phase === 'done' ? player.position
-      : step ? filmStepPosition(scene, step) : undefined;
+      : step ? filmStepPosition(scene, step, journey) : undefined;
   const waitingForMorpheus = scene.id === 'm1_mirror' && journey.mirrorGuide && !journey.mirrorGuide.done;
   const meetingAction = scene.id === 'm1_bug' && (journey.meeting?.phase === 'done' && journey.step >= 2 || journey.meeting?.phase === 'parked');
   const arrival = scene.id === 'm1_construct' ? journey.constructArrival : undefined;
   const truth = journey.truthRecovery;
-  const actionLabel = chairApproach ? '坐下，接入训练' : truth?.phase === 'ready' ? '请求退出程序' : arrival?.phase === 'ready' ? '检查残余自我影像' : meetingAction ? journey.meeting?.phase === 'parked' ? '打开车门下车' : '启程前往 Lafayette' : step?.label;
+  const actionLabel = scene.id === 'm3_hel_entry' && journey.step === 0 && journey.helElevator?.phase === 'arrived' ? '亲自拉开电梯铁门'
+    : chairApproach ? '坐下，接入训练' : truth?.phase === 'ready' ? '请求退出程序' : arrival?.phase === 'ready' ? '检查残余自我影像' : meetingAction ? journey.meeting?.phase === 'parked' ? '打开车门下车' : '启程前往 Lafayette' : step?.label;
   const close = chairApproach ? journey.downloadSetup!.progress >= CABIN_ROUTE_LENGTH && distance(player.position, stepPosition!) <= 1.8
     : truth?.phase === 'ready' || arrival?.phase === 'ready' || (arrival ? Boolean(step && filmStepNear(scene, step, player.position, player.isInMatrix))
-    : meetingAction || trainingWaiting(journey) || Boolean(stepPosition && player.isInMatrix === (set.world === 'matrix') && distance(player.position, stepPosition) <= 4));
+    : meetingAction || trainingWaiting(journey) || Boolean(stepPosition && player.isInMatrix === (set.world === 'matrix')
+      && distance(player.position, stepPosition) <= (scene.id === 'm3_hel_entry' && journey.step === 0 ? 1.1 : 4)));
   const current = player.id === journey.actor;
   const windowExit = !step && !journey.visiting && scene.id === 'm1_office_escape' && Boolean(journey.office && !journey.office.outcome);
   const windowClose = !windowExit || filmStepNear(scene, scene.steps[2], player.position, player.isInMatrix);
-  const performing = Boolean(truth && truth.phase !== 'ready' && truth.phase !== 'question') || arrival?.phase === 'image' || helElevatorLocked(journey) || helDanceDoorLocked(journey) || meetingLocked(journey) && !['ready', 'done', 'parked'].includes(journey.meeting?.phase ?? 'ready') || trainingLocked(journey) || sentinelLocked(journey) || interludeLocked(journey) || rescueLocked(journey) || Boolean(journey.awakening && journey.awakening.elapsed < awakeningDuration(journey.awakening)) || oracleActing(journey) || phoneLocked(journey) || wakeCallLocked(journey) || theOneLocked(journey) || windowOpening(journey) || windowCrossing(journey) || pillLocked(journey) || lafayetteWelcomeLocked(journey) || interrogationLocked(journey) && journey.interrogation?.phase !== 'done';
+  const performing = Boolean(journey.trucks?.road && (journey.trucks.road.phase !== 'ready' || journey.trucks.road.paused || journey.trucks.road.unavailable)) || Boolean(truth && truth.phase !== 'ready' && truth.phase !== 'question') || arrival?.phase === 'image' || helElevatorLocked(journey) || helDanceDoorLocked(journey) || meetingLocked(journey) && !['ready', 'done', 'parked'].includes(journey.meeting?.phase ?? 'ready') || trainingLocked(journey) || sentinelLocked(journey) || interludeLocked(journey) || rescueLocked(journey) || Boolean(journey.awakening && journey.awakening.elapsed < awakeningDuration(journey.awakening)) || oracleActing(journey) || phoneLocked(journey) || wakeCallLocked(journey) || theOneLocked(journey) || windowOpening(journey) || windowCrossing(journey) || pillLocked(journey) || lafayetteWelcomeLocked(journey) || interrogationLocked(journey) && journey.interrogation?.phase !== 'done';
   const answerPhone = phoneLocked(journey) && journey.phone?.phase === 'ready';
   const answer = answerPhone || awakeningWaiting(journey) || trainingWaiting(journey) || interrogationLocked(journey) && journey.interrogation?.phase === 'response';
   const awakeningAction = journey.awakening?.kind === 'breather' ? '检查后颈接口 · G' : journey.awakening?.kind === 'recovery' ? '示意开始恢复肌肉 · G'
@@ -573,13 +814,12 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
     : scene.id === 'm3_hel_entry' ? `左键 / T 射击 · R 换弹 · F 近战 · X 闪避。弹匣 ${journey.helCoatcheck?.ammo ?? 0}/${HEL_COATCHECK.magazine}；衣帽柜台能挡住射线，Morpheus 与 Seraph 会掩护。` : 'F 连击 · X 闪避 · 1 治疗。';
   return `<div class="film-journal">
     <header class="film-heading"><span>THE MATRIX / 0${scene.film}</span><h3>${FILM_NAMES[scene.film]}</h3><p>${journey.completed.length} / ${FILM_SCENES.length} 段 · 第 ${life.cycle} 轮 · ${journey.finished ? '三部曲已完成' : '进度自动保存'}</p><div class="film-progress"><i style="width:${journey.completed.length / FILM_SCENES.length * 100}%"></i></div></header>
-    ${journey.visiting ? `<article class="film-now"><span>回访场景</span><h3>${FILM_SETS[FILM_SCENE_BY_ID[journey.visiting].set].name}</h3><p>原来的剧情与位置已保留，可以自由走动观察。</p>${button('return', '返回正在进行的剧情 →')}</article>` : `<article class="film-now"><div class="film-scene-number">${String(FILM_SCENES.indexOf(scene) + 1).padStart(3, '0')}</div><div><span>${set.name} · ${CHARACTERS[journey.actor]?.nameCn ?? journey.actor} 视角</span><h3>${scene.id === 'm1_bug' && escaped ? '确认没有被追踪' : scene.title}</h3><p>${context}</p>
+    ${journey.visiting ? `<article class="film-now"><span>回访场景</span><h3>${FILM_SETS[FILM_SCENE_BY_ID[journey.visiting].set].name}</h3><p>原来的剧情与位置已保留，可以自由走动观察。</p>${button('return', '返回正在进行的剧情 →')}</article>` : `<article class="film-now"><div class="film-scene-number">${String(FILM_SCENES.findIndex(item => item.id === scene.id) + 1).padStart(3, '0')}</div><div><span>${set.name} · ${CHARACTERS[journey.actor]?.nameCn ?? journey.actor} 视角</span><h3>${scene.id === 'm1_bug' && escaped ? '确认没有被追踪' : scene.title}</h3><p>${context}</p>
       ${!current ? button('resume', '继续保存的剧情视角 →') : ''}
       <ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : String(i + 1).padStart(2, '0')}</b><span>${scene.id === 'm1_bug' && escaped ? ['配合安全扫描', '重新判断今晚的接头', goal.label][i] : goal.label}</span>${i === journey.step && journey.fighting ? `<small>剩余 ${enemies} 个目标</small>` : ''}</li>`).join('')}</ol>
       ${journey.finished ? '<p class="film-memory">停战与本轮反思已经保存。</p>' : journey.lastText ? `<p class="film-memory">${journey.lastText}</p>` : ''}
       ${waitingForMorpheus ? '<p>合上手记，跟随 Morpheus 穿过后门。等他抵达追踪室，再坐进椅子。</p>' : ''}
       ${scene.id === 'm3_emp' ? `<p>EMP ${dockPowerOffline(journey) ? '已触发 · 船坞防御与 APU 同时离线' : '已充能 · 等待 Link 启动'}</p>` : ''}
-      ${scene.id === 'm3_temple_defense' && journey.templeSeal?.phase === 'running' ? `<p>哨兵再次抵达前 ${Math.ceil(journey.templeSeal.remaining)} 秒 · 左右卡榫必须亲手锁住</p>` : ''}
       ${journey.meeting?.phase === 'choice' ? `<div class="film-controls">${button('meeting:stay', '留在车内，接受检查')}${button('meeting:leave', '推开车门，质疑检查')}</div>` : ''}
       ${journey.meeting?.phase === 'hesitating' ? `<div class="film-controls">${button('meeting:stay', '信任 Trinity，关上车门', journey.meeting.elapsed < MEETING_TIMING.hesitating)}${button('meeting:depart', '离开车辆，返回雨中', journey.meeting.elapsed < MEETING_TIMING.hesitating)}</div>` : ''}
       ${player.status !== 'alive' ? `<p>行动中断，已经完成的目标不会丢失。</p>${button('retry', '从当前目标的检查点重试')}` : ''}

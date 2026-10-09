@@ -83,7 +83,7 @@ test('Neo must approach Trinity and the farewell resumes from an exact saved bea
   assert.equal(h.state().farewell?.phase, 'still'); assert.equal(h.state().step, 2);
   assert.equal(h.world.agents.get('trinity')!.status, 'dead');
   h.command('reflect:care'); assert.equal(h.state().step, scene.steps.length);
-  h.command('next'); assert.equal(h.state().scene, 'm3_deus');
+  h.command('next'); assert.equal(h.state().scene, 'm3_temple_breach'); assert.equal(h.actor().id, 'lock');
   assert.equal(h.world.agents.get('trinity')!.status, 'dead');
 });
 

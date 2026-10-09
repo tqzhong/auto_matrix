@@ -1,3 +1,25 @@
+import { CATCH } from './reloaded-catch.js';
+import { TRAINMAN_CHASE, trainmanChaseTarget, trainmanFloor, trainmanChaseLocked } from './trainman-chase.js';
+import { HEL_GARAGE, helGarageTarget } from './hel-garage.js';
+import { HEL_ELEVATOR, helElevatorFloor, type HelElevatorEncounter } from './hel-elevator.js';
+import { HEL_DANCE_DOOR, type HelDanceDoorEncounter } from './hel-dance-door.js';
+import { freewayHandoffRoot } from './freeway-handoff.js';
+import { ARCHITECT_ROOM, type ArchitectRoomState } from './architect-room.js';
+import { ORACLE_REQUEST, oracleRequestLocked } from './oracle-request.js';
+import { ORACLE_LAST, oracleLastLocked } from './oracle-last.js';
+import { ORACLE_ABSORPTION, oracleAbsorptionLocked } from './oracle-absorption.js';
+import { SOURCE_BRIEFING, sourceBriefingTarget, sourceBriefingLocked } from './source-briefing.js';
+import { PRIMARY_DEMOLITION, primaryActive, primaryTarget, primaryFloor, primaryLocked } from './primary-demolition.js';
+import { TRINITY_TERMINAL, trinityTerminalActive, trinityTerminalLocked } from './trinity-terminal.js';
+import { TRINITY_RELAY, trinityRelayTarget, trinityRelayActive, trinityRelayLocked } from './trinity-relay.js';
+import { UPPER_DIGGER, upperDiggerActive, upperDiggerRoot } from './upper-digger.js';
+import { DIGGERS, diggersActive } from './diggers.js';
+import { DOCK_GUNNERY } from './dock-gunnery.js';
+import { DOCK_REUNION, dockReunionRoot } from './dock-reunion.js';
+import { DOCK_BRIEFING, dockBriefingRoot } from './dock-briefing.js';
+import { DOCK_EVACUATION, SHAFT_SEAL, dockEvacuationLift } from './dock-evacuation.js';
+import { TEMPLE_DEFENSE } from './temple-defense.js';
+import { APU_ROUTE } from './dock-apu.js';
 import { DOCK_RELOAD, dockReloadActive } from './dock-reload.js';
 import { DOCK_LAST_STAND, dockLastStandActive } from './dock-last-stand.js';
 import { METACORTEX, metacortexPosition } from './metacortex.js';
@@ -18,7 +40,7 @@ import { CLUB } from './club.js';
 import { SERAPH_ORACLE } from './seraph-oracle.js';
 import { EXILES } from './exiles.js';
 import { MOUNTAIN } from './mountain.js';
-import { TRUCKS } from './trucks.js';
+import { TRUCKS, truckRoadPoint } from './trucks.js';
 import { distance } from '../utils/index.js';
 import { SPOON_LESSON, ORACLE_ENTRANCE, ORACLE_RECEPTION_CAST, spoonLessonLocked, oracleDepartureLocked } from './oracle.js';
 import { AMBUSH_STAIRS, AMBUSH_CAT_STAIRS } from './ambush.js';
@@ -41,6 +63,7 @@ export interface ArchitectEncounter {
   phase: 'cycles' | 'source' | 'trinity' | 'reflection' | 'decision' | 'failed' | 'done';
   sourceReviewed: boolean; trinityReviewed: boolean;
   remaining: number; lastTick: number; attempts: number; door?: 'matrix';
+  room?: ArchitectRoomState;
 }
 export const GRID_REROUTE_SECONDS = 6;
 export const GRID_HACK_SECONDS = 12;
@@ -52,29 +75,36 @@ export interface GridOperation {
 }
 export const RELOADED_FINALE = { evacuationSeconds: 32, sentinelSeconds: 14, signalSeconds: 2.2 } as const;
 export interface ShipLossEncounter {
-  phase: 'briefing' | 'evacuating' | 'failed' | 'escaped'; remaining: number; lastTick: number; attempts: number;
+  phase: 'briefing' | 'evacuating' | 'destroying' | 'mourning' | 'failed' | 'escaped'; remaining: number; lastTick: number; attempts: number;
+  age?: number; elapsed?: number; paused?: string; unavailable?: string;
+  crew?: Partial<Record<import('./neb-escape.js').NebCrewRole, import('./neb-escape.js').NebCrewRoute>>;
 }
 export interface TunnelEncounter {
-  phase: 'running' | 'sensing' | 'failed' | 'collapsed'; remaining: number; focus: number; lastTick: number; attempts: number;
+  phase: 'running' | 'sensing' | 'stopping' | 'collapsing' | 'failed' | 'collapsed'; remaining: number; focus: number; lastTick: number; attempts: number;
+  age?: number; elapsed?: number; pursuit?: number; paused?: string; unavailable?: string;
 }
 export interface MobilEncounter {
   phase: 'waiting' | 'approaching' | 'stopped' | 'refusing' | 'departing' | 'gone';
-  elapsed: number; lastTick: number; loops: number; boarding?: number; approach?: { x: number; z: number; yaw: number };
+  elapsed: number; lastTick: number; loops: number; boarding?: number; refusalStartedAt?: number; approach?: { x: number; z: number; yaw: number };
+  family?: import('./mobil-station.js').MobilFamilyConversation;
+  luggage?: import('./mobil-station.js').MobilLuggage;
+  reunion?: import('./mobil-station.js').MobilReunion;
+  closeElapsed?: number;
 }
 export interface HelChaseEncounter {
   phase: 'sighting' | 'running' | 'escaped'; elapsed: number; lastTick: number;
+  performance?: import('./trainman-chase.js').TrainmanChase;
 }
-export const HEL_ELEVATOR = { doorZ: 24.6, doorWidth: 8.8, doorHeight: 8.8, seconds: 4.2 } as const;
-export interface HelElevatorEncounter {
-  phase: 'ready' | 'descending' | 'open'; elapsed: number; lastTick: number;
-}
-export const HEL_DANCE_DOOR = { z: 1.7, width: 6, height: 9, seconds: 2.5 } as const;
-export interface HelDanceDoorEncounter {
-  phase: 'sealed' | 'opening' | 'open'; elapsed: number; lastTick: number; allyTick?: number;
-}
+export { HEL_ELEVATOR } from './hel-elevator.js';
+export type { HelElevatorEncounter } from './hel-elevator.js';
+export { HEL_DANCE_DOOR } from './hel-dance-door.js';
+export type { HelDanceDoorEncounter } from './hel-dance-door.js';
 export interface HelBargainEncounter {
-  phase: 'armed' | 'disarmed' | 'offered' | 'ready' | 'windup' | 'evade' | 'counter' | 'airborne' | 'gunpoint' | 'released' | 'failed';
+  phase: 'armed' | 'disarming' | 'disarmed' | 'offered' | 'ready' | 'windup' | 'evade' | 'counter' | 'airborne' | 'catching' | 'gunpoint' | 'released' | 'failed';
   elapsed: number; lastTick: number; attempts: number;
+  disarm?: import('./hel-standoff.js').HelDisarm;
+  breakout?: import('./hel-standoff.js').HelBreakout;
+  rush?: import('./hel-standoff.js').HelDisarm['starts']['trinity'];
 }
 export const BANE_ENCOUNTER = { gunWarning: .8, gunWindow: 1.5, grappleWindow: 6, burnSeconds: 1.4,
   focusSeconds: 1.8, pipeWindow: 1.5, counterWindow: 5 } as const;
@@ -91,6 +121,12 @@ export interface FilmJourney {
   version: 1; scene: string; step: number; actor: string; completed: string[];
   enteredAt: number; started?: number; fighting?: boolean; checkpoint: Vector3;
   reflections: Record<string, Philosophy>; lastText: string; finished?: boolean;
+  oracleRequest?: import('./oracle-request.js').OracleRequest;
+  oracleLast?: import('./oracle-last.js').OracleLast;
+  oracleAbsorption?: import('./oracle-absorption.js').OracleAbsorption;
+  helGarage?: import('./hel-garage.js').HelGarageEncounter;
+  sourceBriefing?: import('./source-briefing.js').SourceBriefing;
+  primaryDemolition?: import('./primary-demolition.js').PrimaryDemolition;
   visiting?: string; returnPosition?: Vector3;
   openingHotel?: import('./opening-hotel.js').OpeningHotelEncounter;
   openingRoof?: import('./opening-escape.js').OpeningRoofEncounter;
@@ -100,6 +136,8 @@ export interface FilmJourney {
   phone?: import('./office.js').OfficePhone;
   skipped?: string[];
   ride?: import('./freeway.js').FreewayRide;
+  freewayPickup?: import('./freeway-pickup.js').FreewayPickup;
+  freewayHandoff?: import('./freeway-handoff.js').FreewayHandoff;
   garage?: import('./garage.js').GarageEscape;
   hammer?: import('./hammer-flight.js').HammerFlight;
   logos?: import('./logos-flight.js').LogosFlight;
@@ -108,12 +146,20 @@ export interface FilmJourney {
   smithFinale?: import('./smith-finale.js').SmithFinaleEncounter;
   epilogue?: import('./trilogy-epilogue.js').TrilogyEpilogueEncounter;
   apu?: import('./dock-apu.js').ApuRun;
+  diggers?: import('./diggers.js').Diggers;
+  upperDigger?: import('./upper-digger.js').UpperDigger;
   dockGunnery?: import('./dock-gunnery.js').DockGunnery;
   dockReload?: import('./dock-reload.js').DockReload;
   dockLastStand?: import('./dock-last-stand.js').DockLastStand;
   dockGate?: import('./dock-gate.js').DockGate;
-  emp?: { firedAt: number };
-  templeSeal?: { phase: 'running' | 'failed' | 'sealed'; remaining: number; lastTick: number; attempts: number };
+  empOperator?: import('./dock-emp.js').EmpOperator;
+  emp?: import('./dock-emp.js').DockEmp;
+  dockReunion?: import('./dock-reunion.js').DockReunion;
+  dockBriefing?: import('./dock-briefing.js').DockBriefing;
+  dockEvacuation?: import('./dock-evacuation.js').DockEvacuation;
+  shaftSeal?: import('./dock-evacuation.js').ShaftSeal;
+  templeSeal?: import('./temple-defense.js').TempleDefense;
+  templeBreach?: import('./temple-defense.js').TempleBreach;
   trucks?: import('./trucks.js').TruckEncounter;
   awakening?: import('./awakening.js').AwakeningBeat;
   cabinEscort?: import('./cabin.js').CabinEscort;
@@ -159,7 +205,9 @@ export interface FilmJourney {
   chateau?: import('./chateau.js').ChateauEncounter;
   mountain?: import('./mountain.js').MountainFlight;
   grid?: GridOperation;
-  keyDoor?: { portalOpened: boolean; keyTaken: boolean };
+  trinityTerminal?: import('./trinity-terminal.js').TrinityTerminal;
+  trinityRelay?: import('./trinity-relay.js').TrinityRelay;
+  keyDoor?: import('./source-portal.js').SourcePortalState;
   architect?: ArchitectEncounter;
   catch?: import('./reloaded-catch.js').CatchEncounter;
   shipLoss?: ShipLossEncounter;
@@ -178,7 +226,7 @@ export function dockPowerOffline(journey: FilmJourney | undefined): boolean {
     || journey.scene === 'm3_emp' && journey.step > 0));
 }
 export function helElevatorLocked(journey: FilmJourney | undefined): boolean {
-  return journey?.scene === 'm3_hel_entry' && !journey.visiting && journey.helElevator?.phase === 'descending';
+  return journey?.scene === 'm3_hel_entry' && !journey.visiting && ['descending', 'opening'].includes(journey.helElevator?.phase ?? '');
 }
 export function helDanceDoorLocked(journey: FilmJourney | undefined): boolean {
   return journey?.scene === 'm3_hel_entry' && !journey.visiting && journey.helDanceDoor?.phase === 'opening';
@@ -317,18 +365,20 @@ export const FILM_SCENES: FilmScene[] = [
     use('朝南方起飞', 'Neo 冲向天空，赶赴高速公路。', MOUNTAIN.launch.x, MOUNTAIN.launch.z, 1),
   ], ['link']),
   scene('m2_garage', 2, 'chateau_garage', 'trinity', '车库中的追兵', 'freeway', 'chase', '钥匙匠已发动轿车。双子会穿透撞击，不能靠拳脚清除；Trinity 必须载上 Morpheus 与钥匙匠冲出车库。', [walk('跑向钥匙匠发动的轿车', -3, 14), { kind: 'drive', label: '驾车穿过双子的拦截', x: -3, z: 14 }], ['morpheus', 'keymaker', 'twin1', 'twin2']),
-  scene('m2_freeway', 2, 'freeway_101', 'trinity', '逆向的高速路', 'freeway', 'chase', 'Trinity 骑摩托车带着钥匙匠逆向穿过车流。W 加速，S 刹车，A / D 转向；碰撞会损伤车辆和乘员。', [walk('靠近接应摩托车', 14, 660), { kind: 'drive', label: '驾驶摩托车护送钥匙匠', x: 14, z: 660 }, use('把钥匙匠交给 Morpheus', '两人抵达接应区。Morpheus 接过护送任务，追逐转向重型卡车。', 14, -660)], ['keymaker', 'morpheus']),
-  scene('m2_trucks', 2, 'freeway_trucks', 'morpheus', '两辆卡车之间', 'freeway', 'chase', 'Morpheus 在疾驰的十八轮卡车车顶抵挡 Johnson。F 连击、X 闪避；把他击退后，赶到钥匙匠身边，在卡车相撞前按 G 稳住两人，等待 Neo 飞来。', [
+  scene('m2_freeway', 2, 'freeway_101', 'trinity', '逆向的高速路', 'freeway', 'chase', 'Trinity 骑摩托车带着钥匙匠逆向穿过车流。W 加速，S 刹车，A / D 转向；碰撞会损伤车辆和乘员。', [walk('登上运车卡车并换乘摩托', 14, 660), { kind: 'drive', label: '驾驶摩托车护送钥匙匠', x: 14, z: 660 }, use('在行驶中把钥匙匠交给 Morpheus', 'Morpheus 从迎面的十八轮卡车探身，把钥匙匠拉上车顶。Trinity 继续驶离，追逐转向重型卡车。', 14, -660)], ['keymaker', 'morpheus']),
+  scene('m2_trucks', 2, 'freeway_trucks', 'morpheus', '两辆卡车之间', 'freeway', 'chase', 'Morpheus 在疾驰的十八轮卡车车顶抵挡 Johnson。枪刀战后转入徒手；Niobe 用车盖接应被踢落的 Morpheus。A / D 调整重心、按住 G 抓稳，空格起跑，跃回车顶时按 F 飞踢；再赶到钥匙匠身边等待 Neo。', [
     { ...fight('在卡车顶击退 Johnson', 1, 'agent', 'agent_johnson'), ...TRUCKS.morpheus },
     walk('赶到钥匙匠身边', TRUCKS.rescueApproach.x, TRUCKS.rescueApproach.z),
     use('抓住钥匙匠，迎接 Neo', '两辆货车正面相撞。Neo 掠过车顶，在爆炸前带走 Morpheus 与钥匙匠。', TRUCKS.rescueApproach.x, TRUCKS.rescueApproach.z, 1.5),
-  ], ['keymaker', 'agent_johnson', 'niobe', 'neo']),
-  scene('m2_plan', 2, 'neb_deck', 'neo', '钥匙匠的路线', 'architect', 'infiltration', '打开通往源头的门需要同步切断主电源与备用电源。几艘船分头行动。', [use('核对电站示意图', 'Niobe 的队伍负责发电厂，另一支队伍负责备用电源；Neo 与 Morpheus 护送钥匙匠。', 0, -16), think('合作如何改变可能的选择？', '这条路线无法靠一个人的力量完成。')], ['keymaker', 'morpheus', 'trinity']),
+  ], ['keymaker', 'agent_johnson', 'niobe', 'ghost', 'neo']),
+  scene('m2_plan', 2, 'operation_room', 'neo', '钥匙匠的路线', 'architect', 'infiltration', '矩阵内的废弃公寓。Neo、钥匙匠与三位船长核对主网、应急系统和源头之门，讨论合作与预言的风险。', [use('核对三条行动路线', '纸质计划是游戏中的检查工具；主网、应急系统与源头必须由不同队伍同时处理。', -4.5, -2), think('合作如何改变可能的选择？', '这条路线无法靠一个人的力量完成。')], ['keymaker', 'morpheus', 'niobe', 'soren']),
   scene('m2_power', 2, 'power_station', 'niobe', '主电网的倒计时', 'architect', 'infiltration', 'Niobe 与 Ghost 进入发电厂，在换班前安放同步爆破装置。备用系统未关闭前，主网仍受保护。', [fight('清除配电区守卫', 2), use('设定同步爆破装置', '主网装置已武装；必须等应急系统也停用，才能同时解除源头的保护。', 0, -29, 6)], ['ghost']),
-  scene('m2_vigilant', 2, 'service_tunnels', 'trinity', '突然失去的联系', 'architect', 'siege', '执行应急系统任务的 Vigilant 遭到哨兵袭击。Trinity 与 Link 无法得到船员回应。', [use('检查 Vigilant 最后的信号', 'Soren 的队伍失联，应急系统仍在供电。等待会让进入核心的队伍全军覆没。', 0, -20), use('接入备用电站', 'Trinity 违背 Neo 的请求，决定亲自补上缺口。', 0, 0)], ['link']),
-  scene('m2_backup', 2, 'backup_station', 'trinity', '最后一条供电线路', 'architect', 'combat', 'Trinity 冲进电网改线中心，在特工拦截前接入应急系统主机。', [fight('突破机房封锁', 2), use('接入应急系统，准备终止自动改线', 'Niobe 的主网装置起爆。应急系统随即接管，Trinity 必须在 Neo 抵达白门前完成最后的覆盖。', 0, -23, 4)]),
+  scene('m2_vigilant', 2, 'neb_deck', 'trinity', '突然失去的联系', 'architect', 'siege', 'Trinity 留在现实飞船的操作台旁。Vigilant 遭到哨兵袭击，Link 无法得到船员回应；主网还未爆破。', [use('检查 Vigilant 最后的信号', 'Soren 的队伍失联，应急系统仍在供电。Trinity 此时尚未决定接入矩阵。', 6.4, 12), use('核对其余队伍，继续等待主网信号', 'Niobe 已离开发电厂。Trinity 留在 Link 身旁等待供电变化。', 6.4, 12)], ['link']),
+  scene('m2_blackout', 2, 'power_station', 'niobe', '午夜的主网爆破', 'architect', 'infiltration', 'Logos 队伍在高架观察位等待午夜。同步装置起爆后主网熄灭，应急线路却开始重新供电；这还不是白门的安全窗口。', [use('在观察桥核对午夜同步时刻', '主网爆破结束，应急改线仍在供电。接回 Trinity 关闭最后一路保护。', 0, 41)], ['ghost']),
+  scene('m2_relay', 2, 'neb_deck', 'trinity', '等待，还是行动', 'architect', 'contact', '主网已毁，应急供电却再次亮起。Trinity 在现实飞船上核对信号，决定接替失联的队伍；接入发生在这次决定之后。', [use('核对改线信号并决定接替队伍', 'Trinity 没有继续等待，亲自走向连接椅。', 6.4, 12), use('走到连接椅，让 Link 接入', '神经连接完成，下一段才进入矩阵改线中心。', -3.2, 6)], ['link']),
+  scene('m2_backup', 2, 'backup_station', 'trinity', '最后一条供电线路', 'architect', 'combat', 'Trinity 冲进电网改线中心，在特工拦截前接入应急系统主机。', [fight('突破机房安保', 3, 'soldier'), use('检查终端并提交断电程序', 'Niobe 的主网已毁。应急系统仍在供电，Trinity 必须在 Neo 抵达白门前完成最后的覆盖。', 0, -23, 4)]),
   scene('m2_key_door', 2, 'source_corridor', 'neo', '钥匙匠的最后一扇门', 'architect', 'infiltration', '主网已失电，应急系统却重新接管。Neo 与 Morpheus 必须保护钥匙匠穿过 Smith 复制体，等待 Trinity 切断最后一路保护。', [
-    walk('抵达工业走廊的转角', 0, -20),
+    walk('抵达白色门廊的转角', 0, -20),
     { ...fight('挡住 Smith 复制体，保护钥匙匠', 3, 'smith'), z: -25 },
     use('从复制体手中救出 Morpheus', 'Neo 将 Smith 从 Morpheus 身旁推开，钥匙匠找到正确的门。', 0, -31, 2),
     use('配合钥匙匠打开第一道门', '应急保护已解除。钥匙匠推开门户；Smith 的枪声追着三人进入另一侧。', 0, -38, 3),
@@ -337,24 +387,25 @@ export const FILM_SCENES: FilmScene[] = [
   ], ['keymaker', 'morpheus', 'smith']),
   scene('m2_architect', 2, 'architect_room', 'neo', '被计算过的救世主', 'architect', 'source', '环形屏幕记录了 Neo 的不同反应。建筑师说出此前五次循环、锡安的命运，以及两扇门各自的代价。', [
     walk('走到建筑师面前', 0, -8),
-    use('听建筑师解释异常与此前五次循环', '屏幕上的 Neo 同时反驳、沉默、愤怒。建筑师说，这是第六次；先知引导的选择一直是控制异常的组成部分。', 0, -12, 5),
+    use('听建筑师解释异常与此前五次循环', '屏幕上的 Neo 同时反驳、沉默、愤怒。建筑师说，这是第六次；先知引导的选择一直是控制异常的组成部分。', 0, -10.5, 5),
     use('查看右门：返回源头', '右门通向源头。按建筑师的方案，Neo 会重置矩阵、从矩阵挑选二十三人重建锡安；现有锡安将被摧毁。', 8, -26, 4),
     use('查看屏幕：Trinity 的实时影像', '画面切到城中改线设施。Trinity 已闯入危险之中；左门返回矩阵，Neo 可以去救她，但拒绝源头方案也意味着锡安前途未定。', -4, -19, 4),
     think('理解代价，再决定谁来承担', '两扇门都不是没有损失的答案。记录你的理解，然后由 Neo 亲自走向左门。', 0, -18),
     use('打开左门，返回矩阵营救 Trinity', 'Neo 走进左门，飞向城中的坠落；源头提出的循环没有在这一刻被执行。', -8, -26, 2),
   ], ['architect']),
   scene('m2_catch', 2, 'trinity_roof', 'neo', '抓住正在坠落的人', 'trinity_choice', 'the_one', 'Trinity 中枪坠出高楼。Neo 从建筑师的左门返回矩阵，必须在她触地前赶到。', [
-    use('冲出大楼，追上 Trinity', 'Neo 冲破窗口，沿城市街谷飞向坠落的 Trinity。', 0, 27),
+    use('冲出大楼，追上 Trinity', 'Neo 冲破窗口，沿城市街谷飞向坠落的 Trinity。', 0, CATCH.window.z + .8),
     use('在落地前接住 Trinity', 'Neo 在城市高空接住 Trinity，把她带往屋顶。', -8.5, -24),
-    use('从代码中取出子弹', '子弹离开伤口，Trinity 却失去了心跳。', -.6, -18.2),
-    use('让心脏重新跳动', 'Trinity 恢复意识。两人回到飞船，战争却仍在逼近。', -.6, -18.2),
-  ], ['trinity', 'agent_johnson']),
-  scene('m2_ship_lost', 2, 'neb_deck', 'morpheus', '尼布甲尼撒号的终点', 'trinity_choice', 'siege', 'Neo 说预言也是控制。Link 的雷达突然报告：哨兵停在 EMP 范围外，投下的炸弹正逼近旧船。', [
-    use('听 Neo 说出源头的真相', 'Morpheus 听见：预言与锡安的重建也是控制的一部分。他的信念动摇，但警报打断了谈话。', 0, 20),
-    use('核对雷达：炸弹在 EMP 范围外', '哨兵留在 EMP 射程外；开火不能阻止炸弹。Link 找到通往船尾货舱的逃生路线。', 0, 0),
-    use('下令弃船，打开货舱出口', '连接椅、屏幕与船体都必须留在身后。炸弹已经进入最后航段。', 0, 0),
-    walk('带领船员从货舱撤入隧道', 0, 35),
-  ], ['neo', 'trinity', 'link']),
+    use('从代码中取出子弹', '子弹离开伤口，Trinity 却失去了心跳。', CATCH.rooftop.x, CATCH.rooftop.z),
+    use('让心脏重新跳动', 'Trinity 恢复意识。两人回到飞船，战争却仍在逼近。', CATCH.rooftop.x, CATCH.rooftop.z),
+  ], ['trinity', 'agent_thompson']),
+  scene('m2_ship_lost', 2, 'neb_deck', 'neo', '尼布甲尼撒号的终点', 'trinity_choice', 'siege', 'Neo 向 Morpheus 解释源头与预言的真相。Trinity 发现哨兵停在 EMP 范围外；Neo 认出它们投下的是炸弹，催促所有人离船。', [
+    use('向 Morpheus 说明源头的真相', 'Neo 说明：预言与锡安的重建也是控制的一部分。Morpheus 的信念动摇，但警报打断了谈话。', 0, 20),
+    use('核对 Trinity 发现的 EMP 射程问题', 'Trinity 指出哨兵停在 EMP 射程外；Neo 认出正在飞来的炸弹。Link 找到货舱出口。', 0, 0),
+    use('提醒船员弃船，打开货舱出口', 'Neo 催促大家马上离船。连接椅、屏幕与船体必须留在身后；跑过真正的船尾出口，到隧道中的安全位置。', 0, 0),
+    walk('穿过货舱出口，等待全员离开船体', 0, 62),
+    use('听 Morpheus 面对旧船的毁灭，再继续撤离', 'Morpheus 看着旧船和信念一起崩塌。Link 催促继续离开；失去飞船并不意味着必须停在这里。', 0, 62),
+  ], ['morpheus', 'trinity', 'link']),
   scene('m2_stop_sentinels', 2, 'service_tunnels', 'neo', '触及现实中的连接', 'trinity_choice', 'awakening', '尼布甲尼撒号在身后爆炸。众人沿狭窄管道逃跑，哨兵再次追来；Neo 感到它们的信号。', [
     walk('跑到隧道窄口，回身面对哨兵', 0, -25),
     use('朝哨兵伸手，凝神切断连接', '哨兵逐一失去动力。Neo 因这次现实中的连接耗尽体力、陷入昏迷；Hammer 接走幸存者。', 0, -25),
@@ -362,15 +413,15 @@ export const FILM_SCENES: FilmScene[] = [
   scene('m2_medical', 2, 'hammer_deck', 'trinity', '两个昏迷的人', 'mobil', 'mobil', 'Hammer 的医疗舱内，Neo 没有接入设备却仍昏迷。Maggie 在床边监测他的身体。', [
     use('与 Maggie 一起查看 Neo 的生命体征', 'Neo 的身体稳定，却没有醒来；Maggie 无法解释他与机器的连接。Trinity 留在床旁。', -7, -25),
     use('向 Roland 询问另一场灾难', '锡安舰队过早触发 EMP，计划因此瓦解；那场战斗只带回一名幸存者。', 0, -16),
-    use('走到邻床，确认幸存者身份', '邻床的人是 Bane。他同样昏迷；没人知道他在那场灾难之前经历了什么。', 10, -25),
+    use('走到邻床，确认幸存者身份', '邻床的人是 Bane。他同样昏迷；没人知道他在那场灾难之前经历了什么。', 7, -23),
   ], ['neo', 'bane', 'maggie', 'morpheus', 'roland']),
 
-  scene('m3_mobil', 3, 'mobil_station', 'neo', '既不在这里，也不在那里', 'mobil', 'mobil', 'Neo 在没有来路的白色站台醒来。先与迎上来的 Sati 说话，再确认站名。', [use('与 Sati 说话', 'Sati 说这里是 Mobil Ave；她没有见过通往城市的出口。', -5, 12, 2), use('辨认 MOBIL AVE 站名', '站名像一条线索：Mobil 是 Limbo 的字母重排，这里不是普通的地铁站。', -10, 5, 2)], ['sati']),
+  scene('m3_mobil', 3, 'mobil_station', 'neo', '既不在这里，也不在那里', 'mobil', 'mobil', 'Neo 在没有来路的白色站台醒来。先与迎上来的 Sati 说话，再确认站名。', [use('与 Sati 说话', 'Sati 说这里是 Mobil Ave；她没有见过通往城市的出口。', -5, 12, 2), use('辨认 MOBIL AVE 站名', '站名像一条线索：Mobil 是 Limbo 的字母重排，这里不是普通的地铁站。', -10, 17, 2)], ['sati']),
   scene('m3_family', 3, 'mobil_station', 'neo', '没有指定用途的孩子', 'sati', 'oracle', 'Rama-Kandra 与 Kamala 带着女儿等待迟到的列车。Sati 没有系统指定的用途，他们仍愿付出一切保护她。', [walk('走到 Sati 一家的长椅旁', -7, -8), think('没有指定用途的生命，仍值得被爱吗？', 'Rama-Kandra 不把爱当成程序错误；他们让 Sati 通过这列车去见先知。', -7, -8)], ['rama_kandra', 'kamala', 'sati']),
-  scene('m3_trainman', 3, 'mobil_station', 'neo', '列车驶离', 'sati', 'mobil', '列车晚点抵达。帮助这一家上车，再试着面对替 Merovingian 管理边界的 Trainman。', [use('帮 Rama 提起行李', '隧道深处传来列车声。Neo 把行李递到站台边。', -6, -8, 2), walk('等列车停稳，走向车门', 6, -20), use('尝试随 Sati 一家上车', 'Trainman 拒绝 Neo，击退他，并带着一家人驶离。', 6, -20, 1), walk('沿一端隧道寻找出口', 0, -49), walk('再试另一端隧道', 0, 49)], ['trainman', 'rama_kandra', 'kamala', 'sati']),
-  scene('m3_oracle_request', 3, 'oracle_home', 'trinity', '另一边的营救', 'oracle_last', 'oracle', 'Seraph 把 Trinity 与 Morpheus 带到先知的旧公寓。眼前的先知换了模样，而 Neo 的身体仍躺在 Hammer。', [use('确认眼前的人仍是先知', '她为帮助 Neo 作了选择，也付出了代价。', -4, -18, 2), use('询问 Neo 被困的位置', '他在矩阵与机器世界之间的线路上；Trainman 替 Merovingian 守着出口。', -4, -18, 2), think('知道先知也会付代价，还要信任她吗？', 'Morpheus 可以自己判断是否相信她；救回 Neo 不需要先解决所有预言。', -4, -18), walk('跟随 Seraph 出门找 Trainman', 0, 18)], ['oracle', 'morpheus', 'seraph']),
-  scene('m3_trainman_chase', 3, 'subway_platform', 'seraph', '逃走的列车管理员', 'oracle_last', 'chase', 'Seraph 在地铁车厢认出 Trainman。他急停列车，穿过站台与通道逃向另一侧月台。', [use('认出车厢里的 Trainman', '他拉下紧急制动，持枪逃下列车。', 0, 15, 1), walk('穿过钢柱追到对向站台', 0, -34), use('看他借驶过的列车消失', 'Seraph、Trinity 与 Morpheus 没有抓住他；Trinity 决定直接去找他的主人。', 0, -34, 2)], ['trinity', 'morpheus', 'trainman']),
-  scene('m3_hel_garage', 3, 'hel_garage', 'trinity', '通往 Hel 的车库', 'oracle_last', 'combat', '三人到达地下车库。大块头和两名流亡程序挡住通往 Club Hel 的金属门。', [{ ...fight('突破三名入口守卫', 3), z: 12 }, use('打开通往 Club Hel 的钢门', '门后只有一部向下的铁笼电梯。', 0, -29, 2)], ['morpheus', 'seraph']),
+  scene('m3_trainman', 3, 'mobil_station', 'neo', '列车驶离', 'sati', 'mobil', '列车晚点抵达。帮助这一家上车，再试着面对替 Merovingian 管理边界的 Trainman。', [use('帮 Rama 提起行李', '列车停稳后，Neo 提起箱子，跟家人走向车门。', -10.8, -10, 2), walk('提着箱子走向车门', 6, -20), use('尝试随 Sati 一家上车', 'Trainman 拒绝 Neo，击退他，并带着一家人驶离。', 6, -20, 1), walk('沿一端隧道寻找出口', 0, -49), walk('再试另一端隧道', 0, 49)], ['trainman', 'rama_kandra', 'kamala', 'sati']),
+  scene('m3_oracle_request', 3, 'oracle_home', 'trinity', '另一边的营救', 'oracle_last', 'oracle', 'Seraph 把 Trinity 与 Morpheus 带到先知的旧公寓。眼前的先知换了模样，而 Neo 的身体仍躺在 Hammer。', [use('确认眼前的人仍是先知', '她为帮助 Neo 作了选择，也付出了代价。', ORACLE_REQUEST.question.x, ORACLE_REQUEST.question.z, 2), use('询问 Neo 被困的位置', '他在矩阵与机器世界之间的线路上；Trainman 替 Merovingian 守着出口。', ORACLE_REQUEST.question.x, ORACLE_REQUEST.question.z, 2), think('知道先知也会付代价，还要信任她吗？', 'Morpheus 可以自己判断是否相信她；救回 Neo 不需要先解决所有预言。', ORACLE_REQUEST.question.x, ORACLE_REQUEST.question.z), walk('跟随 Seraph 出门找 Trainman', ORACLE_REQUEST.exit.x, ORACLE_REQUEST.exit.z)], ['oracle', 'morpheus', 'seraph']),
+  scene('m3_trainman_chase', 3, 'trainman_subway', 'seraph', '逃走的列车管理员', 'oracle_last', 'chase', 'Seraph 在列车前排认出 Trainman。急停之后，三人经站台、楼梯和闸机追到第二月台；他借不停站列车脱身。', [use('认出车厢里的 Trainman', '留出距离，请他帮助被困的 Neo。', -30, 18.8, 1), walk('穿过站厅，翻越闸机并追到第二月台', TRAINMAN_CHASE.cover.x, TRAINMAN_CHASE.cover.z), use('列车驶过后与同行者商量', '追逐没有成功。Trinity 决定直接去找 Trainman 的主人。', 17, -31, 2)], ['trinity', 'morpheus', 'trainman']),
+  scene('m3_hel_garage', 3, 'hel_garage', 'trinity', '通往 Hel 的车库', 'oracle_last', 'combat', 'Seraph 带两人来到地下车库。三名守卫认出了他，仍挡住通往 Club Hel 的入口。', [use('回应守卫，近身突破入口', '先避开枪口、缴械，再连续反击。', HEL_GARAGE.question.x, HEL_GARAGE.question.z, 0), use('推开钢门，亲自走进铁笼电梯', '红色拱门后的电梯通往 Club Hel。', 2.7, -28.55, 0)], ['morpheus', 'seraph']),
   scene('m3_hel_entry', 3, 'club_hel', 'trinity', '地狱的衣帽间', 'oracle_last', 'combat', '在标着 HEL 的电梯按钮后面，是衣帽间、武器检查柜与通往舞池的重门。', [use('按下电梯的 HEL 按钮', '铁笼下降；Seraph 提醒俱乐部不许携带武器。', 0, 31, 3), { ...fight('突破衣帽间守卫', 5), z: 19 }, use('从武器检查柜取回装备', '衣帽间的枪声被舞池音乐盖过，三人重新拿起装备。', -8, 7, 2), use('推开通往舞池的重门', '三人推开重门，震耳的舞曲和人群涌入视野。', 0, 4, HEL_DANCE_DOOR.seconds), walk('穿过舞池到 VIP 高台', 0, -28)], ['morpheus', 'seraph']),
   scene('m3_hel_bargain', 3, 'club_hel', 'trinity', '不接受的交换', 'oracle_last', 'infiltration', '舞池里的人群围住三人。Merovingian 要用先知的双眼交换 Neo；Trinity 必须亲自打破包围。', [
     use('被包围后放下武器', '舞曲戛然而止。三人放下枪，避免人群立刻开火。', 0, -28, 0),
@@ -383,16 +434,16 @@ export const FILM_SCENES: FilmScene[] = [
   scene('m3_mobil_release', 3, 'mobil_station', 'neo', '等来同伴', 'oracle_last', 'oracle', 'Neo 无法靠自己打破 Mobil Ave 的边界。列车再次出现，这一次 Trinity 从车门走向他。', [walk('等列车停稳，走向 Trinity', 0, -22), use('与 Trinity 一同离站', '连接重新通向矩阵。Neo 决定先去见先知。', 0, -22, 2)], ['trinity', 'trainman']),
   scene('m3_oracle_last', 3, 'oracle_home', 'neo', '没有保证的未来', 'oracle_last', 'oracle', 'Neo 从 Mobil Ave 返回，再次走进先知的厨房；他要亲自追问源头、Smith，以及先知以前没有说出的真相。', [
     walk('穿过候诊室，走进先知的厨房', 0, -10),
-    use('问先知为什么没有提过建筑师与此前的救世主', '先知没有把隐瞒说成无害；她提醒 Neo 回看自己当时尚不能理解的选择。', -5, -22, 2),
-    use('问现实中停止哨兵的力量与 Smith 的威胁', 'Neo 接触哨兵时感到的连接指向源头。Smith 已超出矩阵里的对抗，正威胁人类和机器。', -5, -22, 2),
-    think('不知道结果，还要行动吗？', '先知也看不到自己尚未理解的选择之后。Neo 听完线索，仍须自己决定下一程。', -5, -22),
+    use('问先知为什么没有提过建筑师与此前的救世主', '先知没有把隐瞒说成无害；她提醒 Neo 回看自己当时尚不能理解的选择。', ORACLE_LAST.question.x, ORACLE_LAST.question.z, 0),
+    use('问现实中停止哨兵的力量与 Smith 的威胁', 'Neo 接触哨兵时感到的连接指向源头。Smith 已超出矩阵里的对抗，正威胁人类和机器。', ORACLE_LAST.question.x, ORACLE_LAST.question.z, 0),
+    think('不知道结果，还要行动吗？', '先知也看不到自己尚未理解的选择之后。Neo 听完线索，仍须自己决定下一程。', ORACLE_LAST.question.x, ORACLE_LAST.question.z),
     walk('离开先知公寓，独自整理这次会面的线索', 0, 18),
   ], ['oracle', 'sati', 'seraph']),
   scene('m3_oracle_absorbed', 3, 'oracle_home', 'oracle', '等待 Smith', 'final', 'infiltration', '另一视角：Neo 已离开。先知闻到烤箱里的饼干，Seraph 警告走廊里的 Smith 正在逼近。', [
-    use('把饼干交给 Sati，请 Seraph 带她离开', 'Seraph 带 Sati 走向楼梯；先知留在厨房，想为他们争取时间。', -5, -22, 1.5),
-    use('听走廊灯逐盏熄灭，确认两人已经撤走', '黑暗沿走廊追上他们。先知不知道他们能走多远，仍没有离开厨房。', -5, -22, 1.5),
-    think('无法看见终点的赌注', '她选择把自己留在 Smith 面前；这不是保证能救下所有人的预言。', -5, -22),
-    use('留在厨房，面对走进来的 Smith', 'Smith 同化先知，也夺取了自己尚不能理解的预见。Neo 此时并不知道这里发生的一切。', -5, -22, 2),
+    use('把饼干交给 Sati，请 Seraph 带她离开', 'Seraph 准备带 Sati 离开；先知想为他们争取时间。', ORACLE_ABSORPTION.start.x, ORACLE_ABSORPTION.start.z, 0),
+    use('看两人撤离，听走廊灯逐盏熄灭', '电梯失去响应，Smith 追上两人。先知没有离开厨房。', ORACLE_ABSORPTION.start.x, ORACLE_ABSORPTION.start.z, 0),
+    think('无法看见终点的赌注', '她选择把自己留在 Smith 面前；这不是保证能救下所有人的预言。', ORACLE_ABSORPTION.seat.x, ORACLE_ABSORPTION.seat.z),
+    use('留在厨房，面对走进来的 Smith', 'Smith 同化先知，也夺取了自己尚不能理解的预见。Neo 此时并不知道这里发生的一切。', ORACLE_ABSORPTION.seat.x, ORACLE_ABSORPTION.seat.z, 0),
   ], ['sati', 'seraph', 'smith']),
   scene('m3_bane_questions', 3, 'hammer_deck', 'roland', '幸存者的说法', 'bane', 'bane', 'Bane 醒来后声称记不得舰队为何提前触发 EMP。Roland 与 Maggie 要把伤口、医疗扫描和舰队记录放在一起核对。', [
     walk('走进 Hammer 的医疗舱，查看 Bane', 0, -18),
@@ -423,22 +474,52 @@ export const FILM_SCENES: FilmScene[] = [
     use('让 Morpheus 接管侧向推进器', '船员就位。保持速度穿过弯道和横向管梁；太慢会让哨兵追上。', 0, 175, 1.5),
     { kind: 'drive', label: '驾驶 Hammer 穿过机械管线', x: 0, z: 175 },
   ], ['morpheus', 'roland']),
-  scene('m3_dock_battle', 3, 'zion_hangar', 'mifune', '船坞的弹药与钢铁', 'siege', 'siege', '钻头突破穹顶，哨兵涌入船坞。Mifune 驾驶 APU 为推送弹药车的 Kid 扫清航路。', [fight('以 APU 双炮掩护 Kid 的弹药车', 4, 'sentinel'), use('接管 Kid，升箱、攀爬并踢入卡住的弹箱', 'Kid 抓稳 APU 后架，把卡住的弹箱踢入导轨，再爬回地面。船坞防线仍在遭受攻击。', -.95, 16.25),
+  scene('m3_diggers', 3, 'zion_hangar', 'charra', '打断钻机的支腿', 'siege', 'siege', '另一视角：Charra 扛起双管发射器，Zee 负责装弹。哨兵正在拦截火箭；需要从两个射击口打断钻机的外侧支腿。', [
+    use('与 Zee 配合装弹，转移射击口并击毁钻机支腿', '第一台钻机失去支撑。船坞里的防守仍在继续。', -40, 27, 0),
+  ], ['zee']),
+  scene('m3_upper_digger', 3, 'zion_hangar', 'zee', '管线边缘的最后两发', 'siege', 'siege', '另一视角：Zee 跟随 Charra 爬上维修梯，从两条管线之间俯射第二台钻机。第一次胜利并没有阻止入侵。', [
+    use('攀上管线、稳住 Charra，并撤回维修舱口', '最后两发火箭被哨兵拦截，Charra 在撤退中遇难。Zee 从管线撤回下层。', -43, 28, 0),
+  ], ['charra']),
+  scene('m3_dock_battle', 3, 'zion_hangar', 'mifune', '船坞的弹药与钢铁', 'siege', 'siege', '钻头突破穹顶，哨兵涌入船坞。Mifune 驾驶 APU 为推送弹药车的 Kid 扫清航路。', [fight('以 APU 双炮掩护 Kid 的弹药车', DOCK_GUNNERY.targets.length, 'sentinel'), use('接管 Kid，升箱、攀爬并踢入卡住的弹箱', 'Kid 抓稳 APU 后架，把卡住的弹箱踢入导轨，再爬回地面。船坞防线仍在遭受攻击。', -.95, 16.25),
     use('走近 Mifune，接下最后的开闸任务', 'Mifune 牺牲前把三号闸门交给 Kid。', DOCK_LAST_STAND.kid.x, DOCK_LAST_STAND.kid.z)], ['kid', 'zee', 'charra']),
   scene('m3_gate', 3, 'zion_hangar', 'kid', '打开三号闸门', 'siege', 'siege', 'Mifune 受致命伤，把打开闸门的任务交给 Kid。', [
-    fight('突破闸门附近的哨兵', 2, 'sentinel'),
-    { kind: 'drive', label: '接管受损 APU，冲向三号闸门', x: 0, z: 12 },
+    walk('绕到受损 APU 的左侧，接下队长的任务', APU_ROUTE.entry.x, APU_ROUTE.entry.z),
+    { kind: 'drive', label: '接管受损 APU，冲向三号闸门', x: APU_ROUTE.entry.x, z: APU_ROUTE.entry.z },
     use('用 APU 机炮击断配重缆索，接应 Hammer', 'Kid 击断承重缆索，配重沿导轨下落并牵开门叶。Hammer 穿过闸门；进入船坞后 Link 才能启动 EMP。', 0, -50),
   ], ['zee']),
   scene('m3_emp', 3, 'hammer_deck', 'link', '代价高昂的援军', 'siege', 'siege', 'Hammer 刚穿过打开的闸门，Link 的 EMP 已充满。哨兵涌入船坞；启动它会同时烧毁锡安自己的防御设备。', [
-    use('启动 EMP，清除船坞里的哨兵', '白色电磁波席卷船坞。哨兵坠落，APU 与自动防御也全部熄灭；下一波机器仍会到来。', 0, -16, 2),
-    think('救援也会带来代价', '这次救援给人们争取了时间，却夺走了原有防线。剩下的人必须用手动设施守住神庙。'),
+    use('走到操作椅左侧，落座后按住 G 转动 EMP 起爆器', '白色电磁波席卷船坞。哨兵坠落，APU 与自动防御也全部熄灭；下一波机器仍会到来。', -2.8, -16, 2),
+    think('救援也会带来代价', '这次救援给人们争取了时间，却夺走了原有防线。船员必须出舱，与幸存者一起撤退。'),
   ], ['niobe', 'morpheus', 'roland']),
-  scene('m3_temple_defense', 3, 'zion_temple', 'zee', '神庙最后的门', 'siege', 'siege', 'EMP 之后自动防御停摆。新的哨兵已进入船坞；居民退向神庙，Zee 必须在它们抵达前手动锁住入口。', [
+  scene('m3_dock_reunion', 3, 'zion_hangar', 'link', '在船坞兑现的承诺', 'siege', 'zion', 'Hammer 停在毁坏的船坞。Link 从损坏的后舱门出来，听见 Zee 的呼唤；他们终于在幸存者中找到了彼此。', [
+    use('扶稳后舱口，逐级下到船坞', 'Link 落到船坞地面，听见 Zee 在人群旁呼唤他。', DOCK_REUNION.hatch.x, DOCK_REUNION.hatch.z, 0),
+    walk('走近呼唤你的 Zee', DOCK_REUNION.link.x, DOCK_REUNION.link.z),
+    use('回应 Zee，拥抱她并确认胸前的挂坠', '他们重新相拥。Link 一直戴着 Zee 留给他的挂坠，记着回来见她的承诺。', DOCK_REUNION.link.x, DOCK_REUNION.link.z, 0),
+  ], ['zee', 'niobe', 'morpheus', 'colt', 'roland']),
+  scene('m3_dock_briefing', 3, 'zion_personnel', 'niobe', '救下船坞之后', 'siege', 'siege', '另一视角：Niobe、Morpheus 与 Roland 乘升降梯来到指挥层。Lock 在人员闸口等候；EMP 带来的短暂胜利已经耗尽了自动防线。', [
+    use('乘升降梯到指挥层，等待人员闸口打开', '三位船长站在同一轿厢中到达 Lock 面前。', 0, 13, 0),
+    walk('走出人员闸口，来到 Lock 面前', DOCK_BRIEFING.meeting.x, DOCK_BRIEFING.meeting.z),
+    use('回应 Lock，听完三位船长与他的分歧', 'Roland 认为他们救下了船坞；Lock 指出 EMP 同时烧毁设备与 APU，下一波仍会到来。', DOCK_BRIEFING.meeting.x, DOCK_BRIEFING.meeting.z, 0),
+    think('救援的结果怎样改变你的责任？', '救下眼前的人与失去下一道防线同时成立。你仍须面对行动带来的后果。', DOCK_BRIEFING.meeting.x, DOCK_BRIEFING.meeting.z),
+    walk('从左前方人员通道走向议会方向', DOCK_BRIEFING.exit.x, DOCK_BRIEFING.exit.z),
+  ], ['morpheus', 'roland', 'lock']),
+  scene('m3_dock_evacuation', 3, 'zion_dock_exit', 'kid', '最后一班升降梯', 'siege', 'siege', '另一视角：Kid 与 Colt 抢运 Hammer 的补给。管道传来风声，第二波哨兵抵达；Lock 下令撤退。搬运与撤离时限是对电影事件的游戏扩展。', [
+    use('走到补给架，抬起最后一箱物资', 'Kid 握住两侧把手，把补给抬离货架。', DOCK_EVACUATION.pickup.x, DOCK_EVACUATION.pickup.z, 0),
+    use('将补给搬到卸货车并放下', '补给已经移交，Kid 听见管道里的风声。', DOCK_EVACUATION.delivery.x, DOCK_EVACUATION.delivery.z, 0),
+    walk('跑进最后一班升降梯', DOCK_EVACUATION.boarding.x, DOCK_EVACUATION.boarding.z),
+    use('等待最后一批士兵上梯，主动关闭笼门', '最后一班升降梯降入井道，脱离即将封堵的爆破段。', DOCK_EVACUATION.boarding.x, DOCK_EVACUATION.boarding.z, 0),
+  ], ['colt']),
+  scene('m3_shaft_seal', 3, 'zion_command_bunker', 'citizen_15', '给最后的防线争取时间', 'siege', 'siege', '另一视角：收到最后一班升降梯的清空确认，Lock 授权封堵井道。操作员拉下起爆杆；连续爆破只能延缓机器。手动操作是电影事件的游戏化。', [
+    walk('走到起爆器，核对人员清空信号', SHAFT_SEAL.operator.x, SHAFT_SEAL.operator.z),
+    use('握住手柄，按住 G 拉下起爆杆', '爆破沿井道依次发生，岩土封堵船坞入口。', SHAFT_SEAL.operator.x, SHAFT_SEAL.operator.z, 0),
+    think('暂时的安全意味着怎样的责任？', '封井换来了时间，机器仍可能钻穿屏障。下一步要把这段时间留给还活着的人。', SHAFT_SEAL.operator.x, SHAFT_SEAL.operator.z),
+  ], ['citizen_16', 'lock']),
+  scene('m3_temple_defense', 3, 'zion_temple', 'zee', '神庙入口的最后防线', 'siege', 'siege', '封井只争取了时间。Lock 把剩余火炮集中在神庙入口，居民退入洞窟。Zee 协助固定炮架是电影事件的游戏化；这里没有能挡住机器的落门。', [
     walk('穿过人群，抵达神庙入口', 0, -30),
-    use('锁住左侧手动卡榫', '左侧卡榫落位；没有电力，另一边也必须由人亲手扳紧。', -8, -45, 2),
-    use('锁住右侧手动卡榫', '两侧卡榫咬合，厚重闸门在机器群抵达前落下。Zee 与 Link 暂时守住居民。', 8, -45, 2),
-  ], ['link', 'hamann', 'kid', 'zion_parent', 'zion_neighbor']),
+    use('固定左侧炮位，按住 G 拧紧炮架', '左侧炮架落位；另一侧仍需亲手固定。', -8, TEMPLE_DEFENSE.operatorZ, 0),
+    use('固定右侧炮位，按住 G 拧紧炮架', '双炮已架好，入口仍敞开。士兵只能在狭口集中火力。', 8, TEMPLE_DEFENSE.operatorZ, 0),
+    walk('回到 Link 与避难人群身边', TEMPLE_DEFENSE.refuge.x, TEMPLE_DEFENSE.refuge.z),
+  ], [...TEMPLE_DEFENSE.cast]),
   scene('m3_defense', 3, 'machine_defense', 'trinity', '机器城的防线', 'last_sky', 'chase', 'Logos 接近机器城，浮动炸弹和密集机器封锁航路。', [
     { kind: 'drive', label: '驾驶 Logos 穿过浮雷与机器群，爬升进入云层', x: 0, z: 42 },
   ], ['neo']),
@@ -450,6 +531,10 @@ export const FILM_SCENES: FilmScene[] = [
     use('跪到 Trinity 身边，听完她最后的话', 'Neo 握住 Trinity 的手。两个人把最后的时间留给彼此。', 0, -13.5),
     think('有限的生命如何留下意义？', '失去无法被一个更大的目标抵消。你认真听完告别，带着共同生活留下的责任继续行动。', 0, -14),
   ], ['trinity']),
+  scene('m3_temple_breach', 3, 'zion_temple', 'lock', '城顶被钻穿之后', 'pact', 'siege', '另一视角：Trinity 告别之后，Lock 催促士兵准备神庙入口的最后防线；钻机突破城顶。Link 与 Zee 在避难人群中等待 Neo，炮火不是终结战争的办法。', [
+    walk('走到神庙入口的指挥位置', TEMPLE_DEFENSE.breach.actor.x, TEMPLE_DEFENSE.breach.actor.z),
+    use('确认炮位，见证城顶突破与人群等待', 'Lock 检查入口部署。岩屑和机器从城顶落下；Link 把最后的希望留给机器城中的 Neo。', TEMPLE_DEFENSE.breach.actor.x, TEMPLE_DEFENSE.breach.actor.z, 0),
+  ], [...TEMPLE_DEFENSE.cast]),
   scene('m3_deus', 3, 'machine_core', 'neo', '共同的威胁', 'pact', 'source', 'Neo 独自穿过机器城的发光通道。机器群将聚成集体面孔；他必须让敌人听完一项双方都无法独自完成的交换。', [
     walk('穿过光廊，走到机器核心开口', 0, -18),
     use('在机器群包围中站稳并请求谈判', 'Neo 没有武器，也没有退路。按住 G 在机器群中站稳，让机器集体听见 Smith 已经失控。', 0, -25, 0),
@@ -457,14 +542,14 @@ export const FILM_SCENES: FilmScene[] = [
     use('进入连接座，接受机器接入', '锡安方向的哨兵已经停止。Neo 仍需亲自进入连接座，并同意颈后的最后一条接线。', 0, -25, 0),
   ], ['deus_ex_machina']),
   scene('m3_rain', 3, 'smith_avenue', 'neo', '暴雨中的大道', 'final', 'final', '大道两侧全部是 Smith。拥有先知预见的复制体走到中央；地面交锋将冲入高空，再坠回被撕开的街区。', [
-    walk('穿过两列复制体，走到大道中央', 0, -15),
+    walk('穿过两列复制体，走到大道中央', 0, SMITH_FINALE.entrance.neoZ),
     use('进入与 Smith 的最后交锋', '两个人的第一击把积水和雨幕同时推开。', 0, -15, 0),
     think('从陨石坑里站起，回答为什么还要继续', '反复被击倒并没有替 Neo 作出选择；他仍要亲自决定为何站起来。', 0, -38),
   ], ['smith']),
   scene('m3_surrender', 3, 'smith_avenue', 'neo', '理解最后的选择', 'final', 'final', 'Smith 的最后猛攻与借来的预见暴露了他的恐惧。Neo 必须分清停止抵抗与向 Smith 屈服。', [
-    use('承受最后的猛攻，让 Smith 的预见说完', 'Smith 发现眼前一幕与先知留下的预见完全重合，并第一次对必然的结局产生恐惧。', 0, -38, 0),
+    use('打出最后的重拳，听见 Smith 的预见', 'Neo 的反击没有解除感染，Smith 再次把他击倒。看着坑底的 Neo，Smith 发现眼前一幕与借来的预见重合，并对必然的结局产生恐惧。', 0, -38, 0),
     think('判断 Smith 真正害怕的是什么', 'Neo 已经与机器建立连接。继续压倒对方不是抵达感染核心的唯一方式。', 0, -38),
-    use('主动停止抵抗，接受同化', 'Neo 放下架势，但最终决定仍需由玩家按住 G 确认。机器会经由连接抵达 Smith 的感染。', 0, -38, 0),
+    use('领悟后再次站起，主动接受同化', 'Neo 亲自撑起身体，再放下架势。最终决定仍需由玩家按住 G 确认，机器会经由连接抵达 Smith 的感染。', 0, -38, 0),
   ], ['smith']),
   scene('m3_ceasefire', 3, 'zion_temple', 'kid', '机器退去', 'source', 'dawn', '神庙入口忽然安静。Kid 必须亲眼确认哨兵撤离，再把这件不可能发生的事带给仍躲在深处的人。', [
     walk('走到神庙入口，确认最后一批哨兵', 0, -30),
@@ -486,6 +571,13 @@ export const FILM_SCENES: FilmScene[] = [
 ];
 
 export const FILM_SCENE_BY_ID = Object.fromEntries(FILM_SCENES.map(s => [s.id, s]));
+
+export function filmSceneForJourney(journey: FilmJourney): FilmScene | undefined {
+  const scene = FILM_SCENE_BY_ID[journey.scene];
+  if (scene?.id === 'm2_ship_lost' && journey.actor === 'morpheus') return { ...scene, actor: 'morpheus', steps: scene.steps.map((step, index) =>
+    index === 0 ? { ...step, label: '听 Neo 说明源头的真相' } : step) };
+  return scene && scene.id === 'm2_trucks' && journey.trucks?.road ? { ...scene, set: 'film_freeway_101' } : scene;
+}
 export const FILM_CAST = [...new Set([...FILM_SCENES.flatMap(s => [s.actor, ...s.cast]), ...Object.values(FILM_CONSEQUENCES).flatMap(Object.keys)])];
 export const FILM_NAMES = { 1: '黑客帝国', 2: '重装上阵', 3: '矩阵革命' } as const;
 export function oracleActing(journey: FilmJourney): boolean {
@@ -494,6 +586,61 @@ export function oracleActing(journey: FilmJourney): boolean {
       || oracleDepartureLocked(journey.oracle?.departure) || Boolean(journey.oracle?.consultation && !['waiting', 'done'].includes(journey.oracle.consultation.phase))));
 }
 export function filmStepPosition(scene: FilmScene, step: FilmStep, journey?: FilmJourney): Vector3 {
+  if (scene.id === 'm3_hel_entry' && step === scene.steps[0]) {
+    const lift = journey?.helElevator;
+    const point = lift?.phase === 'arrived' || lift?.phase === 'opening' ? HEL_ELEVATOR.gate : HEL_ELEVATOR.approach;
+    const position = filmPosition(scene.set, point.x, point.z);
+    position.y += !lift || lift.phase === 'ready' ? HEL_ELEVATOR.upper : helElevatorFloor(lift); return position;
+  }
+  if (scene.id === 'm3_hel_garage') {
+    const point = helGarageTarget(journey?.helGarage); return filmPosition(scene.set, point.x, point.z);
+  }
+  if (scene.id === 'm3_trainman_chase' && journey && journey.step < scene.steps.length) {
+    const point = trainmanChaseTarget(journey.helChase?.performance), position = filmPosition(scene.set, point.x, point.z);
+    position.y += trainmanFloor(point.x, point.z); return position;
+  }
+  if (scene.id === 'm2_catch' && step === scene.steps[0]) return { ...filmPosition(scene.set, step.x, step.z), y: FILM_SETS[scene.set].center.y + CATCH.start.y };
+  if (scene.id === 'm2_key_door' && step === scene.steps[3]) return filmPosition(scene.set, 0, -37.25);
+  if (scene.id === 'm2_backup' && step === scene.steps[1]) return filmPosition(scene.set, TRINITY_TERMINAL.root.x, TRINITY_TERMINAL.root.z);
+  if (scene.id === 'm2_relay') { const point = trinityRelayTarget(journey?.trinityRelay); return filmPosition(scene.set, point.x, point.z); }
+  if (scene.id === 'm2_blackout') {
+    const position = filmPosition(scene.set, PRIMARY_DEMOLITION.observation.x, PRIMARY_DEMOLITION.observation.z);
+    position.y += PRIMARY_DEMOLITION.ramp.top; return position;
+  }
+  if (scene.id === 'm2_power' && step === scene.steps[1]) {
+    const target = primaryTarget(journey?.primaryDemolition), position = filmPosition(scene.set, target.x, target.z);
+    position.y += primaryFloor(target.x, target.z); return position;
+  }
+  if (scene.id === 'm2_plan') {
+    const target = step === scene.steps[0] ? sourceBriefingTarget(journey?.sourceBriefing) : SOURCE_BRIEFING.question;
+    return filmPosition(scene.set, target.x, target.z);
+  }
+  if (scene.id === 'm2_trucks' && journey?.trucks?.road) {
+    const root = truckRoadPoint(journey.trucks.road, { x: step.x, z: step.z });
+    return { ...filmPosition('film_freeway_101', root.x, root.z), y: FILM_SETS.film_freeway_101.center.y + TRUCKS.roof.height };
+  }
+  if (scene.id === 'm2_freeway' && step === scene.steps[2] && journey?.freewayHandoff) {
+    const root = freewayHandoffRoot(journey.freewayHandoff, 'trinity');
+    return { ...filmPosition(scene.set, root.x, root.z), y: FILM_SETS[scene.set].center.y + root.y };
+  }
+  if (scene.id === 'm3_dock_evacuation' && step === scene.steps[3]) {
+    const position = filmPosition(scene.set, step.x, step.z);
+    if (journey?.dockEvacuation) position.y += dockEvacuationLift(journey.dockEvacuation);
+    return position;
+  }
+  if (scene.id === 'm3_dock_briefing' && step === scene.steps[0]) {
+    const pose = dockBriefingRoot(journey?.dockBriefing ?? { phase: 'ready', elapsed: 0, escort: 0 }, 'niobe');
+    return { ...filmPosition(scene.set, pose.x, pose.z), y: FILM_SETS[scene.set].center.y + pose.y };
+  }
+  if (scene.id === 'm3_dock_reunion' && step === scene.steps[0]) {
+    const pose = dockReunionRoot(journey?.dockReunion ?? { phase: 'ready', elapsed: 0, floor: 0 }, 'link');
+    return { ...filmPosition(scene.set, pose.x, pose.z), y: FILM_SETS[scene.set].center.y + pose.y };
+  }
+  if (upperDiggerActive(journey)) {
+    const point = journey!.upperDigger && journey!.upperDigger.phase !== 'approach' ? upperDiggerRoot(journey!.upperDigger, 'zee') : { ...UPPER_DIGGER.ladder, y: 0 };
+    const position = filmPosition(scene.set, point.x, point.z); position.y += point.y; return position;
+  }
+  if (diggersActive(journey)) { const point = DIGGERS.stations[journey?.diggers?.phase === 'relocate' ? 1 : journey?.diggers?.station ?? 0]; return filmPosition(scene.set, point.x, point.z); }
   if (dockLastStandActive(journey)) return journey?.dockLastStand?.phase === 'wounded'
     ? filmPosition(scene.set, DOCK_LAST_STAND.kid.x, DOCK_LAST_STAND.kid.z) : { ...journey!.checkpoint };
   if (dockReloadActive(journey) && journey?.actor === 'kid') return filmPosition(scene.set, DOCK_RELOAD.entry.x, DOCK_RELOAD.entry.z);
@@ -529,16 +676,53 @@ export function filmStepPosition(scene: FilmScene, step: FilmStep, journey?: Fil
   return position;
 }
 export function filmStepNear(scene: FilmScene, step: FilmStep, position: Vector3, matrix: boolean, journey?: FilmJourney): boolean {
-  const radius = scene.id === 'm1_mirror' && step === scene.steps[0] ? MIRROR_TOUCH.radius
+  const radius = scene.id === 'm3_hel_garage' ? journey?.helGarage?.phase === 'cleared' ? 1.05 : 1.6 : primaryActive(journey) ? .8 : scene.id === 'm2_plan' || scene.id === 'm3_oracle_request' || scene.id === 'm3_oracle_last' || scene.id === 'm3_oracle_absorbed' ? 1.6 : scene.id === 'm1_mirror' && step === scene.steps[0] ? MIRROR_TOUCH.radius
+    : scene.id === 'm3_hel_entry' && step === scene.steps[0] ? 1.1
+    : scene.id === 'm3_dock_evacuation' || scene.id === 'm3_shaft_seal' ? 1.2
+    : scene.id === 'm3_dock_reunion' || scene.id === 'm3_dock_briefing' ? 2
+    : scene.id === 'm3_gate' && step !== scene.steps[2] ? 1.2
     : scene.id === 'm2_trucks' && step !== scene.steps[0] ? .7
     : scene.id === 'm1_morning' && step === scene.steps[0] ? .85
     : scene.id === 'm1_cabin' && step !== scene.steps[0] || scene.id === 'm1_construct' && step === scene.steps[0] ? .8 : 4;
   return matrix === (FILM_SETS[scene.set].world === 'matrix') && distance(position, filmStepPosition(scene, step, journey)) <= radius;
 }
 export function filmStepActionReady(scene: FilmScene, step: FilmStep, position: Vector3, matrix: boolean, journey?: FilmJourney): boolean {
+  if (scene.id === 'm3_hel_bargain' && journey?.helBargain?.phase === 'disarming') return false;
+  if (scene.id === 'm3_hel_entry' && step === scene.steps[0] && (helElevatorLocked(journey) || journey?.helElevator?.paused || journey?.helElevator?.unavailable)) return false;
+  if (scene.id === 'm3_hel_garage' && (journey?.helGarage?.paused || journey?.helGarage?.unavailable || !['ready', 'cleared'].includes(journey?.helGarage?.phase ?? 'ready'))) return false;
+  if (scene.id === 'm3_trainman_chase' && (trainmanChaseLocked(journey?.helChase?.performance)
+    || journey?.step === 2 && journey.helChase?.performance?.phase !== 'escaped')) return false;
+  if (scene.id === 'm2_architect' && journey?.architect?.room?.exit) return false;
+  if (scene.id === 'm3_oracle_request' && oracleRequestLocked(journey?.oracleRequest)) return false;
+  if (scene.id === 'm3_oracle_absorbed' && oracleAbsorptionLocked(journey?.oracleAbsorption) && journey?.oracleAbsorption?.phase !== 'waiting') return false;
+  if (scene.id === 'm3_oracle_last' && (oracleLastLocked(journey?.oracleLast) || !['ready', 'reflection', 'leaving', 'done'].includes(journey?.oracleLast?.phase ?? 'waiting'))) return false;
+  if (scene.id === 'm2_plan' && sourceBriefingLocked(journey?.sourceBriefing)) return false;
+  if (trinityTerminalActive(journey) && trinityTerminalLocked(journey?.trinityTerminal) && !['armed', 'deployed'].includes(journey?.trinityTerminal?.phase ?? '')) return false;
+  if (primaryActive(journey) && primaryLocked(journey?.primaryDemolition) || trinityRelayActive(journey) && trinityRelayLocked(journey?.trinityRelay)) return false;
   return step.kind !== 'reach' && step.kind !== 'reflect' && filmStepNear(scene, step, position, matrix, journey);
 }
 export function filmEntry(scene: FilmScene): Vector3 {
+  if (scene.id === 'm3_hel_entry') return { ...filmPosition(scene.set, 0, 33.8), y: FILM_SETS[scene.set].center.y + HEL_ELEVATOR.upper };
+  if (scene.id === 'm3_trainman_chase') return filmPosition(scene.set, TRAINMAN_CHASE.entry.x, TRAINMAN_CHASE.entry.z);
+  if (scene.id === 'm2_catch') return { ...filmPosition(scene.set, CATCH.start.x, CATCH.start.z), y: FILM_SETS[scene.set].center.y + CATCH.start.y };
+  if (scene.id === 'm2_architect') return filmPosition(scene.set, ARCHITECT_ROOM.entry.x, ARCHITECT_ROOM.entry.z);
+  if (scene.id === 'm2_backup') return filmPosition(scene.set, TRINITY_TERMINAL.entry.x, TRINITY_TERMINAL.entry.z);
+  if (['m2_vigilant', 'm2_relay'].includes(scene.id)) return filmPosition(scene.set, TRINITY_RELAY.entry.x, TRINITY_RELAY.entry.z);
+  if (scene.id === 'm2_blackout') return { ...filmPosition(scene.set, PRIMARY_DEMOLITION.observation.x, PRIMARY_DEMOLITION.observation.z), y: FILM_SETS[scene.set].center.y + PRIMARY_DEMOLITION.ramp.top };
+  if (scene.id === 'm2_plan') return filmPosition(scene.set, SOURCE_BRIEFING.entry.x, SOURCE_BRIEFING.entry.z);
+  if (scene.id === 'm2_power') return filmPosition(scene.set, PRIMARY_DEMOLITION.entry.x, PRIMARY_DEMOLITION.entry.z);
+  if (scene.id === 'm3_dock_evacuation') return filmPosition(scene.set, DOCK_EVACUATION.entry.x, DOCK_EVACUATION.entry.z);
+  if (scene.id === 'm3_shaft_seal') return filmPosition(scene.set, SHAFT_SEAL.entry.x, SHAFT_SEAL.entry.z);
+  if (scene.id === 'm3_dock_briefing') {
+    const pose = dockBriefingRoot({ phase: 'ready', elapsed: 0, escort: 0 }, 'niobe');
+    return { ...filmPosition(scene.set, pose.x, pose.z), y: FILM_SETS[scene.set].center.y + pose.y };
+  }
+  if (scene.id === 'm3_dock_reunion') {
+    const pose = dockReunionRoot({ phase: 'ready', elapsed: 0, floor: 0 }, 'link');
+    return { ...filmPosition(scene.set, pose.x, pose.z), y: FILM_SETS[scene.set].center.y + pose.y };
+  }
+  if (scene.id === 'm3_upper_digger') return filmPosition(scene.set, -42, 24);
+  if (scene.id === 'm3_diggers') return filmPosition(scene.set, -42, 31);
   if (scene.id === 'm3_reset') return { ...filmPosition(scene.set, STREET_RESET.entry.x, STREET_RESET.entry.z), y: FILM_SETS[scene.set].center.y - STREET_RESET.roadDrop };
   if (scene.id === 'm1_basement') return { ...filmPosition(scene.set, -15.5, -32.2), y: FILM_SETS[scene.set].center.y - 61.2 };
   if (scene.id === 'm1_tv_exit') return filmPosition(scene.set, TV_EXIT.street.drain.x, TV_EXIT.street.drain.z);

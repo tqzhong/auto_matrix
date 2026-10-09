@@ -91,8 +91,29 @@ function chest(body: THREE.Group) {
   return { bone, triangles };
 }
 
-function contact(neo: THREE.Group, smith: THREE.Group, side: 'R' | 'L') {
-  const target = chest(smith), points = fist(neo, side).map(point => target.bone.worldToLocal(point));
+function face(body: THREE.Group) {
+  const bone = body.getObjectByName('head')!, triangles: THREE.Triangle[] = [];
+  body.traverseVisible(object => {
+    if (!(object instanceof THREE.SkinnedMesh) || (object.material as THREE.Material).name !== 'Skin') return;
+    const { position, skinIndex, skinWeight } = object.geometry.attributes, index = object.geometry.index!;
+    const points: THREE.Vector3[] = [], head: boolean[] = [];
+    for (let i = 0; i < position.count; i++) {
+      let weight = 0;
+      for (let k = 0; k < 4; k++) if (object.skeleton.bones[skinIndex.getComponent(i, k)].name === 'head') weight += skinWeight.getComponent(i, k);
+      head.push(weight > .75);
+      points.push(bone.worldToLocal(object.localToWorld(object.getVertexPosition(i, new THREE.Vector3()))));
+    }
+    for (let i = 0; i < index.count; i += 3) {
+      const ids = [index.getX(i), index.getX(i + 1), index.getX(i + 2)];
+      if (ids.every(id => head[id] && points[id].z > 0)) triangles.push(new THREE.Triangle(points[ids[0]], points[ids[1]], points[ids[2]]));
+    }
+  });
+  assert.ok(triangles.length > 100, 'measure the actual posed face skin');
+  return { bone, triangles };
+}
+
+function contact(neo: THREE.Group, smith: THREE.Group, side: 'R' | 'L', faceHit = false) {
+  const target = faceHit ? face(smith) : chest(smith), points = fist(neo, side).map(point => target.bone.worldToLocal(point));
   const closest = new THREE.Vector3(), crossing = new THREE.Vector3(), ray = new THREE.Ray();
   let gap = Infinity, penetration = 0;
   for (const point of points) {
@@ -176,6 +197,68 @@ test('getting up plants the delivered boots before releasing the supporting hand
     assert.ok(Math.min(...feet) >= -.04, `rise ${rise}: a boot penetrates the bottom: ${feet}`);
     if (rise >= .65) assert.ok(Math.max(...feet) < .08, `rise ${rise}: the second foot must land before straightening up: ${feet}`);
   }
+});
+
+test('Neo cannot rise behind his planted feet after letting go of the supporting hands', async t => {
+  const h = await setup(t), floor = FILM_SETS.film_smith_avenue.center.y - 1 - SMITH_FINALE.crater.depth + .025;
+  for (const progress of [.3, .43, .55, .7, .85, .95]) {
+    h.frame({ ...newSmithFinale(), phase: 'pit_recovery', elapsed: 3, total: 83,
+      focus: progress * SMITH_FINALE.crater.riseSeconds, pitFight: true, impactAt: 51, checkpoint: 'pit' });
+    const supports: THREE.Vector3[] = [];
+    h.neo.traverseVisible(object => {
+      if (!(object instanceof THREE.Mesh) || !/shoes/i.test(object.name)) return;
+      for (let i = 0; i < object.geometry.attributes.position.count; i++) {
+        const point = object.localToWorld(object.getVertexPosition(i, new THREE.Vector3()));
+        if (Math.abs(point.y - floor) < .08) supports.push(point);
+      }
+    });
+    for (const [i, side] of ['R', 'L'].entries()) {
+      const palm = h.neo.getObjectByName(`wrist_${side}`)!.localToWorld(new THREE.Vector3(i ? -.09 : .09, -.18, .02));
+      if (Math.abs(palm.y - floor) < .2) supports.push(palm);
+    }
+    assert.ok(supports.length, `rise ${progress}: a coat hem cannot be the only support`);
+    const weight = h.neo.getObjectByName('pelvis')!.getWorldPosition(new THREE.Vector3())
+      .lerp(h.neo.getObjectByName('chest')!.getWorldPosition(new THREE.Vector3()), .35);
+    const z = supports.map(point => point.z);
+    t.diagnostic(`rise ${progress}: torso projection ${weight.z}, planted support [${Math.min(...z)}, ${Math.max(...z)}]`);
+    assert.ok(weight.z >= Math.min(...z) - .25 && weight.z <= Math.max(...z) + .25,
+      `rise ${progress}: upper-body weight ${weight.z} is outside its actual feet/palm support ${Math.min(...z)}..${Math.max(...z)}`);
+  }
+});
+
+test('the rising coat stays above the water and resumes without a cloth jump when paused, cold loaded or standing', async t => {
+  const h = await setup(t), floor = FILM_SETS.film_smith_avenue.center.y - 1 - SMITH_FINALE.crater.depth + .025;
+  const cloth = (renderer = h.renderer) => {
+    const body = renderer.getAgentBody('neo')!, pelvis = body.getObjectByName('pelvis')!, points: THREE.Vector3[] = [];
+    body.traverseVisible(object => {
+      if (!(object instanceof THREE.Mesh) || object instanceof THREE.SkinnedMesh || object.parent !== pelvis) return;
+      for (let i = 0; i < object.geometry.attributes.position.count; i++) points.push(object.localToWorld(object.getVertexPosition(i, new THREE.Vector3())));
+    });
+    assert.ok(points.length > 1000, 'measure the delivered coat panels rather than a body bounding box');
+    return points;
+  };
+  const same = (actual: THREE.Vector3[], expected: THREE.Vector3[], label: string, tolerance = .00001) => {
+    assert.equal(actual.length, expected.length);
+    const error = Math.max(...actual.map((point, i) => point.distanceTo(expected[i])));
+    assert.ok(error < tolerance, `${label}: the actual coat jumps ${error}`);
+  };
+  for (const progress of [.3, .43, .75, .95]) {
+    const beat: SmithFinaleEncounter = { ...newSmithFinale(), phase: 'pit_recovery', focus: progress * SMITH_FINALE.crater.riseSeconds,
+      total: 83, checkpoint: 'pit', impactAt: 51, pitFight: true };
+    h.frame(beat); const warm = cloth();
+    assert.ok(Math.min(...warm.map(point => point.y)) >= floor - .001, `rise ${progress}: the actual coat passes through the pit floor`);
+    h.frame(beat); same(cloth(), warm, `${progress} paused`);
+    h.frame({ ...beat, focus: SMITH_FINALE.crater.riseSeconds }); h.frame(beat); same(cloth(), warm, `${progress} reverse seek`);
+    const cold = new AgentRenderer(new THREE.Scene());
+    try {
+      h.save(beat, cold); await new Promise(resolve => setImmediate(resolve)); h.frame(beat, cold);
+      same(cloth(cold), warm, `${progress} cold load`);
+    } finally { cold.dispose(); }
+  }
+  const before: SmithFinaleEncounter = { ...newSmithFinale(), phase: 'pit_recovery', focus: SMITH_FINALE.crater.riseSeconds - .00001,
+    total: 83, checkpoint: 'pit', impactAt: 51, pitFight: true };
+  h.frame(before); const hem = cloth();
+  h.frame(stepSmithFinale(before, { ...neutral, focus: true }, .00001)); same(cloth(), hem, 'standing boundary', .004);
 });
 
 test('the shockwave reaches the aerial checkpoint without teleporting either actual body', async t => {
@@ -400,4 +483,98 @@ test('switching to Neo’s eyes keeps Smith’s internal light visible while hid
   assert.equal(duplicate.visible, false);
   for (let parent: THREE.Object3D | null = light; parent; parent = parent.parent)
     assert.equal(parent.visible, true, `Smith’s face light is hidden by ${parent.name || parent.type} in first person`);
+});
+
+test('the interior high kick contacts Smith’s real suit with the boot while the other foot supports Neo', async t => {
+  const h = await setup(t), floor = FILM_SETS.film_smith_avenue.center.y - 1 + 15;
+  h.frame({ ...newSmithFinale(), phase: 'interior_kick', elapsed: .55, total: 40.55, checkpoint: 'interior', breachedAt: 30 });
+  const ankle = h.neo.getObjectByName('ankle_R')!, suit = chest(h.smith), toes: { local: THREE.Vector3; world: THREE.Vector3 }[] = [];
+  let support = Infinity;
+  h.neo.traverseVisible(object => {
+    if (!(object instanceof THREE.SkinnedMesh) || !/shoes/i.test(object.name)) return;
+    const { skinIndex, skinWeight, position } = object.geometry.attributes;
+    for (let i = 0; i < position.count; i++) {
+      let right = 0;
+      for (let k = 0; k < 4; k++) if (object.skeleton.bones[skinIndex.getComponent(i, k)].name === 'ankle_R') right += skinWeight.getComponent(i, k);
+      const world = object.localToWorld(object.getVertexPosition(i, new THREE.Vector3()));
+      if (right > .6) toes.push({ world, local: ankle.worldToLocal(world.clone()) }); else support = Math.min(support, world.y);
+    }
+  });
+  assert.ok(toes.length > 10, 'sample actual boot vertices');
+  const front = Math.max(...toes.map(point => point.local.z)), closest = new THREE.Vector3(); let gap = Infinity;
+  for (const point of toes.filter(point => point.local.z >= front - .025)) {
+    const local = suit.bone.worldToLocal(point.world.clone());
+    for (const triangle of suit.triangles) gap = Math.min(gap, local.distanceTo(triangle.closestPointToPoint(local, closest)));
+  }
+  assert.ok(gap < .09, `the actual boot misses the suit by ${gap}`);
+  assert.ok(support >= floor - .035 && support < floor + .12, `the supporting boot is at ${support}, floor ${floor}`);
+});
+
+test('Smith grasps the delivered Neo coat before the second powered dive', async t => {
+  const h = await setup(t);
+  h.frame({ ...newSmithFinale(), phase: 'sky_grapple', elapsed: 1.65, total: 50, checkpoint: 'sky', breachedAt: 30 });
+  assertContact(h.smith, h.neo, 'R', 'second aerial grapple');
+});
+
+test('the final player heavy punch reaches Smith’s actual cheek skin and keeps both boots supported', async t => {
+  const h = await setup(t), floor = FILM_SETS.film_smith_avenue.center.y - 1 - SMITH_FINALE.crater.depth + .025;
+  const beat: SmithFinaleEncounter = { ...newSmithFinale(), phase: 'pit_punch', checkpoint: 'pit', impactAt: 51, total: 62, elapsed: .8 };
+  h.frame(beat);
+  const measured = contact(h.neo, h.smith, 'R', true);
+  assert.ok(measured.gap < .08, `Neo’s heavy fist misses Smith’s actual face by ${measured.gap}`);
+  assert.ok(measured.penetration < .04, `the heavy fist passes into the face by ${measured.penetration}`);
+  assert.ok(contact(h.neo, h.smith, 'L', true).gap > .3, 'the second hand cannot duplicate the heavy punch');
+  for (const body of [h.neo, h.smith]) {
+    let sole = Infinity;
+    body.traverseVisible(object => {
+      if (!(object instanceof THREE.Mesh) || !/shoes/i.test(object.name)) return;
+      for (let i = 0; i < object.geometry.attributes.position.count; i++) sole = Math.min(sole, object.localToWorld(object.getVertexPosition(i, new THREE.Vector3())).y - floor);
+    });
+    assert.ok(sole >= -.04 && sole < .1, `the heavy counter loses actual boot support: ${sole}`);
+  }
+  const before = ['neo', 'smith'].flatMap(id => ['head', 'wrist_R', 'wrist_L', 'ankle_R', 'ankle_L']
+    .map(name => h.renderer.getAgentBody(id)!.getObjectByName(name)!.getWorldPosition(new THREE.Vector3())));
+  const cold = new AgentRenderer(new THREE.Scene());
+  try {
+    h.save(beat, cold); await new Promise(resolve => setImmediate(resolve)); h.frame(beat, cold);
+    const after = ['neo', 'smith'].flatMap(id => ['head', 'wrist_R', 'wrist_L', 'ankle_R', 'ankle_L']
+      .map(name => cold.getAgentBody(id)!.getObjectByName(name)!.getWorldPosition(new THREE.Vector3())));
+    after.forEach((point, i) => assert.ok(point.distanceTo(before[i]) < .00001, `cold heavy-punch body ${i} jumps`));
+  } finally { cold.dispose(); }
+  t.diagnostic(`heavy cheek contact: gap ${measured.gap}, penetration ${measured.penetration}`);
+});
+
+test('the last face counter and Smith’s three replies contact the actual posed surfaces without pushing knuckles through them', async t => {
+  const h = await setup(t); let deepest = 0;
+  for (const elapsed of [.2, .4, .6, .72, .8, .95, 1.02, 1.3, 1.7, 2.15]) {
+    h.frame({ ...newSmithFinale(), phase: 'pit_punch', elapsed, total: 70 + elapsed, checkpoint: 'pit', impactAt: 51, pitFight: true });
+    const measured = contact(h.neo, h.smith, 'R', true); deepest = Math.max(deepest, measured.penetration);
+    assert.ok(measured.penetration < .04, `heavy punch ${elapsed}: penetrates the delivered face by ${measured.penetration}`);
+    if (elapsed >= .72 && elapsed <= 1.02) assert.ok(measured.gap < .08, `heavy punch ${elapsed}: misses the actual cheek by ${measured.gap}`);
+  }
+  for (const [elapsed, side] of [[.725, 'R'], [1.575, 'L'], [2.425, 'R']] as const) {
+    h.frame({ ...newSmithFinale(), phase: 'pit_retaliation', elapsed, total: 73 + elapsed, checkpoint: 'pit', impactAt: 51, pitFight: true });
+    const measured = assertContact(h.smith, h.neo, side, `Smith pit reply ${elapsed}`);
+    deepest = Math.max(deepest, measured.penetration);
+    assert.ok(contact(h.smith, h.neo, side === 'R' ? 'L' : 'R').gap > .15, 'the defending hand cannot copy the attacking fist');
+  }
+  t.diagnostic(`last-bout sampled maximum knuckle penetration: ${deepest}`);
+});
+
+test('the delivered pit bodies do not snap at the punch, collapse, recognition or standing boundaries', async t => {
+  const h = await setup(t);
+  const points = () => [h.neo, h.smith].flatMap(body => ['head', 'wrist_R', 'wrist_L', 'ankle_R', 'ankle_L']
+    .map(name => body.getObjectByName(name)!.getWorldPosition(new THREE.Vector3())));
+  for (const [phase, duration] of [['pit_warning', SMITH_FINALE.pit.warning], ['pit_evade', SMITH_FINALE.pit.evade],
+    ['pit_punch', SMITH_FINALE.pit.punch], ['pit_retaliation', SMITH_FINALE.pit.retaliation],
+    ['pit_recovery', SMITH_FINALE.crater.riseSeconds]] as const) {
+    const beat: SmithFinaleEncounter = { ...newSmithFinale(), phase, elapsed: duration - .00001,
+      focus: phase === 'pit_recovery' ? duration - .00001 : 0, total: 70, checkpoint: 'pit', impactAt: 51, pitFight: true };
+    h.frame(beat); const before = points(); const next = stepSmithFinale(beat, { ...neutral, focus: true }, .00001); h.frame(next);
+    points().forEach((point, i) => assert.ok(point.distanceTo(before[i]) < .004,
+      `${phase} → ${next.phase}: delivered body joint ${i} jumps ${point.distanceTo(before[i])}`));
+  }
+  const vision: SmithFinaleEncounter = { ...newSmithFinale(), phase: 'vision', total: 80, checkpoint: 'pit', impactAt: 51, pitFight: true };
+  h.frame(vision); const lying = points(); h.frame({ ...vision, phase: 'pit_recovery' });
+  points().forEach((point, i) => assert.ok(point.distanceTo(lying[i]) < .00001, 'understanding cannot teleport Neo upright before G'));
 });

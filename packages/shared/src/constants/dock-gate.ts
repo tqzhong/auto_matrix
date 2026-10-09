@@ -1,4 +1,5 @@
 import type { FilmJourney } from './film-story.js';
+import { APU_CONTACTS, APU_RIG } from './apu-rig.js';
 
 export const DOCK_GATE = {
   z: -64, centerY: 28, radius: 25, travel: 27,
@@ -21,9 +22,6 @@ export function newDockGate(x: number, z: number): DockGate {
 export function dockGateActive(journey?: FilmJourney): boolean {
   return Boolean(journey && journey.scene === 'm3_gate' && !journey.visiting && (journey.step === 2 && !journey.completed.includes(journey.scene) || journey.step === 3 && journey.dockGate?.phase === 'done'));
 }
-// Structural contact corners of the shipped APU feet, shin guards and cannon mounts.
-const contacts = [-1, 1].flatMap(side => [[side * 1.55, .16, -.55, 2.25, .35, 3], [side * 1.55, 1.2, .4, 1.45, 2.4, 2.2],
-  [side * 3.1, 5.7, -.4, 1.5, 1.5, 2.4]].flatMap(([x, y, z, w, h, d]) => [-1, 1].flatMap(a => [-1, 1].flatMap(b => [-1, 1].map(c => ({ x: x + a * w / 2, y: y + b * h / 2, z: z + c * d / 2 }))))));
 type GatePose = Pick<DockGate, 'x' | 'z'> & Partial<Pick<DockGate, 'toppled' | 'phase' | 'elapsed'>>;
 function rotate(point: { x: number; y: number; z: number }, pitch: number, roll: number) {
   const x = point.x * Math.cos(roll) - point.y * Math.sin(roll), y = point.x * Math.sin(roll) + point.y * Math.cos(roll);
@@ -32,15 +30,15 @@ function rotate(point: { x: number; y: number; z: number }, pitch: number, roll:
 export function dockGatePose(gate: GatePose) {
   const fall = !gate.toppled ? 0 : gate.phase === 'falling' ? Math.min(1, Math.max(0, ((gate.elapsed ?? 0) - .8) / 2) ** 2) : 1;
   const pitch = .62 * fall, roll = 1.28 * fall;
-  const bottom = Math.min(...contacts.map(point => rotate(point, pitch, roll).y));
-  return { x: gate.x - .8 * fall, y: .885 * (1 - fall) + .04 * fall - bottom, z: gate.z + 1.2 * fall, pitch, roll, fall };
+  const bottom = Math.min(...APU_CONTACTS.map(point => rotate(point, pitch, roll).y));
+  return { x: gate.x - .8 * fall, y: APU_RIG.floor - bottom, z: gate.z + 1.2 * fall, pitch, roll, fall };
 }
 // Local set coordinates: the rendered dock floor is one unit below its world anchor.
 export function dockGatePoint(gate: GatePose, point: { x: number; y: number; z: number }) {
   const pose = dockGatePose(gate), local = rotate(point, pose.pitch, pose.roll);
   return { x: pose.x + local.x, y: pose.y + local.y, z: pose.z + local.z };
 }
-export function dockGateEye(gate: GatePose) { return dockGatePoint(gate, { x: 0, y: 4.805, z: -.275 }); }
+export function dockGateEye(gate: GatePose) { return dockGatePoint(gate, APU_RIG.eye); }
 export function dockGateZee(gate: GatePose) { return { x: gate.x - 7, z: gate.z + 8, yaw: Math.atan2(9.5, -5) }; }
 export function dockGateAttacker(gate: GatePose) {
   const t = gate.phase === 'falling' ? gate.elapsed ?? 0 : DOCK_GATE.falling;

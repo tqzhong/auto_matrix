@@ -4,7 +4,8 @@ import type { CharacterRig } from './CharacterModel.js';
 import { reach } from './SpoonPerformance.js';
 
 /** The pilot and his hand contacts use the same saved transform as the damaged APU. */
-export function poseDockGate(rig: CharacterRig, gate?: DockGate, cover?: DockGate): void {
+export function poseDockGate(rig: CharacterRig, gate?: DockGate, cover?: DockGate, gunnery?: { yaw: number; pitch: number }, driving = false): void {
+  if (gunnery || driving) gate = { x: 0, z: 12, phase: 'ready', elapsed: 0 } as DockGate;
   if (rig.gateBolt) rig.gateBolt.visible = false;
   if (rig.hero) return;
   if (!gate && !cover) {
@@ -30,6 +31,7 @@ export function poseDockGate(rig: CharacterRig, gate?: DockGate, cover?: DockGat
     const pose = dockGatePose(gate);
     // The pilot faces -Z; conjugate the APU rotation by his half turn.
     rig.detail.rotation.set(-pose.pitch, 0, -pose.roll);
+    if (gunnery) rig.head.rotation.set(gunnery.pitch * .4, Math.atan2(Math.sin(Math.PI - gunnery.yaw), Math.cos(Math.PI - gunnery.yaw)) * .55, 0);
     rig.root.updateWorldMatrix(true, true);
     const rotation = rig.detail.getWorldQuaternion(new THREE.Quaternion());
     for (let i = 0; i < 2; i++) {

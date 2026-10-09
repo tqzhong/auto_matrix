@@ -1,6 +1,12 @@
+import { FREEWAY_HANDOFF, freewayHandoffReady } from '@auto_matrix/shared';
+import { SOURCE_BRIEFING } from '@auto_matrix/shared';
+import { PRIMARY_DEMOLITION } from '@auto_matrix/shared';
+import { TRUCK_HOOD } from '@auto_matrix/shared';
+import { DEUS_PACT, DIGGERS, diggerEye, diggerShield } from '@auto_matrix/shared';
 import { DOCK_GATE, dockGateEye, DOCK_RELOAD, DOCK_LAST_STAND } from '@auto_matrix/shared';
 import { TV_EXIT, basementRouteLength } from '@auto_matrix/shared';
 import { CABIN, CABIN_ROUTE_LENGTH, cabinGuidePose, RELOADED, RELOADED_FINALE } from '@auto_matrix/shared';
+import { dockGunneryTarget } from '@auto_matrix/shared';
 import assert from 'node:assert/strict';
 import { mirrorEntryPose, awakeningDuration } from '@auto_matrix/shared';
 import { AMBUSH_STAIRS } from '@auto_matrix/shared';
@@ -17,6 +23,12 @@ import { musicForScene } from '../packages/client/src/engine/Soundtrack.js';
 import { HOTEL_ROUTE, HOTEL_DOOR_PROGRESS } from '@auto_matrix/shared';
 import { hammerCenter, LOGOS_DEFENSE, AMBUSH_CAT_STAIRS } from '@auto_matrix/shared';
 import { TRUCKS, truckApproachPose, truckRescuePose, type TruckEncounter, type TruckRescueRole, type WorldStructure } from '@auto_matrix/shared';
+import { freewayAvoidanceTarget, freewayDriveInput } from './helpers/freeway-driver.mjs';
+import { NEB_CREW, NEB_ESCAPE } from '@auto_matrix/shared';
+import { MOBIL_FAMILY_QUESTIONS, TRAINMAN_CHASE } from '@auto_matrix/shared';
+import { HEL_ELEVATOR } from '@auto_matrix/shared';
+import { ORACLE_LAST, oracleLastLines, distance } from '@auto_matrix/shared';
+import { ORACLE_ABSORPTION } from '@auto_matrix/shared';
 
 function setup() {
   const world = new WorldState(); const manager = new AgentManager(world); manager.initializeAllAgents();
@@ -32,6 +44,180 @@ function setup() {
   const command = (target: string) => players.sandboxAction('film-player', { kind: 'life', target: `film:${target}` }, ++tick);
   const advance = (amount = 1) => { for (let i = 0; i < amount; i++) sandbox.tick(++tick); };
   return { world, manager, sandbox, players, command, advance, attacked, actor: () => players.getAgent('film-player')!, tick: () => tick };
+}
+
+function completePrimary(h: ReturnType<typeof setup>, nextSequence: () => number) {
+  const state = h.sandbox.life.film.state!, scene = FILM_SCENE_BY_ID.m2_power;
+  const frames = (count: number, focus = false) => {
+    for (let frame = 0; frame < count; frame++) {
+      h.players.receiveInput('film-player', { x: 0, z: 0, yaw: h.actor().rotation, focus, location: scene.set, sequence: nextSequence() });
+      h.players.step(.1, true, h.tick()); if (frame % 5 === 4) h.advance();
+    }
+  };
+  for (const site of PRIMARY_DEMOLITION.sites) {
+    h.actor().position = filmPosition(scene.set, site.x, site.z); h.command('act'); frames(23, true);
+    assert.ok(state.primaryDemolition!.installed.includes(site.id));
+  }
+  frames(12); h.command('act'); assert.equal(state.primaryDemolition?.phase, 'retreat');
+  frames(20); h.actor().position = filmStepPosition(scene, scene.steps[1], state); h.command('act'); assert.equal(state.primaryDemolition?.phase, 'done');
+}
+
+function completeTerminal(h: ReturnType<typeof setup>, nextSequence: () => number) {
+  const state = h.sandbox.life.film.state!, scene = FILM_SCENE_BY_ID.m2_backup;
+  h.actor().position = filmStepPosition(scene, scene.steps[1], state); h.command('act');
+  for (let frame = 0; frame < 35; frame++) { h.players.step(.1, true, h.tick()); if (frame % 5 === 4) h.advance(); }
+  assert.equal(state.trinityTerminal?.phase, 'selecting'); h.command('terminal:select:ssh');
+  for (let frame = 0; frame < 42; frame++) {
+    h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, focus: true, location: scene.set, sequence: nextSequence() });
+    h.players.step(.1, true, h.tick()); if (frame % 5 === 4) h.advance();
+  }
+  h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, focus: false, location: scene.set, sequence: nextSequence() });
+  assert.equal(state.trinityTerminal?.phase, 'armed'); h.command('act'); assert.equal(state.trinityTerminal?.phase, 'deployed');
+}
+
+function portalFrames(h: ReturnType<typeof setup>, count: number) {
+  for (let frame = 0; frame < count; frame++) { h.players.step(.1, true, h.tick()); if (frame % 5 === 4) h.advance(); }
+}
+function completeTrainmanChase(h: ReturnType<typeof setup>, nextSequence: () => number) {
+  const scene = FILM_SCENE_BY_ID.m3_trainman_chase, state = h.sandbox.life.film.state!;
+  const walk = (x: number, z: number) => {
+    const target = filmPosition(scene.set, x, z);
+    for (let frame = 0; Math.hypot(h.actor().position.x - target.x, h.actor().position.z - target.z) > .4 && frame < 240; frame++) {
+      const dx = target.x - h.actor().position.x, dz = target.z - h.actor().position.z, length = Math.hypot(dx, dz);
+      h.players.receiveInput('film-player', { x: dx / Math.max(1.5, length), z: dz / Math.max(1.5, length), yaw: Math.atan2(dx, dz), sprint: true, sequence: nextSequence() });
+      h.players.step(.1, true, h.tick()); if (frame % 5 === 4) h.advance();
+    }
+    assert.ok(Math.hypot(h.actor().position.x - target.x, h.actor().position.z - target.z) <= .4, `reachable Trainman route ${x}/${z}`);
+    h.players.receiveInput('film-player', { x: 0, z: 0, yaw: h.actor().rotation, sequence: nextSequence() }); portalFrames(h, 2);
+  };
+  walk(TRAINMAN_CHASE.question.x, TRAINMAN_CHASE.question.z); h.command('act'); portalFrames(h, 100);
+  assert.equal(state.step, 1);
+  for (const [x, z] of [[-30, 20], [-20.5, 20], [-17, 12], [-17, -3], [-17, -19], [-3.2, -21.5]]) walk(x, z);
+  h.command('act'); portalFrames(h, 14); assert.equal(state.helChase?.performance?.passedGate, true);
+  for (const [x, z] of [[17, -21.5], [17, -3], [23, -3], [23, TRAINMAN_CHASE.cover.z], [TRAINMAN_CHASE.cover.x, TRAINMAN_CHASE.cover.z]]) walk(x, z);
+  for (let frame = 0; frame < 300 && state.helChase?.performance?.phase === 'running'; frame++) portalFrames(h, 1);
+  assert.equal(state.helChase?.performance?.phase, 'cover'); portalFrames(h, 190); assert.equal(state.helChase?.phase, 'escaped');
+  walk(TRAINMAN_CHASE.exit.x, TRAINMAN_CHASE.exit.z); h.command('act'); assert.equal(state.step, scene.steps.length);
+}
+function completeHelGarage(h: ReturnType<typeof setup>, nextSequence: () => number) {
+  const state = h.sandbox.life.film.state!, scene = FILM_SCENE_BY_ID.m3_hel_garage;
+  const until = (phase: string) => {
+    for (let f = 0; f < 160 && state.helGarage?.phase !== phase; f++) portalFrames(h, 1);
+    assert.equal(state.helGarage?.phase, phase);
+  };
+  const walk = (x: number, z: number) => {
+    const point = filmPosition(scene.set, x, z);
+    for (let f = 0; f < 240 && Math.hypot(h.actor().position.x - point.x, h.actor().position.z - point.z) > .3; f++) {
+      const dx = point.x - h.actor().position.x, dz = point.z - h.actor().position.z, length = Math.hypot(dx, dz);
+      h.players.receiveInput('film-player', { x: dx / Math.max(1.5, length), z: dz / Math.max(1.5, length), yaw: Math.atan2(dx, dz), sequence: nextSequence() }); portalFrames(h, 1);
+    }
+    h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, sequence: nextSequence() }); portalFrames(h, 3);
+    assert.ok(Math.hypot(h.actor().position.x - point.x, h.actor().position.z - point.z) <= .4);
+  };
+  walk(4.7, -12.4); h.command('act'); until('evade'); h.players.act('film-player', 'dodge', h.tick()); portalFrames(h, 3);
+  h.players.act('film-player', 'attack', h.tick()); until('combo');
+  for (let i = 0; i < 3; i++) { h.players.act('film-player', 'attack', h.tick()); until(i === 2 ? 'cleared' : 'combo'); }
+  assert.equal(state.step, 1); walk(2.7, -28.55); h.command('act'); until('exit');
+  walk(1.5, -28.3); walk(1.5, -33.2); until('done'); assert.equal(state.step, scene.steps.length);
+}
+function hearMobilFamily(h: ReturnType<typeof setup>) {
+  for (const question of MOBIL_FAMILY_QUESTIONS) {
+    h.command(`family:ask:${question.id}`);
+    for (let frame = 0; frame < 150 && h.sandbox.life.film.state!.mobil!.family!.phase === 'hearing'; frame++) h.players.step(.1, true, h.tick());
+    assert.ok(h.sandbox.life.film.state!.mobil!.family!.answered.includes(question.id));
+  }
+  assert.equal(h.sandbox.life.film.state!.mobil!.family!.phase, 'reflection');
+}
+function completeOracleLast(h: ReturnType<typeof setup>, nextSequence: () => number) {
+  const scene = FILM_SCENE_BY_ID.m3_oracle_last, state = h.sandbox.life.film.state!;
+  const walk = (x: number, z: number) => {
+    const point = filmPosition(scene.set, x, z);
+    for (let frame = 0; frame < 300 && distance(h.actor().position, point) > .3; frame++) {
+      const dx = point.x - h.actor().position.x, dz = point.z - h.actor().position.z, gap = Math.hypot(dx, dz);
+      h.players.receiveInput('film-player', { x: dx / Math.max(1, gap), z: dz / Math.max(1, gap), yaw: Math.atan2(dx, dz),
+        jump: false, sprint: false, sequence: nextSequence() }); portalFrames(h, 1);
+    }
+    assert.ok(distance(h.actor().position, point) <= .3, `reachable final Oracle visit ${x}/${z}`);
+    h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, sequence: nextSequence() }); portalFrames(h, 1);
+  };
+  walk(ORACLE_LAST.entrance.x, ORACLE_LAST.entrance.z);
+  portalFrames(h, Math.ceil(ORACLE_LAST.welcomeSeconds / .1) + 1); assert.equal(state.step, 1);
+  walk(0, ORACLE_LAST.question.z); walk(ORACLE_LAST.question.x, ORACLE_LAST.question.z);
+  for (const step of [1, 2]) {
+    h.command('act'); assert.equal(state.oracleLast?.phase, 'answering');
+    portalFrames(h, Math.ceil(oracleLastLines(state.oracleLast!, step).length * ORACLE_LAST.lineSeconds / .1) + 1);
+    assert.equal(state.step, step + 1);
+  }
+  h.command('reflect:care'); portalFrames(h, Math.ceil(ORACLE_LAST.lineSeconds / .1) + 1);
+  assert.equal(state.step, 4); assert.equal(state.reflections['m3_oracle_last:3'], 'care');
+  walk(0, ORACLE_LAST.question.z); walk(ORACLE_LAST.exit.x, ORACLE_LAST.exit.z);
+  assert.equal(state.step, scene.steps.length); assert.equal(state.oracleLast?.phase, 'done');
+}
+function completeOracleAbsorption(h: ReturnType<typeof setup>, nextSequence: () => number) {
+  const state = h.sandbox.life.film.state!, scene = FILM_SCENE_BY_ID.m3_oracle_absorbed;
+  assert.equal(h.actor().id, 'oracle'); assert.equal(state.step, 0);
+  assert.ok(distance(h.actor().position, filmPosition(scene.set, ORACLE_ABSORPTION.start.x, ORACLE_ABSORPTION.start.z)) <= 1.6);
+  const frames = (count: number, focus = false) => {
+    for (let frame = 0; frame < count; frame++) {
+      h.players.receiveInput('film-player', { x: 0, z: 0, yaw: h.actor().rotation, focus, location: scene.set, sequence: nextSequence() });
+      h.players.step(.1, true, h.tick()); if (frame % 5 === 4) h.advance();
+    }
+  };
+  h.command('act'); frames(Math.ceil(ORACLE_ABSORPTION.farewellSeconds / .1) + 1); assert.equal(state.step, 1);
+  h.command('act'); frames(Math.ceil(ORACLE_ABSORPTION.escapeSeconds / .1) + 1); assert.equal(state.step, 2);
+  h.command('reflect:care'); assert.equal(state.step, 3); assert.equal(state.oracleAbsorption?.phase, 'waiting');
+  h.command('act'); frames(Math.ceil((ORACLE_ABSORPTION.approachSeconds + ORACLE_ABSORPTION.confrontation.length * ORACLE_ABSORPTION.lineSeconds) / .1) + 1);
+  assert.equal(state.oracleAbsorption?.phase, 'consent'); assert.equal(h.actor().status, 'alive');
+  frames(Math.ceil(ORACLE_ABSORPTION.consentSeconds / .1) + 1, true);
+  frames(Math.ceil((ORACLE_ABSORPTION.contactSeconds + ORACLE_ABSORPTION.coatingSeconds + ORACLE_ABSORPTION.laughSeconds) / .1) + 4);
+  assert.equal(state.oracleAbsorption?.phase, 'done'); assert.equal(state.step, scene.steps.length);
+  for (const id of ['oracle', 'sati', 'seraph']) assert.equal(h.world.agents.get(id)!.status, 'disconnected', id);
+}
+function completePortalStep(h: ReturnType<typeof setup>, index: number) {
+  h.command('act');
+  if (index === 3) {
+    portalFrames(h, 22); assert.equal(h.sandbox.life.film.state!.keyDoor?.performance?.phase, 'cover');
+    h.players.act('film-player', 'attack', h.tick()); portalFrames(h, 50);
+  } else if (index === 4) {
+    portalFrames(h, 70); assert.equal(h.sandbox.life.film.state!.keyDoor?.performance?.phase, 'key_ready');
+    h.command('act'); portalFrames(h, 17);
+  } else portalFrames(h, 35);
+}
+function startCatch(h: ReturnType<typeof setup>, nextSequence: () => number) {
+  for (let frame = 0; frame < 6; frame++) {
+    h.players.receiveInput('film-player', { x: 0, z: -1, yaw: Math.PI, focus: false, sequence: nextSequence() }); h.players.step(.1, true, h.tick());
+  }
+  h.command('act'); assert.equal(h.sandbox.life.film.state!.catch?.phase, 'departing');
+  for (let frame = 0; frame < 12; frame++) h.players.step(.1, true, h.tick());
+  assert.equal(h.sandbox.life.film.state!.catch?.phase, 'flight');
+}
+function completeArchitectDoor(h: ReturnType<typeof setup>) {
+  h.command('act'); portalFrames(h, 20);
+  assert.equal(h.sandbox.life.film.state!.step, 5, 'opening the door alone must not complete the scene');
+  h.actor().position = filmPosition('film_architect_room', -8, -28.5);
+  h.players.step(.1, true, h.tick());
+}
+
+function stageNebCrew(h: ReturnType<typeof setup>) {
+  const spots = { neo: [2, 22], morpheus: [-1.5, 24], trinity: [5, 24], link: [4, 1] };
+  for (const id of NEB_CREW.filter(id => id !== h.actor().id)) {
+    const member = h.world.agents.get(id)!, spot = spots[id];
+    member.currentLocation = 'film_neb_deck'; member.isInMatrix = false;
+    member.position = filmPosition('film_neb_deck', spot[0], spot[1]); member.velocity = { x: 0, y: 0, z: 0 };
+  }
+}
+function completeNebExit(h: ReturnType<typeof setup>, nextSequence: () => number) {
+  const state = h.sandbox.life.film.state!, center = FILM_SETS.film_neb_deck.center;
+  for (let frame = 0; frame < 300 && state.shipLoss?.phase === 'evacuating'; frame++) {
+    const actor = h.actor(), dz = NEB_ESCAPE.playerZ + .15 - (actor.position.z - center.z);
+    h.players.receiveInput('film-player', { x: 0, z: Math.max(0, Math.min(1, dz / 1.5)), yaw: 0, jump: false, sprint: true, sequence: nextSequence() });
+    h.players.step(.1, true, h.tick()); if (frame % 5 === 4) h.advance();
+  }
+  assert.equal(state.shipLoss?.phase, 'destroying', `physical evacuation stalled: ${JSON.stringify(NEB_CREW.map(id => [id, h.world.agents.get(id)!.position]))}`);
+  assert.equal(state.step, 3, 'walking out alone must not credit ship destruction');
+  h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false, sequence: nextSequence() });
+  for (let frame = 0; frame < 60; frame++) h.players.step(.1, true, h.tick());
+  assert.equal(state.shipLoss?.phase, 'mourning'); assert.equal(state.step, 4);
 }
 
 test('all trilogy scenes have distinct stable IDs, existing cast, accessible objectives and authored locations', () => {
@@ -59,8 +245,10 @@ test('all trilogy scenes have distinct stable IDs, existing cast, accessible obj
           position: filmPosition(scene.set, SMITH_FINALE.crater.x, SMITH_FINALE.crater.z),
           film: { scene: scene.id, width: 38, depth: 38, height: SMITH_FINALE.crater.depth } }] : [];
       const target = filmStepPosition(scene, step);
+      if (scene.id === 'm2_ship_lost' && step.z > 36) terrain.push({ id: 'film:neb-escape:route', kind: 'beacon', owner: 'matrix',
+        position: { ...set.center }, matrix: false, health: 999 });
       assert.equal(playerBlocked(target, set.world === 'matrix', 1.1, terrain), stagedInsideProp, `${scene.id}: ${step.label}`);
-      if (terrain.length) assert.equal(target.y, groundHeight(target, true, terrain), `${scene.id}: the objective must lie on the collapsed floor`);
+      if (terrain.some(s => s.kind === 'crater')) assert.equal(target.y, groundHeight(target, true, terrain), `${scene.id}: the objective must lie on the collapsed floor`);
     }
     if (scene.steps.some(s => s.kind === 'reflect') && !['m1_pills', 'm1_ledge', 'm1_wake_up'].includes(scene.id)) assert.equal(filmReflections(scene.id).length, 3, `${scene.id}: dialogue must be playable`);
   }
@@ -93,22 +281,21 @@ test('Neo must steer through the city and catch the falling Trinity before impac
   h.actor().currentLocation = 'film_trinity_roof'; h.actor().position = filmEntry(FILM_SCENE_BY_ID.m2_catch);
   h.sandbox.life.film.catch.frame(h.actor(), { x: 0, z: 0, focus: false }, 0, h.tick());
   assert.equal(state.catch?.phase, 'launch');
-  h.command('act'); assert.equal(state.catch?.phase, 'flight');
+  let sequence = 0; startCatch(h, () => ++sequence);
   for (let i = 0; i < 90; i++) h.players.step(.1, true, h.tick());
   assert.equal(state.catch?.phase, 'failed'); assert.equal(state.step, 1);
   h.command('retry'); assert.equal(state.catch?.phase, 'launch');
   assert.equal(state.catch?.attempt, 1);
-  h.command('act');
-  let sequence = 0;
+  startCatch(h, () => ++sequence);
   for (let i = 0; i < 70 && state.catch?.phase === 'flight'; i++) {
-    const x = i < 6 ? -1 : 0;
-    const z = i < 24 ? -1 : 0;
+    const x = i < 10 ? -1 : i >= 42 && i < 46 ? 1 : 0;
+    const z = i >= 10 && i < 42 ? -1 : 0;
     h.players.receiveInput('film-player', { x, z, yaw: Math.PI, jump: false, sprint: false, focus: false, sequence: ++sequence });
     h.players.step(.1, true, h.tick());
     if (i >= 52 && state.catch?.phase === 'flight') h.command('act');
   }
-  assert.equal(state.catch?.phase, 'ascent'); assert.equal(state.step, 2);
-  for (let i = 0; i < 32; i++) h.players.step(.1, true, h.tick());
+  assert.equal(state.catch?.phase, 'catching'); assert.equal(state.step, 2);
+  for (let i = 0; i < 54; i++) h.players.step(.1, true, h.tick());
   assert.equal(state.catch?.phase, 'extract_ready');
 });
 
@@ -135,16 +322,19 @@ test('Trinity revival needs deliberate code focus and three timed pulses, and su
     for (let i = 0; i < 11; i++) h.sandbox.life.film.catch.frame(h.actor(), { x: 0, z: 0, focus: false }, .1, ++state.enteredAt);
     h.players.act('film-player', 'attack', ++state.enteredAt);
   }
+  assert.equal(state.catch?.phase, 'reviving');
+  for (let i = 0; i < 34; i++) h.sandbox.life.film.catch.frame(h.actor(), { x: 0, z: 0, focus: false }, .1, ++state.enteredAt);
   assert.equal(state.catch?.phase, 'done'); assert.ok(state.completed.includes('m2_catch'));
 });
 
-test('the bomb begins only after Morpheus orders evacuation, pauses without a player, and retries from the cargo checkpoint', () => {
+test('the bomb begins only after the evacuation warning, pauses without a player, and retries from the cargo checkpoint', () => {
   const h = setup(); h.command('continue'); let state = h.sandbox.life.film.state!;
   const scene = FILM_SCENE_BY_ID.m2_ship_lost;
   Object.assign(state, { scene: scene.id, actor: 'morpheus', step: 2,
     shipLoss: { phase: 'briefing', remaining: RELOADED_FINALE.evacuationSeconds, lastTick: h.tick(), attempts: 0 } });
   h.players.possess('film-player', 'morpheus', h.tick()); h.actor().currentLocation = scene.set; h.actor().isInMatrix = false;
   h.actor().position = filmStepPosition(scene, scene.steps[2]);
+  stageNebCrew(h);
   h.advance(15); assert.equal(state.shipLoss?.remaining, RELOADED_FINALE.evacuationSeconds);
   h.command('act'); assert.equal(state.step, 3); assert.equal(state.shipLoss?.phase, 'evacuating');
   state.completed.push('m1_lobby'); assert.match(h.command('visit:m1_lobby'), /先完成/);
@@ -156,8 +346,80 @@ test('the bomb begins only after Morpheus orders evacuation, pauses without a pl
   assert.equal(state.shipLoss?.phase, 'failed'); assert.equal(state.step, 3);
   h.command('retry'); assert.equal(state.shipLoss?.phase, 'evacuating'); assert.equal(state.shipLoss?.attempts, 1);
   assert.deepEqual(h.actor().position, state.checkpoint);
-  h.actor().position = filmStepPosition(scene, scene.steps[3]); h.advance();
+  let sequence = 0; completeNebExit(h, () => ++sequence); h.command('act');
   assert.equal(state.shipLoss?.phase, 'escaped'); assert.ok(state.completed.includes(scene.id));
+});
+
+test('Neo walks through the same hatch as all three crew members before a saved and resumable destruction', () => {
+  const h = setup(); h.command('continue'); let state = h.sandbox.life.film.state!;
+  Object.assign(state, { scene: 'm2_ship_lost', actor: 'neo', step: 2,
+    shipLoss: { phase: 'briefing', remaining: 32, lastTick: h.tick(), attempts: 0 } });
+  h.actor().currentLocation = 'film_neb_deck'; h.actor().isInMatrix = false;
+  h.actor().position = filmPosition('film_neb_deck', 0, 0); stageNebCrew(h);
+  h.command('act'); assert.equal(state.step, 3);
+  let sequence = 0;
+  for (let frame = 0; frame < 290 && state.shipLoss?.phase === 'evacuating'; frame++) {
+    const dz = NEB_ESCAPE.playerZ + .15 - (h.actor().position.z - FILM_SETS.film_neb_deck.center.z);
+    h.players.receiveInput('film-player', { x: 0, z: Math.max(0, Math.min(1, dz / 1.5)), yaw: 0, jump: false, sprint: true, sequence: ++sequence });
+    h.players.step(.1, true, h.tick()); if (frame % 5 === 4) h.advance();
+    for (const id of NEB_CREW) assert.equal(playerBlocked(h.world.agents.get(id)!.position, false, 1.05,
+      h.sandbox.state.structures.filter(s => s.owner !== id && s.id !== 'film:neb-escape:hatch')), false, `${id} crossed solid geometry`);
+  }
+  assert.equal(state.shipLoss?.phase, 'destroying'); assert.equal(state.step, 3);
+  for (const id of ['morpheus', 'trinity', 'link']) assert.ok(h.world.agents.get(id)!.position.z - FILM_SETS.film_neb_deck.center.z >= NEB_ESCAPE.safeZ);
+  h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false, sequence: ++sequence });
+  for (let frame = 0; frame < 11; frame++) h.players.step(.1, true, h.tick());
+  assert.ok(Math.abs(h.actor().rotation - Math.PI) < .01, 'Neo can turn back while movement is locked during destruction');
+  const before = JSON.parse(JSON.stringify(state.shipLoss)), bodies = NEB_CREW.map(id => structuredClone(h.world.agents.get(id)!.position));
+  for (let frame = 0; frame < 20; frame++) h.players.step(.1, false, h.tick());
+  assert.deepEqual(JSON.parse(JSON.stringify(state.shipLoss)), before); assert.deepEqual(NEB_CREW.map(id => h.world.agents.get(id)!.position), bodies);
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); state = h.sandbox.life.film.state!;
+  assert.deepEqual(JSON.parse(JSON.stringify(state.shipLoss)), before); assert.deepEqual(NEB_CREW.map(id => h.world.agents.get(id)!.position), bodies);
+  for (let frame = 0; frame < 50; frame++) h.players.step(.1, true, h.tick());
+  assert.equal(state.shipLoss?.phase, 'mourning'); assert.equal(state.step, 4); assert.equal(state.completed.includes('m2_ship_lost'), false);
+  for (const id of ['morpheus', 'trinity', 'link']) assert.ok(Math.cos(h.world.agents.get(id)!.rotation) < -.98, `${id} must turn back toward the destroyed ship`);
+  h.command('act'); assert.equal(state.shipLoss?.phase, 'escaped'); assert.ok(state.completed.includes('m2_ship_lost'));
+  h.command('next'); assert.equal(state.scene, 'm2_stop_sentinels'); assert.equal(state.actor, 'neo');
+  assert.equal(h.sandbox.state.structures.some(s => s.id.startsWith('film:neb-escape:')), false);
+});
+
+test('an occupied or dead escape companion freezes the encounter without moving or reviving them', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  Object.assign(state, { scene: 'm2_ship_lost', actor: 'neo', step: 3,
+    shipLoss: { phase: 'evacuating', remaining: 32, lastTick: h.tick(), attempts: 0, age: 0 } });
+  h.actor().currentLocation = 'film_neb_deck'; h.actor().isInMatrix = false; h.actor().position = filmPosition('film_neb_deck', 0, 0); stageNebCrew(h);
+  const trinity = h.world.agents.get('trinity')!, before = structuredClone(trinity.position);
+  trinity.controller = 'other-player';
+  for (let frame = 0; frame < 20; frame++) h.players.step(.1, true, h.tick()); h.advance(50);
+  assert.equal(state.shipLoss?.remaining, 32); assert.equal(state.shipLoss?.age, 0); assert.deepEqual(trinity.position, before);
+  trinity.controller = undefined; trinity.status = 'dead'; trinity.health = 0;
+  for (let frame = 0; frame < 20; frame++) h.players.step(.1, true, h.tick()); h.advance(50);
+  assert.equal(state.shipLoss?.remaining, 32); assert.equal(state.shipLoss?.age, 0); assert.equal(trinity.status, 'dead'); assert.equal(trinity.health, 0);
+  assert.deepEqual(trinity.position, before); assert.ok(state.shipLoss?.unavailable);
+});
+
+test('a legacy Morpheus save can explicitly resume Neo without moving either body or losing the current step', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  Object.assign(state, { scene: 'm2_ship_lost', actor: 'morpheus', step: 1,
+    shipLoss: { phase: 'briefing', remaining: 32, lastTick: h.tick(), attempts: 0 } });
+  h.players.possess('film-player', 'morpheus', h.tick());
+  h.actor().currentLocation = 'film_neb_deck'; h.actor().isInMatrix = false; h.actor().position = filmPosition('film_neb_deck', 0, 20); stageNebCrew(h);
+  const neo = h.world.agents.get('neo')!, prior = structuredClone(neo.position), morpheus = h.actor();
+  const former = structuredClone(morpheus.position); neo.health = 51;
+  neo.controller = 'other-player'; h.command('neo-view'); assert.equal(state.actor, 'morpheus'); assert.equal(h.actor().id, 'morpheus');
+  neo.controller = undefined; h.command('neo-view'); assert.equal(state.actor, 'neo'); assert.equal(h.actor().id, 'neo');
+  assert.equal(state.step, 1); assert.equal(neo.health, 51); assert.deepEqual(neo.position, prior); assert.deepEqual(morpheus.position, former);
+});
+
+test('the old interior cargo marker cannot complete evacuation before the player and crew leave the hull', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  Object.assign(state, { scene: 'm2_ship_lost', actor: 'morpheus', step: 3,
+    shipLoss: { phase: 'evacuating', remaining: 32, lastTick: h.tick(), attempts: 0 } });
+  h.players.possess('film-player', 'morpheus', h.tick());
+  h.actor().currentLocation = 'film_neb_deck'; h.actor().isInMatrix = false;
+  h.actor().position = filmPosition('film_neb_deck', 0, 35); h.advance();
+  assert.equal(state.shipLoss?.phase, 'evacuating');
+  assert.equal(state.step, 3); assert.equal(state.completed.includes('m2_ship_lost'), false);
 });
 
 test('Neo must face the real Sentinels and hold focus; the signal and pursuit survive a save', () => {
@@ -178,17 +440,68 @@ test('Neo must face the real Sentinels and hold focus; the signal and pursuit su
   const before = state.tunnel!.remaining; h.players.release('film-player', h.tick()); h.advance(20);
   assert.equal(state.tunnel?.remaining, before);
   h.players.possess('film-player', 'neo', h.tick()); focus(0, 15);
+  assert.equal(state.tunnel?.phase, 'stopping', 'cutting the signal must not skip the physical fall and collapse');
+  assert.equal(state.completed.includes(scene.id), false);
+  assert.equal(h.actor().health, 100);
+  assert.match(h.command('next'), /先完成/);
+  const cut = JSON.parse(JSON.stringify(h.sandbox.state)); h.sandbox.restore(cut); state = h.sandbox.life.film.state!;
+  const held = state.tunnel!.elapsed;
+  h.players.release('film-player', h.tick()); h.advance(12); assert.equal(state.tunnel?.elapsed, held);
+  h.players.possess('film-player', 'neo', h.tick());
+  h.players.possess('witness-player', 'trinity', h.tick()); focus(0, 10); assert.equal(state.tunnel?.elapsed, held);
+  h.players.release('witness-player', h.tick());
+  focus(0, 80);
   assert.equal(state.tunnel?.phase, 'collapsed'); assert.ok(state.completed.includes(scene.id));
   assert.equal(h.actor().health, 1);
+});
+
+test('a dead tunnel witness pauses the signal and is neither moved nor healed', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!, scene = FILM_SCENE_BY_ID.m2_stop_sentinels;
+  Object.assign(state, { scene: scene.id, actor: 'neo', step: 1,
+    tunnel: { phase: 'stopping', remaining: 10, focus: 2.2, elapsed: .6, lastTick: h.tick(), attempts: 0 } });
+  h.actor().currentLocation = scene.set; h.actor().isInMatrix = false; h.actor().position = filmStepPosition(scene, scene.steps[1]);
+  const witness = h.world.agents.get('link')!; witness.status = 'dead'; witness.health = 0;
+  const position = { ...witness.position };
+  for (let frame = 0; frame < 20; frame++) h.players.step(.1, true, h.tick());
+  assert.equal(state.tunnel?.elapsed, .6); assert.equal(witness.status, 'dead'); assert.equal(witness.health, 0); assert.deepEqual(witness.position, position);
+  assert.equal(state.completed.includes(scene.id), false);
+});
+
+test('paused signal reattachment restores the saved performance without advancing or moving Neo', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!, scene = FILM_SCENE_BY_ID.m2_stop_sentinels;
+  for (const phase of ['stopping', 'collapsing', 'collapsed'] as const) {
+    Object.assign(state, { scene: scene.id, actor: 'neo', step: phase === 'collapsed' ? scene.steps.length : 1,
+      tunnel: { phase, remaining: 10, focus: 2.2, age: 5, elapsed: .7, lastTick: h.tick(), attempts: 0, paused: undefined, unavailable: undefined } });
+    const neo = h.world.agents.get('neo')!; neo.currentLocation = scene.set; neo.isInMatrix = false; neo.position = filmStepPosition(scene, scene.steps[1]);
+    const before = structuredClone(state.tunnel), position = { ...neo.position };
+    h.players.release('film-player', h.tick()); h.players.possess('film-player', 'neo', h.tick());
+    assert.deepEqual(neo.currentAction?.parameters.signal, before, 'the camera and visibility need the saved gesture immediately on paused reconnect');
+    assert.deepEqual(state.tunnel, before); assert.deepEqual(neo.position, position);
+    h.players.release('film-player', h.tick());
+    assert.deepEqual(neo.currentAction?.parameters.signal, before, 'leaving a character must preserve its paused performance');
+  }
+});
+
+test('a tunnel retry returns Neo to the signal point rather than the locked scene entrance', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!, scene = FILM_SCENE_BY_ID.m2_stop_sentinels;
+  Object.assign(state, { scene: scene.id, actor: 'neo', step: 1, checkpoint: filmPosition(scene.set, 0, 46),
+    tunnel: { phase: 'failed', remaining: 0, focus: 0, lastTick: h.tick(), attempts: 0 } });
+  h.actor().currentLocation = scene.set; h.actor().isInMatrix = false; h.actor().position = filmStepPosition(scene, scene.steps[1]);
+  h.command('retry');
+  assert.deepEqual(h.actor().position, filmStepPosition(scene, scene.steps[1]));
+  h.players.receiveInput('film-player', { x: 0, z: 0, yaw: 0, focus: true, sequence: 1 }); h.players.step(.1, true, h.tick());
+  assert.ok(state.tunnel!.focus > 0, 'ordinary G must work after retry');
 });
 
 test('Hammer reveals Neo and Bane on adjacent beds and hands the completed scene to Mobil Ave', () => {
   const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
   Object.assign(state, { scene: 'm2_stop_sentinels', actor: 'neo', step: FILM_SCENE_BY_ID.m2_stop_sentinels.steps.length,
     tunnel: { phase: 'collapsed', remaining: 4, focus: RELOADED_FINALE.signalSeconds, lastTick: h.tick(), attempts: 0 } });
+  h.world.agents.get('neo')!.health = 1;
   h.command('next'); const medical = FILM_SCENE_BY_ID.m2_medical;
   assert.equal(state.scene, medical.id); assert.equal(h.actor().id, 'trinity');
   assert.equal(h.world.agents.get('neo')?.currentAction?.parameters.finaleComa, true);
+  assert.equal(h.world.agents.get('neo')?.health, 1, 'the bed transition must preserve the collapse cost');
   assert.equal(h.world.agents.get('bane')?.currentAction?.parameters.finaleComa, true);
   assert.equal(h.world.agents.get('neo')?.position.x - h.world.agents.get('bane')!.position.x, -20);
   assert.match(h.players.possess('other-player', 'bane', h.tick()).error ?? '', /昏迷/);
@@ -208,6 +521,21 @@ test('story role handoffs never take a character away from another player', () =
   const changed: string[] = []; h.players.onStoryRole = (_socket, id) => changed.push(id);
   h.command('start'); assert.equal(h.actor().id, 'trinity'); assert.deepEqual(changed, ['trinity']);
   assert.equal(h.actor().currentLocation, FILM_SCENES[0].set);
+});
+
+test('Hammer patient beds block ordinary walking but leave all three clinical objectives accessible after restore', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!, scene = FILM_SCENE_BY_ID.m2_medical;
+  Object.assign(state, { scene: scene.id, actor: 'trinity', step: 0 });
+  h.sandbox.life.film.reconcileCast();
+  for (const x of [-10, 10]) assert.equal(playerBlocked(filmPosition(scene.set, x, -23), false, 1.1, h.sandbox.state.structures), true);
+  for (const x of [-19, 19]) assert.equal(playerBlocked(filmPosition(scene.set, x, -46), false, 1.1, h.sandbox.state.structures), true, 'the rendered supply cabinets must be solid');
+  for (const step of scene.steps) assert.equal(playerBlocked(filmStepPosition(scene, step), false, 1.1, h.sandbox.state.structures), false, step.label);
+  const bed = filmPosition(scene.set, -10, -23), above = { ...bed, y: bed.y + 2 };
+  assert.equal(groundHeight(above, false, h.sandbox.state.structures), bed.y + 1.9, 'a patient mattress supports someone above it');
+  assert.equal(groundHeight(bed, false, h.sandbox.state.structures), bed.y, 'the mattress must not lift someone approaching from the floor');
+  const medicalStructures = () => h.sandbox.state.structures.filter(s => s.id.startsWith('film:hammer-medical:'));
+  const before = structuredClone(medicalStructures()); h.sandbox.restore(structuredClone(h.sandbox.state));
+  assert.deepEqual(medicalStructures(), before, 'restoring must not duplicate or reorder the beds');
 });
 
 test('remote interactions, premature next and unvisited scene jumps cannot advance the plot', () => {
@@ -1004,29 +1332,33 @@ test('Mobil Ave plays Sati, her family, Trainman refusal and both tunnel loops i
     for (const step of scene.steps) {
       h.actor().position = filmStepPosition(scene, step);
       if (step.kind === 'reach') h.advance();
-      else if (step.kind === 'reflect') h.command(`reflect:${filmReflections(id)[0].id}`);
+      else if (step.kind === 'reflect') { if (id === 'm3_family') hearMobilFamily(h); h.command(`reflect:${filmReflections(id)[0].id}`); }
       else { h.command('act'); h.advance(8); }
     }
     h.command('next');
   }
   assert.equal(state.scene, 'm3_trainman');
   const train = FILM_SCENE_BY_ID.m3_trainman;
-  h.actor().position = filmStepPosition(train, train.steps[0]); h.command('act'); h.advance(6);
+  h.actor().position = filmStepPosition(train, train.steps[0]); h.command('act');
+  assert.equal(state.started, undefined, 'luggage cannot trigger the train arrival');
+  portalFrames(h, 4);
   assert.equal(state.mobil?.phase, 'approaching');
   assert.match(h.players.possess('other-player', 'trainman', h.tick()).error ?? '', /列车片段/);
   const elapsed = state.mobil!.elapsed;
   h.players.release('film-player', h.tick()); h.advance(20);
   assert.equal(state.mobil?.elapsed, elapsed, 'the train must not arrive while its player is disconnected');
   h.players.possess('film-player', 'neo', h.tick());
+  portalFrames(h, 55); assert.equal(state.mobil?.phase, 'stopped');
+  assert.equal(state.step, 0, 'Neo must help the family himself after the train arrives');
+  h.command('act'); portalFrames(h, 20); assert.equal(state.step, 1);
   h.actor().position = filmStepPosition(train, train.steps[1]); h.advance();
-  assert.equal(state.step, 1, 'Neo must wait for the actual train');
-  h.advance(12); assert.equal(state.mobil?.phase, 'stopped'); assert.equal(state.step, 2);
+  assert.equal(state.step, 2);
   h.actor().position = filmStepPosition(train, train.steps[2]); h.command('act');
   assert.equal(state.mobil?.phase, 'refusing');
   const before = h.actor().health;
-  for (let i = 0; i < 28; i++) h.players.step(.1, true, h.tick());
+  for (let i = 0; i < 160 && state.mobil?.phase === 'refusing'; i++) h.players.step(.1, true, h.tick());
   assert.equal(state.mobil?.phase, 'departing'); assert.ok(h.actor().health < before);
-  h.advance(10); assert.equal(state.mobil?.phase, 'gone');
+  portalFrames(h, 35); assert.equal(state.mobil?.phase, 'gone');
   h.actor().position = filmStepPosition(train, train.steps[3]); h.advance();
   assert.equal(state.step, 4); assert.ok(h.actor().position.z > center.z + 35);
   assert.equal(h.sandbox.life.state?.choices.mobil_loop, 'one_end');
@@ -1036,19 +1368,99 @@ test('Mobil Ave plays Sati, her family, Trainman refusal and both tunnel loops i
   assert.equal(h.sandbox.life.state?.choices.mobil_loop, 'both_ends');
 });
 
+test('Mobil Ave supports normal walking through an open train door and blocks a shut door', () => {
+  const h = setup(); h.command('continue'); let state = h.sandbox.life.film.state!;
+  Object.assign(state, { scene: 'm3_trainman', actor: 'neo', step: 2,
+    mobil: { phase: 'stopped', elapsed: 0, lastTick: h.tick(), loops: 0 } });
+  h.actor().position = filmPosition('film_mobil_station', 6, -20); h.actor().currentLocation = 'film_mobil_station';
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); state = h.sandbox.life.film.state!;
+  h.sandbox.life.film.reconcileCast();
+  const doorway = filmPosition('film_mobil_station', 7.83, -20);
+  assert.equal(playerBlocked(doorway, true, 1.1, h.sandbox.state.structures), true, 'closed leaves occupy the visible threshold');
+  state.mobil!.elapsed = 1; h.sandbox.life.film.reconcileCast();
+  assert.equal(playerBlocked(doorway, true, 1.1, h.sandbox.state.structures), false);
+  let position = filmPosition('film_mobil_station', 5.7, -20);
+  for (let frame = 0; frame < 30; frame++) {
+    position = stepPlayer(position, 0, { x: 1, z: 0, yaw: Math.PI / 2, sequence: frame }, .05, true, h.sandbox.state.structures).position;
+    assert.equal(position.y, FILM_SETS.film_mobil_station.center.y, 'platform-to-car walking keeps feet on one level');
+  }
+  assert.ok(position.x > doorway.x + 1.3, 'the player genuinely crosses the threshold');
+  const saved = JSON.parse(JSON.stringify(h.sandbox.state)); h.sandbox.restore(saved);
+  assert.deepEqual(h.sandbox.state.structures, saved.structures, 'restoring a train does not move its colliders or change their order');
+  state = h.sandbox.life.film.state!;
+  Object.assign(state.mobil!, { phase: 'departing', elapsed: 1.5 }); h.advance();
+  const floor = h.sandbox.state.structures.find(s => s.id === 'film:mobil:floor')!;
+  for (const id of ['rama_kandra', 'kamala', 'sati']) {
+    const passenger = h.world.agents.get(id)!;
+    assert.equal(passenger.position.y, floor.position.y);
+    assert.ok(Math.abs(passenger.position.z - floor.position.z) <= 2.1, `${id} must stay in the moving carriage`);
+  }
+});
+
+test('Mobil Ave holds an approaching train when a family member is dead or controlled by another player', () => {
+  for (const blocked of ['dead', 'owned']) {
+    const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+    Object.assign(state, { scene: 'm3_trainman', actor: 'neo', step: 1,
+      mobil: { phase: 'approaching', elapsed: 1, lastTick: h.tick(), loops: 0 } });
+    h.actor().position = filmPosition('film_mobil_station', 6, -20); h.actor().currentLocation = 'film_mobil_station';
+    const sati = h.world.agents.get('sati')!;
+    if (blocked === 'dead') { sati.status = 'dead'; sati.health = 0; }
+    else sati.controller = 'other-player';
+    const position = { ...sati.position };
+    portalFrames(h, 50);
+    assert.equal(state.mobil!.elapsed, 1, `${blocked}: arrival must not silently proceed without Sati`);
+    assert.deepEqual(sati.position, position);
+    assert.equal(sati.status, blocked === 'dead' ? 'dead' : 'alive');
+    assert.match(state.lastText, blocked === 'dead' ? /不能|无法|缺席/ : /玩家/);
+  }
+});
+
+test('Neo cannot bypass Trainman by normally walking through the open Mobil doorway', () => {
+  const h = setup(); h.command('continue'); let state = h.sandbox.life.film.state!;
+  Object.assign(state, { scene: 'm3_trainman', actor: 'neo', step: 2,
+    mobil: { phase: 'stopped', elapsed: 1, lastTick: h.tick(), loops: 0 } });
+  h.actor().position = filmPosition('film_mobil_station', 5.7, -20); h.actor().currentLocation = 'film_mobil_station';
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); state = h.sandbox.life.film.state!;
+  for (let frame = 0; frame < 30 && state.mobil!.phase === 'stopped'; frame++) {
+    h.players.receiveInput('film-player', { x: 1, z: 0, yaw: Math.PI / 2, sequence: frame + 1, location: 'film_mobil_station' });
+    h.players.step(.05, true, h.tick());
+  }
+  assert.equal(state.mobil!.phase, 'refusing', 'crossing the actual threshold must trigger Trainman without an extra G press');
+  assert.ok(h.actor().position.x < FILM_SETS.film_mobil_station.center.x + 7, 'Neo must remain outside the carriage');
+  assert.equal(state.step, 2);
+});
+
+test('Trainman launches Neo toward the tiled wall before he falls and recovers, and reconnecting preserves the beat', () => {
+  const h = setup(); h.command('continue'); let state = h.sandbox.life.film.state!;
+  Object.assign(state, { scene: 'm3_trainman', actor: 'neo', step: 2,
+    mobil: { phase: 'stopped', elapsed: 1, lastTick: h.tick(), loops: 0 } });
+  h.actor().position = filmPosition('film_mobil_station', 6, -20); h.actor().currentLocation = 'film_mobil_station';
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); state = h.sandbox.life.film.state!;
+  h.command('act');
+  for (let frame = 0; frame < 9; frame++) h.players.step(.1, true, h.tick());
+  assert.ok(h.actor().position.y > FILM_SETS.film_mobil_station.center.y + .3, 'a strike throws his body above the platform rather than sliding an upright character');
+  for (let frame = 0; frame < 6; frame++) h.players.step(.1, true, h.tick());
+  assert.ok(h.actor().position.x < FILM_SETS.film_mobil_station.center.x - 12, 'Neo reaches the opposite tiled wall');
+  const position = { ...h.actor().position }, beat = state.mobil!.elapsed, health = h.actor().health;
+  h.players.release('film-player', h.tick()); h.advance(12);
+  assert.equal(state.mobil!.elapsed, beat, 'disconnecting pauses the body motion');
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); state = h.sandbox.life.film.state!;
+  h.players.possess('film-player', 'neo', h.tick());
+  assert.deepEqual(h.actor().position, position, 'loading and reconnecting do not repeat the strike');
+  assert.equal(state.mobil!.elapsed, beat);
+  for (let frame = 0; frame < 65 && state.mobil!.phase === 'refusing'; frame++) h.players.step(.1, true, h.tick());
+  assert.equal(state.mobil!.phase, 'departing'); assert.equal(state.step, 3);
+  assert.equal(h.actor().health, Math.max(1, health - 10), 'the completed strike damages Neo only once');
+});
+
 test('Seraph loses the subway chase, Trinity crosses Hel garage and the rescue train returns for Neo', () => {
   const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
   const oracle = FILM_SCENE_BY_ID.m3_oracle_request;
   Object.assign(state, { scene: oracle.id, actor: oracle.actor, step: oracle.steps.length });
   h.players.possess('film-player', 'trinity', h.tick()); h.command('next');
   assert.equal(state.scene, 'm3_trainman_chase'); assert.equal(h.actor().id, 'seraph');
-  const chase = FILM_SCENE_BY_ID.m3_trainman_chase;
-  h.actor().position = filmStepPosition(chase, chase.steps[0]); h.command('act'); h.advance(4);
-  assert.equal(state.helChase?.phase, 'running');
-  assert.ok(h.world.agents.get('trainman')!.position.z < FILM_SETS[chase.set].center.z + 8);
-  h.actor().position = filmStepPosition(chase, chase.steps[1]); h.advance();
-  h.advance(12); assert.equal(state.helChase?.phase, 'escaped');
-  h.actor().position = filmStepPosition(chase, chase.steps[2]); h.command('act'); h.advance(5);
+  const chase = FILM_SCENE_BY_ID.m3_trainman_chase; let sequence = 0;
+  completeTrainmanChase(h, () => ++sequence);
   assert.ok(state.completed.includes(chase.id)); h.command('next');
   assert.equal(state.scene, 'm3_hel_garage'); assert.equal(h.actor().id, 'trinity');
   assert.equal(FILM_SCENE_BY_ID.m3_hel_garage.set, 'film_hel_garage');
@@ -1059,13 +1471,14 @@ test('Seraph loses the subway chase, Trinity crosses Hel garage and the rescue t
   assert.equal(state.mobil?.phase, 'approaching');
   h.actor().position = filmStepPosition(FILM_SCENE_BY_ID.m3_mobil_release, FILM_SCENE_BY_ID.m3_mobil_release.steps[0]);
   h.advance(); assert.equal(state.step, 0, 'Neo cannot greet Trinity before the rescue train arrives');
-  h.advance(12); assert.equal(state.mobil?.phase, 'stopped'); assert.equal(state.step, 1);
+  portalFrames(h, 90); assert.equal(state.mobil?.phase, 'stopped'); assert.equal(state.step, 1);
+  assert.equal(state.mobil?.reunion?.phase, 'ready', 'the continuous train and doorway finish before greeting');
   assert.ok(h.world.agents.get('trinity')!.position.x < FILM_SETS.film_mobil_station.center.x + 8);
   h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
   assert.equal(h.sandbox.life.film.state!.mobil?.phase, 'stopped');
 });
 
-test('Club Hel elevator stays shut through a saved ride and opens only on arrival', () => {
+test('Club Hel elevator preserves a saved descent and waits for the player to pull the gate after arrival', () => {
   const h = setup(); h.command('continue'); let state = h.sandbox.life.film.state!;
   Object.assign(state, { scene: 'm3_hel_garage', actor: 'trinity', step: FILM_SCENE_BY_ID.m3_hel_garage.steps.length });
   h.players.possess('film-player', 'trinity', h.tick()); h.command('next');
@@ -1084,7 +1497,11 @@ test('Club Hel elevator stays shut through a saved ride and opens only on arriva
   const elapsed = (state as typeof state & { helElevator?: { elapsed: number } }).helElevator!.elapsed;
   h.players.release('film-player', h.tick()); h.advance(8);
   assert.equal((state as typeof state & { helElevator?: { elapsed: number } }).helElevator!.elapsed, elapsed, 'the ride pauses without its player');
-  h.players.possess('film-player', 'trinity', h.tick()); h.advance(10);
+  h.players.possess('film-player', 'trinity', h.tick()); h.advance(Math.ceil(HEL_ELEVATOR.seconds * 2));
+  assert.equal(state.step, 0); assert.equal(state.helElevator?.phase, 'arrived');
+  assert.equal(playerBlocked(door, true, 1.1, h.sandbox.state.structures), true);
+  h.actor().position = filmStepPosition(FILM_SCENE_BY_ID.m3_hel_entry, FILM_SCENE_BY_ID.m3_hel_entry.steps[0], state);
+  h.command('act'); h.advance(Math.ceil(HEL_ELEVATOR.opening * 2));
   assert.equal(state.step, 1);
   assert.equal((state as typeof state & { helElevator?: { phase: string } }).helElevator?.phase, 'open');
   assert.equal(playerBlocked(door, true, 1.1, h.sandbox.state.structures), false);
@@ -1096,16 +1513,28 @@ test('Club Hel elevator stays shut through a saved ride and opens only on arriva
   assert.equal(playerBlocked(door, true, 1.1, h.sandbox.state.structures), false);
 });
 
+function enterHelBargain(h: ReturnType<typeof setup>) {
+  const state = h.sandbox.life.film.state!;
+  Object.assign(state, { scene: 'm3_hel_entry', actor: 'trinity', step: FILM_SCENE_BY_ID.m3_hel_entry.steps.length });
+  h.players.possess('film-player', 'trinity', h.tick());
+  for (const [id, x, z] of [['trinity', 0, -28], ['morpheus', -2.5, -24.8], ['seraph', 2.5, -24.8]] as const) {
+    const member = h.world.agents.get(id)!; member.currentLocation = 'film_club_hel'; member.isInMatrix = true;
+    member.position = filmPosition('film_club_hel', x, z); member.position.y = groundHeight(member.position, true); member.rotation = Math.PI;
+  }
+  h.command('next'); return h.sandbox.life.film.state!;
+}
+
 test('Club Hel bargain requires Trinity to disarm, refuse, dodge, counter, catch the gun and confront Merovingian', () => {
   const h = setup(); h.command('continue'); let state = h.sandbox.life.film.state!;
-  Object.assign(state, { scene: 'm3_hel_entry', actor: 'trinity', step: FILM_SCENE_BY_ID.m3_hel_entry.steps.length });
-  h.players.possess('film-player', 'trinity', h.tick()); h.command('next'); state = h.sandbox.life.film.state!;
+  state = enterHelBargain(h);
   const scene = FILM_SCENE_BY_ID.m3_hel_bargain;
   assert.equal(state.scene, scene.id);
   assert.equal(h.world.agents.get('merovingian')?.currentLocation, scene.set);
   assert.ok(Math.abs(h.world.agents.get('merovingian')!.position.z - filmPosition(scene.set, 0, -35).z) < .01);
   h.actor().position = filmStepPosition(scene, scene.steps[0]);
-  h.command('act'); assert.equal(state.step, 1); assert.equal(state.helBargain?.phase, 'disarmed');
+  h.command('act'); assert.equal(state.step, 0); assert.equal(state.helBargain?.phase, 'disarming');
+  for (let frame = 0; frame < 36; frame++) h.players.step(.1, true, h.tick());
+  assert.equal(state.step, 1); assert.equal(state.helBargain?.phase, 'disarmed');
   h.command('act'); assert.equal(state.step, 2); assert.equal(state.helBargain?.phase, 'offered');
   h.command(`reflect:${filmReflections(scene.id)[0].id}`); assert.equal(state.step, 3);
   assert.match(h.command('act'), /冲入人群/); assert.equal(state.helBargain?.phase, 'windup');
@@ -1118,7 +1547,10 @@ test('Club Hel bargain requires Trinity to disarm, refuse, dodge, counter, catch
   h.actor().rotation = Math.PI;
   h.players.act('film-player', 'attack', h.tick()); assert.equal(state.step, 4); assert.equal(state.helBargain?.phase, 'airborne');
   h.command('act'); assert.equal(state.step, 4, 'G before the pistol is within reach cannot catch it');
-  h.advance(3); h.command('act'); assert.equal(state.step, 5); assert.equal(state.helBargain?.phase, 'gunpoint');
+  for (let frame = 0; frame < 31; frame++) h.players.step(.1, true, h.tick());
+  h.command('act'); assert.equal(state.step, 4); assert.equal(state.helBargain?.phase, 'catching');
+  for (let frame = 0; frame < 8; frame++) h.players.step(.1, true, h.tick());
+  assert.equal(state.step, 5); assert.equal(state.helBargain?.phase, 'gunpoint');
   h.players.step(.1, true, h.tick());
   assert.equal(h.actor().currentAction?.parameters.weaponStyle, 'hel_pistol', 'the gun remains visible between movement frames');
   h.actor().position = filmStepPosition(scene, scene.steps[5]); h.actor().rotation = 0;
@@ -1130,11 +1562,11 @@ test('Club Hel bargain requires Trinity to disarm, refuse, dodge, counter, catch
 
 test('Club Hel rush expires, retries from the confrontation and pauses when its player disconnects', () => {
   const h = setup(); h.command('continue'); let state = h.sandbox.life.film.state!;
-  Object.assign(state, { scene: 'm3_hel_entry', actor: 'trinity', step: FILM_SCENE_BY_ID.m3_hel_entry.steps.length });
-  h.players.possess('film-player', 'trinity', h.tick()); h.command('next'); state = h.sandbox.life.film.state!;
+  state = enterHelBargain(h);
   const scene = FILM_SCENE_BY_ID.m3_hel_bargain;
   h.actor().position = filmStepPosition(scene, scene.steps[0]);
-  h.command('act'); h.command('act'); h.command(`reflect:${filmReflections(scene.id)[0].id}`); h.command('act');
+  h.command('act'); for (let frame = 0; frame < 36; frame++) h.players.step(.1, true, h.tick());
+  h.command('act'); h.command(`reflect:${filmReflections(scene.id)[0].id}`); h.command('act');
   h.advance(2); h.players.release('film-player', h.tick()); h.advance(20);
   assert.equal(state.helBargain?.phase, 'evade');
   h.players.possess('film-player', 'trinity', h.tick()); h.advance(10);
@@ -1159,12 +1591,11 @@ test('older Club Hel saves keep the refusal and resume at the new confrontation 
 });
 
 test('another player holding Merovingian pauses Trinity’s Club Hel action window', () => {
-  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
-  Object.assign(state, { scene: 'm3_hel_entry', actor: 'trinity', step: FILM_SCENE_BY_ID.m3_hel_entry.steps.length });
-  h.players.possess('film-player', 'trinity', h.tick()); h.command('next');
+  const h = setup(); h.command('continue'); const state = enterHelBargain(h);
   const scene = FILM_SCENE_BY_ID.m3_hel_bargain;
   h.actor().position = filmStepPosition(scene, scene.steps[0]);
-  h.command('act'); h.command('act'); h.command(`reflect:${filmReflections(scene.id)[0].id}`); h.command('act'); h.advance(2);
+  h.command('act'); for (let frame = 0; frame < 36; frame++) h.players.step(.1, true, h.tick());
+  h.command('act'); h.command(`reflect:${filmReflections(scene.id)[0].id}`); h.command('act'); h.advance(2);
   assert.equal(state.helBargain?.phase, 'evade');
   h.players.possess('other', 'merovingian', h.tick()); h.advance(20);
   assert.equal(state.helBargain?.phase, 'evade'); assert.equal(state.helBargain?.elapsed, 0);
@@ -2029,10 +2460,12 @@ test('Smith assimilation is reversible at the ending, without reviving Trinity',
   const h = setup(); h.command('start'); const state = h.sandbox.life.film.state!;
   const playLast = (id: string) => {
     const scene = FILM_SCENE_BY_ID[id]; state.scene = id; state.actor = scene.actor; state.step = scene.steps.length - 1;
+    if (id === 'm3_oracle_absorbed') state.step = 0;
     h.players.possess('film-player', scene.actor, h.tick());
     h.actor().isInMatrix = FILM_SETS[scene.set].world === 'matrix'; h.actor().currentLocation = scene.set;
     h.actor().position = filmStepPosition(scene, scene.steps[state.step]);
-    if (id === 'm3_surrender') {
+    if (id === 'm3_oracle_absorbed') { let sequence = 0; completeOracleAbsorption(h, () => ++sequence); }
+    else if (id === 'm3_surrender') {
       h.sandbox.state.neoLife!.choices.machine_pact = 'peace'; h.sandbox.state.neoLife!.choices.machine_connection = 'active';
       h.command('act');
       const endingSeconds = SMITH_FINALE.surrender.consentSeconds + SMITH_FINALE.surrender.assimilationSeconds + SMITH_FINALE.surrender.purgeSeconds;
@@ -2053,10 +2486,11 @@ test('Smith assimilation is reversible at the ending, without reviving Trinity',
 });
 
 function rideToExit(h: ReturnType<typeof setup>) {
+  let target = 10;
   for (let frame = 0; h.sandbox.life.film.state!.ride?.phase === 'riding' && frame < 6000; frame++) {
     const ride = h.sandbox.life.film.state!.ride!;
-    const steer = Math.max(-1, Math.min(1, (10 - ride.x) * .6 - ride.lateral * .25));
-    h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, sprint: false, jump: false, drive: { throttle: 1, steer, brake: false }, sequence: frame + 100 });
+    if (frame % 15 === 0) target = freewayAvoidanceTarget(ride);
+    h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, sprint: false, jump: false, drive: freewayDriveInput(ride, target), sequence: frame + 100 });
     h.players.step(1 / 60, true, h.tick());
     if (frame % 30 === 0) h.advance();
   }
@@ -2134,7 +2568,7 @@ test('the motorcycle escort requires driving, preserves its position on reconnec
   h.players.step(.1, false, h.tick()); assert.deepEqual(h.sandbox.life.film.state!.ride, beforePause);
   rideToExit(h); assert.equal(h.sandbox.life.film.state!.step, 2);
   assert.equal(h.world.agents.get('keymaker')!.status, 'alive');
-  assert.equal(h.world.agents.get('keymaker')!.currentAction, null);
+  assert.ok(h.world.agents.get('keymaker')!.currentAction?.parameters.freewayHandoff);
 });
 
 test('a failed escort retries from the motorcycle and never takes another player as passenger', () => {
@@ -2406,18 +2840,26 @@ test('Niobe arms the main station, Vigilant loss requires Trinity, and only both
   const h = setup(); h.command('start'); const state = h.sandbox.life.film.state!;
   const power = FILM_SCENE_BY_ID.m2_power; Object.assign(state, { scene: power.id, actor: 'niobe', step: 1 });
   h.players.possess('film-player', 'niobe', h.tick()); h.actor().currentLocation = power.set; h.actor().isInMatrix = true;
-  h.actor().position = filmStepPosition(power, power.steps[1]); h.command('act'); h.advance(12);
+  const ghost = h.world.agents.get('ghost')!; ghost.currentLocation = power.set; ghost.isInMatrix = true; ghost.position = filmPosition(power.set, 5, 15);
+  let sequence = 0; completePrimary(h, () => ++sequence);
   assert.equal(state.step, 2); assert.equal(state.grid?.primary, 'armed');
   assert.equal(state.grid?.emergency, 'online'); assert.equal(state.grid?.phase, 'preparing');
 
   const vigilant = FILM_SCENE_BY_ID.m2_vigilant; Object.assign(state, { scene: vigilant.id, actor: 'trinity', step: 0 });
   h.players.possess('film-player', 'trinity', h.tick()); h.actor().currentLocation = vigilant.set; h.actor().isInMatrix = false;
   for (const index of [0, 1]) { h.actor().position = filmStepPosition(vigilant, vigilant.steps[index]); h.command('act'); h.advance(6); }
-  assert.equal(state.grid?.vigilant, 'lost'); assert.equal(state.grid?.trinity, 'connected');
+  assert.equal(state.grid?.vigilant, 'lost'); assert.equal(state.grid?.trinity, 'waiting');
+  const relay = FILM_SCENE_BY_ID.m2_relay; Object.assign(state, { scene: relay.id, step: 0 });
+  state.grid!.primary = 'off';
+  h.actor().currentLocation = relay.set; h.actor().isInMatrix = false; h.actor().position = filmStepPosition(relay, relay.steps[0]);
+  h.command('act'); for (let frame = 0; frame < 75; frame++) h.players.step(.1, true, h.tick());
+  h.command('act'); h.actor().position = filmStepPosition(relay, relay.steps[1], state); h.command('act');
+  for (let frame = 0; frame < 170; frame++) h.players.step(.1, true, h.tick());
+  assert.equal(state.grid!.trinity, 'connected'); state.primaryDemolition!.blast = { phase: 'done', elapsed: 8 };
 
   const backup = FILM_SCENE_BY_ID.m2_backup; Object.assign(state, { scene: backup.id, step: 1 });
   h.actor().currentLocation = backup.set; h.actor().isInMatrix = true; h.actor().position = filmStepPosition(backup, backup.steps[1]);
-  h.command('act'); h.advance(8);
+  completeTerminal(h, () => ++sequence);
   assert.equal(state.step, 2); assert.equal(state.grid?.primary, 'off'); assert.equal(state.grid?.emergency, 'online');
   assert.equal(state.grid?.phase, 'emergency'); assert.equal(state.grid?.remaining, 314);
 
@@ -2427,7 +2869,7 @@ test('Niobe arms the main station, Vigilant loss requires Trinity, and only both
   h.actor().position = filmStepPosition(door, door.steps[5]); h.advance(24);
   assert.equal(state.grid?.phase, 'window'); assert.equal(state.grid?.emergency, 'off');
   h.advance(10);
-  assert.ok(state.grid!.remaining < 314); h.command('act'); h.advance(6);
+  assert.ok(state.grid!.remaining < 314); h.command('act'); portalFrames(h, 35);
   assert.equal(state.grid?.phase, 'opened'); assert.equal(state.step, door.steps.length);
 });
 
@@ -2446,7 +2888,7 @@ test('a missed grid window blocks the key door and reroutes through the survivin
   h.players.release('film-player', h.tick()); h.advance(30); assert.equal(state.grid?.reroute, elapsed);
   h.players.possess('film-player', 'neo', h.tick()); h.advance(8);
   assert.equal(state.grid?.phase, 'window'); assert.equal(state.grid?.attempts, 1);
-  h.actor().position = filmStepPosition(door, door.steps[5]); h.command('act'); h.advance(6);
+  h.actor().position = filmStepPosition(door, door.steps[5]); h.command('act'); portalFrames(h, 35);
   assert.equal(state.grid?.phase, 'opened'); assert.equal(state.step, door.steps.length);
 });
 
@@ -2459,12 +2901,32 @@ test('an older key-door checkpoint reconstructs the cut grid without replaying N
   h.actor().position = filmPosition('film_backdoor_hall', 0, -38); state.checkpoint = { ...h.actor().position };
   h.advance(); assert.equal(state.step, 3); h.command('act'); assert.equal(state.grid?.primary, 'off'); assert.equal(state.grid?.emergency, 'off');
   assert.equal(state.grid?.phase, 'window');
-  assert.equal(h.actor().currentLocation, door.set); assert.deepEqual(h.actor().position, filmPosition(door.set, 0, -38));
+  assert.equal(h.actor().currentLocation, door.set); assert.deepEqual(h.actor().position, filmPosition(door.set, 1.65, -37.25));
   assert.deepEqual(state.checkpoint, filmPosition(door.set, 0, -38));
   h.actor().position = filmPosition('film_backdoor_hall', 0, -38); state.checkpoint = { ...h.actor().position };
   h.advance();
-  assert.deepEqual(h.actor().position, filmPosition(door.set, 0, -38));
+  assert.deepEqual(h.actor().position, filmPosition(door.set, 1.65, -37.25));
   assert.deepEqual(state.checkpoint, filmPosition(door.set, 0, -38));
+});
+
+test('entering the Architect room preserves Neo’s wounds, supplies and the Keymaker’s death', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  Object.assign(state, { scene: 'm2_key_door', actor: 'neo', step: FILM_SCENE_BY_ID.m2_key_door.steps.length,
+    keyDoor: { portalOpened: true, keyTaken: true, performance: { phase: 'done', elapsed: 0, attempts: 1 } } });
+  h.actor().currentLocation = FILM_SCENE_BY_ID.m2_key_door.set;
+  h.actor().position = filmPosition(h.actor().currentLocation, 0, -55.4); h.actor().health = 37;
+  h.sandbox.state.profiles.neo.inventory.medkit = 0;
+  const keymaker = h.world.agents.get('keymaker')!; keymaker.status = 'dead'; keymaker.health = 0;
+  h.command('next');
+  assert.equal(state.scene, 'm2_architect');
+  assert.equal(h.actor().health, 37, 'a room transition is not a medical treatment');
+  assert.equal(h.sandbox.state.profiles.neo.inventory.medkit, 0, 'walking through the Source cannot manufacture supplies');
+  assert.equal(keymaker.status, 'dead'); assert.equal(keymaker.health, 0);
+});
+
+test('the Architect control room has a circular reachable floor rather than invisible rectangular corners', () => {
+  assert.equal(playerBlocked(filmPosition('film_architect_room', 20, 20), true, .6, []), true);
+  assert.equal(playerBlocked(filmPosition('film_architect_room', 0, -8), true, .6, []), false);
 });
 
 test('the Architect reveals both costs before Neo can take the film-left door', () => {
@@ -2482,6 +2944,7 @@ test('the Architect reveals both costs before Neo can take the film-left door', 
     h.actor().position = filmStepPosition(scene, scene.steps[index]);
     if (index === 0) h.advance();
     else if (scene.steps[index].kind === 'reflect') h.command('reflect:agency');
+    else if (index === 5) completeArchitectDoor(h);
     else { h.command('act'); h.advance((scene.steps[index].seconds ?? 3) * 2 + 1); }
     assert.equal(state.step, index + 1, `Architect beat ${index}`);
     if (index === 2) assert.equal(state.architect?.sourceReviewed, true);
@@ -2545,7 +3008,7 @@ test('the Architect door window pauses on disconnect, restores, fails, and retri
   assert.equal(restored.architect?.phase, 'decision'); assert.equal(restored.architect?.attempts, 1);
   assert.equal(restored.architect?.sourceReviewed, true); assert.equal(restored.architect?.trinityReviewed, true);
   h.actor().position = filmStepPosition(scene, scene.steps.at(-1)!);
-  h.command('act'); h.advance((scene.steps.at(-1)!.seconds ?? 3) * 2 + 1);
+  completeArchitectDoor(h);
   assert.equal(restored.architect?.door, 'matrix');
 });
 
@@ -2572,7 +3035,7 @@ test('the backup console cannot open the route before Niobe and Vigilant handoff
   assert.equal(state.step, 1); assert.equal(state.grid?.phase, 'preparing');
   assert.match(state.lastText, /尚未全部完成/);
   Object.assign(state.grid!, { primary: 'armed', vigilant: 'lost', trinity: 'connected' });
-  h.command('act'); h.advance(8); assert.equal(state.grid?.phase, 'emergency');
+  let sequence = 0; completeTerminal(h, () => ++sequence); assert.equal(state.grid?.phase, 'emergency');
   const remaining = state.grid!.hackRemaining;
   h.players.release('film-player', h.tick()); h.advance(40);
   assert.equal(state.grid!.hackRemaining, remaining);
@@ -2610,12 +3073,12 @@ test('Neo holds Smith copies, opens the portal, receives the wounded Keymaker’
   }
   h.advance(); assert.equal(state.step, 2);
   for (const index of [2, 3, 4, 5]) {
-    h.actor().position = filmStepPosition(door, door.steps[index]); h.command('act');
-    h.advance((door.steps[index].seconds ?? 3) * 2);
+    h.actor().position = filmStepPosition(door, door.steps[index]);
+    if (index === 2) { h.command('act'); h.advance(4); } else completePortalStep(h, index);
     assert.equal(state.step, index + 1);
     if (index === 3) {
       assert.equal(state.keyDoor?.portalOpened, true);
-      assert.equal(playerBlocked(portal, true, 1.1, h.sandbox.state.structures), false, 'the opened portal is walkable');
+      assert.equal(playerBlocked(portal, true, 1.1, h.sandbox.state.structures), true, 'the escape door is shut behind the wounded party');
       assert.equal(playerBlocked(filmPosition(door.set, 8.7, -39), true, 1.1, h.sandbox.state.structures), true, 'the wall beside it remains solid');
     }
     if (index === 4) {
@@ -2623,14 +3086,14 @@ test('Neo holds Smith copies, opens the portal, receives the wounded Keymaker’
       const remaining = state.grid!.remaining;
       h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); state = h.sandbox.life.film.state!;
       assert.equal(state.step, 5); assert.equal(state.keyDoor?.portalOpened, true); assert.equal(state.keyDoor?.keyTaken, true);
-      assert.equal(state.grid?.remaining, remaining); assert.equal(playerBlocked(portal, true, 1.1, h.sandbox.state.structures), false);
+      assert.equal(state.grid?.remaining, remaining); assert.equal(playerBlocked(portal, true, 1.1, h.sandbox.state.structures), true);
     }
   }
   assert.equal(state.grid?.phase, 'opened'); assert.ok(state.completed.includes(door.id));
   assert.equal(h.world.agents.get('morpheus')?.status, 'alive');
 });
 
-test('the entire film route completes through interactions, driving and real combat, then starts a recorded new life', () => {
+test('the entire film route completes through interactions, driving and real combat, then starts a recorded new life', t => {
   const h = setup(); h.command('start'); const state = h.sandbox.state.neoLife!.journey!;
   let sequence = 0;
   for (const scene of FILM_SCENES) {
@@ -2639,6 +3102,15 @@ test('the entire film route completes through interactions, driving and real com
     assert.equal(h.actor().isInMatrix, scene.id === 'm2_meeting' ? false : FILM_SETS[scene.set].world === 'matrix');
     const entryMusic = scene.id === 'm2_meeting' ? 'night' : scene.id === 'm1_tv_exit' ? 'matrix' : scene.id === 'm1_unplugged' && state.tvExit?.crosscut ? 'anomaly' : scene.music;
     assert.equal(musicForScene({ player: h.actor(), sandbox: h.sandbox.state, time: h.world.timeOfDay, matrix: h.actor().isInMatrix, running: true }), entryMusic, `${scene.id}: music follows the active film entry at ${h.actor().currentLocation}`);
+    if (scene.id === 'm3_trainman_chase') { completeTrainmanChase(h, () => ++sequence); h.command('next'); continue; }
+    if (scene.id === 'm3_hel_garage') { completeHelGarage(h, () => ++sequence); h.command('next'); continue; }
+    if (scene.id === 'm3_oracle_last') { completeOracleLast(h, () => ++sequence); h.command('next'); continue; }
+    if (scene.id === 'm3_oracle_absorbed') { completeOracleAbsorption(h, () => ++sequence); h.command('next'); continue; }
+    if (scene.id === 'm2_trucks' && state.trucks?.road) {
+      h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false, sequence: ++sequence });
+      for (let frame = 0; frame < 110 && state.trucks.road.phase !== 'ready'; frame++) h.players.step(.05, true, h.tick());
+      assert.equal(state.trucks.road.phase, 'ready', 'the route waits for Johnson to land on the same moving truck');
+    }
     if (scene.id === 'm1_mirror' && state.mirrorGuide) {
       for (const [x, z] of [[-5, -3.1], [-5, -9.8], [-6, -12.7], [MIRROR_TOUCH.x, MIRROR_TOUCH.z]]) {
         const target = filmPosition(scene.set, x, z);
@@ -2705,6 +3177,71 @@ test('the entire film route completes through interactions, driving and real com
       assert.equal(state.oracle.arrival.phase, 'done', 'the complete route enters through the door before the spoon lesson');
     }
     for (let index = 0; index < scene.steps.length; index++) {
+      if (scene.id === 'm2_power' && index === 1) {
+        completePrimary(h, () => ++sequence); assert.equal(state.step, 2); continue;
+      }
+      if (scene.id === 'm2_plan') {
+        const walk = (x: number, z: number) => {
+          const target = filmPosition(scene.set, x, z);
+          for (let frame = 0; frame < 300; frame++) {
+            const actor = h.actor(), dx = target.x - actor.position.x, dz = target.z - actor.position.z, gap = Math.hypot(dx, dz);
+            if (gap < .2) break;
+            h.players.receiveInput('film-player', { x: dx / Math.max(.6, gap), z: dz / Math.max(.6, gap), yaw: Math.atan2(dx, dz), jump: false, sprint: false, sequence: ++sequence });
+            h.players.step(.1, true, h.tick()); assert.ok(frame < 299, `source briefing route blocked at ${x}, ${z}`);
+          }
+          h.players.receiveInput('film-player', { x: 0, z: 0, yaw: h.actor().rotation, jump: false, sprint: false, sequence: ++sequence });
+        };
+        if (index === 0) {
+          for (const [i, route] of SOURCE_BRIEFING.routes.entries()) {
+            if (i) { walk(i === 1 ? -5 : 5, 2); walk(route.x, 2); }
+            walk(route.x, route.z); h.command('act');
+            for (let frame = 0; frame < 60; frame++) h.players.step(.1, true, h.tick());
+            assert.ok(state.sourceBriefing!.reviewed.includes(route.id));
+          }
+          walk(5, -5.8); walk(SOURCE_BRIEFING.question.x, SOURCE_BRIEFING.question.z); h.command('act');
+          for (let frame = 0; frame < 125; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.sourceBriefing!.phase, 'reflection');
+        } else h.command(`reflect:${filmReflections(scene.id)[0].id}`);
+        assert.equal(state.step, index + 1, `${scene.id}: ${scene.steps[index].label}`); continue;
+      }
+      if (scene.id === 'm2_freeway' && index === 2 && state.freewayHandoff) {
+        for (let frame = 0; frame < 700 && state.freewayHandoff.phase !== 'done'; frame++) {
+          const handoff = state.freewayHandoff, bike = handoff.bike;
+          assert.notEqual(handoff.phase, 'failed', JSON.stringify(handoff));
+          if (freewayHandoffReady(handoff)) h.command('act');
+          const steer = Math.max(-1, Math.min(1, (handoff.truck.x + FREEWAY_HANDOFF.side - bike.x) * .6 - bike.lateral * .2));
+          h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, sprint: false, jump: false,
+            drive: { throttle: 1, steer, brake: false }, sequence: ++sequence });
+          h.players.step(.05, true, h.tick());
+        }
+        assert.equal(state.freewayHandoff.phase, 'done'); h.command('act'); continue;
+      }
+
+      if (scene.id === 'm2_freeway' && index === 0 && state.freewayPickup) {
+        const frame = (input: Partial<import('@auto_matrix/shared').PlayerInput>, count: number) => {
+          for (let i = 0; i < count; i++) {
+            h.players.receiveInput('film-player', { x: 0, z: 0, yaw: 0, jump: false, sprint: false, sequence: ++sequence, ...input });
+            h.players.step(.05, true, h.tick());
+          }
+        };
+        h.command('act'); frame({ z: 1 }, 20); frame({}, 37); frame({ jump: true }, 1); frame({}, 39);
+        assert.equal(state.freewayPickup.phase, 'deck'); frame({ z: 1 }, 97);
+        h.command('act'); assert.equal(state.freewayPickup.phase, 'key'); frame({}, 28); h.command('act'); frame({}, 83);
+        h.players.act('film-player', 'attack', h.tick()); frame({}, 24); frame({ drive: { throttle: 1, steer: 0, brake: false } }, 1);
+        frame({}, 41);
+        let turning = false;
+        for (let f = 0; f < 300 && state.freewayPickup.phase === 'merging'; f++) {
+          const pickup = state.freewayPickup;
+          if (pickup.chase?.phase === 'crossing') {
+            turning ||= pickup.speed <= 20;
+            frame({ drive: { throttle: turning ? 1 : 0, steer: turning ? -1 : 0, brake: !turning } }, 1);
+          } else {
+            const desired = Math.atan2(2.5 - pickup.x, 20);
+            frame({ drive: { throttle: pickup.speed < 35 ? 1 : 0, steer: Math.max(-1, Math.min(1, (pickup.heading - desired) * 3)), brake: false } }, 1);
+          }
+        }
+        assert.equal(state.freewayPickup.phase, 'done'); assert.equal(state.step, 1); continue;
+      }
       if (scene.id === 'm1_unplugged' && state.tvExit?.crosscut) {
         if (index === 0) { assert.equal(state.step, 1); continue; }
         const frame = () => { h.players.receiveInput('film-player', { x: 0, z: 0, yaw: h.actor().rotation, jump: false, sprint: false, sequence: ++sequence }); h.players.step(.1, true, h.tick()); };
@@ -2857,18 +3394,27 @@ test('the entire film route completes through interactions, driving and real com
         assert.equal(state.ambushApproach.ready, true, 'the full trilogy route waits for the same five physical companions');
       }
       const step = scene.steps[index]; const actor = h.actor();
-      if (scene.id !== 'm1_dejavu' || index !== 0 || !state.ambushApproach?.stairCat) actor.position = filmStepPosition(scene, step, state);
+      if ((scene.id !== 'm1_dejavu' || index !== 0 || !state.ambushApproach?.stairCat) && !(scene.id === 'm2_ship_lost' && index === 3)
+        && !(scene.id === 'm3_hel_bargain' && index === 4) && !(scene.id === 'm3_hel_entry' && index === 4)) actor.position = filmStepPosition(scene, step, state);
       if (scene.id === 'm3_rain') {
         if (index === 0) h.advance();
         else if (index === 1) {
+          for (let frame = 0; frame < 140 && state.smithFinale?.phase !== 'reply'; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.smithFinale?.phase, 'reply'); h.command('act');
+          for (let frame = 0; frame < 70 && state.smithFinale?.phase !== 'charge_ready'; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.smithFinale?.phase, 'charge_ready');
           h.command('act');
-          for (let frame = 0; frame < 12 && state.smithFinale?.phase !== 'ground_dodge'; frame++) h.players.step(.1, true, h.tick());
+          for (let frame = 0; frame < 40 && state.smithFinale?.phase !== 'ground_dodge'; frame++) h.players.step(.1, true, h.tick());
           assert.equal(state.smithFinale?.phase, 'ground_dodge'); h.players.act('film-player', 'dodge', h.tick());
           h.players.act('film-player', 'attack', h.tick());
           for (let frame = 0; frame < 4; frame++) h.players.step(.1, true, h.tick());
           h.players.act('film-player', 'attack', h.tick());
           for (let frame = 0; frame < 30 && state.smithFinale?.phase !== 'air_dodge'; frame++) h.players.step(.1, true, h.tick());
           assert.equal(state.smithFinale?.phase, 'air_dodge'); h.players.act('film-player', 'dodge', h.tick()); h.players.act('film-player', 'attack', h.tick());
+          for (let frame = 0; frame < 45 && state.smithFinale?.phase !== 'interior_dodge'; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.smithFinale?.phase, 'interior_dodge'); h.players.act('film-player', 'dodge', h.tick()); h.players.act('film-player', 'attack', h.tick());
+          for (let frame = 0; frame < 80 && state.smithFinale?.phase !== 'sky_dodge'; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.smithFinale?.phase, 'sky_dodge'); h.players.act('film-player', 'dodge', h.tick()); h.players.act('film-player', 'attack', h.tick());
           for (let frame = 0; frame < 20 && state.smithFinale?.phase !== 'descent'; frame++) h.players.step(.1, true, h.tick());
           for (let frame = 0; frame < 70 && state.step === index; frame++) {
             h.players.receiveInput('film-player', { x: .25, z: 0, yaw: Math.PI, jump: false, sprint: false, focus: true, sequence: ++sequence });
@@ -2881,9 +3427,18 @@ test('the entire film route completes through interactions, driving and real com
       if (scene.id === 'm3_surrender') {
         if (index === 0) {
           h.command('act');
-          for (let frame = 0; frame < Math.ceil(SMITH_FINALE.assault / .1) + 2 && state.step === index; frame++) h.players.step(.1, true, h.tick());
+          for (let frame = 0; frame < 15 && state.smithFinale?.phase !== 'pit_dodge'; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.smithFinale?.phase, 'pit_dodge'); h.players.act('film-player', 'dodge', h.tick());
+          for (let frame = 0; frame < 10 && state.smithFinale?.phase !== 'pit_counter'; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.smithFinale?.phase, 'pit_counter'); h.players.act('film-player', 'attack', h.tick());
+          for (let frame = 0; frame < 65 && state.step === index; frame++) h.players.step(.1, true, h.tick());
         } else if (index === 1) h.command('reflect:agency');
         else {
+          for (let frame = 0; frame < 25 && state.smithFinale?.phase === 'pit_recovery'; frame++) {
+            h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false, focus: true, sequence: ++sequence });
+            h.players.step(.1, true, h.tick());
+          }
+          assert.equal(state.smithFinale?.phase, 'understanding');
           h.command('act');
           for (let frame = 0; frame < Math.ceil((SMITH_FINALE.surrender.consentSeconds + SMITH_FINALE.surrender.assimilationSeconds + SMITH_FINALE.surrender.purgeSeconds) / .1) + 4 && state.step === index; frame++) {
             h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false, focus: true, sequence: ++sequence });
@@ -2894,10 +3449,11 @@ test('the entire film route completes through interactions, driving and real com
         assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`); continue;
       }
       if (scene.id === 'm3_deus') {
+        const seconds = DEUS_PACT.seconds;
         if (index === 0) h.advance();
         else if (index === 1) {
           h.command('act');
-          for (let frame = 0; frame < 120 && state.step === index; frame++) {
+          for (let frame = 0; frame < Math.ceil((DEUS_PACT.resolveSeconds + seconds.forming + seconds.warning + seconds.challenge + seconds.question) / .1) + 3 && state.step === index; frame++) {
             h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false,
               focus: true, sequence: ++sequence });
             h.players.step(.1, true, h.tick());
@@ -2905,7 +3461,7 @@ test('the entire film route completes through interactions, driving and real com
         } else if (index === 2) h.command(`reflect:${filmReflections(scene.id)[0].id}`);
         else {
           h.command('act');
-          for (let frame = 0; frame < 110 && state.step === index; frame++) {
+          for (let frame = 0; frame < Math.ceil((seconds.seating + seconds.cabling + seconds.assurance + DEUS_PACT.consentSeconds + seconds.connecting) / .1) + 3 && state.step === index; frame++) {
             h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false,
               focus: true, sequence: ++sequence });
             h.players.step(.1, true, h.tick());
@@ -2949,45 +3505,75 @@ test('the entire film route completes through interactions, driving and real com
         else h.advance();
         assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`); continue;
       }
-      if (scene.id === 'm3_trainman_chase' && index === 2 || scene.id === 'm3_mobil_release' && index === 0) h.advance(12);
+      if (scene.id === 'm3_mobil_release') {
+        if (index === 0) portalFrames(h, 90);
+        else {
+          h.command('act'); assert.equal(state.mobil?.reunion?.phase, 'embracing');
+          portalFrames(h, 65); assert.equal(state.mobil?.reunion?.phase, 'together');
+          assert.equal(state.step, index, 'the reunion does not leave the station without Neo accepting');
+          h.command('act');
+        }
+        assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`); continue;
+      }
       if (scene.id === 'm3_trainman') {
-        if (index === 0) { h.command('act'); h.advance(6); }
+        if (index === 0) { portalFrames(h, 55); h.command('act'); portalFrames(h, 20); }
         else if (index === 1) h.advance(10);
         else if (index === 2) {
-          h.command('act'); for (let frame = 0; frame < 24; frame++) h.players.step(.1, true, h.tick()); h.advance(7);
+          h.command('act'); for (let frame = 0; frame < 160 && state.mobil?.phase === 'refusing'; frame++) h.players.step(.1, true, h.tick()); portalFrames(h, 35);
         } else h.advance();
         assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`); continue;
       }
+      if (scene.id === 'm2_relay') {
+        actor.position = filmStepPosition(scene, step, state); h.command('act');
+        for (let frame = 0; frame < (index === 0 ? 75 : 170); frame++) h.players.step(.1, true, h.tick());
+        if (index === 0) h.command('act');
+        assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`); continue;
+      }
+      if (scene.id === 'm2_blackout') {
+        // Wait for Ghost to walk onto the bridge, then acknowledge the saved midnight clock.
+        for (let frame = 0; frame < 30; frame++) h.players.step(.1, true, h.tick());
+        h.command('act');
+        for (let frame = 0; frame < 150 && state.step === index; frame++) h.players.step(.1, true, h.tick());
+        assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`);
+        assert.equal(state.grid?.primary, 'off'); assert.equal(state.grid?.emergency, 'online'); continue;
+      }
+      if (scene.id === 'm2_backup' && index === 1) { completeTerminal(h, () => ++sequence); assert.equal(state.step, index + 1); continue; }
       if (scene.id === 'm2_key_door' && index === 3) for (let count = 0; state.grid?.phase !== 'window' && count < 30; count++) h.advance();
+      if (scene.id === 'm2_key_door' && index >= 3) { completePortalStep(h, index); assert.equal(state.step, index + 1); continue; }
+      if (scene.id === 'm2_architect' && index === 5) { completeArchitectDoor(h); assert.equal(state.step, index + 1); continue; }
       if (scene.id === 'm2_dream') {
         if (index === 0) h.players.step(.1, true, h.tick());
         else { h.command('act'); for (let frame = 0; frame < 110 && state.step === index; frame++) h.players.step(.1, true, h.tick()); }
         assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`); continue;
       }
       if (scene.id === 'm2_catch') {
-        if (index === 0) h.command('act');
+        if (index === 0) startCatch(h, () => ++sequence);
         else if (index === 1) {
           for (let frame = 0; frame < 54; frame++) {
-            h.players.receiveInput('film-player', { x: frame < 6 ? -1 : 0, z: frame < 24 ? -1 : 0, yaw: Math.PI, jump: false, sprint: false, focus: false, sequence: ++sequence });
+            h.players.receiveInput('film-player', { x: frame < 10 ? -1 : frame >= 42 && frame < 46 ? 1 : 0, z: frame >= 10 && frame < 42 ? -1 : 0, yaw: Math.PI, jump: false, sprint: false, focus: false, sequence: ++sequence });
             h.players.step(.1, true, h.tick());
           }
           h.command('act');
         } else if (index === 2) {
-          for (let frame = 0; frame < 30; frame++) h.players.step(.1, true, h.tick());
+          for (let frame = 0; frame < 54; frame++) h.players.step(.1, true, h.tick());
           h.command('act');
           for (let frame = 0; frame < 26 && state.step === 2; frame++) {
             h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false, focus: true, sequence: ++sequence });
             h.players.step(.1, true, h.tick());
           }
-        } else for (let beat = 0; beat < 3; beat++) {
-          for (let frame = 0; frame < 11; frame++) h.players.step(.1, true, h.tick());
-          h.players.act('film-player', 'attack', h.tick());
+        } else {
+          for (let beat = 0; beat < 3; beat++) {
+            for (let frame = 0; frame < 11; frame++) h.players.step(.1, true, h.tick());
+            h.players.act('film-player', 'attack', h.tick());
+          }
+          for (let frame = 0; frame < 34; frame++) h.players.step(.1, true, h.tick());
         }
         assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`); continue;
       }
+      if (scene.id === 'm2_ship_lost' && index === 3) { completeNebExit(h, () => ++sequence); assert.equal(state.step, index + 1); continue; }
       if (scene.id === 'm2_stop_sentinels' && index === 1) {
         h.command('act');
-        for (let frame = 0; frame < 25 && state.step === index; frame++) {
+        for (let frame = 0; frame < 85 && state.step === index; frame++) {
           h.players.receiveInput('film-player', { x: 0, z: 0, yaw: 0, jump: false, sprint: false, focus: true, sequence: ++sequence });
           h.players.step(.1, true, h.tick());
         }
@@ -3138,8 +3724,105 @@ test('the entire film route completes through interactions, driving and real com
         h.command('act'); for (let frame = 0; frame < 30; frame++) h.players.step(.1, true, h.tick());
         actor.position = filmPosition(scene.set, 0, 27); h.command('act');
       }
+      else if (scene.id === 'm3_emp' && index === 0) {
+        h.command('act');
+        for (let frame = 0; frame < 70 && state.step === index; frame++) {
+          h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, focus: true, sprint: false, jump: false, sequence: ++sequence });
+          h.players.step(.1, true, h.tick());
+        }
+      }
+      else if (scene.id === 'm3_dock_reunion' && index === 0) {
+        h.command('act');
+        for (let frame = 0; frame < 205 && state.step === index; frame++) {
+          h.players.receiveInput('film-player', { x: 0, z: 0, yaw: 0, focus: true, sprint: false, jump: false, sequence: ++sequence });
+          h.players.step(.1, true, h.tick());
+        }
+      }
+      else if (scene.id === 'm3_dock_reunion' && index === 2) {
+        h.command('act');
+        for (let frame = 0; frame < 112; frame++) h.players.step(.1, true, h.tick());
+        assert.equal(state.dockReunion?.phase, 'promise'); h.command('act');
+        for (let frame = 0; frame < 85 && state.step === index; frame++) h.players.step(.1, true, h.tick());
+      }
+      else if (scene.id === 'm3_dock_briefing') {
+        if (index === 0) {
+          h.command('act');
+          for (let frame = 0; frame < 65 && state.step === index; frame++) h.players.step(.1, true, h.tick());
+        } else if (index === 1) {
+          for (let frame = 0; frame < 60 && state.step === index; frame++) h.players.step(.1, true, h.tick());
+        } else if (index === 2) {
+          h.command('act');
+          for (let frame = 0; frame < 50; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.dockBriefing?.phase, 'reply'); h.command('act');
+          for (let frame = 0; frame < 135 && state.step === index; frame++) h.players.step(.1, true, h.tick());
+        } else if (step.kind === 'reflect') h.command('reflect:care');
+        else h.players.step(.1, true, h.tick());
+      }
+      else if (scene.id === 'm3_dock_evacuation') {
+        if (index === 0 || index === 1) {
+          h.command('act');
+          for (let frame = 0; frame < 20 && state.step === index; frame++) h.players.step(.1, true, h.tick());
+        } else if (index === 2) {
+          for (let frame = 0; frame < 75 && state.dockEvacuation?.phase !== 'running'; frame++) h.players.step(.1, true, h.tick());
+          actor.position = filmStepPosition(scene, step, state); h.players.step(.1, true, h.tick());
+          assert.equal(state.dockEvacuation?.phase, 'waiting');
+        } else {
+          for (let frame = 0; frame < 115; frame++) h.players.step(.1, true, h.tick());
+          h.command('act');
+          for (let frame = 0; frame < 75 && state.step === index; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.dockEvacuation?.phase, 'clear');
+        }
+      }
+      else if (scene.id === 'm3_shaft_seal') {
+        if (index === 0) h.players.step(.1, true, h.tick());
+        else if (index === 1) {
+          h.command('act');
+          for (let frame = 0; frame < 110 && state.step === index; frame++) {
+            h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false, focus: true, sequence: ++sequence });
+            h.players.step(.1, true, h.tick());
+          }
+          assert.equal(state.shaftSeal?.phase, 'done');
+        } else h.command('reflect:care');
+      }
+      else if (scene.id === 'm3_temple_defense' || scene.id === 'm3_temple_breach') {
+        if (step.kind === 'interact') h.command('act');
+        const limit = scene.id === 'm3_temple_breach' ? 200 : 45;
+        for (let frame = 0; frame < limit && state.step === index; frame++) {
+          h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false,
+            focus: scene.id === 'm3_temple_defense' && step.kind === 'interact', sequence: ++sequence });
+          h.players.step(.1, true, h.tick());
+        }
+      }
+      else if (step.kind === 'reach' && scene.id === 'm3_oracle_request') {
+        actor.position = filmPosition(scene.set, 0, 23);
+        for (let frame = 0; frame < 240 && state.step === index; frame++) {
+          h.players.receiveInput('film-player', { x: 0, z: actor.position.z < FILM_SETS[scene.set].center.z + 31.8 ? 1 : 0,
+            yaw: 0, jump: false, sprint: false, sequence: ++sequence });
+          h.players.step(.1, true, h.tick());
+        }
+      }
+      else if (scene.id === 'm3_hel_entry' && index === 4) {
+        const target = filmStepPosition(scene, step, state);
+        for (let frame = 0; frame < 300; frame++) {
+          const dx = target.x - actor.position.x, dz = target.z - actor.position.z, gap = Math.hypot(dx, dz);
+          if (gap < .3) break;
+          h.players.receiveInput('film-player', { x: dx / Math.max(1, gap), z: dz / Math.max(1, gap), yaw: Math.atan2(dx, dz), jump: false, sprint: false, sequence: ++sequence });
+          h.players.step(.1, true, h.tick());
+          if (frame % 5 === 4) h.advance();
+          assert.ok(frame < 299, 'the trio must walk through the club to the VIP stairs');
+        }
+        h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false, sequence: ++sequence });
+        h.players.step(.1, true, h.tick()); h.advance(8);
+      }
       else if (step.kind === 'reach') h.advance();
       else if (step.kind === 'reflect') {
+        if (scene.id === 'm3_family') hearMobilFamily(h);
+        if (scene.id === 'm3_emp') {
+          for (let frame = 0; frame < 125; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.emp?.elapsed, 9, 'the EMP must finish through the player frame loop before reflection');
+          assert.equal(state.empOperator?.phase, 'done', 'Link must leave the chair before walking to reflect');
+          actor.position = filmStepPosition(scene, step);
+        }
         if (scene.id === 'm1_oracle') {
           h.command('act');
           for (let frame = 0; frame < 110; frame++) h.players.step(.1, true, h.tick());
@@ -3156,6 +3839,11 @@ test('the entire film route completes through interactions, driving and real com
         if (scene.id === 'm1_cypher_console') for (let frame = 0; frame < 48; frame++) h.players.step(.1, true, h.tick());
       }
       else if (step.kind === 'interact') {
+        if (scene.id === 'm3_oracle_request') {
+          h.command('act');
+          for (let frame = 0; frame < 200 && state.step === index; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.step, index + 1); continue;
+        }
         if (scene.id === 'm3_dock_battle' && index === 2) {
           h.command('act');
           for (let frame = 0; frame < 53; frame++) h.players.step(.1, true, h.tick());
@@ -3177,6 +3865,33 @@ test('the entire film route completes through interactions, driving and real com
             if (phase === 'jammed' && state.dockReload!.brace >= DOCK_RELOAD.braceSeconds) h.players.act('film-player', 'attack', h.tick());
           }
           assert.equal(state.dockReload?.phase, 'done'); assert.equal(state.step, index + 1); continue;
+        }
+        if (scene.id === 'm3_upper_digger') {
+          actor.position = filmPosition(scene.set, -43, 28); h.command('act');
+          for (let frame = 0; frame < 2000 && state.upperDigger?.phase !== 'done'; frame++) {
+            const phase = state.upperDigger!.phase;
+            if (phase === 'ready' || phase === 'hatch') h.command('act');
+            h.players.receiveInput('film-player', { x: 0, z: 0, yaw: actor.rotation, jump: false, sprint: false,
+              climb: 1, crouch: true, focus: true, sequence: ++sequence });
+            h.players.step(.05, true, h.tick());
+          }
+          assert.equal(state.upperDigger?.phase, 'done'); assert.equal(state.step, index + 1);
+          assert.equal(h.world.agents.get('charra')!.status, 'dead'); continue;
+        }
+        if (scene.id === 'm3_diggers') {
+          for (const station of DIGGERS.stations) {
+            actor.position = filmPosition(scene.set, station.x, station.z); h.command('act');
+            for (let frame = 0; frame < 300; frame++) {
+              const drill = state.diggers!, eye = diggerEye(drill), target = DIGGERS.knees[drill.station];
+              const dx = target.x - eye.x, dz = target.z - eye.z;
+              h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.atan2(dx, dz), pitch: -Math.atan2(target.y - eye.y, Math.hypot(dx, dz)),
+                jump: false, sprint: false, focus: true, sequence: ++sequence });
+              h.players.step(.05, true, h.tick());
+              if (drill.phase === 'aiming' && Math.abs(diggerShield(drill).offset) > 5) h.players.act('film-player', 'shoot', h.tick());
+              if (drill.phase === 'relocate' || drill.phase === 'done') break;
+            }
+          }
+          assert.equal(state.diggers?.phase, 'done'); assert.equal(state.step, index + 1); continue;
         }
         if (scene.id === 'm3_farewell' && index === 1) {
           h.command('act');
@@ -3234,7 +3949,7 @@ test('the entire film route completes through interactions, driving and real com
           assert.equal(state.scene, 'm2_merovingian', `${scene.id}: ${step.label}`); continue;
         }
         if (scene.id === 'm1_wake_up') {
-          for (let frame = 0; frame < 91; frame++) h.players.step(.1, true, h.tick());
+          for (let frame = 0; frame < 125; frame++) h.players.step(.1, true, h.tick());
           if (index === 0) { h.command('act'); for (let frame = 0; frame < 41; frame++) h.players.step(.1, true, h.tick()); }
         }
         else if (scene.id === 'm1_club') {
@@ -3243,10 +3958,25 @@ test('the entire film route completes through interactions, driving and real com
           h.command('act'); for (let frame = 0; frame < 141; frame++) h.players.step(.1, true, h.tick());
         }
         else if (scene.id === 'm1_pills') for (let frame = 0; frame < 51; frame++) h.players.step(.1, true, h.tick());
-        else if (scene.id === 'm3_hel_entry' && index === 0) h.advance(10);
+        else if (scene.id === 'm3_hel_entry' && index === 0) {
+          h.advance(Math.ceil(HEL_ELEVATOR.seconds * 2));
+          assert.equal(state.helElevator?.phase, 'arrived');
+          actor.position = filmStepPosition(scene, step, state); h.command('act'); h.advance(Math.ceil(HEL_ELEVATOR.opening * 2));
+        }
+        else if (scene.id === 'm3_hel_entry' && index === 3) {
+          assert.equal(state.helDanceDoor?.physical, true);
+          for (let frame = 0; frame < 40 && state.helDanceDoor?.phase === 'opening'; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.helDanceDoor?.phase, 'open');
+        }
+        else if (scene.id === 'm3_hel_bargain' && index === 0) {
+          assert.equal(state.helBargain?.phase, 'disarming');
+          for (let frame = 0; frame < 36; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.helBargain?.phase, 'disarmed');
+        }
         else if (scene.id === 'm3_hel_bargain' && index === 3) {
           h.advance(2); h.players.act('film-player', 'dodge', h.tick());
           actor.rotation = Math.PI; h.players.act('film-player', 'attack', h.tick());
+          h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false, sequence: ++sequence });
         }
         else if (scene.id === 'm3_gate' && index === 2) {
           for (let frame = 0; frame < 80; frame++) h.sandbox.life.film.dockGate.frame(actor, .1, h.tick(), undefined, undefined, true);
@@ -3258,7 +3988,11 @@ test('the entire film route completes through interactions, driving and real com
           }
           for (let frame = 0; frame < 115; frame++) h.players.step(.1, true, h.tick());
         }
-        else if (scene.id === 'm3_hel_bargain' && index === 4) { h.advance(4); h.command('act'); }
+        else if (scene.id === 'm3_hel_bargain' && index === 4) {
+          for (let frame = 0; frame < 31; frame++) h.players.step(.1, true, h.tick());
+          h.command('act'); assert.equal(state.helBargain?.phase, 'catching');
+          for (let frame = 0; frame < 8; frame++) h.players.step(.1, true, h.tick());
+        }
         else if (scene.id === 'm3_hel_bargain' && index === 5) { actor.rotation = Math.PI; h.command('act'); }
         else if (scene.id === 'm1_download') {
           for (let frame = 0; frame < 121; frame++) h.players.step(.1, true, h.tick());
@@ -3360,13 +4094,13 @@ test('the entire film route completes through interactions, driving and real com
           for (let frame = 0; frame < 75 && state.step === index; frame++) h.players.step(.1, true, h.tick());
         }
         else if (scene.id === 'm1_boss' && index === 0) {
-          for (let frame = 0; frame < 91; frame++) h.players.step(.1, true, h.tick());
+          for (let frame = 0; frame < 125; frame++) h.players.step(.1, true, h.tick());
           h.command('act');
         } else if (scene.id === 'm1_boss' && index === 1) {
           for (let frame = 0; frame < 111; frame++) h.players.step(.1, true, h.tick());
           h.command('act'); for (let frame = 0; frame < 41; frame++) h.players.step(.1, true, h.tick());
           h.command('act');
-          for (let frame = 0; frame < 30; frame++) h.players.step(.1, true, h.tick());
+          for (let frame = 0; frame < 54; frame++) h.players.step(.1, true, h.tick());
           h.command('act'); for (let frame = 0; frame < 120; frame++) h.players.step(.1, true, h.tick());
         } else if (scene.id === 'm1_office_escape' && index === 2) for (let frame = 0; frame < 40; frame++) h.players.step(.1, true, h.tick());
         else if (state.constructArrival) {
@@ -3452,11 +4186,33 @@ test('the entire film route completes through interactions, driving and real com
         } else rideToExit(h);
       }
       else {
+        if (scene.id === 'm2_trucks' && state.trucks?.road && index === 0) {
+          h.command('act');
+          for (let frame = 0; frame < 400 && state.trucks.weapons?.phase !== 'unarmed'; frame++) {
+            const opponent = h.world.agents.get('agent_johnson')!, w = state.trucks.weapons!;
+            const yaw = Math.atan2(opponent.position.x - actor.position.x, opponent.position.z - actor.position.z);
+            h.players.receiveInput('film-player', { x: 0, z: 0, yaw, pitch: 0, jump: false, sprint: false, sequence: ++sequence });
+            if (w.phase === 'gun') h.players.act('film-player', 'shoot', h.tick());
+            if (w.phase === 'blade') h.players.act('film-player', 'attack', h.tick());
+            if (['counter', 'gun_disarm'].includes(w.phase) && w.elapsed >= .25 && w.elapsed < .6) h.players.act('film-player', 'dodge', h.tick());
+            h.players.step(.05, true, h.tick());
+          }
+          assert.equal(state.trucks.weapons?.phase, 'unarmed', 'the complete route performs the gun and blade stages');
+          assert.ok(state.trucks.weapons!.parries >= 2 && state.trucks.weapons!.slashes >= 2);
+          assert.equal(h.sandbox.state.threats.filter(t => t.scene === scene.id).length, 1);
+        }
         if (scene.id === 'm3_dock_battle') {
-          h.command('act'); h.advance(26);
-          for (const target of state.dockGunnery!.targets) for (let shot = 0; shot < 2; shot++)
-            h.sandbox.life.film.dockShoot(actor, Math.atan2(target.x, target.z - DOCK_GUNNERY.apuZ), 0, h.tick());
-          h.advance(20); assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`); continue;
+          h.command('act');
+          for (let frame = 0; frame < 90 && state.step === index; frame++) {
+            h.advance(); const battle = state.dockGunnery!;
+            for (const [targetIndex, target] of battle.targets.entries()) {
+              if (target.health <= 0 || target.spawnAt > battle.elapsed) continue;
+              const point = dockGunneryTarget(battle, targetIndex), eye = DOCK_GUNNERY.eye;
+              const yaw = Math.atan2(point.x - eye.x, point.z - eye.z), pitch = -Math.atan2(point.y - eye.y, Math.hypot(point.x - eye.x, point.z - eye.z));
+              for (let shot = 0; target.health > 0 && shot < 4; shot++) h.sandbox.life.film.dockShoot(actor, yaw, pitch, h.tick());
+            }
+          }
+          assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`); continue;
         }
         if (scene.id === 'm2_burly') {
           h.command('act');
@@ -3508,7 +4264,8 @@ test('the entire film route completes through interactions, driving and real com
         }
         h.command('act');
         if (scene.id === 'm1_lobby') for (let frame = 0; frame < 80 && !h.sandbox.state.threats.length; frame++) h.players.step(.1, true, h.tick());
-        h.advance(); assert.ok(h.sandbox.state.threats.length > 0, scene.id);
+        h.advance(); assert.ok(h.sandbox.state.threats.length > 0, JSON.stringify({ scene: scene.id, lastText: state.lastText,
+          seraph: scene.id === 'm3_hel_entry' ? h.world.agents.get('seraph') : undefined }));
         if (scene.id === 'm1_bathroom') {
           const target = h.sandbox.state.threats[0]; target.stunUntil = Number.MAX_SAFE_INTEGER;
           for (let frame = 0; frame < 130; frame++) h.players.step(.1, true, h.tick());
@@ -3552,6 +4309,19 @@ test('the entire film route completes through interactions, driving and real com
             assert.equal(target.health, 0, scene.id);
           }
           h.advance();
+        }
+        if (scene.id === 'm2_trucks' && state.trucks?.hood && index === 0) {
+          assert.equal(state.trucks.hood.phase, 'kick', 'winning the unarmed fight starts the car reception instead of skipping it');
+          for (let frame = 0; state.step === index && frame < 320; frame++) {
+            const hood = state.trucks.hood;
+            h.players.receiveInput('film-player', { x: 0, z: 0, yaw: actor.rotation, pitch: 0,
+              jump: hood.phase === 'ready', sprint: false, focus: hood.phase === 'hood',
+              drive: { throttle: 0, brake: false, steer: hood.phase === 'hood' ? -hood.balance * .4 : 0 }, sequence: ++sequence });
+            if (hood.phase === 'flight' && hood.elapsed >= TRUCK_HOOD.contactStart && hood.elapsed <= TRUCK_HOOD.contactEnd) h.players.act('film-player', 'attack', h.tick());
+            h.players.step(.05, true, h.tick());
+          }
+          assert.equal(state.trucks.hood.phase, 'done', 'the full route must grip, pass the truck and perform the timed return kick');
+          assert.equal(state.trucks.phase, 'collision');
         }
       }
       if (scene.id === 'm1_pills' && index === scene.steps.length - 1) {

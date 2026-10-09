@@ -2,7 +2,7 @@ import { TruthPerformance } from './TruthPerformance.js';
 import { poseSpoonBody } from './SpoonPerformance.js';
 import { poseMorningBody } from './MorningPerformance.js';
 import { posePodWake } from './PodWakePerformance.js';
-import { truthKneel, truthSeat, spoonLessonSeat, smithFinaleLocked } from '@auto_matrix/shared';
+import { truthKneel, truthSeat, spoonLessonSeat, smithFinaleLocked, smithCraterAmount } from '@auto_matrix/shared';
 import * as THREE from 'three';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
@@ -44,6 +44,7 @@ export interface HeroRig {
     roughness: number; metalness: number; emissive: THREE.Color; emissiveIntensity: number; outer: boolean; hair: boolean; cloth: boolean }[];
   officeRole?: 'rhineheart' | 'courier' | 'police';
   apartmentRole?: 'choi' | 'dujour';
+  support?: HeroSupport;
 }
 
 export const HERO_IDS = ['neo', 'trinity', 'smith', 'morpheus'] as const;
@@ -264,11 +265,11 @@ export class HeroModels {
     root.traverse(object => {
       if (!(object instanceof THREE.Mesh) || !(object.material instanceof THREE.MeshStandardMaterial)) return;
       const source = object.material; const material = source.clone(); this.materials.add(material); object.material = material;
-      if (tracking && !object.userData.office && object instanceof THREE.SkinnedMesh && material.name === 'Skin') {
+      if ((tracking || support === 'link' || id === 'trinity' || id === 'morpheus') && !object.userData.office && object instanceof THREE.SkinnedMesh && material.name === 'Skin') {
         // The existing head/hands mesh also contains shoulder caps. They sit
         // beneath the new sleeves; preserve the finished face and wrist rings.
         const original = object.geometry; const index = original.index!; const positions = original.attributes.position;
-        const covered = (index: number) => positions.getY(index) > 2.6 && positions.getY(index) < 3.68 && Math.abs(positions.getX(index)) > .24;
+        const covered = (index: number) => (tracking || support === 'link') && positions.getY(index) > 2.6 && positions.getY(index) < 3.68 && Math.abs(positions.getX(index)) > .24;
         const indices: number[] = [];
         for (let i = 0; i < index.count; i += 3) {
           const triangle = [index.getX(i), index.getX(i + 1), index.getX(i + 2)];
@@ -311,7 +312,7 @@ export class HeroModels {
       if (support === 'ballard' && /Coat/.test(material.name)) material.color.setHex(0x302d23);
       if (support === 'ghost' && /Coat/.test(material.name)) material.color.setHex(0x394140);
       if (support === 'soren' && /Hair|hair|Groom|groom/.test(material.name)) material.color.setHex(0xb7b1a2);
-      if (support === 'link' && /Coat|Trousers/.test(material.name)) { material.color.setHex(0x777467); material.roughness = .95; }
+      if (support === 'link' && /Coat|Trousers/.test(material.name)) { material.color.setHex(/Trousers/.test(material.name) ? 0x282829 : 0x302b3c); material.roughness = .95; material.metalness = 0; }
       if (support === 'dozer' && /Coat|Trousers/.test(material.name)) { material.color.setHex(0x665e45); material.roughness = .96; }
       wardrobe.push({ mesh: object, color: material.color.clone(), map: material.map, bumpMap: material.bumpMap, bumpScale: material.bumpScale,
         roughness: material.roughness, metalness: material.metalness, emissive: material.emissive.clone(), emissiveIntensity: material.emissiveIntensity,
@@ -348,11 +349,49 @@ export class HeroModels {
         const theta = i * Math.PI * 2 / 10; const knot = this.mesh(head, new THREE.SphereGeometry(.092, 12, 10), hair);
         knot.position.set(Math.cos(theta) * .23, .17 + (i % 2) * .07, -.04 + Math.sin(theta) * .17); knot.scale.y = 1.3;
       }
+      const wrist = bones.get('wrist_L')!, metal = new THREE.MeshStandardMaterial({ color: 0x87938c, metalness: .85, roughness: .3 });
+      const strap = this.mesh(wrist, new THREE.TorusGeometry(.17, .025, 8, 24), metal); strap.name = 'primary-watch-band'; strap.rotation.x = Math.PI / 2; strap.position.y = .09;
+      const watch = new THREE.Group(); watch.name = 'primary-watch'; watch.position.set(0, .09, -.18); wrist.add(watch);
+      this.mesh(watch, new THREE.BoxGeometry(.23, .27, .045), metal);
+      const face = this.mesh(watch, new THREE.CircleGeometry(.105, 32), new THREE.MeshStandardMaterial({ color: 0x101817, roughness: .45 }));
+      face.position.z = -.024; face.rotation.y = Math.PI;
+      const ink = new THREE.MeshStandardMaterial({ color: 0xd8debc, emissive: 0x65735f, emissiveIntensity: .3, roughness: .6 });
+      for (let i = 0; i < 12; i++) {
+        const angle = i * Math.PI / 6, tick = this.mesh(watch, new THREE.BoxGeometry(.01, .02, .003), ink);
+        tick.position.set(Math.sin(angle) * .082, Math.cos(angle) * .082, -.029); tick.rotation.z = -angle;
+      }
+      const needle = new THREE.Group(); needle.name = 'primary-watch-second'; needle.position.z = -.031; watch.add(needle);
+      this.mesh(needle, new THREE.BoxGeometry(.006, .095, .003), ink).position.y = .03;
+      this.mesh(watch, new THREE.BoxGeometry(.012, .058, .005), ink).position.set(-.007, .021, -.034);
     }
     if (support === 'ballard') {
       const cap = this.mesh(head, new THREE.SphereGeometry(.3, 24, 12), new THREE.MeshStandardMaterial({ color: 0x151813, roughness: .94 })); cap.position.set(.03, .21, -.04); cap.scale.set(1.15, .3, .93); cap.rotation.z = -.17;
     }
-    const rig: HeroRig = { root, bones, rest, panels, footHeight, glasses, silver, trackingSkin, wardrobe, officeRole: police ? 'police' : support === 'rhineheart' || support === 'courier' ? support : undefined, apartmentRole };
+    if (support === 'link') {
+      const hair = new THREE.MeshStandardMaterial({ color: 0x17140f, roughness: .96 });
+      const scalp: number[] = [];
+      root.updateWorldMatrix(true, true);
+      root.traverse(object => {
+        if (!(object instanceof THREE.SkinnedMesh) || (object.material as THREE.Material).name !== 'Skin') return;
+        object.skeleton.update(); const indices = object.geometry.index!;
+        for (let i = 0; i < indices.count; i += 3) {
+          const points = [0, 1, 2].map(k => object.localToWorld(object.getVertexPosition(indices.getX(i + k), new THREE.Vector3())));
+          if (!points.every(p => p.y > metadata.eye[1] - .34 + THREE.MathUtils.smoothstep(p.z, -.15, .23) * .47)) continue;
+          for (const point of points) { head.worldToLocal(point); point.multiplyScalar(1.025); scalp.push(point.x, point.y, point.z); }
+        }
+      });
+      const shell = new THREE.BufferGeometry(); shell.setAttribute('position', new THREE.Float32BufferAttribute(scalp, 3)); shell.computeVertexNormals();
+      this.mesh(head, shell, hair).name = 'link-hair-cap';
+      for (let i = 0; i < 24; i++) {
+        const angle = i * 2.39996323, radius = .1 + Math.sqrt(i / 24) * .21;
+        const x = Math.sin(angle) * radius, z = Math.cos(angle) * radius;
+        const braid = this.mesh(head, new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
+          new THREE.Vector3(x, .41 - radius * .22, z - .045), new THREE.Vector3(x * 1.12, .34 - i % 3 * .035, -.15),
+          new THREE.Vector3(x * 1.2, .03, -.34), new THREE.Vector3(x * 1.3, -.46 - i % 5 * .07, -.37),
+        ]), 16, .034, 7), hair); braid.name = 'link-braid';
+      }
+    }
+    const rig: HeroRig = { root, bones, rest, panels, footHeight, glasses, silver, trackingSkin, wardrobe, support, officeRole: police ? 'police' : support === 'rhineheart' || support === 'courier' ? support : undefined, apartmentRole };
     if (apartmentRole) this.apartments.set(rig, new ApartmentPerformance(rig));
     if (id === 'neo' && !support) this.recoveries.set(rig, new RecoveryPerformance(rig));
     if ((id === 'neo' || id === 'trinity') && !support) this.farewellAppearances.set(rig, new FarewellAppearance(rig, id, eye));
@@ -699,9 +738,13 @@ export class HeroModels {
   }
 
   animate(rig: HeroRig, pose: Pose, motion: MotionState, input: MotionInput, delta: number): void {
-    const interactionView = Boolean(input.firstPerson && (input.morning || input.podWake !== undefined || input.workday?.role === 'neo' && input.workday.phase === 'signing'));
+    const interactionView = Boolean(input.firstPerson && (input.armed && input.weaponStyle === 'hel_pistol' || input.mobilReunion?.reunion.phase === 'embracing' || input.helDisarm || input.helBreakout || input.helDoorPush || input.helElevator || input.helDanceDoor !== undefined || input.primaryDemolition?.phase === 'mounting' || input.primaryDemolition?.blast?.phase === 'countdown' || input.signal || input.architect?.role === 'neo' || input.catch?.role === 'neo' || input.truckHood || input.truckWeapons || input.freewayPickup || input.freewayRide || input.smithFinale?.pitFight && smithFinaleLocked(input.smithFinale) || input.dockReunion || input.empOperator || input.morning || input.podWake !== undefined || input.workday?.role === 'neo' && input.workday.phase === 'signing'));
+    if (rig.support === 'link') for (const part of rig.bones.get('head')!.children)
+      if (part.name === 'link-hair-cap' || part.name === 'link-braid') part.visible = !interactionView;
     rig.silver.value = input.mirror ?? 0;
-    rig.glasses.visible = !interactionView && !rig.officeRole && !rig.apartmentRole && input.glasses !== false && !input.realWorld && !input.smithFinale && !(input.bathroom?.role === 'smith' && input.bathroom.headbutt);
+    const finaleGlasses = !input.smithFinale || (input.smithFinale.role === 'smith' ? smithCraterAmount(input.smithFinale) === 0
+      : ['approach', 'entrance', 'greeting', 'reply', 'prediction', 'charge_ready', 'charging', 'ready', 'ground_warning', 'ground_dodge', 'ground_counter', 'shockwave', 'air_warning', 'air_dodge', 'air_counter'].includes(input.smithFinale.phase));
+    rig.glasses.visible = !interactionView && (!input.catch || ['launch', 'departing', 'flight', 'catching', 'ascent'].includes(input.catch.phase) && input.catch.role === 'neo') && !rig.officeRole && !rig.apartmentRole && input.glasses !== false && !input.realWorld && finaleGlasses && !(input.bathroom?.role === 'smith' && input.bathroom.headbutt);
     const officeShirt = input.officeShirt || rig.officeRole === 'courier' || rig.officeRole === 'police';
     const trackingShirt = input.performance === 'touch' || input.homeClothes === true;
     const clubClothes = Boolean(input.clubClothes && !input.realWorld);
@@ -735,7 +778,7 @@ export class HeroModels {
       if (patientSurface) material.emissive.setHex(0x160708); else material.emissive.copy(part.emissive);
       material.emissiveIntensity = patientSurface ? .06 : part.emissiveIntensity;
       if (patientLegs) material.color.setHex(0xa97c70);
-      else if (part.cloth && input.realWorld) material.color.setHex(0x706c62);
+      else if (part.cloth && input.realWorld && rig.support !== 'link') material.color.setHex(0x706c62);
       else material.color.copy(part.color);
       if ((part.hair || material.name === 'Eyes') && interactionView) part.mesh.visible = false;
     }
@@ -1029,7 +1072,7 @@ export class HeroModels {
     this.truths.get(rig)?.pose(input.truth);
     rig.root.updateWorldMatrix(true, true);
     if (input.performance === 'touch') placeTrackingFeet(rig, input.mirrorBeat, input.mirrorEntry);
-    if (input.epilogue?.kind !== 'neo_carried' && !input.farewell && !(input.truth?.role === 'neo' && input.truth.phase === 'unplug' && (truthSeat(input.truth.elapsed) > 0 || truthKneel(input.truth.elapsed) > 0)) && input.grounded && !input.meeting && !input.interrogation && !(input.wakeCall?.phase === 'waking' && input.wakeCall.elapsed < 3.2) && !input.riding && input.climbing === undefined && (!input.performance || input.performance === 'connect')) {
+    if (!input.truckHood && input.epilogue?.kind !== 'neo_carried' && !input.farewell && !(input.truth?.role === 'neo' && input.truth.phase === 'unplug' && (truthSeat(input.truth.elapsed) > 0 || truthKneel(input.truth.elapsed) > 0)) && input.grounded && !input.meeting && !input.interrogation && !(input.wakeCall?.phase === 'waking' && input.wakeCall.elapsed < 3.2) && !input.riding && input.climbing === undefined && (!input.performance || input.performance === 'connect')) {
       let lowest = Infinity;
       for (const side of ['R', 'L']) {
         this.point.setFromMatrixPosition(bone('ankle_' + side).matrixWorld); rig.root.worldToLocal(this.point);
@@ -1096,7 +1139,7 @@ export class HeroModels {
     const ambushCenter = FILM_SETS.film_ambush_house.center, origin = rig.root.getWorldPosition(new THREE.Vector3());
     const onStairs = Math.abs(origin.x - ambushCenter.x) <= 9 && origin.z >= ambushCenter.z + 12 && origin.z <= ambushCenter.z + 34
       && origin.y >= ambushCenter.y - 1 - AMBUSH_STAIRS.rise * AMBUSH_STOREYS - .1 && origin.y <= ambushCenter.y - 1 + .1;
-    const savedCloth = input.truckRescue || smithFinaleLocked(input.smithFinale);
+    const savedCloth = input.helGarage || input.trainmanChase || input.truckHood || input.truckRescue || smithFinaleLocked(input.smithFinale);
     if (delta <= 0 && !savedCloth && spoonFloor === undefined && !onStairs || !rig.panels.some(panel => panel.mesh.visible)) return;
     const dt = Math.max(0, Math.min(delta, 1 / 30));
     // Analytic wind target plus damped springs; the waist is pinned. Thigh and

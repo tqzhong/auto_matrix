@@ -9,9 +9,9 @@ import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { TRUCKS, truckRescuePose, type TruckEncounter, type TruckRescueRole } from '../packages/shared/src/constants/trucks.js';
 import { poseTruckRescue } from '../packages/client/src/agents/TruckRescueContact.js';
 
-async function actors(t: test.TestContext) {
+async function actors(t: test.TestContext, detailed = false) {
   const assets = new Map();
-  for (const id of ['neo', 'morpheus', 'neo-office', 'neo-tracking']) {
+  for (const id of ['neo', 'morpheus', 'neo-office', 'neo-tracking', ...(detailed ? ['keymaker-body', 'keymaker-head'] : [])]) {
     const glb = await readFile(new URL(`../packages/client/public/assets/characters/${id}.glb`, import.meta.url));
     const length = glb.readUInt32LE(12), source = JSON.parse(glb.subarray(20, 20 + length).toString());
     for (const material of source.materials) { delete material.pbrMetallicRoughness.baseColorTexture; delete material.normalTexture; }
@@ -31,8 +31,13 @@ async function actors(t: test.TestContext) {
   const world = new WorldState(); new AgentManager(world).initializeAllAgents(); const models = new CharacterModels();
   t.after(() => { models.dispose(); globalThis.document = previousDocument; });
   const rigs = Object.fromEntries(['neo', 'morpheus', 'keymaker'].map(id => [id, models.create(world.agents.get(id)!)])) as Record<TruckRescueRole, CharacterRig>;
+  if (detailed) models.animate(rigs.keymaker, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 }, 0);
   await new Promise(resolve => setImmediate(resolve));
   assert.ok(rigs.neo.hero && rigs.morpheus.hero && !rigs.keymaker.hero);
+  if (detailed) {
+    assert.ok(rigs.keymaker.root.getObjectByName('keymaker-detailed-body'));
+    assert.ok(rigs.keymaker.head.getObjectByName('keymaker-detailed-head'));
+  }
   const groups = Object.fromEntries(Object.entries(rigs).map(([id, rig]) => {
     const group = new THREE.Group(); group.add(rig.root); rig.root.position.y = -1; return [id, group];
   })) as Record<TruckRescueRole, THREE.Group>;
@@ -63,8 +68,8 @@ function shoulderSurface(rig: CharacterRig, side: number): THREE.Vector3 {
   return hit.point;
 }
 
-test('Neo holds both actual shoulder surfaces during the truck rescue without stretching his arms', async t => {
-  const h = await actors(t), neo = h.rigs.neo.hero!;
+for (const detailed of [false, true]) test(`Neo holds both actual shoulder surfaces during the truck rescue without stretching his arms (${detailed ? 'delivered Keymaker' : 'fallback'})`, async t => {
+  const h = await actors(t, detailed), neo = h.rigs.neo.hero!;
   const lengths = Object.fromEntries(['elbow_L', 'elbow_R', 'wrist_L', 'wrist_R'].map(name => [name, neo.bones.get(name)!.position.clone()]));
   for (const rescueElapsed of [1.3, 1.4, 1.6, 1.9, 2.2, 2.59]) {
     const encounter: TruckEncounter = { phase: 'rescue', elapsed: 9.7, rescueElapsed, lastTick: 0, attempt: 0 };
@@ -120,7 +125,7 @@ function headSurface(rig: CharacterRig): THREE.Mesh {
 }
 
 test('Neo’s visible palms and fingers stay outside both delivered heads while carrying the two passengers', async t => {
-  const h = await actors(t), neo = h.rigs.neo.hero!, point = new THREE.Vector3(), ray = new THREE.Raycaster();
+  const h = await actors(t, true), neo = h.rigs.neo.hero!, point = new THREE.Vector3(), ray = new THREE.Raycaster();
   for (const rescueElapsed of [.95, 1.1, 1.2, 1.3, 1.7, 2.3, 2.59, 2.7, 2.9]) {
     const encounter: TruckEncounter = { phase: 'rescue', elapsed: 9.7, rescueElapsed, lastTick: 0, attempt: 0 };
     h.draw(encounter); poseTruckRescue(neo, h.rigs.morpheus, h.rigs.keymaker, encounter); neo.root.updateMatrixWorld(true);
@@ -146,7 +151,7 @@ test('Neo’s visible palms and fingers stay outside both delivered heads while 
 });
 
 test('the two delivered passengers leave the roof without driving their shoes or clothing through it', async t => {
-  const h = await actors(t), point = new THREE.Vector3();
+  const h = await actors(t, true), point = new THREE.Vector3();
   for (const rescueElapsed of [0, .02, .05, .1, .15, .25, .35]) {
     h.draw({ phase: 'rescue', elapsed: 9.7, rescueElapsed, lastTick: 0, attempt: 0 });
     for (const role of ['morpheus', 'keymaker'] as const) {
@@ -166,7 +171,7 @@ test('the two delivered passengers leave the roof without driving their shoes or
 });
 
 test('the rescue grip joins and leaves the base arm animation without an elbow pop', async t => {
-  const h = await actors(t), neo = h.rigs.neo.hero!;
+  const h = await actors(t, true), neo = h.rigs.neo.hero!;
   for (const boundary of [.9, 3]) {
     const frames = [boundary - .0001, boundary + .0001].map(rescueElapsed => {
       const encounter: TruckEncounter = { phase: 'rescue', elapsed: 9.7, rescueElapsed, lastTick: 0, attempt: 0 };
@@ -175,5 +180,30 @@ test('the rescue grip joins and leaves the base arm animation without an elbow p
     });
     for (let joint = 0; joint < frames[0].length; joint++) assert.ok(frames[0][joint].distanceTo(frames[1][joint]) < .01,
       `arm joint ${joint} pops by ${frames[0][joint].distanceTo(frames[1][joint])} at ${boundary}`);
+  }
+});
+
+test('delivered rescue bodies pass under the highway deck and land above the road', async t => {
+  const h = await actors(t, true), point = new THREE.Vector3();
+  const encounter: TruckEncounter = { phase: 'rescue', elapsed: 10, lastTick: 482, attempt: 4,
+    road: { truck: { x: 13.7, z: 408.50096 }, elapsed: 41.109, bridgeZ: -471.39624, phase: 'ready',
+      checkpoint: { morpheus: { x: .3, y: 6.6, z: -3.5, yaw: Math.PI / 2 }, keymaker: { x: 1.3, y: 6.6, z: -10.2, yaw: Math.PI }, health: 100 } },
+    starts: { morpheus: { x: 13.13581844, y: 6.6, z: 401.16015308, yaw: .22131444 },
+      keymaker: { x: 15, y: 6.6, z: 398.30096, yaw: 0 }, neo: { x: 13.7, y: 23, z: 491.50096, yaw: Math.PI } } };
+  for (const rescueElapsed of [0, .1, .3, .6, .9, 1.3, 1.55, 1.7, 1.85, 2, 2.2, 2.7, 2.8, 2.9, 2.95, 3]) {
+    encounter.rescueElapsed = rescueElapsed; h.draw(encounter);
+    poseTruckRescue(h.rigs.neo.hero!, h.rigs.morpheus, h.rigs.keymaker, encounter);
+    for (const role of ['neo', 'morpheus', 'keymaker'] as const) {
+      const root = h.rigs[role].root; root.updateWorldMatrix(true, true);
+      root.traverseVisible(object => {
+        if (!(object instanceof THREE.Mesh)) return;
+        for (let vertex = 0; vertex < object.geometry.attributes.position.count; vertex++) {
+          object.getVertexPosition(vertex, point); object.localToWorld(point);
+          assert.ok(point.y >= -1.06, `${role}/${rescueElapsed}/${object.name} enters the road at ${point.toArray()}`);
+          assert.ok(Math.abs(point.x) > 60 || point.z < 391 || point.z > 409 || point.y < 14.225 || point.y > 17,
+            `${role}/${rescueElapsed}/${object.name} enters the real bridge deck or girder at ${point.toArray()}`);
+        }
+      });
+    }
   }
 });

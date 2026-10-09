@@ -4,16 +4,20 @@ import { FILM_SETS, filmPosition } from '../packages/shared/src/constants/film-s
 import { MOUNTAIN } from '../packages/shared/src/constants/mountain.ts';
 import { PILL_ROOM } from '../packages/shared/src/constants/pills.ts';
 import { INTERROGATION_ROOM } from '../packages/shared/src/constants/interrogation.ts';
+import { SOURCE_BRIEFING } from '../packages/shared/src/constants/source-briefing.ts';
+import { TRAINMAN_CHASE } from '../packages/shared/src/constants/trainman-chase.ts';
 import { groundHeight, playerBlocked, stepPlayer } from '../packages/shared/src/constants/city.ts';
 
 test('film sets admit walking in both worlds and use their own floor', () => {
   for (const set of Object.values(FILM_SETS)) {
-    const position = filmPosition(set.id, set.architecture === 'freeway' ? 14 : set.id === 'film_agent_interrogation' ? INTERROGATION_ROOM.approach.x : set.id === 'film_tv_repair' ? 8.5 : 0, set.id === 'film_mountain_range' ? MOUNTAIN.door.z : 0);
+    const position = set.id === 'film_operation_room' ? filmPosition(set.id, SOURCE_BRIEFING.entry.x, SOURCE_BRIEFING.entry.z)
+      : set.id === TRAINMAN_CHASE.set ? filmPosition(set.id, TRAINMAN_CHASE.entry.x, TRAINMAN_CHASE.entry.z)
+      : filmPosition(set.id, set.architecture === 'freeway' ? 14 : set.id === 'film_agent_interrogation' ? INTERROGATION_ROOM.approach.x : set.id === 'film_tv_repair' ? 8.5 : 0, set.id === 'film_mountain_range' ? MOUNTAIN.door.z : 0);
     assert.equal(playerBlocked(position, set.world === 'matrix'), false, set.name);
     assert.equal(groundHeight(position, set.world === 'matrix'), position.y, set.name);
     const next = stepPlayer(position, 0, { x: 0, z: -1, yaw: Math.PI, jump: false, sprint: false, sequence: 1 }, .1, set.world === 'matrix');
     assert.ok(next.position.z < position.z, `${set.name}: movement must not freeze at the old city boundary`);
-    assert.equal(playerBlocked({ ...position, x: position.x + (set.id === 'film_lafayette' ? 48.4 : (set.id === 'film_office_ledge' ? -1 : 1) * (set.width / 2 + 2)) }, set.world === 'matrix'), true, set.name);
+    assert.equal(playerBlocked({ ...position, x: set.center.x + (set.id === 'film_lafayette' ? 48.4 : (set.id === 'film_office_ledge' ? -1 : 1) * (set.width / 2 + 2)) }, set.world === 'matrix'), true, set.name);
   }
 });
 

@@ -19,14 +19,18 @@ export function poseOracleRestored(rig: CharacterRig, restored = false): boolean
   });
   if (!restored) {
     if (supports.has(rig)) {
-      rig.detail.rotation.set(0, 0, 0); rig.detail.position.y = 0; rig.head.position.z = 0;
+      rig.detail.rotation.set(0, 0, 0); rig.detail.position.set(0, 0, 0); rig.head.position.z = 0;
       rig.shoulders.forEach(shoulder => { shoulder.position.z = 0; });
     }
     return false;
   }
   const parkOutfit = rig.root.getObjectByName('oracle-park-outfit'); if (parkOutfit) parkOutfit.visible = false;
+  const parkUpper = rig.root.getObjectByName('oracle-park-upper'); if (parkUpper) parkUpper.visible = false;
+  for (const name of ['oracle-daily-blouse', 'oracle-daily-hem', 'oracle-daily-collar', 'oracle-daily-tailoring']) {
+    const daily = rig.root.getObjectByName(name); if (daily) daily.visible = true;
+  }
   Object.assign(rig.motion, newMotion());
-  rig.detail.rotation.set(-Math.PI / 2, 0, 0); rig.detail.position.y = 0;
+  rig.detail.rotation.set(-Math.PI / 2, 0, 0); rig.detail.position.set(0, 0, 0);
   rig.torso.position.set(0, 1.86, 0); rig.torso.rotation.set(0, 0, 0);
   rig.head.position.z = -.075; rig.head.rotation.set(0, -.06, 0);
   for (let i = 0; i < 2; i++) {

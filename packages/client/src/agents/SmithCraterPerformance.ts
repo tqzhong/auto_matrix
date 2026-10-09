@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { smithCraterAmount, smithFinalePose, type SmithFinaleEncounter } from '@auto_matrix/shared';
+import { smithCraterAmount, smithFinaleBeat, smithFinalePose, type SmithFinaleEncounter } from '@auto_matrix/shared';
 import type { HeroRig } from './HeroModel.js';
 import { reach } from './SpoonPerformance.js';
 
@@ -40,18 +40,24 @@ function supportSurface(rig: HeroRig) {
 
 /** Rest on the delivered back/coat, then roll up through folded legs to standing. */
 export function poseSmithCraterBody(rig: HeroRig, encounter: SmithFinaleEncounter, neo: boolean): void {
+  encounter = smithFinaleBeat(encounter);
   const amount = smithCraterAmount(encounter);
-  if (amount <= 0) return;
+  const street = ['entrance', 'greeting', 'reply', 'prediction', 'charge_ready', 'charging'].includes(encounter.phase);
+  const interior = encounter.phase.startsWith('interior_') && (neo || encounter.phase !== 'interior_kick' || encounter.elapsed <= .65);
+  if (amount <= 0 && !street && !interior) return;
   const pose = smithFinalePose(encounter), pelvis = rig.bones.get('pelvis')!;
-  if (neo && (encounter.phase === 'descent' || encounter.phase === 'crater' || encounter.phase === 'failed')) {
+  const recovering = ['descent', 'crater', 'failed', 'pit_retaliation', 'pit_recovery'].includes(encounter.phase)
+    || encounter.phase === 'vision' && encounter.pitFight;
+  if (neo && recovering) {
     const rise = pose.rise, fold = Math.sin(rise * Math.PI), blend = (encounter.phase === 'descent' ? amount : 1) * (1 - smooth((rise - .8) / .2));
-    const turn = smooth(rise / .65), target = new THREE.Quaternion();
+    const turn = smooth(rise / .28), target = new THREE.Quaternion();
     const rotate = (name: string, x: number, y = 0, z = 0) => {
       const joint = rig.bones.get(name)!;
       target.setFromEuler(new THREE.Euler(x, y, z)); joint.quaternion.slerp(target, blend);
     };
     pelvis.position.lerp(rig.rest.get('pelvis')!, blend);
-    rotate('pelvis', -Math.PI / 2 * (1 - turn));
+    pelvis.position.z += fold * .22 * blend;
+    rotate('pelvis', -Math.PI / 2 * (1 - turn) + fold * .28);
     rotate('spine', fold * .28); rotate('chest', fold * .24); rotate('head', -.25 * fold);
     for (const [i, side] of ['R', 'L'].entries()) {
       rotate(`hip_${side}`, -(i ? 1.8 : 1.3) * fold);
@@ -65,29 +71,34 @@ export function poseSmithCraterBody(rig: HeroRig, encounter: SmithFinaleEncounte
   const inverse = rig.root.matrixWorld.clone().invert(), point = new THREE.Vector3(); let lowest = Infinity;
   for (const { mesh, vertices } of supportSurface(rig)) {
     if (!mesh.visible) continue;
+    if (neo && recovering && rig.panels.some(panel => panel.mesh === mesh)) continue;
     mesh.updateMatrixWorld(true);
     if (mesh instanceof THREE.SkinnedMesh) mesh.skeleton.update();
     const transform = inverse.clone().multiply(mesh.matrixWorld);
     for (const index of vertices) lowest = Math.min(lowest, mesh.getVertexPosition(index, point).applyMatrix4(transform).y);
   }
-  if (Number.isFinite(lowest)) pelvis.position.y += .008 - lowest;
+  if (Number.isFinite(lowest)) pelvis.position.y += (street ? .047 : interior ? .012 : .008) - lowest;
   rig.root.updateWorldMatrix(true, true);
-  if (neo && ['descent', 'crater', 'failed'].includes(encounter.phase)) {
+  if (neo && recovering) {
     const rotation = rig.root.getWorldQuaternion(new THREE.Quaternion());
     // The coat supporting the seated pelvis is not a planted foot. Bring each
     // boot down in turn before the arms release and the legs straighten.
     for (const [i, side] of ['R', 'L'].entries()) {
-      const plant = smooth((pose.rise - (i ? .18 : .04)) / (i ? .4 : .26)) * (1 - smooth((pose.rise - .9) / .1));
+      const plant = smooth((pose.rise - (i ? .12 : 0)) / (i ? .28 : .16)) * (1 - smooth((pose.rise - .9) / .1));
       if (plant <= 0) continue;
       const hip = rig.bones.get(`hip_${side}`)!, knee = rig.bones.get(`knee_${side}`)!, ankle = rig.bones.get(`ankle_${side}`)!;
       const target = rig.root.worldToLocal(ankle.getWorldPosition(new THREE.Vector3()));
+      const step = 1 - smooth((pose.rise - .65) / .35);
+      target.x = THREE.MathUtils.lerp(target.x, i ? .24 : -.24, plant);
+      target.z = THREE.MathUtils.lerp(target.z, (i ? -.05 : .45) * step, plant);
       target.y = THREE.MathUtils.lerp(target.y, rig.footHeight + .013, plant);
       const orientation = ankle.getWorldQuaternion(new THREE.Quaternion()).slerp(rotation, plant);
       reach(hip, knee, ankle.position, rig.root.localToWorld(target), new THREE.Vector3(i ? .15 : -.15, .1, 1).applyQuaternion(rotation));
       ankle.quaternion.copy(knee.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation));
       ankle.updateWorldMatrix(false, true);
     }
-    const contact = amount * (1 - smooth((pose.rise - .15) / .4));
+    drapeCraterCoat(rig, pose.rise);
+    const contact = amount * (1 - smooth((pose.rise - .25) / .25));
     if (contact <= 0) return;
     const rootRotation = rig.root.getWorldQuaternion(new THREE.Quaternion());
     for (const [i, side] of ['R', 'L'].entries()) {
@@ -108,5 +119,40 @@ export function poseSmithCraterBody(rig: HeroRig, encounter: SmithFinaleEncounte
       }
       wrist.updateWorldMatrix(false, true);
     }
+  }
+}
+
+function drapeCraterCoat(rig: HeroRig, rise: number): void {
+  const point = new THREE.Vector3(), waist = new THREE.Vector3(), gravity = new THREE.Vector3();
+  const rootRotation = rig.root.getWorldQuaternion(new THREE.Quaternion()), root = rig.root.getWorldPosition(new THREE.Vector3());
+  const fold = Math.sin(rise * Math.PI), hang = smooth(rise / .35) * (1 - smooth((rise - .75) / .25));
+  const capsules = ['R', 'L'].flatMap(side => ['hip', 'knee'].map((name, i) => ({
+    start: rig.bones.get(`${name}_${side}`)!.getWorldPosition(new THREE.Vector3()),
+    end: rig.bones.get(`${i ? 'ankle' : 'knee'}_${side}`)!.getWorldPosition(new THREE.Vector3()),
+    radius: i ? .16 : .195,
+  })));
+  const segment = new THREE.Vector3(), closest = new THREE.Vector3(), normal = new THREE.Vector3();
+  for (const panel of rig.panels) {
+    if (!panel.mesh.visible) continue;
+    const positions = panel.mesh.geometry.attributes.position;
+    const matrix = panel.mesh.matrixWorld, inverse = matrix.clone().invert();
+    waist.setFromMatrixPosition(matrix);
+    for (let i = 0; i < positions.count; i++) {
+      const x = panel.rest[i * 3], y = panel.rest[i * 3 + 1], z = panel.rest[i * 3 + 2], t = -y / 1.97;
+      point.set(x, y, z).applyMatrix4(matrix);
+      gravity.set(x * (1 + fold * t * .45), 0, z - Math.max(0, z) * fold * t);
+      gravity.applyQuaternion(rootRotation).add(waist); gravity.y += y;
+      point.lerp(gravity, hang * smooth(t / .15));
+      if (t > .04) for (const capsule of capsules) {
+        segment.subVectors(capsule.end, capsule.start);
+        closest.copy(capsule.start).addScaledVector(segment,
+          THREE.MathUtils.clamp(normal.subVectors(point, capsule.start).dot(segment) / segment.lengthSq(), 0, 1));
+        normal.subVectors(point, closest); const distance = normal.length();
+        if (distance > .001 && distance < capsule.radius) point.addScaledVector(normal, (capsule.radius - distance) / distance);
+      }
+      point.y = Math.max(point.y, root.y + .008);
+      point.applyMatrix4(inverse); positions.setXYZ(i, point.x, point.y, point.z);
+    }
+    positions.needsUpdate = true; panel.mesh.geometry.computeVertexNormals(); panel.mesh.geometry.computeBoundingSphere();
   }
 }

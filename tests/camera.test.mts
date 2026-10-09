@@ -1,9 +1,13 @@
+import { DIGGERS, diggerEye, fireDigger, newDiggers, newUpperDigger, upperDiggerRoot } from '@auto_matrix/shared';
+import { APU_RIG, DOCK_GUNNERY, newDockGunnery, fireDockGunnery } from '@auto_matrix/shared';
 import assert from 'node:assert/strict';
 import { test, type TestContext } from 'node:test';
 import * as THREE from 'three';
 import type { AgentState, PlayerInput } from '@auto_matrix/shared';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { CameraController } from '../packages/client/src/engine/CameraController.js';
+import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
+import { FILM_SCENE_BY_ID, filmEntry, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { PodSetRenderer } from '../packages/client/src/engine/PodSetRenderer.js';
 import { ApartmentSetRenderer } from '../packages/client/src/engine/ApartmentSetRenderer.js';
 import { NebDeckRenderer } from '../packages/client/src/engine/NebDeckRenderer.js';
@@ -20,6 +24,26 @@ import { gardenPose, newTrilogyEpilogue } from '@auto_matrix/shared';
 import { newDockLastStand } from '@auto_matrix/shared';
 import { DOCK_GATE, dockGateAim, dockGateEye, dockGatePoint, dockGateAttacker, dockGateZee, fireDockGate, newDockGate, newApuRun } from '@auto_matrix/shared';
 import { ZionHomecomingRenderer } from '../packages/client/src/engine/ZionHomecomingRenderer.js';
+import { DockEmpRenderer } from '../packages/client/src/engine/DockEmpRenderer.js';
+import { RevolutionsPreludeRenderer } from '../packages/client/src/engine/RevolutionsPreludeRenderer.js';
+import { TrainmanChaseRenderer } from '../packages/client/src/engine/TrainmanChaseRenderer.js';
+import { EMP_OPERATOR } from '@auto_matrix/shared';
+import { HEL_ELEVATOR, helElevatorFloor, helElevatorHandle, helElevatorTrinityRoot } from '@auto_matrix/shared';
+import { helDanceDoorContact, helDanceDoorRoot, type HelDanceDoorEncounter } from '@auto_matrix/shared';
+import { dockReunionRoot, type DockReunion } from '@auto_matrix/shared';
+import { mobilReunionRoot, type MobilReunion } from '@auto_matrix/shared';
+import { ORACLE_LAST, newOracleLast } from '@auto_matrix/shared';
+import { ORACLE_ABSORPTION, newOracleAbsorption } from '@auto_matrix/shared';
+import { DOCK_BRIEFING, dockBriefingRoot, type DockBriefing } from '@auto_matrix/shared';
+import { DockBriefingRenderer } from '../packages/client/src/engine/DockBriefingRenderer.js';
+import { DockEvacuationRenderer } from '../packages/client/src/engine/DockEvacuationRenderer.js';
+import { CharacterModels } from '../packages/client/src/agents/CharacterModel.js';
+import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { TRAINMAN_CHASE, trainmanVaultLift, trainmanVaultProgress } from '@auto_matrix/shared';
+import { WorldState } from '../packages/server/src/world/WorldState.js';
+import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
+import { DOCK_EVACUATION, SHAFT_SEAL, dockEvacuationRoot, shaftSealLever, type DockEvacuation } from '@auto_matrix/shared';
 import { APARTMENT, playerBlocked, apartmentComputerPose, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, INTERROGATION_ROOM, pillRoot, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, POD_WATER_DROP, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, TV_EXIT, airRescueRoot, matrixEscapeRoot, theOneRoot, tvExitEmergeRoot, wakeCallRoot, sentinelMachinePose, type TheOneEncounter } from '@auto_matrix/shared';
 
 test('observer camera releases drag and ignores pointer capture while a character controls the view', () => {
@@ -43,11 +67,776 @@ test('mouse pitch is included in authoritative player input', t => {
   assert.ok((game.sent.at(-1)?.pitch ?? 0) < -.15, 'upward camera input must reach server-side ballistics');
 });
 
+test('the cold Oracle return camera cannot put the apartment lintel between Neo and the lens', t => {
+  const game = setup(t, Math.PI), center = FILM_SETS.film_oracle_home.center;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  game.document.createElement = () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {},
+    beginPath() {}, closePath() {}, moveTo() {}, lineTo() {}, stroke() {}, ellipse() {}, fill() {} }) });
+  Object.assign(game.state, { position: filmEntry(FILM_SCENE_BY_ID.m3_oracle_last),
+    currentLocation: 'film_oracle_home', isAwakened: true, currentAction: null });
+  const journey: FilmJourney = { version: 1, scene: 'm3_oracle_last', actor: 'neo', step: 0,
+    enteredAt: 0, completed: [], reflections: {}, lastText: '', checkpoint: { ...game.state.position } };
+  const renderer = new FilmSetRenderer(new THREE.Scene());
+  try {
+    renderer.update(game.state, { neoLife: { journey }, structures: [] } as unknown as SandboxState, 0);
+    for (const aspect of [16 / 9, .8]) {
+      game.camera.aspect = aspect; game.controls.possess(game.state); game.step(.3, .05, false);
+      game.controls.syncTrainmanChaseCamera(game.group, renderer.root);
+      renderer.root.updateWorldMatrix(true, true); game.camera.updateWorldMatrix(true, true);
+      for (const height of [2.05, 3.03]) {
+        const subject = new THREE.Vector3(game.state.position.x, game.state.position.y + height, game.state.position.z);
+        const direction = subject.clone().sub(game.camera.position);
+        const hits = new THREE.Raycaster(game.camera.position, direction.clone().normalize(), 0, direction.length() - .1)
+          .intersectObject(renderer.root, true).filter(hit => {
+            for (let object: THREE.Object3D | null = hit.object; object; object = object.parent) if (!object.visible) return false;
+            return true;
+          });
+        assert.equal(hits.length, 0, `rendered architecture obscures Neo at aspect=${aspect}, height=${height}: ${hits.map(hit => hit.point.toArray()).join('; ')}`);
+        const screen = subject.project(game.camera);
+        assert.ok(Math.abs(screen.x) < .95 && Math.abs(screen.y) < .95 && screen.z > -1 && screen.z < 1);
+      }
+      const corrected = game.camera.position.clone();
+      game.key('KeyV'); game.key('KeyV', false); game.step(.1, .05, false);
+      const first = game.camera.position.clone(); game.controls.syncTrainmanChaseCamera(game.group, renderer.root);
+      assert.ok(first.distanceTo(game.camera.position) < 1e-7, 'the Oracle obstruction correction is third-person only');
+      assert.ok(first.distanceTo(corrected) > 1, 'V still enters the character eye');
+      game.key('KeyV'); game.key('KeyV', false);
+    }
+    assert.equal(game.state.position.y, center.y);
+  } finally { renderer.dispose(); }
+});
+
+test('Mobil reunion keeps both saved partners in the third-person frame and V preserves free first-person look', t => {
+  const game = setup(t), center = FILM_SETS.film_mobil_station.center;
+  const reunion: MobilReunion = { phase: 'embracing', elapsed: 3.25,
+    neo: { x: 0, z: -22, yaw: Math.PI / 2 }, trinity: { x: 2.2, z: -22, yaw: -Math.PI / 2 } };
+  const root = mobilReunionRoot(reunion, 'neo');
+  Object.assign(game.state, { id: 'neo', currentLocation: 'film_mobil_station', rotation: root.yaw,
+    position: filmPosition('film_mobil_station', root.x, root.z),
+    currentAction: { type: 'idle', parameters: { mobilReunion: { role: 'neo', reunion } }, startedAt: 0, duration: 6.2, progress: 0 } });
+  for (const aspect of [16 / 9, .8]) {
+    game.camera.aspect = aspect; game.controls.possess(game.state); game.step(.2, .05, false);
+    game.camera.updateMatrixWorld(true);
+    for (const role of ['neo', 'trinity'] as const) {
+      const pose = mobilReunionRoot(reunion, role);
+      for (const y of [0, 4.6]) {
+        const screen = new THREE.Vector3(center.x + pose.x, center.y - 1 + y, center.z + pose.z).project(game.camera);
+        assert.ok(Math.abs(screen.x) < .98 && Math.abs(screen.y) < .98 && screen.z > -1 && screen.z < 1,
+          `${role} leaves the reunion frame at aspect ${aspect}, height ${y}: ${screen.toArray()}`);
+      }
+    }
+  }
+  game.key('KeyV'); game.key('KeyV', false); game.key('KeyW'); game.step(.3, .05, false);
+  assert.equal(game.controls.performing, true); assert.equal(game.camera.near, .06);
+  assert.ok(game.group.position.distanceTo(new THREE.Vector3().copy(game.state.position)) < 1e-7, 'paused contact cannot predict walking');
+  const direction = game.camera.getWorldDirection(new THREE.Vector3()); game.document.pointerLockElement = game.canvas;
+  game.event(game.document, 'mousemove', { movementX: 120, movementY: -30 }); game.step(.2, .05, false);
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(direction) > .15, 'V must retain mouse look during the reunion');
+  assert.equal(reunion.elapsed, 3.25);
+  game.state.currentAction!.parameters.mobilReunion = { role: 'neo', reunion: { ...reunion, phase: 'together' } };
+  game.step(.1); assert.equal(game.controls.performing, false, 'the completed embrace releases the movement lock');
+});
+
+test('Trainman chase locks only the saved vault and V follows its posed eye while keeping mouse look', t => {
+  const game = setup(t), center = FILM_SETS[TRAINMAN_CHASE.set].center;
+  const gesture = { role: 'seraph' as const, phase: 'vaulting' as const, elapsed: .55, age: 12, vault: .5 };
+  Object.assign(game.state, { id: 'seraph', currentLocation: TRAINMAN_CHASE.set, rotation: Math.PI / 2,
+    position: { x: center.x - 3.2 + 6.4 * trainmanVaultProgress(.5), y: center.y + TRAINMAN_CHASE.upper + trainmanVaultLift(.5), z: center.z - 21.5 },
+    currentAction: { type: 'idle', parameters: { trainmanChase: gesture }, startedAt: 0, duration: 1e9, progress: 0 } });
+  game.controls.possess(game.state); game.key('KeyV'); game.key('KeyV', false); game.key('KeyW'); game.step(.3, .1, false);
+  assert.deepEqual(game.controls.motion.trainmanChase, gesture, 'the player pose must receive the saved chase gesture');
+  assert.equal(game.controls.performing, true);
+  assert.ok(game.group.position.distanceTo(new THREE.Vector3().copy(game.state.position)) < 1e-7, 'paused vault cannot blend toward a standing prediction');
+  const head = new THREE.Bone(); head.name = 'seraph-head'; head.position.set(0, 2.2, .1); head.userData.cameraEye = new THREE.Vector3(0, .12, .28); game.group.children[0].add(head);
+  game.controls.syncTrainmanChaseCamera(game.group);
+  assert.ok(game.camera.position.distanceTo(head.localToWorld(head.userData.cameraEye.clone())) < 1e-7);
+  const before = game.camera.getWorldDirection(new THREE.Vector3()); game.document.pointerLockElement = game.canvas;
+  game.event(game.document, 'mousemove', { movementX: 120, movementY: -40 }); game.step(.1, .1, false); game.controls.syncTrainmanChaseCamera(game.group);
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(before) > .2);
+  assert.equal(game.controls.motion.trainmanChase!.elapsed, .55); assert.equal(game.camera.near, .06);
+  game.state.position = filmPosition(TRAINMAN_CHASE.set, 17, -3);
+  game.state.currentAction!.parameters.trainmanChase = { ...gesture, phase: 'running', vault: undefined };
+  game.step(.8); assert.equal(game.controls.performing, false);
+  assert.ok(game.group.position.distanceTo(new THREE.Vector3().copy(game.state.position)) > .5, 'ordinary chase movement must remain playable');
+  game.state.currentAction!.parameters.trainmanChase = { ...gesture, phase: 'running', vault: undefined, paused: 'Morpheus' };
+  game.step(.1); assert.equal(game.controls.performing, true);
+  assert.ok(game.group.position.distanceTo(new THREE.Vector3().copy(game.state.position)) < 1e-7, 'an occupied companion also stops local prediction');
+});
+
+test('first-person chase keeps the bracing arm visible and restores the head when V leaves', t => {
+  const game = setup(t); t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  t.mock.method(game.document, 'createElement', () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {}, createRadialGradient: () => ({ addColorStop() {} }),
+    createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {} }) }));
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents(); const actor = world.agents.get('seraph')!;
+  actor.currentLocation = TRAINMAN_CHASE.set; actor.position = filmPosition(TRAINMAN_CHASE.set, -30, 18.8);
+  const chase = { role: 'seraph' as const, phase: 'braking' as const, elapsed: 1.5, age: 7.5, bracing: true };
+  actor.currentAction = { type: 'idle', parameters: { trainmanChase: chase }, startedAt: 0, duration: 1e9, progress: 0 };
+  const renderer = new AgentRenderer(new THREE.Scene()); t.after(() => renderer.dispose());
+  renderer.updateAgent(actor.id, actor); renderer.setPlayer(actor.id, true);
+  renderer.setPlayerMotion({ speed: 0, grounded: true, verticalVelocity: 0, turn: 0, trainmanChase: chase }); renderer.update(0, undefined, 0, 0);
+  const body = renderer.getAgentBody(actor.id)!;
+  assert.equal(body.visible, true, 'the held rail cannot lose its player hand in first person');
+  assert.equal(body.getObjectByName('seraph-head')!.visible, false, 'the own head must stay out of the first-person camera');
+  renderer.setPlayer(actor.id, false); renderer.update(0, undefined, 0, 0);
+  assert.equal(body.getObjectByName('seraph-head')!.visible, true, 'V restores the visible head');
+});
+
+test('first-person Hel pistol keeps the weapon visible, hides the own head and restores both view modes', t => {
+  const game = setup(t); t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  t.mock.method(game.document, 'createElement', () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {}, createRadialGradient: () => ({ addColorStop() {} }),
+    createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {} }) }));
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents(); const actor = world.agents.get('seraph')!;
+  actor.currentLocation = 'film_club_hel'; actor.position = filmPosition('film_club_hel', 5, 18);
+  const renderer = new AgentRenderer(new THREE.Scene()); t.after(() => renderer.dispose());
+  renderer.updateAgent(actor.id, actor); renderer.setPlayer(actor.id, true);
+  renderer.setPlayerMotion({ speed: 0, grounded: true, verticalVelocity: 0, turn: 0, armed: true, weaponStyle: 'hel_pistol', firstPerson: true }); renderer.update(0, undefined, 0, 0);
+  const body = renderer.getAgentBody(actor.id)!;
+  assert.equal(body.visible, true, 'hiding the complete player also hides the held gun');
+  assert.ok(body.getObjectByName('character-hel_pistol')?.visible, 'the existing held pistol must be rendered');
+  assert.equal(body.getObjectByName('seraph-head')!.visible, false, 'the own head must stay out of the firing view');
+  renderer.setPlayer(actor.id, false); renderer.update(0, undefined, 0, 0);
+  assert.equal(body.getObjectByName('seraph-head')!.visible, true, 'V restores the third-person head');
+  renderer.setPlayer(actor.id, true); renderer.setPlayerMotion({ speed: 0, grounded: true, verticalVelocity: 0, turn: 0 }); renderer.update(0, undefined, 0, 0);
+  assert.equal(body.visible, false, 'ordinary first person keeps its existing visibility outside the pistol encounter');
+  assert.equal(body.getObjectByName('seraph-head')!.visible, true, 'leaving the pistol encounter cannot leave the head hidden');
+});
+
+test('Hel V frames the actual button and moving handle from the posed eye, then preserves mouse look', t => {
+  const game = setup(t), center = FILM_SETS.film_club_hel.center;
+  const head = new THREE.Bone(); head.name = 'head'; head.position.set(0, 3.25, .1);
+  head.userData.cameraEye = new THREE.Vector3(0, .1, .32); game.group.children[0].add(head);
+  for (const aspect of [16 / 9, 440 / 668]) for (const phase of ['descending', 'opening'] as const) {
+    const lift = { physical: true, lastTick: 0, phase, elapsed: phase === 'descending' ? .569 : HEL_ELEVATOR.seconds, gateElapsed: phase === 'opening' ? .415 : 0 };
+    const at = helElevatorTrinityRoot(lift), floor = helElevatorFloor(lift);
+    Object.assign(game.state, { id: 'trinity', currentLocation: 'film_club_hel', rotation: at.yaw,
+      position: { x: center.x + at.x, y: center.y + floor, z: center.z + at.z },
+      currentAction: { type: 'idle', parameters: { helElevator: { role: 'trinity', ...lift } }, startedAt: 0, duration: 1e9, progress: 0 } });
+    game.camera.aspect = aspect; game.controls.possess(game.state); game.step(.1, .1, false);
+    game.key('KeyV'); game.key('KeyV', false); game.step(.1, .1, false); game.controls.syncTrainmanChaseCamera(game.group);
+    game.camera.updateMatrixWorld(true);
+    const point = phase === 'descending' ? HEL_ELEVATOR.button : helElevatorHandle(lift);
+    const screen = new THREE.Vector3(center.x + point.x, center.y - 1 + floor + point.y, center.z + point.z).project(game.camera);
+    assert.ok(Math.abs(screen.x) < .3 && Math.abs(screen.y) < .3 && screen.z > -1 && screen.z < 1,
+      `${phase} hand target is outside the usable first-person frame at ${aspect}: ${screen.toArray()}`);
+    assert.ok(game.camera.position.distanceTo(head.localToWorld(head.userData.cameraEye.clone())) < 1e-7);
+    const direction = game.camera.getWorldDirection(new THREE.Vector3()); game.document.pointerLockElement = game.canvas;
+    game.event(game.document, 'mousemove', { movementX: 180, movementY: -120 }); game.step(.1, .1, false); game.controls.syncTrainmanChaseCamera(game.group);
+    const looked = game.camera.getWorldDirection(new THREE.Vector3()); assert.ok(looked.distanceTo(direction) > .2);
+    game.step(1.2, .1, false); game.controls.syncTrainmanChaseCamera(game.group);
+    assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(looked) < .001, 'the interaction aim must not overwrite the player’s mouse look');
+    assert.equal(game.controls.motion.helElevator!.elapsed, lift.elapsed, 'looking around cannot advance the paused action');
+  }
+});
+
+test('the chase third-person view stays below the ticket-hall roof and has a clear view of the player', t => {
+  const game = setup(t), center = FILM_SETS[TRAINMAN_CHASE.set].center;
+  t.mock.method(game.document, 'createElement', () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {} }) }));
+  const root = new THREE.Group(); root.position.set(center.x, center.y - 1, center.z);
+  const renderer = new TrainmanChaseRenderer(root); t.after(() => renderer.dispose());
+  Object.assign(game.state, { id: 'seraph', currentLocation: TRAINMAN_CHASE.set, rotation: Math.PI / 2,
+    position: { ...filmPosition(TRAINMAN_CHASE.set, -2.9, -21.5), y: center.y + TRAINMAN_CHASE.upper },
+    currentAction: { type: 'idle', parameters: { trainmanChase: { role: 'seraph', phase: 'running', elapsed: 0, age: 12 } }, startedAt: 0, duration: 1e9, progress: 0 } });
+  for (const aspect of [16 / 9, .65]) {
+    game.camera.aspect = aspect; game.controls.possess(game.state); game.step(.1, .1, false);
+    game.controls.syncTrainmanChaseCamera(game.group, root); root.updateWorldMatrix(true, true);
+    const chest = new THREE.Vector3(game.state.position.x, game.state.position.y + 2.05, game.state.position.z), direction = chest.clone().sub(game.camera.position);
+    const hits = new THREE.Raycaster(game.camera.position, direction.clone().normalize(), .1, direction.length() - .15).intersectObject(root, true);
+    assert.equal(hits.length, 0, `the rendered roof/walls must not cover the player: ${game.camera.position.toArray()}`);
+    assert.ok(game.camera.position.y < center.y - 1 + 11.525, 'the camera belongs inside the hall');
+  }
+});
+
+test('Hel door V shows both physical palm targets in the narrow sidebar and keeps the paused eye and mouse look', t => {
+  const game = setup(t), center = FILM_SETS.film_club_hel.center;
+  const head = new THREE.Bone(); head.name = 'head'; head.position.set(0, 3.62, .1);
+  head.userData.cameraEye = new THREE.Vector3(0, .1, .32); game.group.children[0].add(head);
+  for (const aspect of [16 / 9, 440 / 668]) {
+    const door: HelDanceDoorEncounter = { phase: 'opening', physical: true, elapsed: 1.65, lastTick: 0, approach: { x: 0, z: 4, yaw: Math.PI } };
+    const at = helDanceDoorRoot(door);
+    Object.assign(game.state, { id: 'trinity', currentLocation: 'film_club_hel', rotation: at.yaw,
+      position: { x: center.x + at.x, y: center.y, z: center.z + at.z },
+      currentAction: { type: 'idle', parameters: { resolved: true, helDoorPush: door }, startedAt: 0, duration: 1e9, progress: 0 } });
+    game.camera.aspect = aspect; game.controls.possess(game.state); game.step(.1, .1, false);
+    game.key('KeyV'); game.key('KeyV', false); game.step(.1, .1, false); game.controls.syncTrainmanChaseCamera(game.group); game.camera.updateMatrixWorld(true);
+    for (const side of [-1, 1] as const) {
+      const point = helDanceDoorContact(door, side), screen = new THREE.Vector3(center.x + point.x, center.y - 1 + point.y, center.z + point.z).project(game.camera);
+      assert.ok(Math.abs(screen.x) < .85 && Math.abs(screen.y) < .8 && screen.z > -1 && screen.z < 1, `the ${side} hand target is cropped at ${aspect}: ${screen.toArray()}`);
+    }
+    assert.ok(game.camera.position.distanceTo(head.localToWorld(head.userData.cameraEye.clone())) < 1e-7);
+    const before = game.camera.getWorldDirection(new THREE.Vector3()); game.document.pointerLockElement = game.canvas;
+    game.event(game.document, 'mousemove', { movementX: 180, movementY: -100 }); game.step(.1, .1, false); game.controls.syncTrainmanChaseCamera(game.group);
+    const looked = game.camera.getWorldDirection(new THREE.Vector3()); assert.ok(looked.distanceTo(before) > .2);
+    game.step(1.2, .1, false); game.controls.syncTrainmanChaseCamera(game.group);
+    assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(looked) < .001, 'the door cannot continually force the view toward the hands');
+    assert.equal(game.controls.motion.helDoorPush!.elapsed, 1.65);
+    game.state.currentAction = null; game.step(.1, .1, false);
+    assert.equal(game.controls.motion.helDoorPush, undefined); assert.equal(game.camera.near, .5, 'the close eye clipping plane cannot leak out of the door');
+  }
+});
+
+test('Hel surrender keeps first person looking into the room instead of forcing it down into its own arms', t => {
+  const game = setup(t), center = FILM_SETS.film_club_hel.center;
+  const head = new THREE.Bone(); head.name = 'head'; head.position.set(0, 3.62, .1);
+  head.userData.cameraEye = new THREE.Vector3(0, .1, .32); game.group.children[0].add(head);
+  const disarm = { elapsed: 1.082, role: 'trinity', starts: { trinity: { x: 0, y: 1.2, z: -27.92, yaw: Math.PI },
+    morpheus: { x: -2.5, y: .4, z: -24.65, yaw: Math.PI }, seraph: { x: 2.5, y: .4, z: -24.65, yaw: Math.PI } } };
+  Object.assign(game.state, { id: 'trinity', currentLocation: 'film_club_hel', rotation: Math.PI,
+    position: { x: center.x, y: center.y + 1.2, z: center.z - 27.92 },
+    currentAction: { type: 'idle', parameters: { resolved: true, helDisarm: disarm }, startedAt: 0, duration: 3.5, progress: 0 } });
+  game.controls.possess(game.state); game.key('KeyV'); game.key('KeyV', false); game.step(.1, .1, false);
+  game.controls.syncTrainmanChaseCamera(game.group);
+  const forward = game.camera.getWorldDirection(new THREE.Vector3());
+  assert.ok(forward.y > -.3 && forward.z < -.9, `the initial view points into the torso: ${forward.toArray()}`);
+  const eye = head.localToWorld(head.userData.cameraEye.clone()); assert.ok(game.camera.position.distanceTo(eye) < .000001);
+  game.document.pointerLockElement = game.canvas; game.event(game.document, 'mousemove', { movementX: 100, movementY: -80 });
+  game.step(.1, .1, false); game.controls.syncTrainmanChaseCamera(game.group);
+  const looked = game.camera.getWorldDirection(new THREE.Vector3()); assert.ok(looked.distanceTo(forward) > .1);
+  game.step(1.1, .1, false); game.controls.syncTrainmanChaseCamera(game.group);
+  assert.ok(looked.distanceTo(game.camera.getWorldDirection(new THREE.Vector3())) < .001, 'saved disarm cannot continually override mouse look');
+});
+
+test('the descending evacuation camera remains inside the cage and sees Kid through the roof and gate in wide and portrait windows', t => {
+  const game = setup(t), center = FILM_SETS.film_zion_dock_exit.center;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const root = new THREE.Group(); root.position.set(center.x, center.y - 1, center.z);
+  const renderer = new DockEvacuationRenderer(root); t.after(() => renderer.dispose());
+  for (const aspect of [16 / 9, .65]) for (const elapsed of [0, 1.5, 3.8, 5.5]) {
+    const state: DockEvacuation = { phase: 'lowering', elapsed, crewAge: 11, remaining: 10, attempts: 0, delivered: true }, at = dockEvacuationRoot(state, 'kid');
+    Object.assign(game.state, { id: 'kid', currentLocation: 'film_zion_dock_exit', isInMatrix: false, rotation: at.yaw,
+      position: { ...filmPosition('film_zion_dock_exit', at.x, at.z), y: center.y + at.y },
+      currentAction: { type: 'idle', parameters: { dockEvacuation: { ...state, role: 'kid' } }, startedAt: 0, duration: 1e9, progress: 0 } });
+    game.camera.aspect = aspect; game.controls.possess(game.state); game.step(.1, .1, false); renderer.update(state);
+    game.camera.updateWorldMatrix(true, true); root.updateWorldMatrix(true, true);
+    const camera = root.worldToLocal(game.camera.position.clone());
+    assert.ok(Math.abs(camera.x) < DOCK_EVACUATION.lift.width / 2 - .3);
+    assert.ok(Math.abs(camera.z - DOCK_EVACUATION.lift.z) < DOCK_EVACUATION.lift.depth / 2 - .3);
+    assert.ok(camera.y < at.y + DOCK_EVACUATION.lift.height - .3);
+    for (const height of [-.8, 3.1]) {
+      const target = new THREE.Vector3(game.state.position.x, game.state.position.y + height, game.state.position.z);
+      const screen = target.clone().project(game.camera), direction = target.clone().sub(game.camera.position);
+      assert.ok(Math.abs(screen.x) < .9 && Math.abs(screen.y) < .9 && screen.z > -1 && screen.z < 1, `Kid must stay within frame at ${elapsed}/${aspect}: ${screen.toArray()}`);
+      assert.equal(new THREE.Raycaster(game.camera.position, direction.clone().normalize(), 0, direction.length() - .1).intersectObject(renderer.lift, true).length, 0, 'cage roof and gate cannot cover Kid');
+    }
+  }
+});
+
+test('shaft operation keeps the actual handbar in view and V follows the animated eye without advancing a paused lever', t => {
+  const game = setup(t, Math.PI), center = FILM_SETS.film_zion_command_bunker.center;
+  const state = { phase: 'throwing', elapsed: 0, turn: .45, role: 'citizen_15' } as const;
+  Object.assign(game.state, { id: 'citizen_15', currentLocation: 'film_zion_command_bunker', isInMatrix: false, rotation: Math.PI,
+    position: filmPosition('film_zion_command_bunker', SHAFT_SEAL.operator.x, SHAFT_SEAL.operator.z),
+    currentAction: { type: 'idle', parameters: { shaftSeal: state }, startedAt: 0, duration: 1e9, progress: 0 } });
+  for (const aspect of [16 / 9, .65]) {
+    game.camera.aspect = aspect; game.controls.possess(game.state); game.step(.1, .1, false); game.camera.updateMatrixWorld(true);
+    const lever = shaftSealLever(state);
+    for (const side of [-1, 1]) {
+      const target = new THREE.Vector3(center.x + lever.x + side * SHAFT_SEAL.lever.grip / 2, center.y - 1 + lever.y, center.z + lever.z).project(game.camera);
+      assert.ok(Math.abs(target.x) < .9 && Math.abs(target.y) < .9 && target.z > -1 && target.z < 1, 'both hands and lever remain on screen');
+    }
+  }
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1, .1, false);
+  const head = new THREE.Bone(); head.name = 'citizen_15-head'; head.position.set(0, 2.6, .1); head.userData.cameraEye = new THREE.Vector3(0, .12, .28); game.group.children[0].add(head);
+  game.controls.syncDockReunionCamera(game.group);
+  assert.ok(game.camera.position.distanceTo(head.localToWorld(head.userData.cameraEye.clone())) < 1e-7);
+  const before = game.camera.getWorldDirection(new THREE.Vector3()); game.document.pointerLockElement = game.canvas;
+  game.event(game.document, 'mousemove', { movementX: 160, movementY: -40 }); game.step(.1, .1, false); game.controls.syncDockReunionCamera(game.group);
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(before) > .2);
+  assert.equal(game.controls.motion.shaftSeal!.turn, .45); assert.equal(game.camera.near, .06);
+});
+
+test('V initially frames both actual operator hands and the half-thrown lever from the delivered rig eye, then permits free look', t => {
+  const game = setup(t, Math.PI), center = FILM_SETS.film_zion_command_bunker.center;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(game.document, 'createElement', () => ({ getContext: () => ({
+    createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {}
+  }) }));
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  Object.assign(game.state, world.agents.get('citizen_15'), { currentLocation: 'film_zion_command_bunker', isInMatrix: false, rotation: Math.PI,
+    position: filmPosition('film_zion_command_bunker', SHAFT_SEAL.operator.x, SHAFT_SEAL.operator.z),
+    currentAction: { type: 'idle', parameters: { shaftSeal: { phase: 'throwing', elapsed: 0, turn: .5, role: 'citizen_15' } }, startedAt: 0, duration: 1e9, progress: 0 } });
+  const models = new CharacterModels(), rig = models.create(game.state); t.after(() => models.dispose());
+  game.group.clear(); game.group.add(rig.root); rig.root.position.y = -1;
+  for (const aspect of [16 / 9, .65]) {
+    game.camera.aspect = aspect; game.controls.possess(game.state); game.step(.1, .1, false);
+    models.animate(rig, 0, game.controls.motion, 0);
+    game.key('KeyV'); game.key('KeyV', false); game.step(.1, .1, false); game.controls.syncDockReunionCamera(game.group);
+    game.camera.updateMatrixWorld(true);
+    const lever = shaftSealLever(game.controls.motion.shaftSeal);
+    for (let i = 0; i < 2; i++) {
+      const target = new THREE.Vector3(center.x + lever.x + (i ? -1 : 1) * SHAFT_SEAL.lever.grip / 2, center.y - 1 + lever.y, center.z + lever.z);
+      const palm = rig.elbows[i].localToWorld(new THREE.Vector3(0, -.79, .055));
+      assert.ok(palm.distanceTo(target) < .065, 'the frame uses the delivered hand contacts');
+      for (const point of [palm, target]) {
+        const projected = point.clone().project(game.camera);
+        assert.ok(Math.abs(projected.x) < .9 && Math.abs(projected.y) < .65 && projected.z > -1 && projected.z < 1,
+          `first-person hands must stay above the lower HUD at ${aspect}: ${projected.toArray()}`);
+      }
+    }
+    const before = game.camera.getWorldDirection(new THREE.Vector3()); game.document.pointerLockElement = game.canvas;
+    game.event(game.document, 'mousemove', { movementX: 160, movementY: -70 }); game.step(.1, .1, false); game.controls.syncDockReunionCamera(game.group);
+    assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(before) > .2, 'aiming once must not override subsequent mouse look');
+    assert.equal(game.controls.motion.shaftSeal!.turn, .5);
+  }
+});
+
+test('EMP exterior view frames the ship and V returns to the operator without moving his saved body', t => {
+  const game = setup(t, Math.PI), dock = FILM_SETS.film_zion_hangar.center;
+  game.state.id = 'link'; game.state.currentLocation = 'film_hammer_deck'; game.state.isInMatrix = false;
+  game.state.position = filmPosition('film_hammer_deck', 0, -16);
+  game.state.currentAction = { type: 'idle', parameters: { dockEmp: 2.5 }, startedAt: 0, duration: 1e9, progress: 0 };
+  game.controls.possess(game.state); game.step(.1, .1, false); game.camera.updateMatrixWorld(true);
+  const body = { ...game.controls.motion };
+  const ship = new THREE.Vector3(dock.x + 12, dock.y + 15, dock.z + 22).project(game.camera);
+  assert.ok(Math.abs(ship.x) < .7 && Math.abs(ship.y) < .7 && ship.z > -1 && ship.z < 1);
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1, .1, false);
+  assert.ok(game.camera.position.distanceTo(new THREE.Vector3().copy(game.state.position)) < 4, 'V must return to the real operator eye');
+  game.document.pointerLockElement = game.canvas;
+  const before = game.camera.getWorldDirection(new THREE.Vector3());
+  game.event(game.document, 'mousemove', { movementX: 100, movementY: -50 }); game.step(.1, .1, false);
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(before) > .2);
+  assert.equal(game.controls.motion.dockEmp, body.dockEmp, 'mouse look cannot advance the frozen event');
+});
+
+test('the dock reunion camera frames the descent and couple through the actual crashed hull in both window shapes', t => {
+  const game = setup(t), center = FILM_SETS.film_zion_hangar.center;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const root = new THREE.Group(), renderer = new DockEmpRenderer(root); t.after(() => renderer.dispose());
+  const journey = { scene: 'm3_dock_reunion', step: 0, completed: ['m3_gate', 'm3_emp'], emp: { firedAt: 5, elapsed: 9 },
+    diggers: { ...newDiggers(), phase: 'done', damage: 3 } } as import('@auto_matrix/shared').FilmJourney;
+  for (const aspect of [16 / 9, .65]) for (const reunion of [{ phase: 'ready', elapsed: 0, floor: 1 },
+    { phase: 'exiting', elapsed: 2.668, floor: 1 }, { phase: 'exiting', elapsed: 7.9, floor: 1 },
+    ...[0, 1.1, 3.4, 7.9].map(elapsed => ({ phase: 'exiting', elapsed, floor: 1, departure: 13 })),
+    { phase: 'embrace', elapsed: 2, floor: 1 }] as DockReunion[]) {
+    const pose = dockReunionRoot(reunion, 'link'); journey.dockReunion = reunion;
+    Object.assign(game.state, { id: 'link', currentLocation: 'film_zion_hangar', isInMatrix: false, rotation: pose.yaw,
+      position: { x: center.x + pose.x, y: center.y + pose.y, z: center.z + pose.z },
+      currentAction: { type: 'idle', parameters: { dockReunion: { ...reunion, role: 'link' } }, startedAt: 0, duration: 1e9, progress: 0 } });
+    game.camera.aspect = aspect; game.controls.possess(game.state); game.step(.1, .1, false); game.camera.updateMatrixWorld(true);
+    renderer.update(journey); root.updateMatrixWorld(true);
+    const ship = root.getObjectByName('gate-three-hammer')!;
+    const roles = reunion.phase === 'embrace' ? ['link', 'zee'] as const : ['link'] as const;
+    for (const role of roles) {
+      const at = dockReunionRoot(reunion, role);
+      for (const height of [-.8, 3.2]) {
+        const target = new THREE.Vector3(center.x + at.x, center.y + at.y + height, center.z + at.z), screen = target.clone().project(game.camera);
+        assert.ok(Math.abs(screen.x) < .86 && Math.abs(screen.y) < .88 && screen.z > -1 && screen.z < 1,
+          `${aspect}/${reunion.phase}/${height}: ${role} outside playable frame ${screen.toArray()}`);
+        const sight = target.clone().sub(game.camera.position);
+        assert.equal(new THREE.Raycaster(game.camera.position, sight.clone().normalize(), 0, sight.length() - .1).intersectObject(ship, true).length, 0,
+          `${aspect}/${reunion.phase}: crashed hull cannot block ${role}`);
+      }
+    }
+  }
+});
+
+test('V in the reunion samples the current head and permits looking around without moving its saved progress', t => {
+  const game = setup(t, Math.PI), reunion = { phase: 'embrace', elapsed: 2, floor: 1, role: 'link' } as const;
+  Object.assign(game.state, { id: 'link', isInMatrix: false, currentLocation: 'film_zion_hangar', position: filmPosition('film_zion_hangar', 7, 58.18),
+    currentAction: { type: 'idle', parameters: { dockReunion: reunion }, startedAt: 0, duration: 1e9, progress: 0 } });
+  game.controls.possess(game.state); game.step(.1, .1, false); game.key('KeyV'); game.key('KeyV', false); game.step(.1, .1, false);
+  const head = new THREE.Bone(); head.name = 'head'; head.position.set(0, 2.6, .1); head.userData.cameraEye = new THREE.Vector3(0, .12, .28); game.group.children[0].add(head);
+  game.controls.syncDockReunionCamera(game.group);
+  const eye = head.localToWorld(head.userData.cameraEye.clone()); assert.ok(game.camera.position.distanceTo(eye) < 1e-7);
+  const before = game.camera.getWorldDirection(new THREE.Vector3()); game.document.pointerLockElement = game.canvas;
+  game.event(game.document, 'mousemove', { movementX: 180, movementY: -50 }); game.step(.1, .1, false); game.controls.syncDockReunionCamera(game.group);
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(before) > .2);
+  assert.equal(game.controls.motion.dockReunion!.elapsed, 2); assert.equal(game.camera.near, .06);
+});
+
+test('free walking after the reunion retains the ordinary camera easing through a turn', t => {
+  const game = setup(t, Math.PI);
+  Object.assign(game.state, { id: 'link', isInMatrix: false, currentLocation: 'film_zion_hangar',
+    position: filmPosition('film_zion_hangar', 7, 63), rotation: Math.PI });
+  const turn = (phase?: 'walking' | 'done') => {
+    game.state.currentAction = phase ? { type: 'idle', parameters: { dockReunion: { phase, elapsed: 0, floor: 1, role: 'link' } },
+      startedAt: 0, duration: 1e9, progress: 0 } : null;
+    game.controls.possess(game.state); game.step(.5);
+    const origin = game.camera.position.clone(), frames: THREE.Vector3[] = [];
+    game.key('KeyD');
+    for (let i = 0; i < 12; i++) { game.step(1 / 60); frames.push(game.camera.position.clone().sub(origin)); }
+    game.key('KeyD', false); return frames;
+  };
+  const ordinary = turn();
+  for (const phase of ['walking', 'done'] as const) {
+    const frames = turn(phase);
+    for (const [i, point] of frames.entries()) assert.ok(point.distanceTo(ordinary[i]) < .001,
+      `${phase}/${i}: the free camera must ease like ordinary walking, rather than snapping each frame`);
+  }
+});
+
+test('the personnel camera stays in the cage and sees Niobe and Lock through the actual pipework in both window shapes', t => {
+  const game = setup(t, Math.PI), center = FILM_SETS.film_zion_personnel.center;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const root = new THREE.Group(); root.position.set(center.x, center.y - 1, center.z);
+  const renderer = new DockBriefingRenderer(root); t.after(() => renderer.dispose());
+  for (const aspect of [.65, 16 / 9]) for (const state of [{ phase: 'ready', elapsed: 0, escort: 0 },
+    { phase: 'lowering', elapsed: 2.1, escort: 0 }, { phase: 'gate', elapsed: .9, escort: 0 },
+    ...['warning', 'reply', 'reflection'].map(phase => ({ phase, elapsed: 3.5, escort: 5.6, approach: { x: 0, z: 1.4, yaw: Math.PI } }))] as DockBriefing[]) {
+    const at = dockBriefingRoot(state, 'niobe'), lift = ['ready', 'lowering', 'gate'].includes(state.phase);
+    Object.assign(game.state, { id: 'niobe', isInMatrix: false, currentLocation: 'film_zion_personnel', rotation: at.yaw,
+      position: { x: center.x + at.x, y: center.y + at.y, z: center.z + at.z },
+      currentAction: { type: 'idle', parameters: { dockBriefing: { ...state, role: 'niobe' } }, startedAt: 0, duration: 1e9, progress: 0 } });
+    renderer.update(state); root.updateMatrixWorld(true); game.camera.aspect = aspect; game.camera.updateProjectionMatrix();
+    game.controls.release(); game.controls.possess(game.state); game.step(.2, .1, false); game.camera.updateMatrixWorld(true);
+    if (lift) assert.ok(Math.abs(game.camera.position.x - center.x) < DOCK_BRIEFING.lift.width / 2 - .25
+      && game.camera.position.z - center.z > DOCK_BRIEFING.lift.gateZ + .2 && game.camera.position.z - center.z < 15.95, 'camera cannot look through the shaft wall');
+    for (const role of lift ? ['niobe'] as const : ['niobe', 'lock'] as const) for (const height of [-.94, 3.2]) {
+      const at = dockBriefingRoot(state, role), point = new THREE.Vector3(center.x + at.x, center.y + at.y + height, center.z + at.z);
+      const screen = point.clone().project(game.camera);
+      assert.ok(Math.abs(screen.x) < .95 && Math.abs(screen.y) < .95 && screen.z > -1 && screen.z < 1, `${aspect}/${state.phase}/${role}/${height}: out of frame ${screen.toArray()}`);
+      const direction = point.clone().sub(game.camera.position);
+      const hits = new THREE.Raycaster(game.camera.position, direction.clone().normalize(), 0, direction.length() - .1).intersectObject(root, true);
+      assert.equal(hits.length, 0, `${aspect}/${state.phase}/${role}/${height}: camera=${game.camera.position.toArray()}, target=${point.toArray()}, obstruction=${hits.map(hit => `${hit.object.name || hit.object.type}@${hit.point.toArray()}`).join('; ')}`);
+    }
+  }
+});
+
+test('the personnel V view samples the animated eye and preserves live mouse look while the saved lift is paused', t => {
+  const game = setup(t, Math.PI), state: DockBriefing = { phase: 'lowering', elapsed: 2, escort: 0 }, at = dockBriefingRoot(state, 'niobe');
+  Object.assign(game.state, { id: 'niobe', isInMatrix: false, currentLocation: 'film_zion_personnel', rotation: at.yaw,
+    position: { ...filmPosition('film_zion_personnel', at.x, at.z), y: FILM_SETS.film_zion_personnel.center.y + at.y },
+    currentAction: { type: 'idle', parameters: { dockBriefing: { ...state, role: 'niobe' } }, startedAt: 0, duration: 1e9, progress: 0 } });
+  game.controls.possess(game.state); game.key('KeyV'); game.key('KeyV', false); game.step(.1, .1, false);
+  const head = new THREE.Bone(); head.name = 'head'; head.position.set(.1, 2.6, .1); head.userData.cameraEye = new THREE.Vector3(0, .12, .28); game.group.children[0].add(head);
+  game.controls.syncDockReunionCamera(game.group);
+  assert.ok(game.camera.position.distanceTo(head.localToWorld(head.userData.cameraEye.clone())) < 1e-7, 'the camera must use Niobe’s animated eye rather than the generic standing height');
+  const before = game.camera.getWorldDirection(new THREE.Vector3()); game.document.pointerLockElement = game.canvas;
+  game.event(game.document, 'mousemove', { movementX: 150, movementY: -50 }); game.step(.1, .1, false); game.controls.syncDockReunionCamera(game.group);
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(before) > .2);
+  assert.equal(game.controls.motion.dockBriefing!.elapsed, 2); assert.equal(game.camera.near, .06);
+});
+
+test('free personnel walking retains ordinary camera easing and V follows a new turn', t => {
+  const game = setup(t, Math.PI);
+  Object.assign(game.state, { id: 'niobe', isInMatrix: false, currentLocation: 'film_zion_personnel', position: filmPosition('film_zion_personnel', 0, 6), rotation: Math.PI });
+  const turning = (briefing: boolean) => {
+    game.state.currentAction = briefing ? { type: 'idle', parameters: { dockBriefing: { phase: 'walking', elapsed: 0, escort: 1, role: 'niobe' } }, startedAt: 0, duration: 1e9, progress: 0 } : null;
+    game.controls.possess(game.state); game.step(.5); const origin = game.camera.position.clone(), frames: THREE.Vector3[] = []; game.key('KeyD');
+    for (let i = 0; i < 12; i++) { game.step(1 / 60); frames.push(game.camera.position.clone().sub(origin)); }
+    game.key('KeyD', false); return frames;
+  };
+  const ordinary = turning(false), briefing = turning(true);
+  briefing.forEach((point, i) => assert.ok(point.distanceTo(ordinary[i]) < .001, 'walking camera cannot snap to a film shot each frame'));
+  game.key('KeyV'); game.key('KeyV', false); game.document.pointerLockElement = game.canvas;
+  const before = game.yaw(); game.event(game.document, 'mousemove', { movementX: 200, movementY: 0 }); game.step(.2);
+  assert.ok(Math.abs(angle(game.yaw(), before)) > .4); assert.equal(game.controls.performing, false);
+});
+
+test('EMP camera sees the Hammer through the retained upper pipework in both window shapes', t => {
+  const game = setup(t, Math.PI);
+  game.state.id = 'link'; game.state.currentLocation = 'film_hammer_deck'; game.state.isInMatrix = false;
+  game.state.position = filmPosition('film_hammer_deck', 0, -16);
+  game.state.currentAction = { type: 'idle', parameters: { dockEmp: 1.8 }, startedAt: 0, duration: 1e9, progress: 0 };
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const root = new THREE.Group(), renderer = new DockEmpRenderer(root); t.after(() => renderer.dispose());
+  const journey = { scene: 'm3_emp', step: 1, completed: ['m3_gate'], emp: { firedAt: 5, elapsed: 1.8 },
+    diggers: { ...newDiggers(), phase: 'done', damage: 3 },
+    upperDigger: { ...newUpperDigger(), phase: 'done', charraDead: true } } as import('@auto_matrix/shared').FilmJourney;
+  renderer.update(journey); root.updateMatrixWorld(true);
+  const pipework = root.getObjectByName('upper-digger-service-channel')!;
+  const ship = root.getObjectByName('gate-three-hammer')!;
+  for (const elapsed of [0, 1.8, 5, 9]) for (const aspect of [16 / 9, .65]) {
+    journey.emp!.elapsed = elapsed; game.state.currentAction!.parameters.dockEmp = elapsed;
+    renderer.update(journey); root.updateMatrixWorld(true);
+    game.camera.aspect = aspect; game.controls.possess(game.state); game.step(.1, .1, false); game.camera.updateMatrixWorld(true);
+    for (const x of [-7, 0, 7]) for (const y of [-4, 4]) for (const z of [-17, 0, 17]) {
+      const target = ship.localToWorld(new THREE.Vector3(x, y, z));
+      const projection = target.clone().project(game.camera);
+      assert.ok(Math.abs(projection.x) < .85 && Math.abs(projection.y) < .8, `hull must stay within the playable frame at ${elapsed}s / ${aspect}: ${projection.toArray()}`);
+      const sight = target.sub(game.camera.position);
+      assert.equal(new THREE.Raycaster(game.camera.position, sight.clone().normalize(), 0, sight.length()).intersectObject(pipework, true).length, 0,
+        'upper service pipes must not block the EMP ship shot');
+    }
+    const foreground = new THREE.Raycaster(); foreground.far = game.camera.position.distanceTo(ship.getWorldPosition(new THREE.Vector3()));
+    for (const x of [-.5, -.25, 0, .25, .5]) for (const y of [-.5, 0, .5]) {
+      foreground.setFromCamera(new THREE.Vector2(x, y), game.camera);
+      assert.equal(foreground.intersectObject(pipework, true).length, 0, 'a foreground service pipe must not fill the central ship shot');
+    }
+    const scenery: THREE.Object3D[] = [];
+    root.getObjectByName('zion-homecoming-set')!.traverseVisible(object => { if (object instanceof THREE.Mesh) scenery.push(object); });
+    for (const z of [-9, 0, 9]) {
+      const sight = ship.localToWorld(new THREE.Vector3(0, 0, z)).sub(game.camera.position);
+      const hit = new THREE.Raycaster(game.camera.position, sight.clone().normalize(), 0, sight.length()).intersectObjects(scenery, false)[0];
+      let owner = hit?.object; while (owner && owner !== ship) owner = owner.parent ?? undefined;
+      assert.ok(owner === ship, 'the ship camera must remain inside the dock walls');
+    }
+  }
+});
+
+test('the operator camera shows the crank above the console and permits first-person inspection', t => {
+  const game = setup(t, Math.PI), center = FILM_SETS.film_hammer_deck.center;
+  game.state.id = 'link'; game.state.currentLocation = 'film_hammer_deck'; game.state.isInMatrix = false;
+  game.state.position = filmPosition('film_hammer_deck', 0, -16);
+  const operator = { phase: 'turning' as const, elapsed: 1.4, approach: { ...EMP_OPERATOR.entry } };
+  game.state.currentAction = { type: 'idle', parameters: { empOperator: operator }, startedAt: 0, duration: 1e9, progress: 0 };
+  const root = new THREE.Group(); root.position.set(center.x, center.y - 1, center.z);
+  const renderer = new RevolutionsPreludeRenderer(root, 'm3_emp'); t.after(() => renderer.dispose());
+  renderer.update({ scene: 'm3_emp', step: 0, completed: [], empOperator: operator } as import('@auto_matrix/shared').FilmJourney, 0);
+  root.updateMatrixWorld(true); const grip = root.getObjectByName('emp-crank-grip')!;
+  for (const aspect of [16 / 9, .65]) {
+    game.camera.aspect = aspect; game.controls.possess(game.state); game.step(.1, .1, false); game.camera.updateMatrixWorld(true);
+    const target = grip.getWorldPosition(new THREE.Vector3()), delta = target.clone().sub(game.camera.position);
+    const hits = new THREE.Raycaster(game.camera.position, delta.clone().normalize(), 0, delta.length() - .12).intersectObject(root, true);
+    assert.equal(hits.length, 0, 'the control housing or raised cover cannot hide the player’s hand contact');
+    const screen = target.project(game.camera); assert.ok(Math.abs(screen.x) < .75 && Math.abs(screen.y) < .65);
+  }
+  const head = new THREE.Group(); head.name = 'head'; head.position.set(0, 2.7, -.08);
+  head.userData.cameraEye = new THREE.Vector3(0, .1, .32); game.group.children[0].add(head);
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1, .1, false);
+  game.controls.syncEmpOperatorCamera(game.group); game.camera.updateMatrixWorld(true);
+  assert.ok(game.camera.position.distanceTo(head.localToWorld(head.userData.cameraEye.clone())) < 1e-8, 'V must use the seated head rather than the standing eye height');
+  const visibleGrip = grip.getWorldPosition(new THREE.Vector3()).project(game.camera);
+  assert.ok(Math.abs(visibleGrip.x) < .01 && Math.abs(visibleGrip.y) < .01, 'the first view is aimed at the hand contact');
+  const position = { ...game.state.position }, before = game.camera.getWorldDirection(new THREE.Vector3());
+  game.document.pointerLockElement = game.canvas;
+  game.event(game.document, 'mousemove', { movementX: 100, movementY: 120 }); game.step(.1, .1, false);
+  head.position.y -= .4; game.controls.syncEmpOperatorCamera(game.group);
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(before) > .2);
+  assert.ok(game.camera.position.distanceTo(head.localToWorld(head.userData.cameraEye.clone())) < 1e-8, 'the camera follows the newly posed head in the same rendered frame');
+  assert.deepEqual(game.state.position, position);
+});
+
+for (const available of [false, true]) test(`an unlocked browser can drag the first-person view without attacking (pointer lock API ${available})`, t => {
+  const game = setup(t); game.key('KeyV'); game.step(.1, .1, false);
+  if (available) Object.assign(game.canvas, { requestPointerLock() {} });
+  const before = game.camera.getWorldDirection(new THREE.Vector3());
+  game.event(game.canvas, 'mousedown', { button: 0, clientX: 100, clientY: 200 });
+  game.event(game.document, 'mousemove', { clientX: 220, clientY: 160, movementX: 0, movementY: 0 }); game.step(.1, .1, false);
+  const turned = game.camera.getWorldDirection(new THREE.Vector3());
+  assert.ok(turned.distanceTo(before) > .25, 'dragging must turn the camera even when movementX/Y stay zero');
+  assert.deepEqual(game.actions, [], 'dragging to look must not attack');
+  game.event(game.window, 'mouseup', { button: 0 });
+  game.event(game.document, 'mousemove', { clientX: 400, clientY: 100, movementX: 180, movementY: -60 }); game.step(.1, .1, false);
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(turned) < 1e-8, 'releasing the mouse stops dragging');
+  game.event(game.canvas, 'mousedown', { button: 0, clientX: 400, clientY: 100 });
+  game.event(game.window, 'blur', {});
+  game.event(game.document, 'mousemove', { clientX: 550, clientY: 100, movementX: 150, movementY: 0 }); game.step(.1, .1, false);
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(turned) < 1e-8, 'losing focus releases the fallback too');
+});
+
+test('APU driving frames the moving feet and cockpit while V retains the pilot eye and free look', t => {
+  const game = setup(t, Math.PI), center = FILM_SETS.film_zion_hangar.center;
+  game.state.id = 'kid'; game.state.currentLocation = 'film_zion_hangar'; game.state.isInMatrix = false;
+  game.state.currentAction = { type: 'idle', parameters: { seated: true, riding: true, apuDriving: true }, startedAt: 0, duration: 1e9, progress: 0 };
+  game.controls.ride = { speed: 5 };
+  for (const aspect of [.6, 16 / 9]) for (const [x, z] of [[0, 12], [7.2, -20], [-7.2, -50]]) {
+    game.camera.aspect = aspect; game.camera.updateProjectionMatrix();
+    game.state.position = filmPosition('film_zion_hangar', x, z); game.state.position.y += APU_RIG.floor + APU_RIG.pilot.y;
+    game.controls.possess(game.state); game.step(.5, 1 / 60, false); game.camera.updateMatrixWorld(true);
+    for (const point of [[0, 8.3, 0], [-4, 6.2, -5.4], [4, 6.2, -5.4], [-2.5, 0, 2.2], [2.5, .55, -4.2]]) {
+      const screen = new THREE.Vector3(center.x + x + point[0], center.y - 1 + APU_RIG.floor + point[1], center.z + z + point[2]).project(game.camera);
+      assert.ok(Math.abs(screen.x) < .9 && Math.abs(screen.y) < .86 && screen.z > -1 && screen.z < 1,
+        `APU parts must stay inside the viewport at ${aspect}: ${point} => ${screen.toArray()}`);
+    }
+    game.key('KeyV'); game.key('KeyV', false); game.step(.4, 1 / 60, false);
+    const eye = new THREE.Vector3(center.x + x + APU_RIG.eye.x, center.y - 1 + APU_RIG.floor + APU_RIG.eye.y, center.z + z + APU_RIG.eye.z);
+    assert.ok(game.camera.position.distanceTo(eye) < 1e-6, 'first person must use the shared APU eye contact');
+    const forward = game.camera.getWorldDirection(new THREE.Vector3());
+    game.document.pointerLockElement = game.canvas;
+    game.event(game.document, 'mousemove', { movementX: 100, movementY: -50 }); game.step(.2, 1 / 60, false);
+    assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(forward) > .2, 'V must preserve mouse look even while the world is paused');
+    assert.ok(game.camera.position.distanceTo(eye) < 1e-6, 'turning cannot move the eye out of the seat');
+  }
+});
+
+for (const firstPerson of [false, true]) test(`APU ${firstPerson ? 'first' : 'third'}-person crosshair and server hit ray agree`, t => {
+  const game = setup(t, Math.PI), battle = newDockGunnery(0), center = FILM_SETS.film_zion_hangar.center;
+  battle.phase = 'firing'; battle.yaw = Math.PI - .3; battle.pitch = -.27;
+  game.state.id = 'mifune'; game.state.currentLocation = 'film_zion_hangar'; game.state.isInMatrix = false;
+  game.state.position = filmPosition('film_zion_hangar', 0, DOCK_GUNNERY.apuZ); game.state.position.y += APU_RIG.floor + APU_RIG.pilot.y;
+  game.state.currentAction = { type: 'idle', parameters: { seated: true, riding: true, dockGunnery: { yaw: battle.yaw, pitch: battle.pitch } }, startedAt: 0, duration: 1e9, progress: 0 };
+  game.controls.possess(game.state); game.controls.gunner = true; game.controls.firearm = true; game.step(.2);
+  if (firstPerson) { game.key('KeyV'); game.key('KeyV', false); game.step(.2); }
+  game.camera.updateMatrixWorld(true);
+  const ray = game.camera.getWorldDirection(new THREE.Vector3());
+  const target = game.camera.position.clone().addScaledVector(ray, 40).sub(new THREE.Vector3(center.x, center.y - 1, center.z));
+  battle.targets = [{ x: target.x, z: target.z, altitude: target.y, spawnAt: 0, health: 3, struckKid: false, escaped: false }];
+  const input = game.sent.at(-1)!;
+  assert.equal(input.firstPerson, firstPerson);
+  assert.equal(fireDockGunnery(battle, input.yaw, 1, input.pitch, input.firstPerson), true, 'the point under the actual rendered crosshair must be hit');
+  const impact = new THREE.Vector3().copy(battle.lastShot!).add(new THREE.Vector3(center.x, center.y - 1, center.z)).project(game.camera);
+  assert.ok(Math.hypot(impact.x, impact.y) < 1e-5);
+  assert.ok(Math.abs(game.group.children[0].rotation.y - Math.PI) < .001, 'aim must not swivel the seated pilot out of the cockpit');
+  game.key('KeyW'); game.key('Space'); game.step(1);
+  assert.ok(game.group.position.distanceTo(new THREE.Vector3().copy(game.state.position)) < .001, 'walking or gravity must not pull the seated pilot away from the machine');
+});
+
+test('upper pipe attack camera has an unobstructed view of Charra in wide and narrow windows', t => {
+  const game = setup(t), state = { ...newUpperDigger(), phase: 'attack' as const, climb: 44, crawl: 26, retreat: 7, elapsed: 1.6, charraDead: true };
+  const point = upperDiggerRoot(state, 'zee'), center = FILM_SETS.film_zion_hangar.center;
+  game.state.id = 'zee'; game.state.currentLocation = 'film_zion_hangar'; game.state.isInMatrix = false;
+  game.state.position = filmPosition('film_zion_hangar', point.x, point.z); game.state.position.y += point.y; game.state.rotation = point.yaw;
+  game.state.currentAction = { type: 'idle', parameters: { upperDigger: { ...state, role: 'zee' } }, startedAt: 0, duration: 1e9, progress: 0 };
+  game.controls.possess(game.state);
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const stage = new THREE.Group(); stage.position.set(center.x, center.y - 1, center.z);
+  const renderer = new ZionHomecomingRenderer(stage, 'film_zion_hangar'); t.after(() => renderer.dispose());
+  renderer.update({ scene: 'm3_upper_digger', actor: 'zee', step: 0, completed: [], diggers: { ...newDiggers(), phase: 'done', damage: 3 }, upperDigger: state } as import('@auto_matrix/shared').FilmJourney, 0);
+  stage.updateMatrixWorld(true);
+  const target = new THREE.Vector3(center.x - 19.7, center.y + 45.2, center.z + 28);
+  for (const aspect of [.6, 16 / 9]) {
+    game.camera.aspect = aspect; game.step(.1); game.camera.updateMatrixWorld(true);
+    const direction = target.clone().sub(game.camera.position);
+    const hits = new THREE.Raycaster(game.camera.position, direction.clone().normalize(), 0, direction.length()).intersectObject(stage.getObjectByName('upper-digger-service-channel')!, true);
+    assert.equal(hits.length, 0, `pipe blocks the death scene: ${hits[0]?.point.toArray()}`);
+    const projection = target.clone().project(game.camera); assert.ok(Math.abs(projection.x) < .8 && Math.abs(projection.y) < .8);
+  }
+});
+
+test('Zee first-person view follows the saved hatch turn while retaining her mouse look offset', t => {
+  const game = setup(t), state = { ...newUpperDigger(), phase: 'mounting' as const, climb: 44, elapsed: 0 };
+  game.state.id = 'zee'; game.state.currentLocation = 'film_zion_hangar'; game.state.isInMatrix = false;
+  const sync = () => {
+    const root = upperDiggerRoot(state, 'zee'); game.state.rotation = root.yaw;
+    game.state.position = filmPosition('film_zion_hangar', root.x, root.z); game.state.position.y += root.y;
+    game.state.currentAction = { type: 'idle', parameters: { upperDigger: { ...state, role: 'zee' } }, startedAt: 0, duration: 1e9, progress: 0 };
+  };
+  sync(); game.controls.possess(game.state); game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+  game.document.pointerLockElement = game.canvas; game.event(game.document, 'mousemove', { movementX: 80, movementY: 0 }); game.step(.1);
+  const offset = Math.atan2(Math.sin(game.yaw() - game.state.rotation), Math.cos(game.yaw() - game.state.rotation));
+  state.elapsed = 1; sync(); game.step(.1);
+  const actual = Math.atan2(Math.sin(game.yaw() - game.state.rotation), Math.cos(game.yaw() - game.state.rotation));
+  assert.ok(Math.abs(actual - offset) < .005, 'the first-person camera must turn with the body without discarding mouse look');
+});
+
+for (const saved of [
+  { phase: 'descending', climb: 19.844 }, { phase: 'mounting', climb: 44, elapsed: 0 },
+  { phase: 'mounting', climb: 44, elapsed: .9 }, { phase: 'dismounting', climb: 44, elapsed: .6 },
+  { phase: 'mounting', climb: 44, elapsed: 1.522 }, { phase: 'mounting', climb: 44, elapsed: 3.15 },
+  { phase: 'dismounting', climb: 44, elapsed: 1.2 }, { phase: 'dismounting', climb: 44, elapsed: 3.18 },
+  { phase: 'attack', climb: 44, crawl: 26, retreat: 7, elapsed: 1.8 },
+  { phase: 'attack', climb: 44, crawl: 26, retreat: 7, elapsed: 2.05 },
+] as const) test(`first-person ${saved.phase} at ${'elapsed' in saved ? saved.elapsed : saved.climb} follows Zee's actual eye`, async t => {
+  const game = setup(t), state = { ...newUpperDigger(), ...saved, charraDead: saved.phase !== 'mounting' };
+  t.mock.method(game.document, 'createElement', () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {},
+    createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {} }) }));
+  const root = upperDiggerRoot(state, 'zee');
+  game.state.id = 'zee'; game.state.currentLocation = 'film_zion_hangar'; game.state.isInMatrix = false;
+  game.state.position = filmPosition('film_zion_hangar', root.x, root.z); game.state.position.y += root.y; game.state.rotation = root.yaw;
+  game.state.currentAction = { type: 'idle', parameters: { upperDigger: { ...state, role: 'zee' } }, startedAt: 0, duration: 1e9, progress: 0 };
+  game.controls.possess(game.state); game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+  const { CharacterModels } = await import('../packages/client/src/agents/CharacterModel.js');
+  const { WorldState } = await import('../packages/server/src/world/WorldState.js');
+  const { AgentManager } = await import('../packages/server/src/agents/AgentManager.js');
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents(); const models = new CharacterModels();
+  try {
+    const rig = models.create(world.agents.get('zee')!); rig.root.position.copy(game.state.position); rig.root.rotation.y = root.yaw;
+    models.animate(rig, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true, upperDigger: { ...state, role: 'zee' } }, 1);
+    rig.root.updateMatrixWorld(true);
+    const eye = rig.head.localToWorld(new THREE.Vector3(0, -.012, .24));
+    assert.ok(game.camera.position.distanceTo(eye) < .08, `camera is ${game.camera.position.distanceTo(eye)} behind the visible eye position`);
+    if (state.phase === 'attack') {
+      assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).x > .25, 'first person must follow the glance back at Charra');
+      const charra = models.create(world.agents.get('charra')!), point = upperDiggerRoot(state, 'charra');
+      charra.root.position.copy(filmPosition('film_zion_hangar', point.x, point.z)); charra.root.position.y += point.y; charra.root.rotation.y = point.yaw;
+      models.animate(charra, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true, upperDigger: { ...state, role: 'charra' } }, 1);
+      charra.root.updateMatrixWorld(true); game.camera.updateMatrixWorld(true);
+      const projection = charra.head.getWorldPosition(new THREE.Vector3()).project(game.camera);
+      assert.ok(Math.abs(projection.x) < .55 && Math.abs(projection.y) < .6 && projection.z > -1 && projection.z < 1,
+        `the glance must show Charra, not the pipe: ${projection.toArray()}`);
+      const before = game.yaw(); game.document.pointerLockElement = game.canvas;
+      game.event(game.document, 'mousemove', { movementX: 80, movementY: 0 }); game.step(.1);
+      assert.ok(Math.abs(angle(game.yaw() - before, -80 * .0028)) < .005, 'glancing back must retain mouse look');
+    }
+    if (state.phase === 'mounting' || state.phase === 'dismounting') {
+      game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+      const center = FILM_SETS.film_zion_hangar.center, stage = new THREE.Group(); stage.position.set(center.x, center.y - 1, center.z);
+      const scenery = new ZionHomecomingRenderer(stage, 'film_zion_hangar');
+      try {
+        scenery.update({ scene: 'm3_upper_digger', actor: 'zee', completed: [], diggers: { ...newDiggers(), phase: 'done' }, upperDigger: state } as import('@auto_matrix/shared').FilmJourney, 0);
+        stage.updateMatrixWorld(true);
+        const direction = eye.clone().sub(game.camera.position);
+        const hits = new THREE.Raycaster(game.camera.position, direction.clone().normalize(), 0, direction.length()).intersectObject(stage.getObjectByName('zion-upper-digger')!, true);
+        assert.ok(!hits.length, `the hatch camera at ${game.camera.position.toArray()} is behind ${hits[0]?.object.parent?.name} at ${hits[0]?.point.toArray()}`);
+      } finally { scenery.dispose(); }
+    }
+  } finally { models.dispose(); }
+});
+
+for (const stationIndex of [0, 1] as const) for (const firstPerson of [false, true]) test(`Charra aperture ${stationIndex + 1} ${firstPerson ? 'first' : 'third'} person mouse aims at the actual drill joint`, t => {
+  const game = setup(t), drill = newDiggers(stationIndex); drill.phase = 'aiming'; drill.total = 2;
+  const station = DIGGERS.stations[stationIndex]; game.state.id = 'charra'; game.state.currentLocation = 'film_zion_hangar'; game.state.isInMatrix = false;
+  game.state.position = filmPosition('film_zion_hangar', station.x, station.z);
+  game.state.currentAction = { type: 'idle', parameters: { diggers: { ...drill, role: 'charra' } }, startedAt: 0, duration: 1e9, progress: 0 };
+  game.controls.possess(game.state); game.controls.gunner = true; game.controls.firearm = true; game.step(.1);
+  if (firstPerson) { game.key('KeyV'); game.key('KeyV', false); }
+  const eye = diggerEye(drill), target = DIGGERS.knees[stationIndex], dx = target.x - eye.x, dz = target.z - eye.z;
+  const yaw = Math.atan2(dx, dz), pitch = -Math.atan2(target.y - eye.y, Math.hypot(dx, dz));
+  game.document.pointerLockElement = game.canvas;
+  game.event(game.document, 'mousemove', { movementX: (drill.yaw - yaw) / .0028, movementY: (pitch - drill.pitch) / .002 });
+  game.step(.1); game.key('KeyT'); game.key('KeyT', false);
+  const input = game.sent.at(-1)!; fireDigger(drill, input.yaw, input.pitch!);
+  assert.equal(drill.shot?.result, 'joint'); assert.ok(game.actions.includes('shoot'));
+  const joint = new THREE.Vector3(target.x, target.y, target.z).add(new THREE.Vector3().copy(FILM_SETS.film_zion_hangar.center)).project(game.camera);
+  assert.ok(Math.abs(joint.x) < .04 && Math.abs(joint.y) < .04, `joint projection ${joint.x}, ${joint.y}`);
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const stage = new THREE.Group(), center = FILM_SETS.film_zion_hangar.center;
+  stage.position.set(center.x, center.y - 1, center.z);
+  const renderer = new ZionHomecomingRenderer(stage, 'film_zion_hangar'); t.after(() => renderer.dispose());
+  renderer.update({ scene: 'm3_diggers', actor: 'charra', step: 0, completed: [], diggers: drill } as import('@auto_matrix/shared').FilmJourney, 0);
+  stage.updateMatrixWorld(true);
+  for (const aspect of [.6, 16 / 9]) {
+    game.camera.aspect = aspect; game.step(.1); game.camera.updateMatrixWorld(true);
+    if (!firstPerson) {
+      const head = new THREE.Vector3().copy(diggerEye(drill)).add(new THREE.Vector3().copy(center)).project(game.camera);
+      assert.ok(Math.abs(head.x) < .9 && Math.abs(head.y) < .9, `Charra's head must stay inside the aiming shot: ${head.toArray()}`);
+    }
+    const point = new THREE.Vector3(target.x + center.x, target.y + center.y, target.z + center.z), direction = point.sub(game.camera.position);
+    const blocked = new THREE.Raycaster(game.camera.position, direction.clone().normalize(), 0, direction.length() - 2)
+      .intersectObject(stage, true).find(hit => { let object: THREE.Object3D | null = hit.object;
+        while (object) { if (!object.visible || object.name === 'digger-body') return false; object = object.parent; } return true; });
+    assert.ok(!blocked, `joint blocked at ${aspect}: ${blocked?.point.clone().sub(stage.position).toArray()}`);
+    const crown = stage.getObjectByName('digger-body')!.localToWorld(new THREE.Vector3(0, 38, 0));
+    const crownDirection = crown.clone().sub(game.camera.position);
+    const crownBlocker = new THREE.Raycaster(game.camera.position, crownDirection.clone().normalize(), 0, crownDirection.length() - 8)
+      .intersectObject(stage, true).find(hit => { let object: THREE.Object3D | null = hit.object;
+        while (object) { if (!object.visible || object.name === 'digger-body') return false; object = object.parent; } return true; });
+    assert.ok(!crownBlocker, `the firing hatch must reveal the towering drill, not a lintel at ${crownBlocker?.point.clone().sub(stage.position).toArray()}`);
+  }
+});
+
+for (const phase of ['approach', 'relocate', 'done'] as const) test(`Charra ${phase} reconnect keeps the walking direction instead of the old firing angle`, t => {
+  const game = setup(t), drill = { ...newDiggers(), phase };
+  game.state.id = 'charra'; game.state.currentLocation = 'film_zion_hangar'; game.state.isInMatrix = false;
+  game.state.position = filmPosition('film_zion_hangar', -42, 27); game.state.rotation = -2.2;
+  game.state.currentAction = { type: 'idle', parameters: { diggers: { ...drill, role: 'charra' } }, startedAt: 0, duration: 1e9, progress: 0 };
+  game.controls.possess(game.state); game.key('KeyV'); game.key('KeyV', false); game.key('KeyW'); game.step(.1);
+  assert.ok(Math.abs(game.sent.at(-1)!.yaw - game.state.rotation) < .001, 'first-person movement must resume in the saved facing direction');
+});
+
+test('the collapsing drill stays in frame without the firing aperture blocking its crown', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const game = setup(t), center = FILM_SETS.film_zion_hangar.center, drill = newDiggers(1);
+  drill.phase = 'collapsing'; drill.damage = 3;
+  game.state.id = 'charra'; game.state.currentLocation = 'film_zion_hangar'; game.state.isInMatrix = false;
+  game.state.position = filmPosition('film_zion_hangar', -40, -16);
+  const stage = new THREE.Group(); stage.position.set(center.x, center.y - 1, center.z);
+  const renderer = new ZionHomecomingRenderer(stage, 'film_zion_hangar'); t.after(() => renderer.dispose());
+  for (const aspect of [.6, 16 / 9]) for (const elapsed of [0, 2.5, 5.5]) {
+    drill.elapsed = elapsed;
+    game.state.currentAction = { type: 'idle', parameters: { diggers: { ...drill, role: 'charra' } }, startedAt: 0, duration: 1e9, progress: 0 };
+    game.camera.aspect = aspect; game.controls.possess(game.state); game.step(.1); game.camera.updateMatrixWorld(true);
+    renderer.update({ scene: 'm3_diggers', actor: 'charra', step: 0, completed: [], diggers: drill } as import('@auto_matrix/shared').FilmJourney, 0);
+    stage.updateMatrixWorld(true);
+    const body = stage.getObjectByName('digger-body')!, crown = body.localToWorld(new THREE.Vector3(0, 28, 0));
+    const projected = crown.clone().project(game.camera);
+    assert.ok(Math.abs(projected.x) < .85 && Math.abs(projected.y) < .85 && projected.z > -1 && projected.z < 1, `crown clipped at ${aspect}/${elapsed}: ${projected.toArray()}`);
+    const direction = crown.clone().sub(game.camera.position);
+    const blocker = new THREE.Raycaster(game.camera.position, direction.clone().normalize(), 0, direction.length() - 1).intersectObject(stage, true)
+      .find(hit => { let object: THREE.Object3D | null = hit.object;
+        while (object) { if (!object.visible || object.name === 'digger-body') return false; object = object.parent; } return true; });
+    assert.ok(!blocker, `the player must see the collapse, not a wall at ${aspect}/${elapsed}: ${blocker?.point.clone().sub(stage.position).toArray()}`);
+  }
+});
+
 for (const toppled of [false, true]) for (const firstPerson of [false, true]) test(`Gate Three ${toppled ? 'fallen' : 'upright'} ${firstPerson ? 'first' : 'third'} person can aim and fire at the actual high cable`, t => {
   const game = setup(t, Math.PI), center = FILM_SETS.film_zion_hangar.center;
   const gate = newDockGate(5, -50); gate.phase = 'aiming'; gate.toppled = toppled;
   game.state.id = 'kid'; game.state.currentLocation = 'film_zion_hangar'; game.state.isInMatrix = false;
-  const pilot = dockGatePoint(gate, { x: 0, y: 1.3, z: 0 });
+  const pilot = dockGatePoint(gate, APU_RIG.pilot);
   game.state.position = filmPosition('film_zion_hangar', pilot.x, pilot.z); game.state.position.y += pilot.y;
   game.state.currentAction = { type: 'idle', parameters: { dockGate: gate, riding: true, seated: true }, startedAt: 0, duration: 1e9, progress: 0 };
   game.controls.possess(game.state); game.controls.gunner = true; game.controls.performing = true; game.controls.firearm = true;
@@ -101,6 +890,25 @@ for (const toppled of [false, true]) for (const firstPerson of [false, true]) te
   }
 });
 
+test('handing the completed gate to Link clears Kid’s elevated cannon aim and keeps both walking views steerable', t => {
+  const game = setup(t, Math.PI), gate = { ...newDockGate(7.2, -50), phase: 'done' as const, toppled: true, yaw: 1.964, pitch: -.671 };
+  const pilot = dockGatePoint(gate, APU_RIG.pilot);
+  game.state.id = 'kid'; game.state.isInMatrix = false; game.state.currentLocation = 'film_zion_hangar';
+  game.state.position = filmPosition('film_zion_hangar', pilot.x, pilot.z); game.state.position.y += pilot.y;
+  game.state.currentAction = { type: 'idle', parameters: { dockGate: gate, seated: true, riding: true }, startedAt: 0, duration: 1e9, progress: 0 };
+  game.controls.possess(game.state); game.step(.1);
+  game.state.id = 'link'; game.state.currentLocation = 'film_hammer_deck';
+  game.state.position = filmPosition('film_hammer_deck', 0, 24); game.state.rotation = Math.PI; game.state.currentAction = null;
+  game.controls.possess(game.state); game.step(.1);
+  assert.ok(game.camera.position.y > game.state.position.y + 2, 'the new walking camera must not inherit an upward cannon angle that puts it below Link');
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+  const direction = game.camera.getWorldDirection(new THREE.Vector3());
+  assert.ok(direction.y < .05 && direction.y > -.5, 'Link must start looking down the deck, not up at the ceiling');
+  game.document.pointerLockElement = game.canvas;
+  game.event(game.document, 'mousemove', { movementX: 120, movementY: -60 }); game.step(.1);
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(direction) > .2, 'the handoff must retain normal mouse look');
+});
+
 test('the fallen pilot can see the cable through the actual APU from his first person eye', t => {
   const game = setup(t, Math.PI), center = FILM_SETS.film_zion_hangar.center;
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
@@ -109,7 +917,7 @@ test('the fallen pilot can see the cable through the actual APU from his first p
   game.state.id = 'kid'; game.state.currentLocation = 'film_zion_hangar'; game.state.isInMatrix = false;
   for (const x of [5, 7.2]) for (const height of [26, 32, 37]) {
     const gate = { ...newDockGate(x, -50), toppled: true, phase: 'aiming' as const };
-    const eye = dockGateEye(gate), pilot = dockGatePoint(gate, { x: 0, y: 1.3, z: 0 });
+    const eye = dockGateEye(gate), pilot = dockGatePoint(gate, APU_RIG.pilot);
     gate.yaw = Math.atan2(DOCK_GATE.cable.x - eye.x, DOCK_GATE.cable.z - eye.z);
     gate.pitch = -Math.atan2(height - eye.y, Math.hypot(DOCK_GATE.cable.x - eye.x, DOCK_GATE.cable.z - eye.z));
     game.state.position = filmPosition('film_zion_hangar', pilot.x, pilot.z); game.state.position.y += pilot.y;
@@ -129,29 +937,41 @@ test('the fallen pilot can see the cable through the actual APU from his first p
   }
 });
 
-test('the gate rescue frames the fallen pilot, Zee and her target without hiding them behind the APU frame', t => {
+test('the gate rescue frames the fallen pilot, Zee and her target without hiding them behind the APU frame', async t => {
   const game = setup(t, Math.PI), center = FILM_SETS.film_zion_hangar.center;
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const stage = new THREE.Group(); stage.position.set(center.x, center.y - 1, center.z);
   const renderer = new ZionHomecomingRenderer(stage, 'film_zion_hangar'); t.after(() => renderer.dispose());
-  const gate = { ...newDockGate(7.2, -50), toppled: true, phase: 'rescue' as const, elapsed: .8 };
-  const pilot = dockGatePoint(gate, { x: 0, y: 1.3, z: 0 }), zee = dockGateZee(gate);
+  const gate = { ...newDockGate(7.2, -50), toppled: true };
   game.state.id = 'kid'; game.state.currentLocation = 'film_zion_hangar'; game.state.isInMatrix = false;
-  game.state.position = filmPosition('film_zion_hangar', pilot.x, pilot.z); game.state.position.y += pilot.y;
   game.state.currentAction = { type: 'idle', parameters: { dockGate: gate, riding: true, seated: true }, startedAt: 0, duration: 1e9, progress: 0 };
   game.controls.possess(game.state); game.controls.gunner = true; game.controls.performing = true;
-  renderer.update({ scene: 'm3_gate', step: 2, completed: [], actor: 'kid', dockGate: gate } as import('@auto_matrix/shared').FilmJourney, 0); stage.updateMatrixWorld(true);
-  const points = [dockGateEye(gate), { x: zee.x, y: 3.5, z: zee.z }, dockGateAttacker(gate)];
-  for (const aspect of [.6, 16 / 9]) {
-    game.camera.aspect = aspect; game.step(.1); game.camera.updateMatrixWorld(true);
-    points.forEach((point, index) => {
-      const target = new THREE.Vector3().copy(point).add(stage.position), projected = target.clone().project(game.camera);
-      assert.ok(Math.abs(projected.x) < .9 && projected.y > -.5 && projected.y < .7, `rescue subject ${index} lies behind HUD/outside frame: ${projected.toArray()}`);
-      const direction = target.clone().sub(game.camera.position);
-      const hit = new THREE.Raycaster(game.camera.position, direction.clone().normalize(), 0, direction.length() - (index === 2 ? 1.8 : .3))
-        .intersectObject(stage, true).find(hit => { let object: THREE.Object3D | null = hit.object; while (object) { if (!object.visible) return false; object = object.parent; } return true; });
-      assert.ok(!hit, `rescue subject ${index} is hidden by ${hit?.object.name} at ${hit?.point.toArray()}`);
-    });
+  t.mock.method(game.document, 'createElement', () => ({ getContext: () => ({ createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {} }) }));
+  const { CharacterModels } = await import('../packages/client/src/agents/CharacterModel.js');
+  const { WorldState } = await import('../packages/server/src/world/WorldState.js');
+  const { AgentManager } = await import('../packages/server/src/agents/AgentManager.js');
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents(); const models = new CharacterModels(); t.after(() => models.dispose());
+  const rig = models.create(world.agents.get('zee')!);
+  for (const x of [5, 7.2]) for (const [phase, elapsed] of [['rescue', 0], ['rescue', .8], ['rescue', 1.6], ['rescue', 2.75], ['braced', .5]] as const) {
+    Object.assign(gate, { x, phase, elapsed });
+    const pilot = dockGatePoint(gate, APU_RIG.pilot), zee = dockGateZee(gate);
+    game.state.position = filmPosition('film_zion_hangar', pilot.x, pilot.z); game.state.position.y += pilot.y;
+    renderer.update({ scene: 'm3_gate', step: 2, completed: [], actor: 'kid', dockGate: gate } as import('@auto_matrix/shared').FilmJourney, 0); stage.updateMatrixWorld(true);
+    rig.root.position.set(center.x + zee.x, center.y - 1, center.z + zee.z); rig.root.rotation.y = zee.yaw;
+    models.animate(rig, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true, armed: true, dockGateCover: gate }, 1);
+    const hands = rig.elbows.map(elbow => elbow.localToWorld(new THREE.Vector3(0, -.79, .055)).sub(stage.position));
+    const points = [dockGateEye(gate), { x: zee.x, y: 3.5, z: zee.z }, dockGateAttacker(gate), { x: zee.x, y: 2.4, z: zee.z }, ...hands];
+    for (const aspect of [.6, 16 / 9]) {
+      game.camera.aspect = aspect; game.step(.1); game.camera.updateMatrixWorld(true);
+      points.forEach((point, index) => {
+        const target = new THREE.Vector3().copy(point).add(stage.position), projected = target.clone().project(game.camera);
+        assert.ok(Math.abs(projected.x) < .9 && projected.y > -.5 && projected.y < .7, `rescue subject ${index} lies behind HUD/outside frame: ${projected.toArray()}`);
+        const direction = target.clone().sub(game.camera.position);
+        const hit = new THREE.Raycaster(game.camera.position, direction.clone().normalize(), 0, direction.length() - (index === 2 ? 1.8 : .3))
+          .intersectObject(stage, true).find(hit => { let object: THREE.Object3D | null = hit.object; while (object) { if (!object.visible) return false; object = object.parent; } return true; });
+        assert.ok(!hit, `${phase}/${elapsed}: rescue subject ${index} is hidden by ${hit?.object.name} at ${hit?.point.toArray()}`);
+      });
+    }
   }
 });
 
@@ -243,7 +1063,7 @@ test('the last stand camera sees Mifune past the APU armour and preserves a free
   game.state.currentAction = { type: 'idle', parameters: { dockLastStand: encounter }, startedAt: 0, duration: 1, progress: 0 };
   for (const aspect of [16 / 9, .72]) {
     game.camera.aspect = aspect; game.controls.possess(game.state); game.step(.02, .02, false); game.camera.updateMatrixWorld();
-    const face = new THREE.Vector3(center.x, center.y + 6.0, center.z + 11.8);
+    const face = new THREE.Vector3(center.x, center.y + APU_RIG.floor + APU_RIG.eye.y - .8, center.z + 11.8);
     const projection = face.clone().project(game.camera);
     assert.ok(Math.abs(projection.x) < .85 && Math.abs(projection.y) < .7, 'the captain must stay inside the playable frame');
     const sight = face.clone().sub(game.camera.position), ray = new THREE.Raycaster(game.camera.position, sight.clone().normalize(), 0, sight.length() - .2);
@@ -269,7 +1089,7 @@ test('the last stand camera sees Mifune past the APU armour and preserves a free
 test('the dock APU gunner sees past the frame, can turn the aim and fire from both views', t => {
   const game = setup(t, Math.PI); const center = FILM_SETS.film_zion_hangar.center;
   game.state.currentLocation = 'film_zion_hangar'; game.state.isInMatrix = false;
-  game.state.position = { ...filmPosition('film_zion_hangar', 0, 12), y: center.y + 2.2 };
+  game.state.position = { ...filmPosition('film_zion_hangar', 0, 12), y: center.y + APU_RIG.floor + APU_RIG.pilot.y };
   game.state.currentAction = { type: 'idle', parameters: { riding: true, seated: true }, startedAt: 0, duration: 1, progress: 0 };
   game.controls.possess(game.state); game.controls.gunner = true; game.controls.performing = true;
   game.controls.firearm = true; game.controls.fireInterval = .11; game.step(.4);
@@ -649,6 +1469,63 @@ function setup(t: TestContext, rotation = 0) {
   step(.5);
   return { controls, camera, group, state, document, window, canvas, sent, actions, event, key, step, yaw };
 }
+
+test('the final Oracle reply locks predicted movement, uses Neo actual eyes and releases walking afterwards', t => {
+  const game = setup(t, Math.PI), center = FILM_SETS.film_oracle_home.center;
+  const visit = { ...newOracleLast(1, 61), phase: 'answering' as const, role: 'neo' as const, step: 1 };
+  Object.assign(game.state, { position: filmPosition('film_oracle_home', ORACLE_LAST.question.x, ORACLE_LAST.question.z),
+    rotation: Math.PI, currentLocation: 'film_oracle_home',
+    currentAction: { type: 'idle', parameters: { oracleLast: visit }, startedAt: 0, duration: 1e9, progress: 0 } });
+  const head = new THREE.Group(); head.name = 'head'; head.position.set(0, 2.99, 0); head.userData.cameraEye = new THREE.Vector3(0, .08, .22); game.group.children[0].add(head);
+  game.controls.possess(game.state); game.step(.2);
+  assert.equal(game.controls.performing, true);
+  const position = game.group.position.clone(); game.key('KeyW'); game.key('Space'); game.step(.2); game.key('KeyW', false); game.key('Space', false);
+  assert.ok(position.distanceTo(game.group.position) < .01, 'client prediction must not walk or jump out of a server-locked reply');
+  for (const aspect of [16 / 9, .8]) {
+    game.camera.aspect = aspect; game.camera.updateProjectionMatrix(); game.step(.2);
+    const face = new THREE.Vector3(center.x + ORACLE_LAST.oracle.x, center.y - 1 + 3.5, center.z + ORACLE_LAST.oracle.z).project(game.camera);
+    assert.ok(Math.abs(face.x) < .88 && Math.abs(face.y) < .85 && face.z > -1 && face.z < 1, 'Oracle remains readable in both window shapes');
+  }
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1); game.controls.syncTrainmanChaseCamera(game.group);
+  game.group.updateWorldMatrix(true, true);
+  const eye = head.localToWorld(head.userData.cameraEye.clone());
+  assert.ok(game.camera.position.distanceTo(eye) < 1e-6, 'first-person view follows the actual posed eye');
+  const yaw = game.yaw(); game.event(game.canvas, 'mousedown', { button: 2 }); game.event(game.document, 'mousemove', { movementX: 85, movementY: 0 }); game.step(.1);
+  assert.ok(Math.abs(angle(game.yaw(), yaw)) > .08, 'a locked reply still permits mouse looking');
+  game.state.currentAction = null; game.step(.1); assert.equal(game.controls.performing, false);
+  const released = game.group.position.clone(); game.key('KeyW'); game.step(.25); game.key('KeyW', false);
+  assert.ok(game.group.position.distanceTo(released) > .25, 'the final reply releases normal walking');
+});
+
+test('the seated Oracle camera shows Smith and the doorway copies and keeps the actual first-person eye', t => {
+  const game = setup(t), center = FILM_SETS.film_oracle_home.center;
+  const visit = { ...newOracleAbsorption(3, 61), phase: 'confrontation' as const, role: 'oracle' as const, invasion: 44 };
+  Object.assign(game.state, { id: 'oracle', name: 'Oracle', position: filmPosition('film_oracle_home', ORACLE_ABSORPTION.seat.x, ORACLE_ABSORPTION.seat.z),
+    rotation: 0, currentLocation: 'film_oracle_home', currentAction: { type: 'idle', parameters: { oracleAbsorption: visit }, startedAt: 0, duration: 1e9, progress: 0 } });
+  const head = new THREE.Group(); head.name = 'head'; head.position.set(0, 2.15, 0); head.userData.cameraEye = new THREE.Vector3(0, .08, .22); game.group.children[0].add(head);
+  game.controls.possess(game.state);
+  for (const aspect of [16 / 9, .8]) {
+    game.camera.aspect = aspect; game.camera.updateProjectionMatrix(); game.step(.5); game.camera.updateWorldMatrix(true, true);
+    const faces = [{ ...ORACLE_ABSORPTION.seat, y: 3.2 }, { ...ORACLE_ABSORPTION.smith, y: 3.95 }];
+    if (aspect > 1) faces.push({ x: -.3, y: 3.95, z: -15.8 });
+    for (const point of faces) {
+      const screen = new THREE.Vector3(center.x + point.x, center.y - 1 + point.y, center.z + point.z).project(game.camera);
+      assert.ok(Math.abs(screen.x) < .94 && Math.abs(screen.y) < .9 && screen.z > -1 && screen.z < 1,
+        `Oracle kitchen face ${point.x}/${point.z} must remain in view at ${aspect}: ${screen.toArray()}`);
+    }
+  }
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1); game.group.updateWorldMatrix(true, true);
+  assert.ok(game.camera.position.distanceTo(head.localToWorld(head.userData.cameraEye.clone())) < 1e-6);
+  const yaw = game.yaw(); game.event(game.canvas, 'mousedown', { button: 2 }); game.event(game.document, 'mousemove', { movementX: 80, movementY: 0 }); game.step(.1);
+  assert.ok(Math.abs(angle(game.yaw(), yaw)) > .08, 'the seated first-person view permits looking towards the invaders');
+  const position = game.group.position.clone(); game.key('KeyW'); game.key('Space'); game.step(.2); game.key('KeyW', false); game.key('Space', false);
+  assert.ok(position.distanceTo(game.group.position) < .01, 'the seated scene cannot predict walking through the table');
+  const replacementHead = new THREE.Group(); replacementHead.position.copy(head.getWorldPosition(new THREE.Vector3())).add(new THREE.Vector3(0, 1.3, 0));
+  replacementHead.userData.cameraEye = head.userData.cameraEye.clone(); game.group.userData.oracleSmithHead = replacementHead;
+  game.state.currentAction!.parameters.oracleAbsorption = { ...visit, phase: 'laughing', coating: 1, elapsed: 2.6 }; game.step(.1);
+  assert.ok(game.camera.position.distanceTo(replacementHead.localToWorld(replacementHead.userData.cameraEye.clone())) < 1e-6,
+    'after assimilation the first-person eye rises with the standing Smith body');
+});
 
 test('wetwall third person stays inside the actual shaft and frames Neo head and shoes in both aspect ratios', t => {
   const game = setup(t), center = FILM_SETS.film_ambush_house.center;
@@ -1456,6 +2333,7 @@ test('the recovery camera frames the medical bed and first person moves to Neo e
 });
 
 test('the recovery opening keeps Neo above subtitles and visible past the medical frame in both aspect ratios', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const game = setup(t, Math.PI); const center = FILM_SETS.film_neb_deck.center;
   const root = new THREE.Group(); root.position.set(center.x, center.y - 1, center.z);
   const set = new NebDeckRenderer(root);
@@ -1514,6 +2392,7 @@ test('first person follows the cabin sit and turn, keeps free look and restores 
 });
 
 test('after recovery the ordinary follow camera cannot enter the medical equipment cabinet', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const game = setup(t, Math.PI / 2); const center = FILM_SETS.film_neb_deck.center;
   game.state.position = filmPosition('film_neb_deck', -3.6, -22); game.state.isInMatrix = false; game.state.currentLocation = 'film_neb_deck';
   const root = new THREE.Group(); root.position.set(center.x, center.y - 1, center.z); const set = new NebDeckRenderer(root);
@@ -1532,6 +2411,7 @@ test('after recovery the ordinary follow camera cannot enter the medical equipme
 });
 
 test('the cabin camera stays inside the room and frames Neo during the sit, turn and rise', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const game = setup(t, Math.PI); const center = FILM_SETS.film_neb_deck.center;
   const root = new THREE.Group(); root.position.set(center.x, center.y - 1, center.z); const set = new NebDeckRenderer(root);
   game.state.currentLocation = 'film_neb_deck'; game.state.isInMatrix = false;
@@ -1574,6 +2454,7 @@ test('the Construct keeps movement locked when inspection hands off directly to 
 });
 
 test('training frames Neo, Tank and the console in wide and narrow views throughout connection and upload', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const game = setup(t), center = FILM_SETS.film_neb_deck.center;
   const stage = new THREE.Group(); stage.position.set(center.x, center.y - 1, center.z);
   const deck = new NebDeckRenderer(stage); stage.updateMatrixWorld(true); t.after(() => deck.dispose());
@@ -1612,6 +2493,7 @@ test('training frames Neo, Tank and the console in wide and narrow views through
 });
 
 test('the truth aftermath frames the unplugging and bedside conversation without cabin walls in the sightline', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const game = setup(t, Math.PI), center = FILM_SETS.film_neb_deck.center;
   const stage = new THREE.Group(); stage.position.set(center.x, center.y - 1, center.z); const deck = new NebDeckRenderer(stage);
   game.state.currentLocation = 'film_neb_deck'; game.state.isInMatrix = false;
@@ -2422,4 +3304,140 @@ test('the keyboard attack reaches Trinity revival while the rooftop camera owns 
   game.state.currentAction = { type: 'idle', parameters: { catch: { ...newCatch(), phase: 'pulse', elapsed: 1.1, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
   game.controls.possess(game.state); game.step(.2); assert.equal(game.controls.performing, true);
   game.key('KeyF'); assert.deepEqual(game.actions, ['attack']);
+});
+
+test('V enters the pickup rider view looking along the road and keeps mouse pitch available', async t => {
+  const { newFreewayPickup } = await import('@auto_matrix/shared');
+  const game = setup(t); game.state.id = 'trinity'; game.state.currentLocation = 'film_freeway_101';
+  game.state.position = filmPosition('film_freeway_101', 12.25, 572);
+  game.state.currentAction = { type: 'idle', parameters: { freewayPickup: { ...newFreewayPickup(), phase: 'mounted', role: 'trinity' } }, startedAt: 0, duration: 1e9, progress: 0 };
+  game.controls.possess(game.state); game.step(.1);
+  game.key('KeyV'); game.key('KeyV', false); game.controls.syncFreewayPickupCamera(game.group);
+  const direction = game.camera.getWorldDirection(new THREE.Vector3());
+  assert.ok(direction.y > -.1 && direction.z > .95, `rider V starts looking into the motorcycle: ${direction.toArray()}`);
+  game.document.pointerLockElement = game.canvas;
+  game.event(game.document, 'mousemove', { movementX: 160, movementY: 100 }); game.step(.1); game.controls.syncFreewayPickupCamera(game.group);
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(direction) > .25, 'mouse must still turn and look down');
+});
+
+test('pickup turns carry the first-person view with the body while preserving the player mouse offset', async t => {
+  const { newFreewayPickup, freewayPickupRoot } = await import('@auto_matrix/shared');
+  const game = setup(t); game.state.id = 'trinity'; game.state.currentLocation = 'film_freeway_101';
+  const mounted = { ...newFreewayPickup(), phase: 'mounted' as const, key: true, role: 'trinity' as const };
+  game.state.currentAction = { type: 'idle', parameters: { freewayPickup: mounted }, startedAt: 0, duration: 1e9, progress: 0 };
+  game.controls.possess(game.state); game.step(.1); game.key('KeyV'); game.key('KeyV', false);
+  game.document.pointerLockElement = game.canvas; game.event(game.document, 'mousemove', { movementX: 80, movementY: 0 }); game.step(.1);
+  game.controls.syncFreewayPickupCamera(game.group);
+  const before = game.camera.getWorldDirection(new THREE.Vector3());
+  const key = { ...mounted, phase: 'key' as const, elapsed: 1.3 };
+  game.state.currentAction.parameters.freewayPickup = key; game.state.rotation = freewayPickupRoot(key, 'trinity').yaw;
+  game.step(.1); game.controls.syncFreewayPickupCamera(game.group);
+  const after = game.camera.getWorldDirection(new THREE.Vector3());
+  const angle = Math.atan2(after.x, after.z) - Math.atan2(before.x, before.z), expected = game.state.rotation;
+  assert.ok(Math.abs(Math.atan2(Math.sin(angle - expected), Math.cos(angle - expected))) < .01,
+    'the view must follow the scripted body turn without erasing mouse-look');
+});
+
+test('V frames the pickup chain shot once and leaves mouse look and the paused shot clock intact', async t => {
+  const { newFreewayPickup, freewayPickupRoot } = await import('@auto_matrix/shared');
+  const game = setup(t); game.state.id = 'trinity'; game.state.currentLocation = 'film_freeway_101';
+  const shot = { ...newFreewayPickup(), phase: 'shooting' as const, elapsed: .52, key: true, chain: false, shotAt: 12, total: 12.02, role: 'trinity' as const };
+  const pose = freewayPickupRoot(shot, 'trinity'); game.state.rotation = pose.yaw;
+  game.state.position = { ...filmPosition('film_freeway_101', pose.x, pose.z), y: FILM_SETS.film_freeway_101.center.y + pose.y };
+  game.state.currentAction = { type: 'idle', parameters: { freewayPickup: shot }, startedAt: 0, duration: 1e9, progress: 0 };
+  game.controls.possess(game.state); game.step(.1, .1, false);
+  for (let i = 0; i < 2; i++) {
+    game.key('KeyV'); game.key('KeyV', false); game.controls.syncFreewayPickupCamera(game.group);
+    const direction = game.camera.getWorldDirection(new THREE.Vector3());
+    assert.ok(Math.abs(angle(Math.atan2(direction.x, direction.z), pose.yaw - .8)) < .001, 'repeated view changes cannot accumulate the shot framing offset');
+    assert.ok(Math.abs(direction.y + Math.sin(.55)) < .001);
+    game.document.pointerLockElement = game.canvas;
+    game.event(game.document, 'mousemove', { movementX: 160, movementY: -40 }); game.step(.1, .1, false); game.controls.syncFreewayPickupCamera(game.group);
+    const looked = game.camera.getWorldDirection(new THREE.Vector3());
+    assert.ok(looked.distanceTo(direction) > .2, 'shot framing cannot overwrite subsequent mouse look');
+    game.step(.3, .1, false); game.controls.syncFreewayPickupCamera(game.group);
+    assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(looked) < .001);
+    assert.deepEqual(game.controls.motion.freewayPickup, shot, 'free look cannot advance or refire the saved shot');
+    game.key('KeyV'); game.key('KeyV', false); game.step(.1, .1, false);
+  }
+});
+
+test('Trinity rescue first-person view responds to mouse yaw and pitch during flight and revival', async t => {
+  const { newCatch, catchRoot } = await import('@auto_matrix/shared'); const game = setup(t, Math.PI);
+  game.state.currentLocation = 'film_trinity_roof';
+  for (const phase of ['flight', 'pulse'] as const) {
+    const state = { ...newCatch(), phase, elapsed: 1 }, at = catchRoot(state, 'neo');
+    game.state.position = filmPosition('film_trinity_roof', at.x, at.z); game.state.position.y += at.y;
+    game.state.rotation = at.yaw; game.state.currentAction = { type: 'idle', parameters: { catch: { ...state, role: 'neo' } }, startedAt: 0, duration: 1e9, progress: 0 };
+    game.controls.possess(game.state); game.controls.firstPerson = true; game.step(.1);
+    const before = game.camera.getWorldDirection(new THREE.Vector3()); game.document.pointerLockElement = game.canvas;
+    game.event(game.document, 'mousemove', { movementX: 180, movementY: 90 }); game.step(.1);
+    assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(before) > .25, `${phase} keeps forcing the view forward`);
+  }
+});
+
+test('the paused rescue first-person view uses the posed rig eye without erasing mouse direction', async t => {
+  const { newCatch, catchRoot } = await import('@auto_matrix/shared'), game = setup(t);
+  const state = { ...newCatch(), phase: 'pulse' as const, elapsed: .7 }, root = catchRoot(state, 'neo');
+  game.state.id = 'neo'; game.state.currentLocation = 'film_trinity_roof'; game.state.position = filmPosition(game.state.currentLocation, root.x, root.z);
+  game.state.currentAction = { type: 'idle', parameters: { catch: { ...state, role: 'neo' } }, startedAt: 0, duration: 1e9, progress: 0 };
+  game.controls.possess(game.state); game.controls.firstPerson = true; game.step(.1, .1, false);
+  const head = new THREE.Bone(); head.name = 'head'; head.position.set(-1.3, 1.95, .2); head.rotation.x = .5;
+  head.userData.cameraEye = new THREE.Vector3(0, .1, .28); game.group.children[0].add(head);
+  const before = game.camera.getWorldDirection(new THREE.Vector3()); game.controls.syncReloadedCatchCamera(game.group);
+  assert.ok(game.camera.position.distanceTo(head.localToWorld(head.userData.cameraEye.clone())) < 1e-7);
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(before) < .001);
+  assert.equal(game.controls.motion.catch!.elapsed, .7);
+});
+
+test('the rooftop rescue camera keeps the patient above the bottom subtitle panel', async t => {
+  const { CATCH, newCatch, catchRoot } = await import('@auto_matrix/shared'), game = setup(t);
+  for (const aspect of [16 / 9, .7]) {
+    const state = { ...newCatch(), phase: 'extract_ready' as const }, root = catchRoot(state, 'neo');
+    game.state.id = 'neo'; game.state.currentLocation = 'film_trinity_roof'; game.state.position = filmPosition(game.state.currentLocation, root.x, root.z);
+    game.state.currentAction = { type: 'idle', parameters: { catch: { ...state, role: 'neo' } }, startedAt: 0, duration: 1e9, progress: 0 };
+    game.camera.aspect = aspect; game.camera.updateProjectionMatrix(); game.controls.possess(game.state); game.step(.1, .1, false);
+    game.camera.updateWorldMatrix(true, true);
+    for (const z of [CATCH.patient.z - 1.17, CATCH.patient.z + .7]) {
+      const point = filmPosition(game.state.currentLocation, CATCH.patient.x, z); point.y -= .4;
+      const screen = new THREE.Vector3(point.x, point.y, point.z).project(game.camera);
+      assert.ok(Math.abs(screen.x) < .85 && screen.y > -.28 && screen.y < .65, `patient is outside the usable frame: ${screen.toArray()}`);
+    }
+  }
+});
+
+test('switching V beside the rooftop patient initially aims from the posed eye at the wound, then permits free look', async t => {
+  const { newCatch, catchRoot } = await import('@auto_matrix/shared'), game = setup(t), state = { ...newCatch(), phase: 'extract_ready' as const };
+  const root = catchRoot(state, 'neo'); game.state.currentLocation = 'film_trinity_roof'; game.state.rotation = root.yaw;
+  game.state.position = filmPosition(game.state.currentLocation, root.x, root.z);
+  game.state.currentAction = { type: 'idle', parameters: { catch: { ...state, role: 'neo' } }, startedAt: 0, duration: 1e9, progress: 0 };
+  game.controls.possess(game.state); game.step(.1, .1, false);
+  const head = new THREE.Bone(); head.name = 'head'; head.position.set(0, 2.03, 1.12); head.userData.cameraEye = new THREE.Vector3(); game.group.children[0].add(head);
+  game.group.updateWorldMatrix(true, true);
+  const patient = new THREE.Group(), chest = new THREE.Bone(); chest.name = 'chest'; patient.add(chest);
+  const wound = head.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(-.05, -1.4, -.12));
+  chest.position.copy(wound).sub(new THREE.Vector3(-.02, .18, .3)); patient.updateWorldMatrix(true, true);
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1, .1, false); game.controls.syncReloadedCatchCamera(game.group, patient);
+  game.camera.updateWorldMatrix(true, true); const screen = wound.clone().project(game.camera);
+  assert.ok(Math.abs(screen.x) < .3 && Math.abs(screen.y) < .3 && screen.z > -1 && screen.z < 1, `V points at the empty roof instead of the wound: ${screen.toArray()}`);
+  const before = game.camera.getWorldDirection(new THREE.Vector3()); game.document.pointerLockElement = game.canvas;
+  game.event(game.document, 'mousemove', { movementX: 160, movementY: -120 }); game.step(.1, .1, false); game.controls.syncReloadedCatchCamera(game.group, patient);
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(before) > .2, 'the patient aim overwrites mouse input');
+  assert.equal(game.controls.motion.catch!.phase, 'extract_ready');
+});
+
+test('the rescue first-person camera preserves nearby sleeves and restores its regular clipping plane on exit', async t => {
+  const { newCatch, catchRoot } = await import('@auto_matrix/shared'), game = setup(t);
+  const state = { ...newCatch(), phase: 'reviving' as const, elapsed: .477 }, root = catchRoot(state, 'neo'), regular = game.camera.near;
+  game.state.currentLocation = 'film_trinity_roof'; game.state.rotation = root.yaw;
+  game.state.position = filmPosition(game.state.currentLocation, root.x, root.z);
+  game.state.currentAction = { type: 'idle', parameters: { catch: { ...state, role: 'neo' } }, startedAt: 0, duration: 1e9, progress: 0 };
+  game.controls.possess(game.state); game.step(.1, .1, false);
+  assert.equal(game.camera.near, regular);
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1, .1, false);
+  assert.equal(game.camera.near, .06, 'a half-metre clipping plane slices the medical sleeves open');
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1, .1, false);
+  assert.equal(game.camera.near, regular, 'third-person rescue keeps its regular clipping plane');
+  game.state.currentAction = null; game.controls.firstPerson = true; game.step(.1, .1, false);
+  assert.equal(game.camera.near, regular, 'the close-interaction setting must not leak into ordinary play');
 });

@@ -6,7 +6,55 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { CharacterModels } from '../packages/client/src/agents/CharacterModel.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
-import { newTrilogyEpilogue } from '@auto_matrix/shared';
+import { newTrilogyEpilogue, newUpperDigger, upperDiggerRoot, type UpperDigger } from '@auto_matrix/shared';
+
+test('Sati wears a pale sleeved jacket in Mobil, and restores her checked dress when she leaves it', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  const previous = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {} }) }) } as unknown as Document;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents(); const models = new CharacterModels();
+  try {
+    const rig = models.create(world.agents.get('sati')!), skirt = rig.detail.getObjectByName('sati-skirt') as THREE.Mesh;
+    const cloth = skirt.material as THREE.MeshPhysicalMaterial, checked = cloth.map;
+    assert.ok(checked);
+    for (const speed of [0, 3, 6]) {
+      models.animate(rig, .1, { speed, grounded: true, verticalVelocity: 0, turn: .2, mobilStation: true }, 1);
+      assert.equal(cloth.map, null); assert.equal(rig.detail.getObjectByName('sati-mobil-jacket')!.visible, true);
+      rig.root.updateMatrixWorld(true);
+      for (let i = 0; i < 2; i++) {
+        const shoulder = rig.shoulders[i], origin = shoulder.localToWorld(new THREE.Vector3(.35, -.4, 0));
+        const direction = new THREE.Vector3(-1, 0, 0).transformDirection(shoulder.matrixWorld);
+        const hit = new THREE.Raycaster(origin, direction).intersectObjects(shoulder.children.filter(child => child.visible), true)[0];
+        assert.ok(hit?.object.name.startsWith('sati-mobil-sleeve'), `the moving arm must be covered by the cotton sleeve: speed ${speed}, side ${i}, first hit ${hit?.object.name}`);
+      }
+    }
+    for (let frame = 0; frame < 18; frame++) {
+      models.animate(rig, .07, { speed: 6, grounded: true, verticalVelocity: 0, turn: .3, mobilStation: true }, 1);
+      rig.root.updateMatrixWorld(true);
+      for (const shoulder of rig.shoulders) {
+        const arm = shoulder.children.find(child => child.name.startsWith('sati-covered-arm')) as THREE.SkinnedMesh;
+        const sleeve = shoulder.children.find(child => child.name.startsWith('sati-mobil-sleeve')) as THREE.SkinnedMesh;
+        const rest = arm.geometry.attributes.position;
+        for (let vertex = 0; vertex < rest.count; vertex += 5) {
+          const y = rest.getY(vertex); if (y > -.1 || y < -1.4) continue;
+          const point = arm.localToWorld(arm.getVertexPosition(vertex, new THREE.Vector3()));
+          const center = arm.localToWorld(arm.applyBoneTransform(vertex, new THREE.Vector3(0, y, 0)));
+          const outward = point.clone().sub(center).normalize();
+          const hit = new THREE.Raycaster(point.clone().addScaledVector(outward, 3), outward.clone().negate())
+            .intersectObjects(shoulder.children.filter(child => child.visible), true)[0];
+          assert.equal(hit?.object, sleeve, `running frame ${frame}: the opaque sleeve exposes a hole or skin at ${point.toArray()}`);
+        }
+      }
+    }
+    models.animate(rig, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, mobilStation: false }, 1);
+    assert.equal(cloth.map, checked); assert.equal(rig.detail.getObjectByName('sati-mobil-jacket')!.visible, false);
+    for (const side of [-1, 1]) {
+      assert.equal(rig.detail.getObjectByName(`sati-mobil-sleeve-${side}`)!.visible, false);
+      assert.equal(rig.detail.getObjectByName(`sati-covered-arm-${side}`)!.visible, true);
+    }
+  } finally { models.dispose(); globalThis.document = previous; }
+});
 
 test('Sati waits on her side with closed eyes, then gathers her legs and plants her hands before standing', async t => {
   const asset = await shippedHead('sati');
@@ -71,8 +119,8 @@ test('Oracle and Sati have a front hairline while their detailed assets load', t
   } finally { models.dispose(); globalThis.document = previous; }
 });
 
-async function shippedHead(role: string) {
-  const bytes = await readFile(new URL(`../packages/client/public/assets/characters/${role}-head.glb`, import.meta.url));
+async function shippedHead(role: string, part = 'head') {
+  const bytes = await readFile(new URL(`../packages/client/public/assets/characters/${role}-${part}.glb`, import.meta.url));
   const length = bytes.readUInt32LE(12), document = JSON.parse(bytes.subarray(20, 20 + length).toString());
   for (const material of document.materials) delete material.pbrMetallicRoughness.baseColorTexture;
   document.images = []; document.textures = [];
@@ -84,6 +132,97 @@ async function shippedHead(role: string) {
   asset.scene.traverse(object => { if (object instanceof THREE.Mesh) (object.material as THREE.MeshStandardMaterial).map = new THREE.Texture(); });
   return asset;
 }
+
+test('Zee and Charra load their own continuous heads without changing a saved actor pose', async t => {
+  const assets = { zee: await shippedHead('zee'), charra: await shippedHead('charra') };
+  const bodies = { zee: await shippedHead('zee', 'body'), charra: await shippedHead('charra', 'body') };
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', async url => (String(url).endsWith('-body.glb') ? bodies : assets)[String(url).includes('charra-') ? 'charra' : 'zee']);
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const previous = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {} }) }) } as unknown as Document;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents(); const models = new CharacterModels();
+  try {
+    for (const role of ['zee', 'charra'] as const) {
+      const rig = models.create(world.agents.get(role)!); rig.root.position.set(8, 23, -12); rig.root.rotation.y = 1.2;
+      const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 };
+      models.animate(rig, 0, input, 1); await new Promise(resolve => setImmediate(resolve)); models.animate(rig, 0, input, 1);
+      const face = rig.head.getObjectByName(`${role}-anatomical-head`) as THREE.Mesh;
+      assert.ok(face, `${role}: the real actor still has a generic procedural head`);
+      for (let vertex = 0; vertex < face.geometry.attributes.position.count; vertex++) {
+        if (Math.abs(face.geometry.attributes.position.getX(vertex)) > .225)
+          assert.ok(face.geometry.attributes._face_weight.getX(vertex) < .001, `${role}: the front portrait paints its gray backdrop onto the ear`);
+      }
+      assert.equal(rig.head.getObjectByName(`${role}-fallback-head`)!.visible, false);
+      assert.equal(rig.root.getObjectByName(`${role}-neck`)!.visible, false, 'the old cylinder must not overlay the continuous neck');
+      assert.deepEqual(rig.root.position.toArray(), [8, 23, -12]); assert.equal(rig.root.rotation.y, 1.2);
+      rig.root.updateWorldMatrix(true, true);
+      for (const y of [-.40, -.33, -.24]) {
+        const ray = new THREE.Raycaster(face.localToWorld(new THREE.Vector3(0, y, 1)), new THREE.Vector3(0, 0, -1).transformDirection(face.matrixWorld));
+        assert.ok(ray.intersectObject(face, false).length, `${role}: jaw/neck has a visible hole at ${y}`);
+      }
+      assert.equal(rig.head.getObjectByName('sati-braids'), undefined, 'the hair must belong to this character');
+    }
+  } finally { models.dispose(); globalThis.document = previous; }
+});
+
+test('the two dock fighters have exposed articulated arms rather than their old full sleeves', t => {
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const previous = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {} }) }) } as unknown as Document;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents(); const models = new CharacterModels();
+  try {
+    for (const role of ['zee', 'charra']) {
+      const rig = models.create(world.agents.get(role)!);
+      for (const [index, shoulder] of rig.shoulders.entries()) {
+        const arm = shoulder.children.find(child => child instanceof THREE.SkinnedMesh) as THREE.SkinnedMesh;
+        const finger = rig.fingers[index][0].children.find(child => child instanceof THREE.Mesh) as THREE.Mesh;
+        assert.equal(arm.material, finger.material, `${role}: the upper and lower arms must expose the same skin as the hand`);
+      }
+    }
+  } finally { models.dispose(); globalThis.document = previous; }
+});
+
+test('the shipped dock heads and clothing retain belt contact, deck clearance and Charra’s closed eyes after the attack', async t => {
+  const assets = { zee: await shippedHead('zee'), charra: await shippedHead('charra') };
+  const bodies = { zee: await shippedHead('zee', 'body'), charra: await shippedHead('charra', 'body') };
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', async url => (String(url).endsWith('-body.glb') ? bodies : assets)[String(url).includes('charra-') ? 'charra' : 'zee']);
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const previous = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {} }) }) } as unknown as Document;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents(); const models = new CharacterModels();
+  const rigs = { charra: models.create(world.agents.get('charra')!), zee: models.create(world.agents.get('zee')!) };
+  const pose = (state: UpperDigger) => {
+    for (const role of ['charra', 'zee'] as const) {
+      const rig = rigs[role], root = upperDiggerRoot(state, role); rig.root.position.set(root.x, root.y, root.z); rig.root.rotation.y = root.yaw;
+      const contacts = rigs.charra.diggerProps ? [-1, 1].map(side => rigs.charra.diggerProps!.belt.localToWorld(new THREE.Vector3(side * .23, 0, -.27))) : undefined;
+      models.animate(rig, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true, upperDigger: { ...state, role, contacts } }, 1);
+      rig.root.updateMatrixWorld(true);
+    }
+  };
+  try {
+    const state: UpperDigger = { ...newUpperDigger(), phase: 'bracing', climb: 44, crawl: 26, grip: .55 };
+    pose(state); await new Promise(resolve => setImmediate(resolve)); pose(state);
+    for (const [i, elbow] of rigs.zee.elbows.entries()) {
+      const palm = elbow.localToWorld(new THREE.Vector3(0, -.79, .055));
+      const belt = rigs.charra.diggerProps!.belt.localToWorld(new THREE.Vector3((i ? 1 : -1) * .23, 0, -.27));
+      assert.ok(palm.distanceTo(belt) < .035, 'new clothing cannot move the hands off the support belt');
+    }
+    for (const phase of ['mounting', 'crawl', 'bracing', 'attack', 'escape', 'dismounting'] as const) for (const elapsed of [.2, 1.2, 1.8, 2.6, 3.2]) {
+      Object.assign(state, { phase, elapsed, charraDead: ['attack', 'escape', 'dismounting'].includes(phase) && (phase !== 'attack' || elapsed >= 1.2), retreat: phase === 'attack' || phase === 'escape' ? 7 : phase === 'dismounting' ? 26 : 0 }); pose(state);
+      for (const role of ['charra', 'zee'] as const) rigs[role].detail.traverseVisible(object => {
+        if (!(object instanceof THREE.Mesh)) return;
+        if (object instanceof THREE.SkinnedMesh) object.skeleton.update();
+        const bounds = new THREE.Box3().setFromObject(object, true);
+        assert.ok(bounds.min.y >= (phase === 'mounting' || phase === 'dismounting' ? 40 : 43.97), `${role} ${phase} ${elapsed}: ${object.name || object.geometry.type} intersects the supporting floor at ${bounds.min.y}`);
+      });
+      if (state.charraDead && (phase !== 'attack' || elapsed >= 2.6)) {
+        const face = rigs.charra.head.getObjectByName('charra-anatomical-head') as THREE.Mesh;
+        assert.equal(face.morphTargetInfluences![0], 1, 'death must not reopen the eyes on the next saved phase');
+      }
+    }
+  } finally { models.dispose(); globalThis.document = previous; }
+});
 
 test('the shipped Oracle head closes its eyelids and a late load recomputes support without moving the saved root', async t => {
   const asset = await shippedHead('oracle-revolutions');

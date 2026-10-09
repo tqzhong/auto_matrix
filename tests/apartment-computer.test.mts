@@ -215,7 +215,7 @@ test('Neo can see his own cable hand in first person and the ordinary hidden bod
     createRadialGradient: () => ({ addColorStop() {} }),
   }) }) } as unknown as Document;
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
-  t.mock.method(CharacterModels.prototype, 'create', () => ({ root: new THREE.Group() }) as CharacterRig);
+  t.mock.method(CharacterModels.prototype, 'create', () => ({ root: new THREE.Group(), head: new THREE.Group() }) as CharacterRig);
   t.mock.method(CharacterModels.prototype, 'animate', () => {});
   const renderer = new AgentRenderer(new THREE.Scene()), h = setup();
   try {

@@ -1,3 +1,4 @@
+import { HAMMER_MEDICAL, HAMMER_MEDICAL_BEDS } from './hammer-medical.js';
 import { METACORTEX_LOBBY } from './metacortex.js';
 import { LOCATIONS } from './locations.js';
 import { LIFE_ROOMS, lifeRoomCenter } from './life-world.js';
@@ -5,6 +6,10 @@ import { FILM_SETS, filmSetAt, filmBlocked, filmGroundHeight } from './film-sets
 import type { Vector3 } from '../types/agent.js';
 import type { WorldStructure } from '../types/sandbox.js';
 import { STREET_RESET } from './trilogy-epilogue.js';
+import { DIGGERS } from './diggers.js';
+import { ZION_OBSTACLES } from './zion-homecoming.js';
+import { NEB_ESCAPE } from './neb-escape.js';
+import { SENTINEL_SIGNAL } from './sentinel-signal.js';
 
 export const STREET_SPACING = 80;
 export const CITY_CENTER = { x: 1120, y: 1, z: 920 };
@@ -88,6 +93,7 @@ export interface PlayerInput {
   yaw: number;
   location?: string;
   pitch?: number;
+  firstPerson?: boolean;
   sprint: boolean;
   jump: boolean;
   crouch?: boolean;
@@ -99,6 +105,29 @@ export interface PlayerInput {
 
 export function groundHeight(position: Vector3, matrix: boolean, structures: WorldStructure[] = []): number {
   const set = filmSetAt(position, matrix);
+  if (set?.id === 'film_mobil_station') {
+    const floor = structures.find(s => s.id === 'film:mobil:floor');
+    if (floor?.film && position.y >= floor.position.y - .2 && Math.abs(position.x - floor.position.x) <= floor.film.width / 2
+      && Math.abs(position.z - floor.position.z) <= floor.film.depth / 2) return floor.position.y;
+  }
+  if (set?.id === 'film_freeway_101') {
+    const roof = structures.find(s => s.id === 'film:truck-road:roof');
+    if (roof?.film && position.y >= roof.position.y - .2 && Math.abs(position.x - roof.position.x) <= roof.film.width / 2
+      && Math.abs(position.z - roof.position.z) <= roof.film.depth / 2) return roof.position.y;
+    const deck = structures.find(s => s.id === 'film:freeway-pickup:overpass');
+    if (deck?.film && position.y >= deck.position.y - .2 && Math.abs(position.x - deck.position.x) <= deck.film.width / 2
+      && Math.abs(position.z - deck.position.z) <= deck.film.depth / 2) return deck.position.y;
+  }
+  if (set?.id === 'film_zion_personnel' || set?.id === 'film_zion_dock_exit') {
+    const deck = structures.find(s => s.id === (set.id === 'film_zion_personnel' ? 'film:briefing:floor' : 'film:evacuation:floor'));
+    if (deck?.film && position.y >= deck.position.y - .2 && Math.abs(position.x - deck.position.x) <= deck.film.width / 2
+      && Math.abs(position.z - deck.position.z) <= deck.film.depth / 2) return deck.position.y;
+  }
+  if (set?.id === 'film_hammer_deck' && structures.some(s => s.id.startsWith('film:hammer-medical:bed:'))) {
+    const x = position.x - set.center.x, z = position.z - set.center.z;
+    if (position.y >= set.center.y + HAMMER_MEDICAL.mattressTop - .1 && HAMMER_MEDICAL_BEDS.some(bed => Math.abs(x - bed.x) < 1.4 && Math.abs(z - bed.z) < 2.725)) return set.center.y + HAMMER_MEDICAL.mattressTop;
+  }
+  if (set?.id === 'film_zion_hangar' && position.x - set.center.x >= 12 && structures.some(s => s.id === 'film:digger-body')) return set.center.y + 1;
   if (set?.id === 'film_escape_streets' && structures.some(s => s.id === 'film:reset:facade'))
     return set.center.y - (Math.abs(position.z - set.center.z) < STREET_RESET.curb ? STREET_RESET.roadDrop : 0);
   if (set) return filmGroundHeight(position, set, structures.find(s => s.id === 'film:smith:crater' && s.kind === 'crater')?.film?.height);
@@ -121,9 +150,22 @@ export function groundHeight(position: Vector3, matrix: boolean, structures: Wor
 export function playerBlocked(position: Vector3, matrix: boolean, radius = 1.1, structures: WorldStructure[] = []): boolean {
   if (structures.some(s => s.kind === 'barricade' && s.matrix === matrix && s.health > 0 && position.y < s.position.y + (s.film?.height ?? 3) && position.y > s.position.y - 3 && Math.abs(position.x - s.position.x) < (s.film ? s.film.width / 2 : 4) + radius && Math.abs(position.z - s.position.z) < (s.film ? s.film.depth / 2 : 1.2) + radius)) return true;
   const set = filmSetAt(position, matrix);
+  if (set?.id === 'film_service_tunnels' && structures.some(s => s.id === 'film:sentinel-signal:route'))
+    return Math.abs(position.x - set.center.x) > SENTINEL_SIGNAL.halfWidth - radius
+      || Math.abs(position.z - set.center.z) > SENTINEL_SIGNAL.halfLength - radius || position.y < set.center.y - .8;
+  if (set?.id === 'film_neb_deck' && position.z - set.center.z > 36 && structures.some(s => s.id === 'film:neb-escape:route')) {
+    const x = position.x - set.center.x, z = position.z - set.center.z;
+    const halfWidth = z < NEB_ESCAPE.sternZ + 1 ? NEB_ESCAPE.hatch.width / 2 : NEB_ESCAPE.routeHalfWidth;
+    return Math.abs(x) > halfWidth - radius || z > NEB_ESCAPE.routeEnd - radius || position.y < set.center.y - .8;
+  }
+  if (set?.id === 'film_zion_hangar' && structures.some(s => s.id === 'film:digger-body')) {
+    const x = position.x - set.center.x, z = position.z - set.center.z, bay = DIGGERS.bay;
+    if (x < bay.left + radius || x > bay.right - radius || z < bay.back + radius || z > bay.front - radius || position.y < set.center.y - .8) return true;
+    return [...ZION_OBSTACLES[set.id].filter(o => o.x < 0), ...DIGGERS.supports].some(o => Math.abs(x - o.x) < o.width / 2 + radius && Math.abs(z - o.z) < o.depth / 2 + radius && position.y < set.center.y + o.height);
+  }
   if (set?.id === 'film_escape_streets' && structures.some(s => s.id === 'film:reset:facade'))
     return Math.abs(position.x - set.center.x) > set.width / 2 - radius - .6 || Math.abs(position.z - set.center.z) > set.depth / 2 - radius - .6;
-  if (set) return filmBlocked(position, set, radius, structures.some(s => s.id === 'film:bridge:car'), structures.some(s => s.id === 'film:oracle:door'), structures.find(s => s.id === 'film:smith:crater' && s.kind === 'crater')?.film?.height);
+  if (set) return filmBlocked(position, set, radius, structures.some(s => s.id === 'film:bridge:car'), structures.some(s => s.id === 'film:oracle:door'), structures.find(s => s.id === 'film:smith:crater' && s.kind === 'crater')?.film?.height, structures.some(s => s.id === 'film:oracle-last:table'));
   if (!matrix) return Math.hypot(position.x - 2170, position.z - 2390) > 440;
   if (position.x < 0 || position.x > 2560 || position.z < 0 || position.z > 2560) return true;
   return CITY_BUILDINGS.some(building => {
@@ -156,5 +198,10 @@ export function stepPlayer(position: Vector3, verticalVelocity: number, input: P
   if (!playerBlocked(x, matrix, 1.1, structures)) next.x = x.x; else velocity.x = 0;
   const z = { ...next, z: next.z + velocity.z * dt };
   if (!playerBlocked(z, matrix, 1.1, structures)) next.z = z.z; else velocity.z = 0;
+  if (['film_sunrise_garden', 'film_trainman_subway'].includes(filmSetAt(next, matrix)?.id ?? '')) {
+    const support = groundHeight(next, matrix, structures);
+    const planted = position.y <= floor + .1 && verticalVelocity <= 0 && vy <= 0;
+    if (planted || next.y < support) { next.y = support; vy = 0; }
+  }
   return { position: next, verticalVelocity: vy, horizontalVelocity: velocity };
 }

@@ -1,4 +1,4 @@
-import { crosscutActive } from '@auto_matrix/shared';
+import { crosscutActive, filmSceneForJourney } from '@auto_matrix/shared';
 import { FILM_SCENE_BY_ID, NEO_CHAPTERS, NEO_MISSIONS, distance, type AgentState, type SandboxState } from '@auto_matrix/shared';
 
 export const MUSIC = {
@@ -60,7 +60,7 @@ export function musicForScene({ player, sandbox, time, matrix }: MusicScene): Mu
   if (player.status !== 'alive') return 'oracle';
   const journey = sandbox?.neoLife?.journey;
   if (journey?.actor === player.id) {
-    const scene = FILM_SCENE_BY_ID[journey.visiting ?? journey.scene];
+    const scene = journey.visiting ? FILM_SCENE_BY_ID[journey.visiting] : filmSceneForJourney(journey);
     if (crosscutActive(journey)) {
       const cut = journey.tvExit!.crosscut!;
       return ['assault', 'aiming', 'window', 'countering'].includes(cut.phase) ? 'combat' : cut.apocDead || cut.switchDead ? 'anomaly' : 'matrix';

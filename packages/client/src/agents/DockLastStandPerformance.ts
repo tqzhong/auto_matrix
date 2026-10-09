@@ -24,8 +24,8 @@ export function poseDockLastStand(rig: CharacterRig, gesture?: DockLastStandGest
   const recoil = captain && gesture.phase === 'attack' && gesture.elapsed < 2.4 ? Math.sin(gesture.elapsed * 18) * .06 : 0;
   const breath = captain && fall === 1 ? (1 - pose.dead) * Math.sin(gesture.total * 2.4) * .012 : 0;
   rig.detail.position.set(0, 0, 0); rig.detail.rotation.set(-Math.PI / 2 * fall, 0, 0);
-  rig.torso.position.set(0, captain ? 1.58 + .28 * fall : 1.98 - .88 * kneel, 0);
-  rig.torso.rotation.set(captain ? .15 * (1 - fall) + recoil : .48 * kneel, 0, 0);
+  rig.torso.position.set(0, captain ? 1.38 + .48 * fall : 1.98 - .88 * kneel, 0);
+  rig.torso.rotation.set(captain ? recoil : .48 * kneel, 0, 0);
   rig.head.rotation.set(captain ? -.11 + .11 * pose.dead + breath : -.14 * kneel, captain ? -.15 * fall * (1 - pose.dead) : 0, 0);
   for (let i = 0; i < 2; i++) {
     const side = i ? 1 : -1;
@@ -36,6 +36,15 @@ export function poseDockLastStand(rig: CharacterRig, gesture?: DockLastStandGest
     rig.shoulders[i].rotation.set(captain ? -.9 * (1 - fall) : -.15, 0, side * (captain ? .12 + .15 * fall : .15));
     rig.elbows[i].rotation.set(captain ? -.65 * (1 - fall) - .13 * fall : -.12, 0, 0);
     rig.fingers[i].forEach(finger => { finger.rotation.x = captain ? -.12 - .6 * (1 - fall) : -.12; });
+  }
+  if (captain && !fall) {
+    rig.root.updateWorldMatrix(true, true);
+    const rotation = rig.detail.getWorldQuaternion(new THREE.Quaternion());
+    for (let i = 0; i < 2; i++) {
+      const side = i ? 1 : -1;
+      reach(rig.shoulders[i], rig.elbows[i], new THREE.Vector3(0, -.79, .055),
+        rig.detail.localToWorld(new THREE.Vector3(side * .62, 2.3, 1)), new THREE.Vector3(side * .7, -.5, -.2).applyQuaternion(rotation));
+    }
   }
   if (captain && fall) {
     // Find contact against actual visible vertices, and reuse it for paused frames.

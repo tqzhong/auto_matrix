@@ -10,6 +10,7 @@ import {
   retrySmithFinale,
   smithFinaleAction,
   smithFinaleLocked,
+  smithFinalePose,
   stepSmithFinale,
   type SandboxState,
   type WorldEvent,
@@ -42,6 +43,34 @@ function game() {
   return { world, sandbox, players, command, action, frame, actor: () => players.getAgent('p')!, state: () => sandbox.life.film.state!, tick: () => tick };
 }
 
+test('reaching the avenue plays Smith leaving the curb, waits for Neo’s reply, and saves the opening before either fighter charges', () => {
+  const h = game(), rain = FILM_SCENE_BY_ID.m3_rain, state = h.state();
+  Object.assign(state, { scene: 'm3_deus', actor: 'neo', step: FILM_SCENE_BY_ID.m3_deus.steps.length,
+    deus: { phase: 'connected', elapsed: 0, total: 0, resolve: 3, consent: 1.8, attempts: 0 } });
+  h.sandbox.state.neoLife!.choices.machine_pact = 'peace'; h.sandbox.state.neoLife!.choices.machine_connection = 'active';
+  h.actor().currentLocation = 'film_machine_core'; h.command('next');
+  h.actor().position = filmStepPosition(rain, rain.steps[0]); h.frame();
+  assert.equal(state.smithFinale?.phase, 'entrance', 'Smith must actually walk out instead of appearing at the combat position');
+  const start = smithFinalePose(state.smithFinale!);
+  assert.ok(start.smith.x > 19 && start.smith.z - start.neo.z > 40, 'start in the audience and preserve the distant face-off');
+  h.frame(50); const before = structuredClone(state.smithFinale!), positions = [h.actor(), h.world.agents.get('smith')!].map(actor => structuredClone(actor.position));
+  const saved = structuredClone(h.sandbox.state); h.players.release('p', h.tick()); h.sandbox.restore(saved); h.players.possess('p', 'neo', h.tick());
+  assert.deepEqual(h.state().smithFinale, before, 'the walk clock must survive restoration');
+  assert.deepEqual([h.actor(), h.world.agents.get('smith')!].map(actor => actor.position), positions);
+  h.world.agents.get('smith')!.controller = 'other'; h.frame(10);
+  assert.deepEqual(h.state().smithFinale, before, 'do not advance through an occupied Smith');
+  h.world.agents.get('smith')!.controller = undefined;
+  for (let i = 0; i < 300 && h.state().smithFinale?.phase !== 'reply'; i++) h.frame();
+  assert.equal(h.state().smithFinale?.phase, 'reply'); const waiting = h.state().smithFinale!.elapsed;
+  h.frame(150); h.action('attack'); assert.equal(h.state().smithFinale?.phase, 'reply');
+  assert.equal(h.state().smithFinale!.elapsed, waiting, 'time and ordinary punches cannot answer for Neo');
+  assert.match(h.command('act'), /今晚/); assert.equal(h.state().smithFinale?.phase, 'prediction');
+  for (let i = 0; i < 160 && h.state().smithFinale?.phase !== 'charge_ready'; i++) h.frame();
+  assert.equal(h.state().smithFinale?.phase, 'charge_ready');
+  h.command('act'); assert.equal(h.state().smithFinale?.phase, 'charging');
+  h.frame(45); assert.equal(h.state().smithFinale?.phase, 'ground_warning');
+});
+
 test('the Smith finale has action windows, an air checkpoint and a deliberate crater rise', () => {
   let duel = { ...newSmithFinale(), phase: 'ground_warning' as const };
   duel = stepSmithFinale(duel, { focus: false, x: 0, z: 0 }, SMITH_FINALE.ground.warning);
@@ -61,6 +90,14 @@ test('the Smith finale has action windows, an air checkpoint and a deliberate cr
   duel = smithFinaleAction(duel, 'dodge'); assert.equal(duel.phase, 'air_counter');
   duel = smithFinaleAction(duel, 'attack'); assert.equal(duel.phase, 'building');
   duel = stepSmithFinale(duel, { focus: false, x: 0, z: 0 }, SMITH_FINALE.building);
+  assert.equal(duel.phase, 'interior_warning');
+  duel = stepSmithFinale(duel, { focus: false, x: 0, z: 0 }, SMITH_FINALE.interior.warning);
+  duel = smithFinaleAction(duel, 'dodge'); duel = smithFinaleAction(duel, 'attack');
+  duel = stepSmithFinale(duel, { focus: false, x: 0, z: 0 }, SMITH_FINALE.interior.kick);
+  duel = stepSmithFinale(duel, { focus: false, x: 0, z: 0 }, SMITH_FINALE.relaunch);
+  duel = stepSmithFinale(duel, { focus: false, x: 0, z: 0 }, SMITH_FINALE.air.warning);
+  duel = smithFinaleAction(duel, 'dodge'); duel = smithFinaleAction(duel, 'attack');
+  duel = stepSmithFinale(duel, { focus: false, x: 0, z: 0 }, SMITH_FINALE.grapple);
   assert.equal(duel.phase, 'descent');
   duel = stepSmithFinale(duel, { focus: true, x: .5, z: 1 }, SMITH_FINALE.descent.braceSeconds);
   assert.equal(duel.phase, 'descent');
@@ -81,15 +118,22 @@ test('Neo must finish the pact, duel, reflection, surrender and purge as one sav
   assert.equal(state.scene, rain.id); assert.equal(state.smithFinale?.phase, 'approach');
   h.actor().position = filmStepPosition(rain, rain.steps[0]);
   // Reaching is evaluated by the simulation tick, so drive one controller frame as the player.
-  h.frame(); assert.equal(state.step, 1); assert.equal(state.smithFinale?.phase, 'ready');
-  h.actor().position = filmStepPosition(rain, rain.steps[1]);
+  h.frame(); assert.equal(state.step, 1); assert.equal(state.smithFinale?.phase, 'entrance');
+  for (let i = 0; i < 300 && state.smithFinale?.phase !== 'reply'; i++) h.frame();
+  h.command('act');
+  for (let i = 0; i < 140 && state.smithFinale?.phase !== 'charge_ready'; i++) h.frame();
   h.world.agents.get('smith')!.controller = 'other'; assert.match(h.command('act'), /另一位玩家/);
-  h.world.agents.get('smith')!.controller = undefined; assert.match(h.command('act'), /闪避/);
-  h.frame(20); assert.equal(state.smithFinale?.phase, 'ground_dodge');
+  h.world.agents.get('smith')!.controller = undefined; assert.match(h.command('act'), /冲向/);
+  for (let i = 0; i < 70 && state.smithFinale?.phase !== 'ground_dodge'; i++) h.frame();
+  assert.equal(state.smithFinale?.phase, 'ground_dodge');
   h.action('dodge');
   h.action('attack'); h.frame(8); h.action('attack');
   for (let i = 0; i < 80 && state.smithFinale?.phase !== 'air_dodge'; i++) h.frame();
   assert.equal(state.smithFinale?.phase, 'air_dodge'); h.action('dodge'); h.action('attack');
+  for (let i = 0; i < 100 && state.smithFinale?.phase !== 'interior_dodge'; i++) h.frame();
+  assert.equal(state.smithFinale?.phase, 'interior_dodge'); h.action('dodge'); h.action('attack');
+  for (let i = 0; i < 160 && state.smithFinale?.phase !== 'sky_dodge'; i++) h.frame();
+  assert.equal(state.smithFinale?.phase, 'sky_dodge'); h.action('dodge'); h.action('attack');
   for (let i = 0; i < 180 && state.smithFinale?.phase !== 'choice'; i++) h.frame(1, true, .5, 1);
   assert.equal(state.smithFinale?.phase, 'choice'); assert.equal(state.step, 2);
   const saved = structuredClone(h.sandbox.state); h.players.release('p', h.tick()); h.sandbox.restore(saved); h.players.possess('p', 'neo', h.tick());
@@ -109,8 +153,26 @@ test('Neo must finish the pact, duel, reflection, surrender and purge as one sav
   const walked = { ...h.actor().position };
   h.players.release('p', h.tick()); h.players.possess('p', 'neo', h.tick());
   assert.deepEqual(h.actor().position, walked, 'reconnecting on the broken road must retain ordinary movement, not return to the entrance');
-  h.command('act'); h.frame(90); assert.equal(h.state().smithFinale?.phase, 'vision'); assert.equal(h.state().step, 1);
-  h.command('reflect:trust'); assert.equal(h.state().smithFinale?.phase, 'understanding'); assert.equal(h.state().step, 2);
+  h.command('act'); h.frame(45); assert.equal(h.state().smithFinale?.phase, 'failed');
+  assert.equal(h.state().smithFinale?.checkpoint, 'pit');
+  h.command('retry'); assert.equal(h.actor().health, 73, 'a pit retry cannot heal the injuries from the first bout');
+  assert.equal(h.sandbox.state.structures.find(s => s.id === 'film:smith:crater')!.film!.height, SMITH_FINALE.crater.depth);
+  for (let i = 0; i < 30 && h.state().smithFinale?.phase !== 'pit_dodge'; i++) h.frame();
+  h.action('dodge'); h.frame(14); assert.equal(h.state().smithFinale?.phase, 'pit_counter');
+  h.action('attack'); h.frame(16);
+  const punch = structuredClone(h.state().smithFinale), punchPosition = structuredClone(h.actor().position);
+  const punchSave = structuredClone(h.sandbox.state); h.players.release('p', h.tick()); h.sandbox.restore(punchSave); h.players.possess('p', 'neo', h.tick());
+  assert.deepEqual(h.state().smithFinale, punch); assert.deepEqual(h.actor().position, punchPosition);
+  h.world.agents.get('smith')!.controller = 'other'; h.frame(10);
+  assert.deepEqual(h.state().smithFinale, punch, 'a counter cannot continue through an occupied Smith');
+  h.world.agents.get('smith')!.controller = undefined;
+  for (let i = 0; i < 180 && h.state().smithFinale?.phase !== 'vision'; i++) h.frame();
+  assert.equal(h.state().smithFinale?.phase, 'vision'); assert.equal(h.state().step, 1);
+  assert.equal(smithFinalePose(h.state().smithFinale!).fallen, 1);
+  h.frame(40, true); assert.equal(h.state().smithFinale?.phase, 'vision', 'getting up cannot precede the player’s understanding');
+  h.command('reflect:trust'); assert.equal(h.state().smithFinale?.phase, 'pit_recovery'); assert.equal(h.state().step, 2);
+  h.frame(40); assert.equal(h.state().smithFinale?.phase, 'pit_recovery');
+  h.frame(36, true); assert.equal(h.state().smithFinale?.phase, 'understanding');
   h.command('act'); h.frame(45, false); assert.equal(h.state().smithFinale?.phase, 'surrender');
   h.frame(40, true); h.frame(Math.ceil((SMITH_FINALE.surrender.assimilationSeconds + SMITH_FINALE.surrender.purgeSeconds) / .05), true);
   assert.equal(h.state().smithFinale?.phase, 'done');
@@ -147,6 +209,10 @@ test('the cleared Smith host restores the same Oracle in the crater and preserve
   h.command('next'); assert.equal(h.actor().id, 'sati'); assert.equal(h.state().scene, 'm3_reset');
   assert.equal(oracle.currentAction?.parameters.oracleRestored, true, 'the street reset does not replay the Oracle’s arrival');
   h.command('act'); h.frame(190); h.command('next');
+  assert.equal(h.actor().id, 'sati', 'the park handoff must wait until Sati has actually risen');
+  assert.equal(h.state().scene, 'm3_reset');
+  for (let i = 0; i < 160 && h.state().epilogue?.phase !== 'done'; i++) h.frame();
+  assert.equal(h.state().epilogue?.phase, 'done'); h.command('next');
   assert.equal(h.actor().id, 'oracle'); assert.equal(h.state().scene, 'm3_dawn');
   assert.equal(oracle.currentAction?.parameters.oracleRestored, undefined, 'the later park scene must release the lying pose');
 });
@@ -204,4 +270,36 @@ test('the finale journal exposes combat windows, the philosophical stop and expl
     ...base, scene: surrender.id, step: 2, smithFinale: { ...base.smithFinale, phase: 'understanding' },
   } } } as unknown as SandboxState);
   assert.match(html, /停止抵抗|接受同化/); assert.match(html, /按住 G|明确/);
+});
+
+test('an interior timeout survives server restoration, occupation and retry at the same real floor', () => {
+  const h = game(), state = h.state();
+  Object.assign(state, { scene: 'm3_rain', actor: 'neo', step: 1, smithFinale: {
+    ...newSmithFinale(), phase: 'interior_dodge', elapsed: SMITH_FINALE.interior.dodge - .02, total: 35,
+    checkpoint: 'interior', breachedAt: 30,
+  } });
+  h.actor().currentLocation = 'film_smith_avenue'; h.frame();
+  assert.equal(state.smithFinale!.phase, 'failed');
+  const held = structuredClone(state.smithFinale), position = structuredClone(h.actor().position);
+  assert.ok(position.y >= 15, 'failure cannot release Neo into ordinary street gravity');
+  const saved = structuredClone(h.sandbox.state); h.players.release('p', h.tick()); h.sandbox.restore(saved); h.players.possess('p', 'neo', h.tick());
+  h.frame(10, true, 1, 1);
+  assert.deepEqual(h.state().smithFinale, held); assert.deepEqual(h.actor().position, position);
+  h.command('retry'); assert.equal(h.state().smithFinale!.phase, 'interior_warning');
+  assert.equal(h.state().smithFinale!.breachedAt, 30);
+  h.world.agents.get('smith')!.controller = 'other';
+  const waiting = structuredClone(h.state().smithFinale); h.frame(20);
+  assert.deepEqual(h.state().smithFinale, waiting, 'the new clock also waits for an occupied Smith');
+});
+
+test('production upgrades only old pre-collision checkpoints without replaying an existing descent', () => {
+  for (const phase of ['air_warning', 'descent'] as const) {
+    const h = game(), state = h.state();
+    Object.assign(state, { scene: 'm3_rain', actor: 'neo', step: 1, smithFinale: {
+      ...newSmithFinale(), phase, elapsed: .1, total: 30, checkpoint: 'air', roomFight: undefined,
+    } });
+    h.actor().currentLocation = 'film_smith_avenue'; h.frame();
+    assert.equal(state.smithFinale!.roomFight, phase === 'air_warning' ? true : undefined);
+    assert.equal(state.smithFinale!.phase, phase);
+  }
 });

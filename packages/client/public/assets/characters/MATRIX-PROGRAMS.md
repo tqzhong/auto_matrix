@@ -1,0 +1,20 @@
+# Architect / Seraph assets
+
+Added 2026-10-07. These are approximate game models, not actor scans or film-quality likenesses.
+
+- `architect-face-reference.png` and `seraph-face-reference.png`: unmodified bitmap outputs from the built-in imagegen tool, in generation mode. Each output is actually **1254 × 1254**, with 627 × 1254 front/profile panels; the requested 1024 size was not the returned size. [Exact generation prompts](matrix-programs-generation-prompts.txt) are retained. The images are generated likeness references, not movie frames, photographs of the actors, or proof of game rendering.
+- `architect-head.glb` and `seraph-head.glb`: continuous anatomical heads and necks, with registered front/profile UVs and eyelid morphs. Runtime adds fitted white hair and short beard for the Architect, and dark swept-back hair for Seraph. The Architect's fitted beard retains the face UVs and material instead of covering his face with a flat white mask. The lower neck is clipped to a continuous boundary rather than flattened into a collar flange.
+- `architect-body.glb`: continuous anatomy, pale jacket with a longer hip hem, lapels, shirt collar, tie, welt pockets, trousers and low shoes. `seraph-body.glb`: continuous anatomy and two separate wardrobe variants: an earlier ivory closed jacket with frog closures, and the park's gray open jacket over a dark undershirt. Both include trousers and low shoes. Seraph's mesh totals include both variants; only the applicable wardrobe is shown.
+- Anatomy and weights reuse the CC0 MakeHuman base and targets pinned by `scripts/build-characters.py`, revision `a8bc2d54ff0ac92e78ff71431b1023eda42bf482`. Role targets, source revision and the established 23 performance joints are recorded in each GLB. None of the older dock or captain GLBs were regenerated for these two characters.
+- Tailoring is fitted to the actual garment triangles, and the program jackets retain clearance above their undershirts after smoothing. This repairs sampled chest/back intersections; it is not a cloth simulation or a guarantee against intersections in every animation. Low shoes follow the ankle rather than retaining the dock boot's shin cuff.
+- Costume direction was checked against local frames from the public [Revolutions ending excerpt](https://www.youtube.com/watch?v=HXV4mom9CGo), including Seraph behind Sati at about 84 seconds. This is a short third-party reference, not a complete review of all three films. No movie footage is shipped in these assets.
+- Runtime loading uses `EpilogueHeads.ts` and `DiggerBodies.ts`. A late load retains the saved position and the current wardrobe. Park and earlier clothes switch without accumulating recoloring; failure retains the existing fallback. Character inspection now supports both roles and uses the actual game meshes. Seraph's park approach retains its existing path and saved clock, but now faces his direction of travel and turns toward the Oracle near the end.
+
+Rebuild using the existing Python/NumPy authoring environment. Build heads first, since the body generator reads each exported head's actual neck section.
+
+```sh
+python3 scripts/build-epilogue-heads.py --source output/characters/epilogue-cast-2026-10-05/source --output packages/client/public/assets/characters --roles architect seraph
+python3 scripts/build-digger-bodies.py --source output/characters/epilogue-cast-2026-10-05/source --output packages/client/public/assets/characters --roles architect seraph
+```
+
+No Python, Blender or generation service is needed to run the game. [Actual screenshots, failures and bounded verification](../../../../../output/characters/matrix-programs-2026-10-07/README.md) and the [asset manifest](../../../../../output/characters/matrix-programs-2026-10-07/asset-manifest.json) distinguish delivered files from a film-fidelity signoff. Actor likeness, hair silhouette, facial/body performance, realistic folds, full contact coverage, sound, long manual play and stable performance remain unfinished. Trilogy group 3-12 is not marked complete.

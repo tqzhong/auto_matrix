@@ -13,6 +13,9 @@ import {
   newTrilogyEpilogue,
   stepTrilogyEpilogue,
   trilogyEpilogueLocked,
+  gardenPose,
+  type TrilogyEpilogueEncounter,
+  type FilmJourney,
   type AgentState,
   type SandboxState,
   type WorldEvent,
@@ -122,6 +125,98 @@ test('the Oracle stays seated while the player considers the Architect’s promi
   assert.equal(h.state().step, 3, 'seated movement locking must still allow the explicit answer');
 });
 
+test('the Architect continues along the waterfront while the player waits to welcome Sati', () => {
+  let encounter: TrilogyEpilogueEncounter = { ...newTrilogyEpilogue('dawn'), phase: 'leaving', total: 7.8 };
+  for (let frame = 0; frame < 48; frame++) encounter = stepTrilogyEpilogue(encounter, .1);
+  assert.equal(encounter.phase, 'promise');
+  const first = gardenPose(encounter, 'architect');
+  for (let frame = 0; frame < 80; frame++) encounter = stepTrilogyEpilogue(encounter, .1);
+  const later = gardenPose(encounter, 'architect');
+  assert.ok(later.x < first.x - 20, 'departure must continue instead of freezing at the first shore marker');
+  assert.equal(encounter.phase, 'promise', 'walking away cannot answer the welcome prompt for the player');
+  assert.equal(encounter.elapsed, 0, 'waiting for G still has no countdown');
+  const paused = JSON.parse(JSON.stringify(encounter));
+  assert.deepEqual(stepTrilogyEpilogue(paused, 0), paused, 'paused or disconnected observers cannot advance departure');
+  assert.deepEqual(gardenPose(paused, 'architect'), later, 'cold loading uses the saved departure position and gait');
+  let previous = later;
+  for (let frame = 0; frame < 400; frame++) {
+    encounter = stepTrilogyEpilogue(encounter, .1); const pose = gardenPose(encounter, 'architect');
+    assert.ok(Math.hypot(pose.x - previous.x, pose.z - previous.z) <= .5, 'the physical performer cannot teleport out of the shot');
+    previous = pose;
+  }
+  assert.ok(previous.x < -90 && previous.z > -34, 'departure reaches the far promenade without entering the water');
+  assert.equal(previous.walk, 0, 'the distant performer eventually rests instead of walking on the spot');
+});
+
+test('legacy park departures resume from their saved pose without replaying or jumping', () => {
+  for (const [phase, elapsed] of [['leaving', 2.2], ['promise', 0], ['sati', 3.328], ['belief', .103]] as const) {
+    let encounter: TrilogyEpilogueEncounter = { kind: 'dawn', phase, elapsed, total: 31.02 };
+    const before = gardenPose(encounter, 'architect');
+    assert.deepEqual(stepTrilogyEpilogue(encounter, 0), encounter);
+    encounter = stepTrilogyEpilogue(encounter, .1); const resumed = gardenPose(encounter, 'architect');
+    assert.ok(Math.hypot(resumed.x - before.x, resumed.z - before.z) < .5, `${phase}: first active update jumps`);
+    assert.ok(Math.abs(Math.atan2(Math.sin(resumed.yaw - before.yaw), Math.cos(resumed.yaw - before.yaw))) < .2,
+      `${phase}: first active update snaps the body heading`);
+    for (let frame = 0; frame < 100; frame++) encounter = stepTrilogyEpilogue(encounter, .1);
+    assert.ok(gardenPose(encounter, 'architect').x < before.x - 20, `${phase}: the saved departure remains stuck`);
+  }
+});
+
+test('park departure pauses with the world, another player’s cast ownership and a disconnected Oracle', () => {
+  const h = game(), scene = FILM_SCENE_BY_ID.m3_dawn;
+  Object.assign(h.state(), { scene: scene.id, actor: 'oracle', step: 2,
+    epilogue: { ...newTrilogyEpilogue('dawn'), phase: 'choice' } });
+  h.players.possess('p', 'oracle', h.tick()); h.command('reflect:trust'); h.frame(100);
+  assert.equal(h.state().epilogue?.phase, 'promise');
+  const architect = h.world.agents.get('architect')!, first = structuredClone(architect.position);
+  h.frame(80); assert.ok(architect.position.x < first.x - 10, 'ordinary player frames must keep the departing body moving');
+  const clock = structuredClone(h.state().epilogue), position = structuredClone(architect.position);
+  h.frame(20, false); assert.deepEqual(h.state().epilogue, clock); assert.deepEqual(architect.position, position);
+  architect.controller = 'other'; h.frame(20); assert.deepEqual(h.state().epilogue, clock); assert.deepEqual(architect.position, position);
+  delete architect.controller;
+  const save = JSON.parse(JSON.stringify(h.sandbox.state)); h.players.release('p', h.tick()); h.sandbox.restore(save);
+  h.frame(20); assert.deepEqual(h.state().epilogue, clock); assert.deepEqual(architect.position, position);
+  h.players.possess('p', 'oracle', h.tick()); h.frame(20);
+  assert.ok(architect.position.x < position.x - 2, 'normal reconnection resumes the same departure');
+  assert.equal(h.state().step, 3); assert.equal(h.state().finished, undefined);
+});
+
+test('Neo’s resting transport action survives later world ticks and serialized park restoration exactly', () => {
+  const h = game(), scene = FILM_SCENE_BY_ID.m3_dawn;
+  h.players.release('p', h.tick());
+  Object.assign(h.state(), { scene: scene.id, actor: 'oracle', step: 3, completed: ['m3_surrender', 'm3_neo_carried', 'm3_reset'],
+    epilogue: { ...newTrilogyEpilogue('dawn'), phase: 'sunrise', elapsed: 2.37, total: 29 } });
+  h.sandbox.life.film.reconcileCast(); h.players.possess('p', 'oracle', h.tick());
+  const neo = h.world.agents.get('neo')!, body = structuredClone({ position: neo.position, action: neo.currentAction });
+  h.world.simulationTick += 10; h.sandbox.life.film.reconcileCast();
+  assert.deepEqual(neo.currentAction, body.action, 'reconciliation cannot replace an existing unresponsive body’s action timestamp');
+  h.frame(4); h.players.release('p', h.tick());
+  const save = JSON.parse(JSON.stringify({ sandbox: h.sandbox.state, agents: Object.fromEntries(h.world.agents), tick: h.world.simulationTick }));
+  const cold = game(); cold.players.release('p', cold.tick());
+  cold.world.simulationTick = save.tick;
+  for (const [id, actor] of Object.entries(save.agents)) cold.world.agents.set(id, actor as AgentState);
+  cold.sandbox.restore(save.sandbox);
+  assert.deepEqual(cold.world.agents.get('neo')!.currentAction, body.action, 'cold restoration must retain the exact body action');
+  assert.deepEqual(cold.world.agents.get('neo')!.position, body.position);
+  assert.equal(cold.world.agents.get('neo')!.status, 'disconnected');
+  assert.equal(cold.world.agents.get('neo')!.health, 0);
+});
+
+test('Neo transport keeps a phase’s action start while its saved physical motion advances', () => {
+  const h = game(), scene = FILM_SCENE_BY_ID.m3_neo_carried;
+  Object.assign(h.state(), { scene: scene.id, actor: 'neo', step: 0,
+    epilogue: { ...newTrilogyEpilogue('neo_carried'), phase: 'lowering', elapsed: 1, total: 3.8 } });
+  h.players.possess('p', 'neo', h.tick()); h.frame();
+  const start = h.actor().currentAction!.startedAt, first = structuredClone(h.actor().position);
+  h.frame(5);
+  assert.equal(h.actor().currentAction!.startedAt, start, 'frame updates are not new transport actions');
+  assert.ok(h.actor().position.y < first.y, 'preserving the action timer must not freeze lowering');
+  h.frame(45); assert.equal(h.state().epilogue?.phase, 'transfer');
+  assert.ok(h.actor().currentAction!.startedAt > start, 'entering a new physical transport phase still starts its action');
+  const moving = structuredClone(h.actor().currentAction);
+  h.frame(10, false); assert.deepEqual(h.actor().currentAction, moving, 'pausing cannot rewrite the held action');
+});
+
 test('the Smith ending leaves a persistent real-world body while Kid witnesses the ceasefire', () => {
   const h = game(); const surrender = FILM_SCENE_BY_ID.m3_surrender;
   Object.assign(h.state(), { scene: surrender.id, actor: 'neo', step: surrender.steps.length, completed: [surrender.id],
@@ -221,7 +316,7 @@ test('ceasefire, Neo transport and dawn form a saved playable epilogue without a
   h.command('reflect:trust'); assert.equal(h.state().epilogue?.phase, 'leaving'); assert.equal(h.state().step, 3);
   h.command('act'); assert.equal(h.state().epilogue?.phase, 'leaving', 'wait for the Architect to leave');
   h.frame(100); assert.equal(h.state().epilogue?.phase, 'promise');
-  h.command('act'); h.frame(400);
+  h.command('act'); h.frame(440);
   assert.equal(h.state().epilogue?.phase, 'done'); assert.equal(h.state().step, dawn.steps.length);
   assert.equal(h.state().finished, undefined, 'watching the sunrise must not silently start another cycle');
   h.command('next'); assert.equal(h.state().finished, true); assert.equal(h.sandbox.state.ending, 'peace');
@@ -230,6 +325,20 @@ test('ceasefire, Neo transport and dawn form a saved playable epilogue without a
   assert.equal(h.actor().currentLocation, 'film_government_lobby', 'confirmed ending must allow the existing scene revisit');
   h.command('return'); assert.deepEqual(h.actor().position, finalSeat);
   h.command('cycle'); assert.equal(h.actor().id, 'neo'); assert.equal(h.sandbox.state.neoLife!.cycle, 2);
+});
+
+test('Kid watches the city during withdrawal and faces the crowd only when delivering the news, including a restored save', () => {
+  const h = game(), scene = FILM_SCENE_BY_ID.m3_ceasefire;
+  Object.assign(h.state(), { scene: scene.id, actor: 'kid', step: 1, epilogue: newTrilogyEpilogue('ceasefire') });
+  h.players.possess('p', 'kid', h.tick()); h.actor().position = filmStepPosition(scene, scene.steps[1]);
+  h.command('act'); h.frame(52);
+  assert.equal(h.state().epilogue?.phase, 'retreat');
+  assert.ok(Math.cos(h.actor().rotation) < -.99, 'watching the departing machines must face out of the temple');
+  const saved = structuredClone(h.sandbox.state), clock = structuredClone(h.state().epilogue);
+  h.players.release('p', h.tick()); h.sandbox.restore(saved); h.players.possess('p', 'kid', h.tick()); h.frame(1, false);
+  assert.deepEqual(h.state().epilogue, clock); assert.ok(Math.cos(h.actor().rotation) < -.99);
+  h.frame(100); h.actor().position = filmStepPosition(scene, scene.steps[2]); h.command('act');
+  assert.equal(h.state().epilogue?.phase, 'announcement'); assert.ok(Math.cos(h.actor().rotation) > .99);
 });
 
 test('Kid keeps the run performed by the player instead of teleporting back to replay it', () => {
@@ -327,6 +436,48 @@ test('saved epilogue actions reach NPC animation and carry Neo flat on the machi
     const entries = (renderer as unknown as { agents: Map<string, { rig: { shoulders: THREE.Group[] }; shadow: THREE.Mesh }> }).agents;
     assert.equal(entries.get('neo')!.shadow.visible, false);
     assert.ok(entries.get('morpheus')!.rig.shoulders.every(shoulder => shoulder.rotation.x < -1), 'Morpheus should receive the saved embrace pose');
+  } finally { renderer.dispose(); globalThis.document = originalDocument; }
+});
+
+test('park performers follow the current Oracle frame without advancing a paused clock or overriding an occupied actor', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  const originalDocument = globalThis.document;
+  const context = { createRadialGradient: () => ({ addColorStop() {} }), fillRect() {}, strokeRect() {}, fillText() {},
+    createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }), putImageData() {} };
+  globalThis.document = { createElement: () => ({ getContext: () => context }) } as unknown as Document;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const architect = world.agents.get('architect')!, renderer = new AgentRenderer(new THREE.Scene());
+  const saved: TrilogyEpilogueEncounter = { ...newTrilogyEpilogue('dawn'), phase: 'leaving', elapsed: .3, total: 8.1,
+    parkDeparture: { elapsed: .3, origin: { x: -8.3, z: -25.5, yaw: 0 } } };
+  let current = saved; for (let i = 0; i < 9; i++) current = stepTrilogyEpilogue(current, .1);
+  const journey = { scene: 'm3_dawn', actor: 'oracle', completed: [], epilogue: saved } as FilmJourney;
+  const place = (clock: TrilogyEpilogueEncounter) => {
+    const pose = gardenPose(clock, 'architect');
+    Object.assign(architect, { isInMatrix: true, currentLocation: 'film_sunrise_garden', position: filmPosition('film_sunrise_garden', pose.x, pose.z),
+      rotation: pose.yaw, currentAction: { type: 'idle', parameters: { epilogue: { ...clock, role: 'architect' } }, startedAt: 0, duration: 1e9, progress: 0 } });
+    renderer.updateAgent('architect', architect);
+  };
+  const expected = (clock: TrilogyEpilogueEncounter) => { const pose = gardenPose(clock, 'architect'); return filmPosition('film_sunrise_garden', pose.x, pose.z); };
+  try {
+    place(saved); renderer.setPlayer('oracle');
+    renderer.setPlayerMotion({ speed: 0, grounded: true, verticalVelocity: 0, turn: 0, epilogue: { ...current, role: 'oracle' } });
+    const action = structuredClone(architect.currentAction);
+    renderer.update(0, undefined, 0, 0, journey);
+    assert.ok(renderer.getAgent('architect')!.position.distanceTo(expected(current)) < 1e-7, 'the Architect cannot wait for the slow world snapshot and jump');
+    const paused = renderer.getAgent('architect')!.position.clone();
+    renderer.update(.8, undefined, 0, 0, journey);
+    assert.ok(renderer.getAgent('architect')!.position.equals(paused), 'render time cannot advance the authoritative saved departure');
+    assert.deepEqual(architect.currentAction, action, 'rendering cannot rewrite the saved NPC action');
+    const later = stepTrilogyEpilogue(current, .1); place(later); journey.epilogue = later;
+    renderer.update(0, undefined, 0, 0, journey);
+    assert.ok(renderer.getAgent('architect')!.position.distanceTo(expected(later)) < 1e-7, 'an older player frame cannot rewind a newer world snapshot');
+    architect.controller = 'other'; architect.position.x += 4; renderer.updateAgent('architect', architect);
+    renderer.update(0, undefined, 0, 0, journey);
+    assert.ok(renderer.getAgent('architect')!.position.distanceTo(new THREE.Vector3(architect.position.x, architect.position.y, architect.position.z)) < 1e-7, 'another player retains the occupied body');
+    architect.controller = undefined; place(saved); journey.epilogue = current; journey.visiting = 'm3_dawn';
+    renderer.update(0, undefined, 0, 0, journey);
+    assert.ok(renderer.getAgent('architect')!.position.distanceTo(expected(saved)) < 1e-7, 'visiting a set cannot play a different timeline over the saved body');
   } finally { renderer.dispose(); globalThis.document = originalDocument; }
 });
 

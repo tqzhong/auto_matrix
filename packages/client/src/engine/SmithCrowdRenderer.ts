@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { newSmithFinale, smithEndingPose, type SmithFinaleEncounter } from '@auto_matrix/shared';
+import { SMITH_FINALE, newSmithFinale, smithEndingPose, type SmithFinaleEncounter } from '@auto_matrix/shared';
 import { smithCodeSurface, smithCodeUniforms } from './SmithCodeSurface.js';
 
 /** Static, posed Smith replicas. Shared surfaces avoid hundreds of skeleton updates. */
@@ -39,8 +39,28 @@ export class SmithCrowdRenderer {
       }
     });
     if (this.disposed) { this.release(); return; }
-    // Reuse the near materials while parsing the low-detail file: no duplicate
-    // image decoding, texture uploads or material changes at the distance threshold.
+    const dummy = new THREE.Object3D();
+    // Each section has nine columns, three staggered rows and two sides. Keeping
+    // six local bounds allows the camera to reject the far/behind avenue sections.
+    for (let section = 0; section < 6; section++) for (const source of surfaces) {
+      const mesh = new THREE.InstancedMesh(source.geometry, source.material, section === Math.floor(SMITH_FINALE.entrance.column / 9) ? 53 : 54);
+      mesh.name = `smith-finale-crowd-${section}-${source.name}`;
+      let instance = 0;
+      for (const side of [-1, 1]) for (let row = 0; row < 3; row++) for (let column = 0; column < 9; column++) {
+        if (side === 1 && row === 0 && section * 9 + column === SMITH_FINALE.entrance.column) continue;
+        const x = side * [19.7, 22, 24.25][row];
+        const z = -70 + (section * 9 + column) * 2.6 + row * .84;
+        dummy.position.set(x, row === 0 ? .035 : .29, z);
+        dummy.rotation.set(0, -side * Math.PI / 2, 0); dummy.updateMatrix();
+        mesh.setMatrixAt(instance++, dummy.matrix);
+      }
+      mesh.instanceMatrix.needsUpdate = true; mesh.receiveShadow = true;
+      mesh.computeBoundingBox(); mesh.computeBoundingSphere(); this.group.add(mesh);
+      this.batches.push({ mesh, near: source.geometry, far: source.geometry, z: -70 + (section * 9 + 4) * 2.6 + .84 });
+    }
+    this.update(this.state);
+    // Show the near crowd immediately; the optional low-detail model only replaces
+    // distant section geometry and reuses the decoded textures and materials.
     const materials = new Map([...this.materials].map(material => [material.name, material]));
     const distant = await new GLTFLoader().register(parser => ({ name: 'SmithCrowdSharedMaterials',
       loadMaterial: index => Promise.resolve(materials.get(parser.json.materials[index].name)!),
@@ -53,28 +73,9 @@ export class SmithCrowdRenderer {
       for (const material of Array.isArray(object.material) ? object.material : [object.material])
         if (material !== materials.get(material.name)) temporaryMaterials.add(material);
     });
-    // GLTFLoader may clone a material for derivative tangents; only the near
-    // material is used by the instances, and all of these clones share its maps.
     temporaryMaterials.forEach(material => material.dispose());
     if (this.disposed) { this.release(); return; }
-    const dummy = new THREE.Object3D();
-    // Each section has nine columns, three staggered rows and two sides. Keeping
-    // six local bounds allows the camera to reject the far/behind avenue sections.
-    for (let section = 0; section < 6; section++) for (const source of surfaces) {
-      const mesh = new THREE.InstancedMesh(source.geometry, source.material, 54);
-      mesh.name = `smith-finale-crowd-${section}-${source.name}`;
-      let instance = 0;
-      for (const side of [-1, 1]) for (let row = 0; row < 3; row++) for (let column = 0; column < 9; column++) {
-        const x = side * [19.7, 22, 24.25][row];
-        const z = -70 + (section * 9 + column) * 2.6 + row * .84;
-        dummy.position.set(x, row === 0 ? .035 : .29, z);
-        dummy.rotation.set(0, -side * Math.PI / 2, 0); dummy.updateMatrix();
-        mesh.setMatrixAt(instance++, dummy.matrix);
-      }
-      mesh.instanceMatrix.needsUpdate = true; mesh.receiveShadow = true;
-      mesh.computeBoundingBox(); mesh.computeBoundingSphere(); this.group.add(mesh);
-      this.batches.push({ mesh, near: source.geometry, far: farSurfaces.get(source.name)!, z: -70 + (section * 9 + 4) * 2.6 + .84 });
-    }
+    for (const batch of this.batches) batch.far = farSurfaces.get(batch.mesh.name.replace(/^smith-finale-crowd-\d-/, ''))!;
     this.update(this.state);
   }
 

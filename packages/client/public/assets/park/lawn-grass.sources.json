@@ -1,0 +1,33 @@
+{
+  "asset": "Grass005",
+  "page": "https://ambientcg.com/view?id=Grass005",
+  "author": "Lennart Demes / ambientCG",
+  "license": "CC0",
+  "licensePage": "https://docs.ambientcg.com/license/",
+  "download": {
+    "url": "https://ambientcg.com/get?file=Grass005_1K-JPG.zip",
+    "bytes": 10442657,
+    "sha256": "58a7fb7f32c44a86879483325b62781d04e0ab8f70b0f70ede36c8f1726f8a22"
+  },
+  "processing": "Unmodified 1K JPEG color, OpenGL normal and roughness maps extracted from the official archive; unused archive contents are not public game assets.",
+  "files": [
+    {
+      "file": "lawn_grass-color.jpg",
+      "archiveFile": "Grass005_1K-JPG_Color.jpg",
+      "bytes": 1875015,
+      "sha256": "5fd8edc1a04e2b9b093229dd0ec41f29668dda9fc698f6610b12cdd83b7690cb"
+    },
+    {
+      "file": "lawn_grass-normal.jpg",
+      "archiveFile": "Grass005_1K-JPG_NormalGL.jpg",
+      "bytes": 2137845,
+      "sha256": "f89e3a1701511d379a9772774ec6b9d7b7ccf3e944fdcc2b98c09dee4cfd804f"
+    },
+    {
+      "file": "lawn_grass-roughness.jpg",
+      "archiveFile": "Grass005_1K-JPG_Roughness.jpg",
+      "bytes": 851896,
+      "sha256": "04ca3a66eee6105cac9754ac773ffd4ee63ca2222984554c4c04b0cdca80da26"
+    }
+  ]
+}

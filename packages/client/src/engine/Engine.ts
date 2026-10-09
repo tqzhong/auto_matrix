@@ -1,3 +1,4 @@
+import { diggersActive, diggersLocked } from '@auto_matrix/shared';
 import { dockGateActive, dockLastStandActive, dockLastStandLocked } from '@auto_matrix/shared';
 import { dockReloadActive, dockReloadLocked } from '@auto_matrix/shared';
 import { basementLocked, tvExitLocked, BASEMENT_ROLES } from '@auto_matrix/shared';
@@ -9,7 +10,9 @@ import { spoonLessonBend } from '@auto_matrix/shared';
 import { AMBUSH_ESCAPE } from '@auto_matrix/shared';
 import { wetwallLocked, sixthLocked, SIXTH } from '@auto_matrix/shared';
 import { reloadedLocked } from '@auto_matrix/shared';
+import { trainmanChaseActive, trainmanChaseLocked, helGarageActive, helGarageLocked } from '@auto_matrix/shared';
 import { morningLocked } from '@auto_matrix/shared';
+import { PRIMARY_DEMOLITION } from '@auto_matrix/shared';
 import * as THREE from 'three';
 import type { ComputerInvestigation, OfficeWorkday } from '@auto_matrix/shared';
 import type { AgentState, WorldEvent, SimulationState, SandboxState, CombatImpact, SkillCast, FilmJourney } from '@auto_matrix/shared';
@@ -172,8 +175,16 @@ export class Engine {
     if (this.playerControls?.id) {
       const group = this.agentRenderer.getAgent(this.playerControls.id);
       if (group) {
+        this.playerControls.syncPrimaryDemolitionCamera(group);
+        this.playerControls.syncEmpOperatorCamera(group);
+        this.playerControls.syncDockReunionCamera(group);
         this.playerControls.syncTruckRescueCamera(group);
+        this.playerControls.syncFreewayPickupCamera(group);
+        this.playerControls.syncSentinelSignalCamera(group);
+        this.playerControls.syncMobilRefusalCamera(group);
+        this.playerControls.syncTrainmanChaseCamera(group, this.filmSets.root);
         this.playerControls.syncFarewellCamera(group);
+        this.playerControls.syncReloadedCatchCamera(group, this.agentRenderer.getAgentBody('trinity'));
         this.playerControls.syncDockLastStandCamera(group);
         this.playerControls.syncDeusCamera(group);
         this.playerControls.syncSmithFinaleCamera(group);
@@ -192,7 +203,8 @@ export class Engine {
     measure?.('city');
     const workday = this.agentRenderer.getAgentState('courier')?.currentAction?.parameters.workday as OfficeWorkday | undefined;
     const previousSet = this.filmSets.active;
-    const filmSet = this.filmSets.update(player ?? undefined, this.sandbox, this.elapsed, player ? this.agentRenderer.getAgent(player.id)?.position : undefined, this.camera.position, workday, this.playerControls?.firstPerson ?? false, this.timeOfDay);
+    const filmSet = this.filmSets.update(player ?? undefined, this.sandbox, this.elapsed, player ? this.agentRenderer.getAgent(player.id)?.position : undefined, this.camera.position, workday, this.playerControls?.firstPerson ?? false, this.timeOfDay, this.camera);
+    this.agentRenderer.protectHelAttendant(this.filmSets.helAttendant, meeting?.scene === 'm3_hel_entry' && !meeting.visiting ? meeting.helCoatcheck : undefined);
     this.voxelRenderer.showOfficeInterior(Boolean(filmSet && ['film_metacortex_floor', 'film_office_ledge'].includes(filmSet.id)) || Boolean(this.sandbox?.neoLife?.lift?.passenger));
     const cinematicSet = filmSet && ['film_anderson_flat', 'film_metacortex_floor', 'film_office_ledge'].includes(filmSet.id) ? undefined : filmSet;
     if (!cinematicSet && previousSet?.id !== filmSet?.id) this.updateAtmosphere();
@@ -202,13 +214,7 @@ export class Engine {
     this.sandboxRenderer.update(delta, this.camera, this.matrix, this.tick, this.running);
     this.lightingSystem.setTime(cinematicSet ? ({ day: 12000, night: 22000, warm: 11000, cold: 10000, white: 12000, storm: 19000, sunrise: 7000 })[cinematicSet.light] : this.timeOfDay);
     this.lightingSystem.update(this.elapsed, this.playerControls?.id ? this.camera : undefined,
-      Boolean(filmSet?.id === 'film_neb_deck' && meeting && !meeting.visiting && ['m1_recovery', 'm1_cabin'].includes(meeting.scene)));
-    const atmosphere = this.filmSets.atmosphere();
-    if (atmosphere) {
-      this.lightingSystem.ambientLight.intensity = atmosphere.ambient;
-      this.lightingSystem.directionalLight.intensity = atmosphere.sun;
-      this.lightingSystem.directionalLight.color.setHex(atmosphere.color);
-    }
+      Boolean(filmSet?.id === 'film_smith_avenue' || filmSet?.id === 'film_neb_deck' && meeting && !meeting.visiting && ['m1_recovery', 'm1_cabin'].includes(meeting.scene)), this.filmSets.atmosphere());
     this.particleSystem.update(delta);
     this.combatEffects.update(this.running ? delta * Math.min(1, this.simulationSpeed) : 0);
     this.filmSets.renderTelevisionPreview(this.renderer);
@@ -321,6 +327,12 @@ export class Engine {
         else if (current.phase === 'clear') this.audio.sentinelSound('clear');
         else if (current.phase === 'done') this.audio.sentinelSound('powerUp');
       } else if (current?.phase === 'sweep' && previous?.phase === 'sweep' && Math.floor(current.elapsed * 1.5) > Math.floor(previous.elapsed * 1.5)) this.audio.sentinelSound('scan');
+    }
+    if (after?.scene === 'm2_blackout' && !after.visiting && after.actor === this.playerControls?.id && this.running && before?.scene === after.scene) {
+      const previous = before.primaryDemolition?.blast, current = after.primaryDemolition?.blast;
+      if (previous?.phase === 'countdown' && current?.phase === 'blast') { this.audio.governmentSound('crash'); this.audio.sentinelSound('powerDown'); }
+      else if (previous?.phase === 'countdown' && current?.phase === 'countdown' && Math.floor(current.elapsed) > Math.floor(previous.elapsed)) this.audio.interludeSound('keys');
+      if (previous?.phase === 'blast' && current?.phase === 'blast' && previous.elapsed < PRIMARY_DEMOLITION.emergencyReturnSeconds && current.elapsed >= PRIMARY_DEMOLITION.emergencyReturnSeconds) this.audio.sentinelSound('powerUp');
     }
     if (after?.interlude && ['m1_cypher_console', 'm1_steak', 'm1_meal'].includes(after.scene) && !after.visiting && after.actor === this.playerControls?.id && this.running) {
       const previous = before?.scene === after.scene ? before.interlude : undefined; const current = after.interlude;
@@ -435,8 +447,22 @@ export class Engine {
     }
     if (after?.scene === 'm3_emp' && before?.scene === after.scene && before.emp?.firedAt === undefined
       && after.emp?.firedAt !== undefined && after.actor === this.playerControls?.id && this.running) this.audio.theOneSound('emp');
+    if (after?.scene === 'm3_emp' && before?.scene === after.scene && !after.visiting && after.actor === this.playerControls?.id && this.running
+      && before.emp?.elapsed !== undefined && after.emp?.elapsed !== undefined) {
+      for (const at of [1.6, 2.5, 3.25]) if (before.emp.elapsed < at && after.emp.elapsed >= at)
+        this.audio.governmentSound(at === 1.6 ? 'crash' : 'body');
+    }
     if (after?.scene === 'm3_dock_battle' && before?.scene === after.scene && after.actor === this.playerControls?.id && this.running
       && (after.dockGunnery?.shots ?? 0) > (before.dockGunnery?.shots ?? 0)) this.audio.governmentSound('minigun');
+    if (after?.scene === 'm2_freeway' && before?.scene === after.scene && !after.visiting && after.actor === this.playerControls?.id && this.running) {
+      const previous = before.freewayPickup, current = after.freewayPickup;
+      if (current && previous && current.attempts === previous.attempts) {
+        if (current.phase === 'key' && previous.phase !== 'key') this.audio.landlineSound('pickup');
+        if (current.phase === 'keyhandoff' && previous.phase === 'key') this.audio.phoneSound(false);
+        if (current.key && !previous.key) this.audio.interludeSound('keys');
+        if (current.shotAt !== undefined && current.shotAt !== previous.shotAt) { this.audio.governmentSound('gunfire'); this.audio.governmentSound('cut'); }
+      }
+    }
     if (after?.scene === 'm3_gate' && before?.scene === after.scene && !after.visiting && after.actor === this.playerControls?.id && this.running) {
       if ((after.dockGate?.shots ?? 0) > (before.dockGate?.shots ?? 0)) this.audio.governmentSound('minigun');
       const previous = before.dockGate, current = after.dockGate;
@@ -479,6 +505,20 @@ export class Engine {
       if (current?.phase === 'departing' && previous?.phase === 'handshake') this.audio.dialogue();
       if (current?.phase === 'departing' && previous?.phase === 'departing' && previous.elapsed < .25 && current.elapsed >= .25) this.audio.lafayetteSound('door');
     }
+    if (before?.scene === 'm3_diggers' && after?.scene === 'm3_diggers' && !after.visiting && after.actor === this.playerControls?.id && this.running) {
+      if (after.diggers?.phase === 'rocket' && before.diggers?.phase !== 'rocket') this.audio.governmentSound('rocket');
+      if ((after.diggers?.damage ?? 0) > (before.diggers?.damage ?? 0)) this.audio.governmentSound('crash');
+      if (after.diggers?.phase === 'aiming' && before.diggers?.phase === 'loading') this.audio.governmentSound('cut');
+    }
+    if (before?.scene === 'm3_upper_digger' && after?.scene === before.scene && !after.visiting && after.actor === this.playerControls?.id && this.running) {
+      const previous = before.upperDigger, current = after.upperDigger;
+      if (current?.phase === 'shot') {
+        const elapsed = previous?.phase === 'shot' ? previous.elapsed : 0;
+        for (const beat of [.5, .62]) if (elapsed < beat && current.elapsed >= beat) this.audio.governmentSound('rocket');
+        for (const beat of [1.35, 1.47]) if (elapsed < beat && current.elapsed >= beat) this.audio.governmentSound('crash');
+      }
+      if (current?.charraDead && !previous?.charraDead) this.audio.governmentSound('body');
+    }
     if (this.playerControls) {
       const journey = state.neoLife?.journey;
       const loadout = rescueLoadout(journey);
@@ -490,20 +530,21 @@ export class Engine {
       this.playerControls.ambushCompany = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_dejavu' && journey.ambushEscape
         ? Object.values(agents).filter(actor => actor.status === 'alive' && Boolean((actor.currentAction?.parameters.ambushEscort as { retreat?: boolean } | undefined)?.retreat)).map(actor => actor.position) : journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_basement' ? BASEMENT_ROLES.filter(role => role !== this.playerControls!.id).map(role => agents[role].position) : [];
       this.playerControls.truckRescue = Boolean(journey?.actor === this.playerControls.id && journey.scene === 'm2_trucks' && !journey.visiting && ['rescue', 'rescued'].includes(journey.trucks?.phase ?? ''));
-      const gunner = journey?.actor === this.playerControls.id && !journey.visiting && (dockGateActive(journey) || journey.scene === 'm3_dock_battle' && journey.dockGunnery?.phase === 'firing');
+      const gunner = journey?.actor === this.playerControls.id && !journey.visiting && (diggersActive(journey) && diggersLocked(journey.diggers) || dockGateActive(journey) || journey.scene === 'm3_dock_battle' && journey.dockGunnery?.phase === 'firing');
       this.playerControls.gunner = gunner;
       this.playerControls.custodyBodies = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_office_escape'
         ? officeCustodyActive(journey) ? [...Object.values(journey.office!.custody!.bodies).map(body => body.position), ...(journey.office!.custody!.courier ? [journey.office!.custody!.courier!.position] : [])] : state.threats.filter(threat => threat.patrol).map(threat => threat.position) : undefined;
-      this.playerControls.performing = Boolean(this.playerControls.id === 'neo' && metacortexLiftLocked(state.neoLife?.lift)) || Boolean(journey?.actor === this.playerControls.id && (dockLastStandActive(journey) && dockLastStandLocked(journey.dockLastStand) || dockReloadActive(journey) && (journey.actor === 'mifune' || dockReloadLocked(journey.dockReload)) || officeCustodyLocked(journey) || basementLocked(journey) || tvExitLocked(journey) || sixthLocked(journey) || wetwallLocked(journey) || gunner || journey.scene === 'm1_room303' && ['breach', 'dive', 'ladder_ready'].includes(journey.openingHotel?.phase ?? '') || journey.trucks?.phase === 'rescue' || helElevatorLocked(journey) || helDanceDoorLocked(journey) || baneLocked(journey) || meetingLocked(journey) || awakeningLocked(journey) || oracleActing(journey) || phoneLocked(journey) || wakeCallLocked(journey) || morningLocked(journey) || sentinelLocked(journey) || interludeLocked(journey) || rescueLocked(journey) || lobbyLocked(journey) || governmentLocked(journey) || airRescueLocked(journey) || matrixEscapeLocked(journey) || theOneLocked(journey) || reloadedLocked(journey) || windowOpening(journey) || windowCrossing(journey) || pillLocked(journey) || interrogationLocked(journey) || lafayetteKnocking(journey) || lafayetteWelcomeLocked(journey)));
+      this.playerControls.performing = Boolean(this.playerControls.id === 'neo' && metacortexLiftLocked(state.neoLife?.lift)) || Boolean(journey?.actor === this.playerControls.id && (helGarageActive(journey) && helGarageLocked(journey.helGarage) || trainmanChaseActive(journey) && trainmanChaseLocked(journey?.helChase?.performance) || dockLastStandActive(journey) && dockLastStandLocked(journey.dockLastStand) || dockReloadActive(journey) && (journey.actor === 'mifune' || dockReloadLocked(journey.dockReload)) || officeCustodyLocked(journey) || basementLocked(journey) || tvExitLocked(journey) || sixthLocked(journey) || wetwallLocked(journey) || gunner || journey.scene === 'm1_room303' && ['breach', 'dive', 'ladder_ready'].includes(journey.openingHotel?.phase ?? '') || journey.trucks?.phase === 'rescue' || helElevatorLocked(journey) || helDanceDoorLocked(journey) || baneLocked(journey) || meetingLocked(journey) || awakeningLocked(journey) || oracleActing(journey) || phoneLocked(journey) || wakeCallLocked(journey) || morningLocked(journey) || sentinelLocked(journey) || interludeLocked(journey) || rescueLocked(journey) || lobbyLocked(journey) || governmentLocked(journey) || airRescueLocked(journey) || matrixEscapeLocked(journey) || theOneLocked(journey) || reloadedLocked(journey) || windowOpening(journey) || windowCrossing(journey) || pillLocked(journey) || interrogationLocked(journey) || lafayetteKnocking(journey) || lafayetteWelcomeLocked(journey)));
       this.playerControls.mirror = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_mirror' ? mirrorSilver(mirrorTime(journey.awakening)) : 0;
       this.playerControls.climbing = Boolean(journey?.actor === this.playerControls.id && !journey.visiting && (journey.scene === 'm1_basement' && ['ready', 'descending', 'landing'].includes(journey.basement?.phase ?? '') || journey.scene === 'm1_wetwall' && ['climbing', 'jammed', 'rescuing', 'done'].includes(journey.wetwall?.phase ?? '') || journey.scene === 'm1_ledge' && journey.step === 1 && journey.office?.climbed !== undefined || journey.scene === 'm1_room303' && journey.openingHotel?.phase === 'climbing'));
       this.playerControls.ride = rideForPlayer(journey, this.playerControls.id);
       const coatcheck = journey?.scene === 'm3_hel_entry' && journey.step === 1 && Boolean(journey.fighting) && journey.helCoatcheck?.phase === 'combat';
       const hotel = journey?.scene === 'm1_room303' && journey.step === 1 && journey.openingHotel?.phase === 'combat' && journey.openingHotel.disarmed;
       const sixth = journey?.scene === 'm1_wall_exposed' && journey.wallExposure?.phase === 'firing';
-      this.playerControls.firearm = Boolean(journey && !journey.visiting && journey.actor === this.playerControls.id && (sixth || gunner || journey.scene === 'm1_lobby' && !lobbyLocked(journey) && agents[journey.actor]?.currentLocation === 'film_government_lobby' || coatcheck && agents[journey.actor]?.currentLocation === 'film_club_hel' || hotel && agents[journey.actor]?.currentLocation === 'film_heart_hotel'));
+      const truckGun = journey?.scene === 'm2_trucks' && journey.trucks?.weapons?.phase === 'gun';
+      this.playerControls.firearm = Boolean(journey && !journey.visiting && journey.actor === this.playerControls.id && (truckGun || sixth || gunner || journey.scene === 'm1_lobby' && !lobbyLocked(journey) && agents[journey.actor]?.currentLocation === 'film_government_lobby' || coatcheck && agents[journey.actor]?.currentLocation === 'film_club_hel' || hotel && agents[journey.actor]?.currentLocation === 'film_heart_hotel'));
       this.playerControls.weaponStyle = gunner ? undefined : this.playerControls.firearm ? sixth || coatcheck || hotel ? 'hel_pistol' : loadout.id : undefined;
-      this.playerControls.fireInterval = sixth ? SIXTH.fireInterval : gunner ? .11 : coatcheck || hotel ? HEL_COATCHECK.fireInterval : loadout.fireInterval;
+      this.playerControls.fireInterval = truckGun ? .22 : sixth ? SIXTH.fireInterval : gunner ? .11 : coatcheck || hotel ? HEL_COATCHECK.fireInterval : loadout.fireInterval;
     }
     if (state !== this.sandbox || this.sandboxPlayer !== this.playerControls?.id) {
       this.sandboxPlayer = this.playerControls?.id;

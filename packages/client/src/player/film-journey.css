@@ -1,4 +1,28 @@
 .film-journal { color:#d8dccf; max-width:1240px; margin:auto; }
+body.film-mobil-scene .game-top,body.film-mobil-scene .game-objective,body.film-mobil-scene .game-event { background:#18251ee0; border:1px solid #9cae9555; padding:12px 16px; border-radius:3px; box-sizing:border-box; }
+body.film-mobil-scene .game-top { background:linear-gradient(#17231feb,#17231fbb); }
+body.film-mobil-scene .game-objective,body.film-mobil-scene .game-event { width:min(300px,calc(100vw - 40px)); }
+body.film-mobil-scene .game-objective *,body.film-mobil-scene .game-event *,body.film-mobil-scene .game-top * { color:#e5ebde; }
+body.film-mobil-scene .game-event { top:135px; }
+body.film-mobil-scene .player-ability,body.film-mobil-scene .game-map,body.film-mobil-scene .sandbox-hotbar { display:none; }
+.film-sequence.mobil-family { bottom:124px; padding:8px 16px; }
+.film-sequence.mobil-reunion { bottom:86px; box-sizing:border-box; width:min(580px,calc(100vw - 36px)); padding:10px 18px; background:#132018ed; }
+.film-sequence.mobil-reunion p { margin:3px 0 6px; font-size:15px; line-height:1.6; }
+body:has(.film-sequence.mobil-reunion:not(.hidden)) :is(.game-objective,.game-event,.game-vitals,.game-controls,.game-interaction,.sandbox-hotbar,.sandbox-waypoint,.play-tip,.mouse-hint) { display:none; }
+.film-sequence.mobil-family p { margin:3px 0 6px; font-size:13px; line-height:1.6; }
+body:has(.film-sequence.mobil-family:not(.hidden)) .sandbox-interact { top:auto; bottom:64px; }
+.film-sequence.oracle-request { bottom:110px; box-sizing:border-box; width:min(650px,calc(100vw - 36px)); padding:12px 18px; background:#0a1510f2; }
+.film-sequence.oracle-request p { margin:3px 0 8px; font-size:15px; line-height:1.7; }
+.film-sequence.trainman-chase { bottom:108px; box-sizing:border-box; width:min(590px,calc(100vw - 36px)); padding:10px 16px; background:#142219ee; }
+.film-sequence.trainman-chase p { margin:3px 0 7px; font-size:13px; line-height:1.6; }
+body:has(.film-sequence.trainman-chase:not(.hidden)) :is(.sandbox-hotbar,.player-ability,.game-interaction,.game-map,.game-event) { display:none; }
+body:has(.film-sequence.trainman-chase:not(.hidden)) .sandbox-interact { top:auto; bottom:38px; }
+body:has(.film-sequence.oracle-request:not(.hidden)) :is(.sandbox-hotbar,.player-ability,.game-interaction,.game-map,.game-objective,.game-event) { display:none; }
+body.film-hel-elevator :is(.game-objective,.game-event,.game-vitals,.game-map,.game-controls,.sandbox-hotbar,.sandbox-clock,.sandbox-nav,.mouse-hint,.play-tip) { display:none; }
+body.film-hel-elevator .film-sequence { bottom:108px; box-sizing:border-box; width:min(560px,calc(100vw - 36px)); padding:8px 16px; }
+body.film-hel-elevator .film-sequence p { margin:3px 0 6px; font-size:13px; line-height:1.6; }
+body.film-hel-elevator .sandbox-interact { top:auto; bottom:32px; }
+body.film-hel-elevator:has(#gameplay-recorder) .sandbox-interact { bottom:72px; }
 .film-exiles { color:#293a33; }.film-exiles .film-heading>span { color:#677767; }.film-exiles .film-heading p { color:#677267; }
 .film-exiles .film-objectives li { color:#667268; border-color:#526b5430; }.film-exiles .film-objectives .done { color:#536b5b; }.film-exiles .film-objectives .current { color:#35472e; background:#91a77324; }
 .film-exiles .film-controls small { color:#687458; }.film-journal.film-exiles button { color:#263d33; background:#dbe4d6; border-color:#779075; }.film-journal.film-exiles button:hover:not(:disabled) { background:#c9dac5; }
@@ -20,6 +44,8 @@ body.film-driving .game-controls,body.film-driving .player-ability,body.film-dri
 body.film-performing .game-controls,body.film-performing .player-ability,body.film-performing .sandbox-hotbar,body.film-performing .game-map { display:none; }
 body.film-last-stand .game-vitals,body.film-last-stand .game-event,body.film-last-stand .game-map,body.film-last-stand .sandbox-hotbar,body.film-last-stand .game-controls,body.film-last-stand .mouse-hint,body.film-last-stand .play-tip { display:none; }
 body.film-last-stand .sandbox-interact { top:auto; bottom:30px; }
+body.film-upper-digger .game-vitals,body.film-upper-digger .game-event,body.film-upper-digger .mouse-hint,body.film-upper-digger .play-tip { display:none; }
+body.film-upper-digger .sandbox-interact { top:auto; bottom:30px; }
 body.film-cabin-scene .sandbox-hotbar,body.film-cabin-scene .player-ability { display:none; }
 body.film-download-scene .game-event,body.film-download-scene .game-vitals,body.film-download-scene .game-map,body.film-download-scene .game-controls,body.film-download-scene .mouse-hint,body.film-download-scene .sandbox-nav,body.film-download-scene .sandbox-clock { display:none; }
 body.film-cabin-scene .sandbox-interact { top:auto; bottom:36px; }
@@ -68,9 +94,16 @@ body.film-bane-scene .film-sequence { bottom:70px; width:min(520px,calc(100vw - 
 body.film-bane-scene .film-sequence p { margin:3px 0 6px; font-size:13px; line-height:1.5; }
 body.film-farewell-scene .film-sequence { bottom:28px; width:min(520px,calc(100vw - 36px)); box-sizing:border-box; padding:8px 16px; }
 body.film-farewell-scene .film-sequence p { margin:3px 0 6px; font-size:13px; line-height:1.5; }
+body.film-deus-scene .sandbox-hotbar,body.film-deus-scene .player-ability,body.film-deus-scene .game-controls,body.film-deus-scene .game-map,body.film-deus-scene .game-event,body.film-deus-scene .play-tip { display:none; }
+body.film-deus-scene .film-sequence { bottom:90px; width:min(540px,calc(100vw - 36px)); box-sizing:border-box; padding:8px 15px; }
+body.film-deus-scene .film-sequence p { margin:3px 0 6px; font-size:13px; line-height:1.5; }
+body.film-deus-scene .sandbox-interact { top:auto; bottom:30px; }
 body.film-smith-finale .sandbox-hotbar,body.film-smith-finale .player-ability,body.film-smith-finale .game-event,body.film-smith-finale .play-tip { display:none; }
 body.film-smith-finale .film-sequence { bottom:92px; width:min(540px,calc(100vw - 36px)); box-sizing:border-box; padding:8px 15px; }
 body.film-smith-finale .film-sequence p { margin:3px 0 6px; font-size:13px; line-height:1.5; }
+body.film-epilogue-scene:not(.film-performing) .film-sequence { bottom:180px; width:min(540px,calc(100vw - 36px)); box-sizing:border-box; padding:8px 15px; }
+body.film-epilogue-scene:not(.film-performing) .film-sequence p { margin:3px 0 6px; font-size:13px; line-height:1.5; }
+body.film-epilogue-scene:not(.film-performing) .sandbox-interact { top:auto; bottom:310px; }
 body.film-mountain-flight .sandbox-hotbar,body.film-mountain-flight .game-controls,body.film-mountain-flight .player-ability,body.film-mountain-flight .game-map,body.film-mountain-flight .game-event { display:none; }
 body.film-mountain-flight .film-sequence { bottom:34px; width:min(420px,calc(100vw - 36px)); box-sizing:border-box; padding:8px 16px; }
 body.film-mountain-flight .film-sequence p { margin:2px 0 4px; font-size:12px; line-height:1.4; }
@@ -86,6 +119,7 @@ body:has(#film-phone:not(.hidden)) .game-vitals,body:has(#film-phone:not(.hidden
 .film-heading p,.film-atlas>p { color:#9ba78c; font-size:13px; line-height:1.8; }
 .film-progress { height:3px; background:#83967b22; margin-top:24px; }.film-progress i { display:block; height:100%; background:#cab984; transition:width .4s; }
 .film-now { display:grid; grid-template-columns:80px 1fr; gap:28px; padding:34px 0; }.film-scene-number { color:#c5b485; font:32px/1.5 monospace; border-top:2px solid; padding-top:5px; }
+.film-now>div:only-child { grid-column:1 / -1; min-width:0; }
 .film-now h3 { font-weight:400; font-size:28px; margin:8px 0 16px; }.film-now p { font-size:15px; line-height:1.9; max-width:850px; }
 .film-objectives { list-style:none; padding:12px 0; margin:16px 0; }.film-objectives li { display:flex; gap:18px; align-items:center; color:#788575; padding:14px 8px; border-bottom:1px solid #92a28022; }.film-objectives b { font:12px monospace; }.film-objectives .done { color:#9da88e; }.film-objectives .current { color:#e8d49d; background:#b3a17b0a; }.film-objectives small { margin-left:auto; }
 .film-journal .film-memory { border-left:2px solid #c0a977; padding:10px 20px; background:#c8b77c08; color:#c7c7ae; }
@@ -151,3 +185,23 @@ body:has(.film-sequence.basement-escape:not(.hidden), .film-sequence.tv-repair:n
 body:has(.film-sequence.basement-escape:not(.hidden), .film-sequence.tv-repair:not(.hidden)) .sandbox-hotbar,
 body:has(.film-sequence.basement-escape:not(.hidden), .film-sequence.tv-repair:not(.hidden)) .game-interaction,
 body:has(.film-sequence.basement-escape:not(.hidden), .film-sequence.tv-repair:not(.hidden)) .player-ability { display:none; }
+
+body.film-architect-scene .sandbox-hotbar,body.film-architect-scene .game-event,body.film-architect-scene .player-ability { display:none; }
+body.film-architect-scene .film-sequence { bottom:88px; width:min(680px,calc(100vw - 36px)); box-sizing:border-box; padding:8px 16px; }
+body.film-architect-scene .film-sequence p { margin:3px 0 6px; font-size:14px; line-height:1.6; }
+
+body:has(.film-sequence.hel-garage:not(.hidden)) .sandbox-hotbar,
+body:has(.film-sequence.hel-garage:not(.hidden)) .player-ability { display:none; }
+.film-sequence.hel-garage { bottom:88px; width:min(600px,calc(100vw - 36px)); box-sizing:border-box; padding:8px 16px; }
+.film-sequence.hel-garage p { margin:3px 0 6px; font-size:13px; line-height:1.5; }
+body:has(.film-sequence:is(.hel-coatcheck,.hel-dance-door):not(.hidden)) :is(.sandbox-hotbar,.player-ability,.game-interaction,.game-map,.game-objective,.game-event,.sandbox-clock,.sandbox-nav,.mouse-hint,.play-tip) { display:none; }
+.film-sequence:is(.hel-coatcheck,.hel-dance-door) { bottom:88px; width:min(580px,calc(100vw - 36px)); box-sizing:border-box; padding:8px 16px; }
+.film-sequence:is(.hel-coatcheck,.hel-dance-door) p { margin:3px 0 6px; font-size:13px; line-height:1.5; }
+body:has(#film-sequence.hel-coatcheck:not(.hidden)) .game-vitals { display:block; }
+@media (max-width:760px) {
+  body:has(.film-sequence.hel-coatcheck:not(.hidden)) .game-vitals { top:98px; bottom:auto; width:150px; padding:10px; }
+  body:has(.film-sequence.hel-coatcheck:not(.hidden)) .player-name > span:first-child,
+  body:has(.film-sequence.hel-coatcheck:not(.hidden)) .player-name small,
+  body:has(.film-sequence.hel-coatcheck:not(.hidden)) .player-energy { display:none; }
+  body:has(.film-sequence.hel-coatcheck:not(.hidden)) .player-health { margin-top:8px; }
+}
