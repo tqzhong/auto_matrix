@@ -4,6 +4,7 @@ import { oracleRequestActive, oracleRequestLocked, oracleRequestText } from '@au
 import { oracleLastActive, oracleLastLocked, oracleLastText } from '@auto_matrix/shared';
 import { baneInquiryActive, baneInquiryText } from '@auto_matrix/shared';
 import { hammerBriefingActive, hammerBriefingText } from '@auto_matrix/shared';
+import { ZION_DEPLOYMENT, zionDeploymentActive, zionDeploymentText } from '@auto_matrix/shared';
 import { trainmanChaseActive, trainmanChaseCanAct, trainmanChaseLocked, trainmanChaseText } from '@auto_matrix/shared';
 import { helGarageActive, helGarageText } from '@auto_matrix/shared';
 import { SOURCE_BRIEFING, sourceBriefingActive, sourceBriefingLocked, sourceBriefingText } from '@auto_matrix/shared';
@@ -112,6 +113,21 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
           : primaryLocked(state) ? '<p>合上手记，按住 G 固定装置；松手保留进度。</p>'
             : button('act', state?.phase === 'sync' ? '绿色窗口校准 · G' : state?.phase === 'retreat' ? '确认两人安全撤出 · G' : '安装当前同步装置 · G', !close);
     return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX RELOADED / 02</span><h3>Niobe · 主电网同步行动</h3><p>发电厂 · Logos 队伍</p></header><article class="film-now"><div><p>${primaryText(state)}</p><ol class="film-objectives">${PRIMARY_DEMOLITION.sites.map(site => `<li class="${state?.installed.includes(site.id) ? 'done' : ''}"><b>${state?.installed.includes(site.id) ? '✓' : '○'}</b><span>${site.name}</span></li>`).join('')}</ol><div class="film-controls">${action}</div><small>WASD 移动 · Shift 奔跑 · G 操作 · V 切换视角。换班同步和先撤离的顺序来自电影，三个安装点、观察桥路线与失败重试为游戏改编。</small></div></article></div>`;
+  }
+  if (zionDeploymentActive(journey)) {
+    const state = journey.zionDeployment, step = scene.steps[journey.step], close = Boolean(step && filmStepNear(scene, step, player.position, player.isInMatrix, journey));
+    const action = player.id !== journey.actor ? button('resume', '接回 Lock 的议会视角')
+      : state?.paused || state?.unavailable ? '<p>等待议员信号，部署与问答进度已保留。</p>'
+        : player.status !== 'alive' || player.health <= 0 ? button('retry', '接回议会检查点')
+          : state?.phase === 'done' ? button('next', '转到 Hammer 航行中的另一视角 →')
+            : state?.phase === 'reflection' ? filmReflections(scene.id).map(choice => button(`reflect:${choice.id}`, choice.label)).join('')
+              : state?.phase === 'allocating' ? ZION_DEPLOYMENT.allocations.map(item => `<p>${item.label}</p>` + (state.confirmed.includes(item.id)
+                ? `<p>✓ ${item.answer}</p>` : button(`allocation:${item.id}:${item.correct}`, item.answer) + button(`allocation:${item.id}:incorrect`, item.wrong))).join('')
+                : state && ['ready', 'question', 'review', 'hope'].includes(state.phase) ? button('act', state.phase === 'ready' ? '报告船坞防守方案 · G'
+                  : state.phase === 'question' ? '主动回应兵力与居民动员质询 · G' : state.phase === 'review' ? '打开部署图核对 · G' : '回应 Hamann 的消息询问 · G', !close)
+                  : state?.phase === 'approach' || state?.phase === 'leaving' || !state ? '<p>合上手记，WASD 亲自走到目标。</p>'
+                    : '<p>合上手记，观察议会的当前回应；V 切换视角，鼠标环顾。</p>';
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>锡安议会 · 船坞防守部署</h3><p>Lock 的另一视角 · 计划、希望与动员</p></header><article class="film-now"><div><h3>${step?.label ?? '部署决定已保存'}</h3><p>${zionDeploymentText(state)}</p><div class="film-controls">${action}</div><small>船坞尚未失守，神庙入口是备用防线。G 主动报告与回应 · J 核对部署和记录判断 · WASD 离场。部署图核对和哲学回应是游戏改编；议会不预知 Hammer 的分航安排。</small></div></article></div>`;
   }
   if (hammerBriefingActive(journey)) {
     const state = journey.hammerBriefing, step = scene.steps[journey.step], close = Boolean(step && filmStepNear(scene, step, player.position, player.isInMatrix, journey));

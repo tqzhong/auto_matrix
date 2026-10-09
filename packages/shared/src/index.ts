@@ -103,6 +103,7 @@ export * from './constants/oracle-last.js';
 export * from './constants/oracle-absorption.js';
 export * from './constants/bane-inquiry.js';
 export * from './constants/hammer-briefing.js';
+export * from './constants/zion-deployment.js';
 export * from './constants/trinity-terminal.js';
 export * from './constants/source-portal.js';
 export * from './constants/architect-room.js';

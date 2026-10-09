@@ -2,6 +2,7 @@ import { sourcePortalLocked } from '@auto_matrix/shared';
 import { ORACLE_LAST, oracleLastLocked } from '@auto_matrix/shared';
 import { baneInquiryLocked } from '@auto_matrix/shared';
 import { HAMMER_BRIEFING, hammerBriefingLocked } from '@auto_matrix/shared';
+import { ZION_DEPLOYMENT, zionDeploymentLocked } from '@auto_matrix/shared';
 import { SENTINEL_SIGNAL } from '@auto_matrix/shared';
 import { mobilRefusalPose } from '@auto_matrix/shared';
 import { trainmanChaseLocked, helGarageLocked } from '@auto_matrix/shared';
@@ -69,6 +70,7 @@ export class PlayerControls {
   private elevatorViewAction?: 'press' | 'pull';
   private doorAim = false;
   private hammerAim = false;
+  private deploymentAim = false;
   private disarmAim = false;
   private breakoutAim = false;
   private doorViewOpening = false;
@@ -192,7 +194,7 @@ export class PlayerControls {
     this.motion.truckWeapons = undefined; this.motion.truckHood = undefined;
     this.motion.trainmanChase = undefined; this.motion.helGarage = undefined; this.motion.helElevator = undefined; this.motion.helDoorPush = undefined; this.motion.helDisarm = undefined; this.motion.helBreakout = undefined;
     this.motion.baneInquiry = undefined; this.motion.oracleLast = undefined; this.motion.oracleAbsorption = undefined;
-    this.motion.hammerBriefing = undefined;
+    this.motion.hammerBriefing = undefined; this.motion.zionDeployment = undefined; this.deploymentAim = false;
     this.hammerAim = false;
     this.elevatorAim = false; this.elevatorViewAction = undefined; this.doorAim = false; this.doorViewOpening = false;
     this.motion.dockEvacuation = undefined; this.motion.shaftSeal = undefined;
@@ -271,6 +273,7 @@ export class PlayerControls {
         this.disarmAim = this.firstPerson && Boolean(this.motion.helDisarm);
         this.breakoutAim = this.firstPerson && this.motion.helBreakout?.phase === 'catching';
         this.hammerAim = this.firstPerson && Boolean(this.motion.hammerBriefing && ['planning', 'confirmation'].includes(this.motion.hammerBriefing.phase));
+        this.deploymentAim = this.firstPerson && this.motion.zionDeployment?.phase === 'allocating';
         this.morningAim = this.firstPerson && Boolean(this.motion.morning);
         this.signingAim = this.firstPerson && this.motion.workday?.role === 'neo' && this.motion.workday.phase === 'signing';
         this.lastStandAim = this.firstPerson && dockLastStandLocked(this.motion.dockLastStand);
@@ -518,6 +521,17 @@ export class PlayerControls {
       this.motion.attack = undefined; this.attackQueuedUntil = 0;
     }
     this.motion.hammerBriefing = hammerGesture;
+    const deploymentGesture = state.currentAction?.parameters.zionDeployment as MotionInput['zionDeployment'];
+    if (this.motion.zionDeployment && !deploymentGesture) { this.performing = false; this.cameraReady = false; }
+    if (deploymentGesture) {
+      if (!this.motion.zionDeployment) {
+        this.yaw = this.movementYaw = state.rotation; this.pitch = .1; this.cameraReady = false;
+        this.deploymentAim = this.firstPerson && deploymentGesture.phase === 'allocating';
+      }
+      this.performing = true; this.localJump = this.networkJump = false; this.impulse = undefined;
+      this.motion.attack = undefined; this.attackQueuedUntil = 0;
+    }
+    this.motion.zionDeployment = deploymentGesture;
     const oracleLast = state.currentAction?.parameters.oracleLast as MotionInput['oracleLast'];
     if (oracleLastLocked(this.motion.oracleLast) && !oracleLastLocked(oracleLast)) { this.performing = false; this.cameraReady = false; }
     if (oracleLastLocked(oracleLast)) {
@@ -1183,6 +1197,7 @@ export class PlayerControls {
     if (this.motion.sourcePortal) { this.camera.fov = this.firstPerson ? 66 : 58; this.camera.near = .06; }
     if (this.motion.trinityTerminal) { this.camera.fov = this.firstPerson ? 64 : 56; this.camera.near = .06; }
     if (this.motion.trinityRelay) { this.camera.fov = this.firstPerson ? 68 : 64; this.camera.near = .06; }
+    if (this.firstPerson && this.motion.zionDeployment?.phase === 'allocating') this.camera.fov = this.camera.aspect < .85 ? 88 : 68;
     if (this.firstPerson && this.motion.hammerBriefing && ['planning', 'confirmation'].includes(this.motion.hammerBriefing.phase))
       this.camera.fov = this.camera.aspect < .85 ? 88 : 68;
     if (this.firstPerson && (this.motion.helDoorPush || this.motion.helDisarm || this.motion.helBreakout)) this.camera.fov = Math.max(68,
@@ -1709,7 +1724,7 @@ export class PlayerControls {
         if (resetCamera || gesture.elapsed < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
         this.camera.lookAt(focus);
       }
-    } else if (this.motion.hammerBriefing && hammerBriefingLocked(this.motion.hammerBriefing)) {
+    } else if (this.motion.zionDeployment && zionDeploymentLocked(this.motion.zionDeployment) || this.motion.hammerBriefing && hammerBriefingLocked(this.motion.hammerBriefing)) {
       const focus = new THREE.Vector3(this.position.x, this.position.y + 1.7, this.position.z);
       if (this.firstPerson) {
         const head = group.getObjectByName('head'); head?.updateWorldMatrix(true, false);
@@ -2894,7 +2909,7 @@ export class PlayerControls {
 
   syncTrainmanChaseCamera(group: THREE.Group, environment?: THREE.Object3D): void {
     const oracleThirdPerson = !this.firstPerson && this.authoritative?.currentLocation === 'film_oracle_home';
-    if (!oracleThirdPerson && !this.motion.baneInquiry && !this.motion.hammerBriefing && !this.motion.oracleLast && !this.motion.trainmanChase && !this.motion.helGarage && !this.motion.helElevator && !this.motion.helDoorPush && !this.motion.helDisarm && !this.motion.helBreakout) return;
+    if (!oracleThirdPerson && !this.motion.baneInquiry && !this.motion.hammerBriefing && !this.motion.zionDeployment && !this.motion.oracleLast && !this.motion.trainmanChase && !this.motion.helGarage && !this.motion.helElevator && !this.motion.helDoorPush && !this.motion.helDisarm && !this.motion.helBreakout) return;
     if (!this.firstPerson) {
       if (!environment) return;
       environment.updateWorldMatrix(true, true);
@@ -2914,6 +2929,11 @@ export class PlayerControls {
     group.updateWorldMatrix(true, true);
     const localEye = head.userData.cameraEye as THREE.Vector3 | undefined;
     const eye = head.localToWorld(localEye?.clone() ?? new THREE.Vector3(0, .1, .32));
+    if (this.deploymentAim && this.motion.zionDeployment?.phase === 'allocating') {
+      const point = ZION_DEPLOYMENT.screen, center = FILM_SETS.film_zion_defense_council.center;
+      const direction = new THREE.Vector3(center.x + point.x, center.y - 1 + point.y, center.z + point.z).sub(eye);
+      this.yaw = Math.atan2(direction.x, direction.z); this.pitch = Math.atan2(-direction.y, Math.hypot(direction.x, direction.z)); this.deploymentAim = false;
+    }
     if (this.hammerAim && this.motion.hammerBriefing && ['planning', 'confirmation'].includes(this.motion.hammerBriefing.phase)) {
       const point = HAMMER_BRIEFING.screen, center = FILM_SETS.film_hammer_deck.center;
       const direction = new THREE.Vector3(center.x + point.x, center.y - 1 + point.y, center.z + point.z).sub(eye);

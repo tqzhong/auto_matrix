@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SCENES, FILM_SCENE_BY_ID, filmEntry, filmStepPosition, ORACLE_LAST, oracleLastLines, ORACLE_ABSORPTION, BANE_INQUIRY, HAMMER_BRIEFING, baneInquiryLines, type AgentState, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENES, FILM_SCENE_BY_ID, filmEntry, filmStepPosition, ORACLE_LAST, oracleLastLines, ORACLE_ABSORPTION, BANE_INQUIRY, HAMMER_BRIEFING, ZION_DEPLOYMENT, baneInquiryLines, type AgentState, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -68,6 +68,14 @@ function setup() {
       actor().position = filmStepPosition(scene, scene.steps[3]); command('act'); frames(HAMMER_BRIEFING.belief.length * HAMMER_BRIEFING.lineSeconds + .1);
       command('reflect:agency'); frames(HAMMER_BRIEFING.lineSeconds + .1);
       actor().position = filmStepPosition(scene, scene.steps[4]); frames(3);
+    } else if (sceneId === 'm3_zion_prepare') {
+      actor().position = filmStepPosition(scene, scene.steps[0]); frames(.1);
+      for (const lines of [ZION_DEPLOYMENT.reportLines, ZION_DEPLOYMENT.forceLines]) { command('act'); frames(lines.length * ZION_DEPLOYMENT.lineSeconds + .1); }
+      actor().position = filmStepPosition(scene, scene.steps[2]); command('act');
+      for (const item of ZION_DEPLOYMENT.allocations) command(`allocation:${item.id}:${item.correct}`);
+      actor().position = filmStepPosition(scene, scene.steps[3]); command('act'); frames(ZION_DEPLOYMENT.hopeLines.length * ZION_DEPLOYMENT.lineSeconds + .1);
+      command('reflect:agency'); frames(ZION_DEPLOYMENT.lineSeconds + .1);
+      actor().position = filmStepPosition(scene, scene.steps[4]); frames(.1);
     } else {
     for (const step of scene.steps) {
       actor().position = filmStepPosition(scene, step);

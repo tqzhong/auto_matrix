@@ -4,7 +4,7 @@ import type { CharacterRig } from './CharacterModel.js';
 import { enableSkinnedCulling } from './SkinnedBounds.js';
 
 interface BodyEntry {
-  role: 'zee' | 'charra' | 'niobe' | 'lock' | 'roland' | 'architect' | 'seraph' | 'keymaker' | 'rama_kandra' | 'kamala' | 'trainman';
+  role: 'zee' | 'charra' | 'niobe' | 'lock' | 'roland' | 'architect' | 'seraph' | 'keymaker' | 'rama_kandra' | 'kamala' | 'trainman' | 'hamann' | 'west' | 'dillard';
   fallback: THREE.Mesh[];
   materials: THREE.Material[];
   model?: THREE.Group;
@@ -84,7 +84,7 @@ export class DiggerBodies {
       const material = object.material as THREE.Material, index = ['Skin', 'Dock cloth', 'Dock trousers'].indexOf(material.name);
       this.materials.add(material);
       if (index >= 0) object.material = entry.materials[index];
-      if (material.name === 'Dock bindings' && ['niobe', 'lock', 'roland', 'rama_kandra', 'kamala', 'trainman'].includes(entry.role)) {
+      if (material.name === 'Dock bindings' && ['niobe', 'lock', 'roland', 'rama_kandra', 'kamala', 'trainman', 'hamann', 'west', 'dillard'].includes(entry.role)) {
         const bindings = entry.materials[1].clone() as THREE.MeshStandardMaterial; bindings.color.multiplyScalar(['rama_kandra', 'kamala', 'trainman'].includes(entry.role) ? .95 : .72);
         this.materials.add(bindings); object.material = bindings;
       }
