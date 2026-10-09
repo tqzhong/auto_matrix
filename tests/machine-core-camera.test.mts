@@ -115,6 +115,7 @@ test('machine-core first person samples the current real GLB eyes after posing a
   }
   const connected = { ...newDeusPact(), phase: 'connected' as const, total: 16.8, consent: 1.8 };
   const eye = frame(connected), direction = h.camera.getWorldDirection(new THREE.Vector3());
+  assert.ok(direction.y > .7, 'the reclined first-person view must look upward instead of along the floor through the body');
   h.look(); frame(connected);
   assert.ok(h.camera.getWorldDirection(new THREE.Vector3()).distanceTo(direction) > .1, 'sampling the head must retain free look');
   const beforeMissing = h.camera.position.clone(); sync(new THREE.Group()); assert.deepEqual(h.camera.position, beforeMissing, 'loading fallback cannot reset the camera');
@@ -239,7 +240,9 @@ test('the close connection shot keeps Neo’s actual head, feet and support abov
   const machine = new MachineCoreRenderer(stage); t.after(() => { renderer.dispose(); machine.dispose(); });
   renderer.updateAgent('neo', h.actor); await new Promise(resolve => setImmediate(resolve));
   const group = renderer.getAgent('neo')!, body = renderer.getAgentBody('neo')!;
-  for (const beat of [beats[0], beats[3]]) {
+  for (const beat of [beats[0], beats[3],
+    { ...newDeusPact(), phase: 'assurance' as const, elapsed: .8, total: 24, resolve: 3 },
+    { ...newDeusPact(), phase: 'assurance' as const, elapsed: .841, total: 47.88, resolve: 3 }]) {
     h.actor.position = { x: h.center.x, y: h.center.y, z: h.center.z + DEUS_PACT.platform.z }; h.actor.rotation = Math.PI;
     h.actor.currentAction = { type: 'idle', parameters: { deusPact: { ...beat, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
     renderer.updateAgent('neo', h.actor); h.controls.update(.02, h.actor, group, false);
@@ -268,6 +271,53 @@ test('the close connection shot keeps Neo’s actual head, feet and support abov
         const hit = new THREE.Raycaster(h.camera.position, direction.clone().normalize(), .06, direction.length() - .08)
           .intersectObject(stage.getObjectByName('machine-core-light-tunnel')!, true)[0];
         assert.equal(hit, undefined, `an actual chamber structure blocks the connection shot: ${hit?.object.name}`);
+        const swarm = new THREE.Raycaster(h.camera.position, direction.clone().normalize(), .06, direction.length() - .08)
+          .intersectObject(stage.getObjectByName('machine-core-swarm')!, true)
+          .filter(hit => { for (let p: THREE.Object3D | null = hit.object; p; p = p.parent) if (!p.visible) return false; return true; });
+        assert.equal(swarm.length, 0, `${beat.phase}/${beat.total}/${aspect}: a flying machine obscures supported Neo`);
+      }
+    }
+  }
+});
+
+test('negotiation frames keep the delivered standing body above subtitles throughout formation and dialogue', async t => {
+  const h = setup(t);
+  const assets = new Map(await Promise.all(['neo', 'neo-office', 'neo-tracking'].map(async id => [id, await geometry(id)] as const)));
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', async (path: string) => assets.get(path.split('/').pop()!.replace(/\.glb.*$/, ''))!);
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const renderer = new AgentRenderer(new THREE.Scene()), stage = new THREE.Group(); renderer.setWorld(false); renderer.setPlayer('neo', false);
+  stage.position.set(h.center.x, h.center.y - 1, h.center.z);
+  const machine = new MachineCoreRenderer(stage); t.after(() => { renderer.dispose(); machine.dispose(); });
+  renderer.updateAgent('neo', h.actor); await new Promise(resolve => setImmediate(resolve));
+  const group = renderer.getAgent('neo')!, body = renderer.getAgentBody('neo')!;
+  const samples = [
+    ['swarm', 1.4], ['forming', .4], ['forming', .7], ['forming', 1.329], ['forming', 2.1],
+    ['challenge', .8], ['warning', 1.2], ['question', .8], ['terms', 0],
+  ] as const;
+  for (const [phase, elapsed] of samples) {
+    const beat = { ...newDeusPact(), phase, elapsed, total: 10, resolve: 3 };
+    h.actor.position = { x: h.center.x, y: h.center.y, z: h.center.z + DEUS_PACT.platform.z }; h.actor.rotation = Math.PI;
+    h.actor.currentAction = { type: 'idle', parameters: { deusPact: { ...beat, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
+    renderer.updateAgent('neo', h.actor); h.controls.update(.02, h.actor, group, false);
+    renderer.setPlayerMotion(h.controls.motion); renderer.update(0, h.camera, 0);
+    machine.update(beat, 0, false, { x: 0, z: -25 }, body); stage.updateMatrixWorld(true); group.updateMatrixWorld(true);
+    const points: THREE.Vector3[] = [];
+    body.traverseVisible(object => {
+      if (!(object instanceof THREE.SkinnedMesh)) return;
+      object.skeleton.update();
+      for (let i = 0; i < object.geometry.attributes.position.count; i++) points.push(object.localToWorld(object.getVertexPosition(i, new THREE.Vector3())));
+    });
+    assert.ok(points.length, 'test the delivered body, not a placeholder height');
+    for (const aspect of [16 / 9, 4 / 3, 9 / 16]) {
+      h.camera.aspect = aspect; h.controls.update(.02, h.actor, group, false); h.camera.updateMatrixWorld();
+      const bounds = new THREE.Box3().setFromPoints(points.map(point => point.clone().project(h.camera)));
+      assert.ok(bounds.min.y >= -.5 && bounds.max.y <= .85 && bounds.min.x > -.9 && bounds.max.x < .9,
+        `${phase}/${elapsed}/${aspect}: actual body overlaps subtitles or leaves frame: ${bounds.min.toArray()}..${bounds.max.toArray()}`);
+      for (const name of ['head', 'ankle_L', 'ankle_R']) {
+        const direction = body.getObjectByName(name)!.getWorldPosition(new THREE.Vector3()).sub(h.camera.position);
+        const hit = new THREE.Raycaster(h.camera.position, direction.clone().normalize(), .06, direction.length() - .08)
+          .intersectObject(stage.getObjectByName('machine-core-light-tunnel')!, true)[0];
+        assert.equal(hit, undefined, `${phase}/${aspect}: a chamber structure blocks ${name}`);
       }
     }
   }

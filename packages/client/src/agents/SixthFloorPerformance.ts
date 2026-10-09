@@ -22,6 +22,11 @@ export function poseSixthFloor(rig: CharacterRig, gesture?: SixthGesture): void 
   if (role === 'neo' && phase === 'firing') {
     const direction = new THREE.Vector3(Math.sin(gesture.aim), 0, Math.cos(gesture.aim));
     hand('R', root.clone().add(new THREE.Vector3(.28, 3.2, 0).applyQuaternion(rotation)).addScaledVector(direction, .85), forwardHand);
+    const gun = rig.weapons?.[0];
+    if (gun?.userData.helPistol && gun.parent) {
+      gun.quaternion.copy(gun.parent.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), gesture.aim)));
+      gun.position.copy(new THREE.Vector3(0, -.19, .035).sub(new THREE.Vector3(0, -.1, -.025).applyQuaternion(gun.quaternion)));
+    }
     const center = FILM_SETS.film_ambush_house.center;
     hand('L', new THREE.Vector3(center.x + gesture.start.x - .26, root.y + 3.3, center.z + WETWALL_SHAFT.pipeZ + .27),
       new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2));

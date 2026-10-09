@@ -66,6 +66,7 @@ const beats: DeusPactEncounter[] = [
   { ...newDeusPact(), phase: 'warning', elapsed: 1.1, total: 6.2 },
   { ...newDeusPact(), phase: 'seating', elapsed: 1.2, total: 9.4 },
   { ...newDeusPact(), phase: 'cabling', elapsed: 1.4, total: 12 },
+  { ...newDeusPact(), phase: 'assurance', elapsed: .8, total: 24 },
   { ...newDeusPact(), phase: 'consent', elapsed: .9, total: 14.3, consent: .9 },
   { ...newDeusPact(), phase: 'connecting', elapsed: .8, total: 16 },
   { ...newDeusPact(), phase: 'connected', total: 16.8 },
@@ -100,7 +101,7 @@ test('the final neck probe meets the actual cervical port after waiting outside 
   const h = await setup(t), renderer = h.create(true), stage = new THREE.Group(), center = FILM_SETS.film_machine_core.center;
   stage.position.set(center.x, center.y - 1, center.z);
   const machine = new MachineCoreRenderer(stage); t.after(() => machine.dispose());
-  for (const beat of [{ ...newDeusPact(), phase: 'consent', total: 13.4 }, { ...newDeusPact(), phase: 'connected', total: 16.8 }] as DeusPactEncounter[]) {
+  for (const beat of [{ ...newDeusPact(), phase: 'assurance', elapsed: .8, total: 24 }, { ...newDeusPact(), phase: 'consent', total: 13.4 }, { ...newDeusPact(), phase: 'connected', total: 16.8 }] as DeusPactEncounter[]) {
     h.save(renderer, beat); await new Promise(resolve => setImmediate(resolve)); renderer.update(0, undefined, 0);
     const body = renderer.getAgentBody('neo')!; body.parent!.parent!.updateMatrixWorld(true);
     machine.update(beat, 90, false, { x: 0, z: -25 }, body); stage.updateMatrixWorld(true);
@@ -112,8 +113,27 @@ test('the final neck probe meets the actual cervical port after waiting outside 
     assert.ok(tip, 'measure the visible probe tip, not its group origin');
     const delta = tip.clone().sub(port.getWorldPosition(new THREE.Vector3()));
     const normal = new THREE.Vector3(0, 0, 1).transformDirection(port.matrixWorld);
-    if (beat.phase === 'consent') assert.ok(delta.dot(normal) > .12, 'the tip must wait outside the actual port before consent');
+    if (beat.phase !== 'connected') assert.ok(delta.dot(normal) > .12, 'the tip must wait outside the actual port before consent');
     else assert.ok(delta.length() < .065, `connected probe misses the actual cervical port by ${delta.length()}`);
+  }
+});
+
+test('the supported real-world Neo reclines face-up with extended legs instead of a desk-chair posture', async t => {
+  const h = await setup(t), renderer = h.create(true);
+  for (const phase of ['cabling', 'assurance', 'consent', 'connecting', 'connected'] as const) {
+    const beat = { ...newDeusPact(), phase, elapsed: .8, total: 24 };
+    h.save(renderer, beat); await new Promise(resolve => setImmediate(resolve)); renderer.update(0, undefined, 0);
+    const body = renderer.getAgentBody('neo')!; body.parent!.parent!.updateMatrixWorld(true);
+    const point = (name: string) => body.getObjectByName(name)!.getWorldPosition(new THREE.Vector3());
+    const torso = point('head').sub(point('pelvis')).normalize();
+    assert.ok(Math.abs(torso.y) < .5, `${phase}: actual head/pelvis axis is still upright: ${torso.toArray()}`);
+    const front = new THREE.Vector3(0, 0, 1).transformDirection(body.getObjectByName('chest')!.matrixWorld);
+    assert.ok(front.y > .8, `${phase}: chest must face upward on its machine support: ${front.toArray()}`);
+    for (const side of ['R', 'L']) {
+      const thigh = point(`knee_${side}`).sub(point(`hip_${side}`)).normalize();
+      const shin = point(`ankle_${side}`).sub(point(`knee_${side}`)).normalize();
+      assert.ok(thigh.dot(shin) > .85, `${phase}/${side}: lower body remains folded like a chair: ${thigh.dot(shin)}`);
+    }
   }
 });
 
@@ -168,6 +188,7 @@ test('all body feeds meet actual clothing surfaces and the support leaves room f
   stage.position.set(center.x, center.y - 1, center.z);
   const machine = new MachineCoreRenderer(stage); t.after(() => machine.dispose());
   for (const beat of [{ ...newDeusPact(), phase: 'cabling', elapsed: 2.8, total: 13.4 },
+    { ...newDeusPact(), phase: 'assurance', elapsed: .8, total: 24 },
     { ...newDeusPact(), phase: 'connecting', elapsed: .8, total: 16 }, { ...newDeusPact(), phase: 'connected', total: 16.8 }] as DeusPactEncounter[]) {
     h.save(renderer, beat); await new Promise(resolve => setImmediate(resolve)); renderer.update(0, undefined, 0);
     const body = renderer.getAgentBody('neo')!; body.parent!.parent!.updateMatrixWorld(true);
@@ -226,6 +247,8 @@ test('uplink contacts work before the first WebGL draw and reuse paused surface 
   assert.equal(contacts.sample(body), sampled, 'looking around without moving the supporting clothing must not rescan the underside');
   assert.equal(vertexCalls, 0);
   h.save(renderer, { ...beat, phase: 'connecting', elapsed: .8, total: 16 }); renderer.update(0, undefined, 0);
+  assert.equal(contacts.sample(body), sampled, 'a held reclined body can reuse its surfaces while the probe connects');
+  h.save(renderer, { ...beat, phase: 'seating', elapsed: 1.8, total: 10 }); renderer.update(0, undefined, 0);
   const active = contacts.sample(body)!;
   assert.notEqual(active, sampled, 'active body motion must refresh the support');
   assert.ok(vertexCalls <= 1100, `one active surface solve must remain below 1100 skinned vertex evaluations: ${vertexCalls}`);
@@ -235,4 +258,39 @@ test('uplink contacts work before the first WebGL draw and reuse paused surface 
   const upgraded = contacts.sample(body)!;
   assert.notEqual(upgraded, active, 'an upgraded costume must invalidate the cached triangles even when the pose is unchanged');
   assert.ok(vertexCalls > 0 && vertexCalls <= 1100);
+});
+
+test('the extending body feeds stay outside Neo’s actual reclined clothing, arms and head', async t => {
+  const h = await setup(t), renderer = h.create(true), stage = new THREE.Group(), center = FILM_SETS.film_machine_core.center;
+  stage.position.set(center.x, center.y - 1, center.z);
+  const machine = new MachineCoreRenderer(stage), material = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide });
+  t.after(() => { machine.dispose(); material.dispose(); });
+  for (const beat of [...[.3, 1.4, 2.8].map(elapsed => ({ ...newDeusPact(), phase: 'cabling', elapsed, total: 12 })),
+    { ...newDeusPact(), phase: 'assurance', elapsed: .8, total: 24 }] as DeusPactEncounter[]) {
+    h.save(renderer, beat); await new Promise(resolve => setImmediate(resolve)); renderer.update(0, undefined, 0);
+    const body = renderer.getAgentBody('neo')!; body.parent!.parent!.updateMatrixWorld(true);
+    machine.update(beat, 0, false, { x: 0, z: -25 }, body); stage.updateMatrixWorld(true);
+    const skin: THREE.Mesh[] = [];
+    body.traverseVisible(object => {
+      if (!(object instanceof THREE.SkinnedMesh)) return;
+      object.skeleton.update(); const geometry = new THREE.BufferGeometry(), point = new THREE.Vector3();
+      const positions = new THREE.Float32BufferAttribute(new Float32Array(object.geometry.attributes.position.count * 3), 3);
+      for (let i = 0; i < positions.count; i++) { object.getVertexPosition(i, point); positions.setXYZ(i, point.x, point.y, point.z); }
+      geometry.setAttribute('position', positions); geometry.setIndex(object.geometry.index); geometry.computeBoundingBox(); geometry.computeBoundingSphere();
+      const mesh = new THREE.Mesh(geometry, material); mesh.name = object.name; mesh.matrixWorld.copy(object.matrixWorld); skin.push(mesh);
+    });
+    try {
+      for (let i = 0; i < 7; i++) {
+        const feed = stage.getObjectByName(i < 6 ? `machine-body-feed-${i}` : 'machine-neck-feed') as THREE.Mesh<THREE.TubeGeometry>;
+        if (!feed.visible) continue;
+        const positions = feed.geometry.attributes.position;
+        for (const radial of [0, 2, 4, 6]) for (let segment = 0; segment < 24; segment++) {
+          const from = feed.localToWorld(new THREE.Vector3().fromBufferAttribute(positions, segment * 9 + radial));
+          const delta = feed.localToWorld(new THREE.Vector3().fromBufferAttribute(positions, (segment + 1) * 9 + radial)).sub(from);
+          const hit = new THREE.Raycaster(from, delta.clone().normalize(), .002, delta.length() - .002).intersectObjects(skin)[0];
+          assert.ok(!hit, `${beat.phase}/${beat.elapsed}: feed ${i}, segment ${segment}/${radial} crosses ${hit?.object.name} at ${hit ? stage.worldToLocal(hit.point.clone()).toArray() : 'none'}`);
+        }
+      }
+    } finally { skin.forEach(mesh => mesh.geometry.dispose()); }
+  }
 });

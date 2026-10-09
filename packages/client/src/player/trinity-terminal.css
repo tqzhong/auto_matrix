@@ -1,0 +1,8 @@
+.film-terminal { position: absolute; right: 24px; top: 145px; width: 340px; max-width: calc(100vw - 48px); padding: 16px; background: #101a16ee; border: 1px solid #809a83; pointer-events: auto; }
+.film-terminal p { margin: 0 0 12px; color: #c8d8c9; font-size: 12px; }
+.film-terminal button { display: grid; gap: 5px; width: 100%; margin-top: 8px; padding: 10px 12px; text-align: left; border: 1px solid #536758; background: #18291f; color: #d0dfd1; cursor: pointer; }
+.film-terminal button:hover, .film-terminal button:focus-visible { background: #304b38; outline: 1px solid #bdd1af; }
+.film-terminal button span { font: 11px monospace; color: #8ca493; }
+.film-terminal button strong { font: 12px monospace; }
+.film-terminal button small { color: #a5b9a6; }
+@media (max-width: 700px) { .film-terminal { top: 110px; right: 12px; width: 240px; padding: 10px; } .film-terminal button { padding: 8px; } }

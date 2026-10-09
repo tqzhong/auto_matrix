@@ -5,7 +5,7 @@ import { readFile, writeFile, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { io } from 'socket.io-client';
-import { FILM_SCENE_BY_ID, FILM_SETS, TRUCKS, smithFinalePose, truckApproachPose, truckRescuePose, type DeusPactEncounter, type FarewellEncounter, type SmithFinaleEncounter, type TruckEncounter, type ServerMessage, type WorldStateFull, type WorldStateDelta } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, TRUCKS, PRIMARY_DEMOLITION, filmPosition, mobilFamilyLine, smithFinalePose, truckApproachPose, truckRescuePose, type DeusPactEncounter, type FarewellEncounter, type SmithFinaleEncounter, type TruckEncounter, type ServerMessage, type WorldStateFull, type WorldStateDelta } from '@auto_matrix/shared';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const waitFor = async (ready: () => boolean, description: string, timeout = 5000) => {
@@ -22,7 +22,22 @@ async function server(t: TestContext, elapsed: number, scene = 'm1_mirror') {
       : scene === 'm3_surrender' ? 'smith-assimilation' : 'mirror-thread'], { cwd: root, encoding: 'utf8' }).trim();
   const file = path.join(directory, 'world.json');
   const checkpoint = JSON.parse(await readFile(file, 'utf8'));
-  if (scene === 'm2_trucks') {
+  if (scene === 'm3_trainman') {
+    Object.assign(checkpoint.sandbox.neoLife.journey, { step: 0, mobil: { phase: 'stopped', elapsed: 1, lastTick: 0, loops: 0, boarding: 0,
+      luggage: { phase: 'lifting', elapsed, approach: { x: -10.8, z: -10, yaw: -Math.PI / 2 } } } });
+    Object.assign(checkpoint.agents.neo, { position: filmPosition('film_mobil_station', -10.8, -10), health: 73 });
+    checkpoint.agents.rama_kandra.health = 91; checkpoint.agents.kamala.health = 77;
+  } else if (scene === 'm3_family') {
+    Object.assign(checkpoint.sandbox.neoLife.journey, { step: 1, mobil: { phase: 'waiting', elapsed: 0, lastTick: 0, loops: 0,
+      family: { phase: 'hearing', answered: ['identity'], selected: 'purpose', elapsed } } });
+    Object.assign(checkpoint.agents.neo, { position: filmPosition('film_mobil_station', -7, -8), health: 73 });
+    checkpoint.agents.rama_kandra.health = 91; checkpoint.agents.kamala.health = 77;
+  } else if (scene === 'm2_power') {
+    const journey = checkpoint.sandbox.neoLife.journey, site = PRIMARY_DEMOLITION.sites[0];
+    Object.assign(journey, { step: 1, primaryDemolition: { phase: 'mounting', selected: 0, elapsed, installed: [], remaining: PRIMARY_DEMOLITION.retreatSeconds, attempts: 0 } });
+    Object.assign(checkpoint.agents.niobe, { position: filmPosition(FILM_SCENE_BY_ID.m2_power.set, site.x, site.z), rotation: site.yaw, health: 93 });
+    checkpoint.agents.ghost.health = 47;
+  } else if (scene === 'm2_trucks') {
     const encounter: TruckEncounter = { phase: 'rescue', elapsed: 8, rescueElapsed: elapsed, lastTick: 0, attempt: 0,
       starts: { morpheus: { ...TRUCKS.rescueApproach, y: TRUCKS.roof.height, yaw: 0 },
         keymaker: { ...TRUCKS.keymaker, y: TRUCKS.roof.height, yaw: 0 }, neo: truckApproachPose(8) } };
@@ -95,6 +110,150 @@ async function server(t: TestContext, elapsed: number, scene = 'm1_mirror') {
   return { ...initial, restart: async () => { await initial.stop(); return launch(); } };
 }
 
+test('every fast Mobil lifting packet carries the suitcase clock and all five bodies before the slow world tick', { timeout: 30000 }, async t => {
+  const h = await server(t, .8, 'm3_trainman'), client = await h.connect();
+  client.socket.emit('message', { type: 'play_as', data: { agentId: 'neo' } });
+  await waitFor(() => client.messages.some(message => message.type === 'player_state' && (message.data as { agentId?: string }).agentId === 'neo'), 'Neo was not connected');
+  const marker = client.messages.length;
+  const packets = () => client.messages.slice(marker).filter(message => message.type === 'world_state_delta' && (message.data as WorldStateDelta).agents.neo);
+  await waitFor(() => packets().length >= 5, 'the fast lifting packets did not arrive');
+  const clocks: number[] = [];
+  for (const message of packets()) {
+    const delta = message.data as WorldStateDelta; assert.equal(message.tick, 0);
+    for (const id of ['neo', 'rama_kandra', 'kamala', 'sati', 'trainman']) assert.ok(delta.agents[id], `${id} must share the saved train packet`);
+    const luggage = delta.sandbox!.neoLife!.journey!.mobil!.luggage!;
+    assert.equal(luggage.phase, 'lifting'); clocks.push(luggage.elapsed);
+    assert.deepEqual(delta.agents.neo.position, filmPosition('film_mobil_station', -10.8, -10));
+  }
+  assert.ok(clocks.at(-1)! > clocks[0], 'lifting must advance between the 50ms packets');
+});
+
+test('a real mid-grasp Mobil restart keeps the suitcase and five paused poses without replaying the lift or healing the family', { timeout: 30000 }, async t => {
+  const h = await server(t, .8, 'm3_trainman'), client = await h.connect();
+  client.socket.emit('message', { type: 'play_as', data: { agentId: 'neo' } });
+  await waitFor(() => client.messages.some(message => message.type === 'player_state' && (message.data as { agentId?: string }).agentId === 'neo'), 'Neo was not connected');
+  client.socket.emit('message', { type: 'pause', data: {} }); await waitFor(() => client.state().simulation?.running === false, 'the grip did not pause');
+  client.socket.emit('message', { type: 'leave_character', data: {} });
+  await waitFor(() => client.messages.some(message => message.type === 'player_state' && (message.data as { agentId?: string | null }).agentId === null), 'Neo was not released');
+  const before = await (await fetch(`${h.base}/api/world`)).json() as WorldStateFull;
+  const restored = await h.restart(), cold = await (await fetch(`${restored.base}/api/world`)).json() as WorldStateFull;
+  assert.deepEqual(cold.sandbox, before.sandbox); assert.deepEqual(cold.agents, before.agents);
+  const next = await restored.connect(); next.socket.emit('message', { type: 'play_as', data: { agentId: 'neo' } });
+  await waitFor(() => next.messages.some(message => message.type === 'player_state' && (message.data as { agentId?: string }).agentId === 'neo'), 'Neo did not reconnect');
+  assert.deepEqual(next.state().sandbox!.neoLife!.journey!.mobil!.luggage, before.sandbox!.neoLife!.journey!.mobil!.luggage);
+  next.socket.emit('message', { type: 'resume', data: {} });
+  await waitFor(() => next.state().sandbox!.neoLife!.journey!.mobil!.luggage!.phase === 'carried', 'the saved lift did not finish');
+  next.socket.emit('message', { type: 'pause', data: {} }); await waitFor(() => next.state().simulation?.running === false, 'the completed lift did not pause');
+  assert.equal(next.state().sandbox!.neoLife!.journey!.step, 1);
+  assert.equal(next.state().agents.neo.health, 73); assert.equal(next.state().agents.rama_kandra.health, 91); assert.equal(next.state().agents.kamala.health, 77);
+});
+
+test('every fast Mobil family packet carries the reply clock and all four bodies before the next world tick', { timeout: 30000 }, async t => {
+  const h = await server(t, 3.5, 'm3_family'), client = await h.connect();
+  client.socket.emit('message', { type: 'play_as', data: { agentId: 'neo' } });
+  await waitFor(() => client.messages.some(message => message.type === 'player_state' && (message.data as { agentId?: string }).agentId === 'neo'), 'Neo was not connected');
+  const marker = client.messages.length;
+  const packets = () => client.messages.slice(marker).filter(message => message.type === 'world_state_delta' && (message.data as WorldStateDelta).agents.neo);
+  await waitFor(() => packets().length >= 5, 'the fast family packets did not arrive');
+  const clocks: number[] = [];
+  for (const message of packets()) {
+    const delta = message.data as WorldStateDelta;
+    assert.equal(message.tick, 0);
+    assert.ok(delta.sandbox?.neoLife?.journey?.mobil?.family, 'the reply clock cannot wait for the slow simulation tick');
+    const family = delta.sandbox.neoLife.journey.mobil.family, line = mobilFamilyLine(family)!;
+    for (const id of ['neo', 'rama_kandra', 'kamala', 'sati']) {
+      assert.ok(delta.agents[id], `${id} must share the same saved conversation packet`);
+      const gesture = delta.agents[id].currentAction!.parameters.mobilFamily;
+      assert.equal(gesture.speaker, line.speaker); assert.equal(gesture.elapsed, line.elapsed);
+    }
+    clocks.push(family.elapsed);
+  }
+  assert.ok(clocks.at(-1)! > clocks[0]);
+});
+
+test('a real Mobil family restart keeps the paused answer and all four poses before possession without awarding the topic twice', { timeout: 30000 }, async t => {
+  const h = await server(t, 3.5, 'm3_family'), client = await h.connect();
+  client.socket.emit('message', { type: 'play_as', data: { agentId: 'neo' } });
+  await waitFor(() => client.messages.some(message => message.type === 'player_state' && (message.data as { agentId?: string }).agentId === 'neo'), 'Neo was not connected');
+  client.socket.emit('message', { type: 'pause', data: {} });
+  await waitFor(() => client.state().simulation?.running === false, 'the reply did not pause');
+  client.socket.emit('message', { type: 'leave_character', data: {} });
+  await waitFor(() => client.messages.some(message => message.type === 'player_state' && (message.data as { agentId?: string | null }).agentId === null), 'Neo was not released');
+  const before = await (await fetch(`${h.base}/api/world`)).json() as WorldStateFull;
+  const saved = before.sandbox!.neoLife!.journey!.mobil!.family!;
+  assert.deepEqual(saved.answered, ['identity']); assert.equal(saved.selected, 'purpose');
+  for (const id of ['neo', 'rama_kandra', 'kamala', 'sati']) assert.ok(before.agents[id].currentAction?.parameters.mobilFamily, `${id} must retain its paused conversation pose after release`);
+  const restored = await h.restart(), cold = await (await fetch(`${restored.base}/api/world`)).json() as WorldStateFull;
+  assert.deepEqual(cold.sandbox, before.sandbox); assert.deepEqual(cold.agents, before.agents, 'a cold observer must see the same speaking and listening poses');
+  const next = await restored.connect();
+  next.socket.emit('message', { type: 'play_as', data: { agentId: 'neo' } });
+  await waitFor(() => next.messages.some(message => message.type === 'player_state' && (message.data as { agentId?: string }).agentId === 'neo'), 'Neo did not reconnect');
+  assert.deepEqual(next.state().sandbox!.neoLife!.journey!.mobil!.family, saved);
+  next.socket.emit('message', { type: 'resume', data: {} });
+  await waitFor(() => next.state().sandbox!.neoLife!.journey!.mobil!.family!.elapsed > saved.elapsed, 'the saved reply did not resume');
+  next.socket.emit('message', { type: 'pause', data: {} });
+  await waitFor(() => next.state().simulation?.running === false, 'the resumed reply did not pause');
+  assert.deepEqual(next.state().sandbox!.neoLife!.journey!.mobil!.family!.answered, ['identity']);
+  assert.equal(next.state().agents.rama_kandra.health, 91); assert.equal(next.state().agents.kamala.health, 77);
+});
+
+test('every fast primary-station packet carries the charge clock and both bodies before the next world tick', { timeout: 30000 }, async t => {
+  const h = await server(t, .2, 'm2_power'), client = await h.connect();
+  client.socket.emit('message', { type: 'play_as', data: { agentId: 'niobe' } });
+  await waitFor(() => client.messages.some(message => message.type === 'player_state' && (message.data as { agentId?: string }).agentId === 'niobe'), 'Niobe was not connected');
+  const marker = client.messages.length;
+  let sequence = 0;
+  const held = setInterval(() => client.socket.emit('message', { type: 'player_input', data: { x: 0, z: 0, yaw: PRIMARY_DEMOLITION.sites[0].yaw,
+    focus: true, sequence: ++sequence, location: FILM_SCENE_BY_ID.m2_power.set } }), 50);
+  t.after(() => clearInterval(held));
+  const packets = () => client.messages.slice(marker).filter(message => message.type === 'world_state_delta' && (message.data as WorldStateDelta).agents.niobe);
+  await waitFor(() => packets().length >= 5, 'the fast installation packets did not arrive');
+  const clocks: number[] = [];
+  for (const message of packets()) {
+    const delta = message.data as WorldStateDelta;
+    assert.equal(message.tick, 0, 'charge and body clocks must arrive before the deliberately slow world tick');
+    assert.ok(delta.sandbox?.neoLife?.journey?.primaryDemolition, 'the physical charge cannot wait for a slow world snapshot');
+    assert.ok(delta.agents.ghost, 'the companion must share the same fast packet');
+    const state = delta.sandbox.neoLife.journey.primaryDemolition;
+    assert.deepEqual(delta.agents.niobe.currentAction!.parameters.primaryDemolition, state);
+    clocks.push(state.elapsed);
+  }
+  assert.ok(clocks.at(-1)! > clocks[0], 'held input must advance the shared installation clock');
+});
+
+test('a real primary-station restart restores the paused mounting pose before possession and requires renewed held input', { timeout: 30000 }, async t => {
+  const h = await server(t, .9, 'm2_power'), client = await h.connect();
+  client.socket.emit('message', { type: 'play_as', data: { agentId: 'niobe' } });
+  await waitFor(() => client.messages.some(message => message.type === 'player_state' && (message.data as { agentId?: string }).agentId === 'niobe'), 'Niobe was not connected');
+  client.socket.emit('message', { type: 'pause', data: {} });
+  await waitFor(() => client.state().simulation?.running === false, 'mounting did not pause');
+  client.socket.emit('message', { type: 'leave_character', data: {} });
+  await waitFor(() => client.messages.some(message => message.type === 'player_state' && (message.data as { agentId?: string | null }).agentId === null), 'Niobe was not released');
+  const before = await (await fetch(`${h.base}/api/world`)).json() as WorldStateFull;
+  assert.equal(before.sandbox!.neoLife!.journey!.primaryDemolition!.elapsed, .9);
+  assert.equal(before.agents.ghost.health, 47);
+  assert.ok(before.agents.niobe.currentAction?.parameters.primaryDemolition, 'the paused observer must see her mounting pose');
+  const restored = await h.restart(), cold = await (await fetch(`${restored.base}/api/world`)).json() as WorldStateFull;
+  assert.deepEqual(cold.sandbox!.neoLife, before.sandbox!.neoLife);
+  assert.deepEqual(cold.agents, before.agents, 'the stopped body pose must survive process restart before any client possesses Niobe');
+  assert.deepEqual(cold.simulation, before.simulation);
+  const next = await restored.connect();
+  next.socket.emit('message', { type: 'play_as', data: { agentId: 'niobe' } });
+  await waitFor(() => next.messages.some(message => message.type === 'player_state' && (message.data as { agentId?: string }).agentId === 'niobe'), 'Niobe did not reconnect');
+  next.socket.emit('message', { type: 'resume', data: {} });
+  const marker = next.messages.length;
+  await waitFor(() => next.messages.length > marker + 8, 'mounting snapshots did not arrive');
+  assert.equal(next.state().sandbox!.neoLife!.journey!.primaryDemolition!.elapsed, .9, 'reloading or resuming is not held installation input');
+  let sequence = 0;
+  const held = setInterval(() => next.socket.emit('message', { type: 'player_input', data: { x: 0, z: 0, yaw: PRIMARY_DEMOLITION.sites[0].yaw,
+    focus: true, sequence: ++sequence, location: FILM_SCENE_BY_ID.m2_power.set } }), 50);
+  t.after(() => clearInterval(held));
+  await waitFor(() => next.state().sandbox!.neoLife!.journey!.primaryDemolition!.installed.includes('west'), 'renewed held input did not complete the saved charge');
+  clearInterval(held);
+  assert.deepEqual(next.state().sandbox!.neoLife!.journey!.primaryDemolition!.installed, ['west']);
+  assert.equal(next.state().sandbox!.neoLife!.journey!.step, 1);
+});
+
 test('a paused performance publishes its exact story clock together with the stopped world and restores it on reconnect', { timeout: 30000 }, async t => {
   const h = await server(t, 3.04), client = await h.connect();
   client.socket.emit('message', { type: 'play_as', data: { agentId: 'neo' } });
@@ -164,7 +323,10 @@ test('a real machine-core restart preserves the paused connection before possess
   assert.deepEqual(next.state().sandbox!.neoLife, before.sandbox!.neoLife);
   assert.deepEqual(body(next.state(), 'neo'), body(before, 'neo'));
   next.socket.emit('message', { type: 'resume', data: {} });
-  await waitFor(() => (next.state().agents.neo.currentAction?.parameters.deusPact as DeusPactEncounter | undefined)?.phase === 'consent', 'the probe did not resume to the consent boundary');
+  await waitFor(() => (next.state().agents.neo.currentAction?.parameters.deusPact as DeusPactEncounter | undefined)?.phase === 'assurance', 'body cabling did not resume to the failure-risk exchange');
+  assert.equal(next.state().sandbox!.neoLife!.journey!.deus!.consent, 0);
+  assert.equal(next.state().sandbox!.neoLife!.choices.machine_connection, undefined, 'the failure question is not consent');
+  await waitFor(() => (next.state().agents.neo.currentAction?.parameters.deusPact as DeusPactEncounter | undefined)?.phase === 'consent', 'the probe did not resume to the consent boundary', 10000);
   const consentMarker = next.messages.length;
   await waitFor(() => next.messages.length > consentMarker + 8, 'waiting probe snapshots did not arrive');
   assert.equal((next.state().agents.neo.currentAction!.parameters.deusPact as DeusPactEncounter).phase, 'consent');
@@ -183,7 +345,11 @@ test('a real machine-core restart preserves the paused connection before possess
   assert.equal(settled.sandbox!.neoLife!.journal.filter(entry => entry.title === FILM_SCENE_BY_ID.m3_deus.title).length, 1);
   const settledMarker = next.messages.length;
   await waitFor(() => next.messages.length > settledMarker + 6, 'settled connection snapshots did not arrive');
-  assert.deepEqual(next.state().sandbox!.neoLife, settled.sandbox!.neoLife, 'connected cannot settle or award the scene again');
+  // Normal world ticks may change energy and time while Neo remains connected.
+  // Check the completed scene and its rewards instead of freezing ordinary life.
+  assert.deepEqual(next.state().sandbox!.neoLife!.choices, settled.sandbox!.neoLife!.choices, 'connected cannot change the pact again');
+  assert.deepEqual(next.state().sandbox!.neoLife!.journey!.completed, settled.sandbox!.neoLife!.journey!.completed);
+  assert.equal(next.state().sandbox!.neoLife!.journal.filter(entry => entry.title === FILM_SCENE_BY_ID.m3_deus.title).length, 1);
   assert.equal(next.state().sandbox!.profiles.neo.xp, settled.sandbox!.profiles.neo.xp);
   next.socket.emit('message', { type: 'sandbox_action', data: { kind: 'life', target: 'film:next' } });
   await waitFor(() => next.state().sandbox!.neoLife!.journey!.scene === 'm3_rain', 'the restored connection did not allow entering the final duel');
@@ -348,7 +514,7 @@ test('a real server restart restores the paused airborne crew before possession 
   for (const role of ['morpheus', 'keymaker', 'neo']) assert.equal(complete.agents[role].status, 'alive');
 });
 
-test('a real farewell restart preserves both paused bodies and Neo life, then settles Trinity once before the machine pact', { timeout: 30000 }, async t => {
+test('a real farewell restart preserves both paused bodies and Neo life, then settles Trinity once before the temple breach', { timeout: 30000 }, async t => {
   const h = await server(t, 3.8, 'm3_farewell'), client = await h.connect();
   client.socket.emit('message', { type: 'play_as', data: { agentId: 'neo' } });
   await waitFor(() => ((client.state().agents.neo.currentAction?.parameters.farewell as FarewellEncounter | undefined)?.elapsed ?? 0) > 4.1, 'Neo did not reach the middle of the goodbye');
@@ -409,7 +575,8 @@ test('a real farewell restart preserves both paused bodies and Neo life, then se
   assert.deepEqual(next.state().sandbox!.neoLife, settled.sandbox!.neoLife);
   assert.equal(next.state().sandbox!.profiles.neo.xp, settled.sandbox!.profiles.neo.xp);
   next.socket.emit('message', { type: 'sandbox_action', data: { kind: 'life', target: 'film:next' } });
-  await waitFor(() => next.state().sandbox!.neoLife!.journey!.scene === 'm3_deus', 'Neo did not proceed to the machine pact');
+  await waitFor(() => next.state().sandbox!.neoLife!.journey!.scene === 'm3_temple_breach', 'the farewell did not proceed to the temple breach');
+  assert.equal(next.state().sandbox!.neoLife!.journey!.actor, 'lock');
   assert.equal(next.state().agents.trinity.status, 'dead'); assert.equal(next.state().agents.trinity.health, 0);
   next.socket.emit('message', { type: 'play_as', data: { agentId: 'trinity' } });
   await waitFor(() => next.messages.some(message => message.type === 'player_state' && Boolean((message.data as { error?: string }).error)), 'the deceased role was not rejected');

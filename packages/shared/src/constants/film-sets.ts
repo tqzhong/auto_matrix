@@ -1,4 +1,12 @@
 import { METACORTEX, METACORTEX_SHAFT, metacortexPosition } from './metacortex.js';
+import { PRIMARY_DEMOLITION, primaryFloor } from './primary-demolition.js';
+import { SOURCE_PORTAL } from './source-portal.js';
+import { ARCHITECT_ROOM, architectRoomContains } from './architect-room.js';
+import { HEL_GARAGE } from './hel-garage.js';
+import { HEL_ELEVATOR } from './hel-elevator.js';
+import { HEL_COAT_COUNTERS } from './hel-room.js';
+import { helTerraceFloor } from './hel-standoff.js';
+import { TRINITY_TERMINAL } from './trinity-terminal.js';
 import { RELOADED_WALLS, RELOADED_TABLE, DREAM_CABINETS } from './reloaded-opening.js';
 import { ZION_OBSTACLES } from './zion-homecoming.js';
 import type { Vector3 } from '../types/agent.js';
@@ -21,7 +29,13 @@ import { hammerHeight } from './hammer-flight.js';
 import { ORACLE_ENTRANCE } from './oracle.js';
 import { BASEMENT, basementBlocked, TV_EXIT_OBSTACLES } from './basement-escape.js';
 import { SMITH_FINALE, smithCraterFloor } from './smith-finale.js';
-import { SUNRISE_GARDEN } from './sunrise-garden.js';
+import { SUNRISE_GARDEN, gardenTreeObstacle, gardenGroundHeight } from './sunrise-garden.js';
+import { DIGGERS } from './diggers.js';
+import { DOCK_BRIEFING } from './dock-briefing.js';
+import { DOCK_EVACUATION, SHAFT_SEAL } from './dock-evacuation.js';
+import { SOURCE_BRIEFING } from './source-briefing.js';
+import { MOBIL_STATION } from './mobil-station.js';
+import { trainmanBlocked, trainmanFloor } from './trainman-chase.js';
 
 export type FilmArchitecture = 'hotel' | 'apartment' | 'club' | 'office' | 'interrogation' | 'bridge' | 'car' | 'lafayette' | 'pods' | 'ship' | 'construct' | 'desert' | 'dojo' | 'rooftop' | 'plaza' | 'restaurant' | 'oracle' | 'tenement' | 'lobby' | 'subway' | 'street' | 'zion' | 'temple' | 'engineering' | 'teahouse' | 'backdoors' | 'courtyard' | 'chateau' | 'mountain' | 'workshop' | 'garage' | 'freeway' | 'power' | 'architect' | 'mobil' | 'hel' | 'machine' | 'rain' | 'garden';
 export interface FilmSet {
@@ -75,9 +89,9 @@ const definitions: Omit<FilmSet, 'id' | 'center'>[] = [
   { name: '梅罗文加城堡 · 大厅', film: [2], architecture: 'chateau', world: 'matrix', width: 70, depth: 84, height: 25, light: 'day', detail: '大理石双楼梯、雕花栏杆、壁画与古兵器' },
   { name: '城堡 · 图书室与钥匙匠工坊', film: [2], architecture: 'workshop', world: 'matrix', width: 44, depth: 68, height: 17, light: 'warm', detail: '书墙、暗门、密集钥匙架与工作台' },
   { name: '城堡 · 地下车库', film: [2], architecture: 'garage', world: 'matrix', width: 60, depth: 90, height: 15, light: 'cold', detail: '弧形出口、混凝土柱网、轿车与摩托车' },
-  { name: '101 高速公路', film: [2], architecture: 'freeway', world: 'matrix', width: 64, depth: 1600, height: 24, light: 'day', detail: '多车道、中间护栏、匝道、摩托车与重型卡车' },
+  { name: '101 高速公路', film: [2], architecture: 'freeway', world: 'matrix', width: 64, depth: 2400, height: 24, light: 'day', detail: '多车道、中间护栏、匝道、摩托车与重型卡车' },
   { name: '发电厂 · 电网行动', film: [2], architecture: 'power', world: 'matrix', width: 64, depth: 90, height: 26, light: 'night', detail: '红砖厂房、变压器、绝缘子与断路器' },
-  { name: '备用电站 · Trinity 的路线', film: [2], architecture: 'power', world: 'matrix', width: 48, depth: 74, height: 20, light: 'night', detail: '配电柜、维护通道、玻璃机房与紧急出口' },
+  { name: '电网改线中心 · Trinity 的终端', film: [2], architecture: 'power', world: 'matrix', width: 28, depth: 42, height: 8, light: 'cold', detail: '灰绿机房、荧光灯、CRT 电脑、键盘与应急网络' },
   { name: '建筑师 · 监视器房间', film: [2], architecture: 'architect', world: 'matrix', width: 54, depth: 62, height: 18, light: 'white', detail: '环形监视器墙、白色座椅、两扇门' },
   { name: 'Trinity 坠落 · 城市高空', film: [2], architecture: 'rooftop', world: 'matrix', width: 58, depth: 86, height: 30, light: 'night', detail: '玻璃摩天楼、破窗、下方街道与接应屋顶' },
   { name: '地下隧道 · 舰船撤离', film: [1, 2, 3], architecture: 'engineering', world: 'real', width: 56, depth: 146, height: 34, light: 'cold', detail: '弧形岩壁、废弃管网、哨兵和悬浮引擎' },
@@ -94,18 +108,26 @@ const definitions: Omit<FilmSet, 'id' | 'center'>[] = [
   { name: '工业阁楼 · Bane 的出口', film: [2], architecture: 'tenement', world: 'matrix', width: 52, depth: 78, height: 24, light: 'night', detail: '破碎天窗、旧式出口电话、钢梁与掉落的玻璃' },
   { name: '梅罗文加城堡后门 · 雪山', film: [2], architecture: 'mountain', world: 'matrix', width: 280, depth: 760, height: 180, light: 'day', detail: '白日雪山、石砌城堡后门、远处山脊与向南的飞行航线' },
   { name: '101 高速 · 十八轮卡车车顶', film: [2], architecture: 'freeway', world: 'matrix', width: 60, depth: 180, height: 35, light: 'day', detail: '疾驰的十八轮卡车、车顶决斗、Niobe 接应和迎面相撞的货车' },
-  { name: '工业施工层 · 源头之门', film: [2], architecture: 'backdoors', world: 'matrix', width: 28, depth: 112, height: 12, light: 'cold', detail: '裸露混凝土、临时管线、钥匙匠的门户与通往源头的白门' },
-  { name: 'Club Hel · 地下车库入口', film: [3], architecture: 'garage', world: 'matrix', width: 56, depth: 72, height: 14, light: 'night', detail: '成排轿车、混凝土柱、入口守卫与通往俱乐部的钢门' },
+  { name: '白色门廊 · 源头与施工层', film: [2], architecture: 'backdoors', world: 'matrix', width: 28, depth: 124, height: 12, light: 'cold', detail: '白墙重复房门、长条荧光灯、门后的裸露龙骨与通往源头的白门' },
+  { name: 'Club Hel · 地下车库入口', film: [3], architecture: 'garage', world: 'matrix', width: 56, depth: 80, height: 8.7, light: 'night', detail: '低矮管线、成排黑色轿车、混凝土柱与红色拱门后的铁笼电梯' },
   { name: 'Hammer · 返回锡安的机械管线', film: [3], architecture: 'engineering', world: 'real', width: 68, depth: 390, height: 36, light: 'cold', detail: '弯曲机械管道、横梁、悬浮飞船与追击的哨兵' },
   { name: 'Franklin 与 Erie · 街角电视维修店', film: [1], architecture: 'workshop', world: 'matrix', width: 36, depth: 112, height: 16, light: 'day', detail: '街边出口井、白昼车道、玻璃店面、旧电视陈列、维修柜台与出口硬线' },
+  { name: '锡安 · 指挥层人员闸口', film: [3], architecture: 'engineering', world: 'real', width: 22, depth: 38, height: 9, light: 'cold', detail: '铁笼升降梯、密集裸露管线、携带式工灯与失去自动防御的指挥层' },
+  { name: '锡安 · 船坞撤离升降井', film: [3], architecture: 'engineering', world: 'real', width: 48, depth: 82, height: 24, light: 'cold', detail: '损坏的船坞、补给架、最后一班笼式升降梯与第二波哨兵' },
+  { name: '锡安 · 封井指挥所', film: [3], architecture: 'engineering', world: 'real', width: 36, depth: 38, height: 10, light: 'cold', detail: '人员清空信号、机械起爆杆、指挥台与井道连续爆破' },
+  { name: '废弃公寓 · 三船行动会议', film: [2], architecture: 'apartment', world: 'matrix', width: 32, depth: 32, height: 7.5, light: 'warm', detail: '破损灰墙、旧木地板、红褐皮椅、三条纸质路线与窗外街灯' },
+  { name: 'Stellma · Trainman 的地铁线路', film: [3], architecture: 'subway', world: 'matrix', width: 96, depth: 150, height: 16, light: 'cold', detail: '银色车厢、双月台、楼梯站厅、旧式闸机与不停站列车' },
 ];
-const ids = ['heart_hotel', 'hotel_roofs', 'wells_phone', 'anderson_flat', 'white_rabbit_club', 'metacortex_floor', 'office_ledge', 'agent_interrogation', 'adams_bridge', 'extraction_car', 'lafayette', 'power_plant_pods', 'neb_deck', 'white_construct', 'real_desert', 'kungfu_dojo', 'jump_roofs', 'red_dress_plaza', 'cypher_restaurant', 'oracle_home', 'ambush_house', 'government_lobby', 'government_office', 'government_roof', 'subway_platform', 'escape_streets', 'final_phone', 'captains_meeting', 'zion_hangar', 'zion_council', 'zion_residences', 'zion_temple', 'zion_bedroom', 'zion_engineering', 'backdoor_hall', 'seraph_teahouse', 'oracle_courtyard', 'le_vrai', 'chateau_hall', 'keymaker_workshop', 'chateau_garage', 'freeway_101', 'power_station', 'backup_station', 'architect_room', 'trinity_roof', 'service_tunnels', 'hammer_deck', 'mobil_station', 'club_hel', 'logos_deck', 'machine_defense', 'above_clouds', 'logos_wreck', 'machine_core', 'smith_avenue', 'sunrise_garden', 'industrial_loft', 'mountain_range', 'freeway_trucks', 'source_corridor', 'hel_garage', 'hammer_route', 'tv_repair'];
+const ids = ['heart_hotel', 'hotel_roofs', 'wells_phone', 'anderson_flat', 'white_rabbit_club', 'metacortex_floor', 'office_ledge', 'agent_interrogation', 'adams_bridge', 'extraction_car', 'lafayette', 'power_plant_pods', 'neb_deck', 'white_construct', 'real_desert', 'kungfu_dojo', 'jump_roofs', 'red_dress_plaza', 'cypher_restaurant', 'oracle_home', 'ambush_house', 'government_lobby', 'government_office', 'government_roof', 'subway_platform', 'escape_streets', 'final_phone', 'captains_meeting', 'zion_hangar', 'zion_council', 'zion_residences', 'zion_temple', 'zion_bedroom', 'zion_engineering', 'backdoor_hall', 'seraph_teahouse', 'oracle_courtyard', 'le_vrai', 'chateau_hall', 'keymaker_workshop', 'chateau_garage', 'freeway_101', 'power_station', 'backup_station', 'architect_room', 'trinity_roof', 'service_tunnels', 'hammer_deck', 'mobil_station', 'club_hel', 'logos_deck', 'machine_defense', 'above_clouds', 'logos_wreck', 'machine_core', 'smith_avenue', 'sunrise_garden', 'industrial_loft', 'mountain_range', 'freeway_trucks', 'source_corridor', 'hel_garage', 'hammer_route', 'tv_repair', 'zion_personnel', 'zion_dock_exit', 'zion_command_bunker', 'operation_room'];
+
+ids.push('trainman_subway');
 
 export const FILM_SETS: Record<string, FilmSet> = Object.fromEntries(definitions.map((set, i) => {
   const id = `film_${ids[i]}`;
   return [id, { ...set, id, center: { x: id === 'film_freeway_101' ? 8192 : id === 'film_mountain_range' ? 12000 : 4096 + i % 8 * 320, y: set.world === 'matrix' ? 1 : -100, z: id === 'film_mountain_range' ? 12000 : 4096 + Math.floor(i / 8) * 320 } }];
 }));
 // Daily life and both calls take place in the same city apartment.
+Object.assign(FILM_SETS.film_trinity_roof, { width: 145, depth: 140 });
 FILM_SETS.film_anderson_flat.center = { ...APARTMENT_ROOM.center };
 // The daily lobby, office and exterior occupy the same city tower.
 FILM_SETS.film_metacortex_floor.center = metacortexPosition(0, 0, 1);
@@ -114,8 +136,11 @@ FILM_SETS.film_office_ledge.center = { ...FILM_SETS.film_metacortex_floor.center
 Object.assign(FILM_SETS.film_extraction_car, { center: { ...FILM_SETS.film_adams_bridge.center }, width: 48, depth: 76 });
 FILM_SETS.film_lafayette.center.y += LAFAYETTE.upper;
 FILM_SETS.film_hammer_route.center = { x: 15000, y: -100, z: 15000 };
+Object.assign(FILM_SETS.film_mobil_station, { width: MOBIL_STATION.width, height: MOBIL_STATION.height });
 
 export function filmSetAt(position: Vector3, matrix: boolean): FilmSet | undefined {
+  const dock = FILM_SETS.film_zion_hangar;
+  if (!matrix && position.x - dock.center.x > DIGGERS.bay.left - 28 && position.x - dock.center.x < DIGGERS.bay.right + 28 && Math.abs(position.z - dock.center.z) < dock.depth / 2 + 28) return dock;
   const home = FILM_SETS.film_anderson_flat;
   if (matrix && position.y >= 0 && position.y < 9 && Math.abs(position.x - home.center.x) < home.width / 2 + 1.2 && Math.abs(position.z - home.center.z) < home.depth / 2 + 1.2) return home;
   const office = FILM_SETS.film_metacortex_floor; const ledge = FILM_SETS.film_office_ledge;
@@ -129,7 +154,9 @@ export function filmSetAt(position: Vector3, matrix: boolean): FilmSet | undefin
 }
 export function filmPosition(id: string, x = 0, z = 0): Vector3 {
   const center = FILM_SETS[id].center;
-  return { x: center.x + x, y: id === 'film_hammer_route' ? center.y + hammerHeight(z) - 1.35 : center.y, z: center.z + z };
+  return { x: center.x + x, y: id === 'film_hammer_route' ? center.y + hammerHeight(z) - 1.35
+    : id === 'film_sunrise_garden' ? center.y + gardenGroundHeight(x, z)
+    : id === 'film_club_hel' ? center.y + helTerraceFloor(x, z) : center.y, z: center.z + z };
 }
 
 export interface FilmObstacle { x: number; z: number; width: number; depth: number; height: number }
@@ -158,17 +185,27 @@ export const ORACLE_ENTRANCE_WALLS: FilmObstacle[] = [
   { x: 0, z: 50, width: 8, depth: .4, height: 7.8 },
 ];
 export const ORACLE_OPEN_DOOR: FilmObstacle = { x: ORACLE_ENTRANCE.door.x, z: ORACLE_ENTRANCE.door.z - ORACLE_ENTRANCE.door.width / 2, width: ORACLE_ENTRANCE.door.depth, depth: ORACLE_ENTRANCE.door.width, height: ORACLE_ENTRANCE.door.height };
-export function filmObstacles(set: FilmSet, movingMeetingCar = false, movingOracleDoor = false): FilmObstacle[] {
+export function filmObstacles(set: FilmSet, movingMeetingCar = false, movingOracleDoor = false, oracleLastKitchen = false): FilmObstacle[] {
+  if (set.id === 'film_architect_room') return [{ x: ARCHITECT_ROOM.chair.x, z: ARCHITECT_ROOM.chair.z, width: 3, depth: 2.4, height: ARCHITECT_ROOM.chair.back }];
+  if (set.id === 'film_source_corridor') return [...SOURCE_PORTAL.walls];
+  if (set.id === 'film_backup_station') return [TRINITY_TERMINAL.desk, ...TRINITY_TERMINAL.desks, ...TRINITY_TERMINAL.walls];
+  if (set.id === 'film_operation_room') return [...SOURCE_BRIEFING.walls, SOURCE_BRIEFING.table,
+    { x: 0, z: -9.4, width: 3.4, depth: 3.8, height: 4.3 }];
   if (set.id === 'film_sunrise_garden') return [
     SUNRISE_GARDEN.bench,
     { x: 0, z: SUNRISE_GARDEN.shore - 20, width: 90, depth: 40, height: 100 },
-    ...SUNRISE_GARDEN.trees.map(([x, z, scale]) => ({ x, z, width: scale * 1.25, depth: scale * 1.25, height: 12 })),
+    ...SUNRISE_GARDEN.trees.map((_, index) => gardenTreeObstacle(index)),
   ];
   if (set.id === 'film_tv_repair') return TV_EXIT_OBSTACLES;
-  if (set.id === 'film_mobil_station') return [];
-  if (set.id === 'film_hel_garage') return [-18, 18].flatMap(x => [-17, 9, 24].map(z => ({ x, z, width: 8.5, depth: 13, height: 5 })));
+  if (set.id === 'film_zion_personnel') return [...DOCK_BRIEFING.walls];
+  if (set.id === 'film_zion_dock_exit') return [...DOCK_EVACUATION.walls];
+  if (set.id === 'film_zion_command_bunker') return [...SHAFT_SEAL.obstacles];
+  if (set.id === 'film_mobil_station') return [{ ...MOBIL_STATION.bench }];
+  if (set.id === 'film_hel_garage') return [...HEL_GARAGE.cars, ...HEL_GARAGE.columns, ...HEL_GARAGE.walls];
   if (set.id === 'film_club_hel') return [
-    ...[-14, 14].map(x => ({ x, z: 11, width: 8, depth: 4, height: 3.3 })),
+    ...[-4.3, 4.3].map(x => ({ x, z: 31, width: .2, depth: 13.2, height: 23 })),
+    { x: 0, z: 37.65, width: 8.8, depth: .2, height: 23 },
+    ...HEL_COAT_COUNTERS,
     { x: -8, z: 4.5, width: 7, depth: .4, height: 7 },
     ...[-9.5, 9.5].map(x => ({ x, z: 1, width: 13, depth: .5, height: 10.2 })),
     { x: 0, z: -38, width: 8.6, depth: 3.6, height: 3.5 },
@@ -208,6 +245,7 @@ export function filmObstacles(set: FilmSet, movingMeetingCar = false, movingOrac
     { x: -16.25, z: -18, width: 11.5, depth: .6, height: 13 },
     { x: 8.25, z: -18, width: 27.5, depth: .6, height: 13 },
   ];
+  if (set.id === 'film_power_station') return [PRIMARY_DEMOLITION.terminal, ...PRIMARY_DEMOLITION.banks, ...PRIMARY_DEMOLITION.walls, ...PRIMARY_DEMOLITION.rails];
   if (set.architecture === 'power') return [
     { x: 0, z: set.id === 'film_power_station' ? -32.3 : -26.3, width: 8, depth: 3, height: 6 },
     ...[-set.width * .3, set.width * .3].flatMap(x => {
@@ -246,7 +284,7 @@ export function filmObstacles(set: FilmSet, movingMeetingCar = false, movingOrac
     width: 8 + i % 5 * 2, depth: 7 + i % 3 * 2, height: 17 + (i * 13) % 34,
   }));
   if (set.architecture === 'lobby') return LOBBY_COLUMNS;
-  if (set.architecture === 'oracle') return [...ORACLE_FURNITURE, ...Object.values(ORACLE_WAITING_FURNITURE), ...ORACLE_ENTRANCE_WALLS, ...(movingOracleDoor ? [] : [ORACLE_OPEN_DOOR]), ...[-1, 1].flatMap(side => [
+  if (set.architecture === 'oracle') return [...(oracleLastKitchen ? ORACLE_FURNITURE.filter(item => item !== ORACLE_FURNITURE[2] && !ORACLE_KITCHEN_CHAIRS.includes(item)) : ORACLE_FURNITURE), ...Object.values(ORACLE_WAITING_FURNITURE), ...ORACLE_ENTRANCE_WALLS, ...(movingOracleDoor ? [] : [ORACLE_OPEN_DOOR]), ...[-1, 1].flatMap(side => [
     { x: side * (set.width / 4 + 2.5), z: -8, width: set.width / 2 - 5, depth: .4, height: 7.8 },
     { x: side * 12, z: -19, width: .4, depth: 21.6, height: 7.8 },
     { x: side * 14, z: 11, width: .4, depth: 38, height: 7.8 },
@@ -261,8 +299,10 @@ export function filmObstacles(set: FilmSet, movingMeetingCar = false, movingOrac
   return columns;
 }
 
-export function filmBlocked(position: Vector3, set: FilmSet, radius: number, movingMeetingCar = false, movingOracleDoor = false, craterDepth = 0): boolean {
+export function filmBlocked(position: Vector3, set: FilmSet, radius: number, movingMeetingCar = false, movingOracleDoor = false, craterDepth = 0, oracleLastKitchen = false): boolean {
   const x = position.x - set.center.x; const z = position.z - set.center.z;
+  if (set.id === 'film_trainman_subway') return trainmanBlocked(x, position.y - set.center.y, z, radius);
+  if (set.id === 'film_architect_room' && !architectRoomContains(x, z, radius)) return true;
   if (set.id === 'film_ambush_house' && position.y - set.center.y < -70) return basementBlocked(x, position.y - set.center.y, z, radius);
   if (set.id === 'film_ambush_house' && Math.abs(position.y - set.center.y - WETWALL_SHAFT.sixth) < .8 && z >= WETWALL_SHAFT.front && z <= -14.8)
     return ambushStairsBlocked(x, z, position.y - set.center.y, radius);
@@ -287,10 +327,15 @@ export function filmBlocked(position: Vector3, set: FilmSet, radius: number, mov
     if (fromImpact > SMITH_FINALE.crater.floorRadius - radius && fromImpact < SMITH_FINALE.crater.radius + radius) return true;
   }
   if (position.y < filmGroundHeight(position, set, craterDepth) - .8) return true;
-  return filmObstacles(set, movingMeetingCar, movingOracleDoor).some(o => Math.abs(x - o.x) < o.width / 2 + radius && Math.abs(z - o.z) < o.depth / 2 + radius && position.y < set.center.y + o.height);
+  return filmObstacles(set, movingMeetingCar, movingOracleDoor, oracleLastKitchen).some(o => Math.abs(x - o.x) < o.width / 2 + radius && Math.abs(z - o.z) < o.depth / 2 + radius && position.y < set.center.y + o.height);
 }
 
 export function filmGroundHeight(position: Vector3, set: FilmSet, craterDepth = 0): number {
+  if (set.id === 'film_club_hel' && position.z - set.center.z > HEL_ELEVATOR.doorZ && position.y - set.center.y > HEL_ELEVATOR.upper - 2)
+    return set.center.y + HEL_ELEVATOR.upper;
+  if (set.id === 'film_trainman_subway') return set.center.y + trainmanFloor(position.x - set.center.x, position.z - set.center.z, position.y - set.center.y);
+  if (set.id === 'film_power_station') return set.center.y + primaryFloor(position.x - set.center.x, position.z - set.center.z);
+  if (set.id === 'film_sunrise_garden') return set.center.y + gardenGroundHeight(position.x - set.center.x, position.z - set.center.z);
   if (set.id === 'film_smith_avenue' && craterDepth > 0) {
     const floor = smithCraterFloor(position.x - set.center.x, position.z - set.center.z);
     return set.center.y + (floor < 0 ? (floor + .025) * craterDepth / SMITH_FINALE.crater.depth : 0);
@@ -302,8 +347,8 @@ export function filmGroundHeight(position: Vector3, set: FilmSet, craterDepth = 
     const z = position.z - set.center.z;
     if (z < OPENING_ESCAPE.roofGapNear && z > OPENING_ESCAPE.roofGapFar) return set.center.y - OPENING_ESCAPE.roofDrop;
   }
-  if (set.id === 'film_mobil_station' && position.x - set.center.x > 8) return set.center.y - 1.35;
-  if (set.id === 'film_club_hel' && position.z - set.center.z < -28 && Math.abs(position.x - set.center.x) < 12) return set.center.y + .6;
+  if (set.id === 'film_mobil_station' && position.x - set.center.x > MOBIL_STATION.edge + .28) return set.center.y + MOBIL_STATION.trackFloor;
+  if (set.id === 'film_club_hel') return set.center.y + helTerraceFloor(position.x - set.center.x, position.z - set.center.z);
   if (set.id === 'film_freeway_trucks' && Math.abs(position.x - set.center.x - TRUCKS.roof.x) <= TRUCKS.roof.width / 2 &&
     Math.abs(position.z - set.center.z - TRUCKS.roof.z) <= TRUCKS.roof.depth / 2) return set.center.y + TRUCKS.roof.height;
   if (set.id === 'film_mountain_range') return set.center.y - 1 + mountainFloor(position.x - set.center.x, position.z - set.center.z);

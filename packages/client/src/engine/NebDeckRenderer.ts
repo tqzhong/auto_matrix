@@ -4,6 +4,9 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { RECOVERY_BED, RECOVERY_CABINET, RECOVERY_FRAME, RESCUE, type FilmJourney } from '@auto_matrix/shared';
 import { CABIN, CABIN_WALLS, MEDICAL_OPERATOR, medicalControlBlend, cabinPlugProgress } from '@auto_matrix/shared';
+import { relayPlugContact } from '../agents/TrinityRelayPerformance.js';
+import { NEB_ESCAPE, nebHatchHeight } from '@auto_matrix/shared';
+import { NebEscapeRenderer } from './NebEscapeRenderer.js';
 
 /** The Nebuchadnezzar is one continuous deck: medical bay, operator core and mess.
  * The central aisle remains open so recovery hands control back to the player. */
@@ -58,6 +61,10 @@ export class NebDeckRenderer {
   private shipLossRig = new THREE.Group();
   private shipAlarm!: THREE.PointLight;
   private shipHatch!: THREE.Mesh;
+  private shipRadar!: THREE.ShaderMaterial;
+  private sternPlate!: THREE.Mesh;
+  private deckRig = new THREE.Group();
+  private escapeExterior: NebEscapeRenderer;
 
   constructor(private root: THREE.Group) {
     this.hull();
@@ -66,6 +73,9 @@ export class NebDeckRenderer {
     this.operatorCore();
     this.mess();
     this.shipLossScene();
+    for (const child of [...root.children]) this.deckRig.add(child);
+    this.deckRig.name = 'neb-interior-deck'; root.add(this.deckRig);
+    this.escapeExterior = new NebEscapeRenderer(root);
   }
 
   private material<T extends THREE.Material>(material: T): T { this.materials.add(material); return material; }
@@ -98,7 +108,12 @@ export class NebDeckRenderer {
     const chair = new THREE.Group(); chair.name = name; chair.position.set(x, 0, z); chair.rotation.y = yaw; this.root.add(chair);
     this.box(chair, this.dark, 0, .65, -.35, 2.7, 1.1, 1.7);
     const cushion = this.box(chair, this.leather, 0, 1.25, -.25, 2.35, .3, 1.75); cushion.rotation.x = .15;
-    const back = this.box(chair, this.leather, 0, 2.15, -1.22, 2.35, 2.2, .32); back.rotation.x = .28;
+    const back = this.box(chair, this.leather, 0, 2.15, -1.22, 2.35, 2.2, .32, `${name}-backrest`); back.rotation.x = .28;
+    if (name === 'neb-core-chair-trinity') {
+      const headrest = new THREE.Group(); headrest.name = `${name}-relay-headrest`; chair.add(headrest);
+      headrest.position.set(0, 2.89, -1.006); headrest.rotation.x = .28; headrest.visible = false;
+      for (const side of [-1, 1]) this.box(headrest, this.leather, side * .9, 0, 0, .45, .88, .32);
+    }
     for (const side of [-1, 1]) {
       this.box(chair, this.dark, side * 1.3, 1.35, -.25, .22, 1.7, 1.85);
       const cable = this.pipe([new THREE.Vector3(side * 1.6, 1.1, -2.05), new THREE.Vector3(side * 2, 5, -2.9), new THREE.Vector3(side * 2.4, 7, -4)]
@@ -125,7 +140,7 @@ export class NebDeckRenderer {
       rib.name = `neb-hull-rib-${z}`;
     }
     this.box(this.root, this.dark, 0, 8, -44.6, 44, 16, .8);
-    this.box(this.root, this.dark, 0, 8, 44.6, 44, 16, .8);
+    this.sternPlate = this.box(this.root, this.dark, 0, 8, NEB_ESCAPE.sternZ, 44, 16, .8, 'neb-stern-plate');
     for (const x of [-18.8, 18.8]) for (const offset of [0, .65, 1.3]) {
       this.pipe([new THREE.Vector3(x, 3 + offset, -43), new THREE.Vector3(x, 3 + offset, 43)], .12 + offset * .025, offset === .65 ? this.worn : this.steel);
     }
@@ -398,16 +413,31 @@ export class NebDeckRenderer {
     this.shipLossRig.name = 'neb-final-evacuation'; this.shipLossRig.visible = false; this.root.add(this.shipLossRig);
     const warning = this.material(new THREE.MeshBasicMaterial({ color: 0xe66a50, toneMapped: false }));
     const radar = this.box(this.shipLossRig, this.rubber, 1.4, 3.7, 1.2, 5.2, 3.1, .55, 'neb-bomb-radar'); radar.rotation.y = -.25;
-    this.box(this.shipLossRig, warning, 1.4, 3.72, 1.51, 4.45, 2.25, .04, 'neb-bomb-range-screen');
-    for (let index = 0; index < 4; index++) {
-      const mark = this.box(this.shipLossRig, this.rubber, -.3 + index * .92, 3.7, 1.55, .09, .09, .06); mark.rotation.z = index * .7;
-    }
+    this.shipRadar = this.material(new THREE.ShaderMaterial({ uniforms: { age: { value: 0 } },
+      vertexShader: 'varying vec2 vUv; void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+      fragmentShader: `varying vec2 vUv; uniform float age;
+        void main(){vec2 p=(vUv-.5)*vec2(2.,1.);float r=length(p);
+          float ring=1.-smoothstep(.004,.012,abs(r-.31));
+          float grid=(1.-smoothstep(.002,.007,abs(p.x)))+(1.-smoothstep(.002,.007,abs(p.y)));
+          float contact=1.-smoothstep(.012,.025,length(p-vec2(.68,.18)));
+          contact+=1.-smoothstep(.012,.025,length(p-vec2(.65,-.17)));
+          float bomb=1.-smoothstep(.012,.028,length(p-vec2(max(.08,.58-age*.018),.04)));
+          vec3 c=vec3(.009,.035,.026)+vec3(.18,.43,.29)*(ring+grid*.18)+vec3(.85,.58,.23)*contact+vec3(1.,.2,.04)*bomb;
+          c*=.88+.12*sin(vUv.y*640.);gl_FragColor=vec4(c,1.);}` }));
+    this.box(this.shipLossRig, this.shipRadar, 1.4, 3.72, 1.51, 4.45, 2.25, .04, 'neb-bomb-range-screen');
     for (const z of [7, 16, 25, 34]) for (const side of [-1, 1]) {
       this.box(this.shipLossRig, warning, side * 17.5, .16, z, .25, .07, 3.6, `neb-evacuation-path-${z}`);
       this.box(this.shipLossRig, warning, side * 17, 11.2, z, 1.6, .2, .65, 'neb-evacuation-lamp');
     }
-    this.box(this.shipLossRig, this.steel, 0, 4.5, 39.6, 13, 9, .55, 'neb-cargo-frame');
-    this.shipHatch = this.box(this.shipLossRig, this.dark, 0, 4.5, 39.2, 11.8, 8.6, .35, 'neb-cargo-hatch');
+    const frame = new THREE.Group(); frame.name = 'neb-cargo-frame'; this.shipLossRig.add(frame);
+    for (const side of [-1, 1]) {
+      this.box(frame, this.steel, side * 6.2, 4.5, 39.6, .6, 9, .55, `neb-cargo-jamb-${side}`);
+      this.box(this.shipLossRig, this.dark, side * 14.45, 8, NEB_ESCAPE.sternZ, 17.1, 16, .8, `neb-stern-side-${side}`);
+    }
+    this.box(frame, this.steel, 0, 8.9, 39.6, 13, .4, .55, 'neb-cargo-lintel');
+    this.box(this.shipLossRig, this.dark, 0, 12.5, NEB_ESCAPE.sternZ, NEB_ESCAPE.hatch.width, 7, .8, 'neb-stern-lintel');
+    const door = NEB_ESCAPE.hatch;
+    this.shipHatch = this.box(this.shipLossRig, this.dark, 0, door.closedY, door.z, door.width, door.height, door.depth, 'neb-cargo-hatch');
     this.box(this.shipLossRig, this.amber, 0, 9, 39.1, 4.4, .17, .1);
     this.shipAlarm = new THREE.PointLight(0xf04430, 0, 36, 2); this.shipAlarm.name = 'neb-evacuation-alarm'; this.shipAlarm.position.set(0, 10, 24);
     this.shipLossRig.add(this.shipAlarm); this.lights.add(this.shipAlarm);
@@ -456,8 +486,30 @@ export class NebDeckRenderer {
     }
   }
 
+  private relayDisplay(journey: FilmJourney): void {
+    const light = this.consoleRig.getObjectByName('neb-cypher-console-task-light') as THREE.PointLight;
+    light.intensity = 105;
+    if (!this.consoleScreen) return;
+    const relay = journey.trinityRelay, key = `${journey.scene}:${journey.grid?.vigilant}:${journey.grid?.primary}:${relay?.phase}:${Math.floor((relay?.elapsed ?? 0) * 5)}`;
+    if (this.consoleScreen.userData.relayKey === key) return;
+    this.consoleScreen.userData.relayKey = key;
+    const ctx = (this.consoleScreen.image as HTMLCanvasElement).getContext('2d')!;
+    ctx.fillStyle = '#07100e'; ctx.fillRect(0, 0, 960, 720); ctx.font = '26px monospace'; ctx.fillStyle = '#b7ddbd';
+    ctx.fillText('NEBUCHADNEZZAR / LINK', 42, 60);
+    const rows = [['LOGOS / PRIMARY', journey.grid?.primary === 'off' ? 'OFFLINE' : 'ARMED'],
+      ['VIGILANT / CREW', journey.grid?.vigilant === 'lost' ? 'SIGNAL LOST' : 'ONLINE'], ['EMERGENCY GRID', 'POWER REROUTING'],
+      ['TRINITY', relay?.phase === 'connected' ? 'CONNECTED' : 'REAL WORLD']];
+    rows.forEach(([name, value], row) => {
+      ctx.fillStyle = '#68927b'; ctx.font = '24px monospace'; ctx.fillText(name, 42, 145 + row * 114);
+      ctx.fillStyle = value === 'SIGNAL LOST' ? '#e08a76' : '#a7dbaf'; ctx.font = '32px monospace'; ctx.fillText(value, 42, 185 + row * 114);
+    });
+    ctx.fillStyle = '#4f725d'; ctx.font = '22px monospace'; ctx.fillText('SOURCE WINDOW : NOT YET SAFE', 42, 644);
+    for (let y = 0; y < 720; y += 5) ctx.fillRect(0, y, 960, 1);
+    this.consoleScreen.needsUpdate = true;
+  }
+
   update(journey: FilmJourney | undefined, elapsed: number, recoverySubject?: THREE.Object3D, bodies?: (id: string) => THREE.Object3D | undefined): void {
-    const localShadows = Boolean(journey && !journey.visiting && ['m1_recovery', 'm1_cabin'].includes(journey.scene));
+    const localShadows = Boolean(journey && !journey.visiting && ['m1_recovery', 'm1_cabin', 'm2_vigilant', 'm2_relay'].includes(journey.scene));
     const subject = recoverySubject ? this.root.worldToLocal(recoverySubject.getWorldPosition(new THREE.Vector3())) : undefined;
     const room = journey?.scene === 'm1_recovery' ? 0 : subject ? subject.x > 5.5 && subject.z < -25.5 ? 1 : subject.z < -14 ? 0 : 2 : journey?.step === 0 ? 1 : 2;
     // Treatment lights the bed and helpers; the later escort needs the doorway and central aisle.
@@ -465,9 +517,13 @@ export class NebDeckRenderer {
     this.roomKeys.forEach((light, index) => { light.visible = localShadows; light.castShadow = localShadows && index === room; });
     const loss = journey?.scene === 'm2_ship_lost' && !journey.visiting ? journey.shipLoss : undefined;
     this.shipLossRig.visible = Boolean(loss);
+    this.sternPlate.visible = !loss;
+    this.deckRig.visible = !loss || !['mourning', 'escaped', 'failed'].includes(loss.phase) && !(loss.phase === 'destroying' && (loss.elapsed ?? 0) >= .85);
+    this.escapeExterior.update(loss);
     if (loss) {
-      this.shipHatch.position.y = loss.phase === 'evacuating' || loss.phase === 'escaped' ? 12.5 : 4.5;
-      this.shipAlarm.intensity = loss.phase === 'briefing' ? 70 : loss.phase === 'failed' ? 30 : 170 + Math.sin(elapsed * 14) * 65;
+      this.shipHatch.position.y = nebHatchHeight(loss);
+      this.shipRadar.uniforms.age.value = loss.age ?? 32 - loss.remaining;
+      this.shipAlarm.intensity = loss.phase === 'briefing' ? 70 : loss.phase === 'failed' ? 30 : 170 + Math.sin((loss.age ?? 32 - loss.remaining) * 14) * 65;
     }
     const recovery = journey?.scene === 'm1_recovery' && !journey.visiting && journey.awakening?.kind === 'recovery' ? journey.awakening : undefined;
     const t = recovery?.elapsed ?? 0; const active = recovery?.started === true;
@@ -482,21 +538,26 @@ export class NebDeckRenderer {
     const truth = journey?.scene === 'm1_truth_return' && !journey.visiting ? journey.truthRecovery : undefined;
     const unplugging = truth?.phase === 'unplug' && truth.elapsed < 4 ? truth : undefined;
     this.truthSeat.visible = Boolean(truth && truthRest(truth));
+    const relay = journey?.scene === 'm2_relay' && !journey.visiting && ['connecting', 'connected'].includes(journey.trinityRelay?.phase ?? '') ? journey.trinityRelay : undefined;
     const socket = recoverySubject?.getObjectByName('cervical-interface');
-    this.corePlug.visible = this.coreCable.visible = Boolean(socket && (connecting && connecting.elapsed >= 2.2 || unplugging || downloadedConnection));
+    this.corePlug.visible = this.coreCable.visible = Boolean(socket && (relay && relay.elapsed >= 13.4 || connecting && connecting.elapsed >= 2.2 || unplugging || downloadedConnection));
     if (this.corePlug.visible && socket) {
       recoverySubject!.updateWorldMatrix(true, true); this.root.updateWorldMatrix(true, false);
       const point = this.root.worldToLocal(socket.getWorldPosition(new THREE.Vector3()));
-      point.x += .25 + .7 * (unplugging ? truthUnplug(unplugging.elapsed) : connecting ? 1 - cabinPlugProgress(connecting.elapsed) : 0);
+      point.x += relay ? -(.25 + .7 * (1 - THREE.MathUtils.smoothstep(relay.elapsed, 14.4, 15.8))) : .25 + .7 * (unplugging ? truthUnplug(unplugging.elapsed) : connecting ? 1 - cabinPlugProgress(connecting.elapsed) : 0);
       this.corePlug.position.copy(point);
-      const anchor = new THREE.Vector3(9.5, .35, -6.4); const direction = point.clone().sub(anchor);
+      const anchor = relay ? new THREE.Vector3(-10, .35, 6.4) : new THREE.Vector3(9.5, .35, -6.4); const direction = point.clone().sub(anchor);
       this.coreCable.position.copy(anchor).add(point).multiplyScalar(.5); this.coreCable.scale.y = direction.length();
       this.coreCable.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
+      const link = relay && bodies?.('link');
+      if (link) relayPlugContact(link, this.corePlug.getWorldPosition(new THREE.Vector3()),
+        THREE.MathUtils.smoothstep(relay.elapsed, 13.4, 14.4) * (1 - THREE.MathUtils.smoothstep(relay.elapsed, 15.8, 16.5)));
     }
     let skin: THREE.SkinnedMesh | undefined;
     if (recovery) recoverySubject?.traverse(object => { if (object instanceof THREE.SkinnedMesh && object.userData.patientBody) skin = object; });
     if (skin !== this.recoverySkin) { this.recoverySkin = skin; this.skinContacts.clear(); }
-    const consoleActive = journey?.scene === 'm1_cypher_console' && !journey.visiting;
+    const relayActive = journey && !journey.visiting && ['m2_vigilant', 'm2_relay'].includes(journey.scene);
+    const consoleActive = journey?.scene === 'm1_cypher_console' && !journey.visiting || relayActive;
     this.operatorCables.forEach(cable => { cable.visible = !consoleActive; });
     const descend = active ? THREE.MathUtils.smoothstep(t, 1.8, 3.8) * (1 - THREE.MathUtils.smoothstep(t, 7, 8.2)) : 0;
     const retract = active ? THREE.MathUtils.smoothstep(t, 7.5, 9.2) : 0;
@@ -558,7 +619,16 @@ export class NebDeckRenderer {
       }
     }
     const consoleBeat = journey?.scene === 'm1_cypher_console' && !journey.visiting && journey.interlude?.kind === 'console' ? journey.interlude : undefined;
-    this.consoleRig.visible = Boolean(consoleBeat);
+    this.consoleRig.visible = Boolean(consoleBeat || relayActive);
+    this.consoleRig.getObjectByName('neb-cypher-liquor-bottle')!.visible = !relayActive;
+    this.consoleRig.getObjectByName('neb-cypher-shot-glass')!.visible = !relayActive;
+    const linkChair = this.root.getObjectByName('neb-core-chair-four')!; linkChair.rotation.y = relayActive ? Math.PI / 2 : -Math.PI / 2;
+    const trinityBack = this.root.getObjectByName('neb-core-chair-trinity-backrest')!;
+    // A cervical opening lets the operator and wire reach the actual neck, above the lower back support.
+    trinityBack.scale.y = relayActive ? .3 : 1; trinityBack.position.y = relayActive ? 1.4 : 2.15;
+    trinityBack.position.z = relayActive ? -1.427 : -1.22;
+    this.root.getObjectByName('neb-core-chair-trinity-relay-headrest')!.visible = Boolean(relayActive);
+    if (relayActive) this.relayDisplay(journey!);
     if (consoleBeat) {
       const t = consoleBeat.elapsed;
       const light = this.consoleRig.getObjectByName('neb-cypher-console-task-light') as THREE.PointLight; light.intensity = 68 + Math.sin(elapsed * 7) * 12;
@@ -655,6 +725,7 @@ export class NebDeckRenderer {
   }
 
   dispose(): void {
+    this.escapeExterior.dispose();
     this.downloadScreen?.dispose();
     this.consoleScreen?.dispose();
     this.root.clear();

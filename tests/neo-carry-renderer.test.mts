@@ -3,10 +3,11 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { FILM_SETS, neoCarryPose, newTrilogyEpilogue, type TrilogyEpilogueEncounter } from '@auto_matrix/shared';
+import { FILM_SETS, neoCarryPose, newTrilogyEpilogue, type FilmJourney, type SandboxState, type TrilogyEpilogueEncounter } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { TrilogyEpilogueRenderer } from '../packages/client/src/engine/TrilogyEpilogueRenderer.js';
 import { MachineCoreRenderer } from '../packages/client/src/engine/MachineCoreRenderer.js';
+import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 
@@ -133,5 +134,64 @@ test('the carrier supports the delivered body and withdraws the existing uplink 
     carrier.update(beat, 999, body); stage.updateMatrixWorld(true);
     assert.deepEqual(tray.matrixWorld.elements, saved, 'the carrier cannot move with wall time while paused');
     if (beat.phase === 'done') assert.equal(stage.getObjectByName('machine-core-body-jacks')!.visible, false);
+  }
+});
+
+test('the real carrier follows the current body across a phase boundary before the world snapshot arrives', async t => {
+  const h = await setup(t), actor = h.create(true), scene = new THREE.Scene(), film = new FilmSetRenderer(scene);
+  t.after(() => film.dispose());
+  const journey: FilmJourney = { version: 1, scene: 'm3_neo_carried', actor: 'neo', step: 0, completed: [], enteredAt: 0,
+    checkpoint: { ...FILM_SETS.film_machine_core.center }, reflections: {}, lastText: '', epilogue: newTrilogyEpilogue('neo_carried') };
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  h.save(actor, journey.epilogue!); await new Promise(resolve => setImmediate(resolve)); actor.update(0, undefined, 0);
+  film.setRecoverySubject(actor.getAgentBody('neo')!);
+  film.update(actor.getAgentState('neo')!, sandbox, 0);
+  for (const beat of beats.slice(1)) {
+    h.save(actor, beat); film.update(actor.getAgentState('neo')!, sandbox, 100);
+    scene.updateMatrixWorld(true);
+    const tray = scene.getObjectByName('neo-body-transfer-tray')!, expected = neoCarryPose(beat);
+    assert.ok(Math.abs(tray.position.y - (1.05 + expected.y)) < 1e-6,
+      `${beat.phase}: stale ${journey.epilogue!.phase} world phase separates tray from the current body`);
+    assert.ok(Math.abs(tray.position.z - expected.z) < 1e-6, `${beat.phase}: body and its support must travel together`);
+    const before = tray.matrixWorld.elements.slice();
+    film.update(actor.getAgentState('neo')!, sandbox, 999); scene.updateMatrixWorld(true);
+    assert.deepEqual(tray.matrixWorld.elements, before, 'render time cannot advance the saved carrier');
+  }
+  journey.epilogue = beats.at(-1)!; h.save(actor, beats[1]);
+  film.update(actor.getAgentState('neo')!, sandbox, 1);
+  assert.equal(scene.getObjectByName('neo-body-transfer-tray')!.position.z, neoCarryPose(journey.epilogue).z,
+    'an older actor packet cannot rewind the departed carrier');
+  journey.visiting = journey.scene;
+  film.update(actor.getAgentState('neo')!, sandbox, 1);
+  assert.equal(scene.getObjectByName('neo-body-transfer-tray')!.position.z, neoCarryPose(newTrilogyEpilogue('neo_carried')).z,
+    'visiting the set cannot replay a current transport packet');
+});
+
+test('the delivered body rests on an open mechanical lattice with support under its head, trunk and extremities', async t => {
+  const h = await setup(t), actor = h.create(true), stage = new THREE.Group(), center = FILM_SETS.film_machine_core.center;
+  stage.position.set(center.x, center.y - 1, center.z);
+  const carrier = new TrilogyEpilogueRenderer(stage, 'neo_carried'); t.after(() => carrier.dispose());
+  h.save(actor, beats[0]); await new Promise(resolve => setImmediate(resolve)); actor.update(0, undefined, 0);
+  const body = actor.getAgentBody('neo')!; carrier.update(beats[0], 0, body); stage.updateMatrixWorld(true);
+  const deck = stage.getObjectByName('neo-carry-deck')!, bounds = new THREE.Box3().setFromObject(deck);
+  const size = bounds.getSize(new THREE.Vector3()), ray = new THREE.Raycaster(); let openings = 0, solid = 0;
+  for (let column = 1; column < 20; column++) for (let row = 1; row < 20; row++) {
+    ray.set(new THREE.Vector3(bounds.min.x + size.x * column / 20, bounds.max.y + 1, bounds.min.z + size.z * row / 20), new THREE.Vector3(0, -1, 0));
+    if (ray.intersectObject(deck, false).length) solid++; else openings++;
+  }
+  assert.ok(openings > 65 && solid > 65, `the actual support is still a solid tabletop: ${openings} open, ${solid} solid`);
+  for (let i = 0; i < 7; i++) {
+    const pad = stage.getObjectByName(`neo-carry-support-${i}`)!; assert.equal(pad.visible, true);
+    let gap = Infinity;
+    body.traverseVisible(object => {
+      if (!(object instanceof THREE.SkinnedMesh)) return;
+      object.skeleton.update();
+      for (let vertex = 0; vertex < object.geometry.attributes.position.count; vertex++) {
+        const point = object.localToWorld(object.getVertexPosition(vertex, new THREE.Vector3()));
+        ray.set(point.clone().add(new THREE.Vector3(0, .05, 0)), new THREE.Vector3(0, -1, 0));
+        const hit = ray.intersectObject(pad, false)[0]; if (hit) gap = Math.min(gap, point.y - hit.point.y);
+      }
+    });
+    assert.ok(gap >= -.002 && gap < .025, `support ${i}: visible body has penetration or floats ${gap} above its saddle`);
   }
 });

@@ -43,6 +43,8 @@ export class SandboxSystem {
     if (saved.version !== 1 || !Array.isArray(saved.nodes) || !saved.profiles || !saved.missions) throw new Error('Unsupported sandbox save');
     const defaults = this.state;
     this.state = structuredClone(saved);
+    const architectStructureOrder = saved.neoLife?.journey?.scene === 'm2_architect'
+      ? new Map(saved.structures.map((structure, index) => [structure.id, index])) : undefined;
     for (const node of defaults.nodes) if (!this.state.nodes.some(n => n.id === node.id)) this.state.nodes.push(node);
     for (const [id, progress] of Object.entries(defaults.missions)) this.state.missions[id] ??= progress;
     this.life.film.restoreApartmentSpace();
@@ -77,6 +79,8 @@ export class SandboxSystem {
     if (journey) this.life.film.catch.frame(this.world.agents.get(journey.actor)!, { x: 0, z: 0, focus: false }, 0, this.world.simulationTick);
     if (journey) this.life.film.lobby.frame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);
     if (this.state.traffic) this.traffic.restore();
+    if (architectStructureOrder) this.state.structures.sort((a, b) =>
+      (architectStructureOrder.get(a.id) ?? architectStructureOrder.size) - (architectStructureOrder.get(b.id) ?? architectStructureOrder.size));
   }
   missionsFor(agent: AgentState) { return agent.id === 'neo' && this.state.neoLife ? this.state.neoLife.missions : this.state.missions; }
   private random(): number {
@@ -107,6 +111,9 @@ export class SandboxSystem {
 
   command(agent: AgentState, command: SandboxCommand, tick: number): string {
     if (agent.controller && command.kind === 'life' && command.target === 'film:retry') return this.life.film.command(agent, 'retry', tick);
+    if (agent.controller && command.kind === 'life' && command.target === 'film:next'
+      && this.life.film.controls(agent) && this.life.film.state?.scene === 'm3_oracle_absorbed'
+      && this.life.film.state.oracleAbsorption?.phase === 'done') return this.life.film.command(agent, 'next', tick);
     if (agent.controller && command.kind === 'life' && command.target === 'film:next'
       && this.life.film.controls(agent) && this.life.film.state?.scene === 'm3_neo_carried') return this.life.film.command(agent, 'next', tick);
     if (agent.status !== 'alive' || !agent.controller) return '先接入一个存活角色。';
@@ -483,6 +490,7 @@ export class SandboxSystem {
 
   private updateThreats(tick: number): void {
     for (const threat of [...this.state.threats]) {
+      if (threat.scene === 'm2_trucks' && (this.state.neoLife?.journey?.trucks?.road?.paused || this.state.neoLife?.journey?.trucks?.road?.unavailable)) continue;
       if (threat.scene === 'm1_lobby' || threat.scene === 'm1_room303' || threat.scene === 'm3_hel_entry' || threat.patrol) continue;
       if (threat.infection && tick >= threat.infection.nextAt) {
         const source = this.world.agents.get(threat.infection.source);

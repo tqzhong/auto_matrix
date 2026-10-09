@@ -35,17 +35,79 @@ test('the coat-check attendant reaches cover during combat and keeps that pose a
   const h = setup(); h.sandbox.life.film.command(h.trinity, 'act', 1);
   assert.equal(h.combat.state!.rescueElapsed, 0);
   h.combat.tick(h.trinity, 2);
-  assert.equal(h.combat.state!.rescueElapsed, 1);
+  assert.equal(h.combat.state!.rescueElapsed, .5, 'one simulation tick is half a second, not a second');
   h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
-  assert.equal(h.combat.state!.rescueElapsed, 1);
+  assert.equal(h.combat.state!.rescueElapsed, .5);
   h.combat.tick(h.trinity, 3);
-  assert.equal(h.combat.state!.rescueElapsed, 2);
+  assert.equal(h.combat.state!.rescueElapsed, 1);
   h.trinity.controller = null; h.combat.tick(h.trinity, 20);
-  assert.equal(h.combat.state!.rescueElapsed, 2, 'the performance cannot advance while the player is disconnected');
+  assert.equal(h.combat.state!.rescueElapsed, 1, 'the performance cannot advance while the player is disconnected');
   h.trinity.controller = 'player';
   delete h.combat.state!.rescueElapsed; delete h.combat.state!.rescueLastTick;
+  delete h.combat.state!.rescuePhysical;
   h.combat.tick(h.trinity, 21);
   assert.equal(h.combat.state!.rescueElapsed, 2, 'an older fight save resumes with the attendant already in cover');
+});
+
+test('the Seraph protection uses the real player frame clock, pauses on occupation, and resumes from the saved position', () => {
+  const h = setup(); h.sandbox.life.film.command(h.trinity, 'act', 1);
+  const seraph = h.world.agents.get('seraph')!;
+  const start = { ...seraph.position };
+  assert.equal(typeof h.combat.frame, 'function', 'protection needs a player frame clock rather than whole-tick posing');
+  h.combat.frame(h.trinity, .4, 1);
+  assert.equal(h.combat.state!.rescueElapsed, .4);
+  assert.notDeepEqual(seraph.position, start, 'Seraph must actually walk toward the attendant');
+  const half = { ...seraph.position };
+  h.combat.tick(h.trinity, 2);
+  assert.equal(h.combat.state!.rescueElapsed, .4, 'the simulation tick must not count the same elapsed time twice');
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+  h.combat.frame(h.trinity, 0, 2);
+  assert.deepEqual(seraph.position, half, 'loading the same saved action cannot jump the protector');
+  seraph.controller = 'other-player'; h.combat.frame(h.trinity, 1, 3); h.combat.tick(h.trinity, 3);
+  assert.equal(h.combat.state!.rescueElapsed, .4);
+  assert.deepEqual(seraph.position, half, 'do not move another player to finish the performance');
+  seraph.controller = null; h.combat.frame(h.trinity, .3, 4);
+  assert.ok(Math.abs(h.combat.state!.rescueElapsed! - .7) < .001);
+});
+
+test('ballistic cover identifies the same two visible counters and never paints shaft walls as counter damage', () => {
+  const h = setup();
+  for (const [index, x] of [-14, 14].entries()) {
+    const from = filmPosition('film_club_hel', x, 19); from.y += 2.3;
+    assert.equal(helCoatcheckCover(from, { x: 0, y: 0, z: -1 }).counter, index);
+  }
+  const from = filmPosition('film_club_hel', 0, 31); from.y += 2.3;
+  assert.equal(helCoatcheckCover(from, { x: 1, y: 0, z: 0 }).counter, undefined);
+});
+
+test('a companion outside the Matrix cannot start or advance the physical protection', () => {
+  const h = setup(), seraph = h.world.agents.get('seraph')!;
+  seraph.isInMatrix = false; h.sandbox.life.film.command(h.trinity, 'act', 1);
+  assert.equal(h.sandbox.life.film.state!.fighting, undefined); assert.equal(h.sandbox.state.threats.length, 0);
+  seraph.isInMatrix = true; h.sandbox.life.film.command(h.trinity, 'act', 2); h.combat.frame(h.trinity, .4, 2);
+  const saved = { ...seraph.position }; seraph.isInMatrix = false; h.combat.frame(h.trinity, 1, 3);
+  assert.equal(h.combat.state!.rescueElapsed, .4); assert.equal(h.combat.state!.rescuePaused, true);
+  assert.deepEqual(seraph.position, saved);
+});
+
+test('restoring a paused physical protection keeps both actual companion poses and injuries', () => {
+  const h = setup(); h.sandbox.life.film.command(h.trinity, 'act', 1); h.combat.frame(h.trinity, 2.75, 2);
+  h.trinity.controller = null; h.world.agents.get('morpheus')!.health = 83;
+  const cast = ['seraph', 'morpheus'].map(id => structuredClone(h.world.agents.get(id)!));
+  const saved = structuredClone(h.sandbox.state); h.sandbox.restore(saved);
+  assert.deepEqual(['seraph', 'morpheus'].map(id => h.world.agents.get(id)!), cast);
+  assert.deepEqual(h.combat.state, saved.neoLife!.journey!.helCoatcheck);
+});
+
+test('a dead companion is neither staged nor allowed to fire for the coat-check performance', () => {
+  const h = setup(), seraph = h.world.agents.get('seraph')!;
+  seraph.status = 'dead'; seraph.health = 0;
+  const before = JSON.parse(JSON.stringify(seraph));
+  h.sandbox.life.film.command(h.trinity, 'act', 1); h.combat.tick(h.trinity, 4);
+  assert.deepEqual(seraph.position, before.position);
+  assert.equal(seraph.currentAction, before.currentAction);
+  assert.ok(!h.impacts.some(impact => impact.source === 'seraph'));
+  assert.equal(seraph.status, 'dead'); assert.equal(seraph.health, 0);
 });
 
 test('Trinity can shoot, while coat counters block shots and create impacts', () => {
@@ -73,6 +135,7 @@ test('reload and enemy aim survive a save; moving off the announced line avoids 
   const enemy = h.sandbox.state.threats[0]; h.sandbox.state.threats = [enemy];
   enemy.position = filmPosition('film_club_hel', 0, 6); h.trinity.position = filmPosition('film_club_hel', 0, 18);
   enemy.lastStrike = 3; delete enemy.aim; delete enemy.attackAt;
+  h.combat.state!.allyShotAt = [10, 10];
   h.combat.tick(h.trinity, 10); assert.ok(enemy.aim, JSON.stringify({ enemy, actor: h.trinity.position, state: h.combat.state }));
   h.trinity.position.x += 5; h.combat.tick(h.trinity, 12);
   assert.equal(h.trinity.health, h.trinity.maxHealth);
@@ -83,6 +146,7 @@ test('Morpheus and Seraph assist, the last guard unlocks the weapon check, and r
   for (const threat of h.sandbox.state.threats) threat.stunUntil = 100;
   h.combat.tick(h.trinity, 4);
   assert.ok(h.impacts.some(impact => ['morpheus', 'seraph'].includes(impact.source) && impact.damage > 0), JSON.stringify({ impacts: h.impacts, allies: ['morpheus', 'seraph'].map(id => h.world.agents.get(id)?.position) }));
+  h.combat.frame(h.trinity, HEL_COATCHECK.rescueSeconds, 4);
   h.world.agents.get('morpheus')!.controller = 'other-player'; h.world.agents.get('seraph')!.controller = 'other-player';
   h.impacts.length = 0; h.combat.tick(h.trinity, 10);
   assert.ok(!h.impacts.some(impact => ['morpheus', 'seraph'].includes(impact.source)));
@@ -98,6 +162,7 @@ test('Morpheus and Seraph assist, the last guard unlocks the weapon check, and r
 
 test('player gunfire can clear both guard groups without scripted removal', () => {
   const h = setup(); h.sandbox.life.film.command(h.trinity, 'act', 1);
+  h.combat.frame(h.trinity, HEL_COATCHECK.rescueSeconds, 1);
   h.world.agents.get('morpheus')!.controller = 'other-player'; h.world.agents.get('seraph')!.controller = 'other-player';
   h.trinity.position = filmPosition('film_club_hel', 0, 19);
   let tick = 2;
@@ -175,6 +240,43 @@ test('an older save already walking through Club Hel keeps its progress and an o
   assert.equal(playerBlocked(filmPosition('film_club_hel', 0, HEL_DANCE_DOOR.z), true, .7, h.sandbox.state.structures), false);
 });
 
+test('the door starts at the actual standing position, advances on player frames, and freezes without a living controller', () => {
+  const h = setup(), film = h.sandbox.life.film, journey = film.state!;
+  journey.step = 3; journey.helDanceDoor = { phase: 'sealed', elapsed: 0, lastTick: 2 };
+  h.trinity.position = filmPosition('film_club_hel', .6, 4.2); h.trinity.rotation = .3; h.trinity.health = 73;
+  const start = { ...h.trinity.position };
+  film.command(h.trinity, 'act', 2);
+  assert.equal((journey.helDanceDoor as any).physical, true, 'a fresh push must use the physical approach');
+  assert.deepEqual(h.trinity.position, start, 'pressing G cannot teleport to the door');
+  assert.equal(h.trinity.rotation, .3);
+  (film as any).helDanceDoorFrame(h.trinity, .35, 2);
+  assert.equal(journey.helDanceDoor.elapsed, .35);
+  assert.ok(h.trinity.position.z < start.z && h.trinity.position.z > filmPosition('film_club_hel', 0, 3.05).z);
+  film.tick(3);
+  assert.equal(journey.helDanceDoor.elapsed, .35, 'the simulation tick must not count a player frame twice');
+  const saved = JSON.parse(JSON.stringify(h.sandbox.state)), pose = { ...h.trinity.position }, yaw = h.trinity.rotation;
+  h.trinity.controller = null; (film as any).helDanceDoorFrame(h.trinity, 2, 5);
+  assert.deepEqual(h.trinity.position, pose); assert.equal(journey.helDanceDoor.elapsed, .35);
+  h.sandbox.restore(saved);
+  assert.deepEqual(h.trinity.position, pose); assert.equal(h.trinity.rotation, yaw); assert.equal(h.trinity.health, 73);
+  assert.equal(film.state!.helDanceDoor!.elapsed, .35);
+  h.trinity.controller = 'player'; h.trinity.status = 'dead'; h.trinity.health = 0;
+  (film as any).helDanceDoorFrame(h.trinity, 2, 7);
+  assert.deepEqual(h.trinity.position, pose); assert.equal(film.state!.helDanceDoor!.elapsed, .35); assert.equal(h.trinity.health, 0);
+});
+
+test('loading an old partially open door preserves its existing standing position and original clock', () => {
+  const h = setup(), film = h.sandbox.life.film, journey = film.state!;
+  journey.step = 3; journey.helDanceDoor = { phase: 'opening', elapsed: 1.5, lastTick: 2 };
+  h.trinity.position = filmPosition('film_club_hel', -.4, 4.8); h.trinity.rotation = Math.PI;
+  const position = { ...h.trinity.position };
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+  assert.deepEqual(h.trinity.position, position);
+  assert.equal(film.state!.helDanceDoor!.elapsed, 1.5);
+  (film as any).helDanceDoorFrame(h.trinity, 0, 2);
+  assert.deepEqual(h.trinity.position, position, 'legacy saves cannot acquire a new approach trajectory');
+});
+
 test('an older save after Club Hel remains completed with the inserted door objective', () => {
   const h = setup(); const journey = h.sandbox.life.film.state!;
   journey.step = 4; journey.completed.push('m3_hel_entry'); delete journey.helDanceDoor;
@@ -193,11 +295,11 @@ test('Morpheus and Seraph regroup at the dance door and follow Trinity without m
   assert.ok(morpheus.position.z < filmPosition('film_club_hel', 0, 20).z);
   assert.deepEqual(seraph.position, seraphStart);
   film.command(h.trinity, 'act', 2);
-  for (let tick = 3; tick <= 8; tick++) film.tick(tick);
+  for (let tick = 3; tick <= 10; tick++) film.tick(tick);
   assert.equal(journey.helDanceDoor.phase, 'open');
   assert.ok(morpheus.position.z <= filmPosition('film_club_hel', 0, 8).z);
   h.trinity.position = filmPosition('film_club_hel', 0, -8);
-  film.tick(9);
+  film.tick(11);
   assert.ok(morpheus.velocity.z < 0, 'the companion follows through the open doorway');
   assert.deepEqual(seraph.position, seraphStart);
 });

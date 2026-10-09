@@ -88,7 +88,7 @@ test('Smith spectators stand in three staggered rows on both curbs facing the op
       assert.ok(size.distanceTo(new THREE.Vector3(1, 1, 1)) < 1e-5, 'retain actual hero proportions');
     }
   }
-  assert.equal(rows.size, 6); assert.equal(spectators, 324);
+  assert.equal(rows.size, 6); assert.equal(spectators, 323, 'the speaking Smith owns the one vacant front-row place');
   for (const batch of batches) {
     batch.geometry.computeBoundingBox();
     for (let i = 0; i < batch.count; i++) {
@@ -152,6 +152,20 @@ test('crossing the 50-unit planar distance swaps section geometry without adding
     point.fromBufferAttribute(batch.geometry.attributes.position, vertex).applyMatrix4(matrix);
     assert.ok(batch.boundingBox!.containsPoint(point), 'bounds refresh when detailed geometry returns');
   }
+  crowd.dispose();
+});
+
+test('near spectators are visible while the optional distant geometry is still loading', async t => {
+  const near = await loadCrowd(), far = await loadCrowd(true);
+  let finish!: (value: typeof far.asset) => void;
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', (url: string) => url.endsWith('-far.glb')
+    ? new Promise<typeof far.asset>(resolve => { finish = resolve; }) : Promise.resolve(near.asset));
+  const crowd = new SmithCrowdRenderer(new THREE.Group());
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(crowd.group.children.length, 48, 'a far-model delay must not leave the avenue empty');
+  assert.ok(crowd.group.children.every(mesh => (mesh as THREE.Mesh).geometry), 'keep actual near surfaces until the distant asset arrives');
+  finish(far.asset); await crowd.ready;
+  assert.equal(crowd.group.children.length, 48, 'installing the distant asset cannot duplicate the spectators');
   crowd.dispose();
 });
 

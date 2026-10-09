@@ -1,5 +1,23 @@
+import { HEL_BREAKOUT, helDanceDoorDuration, helDanceDoorText } from '@auto_matrix/shared';
+import { catchDistance } from '@auto_matrix/shared';
+import { sourcePortalActive, sourcePortalLocked, sourcePortalText } from '@auto_matrix/shared';
+import { filmSceneForJourney } from '@auto_matrix/shared';
+import { filmStepNear, mobilFamilyText, mobilLuggageText, mobilReunionRoot, mobilReunionText, MOBIL_LUGGAGE } from '@auto_matrix/shared';
+import { primaryText, TRINITY_RELAY, trinityRelayText, TRINITY_TERMINAL, trinityTerminalActive, trinityTerminalText } from '@auto_matrix/shared';
+import { FREEWAY_HANDOFF, freewayHandoffReady, freewayHandoffText } from '@auto_matrix/shared';
+import { truckWeaponsText, truckHoodText } from '@auto_matrix/shared';
+import { upperDiggerActive, upperDiggerText } from '@auto_matrix/shared';
+import { diggersActive, diggersText } from '@auto_matrix/shared';
 import { crosscutActive, crosscutAction, crosscutText } from '@auto_matrix/shared';
 import { DOCK_RELOAD, dockReloadActive, dockReloadText } from '@auto_matrix/shared';
+import { DOCK_GUNNERY } from '@auto_matrix/shared';
+import { APU_ROUTE } from '@auto_matrix/shared';
+import { dockEmpLocked, empOperatorText, empOperatorPose } from '@auto_matrix/shared';
+import { dockReunionLocked, dockReunionText } from '@auto_matrix/shared';
+import { FREEWAY_PICKUP, freewayPickupText } from '@auto_matrix/shared';
+import { dockBriefingActive, dockBriefingLocked, dockBriefingText } from '@auto_matrix/shared';
+import { dockEvacuationActive, dockEvacuationLocked, dockEvacuationText, shaftSealActive, shaftSealLocked, shaftSealText } from '@auto_matrix/shared';
+import { templeDefenseActive, templeDefenseLocked, templeDefenseText } from '@auto_matrix/shared';
 import { DOCK_GATE, dockGateActive, dockGateText } from '@auto_matrix/shared';
 import { DOCK_LAST_STAND, dockLastStandActive, dockLastStandText } from '@auto_matrix/shared';
 import { truthFade, CABIN, CABIN_ROUTE_LENGTH } from '@auto_matrix/shared';
@@ -8,9 +26,16 @@ import { nearMetacortexLift, metacortexLiftLocked } from '@auto_matrix/shared';
 import { officeCustodyActive, officeCustodyHeld, officeCustodyTarget, officeCustodyText } from '@auto_matrix/shared';
 import { arrestCarPose } from '@auto_matrix/shared';
 import { CATCH, RELOADED, RELOADED_FINALE, HEL_COATCHECK, catchText, reloadedText } from '@auto_matrix/shared';
+import { oracleRequestActive, oracleRequestLocked, oracleRequestText } from '@auto_matrix/shared';
+import { oracleLastActive, oracleLastLocked, oracleLastText } from '@auto_matrix/shared';
+import { oracleAbsorptionActive, oracleAbsorptionLocked, oracleAbsorptionText } from '@auto_matrix/shared';
+import { TRAINMAN_CHASE, trainmanChaseActive, trainmanChaseCanAct, trainmanChaseText } from '@auto_matrix/shared';
+import { HEL_GARAGE, helGarageActive, helGarageText } from '@auto_matrix/shared';
+import { helElevatorText } from '@auto_matrix/shared';
 import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_NAMES, filmReflections, GRID_HACK_SECONDS, GRID_REROUTE_SECONDS, HEL_ELEVATOR, HEL_DANCE_DOOR, filmStepPosition, filmStepActionReady, helElevatorLocked, helDanceDoorLocked, pillLocked, lafayetteWelcomeLocked, awakeningLocked, awakeningWaiting, podRescuePose, AWAKENING_SECONDS, MIRROR_TOUCH, MIRROR_TIMING, mirrorGuidePose, PILL_ROOM, trainingLocked, trainingWaiting, TRAINING_SECONDS, DOJO_COMBO_WINDOW, windowOpening, windowCrossing, dockPowerOffline, ITEMS, RECIPES, SKILLS, FILMS, MISSIONS, LOCATIONS, CITY_BUILDINGS, NEO_CHAPTERS, LIFE_ACTIONS, lifeActionPosition, lifeRoomCenter, locationEntrance, distance, missionPosition, nearTransit, skillPoints,
   type AgentState, type SandboxState, type SandboxCommand, type ItemId, type SkillId, type Vector3 } from '@auto_matrix/shared';
 import './sandbox.css';
+import './trinity-terminal.css';
 import { AMBUSH_ESCAPE, ambushEscapeTarget, ambushEscapeText } from '@auto_matrix/shared';
 import { WETWALL, wetwallText, wetwallEntry, sixthText } from '@auto_matrix/shared';
 import { BASEMENT, TV_EXIT, basementRouteLength, basementText, tvExitText } from '@auto_matrix/shared';
@@ -38,8 +63,8 @@ import { BURLY } from '@auto_matrix/shared';
 import { BANE_ENCOUNTER } from '@auto_matrix/shared';
 import { LOGOS_DEFENSE } from '@auto_matrix/shared';
 import { FAREWELL, farewellLocked } from '@auto_matrix/shared';
-import { DEUS_PACT, deusPactLocked } from '@auto_matrix/shared';
-import { SMITH_FINALE, smithFinaleLocked, smithOracleRestored } from '@auto_matrix/shared';
+import { DEUS_PACT, deusPactDialogue, deusPactLocked } from '@auto_matrix/shared';
+import { SMITH_FINALE, smithFinaleLocked, smithFinaleDialogue, smithOracleRestored } from '@auto_matrix/shared';
 import { trilogyEpilogueLocked, trilogyEpilogueProgress } from '@auto_matrix/shared';
 import { ambushApproachTarget } from '@auto_matrix/shared';
 
@@ -70,6 +95,9 @@ export class SandboxUI {
       <div id="sandbox-waypoint" class="sandbox-waypoint"></div>
       <div id="film-phone" class="film-phone hidden"><span>SECURE LINE / MORPHEUS</span><p id="film-phone-line"></p><div><i id="film-alert"></i></div><small id="film-alert-label"></small></div>
       <div id="film-sequence" class="film-sequence hidden"><p id="film-sequence-line"></p><small id="film-sequence-hint">鼠标观察 · V 切换视角 · J 手记</small></div>
+      <div id="film-terminal" class="film-terminal hidden" role="group" aria-label="机房终端接入点"><p>选择扫描到的网络服务</p>${TRINITY_TERMINAL.nodes.map(node => `<button data-action="life" data-target="film:terminal:select:${node.id}"><span>${node.address} : ${node.port}</span><strong>${node.service}</strong><small>${node.label}</small></button>`).join('')}</div>
+      <div id="film-terminal-retry" class="film-terminal hidden"><p>接入被拒绝 · 应急供电仍在线</p><button data-action="life" data-target="film:retry">重试终端检查 · 保留先前行动</button></div>
+      <div id="film-portal-retry" class="film-terminal hidden"><p>撤离被封锁</p><button data-action="life" data-target="film:retry">重试开门与撤离 · 保留先前行动</button></div>
       <div id="film-training-actions" class="film-training-actions hidden"><button data-combat="dodge"><kbd>X</kbd> 现在闪避</button><button data-combat="attack"><kbd>F</kbd> <span>刺拳</span></button></div>
       <div id="film-pills" class="film-pills hidden" role="group" aria-label="选择药丸"><p>选择仍然属于你 · 等待不会替你决定</p><div class="film-pill-choices"><button data-action="life" data-target="film:pill:red">红色 · 继续追问</button><button data-action="life" data-target="film:blue">蓝色 · 回到日常</button></div></div>
       <div id="film-meeting" class="film-pills hidden" role="group" aria-label="接头决定"><p>你仍然可以离开</p><div class="film-pill-choices"><button data-action="life" data-target="film:meeting:stay">留在车内 · 接受检查</button><button data-action="life" data-target="film:meeting:leave">推开车门 · 质疑检查</button></div></div>
@@ -123,7 +151,10 @@ export class SandboxUI {
   interact(): void {
     const journey = this.state?.neoLife?.journey;
     if (journey && journey.actor === this.player?.id) {
-      const step = FILM_SCENE_BY_ID[journey.scene].steps[journey.step];
+      const step = filmSceneForJourney(journey)!.steps[journey.step];
+      if (!journey.visiting && journey.scene === 'm3_family' && journey.step === 1 && journey.mobil?.family?.phase !== 'reflection') {
+        this.send({ kind: 'life', target: 'film:act' }); return;
+      }
       if (journey.visiting || step?.kind === 'reflect' || journey.scene === 'm2_persephone' && journey.step === 2 || journey.finished) this.open('journal');
       else this.send({ kind: 'life', target: `film:${step ? 'act' : 'next'}` });
       return;
@@ -154,8 +185,10 @@ export class SandboxUI {
     this.root.classList.toggle('hidden', !player || !state || !profile);
     this.el('film-phone').classList.add('hidden');
     this.el('film-sequence').classList.add('hidden');
-    this.el('film-sequence').classList.remove('urgent', 'oracle-departure', 'oracle-arrival', 'ambush-company', 'ambush-observing');
+    this.el('film-sequence').classList.remove('urgent', 'oracle-departure', 'oracle-arrival', 'ambush-company', 'ambush-observing', 'mobil-family', 'mobil-reunion', 'oracle-request', 'trainman-chase', 'hel-garage', 'hel-coatcheck', 'hel-dance-door');
+    this.el('film-portal-retry').classList.add('hidden');
     this.el('film-training-actions').classList.add('hidden');
+    this.el('film-terminal').classList.add('hidden'); this.el('film-terminal-retry').classList.add('hidden');
     this.el('film-ride').classList.add('hidden');
     this.el('film-pills').classList.add('hidden');
     this.el('film-meeting').classList.add('hidden');
@@ -187,6 +220,16 @@ export class SandboxUI {
     this.el('sandbox-interact').classList.toggle('hidden', !nearest && !profile.job);
     this.el('sandbox-nearby').textContent = profile.job ? '正在破解 · 移动将中断' : nearest ? `${nearest.name}${'availableAt' in nearest && nearest.availableAt > tick ? ` · ${Math.ceil((nearest.availableAt - tick) / 2)} 秒后恢复` : ''}` : '';
     this.el('sandbox-job').style.width = profile.job ? `${Math.min(100, (tick - profile.job.startedAt) / (profile.job.endsAt - profile.job.startedAt) * 100)}%` : '0';
+    const journey = state.neoLife?.journey;
+    if (journey?.scene === 'm2_trucks' && !journey.visiting && journey.trucks?.hood && ['niobe', 'ghost'].includes(player.id) && player.currentAction?.parameters.truckHood) {
+      this.nearest = ''; this.waypoint = null;
+      this.el('sandbox-interact').classList.add('hidden'); this.el('sandbox-waypoint').textContent = '';
+      document.getElementById('game-interaction')!.classList.add('hidden');
+      document.getElementById('game-objective')!.textContent = '高速公路 · Niobe 接应';
+      document.getElementById('game-objective-copy')!.textContent = '你正在接应车辆内。切回 Morpheus 继续车盖上的行动；其余玩家占用同行角色时，这段接应会等待。';
+      document.getElementById('mouse-hint')!.textContent = '鼠标观察 · V 切换视角 · Tab 切回 Morpheus';
+      this.drawMinimap(); this.renderPanel(); return;
+    }
     if (life?.journey) { this.updateFilm(player, state); this.drawMinimap(); this.renderPanel(); return; }
     if (life && !life.journey && player.isInMatrix && (nearMetacortexLift(player.position) || metacortexLiftLocked(life.lift))) {
       this.el('sandbox-interact').classList.remove('hidden');
@@ -224,7 +267,7 @@ export class SandboxUI {
   }
 
   private updateFilm(player: AgentState, state: SandboxState): void {
-    const journey = state.neoLife!.journey!; const scene = FILM_SCENE_BY_ID[journey.scene]; const step = scene.steps[journey.step];
+    const journey = state.neoLife!.journey!; const scene = filmSceneForJourney(journey)!; const step = scene.steps[journey.step];
     if (!journey.visiting && ['m1_dejavu', 'm1_wetwall'].includes(scene.id)) this.el('film-sequence').classList.add('ambush-company');
     this.el('film-sequence').classList.toggle('ambush-observing', Boolean(!journey.visiting && scene.id === 'm1_dejavu'
       && journey.step === 0 && journey.ambushApproach?.stairCat && journey.ambush));
@@ -232,7 +275,8 @@ export class SandboxUI {
     this.el('film-sequence').classList.toggle('basement-escape', Boolean(!journey.visiting && scene.id === 'm1_basement'));
     this.el('film-sequence').classList.toggle('tv-repair', Boolean(!journey.visiting && scene.id === 'm1_tv_exit' || crosscutActive(journey)));
     const escapedScan = scene.id === 'm1_bug' && journey.office?.outcome === 'escaped';
-    const stepLabel = escapedScan ? ['配合安全扫描', '重新判断今晚的接头', step?.label][journey.step] : step?.label;
+    const stepLabel = scene.id === 'm3_hel_entry' && journey.step === 0 && journey.helElevator?.phase === 'arrived' ? '亲自拉开电梯铁门'
+      : escapedScan ? ['配合安全扫描', '重新判断今晚的接头', step?.label][journey.step] : step?.label;
     const ambushCenter = FILM_SETS.film_ambush_house.center;
     const ambushGoal = !journey.visiting && scene.id === 'm1_dejavu' && journey.ambushEscape
       ? ambushEscapeTarget(journey.ambushEscape, player.position.x - ambushCenter.x, player.position.y - ambushCenter.y, player.position.z - ambushCenter.z)
@@ -295,6 +339,141 @@ export class SandboxUI {
     document.getElementById('game-objective')!.textContent = journey.visiting ? set.name : escapedScan ? '确认没有被追踪'
       : scene.id === 'm1_wake_again' && journey.office?.outcome === 'escaped' ? '第二次来电' : scene.title;
     document.getElementById('game-objective-copy')!.textContent = journey.visiting ? '自由走动，J 返回保存的剧情位置。' : scene.id === 'm3_dock_battle' && journey.dockGunnery?.phase === 'failed' ? 'APU 防线失守 · 从剧情检查点重试' : journey.fighting ? 'F 连击 · X 闪避 · 1 治疗 · 击败追兵后继续' : step ? `${journey.step + 1}/${scene.steps.length} · ${stepLabel} · ${step.kind === 'reach' ? '走到标记旁' : step.kind === 'reflect' ? '靠近后按 J 记录反思' : '靠近后按 G'}` : 'G 继续下一段，J 查看刚刚发生的事。';
+    if (!journey.visiting && scene.id === 'm3_mobil_release' && journey.step < 2 && journey.mobil) {
+      const reunion = journey.mobil.reunion, text = mobilReunionText(journey.mobil, journey.step);
+      const partner = reunion && mobilReunionRoot(reunion, 'trinity');
+      const gap = partner ? Math.hypot(player.position.x - set.center.x - partner.x, player.position.z - set.center.z - partner.z) : Infinity;
+      const ready = journey.step === 1 && reunion && ['ready', 'together'].includes(reunion.phase) && gap <= 2.8;
+      document.getElementById('game-objective-copy')!.textContent = text;
+      this.el('sandbox-nearby').textContent = reunion?.phase === 'together' ? '与 Trinity 离站' : '与 Trinity 会合';
+      this.el('sandbox-interact').classList.toggle('hidden', !ready); this.el('sandbox-waypoint').textContent = '';
+      if (reunion?.phase === 'embracing') {
+        this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.add('mobil-reunion');
+        this.el('film-sequence-line').textContent = text; this.el('film-sequence-hint').textContent = '鼠标环顾 · V 切换视角';
+      }
+      return;
+    }
+    if (!journey.visiting && scene.id === 'm3_trainman' && journey.step <= 2 && journey.mobil) {
+      const mobil = journey.mobil, lifting = mobil.luggage?.phase === 'lifting';
+      const waiting = mobil.phase !== 'stopped' || mobil.elapsed < .65;
+      document.getElementById('game-objective-copy')!.textContent = mobilLuggageText(mobil, journey.step);
+      if (lifting || waiting) {
+        this.el('sandbox-interact').classList.add('hidden'); this.el('sandbox-waypoint').textContent = '';
+        this.el('sandbox-nearby').textContent = lifting ? '正在提起箱子' : mobil.phase === 'refusing' ? 'Trainman 拒载' : '等候车门打开';
+      }
+      if (lifting) this.el('sandbox-job').style.width = `${mobil.luggage!.elapsed / MOBIL_LUGGAGE.lift * 100}%`;
+      return;
+    }
+    if (helGarageActive(journey)) {
+      const garage = journey.helGarage, phase = garage?.phase, blocked = Boolean(garage?.paused || garage?.unavailable);
+      const finished = phase === 'done' && journey.step >= scene.steps.length;
+      const acting = !blocked && (finished || (phase === 'ready' || phase === 'cleared') && step
+        && filmStepActionReady(scene, step, player.position, player.isInMatrix, journey));
+      const text = finished ? '三人已进入铁笼电梯。按 G 继续下行到 Club Hel。' : helGarageText(garage);
+      document.getElementById('game-objective-copy')!.textContent = text;
+      this.el('sandbox-interact').classList.toggle('hidden', !acting);
+      this.el('sandbox-nearby').textContent = blocked ? '行动进度已保留' : finished ? '继续电梯下行' : phase === 'ready' ? '回应守卫'
+        : phase === 'cleared' ? '推开入口钢门' : phase === 'exit' ? '亲自进入电梯' : phase === 'failed' ? 'J 重试当前入口' : '观察守卫，接上反击';
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.toggle('urgent', phase === 'failed');
+      this.el('film-sequence').classList.add('hel-garage');
+      this.el('film-sequence-line').textContent = text;
+      this.el('film-sequence-hint').textContent = blocked ? '当前进度保留 · 鼠标观察 · V 切换视角'
+        : phase === 'evade' ? '按 X 避开枪口 · V 切换视角' : phase === 'counter' || phase === 'combo' ? '按 F 近身反击 · V 切换视角'
+          : phase === 'failed' ? 'J 打开手记，重试当前入口' : phase === 'exit' ? 'WASD 跨过门槛 · V 切换视角'
+            : finished ? 'G 继续 · J 手记 · V 切换视角' : acting ? 'G 操作 · V 切换视角' : '鼠标环顾 · V 切换视角 · 暂停保留进度';
+      const seconds = phase === 'evade' ? HEL_GARAGE.evadeWindow : phase === 'counter' || phase === 'combo' ? HEL_GARAGE.counterWindow : 0;
+      this.el('sandbox-job').style.width = seconds ? `${Math.max(0, 1 - garage!.elapsed / seconds) * 100}%` : '0';
+      if (!blocked && step && ['ready', 'cleared', 'exit'].includes(phase ?? '')) {
+        const direction = Math.atan2(stepTarget!.x - player.position.x, stepTarget!.z - player.position.z) - player.rotation;
+        const label = phase === 'ready' ? 'Seraph 右后方' : phase === 'cleared' ? '钢门门把' : '铁笼电梯';
+        this.el('sandbox-waypoint').innerHTML = `<span style="transform:rotate(${-direction}rad)">↑</span>${label} <b>${Math.round(distance(stepTarget!, player.position))} m</b>`;
+      } else this.el('sandbox-waypoint').textContent = '';
+      return;
+    }
+    if (trainmanChaseActive(journey)) {
+      const chase = journey.helChase?.performance, text = trainmanChaseText(chase), phase = chase?.phase;
+      const finished = journey.step >= scene.steps.length;
+      const acting = finished || trainmanChaseCanAct(chase, player.position, FILM_SETS[TRAINMAN_CHASE.set].center);
+      this.el('sandbox-interact').classList.toggle('hidden', !acting);
+      this.el('sandbox-nearby').textContent = finished ? '接回 Trinity，前往 Hel' : phase === 'escaped' ? '与同行者商量' : phase === 'running' ? '翻越闸机' : '请 Trainman 帮忙';
+      this.el('sandbox-weather').textContent = '地铁 · Stellma';
+      document.getElementById('game-objective-copy')!.textContent = finished ? 'G 接回 Trinity，前往 Hel。' : text;
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.add('trainman-chase');
+      this.el('film-sequence').classList.toggle('urgent', phase === 'failed'); this.el('film-sequence-line').textContent = text;
+      this.el('film-sequence-hint').textContent = finished ? 'G 继续 · J 手记 · V 切换视角' : phase === 'failed' ? 'J 打开手记，重试当前追逐'
+        : phase === 'cover' ? 'WASD 贴住柱后 · X 闪避 · V 切换视角' : phase === 'running' ? 'WASD 移动 · Shift 奔跑 · G 翻越闸机 · V 切换视角'
+          : acting ? 'G 操作 · 鼠标环顾 · V 切换视角' : '鼠标环顾 · V 切换视角 · 暂停保留进度';
+      this.el('sandbox-job').style.width = phase === 'running' || phase === 'vaulting' ? `${(chase?.remaining ?? 0) / TRAINMAN_CHASE.pursuitSeconds * 100}%` : '0';
+      return;
+    }
+    if (oracleAbsorptionActive(journey)) {
+      const visit = journey.oracleAbsorption, text = oracleAbsorptionText(visit), finished = visit?.phase === 'done';
+      const acting = finished || Boolean(step && filmStepActionReady(scene, step, player.position, player.isInMatrix, journey));
+      this.el('sandbox-interact').classList.toggle('hidden', !acting);
+      this.el('sandbox-nearby').textContent = finished ? '返回 Hammer' : visit?.phase === 'reflection' ? 'J 记录先知自己的判断' : visit?.phase === 'consent' ? '按住 G 决定留下'
+        : visit?.phase === 'waiting' ? '留在厨房面对来客' : visit?.phase === 'watching' ? '请 Seraph 带她离开' : '送别 Sati';
+      document.getElementById('game-objective-copy')!.textContent = text;
+      if (oracleAbsorptionLocked(visit) || finished) {
+        this.el('sandbox-waypoint').textContent = ''; this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.add('oracle-request');
+        this.el('film-sequence-line').textContent = text;
+        this.el('film-sequence-hint').textContent = finished ? 'G 返回 Hammer · J 手记 · V 切换视角' : visit?.phase === 'reflection' ? 'J 记录判断 · V 切换视角' : visit?.phase === 'consent' ? '按住 G · 松手保留选择进度 · V 切换视角' : '鼠标环顾 · V 切换视角 · 暂停保留当前动作';
+      }
+      return;
+    }
+    if (oracleLastActive(journey)) {
+      const visit = journey.oracleLast, text = oracleLastText(visit, journey.step), blocked = oracleLastLocked(visit), greeting = visit?.phase === 'greeting';
+      const finished = journey.step >= scene.steps.length;
+      const acting = !blocked && (finished || [1, 2].includes(journey.step) && step && filmStepActionReady(scene, step, player.position, player.isInMatrix, journey));
+      document.getElementById('game-objective-copy')!.textContent = text;
+      this.el('sandbox-interact').classList.toggle('hidden', !acting);
+      this.el('sandbox-nearby').textContent = finished ? '观察先知留下后的事' : journey.step === 3 ? 'J 记录自己的判断' : journey.step === 4 ? '亲自离开公寓' : '向先知提问';
+      if (blocked || greeting) {
+        this.el('sandbox-waypoint').textContent = ''; this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.add('oracle-request');
+        this.el('film-sequence-line').textContent = text;
+        this.el('film-sequence-hint').textContent = greeting ? 'WASD 在厨房行走 · 鼠标环顾 · V 切换视角' : '鼠标环顾 · V 切换视角 · 暂停保留当前回应';
+      }
+      return;
+    }
+    if (oracleRequestActive(journey)) {
+      const request = journey.oracleRequest, text = oracleRequestText(request, journey.step);
+      document.getElementById('game-objective-copy')!.textContent = text;
+      this.el('sandbox-nearby').textContent = journey.step === 3 ? '跟随 Seraph 离开' : journey.step === 2 ? '记录信任与怀疑' : '向先知提问';
+      if (oracleRequestLocked(request)) {
+        this.el('sandbox-interact').classList.add('hidden'); this.el('sandbox-waypoint').textContent = '';
+        this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.add('oracle-request');
+        this.el('film-sequence-line').textContent = text; this.el('film-sequence-hint').textContent = '鼠标环顾 · V 切换视角 · 暂停保留当前回应';
+      }
+      return;
+    }
+    if (!journey.visiting && scene.id === 'm3_family' && journey.step > 0) {
+      const family = journey.mobil?.family, text = mobilFamilyText(family), hearing = family?.phase === 'hearing';
+      const reflection = family?.phase === 'reflection', blocked = Boolean(family?.paused || family?.unavailable);
+      document.getElementById('game-objective-copy')!.textContent = hearing ? '听家人的回答，了解他们为何来到这里。' : text;
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.add('mobil-family'); this.el('film-sequence-line').textContent = text;
+      this.el('film-sequence-hint').textContent = blocked ? '谈话进度已保留 · 鼠标观察 · V 切换视角'
+        : hearing ? '鼠标环顾 · V 切换视角 · 暂停保留当前回答' : reflection ? 'J 记录自己的理解 · V 切换视角'
+          : journey.step >= scene.steps.length ? 'G 继续等候列车' : `已听 ${family?.answered.length ?? 0}/4 · G 继续询问 · J 选择问题`;
+      this.el('sandbox-nearby').textContent = journey.step >= scene.steps.length ? '继续等候列车' : reflection ? '记录反思' : '继续询问家人';
+      this.el('sandbox-interact').classList.toggle('hidden', hearing || blocked || journey.step < scene.steps.length && !filmStepNear(scene, scene.steps[1], player.position, player.isInMatrix, journey));
+      if (hearing || reflection || blocked || journey.step >= scene.steps.length) this.el('sandbox-waypoint').textContent = '';
+      return;
+    }
+    if (!journey.visiting && scene.id === 'm2_relay' && journey.trinityRelay) {
+      const relay = journey.trinityRelay;
+      document.getElementById('game-objective-copy')!.textContent = trinityRelayText(relay);
+      if (relay.paused || relay.unavailable || relay.phase === 'hearing' || relay.phase === 'connecting') {
+        this.el('sandbox-interact').classList.add('hidden'); this.el('sandbox-waypoint').textContent = '';
+        this.el('sandbox-job').style.width = `${relay.elapsed / (relay.phase === 'hearing' ? TRINITY_RELAY.hearingSeconds : TRINITY_RELAY.connectSeconds) * 100}%`;
+        return;
+      }
+    }
+    if (!journey.visiting && scene.id === 'm2_blackout' && journey.primaryDemolition?.blast) {
+      const phase = journey.primaryDemolition.blast.phase;
+      if (phase === 'countdown' || phase === 'blast') {
+        document.getElementById('game-objective-copy')!.textContent = primaryText(journey.primaryDemolition);
+        this.el('sandbox-interact').classList.add('hidden');
+      } else if (phase === 'done') document.getElementById('game-objective-copy')!.textContent = 'G 接回 Trinity，核对信号并决定接入 · J 查看手记';
+    }
     if (crosscutActive(journey)) {
       const cut = journey.tvExit!.crosscut!, action = crosscutAction(journey, player.position), text = crosscutText(journey);
       const canAct = action && action.target !== 'retry' && player.id === journey.actor;
@@ -448,19 +627,22 @@ export class SandboxUI {
       document.getElementById('game-objective-copy')!.textContent = failed ? '线路中断 · J 打开手记重试'
         : phone.phase === 'running' ? `卡车将在 ${phone.remaining.toFixed(1)} 秒后撞击电话亭` : 'Trinity 已断开连接';
     }
-    if (helElevatorLocked(journey)) {
+    if (!journey.visiting && scene.id === 'm3_hel_entry' && journey.step === 0) {
+      const lift = journey.helElevator, locked = helElevatorLocked(journey);
       this.el('film-sequence').classList.remove('hidden');
-      this.el('film-sequence-line').textContent = journey.lastText;
-      this.el('film-sequence-hint').textContent = `井道下降中 · ${Math.round(journey.helElevator!.elapsed / HEL_ELEVATOR.seconds * 100)}% · 到站后前门打开`;
-      document.getElementById('game-objective-copy')!.textContent = '铁笼下降中 · 到站后前门打开 · 当前进度自动保存';
-      this.el('sandbox-waypoint').textContent = '↓ CLUB HEL';
-      this.el('sandbox-interact').classList.add('hidden');
+      this.el('film-sequence-line').textContent = helElevatorText(lift);
+      this.el('film-sequence-hint').textContent = lift?.phase === 'opening' ? `拉开铁门 · ${Math.round((lift.gateElapsed ?? 0) / HEL_ELEVATOR.opening * 100)}%`
+        : lift?.phase === 'descending' ? `井道下降中 · ${Math.round(lift.elapsed / HEL_ELEVATOR.seconds * 100)}% · 到层后亲自开门`
+          : lift?.phase === 'arrived' ? '走近把手 · G 拉开铁门 · WASD 走进衣帽间' : '走近红色 HEL 按钮 · G 下行';
+      document.getElementById('game-objective-copy')!.textContent = helElevatorText(lift);
+      if (locked) { this.el('sandbox-waypoint').textContent = '↓ CLUB HEL'; this.el('sandbox-interact').classList.add('hidden'); }
       return;
     }
     if (helDanceDoorLocked(journey)) {
       this.el('film-sequence').classList.remove('hidden');
+      this.el('film-sequence').classList.add('hel-dance-door');
       this.el('film-sequence-line').textContent = journey.lastText;
-      this.el('film-sequence-hint').textContent = `推开舞池重门 · ${Math.round(journey.helDanceDoor!.elapsed / HEL_DANCE_DOOR.seconds * 100)}% · 门后是人群与 VIP 高台`;
+      this.el('film-sequence-hint').textContent = `${helDanceDoorText(journey.helDanceDoor!)} · ${Math.round(journey.helDanceDoor!.elapsed / helDanceDoorDuration(journey.helDanceDoor!) * 100)}% · 门后是人群与 VIP 高台`;
       document.getElementById('game-objective-copy')!.textContent = '正在推开重门 · 当前动作自动保存 · 可以转动视角观察';
       this.el('sandbox-waypoint').textContent = '→ CLUB HEL';
       this.el('sandbox-interact').classList.add('hidden');
@@ -468,10 +650,12 @@ export class SandboxUI {
     }
     if (!journey.visiting && scene.id === 'm3_hel_entry' && journey.fighting && journey.helCoatcheck?.phase === 'combat') {
       const coatcheck = journey.helCoatcheck;
-      this.el('film-sequence').classList.remove('hidden');
-      this.el('film-sequence-line').textContent = journey.lastText;
-      this.el('film-sequence-hint').textContent = `衣帽间 ${coatcheck.kills}/5 · 第 ${coatcheck.wave} 组 · 弹匣 ${coatcheck.ammo}/${HEL_COATCHECK.magazine}${coatcheck.reloadAt !== undefined ? ' · 换弹中' : ''}`;
-      document.getElementById('game-objective-copy')!.textContent = '左键 / T 射击 · R 换弹 · X 闪避 · 柜台可挡子弹 · Morpheus / Seraph 掩护';
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.add('hel-coatcheck');
+      this.el('film-sequence-line').textContent = !coatcheck.rescuePhysical ? journey.lastText : coatcheck.rescuePaused ? '护送暂停，等待 Seraph 回到女侍身边。'
+        : (coatcheck.rescueElapsed ?? 0) < HEL_COATCHECK.rescueSeconds ? 'Seraph 正在保护女侍，Morpheus 掩护。清出前方通道。'
+          : coatcheck.wave === 2 ? '后排守卫躲在武器墙后。沿中间通道前进，从侧面射击。' : '女侍已躲到柜台后。清出通往舞池的路。';
+      this.el('film-sequence-hint').textContent = `衣帽间 ${coatcheck.kills}/5 · 第 ${coatcheck.wave} 组 · 弹匣 ${coatcheck.ammo}/${HEL_COATCHECK.magazine}${coatcheck.reloadAt !== undefined ? ' · 换弹中' : ''} · 1 医疗包`;
+      document.getElementById('game-objective-copy')!.textContent = '左键 / T 射击 · R 换弹 · X 闪避 · 柜台可挡子弹 · 1 医疗包';
       this.el('sandbox-interact').classList.add('hidden');
       return;
     }
@@ -543,7 +727,8 @@ export class SandboxUI {
       const near = Boolean(step && distance(player.position, filmStepPosition(scene, step)) <= 4);
       const phaseName = phase === 'approach' ? '发光通道' : phase === 'ready' ? '谈判平台'
         : phase === 'swarm' ? '机器群包围' : phase === 'forming' ? '集体面孔成形'
-          : phase === 'warning' ? 'Smith 警告' : phase === 'terms' ? '和平条件'
+          : phase === 'challenge' ? '机器质疑' : phase === 'warning' ? 'Smith 警告' : phase === 'question' ? '询问条件'
+            : phase === 'terms' ? '和平条件' : phase === 'assurance' ? '失败的风险'
             : phase === 'pact' ? '锡安停火' : phase === 'seating' ? '连接座升起'
               : phase === 'cabling' ? '身体接线' : phase === 'consent' ? '颈后探针等待同意'
                 : phase === 'connecting' ? '矩阵接入' : phase === 'connected' ? '连接完成' : '谈判失败';
@@ -551,7 +736,10 @@ export class SandboxUI {
         : phase === 'ready' ? '走到平台中央按 G 开始；机器群出现后继续按住 G'
           : phase === 'swarm' ? `按住 G 站稳并请求谈判 · ${Math.round(pact.resolve / DEUS_PACT.resolveSeconds * 100)}%`
             : phase === 'forming' ? '机器个体正在聚成一张集体面孔 · 当前一拍自动保存'
-              : phase === 'warning' ? 'Neo 正说明 Smith 已脱离控制，并会继续感染机器城'
+              : phase === 'challenge' ? '听完机器集体的质疑 · 不需要继续按住 G · V 切换视角'
+                : phase === 'warning' ? 'Neo 正说明 Smith 已脱离控制，并会继续感染机器城'
+                  : phase === 'question' ? '等待机器问完，再用 J 手记明确提出条件'
+                    : phase === 'assurance' ? '身体已经接线，聆听双方确认风险 · 颈后探针仍在等待'
                 : phase === 'terms' ? 'J 打开手记，明确清除 Smith 与停止进攻锡安的交换条件'
                   : phase === 'pact' ? '锡安方向的哨兵已经停止 · 走到连接座按 G'
                     : phase === 'seating' ? '连接座正在托起 Neo · 鼠标观察 · V 切换视角'
@@ -561,6 +749,9 @@ export class SandboxUI {
                             : phase === 'failed' ? 'J 打开手记，从谈判平台重试' : 'G 进入暴雨中的矩阵';
       const progress = phase === 'swarm' ? pact.resolve / DEUS_PACT.resolveSeconds * 100
         : phase === 'forming' ? pact.elapsed / DEUS_PACT.seconds.forming * 100
+          : phase === 'challenge' ? pact.elapsed / DEUS_PACT.seconds.challenge * 100
+            : phase === 'question' ? pact.elapsed / DEUS_PACT.seconds.question * 100
+              : phase === 'assurance' ? pact.elapsed / DEUS_PACT.seconds.assurance * 100
           : phase === 'warning' ? pact.elapsed / DEUS_PACT.seconds.warning * 100
             : phase === 'seating' ? pact.elapsed / DEUS_PACT.seconds.seating * 100
               : phase === 'cabling' ? pact.elapsed / DEUS_PACT.seconds.cabling * 100
@@ -569,9 +760,9 @@ export class SandboxUI {
       const interactive = phase === 'ready' && near || phase === 'pact' && near || phase === 'connected';
       this.el('film-sequence').classList.remove('hidden');
       this.el('film-sequence').classList.toggle('urgent', phase === 'failed' || phase === 'swarm' && pact.elapsed > DEUS_PACT.seconds.swarm - 2);
-      this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence-line').textContent = deusPactDialogue(pact) ?? journey.lastText;
       this.el('film-sequence-hint').textContent = hint;
-      this.el('sandbox-trace').textContent = phase === 'pact' || ['seating', 'cabling', 'consent', 'connecting', 'connected'].includes(phase)
+      this.el('sandbox-trace').textContent = phase === 'pact' || ['seating', 'cabling', 'assurance', 'consent', 'connecting', 'connected'].includes(phase)
         ? '停战信号 · 已发送' : `机器核心 · ${phaseName}`;
       this.el('sandbox-trace').classList.toggle('danger', phase === 'failed');
       this.el('sandbox-job').style.width = deusPactLocked(pact) ? `${Math.max(0, Math.min(100, progress))}%` : '0';
@@ -586,18 +777,34 @@ export class SandboxUI {
       const finale = journey.smithFinale; const phase = finale.phase;
       const near = Boolean(step && distance(player.position, filmStepPosition(scene, step)) <= 4);
       const rain = scene.id === 'm3_rain';
-      const phaseName = phase === 'approach' ? '复制体大道' : phase === 'ready' ? '地面交锋'
+      const phaseName = phase === 'approach' ? '复制体大道' : phase === 'entrance' ? 'Smith 走出队列'
+        : phase === 'greeting' ? 'Smith 的迎接' : phase === 'reply' ? 'Neo 的回应'
+          : phase === 'prediction' ? '必胜的预见' : phase === 'charge_ready' ? '雨中对峙'
+            : phase === 'charging' ? '两人冲向中央' : phase === 'ready' ? '地面交锋'
         : phase === 'ground_warning' ? 'Smith 起手' : phase === 'ground_dodge' ? '地面闪避窗口'
           : phase === 'ground_counter' ? '地面反击窗口' : phase === 'shockwave' ? '球形冲击波'
             : phase === 'air_warning' ? '雨云中的俯冲' : phase === 'air_dodge' ? '高空闪避窗口'
               : phase === 'air_counter' ? '高空反击窗口' : phase === 'building' ? '撞穿楼体'
+                : phase === 'interior_warning' ? '楼内追击' : phase === 'interior_dodge' ? '楼内闪避窗口'
+                  : phase === 'interior_counter' ? '高踢反击窗口' : phase === 'interior_kick' ? '踢出破窗'
+                    : phase === 'relaunch' ? '再次升空' : phase === 'sky_warning' ? '第二轮空战'
+                      : phase === 'sky_dodge' ? '第二轮闪避窗口' : phase === 'sky_counter' ? '第二轮反击窗口'
+                        : phase === 'sky_grapple' ? 'Smith 近身抓握'
                 : phase === 'descent' ? '向街面坠落' : phase === 'crater' ? '陨石坑'
                   : phase === 'choice' ? '为何继续' : phase === 'rain_done' ? '第一轮结束'
+                    : phase === 'pit_warning' ? '坑底起手' : phase === 'pit_dodge' ? '坑底闪避窗口'
+                      : phase === 'pit_evade' ? '错开拳锋' : phase === 'pit_counter' ? '最后的重拳窗口'
+                        : phase === 'pit_punch' ? 'Neo 的面部重拳' : phase === 'pit_retaliation' ? 'Smith 再次压制'
+                          : phase === 'pit_recovery' ? '再次站起'
                     : phase === 'assault_ready' ? '最后猛攻' : phase === 'assault' ? '预见重合'
                       : phase === 'vision' ? 'Smith 的恐惧' : phase === 'understanding' ? '停手的意义'
                         : phase === 'surrender' ? '主动停止抵抗' : phase === 'assimilating' ? 'Smith 同化'
                           : smithOracleRestored(finale) ? '先知恢复 · 雨已停' : phase === 'purging' ? '机器清除感染' : '交锋失败';
       const hint = phase === 'approach' ? 'WASD 穿过两列 Smith，走到大道中央'
+        : phase === 'entrance' ? 'Smith 正从队列走出 · 鼠标观察 · V 切换视角'
+          : phase === 'greeting' || phase === 'prediction' ? '听完当前回应 · 鼠标观察 · 进度自动保存'
+            : phase === 'reply' ? '按 G 亲自回答 Smith：今晚结束这一切'
+              : phase === 'charge_ready' ? '按 G 主动迎战，冲向大道中央'
         : phase === 'ready' ? '靠近大道中央按 G 开始最后交锋'
           : phase === 'ground_warning' ? '看清 Smith 的起手，等闪避窗口亮起'
             : phase === 'ground_dodge' ? `现在按 X 闪避 · 剩余 ${Math.max(0, SMITH_FINALE.ground.dodge - finale.elapsed).toFixed(1)} 秒`
@@ -605,53 +812,75 @@ export class SandboxUI {
                 : phase === 'air_warning' ? 'Smith 从雨云上方俯冲 · 准备闪避'
                   : phase === 'air_dodge' ? `现在按 X 在空中错开 · 剩余 ${Math.max(0, SMITH_FINALE.air.dodge - finale.elapsed).toFixed(1)} 秒`
                     : phase === 'air_counter' ? `现在按 F 空中反击 · 剩余 ${Math.max(0, SMITH_FINALE.air.counter - finale.elapsed).toFixed(1)} 秒`
+                      : phase === 'interior_warning' ? 'Smith 从破窗追进来 · 等出拳时闪避'
+                        : phase === 'interior_dodge' ? `现在按 X 楼内闪避 · 剩余 ${Math.max(0, SMITH_FINALE.interior.dodge - finale.elapsed).toFixed(1)} 秒`
+                          : phase === 'interior_counter' ? `现在按 F 高踢反击 · 剩余 ${Math.max(0, SMITH_FINALE.interior.counter - finale.elapsed).toFixed(1)} 秒`
+                            : phase === 'sky_dodge' ? `现在按 X 第二轮闪避 · 剩余 ${Math.max(0, SMITH_FINALE.air.dodge - finale.elapsed).toFixed(1)} 秒`
+                              : phase === 'sky_counter' ? `现在按 F 第二轮反击 · 剩余 ${Math.max(0, SMITH_FINALE.air.counter - finale.elapsed).toFixed(1)} 秒`
                       : phase === 'descent' ? finale.focus >= SMITH_FINALE.descent.braceSeconds ? '姿态已稳住 · 保持 G，等待落地'
                         : `按住 G 稳住坠落姿态 · ${Math.round(finale.focus / SMITH_FINALE.descent.braceSeconds * 100)}%`
                         : phase === 'crater' ? finale.elapsed < SMITH_FINALE.crater.settleSeconds ? '撞击余波尚未平息 · 稍后按住 G 撑起身体'
                           : `按住 G 从坑底站起 · ${Math.round(finale.focus / SMITH_FINALE.crater.riseSeconds * 100)}%`
                           : phase === 'choice' ? 'J 打开手记，亲自回答为什么仍要继续'
                             : phase === 'rain_done' ? '按 G 继续，听完 Smith 最后的预见'
-                              : phase === 'assault_ready' ? '靠近 Smith 按 G，让最后猛攻开始'
+                              : phase === 'assault_ready' ? '靠近 Smith 按 G，再次迎战'
+                                : phase === 'pit_warning' ? 'Smith 再次扑来 · 等起手窗口再闪避'
+                                  : phase === 'pit_dodge' ? `现在按 X 错开拳锋 · 剩余 ${Math.max(0, SMITH_FINALE.pit.dodge - finale.elapsed).toFixed(1)} 秒`
+                                    : phase === 'pit_counter' ? `现在按 F 打出最后的重拳 · 剩余 ${Math.max(0, SMITH_FINALE.pit.counter - finale.elapsed).toFixed(1)} 秒`
+                                      : phase === 'pit_recovery' ? `按住 G 再次站起 · ${Math.round(finale.focus / SMITH_FINALE.crater.riseSeconds * 100)}%`
                                 : phase === 'vision' ? 'J 打开手记，判断 Smith 真正害怕的东西'
                                   : phase === 'understanding' ? '靠近 Smith 按 G，主动放下拳头'
                                     : phase === 'surrender' ? `按住 G 明确接受同化 · ${Math.round(finale.focus / SMITH_FINALE.surrender.consentSeconds * 100)}%`
-                                      : phase === 'failed' ? `J 打开手记，从${finale.checkpoint === 'air' ? '高空' : '大道中央'}检查点重试`
+                                      : phase === 'failed' ? `J 打开手记，从${finale.checkpoint === 'pit' ? '坑底' : finale.checkpoint === 'interior' ? '楼内' : finale.checkpoint === 'sky' ? '第二轮高空' : finale.checkpoint === 'air' ? '高空' : '大道中央'}检查点重试`
                                         : phase === 'done' ? '按 G 进入停战之后' : smithOracleRestored(finale) ? '先知仍躺在坑底 · 等待镜头结束' : '鼠标观察 · V 切换视角 · 当前一拍自动保存';
-      const progress = phase === 'ground_warning' ? finale.elapsed / SMITH_FINALE.ground.warning * 100
+      const progress = phase === 'entrance' ? finale.elapsed / SMITH_FINALE.entrance.seconds * 100
+        : phase === 'greeting' ? finale.elapsed / SMITH_FINALE.entrance.greeting * 100
+          : phase === 'prediction' ? finale.elapsed / SMITH_FINALE.entrance.prediction * 100
+            : phase === 'charging' ? finale.elapsed / SMITH_FINALE.entrance.charge * 100
+              : phase === 'ground_warning' ? finale.elapsed / SMITH_FINALE.ground.warning * 100
         : phase === 'ground_dodge' ? (SMITH_FINALE.ground.dodge - finale.elapsed) / SMITH_FINALE.ground.dodge * 100
           : phase === 'ground_counter' ? (SMITH_FINALE.ground.counter - finale.elapsed) / SMITH_FINALE.ground.counter * 100
             : phase === 'shockwave' ? finale.elapsed / SMITH_FINALE.shockwave * 100
               : phase === 'air_warning' ? finale.elapsed / SMITH_FINALE.air.warning * 100
                 : phase === 'air_dodge' ? (SMITH_FINALE.air.dodge - finale.elapsed) / SMITH_FINALE.air.dodge * 100
                   : phase === 'air_counter' ? (SMITH_FINALE.air.counter - finale.elapsed) / SMITH_FINALE.air.counter * 100
+                    : phase === 'interior_warning' ? finale.elapsed / SMITH_FINALE.interior.warning * 100
+                      : phase === 'interior_dodge' ? (SMITH_FINALE.interior.dodge - finale.elapsed) / SMITH_FINALE.interior.dodge * 100
+                        : phase === 'interior_counter' ? (SMITH_FINALE.interior.counter - finale.elapsed) / SMITH_FINALE.interior.counter * 100
+                          : phase === 'sky_dodge' ? (SMITH_FINALE.air.dodge - finale.elapsed) / SMITH_FINALE.air.dodge * 100
+                            : phase === 'sky_counter' ? (SMITH_FINALE.air.counter - finale.elapsed) / SMITH_FINALE.air.counter * 100
                     : phase === 'building' ? finale.elapsed / SMITH_FINALE.building * 100
                       : phase === 'descent' ? finale.focus / SMITH_FINALE.descent.braceSeconds * 100
                         : phase === 'crater' ? finale.focus / SMITH_FINALE.crater.riseSeconds * 100
+                          : phase === 'pit_dodge' ? (SMITH_FINALE.pit.dodge - finale.elapsed) / SMITH_FINALE.pit.dodge * 100
+                            : phase === 'pit_counter' ? (SMITH_FINALE.pit.counter - finale.elapsed) / SMITH_FINALE.pit.counter * 100
+                              : phase === 'pit_recovery' ? finale.focus / SMITH_FINALE.crater.riseSeconds * 100
                           : phase === 'assault' ? finale.elapsed / SMITH_FINALE.assault * 100
                             : phase === 'surrender' ? finale.focus / SMITH_FINALE.surrender.consentSeconds * 100
                               : phase === 'assimilating' ? finale.elapsed / SMITH_FINALE.surrender.assimilationSeconds * 100
                                 : phase === 'purging' ? finale.elapsed / SMITH_FINALE.surrender.purgeSeconds * 100 : 0;
       const interactive = phase === 'ready' && near || phase === 'assault_ready' && near || phase === 'understanding' && near
-        || phase === 'rain_done' || phase === 'done';
+        || phase === 'reply' || phase === 'charge_ready' || phase === 'rain_done' || phase === 'done';
       this.el('film-sequence').classList.remove('hidden');
-      this.el('film-sequence').classList.toggle('urgent', ['ground_dodge', 'ground_counter', 'air_dodge', 'air_counter', 'failed'].includes(phase));
-      this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence').classList.toggle('urgent', ['ground_dodge', 'ground_counter', 'air_dodge', 'air_counter', 'interior_dodge', 'interior_counter', 'sky_dodge', 'sky_counter', 'pit_dodge', 'pit_counter', 'failed'].includes(phase));
+      this.el('film-sequence-line').textContent = smithFinaleDialogue(finale) ?? journey.lastText;
       this.el('film-sequence-hint').textContent = hint;
       this.el('sandbox-trace').textContent = phase === 'done' ? '机器协议 · 已完成' : `暴雨大道 · ${phaseName}`;
-      this.el('sandbox-trace').classList.toggle('danger', ['ground_dodge', 'ground_counter', 'air_dodge', 'air_counter', 'failed'].includes(phase));
-      this.el('sandbox-job').style.width = smithFinaleLocked(finale) && !['choice', 'vision', 'understanding'].includes(phase)
+      this.el('sandbox-trace').classList.toggle('danger', ['ground_dodge', 'ground_counter', 'air_dodge', 'air_counter', 'interior_dodge', 'interior_counter', 'sky_dodge', 'sky_counter', 'pit_dodge', 'pit_counter', 'failed'].includes(phase));
+      this.el('sandbox-job').style.width = smithFinaleLocked(finale) && !['reply', 'charge_ready', 'choice', 'vision', 'understanding'].includes(phase)
         ? `${Math.max(0, Math.min(100, progress))}%` : '0';
       this.el('sandbox-interact').classList.toggle('hidden', !interactive);
-      this.el('sandbox-nearby').textContent = phase === 'ready' ? '开始最后交锋' : phase === 'assault_ready' ? '承受最后猛攻'
+      this.el('sandbox-nearby').textContent = phase === 'reply' ? '回应 Smith' : phase === 'charge_ready' ? '主动迎战'
+        : phase === 'ready' ? '开始最后交锋' : phase === 'assault_ready' ? '再次迎战'
         : phase === 'understanding' ? '主动停止抵抗' : phase === 'done' ? '进入停战之后' : '继续最后的选择';
       const actions = this.el('film-training-actions');
       const dodge = actions.querySelector<HTMLButtonElement>('[data-combat="dodge"]')!;
       const attack = actions.querySelector<HTMLButtonElement>('[data-combat="attack"]')!;
-      if (['ground_dodge', 'ground_counter', 'air_dodge', 'air_counter'].includes(phase)) {
+      if (['ground_dodge', 'ground_counter', 'air_dodge', 'air_counter', 'interior_dodge', 'interior_counter', 'sky_dodge', 'sky_counter', 'pit_dodge', 'pit_counter'].includes(phase)) {
         actions.classList.remove('hidden');
-        dodge.classList.toggle('hidden', !['ground_dodge', 'air_dodge'].includes(phase)); dodge.disabled = !['ground_dodge', 'air_dodge'].includes(phase);
-        attack.classList.toggle('hidden', !['ground_counter', 'air_counter'].includes(phase)); attack.disabled = !['ground_counter', 'air_counter'].includes(phase);
-        attack.querySelector('span')!.textContent = phase === 'air_counter' ? '空中反击' : '反击 Smith';
+        dodge.classList.toggle('hidden', !['ground_dodge', 'air_dodge', 'interior_dodge', 'sky_dodge', 'pit_dodge'].includes(phase)); dodge.disabled = !['ground_dodge', 'air_dodge', 'interior_dodge', 'sky_dodge', 'pit_dodge'].includes(phase);
+        attack.classList.toggle('hidden', !['ground_counter', 'air_counter', 'interior_counter', 'sky_counter', 'pit_counter'].includes(phase)); attack.disabled = !['ground_counter', 'air_counter', 'interior_counter', 'sky_counter', 'pit_counter'].includes(phase);
+        attack.querySelector('span')!.textContent = phase === 'pit_counter' ? '最后的重拳' : phase === 'interior_counter' ? '高踢反击' : phase === 'air_counter' || phase === 'sky_counter' ? '空中反击' : '反击 Smith';
       }
       if (smithFinaleLocked(finale) || phase === 'failed') this.el('sandbox-waypoint').textContent = '';
       document.getElementById('game-objective')!.textContent = rain ? '暴雨大道 · 最后交锋' : '陨石坑 · 最后的选择';
@@ -696,7 +925,7 @@ export class SandboxUI {
     }
     if (!journey.visiting && scene.id === 'm3_hel_bargain' && journey.helBargain) {
       const bargain = journey.helBargain; const phase = bargain.phase;
-      const window = phase === 'evade' ? 3 : phase === 'counter' ? 2.4 : phase === 'airborne' ? 2.8 : 0;
+      const window = phase === 'evade' ? 3 : phase === 'counter' ? 2.4 : phase === 'airborne' ? bargain.breakout ? HEL_BREAKOUT.kick + HEL_BREAKOUT.flight : 2.8 : 0;
       this.el('film-sequence').classList.remove('hidden');
       this.el('film-sequence').classList.toggle('urgent', phase === 'failed' || Boolean(window));
       this.el('film-sequence-line').textContent = journey.lastText;
@@ -704,10 +933,13 @@ export class SandboxUI {
         : phase === 'evade' ? `X 闪避 · ${(window - bargain.elapsed).toFixed(1)} 秒`
           : phase === 'counter' ? `面朝高台按 F 反击 · ${(window - bargain.elapsed).toFixed(1)} 秒`
               : phase === 'airborne' ? `盯住飞来的枪，靠近后按 G 接住 · ${(window - bargain.elapsed).toFixed(1)} 秒`
+              : phase === 'catching' ? '正在握紧枪柄并收回瞄准位置 · V 切换视角'
+              : phase === 'disarming' ? '放低枪口，让周围的人收走武器 · V 切换视角'
               : phase === 'failed' ? 'J 打开手记 · 从突围前重试' : '按当前目标行动 · 进度自动保存';
       this.el('sandbox-trace').textContent = window ? `包围圈 ${Math.max(0, window - bargain.elapsed).toFixed(1)} 秒` : 'Club Hel · 舞池与 VIP 高台';
       this.el('sandbox-trace').classList.toggle('danger', phase === 'failed' || Boolean(window));
-      this.el('sandbox-interact').classList.toggle('hidden', ['windup', 'evade', 'counter', 'failed'].includes(phase) || step?.kind === 'reflect');
+      this.el('sandbox-interact').classList.toggle('hidden', ['windup', 'evade', 'counter', 'failed', 'disarming', 'catching'].includes(phase) || step?.kind === 'reflect');
+      if (phase === 'disarming' || phase === 'catching') this.el('sandbox-waypoint').textContent = '';
       const actions = this.el('film-training-actions');
       if (phase === 'evade' || phase === 'counter') {
         actions.classList.remove('hidden');
@@ -722,8 +954,38 @@ export class SandboxUI {
           : phase === 'evade' ? '现在按 X 闪避'
             : phase === 'counter' ? '面朝 VIP 高台按 F 反击'
               : phase === 'airborne' ? '靠近飞来的枪，按 G 接住'
+                : phase === 'catching' ? '正在握紧枪柄并转向高台'
+                : phase === 'disarming' ? '正在放下并交出武器'
                 : phase === 'gunpoint' ? '靠近并面朝 Merovingian，按 G 逼他放人'
                   : step?.kind === 'reflect' ? 'J 打开手记，决定如何拒绝交换' : step ? `${step.label} · 走近按 G` : 'Mero 已让 Trainman 接回 Neo · G 继续';
+      return;
+    }
+    if (trinityTerminalActive(journey)) {
+      const state = journey.trinityTerminal, phase = state?.phase ?? 'ready', hint = trinityTerminalText(state);
+      this.el('film-sequence').classList.remove('hidden');
+      this.el('film-sequence-line').textContent = 'TRINITY / EMERGENCY ROUTE CONTROL';
+      this.el('film-sequence-hint').textContent = hint + (phase === 'typing' || phase === 'scanning' ? ` ${Math.round((state?.elapsed ?? 0) / (phase === 'scanning' ? TRINITY_TERMINAL.scanSeconds : TRINITY_TERMINAL.typingSeconds) * 100)}%` : '');
+      this.el('film-terminal').classList.toggle('hidden', phase !== 'selecting' || Boolean(state?.paused || state?.unavailable));
+      this.el('film-terminal-retry').classList.toggle('hidden', phase !== 'failed');
+      this.el('sandbox-trace').textContent = '主网已断 · 应急在线 · Neo 等待交接';
+      this.el('sandbox-trace').classList.toggle('danger', phase === 'failed');
+      if (phase !== 'ready') { this.el('sandbox-waypoint').textContent = ''; this.el('sandbox-interact').classList.toggle('hidden', !['armed', 'deployed'].includes(phase) || Boolean(state?.paused || state?.unavailable)); }
+      this.el('sandbox-nearby').textContent = phase === 'armed' ? '明确提交覆盖程序' : phase === 'deployed' ? '接回 Neo 的走廊行动' : '检查机房终端';
+      this.el('sandbox-job').style.width = `${(state?.elapsed ?? 0) / (phase === 'scanning' ? TRINITY_TERMINAL.scanSeconds : TRINITY_TERMINAL.typingSeconds) * 100}%`;
+      document.getElementById('game-objective-copy')!.textContent = hint;
+      return;
+    }
+    if (sourcePortalActive(journey) && journey.keyDoor?.performance) {
+      const state = journey.keyDoor.performance, phase = state.phase, hint = sourcePortalText(state);
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = 'NEO / SOURCE CORRIDOR';
+      this.el('film-sequence-hint').textContent = hint; document.getElementById('game-objective-copy')!.textContent = hint;
+      this.el('film-portal-retry').classList.toggle('hidden', phase !== 'failed');
+      const actions = this.el('film-training-actions'); actions.classList.toggle('hidden', phase !== 'cover' || Boolean(state.paused || state.unavailable));
+      actions.querySelector<HTMLButtonElement>('[data-combat="dodge"]')!.classList.add('hidden');
+      actions.querySelector<HTMLButtonElement>('[data-combat="attack"] span')!.textContent = '护送同伴撤离';
+      if (sourcePortalLocked(state)) { this.el('sandbox-waypoint').textContent = ''; this.el('sandbox-interact').classList.toggle('hidden', phase !== 'key_ready' || Boolean(state.paused || state.unavailable)); }
+      this.el('sandbox-nearby').textContent = phase === 'key_ready' ? '接住最后的钥匙' : phase === 'cover' ? '护送两位同伴' : hint;
+      if (journey.grid) this.el('sandbox-trace').textContent = `源头窗口 ${Math.ceil(journey.grid.remaining)}s`;
       return;
     }
     if (!journey.visiting && journey.grid && ['m2_plan', 'm2_power', 'm2_vigilant', 'm2_backup', 'm2_key_door'].includes(scene.id)) {
@@ -764,6 +1026,13 @@ export class SandboxUI {
       this.el('sandbox-trace').textContent = encounter.phase === 'decision' || encounter.phase === 'failed'
         ? `Trinity 信号 ${Math.ceil(encounter.remaining)} 秒` : '第六次异常 · 两扇门';
       this.el('sandbox-trace').classList.toggle('danger', encounter.phase === 'failed' || encounter.phase === 'decision' && encounter.remaining < 15);
+      if (encounter.room?.exit && encounter.phase === 'decision') {
+        this.el('sandbox-interact').classList.add('hidden');
+        const hint = encounter.room.exit.elapsed < 1.8 ? 'Neo 正在开门 · 鼠标观察，V 切换视角' : '左门已打开 · 用 WASD 跨过门槛，返回矩阵';
+        this.el('film-sequence-hint').textContent = hint;
+        this.el('sandbox-nearby').textContent = ''; this.el('sandbox-waypoint').textContent = '';
+        document.getElementById('game-objective-copy')!.textContent = hint;
+      }
       if (encounter.phase === 'failed') {
         this.el('sandbox-interact').classList.add('hidden');
         document.getElementById('game-objective-copy')!.textContent = '信号窗口中断 · 按 J 打开手记并重试当前检查点';
@@ -774,7 +1043,7 @@ export class SandboxUI {
       this.el('film-sequence').classList.remove('hidden');
       this.el('film-sequence').classList.toggle('urgent', encounter.phase === 'failed' || encounter.phase === 'flight' && CATCH.impact - encounter.elapsed < 2);
       this.el('film-sequence-line').textContent = catchText(encounter);
-      this.el('film-sequence-hint').textContent = encounter.phase === 'flight' ? `落地前 ${Math.max(0, CATCH.impact - encounter.elapsed).toFixed(1)} 秒 · 距离 ${Math.hypot(encounter.x - CATCH.trinity.x, encounter.z - CATCH.trinity.z).toFixed(1)} 米`
+      this.el('film-sequence-hint').textContent = encounter.phase === 'flight' ? `落地前 ${Math.max(0, CATCH.impact - encounter.elapsed).toFixed(1)} 秒 · 距离 ${catchDistance(encounter).toFixed(1)} 米`
         : encounter.phase === 'extracting' ? `代码聚焦 ${Math.round(encounter.focus / CATCH.extraction * 100)}% · 按住 G`
           : encounter.phase === 'pulse' ? `心跳 ${encounter.beats}/3 · 误按 ${encounter.misses}/3 · 光圈收拢时按 F`
             : encounter.phase === 'failed' ? 'J 打开手记重试检查点' : '跟随当前剧情提示行动';
@@ -793,10 +1062,11 @@ export class SandboxUI {
       this.el('film-sequence').classList.toggle('urgent', loss.phase === 'failed' || loss.phase === 'evacuating' && loss.remaining < 10);
       this.el('film-sequence-line').textContent = journey.lastText;
       this.el('film-sequence-hint').textContent = loss.phase === 'evacuating' ? `炸弹 ${Math.ceil(loss.remaining)} 秒 · 带船员从船尾货舱撤离`
-        : loss.phase === 'failed' ? 'J 打开手记，从弃船命令检查点重试' : '雷达显示炸弹在 EMP 范围外';
+        : loss.phase === 'destroying' ? '全员已出船 · 回头观察船体解体' : loss.phase === 'mourning' ? 'G 听完 Morpheus 的回应，再继续撤离'
+          : loss.phase === 'failed' ? 'J 打开手记，从弃船命令检查点重试' : '雷达显示炸弹在 EMP 范围外';
       this.el('sandbox-trace').textContent = loss.phase === 'evacuating' ? `炸弹 ${Math.ceil(loss.remaining)} 秒` : '尼布甲尼撒号 · 最后一程';
       this.el('sandbox-trace').classList.toggle('danger', loss.phase === 'failed' || loss.phase === 'evacuating' && loss.remaining < 10);
-      if (loss.phase === 'failed') this.el('sandbox-interact').classList.add('hidden');
+      if (['failed', 'destroying'].includes(loss.phase)) this.el('sandbox-interact').classList.add('hidden');
     }
     if (!journey.visiting && scene.id === 'm2_stop_sentinels' && journey.tunnel) {
       const tunnel = journey.tunnel;
@@ -804,12 +1074,15 @@ export class SandboxUI {
       this.el('film-sequence').classList.toggle('urgent', tunnel.phase === 'failed' || tunnel.phase === 'sensing' && tunnel.remaining < 5);
       this.el('film-sequence-line').textContent = journey.lastText;
       this.el('film-sequence-hint').textContent = tunnel.phase === 'sensing' ? `面向哨兵 · 按住 G · 信号 ${Math.round(tunnel.focus / RELOADED_FINALE.signalSeconds * 100)}% · 追击 ${Math.ceil(tunnel.remaining)} 秒`
-        : tunnel.phase === 'failed' ? 'J 打开手记，从窄口重试' : '沿隧道向前跑；旧船已经失去';
+        : tunnel.phase === 'failed' ? 'J 打开手记，从窄口重试' : tunnel.phase === 'stopping' ? '哨兵正在失去动力 · V 切换视角'
+          : tunnel.phase === 'collapsing' ? 'Neo 失去平衡 · Trinity 正在赶来' : tunnel.phase === 'collapsed' ? 'Neo 已昏迷 · J 继续到 Hammer' : '沿隧道向前跑；旧船已经失去';
       this.el('sandbox-trace').textContent = tunnel.phase === 'sensing' ? `信号 ${Math.round(tunnel.focus / RELOADED_FINALE.signalSeconds * 100)}%` : '现实中的连接';
       this.el('sandbox-trace').classList.toggle('danger', tunnel.phase === 'failed' || tunnel.phase === 'sensing' && tunnel.remaining < 5);
       this.el('sandbox-job').style.width = `${tunnel.focus / RELOADED_FINALE.signalSeconds * 100}%`;
-      document.getElementById('game-objective-copy')!.textContent = tunnel.phase === 'sensing' ? '转身面对追兵，按住 G 让哨兵停下' : tunnel.phase === 'failed' ? '按 J 打开手记重试窄口' : 'Shift 奔跑，抵达隧道窄口';
-      if (tunnel.phase === 'sensing' || tunnel.phase === 'failed') this.el('sandbox-interact').classList.add('hidden');
+      document.getElementById('game-objective-copy')!.textContent = tunnel.phase === 'sensing' ? '转身面对追兵，按住 G 让哨兵停下' : tunnel.phase === 'failed' ? '按 J 打开手记重试窄口'
+        : tunnel.phase === 'stopping' ? '连接已经切断，观察哨兵落地' : tunnel.phase === 'collapsing' ? 'Neo 失去意识，同伴正在接近'
+          : tunnel.phase === 'collapsed' ? '按 J 继续到 Hammer 的医疗舱' : 'Shift 奔跑，抵达隧道窄口';
+      if (tunnel.phase !== 'running') this.el('sandbox-interact').classList.add('hidden');
     }
     if (!journey.visiting && scene.id === 'm2_persephone' && journey.step === 2 && journey.persephone) {
       this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
@@ -1653,6 +1926,87 @@ export class SandboxUI {
       document.getElementById('game-objective-copy')!.textContent = '沿维修梯抵达下方平台 · 可停在横档上观察';
       this.el('sandbox-waypoint').textContent = '↓ 维修平台'; this.el('sandbox-interact').classList.add('hidden'); return;
     }
+    if (upperDiggerActive(journey)) {
+      const state = journey.upperDigger, phase = state?.phase ?? 'approach';
+      this.el('film-ride').classList.remove('hidden'); this.el('film-ride-title').textContent = 'ZEE / 上层管线';
+      this.el('film-ride-speed').textContent = ['retreat', 'escape'].includes(phase) ? `${Math.ceil(state?.remaining ?? 18)} 秒` : `${Math.round(state?.climb ?? 0)} m`;
+      this.el('film-ride-health').textContent = state?.charraDead ? 'Charra 已遇难' : phase === 'bracing' ? `支撑 ${Math.round((state?.grip ?? 0) * 100)}%` : '第二台钻机仍在钻进';
+      this.el('film-ride-controls').textContent = upperDiggerText(state);
+      this.el('sandbox-interact').classList.toggle('hidden', !['approach', 'ready', 'hatch'].includes(phase));
+      this.el('sandbox-nearby').textContent = phase === 'ready' ? '抓住腰带' : phase === 'hatch' ? '进入维修舱口' : '抓住维修梯';
+      this.el('film-sequence').classList.toggle('hidden', phase !== 'failed'); this.el('film-sequence-line').textContent = upperDiggerText(state);
+      this.el('film-sequence-hint').textContent = 'J 从检查点重试';
+      if (phase !== 'approach') this.el('sandbox-waypoint').textContent = '';
+      document.getElementById('game-objective-copy')!.textContent = upperDiggerText(state); return;
+    }
+    if (diggersActive(journey)) {
+      const drill = journey.diggers, phase = drill?.phase ?? 'approach';
+      this.el('film-ride').classList.toggle('hidden', phase === 'collapsing' || phase === 'failed'); this.el('film-ride-title').textContent = 'CHARRA / 船坞步兵';
+      this.el('film-ride-speed').textContent = `${Math.ceil(drill?.remaining ?? 90)} 秒`;
+      this.el('film-ride-health').textContent = `射击口 ${(drill?.station ?? 0) + 1} / 2 · 火箭 ${drill?.rounds ?? 6}`;
+      this.el('film-ride-controls').textContent = diggersText(drill);
+      this.el('sandbox-interact').classList.toggle('hidden', !['approach', 'relocate'].includes(phase));
+      this.el('sandbox-nearby').textContent = '架起发射器 · 配合 Zee';
+      if (!['approach', 'relocate'].includes(phase)) this.el('sandbox-waypoint').textContent = '';
+      this.el('film-sequence').classList.toggle('hidden', phase !== 'failed' && phase !== 'collapsing');
+      this.el('film-sequence-line').textContent = diggersText(drill);
+      this.el('film-sequence-hint').textContent = phase === 'failed' ? 'J 从当前射击口重试' : 'V 切换视角';
+      document.getElementById('game-objective-copy')!.textContent = diggersText(drill); return;
+    }
+    if (dockEvacuationActive(journey) || shaftSealActive(journey)) {
+      const evacuation = dockEvacuationActive(journey), state = evacuation ? journey!.dockEvacuation : journey!.shaftSeal;
+      const text = evacuation ? dockEvacuationText(journey!.dockEvacuation) : shaftSealText(journey!.shaftSeal);
+      const locked = evacuation ? dockEvacuationLocked(journey!.dockEvacuation) : shaftSealLocked(journey!.shaftSeal);
+      this.el('sandbox-interact').classList.add('hidden'); this.el('film-ride').classList.toggle('hidden', !locked);
+      this.el('film-ride-title').textContent = evacuation ? 'KID / 最后一班升降梯' : '锡安 / 封堵升降井';
+      this.el('film-ride-speed').textContent = evacuation ? state?.phase === 'lowering' ? '正在撤离' : '第二波机器' : `${Math.round((journey!.shaftSeal?.turn ?? 0) * 100)}%`;
+      this.el('film-ride-health').textContent = 'EMP 已释放 · 牺牲者与伤势保留'; this.el('film-ride-controls').textContent = text;
+      this.el('film-sequence').classList.add('hidden'); if (locked) this.el('sandbox-waypoint').textContent = '';
+      document.getElementById('game-objective-copy')!.textContent = text; return;
+    }
+    if (dockBriefingActive(journey)) {
+      const state = journey!.dockBriefing, text = dockBriefingText(state);
+      this.el('sandbox-interact').classList.add('hidden');
+      this.el('film-ride').classList.toggle('hidden', !dockBriefingLocked(state));
+      this.el('film-ride-title').textContent = 'NIOBE / 指挥层人员闸口';
+      this.el('film-ride-speed').textContent = state?.phase === 'lowering' ? '升降梯下降' : state?.phase === 'gate' ? '人员闸口打开' : '三位船长';
+      this.el('film-ride-health').textContent = 'EMP 已消耗 · 自动防御失效';
+      this.el('film-ride-controls').textContent = text; this.el('film-sequence').classList.add('hidden');
+      if (dockBriefingLocked(state)) this.el('sandbox-waypoint').textContent = '';
+      document.getElementById('game-objective-copy')!.textContent = text; return;
+    }
+    if (journey?.scene === 'm3_dock_reunion' && !journey.visiting && dockReunionLocked(journey.dockReunion)) {
+      const reunion = journey.dockReunion!, text = dockReunionText(reunion);
+      this.el('sandbox-interact').classList.add('hidden'); this.el('sandbox-waypoint').textContent = '';
+      this.el('film-ride').classList.remove('hidden'); this.el('film-ride-title').textContent = 'LINK / 船坞重逢';
+      this.el('film-ride-speed').textContent = reunion.phase === 'disembarking' ? '船员出舱' : reunion.phase === 'exiting' ? `${Math.round(reunion.elapsed / 8 * 100)}%` : reunion.phase === 'promise' ? '等待回应' : reunion.phase === 'ready' ? '准备出舱' : '重逢';
+      this.el('film-ride-health').textContent = 'EMP 已释放 · Zee 留下的挂坠仍在身上';
+      this.el('film-ride-controls').textContent = text;
+      this.el('film-sequence').classList.add('hidden');
+      document.getElementById('game-objective-copy')!.textContent = text; return;
+    }
+    if (dockEmpLocked(journey)) {
+      const operator = journey.empOperator;
+      if (operator && operator.phase !== 'fired') {
+        const text = empOperatorText(operator);
+        this.el('sandbox-interact').classList.add('hidden'); this.el('sandbox-waypoint').textContent = '';
+        this.el('film-ride').classList.remove('hidden'); this.el('film-ride-title').textContent = 'LINK / EMP 操作站';
+        this.el('film-ride-speed').textContent = operator.phase === 'turning' ? `${Math.round(empOperatorPose(operator).turn * 100)}%` : operator.phase === 'ready' ? '等待操作' : operator.phase === 'seating' ? '落座' : '离椅';
+        this.el('film-ride-health').textContent = journey.emp ? 'EMP 已释放 · 船坞防御同时失电' : 'EMP 已充能 · 起爆器由你操作';
+        this.el('film-ride-controls').textContent = text;
+        this.el('film-sequence').classList.add('hidden');
+        document.getElementById('game-objective-copy')!.textContent = text; return;
+      }
+      const time = journey.emp!.elapsed!;
+      const text = time < 1.4 ? '白色电磁波正在席卷船坞' : time < 5 ? '哨兵失去动力，Hammer 正在滑停' : '哨兵落地；APU 与自动防御同时失效';
+      this.el('sandbox-interact').classList.add('hidden'); this.el('sandbox-waypoint').textContent = '';
+      this.el('film-ride').classList.remove('hidden'); this.el('film-ride-title').textContent = 'HAMMER / EMP';
+      this.el('film-ride-speed').textContent = time < 1.4 ? '脉冲释放' : time < 5 ? '全域断电' : '船坞静默';
+      this.el('film-ride-health').textContent = text;
+      this.el('film-ride-controls').textContent = 'V 切换船坞 / Link 视角 · 可随时暂停';
+      this.el('film-sequence').classList.add('hidden');
+      document.getElementById('game-objective-copy')!.textContent = text; return;
+    }
     if (dockGateActive(journey) && journey.dockGate) {
       const gate = journey.dockGate;
       this.el('film-ride').classList.remove('hidden');
@@ -1699,8 +2053,8 @@ export class SandboxUI {
       this.el('film-ride-title').textContent = 'MIFUNE / APU 双炮';
       this.el('film-ride-speed').textContent = `${gunner.ammo} 发`;
       this.el('film-ride-health').textContent = `机甲 ${Math.ceil(gunner.hull)}% · Kid ${Math.ceil(gunner.kidHealth)}% · 击落 ${gunner.kills}/${gunner.targets.length}`;
-      this.el('film-ride-controls').textContent = '鼠标瞄准 · 左键 / T 开炮 · 保护弹药车';
-      document.getElementById('game-objective-copy')!.textContent = '瞄准迎面飞来的哨兵 · Kid 正推着弹药车接近炮位';
+      this.el('film-ride-controls').textContent = '鼠标上下左右瞄准 · 按住左键 / T 连射 · V 切换视角';
+      document.getElementById('game-objective-copy')!.textContent = `迎击分批俯冲的哨兵 · Kid ${Math.round((gunner.kidZ - DOCK_GUNNERY.kidStart) / (DOCK_GUNNERY.kidFinish - DOCK_GUNNERY.kidStart) * 100)}% · 剩余 ${Math.ceil(DOCK_GUNNERY.limit - gunner.elapsed)} 秒`;
       this.el('sandbox-interact').classList.add('hidden'); this.el('sandbox-waypoint').textContent = ''; return;
     }
     if (scene.id === 'm3_hammer_tunnels' && journey.hammer?.phase === 'riding' && !journey.visiting) {
@@ -1730,28 +2084,34 @@ export class SandboxUI {
         : '手动绕开浮雷 · Neo 的感知只能摧毁部分来袭机器 · 末段必须爬升';
       this.el('sandbox-interact').classList.add('hidden'); return;
     }
-    if (scene.id === 'm3_gate' && journey.apu?.phase === 'riding' && !journey.visiting) {
-      const run = journey.apu;
+    if (scene.id === 'm3_gate' && journey.apu && ['riding', 'arrived'].includes(journey.apu.phase) && !journey.dockGate && !journey.visiting) {
+      const run = journey.apu, arrived = run.phase === 'arrived';
       this.el('film-ride').classList.remove('hidden');
       this.el('film-ride-title').textContent = 'KID / APU 03';
-      this.el('film-ride-controls').textContent = 'W 前进 · S 制动 · A / D 横向避让';
+      this.el('film-ride-controls').textContent = arrived ? 'V 切换视角 · 鼠标观察 · 点击 ▶ 继续' : run.clearingCaptain ? 'W 直行跨过队长 · S 制动 · 离开后可横移' : 'W 前进 · S 制动 · A / D 横向避让';
       this.el('film-ride-speed').textContent = `${Math.round(run.speed * 3.6)} km/h`;
-      this.el('film-ride-health').textContent = `机甲 ${Math.ceil(run.hull)}% · 哨兵撞击 ${run.hits} 次 · 剩余 ${Math.ceil(Math.max(0, 18 - run.elapsed))} 秒`;
+      this.el('film-ride-health').textContent = `机甲 ${Math.ceil(run.hull)}% · 哨兵撞击 ${run.hits} 次 · 剩余 ${Math.ceil(Math.max(0, APU_ROUTE.limit - run.elapsed))} 秒`;
       this.el('sandbox-waypoint').textContent = `三号闸门 ↑ ${Math.max(0, Math.round(run.z + 50))} m`;
-      document.getElementById('game-objective-copy')!.textContent = '沿船坞通道驶向闸门 · 看准哨兵俯冲位置并绕开';
+      document.getElementById('game-objective-copy')!.textContent = arrived ? '已抵达三号闸门 · 恢复世界时间后继续' : run.clearingCaptain ? '先跨过倒地的 Mifune · 双脚离开后可横向避让' : '沿船坞通道驶向闸门 · 看准哨兵俯冲位置并绕开';
       this.el('sandbox-interact').classList.add('hidden'); return;
     }
     if (scene.id === 'm3_emp' && !journey.visiting) {
       this.el('sandbox-trace').textContent = dockPowerOffline(journey) ? 'EMP 已触发 · 船坞自动防御失效' : 'EMP 已充能 · 船坞防御仍在线';
     }
-    if (scene.id === 'm3_temple_defense' && journey.templeSeal?.phase === 'running' && !journey.visiting) {
-      const seal = journey.templeSeal;
-      this.el('film-ride').classList.remove('hidden');
-      this.el('film-ride-title').textContent = 'ZEE / 神庙入口';
-      this.el('film-ride-speed').textContent = `${Math.ceil(seal.remaining)} 秒`;
-      this.el('film-ride-health').textContent = `自动防御失效 · 手动卡榫 ${Math.max(0, journey.step - 1)} / 2`;
-      this.el('film-ride-controls').textContent = 'Shift 奔跑 · 靠近左右卡榫按 G';
-      document.getElementById('game-objective-copy')!.textContent = '下一波哨兵逼近 · 在倒计时结束前锁住入口';
+    if (templeDefenseActive(journey)) {
+      const seal = journey.templeSeal, breach = scene.id === 'm3_temple_breach' ? journey.templeBreach : undefined;
+      const locked = templeDefenseLocked(seal, breach), blocked = breach?.paused || breach?.unavailable || seal?.paused || seal?.unavailable;
+      document.getElementById('game-objective-copy')!.textContent = templeDefenseText(seal, breach);
+      if (locked || blocked || seal?.phase === 'failed') {
+        this.el('sandbox-interact').classList.add('hidden'); this.el('sandbox-waypoint').textContent = '';
+      } else if (breach?.phase === 'done') this.el('sandbox-nearby').textContent = '接回机器城中的 Neo';
+      if (seal?.phase === 'running' && !breach) {
+        this.el('film-ride').classList.remove('hidden'); this.el('film-ride-title').textContent = 'ZEE / 神庙入口';
+        this.el('film-ride-speed').textContent = `${Math.ceil(seal.remaining)} 秒`;
+        this.el('film-ride-health').textContent = `自动防御失效 · 固定炮位 ${(seal.turns ?? []).filter(turn => turn === 1).length} / 2`;
+        this.el('film-ride-controls').textContent = seal.mount !== undefined ? '按住 G 拧紧炮架 · 松手停留 · V 切换视角' : 'Shift 奔跑 · 靠近炮位按 G';
+      }
+      return;
     }
     if (scene.id === 'm2_garage' && journey.garage?.phase === 'riding' && !journey.visiting) {
       const escape = journey.garage;
@@ -1763,6 +2123,60 @@ export class SandboxUI {
       this.el('sandbox-waypoint').textContent = `车库出口 ↑ ${Math.max(0, Math.round(escape.z - GARAGE.finish))} m`;
       document.getElementById('game-objective-copy')!.textContent = '加速穿过双子的相位 · A / D 可绕行 · 别撞混凝土护栏';
       this.el('sandbox-interact').classList.add('hidden'); return;
+    }
+    if (scene.id === 'm2_freeway' && journey.step === 0 && journey.freewayPickup && journey.freewayPickup.phase !== 'done' && !journey.visiting) {
+      const saved = journey.freewayPickup, fast = this.player?.currentAction?.parameters.freewayPickup as import('@auto_matrix/shared').FreewayPickup | undefined;
+      const pickup = fast?.attempts === saved.attempts && fast.total >= saved.total ? fast : saved;
+      this.el('film-ride').classList.remove('hidden'); this.el('film-ride-title').textContent = pickup.chase ? 'TRINITY / JACKSON 追击' : 'TRINITY / 运车卡车';
+      const speed = pickup.phase === 'launching' ? FREEWAY_PICKUP.carrier.speed + 18 : pickup.phase === 'merging' ? pickup.speed : ['deck', 'key', 'keyhandoff', 'mounting', 'mounted', 'shooting'].includes(pickup.phase) ? FREEWAY_PICKUP.carrier.speed : 0;
+      this.el('film-ride-speed').textContent = speed ? `${Math.round(speed * 1.8)} km/h` : pickup.phase === 'bridge' ? '看准落点' : '换乘';
+      this.el('film-ride-health').textContent = pickup.key ? '钥匙已接过' : '钥匙匠同行';
+      this.el('film-ride-controls').textContent = pickup.phase === 'mounted' ? pickup.chain ? 'F 开枪断链 · V 视角' : 'W 加速驶出 · V 视角' : pickup.phase === 'shooting' ? '拔枪 · 射击 · 收枪 · V 视角' : pickup.phase === 'keyhandoff' ? '递出 · 接过 · 收回 · V 视角' : pickup.phase === 'mounting' ? '登上摩托 · V 视角' : pickup.phase === 'launching' ? '腾空驶出 · V 视角' : pickup.phase === 'merging' ? 'S 降速 · A / D 掉头 · W 加速' : 'WASD 移动 · 空格起跳 · G 互动 · V 视角';
+      if (pickup.phase === 'merging' && pickup.chase) this.el('film-ride-controls').textContent = pickup.chase.phase === 'crossing' ? 'S 降速 · A / D 横穿转向 · W 逆向脱离' : 'W 加速 · S 刹车 · A / D 避开实体车身';
+      document.getElementById('game-objective-copy')!.textContent = freewayPickupText(pickup);
+      this.el('sandbox-interact').classList.toggle('hidden', !['ready', 'deck', 'key', 'failed'].includes(pickup.phase) || pickup.phase === 'key' && pickup.elapsed < FREEWAY_PICKUP.callSeconds);
+      this.el('sandbox-nearby').textContent = pickup.phase === 'ready' ? '观察接近的卡车' : pickup.phase === 'key' ? '接过钥匙' : pickup.phase === 'failed' ? '从高架重试' : '检查前排摩托车';
+      this.el('sandbox-waypoint').textContent = ''; return;
+    }
+    if (scene.id === 'm2_trucks' && journey.trucks?.road && journey.trucks.phase === 'duel' && !journey.visiting) {
+      const saved = journey.trucks.road, fast = this.player?.currentAction?.parameters.truckRoad as import('@auto_matrix/shared').TruckRoad | undefined;
+      const road = fast?.bridgeZ === saved.bridgeZ && fast.elapsed >= saved.elapsed ? fast : saved;
+      const savedHood = journey.trucks.hood, fastHood = this.player?.currentAction?.parameters.truckHood as import('@auto_matrix/shared').TruckHood | undefined;
+      const hood = savedHood && fastHood?.attempt === savedHood.attempt && fastHood.total >= savedHood.total ? fastHood : savedHood;
+      if (hood && hood.phase !== 'done') {
+        document.getElementById('game-objective-copy')!.textContent = road.paused || road.unavailable ? journey.lastText : truckHoodText(hood);
+        this.el('sandbox-interact').classList.add('hidden'); this.el('sandbox-waypoint').textContent = '';
+        this.el('sandbox-nearby').textContent = hood.phase === 'hood' ? `抓稳 ${Math.round(Math.min(1, hood.grip / 1.25) * 100)}% · 重心 ${hood.balance.toFixed(1)} m` : 'Niobe / Morpheus 接应';
+        return;
+      }
+      const savedWeapons = journey.trucks.weapons, fastWeapons = this.player?.currentAction?.parameters.truckWeapons as import('@auto_matrix/shared').TruckWeapons | undefined;
+      const weapons = savedWeapons && fastWeapons && fastWeapons.total >= savedWeapons.total ? fastWeapons : savedWeapons;
+      if (weapons && journey.step === 0) {
+        document.getElementById('game-objective-copy')!.textContent = road.paused || road.unavailable ? journey.lastText : truckWeaponsText(weapons);
+        this.el('sandbox-interact').classList.add('hidden'); this.el('sandbox-waypoint').textContent = '';
+        this.el('sandbox-nearby').textContent = weapons.phase === 'unarmed' ? '车顶徒手交锋' : `弹药 ${weapons.rounds}/8 · 挥刀 ${weapons.slashes} · 格挡 ${weapons.parries}/2`;
+        return;
+      }
+      document.getElementById('game-objective-copy')!.textContent = road.paused || road.unavailable ? journey.lastText
+        : road.phase === 'ready' ? 'Johnson 已落在车顶。G 迎战 · F 连击 · X 闪避 · Q / C 技能'
+          : road.phase === 'approach' ? '钥匙匠退向车顶后端；注意前方高架上的特工。' : 'Johnson 正从高架跳下；可拖动视角观察。';
+      if (road.phase !== 'ready' || road.paused || road.unavailable) {
+        this.el('sandbox-interact').classList.add('hidden'); this.el('sandbox-waypoint').textContent = ''; return;
+      }
+    }
+    if (scene.id === 'm2_freeway' && journey.step === 2 && journey.freewayHandoff && !journey.visiting) {
+      const saved = journey.freewayHandoff, fast = this.player?.currentAction?.parameters.freewayHandoff as import('@auto_matrix/shared').FreewayHandoff | undefined;
+      const handoff = fast?.attempt === saved.attempt && fast.total >= saved.total ? fast : saved;
+      this.el('film-ride').classList.remove('hidden'); this.el('film-ride-title').textContent = 'TRINITY / MORPHEUS 接应';
+      this.el('film-ride-controls').textContent = 'W / S 速度 · A / D 对齐 · G 接应';
+      this.el('film-ride-speed').textContent = `${Math.round(handoff.bike.speed * 1.8)} km/h`;
+      this.el('film-ride-health').textContent = `车况 ${Math.ceil(handoff.bike.hull)}% · 钥匙匠 ${Math.ceil(handoff.bike.passenger)}%`;
+      document.getElementById('game-objective-copy')!.textContent = freewayHandoffText(handoff);
+      const ready = freewayHandoffReady(handoff) || ['failed', 'done'].includes(handoff.phase);
+      this.el('sandbox-interact').classList.toggle('hidden', !ready);
+      this.el('sandbox-nearby').textContent = handoff.phase === 'failed' ? '重试卡车接应' : handoff.phase === 'done' ? '确认接应完成' : '接住钥匙匠';
+      this.el('sandbox-waypoint').textContent = handoff.phase === 'approach' ? `右侧距离 ${Math.abs(handoff.bike.x - handoff.truck.x - FREEWAY_HANDOFF.side).toFixed(1)} m · 迎面 ${Math.round(Math.max(0, handoff.bike.z - handoff.truck.z) / 2)} m` : '';
+      return;
     }
     if (scene.id === 'm2_freeway' && journey.ride?.phase === 'riding' && !journey.visiting) {
       const ride = journey.ride;
@@ -1807,7 +2221,9 @@ export class SandboxUI {
     if (!this.panel || !this.player || !this.state) return;
     const player = this.player; const state = this.state; const profile = state.profiles[player.id];
     const life = player.id === 'neo' || player.id === state.neoLife?.journey?.actor ? state.neoLife : undefined;
-    const signature = JSON.stringify([this.panel, this.selectedFilm, profile.inventory, profile.xp, profile.skills, profile.trackedMission, profile.visited, state.missions, state.structures.filter(s => !s.film), state.incidents, Math.round(player.position.x), Math.round(player.position.z), state.ending,
+    const helJournal = life && helGarageActive(life.journey) && (this.panel === 'journal' || this.panel === 'map')
+      ? renderNeoLife(player, state, this.time) : undefined;
+    const signature = helJournal !== undefined ? JSON.stringify([this.panel, helJournal]) : JSON.stringify([this.panel, this.selectedFilm, profile.inventory, profile.xp, profile.skills, profile.trackedMission, profile.visited, state.missions, state.structures.filter(s => !s.film), state.incidents, Math.round(player.position.x), Math.round(player.position.z), state.ending,
       life && [life.chapter, life.day, life.money, life.cycle, Math.floor(this.time / 500), life.anomaly, life.computerCheck?.phase, life.activity, life.journal[0], life.appointment, life.journey, player.status, state.threats.length]]);
     if (signature === this.signature) return;
     this.signature = signature;
@@ -1820,7 +2236,7 @@ export class SandboxUI {
     this.root.querySelectorAll<HTMLElement>('.sandbox-window [data-panel]').forEach(button => button.classList.toggle('active', button.dataset.panel === this.panel));
     this.el('sandbox-profile').textContent = neoPanel ? `${player.name} · 第 ${life!.cycle} 轮 · 自动保存生活、证据和选择` : `${player.name} · 等级 ${1 + Math.floor(profile.xp / 50)} · ${profile.xp} XP · 可用技能点 ${skillPoints(profile)}`;
     if (neoPanel) {
-      body.innerHTML = renderNeoLife(player, state, this.time);
+      body.innerHTML = helJournal ?? renderNeoLife(player, state, this.time);
     } else if (this.panel === 'inventory') {
       body.innerHTML = `<div class="inventory-summary"><span>代码 <b>${profile.inventory.code}</b></span><span>零件 <b>${profile.inventory.scrap}</b></span><span>技能点 <b>${skillPoints(profile)}</b></span></div>
         <p class="sandbox-help">搜集物资箱和数据终端 → 制作补给 → 搭建安全屋 → 挑战任务。设施放置在面前 9 米处；靠近安全屋可恢复生命和消除追踪。</p>
@@ -1858,7 +2274,7 @@ export class SandboxUI {
     if (!this.player || !this.state) return;
     const canvas = document.getElementById('game-minimap') as HTMLCanvasElement;
     const ctx = canvas.getContext('2d')!; const player = this.player;
-    const journey = this.state.neoLife?.journey; const scene = journey && FILM_SCENE_BY_ID[journey.scene]; const step = scene?.steps[journey!.step];
+    const journey = this.state.neoLife?.journey; const scene = journey && filmSceneForJourney(journey)!; const step = scene?.steps[journey!.step];
     if (journey?.actor === player.id && !journey.visiting && scene && step) {
       const door = scene.id === 'm1_bridge' && journey.step === 1 && journey.bridgeArrival?.parkedRoadTime !== undefined
         ? meetingBoardPoint(journey.bridgeArrival) : undefined;

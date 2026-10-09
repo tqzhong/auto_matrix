@@ -1,4 +1,4 @@
-import { dockGateActive, dockGateText, dockGatePoint, dockGateZee, dockGateEye, DOCK_GATE, fireDockGate, newDockGate, stepDockGate, FILM_SETS, filmPosition,
+import { APU_RIG, dockGateActive, dockGateText, dockGatePoint, dockGateZee, dockGateEye, DOCK_GATE, fireDockGate, newDockGate, stepDockGate, FILM_SETS, filmPosition,
   type AgentState, type SandboxState } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
 
@@ -12,7 +12,7 @@ export class DockGateSystem {
     const journey = this.journey!, center = FILM_SETS.film_zion_hangar.center;
     const gate = journey.dockGate ??= newDockGate(journey.apu?.x ?? actor.position.x - center.x, journey.apu?.z ?? -50);
     delete journey.started;
-    const pilot = dockGatePoint(gate, { x: 0, y: 1.3, z: 0 });
+    const pilot = dockGatePoint(gate, APU_RIG.pilot);
     actor.position = filmPosition('film_zion_hangar', pilot.x, pilot.z); actor.position.y += pilot.y;
     actor.rotation = Math.PI; actor.velocity = { x: 0, y: 0, z: 0 }; actor.targetPosition = null; actor.currentPath = [];
     actor.currentAction = { type: 'idle', parameters: { player: true, resolved: true, riding: true, seated: true, dockGate: { ...gate } }, startedAt: tick, duration: 1e9, progress: 0 };

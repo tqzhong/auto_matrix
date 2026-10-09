@@ -8,6 +8,8 @@ const NOTES: Record<string, string> = {
   trinity: '后梳短发 · 窄框墨镜 · 合身皮衣与长裤',
   smith: '方框墨镜 · 炭灰西装 · 白衬衫与细领带',
   morpheus: '光头与胡须 · 圆形墨镜 · 深棕长皮衣',
+  architect: '后梳白发 · 短白须 · 浅色西装与领带',
+  seraph: '后梳短发 · 立领外套 · 按所在场景换装',
 };
 
 export class CharacterViewer {
@@ -38,7 +40,7 @@ export class CharacterViewer {
     this.root.setAttribute('role', 'dialog'); this.root.setAttribute('aria-modal', 'true');
     this.root.setAttribute('aria-label', '三维人物检视');
     this.root.innerHTML = `<header><div><span class="eyebrow">RESIDUAL SELF-IMAGE</span><h2>三维人物检视</h2></div><button id="close-viewer" aria-label="关闭人物检视">×</button></header>
-      <nav aria-label="选择检视人物">${['neo', 'trinity', 'smith', 'morpheus'].map(id => `<button data-preview="${id}">${CHARACTERS[id].nameCn}</button>`).join('')}</nav>
+      <nav aria-label="选择检视人物">${Object.keys(NOTES).map(id => `<button data-preview="${id}">${CHARACTERS[id].nameCn}</button>`).join('')}</nav>
       <div class="character-stage" aria-label="可拖动旋转的三维人物模型"></div>
       <div class="character-viewer-info"><span class="eyebrow">THE MATRIX / 1999</span><h3 id="preview-name">NEO</h3><p id="preview-notes"></p><p class="model-note">拖动旋转 · 实际游戏内模型<br>电影造型近似还原，非演员扫描资产</p></div>
       <footer><div><button id="preview-zoom">面部特写</button><select id="preview-motion" aria-label="动作预览"><option value="idle">待机 · 呼吸</option><option value="walk">行走</option><option value="run">奔跑</option><option value="jump">跳跃与落地</option><option value="combat">刺拳 · 直拳 · 正蹬</option></select></div><button id="preview-play" class="enter-world">以此角色进入 ↗</button></footer>`;
@@ -51,9 +53,9 @@ export class CharacterViewer {
       if (button.id === 'preview-play') { const id = this.id; this.close(); this.play(id); }
       if (button.id === 'preview-zoom') {
         if (!this.zoom) { this.zoom = true; this.glasses = true; }
-        else if (this.glasses) this.glasses = false;
+        else if (this.glasses && this.current?.hero) this.glasses = false;
         else { this.zoom = false; this.glasses = true; }
-        button.textContent = this.zoom ? this.glasses ? '取下墨镜' : '查看全身' : '面部特写';
+        button.textContent = this.zoom ? this.glasses && this.current?.hero ? '取下墨镜' : '查看全身' : '面部特写';
       }
     });
     this.root.querySelector('#preview-motion')!.addEventListener('change', event => { this.motion = (event.target as HTMLSelectElement).value; this.started = performance.now(); this.zoom = false; this.glasses = true; this.root.querySelector('#preview-zoom')!.textContent = '面部特写'; });
@@ -105,13 +107,14 @@ export class CharacterViewer {
     const state = this.agents()[id]; if (!state || !this.models) return;
     this.id = id; this.angle = 0.22;
     this.glasses = true;
-    this.root.querySelector('#preview-zoom')!.textContent = this.zoom ? '取下墨镜' : '面部特写';
     if (this.current) this.current.root.visible = false;
     let rig = this.rigs.get(id);
     if (!rig) { rig = this.models.create(state); this.rigs.set(id, rig); this.scene.add(rig.root); }
     this.current = rig; rig.root.visible = true;
+    this.root.querySelector('#preview-zoom')!.textContent = this.zoom ? rig.hero ? '取下墨镜' : '查看全身' : '面部特写';
     this.root.querySelector('#preview-name')!.textContent = CHARACTERS[id].name.toUpperCase();
     this.root.querySelector('#preview-notes')!.textContent = NOTES[id];
+    this.root.querySelector('.character-viewer-info .eyebrow')!.textContent = id === 'architect' || id === 'seraph' ? 'THE MATRIX / 2003' : 'THE MATRIX / 1999';
     this.root.querySelectorAll<HTMLElement>('[data-preview]').forEach(button => button.classList.toggle('active', button.dataset.preview === id));
   }
 
@@ -131,6 +134,7 @@ export class CharacterViewer {
     this.current.root.position.y = height;
     this.models.animate(this.current, delta, { speed: this.motion === 'walk' ? PLAYER_WALK_SPEED : this.motion === 'run' ? PLAYER_RUN_SPEED : 0,
       grounded: height === 0, verticalVelocity: height > 0 ? PLAYER_JUMP_SPEED - PLAYER_GRAVITY * jumpTime : 0, turn: 0,
+      parkOutfit: this.agents()[this.id]?.currentLocation === 'film_sunrise_garden',
       attack: this.motion === 'combat' ? Math.floor(time / .72) : undefined }, 1);
     this.current.root.rotation.y = this.angle;
     if (this.current.hero) this.current.hero.glasses.visible = this.glasses;

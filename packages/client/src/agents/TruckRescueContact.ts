@@ -12,8 +12,9 @@ export function poseTruckRescue(neo: HeroRig, morpheus: CharacterRig, keymaker: 
   for (const [passenger, side, inside] of [[morpheus, 'L', -1], [keymaker, 'R', 1]] as const) {
     passenger.root.updateWorldMatrix(true, true);
     const chest = passenger.hero?.bones.get('chest') ?? passenger.torso;
-    // Calibrated against the shipped leather coat and the procedural Keymaker's jacket.
-    const contact = chest.localToWorld(new THREE.Vector3(inside * .32, passenger.hero ? .3 : 1.45, passenger.hero ? -.025 : -.2215));
+    // The fitted Keymaker jacket and its fallback have different shoulder surfaces.
+    const depth = passenger === keymaker ? passenger.root.getObjectByName('keymaker-detailed-body')?.visible ? -.1309 : -.1896 : passenger.hero ? -.025 : -.2215;
+    const contact = chest.localToWorld(new THREE.Vector3(inside * .32, passenger.hero ? .3 : 1.45, depth));
     const shoulder = neo.bones.get(`shoulder_${side}`)!, elbow = neo.bones.get(`elbow_${side}`)!, wrist = neo.bones.get(`wrist_${side}`)!;
     const shoulderBase = shoulder.quaternion.clone(), elbowBase = elbow.quaternion.clone();
     const palm = new THREE.Vector3(side === 'R' ? .09 : -.09, -.18, .02);

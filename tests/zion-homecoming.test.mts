@@ -39,6 +39,22 @@ test('homecoming routes, named cast and visible prop footprints agree with colli
   }
 });
 
+test('the temple walking floor has one stone surface instead of coincident dark and stone faces', () => {
+  const root = new THREE.Group(), center = FILM_SETS.film_zion_temple.center;
+  root.position.set(center.x, center.y - 1, center.z);
+  const renderer = new ZionHomecomingRenderer(root, 'film_zion_temple');
+  try {
+    root.updateMatrixWorld(true);
+    for (const x of [-12, 12]) for (const z of [-30, -10, 10, 30]) {
+      const ray = new THREE.Raycaster(new THREE.Vector3(center.x + x, center.y - 1 + .08, center.z + z), new THREE.Vector3(0, -1, 0), 0, .1);
+      const surfaces = ray.intersectObject(root, true).filter(hit => Math.abs(hit.point.y - (center.y - 1)) < .015);
+      assert.equal(new Set(surfaces.map(hit => hit.object.uuid)).size, 1, `${x}, ${z}: floor materials must not compete at the same depth`);
+      const material = (surfaces[0].object as THREE.Mesh).material as THREE.MeshStandardMaterial;
+      assert.equal(material.color.getHex(), 0xb39473, 'the textured stone floor remains visible at the unchanged walking height');
+    }
+  } finally { renderer.dispose(); }
+});
+
 test('dock and resident actions save concrete supplies and both requests through reload', () => {
   const h = game(); const state = h.state();
   assert.equal(h.players.possess('p', 'neo', 2).agentId, 'neo');
@@ -66,6 +82,10 @@ test('Zion supplies reach Mifune at the later dock defense only once', () => {
   const h = game(); assert.equal(h.players.possess('p', 'niobe', 2).agentId, 'niobe');
   const state = h.state(); state.scene = 'm3_hammer_tunnels'; state.actor = 'niobe'; state.step = FILM_SCENE_BY_ID.m3_hammer_tunnels.steps.length;
   h.sandbox.state.neoLife!.choices.zion_ship_charged = 'yes'; h.sandbox.state.neoLife!.choices.zion_lock_reported = '72h';
+  h.command('next'); assert.equal(state.scene, 'm3_diggers');
+  state.step = FILM_SCENE_BY_ID.m3_diggers.steps.length; state.completed.push('m3_diggers');
+  h.command('next'); assert.equal(state.scene, 'm3_upper_digger');
+  state.step = FILM_SCENE_BY_ID.m3_upper_digger.steps.length; state.completed.push('m3_upper_digger');
   assert.match(h.command('next'), /船坞的弹药与钢铁/);
   assert.equal(state.scene, 'm3_dock_battle'); assert.equal(h.actor().id, 'mifune');
   assert.equal(h.sandbox.state.profiles.mifune.inventory.medkit, 4);

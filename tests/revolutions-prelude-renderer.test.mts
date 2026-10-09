@@ -2,20 +2,21 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { RevolutionsPreludeRenderer } from '../packages/client/src/engine/RevolutionsPreludeRenderer.js';
-import type { FilmJourney } from '@auto_matrix/shared';
+import { newOracleAbsorption, type FilmJourney } from '@auto_matrix/shared';
 
 const state = (scene: string, step: number) => ({ scene, step, visiting: undefined }) as FilmJourney;
 
-test('Oracle corridor lighting dies in sequence and code intrusion appears only when Smith reaches the kitchen', () => {
+test('Oracle corridor lighting follows the saved escape clock through pause without a particle halo', () => {
   const root = new THREE.Group(); const renderer = new RevolutionsPreludeRenderer(root, 'm3_oracle_absorbed');
   const lamps = [0, 1, 2, 3].map(i => root.getObjectByName(`oracle-corridor-light-${i}`) as THREE.PointLight);
-  const code = root.getObjectByName('oracle-code-intrusion')!;
-  renderer.update(state('m3_oracle_absorbed', 0), 0);
-  assert.ok(lamps.every(lamp => lamp.intensity > 0)); assert.equal(code.visible, false);
-  renderer.update(state('m3_oracle_absorbed', 2), 1);
+  const journey = state('m3_oracle_absorbed', 1); journey.oracleAbsorption = { ...newOracleAbsorption(1, 63), phase: 'escaping', escape: 0 };
+  renderer.update(journey, 0);
+  assert.ok(lamps.every(lamp => lamp.intensity > 0)); assert.equal(root.getObjectByName('oracle-code-intrusion'), undefined);
+  journey.oracleAbsorption.escape = 17; renderer.update(journey, 1);
   assert.equal(lamps[0].intensity, 0); assert.ok(lamps[3].intensity > 0);
-  renderer.update(state('m3_oracle_absorbed', 3), 2);
-  assert.equal(code.visible, true); assert.ok(renderer.consumed);
+  const intensities = lamps.map(lamp => lamp.intensity); renderer.update(journey, 42); assert.deepEqual(lamps.map(lamp => lamp.intensity), intensities);
+  journey.oracleAbsorption.escape = 23; renderer.update(journey, 43);
+  assert.ok(lamps.every(lamp => lamp.intensity === 0)); assert.ok(renderer.consumed);
   renderer.dispose(); assert.equal(root.children.length, 0);
 });
 

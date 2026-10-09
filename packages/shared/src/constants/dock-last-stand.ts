@@ -1,4 +1,5 @@
 import type { FilmJourney } from './film-story.js';
+import { APU_RIG } from './apu-rig.js';
 
 export const DOCK_LAST_STAND = {
   mifune: { x: 0, z: 9 }, kid: { x: -1.55, z: 6.3, yaw: Math.PI / 2 },
@@ -26,7 +27,7 @@ export function dockLastStandPose(encounter: DockLastStand) {
     : phase === 'kneeling' ? smooth(t / DOCK_LAST_STAND.kneel) : phase === 'rise' ? 1 - smooth(t / DOCK_LAST_STAND.rise) : 1;
   const dead = phase === 'dying' ? smooth(t / DOCK_LAST_STAND.dying) : phase === 'rise' || phase === 'done' ? 1 : 0;
   return { fallen, kneel, dead, injured: phase !== 'ready' && (phase !== 'attack' || t >= 1.45),
-    mifune: { x: 0, y: 2.2 * (1 - fallen), z: 12 - 3 * fallen, yaw: Math.PI * (1 - fallen) } };
+    mifune: { x: 0, y: (APU_RIG.floor + APU_RIG.pilot.y) * (1 - fallen), z: 12 - 3 * fallen, yaw: Math.PI * (1 - fallen) } };
 }
 export function dockLastStandText(encounter?: DockLastStand): string {
   switch (encounter?.phase ?? 'ready') {

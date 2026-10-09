@@ -1,0 +1,11 @@
+Use case: photorealistic-natural
+Asset type: 2-by-2 square facial reference and albedo atlas for actual 3D game character authoring.
+Create a precise, clean orthographic model reference sheet with FOUR EQUAL SQUARE PANELS and absolutely no lettering or panel borders.
+TOP ROW is Zee as portrayed by Nona Gaye in The Matrix Revolutions (2003), age about 29, warm medium-brown skin, narrow oval face, high cheekbones, almond brown eyes, broad natural lips, natural eyebrows.
+BOTTOM ROW is Charra as portrayed by Rachel Blackman in The Matrix Revolutions (2003), adult athletic woman, fair lightly freckled skin, narrow angular face, strong cheekbones, slightly prominent straight nose, firm jaw, brown eyes, cropped very short brown hair.
+LEFT column: precise straight-on face; RIGHT column: precise left-facing 90-degree profile of the SAME woman at the SAME vertical scale. No 3/4 views.
+In each panel show whole crown to lower neck. Head fills 90% of panel height; crown at 4% height, eyes at 43%, nostril base at 63%, closed neutral mouth at 71%, bottom of chin at 83%, lower neck at 100%. Left/front head centered, perfectly upright, eyes horizontal. Right/profile nose points LEFT. Face and neck only, no shoulders.
+Both women are unsmiling, natural relaxed closed mouths, no dramatic facial expression, no glasses, no jewelry, no headwear. Zee's hair pulled tightly back and away from face; headwrap will be modeled separately.
+Materials: realistic diffuse human skin microtexture, pores, slight natural asymmetry, no glossy makeup; no heroic beauty retouch, no bruises or movie lighting.
+Lighting: extremely even broad neutral daylight from both sides, very weak shadows, no cast shadow, no directional highlights, suitable for albedo projection. Matte neutral mid-gray flat backdrop.
+No text, watermark, logos, clothing, montage effects, lens distortion or cinematic green color grade. Maintain distinct recognisable likenesses and the exact repeated front/profile alignment.

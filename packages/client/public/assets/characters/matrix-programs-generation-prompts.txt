@@ -1,0 +1,17 @@
+Mode: built-in imagegen; generation, unmodified bitmap outputs.
+
+ARCHITECT
+Use case: photorealistic-natural
+Asset type: game character head albedo reference atlas, one square 1024 x 1024 image with two equal 512 x 1024 panels.
+Subject: the Architect, played by Helmut Bakaitis in The Matrix Reloaded and Revolutions (2003), at his film age: pale mature face, high receding forehead, white swept-back hair at the sides and crown, neatly trimmed short white beard connected to moustache, heavy white eyebrows, narrow gray blue eyes, distinct straight broad nose, fine age lines, reserved neutral expression.
+Composition: LEFT panel a perfectly frontal orthographic portrait, RIGHT panel a strict left-facing 90-degree profile of the SAME man. Eyes level and same head scale between panels. Show the entire head including crown and ears, continuous neck down to clavicles. Head is large enough to show skin pores but has clear margins. Bare neck and clavicle skin, no garment needed. Separate views by a clean vertical boundary at the exact center; no border.
+Lighting/materials: softly diffuse neutral white illumination from the camera and both sides, naturally varied skin albedo and soft fine wrinkles, no cast shadows, no dramatic or green film grading, no highlights baked onto forehead. White hair and beard contain natural individual strands and gray root variation.
+Background: uniform medium neutral gray. No text, captions, grids, glasses, accessories, props, other characters, illustrations or watermark. The two views must be anatomically consistent and photographic, not a rendered 3D bust.
+
+SERAPH
+Use case: photorealistic-natural
+Asset type: game character head albedo reference atlas, one square 1024 x 1024 image with two equal 512 x 1024 panels.
+Subject: Seraph, played by Collin Chou in The Matrix Reloaded and Revolutions (2003), at his film age: clean shaven East Asian man with athletic lean head, squared cheekbones and jaw, straight black short hair neatly swept back with a slight side part and tapered sides, low straight brows, narrow calm dark brown eyes, straight medium-width nose, natural warm skin with fine pores, restrained neutral expression and closed relaxed lips.
+Composition: LEFT panel a perfectly frontal orthographic portrait, RIGHT panel a strict left-facing 90-degree profile of the SAME man. Eyes level and same head scale between panels. Show the entire head including crown and ears, continuous neck down to clavicles. Head is large enough for skin detail but has clear margins. Bare neck and clavicle skin, no garment needed. Exact central division; no border.
+Lighting/materials: softly diffuse neutral white illumination from the camera and both sides, accurate skin albedo, no cast shadows, no dramatic or green film grading, no beauty smoothing, no highlights baked onto forehead.
+Background: uniform medium neutral gray. No text, captions, grids, sunglasses, clothing, accessories, props, other characters, illustrations or watermark. The two views must be anatomically consistent and photographic, not a rendered 3D bust.

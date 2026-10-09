@@ -1,10 +1,94 @@
 import * as THREE from 'three';
-import { gardenPose, SUNRISE_GARDEN, type TrilogyEpilogueGesture } from '@auto_matrix/shared';
+import { gardenPose, gardenGroundHeight, FILM_SETS, SUNRISE_GARDEN, type TrilogyEpilogueGesture } from '@auto_matrix/shared';
 import type { CharacterRig } from './CharacterModel.js';
 import { reach } from './SpoonPerformance.js';
 import { poseStreetWake } from './StreetWakePerformance.js';
 
 const wakeSupports = new WeakMap<CharacterRig, { rising: number; surfaceVersion: number; height: number }>();
+
+function supportGardenFeet(rig: CharacterRig, bend: boolean): void {
+  rig.root.updateWorldMatrix(true, true);
+  const orientation = rig.root.getWorldQuaternion(new THREE.Quaternion()), floor = rig.root.localToWorld(new THREE.Vector3(0, .156, 0)).y;
+  const center = FILM_SETS.film_sunrise_garden.center, origin = rig.root.getWorldPosition(new THREE.Vector3());
+  const bodyHeight = gardenGroundHeight(origin.x - center.x, origin.z - center.z);
+  if (bend) {
+    const downhill = Math.max(0, ...rig.ankles.map(ankle => {
+      const foot = ankle.getWorldPosition(new THREE.Vector3()); return bodyHeight - gardenGroundHeight(foot.x - center.x, foot.z - center.z);
+    }));
+    // Give the knees room to bend: a fully extended leg cannot reach a lower slope by IK alone.
+    rig.detail.position.y -= .06 + downhill / rig.root.scale.x; rig.root.updateWorldMatrix(true, true);
+  }
+  for (let i = 0; i < 2; i++) {
+    const foot = rig.ankles[i].getWorldPosition(new THREE.Vector3()), x = foot.x - center.x, z = foot.z - center.z;
+    foot.y = Math.max(foot.y, floor) + gardenGroundHeight(x, z) - bodyHeight;
+    const normal = new THREE.Vector3((gardenGroundHeight(x - .05, z) - gardenGroundHeight(x + .05, z)) / .1, 1,
+      (gardenGroundHeight(x, z - .05) - gardenGroundHeight(x, z + .05)) / .1).normalize();
+    const planted = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal).multiply(orientation);
+    reach(rig.hips[i], rig.knees[i], rig.ankles[i].position, foot, new THREE.Vector3(0, 0, 1).applyQuaternion(orientation));
+    rig.ankles[i].quaternion.copy(rig.knees[i].getWorldQuaternion(new THREE.Quaternion()).invert().multiply(planted));
+  }
+}
+
+function drapeOracleClothes(rig: CharacterRig, gesture: TrilogyEpilogueGesture, seated: number): void {
+  const pose = gardenPose(gesture, 'oracle'), hip = rig.torso.position.y, b = SUNRISE_GARDEN.bench;
+  const cosine = Math.cos(pose.yaw), sine = Math.sin(pose.yaw), point = new THREE.Vector3();
+  rig.root.updateWorldMatrix(true, true); rig.torso.updateMatrix();
+  const inverse = rig.detail.matrixWorld.clone().invert(), capsules: { point: THREE.Vector3; radius: number }[] = [];
+  for (let leg = 0; leg < 2; leg++) {
+    const joints = [rig.hips[leg], rig.knees[leg], rig.ankles[leg]].map(joint => joint.getWorldPosition(new THREE.Vector3()).applyMatrix4(inverse));
+    for (let part = 0; part < 2; part++) for (let sample = 0; sample <= 12; sample++) {
+      const t = sample / 12;
+      capsules.push({ point: joints[part].clone().lerp(joints[part + 1], t), radius: part ? .235 - .04 * t : .29 - .065 * t });
+    }
+  }
+  for (const name of ['oracle-park-skirt', 'oracle-park-coat']) {
+    const skirt = rig.root.getObjectByName(name) as THREE.Mesh, coat = name === 'oracle-park-coat';
+    const { radialSegments: columns, heightSegments: rows, thetaStart, thetaLength } = (skirt.geometry as THREE.CylinderGeometry).parameters;
+    const vertices = skirt.geometry.attributes.position, length = coat ? 1.92 : 1.58;
+    for (let row = 0; row <= rows; row++) {
+      const t = row / rows, drapedY = t <= .5 ? hip + .12 - t * .3 : hip - .03 - (t - .5) * (coat ? 1.86 : 1.54);
+      const y = THREE.MathUtils.lerp(hip + .12 - t * length, drapedY, seated);
+      const sections = capsules.flatMap(capsule => {
+        const squared = capsule.radius ** 2 - (capsule.point.y - y) ** 2;
+        return squared > 0 ? [{ x: capsule.point.x, z: capsule.point.z, squared }] : [];
+      });
+      const width = Math.max((coat ? .57 : .51) + t * (coat ? .24 : .19), ...sections.map(section => Math.abs(section.x) + Math.sqrt(section.squared) + (coat ? .065 : .035)));
+      for (let column = 0; column <= columns; column++) {
+        const angle = thetaStart + column / columns * thetaLength, wave = Math.cos(angle * 9) * .018 * t, radius = width + wave;
+        const lap = Math.min(1, t * 2), depth = THREE.MathUtils.lerp(coat ? .37 : .33, coat ? .18 : .13, lap);
+        point.set(Math.sin(angle) * radius, y,
+          THREE.MathUtils.lerp(Math.cos(angle) * (coat ? .37 + t * .18 : .33 + t * .16), lap * 1.02 + Math.cos(angle) * depth, seated));
+        const side = Math.cos(angle) >= 0 ? 1 : -1;
+        for (const section of sections) {
+          const squared = section.squared - (point.x - section.x) ** 2;
+          if (squared > 0) point.z = side * Math.max(side * point.z, side * section.z + Math.sqrt(squared) + (coat ? .065 : .04));
+        }
+        if (!row) point.set(Math.sin(angle) * (coat ? .582 : .527), .12,
+          Math.cos(angle) * (coat ? .582 * .65 : .527 * .59)).applyMatrix4(rig.torso.matrix);
+        // Fabric below the seat wraps over its front edge throughout lowering,
+        // not only once the pelvis has reached the final sitting height.
+        const x = (point.x + rig.detail.position.x) * cosine + (point.z + rig.detail.position.z) * sine + pose.x;
+        const z = (point.z + rig.detail.position.z) * cosine - (point.x + rig.detail.position.x) * sine + pose.z;
+        if (Math.abs(x - b.x) < b.width / 2 + .08 && z > b.z - .91 && z < b.z + .93 && point.y < b.surface + length / rows + .045) {
+          const front = b.z - .91 - Math.max(0, b.surface - point.y) * .10;
+          point.x = (x - pose.x) * cosine - (front - pose.z) * sine - rig.detail.position.x;
+          point.z = (front - pose.z) * cosine + (x - pose.x) * sine - rig.detail.position.z;
+        }
+        vertices.setXYZ(row * (columns + 1) + column, point.x, Math.max(.01, point.y), point.z);
+      }
+    }
+    vertices.needsUpdate = true; skirt.geometry.computeVertexNormals(); skirt.geometry.computeBoundingSphere();
+  }
+}
+
+function carryOracleBag(rig: CharacterRig): void {
+  const bag = rig.root.getObjectByName('oracle-park-handbag'); if (!bag?.parent?.visible) return;
+  rig.shoulders[0].rotation.z = -.30;
+  rig.root.updateWorldMatrix(true, true);
+  const palm = rig.elbows[0].localToWorld(new THREE.Vector3(0, -.79, .055));
+  bag.visible = true; bag.scale.setScalar(1); bag.rotation.set(0, 0, 0);
+  bag.position.copy(rig.root.worldToLocal(palm)).sub(new THREE.Vector3(0, .69, .11));
+}
 
 function drapeSatiSkirt(rig: CharacterRig, street = false): void {
   const skirt = rig.root.getObjectByName('sati-skirt') as THREE.Mesh | undefined; if (!skirt) return;
@@ -67,41 +151,70 @@ function drapeSatiSkirt(rig: CharacterRig, street = false): void {
 export function poseGarden(rig: CharacterRig, gesture?: TrilogyEpilogueGesture, parkOutfit = false): void {
   const park = parkOutfit || gesture?.kind === 'dawn';
   const outfit = rig.root.getObjectByName('oracle-park-outfit'); if (outfit) outfit.visible = park;
+  const upper = rig.root.getObjectByName('oracle-park-upper'); if (upper) upper.visible = park;
+  for (const name of ['oracle-daily-blouse', 'oracle-daily-hem', 'oracle-daily-collar', 'oracle-daily-tailoring']) {
+    const daily = rig.root.getObjectByName(name); if (daily) daily.visible = !park;
+  }
   if (rig.oracleClothing && park) {
     rig.root.getObjectByName('oracle-apron-group')!.visible = false;
-    rig.oracleClothing.blouse.color.set(0x536765);
+    rig.oracleClothing.blouse.color.set(0x304b59);
   }
   if (!gesture || !['dawn', 'reset'].includes(gesture.kind) || rig.hero) {
     if (rig.detail.userData.epiloguePose) {
-      rig.detail.position.y = 0; rig.detail.rotation.set(0, 0, 0); delete rig.detail.userData.epiloguePose;
+      rig.detail.position.set(0, 0, 0); rig.detail.rotation.set(0, 0, 0); delete rig.detail.userData.epiloguePose;
       rig.hips.forEach((joint, i) => { joint.position.x = (i ? 1 : -1) * .225; joint.position.z = 0; });
       if (rig.head.name === 'sati-head') rig.head.position.set(0, 1.99, 0);
       for (const side of [-1, 1]) rig.root.getObjectByName(`sati-hand-${side}`)?.rotation.set(0, 0, 0);
-      for (const name of ['oracle-park-skirt', 'sati-skirt']) {
+      for (const name of ['oracle-park-skirt', 'oracle-park-coat', 'sati-skirt']) {
         const skirt = rig.root.getObjectByName(name) as THREE.Mesh | undefined;
         if (skirt) { skirt.geometry.attributes.position.array.set(skirt.userData.standing); skirt.geometry.attributes.position.needsUpdate = true; skirt.geometry.computeVertexNormals(); }
       }
     }
-    const bag = rig.root.getObjectByName('oracle-park-handbag'); if (bag) bag.visible = false;
+    if (park && !rig.hero) {
+      rig.detail.userData.epiloguePose = true; supportGardenFeet(rig, true);
+      const center = FILM_SETS.film_sunrise_garden.center, point = new THREE.Vector3();
+      for (const name of ['oracle-park-skirt', 'oracle-park-coat']) {
+        const cloth = rig.root.getObjectByName(name) as THREE.Mesh | undefined; if (!cloth) continue;
+        const vertices = cloth.geometry.attributes.position;
+        for (let index = 0; index < vertices.count; index++) {
+          point.fromBufferAttribute(vertices, index); cloth.localToWorld(point);
+          const ground = center.y - 1 + gardenGroundHeight(point.x - center.x, point.z - center.z);
+          if (point.y >= ground + .016) continue;
+          point.y = ground + .016; cloth.worldToLocal(point); vertices.setXYZ(index, point.x, point.y, point.z);
+        }
+        vertices.needsUpdate = true; cloth.geometry.computeVertexNormals(); cloth.geometry.computeBoundingSphere();
+      }
+    }
+    const bag = rig.root.getObjectByName('oracle-park-handbag'); if (bag) { bag.visible = false; if (park) carryOracleBag(rig); }
     drapeSatiSkirt(rig);
     return;
   }
-  rig.detail.userData.epiloguePose = true; rig.detail.rotation.set(0, 0, 0); rig.detail.position.y = 0;
+  rig.detail.userData.epiloguePose = true; rig.detail.rotation.set(0, 0, 0); rig.detail.position.set(0, 0, 0);
   if (rig.head.name === 'sati-head') rig.head.position.set(0, 1.99, 0);
   if (gesture.kind === 'reset' && gesture.resetVersion === 2 && gesture.role === 'sati') {
     poseStreetWake(rig, gesture); drapeSatiSkirt(rig, true);
     return;
   }
-  const pose = gardenPose(gesture, gesture.role), time = gesture.total;
+  const pose = gardenPose(gesture, gesture.role), time = gesture.role === 'architect' && gesture.parkDeparture ? gesture.parkDeparture.elapsed : gesture.total;
   const reset = gesture.kind === 'reset';
   const rising = reset ? gesture.phase === 'ready' ? 0 : gesture.phase === 'waking' ? THREE.MathUtils.smoothstep(gesture.elapsed, 0, 3.2) : 1 : 1;
   const seated = reset ? 0 : pose.seated;
+  if (gesture.role === 'oracle' && gesture.phase === 'sitting') {
+    const origin = gesture.parkApproach ?? SUNRISE_GARDEN.approach, b = SUNRISE_GARDEN.bench;
+    const approach = THREE.MathUtils.smoothstep(gesture.elapsed, 0, 1.05);
+    // Plant in front of the seat before lowering and sliding the pelvis back.
+    // Keep the saved actor path intact; this is the body offset within its pose.
+    const bodyZ = THREE.MathUtils.lerp(THREE.MathUtils.lerp(origin.z, b.z - 1.14, approach), b.z - .14, seated);
+    const offset = bodyZ - pose.z;
+    rig.detail.position.set(-offset * Math.sin(pose.yaw), 0, offset * Math.cos(pose.yaw));
+  }
   const scale = rig.root.scale.x, hip = THREE.MathUtils.lerp(1.995, SUNRISE_GARDEN.bench.surface / scale + .22, seated);
   const stride = Math.sin(time * (gesture.role === 'sati' ? 10 : 7));
   rig.torso.position.set(0, hip, 0); rig.torso.rotation.set(.03 * seated, 0, 0);
   rig.head.rotation.set(-.035 * seated, gesture.role === 'oracle' && ['sati', 'sunrise', 'belief', 'done'].includes(gesture.phase) ? -.28 : 0, 0);
   for (let i = 0; i < 2; i++) {
-    const side = i ? 1 : -1, gait = pose.walk && !reset ? stride * side * (1 - seated) : 0;
+    const settling = gesture.role === 'oracle' && gesture.phase === 'sitting' ? 1 - THREE.MathUtils.smoothstep(gesture.elapsed, .45, 1.05) : 1;
+    const side = i ? 1 : -1, gait = !reset ? pose.walk * stride * side * (1 - seated) * settling : 0;
     // Hip joints sit above the supported pelvis so the bent thigh does not cut into the seat.
     rig.hips[i].position.y = hip + .09 * seated; rig.hips[i].rotation.set(gait * .5, 0, 0);
     rig.knees[i].rotation.set(Math.max(0, -gait) * .65, 0, 0); rig.ankles[i].rotation.set(0, 0, 0);
@@ -113,41 +226,42 @@ export function poseGarden(rig: CharacterRig, gesture?: TrilogyEpilogueGesture, 
     for (let i = 0; i < 2; i++) {
       const target = rig.root.localToWorld(new THREE.Vector3(i ? .24 : -.24, gesture.role === 'sati' ? Math.max(.16, hip - .93) : .156, .96));
       const foot = rig.ankles[i].getWorldPosition(new THREE.Vector3()).lerp(target, seated);
+      if (gesture.role === 'oracle') {
+        const b = SUNRISE_GARDEN.bench;
+        const planted = new THREE.Vector3(b.x - pose.x + (i ? -.24 : .24), .156, b.z - 1.10 - pose.z)
+          .applyAxisAngle(new THREE.Vector3(0, 1, 0), -pose.yaw);
+        foot.copy(rig.root.localToWorld(planted));
+      }
+      foot.y = Math.max(foot.y, rig.root.localToWorld(new THREE.Vector3(0, .156, 0)).y);
       reach(rig.hips[i], rig.knees[i], rig.ankles[i].position, foot, new THREE.Vector3(0, 0, 1).applyQuaternion(orientation));
       rig.ankles[i].quaternion.copy(rig.knees[i].getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation));
-      const palm = new THREE.Vector3(0, -.79, .055);
-      const hand = rig.root.localToWorld(new THREE.Vector3((i ? 1 : -1) * .3, hip + .53, .53));
-      reach(rig.shoulders[i], rig.elbows[i], palm, rig.elbows[i].localToWorld(palm.clone()).lerp(hand, seated),
-        new THREE.Vector3((i ? 1 : -1) * .6, -.7, -.25).applyQuaternion(orientation));
+      if (gesture.role !== 'oracle') {
+        const palm = new THREE.Vector3(0, -.79, .055);
+        const hand = rig.root.localToWorld(new THREE.Vector3((i ? 1 : -1) * .3, hip + .53, .53));
+        reach(rig.shoulders[i], rig.elbows[i], palm, rig.elbows[i].localToWorld(palm.clone()).lerp(hand, seated),
+          new THREE.Vector3((i ? 1 : -1) * .6, -.7, -.25).applyQuaternion(orientation));
+      }
     }
   }
   if (!reset && seated === 0) {
-    rig.root.updateWorldMatrix(true, true);
-    const orientation = rig.root.getWorldQuaternion(new THREE.Quaternion()), floor = rig.root.localToWorld(new THREE.Vector3(0, .156, 0)).y;
-    for (let i = 0; i < 2; i++) {
-      const foot = rig.ankles[i].getWorldPosition(new THREE.Vector3()); foot.y = Math.max(foot.y, floor);
-      reach(rig.hips[i], rig.knees[i], rig.ankles[i].position, foot, new THREE.Vector3(0, 0, 1).applyQuaternion(orientation));
-      rig.ankles[i].quaternion.copy(rig.knees[i].getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation));
-    }
+    supportGardenFeet(rig, gesture.parkArrivalVersion === 2);
   }
-  // The coat/dress follows the lap instead of leaving a rigid standing cylinder through the bench.
-  const skirt = gesture.role === 'oracle' ? rig.root.getObjectByName('oracle-park-skirt') as THREE.Mesh | undefined : undefined;
-  if (skirt) {
-    const positions = skirt.geometry.attributes.position;
-    for (let row = 0; row <= 10; row++) for (let column = 0; column <= 32; column++) {
-      const t = row / 10, angle = column / 32 * Math.PI * 2, wave = Math.cos(angle * 9) * .018 * t;
-      const radius = .51 + t * .19 + wave;
-      const lap = Math.min(1, t * 2), depth = THREE.MathUtils.lerp(.33, .13, lap);
-      const drapedY = t <= .5 ? hip + .12 - t * .3 : hip - .03 - (t - .5) * 1.54;
-      const z = THREE.MathUtils.lerp(Math.cos(angle) * (.33 + t * .16), lap * 1.02 + Math.cos(angle) * depth, seated);
-      const y = THREE.MathUtils.lerp(hip + .12 - t * 1.58, drapedY, seated);
-      positions.setXYZ(row * 33 + column, Math.sin(angle) * radius, y, z);
-    }
-    positions.needsUpdate = true; skirt.geometry.computeVertexNormals();
-  }
+  if (gesture.role === 'oracle') drapeOracleClothes(rig, gesture, seated);
   drapeSatiSkirt(rig);
   const bag = rig.root.getObjectByName('oracle-park-handbag');
-  if (bag) { bag.visible = seated > .05; bag.position.set(0, hip + .35, .42); bag.scale.setScalar(seated); }
+  if (bag) {
+    const lift = gesture.phase === 'ready' ? 0 : gesture.phase === 'sitting' ? THREE.MathUtils.smoothstep(gesture.elapsed, .15, 1.05) : 1;
+    bag.visible = true; bag.scale.setScalar(1); bag.rotation.set(0, 0, 0);
+    bag.position.set(THREE.MathUtils.lerp(-.94, 0, lift), hip + THREE.MathUtils.lerp(-.44, .34, lift), THREE.MathUtils.lerp(.21, .50, lift));
+    rig.root.updateWorldMatrix(true, true); const orientation = rig.root.getWorldQuaternion(new THREE.Quaternion());
+    for (let i = 0; i < 2; i++) {
+      const palm = new THREE.Vector3(0, -.79, .055), side = i ? 1 : -1;
+      const hand = bag.localToWorld(new THREE.Vector3(side * .19 * lift, .69 - .036 * lift, .14));
+      reach(rig.shoulders[i], rig.elbows[i], palm, rig.elbows[i].localToWorld(palm.clone()).lerp(hand, i ? lift : 1),
+        new THREE.Vector3(side * .6, -.7, -.25).applyQuaternion(orientation));
+      rig.fingers[i].forEach(finger => { finger.rotation.x = -.38 * (i ? lift : 1); });
+    }
+  }
   if (reset) {
     rig.detail.rotation.x = -Math.PI / 2 * (1 - rising);
     rig.torso.rotation.x = Math.sin(rising * Math.PI) * .55;

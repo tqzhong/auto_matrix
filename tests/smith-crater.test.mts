@@ -21,7 +21,7 @@ test('bracing during the fall cannot skip the remaining descent or choose to sta
 
 test('building exit, falling and impact meet at the same saved body positions', () => {
   for (const lane of [-1, 0, .7]) {
-    const building: SmithFinaleEncounter = { ...newSmithFinale(), phase: 'building', elapsed: SMITH_FINALE.building - .00001, total: 18, lane };
+    const building: SmithFinaleEncounter = { ...newSmithFinale(), roomFight: undefined, phase: 'building', elapsed: SMITH_FINALE.building - .00001, total: 18, lane };
     const fall = stepSmithFinale(building, idle, .00001);
     assert.equal(fall.phase, 'descent');
     const landing: SmithFinaleEncounter = { ...fall, elapsed: SMITH_FINALE.descent.seconds - .00001, total: 21.4, focus: SMITH_FINALE.descent.braceSeconds };

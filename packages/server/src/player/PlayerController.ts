@@ -81,6 +81,10 @@ export class PlayerController {
     if (INTERROGATION_CAST.includes(id as typeof INTERROGATION_CAST[number]) && this.sandbox?.life.film.state && interrogationLocked(this.sandbox.life.film.state)) return { error: '这个特工正在参与审讯，结束后可以接入。' };
     if (id === 'morpheus' && this.sandbox?.life.film.state && pillLocked(this.sandbox.life.film.state)) return { error: 'Morpheus 正在与 Neo 交谈递药，结束后可以接入。' };
     if (id === 'morpheus' && this.sandbox?.life.film.state?.mirrorGuide && !this.sandbox.life.film.state.mirrorGuide.done) return { error: 'Morpheus 正在带 Neo 前往追踪室。抵达后可以接入。' };
+    const handoff = this.sandbox?.life.film.state;
+    if (['morpheus', 'keymaker'].includes(id) && handoff?.scene === 'm2_freeway' && handoff.freewayHandoff && handoff.freewayHandoff.phase !== 'done') return { error: '这个角色正在行驶中的换乘，接应结束后可以接入。' };
+    const pickup = this.sandbox?.life.film.state?.freewayPickup;
+    if (id === 'keymaker' && this.sandbox?.life.film.state?.scene === 'm2_freeway' && pickup && !['ready', 'done'].includes(pickup.phase)) return { error: '钥匙匠正在运车卡车上与 Trinity 换乘，请等她完成护送。' };
     if (id === 'keymaker' && this.sandbox?.life.film.state?.ride?.phase === 'riding') return { error: '钥匙匠正在后座接受护送，抵达接应区后可以接入。' };
     if (['keymaker', 'morpheus', 'twin1', 'twin2'].includes(id) && this.sandbox?.life.film.state?.garage?.phase === 'riding') return { error: '这个角色正在车库追逐中，轿车冲出车库后可以接入。' };
     if (['morpheus', 'roland'].includes(id) && this.sandbox?.life.film.state?.hammer?.phase === 'riding') return { error: '这个角色正在 Hammer 舰桥协助 Niobe 驾驶，驶出管线后可以接入。' };
@@ -90,6 +94,8 @@ export class PlayerController {
       && deusPactLocked(this.sandbox.life.film.state.deus)) return { error: '机器集体正在与 Neo 谈判并建立连接，当前动作结束后可以接入。' };
     if (id === 'smith' && ['m3_rain', 'm3_surrender'].includes(this.sandbox?.life.film.state?.scene ?? '')
       && smithFinaleLocked(this.sandbox?.life.film.state?.smithFinale)) return { error: 'Smith 正在与 Neo 进行最后交锋，当前节拍结束后可以接入。' };
+    if (id === 'charra' && interlude?.scene === 'm3_upper_digger' && !interlude.visiting && !interlude.completed.includes(interlude.scene))
+      return { error: 'Charra 正在梯子或狭窄管线上与 Zee 协作，当前不能接管。' };
     if (id === 'kid' && this.sandbox?.life.film.state?.dockGunnery?.phase === 'firing') return { error: 'Kid 正在船坞推送弹药车。掩护完成后可以接入。' };
     if (id === 'mifune' && interlude?.scene === 'm3_dock_battle' && !interlude.visiting && interlude.actor === 'kid' && interlude.step >= 1 && !interlude.completed.includes(interlude.scene))
       return { error: 'Mifune 正在参与船坞战与最后交接，当前不能接管。' };
@@ -100,9 +106,12 @@ export class PlayerController {
       && this.sandbox.life.film.state.helChase?.phase !== 'escaped') return { error: 'Trainman 正在地铁追逐中，列车驶过后可以接入。' };
     if (['trinity', 'trainman'].includes(id) && this.sandbox?.life.film.state?.scene === 'm3_mobil_release'
       && this.sandbox.life.film.state.mobil?.phase !== 'stopped') return { error: '这个角色正在返程列车中，到站后可以接入。' };
+    if (id === 'trinity' && interlude?.scene === 'm3_mobil_release' && ['exiting', 'approaching', 'embracing'].includes(interlude.mobil?.reunion?.phase ?? ''))
+      return { error: 'Trinity 正在下车与 Neo 重逢，当前动作结束后可以接入。' };
     if (interlude?.scene === 'm3_bane' && interlude.bane && interlude.bane.phase !== 'ready' && !interlude.completed.includes('m3_bane')
       && id !== interlude.actor && ['bane', 'trinity'].includes(id)) return { error: '这个角色正在参与 Logos 船上的剧情交手，片段结束后可以接入。' };
     if (this.sandbox?.state.threats.some(t => t.character === id)) return { error: '这个角色正在剧情交手，结束后可以接入。' };
+    if (id === 'agent_johnson' && interlude?.scene === 'm2_trucks' && interlude.trucks?.weapons && interlude.trucks.phase === 'duel') return { error: 'Johnson 正在参与车顶枪刀交锋，结束后可以接入。' };
     if (this.sandbox?.life.film.custody.reserved(id)) return { error: '这个角色正在办公室拘捕与押送中，片段结束后可以接入。' };
     const restarting = newCycle && id === 'neo' && this.sandbox?.life.film.state?.finished;
     if (id === 'oracle' && agent.currentAction?.parameters.oracleRestored && !this.sandbox?.life.film.controls(agent))
@@ -141,6 +150,11 @@ export class PlayerController {
     agent.velocity = { x: 0, y: 0, z: 0 };
     this.sessions.set(socketId, { agentId: id, input: { ...idleInput(), yaw: agent.rotation }, lastInput: Date.now(), vy: 0, planar: { x: 0, z: 0 }, lastAttack: 0, combo: 0, stagger: 0 });
     this.owners.set(id, socketId);
+    this.sandbox?.life.film.freewayPickup.frame(agent, {}, 0, tick);
+    this.sandbox?.life.film.architectFrame(agent, 0, tick);
+    this.sandbox?.life.film.mobilFrame(agent, 0, tick);
+    this.sandbox?.life.film.freewayHandoff.frame(agent, {}, 0, tick);
+    this.sandbox?.life.film.truckRoad.frame(agent, 0, tick);
     this.sandbox?.life.film.windowFrame(agent, 0, tick);
     this.sandbox?.life.film.crossingFrame(agent, 0, tick);
     this.sandbox?.life.film.pillFrame(agent, 0, tick);
@@ -176,9 +190,30 @@ export class PlayerController {
     this.sandbox?.life.film.epilogueFrame(agent, 0, tick);
     this.sandbox?.life.film.theOneFrame(agent, { x: 0, z: 0, sprint: false, jump: false, focus: false }, 0, tick); this.sandbox?.life.film.reloaded.frame(agent, { x: 0, focus: false }, 0, tick);
     this.sandbox?.life.film.catch.frame(agent, { x: 0, z: 0, focus: false }, 0, tick);
+    if (this.sandbox?.life.film.state?.scene === 'm2_stop_sentinels') this.sandbox.life.film.finaleFrame(agent, false, agent.rotation, 0, tick);
+    this.sandbox?.life.film.dockGunneryFrame(agent, tick);
     this.sandbox?.life.film.dockReload.frame(agent, { focus: false, climb: 0 }, 0, tick);
     this.sandbox?.life.film.dockLastStand.frame(agent, 0, tick);
     this.sandbox?.life.film.dockGate.frame(agent, 0, tick);
+    this.sandbox?.life.film.empFrame(agent, 0, tick);
+    this.sandbox?.life.film.dockReunionFrame(agent, 0, tick);
+    this.sandbox?.life.film.dockEvacuation.frame(agent, 0, tick);
+    this.sandbox?.life.film.dockBriefing.frame(agent, 0, tick);
+    this.sandbox?.life.film.oracleRequest.frame(agent, 0, tick);
+    this.sandbox?.life.film.oracleLast.frame(agent, 0, tick);
+    this.sandbox?.life.film.oracleAbsorption.frame(agent, 0, tick);
+    this.sandbox?.life.film.trainmanChase.frame(agent, 0, tick);
+    this.sandbox?.life.film.helGarage.frame(agent, 0, tick);
+    this.sandbox?.life.film.helElevatorFrame(agent, 0, tick);
+    this.sandbox?.life.film.helDanceDoorFrame(agent, 0, tick);
+    this.sandbox?.life.film.helDisarmFrame(agent, 0, tick);
+    this.sandbox?.life.film.helBargainFrame(agent, tick);
+    this.sandbox?.life.film.sourceBriefing.frame(agent, 0, tick);
+    this.sandbox?.life.film.primaryDemolition.frame(agent, 0, tick);
+    this.sandbox?.life.film.templeDefense.frame(agent, 0, tick);
+    if (['m3_gate', 'm2_freeway'].includes(this.sandbox?.life.film.state?.scene ?? '')) this.sandbox?.life.film.driveFrame(agent, { throttle: 0, steer: 0, brake: false }, 0, tick);
+    this.sandbox?.life.film.diggers.frame(agent, 0, tick);
+    this.sandbox?.life.film.upperDigger.frame(agent, 0, tick);
     this.sandbox?.life.film.lobby.frame(agent, 0, tick);
     if (agent.mind) agent.mind.thought = '由玩家决定下一步行动。';
     return { agentId: id };
@@ -192,7 +227,11 @@ export class PlayerController {
       this.conversations.interrupt(agent.id, this.world.agents, tick);
       delete agent.controller;
       agent.currentAction = null; agent.velocity = { x: 0, y: 0, z: 0 };
-      this.sandbox?.life.film.windowFrame(agent, 0, tick);
+      this.sandbox?.life.film.primaryDemolition.frame(agent, 0, tick);
+      this.sandbox?.life.film.freewayPickup.frame(agent, {}, 0, tick);
+    this.sandbox?.life.film.freewayHandoff.frame(agent, {}, 0, tick);
+    this.sandbox?.life.film.truckRoad.frame(agent, 0, tick);
+    this.sandbox?.life.film.windowFrame(agent, 0, tick);
       this.sandbox?.life.film.crossingFrame(agent, 0, tick);
       this.sandbox?.life.film.pillFrame(agent, 0, tick);
       this.sandbox?.life.film.awakeningFrame(agent, 0, tick);
@@ -211,6 +250,8 @@ export class PlayerController {
       this.sandbox?.life.film.interludeFrame(agent, 0, tick);
       this.sandbox?.life.film.sixth.frame(agent, { crouch: false, yaw: agent.rotation }, 0, tick); this.sandbox?.life.film.basement.frame(agent, {}, 0, tick);
       this.sandbox?.life.film.betrayalFrame(agent, 0, tick);
+      this.sandbox?.life.film.helDisarmFrame(agent, 0, tick);
+      this.sandbox?.life.film.helBargainFrame(agent, tick);
       this.sandbox?.life.film.rescueFrame(agent, 0, tick);
       this.sandbox?.life.film.governmentFrame(agent, false, 0, tick);
       this.sandbox?.life.film.airRescueFrame(agent, false, 0, tick);
@@ -221,6 +262,7 @@ export class PlayerController {
       this.sandbox?.life.film.theOneFrame(agent, { x: 0, z: 0, sprint: false, jump: false, focus: false }, 0, tick); this.sandbox?.life.film.reloaded.frame(agent, { x: 0, focus: false }, 0, tick);
       this.sandbox?.life.film.catch.frame(agent, { x: 0, z: 0, focus: false }, 0, tick);
       this.sandbox?.life.film.lobby.frame(agent, 0, tick);
+      if (['m3_gate', 'm2_freeway'].includes(this.sandbox?.life.film.state?.scene ?? '')) this.sandbox?.life.film.driveFrame(agent, { throttle: 0, steer: 0, brake: false }, 0, tick);
       agent.activeEffects = agent.activeEffects.filter(effect => effect.remainingSeconds === undefined);
       if (agent.mind) agent.mind.thought = '重新回到自己的生活，继续追寻尚未完成的目标。';
     }
@@ -228,6 +270,7 @@ export class PlayerController {
     this.sandbox?.life.film.reconcileCast();
     if (agent) this.sandbox?.life.film.sentinelFrame(agent, { movement: 0, sprint: false, jump: false }, 0, tick);
     if (agent) this.sandbox?.life.film.interludeFrame(agent, 0, tick);
+    if (agent && this.sandbox?.life.film.state?.scene === 'm2_stop_sentinels') this.sandbox.life.film.finaleFrame(agent, false, agent.rotation, 0, tick);
   }
 
   receiveInput(socketId: string, value: unknown): void {
@@ -238,6 +281,7 @@ export class PlayerController {
     if (input.location !== undefined && (typeof input.location !== 'string' || input.location !== this.world.agents.get(session.agentId)!.currentLocation)) return;
     const drive = input.drive && Number.isFinite(input.drive.throttle) && Number.isFinite(input.drive.steer) ? { throttle: Math.max(0, Math.min(1, input.drive.throttle)), steer: Math.max(-1, Math.min(1, input.drive.steer)), brake: input.drive.brake === true } : undefined;
     session.input = { x: input.x, z: input.z, yaw: input.yaw, location: input.location, pitch: Math.max(-1.35, Math.min(1.35, input.pitch ?? 0)), sprint: input.sprint === true, crouch: input.crouch === true, jump: input.jump === true || session.input.jump, drive, climb: Number.isFinite(input.climb) ? Math.max(-1, Math.min(1, input.climb!)) : 0, focus: input.focus === true, sequence: input.sequence };
+    session.input.firstPerson = input.firstPerson === true;
     session.lastInput = Date.now();
   }
 
@@ -266,6 +310,77 @@ export class PlayerController {
     for (const session of this.sessions.values()) {
       const agent = this.world.agents.get(session.agentId)!;
       const computer = this.sandbox?.life.computerFrame(agent, running && agent.status === 'alive' ? dt : 0, tick);
+      if (this.sandbox?.life.film.dockEvacuation.frame(agent, running && agent.status === 'alive' ? dt : 0, tick,
+        now - session.lastInput <= 300 && (session.input.location === undefined || session.input.location === agent.currentLocation) && session.input.focus === true)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
+      if (this.sandbox?.life.film.templeDefense.frame(agent, running && agent.status === 'alive' ? dt : 0, tick,
+        now - session.lastInput <= 300 && (session.input.location === undefined || session.input.location === agent.currentLocation) && session.input.focus === true)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
+      if (this.sandbox?.life.film.dockBriefing.frame(agent, running && agent.status === 'alive' ? dt : 0, tick)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
+      if (this.sandbox?.life.film.sourcePortal.frame(agent, running && agent.status === 'alive' ? dt : 0, tick)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
+      if (this.sandbox?.life.film.architectFrame(agent, running && agent.status === 'alive' ? dt : 0, tick)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
+      if (this.sandbox?.life.film.trinityTerminal.frame(agent, running && agent.status === 'alive' ? dt : 0, tick,
+        now - session.lastInput <= 300 && (session.input.location === undefined || session.input.location === agent.currentLocation) && session.input.focus === true)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
+      if (this.sandbox?.life.film.trinityRelay.frame(agent, running && agent.status === 'alive' ? dt : 0, tick)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
+      if (this.sandbox?.life.film.helGarage.frame(agent, running && agent.status === 'alive' ? dt : 0, tick)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
+      if (this.sandbox?.life.film.helElevatorFrame(agent, running && agent.status === 'alive' ? dt : 0, tick)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
+      if (this.sandbox?.life.film.helDanceDoorFrame(agent, running && agent.status === 'alive' ? dt : 0, tick)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
+      if (this.sandbox?.life.film.helDisarmFrame(agent, running && agent.status === 'alive' ? dt : 0, tick)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
+      if (this.sandbox?.life.film.helBreakoutFrame(agent, running && agent.status === 'alive' ? dt : 0, tick)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
+      this.sandbox?.life.film.coatcheck.frame(agent, running && agent.status === 'alive' ? dt : 0, tick);
+      if (this.sandbox?.life.film.trainmanChase.frame(agent, running && agent.status === 'alive' ? dt : 0, tick)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
+      if (this.sandbox?.life.film.oracleAbsorption.frame(agent, running && agent.status === 'alive' ? dt : 0, tick,
+        now - session.lastInput <= 300 && (session.input.location === undefined || session.input.location === agent.currentLocation) && session.input.focus === true)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
+      if (this.sandbox?.life.film.oracleLast.frame(agent, running && agent.status === 'alive' ? dt : 0, tick)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
+      if (this.sandbox?.life.film.oracleRequest.frame(agent, running && agent.status === 'alive' ? dt : 0, tick)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
+      if (this.sandbox?.life.film.sourceBriefing.frame(agent, running && agent.status === 'alive' ? dt : 0, tick)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
+      if (this.sandbox?.life.film.primaryDemolition.frame(agent, running && agent.status === 'alive' ? dt : 0, tick,
+        now - session.lastInput <= 300 && (session.input.location === undefined || session.input.location === agent.currentLocation) && session.input.focus === true)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
+      if (this.sandbox?.life.film.dockReunionFrame(agent, running && agent.status === 'alive' ? dt : 0, tick,
+        now - session.lastInput <= 300 && (session.input.location === undefined || session.input.location === agent.currentLocation) && session.input.focus === true)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
+      if (this.sandbox?.life.film.empFrame(agent, running && agent.status === 'alive' ? dt : 0, tick,
+        now - session.lastInput <= 300 && (session.input.location === undefined || session.input.location === agent.currentLocation) && session.input.focus === true)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
+      if (!running || agent.status !== 'alive') this.sandbox?.life.film.freewayHandoff.frame(agent, {}, 0, tick);
+    this.sandbox?.life.film.truckRoad.frame(agent, 0, tick);
+      if (!running || agent.status !== 'alive') this.sandbox?.life.film.nebEscape.frame(agent, 0, tick);
       if (!running || agent.status !== 'alive') { this.sandbox?.life.film.sixth.frame(agent, { crouch: false, yaw: agent.rotation }, 0, tick); this.sandbox?.life.film.basement.frame(agent, {}, 0, tick); this.sandbox?.life.film.wetwall.frame(agent, { climb: 0, jump: false }, 0, tick); agent.velocity = { x: 0, y: 0, z: 0 }; this.sandbox?.life.film.hotelFrame(agent, 0, tick); this.sandbox?.life.film.sentinelFrame(agent, { movement: 0, sprint: false, jump: false }, 0, tick); this.sandbox?.life.film.interludeFrame(agent, 0, tick); this.sandbox?.life.film.betrayalFrame(agent, 0, tick); this.sandbox?.life.film.rescueFrame(agent, 0, tick); this.sandbox?.life.film.governmentFrame(agent, false, 0, tick); this.sandbox?.life.film.airRescueFrame(agent, false, 0, tick); this.sandbox?.life.film.matrixEscapeFrame(agent, { movement: 0, sprint: false }, 0, tick); this.sandbox?.life.film.farewellFrame(agent, 0, tick); this.sandbox?.life.film.deusFrame(agent, false, 0, tick); this.sandbox?.life.film.smithFinaleFrame(agent, { focus: false, x: 0, z: 0, yaw: agent.rotation }, 0, tick); this.sandbox?.life.film.epilogueFrame(agent, 0, tick); this.sandbox?.life.film.theOneFrame(agent, { x: 0, z: 0, sprint: false, jump: false, focus: false }, 0, tick); this.sandbox?.life.film.reloaded.frame(agent, { x: 0, focus: false }, 0, tick); this.sandbox?.life.film.catch.frame(agent, { x: 0, z: 0, focus: false }, 0, tick); this.sandbox?.life.film.mountainFrame(agent, { x: 0, z: 0, yaw: agent.rotation, jump: false, sprint: false }, 0, tick); this.sandbox?.life.film.lobby.frame(agent, 0, tick); session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue; }
       session.stagger = Math.max(0, session.stagger - dt);
       const stale = now - session.lastInput > 300;
@@ -278,6 +393,15 @@ export class PlayerController {
       if (sparring) {
         const yaw = Math.atan2(sparring.position.x - agent.position.x, sparring.position.z - agent.position.z);
         input = { ...input, yaw }; session.input.yaw = yaw;
+      }
+      if (this.sandbox?.life.film.truckRoad.frame(agent, dt, tick, input)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
+      if (this.sandbox?.life.film.freewayHandoff.frame(agent, input, dt, tick)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
+      if (this.sandbox?.life.film.freewayPickup.frame(agent, input, dt, tick)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
       if (this.sandbox?.life.film.basement.frame(agent, input, dt, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
@@ -358,8 +482,16 @@ export class PlayerController {
       if (this.sandbox?.life.film.lobby.frame(agent, dt, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
-      if (this.sandbox?.life.film.dockGunneryFrame(agent, tick)) {
-        agent.rotation = input.yaw; session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false;
+      if (this.sandbox?.life.film.dockGunneryFrame(agent, tick, input)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false;
+        session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
+      if (this.sandbox?.life.film.upperDigger.frame(agent, dt, tick, input)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false;
+        session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
+      if (this.sandbox?.life.film.diggers.frame(agent, dt, tick, input)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false;
         session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
       if (this.sandbox?.life.film.dockReload.frame(agent, { focus: Boolean(input.focus), climb: input.climb ?? 0 }, dt, tick)) {
@@ -416,10 +548,11 @@ export class PlayerController {
       }
       const previous = agent.position;
       const custody = this.sandbox?.life.film.custody.active(agent);
-      const boost = custody ? OFFICE_CUSTODY.speed / PLAYER_WALK_SPEED : agent.activeEffects.some(effect => ['speed_blur', 'agent_dodge', 'phase_shift'].includes(effect.visualEffect)) ? 1.8 : 1;
+      const carrying = this.sandbox?.life.film.dockEvacuation.active(agent) && this.sandbox.life.film.state?.dockEvacuation?.phase === 'carrying';
+      const boost = carrying ? .5 : custody ? OFFICE_CUSTODY.speed / PLAYER_WALK_SPEED : agent.activeEffects.some(effect => ['speed_blur', 'agent_dodge', 'phase_shift'].includes(effect.visualEffect)) ? 1.8 : 1;
       const attackScale = session.impulse || session.stagger > 0 ? 0 : session.strike ? .4 : 1;
       const movement = stepPlayer(previous, session.vy, { ...input, x: input.x * attackScale, z: input.z * attackScale,
-        ...(custody ? { sprint: false, jump: false, crouch: false } : {}) }, Math.min(dt, 0.1), agent.isInMatrix, this.sandbox?.state.structures, stale ? undefined : session.planar, boost);
+        ...(custody || carrying ? { sprint: false, jump: false, crouch: false } : {}) }, Math.min(dt, 0.1), agent.isInMatrix, this.sandbox?.state.structures, stale ? undefined : session.planar, boost);
       agent.position = movement.position; session.vy = movement.verticalVelocity; session.planar = movement.horizontalVelocity; session.input.jump = false;
       agent.rotation = input.yaw;
       if (session.impulse) {
@@ -466,7 +599,14 @@ export class PlayerController {
           agent.currentAction = { type: moving ? 'move_to' : 'idle', parameters: { player: true, resolved: true, crouching: !custody && input.crouch === true }, startedAt: tick, duration: 1, progress: 0 };
         }
       }
+      if (this.sandbox?.life.film.truckRoad.active(agent)) this.sandbox.life.film.truckRoad.action(agent, tick);
+      this.sandbox?.life.film.trainmanChase.frame(agent, 0, tick);
+    this.sandbox?.life.film.helGarage.frame(agent, 0, tick);
       this.sandbox?.life.film.basement.frame(agent, input, 0, tick);
+      this.sandbox?.life.film.dockReunionFrame(agent, 0, tick);
+      this.sandbox?.life.film.dockEvacuation.frame(agent, 0, tick);
+      this.sandbox?.life.film.dockBriefing.frame(agent, 0, tick);
+      this.sandbox?.life.film.templeDefense.frame(agent, 0, tick);
       this.sandbox?.life.film.oracleFrame(agent, input.focus === true, dt, tick);
       this.sandbox?.life.film.ambushFrame(agent, dt, tick);
       this.sandbox?.life.film.ambushEscapeFrame(agent, dt, tick);
@@ -477,6 +617,7 @@ export class PlayerController {
       this.sandbox?.life.film.chateauAction(agent);
       this.sandbox?.life.film.helBargainFrame(agent, tick);
       const journey = this.sandbox?.life.film.state;
+      if (journey?.actor === agent.id && journey.scene === 'm3_diggers' && !journey.visiting) this.sandbox!.life.film.diggers.stage(tick, dt);
       if (journey?.actor === agent.id && agent.currentAction && heldPhone(journey)) agent.currentAction.parameters.phone = { ...heldPhone(journey)! };
       if (journey?.actor === agent.id && journey.scene === 'm1_wake_up' && journey.contact?.phase === 'disk' && agent.currentAction)
         agent.currentAction.parameters.contact = { ...journey.contact, role: 'neo' };
@@ -500,18 +641,30 @@ export class PlayerController {
     const session = this.sessions.get(socketId);
     const agent = this.getAgent(socketId);
     if (!session || !agent || agent.status !== 'alive') return '请先接入一个存活角色。';
+    if (this.sandbox?.life.film.freewayPickup.active(agent) && ['attack', 'shoot', 'ability', 'ability2', 'dodge', 'travel'].includes(kind)) return ['attack', 'shoot'].includes(kind) ? this.sandbox.life.film.freewayPickup.shoot(agent, tick) : this.sandbox.life.film.state!.lastText;
+    if (this.sandbox?.life.film.dockEvacuation.active(agent) && this.sandbox.life.film.state?.dockEvacuation?.phase === 'carrying' && kind !== 'interact') return '双手正在搬运补给。WASD 走到卸货车前，再按 G 放下。';
     if (this.sandbox?.life.film.custody.active(agent) && ['attack', 'shoot', 'ability', 'ability2', 'dodge', 'travel'].includes(kind)) return '双手已被扣住。跟随特工走到电梯，按 G 继续故事。';
     if (this.sandbox?.life.film.basement.active(agent) && ['attack', 'dodge', 'shoot', 'ability', 'ability2'].includes(kind)) return '先沿撤离路线脱离烟气，保持同伴之间的通道。';
+    const truckHoodAction = this.sandbox?.life.film.truckRoad.hood.handle(agent, kind, tick);
+    if (truckHoodAction !== undefined) return truckHoodAction;
+    const truckWeaponAction = this.sandbox?.life.film.truckRoad.weapons.handle(agent, kind, session.input.yaw, session.input.pitch ?? 0, tick);
+    if (truckWeaponAction !== undefined) return truckWeaponAction;
     const sixth = this.sandbox?.life.film.sixth.handle(agent, kind, session.input.yaw, session.input.pitch ?? 0, tick);
     if (sixth !== undefined) return sixth;
     const bathroom = this.sandbox?.life.film.bathroomAction(agent, kind, tick);
     if (bathroom !== undefined) return bathroom;
+    const portalAction = this.sandbox?.life.film.sourcePortal.handle(agent, kind, tick);
+    if (portalAction !== undefined) return portalAction;
     const reloaded = this.sandbox?.life.film.reloaded.handle(agent, kind, tick);
     if (reloaded !== undefined) return reloaded;
     const catchAction = this.sandbox?.life.film.catch.handle(agent, kind, tick);
     if (catchAction !== undefined) return catchAction;
     const lastStandAction = this.sandbox?.life.film.dockLastStand.handle(agent, kind);
     if (lastStandAction !== undefined) return lastStandAction;
+    const upperDiggerAction = this.sandbox?.life.film.upperDigger.handle(agent, kind);
+    if (upperDiggerAction !== undefined) return upperDiggerAction;
+    const diggerAction = this.sandbox?.life.film.diggers.handle(agent, kind, tick, session.input.yaw, session.input.pitch ?? 0);
+    if (diggerAction !== undefined) return diggerAction;
     const reloadAction = this.sandbox?.life.film.dockReload.handle(agent, kind, tick);
     if (reloadAction !== undefined) return reloadAction;
     const baneAction = this.sandbox?.life.film.baneAction(agent, kind, tick);
@@ -540,11 +693,16 @@ export class PlayerController {
     }
     if (this.sandbox?.life.film.controls(agent) && this.sandbox.life.film.state?.scene === 'm3_hel_bargain'
       && ['attack', 'shoot', 'ability', 'ability2', 'dodge'].includes(kind)) return '人群封住了射线。按当前剧情提示行动，不能用普通攻击跳过谈判。';
+    if (this.sandbox?.life.film.controls(agent) && this.sandbox.life.film.state?.mobil?.reunion?.phase === 'embracing') return 'Trinity 正拥抱着你。等两人松开手，再继续行动。';
     if (agent.id === 'neo' && metacortexLiftLocked(this.sandbox?.state.neoLife?.lift)) return '电梯运行中，请等候到站。';
     if (this.sandbox?.life.film.dockGate.active(agent) && kind !== 'interact') {
       if (kind === 'shoot') return this.sandbox.life.film.dockGate.shoot(agent, session.input.yaw, session.input.pitch ?? 0, tick);
       return '留在受损 APU 内，用鼠标瞄准承重缆索，左键或 T 开炮。';
     }
+    const garageAction = this.sandbox?.life.film.helGarage.action(agent, kind, tick);
+    if (garageAction !== undefined) return garageAction;
+    const chaseAction = this.sandbox?.life.film.trainmanChase.action(agent, kind);
+    if (chaseAction !== undefined) return chaseAction;
     if (this.sandbox?.life.film.performing(agent) && kind !== 'interact') return '演出进行中，可以转动视角观察；进度会自动保存。';
     if (this.sandbox?.life.film.state && sentinelActive(this.sandbox.life.film.state) && ['attack', 'shoot', 'ability', 'ability2', 'dodge', 'travel'].includes(kind)) return '哨兵正在附近扫描。保持安静，武器和能力会暴露整艘船。';
     if (this.sandbox?.life.film.driving(agent) && ['attack', 'shoot', 'ability', 'ability2', 'dodge', 'travel'].includes(kind)) return this.sandbox.life.film.state?.scene === 'm3_hammer_tunnels'
@@ -588,7 +746,7 @@ export class PlayerController {
       const dock = this.sandbox?.life.film.state?.scene === 'm3_dock_battle' && this.sandbox.life.film.state.dockGunnery?.phase === 'firing';
       if (!lobby && !coatcheck && !hotel && !dock || session.strike || session.impulse || session.stagger > 0 || Date.now() - (session.lastShot ?? 0) < (dock ? 110 : coatcheck || hotel ? HEL_COATCHECK.fireInterval * 1000 : rescueLoadout(this.sandbox!.life.film.state).fireInterval * 1000)) return '';
       session.lastShot = Date.now();
-      return dock ? this.sandbox!.life.film.dockShoot(agent, session.input.yaw, session.input.pitch ?? 0, tick)
+      return dock ? this.sandbox!.life.film.dockShoot(agent, session.input.yaw, session.input.pitch ?? 0, tick, session.input.firstPerson)
         : hotel ? this.sandbox!.life.film.openingHotel.shoot(agent, session.input.yaw, session.input.pitch ?? 0, tick)
         : coatcheck ? this.sandbox!.life.film.coatcheck.shoot(agent, session.input.yaw, session.input.pitch ?? 0, tick)
         : this.sandbox!.life.film.lobby.shoot(agent, session.input.yaw, session.input.pitch ?? 0, tick);

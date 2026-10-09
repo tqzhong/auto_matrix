@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { type FilmJourney } from '@auto_matrix/shared';
+import { APU_RIG, type FilmJourney } from '@auto_matrix/shared';
 
 /** A near sentinel with articulated metal segments, driven entirely by the saved attack clock. */
 export class DockLastStandRenderer {
@@ -45,7 +45,7 @@ export class DockLastStandRenderer {
     for (let arm = 0; arm < 8; arm++) {
       const angle = arm / 8 * Math.PI * 2, origin = body.clone().add(new THREE.Vector3(Math.cos(angle), Math.sin(angle) * .4, .5));
       const strike = THREE.MathUtils.smoothstep(t, .85 + arm * .045, 1.45 + arm * .045) * (1 - retreat);
-      const target = new THREE.Vector3(Math.cos(angle) * (arm < 4 ? .62 : 2.4), arm < 4 ? 5.3 : 6.7, 11.5 + Math.sin(angle) * .65);
+      const target = new THREE.Vector3(Math.cos(angle) * (arm < 4 ? .62 : 1.5), APU_RIG.floor + (arm < 4 ? APU_RIG.pilot.y + 3.1 : 8.25), 11.5 + Math.sin(angle) * .65);
       target.lerp(origin.clone().add(new THREE.Vector3(Math.cos(angle) * 4, -3, -3)), 1 - strike);
       const middle = origin.clone().lerp(target, .45).add(new THREE.Vector3(Math.cos(angle) * 1.5, .7, -1.5));
       const curve = new THREE.QuadraticBezierCurve3(origin, middle, target);
@@ -59,10 +59,11 @@ export class DockLastStandRenderer {
     }
     this.arms.instanceMatrix.needsUpdate = true;
     const impact = t >= 1.4 && t <= 2.8;
-    this.sparks.visible = impact; this.light.position.set(0, 5.7, 11.2); this.light.intensity = impact ? 90 * (.55 + Math.sin(t * 41) * .35) : 0;
+    const strikeY = APU_RIG.floor + APU_RIG.pilot.y + 3.5;
+    this.sparks.visible = impact; this.light.position.set(0, strikeY, 11.2); this.light.intensity = impact ? 90 * (.55 + Math.sin(t * 41) * .35) : 0;
     if (impact) for (let i = 0; i < 28; i++) {
       const age = (t - 1.4 + i * .031) % .7, angle = i * 2.4;
-      this.scratch.position.set(Math.cos(angle) * age * 6, 5.6 + age * (i % 4) - age * age * 12, 11.2 + Math.sin(angle) * age * 4);
+      this.scratch.position.set(Math.cos(angle) * age * 6, strikeY - .1 + age * (i % 4) - age * age * 12, 11.2 + Math.sin(angle) * age * 4);
       this.scratch.quaternion.identity(); this.scratch.scale.set(.7, 2 + age * 7, .7); this.scratch.updateMatrix(); this.sparks.setMatrixAt(i, this.scratch.matrix);
     }
     this.sparks.instanceMatrix.needsUpdate = true;

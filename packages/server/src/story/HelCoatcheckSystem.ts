@@ -1,4 +1,4 @@
-import { FILM_SETS, HEL_COATCHECK, filmPosition, helCoatcheckCover, rayBox, distance, playerBlocked,
+import { FILM_SETS, HEL_COATCHECK, filmPosition, helCoatcheckCover, helCoatcheckAllyRoot, rayBox, distance, playerBlocked,
   type AgentState, type SandboxState, type SandboxThreat, type CombatImpact, type Vector3, type HelCoatcheckEncounter } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
 
@@ -11,13 +11,15 @@ const directionTo = (from: Vector3, to: Vector3): Vector3 => {
 
 /** The five guards, counters, gunfire and two companions are one saved encounter. */
 export class HelCoatcheckSystem {
+  private frames = false;
   onImpact?: (impact: CombatImpact, tick: number) => void;
   onHit?: (owner: AgentState, target: SandboxThreat, damage: number, tick: number) => void;
   constructor(private world: WorldState, private sandbox: () => SandboxState) {}
   get state(): HelCoatcheckEncounter | undefined { return this.sandbox().neoLife?.journey?.helCoatcheck; }
   reset(): void {
+    this.frames = false;
     this.sandbox().neoLife!.journey!.helCoatcheck = { phase: 'ready', ammo: HEL_COATCHECK.magazine, wave: 0,
-      shots: 0, kills: 0, allyShotAt: [-10, -10], coverHits: [0, 0, 0] };
+      shots: 0, kills: 0, allyShotAt: [-10, -10], coverHits: [0, 0], rescuePhysical: true };
   }
   active(actor: AgentState): boolean {
     const journey = this.sandbox().neoLife?.journey;
@@ -27,8 +29,23 @@ export class HelCoatcheckSystem {
   start(actor: AgentState, tick: number): void {
     this.sandbox().threats = this.sandbox().threats.filter(threat => threat.scene !== 'm3_hel_entry');
     this.reset(); this.state!.phase = 'combat'; this.state!.rescueElapsed = 0; this.state!.rescueLastTick = tick; this.wave(actor, tick);
-    this.sandbox().neoLife!.journey!.lastText = 'Seraph 把衣帽间女服务生拉到柜台后。五名守卫拔枪，Trinity 与 Morpheus 冲入交火。左键 / T 射击，R 换弹，柜台能挡住子弹。';
+    for (const id of ['seraph', 'morpheus'] as const) {
+      const ally = this.world.agents.get(id); if (!ally) continue;
+      this.state![id === 'seraph' ? 'rescueStart' : 'morpheusStart'] = { x: ally.position.x - SET.center.x, z: ally.position.z - SET.center.z, yaw: ally.rotation };
+    }
+    this.sandbox().neoLife!.journey!.lastText = '守卫开始拔枪。Seraph 走向女侍，护送她压低身体躲到柜台后；Trinity 与 Morpheus 负责掩护。左键 / T 射击，R 换弹，X 闪避。';
     this.stageAllies(tick);
+  }
+  frame(actor: AgentState, dt: number, tick: number): void {
+    if (!this.state?.rescuePhysical) return;
+    this.state.rescueLastTick = tick;
+    if (!this.active(actor) || this.state.phase !== 'combat') return;
+    if (dt > 0) this.frames = true;
+    const seraph = this.world.agents.get('seraph');
+    this.state.rescuePaused = (this.state.rescueElapsed ?? 0) < HEL_COATCHECK.rescueSeconds
+      && Boolean(!seraph || seraph.controller || seraph.status !== 'alive' || !seraph.isInMatrix || seraph.currentLocation !== SET.id);
+    if (!this.state.rescuePaused) this.state.rescueElapsed = Math.min(HEL_COATCHECK.rescueSeconds, (this.state.rescueElapsed ?? 0) + dt);
+    this.stageAllies(tick, false, dt);
   }
   private enemies(): SandboxThreat[] { return this.sandbox().threats.filter(threat => threat.scene === 'm3_hel_entry'); }
   private wave(actor: AgentState, tick: number): void {
@@ -81,14 +98,19 @@ export class HelCoatcheckSystem {
     this.state.reloadAt = tick + HEL_COATCHECK.reloadTicks;
     return 'Trinity 更换弹匣。趁守卫瞄准前退到衣帽柜台侧面。';
   }
-  private stageAllies(tick: number): void {
+  private stageAllies(tick: number, shooting = true, dt = 0): void {
     for (const [index, id] of (['morpheus', 'seraph'] as const).entries()) {
-      const ally = this.world.agents.get(id); if (!ally || ally.controller) continue;
-      const root = HEL_COATCHECK.allies[id];
+      const ally = this.world.agents.get(id); if (!ally || ally.controller || ally.status !== 'alive' || !ally.isInMatrix) continue;
+      const root = helCoatcheckAllyRoot(this.state!, id);
       if (this.state?.phase === 'combat' && ally.currentLocation === SET.id) {
-        ally.position = filmPosition(SET.id, root.x, root.z); ally.rotation = Math.PI; ally.velocity = { x: 0, y: 0, z: 0 };
-        ally.currentAction = { type: 'idle', parameters: { resolved: true, armed: true, weaponStyle: 'hel_pistol' }, startedAt: tick, duration: 1, progress: 0 };
-        if (tick - this.state.allyShotAt[index] >= 6) {
+        const position = filmPosition(SET.id, root.x, root.z), previous = ally.position;
+        const protecting = id === 'seraph' && this.state.rescuePhysical && (this.state.rescueElapsed ?? 0) < HEL_COATCHECK.rescueSeconds;
+        ally.position = position; ally.rotation = root.yaw;
+        if (dt > 0) ally.velocity = { x: (position.x - previous.x) / dt, y: 0, z: (position.z - previous.z) / dt };
+        else if (shooting) ally.velocity = { x: 0, y: 0, z: 0 };
+        ally.currentAction = { type: 'idle', parameters: { resolved: true, armed: !protecting,
+          ...(protecting ? { helProtection: this.state.rescueElapsed } : { weaponStyle: 'hel_pistol' }) }, startedAt: tick, duration: 1, progress: 0 };
+        if (shooting && !protecting && tick - this.state.allyShotAt[index] >= 6) {
           const from = muzzle(ally.position);
           const enemy = this.enemies().find(threat => threat.health > 12 && this.visible(from, muzzle(threat.position)));
           if (enemy) { this.state.allyShotAt[index] = tick; this.fire(id, from, directionTo(from, muzzle(enemy.position)), ally, 12, tick); }
@@ -97,20 +119,25 @@ export class HelCoatcheckSystem {
     }
   }
   tick(actor: AgentState, tick: number): boolean {
-    if (!this.active(actor)) return false;
+    if (!this.active(actor)) { if (this.state) this.state.rescueLastTick = tick; return false; }
     if (!this.state) { this.start(actor, tick); return false; } // Older saves had a generic melee group.
     const state = this.state;
     if (state.phase === 'cleared') return true;
     if (state.phase !== 'combat') return false;
     // Older combat saves had no attendant pose; resume with her already behind cover.
-    state.rescueElapsed = Math.min(2, (state.rescueElapsed ?? 2) + Math.max(0, tick - (state.rescueLastTick ?? tick)));
-    state.rescueLastTick = tick;
+    if (state.rescuePhysical) {
+      const framed = this.frames; this.frames = false;
+      this.frame(actor, framed ? 0 : Math.max(0, tick - (state.rescueLastTick ?? tick)) * .5, tick); this.frames = false;
+    } else { state.rescueElapsed = Math.min(2, (state.rescueElapsed ?? 2) + Math.max(0, tick - (state.rescueLastTick ?? tick))); state.rescueLastTick = tick; }
     if (state.reloadAt !== undefined && tick >= state.reloadAt) { state.ammo = HEL_COATCHECK.magazine; delete state.reloadAt; }
     this.stageAllies(tick);
     const enemies = this.enemies();
     state.kills = HEL_COATCHECK.waves.slice(0, state.wave).reduce((count, wave) => count + wave.length, 0) - enemies.length;
     if (!enemies.length) {
-      if (state.wave >= HEL_COATCHECK.waves.length) { state.phase = 'cleared'; return true; }
+      if (state.wave >= HEL_COATCHECK.waves.length) {
+        if (state.rescuePhysical && (state.rescuePaused || (state.rescueElapsed ?? 0) < HEL_COATCHECK.rescueSeconds)) return false;
+        state.phase = 'cleared'; return true;
+      }
       state.nextWaveAt ??= tick + 3;
       if (tick >= state.nextWaveAt) this.wave(actor, tick);
       return false;

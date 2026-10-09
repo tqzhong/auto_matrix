@@ -24,7 +24,7 @@ export class WorldDynamics {
       mind.social = Math.max(0, mind.social - 0.15);
       mind.stress = Math.max(0, mind.stress - 0.18);
       mind.memoryCount = this.memories.getMemoryCount(agent.id);
-      if (resting && mind.stress < 20 && !agent.currentAction?.parameters.crosscut) agent.health = Math.min(agent.maxHealth, agent.health + 0.15);
+      if (resting && mind.stress < 20 && !agent.currentAction?.parameters.crosscut && !agent.currentAction?.parameters.sourcePortal && !agent.currentAction?.parameters.helGarage) agent.health = Math.min(agent.maxHealth, agent.health + 0.15);
       const destination = agent.currentAction?.parameters.location as string | undefined;
       if (destination && !agent.targetPosition && agent.currentAction?.parameters.resolved && agent.currentLocation !== destination) {
         agent.currentLocation = destination;

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
-import { DEUS_PACT, deusPactPose, newDeusPact, neoCarryPose, type DeusPactEncounter, type TrilogyEpilogueEncounter } from '@auto_matrix/shared';
+import { DEUS_PACT, deusPactPose, deusPactSpeech, newDeusPact, neoCarryPose, type DeusPactEncounter, type TrilogyEpilogueEncounter } from '@auto_matrix/shared';
 import { MachineUplinkContacts } from './MachineUplinkContacts.js';
+import { machineBugGeometry } from './MachineBugGeometry.js';
 
 /** The Machine City audience chamber: energy tunnel, collective face and physical Matrix uplink. */
 export class MachineCoreRenderer {
@@ -16,10 +17,16 @@ export class MachineCoreRenderer {
   private instance = new THREE.Object3D();
   private collectiveTime = NaN;
   private collectiveAmount = NaN;
+  private collectiveExpression = '';
   private perceptionMaterials: { material: THREE.MeshStandardMaterial; color: number; intensity: number }[] = [];
   private perceptionLights: { light: THREE.Light; color: THREE.Color }[] = [];
   private subjective = false;
-  private swarmMachines: THREE.Group[] = [];
+  private swarmHull!: THREE.InstancedMesh;
+  private swarmLimbs!: THREE.InstancedMesh;
+  private swarmEyes!: THREE.InstancedMesh;
+  private storm = new THREE.Group();
+  private stormLight!: THREE.PointLight;
+  private stormMaterial!: THREE.LineBasicMaterial;
   private seat = new THREE.Group();
   private bodyJacks = new THREE.Group();
   private neckProbe = new THREE.Group();
@@ -35,7 +42,7 @@ export class MachineCoreRenderer {
   private lights: THREE.Light[] = [];
 
   constructor(root: THREE.Group) {
-    root.add(this.group); this.group.add(this.tunnel, this.ripples, this.swarm, this.face, this.seat, this.connection);
+    root.add(this.group); this.group.add(this.tunnel, this.ripples, this.swarm, this.face, this.seat, this.connection, this.storm);
     this.tunnel.name = 'machine-core-light-tunnel';
     this.ripples.name = 'machine-core-footstep-ripples';
     this.swarm.name = 'machine-core-swarm';
@@ -44,6 +51,7 @@ export class MachineCoreRenderer {
     this.bodyJacks.name = 'machine-core-body-jacks';
     this.neckProbe.name = 'machine-core-neck-probe';
     this.connection.name = 'machine-core-connection-pulse';
+    this.storm.name = 'machine-core-storm';
     this.buildChamber(); this.buildCollective(); this.buildUplink();
     this.update(undefined, 0, false, { x: 0, z: 35 });
   }
@@ -119,7 +127,7 @@ export class MachineCoreRenderer {
   }
 
   private buildCollective(): void {
-    const shell = this.material(0x445362, .88, .34);
+    const shell = this.material(0x596574, .72, .38);
     const bright = this.material(0x8d9ba7, .94, .24);
     const red = this.material(0x290a05, .6, .35, 0x952611, .7);
     this.perceptionMaterials.push(...[shell, bright].map(material => ({ material, color: 0, intensity: 0 })));
@@ -157,7 +165,7 @@ export class MachineCoreRenderer {
       const width = Math.sqrt(Math.max(0, 1 - normalizedY * normalizedY)) * 10.8;
       for (let column = -Math.floor(width / .34); column <= Math.floor(width / .34); column++) {
         const seed = this.faceUnits.length; const noise = Math.sin(seed * 12.9898 + row * 78.233);
-        const x = column * .34 + Math.sin(row * 4.1) * .1 + noise * .125;
+        const x = column * .34 + (row % 2) * .17 + Math.sin(row * 4.1) * .1 + noise * .125;
         const py = y + Math.sin(seed * 2.3) * .16;
         const ax = Math.abs(x);
         const dome = Math.sqrt(Math.max(0, 1 - (x / 12) ** 2 - ((py - 24) / 15) ** 2));
@@ -174,8 +182,7 @@ export class MachineCoreRenderer {
         this.faceUnits.push({ x, y: py, z: z + noise * .07, turn: noise * .6 + Math.atan2(py - 23, x) * .22, size: .87 + (noise + 1) * .12 });
       }
     }
-    const plate = new THREE.IcosahedronGeometry(1, 0);
-    const spar = new THREE.BoxGeometry(1, 1, 1);
+    const { hull: plate, limbs: spar } = machineBugGeometry();
     this.geometries.add(plate); this.geometries.add(spar);
     this.collectivePlates = new THREE.InstancedMesh(plate, shell, this.faceUnits.length);
     this.collectiveSpars = new THREE.InstancedMesh(spar, bright, this.faceUnits.length);
@@ -193,20 +200,29 @@ export class MachineCoreRenderer {
       tint.multiplyScalar(1 - fold * .7); this.collectivePlates.setColorAt(i, tint);
     });
 
-    const droneBody = new THREE.CapsuleGeometry(.14, .62, 2, 5);
-    const droneLimb = new THREE.CylinderGeometry(.025, .055, .82, 5);
     const droneEye = new THREE.SphereGeometry(.075, 7, 5);
-    this.geometries.add(droneBody); this.geometries.add(droneLimb); this.geometries.add(droneEye);
-    for (let i = 0; i < 96; i++) {
-      const machine = new THREE.Group(); machine.userData.seed = i; this.swarm.add(machine); this.swarmMachines.push(machine);
-      const body = this.mesh(droneBody, i % 9 ? shell : bright, machine, 0, 0, 0);
-      body.rotation.x = Math.PI / 2;
-      const eye = this.mesh(droneEye, red, machine, 0, .02, .47); eye.scale.set(1.4, .65, .42);
-      for (const side of [-1, 1]) {
-        const limb = this.mesh(droneLimb, shell, machine, side * .22, -.1, -.12);
-        limb.rotation.z = side * (.62 + i % 3 * .12); limb.rotation.x = -.36;
-      }
+    this.geometries.add(droneEye);
+    this.swarmHull = new THREE.InstancedMesh(plate, shell, 96);
+    this.swarmLimbs = new THREE.InstancedMesh(spar, bright, 96);
+    this.swarmEyes = new THREE.InstancedMesh(droneEye, red, 192);
+    for (const [mesh, name] of [[this.swarmHull, 'machine-core-swarm-hulls'], [this.swarmLimbs, 'machine-core-swarm-limbs'], [this.swarmEyes, 'machine-core-swarm-optics']] as const) {
+      mesh.name = name; mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); mesh.frustumCulled = false; this.swarm.add(mesh);
     }
+    for (let i = 0; i < 96; i++) {
+      this.swarmHull.setColorAt(i, tint.setRGB(.72 + i % 7 * .035, .8 + i % 4 * .025, .88));
+    }
+    this.stormMaterial = new THREE.LineBasicMaterial({ color: 0xc7e3ff, transparent: true, opacity: 0, depthWrite: false });
+    this.materials.add(this.stormMaterial);
+    const bolts: THREE.Vector3[] = [];
+    for (const side of [-1, 1]) for (let i = 0; i < 14; i++) {
+      const point = (j: number) => new THREE.Vector3(side * (23 + Math.sin(j * 6.73 + side) * 2.3), 48 - j * 2.4, -62 + Math.cos(j * 2.1) * 1.5);
+      bolts.push(point(i), point(i + 1));
+      if (i % 3 === 0) bolts.push(point(i), point(i).add(new THREE.Vector3(side * 4.3, -2.7, 1.3)));
+    }
+    const lightningGeometry = new THREE.BufferGeometry().setFromPoints(bolts); this.geometries.add(lightningGeometry);
+    this.storm.add(new THREE.LineSegments(lightningGeometry, this.stormMaterial));
+    this.stormLight = new THREE.PointLight(0xa9cfff, 0, 100, 2); this.stormLight.position.set(0, 30, -39); this.group.add(this.stormLight);
+    this.lights.push(this.stormLight); this.perceptionLights.push({ light: this.stormLight, color: this.stormLight.color.clone() });
     const faceLight = new THREE.PointLight(0xa7cbea, 1600, 85, 2); faceLight.position.set(-10, 34, -24); this.group.add(faceLight);
     this.lights.push(faceLight); this.perceptionLights.push({ light: faceLight, color: faceLight.color.clone() });
   }
@@ -223,23 +239,25 @@ export class MachineCoreRenderer {
     }
   }
 
-  private updateCollective(time: number, amount: number): void {
-    if (time === this.collectiveTime && amount === this.collectiveAmount) return;
-    this.collectiveTime = time; this.collectiveAmount = amount;
+  private updateCollective(time: number, amount: number, speech: ReturnType<typeof deusPactSpeech>): void {
+    const expression = `${speech.mouth}:${speech.brow}:${speech.anger}`;
+    if (time === this.collectiveTime && amount === this.collectiveAmount && expression === this.collectiveExpression) return;
+    this.collectiveTime = time; this.collectiveAmount = amount; this.collectiveExpression = expression;
     const transform = this.instance;
     this.faceUnits.forEach((unit, i) => {
       const stagger = i % 17 / 17 * .16;
       const progress = THREE.MathUtils.clamp((amount - stagger) / (1 - stagger), 0, 1);
       const angle = i * 2.39996; const radius = 15 + i % 9 * .3;
+      const lowerJaw = THREE.MathUtils.smoothstep(19.15 - unit.y, 0, 2.3) * Math.exp(-((unit.x / 5.5) ** 4));
+      const brow = Math.exp(-(((Math.abs(unit.x) - 4.2) / 2.6) ** 2 + ((unit.y - 27.3) / 1.2) ** 2));
+      const burst = speech.anger * (i % 23 === 0 ? Math.pow(Math.sin(i * 1.37 + time * 1.2), 2) : 0);
       transform.position.set(
         THREE.MathUtils.lerp(Math.cos(angle) * radius, unit.x, progress),
-        THREE.MathUtils.lerp(23 + Math.sin(angle) * radius, unit.y, progress),
-        THREE.MathUtils.lerp(-3 + Math.sin(i * .91) * 4, unit.z, progress) + Math.sin(time * 2.4 + i * .8) * .025);
+        THREE.MathUtils.lerp(23 + Math.sin(angle) * radius, unit.y, progress) - lowerJaw * speech.mouth * 1.1 - brow * speech.brow * .65,
+        THREE.MathUtils.lerp(-3 + Math.sin(i * .91) * 4, unit.z, progress) + Math.sin(time * 2.4 + i * .8) * .025 + burst * 3);
       transform.rotation.set(Math.sin(time * .7 + i) * .055, unit.x * .033 + (1 - progress) * angle, unit.turn);
-      transform.scale.set(.225 * unit.size, .31 * unit.size, .19 * unit.size);
+      transform.scale.setScalar(.27 * unit.size);
       transform.updateMatrix(); this.collectivePlates.setMatrixAt(i, transform.matrix);
-      transform.scale.set(.052, .48 * unit.size, .066);
-      transform.position.z -= .065; transform.rotation.z += .6;
       transform.updateMatrix(); this.collectiveSpars.setMatrixAt(i, transform.matrix);
     });
     this.collectivePlates.instanceMatrix.needsUpdate = true; this.collectiveSpars.instanceMatrix.needsUpdate = true;
@@ -330,7 +348,7 @@ export class MachineCoreRenderer {
       const surface = local(socket.getWorldPosition(new THREE.Vector3()));
       const axis = normal(new THREE.Vector3(0, 0, 1).transformDirection(socket.matrixWorld));
       const insert = state.phase === 'connecting' ? THREE.MathUtils.smoothstep(state.elapsed, 0, .55) : state.phase === 'connected' ? 1 : 0;
-      const gap = carried ? -.018 + (1 - pose.probe) * 1.6 : state.phase === 'consent' ? .2 + (1 - pose.probe) * .8 : THREE.MathUtils.lerp(.2, -.018, insert);
+      const gap = carried ? -.018 + (1 - pose.probe) * 1.6 : state.phase === 'consent' || state.phase === 'assurance' ? .2 + (1 - pose.probe) * .8 : THREE.MathUtils.lerp(.2, -.018, insert);
       const tip = surface.clone().addScaledVector(axis, gap);
       this.probeTip.position.copy(tip).addScaledVector(axis, .14);
       this.probeTip.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), axis.clone().negate());
@@ -355,19 +373,29 @@ export class MachineCoreRenderer {
       const material = (child as THREE.Mesh).material as THREE.Material; material.opacity = (1 - cycle) * .58;
     });
     this.swarm.visible = pose.swarm > .01;
-    this.swarmMachines.forEach((machine, index) => {
-      const seed = machine.userData.seed as number; const angle = seed * 2.399 + time * (.35 + seed % 5 * .035);
+    const speech = deusPactSpeech(state), transform = this.instance, bodyMatrix = new THREE.Matrix4();
+    for (let seed = 0; seed < this.swarmHull.count; seed++) {
+      const angle = seed * 2.399 + time * (.35 + seed % 5 * .035);
       const band = seed % 11 / 10; const radius = 4.5 + band * 9.5 - pose.swarm * 1.8;
-      machine.position.set(player.x + Math.cos(angle) * radius, 2.1 + seed % 13 * .72 + Math.sin(time * 2 + seed) * .45,
+      transform.position.set(player.x + Math.cos(angle) * radius, 2.1 + seed % 13 * .72 + Math.sin(time * 2 + seed) * .45,
         player.z + Math.sin(angle) * radius * .68 - 1.5);
-      machine.lookAt(player.x, 2.2, player.z); machine.rotateZ(Math.sin(time * 3.2 + seed) * .16);
-      machine.scale.setScalar(.62 + pose.swarm * .58);
+      transform.lookAt(player.x, 2.2, player.z); transform.rotateZ(Math.sin(time * 3.2 + seed) * .16);
+      const size = .43 + pose.swarm * .38; transform.scale.setScalar(size);
+      transform.updateMatrix(); this.swarmHull.setMatrixAt(seed, transform.matrix);
       const flap = Math.sin(time * 5.5 + seed * .73) * .24;
-      machine.children.slice(2).forEach((limb, limbIndex) => { limb.rotation.z = (limbIndex ? 1 : -1) * (.72 + flap); });
-    });
+      transform.scale.x *= 1 + flap; transform.updateMatrix(); this.swarmLimbs.setMatrixAt(seed, transform.matrix);
+      this.swarmHull.getMatrixAt(seed, bodyMatrix);
+      for (const side of [-1, 1]) {
+        transform.position.set(side * .12, .58, .24).applyMatrix4(bodyMatrix); transform.scale.set(size * .8, size * .6, size * .42);
+        transform.updateMatrix(); this.swarmEyes.setMatrixAt(seed * 2 + (side > 0 ? 1 : 0), transform.matrix);
+      }
+    }
+    for (const mesh of [this.swarmHull, this.swarmLimbs, this.swarmEyes]) mesh.instanceMatrix.needsUpdate = true;
     this.face.visible = pose.face > .001;
     this.face.scale.setScalar(1);
-    this.updateCollective(time, pose.face);
+    this.updateCollective(time, pose.face, speech);
+    const flash = speech.anger * Math.pow(Math.max(0, Math.sin(state.elapsed * 18 + .8)), 12);
+    this.storm.visible = flash > .025; this.stormMaterial.opacity = flash * .88; this.stormLight.intensity = flash * 1800;
     this.updateUplink(state, subject, carried);
     this.connection.visible = pose.pulse > .001;
     this.connection.scale.setScalar(.35 + pose.pulse * (firstPerson ? 1.7 : 2.6));

@@ -1,0 +1,144 @@
+{
+  "asset": "tree_small_02",
+  "page": "https://polyhaven.com/a/tree_small_02",
+  "author": {
+    "Rico Cilliers": "All"
+  },
+  "license": "CC0",
+  "licensePage": "https://polyhaven.com/license",
+  "source": {
+    "gltf": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/tree_small_02/tree_small_02_1k.gltf",
+    "gltfMd5": "63f42b19687332f7b3a5c8b531734d8e",
+    "binary": {
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/tree_small_02/tree_small_02.bin",
+      "md5": "7a7019a87e6fe0d7475c0fa2e08d8962",
+      "size": 95102324
+    }
+  },
+  "output": {
+    "file": "waterfront-tree.glb",
+    "bytes": 7104008,
+    "sha256": "625ae4be13e8eb3a5682a5ac8b26c792a6414bf07e99afbb222d077e85e75271",
+    "statistics": [
+      {
+        "lod": "near",
+        "material": "tree_small_02_branches",
+        "originalTriangles": 94814,
+        "triangles": 7999,
+        "vertices": 9298,
+        "relativeError": 0.0029213367961347103
+      },
+      {
+        "lod": "near",
+        "material": "tree_small_02_leaves",
+        "originalTriangles": 1939380,
+        "triangles": 60500,
+        "vertices": 121000,
+        "leafCards": 30250
+      },
+      {
+        "lod": "near",
+        "material": "tree_small_02_trunk",
+        "originalTriangles": 28293,
+        "triangles": 4499,
+        "vertices": 3151,
+        "relativeError": 0.001890369225293398
+      },
+      {
+        "lod": "background",
+        "material": "tree_small_02_leaves",
+        "originalTriangles": 1939380,
+        "triangles": 7000,
+        "vertices": 14000,
+        "leafCards": 3500
+      },
+      {
+        "lod": "background",
+        "material": "tree_small_02_trunk",
+        "originalTriangles": 28293,
+        "triangles": 999,
+        "vertices": 1018,
+        "relativeError": 0.00951401051133871
+      },
+      {
+        "lod": "shore",
+        "material": "tree_small_02_leaves",
+        "originalTriangles": 1939380,
+        "triangles": 1500,
+        "vertices": 3000,
+        "leafCards": 750
+      },
+      {
+        "lod": "shore",
+        "material": "tree_small_02_trunk",
+        "originalTriangles": 28293,
+        "triangles": 860,
+        "vertices": 926,
+        "relativeError": 0.028108030557632446
+      }
+    ]
+  },
+  "textures": [
+    {
+      "file": "tree_small_02_branch_nor_gl_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/tree_small_02/tree_small_02_branch_nor_gl_1k.jpg",
+      "md5": "00a3eed0d4d28e7e890d9ec6ac0619af",
+      "size": 581596
+    },
+    {
+      "file": "tree_small_02_branch_diff_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/tree_small_02/tree_small_02_branch_diff_1k.jpg",
+      "md5": "88b531469f5dba2fc44ca85df3776e7c",
+      "size": 449977
+    },
+    {
+      "file": "tree_small_02_branch_arm_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/tree_small_02/tree_small_02_branch_arm_1k.jpg",
+      "md5": "9ec3d8428295d87ae363bf0d1e0a8288",
+      "size": 375732
+    },
+    {
+      "file": "tree_small_02_leaves_nor_gl_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/tree_small_02/tree_small_02_leaves_nor_gl_1k.jpg",
+      "md5": "b06c87e73f54d9654f66d67e9de7aa85",
+      "size": 681604
+    },
+    {
+      "file": "tree_small_02_leaves_diff_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/tree_small_02/tree_small_02_leaves_diff_1k.jpg",
+      "md5": "315cbc2cebfb399e649ccd39112c109a",
+      "size": 340003
+    },
+    {
+      "file": "tree_small_02_leaves_arm_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/tree_small_02/tree_small_02_leaves_arm_1k.jpg",
+      "md5": "3dad5bafc732f7692db32a262530bbab",
+      "size": 633698
+    },
+    {
+      "file": "tree_small_02_nor_gl_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/tree_small_02/tree_small_02_nor_gl_1k.jpg",
+      "md5": "115a20da8621cd3e034e9b1bbe574746",
+      "size": 1228646
+    },
+    {
+      "file": "tree_small_02_diff_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/tree_small_02/tree_small_02_diff_1k.jpg",
+      "md5": "a7287a3f4e7f0d4577cb949b245f5b14",
+      "size": 863246
+    },
+    {
+      "file": "tree_small_02_arm_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/tree_small_02/tree_small_02_arm_1k.jpg",
+      "md5": "44b6ed4bf32d7cd67cb3e9d5faeacc38",
+      "size": 708242
+    },
+    {
+      "file": "tree_small_02_leaves_alpha_1k.png",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/png/1k/tree_small_02/tree_small_02_leaves_alpha_1k.png",
+      "md5": "63199ba87a9e8928424bd8c3b8017bd0",
+      "size": 264711
+    }
+  ],
+  "processing": "meshoptimizer 0.18.1 (already locked by @types/three) for wood; connected leaf surfaces fitted to their UV0 planes, two triangles per cutout card, original atlas regions retained and UV1 fitted within each island; near uses every valid card at 1.2x, background and shore select whole islands by stable hash order within their 7000/1500 triangle budgets and expand 2.7x/5.7x; distant LODs omit thin twigs; root raised 0.0241038464 m; separate opaque/cutout leaf material"
+}

@@ -18,10 +18,13 @@ function snapshot(root: THREE.Group, name: string) {
   });
   return objects;
 }
-const names = ['machine-core-swarm', 'machine-core-face', 'machine-core-seat', 'machine-core-connection-pulse'];
+const names = ['machine-core-swarm', 'machine-core-face', 'machine-core-seat', 'machine-core-connection-pulse', 'machine-core-storm'];
 const beats: DeusPactEncounter[] = [
   { ...newDeusPact(), phase: 'swarm', elapsed: 1.4, total: 1.4, resolve: 1.1 },
+  { ...newDeusPact(), phase: 'challenge', elapsed: .85, total: 6.2, resolve: 3 },
   { ...newDeusPact(), phase: 'warning', elapsed: 1.2, total: 6.3, resolve: 3 },
+  { ...newDeusPact(), phase: 'question', elapsed: .8, total: 16, resolve: 3 },
+  { ...newDeusPact(), phase: 'assurance', elapsed: .8, total: 18, resolve: 3 },
   { ...newDeusPact(), phase: 'cabling', elapsed: 1.4, total: 10.8, resolve: 3 },
   { ...newDeusPact(), phase: 'consent', elapsed: 1.1, total: 13.3, resolve: 3, consent: .7 },
   { ...newDeusPact(), phase: 'connected', elapsed: 0, total: 15.5, resolve: 3, consent: 1.8 },
@@ -56,7 +59,7 @@ test('cold machine-core rendering and reverse saved-frame seeking reproduce the 
 test('saved performance time still animates the visible swarm, face and connection rather than freezing them', () => {
   const root = new THREE.Group(), renderer = new MachineCoreRenderer(root);
   try {
-    for (const [beat, name] of [[beats[0], names[0]], [beats[1], names[1]], [beats[4], names[3]]] as const) {
+    for (const [beat, name] of [[beats[0], names[0]], [beats[2], names[1]], [beats.at(-1)!, names[3]]] as const) {
       renderer.update(beat, 50, false, player);
       assert.equal(root.getObjectByName(name)!.visible, true);
       const before = snapshot(root, name);
@@ -68,6 +71,7 @@ test('saved performance time still animates the visible swarm, face and connecti
 
 test('the real film set follows Neo’s fast connection clock without replaying stale phases, retries or visits', t => {
   const original = globalThis.document;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ({
     createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }),
     putImageData() {}, fillRect() {}, strokeRect() {}, fillText() {}, createRadialGradient: () => ({ addColorStop() {} }),
@@ -78,8 +82,8 @@ test('the real film set follows Neo’s fast connection clock without replaying 
   const actor = world.agents.get('neo')!;
   Object.assign(actor, { position: filmPosition('film_machine_core', 0, -25), isInMatrix: false, currentLocation: 'film_machine_core' });
   const journey: FilmJourney = { version: 1, scene: 'm3_deus', actor: 'neo', step: 3, completed: [], enteredAt: 0,
-    checkpoint: { ...actor.position }, reflections: {}, lastText: '', deus: { ...beats[2], elapsed: .1, total: 9.5 } };
-  const fast = { ...beats[2], role: 'neo' };
+    checkpoint: { ...actor.position }, reflections: {}, lastText: '', deus: { ...beats[5], elapsed: .1, total: 9.5 } };
+  const fast = { ...beats[5], role: 'neo' };
   actor.currentAction = { type: 'idle', parameters: { deusPact: fast }, startedAt: 0, duration: 1, progress: 0 };
   const sandbox = { neoLife: { journey } } as SandboxState;
   const verify = (beat: DeusPactEncounter | undefined, reason: string) => {
@@ -89,13 +93,13 @@ test('the real film set follows Neo’s fast connection clock without replaying 
   };
   verify(fast, 'body jacks must use the same fast beat as Neo instead of the older world snapshot');
   assert.equal(journey.deus!.elapsed, .1, 'rendering cannot mutate saved world state');
-  journey.deus = { ...beats[2], elapsed: .2, total: 9.6, attempts: 1 };
+  journey.deus = { ...beats[5], elapsed: .2, total: 9.6, attempts: 1 };
   verify(journey.deus, 'a previous attempt cannot animate the next connection');
-  journey.deus = { ...beats[2], elapsed: 2.4, total: 11.8 };
+  journey.deus = { ...beats[5], elapsed: 2.4, total: 11.8 };
   verify(journey.deus, 'an older actor packet cannot rewind newer saved cabling');
-  journey.deus = { ...beats[4] };
+  journey.deus = { ...beats.at(-1)! };
   verify(journey.deus, 'cabling cannot overwrite an already connected phase');
-  journey.deus = { ...beats[2], elapsed: .1, total: 9.5 }; actor.id = 'morpheus';
+  journey.deus = { ...beats[5], elapsed: .1, total: 9.5 }; actor.id = 'morpheus';
   verify(journey.deus, 'another selected role cannot supply Neo’s performance clock');
   actor.id = 'neo'; journey.visiting = 'm3_deus';
   verify(undefined, 'a visit cannot replay the active negotiation');

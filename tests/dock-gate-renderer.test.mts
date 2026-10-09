@@ -19,7 +19,7 @@ test('steering the APU around sentinel dives leaves its actual feet clear of the
   const staticSet = root.getObjectByName('zion-homecoming-set')!.children[0];
   for (const side of [-1, 1]) {
     journey.apu!.x = side * 6.6; renderer.update(journey, 0); root.updateMatrixWorld(true);
-    const foot = apu.children.find(child => child instanceof THREE.Mesh && child.position.y < .3 && Math.sign(child.position.x) === side)!;
+    const foot = apu.getObjectByName(`apu-foot-${side}`)!;
     const origin = foot.localToWorld(new THREE.Vector3(-side * 1.15, 0, 0));
     const hit = new THREE.Raycaster(origin, new THREE.Vector3(side, 0, 0), 0, 2.3).intersectObject(staticSet, true)[0];
     assert.ok(!hit, `the ${side} foot cuts through a rendered dock obstacle at ${hit?.point.toArray()}`);

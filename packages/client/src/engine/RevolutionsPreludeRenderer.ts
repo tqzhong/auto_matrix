@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { dockPowerOffline, type FilmJourney } from '@auto_matrix/shared';
+import { EMP_OPERATOR, empOperatorPose, dockEmpFlash, dockPowerOffline, type FilmJourney } from '@auto_matrix/shared';
 
 type PreludeScene = 'm3_oracle_absorbed' | 'm3_bane_questions' | 'm3_logos_plan' | 'm3_maggie_discovery' | 'm3_emp';
 
@@ -9,16 +9,14 @@ export class RevolutionsPreludeRenderer {
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private lamps: THREE.PointLight[] = [];
-  private code?: THREE.Group;
-  private codeLight?: THREE.PointLight;
+  private oracleDiffusers: THREE.MeshBasicMaterial[] = [];
   private evidence: THREE.Mesh[] = [];
   private routes?: [THREE.Mesh, THREE.Mesh];
   private warning?: THREE.PointLight;
   private hammerDiffuser?: THREE.MeshBasicMaterial;
   private empDisplay?: THREE.MeshBasicMaterial;
   private empFlash?: THREE.PointLight;
-  private empTriggeredAt?: number;
-  private empSeen = false;
+  private empCrank?: THREE.Group;
   consumed = false;
   blackout = false;
 
@@ -43,27 +41,14 @@ export class RevolutionsPreludeRenderer {
   }
   private oracle(): void {
     const fixture = this.material(new THREE.MeshStandardMaterial({ color: 0x888c77, roughness: .5, metalness: .45 }));
-    const lightFace = this.material(new THREE.MeshBasicMaterial({ color: 0xe7e8cb, toneMapped: false }));
     for (let i = 0; i < 4; i++) {
-      const z = 2 + i * 4.7;
-      this.box(fixture, 0, 8.35, z, 6, .2, .75);
-      this.box(lightFace, 0, 8.19, z, 5.5, .04, .56);
-      const lamp = new THREE.PointLight(0xebedd2, 105, 13, 2); lamp.name = `oracle-corridor-light-${i}`;
-      lamp.position.set(0, 7.7, z); this.group.add(lamp); this.lamps.push(lamp);
+      const z = 47 - i * 4.2;
+      this.box(fixture, 0, 7.7, z, 3.7, .2, .6);
+      const face = this.material(new THREE.MeshBasicMaterial({ color: 0xe7e8cb, toneMapped: false })); this.oracleDiffusers.push(face);
+      this.box(face, 0, 7.57, z, 3.3, .04, .45);
+      const lamp = new THREE.PointLight(0xebedd2, 105, 11, 2); lamp.name = `oracle-corridor-light-${i}`;
+      lamp.position.set(0, 7.1, z); this.group.add(lamp); this.lamps.push(lamp);
     }
-    this.code = new THREE.Group(); this.code.name = 'oracle-code-intrusion'; this.group.add(this.code);
-    const symbol = this.material(new THREE.MeshBasicMaterial({ color: 0x86edb3, transparent: true, opacity: .5, depthWrite: false, toneMapped: false }));
-    const shard = new THREE.BoxGeometry(.04, .28, .035); this.geometries.add(shard);
-    for (let i = 0; i < 96; i++) {
-      const mesh = new THREE.Mesh(shard, symbol);
-      const angle = i * 2.39996323;
-      const radius = 1.1 + Math.sqrt(i / 96) * 8.5;
-      mesh.position.set(-5 + Math.sin(angle) * radius, .45 + (i * 37 % 83) / 83 * 7.2, -22 + Math.cos(angle) * radius);
-      mesh.rotation.z = Math.sin(i * 1.7) * .4; mesh.scale.y = .35 + (i % 6) * .32;
-      this.code.add(mesh);
-    }
-    this.codeLight = new THREE.PointLight(0x7af7a9, 0, 16, 2); this.codeLight.position.set(-5, 4, -22); this.group.add(this.codeLight);
-    this.code.visible = false;
   }
   private hammerLighting(): void {
     const diffuser = this.material(new THREE.MeshBasicMaterial({ color: 0xcbdfe0, toneMapped: false }));
@@ -118,22 +103,73 @@ export class RevolutionsPreludeRenderer {
   }
   private empDetonator(): void {
     const iron = this.material(new THREE.MeshStandardMaterial({ color: 0x354348, roughness: .5, metalness: .7 }));
+    const steel = this.material(new THREE.MeshStandardMaterial({ color: 0x8c9697, roughness: .38, metalness: .82 }));
+    const rubber = this.material(new THREE.MeshStandardMaterial({ color: 0x151b22, roughness: .87 }));
+    const red = this.material(new THREE.MeshStandardMaterial({ color: 0x9c2920, roughness: .57, metalness: .35 }));
     this.empDisplay = this.material(new THREE.MeshBasicMaterial({ color: 0xe3b88b, toneMapped: false }));
     const console = new THREE.Group(); console.name = 'hammer-emp-detonator'; this.group.add(console);
-    this.box(iron, 2.4, 1.2, -16, 2.6, 2.4, 1.8, console);
-    this.box(this.empDisplay, 2.4, 2.46, -16.15, 1.8, .08, 1.1, console);
-    const handle = this.mesh(new THREE.CylinderGeometry(.17, .22, .8, 12), iron, console);
-    handle.position.set(2.4, 3, -16); handle.rotation.z = -.3;
+    const tube = (points: number[][], radius: number, material = steel) => this.mesh(new THREE.TubeGeometry(
+      new THREE.CatmullRomCurve3(points.map(p => new THREE.Vector3(...p as [number, number, number]))), 20, radius, 8), material, console);
+    const seat = EMP_OPERATOR.seat;
+    const cushion = this.box(rubber, 0, seat.y - .1, seat.z, seat.width, .2, seat.depth, console); cushion.name = 'link-seat-cushion';
+    this.box(iron, 0, seat.y - .25, seat.z, 1.65, .12, 1.4, console);
+    this.box(rubber, 0, 2.25, -15.38, 1.5, 1.8, .25, console).rotation.x = -.11;
+    this.box(rubber, 0, 3.59, -15.24, 1.1, .48, .24, console).rotation.x = -.11;
+    for (const side of [-1, 1]) {
+      tube([[side * .7, .12, -16.4], [side * .78, 1.3, -15.5], [side * .78, 3.74, -15.1]], .065);
+      tube([[side * .77, 1.48, -16.5], [side * 1.03, 2.18, -16.7], [side * 1.03, 2.18, -15.6], [side * .78, 1.6, -15.5]], .06);
+      this.box(iron, side * .67, .08, -16, .32, .16, 1.7, console);
+      this.box(rubber, side * .99, 2.23, -16.05, .19, .11, .72, console);
+    }
+    // An arm-mounted circular crank with a lifted red safety cover, as in the hand close-up.
+    const housing = EMP_OPERATOR.console;
+    this.box(iron, housing.x, housing.y, housing.z, housing.width, housing.height, housing.depth, console).name = 'emp-control-housing';
+    const crank = EMP_OPERATOR.crank;
+    const base = this.mesh(new THREE.CylinderGeometry(.4, .44, .24, 32), steel, console);
+    base.position.set(crank.x, crank.y - .17, crank.z);
+    const cover = this.mesh(new THREE.CylinderGeometry(.39, .39, .05, 32), red, console);
+    cover.name = 'emp-red-cover'; cover.position.set(crank.x, crank.y + .29, crank.z - .4); cover.rotation.x = -1.12;
+    const strokes = [
+      [-.25, -.09, -.25, .09], [-.25, -.09, -.12, -.09], [-.25, 0, -.14, 0], [-.25, .09, -.12, .09],
+      [-.06, .09, -.06, -.09], [-.06, -.09, .01, .02], [.01, .02, .08, -.09], [.08, -.09, .08, .09],
+      [.15, .09, .15, -.09], [.15, -.09, .26, -.09], [.26, -.09, .28, -.06], [.28, -.06, .28, -.01], [.28, -.01, .15, .01],
+    ];
+    const letter = new THREE.BoxGeometry(1, .006, .021); this.geometries.add(letter);
+    const stencil = new THREE.InstancedMesh(letter, this.material(new THREE.MeshStandardMaterial({ color: 0xd7d3bd, roughness: .9 })), strokes.length * 2);
+    stencil.name = 'emp-cover-lettering'; const mark = new THREE.Object3D();
+    for (let side = 0; side < 2; side++) strokes.forEach(([x, z, endX, endZ], i) => {
+      const sign = side ? -1 : 1;
+      mark.position.set((x + endX) / 2 * sign, sign * .028, (z + endZ) / 2);
+      mark.scale.set(Math.hypot(endX - x, endZ - z), 1, 1); mark.rotation.y = -Math.atan2(endZ - z, (endX - x) * sign);
+      mark.updateMatrix(); stencil.setMatrixAt(side * strokes.length + i, mark.matrix);
+    });
+    cover.add(stencil);
+    for (let i = 0; i < 8; i++) {
+      const angle = i / 8 * Math.PI * 2;
+      this.box(rubber, crank.x + Math.cos(angle) * .35, crank.y - .01, crank.z + Math.sin(angle) * .35, .045, .04, .045, console);
+    }
+    this.empCrank = new THREE.Group(); this.empCrank.name = 'emp-crank'; this.empCrank.position.set(crank.x, crank.y, crank.z); console.add(this.empCrank);
+    this.box(steel, crank.radius / 2, 0, 0, crank.radius + .12, .1, .12, this.empCrank);
+    const grip = this.mesh(new THREE.CylinderGeometry(.075, .075, .29, 20), rubber, this.empCrank);
+    grip.name = 'emp-crank-grip'; grip.position.set(crank.radius, .13, 0);
+    const screen = this.box(iron, 1.55, 2.3, -17.25, 1.05, .52, .32, console); screen.rotation.x = -.55;
+    this.box(this.empDisplay, 1.55, 2.34, -17.08, .82, .32, .025, console).rotation.x = -.55;
+    for (let i = 0; i < 6; i++) this.box(rubber, 1.22 + i * .13, 2.11, -16.96, .07, .07, .045, console);
+    tube([[1.6, 1, -16.7], [1.9, .3, -17.4], [2.1, .16, -19.5], [2.6, .17, -20.3]], .065, rubber);
+    tube([[-1, 1.8, -15.4], [-1.4, .2, -15.1], [-2.6, .15, -14.2], [-4, .13, -15]], .04, rubber);
     this.empFlash = new THREE.PointLight(0xe8f9ff, 0, 95, 2);
     this.empFlash.position.set(0, 8, -16); this.group.add(this.empFlash);
   }
   update(journey: FilmJourney | undefined, elapsed: number): void {
     const step = journey?.scene === this.scene && !journey.visiting ? journey.step : 0;
     if (this.scene === 'm3_oracle_absorbed') {
-      this.lamps.forEach((lamp, i) => lamp.intensity = i < step ? 0 : 105);
-      this.consumed = step >= 3;
-      if (this.code) { this.code.visible = this.consumed; this.code.rotation.y = elapsed * .06; }
-      if (this.codeLight) this.codeLight.intensity = this.consumed ? 170 + Math.sin(elapsed * 7) * 45 : 0;
+      const escape = journey?.oracleAbsorption?.escape ?? (step >= 2 ? 32 : 0);
+      this.lamps.forEach((lamp, i) => {
+        const remaining = 16 + i * 1.8 - escape;
+        lamp.intensity = remaining <= 0 ? 0 : remaining < .35 ? 30 + Math.sin(escape * 47) * 24 : 105;
+        this.oracleDiffusers[i].color.setHex(lamp.intensity ? 0xe7e8cb : 0x252820);
+      });
+      this.consumed = escape >= 20;
     } else if (this.scene === 'm3_bane_questions') this.evidence.forEach((indicator, i) => indicator.visible = step > i + 1);
     else if (this.scene === 'm3_logos_plan' && this.routes) this.routes.forEach((route, i) => {
       const material = route.material as THREE.MeshBasicMaterial; material.opacity = step >= 2 ? .82 : .28 + Math.sin(elapsed * 2 + i) * .08;
@@ -141,19 +177,19 @@ export class RevolutionsPreludeRenderer {
     else if (this.scene === 'm3_maggie_discovery' && this.warning) this.warning.intensity = step ? 90 + Math.sin(elapsed * 5) * 45 : 45;
     else if (this.scene === 'm3_emp') {
       const fired = dockPowerOffline(journey);
-      if (fired && !this.empSeen) this.empTriggeredAt = elapsed;
-      this.empSeen = fired; this.blackout = fired;
+      this.blackout = fired;
       this.lamps.forEach(lamp => lamp.intensity = fired ? 0 : 850);
       this.hammerDiffuser?.color.setHex(fired ? 0x182023 : 0xcbdfe0);
       this.empDisplay?.color.setHex(fired ? 0x30231f : 0xe3b88b);
-      const pulse = fired && this.empTriggeredAt !== undefined ? Math.max(0, 1 - (elapsed - this.empTriggeredAt) / .7) : 0;
-      if (this.empFlash) this.empFlash.intensity = pulse * 4500;
+      if (this.empCrank) this.empCrank.rotation.y = -(journey?.empOperator ? empOperatorPose(journey.empOperator).turn : fired ? 1 : 0) * Math.PI * 1.5;
+      if (this.empFlash) this.empFlash.intensity = fired ? dockEmpFlash(journey?.emp) * 4500 : 0;
     }
   }
   dispose(): void {
+    this.group.traverse(object => { if (object instanceof THREE.InstancedMesh) object.dispose(); });
     this.group.removeFromParent(); this.group.clear();
     this.geometries.forEach(geometry => geometry.dispose()); this.materials.forEach(material => material.dispose());
-    this.lamps.forEach(light => light.dispose()); this.codeLight?.dispose();
+    this.lamps.forEach(light => light.dispose());
     this.empFlash?.dispose();
   }
 }

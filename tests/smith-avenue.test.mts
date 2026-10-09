@@ -83,3 +83,22 @@ test('aerial rain spray follows both saved bodies without broad cones across the
     }
   } finally { renderer.dispose(); }
 });
+
+test('the actual shadow camera uses its configured projection and covers both interior fighters', () => {
+  const root = new THREE.Group(), renderer = new SmithFinaleRenderer(root);
+  try {
+    const beat = { ...newSmithFinale(), phase: 'interior_warning' as const, elapsed: .2, total: 35, breachedAt: 30 };
+    renderer.update(beat, false, { x: -32.5, z: -28 }); root.updateMatrixWorld(true);
+    let light!: THREE.DirectionalLight;
+    root.traverse(object => { if (object instanceof THREE.DirectionalLight && object.castShadow) light = object; });
+    assert.ok(light);
+    const camera = light.shadow.camera;
+    assert.ok(Math.abs(camera.projectionMatrix.elements[0] - 2 / (camera.right - camera.left)) < .00001,
+      'setting frustum properties must update the actual shadow projection matrix');
+    light.shadow.updateMatrices(light);
+    for (const pose of Object.values(smithFinalePose(beat)).slice(0, 2) as {x:number;y:number;z:number}[]) {
+      const point = new THREE.Vector3(pose.x, pose.y + 1.7, pose.z).project(camera);
+      assert.ok(Math.abs(point.x) < 1 && Math.abs(point.y) < 1 && Math.abs(point.z) < 1, 'the interior body is outside its real shadow camera');
+    }
+  } finally { renderer.dispose(); }
+});

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SCENES, FILM_SCENE_BY_ID, filmEntry, filmStepPosition, type AgentState, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENES, FILM_SCENE_BY_ID, filmEntry, filmStepPosition, ORACLE_LAST, oracleLastLines, ORACLE_ABSORPTION, type AgentState, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -16,7 +16,7 @@ function setup() {
   const conversations = { interrupt() {}, isAgentInConversation: () => false, startConversation: () => false } as unknown as ConversationEngine;
   const actions = { execute() {} } as unknown as ActionExecutor;
   const players = new PlayerController(world, conversations, actions, dynamics, sandbox);
-  let tick = 0;
+  let tick = 0, sequence = 0;
   players.possess('film-player', 'neo', tick); sandbox.life.begin(world.agents.get('neo')!, tick);
   sandbox.state.neoLife!.chapter = 1;
   const command = (target: string) => players.sandboxAction('film-player', { kind: 'life', target: `film:${target}` }, ++tick);
@@ -34,11 +34,33 @@ function setup() {
   const finish = (sceneId: string) => {
     const state = sandbox.life.film.state!;
     const scene = FILM_SCENE_BY_ID[sceneId];
+    const frames = (seconds: number, focus = false) => {
+      for (let i = 0; i < Math.ceil(seconds / .05); i++) {
+        players.receiveInput('film-player', { x: 0, z: 0, yaw: actor().rotation, focus, location: scene.set, sequence: ++sequence });
+        players.step(.05, true, tick);
+      }
+    };
+    if (sceneId === 'm3_oracle_last') {
+      actor().position = filmStepPosition(scene, scene.steps[0]); frames(ORACLE_LAST.welcomeSeconds + .1); assert.equal(state.step, 1);
+      actor().position = filmStepPosition(scene, scene.steps[1]);
+      for (const step of [1, 2]) { command('act'); frames(oracleLastLines(state.oracleLast!, step).length * ORACLE_LAST.lineSeconds + .1); assert.equal(state.step, step + 1); }
+      command('reflect:agency'); frames(ORACLE_LAST.lineSeconds + .1); assert.equal(state.step, 4);
+      actor().position = filmStepPosition(scene, scene.steps[4]); frames(.1);
+    } else if (sceneId === 'm3_oracle_absorbed') {
+      actor().position = filmStepPosition(scene, scene.steps[0]); command('act'); frames(ORACLE_ABSORPTION.farewellSeconds + .1); assert.equal(state.step, 1);
+      command('act'); frames(ORACLE_ABSORPTION.escapeSeconds + .1); assert.equal(state.step, 2);
+      command('reflect:agency'); assert.equal(state.step, 3); command('act');
+      frames(ORACLE_ABSORPTION.approachSeconds + ORACLE_ABSORPTION.confrontation.length * ORACLE_ABSORPTION.lineSeconds + .1);
+      assert.equal(state.oracleAbsorption?.phase, 'consent'); assert.equal(actor().status, 'alive');
+      frames(ORACLE_ABSORPTION.consentSeconds + .1, true);
+      frames(ORACLE_ABSORPTION.contactSeconds + ORACLE_ABSORPTION.coatingSeconds + ORACLE_ABSORPTION.laughSeconds + .2);
+    } else {
     for (const step of scene.steps) {
       actor().position = filmStepPosition(scene, step);
       if (step.kind === 'reflect') command('reflect:agency');
       else if (step.kind === 'interact') { command('act'); advance(Math.max(6, Math.ceil(step.seconds ?? 3) + 2)); }
       else advance();
+    }
     }
     assert.ok(state.completed.includes(sceneId), `${sceneId} should complete: step ${state.step}/${scene.steps.length}, ${state.lastText}`);
   };
