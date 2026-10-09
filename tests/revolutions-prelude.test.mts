@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SCENES, FILM_SCENE_BY_ID, filmEntry, filmStepPosition, ORACLE_LAST, oracleLastLines, ORACLE_ABSORPTION, type AgentState, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENES, FILM_SCENE_BY_ID, filmEntry, filmStepPosition, ORACLE_LAST, oracleLastLines, ORACLE_ABSORPTION, BANE_INQUIRY, baneInquiryLines, type AgentState, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -54,6 +54,12 @@ function setup() {
       assert.equal(state.oracleAbsorption?.phase, 'consent'); assert.equal(actor().status, 'alive');
       frames(ORACLE_ABSORPTION.consentSeconds + .1, true);
       frames(ORACLE_ABSORPTION.contactSeconds + ORACLE_ABSORPTION.coatingSeconds + ORACLE_ABSORPTION.laughSeconds + .2);
+    } else if (sceneId === 'm3_bane_questions') {
+      actor().position = filmStepPosition(scene, scene.steps[0]); frames(.1);
+      for (const step of [1, 2, 3]) { command('act'); frames(baneInquiryLines(step).length * BANE_INQUIRY.lineSeconds + (step === 1 ? BANE_INQUIRY.sitSeconds : 0) + .1); }
+      command('review:negative'); command('review:abnormal'); command('reflect:agency');
+      frames(BANE_INQUIRY.lineSeconds + BANE_INQUIRY.riseSeconds + .1);
+      actor().position = filmStepPosition(scene, scene.steps[5]); frames(.1);
     } else {
     for (const step of scene.steps) {
       actor().position = filmStepPosition(scene, step);

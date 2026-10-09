@@ -28,6 +28,7 @@ import { arrestCarPose } from '@auto_matrix/shared';
 import { CATCH, RELOADED, RELOADED_FINALE, HEL_COATCHECK, catchText, reloadedText } from '@auto_matrix/shared';
 import { oracleRequestActive, oracleRequestLocked, oracleRequestText } from '@auto_matrix/shared';
 import { oracleLastActive, oracleLastLocked, oracleLastText } from '@auto_matrix/shared';
+import { baneInquiryActive, baneInquiryLocked, baneInquiryText } from '@auto_matrix/shared';
 import { oracleAbsorptionActive, oracleAbsorptionLocked, oracleAbsorptionText } from '@auto_matrix/shared';
 import { TRAINMAN_CHASE, trainmanChaseActive, trainmanChaseCanAct, trainmanChaseText } from '@auto_matrix/shared';
 import { HEL_GARAGE, helGarageActive, helGarageText } from '@auto_matrix/shared';
@@ -185,7 +186,7 @@ export class SandboxUI {
     this.root.classList.toggle('hidden', !player || !state || !profile);
     this.el('film-phone').classList.add('hidden');
     this.el('film-sequence').classList.add('hidden');
-    this.el('film-sequence').classList.remove('urgent', 'oracle-departure', 'oracle-arrival', 'ambush-company', 'ambush-observing', 'mobil-family', 'mobil-reunion', 'oracle-request', 'trainman-chase', 'hel-garage', 'hel-coatcheck', 'hel-dance-door');
+    this.el('film-sequence').classList.remove('urgent', 'oracle-departure', 'oracle-arrival', 'ambush-company', 'ambush-observing', 'mobil-family', 'mobil-reunion', 'oracle-request', 'bane-inquiry', 'trainman-chase', 'hel-garage', 'hel-coatcheck', 'hel-dance-door');
     this.el('film-portal-retry').classList.add('hidden');
     this.el('film-training-actions').classList.add('hidden');
     this.el('film-terminal').classList.add('hidden'); this.el('film-terminal-retry').classList.add('hidden');
@@ -404,6 +405,21 @@ export class SandboxUI {
         : phase === 'cover' ? 'WASD 贴住柱后 · X 闪避 · V 切换视角' : phase === 'running' ? 'WASD 移动 · Shift 奔跑 · G 翻越闸机 · V 切换视角'
           : acting ? 'G 操作 · 鼠标环顾 · V 切换视角' : '鼠标环顾 · V 切换视角 · 暂停保留进度';
       this.el('sandbox-job').style.width = phase === 'running' || phase === 'vaulting' ? `${(chase?.remaining ?? 0) / TRAINMAN_CHASE.pursuitSeconds * 100}%` : '0';
+      return;
+    }
+    if (baneInquiryActive(journey)) {
+      const visit = journey.baneInquiry, text = baneInquiryText(visit, journey.step), finished = visit?.phase === 'done';
+      const acting = !visit?.paused && !visit?.unavailable && (finished || visit?.phase === 'ready' || visit?.phase === 'reviewing');
+      document.getElementById('game-location')!.textContent = 'Hammer · 餐厅长桌';
+      document.getElementById('game-objective-copy')!.textContent = text;
+      this.el('sandbox-interact').classList.toggle('hidden', !acting);
+      this.el('sandbox-nearby').textContent = finished ? '接回 Neo，参加航路讨论' : visit?.phase === 'reviewing' ? '翻到另一页 · J 核对结果' : journey.step === 1 ? '坐下询问 Bane' : journey.step === 2 ? '核对 EMP 记录' : '请 Maggie 说明检查结果';
+      if (baneInquiryLocked(visit) || finished) {
+        this.el('sandbox-waypoint').textContent = ''; this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.add('oracle-request', 'bane-inquiry');
+        this.el('film-sequence-line').textContent = text;
+        this.el('film-sequence-hint').textContent = visit?.phase === 'reviewing' ? 'G 翻页 · J 核对检查单 · V 切换视角'
+          : visit?.phase === 'reflection' ? 'J 记录如何处理疑点 · V 切换视角' : acting ? 'G 主动问话 · J 手记 · V 切换视角' : '鼠标观察 · V 切换视角 · 暂停保留当前回答';
+      }
       return;
     }
     if (oracleAbsorptionActive(journey)) {

@@ -140,3 +140,8 @@ test('the assimilated Oracle continues her saved scene without a rebuild prompt'
   assert.match(element('#enter-world').innerHTML, /重建并进入角色/);
   assert.equal(agents.oracle.status, 'disconnected');
 });
+
+test('the Hammer interview keeps ambient Neo chat out of the dedicated questions and report controls', () => {
+  for (const step of [0, 1, 2, 3, 4, 5, 6]) assert.equal(cinematicTalkSuppressed('m3_bane_questions', undefined, step), true);
+  assert.equal(cinematicTalkSuppressed('m3_bane_questions', 'film_hammer_deck', 1), false);
+});

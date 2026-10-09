@@ -2,6 +2,7 @@ import { catchLaunchReady, catchDistance } from '@auto_matrix/shared';
 import { filmSceneForJourney } from '@auto_matrix/shared';
 import { oracleRequestActive, oracleRequestLocked, oracleRequestText } from '@auto_matrix/shared';
 import { oracleLastActive, oracleLastLocked, oracleLastText } from '@auto_matrix/shared';
+import { baneInquiryActive, baneInquiryText } from '@auto_matrix/shared';
 import { trainmanChaseActive, trainmanChaseCanAct, trainmanChaseLocked, trainmanChaseText } from '@auto_matrix/shared';
 import { helGarageActive, helGarageText } from '@auto_matrix/shared';
 import { SOURCE_BRIEFING, sourceBriefingActive, sourceBriefingLocked, sourceBriefingText } from '@auto_matrix/shared';
@@ -110,6 +111,21 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
           : primaryLocked(state) ? '<p>合上手记，按住 G 固定装置；松手保留进度。</p>'
             : button('act', state?.phase === 'sync' ? '绿色窗口校准 · G' : state?.phase === 'retreat' ? '确认两人安全撤出 · G' : '安装当前同步装置 · G', !close);
     return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX RELOADED / 02</span><h3>Niobe · 主电网同步行动</h3><p>发电厂 · Logos 队伍</p></header><article class="film-now"><div><p>${primaryText(state)}</p><ol class="film-objectives">${PRIMARY_DEMOLITION.sites.map(site => `<li class="${state?.installed.includes(site.id) ? 'done' : ''}"><b>${state?.installed.includes(site.id) ? '✓' : '○'}</b><span>${site.name}</span></li>`).join('')}</ol><div class="film-controls">${action}</div><small>WASD 移动 · Shift 奔跑 · G 操作 · V 切换视角。换班同步和先撤离的顺序来自电影，三个安装点、观察桥路线与失败重试为游戏改编。</small></div></article></div>`;
+  }
+  if (baneInquiryActive(journey)) {
+    const state = journey.baneInquiry, step = scene.steps[journey.step];
+    const action = player.id !== journey.actor ? button('resume', '接回 Roland 的询问视角')
+      : state?.paused || state?.unavailable ? '<p>当前问话与检查结果保留，等待参与者。</p>'
+        : player.status !== 'alive' ? button('retry', '接回当前询问检查点')
+          : state?.phase === 'done' ? button('next', '接回 Neo，参加航路讨论 →')
+            : state?.phase === 'reflection' ? filmReflections(scene.id).map(choice => button(`reflect:${choice.id}`, choice.label)).join('')
+              : state?.phase === 'reviewing' ? (state.page === 'vdt'
+                ? button('review:negative', 'VDT 阴性') + button('review:positive', 'VDT 阳性')
+                : button('review:abnormal', '神经活动异常') + button('review:normal', '神经活动正常')) + button('act', '翻到另一页 · G')
+                : state?.phase === 'ready' ? button('act', journey.step === 1 ? '坐下，询问记忆和割伤 · G' : journey.step === 2 ? '追问提前释放的 EMP · G' : '请 Maggie 说明检查结果 · G')
+                  : state?.phase === 'approach' || state?.phase === 'leaving' || !state ? '<p>合上手记，WASD 亲自走到目标。</p>'
+                    : '<p>合上手记，观察当前回答和动作；V 切换视角。</p>';
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>Hammer 餐厅 · 幸存者的说法</h3><p>Roland 的另一视角 · Neo 尚不在场</p></header><article class="film-now"><div><h3>${step?.label ?? '询问结束'}</h3><p>${baneInquiryText(state, journey.step)}</p>${state?.phase === 'reviewing' ? `<p>已核对 ${state.reviewed.length} / 2 页 · 判断与数据不符 ${state.mistakes} 次</p>` : ''}<div class="film-controls">${action}</div><small>G 主动问话与翻页 · J 核对检查单、记录判断 · V 切换视角。问话顺序与疑点取自电影；两页检查单与核对操作为游戏改编。保存动作、伤势、物品和判断。</small></div></article></div>`;
   }
   if (oracleAbsorptionActive(journey)) {
     const state = journey.oracleAbsorption, step = scene.steps[journey.step], close = Boolean(step && filmStepNear(scene, step, player.position, player.isInMatrix, journey));

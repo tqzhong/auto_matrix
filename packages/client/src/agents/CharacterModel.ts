@@ -1,4 +1,5 @@
 import { poseOracleRequest } from './OracleRequestPerformance.js';
+import { poseBaneInquiry } from './BaneInquiryPerformance.js';
 import { poseOracleLast } from './OracleLastPerformance.js';
 import { poseOracleAbsorption } from './OracleAbsorptionPerformance.js';
 import { poseTrainmanChase } from './TrainmanChasePerformance.js';
@@ -92,6 +93,8 @@ const HERO_LOOKS: Record<string, Look> = {
   zee: { width: .97, shoulders: .5, waist: .33, hips: .45, skin: '#87583e', cloth: '#505649', leather: false, coat: false, hair: 'pixie', glasses: 'none' },
   niobe: { width: .94, shoulders: .5, waist: .33, hips: .45, skin: '#996c50', cloth: '#563635', leather: false, coat: false, hair: 'pixie', glasses: 'none' },
   lock: { width: 1, shoulders: .62, waist: .39, hips: .45, skin: '#8d6049', cloth: '#5f5b48', leather: false, coat: false, hair: 'short', glasses: 'none' },
+  bane: { width: 1.05, shoulders: .66, waist: .42, hips: .46, skin: '#b89883', cloth: '#536374', leather: false, coat: false, hair: 'short', glasses: 'none' },
+  maggie: { width: .94, shoulders: .51, waist: .35, hips: .45, skin: '#b99c89', cloth: '#663b3b', leather: false, coat: false, hair: 'pixie', glasses: 'none' },
   roland: { width: 1.04, shoulders: .64, waist: .43, hips: .47, skin: '#c29982', cloth: '#56403a', leather: false, coat: false, hair: 'short', glasses: 'none' },
   seraph: { width: .94, shoulders: .58, waist: .34, hips: .4, skin: '#c5a27e', cloth: '#d7d4c6', leather: false, coat: false, hair: 'short', glasses: 'none' },
   keymaker: { width: 1.04, shoulders: .55, waist: .40, hips: .44, skin: '#c4a07d', cloth: '#514d40', leather: false, coat: false, hair: 'short', glasses: 'none' },
@@ -614,7 +617,7 @@ export class CharacterModels {
       const arm = [[.10, -1.43], [.115, -1.23], [.14, -1.03], [.15, -.91], [.16, -.82], [.155, -.73], [.17, -.62], [.18, -.45], [.195, -.24], [.215, -.04], [.19, .08], [.10, .15], [.002, .18]];
       if (state.id === 'sati') for (const point of arm) point[0] *= .78;
       if (digger) for (const point of arm) point[0] *= .9;
-      const elbow = this.limb(shoulder, arm, .81, state.id === 'sati' || digger || sealOperator ? skin : cloth, .94);
+      const elbow = this.limb(shoulder, arm, .81, state.id === 'sati' || state.id === 'bane' || digger || sealOperator ? skin : cloth, .94);
       elbows.push(elbow);
       if (mobilCotton) {
         const armMesh = shoulder.children.find(child => child instanceof THREE.SkinnedMesh) as THREE.SkinnedMesh;
@@ -624,14 +627,14 @@ export class CharacterModels {
         sleeve.castShadow = sleeve.receiveShadow = true; sleeve.frustumCulled = false;
         shoulder.add(sleeve); sleeve.bind(armMesh.skeleton, armMesh.bindMatrix);
       }
-      if (sealOperator) {
+      if (sealOperator || state.id === 'bane') {
         const sleeve = this.geometry(new THREE.LatheGeometry([[.18, -.69], [.197, -.67], [.20, -.58], [.207, -.39], [.225, -.20], [.239, 0], [.218, .09], [.13, .16], [.003, .18]].map(([r, y]) => new THREE.Vector2(r, y)), 24));
-        this.mesh(shoulder, sleeve, shirt, [0, 0, 0], [1, 1, .94]);
+        this.mesh(shoulder, sleeve, state.id === 'bane' ? cloth : shirt, [0, 0, 0], [1, 1, .94]);
         this.mesh(shoulder, this.cylinder, shirt, [0, -.65, 0], [.203, .075, .193]);
       }
       if (state.id !== 'sati' && !digger && !sealOperator) this.mesh(elbow, this.cylinder, seams, [0, -0.56, 0], [0.13, 0.045, 0.14]);
       const handMaterial = look.leather ? black : skin;
-      const parentHand = state.id === 'oracle' || state.id.startsWith('hel_garage_guard_') || ['rama_kandra', 'kamala', 'trainman', 'seraph'].includes(state.id);
+      const parentHand = state.id === 'oracle' || state.id.startsWith('hel_garage_guard_') || ['rama_kandra', 'kamala', 'trainman', 'seraph', 'bane', 'maggie', 'roland', 'morpheus'].includes(state.id);
       const wristOffset = state.id === 'sati' ? .68 : parentHand ? .65 : 0;
       const hand = wristOffset ? this.joint(elbow, 0, -wristOffset) : elbow;
       if (parentHand) { hand.name = `${state.id === 'oracle' ? 'oracle-hand' : 'mobil-palm'}-${side < 0 ? 'R' : 'L'}`; if (state.id !== 'oracle') mobilWrists.push(hand); }
@@ -642,6 +645,13 @@ export class CharacterModels {
         const body = this.mesh(cigarette, this.cylinder, paper, [0, 0, .10], [.02, .22, .02]); body.rotation.x = Math.PI / 2;
         const ember = this.material(new THREE.MeshStandardMaterial({ color: 0x5c2e18, emissive: 0x7d2609, emissiveIntensity: .3, roughness: 1 }));
         this.mesh(cigarette, this.sphere, ember, [0, 0, .213], [.021, .021, .013]);
+      }
+      if (state.id === 'bane') {
+        const scar = this.material(new THREE.MeshStandardMaterial({ color: 0x9f6b5d, roughness: .92 }));
+        for (let cut = 0; cut < 4; cut++) {
+          const line = new THREE.CatmullRomCurve3([new THREE.Vector3(-.08, -.22 - cut * .095, .137), new THREE.Vector3(0, -.245 - cut * .095, .155), new THREE.Vector3(.085, -.26 - cut * .095, .135)]);
+          const mark = this.mesh(elbow, this.geometry(new THREE.TubeGeometry(line, 12, .006, 5, false)), scar, [0, 0, 0]); mark.name = `bane-healed-cut-${side}-${cut}`;
+        }
       }
       if (state.id === 'sati') hand.name = `sati-hand-${side}`;
       const palm = this.mesh(hand, this.sphere, handMaterial, [0, -0.75 + wristOffset, 0.005], [0.095, 0.145, 0.055]);
@@ -1123,6 +1133,7 @@ export class CharacterModels {
       poseMobilLuggage(rig, input.mobilLuggage);
       poseOracleLast(rig, input.oracleLast);
       poseOracleAbsorption(rig, input.oracleAbsorption);
+      poseBaneInquiry(rig, input.baneInquiry);
       return;
     }
     rig.torso.position.y = pose.hipHeight;
@@ -1195,6 +1206,7 @@ export class CharacterModels {
     poseOracleRequest(rig, input.oracleRequest);
     poseOracleLast(rig, input.oracleLast);
     poseOracleAbsorption(rig, input.oracleAbsorption);
+    poseBaneInquiry(rig, input.baneInquiry);
     poseDiggers(rig, input.diggers);
     poseUpperDigger(rig, input.upperDigger);
     poseDockReload(rig, input.dockReload);

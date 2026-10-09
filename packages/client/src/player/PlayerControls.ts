@@ -1,5 +1,6 @@
 import { sourcePortalLocked } from '@auto_matrix/shared';
 import { ORACLE_LAST, oracleLastLocked } from '@auto_matrix/shared';
+import { baneInquiryLocked } from '@auto_matrix/shared';
 import { SENTINEL_SIGNAL } from '@auto_matrix/shared';
 import { mobilRefusalPose } from '@auto_matrix/shared';
 import { trainmanChaseLocked, helGarageLocked } from '@auto_matrix/shared';
@@ -188,7 +189,7 @@ export class PlayerControls {
     this.motion.dockBriefing = undefined; this.motion.freewayPickup = undefined; this.motion.freewayRide = undefined; this.motion.freewayHandoff = undefined; this.motion.truckRoad = undefined;
     this.motion.truckWeapons = undefined; this.motion.truckHood = undefined;
     this.motion.trainmanChase = undefined; this.motion.helGarage = undefined; this.motion.helElevator = undefined; this.motion.helDoorPush = undefined; this.motion.helDisarm = undefined; this.motion.helBreakout = undefined;
-    this.motion.oracleLast = undefined; this.motion.oracleAbsorption = undefined;
+    this.motion.baneInquiry = undefined; this.motion.oracleLast = undefined; this.motion.oracleAbsorption = undefined;
     this.elevatorAim = false; this.elevatorViewAction = undefined; this.doorAim = false; this.doorViewOpening = false;
     this.motion.dockEvacuation = undefined; this.motion.shaftSeal = undefined;
     this.sealAim = false; this.templeAim = false; this.ceasefireAim = false; this.primaryAim = false; this.primaryViewPhase = undefined; this.motion.primaryDemolition = undefined; this.motion.trinityRelay = undefined; this.motion.trinityTerminal = undefined; this.motion.sourcePortal = undefined; this.motion.architect = undefined; this.motion.templeDefense = undefined;
@@ -493,6 +494,14 @@ export class PlayerControls {
       this.performing = true;
     }
     this.motion.mobilReunion = mobilReunion;
+    const inquiry = state.currentAction?.parameters.baneInquiry as MotionInput['baneInquiry'];
+    if (this.motion.baneInquiry && !inquiry) { this.performing = false; this.cameraReady = false; }
+    if (inquiry) {
+      if (!this.motion.baneInquiry) { this.yaw = this.movementYaw = state.rotation; this.pitch = .10; this.cameraReady = false; }
+      this.performing = true; this.localJump = this.networkJump = false; this.impulse = undefined;
+      this.motion.attack = undefined; this.attackQueuedUntil = 0;
+    }
+    this.motion.baneInquiry = inquiry;
     const oracleLast = state.currentAction?.parameters.oracleLast as MotionInput['oracleLast'];
     if (oracleLastLocked(this.motion.oracleLast) && !oracleLastLocked(oracleLast)) { this.performing = false; this.cameraReady = false; }
     if (oracleLastLocked(oracleLast)) {
@@ -1682,6 +1691,20 @@ export class PlayerControls {
         if (resetCamera || gesture.elapsed < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
         this.camera.lookAt(focus);
       }
+    } else if (this.motion.baneInquiry && baneInquiryLocked(this.motion.baneInquiry)) {
+      const center = FILM_SETS.film_hammer_deck.center, origin = new THREE.Vector3(center.x, center.y - 1, center.z);
+      if (this.firstPerson) {
+        const head = group.getObjectByName('head'); head?.updateWorldMatrix(true, false);
+        const eye = head ? head.localToWorld((head.userData.cameraEye as THREE.Vector3 | undefined)?.clone() ?? new THREE.Vector3(0, .1, .23))
+          : new THREE.Vector3(this.position.x, this.position.y + 2.9, this.position.z);
+        const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
+        this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
+      } else {
+        const portrait = this.camera.aspect < .85, focus = new THREE.Vector3(-1.4, 2.8, -20.8).add(origin);
+        const ideal = new THREE.Vector3(portrait ? 7.8 : 6.8, portrait ? 5.6 : 4.8, portrait ? -9.5 : -12.2).add(origin);
+        if (resetCamera) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
+        this.cameraTarget.copy(focus); this.camera.lookAt(focus);
+      }
     } else if (this.motion.oracleAbsorption) {
       const center = FILM_SETS.film_oracle_home.center, origin = new THREE.Vector3(center.x, center.y - 1, center.z);
       if (this.firstPerson) {
@@ -2839,7 +2862,7 @@ export class PlayerControls {
 
   syncTrainmanChaseCamera(group: THREE.Group, environment?: THREE.Object3D): void {
     const oracleThirdPerson = !this.firstPerson && this.authoritative?.currentLocation === 'film_oracle_home';
-    if (!oracleThirdPerson && !this.motion.oracleLast && !this.motion.trainmanChase && !this.motion.helGarage && !this.motion.helElevator && !this.motion.helDoorPush && !this.motion.helDisarm && !this.motion.helBreakout) return;
+    if (!oracleThirdPerson && !this.motion.baneInquiry && !this.motion.oracleLast && !this.motion.trainmanChase && !this.motion.helGarage && !this.motion.helElevator && !this.motion.helDoorPush && !this.motion.helDisarm && !this.motion.helBreakout) return;
     if (!this.firstPerson) {
       if (!environment) return;
       environment.updateWorldMatrix(true, true);

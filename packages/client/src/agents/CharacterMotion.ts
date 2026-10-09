@@ -79,6 +79,7 @@ export interface MotionInput {
   oracleRevolutions?: boolean;
   oracleRequest?: import('@auto_matrix/shared').OracleRequestGesture;
   oracleLast?: import('@auto_matrix/shared').OracleLastGesture;
+  baneInquiry?: import('@auto_matrix/shared').BaneInquiryGesture;
   oracleAbsorption?: import('@auto_matrix/shared').OracleAbsorptionGesture;
   trainmanChase?: import('@auto_matrix/shared').TrainmanChaseGesture;
   helGarage?: import('@auto_matrix/shared').HelGarageGesture;
@@ -286,6 +287,13 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     return { legs: [0, 1].map(() => solveLeg(.75 * seated, hipHeight - .16)),
       arms: [0, 1].map(i => ({ shoulder: -.43 * seated, elbow: -.82 * seated, outward: (i ? 1 : -1) * .12, grip: .05 })),
       hipHeight, twist: 0, lean: Math.sin(seated * Math.PI) * .16, sway: 0, lunge: 0, roll: 0, headTurn: 0,
+      moving: 0, run: 0, airborne: 0, coat: 0, impact: 0, landing: 0 };
+  }
+  if (input.baneInquiry) {
+    Object.assign(state, newMotion(), { time: input.baneInquiry.elapsed });
+    return { legs: [0, 1].map(() => ({ hip: 0, knee: 0, ankle: 0 })),
+      arms: [0, 1].map(i => ({ shoulder: 0, elbow: 0, outward: (i ? 1 : -1) * .12, grip: 0 })),
+      hipHeight: 1.98, twist: 0, lean: 0, sway: 0, lunge: 0, roll: 0, headTurn: 0,
       moving: 0, run: 0, airborne: 0, coat: 0, impact: 0, landing: 0 };
   }
   if (input.oracleAbsorption) {
