@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SCENES, FILM_SCENE_BY_ID, filmEntry, filmStepPosition, ORACLE_LAST, oracleLastLines, ORACLE_ABSORPTION, BANE_INQUIRY, baneInquiryLines, type AgentState, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENES, FILM_SCENE_BY_ID, filmEntry, filmStepPosition, ORACLE_LAST, oracleLastLines, ORACLE_ABSORPTION, BANE_INQUIRY, HAMMER_BRIEFING, baneInquiryLines, type AgentState, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -60,6 +60,14 @@ function setup() {
       command('review:negative'); command('review:abnormal'); command('reflect:agency');
       frames(BANE_INQUIRY.lineSeconds + BANE_INQUIRY.riseSeconds + .1);
       actor().position = filmStepPosition(scene, scene.steps[5]); frames(.1);
+    } else if (sceneId === 'm3_logos_plan') {
+      actor().position = filmStepPosition(scene, scene.steps[0]); frames(.1);
+      for (const lines of [HAMMER_BRIEFING.proposal, HAMMER_BRIEFING.loan]) { command('act'); frames(lines.length * HAMMER_BRIEFING.lineSeconds + .1); }
+      actor().position = filmStepPosition(scene, scene.steps[2]); command('act'); frames(HAMMER_BRIEFING.planning.length * HAMMER_BRIEFING.lineSeconds + .1);
+      command('route:hammer:zion'); command('route:logos:machine_city');
+      actor().position = filmStepPosition(scene, scene.steps[3]); command('act'); frames(HAMMER_BRIEFING.belief.length * HAMMER_BRIEFING.lineSeconds + .1);
+      command('reflect:agency'); frames(HAMMER_BRIEFING.lineSeconds + .1);
+      actor().position = filmStepPosition(scene, scene.steps[4]); frames(3);
     } else {
     for (const step of scene.steps) {
       actor().position = filmStepPosition(scene, step);

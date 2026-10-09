@@ -7,7 +7,7 @@ export class FarewellAppearance {
   private weave: THREE.DataTexture;
   private band?: THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
 
-  constructor(private rig: HeroRig, private role: 'neo' | 'trinity', eye: THREE.Vector3) {
+  constructor(private rig: HeroRig, private role: 'neo' | 'trinity' | 'morpheus', eye: THREE.Vector3) {
     const size = 128, pixels = new Uint8Array(size * size * 4);
     for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
       const row = y % 16 / 16, column = x % 16;
@@ -83,14 +83,14 @@ export class FarewellAppearance {
 
   garment(mesh: THREE.Mesh, input: MotionInput): 'upper' | 'trousers' | undefined {
     const outfit = input.farewellOutfit ?? input.farewell?.role ?? input.nebCrew;
-    if (input.realWorld !== true || outfit !== this.role && !(this.role === 'trinity' && !outfit)) return;
-    const upper = this.role === 'neo' ? /Tailored.coat.upper|Black.crew.neck/i.test(mesh.name) : /Fitted.leather.jacket/i.test(mesh.name);
+    if (input.realWorld !== true || (this.role === 'morpheus' ? !input.hammerBriefing : outfit !== this.role && !(this.role === 'trinity' && !outfit))) return;
+    const upper = this.role !== 'trinity' ? /Tailored.coat.upper|Black.crew.neck/i.test(mesh.name) : /Fitted.leather.jacket/i.test(mesh.name);
     return upper ? 'upper' : /Tailored.trousers/i.test(mesh.name) ? 'trousers' : undefined;
   }
 
   update(input: MotionInput): void {
     const outfit = input.farewellOutfit ?? input.farewell?.role ?? input.nebCrew;
-    const active = input.realWorld === true && (outfit === this.role || this.role === 'trinity' && !outfit);
+    const active = input.realWorld === true && (this.role === 'morpheus' ? Boolean(input.hammerBriefing) : outfit === this.role || this.role === 'trinity' && !outfit);
     if (this.band) this.band.visible = active && Boolean(input.farewellOutfit ?? input.farewell) && !input.firstPerson;
     if (!active) return;
     for (const part of this.rig.wardrobe) {
@@ -104,7 +104,8 @@ export class FarewellAppearance {
       }
       material.bumpScale = upper ? .009 : .003;
       material.roughness = .97; material.metalness = 0;
-      material.color.setHex(upper ? this.role === 'neo' ? 0x393c3a : 0xa6a59a : 0x333631);
+      const collar = this.role === 'morpheus' && /Black.crew.neck/i.test(part.mesh.name);
+      material.color.setHex(upper ? this.role === 'neo' ? 0x393c3a : this.role === 'morpheus' ? collar ? 0xa7a295 : 0x55343d : 0xa6a59a : 0x333631);
     }
   }
 

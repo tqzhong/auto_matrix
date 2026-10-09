@@ -1,6 +1,7 @@
 import { sourcePortalLocked } from '@auto_matrix/shared';
 import { ORACLE_LAST, oracleLastLocked } from '@auto_matrix/shared';
 import { baneInquiryLocked } from '@auto_matrix/shared';
+import { HAMMER_BRIEFING, hammerBriefingLocked } from '@auto_matrix/shared';
 import { SENTINEL_SIGNAL } from '@auto_matrix/shared';
 import { mobilRefusalPose } from '@auto_matrix/shared';
 import { trainmanChaseLocked, helGarageLocked } from '@auto_matrix/shared';
@@ -67,6 +68,7 @@ export class PlayerControls {
   private elevatorAim = false;
   private elevatorViewAction?: 'press' | 'pull';
   private doorAim = false;
+  private hammerAim = false;
   private disarmAim = false;
   private breakoutAim = false;
   private doorViewOpening = false;
@@ -190,6 +192,8 @@ export class PlayerControls {
     this.motion.truckWeapons = undefined; this.motion.truckHood = undefined;
     this.motion.trainmanChase = undefined; this.motion.helGarage = undefined; this.motion.helElevator = undefined; this.motion.helDoorPush = undefined; this.motion.helDisarm = undefined; this.motion.helBreakout = undefined;
     this.motion.baneInquiry = undefined; this.motion.oracleLast = undefined; this.motion.oracleAbsorption = undefined;
+    this.motion.hammerBriefing = undefined;
+    this.hammerAim = false;
     this.elevatorAim = false; this.elevatorViewAction = undefined; this.doorAim = false; this.doorViewOpening = false;
     this.motion.dockEvacuation = undefined; this.motion.shaftSeal = undefined;
     this.sealAim = false; this.templeAim = false; this.ceasefireAim = false; this.primaryAim = false; this.primaryViewPhase = undefined; this.motion.primaryDemolition = undefined; this.motion.trinityRelay = undefined; this.motion.trinityTerminal = undefined; this.motion.sourcePortal = undefined; this.motion.architect = undefined; this.motion.templeDefense = undefined;
@@ -266,6 +270,7 @@ export class PlayerControls {
         this.doorAim = this.firstPerson && this.doorViewOpening;
         this.disarmAim = this.firstPerson && Boolean(this.motion.helDisarm);
         this.breakoutAim = this.firstPerson && this.motion.helBreakout?.phase === 'catching';
+        this.hammerAim = this.firstPerson && Boolean(this.motion.hammerBriefing && ['planning', 'confirmation'].includes(this.motion.hammerBriefing.phase));
         this.morningAim = this.firstPerson && Boolean(this.motion.morning);
         this.signingAim = this.firstPerson && this.motion.workday?.role === 'neo' && this.motion.workday.phase === 'signing';
         this.lastStandAim = this.firstPerson && dockLastStandLocked(this.motion.dockLastStand);
@@ -502,6 +507,17 @@ export class PlayerControls {
       this.motion.attack = undefined; this.attackQueuedUntil = 0;
     }
     this.motion.baneInquiry = inquiry;
+    const hammerGesture = state.currentAction?.parameters.hammerBriefing as MotionInput['hammerBriefing'];
+    if (this.motion.hammerBriefing && !hammerGesture) { this.performing = false; this.cameraReady = false; }
+    if (hammerGesture) {
+      if (!this.motion.hammerBriefing) {
+        this.yaw = this.movementYaw = state.rotation; this.pitch = .10; this.cameraReady = false;
+        this.hammerAim = this.firstPerson && ['planning', 'confirmation'].includes(hammerGesture.phase);
+      }
+      this.performing = true; this.localJump = this.networkJump = false; this.impulse = undefined;
+      this.motion.attack = undefined; this.attackQueuedUntil = 0;
+    }
+    this.motion.hammerBriefing = hammerGesture;
     const oracleLast = state.currentAction?.parameters.oracleLast as MotionInput['oracleLast'];
     if (oracleLastLocked(this.motion.oracleLast) && !oracleLastLocked(oracleLast)) { this.performing = false; this.cameraReady = false; }
     if (oracleLastLocked(oracleLast)) {
@@ -1167,6 +1183,8 @@ export class PlayerControls {
     if (this.motion.sourcePortal) { this.camera.fov = this.firstPerson ? 66 : 58; this.camera.near = .06; }
     if (this.motion.trinityTerminal) { this.camera.fov = this.firstPerson ? 64 : 56; this.camera.near = .06; }
     if (this.motion.trinityRelay) { this.camera.fov = this.firstPerson ? 68 : 64; this.camera.near = .06; }
+    if (this.firstPerson && this.motion.hammerBriefing && ['planning', 'confirmation'].includes(this.motion.hammerBriefing.phase))
+      this.camera.fov = this.camera.aspect < .85 ? 88 : 68;
     if (this.firstPerson && (this.motion.helDoorPush || this.motion.helDisarm || this.motion.helBreakout)) this.camera.fov = Math.max(68,
       THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(43)) / this.camera.aspect)));
     this.camera.updateProjectionMatrix();
@@ -1690,6 +1708,20 @@ export class PlayerControls {
         const ideal = focus.clone().add(new THREE.Vector3(0, 1.15, this.camera.aspect < .85 ? 8.4 : 6));
         if (resetCamera || gesture.elapsed < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
         this.camera.lookAt(focus);
+      }
+    } else if (this.motion.hammerBriefing && hammerBriefingLocked(this.motion.hammerBriefing)) {
+      const focus = new THREE.Vector3(this.position.x, this.position.y + 1.7, this.position.z);
+      if (this.firstPerson) {
+        const head = group.getObjectByName('head'); head?.updateWorldMatrix(true, false);
+        const eye = head ? head.localToWorld((head.userData.cameraEye as THREE.Vector3 | undefined)?.clone() ?? new THREE.Vector3(0, .1, .23))
+          : new THREE.Vector3(this.position.x, this.position.y + 2.9, this.position.z);
+        const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
+        this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
+      } else {
+        const distance = this.camera.aspect < .85 ? 11 : 7.6;
+        const ideal = focus.clone().add(new THREE.Vector3(-Math.sin(this.yaw) * distance, 1.8 + Math.sin(this.pitch) * distance, -Math.cos(this.yaw) * distance));
+        if (resetCamera) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
+        this.cameraTarget.copy(focus); this.camera.lookAt(focus);
       }
     } else if (this.motion.baneInquiry && baneInquiryLocked(this.motion.baneInquiry)) {
       const center = FILM_SETS.film_hammer_deck.center, origin = new THREE.Vector3(center.x, center.y - 1, center.z);
@@ -2862,7 +2894,7 @@ export class PlayerControls {
 
   syncTrainmanChaseCamera(group: THREE.Group, environment?: THREE.Object3D): void {
     const oracleThirdPerson = !this.firstPerson && this.authoritative?.currentLocation === 'film_oracle_home';
-    if (!oracleThirdPerson && !this.motion.baneInquiry && !this.motion.oracleLast && !this.motion.trainmanChase && !this.motion.helGarage && !this.motion.helElevator && !this.motion.helDoorPush && !this.motion.helDisarm && !this.motion.helBreakout) return;
+    if (!oracleThirdPerson && !this.motion.baneInquiry && !this.motion.hammerBriefing && !this.motion.oracleLast && !this.motion.trainmanChase && !this.motion.helGarage && !this.motion.helElevator && !this.motion.helDoorPush && !this.motion.helDisarm && !this.motion.helBreakout) return;
     if (!this.firstPerson) {
       if (!environment) return;
       environment.updateWorldMatrix(true, true);
@@ -2882,6 +2914,11 @@ export class PlayerControls {
     group.updateWorldMatrix(true, true);
     const localEye = head.userData.cameraEye as THREE.Vector3 | undefined;
     const eye = head.localToWorld(localEye?.clone() ?? new THREE.Vector3(0, .1, .32));
+    if (this.hammerAim && this.motion.hammerBriefing && ['planning', 'confirmation'].includes(this.motion.hammerBriefing.phase)) {
+      const point = HAMMER_BRIEFING.screen, center = FILM_SETS.film_hammer_deck.center;
+      const direction = new THREE.Vector3(center.x + point.x, center.y - 1 + point.y, center.z + point.z).sub(eye);
+      this.yaw = Math.atan2(direction.x, direction.z); this.pitch = Math.atan2(-direction.y, Math.hypot(direction.x, direction.z)); this.hammerAim = false;
+    }
     if (this.elevatorAim && this.motion.helElevator) {
       const lift = { ...this.motion.helElevator, physical: true, lastTick: 0 }, center = FILM_SETS.film_club_hel.center;
       const point = this.elevatorViewAction === 'press' ? HEL_ELEVATOR.button : helElevatorHandle(lift);

@@ -337,7 +337,16 @@ def main(source, output, role):
         clearance = ((vest - points) * normal).sum(axis=1)
         vest += normal * np.maximum(.026 - clearance, 0)[:, None]
     vp, vu, vf, vw = builder.trim_neckline(vest, uv, faces, weights, vest[:, 1] + covered + .012)
-    export(role + ('-tailored-jacket' if role == 'architect' else '-work-jacket' if role == 'keymaker' else '-traditional-top' if role == 'seraph' else '-work-top'), vp, vu, vf, vw, 1, 'matrix' if role == 'seraph' else None)
+    export(role + ('-tailored-jacket' if role == 'architect' else '-work-jacket' if role == 'keymaker' else '-traditional-top' if role == 'seraph' else '-work-top'), vp, vu, vf, vw, 1, 'matrix' if role == 'seraph' else 'dock' if role == 'niobe' else None)
+    if role == 'niobe':
+        # She wears a burgundy long-sleeved sweater in the Hammer meeting.
+        # Retain the sleeveless dock top as a separate scene wardrobe.
+        clearance = ((vest - points) * normal).sum(axis=1)
+        sweater = vest + normal * (np.maximum(.025 - clearance, 0) * (arms > .25))[:, None]
+        neckline = 3.43 - .09 * np.exp(-(x / .19) ** 4) * np.clip((z + .1) / .22, 0, 1)
+        cut = np.minimum(neckline - y, y - np.where(arms > .3, 1.82, 1.95))
+        sp, su, sf, sw = builder.trim_neckline(sweater, uv, faces, weights, sweater[:, 1] + cut)
+        export('niobe-briefing-sweater', sp, su, sf, sw, 1, 'briefing')
     # Sewn armhole/neck bindings have actual thickness in silhouette.
     edge_count = {}
     for face in vf:
@@ -357,7 +366,7 @@ def main(source, output, role):
         for segment in range(8):
             ids = [start + segment, start + (segment + 1) % 8, start + 8 + (segment + 1) % 8, start + 8 + segment]
             ef.append([(j, j) for j in ids])
-    export(role + '-sewn-bindings', np.array(ep), np.array(eu), ef, np.array(ew), 4, 'matrix' if role == 'seraph' else None)
+    export(role + '-sewn-bindings', np.array(ep), np.array(eu), ef, np.array(ew), 4, 'matrix' if role == 'seraph' else 'dock' if role == 'niobe' else None)
 
     if sleeved and not program:
         # Woven layered V collars and a diagonal wrap seam belong to Zion,

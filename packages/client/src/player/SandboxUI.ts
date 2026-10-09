@@ -29,6 +29,7 @@ import { CATCH, RELOADED, RELOADED_FINALE, HEL_COATCHECK, catchText, reloadedTex
 import { oracleRequestActive, oracleRequestLocked, oracleRequestText } from '@auto_matrix/shared';
 import { oracleLastActive, oracleLastLocked, oracleLastText } from '@auto_matrix/shared';
 import { baneInquiryActive, baneInquiryLocked, baneInquiryText } from '@auto_matrix/shared';
+import { hammerBriefingActive, hammerBriefingLocked, hammerBriefingText } from '@auto_matrix/shared';
 import { oracleAbsorptionActive, oracleAbsorptionLocked, oracleAbsorptionText } from '@auto_matrix/shared';
 import { TRAINMAN_CHASE, trainmanChaseActive, trainmanChaseCanAct, trainmanChaseText } from '@auto_matrix/shared';
 import { HEL_GARAGE, helGarageActive, helGarageText } from '@auto_matrix/shared';
@@ -154,6 +155,9 @@ export class SandboxUI {
     if (journey && journey.actor === this.player?.id) {
       const step = filmSceneForJourney(journey)!.steps[journey.step];
       if (!journey.visiting && journey.scene === 'm3_family' && journey.step === 1 && journey.mobil?.family?.phase !== 'reflection') {
+        this.send({ kind: 'life', target: 'film:act' }); return;
+      }
+      if (hammerBriefingActive(journey) && journey.hammerBriefing?.phase === 'faith') {
         this.send({ kind: 'life', target: 'film:act' }); return;
       }
       if (journey.visiting || step?.kind === 'reflect' || journey.scene === 'm2_persephone' && journey.step === 2 || journey.finished) this.open('journal');
@@ -405,6 +409,22 @@ export class SandboxUI {
         : phase === 'cover' ? 'WASD 贴住柱后 · X 闪避 · V 切换视角' : phase === 'running' ? 'WASD 移动 · Shift 奔跑 · G 翻越闸机 · V 切换视角'
           : acting ? 'G 操作 · 鼠标环顾 · V 切换视角' : '鼠标环顾 · V 切换视角 · 暂停保留进度';
       this.el('sandbox-job').style.width = phase === 'running' || phase === 'vaulting' ? `${(chase?.remaining ?? 0) / TRAINMAN_CHASE.pursuitSeconds * 100}%` : '0';
+      return;
+    }
+    if (hammerBriefingActive(journey)) {
+      const visit = journey.hammerBriefing, text = hammerBriefingText(visit), finished = visit?.phase === 'done';
+      const acting = finished || Boolean(step && filmStepActionReady(scene, step, player.position, player.isInMatrix, journey));
+      document.getElementById('game-location')!.textContent = 'Hammer · 分航会议';
+      document.getElementById('game-objective-copy')!.textContent = text;
+      this.el('sandbox-interact').classList.toggle('hidden', !acting);
+      this.el('sandbox-nearby').textContent = finished ? '查看锡安的防守部署' : visit?.phase === 'objection' ? '坚持自己的选择'
+        : visit?.phase === 'route' ? '核对两船航线' : visit?.phase === 'faith' ? '听 Niobe 对信任的解释' : '提出赴机器城的请求';
+      if (hammerBriefingLocked(visit) || finished) {
+        this.el('sandbox-waypoint').textContent = ''; this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.add('oracle-request');
+        this.el('film-sequence-line').textContent = text;
+        this.el('film-sequence-hint').textContent = visit?.phase === 'confirmation' ? 'J 确认两条航线 · V 切换视角'
+          : visit?.phase === 'reflection' ? 'J 作出信任判断 · V 切换视角' : acting ? 'G 主动回应 · J 手记 · V 切换视角' : '鼠标观察 · V 切换视角 · 暂停保留当前回应';
+      }
       return;
     }
     if (baneInquiryActive(journey)) {

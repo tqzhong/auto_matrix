@@ -1,5 +1,6 @@
 import { FREEWAY_HANDOFF, freewayHandoffReady } from '@auto_matrix/shared';
 import { SOURCE_BRIEFING } from '@auto_matrix/shared';
+import { HAMMER_BRIEFING } from '@auto_matrix/shared';
 import { PRIMARY_DEMOLITION } from '@auto_matrix/shared';
 import { TRUCK_HOOD } from '@auto_matrix/shared';
 import { DEUS_PACT, DIGGERS, diggerEye, diggerShield } from '@auto_matrix/shared';
@@ -192,6 +193,24 @@ function completeBaneInquiry(h: ReturnType<typeof setup>, nextSequence: () => nu
   assert.equal(state.baneInquiry?.phase, 'reviewing'); h.command('review:negative'); h.command('review:abnormal');
   h.command('reflect:care'); portalFrames(h, Math.ceil((BANE_INQUIRY.lineSeconds + BANE_INQUIRY.riseSeconds) / .1) + 2);
   assert.equal(state.step, 5); walk(BANE_INQUIRY.exit); assert.equal(state.step, 6);
+}
+function completeHammerBriefing(h: ReturnType<typeof setup>, nextSequence: () => number) {
+  const scene = FILM_SCENE_BY_ID.m3_logos_plan, state = h.sandbox.life.film.state!;
+  const walk = (point: { x: number; z: number }) => {
+    const target = filmPosition(scene.set, point.x, point.z);
+    for (let frame = 0; frame < 500 && distance(h.actor().position, target) > .4 && state.hammerBriefing?.phase !== 'done'; frame++) {
+      const dx = target.x - h.actor().position.x, dz = target.z - h.actor().position.z, gap = Math.hypot(dx, dz);
+      h.players.receiveInput('film-player', { x: dx / Math.max(1, gap), z: dz / Math.max(1, gap), yaw: Math.atan2(dx, dz), sequence: nextSequence() }); portalFrames(h, 1);
+    }
+    h.players.receiveInput('film-player', { x: 0, z: 0, yaw: h.actor().rotation, sequence: nextSequence() });
+  };
+  walk(HAMMER_BRIEFING.approach); assert.equal(state.step, 1);
+  for (const lines of [HAMMER_BRIEFING.proposal, HAMMER_BRIEFING.loan]) { h.command('act'); portalFrames(h, Math.ceil(lines.length * HAMMER_BRIEFING.lineSeconds / .1) + 2); }
+  walk(HAMMER_BRIEFING.inspection); h.command('act'); portalFrames(h, Math.ceil(HAMMER_BRIEFING.planning.length * HAMMER_BRIEFING.lineSeconds / .1) + 2);
+  h.command('route:hammer:zion'); h.command('route:logos:machine_city'); assert.equal(state.step, 3);
+  walk(HAMMER_BRIEFING.approach); h.command('act'); portalFrames(h, Math.ceil(HAMMER_BRIEFING.belief.length * HAMMER_BRIEFING.lineSeconds / .1) + 2);
+  h.command('reflect:trust'); portalFrames(h, Math.ceil(HAMMER_BRIEFING.lineSeconds / .1) + 2);
+  walk(HAMMER_BRIEFING.exit); portalFrames(h, 25); assert.equal(state.step, scene.steps.length); assert.equal(state.hammerBriefing?.phase, 'done');
 }
 function completePortalStep(h: ReturnType<typeof setup>, index: number) {
   h.command('act');
@@ -3127,6 +3146,7 @@ test('the entire film route completes through interactions, driving and real com
     if (scene.id === 'm3_oracle_last') { completeOracleLast(h, () => ++sequence); h.command('next'); continue; }
     if (scene.id === 'm3_oracle_absorbed') { completeOracleAbsorption(h, () => ++sequence); h.command('next'); continue; }
     if (scene.id === 'm3_bane_questions') { completeBaneInquiry(h, () => ++sequence); h.command('next'); continue; }
+    if (scene.id === 'm3_logos_plan') { completeHammerBriefing(h, () => ++sequence); h.command('next'); continue; }
     if (scene.id === 'm2_trucks' && state.trucks?.road) {
       h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false, sequence: ++sequence });
       for (let frame = 0; frame < 110 && state.trucks.road.phase !== 'ready'; frame++) h.players.step(.05, true, h.tick());

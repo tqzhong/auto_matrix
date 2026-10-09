@@ -3,6 +3,7 @@ import { filmSceneForJourney } from '@auto_matrix/shared';
 import { oracleRequestActive, oracleRequestLocked, oracleRequestText } from '@auto_matrix/shared';
 import { oracleLastActive, oracleLastLocked, oracleLastText } from '@auto_matrix/shared';
 import { baneInquiryActive, baneInquiryText } from '@auto_matrix/shared';
+import { hammerBriefingActive, hammerBriefingText } from '@auto_matrix/shared';
 import { trainmanChaseActive, trainmanChaseCanAct, trainmanChaseLocked, trainmanChaseText } from '@auto_matrix/shared';
 import { helGarageActive, helGarageText } from '@auto_matrix/shared';
 import { SOURCE_BRIEFING, sourceBriefingActive, sourceBriefingLocked, sourceBriefingText } from '@auto_matrix/shared';
@@ -111,6 +112,22 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
           : primaryLocked(state) ? '<p>合上手记，按住 G 固定装置；松手保留进度。</p>'
             : button('act', state?.phase === 'sync' ? '绿色窗口校准 · G' : state?.phase === 'retreat' ? '确认两人安全撤出 · G' : '安装当前同步装置 · G', !close);
     return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX RELOADED / 02</span><h3>Niobe · 主电网同步行动</h3><p>发电厂 · Logos 队伍</p></header><article class="film-now"><div><p>${primaryText(state)}</p><ol class="film-objectives">${PRIMARY_DEMOLITION.sites.map(site => `<li class="${state?.installed.includes(site.id) ? 'done' : ''}"><b>${state?.installed.includes(site.id) ? '✓' : '○'}</b><span>${site.name}</span></li>`).join('')}</ol><div class="film-controls">${action}</div><small>WASD 移动 · Shift 奔跑 · G 操作 · V 切换视角。换班同步和先撤离的顺序来自电影，三个安装点、观察桥路线与失败重试为游戏改编。</small></div></article></div>`;
+  }
+  if (hammerBriefingActive(journey)) {
+    const state = journey.hammerBriefing, step = scene.steps[journey.step], close = Boolean(step && filmStepNear(scene, step, player.position, player.isInMatrix, journey));
+    const action = player.id !== journey.actor ? button('resume', '接回 Neo 的会议视角')
+      : state?.paused || state?.unavailable ? '<p>等待参与者信号，提议与借船安排已保留。</p>'
+        : player.status !== 'alive' || player.health <= 0 ? button('retry', '接回分航会议检查点')
+          : state?.phase === 'done' ? button('next', '查看锡安的最后防守部署 →')
+            : state?.phase === 'reflection' ? filmReflections(scene.id).map(choice => button(`reflect:${choice.id}`, choice.label)).join('')
+              : state?.phase === 'confirmation' ? `<p>Hammer · Niobe 与船员 · 返回防守。Logos · Neo 与 Trinity · 不带弹药。</p>`
+                + (!state.confirmed.includes('hammer') ? button('route:hammer:zion', 'Hammer → 锡安') + button('route:hammer:machine_city', 'Hammer → 机器城') : '<p>✓ Hammer → 锡安</p>')
+                + (!state.confirmed.includes('logos') ? button('route:logos:machine_city', 'Logos → 机器城') + button('route:logos:zion', 'Logos → 锡安') : '<p>✓ Logos → 机器城</p>')
+                : state && ['ready', 'objection', 'route', 'faith'].includes(state.phase) ? button('act', state.phase === 'ready' ? '提出赴机器城的请求 · G'
+                  : state.phase === 'objection' ? '坚持说明自己的选择 · G' : state.phase === 'route' ? '核对两船航线 · G' : '听 Niobe 对信任的解释 · G', !close)
+                  : state?.phase === 'approach' || state?.phase === 'leaving' || !state ? '<p>合上手记，WASD 亲自走到目标。</p>'
+                    : '<p>合上手记，观察当前回应；鼠标环顾，V 切换视角。</p>';
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>Hammer · 两船分航会议</h3><p>Neo 视角 · 选择与信任</p></header><article class="film-now"><div><h3>${step?.label ?? '分航决定已保存'}</h3><p>${hammerBriefingText(state)}</p><div class="film-controls">${action}</div><small>G 主动提议与回应 · J 确认航线、记录判断 · WASD 离开 · V 切换视角。借船顺序与两船安排来自电影；航路终端核对是游戏改编。保存伤势、物品、动作与判断。</small></div></article></div>`;
   }
   if (baneInquiryActive(journey)) {
     const state = journey.baneInquiry, step = scene.steps[journey.step];

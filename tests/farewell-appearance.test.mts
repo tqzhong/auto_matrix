@@ -34,6 +34,21 @@ async function setup(t: test.TestContext, role: 'neo' | 'trinity') {
 }
 const material = (rig: HeroRig, name: RegExp) => rig.wardrobe.find(part => name.test(part.mesh.name))!.mesh.material as THREE.MeshStandardMaterial;
 
+test('healthy Hammer Neo retains his hair without changing the first-film recovery scalp', async t => {
+  const h = await setup(t, 'neo'), hair = h.rig.wardrobe.filter(part => part.hair);
+  assert.ok(hair.length > 0, 'check the delivered hairstyle');
+  h.update({ realWorld: true, nebCrew: 'neo' });
+  assert.ok(hair.every(part => part.mesh.visible), 'the later Hammer crew outfit must retain Neo’s grown hair');
+  assert.equal(h.rig.glasses.visible, false);
+  assert.equal(h.rig.root.getObjectByName('neo-farewell-eye-band')?.visible, false);
+  h.update({ realWorld: true, performance: 'pod' });
+  assert.ok(hair.every(part => !part.mesh.visible), 'the original pod recovery still uses the shaved appearance');
+  h.update({ realWorld: true });
+  assert.ok(hair.every(part => !part.mesh.visible), 'early real-world recovery retains the shaved scalp');
+  h.update({ realWorld: true, nebCrew: 'neo' });
+  assert.ok(hair.every(part => part.mesh.visible), 'the later meeting restores its grown hairstyle');
+});
+
 test('Neo enters the wreck in the farewell outfit while retaining normal walking without a performance gesture', async t => {
   const h = await setup(t, 'neo');
   const walking = { speed: 4, grounded: true, verticalVelocity: 0, turn: .2, realWorld: true };
