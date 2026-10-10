@@ -72,6 +72,19 @@ test('failed grip can retry, but waiting does not count as supporting the shoote
   assert.equal(h.state().diggers?.damage, 3); assert.equal(h.world.agents.get('charra')?.status, 'alive');
 });
 
+test('a partially reached belt survives pause and cold possession, and releasing G withdraws support before firing', () => {
+  const h = game(); h.ready(); h.command('act'); h.frame(.65, { focus: true });
+  const saved = structuredClone(h.sandbox.state), grip = h.state().upperDigger!.grip;
+  assert.ok(grip > 0 && grip < .42, 'the checkpoint must be in the hand-reaching phase');
+  h.frame(3, { focus: true }, false); assert.deepEqual(h.state().upperDigger, saved.neoLife!.journey!.upperDigger);
+  h.players.release('p', h.tick()); h.sandbox.restore(saved); h.players.possess('p', 'zee', h.tick() + 1);
+  assert.deepEqual(h.state().upperDigger, saved.neoLife!.journey!.upperDigger);
+  assert.equal((h.world.agents.get('charra')!.currentAction!.parameters.upperDigger as { grip: number }).grip, grip);
+  h.frame(.3); assert.ok(h.state().upperDigger!.grip < grip); assert.equal(h.state().upperDigger!.phase, 'bracing');
+  h.frame(3, { focus: true }); assert.equal(h.state().upperDigger!.phase, 'shot');
+  assert.equal(h.state().upperDigger!.attempts, 0); assert.equal(h.world.agents.get('charra')!.status, 'alive');
+});
+
 test('retreat failure and retry preserve Charra’s death, corpse pose and destroyed first drill', () => {
   const h = game(); h.ready(); h.command('act'); h.frame(3, { focus: true }); h.frame(3);
   h.frame(2.5, { climb: 1, crouch: true }); h.frame(3.5);

@@ -2551,7 +2551,7 @@ export class PlayerControls {
         } else if (['ready', 'bracing', 'shot'].includes(state.phase)) {
           ideal.set(center.x - 16, center.y + 48, center.z + 29.2);
           focus.set(center.x - 11, center.y + 45.8, center.z + 28);
-          if (state.phase === 'shot') { const shot = upperDiggerShot(); focus.set(center.x + shot.to.x, center.y + shot.to.y, center.z + shot.to.z); ideal.set(center.x - 9, center.y + 48.5, center.z + 41); }
+          if (state.phase === 'shot' && state.elapsed < 2) { const shot = upperDiggerShot(); focus.set(center.x + shot.to.x, center.y + shot.to.y, center.z + shot.to.z); ideal.set(center.x - 9, center.y + 48.5, center.z + 41); }
         } else if (state.phase === 'attack' || state.phase === 'failed' && state.charraDead) {
           ideal.set(center.x - 24, center.y + 46.8, center.z + 29.6); focus.set(center.x - 19.7, center.y + 45.2, center.z + 28);
         }

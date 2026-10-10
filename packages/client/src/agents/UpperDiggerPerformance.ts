@@ -25,13 +25,18 @@ function posture(gesture: UpperDiggerGesture) {
   let ladder = ['approach', 'climbing', 'descending'].includes(gesture.phase) && !(charra && gesture.charraDead) ? 1 : 0;
   if (hatch !== undefined) ladder = 1 - THREE.MathUtils.smoothstep(hatch, gesture.phase === 'dismounting' ? .45 : .1, gesture.phase === 'dismounting' ? 1 : .46);
   const bracing = ['ready', 'bracing', 'shot'].includes(gesture.phase) || gesture.phase === 'failed' && !gesture.charraDead;
+  // Reach with one hand at a time, then take the shooter's weight. Reverse
+  // that sequence after the intercepted shot before either fighter turns.
+  const support = gesture.phase === 'bracing' ? gesture.grip : 0;
+  const lean = gesture.phase === 'shot' ? 1 - THREE.MathUtils.smoothstep(gesture.elapsed, 1.5, 2)
+    : THREE.MathUtils.smoothstep(support, .42, 1);
   const dead = charra && gesture.charraDead;
   const collapse = charra ? upperDiggerFall(gesture) : 0;
   const lookBack = upperDiggerLookBack(gesture);
-  const height = THREE.MathUtils.lerp(THREE.MathUtils.lerp(bracing ? charra ? 1.12 : .9 : .83, 1.72, ladder), .47, collapse) + lookBack * .12;
-  const pitch = THREE.MathUtils.lerp(THREE.MathUtils.lerp(bracing ? charra ? 1.12 : .95 : 1.18, .16, ladder), 1.48, collapse) - lookBack * .4;
+  const height = THREE.MathUtils.lerp(THREE.MathUtils.lerp(THREE.MathUtils.lerp(.83, charra ? 1.12 : .9, lean), 1.72, ladder), .47, collapse) + lookBack * .12;
+  const pitch = THREE.MathUtils.lerp(THREE.MathUtils.lerp(THREE.MathUtils.lerp(1.18, charra ? 1.12 : .95, lean), .16, ladder), 1.48, collapse) - lookBack * .4;
   const headPitch = THREE.MathUtils.lerp(THREE.MathUtils.lerp(-.58, -.12, ladder), -.05, collapse) + lookBack * .25;
-  return { ladder, hatch, bracing, dead, collapse, lookBack, height, pitch, headPitch };
+  return { ladder, hatch, bracing, support, lean, dead, collapse, lookBack, height, pitch, headPitch };
 }
 
 export function upperDiggerLookBack(gesture: UpperDiggerGesture): number {
@@ -74,7 +79,7 @@ function hatchContact(rig: CharacterRig, gesture: UpperDiggerGesture, hand: bool
 export function poseUpperDigger(rig: CharacterRig, gesture?: UpperDiggerGesture): void {
   if (!gesture || rig.hero || !rig.diggerProps) return;
   const props = rig.diggerProps, charra = gesture.role === 'charra';
-  const { ladder, hatch, bracing, dead, collapse, lookBack, height, pitch, headPitch } = posture(gesture);
+  const { ladder, hatch, bracing, support, lean, dead, collapse, lookBack, height, pitch, headPitch } = posture(gesture);
   const cycle = (ladder ? gesture.climb : gesture.crawl - gesture.retreat) * Math.PI * 1.5;
   props.group.visible = true; props.gun.visible = charra; props.rounds.visible = false; props.belt.visible = charra;
   rig.detail.position.set(0, 0, 0); rig.detail.rotation.set(0, 0, 0);
@@ -82,8 +87,10 @@ export function poseUpperDigger(rig: CharacterRig, gesture?: UpperDiggerGesture)
   rig.torso.quaternion.setFromEuler(new THREE.Euler(pitch, .85 * lookBack, 0, 'YXZ'));
   rig.head.rotation.set(headPitch, .35 * collapse + 1.45 * lookBack, -.2 * collapse);
   props.belt.position.set(0, .43, 0).applyEuler(rig.torso.rotation).add(rig.torso.position); props.belt.rotation.copy(rig.torso.rotation);
-  props.gun.position.set(-.52, THREE.MathUtils.lerp(bracing ? 1.8 : .72, 2.1, ladder), THREE.MathUtils.lerp(1.1, -.55, ladder));
-  props.gun.rotation.set(THREE.MathUtils.lerp(bracing ? .12 : 0, -.8, ladder), 0, .22 * ladder);
+  const clearHands = (gesture.phase === 'shot' ? 1 - THREE.MathUtils.smoothstep(gesture.elapsed, 2, UPPER_DIGGER.shot)
+    : THREE.MathUtils.smoothstep(support, 0, .2)) * (1 - THREE.MathUtils.smoothstep(lean, .55, 1));
+  props.gun.position.set(-.52 - .55 * clearHands, THREE.MathUtils.lerp(THREE.MathUtils.lerp(.72, 1.8, lean), 2.1, ladder), THREE.MathUtils.lerp(1.1 + .2 * clearHands, -.55, ladder));
+  props.gun.rotation.set(THREE.MathUtils.lerp(.12 * lean, -.8, ladder), .35 * clearHands, .22 * ladder);
   if (dead) { props.gun.position.lerp(new THREE.Vector3(-.6, .45, 1.2), collapse); props.gun.rotation.set(0, -.35 * collapse, Math.PI / 2 * collapse); }
   const rotation = rig.root.getWorldQuaternion(new THREE.Quaternion());
   for (let i = 0; i < 2; i++) {
@@ -100,15 +107,19 @@ export function poseUpperDigger(rig: CharacterRig, gesture?: UpperDiggerGesture)
     if (ladder) hand.lerp(localPoint(rig, gesture, rungPoint(upperDiggerRoot(gesture, gesture.role).y, true, i)), ladder);
     if (hatch !== undefined && hatch < 1) hand.copy(hatchContact(rig, gesture, true, i, hatch));
     rig.root.updateWorldMatrix(true, true);
-    if (bracing && !charra) {
+    hand = rig.root.localToWorld(hand);
+    const grab = gesture.phase === 'shot' ? 1 - THREE.MathUtils.smoothstep(gesture.elapsed, i ? 2 : 2.15, i ? 2.65 : UPPER_DIGGER.shot)
+      : THREE.MathUtils.smoothstep(support, i ? .14 : 0, i ? .4 : .26);
+    if (grab && !charra) {
       const contact = gesture.contacts?.[i];
-      hand = contact ? new THREE.Vector3(contact.x, contact.y, contact.z)
-        : rig.root.localToWorld(new THREE.Vector3(side * .23, 1.55, 2.55));
-    } else hand = rig.root.localToWorld(hand);
-    const grip = charra ? bracing ? 1 : i === 0 && ladder === 0 ? (hatch === undefined ? 1 : THREE.MathUtils.smoothstep(hatch, .8, 1)) * (1 - collapse) : 0 : 0;
+      hand.lerp(contact ? new THREE.Vector3(contact.x, contact.y, contact.z)
+        : rig.root.localToWorld(new THREE.Vector3(side * .23, 1.55, 2.55)), grab);
+    }
+    const grip = charra ? i === 0 && ladder === 0 ? (hatch === undefined ? 1 : THREE.MathUtils.smoothstep(hatch, .8, 1)) * (1 - collapse)
+      : gesture.phase === 'shot' ? 1 - THREE.MathUtils.smoothstep(gesture.elapsed, 2, 2.7) : THREE.MathUtils.smoothstep(support, .14, .4) : 0;
     if (grip) hand.lerp(props.gun.localToWorld(new THREE.Vector3(.05, -.31, i ? .85 : -.12)), grip);
     reach(rig.shoulders[i], rig.elbows[i], new THREE.Vector3(0, -.79, .055), hand, new THREE.Vector3(side * .65, -.3, -.25).applyQuaternion(rotation));
-    rig.fingers[i].forEach(finger => { finger.rotation.x = ladder || bracing ? -.85 : THREE.MathUtils.lerp(-.28, -.15, collapse); });
+    rig.fingers[i].forEach(finger => { finger.rotation.x = ladder ? -.85 : THREE.MathUtils.lerp(THREE.MathUtils.lerp(-.28, -.15, collapse), -.85, charra ? grip : grab); });
   }
   rig.root.updateWorldMatrix(true, true);
 }
