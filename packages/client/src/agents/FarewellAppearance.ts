@@ -84,7 +84,7 @@ export class FarewellAppearance {
   garment(mesh: THREE.Mesh, input: MotionInput): 'upper' | 'trousers' | undefined {
     if (input.performance && ['pod', 'fall', 'float', 'lift', 'recover'].includes(input.performance)) return;
     const outfit = input.logosBane?.role ?? input.farewellOutfit ?? input.farewell?.role ?? input.nebCrew;
-    if (input.realWorld !== true || (this.role === 'morpheus' ? !input.hammerBriefing : outfit !== this.role && !(this.role === 'trinity' && !outfit))) return;
+    if (input.realWorld !== true || (this.role === 'morpheus' ? !input.hammerBriefing && !input.hammerPilot : outfit !== this.role && !(this.role === 'trinity' && !outfit))) return;
     const upper = this.role === 'morpheus' ? mesh.userData.hammerBriefingCostume === true : mesh.userData.logosCostume === true;
     return upper ? 'upper' : /Tailored.trousers/i.test(mesh.name) ? 'trousers' : undefined;
   }
@@ -92,7 +92,7 @@ export class FarewellAppearance {
   update(input: MotionInput): void {
     const outfit = input.logosBane?.role ?? input.farewellOutfit ?? input.farewell?.role ?? input.nebCrew;
     const active = input.realWorld === true && !(input.performance && ['pod', 'fall', 'float', 'lift', 'recover'].includes(input.performance))
-      && (this.role === 'morpheus' ? Boolean(input.hammerBriefing) : outfit === this.role || this.role === 'trinity' && !outfit);
+      && (this.role === 'morpheus' ? Boolean(input.hammerBriefing || input.hammerPilot) : outfit === this.role || this.role === 'trinity' && !outfit);
     if (this.band) this.band.visible = active && Boolean(input.farewellOutfit ?? input.farewell) && !input.firstPerson;
     if (!active) return;
     for (const part of this.rig.wardrobe) {

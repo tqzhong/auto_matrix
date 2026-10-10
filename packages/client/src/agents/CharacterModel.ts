@@ -1,6 +1,7 @@
 import { poseOracleRequest } from './OracleRequestPerformance.js';
 import { poseBaneInquiry } from './BaneInquiryPerformance.js';
 import { poseHammerBriefing } from './HammerBriefingPerformance.js';
+import { poseHammerPilot } from './HammerPilotPerformance.js';
 import { poseMaggieDiscovery } from './MaggieDiscoveryPerformance.js';
 import { poseLogosBane } from './LogosBanePerformance.js';
 import { poseZionDeployment } from './ZionDeploymentPerformance.js';
@@ -1173,6 +1174,7 @@ export class CharacterModels {
       poseOracleAbsorption(rig, input.oracleAbsorption);
       poseBaneInquiry(rig, input.baneInquiry);
       poseHammerBriefing(rig, input.hammerBriefing);
+      poseHammerPilot(rig, input.hammerPilot);
       poseZionDeployment(rig, input.zionDeployment);
       poseMaggieDiscovery(rig, input.maggieDiscovery);
       poseLogosBane(rig, input.logosBane);
@@ -1291,6 +1293,7 @@ export class CharacterModels {
     poseHelBreakout(rig, input.helBreakout);
     poseMaggieDiscovery(rig, input.maggieDiscovery);
     poseLogosBane(rig, input.logosBane);
+    poseHammerPilot(rig, input.hammerPilot);
     this.diggerBodies.update(rig, rig.logosBaneBody ? Boolean(input.logosBane) : !rig.medicalCrew || Boolean(input.maggieDiscovery), Boolean(input.parkOutfit || input.epilogue?.kind === 'dawn'), Boolean(input.hammerBriefing));
   }
 

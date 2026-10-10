@@ -26,7 +26,7 @@ import { LAFAYETTE, hotelContains, hotelBlocked, hotelFloor } from './lafayette.
 import { mountainFloor } from './mountain.js';
 import { TRUCKS } from './trucks.js';
 import { OPENING_ESCAPE } from './opening-escape.js';
-import { hammerHeight } from './hammer-flight.js';
+import { HAMMER_ROUTE, HAMMER_COCKPIT, hammerHeight } from './hammer-flight.js';
 import { ORACLE_ENTRANCE } from './oracle.js';
 import { BASEMENT, basementBlocked, TV_EXIT_OBSTACLES } from './basement-escape.js';
 import { SMITH_FINALE, smithCraterFloor } from './smith-finale.js';
@@ -157,7 +157,7 @@ export function filmSetAt(position: Vector3, matrix: boolean): FilmSet | undefin
 }
 export function filmPosition(id: string, x = 0, z = 0): Vector3 {
   const center = FILM_SETS[id].center;
-  return { x: center.x + x, y: id === 'film_hammer_route' ? center.y + hammerHeight(z) - 1.35
+  return { x: center.x + x, y: id === 'film_hammer_route' ? center.y + hammerHeight(HAMMER_ROUTE.start) + HAMMER_COCKPIT.floor + 1
     : id === 'film_sunrise_garden' ? center.y + gardenGroundHeight(x, z)
     : id === 'film_club_hel' ? center.y + helTerraceFloor(x, z) : center.y, z: center.z + z };
 }
@@ -189,6 +189,10 @@ export const ORACLE_ENTRANCE_WALLS: FilmObstacle[] = [
 ];
 export const ORACLE_OPEN_DOOR: FilmObstacle = { x: ORACLE_ENTRANCE.door.x, z: ORACLE_ENTRANCE.door.z - ORACLE_ENTRANCE.door.width / 2, width: ORACLE_ENTRANCE.door.depth, depth: ORACLE_ENTRANCE.door.width, height: ORACLE_ENTRANCE.door.height };
 export function filmObstacles(set: FilmSet, movingMeetingCar = false, movingOracleDoor = false, oracleLastKitchen = false): FilmObstacle[] {
+  if (set.id === 'film_hammer_route') return [
+    ...(['niobe', 'morpheus'] as const).map(role => ({ x: HAMMER_COCKPIT.roots[role].x, z: HAMMER_ROUTE.start + HAMMER_COCKPIT.roots[role].z, width: 1.55, depth: 1.45, height: 12 })),
+    { x: 0, z: HAMMER_ROUTE.start + HAMMER_COCKPIT.roots.roland.z - .45, width: 3.4, depth: .14, height: 11 },
+  ];
   if (set.id === 'film_zion_defense_council') return [{ ...ZION_DEPLOYMENT.map, height: 4.7 }, ...ZION_DEPLOYMENT.walls,
     ...Object.values(ZION_DEPLOYMENT.roots).map(root => ({ x: root.x, z: root.z, width: 2.8, depth: 2.8, height: 3.5 }))];
   if (set.id === 'film_architect_room') return [{ x: ARCHITECT_ROOM.chair.x, z: ARCHITECT_ROOM.chair.z, width: 3, depth: 2.4, height: ARCHITECT_ROOM.chair.back }];
@@ -306,6 +310,11 @@ export function filmObstacles(set: FilmSet, movingMeetingCar = false, movingOrac
 
 export function filmBlocked(position: Vector3, set: FilmSet, radius: number, movingMeetingCar = false, movingOracleDoor = false, craterDepth = 0, oracleLastKitchen = false): boolean {
   const x = position.x - set.center.x; const z = position.z - set.center.z;
+  if (set.id === 'film_hammer_route') {
+    const walk = HAMMER_COCKPIT.walk; radius = Math.min(radius, walk.radius);
+    return x < walk.left + radius || x > walk.right - radius || z < walk.front + radius || z > walk.back - radius
+      || filmObstacles(set).some(o => Math.abs(x - o.x) < o.width / 2 + radius && Math.abs(z - o.z) < o.depth / 2 + radius);
+  }
   if (set.id === 'film_trainman_subway') return trainmanBlocked(x, position.y - set.center.y, z, radius);
   if (set.id === 'film_architect_room' && !architectRoomContains(x, z, radius)) return true;
   if (set.id === 'film_ambush_house' && position.y - set.center.y < -70) return basementBlocked(x, position.y - set.center.y, z, radius);
@@ -347,7 +356,7 @@ export function filmGroundHeight(position: Vector3, set: FilmSet, craterDepth = 
   }
   if (set.id === 'film_ambush_house' && position.y - set.center.y < -70) return set.center.y + (position.y - set.center.y < BASEMENT.floor - 2 ? BASEMENT.tunnelFloor : BASEMENT.floor);
   if (set.id === 'film_ambush_house') return set.center.y + (ambushFloor(position.x - set.center.x, position.z - set.center.z, position.y - set.center.y) ?? -AMBUSH_STAIRS.rise * (AMBUSH_STOREYS + 1));
-  if (set.id === 'film_hammer_route') return set.center.y + hammerHeight(position.z - set.center.z) - 1.35;
+  if (set.id === 'film_hammer_route') return set.center.y + hammerHeight(HAMMER_ROUTE.start) + HAMMER_COCKPIT.floor + 1;
   if (set.id === 'film_hotel_roofs') {
     const z = position.z - set.center.z;
     if (z < OPENING_ESCAPE.roofGapNear && z > OPENING_ESCAPE.roofGapFar) return set.center.y - OPENING_ESCAPE.roofDrop;

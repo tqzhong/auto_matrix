@@ -81,6 +81,7 @@ export interface MotionInput {
   oracleLast?: import('@auto_matrix/shared').OracleLastGesture;
   baneInquiry?: import('@auto_matrix/shared').BaneInquiryGesture;
   hammerBriefing?: import('@auto_matrix/shared').HammerBriefingGesture;
+  hammerPilot?: import('@auto_matrix/shared').HammerPilotGesture;
   zionDeployment?: import('@auto_matrix/shared').ZionDeploymentGesture;
   maggieDiscovery?: import('@auto_matrix/shared').MaggieDiscoveryGesture;
   logosBane?: import('@auto_matrix/shared').LogosBaneGesture;
@@ -213,6 +214,14 @@ export function solveLeg(z: number, height: number): { hip: number; knee: number
 }
 
 export function advanceMotion(state: MotionState, input: MotionInput, delta: number) {
+  if (input.hammerPilot) {
+    const seated = input.hammerPilot.role !== 'roland';
+    Object.assign(state, newMotion(), { time: input.hammerPilot.flight.elapsed, seated: seated ? 1 : 0 });
+    return { legs: [0, 1].map(() => solveLeg(seated ? 1.05 : 0, seated ? 1.27 : 1.82)),
+      arms: [0, 1].map(i => ({ shoulder: -.7, elbow: -.8, outward: (i ? 1 : -1) * .12, grip: .8 })),
+      hipHeight: seated ? 1.43 : 1.98, twist: 0, lean: 0, sway: 0, lunge: 0, roll: 0, headTurn: 0,
+      moving: 0, run: 0, airborne: 0, coat: 0, impact: 0, landing: 0 };
+  }
   if (input.helDisarm || input.helBreakout) {
     Object.assign(state, newMotion(), { time: input.helDisarm?.elapsed ?? input.helBreakout!.elapsed });
     return { legs: [0, 1].map(() => ({ hip: 0, knee: 0, ankle: 0 })),

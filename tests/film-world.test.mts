@@ -5,12 +5,14 @@ import { MOUNTAIN } from '../packages/shared/src/constants/mountain.ts';
 import { PILL_ROOM } from '../packages/shared/src/constants/pills.ts';
 import { INTERROGATION_ROOM } from '../packages/shared/src/constants/interrogation.ts';
 import { SOURCE_BRIEFING } from '../packages/shared/src/constants/source-briefing.ts';
+import { HAMMER_COCKPIT } from '../packages/shared/src/constants/hammer-flight.ts';
 import { TRAINMAN_CHASE } from '../packages/shared/src/constants/trainman-chase.ts';
 import { groundHeight, playerBlocked, stepPlayer } from '../packages/shared/src/constants/city.ts';
 
 test('film sets admit walking in both worlds and use their own floor', () => {
   for (const set of Object.values(FILM_SETS)) {
     const position = set.id === 'film_operation_room' ? filmPosition(set.id, SOURCE_BRIEFING.entry.x, SOURCE_BRIEFING.entry.z)
+      : set.id === 'film_hammer_route' ? filmPosition(set.id, 0, HAMMER_COCKPIT.walk.back - 1)
       : set.id === TRAINMAN_CHASE.set ? filmPosition(set.id, TRAINMAN_CHASE.entry.x, TRAINMAN_CHASE.entry.z)
       : filmPosition(set.id, set.architecture === 'freeway' ? 14 : set.id === 'film_agent_interrogation' ? INTERROGATION_ROOM.approach.x : set.id === 'film_tv_repair' ? 8.5 : 0, set.id === 'film_mountain_range' ? MOUNTAIN.door.z : 0);
     assert.equal(playerBlocked(position, set.world === 'matrix'), false, set.name);
