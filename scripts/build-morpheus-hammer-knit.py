@@ -1,4 +1,4 @@
-"""Add Morpheus's Hammer crew-neck costume to a finished, unmodified GLB.
+"""Add Hammer/Logos crew-neck costumes to finished character GLBs.
 
 Uses the same pinned CC0 body, morphs and 46-joint bind pose as the delivered
 character. The face, original wardrobe and existing binary buffers stay intact.
@@ -35,9 +35,11 @@ def build(source, character, output):
     length = struct.unpack_from('<I', data, 12)[0]
     doc = json.loads(data[20:20 + length]); binary = bytearray(data[28 + length:])
     metadata = doc['extras']
-    assert metadata['character'] == 'morpheus' and metadata.get('skinBaked')
+    role = metadata['character']
+    assert role in ['morpheus', 'neo', 'trinity'] and metadata.get('skinBaked')
     assert metadata['sourceRevision'] == builder.REVISION
-    assert 'hammerKnitVersion' not in metadata, 'Use the finished original, not an already dressed character.'
+    version = 'hammerKnit' if role == 'morpheus' else 'logosKnit'
+    assert version + 'Version' not in metadata, 'Use the finished original, not an already dressed character.'
     assert not output.exists(), 'Review in a fresh staging file; never overwrite an earlier candidate.'
 
     def array(index, width):
@@ -112,7 +114,8 @@ def build(source, character, output):
     # A loose, closed body follows the actual anatomy without copying a jacket's
     # lapels or outlining every chest muscle. The wrists retain their own sleeve.
     cloth = points + normals * .035
-    trunk = (1 - np.clip(arm / .45, 0, 1)) * np.clip((3.86 - points[:, 1]) / .2, 0, 1)
+    neckline = 3.91 if role == 'morpheus' else rest[3, 1] - .225
+    trunk = (1 - np.clip(arm / .45, 0, 1)) * np.clip((neckline - .05 - points[:, 1]) / .2, 0, 1)
     cloth[:, 0] *= 1 + trunk * .07
     cloth[:, 2] *= 1 + trunk * .08
     cloth[:, 2] += np.maximum(normals[:, 2], 0) * trunk * (.008 * np.sin(points[:, 1] * 25 + points[:, 0] * 7))
@@ -127,11 +130,11 @@ def build(source, character, output):
     # The finished hand mesh stops below the anatomical wrist pivot. Cover its
     # real edge with a short overlap, including when the palm turns during speech.
     cuff = min(hand_tops) - .04
-    hem = np.where(arm > .4, cuff, 2.38)
+    hem = np.where(arm > .4, cuff, 2.38 if role == 'morpheus' else metadata['waist'][1] - .095)
 
     def neck(points):
         front = np.clip((points[:, 2] - .04) / .20, 0, 1)
-        return 3.91 - .105 * front * np.exp(-(points[:, 0] / .30) ** 4)
+        return neckline - .105 * front * np.exp(-(points[:, 0] / .30) ** 4)
 
     garment, texcoords, polygons, influence = builder.trim_neckline(cloth, uv, faces, weights, hem, above=True)
     garment, texcoords, polygons, influence = builder.trim_neckline(garment, texcoords, polygons, influence, neck(garment))
@@ -191,12 +194,18 @@ def build(source, character, output):
         index = len(doc['meshes'])
         doc['meshes'].append({'name': name, 'primitives': [{'attributes': attrs, 'indices': accessor(indices, 'SCALAR', 5125), 'material': material}]})
         doc['scenes'][doc.get('scene', 0)]['nodes'].append(len(doc['nodes']))
-        doc['nodes'].append({'name': name, 'mesh': index, 'skin': 0, 'extras': {'hammerBriefingCostume': True}})
+        costume = 'hammerBriefingCostume' if role == 'morpheus' else 'logosCostume'
+        doc['nodes'].append({'name': name, 'mesh': index, 'skin': 0, 'extras': {costume: True}})
         return {'vertices': len(vertices), 'triangles': len(indices) // 3}
 
-    meshes = {'sweater': export('morpheus-hammer-sweater', garment, texcoords, polygons, influence, [.091, .034, .047]),
-              'collar': export('morpheus-hammer-collar', collar, collar_uv, collar_faces, collar_weights, [.386, .361, .301])}
-    metadata.update(hammerKnitVersion=2, hammerKnitOriginalSha256=hashlib.sha256(data).hexdigest(), hammerKnitSource=source_hashes)
+    name = role + ('-hammer' if role == 'morpheus' else '-logos')
+    colors = {'morpheus': ([.091, .034, .047], [.386, .361, .301]),
+              'neo': ([.0395, .0545, .0802], [.0865, .0931, .1022]),
+              'trinity': ([.3813, .3763, .3231], [.3813, .3763, .3231])}
+    upper_color, collar_color = colors[role]
+    meshes = {'sweater': export(name + '-sweater', garment, texcoords, polygons, influence, upper_color),
+              'collar': export(name + '-collar', collar, collar_uv, collar_faces, collar_weights, collar_color)}
+    metadata.update({version + 'Version': 2, version + 'OriginalSha256': hashlib.sha256(data).hexdigest(), version + 'Source': source_hashes})
     doc['buffers'][0]['byteLength'] = len(binary)
     encoded = json.dumps(doc, separators=(',', ':')).encode(); encoded += b' ' * (-len(encoded) % 4)
     binary.extend(b'\x00' * (-len(binary) % 4))
@@ -210,7 +219,7 @@ def build(source, character, output):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--source', required=True, type=Path, help='Cached pinned MakeHuman body, rig, weights and Morpheus targets')
+    parser.add_argument('--source', required=True, type=Path, help='Cached pinned MakeHuman body, rig, weights and character targets')
     parser.add_argument('--character', type=Path, default=ROOT / 'packages/client/public/assets/characters/morpheus.glb')
     parser.add_argument('--output', required=True, type=Path)
     args = parser.parse_args()

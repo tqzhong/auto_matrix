@@ -264,7 +264,7 @@ export class HeroModels {
     let trackingSkin: HeroRig['trackingSkin'];
     root.traverse(object => {
       if (!(object instanceof THREE.Mesh) || !(object.material instanceof THREE.MeshStandardMaterial)) return;
-      if (object.userData.hammerBriefingCostume) { object.visible = false; object.userData.reloadedHidden = true; }
+      if (object.userData.hammerBriefingCostume || object.userData.logosCostume) { object.visible = false; object.userData.reloadedHidden = true; }
       const source = object.material; const material = source.clone(); this.materials.add(material); object.material = material;
       if ((tracking || support === 'link' || id === 'trinity' || id === 'morpheus') && !object.userData.office && object instanceof THREE.SkinnedMesh && material.name === 'Skin') {
         // The existing head/hands mesh also contains shoulder caps. They sit

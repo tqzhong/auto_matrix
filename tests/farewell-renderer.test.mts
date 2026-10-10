@@ -124,7 +124,7 @@ test('player Neo wears the wreck outfit before any farewell action without losin
     body.traverseVisible(object => {
       if (!(object instanceof THREE.Mesh)) return;
       if (/hair|groom/i.test((object.material as THREE.Material).name)) hair++;
-      if (/Tailored.coat.upper/i.test(object.name)) upper = object.material as THREE.MeshStandardMaterial;
+      if (object.name === 'neo-logos-sweater') upper = object.material as THREE.MeshStandardMaterial;
     });
     assert.ok(hair > 0, 'the ready player must retain his hair');
     assert.ok(upper && upper.roughness >= .94 && upper.bumpMap?.name === 'neo-farewell-knit', 'the ready player needs his matte knit outfit');

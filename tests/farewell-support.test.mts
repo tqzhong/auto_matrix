@@ -135,18 +135,18 @@ test('the support furniture leaves both visible bodies and the approach to the k
   } finally { h.dispose(); }
 });
 
-test('the shipped seat and back surfaces meet Trinity’s trousers and jacket without a visible support gap', async () => {
+test('the shipped seat and back surfaces meet Trinity’s trousers and sweater without a visible support gap', async () => {
   const h = await setup();
   try {
     for (const beat of [beats[0], beats[10], beats[15], beats.at(-1)!]) {
       h.pose(beat);
       const seat = h.root.getObjectByName('logos-wreck-trinity-seat')!, back = h.root.getObjectByName('logos-wreck-trinity-back')!;
       const under = vertices(h.trinityRig, /trousers/i).map(point => seat.worldToLocal(point)).filter(point => Math.abs(point.x) < .55 && Math.abs(point.z) < .35);
-      const behind = vertices(h.trinityRig, /Fitted_leather_jacket/).map(point => back.worldToLocal(point)).filter(point => Math.abs(point.x) < .6 && Math.abs(point.y) < .6);
+      const behind = vertices(h.trinityRig, /trinity-logos-sweater/).map(point => back.worldToLocal(point)).filter(point => Math.abs(point.x) < .6 && Math.abs(point.y) < .6);
       const seatGap = Math.min(...under.map(point => point.y)) - .15;
       const backGap = Math.min(...behind.map(point => point.z)) - .125;
       assert.ok(seatGap > -.03 && seatGap < .06, `${beat.phase}: actual buttock-to-seat gap ${seatGap}`);
-      assert.ok(backGap > -.03 && backGap < .08, `${beat.phase}: actual jacket-to-backrest gap ${backGap}`);
+      assert.ok(backGap > -.03 && backGap < .08, `${beat.phase}: actual sweater-to-backrest gap ${backGap}`);
     }
   } finally { h.dispose(); }
 });

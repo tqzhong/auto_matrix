@@ -18,7 +18,7 @@ export class FarewellAppearance {
     }
     this.weave = new THREE.DataTexture(pixels, size, size, THREE.RGBAFormat);
     this.weave.name = `${role}-farewell-knit`; this.weave.wrapS = this.weave.wrapT = THREE.RepeatWrapping;
-    this.weave.repeat.set(role === 'morpheus' ? 12 : 2, role === 'morpheus' ? 12 : 2); this.weave.needsUpdate = true;
+    this.weave.repeat.set(12, 12); this.weave.needsUpdate = true;
     if (role !== 'neo') return;
     const head = rig.bones.get('head')!;
     rig.root.updateMatrixWorld(true);
@@ -82,24 +82,23 @@ export class FarewellAppearance {
   }
 
   garment(mesh: THREE.Mesh, input: MotionInput): 'upper' | 'trousers' | undefined {
+    if (input.performance && ['pod', 'fall', 'float', 'lift', 'recover'].includes(input.performance)) return;
     const outfit = input.logosBane?.role ?? input.farewellOutfit ?? input.farewell?.role ?? input.nebCrew;
     if (input.realWorld !== true || (this.role === 'morpheus' ? !input.hammerBriefing : outfit !== this.role && !(this.role === 'trinity' && !outfit))) return;
-    const upper = this.role === 'morpheus' ? mesh.userData.hammerBriefingCostume === true
-      : this.role === 'neo' ? /Tailored.coat.upper|Black.crew.neck/i.test(mesh.name) : /Fitted.leather.jacket/i.test(mesh.name);
+    const upper = this.role === 'morpheus' ? mesh.userData.hammerBriefingCostume === true : mesh.userData.logosCostume === true;
     return upper ? 'upper' : /Tailored.trousers/i.test(mesh.name) ? 'trousers' : undefined;
   }
 
   update(input: MotionInput): void {
     const outfit = input.logosBane?.role ?? input.farewellOutfit ?? input.farewell?.role ?? input.nebCrew;
-    const active = input.realWorld === true && (this.role === 'morpheus' ? Boolean(input.hammerBriefing) : outfit === this.role || this.role === 'trinity' && !outfit);
+    const active = input.realWorld === true && !(input.performance && ['pod', 'fall', 'float', 'lift', 'recover'].includes(input.performance))
+      && (this.role === 'morpheus' ? Boolean(input.hammerBriefing) : outfit === this.role || this.role === 'trinity' && !outfit);
     if (this.band) this.band.visible = active && Boolean(input.farewellOutfit ?? input.farewell) && !input.firstPerson;
     if (!active) return;
     for (const part of this.rig.wardrobe) {
       if (part.hair) part.mesh.visible = !input.firstPerson;
-      if (this.role === 'morpheus') {
-        if (part.mesh.userData.hammerBriefingCostume) part.mesh.visible = true;
-        else if (/Tailored.coat.upper|Black.crew.neck/i.test(part.mesh.name)) part.mesh.visible = false;
-      }
+      if (this.role === 'morpheus' ? part.mesh.userData.hammerBriefingCostume : part.mesh.userData.logosCostume) part.mesh.visible = true;
+      else if (this.role === 'trinity' ? /Fitted.leather.jacket/i.test(part.mesh.name) : /Tailored.coat.upper|Black.crew.neck/i.test(part.mesh.name)) part.mesh.visible = false;
       const garment = this.garment(part.mesh, input);
       if (!garment) continue;
       const upper = garment === 'upper';
@@ -107,10 +106,10 @@ export class FarewellAppearance {
       if (material.map !== null || material.bumpMap !== this.weave) {
         material.map = null; material.bumpMap = this.weave; material.needsUpdate = true;
       }
-      const collar = this.role === 'morpheus' && part.mesh.name === 'morpheus-hammer-collar';
+      const collar = /-(hammer|logos)-collar$/.test(part.mesh.name);
       material.bumpScale = upper ? collar ? .002 : .009 : .003;
       material.roughness = .97; material.metalness = 0;
-      material.color.setHex(upper ? this.role === 'neo' ? input.logosBane ? 0x384250 : 0x393c3a : this.role === 'morpheus' ? collar ? 0xa7a295 : 0x55343d : 0xa6a59a : 0x333631);
+      material.color.setHex(upper ? this.role === 'neo' ? collar ? 0x53565a : input.logosBane ? 0x384250 : 0x393c3a : this.role === 'morpheus' ? collar ? 0xa7a295 : 0x55343d : 0xa6a59a : 0x333631);
     }
   }
 

@@ -34,6 +34,63 @@ async function setup(t: test.TestContext, role: 'neo' | 'trinity') {
 }
 const material = (rig: HeroRig, name: RegExp) => rig.wardrobe.find(part => name.test(part.mesh.name))!.mesh.material as THREE.MeshStandardMaterial;
 
+for (const role of ['neo', 'trinity'] as const) test(`${role} wears real-world crew-neck geometry and restores the original Matrix silhouette`, async t => {
+  const h = await setup(t, role);
+  const knit = h.rig.root.getObjectByName(`${role}-logos-sweater`) as THREE.SkinnedMesh;
+  assert.ok(knit instanceof THREE.SkinnedMesh, 'a recolored suit or leather jacket cannot substitute for the crew-neck sweater');
+  const old = h.rig.wardrobe.filter(part => role === 'neo' ? /Tailored.coat.upper|Black.crew.neck/i.test(part.mesh.name) : /Fitted.leather.jacket/i.test(part.mesh.name));
+  assert.ok(old.length > 0);
+  h.update(); assert.equal(knit.visible, false); assert.ok(old.every(part => part.mesh.visible));
+  const original = old.map(part => ({ material: part.mesh.material, geometry: part.mesh.geometry }));
+  h.update({ realWorld: true, farewellOutfit: role });
+  assert.equal(knit.visible, true); assert.ok(old.every(part => !part.mesh.visible), 'Matrix lapels and leather sleeves must not render through the knit');
+  assert.ok(knit.geometry.index!.count > 9000, 'measure a complete torso and articulated sleeves');
+  assert.equal(knit.skeleton.bones.length, 46, 'the new cloth must use the delivered articulated skeleton');
+  h.update({ realWorld: true, farewellOutfit: role, firstPerson: true });
+  assert.equal(knit.visible, true, 'first person retains the actual sleeves and torso');
+  h.update(); assert.equal(knit.visible, false); assert.ok(old.every(part => part.mesh.visible));
+  assert.deepEqual(old.map(part => ({ material: part.mesh.material, geometry: part.mesh.geometry })), original);
+});
+
+test('real-world crew clothing cannot cover a saved patient recovery pose', async t => {
+  for (const role of ['neo', 'trinity'] as const) {
+    const h = await setup(t, role), knit = h.rig.root.getObjectByName(`${role}-logos-sweater`)!;
+    h.update({ realWorld: true, farewellOutfit: role }); assert.equal(knit.visible, true);
+    h.update({ realWorld: true, farewellOutfit: role, performance: 'recover', recovery: 2 });
+    assert.equal(knit.visible, false, `${role}: the patient visibility rule must win over a stale outfit flag`);
+  }
+});
+
+test('both crew-neck costumes cover the delivered wrist edges through saved reaching and goodbye poses', async t => {
+  for (const role of ['neo', 'trinity'] as const) {
+    const h = await setup(t, role), knit = h.rig.root.getObjectByName(`${role}-logos-sweater`) as THREE.SkinnedMesh;
+    const skin = h.rig.wardrobe.find(part => (part.mesh.material as THREE.Material).name === 'Skin')!.mesh as THREE.SkinnedMesh;
+    for (const [phase, elapsed] of [['reaching', .6], ['goodbye', 2.1], ['kiss', .75]] as const) {
+      h.update({ realWorld: true, farewell: { phase, elapsed, total: elapsed, role } });
+      for (const side of ['R', 'L']) {
+        const wrist = h.rig.bones.get(`wrist_${side}`)!;
+        const positions = skin.geometry.attributes.position, joints = skin.geometry.attributes.skinIndex, weights = skin.geometry.attributes.skinWeight;
+        let highest = -Infinity;
+        for (let i = 0; i < positions.count; i++) {
+          const hand = [0, 1, 2, 3].reduce((sum, n) => {
+            const name = skin.skeleton.bones[joints.getComponent(i, n)].name;
+            return sum + (/^(wrist|finger)/.test(name) && name.endsWith(`_${side}`) ? weights.getComponent(i, n) : 0);
+          }, 0);
+          if (hand > .5) highest = Math.max(highest, positions.getY(i));
+        }
+        const bindY = skin.skeleton.boneInverses[skin.skeleton.bones.indexOf(wrist)].clone().invert().elements[13];
+        assert.ok(Number.isFinite(highest));
+        const direction = new THREE.Vector3(0, 0, -1).transformDirection(wrist.matrixWorld);
+        assert.ok([.008, .03, .055].some(inset => {
+          const ray = new THREE.Raycaster(wrist.localToWorld(new THREE.Vector3(0, highest - bindY - inset, .6)), direction, 0, .9);
+          const fabric = ray.intersectObject(knit, false)[0], body = ray.intersectObject(skin, false)[0];
+          return fabric && body && fabric.distance < body.distance;
+        }), `${role}/${phase}/${side}: the sleeve must overlap the real hand boundary`);
+      }
+    }
+  }
+});
+
 test('healthy Hammer Neo retains his hair without changing the first-film recovery scalp', async t => {
   const h = await setup(t, 'neo'), hair = h.rig.wardrobe.filter(part => part.hair);
   assert.ok(hair.length > 0, 'check the delivered hairstyle');
@@ -56,7 +113,7 @@ test('Neo enters the wreck in the farewell outfit while retaining normal walking
   const band = h.rig.root.getObjectByName('neo-farewell-eye-band') as THREE.Mesh;
   assert.ok(band?.visible, 'the eye band must already be present before G starts the goodbye');
   assert.ok(h.rig.wardrobe.filter(part => part.hair).every(part => part.mesh.visible));
-  assert.ok(material(h.rig, /Tailored.coat.upper/).roughness >= .94);
+  assert.ok(material(h.rig, /neo-logos-sweater/).roughness >= .94);
   const normal = advanceMotion(newMotion(), walking, .1);
   const dressed = advanceMotion(newMotion(), { ...walking, farewellOutfit: 'neo' }, .1);
   assert.ok(normal.moving > 0); assert.deepEqual(dressed, normal, 'wearing the outfit cannot fake a farewell gesture or stop walking');
@@ -67,7 +124,7 @@ test('Neo enters the wreck in the farewell outfit while retaining normal walking
 test('Neo keeps his shipped hair and wears matte knit with a fitted eye band, not a bald patient outfit', async t => {
   const h = await setup(t, 'neo'); h.update(h.farewell);
   assert.ok(h.rig.wardrobe.filter(part => part.hair).every(part => part.mesh.visible), 'farewell Neo must keep his actual hair despite the loaded patient body');
-  const shirt = material(h.rig, /Tailored.coat.upper/), trousers = material(h.rig, /Tailored.trousers/);
+  const shirt = material(h.rig, /neo-logos-sweater/), trousers = material(h.rig, /Tailored.trousers/);
   assert.ok(shirt.roughness >= .94 && shirt.metalness <= .02 && shirt.bumpMap instanceof THREE.DataTexture, 'Neo needs coarse matte cloth');
   assert.ok(shirt.color.r > trousers.color.r && shirt.color.r < .1, 'dark upper cloth must remain distinct from darker trousers');
   const band = h.rig.root.getObjectByName('neo-farewell-eye-band') as THREE.Mesh;
@@ -98,7 +155,7 @@ test('Neo keeps his shipped hair and wears matte knit with a fitted eye band, no
 
 test('Trinity wears a light knit upper with darker trousers and restores her Matrix materials', async t => {
   const h = await setup(t, 'trinity'); h.update();
-  const shirt = material(h.rig, /Fitted.leather.jacket/), trousers = material(h.rig, /Tailored.trousers/);
+  const shirt = material(h.rig, /trinity-logos-sweater/), trousers = material(h.rig, /Tailored.trousers/);
   const original = { shirtColor: shirt.color.clone(), trousersColor: trousers.color.clone(), roughness: shirt.roughness, metalness: shirt.metalness, map: shirt.map, bump: shirt.bumpMap };
   h.update(h.farewell);
   assert.ok(shirt.roughness >= .94 && shirt.metalness <= .02 && shirt.bumpMap instanceof THREE.DataTexture, 'Trinity’s upper garment must read as knit, not leather');
@@ -108,7 +165,7 @@ test('Trinity wears a light knit upper with darker trousers and restores her Mat
   h.update();
   assert.deepEqual({ shirtColor: shirt.color, trousersColor: trousers.color, roughness: shirt.roughness, metalness: shirt.metalness, map: shirt.map, bump: shirt.bumpMap }, original);
   h.update({ ...h.farewell, farewell: { ...h.farewell.farewell, role: 'neo' } });
-  assert.equal(shirt.roughness, original.roughness, 'another role’s saved gesture cannot apply this costume');
+  assert.equal(h.rig.root.getObjectByName('trinity-logos-sweater')!.visible, false, 'another role’s saved gesture cannot apply this costume');
 });
 
 test('the eye band is scoped to the real farewell and disposes its owned geometry, material and texture once', async t => {
@@ -129,7 +186,7 @@ test('paused farewell clothes keep stable material versions and restore original
   for (const role of ['neo', 'trinity'] as const) {
     const h = await setup(t, role), diffuse = new THREE.Texture(), bump = new THREE.Texture();
     t.after(() => { diffuse.dispose(); bump.dispose(); });
-    const parts = h.rig.wardrobe.filter(part => /Tailored.trousers|Tailored.coat.upper|Black.crew.neck|Fitted.leather.jacket/i.test(part.mesh.name));
+    const parts = h.rig.wardrobe.filter(part => /Tailored.trousers|logos-sweater|logos-collar/i.test(part.mesh.name));
     assert.ok(parts.length >= 2, 'exercise both delivered upper clothing and trousers');
     // Texture decoding is omitted in Node; retain non-null original map identities.
     for (const part of parts) { part.map = diffuse; part.bumpMap = bump; }
