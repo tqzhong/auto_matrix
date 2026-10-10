@@ -40,6 +40,7 @@ export interface FrameProfile {
 
 export function rideForPlayer(journey: FilmJourney | undefined, playerId: string | null | undefined) {
   if (!journey || !playerId || journey.actor !== playerId || journey.visiting) return undefined;
+  if (journey.scene === 'm3_hammer_tunnels' && playerId === 'ghost' && journey.hammer?.gunnery) return undefined;
   if (journey.logos) return journey.logos;
   return journey.apu?.phase === 'riding' ? journey.apu
     : journey.hammer?.phase === 'riding' ? journey.hammer
@@ -454,6 +455,8 @@ export class Engine {
     }
     if (after?.scene === 'm3_dock_battle' && before?.scene === after.scene && after.actor === this.playerControls?.id && this.running
       && (after.dockGunnery?.shots ?? 0) > (before.dockGunnery?.shots ?? 0)) this.audio.governmentSound('minigun');
+    if (after?.scene === 'm3_hammer_tunnels' && before?.scene === after.scene && after.actor === this.playerControls?.id && this.running
+      && (after.hammer?.gunnery?.shots ?? 0) > (before.hammer?.gunnery?.shots ?? 0)) this.audio.governmentSound('minigun');
     if (after?.scene === 'm2_freeway' && before?.scene === after.scene && !after.visiting && after.actor === this.playerControls?.id && this.running) {
       const previous = before.freewayPickup, current = after.freewayPickup;
       if (current && previous && current.attempts === previous.attempts) {
@@ -530,7 +533,7 @@ export class Engine {
       this.playerControls.ambushCompany = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_dejavu' && journey.ambushEscape
         ? Object.values(agents).filter(actor => actor.status === 'alive' && Boolean((actor.currentAction?.parameters.ambushEscort as { retreat?: boolean } | undefined)?.retreat)).map(actor => actor.position) : journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_basement' ? BASEMENT_ROLES.filter(role => role !== this.playerControls!.id).map(role => agents[role].position) : [];
       this.playerControls.truckRescue = Boolean(journey?.actor === this.playerControls.id && journey.scene === 'm2_trucks' && !journey.visiting && ['rescue', 'rescued'].includes(journey.trucks?.phase ?? ''));
-      const gunner = journey?.actor === this.playerControls.id && !journey.visiting && (diggersActive(journey) && diggersLocked(journey.diggers) || dockGateActive(journey) || journey.scene === 'm3_dock_battle' && journey.dockGunnery?.phase === 'firing');
+      const gunner = journey?.actor === this.playerControls.id && !journey.visiting && (journey.scene === 'm3_hammer_tunnels' && journey.actor === 'ghost' && Boolean(journey.hammer?.gunnery) && journey.hammer?.phase === 'riding' || diggersActive(journey) && diggersLocked(journey.diggers) || dockGateActive(journey) || journey.scene === 'm3_dock_battle' && journey.dockGunnery?.phase === 'firing');
       this.playerControls.gunner = gunner;
       this.playerControls.custodyBodies = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_office_escape'
         ? officeCustodyActive(journey) ? [...Object.values(journey.office!.custody!.bodies).map(body => body.position), ...(journey.office!.custody!.courier ? [journey.office!.custody!.courier!.position] : [])] : state.threats.filter(threat => threat.patrol).map(threat => threat.position) : undefined;

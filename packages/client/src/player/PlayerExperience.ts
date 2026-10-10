@@ -163,8 +163,11 @@ export class PlayerExperience {
     if (this.menuOpen && performance.now() - this.lastRender > 1000) this.renderRoster();
     const player = this.controlled ? agents[this.controlled] : undefined;
     const diggerScene = Boolean(player && neoLife?.journey?.actor === player.id && diggersActive(neoLife.journey));
+    const hammerGunner = Boolean(player?.id === 'ghost' && neoLife?.journey?.actor === player.id && !neoLife.journey.visiting
+      && neoLife.journey.scene === 'm3_hammer_tunnels' && neoLife.journey.hammer?.gunnery && neoLife.journey.hammer.phase === 'riding');
+    document.body.classList.toggle('film-hammer-gunner', hammerGunner);
     const gunner = Boolean(player && neoLife?.journey?.actor === player.id && !neoLife.journey.visiting
-      && (diggerScene && diggersLocked(neoLife.journey.diggers) || dockGateActive(neoLife.journey) || neoLife.journey.scene === 'm3_dock_battle' && neoLife.journey.dockGunnery?.phase === 'firing'));
+      && (hammerGunner || diggerScene && diggersLocked(neoLife.journey.diggers) || dockGateActive(neoLife.journey) || neoLife.journey.scene === 'm3_dock_battle' && neoLife.journey.dockGunnery?.phase === 'firing'));
     const driving = Boolean(player?.currentAction?.parameters.riding || gunner);
     const matrixPerforming = Boolean(neoLife?.journey && neoLife.journey.actor === player?.id && matrixEscapeLocked(neoLife.journey));
     const onePerforming = Boolean(neoLife?.journey && neoLife.journey.actor === player?.id && theOneLocked(neoLife.journey));
@@ -222,7 +225,7 @@ export class PlayerExperience {
     const armed = Boolean(this.filmPlaying && !neoLife?.journey?.visiting && (gunner || neoLife?.journey?.scene === 'm1_lobby' || neoLife?.journey?.scene === 'm3_hel_entry' && neoLife.journey.fighting));
     const pointerLock = Boolean(document.pointerLockElement);
     this.el('attack-keys').textContent = armed || diggerScene ? pointerLock ? '左键 / T' : 'T' : pointerLock ? 'F / 左键' : 'F';
-    this.el('attack-label').textContent = diggerScene ? '双管火箭' : gunner ? 'APU 机炮' : armed ? '射击 · F 近战' : '连击';
+    this.el('attack-label').textContent = diggerScene ? '双管火箭' : hammerGunner ? '船尾机炮' : gunner ? 'APU 机炮' : armed ? '射击 · F 近战' : '连击';
     this.el('r-label').textContent = gunner ? '炮位' : armed ? '换弹' : '出口接入';
     this.el('mouse-hint').textContent = armed ? '点击锁定鼠标 · 朝向辅助瞄准 · 左键 / T 射击 · R 换弹 · 右键观察' : '点击画面锁定鼠标 · F 连击，锁定后也可用左键 · 右键观察 · Esc 释放';
     if (!pointerLock) this.el('mouse-hint').textContent = armed || diggerScene ? '左键拖动瞄准 · T 射击 · F 近战 · 右键观察' : '左键拖动视角 · F 连击 · 右键观察 · Esc 菜单';
@@ -274,6 +277,7 @@ export class PlayerExperience {
     if (neoLife?.journey?.scene === 'm3_upper_digger' && neoLife.journey.actor === player?.id && !neoLife.journey.visiting) this.el('mouse-hint').textContent = upperDiggerText(neoLife.journey.upperDigger);
     if (diggerScene) this.el('mouse-hint').textContent = diggersText(neoLife?.journey?.diggers) + ' · V 切换视角';
     if (gunner && !diggerScene) this.el('mouse-hint').textContent = '鼠标瞄准 · 左键 / T 开炮 · V 切换视角 · J 手记';
+    if (hammerGunner) this.el('mouse-hint').textContent = `${pointerLock ? '鼠标瞄准 · 左键 / T 开炮' : '左键拖动瞄准 · T 开炮'} · 对准战术屏准星 · V 视角 · J 交接驾驶`;
     document.body.classList.toggle('neo-daily', Boolean(player?.id === 'neo' && neoLife && !player.isAwakened));
     if (!player) return;
     this.el('player-name').textContent = player.name.toUpperCase();

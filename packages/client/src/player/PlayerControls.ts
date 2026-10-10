@@ -18,6 +18,7 @@ import { upperDiggerLocked, upperDiggerRoot, upperDiggerShot, upperDiggerHatch }
 import { DIGGERS, diggerEye, diggerDirection, diggersLocked } from '@auto_matrix/shared';
 import { dockReloadHeight, dockReloadLocked } from '@auto_matrix/shared';
 import { APU_RIG, DOCK_GATE, dockGateEye, dockGateAim, dockGateShip, dockLastStandLocked, dockLastStandPose, dockGunneryView, dockGunneryAngles } from '@auto_matrix/shared';
+import { hammerGunneryAngles } from '@auto_matrix/shared';
 import { empCrankPoint } from '@auto_matrix/shared';
 import { freewayPickupBike, freewayPickupRoot } from '@auto_matrix/shared';
 import { truckHoodRoot, truckHoodBack } from '@auto_matrix/shared';
@@ -355,9 +356,11 @@ export class PlayerControls {
     if (!this.dragging || this.dragPoint) this.movementYaw += turn;
     if (this.dragPoint) this.dragPoint = { x: event.clientX, y: event.clientY };
     const recline = this.firstPerson && this.motion.deusPact ? DEUS_PACT.reclineAngle * .82 * deusPactPose(this.motion.deusPact).seated : 0;
-    this.pitch = THREE.MathUtils.clamp(this.pitch + movementY * 0.002, this.motion.epilogue?.kind === 'ceasefire' && this.motion.epilogue.phase === 'retreat' ? -1.3 : this.motion.dockGunnery ? -.85 : this.motion.diggers ? -.65 : this.motion.dockGate ? -1.35 : this.motion.mirrorBeat !== undefined ? -.9 : -.4, this.motion.dockGunnery ? .4 : this.motion.diggers ? .5 : this.motion.dockGate ? 1.35 : this.motion.catch ? 1.55 : this.motion.computerCheck || this.motion.primaryDemolition?.phase === 'mounting' ? 1.5 : 1.1 + recline);
+    const hammerGunner = this.motion.hammerPilot?.role === 'ghost' && this.motion.hammerPilot.flight.gunnery;
+    this.pitch = THREE.MathUtils.clamp(this.pitch + movementY * 0.002, hammerGunner ? -.65 : this.motion.epilogue?.kind === 'ceasefire' && this.motion.epilogue.phase === 'retreat' ? -1.3 : this.motion.dockGunnery ? -.85 : this.motion.diggers ? -.65 : this.motion.dockGate ? -1.35 : this.motion.mirrorBeat !== undefined ? -.9 : -.4, this.motion.dockGunnery ? .4 : this.motion.diggers ? .5 : this.motion.dockGate ? 1.35 : this.motion.catch ? 1.55 : this.motion.computerCheck || this.motion.primaryDemolition?.phase === 'mounting' ? 1.5 : 1.1 + recline);
     this.ceasefireAim = false;
     if (this.motion.dockGunnery) Object.assign(this, dockGunneryAngles(this.yaw, this.pitch));
+    if (hammerGunner) Object.assign(this, hammerGunneryAngles(this.yaw, this.pitch));
     this.lastLook = performance.now();
   };
   private click = (): void => { if (this.id && this.enabled && document.pointerLockElement !== this.canvas) this.lockPointer(); };
@@ -931,8 +934,15 @@ export class PlayerControls {
     this.motion.crouching = farewell?.role === 'neo' || !custody && this.enabled && !this.performing && this.keys.has('KeyZ');
     this.motion.riding = Boolean(this.ride || this.gunner);
     const hammerPilot = state.currentAction?.parameters.hammerPilot as MotionInput['hammerPilot'];
-    if (hammerPilot && this.hammerPilotYaw === undefined) { this.yaw = this.movementYaw = state.rotation; this.pitch = .08; this.cameraReady = false; }
-    if (hammerPilot && this.hammerPilotYaw !== undefined) {
+    const hammerGunner = hammerPilot?.role === 'ghost' ? hammerPilot.flight.gunnery : undefined;
+    if (hammerGunner) {
+      if (this.motion.hammerPilot?.role !== 'ghost' || !this.motion.hammerPilot.flight.gunnery) {
+        this.yaw = this.movementYaw = hammerGunner.yaw; this.pitch = hammerGunner.pitch; this.cameraReady = false;
+      }
+      this.motion.armed = false;
+    }
+    if (hammerPilot && !hammerGunner && this.hammerPilotYaw === undefined) { this.yaw = this.movementYaw = state.rotation; this.pitch = .08; this.cameraReady = false; }
+    if (hammerPilot && !hammerGunner && this.hammerPilotYaw !== undefined) {
       const turn = Math.atan2(Math.sin(state.rotation - this.hammerPilotYaw), Math.cos(state.rotation - this.hammerPilotYaw));
       this.yaw += turn; this.movementYaw += turn;
     }
@@ -1288,7 +1298,20 @@ export class PlayerControls {
     const spoon = this.motion.inspecting && group.getObjectByName('held-spoon');
     if (this.motion.hammerPilot) {
       const flight = this.motion.hammerPilot.flight, center = FILM_SETS.film_hammer_route.center, ship = hammerShipPose(flight);
-      if (this.firstPerson) {
+      if (this.motion.hammerPilot.role === 'ghost' && flight.gunnery) {
+        const rotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(ship.pitch, ship.yaw, ship.roll, 'YXZ'));
+        const focus = hammerShipPoint(flight, { x: 0, y: .52, z: 13.65 });
+        this.camera.up.set(0, 1, 0).applyQuaternion(rotation);
+        if (this.firstPerson) {
+          const head = group.getObjectByName(`${state.id}-head`) ?? group.getObjectByName('head'); group.updateWorldMatrix(true, true);
+          const eye = head ? head.localToWorld((head.userData.cameraEye as THREE.Vector3 | undefined)?.clone() ?? new THREE.Vector3(0, .1, .32)) : target;
+          this.camera.position.copy(eye);
+        } else {
+          const eye = hammerShipPoint(flight, { x: -1.55, y: 1.32, z: 10.25 });
+          this.camera.position.set(center.x + eye.x, center.y + eye.y, center.z + eye.z);
+        }
+        this.camera.lookAt(center.x + focus.x, center.y + focus.y, center.z + focus.z);
+      } else if (this.firstPerson) {
         const head = group.getObjectByName(`${state.id}-head`) ?? group.getObjectByName('head'); group.updateWorldMatrix(true, true);
         const eye = head ? head.localToWorld((head.userData.cameraEye as THREE.Vector3 | undefined)?.clone() ?? new THREE.Vector3(0, .1, .32)) : target;
         const relative = this.yaw - ship.yaw - Math.PI;

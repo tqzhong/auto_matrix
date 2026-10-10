@@ -2141,14 +2141,14 @@ export class SandboxUI {
       this.el('sandbox-interact').classList.add('hidden'); this.el('sandbox-waypoint').textContent = ''; return;
     }
     if (scene.id === 'm3_hammer_tunnels' && journey.hammer?.phase === 'riding' && !journey.visiting) {
-      const flight = journey.hammer;
+      const flight = journey.hammer, gunner = player.id === 'ghost' && flight.gunnery;
       this.el('film-ride').classList.remove('hidden');
-      this.el('film-ride-title').textContent = 'NIOBE / HAMMER';
-      this.el('film-ride-controls').textContent = flight.maneuver ? 'W / S 推进制动 · A / D 横移 · 空格 / C 升降 · Q / E 侧滚 · V 视角' : 'W 推进 · S 制动 · A / D 侧向推进';
-      this.el('film-ride-speed').textContent = `${Math.round(flight.speed * 3.6)} km/h`;
+      this.el('film-ride-title').textContent = gunner ? 'GHOST / AFT GUNS' : 'NIOBE / HAMMER';
+      this.el('film-ride-controls').textContent = gunner ? `${document.pointerLockElement ? '鼠标瞄准 · 左键 / T 连射' : '左键拖动瞄准 · T 连射'} · V 炮位视角 · J 交接驾驶` : flight.maneuver ? 'W / S 推进制动 · A / D 横移 · 空格 / C 升降 · Q / E 侧滚 · V 视角 · J 炮位' : 'W 推进 · S 制动 · A / D 侧向推进';
+      this.el('film-ride-speed').textContent = gunner ? `弹药 ${gunner.ammo} · 击落 ${gunner.kills}` : `${Math.round(flight.speed * 3.6)} km/h`;
       this.el('film-ride-health').textContent = `船体 ${Math.ceil(flight.hull)}% · 哨兵 ${Math.ceil(flight.pursuit)}% · ${flight.maneuver ? `侧滚 ${Math.round(flight.maneuver.bank * 180 / Math.PI)}° · ` : ''}${hammerRadioStatus(flight)}`;
       this.el('sandbox-waypoint').textContent = `锡安管线出口 ↑ ${Math.max(0, Math.round(flight.z + 175))} m`;
-      document.getElementById('game-objective-copy')!.textContent = hammerFlightHint(flight);
+      document.getElementById('game-objective-copy')!.textContent = gunner ? 'Niobe 正在驾驶。将红色目标移到战术屏中心准星，击落贴近船尾的哨兵。' : hammerFlightHint(flight);
       this.el('sandbox-interact').classList.add('hidden'); return;
     }
     if (scene.id === 'm3_hammer_tunnels' && journey.step === 1 && journey.hammerHandover && !journey.visiting) {

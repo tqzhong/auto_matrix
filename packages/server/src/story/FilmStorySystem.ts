@@ -1,4 +1,5 @@
 import { SourcePortalSystem } from './SourcePortalSystem.js';
+import { newHammerGunnery, hammerGunneryAngles, fireHammerGunnery, stepHammerGunnery, hammerNiobeInput } from '@auto_matrix/shared';
 import { HAMMER_MEDICAL, HAMMER_MEDICAL_BEDS, HAMMER_MEDICAL_SUPPLIES } from '@auto_matrix/shared';
 import { MOBIL_STATION, MOBIL_REFUSAL, MOBIL_FAMILY, MOBIL_FAMILY_QUESTIONS, MOBIL_LUGGAGE, MOBIL_REUNION, mobilReunionRoot, mobilReunionText, mobilLuggagePose, mobilLuggageParent, mobilFamilyLine, mobilFamilyDuration, mobilFamilyText, mobilRefusalPose, mobilTrainPose, mobilPassengerPose, mobilTrainObstacles } from '@auto_matrix/shared';
 import { ARCHITECT_ROOM, architectDoorAngle, architectDoorLocked, architectExitRoot, type ArchitectGesture } from '@auto_matrix/shared';
@@ -4923,7 +4924,7 @@ export class FilmStorySystem {
     const center = FILM_SETS[this.scene!.set].center;
     for (const id of ['niobe', 'morpheus', 'roland', 'ghost'] as const) {
       const crew = this.world.agents.get(id); if (!crew || crew.status !== 'alive' || crew.health <= 0 || crew.controller && crew !== agent) continue;
-      const handover = id === 'ghost' ? state.hammerHandover : undefined;
+      const handover = id === 'ghost' && !flight.gunnery ? state.hammerHandover : undefined;
       const point = hammerCrewRoot(flight, id, handover);
       crew.position = { x: center.x + point.x, y: center.y + point.y, z: center.z + point.z };
       crew.currentLocation = this.scene!.set; crew.isInMatrix = false;
@@ -4933,8 +4934,30 @@ export class FilmStorySystem {
         velocity = { x: vector.x - frame.x, y: vector.y - frame.y, z: vector.z - frame.z };
       }
       crew.velocity = crew.controller ? velocity : { x: 0, y: 0, z: 0 }; crew.rotation = point.yaw;
-      crew.currentAction = { type: 'idle', parameters: { riding: true, passenger: id !== 'niobe', seated: id !== 'roland' && id !== 'ghost', hammerPilot: { role: id, flight: { ...flight }, handover } }, startedAt: state.enteredAt, duration: 1e9, progress: 0 };
+      crew.currentAction = { type: 'idle', parameters: { riding: true, passenger: id !== 'niobe', seated: id !== 'roland' && (id !== 'ghost' || Boolean(flight.gunnery)), hammerPilot: { role: id, flight: { ...flight }, handover } }, startedAt: state.enteredAt, duration: 1e9, progress: 0 };
     }
+  }
+  hammerGunnerFrame(agent: AgentState, input: { yaw: number; pitch?: number }, dt: number, tick: number): boolean {
+    const state = this.state;
+    if (state?.scene !== 'm3_hammer_tunnels' || state.visiting || !this.controls(agent) || agent.id !== 'ghost' || !state.hammer?.gunnery) return false;
+    const pilot = this.world.agents.get('niobe');
+    if (!pilot || pilot.status !== 'alive' || pilot.health <= 0 || pilot.controller) {
+      state.lastText = 'Niobe 当前无法继续驾驶，航程与炮位进度保留。'; return true;
+    }
+    if (dt > 0 && Number.isFinite(input.yaw) && Number.isFinite(input.pitch ?? 0)) Object.assign(state.hammer.gunnery, hammerGunneryAngles(input.yaw, input.pitch ?? 0));
+    this.driveFrame(agent, hammerNiobeInput(state.hammer), dt, tick); return true;
+  }
+  hammerGunnerAction(agent: AgentState, kind: string, yaw: number, pitch: number, tick: number, running: boolean): string | undefined {
+    const state = this.state;
+    if (state?.scene !== 'm3_hammer_tunnels' || state.visiting || !this.controls(agent) || agent.id !== 'ghost' || !state.hammer?.gunnery || kind === 'interact') return;
+    if (!running) return '时间已暂停；继续时间后开火。';
+    const pilot = this.world.agents.get('niobe');
+    if (!pilot || pilot.status !== 'alive' || pilot.health <= 0 || pilot.controller) return 'Niobe 当前无法继续驾驶，航程与炮位进度保留。';
+    if (kind === 'shoot') {
+      if (fireHammerGunnery(state.hammer, yaw, pitch)) this.hammerFrame(agent, tick);
+      return state.hammer.gunnery.ammo ? '炮口跟随战术屏准星。优先击落靠近船尾的哨兵。' : '炮位弹药耗尽，J 可以接回 Niobe 驾驶。';
+    }
+    return '鼠标控制炮塔，左键或 T 射击；V 观察炮位，J 切换驾驶。';
   }
   hammerHandoverFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
@@ -5209,7 +5232,14 @@ export class FilmStorySystem {
     }
     if (this.state!.scene === 'm3_hammer_tunnels') {
       const state = this.state!; const before = state.hammer!;
+      if (before.gunnery && ['niobe', 'ghost'].some(id => id !== agent.id && this.world.agents.get(id)?.controller)) {
+        state.lastText = '驾驶员或炮手正由另一位玩家控制，当前航程等待交接。'; return true;
+      }
       const flight = state.hammer = stepHammerFlight(before, input, dt);
+      if (before.gunnery) {
+        flight.gunnery = structuredClone(before.gunnery);
+        stepHammerGunnery(flight, agent.id === 'niobe' && this.world.agents.get('ghost')?.status === 'alive', dt);
+      }
       this.hammerFrame(agent, tick);
       if (flight.hits > before.hits) state.lastText = 'Hammer 擦过管壁或横梁！Morpheus 校准侧向推进器；减速并修正航线，别让哨兵追近。';
       else if (flight.antennaLost && !before.antennaLost) state.lastText = '一道哨兵掠过船顶，通讯天线被扯断。锡安无法收到开门请求，只能靠目视发现 Hammer。';
@@ -5564,6 +5594,16 @@ export class FilmStorySystem {
       return '已继续保存的剧情视角与位置。';
     }
     if (!this.controls(agent)) return '请接入当前剧情角色，或以 Neo 继续电影进度。';
+    if (state.scene === 'm3_hammer_tunnels' && ['hammer-gunner', 'hammer-pilot'].includes(target)) {
+      if (state.visiting || state.hammer?.phase !== 'riding' || !state.hammer.gunnery || agent.status !== 'alive') return '先由 Niobe 启动本轮航行，再交接驾驶或炮位。';
+      const id = target === 'hammer-gunner' ? 'ghost' : 'niobe', crew = this.world.agents.get(id);
+      if (crew?.controller && crew !== agent) return '这个角色正由另一位玩家控制，当前航程和角色保持。';
+      if (!crew || crew.status !== 'alive' || crew.health <= 0) return '这个船员当前无法接管，航程与伤亡状态保持。';
+      if (!this.changeActor(agent, id, tick)) return '暂时无法交接，当前航程保持。';
+      this.hammerFrame(crew, tick);
+      return state.lastText = id === 'ghost' ? 'Ghost 接管船尾炮塔。鼠标瞄准，左键或 T 连射，V 查看实体炮位；Niobe 继续驾驶。J 可接回驾驶。'
+        : 'Niobe 接回驾驶，Ghost 继续防守。原航程、弹药与船体损伤保留。';
+    }
     const familyCommand = this.mobilFamilyCommand(agent, target, tick);
     if (familyCommand !== undefined) return familyCommand;
     const portalCommand = this.sourcePortal.command(agent, target, tick);
@@ -5663,6 +5703,14 @@ export class FilmStorySystem {
     if (this.sixth.active(agent) && target === 'retry') return this.sixth.command(agent, target, tick);
     if (this.wetwall.active(agent) && target === 'retry') return this.wetwall.command(agent, target, tick);
     if (target === 'retry') {
+      if (state.scene === 'm3_hammer_tunnels' && state.actor === 'ghost' && state.hammer?.gunnery) {
+        if (state.hammer.phase === 'wrecked') {
+          state.hammer = { ...newHammerFlight(), gunnery: newHammerGunnery() }; state.step = 2;
+          agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
+        }
+        this.hammerFrame(agent, tick);
+        return state.lastText = '已接回 Ghost 炮位。副驾驶换位和之前的故事结果保留；鼠标瞄准，左键或 T 开炮。';
+      }
       if (state.scene === 'm3_neo_carried') { this.placeEpilogue(agent, tick); return 'Neo 的身体仍没有回应；已保留当前运送进度。'; }
       if (state.scene === 'm1_dejavu' && state.ambushEscape) {
         const escape = state.ambushEscape, checkpoint = escape.checkpoint;
@@ -6618,7 +6666,7 @@ export class FilmStorySystem {
       }
       if (state.scene === 'm3_hammer_tunnels') {
         if (HAMMER_HANDOVER_CAST.some(id => this.world.agents.get(id)?.controller)) return '舰桥船员正由另一位玩家控制，等待他们结束当前行动。';
-        if (!state.hammer) state.hammer = newHammerFlight();
+        if (!state.hammer) state.hammer = { ...newHammerFlight(), gunnery: newHammerGunnery() };
         this.driveFrame(agent, { throttle: 0, steer: 0, brake: false }, 0, tick);
         return state.hammer.maneuver
           ? '已接管 Hammer。W 推进 / S 制动，A / D 横移，空格抬升 / C 下降，Q / E 侧滚。航向辅助沿管线转弯；你需要避开上下横梁，并侧滚穿过狭管。'
@@ -6673,7 +6721,8 @@ export class FilmStorySystem {
     if (state?.tvExit?.crosscut && ['m1_tv_exit', 'm1_unplugged'].includes(state.scene)
       || state?.scene === 'm3_ceasefire' && !this.step && id === 'neo'
       || state?.scene === 'm3_neo_carried' && !this.step && id === 'sati'
-      || state?.scene === 'm3_reset' && !this.step && id === 'oracle') state!.actor = id;
+      || state?.scene === 'm3_reset' && !this.step && id === 'oracle'
+      || state?.scene === 'm3_hammer_tunnels' && Boolean(state.hammer?.gunnery) && ['niobe', 'ghost'].includes(id)) state!.actor = id;
     const changed = this.handoff?.(agent, id, tick) ?? false;
     if (!changed && state && previous) state.actor = previous;
     return changed;

@@ -30,6 +30,7 @@ interface PlayerSession {
 const idleInput = (): PlayerInput => ({ x: 0, z: 0, yaw: 0, pitch: 0, sprint: false, jump: false, sequence: 0 });
 
 export class PlayerController {
+  private running = true;
   private sessions = new Map<string, PlayerSession>();
   private owners = new Map<string, string>();
   onStoryRole?: (socketId: string, agentId: string, tick: number) => void;
@@ -88,6 +89,8 @@ export class PlayerController {
     if (id === 'keymaker' && this.sandbox?.life.film.state?.ride?.phase === 'riding') return { error: '钥匙匠正在后座接受护送，抵达接应区后可以接入。' };
     if (['keymaker', 'morpheus', 'twin1', 'twin2'].includes(id) && this.sandbox?.life.film.state?.garage?.phase === 'riding') return { error: '这个角色正在车库追逐中，轿车冲出车库后可以接入。' };
     if (['morpheus', 'roland'].includes(id) && this.sandbox?.life.film.state?.hammer?.phase === 'riding') return { error: '这个角色正在 Hammer 舰桥协助 Niobe 驾驶，驶出管线后可以接入。' };
+    if (['niobe', 'ghost'].includes(id) && interlude?.scene === 'm3_hammer_tunnels' && interlude.hammer?.gunnery
+      && interlude.hammer.phase === 'riding' && id !== interlude.actor) return { error: '这个角色正在 Hammer 驾驶与炮位协作中，请从 J 手记交接。' };
     if (id === 'neo' && this.sandbox?.life.film.state?.logos?.phase === 'riding') return { error: 'Neo 正在 Logos 驾驶舱为 Trinity 指引航线，航行结束后可以接入。' };
     if (id === 'trinity' && this.sandbox?.life.film.state?.scene === 'm3_farewell') return { error: 'Trinity 正在 Logos 残骸中完成最后的告别，当前不能接管。' };
     if (id === 'deus_ex_machina' && this.sandbox?.life.film.state?.scene === 'm3_deus'
@@ -309,6 +312,7 @@ export class PlayerController {
   }
 
   step(dt: number, running: boolean, tick: number, now = Date.now()): void {
+    this.running = running;
     dt = Math.min(dt, .1);
     this.sandbox?.traffic.frame(running ? dt * this.timeScale() : 0);
     if (running) for (const agent of this.world.agents.values()) {
@@ -565,6 +569,9 @@ export class PlayerController {
       if (this.sandbox?.life.film.climbFrame(agent, input.climb ?? 0, dt, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; continue;
       }
+      if (this.sandbox?.life.film.hammerGunnerFrame(agent, input, dt, tick)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.strike = undefined; session.impulse = undefined; session.palm = undefined; session.input.jump = false; continue;
+      }
       if (this.sandbox?.life.film.driveFrame(agent, input.drive ?? { throttle: 0, steer: 0,
         brake: this.sandbox.life.film.state?.logos?.phase !== 'riding' }, dt, tick, Boolean(input.focus))) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.strike = undefined; session.impulse = undefined; session.palm = undefined; session.input.jump = false;
@@ -665,6 +672,8 @@ export class PlayerController {
     const session = this.sessions.get(socketId);
     const agent = this.getAgent(socketId);
     if (!session || !agent || agent.status !== 'alive') return '请先接入一个存活角色。';
+    const hammerAction = this.sandbox?.life.film.hammerGunnerAction(agent, kind, session.input.yaw, session.input.pitch ?? 0, tick, this.running);
+    if (hammerAction !== undefined) return hammerAction;
     if (this.sandbox?.life.film.freewayPickup.active(agent) && ['attack', 'shoot', 'ability', 'ability2', 'dodge', 'travel'].includes(kind)) return ['attack', 'shoot'].includes(kind) ? this.sandbox.life.film.freewayPickup.shoot(agent, tick) : this.sandbox.life.film.state!.lastText;
     if (this.sandbox?.life.film.dockEvacuation.active(agent) && this.sandbox.life.film.state?.dockEvacuation?.phase === 'carrying' && kind !== 'interact') return '双手正在搬运补给。WASD 走到卸货车前，再按 G 放下。';
     if (this.sandbox?.life.film.custody.active(agent) && ['attack', 'shoot', 'ability', 'ability2', 'dodge', 'travel'].includes(kind)) return '双手已被扣住。跟随特工走到电梯，按 G 继续故事。';

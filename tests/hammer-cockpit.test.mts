@@ -8,6 +8,7 @@ import { CharacterModels } from '../packages/client/src/agents/CharacterModel.js
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { HammerRouteRenderer } from '../packages/client/src/engine/HammerRouteRenderer.js';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
+import { newHammerGunnery } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { HAMMER_BEAMS, hammerRouteFrame } from '@auto_matrix/shared';
@@ -38,7 +39,8 @@ async function setup(t: test.TestContext) {
   const pose = (role: HammerPilotGesture['role'], flight: HammerFlight, delta = 0, handover?: HammerHandover) => {
     const rig = rigs[role], point = hammerCrewRoot(flight, role, handover), ship = hammerShipPose(flight);
     const up = hammerShipPoint(flight, { x: 0, y: 1, z: 0 });
-    rig.root.position.set(point.x - up.x + ship.x, point.y - up.y + ship.y + 1, point.z - up.z + ship.z); rig.root.rotation.set(-ship.pitch, point.yaw, -ship.roll, 'YXZ');
+    const direction = role === 'ghost' && flight.gunnery ? 1 : -1;
+    rig.root.position.set(point.x - up.x + ship.x, point.y - up.y + ship.y + 1, point.z - up.z + ship.z); rig.root.rotation.set(direction * ship.pitch, point.yaw, direction * ship.roll, 'YXZ');
     models.animate(rig, delta, { speed: flight.speed, grounded: true, verticalVelocity: 0, turn: flight.lateral, realWorld: true,
       nebCrew: role === 'morpheus' ? role : undefined, seated: role !== 'roland', riding: true, hammerPilot: { role, flight, handover } }, 0);
     rig.root.updateMatrixWorld(true); rig.root.traverse(object => { if (object instanceof THREE.SkinnedMesh) object.skeleton.update(); }); return rig;
@@ -330,5 +332,32 @@ test('handover bodies stay above the deck, clear of furniture, closing doors and
     for (let i = 0; i < bodies.length; i++) for (let j = i + 1; j < bodies.length; j++)
       assert.ok(!bodies[i].clone().expandByScalar(-.06).intersectsBox(bodies[j]), `${elapsed}: crew ${i}/${j} bodies intersect: ${JSON.stringify(bodies.map(box => ({ min: box.min.toArray(), max: box.max.toArray() })))}`);
     assert.equal(contacts.length, 0, JSON.stringify(contacts.sort((a,b) => b.depth-a.depth).slice(0,12)));
+  }
+});
+
+test('the real Ghost body sits inside the aft room with supported feet, clear upholstery and both palms on the physical triggers during side roll', async t => {
+  const h = await setup(t), root = new THREE.Group(), renderer = new HammerRouteRenderer(root);
+  t.after(() => renderer.dispose());
+  for (const bank of [0, .7, Math.PI / 2, -Math.PI / 2]) {
+    const flight = { ...newHammerFlight(), gunnery: newHammerGunnery() }; flight.z = -75; flight.maneuver!.bank = bank;
+    renderer.update(flight, 0); root.updateMatrixWorld(true);
+    const rig = h.pose('ghost', flight), cockpit = root.getObjectByName('hammer-cockpit')!, inverse = cockpit.matrixWorld.clone().invert();
+    assert.ok(rig.hero, 'use the shipped Ghost body');
+    const back = root.getObjectByName('ghost-seat-back')! as THREE.Mesh, seat = root.getObjectByName('ghost-seat-cushion')! as THREE.Mesh;
+    const furniture = [back, seat].map(mesh => { mesh.geometry.computeBoundingBox(); return { inverse: mesh.matrixWorld.clone().invert(), box: mesh.geometry.boundingBox!.clone().expandByScalar(-.025) }; });
+    let lowest = Infinity;
+    rig.root.traverseVisible(object => { if (object instanceof THREE.Mesh) for (let i = 0; i < object.geometry.attributes.position.count; i++) {
+      const world = object.localToWorld(object.getVertexPosition(i, new THREE.Vector3())), p = world.clone().applyMatrix4(inverse);
+      lowest = Math.min(lowest, p.y);
+      assert.ok(p.y > HAMMER_COCKPIT.floor - .05 && p.y < 1.89 && Math.abs(p.x) < 2.02 && p.z < 14.2 && p.z > 10, `${bank}/${object.name}: body leaves the physical room ${p.toArray()}`);
+      assert.ok(!furniture.some(item => item.box.containsPoint(world.clone().applyMatrix4(item.inverse))), `${bank}/${object.name}: body penetrates chair upholstery`);
+    } });
+    assert.ok(lowest < HAMMER_COCKPIT.floor + .12);
+    const grips: THREE.Vector3[] = [];
+    root.getObjectByName('ghost-hammer-yoke')!.traverse(object => { if (object.name === 'hammer-control-grip') grips.push(object.getWorldPosition(new THREE.Vector3())); });
+    for (let i = 0; i < 2; i++) {
+      const wrist = rig.hero!.bones.get(i ? 'wrist_L' : 'wrist_R')!, palm = wrist.localToWorld(new THREE.Vector3(i ? -.13 : .13, -.18, .02));
+      assert.ok(Math.min(...grips.map(grip => palm.distanceTo(grip))) < .09, 'Ghost lets go of the real gun controls');
+    }
   }
 });

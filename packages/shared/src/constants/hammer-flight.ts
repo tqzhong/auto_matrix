@@ -1,5 +1,6 @@
 import type { DriveInput } from './freeway.js';
 import { hammerHandoverPose, type HammerHandover } from './hammer-handover.js';
+import { HAMMER_GUNNERY } from './hammer-gunnery.js';
 
 export const HAMMER_ROUTE = {
   start: 175, finish: -175, limit: 29, shipRadius: 6.25,
@@ -38,6 +39,8 @@ export function hammerShipPoint(flight: Pick<HammerFlight, 'x' | 'z' | 'speed' |
 }
 
 export function hammerCrewRoot(flight: HammerFlight, role: HammerPilotGesture['role'], handover?: HammerHandover) {
+  if (role === 'ghost' && flight.gunnery) return {
+    ...hammerShipPoint(flight, { ...HAMMER_GUNNERY.seat, y: HAMMER_COCKPIT.floor + 1 }), yaw: hammerShipPose(flight).yaw };
   if (handover && (role === 'ghost' || role === 'morpheus')) {
     const root = hammerHandoverPose(handover, role);
     return { ...hammerShipPoint(flight, { x: root.x, y: HAMMER_COCKPIT.floor + 1, z: root.z }), yaw: hammerShipPose(flight).yaw + root.yaw };
@@ -60,6 +63,7 @@ export interface HammerFlight {
   x: number; z: number; speed: number; lateral: number; elapsed: number;
   hull: number; pursuit: number; cooldown: number; hits: number; debris: number;
   antennaLost: boolean; phase: 'riding' | 'arrived' | 'wrecked';
+  gunnery?: import('./hammer-gunnery.js').HammerGunnery;
   // Absent in existing saves: they retain the original planar route until retry.
   // x and start-z are offsets/progress along the guided pipe, not world coordinates.
   maneuver?: { lift: number; vertical: number; bank: number; bankVelocity: number };
