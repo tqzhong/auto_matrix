@@ -2200,7 +2200,10 @@ export class SandboxUI {
       const seal = journey.templeSeal, breach = scene.id === 'm3_temple_breach' ? journey.templeBreach : undefined;
       const locked = templeDefenseLocked(seal, breach), blocked = breach?.paused || breach?.unavailable || seal?.paused || seal?.unavailable;
       document.getElementById('game-objective-copy')!.textContent = templeDefenseText(seal, breach);
-      if (locked || blocked || seal?.phase === 'failed') {
+      if (!breach && seal?.phase === 'ready' && !blocked && player.status === 'alive') {
+        this.el('sandbox-interact').classList.remove('hidden'); this.el('sandbox-waypoint').textContent = '';
+        this.el('sandbox-nearby').textContent = '开始炮位准备';
+      } else if (locked || blocked || seal?.phase === 'failed') {
         this.el('sandbox-interact').classList.add('hidden'); this.el('sandbox-waypoint').textContent = '';
       } else if (breach?.phase === 'done') this.el('sandbox-nearby').textContent = '接回机器城中的 Neo';
       if (seal?.phase === 'running' && !breach) {

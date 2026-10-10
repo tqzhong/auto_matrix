@@ -23,17 +23,34 @@ function fixture(t: TestContext, role: 'zee' | 'lock') {
   const head = new THREE.Bone(); head.name = `${role}-head`; head.position.set(0, 2.7, .05); head.userData.cameraEye = new THREE.Vector3(0, .1, .32); group.children[0].add(head);
   const sent: PlayerInput[] = [], controls = new PlayerControls(canvas as unknown as HTMLCanvasElement, camera, input => sent.push(input), () => {});
   let time = 2000; t.mock.method(performance, 'now', () => time);
-  const step = (gesture: TempleDefenseGesture) => {
+  const step = (gesture: TempleDefenseGesture, running = false) => {
     state.currentAction = { type: 'idle', parameters: { templeDefense: gesture }, startedAt: 0, duration: 1e9, progress: 0 };
-    time += 100; controls.update(.1, state, group, false); group.updateMatrixWorld(true); camera.updateMatrixWorld(true);
+    time += 100; controls.update(.1, state, group, running); group.updateMatrixWorld(true); camera.updateMatrixWorld(true);
   };
   const toggle = () => window.dispatchEvent(Object.assign(new Event('keydown'), { code: 'KeyV', repeat: false }));
   controls.possess(state);
   t.after(() => { controls.dispose(); ['window', 'document'].forEach((key, i) => {
     if (previous[i]) Object.defineProperty(globalThis, key, previous[i]!); else Reflect.deleteProperty(globalThis, key);
   }); });
-  return { camera, controls, group, head, state, document, canvas, sent, step, toggle };
+  return { camera, controls, group, head, state, window, document, canvas, sent, step, toggle };
 }
+
+test('waiting at the temple entrance prevents predicted movement while retaining V and free look', t => {
+  const h = fixture(t, 'zee'), gesture: TempleDefenseGesture = { role: 'zee', phase: 'ready', elapsed: 0, turn: 0, grip: 0 };
+  h.state.position = filmPosition('film_zion_temple', 0, 30); h.controls.possess(h.state);
+  h.step(gesture, true); const position = h.group.position.clone();
+  h.window.dispatchEvent(Object.assign(new Event('keydown'), { code: 'KeyW', repeat: false }));
+  for (let i = 0; i < 20; i++) h.step(gesture, true);
+  assert.ok(h.group.position.equals(position), 'the client cannot drift while the server waits for explicit start');
+  h.toggle(); h.step(gesture); h.controls.syncDockReunionCamera(h.group);
+  assert.ok(h.camera.position.distanceTo(h.head.localToWorld(h.head.userData.cameraEye.clone())) < 1e-7);
+  const direction = h.camera.getWorldDirection(new THREE.Vector3()); h.document.pointerLockElement = h.canvas;
+  h.document.dispatchEvent(Object.assign(new Event('mousemove'), { movementX: 160, movementY: -40 }));
+  h.step(gesture); h.controls.syncDockReunionCamera(h.group);
+  assert.ok(direction.distanceTo(h.camera.getWorldDirection(new THREE.Vector3())) > .2);
+  for (let i = 0; i < 20; i++) h.step({ ...gesture, phase: 'standing' }, true);
+  assert.ok(!h.group.position.equals(position), 'starting preparation restores predicted movement');
+});
 
 test('the temple wheel camera keeps both handles visible and V follows the posed eye while retaining free look', t => {
   const h = fixture(t, 'zee'), center = FILM_SETS.film_zion_temple.center;

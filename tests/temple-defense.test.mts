@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { FILM_SCENES, FILM_SCENE_BY_ID, TEMPLE_DEFENSE, filmEntry, filmPosition, filmStepPosition, playerBlocked, stepPlayer, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENES, FILM_SCENE_BY_ID, TEMPLE_DEFENSE, filmEntry, filmPosition, filmStepPosition, newTempleDefense, playerBlocked, stepPlayer, type WorldEvent } from '@auto_matrix/shared';
 import { ZionHomecomingRenderer } from '../packages/client/src/engine/ZionHomecomingRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -11,7 +11,7 @@ import type { ConversationEngine } from '../packages/server/src/agents/Conversat
 import type { ActionExecutor } from '../packages/server/src/agents/ActionExecutor.js';
 import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
 
-function game() {
+function game(entry = false) {
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
   const dynamics = { record: (event: Omit<WorldEvent, 'id'>) => world.addWorldEvent(event) } as WorldDynamics;
   const sandbox = new SandboxSystem(world, dynamics, 81);
@@ -20,18 +20,50 @@ function game() {
   players.possess('p', 'neo', 0); sandbox.life.begin(world.agents.get('neo')!, 0); sandbox.state.neoLife!.chapter = 1;
   players.sandboxAction('p', { kind: 'life', target: 'film:start' }, 1);
   const state = sandbox.life.film.state!;
-  Object.assign(state, { scene: 'm3_temple_defense', actor: 'zee', step: 1, checkpoint: filmStepPosition(FILM_SCENE_BY_ID.m3_temple_defense, FILM_SCENE_BY_ID.m3_temple_defense.steps[1]) });
+  Object.assign(state, { scene: 'm3_temple_defense', actor: 'zee', step: entry ? 0 : 1, checkpoint: entry ? filmEntry(FILM_SCENE_BY_ID.m3_temple_defense) : filmStepPosition(FILM_SCENE_BY_ID.m3_temple_defense, FILM_SCENE_BY_ID.m3_temple_defense.steps[1]) });
+  if (!entry) state.templeSeal = { ...newTempleDefense(2), phase: 'running' };
   players.possess('p', 'zee', 2); const actor = players.getAgent('p')!;
   Object.assign(actor, { position: { ...state.checkpoint }, currentLocation: FILM_SCENE_BY_ID.m3_temple_defense.set, isInMatrix: false });
   let tick = 3, frames = 0, sequence = 0;
   const command = (target: string) => players.sandboxAction('p', { kind: 'life', target: `film:${target}` }, tick);
-  const frame = (count: number, focus: boolean, running = true) => { for (let i = 0; i < count; i++) {
-    players.receiveInput('p', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false, focus, sequence: ++sequence });
+  const frame = (count: number, focus: boolean, running = true, x = 0) => { for (let i = 0; i < count; i++) {
+    players.receiveInput('p', { x, z: 0, yaw: Math.PI, jump: false, sprint: false, focus, sequence: ++sequence });
     players.step(.1, running, tick);
     if (++frames % 5 === 0 && running) sandbox.tick(++tick);
   } };
   return { world, sandbox, players, command, frame, actor, state: () => sandbox.life.film.state! };
 }
+
+test('a new temple entry waits for an explicit start through loading, movement input and save restoration', () => {
+  const h = game(true), position = { ...h.actor.position };
+  h.frame(450, true, true, 1);
+  assert.equal(h.actor.status, 'alive', 'loading for longer than the deadline cannot kill Zee');
+  assert.equal(h.state().templeSeal!.remaining, TEMPLE_DEFENSE.seconds);
+  assert.equal(h.state().templeSeal!.elapsed, 0);
+  assert.equal(h.state().step, 0);
+  assert.deepEqual(h.actor.position, position, 'waiting cannot be used to walk to the guns before the clock starts');
+  h.command('next'); assert.equal(h.state().scene, 'm3_temple_defense');
+  h.players.release('p', 100); h.sandbox.restore(structuredClone(h.sandbox.state)); h.players.possess('p', 'zee', 100);
+  h.frame(450, false);
+  assert.equal(h.state().templeSeal!.remaining, TEMPLE_DEFENSE.seconds);
+  h.command('act'); assert.equal(h.state().templeSeal!.phase, 'running');
+  h.frame(10, false, true, 1);
+  assert.ok(h.state().templeSeal!.remaining < TEMPLE_DEFENSE.seconds);
+  assert.notDeepEqual(h.actor.position, position, 'explicit start unlocks the route and its original time pressure');
+  const remaining = h.state().templeSeal!.remaining;
+  h.command('act'); assert.equal(h.state().templeSeal!.remaining, remaining, 'repeated G cannot refill the clock');
+});
+
+test('starting temple preparation waits for occupied companions without consuming or resetting the deadline', () => {
+  const h = game(true);
+  h.players.possess('other', 'link', 3); h.command('act'); h.frame(450, false);
+  assert.equal(h.state().templeSeal!.phase, 'ready'); assert.equal(h.state().templeSeal!.remaining, TEMPLE_DEFENSE.seconds);
+  h.players.release('other', 100); h.command('act'); h.frame(10, false);
+  const remaining = h.state().templeSeal!.remaining;
+  assert.equal(h.state().templeSeal!.phase, 'running'); assert.ok(remaining < TEMPLE_DEFENSE.seconds);
+  h.players.release('p', 101); h.sandbox.restore(structuredClone(h.sandbox.state)); h.players.possess('p', 'zee', 101);
+  assert.equal(h.state().templeSeal!.phase, 'running'); assert.equal(h.state().templeSeal!.remaining, remaining);
+});
 
 test('temple fortification prepares artillery; the city breach follows Trinity’s farewell', () => {
   const preparation = FILM_SCENE_BY_ID.m3_temple_defense;
@@ -137,6 +169,8 @@ test('a timed preparation failure retries only the temple and preserves the spen
   h.frame(440, false); assert.equal(state.templeSeal!.phase, 'failed'); assert.equal(h.actor.status, 'dead');
   h.command('retry'); assert.equal(state.step, 0); assert.equal(h.actor.status, 'alive');
   assert.equal(state.templeSeal!.attempts, 1); assert.deepEqual(state.templeSeal!.turns, [0, 0]);
+  h.frame(450, false); assert.equal(state.templeSeal!.phase, 'ready'); assert.equal(state.templeSeal!.remaining, TEMPLE_DEFENSE.seconds);
+  h.command('act'); assert.equal(state.templeSeal!.phase, 'running');
   assert.equal(state.emp!.firedAt, 1); assert.ok(state.completed.includes('m3_shaft_seal'));
   assert.equal(mifune.status, 'dead'); assert.equal(charra.status, 'dead');
 });

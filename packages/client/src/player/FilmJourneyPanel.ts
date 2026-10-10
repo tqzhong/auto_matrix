@@ -252,6 +252,7 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
       : seal?.paused || seal?.unavailable || breach?.paused || breach?.unavailable ? '<p>等候同行者的信号；当前动作与时钟已保留。</p>'
         : player.status !== 'alive' ? button('retry', '从入口检查点重试 · 保留既有结果')
           : !step ? button('next', breach ? '接回机器城的 Neo →' : '转入 Logos 航线 →')
+            : !breach && seal?.phase === 'ready' ? button('act', '开始炮位准备 · G')
             : templeDefenseLocked(seal, breach) ? breach ? '<p>合上手记观看城市失守与人群等待；V 切换视角，鼠标环顾。</p>' : '<p>合上手记观看；固定炮架时按住 G，松手保留角度。</p>'
               : step.kind === 'interact' ? button('act', breach ? '确认最后的部署 · G' : '握住炮架手轮 · G', !close)
                 : '<p>合上手记，沿目标路线亲自行走。</p>';

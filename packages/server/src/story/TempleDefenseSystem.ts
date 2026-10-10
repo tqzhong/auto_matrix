@@ -64,7 +64,7 @@ export class TempleDefenseSystem {
         }
       }
       const scene = FILM_SCENE_BY_ID.m3_temple_defense;
-      if (elapsed && journey.step === 0 && filmStepNear(scene, scene.steps[0], actor.position, false, journey)) this.onAdvance?.(templeDefenseText(seal), actor, tick);
+      if (seal.phase === 'running' && elapsed && journey.step === 0 && filmStepNear(scene, scene.steps[0], actor.position, false, journey)) this.onAdvance?.(templeDefenseText(seal), actor, tick);
       if (elapsed && journey.step === 3 && seal.phase === 'sealed') {
         seal.waiting = filmStepNear(scene, scene.steps[3], actor.position, false, journey) ? (seal.waiting ?? 0) + elapsed : 0;
         if (seal.waiting >= TEMPLE_DEFENSE.returnSeconds) this.onAdvance?.('Zee 回到避难人群旁。炮架固定并不等于战争结束，士兵仍守着敞开的入口。', actor, tick);
@@ -91,7 +91,7 @@ export class TempleDefenseSystem {
         member.position = filmPosition('film_zion_temple', point.x, point.z); member.rotation = point.yaw;
         member.currentLocation = 'film_zion_temple'; member.isInMatrix = false; member.velocity = { x: 0, y: 0, z: 0 }; member.targetPosition = null; member.currentPath = [];
       }
-      const gesture: TempleDefenseGesture = { role, phase: breach?.phase === 'ready' ? 'standing' : breach?.phase ?? (role === actor.id && seal.mount !== undefined ? 'mounting' : 'standing'),
+      const gesture: TempleDefenseGesture = { role, phase: breach?.phase === 'ready' ? 'standing' : breach?.phase ?? (role === actor.id ? seal.phase === 'ready' ? 'ready' : seal.mount !== undefined ? 'mounting' : 'standing' : 'standing'),
         elapsed: breach?.elapsed ?? seal.elapsed ?? 0, mount: role === actor.id ? seal.mount : undefined, turn: seal.mount === undefined ? 0 : seal.turns[seal.mount],
         grip: Math.min(1, (seal.gripAge ?? 0) / TEMPLE_DEFENSE.reach) };
       member.currentAction = { type: 'idle', parameters: { resolved: true, player: role === actor.id, templeDefense: gesture }, startedAt: tick, duration: 1e9, progress: 0 };
@@ -116,6 +116,9 @@ export class TempleDefenseSystem {
     const scene = FILM_SCENE_BY_ID[journey.scene], step = scene.steps[journey.step];
     if (!step) return undefined;
     if (target !== 'act') return target === 'next' || templeDefenseLocked(seal, breach) ? journey.lastText : undefined;
+    if (!breach && seal.phase === 'ready') {
+      seal.phase = 'running'; this.frame(actor, 0, tick); return journey.lastText;
+    }
     if (!filmStepNear(scene, step, actor.position, false, journey)) return '先走到当前炮位或指挥位置，再按 G。';
     if (breach && journey.step === 1 && breach.phase === 'ready') { breach.phase = 'orders'; breach.elapsed = 0; }
     else if (!breach && [1, 2].includes(journey.step) && seal.phase === 'running' && seal.mount === undefined) { seal.mount = journey.step - 1 as 0 | 1; seal.gripAge = 0; }
