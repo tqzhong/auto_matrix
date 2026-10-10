@@ -6,6 +6,7 @@ import { oracleRequestActive, oracleRequestLocked, oracleRequestText } from '@au
 import { oracleLastActive, oracleLastLocked, oracleLastText } from '@auto_matrix/shared';
 import { baneInquiryActive, baneInquiryText } from '@auto_matrix/shared';
 import { hammerBriefingActive, hammerBriefingText } from '@auto_matrix/shared';
+import { hammerHandoverText } from '@auto_matrix/shared';
 import { ZION_DEPLOYMENT, zionDeploymentActive, zionDeploymentText } from '@auto_matrix/shared';
 import { trainmanChaseActive, trainmanChaseCanAct, trainmanChaseLocked, trainmanChaseText } from '@auto_matrix/shared';
 import { helGarageActive, helGarageText } from '@auto_matrix/shared';
@@ -144,6 +145,13 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
                   : state?.phase === 'approach' || state?.phase === 'leaving' || !state ? '<p>合上手记，WASD 亲自走到目标。</p>'
                     : '<p>合上手记，观察议会的当前回应；V 切换视角，鼠标环顾。</p>';
     return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>锡安议会 · 船坞防守部署</h3><p>Lock 的另一视角 · 计划、希望与动员</p></header><article class="film-now"><div><h3>${step?.label ?? '部署决定已保存'}</h3><p>${zionDeploymentText(state)}</p><div class="film-controls">${action}</div><small>船坞尚未失守，神庙入口是备用防线。G 主动报告与回应 · J 核对部署和记录判断 · WASD 离场。部署图核对和哲学回应是游戏改编；议会不预知 Hammer 的分航安排。</small></div></article></div>`;
+  }
+  if (scene.id === 'm3_hammer_tunnels' && journey.step === 1 && journey.hammerHandover && !journey.visiting) {
+    const handover = journey.hammerHandover, close = filmStepNear(scene, scene.steps[1], player.position, player.isInMatrix, journey);
+    const action = player.id !== journey.actor ? button('resume', '接回 Niobe 的视角')
+      : handover.phase === 'waiting' ? button('act', '安排副驾驶换位 · G', !close || Boolean(handover.blocked))
+        : '<p>合上手记观看换位；WASD 给船员让路，鼠标环顾，V 切换视角。</p>';
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>Hammer · 舰桥换岗</h3></header><article class="film-now"><div><p>${hammerHandoverText(handover)}</p><div class="film-controls">${action}</div></div></article></div>`;
   }
   if (hammerBriefingActive(journey)) {
     const state = journey.hammerBriefing, step = scene.steps[journey.step], close = Boolean(step && filmStepNear(scene, step, player.position, player.isInMatrix, journey));

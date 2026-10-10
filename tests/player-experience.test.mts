@@ -145,3 +145,8 @@ test('the Hammer interview keeps ambient Neo chat out of the dedicated questions
   for (const step of [0, 1, 2, 3, 4, 5, 6]) assert.equal(cinematicTalkSuppressed('m3_bane_questions', undefined, step), true);
   assert.equal(cinematicTalkSuppressed('m3_bane_questions', 'film_hammer_deck', 1), false);
 });
+
+test('Hammer crew exchange and boarding do not overlay ambient E talk on their G controls', () => {
+  for (const step of [0, 1, 2]) assert.equal(cinematicTalkSuppressed('m3_hammer_tunnels', undefined, step), true);
+  assert.equal(cinematicTalkSuppressed('m3_hammer_tunnels', 'film_hammer_route', 1), false);
+});

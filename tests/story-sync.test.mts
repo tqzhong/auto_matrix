@@ -22,7 +22,10 @@ async function server(t: TestContext, elapsed: number, scene = 'm1_mirror') {
       : scene === 'm3_surrender' ? 'smith-assimilation' : 'mirror-thread'], { cwd: root, encoding: 'utf8' }).trim();
   const file = path.join(directory, 'world.json');
   const checkpoint = JSON.parse(await readFile(file, 'utf8'));
-  if (scene === 'm3_trainman') {
+  if (scene === 'm3_hammer_tunnels') {
+    Object.assign(checkpoint.sandbox.neoLife.journey, { step: 1, hammerHandover: { phase: 'moving', elapsed } });
+    Object.assign(checkpoint.agents.niobe, { position: filmPosition('film_hammer_route', -1.65, 172.4), health: 73 });
+  } else if (scene === 'm3_trainman') {
     Object.assign(checkpoint.sandbox.neoLife.journey, { step: 0, mobil: { phase: 'stopped', elapsed: 1, lastTick: 0, loops: 0, boarding: 0,
       luggage: { phase: 'lifting', elapsed, approach: { x: -10.8, z: -10, yaw: -Math.PI / 2 } } } });
     Object.assign(checkpoint.agents.neo, { position: filmPosition('film_mobil_station', -10.8, -10), health: 73 });
@@ -109,6 +112,21 @@ async function server(t: TestContext, elapsed: number, scene = 'm1_mirror') {
   const initial = await launch();
   return { ...initial, restart: async () => { await initial.stop(); return launch(); } };
 }
+
+test('fast Hammer handover packets keep Ghost, Morpheus and the saved clock together between world ticks', { timeout: 30000 }, async t => {
+  const h = await server(t, 6.5, 'm3_hammer_tunnels'), client = await h.connect();
+  client.socket.emit('message', { type: 'play_as', data: { agentId: 'niobe' } });
+  await waitFor(() => Boolean(client.state().agents.niobe.controller), 'Niobe was not acquired');
+  client.messages.length = 0; client.socket.emit('message', { type: 'resume' });
+  await waitFor(() => client.messages.filter(m => m.type === 'world_state_delta').length >= 5, 'missing fast player packets');
+  const packets = client.messages.filter(m => m.type === 'world_state_delta').map(m => m.data as WorldStateDelta);
+  const moving = packets.filter(p => (p.sandbox?.neoLife?.journey?.hammerHandover?.elapsed ?? 0) > 6.5);
+  assert.ok(moving.length >= 3, 'crew handover waits for the slow world snapshot');
+  for (const packet of moving) for (const id of ['ghost', 'morpheus', 'roland']) {
+    const gesture = packet.agents[id]?.currentAction?.parameters.hammerPilot as { handover: { elapsed: number } } | undefined;
+    assert.equal(gesture?.handover.elapsed, packet.sandbox!.neoLife!.journey!.hammerHandover!.elapsed);
+  }
+});
 
 test('every fast Mobil lifting packet carries the suitcase clock and all five bodies before the slow world tick', { timeout: 30000 }, async t => {
   const h = await server(t, .8, 'm3_trainman'), client = await h.connect();

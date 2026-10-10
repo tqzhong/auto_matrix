@@ -779,7 +779,7 @@ export class HeroModels {
       if (patientSurface) material.emissive.setHex(0x160708); else material.emissive.copy(part.emissive);
       material.emissiveIntensity = patientSurface ? .06 : part.emissiveIntensity;
       if (patientLegs) material.color.setHex(0xa97c70);
-      else if (part.cloth && input.realWorld && rig.support !== 'link') material.color.setHex(0x706c62);
+      else if (part.cloth && input.realWorld && rig.support !== 'link') material.color.setHex(rig.support === 'ghost' ? 0x232725 : 0x706c62);
       else material.color.copy(part.color);
       if ((part.hair || material.name === 'Eyes') && interactionView) part.mesh.visible = false;
     }

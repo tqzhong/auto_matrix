@@ -105,7 +105,7 @@ import { EXILES } from '@auto_matrix/shared';
 import { CHATEAU, type ChateauEncounter } from '@auto_matrix/shared';
 import { MOUNTAIN, type MountainFlight, type PlayerInput } from '@auto_matrix/shared';
 import { GARAGE, newGarageEscape, stepGarageEscape } from '@auto_matrix/shared';
-import { HAMMER_ROUTE, HAMMER_COCKPIT, hammerCrewRoot, hammerHeight, hammerRouteFrame, hammerRoutePoint, newHammerFlight, stepHammerFlight, type HammerPilotRole } from '@auto_matrix/shared';
+import { HAMMER_ROUTE, HAMMER_COCKPIT, HAMMER_HANDOVER_SECONDS, HAMMER_HANDOVER_CAST, hammerHandoverPose, hammerHandoverText, hammerCrewRoot, hammerHeight, hammerRouteFrame, hammerRoutePoint, newHammerFlight, stepHammerFlight } from '@auto_matrix/shared';
 import { newLogosFlight, stepLogosFlight } from '@auto_matrix/shared';
 import { farewellLocked, farewellPose, newFarewell, stepFarewell } from '@auto_matrix/shared';
 import { DEUS_PACT, deusPactDialogue, deusPactLocked, deusPactPose, newDeusPact, stepDeusPact } from '@auto_matrix/shared';
@@ -4917,11 +4917,14 @@ export class FilmStorySystem {
     const state = this.state;
     if (state?.scene !== 'm3_hammer_tunnels' || state.visiting || agent.id !== state.actor) return;
     this.ensureHammerRoute();
+    this.hammerHandoverFrame(agent, 0, tick);
     const flight = state.hammer; if (!flight) return;
+    state.hammerHandover ??= { phase: 'ready', elapsed: HAMMER_HANDOVER_SECONDS };
     const center = FILM_SETS[this.scene!.set].center;
-    for (const id of ['niobe', 'morpheus', 'roland'] as const) {
-      const crew = this.world.agents.get(id); if (!crew || crew.controller && crew !== agent) continue;
-      const point = hammerCrewRoot(flight, id);
+    for (const id of ['niobe', 'morpheus', 'roland', 'ghost'] as const) {
+      const crew = this.world.agents.get(id); if (!crew || crew.status !== 'alive' || crew.health <= 0 || crew.controller && crew !== agent) continue;
+      const handover = id === 'ghost' ? state.hammerHandover : undefined;
+      const point = hammerCrewRoot(flight, id, handover);
       crew.position = { x: center.x + point.x, y: center.y + point.y, z: center.z + point.z };
       crew.currentLocation = this.scene!.set; crew.isInMatrix = false;
       let velocity = { x: flight.lateral, y: 0, z: -flight.speed };
@@ -4930,7 +4933,41 @@ export class FilmStorySystem {
         velocity = { x: vector.x - frame.x, y: vector.y - frame.y, z: vector.z - frame.z };
       }
       crew.velocity = crew.controller ? velocity : { x: 0, y: 0, z: 0 }; crew.rotation = point.yaw;
-      crew.currentAction = { type: 'idle', parameters: { riding: true, passenger: id !== 'niobe', seated: id !== 'roland', hammerPilot: { role: id, flight: { ...flight } } }, startedAt: state.enteredAt, duration: 1e9, progress: 0 };
+      crew.currentAction = { type: 'idle', parameters: { riding: true, passenger: id !== 'niobe', seated: id !== 'roland' && id !== 'ghost', hammerPilot: { role: id, flight: { ...flight }, handover } }, startedAt: state.enteredAt, duration: 1e9, progress: 0 };
+    }
+  }
+  hammerHandoverFrame(agent: AgentState, dt: number, tick: number): void {
+    const state = this.state;
+    if (state?.scene !== 'm3_hammer_tunnels' || state.visiting || state.actor !== agent.id || state.hammer || state.step > 2) return;
+    const handover = state.hammerHandover ??= { phase: state.step >= 2 ? 'ready' : 'waiting', elapsed: state.step >= 2 ? HAMMER_HANDOVER_SECONDS : 0 };
+    const occupied = HAMMER_HANDOVER_CAST.find(id => this.world.agents.get(id)?.controller);
+    const unavailable = HAMMER_HANDOVER_CAST.find(id => { const crew = this.world.agents.get(id); return !crew || crew.status !== 'alive' || crew.health <= 0; });
+    handover.blocked = occupied ? `${this.world.agents.get(occupied)!.name} 正由另一位玩家控制，换位进度保留。`
+      : unavailable ? `${this.world.agents.get(unavailable)?.name ?? unavailable} 无法参与换位，当前进度保留。` : undefined;
+    if (state.step === 1) delete state.started;
+    const elapsed = !handover.blocked && agent.controller && agent.status === 'alive' && agent.health > 0 ? Math.max(0, Math.min(.1, dt)) : 0;
+    if (handover.phase === 'moving' && elapsed) {
+      const next = { ...handover, elapsed: Math.min(HAMMER_HANDOVER_SECONDS, handover.elapsed + elapsed) };
+      const blocked = ['ghost', 'morpheus'].some(id => {
+        const point = hammerCrewRoot(newHammerFlight(), id as 'ghost' | 'morpheus', next), center = FILM_SETS[this.scene!.set].center;
+        return Math.hypot(agent.position.x - center.x - point.x, agent.position.z - center.z - point.z) < 1.25;
+      });
+      if (blocked) handover.blocked = '请让开船员通道。Ghost 与 Morpheus 会等你让路，再继续换位。';
+      else handover.elapsed = next.elapsed;
+    }
+    if (handover.elapsed >= HAMMER_HANDOVER_SECONDS) handover.phase = 'ready';
+    const flight = newHammerFlight(), center = FILM_SETS[this.scene!.set].center;
+    for (const role of HAMMER_HANDOVER_CAST) {
+      const crew = this.world.agents.get(role); if (!crew || crew.controller || crew.status !== 'alive' || crew.health <= 0) continue;
+      const point = hammerCrewRoot(flight, role, handover);
+      crew.position = { x: center.x + point.x, y: center.y + point.y, z: center.z + point.z }; crew.rotation = point.yaw;
+      crew.currentLocation = this.scene!.set; crew.isInMatrix = false; crew.velocity = { x: 0, y: 0, z: 0 }; crew.targetPosition = null; crew.currentPath = [];
+      crew.currentAction = { type: 'idle', parameters: { resolved: true, seated: role !== 'roland' && hammerHandoverPose(handover, role).sitting > .99,
+        hammerPilot: { role, flight, handover: { ...handover } } }, startedAt: state.enteredAt, duration: 1e9, progress: 0 };
+    }
+    if (state.step === 1) {
+      state.lastText = hammerHandoverText(handover);
+      if (handover.phase === 'ready') this.advance(state.lastText, agent, tick);
     }
   }
   private ensureHammerRoute(): void {
@@ -5292,6 +5329,7 @@ export class FilmStorySystem {
     if (pickupActor) this.oracleLast.frame(pickupActor, 0, this.world.simulationTick);
     if (pickupActor) this.baneInquiry.frame(pickupActor, 0, this.world.simulationTick);
     if (pickupActor) this.hammerBriefing.frame(pickupActor, 0, this.world.simulationTick);
+    if (pickupActor) this.hammerHandoverFrame(pickupActor, 0, this.world.simulationTick);
     if (pickupActor) this.zionDeployment.frame(pickupActor, 0, this.world.simulationTick);
     if (pickupActor) this.maggieDiscovery.frame(pickupActor, 0, this.world.simulationTick);
     if (pickupActor) this.oracleAbsorption.frame(pickupActor, 0, this.world.simulationTick);
@@ -6365,6 +6403,12 @@ export class FilmStorySystem {
     if (state.scene === 'm2_architect' && state.architect?.phase === 'failed') return 'Trinity 的信号已经消失。按 J 从抉择检查点重试。';
     if (!this.near(agent, step) && !(state.scene === 'm1_construct' && step.kind === 'reflect')) return state.scene === 'm1_mirror' && state.step === 0 ? '穿过会客厅后方的门，走到追踪椅右侧再按 G。'
       : state.scene === 'm1_cabin' ? '走到连接椅正面的金色标记旁，再按 G。' : '请走近金色目标标记（4 米内），再按 G。';
+    if (state.scene === 'm3_hammer_tunnels' && state.step === 1) {
+      this.hammerHandoverFrame(agent, 0, tick);
+      const handover = state.hammerHandover!;
+      if (!handover.blocked && handover.phase === 'waiting') handover.phase = 'moving';
+      this.hammerHandoverFrame(agent, 0, tick); return state.lastText;
+    }
     if (state.scene === 'm1_room303' && state.step === 0 && target === 'act') return this.openingHotel.begin(agent, tick);
     if (state.scene === 'm1_room303' && state.step === 2 && target === 'act') {
       this.openingHotel.state!.phase = 'corridor';
@@ -6573,7 +6617,7 @@ export class FilmStorySystem {
         return 'Kid 接管 Mifune 留下的受损 APU。先按 W 跨过队长，再用 A / D 横向避开哨兵；S 制动，赶到三号闸门。';
       }
       if (state.scene === 'm3_hammer_tunnels') {
-        if (['morpheus', 'roland'].some(id => this.world.agents.get(id)?.controller)) return '舰桥船员正由另一位玩家控制，等待他们结束当前行动。';
+        if (HAMMER_HANDOVER_CAST.some(id => this.world.agents.get(id)?.controller)) return '舰桥船员正由另一位玩家控制，等待他们结束当前行动。';
         if (!state.hammer) state.hammer = newHammerFlight();
         this.driveFrame(agent, { throttle: 0, steer: 0, brake: false }, 0, tick);
         return state.hammer.maneuver
@@ -6713,6 +6757,8 @@ export class FilmStorySystem {
     state.freewayPickup = scene.id === 'm2_freeway' ? newFreewayPickup() : undefined;
     delete state.garage;
     delete state.hammer;
+    delete state.hammerHandover;
+    for (const crew of this.world.agents.values()) if (!crew.controller && crew.currentAction?.parameters.hammerPilot) crew.currentAction = null;
     delete state.logos;
     delete state.apu;
     if (state.diggers?.phase !== 'done' && !['m3_upper_digger', 'm3_dock_battle', 'm3_gate'].includes(scene.id)) delete state.diggers;
@@ -7086,6 +7132,7 @@ export class FilmStorySystem {
     if (scene.id === 'm3_maggie_discovery') { this.maggieDiscovery.frame(this.world.agents.get(this.state!.actor)!, 0, this.world.simulationTick); return; }
     if (scene.id === 'm3_zion_prepare') { this.zionDeployment.frame(this.world.agents.get(this.state!.actor)!, 0, this.world.simulationTick); return; }
     if (scene.id === 'm3_logos_plan') { this.hammerBriefing.frame(this.world.agents.get(this.state!.actor)!, 0, this.world.simulationTick); return; }
+    if (scene.id === 'm3_hammer_tunnels') { this.hammerHandoverFrame(this.world.agents.get(this.state!.actor)!, 0, this.world.simulationTick); return; }
     if (scene.id === 'm3_oracle_absorbed') { this.oracleAbsorption.frame(this.world.agents.get(this.state!.actor)!, 0, this.world.simulationTick); return; }
     if (scene.id === 'm3_hel_garage') { this.helGarage.frame(this.world.agents.get(this.state!.actor)!, 0, this.world.simulationTick); return; }
     if (scene.id === 'm3_hel_entry' && this.state!.step === 0) { this.helElevatorFrame(this.world.agents.get(this.state!.actor)!, 0, this.world.simulationTick); this.sealHelDanceDoor(); return; }
@@ -7250,12 +7297,6 @@ export class FilmStorySystem {
         actor.currentAction = { type: 'idle', parameters: { meeting: { phase: encounter.phase, elapsed: encounter.elapsed, bugged: encounter.bugged, roadTime: encounter.roadTime ?? arrival?.parkedRoadTime, role } }, startedAt: this.state!.enteredAt, duration: 100000, progress: 0 };
       }
       if (scene.id === 'm2_freeway') actor.position = filmPosition(scene.set, id === 'keymaker' ? 19 : 20, id === 'keymaker' ? 660 : -660);
-      if (scene.id === 'm3_hammer_tunnels') {
-        const root = HAMMER_COCKPIT.roots[id as HammerPilotRole];
-        actor.position = filmPosition(scene.set, root.x, HAMMER_ROUTE.start + root.z);
-        actor.rotation = Math.PI;
-        actor.currentAction = { type: 'idle', parameters: { seated: id !== 'roland', hammerPilot: { role: id, flight: newHammerFlight() } }, startedAt: this.state!.enteredAt, duration: 100000, progress: 0 };
-      }
       if (scene.id === 'm2_garage') {
         const poses: Record<string, [number, number, number]> = {
           morpheus: [2.7, 14, Math.PI], keymaker: [3.5, 10.5, Math.PI],
@@ -7696,6 +7737,7 @@ export class FilmStorySystem {
     if (this.maggieDiscovery.active(actor)) { this.maggieDiscovery.frame(actor, 0, tick); return; }
     if (this.zionDeployment.active(actor)) { this.zionDeployment.frame(actor, 0, tick); return; }
     if (this.hammerBriefing.active(actor)) { this.hammerBriefing.frame(actor, 0, tick); return; }
+    if (state.scene === 'm3_hammer_tunnels' && state.step === 1) { this.hammerHandoverFrame(actor, 0, tick); return; }
     if (this.oracleAbsorption.active(actor)) { this.oracleAbsorption.frame(actor, 0, tick); return; }
     if (this.sourceBriefing.active(actor)) { this.sourceBriefing.frame(actor, 0, tick); return; }
     if (this.primaryDemolition.active(actor)) { this.primaryDemolition.frame(actor, 0, tick); return; }

@@ -17,7 +17,7 @@ export function savedEntryCharacter(chosen: string | null, journeyActor: string 
 }
 
 export function cinematicTalkSuppressed(scene: string | undefined, visiting: string | undefined, step?: number): boolean {
-  if (!visiting && ['m3_mobil', 'm3_family', 'm3_trainman', 'm3_bane_questions'].includes(scene ?? '')) return true;
+  if (!visiting && ['m3_mobil', 'm3_family', 'm3_trainman', 'm3_bane_questions', 'm3_hammer_tunnels'].includes(scene ?? '')) return true;
   if (!visiting && scene === 'm3_hel_entry' && (step ?? 0) < FILM_SCENE_BY_ID.m3_hel_entry.steps.length) return true;
   return !visiting && (scene === 'm2_key_door' && (step ?? 0) >= 3 || scene === 'm2_stop_sentinels' || scene === 'm2_blackout' || scene === 'm2_relay' || scene === 'm2_vigilant' || scene === 'm3_temple_defense' || scene === 'm3_temple_breach' || scene === 'm3_dock_evacuation' || scene === 'm3_shaft_seal' || scene === 'm3_dock_briefing' || scene === 'm3_dock_reunion' || scene === 'm3_emp' || scene === 'm3_upper_digger' || scene === 'm3_diggers' || scene === 'm1_wall_exposed' || scene === 'm1_wetwall' || scene === 'm1_download' || scene === 'm1_truth_exit' || scene === 'm1_truth_return' || scene === 'm1_pod' || scene === 'm1_construct' || scene === 'm1_desert' || scene === 'm1_cabin' || (scene === 'm1_recovery' || scene === 'm1_spoon') && step === 0 || scene === 'm3_dock_battle' && (step ?? 0) >= 1);
 }

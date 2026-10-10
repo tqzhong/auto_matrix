@@ -3,6 +3,7 @@ import { trinityRelaySeat, cabinSeat, constructGuidePose, podRescuePose, reloade
 import { deusPactLocked, deusPactPose, farewellPose, smithFinaleLocked, smithFinalePose, trilogyEpilogueLocked } from '@auto_matrix/shared';
 import { mirrorEntryPose } from '@auto_matrix/shared';
 import { HEL_DOOR_PUSH, helDanceDoorGrip } from '@auto_matrix/shared';
+import { hammerHandoverPose } from '@auto_matrix/shared';
 import { MELEE_COMBO, COMBO_WINDOW, COMBAT_SKILLS, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED, PILL_TIMING, MIRROR_TIMING, lobbyPose, governmentPose, airRescuePose, matrixEscapePose, theOnePose, recoveryCrewPose, type CombatSkillId, type AwakeningPose, type AwakeningReveal, type RecoveryCrewGesture, type OfficePhone, pillPose, lafayetteWelcomePose, oracleVisitPose, betrayalPose, rescuePose, type PillGesture, type InterrogationGesture, type LafayetteWelcomeGesture, type TrainingGesture, type OracleVisitGesture, type BetrayalGesture, type RescueGesture, type RescueLoadout, type LobbyGesture, type GovernmentRescueGesture, type AirRescueGesture, type MatrixEscapeGesture, type TheOneGesture } from '@auto_matrix/shared';
 
 export interface MotionInput {
@@ -215,8 +216,9 @@ export function solveLeg(z: number, height: number): { hip: number; knee: number
 
 export function advanceMotion(state: MotionState, input: MotionInput, delta: number) {
   if (input.hammerPilot) {
-    const seated = input.hammerPilot.role !== 'roland';
-    Object.assign(state, newMotion(), { time: input.hammerPilot.flight.elapsed, seated: seated ? 1 : 0 });
+    const gesture = input.hammerPilot, handover = gesture.handover && gesture.role !== 'roland' ? hammerHandoverPose(gesture.handover, gesture.role) : undefined;
+    const seated = handover ? handover.sitting > .5 : gesture.role !== 'roland';
+    Object.assign(state, newMotion(), { time: gesture.handover?.elapsed ?? gesture.flight.elapsed, seated: seated ? 1 : 0 });
     return { legs: [0, 1].map(() => solveLeg(seated ? 1.05 : 0, seated ? 1.27 : 1.82)),
       arms: [0, 1].map(i => ({ shoulder: -.7, elbow: -.8, outward: (i ? 1 : -1) * .12, grip: .8 })),
       hipHeight: seated ? 1.43 : 1.98, twist: 0, lean: 0, sway: 0, lunge: 0, roll: 0, headTurn: 0,

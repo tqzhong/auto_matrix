@@ -3,7 +3,7 @@ import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { HAMMER_COCKPIT, FILM_SETS, newHammerFlight, stepHammerFlight, hammerCenter, hammerHeight, hammerHalfWidth, hammerCrewRoot, hammerShipPoint, hammerShipPose, filmPosition, playerBlocked, type HammerFlight, type HammerPilotRole } from '@auto_matrix/shared';
+import { HAMMER_COCKPIT, FILM_SETS, newHammerFlight, stepHammerFlight, hammerCenter, hammerHeight, hammerHalfWidth, hammerCrewRoot, hammerShipPoint, hammerShipPose, filmPosition, playerBlocked, type HammerFlight, type HammerPilotRole, type HammerPilotGesture, type HammerHandover } from '@auto_matrix/shared';
 import { CharacterModels } from '../packages/client/src/agents/CharacterModel.js';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { HammerRouteRenderer } from '../packages/client/src/engine/HammerRouteRenderer.js';
@@ -27,24 +27,25 @@ async function geometry(id: string) {
 }
 
 async function setup(t: test.TestContext) {
-  const ids = ['morpheus', 'trinity', 'niobe-head', 'niobe-body', 'roland-head', 'roland-body'];
+  const ids = ['neo', 'neo-office', 'morpheus', 'trinity', 'niobe-head', 'niobe-body', 'roland-head', 'roland-body'];
   const assets = new Map(await Promise.all(ids.map(async id => [`${id}.glb`, await geometry(id)] as const)));
   t.mock.method(GLTFLoader.prototype, 'loadAsync', (url: string) => assets.has(url.split('/').at(-1)!) ? Promise.resolve(assets.get(url.split('/').at(-1)!)) : new Promise(() => {}));
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const old = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({ createRadialGradient: () => ({ addColorStop() {} }), fillRect() {}, strokeRect() {}, fillText() {}, beginPath() {}, closePath() {}, moveTo() {}, lineTo() {}, stroke() {}, ellipse() {}, fill() {}, createImageData: (w: number,h: number) => ({ data: new Uint8ClampedArray(w*h*4) }), putImageData() {} }) }) } as unknown as Document;
   const world = new WorldState(); new AgentManager(world).initializeAllAgents(); const models = new CharacterModels();
-  const roles = ['niobe', 'morpheus', 'roland'] as const, rigs = Object.fromEntries(roles.map(role => [role, models.create(world.agents.get(role)!)]));
-  const pose = (role: HammerPilotRole, flight: HammerFlight, delta = 0) => {
-    const rig = rigs[role], point = hammerShipPoint(flight, { ...HAMMER_COCKPIT.roots[role], y: HAMMER_COCKPIT.floor }), ship = hammerShipPose(flight);
-    rig.root.position.set(point.x, point.y + 1, point.z); rig.root.rotation.set(-ship.pitch, ship.yaw + Math.PI, -ship.roll, 'YXZ');
+  const roles = ['niobe', 'morpheus', 'roland'] as const, rigs = Object.fromEntries([...roles, 'ghost'].map(role => [role, models.create(world.agents.get(role)!)]));
+  const pose = (role: HammerPilotGesture['role'], flight: HammerFlight, delta = 0, handover?: HammerHandover) => {
+    const rig = rigs[role], point = hammerCrewRoot(flight, role, handover), ship = hammerShipPose(flight);
+    const up = hammerShipPoint(flight, { x: 0, y: 1, z: 0 });
+    rig.root.position.set(point.x - up.x + ship.x, point.y - up.y + ship.y + 1, point.z - up.z + ship.z); rig.root.rotation.set(-ship.pitch, point.yaw, -ship.roll, 'YXZ');
     models.animate(rig, delta, { speed: flight.speed, grounded: true, verticalVelocity: 0, turn: flight.lateral, realWorld: true,
-      nebCrew: role === 'morpheus' ? role : undefined, seated: role !== 'roland', riding: true, hammerPilot: { role, flight } }, 0);
+      nebCrew: role === 'morpheus' ? role : undefined, seated: role !== 'roland', riding: true, hammerPilot: { role, flight, handover } }, 0);
     rig.root.updateMatrixWorld(true); rig.root.traverse(object => { if (object instanceof THREE.SkinnedMesh) object.skeleton.update(); }); return rig;
   };
   t.after(() => { models.dispose(); globalThis.document = old; });
-  for (const role of roles) pose(role, legacyFlight()); await new Promise(resolve => setImmediate(resolve));
-  for (const role of roles) pose(role, legacyFlight()); await new Promise(resolve => setImmediate(resolve));
+  for (const role of [...roles, 'ghost'] as const) pose(role, legacyFlight()); await new Promise(resolve => setImmediate(resolve));
+  for (const role of [...roles, 'ghost'] as const) pose(role, legacyFlight()); await new Promise(resolve => setImmediate(resolve));
   return { roles, rigs, pose, models, world };
 }
 
@@ -297,4 +298,37 @@ test('Niobe first-person steering carries the view with the bank while preservin
   assert.deepEqual(actions, [], 'flight keys must not open conversation or trigger a combat ability');
   controls.setEnabled(false); assert.equal(keys.input(false).drive?.lift, 0); assert.equal(keys.input(false).drive?.roll, 0);
 
+});
+
+test('handover bodies stay above the deck, clear of furniture, closing doors and one another through the saved route', async t => {
+  const h = await setup(t), root = new THREE.Group(), renderer = new HammerRouteRenderer(root);
+  t.after(() => renderer.dispose()); const flight = newHammerFlight(); const contacts: { role: string; elapsed: number; mesh: string; depth: number }[] = [];
+  for (let elapsed = 0; elapsed <= 12.5; elapsed += .25) {
+    const handover: HammerHandover = { phase: 'moving', elapsed };
+    renderer.update(undefined, 0, false, handover); root.updateMatrixWorld(true);
+    const cockpit = root.getObjectByName('hammer-cockpit')!, inverse = cockpit.matrixWorld.clone().invert();
+    const bodies: THREE.Box3[] = [];
+    for (const role of ['ghost', 'morpheus', 'roland'] as const) {
+      const rig = h.pose(role, flight, 0, handover), body = new THREE.Box3();
+      assert.ok(role === 'roland' ? rig.root.getObjectByName('roland-detailed-body') : rig.hero, `${role} must use the actual shipped body`);
+      const furniture: THREE.Mesh[] = [];
+      root.traverse(object => { if (object instanceof THREE.Mesh && ['hammer-seat-back', 'hammer-seat-armrest', 'hammer-seat-cushion', 'hammer-aft-door'].includes(object.name)) furniture.push(object); });
+      const boxes = furniture.map(mesh => { mesh.geometry.computeBoundingBox(); return { name: mesh.name, inverse: mesh.matrixWorld.clone().invert(), box: mesh.geometry.boundingBox!.clone().expandByScalar(-.025) }; });
+      rig.root.traverseVisible(object => { if (object instanceof THREE.Mesh) for (let i = 0; i < object.geometry.attributes.position.count; i++) {
+        const world = object.localToWorld(object.getVertexPosition(i, new THREE.Vector3())), point = world.clone().applyMatrix4(inverse);
+        assert.ok(point.toArray().every(Number.isFinite));
+        assert.ok(point.y >= HAMMER_COCKPIT.floor - .08, `${role}/${elapsed} penetrates the floor: ${point.toArray()}`);
+        assert.ok(point.y < (point.z > 9.9 ? 1.88 : 2.5), `${role}/${elapsed} penetrates the roof`);
+        for (const back of boxes) { const local = world.clone().applyMatrix4(back.inverse); if (back.box.containsPoint(local)) contacts.push({ role, elapsed, mesh: `${back.name}/${object.name}`, depth: back.box.max.y - local.y }); }
+        if (point.y > HAMMER_COCKPIT.floor + .4) body.expandByPoint(point);
+      } });
+      bodies.push(body);
+      const joints = [...(rig.hero?.bones.values() ?? [rig.torso, rig.head])].map(bone => bone.matrixWorld.elements.slice());
+      h.pose(role, flight, 10, structuredClone(handover));
+      assert.deepEqual([...(rig.hero?.bones.values() ?? [rig.torso, rig.head])].map(bone => bone.matrixWorld.elements.slice()), joints, 'render time replays saved walking');
+    }
+    for (let i = 0; i < bodies.length; i++) for (let j = i + 1; j < bodies.length; j++)
+      assert.ok(!bodies[i].clone().expandByScalar(-.06).intersectsBox(bodies[j]), `${elapsed}: crew ${i}/${j} bodies intersect: ${JSON.stringify(bodies.map(box => ({ min: box.min.toArray(), max: box.max.toArray() })))}`);
+    assert.equal(contacts.length, 0, JSON.stringify(contacts.sort((a,b) => b.depth-a.depth).slice(0,12)));
+  }
 });

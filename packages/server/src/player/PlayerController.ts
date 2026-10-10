@@ -374,6 +374,7 @@ export class PlayerController {
       if (this.sandbox?.life.film.hammerBriefing.frame(agent, running && agent.status === 'alive' ? dt : 0, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
+      this.sandbox?.life.film.hammerHandoverFrame(agent, running && agent.status === 'alive' ? dt : 0, tick);
       if (this.sandbox?.life.film.maggieDiscovery.frame(agent, running && agent.status === 'alive' ? dt : 0, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
