@@ -1,12 +1,12 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { streetResetPose, upperDiggerFall } from '@auto_matrix/shared';
+import { streetResetPose, upperDiggerFall, dockLastStandPose } from '@auto_matrix/shared';
 import type { CharacterRig } from './CharacterModel.js';
 import type { MotionInput } from './CharacterMotion.js';
 
 interface HeadEntry {
-  role: 'oracle' | 'sati' | 'zee' | 'charra' | 'niobe' | 'lock' | 'roland' | 'architect' | 'seraph' | 'keymaker' | 'rama_kandra' | 'kamala' | 'trainman' | 'hamann' | 'west' | 'dillard' | 'maggie' | 'colt' | 'link' | 'bane';
+  role: 'oracle' | 'sati' | 'zee' | 'charra' | 'niobe' | 'lock' | 'roland' | 'architect' | 'seraph' | 'keymaker' | 'rama_kandra' | 'kamala' | 'trainman' | 'hamann' | 'west' | 'dillard' | 'maggie' | 'colt' | 'link' | 'bane' | 'mifune' | 'kid';
   fallback: THREE.Group;
   model?: THREE.Group;
   face?: THREE.Mesh;
@@ -37,7 +37,7 @@ export class EpilogueHeads {
     // retain their existing head until their own likeness asset is authored.
     entry.active = entry.role === 'bane' ? Boolean(input.logosBane) : entry.role === 'colt' || entry.role === 'link' ? Boolean(input.maggieDiscovery) : entry.role === 'niobe' ? Boolean(input.realWorld) : entry.role !== 'oracle' || Boolean(input.oracleRevolutions || input.oracleRequest?.role === 'oracle' || input.oracleLast?.role === 'oracle' || input.oracleRestored || input.parkOutfit || input.epilogue?.kind === 'dawn');
     entry.closed.value = input.oracleRestored ? 1 : entry.role === 'sati' && input.epilogue?.kind === 'reset' ? streetResetPose(input.epilogue).closedEyes
-      : entry.role === 'charra' && input.upperDigger ? upperDiggerFall(input.upperDigger) : entry.role === 'maggie' && input.maggieDiscovery?.incident ? 1 : 0;
+      : entry.role === 'mifune' && input.dockLastStand ? dockLastStandPose(input.dockLastStand).dead : entry.role === 'charra' && input.upperDigger ? upperDiggerFall(input.upperDigger) : entry.role === 'maggie' && input.maggieDiscovery?.incident ? 1 : 0;
     if (entry.active && !entry.loading) {
       entry.loading = true;
       this.load(rig, entry).catch(error => console.warn(`${entry.role} detailed head could not load; retaining its fallback.`, error));
@@ -67,6 +67,7 @@ export class EpilogueHeads {
     const material = face.material as THREE.MeshStandardMaterial;
     const digger = entry.role === 'zee' || entry.role === 'charra';
     const captain = ['niobe', 'lock', 'roland'].includes(entry.role);
+    const apu = entry.role === 'mifune' || entry.role === 'kid';
     const council = ['hamann', 'west', 'dillard', 'maggie', 'colt', 'link', 'bane'].includes(entry.role);
     const program = entry.role === 'architect' || entry.role === 'seraph' || entry.role === 'keymaker' || entry.role === 'rama_kandra' || entry.role === 'kamala' || entry.role === 'trainman';
     const atlas = metadata.atlasSize ?? [1254, 1254], origin = metadata.profileOrigin ?? [627, row * 627];
@@ -89,7 +90,7 @@ export class EpilogueHeads {
         uniform vec3 headSkin; uniform float eyesClosed;
         varying float vFaceWeight; varying vec3 vHeadRest; varying vec2 vProfileUv; varying vec3 vHeadNormal;`)
         .replace('#include <map_fragment>', `#include <map_fragment>
-          vec2 neckUv = vec2(${Number(neck[0]).toFixed(6)} + vHeadRest.x * .10, ${Number(neck[1]).toFixed(6)} + clamp(-vHeadRest.y - .30, 0.0, .2) * ${captain || program || council ? '.03' : '.12'});
+          vec2 neckUv = vec2(${Number(neck[0]).toFixed(6)} + vHeadRest.x * .10, ${Number(neck[1]).toFixed(6)} + clamp(-vHeadRest.y - .30, 0.0, .2) * ${captain || program || council || apu ? '.03' : '.12'});
           vec3 neckColor = texture2D(map, neckUv).rgb;
           float profileWeight = smoothstep(.20, .70, abs(vHeadNormal.x)) * smoothstep(-.28, -.16, vHeadRest.y);
           vec3 profileColor = texture2D(map, vProfileUv).rgb;
@@ -150,6 +151,7 @@ export class EpilogueHeads {
 
   private groom(parent: THREE.Group, skin: THREE.BufferGeometry, role: HeadEntry['role']): void {
     const oracle = role === 'oracle', position = skin.attributes.position, normal = skin.attributes.normal, indices = skin.index!;
+    const apu = role === 'mifune' || role === 'kid';
     const digger = role === 'zee' || role === 'charra', captain = ['niobe', 'lock', 'roland'].includes(role);
     const council = ['hamann', 'west', 'dillard', 'maggie', 'colt', 'link', 'bane'].includes(role);
     const program = role === 'architect' || role === 'seraph' || role === 'keymaker' || role === 'rama_kandra' || role === 'kamala' || role === 'trainman';
@@ -158,6 +160,8 @@ export class EpilogueHeads {
     const boundary = (x: number, z: number) => {
       const front = Math.max(0, Math.cos(Math.atan2(x, z + .04)));
       const ear = Math.exp(-(((z + .045) / .24) ** 4)) * THREE.MathUtils.smoothstep(Math.abs(x), .10, .19);
+      if (apu) return Math.max(-.20 + front * (role === 'mifune' ? .42 : .385)
+        + .002 * Math.sin(x * 105 + z * 71) * front, -.20 + .29 * ear);
       if (council) return Math.max(-.20 + front * (role === 'hamann' ? .47 : role === 'dillard' ? .42 : role === 'maggie' ? .37 : role === 'colt' ? .40 : role === 'link' ? .34 : role === 'bane' ? .45 : .33), -.20 + .30 * ear);
       if (role === 'rama_kandra' || role === 'kamala' || role === 'trainman') return Math.max(-.20 + front * (role === 'rama_kandra' ? .51 : role === 'kamala' ? .405 : .40), -.20 + .29 * ear);
       if (program) return Math.max(-.20 + front * (role === 'architect' ? .45 : role === 'keymaker' ? .46 : .385)
@@ -169,9 +173,9 @@ export class EpilogueHeads {
     };
     for (let t = 0; t < indices.count; t += 3) {
       const ids = [indices.getX(t), indices.getX(t + 1), indices.getX(t + 2)];
-      if (!digger && !captain && !program && !council && ids.some(i => position.getY(i) < boundary(position.getX(i), position.getZ(i)))) continue;
+      if (!digger && !captain && !program && !council && !apu && ids.some(i => position.getY(i) < boundary(position.getX(i), position.getZ(i)))) continue;
       let polygon = ids.map(i => ({ point: new THREE.Vector3().fromBufferAttribute(position, i), normal: new THREE.Vector3().fromBufferAttribute(normal, i), tone: .65 + .35 * (.5 + .5 * Math.sin(i * 13.27)) }));
-      if (digger || captain || program || council) {
+      if (digger || captain || program || council || apu) {
         const clipped: typeof polygon = [];
         for (let i = 0; i < polygon.length; i++) {
           const a = polygon[i], b = polygon[(i + polygon.length - 1) % polygon.length];
@@ -189,7 +193,7 @@ export class EpilogueHeads {
         point.copy(vertex.point); direction.copy(vertex.normal);
         const curl = oracle ? .0025 * Math.sin(point.x * 200 + Math.sin(point.y * 180)) * Math.cos(point.z * 210)
           : role === 'west' ? .007 * Math.sin(point.x * 135 + point.y * 155) * Math.cos(point.z * 120) : role === 'zee' ? .003 * Math.sin(point.y * 180 + point.z * 35) : role === 'charra' ? .003 * Math.sin(point.x * 80 + point.z * 110) : role === 'keymaker' ? .002 * Math.sin(point.x * 140 + point.y * 60) : role === 'lock' ? .002 * Math.sin(point.y * 320 + point.x * 70) * Math.cos(point.z * 260) : 0;
-        point.addScaledVector(direction, (role === 'west' ? .075 : role === 'dillard' ? .019 : oracle ? .035 + .025 * Math.max(0, -direction.z) : role === 'zee' ? .025 : role === 'charra' ? .016 : role === 'roland' ? .021 : role === 'architect' ? .010 : role === 'seraph' ? .018 : .009) + curl);
+        point.addScaledVector(direction, (apu ? .003 : role === 'west' ? .075 : role === 'dillard' ? .019 : oracle ? .035 + .025 * Math.max(0, -direction.z) : role === 'zee' ? .025 : role === 'charra' ? .016 : role === 'roland' ? .021 : role === 'architect' ? .010 : role === 'seraph' ? .018 : .009) + curl);
         vertices.push(...point.toArray()); normals.push(...direction.toArray());
         const tone = role === 'zee' ? .91 + .06 * Math.sin(point.y * 450) * Math.cos(point.z * 370) : vertex.tone; colors.push(tone, tone, tone);
         uvs.push((Math.atan2(point.x, point.z + .04) / Math.PI + 1) * 2, (point.y + .24) * 5);
@@ -201,9 +205,17 @@ export class EpilogueHeads {
     cap.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3)); cap.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
     cap.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2)); cap.setIndex(triangles);
     const atlas = ((parent.getObjectByName(`${oracle ? 'oracle-revolutions' : role}-anatomical-head`) as THREE.Mesh).material as THREE.MeshStandardMaterial).map!;
-    const scalp = captain || program || council ? this.material(new THREE.MeshPhysicalMaterial({ color: role === 'hamann' ? '#c5c1b6' : role === 'dillard' ? '#aaa89f' : role === 'maggie' ? '#30241e' : role === 'colt' ? '#302821' : role === 'link' ? '#171512' : role === 'west' ? '#292824' : role === 'architect' ? '#d7d5ca' : role === 'trainman' ? '#625e50' : role === 'roland' ? '#37322d' : '#12100e', vertexColors: true, roughness: .96, specularIntensity: .15, side: THREE.DoubleSide }))
+    const scalp = captain || program || council || apu ? this.material(new THREE.MeshPhysicalMaterial({ color: role === 'kid' ? '#3b3027' : role === 'mifune' ? '#24231f' : role === 'hamann' ? '#c5c1b6' : role === 'dillard' ? '#aaa89f' : role === 'maggie' ? '#30241e' : role === 'colt' ? '#302821' : role === 'link' ? '#171512' : role === 'west' ? '#292824' : role === 'architect' ? '#d7d5ca' : role === 'trainman' ? '#625e50' : role === 'roland' ? '#37322d' : '#12100e', vertexColors: true, roughness: .96, specularIntensity: .15, side: THREE.DoubleSide }))
       : this.material(new THREE.MeshStandardMaterial({ map: role === 'zee' ? null : atlas, color: role === 'zee' ? '#686c62' : '#ffffff', vertexColors: true, roughness: oracle ? .84 : role === 'zee' ? .94 : .7, side: THREE.DoubleSide }));
     scalp.onBeforeCompile = shader => {
+      if (apu) {
+        shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vScalpPosition;')
+          .replace('#include <begin_vertex>', '#include <begin_vertex>\nvScalpPosition = position;');
+        shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vScalpPosition;')
+          .replace('#include <map_fragment>', `float stubble = fract(sin(dot(floor(vScalpPosition * 520.0), vec3(127.1, 311.7, 74.7))) * 43758.5453);
+            diffuseColor.rgb *= .68 + .32 * stubble;`);
+        return;
+      }
       shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', `#ifdef USE_MAP
         vec2 hairUv = vec2(${oracle ? '.766, .078' : role === 'charra' ? '.82, .545' : '.81, .57'}) + (1.0 - abs(fract(vMapUv * .5) * 2.0 - 1.0)) * vec2(${oracle ? '.14, .14' : role === 'charra' ? '.08, .07' : '.10, .12'});
         diffuseColor *= texture2D(map, hairUv);
@@ -229,8 +241,8 @@ export class EpilogueHeads {
       const index = (strand * 7919) % roots.length, root = roots[index], outward = directions[index];
       const sweep = new THREE.Vector3(Math.sign(root.x) * .22, .3, -1).addScaledVector(outward, -new THREE.Vector3(Math.sign(root.x) * .22, .3, -1).dot(outward)).normalize();
       const across = new THREE.Vector3().crossVectors(outward, sweep).normalize();
-      const length = role === 'lock' || role === 'niobe' || role === 'bane' ? .006 + (strand % 5) * .001 : oracle ? .012 + (strand % 7) * .003 : .015 + (strand % 11) * .002;
-      const silver = oracle && strand % 7 === 0 || role === 'west' && strand % 4 === 0 || role === 'roland' && (Math.abs(root.x) > .15 || strand % 3 === 0) || role === 'keymaker' && strand % 6 === 0, tone = role === 'architect' || role === 'hamann' || role === 'dillard' ? .45 + (strand % 7) * .045 : silver ? .09 + (strand % 4) * .02 : oracle ? .016 : role === 'charra' ? .019 + (strand % 4) * .004 : .005;
+      const length = role === 'kid' ? .003 + (strand % 3) * .001 : role === 'mifune' || role === 'lock' || role === 'niobe' || role === 'bane' ? .006 + (strand % 5) * .001 : oracle ? .012 + (strand % 7) * .003 : .015 + (strand % 11) * .002;
+      const silver = role === 'mifune' && Math.abs(root.x) > .15 && strand % 3 === 0 || oracle && strand % 7 === 0 || role === 'west' && strand % 4 === 0 || role === 'roland' && (Math.abs(root.x) > .15 || strand % 3 === 0) || role === 'keymaker' && strand % 6 === 0, tone = role === 'architect' || role === 'hamann' || role === 'dillard' ? .45 + (strand % 7) * .045 : silver ? .09 + (strand % 4) * .02 : role === 'kid' ? .035 : oracle ? .016 : role === 'charra' ? .019 + (strand % 4) * .004 : .005;
       const start = strands.length / 3;
       for (let j = 0; j <= 5; j++) {
         const f = j / 5, curl = oracle ? Math.sin(f * Math.PI * 3 + strand) * .0018 : Math.sin(f * Math.PI) * .0006;

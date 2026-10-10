@@ -10,6 +10,8 @@ const NOTES: Record<string, string> = {
   morpheus: '光头与胡须 · 圆形墨镜 · 深棕长皮衣',
   architect: '后梳白发 · 短白须 · 浅色西装与领带',
   seraph: '后梳短发 · 立领外套 · 按所在场景换装',
+  mifune: '短发与灰色鬓角 · 浅色袖衫 · 深色背心与酒红领边',
+  kid: '短寸头 · 浅色针织上衣 · 深色工装裤',
 };
 
 export class CharacterViewer {
@@ -114,7 +116,7 @@ export class CharacterViewer {
     this.root.querySelector('#preview-zoom')!.textContent = this.zoom ? rig.hero ? '取下墨镜' : '查看全身' : '面部特写';
     this.root.querySelector('#preview-name')!.textContent = CHARACTERS[id].name.toUpperCase();
     this.root.querySelector('#preview-notes')!.textContent = NOTES[id];
-    this.root.querySelector('.character-viewer-info .eyebrow')!.textContent = id === 'architect' || id === 'seraph' ? 'THE MATRIX / 2003' : 'THE MATRIX / 1999';
+    this.root.querySelector('.character-viewer-info .eyebrow')!.textContent = ['architect', 'seraph', 'mifune', 'kid'].includes(id) ? 'THE MATRIX / 2003' : 'THE MATRIX / 1999';
     this.root.querySelectorAll<HTMLElement>('[data-preview]').forEach(button => button.classList.toggle('active', button.dataset.preview === id));
   }
 

@@ -82,6 +82,7 @@ export class PlayerControls {
   private breakoutAim = false;
   private doorViewOpening = false;
   private lastStandAim = false;
+  private reloadAim = false;
   private empAim = false;
   private primaryAim = false;
   private primaryViewPhase?: string;
@@ -187,7 +188,7 @@ export class PlayerControls {
     this.lastLook = -1000; this.dragging = false; this.dragPoint = undefined;
     this.facing = state.rotation; this.cameraReady = false; this.motion.attack = undefined;
     this.motion.computerCheck = undefined;
-    this.cableAim = this.bookAim = this.morningAim = this.signingAim = this.catchAim = false;
+    this.cableAim = this.bookAim = this.morningAim = this.signingAim = this.catchAim = this.reloadAim = false;
     if (changedActor) this.pitch = .24;
     else if (this.cablePitch !== undefined) this.pitch = this.cablePitch;
     this.cablePitch = undefined;
@@ -295,6 +296,7 @@ export class PlayerControls {
         this.morningAim = this.firstPerson && Boolean(this.motion.morning);
         this.signingAim = this.firstPerson && this.motion.workday?.role === 'neo' && this.motion.workday.phase === 'signing';
         this.lastStandAim = this.firstPerson && dockLastStandLocked(this.motion.dockLastStand);
+        this.reloadAim = this.firstPerson && dockReloadLocked(this.motion.dockReload);
         if (this.bridgeCaught) this.cameraReady = false;
         if (this.firstPerson && this.motion.mirrorBeat !== undefined) {
           if (this.motion.mirrorEntry && this.motion.mirrorBeat < MIRROR_TIMING.sit) { this.yaw = this.movementYaw = this.facing; this.pitch = .08; }
@@ -360,7 +362,7 @@ export class PlayerControls {
     const recline = this.firstPerson && this.motion.deusPact ? DEUS_PACT.reclineAngle * .82 * deusPactPose(this.motion.deusPact).seated : 0;
     const hammerGunner = this.motion.hammerPilot?.role === 'ghost' && this.motion.hammerPilot.flight.gunnery;
     this.pitch = THREE.MathUtils.clamp(this.pitch + movementY * 0.002, hammerGunner ? -.65 : this.motion.epilogue?.kind === 'ceasefire' && this.motion.epilogue.phase === 'retreat' ? -1.3 : this.motion.dockGunnery ? -.85 : this.motion.diggers ? -.65 : this.motion.dockGate ? -1.35 : this.motion.mirrorBeat !== undefined ? -.9 : -.4, this.motion.dockGunnery ? .4 : this.motion.diggers ? .5 : this.motion.dockGate ? 1.35 : this.motion.catch ? 1.55 : this.motion.computerCheck || this.motion.primaryDemolition?.phase === 'mounting' ? 1.5 : 1.1 + recline);
-    this.ceasefireAim = false;
+    this.ceasefireAim = this.reloadAim = false;
     if (this.motion.dockGunnery) Object.assign(this, dockGunneryAngles(this.yaw, this.pitch));
     if (hammerGunner) Object.assign(this, hammerGunneryAngles(this.yaw, this.pitch));
     this.lastLook = performance.now();
@@ -808,7 +810,7 @@ export class PlayerControls {
     }
     if (this.motion.dockReload && !dockReloadLocked(dockReload)) this.performing = false;
     if (dockReloadLocked(dockReload)) {
-      if (!dockReloadLocked(this.motion.dockReload)) { this.yaw = this.movementYaw = state.rotation; this.pitch = .26; this.cameraReady = false; }
+      if (!dockReloadLocked(this.motion.dockReload)) { this.yaw = this.movementYaw = state.rotation; this.pitch = .26; this.cameraReady = false; this.reloadAim = true; }
       this.performing = true;
     }
     const epilogue = state.currentAction?.parameters.epilogue as MotionInput['epilogue'];
@@ -2513,11 +2515,8 @@ export class PlayerControls {
       }
     } else if (dockReloadLocked(this.motion.dockReload)) {
       const center = FILM_SETS.film_zion_hangar.center;
-      if (this.firstPerson) {
-        const eye = new THREE.Vector3(this.position.x, this.position.y + 3.08, this.position.z - .18);
-        const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
-        this.camera.position.copy(eye); this.camera.lookAt(eye.clone().addScaledVector(forward, 20));
-      } else {
+      if (this.firstPerson) this.syncDockReloadCamera(group);
+      else {
         const height = dockReloadHeight(this.motion.dockReload!.climb);
         const ideal = new THREE.Vector3(center.x + (this.camera.aspect < .85 ? 8 : 6.2), center.y + 5.2 + height * .35, center.z + 24.5);
         const focus = new THREE.Vector3(center.x - .75, center.y + 2.6 + height * .5, center.z + 14.5);
@@ -3149,6 +3148,24 @@ export class PlayerControls {
     }
     const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
     this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
+  }
+
+  syncDockReloadCamera(group: THREE.Group): void {
+    if (!this.firstPerson || !dockReloadLocked(this.motion.dockReload)) return;
+    const head = group.getObjectByName('kid-head'); if (!head) return;
+    group.updateWorldMatrix(true, true);
+    const eye = head.localToWorld(new THREE.Vector3(0, -.005, .275));
+    const hands = ['wrist_R', 'wrist_L'].map(name => group.getObjectByName(name));
+    if (this.reloadAim && hands.every(Boolean)) {
+      const target = hands[0]!.localToWorld(new THREE.Vector3(0, -.14, .05))
+        .add(hands[1]!.localToWorld(new THREE.Vector3(0, -.14, .05))).multiplyScalar(.5);
+      const direction = target.sub(eye);
+      this.yaw = Math.atan2(direction.x, direction.z); this.pitch = Math.atan2(-direction.y, Math.hypot(direction.x, direction.z));
+      this.reloadAim = false;
+    }
+    const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
+    this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
+    this.camera.near = .06; this.camera.fov = 90; this.camera.updateProjectionMatrix();
   }
 
   syncDockLastStandCamera(group: THREE.Group): void {

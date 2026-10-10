@@ -4,7 +4,7 @@ import type { CharacterRig } from './CharacterModel.js';
 import { enableSkinnedCulling } from './SkinnedBounds.js';
 
 interface BodyEntry {
-  role: 'zee' | 'charra' | 'niobe' | 'lock' | 'roland' | 'architect' | 'seraph' | 'keymaker' | 'rama_kandra' | 'kamala' | 'trainman' | 'hamann' | 'west' | 'dillard' | 'maggie' | 'colt' | 'link' | 'bane';
+  role: 'zee' | 'charra' | 'niobe' | 'lock' | 'roland' | 'architect' | 'seraph' | 'keymaker' | 'rama_kandra' | 'kamala' | 'trainman' | 'hamann' | 'west' | 'dillard' | 'maggie' | 'colt' | 'link' | 'bane' | 'mifune' | 'kid';
   fallback: THREE.Mesh[];
   materials: THREE.Material[];
   model?: THREE.Group;
@@ -94,7 +94,11 @@ export class DiggerBodies {
       const material = object.material as THREE.Material, index = ['Skin', 'Dock cloth', 'Dock trousers'].indexOf(material.name);
       this.materials.add(material);
       if (index >= 0) object.material = entry.materials[index];
-      if (material.name === 'Dock bindings' && ['niobe', 'lock', 'roland', 'rama_kandra', 'kamala', 'trainman', 'hamann', 'west', 'dillard', 'maggie', 'colt', 'link', 'bane'].includes(entry.role)) {
+      if (material.name === 'APU woven vest') {
+        const vest = material as THREE.MeshStandardMaterial;
+        vest.bumpMap = (entry.materials[1] as THREE.MeshStandardMaterial).bumpMap; vest.bumpScale = .004;
+      }
+      if (material.name === 'Dock bindings' && ['niobe', 'lock', 'roland', 'rama_kandra', 'kamala', 'trainman', 'hamann', 'west', 'dillard', 'maggie', 'colt', 'link', 'bane', 'mifune'].includes(entry.role)) {
         const bindings = entry.materials[1].clone() as THREE.MeshStandardMaterial; bindings.color.multiplyScalar(['rama_kandra', 'kamala', 'trainman'].includes(entry.role) ? .95 : .72);
         this.materials.add(bindings); object.material = bindings;
       }
