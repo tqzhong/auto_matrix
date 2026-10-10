@@ -575,6 +575,14 @@ export class AgentRenderer {
         const other = this.agents.get(input.logosBane.encounter.phase === 'burning' ? 'neo' : 'trinity');
         const head = other?.rig.hero?.bones.get('head') ?? other?.rig.head;
         if (head) { head.updateWorldMatrix(true, false); const contact = head.localToWorld(new THREE.Vector3(0, input.logosBane.encounter.phase === 'burning' ? .01 : -.37, .18)); input.logosBane = { ...input.logosBane, contact }; }
+      } else if (input.logosBane?.encounter.physical?.rescue === 'checking') {
+        const trinity = input.logosBane.role === 'trinity', other = this.agents.get(trinity ? 'neo' : 'trinity');
+        const head = other?.rig.hero?.bones.get('head') ?? other?.rig.head;
+        if (head) {
+          head.updateWorldMatrix(true, false);
+          const handContacts = [0, 1].map(i => head.localToWorld(new THREE.Vector3((i ? -1 : 1) * (trinity ? .18 : .25), trinity ? -.2 : -.6, trinity ? .18 : -.12))) as [THREE.Vector3, THREE.Vector3];
+          input.logosBane = { ...input.logosBane, handContacts };
+        }
       }
       input.oracleAbsorption = state.currentAction?.parameters.oracleAbsorption as MotionInput['oracleAbsorption'];
       input.trainmanChase = state.currentAction?.parameters.trainmanChase as MotionInput['trainmanChase'];

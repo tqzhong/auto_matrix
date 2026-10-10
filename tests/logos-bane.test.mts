@@ -286,3 +286,35 @@ test('an older partial eye-burn save repairs the head clearance without advancin
   assert.equal(restored.elapsed, elapsed); assert.deepEqual([...h.world.agents].map(([id, a]) => [id, a.status, a.health]), health);
   assert.deepEqual(h.sandbox.state.neoLife!.choices, choices); assert.equal(h.actor.controller, undefined);
 });
+
+test('Neo releases the pipe before reaching the hatch and a partial release survives disconnect and restore', () => {
+  const h = setup(); h.actor.position = filmStepPosition(h.scene, h.scene.steps[0]); h.advance();
+  h.state.bane!.phase = 'defeated'; h.state.bane!.physical!.intro = 'done'; h.state.step = 2;
+  const bane = h.world.agents.get('bane')!; bane.status = 'dead'; bane.health = 0;
+  h.actor.health = 43; h.actor.position = filmStepPosition(h.scene, h.scene.steps[2]); h.command('act'); h.frames(3);
+  const state = h.state.bane!.physical!;
+  assert.ok(state.pipeDrop && state.pipeDrop.elapsed > .2 && state.pipeDrop.elapsed < LOGOS_BANE.pipeReleaseSeconds, 'opening must begin with a saved physical release');
+  const dropped = structuredClone(state.pipeDrop), clock = state.rescueElapsed, health = h.actor.health;
+  h.players.release('film-player', h.tick()); h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); h.advance(20);
+  const restored = h.sandbox.life.film.state!;
+  assert.deepEqual(restored.bane!.physical!.pipeDrop, dropped); assert.equal(restored.bane!.physical!.rescueElapsed, clock);
+  assert.equal(h.actor.health, health); assert.equal(bane.status, 'dead');
+  h.players.possess('film-player', 'neo', h.tick()); until(h, () => restored.bane!.physical!.rescue === 'climbing');
+  assert.equal(restored.bane!.physical!.pipeDrop!.elapsed, LOGOS_BANE.pipeReleaseSeconds);
+});
+
+test('an older paused hatch save releases the weapon without replaying the fight or changing its clocks and injuries', () => {
+  const h = setup(); h.actor.position = filmStepPosition(h.scene, h.scene.steps[0]); h.advance();
+  h.state.step = 2; h.state.bane!.phase = 'defeated'; const physical = h.state.bane!.physical!;
+  Object.assign(physical, { intro: 'done', rescue: 'opening', rescueElapsed: 1.1, fall: 1.2, blindHealth: 43 });
+  const bane = h.world.agents.get('bane')!; bane.status = 'dead'; bane.health = 0; h.actor.health = 43;
+  h.actor.position = filmStepPosition(h.scene, h.scene.steps[2]); h.players.release('film-player', h.tick());
+  const saved = JSON.parse(JSON.stringify(h.sandbox.state)); delete saved.neoLife.journey.bane.physical.pipeDrop;
+  const health = [...h.world.agents].map(([id, a]) => [id, a.status, a.health]), choices = structuredClone(saved.neoLife.choices), position = { ...h.actor.position };
+  h.sandbox.restore(saved); const restored = h.sandbox.life.film.state!.bane!.physical!;
+  assert.equal(restored.pipeDrop!.elapsed, LOGOS_BANE.pipeReleaseSeconds); assert.equal(restored.rescueElapsed, 1.1);
+  assert.deepEqual(h.actor.position, position); assert.deepEqual([...h.world.agents].map(([id, a]) => [id, a.status, a.health]), health);
+  assert.deepEqual(h.sandbox.state.neoLife!.choices, choices); assert.equal(h.actor.controller, undefined);
+  const before = structuredClone(h.sandbox.state); h.sandbox.restore(JSON.parse(JSON.stringify(before)));
+  assert.deepEqual(h.sandbox.state, before, 'a second cold restore cannot relocate the released weapon or replay an action');
+});
