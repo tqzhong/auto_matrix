@@ -410,7 +410,7 @@ export class AgentRenderer {
         const point = hammerCrewRoot(hammerPilot.flight, hammerPilot.role, hammerPilot.handover), center = FILM_SETS.film_hammer_route.center;
         entry.group.position.set(center.x + point.x, center.y + point.y, center.z + point.z); guideHeading = point.yaw;
         entry.body.rotation.y = point.yaw;
-        if (hammerPilot.role === 'ghost' && hammerPilot.handover?.phase === 'ready') entry.body.visible = false;
+        if (hammerPilot.role === 'ghost' && hammerPilot.handover?.phase === 'ready' && !hammerPilot.flight.gunnery) entry.body.visible = false;
       }
       const moving = Math.hypot(state.velocity.x, state.velocity.z) > .1;
       const heading = guideHeading ?? (moving && state.currentAction?.parameters.helProtection === undefined && !state.currentAction?.parameters.helElevator && !state.currentAction?.parameters.helGarage && !state.currentAction?.parameters.trainmanChase && !state.currentAction?.parameters.truckRoad && !state.currentAction?.parameters.freewayHandoff && !state.currentAction?.parameters.freewayPickup && !state.currentAction?.parameters.freewayDriver && !smithLocked && !state.currentAction?.parameters.mirrorEntry && !state.currentAction?.parameters.officeCustody && !state.currentAction?.parameters.oracleLast && !state.currentAction?.parameters.baneInquiry && !state.currentAction?.parameters.hammerBriefing && !state.currentAction?.parameters.zionDeployment && !state.currentAction?.parameters.maggieDiscovery && !state.currentAction?.parameters.logosBane && !state.currentAction?.parameters.oracleAbsorption && !state.currentAction?.parameters.oracleArrival && !state.currentAction?.parameters.oracleReception && !state.currentAction?.parameters.oracleDeparture && !state.currentAction?.parameters.club && !state.currentAction?.parameters.upperDigger && !state.currentAction?.parameters.diggers && !state.currentAction?.parameters.dockReload && !state.currentAction?.parameters.dockLastStand && !state.currentAction?.parameters.catch && !state.currentAction?.parameters.truckRescue && !state.currentAction?.parameters.recoveryCrew && state.currentLocation !== 'film_government_lobby' ? Math.atan2(state.velocity.x, state.velocity.z) : state.rotation);
@@ -710,7 +710,8 @@ export class AgentRenderer {
         : coma || epilogueCarried ? THREE.MathUtils.lerp(entry.body.rotation.x, -Math.PI / 2, 1 - Math.exp(-6 * delta)) : -Math.PI / 2 * podRecline;
       if (hammerPilot) {
         const pose = hammerShipPose(hammerPilot.flight);
-        entry.body.rotation.set(-pose.pitch, hammerCrewRoot(hammerPilot.flight, hammerPilot.role, hammerPilot.handover).yaw, -pose.roll, 'YXZ');
+        const direction = hammerPilot.role === 'ghost' && hammerPilot.flight.gunnery ? 1 : -1;
+        entry.body.rotation.set(direction * pose.pitch, hammerCrewRoot(hammerPilot.flight, hammerPilot.role, hammerPilot.handover).yaw, direction * pose.roll, 'YXZ');
         // The one-unit actor offset follows all three axes, including a ninety-degree bank.
         entry.body.position.set(0, -1, 0).applyQuaternion(new THREE.Quaternion().setFromEuler(new THREE.Euler(pose.pitch, pose.yaw, pose.roll, 'YXZ')));
       }

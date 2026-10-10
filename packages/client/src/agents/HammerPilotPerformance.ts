@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { HAMMER_COCKPIT, hammerControlGrip, hammerHandoverPose, type HammerPilotGesture } from '@auto_matrix/shared';
+import { HAMMER_COCKPIT, HAMMER_GUNNERY, hammerControlGrip, hammerHandoverPose, type HammerPilotGesture } from '@auto_matrix/shared';
 import type { CharacterRig } from './CharacterModel.js';
 import { reach } from './SpoonPerformance.js';
 
@@ -36,7 +36,8 @@ export function poseHammerPilot(rig: CharacterRig, gesture?: HammerPilotGesture)
       .05 + sitting + stride * .26);
     reach(upper, lower, ankle.position, rig.root.localToWorld(foot), new THREE.Vector3(sign * .12, .1, 1).applyQuaternion(orientation));
     ankle.quaternion.copy(lower.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation));
-    const grip = gesture.role === 'roland' ? { x: sign * .6, y: 2.2, z: .45 } : hammerControlGrip(gesture.flight, sign);
+    const grip = gesture.role === 'ghost' && gesture.flight.gunnery ? { ...HAMMER_GUNNERY.grip, x: sign * HAMMER_GUNNERY.grip.x }
+      : gesture.role === 'roland' ? { x: sign * .6, y: 2.2, z: .45 } : hammerControlGrip(gesture.flight, sign);
     if (handover) {
       grip.x = THREE.MathUtils.lerp(sign * .52, grip.x, holding);
       grip.y = THREE.MathUtils.lerp(hip - .25 + sitting * .6, grip.y, holding);

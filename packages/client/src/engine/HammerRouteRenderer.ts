@@ -1,10 +1,12 @@
 import * as THREE from 'three';
 import { HAMMER_ROUTE, HAMMER_COCKPIT, HAMMER_BEAMS, HAMMER_RADIO, newHammerFlight, hammerRadioPose, hammerShipPoint, hammerControlTurn, hammerRouteFrame, hammerRoutePoint, hammerTunnelSection, hammerShipPose, hammerCenter, hammerHalfWidth, hammerHeight, type HammerFlight } from '@auto_matrix/shared';
 import { batchStaticGeometry } from './StaticGeometry.js';
+import { HammerGunneryRenderer } from './HammerGunneryRenderer.js';
 import type { HammerHandover } from '@auto_matrix/shared';
 
 /** The tunnel, ship and pursuers share the coordinates used by flight collision. */
 export class HammerRouteRenderer {
+  private gunner: HammerGunneryRenderer;
   private group = new THREE.Group();
   private ship = new THREE.Group();
   private cockpit = new THREE.Group();
@@ -86,6 +88,7 @@ export class HammerRouteRenderer {
     batchStaticGeometry(this.cockpit, new Set()).forEach(geometry => this.geometries.add(geometry));
     batchStaticGeometry(this.ship, new Set()).forEach(geometry => this.geometries.add(geometry));
     batchStaticGeometry(this.attacker, new Set()).forEach(geometry => this.geometries.add(geometry));
+    this.gunner = new HammerGunneryRenderer(this.group, this.cockpit);
     this.update(undefined, 0);
   }
 
@@ -370,6 +373,7 @@ export class HammerRouteRenderer {
     this.ship.rotation.set(transform.pitch, transform.yaw, transform.roll, 'YXZ');
     this.ship.visible = !firstPerson;
     this.cockpit.position.copy(this.ship.position); this.cockpit.rotation.copy(this.ship.rotation);
+    this.gunner.update(flight);
     this.controls.forEach(control => { control.rotation.z = -hammerControlTurn(pose); });
     this.needles.forEach((needle, i) => { needle.rotation.z = -1.2 + (i % 3 === 0 ? pose.speed / 38 : i % 3 === 1 ? pose.hull / 100 : pose.pursuit / 100) * 2.4; });
     this.horizons.forEach(horizon => { horizon.rotation.z = -transform.roll; horizon.position.y = Math.sin(transform.pitch) * .12; });
@@ -404,6 +408,7 @@ export class HammerRouteRenderer {
     }
     for (const engine of this.engines) engine.emissiveIntensity = .75 + Math.sin(time * 12) * .12 + pose.speed / 80;
     this.sentinels.forEach((sentinel, i) => {
+      if (flight?.gunnery) { sentinel.visible = false; return; }
       if (i === 0 && attack && attack.phase !== 'intact') { sentinel.visible = false; return; }
       if (pose.maneuver) {
         const distance = Math.max(-20, 175 - pose.z - 23 - i * 7 + pose.pursuit * .11), frame = hammerRouteFrame(distance);
@@ -418,6 +423,7 @@ export class HammerRouteRenderer {
     });
   }
   dispose(): void {
+    this.gunner.dispose();
     this.disposed = true;
     this.group.removeFromParent(); this.group.clear();
     this.geometries.forEach(geometry => geometry.dispose()); this.materials.forEach(material => material.dispose());

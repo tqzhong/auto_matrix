@@ -40,6 +40,7 @@ export * from './constants/freeway-pickup.js';
 export * from './constants/garage.js';
 export * from './constants/hammer-flight.js';
 export * from './constants/hammer-handover.js';
+export * from './constants/hammer-gunnery.js';
 export * from './constants/logos-flight.js';
 export * from './constants/logos-bane.js';
 export * from './constants/farewell.js';

@@ -146,6 +146,12 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
                     : '<p>合上手记，观察议会的当前回应；V 切换视角，鼠标环顾。</p>';
     return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>锡安议会 · 船坞防守部署</h3><p>Lock 的另一视角 · 计划、希望与动员</p></header><article class="film-now"><div><h3>${step?.label ?? '部署决定已保存'}</h3><p>${zionDeploymentText(state)}</p><div class="film-controls">${action}</div><small>船坞尚未失守，神庙入口是备用防线。G 主动报告与回应 · J 核对部署和记录判断 · WASD 离场。部署图核对和哲学回应是游戏改编；议会不预知 Hammer 的分航安排。</small></div></article></div>`;
   }
+  if (scene.id === 'm3_hammer_tunnels' && journey.hammer?.gunnery && journey.hammer.phase === 'riding' && !journey.visiting) {
+    const gunner = journey.actor === 'ghost', flight = journey.hammer;
+    const action = player.id !== journey.actor ? button('resume', '接回当前船员')
+      : button(gunner ? 'hammer-pilot' : 'hammer-gunner', gunner ? '接回 Niobe 驾驶' : '接管 Ghost 炮位');
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>Hammer · 驾驶与炮位协作</h3></header><article class="film-now"><div><p>${gunner ? 'Ghost 在船尾炮位防守，Niobe 继续驾驶。' : 'Niobe 驾驶，Ghost 在炮位防守。'}</p><p>船体 ${Math.ceil(flight.hull)}% · 炮位弹药 ${flight.gunnery!.ammo} · 击落 ${flight.gunnery!.kills}</p><div class="film-controls">${action}</div><small>交接保留航程、损伤与弹药。Ghost：鼠标瞄准战术屏，左键或 T 连射，V 切换炮位视角。炮位布局、敌袭波次和同伴驾驶辅助为游戏改编。</small></div></article></div>`;
+  }
   if (scene.id === 'm3_hammer_tunnels' && journey.step === 1 && journey.hammerHandover && !journey.visiting) {
     const handover = journey.hammerHandover, close = filmStepNear(scene, scene.steps[1], player.position, player.isInMatrix, journey);
     const action = player.id !== journey.actor ? button('resume', '接回 Niobe 的视角')
