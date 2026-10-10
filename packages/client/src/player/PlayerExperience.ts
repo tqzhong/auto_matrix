@@ -226,7 +226,9 @@ export class PlayerExperience {
     this.el('r-label').textContent = gunner ? '炮位' : armed ? '换弹' : '出口接入';
     this.el('mouse-hint').textContent = armed ? '点击锁定鼠标 · 朝向辅助瞄准 · 左键 / T 射击 · R 换弹 · 右键观察' : '点击画面锁定鼠标 · F 连击，锁定后也可用左键 · 右键观察 · Esc 释放';
     if (!pointerLock) this.el('mouse-hint').textContent = armed || diggerScene ? '左键拖动瞄准 · T 射击 · F 近战 · 右键观察' : '左键拖动视角 · F 连击 · 右键观察 · Esc 菜单';
-    if (driving) this.el('mouse-hint').textContent = 'W 加速 · S 刹车 · A / D 转向 · V 切换视角 · J 手记';
+    if (driving) this.el('mouse-hint').textContent = neoLife?.journey?.hammer?.maneuver
+      ? 'W / S 推进制动 · A / D 横移 · 空格 / C 升降 · Q 左滚 / E 右滚 · V 视角 · J 手记'
+      : 'W 加速 · S 刹车 · A / D 转向 · V 切换视角 · J 手记';
     if (driving && neoLife?.journey?.apu?.clearingCaptain) this.el('mouse-hint').textContent = 'W 直行跨过队长 · S 刹车 · V 切换视角 · J 手记';
     if (driving && !pointerLock) this.el('mouse-hint').textContent += ' · 左键拖动观察';
     if (neoLife?.journey?.logos?.phase === 'riding') this.el('mouse-hint').textContent = neoLife.journey.logos.mode === 'defense'

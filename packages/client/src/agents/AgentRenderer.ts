@@ -53,6 +53,7 @@ interface Entry {
   clubGuide?: { phase: ClubPhase; from: number; to: number; progress: number; elapsed: number };
   sixthElapsed?: number;
   bathroomElapsed?: number;
+  hammerPilot?: boolean;
   basementDropClock?: BasementDropPlayback;
 }
 
@@ -403,6 +404,8 @@ export class AgentRenderer {
         if (state.currentAction?.parameters.basement && !dropRoot && delta * speed > 0) guideSpeed = entry.group.position.distanceTo(previous) / (delta * speed);
       }
       const hammerPilot = state.currentAction?.parameters.hammerPilot as MotionInput['hammerPilot'];
+      if (!hammerPilot && entry.hammerPilot) entry.body.rotation.z = 0;
+      entry.hammerPilot = Boolean(hammerPilot);
       if (hammerPilot) {
         const point = hammerCrewRoot(hammerPilot.flight, hammerPilot.role), center = FILM_SETS.film_hammer_route.center;
         entry.group.position.set(center.x + point.x, center.y + point.y, center.z + point.z); guideHeading = point.yaw;
@@ -698,18 +701,18 @@ export class AgentRenderer {
       const truckPose = input.truckRescue ? truckRescuePose(input.truckRescue, input.truckRescue.role)
         : input.truckFlight ? { yaw: state.rotation, airborne: 1, tumble: 0 } : undefined;
       entry.body.rotation.order = truckPose ? 'YXZ' : 'XYZ';
-      if (hammerPilot) {
-        entry.body.rotation.y = hammerCrewRoot(hammerPilot.flight, hammerPilot.role).yaw;
-        entry.body.rotation.z = -hammerShipPose(hammerPilot.flight).roll;
-        // The one-unit actor offset must bank with the ship, rather than stay vertical.
-        const bank = hammerShipPose(hammerPilot.flight), yaw = bank.yaw;
-        entry.body.position.set(Math.sin(bank.roll) * Math.cos(yaw), -Math.cos(bank.roll), -Math.sin(bank.roll) * Math.sin(yaw));
-      } else entry.body.position.x = 0;
+      if (!hammerPilot) entry.body.position.x = 0;
       if (truckPose) { entry.body.rotation.y = truckPose.yaw; entry.body.rotation.z = truckPose.tumble; }
       if (input.catch || input.farewell || epilogueCarried || input.oracleRestored || input.dockLastStand) entry.body.rotation.z = 0;
       entry.body.rotation.x = input.catch ? 0 : epilogueCarried ? Math.PI / 2 : truckPose ? Math.PI / 2 * truckPose.airborne : input.farewell?.role === 'trinity' ? -.48
         : mountainFlying ? THREE.MathUtils.lerp(entry.body.rotation.x, 1.05, 1 - Math.exp(-6 * delta))
         : coma || epilogueCarried ? THREE.MathUtils.lerp(entry.body.rotation.x, -Math.PI / 2, 1 - Math.exp(-6 * delta)) : -Math.PI / 2 * podRecline;
+      if (hammerPilot) {
+        const pose = hammerShipPose(hammerPilot.flight);
+        entry.body.rotation.set(-pose.pitch, pose.yaw + Math.PI, -pose.roll, 'YXZ');
+        // The one-unit actor offset follows all three axes, including a ninety-degree bank.
+        entry.body.position.set(0, -1, 0).applyQuaternion(new THREE.Quaternion().setFromEuler(new THREE.Euler(pose.pitch, pose.yaw, pose.roll, 'YXZ')));
+      }
       if (medicalPatient) { entry.rig.motion = newMotion(); input.speed = 0; input.turn = 0; }
       this.models.animate(entry.rig, medicalPatient ? 0 : delta * (id === this.playerId && speed > 0 ? 1 : speed), input, dist);
       if (input.maggieDiscovery?.role !== 'maggie') poseHammerPatient(entry.rig, medicalPatient);

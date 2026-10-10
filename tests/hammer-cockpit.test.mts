@@ -5,10 +5,14 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { HAMMER_COCKPIT, FILM_SETS, newHammerFlight, stepHammerFlight, hammerCenter, hammerHeight, hammerHalfWidth, hammerCrewRoot, hammerShipPoint, hammerShipPose, filmPosition, playerBlocked, type HammerFlight, type HammerPilotRole } from '@auto_matrix/shared';
 import { CharacterModels } from '../packages/client/src/agents/CharacterModel.js';
+import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { HammerRouteRenderer } from '../packages/client/src/engine/HammerRouteRenderer.js';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
+import { HAMMER_BEAMS, hammerRouteFrame } from '@auto_matrix/shared';
+
+function legacyFlight() { const flight = newHammerFlight(); delete flight.maneuver; return flight; }
 
 async function geometry(id: string) {
   const glb = await readFile(new URL(`../packages/client/public/assets/characters/${id}.glb`, import.meta.url));
@@ -33,22 +37,24 @@ async function setup(t: test.TestContext) {
   const roles = ['niobe', 'morpheus', 'roland'] as const, rigs = Object.fromEntries(roles.map(role => [role, models.create(world.agents.get(role)!)]));
   const pose = (role: HammerPilotRole, flight: HammerFlight, delta = 0) => {
     const rig = rigs[role], point = hammerShipPoint(flight, { ...HAMMER_COCKPIT.roots[role], y: HAMMER_COCKPIT.floor }), ship = hammerShipPose(flight);
-    rig.root.position.set(point.x, point.y + 1, point.z); rig.root.rotation.set(0, ship.yaw + Math.PI, -ship.roll);
+    rig.root.position.set(point.x, point.y + 1, point.z); rig.root.rotation.set(-ship.pitch, ship.yaw + Math.PI, -ship.roll, 'YXZ');
     models.animate(rig, delta, { speed: flight.speed, grounded: true, verticalVelocity: 0, turn: flight.lateral, realWorld: true,
       nebCrew: role === 'morpheus' ? role : undefined, seated: role !== 'roland', riding: true, hammerPilot: { role, flight } }, 0);
     rig.root.updateMatrixWorld(true); rig.root.traverse(object => { if (object instanceof THREE.SkinnedMesh) object.skeleton.update(); }); return rig;
   };
   t.after(() => { models.dispose(); globalThis.document = old; });
-  for (const role of roles) pose(role, newHammerFlight()); await new Promise(resolve => setImmediate(resolve));
-  for (const role of roles) pose(role, newHammerFlight()); await new Promise(resolve => setImmediate(resolve));
+  for (const role of roles) pose(role, legacyFlight()); await new Promise(resolve => setImmediate(resolve));
+  for (const role of roles) pose(role, legacyFlight()); await new Promise(resolve => setImmediate(resolve));
   return { roles, rigs, pose, models, world };
 }
 
 test('the shipped pilots keep their soles above the deck and palms on the banking physical yokes', async t => {
   const h = await setup(t), root = new THREE.Group(), renderer = new HammerRouteRenderer(root);
   t.after(() => renderer.dispose());
-  for (const lateral of [-12, 0, 12]) {
-    const flight = { ...newHammerFlight(), elapsed: 7.4, speed: 28, lateral, z: -42, x: -8 };
+  const flights = [-12, 0, 12].map(lateral => ({ ...legacyFlight(), elapsed: 7.4, speed: 28, lateral, z: -42, x: -8 }));
+  flights.push(...[-1, 1].map(side => ({ ...newHammerFlight(), z: -75, x: -1.5, maneuver: { lift: 0, vertical: 0, bank: side * Math.PI / 2, bankVelocity: side * .8 } })));
+  for (const flight of flights) {
+    const lateral = flight.maneuver?.bank ?? flight.lateral;
     renderer.update(flight, 30); root.updateMatrixWorld(true);
     const cockpit = root.getObjectByName('hammer-cockpit')!, inverse = cockpit.matrixWorld.clone().invert();
     for (const role of h.roles) {
@@ -74,7 +80,7 @@ test('the shipped pilots keep their soles above the deck and palms on the bankin
 });
 
 test('the saved cockpit pose remains fixed through render deltas and leaving restores the wardrobe', async t => {
-  const h = await setup(t), flight = { ...newHammerFlight(), elapsed: 4.1, speed: 24, lateral: 8 };
+  const h = await setup(t), flight = { ...legacyFlight(), elapsed: 4.1, speed: 24, lateral: 8 };
   for (const role of h.roles) {
     const rig = h.pose(role, flight), joints = [rig.torso, rig.head, ...rig.shoulders, ...rig.elbows, ...(rig.hero?.bones.values() ?? [])];
     const before = joints.map(joint => joint.matrixWorld.elements.slice()); h.pose(role, structuredClone(flight), 8);
@@ -91,10 +97,26 @@ test('the cabin aisle stays usable while seats and side walls block walking thro
   assert.equal(playerBlocked(filmPosition('film_hammer_route', 4, 180), false), true);
 });
 
+test('leaving a side-rolled flight while paused restores the upright walking body', async t => {
+  const h = await setup(t), renderer = new AgentRenderer(new THREE.Scene());
+  t.after(() => renderer.dispose()); renderer.setWorld(false);
+  const state = h.world.agents.get('niobe')!, flight = newHammerFlight();
+  flight.z = -75; flight.maneuver!.bank = Math.PI / 2;
+  state.isInMatrix = false; state.currentLocation = 'film_hammer_route';
+  state.currentAction = { type: 'idle', parameters: { riding: true, seated: true, hammerPilot: { role: 'niobe', flight } }, startedAt: 1, duration: 1e9, progress: 0 };
+  renderer.updateAgent(state.id, state); renderer.update(0);
+  assert.ok(Math.abs(renderer.getAgentBody(state.id)!.rotation.z) > 1.5);
+  state.currentAction = null; state.position = filmPosition('film_hammer_route', 0, 184);
+  renderer.updateAgent(state.id, state); renderer.update(0);
+  const body = renderer.getAgentBody(state.id)!;
+  assert.ok(Math.abs(body.rotation.z) < .001, 'the paused walking body retains the ship roll');
+  assert.ok(body.position.distanceTo(new THREE.Vector3(0, -1, 0)) < .001);
+});
+
 test('the Hammer outer hull and glowing hover coils stay below the walkable cabin floor', () => {
   const root = new THREE.Group(), renderer = new HammerRouteRenderer(root);
   try {
-    renderer.update(newHammerFlight(), 0); root.updateMatrixWorld(true);
+    renderer.update(legacyFlight(), 0); root.updateMatrixWorld(true);
     const cockpit = root.getObjectByName('hammer-cockpit')!, inverse = cockpit.matrixWorld.clone().invert();
     const radio = root.getObjectByName('hammer-radio')!, excluded = new Set<THREE.Object3D>(); radio.traverse(object => excluded.add(object));
     root.getObjectByName('hammer-airframe')!.traverse(object => {
@@ -111,7 +133,7 @@ test('the Hammer outer hull and glowing hover coils stay below the walkable cabi
 test('hitting the elliptical tunnel keeps the banked rendered hull inside the wall, including after the collision rebound', () => {
   const root = new THREE.Group(), renderer = new HammerRouteRenderer(root), vertices: THREE.Vector3[] = [];
   try {
-    renderer.update(newHammerFlight(), 0); root.updateMatrixWorld(true);
+    renderer.update(legacyFlight(), 0); root.updateMatrixWorld(true);
     const inverse = root.getObjectByName('hammer-cockpit')!.matrixWorld.clone().invert();
     for (const name of ['hammer-airframe', 'hammer-cockpit']) root.getObjectByName(name)!.traverse(object => {
       if (!(object instanceof THREE.Mesh)) return;
@@ -119,7 +141,7 @@ test('hitting the elliptical tunnel keeps the banked rendered hull inside the wa
         vertices.push(object.localToWorld(object.getVertexPosition(i, new THREE.Vector3())).applyMatrix4(inverse));
     });
     for (const z of [175, 55, -90]) for (const steer of [-1, 1]) {
-      let flight = { ...newHammerFlight(), x: hammerCenter(z), z, speed: 25 };
+      let flight = { ...legacyFlight(), x: hammerCenter(z), z, speed: 25 };
       for (let frame = 0; frame < 120 && flight.phase === 'riding'; frame++) {
         flight = stepHammerFlight(flight, { throttle: 1, steer, brake: false }, .05);
         for (const vertex of vertices) {
@@ -151,24 +173,54 @@ test('the third-person camera frames Niobe at the saved cabin entry rather than 
   }
 });
 
+test('third-person flight cameras keep an unobstructed view past the two physical crossbeams', async t => {
+  const previous = ['window', 'document'].map(key => Object.getOwnPropertyDescriptor(globalThis, key));
+  let controls: PlayerControls | undefined;
+  t.after(() => { controls?.dispose(); ['window', 'document'].forEach((key,i) => previous[i] ? Object.defineProperty(globalThis,key,previous[i]!) : Reflect.deleteProperty(globalThis,key)); });
+  const h = await setup(t), target = { addEventListener() {}, removeEventListener() {} };
+  Object.defineProperty(globalThis, 'window', { configurable: true, value: target });
+  Object.defineProperty(globalThis, 'document', { configurable: true, value: target });
+  const camera = new THREE.PerspectiveCamera(48, 16/9, .5, 5000); controls = new PlayerControls(target as unknown as HTMLCanvasElement, camera, () => {}, () => {});
+  const state = h.world.agents.get('niobe')!, center = FILM_SETS.film_hammer_route.center, group = new THREE.Group();
+  for (const distance of [60, 85, 110, 310, 330, 350]) {
+    const flight = newHammerFlight(); flight.z = 175 - distance; flight.maneuver!.lift = distance < 150 ? 2 : -2.5;
+    const point = hammerCrewRoot(flight, 'niobe');
+    state.position = { x: center.x + point.x, y: center.y + point.y, z: center.z + point.z }; state.rotation = point.yaw;
+    state.currentLocation = 'film_hammer_route';
+    state.currentAction = { type: 'idle', parameters: { riding: true, seated: true, hammerPilot: { role: 'niobe', flight } }, startedAt: 1, duration: 1e9, progress: 0 };
+    group.position.set(state.position.x, state.position.y, state.position.z); controls.possess(state); controls.update(.1, state, group, false);
+    const focus = hammerShipPoint(flight, { x: 0, y: -.6, z: -7 });
+    for (const beam of HAMMER_BEAMS) {
+      const frame = hammerRouteFrame(beam.distance), inverse = new THREE.Quaternion().setFromEuler(new THREE.Euler(frame.pitch, frame.yaw, 0, 'YXZ')).invert();
+      const origin = new THREE.Vector3(focus.x - frame.x, focus.y - frame.y, focus.z - frame.z).applyQuaternion(inverse);
+      const eye = camera.position.clone().sub(new THREE.Vector3(center.x + frame.x, center.y + frame.y, center.z + frame.z)).applyQuaternion(inverse);
+      const box = new THREE.Box3(new THREE.Vector3(-beam.width / 2, beam.y - beam.height / 2, -beam.depth / 2), new THREE.Vector3(beam.width / 2, beam.y + beam.height / 2, beam.depth / 2)).expandByScalar(.35);
+      const hit = new THREE.Ray(origin, eye.clone().sub(origin).normalize()).intersectBox(box, new THREE.Vector3());
+      assert.ok(!hit || hit.distanceTo(origin) > eye.distanceTo(origin), `${distance}: the beam blocks the camera or cuts through its near plane`);
+    }
+  }
+});
+
 test('Niobe first-person steering carries the view with the bank while preserving subsequent free look', async t => {
   const previous = ['window', 'document'].map(key => Object.getOwnPropertyDescriptor(globalThis, key));
   let controls: PlayerControls | undefined;
   t.after(() => { controls?.dispose(); ['window', 'document'].forEach((key,i) => previous[i] ? Object.defineProperty(globalThis,key,previous[i]!) : Reflect.deleteProperty(globalThis,key)); });
   const h = await setup(t);
-  const target = { addEventListener() {}, removeEventListener() {} };
+  const target = { addEventListener() {}, removeEventListener() {} }, actions: string[] = [];
   Object.defineProperty(globalThis, 'window', { configurable: true, value: target });
   Object.defineProperty(globalThis, 'document', { configurable: true, value: target });
-  const camera = new THREE.PerspectiveCamera(48, 16/9, .5, 5000); controls = new PlayerControls(target as unknown as HTMLCanvasElement, camera, () => {}, () => {});
+  const camera = new THREE.PerspectiveCamera(48, 16/9, .5, 5000); controls = new PlayerControls(target as unknown as HTMLCanvasElement, camera, () => {}, kind => actions.push(kind));
   const state = h.world.agents.get('niobe')!, center = FILM_SETS.film_hammer_route.center, group = new THREE.Group();
-  const place = (lateral: number, z = 175) => {
-    const flight = { ...newHammerFlight(), x: hammerCenter(z), z, speed: 28, lateral }, point = hammerCrewRoot(flight, 'niobe');
+  const place = (lateral: number, z = 175, bank?: number) => {
+    const flight = bank === undefined ? { ...legacyFlight(), x: hammerCenter(z), z, speed: 28, lateral }
+      : { ...newHammerFlight(), x: -1.5, z, speed: 23, maneuver: { lift: 0, vertical: 0, bank, bankVelocity: 0 } };
+    const point = hammerCrewRoot(flight, 'niobe');
     state.position = { x: center.x + point.x, y: center.y + point.y, z: center.z + point.z }; state.rotation = point.yaw;
     state.currentLocation = 'film_hammer_route'; state.currentAction = { type: 'idle', parameters: { riding: true, seated: true, hammerPilot: { role: 'niobe', flight } }, startedAt: 1, duration: 1e9, progress: 0 };
     h.rigs.niobe.root.removeFromParent();
     const rig = h.pose('niobe', flight), ship = hammerShipPose(flight);
     group.position.set(state.position.x, state.position.y, state.position.z); group.add(rig.root);
-    rig.root.position.set(Math.sin(ship.roll) * Math.cos(ship.yaw), -Math.cos(ship.roll), -Math.sin(ship.roll) * Math.sin(ship.yaw));
+    rig.root.position.set(0, -1, 0).applyQuaternion(new THREE.Quaternion().setFromEuler(new THREE.Euler(ship.pitch, ship.yaw, ship.roll, 'YXZ')));
     group.updateMatrixWorld(true); return rig;
   };
   let rig = place(0); controls.possess(state); controls.firstPerson = true;
@@ -192,4 +244,24 @@ test('Niobe first-person steering carries the view with the bank while preservin
       assert.ok(eye.z <= 189, 'the start camera sits behind the rendered tunnel entrance');
     }
   }
+  for (const bank of [-Math.PI / 2, Math.PI / 2]) {
+    rig = place(0, -75, bank); controls.possess(state); controls.firstPerson = true;
+    controls.update(.1, state, group, false);
+    const direction = camera.getWorldDirection(new THREE.Vector3());
+    assert.ok(direction.x > .7 && direction.y > .3, `after the elbow the pilot still looks along the original horizontal axis: ${direction.toArray()}, yaw ${look.yaw}, root ${state.rotation}`);
+    assert.ok(camera.up.z * Math.sign(bank) < -.9, 'the horizon does not follow a ninety-degree side roll');
+    const eye = rig.head.localToWorld((rig.head.userData.cameraEye as THREE.Vector3 | undefined)?.clone() ?? new THREE.Vector3(0, .1, .32));
+    assert.ok(camera.position.distanceTo(eye) < .04, 'pitch and bank move the view away from the physical head');
+  }
+  controls.ride = { speed: 23 }; controls.setEnabled(true);
+  const keys = controls as unknown as { keyDown(event: KeyboardEvent): void; keyUp(event: KeyboardEvent): void; input(jump: boolean): { drive?: { lift?: number; roll?: number }; jump: boolean }; networkJump: boolean };
+  const key = (code: string) => ({ code, target: { matches: () => false }, repeat: false, preventDefault() {} }) as unknown as KeyboardEvent;
+  keys.keyDown(key('KeyQ')); keys.keyDown(key('Space'));
+  assert.equal(keys.input(false).drive?.roll, 1); assert.equal(keys.input(false).drive?.lift, 1);
+  assert.equal(keys.networkJump, false); assert.deepEqual(actions, []);
+  keys.keyUp(key('KeyQ')); keys.keyUp(key('Space')); keys.keyDown(key('KeyE')); keys.keyDown(key('KeyC'));
+  assert.equal(keys.input(false).drive?.roll, -1); assert.equal(keys.input(false).drive?.lift, -1);
+  assert.deepEqual(actions, [], 'flight keys must not open conversation or trigger a combat ability');
+  controls.setEnabled(false); assert.equal(keys.input(false).drive?.lift, 0); assert.equal(keys.input(false).drive?.roll, 0);
+
 });

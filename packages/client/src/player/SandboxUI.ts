@@ -1,4 +1,5 @@
 import { logosBaneBeat, logosBaneText } from '@auto_matrix/shared';
+import { hammerFlightHint } from '@auto_matrix/shared';
 import { HEL_BREAKOUT, helDanceDoorDuration, helDanceDoorText } from '@auto_matrix/shared';
 import { catchDistance } from '@auto_matrix/shared';
 import { sourcePortalActive, sourcePortalLocked, sourcePortalText } from '@auto_matrix/shared';
@@ -2143,11 +2144,11 @@ export class SandboxUI {
       const flight = journey.hammer;
       this.el('film-ride').classList.remove('hidden');
       this.el('film-ride-title').textContent = 'NIOBE / HAMMER';
-      this.el('film-ride-controls').textContent = 'W 推进 · S 制动 · A / D 侧向推进';
+      this.el('film-ride-controls').textContent = flight.maneuver ? 'W / S 推进制动 · A / D 横移 · 空格 / C 升降 · Q / E 侧滚 · V 视角' : 'W 推进 · S 制动 · A / D 侧向推进';
       this.el('film-ride-speed').textContent = `${Math.round(flight.speed * 3.6)} km/h`;
-      this.el('film-ride-health').textContent = `船体 ${Math.ceil(flight.hull)}% · 哨兵 ${Math.ceil(flight.pursuit)}% · ${flight.antennaLost ? '通讯已断' : '通讯正常'}`;
+      this.el('film-ride-health').textContent = `船体 ${Math.ceil(flight.hull)}% · 哨兵 ${Math.ceil(flight.pursuit)}% · ${flight.maneuver ? `侧滚 ${Math.round(flight.maneuver.bank * 180 / Math.PI)}° · ` : ''}${flight.antennaLost ? '通讯已断' : '通讯正常'}`;
       this.el('sandbox-waypoint').textContent = `锡安管线出口 ↑ ${Math.max(0, Math.round(flight.z + 175))} m`;
-      document.getElementById('game-objective-copy')!.textContent = '沿机械管线转弯，避开横梁 · 低速会让哨兵追上';
+      document.getElementById('game-objective-copy')!.textContent = hammerFlightHint(flight);
       this.el('sandbox-interact').classList.add('hidden'); return;
     }
     if ((scene.id === 'm3_defense' || scene.id === 'm3_sun') && journey.logos?.phase === 'riding' && !journey.visiting) {

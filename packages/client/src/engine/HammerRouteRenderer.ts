@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { HAMMER_ROUTE, HAMMER_COCKPIT, hammerShipPose, hammerCenter, hammerHalfWidth, hammerHeight, type HammerFlight } from '@auto_matrix/shared';
+import { HAMMER_ROUTE, HAMMER_COCKPIT, HAMMER_BEAMS, newHammerFlight, hammerControlTurn, hammerRouteFrame, hammerRoutePoint, hammerTunnelSection, hammerShipPose, hammerCenter, hammerHalfWidth, hammerHeight, type HammerFlight } from '@auto_matrix/shared';
 import { batchStaticGeometry } from './StaticGeometry.js';
 
 /** The tunnel, ship and pursuers share the coordinates used by flight collision. */
@@ -7,10 +7,13 @@ export class HammerRouteRenderer {
   private group = new THREE.Group();
   private ship = new THREE.Group();
   private cockpit = new THREE.Group();
+  private planar = new THREE.Group();
+  private spatial = new THREE.Group();
   private sentinels: THREE.Group[] = [];
   private engines: THREE.MeshStandardMaterial[] = [];
   private controls: THREE.Group[] = [];
   private needles: THREE.Mesh[] = [];
+  private horizons: THREE.Group[] = [];
   private radio = new THREE.Group();
   private warning?: THREE.MeshStandardMaterial;
   private lights: THREE.Light[] = [];
@@ -48,6 +51,9 @@ export class HammerRouteRenderer {
       const warning = this.mesh(new THREE.BoxGeometry(2.6, .25, .32), this.material(0xf37c4d, .5, .5, 0xda4a22, .8));
       warning.position.set(pipe.x, y - .7, pipe.z + 2.1);
     }
+    for (const object of [...this.group.children]) if (object !== fill) this.planar.add(object);
+    this.group.add(this.planar, this.spatial);
+    this.spatialTunnel(iron, rib, lamp);
     this.buildShip();
     this.buildCockpit();
     this.group.add(this.ship);
@@ -74,7 +80,7 @@ export class HammerRouteRenderer {
     const material = new THREE.MeshStandardMaterial({ color, metalness, roughness, emissive, emissiveIntensity: intensity, side: THREE.DoubleSide });
     this.materials.add(material); return material;
   }
-  private mesh(geometry: THREE.BufferGeometry, material: THREE.Material, parent = this.group): THREE.Mesh {
+  private mesh(geometry: THREE.BufferGeometry, material: THREE.Material, parent: THREE.Object3D = this.group): THREE.Mesh {
     this.geometries.add(geometry); const mesh = new THREE.Mesh(geometry, material);
     mesh.castShadow = parent === this.ship; mesh.receiveShadow = true; parent.add(mesh); return mesh;
   }
@@ -96,6 +102,46 @@ export class HammerRouteRenderer {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)); geometry.setIndex(indices); geometry.computeVertexNormals();
     this.mesh(geometry, material);
+  }
+  private spatialTunnel(iron: THREE.Material, rib: THREE.Material, lamp: THREE.Material): void {
+    const positions: number[] = [], indices: number[] = [], sides = 24, segments = 200;
+    for (let row = 0; row <= segments; row++) {
+      const distance = -24 + row * 398 / segments, section = hammerTunnelSection(distance);
+      for (let side = 0; side < sides; side++) {
+        const angle = side * Math.PI * 2 / sides;
+        const point = hammerRoutePoint(distance, { x: Math.cos(angle) * section.width, y: Math.sin(angle) * section.height, z: 0 });
+        positions.push(point.x, point.y + 1, point.z);
+      }
+    }
+    for (let row = 0; row < segments; row++) for (let side = 0; side < sides; side++) {
+      const a = row * sides + side, b = row * sides + (side + 1) % sides, c = a + sides, d = b + sides;
+      indices.push(a, c, b, b, c, d);
+    }
+    const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geometry.setIndex(indices); geometry.computeVertexNormals();
+    this.mesh(geometry, iron, this.spatial).name = 'hammer-spatial-tunnel';
+    for (let distance = -20; distance <= 370; distance += 12) {
+      const frame = hammerRouteFrame(distance), section = hammerTunnelSection(distance);
+      const ring = this.mesh(new THREE.TorusGeometry(section.width + .1, .12, 6, 24), rib, this.spatial);
+      ring.scale.y = section.height / section.width; ring.position.set(frame.x, frame.y + 1, frame.z); ring.rotation.set(frame.pitch, frame.yaw, 0, 'YXZ');
+      const point = hammerRoutePoint(distance, { x: 0, y: section.height - .3, z: 0 });
+      const beacon = this.mesh(new THREE.BoxGeometry(1.25, .2, .65), lamp, this.spatial);
+      beacon.position.set(point.x, point.y + 1, point.z); beacon.rotation.copy(ring.rotation);
+      if (distance % 24 === 4) {
+        const light = new THREE.PointLight(0x85d1c3, 18, 25, 2); light.position.copy(beacon.position); this.spatial.add(light); this.lights.push(light);
+      }
+    }
+    const warning = this.material(0xed9f55, .4, .6, 0xb86229, .7);
+    for (const beam of HAMMER_BEAMS) {
+      const frame = hammerRouteFrame(beam.distance), point = hammerRoutePoint(beam.distance, { x: 0, y: beam.y, z: 0 });
+      const mesh = this.mesh(new THREE.BoxGeometry(beam.width, beam.height, beam.depth), rib, this.spatial);
+      mesh.name = 'hammer-spatial-beam'; mesh.position.set(point.x, point.y + 1, point.z); mesh.rotation.set(frame.pitch, frame.yaw, 0, 'YXZ');
+      for (const side of [-1, 1]) {
+        const edge = this.mesh(new THREE.BoxGeometry(20, .16, .18), warning, mesh);
+        edge.position.set(0, -Math.sign(beam.y) * beam.height / 2, side * (beam.depth / 2 + .1));
+      }
+    }
+    batchStaticGeometry(this.spatial, new Set()).forEach(geometry => this.geometries.add(geometry));
   }
   private buildShip(): void {
     const hull = this.material(0x313a3a, .82, .43);
@@ -173,6 +219,10 @@ export class HammerRouteRenderer {
       }
       const console = this.mesh(new THREE.BoxGeometry(1.47, 1.34, .48), panel, this.cockpit); console.position.set(position.x, floor + 1.48, position.z - 1.65);
       const crt = this.mesh(new THREE.BoxGeometry(.9, .58, .11), display, this.cockpit); crt.name = `${role}-hammer-crt`; crt.position.set(position.x, floor + 1.99, position.z - 1.38); crt.rotation.x = -.3;
+      const horizon = new THREE.Group(); horizon.name = `${role}-hammer-horizon`; crt.add(horizon); horizon.position.z = .062; this.horizons.push(horizon);
+      const line = this.mesh(new THREE.BoxGeometry(.55, .014, .005), button, horizon);
+      line.position.y = 0;
+      const centerMark = this.mesh(new THREE.BoxGeometry(.014, .12, .005), button, horizon); centerMark.position.y = -.06;
       for (let i = 0; i < 9; i++) {
         const key = this.mesh(new THREE.BoxGeometry(.09, .035, .065), i === 8 ? this.warning : button, this.cockpit);
         key.position.set(position.x + (i % 3 - 1) * .24, floor + 1.72, position.z - 1.4 + Math.floor(i / 3) * .09);
@@ -195,20 +245,33 @@ export class HammerRouteRenderer {
     for (const z of [-6, 1, 7]) {
       const light = new THREE.PointLight(0x9cafce, 11, 7, 2); light.position.set(0, 1.7, z); this.cockpit.add(light); this.lights.push(light);
     }
+    for (const side of [-1, 1]) {
+      const light = new THREE.SpotLight(0xb7d5e3, 480, 85, .52, .65, 1.4);
+      light.position.set(side * 3.3, -.9, -8.6); light.target.position.set(side * 3.3, -.9, -65);
+      this.cockpit.add(light, light.target); this.lights.push(light);
+    }
   }
   update(flight: HammerFlight | undefined, elapsed: number, firstPerson = false): void {
-    const pose = flight ?? { x: 0, z: HAMMER_ROUTE.start, speed: 0, lateral: 0, pursuit: 0, hull: 100 };
+    const pose = flight ?? newHammerFlight();
+    this.planar.visible = !pose.maneuver; this.spatial.visible = Boolean(pose.maneuver);
     const transform = hammerShipPose(pose), time = flight?.elapsed ?? 0;
     this.ship.position.set(transform.x, 1 + transform.y, transform.z);
-    this.ship.rotation.set(0, transform.yaw, transform.roll);
+    this.ship.rotation.set(transform.pitch, transform.yaw, transform.roll, 'YXZ');
     this.ship.visible = !firstPerson;
     this.cockpit.position.copy(this.ship.position); this.cockpit.rotation.copy(this.ship.rotation);
-    this.controls.forEach(control => { control.rotation.z = -Math.max(-1, Math.min(1, pose.lateral / 13)) * .22; });
+    this.controls.forEach(control => { control.rotation.z = -hammerControlTurn(pose); });
     this.needles.forEach((needle, i) => { needle.rotation.z = -1.2 + (i % 3 === 0 ? pose.speed / 38 : i % 3 === 1 ? pose.hull / 100 : pose.pursuit / 100) * 2.4; });
+    this.horizons.forEach(horizon => { horizon.rotation.z = -transform.roll; horizon.position.y = Math.sin(transform.pitch) * .12; });
     this.warning!.emissiveIntensity = flight?.antennaLost || pose.hull < 50 ? .9 : .2;
     this.radio.visible = !flight?.antennaLost;
     for (const engine of this.engines) engine.emissiveIntensity = 1.5 + Math.sin(time * 12) * .3 + pose.speed / 35;
     this.sentinels.forEach((sentinel, i) => {
+      if (pose.maneuver) {
+        const distance = Math.max(-20, 175 - pose.z - 23 - i * 7 + pose.pursuit * .11), frame = hammerRouteFrame(distance);
+        const point = hammerRoutePoint(distance, { x: Math.sin(time * 2.5 + i * 3) * 3, y: Math.cos(time * 4 + i) * 2, z: 0 });
+        sentinel.position.set(point.x, point.y + 1, point.z); sentinel.rotation.set(frame.pitch, frame.yaw, Math.sin(time * 3 + i) * .18, 'YXZ');
+        sentinel.visible = Boolean(flight && flight.phase === 'riding'); return;
+      }
       const z = Math.min(187, pose.z + 23 + i * 7 - pose.pursuit * .11);
       sentinel.position.set(hammerCenter(z) + Math.sin(time * 2.5 + i * 3) * (2.7 + i), 1 + hammerHeight(z) + Math.cos(time * 4 + i) * 2, z);
       sentinel.rotation.z = Math.sin(time * 3 + i) * .18;
