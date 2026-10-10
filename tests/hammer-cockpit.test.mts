@@ -60,12 +60,22 @@ test('the shipped pilots keep their soles above the deck and palms on the bankin
     for (const role of h.roles) {
       const rig = h.pose(role, flight), hero = rig.hero;
       assert.ok(role === 'morpheus' ? hero : rig.root.getObjectByName(`${role}-detailed-body`), `${role}: test must use the shipped body`);
-      let lowest = Infinity;
+      let lowest = Infinity; const ceilingSamples = new Map<string, THREE.Vector3>();
       rig.root.traverseVisible(object => { if (object instanceof THREE.Mesh) for (let i = 0; i < object.geometry.attributes.position.count; i++) {
         const point = object.localToWorld(object.getVertexPosition(i, new THREE.Vector3())).applyMatrix4(inverse);
         assert.ok(point.toArray().every(Number.isFinite)); lowest = Math.min(lowest, point.y);
+        if (point.y > 1.1) {
+          const key = `${point.x.toFixed(1)}/${point.z.toFixed(1)}`;
+          if (!ceilingSamples.has(key) || ceilingSamples.get(key)!.y < point.y) ceilingSamples.set(key, point);
+        }
       } });
       assert.ok(lowest >= HAMMER_COCKPIT.floor - .05 && lowest < HAMMER_COCKPIT.floor + .12, `${role}/${lateral}: soles leave the deck (${lowest})`);
+      const roof = root.getObjectByName('hammer-cabin-roof')!, up = new THREE.Vector3(0, 1, 0).transformDirection(cockpit.matrixWorld);
+      for (const point of ceilingSamples.values()) {
+        const origin = new THREE.Vector3(point.x, HAMMER_COCKPIT.floor, point.z).applyMatrix4(cockpit.matrixWorld);
+        const hit = new THREE.Raycaster(origin, up).intersectObject(roof, false)[0];
+        assert.ok(hit && hit.point.clone().applyMatrix4(inverse).y >= point.y + .02, `${role}/${lateral}: the body penetrates the actual curved roof at ${point.toArray()}`);
+      }
       if (role === 'roland') continue;
       const grips: THREE.Vector3[] = [];
       root.getObjectByName(`${role}-hammer-yoke`)!.traverse(object => { if (object.name === 'hammer-control-grip') grips.push(object.getWorldPosition(new THREE.Vector3())); });
@@ -198,6 +208,29 @@ test('third-person flight cameras keep an unobstructed view past the two physica
       const hit = new THREE.Ray(origin, eye.clone().sub(origin).normalize()).intersectBox(box, new THREE.Vector3());
       assert.ok(!hit || hit.distanceTo(origin) > eye.distanceTo(origin), `${distance}: the beam blocks the camera or cuts through its near plane`);
     }
+  }
+});
+
+test('walking around the closed cabin does not put the third-person camera behind its opaque shell', async t => {
+  const previous = ['window', 'document'].map(key => Object.getOwnPropertyDescriptor(globalThis, key));
+  let controls: PlayerControls | undefined;
+  t.after(() => { controls?.dispose(); ['window', 'document'].forEach((key,i) => previous[i] ? Object.defineProperty(globalThis,key,previous[i]!) : Reflect.deleteProperty(globalThis,key)); });
+  const h = await setup(t), target = { addEventListener() {}, removeEventListener() {} };
+  const center = FILM_SETS.film_hammer_route.center, root = new THREE.Group(), renderer = new HammerRouteRenderer(root);
+  t.after(() => renderer.dispose()); root.position.set(center.x, center.y - 1, center.z); root.updateMatrixWorld(true);
+  const shell: THREE.Object3D[] = []; root.traverse(object => { if (['hammer-cabin-shell', 'hammer-cabin-roof'].includes(object.name)) shell.push(object); });
+  Object.defineProperty(globalThis, 'window', { configurable: true, value: target });
+  Object.defineProperty(globalThis, 'document', { configurable: true, value: target });
+  const camera = new THREE.PerspectiveCamera(48, 16/9, .5, 5000); controls = new PlayerControls(target as unknown as HTMLCanvasElement, camera, () => {}, () => {});
+  const state = h.world.agents.get('niobe')!, group = new THREE.Group();
+  state.currentLocation = 'film_hammer_route'; state.currentAction = null;
+  for (const [x, z, yaw] of [[-1.467661284, 172.56442311593, 1.7634896785663674], [0, 184, Math.PI], [-3.1, 173.3, 0], [3.1, 180, -Math.PI / 2]]) {
+    state.position = filmPosition('film_hammer_route', x, z); state.rotation = yaw; controls.possess(state);
+    group.position.set(state.position.x, state.position.y, state.position.z); controls.update(.1, state, group, false);
+    assert.ok(Math.abs(camera.position.x - center.x) < 3.7, 'the walking camera leaves the enclosed cabin through its side window');
+    const focus = new THREE.Vector3(state.position.x, state.position.y + 1.45, state.position.z), direction = focus.clone().sub(camera.position);
+    const ray = new THREE.Raycaster(camera.position, direction.clone().normalize(), .05, direction.length() - .1);
+    assert.equal(ray.intersectObjects(shell, false).length, 0, `the cabin blocks the camera at ${x}/${z}/${yaw}`);
   }
 });
 
