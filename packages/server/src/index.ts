@@ -267,7 +267,7 @@ const playerTimer = setInterval(() => {
     const crew = [...world.agents.entries()].filter(([id]) => ['niobe', 'ghost', 'morpheus', 'roland'].includes(id));
     sockets.broadcastDelta({ agents: Object.fromEntries(crew), dirtyChunks: {}, events: [], sandbox: sandbox.state }, simLoop.getTick()); return;
   }
-  if (current?.scene === 'm3_diggers' && !current.visiting && (world.agents.get(current.actor)?.controller || simLoop.isRunning())) {
+  if (current && ['m3_diggers', 'm3_upper_digger'].includes(current.scene) && !current.visiting && (world.agents.get(current.actor)?.controller || simLoop.isRunning())) {
     const crew = [...world.agents.entries()].filter(([id]) => ['charra', 'zee'].includes(id));
     sockets.broadcastDelta({ agents: Object.fromEntries(crew), dirtyChunks: {}, events: [], sandbox: sandbox.state }, simLoop.getTick()); return;
   }

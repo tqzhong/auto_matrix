@@ -129,7 +129,7 @@ test('cold paused loading resolves belt contact even when Zee is rendered before
   const world = new WorldState(); new AgentManager(world).initializeAllAgents(); const renderer = new AgentRenderer(new THREE.Scene());
   try {
     for (const role of ['zee', 'charra'] as const) {
-      const actor = world.agents.get(role)!, state = { ...newUpperDigger(), phase: 'bracing' as const, climb: 44, crawl: 26, role };
+      const actor = world.agents.get(role)!, state = { ...newUpperDigger(), phase: 'bracing' as const, climb: 44, crawl: 26, grip: .55, role };
       const root = upperDiggerRoot(state, role); actor.position = { x: root.x, y: root.y, z: root.z }; actor.rotation = root.yaw;
       actor.isInMatrix = false; actor.currentAction = { type: 'idle', parameters: { upperDigger: state }, startedAt: 0, duration: 1e9, progress: 0 };
       renderer.updateAgent(role, actor);
@@ -313,5 +313,52 @@ test('the fatal hit releases Charra’s launcher and support over time instead o
     };
     const before = pose(); state.elapsed = 1.201; state.charraDead = true;
     pose().forEach((point, i) => assert.ok(point.distanceTo(before[i]) < .025, `contact ${i} snaps by ${point.distanceTo(before[i])} when Charra dies`));
+  } finally { models.dispose(); globalThis.document = previous; }
+});
+
+test('belt support starts with an explicit reach and releases continuously before turning to retreat', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const previous = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {} }) }) } as unknown as Document;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents(); const models = new CharacterModels();
+  const rigs = { charra: models.create(world.agents.get('charra')!), zee: models.create(world.agents.get('zee')!) };
+  const state: UpperDigger = { ...newUpperDigger(), phase: 'ready', climb: 44, crawl: 26 };
+  const pose = () => {
+    for (const role of ['charra', 'zee'] as const) {
+      const rig = rigs[role], root = upperDiggerRoot(state, role); rig.root.position.set(root.x, root.y, root.z); rig.root.rotation.y = root.yaw;
+      const contacts = rigs.charra.diggerProps ? [-1, 1].map(side => rigs.charra.diggerProps!.belt.localToWorld(new THREE.Vector3(side * .23, 0, -.27))) : undefined;
+      models.animate(rig, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true, upperDigger: { ...state, role, contacts } }, 1);
+      rig.root.updateMatrixWorld(true);
+    }
+    return Object.values(rigs).flatMap(rig => [rig.head.getWorldPosition(new THREE.Vector3()),
+      ...rig.elbows.map(elbow => elbow.localToWorld(new THREE.Vector3(0, -.79, .055))),
+      ...rig.ankles.map(ankle => ankle.getWorldPosition(new THREE.Vector3()))]);
+  };
+  try {
+    state.phase = 'crawl'; state.crawl = 25.999; const arriving = pose();
+    state.phase = 'ready'; state.crawl = 26;
+    pose().forEach((point, i) => assert.ok(point.distanceTo(arriving[i]) < .025, 'reaching the edge teleports a limb into the waiting pose'));
+    pose();
+    for (const elbow of rigs.zee.elbows) assert.ok(elbow.localToWorld(new THREE.Vector3(0, -.79, .055)).y < 44.35,
+      'Zee is already holding the belt before the player agrees to support Charra');
+    assert.ok(rigs.charra.diggerProps!.gun.position.y < 1, 'Charra aims before her partner has reached the belt');
+    let before = pose(); state.phase = 'bracing';
+    pose().forEach((point, i) => assert.ok(point.distanceTo(before[i]) < .001, 'pressing G teleports a limb instead of starting the reach'));
+    for (let sample = 1; sample <= 100; sample++) {
+      state.grip = sample / 100; const points = pose();
+      points.forEach((point, i) => assert.ok(point.distanceTo(before[i]) < .15, `support ${state.grip}, limb ${i} jumps by ${point.distanceTo(before[i])}`)); before = points;
+      if (state.grip >= .42) rigs.zee.elbows.forEach((elbow, i) => {
+        const target = rigs.charra.diggerProps!.belt.localToWorld(new THREE.Vector3((i ? 1 : -1) * .23, 0, -.27));
+        assert.ok(elbow.localToWorld(new THREE.Vector3(0, -.79, .055)).distanceTo(target) < .035, 'Charra leans out before both hands provide support');
+      });
+    }
+    state.phase = 'shot'; state.elapsed = 0;
+    pose().forEach((point, i) => assert.ok(point.distanceTo(before[i]) < .001, 'firing changes the supported posture'));
+    for (let elapsed = .025; elapsed <= UPPER_DIGGER.shot; elapsed += .025) {
+      state.elapsed = elapsed; const points = pose();
+      points.forEach((point, i) => assert.ok(point.distanceTo(before[i]) < .25, `release ${elapsed}, limb ${i} jumps by ${point.distanceTo(before[i])}`)); before = points;
+    }
+    state.elapsed = UPPER_DIGGER.shot; before = pose(); state.phase = 'retreat'; state.elapsed = 0;
+    pose().forEach((point, i) => assert.ok(point.distanceTo(before[i]) < .001, 'retreat snaps out of the supported pose before Zee releases the belt'));
   } finally { models.dispose(); globalThis.document = previous; }
 });

@@ -99,7 +99,8 @@ export function upperDiggerText(state?: UpperDigger): string {
     case 'dismounting': return 'Zee 转身抓住舱口下的梯子。';
     case 'crawl': return '按住 Z 压低身体，再用 W / S 沿两条大管之间前进 / 后退。Charra 正在寻找俯射角度。';
     case 'ready': return 'Charra 要探出管线边缘。按 G 抓住她的腰带。';
-    case 'bracing': return `继续按住 G 稳住腰带 · ${Math.round((state?.grip ?? 0) * 100)}%。松手会失去支撑。`;
+    case 'bracing': return (state?.grip ?? 0) < .42 ? '按住 G，依次伸手抓住腰带。抓稳后，Charra 才会抬枪探出。'
+      : `继续按住 G 稳住腰带 · ${Math.round((state?.grip ?? 0) * 100)}%。松手会失去支撑。`;
     case 'shot': return '两枚火箭射向第二台钻机的上部驱动，却被哨兵截住。机器仍在钻进。';
     case 'retreat': return '哨兵发现了射击位置！按住 Z，W 沿管线撤回，S 退向危险一侧。';
     case 'attack': return 'Charra 被追来的触手击中。Zee 回头呼喊她，管线后方仍有退路。';

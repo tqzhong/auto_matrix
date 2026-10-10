@@ -85,6 +85,59 @@ test('the shipped dock hands remain on the support belt after full body skinning
   }
 });
 
+test('the shipped pair keeps grounded boots, clear bodies and belt contact throughout reaching and lowering the launcher', async t => {
+  const { rigs, state, pose } = await fixture(t);
+  const clashes = new Map<string, string>();
+  for (const phase of ['bracing', 'shot'] as const) for (let sample = 0; sample <= 20; sample++) {
+    Object.assign(state, { phase, grip: sample / 20, elapsed: phase === 'shot' ? 2 + sample / 20 * .8 : 0 }); pose(state);
+    for (const role of ['zee', 'charra'] as const) {
+      const rig = rigs[role], boots = rig.root.getObjectByName(`${role}-work-boots`) as THREE.SkinnedMesh; boots.skeleton.update();
+      const floor = new THREE.Box3().setFromObject(boots, true).min.y;
+      assert.ok(floor >= 43.98 && floor < 44.03, `${role} ${phase} ${sample}: soles lost support at ${floor}`);
+      const body = rig.root.getObjectByName(`${role}-detailed-body`)!;
+      body.traverseVisible(object => {
+        if (!(object instanceof THREE.SkinnedMesh)) return;
+        object.skeleton.update(); const point = new THREE.Vector3();
+        for (let i = 0; i < object.geometry.attributes.position.count; i++) {
+          object.localToWorld(object.getVertexPosition(i, point));
+          assert.ok(point.y >= 43.97, `${role} ${phase} ${sample}: ${object.name} crosses the deck at ${point.toArray()}`);
+          if (point.x > -49 && point.x < -16) assert.ok(UPPER_DIGGER.pipes.every(z => Math.hypot(point.y - 46, point.z - z) >= 2.5), 'a limb enters the neighboring pipe');
+          if (role === 'zee') {
+            const gun = rigs.charra.diggerProps!.gun.worldToLocal(point.clone());
+            if (gun.z >= -1.105 && gun.z <= 1.505 && Math.min(Math.hypot(gun.x - .21, gun.y), Math.hypot(gun.x + .21, gun.y)) < .22)
+              clashes.set(`${phase}-${sample}`, `Zee ${phase} ${sample}: ${object.name} enters the launcher's barrels at ${gun.toArray()}`);
+          }
+        }
+      });
+      if (role === 'charra') {
+        const skin = rig.root.getObjectByName('charra-anatomical-body') as THREE.SkinnedMesh; skin.skeleton.update();
+        for (let i = 0; i < 2; i++) {
+          if (i === 1 && (phase === 'bracing' ? state.grip < .4 : state.elapsed > 2)) continue;
+          const side = i ? 1 : -1, target = rig.diggerProps!.gun.localToWorld(new THREE.Vector3(.05, -.31, i ? .85 : -.12));
+          const position = skin.geometry.attributes.position; let distance = Infinity;
+          for (let vertex = 0; vertex < position.count; vertex++) {
+            if (position.getY(vertex) > 1.79 || position.getY(vertex) < 1.45 || Math.sign(position.getX(vertex)) !== side) continue;
+            distance = Math.min(distance, skin.localToWorld(skin.getVertexPosition(vertex, new THREE.Vector3())).distanceTo(target));
+          }
+          assert.ok(distance < .075, `Charra ${phase} ${sample}: actual palm ${i} misses the launcher handle by ${distance}`);
+        }
+      }
+    }
+    if (phase !== 'bracing' || state.grip < .42) continue;
+    const skin = rigs.zee.root.getObjectByName('zee-anatomical-body') as THREE.SkinnedMesh; skin.skeleton.update();
+    for (const side of [-1, 1]) {
+      const target = rigs.charra.diggerProps!.belt.localToWorld(new THREE.Vector3(side * .23, 0, -.27));
+      const position = skin.geometry.attributes.position; let distance = Infinity;
+      for (let i = 0; i < position.count; i++) {
+        if (position.getY(i) > 1.79 || position.getY(i) < 1.45 || Math.sign(position.getX(i)) !== side) continue;
+        distance = Math.min(distance, skin.localToWorld(skin.getVertexPosition(i, new THREE.Vector3())).distanceTo(target));
+      }
+      assert.ok(distance < .075, `support ${state.grip}: the actual hand surface misses the belt by ${distance}`);
+    }
+  }
+  assert.deepEqual([...clashes.values()], []);
+});
+
 test('Zee’s shipped hands stay on the artillery wheel without crossing her arms or lifting her boots', async t => {
   const { rigs, models } = await fixture(t), rig = rigs.zee, center = FILM_SETS.film_zion_temple.center;
   rig.root.position.set(center.x + TEMPLE_DEFENSE.mounts[0].x, center.y - 1, center.z + TEMPLE_DEFENSE.operatorZ); rig.root.rotation.set(0, Math.PI, 0);

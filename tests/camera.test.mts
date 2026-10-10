@@ -665,6 +665,34 @@ for (const firstPerson of [false, true]) test(`APU ${firstPerson ? 'first' : 'th
   assert.ok(game.group.position.distanceTo(new THREE.Vector3().copy(game.state.position)) < .001, 'walking or gravity must not pull the seated pilot away from the machine');
 });
 
+test('upper pipe shot camera returns to both fighters before they withdraw their hands, including a cold load', async t => {
+  const { upperDiggerEye } = await import('../packages/client/src/agents/UpperDiggerPerformance.js');
+  const game = setup(t), center = FILM_SETS.film_zion_hangar.center;
+  const state = { ...newUpperDigger(), phase: 'shot' as const, climb: 44, crawl: 26, grip: 1, elapsed: 2 };
+  game.state.id = 'zee'; game.state.currentLocation = 'film_zion_hangar'; game.state.isInMatrix = false;
+  const point = upperDiggerRoot(state, 'zee');
+  game.state.position = filmPosition('film_zion_hangar', point.x, point.z); game.state.position.y += point.y; game.state.rotation = point.yaw;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const stage = new THREE.Group(); stage.position.set(center.x, center.y - 1, center.z);
+  const renderer = new ZionHomecomingRenderer(stage, 'film_zion_hangar'); t.after(() => renderer.dispose());
+  for (const elapsed of [2, 2.4, 2.79]) for (const aspect of [.6, 16 / 9]) {
+    state.elapsed = elapsed; game.camera.aspect = aspect;
+    game.state.currentAction = { type: 'idle', parameters: { upperDigger: { ...state, role: 'zee' } }, startedAt: 0, duration: 1e9, progress: 0 };
+    renderer.update({ scene: 'm3_upper_digger', actor: 'zee', step: 0, completed: [], diggers: { ...newDiggers(), phase: 'done', damage: 3 }, upperDigger: state } as import('@auto_matrix/shared').FilmJourney, 0);
+    game.controls.possess(game.state); game.step(.1); game.camera.updateMatrixWorld(true); stage.updateMatrixWorld(true);
+    for (const role of ['zee', 'charra'] as const) {
+      const eye = upperDiggerEye({ ...state, role }).add(new THREE.Vector3(center.x, center.y, center.z));
+      const projection = eye.clone().project(game.camera);
+      assert.ok(Math.abs(projection.x) < .9 && Math.abs(projection.y) < .9 && projection.z > -1 && projection.z < 1,
+        `${role} withdrawing at ${elapsed}s must remain visible at aspect=${aspect}: ${projection.toArray()}`);
+      const direction = eye.clone().sub(game.camera.position);
+      const hits = new THREE.Raycaster(game.camera.position, direction.clone().normalize(), 0, direction.length())
+        .intersectObject(stage.getObjectByName('upper-digger-service-channel')!, true);
+      assert.equal(hits.length, 0, `pipe blocks ${role} withdrawing at ${elapsed}s: ${hits[0]?.point.toArray()}`);
+    }
+  }
+});
+
 test('upper pipe attack camera has an unobstructed view of Charra in wide and narrow windows', t => {
   const game = setup(t), state = { ...newUpperDigger(), phase: 'attack' as const, climb: 44, crawl: 26, retreat: 7, elapsed: 1.6, charraDead: true };
   const point = upperDiggerRoot(state, 'zee'), center = FILM_SETS.film_zion_hangar.center;
