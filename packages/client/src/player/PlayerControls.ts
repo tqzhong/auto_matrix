@@ -2600,7 +2600,7 @@ export class PlayerControls {
       const focus = lift ? new THREE.Vector3(center.x, this.position.y + 1.85, center.z + 13)
         : new THREE.Vector3(center.x, this.position.y + 1.9, center.z - 1.8);
       const ideal = lift ? new THREE.Vector3(center.x + 3.7, this.position.y + 3.5, center.z + 10.5)
-        : new THREE.Vector3(center.x + 5.3, this.position.y + 3.8, center.z + 3.8);
+        : new THREE.Vector3(center.x + 7.7, this.position.y + 3.8, center.z - 2.6);
       const offset = ideal.clone().sub(focus).applyAxisAngle(new THREE.Vector3(0, 1, 0), THREE.MathUtils.clamp(this.yaw - state.rotation, -.5, .5));
       offset.y += THREE.MathUtils.clamp(this.pitch - .1, -.25, .4) * 2;
       ideal.copy(focus).add(offset);

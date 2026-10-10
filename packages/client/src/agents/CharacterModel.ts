@@ -107,7 +107,7 @@ const HERO_LOOKS: Record<string, Look> = {
   link: { width: .97, shoulders: .57, waist: .37, hips: .43, skin: '#654733', cloth: '#5d554a', leather: false, coat: false, hair: 'short', glasses: 'none' },
   mifune: { width: 1.07, shoulders: .68, waist: .43, hips: .46, skin: '#997050', cloth: '#b8ad94', leather: false, coat: false, hair: 'short', glasses: 'none' },
   kid: { width: .97, shoulders: .55, waist: .36, hips: .43, skin: '#c6a087', cloth: '#a9a28d', leather: false, coat: false, hair: 'short', glasses: 'none' },
-  roland: { width: 1.04, shoulders: .64, waist: .43, hips: .47, skin: '#c29982', cloth: '#56403a', leather: false, coat: false, hair: 'short', glasses: 'none' },
+  roland: { width: 1.04, shoulders: .64, waist: .43, hips: .47, skin: '#c29982', cloth: '#4b2933', leather: false, coat: false, hair: 'short', glasses: 'none' },
   seraph: { width: .94, shoulders: .58, waist: .34, hips: .4, skin: '#c5a27e', cloth: '#d7d4c6', leather: false, coat: false, hair: 'short', glasses: 'none' },
   keymaker: { width: 1.04, shoulders: .55, waist: .40, hips: .44, skin: '#c4a07d', cloth: '#514d40', leather: false, coat: false, hair: 'short', glasses: 'none' },
   merovingian: { width: 1, shoulders: .67, waist: .42, hips: .46, skin: '#d1ad97', cloth: '#171a1b', leather: false, coat: false, hair: 'short', glasses: 'none' },
@@ -395,6 +395,18 @@ export class CharacterModels {
     }
     const cloth = this.material(new THREE.MeshPhysicalMaterial({ color: look.cloth, roughness: look.leather ? 0.43 : 0.88,
       metalness: 0, clearcoat: look.leather ? 0.22 : 0, clearcoatRoughness: 0.4, bumpMap: this.fabric, bumpScale: look.leather ? 0.003 : 0.002, side: THREE.DoubleSide }));
+    if (state.id === 'roland') {
+      const size = 128, pixels = new Uint8Array(size * size * 4);
+      for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+        const row = y % 16 / 16, column = x % 16;
+        const strand = Math.min(Math.abs(column - (8 - row * 6)), Math.abs(column - (8 + row * 6)));
+        const height = Math.round(74 + Math.exp(-strand * strand / 2.6) * 155 + Math.sin(x * 2.1 + y * 3.7) * 5), offset = (y * size + x) * 4;
+        pixels[offset] = pixels[offset + 1] = pixels[offset + 2] = height; pixels[offset + 3] = 255;
+      }
+      const weave = new THREE.DataTexture(pixels, size, size, THREE.RGBAFormat);
+      weave.wrapS = weave.wrapT = THREE.RepeatWrapping; weave.repeat.set(12, 12); weave.needsUpdate = true;
+      this.textures.add(weave); cloth.bumpMap = weave; cloth.bumpScale = .007; cloth.roughness = .97;
+    }
     if (state.id === 'kid') {
       const size = 128, pixels = new Uint8Array(size * size * 4);
       for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {

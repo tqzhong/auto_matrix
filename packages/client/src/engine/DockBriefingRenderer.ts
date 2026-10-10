@@ -58,7 +58,9 @@ export class DockBriefingRenderer {
         const joint = this.mesh(new THREE.TorusGeometry(radius + .025, .035, 6, 14), bolt); joint.position.set(x, y, z);
       }
     }
-    const face = new THREE.MeshStandardMaterial({ color: 0xe6d9ba, emissive: 0xffc895, emissiveIntensity: 1.6, roughness: .45 }); this.materials.add(face);
+    // The emitter must not receive its own nearby point light: a lit PBR
+    // bulb turns into an oversized HDR bloom when viewed along the corridor.
+    const face = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xffdbab).multiplyScalar(1.6) }); this.materials.add(face);
     for (const z of [-10, -2, 6]) {
       const lamp = new THREE.Group(); lamp.name = 'personnel-portable-lamp'; this.static.add(lamp);
       lamp.position.set(8.1, 4.7, z); lamp.rotation.z = -.18;
