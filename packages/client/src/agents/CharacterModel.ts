@@ -2,6 +2,7 @@ import { poseOracleRequest } from './OracleRequestPerformance.js';
 import { poseBaneInquiry } from './BaneInquiryPerformance.js';
 import { poseHammerBriefing } from './HammerBriefingPerformance.js';
 import { poseHammerPilot } from './HammerPilotPerformance.js';
+import { poseLogosPilot } from './LogosPilotPerformance.js';
 import { poseMaggieDiscovery } from './MaggieDiscoveryPerformance.js';
 import { poseLogosBane } from './LogosBanePerformance.js';
 import { poseZionDeployment } from './ZionDeploymentPerformance.js';
@@ -1208,6 +1209,7 @@ export class CharacterModels {
       poseBaneInquiry(rig, input.baneInquiry);
       poseHammerBriefing(rig, input.hammerBriefing);
       poseHammerPilot(rig, input.hammerPilot);
+      poseLogosPilot(rig, input.logosPilot);
       poseZionDeployment(rig, input.zionDeployment);
       poseMaggieDiscovery(rig, input.maggieDiscovery);
       poseLogosBane(rig, input.logosBane);
@@ -1327,6 +1329,7 @@ export class CharacterModels {
     poseMaggieDiscovery(rig, input.maggieDiscovery);
     poseLogosBane(rig, input.logosBane);
     poseHammerPilot(rig, input.hammerPilot);
+    poseLogosPilot(rig, input.logosPilot);
     this.diggerBodies.update(rig, rig.logosBaneBody ? Boolean(input.logosBane) : !rig.medicalCrew || Boolean(input.maggieDiscovery) || input.dockEvacuation?.role === 'colt', Boolean(input.parkOutfit || input.epilogue?.kind === 'dawn'), Boolean(input.hammerBriefing), Boolean(input.dockEvacuation));
   }
 

@@ -9,7 +9,7 @@ import { poseFreewayTransferContact } from './FreewayPickupContact.js';
 import { truckRoadRoot, freewayHandoffRoot, truckWeaponPairRoot, truckHoodRoot } from '@auto_matrix/shared';
 import { freewayPickupRoot, freewayDriverRoot, freewayRideRoot } from '@auto_matrix/shared';
 import * as THREE from 'three';
-import { hammerCrewRoot, hammerShipPose } from '@auto_matrix/shared';
+import { hammerCrewRoot, hammerShipPose, logosCrewRoot, logosShipPose } from '@auto_matrix/shared';
 import { CONNECTED_ROLES, BETRAYAL, crosscutActive, type CrosscutGesture, FILM_SETS, groundHeight, mirrorGuidePose, ambushRouteRoot, ambushRetreatRoot, wetwallPose, sixthPose, bathroomFightRoot, basementDropPose, basementDropRoot, basementDropPlayback, CLUB, clubRoot, oracleCookieOwner, oracleReceptionRoot, officeClothing, type AmbushEscort, type AgentState, type CombatImpact, type FilmJourney, type WetwallPhase, type BasementDropPlayback, type ClubPhase } from '@auto_matrix/shared';
 import { trackingContact } from './TrackingContact.js';
 import { CharacterModels, weaponMuzzle, type CharacterRig } from './CharacterModel.js';
@@ -54,6 +54,7 @@ interface Entry {
   sixthElapsed?: number;
   bathroomElapsed?: number;
   hammerPilot?: boolean;
+  logosPilot?: boolean;
   basementDropClock?: BasementDropPlayback;
 }
 
@@ -300,7 +301,7 @@ export class AgentRenderer {
       const doorPush = door ? door.elapsed / helDanceDoorDuration(door) : undefined;
       const pistolView = id === this.playerId && this.firstPerson && (disarmGesture || this.playerMotion?.armed && this.playerMotion.weaponStyle === 'hel_pistol');
       const apuView = id === this.playerId && this.firstPerson && Boolean(this.playerMotion?.apuDriving || this.playerMotion?.dockReload || this.playerMotion?.dockLastStand || this.playerMotion?.dockGate);
-      entry.body.visible = (id !== this.playerId || !this.firstPerson || apuView || pistolView || doorPush !== undefined || (this.playerMotion?.primaryDemolition?.phase === 'mounting' || this.playerMotion?.primaryDemolition?.blast?.phase === 'countdown') || this.playerMotion?.signal !== undefined || this.playerMotion?.helGarage !== undefined || this.playerMotion?.helElevator !== undefined || this.playerMotion?.trainmanChase !== undefined || this.playerMotion?.baneInquiry !== undefined || this.playerMotion?.hammerBriefing !== undefined || this.playerMotion?.hammerPilot !== undefined || this.playerMotion?.zionDeployment !== undefined || this.playerMotion?.maggieDiscovery !== undefined || this.playerMotion?.logosBane !== undefined || this.playerMotion?.architect?.role === 'neo' || this.playerMotion?.catch?.role === 'neo' || this.playerMotion?.truckHood !== undefined || this.playerMotion?.truckWeapons !== undefined || this.playerMotion?.freewayPickup !== undefined || this.playerMotion?.freewayRide !== undefined || this.playerMotion?.dockEvacuation !== undefined || this.playerMotion?.shaftSeal !== undefined || this.playerMotion?.templeDefense?.phase === 'mounting' || this.playerMotion?.dockReunion !== undefined || this.playerMotion?.empOperator !== undefined || this.playerMotion?.upperDigger !== undefined || this.playerMotion?.diggers !== undefined || this.playerMotion?.smithFinale?.pitFight && smithLocked || this.playerMotion?.morning !== undefined || state.id === 'neo' && state.currentLocation === 'film_power_plant_pods' && this.playerMotion?.performance === 'pod' || Boolean(this.playerMotion?.workday?.role === 'neo' && this.playerMotion.workday.phase === 'signing') || this.playerMotion?.computerCheck !== undefined || Boolean(this.playerMotion?.contact?.propMotion === 'minidisc' && ['retrieving', 'disk', 'handover'].includes(this.playerMotion.contact.phase)) || this.playerMotion?.pills !== undefined || this.playerMotion?.wetwall?.hanging || this.playerMotion?.inspecting === true || this.playerMotion?.spoon !== undefined || this.playerMotion?.spoonLesson !== undefined || Boolean(this.playerMotion?.oracleVisit && oracleCookieOwner(this.playerMotion.oracleVisit) === 'neo') || this.playerMotion?.oracleDeparture?.role === 'neo') && state.status !== 'disconnected' && !state.currentAction?.parameters.filmDuel && !state.currentAction?.parameters.ghostPhase;
+      entry.body.visible = (id !== this.playerId || !this.firstPerson || apuView || pistolView || doorPush !== undefined || (this.playerMotion?.primaryDemolition?.phase === 'mounting' || this.playerMotion?.primaryDemolition?.blast?.phase === 'countdown') || this.playerMotion?.signal !== undefined || this.playerMotion?.helGarage !== undefined || this.playerMotion?.helElevator !== undefined || this.playerMotion?.trainmanChase !== undefined || this.playerMotion?.baneInquiry !== undefined || this.playerMotion?.hammerBriefing !== undefined || this.playerMotion?.hammerPilot !== undefined || this.playerMotion?.logosPilot !== undefined || this.playerMotion?.zionDeployment !== undefined || this.playerMotion?.maggieDiscovery !== undefined || this.playerMotion?.logosBane !== undefined || this.playerMotion?.architect?.role === 'neo' || this.playerMotion?.catch?.role === 'neo' || this.playerMotion?.truckHood !== undefined || this.playerMotion?.truckWeapons !== undefined || this.playerMotion?.freewayPickup !== undefined || this.playerMotion?.freewayRide !== undefined || this.playerMotion?.dockEvacuation !== undefined || this.playerMotion?.shaftSeal !== undefined || this.playerMotion?.templeDefense?.phase === 'mounting' || this.playerMotion?.dockReunion !== undefined || this.playerMotion?.empOperator !== undefined || this.playerMotion?.upperDigger !== undefined || this.playerMotion?.diggers !== undefined || this.playerMotion?.smithFinale?.pitFight && smithLocked || this.playerMotion?.morning !== undefined || state.id === 'neo' && state.currentLocation === 'film_power_plant_pods' && this.playerMotion?.performance === 'pod' || Boolean(this.playerMotion?.workday?.role === 'neo' && this.playerMotion.workday.phase === 'signing') || this.playerMotion?.computerCheck !== undefined || Boolean(this.playerMotion?.contact?.propMotion === 'minidisc' && ['retrieving', 'disk', 'handover'].includes(this.playerMotion.contact.phase)) || this.playerMotion?.pills !== undefined || this.playerMotion?.wetwall?.hanging || this.playerMotion?.inspecting === true || this.playerMotion?.spoon !== undefined || this.playerMotion?.spoonLesson !== undefined || Boolean(this.playerMotion?.oracleVisit && oracleCookieOwner(this.playerMotion.oracleVisit) === 'neo') || this.playerMotion?.oracleDeparture?.role === 'neo') && state.status !== 'disconnected' && !state.currentAction?.parameters.filmDuel && !state.currentAction?.parameters.ghostPhase;
       const warning = state.currentAction?.type === 'attack' && state.currentAction.target === this.playerId && Number(state.currentAction.parameters.contactTick ?? 0) > tick;
       entry.marker.visible = !physical && (warning || !this.playerId || id === this.selected);
       (entry.marker.material as THREE.MeshBasicMaterial).color.set(warning ? '#f6b177' : FACTION_COLORS[state.faction] ?? '#91cfb0');
@@ -403,6 +404,15 @@ export class AgentRenderer {
         else if (state.currentAction?.parameters.truckPassenger || state.currentAction?.parameters.truckFlight || state.currentAction?.parameters.farewell || state.currentAction?.parameters.club || state.currentAction?.parameters.sentinel || state.currentAction?.parameters.interlude || state.currentAction?.parameters.oracleVisit || state.currentAction?.parameters.oracleDeparture || state.currentAction?.parameters.crosscut || state.currentAction?.parameters.betrayal || state.currentAction?.parameters.rescue || state.currentAction?.parameters.government || state.currentAction?.parameters.airRescue || state.currentAction?.parameters.matrixEscape || state.currentAction?.parameters.theOne || state.currentAction?.parameters.reloaded || state.currentAction?.parameters.catch || state.currentAction?.parameters.lobbyEntry || state.currentAction?.parameters.meeting || state.currentAction?.parameters.pills || state.currentAction?.parameters.interrogation || state.currentAction?.parameters.welcome || state.currentAction?.parameters.reveal || state.currentAction?.parameters.training || state.currentAction?.parameters.workday || state.currentAction?.parameters.recoveryCrew || state.currentAction?.parameters.mirrorEntry || entry.group.position.distanceTo(target) > 60) entry.group.position.copy(target);
         else entry.group.position.lerp(target, 1 - Math.exp(-8 * delta));
         if (state.currentAction?.parameters.basement && !dropRoot && delta * speed > 0) guideSpeed = entry.group.position.distanceTo(previous) / (delta * speed);
+      }
+      const logosPilot = typeof state.currentAction?.parameters.logosPilot === 'object'
+        ? state.currentAction.parameters.logosPilot as MotionInput['logosPilot'] : undefined;
+      if (!logosPilot && entry.logosPilot) entry.body.rotation.z = 0;
+      entry.logosPilot = Boolean(logosPilot);
+      if (logosPilot) {
+        const point = logosCrewRoot(logosPilot.flight, logosPilot.role), center = FILM_SETS[logosPilot.flight.mode === 'defense' ? 'film_machine_defense' : 'film_above_clouds'].center;
+        entry.group.position.set(center.x + point.x, center.y + point.y, center.z + point.z); guideHeading = point.yaw;
+        entry.body.rotation.y = point.yaw;
       }
       const hammerPilot = state.currentAction?.parameters.hammerPilot as MotionInput['hammerPilot'];
       if (!hammerPilot && entry.hammerPilot) entry.body.rotation.z = 0;
@@ -580,7 +590,7 @@ export class AgentRenderer {
       input.oracleLast = state.currentAction?.parameters.oracleLast as MotionInput['oracleLast'];
       input.baneInquiry = state.currentAction?.parameters.baneInquiry as MotionInput['baneInquiry'];
       input.hammerBriefing = state.currentAction?.parameters.hammerBriefing as MotionInput['hammerBriefing'];
-      input.hammerPilot = hammerPilot;
+      input.hammerPilot = hammerPilot; input.logosPilot = logosPilot;
       input.zionDeployment = state.currentAction?.parameters.zionDeployment as MotionInput['zionDeployment'];
       input.maggieDiscovery = state.currentAction?.parameters.maggieDiscovery as MotionInput['maggieDiscovery'];
       input.logosBane = (id === this.playerId ? this.playerMotion?.logosBane : state.currentAction?.parameters.logosBane) as MotionInput['logosBane'];
@@ -603,7 +613,7 @@ export class AgentRenderer {
       input.helElevator = typeof state.currentAction?.parameters.helElevator === 'object' ? state.currentAction.parameters.helElevator as MotionInput['helElevator'] : undefined;
       input.parkOutfit = state.currentLocation === 'film_sunrise_garden';
       input.farewellOutfit = input.realWorld && (id === 'neo' || id === 'trinity')
-        && (state.currentLocation === 'film_logos_wreck' || id === 'neo' && state.currentLocation === 'film_machine_core') ? id : undefined;
+        && (['film_logos_wreck', 'film_machine_defense', 'film_above_clouds'].includes(state.currentLocation) || id === 'neo' && state.currentLocation === 'film_machine_core') ? id : undefined;
       if (input.wetwall && !input.sixth && id !== this.playerId && entry.wetwallGuide) {
         const progress = entry.wetwallGuide.progress, wall = input.wetwall, pose = wetwallPose(wall.start, wall.role, progress, wall.phase, wall.elapsed, wall.fallY, wall.continued);
         input.wetwall = { ...wall, progress, hanging: pose.hanging }; input.climbing = pose.hanging ? 0 : undefined;
@@ -716,6 +726,11 @@ export class AgentRenderer {
         // The one-unit actor offset follows all three axes, including a ninety-degree bank.
         entry.body.position.set(0, -1, 0).applyQuaternion(new THREE.Quaternion().setFromEuler(new THREE.Euler(pose.pitch, pose.yaw, pose.roll, 'YXZ')));
       }
+      if (logosPilot) {
+        const pose = logosShipPose(logosPilot.flight);
+        entry.body.rotation.set(-pose.pitch, pose.yaw + Math.PI, -pose.roll, 'YXZ');
+        entry.body.position.set(0, -1, 0).applyQuaternion(new THREE.Quaternion().setFromEuler(new THREE.Euler(pose.pitch, pose.yaw, pose.roll, 'YXZ')));
+      }
       if (medicalPatient) { entry.rig.motion = newMotion(); input.speed = 0; input.turn = 0; }
       this.models.animate(entry.rig, medicalPatient ? 0 : delta * (id === this.playerId && speed > 0 ? 1 : speed), input, dist);
       if (input.maggieDiscovery?.role !== 'maggie') poseHammerPatient(entry.rig, medicalPatient);
@@ -724,8 +739,8 @@ export class AgentRenderer {
         evacuationHead.userData.evacuationHidden = Boolean(id === this.playerId && this.firstPerson && (input.dockEvacuation || input.shaftSeal || input.templeDefense?.phase === 'mounting'));
         evacuationHead.visible = !evacuationHead.userData.evacuationHidden;
       }
-      if (input.trainmanChase || input.helGarage || input.helElevator || input.helDanceDoor !== undefined || input.baneInquiry || input.hammerBriefing || input.hammerPilot || input.zionDeployment || input.maggieDiscovery || input.logosBane || input.apuDriving || input.dockReload || input.dockLastStand || input.dockGate || pistolView || evacuationHead.userData.trainmanHidden) {
-        evacuationHead.userData.trainmanHidden = Boolean(id === this.playerId && this.firstPerson && (input.trainmanChase || input.helGarage || input.helElevator || input.helDanceDoor !== undefined || input.baneInquiry || input.hammerBriefing || input.hammerPilot || input.zionDeployment || input.maggieDiscovery || input.logosBane || input.apuDriving || input.dockReload || input.dockLastStand || input.dockGate || pistolView));
+      if (input.trainmanChase || input.helGarage || input.helElevator || input.helDanceDoor !== undefined || input.baneInquiry || input.hammerBriefing || input.hammerPilot || input.logosPilot || input.zionDeployment || input.maggieDiscovery || input.logosBane || input.apuDriving || input.dockReload || input.dockLastStand || input.dockGate || pistolView || evacuationHead.userData.trainmanHidden) {
+        evacuationHead.userData.trainmanHidden = Boolean(id === this.playerId && this.firstPerson && (input.trainmanChase || input.helGarage || input.helElevator || input.helDanceDoor !== undefined || input.baneInquiry || input.hammerBriefing || input.hammerPilot || input.logosPilot || input.zionDeployment || input.maggieDiscovery || input.logosBane || input.apuDriving || input.dockReload || input.dockLastStand || input.dockGate || pistolView));
         evacuationHead.visible = !evacuationHead.userData.trainmanHidden;
       }
       if (entry.rig.diggerProps) entry.rig.head.visible = !((input.diggers || input.upperDigger || input.templeDefense?.phase === 'mounting') && id === this.playerId && this.firstPerson);

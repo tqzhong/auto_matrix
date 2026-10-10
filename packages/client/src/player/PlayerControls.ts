@@ -1,4 +1,5 @@
 import { logosBaneBeat, logosBaneLocked, logosBaneRoot } from '@auto_matrix/shared';
+import { logosShipPose, logosShipPoint } from '@auto_matrix/shared';
 import { MAGGIE_DISCOVERY, HAMMER_MEDICAL, maggieDiscoveryLocked, maggieDiscoveryRoot } from '@auto_matrix/shared';
 import { sourcePortalLocked } from '@auto_matrix/shared';
 import { ORACLE_LAST, oracleLastLocked } from '@auto_matrix/shared';
@@ -75,6 +76,7 @@ export class PlayerControls {
   private doorAim = false;
   private hammerAim = false;
   private hammerPilotYaw?: number;
+  private logosPilotYaw?: number;
   private deploymentAim = false;
   private discoveryAim = false;
   private logosAim = false;
@@ -207,6 +209,7 @@ export class PlayerControls {
     this.motion.maggieDiscovery = undefined; this.discoveryAim = false;
     this.motion.logosBane = undefined; this.logosAim = false;
     this.hammerAim = false; this.hammerPilotYaw = undefined; this.motion.hammerPilot = undefined; this.hammerPreparation = undefined;
+    this.logosPilotYaw = undefined; this.motion.logosPilot = undefined;
     this.elevatorAim = false; this.elevatorViewAction = undefined; this.doorAim = false; this.doorViewOpening = false;
     this.motion.dockEvacuation = undefined; this.motion.shaftSeal = undefined;
     this.sealAim = false; this.templeAim = false; this.ceasefireAim = false; this.primaryAim = false; this.primaryViewPhase = undefined; this.motion.primaryDemolition = undefined; this.motion.trinityRelay = undefined; this.motion.trinityTerminal = undefined; this.motion.sourcePortal = undefined; this.motion.architect = undefined; this.motion.templeDefense = undefined;
@@ -937,6 +940,16 @@ export class PlayerControls {
     this.motion.weaponStyle = state.currentAction?.parameters.weaponStyle as MotionInput['weaponStyle'] ?? (this.firearm ? this.weaponStyle : undefined);
     this.motion.crouching = farewell?.role === 'neo' || !custody && this.enabled && !this.performing && this.keys.has('KeyZ');
     this.motion.riding = Boolean(this.ride || this.gunner);
+    const logosPilot = typeof state.currentAction?.parameters.logosPilot === 'object'
+      ? state.currentAction.parameters.logosPilot as MotionInput['logosPilot'] : undefined;
+    if (logosPilot && this.logosPilotYaw === undefined) { this.yaw = this.movementYaw = state.rotation; this.pitch = .08; this.cameraReady = false; }
+    if (logosPilot && this.logosPilotYaw !== undefined) {
+      const turn = Math.atan2(Math.sin(state.rotation - this.logosPilotYaw), Math.cos(state.rotation - this.logosPilotYaw));
+      this.yaw += turn; this.movementYaw += turn;
+    }
+    if (logosPilot) { this.motion.armed = false; this.performing = true; }
+    else if (this.motion.logosPilot) { this.performing = false; this.cameraReady = false; }
+    this.motion.logosPilot = logosPilot; this.logosPilotYaw = logosPilot ? state.rotation : undefined;
     const hammerPilot = state.currentAction?.parameters.hammerPilot as MotionInput['hammerPilot'];
     const hammerGunner = hammerPilot?.role === 'ghost' ? hammerPilot.flight.gunnery : undefined;
     if (hammerGunner) {
@@ -1154,7 +1167,7 @@ export class PlayerControls {
       const center = FILM_SETS.film_ambush_house.center;
       this.position = { x: center.x + dropRoot.x, y: center.y + dropRoot.y, z: center.z + dropRoot.z };
       this.vy = basementDropPose(basement!.drop!).verticalVelocity; this.planar = { x: 0, z: 0 }; this.localJump = false;
-    } else if (this.motion.hammerPilot) {
+    } else if (this.motion.hammerPilot || this.motion.logosPilot) {
       this.position = { ...state.position }; this.facing = state.rotation;
       this.vy = 0; this.planar = { x: 0, z: 0 }; this.localJump = false;
     } else if (this.ride || this.climbing || this.performing || this.motion.dockGunnery || this.motion.truckRoad) {
@@ -1265,6 +1278,7 @@ export class PlayerControls {
     if (this.firstPerson && (this.motion.helDoorPush || this.motion.helDisarm || this.motion.helBreakout)) this.camera.fov = Math.max(68,
       THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(43)) / this.camera.aspect)));
     if (this.motion.hammerPilot) { this.camera.near = .06; this.camera.fov = this.firstPerson ? 72 : 64; }
+    if (this.motion.logosPilot) { this.camera.near = .04; this.camera.fov = this.firstPerson ? 76 : 64; }
     this.camera.up.set(0, 1, 0);
     this.camera.updateProjectionMatrix();
     this.cameraStep += this.motion.speed * delta;
@@ -1308,6 +1322,8 @@ export class PlayerControls {
       this.camera.near = .06; this.camera.fov = this.camera.aspect < .85 ? 88 : 78; this.camera.updateProjectionMatrix();
       this.camera.position.set(center.x + eye.x, center.y + eye.y, center.z + eye.z);
       this.camera.lookAt(center.x + point.x, center.y + point.y + 1.3, center.z + point.z + .15);
+    } else if (this.motion.logosPilot) {
+      this.syncLogosCamera(group);
     } else if (this.motion.hammerPilot) {
       const flight = this.motion.hammerPilot.flight, center = FILM_SETS.film_hammer_route.center, ship = hammerShipPose(flight);
       if (this.motion.hammerPilot.role === 'ghost' && flight.gunnery) {
@@ -3061,6 +3077,28 @@ export class PlayerControls {
     const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(pitch), -Math.sin(pitch), Math.cos(this.yaw) * Math.cos(pitch));
     this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
     this.camera.near = .06; this.camera.updateProjectionMatrix();
+  }
+
+  syncLogosCamera(group: THREE.Group): void {
+    const gesture = this.motion.logosPilot; if (!gesture) return;
+    const flight = gesture.flight, ship = logosShipPose(flight);
+    const center = FILM_SETS[flight.mode === 'defense' ? 'film_machine_defense' : 'film_above_clouds'].center;
+    const rotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(ship.pitch, ship.yaw, ship.roll, 'YXZ'));
+    const relative = this.yaw - ship.yaw - Math.PI;
+    this.camera.up.set(0, 1, 0).applyQuaternion(rotation);
+    if (this.firstPerson) {
+      const head = group.getObjectByName(`${gesture.role}-head`) ?? group.getObjectByName('head'); group.updateWorldMatrix(true, true);
+      if (!head) return;
+      const eye = head.localToWorld((head.userData.cameraEye as THREE.Vector3 | undefined)?.clone() ?? new THREE.Vector3(0, .1, .32));
+      const forward = new THREE.Vector3(-Math.sin(relative) * Math.cos(this.pitch), -Math.sin(this.pitch), -Math.cos(relative) * Math.cos(this.pitch)).applyQuaternion(rotation);
+      this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
+    } else {
+      const offset = gesture.waiting ? new THREE.Vector3(-.2, 1.7, -9.35)
+        : new THREE.Vector3(0, 7.5 + Math.sin(this.pitch) * 5, this.camera.aspect < .85 ? 32 : 25).applyAxisAngle(new THREE.Vector3(0, 1, 0), relative);
+      const eye = logosShipPoint(flight, offset), focus = logosShipPoint(flight, { x: 0, y: gesture.waiting ? 1.3 : 0, z: -5.1 });
+      this.camera.position.set(center.x + eye.x, center.y - 1 + eye.y, center.z + eye.z);
+      this.camera.lookAt(center.x + focus.x, center.y - 1 + focus.y, center.z + focus.z);
+    }
   }
 
   syncFarewellCamera(group: THREE.Group): void {

@@ -800,7 +800,7 @@ export class SandboxUI {
       this.el('sandbox-job').style.width = locked ? `${progress}%` : '0';
       this.el('sandbox-interact').classList.toggle('hidden', locked || phase === 'still' || !near);
       this.el('sandbox-nearby').textContent = journey.step === 1 ? '跪到 Trinity 身边' : step?.label ?? '继续';
-      if (locked || phase === 'still') this.el('sandbox-waypoint').textContent = '';
+      this.el('sandbox-waypoint').textContent = '';
       document.getElementById('game-objective')!.textContent = !step ? '前往机器城' : phase === 'still' ? '告别之后' : 'Logos 残骸 · Trinity';
       document.getElementById('game-objective-copy')!.textContent = hint;
       return;
@@ -2166,13 +2166,19 @@ export class SandboxUI {
       this.el('sandbox-nearby').textContent = '以 Niobe 驾驶 Hammer';
       return;
     }
+    if ((scene.id === 'm3_defense' || scene.id === 'm3_sun') && !journey.logos && !journey.visiting) {
+      document.getElementById('game-objective-copy')!.textContent = '两人已就座 · 按 G 开始航行 · V 切换驾驶舱视角';
+      this.el('sandbox-waypoint').textContent = 'LOGOS · 等待启航';
+      this.el('sandbox-nearby').textContent = '启动 Logos 航行';
+      return;
+    }
     if ((scene.id === 'm3_defense' || scene.id === 'm3_sun') && journey.logos?.phase === 'riding' && !journey.visiting) {
       const flight = journey.logos;
       const sun = flight.mode === 'sun';
       this.el('film-ride').classList.remove('hidden');
       this.el('film-ride-title').textContent = sun ? 'TRINITY / 云层之上' : 'TRINITY / LOGOS';
       this.el('film-ride-controls').textContent = flight.stage === 'sun' ? '阳光窗口 · 观察真实天空'
-        : flight.stage === 'stall' ? '引擎熄火 · 飞船正在失速' : sun ? 'W 爬升 · A / D 修正姿态' : 'W 爬升 · S 俯冲 · A / D 横移 · G / 右键 Neo 感知';
+        : flight.stage === 'stall' ? '引擎熄火 · 飞船正在失速' : sun ? 'W 爬升 · A / D 修正姿态' : 'W 爬升 · S 俯冲 · A / D 横移 · G 感知 · V 视角';
       this.el('film-ride-speed').textContent = `${Math.round(flight.altitude)} m · ${Math.round(flight.speed * 3.6)} km/h`;
       this.el('film-ride-health').textContent = sun ? `船体 ${Math.ceil(flight.hull)}% · ${flight.stage === 'clouds' ? '云层内' : flight.stage === 'sun' ? '阳光中' : '动力失效'}`
         : `船体 ${Math.ceil(flight.hull)}% · Neo ${Math.ceil(flight.neo)}% · 击碎 ${flight.destroyed}/${LOGOS_DEFENSE.threats.length}`;

@@ -185,6 +185,7 @@ export class Engine {
         this.playerControls.syncMobilRefusalCamera(group);
         this.playerControls.syncTrainmanChaseCamera(group, this.filmSets.root);
         this.playerControls.syncFarewellCamera(group);
+        this.playerControls.syncLogosCamera(group);
         this.playerControls.syncReloadedCatchCamera(group, this.agentRenderer.getAgentBody('trinity'));
         this.playerControls.syncDockLastStandCamera(group);
         this.playerControls.syncDockReloadCamera(group);

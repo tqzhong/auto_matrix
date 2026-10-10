@@ -26,6 +26,46 @@ export const LOGOS_DEFENSE = {
 export type LogosFlightMode = 'defense' | 'sun';
 export type LogosFlightStage = 'defense' | 'clouds' | 'sun' | 'stall';
 
+export const LOGOS_COCKPIT = {
+  floor: -1.1, seat: 1.16,
+  roots: { trinity: { x: -1.35, z: -5.1 }, neo: { x: 1.35, z: -5.1 } },
+  grip: { x: .48, y: 2.08, z: .93 },
+} as const;
+export interface LogosPilotGesture { role: 'trinity' | 'neo'; flight: LogosFlight; waiting: boolean }
+
+export function logosShipPose(flight: LogosFlight) {
+  return { x: flight.x, y: 1 + flight.altitude, z: flight.z,
+    yaw: -Math.atan2(flight.lateral, Math.max(1, flight.speed)) * .72,
+    pitch: flight.stage === 'stall' ? Math.max(-.72, -.18 + flight.vertical * .025) : Math.max(-.32, Math.min(.32, flight.vertical * .024)),
+    roll: Math.max(-.34, Math.min(.34, -flight.lateral * .022)) };
+}
+
+/** Furniture, crew and cameras all use the renderer's YXZ rotation order. */
+export function logosShipPoint(flight: LogosFlight, point: { x: number; y: number; z: number }) {
+  const pose = logosShipPose(flight);
+  const x = point.x * Math.cos(pose.roll) - point.y * Math.sin(pose.roll);
+  const bankY = point.x * Math.sin(pose.roll) + point.y * Math.cos(pose.roll);
+  const y = bankY * Math.cos(pose.pitch) - point.z * Math.sin(pose.pitch);
+  const z = bankY * Math.sin(pose.pitch) + point.z * Math.cos(pose.pitch);
+  return { x: pose.x + x * Math.cos(pose.yaw) + z * Math.sin(pose.yaw), y: pose.y + y,
+    z: pose.z - x * Math.sin(pose.yaw) + z * Math.cos(pose.yaw) };
+}
+
+export function logosCrewRoot(flight: LogosFlight, role: LogosPilotGesture['role']) {
+  const point = logosShipPoint(flight, { ...LOGOS_COCKPIT.roots[role], y: LOGOS_COCKPIT.floor + 1 });
+  // Film sets sit one world unit below actor coordinates; the remaining actor
+  // offset is rotated with the ship by AgentRenderer.
+  return { ...point, y: point.y - 1, yaw: logosShipPose(flight).yaw + Math.PI };
+}
+
+export function logosControlGrip(flight: LogosFlight, role: LogosPilotGesture['role'], side: number) {
+  if (role === 'neo') return { x: side * .64, y: 1.78, z: .48 };
+  const angle = Math.max(-1, Math.min(1, flight.lateral / 17)) * .22;
+  const x = side * LOGOS_COCKPIT.grip.x, y = LOGOS_COCKPIT.grip.y - 1.86;
+  return { x: x * Math.cos(angle) - y * Math.sin(angle), y: 1.86 + x * Math.sin(angle) + y * Math.cos(angle),
+    z: LOGOS_COCKPIT.grip.z - Math.max(-1, Math.min(1, flight.vertical / 15)) * .12 };
+}
+
 export interface LogosFlight {
   mode: LogosFlightMode;
   stage: LogosFlightStage;

@@ -83,6 +83,7 @@ export interface MotionInput {
   baneInquiry?: import('@auto_matrix/shared').BaneInquiryGesture;
   hammerBriefing?: import('@auto_matrix/shared').HammerBriefingGesture;
   hammerPilot?: import('@auto_matrix/shared').HammerPilotGesture;
+  logosPilot?: import('@auto_matrix/shared').LogosPilotGesture;
   zionDeployment?: import('@auto_matrix/shared').ZionDeploymentGesture;
   maggieDiscovery?: import('@auto_matrix/shared').MaggieDiscoveryGesture;
   logosBane?: import('@auto_matrix/shared').LogosBaneGesture;
@@ -215,6 +216,13 @@ export function solveLeg(z: number, height: number): { hip: number; knee: number
 }
 
 export function advanceMotion(state: MotionState, input: MotionInput, delta: number) {
+  if (input.logosPilot) {
+    Object.assign(state, newMotion(), { time: input.logosPilot.flight.elapsed, seated: 1 });
+    return { legs: [0, 1].map(() => solveLeg(1.05, 1.27)),
+      arms: [0, 1].map(i => ({ shoulder: -.7, elbow: -.8, outward: (i ? 1 : -1) * .12, grip: .8 })),
+      hipHeight: 1.43, twist: 0, lean: 0, sway: 0, lunge: 0, roll: 0, headTurn: 0,
+      moving: 0, run: 0, airborne: 0, coat: 0, impact: 0, landing: 0 };
+  }
   if (input.hammerPilot) {
     const gesture = input.hammerPilot, handover = gesture.handover && gesture.role !== 'roland' ? hammerHandoverPose(gesture.handover, gesture.role) : undefined;
     const seated = handover ? handover.sitting > .5 : gesture.role !== 'roland';
