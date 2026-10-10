@@ -276,7 +276,7 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
       : state?.paused || state?.unavailable ? '<p>等候人员清空与同行者信号；起爆杆保留当前角度。</p>'
         : player.status !== 'alive' ? button('retry', '接回保存的起爆位置')
           : phase === 'done' && !step ? button('next', '继续最后防线 →')
-            : phase === 'ready' && journey.step === 1 ? button('act', '握住起爆手柄 · G', !close)
+            : phase === 'ready' && journey.step === 1 ? button('act', '核对清空信号，等待起爆命令 · G', !close)
               : phase === 'armed' || phase === 'throwing' ? '<p>合上手记，按住 G 拉下起爆杆；松手停留。</p>'
                 : '<p>合上手记，走到操作台或观察封井过程。</p>';
     return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>封井操作员 · 为防线争取时间</h3><p>确认最后一班升降梯已经撤离</p></header><article class="film-now"><div><p>${shaftSealText(state)}</p><div class="film-controls">${action}</div><small>WASD 接近起爆台 · G 握住手柄 / 持续下拉 · V 切换视角<br>起爆杆 ${Math.round((state?.turn ?? 0) * 100)}% · 暂停、断线与读档保留手柄位置</small></div></article></div>`;

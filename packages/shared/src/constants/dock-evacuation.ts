@@ -31,7 +31,7 @@ export type DockEvacuationGesture = DockEvacuation & { role: 'kid' | 'colt' };
 export const SHAFT_SEAL = {
   entry: { x: -6, z: 10 }, operator: { x: 3.1, z: .1 },
   lever: { x: 3.1, y: 2.1, z: -1.25, length: .6, grip: 1.2 },
-  reach: .9, throwing: 1.8, blast: 7.2, cast: ['citizen_15', 'citizen_16', 'lock'] as const,
+  report: 2.2, order: 1.8, reach: .9, throwing: 1.8, blast: 7.2, cast: ['citizen_15', 'citizen_16', 'lock'] as const,
   obstacles: [
     ...[-1, 1].map(side => ({ x: side * 17.7, z: 0, width: .6, depth: 38, height: 10 })),
     { x: 0, z: 18.7, width: 36, depth: .6, height: 10 },
@@ -42,7 +42,7 @@ export const SHAFT_SEAL = {
   ],
 } as const;
 export interface ShaftSeal {
-  phase: 'ready' | 'reaching' | 'armed' | 'throwing' | 'detonating' | 'done';
+  phase: 'ready' | 'reporting' | 'reaching' | 'armed' | 'throwing' | 'detonating' | 'done';
   elapsed: number; turn: number; firedAt?: number; paused?: string; unavailable?: string;
 }
 export type ShaftSealGesture = ShaftSeal & { role: 'citizen_15' | 'citizen_16' | 'lock' };
@@ -100,7 +100,10 @@ export function dockEvacuationText(state?: DockEvacuation): string {
 export function shaftSealText(state?: ShaftSeal): string {
   if (!state) return '最后一批人已经撤离，指挥所正在等待封井确认。';
   if (state.paused || state.unavailable) return `${state.paused ?? state.unavailable} 的信号暂不可用，起爆器保留当前位置。`;
-  return ({ ready: '收到人员清空确认。走到右侧起爆器，G 握住手柄。', reaching: '操作员伸出双手，握住机械手柄。',
+  return ({ ready: '走到右侧起爆器，G 接听最后一班升降梯的清空确认。',
+    reporting: state.elapsed < SHAFT_SEAL.report ? '第二操作员：最后一班人员已离开爆破段。' : 'Lock：封闭竖井。操作员准备起爆。',
+    reaching: '操作员伸出双手，握住机械手柄。',
     armed: 'Lock 已授权封井。按住 G 拉下起爆杆；松手停留。', throwing: `按住 G 拉下起爆杆 · ${Math.round(state.turn * 100)}% · 松手停留`,
-    detonating: '爆破沿井道依次发生，岩土封住船坞入口。爆破结束前不能离开或重放。', done: '井道已经封堵。机器仍在钻穿屏障，J 记录这段暂时换来的时间。' } as const)[state.phase];
+    detonating: state.elapsed < 5.4 ? '爆破沿井道依次发生，岩土封住船坞入口。V 查看竖井外景 / 操作员视角。' : '余震渐渐平息。Lock 仰望岩顶：现在，轮到你们了。',
+    done: '井道已经封堵。机器仍在钻穿屏障，J 记录这段暂时换来的时间。' } as const)[state.phase];
 }

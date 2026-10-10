@@ -348,6 +348,35 @@ test('shaft operation keeps the actual handbar in view and V follows the animate
   assert.equal(game.controls.motion.shaftSeal!.turn, .45); assert.equal(game.camera.near, .06);
 });
 
+test('shaft report and blast shots remain on their own side of the opaque bunker wall in wide and narrow views', t => {
+  const game = setup(t, Math.PI), center = FILM_SETS.film_zion_command_bunker.center;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const root = new THREE.Group(); root.position.set(center.x, center.y - 1, center.z);
+  const renderer = new DockEvacuationRenderer(root, true); t.after(() => renderer.dispose());
+  for (const aspect of [16 / 9, .65]) for (const [phase, elapsed] of [['reporting', 1], ['reporting', 3], ['detonating', 2], ['detonating', 6]] as const) {
+    const state = { phase, elapsed, turn: phase === 'reporting' ? 0 : 1, role: 'citizen_15' } as const;
+    Object.assign(game.state, { id: 'citizen_15', currentLocation: 'film_zion_command_bunker', isInMatrix: false, rotation: Math.PI,
+      position: filmPosition('film_zion_command_bunker', SHAFT_SEAL.operator.x, SHAFT_SEAL.operator.z),
+      currentAction: { type: 'idle', parameters: { shaftSeal: state }, startedAt: 0, duration: 1e9, progress: 0 } });
+    game.camera.aspect = aspect; game.controls.possess(game.state); game.step(.1, .1, false);
+    renderer.update(undefined, state); root.updateMatrixWorld(true); game.camera.updateMatrixWorld(true);
+    const external = phase === 'detonating' && elapsed < 5.4;
+    assert.ok(external ? game.camera.position.z < center.z - 6.6 : game.camera.position.z > center.z - 5.5, 'camera cannot sit inside or behind the blast wall during a command-room shot');
+    const target = external ? new THREE.Vector3(center.x, center.y + 9, center.z - 13)
+      : new THREE.Vector3(center.x - (phase === 'reporting' && elapsed < SHAFT_SEAL.report ? 11 : 7), center.y + 2.99, center.z);
+    const screen = target.clone().project(game.camera);
+    assert.ok(Math.abs(screen.x) < .9 && Math.abs(screen.y) < .9 && screen.z > -1 && screen.z < 1);
+    if (external) {
+      const eye = root.worldToLocal(game.camera.position.clone());
+      assert.ok(Math.abs(eye.x) < 3.5 && eye.z < -9 && eye.z > -17, 'the shaft view must be inside the opening, clear of the side support ledges');
+    } else {
+      const direction = target.clone().sub(game.camera.position);
+      const hits = new THREE.Raycaster(game.camera.position, direction.clone().normalize(), .06, direction.length() - .15).intersectObject(root, true);
+      assert.equal(hits.length, 0, 'the commander and reporting operator cannot be hidden by their console or wall');
+    }
+  }
+});
+
 test('V initially frames both actual operator hands and the half-thrown lever from the delivered rig eye, then permits free look', t => {
   const game = setup(t, Math.PI), center = FILM_SETS.film_zion_command_bunker.center;
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());

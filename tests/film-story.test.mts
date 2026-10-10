@@ -3863,7 +3863,7 @@ test('the entire film route completes through interactions, driving and real com
         if (index === 0) h.players.step(.1, true, h.tick());
         else if (index === 1) {
           h.command('act');
-          for (let frame = 0; frame < 110 && state.step === index; frame++) {
+          for (let frame = 0; frame < 150 && state.step === index; frame++) {
             h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false, focus: true, sequence: ++sequence });
             h.players.step(.1, true, h.tick());
           }

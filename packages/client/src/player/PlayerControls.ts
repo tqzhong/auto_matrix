@@ -2583,6 +2583,18 @@ export class PlayerControls {
         }
       }
       this.camera.fov = this.camera.aspect < .85 ? 70 : state.phase === 'aiming' ? 48 : 63; this.camera.position.copy(ideal); this.camera.lookAt(target);
+    } else if (!this.firstPerson && (this.motion.shaftSeal?.phase === 'reporting' || this.motion.shaftSeal?.phase === 'detonating')) {
+      const seal = this.motion.shaftSeal, center = FILM_SETS.film_zion_command_bunker.center;
+      const exterior = seal.phase === 'detonating' && seal.elapsed < 5.4;
+      const target = exterior ? new THREE.Vector3(center.x, center.y + 4, center.z - 13)
+        : new THREE.Vector3(center.x - (seal.phase === 'reporting' && seal.elapsed < SHAFT_SEAL.report ? 9 : 7), center.y + 2.2, center.z);
+      const ideal = exterior ? new THREE.Vector3(center.x + .6, center.y + 22, center.z - 12.6)
+        : new THREE.Vector3(center.x - 3, center.y + 3.5, center.z - 4.3);
+      const offset = ideal.sub(target).multiplyScalar(exterior ? 1 : Math.min(1.4, Math.max(1, 1 / this.camera.aspect)));
+      this.camera.position.copy(target).add(offset);
+      if (!exterior) this.camera.position.z = Math.max(center.z - 5.3, this.camera.position.z);
+      this.camera.lookAt(target);
+      this.camera.fov = this.camera.aspect < .85 ? 82 : exterior ? 68 : 62; this.camera.updateProjectionMatrix();
     } else if (!this.firstPerson && (dockEvacuationLocked(this.motion.dockEvacuation) || shaftSealLocked(this.motion.shaftSeal))) {
       const evacuation = this.motion.dockEvacuation, inLift = evacuation && ['waiting', 'closing', 'lowering', 'clear'].includes(evacuation.phase);
       const center = FILM_SETS[this.motion.shaftSeal ? 'film_zion_command_bunker' : 'film_zion_dock_exit'].center;
