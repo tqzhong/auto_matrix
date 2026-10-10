@@ -106,7 +106,7 @@ import { EXILES } from '@auto_matrix/shared';
 import { CHATEAU, type ChateauEncounter } from '@auto_matrix/shared';
 import { MOUNTAIN, type MountainFlight, type PlayerInput } from '@auto_matrix/shared';
 import { GARAGE, newGarageEscape, stepGarageEscape } from '@auto_matrix/shared';
-import { HAMMER_ROUTE, HAMMER_COCKPIT, HAMMER_HANDOVER_SECONDS, HAMMER_HANDOVER_CAST, hammerHandoverPose, hammerHandoverText, hammerCrewRoot, hammerHeight, hammerRouteFrame, hammerRoutePoint, newHammerFlight, stepHammerFlight } from '@auto_matrix/shared';
+import { HAMMER_ROUTE, HAMMER_COCKPIT, HAMMER_HANDOVER_SECONDS, HAMMER_HANDOVER_CAST, hammerHandoverDuration, hammerHandoverPose, hammerHandoverText, hammerCrewRoot, hammerHeight, hammerRouteFrame, hammerRoutePoint, newHammerFlight, stepHammerFlight } from '@auto_matrix/shared';
 import { newLogosFlight, stepLogosFlight } from '@auto_matrix/shared';
 import { farewellLocked, farewellPose, newFarewell, stepFarewell } from '@auto_matrix/shared';
 import { DEUS_PACT, deusPactDialogue, deusPactLocked, deusPactPose, newDeusPact, stepDeusPact } from '@auto_matrix/shared';
@@ -4970,7 +4970,7 @@ export class FilmStorySystem {
     if (state.step === 1) delete state.started;
     const elapsed = !handover.blocked && agent.controller && agent.status === 'alive' && agent.health > 0 ? Math.max(0, Math.min(.1, dt)) : 0;
     if (handover.phase === 'moving' && elapsed) {
-      const next = { ...handover, elapsed: Math.min(HAMMER_HANDOVER_SECONDS, handover.elapsed + elapsed) };
+      const next = { ...handover, elapsed: Math.min(hammerHandoverDuration(handover), handover.elapsed + elapsed) };
       const blocked = ['ghost', 'morpheus'].some(id => {
         const point = hammerCrewRoot(newHammerFlight(), id as 'ghost' | 'morpheus', next), center = FILM_SETS[this.scene!.set].center;
         return Math.hypot(agent.position.x - center.x - point.x, agent.position.z - center.z - point.z) < 1.25;
@@ -4978,7 +4978,7 @@ export class FilmStorySystem {
       if (blocked) handover.blocked = '请让开船员通道。Ghost 与 Morpheus 会等你让路，再继续换位。';
       else handover.elapsed = next.elapsed;
     }
-    if (handover.elapsed >= HAMMER_HANDOVER_SECONDS) handover.phase = 'ready';
+    if (handover.elapsed >= hammerHandoverDuration(handover)) handover.phase = 'ready';
     const flight = newHammerFlight(), center = FILM_SETS[this.scene!.set].center;
     for (const role of HAMMER_HANDOVER_CAST) {
       const crew = this.world.agents.get(role); if (!crew || crew.controller || crew.status !== 'alive' || crew.health <= 0) continue;
@@ -6454,7 +6454,7 @@ export class FilmStorySystem {
     if (state.scene === 'm3_hammer_tunnels' && state.step === 1) {
       this.hammerHandoverFrame(agent, 0, tick);
       const handover = state.hammerHandover!;
-      if (!handover.blocked && handover.phase === 'waiting') handover.phase = 'moving';
+      if (!handover.blocked && handover.phase === 'waiting') { handover.phase = 'moving'; handover.station = true; }
       this.hammerHandoverFrame(agent, 0, tick); return state.lastText;
     }
     if (state.scene === 'm1_room303' && state.step === 0 && target === 'act') return this.openingHotel.begin(agent, tick);

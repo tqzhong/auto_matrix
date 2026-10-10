@@ -4226,8 +4226,9 @@ test('the entire film route completes through interactions, driving and real com
           }
         }
         else if (scene.id === 'm3_hammer_tunnels' && index === 1) {
-          for (let frame = 0; state.step === index && frame < 300; frame++) h.players.step(.05, true, h.tick());
+          for (let frame = 0; state.step === index && frame < 400; frame++) h.players.step(.05, true, h.tick());
           assert.equal(state.step, 2);
+          assert.equal(h.world.agents.get('ghost')!.currentAction?.parameters.seated, true);
         }
         else if (scene.id === 'm2_trucks' && index === 2) {
           h.advance((step.seconds ?? 3) * 2);

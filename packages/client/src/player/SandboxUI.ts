@@ -2154,7 +2154,16 @@ export class SandboxUI {
     if (scene.id === 'm3_hammer_tunnels' && journey.step === 1 && journey.hammerHandover && !journey.visiting) {
       const handover = journey.hammerHandover;
       document.getElementById('game-objective-copy')!.textContent = hammerHandoverText(handover);
-      if (handover.phase === 'moving') { this.el('sandbox-interact').classList.add('hidden'); this.el('sandbox-waypoint').textContent = '留出过道 · 鼠标观察换位 · V 切换视角'; }
+      if (handover.phase === 'moving') {
+        this.el('sandbox-interact').classList.add('hidden');
+        this.el('sandbox-waypoint').textContent = handover.station && handover.elapsed >= 11.4 ? '站定观察炮位 · V 切回角色视角 · WASD 移动' : '留出过道 · 鼠标观察换位 · V 切换视角';
+      }
+      return;
+    }
+    if (scene.id === 'm3_hammer_tunnels' && journey.step === 2 && journey.hammerHandover?.station && !journey.hammer && !journey.visiting) {
+      document.getElementById('game-objective-copy')!.textContent = 'Niobe：炮手与副驾驶已就位。回到主驾驶椅旁按 G，开始返回锡安。';
+      this.el('sandbox-waypoint').textContent = '炮手已就位 · V 切换驾驶位与炮位近景';
+      this.el('sandbox-nearby').textContent = '以 Niobe 驾驶 Hammer';
       return;
     }
     if ((scene.id === 'm3_defense' || scene.id === 'm3_sun') && journey.logos?.phase === 'riding' && !journey.visiting) {

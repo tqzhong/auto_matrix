@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { FILM_SCENE_BY_ID, filmPosition, filmStepPosition, type WorldEvent } from '@auto_matrix/shared';
+import { hammerCrewRoot, newHammerFlight, newHammerGunnery, FILM_SETS } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -74,4 +75,26 @@ test('a previously completed copilot preparation remains complete and flight ret
   h.state.hammer!.hull = 1; h.state.hammer!.x = 30; h.frames(.1);
   h.command('retry'); assert.equal(h.state.step, 2); assert.equal(h.actor.status, 'alive');
   h.command('act'); assert.equal(h.state.hammer?.phase, 'riding');
+});
+
+test('new preparation waits for Ghost to reach and grip the actual gunner seat without a launch teleport', () => {
+  const h = setup(1); h.command('act'); h.frames(13);
+  assert.equal(h.state.step, 1, 'flight becomes available while the gunner is still walking');
+  const saved = structuredClone(h.sandbox.state); h.frames(3, false);
+  assert.deepEqual(h.state, saved.neoLife!.journey);
+  h.players.release('p', h.tick()); h.sandbox.restore(saved); h.players.possess('p', 'niobe', h.tick());
+  h.frames(5); assert.equal(h.state.step, 2);
+  const ghost = h.world.agents.get('ghost')!, before = structuredClone(ghost.position);
+  assert.equal(ghost.currentAction?.parameters.seated, true);
+  const expected = hammerCrewRoot({ ...newHammerFlight(), gunnery: newHammerGunnery() }, 'ghost'), center = FILM_SETS[h.scene.set].center;
+  assert.ok(Math.hypot(before.x - center.x - expected.x, before.y - center.y - expected.y, before.z - center.z - expected.z) < .001);
+  h.command('act'); assert.deepEqual(ghost.position, before, 'launch teleports Ghost through the gunner chair');
+});
+
+test('an already moving legacy handover finishes its original path without being restarted', () => {
+  const h = setup(1);
+  h.state.hammerHandover = { phase: 'moving', elapsed: 11.4 };
+  h.frames(2);
+  assert.equal(h.state.step, 2); assert.equal(h.state.hammerHandover.station, undefined);
+  assert.equal(h.state.hammerHandover.elapsed, 12.5);
 });

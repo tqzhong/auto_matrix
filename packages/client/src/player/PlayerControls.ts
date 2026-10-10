@@ -18,7 +18,7 @@ import { upperDiggerLocked, upperDiggerRoot, upperDiggerShot, upperDiggerHatch }
 import { DIGGERS, diggerEye, diggerDirection, diggersLocked } from '@auto_matrix/shared';
 import { dockReloadHeight, dockReloadLocked } from '@auto_matrix/shared';
 import { APU_RIG, DOCK_GATE, dockGateEye, dockGateAim, dockGateShip, dockLastStandLocked, dockLastStandPose, dockGunneryView, dockGunneryAngles } from '@auto_matrix/shared';
-import { hammerGunneryAngles } from '@auto_matrix/shared';
+import { hammerGunneryAngles, hammerCrewRoot, newHammerFlight, type HammerHandover } from '@auto_matrix/shared';
 import { empCrankPoint } from '@auto_matrix/shared';
 import { freewayPickupBike, freewayPickupRoot } from '@auto_matrix/shared';
 import { truckHoodRoot, truckHoodBack } from '@auto_matrix/shared';
@@ -130,6 +130,7 @@ export class PlayerControls {
   fireInterval = LOBBY_FIRE_INTERVAL;
   ride?: Pick<FreewayRide, 'speed'> & { mode?: 'defense' | 'sun' };
   gunner = false;
+  hammerPreparation?: HammerHandover;
   climbing = false;
   performing = false;
   private phoneExit = false;
@@ -204,7 +205,7 @@ export class PlayerControls {
     this.motion.hammerBriefing = undefined; this.motion.zionDeployment = undefined; this.deploymentAim = false;
     this.motion.maggieDiscovery = undefined; this.discoveryAim = false;
     this.motion.logosBane = undefined; this.logosAim = false;
-    this.hammerAim = false; this.hammerPilotYaw = undefined; this.motion.hammerPilot = undefined;
+    this.hammerAim = false; this.hammerPilotYaw = undefined; this.motion.hammerPilot = undefined; this.hammerPreparation = undefined;
     this.elevatorAim = false; this.elevatorViewAction = undefined; this.doorAim = false; this.doorViewOpening = false;
     this.motion.dockEvacuation = undefined; this.motion.shaftSeal = undefined;
     this.sealAim = false; this.templeAim = false; this.ceasefireAim = false; this.primaryAim = false; this.primaryViewPhase = undefined; this.motion.primaryDemolition = undefined; this.motion.trinityRelay = undefined; this.motion.trinityTerminal = undefined; this.motion.sourcePortal = undefined; this.motion.architect = undefined; this.motion.templeDefense = undefined;
@@ -216,6 +217,7 @@ export class PlayerControls {
     this.onViewChange?.(false);
   }
   release(): void {
+    this.hammerPreparation = undefined;
     this.motion.maggieDiscovery = undefined; this.discoveryAim = false;
     this.motion.logosBane = undefined; this.logosAim = false;
     this.custodyBodies = undefined; this.motion.officeCustody = undefined;
@@ -1296,11 +1298,19 @@ export class PlayerControls {
     const verticalTarget = THREE.MathUtils.lerp(this.cameraTarget.y, target.y, 1 - Math.exp(-8 * delta));
     this.cameraTarget.lerp(target, 1 - Math.exp(-22 * delta)); this.cameraTarget.y = verticalTarget;
     const spoon = this.motion.inspecting && group.getObjectByName('held-spoon');
-    if (this.motion.hammerPilot) {
+    if (state.id === 'niobe' && state.currentLocation === 'film_hammer_route' && !this.motion.hammerPilot
+      && this.hammerPreparation?.station && this.hammerPreparation.elapsed >= 11.4 && !this.firstPerson
+      && this.motion.speed < .1 && !['KeyW', 'KeyA', 'KeyS', 'KeyD'].some(key => this.keys.has(key))) {
+      const flight = newHammerFlight(), center = FILM_SETS.film_hammer_route.center;
+      const point = hammerCrewRoot(flight, 'ghost', this.hammerPreparation), eye = hammerShipPoint(flight, { x: -2.18, y: 1.25, z: 10.04 });
+      this.camera.near = .06; this.camera.fov = this.camera.aspect < .85 ? 88 : 78; this.camera.updateProjectionMatrix();
+      this.camera.position.set(center.x + eye.x, center.y + eye.y, center.z + eye.z);
+      this.camera.lookAt(center.x + point.x, center.y + point.y + 1.3, center.z + point.z + .15);
+    } else if (this.motion.hammerPilot) {
       const flight = this.motion.hammerPilot.flight, center = FILM_SETS.film_hammer_route.center, ship = hammerShipPose(flight);
       if (this.motion.hammerPilot.role === 'ghost' && flight.gunnery) {
         const rotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(ship.pitch, ship.yaw, ship.roll, 'YXZ'));
-        const focus = hammerShipPoint(flight, { x: 0, y: .52, z: 13.65 });
+        const focus = hammerShipPoint(flight, { x: 0, y: .52, z: 14.15 });
         this.camera.up.set(0, 1, 0).applyQuaternion(rotation);
         if (this.firstPerson) {
           const head = group.getObjectByName(`${state.id}-head`) ?? group.getObjectByName('head'); group.updateWorldMatrix(true, true);

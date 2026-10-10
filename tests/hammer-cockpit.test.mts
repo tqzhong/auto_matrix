@@ -361,3 +361,37 @@ test('the real Ghost body sits inside the aft room with supported feet, clear up
     }
   }
 });
+
+test('Ghost enters the live gunner station without crossing its upholstery, controls, screens or closed doors', async t => {
+  const h = await setup(t), root = new THREE.Group(), renderer = new HammerRouteRenderer(root), flight = newHammerFlight();
+  t.after(() => renderer.dispose());
+  const contacts: { elapsed: number; mesh: string; point: number[] }[] = [];
+  const contact = (elapsed: number, mesh: string, point: THREE.Vector3) => {
+    if (!contacts.some(item => item.elapsed === elapsed && item.mesh === mesh)) contacts.push({ elapsed, mesh, point: point.toArray() });
+  };
+  for (let frame = 0; frame <= 84; frame++) {
+    const elapsed = frame * .2, handover: HammerHandover = { phase: elapsed >= 16.8 ? 'ready' : 'moving', elapsed, station: true };
+    renderer.update(undefined, 0, false, handover); root.updateMatrixWorld(true);
+    assert.equal(root.getObjectByName('hammer-gunnery-room')!.visible, true);
+    const cockpit = root.getObjectByName('hammer-cockpit')!, inverse = cockpit.matrixWorld.clone().invert(), furniture: THREE.Mesh[] = [];
+    root.traverseVisible(object => { if (object instanceof THREE.Mesh && ['ghost-seat-back', 'ghost-seat-cushion', 'ghost-seat-armrest', 'ghost-yoke-bar', 'ghost-screen-casing', 'hammer-aft-door'].includes(object.name)) furniture.push(object); });
+    const boxes = furniture.map(mesh => { mesh.geometry.computeBoundingBox(); return { name: mesh.name, inverse: mesh.matrixWorld.clone().invert(), box: mesh.geometry.boundingBox!.clone().expandByScalar(-.025) }; });
+    const rig = h.pose('ghost', flight, 0, handover); assert.ok(rig.hero);
+    rig.root.traverseVisible(object => { if (object instanceof THREE.Mesh) for (let i = 0; i < object.geometry.attributes.position.count; i++) {
+      const world = object.localToWorld(object.getVertexPosition(i, new THREE.Vector3())), point = world.clone().applyMatrix4(inverse);
+      assert.ok(point.toArray().every(Number.isFinite));
+      if (point.y < HAMMER_COCKPIT.floor - .08 || point.y >= (point.z > 9.9 ? 1.88 : 2.5)) contact(elapsed, `floor or roof/${object.name}`, point);
+      if (point.z > 9.9 && (Math.abs(point.x) >= 2.54 || point.z >= 14.74)) contact(elapsed, `aft wall/${object.name}`, point);
+      for (const item of boxes) if (item.box.containsPoint(world.clone().applyMatrix4(item.inverse))) {
+        contact(elapsed, `${item.name}/${object.name}`, point);
+      }
+    } });
+  }
+  assert.deepEqual(contacts, []);
+  const handover: HammerHandover = { phase: 'ready', elapsed: 16.8, station: true }, rig = h.pose('ghost', flight, 0, handover);
+  const joints = [...rig.hero!.bones.values()].map(bone => bone.matrixWorld.elements.slice());
+  h.pose('ghost', flight, 10, structuredClone(handover));
+  assert.deepEqual([...rig.hero!.bones.values()].map(bone => bone.matrixWorld.elements.slice()), joints, 'render time changes saved entry');
+  h.pose('ghost', { ...flight, gunnery: newHammerGunnery() });
+  assert.deepEqual([...rig.hero!.bones.values()].map(bone => bone.matrixWorld.elements.slice()), joints, 'launch changes the seated body pose');
+});
