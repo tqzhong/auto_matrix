@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { FILM_SCENE_BY_ID, FILM_SETS, hammerCenter, newHammerFlight, stepHammerFlight, filmEntry, filmStepPosition, playerBlocked, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, HAMMER_ROUTE, hammerCenter, hammerHeight, newHammerFlight, stepHammerFlight, filmEntry, filmStepPosition, playerBlocked, type HammerFlight, type WorldEvent } from '@auto_matrix/shared';
 import { HammerRouteRenderer } from '../packages/client/src/engine/HammerRouteRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -26,11 +26,17 @@ function game() {
   return { world, sandbox, players, command, advance, actor: () => players.getAgent('p')!, state: () => sandbox.life.film.state!, tick: () => tick };
 }
 
+function pilotInput(flight: HammerFlight) {
+  let target = hammerCenter(flight.z - 12);
+  for (const pipe of HAMMER_ROUTE.debris) if (flight.z < pipe.z + 28 && flight.z > pipe.z - 10)
+    target += Math.sign(hammerCenter(pipe.z) - pipe.x) * 2;
+  return { throttle: flight.speed < 28 ? 1 : 0, steer: Math.max(-1, Math.min(1, (target - flight.x) * .35 - flight.lateral * .12)), brake: false };
+}
+
 test('Hammer route requires steering and forward speed; bent walls, debris and pursuers can end the flight', () => {
   let pilot = newHammerFlight();
   for (let i = 0; i < 900 && pilot.phase === 'riding'; i++) {
-    const steer = Math.max(-1, Math.min(1, (hammerCenter(pilot.z - 15) - pilot.x) * .24 - pilot.lateral * .12));
-    pilot = stepHammerFlight(pilot, { throttle: 1, steer, brake: false }, .05);
+    pilot = stepHammerFlight(pilot, pilotInput(pilot), .05);
   }
   assert.equal(pilot.phase, 'arrived'); assert.equal(pilot.hits, 0);
   assert.equal(pilot.hull, 100); assert.equal(pilot.antennaLost, true);
@@ -58,8 +64,7 @@ test('Niobe drives Hammer with crew, save restore, failure retry and a dock hand
   h.players.possess('p', 'niobe', h.tick()); assert.deepEqual(h.actor().position, location);
   let flight = h.state().hammer!;
   for (let i = 0; i < 900 && flight.phase === 'riding'; i++) {
-    const steer = Math.max(-1, Math.min(1, (hammerCenter(flight.z - 15) - flight.x) * .24 - flight.lateral * .12));
-    h.sandbox.life.film.driveFrame(h.actor(), { throttle: 1, steer, brake: false }, .05, h.tick());
+    h.sandbox.life.film.driveFrame(h.actor(), pilotInput(flight), .05, h.tick());
     flight = h.state().hammer!;
   }
   assert.equal(flight.phase, 'arrived'); assert.equal(h.world.agents.get('morpheus')!.currentLocation, scene.set);
@@ -95,4 +100,67 @@ test('a save made in the former service tunnel is moved to the new Hammer checkp
   assert.equal(h.actor().currentLocation, scene.set); assert.deepEqual(h.actor().position, state.checkpoint);
   assert.equal(state.step, 2); assert.equal(state.hammer, undefined);
   assert.equal(h.world.agents.get('morpheus')!.currentLocation, scene.set);
+});
+
+test('an existing Hammer cabin save seats unowned crew without relocating the walking player or their checkpoint', () => {
+  const h = game(), state = h.state(), scene = FILM_SCENE_BY_ID.m3_hammer_tunnels;
+  state.scene = scene.id; state.actor = scene.actor; state.step = 0;
+  h.players.possess('p', 'niobe', h.tick()); h.actor().currentLocation = scene.set;
+  h.actor().position = filmEntry(scene); state.checkpoint = { ...h.actor().position };
+  const before = { position: { ...h.actor().position }, checkpoint: { ...state.checkpoint }, completed: state.completed.slice() };
+  const morpheus = h.world.agents.get('morpheus')!, roland = h.world.agents.get('roland')!;
+  morpheus.currentLocation = roland.currentLocation = scene.set;
+  morpheus.currentAction = { type: 'idle', parameters: { seated: true }, startedAt: 1, duration: 1e9, progress: 0 };
+  roland.currentAction = null;
+  h.players.possess('other', 'roland', h.tick()); const otherPosition = { ...roland.position };
+  h.advance();
+  assert.ok(morpheus.currentAction?.parameters.hammerPilot, 'the existing copilot still uses a generic sitting pose');
+  assert.deepEqual({ position: h.actor().position, checkpoint: state.checkpoint, completed: state.completed }, before);
+  assert.deepEqual(roland.position, otherPosition, 'another player must keep their own body');
+  assert.equal(roland.currentAction?.parameters.hammerPilot, undefined);
+  h.players.release('other', h.tick()); h.advance();
+  assert.ok(roland.currentAction?.parameters.hammerPilot);
+  assert.equal(state.hammer, undefined, 'fitting a saved cabin must not begin the flight');
+});
+
+test('the saved Hammer flight freezes pursuers and engine effects while world time is paused', () => {
+  const root = new THREE.Group(), renderer = new HammerRouteRenderer(root);
+  const flight = { ...newHammerFlight(), elapsed: 3.25, speed: 28, lateral: 6, pursuit: 25 };
+  const capture = () => {
+    root.updateMatrixWorld(true); const rows: unknown[] = [];
+    root.traverse(object => rows.push([object.matrixWorld.elements.slice(), object.visible,
+      object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial ? object.material.emissiveIntensity : undefined]));
+    return rows;
+  };
+  try {
+    renderer.update(flight, 4); const before = capture();
+    renderer.update(structuredClone(flight), 104); assert.deepEqual(capture(), before);
+  } finally { renderer.dispose(); }
+});
+
+test('the former curved cabin floor is fitted to the rigid deck on possession while horizontal progress remains saved', () => {
+  const h = game(), state = h.state(), scene = FILM_SCENE_BY_ID.m3_hammer_tunnels, actor = h.world.agents.get('niobe')!;
+  state.scene = scene.id; state.actor = scene.actor; state.step = 0;
+  const point = filmEntry(scene); point.y = FILM_SETS[scene.set].center.y + hammerHeight(184) - 1.35;
+  actor.position = { ...point }; actor.currentLocation = scene.set; state.checkpoint = { ...point };
+  const completed = state.completed.slice(); h.players.possess('p', 'niobe', h.tick());
+  const floor = filmEntry(scene).y;
+  assert.equal(actor.position.y, floor, 'the saved soles are buried in the new rigid deck');
+  assert.deepEqual(actor.position, { ...point, y: floor }); assert.deepEqual(state.checkpoint, { ...point, y: floor });
+  assert.deepEqual(state.completed, completed); assert.equal(state.step, 0); assert.equal(state.hammer, undefined);
+});
+
+test('Hammer wall clearance includes the wide outer hover pods rather than just the central hull', () => {
+  const flight = stepHammerFlight({ ...newHammerFlight(), x: 8, speed: 25 }, { throttle: 1, steer: 0, brake: false }, .05);
+  assert.equal(flight.hits, 1, 'the visible outer hull crosses the wall without a collision');
+  assert.ok(flight.x <= 13.2 - 6.175);
+});
+
+test('the pilot follows the same heading as the rendered Hammer instead of a different turn rate', () => {
+  const h = game(), state = h.state(), scene = FILM_SCENE_BY_ID.m3_hammer_tunnels;
+  state.scene = scene.id; state.actor = scene.actor; state.step = 2; state.hammer = { ...newHammerFlight(), speed: 25, lateral: 6 };
+  h.players.possess('p', 'niobe', h.tick()); h.actor().currentLocation = scene.set;
+  h.sandbox.life.film.driveFrame(h.actor(), { throttle: 1, steer: .6, brake: false }, .05, h.tick());
+  const flight = state.hammer!;
+  assert.ok(Math.abs(h.actor().rotation - Math.PI + Math.atan2(flight.lateral, Math.max(1, flight.speed)) * .7) < 1e-8);
 });

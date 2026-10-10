@@ -186,6 +186,7 @@ export class PlayerController {
     this.sandbox?.life.film.airRescueFrame(agent, false, 0, tick);
     this.sandbox?.life.film.matrixEscapeFrame(agent, { movement: 0, sprint: false }, 0, tick);
     this.sandbox?.life.film.farewellFrame(agent, 0, tick);
+    this.sandbox?.life.film.hammerFrame(agent, tick);
     this.sandbox?.life.film.deusFrame(agent, false, 0, tick);
     this.sandbox?.life.film.smithFinaleFrame(agent, { focus: false, x: 0, z: 0, yaw: agent.rotation }, 0, tick);
     this.sandbox?.life.film.epilogueFrame(agent, 0, tick);
@@ -269,6 +270,7 @@ export class PlayerController {
       this.sandbox?.life.film.catch.frame(agent, { x: 0, z: 0, focus: false }, 0, tick);
       this.sandbox?.life.film.lobby.frame(agent, 0, tick);
       if (['m3_gate', 'm2_freeway'].includes(this.sandbox?.life.film.state?.scene ?? '')) this.sandbox?.life.film.driveFrame(agent, { throttle: 0, steer: 0, brake: false }, 0, tick);
+      this.sandbox?.life.film.hammerFrame(agent, tick);
       agent.activeEffects = agent.activeEffects.filter(effect => effect.remainingSeconds === undefined);
       if (agent.mind) agent.mind.thought = '重新回到自己的生活，继续追寻尚未完成的目标。';
     }

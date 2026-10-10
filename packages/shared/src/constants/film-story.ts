@@ -492,9 +492,9 @@ export const FILM_SCENES: FilmScene[] = [
     use('打开下层舱口，等待 Trinity 爬回甲板', '眼伤不会恢复。Trinity 确认 Neo 还能继续，然后接过驾驶任务。', LOGOS_BANE.rescue.x, LOGOS_BANE.rescue.z, 0),
   ], ['trinity', 'bane']),
   scene('m3_hammer_tunnels', 3, 'hammer_route', 'niobe', 'Hammer 的狭窄航路', 'siege', 'chase', '主航道已被哨兵封死。Niobe 驾驶 Hammer 转入狭窄机械管线；Morpheus 操纵侧向推进器，Roland 与船员守住船身。', [
-    use('核对主航道与机械管线', 'Hammer 无法在主航道减速转弯；Niobe 选择从侧面的机械管线返回锡安。', -5, 164, 1.5),
-    use('让 Morpheus 接管侧向推进器', '船员就位。保持速度穿过弯道和横向管梁；太慢会让哨兵追上。', 0, 175, 1.5),
-    { kind: 'drive', label: '驾驶 Hammer 穿过机械管线', x: 0, z: 175 },
+    use('检查机械管线的手动驾驶仪表', '哨兵已经发现 Hammer。Ghost 赶往炮位，Niobe 要求恢复推进系统的全功率。', -2.8, 169.5, 1.5),
+    use('在驾驶椅旁让 Morpheus 接管副驾驶', 'Morpheus 接替 Ghost 控制侧向推进器。Niobe 必须保持速度穿过弯道和横向管梁。', -1.65, 172.4, 1.5),
+    { kind: 'drive', label: '握住操纵杆，驾驶 Hammer 穿过机械管线', x: -1.65, z: 172.4 },
   ], ['morpheus', 'roland']),
   scene('m3_diggers', 3, 'zion_hangar', 'charra', '打断钻机的支腿', 'siege', 'siege', '另一视角：Charra 扛起双管发射器，Zee 负责装弹。哨兵正在拦截火箭；需要从两个射击口打断钻机的外侧支腿。', [
     use('与 Zee 配合装弹，转移射击口并击毁钻机支腿', '第一台钻机失去支撑。船坞里的防守仍在继续。', -40, 27, 0),

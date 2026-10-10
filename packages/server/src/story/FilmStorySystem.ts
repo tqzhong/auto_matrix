@@ -105,7 +105,7 @@ import { EXILES } from '@auto_matrix/shared';
 import { CHATEAU, type ChateauEncounter } from '@auto_matrix/shared';
 import { MOUNTAIN, type MountainFlight, type PlayerInput } from '@auto_matrix/shared';
 import { GARAGE, newGarageEscape, stepGarageEscape } from '@auto_matrix/shared';
-import { newHammerFlight, stepHammerFlight } from '@auto_matrix/shared';
+import { HAMMER_ROUTE, HAMMER_COCKPIT, hammerCrewRoot, hammerHeight, newHammerFlight, stepHammerFlight, type HammerPilotRole } from '@auto_matrix/shared';
 import { newLogosFlight, stepLogosFlight } from '@auto_matrix/shared';
 import { farewellLocked, farewellPose, newFarewell, stepFarewell } from '@auto_matrix/shared';
 import { DEUS_PACT, deusPactDialogue, deusPactLocked, deusPactPose, newDeusPact, stepDeusPact } from '@auto_matrix/shared';
@@ -4912,11 +4912,42 @@ export class FilmStorySystem {
     return true;
   }
   driving(agent: AgentState): boolean { return this.controls(agent) && !this.state?.visiting && ((this.state?.scene === 'm2_freeway' && this.state.ride?.phase === 'riding') || (this.state?.scene === 'm2_garage' && this.state.garage?.phase === 'riding') || (this.state?.scene === 'm3_hammer_tunnels' && this.state.hammer?.phase === 'riding') || (['m3_defense', 'm3_sun'].includes(this.state?.scene ?? '') && this.state?.logos?.phase === 'riding') || (this.state?.scene === 'm3_gate' && this.state.apu?.phase === 'riding')); }
+
+  hammerFrame(agent: AgentState, tick: number): void {
+    const state = this.state;
+    if (state?.scene !== 'm3_hammer_tunnels' || state.visiting || agent.id !== state.actor) return;
+    this.ensureHammerRoute();
+    const flight = state.hammer; if (!flight) return;
+    const center = FILM_SETS[this.scene!.set].center;
+    for (const id of ['niobe', 'morpheus', 'roland'] as const) {
+      const crew = this.world.agents.get(id); if (!crew || crew.controller && crew !== agent) continue;
+      const point = hammerCrewRoot(flight, id);
+      crew.position = { x: center.x + point.x, y: center.y + point.y, z: center.z + point.z };
+      crew.currentLocation = this.scene!.set; crew.isInMatrix = false;
+      crew.velocity = crew.controller ? { x: flight.lateral, y: 0, z: -flight.speed } : { x: 0, y: 0, z: 0 }; crew.rotation = point.yaw;
+      crew.currentAction = { type: 'idle', parameters: { riding: true, passenger: id !== 'niobe', seated: id !== 'roland', hammerPilot: { role: id, flight: { ...flight } } }, startedAt: state.enteredAt, duration: 1e9, progress: 0 };
+    }
+  }
   private ensureHammerRoute(): void {
     const state = this.state;
-    if (state?.scene !== 'm3_hammer_tunnels' || state.step >= this.scene!.steps.length) return;
+    if (state?.scene !== 'm3_hammer_tunnels' || state.visiting || state.step >= this.scene!.steps.length) return;
     const actor = this.world.agents.get(state.actor);
-    if (actor?.currentLocation !== 'film_service_tunnels') return;
+    if (actor?.currentLocation !== 'film_service_tunnels') {
+      if (!state.hammer && actor?.currentLocation === this.scene!.set) {
+        const center = FILM_SETS[this.scene!.set].center;
+        for (const position of [actor.position, state.checkpoint]) {
+          const z = position.z - center.z;
+          if (z >= HAMMER_COCKPIT.walk.front && z <= HAMMER_COCKPIT.walk.back
+            && Math.abs(position.y - (center.y + hammerHeight(z) + HAMMER_COCKPIT.floor + 1)) < .0001)
+            position.y = center.y + hammerHeight(HAMMER_ROUTE.start) + HAMMER_COCKPIT.floor + 1;
+        }
+      }
+      if (!state.hammer && this.scene!.cast.some(id => {
+        const crew = this.world.agents.get(id);
+        return crew?.status === 'alive' && !crew.controller && !crew.currentAction?.parameters.hammerPilot;
+      })) this.stageCast();
+      return;
+    }
     const position = filmStepPosition(this.scene!, this.scene!.steps[state.step]);
     if (state.step === 0) position.z += 3;
     this.place(actor, this.scene!, position); state.checkpoint = { ...position };
@@ -5137,17 +5168,7 @@ export class FilmStorySystem {
     if (this.state!.scene === 'm3_hammer_tunnels') {
       const state = this.state!; const before = state.hammer!;
       const flight = state.hammer = stepHammerFlight(before, input, dt);
-      agent.position = filmPosition(this.scene!.set, flight.x, flight.z);
-      agent.velocity = { x: flight.lateral, y: 0, z: -flight.speed };
-      agent.rotation = Math.PI - Math.atan2(flight.lateral, Math.max(1, flight.speed));
-      agent.currentAction = { type: 'idle', parameters: { riding: true, seated: true }, startedAt: tick, duration: 1, progress: 0 };
-      for (const [id, offset] of [['morpheus', -2.6], ['roland', 2.6]] as const) {
-        const crew = this.world.agents.get(id); if (!crew || crew.controller) continue;
-        crew.position = { ...agent.position, x: agent.position.x + offset, z: agent.position.z + 2.5 };
-        crew.currentLocation = this.scene!.set; crew.isInMatrix = false;
-        crew.velocity = { ...agent.velocity }; crew.rotation = agent.rotation;
-        crew.currentAction = { type: 'idle', parameters: { riding: true, passenger: true, seated: true }, startedAt: tick, duration: 1, progress: 0 };
-      }
+      this.hammerFrame(agent, tick);
       if (flight.hits > before.hits) state.lastText = 'Hammer 擦过管壁或横梁！Morpheus 校准侧向推进器；减速并修正航线，别让哨兵追近。';
       else if (flight.antennaLost && !before.antennaLost) state.lastText = '一道哨兵掠过船顶，通讯天线被扯断。锡安无法收到开门请求，只能靠目视发现 Hammer。';
       if (flight.phase === 'wrecked') { agent.health = 0; agent.status = 'dead'; agent.velocity = { x: 0, y: 0, z: 0 }; state.lastText = 'Hammer 在管线中失去推进或被哨兵追上。按 J 从驾驶检查点重试。'; }
@@ -6549,6 +6570,7 @@ export class FilmStorySystem {
       if (state.scene === 'm3_hammer_tunnels') {
         if (['morpheus', 'roland'].some(id => this.world.agents.get(id)?.controller)) return '舰桥船员正由另一位玩家控制，等待他们结束当前行动。';
         if (!state.hammer) state.hammer = newHammerFlight();
+        this.driveFrame(agent, { throttle: 0, steer: 0, brake: false }, 0, tick);
         return '已接管 Hammer。W 加速，S 刹车，A / D 调整侧向推进器；沿弯曲管线飞行，避开横梁并保持与哨兵的距离。';
       }
       if (state.scene === 'm2_garage') {
@@ -7222,9 +7244,10 @@ export class FilmStorySystem {
       }
       if (scene.id === 'm2_freeway') actor.position = filmPosition(scene.set, id === 'keymaker' ? 19 : 20, id === 'keymaker' ? 660 : -660);
       if (scene.id === 'm3_hammer_tunnels') {
-        actor.position = filmPosition(scene.set, id === 'morpheus' ? -2.6 : 2.6, 177.5);
+        const root = HAMMER_COCKPIT.roots[id as HammerPilotRole];
+        actor.position = filmPosition(scene.set, root.x, HAMMER_ROUTE.start + root.z);
         actor.rotation = Math.PI;
-        actor.currentAction = { type: 'idle', parameters: { seated: true }, startedAt: this.state!.enteredAt, duration: 100000, progress: 0 };
+        actor.currentAction = { type: 'idle', parameters: { seated: id !== 'roland', hammerPilot: { role: id, flight: newHammerFlight() } }, startedAt: this.state!.enteredAt, duration: 100000, progress: 0 };
       }
       if (scene.id === 'm2_garage') {
         const poses: Record<string, [number, number, number]> = {
@@ -7695,9 +7718,9 @@ export class FilmStorySystem {
         return;
       }
       if (state.scene === 'm3_hammer_tunnels' && state.hammer?.phase === 'arrived') {
-        actor.velocity = { x: 0, y: 0, z: 0 }; actor.currentAction = null;
+        actor.velocity = { x: 0, y: 0, z: 0 };
         for (const id of ['morpheus', 'roland']) {
-          const crew = this.world.agents.get(id); if (crew && !crew.controller) { crew.velocity = { x: 0, y: 0, z: 0 }; crew.currentAction = null; }
+          const crew = this.world.agents.get(id); if (crew && !crew.controller) crew.velocity = { x: 0, y: 0, z: 0 };
         }
         this.advance('Niobe 驾驶 Hammer 冲出狭窄管线。天线已断，船坞仍不知道援军抵达；接下来必须有人打开三号闸门。', actor, tick);
         return;

@@ -482,7 +482,8 @@ export class FilmSetRenderer {
     this.empDock?.update(empJourney, cameraPosition, camera);
     if (this.empDock) this.empDock.group.visible = this.empDock.group.visible && (this.currentScene === 'm3_dock_reunion' || !firstPerson && typeof empTime === 'number');
     this.root.visible = !this.empDock?.group.visible;
-    this.hammerRoute?.update(journey?.scene === 'm3_hammer_tunnels' && !journey.visiting ? journey.hammer : undefined, elapsed, firstPerson);
+    const fastHammer = player?.id === 'niobe' && player.id === journey?.actor ? player.currentAction?.parameters.hammerPilot as import('@auto_matrix/shared').HammerPilotGesture | undefined : undefined;
+    this.hammerRoute?.update(journey?.scene === 'm3_hammer_tunnels' && !journey.visiting ? fastHammer?.flight ?? journey.hammer : undefined, elapsed, firstPerson);
     this.logosStage = journey?.logos?.stage;
     this.logosFlight?.update(['m3_defense', 'm3_sun'].includes(journey?.scene ?? '') && !journey?.visiting ? journey?.logos : undefined, elapsed, firstPerson);
     this.logosWreck?.update(journey?.scene === 'm3_farewell' && !journey.visiting ? journey.farewell : undefined, elapsed, firstPerson, firstPerson && player?.id === 'neo');
