@@ -12,6 +12,7 @@ interface BodyEntry {
   active: boolean;
   park: boolean;
   briefing: boolean;
+  evacuation: boolean;
   dryColor?: THREE.Color;
 }
 
@@ -33,15 +34,19 @@ export class DiggerBodies {
       lower.color.set('#343b40'); lower.roughness = .97;
       this.materials.add(upper); this.materials.add(lower); cloth = upper; trousers = lower;
     }
-    this.entries.set(rig, { role, fallback, materials: [skin, cloth, trousers], loading: false, active: true, park: false, briefing: false,
-      dryColor: role === 'seraph' ? (cloth as THREE.MeshStandardMaterial).color.clone() : undefined });
+    if (role === 'colt') {
+      cloth = cloth.clone(); this.materials.add(cloth);
+    }
+    this.entries.set(rig, { role, fallback, materials: [skin, cloth, trousers], loading: false, active: true, park: false, briefing: false, evacuation: false,
+      dryColor: role === 'seraph' || role === 'colt' ? (cloth as THREE.MeshStandardMaterial).color.clone() : undefined });
   }
 
-  update(rig: CharacterRig, active = true, park = false, briefing = false): void {
+  update(rig: CharacterRig, active = true, park = false, briefing = false, evacuation = false): void {
     const entry = this.entries.get(rig); if (!entry) return;
     entry.active = active;
     entry.park = park;
     entry.briefing = briefing;
+    entry.evacuation = evacuation;
     if (!active) {
       if (entry.model) entry.model.visible = false;
       if (entry.role === 'colt' || entry.role === 'bane') entry.fallback.forEach(mesh => { mesh.visible = true; });
@@ -62,6 +67,11 @@ export class DiggerBodies {
       if (entry.role === 'niobe') entry.model.traverse(object => {
         if (object.userData.wardrobe) object.visible = object.userData.wardrobe === (briefing ? 'briefing' : 'dock');
       });
+      if (entry.role === 'colt') {
+        const cloth = entry.materials[1] as THREE.MeshStandardMaterial;
+        if (evacuation) cloth.color.set('#b4a58c'); else cloth.color.copy(entry.dryColor!);
+        entry.model.traverse(object => { if (object.userData.wardrobe === 'evacuation') object.visible = evacuation; });
+      }
       rig.root.updateWorldMatrix(true, true);
       entry.model.updateMatrixWorld(true);
     }
@@ -94,7 +104,7 @@ export class DiggerBodies {
       const material = object.material as THREE.Material, index = ['Skin', 'Dock cloth', 'Dock trousers'].indexOf(material.name);
       this.materials.add(material);
       if (index >= 0) object.material = entry.materials[index];
-      if (material.name === 'APU woven vest') {
+      if (material.name === 'APU woven vest' || material.name === 'Dock woven vest') {
         const vest = material as THREE.MeshStandardMaterial;
         vest.bumpMap = (entry.materials[1] as THREE.MeshStandardMaterial).bumpMap; vest.bumpScale = .004;
       }
@@ -127,7 +137,7 @@ export class DiggerBodies {
     enableSkinnedCulling(model);
     const update = model.updateMatrixWorld.bind(model);
     model.updateMatrixWorld = force => { synchronize(); update(force); };
-    this.update(rig, entry.active, entry.park, entry.briefing);
+    this.update(rig, entry.active, entry.park, entry.briefing, entry.evacuation);
   }
 
   private release(): void {

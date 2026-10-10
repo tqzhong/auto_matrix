@@ -7,7 +7,7 @@ import { reach } from '../agents/SpoonPerformance.js';
 
 type CrewMember = { root: THREE.Group; bones: Map<string, THREE.Bone>; pelvis: THREE.Vector3; footHeight: number };
 
-/** Existing CC0 background rigs, posed directly from the saved withdrawal clock. */
+/** CC0 background rigs with Zion workwear, posed from the saved withdrawal clock. */
 export class DockEvacuationCrew {
   readonly group = new THREE.Group();
   readonly ready: Promise<void>;
@@ -25,7 +25,7 @@ export class DockEvacuationCrew {
   }
 
   private async load(): Promise<void> {
-    const assets = await Promise.all(['male', 'female'].map(sex => new GLTFLoader().loadAsync(`/assets/characters/club-${sex}.glb`)));
+    const assets = await Promise.all(['male', 'female'].map(sex => new GLTFLoader().loadAsync(`/assets/characters/dock-${sex}.glb`)));
     for (const asset of assets) {
       asset.scene.updateMatrixWorld(true);
       asset.scene.traverse(object => {
@@ -49,6 +49,13 @@ export class DockEvacuationCrew {
       });
     }
     if (this.disposed) { this.release(); return; }
+    const pixels = new Uint8Array(64 * 64 * 4);
+    for (let y = 0; y < 64; y++) for (let x = 0; x < 64; x++) {
+      const value = 126 + Math.round(26 * Math.cos((x + (Math.floor(y / 8) % 2) * 4) * Math.PI / 4) * Math.sin(y * Math.PI / 8));
+      const index = (y * 64 + x) * 4; pixels[index] = pixels[index + 1] = pixels[index + 2] = value; pixels[index + 3] = 255;
+    }
+    const weave = new THREE.DataTexture(pixels, 64, 64); weave.wrapS = weave.wrapT = THREE.RepeatWrapping;
+    weave.repeat.set(16, 16); weave.needsUpdate = true; this.textures.add(weave);
     const colors = [0x85725b, 0x74614f, 0x6e5845, 0x938269, 0x6c6b59, 0x8b705c];
     for (let i = 0; i < DOCK_EVACUATION.crew; i++) {
       const root = clone(assets[i % 2].scene) as THREE.Group; root.name = `evacuation-soldier-${i}`; root.scale.setScalar(.88);
@@ -59,8 +66,9 @@ export class DockEvacuationCrew {
         object.castShadow = object.receiveShadow = true;
         if (object instanceof THREE.SkinnedMesh) { object.frustumCulled = false; this.skeletons.add(object.skeleton); }
         const material = object.material as THREE.MeshStandardMaterial;
-        if (/Coat|Trousers/.test(material.name)) {
+        if (/Dock knit|Trousers/.test(material.name)) {
           const copy = material.clone(); copy.color.setHex(material.name === 'Trousers' ? 0x4c4940 : colors[i]);
+          copy.bumpMap = weave; copy.bumpScale = material.name === 'Trousers' ? .0015 : .004;
           object.material = copy; this.materials.add(copy);
         }
       });

@@ -272,8 +272,8 @@ def main(source, output, role):
                                     ('Dock trousers', [.027, .033, .026], .95), ('Dock boots', [.012, .015, .012], .79),
                                     ('Dock bindings', [.035, .039, .028], .93)]:
         doc['materials'].append({'name': name, 'pbrMetallicRoughness': {'baseColorFactor': color + [1], 'metallicFactor': 0, 'roughnessFactor': roughness}, 'doubleSided': True})
-    if role == 'mifune':
-        for name, color in [('APU woven vest', [.027, .025, .021]), ('APU wine collar', [.12, .028, .025])]:
+    if role in ['mifune', 'colt']:
+        for name, color in [('APU woven vest' if role == 'mifune' else 'Dock woven vest', [.027, .025, .021] if role == 'mifune' else [.10, .053, .035]), ('APU wine collar', [.12, .028, .025])]:
             doc['materials'].append({'name': name, 'pbrMetallicRoughness': {'baseColorFactor': color + [1], 'metallicFactor': 0, 'roughnessFactor': .95}, 'doubleSided': True})
     if role == 'roland':
         doc['materials'].append({'name': 'Roland undershirt', 'pbrMetallicRoughness': {
@@ -348,6 +348,16 @@ def main(source, output, role):
                                                               preserve=skin_w[:, arm_ids].sum(axis=1) > .3)
     export(role + '-anatomical-body', skin_p, skin_uv, skin_faces, skin_w, 0)
 
+    if role == 'kid':
+        # The waistband and overlying knit must fold around the same pelvis,
+        # rather than letting the lifted thighs pull through the shirt hem.
+        weights = weights.copy()
+        blend = np.clip((y - 1.65) / .25, 0, 1) * ((arms < .2) & (y < 2.3))
+        blend = blend * blend * (3 - 2 * blend)
+        torso_weight = np.clip((y - 1.90) / .4, 0, 1)
+        weights *= 1 - blend[:, None]
+        weights[:, 0] += blend * (1 - torso_weight); weights[:, 1] += blend * torso_weight
+
     vest = points + normal * .018
     # Smooth small anatomical indentations before adding cloth folds. This
     # changes garment vertices only; the shoulder/arm skin stays continuous.
@@ -355,6 +365,15 @@ def main(source, output, role):
     for face in faces:
         ids = [i for i, _ in face]
         for a, b in zip(ids, ids[1:] + ids[:1]): adjacency.setdefault(a, set()).add(b); adjacency.setdefault(b, set()).add(a)
+    # Fit the overlapping shirt against the trousers as well as bare anatomy.
+    pants = points + normal * ((.005 if role == 'kamala' else .055 if program else .025) + (.002 if role == 'kamala' else .018) * np.exp(-((y - 1.2) / .8) ** 2))[:, None]
+    crease = (.003 if program else .009) * np.sin(y * 42 + x * 14) * np.exp(-((y - .92) / .3) ** 2)
+    pants += normal * crease[:, None]
+    for _ in range(5):
+        smooth = pants.copy()
+        for i, neighbors in adjacency.items():
+            if .27 < y[i] < 2.08: smooth[i] = pants[i] * .4 + pants[list(neighbors)].mean(axis=0) * .6
+        pants = smooth
     for _ in range(5):
         smooth = vest.copy()
         for i, neighbors in adjacency.items():
@@ -372,6 +391,14 @@ def main(source, output, role):
         vest[i, [0, 2]] = vest[i, [0, 2]] * (1 - blend) + radial * blend
     folds = (.003 * np.sin(y * 28 + np.arctan2(x, z) * 5) + .002 * np.sin(y * 43 - x * 17)) * np.clip((2.9 - y) / .6, 0, 1)
     vest += normal * folds[:, None]
+    if role == 'kid':
+        pant_heights, pant_sections = cloth_sections(pants, faces, arms, bottom=1.84)
+        for i in np.flatnonzero((arms < .2) & (y >= 1.84) & (y < 2.3)):
+            a = int(angle[i]) % pant_sections.shape[1]; t = angle[i] - np.floor(angle[i])
+            radius = np.interp(vest[i, 1], pant_heights, pant_sections[:, a] * (1 - t) + pant_sections[:, (a + 1) % pant_sections.shape[1]] * t)
+            clearance = .028 * min(1, (2.3 - y[i]) / .12)
+            current = np.linalg.norm(vest[i, [0, 2]])
+            vest[i, [0, 2]] *= max(1, (radius + clearance) / current)
     if program or role == 'roland':
         # Section smoothing must not pull a jacket inside its anatomical
         # undershirt, especially beside the chest and shoulder blades.
@@ -393,17 +420,19 @@ def main(source, output, role):
         cut = np.minimum(neckline - y, y - np.where(arms > .3, 1.82, 1.95))
         sp, su, sf, sw = builder.trim_neckline(sweater, uv, faces, weights, sweater[:, 1] + cut)
         export('niobe-briefing-sweater', sp, su, sf, sw, 1, 'briefing')
-    if role == 'mifune':
-        # The APU captain wears a separate open, sleeveless woven vest over
-        # his light shirt. Both layers retain identical anatomical weights.
+    if role in ['mifune', 'colt']:
+        # The captain and withdrawal officer wear an open woven vest over
+        # a light shirt. Colt retains his earlier medical outfit separately.
+        wardrobe = 'evacuation' if role == 'colt' else None
         outer = vest + normals(vest, faces) * .030
         opening = np.where(z > .015, np.abs(x) - (.055 + .24 * np.clip((y - 2.65) / .76, 0, 1)), 1)
         cut = np.minimum.reduce([3.43 - y, y - 1.93, armhole - arms, opening])
         op, ou, of, ow = builder.trim_neckline(outer, uv, faces, weights, outer[:, 1] + cut)
-        export('mifune-woven-vest', op, ou, of, ow, 5)
+        export(role + '-woven-vest', op, ou, of, ow, 5, wardrobe)
         border = np.minimum.reduce([cut, .10 - opening, y - 2.72, z - .015])
         cp, cu, cf, cw = builder.trim_neckline(outer + normals(outer, faces) * .004, uv, faces, weights, outer[:, 1] + border)
-        export('mifune-wine-collar', cp, cu, cf, cw, 6)
+        export(role + '-wine-collar', cp, cu, cf, cw, 6, wardrobe)
+    if role == 'mifune':
         cuff = vest + normals(vest, faces) * .009
         roll = np.minimum.reduce([y - 2.29, 2.43 - y, arms - .35])
         cp, cu, cf, cw = builder.trim_neckline(cuff, uv, faces, weights, cuff[:, 1] + roll)
@@ -598,14 +627,6 @@ def main(source, output, role):
 
     # Relaxed trousers bridge skin details, add ease around thighs and knees,
     # and share the anatomical hip weights across the continuous crotch.
-    pants = points + normal * ((.005 if role == 'kamala' else .055 if program else .025) + (.002 if role == 'kamala' else .018) * np.exp(-((y - 1.2) / .8) ** 2))[:, None]
-    crease = (.003 if program else .009) * np.sin(y * 42 + x * 14) * np.exp(-((y - .92) / .3) ** 2)
-    pants += normal * crease[:, None]
-    for _ in range(5):
-        smooth = pants.copy()
-        for i, neighbors in adjacency.items():
-            if .27 < y[i] < 2.08: smooth[i] = pants[i] * .4 + pants[list(neighbors)].mean(axis=0) * .6
-        pants = smooth
     pp, pu, pf, pw = builder.trim_neckline(pants, uv, faces, weights, 2.08)
     # Hands in the relaxed bind pose must not become part of the trousers.
     pp, pu, pf, pw = builder.trim_neckline(pp, pu, pf, pw, pp[:, 1] + .1 - pw[:, arm_ids].sum(axis=1))

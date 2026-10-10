@@ -15,6 +15,8 @@ interface HeadEntry {
   loading: boolean;
   active: boolean;
   neck?: THREE.Object3D;
+  headset?: THREE.Group;
+  evacuation?: boolean;
 }
 
 /** Detailed heads retain the existing performance joints and saved body poses. */
@@ -33,9 +35,10 @@ export class EpilogueHeads {
 
   update(rig: CharacterRig, input: MotionInput): void {
     const entry = this.entries.get(rig); if (!entry) return;
+    entry.evacuation = input.dockEvacuation?.role === 'colt';
     // Mary Alice's appearance belongs to Revolutions. Earlier Oracle scenes
     // retain their existing head until their own likeness asset is authored.
-    entry.active = entry.role === 'bane' ? Boolean(input.logosBane) : entry.role === 'colt' || entry.role === 'link' ? Boolean(input.maggieDiscovery) : entry.role === 'niobe' ? Boolean(input.realWorld) : entry.role !== 'oracle' || Boolean(input.oracleRevolutions || input.oracleRequest?.role === 'oracle' || input.oracleLast?.role === 'oracle' || input.oracleRestored || input.parkOutfit || input.epilogue?.kind === 'dawn');
+    entry.active = entry.role === 'bane' ? Boolean(input.logosBane) : entry.role === 'colt' || entry.role === 'link' ? Boolean(input.maggieDiscovery || entry.role === 'colt' && input.dockEvacuation?.role === 'colt') : entry.role === 'niobe' ? Boolean(input.realWorld) : entry.role !== 'oracle' || Boolean(input.oracleRevolutions || input.oracleRequest?.role === 'oracle' || input.oracleLast?.role === 'oracle' || input.oracleRestored || input.parkOutfit || input.epilogue?.kind === 'dawn');
     entry.closed.value = input.oracleRestored ? 1 : entry.role === 'sati' && input.epilogue?.kind === 'reset' ? streetResetPose(input.epilogue).closedEyes
       : entry.role === 'mifune' && input.dockLastStand ? dockLastStandPose(input.dockLastStand).dead : entry.role === 'charra' && input.upperDigger ? upperDiggerFall(input.upperDigger) : entry.role === 'maggie' && input.maggieDiscovery?.incident ? 1 : 0;
     if (entry.active && !entry.loading) {
@@ -49,6 +52,7 @@ export class EpilogueHeads {
     if (entry.model) entry.model.visible = visible;
     if (entry.face?.morphTargetInfluences) entry.face.morphTargetInfluences[0] = entry.closed.value;
     if (entry.eyes) entry.eyes.visible = entry.closed.value < .98;
+    if (entry.headset) entry.headset.visible = Boolean(entry.evacuation);
   }
 
   private async load(rig: CharacterRig, entry: HeadEntry): Promise<void> {
@@ -136,6 +140,20 @@ export class EpilogueHeads {
     }
     this.groom(model, face.geometry, entry.role);
     if (entry.role === 'keymaker') this.readingGlasses(model, metadata.eye[0]);
+    if (entry.role === 'colt') {
+      const headset = new THREE.Group(); headset.name = 'colt-dock-headset'; headset.visible = Boolean(entry.evacuation); model.add(headset); entry.headset = headset;
+      const metal = this.material(new THREE.MeshStandardMaterial({ color: '#514b3c', roughness: .68, metalness: .56 }));
+      const pads = this.material(new THREE.MeshStandardMaterial({ color: '#26241e', roughness: .95 }));
+      const band = new THREE.CatmullRomCurve3([[-.30, .02, -.07], [-.29, .34, -.09], [0, .51, -.09], [.29, .34, -.09], [.30, .02, -.07]].map(point => new THREE.Vector3().fromArray(point)));
+      this.mesh(headset, this.geometry(new THREE.TubeGeometry(band, 40, .022, 8, false)), metal, [0, 0, 0]);
+      for (const sign of [-1, 1]) {
+        this.mesh(headset, sphere, pads, [sign * .31, .01, -.055], [.048, .125, .085]);
+        this.mesh(headset, sphere, metal, [sign * .353, .01, -.055], [.026, .103, .067]);
+      }
+      const boom = new THREE.CatmullRomCurve3([[.36, -.05, .01], [.33, -.15, .19], [.22, -.23, .33], [.09, -.23, .36]].map(point => new THREE.Vector3().fromArray(point)));
+      this.mesh(headset, this.geometry(new THREE.TubeGeometry(boom, 24, .010, 6, false)), metal, [0, 0, 0]);
+      this.mesh(headset, sphere, pads, [.085, -.23, .36], [.042, .025, .024]).name = 'colt-radio-microphone';
+    }
     if (this.disposed) { this.release(); return; }
     entry.model = model; model.visible = entry.active; entry.fallback.visible = !entry.active; rig.head.add(model);
     rig.head.userData.surfaceVersion = (rig.head.userData.surfaceVersion ?? 0) + 1;
