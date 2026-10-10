@@ -22,7 +22,7 @@ export function newDockGate(x: number, z: number): DockGate {
 export function dockGateActive(journey?: FilmJourney): boolean {
   return Boolean(journey && journey.scene === 'm3_gate' && !journey.visiting && (journey.step === 2 && !journey.completed.includes(journey.scene) || journey.step === 3 && journey.dockGate?.phase === 'done'));
 }
-type GatePose = Pick<DockGate, 'x' | 'z'> & Partial<Pick<DockGate, 'toppled' | 'phase' | 'elapsed'>>;
+type GatePose = Pick<DockGate, 'x' | 'z'> & Partial<Pick<DockGate, 'toppled' | 'phase' | 'elapsed' | 'brace'>>;
 function rotate(point: { x: number; y: number; z: number }, pitch: number, roll: number) {
   const x = point.x * Math.cos(roll) - point.y * Math.sin(roll), y = point.x * Math.sin(roll) + point.y * Math.cos(roll);
   return { x, y: y * Math.cos(pitch) - point.z * Math.sin(pitch), z: y * Math.sin(pitch) + point.z * Math.cos(pitch) };
@@ -38,7 +38,16 @@ export function dockGatePoint(gate: GatePose, point: { x: number; y: number; z: 
   const pose = dockGatePose(gate), local = rotate(point, pose.pitch, pose.roll);
   return { x: pose.x + local.x, y: pose.y + local.y, z: pose.z + local.z };
 }
-export function dockGateEye(gate: GatePose) { return dockGatePoint(gate, APU_RIG.eye); }
+export function dockGatePilotPose(gate: GatePose) {
+  const brace = gate.toppled ? Math.max(0, Math.min(1, gate.brace ?? 0)) : 0;
+  const effort = brace * brace * (3 - 2 * brace);
+  return { lean: .10 * effort, head: -.16 * effort };
+}
+export function dockGateEye(gate: GatePose) {
+  const pose = dockGatePilotPose(gate), eye = rotate({ x: 0, y: -.005, z: .275 }, pose.head, 0);
+  const torso = rotate({ x: eye.x, y: 2.13 + eye.y, z: eye.z }, pose.lean, 0);
+  return dockGatePoint(gate, { x: -torso.x, y: APU_RIG.pilot.y + 1.38 + torso.y, z: -torso.z });
+}
 export function dockGateZee(gate: GatePose) { return { x: gate.x - 7, z: gate.z + 8, yaw: Math.atan2(9.5, -5) }; }
 export function dockGateAttacker(gate: GatePose) {
   const t = gate.phase === 'falling' ? gate.elapsed ?? 0 : DOCK_GATE.falling;

@@ -945,8 +945,8 @@ test('the fallen pilot can see the cable through the actual APU from his first p
   const stage = new THREE.Group(); stage.position.set(center.x, center.y - 1, center.z);
   const renderer = new ZionHomecomingRenderer(stage, 'film_zion_hangar'); t.after(() => renderer.dispose());
   game.state.id = 'kid'; game.state.currentLocation = 'film_zion_hangar'; game.state.isInMatrix = false;
-  for (const x of [5, 7.2]) for (const height of [26, 32, 37]) {
-    const gate = { ...newDockGate(x, -50), toppled: true, phase: 'aiming' as const };
+  for (const x of [5, 7.2]) for (const height of [26, 32, 37]) for (const brace of [undefined, 1]) {
+    const gate = { ...newDockGate(x, -50), toppled: true, phase: 'aiming' as const, brace };
     const eye = dockGateEye(gate), pilot = dockGatePoint(gate, APU_RIG.pilot);
     gate.yaw = Math.atan2(DOCK_GATE.cable.x - eye.x, DOCK_GATE.cable.z - eye.z);
     gate.pitch = -Math.atan2(height - eye.y, Math.hypot(DOCK_GATE.cable.x - eye.x, DOCK_GATE.cable.z - eye.z));

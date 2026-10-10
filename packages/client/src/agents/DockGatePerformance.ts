@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { dockGatePose, dockGateAttacker, FILM_SETS, type DockGate } from '@auto_matrix/shared';
+import { dockGatePose, dockGatePilotPose, dockGateAttacker, FILM_SETS, type DockGate } from '@auto_matrix/shared';
 import type { CharacterRig } from './CharacterModel.js';
 import { reach } from './SpoonPerformance.js';
 
@@ -31,6 +31,8 @@ export function poseDockGate(rig: CharacterRig, gate?: DockGate, cover?: DockGat
     const pose = dockGatePose(gate);
     // The pilot faces -Z; conjugate the APU rotation by his half turn.
     rig.detail.rotation.set(-pose.pitch, 0, -pose.roll);
+    const effort = dockGatePilotPose(gate);
+    rig.torso.rotation.x = effort.lean; rig.head.rotation.x = effort.head;
     if (gunnery) rig.head.rotation.set(gunnery.pitch * .4, Math.atan2(Math.sin(Math.PI - gunnery.yaw), Math.cos(Math.PI - gunnery.yaw)) * .55, 0);
     rig.root.updateWorldMatrix(true, true);
     const rotation = rig.detail.getWorldQuaternion(new THREE.Quaternion());
