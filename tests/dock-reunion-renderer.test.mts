@@ -35,14 +35,14 @@ async function fixture(t: TestContext) {
   t.after(() => { models.dispose(); globalThis.document = previous; });
   const rigs = { link: models.create(world.agents.get('link')!), zee: models.create(world.agents.get('zee')!) }, center = FILM_SETS.film_zion_hangar.center;
   const crew = Object.fromEntries(DOCK_REUNION.crew.map(role => [role, models.create(world.agents.get(role)!)])) as Record<DockDepartureRole, CharacterRig>;
-  const poseDeparture = (elapsed: number) => {
+  const poseDeparture = (elapsed: number, forward = false) => {
     for (const role of DOCK_REUNION.crew) {
-      const gesture: DockDepartureGesture = { role, elapsed, floor: 1, assisted: true }, rig = crew[role], at = dockDepartureRoot(gesture);
+      const gesture: DockDepartureGesture = { role, elapsed, floor: 1, assisted: true, forward }, rig = crew[role], at = dockDepartureRoot(gesture);
       rig.root.position.set(center.x + at.x, center.y - 1 + at.y, center.z + at.z); rig.root.rotation.y = at.yaw;
       models.animate(rig, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true, dockDeparture: gesture }, 0);
     }
-    poseDockDeparture(crew.colt, { role: 'colt', elapsed, floor: 1, assisted: true }, crew.roland);
-    poseDockDeparture(crew.roland, { role: 'roland', elapsed, floor: 1, assisted: true }, crew.colt);
+    poseDockDeparture(crew.colt, { role: 'colt', elapsed, floor: 1, assisted: true, forward }, crew.roland);
+    poseDockDeparture(crew.roland, { role: 'roland', elapsed, floor: 1, assisted: true, forward }, crew.colt);
   };
   const pose = (state: DockReunion) => {
     for (const role of ['link', 'zee'] as const) {
@@ -60,12 +60,14 @@ async function fixture(t: TestContext) {
   return { rigs, crew, pose, poseDeparture, center, models };
 }
 
-test('the damaged door falls visibly, stays above the dock, and restores at the same saved frame', t => {
+for (const forward of [false, true]) test(`the damaged door falls visibly, stays above the dock, and restores at the same saved frame (${forward ? 'forward' : 'legacy'})`, t => {
   const root = new THREE.Group(), metal = new THREE.MeshStandardMaterial(), iron = new THREE.MeshStandardMaterial();
   const renderer = new DockGateRenderer(root, metal, iron); t.after(() => { renderer.dispose(); metal.dispose(); iron.dispose(); });
   const journey = { scene: 'm3_dock_reunion', completed: ['m3_emp'], emp: { firedAt: 1, elapsed: 9 },
-    dockReunion: { phase: 'disembarking', elapsed: 0, floor: 1, departure: 0 } } as FilmJourney;
+    dockReunion: { phase: 'disembarking', elapsed: 0, floor: 1, departure: 0, forward } } as FilmJourney;
   const door = root.getObjectByName('hammer-rear-hatch')!;
+  renderer.update(journey);
+  assert.ok(Math.abs(door.position.z - (forward ? 20.96 : 55.04)) < 1e-6, 'door must detach from the correct rear opening');
   for (let age = 0; age <= 2.2; age += .025) {
     journey.dockReunion!.departure = age; renderer.update(journey); root.updateMatrixWorld(true);
     assert.equal(door.visible, true, 'the panel must fall rather than simply disappear');
@@ -82,24 +84,24 @@ test('the damaged door falls visibly, stays above the dock, and restores at the 
   assert.ok(cold.group.getObjectByName('hammer-rear-hatch')!.matrixWorld.equals(matrix), 'cold creation restores the real panel transform');
 });
 
-test('the waiting crew and Link stand on a rendered rear deck inside the hull', t => {
+for (const forward of [false, true]) test(`the waiting crew and Link stand on a rendered rear deck inside the hull (${forward ? 'forward' : 'legacy'})`, t => {
   const root = new THREE.Group(), metal = new THREE.MeshStandardMaterial(), iron = new THREE.MeshStandardMaterial();
   const renderer = new DockGateRenderer(root, metal, iron); t.after(() => { renderer.dispose(); metal.dispose(); iron.dispose(); });
   renderer.update({ scene: 'm3_dock_reunion', completed: [], emp: { firedAt: 1, elapsed: 9 },
-    dockReunion: { phase: 'ready', elapsed: 0, floor: 1, departure: 0 } } as FilmJourney); root.updateMatrixWorld(true);
+    dockReunion: { phase: 'ready', elapsed: 0, floor: 1, departure: 0, forward } } as FilmJourney); root.updateMatrixWorld(true);
   const deck = root.getObjectByName('hammer-exit-deck'); assert.ok(deck, 'the newly walkable interior needs a visible support surface');
   for (const role of [...DOCK_REUNION.crew, 'link'] as const) for (const left of [false, true]) {
-    const foot = role === 'link' ? dockReunionFoot({ phase: 'ready', elapsed: 0, floor: 1, departure: 0 }, left)
-      : dockDepartureFoot({ role, elapsed: 0, floor: 1, assisted: true }, left);
+    const foot = role === 'link' ? dockReunionFoot({ phase: 'ready', elapsed: 0, floor: 1, departure: 0, forward }, left)
+      : dockDepartureFoot({ role, elapsed: 0, floor: 1, assisted: true, forward }, left);
     const hit = new THREE.Raycaster(new THREE.Vector3(foot.x, foot.y + .5, foot.z), new THREE.Vector3(0, -1, 0), 0, .6).intersectObject(deck)[0];
     assert.ok(hit && Math.abs(hit.point.y - foot.y) < .00001, `${role}/${left}: the saved waiting foot has no rendered deck beneath it`);
   }
 });
 
-test('the delivered crew boots support each descending foot and their bodies fit through the opening', async t => {
+for (const forward of [false, true]) test(`the delivered crew boots support each descending foot and their bodies fit through the opening (${forward ? 'forward' : 'legacy'})`, async t => {
   const h = await fixture(t), floor = h.center.y, base = dockEmpHullBase(1.2, 1);
   for (const elapsed of [0, 3.2, 6, 8.7, 10.3, 12.2, 15.5, 18.5, 21.5, 24.3, 26.2]) {
-    h.poseDeparture(elapsed);
+    h.poseDeparture(elapsed, forward);
     for (const role of DOCK_REUNION.crew) {
       const rig = h.crew[role];
       const joints = ['L', 'R'].map((side, index) => ({
@@ -110,7 +112,7 @@ test('the delivered crew boots support each descending foot and their bodies fit
       const ankles = joints.map(joint => rig.root.worldToLocal(joint.ankle.getWorldPosition(new THREE.Vector3())).x);
       assert.ok((hips[0] - hips[1]) * (ankles[0] - ankles[1]) > 0, `${role}/${elapsed}: the real left and right legs cross under the body`);
       for (const side of ['L', 'R'] as const) {
-        const foot = dockDepartureFoot({ role, elapsed, floor: 1, assisted: true }, side === 'L'); let low = Infinity;
+        const foot = dockDepartureFoot({ role, elapsed, floor: 1, assisted: true, forward }, side === 'L'); let low = Infinity;
         if (rig.hero || rig.detail.getObjectByName(`${role}-detailed-body`)) rig.detail.traverseVisible(object => {
           if (!(object instanceof THREE.SkinnedMesh) || !/leather/i.test((object.material as THREE.Material).name) && !object.name.endsWith('-work-boots')) return;
           object.skeleton.update(); const ids = object.geometry.attributes.skinIndex, weights = object.geometry.attributes.skinWeight;
@@ -126,7 +128,7 @@ test('the delivered crew boots support each descending foot and their bodies fit
         const positions = object.geometry.attributes.position;
         for (let i = 0; i < positions.count; i++) {
           const p = object.localToWorld(object.getVertexPosition(i, new THREE.Vector3())).sub(h.center).add(new THREE.Vector3(0, 1, 0));
-          if (Math.abs(p.z - 55.04) < .13) assert.ok(Math.hypot(p.x - 20, p.y - base) < DOCK_REUNION.hatch.radius - .01,
+          if (Math.abs(p.z - (forward ? 20.96 : 55.04)) < .13) assert.ok(Math.hypot(p.x - 20, p.y - base) < DOCK_REUNION.hatch.radius - .01,
             `${role}/${elapsed}: delivered body touches the solid hatch rim at ${p.toArray()}`);
         }
       });
@@ -134,19 +136,19 @@ test('the delivered crew boots support each descending foot and their bodies fit
   }
 });
 
-test('crew who reach the dock clear the shared landing before the next person arrives', () => {
+for (const forward of [false, true]) test(`crew who reach the dock clear the shared landing before the next person arrives (${forward ? 'forward' : 'legacy'})`, () => {
   for (let elapsed = 0; elapsed <= 26.2; elapsed += .1) {
-    const points = DOCK_REUNION.crew.map(role => dockDepartureRoot({ role, elapsed, floor: 1, assisted: true }));
+    const points = DOCK_REUNION.crew.map(role => dockDepartureRoot({ role, elapsed, floor: 1, assisted: true, forward }));
     for (let i = 0; i < points.length; i++) for (let j = i + 1; j < points.length; j++)
       assert.ok(Math.hypot(points[i].x - points[j].x, points[i].z - points[j].z) > .9,
         `${elapsed}: ${DOCK_REUNION.crew[i]} and ${DOCK_REUNION.crew[j]} occupy the same landing`);
   }
 });
 
-test('Roland’s delivered palm reaches Colt’s shoulder and Colt supports the captain’s waist', async t => {
+for (const forward of [false, true]) test(`Roland’s delivered palm reaches Colt’s shoulder and Colt supports the captain’s waist (${forward ? 'forward' : 'legacy'})`, async t => {
   const h = await fixture(t);
   for (const elapsed of [0, 17.2, 22.5]) {
-    h.poseDeparture(elapsed);
+    h.poseDeparture(elapsed, forward);
     for (const [role, other, left] of [['roland', 'colt', false], ['colt', 'roland', true]] as const) {
       const rig = h.crew[role], contact = departureSupportContact(h.crew[other], role === 'roland'), points: THREE.Vector3[] = rig.detail.getObjectByName(`${role}-detailed-body`) ? handPoints(rig, left) : [];
       if (!points.length) rig.elbows[left ? 1 : 0].traverseVisible(object => {
@@ -190,10 +192,10 @@ test('the helper waist contact comes from Roland’s visible wrap tunic after th
   assert.ok(gap !== undefined && Math.abs(gap - .025) < .01, `the helper must stay outside the captain's delivered tunic: signed gap ${gap}`);
 });
 
-test('the delivered boots descend one real tread at a time and retain the paused support foot', async t => {
+for (const forward of [false, true]) test(`the delivered boots descend one real tread at a time and retain the paused support foot (${forward ? 'forward' : 'legacy'})`, async t => {
   const h = await fixture(t), rig = h.rigs.link;
   for (const departure of [undefined, 16]) for (let elapsed = 0; elapsed <= DOCK_REUNION.exitSeconds; elapsed += .2) {
-    const state: DockReunion = { phase: 'exiting', elapsed, floor: 1, departure }; h.pose(state);
+    const state: DockReunion = { phase: 'exiting', elapsed, floor: 1, departure, forward }; h.pose(state);
     for (const side of ['L', 'R'] as const) {
       const target = dockReunionFoot(state, side === 'L'); let low = Infinity;
       rig.detail.traverseVisible(object => {
@@ -351,5 +353,17 @@ test('the temple huddle keeps both delivered boot soles grounded and faces outsi
         }
       }
     } finally { a.dispose(); b.dispose(); }
+  }
+});
+
+
+for (const forward of [false, true]) test(`Link's approach keeps anatomical legs on their own side while turning (${forward ? 'forward' : 'legacy'})`, async t => {
+  const h = await fixture(t), rig = h.rigs.link;
+  const approach = forward ? { x: 32.3, z: 17.2, yaw: 1.1 } : { x: 7.7, z: 58.8, yaw: 1.1 + Math.PI };
+  for (const elapsed of [0, .4, 1.2, 2, 2.39]) {
+    h.pose({ phase: 'approaching', elapsed, floor: 1, forward, approach });
+    const hips = ['L', 'R'].map(side => rig.root.worldToLocal(rig.hero!.bones.get(`hip_${side}`)!.getWorldPosition(new THREE.Vector3())).x);
+    const ankles = ['L', 'R'].map(side => rig.root.worldToLocal(rig.hero!.bones.get(`ankle_${side}`)!.getWorldPosition(new THREE.Vector3())).x);
+    assert.ok((hips[0] - hips[1]) * (ankles[0] - ankles[1]) > 0, `${elapsed}: Link crosses his legs while turning toward Zee`);
   }
 });

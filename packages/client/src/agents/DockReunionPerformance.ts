@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { FILM_SETS, dockDepartureFoot, dockReunionFoot, dockReunionPose, dockReunionRail, type DockDepartureGesture, type DockReunionGesture } from '@auto_matrix/shared';
+import { FILM_SETS, dockArrivalPoint, dockDepartureFoot, dockReunionFoot, dockReunionPose, dockReunionRail, type DockDepartureGesture, type DockReunionGesture } from '@auto_matrix/shared';
 import type { CharacterRig } from './CharacterModel.js';
 import { reach } from './SpoonPerformance.js';
 
@@ -29,7 +29,7 @@ export function poseDockReunion(rig: CharacterRig, gesture?: DockReunionGesture,
   const rotation = rig.root.getWorldQuaternion(new THREE.Quaternion());
   const descending = gesture.role === 'link' && ['ready', 'disembarking', 'exiting'].includes(gesture.phase);
   const holding = descending && (gesture.departure === undefined ? 1 : gesture.phase === 'exiting'
-    ? THREE.MathUtils.smoothstep(dockReunionFoot(gesture, true).z, 53, 55.35) : 0);
+    ? THREE.MathUtils.smoothstep(dockArrivalPoint(dockReunionFoot(gesture, true), gesture.forward).z, 53, 55.35) : 0);
   if (rig.empCharm && gesture.role === 'link') {
     rig.empCharm.visible = true;
     const chest = hero?.bones.get('chest') ?? rig.torso;

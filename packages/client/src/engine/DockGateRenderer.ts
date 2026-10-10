@@ -128,22 +128,24 @@ export class DockGateRenderer {
       section.visible = !open || Math.abs(y - cut) > .8;
     }
     this.ship.visible = Boolean(!journey?.visiting && (gate && ['opening', 'entering', 'done'].includes(gate.phase) && journey?.scene === 'm3_gate' || ['m3_emp', 'm3_dock_reunion'].includes(journey?.scene ?? '')));
+    const forward = journey?.scene === 'm3_dock_reunion' ? journey.dockReunion?.forward : gate?.forward;
     const ship = journey?.emp ? dockEmpShip(journey.emp.elapsed ?? DOCK_EMP.seconds) : dockGateShip(gate);
-    this.ship.position.set(ship.x, ship.y, ship.z); this.ship.rotation.set(0, journey?.emp ? 0 : dockGateShip(gate).yaw, ship.roll);
+    this.ship.position.set(ship.x, ship.y, ship.z); this.ship.rotation.set(0, journey?.emp ? forward ? Math.PI : 0 : dockGateShip(gate).yaw, ship.roll);
     if (journey?.emp) {
       const floor = journey.diggers ? 1 : 0;
       this.ship.position.y = Math.max(ship.y, dockEmpHullBase(ship.roll, floor));
     }
     if (journey?.scene === 'm3_dock_reunion' && !journey.visiting) {
       if (this.hatch.parent !== this.group) this.group.add(this.hatch);
-      const pose = dockHatchPose(journey.dockReunion?.departure ?? DOCK_REUNION.departure.hatchSeconds, journey.dockReunion?.floor ?? (journey.diggers ? 1 : 0));
-      this.hatch.position.set(pose.x, pose.y, pose.z); this.hatch.rotation.set(pose.pitch, 0, pose.roll);
+      const pose = dockHatchPose(journey.dockReunion?.departure ?? DOCK_REUNION.departure.hatchSeconds, journey.dockReunion?.floor ?? (journey.diggers ? 1 : 0), forward);
+      this.hatch.position.set(pose.x, pose.y, pose.z); this.hatch.rotation.set(pose.pitch, forward ? Math.PI : 0, pose.roll, 'YXZ');
     } else {
       if (this.hatch.parent !== this.ship) this.ship.add(this.hatch);
       this.hatch.position.set(0, 0, 17.04); this.hatch.rotation.set(0, 0, 0);
     }
     this.hatch.visible = this.ship.visible;
     this.descent.visible = journey?.scene === 'm3_dock_reunion' && !journey.visiting;
+    this.descent.position.set(forward ? 40 : 0, 0, forward ? 76 : 0); this.descent.rotation.y = forward ? Math.PI : 0;
     if (this.descent.visible) this.descent.getObjectByName('hammer-exit-deck')!.position.y = dockReunionTread(0,
       journey!.dockReunion?.floor ?? (journey!.diggers ? 1 : 0)).y - .08;
     if (this.descent.visible) for (let i = 0; i <= DOCK_REUNION.steps; i++) {

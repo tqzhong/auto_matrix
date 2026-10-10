@@ -12,11 +12,11 @@ function setup() {
   return { root, renderer, journey };
 }
 
-test('Hammer crosses nose-first before banking inside the dock, and its saved heading resumes without a jump', t => {
+test('Hammer stays nose-first through entry and EMP, and its saved heading resumes without a jump', t => {
   const { root, renderer, journey } = setup(); t.after(() => renderer.dispose());
   const ship = root.getObjectByName('gate-three-hammer')!;
   journey.dockGate!.phase = 'entering';
-  for (const elapsed of [0, .5, 1.8, 2.7, 3]) {
+  for (const elapsed of [0, .5, 1.8, 2.7, 3, 4.5, 5.5, 6]) {
     journey.dockGate!.elapsed = elapsed; renderer.update(journey, 0); root.updateMatrixWorld(true);
     const bow = ship.localToWorld(new THREE.Vector3(0, 0, -17));
     const stern = ship.localToWorld(new THREE.Vector3(0, 0, 17));

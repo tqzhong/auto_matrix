@@ -30,7 +30,7 @@ import { ARREST_BIKE, arrestCarPoint, arrestBikePoint, arrestMirrorShot } from '
 import { CATCH, catchLocked, DEUS_PACT, deusPactLocked, deusPactPose, reloadedPhaseLocked, SMITH_FINALE, smithFinaleBeat, smithFinaleLocked, smithFinalePose, smithCraterAmount, smithCraterFloor, smithOracleRestored, trilogyEpilogueLocked } from '@auto_matrix/shared';
 import { reloadedCamera } from './ReloadedCamera.js';
 import * as THREE from 'three';
-import { dockReunionLocked, dockReunionRoot } from '@auto_matrix/shared';
+import { dockArrivalPoint, dockReunionLocked, dockReunionRoot } from '@auto_matrix/shared';
 import { dockBriefingLocked } from '@auto_matrix/shared';
 import { dockEvacuationLocked, shaftSealLocked, shaftSealLever, DOCK_EVACUATION, SHAFT_SEAL } from '@auto_matrix/shared';
 import { spoonLessonSeat, oracleDepartureLocked, pillPose } from '@auto_matrix/shared';
@@ -2619,13 +2619,14 @@ export class PlayerControls {
       const reunion = this.motion.dockReunion, center = FILM_SETS.film_zion_hangar.center;
       const departing = reunion.departure !== undefined && ['ready', 'disembarking'].includes(reunion.phase);
       const exiting = ['ready', 'disembarking', 'exiting'].includes(reunion.phase), pose = dockReunionRoot(reunion, 'link');
-      const target = departing ? new THREE.Vector3(center.x + 21, center.y + 4.2, center.z + 55.5)
-        : exiting ? new THREE.Vector3(center.x + pose.x, center.y + pose.y + 1.2, center.z + pose.z)
-        : new THREE.Vector3(center.x + 7, center.y + 1.9, center.z + 57.6);
+      const local = dockArrivalPoint(pose, reunion.forward);
+      const focus = dockArrivalPoint(departing ? { x: 21, y: 4.2, z: 55.5 }
+        : exiting ? { ...local, y: local.y + 1.2 } : { x: 7, y: 1.9 + (reunion.forward ? reunion.floor : 0), z: 57.6 }, reunion.forward);
+      const target = new THREE.Vector3(center.x + focus.x, center.y + focus.y, center.z + focus.z);
       const orbit = THREE.MathUtils.clamp(this.yaw - state.rotation, -.5, .5);
-      const emerging = reunion.departure !== undefined && reunion.phase === 'exiting' ? 1 - THREE.MathUtils.smoothstep(pose.z, 55.35, 56.8) : 0;
+      const emerging = reunion.departure !== undefined && reunion.phase === 'exiting' ? 1 - THREE.MathUtils.smoothstep(local.z, 55.35, 56.8) : 0;
       const offset = (departing ? new THREE.Vector3(11, 4.5, 10) : exiting ? new THREE.Vector3(9 - emerging * 5, 3.4 + emerging * .6,
-        THREE.MathUtils.lerp(3.4, 63.35 - pose.z, emerging)) : new THREE.Vector3(5.2, 1.5, 3.8)).applyAxisAngle(new THREE.Vector3(0, 1, 0), orbit * (1 - emerging));
+        THREE.MathUtils.lerp(3.4, 63.35 - local.z, emerging)) : new THREE.Vector3(5.2, 1.5, 3.8)).applyAxisAngle(new THREE.Vector3(0, 1, 0), orbit * (1 - emerging) + (reunion.forward ? Math.PI : 0));
       offset.y += THREE.MathUtils.clamp(this.pitch - .18, -.35, .45) * 3;
       this.camera.fov = this.camera.aspect < .85 ? 78 : exiting ? 64 : 53; this.camera.updateProjectionMatrix();
       this.camera.position.copy(target).add(offset); this.camera.lookAt(target);

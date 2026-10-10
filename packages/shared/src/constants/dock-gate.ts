@@ -12,12 +12,14 @@ export interface DockGate {
   elapsed: number; total: number; remaining: number; ammo: number; hits: number; shots: number;
   x: number; z: number; yaw: number; pitch: number;
   toppled?: boolean; brace?: number;
+  /** New arrivals keep the bow forward; absent in already-entering legacy saves. */
+  forward?: boolean;
   lastShot?: { at: number; x: number; y: number; z: number; hit: boolean };
 }
 export function newDockGate(x: number, z: number): DockGate {
   const eye = dockGateEye({ x, z }), dx = DOCK_GATE.cable.x - 3 - eye.x, dz = DOCK_GATE.cable.z - eye.z;
   return { phase: 'ready', elapsed: 0, total: 0, remaining: DOCK_GATE.seconds, ammo: DOCK_GATE.ammo,
-    hits: 0, shots: 0, x, z, yaw: Math.atan2(dx, dz), pitch: -Math.atan2(24 - eye.y, Math.hypot(dx, dz)) };
+    hits: 0, shots: 0, x, z, forward: true, yaw: Math.atan2(dx, dz), pitch: -Math.atan2(24 - eye.y, Math.hypot(dx, dz)) };
 }
 export function dockGateActive(journey?: FilmJourney): boolean {
   return Boolean(journey && journey.scene === 'm3_gate' && !journey.visiting && (journey.step === 2 && !journey.completed.includes(journey.scene) || journey.step === 3 && journey.dockGate?.phase === 'done'));
@@ -65,8 +67,8 @@ export function dockGateOpen(gate?: DockGate): number {
 }
 export function dockGateShip(gate?: DockGate) {
   const progress = gate?.phase === 'entering' ? Math.min(1, gate.elapsed / DOCK_GATE.entering) : gate?.phase === 'done' ? 1 : 0;
-  // The bow faces -Z locally. Turn into the dock only after the complete stern clears the gate.
-  const turn = Math.max(0, Math.min(1, (progress - .62) / .38));
+  // The bow faces -Z locally. Only already-entering old saves retain the former turn.
+  const turn = gate?.forward ? 0 : Math.max(0, Math.min(1, (progress - .62) / .38));
   return { x: 12, y: 26 - 6 * progress, z: -114 + 128 * progress, roll: .65 * Math.sin(Math.PI * progress), yaw: Math.PI * (1 - turn * turn * (3 - 2 * turn)) };
 }
 export function fireDockGate(gate: DockGate, yaw: number, pitch: number): boolean {
@@ -81,7 +83,7 @@ export function fireDockGate(gate: DockGate, yaw: number, pitch: number): boolea
   const hit = distance > 0 && eye.y + dy * distance >= cable.bottom && eye.y + dy * distance <= cable.top;
   const t = hit ? distance : 85;
   gate.lastShot = { at: gate.total, x: eye.x + dx * t, y: eye.y + dy * t, z: eye.z + dz * t, hit };
-  if (hit && ++gate.hits >= DOCK_GATE.hits) { gate.phase = 'opening'; gate.elapsed = 0; }
+  if (hit && ++gate.hits >= DOCK_GATE.hits) { gate.phase = 'opening'; gate.elapsed = 0; gate.forward = true; }
   else if (!gate.ammo) { gate.phase = 'failed'; gate.elapsed = 0; }
   return hit;
 }

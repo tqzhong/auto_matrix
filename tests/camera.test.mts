@@ -401,7 +401,7 @@ test('EMP exterior view frames the ship and V returns to the operator without mo
   assert.equal(game.controls.motion.dockEmp, body.dockEmp, 'mouse look cannot advance the frozen event');
 });
 
-test('the dock reunion camera frames the descent and couple through the actual crashed hull in both window shapes', t => {
+for (const forward of [false, true]) test(`the dock reunion camera frames the descent and couple through the actual crashed hull in both window shapes (${forward ? 'forward' : 'legacy'})`, t => {
   const game = setup(t), center = FILM_SETS.film_zion_hangar.center;
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const root = new THREE.Group(), renderer = new DockEmpRenderer(root); t.after(() => renderer.dispose());
@@ -411,6 +411,7 @@ test('the dock reunion camera frames the descent and couple through the actual c
     { phase: 'exiting', elapsed: 2.668, floor: 1 }, { phase: 'exiting', elapsed: 7.9, floor: 1 },
     ...[0, 1.1, 3.4, 7.9].map(elapsed => ({ phase: 'exiting', elapsed, floor: 1, departure: 13 })),
     { phase: 'embrace', elapsed: 2, floor: 1 }] as DockReunion[]) {
+    reunion.forward = forward;
     const pose = dockReunionRoot(reunion, 'link'); journey.dockReunion = reunion;
     Object.assign(game.state, { id: 'link', currentLocation: 'film_zion_hangar', isInMatrix: false, rotation: pose.yaw,
       position: { x: center.x + pose.x, y: center.y + pose.y, z: center.z + pose.z },

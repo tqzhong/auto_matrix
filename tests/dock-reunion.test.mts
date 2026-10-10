@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SCENE_BY_ID, FILM_SETS, filmEntry, filmPosition, groundHeight, playerBlocked, type WorldEvent, type WorldStructure } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, filmEntry, filmPosition, filmStepPosition, newDockGate, groundHeight, playerBlocked, type WorldEvent, type WorldStructure } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -9,7 +9,7 @@ import type { ConversationEngine } from '../packages/server/src/agents/Conversat
 import type { ActionExecutor } from '../packages/server/src/agents/ActionExecutor.js';
 import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
 
-function fixture() {
+function fixture(forward = false) {
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
   const dynamics = { record: (event: Omit<WorldEvent, 'id'>) => world.addWorldEvent(event) } as WorldDynamics;
   const sandbox = new SandboxSystem(world, dynamics, 42);
@@ -19,6 +19,7 @@ function fixture() {
   sandbox.state.neoLife!.chapter = 1; players.sandboxAction('p', { kind: 'life', target: 'film:start' }, 1);
   const state = sandbox.life.film.state!, scene = FILM_SCENE_BY_ID.m3_emp;
   Object.assign(state, { scene: scene.id, actor: 'link', step: scene.steps.length, emp: { firedAt: 7, elapsed: 9 } });
+  if (forward) state.dockGate = { ...newDockGate(5, -50), phase: 'done' };
   state.completed.push(scene.id);
   players.possess('p', 'link', 2); const link = players.getAgent('p')!;
   Object.assign(link, { currentLocation: scene.set, isInMatrix: false, position: filmEntry(scene) });
@@ -65,13 +66,17 @@ test('the damaged hatch and crew leave the ship before Link descends, without ta
   assert.equal(h.world.agents.get('niobe')!.currentLocation, 'film_zion_hangar');
 });
 
-test('Link actively descends, walks to Zee and keeps his promise; pause, ownership and saved progress cannot skip the encounter', () => {
-  const h = fixture(), zee = h.world.agents.get('zee')!, mifune = h.world.agents.get('mifune')!;
+for (const forward of [false, true]) test(`Link descends and meets Zee through pause, ownership and restore (${forward ? 'forward arrival' : 'legacy dock'})`, () => {
+  const h = fixture(forward), zee = h.world.agents.get('zee')!, mifune = h.world.agents.get('mifune')!;
   zee.health = 62; mifune.status = 'dead'; mifune.health = 0;
   h.command('next'); let state = h.sandbox.life.film.state!;
+  assert.equal(Boolean(state.dockReunion?.forward), forward);
+  const meeting = filmStepPosition(FILM_SCENE_BY_ID.m3_dock_reunion, FILM_SCENE_BY_ID.m3_dock_reunion.steps[1], state);
+  assert.ok(Math.abs(meeting.x - FILM_SETS.film_zion_hangar.center.x - (forward ? 33 : 7)) < 1e-6);
+  assert.ok(Math.abs(meeting.z - FILM_SETS.film_zion_hangar.center.z - (forward ? 17.82 : 58.18)) < 1e-6);
   let sequence = 0, tick = 10;
   const frame = (focus = false, running = true, walk = false) => {
-    const target = filmPosition('film_zion_hangar', 7, 58.18);
+    const target = meeting;
     const yaw = walk ? Math.atan2(target.x - h.link.position.x, target.z - h.link.position.z) : h.link.rotation;
     h.players.receiveInput('p', { x: walk ? Math.sin(yaw) : 0, z: walk ? Math.cos(yaw) : 0, yaw, focus, sprint: false, jump: false, sequence: ++sequence });
     h.players.step(.1, running, ++tick); if (running) h.sandbox.tick(tick);

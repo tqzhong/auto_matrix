@@ -667,8 +667,9 @@ export function filmStepPosition(scene: FilmScene, step: FilmStep, journey?: Fil
     const pose = dockBriefingRoot(journey?.dockBriefing ?? { phase: 'ready', elapsed: 0, escort: 0 }, 'niobe');
     return { ...filmPosition(scene.set, pose.x, pose.z), y: FILM_SETS[scene.set].center.y + pose.y };
   }
-  if (scene.id === 'm3_dock_reunion' && step === scene.steps[0]) {
-    const pose = dockReunionRoot(journey?.dockReunion ?? { phase: 'ready', elapsed: 0, floor: 0 }, 'link');
+  if (scene.id === 'm3_dock_reunion' && (step === scene.steps[0] || journey?.dockReunion?.forward)) {
+    const reunion = journey?.dockReunion ?? { phase: 'ready', elapsed: 0, floor: 0 };
+    const pose = dockReunionRoot(step === scene.steps[0] ? reunion : { ...reunion, phase: 'promise', elapsed: 0 }, 'link');
     return { ...filmPosition(scene.set, pose.x, pose.z), y: FILM_SETS[scene.set].center.y + pose.y };
   }
   if (upperDiggerActive(journey)) {
