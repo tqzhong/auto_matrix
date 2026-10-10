@@ -2,6 +2,7 @@ import { poseOracleRequest } from './OracleRequestPerformance.js';
 import { poseBaneInquiry } from './BaneInquiryPerformance.js';
 import { poseHammerBriefing } from './HammerBriefingPerformance.js';
 import { poseMaggieDiscovery } from './MaggieDiscoveryPerformance.js';
+import { poseLogosBane } from './LogosBanePerformance.js';
 import { poseZionDeployment } from './ZionDeploymentPerformance.js';
 import { poseOracleLast } from './OracleLastPerformance.js';
 import { poseOracleAbsorption } from './OracleAbsorptionPerformance.js';
@@ -130,6 +131,7 @@ export interface CharacterRig {
   oracleClothing?: { blouse: THREE.MeshStandardMaterial; trousers: THREE.MeshStandardMaterial; dry: THREE.Color[] };
   hero?: HeroRig;
   medicalCrew?: boolean;
+  logosBaneBody?: boolean;
   zionVariant?: { hero?: HeroRig; fallback: THREE.Object3D[]; realWorld: boolean };
   weapons?: THREE.Group[];
   spoon?: SpoonModel;
@@ -722,6 +724,7 @@ export class CharacterModels {
     const rig: CharacterRig = { root, detail, distant, torso, head, shoulders, elbows, fingers, hips, knees, ankles, tails, cloth: clothPanels, motion: newMotion(), smallDetails, rifle: state.id === 'film_soldier' };
     if (mobilWrists.length) rig.mobilWrists = mobilWrists;
     if (state.id === 'colt' || state.id === 'link') rig.medicalCrew = true;
+    if (state.id === 'bane') rig.logosBaneBody = true;
     if (state.id === 'niobe' || state.id === 'link') rig.zionVariant = { fallback: [...detail.children], realWorld: !state.isInMatrix && (!rig.medicalCrew || Boolean(state.currentAction?.parameters.maggieDiscovery)) };
     if (state.id === 'oracle') rig.oracleClothing = { blouse: cloth, trousers, dry: [cloth.color.clone(), trousers.color.clone()] };
     const guard = ['agent_jones', 'agent_brown', 'agent_johnson', 'agent_jackson', 'agent_thompson'].includes(state.id) ? state.id as 'agent_jones' | 'agent_brown' | 'agent_johnson' | 'agent_jackson' | 'agent_thompson' : undefined;
@@ -741,8 +744,8 @@ export class CharacterModels {
       }).catch(error => console.warn(`${state.id} asset could not load; retaining the procedural character.`, error));
     }
     batchStaticGeometry(detail, new Set(clothPanels.map(panel => panel.mesh))).forEach(geometry => this.geometries.add(geometry));
-    if (state.id === 'oracle' || state.id === 'sati' || state.id === 'zee' || state.id === 'charra' || state.id === 'niobe' || state.id === 'lock' || state.id === 'roland' || state.id === 'architect' || state.id === 'seraph' || state.id === 'keymaker' || state.id === 'rama_kandra' || state.id === 'kamala' || state.id === 'trainman' || state.id === 'hamann' || state.id === 'west' || state.id === 'dillard' || state.id === 'maggie' || state.id === 'colt' || state.id === 'link') this.epilogueHeads.track(rig, state.id);
-    if (state.id === 'zee' || state.id === 'charra' || state.id === 'niobe' || state.id === 'lock' || state.id === 'roland' || state.id === 'architect' || state.id === 'seraph' || state.id === 'keymaker' || state.id === 'rama_kandra' || state.id === 'kamala' || state.id === 'trainman' || state.id === 'hamann' || state.id === 'west' || state.id === 'dillard' || state.id === 'maggie' || state.id === 'colt' || state.id === 'link') this.diggerBodies.track(rig, state.id, skin, cloth, trousers);
+    if (state.id === 'oracle' || state.id === 'sati' || state.id === 'zee' || state.id === 'charra' || state.id === 'niobe' || state.id === 'lock' || state.id === 'roland' || state.id === 'architect' || state.id === 'seraph' || state.id === 'keymaker' || state.id === 'rama_kandra' || state.id === 'kamala' || state.id === 'trainman' || state.id === 'hamann' || state.id === 'west' || state.id === 'dillard' || state.id === 'maggie' || state.id === 'colt' || state.id === 'link' || state.id === 'bane') this.epilogueHeads.track(rig, state.id);
+    if (state.id === 'zee' || state.id === 'charra' || state.id === 'niobe' || state.id === 'lock' || state.id === 'roland' || state.id === 'architect' || state.id === 'seraph' || state.id === 'keymaker' || state.id === 'rama_kandra' || state.id === 'kamala' || state.id === 'trainman' || state.id === 'hamann' || state.id === 'west' || state.id === 'dillard' || state.id === 'maggie' || state.id === 'colt' || state.id === 'link' || state.id === 'bane') this.diggerBodies.track(rig, state.id, skin, cloth, trousers);
     enableSkinnedCulling(detail);
     return rig;
   }
@@ -1172,6 +1175,7 @@ export class CharacterModels {
       poseHammerBriefing(rig, input.hammerBriefing);
       poseZionDeployment(rig, input.zionDeployment);
       poseMaggieDiscovery(rig, input.maggieDiscovery);
+      poseLogosBane(rig, input.logosBane);
       return;
     }
     rig.torso.position.y = pose.hipHeight;
@@ -1286,7 +1290,8 @@ export class CharacterModels {
     poseHelDisarm(rig, input.helDisarm);
     poseHelBreakout(rig, input.helBreakout);
     poseMaggieDiscovery(rig, input.maggieDiscovery);
-    this.diggerBodies.update(rig, !rig.medicalCrew || Boolean(input.maggieDiscovery), Boolean(input.parkOutfit || input.epilogue?.kind === 'dawn'), Boolean(input.hammerBriefing));
+    poseLogosBane(rig, input.logosBane);
+    this.diggerBodies.update(rig, rig.logosBaneBody ? Boolean(input.logosBane) : !rig.medicalCrew || Boolean(input.maggieDiscovery), Boolean(input.parkOutfit || input.epilogue?.kind === 'dawn'), Boolean(input.hammerBriefing));
   }
 
   refreshFarewellContact(rig: CharacterRig, gesture: NonNullable<MotionInput['farewell']>, normal?: THREE.Vector3, up?: THREE.Vector3): void {

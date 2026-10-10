@@ -36,9 +36,10 @@ export class RecoveryPerformance {
     const mesh = new THREE.Mesh(geometry, material); mesh.castShadow = mesh.receiveShadow = true; parent.add(mesh); this.geometries.add(geometry); return mesh;
   }
 
-  update(elapsed: number | undefined, realWorld = false, patient = false): void {
+  update(elapsed: number | undefined, realWorld = false, patient = false, firstPerson = false): void {
     this.root.visible = realWorld || elapsed !== undefined;
     this.chest.visible = patient;
+    this.neck.visible = !firstPerson;
     if (this.root.visible) {
       const head = this.rig.bones.get('head')!; this.root.updateWorldMatrix(true, false);
       this.neck.position.copy(this.root.worldToLocal(head.localToWorld(new THREE.Vector3(0, -.2, -.215))));

@@ -4,7 +4,7 @@ import type { CharacterRig } from './CharacterModel.js';
 import { enableSkinnedCulling } from './SkinnedBounds.js';
 
 interface BodyEntry {
-  role: 'zee' | 'charra' | 'niobe' | 'lock' | 'roland' | 'architect' | 'seraph' | 'keymaker' | 'rama_kandra' | 'kamala' | 'trainman' | 'hamann' | 'west' | 'dillard' | 'maggie' | 'colt' | 'link';
+  role: 'zee' | 'charra' | 'niobe' | 'lock' | 'roland' | 'architect' | 'seraph' | 'keymaker' | 'rama_kandra' | 'kamala' | 'trainman' | 'hamann' | 'west' | 'dillard' | 'maggie' | 'colt' | 'link' | 'bane';
   fallback: THREE.Mesh[];
   materials: THREE.Material[];
   model?: THREE.Group;
@@ -27,6 +27,12 @@ export class DiggerBodies {
     const headObjects = new Set<THREE.Object3D>(); rig.head.traverse(object => headObjects.add(object));
     const fallback: THREE.Mesh[] = [];
     rig.detail.traverse(object => { if (object instanceof THREE.Mesh && !headObjects.has(object) && object.name !== 'kamala-skirt') fallback.push(object); });
+    if (role === 'bane') {
+      const upper = cloth.clone() as THREE.MeshStandardMaterial, lower = trousers.clone() as THREE.MeshStandardMaterial;
+      upper.color.set('#827463'); upper.roughness = .96; upper.metalness = 0; upper.bumpScale = .006;
+      lower.color.set('#343b40'); lower.roughness = .97;
+      this.materials.add(upper); this.materials.add(lower); cloth = upper; trousers = lower;
+    }
     this.entries.set(rig, { role, fallback, materials: [skin, cloth, trousers], loading: false, active: true, park: false, briefing: false,
       dryColor: role === 'seraph' ? (cloth as THREE.MeshStandardMaterial).color.clone() : undefined });
   }
@@ -38,7 +44,7 @@ export class DiggerBodies {
     entry.briefing = briefing;
     if (!active) {
       if (entry.model) entry.model.visible = false;
-      if (entry.role === 'colt') entry.fallback.forEach(mesh => { mesh.visible = true; });
+      if (entry.role === 'colt' || entry.role === 'bane') entry.fallback.forEach(mesh => { mesh.visible = true; });
       return;
     }
     if (!entry.loading) {
@@ -88,7 +94,7 @@ export class DiggerBodies {
       const material = object.material as THREE.Material, index = ['Skin', 'Dock cloth', 'Dock trousers'].indexOf(material.name);
       this.materials.add(material);
       if (index >= 0) object.material = entry.materials[index];
-      if (material.name === 'Dock bindings' && ['niobe', 'lock', 'roland', 'rama_kandra', 'kamala', 'trainman', 'hamann', 'west', 'dillard', 'maggie', 'colt', 'link'].includes(entry.role)) {
+      if (material.name === 'Dock bindings' && ['niobe', 'lock', 'roland', 'rama_kandra', 'kamala', 'trainman', 'hamann', 'west', 'dillard', 'maggie', 'colt', 'link', 'bane'].includes(entry.role)) {
         const bindings = entry.materials[1].clone() as THREE.MeshStandardMaterial; bindings.color.multiplyScalar(['rama_kandra', 'kamala', 'trainman'].includes(entry.role) ? .95 : .72);
         this.materials.add(bindings); object.material = bindings;
       }

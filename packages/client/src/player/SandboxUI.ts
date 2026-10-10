@@ -1,3 +1,4 @@
+import { logosBaneBeat, logosBaneText } from '@auto_matrix/shared';
 import { HEL_BREAKOUT, helDanceDoorDuration, helDanceDoorText } from '@auto_matrix/shared';
 import { catchDistance } from '@auto_matrix/shared';
 import { sourcePortalActive, sourcePortalLocked, sourcePortalText } from '@auto_matrix/shared';
@@ -738,10 +739,13 @@ export class SandboxUI {
       return;
     }
     if (!journey.visiting && scene.id === 'm3_bane' && journey.bane) {
-      const bane = journey.bane; const phase = bane.phase;
+      const bane = journey.bane; const phase = bane.phase, beat = logosBaneBeat(bane), physical = bane.physical, busy = Boolean(physical?.strike || physical?.dodge);
       const window = phase === 'gun_window' ? BANE_ENCOUNTER.gunWindow : phase === 'pipe_window' ? BANE_ENCOUNTER.pipeWindow
         : phase === 'grapple' ? BANE_ENCOUNTER.grappleWindow : phase === 'counter' ? BANE_ENCOUNTER.counterWindow : 0;
-      const hint = phase === 'ready' ? journey.step === 0 ? 'WASD 穿过驾驶舱，去找 Trinity' : '靠近 Bane 按 G；现实世界无法使用矩阵能力'
+      const hint = physical?.paused || physical?.unavailable ? logosBaneText(bane)
+        : physical && physical.intro !== 'done' ? journey.step === 0 ? 'WASD 沿通道找到 Trinity' : ['waiting', 'lower_ready', 'recognition_ready'].includes(beat) ? logosBaneText(bane) : '对峙进行中 · 已保存动作进度 · 可用 V / 鼠标观察'
+          : busy ? '动作进行中 · 接触时结算 · 连续按键不会跳过动作'
+            : phase === 'ready' ? '走近挟持位置，按 G'
         : phase === 'gun_warning' ? '保险丝即将切断 · 等电枪闪光后按 X'
           : phase === 'gun_window' ? `电枪射线 · 现在按 X · 剩余 ${(window - bane.elapsed).toFixed(1)} 秒`
             : phase === 'grapple' ? `WASD 靠近 Bane · F 还击 ${bane.hits}/2 · 剩余 ${(window - bane.elapsed).toFixed(1)} 秒`
@@ -750,7 +754,7 @@ export class SandboxUI {
                   : phase === 'pipe_window' ? `金色 Smith 举起铁管 · 现在按 X · 剩余 ${(window - bane.elapsed).toFixed(1)} 秒`
                     : phase === 'counter' ? `面向金色轮廓靠近，按 F 反击 ${bane.counters}/2 · 剩余 ${(window - bane.elapsed).toFixed(1)} 秒`
                       : phase === 'failed' ? `本次失败 · J 手记从${bane.checkpoint === 'blind' ? '失明后' : '断电前'}检查点重试`
-                        : journey.step === 2 ? 'Bane 已倒下 · 到舱口按 G 救出 Trinity' : '舱口已打开 · G 继续';
+                        : physical && !['waiting', 'done'].includes(physical.rescue) ? logosBaneText(bane) : journey.step === 2 ? 'Bane 已倒下 · 到舱口按 G 救出 Trinity' : 'Trinity 已回到甲板 · J 继续航程';
       this.el('film-sequence').classList.remove('hidden');
       this.el('film-sequence').classList.toggle('urgent', Boolean(window) || phase === 'failed');
       this.el('film-sequence-line').textContent = journey.lastText;
@@ -758,13 +762,13 @@ export class SandboxUI {
       this.el('sandbox-trace').textContent = phase === 'blind' ? `金色感知 ${Math.round(bane.focus / BANE_ENCOUNTER.focusSeconds * 100)}%`
         : window ? `危险窗口 ${Math.max(0, window - bane.elapsed).toFixed(1)} 秒` : 'Logos · 工程舱';
       this.el('sandbox-trace').classList.toggle('danger', Boolean(window) || phase === 'failed');
-      this.el('sandbox-interact').classList.toggle('hidden', !['ready', 'defeated'].includes(phase)
-        || Boolean(step && distance(player.position, filmStepPosition(scene, step)) > 4));
+      const canInteract = journey.step === 1 && ['waiting', 'lower_ready', 'recognition_ready'].includes(beat) || journey.step === 2 && phase === 'defeated' && (!physical || physical.rescue === 'waiting');
+      this.el('sandbox-interact').classList.toggle('hidden', !canInteract || Boolean(physical?.paused || physical?.unavailable || busy) || Boolean(step && distance(player.position, filmStepPosition(scene, step)) > 2.3));
       this.el('sandbox-nearby').textContent = phase === 'defeated' ? journey.step === 2 ? '打开舱口 · 救出 Trinity' : '继续航程' : step?.label ?? '继续';
       const actions = this.el('film-training-actions');
       const dodge = actions.querySelector<HTMLButtonElement>('[data-combat="dodge"]')!;
       const attack = actions.querySelector<HTMLButtonElement>('[data-combat="attack"]')!;
-      if (['gun_window', 'pipe_window', 'grapple', 'counter'].includes(phase)) {
+      if (!busy && ['gun_window', 'pipe_window', 'grapple', 'counter'].includes(phase)) {
         actions.classList.remove('hidden');
         dodge.classList.toggle('hidden', !['gun_window', 'pipe_window'].includes(phase)); dodge.disabled = !['gun_window', 'pipe_window'].includes(phase);
         attack.classList.toggle('hidden', !['grapple', 'counter'].includes(phase)); attack.disabled = !['grapple', 'counter'].includes(phase);

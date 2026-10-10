@@ -739,7 +739,7 @@ export class HeroModels {
   }
 
   animate(rig: HeroRig, pose: Pose, motion: MotionState, input: MotionInput, delta: number): void {
-    const interactionView = Boolean(input.firstPerson && (input.armed && input.weaponStyle === 'hel_pistol' || input.mobilReunion?.reunion.phase === 'embracing' || input.hammerBriefing || input.helDisarm || input.helBreakout || input.helDoorPush || input.helElevator || input.helDanceDoor !== undefined || input.primaryDemolition?.phase === 'mounting' || input.primaryDemolition?.blast?.phase === 'countdown' || input.signal || input.architect?.role === 'neo' || input.catch?.role === 'neo' || input.truckHood || input.truckWeapons || input.freewayPickup || input.freewayRide || input.smithFinale?.pitFight && smithFinaleLocked(input.smithFinale) || input.dockReunion || input.empOperator || input.morning || input.podWake !== undefined || input.workday?.role === 'neo' && input.workday.phase === 'signing'));
+    const interactionView = Boolean(input.firstPerson && (input.armed && input.weaponStyle === 'hel_pistol' || input.mobilReunion?.reunion.phase === 'embracing' || input.hammerBriefing || input.helDisarm || input.helBreakout || input.helDoorPush || input.helElevator || input.helDanceDoor !== undefined || input.primaryDemolition?.phase === 'mounting' || input.primaryDemolition?.blast?.phase === 'countdown' || input.logosBane || input.signal || input.architect?.role === 'neo' || input.catch?.role === 'neo' || input.truckHood || input.truckWeapons || input.freewayPickup || input.freewayRide || input.smithFinale?.pitFight && smithFinaleLocked(input.smithFinale) || input.dockReunion || input.empOperator || input.morning || input.podWake !== undefined || input.workday?.role === 'neo' && input.workday.phase === 'signing'));
     if (rig.support === 'link') for (const part of rig.bones.get('head')!.children)
       if (part.name === 'link-hair-cap' || part.name === 'link-braid') part.visible = !interactionView;
     rig.silver.value = input.mirror ?? 0;
@@ -1113,7 +1113,7 @@ export class HeroModels {
     if (input.crossing !== undefined) this.crossWindow(rig, input.crossing);
     if (input.recoveryCrew) this.supportRecovery(rig, input.recoveryCrew);
     if (input.recovery !== undefined && !this.recoveries.has(rig)) this.recoveries.set(rig, new RecoveryPerformance(rig));
-    this.recoveries.get(rig)?.update(input.recovery, input.realWorld, patient);
+    this.recoveries.get(rig)?.update(input.recovery, input.realWorld, patient, interactionView);
     if (input.medical !== undefined || input.cabin || input.truth || input.download || input.training?.kind === 'download') cabinContact(rig, input);
     this.truths.get(rig)?.contact(input.truth);
     if ((input.construct || input.reveal?.kind === 'construct') && !this.constructs.has(rig)) this.constructs.set(rig, new ConstructPerformance(rig));

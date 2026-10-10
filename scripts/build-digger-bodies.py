@@ -34,6 +34,7 @@ COUNCILLORS = {
 }
 
 HAMMER_CREW = {
+    'bane': {'shoulders': .66, 'race': 'caucasian', 'sex': 'male'},
     'maggie': {'shoulders': .51, 'race': 'caucasian', 'sex': 'female'},
     'colt': {'shoulders': .61, 'race': 'caucasian', 'sex': 'male'},
     'link': {'shoulders': .57, 'race': 'african', 'sex': 'male'},

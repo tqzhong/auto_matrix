@@ -9,6 +9,7 @@ import { OracleLastSystem } from './OracleLastSystem.js';
 import { BaneInquirySystem } from './BaneInquirySystem.js';
 import { HammerBriefingSystem } from './HammerBriefingSystem.js';
 import { MaggieDiscoverySystem } from './MaggieDiscoverySystem.js';
+import { LogosBaneSystem } from './LogosBaneSystem.js';
 import { maggieDiscoveryLocked } from '@auto_matrix/shared';
 import { ZionDeploymentSystem } from './ZionDeploymentSystem.js';
 import { zionDeploymentLocked } from '@auto_matrix/shared';
@@ -70,7 +71,7 @@ import { CONSTRUCT, CONSTRUCT_FURNITURE, constructGuidePose, constructArrivalTex
 import { catchLocked, newCatch } from '@auto_matrix/shared';
 import { awakeningDuration, mirrorTime } from '@auto_matrix/shared';
 import { SENTINEL_SIGNAL, SIGNAL_OBSTACLES, signalLocked, type WorldStructure } from '@auto_matrix/shared';
-import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_CAST, GRID_WINDOW_SECONDS, GRID_REROUTE_SECONDS, GRID_HACK_SECONDS, ARCHITECT_DOOR_SECONDS, RELOADED_FINALE, BANE_ENCOUNTER, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, filmReflections, CHARACTERS, LOCATIONS, NEO_CHAPTERS, filmCharacterFates, filmEntry, filmPosition, filmStepPosition, filmStepNear, locationEntrance, distance, playerBlocked, newFreewayRide, stepFreeway, OFFICE_LADDER, awakeningLocked, awakeningPose, AWAKENING_SECONDS, MIRROR_TOUCH, MIRROR_TIMING, MIRROR_GUIDE_LENGTH, mirrorGuidePose, mirrorGuideProgress, mirrorSilver, recoveryCrewPose, CONSTRUCT_REVEAL, DESERT_REVEAL, oracleActing,
+import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_CAST, GRID_WINDOW_SECONDS, GRID_REROUTE_SECONDS, GRID_HACK_SECONDS, ARCHITECT_DOOR_SECONDS, RELOADED_FINALE, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, filmReflections, CHARACTERS, LOCATIONS, NEO_CHAPTERS, filmCharacterFates, filmEntry, filmPosition, filmStepPosition, filmStepNear, locationEntrance, distance, playerBlocked, newFreewayRide, stepFreeway, OFFICE_LADDER, awakeningLocked, awakeningPose, AWAKENING_SECONDS, MIRROR_TOUCH, MIRROR_TIMING, MIRROR_GUIDE_LENGTH, mirrorGuidePose, mirrorGuideProgress, mirrorSilver, recoveryCrewPose, CONSTRUCT_REVEAL, DESERT_REVEAL, oracleActing,
   AMBUSH_REWRITE, AMBUSH_SECONDS, AMBUSH_SEALS, OFFICE_CONTACT, OFFICE_WINDOW, OFFICE_CROSSING_SECONDS, officeCrossingPose, windowCrossing, phoneLocked, heldPhone, windowOpening, pillLocked, pillRoot, PILL_ROOM, PILL_TIMING, trainingLocked, trainingRoot, trainingText, TRAINING_SECONDS, DOJO_COMBO_WINDOW,
   lobbyLocked, meleeReach, groundHeight, MIRROR_SEAT, MIRROR_TRINITY, type DriveInput, type AgentState, type FilmScene, type FilmStep, type GridOperation, type SandboxState, type SandboxThreat, type TrainingRole, type CombatImpact } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
@@ -147,6 +148,7 @@ export class FilmStorySystem {
   readonly hammerBriefing: HammerBriefingSystem;
   readonly zionDeployment: ZionDeploymentSystem;
   readonly maggieDiscovery: MaggieDiscoverySystem;
+  readonly logosBane: LogosBaneSystem;
   readonly oracleAbsorption: OracleAbsorptionSystem;
   readonly trainmanChase: TrainmanChaseSystem;
   readonly helGarage: HelGarageSystem;
@@ -169,130 +171,23 @@ export class FilmStorySystem {
   readonly office: OfficeEscapeSystem;
   readonly custody: OfficeCustodySystem;
   readonly nebEscape: NebEscapeSystem;
-  constructor(private world: WorldState, private sandbox: () => SandboxState, private returnToLife: (tick: number) => void, private elapse: (minutes: number, tick: number) => void) { this.maggieDiscovery = new MaggieDiscoverySystem(world, sandbox); this.maggieDiscovery.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.zionDeployment = new ZionDeploymentSystem(world, sandbox); this.zionDeployment.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.hammerBriefing = new HammerBriefingSystem(world, sandbox); this.hammerBriefing.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.baneInquiry = new BaneInquirySystem(world, sandbox); this.baneInquiry.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.nebEscape = new NebEscapeSystem(world, sandbox); this.nebEscape.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sourcePortal = new SourcePortalSystem(world, sandbox); this.sourcePortal.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.trinityTerminal = new TrinityTerminalSystem(world, sandbox); this.trinityTerminal.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.trinityRelay = new TrinityRelaySystem(world, sandbox); this.trinityRelay.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.primaryDemolition = new PrimaryDemolitionSystem(world, sandbox); this.primaryDemolition.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.helGarage = new HelGarageSystem(world, sandbox); this.helGarage.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.helGarage.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.trainmanChase = new TrainmanChaseSystem(world, sandbox); this.trainmanChase.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.oracleLast = new OracleLastSystem(world, sandbox); this.oracleLast.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.oracleAbsorption = new OracleAbsorptionSystem(world, sandbox); this.oracleAbsorption.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.oracleRequest = new OracleRequestSystem(world, sandbox); this.oracleRequest.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sourceBriefing = new SourceBriefingSystem(world, sandbox); this.sourceBriefing.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.truckRoad = new TruckRoadSystem(world, sandbox); this.truckRoad.hood.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.truckRoad.hood.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.truckRoad.weapons.onUnarmed = (actor, tick) => this.spawn(actor, this.step!, tick); this.truckRoad.weapons.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.freewayHandoff = new FreewayHandoffSystem(world, sandbox); this.freewayHandoff.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.freewayPickup = new FreewayPickupSystem(world, sandbox); this.freewayPickup.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.templeDefense = new TempleDefenseSystem(world, sandbox); this.templeDefense.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.dockEvacuation = new DockEvacuationSystem(world, sandbox); this.dockEvacuation.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.dockBriefing = new DockBriefingSystem(world, sandbox); this.dockBriefing.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.upperDigger = new UpperDiggerSystem(world, sandbox); this.upperDigger.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.diggers = new DiggersSystem(world, sandbox); this.diggers.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.lobby = new LobbyCombatSystem(world, sandbox); this.coatcheck = new HelCoatcheckSystem(world, sandbox); this.openingHotel = new OpeningHotelSystem(sandbox); this.openingHotel.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.openingHotel.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.office = new OfficeEscapeSystem(sandbox); this.custody = new OfficeCustodySystem(world, sandbox); this.custody.onDeparted = (agent, tick) => { this.command(agent, 'next', tick); }; this.reloaded = new ReloadedOpeningSystem(world, sandbox); this.reloaded.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.reloaded.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.dockGate = new DockGateSystem(world, sandbox); this.dockGate.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.dockLastStand = new DockLastStandSystem(world, sandbox); this.dockLastStand.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.dockReload = new DockReloadSystem(world, sandbox); this.dockReload.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.dockReload.onHandoff = (actor, id, tick) => this.changeActor(actor, id, tick); this.catch = new ReloadedCatchSystem(world, sandbox); this.catch.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.wetwall = new WetwallEscapeSystem(world, sandbox); this.wetwall.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sixth = new SixthFloorSystem(world, sandbox); this.sixth.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sixth.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.basement = new BasementEscapeSystem(world, sandbox); this.basement.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.basement.crosscut.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.basement.crosscut.onHandoff = (actor, id, tick) => this.changeActor(actor, id, tick); this.basement.crosscut.onImpact = (impact, tick) => this.onImpact?.(impact, tick); }
+  constructor(private world: WorldState, private sandbox: () => SandboxState, private returnToLife: (tick: number) => void, private elapse: (minutes: number, tick: number) => void) { this.logosBane = new LogosBaneSystem(world, sandbox); this.logosBane.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.maggieDiscovery = new MaggieDiscoverySystem(world, sandbox); this.maggieDiscovery.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.zionDeployment = new ZionDeploymentSystem(world, sandbox); this.zionDeployment.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.hammerBriefing = new HammerBriefingSystem(world, sandbox); this.hammerBriefing.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.baneInquiry = new BaneInquirySystem(world, sandbox); this.baneInquiry.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.nebEscape = new NebEscapeSystem(world, sandbox); this.nebEscape.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sourcePortal = new SourcePortalSystem(world, sandbox); this.sourcePortal.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.trinityTerminal = new TrinityTerminalSystem(world, sandbox); this.trinityTerminal.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.trinityRelay = new TrinityRelaySystem(world, sandbox); this.trinityRelay.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.primaryDemolition = new PrimaryDemolitionSystem(world, sandbox); this.primaryDemolition.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.helGarage = new HelGarageSystem(world, sandbox); this.helGarage.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.helGarage.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.trainmanChase = new TrainmanChaseSystem(world, sandbox); this.trainmanChase.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.oracleLast = new OracleLastSystem(world, sandbox); this.oracleLast.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.oracleAbsorption = new OracleAbsorptionSystem(world, sandbox); this.oracleAbsorption.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.oracleRequest = new OracleRequestSystem(world, sandbox); this.oracleRequest.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sourceBriefing = new SourceBriefingSystem(world, sandbox); this.sourceBriefing.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.truckRoad = new TruckRoadSystem(world, sandbox); this.truckRoad.hood.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.truckRoad.hood.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.truckRoad.weapons.onUnarmed = (actor, tick) => this.spawn(actor, this.step!, tick); this.truckRoad.weapons.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.freewayHandoff = new FreewayHandoffSystem(world, sandbox); this.freewayHandoff.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.freewayPickup = new FreewayPickupSystem(world, sandbox); this.freewayPickup.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.templeDefense = new TempleDefenseSystem(world, sandbox); this.templeDefense.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.dockEvacuation = new DockEvacuationSystem(world, sandbox); this.dockEvacuation.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.dockBriefing = new DockBriefingSystem(world, sandbox); this.dockBriefing.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.upperDigger = new UpperDiggerSystem(world, sandbox); this.upperDigger.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.diggers = new DiggersSystem(world, sandbox); this.diggers.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.lobby = new LobbyCombatSystem(world, sandbox); this.coatcheck = new HelCoatcheckSystem(world, sandbox); this.openingHotel = new OpeningHotelSystem(sandbox); this.openingHotel.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.openingHotel.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.office = new OfficeEscapeSystem(sandbox); this.custody = new OfficeCustodySystem(world, sandbox); this.custody.onDeparted = (agent, tick) => { this.command(agent, 'next', tick); }; this.reloaded = new ReloadedOpeningSystem(world, sandbox); this.reloaded.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.reloaded.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.dockGate = new DockGateSystem(world, sandbox); this.dockGate.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.dockLastStand = new DockLastStandSystem(world, sandbox); this.dockLastStand.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.dockReload = new DockReloadSystem(world, sandbox); this.dockReload.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.dockReload.onHandoff = (actor, id, tick) => this.changeActor(actor, id, tick); this.catch = new ReloadedCatchSystem(world, sandbox); this.catch.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.wetwall = new WetwallEscapeSystem(world, sandbox); this.wetwall.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sixth = new SixthFloorSystem(world, sandbox); this.sixth.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.sixth.onImpact = (impact, tick) => this.onImpact?.(impact, tick); this.basement = new BasementEscapeSystem(world, sandbox); this.basement.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.basement.crosscut.onAdvance = (text, actor, tick) => this.advance(text, actor, tick); this.basement.crosscut.onHandoff = (actor, id, tick) => this.changeActor(actor, id, tick); this.basement.crosscut.onImpact = (impact, tick) => this.onImpact?.(impact, tick); }
   get state() { return this.sandbox().neoLife?.journey; }
   get scene(): FilmScene | undefined { return this.state && filmSceneForJourney(this.state); }
   get step(): FilmStep | undefined { return this.scene?.steps[this.state!.step]; }
   controls(agent: AgentState): boolean { return Boolean(this.state && this.state.actor === agent.id); }
   private ensureBane(tick: number): void {
-    const state = this.state;
-    if (state?.scene !== 'm3_bane' || state.visiting || state.bane || state.completed.includes('m3_bane')) return;
-    // Existing saves used a generic threat. Resume at the confrontation, before
-    // the eye injury, rather than silently crediting the old final interaction.
-    if (state.step > 0) {
-      state.step = 1; delete state.fighting; delete state.started; this.clearThreats();
-      const bane = this.world.agents.get('bane');
-      if (bane && !bane.controller) { bane.status = 'alive'; bane.health = bane.maxHealth; bane.activeEffects = []; }
-    }
-    state.bane = { phase: 'ready', elapsed: 0, attempts: 0, checkpoint: 'gun', hits: 0, focus: 0, counters: 0, lastStrike: -1 };
-    state.lastText = state.step ? 'Trinity 被困在工程舱。Bane 正持电枪等待；靠近后按 G 面对他。' : this.scene!.context;
+    const actor = this.state && this.world.agents.get(this.state.actor);
+    if (actor) this.logosBane.frame(actor, { focus: false, yaw: actor.rotation }, 0, tick);
   }
   private banePose(agent: AgentState, tick: number): void {
-    const encounter = this.state?.bane; if (!encounter || this.state?.scene !== 'm3_bane') return;
-    const bane = this.world.agents.get('bane'); const trinity = this.world.agents.get('trinity');
-    if (bane && !bane.controller && encounter.phase !== 'defeated') {
-      const x = encounter.phase === 'gun_warning' || encounter.phase === 'gun_window' ? 2.2
-        : encounter.phase === 'grapple' || encounter.phase === 'burning' ? 1 : ['pipe_window', 'counter'].includes(encounter.phase) ? encounter.pipeX ?? 2.2 : 2.2;
-      const z = encounter.phase === 'gun_warning' || encounter.phase === 'gun_window' ? 0
-        : encounter.phase === 'grapple' || encounter.phase === 'burning' ? -2 : ['pipe_window', 'counter'].includes(encounter.phase) ? encounter.pipeZ ?? 0 : 0;
-      bane.position = filmPosition(this.scene!.set, x, z); bane.rotation = Math.atan2(agent.position.x - bane.position.x, agent.position.z - bane.position.z);
-      bane.currentLocation = this.scene!.set; bane.isInMatrix = false;
-      bane.velocity = { x: 0, y: 0, z: 0 };
-      const gesture = ['gun_window', 'grapple', 'burning', 'pipe_window', 'counter'].indexOf(encounter.phase);
-      bane.currentAction = { type: gesture >= 0 ? 'attack' : 'idle',
-        target: agent.id, parameters: { resolved: true, armed: ['ready', 'gun_warning', 'gun_window'].includes(encounter.phase), weaponStyle: 'hel_pistol',
-          bane: { phase: encounter.phase, elapsed: encounter.elapsed } },
-        startedAt: gesture >= 0 ? encounter.attempts * 10 + gesture : tick, duration: 1, progress: 0 };
-    }
-    if (trinity && !trinity.controller) {
-      const released = encounter.phase === 'defeated' && this.state!.step >= this.scene!.steps.length;
-      trinity.position = filmPosition(this.scene!.set, -6, 8);
-      trinity.currentLocation = this.scene!.set; trinity.isInMatrix = false;
-      if (!released) trinity.position.y -= 3.8;
-      trinity.rotation = Math.PI / 2; trinity.velocity = { x: 0, y: 0, z: 0 };
-      trinity.currentAction = { type: 'idle', parameters: { resolved: true, crouching: !released, bane: { phase: encounter.phase } },
-        startedAt: tick, duration: 1, progress: 0 };
-    }
-  }
-  private baneFail(agent: AgentState, checkpoint: 'gun' | 'blind', text: string, tick: number): void {
-    const encounter = this.state!.bane!;
-    encounter.phase = 'failed'; encounter.checkpoint = checkpoint; encounter.elapsed = 0;
-    agent.health = Math.max(1, Math.min(agent.health, Math.ceil(agent.maxHealth * .15)));
-    agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentAction = { type: 'idle', parameters: { resolved: true, crouching: true }, startedAt: tick, duration: 1, progress: 0 };
-    this.state!.lastText = `${text} J 打开手记，从${checkpoint === 'blind' ? '失明后' : '断电前'}检查点重试。`;
+    this.logosBane.frame(agent, { focus: false, yaw: agent.rotation }, 0, tick);
   }
   baneFrame(agent: AgentState, input: { focus: boolean; yaw: number }, dt: number, tick: number): boolean {
-    if (!this.controls(agent) || this.state?.scene !== 'm3_bane' || this.state.visiting) return false;
-    this.ensureBane(tick);
-    const encounter = this.state.bane!;
-    if (['ready', 'defeated', 'failed'].includes(encounter.phase)) return false;
-    agent.rotation = input.yaw;
-    if (this.world.agents.get('bane')?.controller || this.world.agents.get('trinity')?.controller) return true;
-    encounter.elapsed += dt;
-    if (encounter.phase === 'gun_warning' && encounter.elapsed >= BANE_ENCOUNTER.gunWarning) {
-      encounter.phase = 'gun_window'; encounter.elapsed = 0;
-      this.state.lastText = 'Trinity 扯下保险丝，灯骤灭。电枪枪口还在追踪你：现在按 X 闪开。';
-    } else if (encounter.phase === 'gun_window' && encounter.elapsed >= BANE_ENCOUNTER.gunWindow)
-      this.baneFail(agent, 'gun', '电光击中了 Neo。', tick);
-    else if (encounter.phase === 'grapple' && encounter.elapsed >= BANE_ENCOUNTER.grappleWindow)
-      this.baneFail(agent, 'gun', 'Bane 在近身缠斗中重新拿到电枪。', tick);
-    else if (encounter.phase === 'burning' && encounter.elapsed >= BANE_ENCOUNTER.burnSeconds) {
-      encounter.phase = 'blind'; encounter.elapsed = 0; encounter.focus = 0; encounter.checkpoint = 'blind';
-      this.sandbox().neoLife!.choices.neo_eyes = 'burned';
-      agent.position = filmPosition(this.scene!.set, -2, -2);
-      this.state.lastText = '裸露电缆灼伤双眼。房间失去形状，Bane 的脚步仍在移动。按住 G，辨认黑暗中的机器信号。';
-    } else if (encounter.phase === 'blind') {
-      encounter.focus = Math.max(0, Math.min(BANE_ENCOUNTER.focusSeconds, encounter.focus + (input.focus ? dt : -dt * .35)));
-      if (encounter.focus >= BANE_ENCOUNTER.focusSeconds) {
-        encounter.phase = 'pipe_window'; encounter.elapsed = 0;
-        const center = FILM_SETS[this.scene!.set].center;
-        encounter.pipeX = agent.position.x - center.x + 2.5; encounter.pipeZ = agent.position.z - center.z + 2.3;
-        this.state.lastText = 'Bane 的肉身在黑暗中消失，Smith 的金色轮廓却显现出来。他正举起铁管：现在按 X。';
-      }
-    } else if (encounter.phase === 'pipe_window' && encounter.elapsed >= BANE_ENCOUNTER.pipeWindow)
-      this.baneFail(agent, 'blind', '铁管击中了失明的 Neo。', tick);
-    else if (encounter.phase === 'counter' && encounter.elapsed >= BANE_ENCOUNTER.counterWindow)
-      this.baneFail(agent, 'blind', 'Bane 从反击范围脱开，再次举起铁管。', tick);
-    this.banePose(agent, tick);
-    return ['gun_warning', 'gun_window', 'burning', 'pipe_window'].includes(encounter.phase);
+    return this.logosBane.frame(agent, input, dt, tick);
   }
   baneAction(agent: AgentState, kind: string, tick: number): string | undefined {
-    if (!this.controls(agent) || this.state?.scene !== 'm3_bane' || this.state.visiting) return;
-    this.ensureBane(tick);
-    const encounter = this.state.bane!;
-    if (['ability', 'ability2', 'shoot', 'travel'].includes(kind)) return '这里是现实世界。矩阵中的技能与武器不能代替近身求生。';
-    if (kind !== 'attack' && kind !== 'dodge') return;
-    if (encounter.phase === 'gun_window' && kind === 'dodge') {
-      encounter.phase = 'grapple'; encounter.elapsed = 0; encounter.hits = 0; encounter.lastStrike = -1;
-      this.state.lastText = '电光击中身后的甲板。Neo 撞开枪口，必须在 Bane 抓到另一把武器前用 F 近身还击。';
-    } else if (encounter.phase === 'grapple' && kind === 'attack') {
-      const bane = this.world.agents.get('bane');
-      if (!bane || distance(agent.position, bane.position) > 3.25 || Math.cos(agent.rotation - Math.atan2(bane.position.x - agent.position.x, bane.position.z - agent.position.z)) < .45)
-        return '用 WASD 靠近并面向 Bane，再按 F 近身还击。';
-      if (encounter.elapsed - encounter.lastStrike < .32) return '拉开一拍再出拳，别用连续点击跳过缠斗。';
-      encounter.lastStrike = encounter.elapsed; encounter.hits++;
-      if (encounter.hits >= 2) { encounter.phase = 'burning'; encounter.elapsed = 0;
-        this.state.lastText = '拳头击中 Bane；他扯下冒火的断电缆，猛地压向 Neo 的双眼。'; }
-      else this.state.lastText = '第一拳击中，但 Bane 仍在挣扎。再用 F 击退他。';
-    } else if (encounter.phase === 'pipe_window' && kind === 'dodge') {
-      encounter.phase = 'counter'; encounter.elapsed = 0; encounter.counters = 0; encounter.lastStrike = -1;
-      this.state.lastText = 'Neo 在铁管砸下前闪开。循着金色轮廓靠近 Bane，面向他用 F 反击。';
-    } else if (encounter.phase === 'counter' && kind === 'attack') {
-      const bane = this.world.agents.get('bane');
-      if (!bane || distance(agent.position, bane.position) > 5 || Math.cos(agent.rotation - Math.atan2(bane.position.x - agent.position.x, bane.position.z - agent.position.z)) < .5)
-        return '先靠近并面向金色轮廓，再用 F 反击。';
-      if (encounter.elapsed - encounter.lastStrike < .32) return '先稳住重心，再出下一击。';
-      encounter.lastStrike = encounter.elapsed; encounter.counters++;
-      if (encounter.counters >= 2) {
-        encounter.phase = 'defeated'; encounter.elapsed = 0;
-        bane.status = 'dead'; bane.health = 0; bane.currentAction = null;
-        this.advance('Neo 夺下铁管，击倒了 Bane。金色的 Smith 轮廓从肉身里散去；Trinity 仍被锁在下层。', agent, tick);
-      } else this.state.lastText = '铁管被格开，金色轮廓仍在挣扎。再靠近反击一次。';
-    } else return encounter.phase === 'blind' ? '听脚步，按住 G 建立金色感知。'
-      : encounter.phase === 'failed' ? '这一拍已经失败。J 打开手记重试。'
-        : '观察动作提示；F 近身反击，X 躲开枪线或铁管。';
-    this.banePose(agent, tick);
-    return this.state.lastText;
+    return this.logosBane.action(agent, kind, tick);
   }
   private ensureFarewell(): void {
     const state = this.state;
@@ -5618,6 +5513,8 @@ export class FilmStorySystem {
     const chaseCommand = this.trainmanChase.command(agent, target, tick);
     if (chaseCommand !== undefined) return chaseCommand;
     const inquiryCommand = this.baneInquiry.command(agent, target, tick);
+    const logosCommand = this.logosBane.command(agent, target, tick);
+    if (logosCommand !== undefined) return logosCommand;
     const discoveryCommand = this.maggieDiscovery.command(agent, target, tick);
     if (discoveryCommand !== undefined) return discoveryCommand;
     const deploymentCommand = this.zionDeployment.command(agent, target, tick);
@@ -5738,20 +5635,6 @@ export class FilmStorySystem {
         agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
         this.dockGunneryFrame(agent, tick); state.checkpoint = { ...agent.position };
         return state.lastText = 'Mifune 回到 APU 炮位。用鼠标瞄准哨兵，左键或 T 开火；保护 Kid 的弹药车。';
-      }
-      if (state.scene === 'm3_bane' && state.bane?.phase === 'failed') {
-        const encounter = state.bane; encounter.phase = encounter.checkpoint === 'gun' ? 'gun_warning' : 'blind';
-        encounter.elapsed = 0; encounter.focus = 0; encounter.hits = 0; encounter.counters = 0; encounter.lastStrike = -1;
-        delete encounter.pipeX; delete encounter.pipeZ; encounter.attempts++;
-        agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
-        agent.position = filmPosition(this.scene.set, -2, encounter.checkpoint === 'gun' ? -4 : -2);
-        agent.rotation = Math.atan2(4.2, encounter.checkpoint === 'gun' ? 4 : 2);
-        agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentAction = null; state.checkpoint = { ...agent.position };
-        const bane = this.world.agents.get('bane'); if (bane && !bane.controller) { bane.status = 'alive'; bane.health = bane.maxHealth; }
-        this.banePose(agent, tick);
-        return state.lastText = encounter.checkpoint === 'gun'
-          ? '已从断电前重试。电枪即将开火；等灯熄灭再按 X，随后用 F 近身还击。'
-          : '已从失明后重试。双眼的伤不会撤销；按住 G 找出金色轮廓。';
       }
       if (state.scene === 'm3_deus' && state.deus?.phase === 'failed') {
         state.deus = { ...newDeusPact(state.deus.attempts + 1), phase: 'ready' };
@@ -6200,20 +6083,6 @@ export class FilmStorySystem {
     }
     if (state.scene === 'm1_roofs' && state.openingRoof?.phase === 'failed' || state.scene === 'm1_phone_escape' && state.openingPhone?.phase === 'failed')
       return '撤离失败。J 打开手记，从本场景入口重试。';
-    if (state.scene === 'm3_bane' && state.step === 1) {
-      const encounter = state.bane!;
-      if (encounter.phase === 'failed') return '本次交锋失败。J 打开手记重试。';
-      if (encounter.phase !== 'ready') return state.lastText;
-      if (target !== 'act') return '走近 Bane，按 G 面对他。';
-      if (!this.near(agent, step)) return '先走近 Bane。';
-      if (['bane', 'trinity'].some(id => this.world.agents.get(id)?.controller)) return 'Bane 或 Trinity 正由另一位玩家控制，等待对方结束后再继续。';
-      encounter.phase = 'gun_warning'; encounter.elapsed = 0;
-      agent.position = filmPosition(this.scene.set, -2, -4); agent.rotation = Math.atan2(4.2, 4);
-      agent.velocity = { x: 0, y: 0, z: 0 }; state.checkpoint = { ...agent.position };
-      this.banePose(agent, tick);
-      return state.lastText = 'Trinity 摸到保险丝。Bane 举起电枪对准 Neo；等灯灭、枪口偏开时按 X。';
-    }
-    if (state.scene === 'm3_bane' && state.step === 2 && state.bane?.phase !== 'defeated') return '先解决 Bane，再去工程舱找 Trinity。';
     if (state.scene === 'm3_farewell' && state.step === 1) {
       this.ensureFarewell();
       if (state.farewell!.phase !== 'ready') return state.lastText;
@@ -6791,6 +6660,7 @@ export class FilmStorySystem {
     this.hammerBriefing.clear();
     this.zionDeployment.clear();
     this.maggieDiscovery.clear();
+    this.logosBane.clear();
     if (scene.id === 'm3_maggie_discovery') delete state.maggieDiscovery;
     if (scene.id === 'm3_zion_prepare') delete state.zionDeployment;
     if (scene.id === 'm3_logos_plan') delete state.hammerBriefing;
@@ -7183,6 +7053,7 @@ export class FilmStorySystem {
     if (scene.id === 'm3_oracle_request') { this.oracleRequest.frame(this.world.agents.get(this.state!.actor)!, 0, this.world.simulationTick); return; }
     if (scene.id === 'm3_oracle_last') { this.oracleLast.frame(this.world.agents.get(this.state!.actor)!, 0, this.world.simulationTick); return; }
     if (scene.id === 'm3_bane_questions') { this.baneInquiry.frame(this.world.agents.get(this.state!.actor)!, 0, this.world.simulationTick); return; }
+    if (scene.id === 'm3_bane') { this.banePose(this.world.agents.get(this.state!.actor)!, this.world.simulationTick); return; }
     if (scene.id === 'm3_maggie_discovery') { this.maggieDiscovery.frame(this.world.agents.get(this.state!.actor)!, 0, this.world.simulationTick); return; }
     if (scene.id === 'm3_zion_prepare') { this.zionDeployment.frame(this.world.agents.get(this.state!.actor)!, 0, this.world.simulationTick); return; }
     if (scene.id === 'm3_logos_plan') { this.hammerBriefing.frame(this.world.agents.get(this.state!.actor)!, 0, this.world.simulationTick); return; }
@@ -7298,8 +7169,6 @@ export class FilmStorySystem {
       if (scene.id === 'm1_jump' && id === 'morpheus') actor.position = filmPosition(scene.set, 0, -38);
       if (scene.id === 'm2_seraph' && id === 'seraph') { actor.position = filmPosition(scene.set, 0, -8); actor.rotation = 0; }
       if (scene.id === 'm2_burly' && id === 'smith') { actor.position = filmPosition(scene.set, 0, -8); actor.rotation = 0; }
-      if (scene.id === 'm3_bane' && id === 'bane') { actor.position = filmPosition(scene.set, 2.2, 0); actor.rotation = Math.PI; }
-      if (scene.id === 'm3_bane' && id === 'trinity') { actor.position = filmPosition(scene.set, -6, 8); actor.position.y -= 3.8; actor.rotation = Math.PI / 2; }
       if (scene.id === 'm3_farewell' && id === 'trinity') {
         const encounter = this.state!.farewell ?? newFarewell(); const pose = farewellPose(encounter);
         actor.position = filmPosition(scene.set, pose.trinity.x, pose.trinity.z); actor.rotation = pose.trinity.yaw;
