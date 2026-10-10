@@ -716,7 +716,8 @@ export function filmStepNear(scene: FilmScene, step: FilmStep, position: Vector3
     : scene.id === 'm3_logos_plan' || scene.id === 'm3_zion_prepare' || scene.id === 'm3_maggie_discovery' ? step.kind === 'reach' ? 1.1 : 1.6
     : scene.id === 'm3_bane_questions' ? step === scene.steps[5] ? 1.1 : step === scene.steps[0] ? 1.05 : 1.4
     : scene.id === 'm3_hel_entry' && step === scene.steps[0] ? 1.1
-    : scene.id === 'm3_dock_evacuation' || scene.id === 'm3_shaft_seal' ? 1.2
+    : scene.id === 'm3_dock_evacuation' ? step === scene.steps[0] || step === scene.steps[1] ? .45 : 1.2
+    : scene.id === 'm3_shaft_seal' ? 1.2
     : scene.id === 'm3_dock_reunion' || scene.id === 'm3_dock_briefing' ? 2
     : scene.id === 'm3_gate' && step !== scene.steps[2] ? 1.2
     : scene.id === 'm2_trucks' && step !== scene.steps[0] ? .7

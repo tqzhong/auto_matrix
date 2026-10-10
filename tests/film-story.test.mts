@@ -3847,7 +3847,7 @@ test('the entire film route completes through interactions, driving and real com
       else if (scene.id === 'm3_dock_evacuation') {
         if (index === 0 || index === 1) {
           h.command('act');
-          for (let frame = 0; frame < 20 && state.step === index; frame++) h.players.step(.1, true, h.tick());
+          for (let frame = 0; frame < 28 && state.step === index; frame++) h.players.step(.1, true, h.tick());
         } else if (index === 2) {
           for (let frame = 0; frame < 75 && state.dockEvacuation?.phase !== 'running'; frame++) h.players.step(.1, true, h.tick());
           actor.position = filmStepPosition(scene, step, state); h.players.step(.1, true, h.tick());

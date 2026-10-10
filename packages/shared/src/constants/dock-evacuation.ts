@@ -7,7 +7,7 @@ export const DOCK_EVACUATION = {
   cargoRest: [{ x: -14, y: 1.525, z: 22.8 }, { x: -3, y: 1.525, z: -13.2 }],
   crate: { width: 1.9, height: 1.05, depth: 1.2, y: 2.4, z: 1.2 },
   lift: { x: 0, z: -30, width: 9, depth: 7, height: 7, drop: 13, seconds: 5.5, closing: 1.6 },
-  boarding: { x: 0, z: -28.5 }, cargoSeconds: 1.8, retreatSeconds: 26, crewSeconds: 11,
+  boarding: { x: 0, z: -28.5 }, cargoSeconds: 1.8, cargoReachSeconds: .75, retreatSeconds: 26, crewSeconds: 11,
   crew: 6, cast: ['kid', 'colt'] as const,
   walls: [
     { x: -23.8, z: 0, width: .8, depth: 82, height: 24 },
@@ -25,6 +25,7 @@ export interface DockEvacuation {
   phase: 'supplies' | 'lifting' | 'carrying' | 'depositing' | 'wind' | 'order' | 'running' | 'waiting' | 'closing' | 'lowering' | 'clear' | 'failed';
   elapsed: number; crewAge: number; remaining: number; attempts: number; delivered: boolean;
   approach?: { x: number; z: number; yaw: number }; paused?: string; unavailable?: string;
+  handling?: 'continuous';
 }
 export type DockEvacuationGesture = DockEvacuation & { role: 'kid' | 'colt' };
 export const SHAFT_SEAL = {
@@ -69,14 +70,17 @@ export function dockEvacuationSoldier(state: DockEvacuation, index: number) {
     yaw: progress < 1 ? Math.PI : 0, moving: progress > 0 && progress < 1 };
 }
 export function dockCargoPose(state: DockEvacuation) {
-  const p = state.phase === 'lifting' ? ease(state.elapsed / DOCK_EVACUATION.cargoSeconds)
+  const reach = state.handling === 'continuous' ? DOCK_EVACUATION.cargoReachSeconds : 0;
+  const grip = !reach ? 1 : state.phase === 'lifting' ? ease(state.elapsed / reach)
+    : state.phase === 'depositing' ? 1 - ease((state.elapsed - DOCK_EVACUATION.cargoSeconds) / reach) : 1;
+  const p = state.phase === 'lifting' ? ease((state.elapsed - reach) / DOCK_EVACUATION.cargoSeconds)
     : state.phase === 'depositing' ? 1 - ease(state.elapsed / DOCK_EVACUATION.cargoSeconds) : 1;
   const rest = DOCK_EVACUATION.cargoRest[state.phase === 'depositing' ? 1 : 0];
   const approach = state.approach ?? { ...(state.phase === 'depositing' ? DOCK_EVACUATION.delivery : DOCK_EVACUATION.pickup), yaw: Math.PI };
   const dx = rest.x - approach.x, dz = rest.z - approach.z;
   const x = (Math.cos(approach.yaw) * dx - Math.sin(approach.yaw) * dz) * (1 - p);
   const z = DOCK_EVACUATION.crate.z * p + (Math.sin(approach.yaw) * dx + Math.cos(approach.yaw) * dz) * (1 - p);
-  return { x, y: rest.y + (DOCK_EVACUATION.crate.y - rest.y) * p, z, bend: 1 - p };
+  return { x, y: rest.y + (DOCK_EVACUATION.crate.y - rest.y) * p, z, bend: (1 - p) * grip, grip };
 }
 export function shaftSealLever(state?: ShaftSeal) {
   const angle = (state?.turn ?? 0) * 1.2;
