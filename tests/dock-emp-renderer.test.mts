@@ -125,3 +125,25 @@ test('switching back inside the Hammer restores the cabin with its CRTs powered 
   renderer.update(link, sandbox, 1, link.position);
   assert.equal(renderer.root.visible, false);
 });
+
+
+test('fuel fires light the disabled dock without restoring powered fixtures, and resume at the saved frame', t => {
+  const root = new THREE.Group(), renderer = new DockEmpRenderer(root), state = saved(9);
+  state.diggers = { ...newDiggers(), phase: 'done', damage: 3 };
+  t.after(() => renderer.dispose()); renderer.update(state);
+  const fire = root.getObjectByName('emp-dock-fuel-fires'); assert.ok(fire, 'the blackout needs visible non-electrical light sources');
+  const lights: THREE.PointLight[] = [];
+  fire.traverse(object => { if (object instanceof THREE.PointLight) lights.push(object); });
+  assert.equal(lights.length, 2); assert.ok(lights.every(light => light.visible && light.intensity > 0));
+  const powered: THREE.PointLight[] = [];
+  root.getObjectByName('zion-homecoming-set')!.traverseVisible(object => { if (object instanceof THREE.PointLight && object.intensity > 0) powered.push(object); });
+  assert.equal(powered.length, 0);
+  const flame = fire.getObjectByName('emp-fuel-flames') as THREE.InstancedMesh;
+  assert.ok(flame?.count); const matrices = [...flame.instanceMatrix.array];
+  const coldRoot = new THREE.Group(), cold = new DockEmpRenderer(coldRoot); t.after(() => cold.dispose());
+  cold.update(structuredClone(state));
+  assert.deepEqual([...(coldRoot.getObjectByName('emp-fuel-flames') as THREE.InstancedMesh).instanceMatrix.array], matrices);
+  assert.equal((coldRoot.getObjectByName('emp-fuel-flames') as THREE.InstancedMesh<THREE.PlaneGeometry, THREE.ShaderMaterial>).material.uniforms.time.value,
+    (flame.material as THREE.ShaderMaterial).uniforms.time.value);
+  state.emp!.elapsed = 0; renderer.update(state); assert.equal(fire.visible, false, 'new crash fires cannot precede the impact');
+});

@@ -5130,7 +5130,7 @@ export class FilmStorySystem {
     if (reunion.departure !== undefined) for (const role of DOCK_REUNION.crew) {
       const member = this.world.agents.get(role)!;
       if (member.status !== 'alive' || member.controller) continue;
-      const gesture = { role, elapsed: reunion.departure, floor: reunion.floor,
+      const gesture = { role, elapsed: reunion.departure, floor: reunion.floor, forward: reunion.forward,
         assisted: ['colt', 'roland'].every(id => this.world.agents.get(id)?.status === 'alive') };
       const pose = dockDepartureRoot(gesture), center = FILM_SETS[this.scene!.set].center;
       member.position = { x: center.x + pose.x, y: center.y + pose.y, z: center.z + pose.z };
@@ -6146,7 +6146,7 @@ export class FilmStorySystem {
       }
       else if (reunion.phase === 'walking' && state.step === 2) {
         if (this.world.agents.get('zee')?.controller || this.world.agents.get('zee')?.status !== 'alive') return '等待 Zee 结束其他玩家的控制后再重逢，进度已经保留。';
-        if (distance(agent.position, filmStepPosition(this.scene, step)) > 2.2) return '先走近呼唤你的 Zee，再按 G 回应。';
+        if (distance(agent.position, filmStepPosition(this.scene, step, state)) > 2.2) return '先走近呼唤你的 Zee，再按 G 回应。';
         const center = FILM_SETS[this.scene.set].center;
         reunion.approach = { x: agent.position.x - center.x, z: agent.position.z - center.z, yaw: agent.rotation };
         reunion.phase = 'approaching'; reunion.elapsed = 0;
@@ -6825,7 +6825,7 @@ export class FilmStorySystem {
     if (scene.id !== 'm3_dock_reunion') for (const other of this.world.agents.values())
       if (!other.controller && (other.currentAction?.parameters.dockDeparture || other.currentAction?.parameters.dockReunion)) other.currentAction = null;
     if (scene.id === 'm3_dock_reunion') {
-      state.dockReunion = { phase: 'ready', elapsed: 0, floor: state.diggers ? 1 : 0, departure: 0 };
+      state.dockReunion = { phase: 'ready', elapsed: 0, floor: state.diggers ? 1 : 0, departure: 0, forward: state.dockGate?.forward };
       const pose = dockReunionRoot(state.dockReunion, 'link'), center = FILM_SETS[scene.set].center;
       state.checkpoint = { x: center.x + pose.x, y: center.y + pose.y, z: center.z + pose.z };
     } else delete state.dockReunion;

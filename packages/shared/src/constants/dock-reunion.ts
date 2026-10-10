@@ -27,14 +27,20 @@ export interface DockReunion {
   phase: 'ready' | 'disembarking' | 'exiting' | 'walking' | 'approaching' | 'embrace' | 'kiss' | 'promise' | 'charm' | 'parting' | 'done';
   elapsed: number;
   floor: number;
+  /** Same arrival direction as the saved gate crossing; missing keeps the old dock layout. */
+  forward?: boolean;
   /** Absent in older reunion saves, whose crew and door have already left. */
   departure?: number;
   approach?: { x: number; z: number; yaw: number };
 }
 export interface DockReunionGesture extends DockReunion { role: 'link' | 'zee' }
 export type DockDepartureRole = typeof DOCK_REUNION.crew[number];
-export interface DockDepartureGesture { role: DockDepartureRole; elapsed: number; floor: number; assisted: boolean }
+export interface DockDepartureGesture { role: DockDepartureRole; elapsed: number; floor: number; assisted: boolean; forward?: boolean }
 const ease = (value: number, start: number, end: number) => { const p = Math.max(0, Math.min(1, (value - start) / (end - start))); return p * p * (3 - 2 * p); };
+/** Rotate the authored rear-deck layout around the landed hull, without moving old saves. */
+export function dockArrivalPoint(point: { x: number; y: number; z: number }, forward = false) {
+  return forward ? { x: 40 - point.x, y: point.y, z: 76 - point.z } : { ...point };
+}
 export function dockReunionLocked(state?: DockReunion): boolean {
   return Boolean(state && state.phase !== 'walking' && state.phase !== 'done');
 }
@@ -46,21 +52,21 @@ export function dockReunionTread(index: number, floor: number) {
     z: DOCK_REUNION.hatch.z + .35 + i * DOCK_REUNION.tread };
 }
 /** A saved release/rotation and gravity fall, with support from the actual circular panel. */
-export function dockHatchPose(elapsed: number, floor: number) {
+export function dockHatchPose(elapsed: number, floor: number, forward = false) {
   const age = Math.max(0, elapsed - .55), pitch = ease(age, 0, 1.1) * Math.PI / 2;
   const support = DOCK_REUNION.hatch.radius * Math.abs(Math.cos(pitch)) + .16;
-  return { x: 20, y: Math.max(floor + support, dockEmpHullBase(1.2, floor) - 4.9 * age * age),
-    z: 55.04 + ease(age, 0, 1.65) * 2.4, pitch, roll: 1.2 };
+  return { ...dockArrivalPoint({ x: 20, y: Math.max(floor + support, dockEmpHullBase(1.2, floor) - 4.9 * age * age),
+    z: 55.04 + ease(age, 0, 1.65) * 2.4 }, forward), pitch, roll: 1.2 };
 }
-function departureFoot(elapsed: number, seconds: number, floor: number, left: boolean, x: number, start: number) {
+function departureFoot(elapsed: number, seconds: number, floor: number, left: boolean, x: number, start: number, forward = false) {
   const inside = Math.ceil((55.35 - start) / DOCK_REUNION.tread), count = inside + DOCK_REUNION.steps;
   const at = (index: number) => index < inside ? { x, y: dockReunionTread(0, floor).y, z: start + (55.35 - start) * index / inside }
     : { ...dockReunionTread(index - inside, floor), x };
   const step = Math.min(count, Math.max(0, elapsed / seconds * count)), i = Math.min(count - 1, Math.floor(step));
   const swing = (i % 2 === 0) === left, from = at(Math.max(0, i - (swing ? 1 : 0))), to = at(i + 1);
   const p = step >= count ? 1 : ease(step - i, 0, 1), moving = swing || i === count - 1;
-  return { x: x + (left ? .29 : -.29), y: from.y + (moving ? (to.y - from.y) * p + Math.sin(p * Math.PI) * .22 : 0),
-    z: from.z + (moving ? (to.z - from.z) * p : 0) };
+  return dockArrivalPoint({ x: x + (left ? .29 : -.29), y: from.y + (moving ? (to.y - from.y) * p + Math.sin(p * Math.PI) * .22 : 0),
+    z: from.z + (moving ? (to.z - from.z) * p : 0) }, forward);
 }
 export function dockDepartureFoot(gesture: DockDepartureGesture, left: boolean) {
   const pair = gesture.role === 'colt' || gesture.role === 'roland';
@@ -70,31 +76,34 @@ export function dockDepartureFoot(gesture: DockDepartureGesture, left: boolean) 
     const step = Math.min(4, (gesture.elapsed - start - 8) / .5), i = Math.min(3, Math.floor(step)), swing = (i % 2 === 0) === left;
     const at = (index: number) => ({ x: last.x + (goal.x - last.x) * index / 4, z: last.z + (goal.z - last.z) * index / 4 });
     const from = at(Math.max(0, i - (swing ? 1 : 0))), to = at(i + 1), p = step >= 4 ? 1 : ease(step - i, 0, 1), moving = swing || i === 3;
-    return { x: from.x + (left ? .29 : -.29) + (moving ? (to.x - from.x) * p : 0),
-      y: gesture.floor + (moving ? Math.sin(p * Math.PI) * .14 : 0), z: from.z + (moving ? (to.z - from.z) * p : 0) };
+    return dockArrivalPoint({ x: from.x + (left ? .29 : -.29) + (moving ? (to.x - from.x) * p : 0),
+      y: gesture.floor + (moving ? Math.sin(p * Math.PI) * .14 : 0), z: from.z + (moving ? (to.z - from.z) * p : 0) }, gesture.forward);
   }
   return departureFoot(gesture.elapsed - start, pair ? DOCK_REUNION.departure.pairSeconds : 8, gesture.floor, left,
-    gesture.role === 'colt' ? 22.15 : gesture.role === 'roland' ? 23.17 : 20, gesture.role === 'niobe' ? 52.45 : 53.95);
+    gesture.role === 'colt' ? 22.15 : gesture.role === 'roland' ? 23.17 : 20, gesture.role === 'niobe' ? 52.45 : 53.95, gesture.forward);
 }
 export function dockDepartureRoot(gesture: DockDepartureGesture) {
   const left = dockDepartureFoot(gesture, true), right = dockDepartureFoot(gesture, false);
   const yaw = gesture.role === 'morpheus' ? Math.atan2(-2, 2.85) * ease(gesture.elapsed, 10.2, 10.9)
     : gesture.role === 'niobe' ? Math.atan2(-.2, 5.05) * ease(gesture.elapsed, 12.2, 12.9) : 0;
-  return { x: (left.x + right.x) / 2, y: (left.y + right.y) / 2, z: (left.z + right.z) / 2, yaw };
+  return { x: (left.x + right.x) / 2, y: (left.y + right.y) / 2, z: (left.z + right.z) / 2, yaw: yaw + (gesture.forward ? Math.PI : 0) };
 }
 export function dockDepartureFinished(elapsed: number, role: DockDepartureRole): boolean {
   return elapsed + 1e-6 >= (role === 'morpheus' ? 12.2 : role === 'niobe' ? 14.2 : DOCK_REUNION.departure.seconds);
 }
 export function dockReunionFoot(state: DockReunion, left: boolean): { x: number; y: number; z: number } {
   if (state.departure !== undefined && ['ready', 'disembarking', 'exiting'].includes(state.phase))
-    return departureFoot(state.phase === 'exiting' ? state.elapsed : 0, DOCK_REUNION.exitSeconds, state.floor, left, 20, 51.15);
+    return departureFoot(state.phase === 'exiting' ? state.elapsed : 0, DOCK_REUNION.exitSeconds, state.floor, left, 20, 51.15, state.forward);
   if (state.phase !== 'ready' && state.phase !== 'exiting') {
-    const at = (elapsed: number) => dockReunionRoot({ ...state, elapsed }, 'link');
+    const at = (elapsed: number) => {
+      const root = dockReunionRoot({ ...state, elapsed }, 'link'), side = left ? .29 : -.29;
+      return { x: root.x + Math.cos(root.yaw) * side, y: root.y, z: root.z - Math.sin(root.yaw) * side };
+    };
     const step = Math.min(4, state.elapsed / .6), i = Math.min(3, Math.floor(step));
     const swing = (i % 2 === 0) === left;
     const from = state.phase === 'approaching' ? at(Math.max(0, i - (swing ? 1 : 0)) * .6) : at(state.elapsed);
     const to = at((i + 1) * .6), p = step >= 4 ? 1 : ease(step - i, 0, 1);
-    return { x: from.x + (left ? .29 : -.29) + (swing ? (to.x - from.x) * p : 0), y: state.phase === 'approaching' && swing ? Math.sin(p * Math.PI) * .13 : 0,
+    return { x: from.x + (swing ? (to.x - from.x) * p : 0), y: from.y + (state.phase === 'approaching' && swing ? Math.sin(p * Math.PI) * .13 : 0),
       z: from.z + (state.phase === 'approaching' && swing ? (to.z - from.z) * p : 0) };
   }
   const time = state.phase === 'ready' ? 0 : state.phase === 'exiting' ? state.elapsed : DOCK_REUNION.exitSeconds;
@@ -103,25 +112,26 @@ export function dockReunionFoot(state: DockReunion, left: boolean): { x: number;
   const from = dockReunionTread(Math.max(0, i - (swing ? 1 : 0)), state.floor), to = dockReunionTread(i + 1, state.floor);
   const p = step >= DOCK_REUNION.steps ? 1 : ease(step - i, 0, 1);
   const finish = i === DOCK_REUNION.steps - 1;
-  return { x: from.x + (left ? .29 : -.29), y: swing || finish ? from.y + (to.y - from.y) * p + Math.sin(p * Math.PI) * .24 : from.y,
-    z: swing || finish ? from.z + (to.z - from.z) * p : from.z };
+  return dockArrivalPoint({ x: from.x + (left ? .29 : -.29), y: swing || finish ? from.y + (to.y - from.y) * p + Math.sin(p * Math.PI) * .24 : from.y,
+    z: swing || finish ? from.z + (to.z - from.z) * p : from.z }, state.forward);
 }
 export function dockReunionRoot(state: DockReunion, role: 'link' | 'zee'): { x: number; y: number; z: number; yaw: number } {
   if (role === 'link' && ['ready', 'disembarking', 'exiting'].includes(state.phase)) {
     const left = dockReunionFoot(state, true), right = dockReunionFoot(state, false);
-    return { x: (left.x + right.x) / 2, y: (left.y + right.y) / 2, z: (left.z + right.z) / 2, yaw: 0 };
+    return { x: (left.x + right.x) / 2, y: (left.y + right.y) / 2, z: (left.z + right.z) / 2, yaw: state.forward ? Math.PI : 0 };
   }
-  if (role === 'zee') return { ...DOCK_REUNION.zee, y: 0, yaw: 0 };
-  const position = DOCK_REUNION.link, approach = state.approach ?? { ...position, yaw: Math.PI };
+  const floor = state.forward ? state.floor : 0, yaw = state.forward ? 0 : Math.PI;
+  if (role === 'zee') return { ...dockArrivalPoint({ ...DOCK_REUNION.zee, y: floor }, state.forward), yaw: state.forward ? Math.PI : 0 };
+  const position = dockArrivalPoint({ ...DOCK_REUNION.link, y: floor }, state.forward), approach = state.approach ?? { ...position, yaw };
   const p = state.phase === 'approaching' ? ease(state.elapsed, 0, DOCK_REUNION.seconds.approaching) : 1;
   const gap = state.phase === 'parting' ? ease(state.elapsed, 0, DOCK_REUNION.seconds.parting) * .7 : state.phase === 'done' ? .7 : 0;
-  const angle = Math.atan2(Math.sin(Math.PI - approach.yaw), Math.cos(Math.PI - approach.yaw));
-  return { x: approach.x + (position.x - approach.x) * p, y: 0, z: approach.z + (position.z - approach.z) * p + gap, yaw: approach.yaw + angle * p };
+  const angle = Math.atan2(Math.sin(yaw - approach.yaw), Math.cos(yaw - approach.yaw));
+  return { x: approach.x + (position.x - approach.x) * p, y: floor, z: approach.z + (position.z - approach.z) * p + gap * (state.forward ? -1 : 1), yaw: approach.yaw + angle * p };
 }
 export function dockReunionRail(state: DockReunion, left: boolean) {
-  const root = dockReunionRoot(state, 'link');
+  const root = dockArrivalPoint(dockReunionRoot(state, 'link'), state.forward);
   const tread = dockReunionTread((root.z - DOCK_REUNION.hatch.z - .35) / DOCK_REUNION.tread, state.floor);
-  return { x: tread.x + (left ? 1 : -1) * DOCK_REUNION.rail.halfWidth, y: tread.y + DOCK_REUNION.rail.height + .045, z: tread.z };
+  return dockArrivalPoint({ x: tread.x + (left ? 1 : -1) * DOCK_REUNION.rail.halfWidth, y: tread.y + DOCK_REUNION.rail.height + .045, z: tread.z }, state.forward);
 }
 export function dockReunionPose(state: DockReunion) {
   const hugged = ['embrace', 'kiss', 'promise', 'charm', 'parting'].includes(state.phase);

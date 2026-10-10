@@ -15,6 +15,9 @@ export class DockEmpRenderer {
   private sparks: THREE.InstancedMesh;
   private wave: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>;
   private flash: THREE.PointLight;
+  private fire = new THREE.Group();
+  private flames: THREE.InstancedMesh<THREE.PlaneGeometry, THREE.ShaderMaterial>;
+  private fireLights: THREE.PointLight[] = [];
   private materials: THREE.Material[];
   private floorOffsets: number[] = [];
   private scratch = new THREE.Object3D();
@@ -64,6 +67,39 @@ export class DockEmpRenderer {
     this.wave.position.copy(DOCK_EMP.source); this.group.add(this.wave);
     this.flash = new THREE.PointLight(0xe4f5ff, 0, 180, 2); this.flash.name = 'emp-dock-flash';
     this.flash.position.copy(DOCK_EMP.source); this.group.add(this.flash);
+    this.fire.name = 'emp-dock-fuel-fires'; this.group.add(this.fire);
+    const flame = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending, toneMapped: false,
+      uniforms: { time: { value: 0 }, strength: { value: 0 } },
+      vertexShader: `varying vec2 vUv; varying float seed;
+        void main() { vUv = uv; seed = instanceMatrix[3].x * .7 + instanceMatrix[3].z;
+          gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(position, 1.0); }`,
+      fragmentShader: `uniform float time; uniform float strength; varying vec2 vUv; varying float seed;
+        float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+        float noise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+          return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0)), f.x), f.y); }
+        void main() {
+          float y = vUv.y, n = noise(vec2(vUv.x * 5.0 + seed, y * 7.0 - time * 2.8));
+          float bend = sin(y * 8.0 - time * 3.0 + seed) * .13 * y;
+          float edge = abs(vUv.x - .5 + bend) / max(.02, .45 * (1.0 - y));
+          float heat = (1.0 - edge) * (1.0 - y) + n * .32 - .15;
+          float alpha = smoothstep(0.0, .2, heat) * smoothstep(0.0, .07, y) * strength;
+          vec3 color = mix(vec3(1.0, .09, .005), vec3(1.0, .8, .3), smoothstep(.08, .65, heat));
+          gl_FragColor = vec4(color * 1.8, alpha * .68); }`,
+    });
+    this.materials.push(flame);
+    this.flames = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1).translate(0, .5, 0), flame, 24);
+    this.flames.name = 'emp-fuel-flames'; this.flames.frustumCulled = false; this.fire.add(this.flames);
+    // Burning wreckage flanks the landed hull, clear of the rear exit and reunion path.
+    for (const [index, [x, z]] of [[31, 39], [16, 53]].entries()) {
+      const light = new THREE.PointLight(0xff873e, 0, 44, 2); light.position.set(x, 3, z); this.fire.add(light); this.fireLights.push(light);
+      for (let i = 0; i < 12; i++) {
+        const pair = Math.floor(i / 2), angle = pair * 2.4;
+        this.scratch.position.set(x + Math.sin(angle) * 2.3, 0, z + Math.cos(angle) * 3.1);
+        this.scratch.rotation.set(0, i % 2 * Math.PI / 2, 0); this.scratch.scale.set(2.6 + pair % 3 * .5, 2.8 + pair % 4 * .85, 1);
+        this.scratch.updateMatrix(); this.flames.setMatrixAt(index * 12 + i, this.scratch.matrix);
+      }
+    }
   }
   private instances(geometry: THREE.BufferGeometry, material: THREE.Material, count: number, name: string) {
     const mesh = new THREE.InstancedMesh(geometry, material, count); mesh.name = name; mesh.frustumCulled = false;
@@ -77,6 +113,12 @@ export class DockEmpRenderer {
     // The pulse kills the drill bay and service lighting as well as the main dock.
     // Blackout is lit by the environment; powered fixtures must not keep shading it.
     this.dock.group.traverseVisible(object => { if (object instanceof THREE.PointLight) object.visible = false; });
+    this.fire.visible = time > 1.6;
+    this.fire.position.y = journey!.diggers ? 1.03 : .03;
+    const fireTime = time + (journey!.dockReunion?.departure ?? 0);
+    const strength = THREE.MathUtils.smoothstep(time, 1.6, 3.2);
+    this.flames.material.uniforms.time.value = fireTime; this.flames.material.uniforms.strength.value = strength;
+    this.fireLights.forEach((light, index) => { light.intensity = strength * (1200 + Math.sin(fireTime * 7 + index * 2) * 140); });
     if (time === this.lastTime) return;
     this.lastTime = time;
     this.wave.visible = time < 1.4; this.wave.scale.setScalar(Math.max(.01, time * DOCK_EMP.waveSpeed));
@@ -118,7 +160,7 @@ export class DockEmpRenderer {
   }
   dispose(): void {
     this.dock.dispose(); this.group.removeFromParent(); this.group.clear();
-    for (const mesh of [this.bodies, this.faces, this.eyes, this.tails, this.sparks, this.wave]) mesh.geometry.dispose();
-    this.materials.forEach(material => material.dispose()); this.flash.dispose();
+    for (const mesh of [this.bodies, this.faces, this.eyes, this.tails, this.sparks, this.wave, this.flames]) mesh.geometry.dispose();
+    this.materials.forEach(material => material.dispose()); this.flash.dispose(); this.fireLights.forEach(light => light.dispose());
   }
 }

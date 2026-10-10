@@ -91,7 +91,7 @@ test('the ambushed APU falls before Zee clears the attacker, and Kid must brace 
 });
 
 test('only aimed bursts damage the visible vertical cable; misses, pitch and duplicate shots matter', () => {
-  const gate = newDockGate(5, -50); gate.phase = 'aiming'; const target = aim(gate);
+  const gate = newDockGate(5, -50); gate.phase = 'aiming'; delete gate.forward; const target = aim(gate);
   assert.equal(fireDockGate(gate, target.yaw, 0), false, 'horizontal fire passes below the cable');
   assert.equal(gate.ammo, DOCK_GATE.ammo - 1); assert.equal(gate.hits, 0);
   assert.equal(fireDockGate(gate, target.yaw, target.pitch), false, 'duplicate input cannot bypass fire cadence');
@@ -99,6 +99,7 @@ test('only aimed bursts damage the visible vertical cable; misses, pitch and dup
     stepDockGate(gate, .1); assert.equal(fireDockGate(gate, target.yaw, target.pitch), true);
   }
   assert.equal(gate.phase, 'opening'); assert.equal(dockGateOpen(gate), 0);
+  assert.equal(gate.forward, true, 'a legacy gunner uses the corrected arrival once the cable is cut');
   const ammo = gate.ammo; assert.equal(fireDockGate(gate, target.yaw, target.pitch), false); assert.equal(gate.ammo, ammo);
   stepDockGate(gate, .1); assert.ok(Number.isFinite(gate.lastShot!.y));
 });
@@ -155,6 +156,7 @@ test('reconciling a gate save does not restart the completed Mifune body action'
 test('old aiming and opening saves retain their upright progress and do not replay the ambush', () => {
   for (const phase of ['aiming', 'opening'] as const) {
     const h = setup(); h.journey.dockGate = { ...newDockGate(5, -50), phase, elapsed: 1.7, hits: phase === 'opening' ? 8 : 3 };
+    delete h.journey.dockGate.forward;
     const saved = structuredClone(h.sandbox.state); h.sandbox.restore(saved); h.players.possess('p', 'kid', 40);
     const gate = h.sandbox.life.film.state!.dockGate!;
     assert.deepEqual(gate, saved.neoLife.journey.dockGate); assert.equal(gate.toppled, undefined);
