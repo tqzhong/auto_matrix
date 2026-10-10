@@ -161,3 +161,17 @@ test('old aiming and opening saves retain their upright progress and do not repl
     frames(h, 1); assert.equal(gate.phase, phase);
   }
 });
+
+test('a dead Zee cannot be moved into the rescue or fire on behalf of the player', () => {
+  const h = setup(), zee = h.world.agents.get('zee')!;
+  zee.status = 'dead'; zee.health = 0;
+  const body = structuredClone(zee);
+  h.command('act');
+  assert.equal(h.journey.dockGate?.phase, 'ready');
+  assert.deepEqual(zee, body);
+  h.journey.dockGate = { ...newDockGate(5, -50), toppled: true, phase: 'rescue', elapsed: .5 };
+  const rescue = structuredClone(h.journey.dockGate);
+  frames(h, 40);
+  assert.deepEqual(h.journey.dockGate, rescue, 'the saved rescue waits instead of fabricating fire from a dead character');
+  assert.deepEqual(zee, body);
+});

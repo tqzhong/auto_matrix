@@ -3,7 +3,7 @@ import test, { type TestContext } from 'node:test';
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { APU_RIG, DOCK_RELOAD, dockReloadBox, dockReloadHeight, dockLastStandPose, newDockLastStand, newDockReload, type FilmJourney, type DockLastStand, type DockReload } from '@auto_matrix/shared';
+import { APU_RIG, DOCK_RELOAD, dockReloadBox, dockReloadHeight, dockLastStandPose, newDockLastStand, newDockReload, newDockGate, dockGatePoint, dockGateEye, type FilmJourney, type DockLastStand, type DockReload } from '@auto_matrix/shared';
 import { CharacterModels } from '../packages/client/src/agents/CharacterModel.js';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
@@ -154,6 +154,7 @@ test('APU first person retains operating arms, hides the eye-camera head, and re
     { dockReload: { ...newDockReload(), role: 'kid' as const, phase: 'climbing' as const, climb: .5 } },
     { dockLastStand: { ...newDockLastStand(), role: 'kid' as const, phase: 'orders' as const } },
     { apuDriving: true, seated: true, riding: true },
+    { dockGate: { ...newDockGate(5, -50), toppled: true, phase: 'braced' as const, brace: .5 }, seated: true, riding: true },
   ]) {
     actor.currentAction = { type: 'idle', parameters: action, startedAt: 0, duration: 1e9, progress: 0 };
     renderer.updateAgent(actor.id, actor); renderer.setWorld(false); renderer.setPlayer('kid', true);
@@ -169,6 +170,45 @@ test('APU first person retains operating arms, hides the eye-camera head, and re
     assert.equal(body.visible, false, 'ordinary first person retains its existing visibility policy');
     assert.ok(head.visible, 'the temporary head mask must be released');
   }
+});
+
+test('Kid braces with his delivered body while retaining seat, hand, pedal and eye contacts through the gate fall', async t => {
+  const h = await fixture(t), kid = h.rigs.kid;
+  const gate = { ...newDockGate(5, -50), toppled: true, brace: 0 };
+  const draw = () => {
+    const p = dockGatePoint(gate, APU_RIG.pilot);
+    kid.root.position.set(p.x, p.y, p.z); kid.root.rotation.y = Math.PI;
+    h.models.animate(kid, 0, { ...h.input, seated: true, riding: true, dockGate: gate }, 1);
+    h.renderer.update({ scene: 'm3_gate', actor: 'kid', step: 2, completed: [], dockGate: gate } as FilmJourney, 0);
+    kid.root.updateWorldMatrix(true, true); h.root.updateWorldMatrix(true, true);
+  };
+  for (const [phase, elapsed, brace] of [['falling', 0, 0], ['falling', 1.3, 0], ['falling', 2.7, 0], ['rescue', .8, 0],
+    ['braced', 0, 0], ['braced', .5, .5], ['aiming', 0, 1]] as const) {
+    Object.assign(gate, { phase, elapsed, brace }); draw();
+    const body = kid.root.getObjectByName('kid-detailed-body')!, vertices = points(body);
+    assert.ok(vertices.every(p => Number.isFinite(p.x + p.y + p.z) && p.y >= -.025), `${phase}: floor penetration`);
+    for (const name of ['apu-seat-pan', 'apu-seat-back', 'apu-control-panel']) {
+      const seat = h.root.getObjectByName(name) as THREE.Mesh; seat.geometry.computeBoundingBox();
+      const box = seat.geometry.boundingBox!.clone().expandByScalar(-.008);
+      assert.equal(vertices.filter(p => box.containsPoint(seat.worldToLocal(p.clone()))).length, 0, `${phase}/${brace}: anatomy enters ${name}`);
+    }
+    for (let i = 0; i < 2; i++) {
+      const palm = kid.elbows[i].localToWorld(new THREE.Vector3(0, -.79, .055));
+      const grip = h.root.getObjectByName(`apu-control-${i ? -1 : 1}`)!.getWorldPosition(new THREE.Vector3());
+      assert.ok(palm.distanceTo(grip) < .04, 'bracing must keep both palms on the physical controls');
+      const pedal = h.root.getObjectByName(`apu-pedal-${i ? -1 : 1}`)!;
+      const sole = kid.ankles[i].localToWorld(new THREE.Vector3(0, -.155, .13));
+      assert.ok(sole.distanceTo(pedal.localToWorld(new THREE.Vector3(0, .06, 0))) < .025);
+    }
+    assert.ok(kid.head.localToWorld(new THREE.Vector3(0, -.005, .275)).distanceTo(new THREE.Vector3().copy(dockGateEye(gate))) < 1e-5,
+      'the authoritative aiming origin must follow the braced eye');
+    const before = vertices.map(p => p.toArray()); draw(); assert.deepEqual(points(body).map(p => p.toArray()), before);
+  }
+  Object.assign(gate, { phase: 'braced', elapsed: 0, brace: 0 }); draw();
+  const relaxed = kid.head.getWorldPosition(new THREE.Vector3());
+  gate.brace = 1; draw();
+  assert.ok(kid.head.getWorldPosition(new THREE.Vector3()).distanceTo(relaxed) > .12, 'holding G must animate the pilot’s effort, not just the cannon');
+  gate.brace = 0; draw(); assert.ok(kid.head.getWorldPosition(new THREE.Vector3()).distanceTo(relaxed) < 1e-6, 'letting go releases the same saved effort');
 });
 
 test('delivered dock anatomy stays above the floor through Mifune’s fall and Kid’s kneel and rise', async t => {

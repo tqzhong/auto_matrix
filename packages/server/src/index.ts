@@ -271,6 +271,10 @@ const playerTimer = setInterval(() => {
     const crew = [...world.agents.entries()].filter(([id]) => ['charra', 'zee'].includes(id));
     sockets.broadcastDelta({ agents: Object.fromEntries(crew), dirtyChunks: {}, events: [], sandbox: sandbox.state }, simLoop.getTick()); return;
   }
+  if (current?.scene === 'm3_gate' && !current.visiting && (world.agents.get(current.actor)?.controller || simLoop.isRunning())) {
+    const crew = [...world.agents.entries()].filter(([id]) => ['kid', 'zee'].includes(id));
+    sockets.broadcastDelta({ agents: Object.fromEntries(crew), dirtyChunks: {}, events: [], sandbox: sandbox.state }, simLoop.getTick()); return;
+  }
   const controlled = [...world.agents.entries()].filter(([, agent]) => agent.controller || agent.currentAction?.parameters.workday && sandbox.life.film.state?.scene === 'm1_boss' || agent.currentAction?.parameters.hotelGuide && sandbox.life.film.state?.hotel || agent.currentAction?.parameters.welcome && sandbox.life.film.state?.scene === 'm1_pills' || agent.currentAction?.parameters.meeting && ['m1_bridge', 'm1_bug'].includes(sandbox.life.film.state?.scene ?? '') || agent.currentAction?.parameters.pills && sandbox.life.film.state?.scene === 'm1_pills' || agent.currentAction?.parameters.interrogation && sandbox.life.film.state?.scene === 'm1_interrogation' || (sandbox.life.film.state?.ride?.phase === 'riding' || sandbox.life.film.state?.hammer?.phase === 'riding' || sandbox.life.film.state?.logos?.phase === 'riding') && agent.currentAction?.parameters.passenger || current?.scene === 'm2_trucks' && !current.visiting && current.trucks?.phase === 'rescue' && agent.currentAction?.parameters.truckRescue || (current?.scene === 'm3_rain' || current?.scene === 'm3_surrender') && !current.visiting && ['neo', 'smith'].includes(agent.id) && agent.currentAction?.parameters.smithFinale);
   if (controlled.length || simLoop.isRunning()) sockets.broadcastDelta({ agents: Object.fromEntries(controlled), dirtyChunks: {}, events: [], traffic: sandbox.state.traffic }, simLoop.getTick());
 }, 50);

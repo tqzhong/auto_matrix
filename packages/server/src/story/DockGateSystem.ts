@@ -18,7 +18,7 @@ export class DockGateSystem {
     actor.currentAction = { type: 'idle', parameters: { player: true, resolved: true, riding: true, seated: true, dockGate: { ...gate } }, startedAt: tick, duration: 1e9, progress: 0 };
     journey.checkpoint = { ...actor.position };
     const zee = this.world.agents.get('zee');
-    if (gate.toppled && zee && !zee.controller) {
+    if (gate.toppled && zee?.status === 'alive' && !zee.controller) {
       const cover = dockGateZee(gate);
       zee.position = filmPosition('film_zion_hangar', cover.x, cover.z); zee.rotation = cover.yaw;
       zee.currentLocation = 'film_zion_hangar'; zee.isInMatrix = false;
@@ -32,6 +32,7 @@ export class DockGateSystem {
     if (!actor.controller || actor.status !== 'alive') return true;
     // Link is needed at the next handoff; never consume the ending under another player.
     if (gate.phase === 'entering' && this.world.agents.get('link')?.controller) { journey.lastText = 'Link 正由另一位玩家控制，Hammer 进场进度已保留。'; return true; }
+    if (['falling', 'rescue'].includes(gate.phase) && this.world.agents.get('zee')?.status !== 'alive') { journey.lastText = 'Zee 已无法参与救援，当前进度与伤亡已保留。'; return true; }
     if (['falling', 'rescue'].includes(gate.phase) && this.world.agents.get('zee')?.controller) { journey.lastText = 'Zee 正由另一位玩家控制，救援进度已保留。'; return true; }
     if (gate.phase === 'aiming' && Number.isFinite(yaw) && Number.isFinite(pitch)) { gate.yaw = yaw!; gate.pitch = Math.max(-1.35, Math.min(1.35, pitch!)); }
     const previous = gate.phase;
@@ -61,6 +62,7 @@ export class DockGateSystem {
       this.stage(actor, tick); return journey.lastText = dockGateText(journey.dockGate!);
     }
     if (target === 'act' && gate.phase === 'ready') {
+      if (this.world.agents.get('zee')?.status !== 'alive') return journey.lastText = 'Zee 已无法参与救援，当前进度与伤亡已保留。';
       if (this.world.agents.get('zee')?.controller) return journey.lastText = 'Zee 正由另一位玩家控制，等待她可参与救援后再接管机炮。';
       gate.phase = 'falling'; gate.elapsed = 0; gate.toppled = true;
     }
