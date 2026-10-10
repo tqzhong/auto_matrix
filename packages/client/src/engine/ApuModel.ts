@@ -40,7 +40,7 @@ export class ApuModel {
     this.pipe(this.steel, [-1.5, 0, 0], [1.5, 0, 0], .11, rail);
     this.pipe(this.blue, [-.7, 0, 0], [-.15, 0, 0], .13, rail);
     this.pipe(this.paint, [.15, 0, 0], [.7, 0, 0], .13, rail);
-    this.plate(this.dark, [0, p + 2.05, -.85], [1.6, .18, .24], this.group, 'apu-control-panel');
+    this.plate(this.dark, [0, p + 1.9, -.85], [1.6, .18, .24], this.group, 'apu-control-panel');
     for (const side of [-1, 1]) {
       this.pipe(this.rubber, [side * .62, p + 2.15, -1], [side * .62, p + 2.45, -1], .065, this.group, `apu-control-${side}`);
       this.plate(this.red, [side * .62, p + 2.47, -1], [.095, .04, .095], this.group, undefined, .015);

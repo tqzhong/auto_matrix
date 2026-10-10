@@ -35,7 +35,9 @@ export function poseDockReload(rig: CharacterRig, gesture?: DockReloadGesture): 
       foot.lerp(ankle, raised); footRotation.multiply(new THREE.Quaternion().slerp(q, raised));
     }
     rig.root.updateWorldMatrix(true, true);
-    reach(rig.hips[i], rig.knees[i], rig.ankles[i].position, rig.root.localToWorld(foot), new THREE.Vector3(side * .15, .1, 1).applyQuaternion(orientation));
+    const opening = i === 0 ? raised : 0;
+    reach(rig.hips[i], rig.knees[i], rig.ankles[i].position, rig.root.localToWorld(foot),
+      new THREE.Vector3(side * (.15 + .7 * opening), .1, 1 - .7 * opening).applyQuaternion(orientation));
     rig.ankles[i].quaternion.copy(rig.knees[i].getWorldQuaternion(new THREE.Quaternion()).invert().multiply(footRotation));
     const hand = new THREE.Vector3(side * .53, 3.25 + first * .9 + second - h, .6);
     if (gesture.phase === 'hoisting' && i === 0) hand.set(-.92, 2.42 + Math.sin(gesture.lift * Math.PI * 4) * .09, .6);

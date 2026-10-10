@@ -41,6 +41,12 @@ HAMMER_CREW = {
 }
 
 
+APU_CREW = {
+    'mifune': {'shoulders': .68, 'race': 'asian', 'sex': 'male'},
+    'kid': {'shoulders': .55, 'race': 'caucasian', 'sex': 'male'},
+}
+
+
 def normals(points, faces):
     result = np.zeros_like(points)
     for face in faces:
@@ -124,7 +130,8 @@ def main(source, output, role):
     program = PROGRAMS.get(role)
     council = COUNCILLORS.get(role)
     crew = HAMMER_CREW.get(role)
-    captain = CAPTAINS.get(role); profile = captain or program or council or crew; sleeved = bool(profile and (profile['sex'] == 'male' or role == 'kamala' or council or crew))
+    apu = APU_CREW.get(role)
+    captain = CAPTAINS.get(role); profile = captain or program or council or crew or apu; sleeved = bool(profile and (profile['sex'] == 'male' or role == 'kamala' or council or crew))
     sex = profile['sex'] if profile else 'female'; race = profile['race'] if profile else 'african' if role == 'zee' else 'caucasian'
     targets = {'macrodetails/' + race + '-' + sex + '-young': 1,
                'macrodetails/universal-' + sex + '-young-averagemuscle-averageweight': .7,
@@ -265,6 +272,9 @@ def main(source, output, role):
                                     ('Dock trousers', [.027, .033, .026], .95), ('Dock boots', [.012, .015, .012], .79),
                                     ('Dock bindings', [.035, .039, .028], .93)]:
         doc['materials'].append({'name': name, 'pbrMetallicRoughness': {'baseColorFactor': color + [1], 'metallicFactor': 0, 'roughnessFactor': roughness}, 'doubleSided': True})
+    if role == 'mifune':
+        for name, color in [('APU woven vest', [.027, .025, .021]), ('APU wine collar', [.12, .028, .025])]:
+            doc['materials'].append({'name': name, 'pbrMetallicRoughness': {'baseColorFactor': color + [1], 'metallicFactor': 0, 'roughnessFactor': .95}, 'doubleSided': True})
     if program:
         doc['materials'][4]['pbrMetallicRoughness']['baseColorFactor'] = [.66, .65, .59, 1] if role == 'architect' else [.74, .71, .61, 1]
         for name, color, roughness in [('Program shirt', [.80, .79, .73] if role == 'architect' else [.025, .030, .028], .91),
@@ -293,7 +303,7 @@ def main(source, output, role):
             blend = np.clip((p[vi, 1] - 3.22) / .24, 0, 1)[:, None]
             neck_uv = np.column_stack(((.25 + p[vi, 0] * .10 - .232) / .035,
                                        (.445 + np.clip(3.69 - p[vi, 1], 0, .2) * .12 - .452) / .02))
-            if captain or program or council or crew:
+            if captain or program or council or crew or apu:
                 neck_uv[:, 1] = (.002 + np.clip(3.69 - p[vi, 1], 0, .2) * .03) / .012
             fitted_uv = fitted_uv * (1 - blend) + neck_uv * blend
         attrs = {'POSITION': accessor(p[vi], 'VEC3'), 'NORMAL': accessor(n[vi], 'VEC3'), 'TEXCOORD_0': accessor(fitted_uv, 'VEC2'),
@@ -314,13 +324,13 @@ def main(source, output, role):
     covered = np.minimum(covered, y - 1.97)
     if sleeved:
         neck_height = 3.42 - .33 * np.clip(1 - np.abs(x) / .27, 0, 1) * np.clip((z + .1) / .22, 0, 1)
-        covered = np.minimum(neck_height - y, y - np.where(arms > .3, 1.82, 1.97))
+        covered = np.minimum(neck_height - y, y - np.where(arms > .3, 2.29 if role == 'mifune' else 1.82, 1.97))
     if program:
         # A modern suit opens onto a full shirt. Seraph's earlier Chinese
         # jacket closes at the throat; his park jacket opens onto a dark top.
         neck_height = 3.45 - (.78 * np.clip(1 - np.abs(x) / .30, 0, 1) * np.clip((z + .02) / .14, 0, 1) if role in ['architect', 'keymaker', 'rama_kandra', 'trainman'] else 0)
         covered = np.minimum(neck_height - y, y - np.where(arms > .3, 1.82, 1.82 if role in ['architect', 'keymaker', 'rama_kandra', 'kamala', 'trainman'] else 1.98))
-    if council or crew:
+    if council or crew or role == 'kid':
         neck_height = 3.43 - .085 * np.exp(-(x / .19) ** 4) * np.clip((z + .1) / .22, 0, 1)
         covered = np.minimum(neck_height - y, y - np.where(arms > .3, 1.82, 1.88))
     skin_covered = np.minimum(3.44 - y, y - np.where(arms > .3, 1.82, 1.97)) if program else covered
@@ -369,6 +379,21 @@ def main(source, output, role):
         cut = np.minimum(neckline - y, y - np.where(arms > .3, 1.82, 1.95))
         sp, su, sf, sw = builder.trim_neckline(sweater, uv, faces, weights, sweater[:, 1] + cut)
         export('niobe-briefing-sweater', sp, su, sf, sw, 1, 'briefing')
+    if role == 'mifune':
+        # The APU captain wears a separate open, sleeveless woven vest over
+        # his light shirt. Both layers retain identical anatomical weights.
+        outer = vest + normals(vest, faces) * .030
+        opening = np.where(z > .015, np.abs(x) - (.055 + .24 * np.clip((y - 2.65) / .76, 0, 1)), 1)
+        cut = np.minimum.reduce([3.43 - y, y - 1.93, armhole - arms, opening])
+        op, ou, of, ow = builder.trim_neckline(outer, uv, faces, weights, outer[:, 1] + cut)
+        export('mifune-woven-vest', op, ou, of, ow, 5)
+        border = np.minimum.reduce([cut, .10 - opening, y - 2.72, z - .015])
+        cp, cu, cf, cw = builder.trim_neckline(outer + normals(outer, faces) * .004, uv, faces, weights, outer[:, 1] + border)
+        export('mifune-wine-collar', cp, cu, cf, cw, 6)
+        cuff = vest + normals(vest, faces) * .009
+        roll = np.minimum.reduce([y - 2.29, 2.43 - y, arms - .35])
+        cp, cu, cf, cw = builder.trim_neckline(cuff, uv, faces, weights, cuff[:, 1] + roll)
+        export('mifune-rolled-cuffs', cp, cu, cf, cw, 1)
     # Sewn armhole/neck bindings have actual thickness in silhouette.
     edge_count = {}
     for face in vf:
@@ -390,7 +415,7 @@ def main(source, output, role):
             ef.append([(j, j) for j in ids])
     export(role + '-sewn-bindings', np.array(ep), np.array(eu), ef, np.array(ew), 4, 'matrix' if role == 'seraph' else 'dock' if role == 'niobe' else None)
 
-    if sleeved and not program and not council and not crew:
+    if sleeved and not program and not council and not crew and not apu:
         # Woven layered V collars and a diagonal wrap seam belong to Zion,
         # rather than a modern buttoned military uniform. Fit each strip to
         # the actual garment front and carry its neighboring skin weights.
@@ -622,6 +647,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--source', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
-    parser.add_argument('--roles', nargs='+', choices=['zee', 'charra', *CAPTAINS, *PROGRAMS, *COUNCILLORS, *HAMMER_CREW], default=['zee', 'charra'])
+    parser.add_argument('--roles', nargs='+', choices=['zee', 'charra', *CAPTAINS, *PROGRAMS, *COUNCILLORS, *HAMMER_CREW, *APU_CREW], default=['zee', 'charra'])
     args = parser.parse_args()
     for role in args.roles: main(args.source, args.output, role)
