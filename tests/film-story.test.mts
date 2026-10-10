@@ -4225,6 +4225,10 @@ test('the entire film route completes through interactions, driving and real com
             h.players.step(.1, true, h.tick());
           }
         }
+        else if (scene.id === 'm3_hammer_tunnels' && index === 1) {
+          for (let frame = 0; state.step === index && frame < 300; frame++) h.players.step(.05, true, h.tick());
+          assert.equal(state.step, 2);
+        }
         else if (scene.id === 'm2_trucks' && index === 2) {
           h.advance((step.seconds ?? 3) * 2);
           for (let frame = 0; frame < 40 && state.trucks?.phase === 'rescue'; frame++) h.players.step(.1, true, h.tick());

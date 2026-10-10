@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { HAMMER_ROUTE, HAMMER_COCKPIT, HAMMER_BEAMS, HAMMER_RADIO, newHammerFlight, hammerRadioPose, hammerShipPoint, hammerControlTurn, hammerRouteFrame, hammerRoutePoint, hammerTunnelSection, hammerShipPose, hammerCenter, hammerHalfWidth, hammerHeight, type HammerFlight } from '@auto_matrix/shared';
 import { batchStaticGeometry } from './StaticGeometry.js';
+import type { HammerHandover } from '@auto_matrix/shared';
 
 /** The tunnel, ship and pursuers share the coordinates used by flight collision. */
 export class HammerRouteRenderer {
@@ -237,6 +238,14 @@ export class HammerRouteRenderer {
       door.name = 'hammer-aft-door'; door.position.set(side * 2.1, -.25, 9.84); this.doors.push(door);
       const handle = this.mesh(new THREE.CylinderGeometry(.055, .055, .65, 8), frame, door); handle.position.set(-side * 1.8, 0, -.1);
     }
+    // A short enclosed vestibule lets the gunner pass out of sight behind the bridge doors.
+    for (const y of [HAMMER_COCKPIT.floor - .08, 1.95]) {
+      const deck = this.mesh(new THREE.BoxGeometry(4.2, .16, 4.4), panel, this.cockpit); deck.position.set(0, y, 12.1);
+    }
+    for (const side of [-1, 1]) {
+      const wall = this.mesh(new THREE.BoxGeometry(.12, 4.3, 4.4), panel, this.cockpit); wall.position.set(side * 2.1, -.2, 12.1);
+    }
+    const rear = this.mesh(new THREE.BoxGeometry(4.2, 4.3, .12), panel, this.cockpit); rear.position.set(0, -.2, 14.3);
   }
 
   private buildRadioAttack(): void {
@@ -316,7 +325,7 @@ export class HammerRouteRenderer {
       const headrest = this.mesh(new THREE.BoxGeometry(.83, .43, .21), leather, seat); headrest.position.set(0, 2.96, .72);
       for (const side of [-1, 1]) {
         const bracket = this.mesh(new THREE.CylinderGeometry(.035, .035, 2.3, 8), metal, seat); bracket.position.set(side * .58, 1.99, .75);
-        const arm = this.mesh(new THREE.BoxGeometry(.16, .12, .92), leather, seat); arm.position.set(side * .77, 1.72, -.05);
+        const arm = this.mesh(new THREE.BoxGeometry(.16, .12, .92), leather, seat); arm.name = 'hammer-seat-armrest'; arm.position.set(side * .77, 1.72, -.05);
         const pedal = this.mesh(new THREE.BoxGeometry(.42, .055, .5), metal, seat); pedal.position.set(side * .25, .04, -1.14); pedal.rotation.x = -.1;
       }
       const console = this.mesh(new THREE.BoxGeometry(1.47, 1.34, .48), panel, this.cockpit); console.position.set(position.x, floor + 1.48, position.z - 1.65);
@@ -353,7 +362,7 @@ export class HammerRouteRenderer {
       this.cockpit.add(light, light.target); this.lights.push(light);
     }
   }
-  update(flight: HammerFlight | undefined, elapsed: number, firstPerson = false): void {
+  update(flight: HammerFlight | undefined, elapsed: number, firstPerson = false, handover?: HammerHandover): void {
     const pose = flight ?? newHammerFlight();
     this.planar.visible = !pose.maneuver; this.spatial.visible = Boolean(pose.maneuver);
     const transform = hammerShipPose(pose), time = flight?.elapsed ?? 0;
@@ -365,7 +374,8 @@ export class HammerRouteRenderer {
     this.needles.forEach((needle, i) => { needle.rotation.z = -1.2 + (i % 3 === 0 ? pose.speed / 38 : i % 3 === 1 ? pose.hull / 100 : pose.pursuit / 100) * 2.4; });
     this.horizons.forEach(horizon => { horizon.rotation.z = -transform.roll; horizon.position.y = Math.sin(transform.pitch) * .12; });
     this.warning!.emissiveIntensity = flight?.antennaLost || pose.hull < 50 ? .9 : .2;
-    this.doors.forEach(door => { door.rotation.y = -Math.sign(door.position.x) * Math.PI / 2 * (1 - Math.min(1, time / 1.1)); });
+    const closing = handover ? Math.max(0, Math.min(1, (handover.elapsed - 11.4) / 1.1)) : Math.min(1, time / 1.1);
+    this.doors.forEach(door => { door.rotation.y = -Math.sign(door.position.x) * Math.PI / 2 * (1 - closing); });
     const radioPose = hammerRadioPose(pose), attack = pose.maneuver ? pose.radio : undefined;
     this.radio.position.set(radioPose.x, radioPose.y + 1, radioPose.z); this.radio.rotation.set(radioPose.pitch, radioPose.yaw, radioPose.roll, 'YXZ');
     this.radio.visible = attack ? attack.phase !== 'lost' : !pose.antennaLost;

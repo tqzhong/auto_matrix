@@ -1,4 +1,5 @@
 import type { DriveInput } from './freeway.js';
+import { hammerHandoverPose, type HammerHandover } from './hammer-handover.js';
 
 export const HAMMER_ROUTE = {
   start: 175, finish: -175, limit: 29, shipRadius: 6.25,
@@ -16,7 +17,7 @@ export const HAMMER_COCKPIT = {
   walk: { left: -4.1, right: 4.1, front: 166.1, back: 184.9, radius: .55 },
 } as const;
 export type HammerPilotRole = keyof typeof HAMMER_COCKPIT.roots;
-export interface HammerPilotGesture { role: HammerPilotRole; flight: HammerFlight }
+export interface HammerPilotGesture { role: HammerPilotRole | 'ghost'; flight: HammerFlight; handover?: HammerHandover }
 
 export function hammerShipPose(flight: Pick<HammerFlight, 'x' | 'z' | 'speed' | 'lateral' | 'maneuver'>) {
   if (flight.maneuver) {
@@ -36,7 +37,12 @@ export function hammerShipPoint(flight: Pick<HammerFlight, 'x' | 'z' | 'speed' |
   return { x: pose.x + offset.x, y: pose.y + offset.y, z: pose.z + offset.z };
 }
 
-export function hammerCrewRoot(flight: HammerFlight, role: HammerPilotRole) {
+export function hammerCrewRoot(flight: HammerFlight, role: HammerPilotGesture['role'], handover?: HammerHandover) {
+  if (handover && (role === 'ghost' || role === 'morpheus')) {
+    const root = hammerHandoverPose(handover, role);
+    return { ...hammerShipPoint(flight, { x: root.x, y: HAMMER_COCKPIT.floor + 1, z: root.z }), yaw: hammerShipPose(flight).yaw + root.yaw };
+  }
+  if (role === 'ghost') role = 'morpheus';
   return { ...hammerShipPoint(flight, { ...HAMMER_COCKPIT.roots[role], y: HAMMER_COCKPIT.floor + 1 }), yaw: hammerShipPose(flight).yaw + Math.PI };
 }
 
@@ -205,6 +211,7 @@ export function hammerFlightHint(flight: HammerFlight): string {
 const hull = [
   ...[
     { x: 4.42, y: [-2.45, 2.65], z: [-8.95, 9.95] },
+    { x: 2.2, y: [-2.53, 2.1], z: [9.8, 14.4] },
     { x: 3.2, y: [-4.76, -2.64], z: [-7.85, 10.3] },
     { x: 2.6, y: [-3.92, -2.49], z: [5.55, 10.65] },
     { x: 3.11, y: [-5, -2.5], z: [-6.35] },
