@@ -4,7 +4,7 @@ import type { CharacterRig } from './CharacterModel.js';
 import { enableSkinnedCulling } from './SkinnedBounds.js';
 
 interface BodyEntry {
-  role: 'zee' | 'charra' | 'niobe' | 'lock' | 'roland' | 'architect' | 'seraph' | 'keymaker' | 'rama_kandra' | 'kamala' | 'trainman' | 'hamann' | 'west' | 'dillard';
+  role: 'zee' | 'charra' | 'niobe' | 'lock' | 'roland' | 'architect' | 'seraph' | 'keymaker' | 'rama_kandra' | 'kamala' | 'trainman' | 'hamann' | 'west' | 'dillard' | 'maggie' | 'colt' | 'link';
   fallback: THREE.Mesh[];
   materials: THREE.Material[];
   model?: THREE.Group;
@@ -36,7 +36,11 @@ export class DiggerBodies {
     entry.active = active;
     entry.park = park;
     entry.briefing = briefing;
-    if (!active) { if (entry.model) entry.model.visible = false; return; }
+    if (!active) {
+      if (entry.model) entry.model.visible = false;
+      if (entry.role === 'colt') entry.fallback.forEach(mesh => { mesh.visible = true; });
+      return;
+    }
     if (!entry.loading) {
       entry.loading = true;
       this.load(rig, entry).catch(error => console.warn(`${entry.role} detailed body could not load; retaining its fallback.`, error));
@@ -84,7 +88,7 @@ export class DiggerBodies {
       const material = object.material as THREE.Material, index = ['Skin', 'Dock cloth', 'Dock trousers'].indexOf(material.name);
       this.materials.add(material);
       if (index >= 0) object.material = entry.materials[index];
-      if (material.name === 'Dock bindings' && ['niobe', 'lock', 'roland', 'rama_kandra', 'kamala', 'trainman', 'hamann', 'west', 'dillard'].includes(entry.role)) {
+      if (material.name === 'Dock bindings' && ['niobe', 'lock', 'roland', 'rama_kandra', 'kamala', 'trainman', 'hamann', 'west', 'dillard', 'maggie', 'colt', 'link'].includes(entry.role)) {
         const bindings = entry.materials[1].clone() as THREE.MeshStandardMaterial; bindings.color.multiplyScalar(['rama_kandra', 'kamala', 'trainman'].includes(entry.role) ? .95 : .72);
         this.materials.add(bindings); object.material = bindings;
       }

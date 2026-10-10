@@ -2,6 +2,7 @@ import { FREEWAY_HANDOFF, freewayHandoffReady } from '@auto_matrix/shared';
 import { SOURCE_BRIEFING } from '@auto_matrix/shared';
 import { HAMMER_BRIEFING } from '@auto_matrix/shared';
 import { ZION_DEPLOYMENT } from '@auto_matrix/shared';
+import { MAGGIE_DISCOVERY } from '@auto_matrix/shared';
 import { PRIMARY_DEMOLITION } from '@auto_matrix/shared';
 import { TRUCK_HOOD } from '@auto_matrix/shared';
 import { DEUS_PACT, DIGGERS, diggerEye, diggerShield } from '@auto_matrix/shared';
@@ -230,6 +231,26 @@ function completeZionDeployment(h: ReturnType<typeof setup>, nextSequence: () =>
   walk(ZION_DEPLOYMENT.report); h.command('act'); portalFrames(h, Math.ceil(ZION_DEPLOYMENT.hopeLines.length * ZION_DEPLOYMENT.lineSeconds / .1) + 2);
   h.command('reflect:trust'); portalFrames(h, Math.ceil(ZION_DEPLOYMENT.lineSeconds / .1) + 2);
   walk(ZION_DEPLOYMENT.exit); assert.equal(state.step, 5); assert.equal(state.zionDeployment?.phase, 'done');
+}
+function completeMaggieDiscovery(h: ReturnType<typeof setup>, nextSequence: () => number) {
+  const scene = FILM_SCENE_BY_ID.m3_maggie_discovery, state = h.sandbox.life.film.state!;
+  const walk = (point: { x: number; z: number }) => {
+    const target = filmPosition(scene.set, point.x, point.z);
+    for (let frame = 0; frame < 500 && distance(h.actor().position, target) > .35; frame++) {
+      const dx = target.x - h.actor().position.x, dz = target.z - h.actor().position.z, gap = Math.hypot(dx, dz);
+      h.players.receiveInput('film-player', { x: dx / Math.max(1, gap), z: dz / Math.max(1, gap), yaw: Math.atan2(dx, dz), sequence: nextSequence() }); portalFrames(h, 1);
+    }
+    h.players.receiveInput('film-player', { x: 0, z: 0, yaw: h.actor().rotation, sequence: nextSequence() });
+    assert.ok(distance(h.actor().position, target) < .4);
+  };
+  h.command('act'); portalFrames(h, Math.ceil(MAGGIE_DISCOVERY.call.length * MAGGIE_DISCOVERY.lineSeconds / .1) + 2);
+  walk(MAGGIE_DISCOVERY.approach); assert.equal(state.step, 2);
+  for (const [point, lines] of [[MAGGIE_DISCOVERY.inspection, MAGGIE_DISCOVERY.bedside], [MAGGIE_DISCOVERY.emptyBed, MAGGIE_DISCOVERY.berthLines], [MAGGIE_DISCOVERY.report, MAGGIE_DISCOVERY.search]] as const) {
+    walk(point); h.command('act'); portalFrames(h, Math.ceil((lines.length * MAGGIE_DISCOVERY.lineSeconds + (point === MAGGIE_DISCOVERY.report ? MAGGIE_DISCOVERY.arrivalSeconds : 0)) / .1) + 2);
+  }
+  h.command('act'); portalFrames(h, Math.ceil(MAGGIE_DISCOVERY.returnLines.length * MAGGIE_DISCOVERY.lineSeconds / .1) + 2);
+  h.command('reflect:care'); portalFrames(h, Math.ceil(MAGGIE_DISCOVERY.lineSeconds / .1) + 2);
+  walk(MAGGIE_DISCOVERY.exit); assert.equal(state.step, 7); assert.equal(state.maggieDiscovery?.phase, 'done');
 }
 function completePortalStep(h: ReturnType<typeof setup>, index: number) {
   h.command('act');
@@ -3167,6 +3188,7 @@ test('the entire film route completes through interactions, driving and real com
     if (scene.id === 'm3_bane_questions') { completeBaneInquiry(h, () => ++sequence); h.command('next'); continue; }
     if (scene.id === 'm3_logos_plan') { completeHammerBriefing(h, () => ++sequence); h.command('next'); continue; }
     if (scene.id === 'm3_zion_prepare') { completeZionDeployment(h, () => ++sequence); h.command('next'); continue; }
+    if (scene.id === 'm3_maggie_discovery') { completeMaggieDiscovery(h, () => ++sequence); h.command('next'); continue; }
     if (scene.id === 'm2_trucks' && state.trucks?.road) {
       h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false, sequence: ++sequence });
       for (let frame = 0; frame < 110 && state.trucks.road.phase !== 'ready'; frame++) h.players.step(.05, true, h.tick());

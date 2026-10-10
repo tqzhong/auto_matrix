@@ -6,7 +6,7 @@ import { HAMMER_MEDICAL } from '@auto_matrix/shared';
 const patients = new WeakSet<CharacterRig>();
 
 /** A coma is already established in the save; reconnecting must not perform another fall. */
-export function poseHammerPatient(rig: CharacterRig, role?: 'neo' | 'bane'): void {
+export function poseHammerPatient(rig: CharacterRig, role?: 'neo' | 'bane' | 'maggie'): void {
   if (!role) {
     if (patients.delete(rig)) { rig.detail.rotation.set(0, 0, 0); rig.detail.position.set(0, .04, 0); }
     return;

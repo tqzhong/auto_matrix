@@ -1,3 +1,4 @@
+import { MAGGIE_DISCOVERY, HAMMER_MEDICAL, maggieDiscoveryLocked, maggieDiscoveryRoot } from '@auto_matrix/shared';
 import { sourcePortalLocked } from '@auto_matrix/shared';
 import { ORACLE_LAST, oracleLastLocked } from '@auto_matrix/shared';
 import { baneInquiryLocked } from '@auto_matrix/shared';
@@ -71,6 +72,7 @@ export class PlayerControls {
   private doorAim = false;
   private hammerAim = false;
   private deploymentAim = false;
+  private discoveryAim = false;
   private disarmAim = false;
   private breakoutAim = false;
   private doorViewOpening = false;
@@ -195,6 +197,7 @@ export class PlayerControls {
     this.motion.trainmanChase = undefined; this.motion.helGarage = undefined; this.motion.helElevator = undefined; this.motion.helDoorPush = undefined; this.motion.helDisarm = undefined; this.motion.helBreakout = undefined;
     this.motion.baneInquiry = undefined; this.motion.oracleLast = undefined; this.motion.oracleAbsorption = undefined;
     this.motion.hammerBriefing = undefined; this.motion.zionDeployment = undefined; this.deploymentAim = false;
+    this.motion.maggieDiscovery = undefined; this.discoveryAim = false;
     this.hammerAim = false;
     this.elevatorAim = false; this.elevatorViewAction = undefined; this.doorAim = false; this.doorViewOpening = false;
     this.motion.dockEvacuation = undefined; this.motion.shaftSeal = undefined;
@@ -207,6 +210,7 @@ export class PlayerControls {
     this.onViewChange?.(false);
   }
   release(): void {
+    this.motion.maggieDiscovery = undefined; this.discoveryAim = false;
     this.custodyBodies = undefined; this.motion.officeCustody = undefined;
     this.motion.truckWeapons = undefined; this.motion.truckHood = undefined;
     this.motion.trainmanChase = undefined; this.motion.helGarage = undefined; this.motion.helElevator = undefined; this.motion.helDoorPush = undefined; this.motion.helDisarm = undefined; this.motion.helBreakout = undefined;
@@ -274,6 +278,7 @@ export class PlayerControls {
         this.breakoutAim = this.firstPerson && this.motion.helBreakout?.phase === 'catching';
         this.hammerAim = this.firstPerson && Boolean(this.motion.hammerBriefing && ['planning', 'confirmation'].includes(this.motion.hammerBriefing.phase));
         this.deploymentAim = this.firstPerson && this.motion.zionDeployment?.phase === 'allocating';
+        this.discoveryAim = this.firstPerson && Boolean(this.motion.maggieDiscovery);
         this.morningAim = this.firstPerson && Boolean(this.motion.morning);
         this.signingAim = this.firstPerson && this.motion.workday?.role === 'neo' && this.motion.workday.phase === 'signing';
         this.lastStandAim = this.firstPerson && dockLastStandLocked(this.motion.dockLastStand);
@@ -521,6 +526,17 @@ export class PlayerControls {
       this.motion.attack = undefined; this.attackQueuedUntil = 0;
     }
     this.motion.hammerBriefing = hammerGesture;
+    const discoveryGesture = state.currentAction?.parameters.maggieDiscovery as MotionInput['maggieDiscovery'];
+    if (this.motion.maggieDiscovery && !discoveryGesture) { this.performing = false; this.cameraReady = false; }
+    if (discoveryGesture) {
+      if (!this.motion.maggieDiscovery || this.motion.maggieDiscovery.phase !== discoveryGesture.phase) {
+        this.yaw = this.movementYaw = state.rotation; this.pitch = ['covering', 'checking'].includes(discoveryGesture.phase) ? .55 : .1; this.cameraReady = false;
+        this.discoveryAim = this.firstPerson;
+      }
+      this.performing = true; this.localJump = this.networkJump = false; this.impulse = undefined;
+      this.motion.attack = undefined; this.attackQueuedUntil = 0;
+    }
+    this.motion.maggieDiscovery = discoveryGesture;
     const deploymentGesture = state.currentAction?.parameters.zionDeployment as MotionInput['zionDeployment'];
     if (this.motion.zionDeployment && !deploymentGesture) { this.performing = false; this.cameraReady = false; }
     if (deploymentGesture) {
@@ -1724,7 +1740,7 @@ export class PlayerControls {
         if (resetCamera || gesture.elapsed < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
         this.camera.lookAt(focus);
       }
-    } else if (this.motion.zionDeployment && zionDeploymentLocked(this.motion.zionDeployment) || this.motion.hammerBriefing && hammerBriefingLocked(this.motion.hammerBriefing)) {
+    } else if (this.motion.maggieDiscovery && maggieDiscoveryLocked(this.motion.maggieDiscovery) || this.motion.zionDeployment && zionDeploymentLocked(this.motion.zionDeployment) || this.motion.hammerBriefing && hammerBriefingLocked(this.motion.hammerBriefing)) {
       const focus = new THREE.Vector3(this.position.x, this.position.y + 1.7, this.position.z);
       if (this.firstPerson) {
         const head = group.getObjectByName('head'); head?.updateWorldMatrix(true, false);
@@ -2909,7 +2925,7 @@ export class PlayerControls {
 
   syncTrainmanChaseCamera(group: THREE.Group, environment?: THREE.Object3D): void {
     const oracleThirdPerson = !this.firstPerson && this.authoritative?.currentLocation === 'film_oracle_home';
-    if (!oracleThirdPerson && !this.motion.baneInquiry && !this.motion.hammerBriefing && !this.motion.zionDeployment && !this.motion.oracleLast && !this.motion.trainmanChase && !this.motion.helGarage && !this.motion.helElevator && !this.motion.helDoorPush && !this.motion.helDisarm && !this.motion.helBreakout) return;
+    if (!oracleThirdPerson && !this.motion.baneInquiry && !this.motion.hammerBriefing && !this.motion.maggieDiscovery && !this.motion.zionDeployment && !this.motion.oracleLast && !this.motion.trainmanChase && !this.motion.helGarage && !this.motion.helElevator && !this.motion.helDoorPush && !this.motion.helDisarm && !this.motion.helBreakout) return;
     if (!this.firstPerson) {
       if (!environment) return;
       environment.updateWorldMatrix(true, true);
@@ -2933,6 +2949,15 @@ export class PlayerControls {
       const point = ZION_DEPLOYMENT.screen, center = FILM_SETS.film_zion_defense_council.center;
       const direction = new THREE.Vector3(center.x + point.x, center.y - 1 + point.y, center.z + point.z).sub(eye);
       this.yaw = Math.atan2(direction.x, direction.z); this.pitch = Math.atan2(-direction.y, Math.hypot(direction.x, direction.z)); this.deploymentAim = false;
+    }
+    if (this.discoveryAim && this.motion.maggieDiscovery) {
+      const visit = this.motion.maggieDiscovery, center = FILM_SETS.film_hammer_deck.center;
+      const point = visit.phase === 'covering' ? { x: -8.65, y: 1.96,
+        z: MAGGIE_DISCOVERY.corpse.z + THREE.MathUtils.lerp(-.25, -2.75, THREE.MathUtils.smoothstep(visit.cover, 0, MAGGIE_DISCOVERY.coverSeconds)) }
+        : visit.phase === 'checking' ? { ...MAGGIE_DISCOVERY.berth, y: HAMMER_MEDICAL.mattressTop + .1 }
+          : { ...maggieDiscoveryRoot(visit, visit.phase === 'calling' ? 'ak' : visit.phase === 'searching' ? 'colt' : 'link'), y: 3.2 };
+      const direction = new THREE.Vector3(center.x + point.x, center.y - 1 + point.y, center.z + point.z).sub(eye);
+      this.yaw = Math.atan2(direction.x, direction.z); this.pitch = Math.atan2(-direction.y, Math.hypot(direction.x, direction.z)); this.discoveryAim = false;
     }
     if (this.hammerAim && this.motion.hammerBriefing && ['planning', 'confirmation'].includes(this.motion.hammerBriefing.phase)) {
       const point = HAMMER_BRIEFING.screen, center = FILM_SETS.film_hammer_deck.center;

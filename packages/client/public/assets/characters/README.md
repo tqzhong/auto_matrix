@@ -59,6 +59,21 @@ python3 scripts/build-digger-bodies.py --source output/characters/zion-council-s
 
 The builders fetch missing pinned CC0 source files into the selected cache. Review staging before copying the six GLBs; the head files require the checked-in atlas beside them. No Python, Blender, generation service or additional package is needed at game runtime. `tests/zion-deployment-render.test.mts` loads all four delivered head/body pairs, including Lock, and checks finite geometry, grounded soles, unchanged paused joints, actor separation and seven sampled furniture clearances. Native paused report and plan views were also reviewed. These checks do not prove arbitrary-pose clearance, movie likeness, stable frame performance or a continuous trilogy playthrough. Local images, exact checkpoint comparisons and remaining work are in `output/gameplay/trilogy-zion-deployment-2026-10-10/`.
 
+## Hammer medical crew
+
+`maggie-head.glb`, `colt-head.glb` and `link-head.glb` use distinct continuous head/ear/neck geometry fitted to the 1,024 × 1,536 front/profile atlas `hammer-crew-faces.png`. The built-in image tool generated that atlas; its exact prompt is saved in `hammer-crew-generation-prompt.txt`. These are approximate interpretations of Essie Davis, Peter Lamb and Harold Perrineau, not actor scans or verified likenesses. The matching three `*-body.glb` files bind continuous skin, long sleeves, trousers and boots to the existing supporting-character joints. They use the same pinned CC0 MakeHuman source and credits below. Runtime neck UVs sample the same atlas as the head. Colt and Link use the new head/body pairs only during the saved Maggie discovery; other performances retain their previously verified actors until their contact poses are adapted. Link keeps his own discovery body when the older shared principal-character asset finishes loading, and both actors restore their previous appearance on leaving the encounter.
+
+`EpilogueHeads.ts` adds Maggie's pulled-back hair and closed eyelids, Colt's short hair and Link's tied dreadlocks and beard. The saved medical investigation selects Maggie's horizontal patient pose and a real moving cover; it does not substitute a prop corpse. The medical room and active bedside inspections expand the film's brief report and investigation, and do not establish its exact filmed layout. Faces, hair, outfits, sheet folds and performances still require further visual refinement.
+
+Rebuild only these assets into staging using the existing Python/numpy toolchain:
+
+```sh
+python3 scripts/build-epilogue-heads.py --source output/characters/hammer-crew-source --output output/characters/hammer-crew-staging --roles maggie colt link
+python3 scripts/build-digger-bodies.py --source output/characters/hammer-crew-source --output output/characters/hammer-crew-staging --roles maggie colt link
+```
+
+The builders fetch missing pinned CC0 files into the selected source cache. Copy the reviewed six GLBs with their checked-in atlas; the atlas must remain beside them at runtime. No additional game dependency is required. `tests/maggie-discovery-render.test.mts` checks the delivered geometry, mattress contact, hand/linen contact and sampled cover clearance at five saved pull positions, plus cold first-person framing and subsequent mouse look. These finite checks do not establish arbitrary-pose clearance, film likeness or stable browser performance. Local staging, reference frames and exact test failures are retained in `output/gameplay/trilogy-maggie-discovery-2026-10-10/`.
+
 ## Editable Blender project
 
 The finishing script can generate `output/characters/matrix-cast.blend` (relative to the repository root), containing all four rigs, outfits, editable glasses/coat counterparts, packed materials and the frontal reference atlas. Generated Blender projects and intermediate meshes are not retained or committed. Local inspection captures under `output/` are not shipped with the game. In the game, glasses and coat panels are managed by `HeroModel.ts` so the cloth can keep responding to movement.

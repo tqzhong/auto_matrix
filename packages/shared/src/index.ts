@@ -112,3 +112,5 @@ export * from './constants/mobil-station.js';
 export * from './constants/trainman-chase.js';
 export * from './constants/hel-garage.js';
 export * from './constants/hel-standoff.js';
+
+export * from './constants/maggie-discovery.js';

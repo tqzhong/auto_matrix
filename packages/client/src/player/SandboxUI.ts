@@ -31,6 +31,7 @@ import { oracleLastActive, oracleLastLocked, oracleLastText } from '@auto_matrix
 import { baneInquiryActive, baneInquiryLocked, baneInquiryText } from '@auto_matrix/shared';
 import { hammerBriefingActive, hammerBriefingLocked, hammerBriefingText } from '@auto_matrix/shared';
 import { zionDeploymentActive, zionDeploymentLocked, zionDeploymentText } from '@auto_matrix/shared';
+import { maggieDiscoveryActive, maggieDiscoveryLocked, maggieDiscoveryText } from '@auto_matrix/shared';
 import { oracleAbsorptionActive, oracleAbsorptionLocked, oracleAbsorptionText } from '@auto_matrix/shared';
 import { TRAINMAN_CHASE, trainmanChaseActive, trainmanChaseCanAct, trainmanChaseText } from '@auto_matrix/shared';
 import { HEL_GARAGE, helGarageActive, helGarageText } from '@auto_matrix/shared';
@@ -414,6 +415,26 @@ export class SandboxUI {
         : phase === 'cover' ? 'WASD 贴住柱后 · X 闪避 · V 切换视角' : phase === 'running' ? 'WASD 移动 · Shift 奔跑 · G 翻越闸机 · V 切换视角'
           : acting ? 'G 操作 · 鼠标环顾 · V 切换视角' : '鼠标环顾 · V 切换视角 · 暂停保留进度';
       this.el('sandbox-job').style.width = phase === 'running' || phase === 'vaulting' ? `${(chase?.remaining ?? 0) / TRAINMAN_CHASE.pursuitSeconds * 100}%` : '0';
+      return;
+    }
+    if (maggieDiscoveryActive(journey)) {
+      const visit = journey.maggieDiscovery, text = maggieDiscoveryText(visit), finished = visit?.phase === 'done';
+      const blocked = Boolean(visit?.paused || visit?.unavailable);
+      const acting = !blocked && (finished || Boolean(step && filmStepActionReady(scene, step, player.position, player.isInMatrix, journey)));
+      document.getElementById('game-location')!.textContent = 'Hammer · 医疗舱';
+      document.getElementById('game-objective-copy')!.textContent = text;
+      this.el('sandbox-interact').classList.toggle('hidden', !acting);
+      this.el('sandbox-nearby').textContent = blocked ? '调查进度已保留' : finished ? '接回 Logos 上 Neo 的视角'
+        : visit?.phase === 'call' ? '接听 AK 的紧急报告' : visit?.phase === 'ready' ? '查看 Maggie，覆上床单'
+          : visit?.phase === 'empty' ? '查看 Bane 的空床' : visit?.phase === 'report' ? '听取全船搜查结果'
+            : visit?.phase === 'return' ? '听取返航与 EMP 风险争论' : visit?.phase === 'reflection' ? 'J 记录指挥责任的判断'
+              : visit?.phase === 'leaving' ? '离开医疗舱' : '观察调查现场';
+      if (maggieDiscoveryLocked(visit) || finished) {
+        this.el('sandbox-waypoint').textContent = ''; this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.add('oracle-request');
+        this.el('film-sequence-line').textContent = text;
+        this.el('film-sequence-hint').textContent = visit?.phase === 'reflection' ? 'J 记录判断 · V 切换视角'
+          : acting ? 'G 主动回应 · J 手记 · V 切换视角' : '鼠标观察 · V 切换视角 · 暂停保留调查';
+      }
       return;
     }
     if (zionDeploymentActive(journey)) {
