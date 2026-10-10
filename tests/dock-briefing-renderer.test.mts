@@ -6,6 +6,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DOCK_BRIEFING, FILM_SETS, dockBriefingGate, dockBriefingLift, dockBriefingRoot, type DockBriefing, type DockBriefingRole } from '@auto_matrix/shared';
 import { CharacterModels, type CharacterRig } from '../packages/client/src/agents/CharacterModel.js';
 import { DockBriefingRenderer } from '../packages/client/src/engine/DockBriefingRenderer.js';
+import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 
@@ -53,8 +54,101 @@ async function fixture(t: TestContext, delayed = false) {
   assert.ok(!rigs.niobe.hero && rigs.morpheus.hero, 'Niobe uses her own reality body; the existing Morpheus asset is retained');
   if (!delayed) for (const role of ['niobe', 'lock', 'roland']) assert.ok(rigs[role as DockBriefingRole].root.getObjectByName(`${role}-anatomical-body`), `inspect ${role}'s delivered body`);
   t.after(() => { renderer.dispose(); models.dispose(); globalThis.document = previous; });
-  return { rigs, root, renderer, center, pose, models, release: async () => { pending.forEach(resolve => resolve()); await new Promise(resolve => setImmediate(resolve)); } };
+  return { rigs, root, renderer, center, pose, models, world, release: async () => { pending.forEach(resolve => resolve()); await new Promise(resolve => setImmediate(resolve)); } };
 }
+
+test('the dock conversation camera keeps the actual speaker and player clear of the foreground captains', async t => {
+  const h = await fixture(t), previousWindow = globalThis.window, previousDocument = globalThis.document;
+  class InputTarget extends EventTarget { matches() { return false; } }
+  Object.assign(globalThis, { window: new InputTarget(), document: Object.assign(new InputTarget(), {
+    hidden: false, pointerLockElement: null, exitPointerLock() {}, createElement: previousDocument.createElement,
+  }) });
+  const camera = new THREE.PerspectiveCamera(57, 16 / 9, .5, 5000);
+  const controls = new PlayerControls(new InputTarget() as unknown as HTMLCanvasElement, camera, () => {}, () => {});
+  try {
+    for (const aspect of [.65, 16 / 9]) for (const z of [-1.355455288057783, 1.2]) for (const phase of ['council', 'roland', 'warning'] as const) {
+      const briefing: DockBriefing = { phase, elapsed: 1.335, escort: 5.6, approach: { x: 0, z, yaw: Math.PI } };
+      h.pose(briefing);
+      const state = h.world.agents.get('niobe')!;
+      Object.assign(state, { position: { x: h.center.x, y: h.center.y, z: h.center.z + z }, rotation: Math.PI, currentLocation: 'film_zion_personnel',
+        currentAction: { type: 'idle', parameters: { dockBriefing: { ...briefing, role: 'niobe' } }, startedAt: 0, duration: 1e9, progress: 0 } });
+      camera.aspect = aspect; controls.possess(state); controls.update(1 / 60, state, h.rigs.niobe.root, false);
+      h.pose(briefing); camera.updateWorldMatrix(true, false);
+      for (const role of ['niobe', phase === 'roland' ? 'roland' : 'lock'] as const) {
+        const rig = h.rigs[role], obstacles: THREE.Object3D[] = [];
+        for (const other of DOCK_BRIEFING.cast.filter(other => other !== role)) h.rigs[other].root.traverseVisible(object => {
+          if (object instanceof THREE.SkinnedMesh) object.skeleton.update();
+          if (object instanceof THREE.Mesh) obstacles.push(object);
+        });
+        for (const target of [rig.head.localToWorld(new THREE.Vector3(0, 0, .12)), rig.torso.localToWorld(new THREE.Vector3(0, 1, .17))]) {
+          const projected = target.clone().project(camera);
+          assert.ok(Math.abs(projected.x) < .95 && Math.abs(projected.y) < .95 && projected.z > -1 && projected.z < 1, `${role}/${phase}/${aspect}: head and chest must stay in frame`);
+          const ray = new THREE.Raycaster(camera.position, target.clone().sub(camera.position).normalize(), .1, camera.position.distanceTo(target) - .15);
+          const hit = ray.intersectObjects(obstacles, false)[0];
+          assert.ok(!hit, `${role}/${phase}/${aspect}/${z}: another captain (${hit?.object.name}) blocks the head or chest`);
+        }
+      }
+    }
+  } finally { controls.dispose(); Object.assign(globalThis, { window: previousWindow, document: previousDocument }); }
+});
+
+test('Roland wears a broad boat-neck knit over a pale undershirt instead of the shared wrap collar', async t => {
+  const h = await fixture(t), rig = h.rigs.roland;
+  assert.ok(!rig.root.getObjectByName('roland-wrap-collar'), 'the movie costume does not have the Lock-style diagonal wrap');
+  const shirt = rig.root.getObjectByName('roland-undershirt') as THREE.SkinnedMesh;
+  assert.ok(shirt?.isSkinnedMesh, 'the pale inner neckline must follow the same shoulders and neck');
+  const cloth = rig.root.getObjectByName('roland-work-top') as THREE.SkinnedMesh;
+  const material = cloth.material as THREE.MeshStandardMaterial, inner = shirt.material as THREE.MeshStandardMaterial;
+  assert.ok(material.color.r > material.color.g * 1.7 && material.color.b > material.color.g * 1.1, 'the knit has a muted wine hue');
+  assert.ok(inner.color.r > .3 && inner.color.g > .3 && inner.roughness > .9);
+  const positions = cloth.geometry.attributes.position;
+  for (const x of [0, -.24, .24]) {
+    let top = -Infinity;
+    for (let i = 0; i < positions.count; i++) if (Math.abs(positions.getX(i) - x) < .045 && positions.getZ(i) > .14) top = Math.max(top, positions.getY(i));
+    assert.ok(top > 3.05 && top < 3.23, `the wide opening must stay shallow across the upper chest at ${x}, got ${top}`);
+  }
+});
+
+test('Roland’s delivered knit covers his chest and forearms without swallowing fingers during his saved response', async t => {
+  const h = await fixture(t), rig = h.rigs.roland;
+  const sweater = rig.root.getObjectByName('roland-work-top') as THREE.SkinnedMesh;
+  const skin = rig.root.getObjectByName('roland-anatomical-body') as THREE.SkinnedMesh;
+  const joints = skin.geometry.attributes.skinIndex, weights = skin.geometry.attributes.skinWeight, fingers: number[] = [];
+  for (let i = 0; i < skin.geometry.attributes.position.count; i++) {
+    const influence = [0, 1, 2, 3].reduce((sum, n) => sum + (skin.skeleton.bones[joints.getComponent(i, n)].name.startsWith('finger') ? weights.getComponent(i, n) : 0), 0);
+    if (influence > .85) fingers.push(i);
+  }
+  assert.ok(fingers.length > 100);
+  const geometry = new THREE.BufferGeometry(), material = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide });
+  geometry.setIndex(sweater.geometry.index!.clone());
+  const cloth = new THREE.Mesh(geometry, material), ray = new THREE.Raycaster();
+  try {
+    for (const elapsed of [0, .85, 1.7, 2.55, 3.4]) {
+      h.pose({ phase: 'roland', elapsed, escort: 5.6 }); sweater.skeleton.update(); skin.skeleton.update();
+      const points = new Float32Array(sweater.geometry.attributes.position.count * 3);
+      for (let i = 0; i < points.length / 3; i++) points.set(rig.root.worldToLocal(sweater.localToWorld(sweater.getVertexPosition(i, new THREE.Vector3()))).toArray(), i * 3);
+      geometry.setAttribute('position', new THREE.BufferAttribute(points, 3)); geometry.computeBoundingSphere();
+      for (const x of [-.23, 0, .23]) for (const y of [2.35, 2.75, 2.95]) {
+        ray.set(new THREE.Vector3(x, y, 1.2), new THREE.Vector3(0, 0, -1));
+        assert.ok(ray.intersectObject(cloth, false).length, `${elapsed}: the chest has a hole at ${x},${y}`);
+      }
+      for (const elbow of rig.elbows) {
+        const point = rig.root.worldToLocal(elbow.localToWorld(new THREE.Vector3(0, -.35, 0)));
+        const direction = new THREE.Vector3(0, 0, 1).applyQuaternion(elbow.getWorldQuaternion(new THREE.Quaternion())).applyQuaternion(rig.root.quaternion.clone().invert());
+        ray.set(point.addScaledVector(direction, .4), direction.negate());
+        const hit = ray.intersectObject(cloth, false)[0];
+        assert.ok(hit && hit.distance < .4, `${elapsed}: sleeve does not cover the forearm`);
+      }
+      for (let n = 0; n < fingers.length; n += Math.ceil(fingers.length / 24)) {
+        const point = rig.root.worldToLocal(skin.localToWorld(skin.getVertexPosition(fingers[n], new THREE.Vector3())));
+        ray.set(point.clone().add(new THREE.Vector3(0, 0, 2)), new THREE.Vector3(0, 0, -1));
+        const distances = ray.intersectObject(cloth, false).map(hit => hit.distance);
+        const crossings = distances.filter((distance, i) => distance < 2 - .008 && (i === 0 || distance - distances[i - 1] > 1e-5));
+        assert.equal(crossings.length % 2, 0, `${elapsed}: a finger intersects the knit at ${point.toArray()}`);
+      }
+    }
+  } finally { geometry.dispose(); material.dispose(); }
+});
 
 test('the real boots share a visible cage deck through descent and a personnel floor during the saved conversation', async t => {
   const h = await fixture(t);

@@ -275,6 +275,9 @@ def main(source, output, role):
     if role == 'mifune':
         for name, color in [('APU woven vest', [.027, .025, .021]), ('APU wine collar', [.12, .028, .025])]:
             doc['materials'].append({'name': name, 'pbrMetallicRoughness': {'baseColorFactor': color + [1], 'metallicFactor': 0, 'roughnessFactor': .95}, 'doubleSided': True})
+    if role == 'roland':
+        doc['materials'].append({'name': 'Roland undershirt', 'pbrMetallicRoughness': {
+            'baseColorFactor': [.49, .475, .43, 1], 'metallicFactor': 0, 'roughnessFactor': .98}, 'doubleSided': True})
     if program:
         doc['materials'][4]['pbrMetallicRoughness']['baseColorFactor'] = [.66, .65, .59, 1] if role == 'architect' else [.74, .71, .61, 1]
         for name, color, roughness in [('Program shirt', [.80, .79, .73] if role == 'architect' else [.025, .030, .028], .91),
@@ -325,6 +328,11 @@ def main(source, output, role):
     if sleeved:
         neck_height = 3.42 - .33 * np.clip(1 - np.abs(x) / .27, 0, 1) * np.clip((z + .1) / .22, 0, 1)
         covered = np.minimum(neck_height - y, y - np.where(arms > .3, 2.29 if role == 'mifune' else 1.82, 1.97))
+    if role == 'roland':
+        # The captain's wine knit has a broad, shallow opening; Lock keeps
+        # his separate V-shaped woven wrap. A pale underlayer shows above it.
+        neck_height = 3.40 - .28 * np.exp(-(x / .39) ** 4) * np.clip((z + .1) / .22, 0, 1)
+        covered = np.minimum(neck_height - y, y - np.where(arms > .3, 1.82, 1.97))
     if program:
         # A modern suit opens onto a full shirt. Seraph's earlier Chinese
         # jacket closes at the throat; his park jacket opens onto a dark top.
@@ -334,6 +342,7 @@ def main(source, output, role):
         neck_height = 3.43 - .085 * np.exp(-(x / .19) ** 4) * np.clip((z + .1) / .22, 0, 1)
         covered = np.minimum(neck_height - y, y - np.where(arms > .3, 1.82, 1.88))
     skin_covered = np.minimum(3.44 - y, y - np.where(arms > .3, 1.82, 1.97)) if program else covered
+    if role == 'roland': skin_covered = np.minimum(neck_height + .044 - y, y - np.where(arms > .3, 1.82, 1.97))
     skin_p, skin_uv, skin_faces, skin_w = builder.trim_neckline(points, uv, faces, weights, y + skin_covered - .008, above=True)
     skin_p, skin_uv, skin_faces, skin_w = builder.trim_neckline(skin_p, skin_uv, skin_faces, skin_w, 1.96, above=True,
                                                               preserve=skin_w[:, arm_ids].sum(axis=1) > .3)
@@ -363,13 +372,18 @@ def main(source, output, role):
         vest[i, [0, 2]] = vest[i, [0, 2]] * (1 - blend) + radial * blend
     folds = (.003 * np.sin(y * 28 + np.arctan2(x, z) * 5) + .002 * np.sin(y * 43 - x * 17)) * np.clip((2.9 - y) / .6, 0, 1)
     vest += normal * folds[:, None]
-    if program:
+    if program or role == 'roland':
         # Section smoothing must not pull a jacket inside its anatomical
         # undershirt, especially beside the chest and shoulder blades.
         clearance = ((vest - points) * normal).sum(axis=1)
         vest += normal * np.maximum(.026 - clearance, 0)[:, None]
     vp, vu, vf, vw = builder.trim_neckline(vest, uv, faces, weights, vest[:, 1] + covered + .012)
     export(role + ('-tailored-jacket' if role == 'architect' else '-work-jacket' if role == 'keymaker' else '-traditional-top' if role == 'seraph' else '-work-top'), vp, vu, vf, vw, 1, 'matrix' if role == 'seraph' else 'dock' if role == 'niobe' else None)
+    if role == 'roland':
+        inner = vest - normal * .012
+        border = np.minimum(neck_height + .05 - y, y - neck_height + .10)
+        sp, su, sf, sw = builder.trim_neckline(inner, uv, faces, weights, inner[:, 1] + border)
+        export('roland-undershirt', sp, su, sf, sw, 5)
     if role == 'niobe':
         # She wears a burgundy long-sleeved sweater in the Hammer meeting.
         # Retain the sleeveless dock top as a separate scene wardrobe.
@@ -415,7 +429,7 @@ def main(source, output, role):
             ef.append([(j, j) for j in ids])
     export(role + '-sewn-bindings', np.array(ep), np.array(eu), ef, np.array(ew), 4, 'matrix' if role == 'seraph' else 'dock' if role == 'niobe' else None)
 
-    if sleeved and not program and not council and not crew and not apu:
+    if sleeved and not program and not council and not crew and not apu and role != 'roland':
         # Woven layered V collars and a diagonal wrap seam belong to Zion,
         # rather than a modern buttoned military uniform. Fit each strip to
         # the actual garment front and carry its neighboring skin weights.
