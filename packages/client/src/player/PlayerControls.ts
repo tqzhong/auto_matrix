@@ -1,3 +1,4 @@
+import { logosBaneBeat, logosBaneLocked, logosBaneRoot } from '@auto_matrix/shared';
 import { MAGGIE_DISCOVERY, HAMMER_MEDICAL, maggieDiscoveryLocked, maggieDiscoveryRoot } from '@auto_matrix/shared';
 import { sourcePortalLocked } from '@auto_matrix/shared';
 import { ORACLE_LAST, oracleLastLocked } from '@auto_matrix/shared';
@@ -73,6 +74,7 @@ export class PlayerControls {
   private hammerAim = false;
   private deploymentAim = false;
   private discoveryAim = false;
+  private logosAim = false;
   private disarmAim = false;
   private breakoutAim = false;
   private doorViewOpening = false;
@@ -198,6 +200,7 @@ export class PlayerControls {
     this.motion.baneInquiry = undefined; this.motion.oracleLast = undefined; this.motion.oracleAbsorption = undefined;
     this.motion.hammerBriefing = undefined; this.motion.zionDeployment = undefined; this.deploymentAim = false;
     this.motion.maggieDiscovery = undefined; this.discoveryAim = false;
+    this.motion.logosBane = undefined; this.logosAim = false;
     this.hammerAim = false;
     this.elevatorAim = false; this.elevatorViewAction = undefined; this.doorAim = false; this.doorViewOpening = false;
     this.motion.dockEvacuation = undefined; this.motion.shaftSeal = undefined;
@@ -211,6 +214,7 @@ export class PlayerControls {
   }
   release(): void {
     this.motion.maggieDiscovery = undefined; this.discoveryAim = false;
+    this.motion.logosBane = undefined; this.logosAim = false;
     this.custodyBodies = undefined; this.motion.officeCustody = undefined;
     this.motion.truckWeapons = undefined; this.motion.truckHood = undefined;
     this.motion.trainmanChase = undefined; this.motion.helGarage = undefined; this.motion.helElevator = undefined; this.motion.helDoorPush = undefined; this.motion.helDisarm = undefined; this.motion.helBreakout = undefined;
@@ -279,6 +283,7 @@ export class PlayerControls {
         this.hammerAim = this.firstPerson && Boolean(this.motion.hammerBriefing && ['planning', 'confirmation'].includes(this.motion.hammerBriefing.phase));
         this.deploymentAim = this.firstPerson && this.motion.zionDeployment?.phase === 'allocating';
         this.discoveryAim = this.firstPerson && Boolean(this.motion.maggieDiscovery);
+        this.logosAim = this.firstPerson && Boolean(this.motion.logosBane);
         this.morningAim = this.firstPerson && Boolean(this.motion.morning);
         this.signingAim = this.firstPerson && this.motion.workday?.role === 'neo' && this.motion.workday.phase === 'signing';
         this.lastStandAim = this.firstPerson && dockLastStandLocked(this.motion.dockLastStand);
@@ -526,6 +531,16 @@ export class PlayerControls {
       this.motion.attack = undefined; this.attackQueuedUntil = 0;
     }
     this.motion.hammerBriefing = hammerGesture;
+    const logosGesture = state.currentAction?.parameters.logosBane as MotionInput['logosBane'];
+    if (this.motion.logosBane && !logosGesture) { this.performing = false; this.cameraReady = false; }
+    if (logosGesture) {
+      if (!this.motion.logosBane || logosBaneBeat(this.motion.logosBane.encounter) !== logosBaneBeat(logosGesture.encounter)) {
+        this.yaw = this.movementYaw = state.rotation; this.pitch = .1; this.cameraReady = false; this.logosAim = this.firstPerson;
+      }
+      this.performing = logosBaneLocked(logosGesture.encounter);
+      this.localJump = this.networkJump = false; this.impulse = undefined; this.motion.attack = undefined; this.attackQueuedUntil = 0;
+    }
+    this.motion.logosBane = logosGesture;
     const discoveryGesture = state.currentAction?.parameters.maggieDiscovery as MotionInput['maggieDiscovery'];
     if (this.motion.maggieDiscovery && !discoveryGesture) { this.performing = false; this.cameraReady = false; }
     if (discoveryGesture) {
@@ -1740,6 +1755,21 @@ export class PlayerControls {
         if (resetCamera || gesture.elapsed < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
         this.camera.lookAt(focus);
       }
+    } else if (this.motion.logosBane) {
+      const center = FILM_SETS.film_logos_deck.center;
+      if (this.firstPerson) {
+        const head = group.getObjectByName('head'); head?.updateWorldMatrix(true, false);
+        const eye = head ? head.localToWorld((head.userData.cameraEye as THREE.Vector3 | undefined)?.clone() ?? new THREE.Vector3(0, .02, .23)) : new THREE.Vector3(this.position.x, this.position.y + 2.9, this.position.z);
+        const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
+        this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
+      } else {
+        const focus = new THREE.Vector3(this.position.x, this.position.y + 2.2, this.position.z), distance = this.camera.aspect < .85 ? 6.5 : 4.8;
+        const ideal = focus.clone().add(new THREE.Vector3(-Math.sin(this.yaw) * distance, 1.6 + Math.sin(this.pitch) * distance, -Math.cos(this.yaw) * distance));
+        ideal.x = THREE.MathUtils.clamp(ideal.x, center.x - 5.6, center.x + 5.6); ideal.y = Math.min(ideal.y, center.y + 5.1);
+        ideal.z = THREE.MathUtils.clamp(ideal.z, center.z - 33.8, center.z + 21.8);
+        if (resetCamera) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
+        this.cameraTarget.copy(focus); this.camera.lookAt(focus);
+      }
     } else if (this.motion.maggieDiscovery && maggieDiscoveryLocked(this.motion.maggieDiscovery) || this.motion.zionDeployment && zionDeploymentLocked(this.motion.zionDeployment) || this.motion.hammerBriefing && hammerBriefingLocked(this.motion.hammerBriefing)) {
       const focus = new THREE.Vector3(this.position.x, this.position.y + 1.7, this.position.z);
       if (this.firstPerson) {
@@ -2925,7 +2955,7 @@ export class PlayerControls {
 
   syncTrainmanChaseCamera(group: THREE.Group, environment?: THREE.Object3D): void {
     const oracleThirdPerson = !this.firstPerson && this.authoritative?.currentLocation === 'film_oracle_home';
-    if (!oracleThirdPerson && !this.motion.baneInquiry && !this.motion.hammerBriefing && !this.motion.maggieDiscovery && !this.motion.zionDeployment && !this.motion.oracleLast && !this.motion.trainmanChase && !this.motion.helGarage && !this.motion.helElevator && !this.motion.helDoorPush && !this.motion.helDisarm && !this.motion.helBreakout) return;
+    if (!oracleThirdPerson && !this.motion.logosBane && !this.motion.baneInquiry && !this.motion.hammerBriefing && !this.motion.maggieDiscovery && !this.motion.zionDeployment && !this.motion.oracleLast && !this.motion.trainmanChase && !this.motion.helGarage && !this.motion.helElevator && !this.motion.helDoorPush && !this.motion.helDisarm && !this.motion.helBreakout) return;
     if (!this.firstPerson) {
       if (!environment) return;
       environment.updateWorldMatrix(true, true);
@@ -2949,6 +2979,14 @@ export class PlayerControls {
       const point = ZION_DEPLOYMENT.screen, center = FILM_SETS.film_zion_defense_council.center;
       const direction = new THREE.Vector3(center.x + point.x, center.y - 1 + point.y, center.z + point.z).sub(eye);
       this.yaw = Math.atan2(direction.x, direction.z); this.pitch = Math.atan2(-direction.y, Math.hypot(direction.x, direction.z)); this.deploymentAim = false;
+    }
+    if (this.logosAim && this.motion.logosBane) {
+      const encounter = this.motion.logosBane.encounter, center = FILM_SETS.film_logos_deck.center;
+      const rescue = ['opening', 'climbing', 'checking', 'done'].includes(logosBaneBeat(encounter));
+      const root = logosBaneRoot(encounter, rescue ? 'trinity' : 'bane');
+      const target = new THREE.Vector3(center.x + root.x, center.y - 1 + root.y + 3.8, center.z + root.z);
+      const direction = target.sub(this.camera.position);
+      this.yaw = Math.atan2(direction.x, direction.z); this.pitch = Math.atan2(-direction.y, Math.hypot(direction.x, direction.z)); this.logosAim = false;
     }
     if (this.discoveryAim && this.motion.maggieDiscovery) {
       const visit = this.motion.maggieDiscovery, center = FILM_SETS.film_hammer_deck.center;

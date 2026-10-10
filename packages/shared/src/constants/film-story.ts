@@ -12,6 +12,7 @@ import { BANE_INQUIRY, baneInquiryLocked, baneInquiryRoot } from './bane-inquiry
 import { HAMMER_BRIEFING, hammerBriefingTarget } from './hammer-briefing.js';
 import { ZION_DEPLOYMENT, zionDeploymentTarget } from './zion-deployment.js';
 import { MAGGIE_DISCOVERY, maggieDiscoveryTarget } from './maggie-discovery.js';
+import { LOGOS_BANE, logosBaneLocked } from './logos-bane.js';
 import { SOURCE_BRIEFING, sourceBriefingTarget, sourceBriefingLocked } from './source-briefing.js';
 import { PRIMARY_DEMOLITION, primaryActive, primaryTarget, primaryFloor, primaryLocked } from './primary-demolition.js';
 import { TRINITY_TERMINAL, trinityTerminalActive, trinityTerminalLocked } from './trinity-terminal.js';
@@ -116,10 +117,11 @@ export interface BaneEncounter {
   phase: 'ready' | 'gun_warning' | 'gun_window' | 'grapple' | 'burning' | 'blind' | 'pipe_window' | 'counter' | 'defeated' | 'failed';
   elapsed: number; attempts: number; checkpoint: 'gun' | 'blind'; hits: number; focus: number; counters: number; lastStrike: number;
   pipeX?: number; pipeZ?: number;
+  physical?: import('./logos-bane.js').LogosBaneStaging;
 }
 export function baneLocked(journey: FilmJourney | undefined): boolean {
   return journey?.scene === 'm3_bane' && !journey.visiting && Boolean(journey.bane &&
-    ['gun_warning', 'gun_window', 'burning', 'pipe_window'].includes(journey.bane.phase));
+    logosBaneLocked(journey.bane));
 }
 export interface FilmJourney {
   version: 1; scene: string; step: number; actor: string; completed: string[];
@@ -484,10 +486,10 @@ export const FILM_SCENES: FilmScene[] = [
     think('援救、风险与指挥责任', '这是 Roland 的游戏反思。船员不知道 Bane 的真实身份，也无法保证 Neo 会获胜。', MAGGIE_DISCOVERY.report.x, MAGGIE_DISCOVERY.report.z),
     walk('离开医疗舱，保留搜查与人员记录', MAGGIE_DISCOVERY.exit.x, MAGGIE_DISCOVERY.exit.z),
   ], ['maggie', 'morpheus', 'link', 'colt']),
-  scene('m3_bane', 3, 'logos_deck', 'neo', 'Logos 上的 Bane', 'bane', 'bane', '驾驶舱突然断电。Trinity 下到工程舱检查保险丝；Neo 听见她呼救，走向下层，发现占据 Bane 身体的 Smith。现实中的肉身不能使用矩阵能力。', [
-    walk('从驾驶舱走进狭长下层，寻找 Trinity', 0, -6),
-    use('面对持电枪的 Bane', 'Trinity 在舱口下切断电路。趁电枪失去瞄准的瞬间闪避，近身反击。', 0, -6, 0),
-    use('打开工程舱舱口，带 Trinity 返回驾驶舱', 'Bane 已死。Neo 的双眼被电缆灼伤，却看见机器与 Smith 的金色轮廓；Trinity 将继续驾驶 Logos。', -6, 8, 1.6),
+  scene('m3_bane', 3, 'logos_deck', 'neo', 'Logos 上的 Bane', 'bane', 'bane', '电力故障迫使 Trinity 离开驾驶舱检查。Neo 听见货舱传来的呼喊，带上电枪走向她。这里是现实世界，肉身无法使用矩阵能力。', [
+    walk('沿狭长通道寻找 Trinity', LOGOS_BANE.approach.x, LOGOS_BANE.approach.z),
+    use('应对 Bane 的挟持，救出 Trinity', '先面对人质对峙，放下电枪并追问身份；断电后的近身交锋，需要实际闪避和反击。', LOGOS_BANE.approach.x, LOGOS_BANE.approach.z, 0),
+    use('打开下层舱口，等待 Trinity 爬回甲板', '眼伤不会恢复。Trinity 确认 Neo 还能继续，然后接过驾驶任务。', LOGOS_BANE.rescue.x, LOGOS_BANE.rescue.z, 0),
   ], ['trinity', 'bane']),
   scene('m3_hammer_tunnels', 3, 'hammer_route', 'niobe', 'Hammer 的狭窄航路', 'siege', 'chase', '主航道已被哨兵封死。Niobe 驾驶 Hammer 转入狭窄机械管线；Morpheus 操纵侧向推进器，Roland 与船员守住船身。', [
     use('核对主航道与机械管线', 'Hammer 无法在主航道减速转弯；Niobe 选择从侧面的机械管线返回锡安。', -5, 164, 1.5),

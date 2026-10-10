@@ -1,3 +1,4 @@
+import { logosBaneInjured, logosBaneLocked } from '@auto_matrix/shared';
 import { filmSceneForJourney } from '@auto_matrix/shared';
 import { upperDiggerActive, upperDiggerLocked } from '@auto_matrix/shared';
 import { diggersActive, diggersLocked } from '@auto_matrix/shared';
@@ -210,6 +211,7 @@ export class FilmSetRenderer {
   private baneCopy?: BaneCopyRenderer;
   private logosBane?: LogosBaneRenderer;
   private logosBanePhase?: string;
+  private logosBaneBlind = false;
   private revolutionsPrelude?: RevolutionsPreludeRenderer;
   private dockBriefing?: DockBriefingRenderer;
   private dockEvacuation?: DockEvacuationRenderer;
@@ -284,6 +286,7 @@ export class FilmSetRenderer {
         if (['film_metacortex_floor', 'film_office_ledge'].includes(set.id)) this.office = new OfficeSetRenderer(this.root, set);
         else if (set.id === 'film_white_rabbit_club') { this.club = new ClubSetRenderer(this.root); void this.club.ready.catch(error => console.error('夜店人群加载失败', error)); }
         else if (set.id === 'film_government_office' || set.id === 'film_government_roof') this.government = new GovernmentSetRenderer(this.root, set.id);
+        else if (sceneId === 'm3_bane' && set.id === 'film_logos_deck') { this.logosBane = new LogosBaneRenderer(this.root); void this.logosBane.ready.catch(error => console.error('金色 Smith 加载失败', error)); }
         else if (sceneId === 'm3_bane_questions' && set.id === 'film_hammer_deck') this.baneInquiry = new BaneInquiryRenderer(this.root);
         else if (sceneId === 'm3_maggie_discovery' && set.id === 'film_hammer_deck') this.maggieDiscovery = new MaggieDiscoveryRenderer(this.root);
         else if (sceneId === 'm3_logos_plan' && set.id === 'film_hammer_deck') this.hammerBriefing = new HammerBriefingRenderer(this.root);
@@ -335,7 +338,6 @@ export class FilmSetRenderer {
           this.build(set); this.batch();
           if (['m3_oracle_last', 'm3_oracle_absorbed'].includes(sceneId ?? '') && set.id === 'film_oracle_home') this.oracleLast = new OracleLastRenderer(this.root);
           if (sceneId === 'm3_oracle_absorbed' && set.id === 'film_oracle_home') this.oracleAbsorption = new OracleAbsorptionRenderer(this.root);
-          if (sceneId === 'm3_bane' && set.id === 'film_logos_deck') this.logosBane = new LogosBaneRenderer(this.root);
           if (sceneId === 'm3_oracle_absorbed' && set.id === 'film_oracle_home'
             || ['m3_bane_questions', 'm3_logos_plan', 'm3_emp'].includes(sceneId ?? '') && set.id === 'film_hammer_deck')
             this.revolutionsPrelude = new RevolutionsPreludeRenderer(this.root, sceneId as 'm3_oracle_absorbed' | 'm3_bane_questions' | 'm3_logos_plan' | 'm3_emp');
@@ -526,8 +528,8 @@ export class FilmSetRenderer {
     this.baneCopy?.update(journey, elapsed, player && journey?.actor === player.id ? player.position : undefined, set?.center);
     if (this.logosBane) {
       const encounter = journey?.scene === 'm3_bane' && !journey.visiting ? journey.bane : undefined;
-      this.logosBane.update(encounter, journey?.step ?? 0, elapsed);
-      this.logosBanePhase = encounter?.phase;
+      this.logosBane.update(encounter, journey?.step ?? 0, elapsed, this.phoneBodies);
+      this.logosBanePhase = encounter?.phase; this.logosBaneBlind = firstPerson && logosBaneInjured(encounter);
     }
     if (this.mobil) this.mobil.update(!journey?.visiting ? journey?.mobil : undefined, this.phoneBodies?.('neo'), this.phoneBodies?.('rama_kandra'));
     this.trainmanChase?.update(sceneId === 'm3_trainman_chase' && !journey?.visiting ? journey?.helChase?.performance : undefined);
@@ -673,7 +675,7 @@ export class FilmSetRenderer {
     if (journey?.scene === 'm2_burly' && !['ready', 'staff_ready', 'flight_ready'].includes(journey.burly?.phase ?? 'ready')) this.marker.visible = false;
     if (journey?.scene === 'm2_chateau' && journey.step === 0 && !['ready', 'landing'].includes(journey.chateau?.phase ?? 'ready')) this.marker.visible = false;
     if (journey?.scene === 'm2_mountain' && journey.step === 2 && !['ready', 'failed'].includes(journey.mountain?.phase ?? 'ready')) this.marker.visible = false;
-    if (journey?.scene === 'm3_bane' && journey.step === 1 && journey.bane?.phase !== 'ready') this.marker.visible = false;
+    if (journey?.scene === 'm3_bane' && (logosBaneLocked(journey.bane) || journey.step === 1 && journey.bane?.phase !== 'ready')) this.marker.visible = false;
     if (journey?.scene === 'm3_farewell' && journey.farewell && journey.farewell.phase !== 'ready') this.marker.visible = false;
     if (journey?.scene === 'm3_deus' && deusPactLocked(journey.deus)) this.marker.visible = false;
     if (['m3_rain', 'm3_surrender'].includes(journey?.scene ?? '') && smithFinaleLocked(journey?.smithFinale)) this.marker.visible = false;
@@ -807,7 +809,7 @@ export class FilmSetRenderer {
     if (this.logosBane) {
       const phase = this.logosBanePhase;
       const cut = phase && !['ready', 'gun_warning'].includes(phase);
-      const blind = phase && ['blind', 'pipe_window', 'counter', 'failed'].includes(phase);
+      const blind = this.logosBaneBlind;
       const color = blind ? 0x050a0c : cut ? 0x111b1e : 0x26333a;
       fog.color.setHex(color); fog.density = blind ? .016 : .004;
       (this.scene.background as THREE.Color).setHex(color);
@@ -2628,7 +2630,7 @@ export class FilmSetRenderer {
     this.catchSet?.dispose(); this.catchSet = undefined;
     this.zion?.dispose(); this.zion = undefined;
     this.baneCopy?.dispose(); this.baneCopy = undefined;
-    this.logosBane?.dispose(); this.logosBane = undefined; this.logosBanePhase = undefined;
+    this.logosBane?.dispose(); this.logosBane = undefined; this.logosBanePhase = undefined; this.logosBaneBlind = false;
     this.revolutionsPrelude?.dispose(); this.revolutionsPrelude = undefined;
     this.oracleLast?.dispose(); this.oracleLast = undefined;
     this.baneInquiry?.dispose(); this.baneInquiry = undefined;

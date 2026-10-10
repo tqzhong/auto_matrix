@@ -3983,30 +3983,41 @@ test('the entire film route completes through interactions, driving and real com
           assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`); continue;
         }
         if (scene.id === 'm3_bane' && index === 1) {
+          const until = (predicate: () => boolean, focus = false) => {
+            for (let frame = 0; frame < 400 && !predicate(); frame++) {
+              h.players.receiveInput('film-player', { x: 0, z: 0, yaw: actor.rotation, jump: false, sprint: false, focus, sequence: ++sequence });
+              h.players.step(.1, true, h.tick());
+            }
+            assert.ok(predicate(), `Logos stage ${state.bane?.phase}/${state.bane?.physical?.intro}`);
+          };
           h.command('act');
-          h.players.receiveInput('film-player', { x: 0, z: 0, yaw: actor.rotation, jump: false, sprint: false, focus: false, sequence: ++sequence });
-          for (let frame = 0; frame < 9; frame++) h.players.step(.1, true, h.tick());
-          assert.equal(state.bane?.phase, 'gun_window'); h.players.act('film-player', 'dodge', h.tick());
+          until(() => state.bane?.physical?.intro === 'lower_ready'); h.command('act');
+          until(() => state.bane?.physical?.intro === 'recognition_ready'); h.command('act');
+          until(() => state.bane?.phase === 'gun_window'); h.players.act('film-player', 'dodge', h.tick());
+          until(() => state.bane?.phase === 'grapple');
           const grapplingBane = h.world.agents.get('bane')!;
           actor.position = { ...grapplingBane.position, x: grapplingBane.position.x - 2 };
           actor.rotation = Math.atan2(grapplingBane.position.x - actor.position.x, grapplingBane.position.z - actor.position.z);
           h.players.act('film-player', 'attack', h.tick());
-          for (let frame = 0; frame < 4; frame++) h.players.step(.1, true, h.tick());
+          until(() => !state.bane?.physical?.strike);
           h.players.act('film-player', 'attack', h.tick());
-          for (let frame = 0; frame < 16; frame++) h.players.step(.1, true, h.tick());
-          assert.equal(state.bane?.phase, 'blind');
-          for (let frame = 0; frame < 19; frame++) {
-            h.players.receiveInput('film-player', { x: 0, z: 0, yaw: actor.rotation, jump: false, sprint: false, focus: true, sequence: ++sequence });
-            h.players.step(.1, true, h.tick());
-          }
-          assert.equal(state.bane?.phase, 'pipe_window'); h.players.act('film-player', 'dodge', h.tick());
+          until(() => state.bane?.phase === 'blind');
+          until(() => state.bane?.phase === 'pipe_window', true); h.players.act('film-player', 'dodge', h.tick());
+          until(() => state.bane?.phase === 'counter');
           const bane = h.world.agents.get('bane')!;
+          actor.position = { ...bane.position, x: bane.position.x - 2 };
           actor.rotation = Math.atan2(bane.position.x - actor.position.x, bane.position.z - actor.position.z);
           h.players.act('film-player', 'attack', h.tick());
-          for (let frame = 0; frame < 4; frame++) h.players.step(.1, true, h.tick());
+          until(() => !state.bane?.physical?.strike);
           actor.rotation = Math.atan2(bane.position.x - actor.position.x, bane.position.z - actor.position.z);
           h.players.act('film-player', 'attack', h.tick());
+          until(() => state.step === 2 && !state.bane?.physical?.strike);
           assert.equal(state.step, 2); continue;
+        }
+        if (scene.id === 'm3_bane' && index === 2) {
+          h.command('act');
+          for (let frame = 0; frame < 200 && state.bane?.physical?.rescue !== 'done'; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.bane?.physical?.rescue, 'done'); assert.equal(state.step, 3); continue;
         }
         if (scene.id === 'm2_mountain' && index === 2) {
           h.players.receiveInput('film-player', { x: 0, z: -1, yaw: Math.PI, jump: true, sprint: true, sequence: ++sequence });

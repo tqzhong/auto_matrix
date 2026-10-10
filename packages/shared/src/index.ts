@@ -40,6 +40,7 @@ export * from './constants/freeway-pickup.js';
 export * from './constants/garage.js';
 export * from './constants/hammer-flight.js';
 export * from './constants/logos-flight.js';
+export * from './constants/logos-bane.js';
 export * from './constants/farewell.js';
 export * from './constants/deus-pact.js';
 export * from './constants/smith-finale.js';

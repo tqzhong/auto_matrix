@@ -17,6 +17,14 @@ spec = importlib.util.spec_from_file_location('character_builder', Path(__file__
 builder = importlib.util.module_from_spec(spec); spec.loader.exec_module(builder)
 REVISION = builder.REVISION
 REFERENCES = {
+    'bane': {
+        'targets': {'macrodetails/caucasian-male-young': .85, 'macrodetails/caucasian-male-old': .15,
+                    'head/head-rectangular': .30, 'head/head-fat-decr': .12},
+        'row': 0, 'eye': [214, 408, 455], 'ys': [1235, 877, 734, 706, 654, 554, 455, 88],
+        'chin': -.35, 'skin': [.56, .36, .26], 'atlas': 'bane-face-reference.png',
+        'atlas_size': [1254, 1254], 'panel_top': 0, 'profile_anchor': 121, 'profile_y': 0,
+        'neck_sample': [265, 1040], 'cheek_sample': [941, 611], 'profile_ear': [488, 547],
+    },
     'oracle-revolutions': {
         'targets': {'macrodetails/african-female-old': .85, 'macrodetails/african-female-young': .15},
         'row': 0, 'eye': [239, 385, 267], 'ys': [625, 514, 438, 421, 404, 349, 267, 18],
@@ -192,7 +200,7 @@ def main(source, output, role):
         return base[skeleton['joints'][skeleton['bones'][name]['head']]].mean(axis=0)
 
     eye, neck = pivot('eye.L'), pivot('neck01')
-    if role in ['architect', 'seraph', 'keymaker', 'rama_kandra', 'kamala', 'trainman', 'hamann', 'west', 'dillard', 'maggie', 'colt', 'link']:
+    if role in ['architect', 'seraph', 'keymaker', 'rama_kandra', 'kamala', 'trainman', 'hamann', 'west', 'dillard', 'maggie', 'colt', 'link', 'bane']:
         # Keep and clip crossing faces rather than leaving jagged open edges
         # above the body's neck overlap.
         faces = [face for face, group in zip(faces, groups) if group == 'body' and max(base[[i for i, _ in face], 1]) > neck[1] - .1]
@@ -216,7 +224,7 @@ def main(source, output, role):
     radius = np.maximum(np.hypot(fitted[:, 0], fitted[:, 2] * 1.3), .001)
     fitted[:, 0] *= 1 - neck_blend * (1 - .135 / radius)
     fitted[:, 2] *= 1 - neck_blend * .35
-    if role in ['architect', 'seraph', 'keymaker', 'rama_kandra', 'kamala', 'trainman', 'hamann', 'west', 'dillard', 'maggie', 'colt', 'link']:
+    if role in ['architect', 'seraph', 'keymaker', 'rama_kandra', 'kamala', 'trainman', 'hamann', 'west', 'dillard', 'maggie', 'colt', 'link', 'bane']:
         # Fit the anatomical neck independently of the portrait's long bare
         # shoulder region. Clamping that projection flattens several rings
         # into a visible flange at the collar.

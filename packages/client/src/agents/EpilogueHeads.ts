@@ -6,7 +6,7 @@ import type { CharacterRig } from './CharacterModel.js';
 import type { MotionInput } from './CharacterMotion.js';
 
 interface HeadEntry {
-  role: 'oracle' | 'sati' | 'zee' | 'charra' | 'niobe' | 'lock' | 'roland' | 'architect' | 'seraph' | 'keymaker' | 'rama_kandra' | 'kamala' | 'trainman' | 'hamann' | 'west' | 'dillard' | 'maggie' | 'colt' | 'link';
+  role: 'oracle' | 'sati' | 'zee' | 'charra' | 'niobe' | 'lock' | 'roland' | 'architect' | 'seraph' | 'keymaker' | 'rama_kandra' | 'kamala' | 'trainman' | 'hamann' | 'west' | 'dillard' | 'maggie' | 'colt' | 'link' | 'bane';
   fallback: THREE.Group;
   model?: THREE.Group;
   face?: THREE.Mesh;
@@ -35,7 +35,7 @@ export class EpilogueHeads {
     const entry = this.entries.get(rig); if (!entry) return;
     // Mary Alice's appearance belongs to Revolutions. Earlier Oracle scenes
     // retain their existing head until their own likeness asset is authored.
-    entry.active = entry.role === 'colt' || entry.role === 'link' ? Boolean(input.maggieDiscovery) : entry.role === 'niobe' ? Boolean(input.realWorld) : entry.role !== 'oracle' || Boolean(input.oracleRevolutions || input.oracleRequest?.role === 'oracle' || input.oracleLast?.role === 'oracle' || input.oracleRestored || input.parkOutfit || input.epilogue?.kind === 'dawn');
+    entry.active = entry.role === 'bane' ? Boolean(input.logosBane) : entry.role === 'colt' || entry.role === 'link' ? Boolean(input.maggieDiscovery) : entry.role === 'niobe' ? Boolean(input.realWorld) : entry.role !== 'oracle' || Boolean(input.oracleRevolutions || input.oracleRequest?.role === 'oracle' || input.oracleLast?.role === 'oracle' || input.oracleRestored || input.parkOutfit || input.epilogue?.kind === 'dawn');
     entry.closed.value = input.oracleRestored ? 1 : entry.role === 'sati' && input.epilogue?.kind === 'reset' ? streetResetPose(input.epilogue).closedEyes
       : entry.role === 'charra' && input.upperDigger ? upperDiggerFall(input.upperDigger) : entry.role === 'maggie' && input.maggieDiscovery?.incident ? 1 : 0;
     if (entry.active && !entry.loading) {
@@ -67,7 +67,7 @@ export class EpilogueHeads {
     const material = face.material as THREE.MeshStandardMaterial;
     const digger = entry.role === 'zee' || entry.role === 'charra';
     const captain = ['niobe', 'lock', 'roland'].includes(entry.role);
-    const council = ['hamann', 'west', 'dillard', 'maggie', 'colt', 'link'].includes(entry.role);
+    const council = ['hamann', 'west', 'dillard', 'maggie', 'colt', 'link', 'bane'].includes(entry.role);
     const program = entry.role === 'architect' || entry.role === 'seraph' || entry.role === 'keymaker' || entry.role === 'rama_kandra' || entry.role === 'kamala' || entry.role === 'trainman';
     const atlas = metadata.atlasSize ?? [1254, 1254], origin = metadata.profileOrigin ?? [627, row * 627];
     const neck = metadata.neckSample ?? [.25, .445 + row * .5], cheek = metadata.cheekSample ?? [.697, .305 + row * .5];
@@ -124,7 +124,7 @@ export class EpilogueHeads {
     entry.face = face;
     entry.eyes = new THREE.Group(); entry.eyes.name = `${role}-eyes`; model.add(entry.eyes);
     const sclera = this.material(new THREE.MeshPhysicalMaterial({ color: '#c6b9a7', roughness: .3, clearcoat: .3 }));
-    const iris = this.material(new THREE.MeshStandardMaterial({ color: entry.role === 'roland' || entry.role === 'architect' || entry.role === 'trainman' || entry.role === 'hamann' || entry.role === 'dillard' ? '#536064' : '#352318', roughness: .48 }));
+    const iris = this.material(new THREE.MeshStandardMaterial({ color: entry.role === 'roland' || entry.role === 'architect' || entry.role === 'trainman' || entry.role === 'hamann' || entry.role === 'dillard' || entry.role === 'bane' ? '#536064' : '#352318', roughness: .48 }));
     const pupil = this.material(new THREE.MeshPhysicalMaterial({ color: '#080906', roughness: .19, clearcoat: .5 }));
     const sphere = this.geometry(new THREE.SphereGeometry(1, 24, 16));
     for (const side of [-1, 1]) {
@@ -151,14 +151,14 @@ export class EpilogueHeads {
   private groom(parent: THREE.Group, skin: THREE.BufferGeometry, role: HeadEntry['role']): void {
     const oracle = role === 'oracle', position = skin.attributes.position, normal = skin.attributes.normal, indices = skin.index!;
     const digger = role === 'zee' || role === 'charra', captain = ['niobe', 'lock', 'roland'].includes(role);
-    const council = ['hamann', 'west', 'dillard', 'maggie', 'colt', 'link'].includes(role);
+    const council = ['hamann', 'west', 'dillard', 'maggie', 'colt', 'link', 'bane'].includes(role);
     const program = role === 'architect' || role === 'seraph' || role === 'keymaker' || role === 'rama_kandra' || role === 'kamala' || role === 'trainman';
     const vertices: number[] = [], normals: number[] = [], colors: number[] = [], uvs: number[] = [], triangles: number[] = [], roots: THREE.Vector3[] = [], directions: THREE.Vector3[] = [];
     const point = new THREE.Vector3(), direction = new THREE.Vector3();
     const boundary = (x: number, z: number) => {
       const front = Math.max(0, Math.cos(Math.atan2(x, z + .04)));
       const ear = Math.exp(-(((z + .045) / .24) ** 4)) * THREE.MathUtils.smoothstep(Math.abs(x), .10, .19);
-      if (council) return Math.max(-.20 + front * (role === 'hamann' ? .47 : role === 'dillard' ? .42 : role === 'maggie' ? .37 : role === 'colt' ? .40 : role === 'link' ? .34 : .33), -.20 + .30 * ear);
+      if (council) return Math.max(-.20 + front * (role === 'hamann' ? .47 : role === 'dillard' ? .42 : role === 'maggie' ? .37 : role === 'colt' ? .40 : role === 'link' ? .34 : role === 'bane' ? .45 : .33), -.20 + .30 * ear);
       if (role === 'rama_kandra' || role === 'kamala' || role === 'trainman') return Math.max(-.20 + front * (role === 'rama_kandra' ? .51 : role === 'kamala' ? .405 : .40), -.20 + .29 * ear);
       if (program) return Math.max(-.20 + front * (role === 'architect' ? .45 : role === 'keymaker' ? .46 : .385)
         + (role === 'architect' || role === 'keymaker' ? .045 * Math.exp(-(((Math.abs(x) - .13) / .07) ** 2)) * front : 0), -.20 + .29 * ear);
@@ -229,7 +229,7 @@ export class EpilogueHeads {
       const index = (strand * 7919) % roots.length, root = roots[index], outward = directions[index];
       const sweep = new THREE.Vector3(Math.sign(root.x) * .22, .3, -1).addScaledVector(outward, -new THREE.Vector3(Math.sign(root.x) * .22, .3, -1).dot(outward)).normalize();
       const across = new THREE.Vector3().crossVectors(outward, sweep).normalize();
-      const length = role === 'lock' || role === 'niobe' ? .006 + (strand % 5) * .001 : oracle ? .012 + (strand % 7) * .003 : .015 + (strand % 11) * .002;
+      const length = role === 'lock' || role === 'niobe' || role === 'bane' ? .006 + (strand % 5) * .001 : oracle ? .012 + (strand % 7) * .003 : .015 + (strand % 11) * .002;
       const silver = oracle && strand % 7 === 0 || role === 'west' && strand % 4 === 0 || role === 'roland' && (Math.abs(root.x) > .15 || strand % 3 === 0) || role === 'keymaker' && strand % 6 === 0, tone = role === 'architect' || role === 'hamann' || role === 'dillard' ? .45 + (strand % 7) * .045 : silver ? .09 + (strand % 4) * .02 : oracle ? .016 : role === 'charra' ? .019 + (strand % 4) * .004 : .005;
       const start = strands.length / 3;
       for (let j = 0; j <= 5; j++) {

@@ -108,7 +108,8 @@ export class PlayerController {
       && this.sandbox.life.film.state.mobil?.phase !== 'stopped') return { error: '这个角色正在返程列车中，到站后可以接入。' };
     if (id === 'trinity' && interlude?.scene === 'm3_mobil_release' && ['exiting', 'approaching', 'embracing'].includes(interlude.mobil?.reunion?.phase ?? ''))
       return { error: 'Trinity 正在下车与 Neo 重逢，当前动作结束后可以接入。' };
-    if (interlude?.scene === 'm3_bane' && interlude.bane && interlude.bane.phase !== 'ready' && !interlude.completed.includes('m3_bane')
+    if (interlude?.scene === 'm3_bane' && !interlude.visiting && interlude.bane
+      && (interlude.bane.phase !== 'ready' || interlude.bane.physical && interlude.bane.physical.intro !== 'waiting') && !interlude.completed.includes('m3_bane')
       && id !== interlude.actor && ['bane', 'trinity'].includes(id)) return { error: '这个角色正在参与 Logos 船上的剧情交手，片段结束后可以接入。' };
     if (this.sandbox?.state.threats.some(t => t.character === id)) return { error: '这个角色正在剧情交手，结束后可以接入。' };
     if (id === 'agent_johnson' && interlude?.scene === 'm2_trucks' && interlude.trucks?.weapons && interlude.trucks.phase === 'duel') return { error: 'Johnson 正在参与车顶枪刀交锋，结束后可以接入。' };
@@ -205,6 +206,7 @@ export class PlayerController {
     this.sandbox?.life.film.hammerBriefing.frame(agent, 0, tick);
     this.sandbox?.life.film.zionDeployment.frame(agent, 0, tick);
     this.sandbox?.life.film.maggieDiscovery.frame(agent, 0, tick);
+    this.sandbox?.life.film.baneFrame(agent, { focus: false, yaw: agent.rotation }, 0, tick);
     this.sandbox?.life.film.oracleAbsorption.frame(agent, 0, tick);
     this.sandbox?.life.film.trainmanChase.frame(agent, 0, tick);
     this.sandbox?.life.film.helGarage.frame(agent, 0, tick);
@@ -272,6 +274,7 @@ export class PlayerController {
     }
     this.owners.delete(session.agentId); this.sessions.delete(socketId);
     this.sandbox?.life.film.reconcileCast();
+    if (agent) this.sandbox?.life.film.baneFrame(agent, { focus: false, yaw: agent.rotation }, 0, tick);
     if (agent) this.sandbox?.life.film.sentinelFrame(agent, { movement: 0, sprint: false, jump: false }, 0, tick);
     if (agent) this.sandbox?.life.film.interludeFrame(agent, 0, tick);
     if (agent && this.sandbox?.life.film.state?.scene === 'm2_stop_sentinels') this.sandbox.life.film.finaleFrame(agent, false, agent.rotation, 0, tick);

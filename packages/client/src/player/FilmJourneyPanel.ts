@@ -1,4 +1,5 @@
 import { maggieDiscoveryActive, maggieDiscoveryText } from '@auto_matrix/shared';
+import { logosBaneBeat, logosBaneRoot, logosBaneText } from '@auto_matrix/shared';
 import { catchLaunchReady, catchDistance } from '@auto_matrix/shared';
 import { filmSceneForJourney } from '@auto_matrix/shared';
 import { oracleRequestActive, oracleRequestLocked, oracleRequestText } from '@auto_matrix/shared';
@@ -397,19 +398,26 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
   }
   if (!journey.visiting && scene.id === 'm3_bane' && journey.bane) {
     const bane = journey.bane; const step = scene.steps[journey.step]; const current = player.id === journey.actor;
-    const close = current && Boolean(step && distance(player.position, filmStepPosition(scene, step)) <= 4);
+    const physical = bane.physical, beat = logosBaneBeat(bane), occupied = Boolean(physical?.paused || physical?.unavailable);
+    const target = logosBaneRoot(bane, 'bane');
+    const close = current && (beat === 'recognition_ready' ? distance(player.position, filmPosition(scene.set, target.x, target.z)) <= 7
+      : Boolean(step && distance(player.position, filmStepPosition(scene, step)) <= (journey.step === 2 ? 1.7 : 2.3)));
     const action = !current ? button('resume', '接回 Neo 的视角')
-      : bane.phase === 'failed' ? button('retry', `从${bane.checkpoint === 'blind' ? '失明后' : '断电前'}重试`)
+      : occupied ? `<p>${logosBaneText(bane)}</p>`
+        : bane.phase === 'failed' ? button('retry', `从${bane.checkpoint === 'blind' ? '失明后' : '断电前'}重试`)
         : !step ? button('next', '继续驶向机器城 →')
           : journey.step === 0 ? '<p>合上手记，亲自穿过驾驶舱到下层。</p>'
-            : journey.step === 1 && bane.phase === 'ready' ? button('act', '面对 Bane · G', !close)
-              : journey.step === 2 ? button('act', '打开舱口 · G', !close || journey.started !== undefined)
-                : '<p>合上手记，按场景提示闪避、还击，并在失明后按住 G 辨认金色轮廓。</p>';
+            : journey.step === 1 && ['waiting', 'lower_ready', 'recognition_ready', 'ready'].includes(beat) ? button('act', beat === 'lower_ready' ? '放下电枪 · G' : beat === 'recognition_ready' ? '追问身份 · G' : '面对 Bane · G', !close)
+              : journey.step === 2 && (!physical || physical.rescue === 'waiting') && !physical?.strike ? button('act', '打开舱口 · G', !close)
+                : physical && physical.intro !== 'done' ? '<p>对峙与动作进行中。可以合上手记，用 V 和鼠标观察。</p>'
+                  : physical && physical.rescue !== 'waiting' ? '<p>Trinity 正在返回甲板，救援会从当前动作继续。</p>'
+                    : '<p>合上手记，按场景提示闪避、还击，并在失明后按住 G 辨认金色轮廓。</p>';
     const focus = Math.round(bane.focus / BANE_ENCOUNTER.focusSeconds * 100);
     const status = bane.phase === 'blind' ? `金色感知 ${focus}% · 双眼伤势已记入存档`
       : bane.phase === 'failed' ? `失败检查点：${bane.checkpoint === 'blind' ? '失明后' : '断电前'} · 已尝试 ${bane.attempts + 1} 次`
-        : `Bane 交锋 · ${bane.phase === 'grapple' ? `还击 ${bane.hits}/2` : bane.phase === 'counter' ? `反击 ${bane.counters}/2` : '警惕电枪与铁管'}`;
-    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>Logos · 失明与金色视野</h3><p>Neo 视角 · 断电、伤势、反击与营救自动保存</p></header><article class="film-now"><div><h3>${step?.label ?? 'Trinity 已返回驾驶舱'}</h3><p>${journey.lastText}</p><p>${status}</p>${bane.phase === 'blind' ? `<div class="film-progress"><i style="width:${focus}%"></i></div>` : ''}<div class="film-controls">${action}<small>枪线亮起时 X 闪避；WASD 靠近并面向 Bane，用 F 还击；失明后按住 G，辨认金色轮廓再躲开铁管。暂停、断线和读档保留当前进度。</small></div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
+        : logosBaneText(bane) || `Bane 交锋 · ${bane.phase === 'grapple' ? `还击 ${bane.hits}/2` : bane.phase === 'counter' ? `反击 ${bane.counters}/2` : '警惕电枪与铁管'}`;
+    const title = physical && !physical.known ? 'Logos · 船舱对峙' : 'Logos · 失明与金色视野';
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>${title}</h3><p>Neo 视角 · 对峙、伤势、反击与营救自动保存</p></header><article class="film-now"><div><h3>${step?.label ?? 'Trinity 已返回甲板'}</h3><p>${journey.lastText}</p><p>${status}</p>${bane.phase === 'blind' ? `<div class="film-progress"><i style="width:${focus}%"></i></div>` : ''}<div class="film-controls">${action}<small>${physical && !physical.known ? '走近对峙位置，用 G 放下电枪和追问身份。放枪、放人与交流会按当前动作继续。' : '枪线亮起时 X 闪避；WASD 靠近并面向 Bane，用 F 还击；失明后按住 G，辨认金色轮廓再躲开铁管。'}暂停、断线和读档保留当前进度。</small></div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
   }
   if (!journey.visiting && scene.id === 'm3_farewell' && journey.farewell) {
     const farewell = journey.farewell; const step = scene.steps[journey.step]; const current = player.id === journey.actor;

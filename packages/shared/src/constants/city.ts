@@ -105,6 +105,10 @@ export interface PlayerInput {
 
 export function groundHeight(position: Vector3, matrix: boolean, structures: WorldStructure[] = []): number {
   const set = filmSetAt(position, matrix);
+  if (set?.id === 'film_logos_deck') {
+    const hatch = structures.find(s => s.id === 'film:logos-bane:hatch-floor');
+    if (hatch?.film && Math.abs(position.x - hatch.position.x) < hatch.film.width / 2 && Math.abs(position.z - hatch.position.z) < hatch.film.depth / 2) return hatch.position.y;
+  }
   if (set?.id === 'film_mobil_station') {
     const floor = structures.find(s => s.id === 'film:mobil:floor');
     if (floor?.film && position.y >= floor.position.y - .2 && Math.abs(position.x - floor.position.x) <= floor.film.width / 2
