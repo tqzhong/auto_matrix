@@ -43,7 +43,7 @@ function game() {
 }
 function fireJoint(h: ReturnType<typeof game>) {
   const state = h.state().diggers!;
-  h.frame(3, { focus: true }); assert.equal(state.phase, 'aiming');
+  h.frame(10, { focus: true }); assert.equal(state.phase, 'aiming');
   for (let i = 0; i < 200 && Math.abs(diggerShield(state).offset) < 5; i++) h.frame(.05);
   const eye = diggerEye(state), target = DIGGERS.knees[state.station], dx = target.x - eye.x, dz = target.z - eye.z;
   h.frame(.05, { yaw: Math.atan2(dx, dz), pitch: -Math.atan2(target.y - eye.y, Math.hypot(dx, dz)) });
@@ -85,7 +85,7 @@ test('pause, disconnect and restoring a loaded shot preserve phase, timing and c
   assert.deepEqual(h.state().diggers, state);
   h.players.possess('p', 'charra', h.tick() + 21);
   assert.deepEqual(h.actor().position, charra); assert.deepEqual(h.world.agents.get('zee')!.position, zee);
-  h.frame(2, { focus: true }); assert.equal(h.state().diggers?.phase, 'aiming');
+  h.frame(8, { focus: true }); assert.equal(h.state().diggers?.phase, 'aiming');
 });
 test('timeout at the second aperture retries without resurrecting the destroyed first leg', () => {
   const h = game(); h.walk(-40, 27); h.command('act'); fireJoint(h);
@@ -101,7 +101,7 @@ test('another player occupying Zee freezes the task without moving that player',
   assert.deepEqual(h.state().diggers, saved);
   const current = h.world.agents.get('zee')!;
   for (const field of ['position', 'rotation', 'health', 'controller', 'currentLocation'] as const) assert.deepEqual(current[field], zee![field]);
-  assert.match(h.command('retry'), /玩家/); h.players.release('other', h.tick()); h.frame(3, { focus: true });
+  assert.match(h.command('retry'), /玩家/); h.players.release('other', h.tick()); h.frame(10, { focus: true });
   assert.equal(h.state().diggers?.phase, 'aiming');
 });
 
@@ -113,4 +113,41 @@ test('the expanded drill bay has no old cargo or invisible perimeter and still b
   assert.equal(blocked(113, 40), true, 'the visible east wall remains solid');
   assert.equal(blocked(-24, -30), true, 'the west cargo still exists');
   assert.equal(blocked(60, -15), true, 'the machine itself remains solid');
+});
+
+test('Zee walks into loading position before the held reload can advance, and her approach survives a paused reconnect', () => {
+  const h = game(); h.walk(-40, 27);
+  const zee = h.world.agents.get('zee')!, before = { ...zee.position };
+  h.command('act');
+  assert.deepEqual(zee.position, before, 'arming the launcher teleports Zee to its breech');
+  h.frame(.5, { focus: true });
+  assert.equal(h.state().diggers!.load, 0, 'rounds load before the loader arrives');
+  const saved = structuredClone(h.sandbox.state), position = { ...zee.position };
+  h.frame(3, { focus: true }, false); assert.deepEqual(h.sandbox.state, saved);
+  h.players.release('p', h.tick()); h.sandbox.restore(saved); h.players.possess('p', 'charra', h.tick());
+  assert.deepEqual(zee.position, position, 'reconnect restarts the approach');
+  for (let i = 0; i < 200 && h.state().diggers!.phase === 'loading'; i++) {
+    const previous = { ...zee.position }; h.frame(.05, { focus: true });
+    assert.ok(Math.hypot(zee.position.x - previous.x, zee.position.z - previous.z) <= .23, 'the loader skips part of her route');
+    assert.ok(Math.hypot(zee.position.x - h.actor().position.x, zee.position.z - h.actor().position.z) >= 1.69, 'the loader crosses the gunner');
+    assert.equal(playerBlocked(zee.position, false, .7, h.sandbox.state.structures), false, 'the loader crosses a duct wall');
+  }
+  assert.equal(h.state().diggers!.phase, 'aiming');
+});
+
+test('an unavailable loader cannot be moved or keep loading rounds', () => {
+  const h = game(); h.walk(-40, 27); h.command('act'); h.frame(.5, { focus: true });
+  const zee = h.world.agents.get('zee')!; zee.status = 'dead'; zee.health = 0;
+  const saved = structuredClone(zee), state = structuredClone(h.state().diggers);
+  h.frame(5, { focus: true });
+  assert.deepEqual(h.state().diggers, state); assert.deepEqual(zee, saved);
+  assert.match(h.command('act'), /Zee/);
+});
+
+test('a legacy partly loaded save keeps its rounds and does not restart Zee approach', () => {
+  const h = game(); h.walk(-40, 27); h.command('act');
+  const state = h.state().diggers!; delete state.loader; state.load = .45;
+  h.sandbox.restore(structuredClone(h.sandbox.state)); h.players.release('p', h.tick()); h.players.possess('p', 'charra', h.tick());
+  assert.equal(h.state().diggers!.load, .45); assert.equal(h.state().diggers!.loader, undefined);
+  h.frame(2, { focus: true }); assert.equal(h.state().diggers!.phase, 'aiming');
 });

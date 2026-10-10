@@ -1,4 +1,4 @@
-import { DIGGERS, FILM_SETS, diggersActive, diggersLocked, diggersText, filmPosition, fireDigger, newDiggers,
+import { DIGGERS, FILM_SETS, diggersActive, diggersLocked, diggersText, diggerLoaderPose, filmPosition, fireDigger, newDiggers,
   stepDiggers, playerBlocked, type AgentState, type SandboxState } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
 
@@ -8,6 +8,11 @@ export class DiggersSystem {
   private get journey() { return this.sandbox().neoLife?.journey; }
   active(actor: AgentState): boolean { return diggersActive(this.journey) && this.journey!.actor === actor.id; }
   private occupied(): boolean { return Boolean(this.world.agents.get('zee')?.controller); }
+  private unavailable(): string | undefined {
+    if (this.occupied()) return 'Zee 正由另一位玩家控制，当前射击口的进度保持不变。';
+    const zee = this.world.agents.get('zee');
+    if (!zee || zee.status !== 'alive' || zee.health <= 0) return 'Zee 无法继续装弹，当前射击口的进度保持不变。';
+  }
   stage(tick: number, dt = 0): void {
     const journey = this.journey, prefix = 'film:diggers:';
     const body = 'film:digger-body';
@@ -39,10 +44,12 @@ export class DiggersSystem {
     const following = !diggersLocked(state);
     if (following && charra.currentAction) charra.currentAction.parameters.diggers = { ...state, role: 'charra' };
     else charra.currentAction = { type: 'idle', parameters: { resolved: true, diggers: { ...state, role: 'charra' } }, startedAt: tick, duration: 1e9, progress: 0 };
-    if (this.occupied()) return;
+    if (this.unavailable()) return;
+    const loader = diggerLoaderPose(state);
     const target = following ? { x: charra.position.x + Math.cos(charra.rotation) * 2.3 - Math.sin(charra.rotation) * 1.4, y: charra.position.y,
       z: charra.position.z - Math.sin(charra.rotation) * 2.3 - Math.cos(charra.rotation) * 1.4 }
-      : { x: charra.position.x - Math.sin(state.yaw) * 1.95, y: charra.position.y, z: charra.position.z - Math.cos(state.yaw) * 1.95 };
+      : { x: charra.position.x + Math.cos(state.yaw) * loader.x + Math.sin(state.yaw) * loader.z, y: charra.position.y,
+        z: charra.position.z - Math.sin(state.yaw) * loader.x + Math.cos(state.yaw) * loader.z };
     if (following) { target.x = Math.max(FILM_SETS.film_zion_hangar.center.x - 46.6, Math.min(FILM_SETS.film_zion_hangar.center.x - 38, target.x)); }
     target.y = FILM_SETS.film_zion_hangar.center.y;
     if (!following || zee.currentLocation !== 'film_zion_hangar' || !zee.currentAction?.parameters.diggers) zee.position = target;
@@ -61,7 +68,7 @@ export class DiggersSystem {
     }
     if (!following) zee.velocity = { x: 0, y: 0, z: 0 };
     zee.currentLocation = charra.currentLocation = 'film_zion_hangar'; zee.isInMatrix = charra.isInMatrix = false;
-    zee.rotation = following && Math.hypot(zee.velocity.x, zee.velocity.z) > .05 ? Math.atan2(zee.velocity.x, zee.velocity.z) : charra.rotation;
+    zee.rotation = following && Math.hypot(zee.velocity.x, zee.velocity.z) > .05 ? Math.atan2(zee.velocity.x, zee.velocity.z) : charra.rotation + (following ? 0 : loader.yaw);
     zee.targetPosition = null; zee.currentPath = [];
     zee.currentAction = { type: following && Math.hypot(zee.velocity.x, zee.velocity.z) > .05 ? 'move_to' : 'idle', parameters: { resolved: true, diggers: { ...state, role: 'zee' } }, startedAt: tick, duration: 1e9, progress: 0 };
   }
@@ -71,7 +78,8 @@ export class DiggersSystem {
       return false;
     }
     const journey = this.journey!, state = journey.diggers ??= newDiggers(); delete journey.started;
-    if (this.occupied()) { journey.lastText = 'Zee 正由另一位玩家控制，当前射击口的进度保持不变。'; return true; }
+    const unavailable = this.unavailable();
+    if (unavailable) { journey.lastText = unavailable; return true; }
     if (actor.controller && actor.status === 'alive') {
       if (state.phase === 'aiming' && Number.isFinite(input.yaw) && Number.isFinite(input.pitch)) {
         state.yaw = input.yaw!; state.pitch = Math.max(-.65, Math.min(.5, input.pitch!));
@@ -86,14 +94,14 @@ export class DiggersSystem {
   }
   handle(actor: AgentState, kind: string, tick: number, yaw: number, pitch: number): string | undefined {
     if (!this.active(actor) || !['attack', 'shoot', 'dodge', 'ability', 'ability2', 'travel'].includes(kind)) return;
-    if (this.occupied()) return 'Zee 正由另一位玩家控制，当前进度保持不变。';
+    const unavailable = this.unavailable(); if (unavailable) return unavailable;
     const state = this.journey!.diggers ??= newDiggers();
     if (kind === 'shoot') { fireDigger(state, yaw, pitch); this.stage(tick); }
     return this.journey!.lastText = diggersText(state);
   }
   command(actor: AgentState, target: string, tick: number): string {
     const journey = this.journey!, state = journey.diggers ??= newDiggers();
-    if (this.occupied()) return 'Zee 正由另一位玩家控制，当前射击口的进度保持不变。';
+    const unavailable = this.unavailable(); if (unavailable) return unavailable;
     if (target === 'retry' && (state.phase === 'failed' || actor.status !== 'alive')) {
       const retry = newDiggers(state.station, state.attempts + 1);
       if (state.station === 0 && state.damage === 1) { retry.phase = 'relocate'; retry.damage = 1; }
@@ -106,6 +114,10 @@ export class DiggersSystem {
         return '先沿防御通道走到标记的射击口，再按 G 架起发射器。';
       if (station !== state.station) journey.diggers = { ...newDiggers(station, state.attempts), total: state.total };
       journey.diggers!.phase = 'loading'; journey.diggers!.elapsed = 0;
+      const zee = this.world.agents.get('zee')!, yaw = journey.diggers!.yaw;
+      const dx = zee.position.x - center.x - point.x, dz = zee.position.z - center.z - point.z;
+      journey.diggers!.loader = { x: Math.cos(yaw) * dx - Math.sin(yaw) * dz, z: Math.sin(yaw) * dx + Math.cos(yaw) * dz,
+        yaw: zee.rotation - yaw, elapsed: 0 };
     }
     delete journey.started; this.stage(tick); return journey.lastText = diggersText(journey.diggers);
   }

@@ -24,6 +24,7 @@ export interface Diggers {
   phase: 'approach' | 'loading' | 'aiming' | 'rocket' | 'relocate' | 'collapsing' | 'done' | 'failed';
   station: 0 | 1; damage: number; load: number; rounds: number; remaining: number;
   elapsed: number; total: number; attempts: number; yaw: number; pitch: number;
+  loader?: { x: number; z: number; yaw: number; elapsed: number };
   shot?: { at: number; from: Vector3; to: Vector3; flight: number; result: 'joint' | 'screened' | 'miss' };
 }
 export type DiggerGesture = Diggers & { role: 'charra' | 'zee' };
@@ -37,6 +38,27 @@ export function diggersActive(journey?: FilmJourney): boolean {
 }
 export function diggersLocked(state?: Diggers): boolean {
   return Boolean(state && !['approach', 'relocate', 'done'].includes(state.phase));
+}
+export function diggerLoaderPose(state: Diggers) {
+  const setup = state.loader;
+  if (!setup) return { x: 0, z: -1.95, yaw: 0, walk: false, brace: 1, ready: true };
+  const side = Math.sign(setup.x) || 1;
+  const points = [[setup.x, setup.z], [side * 2.15, -2.75], [0, -2.75], [0, -1.95]];
+  let remaining = setup.elapsed, yaw = setup.yaw;
+  for (let i = 1; i < points.length; i++) {
+    const [x, z] = points[i - 1], [endX, endZ] = points[i], dx = endX - x, dz = endZ - z;
+    const seconds = Math.hypot(dx, dz) / 2.8, heading = Math.atan2(dx, dz);
+    if (remaining < seconds) {
+      const t = remaining / seconds, turn = Math.min(1, remaining / .3);
+      return { x: x + dx * t, z: z + dz * t,
+        yaw: yaw + Math.atan2(Math.sin(heading - yaw), Math.cos(heading - yaw)) * turn,
+        walk: true, brace: 0, ready: false };
+    }
+    remaining -= seconds; yaw = heading;
+  }
+  const turn = Math.min(1, remaining / .4), brace = Math.max(0, Math.min(1, (remaining - .4) / .45));
+  return { x: 0, z: -1.95, yaw: yaw + Math.atan2(Math.sin(-yaw), Math.cos(-yaw)) * turn,
+    walk: false, brace: brace * brace * (3 - 2 * brace), ready: brace === 1 };
 }
 export function diggerEye(state: Diggers): Vector3 {
   const p = DIGGERS.stations[state.station]; return { x: p.x + Math.sin(state.yaw) * .2, y: 4.01, z: p.z + Math.cos(state.yaw) * .2 };
@@ -104,6 +126,9 @@ export function stepDiggers(state: Diggers, seconds: number, focus = false): voi
     state.remaining = Math.max(0, state.remaining - dt);
     if (!state.remaining) { state.phase = 'failed'; return; }
   }
+  if (state.phase === 'loading' && state.loader && !diggerLoaderPose(state).ready) {
+    state.loader.elapsed += dt; return;
+  }
   if (state.phase === 'loading' && focus) {
     state.load = Math.min(1, state.load + dt / DIGGERS.loading);
     if (state.load >= 1) { state.phase = 'aiming'; state.elapsed = 0; }
@@ -119,7 +144,8 @@ export function diggersText(state?: Diggers): string {
   if (!state) return 'Charra 与 Zee 在船坞侧面的防御通道就位。走到第一处射击口，按 G 架起双管发射器。';
   switch (state.phase) {
     case 'approach': return '走到射击口，按 G 架起发射器；Zee 会在后方装弹。';
-    case 'loading': return `按住 G 配合 Zee 装入两发火箭 · ${Math.round(state.load * 100)}%`;
+    case 'loading': return !diggerLoaderPose(state).ready ? 'Zee 正绕到发射器后方。等她站稳，Charra 抬起发射器后，按住 G 装弹。'
+      : `按住 G 配合 Zee 装入两发火箭 · ${Math.round(state.load * 100)}%`;
     case 'aiming': return '鼠标瞄准钻机外侧裸露的支腿关节，左键 / T 发射。等哨兵横穿射线后再开火。';
     case 'rocket': return state.shot?.result === 'screened' ? '哨兵扑进火箭航迹！准备重新装弹。' : '火箭正在飞向钻机。';
     case 'relocate': return '第一条支腿已断，钻机仍在维持平衡。沿防御通道向北走到第二处射击口，按 G。';
