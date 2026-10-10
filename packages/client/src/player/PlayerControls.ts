@@ -1331,7 +1331,17 @@ export class PlayerControls {
       this.camera.near = .08; this.camera.updateProjectionMatrix();
       const offset = new THREE.Vector3(2.2, 3.3, 6.6).applyAxisAngle(new THREE.Vector3(0, 1, 0), this.yaw + Math.PI);
       this.camera.position.copy(this.position).add(offset);
+      this.camera.position.x = THREE.MathUtils.clamp(this.camera.position.x, center.x - 3.4, center.x + 3.4);
+      this.camera.position.z = Math.max(center.z + 167, this.camera.position.z);
       this.camera.position.z = Math.min(center.z + 189, this.camera.position.z);
+      if (this.camera.position.z > center.z + 184.9) {
+        const t = (center.z + 184.9 - this.position.z) / (this.camera.position.z - this.position.z);
+        const crossing = THREE.MathUtils.lerp(this.position.x, this.camera.position.x, t) - center.x;
+        if (Math.abs(crossing) > 1.9) this.camera.position.z = center.z + 184.2;
+      }
+      const x = (this.camera.position.x - center.x) / 4.08;
+      const ceiling = center.y + hammerHeight(175) + 1.1 + 1.4 * Math.sqrt(1 - x * x) - .3;
+      this.camera.position.y = Math.min(ceiling, this.camera.position.y);
       this.camera.lookAt(this.position.x, this.position.y + 1.45, this.position.z);
     } else if (this.motion.sourcePortal) {
       const portal = this.motion.sourcePortal, center = FILM_SETS.film_source_corridor.center;

@@ -57,6 +57,10 @@ export interface HammerFlight {
   // Absent in existing saves: they retain the original planar route until retry.
   // x and start-z are offsets/progress along the guided pipe, not world coordinates.
   maneuver?: { lift: number; vertical: number; bank: number; bankVelocity: number };
+  radio?: {
+    phase: 'intact' | 'approach' | 'cutting' | 'falling' | 'lost'; elapsed: number;
+    detached?: { position: HammerPoint; velocity: HammerPoint; yaw: number; pitch: number; roll: number };
+  };
 }
 
 const bends = [
@@ -87,7 +91,7 @@ export function hammerHeight(z: number): number {
 export function newHammerFlight(): HammerFlight {
   return { x: 0, z: HAMMER_ROUTE.start, speed: 0, lateral: 0, elapsed: 0,
     hull: 100, pursuit: 0, cooldown: 0, hits: 0, debris: 0, antennaLost: false, phase: 'riding',
-    maneuver: { lift: 0, vertical: 0, bank: 0, bankVelocity: 0 } };
+    maneuver: { lift: 0, vertical: 0, bank: 0, bankVelocity: 0 }, radio: { phase: 'intact', elapsed: 0 } };
 }
 
 type HammerPoint = { x: number; y: number; z: number };
@@ -147,6 +151,45 @@ export const HAMMER_BEAMS = [
   { distance: 85, y: -8.3, width: 24, height: 7, depth: 3.8 },
   { distance: 330, y: 5.8, width: 24, height: 7.6, depth: 3.8 },
 ] as const;
+
+export const HAMMER_RADIO = { approach: 1.25, cutting: 1.4, falling: 1.1 } as const;
+
+export function hammerRadioPose(flight: HammerFlight) {
+  const detached = flight.radio?.detached;
+  if (flight.maneuver && detached) {
+    const t = flight.radio!.phase === 'falling' ? flight.radio!.elapsed : HAMMER_RADIO.falling;
+    return { x: detached.position.x + detached.velocity.x * t, y: detached.position.y + detached.velocity.y * t - 4.9 * t * t,
+      z: detached.position.z + detached.velocity.z * t, yaw: detached.yaw + t * .8, pitch: detached.pitch + t * 1.3, roll: detached.roll - t * 2.2 };
+  }
+  return { ...hammerShipPose(flight), ...hammerShipPoint(flight, { x: 0, y: 2.65, z: 5.6 }) };
+}
+
+export function hammerRadioStatus(flight: HammerFlight): string {
+  if (flight.antennaLost) return '通讯已断';
+  if (flight.maneuver && flight.radio?.phase === 'approach') return '哨兵正扑向天线';
+  if (flight.maneuver && flight.radio?.phase === 'cutting') return '天线支架遭到切割';
+  return '通讯正常';
+}
+
+function stepHammerRadio(flight: HammerFlight, dt: number): void {
+  const radio = flight.radio;
+  if (!radio || radio.phase === 'lost') return;
+  if (radio.phase === 'intact') {
+    if (HAMMER_ROUTE.start - flight.z < 45) return;
+    radio.phase = 'approach';
+  }
+  radio.elapsed += dt;
+  if (radio.elapsed < HAMMER_RADIO[radio.phase]) return;
+  radio.elapsed -= HAMMER_RADIO[radio.phase];
+  if (radio.phase === 'approach') radio.phase = 'cutting';
+  else if (radio.phase === 'cutting') {
+    const pose = hammerShipPose(flight);
+    radio.phase = 'falling'; flight.antennaLost = true;
+    radio.detached = { position: hammerShipPoint(flight, { x: 0, y: 2.65, z: 5.6 }),
+      velocity: hammerRotate(hammerRouteFrame(HAMMER_ROUTE.start - flight.z), { x: flight.lateral + .7, y: flight.maneuver!.vertical + 3.5, z: -flight.speed + 10 }),
+      yaw: pose.yaw, pitch: pose.pitch, roll: pose.roll };
+  } else { radio.phase = 'lost'; radio.elapsed = 0; }
+}
 
 export function hammerFlightHint(flight: HammerFlight): string {
   if (!flight.maneuver) return '沿机械管线转弯，避开横梁 · 低速会让哨兵追上';
@@ -214,6 +257,7 @@ function maneuverBlocked(flight: HammerFlight): boolean {
 
 function stepHammerManeuver(flight: HammerFlight, input: DriveInput, dt: number): HammerFlight {
   const next = { ...flight, maneuver: { ...flight.maneuver! }, elapsed: flight.elapsed + dt, cooldown: Math.max(0, flight.cooldown - dt) };
+  if (flight.radio) next.radio = { ...flight.radio };
   next.speed = Math.max(0, Math.min(38, flight.speed + (input.brake ? -32 : input.throttle > 0 ? 19 : -7) * dt));
   const clamp = (value: number) => Math.max(-1, Math.min(1, value));
   next.lateral += (clamp(input.steer) * 8 - next.lateral) * (1 - Math.exp(-6 * dt));
@@ -221,7 +265,7 @@ function stepHammerManeuver(flight: HammerFlight, input: DriveInput, dt: number)
   next.maneuver.bankVelocity += (clamp(input.roll ?? 0) * 1.25 - next.maneuver.bankVelocity) * (1 - Math.exp(-8 * dt));
   next.x += next.lateral * dt; next.z = Math.max(HAMMER_ROUTE.finish, next.z - next.speed * dt);
   next.maneuver.lift += next.maneuver.vertical * dt; next.maneuver.bank += next.maneuver.bankVelocity * dt;
-  if (next.z <= 25) next.antennaLost = true;
+  if (!next.radio && next.z <= 25) next.antennaLost = true;
   if (maneuverBlocked(next)) {
     // Stop forward motion, but allow safe corrective thrust at the last station.
     next.z = flight.z;
@@ -233,6 +277,7 @@ function stepHammerManeuver(flight: HammerFlight, input: DriveInput, dt: number)
       next.hull = Math.max(0, next.hull - 26); next.speed *= .54; next.hits++; next.cooldown = .75;
     }
   }
+  stepHammerRadio(next, dt);
   next.pursuit = Math.max(0, Math.min(100, next.pursuit + (next.speed < 18 ? 2.6 + (18 - next.speed) * .075 : -5.5) * dt));
   if (next.pursuit >= 70 && flight.pursuit < 70) next.hull = Math.max(0, next.hull - 12);
   if (next.hull <= 0 || next.pursuit >= 100 || next.elapsed >= HAMMER_ROUTE.limit && next.z > HAMMER_ROUTE.finish) next.phase = 'wrecked';
