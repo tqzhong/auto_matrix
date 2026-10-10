@@ -41,8 +41,9 @@ test('Neo has his grown hair and unbandaged knit costume at the ship loss, with 
   body.traverse(object => { if (object instanceof THREE.Mesh && /Hair|hair|Groom|groom/.test((object.material as THREE.Material).name)) hair.push(object); });
   assert.ok(body.getObjectByName('pelvis'), 'the delivered Neo skeleton must finish loading');
   assert.ok(hair.length >= 2, `use the delivered scalp and hair meshes: ${hair.map(part => part.name).join(', ')}`);
-  const shirt = body.getObjectByName('Black_crew_neck') as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
-  const originalBump = shirt.material.bumpMap;
+  const shirt = body.getObjectByName('neo-logos-sweater') as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
+  const matrixShirt = body.getObjectByName('Black_crew_neck') as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
+  const originalBump = matrixShirt.material.bumpMap;
   const band = body.getObjectByName('neo-farewell-eye-band')!;
   const coatTail = body.getObjectByName('neo-coat-panel');
   renderer.update(0, undefined, 0, 0, journey);
@@ -50,13 +51,15 @@ test('Neo has his grown hair and unbandaged knit costume at the ship loss, with 
   assert.equal(band.visible, false, 'Neo is not yet blind in the second film');
   assert.equal(shirt.material.bumpMap?.name, 'neo-farewell-knit');
   assert.equal(shirt.material.color.getHex(), 0x393c3a);
+  assert.equal(shirt.visible, true); assert.equal(matrixShirt.visible, false);
   if (coatTail) assert.equal(coatTail.visible, false);
 
   journey.scene = 'm1_recovery'; journey.shipLoss = undefined;
   renderer.update(0, undefined, 0, 0, journey);
   assert.ok(hair.every(part => !part.visible), 'the first-film real body remains shaved');
   assert.equal(band.visible, false);
-  assert.equal(shirt.material.bumpMap, originalBump);
+  assert.equal(shirt.visible, false);
+  assert.equal(matrixShirt.material.bumpMap, originalBump);
 
   journey.scene = 'm3_farewell'; neo.currentLocation = 'film_logos_wreck'; renderer.updateAgent('neo', neo);
   renderer.update(0, undefined, 0, 0, journey);
@@ -65,5 +68,6 @@ test('Neo has his grown hair and unbandaged knit costume at the ship loss, with 
   journey.scene = 'm1_dojo'; neo.currentLocation = 'film_kungfu_dojo'; neo.isInMatrix = true; renderer.setWorld(true); renderer.updateAgent('neo', neo);
   renderer.update(0, undefined, 0, 0, journey);
   assert.ok(hair.every(part => part.visible)); assert.equal(band.visible, false);
-  assert.equal(shirt.material.bumpMap, originalBump, 'Matrix clothing must not keep the real-world knit');
+  assert.equal(shirt.visible, false); assert.equal(matrixShirt.visible, true);
+  assert.equal(matrixShirt.material.bumpMap, originalBump, 'Matrix clothing must retain its original texture');
 });

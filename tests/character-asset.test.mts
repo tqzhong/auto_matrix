@@ -1307,11 +1307,14 @@ test('Trinity resumes in her club costume and restores her jacket after leaving'
     }
     const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, clubClothes: true, realWorld: true };
     models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0);
-    assert.ok(jacket.visible);
+    assert.equal(jacket.visible, false, 'real-world Trinity replaces the leather silhouette with her knit costume');
+    const sweater = rig.root.getObjectByName('trinity-logos-sweater')!;
+    assert.ok(sweater.visible);
     assert.ok(rig.wardrobe.filter(part => part.mesh.userData.club).every(part => !part.mesh.visible));
     const patient = { ...input, performance: 'recover' as const, recovery: 2 };
     models.animate(rig, advanceMotion(motion, patient, 0), motion, patient, 0);
     assert.equal(jacket.visible, false, 'restoring the jacket must still respect the existing patient visibility rule');
+    assert.equal(sweater.visible, false, 'the new knit costume must also respect patient visibility');
   } finally { models.dispose(); }
 });
 
@@ -2007,12 +2010,14 @@ test('the crossing body plants its palm and clears the solid sill with both legs
 for (const id of ['neo', 'trinity', 'smith', 'morpheus']) {
 test(`shipped ${id} mesh has valid skinning and usable anatomical bones`, async () => {
   const asset = await loadGeometry(id); const bones = new Map<string, THREE.Bone>();
-  let triangles = 0;
+  let triangles = 0, logosTriangles = 0, replacedUpperTriangles = 0;
   asset.scene.traverse(object => {
     if (object instanceof THREE.Bone) bones.set(object.name, object);
     if (!(object instanceof THREE.SkinnedMesh)) return;
     const skin = object.geometry.getAttribute('skinWeight'); const joints = object.geometry.getAttribute('skinIndex');
     triangles += object.geometry.index!.count / 3;
+    if (object.userData.logosCostume) logosTriangles += object.geometry.index!.count / 3;
+    if (id === 'neo' ? /Tailored.coat.upper|Black.crew.neck/i.test(object.name) : id === 'trinity' && /Fitted.leather.jacket/i.test(object.name)) replacedUpperTriangles += object.geometry.index!.count / 3;
     for (let i = 0; i < skin.count; i++) {
       let sum = 0;
       for (let c = 0; c < 4; c++) {
@@ -2024,7 +2029,11 @@ test(`shipped ${id} mesh has valid skinning and usable anatomical bones`, async 
     }
   });
   for (const name of ['pelvis', 'spine', 'chest', 'head', 'shoulder_L', 'elbow_R', 'ankle_L', 'finger5-3_R']) assert.ok(bones.has(name), name);
-  assert.ok(triangles > 25000 && triangles < 160000);
+  assert.ok(triangles - logosTriangles > 25000 && triangles - logosTriangles < 160000, 'keep the original Matrix wardrobe within its geometry budget');
+  if (logosTriangles) {
+    assert.ok(logosTriangles < 24000, 'the optional knit costume needs a bounded geometry budget');
+    assert.ok(triangles - replacedUpperTriangles < 160000, 'check the selected real-world wardrobe instead of summing mutually hidden garments');
+  }
   assert.ok(asset.parser.json.extras.height >= 4.2 && asset.parser.json.extras.height <= 4.6);
 });
 
