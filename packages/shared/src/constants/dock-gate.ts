@@ -65,7 +65,9 @@ export function dockGateOpen(gate?: DockGate): number {
 }
 export function dockGateShip(gate?: DockGate) {
   const progress = gate?.phase === 'entering' ? Math.min(1, gate.elapsed / DOCK_GATE.entering) : gate?.phase === 'done' ? 1 : 0;
-  return { x: 12, y: 26 - 6 * progress, z: -114 + 128 * progress, roll: .65 * Math.sin(Math.PI * progress) };
+  // The bow faces -Z locally. Turn into the dock only after the complete stern clears the gate.
+  const turn = Math.max(0, Math.min(1, (progress - .62) / .38));
+  return { x: 12, y: 26 - 6 * progress, z: -114 + 128 * progress, roll: .65 * Math.sin(Math.PI * progress), yaw: Math.PI * (1 - turn * turn * (3 - 2 * turn)) };
 }
 export function fireDockGate(gate: DockGate, yaw: number, pitch: number): boolean {
   if (gate.phase !== 'aiming' || !Number.isFinite(yaw) || !Number.isFinite(pitch) || gate.ammo <= 0
