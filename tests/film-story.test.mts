@@ -3871,6 +3871,7 @@ test('the entire film route completes through interactions, driving and real com
         } else h.command('reflect:care');
       }
       else if (scene.id === 'm3_temple_defense' || scene.id === 'm3_temple_breach') {
+        if (scene.id === 'm3_temple_defense' && state.templeSeal?.phase === 'ready') h.command('act');
         if (step.kind === 'interact') h.command('act');
         const limit = scene.id === 'm3_temple_breach' ? 200 : 45;
         for (let frame = 0; frame < limit && state.step === index; frame++) {

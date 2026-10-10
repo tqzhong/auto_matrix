@@ -13,7 +13,7 @@ export const TEMPLE_DEFENSE = {
 
 /** The serialized name templeSeal is retained for old saves; sealed now means the artillery is secured. */
 export interface TempleDefense {
-  phase: 'running' | 'failed' | 'sealed'; remaining: number; lastTick: number; attempts: number;
+  phase: 'ready' | 'running' | 'failed' | 'sealed'; remaining: number; lastTick: number; attempts: number;
   turns?: [number, number]; elapsed?: number; mount?: 0 | 1; gripAge?: number; waiting?: number;
   paused?: string; unavailable?: string;
 }
@@ -22,20 +22,20 @@ export interface TempleBreach {
   paused?: string; unavailable?: string;
 }
 export interface TempleDefenseGesture {
-  role: string; phase: 'standing' | 'mounting' | 'orders' | 'breach' | 'waiting' | 'done';
+  role: string; phase: 'ready' | 'standing' | 'mounting' | 'orders' | 'breach' | 'waiting' | 'done';
   elapsed: number; mount?: 0 | 1; turn: number; grip: number;
 }
 export function newTempleDefense(tick: number, attempts = 0): TempleDefense {
-  return { phase: 'running', remaining: TEMPLE_DEFENSE.seconds, lastTick: tick, attempts, turns: [0, 0], elapsed: 0, waiting: 0 };
+  return { phase: 'ready', remaining: TEMPLE_DEFENSE.seconds, lastTick: tick, attempts, turns: [0, 0], elapsed: 0, waiting: 0 };
 }
 export function templeDefenseActive(journey?: FilmJourney): boolean {
   return Boolean(journey && !journey.visiting && ['m3_temple_defense', 'm3_temple_breach'].includes(journey.scene));
 }
 export function templeDefenseLocked(state?: TempleDefense, breach?: TempleBreach): boolean {
-  return state?.mount !== undefined || Boolean(breach && !['ready', 'done'].includes(breach.phase));
+  return !breach && state?.phase === 'ready' || state?.mount !== undefined || Boolean(breach && !['ready', 'done'].includes(breach.phase));
 }
 export function templeDefenseGestureLocked(gesture?: TempleDefenseGesture): boolean {
-  return Boolean(gesture && ['mounting', 'orders', 'breach', 'waiting'].includes(gesture.phase));
+  return Boolean(gesture && ['ready', 'mounting', 'orders', 'breach', 'waiting'].includes(gesture.phase));
 }
 export function templeWheelHands(index: number, turn: number): { x: number; y: number; z: number }[] {
   const wheel = TEMPLE_DEFENSE.wheel, angle = turn * wheel.angle;
@@ -60,6 +60,7 @@ export function templeDefenseText(state?: TempleDefense, breach?: TempleBreach):
     breach: '城顶被钻穿，岩屑落向城市。封井并没有阻止机器继续推进。', waiting: 'Link 与 Zee 留在人群边缘。Link：Neo，如果你能改变这一切，就请快一点。',
     done: '神庙里的等待仍在继续。按 G 接回机器城中的 Neo。' })[breach.phase];
   if (state?.phase === 'failed') return '炮位还未固定，入口准备时间已耗尽。按 J 重试；封井、EMP 和既有伤亡保留。';
+  if (state?.phase === 'ready') return '入口准备尚未开始。按 G 后，在 42 秒内赶到左右两处炮位，握住手轮并按住 G 固定炮架。';
   if (state?.mount !== undefined) return `按住 G 固定${state.mount ? '右' : '左'}侧炮架 · ${Math.round((state.turns?.[state.mount] ?? 0) * 100)}% · 松手停在当前位置`;
   if (state?.phase === 'sealed') return '两处重炮固定完成。走回 Link 与避难人群身边；入口仍敞开，军队等待下一次来袭。';
   return `赶在准备时间耗尽前固定两处炮架 · 剩余 ${Math.ceil(state?.remaining ?? TEMPLE_DEFENSE.seconds)} 秒。`;

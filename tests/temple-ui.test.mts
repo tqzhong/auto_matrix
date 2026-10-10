@@ -42,6 +42,14 @@ test('temple HUD separates held mounting from automatic city breach and restores
   assert.match(element('game-objective-copy').textContent, /按住 G.*45%/);
   assert.equal(element('#sandbox-interact').classList.contains('hidden'), true, 'holding uses the key, not a repeat action button');
   assert.equal(element('#sandbox-waypoint').textContent, '');
+  journey.step = 0; journey.templeSeal!.phase = 'ready'; delete journey.templeSeal!.mount;
+  player.position = filmPosition('film_zion_temple', 0, 30); ui.updateFilm(player, sandbox);
+  assert.equal(element('#sandbox-interact').classList.contains('hidden'), false, 'new entries can start from the arrival point');
+  assert.match(element('#sandbox-nearby').textContent, /开始炮位准备/);
+  assert.match(element('game-objective-copy').textContent, /尚未开始/);
+  assert.equal(element('#sandbox-waypoint').textContent, '');
+  journey.templeSeal!.paused = 'Link'; ui.updateFilm(player, sandbox);
+  assert.equal(element('#sandbox-interact').classList.contains('hidden'), true);
 });
 
 test('the temple journal blocks repeated start and scene skip during orders, breach and waiting', async () => {
@@ -59,6 +67,11 @@ test('the temple journal blocks repeated start and scene skip during orders, bre
   }
   journey.templeBreach!.phase = 'done'; journey.step = 2; assert.match(renderFilmJourney(player, sandbox), /data-target="film:next"/);
   journey.templeBreach!.paused = 'Zee'; assert.doesNotMatch(renderFilmJourney(player, sandbox), /data-target="film:next"/);
+  journey.scene = 'm3_temple_defense'; journey.actor = player.id = 'zee'; journey.step = 0; delete journey.templeBreach;
+  journey.templeSeal!.phase = 'ready'; player.position = filmPosition('film_zion_temple', 0, 30);
+  assert.match(renderFilmJourney(player, sandbox), /data-target="film:act"[^>]*>开始炮位准备/);
+  assert.doesNotMatch(renderFilmJourney(player, sandbox), /data-target="film:next"/);
+  journey.templeSeal!.paused = 'Link'; assert.doesNotMatch(renderFilmJourney(player, sandbox), /data-target="film:act"/);
   journey.scene = 'm3_farewell'; journey.actor = player.id = 'neo'; journey.step = 3;
   journey.farewell = { phase: 'still', elapsed: 0, total: 20 };
   assert.match(renderFilmJourney(player, sandbox), /锡安/, 'the farewell handoff must identify the intervening city scene');
