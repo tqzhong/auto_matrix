@@ -12,6 +12,28 @@ function setup() {
   return { root, renderer, journey };
 }
 
+test('Hammer crosses nose-first before banking inside the dock, and its saved heading resumes without a jump', t => {
+  const { root, renderer, journey } = setup(); t.after(() => renderer.dispose());
+  const ship = root.getObjectByName('gate-three-hammer')!;
+  journey.dockGate!.phase = 'entering';
+  for (const elapsed of [0, .5, 1.8, 2.7, 3]) {
+    journey.dockGate!.elapsed = elapsed; renderer.update(journey, 0); root.updateMatrixWorld(true);
+    const bow = ship.localToWorld(new THREE.Vector3(0, 0, -17));
+    const stern = ship.localToWorld(new THREE.Vector3(0, 0, 17));
+    assert.ok(bow.z > stern.z, `at ${elapsed}, the rear hatch leads the bow into the gate`);
+  }
+  journey.dockGate!.elapsed = 4.5; renderer.update(journey, 0); root.updateMatrixWorld(true);
+  const rotation = ship.quaternion.toArray(); renderer.update(journey, 800);
+  assert.deepEqual(ship.quaternion.toArray(), rotation, 'render time changes a paused heading');
+  const cold = setup(); t.after(() => cold.renderer.dispose()); cold.renderer.update(structuredClone(journey), 0);
+  assert.deepEqual(cold.root.getObjectByName('gate-three-hammer')!.quaternion.toArray(), rotation);
+  journey.dockGate!.phase = 'done'; renderer.update(journey, 0); root.updateMatrixWorld(true);
+  const docked = ship.matrixWorld.toArray();
+  journey.scene = 'm3_emp'; journey.emp = { firedAt: 0, elapsed: 0 }; renderer.update(journey, 0); root.updateMatrixWorld(true);
+  assert.ok(ship.matrixWorld.toArray().every((value, i) => Math.abs(value - docked[i]) < 1e-12),
+    'handing control to Link must not turn or move the ship');
+});
+
 test('steering the APU around sentinel dives leaves its actual feet clear of the dock rails', t => {
   const { root, renderer, journey } = setup(); t.after(() => renderer.dispose());
   journey.step = 1; delete journey.dockGate; journey.apu!.phase = 'riding'; journey.apu!.z = -40;

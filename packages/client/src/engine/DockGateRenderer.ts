@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { DOCK_EMP, DOCK_GATE, dockGateOpen, dockGateShip, dockEmpShip, dockPowerOffline, type FilmJourney } from '@auto_matrix/shared';
 import { DOCK_REUNION, dockEmpHullBase, dockHatchPose, dockReunionTread } from '@auto_matrix/shared';
+import { HammerDockModel } from './HammerDockModel.js';
 
 export class DockGateRenderer {
   readonly group = new THREE.Group();
@@ -10,6 +11,7 @@ export class DockGateRenderer {
   private weight = new THREE.Group();
   private cable = new THREE.Group();
   private ship = new THREE.Group();
+  private airframe: HammerDockModel;
   private hatch = new THREE.Group();
   private descent = new THREE.Group();
   private engines: THREE.MeshBasicMaterial;
@@ -76,22 +78,8 @@ export class DockGateRenderer {
       }
       this.batch(section);
     }
-    const hull = this.mesh(new THREE.CylinderGeometry(4.4, 3.4, 34, 16, 1, true), edge, this.ship); hull.rotation.x = Math.PI / 2;
-    const front = this.mesh(new THREE.CircleGeometry(3.4, 32), edge, this.ship); front.position.z = -17; front.rotation.y = Math.PI;
-    const rear = new THREE.Shape(); rear.absarc(0, 0, 4.4, 0, Math.PI * 2, false);
-    const opening = new THREE.Path(); opening.absarc(0, 0, DOCK_REUNION.hatch.radius, 0, Math.PI * 2, true); rear.holes.push(opening);
-    const rim = this.mesh(new THREE.ShapeGeometry(rear, 32), plate, this.ship); rim.position.z = 17.02;
-    this.box(plate, 0, 1.8, 1, 7.2, 2.2, 23, this.ship);
-    for (const side of [-1, 1]) this.box(edge, side * 3.45, 0, 15.7, .35, 4.7, 2.5, this.ship);
-    for (const side of [-1, 1]) {
-      this.box(edge, side * 5.7, 0, -5, 3, 3, 20, this.ship);
-      for (let z = -13; z < 12; z += 6) {
-        const pad = this.mesh(new THREE.TorusGeometry(1.55, .37, 8, 18), plate, this.ship); pad.position.set(side * 5.8, -.4, z); pad.rotation.x = Math.PI / 2;
-        const core = this.mesh(new THREE.CircleGeometry(1.15, 16), this.engines, this.ship); core.position.copy(pad.position); core.rotation.x = -Math.PI / 2;
-      }
-      for (let z = -14; z <= 12; z += 4) this.box(plate, side * 3.9, 2.7, z, .4, 1.1, 1.7, this.ship);
-    }
-    this.batch(this.ship); this.batch(this.fixed); this.batch(this.leaf); this.batch(this.weight);
+    this.airframe = new HammerDockModel(this.ship, metal, iron, this.engines);
+    this.batch(this.fixed); this.batch(this.leaf); this.batch(this.weight);
     this.ship.add(this.hatch); this.hatch.position.z = 17.04;
     const cover = this.mesh(new THREE.CylinderGeometry(DOCK_REUNION.hatch.radius, DOCK_REUNION.hatch.radius, .18, 32), edge, this.hatch);
     cover.rotation.x = Math.PI / 2;
@@ -141,7 +129,7 @@ export class DockGateRenderer {
     }
     this.ship.visible = Boolean(!journey?.visiting && (gate && ['opening', 'entering', 'done'].includes(gate.phase) && journey?.scene === 'm3_gate' || ['m3_emp', 'm3_dock_reunion'].includes(journey?.scene ?? '')));
     const ship = journey?.emp ? dockEmpShip(journey.emp.elapsed ?? DOCK_EMP.seconds) : dockGateShip(gate);
-    this.ship.position.set(ship.x, ship.y, ship.z); this.ship.rotation.z = ship.roll;
+    this.ship.position.set(ship.x, ship.y, ship.z); this.ship.rotation.set(0, journey?.emp ? 0 : dockGateShip(gate).yaw, ship.roll);
     if (journey?.emp) {
       const floor = journey.diggers ? 1 : 0;
       this.ship.position.y = Math.max(ship.y, dockEmpHullBase(ship.roll, floor));
@@ -172,7 +160,7 @@ export class DockGateRenderer {
         }
       }
     }
-    this.engines.color.setHex(dockPowerOffline(journey) ? 0x101b20 : 0xffc187);
+    this.engines.color.setHex(dockPowerOffline(journey) ? 0x101b20 : 0x9addf3);
     const shot = gate?.lastShot, age = shot ? gate!.total - shot.at : 10;
     this.spark.visible = Boolean(shot?.hit && age < .5);
     if (this.spark.visible) for (let i = 0; i < 24; i++) {
@@ -186,5 +174,5 @@ export class DockGateRenderer {
       this.tracer.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), delta.normalize());
     }
   }
-  dispose(): void { this.group.removeFromParent(); this.group.clear(); this.geometries.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); }
+  dispose(): void { this.airframe.dispose(); this.group.removeFromParent(); this.group.clear(); this.geometries.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); }
 }
