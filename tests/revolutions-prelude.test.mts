@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SCENES, FILM_SCENE_BY_ID, filmEntry, filmStepPosition, ORACLE_LAST, oracleLastLines, ORACLE_ABSORPTION, BANE_INQUIRY, HAMMER_BRIEFING, ZION_DEPLOYMENT, baneInquiryLines, type AgentState, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENES, FILM_SCENE_BY_ID, filmEntry, filmStepPosition, ORACLE_LAST, oracleLastLines, ORACLE_ABSORPTION, BANE_INQUIRY, HAMMER_BRIEFING, ZION_DEPLOYMENT, MAGGIE_DISCOVERY, baneInquiryLines, type AgentState, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -76,6 +76,16 @@ function setup() {
       actor().position = filmStepPosition(scene, scene.steps[3]); command('act'); frames(ZION_DEPLOYMENT.hopeLines.length * ZION_DEPLOYMENT.lineSeconds + .1);
       command('reflect:agency'); frames(ZION_DEPLOYMENT.lineSeconds + .1);
       actor().position = filmStepPosition(scene, scene.steps[4]); frames(.1);
+    } else if (sceneId === 'm3_maggie_discovery') {
+      actor().position = filmStepPosition(scene, scene.steps[0], state); command('act'); frames(MAGGIE_DISCOVERY.call.length * MAGGIE_DISCOVERY.lineSeconds + .1);
+      actor().position = filmStepPosition(scene, scene.steps[1], state); frames(.1);
+      for (const [step, lines] of [[2, MAGGIE_DISCOVERY.bedside], [3, MAGGIE_DISCOVERY.berthLines], [4, MAGGIE_DISCOVERY.search]] as const) {
+        actor().position = filmStepPosition(scene, scene.steps[step], state); command('act');
+        frames(lines.length * MAGGIE_DISCOVERY.lineSeconds + (step === 4 ? MAGGIE_DISCOVERY.arrivalSeconds : 0) + .1);
+      }
+      command('act'); frames(MAGGIE_DISCOVERY.returnLines.length * MAGGIE_DISCOVERY.lineSeconds + .1);
+      command('reflect:agency'); frames(MAGGIE_DISCOVERY.lineSeconds + .1);
+      actor().position = filmStepPosition(scene, scene.steps[6], state); frames(.1);
     } else {
     for (const step of scene.steps) {
       actor().position = filmStepPosition(scene, step);

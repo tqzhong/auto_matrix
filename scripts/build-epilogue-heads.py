@@ -138,6 +138,28 @@ REFERENCES = {
         'atlas_size': [1024, 1536], 'panel_top': 1024, 'profile_anchor': 92, 'profile_y': 0,
         'neck_sample': [256, 1510], 'cheek_sample': [729, 1300], 'profile_ear': [338, 230],
     },
+    'maggie': {
+        'targets': {'macrodetails/caucasian-female-young': 1, 'head/head-fat-decr': .22,
+                    'cheek/l-cheek-bones-incr': .16, 'cheek/r-cheek-bones-incr': .16},
+        'row': 0, 'eye': [201, 304, 202], 'ys': [498, 378, 335, 322, 310, 284, 202, 1],
+        'chin': -.34, 'skin': [.58, .36, .25], 'atlas': 'hammer-crew-faces.png',
+        'atlas_size': [1024, 1536], 'panel_top': 0, 'profile_anchor': 88, 'profile_y': 0,
+        'neck_sample': [256, 468], 'cheek_sample': [729, 300], 'profile_ear': [316, 218],
+    },
+    'colt': {
+        'targets': {'macrodetails/caucasian-male-young': 1, 'head/head-rectangular': .20},
+        'row': 1, 'eye': [201, 308, 193], 'ys': [499, 385, 327, 313, 301, 268, 193, 1],
+        'chin': -.35, 'skin': [.48, .29, .20], 'atlas': 'hammer-crew-faces.png',
+        'atlas_size': [1024, 1536], 'panel_top': 512, 'profile_anchor': 88, 'profile_y': 0,
+        'neck_sample': [256, 1008], 'cheek_sample': [732, 807], 'profile_ear': [325, 220],
+    },
+    'link': {
+        'targets': {'macrodetails/african-male-young': 1, 'head/head-fat-decr': .20},
+        'row': 2, 'eye': [200, 304, 193], 'ys': [500, 390, 336, 326, 312, 281, 193, 1],
+        'chin': -.35, 'skin': [.24, .13, .07], 'atlas': 'hammer-crew-faces.png',
+        'atlas_size': [1024, 1536], 'panel_top': 1024, 'profile_anchor': 88, 'profile_y': 0,
+        'neck_sample': [256, 1491], 'cheek_sample': [728, 1319], 'profile_ear': [323, 222],
+    },
 }
 
 
@@ -170,7 +192,7 @@ def main(source, output, role):
         return base[skeleton['joints'][skeleton['bones'][name]['head']]].mean(axis=0)
 
     eye, neck = pivot('eye.L'), pivot('neck01')
-    if role in ['architect', 'seraph', 'keymaker', 'rama_kandra', 'kamala', 'trainman', 'hamann', 'west', 'dillard']:
+    if role in ['architect', 'seraph', 'keymaker', 'rama_kandra', 'kamala', 'trainman', 'hamann', 'west', 'dillard', 'maggie', 'colt', 'link']:
         # Keep and clip crossing faces rather than leaving jagged open edges
         # above the body's neck overlap.
         faces = [face for face, group in zip(faces, groups) if group == 'body' and max(base[[i for i, _ in face], 1]) > neck[1] - .1]
@@ -194,7 +216,7 @@ def main(source, output, role):
     radius = np.maximum(np.hypot(fitted[:, 0], fitted[:, 2] * 1.3), .001)
     fitted[:, 0] *= 1 - neck_blend * (1 - .135 / radius)
     fitted[:, 2] *= 1 - neck_blend * .35
-    if role in ['architect', 'seraph', 'keymaker', 'rama_kandra', 'kamala', 'trainman', 'hamann', 'west', 'dillard']:
+    if role in ['architect', 'seraph', 'keymaker', 'rama_kandra', 'kamala', 'trainman', 'hamann', 'west', 'dillard', 'maggie', 'colt', 'link']:
         # Fit the anatomical neck independently of the portrait's long bare
         # shoulder region. Clamping that projection flattens several rings
         # into a visible flange at the collar.

@@ -20,11 +20,11 @@ test('Oracle corridor lighting follows the saved escape clock through pause with
   renderer.dispose(); assert.equal(root.children.length, 0);
 });
 
-test('Bane evidence, split routes and Maggie discovery each have scene-specific visual state', () => {
-  for (const scene of ['m3_bane_questions', 'm3_logos_plan', 'm3_maggie_discovery'] as const) {
+test('Bane evidence and split routes retain their own scene-specific visual state', () => {
+  for (const scene of ['m3_bane_questions', 'm3_logos_plan'] as const) {
     const root = new THREE.Group(); const renderer = new RevolutionsPreludeRenderer(root, scene);
     renderer.update(state(scene, 0), 0);
-    assert.ok(root.getObjectByName(scene === 'm3_bane_questions' ? 'bane-neural-monitor' : scene === 'm3_logos_plan' ? 'hammer-two-routes' : 'maggie-covered-stretcher'));
+    assert.ok(root.getObjectByName(scene === 'm3_bane_questions' ? 'bane-neural-monitor' : 'hammer-two-routes'));
     renderer.update(state(scene, 3), 2);
     renderer.dispose(); assert.equal(root.children.length, 0);
   }

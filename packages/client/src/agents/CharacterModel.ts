@@ -1,6 +1,7 @@
 import { poseOracleRequest } from './OracleRequestPerformance.js';
 import { poseBaneInquiry } from './BaneInquiryPerformance.js';
 import { poseHammerBriefing } from './HammerBriefingPerformance.js';
+import { poseMaggieDiscovery } from './MaggieDiscoveryPerformance.js';
 import { poseZionDeployment } from './ZionDeploymentPerformance.js';
 import { poseOracleLast } from './OracleLastPerformance.js';
 import { poseOracleAbsorption } from './OracleAbsorptionPerformance.js';
@@ -100,6 +101,8 @@ const HERO_LOOKS: Record<string, Look> = {
   dillard: { width: .96, shoulders: .52, waist: .40, hips: .47, skin: '#c2a38b', cloth: '#616151', leather: false, coat: false, hair: 'short', glasses: 'none' },
   bane: { width: 1.05, shoulders: .66, waist: .42, hips: .46, skin: '#b89883', cloth: '#536374', leather: false, coat: false, hair: 'short', glasses: 'none' },
   maggie: { width: .94, shoulders: .51, waist: .35, hips: .45, skin: '#b99c89', cloth: '#663b3b', leather: false, coat: false, hair: 'pixie', glasses: 'none' },
+  colt: { width: 1.02, shoulders: .61, waist: .4, hips: .45, skin: '#b69276', cloth: '#4d4940', leather: false, coat: false, hair: 'short', glasses: 'none' },
+  link: { width: .97, shoulders: .57, waist: .37, hips: .43, skin: '#654733', cloth: '#5d554a', leather: false, coat: false, hair: 'short', glasses: 'none' },
   roland: { width: 1.04, shoulders: .64, waist: .43, hips: .47, skin: '#c29982', cloth: '#56403a', leather: false, coat: false, hair: 'short', glasses: 'none' },
   seraph: { width: .94, shoulders: .58, waist: .34, hips: .4, skin: '#c5a27e', cloth: '#d7d4c6', leather: false, coat: false, hair: 'short', glasses: 'none' },
   keymaker: { width: 1.04, shoulders: .55, waist: .40, hips: .44, skin: '#c4a07d', cloth: '#514d40', leather: false, coat: false, hair: 'short', glasses: 'none' },
@@ -126,6 +129,7 @@ export interface CharacterRig {
   smallDetails: THREE.Group;
   oracleClothing?: { blouse: THREE.MeshStandardMaterial; trousers: THREE.MeshStandardMaterial; dry: THREE.Color[] };
   hero?: HeroRig;
+  medicalCrew?: boolean;
   zionVariant?: { hero?: HeroRig; fallback: THREE.Object3D[]; realWorld: boolean };
   weapons?: THREE.Group[];
   spoon?: SpoonModel;
@@ -302,6 +306,7 @@ export class CharacterModels {
     const digger = state.id === 'zee' || state.id === 'charra';
     const captain = ['niobe', 'lock', 'roland'].includes(state.id);
     const council = state.id === 'hamann' || state.id === 'west' || state.id === 'dillard';
+    const hammerCrew = ['maggie', 'colt', 'link'].includes(state.id);
     const program = state.id === 'architect' || state.id === 'seraph' || state.id === 'keymaker';
     const mobilCast = state.id === 'rama_kandra' || state.id === 'kamala' || state.id === 'trainman';
     const sealOperator = state.id === 'citizen_15';
@@ -350,6 +355,12 @@ export class CharacterModels {
       const texture = new THREE.TextureLoader().load('/assets/characters/zion-council-faces.png');
       texture.colorSpace = THREE.SRGBColorSpace; texture.flipY = false; texture.anisotropy = 8;
       texture.repeat.set(.035, .012); texture.offset.set(.232, (state.id === 'hamann' ? 480 : state.id === 'west' ? 1000 : 1510) / 1536 - .002); this.textures.add(texture);
+      skin.map = texture; skin.color.set('#ffffff'); skin.roughness = .76; skin.bumpScale = .0006;
+    }
+    if (hammerCrew) {
+      const texture = new THREE.TextureLoader().load('/assets/characters/hammer-crew-faces.png');
+      texture.colorSpace = THREE.SRGBColorSpace; texture.flipY = false; texture.anisotropy = 8;
+      texture.repeat.set(.035, .012); texture.offset.set(.232, (state.id === 'maggie' ? 468 : state.id === 'colt' ? 1008 : 1491) / 1536 - .002); this.textures.add(texture);
       skin.map = texture; skin.color.set('#ffffff'); skin.roughness = .76; skin.bumpScale = .0006;
     }
     if (program) {
@@ -657,7 +668,7 @@ export class CharacterModels {
       }
       if (state.id !== 'sati' && !digger && !sealOperator) this.mesh(elbow, this.cylinder, seams, [0, -0.56, 0], [0.13, 0.045, 0.14]);
       const handMaterial = look.leather ? black : skin;
-      const parentHand = state.id === 'oracle' || state.id.startsWith('hel_garage_guard_') || council || ['rama_kandra', 'kamala', 'trainman', 'seraph', 'bane', 'maggie', 'roland', 'morpheus', 'niobe'].includes(state.id);
+      const parentHand = state.id === 'oracle' || state.id.startsWith('hel_garage_guard_') || council || ['rama_kandra', 'kamala', 'trainman', 'seraph', 'bane', 'maggie', 'colt', 'link', 'roland', 'morpheus', 'niobe'].includes(state.id);
       const wristOffset = state.id === 'sati' ? .68 : parentHand ? .65 : 0;
       const hand = wristOffset ? this.joint(elbow, 0, -wristOffset) : elbow;
       if (parentHand) { hand.name = `${state.id === 'oracle' ? 'oracle-hand' : 'mobil-palm'}-${side < 0 ? 'R' : 'L'}`; if (state.id !== 'oracle') mobilWrists.push(hand); }
@@ -710,7 +721,8 @@ export class CharacterModels {
     const distant = this.makeDistant(look, root);
     const rig: CharacterRig = { root, detail, distant, torso, head, shoulders, elbows, fingers, hips, knees, ankles, tails, cloth: clothPanels, motion: newMotion(), smallDetails, rifle: state.id === 'film_soldier' };
     if (mobilWrists.length) rig.mobilWrists = mobilWrists;
-    if (state.id === 'niobe') rig.zionVariant = { fallback: [...detail.children], realWorld: !state.isInMatrix };
+    if (state.id === 'colt' || state.id === 'link') rig.medicalCrew = true;
+    if (state.id === 'niobe' || state.id === 'link') rig.zionVariant = { fallback: [...detail.children], realWorld: !state.isInMatrix && (!rig.medicalCrew || Boolean(state.currentAction?.parameters.maggieDiscovery)) };
     if (state.id === 'oracle') rig.oracleClothing = { blouse: cloth, trousers, dry: [cloth.color.clone(), trousers.color.clone()] };
     const guard = ['agent_jones', 'agent_brown', 'agent_johnson', 'agent_jackson', 'agent_thompson'].includes(state.id) ? state.id as 'agent_jones' | 'agent_brown' | 'agent_johnson' | 'agent_jackson' | 'agent_thompson' : undefined;
     const reloadedBase: Record<string, HeroId> = { niobe: 'trinity', ballard: 'morpheus', ghost: 'neo', soren: 'smith', link: 'morpheus', dozer: 'morpheus', tank: 'neo', cypher: 'neo', oracle_priestess: 'trinity', oracle_attendant: 'trinity', citizen_4: 'neo', citizen_14: 'neo' };
@@ -729,8 +741,8 @@ export class CharacterModels {
       }).catch(error => console.warn(`${state.id} asset could not load; retaining the procedural character.`, error));
     }
     batchStaticGeometry(detail, new Set(clothPanels.map(panel => panel.mesh))).forEach(geometry => this.geometries.add(geometry));
-    if (state.id === 'oracle' || state.id === 'sati' || state.id === 'zee' || state.id === 'charra' || state.id === 'niobe' || state.id === 'lock' || state.id === 'roland' || state.id === 'architect' || state.id === 'seraph' || state.id === 'keymaker' || state.id === 'rama_kandra' || state.id === 'kamala' || state.id === 'trainman' || state.id === 'hamann' || state.id === 'west' || state.id === 'dillard') this.epilogueHeads.track(rig, state.id);
-    if (state.id === 'zee' || state.id === 'charra' || state.id === 'niobe' || state.id === 'lock' || state.id === 'roland' || state.id === 'architect' || state.id === 'seraph' || state.id === 'keymaker' || state.id === 'rama_kandra' || state.id === 'kamala' || state.id === 'trainman' || state.id === 'hamann' || state.id === 'west' || state.id === 'dillard') this.diggerBodies.track(rig, state.id, skin, cloth, trousers);
+    if (state.id === 'oracle' || state.id === 'sati' || state.id === 'zee' || state.id === 'charra' || state.id === 'niobe' || state.id === 'lock' || state.id === 'roland' || state.id === 'architect' || state.id === 'seraph' || state.id === 'keymaker' || state.id === 'rama_kandra' || state.id === 'kamala' || state.id === 'trainman' || state.id === 'hamann' || state.id === 'west' || state.id === 'dillard' || state.id === 'maggie' || state.id === 'colt' || state.id === 'link') this.epilogueHeads.track(rig, state.id);
+    if (state.id === 'zee' || state.id === 'charra' || state.id === 'niobe' || state.id === 'lock' || state.id === 'roland' || state.id === 'architect' || state.id === 'seraph' || state.id === 'keymaker' || state.id === 'rama_kandra' || state.id === 'kamala' || state.id === 'trainman' || state.id === 'hamann' || state.id === 'west' || state.id === 'dillard' || state.id === 'maggie' || state.id === 'colt' || state.id === 'link') this.diggerBodies.track(rig, state.id, skin, cloth, trousers);
     enableSkinnedCulling(detail);
     return rig;
   }
@@ -862,7 +874,7 @@ export class CharacterModels {
     rig.detail.visible = near; rig.distant.visible = !near;
     if (!near) return;
     if (rig.zionVariant) {
-      const variant = rig.zionVariant, realWorld = Boolean(input.realWorld);
+      const variant = rig.zionVariant, realWorld = Boolean(input.realWorld) && (!rig.medicalCrew || Boolean(input.maggieDiscovery));
       if (variant.realWorld !== realWorld) {
         variant.realWorld = realWorld; variant.fallback.forEach(child => { child.visible = realWorld; });
         rig.weapons?.forEach(gun => gun.removeFromParent()); rig.weapons = undefined; rig.weaponStyle = undefined;
@@ -1159,6 +1171,7 @@ export class CharacterModels {
       poseBaneInquiry(rig, input.baneInquiry);
       poseHammerBriefing(rig, input.hammerBriefing);
       poseZionDeployment(rig, input.zionDeployment);
+      poseMaggieDiscovery(rig, input.maggieDiscovery);
       return;
     }
     rig.torso.position.y = pose.hipHeight;
@@ -1272,7 +1285,8 @@ export class CharacterModels {
     if (armed && helPistol && input.helDanceDoor === undefined && !input.helDisarm) poseHelPistol(rig, input.aimPitch);
     poseHelDisarm(rig, input.helDisarm);
     poseHelBreakout(rig, input.helBreakout);
-    this.diggerBodies.update(rig, true, Boolean(input.parkOutfit || input.epilogue?.kind === 'dawn'), Boolean(input.hammerBriefing));
+    poseMaggieDiscovery(rig, input.maggieDiscovery);
+    this.diggerBodies.update(rig, !rig.medicalCrew || Boolean(input.maggieDiscovery), Boolean(input.parkOutfit || input.epilogue?.kind === 'dawn'), Boolean(input.hammerBriefing));
   }
 
   refreshFarewellContact(rig: CharacterRig, gesture: NonNullable<MotionInput['farewell']>, normal?: THREE.Vector3, up?: THREE.Vector3): void {

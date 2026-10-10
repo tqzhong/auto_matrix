@@ -82,6 +82,7 @@ export interface MotionInput {
   baneInquiry?: import('@auto_matrix/shared').BaneInquiryGesture;
   hammerBriefing?: import('@auto_matrix/shared').HammerBriefingGesture;
   zionDeployment?: import('@auto_matrix/shared').ZionDeploymentGesture;
+  maggieDiscovery?: import('@auto_matrix/shared').MaggieDiscoveryGesture;
   oracleAbsorption?: import('@auto_matrix/shared').OracleAbsorptionGesture;
   trainmanChase?: import('@auto_matrix/shared').TrainmanChaseGesture;
   helGarage?: import('@auto_matrix/shared').HelGarageGesture;

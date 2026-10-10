@@ -11,6 +11,7 @@ import { ORACLE_ABSORPTION, oracleAbsorptionLocked } from './oracle-absorption.j
 import { BANE_INQUIRY, baneInquiryLocked, baneInquiryRoot } from './bane-inquiry.js';
 import { HAMMER_BRIEFING, hammerBriefingTarget } from './hammer-briefing.js';
 import { ZION_DEPLOYMENT, zionDeploymentTarget } from './zion-deployment.js';
+import { MAGGIE_DISCOVERY, maggieDiscoveryTarget } from './maggie-discovery.js';
 import { SOURCE_BRIEFING, sourceBriefingTarget, sourceBriefingLocked } from './source-briefing.js';
 import { PRIMARY_DEMOLITION, primaryActive, primaryTarget, primaryFloor, primaryLocked } from './primary-demolition.js';
 import { TRINITY_TERMINAL, trinityTerminalActive, trinityTerminalLocked } from './trinity-terminal.js';
@@ -130,6 +131,7 @@ export interface FilmJourney {
   baneInquiry?: import('./bane-inquiry.js').BaneInquiry;
   hammerBriefing?: import('./hammer-briefing.js').HammerBriefing;
   zionDeployment?: import('./zion-deployment.js').ZionDeployment;
+  maggieDiscovery?: import('./maggie-discovery.js').MaggieDiscovery;
   helGarage?: import('./hel-garage.js').HelGarageEncounter;
   sourceBriefing?: import('./source-briefing.js').SourceBriefing;
   primaryDemolition?: import('./primary-demolition.js').PrimaryDemolition;
@@ -474,9 +476,14 @@ export const FILM_SCENES: FilmScene[] = [
     walk('离开议会，执行核对过的防守安排', ZION_DEPLOYMENT.exit.x, ZION_DEPLOYMENT.exit.z),
   ], ['hamann', 'west', 'dillard']),
   scene('m3_maggie_discovery', 3, 'hammer_deck', 'roland', '空出的医疗舱', 'bane', 'bane', '另一视角：Hammer 已经启航。船员呼叫 Roland；医疗舱里出了事，而 Logos 已走上另一条航线。', [
-    walk('赶到医疗舱查看 Maggie', 0, -18),
-    use('确认 Maggie 遇害，并核对 Bane 的床位', 'Maggie 被杀，Bane 已不在 Hammer。Roland 与 Morpheus 意识到他可能潜入了 Logos，却无法及时追回。', -7, -25, 1.5),
-  ], ['morpheus']),
+    use('接听 AK 的紧急报告', 'AK 报告 Maggie 遇害。Roland 赶去医疗舱。', MAGGIE_DISCOVERY.entry.x, MAGGIE_DISCOVERY.entry.z, 0),
+    walk('进入医疗舱，走到两张病床前', MAGGIE_DISCOVERY.approach.x, MAGGIE_DISCOVERY.approach.z),
+    use('查看 Maggie，确认身份并覆上床单', 'Maggie 已经死亡。这个命运不会因重试或换场而撤销。', MAGGIE_DISCOVERY.inspection.x, MAGGIE_DISCOVERY.inspection.z, 0),
+    use('核对 Bane 的空床与解开的监测线', 'Bane 不在床上；这还不是全船搜查结果。', MAGGIE_DISCOVERY.emptyBed.x, MAGGIE_DISCOVERY.emptyBed.z, 0),
+    use('听取 Colt 的搜船报告，再听返航争论', '搜遍 Hammer 仍未找到 Bane。Morpheus 怀疑他在 Logos 上；若他掌握另一艘船的 EMP，返航救援会危及 Hammer。', MAGGIE_DISCOVERY.report.x, MAGGIE_DISCOVERY.report.z, 0),
+    think('援救、风险与指挥责任', '这是 Roland 的游戏反思。船员不知道 Bane 的真实身份，也无法保证 Neo 会获胜。', MAGGIE_DISCOVERY.report.x, MAGGIE_DISCOVERY.report.z),
+    walk('离开医疗舱，保留搜查与人员记录', MAGGIE_DISCOVERY.exit.x, MAGGIE_DISCOVERY.exit.z),
+  ], ['maggie', 'morpheus', 'link', 'colt']),
   scene('m3_bane', 3, 'logos_deck', 'neo', 'Logos 上的 Bane', 'bane', 'bane', '驾驶舱突然断电。Trinity 下到工程舱检查保险丝；Neo 听见她呼救，走向下层，发现占据 Bane 身体的 Smith。现实中的肉身不能使用矩阵能力。', [
     walk('从驾驶舱走进狭长下层，寻找 Trinity', 0, -6),
     use('面对持电枪的 Bane', 'Trinity 在舱口下切断电路。趁电枪失去瞄准的瞬间闪避，近身反击。', 0, -6, 0),
@@ -631,6 +638,9 @@ export function filmStepPosition(scene: FilmScene, step: FilmStep, journey?: Fil
   if (scene.id === 'm3_logos_plan' && journey?.hammerBriefing) {
     const target = hammerBriefingTarget(journey.hammerBriefing); return filmPosition(scene.set, target.x, target.z);
   }
+  if (scene.id === 'm3_maggie_discovery' && journey?.maggieDiscovery) {
+    const target = maggieDiscoveryTarget(journey.maggieDiscovery); return filmPosition(scene.set, target.x, target.z);
+  }
   if (scene.id === 'm3_zion_prepare' && journey?.zionDeployment) {
     const target = zionDeploymentTarget(journey.zionDeployment); return filmPosition(scene.set, target.x, target.z);
   }
@@ -699,7 +709,7 @@ export function filmStepPosition(scene: FilmScene, step: FilmStep, journey?: Fil
 }
 export function filmStepNear(scene: FilmScene, step: FilmStep, position: Vector3, matrix: boolean, journey?: FilmJourney): boolean {
   const radius = scene.id === 'm3_hel_garage' ? journey?.helGarage?.phase === 'cleared' ? 1.05 : 1.6 : primaryActive(journey) ? .8 : scene.id === 'm2_plan' || scene.id === 'm3_oracle_request' || scene.id === 'm3_oracle_last' || scene.id === 'm3_oracle_absorbed' ? 1.6 : scene.id === 'm1_mirror' && step === scene.steps[0] ? MIRROR_TOUCH.radius
-    : scene.id === 'm3_logos_plan' || scene.id === 'm3_zion_prepare' ? step.kind === 'reach' ? 1.1 : 1.6
+    : scene.id === 'm3_logos_plan' || scene.id === 'm3_zion_prepare' || scene.id === 'm3_maggie_discovery' ? step.kind === 'reach' ? 1.1 : 1.6
     : scene.id === 'm3_bane_questions' ? step === scene.steps[5] ? 1.1 : step === scene.steps[0] ? 1.05 : 1.4
     : scene.id === 'm3_hel_entry' && step === scene.steps[0] ? 1.1
     : scene.id === 'm3_dock_evacuation' || scene.id === 'm3_shaft_seal' ? 1.2
@@ -711,6 +721,8 @@ export function filmStepNear(scene: FilmScene, step: FilmStep, position: Vector3
   return matrix === (FILM_SETS[scene.set].world === 'matrix') && distance(position, filmStepPosition(scene, step, journey)) <= radius;
 }
 export function filmStepActionReady(scene: FilmScene, step: FilmStep, position: Vector3, matrix: boolean, journey?: FilmJourney): boolean {
+  if (scene.id === 'm3_maggie_discovery') return Boolean(journey?.maggieDiscovery && ['call', 'ready', 'empty', 'report', 'return'].includes(journey.maggieDiscovery.phase)
+    && !journey.maggieDiscovery.paused && !journey.maggieDiscovery.unavailable && filmStepNear(scene, step, position, matrix, journey));
   if (scene.id === 'm3_zion_prepare') return Boolean(journey?.zionDeployment && ['ready', 'question', 'review', 'hope'].includes(journey.zionDeployment.phase)
     && !journey.zionDeployment.paused && !journey.zionDeployment.unavailable && filmStepNear(scene, step, position, matrix, journey));
   if (scene.id === 'm3_logos_plan') return Boolean(journey?.hammerBriefing && ['ready', 'objection', 'route', 'faith'].includes(journey.hammerBriefing.phase)
@@ -731,6 +743,7 @@ export function filmStepActionReady(scene: FilmScene, step: FilmStep, position: 
   return step.kind !== 'reach' && step.kind !== 'reflect' && filmStepNear(scene, step, position, matrix, journey);
 }
 export function filmEntry(scene: FilmScene): Vector3 {
+  if (scene.id === 'm3_maggie_discovery') return filmPosition(scene.set, MAGGIE_DISCOVERY.entry.x, MAGGIE_DISCOVERY.entry.z);
   if (scene.id === 'm3_zion_prepare') return filmPosition(scene.set, ZION_DEPLOYMENT.entry.x, ZION_DEPLOYMENT.entry.z);
   if (scene.id === 'm3_logos_plan') return filmPosition(scene.set, HAMMER_BRIEFING.entry.x, HAMMER_BRIEFING.entry.z);
   if (scene.id === 'm3_bane_questions') return filmPosition(scene.set, BANE_INQUIRY.entry.x, BANE_INQUIRY.entry.z);

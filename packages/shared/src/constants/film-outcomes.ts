@@ -24,6 +24,7 @@ export function filmCharacterFates(journey: FilmJourney): Record<string, FilmFat
   for (const [scene, changes] of Object.entries(FILM_CONSEQUENCES)) {
     if (journey.completed.includes(scene)) Object.assign(fates, changes);
   }
+  if (journey.maggieDiscovery?.incident) fates.maggie = 'dead';
   if (journey.upperDigger?.charraDead) fates.charra = 'dead';
   if (journey.ambushEscape?.mouseDead) fates.mouse = 'dead';
   if (journey.scene === 'm3_surrender' && smithOracleRestored(journey.smithFinale))

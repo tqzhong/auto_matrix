@@ -1,3 +1,4 @@
+import { maggieDiscoveryActive, maggieDiscoveryText } from '@auto_matrix/shared';
 import { catchLaunchReady, catchDistance } from '@auto_matrix/shared';
 import { filmSceneForJourney } from '@auto_matrix/shared';
 import { oracleRequestActive, oracleRequestLocked, oracleRequestText } from '@auto_matrix/shared';
@@ -113,6 +114,20 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
           : primaryLocked(state) ? '<p>合上手记，按住 G 固定装置；松手保留进度。</p>'
             : button('act', state?.phase === 'sync' ? '绿色窗口校准 · G' : state?.phase === 'retreat' ? '确认两人安全撤出 · G' : '安装当前同步装置 · G', !close);
     return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX RELOADED / 02</span><h3>Niobe · 主电网同步行动</h3><p>发电厂 · Logos 队伍</p></header><article class="film-now"><div><p>${primaryText(state)}</p><ol class="film-objectives">${PRIMARY_DEMOLITION.sites.map(site => `<li class="${state?.installed.includes(site.id) ? 'done' : ''}"><b>${state?.installed.includes(site.id) ? '✓' : '○'}</b><span>${site.name}</span></li>`).join('')}</ol><div class="film-controls">${action}</div><small>WASD 移动 · Shift 奔跑 · G 操作 · V 切换视角。换班同步和先撤离的顺序来自电影，三个安装点、观察桥路线与失败重试为游戏改编。</small></div></article></div>`;
+  }
+  if (maggieDiscoveryActive(journey)) {
+    const state = journey.maggieDiscovery, step = scene.steps[journey.step], close = Boolean(step && filmStepNear(scene, step, player.position, player.isInMatrix, journey));
+    const action = player.id !== journey.actor ? button('resume', '接回 Roland 的调查视角')
+      : state?.paused || state?.unavailable ? '<p>等待船员信号，调查与事件进度已保留。</p>'
+        : player.status !== 'alive' || player.health <= 0 ? button('retry', '接回调查检查点')
+          : state?.phase === 'done' ? button('next', '转到 Logos 上 Neo 的视角 →')
+            : state?.phase === 'reflection' ? filmReflections(scene.id).map(choice => button(`reflect:${choice.id}`, choice.label)).join('')
+              : state && ['call', 'ready', 'empty', 'report', 'return'].includes(state.phase) ? button('act', state.phase === 'call' ? '接听 AK 的紧急报告 · G'
+                : state.phase === 'ready' ? '确认 Maggie，覆上床单 · G' : state.phase === 'empty' ? '核对 Bane 的空床 · G'
+                  : state.phase === 'report' ? '听取 Colt 的全船搜查报告 · G' : '听完 Link 的返航请求与 EMP 风险 · G', !close)
+                : state?.phase === 'approach' || state?.phase === 'leaving' || !state ? '<p>合上手记，WASD 亲自走到目标。</p>'
+                  : '<p>合上手记，观察床边与船员的当前动作；V 切换视角，鼠标环顾。</p>';
+    return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX REVOLUTIONS / 03</span><h3>Hammer · 空出的医疗舱</h3><p>Roland 的另一视角 · 援救、风险与责任</p></header><article class="film-now"><div><h3>${step?.label ?? '调查已经保存'}</h3><p>${maggieDiscoveryText(state)}</p><p>确认遗体 ${state?.evidence.includes('maggie') ? '✓' : '○'} · 核对空床 ${state?.evidence.includes('berth') ? '✓' : '○'} · 全船搜查 ${state?.evidence.includes('ship') ? '✓' : '○'}</p><div class="film-controls">${action}</div><small>G 接听与调查 · J 记录判断 · WASD 离场 · V 切换视角。床边核对与哲学判断为游戏改编；另一个 EMP 的风险来自原片。Maggie 的死亡会保存，Neo 尚未收到这里的报告。</small></div></article></div>`;
   }
   if (zionDeploymentActive(journey)) {
     const state = journey.zionDeployment, step = scene.steps[journey.step], close = Boolean(step && filmStepNear(scene, step, player.position, player.isInMatrix, journey));

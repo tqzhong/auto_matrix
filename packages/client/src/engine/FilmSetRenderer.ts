@@ -56,6 +56,7 @@ import { TrainingSetRenderer } from './TrainingSetRenderer.js';
 import { OracleVase } from './OracleVase.js';
 import { BaneInquiryRenderer } from './BaneInquiryRenderer.js';
 import { HammerBriefingRenderer } from './HammerBriefingRenderer.js';
+import { MaggieDiscoveryRenderer } from './MaggieDiscoveryRenderer.js';
 import { ZionDeploymentRenderer } from './ZionDeploymentRenderer.js';
 import { zionDeploymentLocked } from '@auto_matrix/shared';
 import { baneInquiryLocked } from '@auto_matrix/shared';
@@ -183,6 +184,7 @@ export class FilmSetRenderer {
   private baneInquiry?: BaneInquiryRenderer;
   private hammerBriefing?: HammerBriefingRenderer;
   private zionDeployment?: ZionDeploymentRenderer;
+  private maggieDiscovery?: MaggieDiscoveryRenderer;
   private oracleLast?: OracleLastRenderer;
   private oracleAbsorption?: OracleAbsorptionRenderer;
   private oracleBlocks?: THREE.Group;
@@ -283,6 +285,7 @@ export class FilmSetRenderer {
         else if (set.id === 'film_white_rabbit_club') { this.club = new ClubSetRenderer(this.root); void this.club.ready.catch(error => console.error('夜店人群加载失败', error)); }
         else if (set.id === 'film_government_office' || set.id === 'film_government_roof') this.government = new GovernmentSetRenderer(this.root, set.id);
         else if (sceneId === 'm3_bane_questions' && set.id === 'film_hammer_deck') this.baneInquiry = new BaneInquiryRenderer(this.root);
+        else if (sceneId === 'm3_maggie_discovery' && set.id === 'film_hammer_deck') this.maggieDiscovery = new MaggieDiscoveryRenderer(this.root);
         else if (sceneId === 'm3_logos_plan' && set.id === 'film_hammer_deck') this.hammerBriefing = new HammerBriefingRenderer(this.root);
         else if (set.id === 'film_zion_defense_council') this.zionDeployment = new ZionDeploymentRenderer(this.root);
         else if (set.id === 'film_trainman_subway') this.trainmanChase = new TrainmanChaseRenderer(this.root);
@@ -334,8 +337,8 @@ export class FilmSetRenderer {
           if (sceneId === 'm3_oracle_absorbed' && set.id === 'film_oracle_home') this.oracleAbsorption = new OracleAbsorptionRenderer(this.root);
           if (sceneId === 'm3_bane' && set.id === 'film_logos_deck') this.logosBane = new LogosBaneRenderer(this.root);
           if (sceneId === 'm3_oracle_absorbed' && set.id === 'film_oracle_home'
-            || ['m3_bane_questions', 'm3_logos_plan', 'm3_maggie_discovery', 'm3_emp'].includes(sceneId ?? '') && set.id === 'film_hammer_deck')
-            this.revolutionsPrelude = new RevolutionsPreludeRenderer(this.root, sceneId as 'm3_oracle_absorbed' | 'm3_bane_questions' | 'm3_logos_plan' | 'm3_maggie_discovery' | 'm3_emp');
+            || ['m3_bane_questions', 'm3_logos_plan', 'm3_emp'].includes(sceneId ?? '') && set.id === 'film_hammer_deck')
+            this.revolutionsPrelude = new RevolutionsPreludeRenderer(this.root, sceneId as 'm3_oracle_absorbed' | 'm3_bane_questions' | 'm3_logos_plan' | 'm3_emp');
           if (set.id === 'film_club_hel' && typeof window !== 'undefined') {
             this.helPerformers = new HelClubPerformers(this.root);
             void this.helPerformers.ready.catch(error => console.error('Club Hel 演员加载失败', error));
@@ -462,6 +465,7 @@ export class FilmSetRenderer {
     this.baneInquiry?.update(journey?.baneInquiry);
     this.hammerBriefing?.update(journey?.hammerBriefing);
     this.zionDeployment?.update(journey?.zionDeployment);
+    this.maggieDiscovery?.update(journey?.maggieDiscovery);
     this.oracleAbsorption?.update(journey?.oracleAbsorption);
     this.dockEvacuation?.update(player?.currentAction?.parameters.dockEvacuation as FilmJourney['dockEvacuation'] ?? journey?.dockEvacuation,
       player?.currentAction?.parameters.shaftSeal as FilmJourney['shaftSeal'] ?? journey?.shaftSeal);
@@ -2630,6 +2634,7 @@ export class FilmSetRenderer {
     this.baneInquiry?.dispose(); this.baneInquiry = undefined;
     this.hammerBriefing?.dispose(); this.hammerBriefing = undefined;
     this.zionDeployment?.dispose(); this.zionDeployment = undefined;
+    this.maggieDiscovery?.dispose(); this.maggieDiscovery = undefined;
     this.oracleAbsorption?.dispose(); this.oracleAbsorption = undefined;
     this.dockEvacuation?.dispose(); this.dockEvacuation = undefined;
     this.dockBriefing?.dispose(); this.dockBriefing = undefined;

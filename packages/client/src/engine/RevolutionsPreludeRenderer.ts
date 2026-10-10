@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { EMP_OPERATOR, empOperatorPose, dockEmpFlash, dockPowerOffline, type FilmJourney } from '@auto_matrix/shared';
 
-type PreludeScene = 'm3_oracle_absorbed' | 'm3_bane_questions' | 'm3_logos_plan' | 'm3_maggie_discovery' | 'm3_emp';
+type PreludeScene = 'm3_oracle_absorbed' | 'm3_bane_questions' | 'm3_logos_plan' | 'm3_emp';
 
 /** Small, state-driven set pieces layered over the existing Oracle apartment and Hammer interiors. */
 export class RevolutionsPreludeRenderer {
@@ -12,7 +12,6 @@ export class RevolutionsPreludeRenderer {
   private oracleDiffusers: THREE.MeshBasicMaterial[] = [];
   private evidence: THREE.Mesh[] = [];
   private routes?: [THREE.Mesh, THREE.Mesh];
-  private warning?: THREE.PointLight;
   private hammerDiffuser?: THREE.MeshBasicMaterial;
   private empDisplay?: THREE.MeshBasicMaterial;
   private empFlash?: THREE.PointLight;
@@ -28,7 +27,6 @@ export class RevolutionsPreludeRenderer {
       if (scene === 'm3_bane_questions') this.baneInquiry();
       else if (scene === 'm3_logos_plan') this.routesAtHammer();
       else if (scene === 'm3_emp') this.empDetonator();
-      else this.maggieDiscovery();
     }
   }
   private material<T extends THREE.Material>(material: T): T { this.materials.add(material); return material; }
@@ -89,17 +87,6 @@ export class RevolutionsPreludeRenderer {
       route.name = i ? 'logos-machine-city-route' : 'hammer-zion-route'; route.castShadow = false; return route;
     });
     this.routes = [paths[0], paths[1]];
-  }
-  private maggieDiscovery(): void {
-    const iron = this.material(new THREE.MeshStandardMaterial({ color: 0x33464a, roughness: .5, metalness: .6 }));
-    const linen = this.material(new THREE.MeshStandardMaterial({ color: 0xaebcb7, roughness: .96, side: THREE.DoubleSide }));
-    const sheet = new THREE.Group(); sheet.name = 'maggie-covered-stretcher'; this.group.add(sheet);
-    this.box(iron, -10, 1, -25, 4.7, .6, 8.5, sheet);
-    this.box(linen, -10, 1.42, -25, 4.25, .28, 8.1, sheet);
-    const cover = this.mesh(new THREE.SphereGeometry(1, 20, 12), linen, sheet);
-    cover.name = 'maggie-cover'; cover.position.set(-10, 1.75, -25); cover.scale.set(2.05, .48, 3.3);
-    const warning = new THREE.PointLight(0xdb735e, 0, 18, 2); warning.name = 'hammer-medical-warning'; warning.position.set(-10, 6, -25);
-    this.group.add(warning); this.lamps.push(warning); this.warning = warning;
   }
   private empDetonator(): void {
     const iron = this.material(new THREE.MeshStandardMaterial({ color: 0x354348, roughness: .5, metalness: .7 }));
@@ -174,7 +161,6 @@ export class RevolutionsPreludeRenderer {
     else if (this.scene === 'm3_logos_plan' && this.routes) this.routes.forEach((route, i) => {
       const material = route.material as THREE.MeshBasicMaterial; material.opacity = step >= 2 ? .82 : .28 + Math.sin(elapsed * 2 + i) * .08;
     });
-    else if (this.scene === 'm3_maggie_discovery' && this.warning) this.warning.intensity = step ? 90 + Math.sin(elapsed * 5) * 45 : 45;
     else if (this.scene === 'm3_emp') {
       const fired = dockPowerOffline(journey);
       this.blackout = fired;
