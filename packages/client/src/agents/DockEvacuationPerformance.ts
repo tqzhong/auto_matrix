@@ -73,14 +73,32 @@ export function poseDockEvacuation(rig: CharacterRig, gesture?: DockEvacuationGe
   hands(rig, targets, pose.grip, THREE.MathUtils.smoothstep(pose.grip, 0, .25));
 }
 export function poseShaftSeal(rig: CharacterRig, gesture?: ShaftSealGesture): void {
-  if (!gesture || gesture.role !== 'citizen_15' || gesture.phase === 'ready' || gesture.phase === 'done') return;
+  if (!gesture) return;
+  const report = gesture.phase === 'reporting', aftermath = gesture.phase === 'detonating';
+  const speaking = report ? THREE.MathUtils.smoothstep(gesture.elapsed, 0, .4) * (1 - THREE.MathUtils.smoothstep(gesture.elapsed, SHAFT_SEAL.report + SHAFT_SEAL.order - .4, SHAFT_SEAL.report + SHAFT_SEAL.order)) : 0;
+  if (gesture.role === 'lock') {
+    const order = report ? THREE.MathUtils.smoothstep(gesture.elapsed, SHAFT_SEAL.report - .2, SHAFT_SEAL.report + .4) : 0;
+    rig.head.rotation.y = (.42 - order * .9) * speaking;
+    rig.head.rotation.x = gesture.phase === 'done' ? -.36 : aftermath ? -.04 - .32 * THREE.MathUtils.smoothstep(gesture.elapsed, 4.4, 5.6) : -.04;
+    rig.shoulders[1].rotation.x = -.12 - order * .30 * speaking; rig.elbows[1].rotation.x = -.15 - order * .5 * speaking;
+    return;
+  }
+  if (gesture.role === 'citizen_16') {
+    rig.head.rotation.y = -.55 * speaking;
+    rig.head.rotation.x = gesture.phase === 'done' ? -.24 : aftermath ? -.24 * THREE.MathUtils.smoothstep(gesture.elapsed, .6, 1.5) : .08;
+    return;
+  }
+  if (report) { rig.head.rotation.y = .55 * Math.sin(Math.PI * gesture.elapsed / (SHAFT_SEAL.report + SHAFT_SEAL.order)); return; }
+  if (gesture.phase === 'ready' || gesture.phase === 'done') return;
   const center = FILM_SETS.film_zion_command_bunker.center, lever = shaftSealLever(gesture);
-  const t = gesture.phase === 'reaching' ? THREE.MathUtils.smoothstep(gesture.elapsed, 0, SHAFT_SEAL.reach) : 1;
+  const release = aftermath ? THREE.MathUtils.smoothstep(gesture.elapsed, .2, 1.3) : 0;
+  const t = (gesture.phase === 'reaching' ? THREE.MathUtils.smoothstep(gesture.elapsed, 0, SHAFT_SEAL.reach) : 1) * (1 - release);
+  if (!t) return;
   rig.root.updateWorldMatrix(true, true);
   const targets = [-1, 1].map((sign, i) => {
     const end = rig.hero ? rig.hero.bones.get(`wrist_${i ? 'L' : 'R'}`)!.getWorldPosition(new THREE.Vector3())
       : rig.elbows[i].localToWorld(new THREE.Vector3(0, -.79, .055));
     return end.lerp(new THREE.Vector3(center.x + lever.x - sign * SHAFT_SEAL.lever.grip / 2, center.y - 1 + lever.y, center.z + lever.z), t);
   });
-  hands(rig, targets);
+  hands(rig, targets, t, t);
 }

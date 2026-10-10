@@ -102,7 +102,7 @@ test('normal player input unloads supplies, waits for the last crew and lowers t
   h.walk(SHAFT_SEAL.operator); assert.equal(h.state.step, 1);
   for (let i = 0; i < 30; i++) h.frame(undefined, { focus: true });
   assert.equal(h.state.shaftSeal?.phase, 'ready', 'holding G without first gripping the bar cannot arm the lever');
-  h.command('act'); for (let i = 0; i < 12; i++) h.frame();
+  h.command('act'); for (let i = 0; i < 55; i++) h.frame();
   assert.equal(h.state.shaftSeal?.phase, 'armed');
   for (let i = 0; i < 8; i++) h.frame(undefined, { focus: true });
   const turn = h.state.shaftSeal!.turn; assert.ok(turn > .2 && turn < .8);
@@ -128,7 +128,8 @@ test('missing the lift fails and retry preserves supplies and film consequences 
 });
 test('pause, disconnect, save restoration and an occupied crew member freeze the shaft lever', () => {
   const h = fixture(); clear(h); h.command('next'); h.walk(SHAFT_SEAL.operator); h.command('act');
-  for (let i = 0; i < 14; i++) h.frame(undefined, { focus: true });
+  for (let i = 0; i < 55; i++) h.frame();
+  for (let i = 0; i < 5; i++) h.frame(undefined, { focus: true });
   const saved = structuredClone(h.state.shaftSeal), position = structuredClone(h.players.getAgent('p')!.position);
   h.frame(undefined, { focus: true }, false); assert.deepEqual(h.state.shaftSeal, saved);
   h.players.release('p', 1000); for (let i = 0; i < 12; i++) h.sandbox.tick(1001 + i);
@@ -141,6 +142,23 @@ test('pause, disconnect, save restoration and an occupied crew member freeze the
   assert.deepEqual(h.world.agents.get('lock')!.position, lock.position);
   h.players.release('other', 1016); h.frame(undefined, { focus: true });
   assert.ok(h.state.shaftSeal!.turn > saved!.turn);
+});
+test('the clearance report and Lock order finish before the operator can grip or fire, including a restored report', () => {
+  const h = fixture(); clear(h); h.command('next'); h.walk(SHAFT_SEAL.operator); h.command('act');
+  assert.equal(h.state.shaftSeal?.phase, 'reporting');
+  for (let i = 0; i < 10; i++) h.frame(undefined, { focus: true });
+  assert.equal(h.state.shaftSeal!.turn, 0); assert.equal(h.state.shaftSeal!.firedAt, undefined);
+  const saved = structuredClone(h.state.shaftSeal);
+  h.frame(undefined, { focus: true }, false); assert.deepEqual(h.state.shaftSeal, saved);
+  h.players.release('p', 1000); h.sandbox.restore(structuredClone(h.sandbox.state)); h.players.possess('p', 'citizen_15', 1001);
+  assert.deepEqual(h.state.shaftSeal, saved);
+  h.players.possess('other', 'lock', 1002);
+  for (let i = 0; i < 50; i++) h.frame(undefined, { focus: true });
+  assert.equal(h.state.shaftSeal!.elapsed, saved!.elapsed); assert.equal(h.state.shaftSeal!.turn, 0);
+  h.players.release('other', 1003);
+  for (let i = 0; i < 55; i++) h.frame();
+  assert.equal(h.state.shaftSeal?.phase, 'armed'); assert.equal(h.state.shaftSeal!.turn, 0);
+  h.command('act'); assert.equal(h.state.shaftSeal?.phase, 'armed', 'G cannot replay the report after receiving clearance');
 });
 test('carrying keeps both hands occupied while ordinary walking remains available', () => {
   const h = fixture(); h.walk(DOCK_EVACUATION.pickup); h.command('act');

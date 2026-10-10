@@ -29,6 +29,10 @@ test('the shaft journal requires a nearby lever and preserves the held throw ins
   assert.match(renderFilmJourney(h.player, h.sandbox), /data-target="film:act" disabled/);
   h.player.position = filmPosition('film_zion_command_bunker', SHAFT_SEAL.operator.x, SHAFT_SEAL.operator.z);
   assert.doesNotMatch(renderFilmJourney(h.player, h.sandbox), /data-target="film:act" disabled/);
+  h.journey.shaftSeal.phase = 'reporting'; h.journey.shaftSeal.elapsed = 1;
+  assert.match(renderFilmJourney(h.player, h.sandbox), /第二操作员/);
+  assert.doesNotMatch(renderFilmJourney(h.player, h.sandbox), /data-target="film:act"|data-target="film:next"/);
+  h.journey.shaftSeal.elapsed = 3; assert.match(renderFilmJourney(h.player, h.sandbox), /Lock/);
   h.journey.shaftSeal.phase = 'throwing'; h.journey.shaftSeal.turn = .45;
   assert.match(renderFilmJourney(h.player, h.sandbox), /按住 G/);
   assert.doesNotMatch(renderFilmJourney(h.player, h.sandbox), /data-target="film:act"|data-target="film:next"/);

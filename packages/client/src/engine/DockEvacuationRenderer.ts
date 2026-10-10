@@ -20,6 +20,7 @@ export class DockEvacuationRenderer {
   private crew?: DockEvacuationCrew;
   private swarm: THREE.InstancedMesh[] = [];
   private rubble?: THREE.InstancedMesh;
+  private shaftRings?: THREE.InstancedMesh;
   private smoke?: THREE.InstancedMesh;
   private flash?: THREE.PointLight;
   private grip?: THREE.Mesh;
@@ -32,22 +33,31 @@ export class DockEvacuationRenderer {
     this.group.name = bunker ? 'shaft-seal-set' : 'dock-evacuation-set'; parent.add(this.group); this.group.add(this.static);
     const concrete = this.surface('damaged_plaster', 0x716b55, .95, .03), steel = this.surface('metal_plate', 0x5b5b4a, .7, .6);
     const iron = this.material(0x292b24, .8, .5), rubber = this.material(0x151915, .85, .1);
-    const bulb = new THREE.MeshStandardMaterial({ color: 0xedddc0, emissive: 0xffd5a5, emissiveIntensity: 1.2 }); this.materials.add(bulb);
+    // A PBR emitter would receive its own point light and bloom over the actors.
+    const bulb = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xffd5a5).multiplyScalar(1.6) }); this.materials.add(bulb);
     if (bunker) {
       const floor = this.surface('white_plaster_02', 0x6c6759, .98, 0), casing = this.material(0x716657, .85, .12);
       this.box(floor, 0, -.2, 0, 36, .4, 38, this.static, 'bunker-floor');
       this.box(concrete, 0, 10, 6, 36, .4, 26);
       SHAFT_SEAL.obstacles.forEach((wall, i) => {
-        if (wall.z === -6) return;
         this.box(i > 4 ? casing : concrete, wall.x, wall.height / 2, wall.z, wall.width, wall.height, wall.depth, this.static, `bunker-obstacle-${i}`);
       });
-      this.box(concrete, 0, 1.35, -6, 36, 2.7, .8);
-      this.box(concrete, 0, 8.4, -6, 36, 3.2, .8);
-      for (const side of [-1, 1]) this.box(concrete, side * 12.5, 4.75, -6, 11, 4.1, .8);
-      const glass = new THREE.MeshPhysicalMaterial({ color: 0x5e695d, roughness: .27, transparent: true, opacity: .12, depthWrite: false, side: THREE.DoubleSide }); this.materials.add(glass);
-      this.box(glass, 0, 4.75, -6, 14, 4.1, .08, this.static, 'bunker-witness-window');
-      for (const x of [-7, 0, 7]) this.box(iron, x, 4.75, -5.96, .15, 4.1, .15);
-      for (const y of [2.7, 6.8]) this.box(iron, 0, y, -5.96, 14, .15, .15);
+      // The film's operators are protected by the bunker. Demolition is seen
+      // in an exterior shot, not through a glass wall beside the charge.
+      for (const x of [-15, -5, 5, 15]) {
+        this.box(iron, x, 4.9, -5.5, .18, 9.8, .14);
+        this.box(steel, x, 7.8, -5.43, .5, .16, .15);
+      }
+      for (const y of [6.4, 7.1, 8.5]) this.tube(rubber, [[-17.3, y, -5.3], [-9, y - .22, -5.28], [1, y + .08, -5.28], [17.3, y, -5.3]], .09, this.static);
+      for (const x of [-13, -2, 9]) this.box(casing, x, 5.4, -5.42, .7, 1.15, .18);
+      const dial = new THREE.MeshBasicMaterial({ color: 0xaaa17c }); this.materials.add(dial);
+      for (let i = 0; i < 4; i++) {
+        const x = -9.6 + i * 1.05;
+        this.box(iron, x, 2.74, -2.75, .72, .10, .62);
+        this.pipe(dial, [x, 2.80, -2.75], [x, 2.82, -2.75], .20);
+        this.box(iron, x, 2.84, -2.73, .025, .012, .24).rotation.y = i * .43;
+        this.pipe(rubber, [x, 2.74, -1.65], [x, 2.91, -1.65], .055);
+      }
       const lever = SHAFT_SEAL.lever; this.lever.position.set(lever.x, lever.y, lever.z); this.group.add(this.lever);
       for (const side of [-1, 1]) {
         this.tube(iron, [[side * lever.grip / 2, .02, 0], [side * lever.grip / 2, lever.length - .12, 0],
@@ -59,6 +69,9 @@ export class DockEvacuationRenderer {
       this.grip.name = 'shaft-seal-grip';
       this.pipe(steel, [lever.x - .69, lever.y, lever.z], [lever.x + .69, lever.y, lever.z], .07);
       this.box(casing, lever.x, 2.22, -2.25, 1.72, .06, 1.91);
+      for (const side of [-1, 1]) for (const y of [.5, .8, 1.1, 1.4]) this.box(iron, lever.x + side * .86, y, -2.25, .012, .035, 1.2);
+      this.box(iron, lever.x - .38, 2.26, -2.65, .55, .025, .36);
+      this.pipe(dial, [lever.x - .38, 2.28, -2.65], [lever.x - .38, 2.29, -2.65], .135);
       const conduits = new THREE.Group(); conduits.name = 'bunker-conduit-bundle'; this.static.add(conduits);
       for (let i = 0; i < 6; i++) this.tube(rubber, [[lever.x + .20 + i * .08, 1.7 - i * .08, -3.18],
         [7.5, 1.7 + i * .18, -4.9], [12, 3.5 + i * .23, -5.48], [17.3, 3.9 + i * .25, -5.48]], .10 + i * .009, conduits);
@@ -71,10 +84,20 @@ export class DockEvacuationRenderer {
       for (let i = 0; i < 6; i++) {
         const y = 2 + i * 3.2;
         for (const side of [-1, 1]) this.box(steel, side * 5.5, y, -13, 2.8, .45, 7);
-        this.box(iron, 0, y, -16, 10, .32, .4);
       }
-      const rock = this.material(0x777060, .99, 0);
-      this.rubble = this.instances(new THREE.DodecahedronGeometry(1, 0), rock, 40, 'shaft-collapse-rock');
+      this.shaftRings = this.instances(new THREE.TorusGeometry(4.8, .24, 8, 48), steel, 6, 'shaft-demolition-rings');
+      for (const x of [-6.3, 6.3]) this.box(concrete, x, 11, -13, 1.1, 24, 9);
+      this.box(concrete, 0, 11, -17.8, 12, 24, .8);
+      this.box(concrete, 0, 11, -8.2, 12, 24, .8);
+      const rock = this.surface('damaged_plaster', 0x777060, .99, 0), fragments = new THREE.IcosahedronGeometry(1, 1);
+      const positions = fragments.attributes.position;
+      for (let i = 0; i < positions.count; i++) {
+        const x = positions.getX(i), y = positions.getY(i), z = positions.getZ(i);
+        const radius = .88 + .16 * Math.sin(x * 5 + y * 3) * Math.cos(z * 4 - y * 2);
+        positions.setXYZ(i, x * radius, y * radius, z * radius);
+      }
+      fragments.computeVertexNormals();
+      this.rubble = this.instances(fragments, rock, 40, 'shaft-collapse-rock');
       const pixels = new Uint8Array(96 * 96 * 4);
       for (let y = 0; y < 96; y++) for (let x = 0; x < 96; x++) {
         const index = (y * 96 + x) * 4, radius = Math.hypot(x - 47.5, y - 47.5) / 47.5;
@@ -226,12 +249,27 @@ export class DockEvacuationRenderer {
     if (this.bunker) {
       this.lever.rotation.x = shaftSealLever(seal).angle;
       const time = seal?.phase === 'done' ? SHAFT_SEAL.blast : seal?.phase === 'detonating' ? seal.elapsed : -1;
-      if (this.flash) this.flash.intensity = time < 0 ? 0 : 900 * Math.max(0, Math.sin(time * 9)) * Math.max(0, 1 - time / 7.2);
-      this.rubble!.visible = time >= 0;
-      for (let i = 0; i < 40; i++) {
-        const age = Math.max(0, time - Math.floor(i / 7) * .7), fall = Math.min(2 + i % 6 * 3.2, 4.9 * age * age);
-        this.instance(this.rubble!, i, Math.sin(i * 2.39) * 4.5, 2 + i % 6 * 3.2 - fall + .7, -13 + Math.cos(i * 2.39) * 3, .15 + i % 3 * .12, .22, .3, age * .8, i * 2.39);
+      if (this.flash) {
+        const burst = time - Math.floor(Math.max(0, time) / .7) * .7;
+        this.flash.intensity = time < 0 || time > 4.2 ? 0 : 420 * Math.exp(-burst * 14);
+        this.flash.position.y = 2 + Math.min(5, Math.floor(Math.max(0, time) / .7)) * 3.2;
       }
+      for (let i = 0; i < 6; i++) {
+        const age = Math.max(0, time - i * .7), fall = Math.min(1.3 + i * 3.2, 4.9 * age * age);
+        this.instance(this.shaftRings!, i, Math.sin(i * 2.3) * Math.min(.6, age * .3), 2 + i * 3.2 - fall, -13,
+          1, 1, 1, Math.PI / 2 + Math.min(.28, age * .15), i * Math.min(.18, age * .1));
+      }
+      this.shaftRings!.instanceMatrix.needsUpdate = true;
+      let rockCount = 0;
+      for (let i = 0; i < 40; i++) {
+        const age = time - i % 6 * .7;
+        if (age <= 0) continue;
+        const x = Math.sin(i * 2.39) * (1.1 + i % 5 * .8), z = Math.cos(i * 2.39) * (1 + i % 4 * .7);
+        const mound = .4 + 1.7 * Math.max(0, 1 - Math.hypot(x, z) / 5), height = 3 + i % 6 * 3.2;
+        const fall = Math.min(height - mound, 4.9 * age * age), scale = .62 + i % 3 * .16;
+        this.instance(this.rubble!, rockCount++, x, height - fall, -13 + z, scale * 1.35, scale, scale * 1.1, Math.min(age, 1.6) * .8, i * 2.39);
+      }
+      this.rubble!.count = rockCount; this.rubble!.visible = rockCount > 0;
       let dustCount = 0;
       for (let i = 0; i < 36; i++) {
         const age = time - i % 6 * .7;

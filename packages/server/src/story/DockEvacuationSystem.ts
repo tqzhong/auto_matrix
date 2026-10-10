@@ -83,7 +83,10 @@ export class DockEvacuationSystem {
   }
   private seal(actor: AgentState, dt: number, tick: number, held: boolean): void {
     const journey = this.journey!, state = journey.shaftSeal!;
-    if (state.phase === 'reaching') {
+    if (state.phase === 'reporting') {
+      state.elapsed = Math.min(SHAFT_SEAL.report + SHAFT_SEAL.order, state.elapsed + dt);
+      if (state.elapsed >= SHAFT_SEAL.report + SHAFT_SEAL.order) { state.phase = 'reaching'; state.elapsed = 0; }
+    } else if (state.phase === 'reaching') {
       state.elapsed = Math.min(SHAFT_SEAL.reach, state.elapsed + dt);
       if (state.elapsed >= SHAFT_SEAL.reach) { state.phase = 'armed'; state.elapsed = 0; }
     } else if ((state.phase === 'armed' || state.phase === 'throwing') && held && dt) {
@@ -134,7 +137,7 @@ export class DockEvacuationSystem {
         saved.handling = 'continuous';
         saved.phase = saved.phase === 'supplies' ? 'lifting' : 'depositing'; saved.elapsed = 0;
       } else if (saved.phase === 'waiting' && saved.crewAge >= DOCK_EVACUATION.crewSeconds) { saved.phase = 'closing'; saved.elapsed = 0; }
-    } else if (journey.step === 1 && journey.shaftSeal!.phase === 'ready') { journey.shaftSeal!.phase = 'reaching'; journey.shaftSeal!.elapsed = 0; }
+    } else if (journey.step === 1 && journey.shaftSeal!.phase === 'ready') { journey.shaftSeal!.phase = 'reporting'; journey.shaftSeal!.elapsed = 0; }
     this.frame(actor, 0, tick); return journey.lastText;
   }
 }

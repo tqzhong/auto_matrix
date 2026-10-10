@@ -144,6 +144,55 @@ test('both operator hands follow the actual lever bar, including a paused halfwa
   } finally { renderer.dispose(); }
 });
 
+test('the operator releases the fired bar before returning to idle without a final-frame arm snap', t => {
+  const { models, rig } = fixture(t, 'citizen_15'), center = FILM_SETS.film_zion_command_bunker.center;
+  rig.root.position.set(center.x + SHAFT_SEAL.operator.x, center.y - 1, center.z + SHAFT_SEAL.operator.z); rig.root.rotation.y = Math.PI;
+  const pose = (phase: 'detonating' | 'done', elapsed: number) => {
+    models.animate(rig, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true, shaftSeal: { phase, elapsed, turn: 1, role: 'citizen_15' } }, 0);
+    rig.root.updateMatrixWorld(true);
+    return rig.elbows.map(elbow => elbow.localToWorld(new THREE.Vector3(0, -.79, .055)));
+  };
+  const first = pose('detonating', 0), released = pose('detonating', 1.5);
+  for (let i = 0; i < 2; i++) assert.ok(first[i].distanceTo(released[i]) > .4, 'hands should leave the bar after firing');
+  const before = pose('detonating', SHAFT_SEAL.blast - .001), after = pose('done', SHAFT_SEAL.blast);
+  for (let i = 0; i < 2; i++) assert.ok(before[i].distanceTo(after[i]) < .01, 'completion must not snap hands from the bar to the sides');
+});
+
+test('the reporting operator keeps the last blast reaction when the scene reaches its reflection', t => {
+  const { models, rig } = fixture(t, 'citizen_16');
+  const pose = (phase: 'detonating' | 'done', elapsed: number) => {
+    models.animate(rig, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true,
+      shaftSeal: { phase, elapsed, turn: 1, role: 'citizen_16' } }, 0);
+    return rig.head.getWorldQuaternion(new THREE.Quaternion());
+  };
+  assert.ok(pose('detonating', SHAFT_SEAL.blast - .001).angleTo(pose('done', SHAFT_SEAL.blast)) < .01, 'finishing the explosion must not snap the witness out of his upward reaction');
+});
+
+test('the barricaded command room has an opaque blast wall rather than an invented observation window', () => {
+  const root = new THREE.Group(), renderer = new DockEvacuationRenderer(root, true);
+  try {
+    root.updateMatrixWorld(true);
+    const hit = new THREE.Raycaster(new THREE.Vector3(1.5, 4.75, 0), new THREE.Vector3(0, 0, -1), 0, 8).intersectObject(root, true)[0];
+    assert.ok(hit, 'the original collision wall must also have visible geometry');
+    const material = (hit.object as THREE.Mesh).material as THREE.Material;
+    assert.equal(material.transparent, false, 'a glass panel does not match the barricaded bunker');
+  } finally { renderer.dispose(); }
+});
+
+test('the command room work lamps keep bounded radiance under their own nearby lights', () => {
+  const root = new THREE.Group(), renderer = new DockEvacuationRenderer(root, true);
+  try {
+    root.updateMatrixWorld(true);
+    for (const x of [-8, 4]) {
+      const hit = new THREE.Raycaster(new THREE.Vector3(x, 7.1, 3), new THREE.Vector3(0, 1, 0), 0, .6).intersectObject(root, true)[0];
+      assert.ok(hit, 'the actual downward-facing lamp must remain visible');
+      const material = (hit.object as THREE.Mesh).material;
+      assert.ok(material instanceof THREE.MeshBasicMaterial, 'the lamp must not multiply its output by its own point light');
+      assert.ok(Math.max(material.color.r, material.color.g, material.color.b) <= 2, 'the emitter must not flood the command shot with bloom');
+    }
+  } finally { renderer.dispose(); }
+});
+
 test('unfired demolition particles stay out of rendering and every drawn instance has a valid normal transform', () => {
   const renderer = new DockEvacuationRenderer(new THREE.Group(), true), matrix = new THREE.Matrix4();
   const rocks = renderer.group.getObjectByName('shaft-collapse-rock') as THREE.InstancedMesh;
@@ -156,13 +205,24 @@ test('unfired demolition particles stay out of rendering and every drawn instanc
     }
     for (const elapsed of [0, .1, .7, 2.5, 7.2]) {
       renderer.update(undefined, { phase: 'detonating', elapsed, turn: 1 });
-      assert.equal(rocks.visible, true);
+      assert.equal(rocks.visible, elapsed > 0);
       for (const mesh of [rocks, dust]) if (mesh.visible) for (let i = 0; i < mesh.count; i++) {
         mesh.getMatrixAt(i, matrix);
         assert.ok(matrix.determinant() > 1e-9, `${mesh.name} ${elapsed}/${i}: zero scale produces undefined shader normals`);
       }
       if (elapsed === 0) assert.equal(dust.visible, false, 'dust begins after the first explosion, rather than drawing zero-sized instances');
     }
+  } finally { renderer.dispose(); }
+});
+
+test('shaft rubble appears only when its charge fires, instead of floating ahead of the blast', () => {
+  const renderer = new DockEvacuationRenderer(new THREE.Group(), true);
+  const rocks = renderer.group.getObjectByName('shaft-collapse-rock') as THREE.InstancedMesh;
+  try {
+    renderer.update(undefined, { phase: 'detonating', elapsed: .1, turn: 1 });
+    assert.ok(rocks.count > 0 && rocks.count < 12, 'the first burst must not expose debris from all six charges');
+    renderer.update(undefined, { phase: 'detonating', elapsed: 4, turn: 1 });
+    assert.equal(rocks.count, 40);
   } finally { renderer.dispose(); }
 });
 
