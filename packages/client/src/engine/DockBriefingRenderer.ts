@@ -17,8 +17,8 @@ export class DockBriefingRenderer {
     const steel = this.surface('metal_plate', 0x59635b, 3), plaster = this.surface('damaged_plaster', 0x64675b, 4);
     const iron = this.material(0x282f2b, .7, .7), rubber = this.material(0x141b18, .95, .05);
     const bolt = this.material(0x929282, .45, .75);
-    this.box(plaster, 0, -.2, 0, 22, .4, 38, this.static, 'personnel-floor');
-    this.box(plaster, 0, 9.15, -4.4, 22, .3, 28.4);
+    this.box(steel, 0, -.2, 0, 22, .4, 38, this.static, 'personnel-floor');
+    this.box(plaster, 0, 7.25, -5.1, 22, .3, 26.6);
     for (const [i, wall] of DOCK_BRIEFING.walls.entries()) {
       if (i >= 8) continue; // These are the pipe-bank footprints, drawn as pipes below.
       this.box(wall.height > 10 ? steel : plaster, wall.x, wall.height / 2, wall.z, wall.width, wall.height, wall.depth, this.static, `personnel-wall-${i}`);
@@ -33,13 +33,30 @@ export class DockBriefingRenderer {
         }
       }
       for (const z of [-14, -5, 4]) {
-        this.box(iron, side * 8.5, 8.1, z, .18, 1.6, .35);
-        this.pipe(steel, [side * 8.5, 8.4, z], [side * 6.9, 8.4, z], .18);
+        this.box(iron, side * 8.75, 3.5, z, .16, 7, .25);
+        if (side === -1) this.box(iron, 0, 6.9, z, 17.5, .18, .3);
+        this.box(bolt, side * 8.73, .18, z, .3, .35, .5);
+        const valve = this.mesh(new THREE.TorusGeometry(.42, .055, 8, 20), iron);
+        valve.position.set(side * 8.91, 2.94, z + 1.4); valve.rotation.y = Math.PI / 2;
+        this.pipe(bolt, [side * 8.91, 2.94, z + 1.4], [side * 9.35, 2.94, z + 1.4], .07);
+        this.pipe(iron, [side * 8.91, 2.52, z + 1.4], [side * 8.91, 3.36, z + 1.4], .035);
+        this.pipe(iron, [side * 8.91, 2.94, z + .98], [side * 8.91, 2.94, z + 1.82], .035);
+      }
+      this.box(iron, side * 9.8, 3.4, -8.5, .6, 1.4, .9);
+      for (let cable = 0; cable < 4; cable++) {
+        const x = side * (7.3 + cable * .22);
+        const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(x, 6.8, -16), new THREE.Vector3(x + side * .1, 5.85, -10),
+          new THREE.Vector3(x, 6.8, -5), new THREE.Vector3(x - side * .14, 5.9, -.5), new THREE.Vector3(x, 6.8, 4)]);
+        this.mesh(new THREE.TubeGeometry(curve, 36, .035 + cable % 2 * .012, 5, false), rubber);
       }
     }
     for (let i = 0; i < 10; i++) {
       const x = -7.8 + i * 1.7;
-      this.pipe(steel, [x, 7.7 + i % 2 * .48, -17], [x, 7.7 + i % 2 * .48, 9.1], .13 + i % 3 * .06);
+      const y = 6.3 + i % 2 * .38, radius = .13 + i % 3 * .06;
+      this.pipe(steel, [x, y, -17], [x, y, 7.7], radius);
+      for (const z of [-12, -3, 6]) {
+        const joint = this.mesh(new THREE.TorusGeometry(radius + .025, .035, 6, 14), bolt); joint.position.set(x, y, z);
+      }
     }
     const face = new THREE.MeshStandardMaterial({ color: 0xe6d9ba, emissive: 0xffc895, emissiveIntensity: 1.6, roughness: .45 }); this.materials.add(face);
     for (const z of [-10, -2, 6]) {
@@ -52,7 +69,7 @@ export class DockBriefingRenderer {
       const light = new THREE.PointLight(0xffdbab, 88, 16, 2); light.position.set(-.25, 0, 0); lamp.add(light);
       for (const y of [-.26, 0, .26]) this.box(iron, -.12, y, 0, .035, .035, .95, lamp);
     }
-    const fill = new THREE.PointLight(0xbcccb8, 100, 25, 2); fill.position.set(-5, 6.4, 6); this.group.add(fill);
+    const fill = new THREE.PointLight(0xc4c5b8, 65, 25, 2); fill.position.set(-5, 5.7, 6); this.group.add(fill);
     const cage = DOCK_BRIEFING.lift; this.lift.name = 'personnel-moving-cage'; this.lift.position.set(cage.x, 0, cage.z);
     this.box(steel, 0, -.16, 0, cage.width, .32, cage.depth, this.lift, 'personnel-lift-deck');
     for (const side of [-1, 1]) {

@@ -36,12 +36,12 @@ export class DockBriefingSystem {
     const elapsed = actor.controller && actor.status === 'alive' ? Math.max(0, Math.min(.1, dt)) : 0;
     if (journey.step >= 4 && state.phase === 'reflection') state.phase = 'return';
     const duration = ({ lowering: DOCK_BRIEFING.lift.seconds, gate: DOCK_BRIEFING.lift.opening,
-      greeting: 4.8, answer: 2.4, roland: 3.4, warning: 7 } as Partial<Record<typeof state.phase, number>>)[state.phase];
+      greeting: 4.8, answer: 2.4, council: 6, roland: 3.4, warning: 7 } as Partial<Record<typeof state.phase, number>>)[state.phase];
     if (duration) {
       state.elapsed = Math.min(duration, state.elapsed + elapsed);
       if (state.elapsed >= duration) {
         const previous = state.phase;
-        state.phase = ({ lowering: 'gate', gate: 'walking', greeting: 'reply', answer: 'roland', roland: 'warning', warning: 'reflection' } as const)[previous as 'lowering' | 'gate' | 'greeting' | 'answer' | 'roland' | 'warning'];
+        state.phase = ({ lowering: 'gate', gate: 'walking', greeting: 'reply', answer: 'council', council: 'roland', roland: 'warning', warning: 'reflection' } as const)[previous as 'lowering' | 'gate' | 'greeting' | 'answer' | 'council' | 'roland' | 'warning'];
         state.elapsed = 0;
         if (previous === 'gate' || previous === 'warning') this.onAdvance?.(dockBriefingText(state), actor, tick);
       }

@@ -10,8 +10,8 @@ export function poseDockBriefing(rig: CharacterRig, gesture?: DockBriefingGestur
   const escorting = role !== 'niobe' && role !== 'lock' && phase === 'walking' && gesture.escort > 0 && gesture.escort < DOCK_BRIEFING.escortSeconds;
   const hero = rig.hero, head = hero?.bones.get('head') ?? rig.head;
   if (escorting || role === 'niobe' && ['walking', 'reply', 'reflection', 'return', 'done'].includes(phase)) return;
-  const speaker = role === 'lock' && ['greeting', 'warning'].includes(phase) || role === 'roland' && phase === 'roland' || role === 'niobe' && phase === 'answer';
-  const length = phase === 'warning' ? 7 : phase === 'greeting' ? 4.8 : phase === 'roland' ? 3.4 : 2.4;
+  const speaker = role === 'lock' && ['greeting', 'council', 'warning'].includes(phase) || role === 'roland' && phase === 'roland' || role === 'niobe' && phase === 'answer';
+  const length = phase === 'warning' ? 7 : phase === 'council' ? 6 : phase === 'greeting' ? 4.8 : phase === 'roland' ? 3.4 : 2.4;
   const movement = speaker ? Math.sin(Math.min(1, elapsed / length) * Math.PI) : 0;
   rig.detail.position.set(0, 0, 0); rig.detail.rotation.set(0, 0, 0);
   head.rotation.set(.06 + movement * .06 * Math.sin(elapsed * 3.2), 0, 0);
