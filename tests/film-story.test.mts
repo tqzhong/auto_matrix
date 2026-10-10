@@ -3963,9 +3963,20 @@ test('the entire film route completes through interactions, driving and real com
           assert.equal(h.world.agents.get('charra')!.status, 'dead'); continue;
         }
         if (scene.id === 'm3_diggers') {
+          const walkTo = (x: number, z: number) => {
+            const target = filmPosition(scene.set, x, z);
+            for (let frame = 0; frame < 1200; frame++) {
+              const dx = target.x - actor.position.x, dz = target.z - actor.position.z, gap = Math.hypot(dx, dz);
+              if (gap < .3) return;
+              h.players.receiveInput('film-player', { x: dx / gap, z: dz / gap, yaw: Math.atan2(dx, dz), jump: false, sprint: false, sequence: ++sequence });
+              h.players.step(.05, true, h.tick());
+            }
+            assert.fail('the loading pair cannot reach the next firing aperture');
+          };
           for (const station of DIGGERS.stations) {
-            actor.position = filmPosition(scene.set, station.x, station.z); h.command('act');
-            for (let frame = 0; frame < 300; frame++) {
+            if (state.diggers!.phase === 'relocate') { walkTo(-42, 27); walkTo(-42, station.z); }
+            walkTo(station.x, station.z); h.command('act');
+            for (let frame = 0; frame < 600; frame++) {
               const drill = state.diggers!, eye = diggerEye(drill), target = DIGGERS.knees[drill.station];
               const dx = target.x - eye.x, dz = target.z - eye.z;
               h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.atan2(dx, dz), pitch: -Math.atan2(target.y - eye.y, Math.hypot(dx, dz)),

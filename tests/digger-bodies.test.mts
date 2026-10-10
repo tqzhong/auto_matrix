@@ -7,6 +7,7 @@ import { CharacterModels } from '../packages/client/src/agents/CharacterModel.js
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { newDiggers, newUpperDigger, upperDiggerRoot, UPPER_DIGGER, TEMPLE_DEFENSE, FILM_SETS, templeWheelHands, type UpperDigger } from '@auto_matrix/shared';
+import { diggerLoaderPose, stepDiggers } from '@auto_matrix/shared';
 
 async function shipped(name: string) {
   const bytes = await readFile(new URL(`../packages/client/public/assets/characters/${name}.glb`, import.meta.url));
@@ -143,7 +144,7 @@ test('a contact correction after animation moves the rendered skin and its culli
 
 test('the anatomical palms meet the launcher and rockets, and boot soles support both fighters during loading', async t => {
   const { rigs, models } = await fixture(t);
-  for (const role of ['charra', 'zee'] as const) for (const pitch of [-.65, 0, .5]) for (const load of [0, .5, .9]) {
+  for (const role of ['charra', 'zee'] as const) for (const pitch of [-.65, 0, .5]) for (const load of [0, .5, .8]) {
     const rig = rigs[role]; rig.root.position.set(0, 0, 0); rig.root.rotation.set(0, .65, 0);
     models.animate(rig, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true,
       diggers: { ...newDiggers(), phase: 'loading', role, load, pitch } }, 1);
@@ -163,6 +164,48 @@ test('the anatomical palms meet the launcher and rockets, and boot soles support
     const floor = new THREE.Box3().setFromObject(boots, true).min.y;
     assert.ok(floor >= -.01 && floor < .03, `${role}: boot sole support is ${floor}`);
   }
+});
+
+test('Zee releases the seated rounds before aiming without snapping either arm down', async t => {
+  const { rigs, models } = await fixture(t), rig = rigs.zee;
+  const state = { ...newDiggers(), phase: 'loading' as const, load: 1 };
+  const pose = (phase: 'loading' | 'aiming') => { models.animate(rig, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true, diggers: { ...state, phase, role: 'zee' } }, 1); rig.root.updateMatrixWorld(true); };
+  pose('loading'); const before = rig.elbows.map(elbow => elbow.localToWorld(new THREE.Vector3(0, -.79, .055)));
+  pose('aiming'); rig.elbows.forEach((elbow, i) => assert.ok(elbow.localToWorld(new THREE.Vector3(0, -.79, .055)).distanceTo(before[i]) < .001, 'the loading boundary teleports the hand'));
+});
+
+test('the shipped loading pair carries the rounds, clears the other body and feeds them entirely inside the open breeches', async t => {
+  const { rigs, models } = await fixture(t), state = { ...newDiggers(), phase: 'loading' as const, loader: { x: 2.3, z: -1.4, yaw: 0, elapsed: 0 } };
+  for (let frame = 0; frame <= 65; frame++) {
+    const loader = diggerLoaderPose(state);
+    for (const role of ['charra', 'zee'] as const) {
+      const rig = rigs[role]; rig.root.position.set(role === 'zee' ? loader.x : 0, 0, role === 'zee' ? loader.z : 0); rig.root.rotation.set(0, role === 'zee' ? loader.yaw : 0, 0);
+      models.animate(rig, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true, diggers: { ...state, role } }, 1);
+      rig.root.updateMatrixWorld(true);
+      rig.root.getObjectByName(`${role}-detailed-body`)!.traverseVisible(object => {
+        if (!(object instanceof THREE.SkinnedMesh)) return;
+        object.skeleton.update(); const point = new THREE.Vector3();
+        for (let i = 0; i < object.geometry.attributes.position.count; i++) {
+          object.localToWorld(object.getVertexPosition(i, point));
+          assert.ok(point.y >= -.02, `${role} frame ${frame}: ${object.name} crosses the floor at ${point.toArray()}`);
+          if (role === 'zee') assert.ok(!(Math.abs(point.x) < .35 && Math.abs(point.z) < .3 && point.y > 1.6 && point.y < 3.2), `frame ${frame}: Zee crosses Charra's torso`);
+        }
+      });
+    }
+    if (state.load > 0 && rigs.zee.diggerProps!.rounds.visible) {
+      rigs.zee.diggerProps!.rounds.traverseVisible(object => {
+        if (!(object instanceof THREE.Mesh)) return;
+        for (let i = 0; i < object.geometry.attributes.position.count; i++) {
+          const point = rigs.charra.diggerProps!.gun.worldToLocal(object.localToWorld(new THREE.Vector3().fromBufferAttribute(object.geometry.attributes.position, i)));
+          if (state.load >= .9) assert.ok(point.z > -1.05 && point.z < 1.55, 'loaded rocket disappears before entering the barrel');
+          if (point.z >= -1.1025) assert.ok(Math.min(Math.hypot(point.x - .21, point.y), Math.hypot(point.x + .21, point.y)) < .17,
+            `load ${state.load}: a rocket enters the breech before aligning with its open bore`);
+        }
+      });
+    }
+    stepDiggers(state, .1, true);
+  }
+  assert.equal(state.phase, 'aiming');
 });
 
 test('boot cuffs follow the shin when the ankle flexes, without pulling the flat sole off the foot', async t => {

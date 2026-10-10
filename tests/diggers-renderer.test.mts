@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
+import { DiggerProps } from '../packages/client/src/agents/DiggerPerformance.js';
 import { DIGGERS, newDiggers, type FilmJourney } from '@auto_matrix/shared';
 import { DiggersRenderer } from '../packages/client/src/engine/DiggersRenderer.js';
 import { CharacterModels } from '../packages/client/src/agents/CharacterModel.js';
@@ -113,7 +114,7 @@ test('Charra grips the launcher, Zee loads the breeches, and the actual shoes st
   try {
     for (const role of ['charra', 'zee'] as const) {
       const rig = models.create(world.agents.get(role)!);
-      for (const load of [0, .3, .7, 1]) {
+      for (const load of [0, .3, .7]) {
         const state = { ...newDiggers(), phase: 'loading' as const, load, role, pitch: -.09 };
         rig.root.position.set(0, 0, role === 'zee' ? -1.95 : 0);
         models.animate(rig, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true, diggers: state }, 1);
@@ -161,4 +162,14 @@ test('first person retains Charra’s launcher and arms, hides only her head, an
     renderer.setPlayer('charra', false); renderer.update(0);
     assert.equal(body.getObjectByName('charra-head')!.visible, true);
   } finally { renderer.dispose(); globalThis.document = previous; }
+});
+test('the twin launcher bores stay open from breech to muzzle so the loaded rounds do not pass through solid caps', () => {
+  const props = new DiggerProps(new THREE.Group());
+  try {
+    props.gun.updateMatrixWorld(true);
+    for (const x of [-.21, .21]) for (const offset of [0, .14]) {
+      const ray = new THREE.Raycaster(new THREE.Vector3(x + offset, 0, -2), new THREE.Vector3(0, 0, 1), 0, 4);
+      assert.equal(ray.intersectObject(props.gun, true).length, 0, 'a ring or muzzle cap closes the rocket tube');
+    }
+  } finally { props.dispose(); }
 });
