@@ -7,10 +7,11 @@ export const LOGOS_BANE = {
   pushEnd: { x: -.9, y: 0, z: 6.5, yaw: -Math.PI / 2 }, returned: { x: -.9, y: 0, z: 8.95, yaw: Math.PI },
   gunman: { x: 1, y: 0, z: .6, yaw: Math.PI }, grapple: { x: 1, y: 0, z: -2, yaw: Math.PI },
   hatch: { x: -3.2, z: 7.8, width: 3.4, depth: 3.8, lower: -4.2, seconds: 2.2 },
+  ladder: { x: -2.6, z: 8.38, bottom: -3.8, gap: .55, count: 8 },
   rescue: { x: -.9, z: 7.8 }, pipe: { x: 4.6, z: -.8, y: 1.6 },
   lineSeconds: 4.2, lowerSeconds: 2.4, dropSeconds: 2.8, takeSeconds: 5.4, walkSeconds: 4.4, dodgeSeconds: .65,
   punchSeconds: .7, punchImpact: .36, pipeSeconds: .9, pipeImpact: .48, climbSeconds: 4.6,
-  burnDistance: 1.8,
+  burnDistance: 1.8, pipeReleaseSeconds: .7,
   hostageLines: [
     { role: 'bane', text: 'Bane 叫他“安德森先生”，像是早已预料到他会下来。Neo 不明白这个称呼为什么如此熟悉。' },
     { role: 'trinity', text: 'Trinity 要 Neo 开枪，别让 Bane 得逞。Bane 把她挡在身前，威胁电枪会把两人一起烧死。' },
@@ -41,12 +42,13 @@ export interface LogosBaneStaging {
   gunHealth: number; blindHealth: number; baneHealth: number; fall: number;
   player: LogosBaneRoot;
   gunPoint?: { x: number; y: number; z: number };
+  pipeDrop?: { elapsed: number; from: LogosBaneRoot };
   strike?: { kind: 'punch' | 'pipe'; elapsed: number; landed: boolean; from: LogosBaneRoot; to: LogosBaneRoot };
   dodge?: { kind: 'gun' | 'pipe'; elapsed: number; from: LogosBaneRoot };
   burnFrom?: LogosBaneRoot; burnTo?: LogosBaneRoot;
   paused?: string; unavailable?: string; legacy?: boolean;
 }
-export interface LogosBaneGesture { encounter: BaneEncounter; role: LogosBaneRole; contact?: { x: number; y: number; z: number } }
+export interface LogosBaneGesture { encounter: BaneEncounter; role: LogosBaneRole; contact?: { x: number; y: number; z: number }; handContacts?: [{ x: number; y: number; z: number }, { x: number; y: number; z: number }] }
 const smooth = (t: number) => { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); };
 const mix = (a: LogosBaneRoot, b: LogosBaneRoot, t: number): LogosBaneRoot => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, z: a.z + (b.z - a.z) * t, yaw: a.yaw + Math.atan2(Math.sin(b.yaw - a.yaw), Math.cos(b.yaw - a.yaw)) * t });
 export function logosBaneActive(journey?: FilmJourney): boolean { return journey?.scene === 'm3_bane' && !journey.visiting; }
@@ -85,6 +87,11 @@ export function logosBaneRoot(encounter: BaneEncounter, role: LogosBaneRole): Lo
     }
     if (state?.strike) return mix(state.strike.from, state.strike.to, smooth(state.strike.elapsed / .3));
     if (encounter.phase === 'burning' && state?.burnFrom && state.burnTo) return mix(state.burnFrom, state.burnTo, smooth(encounter.elapsed / .45));
+    if (state?.pipeDrop && ['opening', 'checking'].includes(state.rescue)) {
+      const from = state.pipeDrop.from, hatchYaw = Math.atan2(LOGOS_BANE.hatch.x - from.x, LOGOS_BANE.hatch.z - from.z);
+      const yaw = state.rescue === 'opening' ? hatchYaw : Math.atan2(LOGOS_BANE.returned.x - player.x, LOGOS_BANE.returned.z - player.z);
+      return mix({ ...player, yaw: state.rescue === 'opening' ? from.yaw : hatchYaw }, { ...player, yaw }, smooth(state.rescueElapsed / .65));
+    }
     return player;
   }
   if (role === 'trinity') {
@@ -97,8 +104,10 @@ export function logosBaneRoot(encounter: BaneEncounter, role: LogosBaneRole): Lo
     }
     if (state?.rescue === 'climbing') {
       const vertical = LOGOS_BANE.climbSeconds - 1, elapsed = state.rescueElapsed;
-      return elapsed < vertical ? { ...lower, y: hatch.lower * (1 - smooth(elapsed / vertical)) }
-        : mix({ ...lower, y: 0 }, LOGOS_BANE.returned, smooth(elapsed - vertical));
+      const ladder = { ...lower, x: LOGOS_BANE.ladder.x };
+      if (elapsed < .45) return mix(lower, ladder, smooth(elapsed / .45));
+      if (elapsed < vertical) return { ...ladder, y: hatch.lower + (-.8 - hatch.lower) * smooth((elapsed - .45) / (vertical - .45)) };
+      return { ...mix({ ...ladder, y: 0 }, LOGOS_BANE.returned, smooth((elapsed - vertical - .4) / .6)), y: -.8 * (1 - smooth((elapsed - vertical) / .4)) };
     }
     if (state?.rescue === 'checking' || state?.rescue === 'done') return { ...LOGOS_BANE.returned };
     return lower;
@@ -130,6 +139,15 @@ export function logosBaneHandle(encounter?: BaneEncounter): { x: number; y: numb
   return { x: h.x - h.width / 2 + Math.cos(angle) * (h.width - .2) - Math.sin(angle) * .36,
     y: .08 + Math.sin(angle) * (h.width - .2) + Math.cos(angle) * .36, z: h.z };
 }
+export function logosBaneDroppedPipe(encounter?: BaneEncounter): { x: number; y: number; z: number; roll: number } | undefined {
+  const drop = encounter?.physical?.pipeDrop;
+  if (!drop) return;
+  const { from } = drop, elapsed = Math.max(0, Math.min(LOGOS_BANE.pipeReleaseSeconds, drop.elapsed)), amount = elapsed / LOGOS_BANE.pipeReleaseSeconds;
+  const roll = .5 + (Math.PI / 2 - .5) * smooth(amount);
+  return { x: from.x - .54 * Math.cos(from.yaw) + .24 * Math.sin(from.yaw) + amount * 2,
+    y: Math.max(from.y + 2.15 - 4.9 * elapsed * elapsed, 1.1 * Math.abs(Math.cos(roll)) + .065 * Math.abs(Math.sin(roll)) + .005),
+    z: from.z + .54 * Math.sin(from.yaw) + .24 * Math.cos(from.yaw), roll };
+}
 export function logosBaneInjured(encounter?: BaneEncounter): boolean { return Boolean(encounter && (encounter.checkpoint === 'blind' || ['blind', 'pipe_window', 'counter', 'defeated'].includes(encounter.phase))); }
 export function logosBaneText(encounter?: BaneEncounter): string {
   const state = encounter?.physical, beat = logosBaneBeat(encounter);
@@ -143,7 +161,7 @@ export function logosBaneText(encounter?: BaneEncounter): string {
   if (beat === 'dropping') return 'Bane 把 Trinity 推入下层，伸手关上舱口。Neo 放下的电枪仍在甲板上。';
   if (beat === 'taking') return 'Bane 把下层舱口关上，走到 Neo 放下的电枪旁，屈身拿起它。';
   if (beat === 'recognition_ready') return 'G 追问 Bane 的身份。熟悉的称呼与语气，仍与眼前的肉身不符。';
-  if (beat === 'opening') return 'Neo 摸到舱口把手，转动并抬起舱盖。';
+  if (beat === 'opening') return state!.rescueElapsed < LOGOS_BANE.pipeReleaseSeconds ? 'Neo 松开铁管，把它放到舱口外的甲板上。' : 'Neo 摸到舱口把手，转动并抬起舱盖。';
   if (beat === 'climbing') return 'Trinity 抓住梯档爬回甲板。舱盖保持打开，Neo 在旁等待她。';
   if (beat === 'done') return 'Trinity 已回到甲板。眼伤与 Bane 的死亡保留，接下来由她驾驶 Logos。';
   return '';

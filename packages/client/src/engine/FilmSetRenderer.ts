@@ -528,8 +528,9 @@ export class FilmSetRenderer {
     this.baneCopy?.update(journey, elapsed, player && journey?.actor === player.id ? player.position : undefined, set?.center);
     if (this.logosBane) {
       const encounter = journey?.scene === 'm3_bane' && !journey.visiting ? journey.bane : undefined;
-      this.logosBane.update(encounter, journey?.step ?? 0, elapsed, this.phoneBodies);
-      this.logosBanePhase = encounter?.phase; this.logosBaneBlind = firstPerson && logosBaneInjured(encounter);
+      const neoFirstPerson = firstPerson && player?.id === 'neo';
+      this.logosBane.update(encounter, journey?.step ?? 0, elapsed, this.phoneBodies, neoFirstPerson);
+      this.logosBanePhase = encounter?.phase; this.logosBaneBlind = neoFirstPerson && logosBaneInjured(encounter);
     }
     if (this.mobil) this.mobil.update(!journey?.visiting ? journey?.mobil : undefined, this.phoneBodies?.('neo'), this.phoneBodies?.('rama_kandra'));
     this.trainmanChase?.update(sceneId === 'm3_trainman_chase' && !journey?.visiting ? journey?.helChase?.performance : undefined);
@@ -813,8 +814,8 @@ export class FilmSetRenderer {
       const color = blind ? 0x050a0c : cut ? 0x111b1e : 0x26333a;
       fog.color.setHex(color); fog.density = blind ? .016 : .004;
       (this.scene.background as THREE.Color).setHex(color);
-      this.scene.environmentIntensity = blind ? .025 : cut ? .12 : .52;
-      return { color: blind ? 0x7d92a0 : 0xc4d5da, ambient: blind ? .065 : cut ? .18 : .68, sun: blind ? .01 : cut ? .04 : .13 };
+      this.scene.environmentIntensity = blind ? .025 : cut ? .36 : .52;
+      return { color: blind ? 0x7d92a0 : 0xc4d5da, ambient: blind ? .065 : cut ? .42 : .68, sun: blind ? .01 : cut ? .04 : .13 };
     }
     if (this.logosFlight && this.current.id === 'film_machine_defense') {
       fog.density = .0034; fog.color.setHex(0x172326); (this.scene.background as THREE.Color).copy(fog.color);

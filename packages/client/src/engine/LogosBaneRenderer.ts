@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { LOGOS_BANE, logosBaneBeat, logosBaneHatch, logosBaneInjured, logosBaneRoot, type BaneEncounter, type LogosBaneRole } from '@auto_matrix/shared';
+import { LOGOS_BANE, logosBaneBeat, logosBaneHatch, logosBaneInjured, logosBaneRoot, logosBaneDroppedPipe, type BaneEncounter, type LogosBaneRole } from '@auto_matrix/shared';
 
 /** An independent lower cargo bay. Its dimensions are a playable reconstruction. */
 export class LogosBaneRenderer {
@@ -12,8 +12,10 @@ export class LogosBaneRenderer {
   private goldBody?: THREE.Group;
   private goldMaterial = new THREE.MeshBasicMaterial({ color: 0xffb642, transparent: true, opacity: .85, depthWrite: false, depthTest: false, toneMapped: false, fog: false });
   private hatch = new THREE.Group();
+  private ladder = new THREE.Group();
   private gun = new THREE.Group();
   private pipe = new THREE.Group();
+  private blindMask: THREE.Mesh;
   private gunFlash: THREE.PointLight;
   private cableFlash: THREE.PointLight;
   private fill: THREE.HemisphereLight;
@@ -83,8 +85,10 @@ export class LogosBaneRenderer {
     this.box(steel, h.width / 2, .08, 0, h.width, .14, h.depth, this.hatch);
     for (const z of [-1.1, 1.1]) this.box(dark, h.width / 2, .16, z, h.width - .3, .03, .08, this.hatch);
     this.tube([[h.width - .2, .19, -.22], [h.width - .2, .36, -.22], [h.width - .2, .36, .22], [h.width - .2, .19, .22]], .045, bronze, this.hatch);
-    for (let y = h.lower + .4; y < .1; y += .55) this.box(pale, h.x, y, h.z + .58, 1.1, .06, .13);
-    for (const x of [-.55, .55]) this.box(steel, h.x + x, h.lower / 2, h.z + .58, .07, -h.lower, .07);
+    const ladder = LOGOS_BANE.ladder; this.ladder.name = 'logos-engineering-ladder'; this.root.add(this.ladder);
+    for (let i = 0; i < ladder.count; i++) this.box(pale, ladder.x, ladder.bottom + i * ladder.gap, ladder.z, 1.1, .06, .13, this.ladder);
+    for (const x of [-.55, .55]) this.box(steel, ladder.x + x, h.lower / 2, ladder.z, .07, -h.lower, .07, this.ladder);
+    this.batchFixed(this.ladder);
     this.batchFixed();
     this.gun.name = 'bane-electric-gun'; this.root.add(this.gun);
     this.box(rubber, 0, -.11, 0, .22, .38, .15, this.gun); this.box(steel, 0, .11, .28, .27, .23, .74, this.gun);
@@ -92,6 +96,11 @@ export class LogosBaneRenderer {
     this.box(dark, 0, .17, .23, .16, .04, .55, this.gun);
     this.pipe.name = 'logos-bane-iron-pipe'; this.root.add(this.pipe);
     this.pipe.add(new THREE.Mesh(this.geometry(new THREE.CylinderGeometry(.065, .065, 2.2, 12)), steel));
+    const blackout = new THREE.ShaderMaterial({ transparent: true, depthTest: false, depthWrite: false, toneMapped: false,
+      vertexShader: 'void main() { gl_Position = vec4(position.xy, 0.0, 1.0); }',
+      fragmentShader: 'void main() { gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0); }' });
+    this.materials.add(blackout); this.blindMask = new THREE.Mesh(this.geometry(new THREE.PlaneGeometry(2, 2)), blackout);
+    this.blindMask.name = 'logos-blind-view-mask'; this.blindMask.frustumCulled = false; this.blindMask.renderOrder = 1; this.blindMask.visible = false; this.root.add(this.blindMask);
     this.gold.name = 'bane-gold-perception'; this.root.add(this.gold); this.materials.add(this.goldMaterial);
     this.goldMaterial.onBeforeCompile = shader => {
       shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vGoldSurface;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvGoldSurface = position;');
@@ -123,17 +132,19 @@ export class LogosBaneRenderer {
     this.goldBody = asset.scene; this.goldBody.name = 'logos-gold-smith-body'; this.gold.add(asset.scene);
   }
 
-  update(encounter: BaneEncounter | undefined, step: number, _time: number, avatars?: (id: string) => THREE.Object3D | undefined): void {
+  update(encounter: BaneEncounter | undefined, step: number, _time: number, avatars?: (id: string) => THREE.Object3D | undefined, neoFirstPerson = false): void {
     const phase = encounter?.phase ?? 'ready', state = encounter?.physical, beat = logosBaneBeat(encounter);
-    const cut = !['ready', 'gun_warning'].includes(phase), dark = logosBaneInjured(encounter);
+    const cut = !['ready', 'gun_warning'].includes(phase), injured = logosBaneInjured(encounter), dark = neoFirstPerson && injured;
+    this.blindMask.visible = dark;
     const clock = state && state.intro !== 'done' ? state.elapsed : encounter?.elapsed ?? 0, flicker = phase === 'gun_warning' ? .7 + .22 * Math.sin(clock * 29) : 1;
-    for (const { light, intensity } of this.lights) light.intensity = intensity * (cut ? dark ? .025 : .09 : flicker);
-    this.fill.intensity = cut ? dark ? .07 : .23 : .85 * flicker;
-    for (const light of this.deckLights) light.intensity = 110 * (cut ? dark ? .015 : .10 : flicker);
+    for (const { light, intensity } of this.lights) light.intensity = intensity * (cut ? dark ? .025 : .24 : flicker);
+    this.fill.intensity = cut ? dark ? .07 : .52 : .85 * flicker;
+    for (const light of this.deckLights) light.intensity = 110 * (cut ? dark ? .015 : .32 : flicker);
     const local = (role: LogosBaneRole) => encounter ? logosBaneRoot(encounter, role) : role === 'neo' ? LOGOS_BANE.neo : role === 'bane' ? LOGOS_BANE.holder : LOGOS_BANE.hostage;
-    const hand = (role: LogosBaneRole, side = 'R') => {
+    const hand = (role: LogosBaneRole, side = 'R', pipeGrip = false) => {
       const wrist = avatars?.(role)?.getObjectByName('wrist_' + side), root = local(role);
-      if (wrist) return this.parent.worldToLocal(wrist.localToWorld(role === 'bane' ? new THREE.Vector3(0, -.1, .005) : new THREE.Vector3(side === 'R' ? .09 : -.09, -.18, .02)));
+      if (wrist) return this.parent.worldToLocal(wrist.localToWorld(pipeGrip && wrist.userData.logosBanePalm instanceof THREE.Vector3 ? wrist.userData.logosBanePalm.clone()
+        : role === 'bane' ? new THREE.Vector3(0, -.1, .005) : new THREE.Vector3(side === 'R' ? .09 : -.09, -.18, .02)));
       return new THREE.Vector3(root.x + Math.cos(root.yaw) * .2, root.y + 3.15, root.z + Math.cos(root.yaw) * .85);
     };
     const eyes = (role: LogosBaneRole) => {
@@ -154,7 +165,7 @@ export class LogosBaneRenderer {
     this.hatch.rotation.z = (state ? logosBaneHatch(encounter) : step >= 3 ? 1 : 0) * 1.43;
     const bane = local('bane');
     const focus = phase === 'blind' ? (encounter?.focus ?? 0) / 1.8 : ['pipe_window', 'counter'].includes(phase) ? 1 : phase === 'defeated' && state ? 1 - state.fall / 1.2 : 0;
-    this.gold.visible = focus > .12; this.goldMaterial.opacity = .12 + .8 * focus; this.gold.position.set(bane.x, bane.y, bane.z); this.gold.rotation.y = bane.yaw;
+    this.gold.visible = neoFirstPerson && focus > .12; this.goldMaterial.opacity = .12 + .8 * focus; this.gold.position.set(bane.x, bane.y, bane.z); this.gold.rotation.y = bane.yaw;
     const baneBody = avatars?.('bane');
     if (baneBody) {
       baneBody.updateWorldMatrix(true, false);
@@ -164,11 +175,13 @@ export class LogosBaneRenderer {
       const joint = this.goldBody.getObjectByName(name); if (joint) joint.rotation.set(x + (state?.strike ? Math.sin(state.strike.elapsed * 6) * .35 : 0), 0, z);
     }
     const pipeHeld = ['blind', 'pipe_window', 'counter', 'defeated'].includes(phase), pipeOwner = state?.strike?.kind === 'pipe' || phase === 'defeated' ? 'neo' : 'bane';
-    this.pipe.position.copy(pipeHeld ? hand(pipeOwner) : new THREE.Vector3(LOGOS_BANE.pipe.x, LOGOS_BANE.pipe.y, LOGOS_BANE.pipe.z));
-    this.pipe.rotation.set(0, 0, pipeHeld ? .5 + (state?.strike ? Math.sin(state.strike.elapsed * 6) * 1.4 : 0) : Math.PI / 2);
-    const endpoint = phase === 'burning' ? eyes('neo') : dark && state?.burnTo ? new THREE.Vector3(state.burnTo.x + .3, .1, state.burnTo.z + .2) : new THREE.Vector3(4.6, 1.1, -2);
+    const droppedPipe = logosBaneDroppedPipe(encounter);
+    this.pipe.position.copy(droppedPipe ? new THREE.Vector3(droppedPipe.x, droppedPipe.y, droppedPipe.z)
+      : pipeHeld ? hand(pipeOwner, 'R', true) : new THREE.Vector3(LOGOS_BANE.pipe.x, LOGOS_BANE.pipe.y, LOGOS_BANE.pipe.z));
+    this.pipe.rotation.set(0, 0, droppedPipe?.roll ?? (pipeHeld ? .5 + (state?.strike ? Math.sin(state.strike.elapsed * 6) * 1.4 : 0) : Math.PI / 2));
+    const endpoint = phase === 'burning' ? eyes('neo') : injured && state?.burnTo ? new THREE.Vector3(state.burnTo.x + .3, .1, state.burnTo.z + .2) : new THREE.Vector3(4.6, 1.1, -2);
     const cable = new THREE.CatmullRomCurve3([new THREE.Vector3(4.8, 6, -3), new THREE.Vector3(4.6, 4.9, -3.1),
-      phase === 'burning' ? hand('bane').lerp(endpoint, .7) : dark ? new THREE.Vector3(4.5, .16, -3.1) : new THREE.Vector3(4.6, 2.2, -2.5), endpoint]), points = cable.getPoints(24), transform = new THREE.Object3D();
+      phase === 'burning' ? hand('bane').lerp(endpoint, .7) : injured ? new THREE.Vector3(4.5, .16, -3.1) : new THREE.Vector3(4.6, 2.2, -2.5), endpoint]), points = cable.getPoints(24), transform = new THREE.Object3D();
     for (let i = 0; i < 24; i++) {
       const a = points[i], b = points[i + 1]; transform.position.copy(a).add(b).multiplyScalar(.5); transform.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize()); transform.scale.set(.055, a.distanceTo(b), .055); transform.updateMatrix(); this.liveCable.setMatrixAt(i, transform.matrix);
     }
@@ -196,20 +209,20 @@ export class LogosBaneRenderer {
     items.forEach(([x, y, z, w, h, d], index) => { transform.position.set(x, y, z); transform.scale.set(w, h, d); transform.updateMatrix(); mesh.setMatrixAt(index, transform.matrix); });
     mesh.castShadow = mesh.receiveShadow = true; this.root.add(mesh); this.instances.add(mesh);
   }
-  private batchFixed(): void {
-    this.root.updateWorldMatrix(true, true);
+  private batchFixed(root = this.root): void {
+    root.updateWorldMatrix(true, true);
     const groups = new Map<THREE.Material, { mesh: THREE.Mesh; geometry: THREE.BufferGeometry }[]>();
-    this.root.traverse(object => {
+    root.traverse(object => {
       if (!(object instanceof THREE.Mesh) || object instanceof THREE.InstancedMesh) return;
-      for (let p: THREE.Object3D | null = object; p; p = p.parent) if (p === this.hatch) return;
+      for (let p: THREE.Object3D | null = object; p; p = p.parent) if (p === this.hatch || root === this.root && p === this.ladder) return;
       const material = object.material as THREE.Material, entries = groups.get(material) ?? [];
-      const transform = this.root.matrixWorld.clone().invert().multiply(object.matrixWorld);
+      const transform = root.matrixWorld.clone().invert().multiply(object.matrixWorld);
       entries.push({ mesh: object, geometry: object.geometry.clone().applyMatrix4(transform) }); groups.set(material, entries);
     });
     for (const [material, entries] of groups) {
       const geometry = this.geometry(mergeGeometries(entries.map(entry => entry.geometry))!);
       entries.forEach(entry => { entry.mesh.removeFromParent(); entry.geometry.dispose(); });
-      const mesh = new THREE.Mesh(geometry, material); mesh.castShadow = mesh.receiveShadow = true; mesh.name = 'logos-fixed-equipment'; this.root.add(mesh);
+      const mesh = new THREE.Mesh(geometry, material); mesh.castShadow = mesh.receiveShadow = true; mesh.name = 'logos-fixed-equipment'; root.add(mesh);
     }
   }
 }

@@ -19,8 +19,8 @@ test('Logos cuts the ship lights, reveals the saved gold target and opens the en
   renderer.update(encounter, 1, 0); assert.equal(shipLight.intensity, 100); assert.equal(gold.visible, false); assert.equal(hatch.rotation.z, 0);
   assert.equal(gun.visible, true, 'the same physical gun remains visible while it is held');
   assert.ok(fill.intensity > .6);
-  encounter.phase = 'gun_window'; renderer.update(encounter, 1, .8); assert.ok(shipLight.intensity < 10);
-  encounter.phase = 'blind'; encounter.focus = .9; renderer.update(encounter, 1, 2); assert.equal(gold.visible, true); assert.ok(shipLight.intensity < 3);
+  encounter.phase = 'gun_window'; renderer.update(encounter, 1, .8); assert.ok(shipLight.intensity > 0 && shipLight.intensity < 100, 'the remaining emergency light is dimmer than the powered ship');
+  encounter.phase = 'blind'; encounter.focus = .9; renderer.update(encounter, 1, 2, undefined, true); assert.equal(gold.visible, true); assert.ok(shipLight.intensity < 3);
   assert.equal(gun.visible, true, 'the gun remains on the deck after the grapple');
   assert.ok(fill.intensity < .1);
   encounter.phase = 'counter'; encounter.pipeX = 4; encounter.pipeZ = -3; renderer.update(encounter, 1, 3);
@@ -82,4 +82,33 @@ test('the cargo-bay waypoint light stays off during the saved hostage and rescue
   bane.physical!.intro = 'recognition_ready'; check(true);
   bane.phase = 'defeated'; bane.physical!.intro = 'done'; bane.physical!.rescue = 'climbing'; journey.step = 2; check(false);
   bane.physical!.rescue = 'done'; journey.step = 3; check(false);
+});
+
+test('Neo’s blindness belongs to his first-person view rather than the ship or Trinity’s eyes', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const previous = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {},
+    createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {} }) }) } as unknown as Document;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const actor = world.agents.get('neo')!; actor.isInMatrix = false; actor.currentLocation = 'film_logos_deck'; actor.position = filmEntry(FILM_SCENE_BY_ID.m3_bane);
+  const bane: BaneEncounter = { phase: 'blind', elapsed: 1, attempts: 0, checkpoint: 'blind', hits: 2, focus: .9, counters: 0, lastStrike: -1 };
+  const journey = { scene: 'm3_bane', actor: 'neo', step: 1, bane } as FilmJourney;
+  const sandbox = { neoLife: { journey }, structures: [] } as unknown as SandboxState;
+  const scene = new THREE.Scene(); scene.background = new THREE.Color(); scene.fog = new THREE.FogExp2();
+  const renderer = new FilmSetRenderer(scene);
+  t.after(() => { renderer.dispose(); globalThis.document = previous; });
+  const view = (id: string, first: boolean) => {
+    renderer.update({ ...actor, id }, sandbox, 0, undefined, undefined, undefined, first);
+    const fill = scene.getObjectByName('logos-deck-fill') as THREE.HemisphereLight;
+    return { fill: fill.intensity, ambient: renderer.atmosphere()!.ambient, gold: scene.getObjectByName('bane-gold-perception')!.visible,
+      blind: scene.getObjectByName('logos-blind-view-mask')?.visible ?? false };
+  };
+  const neo = view('neo', true), third = view('neo', false), trinity = view('trinity', true);
+  assert.ok(neo.gold && neo.fill < .1 && neo.ambient < .1);
+  assert.equal(neo.blind, true, 'ordinary humans and surfaces cannot remain visible to the burned eyes');
+  assert.equal(third.gold, false, 'the third-person camera sees Bane’s physical body');
+  assert.equal(third.blind, false, 'switching away from Neo’s eyes restores the physical scene');
+  assert.ok(third.fill > .2, 'injuring Neo cannot remove the ship’s remaining physical light');
+  assert.deepEqual(trinity, third, 'Trinity retains the same physical cargo bay rather than inheriting Neo’s blindness');
+  assert.deepEqual(view('neo', true), neo, 'V restores only Neo’s saved perception without changing world time');
 });

@@ -55,7 +55,7 @@ async function setup(t: test.TestContext) {
     renderer.getAgent('neo')!.position.set(player.position.x, player.position.y, player.position.z);
     renderer.getAgentBody('neo')!.rotation.y = player.rotation;
     renderer.setPlayerMotion({ speed: 0, turn: 0, grounded: true, verticalVelocity: 0, realWorld: true, firstPerson: first, logosBane: { encounter: state, role: 'neo' } });
-    renderer.update(delta, undefined, 0, 10105, journey); room.update(state, 1, 0, id => renderer.getAgentBody(id)); scene.updateMatrixWorld(true);
+    renderer.update(delta, undefined, 0, 10105, journey); room.update(state, 1, 0, id => renderer.getAgentBody(id), first); scene.updateMatrixWorld(true);
     scene.traverse(object => { if (object instanceof THREE.SkinnedMesh) object.skeleton.update(); });
   };
   t.after(() => { disposers.forEach(dispose => dispose()); renderer.dispose(); room.dispose(); ['window', 'document'].forEach((key, i) => { if (old[i]) Object.defineProperty(globalThis, key, old[i]!); else Reflect.deleteProperty(globalThis, key); }); });
@@ -130,7 +130,7 @@ test('first-person free look cannot reveal Neo’s combined face or neck while l
 
 test('gold perception uses the delivered Smith anatomy at Bane’s actual saved position', async t => {
   const h = await setup(t); h.encounter.physical!.intro = 'done'; h.encounter.phase = 'counter'; h.encounter.pipeX = 4; h.encounter.pipeZ = -3;
-  h.pose();
+  h.pose(h.encounter, true);
   const gold = h.set.getObjectByName('bane-gold-perception')!, body = h.set.getObjectByName('logos-gold-smith-body')!;
   assert.ok(gold.visible && body); const points = surfaces(body);
   assert.ok(points.length > 400, 'gold perception needs actual face, clothing and limbs instead of wire spheres');
@@ -267,4 +267,74 @@ test('the burning cable hand reaches Neo’s actual eyes while both delivered bo
   const eye = head.localToWorld((head.userData.cameraEye as THREE.Vector3).clone());
   const face = h.renderer.getAgentBody('bane')!.getObjectByName('bane-anatomical-head')!;
   assert.equal(new THREE.Box3().setFromObject(face, true).containsPoint(eye), false, 'the first-person eye cannot enter Bane’s delivered head');
+});
+
+test('the pipe leaves Neo’s delivered palm continuously and rests outside the opening instead of following the handle', async t => {
+  const h = await setup(t), state = h.encounter.physical!, pipe = h.set.getObjectByName('logos-bane-iron-pipe')!;
+  state.intro = 'done'; state.fall = 1.2; h.encounter.phase = 'defeated';
+  state.player = { x: -.94, y: 0, z: 7.89, yaw: -.4 }; h.pose();
+  const held = pipe.getWorldPosition(new THREE.Vector3()).clone();
+  state.rescue = 'opening'; state.rescueElapsed = 0; state.pipeDrop = { elapsed: 0, from: { ...state.player } }; h.pose();
+  assert.ok(held.distanceTo(pipe.getWorldPosition(new THREE.Vector3())) < .06, `releasing the pipe leaves the delivered palm: ${held.toArray()} → ${pipe.getWorldPosition(new THREE.Vector3()).toArray()}`);
+  for (const clock of [.2, .45, .7, .9, 1.1, 1.5]) {
+    state.rescueElapsed = clock; state.pipeDrop.elapsed = Math.min(LOGOS_BANE.pipeReleaseSeconds, clock); h.pose();
+    const bounds = new THREE.Box3().setFromObject(pipe, true), floor = h.center.y - 1;
+    assert.ok(bounds.min.y >= floor - .01, `the released pipe penetrates the deck at ${clock}`);
+    assert.ok(Math.min(...surfaces(h.renderer.getAgentBody('neo')!).map(p => p.y)) >= floor - .1, `Neo penetrates the deck while opening at ${clock}`);
+    if (clock >= LOGOS_BANE.pipeReleaseSeconds) {
+      assert.ok(bounds.max.y < floor + .15, 'the pipe must lie on the physical deck');
+      assert.ok(bounds.min.x > h.center.x + LOGOS_BANE.hatch.x + LOGOS_BANE.hatch.width / 2, 'the pipe cannot remain suspended over the newly open hole');
+      const wrist = h.renderer.getAgentBody('neo')!.getObjectByName('wrist_R')!;
+      assert.ok(wrist.getWorldPosition(new THREE.Vector3()).distanceTo(pipe.getWorldPosition(new THREE.Vector3())) > .6, 'the hand operating the hatch no longer owns the weapon');
+    }
+  }
+  const saved = pipe.getWorldPosition(new THREE.Vector3()).clone(), angle = pipe.getWorldQuaternion(new THREE.Quaternion());
+  h.pose(structuredClone(h.encounter), false, 10);
+  assert.ok(saved.distanceTo(pipe.getWorldPosition(new THREE.Vector3())) < .001); assert.ok(angle.angleTo(pipe.getWorldQuaternion(new THREE.Quaternion())) < .001);
+});
+
+test('Trinity grips the delivered ladder and upper rim rather than climbing with her hands in empty space', async t => {
+  const h = await setup(t), state = h.encounter.physical!;
+  state.intro = 'done'; state.fall = 1.2; state.rescue = 'climbing'; h.encounter.phase = 'defeated';
+  const rig = (h.renderer as any).agents.get('trinity').rig;
+  for (const clock of [2, 3.6]) {
+    state.rescueElapsed = clock; h.pose();
+    for (let i = 0; i < 2; i++) {
+      const wrist = rig.hero?.bones.get(`wrist_${i ? 'L' : 'R'}`) ?? rig.mobilWrists[i];
+      const palm = wrist.localToWorld(rig.hero ? new THREE.Vector3(i ? -.13 : .13, -.18, .02) : new THREE.Vector3(0, -.75 - wrist.position.y, .005));
+      const contacts = [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]].flatMap(d => {
+        const direction = new THREE.Vector3(...d);
+        return new THREE.Raycaster(palm.clone().addScaledVector(direction, .14), direction.negate(), .0001, .28).intersectObject(h.set, true).filter(hit => hit.point.distanceTo(palm) < .14);
+      });
+      assert.ok(contacts.length > 0, `Trinity’s ${i ? 'left' : 'right'} palm has no physical support at ${clock}: ${palm.toArray()}`);
+    }
+  }
+});
+
+test('Trinity reaches Neo’s actual cheeks after climbing out and releases them at the saved end of the exchange', async t => {
+  const h = await setup(t), state = h.encounter.physical!;
+  state.intro = 'done'; state.fall = 1.2; state.rescue = 'checking'; state.rescueElapsed = 1;
+  state.player = { x: -.94, y: 0, z: 7.89, yaw: .038 }; h.encounter.phase = 'defeated'; h.pose(); h.pose();
+  const rig = (h.renderer as any).agents.get('trinity').rig, head = h.renderer.getAgentBody('neo')!.getObjectByName('head')!;
+  const palms = () => [0,1].map(i => {
+    const wrist = rig.hero?.bones.get(`wrist_${i ? 'L' : 'R'}`) ?? rig.mobilWrists[i];
+    return wrist.localToWorld(rig.hero ? new THREE.Vector3(i ? -.13 : .13, -.18, .02) : new THREE.Vector3(0, -.75 - wrist.position.y, .005));
+  });
+  for (const [i, palm] of palms().entries()) {
+    const cheek = head.localToWorld(new THREE.Vector3(i ? -.18 : .18, -.2, .18));
+    assert.ok(palm.distanceTo(cheek) < .1, `Trinity misses Neo’s cheek by ${palm.distanceTo(cheek)}`);
+  }
+  state.rescueElapsed = LOGOS_BANE.rescueLines.length * LOGOS_BANE.lineSeconds; h.pose(); h.pose();
+  assert.ok(palms().every(palm => palm.distanceTo(head.getWorldPosition(new THREE.Vector3())) > .5), 'the finished conversation does not leave hands attached to the face');
+});
+
+test('Trinity’s lower body clears the actual hatch sidewall throughout the vertical climb', async t => {
+  const h = await setup(t), state = h.encounter.physical!, floor = h.center.y - 1, edge = h.center.x + LOGOS_BANE.hatch.x + LOGOS_BANE.hatch.width / 2;
+  state.intro = 'done'; state.fall = 1.2; state.rescue = 'climbing'; h.encounter.phase = 'defeated';
+  for (const clock of [1, 2, 3.2, 3.6, 4, 4.25, 4.5]) {
+    state.rescueElapsed = clock; h.pose();
+    const below = surfaces(h.renderer.getAgentBody('trinity')!).filter(point => point.y < floor - .12);
+    if (clock <= 3.6) assert.ok(below.length > 20);
+    assert.ok(below.every(point => point.x < edge - .04), `Trinity penetrates the hatch’s right sidewall at ${clock}: ${Math.max(...below.map(point => point.x)) - edge}`);
+  }
 });

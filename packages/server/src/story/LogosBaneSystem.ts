@@ -50,7 +50,11 @@ export class LogosBaneSystem {
     }
     const elapsed = available && actor.controller ? Math.max(0, Math.min(.1, dt)) : 0;
     state.player = this.local(actor);
+    if (available && state.rescue !== 'waiting' && !state.pipeDrop) state.pipeDrop = {
+      elapsed: state.rescue === 'opening' ? Math.min(LOGOS_BANE.pipeReleaseSeconds, state.rescueElapsed) : LOGOS_BANE.pipeReleaseSeconds,
+      from: { ...state.player } };
     if (elapsed) {
+      if (state.pipeDrop) state.pipeDrop.elapsed = Math.min(LOGOS_BANE.pipeReleaseSeconds, state.pipeDrop.elapsed + elapsed);
       if (encounter.phase === 'defeated') state.fall = Math.min(1.2, state.fall + elapsed);
       if (state.intro !== 'done') {
         if (['hostage', 'lowering', 'dropping', 'taking', 'recognition'].includes(state.intro)) state.elapsed += elapsed;
@@ -144,7 +148,7 @@ export class LogosBaneSystem {
   private pose(actor: AgentState): void {
     const journey = this.journey!, encounter = journey.bane!, state = encounter.physical!;
     if (logosBaneLocked(encounter) && !state.paused && !state.unavailable) {
-      if (state.intro !== 'done' || encounter.phase === 'burning') this.place(actor, logosBaneRoot(encounter, 'neo'));
+      if (state.intro !== 'done' || encounter.phase === 'burning' || ['opening', 'checking'].includes(state.rescue)) this.place(actor, logosBaneRoot(encounter, 'neo'));
       actor.velocity = { x: 0, y: 0, z: 0 }; actor.targetPosition = null; actor.currentPath = [];
     }
     state.player = this.local(actor);
@@ -214,6 +218,7 @@ export class LogosBaneSystem {
     if (journey.step === 2 && encounter.phase === 'defeated') {
       if (state.strike || state.rescue !== 'waiting') return journey.lastText;
       if (distance(actor.position, filmPosition('film_logos_deck', LOGOS_BANE.rescue.x, LOGOS_BANE.rescue.z)) > 1.7) return '先走到下层舱口旁，再按 G 打开它。';
+      state.pipeDrop = { elapsed: 0, from: this.local(actor) };
       state.rescue = 'opening'; state.rescueElapsed = 0; this.pose(actor); return journey.lastText = logosBaneText(encounter);
     }
     return journey.step < 3 ? journey.lastText : undefined;
