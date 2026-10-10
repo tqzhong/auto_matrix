@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { WebGLMaterials } from 'three/src/renderers/webgl/WebGLMaterials.js';
-import { DOCK_EVACUATION, SHAFT_SEAL, FILM_SETS, dockEvacuationLift, dockEvacuationRoot, dockEvacuationSoldier, shaftSealLever, type DockEvacuation } from '@auto_matrix/shared';
+import { DOCK_EVACUATION, SHAFT_SEAL, FILM_SETS, dockCargoPose, dockEvacuationLift, dockEvacuationRoot, dockEvacuationSoldier, shaftSealLever, type DockEvacuation } from '@auto_matrix/shared';
 import { DockEvacuationRenderer } from '../packages/client/src/engine/DockEvacuationRenderer.js';
 import { DockEvacuationCrew } from '../packages/client/src/engine/DockEvacuationCrew.js';
 import { CharacterModels } from '../packages/client/src/agents/CharacterModel.js';
@@ -241,6 +241,70 @@ async function crewAsset(name: string) {
   buffer.writeUInt32LE(padded.length, 12); buffer.writeUInt32LE(0x4e4f534a, 16); padded.copy(buffer, 20); bin.copy(buffer, 20 + padded.length);
   return new GLTFLoader().parseAsync(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength), '');
 }
+
+test('the real Kid reaches for stationary cargo before lifting and releases it before returning upright', async t => {
+  const assets = Object.fromEntries(await Promise.all(['kid-head', 'kid-body'].map(async name => [name, await crewAsset(name)])));
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', (url: string) => Promise.resolve(assets[url.split('/').at(-1)!.replace('.glb', '')]));
+  const { models, rig } = fixture(t, 'kid');
+  const base: DockEvacuation = { phase: 'supplies', elapsed: 0, crewAge: 0, remaining: 26, attempts: 0, delivered: false,
+    approach: { ...DOCK_EVACUATION.pickup, yaw: Math.PI }, handling: 'continuous' };
+  const pose = (phase: DockEvacuation['phase'], elapsed: number, offset = { x: 0, z: 0 }) => {
+    const approach = { ...(phase === 'depositing' || phase === 'wind' ? DOCK_EVACUATION.delivery : DOCK_EVACUATION.pickup), yaw: Math.PI };
+    approach.x += offset.x; approach.z += offset.z;
+    const state = { ...base, phase, elapsed, approach };
+    rig.root.position.set(approach.x, 0, approach.z); rig.root.rotation.y = approach.yaw;
+    models.animate(rig, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true, dockEvacuation: { ...state, role: 'kid' } }, 0);
+    rig.root.updateMatrixWorld(true); return state;
+  };
+  pose('supplies', 0); await new Promise(resolve => setImmediate(resolve)); pose('supplies', 0);
+  assert.ok(rig.root.getObjectByName('kid-anatomical-body'), 'inspect the delivered continuous body rather than the fallback capsules');
+  const wrists = () => rig.elbows.map(elbow => elbow.localToWorld(new THREE.Vector3(0, -.79, .055)));
+  const rest = wrists();
+  pose('lifting', 0);
+  assert.ok(wrists().every((point, i) => point.distanceTo(rest[i]) < .015), 'G must not teleport both hands onto the cargo');
+  const first = dockCargoPose(pose('lifting', .3)), atRest = dockCargoPose(pose('lifting', 0));
+  assert.ok(Math.hypot(first.x - atRest.x, first.y - atRest.y, first.z - atRest.z) < .001, 'the crate cannot levitate before both hands arrive');
+  const held = wrists(); pose('lifting', 2.55);
+  assert.ok(wrists().some((point, i) => point.distanceTo(held[i]) > .3));
+  pose('depositing', 2.55); const released = wrists(); pose('wind', 0);
+  assert.ok(wrists().every((point, i) => point.distanceTo(released[i]) < .015), 'the final release must meet the next neutral pose without snapping');
+  const boots = rig.root.getObjectByName('kid-work-boots') as THREE.SkinnedMesh;
+  const skin = rig.root.getObjectByName('kid-anatomical-body') as THREE.SkinnedMesh;
+  const indices = skin.geometry.attributes.skinIndex, weights = skin.geometry.attributes.skinWeight;
+  const hands = [0, 1].map(side => {
+    const joints = skin.skeleton.bones.map((bone, index) => /^(wrist|finger)/.test(bone.name) && bone.name.endsWith(side ? '_L' : '_R') ? index : -1);
+    return Array.from({ length: indices.count }, (_, i) => i).filter(i => {
+      let weight = 0;
+      for (let j = 0; j < 4; j++) if (joints.includes(indices.getComponent(i, j))) weight += weights.getComponent(i, j);
+      return weight > .6;
+    });
+  });
+  for (const offset of [{ x: 0, z: 0 }, { x: 0, z: .43 }, { x: 0, z: -.43 }, { x: .4, z: 0 }, { x: -.3, z: .3 }])
+    for (const phase of ['lifting', 'depositing'] as const) for (const elapsed of [0, .18, .375, .75, 1.2, 1.8, 2.1, 2.55]) {
+    const state = pose(phase, elapsed, offset), cargo = dockCargoPose(state), point = new THREE.Vector3();
+    boots.skeleton.update(); skin.skeleton.update(); const soles = [Infinity, Infinity];
+    for (let i = 0; i < boots.geometry.attributes.position.count; i++) {
+      const side = boots.geometry.attributes.position.getX(i) < 0 ? 0 : 1;
+      boots.getVertexPosition(i, point).applyMatrix4(boots.matrixWorld); soles[side] = Math.min(soles[side], point.y);
+    }
+    assert.ok(soles.every(y => y >= -.025 && y < .045), `${phase}/${elapsed}: actual boot soles ${soles}`);
+    for (const knee of rig.knees) assert.ok(knee.getWorldPosition(new THREE.Vector3()).y > .35, `${phase}/${elapsed}: lifting must bend the knees above the deck, not kneel through it`);
+    for (let side = 0; side < 2; side++) {
+      let distance = Infinity; const handle = rig.dockCargo!.handles[side].getWorldPosition(new THREE.Vector3());
+      for (const index of hands[side]) {
+        skin.getVertexPosition(index, point).applyMatrix4(skin.matrixWorld);
+        distance = Math.min(distance, point.distanceTo(handle));
+        rig.dockCargo!.root.worldToLocal(point);
+        assert.ok(!(Math.abs(point.x) < .93 && Math.abs(point.y) < .50 && Math.abs(point.z) < .58), `${phase}/${elapsed}/${side}: actual hand enters the crate at ${point.toArray()}`);
+      }
+      if (cargo.grip === 1) assert.ok(distance < .1, `${phase}/${elapsed}/${side}: actual hand is ${distance} from the handle`);
+    }
+    if (phase === 'depositing' && elapsed === 2.55) {
+      const before = wrists(); pose('wind', 0, offset);
+      assert.ok(wrists().every((point, i) => point.distanceTo(before[i]) < .015), 'the close-approach clearance must continue after the prop becomes a world object');
+    }
+  }
+});
 test('the delivered crew meshes keep their supporting soles planted and restore the saved pose after asynchronous loading', async t => {
   const assets = await Promise.all(['club-male', 'club-female'].map(crewAsset));
   t.mock.method(GLTFLoader.prototype, 'loadAsync', (url: string) => Promise.resolve(assets[url.includes('female') ? 1 : 0]));

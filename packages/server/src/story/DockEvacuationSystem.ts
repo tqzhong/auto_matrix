@@ -43,7 +43,8 @@ export class DockEvacuationSystem {
     const journey = this.journey!, state = journey.dockEvacuation!, center = FILM_SETS.film_zion_dock_exit.center;
     const locked = dockEvacuationLocked(state);
     if (!locked) state.approach = { x: actor.position.x - center.x, z: actor.position.z - center.z, yaw: actor.rotation };
-    const durations = { lifting: DOCK_EVACUATION.cargoSeconds, depositing: DOCK_EVACUATION.cargoSeconds, wind: 3.6, order: 3.4,
+    const cargoSeconds = DOCK_EVACUATION.cargoSeconds + (state.handling === 'continuous' ? DOCK_EVACUATION.cargoReachSeconds : 0);
+    const durations = { lifting: cargoSeconds, depositing: cargoSeconds, wind: 3.6, order: 3.4,
       closing: DOCK_EVACUATION.lift.closing, lowering: DOCK_EVACUATION.lift.seconds };
     const duration = durations[state.phase as keyof typeof durations];
     if (duration) {
@@ -130,6 +131,7 @@ export class DockEvacuationSystem {
       const saved = journey.dockEvacuation!, center = FILM_SETS[scene.set].center;
       if (saved.phase === 'supplies' || saved.phase === 'carrying') {
         saved.approach = { x: actor.position.x - center.x, z: actor.position.z - center.z, yaw: Math.PI };
+        saved.handling = 'continuous';
         saved.phase = saved.phase === 'supplies' ? 'lifting' : 'depositing'; saved.elapsed = 0;
       } else if (saved.phase === 'waiting' && saved.crewAge >= DOCK_EVACUATION.crewSeconds) { saved.phase = 'closing'; saved.elapsed = 0; }
     } else if (journey.step === 1 && journey.shaftSeal!.phase === 'ready') { journey.shaftSeal!.phase = 'reaching'; journey.shaftSeal!.elapsed = 0; }

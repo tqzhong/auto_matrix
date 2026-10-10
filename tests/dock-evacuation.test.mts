@@ -46,7 +46,7 @@ function fixture() {
 }
 function unload(h: ReturnType<typeof fixture>) {
   h.walk(DOCK_EVACUATION.pickup); h.command('act');
-  for (let i = 0; i < 20; i++) h.frame();
+  for (let i = 0; i < 28; i++) h.frame();
   assert.equal(h.state.dockEvacuation?.phase, 'carrying');
   h.walk(DOCK_EVACUATION.delivery, 400); h.command('act');
   for (let i = 0; i < 100 && h.state.dockEvacuation?.phase !== 'running'; i++) h.frame();
@@ -60,6 +60,25 @@ function clear(h: ReturnType<typeof fixture>) {
   for (let i = 0; i < 80; i++) h.frame();
   assert.equal(h.state.dockEvacuation?.phase, 'clear');
 }
+test('a new cargo interaction waits for reaching before lifting while an in-flight legacy save keeps its original timing', () => {
+  const h = fixture(); h.walk({ x: DOCK_EVACUATION.pickup.x, z: DOCK_EVACUATION.pickup.z + .6 }); h.command('act');
+  assert.equal(h.state.dockEvacuation?.phase, 'supplies', 'a distant pickup must not pull the pelvis forward beyond the planted feet');
+  h.walk(DOCK_EVACUATION.pickup); h.command('act');
+  for (let i = 0; i < 20; i++) h.frame();
+  assert.equal(h.state.dockEvacuation?.phase, 'lifting', 'the reaching interval must not consume the original lift interval');
+  const saved = structuredClone(h.state.dockEvacuation), point = structuredClone(h.players.getAgent('p')!.position);
+  h.frame(undefined, {}, false); assert.deepEqual(h.state.dockEvacuation, saved);
+  h.sandbox.restore(structuredClone(h.sandbox.state)); h.frame(undefined, {}, false);
+  assert.deepEqual(h.state.dockEvacuation, saved); assert.deepEqual(h.players.getAgent('p')!.position, point);
+  for (let i = 0; i < 8; i++) h.frame();
+  assert.equal(h.state.dockEvacuation?.phase, 'carrying');
+  const legacy = fixture();
+  legacy.state.dockEvacuation = { ...saved!, phase: 'lifting', elapsed: .5, approach: { x: DOCK_EVACUATION.pickup.x, z: DOCK_EVACUATION.pickup.z + .9, yaw: Math.PI } };
+  delete legacy.state.dockEvacuation.handling;
+  for (let i = 0; i < 14; i++) legacy.frame();
+  assert.equal(legacy.state.dockEvacuation?.phase, 'carrying', 'an old saved lift keeps the original 1.8-second motion');
+  assert.equal(legacy.state.step, 1, 'the closer new pickup radius cannot strand an old in-flight interaction');
+});
 test('normal player input unloads supplies, waits for the last crew and lowers the lift before shaft demolition', () => {
   const h = fixture(); assert.equal(h.state.scene, 'm3_dock_evacuation');
   assert.equal(h.players.getAgent('p')!.health, 31);
@@ -125,7 +144,7 @@ test('pause, disconnect, save restoration and an occupied crew member freeze the
 });
 test('carrying keeps both hands occupied while ordinary walking remains available', () => {
   const h = fixture(); h.walk(DOCK_EVACUATION.pickup); h.command('act');
-  for (let i = 0; i < 20; i++) h.frame();
+  for (let i = 0; i < 28; i++) h.frame();
   assert.equal(h.state.dockEvacuation?.phase, 'carrying');
   for (const action of ['attack', 'shoot', 'ability', 'ability2', 'dodge', 'talk', 'travel']) {
     const before = structuredClone(h.players.getAgent('p')!);
