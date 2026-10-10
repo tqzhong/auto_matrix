@@ -83,7 +83,7 @@ test('gun rays respect aim, ammunition, cadence, finite inputs and opaque tunnel
     x: view.eye.x + view.direction.x * 50, y: view.eye.y, z: view.eye.z + view.direction.z * 50 };
   gun.targets[0] = { ...gun.targets[0], health: 4, downAt: flight.elapsed, downFrom: point };
   assert.equal(hammerGunneryAim(flight, 1, 0).target, undefined, 'the rear cannon shoots through the pipe wall');
-  const muzzle = hammerShipPoint(flight, { x: 0, y: .35, z: 14.65 });
+  const muzzle = hammerShipPoint(flight, { x: 0, y: .35, z: 15.15 });
   assert.deepEqual(hammerGunneryAim(flight).from, muzzle);
 });
 

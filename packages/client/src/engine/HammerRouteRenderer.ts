@@ -231,24 +231,24 @@ export class HammerRouteRenderer {
       const shape = new THREE.Shape(); shape.moveTo(-4.08, HAMMER_COCKPIT.floor); shape.lineTo(4.08, HAMMER_COCKPIT.floor);
       for (const p of points) shape.lineTo(p.x, p.y); shape.closePath();
       const opening = new THREE.Path();
-      if (rear) { opening.moveTo(-2.1, -2.34); opening.lineTo(-2.1, 1.85); opening.lineTo(2.1, 1.85); opening.lineTo(2.1, -2.34); }
+      if (rear) { opening.moveTo(-2.6, -2.34); opening.lineTo(-2.6, 1.85); opening.lineTo(2.6, 1.85); opening.lineTo(2.6, -2.34); }
       else { opening.moveTo(-3.7, -1.32); opening.lineTo(-3.7, 1.4); opening.lineTo(-3.4, 1.86); opening.lineTo(3.4, 1.86); opening.lineTo(3.7, 1.4); opening.lineTo(3.7, -1.32); }
       opening.closePath(); shape.holes.push(opening);
       const bulkhead = this.mesh(new THREE.ShapeGeometry(shape), panel, this.cockpit); bulkhead.name = 'hammer-cabin-shell'; bulkhead.position.z = rear ? 9.9 : -8.85;
     }
     for (const side of [-1, 1]) {
-      const door = this.mesh(new THREE.BoxGeometry(2.1, 4.18, .08).translate(-side * 1.05, 0, 0), panel, this.cockpit);
-      door.name = 'hammer-aft-door'; door.position.set(side * 2.1, -.25, 9.84); this.doors.push(door);
-      const handle = this.mesh(new THREE.CylinderGeometry(.055, .055, .65, 8), frame, door); handle.position.set(-side * 1.8, 0, -.1);
+      const door = this.mesh(new THREE.BoxGeometry(2.6, 4.18, .08).translate(-side * 1.3, 0, 0), panel, this.cockpit);
+      door.name = 'hammer-aft-door'; door.position.set(side * 2.6, -.25, 9.84); this.doors.push(door);
+      const handle = this.mesh(new THREE.CylinderGeometry(.055, .055, .65, 8), frame, door); handle.position.set(-side * 2.3, 0, -.1);
     }
-    // A short enclosed vestibule lets the gunner pass out of sight behind the bridge doors.
+    // The aft compartment contains the remote gunner station.
     for (const y of [HAMMER_COCKPIT.floor - .08, 1.95]) {
-      const deck = this.mesh(new THREE.BoxGeometry(4.2, .16, 4.4), panel, this.cockpit); deck.position.set(0, y, 12.1);
+      const deck = this.mesh(new THREE.BoxGeometry(5.2, .16, 4.9), panel, this.cockpit); deck.position.set(0, y, 12.35);
     }
     for (const side of [-1, 1]) {
-      const wall = this.mesh(new THREE.BoxGeometry(.12, 4.3, 4.4), panel, this.cockpit); wall.position.set(side * 2.1, -.2, 12.1);
+      const wall = this.mesh(new THREE.BoxGeometry(.12, 4.3, 4.9), panel, this.cockpit); wall.position.set(side * 2.6, -.2, 12.35);
     }
-    const rear = this.mesh(new THREE.BoxGeometry(4.2, 4.3, .12), panel, this.cockpit); rear.position.set(0, -.2, 14.3);
+    const rear = this.mesh(new THREE.BoxGeometry(5.2, 4.3, .12), panel, this.cockpit); rear.name = 'hammer-gunnery-rear-wall'; rear.position.set(0, -.2, 14.8);
   }
 
   private buildRadioAttack(): void {
@@ -373,12 +373,12 @@ export class HammerRouteRenderer {
     this.ship.rotation.set(transform.pitch, transform.yaw, transform.roll, 'YXZ');
     this.ship.visible = !firstPerson;
     this.cockpit.position.copy(this.ship.position); this.cockpit.rotation.copy(this.ship.rotation);
-    this.gunner.update(flight);
+    this.gunner.update(flight, handover);
     this.controls.forEach(control => { control.rotation.z = -hammerControlTurn(pose); });
     this.needles.forEach((needle, i) => { needle.rotation.z = -1.2 + (i % 3 === 0 ? pose.speed / 38 : i % 3 === 1 ? pose.hull / 100 : pose.pursuit / 100) * 2.4; });
     this.horizons.forEach(horizon => { horizon.rotation.z = -transform.roll; horizon.position.y = Math.sin(transform.pitch) * .12; });
     this.warning!.emissiveIntensity = flight?.antennaLost || pose.hull < 50 ? .9 : .2;
-    const closing = handover ? Math.max(0, Math.min(1, (handover.elapsed - 11.4) / 1.1)) : Math.min(1, time / 1.1);
+    const closing = handover ? Math.max(0, Math.min(1, (handover.elapsed - (handover.station ? 13.3 : 11.4)) / 1.1)) : Math.min(1, time / 1.1);
     this.doors.forEach(door => { door.rotation.y = -Math.sign(door.position.x) * Math.PI / 2 * (1 - closing); });
     const radioPose = hammerRadioPose(pose), attack = pose.maneuver ? pose.radio : undefined;
     this.radio.position.set(radioPose.x, radioPose.y + 1, radioPose.z); this.radio.rotation.set(radioPose.pitch, radioPose.yaw, radioPose.roll, 'YXZ');

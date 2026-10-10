@@ -4,7 +4,7 @@ import { HAMMER_BEAMS, HAMMER_ROUTE, hammerCenter, hammerProjectPoint, hammerRou
 export const HAMMER_GUNNERY = {
   ammo: 220, interval: .11, radius: 1.25,
   seat: { x: 0, z: 11.4 }, grip: { x: .48, y: 2.08, z: .93 },
-  muzzle: { x: 0, y: .35, z: 14.65 },
+  muzzle: { x: 0, y: .35, z: 15.15 },
   waves: [0, 1.5, 4, 6, 8, 10, 12],
 } as const;
 

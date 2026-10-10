@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { HAMMER_COCKPIT, HAMMER_GUNNERY, hammerGunneryTarget, hammerGunneryView, hammerRoutePoint, hammerTunnelSection, type HammerFlight } from '@auto_matrix/shared';
+import { HAMMER_COCKPIT, HAMMER_GUNNERY, hammerGunneryTarget, hammerGunneryView, hammerRoutePoint, hammerTunnelSection, type HammerFlight, type HammerHandover } from '@auto_matrix/shared';
 import { batchStaticGeometry } from './StaticGeometry.js';
 
 /** Physical remote gun controls; the CRT projects the actual ship-space firing ray and enemies. */
@@ -8,6 +8,7 @@ export class HammerGunneryRenderer {
   private outside = new THREE.Group();
   private turret = new THREE.Group();
   private grip = new THREE.Group();
+  private gate = new THREE.Group();
   private enemies: { root: THREE.Group; limbs: THREE.InstancedMesh; eyes: THREE.MeshStandardMaterial }[] = [];
   private tracer: THREE.Mesh;
   private flash: THREE.Mesh;
@@ -28,21 +29,23 @@ export class HammerGunneryRenderer {
     this.box(chair, [.83, .43, .21], [0, 2.96, -.72], rubber);
     this.box(chair, [.45, .8, .45], [0, .5, 0], metal);
     for (const side of [-1, 1]) {
-      this.box(chair, [.16, .12, .92], [side * .77, 1.72, .05], rubber);
+      this.box(chair, [.16, .12, .92], [side * .77, 1.72, .05], rubber).name = 'ghost-seat-armrest';
       this.box(chair, [.42, .055, .5], [side * .25, .04, 1.14], metal);
     }
-    this.grip.name = 'ghost-hammer-yoke'; this.grip.position.set(0, 1.86, HAMMER_GUNNERY.grip.z); chair.add(this.grip);
-    this.box(this.grip, [.97, .07, .09], [0, .03, 0], frame);
+    this.gate.name = 'ghost-yoke-hinge'; this.gate.position.set(-.76, 1.86, HAMMER_GUNNERY.grip.z); chair.add(this.gate);
+    this.grip.name = 'ghost-hammer-yoke'; this.grip.position.set(.76, 0, 0); this.gate.add(this.grip);
+    this.box(this.grip, [.97, .07, .09], [0, .03, 0], frame).name = 'ghost-yoke-bar';
     for (const side of [-1, 1]) {
       const handle = this.mesh(new THREE.CylinderGeometry(.068, .068, .38, 12), rubber, this.grip);
       handle.name = 'hammer-control-grip'; handle.position.set(side * HAMMER_GUNNERY.grip.x, HAMMER_GUNNERY.grip.y - 1.86, 0);
       this.box(this.grip, [.1, .06, .07], [side * .48, .42, .02], frame);
     }
-    this.box(chair, [.1, 1.3, .12], [0, 1.2, .79], metal);
+    this.box(chair, [.1, 1.3, .12], [-.76, 1.2, HAMMER_GUNNERY.grip.z], metal);
+    this.box(this.gate, [.29, .07, .09], [.145, .03, 0], frame);
     for (let i = 0; i < 4; i++) {
       const side = i % 2 ? 1 : -1, upper = i < 2;
-      const screen = new THREE.Group(); screen.position.set(side * .81, HAMMER_COCKPIT.floor + (upper ? 2.98 : 1.83), upper ? 13.65 : 13.4); this.room.add(screen);
-      this.box(screen, [1.53, .95, .36], [0, 0, 0], metal);
+      const screen = new THREE.Group(); screen.position.set(side * .81, HAMMER_COCKPIT.floor + (upper ? 2.98 : 1.83), upper ? 14.15 : 13.9); this.room.add(screen);
+      this.box(screen, [1.53, .95, .36], [0, 0, 0], metal).name = 'ghost-screen-casing';
       this.box(screen, [1.39, .79, .02], [0, 0, -.19], rubber);
       let material: THREE.Material = this.material(0x365363, .1, .5);
       if (typeof document !== 'undefined') {
@@ -58,8 +61,8 @@ export class HammerGunneryRenderer {
       for (let b = 0; b < 5; b++) this.box(screen, [.05, .024, .035], [-.5 + b * .12, -.426, -.196], frame);
     }
     for (const x of [-1.72, 1.72]) {
-      this.box(this.room, [.08, 3.5, .1], [x, -.45, 13.91], frame);
-      const cable = new THREE.CatmullRomCurve3([new THREE.Vector3(x, 1.3, 13.8), new THREE.Vector3(x, .5, 13.9), new THREE.Vector3(x, -.8, 14.1), new THREE.Vector3(x * .6, -2.1, 14.1)]);
+      this.box(this.room, [.08, 3.5, .1], [x, -.45, 14.41], frame);
+      const cable = new THREE.CatmullRomCurve3([new THREE.Vector3(x, 1.3, 14.3), new THREE.Vector3(x, .5, 14.4), new THREE.Vector3(x, -.8, 14.6), new THREE.Vector3(x * .6, -2.1, 14.6)]);
       this.mesh(new THREE.TubeGeometry(cable, 12, .055, 6, false), rubber, this.room);
     }
     this.glow.position.set(0, .5, 12.8); this.room.add(this.glow);
@@ -96,10 +99,20 @@ export class HammerGunneryRenderer {
     const mesh = this.mesh(new THREE.BoxGeometry(size[0], size[1], size[2]), material, parent); mesh.position.set(position[0], position[1], position[2]); return mesh;
   }
 
-  update(flight: HammerFlight | undefined): void {
+  update(flight: HammerFlight | undefined, handover?: HammerHandover): void {
     const gun = flight?.gunnery; this.outside.visible = this.turret.visible = Boolean(gun);
-    this.room.visible = Boolean(gun);
-    if (!flight || !gun) return;
+    this.gate.rotation.y = !gun && handover?.station ? Math.PI / 2 * (1 - THREE.MathUtils.smoothstep(handover.elapsed, 15.9, 16.3)) : 0;
+    this.room.visible = Boolean(gun || handover?.station || handover?.phase === 'waiting');
+    if (!flight || !gun) {
+      if (this.room.visible && this.lastScreen !== 'standby') {
+        this.lastScreen = 'standby';
+        this.screens.forEach(({ context: c, texture }) => {
+          c.fillStyle = '#07151f'; c.fillRect(0, 0, 768, 480); c.fillStyle = '#9fc9d0'; c.font = '26px monospace';
+          c.fillText('HAMMER / AFT FIRE CONTROL', 36, 80); c.fillText('STANDBY', 36, 240); c.fillText('AWAITING PILOT', 36, 310); texture.needsUpdate = true;
+        });
+      }
+      return;
+    }
     this.turret.rotation.set(gun.pitch, gun.yaw, 0, 'YXZ');
     const shot = gun.lastShot, flash = Boolean(shot && flight.elapsed - shot.at < .1 && flight.phase === 'riding');
     this.tracer.visible = this.flash.visible = flash;

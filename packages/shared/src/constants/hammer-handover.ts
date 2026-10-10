@@ -2,10 +2,12 @@ export interface HammerHandover {
   phase: 'waiting' | 'moving' | 'ready';
   elapsed: number;
   blocked?: string;
+  station?: true;
 }
 
 export const HAMMER_HANDOVER_SECONDS = 12.5;
 export const HAMMER_HANDOVER_CAST = ['ghost', 'morpheus', 'roland'] as const;
+export const hammerHandoverDuration = (state: HammerHandover) => state.station ? 16.8 : HAMMER_HANDOVER_SECONDS;
 
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
 const smooth = (value: number) => { const t = clamp(value); return t * t * (3 - 2 * t); };
@@ -15,28 +17,34 @@ const smooth = (value: number) => { const t = clamp(value); return t * t * (3 - 
 const ghostRoute = [[0, 1.65, -4.1, Math.PI], [1, 1.65, -4.1, Math.PI], [2, 1.65, -5.2, Math.PI],
   [3.4, 0, -5.2, -Math.PI / 2], [5.4, 0, -1.2, 0], [6.2, 2.15, -.4, .9],
   [8.4, 2.15, 4.8, 0], [9.4, 0, 6.5, -.8], [12.5, 0, 12.5, 0]];
+const stationRoute = [...ghostRoute.slice(0, -1), [11.1, 1.65, 9.8, 0], [12.8, 1.65, 12.5, 0],
+  [13.8, 0, 12.6, -Math.PI / 2], [14.3, 0, 12.6, 0], [16.3, 0, 11.4, 0]];
 const morpheusRoute = [[0, -2.7, -.6, Math.PI], [6.2, -2.7, -.6, Math.PI], [7.6, 0, -.6, Math.PI / 2],
   [9.6, 0, -5.65, Math.PI], [10.6, 1.65, -5.65, Math.PI / 2], [11.1, 1.65, -5.65, Math.PI], [12.5, 1.65, -4.1, Math.PI]];
 
 export function hammerHandoverPose(state: HammerHandover, role: string) {
-  const t = state.phase === 'ready' ? HAMMER_HANDOVER_SECONDS : state.elapsed;
-  const route = role === 'ghost' ? ghostRoute : morpheusRoute;
+  const t = state.phase === 'ready' ? hammerHandoverDuration(state) : state.elapsed;
+  const route = role === 'ghost' ? state.station ? stationRoute : ghostRoute : morpheusRoute;
   let i = route.findIndex(point => point[0] >= t); if (i < 1) i = t === 0 ? 1 : route.length - 1;
   const a = route[i - 1], b = route[i], ratio = smooth((t - a[0]) / (b[0] - a[0]));
   const angle = Math.atan2(Math.sin(b[3] - a[3]), Math.cos(b[3] - a[3]));
-  const sitting = role === 'ghost' ? 1 - smooth(t - 1) : smooth((t - 11.1) / 1.4);
+  const gunner = role === 'ghost' && Boolean(state.station) && t >= 13.8;
+  const sitting = role === 'ghost' ? 1 - smooth(t - 1) + (gunner ? smooth((t - 14.3) / 2) : 0) : smooth((t - 11.1) / 1.4);
   return { x: a[1] + (b[1] - a[1]) * ratio, z: a[2] + (b[2] - a[2]) * ratio, yaw: a[3] + angle * ratio,
-    sitting, grip: role === 'ghost' ? 1 - smooth(t / .7) : smooth((t - 12) / .5),
-    walk: role === 'ghost' ? t > 2 && t < 12.5 : t > 6.2 && t < 11.1,
-    gone: role === 'ghost' && state.phase === 'ready' };
+    sitting, gunner, grip: role === 'ghost' ? 1 - smooth(t / .7) + (gunner ? smooth((t - 16.3) / .5) : 0) : smooth((t - 12) / .5),
+    walk: role === 'ghost' ? t > 2 && t < (state.station ? 13.8 : 12.5) : t > 6.2 && t < 11.1,
+    gone: role === 'ghost' && state.phase === 'ready' && !state.station };
 }
 
 export function hammerHandoverText(state: HammerHandover): string {
   if (state.blocked) return state.blocked;
   if (state.phase === 'waiting') return 'Ghost 正在副驾驶位。走到驾驶椅旁按 G，让他前往炮位，并请 Morpheus 接替。';
-  if (state.phase === 'ready') return 'Ghost 已离开舰桥，Morpheus 握住副驾驶操纵杆。回到主驾驶位，按 G 接管 Hammer。';
+  if (state.phase === 'ready') return state.station ? 'Ghost 已坐稳并握住炮位操纵杆，Morpheus 接替副驾驶。回到主驾驶位，按 G 接管 Hammer。'
+    : 'Ghost 已离开舰桥，Morpheus 握住副驾驶操纵杆。回到主驾驶位，按 G 接管 Hammer。';
   if (state.elapsed < 2) return 'Niobe 安排 Ghost 前往炮位。Ghost 松开操纵杆，起身离座。';
   if (state.elapsed < 6.2) return 'Ghost 正沿通道离开。请留出中央过道，Morpheus 在椅旁等待。';
   if (state.elapsed < 11.1) return 'Ghost 走向后舱，Morpheus 绕到副驾驶椅前。';
+  if (state.station) return state.elapsed < 14.3 ? 'Ghost 绕过炮位椅背，走到座椅前转身。Morpheus 正接过副驾驶。'
+    : 'Ghost 正坐下、握住炮位操纵杆。等待两位船员准备完成。';
   return 'Morpheus 正坐下接过侧向推进器。等待双手握稳操纵杆。';
 }
