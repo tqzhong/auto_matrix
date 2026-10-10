@@ -54,6 +54,24 @@ function defenseInput(flight: LogosFlight) {
   };
 }
 
+test('Logos entry seats both living crew before launch and cannot walk off or resurrect an unavailable Neo', () => {
+  const h = game(), scene = FILM_SCENE_BY_ID.m3_defense, state = h.state();
+  state.scene = scene.id; state.actor = scene.actor; state.step = 0;
+  h.players.release('p', h.tick());
+  h.players.possess('p', 'trinity', h.tick());
+  const pilot = h.actor(), neo = h.world.agents.get('neo')!;
+  assert.equal(typeof pilot.currentAction?.parameters.logosPilot, 'object');
+  assert.equal(typeof neo.currentAction?.parameters.logosPilot, 'object');
+  const before = structuredClone(pilot.position);
+  for (let frame = 0; frame < 30; frame++) h.players.step(.05, true, h.tick());
+  assert.deepEqual(pilot.position, before, 'the waiting pilot must remain in her airborne seat');
+  assert.equal(state.logos, undefined, 'entry and waiting must not start the timed flight');
+  neo.status = 'dead'; neo.health = 0; const body = structuredClone(neo);
+  assert.match(h.command('act'), /Neo.*无法/);
+  assert.equal(state.logos, undefined);
+  assert.deepEqual(neo, body, 'unavailable crew must not be moved, healed or restaged');
+});
+
 test('Logos defense flight combines three-axis piloting, finite Neo pulses and collision failure', () => {
   let flight = newLogosFlight('defense');
   let usedPulse = false;
@@ -142,7 +160,7 @@ test('Logos renderer exposes the ship, physical defenses, Neo pulse, cloud sea a
   assert.ok(sunRoot.getObjectByName('logos-sun'));
   const landed = { ...ascent, phase: 'arrived' as const, stage: 'stall' as const, altitude: 5 };
   sun.update(landed, 6, true);
-  assert.equal(sunRoot.getObjectByName('logos-flight-cockpit')!.visible, false, 'the completed first-person shot must leave the cockpit');
+  assert.equal(sunRoot.getObjectByName('logos-flight-cockpit')!.visible, true, 'the crew stays inside the cockpit until leaving this scene');
   assert.equal(sunRoot.getObjectByName('logos-cloud-bank')!.visible, false, 'the completed first-person shot must not remain inside cloud geometry');
   sun.update(landed, 7, false);
   assert.equal(sunRoot.getObjectByName('logos-flight-ship')!.visible, true);
@@ -151,6 +169,22 @@ test('Logos renderer exposes the ship, physical defenses, Neo pulse, cloud sea a
   assert.ok(meshes.length > 70);
   const disposed: string[] = []; meshes.forEach(mesh => mesh.geometry.addEventListener('dispose', () => disposed.push(mesh.uuid)));
   defense.dispose(); sun.dispose(); assert.equal(defenseRoot.children.length, 0); assert.equal(sunRoot.children.length, 0); assert.ok(disposed.length > 0);
+});
+
+test('Logos propulsion and cockpit displays lose their emitted light when the engines stall', () => {
+  const root = new THREE.Group(), renderer = new LogosFlightRenderer(root, 'sun');
+  const powered = new Set<THREE.MeshStandardMaterial>();
+  root.traverse(object => { if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial
+    && [0x72e7ec, 0x365a79, 0x5285a3].includes(object.material.emissive.getHex())) powered.add(object.material); });
+  const propulsion = root.getObjectByName('logos-flight-ship')!.children.find(object => object instanceof THREE.PointLight) as THREE.PointLight;
+  assert.equal(powered.size, 3); assert.ok(propulsion.intensity > 0);
+  const sunlight = { ...newLogosFlight('sun'), stage: 'sun' as const, altitude: 30 };
+  renderer.update(sunlight, 1); assert.ok([...powered].every(material => material.emissiveIntensity > 0));
+  renderer.update({ ...sunlight, stage: 'stall', vertical: -8 }, 2);
+  assert.equal(propulsion.intensity, 0);
+  assert.ok([...powered].every(material => material.emissiveIntensity === 0), 'failed engines and instruments must not glow');
+  renderer.update(sunlight, 3); assert.ok(propulsion.intensity > 0); assert.ok([...powered].every(material => material.emissiveIntensity > 0));
+  renderer.dispose();
 });
 
 test('the completed Logos shot keeps the wide vehicle camera until the player leaves the scene', () => {

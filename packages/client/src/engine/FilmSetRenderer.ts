@@ -484,8 +484,11 @@ export class FilmSetRenderer {
     this.root.visible = !this.empDock?.group.visible;
     const fastHammer = player?.id === journey?.actor ? player?.currentAction?.parameters.hammerPilot as import('@auto_matrix/shared').HammerPilotGesture | undefined : undefined;
     this.hammerRoute?.update(journey?.scene === 'm3_hammer_tunnels' && !journey.visiting ? fastHammer?.flight ?? journey.hammer : undefined, elapsed, firstPerson, journey?.scene === 'm3_hammer_tunnels' && !journey.visiting ? journey.hammerHandover : undefined);
-    this.logosStage = journey?.logos?.stage;
-    this.logosFlight?.update(['m3_defense', 'm3_sun'].includes(journey?.scene ?? '') && !journey?.visiting ? journey?.logos : undefined, elapsed, firstPerson);
+    const fastLogos = player?.id === journey?.actor && typeof player?.currentAction?.parameters.logosPilot === 'object'
+      ? player.currentAction.parameters.logosPilot as import('@auto_matrix/shared').LogosPilotGesture : undefined;
+    const logos = ['m3_defense', 'm3_sun'].includes(journey?.scene ?? '') && !journey?.visiting ? fastLogos?.flight ?? journey?.logos : undefined;
+    this.logosStage = logos?.stage;
+    this.logosFlight?.update(logos, elapsed, firstPerson);
     this.logosWreck?.update(journey?.scene === 'm3_farewell' && !journey.visiting ? journey.farewell : undefined, elapsed, firstPerson, firstPerson && player?.id === 'neo');
     const savedDeus = journey?.scene === 'm3_deus' && !journey.visiting ? journey.deus : undefined;
     const fastDeus = player?.id === 'neo' && player.id === journey?.actor && player.currentLocation === 'film_machine_core'
@@ -685,7 +688,7 @@ export class FilmSetRenderer {
     if (journey?.scene === 'm2_backup' && trinityTerminalLocked(journey.trinityTerminal)) this.marker.visible = false;
     if (journey?.scene === 'm2_garage' && journey.garage?.phase === 'riding') this.marker.visible = false;
     if (journey?.scene === 'm3_hammer_tunnels' && journey.hammer?.phase === 'riding') this.marker.visible = false;
-    if (['m3_defense', 'm3_sun'].includes(journey?.scene ?? '') && journey?.logos?.phase === 'riding') this.marker.visible = false;
+    if (['m3_defense', 'm3_sun'].includes(journey?.scene ?? '') && !journey?.visiting) this.marker.visible = false;
     if (upperDiggerActive(journey) && upperDiggerLocked(journey?.upperDigger)) this.marker.visible = false;
     if (diggersActive(journey) && diggersLocked(journey?.diggers)) this.marker.visible = false;
     if (dockGateActive(journey) || journey?.scene === 'm3_gate' && journey.apu?.phase === 'riding') this.marker.visible = false;

@@ -13,6 +13,7 @@ import { HAMMER_BRIEFING, hammerBriefingTarget } from './hammer-briefing.js';
 import { ZION_DEPLOYMENT, zionDeploymentTarget } from './zion-deployment.js';
 import { MAGGIE_DISCOVERY, maggieDiscoveryTarget } from './maggie-discovery.js';
 import { LOGOS_BANE, logosBaneLocked } from './logos-bane.js';
+import { logosCrewRoot, newLogosFlight } from './logos-flight.js';
 import { SOURCE_BRIEFING, sourceBriefingTarget, sourceBriefingLocked } from './source-briefing.js';
 import { PRIMARY_DEMOLITION, primaryActive, primaryTarget, primaryFloor, primaryLocked } from './primary-demolition.js';
 import { TRINITY_TERMINAL, trinityTerminalActive, trinityTerminalLocked } from './trinity-terminal.js';
@@ -609,6 +610,10 @@ export function oracleActing(journey: FilmJourney): boolean {
       || oracleDepartureLocked(journey.oracle?.departure) || Boolean(journey.oracle?.consultation && !['waiting', 'done'].includes(journey.oracle.consultation.phase))));
 }
 export function filmStepPosition(scene: FilmScene, step: FilmStep, journey?: FilmJourney): Vector3 {
+  if (['m3_defense', 'm3_sun'].includes(scene.id) && !journey?.visiting) {
+    const root = logosCrewRoot(journey?.logos ?? newLogosFlight(scene.id === 'm3_defense' ? 'defense' : 'sun'), 'trinity'), center = FILM_SETS[scene.set].center;
+    return { x: center.x + root.x, y: center.y + root.y, z: center.z + root.z };
+  }
   if (scene.id === 'm3_hel_entry' && step === scene.steps[0]) {
     const lift = journey?.helElevator;
     const point = lift?.phase === 'arrived' || lift?.phase === 'opening' ? HEL_ELEVATOR.gate : HEL_ELEVATOR.approach;
@@ -712,6 +717,10 @@ export function filmStepPosition(scene: FilmScene, step: FilmStep, journey?: Fil
   return position;
 }
 export function filmStepNear(scene: FilmScene, step: FilmStep, position: Vector3, matrix: boolean, journey?: FilmJourney): boolean {
+  if (['m3_defense', 'm3_sun'].includes(scene.id) && !journey?.visiting) {
+    const root = logosCrewRoot(journey?.logos ?? newLogosFlight(scene.id === 'm3_defense' ? 'defense' : 'sun'), 'trinity'), center = FILM_SETS[scene.set].center;
+    return !matrix && distance(position, { x: center.x + root.x, y: center.y + root.y, z: center.z + root.z }) <= 1.6;
+  }
   const radius = scene.id === 'm3_hel_garage' ? journey?.helGarage?.phase === 'cleared' ? 1.05 : 1.6 : primaryActive(journey) ? .8 : scene.id === 'm2_plan' || scene.id === 'm3_oracle_request' || scene.id === 'm3_oracle_last' || scene.id === 'm3_oracle_absorbed' ? 1.6 : scene.id === 'm1_mirror' && step === scene.steps[0] ? MIRROR_TOUCH.radius
     : scene.id === 'm3_logos_plan' || scene.id === 'm3_zion_prepare' || scene.id === 'm3_maggie_discovery' ? step.kind === 'reach' ? 1.1 : 1.6
     : scene.id === 'm3_bane_questions' ? step === scene.steps[5] ? 1.1 : step === scene.steps[0] ? 1.05 : 1.4

@@ -107,7 +107,7 @@ import { CHATEAU, type ChateauEncounter } from '@auto_matrix/shared';
 import { MOUNTAIN, type MountainFlight, type PlayerInput } from '@auto_matrix/shared';
 import { GARAGE, newGarageEscape, stepGarageEscape } from '@auto_matrix/shared';
 import { HAMMER_ROUTE, HAMMER_COCKPIT, HAMMER_HANDOVER_SECONDS, HAMMER_HANDOVER_CAST, hammerHandoverDuration, hammerHandoverPose, hammerHandoverText, hammerCrewRoot, hammerHeight, hammerRouteFrame, hammerRoutePoint, newHammerFlight, stepHammerFlight } from '@auto_matrix/shared';
-import { newLogosFlight, stepLogosFlight } from '@auto_matrix/shared';
+import { newLogosFlight, stepLogosFlight, logosCrewRoot } from '@auto_matrix/shared';
 import { farewellLocked, farewellPose, newFarewell, stepFarewell } from '@auto_matrix/shared';
 import { DEUS_PACT, deusPactDialogue, deusPactLocked, deusPactPose, newDeusPact, stepDeusPact } from '@auto_matrix/shared';
 import { SMITH_FINALE, newSmithFinale, retrySmithFinale, smithFinaleAction as reduceSmithFinaleAction,
@@ -4937,6 +4937,25 @@ export class FilmStorySystem {
       crew.currentAction = { type: 'idle', parameters: { riding: true, passenger: id !== 'niobe', seated: id !== 'roland' && (id !== 'ghost' || Boolean(flight.gunnery)), hammerPilot: { role: id, flight: { ...flight }, handover } }, startedAt: state.enteredAt, duration: 1e9, progress: 0 };
     }
   }
+  logosFrame(agent: AgentState): boolean {
+    const state = this.state;
+    if (!state || !['m3_defense', 'm3_sun'].includes(state.scene) || state.visiting || agent.id !== state.actor) return false;
+    const flight = state.logos ?? newLogosFlight(state.scene === 'm3_defense' ? 'defense' : 'sun');
+    const center = FILM_SETS[this.scene!.set].center;
+    for (const role of ['trinity', 'neo'] as const) {
+      const crew = this.world.agents.get(role);
+      if (!crew || crew.status !== 'alive' || crew.health <= 0 || crew.controller && crew !== agent) continue;
+      const point = logosCrewRoot(flight, role);
+      crew.position = { x: center.x + point.x, y: center.y + point.y, z: center.z + point.z };
+      crew.rotation = point.yaw; crew.currentLocation = this.scene!.set; crew.isInMatrix = false;
+      crew.targetPosition = null; crew.currentPath = [];
+      crew.velocity = crew.controller && state.logos?.phase === 'riding'
+        ? { x: flight.lateral, y: flight.vertical, z: -flight.speed } : { x: 0, y: 0, z: 0 };
+      crew.currentAction = { type: 'idle', parameters: { resolved: true, riding: true, passenger: role === 'neo', seated: true,
+        logosPilot: { role, flight: { ...flight }, waiting: !state.logos } }, startedAt: state.enteredAt, duration: 1e9, progress: 0 };
+    }
+    return true;
+  }
   hammerGunnerFrame(agent: AgentState, input: { yaw: number; pitch?: number }, dt: number, tick: number): boolean {
     const state = this.state;
     if (state?.scene !== 'm3_hammer_tunnels' || state.visiting || !this.controls(agent) || agent.id !== 'ghost' || !state.hammer?.gunnery) return false;
@@ -5194,17 +5213,7 @@ export class FilmStorySystem {
     if (this.state!.scene === 'm3_defense' || this.state!.scene === 'm3_sun') {
       const state = this.state!; const before = state.logos!;
       const flight = state.logos = stepLogosFlight(before, input, dt, focus);
-      const center = FILM_SETS[this.scene!.set].center;
-      agent.position = { x: center.x + flight.x, y: center.y + flight.altitude, z: center.z + flight.z };
-      agent.velocity = { x: flight.lateral, y: flight.vertical, z: -flight.speed };
-      agent.rotation = Math.PI - Math.atan2(flight.lateral, Math.max(1, flight.speed));
-      agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, riding: true, seated: true, logosPilot: true }, startedAt: tick, duration: 1, progress: 0 };
-      const neo = this.world.agents.get('neo');
-      if (neo && !neo.controller) {
-        neo.position = { x: agent.position.x + 2.1, y: agent.position.y, z: agent.position.z + 1.2 };
-        neo.currentLocation = this.scene!.set; neo.isInMatrix = false; neo.velocity = { ...agent.velocity }; neo.rotation = agent.rotation;
-        neo.currentAction = { type: 'idle', parameters: { riding: true, passenger: true, seated: true, logosPassenger: true }, startedAt: tick, duration: 1, progress: 0 };
-      }
+      this.logosFrame(agent);
       if (flight.destroyed > before.destroyed) state.lastText = `Neo 击碎来袭机器；金色感知剩余 ${Math.ceil(flight.neo)}%。继续手动避开其余浮雷。`;
       else if (flight.hits > before.hits) state.lastText = 'Logos 撞上浮雷，船壳正在解体。A / D 横移，W 爬升、S 俯冲；按住 G 让 Neo 摧毁一次迫近目标。';
       else if (flight.stage !== before.stage) state.lastText = flight.stage === 'clouds'
@@ -5575,6 +5584,7 @@ export class FilmStorySystem {
     }
     const state = this.state;
     if (!state || !this.scene) return '这条电影进度尚未开始。';
+    this.logosFrame(agent);
     this.ensureHammerRoute();
     this.ensureApuGate();
     this.ensureDockGunnery(tick);
@@ -6651,6 +6661,8 @@ export class FilmStorySystem {
     if (step.kind === 'drive') {
       if (state.scene === 'm3_defense' || state.scene === 'm3_sun') {
         if (this.world.agents.get('neo')?.controller) return 'Neo 正由另一位玩家控制；等待他空闲后再启动 Logos 航行。';
+        const neo = this.world.agents.get('neo');
+        if (!neo || neo.status !== 'alive' || neo.health <= 0) return 'Neo 当前无法协助航行，Logos 保留在准备状态。';
         if (!state.logos) state.logos = newLogosFlight(state.scene === 'm3_defense' ? 'defense' : 'sun');
         state.checkpoint = filmStepPosition(this.scene!, step);
         this.driveFrame(agent, { throttle: 0, steer: 0, brake: false }, 0, tick);
@@ -7182,6 +7194,7 @@ export class FilmStorySystem {
     if (scene.id === 'm3_zion_prepare') { this.zionDeployment.frame(this.world.agents.get(this.state!.actor)!, 0, this.world.simulationTick); return; }
     if (scene.id === 'm3_logos_plan') { this.hammerBriefing.frame(this.world.agents.get(this.state!.actor)!, 0, this.world.simulationTick); return; }
     if (scene.id === 'm3_hammer_tunnels') { this.hammerHandoverFrame(this.world.agents.get(this.state!.actor)!, 0, this.world.simulationTick); return; }
+    if (['m3_defense', 'm3_sun'].includes(scene.id)) { this.logosFrame(this.world.agents.get(this.state!.actor)!); return; }
     if (scene.id === 'm3_oracle_absorbed') { this.oracleAbsorption.frame(this.world.agents.get(this.state!.actor)!, 0, this.world.simulationTick); return; }
     if (scene.id === 'm3_hel_garage') { this.helGarage.frame(this.world.agents.get(this.state!.actor)!, 0, this.world.simulationTick); return; }
     if (scene.id === 'm3_hel_entry' && this.state!.step === 0) { this.helElevatorFrame(this.world.agents.get(this.state!.actor)!, 0, this.world.simulationTick); this.sealHelDanceDoor(); return; }
@@ -7636,6 +7649,7 @@ export class FilmStorySystem {
     if (['m3_ceasefire', 'm3_neo_carried', 'm3_reset', 'm3_dawn'].includes(state.scene)) this.ensureEpilogue();
     if (state.scene === 'm2_key_door') this.sourceDoor();
     const actor = this.world.agents.get(state.actor);
+    if (actor) this.logosFrame(actor);
     if (state.scene === 'm3_bane' && actor) this.banePose(actor, tick);
     if (state.scene === 'm3_farewell' && actor) this.placeFarewell(actor, tick);
     if (state.scene === 'm3_deus' && actor) this.placeDeus(actor, tick);

@@ -76,7 +76,7 @@ export class FarewellAppearance {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)); geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
     geometry.setIndex(indices); geometry.computeVertexNormals();
-    const cloth = new THREE.MeshStandardMaterial({ color: 0x292725, roughness: .98, metalness: 0, bumpMap: this.weave, bumpScale: .0015, side: THREE.DoubleSide });
+    const cloth = new THREE.MeshStandardMaterial({ color: 0x452527, roughness: .98, metalness: 0, bumpMap: this.weave, bumpScale: .0015, side: THREE.DoubleSide });
     this.band = new THREE.Mesh(geometry, cloth); this.band.name = 'neo-farewell-eye-band';
     this.band.castShadow = this.band.receiveShadow = true; this.band.visible = false; head.add(this.band);
   }

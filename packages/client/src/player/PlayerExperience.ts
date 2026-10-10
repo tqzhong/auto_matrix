@@ -234,9 +234,12 @@ export class PlayerExperience {
       : 'W 加速 · S 刹车 · A / D 转向 · V 切换视角 · J 手记';
     if (driving && neoLife?.journey?.apu?.clearingCaptain) this.el('mouse-hint').textContent = 'W 直行跨过队长 · S 刹车 · V 切换视角 · J 手记';
     if (driving && !pointerLock) this.el('mouse-hint').textContent += ' · 左键拖动观察';
+    if (this.filmPlaying && !neoLife?.journey?.visiting && ['m3_defense', 'm3_sun'].includes(neoLife?.journey?.scene ?? '') && !neoLife?.journey?.logos)
+      this.el('mouse-hint').textContent = 'G 启航 · V 切换驾驶舱视角 · 左键拖动观察 · J 手记';
     if (neoLife?.journey?.logos?.phase === 'riding') this.el('mouse-hint').textContent = neoLife.journey.logos.mode === 'defense'
-      ? 'W 爬升 · S 俯冲 · A / D 横移 · G / 右键 Neo 感知 · V 切换视角'
-      : 'W 爬升穿云 · A / D 修正姿态 · V 切换视角 · J 手记';
+      ? 'W 爬升 · S 俯冲 · A / D 横移 · G Neo 感知 · V 切换视角'
+      : neoLife.journey.logos.stage === 'stall' ? '动力失效 · V 切换视角 · 左键拖动观察 · J 手记'
+        : neoLife.journey.logos.stage === 'sun' ? '观察真实的阳光 · V 切换视角 · J 手记' : 'W 爬升穿云 · A / D 修正姿态 · V 切换视角 · J 手记';
     if (neoLife?.journey?.scene === 'm3_farewell' && !neoLife.journey.visiting) this.el('mouse-hint').textContent = neoLife.journey.step >= FILM_SCENE_BY_ID.m3_farewell.steps.length
       ? 'J 打开手记，继续下一段 · 前往机器城 · V 切换视角'
       : neoLife.journey.farewell?.phase === 'still' ? 'J 打开手记，记录 Neo 对告别的理解 · V 切换视角'
