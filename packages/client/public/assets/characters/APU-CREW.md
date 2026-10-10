@@ -16,3 +16,5 @@ python3 scripts/build-digger-bodies.py --source output/characters/epilogue-cast-
 ```
 
 The actual shipped geometry is tested against APU controls, pedals, seat, ammunition case and dock floor. Native screenshots and checkpoint recovery evidence are in `output/gameplay/trilogy-apu-cast-2026-10-11/`. These finite checks do not establish arbitrary-pose clearance, actor likeness, natural cloth/facial performance, stable frame rate or a complete trilogy playthrough. The existing APU and dock remain simplified approximations.
+
+Kid's waistband fitting was updated on 2026-10-11 for cargo handling. The shirt clears the actual trouser surface, and their overlapping waist vertices bend around the same pelvis/torso instead of following the raised thighs independently. The head, anatomy and previous APU contact points are retained. Regression and native evidence are in `output/gameplay/trilogy-dock-wardrobe-2026-10-11/`; the finite garment checks do not establish arbitrary-pose cloth collision.

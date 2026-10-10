@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { WebGLMaterials } from 'three/src/renderers/webgl/WebGLMaterials.js';
-import { DOCK_EVACUATION, SHAFT_SEAL, FILM_SETS, dockCargoPose, dockEvacuationLift, dockEvacuationRoot, dockEvacuationSoldier, shaftSealLever, type DockEvacuation } from '@auto_matrix/shared';
+import { DOCK_EVACUATION, SHAFT_SEAL, FILM_SETS, dockCargoPose, dockEvacuationLift, dockEvacuationRoot, dockEvacuationSoldier, shaftSealLever, newMaggieDiscovery, type DockEvacuation } from '@auto_matrix/shared';
 import { DockEvacuationRenderer } from '../packages/client/src/engine/DockEvacuationRenderer.js';
 import { DockEvacuationCrew } from '../packages/client/src/engine/DockEvacuationCrew.js';
 import { CharacterModels } from '../packages/client/src/agents/CharacterModel.js';
@@ -306,12 +306,21 @@ test('the real Kid reaches for stationary cargo before lifting and releases it b
   }
 });
 test('the delivered crew meshes keep their supporting soles planted and restore the saved pose after asynchronous loading', async t => {
-  const assets = await Promise.all(['club-male', 'club-female'].map(crewAsset));
+  const assets = await Promise.all(['dock-male', 'dock-female'].map(crewAsset));
   t.mock.method(GLTFLoader.prototype, 'loadAsync', (url: string) => Promise.resolve(assets[url.includes('female') ? 1 : 0]));
   const root = new THREE.Group(), crew = new DockEvacuationCrew(root);
   const state: DockEvacuation = { phase: 'running', elapsed: 0, crewAge: 6.2, remaining: 15, attempts: 0, delivered: true };
   crew.update(state); await crew.ready; t.after(() => crew.dispose());
   crew.group.children.forEach((person, i) => {
+    const top = person.getObjectByName('Dock_crew_neck_top') as THREE.SkinnedMesh;
+    assert.ok(top, 'evacuating crew need their long-sleeved work outfit rather than the club costume');
+    for (const side of ['R', 'L']) {
+      const elbow = top.skeleton.bones.findIndex(bone => bone.name === `elbow_${side}`), weights = top.geometry.attributes.skinWeight, indices = top.geometry.attributes.skinIndex;
+      let sleeve = 0;
+      for (let vertex = 0; vertex < weights.count; vertex++) for (let slot = 0; slot < 4; slot++)
+        if (indices.getComponent(vertex, slot) === elbow && weights.getComponent(vertex, slot) > .5) sleeve++;
+      assert.ok(sleeve > 30, `both backgrounds need cloth extending over the ${side} forearm`);
+    }
     const at = dockEvacuationSoldier(state, i);
     assert.ok(person.position.distanceTo(new THREE.Vector3(at.x, at.y, at.z)) < .001, 'asynchronous loading must use the saved crew positions');
   });
@@ -341,4 +350,76 @@ test('the delivered crew meshes keep their supporting soles planted and restore 
   }
   crew.update({ ...state, phase: 'lowering', crewAge: 11, elapsed: 2.2 }); root.updateMatrixWorld(true);
   for (const person of crew.group.children) for (const y of shoes(person)) assert.ok(Math.abs(y - dockEvacuationLift({ ...state, phase: 'lowering', elapsed: 2.2 })) < .045);
+});
+
+test('Kid’s actual shirt stays outside the trouser waistband while crouching with cargo', async t => {
+  const assets = Object.fromEntries(await Promise.all(['kid-head', 'kid-body'].map(async name => [name, await crewAsset(name)])));
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', (url: string) => Promise.resolve(assets[url.split('/').at(-1)!.replace('.glb', '')]));
+  const { models, rig } = fixture(t, 'kid');
+  const pose = (elapsed: number) => {
+    models.animate(rig, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true,
+      dockEvacuation: { role: 'kid', phase: 'lifting', elapsed, handling: 'continuous', approach: { ...DOCK_EVACUATION.pickup, yaw: Math.PI },
+        crewAge: 0, remaining: 26, attempts: 0, delivered: false } }, 0);
+    rig.root.updateMatrixWorld(true);
+  };
+  pose(0); await new Promise(resolve => setImmediate(resolve)); pose(0);
+  const shirt = rig.root.getObjectByName('kid-work-top') as THREE.SkinnedMesh;
+  const pants = rig.root.getObjectByName('kid-work-trousers') as THREE.SkinnedMesh;
+  assert.ok(shirt && pants);
+  const edges = new Map<string, [number, number]>(), indices = pants.geometry.index!;
+  for (let i = 0; i < indices.count; i += 3) for (let edge = 0; edge < 3; edge++) {
+    const a = indices.getX(i + edge), b = indices.getX(i + (edge + 1) % 3);
+    if ([a, b].every(index => pants.geometry.attributes.position.getY(index) > 1.90)) edges.set([a, b].sort((a, b) => a - b).join(','), [a, b]);
+  }
+  assert.ok(edges.size > 100, 'sample the delivered waistband surface');
+  for (const elapsed of [0, .375, .75, 1.2, 1.8, 2.55]) {
+    pose(elapsed); shirt.skeleton.update(); pants.skeleton.update();
+    const vertices: number[] = [], triangles: number[] = [], shirtIndices = shirt.geometry.index!, source = shirt.geometry.attributes.position;
+    for (let i = 0; i < source.count; i++) vertices.push(...shirt.getVertexPosition(i, new THREE.Vector3()).applyMatrix4(shirt.matrixWorld).toArray());
+    for (let i = 0; i < shirtIndices.count; i += 3) {
+      const ids = [0, 1, 2].map(j => shirtIndices.getX(i + j));
+      if (ids.some(id => source.getY(id) < 2.4)) triangles.push(...ids);
+    }
+    const geometry = new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3)).setIndex(triangles);
+    const surface = new THREE.Mesh(geometry, shirt.material);
+    const crossings: string[] = [];
+    for (const [a, b] of edges.values()) {
+      const start = pants.getVertexPosition(a, new THREE.Vector3()).applyMatrix4(pants.matrixWorld);
+      const end = pants.getVertexPosition(b, new THREE.Vector3()).applyMatrix4(pants.matrixWorld);
+      const direction = end.sub(start), length = direction.length();
+      if (length < .004) continue;
+      const hit = new THREE.Raycaster(start, direction.normalize(), .001, length - .001).intersectObject(surface, false)[0];
+      if (hit) crossings.push(hit.point.toArray().map(value => value.toFixed(3)).join(','));
+    }
+    geometry.dispose();
+    assert.equal(crossings.length, 0, `${elapsed}: trouser edges cross the shirt at ${crossings.slice(0, 5).join('; ')}`);
+  }
+});
+
+test('Colt retains his delivered head and body in a cold-loaded dock evacuation', async t => {
+  const assets = Object.fromEntries(await Promise.all(['colt-head', 'colt-body'].map(async name => [name, await crewAsset(name)])));
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', (url: string) => Promise.resolve(assets[url.split('/').at(-1)!.replace('.glb', '')]));
+  const { models, rig } = fixture(t, 'colt');
+  const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true,
+    dockEvacuation: { role: 'colt', phase: 'lowering', elapsed: 2, crewAge: 11, remaining: 12, attempts: 1, delivered: true } } as const;
+  models.animate(rig, 0, input, 0); await new Promise(resolve => setImmediate(resolve)); models.animate(rig, 0, input, 0);
+  assert.equal(rig.head.getObjectByName('colt-detailed-head')?.visible, true, 'the dock must not restore the old placeholder head');
+  assert.equal(rig.root.getObjectByName('colt-detailed-body')?.visible, true);
+  assert.equal(rig.head.getObjectByName('colt-fallback-head')!.visible, false);
+  const vest = rig.root.getObjectByName('colt-woven-vest')!, headset = rig.head.getObjectByName('colt-dock-headset')!;
+  assert.ok(vest?.visible && headset?.visible, 'the dock outfit includes the woven vest and radio headset');
+  const top = rig.root.getObjectByName('colt-work-top') as THREE.Mesh, trousers = rig.root.getObjectByName('colt-work-trousers') as THREE.Mesh;
+  assert.ok(top.material !== trousers.material, 'changing the light undershirt must not recolor the trousers');
+  const face = rig.head.getObjectByName('colt-anatomical-head') as THREE.Mesh, mic = rig.head.getObjectByName('colt-radio-microphone') as THREE.Mesh;
+  rig.root.updateMatrixWorld(true);
+  const mouth: THREE.Vector3[] = [], positions = face.geometry.attributes.position;
+  for (let i = 0; i < positions.count; i++) if (Math.abs(positions.getX(i)) < .15 && positions.getY(i) > -.30 && positions.getY(i) < -.16)
+    mouth.push(new THREE.Vector3().fromBufferAttribute(positions, i));
+  assert.ok(mouth.length > 20);
+  assert.ok(mic.position.z - .024 > Math.max(...mouth.map(point => point.z)) + .005, 'the microphone must stay outside the lips');
+  const before = rig.head.getObjectByName('colt-detailed-head'); models.animate(rig, 0, input, 0);
+  assert.equal(rig.head.getObjectByName('colt-detailed-head'), before, 'repeated saved frames reuse the loaded actor');
+  models.animate(rig, 0, { ...input, dockEvacuation: undefined, maggieDiscovery: { ...newMaggieDiscovery(2, 47), role: 'colt' } }, 0);
+  assert.equal(vest.visible, false); assert.equal(headset.visible, false);
+  models.animate(rig, 0, input, 0); assert.ok(vest.visible && headset.visible);
 });

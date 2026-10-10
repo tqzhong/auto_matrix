@@ -306,7 +306,7 @@ def club_bodice(points, faces, weights):
     return vertices, np.array(uv), polygons, influence
 
 
-def main(source, character, office=False, tracking=False, club=False):
+def main(source, character, office=False, tracking=False, club=False, dock=False):
     spec = CHARACTERS[character]
     original, skin_uv, body_faces, groups = obj(source / 'base.obj')
     base = original.copy()
@@ -456,6 +456,7 @@ def main(source, character, office=False, tracking=False, club=False):
         hair = material('Hair cards', [.37, .32, .29, 1] if character == 'smith' else [.28, .30, .33, 1], .65,
                         system / 'hair' / spec['hair'] / (spec['hair'] + '_diffuse.png'), spec['hair'] + '-hair.png', True)
     shoes = material('Boot leather', [.022, .024, .023, 1], .32)
+    if dock: doc['materials'][shoes]['pbrMetallicRoughness']['roughnessFactor'] = .85
     eye_map = 'bluegreen_eye.png' if character == 'trinity' else 'grey_eye.png' if character == 'smith' else 'brown_eye.png'
     sclera = material('Eyes', [1, 1, 1, 1], .23, system / 'eyes/materials' / eye_map, eye_map, True)
     if character == 'smith':
@@ -549,6 +550,9 @@ def main(source, character, office=False, tracking=False, club=False):
     waistline = pivot('spine03')[1] + .9
     exposed = [f for f in body_faces if character == 'dujour' and np.mean(base[[i for i, _ in f], 1]) > waistline or np.mean(base[[i for i, _ in f], 1]) > neckline - .85 or
                np.mean(weights[[i for i, _ in f]][:, hand_bones].sum(axis=1)) > .85]
+    if dock:
+        exposed = [f for f in body_faces if np.mean(base[[i for i, _ in f], 1]) > neckline - .12 or
+                   np.mean(weights[[i for i, _ in f]][:, hand_bones].sum(axis=1)) > .7]
     if club:
         # The club scene has bare shoulders and a strapless vinyl bodice.
         # Complement the finished head/hands; never rebuild their likeness.
@@ -635,7 +639,18 @@ def main(source, character, office=False, tracking=False, club=False):
         torso = [f for f in body_faces if waistline - 1.8 < np.mean(base[[i for i, _ in f], 1]) < neckline - .8 and np.mean(weights[[i for i, _ in f]][:, :3].sum(axis=1)) > .9]
         v, uv, faces, w = subdivide(base, skin_uv, torso, weights)
         export_mesh('Office torso', v, uv, faces, w, skin)
-    if character != 'smith' and not office and not tracking:
+    if dock:
+        # Zion workwear has a closed knit neckline and full sleeves, not the
+        # club's exposed shoulders, cropped bodice or modern suit lapels.
+        arm_ids = [i for i, name in enumerate(names) if name.startswith(('shoulder', 'elbow'))]
+        arm_weight, hand_weight = weights[:, arm_ids].sum(axis=1), weights[:, hand_bones].sum(axis=1)
+        garment = base.copy(); garment[:, [0, 2]] *= 1.035
+        cut = np.minimum(neckline - base[:, 1], np.where(arm_weight + hand_weight > .25, .65 - hand_weight, base[:, 1] - (waistline - 1.1)))
+        v, uv, faces, w = trim_neckline(garment, skin_uv, body_faces, weights, garment[:, 1] + cut)
+        v, uv, faces, w = subdivide(v, uv, faces, w)
+        knit = material('Dock knit', [.28, .24, .18, 1], .98)
+        export_mesh('Dock crew neck top', v, uv, faces, w, knit)
+    elif character != 'smith' and not office and not tracking:
         arm_bones = [i for i, name in enumerate(names) if name.startswith(('shoulder', 'elbow'))]
         undershirt = [f for f in body_faces if (np.mean(base[[i for i, _ in f], 1]) > waistline - .3
                      or character == 'trinity' and np.mean(weights[[i for i, _ in f]][:, arm_bones].sum(axis=1)) > .5)
@@ -793,7 +808,7 @@ def main(source, character, office=False, tracking=False, club=False):
             coat_faces.append(f)
     if office:
         suit = material('Office cotton', [.56, .56, .52, 1], .92)
-    export_mesh('Office shirt' if office else 'Tailored coat upper', np.array(extra_v), np.array(extra_uv), coat_faces, np.array(extra_w), suit if office else formal if character == 'smith' else suit)
+    if not dock: export_mesh('Office shirt' if office else 'Tailored coat upper', np.array(extra_v), np.array(extra_uv), coat_faces, np.array(extra_w), suit if office else formal if character == 'smith' else suit)
     accessories = [] if office else [('clothes/shoes01', 'shoes01', shoes), ('eyes/high-poly', 'high-poly', sclera)]
     if spec['hair'] and not office:
         accessories.append(('hair/' + spec['hair'], spec['hair'], hair))
@@ -835,7 +850,8 @@ def main(source, character, office=False, tracking=False, club=False):
         doc['images'] = [{'uri': filename}]
         doc['textures'] = [{'source': 0, 'sampler': 0}]
         doc['extras']['skinBaked'] = True
-    write_glb(doc, binaries, character + ('-office' if office else '') + '.glb')
+    if dock: doc['extras']['costume'] = 'zion-dock-withdrawal'
+    write_glb(doc, binaries, character + ('-office' if office else '-dock' if dock else '') + '.glb')
 
 
 if __name__ == '__main__':
