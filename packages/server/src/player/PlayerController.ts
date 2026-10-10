@@ -288,7 +288,9 @@ export class PlayerController {
     const input = value as PlayerInput;
     if (![input.x, input.z, input.yaw, input.sequence].every(Number.isFinite) || input.pitch !== undefined && !Number.isFinite(input.pitch) || Math.abs(input.x) > 1 || Math.abs(input.z) > 1 || input.sequence < session.input.sequence) return;
     if (input.location !== undefined && (typeof input.location !== 'string' || input.location !== this.world.agents.get(session.agentId)!.currentLocation)) return;
-    const drive = input.drive && Number.isFinite(input.drive.throttle) && Number.isFinite(input.drive.steer) ? { throttle: Math.max(0, Math.min(1, input.drive.throttle)), steer: Math.max(-1, Math.min(1, input.drive.steer)), brake: input.drive.brake === true } : undefined;
+    const drive = input.drive && Number.isFinite(input.drive.throttle) && Number.isFinite(input.drive.steer) ? { throttle: Math.max(0, Math.min(1, input.drive.throttle)), steer: Math.max(-1, Math.min(1, input.drive.steer)), brake: input.drive.brake === true,
+      lift: Number.isFinite(input.drive.lift) ? Math.max(-1, Math.min(1, input.drive.lift!)) : 0,
+      roll: Number.isFinite(input.drive.roll) ? Math.max(-1, Math.min(1, input.drive.roll!)) : 0 } : undefined;
     session.input = { x: input.x, z: input.z, yaw: input.yaw, location: input.location, pitch: Math.max(-1.35, Math.min(1.35, input.pitch ?? 0)), sprint: input.sprint === true, crouch: input.crouch === true, jump: input.jump === true || session.input.jump, drive, climb: Number.isFinite(input.climb) ? Math.max(-1, Math.min(1, input.climb!)) : 0, focus: input.focus === true, sequence: input.sequence };
     session.input.firstPerson = input.firstPerson === true;
     session.lastInput = Date.now();

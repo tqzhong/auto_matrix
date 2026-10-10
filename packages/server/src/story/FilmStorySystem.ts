@@ -105,7 +105,7 @@ import { EXILES } from '@auto_matrix/shared';
 import { CHATEAU, type ChateauEncounter } from '@auto_matrix/shared';
 import { MOUNTAIN, type MountainFlight, type PlayerInput } from '@auto_matrix/shared';
 import { GARAGE, newGarageEscape, stepGarageEscape } from '@auto_matrix/shared';
-import { HAMMER_ROUTE, HAMMER_COCKPIT, hammerCrewRoot, hammerHeight, newHammerFlight, stepHammerFlight, type HammerPilotRole } from '@auto_matrix/shared';
+import { HAMMER_ROUTE, HAMMER_COCKPIT, hammerCrewRoot, hammerHeight, hammerRouteFrame, hammerRoutePoint, newHammerFlight, stepHammerFlight, type HammerPilotRole } from '@auto_matrix/shared';
 import { newLogosFlight, stepLogosFlight } from '@auto_matrix/shared';
 import { farewellLocked, farewellPose, newFarewell, stepFarewell } from '@auto_matrix/shared';
 import { DEUS_PACT, deusPactDialogue, deusPactLocked, deusPactPose, newDeusPact, stepDeusPact } from '@auto_matrix/shared';
@@ -4924,7 +4924,12 @@ export class FilmStorySystem {
       const point = hammerCrewRoot(flight, id);
       crew.position = { x: center.x + point.x, y: center.y + point.y, z: center.z + point.z };
       crew.currentLocation = this.scene!.set; crew.isInMatrix = false;
-      crew.velocity = crew.controller ? { x: flight.lateral, y: 0, z: -flight.speed } : { x: 0, y: 0, z: 0 }; crew.rotation = point.yaw;
+      let velocity = { x: flight.lateral, y: 0, z: -flight.speed };
+      if (flight.maneuver) {
+        const frame = hammerRouteFrame(175 - flight.z), vector = hammerRoutePoint(175 - flight.z, { x: flight.lateral, y: flight.maneuver.vertical, z: -flight.speed });
+        velocity = { x: vector.x - frame.x, y: vector.y - frame.y, z: vector.z - frame.z };
+      }
+      crew.velocity = crew.controller ? velocity : { x: 0, y: 0, z: 0 }; crew.rotation = point.yaw;
       crew.currentAction = { type: 'idle', parameters: { riding: true, passenger: id !== 'niobe', seated: id !== 'roland', hammerPilot: { role: id, flight: { ...flight } } }, startedAt: state.enteredAt, duration: 1e9, progress: 0 };
     }
   }
@@ -6571,7 +6576,9 @@ export class FilmStorySystem {
         if (['morpheus', 'roland'].some(id => this.world.agents.get(id)?.controller)) return '舰桥船员正由另一位玩家控制，等待他们结束当前行动。';
         if (!state.hammer) state.hammer = newHammerFlight();
         this.driveFrame(agent, { throttle: 0, steer: 0, brake: false }, 0, tick);
-        return '已接管 Hammer。W 加速，S 刹车，A / D 调整侧向推进器；沿弯曲管线飞行，避开横梁并保持与哨兵的距离。';
+        return state.hammer.maneuver
+          ? '已接管 Hammer。W 推进 / S 制动，A / D 横移，空格抬升 / C 下降，Q / E 侧滚。航向辅助沿管线转弯；你需要避开上下横梁，并侧滚穿过狭管。'
+          : '已接管 Hammer。W 加速，S 刹车，A / D 调整侧向推进器；沿弯曲管线飞行，避开横梁并保持与哨兵的距离。';
       }
       if (state.scene === 'm2_garage') {
         if (['morpheus', 'keymaker', 'twin1', 'twin2'].some(id => this.world.agents.get(id)?.controller)) return '车内同伴或双子正在由另一位玩家控制，等待对方结束后再开始撤离。';

@@ -2,7 +2,7 @@ export const FREEWAY_START = 660;
 export const FREEWAY_FINISH = -660;
 export const FREEWAY_LANES = [-22, -14, -6, 6, 14, 22];
 export const FREEWAY_BIKE = { rider: -.65, passenger: -1.9 } as const;
-export interface DriveInput { throttle: number; steer: number; brake: boolean }
+export interface DriveInput { throttle: number; steer: number; brake: boolean; lift?: number; roll?: number }
 export interface FreewayRide {
   x: number; z: number; speed: number; lateral: number; elapsed: number;
   hull: number; passenger: number; cooldown: number; hits: number;

@@ -138,7 +138,8 @@ FILM_SETS.film_office_ledge.center = { ...FILM_SETS.film_metacortex_floor.center
 // Boarding and the examination share the same parked car, not separate rooms.
 Object.assign(FILM_SETS.film_extraction_car, { center: { ...FILM_SETS.film_adams_bridge.center }, width: 48, depth: 76 });
 FILM_SETS.film_lafayette.center.y += LAFAYETTE.upper;
-FILM_SETS.film_hammer_route.center = { x: 15000, y: -100, z: 15000 };
+// Include the new elbow and climbing pipe as well as saved flights on the original route.
+Object.assign(FILM_SETS.film_hammer_route, { center: { x: 15000, y: -100, z: 15000 }, width: 520, height: 80 });
 Object.assign(FILM_SETS.film_mobil_station, { width: MOBIL_STATION.width, height: MOBIL_STATION.height });
 
 export function filmSetAt(position: Vector3, matrix: boolean): FilmSet | undefined {

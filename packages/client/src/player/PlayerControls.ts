@@ -4,7 +4,7 @@ import { sourcePortalLocked } from '@auto_matrix/shared';
 import { ORACLE_LAST, oracleLastLocked } from '@auto_matrix/shared';
 import { baneInquiryLocked } from '@auto_matrix/shared';
 import { HAMMER_BRIEFING, hammerBriefingLocked } from '@auto_matrix/shared';
-import { hammerShipPose, hammerShipPoint, hammerCenter, hammerHeight, hammerHalfWidth } from '@auto_matrix/shared';
+import { HAMMER_BEAMS, hammerRouteFrame, hammerShipPose, hammerShipPoint, hammerProjectPoint, hammerRoutePoint, hammerTunnelSection, hammerCenter, hammerHeight, hammerHalfWidth } from '@auto_matrix/shared';
 import { ZION_DEPLOYMENT, zionDeploymentLocked } from '@auto_matrix/shared';
 import { SENTINEL_SIGNAL } from '@auto_matrix/shared';
 import { mobilRefusalPose } from '@auto_matrix/shared';
@@ -251,6 +251,9 @@ export class PlayerControls {
       event.preventDefault(); this.onPanel?.(event.code === 'KeyB' ? 'inventory' : event.code === 'KeyJ' ? 'journal' : 'map'); return;
     }
     if (!this.enabled) return;
+    if (this.ride && this.motion.hammerPilot?.flight.maneuver && ['Space', 'KeyC', 'KeyQ', 'KeyE'].includes(event.code)) {
+      event.preventDefault(); this.keys.add(event.code); return;
+    }
     if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyZ', 'KeyG', 'Space', 'ShiftLeft', 'ShiftRight', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.code)) {
       event.preventDefault(); this.keys.add(event.code);
     }
@@ -472,7 +475,9 @@ export class PlayerControls {
     const carrying = this.motion.dockEvacuation?.phase === 'carrying';
     return { x, z, yaw: attacking ? this.attackYaw : this.yaw, location: this.authoritative?.currentLocation, pitch: this.pitch, sprint: !carrying && !this.motion.officeCustody && (this.keys.has('ShiftLeft') || this.keys.has('ShiftRight')), crouch: !carrying && !this.motion.officeCustody && this.keys.has('KeyZ'), jump: !carrying && !this.motion.officeCustody && jump,
       firstPerson: this.firstPerson,
-      drive: this.ride || this.motion.truckHood || this.motion.freewayHandoff || this.motion.freewayPickup && ['mounted', 'launching', 'merging'].includes(this.motion.freewayPickup.phase) ? { throttle: this.enabled ? Math.max(0, forward) : 0, steer: this.enabled ? right : 0, brake: forward < 0 || !this.enabled } : undefined,
+      drive: this.ride || this.motion.truckHood || this.motion.freewayHandoff || this.motion.freewayPickup && ['mounted', 'launching', 'merging'].includes(this.motion.freewayPickup.phase) ? { throttle: this.enabled ? Math.max(0, forward) : 0, steer: this.enabled ? right : 0, brake: forward < 0 || !this.enabled,
+        ...(this.motion.hammerPilot?.flight.maneuver ? { lift: this.enabled ? Number(this.keys.has('Space')) - Number(this.keys.has('KeyC')) : 0,
+          roll: this.enabled ? Number(this.keys.has('KeyQ')) - Number(this.keys.has('KeyE')) : 0 } : {}) } : undefined,
       climb: (this.climbing || upperDiggerLocked(this.motion.upperDigger) || dockReloadLocked(this.motion.dockReload) || this.motion.tvExit?.phase === 'emerging') && this.enabled ? forward : 0, focus: this.enabled && this.running && this.keys.has('KeyG'), sequence: ++this.sequence };
   }
 
@@ -1286,17 +1291,38 @@ export class PlayerControls {
       if (this.firstPerson) {
         const head = group.getObjectByName(`${state.id}-head`) ?? group.getObjectByName('head'); group.updateWorldMatrix(true, true);
         const eye = head ? head.localToWorld((head.userData.cameraEye as THREE.Vector3 | undefined)?.clone() ?? new THREE.Vector3(0, .1, .32)) : target;
-        const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
-        this.camera.up.set(-Math.sin(ship.roll) * Math.cos(ship.yaw), Math.cos(ship.roll), Math.sin(ship.roll) * Math.sin(ship.yaw));
+        const relative = this.yaw - ship.yaw - Math.PI;
+        const rotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(ship.pitch, ship.yaw, ship.roll, 'YXZ'));
+        const forward = flight.maneuver
+          ? new THREE.Vector3(-Math.sin(relative) * Math.cos(this.pitch), -Math.sin(this.pitch), -Math.cos(relative) * Math.cos(this.pitch)).applyQuaternion(rotation)
+          : new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
+        this.camera.up.set(0, 1, 0).applyQuaternion(rotation);
         this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
       } else {
         const relative = this.yaw - ship.yaw - Math.PI;
         const offset = new THREE.Vector3(0, 5.3 + Math.sin(this.pitch) * 5, this.camera.aspect < .85 ? 31 : 26).applyAxisAngle(new THREE.Vector3(0, 1, 0), relative);
         const eye = hammerShipPoint(flight, offset), focus = hammerShipPoint(flight, { x: 0, y: -.6, z: -7 });
-        eye.z = Math.min(189, eye.z);
-        const tunnel = hammerCenter(eye.z), height = hammerHeight(eye.z), radius = hammerHalfWidth(eye.z) - .8;
-        const x = eye.x - tunnel, y = (eye.y - height) / .9, shrink = Math.min(1, radius / Math.max(.01, Math.hypot(x, y)));
-        eye.x = tunnel + x * shrink; eye.y = height + y * .9 * shrink;
+        if (flight.maneuver) {
+          const station = hammerProjectPoint(eye, 175 - flight.z), section = hammerTunnelSection(station.distance);
+          const shrink = Math.min(1, .9 / Math.max(.01, Math.hypot(station.x / section.width, station.y / section.height)));
+          Object.assign(eye, hammerRoutePoint(Math.max(-23, Math.min(373, station.distance)), { x: station.x * shrink, y: station.y * shrink, z: 0 }));
+          for (const beam of HAMMER_BEAMS) {
+            const frame = hammerRouteFrame(beam.distance), inverse = new THREE.Quaternion().setFromEuler(new THREE.Euler(frame.pitch, frame.yaw, 0, 'YXZ')).invert();
+            const origin = new THREE.Vector3(focus.x - frame.x, focus.y - frame.y, focus.z - frame.z).applyQuaternion(inverse);
+            const offset = new THREE.Vector3(eye.x - focus.x, eye.y - focus.y, eye.z - focus.z), length = offset.length();
+            const box = new THREE.Box3(new THREE.Vector3(-beam.width / 2, beam.y - beam.height / 2, -beam.depth / 2), new THREE.Vector3(beam.width / 2, beam.y + beam.height / 2, beam.depth / 2)).expandByScalar(.8);
+            const hit = new THREE.Ray(origin, offset.clone().applyQuaternion(inverse).normalize()).intersectBox(box, new THREE.Vector3());
+            if (hit && hit.distanceTo(origin) < length) {
+              offset.multiplyScalar(Math.max(0, hit.distanceTo(origin) - .15) / length);
+              Object.assign(eye, { x: focus.x + offset.x, y: focus.y + offset.y, z: focus.z + offset.z });
+            }
+          }
+        } else {
+          eye.z = Math.min(189, eye.z);
+          const tunnel = hammerCenter(eye.z), height = hammerHeight(eye.z), radius = hammerHalfWidth(eye.z) - .8;
+          const x = eye.x - tunnel, y = (eye.y - height) / .9, shrink = Math.min(1, radius / Math.max(.01, Math.hypot(x, y)));
+          eye.x = tunnel + x * shrink; eye.y = height + y * .9 * shrink;
+        }
         this.camera.position.set(center.x + eye.x, center.y + eye.y, center.z + eye.z);
         this.camera.lookAt(center.x + focus.x, center.y + focus.y, center.z + focus.z);
       }
