@@ -20,14 +20,14 @@ export const DOCK_BRIEFING = {
 } as const;
 export type DockBriefingRole = typeof DOCK_BRIEFING.cast[number];
 export interface DockBriefing {
-  phase: 'ready' | 'lowering' | 'gate' | 'walking' | 'greeting' | 'reply' | 'answer' | 'roland' | 'warning' | 'reflection' | 'return' | 'done';
+  phase: 'ready' | 'lowering' | 'gate' | 'walking' | 'greeting' | 'reply' | 'answer' | 'council' | 'roland' | 'warning' | 'reflection' | 'return' | 'done';
   elapsed: number; escort: number; paused?: string; unavailable?: string;
   approach?: { x: number; z: number; yaw: number };
 }
 export type DockBriefingGesture = DockBriefing & { role: DockBriefingRole };
 export function dockBriefingActive(journey?: FilmJourney): boolean { return journey?.scene === 'm3_dock_briefing' && !journey.visiting; }
 export function dockBriefingLocked(state?: DockBriefing): boolean {
-  return Boolean(state && (state.paused || state.unavailable || ['ready', 'lowering', 'gate', 'greeting', 'answer', 'roland', 'warning'].includes(state.phase)));
+  return Boolean(state && (state.paused || state.unavailable || ['ready', 'lowering', 'gate', 'greeting', 'answer', 'council', 'roland', 'warning'].includes(state.phase)));
 }
 const smooth = (value: number) => { const t = Math.max(0, Math.min(1, value)); return t * t * (3 - 2 * t); };
 export function dockBriefingLift(state: DockBriefing): number {
@@ -40,7 +40,7 @@ export function dockBriefingGate(state: DockBriefing): number {
 export function dockBriefingRoot(state: DockBriefing, role: DockBriefingRole) {
   if (role === 'lock') return { x: 0, y: 0, z: -4, yaw: 0 };
   const side = role === 'morpheus' ? -1 : role === 'roland' ? 1 : 0;
-  if (role === 'niobe' && state.approach && ['greeting', 'reply', 'answer', 'roland', 'warning', 'reflection'].includes(state.phase))
+  if (role === 'niobe' && state.approach && ['greeting', 'reply', 'answer', 'council', 'roland', 'warning', 'reflection'].includes(state.phase))
     return { ...state.approach, y: 0 };
   const t = Math.min(1, state.escort / DOCK_BRIEFING.escortSeconds);
   return { x: side * (2 + 1.1 * t), y: dockBriefingLift(state), z: (side ? 14.2 : 13) * (1 - t) + .8 * t,
@@ -55,9 +55,10 @@ export function dockBriefingText(state?: DockBriefing): string {
     lowering: '升降梯正在下降。三位船长与同一轿厢一起到达指挥层。',
     gate: '人员闸口正在打开。等待门叶完全升起，再走出升降梯。',
     walking: 'WASD 走出升降梯，走近前方等待的 Lock；同行船长会跟上。',
-    greeting: 'Lock：三位船长只带回一艘船。他要求你们向议会解释损失，自己必须留在这里挽救防线。',
+    greeting: 'Lock 迎上来，质问三位船长为何只带回一艘船，其余舰船是否白白损失。',
     reply: '轮到 Niobe 回应。走近 Lock，按 G 接下这次质问。',
-    answer: 'Niobe 对 Jason 的冷言作出回应，仍把他的担忧听完。',
+    answer: 'Niobe 叫出 Jason 的名字，带着讽意回应这场冷淡的迎接。',
+    council: 'Lock 要三位船长向议会报告，自己留下重整防线。他仍认为这次行动让局势更加危险。',
     roland: 'Roland：我们刚刚救下船坞，为什么仍被当成失败？',
     warning: 'Lock：EMP 烧毁了大部分设备和所有 APU。机器若立刻投入下一波，船坞已经没有自动防御。',
     reflection: 'J 记录你如何理解这次救援的代价；一次成功并没有免除后续责任。',

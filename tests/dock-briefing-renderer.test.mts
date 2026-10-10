@@ -122,6 +122,22 @@ test('cold loading restores the same lift and raised gate and disposing releases
   renderer.dispose(); assert.equal(releasedGeometry, geometries.size); assert.equal(releasedMaterial, materials.size); assert.equal(root.children.length, 0);
 });
 
+test('Morpheus keeps his real-world knit after disembarking, including a cold-loaded conversation, and restores his Matrix coat', async t => {
+  const h = await fixture(t), rig = h.rigs.morpheus;
+  const sweater = rig.root.getObjectByName('morpheus-hammer-sweater') as THREE.SkinnedMesh;
+  const collar = rig.root.getObjectByName('morpheus-hammer-collar') as THREE.SkinnedMesh;
+  const old = rig.hero!.wardrobe.filter(part => /Tailored.coat.upper|Black.crew.neck/i.test(part.mesh.name));
+  for (const phase of ['ready', 'council', 'warning'] as const) {
+    h.pose({ phase, elapsed: 2, escort: 5.6 });
+    assert.equal(sweater.visible, true, `${phase}: Morpheus must retain the real-world sweater`);
+    assert.equal(collar.visible, true); assert.ok(old.every(part => !part.mesh.visible));
+    assert.ok((sweater.material as THREE.MeshStandardMaterial).bumpMap instanceof THREE.DataTexture);
+  }
+  h.models.animate(rig, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: false }, 0);
+  assert.equal(sweater.visible, false); assert.equal(collar.visible, false);
+  assert.ok(old.every(part => part.mesh.visible), 'scene-specific clothing must not replace his Matrix wardrobe');
+});
+
 test('listening captains rest their hands near their thighs and the speaking gesture returns to rest', async t => {
   const h = await fixture(t);
   for (const elapsed of [0, 2.4, 4.8]) {
@@ -134,6 +150,37 @@ test('listening captains rest their hands near their thighs and the speaking ges
       if (speaking) assert.ok(hand.z > .25, 'a deliberate single-hand gesture must face the listener');
     }
   }
+});
+
+test('Morpheus’s delivered fingers stay outside the real-world sweater while listening to the dock briefing', async t => {
+  const h = await fixture(t), rig = h.rigs.morpheus;
+  const sweater = rig.root.getObjectByName('morpheus-hammer-sweater') as THREE.SkinnedMesh;
+  const skin = rig.hero!.wardrobe.find(part => (part.mesh.material as THREE.Material).name === 'Skin')!.mesh as THREE.SkinnedMesh;
+  const joints = skin.geometry.attributes.skinIndex, weights = skin.geometry.attributes.skinWeight, fingers: number[] = [];
+  for (let i = 0; i < skin.geometry.attributes.position.count; i++) {
+    const hand = [0, 1, 2, 3].reduce((sum, n) => sum + (/^finger/.test(skin.skeleton.bones[joints.getComponent(i, n)].name) ? weights.getComponent(i, n) : 0), 0);
+    if (hand > .85) fingers.push(i);
+  }
+  assert.ok(fingers.length > 100);
+  const geometry = new THREE.BufferGeometry(), material = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide });
+  geometry.setIndex(sweater.geometry.index!.clone());
+  const cloth = new THREE.Mesh(geometry, material), ray = new THREE.Raycaster();
+  try {
+    for (const phase of ['ready', 'council', 'roland', 'warning'] as const) {
+      h.pose({ phase, elapsed: 1.335, escort: phase === 'ready' ? 0 : 5.6 });
+      sweater.skeleton.update(); skin.skeleton.update();
+      const points = new Float32Array(sweater.geometry.attributes.position.count * 3);
+      for (let i = 0; i < points.length / 3; i++) points.set(rig.root.worldToLocal(sweater.localToWorld(sweater.getVertexPosition(i, new THREE.Vector3()))).toArray(), i * 3);
+      geometry.setAttribute('position', new THREE.BufferAttribute(points, 3)); geometry.computeBoundingSphere();
+      for (let n = 0; n < fingers.length; n += Math.ceil(fingers.length / 36)) {
+        const point = rig.root.worldToLocal(skin.localToWorld(skin.getVertexPosition(fingers[n], new THREE.Vector3())));
+        ray.set(point.clone().add(new THREE.Vector3(0, 0, 2)), new THREE.Vector3(0, 0, -1));
+        const distances = ray.intersectObject(cloth, false).map(hit => hit.distance);
+        const crossings = distances.filter((distance, i) => distance < 2 - .008 && (i === 0 || distance - distances[i - 1] > 1e-5));
+        assert.equal(crossings.length % 2, 0, `${phase}: a delivered finger penetrates the new clothing at ${point.toArray()}`);
+      }
+    }
+  } finally { geometry.dispose(); material.dispose(); }
 });
 
 test('late captain body loading retains the saved lift pose and Niobe can change world without drawing two bodies', async t => {

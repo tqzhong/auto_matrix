@@ -3838,7 +3838,9 @@ test('the entire film route completes through interactions, driving and real com
           h.command('act');
           for (let frame = 0; frame < 50; frame++) h.players.step(.1, true, h.tick());
           assert.equal(state.dockBriefing?.phase, 'reply'); h.command('act');
-          for (let frame = 0; frame < 135 && state.step === index; frame++) h.players.step(.1, true, h.tick());
+          for (let frame = 0; frame < 25; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.dockBriefing?.phase, 'council', 'the council order follows Niobe’s answer');
+          for (let frame = 0; frame < 170 && state.step === index; frame++) h.players.step(.1, true, h.tick());
         } else if (step.kind === 'reflect') h.command('reflect:care');
         else h.players.step(.1, true, h.tick());
       }
