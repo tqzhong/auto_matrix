@@ -539,7 +539,7 @@ export class PlayerController {
       if (this.sandbox?.life.film.sentinelFrame(agent, { movement: Math.hypot(input.x, input.z), sprint: input.sprint, jump: input.jump }, dt, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
-      if (this.sandbox?.life.film.awakeningFrame(agent, dt, tick)) {
+      if (this.sandbox?.life.film.awakeningFrame(agent, dt, tick, Boolean(input.focus))) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
       if (this.sandbox?.life.film.trainingFrame(agent, dt, tick)) {

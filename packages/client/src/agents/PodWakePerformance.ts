@@ -1,12 +1,13 @@
 import * as THREE from 'three';
-import { FILM_SETS, POD_BREATHER, podBreatherPose } from '@auto_matrix/shared';
+import { FILM_SETS, POD_BREATHER, podBreatherPose, podEmergencePose } from '@auto_matrix/shared';
 import type { HeroRig } from './HeroModel.js';
 import { reach } from './SpoonPerformance.js';
 
 /** The saved disconnection clock drives the supported body, including paused loads. */
-export function posePodWake(rig: HeroRig, elapsed: number | undefined, breather?: number): void {
+export function posePodWake(rig: HeroRig, elapsed: number | undefined, breather?: number, emergence?: number): void {
   if (elapsed === undefined) return;
-  const smooth = THREE.MathUtils.smoothstep, t = elapsed;
+  const emerging = emergence === undefined ? undefined : podEmergencePose(emergence);
+  const smooth = THREE.MathUtils.smoothstep, t = emerging ? 1.35 * emerging.rise : elapsed;
   const sitting = smooth(t, .1, 1.35) * (1 - smooth(t, 3.8, 5.2));
   const support = smooth(t, .08, .45) * (1 - smooth(t, 3.6, 4.05));
   const inspect = smooth(t, 1.3, 1.75) * (1 - smooth(t, 2.25, 2.6));
@@ -30,7 +31,7 @@ export function posePodWake(rig: HeroRig, elapsed: number | undefined, breather?
       bone(`finger${finger}-${segment}_${side}`).rotation.set(0, 0, -sign * (finger === 1 ? .15 : .25));
   }
   rig.root.updateWorldMatrix(true, true);
-  if (!support) return;
+  if (!support && !emerging) return;
   const center = FILM_SETS.film_power_plant_pods.center;
   const z = -.6 / 3.4, rimX = 1.8 * Math.sqrt(1 - z * z) * (.84 - .16 * z);
   for (const [i, side] of ['R', 'L'].entries()) {
@@ -44,6 +45,23 @@ export function posePodWake(rig: HeroRig, elapsed: number | undefined, breather?
     reach(shoulder, elbow, wrist.position, target, new THREE.Vector3(sign, .2, -.45));
     wrist.quaternion.copy(elbow.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation));
     wrist.updateWorldMatrix(false, true);
+  }
+  if (emerging) {
+    for (const [i, side] of ['R', 'L'].entries()) {
+      const sign = i ? 1 : -1, blend = 1 - smooth(emergence!, 3.65, 4.75);
+      const shoulder = bone(`shoulder_${side}`), elbow = bone(`elbow_${side}`), wrist = bone(`wrist_${side}`);
+      const contact = new THREE.Vector3(center.x + sign * (.42 + .78 * emerging.tear),
+        center.y - 1 + 2.5 + .2 * emerging.press + .7 * emerging.rise - .95 * emerging.clear, center.z - 14.5 + .75 * emerging.rise);
+      const orientation = wrist.getWorldQuaternion(new THREE.Quaternion()).slerp(new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, Math.PI, 0)), blend);
+      const palm = new THREE.Vector3(-sign * .09, -.18, .15);
+      const target = wrist.localToWorld(palm.clone()).lerp(contact, blend).sub(palm.applyQuaternion(orientation));
+      reach(shoulder, elbow, wrist.position, target, new THREE.Vector3(sign, -.25, .35));
+      wrist.quaternion.copy(elbow.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation));
+      for (let finger = 2; finger <= 5; finger++) for (let segment = 1; segment <= 3; segment++)
+        bone(`finger${finger}-${segment}_${side}`).rotation.z = -sign * (.04 + .21 * emerging.tear);
+      wrist.updateWorldMatrix(false, true);
+    }
+    return;
   }
   if (breather === undefined) return;
   const pose = podBreatherPose(breather), head = bone('head');

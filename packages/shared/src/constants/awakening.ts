@@ -4,12 +4,12 @@ import { CABIN, cabinBodyPose, cabinSeat } from './cabin.js';
 import { truthLocked } from './truth-recovery.js';
 import { CONSTRUCT } from './construct.js';
 
-export type AwakeningKind = 'mirror' | 'connect' | 'breather' | 'disconnect' | 'rescue' | 'recovery' | 'cabin' | 'core' | 'construct' | 'desert';
-export interface AwakeningBeat { kind: AwakeningKind; elapsed: number; started?: boolean; approach?: { x: number; z: number; yaw?: number }; chairMotion?: 'stepping'; breatherRemoved?: boolean }
+export type AwakeningKind = 'mirror' | 'connect' | 'emerge' | 'breather' | 'disconnect' | 'rescue' | 'recovery' | 'cabin' | 'core' | 'construct' | 'desert';
+export interface AwakeningBeat { kind: AwakeningKind; elapsed: number; started?: boolean; approach?: { x: number; z: number; yaw?: number }; chairMotion?: 'stepping'; emerged?: boolean; breatherRemoved?: boolean }
 export interface AwakeningReveal { kind: 'construct' | 'desert'; elapsed: number; role: 'neo' | 'morpheus' }
 export type RecoveryCrewRole = 'morpheus' | 'trinity';
 export interface RecoveryCrewGesture { elapsed: number; role: RecoveryCrewRole; boarding?: boolean; target?: { x: number; y: number; z: number } }
-export const AWAKENING_SECONDS = { mirror: 8, connect: 4, breather: 5.5, disconnect: 9, rescue: 14, recovery: 12, cabin: 12, core: 8, construct: 11, desert: 13 } as const;
+export const AWAKENING_SECONDS = { mirror: 8, connect: 4, emerge: 5.2, breather: 5.5, disconnect: 9, rescue: 14, recovery: 12, cabin: 12, core: 8, construct: 11, desert: 13 } as const;
 export const MIRROR_TOUCH = { x: -7.1, z: -14.6, radius: 1.25 } as const;
 export const MIRROR_SEAT = { x: -9.5, z: -16.05 } as const;
 export const MIRROR_FACE = { y: 2.8, radiusX: 1.85, radiusY: 2.65 } as const;
@@ -65,6 +65,10 @@ export const DESERT_REVEAL = { neo: { x: 1.8, z: -28, yaw: Math.PI }, morpheus: 
 export type AwakeningPose = 'touch' | 'connect' | 'pod' | 'fall' | 'float' | 'lift' | 'recover' | 'cabin' | 'core' | 'construct' | 'desert';
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
 const smooth = (value: number) => { const t = clamp(value); return t * t * (3 - 2 * t); };
+export function podEmergencePose(elapsed: number) {
+  return { press: smooth((elapsed - .15) / .7), tear: smooth((elapsed - 1.1) / 1.25), rise: smooth((elapsed - .65) / 2.65),
+    clear: smooth((elapsed - 3.1) / 1.5), reach: smooth(elapsed / .7) * (1 - smooth((elapsed - 3.65) / 1.1)) };
+}
 export function podBreatherPose(elapsed: number) {
   const pull = smooth((elapsed - 2.05) / 1.15), lower = smooth((elapsed - 3.45) / 1.15), drop = smooth((elapsed - 4.85) / .65);
   const release = smooth((elapsed - 4.55) / .55);
@@ -202,8 +206,13 @@ export function awakeningPose(beat?: AwakeningBeat): { x: number; y: number; z: 
         : time < 5.8 ? '冰冷的银色镜面粘住指尖，沿手臂与颈部蔓延。' : 'Neo 惊恐地仰头；房间的声音和光线正在消失。' };
   }
   if (beat?.kind === 'connect') return { x: 8, y: 0, z: 5, pose: 'connect', text: '坐稳。接线组已经找到你，连接正在从模拟世界转向真实身体。' };
+  if (beat?.kind === 'emerge') return { x: 0, y: 0, z: -12, pose: 'pod', text: beat.elapsed < 1.1
+    ? '按住 G，用双手顶住覆盖身体的薄膜。松开会停在当前挣扎进度。'
+    : beat.elapsed < 2.35 ? '薄膜沿双手之间裂开。继续按住 G，撑起头部和肩膀。'
+      : beat.elapsed < AWAKENING_SECONDS.emerge ? '把湿滑的残膜拨到两侧，双手重新撑住舱沿。'
+        : '你挣脱了舱膜，嘴里的管线仍然连接着。按 G 抓住并拔出呼吸管。' };
   if (beat?.kind === 'breather') return { x: 0, y: 0, z: -12, pose: 'pod', text: beat.elapsed < 1.35
-    ? '撑住舱沿抬起上身。口中的管线让你无法呼吸。'
+    ? beat.emerged ? '你已经撑起上身。稳住舱沿，准备拔出妨碍呼吸的管线。' : '撑住舱沿抬起上身。口中的管线让你无法呼吸。'
     : beat.elapsed < 2.05 ? '右手先抓住管口，左手扶住外侧软管。'
       : beat.elapsed < 3.45 ? '双手缓慢向外拔出呼吸管，空气第一次进入肺部。'
         : beat.elapsed < AWAKENING_SECONDS.breather ? '把松开的管线放回液面，重新撑住舱沿。'
@@ -265,5 +274,5 @@ export function awakeningPose(beat?: AwakeningBeat): { x: number; y: number; z: 
   const fall = clamp(((beat?.elapsed ?? 0) - 4) / 3);
   const immersion = POD_RESCUE.immersion * smooth(((beat?.elapsed ?? 0) - 6.8) / 1.2);
   return { x: 0, y: -POD_WATER_DROP * fall * fall - immersion, z: -12 + 24 * fall, pose: fall === 1 ? 'float' : fall > 0 ? 'fall' : 'pod',
-    text: !beat ? '转动视角观察培养塔。G 撑起身体，拔出口中的呼吸管。' : beat.elapsed < 2 ? '维护机器锁定了异常信号，正在靠近培养舱。' : beat.elapsed < 4 ? '固定臂扶住后颈，连接管线逐一脱开。' : fall < 1 ? '舱底打开。水流把你冲入排放管道。' : '上方出现了探照灯。G 抓住下降的救援装置。' };
+    text: !beat ? '薄膜贴在身体上。按住 G 顶破舱膜，松开会保留挣脱进度。' : beat.elapsed < 2 ? '维护机器锁定了异常信号，正在靠近培养舱。' : beat.elapsed < 4 ? '固定臂扶住后颈，连接管线逐一脱开。' : fall < 1 ? '舱底打开。水流把你冲入排放管道。' : '上方出现了探照灯。G 抓住下降的救援装置。' };
 }

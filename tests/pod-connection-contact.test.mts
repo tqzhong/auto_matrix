@@ -37,8 +37,8 @@ async function setup(t: TestContext) {
   const scene = new THREE.Scene(), renderer = new AgentRenderer(scene), root = new THREE.Group(); scene.add(root);
   const center = FILM_SETS.film_power_plant_pods.center; root.position.set(center.x, center.y - 1, center.z);
   const set = new PodSetRenderer(root);
-  const at = (elapsed: number, wallTime = 100, firstPerson = false, saved?: AwakeningBeat) => {
-    const awakening = saved ?? { kind: 'disconnect' as const, elapsed }, pose = awakeningPose(awakening);
+  const at = (elapsed: number, wallTime = 100, firstPerson = false, saved?: AwakeningBeat | null) => {
+    const awakening = saved === null ? undefined : saved ?? { kind: 'disconnect' as const, elapsed }, pose = awakeningPose(awakening);
     const journey = { scene: 'm1_pod', awakening } as FilmJourney;
     neo.position = filmPosition(neo.currentLocation, pose.x, pose.z); neo.position.y += pose.y;
     neo.currentAction = { type: 'idle', parameters: { filmPose: pose.pose }, startedAt: 0, duration: 1, progress: 0 };
@@ -55,6 +55,34 @@ async function setup(t: TestContext) {
   return { root, at, neo, renderer };
 }
 
+test('the pod membrane stretches above the real body, opens around the head and reconstructs a paused tear', async t => {
+  const h = await setup(t);
+  const at = (elapsed: number, wallTime = 100) => h.at(elapsed, wallTime, false, { kind: 'emerge', elapsed } as AwakeningBeat);
+  const body = at(0), membrane = h.root.getObjectByName('pod-membrane'); assert.ok(membrane, 'the waking body starts beneath a physical transparent membrane');
+  const meshes = membrane.children as THREE.Mesh[];
+  const buffers = meshes.map(mesh => mesh.geometry.getAttribute('position'));
+  assert.ok(buffers.reduce((count, buffer) => count + buffer.count, 0) <= 2500, 'the sheet cannot add dense per-frame geometry to the pod set');
+  const head = body.getObjectByName('head')!;
+  const initialEye = head.localToWorld(new THREE.Vector3(0, .1, .32));
+  assert.ok(new THREE.Raycaster(initialEye, new THREE.Vector3(0, 1, 0), .01, 3).intersectObject(membrane, true).length,
+    'the intact membrane must actually cover the immersed first-person eye');
+  at(3.8); const eye = head.localToWorld(new THREE.Vector3(0, .1, .32));
+  assert.equal(new THREE.Raycaster(eye, new THREE.Vector3(0, 1, 0), .01, 2).intersectObject(membrane, true).length, 0,
+    'the torn opening must clear the rising head instead of passing through the face');
+  at(1.9); const paused = buffers.map(buffer => Array.from(buffer.array));
+  at(5.2); at(1.9, 900);
+  assert.deepEqual(buffers.map(buffer => Array.from(buffer.array)), paused);
+  meshes.forEach((mesh, i) => assert.equal(mesh.geometry.getAttribute('position'), buffers[i], 'deformation reuses the saved surface buffers'));
+  await t.test('a new scene loaded mid-tear has exactly the same surface', async t => {
+    const cold = await setup(t); cold.at(1.9, 1000, false, { kind: 'emerge', elapsed: 1.9 } as AwakeningBeat);
+    const restored = cold.root.getObjectByName('pod-membrane')!;
+    assert.deepEqual(restored.children.map(mesh => Array.from((mesh as THREE.Mesh).geometry.getAttribute('position').array)), paused);
+  });
+  for (const beat of [{ kind: 'breather', elapsed: 2.4 }, { kind: 'disconnect', elapsed: 2.4 }, { kind: 'rescue', elapsed: 2.4 }] as AwakeningBeat[]) {
+    h.at(beat.elapsed, 100, false, beat); assert.equal(membrane.visible, false, 'old saves already beyond emergence do not gain a new sealed surface');
+  }
+});
+
 test('the pod neck hose seats against the shipped cervical socket before it is unlocked', async t => {
   const h = await setup(t);
   for (const elapsed of [0, .75, 1.5, 2.2]) {
@@ -67,6 +95,60 @@ test('the pod neck hose seats against the shipped cervical socket before it is u
     const end = hose.localToWorld(hose.geometry.parameters.path.getPoint(1));
     const contact = socket.localToWorld(new THREE.Vector3(0, 0, .025));
     assert.ok(end.distanceTo(contact) < .045, `at ${elapsed}s the hose floats ${end.distanceTo(contact)} units from the real socket`);
+  }
+});
+
+test('both real palms remain beneath or against the stretching membrane without cutting through it', async t => {
+  const h = await setup(t);
+  for (const elapsed of [.7, 1, 1.5, 1.9, 2.4, 3.4]) {
+    const body = h.at(elapsed, 100, false, { kind: 'emerge', elapsed });
+    const membrane = h.root.getObjectByName('pod-membrane')!;
+    for (const [side, sign] of [['R', -1], ['L', 1]] as const) {
+      const palm = body.getObjectByName(`wrist_${side}`)!.localToWorld(new THREE.Vector3(-sign * .09, -.18, .15));
+      const hit = new THREE.Raycaster(palm.clone().add(new THREE.Vector3(0, -.2, 0)), new THREE.Vector3(0, 1, 0), 0, .4).intersectObject(membrane, true)[0];
+      assert.ok(hit, `the ${side} palm must press a sheet at ${elapsed}s`);
+      const gap = hit.point.y - palm.y;
+      assert.ok(gap >= -.025 && gap < .075, `the ${side} palm crosses or floats off the membrane at ${elapsed}s: ${gap}`);
+    }
+  }
+});
+
+test('pod entry and the first held input share the same submerged pose, and breathing starts from the emerged body', async t => {
+  const h = await setup(t);
+  const joints = ['head', 'wrist_R', 'wrist_L'];
+  const positions = (body: THREE.Object3D) => joints.map(name => body.getObjectByName(name)!.getWorldPosition(new THREE.Vector3()));
+  const entry = positions(h.at(0, 100, false, null)), starting = positions(h.at(0, 100, false, { kind: 'emerge', elapsed: 0 }));
+  entry.forEach((point, i) => assert.ok(point.distanceTo(starting[i]) < .00001, `${joints[i]} jumps when Neo first presses the membrane`));
+  const emerged = positions(h.at(5.2, 100, false, { kind: 'emerge', elapsed: 5.2, started: false }));
+  const membrane = h.root.getObjectByName('pod-membrane')!;
+  const torn = membrane.children.map(mesh => Array.from((mesh as THREE.Mesh).geometry.getAttribute('position').array));
+  const breathing = positions(h.at(0, 100, false, { kind: 'breather', elapsed: 0, emerged: true }));
+  emerged.forEach((point, i) => assert.ok(point.distanceTo(breathing[i]) < .00001, `${joints[i]} returns underwater before oral removal`));
+  assert.equal(membrane.visible, true, 'the rim retains its torn film when Neo reaches for the tube');
+  const retained = membrane.children.map(mesh => Array.from((mesh as THREE.Mesh).geometry.getAttribute('position').array));
+  assert.ok(Math.max(...retained.flatMap((buffer, i) => buffer.map((value, j) => Math.abs(value - torn[i][j])))) < .00001);
+  h.at(1, 100, false, { kind: 'disconnect', elapsed: 1, emerged: true, breatherRemoved: true });
+  assert.equal(membrane.visible, true);
+  h.at(4.1, 100, false, { kind: 'disconnect', elapsed: 4.1, emerged: true, breatherRemoved: true });
+  assert.equal(membrane.visible, false, 'the torn film clears with the opening drain');
+});
+
+test('the pressing hand skin stays below the intact pod membrane', async t => {
+  const h = await setup(t);
+  for (const elapsed of [.7, 1]) {
+    const body = h.at(elapsed, 100, false, { kind: 'emerge', elapsed }), membrane = h.root.getObjectByName('pod-membrane')!;
+    const penetrations: number[][] = [];
+    body.traverse(object => {
+      if (!(object instanceof THREE.SkinnedMesh) || !object.visible || (object.material as THREE.Material).name !== 'Skin') return;
+      const index = object.geometry.getAttribute('skinIndex'), weight = object.geometry.getAttribute('skinWeight');
+      for (let i = 0; i < index.count; i++) {
+        if (!Array.from({ length: 4 }, (_, j) => weight.getComponent(i, j) > .2 && /^(wrist_|finger)/.test(object.skeleton.bones[index.getComponent(i, j)].name)).some(Boolean)) continue;
+        const point = object.localToWorld(object.getVertexPosition(i, new THREE.Vector3()));
+        const hit = new THREE.Raycaster(point.clone().add(new THREE.Vector3(0, -.3, 0)), new THREE.Vector3(0, 1, 0), 0, .6).intersectObject(membrane, true)[0];
+        if (hit && point.y - hit.point.y > .035) penetrations.push([point.x, point.y - hit.point.y, point.z]);
+      }
+    });
+    assert.equal(penetrations.length, 0, `the actual fingers cut through the sheet at ${elapsed}s: ${JSON.stringify(penetrations.slice(0, 4))}`);
   }
 });
 
@@ -450,10 +532,12 @@ test('the attached breathing nozzle touches the shipped mouth surface instead of
   }
 });
 
-test('the chest feed surfaces avoid the moving arms during oral removal and release', async t => {
+test('the chest feed surfaces avoid the moving arms during emergence, oral removal and release', async t => {
   const h = await setup(t);
   const beats: AwakeningBeat[] = [0, .4, .75, 1.35, 1.7, 2.4, 3.2, 3.6, 4, 4.5, 4.8, 5, 5.5].map(elapsed => ({ kind: 'breather', elapsed }));
   beats.push(...[0, 1.8, 3.5].map(elapsed => ({ kind: 'disconnect' as const, elapsed, breatherRemoved: true })));
+  beats.push(...[.7, 1.63, 2.4, 3.4, 4.2].map(elapsed => ({ kind: 'emerge' as const, elapsed })));
+  beats.push(...[.7, 2.4, 4.5].map(elapsed => ({ kind: 'breather' as const, elapsed, emerged: true })));
   for (const beat of beats) {
     const body = h.at(beat.elapsed, 100, false, beat), skin: THREE.Mesh[] = [];
     body.traverse(object => {

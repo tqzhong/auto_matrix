@@ -45,6 +45,7 @@ export interface MotionInput {
   climbing?: number;
   performance?: AwakeningPose;
   podWake?: number;
+  podEmergence?: number;
   podBreather?: number;
   podRescue?: number;
   mirrorBeat?: number;

@@ -631,9 +631,10 @@ export class AgentRenderer {
       const podBeat = journey?.scene === 'm1_pod' && !journey.visiting ? journey.awakening : undefined;
       const podBody = state.id === 'neo' && state.currentLocation === 'film_power_plant_pods' && journey?.scene === 'm1_pod' && !journey.visiting;
       input.podWake = podBody && (input.performance === 'pod' || podBeat?.kind === 'disconnect' && podBeat.elapsed < 5.2)
-        ? podBeat?.kind === 'breather' ? Math.min(1.35, podBeat.elapsed)
+        ? podBeat?.kind === 'emerge' ? 0 : podBeat?.kind === 'breather' ? podBeat.emerged ? 1.35 : Math.min(1.35, podBeat.elapsed)
           : podBeat?.kind === 'disconnect' ? Math.max(podBeat.breatherRemoved ? 1.35 : 0, podBeat.elapsed) : 0 : undefined;
       input.podBreather = podBody && podBeat?.kind === 'breather' ? podBeat.elapsed : undefined;
+      input.podEmergence = podBody && (!podBeat || podBeat.kind === 'emerge') ? podBeat?.elapsed ?? 0 : undefined;
       input.podRescue = journey?.scene === 'm1_pod' && !journey.visiting && input.performance === 'lift' && journey.awakening?.kind === 'rescue'
         ? journey.awakening.elapsed : undefined;
       input.officeShirt = officeClothing(state.id, state.currentLocation);

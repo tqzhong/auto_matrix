@@ -267,6 +267,20 @@ test('the completed oral removal offers a new neck inspection in both the journa
   assert.equal(element('#sandbox-nearby').textContent, '检查后颈接口');
   assert.match(journal.renderFilmJourney(player, sandbox), /data-target="film:act" >检查后颈接口 · G/);
   assert.doesNotMatch(journal.renderFilmJourney(player, sandbox), /data-target="film:next"/);
+  sandbox.neoLife!.journey!.awakening = { kind: 'emerge', elapsed: 1.9 };
+  ui.updateFilm(player, sandbox);
+  assert.match(element('game-objective-copy').textContent, /挣脱舱膜进行中/);
+  assert.match(element('#film-sequence-hint').textContent, /按住 G.*松开保留进度/);
+  assert.match(journal.renderFilmJourney(player, sandbox), /按住 G.*松开.*保留/);
+  sandbox.neoLife!.journey!.awakening = { kind: 'emerge', elapsed: 5.2, started: false };
+  ui.updateFilm(player, sandbox);
+  assert.match(element('game-objective-copy').textContent, /拔出口部呼吸管 · 按 G/);
+  assert.match(journal.renderFilmJourney(player, sandbox), /data-target="film:act" >拔出口部呼吸管 · G/);
+  assert.doesNotMatch(journal.renderFilmJourney(player, sandbox), /data-target="film:next"/);
+  delete sandbox.neoLife!.journey!.awakening;
+  ui.updateFilm(player, sandbox);
+  assert.match(element('game-objective-copy').textContent, /按住 G.*松开.*保留/);
+  assert.doesNotMatch(element('game-objective-copy').textContent, /靠近/);
 });
 
 test('the pill choice clears the central subtitle over Morpheus palms and restores it for the taking action', async t => {
