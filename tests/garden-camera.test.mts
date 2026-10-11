@@ -92,6 +92,64 @@ function vertices(root: THREE.Object3D) {
   return result;
 }
 
+test('the park conversation brings the Oracle close enough to read her face and keeps her handbag in frame', async t => {
+  const h = await fixture(t);
+  for (const aspect of [16 / 9, .65]) {
+    h.camera.aspect = aspect; h.step('choice', 0, true);
+    const face = new THREE.Box3().setFromPoints(vertices(h.rigs.oracle.head).map(point => point.project(h.camera)));
+    t.diagnostic(`${aspect}: projected head height ${face.max.y - face.min.y}, bounds ${face.min.toArray()} / ${face.max.toArray()}`);
+    assert.ok(face.max.y - face.min.y >= .24, `${aspect}: the speaking face occupies less than 12% of the viewport height`);
+    for (const object of [h.rigs.oracle.head, h.rigs.oracle.root.getObjectByName('oracle-park-handbag')!]) {
+      assert.ok(object.visible);
+      const bounds = new THREE.Box3().setFromPoints(vertices(object).map(point => point.project(h.camera)));
+      t.diagnostic(`${object.name}: ${bounds.min.toArray()} / ${bounds.max.toArray()}`);
+      assert.ok(vertices(object).every(point => {
+        point.project(h.camera); return Math.abs(point.x) < .88 && point.y > -.36 && point.y < .72 && point.z > -1 && point.z < 1;
+      }), `${aspect}: the face or handbag is cropped or behind the lower HUD`);
+    }
+    const faceTarget = h.rigs.oracle.head.localToWorld(new THREE.Vector3(0, 0, .27));
+    const towardFace = faceTarget.sub(h.camera.position);
+    const occluders = new THREE.Raycaster(h.camera.position, towardFace.clone().normalize(), .06, towardFace.length() - .12)
+      .intersectObjects([h.scenery.group, h.rigs.architect.root], true).filter(hit => {
+        for (let object: THREE.Object3D | null = hit.object; object; object = object.parent) if (!object.visible) return false;
+        const material = hit.object.material as THREE.MeshStandardMaterial;
+        if (material.name.endsWith('_leaves')) {
+          assert.ok(hit.uv); if (leafAlpha(hit.uv) < material.alphaTest) return false;
+        }
+        return !material.transparent;
+      });
+    assert.equal(occluders.length, 0, `${aspect}: the foreground Architect or set covers the Oracle's face: ${occluders[0]?.object.name}`);
+    const matrix = h.camera.matrixWorld.clone(), projection = h.camera.projectionMatrix.clone();
+    h.step('choice', 0); assert.ok(h.camera.matrixWorld.equals(matrix) && h.camera.projectionMatrix.equals(projection), 'paused dialogue must not drift');
+    h.step('choice', 0, true); assert.ok(h.camera.matrixWorld.equals(matrix) && h.camera.projectionMatrix.equals(projection), 'cold dialogue must restore its saved framing');
+    h.step('architect', 5.4, true);
+    assert.ok(h.camera.matrixWorld.equals(matrix) && h.camera.projectionMatrix.equals(projection), 'the approach must end at the conversation shot');
+  }
+});
+
+test('the park conversation push-in and mouse orbit preserve the frozen performers and V eye view', async t => {
+  const h = await fixture(t);
+  h.step('architect', 3.8, true);
+  let previous = h.camera.position.clone(), previousFov = h.camera.fov;
+  for (let frame = 1; frame <= 16; frame++) {
+    h.step('architect', 3.8 + frame * .1);
+    assert.ok(h.camera.position.distanceTo(previous) < 1.6 && Math.abs(h.camera.fov - previousFov) < 2.1, 'the arriving Architect must not cause a sudden close-up jump');
+    previous.copy(h.camera.position); previousFov = h.camera.fov;
+  }
+  h.step('choice', 0, true);
+  const original = h.camera.matrixWorld.clone(), action = structuredClone(h.state.currentAction), body = vertices(h.rigs.oracle.root);
+  h.document.pointerLockElement = h.canvas;
+  h.event(h.document, 'mousemove', { movementX: 160, movementY: 30 }); h.step('choice', 0);
+  const orbit = h.camera.matrixWorld.clone();
+  assert.ok(!orbit.equals(original), 'the close-up must respond to mouse orbit');
+  h.step('choice', 0); assert.ok(h.camera.matrixWorld.equals(orbit), 'paused orbit must remain stable');
+  assert.deepEqual(h.state.currentAction, action);
+  assert.ok(vertices(h.rigs.oracle.root).every((point, i) => point.distanceTo(body[i]) < 1e-7));
+  h.toggle(); h.step('choice', 0); h.controls.syncNeoCarryCamera(h.groups.oracle);
+  assert.ok(h.camera.position.distanceTo(h.rigs.oracle.head.localToWorld(new THREE.Vector3(0, 0, .27))) < 1e-7);
+  h.toggle(); h.step('choice', 0); assert.ok(h.camera.matrixWorld.equals(orbit), 'V must return to the chosen close-up orbit');
+});
+
 test('the saved Sati arrival keeps the real Oracle, Sati and Seraph bodies above the lower HUD in both window shapes', async t => {
   const h = await fixture(t);
   for (const aspect of [16 / 9, .65]) {
@@ -206,7 +264,7 @@ test('park shots frame the arriving and departing speakers, then the reunited gr
   const h = await fixture(t);
   const samples: [TrilogyEpilogueEncounter['phase'], number, ('oracle' | 'architect' | 'sati' | 'seraph')[]][] = [
     ['sitting', 1.479, ['oracle']], ['architect', 0, ['oracle', 'architect']], ['architect', 1.6, ['oracle', 'architect']],
-    ['architect', 3.8, ['oracle', 'architect']], ['choice', 0, ['oracle', 'architect']], ['leaving', 2.2, ['oracle', 'architect']],
+    ['architect', 3.8, ['oracle', 'architect']], ['leaving', 2.2, ['oracle', 'architect']],
     ['leaving', 4.8, ['oracle', 'architect']], ['promise', 0, ['oracle', 'sati', 'seraph']],
     ...[0, 1.6, 3.328, 4.8, 6, 8, 9.2, 10.3, 12].map(elapsed => ['sati', elapsed, ['oracle', 'sati', 'seraph']] as typeof samples[number]),
     ...[0, 3.1, 6.2].map(elapsed => ['sunrise', elapsed, ['oracle', 'sati', 'seraph']] as typeof samples[number]),

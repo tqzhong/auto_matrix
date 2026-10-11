@@ -59,6 +59,11 @@ function drapeOracleClothes(rig: CharacterRig, gesture: TrilogyEpilogueGesture, 
         point.set(Math.sin(angle) * radius, y,
           THREE.MathUtils.lerp(Math.cos(angle) * (coat ? .37 + t * .18 : .33 + t * .16), lap * 1.02 + Math.cos(angle) * depth, seated));
         const side = Math.cos(angle) >= 0 ? 1 : -1;
+        // Bent knees rise above the waist; horizontal skirt rings alone leave them exposed.
+        if (row && t <= .5 && seated > 0) for (const capsule of capsules) {
+          const squared = capsule.radius ** 2 - (point.x - capsule.point.x) ** 2 - (point.z - capsule.point.z) ** 2;
+          if (squared > 0) point.y = Math.max(point.y, capsule.point.y + Math.sqrt(squared) + (coat ? .07 : .05) * seated);
+        }
         for (const section of sections) {
           const squared = section.squared - (point.x - section.x) ** 2;
           if (squared > 0) point.z = side * Math.max(side * point.z, side * section.z + Math.sqrt(squared) + (coat ? .065 : .04));
@@ -253,6 +258,11 @@ export function poseGarden(rig: CharacterRig, gesture?: TrilogyEpilogueGesture, 
     const lift = gesture.phase === 'ready' ? 0 : gesture.phase === 'sitting' ? THREE.MathUtils.smoothstep(gesture.elapsed, .15, 1.05) : 1;
     bag.visible = true; bag.scale.setScalar(1); bag.rotation.set(0, 0, 0);
     bag.position.set(THREE.MathUtils.lerp(-.94, 0, lift), hip + THREE.MathUtils.lerp(-.44, .34, lift), THREE.MathUtils.lerp(.21, .50, lift));
+    if (seated > 0) {
+      const lap = new THREE.Raycaster(rig.detail.localToWorld(new THREE.Vector3(0, hip + 1, .5)), new THREE.Vector3(0, -1, 0))
+        .intersectObject(rig.root.getObjectByName('oracle-park-skirt')!, false)[0];
+      if (lap) bag.position.y = Math.max(bag.position.y, rig.detail.worldToLocal(lap.point).y + .255);
+    }
     rig.root.updateWorldMatrix(true, true); const orientation = rig.root.getWorldQuaternion(new THREE.Quaternion());
     for (let i = 0; i < 2; i++) {
       const palm = new THREE.Vector3(0, -.79, .055), side = i ? 1 : -1;
