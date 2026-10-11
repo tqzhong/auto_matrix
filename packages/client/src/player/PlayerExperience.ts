@@ -39,7 +39,7 @@ export class PlayerExperience {
   private chosen = 'neo';
   private lastPlayed: string | null = null;
   private storyActor: string | null = null;
-  private oracleContinuation = false;
+  private storyContinuation = false;
   private entryExplicit = false;
   private controlled: string | null = null;
   private search = '';
@@ -144,12 +144,14 @@ export class PlayerExperience {
     const agent = this.agents[this.chosen];
     const button = this.el<HTMLButtonElement>('enter-world');
     button.disabled = !agent;
-    button.innerHTML = `${agent && agent.status !== 'alive' && !(agent.id === 'oracle' && this.oracleContinuation) ? '重建并进入角色' : agent && this.storyActor === agent.id && !this.entryExplicit ? `继续 ${escape(agent.name)} 的剧情存档` : agent && this.lastPlayed === agent.id ? `继续 ${escape(agent.name)} 的进度` : agent?.controller ? '在此页面继续' : '进入角色'} <span>↗</span>`;
+    button.innerHTML = `${agent && agent.status !== 'alive' && !(agent.id === this.storyActor && this.storyContinuation) ? '重建并进入角色' : agent && this.storyActor === agent.id && !this.entryExplicit ? `继续 ${escape(agent.name)} 的剧情存档` : agent && this.lastPlayed === agent.id ? `继续 ${escape(agent.name)} 的进度` : agent?.controller ? '在此页面继续' : '进入角色'} <span>↗</span>`;
   }
   update(agents: Record<string, AgentState>, simulation: SimulationState, neoLife?: NeoLifeState): void {
     this.agents = agents;
     this.storyActor = neoLife?.journey?.actor ?? null;
-    this.oracleContinuation = oracleAbsorptionActive(neoLife?.journey) && this.storyActor === 'oracle' && neoLife?.journey?.oracleAbsorption?.phase === 'done';
+    this.storyContinuation = oracleAbsorptionActive(neoLife?.journey) && this.storyActor === 'oracle' && neoLife?.journey?.oracleAbsorption?.phase === 'done'
+      || Boolean(neoLife?.journey && !neoLife.journey.visiting && neoLife.journey.scene === 'm3_neo_carried'
+        && this.storyActor === 'neo' && neoLife.journey.epilogue?.phase === 'done');
     this.chosen = savedEntryCharacter(this.chosen, this.storyActor ?? undefined, this.entryExplicit || Boolean(this.controlled));
     this.root.querySelectorAll<HTMLElement>('[data-choose]').forEach(role => role.classList.toggle('active', role.dataset.choose === this.chosen));
     this.updateEntry();
@@ -348,7 +350,7 @@ export class PlayerExperience {
     this.lastRender = performance.now();
     const agents = Object.values(this.agents).filter(a => `${a.name} ${CHARACTERS[a.id]?.nameCn} ${FACTIONS[a.faction]}`.toLowerCase().includes(this.search));
     this.el('available-count').textContent = `${agents.length} 个角色`;
-    this.el('character-grid').innerHTML = agents.map(agent => `<button class="character-card" data-play="${escape(agent.id)}" style="--role-color:${FACTION_COLORS[agent.faction] ?? '#b1ccab'}"><div class="character-card-top"><span>${escape(agent.name[0])}</span><small>${agent.isInMatrix ? 'MATRIX' : 'REAL WORLD'}</small><b>↗</b></div><h3>${escape(agent.name)}</h3><p class="roster-skills">${playerSkills(agent).map(id => COMBAT_SKILLS[id].name).join(' / ')}</p><p>${escape(CHARACTERS[agent.id]?.nameCn ?? '')} · ${escape(FACTIONS[agent.faction] ?? agent.faction)}</p><div class="character-card-bottom"><span>${agent.id === 'oracle' && this.oracleContinuation ? '继续剧情' : agent.status !== 'alive' ? '重建并接入' : agent.id === this.controlled ? '返回当前角色' : agent.controller ? '在此页面继续' : agent.id === this.lastPlayed ? '继续上次进度' : agent.isAwakened ? '已觉醒' : '未觉醒'}</span><span>${escape(LOCATIONS[agent.currentLocation]?.nameCn ?? '')}</span></div></button>`).join('') || '<p>没有匹配的角色。</p>';
+    this.el('character-grid').innerHTML = agents.map(agent => `<button class="character-card" data-play="${escape(agent.id)}" style="--role-color:${FACTION_COLORS[agent.faction] ?? '#b1ccab'}"><div class="character-card-top"><span>${escape(agent.name[0])}</span><small>${agent.isInMatrix ? 'MATRIX' : 'REAL WORLD'}</small><b>↗</b></div><h3>${escape(agent.name)}</h3><p class="roster-skills">${playerSkills(agent).map(id => COMBAT_SKILLS[id].name).join(' / ')}</p><p>${escape(CHARACTERS[agent.id]?.nameCn ?? '')} · ${escape(FACTIONS[agent.faction] ?? agent.faction)}</p><div class="character-card-bottom"><span>${agent.id === this.storyActor && this.storyContinuation ? '继续剧情' : agent.status !== 'alive' ? '重建并接入' : agent.id === this.controlled ? '返回当前角色' : agent.controller ? '在此页面继续' : agent.id === this.lastPlayed ? '继续上次进度' : agent.isAwakened ? '已觉醒' : '未觉醒'}</span><span>${escape(LOCATIONS[agent.currentLocation]?.nameCn ?? '')}</span></div></button>`).join('') || '<p>没有匹配的角色。</p>';
   }
   event(event: WorldEvent): void {
     if (this.filmPlaying) return;

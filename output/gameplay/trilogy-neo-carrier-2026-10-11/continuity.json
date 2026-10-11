@@ -1,0 +1,33 @@
+{
+  "scene": "m3_reset",
+  "step": 0,
+  "actor": "sati",
+  "epilogue": {
+    "kind": "reset",
+    "phase": "ready",
+    "elapsed": 0,
+    "total": 0,
+    "resetVersion": 2
+  },
+  "tick": 13688,
+  "paused": true,
+  "unowned": true,
+  "old_completed_count": 49,
+  "old_completed_preserved": true,
+  "added_completed": [
+    "m3_neo_carried"
+  ],
+  "choices_count": 45,
+  "choices_preserved": true,
+  "reflections_count": 18,
+  "reflections_preserved": true,
+  "old_journal_count": 70,
+  "old_journal_preserved": true,
+  "journal_added": 1,
+  "old_dead_preserved": true,
+  "old_dead_count": 10,
+  "neo_inventory_preserved": true,
+  "neo_departed_body_preserved": false,
+  "memory_count": 15,
+  "memories_preserved": true
+}

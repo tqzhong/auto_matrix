@@ -1,0 +1,48 @@
+{
+  "body_fields": {
+    "status": true,
+    "health": true,
+    "position": true,
+    "rotation": true,
+    "isInMatrix": true,
+    "currentLocation": true,
+    "velocity": true,
+    "targetPosition": true,
+    "currentPath": true
+  },
+  "current_action_before": {
+    "type": "idle",
+    "parameters": {
+      "resolved": true,
+      "finaleComa": true,
+      "epilogue": {
+        "kind": "neo_carried",
+        "phase": "done",
+        "elapsed": 0,
+        "total": 14.401000000000007,
+        "role": "neo"
+      }
+    },
+    "startedAt": 13656,
+    "duration": 100000,
+    "progress": 0
+  },
+  "current_action_after": {
+    "type": "idle",
+    "parameters": {
+      "resolved": true,
+      "finaleComa": true,
+      "epilogue": {
+        "kind": "neo_carried",
+        "phase": "done",
+        "elapsed": 0,
+        "total": 0,
+        "role": "neo"
+      }
+    },
+    "startedAt": 13657,
+    "duration": 100000,
+    "progress": 0
+  },
+  "note": "Normal handoff retains the final physical root and unresponsive status. Existing scene setup rewrites the done action clock: total 14.401 to 0, startedAt 13656 to 13657. The strict full-action comparison in continuity.json is false; this is not a restart equality claim."
+}
