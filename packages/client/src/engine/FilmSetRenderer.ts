@@ -1278,7 +1278,7 @@ export class FilmSetRenderer {
     const lafayette = set.architecture === 'lafayette';
     this.metal = this.pbr('metal_plate', 0x9caaa9, 3, .7, .28);
     this.wood = this.pbr('old_wood_floor', lafayette ? 0x93846f : 0x96826b, lafayette ? 1 : 3, lafayette ? .88 : .85); this.marble = this.pbr('marble_01', 0xbdcbd1, 4, .25);
-    this.plaster = this.pbr('damaged_plaster', lafayette ? 0x829077 : 0xadae9c, lafayette ? 1 : 5, lafayette ? .95 : .85); this.leather = this.pbr('leather_red_03', lafayette ? 0xb48b79 : 0x71413a, 1, lafayette ? .94 : .48);
+    this.plaster = this.pbr('damaged_plaster', lafayette ? 0x829077 : 0xadae9c, lafayette ? 1 : 5, lafayette ? .95 : .85); this.leather = this.pbr('leather_red_03', lafayette ? 0xb48b79 : 0x71413a, 1, lafayette ? .74 : .48);
     this.white = this.pbr('white_plaster_02', 0xd8d9ce, 3); this.black = this.mat(0x161b1a, .44); this.brass = this.mat(0x8e7951, .32, .8);
     this.glass = new THREE.MeshPhysicalMaterial({ color: 0xb3c9c7, metalness: .12, roughness: .12, transparent: true, opacity: .3, side: THREE.DoubleSide, depthWrite: false }); this.materials.add(this.glass);
     this.glow = new THREE.MeshBasicMaterial({ color: 0xffdb9e, toneMapped: false }); this.materials.add(this.glow);

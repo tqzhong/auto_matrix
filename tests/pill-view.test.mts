@@ -8,6 +8,7 @@ import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
+import { createLoungeChair } from '../packages/client/src/engine/LoungeChair.js';
 
 async function setup(t: test.TestContext, actorId: 'neo' | 'morpheus' = 'neo') {
   const glb = await readFile(new URL(`../packages/client/public/assets/characters/${actorId}.glb`, import.meta.url));
@@ -133,6 +134,35 @@ test('the first-person conversation retains the chosen look direction even after
   controls.yaw += .4; controls.pitch = .1; const yaw = controls.yaw;
   h.controls.update(.05, h.neo, h.group, false);
   assert.equal(controls.yaw, yaw, 'finishing a spoken line must not force the eyes back to the departure heading');
+});
+
+for (const role of ['neo', 'morpheus'] as const) test(`the padded chairs clear ${role}'s real eyes and the pill conversation`, async t => {
+  const h = await setup(t, role), chairs = new THREE.Group(), leather = new THREE.MeshStandardMaterial();
+  const center = FILM_SETS.film_lafayette.center;
+  for (const side of [-1, 1]) {
+    const chair = createLoungeChair(leather); chair.position.set(center.x + side * PILL_ROOM.seat, center.y - 1, center.z + PILL_ROOM.z);
+    chair.rotation.y = -side * Math.PI / 2; chairs.add(chair);
+  }
+  chairs.updateMatrixWorld(true);
+  t.after(() => {
+    const geometries = new Set<THREE.BufferGeometry>(), materials = new Set<THREE.Material>([leather]);
+    chairs.traverse(object => { if (object instanceof THREE.Mesh) { geometries.add(object.geometry); materials.add(object.material); } });
+    geometries.forEach(geometry => geometry.dispose()); materials.forEach(material => material.dispose());
+  });
+  const clear = (target: THREE.Vector3, label: string) => {
+    const direction = target.clone().sub(h.camera.position), ray = new THREE.Raycaster(h.camera.position, direction.clone().normalize(), 0, direction.length() - .02);
+    assert.equal(ray.intersectObject(chairs, true).length, 0, label);
+  };
+  for (const aspect of [16 / 9, .65]) {
+    h.camera.aspect = aspect; h.camera.updateProjectionMatrix();
+    const gesture: PillGesture = { phase: 'talking', elapsed: role === 'neo' ? 1.5 : 4.5, role, conversation: { beat: 1, belief: 'agency' } };
+    h.draw(gesture, false); clear(h.head.getWorldPosition(new THREE.Vector3()), 'the chair crown cannot cover the speaking actor');
+    h.draw(gesture); clear(h.camera.position.clone().addScaledVector(h.camera.getWorldDirection(new THREE.Vector3()), 3), 'V must look out of the chair from the real seated eyes');
+    if (role === 'neo') for (const elapsed of [5.7, 6.6, 7.3, 8.4]) {
+      h.draw({ phase: 'taking', elapsed, role, choice: 'red' });
+      clear(h.group.getObjectByName('pill-water-glass')!.getWorldPosition(new THREE.Vector3()), 'the carved arms cannot hide the held glass');
+    }
+  }
 });
 
 test('Neo grips the outside of the drinking glass without putting his fingers through the glass and water', async t => {

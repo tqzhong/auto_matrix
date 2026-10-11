@@ -5,14 +5,14 @@ export const CONSTRUCT = {
   arrival: { x: 6.95, z: 5, yaw: Math.PI },
   approach: { x: 6.95, z: -4.75 },
   neo: { x: 6.35, z: -4.75, yaw: -2.22 },
-  chair: { z: -6.2, width: 2.5, depth: 2.35, height: 3.48, scale: .65 },
+  chair: { z: -6.2, width: 2.5, depth: 2.35, height: 3.48, scale: .65, backOffset: .13 },
   chairX: { neo: 4.4, morpheus: -4.4 },
   television: { x: 0, z: -13, width: 3.4, depth: 2.25, height: 2.8, screenY: 1.8, faceZ: 1.15 },
   imageSeconds: 6,
   guideSeconds: 11,
 } as const;
 export const CONSTRUCT_FURNITURE = [
-  ...Object.values(CONSTRUCT.chairX).map(x => ({ x, z: CONSTRUCT.chair.z, width: CONSTRUCT.chair.width, depth: CONSTRUCT.chair.depth, height: CONSTRUCT.chair.height })),
+  ...Object.values(CONSTRUCT.chairX).map(x => ({ x, z: CONSTRUCT.chair.z + CONSTRUCT.chair.backOffset, width: CONSTRUCT.chair.width, depth: CONSTRUCT.chair.depth, height: CONSTRUCT.chair.height })),
   { ...CONSTRUCT.television },
 ];
 const smooth = (value: number) => { const t = Math.max(0, Math.min(1, value)); return t * t * (3 - 2 * t); };
