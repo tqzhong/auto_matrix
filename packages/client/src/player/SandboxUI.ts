@@ -1,4 +1,4 @@
-import { logosBaneBeat, logosBaneText } from '@auto_matrix/shared';
+import { logosBaneBeat, logosBaneText, logosCloudTop } from '@auto_matrix/shared';
 import { hammerFlightHint, hammerRadioStatus, hammerHandoverText } from '@auto_matrix/shared';
 import { HEL_BREAKOUT, helDanceDoorDuration, helDanceDoorText } from '@auto_matrix/shared';
 import { catchDistance } from '@auto_matrix/shared';
@@ -332,7 +332,7 @@ export class SandboxUI {
     }
     const set = FILM_SETS[journey.visiting ? FILM_SCENE_BY_ID[journey.visiting].set : scene.set];
     const shown = journey.visiting ? FILM_SCENE_BY_ID[journey.visiting] : scene;
-    this.el('sandbox-clock').textContent = `${FILM_NAMES[shown.film]} · 第 ${FILM_SCENES.indexOf(shown) + 1} 段`;
+    this.el('sandbox-clock').textContent = `${FILM_NAMES[shown.film]} · 第 ${FILM_SCENES.findIndex(item => item.id === shown.id) + 1} 段`;
     this.el('sandbox-weather').textContent = set.world === 'real' ? '真实世界' : ({ day: '日间', night: '夜间', warm: '室内', cold: '室内', white: '程序空间', storm: '暴雨', sunrise: '日出' })[set.light];
     if (shown.id === 'm3_reset') {
       this.el('sandbox-weather').textContent = '黎明前 · 街道恢复';
@@ -2167,9 +2167,9 @@ export class SandboxUI {
       return;
     }
     if ((scene.id === 'm3_defense' || scene.id === 'm3_sun') && !journey.logos && !journey.visiting) {
-      document.getElementById('game-objective-copy')!.textContent = '两人已就座 · 按 G 开始航行 · V 切换驾驶舱视角';
-      this.el('sandbox-waypoint').textContent = 'LOGOS · 等待启航';
-      this.el('sandbox-nearby').textContent = '启动 Logos 航行';
+      document.getElementById('game-objective-copy')!.textContent = journey.logosEntry ? '已进入乌云 · 按 G 继续爬升 · 船体与能量保留' : '两人已就座 · 按 G 开始航行 · V 切换驾驶舱视角';
+      this.el('sandbox-waypoint').textContent = journey.logosEntry ? `LOGOS · 船体 ${Math.ceil(journey.logosEntry.hull)}% · Neo ${Math.ceil(journey.logosEntry.neo)}%` : 'LOGOS · 等待启航';
+      this.el('sandbox-nearby').textContent = journey.logosEntry ? '继续穿云航程' : '启动 Logos 航行';
       return;
     }
     if ((scene.id === 'm3_defense' || scene.id === 'm3_sun') && journey.logos?.phase === 'riding' && !journey.visiting) {
@@ -2182,7 +2182,7 @@ export class SandboxUI {
       this.el('film-ride-speed').textContent = `${Math.round(flight.altitude)} m · ${Math.round(flight.speed * 3.6)} km/h`;
       this.el('film-ride-health').textContent = sun ? `船体 ${Math.ceil(flight.hull)}% · ${flight.stage === 'clouds' ? '云层内' : flight.stage === 'sun' ? '阳光中' : '动力失效'}`
         : `船体 ${Math.ceil(flight.hull)}% · Neo ${Math.ceil(flight.neo)}% · 击碎 ${flight.destroyed}/${LOGOS_DEFENSE.threats.length}`;
-      this.el('sandbox-waypoint').textContent = sun ? flight.stage === 'clouds' ? `云顶 ↑ ${Math.max(0, Math.ceil(29 - flight.altitude))} m` : flight.stage === 'sun' ? '真实天空 · 保持航向' : '机器城 ↓ 失速'
+      this.el('sandbox-waypoint').textContent = sun ? flight.stage === 'clouds' ? `云顶 ↑ ${Math.max(0, Math.ceil(logosCloudTop(flight) - flight.altitude))} m` : flight.stage === 'sun' ? '真实天空 · 保持航向' : '机器城 ↓ 失速'
         : `云层入口 ↑ ${Math.max(0, Math.round(flight.z - LOGOS_DEFENSE.finish))} m`;
       document.getElementById('game-objective-copy')!.textContent = sun ? flight.stage === 'clouds' ? '把受损的 Logos 拉出黑云' : flight.stage === 'sun' ? 'Trinity 第一次看见真实的太阳' : '动力熄灭 · Logos 坠回机器城'
         : '手动绕开浮雷 · Neo 的感知只能摧毁部分来袭机器 · 末段必须爬升';

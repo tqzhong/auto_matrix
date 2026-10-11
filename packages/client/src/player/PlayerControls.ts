@@ -1,5 +1,5 @@
 import { logosBaneBeat, logosBaneLocked, logosBaneRoot } from '@auto_matrix/shared';
-import { logosShipPose, logosShipPoint } from '@auto_matrix/shared';
+import { logosShipPose, logosShipPoint, logosFlightSet } from '@auto_matrix/shared';
 import { MAGGIE_DISCOVERY, HAMMER_MEDICAL, maggieDiscoveryLocked, maggieDiscoveryRoot } from '@auto_matrix/shared';
 import { sourcePortalLocked } from '@auto_matrix/shared';
 import { ORACLE_LAST, oracleLastLocked } from '@auto_matrix/shared';
@@ -3082,7 +3082,7 @@ export class PlayerControls {
   syncLogosCamera(group: THREE.Group): void {
     const gesture = this.motion.logosPilot; if (!gesture) return;
     const flight = gesture.flight, ship = logosShipPose(flight);
-    const center = FILM_SETS[flight.mode === 'defense' ? 'film_machine_defense' : 'film_above_clouds'].center;
+    const center = FILM_SETS[logosFlightSet(flight)].center;
     const rotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(ship.pitch, ship.yaw, ship.roll, 'YXZ'));
     const relative = this.yaw - ship.yaw - Math.PI;
     this.camera.up.set(0, 1, 0).applyQuaternion(rotation);

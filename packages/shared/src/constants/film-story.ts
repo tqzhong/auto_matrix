@@ -13,7 +13,7 @@ import { HAMMER_BRIEFING, hammerBriefingTarget } from './hammer-briefing.js';
 import { ZION_DEPLOYMENT, zionDeploymentTarget } from './zion-deployment.js';
 import { MAGGIE_DISCOVERY, maggieDiscoveryTarget } from './maggie-discovery.js';
 import { LOGOS_BANE, logosBaneLocked } from './logos-bane.js';
-import { logosCrewRoot, newLogosFlight } from './logos-flight.js';
+import { logosCrewRoot, logosFlightSet, newLogosFlight } from './logos-flight.js';
 import { SOURCE_BRIEFING, sourceBriefingTarget, sourceBriefingLocked } from './source-briefing.js';
 import { PRIMARY_DEMOLITION, primaryActive, primaryTarget, primaryFloor, primaryLocked } from './primary-demolition.js';
 import { TRINITY_TERMINAL, trinityTerminalActive, trinityTerminalLocked } from './trinity-terminal.js';
@@ -153,6 +153,7 @@ export interface FilmJourney {
   hammer?: import('./hammer-flight.js').HammerFlight;
   hammerHandover?: import('./hammer-handover.js').HammerHandover;
   logos?: import('./logos-flight.js').LogosFlight;
+  logosEntry?: import('./logos-flight.js').LogosFlight;
   farewell?: import('./farewell.js').FarewellEncounter;
   deus?: import('./deus-pact.js').DeusPactEncounter;
   smithFinale?: import('./smith-finale.js').SmithFinaleEncounter;
@@ -598,6 +599,7 @@ export const FILM_SCENE_BY_ID = Object.fromEntries(FILM_SCENES.map(s => [s.id, s
 
 export function filmSceneForJourney(journey: FilmJourney): FilmScene | undefined {
   const scene = FILM_SCENE_BY_ID[journey.scene];
+  if (scene?.id === 'm3_sun' && !journey.visiting) return { ...scene, set: logosFlightSet(journey.logos ?? journey.logosEntry ?? newLogosFlight('sun')) };
   if (scene?.id === 'm2_ship_lost' && journey.actor === 'morpheus') return { ...scene, actor: 'morpheus', steps: scene.steps.map((step, index) =>
     index === 0 ? { ...step, label: '听 Neo 说明源头的真相' } : step) };
   return scene && scene.id === 'm2_trucks' && journey.trucks?.road ? { ...scene, set: 'film_freeway_101' } : scene;
@@ -611,7 +613,8 @@ export function oracleActing(journey: FilmJourney): boolean {
 }
 export function filmStepPosition(scene: FilmScene, step: FilmStep, journey?: FilmJourney): Vector3 {
   if (['m3_defense', 'm3_sun'].includes(scene.id) && !journey?.visiting) {
-    const root = logosCrewRoot(journey?.logos ?? newLogosFlight(scene.id === 'm3_defense' ? 'defense' : 'sun'), 'trinity'), center = FILM_SETS[scene.set].center;
+    const flight = journey?.logos ?? journey?.logosEntry ?? newLogosFlight(scene.id === 'm3_defense' ? 'defense' : 'sun');
+    const root = logosCrewRoot(flight, 'trinity'), center = FILM_SETS[logosFlightSet(flight)].center;
     return { x: center.x + root.x, y: center.y + root.y, z: center.z + root.z };
   }
   if (scene.id === 'm3_hel_entry' && step === scene.steps[0]) {
@@ -718,7 +721,8 @@ export function filmStepPosition(scene: FilmScene, step: FilmStep, journey?: Fil
 }
 export function filmStepNear(scene: FilmScene, step: FilmStep, position: Vector3, matrix: boolean, journey?: FilmJourney): boolean {
   if (['m3_defense', 'm3_sun'].includes(scene.id) && !journey?.visiting) {
-    const root = logosCrewRoot(journey?.logos ?? newLogosFlight(scene.id === 'm3_defense' ? 'defense' : 'sun'), 'trinity'), center = FILM_SETS[scene.set].center;
+    const flight = journey?.logos ?? journey?.logosEntry ?? newLogosFlight(scene.id === 'm3_defense' ? 'defense' : 'sun');
+    const root = logosCrewRoot(flight, 'trinity'), center = FILM_SETS[logosFlightSet(flight)].center;
     return !matrix && distance(position, { x: center.x + root.x, y: center.y + root.y, z: center.z + root.z }) <= 1.6;
   }
   const radius = scene.id === 'm3_hel_garage' ? journey?.helGarage?.phase === 'cleared' ? 1.05 : 1.6 : primaryActive(journey) ? .8 : scene.id === 'm2_plan' || scene.id === 'm3_oracle_request' || scene.id === 'm3_oracle_last' || scene.id === 'm3_oracle_absorbed' ? 1.6 : scene.id === 'm1_mirror' && step === scene.steps[0] ? MIRROR_TOUCH.radius

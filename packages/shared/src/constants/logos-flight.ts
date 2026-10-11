@@ -25,6 +25,7 @@ export const LOGOS_DEFENSE = {
 
 export type LogosFlightMode = 'defense' | 'sun';
 export type LogosFlightStage = 'defense' | 'clouds' | 'sun' | 'stall';
+export const LOGOS_CLOUD_TOP = 62;
 
 export const LOGOS_COCKPIT = {
   floor: -1.1, seat: 1.16,
@@ -85,16 +86,31 @@ export interface LogosFlight {
   hits: number;
   destroyed: number;
   resolved: number;
+  /** Absolute route height. Missing on saves from the former, separate sun stage. */
+  cloudTop?: number;
+}
+
+export function logosCloudTop(flight: LogosFlight): number {
+  return flight.cloudTop ?? (flight.mode === 'sun' ? 29 : LOGOS_CLOUD_TOP);
+}
+
+export function logosFlightSet(flight: LogosFlight): string {
+  return flight.mode === 'sun' && flight.cloudTop === undefined ? 'film_above_clouds' : 'film_machine_defense';
+}
+
+export function continueLogosFlight(flight: LogosFlight): LogosFlight {
+  return { ...flight, mode: 'sun', stage: 'clouds', phase: 'riding', stageElapsed: 0,
+    speed: flight.speed || 10, cooldown: 0, pulse: 0, cloudTop: LOGOS_CLOUD_TOP };
 }
 
 export function newLogosFlight(mode: LogosFlightMode): LogosFlight {
   return mode === 'defense'
     ? { mode, stage: 'defense', phase: 'riding', x: 0, altitude: 22, z: LOGOS_DEFENSE.start, speed: 13,
       lateral: 0, vertical: 0, elapsed: 0, stageElapsed: 0, hull: 100, neo: 100, cooldown: 0, pulse: 0,
-      hits: 0, destroyed: 0, resolved: 0 }
-    : { mode, stage: 'clouds', phase: 'riding', x: 0, altitude: 5, z: 36, speed: 10,
+      hits: 0, destroyed: 0, resolved: 0, cloudTop: LOGOS_CLOUD_TOP }
+    : { mode, stage: 'clouds', phase: 'riding', x: 0, altitude: LOGOS_DEFENSE.cloudFloor, z: LOGOS_DEFENSE.finish, speed: 10,
       lateral: 0, vertical: 0, elapsed: 0, stageElapsed: 0, hull: 55, neo: 18, cooldown: 0, pulse: 0,
-      hits: 0, destroyed: 0, resolved: 0 };
+      hits: 0, destroyed: 0, resolved: 0, cloudTop: LOGOS_CLOUD_TOP };
 }
 
 function steerFlight(next: LogosFlight, input: DriveInput, dt: number): void {
@@ -105,7 +121,7 @@ function steerFlight(next: LogosFlight, input: DriveInput, dt: number): void {
   next.x += next.lateral * dt;
   next.altitude += next.vertical * dt;
   next.x = Math.max(-LOGOS_DEFENSE.halfWidth, Math.min(LOGOS_DEFENSE.halfWidth, next.x));
-  next.altitude = Math.max(LOGOS_DEFENSE.minAltitude, Math.min(LOGOS_DEFENSE.maxAltitude, next.altitude));
+  next.altitude = Math.max(LOGOS_DEFENSE.minAltitude, Math.min(next.mode === 'sun' ? logosCloudTop(next) + 8 : LOGOS_DEFENSE.maxAltitude, next.altitude));
 }
 
 function stepDefense(flight: LogosFlight, input: DriveInput, dt: number, focus: boolean): LogosFlight {
@@ -141,8 +157,9 @@ function stepDefense(flight: LogosFlight, input: DriveInput, dt: number, focus: 
   if (next.hull <= 0 || next.elapsed >= LOGOS_DEFENSE.limit) {
     next.phase = 'wrecked'; next.speed = 0; next.lateral = 0; next.vertical = 0;
   } else if (next.z <= LOGOS_DEFENSE.finish) {
-    next.z = LOGOS_DEFENSE.finish; next.speed = 0; next.lateral = 0; next.vertical = 0;
+    next.z = LOGOS_DEFENSE.finish;
     next.phase = next.altitude >= LOGOS_DEFENSE.cloudFloor ? 'arrived' : 'wrecked';
+    if (next.phase === 'wrecked') { next.speed = 0; next.lateral = 0; next.vertical = 0; }
   }
   return next;
 }
@@ -150,17 +167,18 @@ function stepDefense(flight: LogosFlight, input: DriveInput, dt: number, focus: 
 function stepSun(flight: LogosFlight, input: DriveInput, dt: number): LogosFlight {
   const next = { ...flight, elapsed: flight.elapsed + dt, stageElapsed: flight.stageElapsed + dt,
     cooldown: 0, pulse: 0 };
+  const sunAltitude = flight.cloudTop === undefined ? 30 : logosCloudTop(flight) + 4;
   if (flight.stage === 'clouds') {
     steerFlight(next, input, dt); next.z -= next.speed * dt;
-    if (next.altitude >= 29) {
-      next.stage = 'sun'; next.stageElapsed = 0; next.altitude = 30; next.vertical = 0; next.speed = 8;
-    } else if (next.elapsed >= 14) {
+    if (next.altitude >= logosCloudTop(next)) {
+      next.stage = 'sun'; next.stageElapsed = 0; next.altitude = sunAltitude; next.vertical = 0; next.speed = 8;
+    } else if (next.stageElapsed >= 14) {
       next.phase = 'wrecked'; next.speed = 0; next.lateral = 0; next.vertical = 0;
     }
   } else if (flight.stage === 'sun') {
     next.x += next.lateral * dt; next.z -= next.speed * dt;
     next.lateral *= Math.exp(-2 * dt); next.speed = Math.max(3, next.speed - dt * 1.1);
-    next.altitude = 30 + Math.sin(next.stageElapsed * .65) * .35;
+    next.altitude = sunAltitude + Math.sin(next.stageElapsed * .65) * .35;
     if (next.stageElapsed >= 4.2) {
       next.stage = 'stall'; next.stageElapsed = 0; next.vertical = -1; next.speed = 3.5;
     }
