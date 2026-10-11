@@ -1,0 +1,118 @@
+TAP version 13
+# Subtest: landing resumes the saved story actor instead of an unrelated browser-local character
+ok 1 - landing resumes the saved story actor instead of an unrelated browser-local character
+  ---
+  duration_ms: 0.918416
+  type: 'test'
+  ...
+# Subtest: an explicit landing choice still overrides the saved story actor
+ok 2 - an explicit landing choice still overrides the saved story actor
+  ---
+  duration_ms: 0.187958
+  type: 'test'
+  ...
+# Subtest: Construct and desert story beats keep ambient conversation prompts out of the reveal
+ok 3 - Construct and desert story beats keep ambient conversation prompts out of the reveal
+  ---
+  duration_ms: 0.163542
+  type: 'test'
+  ...
+# Subtest: wall escape keeps ambient conversation out of breaking, climbing and rescue controls
+ok 4 - wall escape keeps ambient conversation out of breaking, climbing and rescue controls
+  ---
+  duration_ms: 0.175875
+  type: 'test'
+  ...
+# Subtest: APU loading keeps ambient talk out of the handhold and kick controls
+ok 5 - APU loading keeps ambient talk out of the handhold and kick controls
+  ---
+  duration_ms: 0.073
+  type: 'test'
+  ...
+# Subtest: Link’s EMP controls and exterior shot suppress nearby ambient conversation
+ok 6 - Link’s EMP controls and exterior shot suppress nearby ambient conversation
+  ---
+  duration_ms: 0.064958
+  type: 'test'
+  ...
+# Subtest: the midnight watch and explosion keep ambient conversation out of the observation view
+ok 7 - the midnight watch and explosion keep ambient conversation out of the observation view
+  ---
+  duration_ms: 0.162041
+  type: 'test'
+  ...
+# Subtest: the real-world signal and collapse suppress ambient E talk while a later visit keeps it
+ok 8 - the real-world signal and collapse suppress ambient E talk while a later visit keeps it
+  ---
+  duration_ms: 0.06875
+  type: 'test'
+  ...
+# Subtest: Mobil conversations and the refusal use their story controls without overlapping ambient E talk
+ok 9 - Mobil conversations and the refusal use their story controls without overlapping ambient E talk
+  ---
+  duration_ms: 0.401625
+  type: 'test'
+  ...
+# Subtest: Link’s descent and reunion use their own controls instead of ambient E conversation
+ok 10 - Link’s descent and reunion use their own controls instead of ambient E conversation
+  ---
+  duration_ms: 0.501208
+  type: 'test'
+  ...
+# Subtest: the captains’ lift and Lock briefing keep ambient E prompts out of the manual G responses
+ok 11 - the captains’ lift and Lock briefing keep ambient E prompts out of the manual G responses
+  ---
+  duration_ms: 0.084291
+  type: 'test'
+  ...
+# Subtest: temple artillery and the final city breach keep ambient talk out of their saved actions
+ok 12 - temple artillery and the final city breach keep ambient talk out of their saved actions
+  ---
+  duration_ms: 0.0705
+  type: 'test'
+  ...
+# Subtest: the last doors keep ambient E prompts out of the key handoff and source continuation
+ok 13 - the last doors keep ambient E prompts out of the key handoff and source continuation
+  ---
+  duration_ms: 0.059333
+  type: 'test'
+  ...
+# Subtest: Hel keeps ambient talk out of the elevator and coat-check actions, but restores it outside the active scene
+ok 14 - Hel keeps ambient talk out of the elevator and coat-check actions, but restores it outside the active scene
+  ---
+  duration_ms: 0.062375
+  type: 'test'
+  ...
+# Subtest: a paused save is presented as paused before entry and its landing status follows resume
+ok 15 - a paused save is presented as paused before entry and its landing status follows resume
+  ---
+  duration_ms: 2.532792
+  type: 'test'
+  ...
+# Subtest: the assimilated Oracle continues her saved scene without a rebuild prompt
+ok 16 - the assimilated Oracle continues her saved scene without a rebuild prompt
+  ---
+  duration_ms: 0.823292
+  type: 'test'
+  ...
+# Subtest: the Hammer interview keeps ambient Neo chat out of the dedicated questions and report controls
+ok 17 - the Hammer interview keeps ambient Neo chat out of the dedicated questions and report controls
+  ---
+  duration_ms: 0.065459
+  type: 'test'
+  ...
+# Subtest: Hammer crew exchange and boarding do not overlay ambient E talk on their G controls
+ok 18 - Hammer crew exchange and boarding do not overlay ambient E talk on their G controls
+  ---
+  duration_ms: 0.054708
+  type: 'test'
+  ...
+1..18
+# tests 18
+# suites 0
+# pass 18
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 576.702583

@@ -7,14 +7,15 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { io } from 'socket.io-client';
 import type { ConversationRecord, ServerMessage, WorldStateFull } from '@auto_matrix/shared';
+import { filmPosition, newSmithFinale, SMITH_FINALE, smithFinalePose, stepSmithFinale } from '@auto_matrix/shared';
 import { PersistentMemoryManager } from '../packages/server/src/memory/PersistentMemoryManager.js';
 import { CheckpointStore } from '../packages/server/src/world/CheckpointStore.js';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const fingerprint = (data: string) => createHash('sha256').update(data).digest('hex');
 
-async function fixture(t: TestContext) {
-  const directory = execFileSync(process.execPath, ['--import', 'tsx', 'scripts/film-review-fixture.mts', 'm1_dejavu'], { cwd: root, encoding: 'utf8' }).trim();
+async function fixture(t: TestContext, scene = 'm1_dejavu') {
+  const directory = execFileSync(process.execPath, ['--import', 'tsx', 'scripts/film-review-fixture.mts', scene], { cwd: root, encoding: 'utf8' }).trim();
   t.after(() => rm(directory, { recursive: true, force: true }));
   const file = path.join(directory, 'world.json');
   const checkpoint = JSON.parse(await readFile(file, 'utf8'));
@@ -168,6 +169,66 @@ test('an explicit pause reaches the atomic world checkpoint before the process s
   assert.deepEqual(saved.sandbox.neoLife, paused.sandbox!.neoLife);
   client.socket.disconnect(); await server.stop();
 });
+
+for (const checkpoint of ['ground', 'pit'] as const) {
+  test(`a paused ${checkpoint} retry restores and saves the checkpoint without restarting time or allowing other actions`, { timeout: 30000 }, async t => {
+    const f = await fixture(t, checkpoint === 'pit' ? 'm3_surrender' : 'm3_rain'), journey = f.checkpoint.sandbox.neoLife.journey;
+    f.checkpoint.simulation = { running: false, speed: 2 };
+    journey.step = checkpoint === 'pit' ? 0 : 1;
+    journey.smithFinale = stepSmithFinale({ ...newSmithFinale(), phase: checkpoint === 'pit' ? 'pit_dodge' : 'ground_dodge',
+      checkpoint, attempts: 2, total: 70, pitFight: checkpoint === 'pit', impactAt: checkpoint === 'pit' ? 51 : undefined },
+      { focus: false, x: 0, z: 0 }, SMITH_FINALE[checkpoint].dodge + .1);
+    assert.equal(journey.smithFinale.phase, 'failed');
+    const pose = smithFinalePose(journey.smithFinale);
+    f.checkpoint.agents.neo.position = filmPosition('film_smith_avenue', pose.neo.x, pose.neo.z);
+    f.checkpoint.agents.neo.position.y += pose.neo.y;
+    journey.checkpoint = { ...f.checkpoint.agents.neo.position };
+    await writeFile(f.file, JSON.stringify(f.checkpoint));
+    const server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING');
+    const client = await controls(t, server);
+    const before = await client.command('play_as', { agentId: 'neo' }, state => Boolean(state.agents.neo.controller));
+    const phase = checkpoint === 'pit' ? 'pit_warning' : 'ready';
+    const after = await client.command('sandbox_action', { kind: 'life', target: 'film:retry' }, state => state.sandbox!.neoLife!.journey!.smithFinale!.phase === phase);
+    assert.equal(after.sandbox!.neoLife!.journey!.smithFinale!.attempts, 3);
+    assert.equal(after.simulation!.running, false); assert.equal(after.simulation!.tick, before.simulation!.tick);
+    assert.equal(after.simulation!.speed, 2); assert.equal(after.simulation!.day, before.simulation!.day); assert.equal(after.timeOfDay, before.timeOfDay);
+    assert.deepEqual(after.sandbox!.neoLife!.journey!.completed, before.sandbox!.neoLife!.journey!.completed);
+    assert.deepEqual(after.sandbox!.neoLife!.journey!.reflections, before.sandbox!.neoLife!.journey!.reflections);
+    assert.deepEqual(after.sandbox!.neoLife!.choices, before.sandbox!.neoLife!.choices);
+    assert.deepEqual(after.sandbox!.profiles.neo.inventory, before.sandbox!.profiles.neo.inventory);
+    assert.equal(after.agents.mouse.status, 'dead'); assert.equal(after.agents.neo.health, checkpoint === 'pit' ? 63 : 100);
+    assert.ok(client.messages.some(message => message.type === 'notification' && /仍暂停/.test((message.data as { message: string }).message)));
+
+    // The retry must reach disk while paused, before a shutdown or another pause can hide a missing save.
+    const deadline = Date.now() + 5000;
+    let saved = JSON.parse(await readFile(f.file, 'utf8'));
+    while (saved.sandbox.neoLife.journey.smithFinale.phase !== phase) {
+      assert.ok(Date.now() < deadline, 'the paused retry never reached the world checkpoint');
+      await new Promise(resolve => setTimeout(resolve, 20)); saved = JSON.parse(await readFile(f.file, 'utf8'));
+    }
+    assert.equal(saved.simulation.running, false); assert.deepEqual(saved.sandbox, after.sandbox);
+    const observer = await controls(t, server);
+    for (const [sender, type, data] of [[client, 'sandbox_action', { kind: 'life', target: 'film:act' }],
+      [client, 'sandbox_action', { kind: 'use', target: 'medkit' }], [client, 'player_action', { kind: 'attack' }],
+      [client, 'sandbox_action', { kind: 'interact', target: 'film:retry' }], [observer, 'sandbox_action', { kind: 'life', target: 'film:retry' }]] as const) {
+      const marker = sender.messages.length;
+      const unchanged = await sender.command(type, data, () => sender.messages.slice(marker).some(message => message.type === 'notification'));
+      assert.deepEqual(unchanged.sandbox, after.sandbox, `${type} ${data.kind} cannot bypass pause or ownership`);
+      assert.deepEqual(unchanged.agents, after.agents); assert.equal(unchanged.simulation!.tick, after.simulation!.tick);
+    }
+    observer.socket.disconnect(); client.socket.disconnect(); await server.stop();
+    const restored = start(t, f.directory, 'normal'); await restored.waitFor('STARTUP_LISTENING');
+    const next = await controls(t, restored), cold = await next.world();
+    assert.deepEqual(cold.sandbox, after.sandbox); assert.equal(cold.simulation!.running, false);
+    assert.equal(cold.simulation!.tick, after.simulation!.tick); assert.deepEqual(cold.agents.neo.position, after.agents.neo.position);
+    assert.equal(cold.agents.neo.health, after.agents.neo.health);
+    await next.command('play_as', { agentId: 'neo' }, state => Boolean(state.agents.neo.controller));
+    await next.command('resume', {}, state => state.simulation!.running);
+    if (checkpoint === 'ground') await next.command('sandbox_action', { kind: 'life', target: 'film:act' }, state => state.sandbox!.neoLife!.journey!.smithFinale!.phase !== 'ready');
+    await next.command('request_full_state', {}, state => state.sandbox!.neoLife!.journey!.smithFinale!.elapsed > 0);
+    next.socket.disconnect(); await restored.stop();
+  });
+}
 
 test('invalid saved time controls are rejected without overwriting the recoverable checkpoint', async t => {
   const f = await fixture(t), store = new CheckpointStore(f.file);

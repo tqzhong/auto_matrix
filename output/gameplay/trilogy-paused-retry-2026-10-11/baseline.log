@@ -1,0 +1,238 @@
+TAP version 13
+# Subtest: sandbox interactions enforce range, world, cooldown and atomic material costs
+ok 1 - sandbox interactions enforce range, world, cooldown and atomic material costs
+  ---
+  duration_ms: 8.693958
+  type: 'test'
+  ...
+# Subtest: hacking is interruptible and a shared terminal only pays one completion
+ok 2 - hacking is interruptible and a shared terminal only pays one completion
+  ---
+  duration_ms: 2.39575
+  type: 'test'
+  ...
+# Subtest: every character keeps an independent persistent inventory and progression
+ok 3 - every character keeps an independent persistent inventory and progression
+  ---
+  duration_ms: 1.088333
+  type: 'test'
+  ...
+# Subtest: built barricades affect actual movement and shelter healing survives character switching
+ok 4 - built barricades affect actual movement and shelter healing survives character switching
+  ---
+  duration_ms: 7.027708
+  type: 'test'
+  ...
+# Subtest: travel and story choices require a nearby valid world object
+ok 5 - travel and story choices require a nearby valid world object
+  ---
+  duration_ms: 2.02675
+  type: 'test'
+  ...
+# Subtest: all three films can be completed through combat, escort, crafting and consequential choices
+ok 6 - all three films can be completed through combat, escort, crafting and consequential choices
+  ---
+  duration_ms: 14.246709
+  type: 'test'
+  ...
+# Subtest: failed combat can be retried without replaying completed chapters
+ok 7 - failed combat can be retried without replaying completed chapters
+  ---
+  duration_ms: 1.079583
+  type: 'test'
+  ...
+# Subtest: random events and weather resume identically from a checkpoint seed
+ok 8 - random events and weather resume identically from a checkpoint seed
+  ---
+  duration_ms: 20.685125
+  type: 'test'
+  ...
+# Subtest: checkpoints preserve structures, individual inventory, campaign and RNG without aliasing
+ok 9 - checkpoints preserve structures, individual inventory, campaign and RNG without aliasing
+  ---
+  duration_ms: 17.708542
+  type: 'test'
+  ...
+# Subtest: shutdown during memories loading must preserve the last complete world and memories
+ok 10 - shutdown during memories loading must preserve the last complete world and memories
+  ---
+  duration_ms: 1175.114
+  type: 'test'
+  ...
+# Subtest: shutdown during checkpoint loading must preserve the last complete world and memories
+ok 11 - shutdown during checkpoint loading must preserve the last complete world and memories
+  ---
+  duration_ms: 1036.004292
+  type: 'test'
+  ...
+# Subtest: shutdown after a rejected checkpoint preserves the original file for recovery
+ok 12 - shutdown after a rejected checkpoint preserves the original file for recovery
+  ---
+  duration_ms: 987.8665
+  type: 'test'
+  ...
+# Subtest: a fully loaded server saves and resumes the same story, memories and relationships across restarts
+ok 13 - a fully loaded server saves and resumes the same story, memories and relationships across restarts
+  ---
+  duration_ms: 1449.122375
+  type: 'test'
+  ...
+# Subtest: a first startup without a world checkpoint still saves a usable new world
+ok 14 - a first startup without a world checkpoint still saves a usable new world
+  ---
+  duration_ms: 1142.7045
+  type: 'test'
+  ...
+# Subtest: a paused world keeps its clock, selected speed and story across a server restart
+ok 15 - a paused world keeps its clock, selected speed and story across a server restart
+  ---
+  duration_ms: 1245.647333
+  type: 'test'
+  ...
+# Subtest: a running world restarts running at its selected speed instead of being saved as paused by shutdown
+ok 16 - a running world restarts running at its selected speed instead of being saved as paused by shutdown
+  ---
+  duration_ms: 1458.101084
+  type: 'test'
+  ...
+# Subtest: an explicit pause reaches the atomic world checkpoint before the process shuts down
+ok 17 - an explicit pause reaches the atomic world checkpoint before the process shuts down
+  ---
+  duration_ms: 764.485833
+  type: 'test'
+  ...
+# Subtest: invalid saved time controls are rejected without overwriting the recoverable checkpoint
+ok 18 - invalid saved time controls are rejected without overwriting the recoverable checkpoint
+  ---
+  duration_ms: 283.179125
+  type: 'test'
+  ...
+# Subtest: a real server restart preserves an unfinished NPC conversation and replays it only to the reconnecting page
+ok 19 - a real server restart preserves an unfinished NPC conversation and replays it only to the reconnecting page
+  ---
+  duration_ms: 2422.740458
+  type: 'test'
+  ...
+# Subtest: legacy talk actions without a saved conversation are released instead of stranding their participants
+ok 20 - legacy talk actions without a saved conversation are released instead of stranding their participants
+  ---
+  duration_ms: 656.122166
+  type: 'test'
+  ...
+# Subtest: a new conversation checkpoint also preserves NPCs still approaching their conversation partner
+ok 21 - a new conversation checkpoint also preserves NPCs still approaching their conversation partner
+  ---
+  duration_ms: 720.7295
+  type: 'test'
+  ...
+# Subtest: invalid saved NPC dialogue is rejected without replacing the recoverable world
+ok 22 - invalid saved NPC dialogue is rejected without replacing the recoverable world
+  ---
+  duration_ms: 278.499791
+  type: 'test'
+  ...
+# Subtest: the real machine handoff can resume and walk from the avenue entrance without being moved to the far end
+ok 23 - the real machine handoff can resume and walk from the avenue entrance without being moved to the far end
+  ---
+  duration_ms: 271.203375
+  type: 'test'
+  ...
+# Subtest: reaching the avenue plays Smith leaving the curb, waits for Neo’s reply, and saves the opening before either fighter charges
+ok 24 - reaching the avenue plays Smith leaving the curb, waits for Neo’s reply, and saves the opening before either fighter charges
+  ---
+  duration_ms: 435.70525
+  type: 'test'
+  ...
+# Subtest: entering the face-off preserves the actual approach, brakes without teleporting, and resumes the same turn
+ok 25 - entering the face-off preserves the actual approach, brakes without teleporting, and resumes the same turn
+  ---
+  duration_ms: 627.497583
+  type: 'test'
+  ...
+# Subtest: jumping into the face-off marker waits for landing instead of pulling Neo to the road
+ok 26 - jumping into the face-off marker waits for landing instead of pulling Neo to the road
+  ---
+  duration_ms: 6.685083
+  type: 'test'
+  ...
+# Subtest: the Smith finale has action windows, an air checkpoint and a deliberate crater rise
+ok 27 - the Smith finale has action windows, an air checkpoint and a deliberate crater rise
+  ---
+  duration_ms: 0.380042
+  type: 'test'
+  ...
+# Subtest: Neo must finish the pact, duel, reflection, surrender and purge as one saved encounter
+ok 28 - Neo must finish the pact, duel, reflection, surrender and purge as one saved encounter
+  ---
+  duration_ms: 1202.782958
+  type: 'test'
+  ...
+# Subtest: the cleared Smith host restores the same Oracle in the crater and preserves her until the park handoff
+ok 29 - the cleared Smith host restores the same Oracle in the crater and preserves her until the park handoff
+  ---
+  duration_ms: 536.949542
+  type: 'test'
+  ...
+# Subtest: a missed landing reconnects to the same failed pose and only retry restores the road
+ok 30 - a missed landing reconnects to the same failed pose and only retry restores the road
+  ---
+  duration_ms: 13.655417
+  type: 'test'
+  ...
+# Subtest: the dedicated avenue renders the crowd, aerial collision, crater and purge from saved state
+ok 31 - the dedicated avenue renders the crowd, aerial collision, crater and purge from saved state
+  ---
+  duration_ms: 345.407791
+  type: 'test'
+  ...
+# Subtest: the finale journal exposes combat windows, the philosophical stop and explicit assimilation consent
+ok 32 - the finale journal exposes combat windows, the philosophical stop and explicit assimilation consent
+  ---
+  duration_ms: 115.325583
+  type: 'test'
+  ...
+# Subtest: an interior timeout survives server restoration, occupation and retry at the same real floor
+ok 33 - an interior timeout survives server restoration, occupation and retry at the same real floor
+  ---
+  duration_ms: 39.559625
+  type: 'test'
+  ...
+# Subtest: production upgrades only old pre-collision checkpoints without replaying an existing descent
+ok 34 - production upgrades only old pre-collision checkpoints without replaying an existing descent
+  ---
+  duration_ms: 9.545459
+  type: 'test'
+  ...
+# Subtest: the final pit bout needs a dodge and a player counter instead of ending automatically
+ok 35 - the final pit bout needs a dodge and a player counter instead of ending automatically
+  ---
+  duration_ms: 4.507042
+  type: 'test'
+  ...
+# Subtest: a failed final counter freezes in the existing crater and retries without undoing the first fight
+ok 36 - a failed final counter freezes in the existing crater and retries without undoing the first fight
+  ---
+  duration_ms: 5.11925
+  type: 'test'
+  ...
+# Subtest: the final bout roots remain continuous at every automatic boundary and after rising
+ok 37 - the final bout roots remain continuous at every automatic boundary and after rising
+  ---
+  duration_ms: 1.753875
+  type: 'test'
+  ...
+# Subtest: old in-progress assault and assimilation saves complete their original ending without replaying the new bout
+ok 38 - old in-progress assault and assimilation saves complete their original ending without replaying the new bout
+  ---
+  duration_ms: 0.110708
+  type: 'test'
+  ...
+1..38
+# tests 38
+# suites 0
+# pass 38
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 14031.046709

@@ -296,7 +296,7 @@ export class PlayerExperience {
     this.el('game-world').textContent = player.isInMatrix ? 'MATRIX / 01' : 'REAL WORLD / ZION';
     this.el('game-location').textContent = LOCATIONS[player.currentLocation]?.nameCn ?? '城市街道';
     this.el('game-population').textContent = `${simulation.population} SIGNALS`;
-    this.el('game-pause').textContent = simulation.running ? 'Ⅱ' : '▶';
+    this.el('game-pause').textContent = simulation.running ? 'Ⅱ' : '▶ 继续时间';
     this.el('game-pause').title = simulation.running ? '暂停世界' : '继续世界时间';
     this.el('game-pause').setAttribute('aria-label', this.el('game-pause').title);
     this.el('player-death').classList.toggle('hidden', player.status !== 'dead');

@@ -1,0 +1,36 @@
+TAP version 13
+# Subtest: a paused ground retry restores and saves the checkpoint without restarting time or allowing other actions
+not ok 1 - a paused ground retry restores and saves the checkpoint without restarting time or allowing other actions
+  ---
+  duration_ms: 6539.122
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/server-startup.test.mts:1:10551'
+  failureType: 'testCodeFailure'
+  error: 'sandbox_action was not acknowledged'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    Object.command (/Users/tianqizhong/ai_project/auto_matrix/tests/server-startup.test.mts:72:14)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/server-startup.test.mts:223:34)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: a paused pit retry restores and saves the checkpoint without restarting time or allowing other actions
+ok 2 - a paused pit retry restores and saves the checkpoint without restarting time or allowing other actions
+  ---
+  duration_ms: 1440.097709
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 1
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 8256.7025
