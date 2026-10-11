@@ -1,4 +1,5 @@
 import { SourcePortalSystem } from './SourcePortalSystem.js';
+import { PILL_BELIEFS, PILL_TALK_SECONDS, pillTalkReady, pillTalkCue } from '@auto_matrix/shared';
 import { newHammerGunnery, hammerGunneryAngles, fireHammerGunnery, stepHammerGunnery, hammerNiobeInput } from '@auto_matrix/shared';
 import { HAMMER_MEDICAL, HAMMER_MEDICAL_BEDS, HAMMER_MEDICAL_SUPPLIES } from '@auto_matrix/shared';
 import { MOBIL_STATION, MOBIL_REFUSAL, MOBIL_FAMILY, MOBIL_FAMILY_QUESTIONS, MOBIL_LUGGAGE, MOBIL_REUNION, mobilReunionRoot, mobilReunionText, mobilLuggagePose, mobilLuggageParent, mobilFamilyLine, mobilFamilyDuration, mobilFamilyText, mobilRefusalPose, mobilTrainPose, mobilPassengerPose, mobilTrainObstacles } from '@auto_matrix/shared';
@@ -2080,6 +2081,9 @@ export class FilmStorySystem {
       this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== 'film:apartment:door');
   }
   restoreHotelSpace(): void {
+    const actor = this.state && this.world.agents.get(this.state.actor);
+    if (actor?.status === 'alive' && !actor.controller && this.world.agents.get('morpheus')?.status === 'alive')
+      this.pillFrame(actor, 0, this.world.simulationTick);
     if (this.state?.hotel) { this.sealHotelDoor(); return; }
     const center = FILM_SETS.film_lafayette.center;
     const migrate = (position?: AgentState['position']) => {
@@ -2337,21 +2341,29 @@ export class FilmStorySystem {
   pillFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
     if (!state || !this.controls(agent) || !pillLocked(state)) return;
+    if (this.world.agents.get('morpheus')?.controller) return;
     const pills = state.pills!; const life = this.sandbox().neoLife!;
-    if (pills.phase !== 'choice') pills.elapsed = Math.min(pills.phase === 'offering' ? PILL_TIMING.offer : PILL_TIMING.take, pills.elapsed + Math.min(.1, dt));
+    const duration = pills.phase === 'seating' ? PILL_TIMING.seat : pills.phase === 'talking' ? PILL_TALK_SECONDS[pills.conversation!.beat]
+      : pills.phase === 'offering' ? PILL_TIMING.offer : PILL_TIMING.take;
+    if (pills.phase !== 'choice') pills.elapsed = Math.min(duration, pills.elapsed + Math.min(.1, dt));
     const root = pillRoot(pills);
     agent.position = filmPosition(this.scene!.set, root.x, root.z); agent.rotation = root.yaw; agent.velocity = { x: 0, y: 0, z: 0 };
-    agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, pills: { phase: pills.phase, elapsed: pills.elapsed, choice: pills.choice, role: 'neo' } }, startedAt: tick, duration: 1, progress: 0 };
+    agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, pills: { phase: pills.phase, elapsed: pills.elapsed, choice: pills.choice, conversation: pills.conversation, role: 'neo' } }, startedAt: tick, duration: 1, progress: 0 };
     const morpheus = this.world.agents.get('morpheus')!;
     morpheus.position = filmPosition(this.scene!.set, -PILL_ROOM.seat, PILL_ROOM.z); morpheus.rotation = Math.PI / 2; morpheus.velocity = { x: 0, y: 0, z: 0 };
-    morpheus.currentAction = { type: 'idle', parameters: { seated: true, pills: { phase: pills.phase, elapsed: pills.elapsed, choice: pills.choice, role: 'morpheus' } }, startedAt: tick, duration: 1, progress: 0 };
-    state.lastText = pills.phase === 'offering' ? pills.elapsed < 2 ? '你在对面的皮椅上坐下。Morpheus 等你安静下来。' : 'MORPHEUS · 我能让你看见另一面，但是否继续，只能由你决定。'
+    morpheus.currentAction = { type: 'idle', parameters: { seated: true, pills: { phase: pills.phase, elapsed: pills.elapsed, choice: pills.choice, conversation: pills.conversation, role: 'morpheus' } }, startedAt: tick, duration: 1, progress: 0 };
+    state.lastText = pills.phase === 'seating' ? '你在对面的皮椅上坐下。Morpheus 等你安静下来。'
+      : pills.phase === 'talking' ? pillTalkCue(pills).text
+      : pills.phase === 'offering' ? pills.conversation ? 'MORPHEUS · 蓝色让你回到熟悉的生活；红色让你继续追索真相。我不能替你承担这个选择。'
+        : pills.elapsed < 2 ? '你在对面的皮椅上坐下。Morpheus 等你安静下来。' : 'MORPHEUS · 我能让你看见另一面，但是否继续，只能由你决定。'
       : pills.phase === 'choice' ? '两只手掌停在面前。红色，继续追问；蓝色，回到日常。你可以慢慢决定。'
       : pills.elapsed < 2.15 ? `你伸手拿取${pills.choice === 'red' ? '红色' : '蓝色'}药丸。`
       : pills.elapsed < 4.1 ? '你把药丸送入口中。Morpheus 收回双手，注视着你。'
       : pills.elapsed < 8.6 ? '拿起桌上的水杯，用一口水吞下药丸。'
       : '杯子放回桌上。你离开皮椅，这个决定已经发生。';
-    if (pills.phase === 'offering' && pills.elapsed >= PILL_TIMING.offer) {
+    if (pills.phase === 'seating' && pills.elapsed >= PILL_TIMING.seat) {
+      pills.phase = 'talking'; pills.elapsed = 0; this.pillFrame(agent, 0, tick);
+    } else if (pills.phase === 'offering' && pills.elapsed >= PILL_TIMING.offer) {
       pills.phase = 'choice'; pills.elapsed = 0;
       this.advance(this.step!.text!, agent, tick); this.pillFrame(agent, 0, tick);
     } else if (pills.phase === 'taking' && pills.elapsed >= PILL_TIMING.take) {
@@ -6546,6 +6558,23 @@ export class FilmStorySystem {
       state.lastText = '你抓住外侧维修梯。W 向下，S 向上；双手停在当前横档时不会松开。';
       return state.lastText;
     }
+    if (state.scene === 'm1_pills' && state.pills?.phase === 'talking') {
+      if (this.world.agents.get('morpheus')?.controller) return 'Morpheus 正由另一位玩家控制，交谈进度保留。';
+      const pills = state.pills;
+      if (!pillTalkReady(pills)) return '听完当前这句话，再作出回应。';
+      if (pills.conversation!.beat === 0) {
+        const belief = PILL_BELIEFS.find(answer => target === `pill:belief:${answer.id}`);
+        if (!belief) return '先回答 Morpheus 关于命运的问题；这不是红蓝药丸的决定。';
+        pills.conversation!.belief = belief.id;
+        if (!state.reflections['m1_pills:fate']) {
+          state.reflections['m1_pills:fate'] = belief.id; life.choices['m1_pills:fate'] = belief.id; life.philosophy[belief.id]++;
+          life.journal.unshift({ day: life.day, time: this.world.timeOfDay, title: `两把皮椅之间 · ${belief.label}`, text: belief.reply });
+        }
+      } else if (target !== 'act') return '按 G 继续追问；药丸还没有交到面前。';
+      if (pills.conversation!.beat < PILL_TALK_SECONDS.length - 1) pills.conversation!.beat++;
+      else pills.phase = 'offering';
+      pills.elapsed = 0; this.pillFrame(agent, 0, tick); return state.lastText;
+    }
     if (state.scene === 'm1_pills' && step.kind === 'reflect') {
       if (state.pills?.phase === 'taking') return '选择已经记下。请看完拿取、吞服和放回水杯的动作。';
       if (target !== 'pill:red' && target !== 'blue') return '亲自选择面前的红色或蓝色药丸；等待不会替你决定。';
@@ -6620,8 +6649,9 @@ export class FilmStorySystem {
     }
     if (state.scene === 'm1_pills' && state.step === 0) {
       if (this.world.agents.get('morpheus')?.controller) return 'Morpheus 正在由另一位玩家控制，等待对方结束后再交谈。';
+      if (target !== 'act') return '走到皮椅前，按 G 坐下与 Morpheus 交谈。';
       const center = FILM_SETS[this.scene.set].center;
-      state.pills ??= { phase: 'offering', elapsed: 0, approach: { x: agent.position.x - center.x, z: agent.position.z - center.z, yaw: agent.rotation } };
+      state.pills ??= { phase: 'seating', elapsed: 0, conversation: { beat: 0 }, approach: { x: agent.position.x - center.x, z: agent.position.z - center.z, yaw: agent.rotation } };
       this.pillFrame(agent, 0, tick); return state.lastText;
     }
     if (state.scene === 'm1_office_escape' && state.step === 2) {

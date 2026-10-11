@@ -1,0 +1,13 @@
+{
+  "tick": 4849,
+  "paused": true,
+  "location": "neo_apartment",
+  "journey_removed": true,
+  "pill": "blue",
+  "fate": "trust",
+  "money_preserved": true,
+  "evidence_preserved": true,
+  "trust_awarded_once": true,
+  "old_choices_preserved": true,
+  "old_journal_retained": true
+}

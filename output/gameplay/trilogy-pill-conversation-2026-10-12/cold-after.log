@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: cold loading restores both pill performers before a player reconnects
+ok 1 - cold loading restores both pill performers before a player reconnects
+  ---
+  duration_ms: 7587.349875
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10472.189167

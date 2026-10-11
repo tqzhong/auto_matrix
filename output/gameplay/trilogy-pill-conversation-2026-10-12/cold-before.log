@@ -1,0 +1,404 @@
+TAP version 13
+# Subtest: cold loading restores both pill performers before a player reconnects
+not ok 1 - cold loading restores both pill performers before a player reconnects
+  ---
+  duration_ms: 1235.944292
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/pills.test.mts:1:6196'
+  failureType: 'testCodeFailure'
+  error: |-
+    talking: unowned bodies must recover the exact saved pose
+    + actual - expected
+    ... Skipped lines
+
+      [
+        {
+          abilities: [
+            {
+              cooldownTicks: 30,
+    ...
+          combatCooldowns: {},
+    +     currentAction: null,
+    -     currentAction: {
+    -       duration: 1,
+    -       parameters: {
+    -         pills: {
+    -           choice: undefined,
+    -           conversation: {
+    -             beat: 1,
+    -             belief: 'agency'
+    -           },
+    -           elapsed: 1.3000000000000005,
+    -           phase: 'talking',
+    -           role: 'neo'
+    -         },
+    -         player: true,
+    -         resolved: true
+    -       },
+    -       progress: 0,
+    -       startedAt: 23,
+    -       type: 'idle'
+    -     },
+          currentGoal: 'Discover the truth about the Matrix',
+          currentLocation: 'film_lafayette',
+          currentPath: [],
+          faction: 'zion',
+          health: 100,
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0:
+      id: 'neo'
+      name: 'Neo'
+      faction: 'zion'
+      status: 'alive'
+      position:
+        x: 4737.75
+        y: 85
+        z: 4410
+      rotation: -1.5707963267948966
+      velocity:
+        x: 0
+        y: 0
+        z: 0
+      targetPosition: ~
+      currentPath:
+      health: 100
+      maxHealth: 100
+      isAwakened: false
+      isInMatrix: true
+      currentLocation: 'film_lafayette'
+      currentGoal: 'Discover the truth about the Matrix'
+      currentAction:
+        type: 'idle'
+        parameters:
+          player: true
+          resolved: true
+          pills:
+            phase: 'talking'
+            elapsed: 1.3000000000000005
+            conversation:
+              beat: 1
+              belief: 'agency'
+            role: 'neo'
+        startedAt: 23
+        duration: 1
+        progress: 0
+      mood: 'neutral'
+      alertness: 3
+      mind:
+        energy: 85
+        social: 55
+        suspicion: 0
+        stress: 0
+        thought: '重新回到自己的生活，继续追寻尚未完成的目标。'
+        source: 'rules'
+        memoryCount: 0
+        home: 'neo_apartment'
+      abilities:
+        0:
+          id: 'bullet_time'
+          name: 'Bullet Time'
+          description: '极度减缓时间感知，可躲避子弹'
+          cooldownTicks: 30
+          currentCooldown: 0
+          requiredAwakened: true
+          powerLevel: 8
+          visualEffect: 'slow_motion'
+        1:
+          id: 'flight'
+          name: 'Flight'
+          description: '以超人速度飞行'
+          cooldownTicks: 20
+          currentCooldown: 0
+          requiredAwakened: true
+          powerLevel: 9
+          visualEffect: 'flight_trail'
+        2:
+          id: 'code_sight'
+          name: 'Code Sight'
+          description: '看到Matrix底层的绿色代码'
+          cooldownTicks: 10
+          currentCooldown: 0
+          requiredAwakened: true
+          powerLevel: 7
+          visualEffect: 'code_overlay'
+        3:
+          id: 'martial_arts'
+          name: 'Martial Arts'
+          description: '瞬间掌握各种武术'
+          cooldownTicks: 5
+          currentCooldown: 0
+          requiredAwakened: true
+          powerLevel: 6
+          visualEffect: 'combat_flash'
+      activeEffects:
+      appearance:
+        bodyColor: '#d4a574'
+        headColor: '#e0b088'
+        clothing: '#1a1a1a'
+        accessories:
+        isAgent: false
+      combatCooldowns:
+    1:
+      id: 'morpheus'
+      name: 'Morpheus'
+      faction: 'zion'
+      status: 'alive'
+      position:
+        x: 4734.25
+        y: 85
+        z: 4410
+      rotation: 1.5707963267948966
+      velocity:
+        x: 0
+        y: 0
+        z: 0
+      targetPosition: ~
+      currentPath:
+      health: 100
+      maxHealth: 100
+      isAwakened: true
+      isInMatrix: true
+      currentLocation: 'film_lafayette'
+      currentGoal: 'Find The One'
+      currentAction:
+        type: 'idle'
+        parameters:
+          seated: true
+          pills:
+            phase: 'talking'
+            elapsed: 1.3000000000000005
+            conversation:
+              beat: 1
+              belief: 'agency'
+            role: 'morpheus'
+        startedAt: 23
+        duration: 1
+        progress: 0
+      mood: 'neutral'
+      alertness: 3
+      mind:
+        energy: 66.20989217176168
+        social: 62.980281462761845
+        suspicion: 100
+        stress: 0
+        thought: '今晚，一切看起来和平常一样。'
+        source: 'rules'
+        memoryCount: 0
+        home: 'nebuchadnezzar'
+      abilities:
+        0:
+          id: 'martial_arts'
+          name: 'Martial Arts'
+          description: '瞬间掌握各种武术'
+          cooldownTicks: 5
+          currentCooldown: 0
+          requiredAwakened: true
+          powerLevel: 6
+          visualEffect: 'combat_flash'
+        1:
+          id: 'code_sight'
+          name: 'Code Sight'
+          description: '看到Matrix底层的绿色代码'
+          cooldownTicks: 10
+          currentCooldown: 0
+          requiredAwakened: true
+          powerLevel: 7
+          visualEffect: 'code_overlay'
+        2:
+          id: 'super_speed'
+          name: 'Super Speed'
+          description: '超越常人的移动速度'
+          cooldownTicks: 8
+          currentCooldown: 0
+          requiredAwakened: true
+          powerLevel: 6
+          visualEffect: 'speed_blur'
+      activeEffects:
+      appearance:
+        bodyColor: '#d4a574'
+        headColor: '#e0b088'
+        clothing: '#1a1a1a'
+        accessories:
+        isAgent: false
+  actual:
+    0:
+      id: 'neo'
+      name: 'Neo'
+      faction: 'zion'
+      status: 'alive'
+      position:
+        x: 4737.75
+        y: 85
+        z: 4410
+      rotation: -1.5707963267948966
+      velocity:
+        x: 0
+        y: 0
+        z: 0
+      targetPosition: ~
+      currentPath:
+      health: 100
+      maxHealth: 100
+      isAwakened: false
+      isInMatrix: true
+      currentLocation: 'film_lafayette'
+      currentGoal: 'Discover the truth about the Matrix'
+      currentAction: ~
+      mood: 'neutral'
+      alertness: 3
+      mind:
+        energy: 85
+        social: 55
+        suspicion: 0
+        stress: 0
+        thought: '重新回到自己的生活，继续追寻尚未完成的目标。'
+        source: 'rules'
+        memoryCount: 0
+        home: 'neo_apartment'
+      abilities:
+        0:
+          id: 'bullet_time'
+          name: 'Bullet Time'
+          description: '极度减缓时间感知，可躲避子弹'
+          cooldownTicks: 30
+          currentCooldown: 0
+          requiredAwakened: true
+          powerLevel: 8
+          visualEffect: 'slow_motion'
+        1:
+          id: 'flight'
+          name: 'Flight'
+          description: '以超人速度飞行'
+          cooldownTicks: 20
+          currentCooldown: 0
+          requiredAwakened: true
+          powerLevel: 9
+          visualEffect: 'flight_trail'
+        2:
+          id: 'code_sight'
+          name: 'Code Sight'
+          description: '看到Matrix底层的绿色代码'
+          cooldownTicks: 10
+          currentCooldown: 0
+          requiredAwakened: true
+          powerLevel: 7
+          visualEffect: 'code_overlay'
+        3:
+          id: 'martial_arts'
+          name: 'Martial Arts'
+          description: '瞬间掌握各种武术'
+          cooldownTicks: 5
+          currentCooldown: 0
+          requiredAwakened: true
+          powerLevel: 6
+          visualEffect: 'combat_flash'
+      activeEffects:
+      appearance:
+        bodyColor: '#d4a574'
+        headColor: '#e0b088'
+        clothing: '#1a1a1a'
+        accessories:
+        isAgent: false
+      combatCooldowns:
+    1:
+      id: 'morpheus'
+      name: 'Morpheus'
+      faction: 'zion'
+      status: 'alive'
+      position:
+        x: 4734.25
+        y: 85
+        z: 4410
+      rotation: 1.5707963267948966
+      velocity:
+        x: 0
+        y: 0
+        z: 0
+      targetPosition: ~
+      currentPath:
+      health: 100
+      maxHealth: 100
+      isAwakened: true
+      isInMatrix: true
+      currentLocation: 'film_lafayette'
+      currentGoal: 'Find The One'
+      currentAction:
+        type: 'idle'
+        parameters:
+          seated: true
+          pills:
+            phase: 'talking'
+            elapsed: 1.3000000000000005
+            conversation:
+              beat: 1
+              belief: 'agency'
+            role: 'morpheus'
+        startedAt: 23
+        duration: 1
+        progress: 0
+      mood: 'neutral'
+      alertness: 3
+      mind:
+        energy: 66.20989217176168
+        social: 62.980281462761845
+        suspicion: 100
+        stress: 0
+        thought: '今晚，一切看起来和平常一样。'
+        source: 'rules'
+        memoryCount: 0
+        home: 'nebuchadnezzar'
+      abilities:
+        0:
+          id: 'martial_arts'
+          name: 'Martial Arts'
+          description: '瞬间掌握各种武术'
+          cooldownTicks: 5
+          currentCooldown: 0
+          requiredAwakened: true
+          powerLevel: 6
+          visualEffect: 'combat_flash'
+        1:
+          id: 'code_sight'
+          name: 'Code Sight'
+          description: '看到Matrix底层的绿色代码'
+          cooldownTicks: 10
+          currentCooldown: 0
+          requiredAwakened: true
+          powerLevel: 7
+          visualEffect: 'code_overlay'
+        2:
+          id: 'super_speed'
+          name: 'Super Speed'
+          description: '超越常人的移动速度'
+          cooldownTicks: 8
+          currentCooldown: 0
+          requiredAwakened: true
+          powerLevel: 6
+          visualEffect: 'speed_blur'
+      activeEffects:
+      appearance:
+        bodyColor: '#d4a574'
+        headColor: '#e0b088'
+        clothing: '#1a1a1a'
+        accessories:
+        isAgent: false
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/pills.test.mts:107:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6176.17875

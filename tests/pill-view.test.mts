@@ -81,6 +81,30 @@ test('possessing Morpheus does not borrow Neo\'s drinking glance', async t => {
   assert.ok(waiting.dot(h.camera.getWorldDirection(new THREE.Vector3())) > .999, 'Morpheus is watching Neo, rather than drinking the water himself');
 });
 
+for (const role of ['neo', 'morpheus'] as const) test(`the conversation frames ${role} and keeps capsules hidden until the offer`, async t => {
+    const h = await setup(t, role);
+    for (const aspect of [16 / 9, .65]) for (const elapsed of [1.5, 4.5, 7]) {
+      h.camera.aspect = aspect; h.camera.updateProjectionMatrix();
+      const gesture: PillGesture = { phase: 'talking', elapsed, role, conversation: { beat: 1, belief: 'agency' } };
+      h.draw(gesture, false);
+      const visible: string[] = [];
+      h.group.traverseVisible(object => { if (/held-.*-pill|pill-water-glass/.test(object.name)) visible.push(object.name); });
+      assert.deepEqual(visible, [], 'listening and explaining must not expose the capsules');
+      if ((elapsed < 3.3 ? 'neo' : 'morpheus') === role) {
+        const head = h.head.getWorldPosition(new THREE.Vector3()).project(h.camera);
+        assert.ok(Math.abs(head.x) < .45 && head.y > -.1 && head.y < .6 && Math.abs(head.z) < 1,
+          `${role} head leaves the reverse shot at ${aspect}: ${head.toArray()}`);
+      }
+      const hand = h.group.getObjectByName('wrist_R')!.getWorldPosition(new THREE.Vector3());
+      h.draw(JSON.parse(JSON.stringify(gesture)), false);
+      assert.ok(hand.distanceTo(h.group.getObjectByName('wrist_R')!.getWorldPosition(new THREE.Vector3())) < .001,
+        'a paused/reloaded speaking gesture must have the same hand position');
+      h.draw(gesture, true);
+      const eye = h.head.localToWorld(new THREE.Vector3(0, .1, .32));
+      assert.ok(h.camera.position.distanceTo(eye) < .001, 'V keeps the first-person view at the actual seated eyes');
+    }
+});
+
 test('first-person pill eyes follow the real seated, leaning and standing head while near hand props clear the clip plane', async t => {
   const h = await setup(t);
   for (const elapsed of [0, 1.9, 3.4, 5.7, 7.3, 8.4, 10.6, 12, 16.5]) {
@@ -100,6 +124,15 @@ test('first-person pill eyes follow the real seated, leaning and standing head w
   assert.equal(h.camera.near, .5, 'switching back restores the normal world clip plane');
   delete h.neo.currentAction; h.controls.possess(h.neo); h.controls.firstPerson = true; h.controls.update(.05, h.neo, h.group, false);
   assert.equal(h.camera.near, .5, 'leaving the pill action must restore the normal clip plane');
+});
+
+test('the first-person conversation retains the chosen look direction even after a long answer', async t => {
+  const h = await setup(t);
+  h.draw({ phase: 'talking', elapsed: 10, role: 'neo', conversation: { beat: 3, belief: 'agency' } });
+  const controls = h.controls as unknown as { yaw: number; pitch: number };
+  controls.yaw += .4; controls.pitch = .1; const yaw = controls.yaw;
+  h.controls.update(.05, h.neo, h.group, false);
+  assert.equal(controls.yaw, yaw, 'finishing a spoken line must not force the eyes back to the departure heading');
 });
 
 test('Neo grips the outside of the drinking glass without putting his fingers through the glass and water', async t => {

@@ -1,0 +1,130 @@
+{
+  "interim-seating": {
+    "file": "output/gameplay/neo-longplay-2026-09-20/neo-2026-10-11T16-35-18-373Z.webm",
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "opus",
+          "codec_type": "audio"
+        },
+        {
+          "codec_name": "vp9",
+          "codec_type": "video",
+          "width": 1280,
+          "height": 720
+        }
+      ],
+      "format": {
+        "size": "15459943"
+      }
+    },
+    "packet_timelines": {
+      "0": {
+        "packets": 2457,
+        "last_end_seconds": 147.419
+      },
+      "1": {
+        "packets": 1302,
+        "last_end_seconds": 147.298
+      }
+    }
+  },
+  "red-conversation": {
+    "file": "output/gameplay/neo-longplay-2026-09-20/neo-2026-10-11T16-47-45-754Z.webm",
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "opus",
+          "codec_type": "audio"
+        },
+        {
+          "codec_name": "vp9",
+          "codec_type": "video",
+          "width": 1280,
+          "height": 720
+        }
+      ],
+      "format": {
+        "size": "41666888"
+      }
+    },
+    "packet_timelines": {
+      "0": {
+        "packets": 5678,
+        "last_end_seconds": 344.931
+      },
+      "1": {
+        "packets": 3399,
+        "last_end_seconds": 344.705
+      }
+    }
+  },
+  "red-restored-finish": {
+    "file": "output/gameplay/neo-longplay-2026-09-20/neo-2026-10-11T16-55-29-943Z.webm",
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "opus",
+          "codec_type": "audio"
+        },
+        {
+          "codec_name": "vp9",
+          "codec_type": "video",
+          "width": 1280,
+          "height": 720
+        }
+      ],
+      "format": {
+        "size": "10240032"
+      }
+    },
+    "packet_timelines": {
+      "0": {
+        "packets": 758,
+        "last_end_seconds": 45.480000000000004
+      },
+      "1": {
+        "packets": 511,
+        "last_end_seconds": 45.271
+      }
+    }
+  },
+  "blue-conversation": {
+    "file": "output/gameplay/neo-longplay-2026-09-20/neo-2026-10-11T16-59-31-674Z.webm",
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "opus",
+          "codec_type": "audio"
+        },
+        {
+          "codec_name": "vp9",
+          "codec_type": "video",
+          "width": 1280,
+          "height": 720
+        }
+      ],
+      "format": {
+        "size": "30253801"
+      }
+    },
+    "packet_timelines": {
+      "0": {
+        "packets": 3097,
+        "last_end_seconds": 185.819
+      },
+      "1": {
+        "packets": 2128,
+        "last_end_seconds": 185.69
+      }
+    }
+  }
+}

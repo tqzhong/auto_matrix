@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: the entire film route completes through interactions, driving and real combat, then starts a recorded new life
+ok 1 - the entire film route completes through interactions, driving and real combat, then starts a recorded new life
+  ---
+  duration_ms: 300709.740959
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 307598.002166

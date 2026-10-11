@@ -300,6 +300,30 @@ test('the pill choice clears the central subtitle over Morpheus palms and restor
   assert.equal(element('#film-sequence').classes.has('hidden'), false);
   assert.equal(element('#film-pills').classes.has('hidden'), true, 'taking cannot offer a second decision');
   assert.equal(element('#film-sequence-line').textContent, 'Neo 用水吞服。');
+  pills.phase = 'talking'; pills.conversation = { beat: 0 }; pills.elapsed = 1;
+  sandbox.neoLife!.journey!.step = 0; ui.updateFilm(player, sandbox);
+  assert.equal(element('#film-pill-dialogue').classes.has('hidden'), true, 'finish the question before answering');
+  assert.equal(element('#film-pills').classes.has('hidden'), true, 'a belief answer must not become a pill selection');
+  pills.elapsed = 6; ui.updateFilm(player, sandbox);
+  assert.equal(element('#film-pill-dialogue').classes.has('hidden'), false);
+  assert.equal(element('#sandbox-interact').classes.has('hidden'), true, 'G cannot silently select a belief');
+  pills.conversation = { beat: 1, belief: 'agency' }; pills.elapsed = 7; ui.updateFilm(player, sandbox);
+  assert.equal(element('#film-pill-dialogue').classes.has('hidden'), true);
+  assert.equal(element('#sandbox-interact').classes.has('hidden'), false);
+  assert.match(element('#sandbox-nearby').textContent, /追问矩阵/);
+});
+
+test('the pill journal offers the saved dialogue response without exposing the later pill decision', async () => {
+  const output = await build({ entryPoints: ['packages/client/src/player/FilmJourneyPanel.ts'], bundle: true,
+    platform: 'node', format: 'esm', write: false, loader: { '.css': 'empty' }, logLevel: 'silent' });
+  const { renderFilmJourney } = await import(`data:text/javascript;base64,${Buffer.from(output.outputFiles[0].contents).toString('base64')}`);
+  const player = { id: 'neo', status: 'alive', isInMatrix: true, position: filmPosition('film_lafayette', 1.75, -6) } as AgentState;
+  const sandbox = { threats: [], neoLife: { cycle: 1, journey: { scene: 'm1_pills', actor: 'neo', step: 0, completed: [], reflections: {}, lastText: '你如何看待命运？',
+    pills: { phase: 'talking', elapsed: 6, conversation: { beat: 0 }, approach: { x: 0, z: -3.3, yaw: Math.PI } } } } } as SandboxState;
+  assert.match(renderFilmJourney(player, sandbox), /data-target="film:pill:belief:agency" >我希望自己决定人生/);
+  assert.doesNotMatch(renderFilmJourney(player, sandbox), /data-target="film:pill:red"/);
+  const pills = sandbox.neoLife!.journey!.pills!; pills.conversation = { beat: 2, belief: 'trust' }; pills.elapsed = 8;
+  assert.match(renderFilmJourney(player, sandbox), /data-target="film:act" >追问看不见的边界/);
 });
 
 test('the farewell HUD only offers kneeling within the actual interaction distance', async t => {

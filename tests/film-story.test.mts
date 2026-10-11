@@ -1,3 +1,4 @@
+import { PILL_TALK_SECONDS } from '@auto_matrix/shared';
 import { FREEWAY_HANDOFF, freewayHandoffReady } from '@auto_matrix/shared';
 import { SOURCE_BRIEFING } from '@auto_matrix/shared';
 import { HAMMER_BRIEFING } from '@auto_matrix/shared';
@@ -4066,7 +4067,16 @@ test('the entire film route completes through interactions, driving and real com
           h.command('act'); for (let frame = 0; frame < 61; frame++) h.players.step(.1, true, h.tick());
           h.command('act'); for (let frame = 0; frame < 141; frame++) h.players.step(.1, true, h.tick());
         }
-        else if (scene.id === 'm1_pills') for (let frame = 0; frame < 51; frame++) h.players.step(.1, true, h.tick());
+        else if (scene.id === 'm1_pills') {
+          for (let frame = 0; frame < 23; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.pills?.phase, 'talking');
+          for (const [beat, seconds] of PILL_TALK_SECONDS.entries()) {
+            for (let frame = 0; frame < Math.ceil(seconds / .1) + 1; frame++) h.players.step(.1, true, h.tick());
+            h.command(beat === 0 ? 'pill:belief:agency' : 'act');
+          }
+          for (let frame = 0; frame < 51; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.pills?.phase, 'choice');
+        }
         else if (scene.id === 'm3_hel_entry' && index === 0) {
           h.advance(Math.ceil(HEL_ELEVATOR.seconds * 2));
           assert.equal(state.helElevator?.phase, 'arrived');

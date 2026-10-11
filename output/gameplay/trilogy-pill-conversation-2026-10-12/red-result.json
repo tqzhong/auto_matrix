@@ -1,0 +1,14 @@
+{
+  "tick": 5319,
+  "paused": true,
+  "scene": "m1_mirror",
+  "step": 0,
+  "pill": "red",
+  "fate": "agency",
+  "escort_started": true,
+  "money_preserved": true,
+  "evidence_preserved": true,
+  "old_choices_preserved": true,
+  "old_completed_retained": true,
+  "old_journal_retained": true
+}

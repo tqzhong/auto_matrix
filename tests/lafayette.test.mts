@@ -137,7 +137,8 @@ test('all thirteen floors and the locked 1313 door are playable through controll
   assert.deepEqual(guide.position, filmPosition('film_lafayette', trinityPose.x, trinityPose.z));
   h.command('act'); h.frames(9); assert.equal(h.state().hotel!.welcome?.phase, 'done');
   h.walk({ x: 0, y: 84, z: 0 }); h.walk({ x: 0, y: 84, z: -3.3 });
-  h.command('act'); h.frames(6); assert.equal(h.state().pills?.phase, 'choice');
+  h.command('act'); h.frames(6); assert.equal(h.state().pills?.phase, 'talking');
+  assert.equal(h.state().step, 0, 'the seated conversation precedes the explicit pill decision');
 });
 
 test('sprinting to 1313 does not leave Trinity half a minute behind at the door', () => {
@@ -208,7 +209,8 @@ test('crossing 1313 starts a saved greeting, waits for the handshake, then relea
   h.frames(8); assert.equal(welcome()?.phase, 'done'); assert.equal(h.state().step, 0); assert.equal(h.state().pills, undefined);
   assert.ok(h.world.agents.get('trinity')!.position.x > FILM_SETS.film_lafayette.center.x + 21, 'Trinity leaves through the adjacent doorway');
   h.neo.position = filmStepPosition(FILM_SCENE_BY_ID.m1_pills, FILM_SCENE_BY_ID.m1_pills.steps[0]);
-  h.command('act'); h.frames(6); assert.equal(h.state().pills?.phase, 'choice');
+  h.command('act'); h.frames(6); assert.equal(h.state().pills?.phase, 'talking');
+  assert.equal(h.state().step, 0, 'the seated conversation precedes the explicit pill decision');
 });
 
 test('legacy room saves migrate once while new lower-floor saves retain their actual height', () => {
