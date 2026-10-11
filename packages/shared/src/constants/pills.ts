@@ -9,7 +9,7 @@ export interface PillEncounter {
 }
 export type PillGesture = Pick<PillEncounter, 'phase' | 'elapsed' | 'choice' | 'conversation'> & { role: 'neo' | 'morpheus' };
 export const PILL_ROOM = { seat: 1.75, z: -6, tableZ: -7.35, tableY: 1.75, tableRadius: .64, cup: { x: .42, y: 2.03, z: -7.2 },
-  fireplace: { x: 0, z: -10.8, width: 7.7, depth: 1.25, height: 5 },
+  fireplace: { x: 0, z: -10.8, width: 6.8, depth: 1.15, height: 4.55 },
   exit: { x: -3, z: -3.1 }, trackingDoor: { x: -6, z: -11.5 }, mirror: { x: -10, z: -17.62 } } as const;
 export const PILL_TIMING = { seat: 2.2, offer: 5, take: 17, transfer: 1.8, swallow: 3.65, liftCup: 5.3, replaceCup: 8.6,
   stand: 11, walk: 13, exit: 15.7 } as const;

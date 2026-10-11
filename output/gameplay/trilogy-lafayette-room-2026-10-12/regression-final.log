@@ -1,0 +1,418 @@
+TAP version 13
+# Subtest: the Lafayette meeting has low window sills, recessed wall panels and a solid arched fireplace
+ok 1 - the Lafayette meeting has low window sills, recessed wall panels and a solid arched fireplace
+  ---
+  duration_ms: 46268.31
+  type: 'test'
+  ...
+# Subtest: the Trinity exit shot keeps foreground furniture out of the sightline
+ok 2 - the Trinity exit shot keeps foreground furniture out of the sightline
+  ---
+  duration_ms: 91.387917
+  type: 'test'
+  ...
+# Subtest: worn stair nosings stay flush with the surface used for foot contact
+ok 3 - worn stair nosings stay flush with the surface used for foot contact
+  ---
+  duration_ms: 63895.470125
+  type: 'test'
+  ...
+# Subtest: opening 1313 clears the visible doorway as well as its collision
+ok 4 - opening 1313 clears the visible doorway as well as its collision
+  ---
+  duration_ms: 1395.571125
+  type: 'test'
+  ...
+# Subtest: each knuckle impact briefly gives the closed 1313 door
+ok 5 - each knuckle impact briefly gives the closed 1313 door
+  ---
+  duration_ms: 994.416292
+  type: 'test'
+  ...
+# Subtest: Trinity can visibly pass through the adjacent room door after Morpheus nods
+ok 6 - Trinity can visibly pass through the adjacent room door after Morpheus nods
+  ---
+  duration_ms: 1492.991
+  type: 'test'
+  ...
+# Subtest: Lafayette windows, fireplace and tracking passage have matching visible geometry and access
+ok 7 - Lafayette windows, fireplace and tracking passage have matching visible geometry and access
+  ---
+  duration_ms: 27715.985292
+  type: 'test'
+  ...
+# Subtest: the hotel has a physical route from the alley to floor 13 without position jumps
+ok 8 - the hotel has a physical route from the alley to floor 13 without position jumps
+  ---
+  duration_ms: 654.398917
+  type: 'test'
+  ...
+# Subtest: Trinity route stays on the same steps and landings as the player
+ok 9 - Trinity route stays on the same steps and landings as the player
+  ---
+  duration_ms: 249.979125
+  type: 'test'
+  ...
+# Subtest: Trinity waits beside Neo at 1313 without stacking their bodies in the doorway shot
+ok 10 - Trinity waits beside Neo at 1313 without stacking their bodies in the doorway shot
+  ---
+  duration_ms: 0.266
+  type: 'test'
+  ...
+# Subtest: an older 1313 doorstep save keeps Trinity at the new waiting point
+ok 11 - an older 1313 doorstep save keeps Trinity at the new waiting point
+  ---
+  duration_ms: 489.176959
+  type: 'test'
+  ...
+# Subtest: Trinity walks around the 1313 furniture before using the adjacent door
+ok 12 - Trinity walks around the 1313 furniture before using the adjacent door
+  ---
+  duration_ms: 1.005667
+  type: 'test'
+  ...
+# Subtest: the rear door preserves Neo position, Trinity waits, and room choices cannot bypass the climb
+ok 13 - the rear door preserves Neo position, Trinity waits, and room choices cannot bypass the climb
+  ---
+  duration_ms: 8781.021458
+  type: 'test'
+  ...
+# Subtest: all thirteen floors and the locked 1313 door are playable through controller input
+ok 14 - all thirteen floors and the locked 1313 door are playable through controller input
+  ---
+  duration_ms: 50295.322334
+  type: 'test'
+  ...
+# Subtest: sprinting to 1313 does not leave Trinity half a minute behind at the door
+ok 15 - sprinting to 1313 does not leave Trinity half a minute behind at the door
+  ---
+  duration_ms: 9893.793166
+  type: 'test'
+  ...
+# Subtest: arriving at 1313 before Trinity explains why the door is not ready
+ok 16 - arriving at 1313 before Trinity explains why the door is not ready
+  ---
+  duration_ms: 15.953125
+  type: 'test'
+  ...
+# Subtest: Neo knocks before 1313 opens, and the saved knock cannot be skipped by movement or pause
+ok 17 - Neo knocks before 1313 opens, and the saved knock cannot be skipped by movement or pause
+  ---
+  duration_ms: 288.904791
+  type: 'test'
+  ...
+# Subtest: the guide and swinging door pause, reload and retry at the saved floor
+ok 18 - the guide and swinging door pause, reload and retry at the saved floor
+  ---
+  duration_ms: 1199.921542
+  type: 'test'
+  ...
+# Subtest: crossing 1313 starts a saved greeting, waits for the handshake, then releases Neo to the chairs
+ok 19 - crossing 1313 starts a saved greeting, waits for the handshake, then releases Neo to the chairs
+  ---
+  duration_ms: 3101.777083
+  type: 'test'
+  ...
+# Subtest: legacy room saves migrate once while new lower-floor saves retain their actual height
+ok 20 - legacy room saves migrate once while new lower-floor saves retain their actual height
+  ---
+  duration_ms: 24.622125
+  type: 'test'
+  ...
+# Subtest: the wingback upholstery has deep tufted cushions and a closed padded rear
+ok 21 - the wingback upholstery has deep tufted cushions and a closed padded rear
+  ---
+  duration_ms: 671.272042
+  type: 'test'
+  ...
+# Subtest: the thick Lafayette chair backs block walking while leaving the post-pill exit open
+ok 22 - the thick Lafayette chair backs block walking while leaving the post-pill exit open
+  ---
+  duration_ms: 593.774625
+  type: 'test'
+  ...
+# Subtest: the shared Construct chair footprint contains the rebuilt padded rear
+ok 23 - the shared Construct chair footprint contains the rebuilt padded rear
+  ---
+  duration_ms: 214.125084
+  type: 'test'
+  ...
+# Subtest: a new tracking-chair approach walks around the chair before lowering into it
+ok 24 - a new tracking-chair approach walks around the chair before lowering into it
+  ---
+  duration_ms: 96.922958
+  type: 'test'
+  ...
+# Subtest: turning toward the chair cannot cross Neo’s feet when G starts from a different heading
+ok 25 - turning toward the chair cannot cross Neo’s feet when G starts from a different heading
+  ---
+  duration_ms: 332.294375
+  type: 'test'
+  ...
+# Subtest: the new mirror clock reaches the seated boundary exactly
+ok 26 - the new mirror clock reaches the seated boundary exactly
+  ---
+  duration_ms: 0.343208
+  type: 'test'
+  ...
+# Subtest: the tracking-room mirror has straight carved sides and glass across all four corners
+ok 27 - the tracking-room mirror has straight carved sides and glass across all four corners
+  ---
+  duration_ms: 12790.831667
+  type: 'test'
+  ...
+# Subtest: healing and the silver filament resume from story time with their contact fixed to the glass
+ok 28 - healing and the silver filament resume from story time with their contact fixed to the glass
+  ---
+  duration_ms: 25389.897834
+  type: 'test'
+  ...
+# Subtest: reloading a paused mirror beat restores Neo’s seated body and reaching hand immediately
+ok 29 - reloading a paused mirror beat restores Neo’s seated body and reaching hand immediately
+  ---
+  duration_ms: 4051.960208
+  type: 'test'
+  ...
+# Subtest: Neo’s shipped shoes rest on the tracking-room floor throughout the seated mirror performance
+ok 30 - Neo’s shipped shoes rest on the tracking-room floor throughout the seated mirror performance
+  ---
+  duration_ms: 1669.385833
+  type: 'test'
+  ...
+# Subtest: tracking-chair footsteps keep the shipped support shoe planted and restore the whole body at a paused turn
+ok 31 - tracking-chair footsteps keep the shipped support shoe planted and restore the whole body at a paused turn
+  ---
+  duration_ms: 4530.767333
+  type: 'test'
+  ...
+# Subtest: the entry keeps the shipped body outside the actual chair solids while turning and sitting
+ok 32 - the entry keeps the shipped body outside the actual chair solids while turning and sitting
+  ---
+  duration_ms: 159361.1095
+  type: 'test'
+  ...
+# Subtest: the actual tracking-chair cushion supports Neo’s trousers without swallowing his thighs
+ok 33 - the actual tracking-chair cushion supports Neo’s trousers without swallowing his thighs
+  ---
+  duration_ms: 49790.557542
+  type: 'test'
+  ...
+# Subtest: Neo reaches the actual mirror smoothly without passing through it
+ok 34 - Neo reaches the actual mirror smoothly without passing through it
+  ---
+  duration_ms: 1182.509208
+  type: 'test'
+  ...
+# Subtest: Trinity connects the electrode on Neo’s left forearm instead of reaching for a headset
+ok 35 - Trinity connects the electrode on Neo’s left forearm instead of reaching for a headset
+  ---
+  duration_ms: 643.480792
+  type: 'test'
+  ...
+# Subtest: Trinity keeps her face clear of Neo’s seated eye while connecting and releasing the electrode
+ok 36 - Trinity keeps her face clear of Neo’s seated eye while connecting and releasing the electrode
+  ---
+  duration_ms: 1556.735042
+  type: 'test'
+  ...
+# Subtest: the visible electrode and lead stay attached to Neo when paused, restored or hidden from first person
+ok 37 - the visible electrode and lead stay attached to Neo when paused, restored or hidden from first person
+  ---
+  duration_ms: 6935.208042
+  type: 'test'
+  ...
+# Subtest: Morpheus walks the tracking-room route evenly between snapshots and stops his feet when waiting
+ok 38 - Morpheus walks the tracking-room route evenly between snapshots and stops his feet when waiting
+  ---
+  duration_ms: 424.0255
+  type: 'test'
+  ...
+# Subtest: a remote Neo keeps his saved chair heading and planted root while sidestepping
+ok 39 - a remote Neo keeps his saved chair heading and planted root while sidestepping
+  ---
+  duration_ms: 159.492333
+  type: 'test'
+  ...
+# Subtest: the fractured glass fills the straight-sided mirror without overlapping pieces, holes or flipped faces
+ok 40 - the fractured glass fills the straight-sided mirror without overlapping pieces, holes or flipped faces
+  ---
+  duration_ms: 141.737583
+  type: 'test'
+  ...
+# Subtest: the first-person body appears only in the mirror render
+ok 41 - the first-person body appears only in the mirror render
+  ---
+  duration_ms: 6.762042
+  type: 'test'
+  ...
+# Subtest: the mirror reuses its color reflection while the room normals are rendered for occlusion
+ok 42 - the mirror reuses its color reflection while the room normals are rendered for occlusion
+  ---
+  duration_ms: 1.779958
+  type: 'test'
+  ...
+# Subtest: transmission and color passes share one mirror reflection per view, then refresh on the next frame
+ok 43 - transmission and color passes share one mirror reflection per view, then refresh on the next frame
+  ---
+  duration_ms: 5.860166
+  type: 'test'
+  ...
+# Subtest: the pill-room reflection draws only sampled pixels and culls the rest of the panorama without moving the image
+ok 44 - the pill-room reflection draws only sampled pixels and culls the rest of the panorama without moving the image
+  ---
+  duration_ms: 201.978542
+  type: 'test'
+  ...
+# Subtest: moving views keep every fractured and rippling sample painted and the first-person subject live
+ok 45 - moving views keep every fractured and rippling sample painted and the first-person subject live
+  ---
+  duration_ms: 162.516333
+  type: 'test'
+  ...
+# Subtest: a reflection render failure restores the borrowed render method, projection and target region
+ok 46 - a reflection render failure restores the borrowed render method, projection and target region
+  ---
+  duration_ms: 6.338125
+  type: 'test'
+  ...
+# Subtest: a distant pill glass avoids a room-wide transmission pass while close and zoomed views keep refraction
+ok 47 - a distant pill glass avoids a room-wide transmission pass while close and zoomed views keep refraction
+  ---
+  duration_ms: 27.574
+  type: 'test'
+  ...
+# Subtest: first-person pill taking retains the actual hands and owned props, including a paused or restored pose
+ok 48 - first-person pill taking retains the actual hands and owned props, including a paused or restored pose
+  ---
+  duration_ms: 7316.933875
+  type: 'test'
+  ...
+# Subtest: possessing Morpheus does not borrow Neo's drinking glance
+ok 49 - possessing Morpheus does not borrow Neo's drinking glance
+  ---
+  duration_ms: 661.380958
+  type: 'test'
+  ...
+# Subtest: the conversation frames neo and keeps capsules hidden until the offer
+ok 50 - the conversation frames neo and keeps capsules hidden until the offer
+  ---
+  duration_ms: 3478.548833
+  type: 'test'
+  ...
+# Subtest: the conversation frames morpheus and keeps capsules hidden until the offer
+ok 51 - the conversation frames morpheus and keeps capsules hidden until the offer
+  ---
+  duration_ms: 1117.393875
+  type: 'test'
+  ...
+# Subtest: first-person pill eyes follow the real seated, leaning and standing head while near hand props clear the clip plane
+ok 52 - first-person pill eyes follow the real seated, leaning and standing head while near hand props clear the clip plane
+  ---
+  duration_ms: 3892.932709
+  type: 'test'
+  ...
+# Subtest: the first-person conversation retains the chosen look direction even after a long answer
+ok 53 - the first-person conversation retains the chosen look direction even after a long answer
+  ---
+  duration_ms: 2659.675209
+  type: 'test'
+  ...
+# Subtest: the padded chairs clear neo's real eyes and the pill conversation
+ok 54 - the padded chairs clear neo's real eyes and the pill conversation
+  ---
+  duration_ms: 4892.273292
+  type: 'test'
+  ...
+# Subtest: the padded chairs clear morpheus's real eyes and the pill conversation
+ok 55 - the padded chairs clear morpheus's real eyes and the pill conversation
+  ---
+  duration_ms: 2713.563209
+  type: 'test'
+  ...
+# Subtest: Neo grips the outside of the drinking glass without putting his fingers through the glass and water
+ok 56 - Neo grips the outside of the drinking glass without putting his fingers through the glass and water
+  ---
+  duration_ms: 5269.419666
+  type: 'test'
+  ...
+# Subtest: Neo leaves the chairs facing the open tracking-room doorway
+ok 57 - Neo leaves the chairs facing the open tracking-room doorway
+  ---
+  duration_ms: 60.67675
+  type: 'test'
+  ...
+# Subtest: the seated meeting waits for Neo to answer and pursue the explanation before offering pills
+ok 58 - the seated meeting waits for Neo to answer and pursue the explanation before offering pills
+  ---
+  duration_ms: 7260.750042
+  type: 'test'
+  ...
+# Subtest: the belief, unfinished question and saved sitting pose survive pause, release, restore and retry
+ok 59 - the belief, unfinished question and saved sitting pose survive pause, release, restore and retry
+  ---
+  duration_ms: 5405.28525
+  type: 'test'
+  ...
+# Subtest: existing offering and choice saves continue without inserting a new unanswered conversation
+ok 60 - existing offering and choice saves continue without inserting a new unanswered conversation
+  ---
+  duration_ms: 6611.806334
+  type: 'test'
+  ...
+# Subtest: cold loading restores both pill performers before a player reconnects
+ok 61 - cold loading restores both pill performers before a player reconnects
+  ---
+  duration_ms: 9134.098083
+  type: 'test'
+  ...
+# Subtest: pill pose restoration leaves occupied and dead performers alone
+ok 62 - pill pose restoration leaves occupied and dead performers alone
+  ---
+  duration_ms: 1109.80875
+  type: 'test'
+  ...
+# Subtest: Morpheus waits for an explicit pill choice and red completes only after the handoff and drink
+ok 63 - Morpheus waits for an explicit pill choice and red completes only after the handoff and drink
+  ---
+  duration_ms: 9287.029958
+  type: 'test'
+  ...
+# Subtest: after the red pill Morpheus leads Neo to the tracking chair instead of appearing there
+ok 64 - after the red pill Morpheus leads Neo to the tracking chair instead of appearing there
+  ---
+  duration_ms: 6690.76225
+  type: 'test'
+  ...
+# Subtest: blue takes the same physical sequence before preserving the daily-life save
+ok 65 - blue takes the same physical sequence before preserving the daily-life save
+  ---
+  duration_ms: 4910.868709
+  type: 'test'
+  ...
+# Subtest: pill gestures survive pause, disconnection, save restore and retry without changing the chosen color
+ok 66 - pill gestures survive pause, disconnection, save restore and retry without changing the chosen color
+  ---
+  duration_ms: 4678.214791
+  type: 'test'
+  ...
+# Subtest: a pill performance reserves Morpheus and rejects movement, combat and remote choices
+ok 67 - a pill performance reserves Morpheus and rejects movement, combat and remote choices
+  ---
+  duration_ms: 3205.644667
+  type: 'test'
+  ...
+# Subtest: an occupied Morpheus is never moved into the pill performance
+ok 68 - an occupied Morpheus is never moved into the pill performance
+  ---
+  duration_ms: 863.7955
+  type: 'test'
+  ...
+1..68
+# tests 68
+# suites 0
+# pass 68
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 271467.448333

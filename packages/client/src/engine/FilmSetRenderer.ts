@@ -72,7 +72,7 @@ import { interrogationLocked } from '@auto_matrix/shared';
 import { MEETING_DESTINATION, meetingLocked, type MeetingGesture } from '@auto_matrix/shared';
 import { MeetingSetRenderer } from './MeetingSetRenderer.js';
 import { LafayetteApproachRenderer } from './LafayetteApproachRenderer.js';
-import { LAFAYETTE } from '@auto_matrix/shared';
+import { LAFAYETTE, HOTEL_WALLS } from '@auto_matrix/shared';
 import { apartmentLocked } from '@auto_matrix/shared';
 import { clubLocked } from '@auto_matrix/shared';
 import { ClubSetRenderer } from './ClubSetRenderer.js';
@@ -977,11 +977,11 @@ export class FilmSetRenderer {
     texture('color'); texture('normal'); texture('roughness');
     return material;
   }
-  private imageMaterial(id: string, fallback: number, repeat = false): THREE.MeshStandardMaterial {
+  private imageMaterial(id: string, fallback: number, repeat = false, tint = 0xffffff): THREE.MeshStandardMaterial {
     const material = new THREE.MeshStandardMaterial({ color: fallback, roughness: .96 }); this.materials.add(material);
     const texture = new THREE.TextureLoader().load(`/assets/film-materials/${id}.jpg`, loaded => {
       if (!this.materials.has(material)) { loaded.dispose(); return; }
-      material.map = loaded; material.color.setHex(0xffffff); material.needsUpdate = true;
+      material.map = loaded; material.color.setHex(tint); material.needsUpdate = true;
     });
     texture.colorSpace = THREE.SRGBColorSpace; texture.anisotropy = 8;
     if (repeat) texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
@@ -1277,8 +1277,9 @@ export class FilmSetRenderer {
   private build(set: FilmSet): void {
     const lafayette = set.architecture === 'lafayette';
     this.metal = this.pbr('metal_plate', 0x9caaa9, 3, .7, .28);
-    this.wood = this.pbr('old_wood_floor', lafayette ? 0x93846f : 0x96826b, lafayette ? 1 : 3, lafayette ? .88 : .85); this.marble = this.pbr('marble_01', 0xbdcbd1, 4, .25);
-    this.plaster = this.pbr('damaged_plaster', lafayette ? 0x829077 : 0xadae9c, lafayette ? 1 : 5, lafayette ? .95 : .85); this.leather = this.pbr('leather_red_03', lafayette ? 0xb48b79 : 0x71413a, 1, lafayette ? .74 : .48);
+    this.wood = this.pbr('old_wood_floor', lafayette ? 0x7d7968 : 0x96826b, lafayette ? 1 : 3, lafayette ? .88 : .85); this.marble = this.pbr('marble_01', 0xbdcbd1, 4, .25);
+    this.plaster = this.pbr(lafayette ? 'white_plaster_02' : 'damaged_plaster', lafayette ? 0x737b67 : 0xadae9c, lafayette ? 1 : 5, lafayette ? .95 : .85); this.leather = this.pbr('leather_red_03', lafayette ? 0xb48b79 : 0x71413a, 1, lafayette ? .74 : .48);
+    if (lafayette) this.plaster.normalScale.set(.1, .1);
     this.white = this.pbr('white_plaster_02', 0xd8d9ce, 3); this.black = this.mat(0x161b1a, .44); this.brass = this.mat(0x8e7951, .32, .8);
     this.glass = new THREE.MeshPhysicalMaterial({ color: 0xb3c9c7, metalness: .12, roughness: .12, transparent: true, opacity: .3, side: THREE.DoubleSide, depthWrite: false }); this.materials.add(this.glass);
     this.glow = new THREE.MeshBasicMaterial({ color: 0xffdb9e, toneMapped: false }); this.materials.add(this.glow);
@@ -1311,63 +1312,121 @@ export class FilmSetRenderer {
     }
     return this.mesh(geometry, material, x, y, z);
   }
+  private lafayettePaneling(x: number, z: number, width: number, height: number, angle: number, wallpaper: THREE.Material): void {
+    const start = this.root.children.length;
+    const paint = this.mat(0x535d4b, .91), lip = this.mat(0x737a66, .9), shadow = this.mat(0x343d31, .96);
+    for (const [y, h, depth] of [[.18, .3, .22], [.43, .15, .28], [2.62, .2, .28], [height - .53, .28, .38], [height - .18, .18, .46]])
+      this.box(paint, 0, y, .38, width, h, depth);
+    const count = Math.max(1, Math.round(width / 5.8)), slot = (width - .7) / count;
+    for (let i = 0; i < count; i++) {
+      const cx = -.35 - width / 2 + slot * (i + .5) + .7;
+      const w = Math.max(.5, slot - .52);
+      for (const [bottom, top] of [[.73, 2.25], [3.08, height - 1]]) {
+        this.lafayetteSurface(bottom > 3 ? wallpaper : this.plaster, cx, (bottom + top) / 2, .34, w, top - bottom, .03);
+        for (const side of [-1, 1]) {
+          this.box(shadow, cx + side * (w / 2 + .045), (bottom + top) / 2, .385, .11, top - bottom + .18, .07);
+          this.box(paint, cx + side * (w / 2 + .1), (bottom + top) / 2, .465, .18, top - bottom + .32, .28);
+          this.box(lip, cx + side * (w / 2 - .005), (bottom + top) / 2, .475, .04, top - bottom, .09);
+          const y = side < 0 ? bottom : top;
+          this.box(shadow, cx, y, .385, w + .22, .11, .07);
+          this.box(paint, cx, y + side * .075, .465, w + .38, .18, .28);
+          this.box(lip, cx, y - side * .025, .475, w, .04, .09);
+        }
+      }
+    }
+    const group = new THREE.Group(); this.root.children.slice(start).forEach(child => group.add(child));
+    group.position.set(x, 0, z); group.rotation.y = angle; this.root.add(group);
+  }
+  private lafayetteParquet(width: number, depth: number): void {
+    this.lafayetteSurface(this.mat(0x302f27, .95), 0, -.33, 0, width, .6, depth);
+    const length = 2.4, board = .6;
+    const plank = (x: number, z: number, w: number, d: number, vertical: boolean) => {
+      const left = Math.max(-width / 2, x), right = Math.min(width / 2, x + w);
+      const near = Math.max(-depth / 2, z), far = Math.min(depth / 2, z + d);
+      if (right - left <= .02 || far - near <= .02) return;
+      const geometry = new THREE.BoxGeometry(right - left - .012, .028, far - near - .012);
+      const uv = geometry.attributes.uv, position = geometry.attributes.position, normal = geometry.attributes.normal;
+      for (let i = 0; i < uv.count; i++) if (normal.getY(i) > .5) {
+        const u = (position.getX(i) + (right - left) / 2) / 6, v = (position.getZ(i) + (far - near) / 2) / 6;
+        uv.setXY(i, (vertical ? v : u) + (Math.abs(x * .31 + z * .17) % .6), vertical ? u : v);
+      }
+      this.mesh(geometry, this.wood, (left + right) / 2, -.014, (near + far) / 2);
+    };
+    // An L pair repeats along (length,length) and (board,-board), without gaps
+    // or stacked boards. Cut edge pieces to the actual room footprint.
+    const rows = Math.ceil((width + depth) / length), columns = Math.ceil((width + depth) / board);
+    for (let i = -rows; i <= rows; i++) for (let j = -columns; j <= columns; j++) {
+      const x = i * length + j * board, z = i * length - j * board;
+      plank(x, z, length, board, false); plank(x + length, z, board, length, true);
+    }
+  }
   private lafayetteRoomShell(set: FilmSet): void {
     const { width: w, depth: d, height: h } = set;
     const trim = this.mat(0x414b3a, .87); const edge = this.mat(0x727561, .91);
-    this.lafayetteSurface(this.wood, 0, -.3, 0, w, .6, d, 10);
+    const wallpaper = this.imageMaterial('lafayette-wallpaper-v1', 0x5b6251, true, 0xa0a58e);
+    this.lafayetteParquet(w, d);
     this.lafayetteSurface(this.plaster, 0, h, 0, w, .5, d);
     for (const z of [-d / 2, d / 2]) {
       this.lafayetteSurface(this.plaster, 0, h / 2, z, w, h, .7);
-      for (const y of [.2, .6, 1.45, h - .9, h - .55]) this.box(y > 4 ? edge : trim, 0, y, z - Math.sign(z) * .43, w, y === .6 ? .65 : .14, .28);
+      this.lafayettePaneling(0, z, w, h, z < 0 ? 0 : Math.PI, wallpaper);
     }
     // Three recessed sash windows, with solid piers instead of glass over a wall.
-    const cloth = this.pbr('white_plaster_02', 0x77765d, 2, 1); cloth.side = THREE.DoubleSide; cloth.normalScale.set(.07, .07);
+    const cloth = this.pbr('white_plaster_02', 0x78604b, 3, 1); cloth.side = THREE.DoubleSide; cloth.normalScale.set(.025, .025);
     const windows = [-18, -2, 14]; let start = -d / 2;
     for (const z of [...windows, d / 2 + 4]) {
       const end = z - 4;
-      if (end > start) this.lafayetteSurface(this.plaster, -w / 2, h / 2, (start + end) / 2, .7, h, end - start);
+      if (end > start) {
+        this.lafayetteSurface(this.plaster, -w / 2, h / 2, (start + end) / 2, .7, h, end - start);
+        this.lafayettePaneling(-w / 2, (start + end) / 2, end - start, h, Math.PI / 2, wallpaper);
+      }
       if (z <= d / 2) {
-        this.lafayetteSurface(this.plaster, -w / 2, 1.6, z, .7, 3.2, 8);
-        this.lafayetteSurface(this.plaster, -w / 2, (11.2 + h) / 2, z, .7, h - 11.2, 8);
-        this.lafayetteWindow(-w / 2, z, trim, edge, cloth);
+        this.lafayetteSurface(this.plaster, -w / 2, .425, z, .7, .85, 8);
+        this.lafayetteSurface(this.plaster, -w / 2, h - .7, z, .7, 1.4, 8);
+        this.lafayetteWindow(-w / 2, z, trim, edge, cloth, h);
       }
       start = z + 4;
     }
-    for (const y of [.2, .6, 1.45, h - .9, h - .55]) this.box(y > 4 ? edge : trim, -w / 2 + .43, y, 0, .28, y === .6 ? .65 : .14, d);
+    for (const y of [.18, .43, h - .53, h - .18]) this.box(y > 4 ? edge : trim, -w / 2 + .43, y, 0, .28, .16, d);
+    for (const wall of HOTEL_WALLS.filter(wall => wall.x === LAFAYETTE.door.x && wall.y === LAFAYETTE.upper)) {
+      this.lafayetteSurface(this.plaster, wall.x - .12, h / 2, wall.z, .7, h, wall.depth);
+      this.lafayettePaneling(wall.x - .12, wall.z, wall.depth, h, -Math.PI / 2, wallpaper);
+    }
     const fill = new THREE.HemisphereLight(0xc6cfbd, 0x30291f, .18); this.root.add(fill);
     const key = new THREE.SpotLight(0xc8d2b9, 1900, 50, .85, .65, 2);
     key.position.set(-w / 2 + 1.7, 9.4, -2); key.target.position.set(1, 1.9, -6);
     key.castShadow = true; key.shadow.mapSize.set(1024, 1024); key.shadow.bias = -.0002; key.shadow.normalBias = .035;
     this.root.add(key, key.target);
-    const bounce = new THREE.PointLight(0xd3bc97, 85, 24, 2); bounce.position.set(6, 5, -2); this.root.add(bounce);
-    const rim = new THREE.SpotLight(0xb7c5b2, 650, 40, 1.1, .8, 2);
+    const bounce = new THREE.PointLight(0xc6c3a5, 35, 24, 2); bounce.position.set(6, 5, -2); this.root.add(bounce);
+    const rim = new THREE.SpotLight(0xb7c5b2, 300, 40, 1.1, .8, 2);
     rim.position.set(15, 8, 6); rim.target.position.set(-2, 2, -6); this.root.add(rim, rim.target);
   }
-  private lafayetteWindow(x: number, z: number, trim: THREE.Material, edge: THREE.Material, cloth: THREE.Material): void {
+  private lafayetteWindow(x: number, z: number, trim: THREE.Material, edge: THREE.Material, cloth: THREE.Material, height: number): void {
+    const bottom = .85, top = height - 1.4, center = (bottom + top) / 2;
     const glass = new THREE.MeshStandardMaterial({ color: 0x66766d, roughness: .4, metalness: .1, transparent: true, opacity: .45, side: THREE.DoubleSide, depthWrite: false }); this.materials.add(glass);
-    const pane = this.box(glass, x - .12, 7.2, z, .06, 8, 8);
+    const pane = this.box(glass, x - .12, center, z, .06, top - bottom, 8);
     pane.castShadow = false; pane.userData.dynamic = true;
     const night = new THREE.MeshBasicMaterial({ color: 0x25342f }); this.materials.add(night);
-    const beyond = this.box(night, x - 2, 7.2, z, .05, 8.8, 8.8);
+    const beyond = this.box(night, x - 2, center, z, .05, top - bottom + .8, 8.8);
     beyond.castShadow = false; beyond.userData.dynamic = true;
     for (const offset of [-4, 4]) {
-      this.box(trim, x + .22, 7.2, z + offset, .5, 8.4, .25);
-      this.box(edge, x + .5, 7.2, z + offset * 1.05, .18, 8.7, .11);
+      this.box(trim, x + .22, center, z + offset, .5, top - bottom + .4, .25);
+      this.box(edge, x + .5, center, z + offset * 1.05, .18, top - bottom + .7, .11);
     }
-    for (const y of [3.2, 7.1, 11.2]) this.box(trim, x + .25, y, z, .45, .19, 8.25);
-    this.box(trim, x + .25, 7.2, z, .3, 8, .12);
-    this.box(edge, x + .55, 3.03, z, 1.1, .22, 8.65, .04);
-    this.box(trim, x + .6, 11.7, z, .55, .3, 9.5, .04);
+    for (const y of [bottom, center, top]) this.box(trim, x + .25, y, z, .45, .19, 8.25);
+    this.box(trim, x + .25, center, z, .3, top - bottom, .12);
+    this.box(edge, x + .55, bottom - .17, z, 1.1, .22, 8.65, .04);
+    this.box(trim, x + .6, top + .45, z, .55, .3, 9.5, .04);
     for (const side of [-1, 1]) {
-      const geometry = new THREE.PlaneGeometry(2.05, 11.2, 32, 28);
+      const curtainHeight = height - .65;
+      const geometry = new THREE.PlaneGeometry(2.05, curtainHeight, 32, 28);
       const p = geometry.attributes.position;
       for (let i = 0; i < p.count; i++) {
-        const u = p.getX(i) / 2.05 + .5; const v = p.getY(i) / 11.2 + .5;
+        const u = p.getX(i) / 2.05 + .5; const v = p.getY(i) / curtainHeight + .5;
         const fold = Math.sin(u * Math.PI * 12 + v * .22);
         p.setXYZ(i, side * (u - .5) * (1.85 + (1 - v) * .8), p.getY(i) + (1 - v) ** 5 * (.16 * Math.sin(u * 27) + .07 * Math.sin(u * 61)), fold * (.1 + (1 - v) * .16));
       }
       geometry.computeVertexNormals();
-      const curtain = this.mesh(geometry, cloth, x + .95, 5.9, z + side * 3.75); curtain.rotation.y = Math.PI / 2;
+      const curtain = this.mesh(geometry, cloth, x + .95, curtainHeight / 2 + .16, z + side * 3.75); curtain.rotation.y = Math.PI / 2;
     }
   }
   private openingHotelSet(set: FilmSet): void {
@@ -1468,24 +1527,17 @@ export class FilmSetRenderer {
     }
     if (a === 'lafayette') {
       const rug = this.imageMaterial('lafayette-rug-v1', 0x493b31);
-      this.box(rug, 0, .035, -6, 19, .055, 22);
+      this.box(rug, 0, .035, -6, 12, .055, 14);
       this.loungeChair(-PILL_ROOM.seat, PILL_ROOM.z, Math.PI / 2); this.loungeChair(PILL_ROOM.seat, PILL_ROOM.z, -Math.PI / 2);
       this.pillTable();
       this.pillGlass = createPillGlass(); this.pillGlass.position.set(PILL_ROOM.cup.x, PILL_ROOM.cup.y, PILL_ROOM.cup.z); this.root.add(this.pillGlass);
       this.pillGlass.traverse(object => { if (object instanceof THREE.Mesh) { this.geometries.add(object.geometry); this.materials.add(object.material as THREE.Material); } });
-      const plaster = this.imageMaterial('lafayette-wallpaper-v1', 0x73745c, true); const cable = this.mat(0x1a201f, .9);
+      const wallpaper = this.imageMaterial('lafayette-wallpaper-v1', 0x5b6251, true, 0xa0a58e); const cable = this.mat(0x1a201f, .9);
       const trim = this.mat(0x414b3a, .87); const wornEdge = this.mat(0x727561, .91);
       for (const wall of filmObstacles(set).filter(item => item.z === -11.5)) {
-        this.lafayetteSurface(plaster, wall.x, wall.height / 2, wall.z, wall.width, wall.height, wall.depth);
-        for (const side of [-1, 1]) {
-          const z = wall.z + side * .38;
-          this.lafayetteSurface(this.wood, wall.x, .65, z, wall.width, 1.3, .1);
-          for (const y of [.18, 1.35, 8.65, 8.9]) this.box(y < 2 ? trim : wornEdge, wall.x, y, z + side * .06, wall.width, .12, .16);
-          for (let x = wall.x - wall.width / 2 + .9; x < wall.x + wall.width / 2 - 4.4; x += 5.9) {
-            for (const dx of [0, 4.7]) this.box(trim, x + dx, 4.85, z + side * .05, .045, 5.5, .045);
-            for (const y of [2.1, 7.6]) this.box(trim, x + 2.35, y, z + side * .05, 4.7, .045, .045);
-          }
-        }
+        // The collision includes the projecting mouldings on both faces.
+        this.lafayetteSurface(this.plaster, wall.x, wall.height / 2, wall.z, wall.width, wall.height, wall.depth - .6);
+        for (const side of [-1, 1]) this.lafayettePaneling(wall.x, wall.z, wall.width, wall.height, side > 0 ? 0 : Math.PI, wallpaper);
       }
       for (const x of [-8, -4]) {
         this.box(trim, x, 4.5, -11.5, .3, 9.2, .9);
@@ -1514,38 +1566,53 @@ export class FilmSetRenderer {
       this.trackingLead = new THREE.Line(leadGeometry, leadMaterial); this.trackingLead.name = 'tracking-electrode-lead'; this.root.add(this.trackingLead);
       this.trackingEquipment();
       for (const x of [-17.5, -16.5, -15.5]) this.pipe([[x, 0, -20], [x, 6.5, -20], [chairX - 2.2 + (x + 16.5) * .12, 6.5, chairZ + 1.5], [chairX - 1.9, 3.5, chairZ + 1.2]], .014, cable);
-      const hearth = this.mat(0x343c36, .96); const stone = this.pbr('marble_01', 0x788478, 1, .85);
-      const carving = this.mat(0x626f61, .83); const f = PILL_ROOM.fireplace;
+      const hearth = this.mat(0x30352f, .96); const stone = this.pbr('marble_01', 0x707363, 1, .94); stone.normalScale.set(.12, .12);
+      const carving = this.mat(0x59604f, .92); const f = PILL_ROOM.fireplace;
       const front = f.z + f.depth / 2;
       const leafShape = new THREE.Shape(); leafShape.moveTo(0, 0);
       leafShape.bezierCurveTo(-.13, .12, -.1, .28, 0, .38); leafShape.bezierCurveTo(.1, .28, .13, .12, 0, 0);
       const leafGeometry = new THREE.ExtrudeGeometry(leafShape, { depth: .045, bevelEnabled: true, bevelSize: .014, bevelThickness: .012, bevelSegments: 2, curveSegments: 6, steps: 1 });
-      this.box(hearth, f.x, .16, f.z, f.width, .3, f.depth, .03);
-      this.box(this.black, f.x, 2.15, f.z - .27, 4.9, 3.85, .06);
+      this.box(hearth, f.x, .13, f.z, f.width, .26, f.depth, .025);
+      const surround = new THREE.Shape(); surround.moveTo(-3.14, .26); surround.lineTo(3.14, .26);
+      surround.lineTo(3.14, 4.18); surround.lineTo(-3.14, 4.18); surround.closePath();
+      const opening = new THREE.Path(); opening.moveTo(-2.09, .26); opening.lineTo(-2.09, 1.93);
+      opening.bezierCurveTo(-2.09, 2.84, -1.28, 3.35, 0, 3.35);
+      opening.bezierCurveTo(1.28, 3.35, 2.09, 2.84, 2.09, 1.93); opening.lineTo(2.09, .26); opening.closePath();
+      surround.holes.push(opening);
+      this.mesh(new THREE.ExtrudeGeometry(surround, { depth: .6, bevelEnabled: true, bevelSize: .025, bevelThickness: .02,
+        bevelSegments: 2, curveSegments: 24, steps: 1 }), stone, f.x, 0, front - .74);
+      const soot = this.mat(0x111512, 1);
+      this.box(soot, f.x, 1.85, front - .64, 4.25, 3.2, .035);
+      this.box(soot, f.x, .29, front - .35, 4.3, .04, .58);
       for (const side of [-1, 1]) {
-        const x = f.x + side * 3.05;
-        this.lafayetteSurface(stone, x, 2.2, f.z, 1.15, 4.1, .9);
-        for (const y of [.55, 3.45, 3.85]) this.box(carving, x, y, front - .17, 1.3, .19, .34, .035);
-        for (const dx of [-.35, -.12, .12, .35]) this.cylinder(carving, x + dx, 1.97, front - .16, .065, 2.6);
-        this.pipe([[f.x + side * .65, 3.65, front - .06], [f.x + side * 1.15, 3.75, front - .03],
-          [f.x + side * 2.35, 4.35, front - .06], [x, 4.45, front - .12]], .04, carving);
-        this.pipe([[f.x + side * .72, 3.47, front - .07], [f.x + side * 1.4, 3.55, front - .04],
-          [f.x + side * 2.3, 4.12, front - .06], [x, 4.2, front - .12]], .035, carving);
-        for (let i = 0; i < 8; i++) for (const turn of [-1, 1]) {
-          const u = i / 8;
-          const leaf = this.mesh(leafGeometry, stone, f.x + side * (.75 + u * 2.15), 3.7 + u * .65, front - .06);
-          leaf.rotation.z = side * (turn > 0 ? -.65 : -2.15); leaf.scale.setScalar(.8 + u * .3);
+        const x = f.x + side * 2.72;
+        this.box(carving, x, .4, front - .3, 1.05, .22, .45, .025);
+        this.box(carving, x, 2.07, front - .18, .32, 3.05, .14, .04);
+        for (const y of [.68, 3.45, 3.91]) this.box(stone, x, y, front - .24, .88, .13, .34, .035);
+        this.pipe([[f.x + side * .47, 3.48, front - .13], [f.x + side * 1.14, 3.53, front - .1],
+          [f.x + side * 1.85, 3.87, front - .1], [x, 3.97, front - .13]], .024, carving);
+        this.pipe([[f.x + side * .52, 3.47, front - .11], [f.x + side * 1.14, 3.57, front - .09],
+          [f.x + side * 1.76, 3.31, front - .09], [x, 2.99, front - .13]], .021, carving);
+        for (let i = 0; i < 11; i++) for (const turn of [-1, 1]) {
+          const u = i / 11;
+          const leaf = this.mesh(leafGeometry, carving, f.x + side * (.57 + u * 2.1), 3.48 + u * .48, front - .11);
+          leaf.rotation.z = side * (turn > 0 ? -.45 : -2.35); leaf.scale.set(.48, .67 + u * .12, .65);
+        }
+        this.pipe([[x, .77, front - .12], [x - side * .1, 1.3, front - .09], [x + side * .13, 2.05, front - .09], [x, 3.33, front - .12]], .025, carving);
+        for (let i = 0; i < 7; i++) for (const turn of [-1, 1]) {
+          const leaf = this.mesh(leafGeometry, carving, x, 1.01 + i * .32, front - .105);
+          leaf.rotation.z = turn * 1.03; leaf.scale.set(.5, .65, .7);
         }
       }
-      this.lafayetteSurface(stone, f.x, 4.25, f.z, 7.15, 1.15, .9);
-      for (const [y, width, depth] of [[4.65, 7.35, 1.1], [4.87, f.width, f.depth]] as const) this.box(carving, f.x, y, f.z, width, .19, depth, .045);
-      this.mesh(new THREE.TorusGeometry(.48, .035, 8, 40), carving, f.x, 4.06, front - .055);
-      for (let i = 0; i < 12; i++) {
-        const angle = i / 12 * Math.PI * 2;
-        const leaf = this.mesh(leafGeometry, stone, f.x + Math.cos(angle) * .08, 4.06 + Math.sin(angle) * .08, front - .04);
-        leaf.rotation.z = angle - Math.PI / 2;
+      for (const [y, width, depth] of [[4.19, 6.4, 1.03], [4.34, 6.6, 1.1], [f.height - .075, f.width, f.depth]] as const)
+        this.box(stone, f.x, y, f.z, width, .15, depth, .03);
+      const oval = this.mesh(new THREE.TorusGeometry(.34, .03, 8, 40), carving, f.x, 3.76, front - .11); oval.scale.set(1, 1.3, .8);
+      for (let i = 0; i < 14; i++) {
+        const angle = i / 14 * Math.PI * 2;
+        const leaf = this.mesh(leafGeometry, carving, f.x + Math.cos(angle) * .23, 3.76 + Math.sin(angle) * .3, front - .09);
+        leaf.rotation.z = angle + Math.PI / 2; leaf.scale.set(.33, .43, .6);
       }
-      for (const x of [-1.7, -1, -.3, .4, 1.1, 1.8]) this.box(this.black, f.x + x, .65, front - .2, .07, .95, .08);
+      for (const x of [-1.55, -.93, -.31, .31, .93, 1.55]) this.box(soot, f.x + x, .55, front - .3, .045, .53, .05);
       const mirrorY = MIRROR_FACE.y + 1;
       const mirrorWood = this.pbr('old_wood_floor', 0x252b22, 1.5, .66);
       const relief = this.mat(0x303727, .9); const mx = PILL_ROOM.mirror.x;

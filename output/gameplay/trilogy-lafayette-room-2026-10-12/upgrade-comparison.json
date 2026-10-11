@@ -1,0 +1,13 @@
+{
+  "agents": true,
+  "chunks": true,
+  "locations": false,
+  "events": true,
+  "sandbox": true,
+  "simulation": true,
+  "phase_time": true,
+  "changed_agents": [],
+  "simulation_changes": {},
+  "memory_count": 7,
+  "memories_equal": true
+}

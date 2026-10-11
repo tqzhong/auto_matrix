@@ -1,0 +1,53 @@
+{
+  "programs": [],
+  "stream_groups": [],
+  "streams": [
+    {
+      "index": 0,
+      "codec_name": "vp9",
+      "codec_type": "video",
+      "width": 1280,
+      "height": 720,
+      "avg_frame_rate": "0/0"
+    },
+    {
+      "index": 1,
+      "codec_name": "opus",
+      "codec_type": "audio",
+      "avg_frame_rate": "0/0"
+    }
+  ],
+  "format": {
+    "size": "12796115"
+  },
+  "path": "/Users/tianqizhong/ai_project/auto_matrix/output/gameplay/neo-longplay-2026-09-20/neo-2026-10-11T19-18-12-321Z.webm",
+  "packet_spans": {
+    "video": {
+      "packet_count": 1475,
+      "start_seconds": 0.0,
+      "end_seconds": 88.668,
+      "span_seconds": 88.668
+    },
+    "audio": {
+      "packet_count": 1479,
+      "start_seconds": 0.011,
+      "end_seconds": 88.748,
+      "span_seconds": 88.73700000000001
+    }
+  },
+  "recorder_metadata": {
+    "file": "neo-2026-10-11T19-18-12-321Z.webm",
+    "duration": 88.783,
+    "width": 1280,
+    "height": 720,
+    "audio": true,
+    "frames": 1551,
+    "rendering": {
+      "frames": 3161,
+      "fps": 35.597090501020155,
+      "p95FrameMs": 106,
+      "includesRecordingOverhead": true
+    },
+    "markers": []
+  }
+}

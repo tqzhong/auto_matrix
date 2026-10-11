@@ -26,7 +26,7 @@ test('Lafayette windows, fireplace and tracking passage have matching visible ge
     for (const z of [-18, -2, 14]) {
       assert.equal(blockers(new THREE.Vector3(-19.5, 8, z + .7), new THREE.Vector3(-1, 0, 0), 4).length, 0,
         `the window at ${z} must not be glass glued onto an opaque wall`);
-      assert.ok(blockers(new THREE.Vector3(-19.5, 2, z + .7), new THREE.Vector3(-1, 0, 0), 4).length > 0,
+      assert.ok(blockers(new THREE.Vector3(-19.5, .35, z + .7), new THREE.Vector3(-1, 0, 0), 4).length > 0,
         'the solid sill below the glazing remains');
     }
     for (const x of [-7, -6, -5]) for (const y of [1, 3, 5]) {
