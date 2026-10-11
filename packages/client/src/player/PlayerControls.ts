@@ -930,6 +930,9 @@ export class PlayerControls {
     if (this.motion.helBreakout && !breakout) this.performing = false;
     this.motion.helBreakout = breakout;
     if (breakout) this.performing = breakout.phase === 'catching' || breakout.elapsed < .95;
+    const logosPilot = typeof state.currentAction?.parameters.logosPilot === 'object'
+      ? state.currentAction.parameters.logosPilot as MotionInput['logosPilot'] : undefined;
+    if (logosPilot) this.performing = true;
     if (this.wasPerforming && !this.performing) this.yaw = this.movementYaw = this.facing;
     if (redPillEnded) this.yaw = this.movementYaw = this.facing = state.rotation;
     if (bridgeCaptureStarting) this.yaw = this.movementYaw = Math.atan2(bridgeCaught!.x - state.position.x, bridgeCaught!.z - state.position.z);
@@ -940,8 +943,6 @@ export class PlayerControls {
     this.motion.weaponStyle = state.currentAction?.parameters.weaponStyle as MotionInput['weaponStyle'] ?? (this.firearm ? this.weaponStyle : undefined);
     this.motion.crouching = farewell?.role === 'neo' || !custody && this.enabled && !this.performing && this.keys.has('KeyZ');
     this.motion.riding = Boolean(this.ride || this.gunner);
-    const logosPilot = typeof state.currentAction?.parameters.logosPilot === 'object'
-      ? state.currentAction.parameters.logosPilot as MotionInput['logosPilot'] : undefined;
     if (logosPilot && this.logosPilotYaw === undefined) { this.yaw = this.movementYaw = state.rotation; this.pitch = .08; this.cameraReady = false; }
     if (logosPilot && this.logosPilotYaw !== undefined) {
       const turn = Math.atan2(Math.sin(state.rotation - this.logosPilotYaw), Math.cos(state.rotation - this.logosPilotYaw));

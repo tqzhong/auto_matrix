@@ -90,8 +90,9 @@ test('Logos defense flight combines three-axis piloting, finite Neo pulses and c
   assert.equal(impact.phase, 'wrecked'); assert.equal(impact.hits, 1);
 });
 
-test('Logos climbs through cloud, holds in sunlight, then stalls back below the cloud deck', () => {
+test('a legacy automatic flight still completes its saved cloud, sunlight and descent sequence', () => {
   let flight = newLogosFlight('sun');
+  delete flight.ignition;
   const stages = new Set([flight.stage]);
   for (let frame = 0; frame < 600 && flight.phase === 'riding'; frame++) {
     flight = stepLogosFlight(flight, { throttle: flight.stage === 'clouds' ? 1 : 0, steer: 0, brake: false }, .05, false);
@@ -132,7 +133,32 @@ test('the cloud handoff preserves the damaged ship and crew, waits for input, an
 test('a legacy flight in sunlight keeps its existing altitude after an update', () => {
   const flight = { ...newLogosFlight('sun'), stage: 'sun' as const, altitude: 30, z: 12, stageElapsed: 0 };
   delete flight.cloudTop;
+  delete flight.ignition;
   assert.equal(stepLogosFlight(flight, { throttle: 0, steer: 0, brake: false }, 0).altitude, 30);
+});
+
+test('a partially pumped Logos igniter survives server restore, release and paused inputs before a normal handoff', () => {
+  const h = game(); let state = h.state(); state.scene = 'm3_sun'; state.actor = 'trinity'; state.step = 0;
+  state.logosEntry = { ...newLogosFlight('sun'), hull: 44, neo: 32, altitude: 42 };
+  h.players.possess('p', 'trinity', h.tick()); h.command('act'); let sequence = 0;
+  const frame = () => {
+    const flight = state.logos!;
+    h.players.receiveInput('p', { x: 0, z: 0, yaw: Math.PI, focus: flight.stage === 'stall' && (flight.ignition?.pump ?? 0) < 1.3,
+      drive: { throttle: flight.stage === 'clouds' ? 1 : 0, steer: 0, brake: false }, sequence: ++sequence });
+    h.players.step(.05, true, h.tick());
+  };
+  for (let i = 0; i < 400 && (state.logos!.ignition?.pump ?? 0) < .55; i++) frame();
+  assert.equal(state.logos!.ignition?.phase, 'pumping');
+  const saved = structuredClone(h.sandbox.state), flight = structuredClone(state.logos);
+  assert.match(h.command('act'), /保持 G/); assert.deepEqual(state.logos, flight, 'G during ignition must not relaunch the flight');
+  h.players.step(.5, false, h.tick()); assert.deepEqual(state.logos, flight);
+  h.players.release('p', h.tick()); h.sandbox.restore(saved); state = h.state(); h.advance(30);
+  assert.deepEqual(state.logos, flight);
+  h.players.possess('p', 'trinity', h.tick()); assert.deepEqual(state.logos, flight);
+  for (let i = 0; i < 500 && state.logos!.phase === 'riding'; i++) frame();
+  assert.equal(state.logos!.phase, 'arrived'); assert.equal(state.logos!.ignition?.attempts, 1);
+  assert.equal(state.logos!.hull, 44); assert.equal(state.logos!.neo, 32);
+  h.advance(); h.command('next'); assert.equal(state.scene, 'm3_farewell');
 });
 
 test('Logos scene lighting darkens again below the clouds and keeps the same ship through the chapter handoff', () => {
@@ -186,7 +212,8 @@ test('Trinity pilots both Logos scenes with Neo occupied checks, save restore, f
   h.command('next'); state = h.state(); assert.equal(state.scene, 'm3_sun'); assert.equal(state.logos, undefined);
   h.command('act');
   for (let frame = 0; frame < 600 && state.logos?.phase === 'riding'; frame++)
-    h.sandbox.life.film.driveFrame(h.actor(), { throttle: state.logos.stage === 'clouds' ? 1 : 0, steer: 0, brake: false }, .05, h.tick());
+    h.sandbox.life.film.driveFrame(h.actor(), { throttle: state.logos.stage === 'clouds' ? 1 : 0, steer: 0, brake: false }, .05, h.tick(),
+      state.logos.stage === 'stall' && (state.logos.ignition?.pump ?? 0) < 1.3);
   assert.equal(state.logos?.phase, 'arrived'); h.advance(); assert.equal(state.step, FILM_SCENE_BY_ID.m3_sun.steps.length);
   h.command('next'); assert.equal(h.state().scene, 'm3_farewell'); assert.equal(h.state().logos, undefined);
 
@@ -235,6 +262,7 @@ test('Logos propulsion and cockpit displays lose their emitted light when the en
   const propulsion = root.getObjectByName('logos-flight-ship')!.children.find(object => object instanceof THREE.PointLight) as THREE.PointLight;
   assert.equal(powered.size, 3); assert.ok(propulsion.intensity > 0);
   const sunlight = { ...newLogosFlight('sun'), stage: 'sun' as const, altitude: 30 };
+  delete sunlight.ignition;
   renderer.update(sunlight, 1); assert.ok([...powered].every(material => material.emissiveIntensity > 0));
   renderer.update({ ...sunlight, stage: 'stall', vertical: -8 }, 2);
   assert.equal(propulsion.intensity, 0);

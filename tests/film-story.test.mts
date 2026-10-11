@@ -4292,7 +4292,8 @@ test('the entire film route completes through interactions, driving and real com
         } else if (scene.id === 'm3_sun') {
           for (let frame = 0; state.logos?.phase === 'riding' && frame < 600; frame++) {
             h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, sprint: false, jump: false,
-              drive: { throttle: state.logos.stage === 'clouds' ? 1 : 0, steer: 0, brake: false }, sequence: ++sequence });
+              drive: { throttle: state.logos.stage === 'clouds' ? 1 : 0, steer: 0, brake: false },
+              focus: state.logos.stage === 'stall' && (state.logos.ignition?.pump ?? 0) < 1.3, sequence: ++sequence });
             h.players.step(.05, true, h.tick());
           }
           assert.equal(state.logos?.phase, 'arrived'); h.advance();

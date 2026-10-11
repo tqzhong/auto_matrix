@@ -1,4 +1,4 @@
-import { logosBaneBeat, logosBaneText, logosCloudTop } from '@auto_matrix/shared';
+import { logosBaneBeat, logosBaneText, logosCloudTop, logosIgnitionText, LOGOS_IGNITION } from '@auto_matrix/shared';
 import { hammerFlightHint, hammerRadioStatus, hammerHandoverText } from '@auto_matrix/shared';
 import { HEL_BREAKOUT, helDanceDoorDuration, helDanceDoorText } from '@auto_matrix/shared';
 import { catchDistance } from '@auto_matrix/shared';
@@ -2177,7 +2177,7 @@ export class SandboxUI {
       const sun = flight.mode === 'sun';
       this.el('film-ride').classList.remove('hidden');
       this.el('film-ride-title').textContent = sun ? 'TRINITY / 云层之上' : 'TRINITY / LOGOS';
-      this.el('film-ride-controls').textContent = flight.stage === 'sun' ? '阳光窗口 · 观察真实天空'
+      this.el('film-ride-controls').textContent = flight.ignition ? `${logosIgnitionText(flight)} · V 视角` : flight.stage === 'sun' ? '阳光窗口 · 观察真实天空'
         : flight.stage === 'stall' ? '引擎熄火 · 飞船正在失速' : sun ? 'W 爬升 · A / D 修正姿态' : 'W 爬升 · S 俯冲 · A / D 横移 · G 感知 · V 视角';
       this.el('film-ride-speed').textContent = `${Math.round(flight.altitude)} m · ${Math.round(flight.speed * 3.6)} km/h`;
       this.el('film-ride-health').textContent = sun ? `船体 ${Math.ceil(flight.hull)}% · ${flight.stage === 'clouds' ? '云层内' : flight.stage === 'sun' ? '阳光中' : '动力失效'}`
@@ -2186,6 +2186,13 @@ export class SandboxUI {
         : `云层入口 ↑ ${Math.max(0, Math.round(flight.z - LOGOS_DEFENSE.finish))} m`;
       document.getElementById('game-objective-copy')!.textContent = sun ? flight.stage === 'clouds' ? '把受损的 Logos 拉出黑云' : flight.stage === 'sun' ? 'Trinity 第一次看见真实的太阳' : '动力熄灭 · Logos 坠回机器城'
         : '手动绕开浮雷 · Neo 的感知只能摧毁部分来袭机器 · 末段必须爬升';
+      if (flight.ignition) {
+        const ignition = flight.ignition;
+        document.getElementById('game-objective-copy')!.textContent = logosIgnitionText(flight);
+        if (flight.stage === 'stall') this.el('sandbox-waypoint').textContent = ignition.phase === 'running' ? '机器城 ↓ 准备撞击' : '下坠中 · 操作头顶点火器';
+        this.el('film-ride-health').textContent = `船体 ${Math.ceil(flight.hull)}% · ${ignition.phase === 'pumping' || ignition.phase === 'ready'
+          ? `蓄压 ${Math.min(100, Math.floor(ignition.pump / LOGOS_IGNITION.ready * 100))}%` : ignition.phase === 'running' ? '动力恢复' : ignition.phase === 'powered' ? '爬升中' : '动力失效'}`;
+      }
       this.el('sandbox-interact').classList.add('hidden'); return;
     }
     if (scene.id === 'm3_gate' && journey.apu && ['riding', 'arrived'].includes(journey.apu.phase) && !journey.dockGate && !journey.visiting) {
