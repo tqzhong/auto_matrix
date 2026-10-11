@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { TEMPLE_DEFENSE, type FilmJourney } from '@auto_matrix/shared';
+import { TEMPLE_DEFENSE, trilogyEpilogueProgress, type FilmJourney } from '@auto_matrix/shared';
 import { batchStaticGeometry } from './StaticGeometry.js';
 
 /** The temple has an open firing bottleneck, not a powered door that can stop the siege. */
@@ -192,6 +192,11 @@ export class TempleDefenseRenderer {
     const age = breach?.phase === 'breach' ? breach.elapsed : TEMPLE_DEFENSE.breach.drilling;
     this.drill.visible = active; this.drill.position.y = 38 - Math.min(1, age / TEMPLE_DEFENSE.breach.drilling) * 19;
     this.drill.rotation.y = age * 2.7;
+    const epilogue = journey?.scene === 'm3_ceasefire' ? journey.epilogue : undefined;
+    if (epilogue) {
+      const withdrawing = epilogue.phase === 'retreat' ? trilogyEpilogueProgress(epilogue) : epilogue.phase === 'ready' ? 0 : 1;
+      this.drill.position.y += THREE.MathUtils.smoothstep(withdrawing, 0, .3) * 128;
+    }
     const vertex = new THREE.Vector3();
     this.ceilingFragments.forEach(({ mesh, origin, angle }, index) => {
       const falling = active ? Math.max(0, age - .86 - index * .045) : 0;

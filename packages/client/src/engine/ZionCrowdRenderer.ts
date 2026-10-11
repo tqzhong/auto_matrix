@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { TRILOGY_EPILOGUE, type FilmJourney } from '@auto_matrix/shared';
 
-/** Two shared anatomical bodies, with baked arm arcs and individual saved-clock reactions. */
+/** Shared anatomical bodies with applause, head turns and saved-clock reactions. */
 export class ZionCrowdRenderer {
   readonly group = new THREE.Group();
   readonly ready: Promise<void>;
@@ -99,12 +99,23 @@ export class ZionCrowdRenderer {
         this.dummy.scale.setScalar(resident.height / batch.height); this.dummy.updateMatrix();
         batch.mesh.setMatrixAt(instance, this.dummy.matrix);
         const weights = batch.source.morphTargetInfluences!; weights.fill(0);
+        const response = index % 7, clapping = !dancing && response >= 1 && response <= 3;
         for (let side = 0; side < 2; side++) {
           const raised = dancing ? .58 + Math.sin(this.elapsed * 2.2 + index * .53 + side) * .3
-            : reaction * (index % 4 === 0 && side === 1 ? .12 : .76 + Math.sin(clock * 2.2 + index * .53 + side) * .19);
+            : clapping || response === 0 ? 0 : reaction * (index % 4 === 0 && side === 1 ? .12 : .76 + Math.sin(clock * 2.2 + index * .53 + side) * .19);
           // Two baked samples follow the arm's arc while keeping the actual soles planted.
           weights[side * 2] = raised <= .5 ? raised * 2 : (1 - raised) * 2;
           weights[side * 2 + 1] = Math.max(0, raised * 2 - 1);
+        }
+        if (clapping) {
+          const started = Math.max(0, clock - resident.delay - .45), lift = smooth(started, 0, .75);
+          const contact = .5 - .5 * Math.cos(Math.max(0, started - .75) * (7.2 + index % 5 * .37));
+          weights[4] = lift * (1 - contact); weights[5] = lift * contact;
+        }
+        if (!dancing) {
+          const looking = reaction * smooth(clock, resident.delay + 1.1, resident.delay + 2.1)
+            * Math.sin((clock - resident.delay) * .7 + index * 1.2);
+          weights[6] = Math.max(0, -looking) * .65; weights[7] = Math.max(0, looking) * .65;
         }
         batch.mesh.setMorphAt(instance, batch.source);
       }

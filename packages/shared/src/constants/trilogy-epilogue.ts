@@ -81,11 +81,18 @@ export function newTrilogyEpilogue(kind: TrilogyEpilogueKind): TrilogyEpilogueEn
 export function ceasefireSentinelPose(encounter: TrilogyEpilogueEncounter, index: number) {
   const progress = encounter.phase === 'retreat' ? trilogyEpilogueProgress(encounter)
     : ['message_ready', 'running', 'announcement', 'embrace', 'done'].includes(encounter.phase) ? 1 : 0;
-  const eased = progress * progress * (3 - 2 * progress), row = Math.floor(index / 6);
-  const turn = Math.min(1, progress * 3), clock = encounter.total;
-  return { x: (index % 6 - 2.5) * 5.4 + row % 2 * 1.8, y: 9 + row * 4 + eased * 62,
-    z: -63 - row * 8 - eased * (32 + row * 4), pitch: eased * .52,
-    yaw: Math.PI * turn * turn * (3 - 2 * turn), roll: Math.sin(clock * 1.6 + index) * .025,
+  const smooth = (start: number, end: number) => {
+    const t = Math.max(0, Math.min(1, (progress - start) / (end - start))); return t * t * (3 - 2 * t);
+  };
+  const row = Math.floor(index / 6), column = index % 6, wave = column < 3 ? 0 : 1, clock = encounter.total;
+  const gather = smooth(0, .34), rise = smooth(.34 + wave * .16, .86 + wave * .14);
+  const startX = (index % 6 - 2.5) * 5.4 + row % 2 * 1.8;
+  // Two vertically separated groups converge beneath the existing drill bore.
+  // Their raised noses and trailing tentacles clear the surrounding intact roof.
+  const exitX = (column % 3 - 1) * 3.5 + (wave ? .45 : -.45), exitZ = -101.5 - row * 3.5;
+  return { x: startX + (exitX - startX) * gather, y: 9 + row * 4 + (23 - wave * 10.5 - 9 - row * 4) * gather + rise * 71,
+    z: -63 - row * 8 + (exitZ + 63 + row * 8) * gather, pitch: Math.PI / 2 * smooth(.16, .34),
+    yaw: Math.PI * smooth(0, .2), roll: Math.sin(clock * 1.6 + index) * .025,
     visible: progress < .999, clock };
 }
 

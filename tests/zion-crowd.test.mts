@@ -71,11 +71,11 @@ test('the shipped crowd assets retain textured faces, anatomical hands, separate
     const source = await readFile(new URL(`../packages/client/public/assets/characters/club-${sex}.glb`, import.meta.url));
     assert.equal(original.extras.sourceSha256, createHash('sha256').update(source).digest('hex'));
     assert.ok(!original.skins && !original.animations, 'background bodies do not need individual skeleton updates');
-    assert.ok(bytes < 800000); let triangles = 0;
+    assert.ok(bytes < 1200000); let triangles = 0;
     for (const mesh of asset.scene.children as THREE.Mesh[]) {
       const geometry = mesh.geometry; triangles += geometry.index!.count / 3;
       assert.equal(geometry.attributes.uv.count, geometry.attributes.position.count);
-      assert.equal(geometry.morphAttributes.position.length, 4); assert.equal(geometry.morphAttributes.normal.length, 4);
+      assert.equal(geometry.morphAttributes.position.length, 8); assert.equal(geometry.morphAttributes.normal.length, 8);
       assert.ok(geometry.morphTargetsRelative); assert.ok(!geometry.attributes.skinIndex && !geometry.attributes.skinWeight && !geometry.attributes.color);
       for (const attribute of [geometry.attributes.position, geometry.attributes.normal, ...geometry.morphAttributes.position, ...geometry.morphAttributes.normal]) {
         assert.equal(attribute.count, geometry.attributes.position.count); assert.ok(attribute.array.every(Number.isFinite));
@@ -175,4 +175,53 @@ test('leaving before either crowd asset loads cannot reattach figures and releas
   assert.equal(root.children.length, 0); assert.equal(crowd.group.children.length, 0);
   assert.equal(instanceReleases, 6); assert.equal(morphReleases, 6);
   assert.equal(releases.size, resources.size); assert.ok([...releases.values()].every(count => count === 1));
+});
+
+test('applause has opposing palm contact and an open stroke, without moving the planted soles', async () => {
+  for (const sex of ['male', 'female']) {
+    const { asset, original } = await loadAsset(sex), skin = asset.scene.getObjectByName('Zion_skin') as THREE.Mesh;
+    const targets = original.extras.targets as string[];
+    assert.ok(targets.includes('clap_open') && targets.includes('clap_closed'), 'the audience needs actual applause, not two raised-arm loops');
+    const hands = [0, 1].map(side => {
+      const wrist = new THREE.Vector3(...original.extras.wrists.neutral[side] as [number, number, number]);
+      return Array.from({ length: skin.geometry.attributes.position.count }, (_, i) => i)
+        .filter(i => skin.geometry.attributes.position.getY(i) < wrist.y - .07
+          && new THREE.Vector3().fromBufferAttribute(skin.geometry.attributes.position, i).distanceTo(wrist) < .34);
+    });
+    const gaps: number[] = [];
+    for (const name of ['clap_open', 'clap_closed']) {
+      skin.morphTargetInfluences!.fill(0); skin.morphTargetInfluences![targets.indexOf(name)] = 1;
+      const points = hands.map(vertices => vertices.map(vertex => skin.getVertexPosition(vertex, new THREE.Vector3())));
+      const right = new THREE.Box3().setFromPoints(points[0]), left = new THREE.Box3().setFromPoints(points[1]);
+      const gap = left.min.x - right.max.x; gaps.push(gap);
+      assert.ok(right.max.y > 2.65 && left.max.y > 2.65, `${sex}: palms rise in front of the chest`);
+      assert.ok(right.min.z > .35 && left.min.z > .35, `${sex}: hands remain outside the torso`);
+      assert.ok(gap >= -.004, `${sex}/${name}: the actual hands pass through each other (${gap})`);
+      const shoes = asset.scene.getObjectByName('Zion_soles') as THREE.Mesh;
+      assert.ok(shoes.geometry.morphAttributes.position[targets.indexOf(name)].array.every(value => Math.abs(value) < 1e-6));
+    }
+    assert.ok(gaps[0] > .4, `${sex}: clap needs a visible open stroke (${gaps})`);
+    assert.ok(gaps[1] < .065, `${sex}: closed palms miss one another (${gaps})`);
+  }
+});
+
+test('the ceasefire has distinct quiet, cheering and clapping residents, with continuous saved reactions at the reunion boundary', async t => {
+  mockAssets(t); const crowd = new ZionCrowdRenderer(new THREE.Group()); await crowd.ready;
+  try {
+    const sample = (phase: 'announcement' | 'embrace', elapsed: number) => {
+      crowd.update({ ...announcement, epilogue: { ...announcement.epilogue!, phase, elapsed, total: 5.2 + elapsed } }, 900);
+      return instances(crowd.group).filter(mesh => mesh.name.endsWith('-Zion_skin')).flatMap(mesh => {
+        const pose = new THREE.Mesh(mesh.geometry);
+        return Array.from({ length: mesh.count }, (_, i) => { mesh.getMorphAt(i, pose); return [...pose.morphTargetInfluences!]; });
+      });
+    };
+    const poses = sample('embrace', 2.4);
+    assert.ok(poses.some(weights => weights[4] + weights[5] > .9), 'some survivors applaud');
+    assert.ok(poses.some(weights => weights.slice(0, 4).reduce((a, b) => a + b, 0) > 1), 'some survivors raise their arms');
+    assert.ok(poses.some(weights => weights.slice(0, 6).every(weight => weight < .01)), 'some survivors remain still rather than all waving');
+    const before = sample('announcement', 3.2), after = sample('embrace', 0);
+    assert.deepEqual(after, before, 'the change to the named reunion cannot restart the background reactions');
+    crowd.update({ ...announcement, epilogue: { ...announcement.epilogue!, phase: 'embrace', elapsed: 2.4 } }, 0);
+    assert.deepEqual(sample('embrace', 2.4), poses, 'renderer time or reverse seeking cannot alter the saved reactions');
+  } finally { crowd.dispose(); }
 });
