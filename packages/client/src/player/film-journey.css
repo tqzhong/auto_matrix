@@ -105,6 +105,13 @@ body.film-smith-finale .film-sequence p { margin:3px 0 6px; font-size:13px; line
 body.film-epilogue-scene:not(.film-performing) .film-sequence { bottom:180px; width:min(540px,calc(100vw - 36px)); box-sizing:border-box; padding:8px 15px; }
 body.film-epilogue-scene:not(.film-performing) .film-sequence p { margin:3px 0 6px; font-size:13px; line-height:1.5; }
 body.film-epilogue-scene:not(.film-performing) .sandbox-interact { top:auto; bottom:310px; }
+body.film-park-conversation :is(.game-objective,.game-event,.game-vitals,.game-crosshair,.mouse-hint,.play-tip,.sandbox-clock) { display:none; }
+body.film-park-conversation .sandbox-nav { top:76px; bottom:auto; left:auto; right:24px; }
+body.film-park-conversation .film-sequence { bottom:96px; width:min(600px,calc(100vw - 36px)); box-sizing:border-box; padding:8px 16px; }
+body.film-park-conversation .film-sequence p { margin:3px 0 6px; font-size:13px; line-height:1.5; }
+body.film-park-conversation .sandbox-interact { top:auto; bottom:36px; }
+body.film-park-conversation:has(#gameplay-recorder) .sandbox-interact { bottom:72px; }
+body.film-park-conversation:has(#gameplay-recorder) .film-sequence { bottom:130px; }
 body.film-mountain-flight .sandbox-hotbar,body.film-mountain-flight .game-controls,body.film-mountain-flight .player-ability,body.film-mountain-flight .game-map,body.film-mountain-flight .game-event { display:none; }
 body.film-mountain-flight .film-sequence { bottom:34px; width:min(420px,calc(100vw - 36px)); box-sizing:border-box; padding:8px 16px; }
 body.film-mountain-flight .film-sequence p { margin:2px 0 4px; font-size:12px; line-height:1.4; }

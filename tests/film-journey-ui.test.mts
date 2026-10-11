@@ -375,6 +375,37 @@ test('the completed farewell guides Neo to the machine city instead of asking fo
   }
 });
 
+test('the park performance uses its dialogue HUD while paused and clears it on free walking, replay and other actors', async t => {
+  const output = await build({ entryPoints: ['packages/client/src/player/PlayerExperience.ts'], bundle: true,
+    platform: 'node', format: 'esm', write: false, loader: { '.css': 'empty' }, logLevel: 'silent' });
+  const { PlayerExperience } = await import(`data:text/javascript;base64,${Buffer.from(output.outputFiles[0].contents).toString('base64')}`);
+  const elements = new Map(), classes = new Set<string>();
+  const element = (selector: string) => {
+    const id = selector.replace(/^#/, '');
+    if (!elements.has(id)) elements.set(id, { textContent: '', innerHTML: '', style: { setProperty() {} }, setAttribute() {},
+      classList: { add() {}, remove() {}, toggle() {} }, querySelector: (child: string) => element(`${id} ${child}`) });
+    return elements.get(id);
+  };
+  const document = globalThis.document; t.after(() => { globalThis.document = document; });
+  globalThis.document = { getElementById: element, body: { classList: {
+    toggle: (name: string, active: boolean) => active ? classes.add(name) : classes.delete(name),
+  } } } as unknown as Document;
+  const ui = Object.assign(Object.create(PlayerExperience.prototype), { root: { querySelector: element, querySelectorAll: () => [] },
+    controlled: 'oracle', chosen: 'oracle', lastPlayed: 'oracle', menuOpen: false, entryExplicit: false, tipUntil: Infinity, drawMap() {} });
+  const player = { id: 'oracle', name: 'The Oracle', faction: 'programs', status: 'alive', health: 100, maxHealth: 100, isAwakened: true,
+    isInMatrix: true, rotation: Math.PI, activeEffects: [], currentLocation: 'film_sunrise_garden', position: filmPosition('film_sunrise_garden', -7, -20) } as AgentState;
+  const sandbox = { neoLife: { journey: { scene: 'm3_dawn', actor: 'oracle', step: 2, completed: [], reflections: {}, lastText: '听建筑师的承诺。',
+    epilogue: { kind: 'dawn', phase: 'choice', elapsed: 0, total: 7.8 } } } } as SandboxState;
+  const journey = sandbox.neoLife!.journey!;
+  const render = () => { ui.update({ oracle: player }, { running: false, population: 1 }, sandbox.neoLife); return classes.has('film-park-conversation'); };
+  assert.equal(render(), true, 'pausing a choice still needs a clear picture and accessible journal');
+  journey.epilogue!.phase = 'done'; assert.equal(render(), true, 'the final G action must stay beneath the subtitles');
+  journey.epilogue!.phase = 'ready'; assert.equal(render(), false, 'free walking retains the exploration HUD');
+  journey.epilogue!.phase = 'choice'; journey.visiting = true; assert.equal(render(), false);
+  journey.visiting = false; journey.actor = 'neo'; assert.equal(render(), false);
+  journey.actor = 'oracle'; journey.scene = 'm3_reset'; assert.equal(render(), false);
+});
+
 test('confirming the sunrise replaces the final confirmation with saved completion and optional replay controls', async t => {
   const outputs = await Promise.all(['FilmJourneyPanel', 'SandboxUI'].map(name => build({ entryPoints: [`packages/client/src/player/${name}.ts`], bundle: true,
     platform: 'node', format: 'esm', write: false, loader: { '.css': 'empty' }, logLevel: 'silent' })));

@@ -1,0 +1,32 @@
+TAP version 13
+# Subtest: the park performance uses its dialogue HUD while paused and clears it on free walking, replay and other actors
+not ok 1 - the park performance uses its dialogue HUD while paused and clears it on free walking, replay and other actors
+  ---
+  duration_ms: 873.868375
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/film-journey-ui.test.mts:1:27983'
+  failureType: 'testCodeFailure'
+  error: |-
+    pausing a choice still needs a clear picture and accessible journal
+
+    false !== true
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/film-journey-ui.test.mts:401:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2101.555875

@@ -87,11 +87,14 @@ test('Oracle’s actual body and park clothes clear the wooden seat throughout t
         mesh.skeleton.update();
         for (let vertex = 0; vertex < mesh.geometry.attributes.position.count; vertex += 3) {
           const point = mesh.localToWorld(mesh.getVertexPosition(vertex, new THREE.Vector3()));
-          if (point.y <= hem + .12 || point.y >= warm.torso.getWorldPosition(new THREE.Vector3()).y - .025) continue;
+          if (point.y <= hem + .12 || point.y >= warm.torso.getWorldPosition(new THREE.Vector3()).y + .35) continue;
           ray.set(point, forward);
-          if (!ray.intersectObject(skirt, false).length) uncovered.push(point.toArray());
+          if (!ray.intersectObjects([skirt, warm.root.getObjectByName('oracle-park-upper')!], true).length) uncovered.push(point.toArray());
         }
       }
+      if (uncovered.length) t.diagnostic(JSON.stringify({ elapsed, scale: warm.root.scale.toArray(), hip: warm.torso.position.toArray(),
+        knees: warm.knees.map(knee => knee.getWorldPosition(new THREE.Vector3()).toArray()),
+        skirtTop: new THREE.Box3().setFromPoints(points(skirt)).max.y }));
       assert.equal(uncovered.length, 0, `${elapsed}: the actual legs emerge through the front of the dress: ${JSON.stringify(uncovered.slice(0, 4))}`);
       models.animate(warm, .1, { ...input, epilogue }, 1);
       const paused = new THREE.Box3().setFromPoints(points(warm.detail));

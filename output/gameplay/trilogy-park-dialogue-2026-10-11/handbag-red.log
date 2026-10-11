@@ -1,0 +1,29 @@
+TAP version 13
+# Subtest: the park conversation brings the Oracle close enough to read her face and keeps her handbag in frame
+not ok 1 - the park conversation brings the Oracle close enough to read her face and keeps her handbag in frame
+  ---
+  duration_ms: 5011.62925
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/garden-camera.test.mts:1:6110'
+  failureType: 'testCodeFailure'
+  error: '1.7777777777777777: the face or handbag is cropped or behind the lower HUD'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/garden-camera.test.mts:104:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# 1.7777777777777777: projected head height 0.2768169599545804, bounds -0.2248257233626949,0.02276685851642336,0.8709105970158364 / -0.1250046200160955,0.29958381847100374,0.8811260230171202
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 8438.155709

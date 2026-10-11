@@ -1,0 +1,50 @@
+TAP version 13
+# Subtest: Oracle’s actual body and park clothes clear the wooden seat throughout turning and lowering, including a cold pose
+not ok 1 - Oracle’s actual body and park clothes clear the wooden seat throughout turning and lowering, including a cold pose
+  ---
+  duration_ms: 4038.887
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/oracle-garden.test.mts:1:2604'
+  failureType: 'testCodeFailure'
+  error: |-
+    2.25: the actual legs emerge through the front of the dress: [[-6.7733681429667625,1.2497898295071055,-21.06484522634564],[-6.817362171448477,1.243725633307072,-21.063506836115767],[-6.858349337021812,1.2262290839679557,-21.05934047879395],[-6.688352558760542,1.2267752750623264,-21.05887218475504]]
+
+    12 !== 0
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 12
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/oracle-garden.test.mts:95:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: the park handbag stays in the hand before lowering, both palms meet its handles and its base rests on the dressed lap
+not ok 2 - the park handbag stays in the hand before lowering, both palms meet its handles and its base rests on the dressed lap
+  ---
+  duration_ms: 323.716333
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/oracle-garden.test.mts:1:6749'
+  failureType: 'testCodeFailure'
+  error: 'the bag floats over or penetrates the lap by -0.02626125438731375'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/oracle-garden.test.mts:136:16)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5348.409584

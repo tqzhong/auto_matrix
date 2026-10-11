@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { gardenPose, gardenSunrise, gardenGroundHeight, type TrilogyEpilogueEncounter } from '@auto_matrix/shared';
 
-/** Frame the current speakers and their approach, leaving room above the subtitles. */
+/** Keep approaches wide, then move in for the seated conversation above the subtitles. */
 export function gardenCamera(encounter: TrilogyEpilogueEncounter, aspect: number, look: { yaw: number; pitch: number }) {
   const arrival = ['promise', 'sati', 'sunrise', 'belief', 'done'].includes(encounter.phase);
   const roles = arrival ? ['oracle', 'sati', 'seraph'] as const
@@ -26,5 +26,15 @@ export function gardenCamera(encounter: TrilogyEpilogueEncounter, aspect: number
     const offset = new THREE.Vector3(x, y, z).sub(focus), depth = offset.dot(away);
     distance = Math.max(distance, depth + Math.abs(offset.dot(right)) / (tangent * aspect * .82), depth + Math.abs(offset.dot(up)) / (tangent * .56));
   }
-  return { focus, ideal: focus.clone().addScaledVector(away, distance + .6) };
+  const ideal = focus.clone().addScaledVector(away, distance + .6);
+  const conversation = encounter.phase === 'choice' ? 1
+    : encounter.phase === 'architect' ? THREE.MathUtils.smoothstep(encounter.elapsed, 3.8, 5.4) : 0;
+  if (conversation) {
+    const oracle = gardenPose(encounter, 'oracle');
+    const closeFocus = new THREE.Vector3(oracle.x - (aspect < .85 ? .2 : 1), 2.1, oracle.z - .1);
+    const closeYaw = 2.8 + look.yaw * .35, closePitch = .1 + look.pitch * .35;
+    const closeAway = new THREE.Vector3(Math.sin(closeYaw) * Math.cos(closePitch), Math.sin(closePitch), Math.cos(closeYaw) * Math.cos(closePitch));
+    focus.lerp(closeFocus, conversation); ideal.lerp(closeFocus.addScaledVector(closeAway, 8.4), conversation);
+  }
+  return { focus, ideal, fov: THREE.MathUtils.lerp(64, 42, conversation) };
 }

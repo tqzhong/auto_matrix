@@ -1,0 +1,33 @@
+{
+  "action": {
+    "bottom": 648,
+    "height": 46.5,
+    "right": 740,
+    "visible": true,
+    "width": 200,
+    "x": 540,
+    "y": 601.5
+  },
+  "actionBelowSubtitle": true,
+  "height": 720,
+  "recorder": {
+    "bottom": 712,
+    "height": 40.5,
+    "right": 969.0234375,
+    "visible": true,
+    "width": 658.046875,
+    "x": 310.9765625,
+    "y": 671.5
+  },
+  "recorderClear": true,
+  "subtitle": {
+    "bottom": 590,
+    "height": 61.5,
+    "right": 940,
+    "visible": true,
+    "width": 600,
+    "x": 340,
+    "y": 528.5
+  },
+  "width": 1280
+}

@@ -1257,7 +1257,6 @@ export class PlayerControls {
     this.camera.near = basement?.crawling || Boolean(dropRoot) || this.firstPerson && (this.motion.performance === 'pod' && state.currentLocation === 'film_power_plant_pods' || this.motion.morning || this.motion.workday?.role === 'neo' && this.motion.workday.phase === 'signing' || this.motion.computerCheck || this.motion.contact?.propMotion === 'minidisc' && ['retrieving', 'disk', 'handover'].includes(this.motion.contact.phase) || this.motion.pills || this.motion.farewell || this.motion.mobilReunion?.reunion.phase === 'embracing' || this.motion.catch || dockEvacuationLocked(this.motion.dockEvacuation) || shaftSealLocked(this.motion.shaftSeal) || dockBriefingLocked(this.motion.dockBriefing) || dockReunionLocked(this.motion.dockReunion) || this.motion.empOperator || this.motion.dockGate || this.motion.dockLastStand || deusPactLocked(this.motion.deusPact) || smithFinaleLocked(this.motion.smithFinale) || this.motion.bathroom || this.motion.sixth || this.motion.wetwall?.hanging || tvExit?.phase === 'emerging') ? .06 : this.firstPerson && this.motion.club ? .08 : this.defaultNear;
     const arrest = this.motion.officeCustody?.street;
     if (this.motion.epilogue?.kind === 'neo_carried') this.camera.fov = this.firstPerson ? 68 : 58;
-    if (this.motion.epilogue?.kind === 'dawn' && epilogueWide) this.camera.fov = 64;
     if (deusPactLocked(this.motion.deusPact)) this.camera.fov = this.firstPerson ? 68 : 57;
     if (smithFinaleLocked(this.motion.smithFinale)) {
       const beat = smithFinaleBeat(this.motion.smithFinale!);
@@ -2772,6 +2771,7 @@ export class PlayerControls {
       if (dawn) {
         const shot = gardenCamera(gesture, this.camera.aspect, this.gardenLook), offset = new THREE.Vector3(center.x, center.y - 1, center.z);
         focus.copy(shot.focus).add(offset); ideal.copy(shot.ideal).add(offset);
+        this.camera.fov = shot.fov; this.camera.updateProjectionMatrix();
       }
       if (dawn || carried || retreat || reporting || resetCamera || gesture.elapsed < .08) this.camera.position.copy(ideal);
       else this.camera.position.lerp(ideal, 1 - Math.exp(-7 * delta));

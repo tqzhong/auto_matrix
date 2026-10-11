@@ -1,0 +1,20 @@
+{
+  "action": {
+    "bottom": 684,
+    "height": 46.5,
+    "width": 200,
+    "x": 540,
+    "y": 637.5
+  },
+  "actionBelowSubtitle": true,
+  "height": 720,
+  "recordingToolbar": false,
+  "subtitle": {
+    "bottom": 624,
+    "height": 61.5,
+    "width": 600,
+    "x": 340,
+    "y": 562.5
+  },
+  "width": 1280
+}

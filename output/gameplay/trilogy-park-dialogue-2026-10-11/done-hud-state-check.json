@@ -1,0 +1,16 @@
+{
+  "agents": true,
+  "chunks": true,
+  "locations": true,
+  "events": true,
+  "sandbox": true,
+  "simulation": false,
+  "phase_time": true,
+  "memories_equal": true,
+  "simulation_changes": {
+    "llmStatus": [
+      "degraded",
+      "ready"
+    ]
+  }
+}

@@ -219,6 +219,7 @@ export class PlayerExperience {
     document.body.classList.toggle('film-deus-scene', this.filmPlaying && neoLife?.journey?.scene === 'm3_deus' && !neoLife.journey.visiting);
     document.body.classList.toggle('film-smith-finale', smithFinaleScene);
     document.body.classList.toggle('film-epilogue-scene', epilogueScene);
+    document.body.classList.toggle('film-park-conversation', epiloguePerforming && neoLife?.journey?.scene === 'm3_dawn');
     document.body.classList.toggle('film-grid-scene', this.filmPlaying && ['m2_plan', 'm2_power', 'm2_vigilant', 'm2_blackout', 'm2_relay', 'm2_backup', 'm2_key_door'].includes(neoLife?.journey?.scene ?? '') && !neoLife?.journey?.visiting);
     document.body.classList.toggle('film-finale-scene', this.filmPlaying && ['m2_ship_lost', 'm2_stop_sentinels'].includes(neoLife?.journey?.scene ?? '') && !neoLife?.journey?.visiting);
     document.body.classList.toggle('film-mountain-flight', this.filmPlaying && neoLife?.journey?.scene === 'm2_mountain' && ['takeoff', 'flying', 'arrived'].includes(neoLife.journey.mountain?.phase ?? ''));
