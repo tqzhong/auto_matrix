@@ -220,12 +220,16 @@ export class TempleDefenseRenderer {
       this.rubble.setMatrixAt(this.rubble.count++, matrix);
     }
     const opacity = this.dust.geometry.getAttribute('cloudOpacity');
+    const dustAge = journey?.scene === 'm3_ceasefire' || breach?.phase === 'done' ? TEMPLE_DEFENSE.breach.drilling + TEMPLE_DEFENSE.breach.waiting
+      : age + (breach?.phase === 'waiting' ? breach.elapsed : 0);
     for (let i = 0; i < 24; i++) {
-      const growing = age - .9 - i * .16; if (growing < 0) continue;
+      const growing = dustAge - .9 - i * .16; if (growing < 0) continue;
+      const alpha = Math.min(.7, growing * .45) * (1 - THREE.MathUtils.smoothstep(growing, 4.5, 8.2));
+      if (alpha < .001) continue;
       const a = i * 2.1;
       position.set(Math.cos(a) * (2 + growing * .65), 26 - growing * .8 + Math.sin(a) * 2, -105 + Math.sin(a) * (2 + growing * .6));
       scale.setScalar(2.5 + growing * 1.25); matrix.compose(position, new THREE.Quaternion(), scale);
-      this.dust.setMatrixAt(this.dust.count, matrix); opacity.setX(this.dust.count++, Math.min(.7, growing * .45));
+      this.dust.setMatrixAt(this.dust.count, matrix); opacity.setX(this.dust.count++, alpha);
     }
     this.rubble.instanceMatrix.needsUpdate = this.dust.instanceMatrix.needsUpdate = opacity.needsUpdate = true;
   }

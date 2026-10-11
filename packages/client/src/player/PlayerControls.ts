@@ -38,9 +38,8 @@ import { dockEvacuationLocked, shaftSealLocked, shaftSealLever, DOCK_EVACUATION,
 import { spoonLessonSeat, oracleDepartureLocked, pillPose } from '@auto_matrix/shared';
 import { FILM_SETS, OFFICE_CONTACT, LOBBY_FIRE_INTERVAL, RESCUE, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_TIMING, groundHeight, playerBlocked, stepPlayer, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, COMBAT_SKILLS, combatDisplace, PLAYER_WALK_SPEED, meleeReach, trainingRoot, matrixEscapePhaseLocked, matrixEscapePose, matrixEscapeRoot, theOnePhaseLocked, theOnePose, theOneRoot, sentinelMachinePose, type OfficePhone, type AwakeningPose, type FreewayRide, type AgentState, type PlayerInput, type Vector3, type WorldStructure, type CombatImpact, type SkillCast, type RescueLoadout } from '@auto_matrix/shared';
 import { lafayetteWelcomeCamera } from './LafayetteWelcomeCamera.js';
-import { ceasefireCamera } from './CeasefireCamera.js';
+import { ceasefireCamera, ceasefireWitnessTarget } from './CeasefireCamera.js';
 import { gardenCamera } from './GardenCamera.js';
-import { ceasefireSentinelPose } from '@auto_matrix/shared';
 import type { MotionInput } from '../agents/CharacterMotion.js';
 import { upperDiggerEye, upperDiggerLookBack } from '../agents/UpperDiggerPerformance.js';
 import { ambushCompanyStep } from '@auto_matrix/shared';
@@ -2736,7 +2735,7 @@ export class PlayerControls {
       const carried = this.motion.epilogue.kind === 'neo_carried';
       const eye = new THREE.Vector3(this.position.x, this.position.y + (carried ? 1.25 : 2.25), this.position.z + (carried ? .7 : 0));
       if (this.ceasefireAim && this.motion.epilogue.phase === 'retreat') {
-        const pose = ceasefireSentinelPose(this.motion.epilogue, 2), center = FILM_SETS[state.currentLocation].center;
+        const pose = ceasefireWitnessTarget(this.motion.epilogue), center = FILM_SETS[state.currentLocation].center;
         const x = center.x + pose.x - eye.x, z = center.z + pose.z - eye.z;
         this.yaw = this.movementYaw = Math.atan2(x, z); this.pitch = Math.atan2(eye.y - (center.y - 1 + pose.y), Math.hypot(x, z));
       }
@@ -3276,7 +3275,7 @@ export class PlayerControls {
       group.updateWorldMatrix(true, true);
       const eye = head.localToWorld(new THREE.Vector3(0, 0, .27));
       if (this.ceasefireAim && this.motion.epilogue.phase === 'retreat') {
-        const pose = ceasefireSentinelPose(this.motion.epilogue, 2), center = FILM_SETS.film_zion_temple.center;
+        const pose = ceasefireWitnessTarget(this.motion.epilogue), center = FILM_SETS.film_zion_temple.center;
         const x = center.x + pose.x - eye.x, z = center.z + pose.z - eye.z;
         this.yaw = this.movementYaw = Math.atan2(x, z); this.pitch = Math.atan2(eye.y - (center.y - 1 + pose.y), Math.hypot(x, z));
       }

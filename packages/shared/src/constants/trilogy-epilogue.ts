@@ -36,6 +36,8 @@ export interface TrilogyEpilogueEncounter {
   phase: TrilogyEpiloguePhase;
   elapsed: number;
   total: number;
+  /** Preserve the player's actual doorway position; existing withdrawals keep their original stand. */
+  witnessOrigin?: { x: number; z: number };
   parkApproach?: { x: number; z: number; yaw: number };
   /** Existing active saves retain the earlier wake-first timing. */
   resetVersion?: 2;

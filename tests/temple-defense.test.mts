@@ -134,6 +134,31 @@ test('completed legacy temple saves retain completion without replaying the new 
   assert.deepEqual(state.templeSeal.turns, [1, 1]);
 });
 
+test('breach dust dissipates during the saved wait and cannot remain as frozen clouds during the ceasefire', t => {
+  const h = game(), journey = h.state(), root = new THREE.Group();
+  const renderer = new ZionHomecomingRenderer(root, 'film_zion_temple'); t.after(() => renderer.dispose());
+  Object.assign(journey, { scene: 'm3_temple_breach', actor: 'lock', step: 1, templeBreach: { phase: 'breach', elapsed: 8.2 } });
+  renderer.update(journey, 0);
+  const dust = root.getObjectByName('temple-breach-dust') as THREE.InstancedMesh;
+  const opacity = () => Array.from(dust.geometry.getAttribute('cloudOpacity').array).slice(0, dust.count);
+  const transforms = () => Array.from(dust.instanceMatrix.array).slice(0, dust.count * 16);
+  const lastBreach = opacity(), matrices = transforms();
+  assert.ok(lastBreach.some(value => value > 0), 'the final falling fragments still raise dust');
+  journey.templeBreach = { phase: 'waiting', elapsed: 0 }; renderer.update(journey, 0);
+  assert.deepEqual(opacity(), lastBreach, 'the phase boundary cannot pop the dust');
+  assert.deepEqual(transforms(), matrices);
+  journey.templeBreach.elapsed = 2; renderer.update(journey, 0); const midway = opacity(), positions = transforms();
+  assert.ok(midway.reduce((sum, value) => sum + value, 0) < lastBreach.reduce((sum, value) => sum + value, 0));
+  renderer.update(journey, 300); assert.deepEqual(opacity(), midway); assert.deepEqual(transforms(), positions);
+  const restoredRoot = new THREE.Group(), restored = new ZionHomecomingRenderer(restoredRoot, 'film_zion_temple'); t.after(() => restored.dispose());
+  restored.update(structuredClone(journey), 0);
+  const loaded = restoredRoot.getObjectByName('temple-breach-dust') as THREE.InstancedMesh;
+  assert.deepEqual(Array.from(loaded.instanceMatrix.array).slice(0, loaded.count * 16), positions);
+  assert.deepEqual(Array.from(loaded.geometry.getAttribute('cloudOpacity').array).slice(0, loaded.count), midway);
+  journey.templeBreach = { phase: 'done', elapsed: 0 }; journey.scene = 'm3_ceasefire'; journey.completed.push('m3_temple_breach');
+  renderer.update(journey, 0); assert.equal(dust.count, 0, 'the later withdrawal must not inherit frozen breach dust');
+});
+
 test('physical artillery and its approach keep the existing podium route traversable', () => {
   const h = game(), scene = FILM_SCENE_BY_ID.m3_temple_defense;
   for (const obstacle of TEMPLE_DEFENSE.obstacles) assert.equal(playerBlocked(filmPosition(scene.set, obstacle.x, obstacle.z), false, 1.1, h.sandbox.state.structures), true);
