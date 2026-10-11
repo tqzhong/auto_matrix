@@ -1,0 +1,51 @@
+{
+  "completed_before": 51,
+  "choices_before": 45,
+  "choices_preserved": true,
+  "new_choices": {
+    "m3_dawn:2": "agency"
+  },
+  "reflections_before": 18,
+  "reflections_preserved": true,
+  "journal_before": 72,
+  "old_journal_retained": true,
+  "journal_after": 74,
+  "cycle_unchanged": true,
+  "neo_inventory_preserved": true,
+  "dead_count": 10,
+  "dead_preserved": true,
+  "neo_status": "disconnected",
+  "neo_health": 0,
+  "neo_position_unchanged": true,
+  "neo_action_unchanged": true,
+  "ending": "open",
+  "journey_finished": false,
+  "tick": 14157,
+  "epilogue": {
+    "kind": "dawn",
+    "phase": "done",
+    "elapsed": 0,
+    "total": 34.65699999999988,
+    "parkArrivalVersion": 2,
+    "parkApproach": {
+      "x": -6.045117462610051,
+      "z": -23.263411178117167,
+      "yaw": 4.712246085030516
+    },
+    "parkDeparture": {
+      "elapsed": 26.751999999999985,
+      "origin": {
+        "x": -8.3,
+        "z": -25.5,
+        "yaw": 0
+      }
+    }
+  },
+  "completed_equal": false,
+  "old_completed_preserved": true,
+  "completed_added": [
+    "m3_dawn"
+  ],
+  "memory_files_retained": true,
+  "memory_files_changed_during_normal_play": []
+}

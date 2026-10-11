@@ -28,6 +28,21 @@ export class SunriseGardenRenderer {
     const dome = this.mesh(new THREE.SphereGeometry(850, 48, 24), this.sky, 0, 0, 0);
     dome.name = 'sati-sunrise'; dome.castShadow = dome.receiveShadow = false; dome.renderOrder = -10;
     const grass = this.pbr('park', 'lawn_grass', 0xffffff, 40, 28); grass.normalScale.set(.25, .25);
+    // A mown lawn scatters light across blades; the source map multiplied by
+    // the generic .8 roughness otherwise produces broad, wet-looking glints.
+    grass.roughness = 1;
+    grass.onBeforeCompile = shader => {
+      shader.vertexShader = 'varying vec2 lawnPosition;\n' + shader.vertexShader;
+      shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nlawnPosition = position.xz;');
+      shader.fragmentShader = 'varying vec2 lawnPosition;\n' + shader.fragmentShader;
+      shader.fragmentShader = shader.fragmentShader.replace('#include <roughnessmap_fragment>',
+        '#include <roughnessmap_fragment>\nroughnessFactor = .88 + .12 * roughnessFactor;');
+      shader.fragmentShader = shader.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
+        float lawnPatch = sin(lawnPosition.x*.21 + sin(lawnPosition.y*.13)*1.7) * sin(lawnPosition.y*.19 - lawnPosition.x*.11);
+        float lawnMown = sin(lawnPosition.x*.63 + lawnPosition.y*.09);
+        diffuseColor.rgb *= .91 + lawnPatch*.075 + lawnMown*.025;`);
+    };
+    grass.customProgramCacheKey = () => 'park-dry-lawn-v1';
     const pavement = this.pbr('surfaces', 'concrete_pavement_03', 0xa9a895, 18 * SUNRISE_GARDEN.promenadeWidth / 210, 1);
     const soil = this.material(0x282f22, 1), stone = this.material(0x9f9b8a, .94);
     const lawnGeometry = new THREE.PlaneGeometry(210, 150, 140, 150); lawnGeometry.rotateX(-Math.PI / 2);
@@ -44,20 +59,26 @@ export class SunriseGardenRenderer {
     this.group.add(this.treeFallback);
     this.bench(); this.vegetation(); this.treesReady = this.loadTrees(); this.city();
     const waterGeometry = new THREE.PlaneGeometry(900, 700); this.geometries.add(waterGeometry);
-    this.water = new Reflector(waterGeometry, { color: 0x94a8ae, textureWidth: 768, textureHeight: 512, clipBias: .003, multisample: 0 });
+    this.water = new Reflector(waterGeometry, { color: 0x1b3036, textureWidth: 768, textureHeight: 512, clipBias: .003, multisample: 0 });
     this.water.name = 'park-reflecting-water'; this.water.rotation.x = -Math.PI / 2;
     this.water.position.set(0, -.72, SUNRISE_GARDEN.shore - 350); this.group.add(this.water);
     const reflect = this.water.onBeforeRender.bind(this.water);
     this.water.onBeforeRender = (...args) => { if (!args[1].overrideMaterial) reflect(...args); };
     const shader = this.water.material as THREE.ShaderMaterial;
     shader.uniforms.parkTime = { value: 0 };
-    shader.fragmentShader = shader.fragmentShader.replace('uniform vec3 color;', 'uniform vec3 color; uniform float parkTime;')
+    shader.vertexShader = 'varying vec3 parkWaterView;\n' + shader.vertexShader;
+    shader.vertexShader = shader.vertexShader.replace('void main() {', 'void main() {\nparkWaterView = cameraPosition - (modelMatrix * vec4(position, 1.0)).xyz;');
+    shader.fragmentShader = shader.fragmentShader.replace('uniform vec3 color;', 'uniform vec3 color; uniform float parkTime; varying vec3 parkWaterView;')
       .replace('vec4 base = texture2DProj( tDiffuse, vUv );', `
         vec4 waterUv = vUv;
         vec2 uv = vUv.xy / vUv.w;
-        waterUv.x += (sin(uv.y * 570.0 + parkTime * .8) + sin(uv.y * 921.0 - parkTime * .6)) * .0014 * vUv.w;
-        waterUv.y += sin(uv.x * 110.0 + uv.y * 300.0 + parkTime * .55) * .00065 * vUv.w;
-        vec4 base = texture2DProj(tDiffuse, waterUv);`);
+        waterUv.x += (sin(uv.y * 570.0 + parkTime * .8) + sin(uv.y * 921.0 - parkTime * .6)) * .00065 * vUv.w;
+        waterUv.y += sin(uv.x * 110.0 + uv.y * 300.0 + parkTime * .55) * .0003 * vUv.w;
+        vec4 base = texture2DProj(tDiffuse, waterUv);`)
+      .replace('gl_FragColor = vec4( blendOverlay( base.rgb, color ), 1.0 );', `
+        float facing = clamp(abs(normalize(parkWaterView).y), 0.0, 1.0);
+        float reflection = .035 + .84 * pow(1.0 - facing, 5.0);
+        gl_FragColor = vec4(mix(color, base.rgb, reflection), 1.0);`);
     this.sun.position.set(22, 25, -105); this.sun.target.position.set(-6, 0, -20);
     this.sun.castShadow = true; this.sun.shadow.mapSize.set(2048, 2048);
     Object.assign(this.sun.shadow.camera, { left: -42, right: 42, top: 42, bottom: -42, near: 1, far: 180 });

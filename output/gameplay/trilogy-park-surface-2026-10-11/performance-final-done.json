@@ -1,0 +1,262 @@
+{
+  "measuredAt": "2026-10-11T15:04:10.960Z",
+  "scenes": [
+    "film_sunrise_garden"
+  ],
+  "viewport": {
+    "width": 1280,
+    "height": 720,
+    "pixelRatio": 1
+  },
+  "frames": 452,
+  "fps": 30.051841091537113,
+  "frameTime": {
+    "mean": 33.27583148579904,
+    "p95": 46.69999980926514
+  },
+  "cpuMs": {
+    "controls": {
+      "mean": 0.3926991108244499,
+      "p95": 0.9000000953674316
+    },
+    "agents": {
+      "mean": 6.6130530908044465,
+      "p95": 10.5
+    },
+    "city": {
+      "mean": 0.1117256594970163,
+      "p95": 0.20000028610229492
+    },
+    "film": {
+      "mean": 0.06526549200041104,
+      "p95": 0.19999980926513672
+    },
+    "effects": {
+      "mean": 0.10884956764963875,
+      "p95": 0.20000028610229492
+    },
+    "render": {
+      "mean": 21.052212380729944,
+      "p95": 29
+    },
+    "capture": {
+      "mean": 0.0022123904354804384,
+      "p95": 0
+    }
+  },
+  "passCpuMs": {
+    "worldMatrices": {
+      "mean": 1.218936866304011,
+      "p95": 1.8000001907348633
+    },
+    "scene": {
+      "mean": 17.448672545694674,
+      "p95": 24.199999809265137
+    },
+    "occlusion.overrideVisibility": {
+      "mean": 0.4170354108894821,
+      "p95": 0.6000003814697266
+    },
+    "occlusion.normals": {
+      "mean": 2.4126106078645826,
+      "p95": 3.5
+    },
+    "occlusion.restoreVisibility": {
+      "mean": 0.0068584068686561245,
+      "p95": 0.09999990463256836
+    },
+    "occlusion": {
+      "mean": 3.078761080725003,
+      "p95": 4.599999904632568
+    },
+    "bloom": {
+      "mean": 0.3800884970521505,
+      "p95": 1
+    },
+    "output": {
+      "mean": 0.04756637168141593,
+      "p95": 0.19999980926513672
+    },
+    "antialias": {
+      "mean": 0.06349556846956236,
+      "p95": 0.19999980926513672
+    }
+  },
+  "calls": {
+    "mean": 547,
+    "p95": 547
+  },
+  "triangles": {
+    "mean": 4860160,
+    "p95": 4860160
+  },
+  "drawsPerFrame": {
+    "shadows": {
+      "calls": 103,
+      "triangles": 762816
+    },
+    "scene": {
+      "calls": 126,
+      "triangles": 1368061
+    },
+    "reflectionOrPreview": {
+      "calls": 181,
+      "triangles": 1363425
+    },
+    "occlusion": {
+      "calls": 118,
+      "triangles": 1365839
+    },
+    "postprocessing": {
+      "calls": 19,
+      "triangles": 19
+    }
+  },
+  "heaviestMeshes": [
+    {
+      "name": "park-near-tree_small_02_leaves",
+      "parent": "sunrise-waterfront-park",
+      "type": "Mesh",
+      "calls": 4,
+      "triangles": 1452000
+    },
+    {
+      "name": "park-background-tree_small_02_leaves",
+      "parent": "sunrise-waterfront-park",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 651000
+    },
+    {
+      "name": "park-grass-blades",
+      "parent": "sunrise-waterfront-park",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 432000
+    },
+    {
+      "name": "park-shore-tree_small_02_leaves",
+      "parent": "sunrise-waterfront-park",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 387000
+    },
+    {
+      "name": "park-shore-tree_small_02_trunk",
+      "parent": "sunrise-waterfront-park",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 221880
+    },
+    {
+      "name": "park-near-tree_small_02_branches",
+      "parent": "sunrise-waterfront-park",
+      "type": "Mesh",
+      "calls": 4,
+      "triangles": 191976
+    },
+    {
+      "name": "park-mown-lawn",
+      "parent": "sunrise-waterfront-park",
+      "type": "Mesh",
+      "calls": 4,
+      "triangles": 168000
+    },
+    {
+      "name": "sati-anatomical-head",
+      "parent": "sati-detailed-head",
+      "type": "Mesh",
+      "calls": 4,
+      "triangles": 139200
+    },
+    {
+      "name": "oracle-revolutions-anatomical-head",
+      "parent": "oracle-revolutions-detailed-head",
+      "type": "Mesh",
+      "calls": 4,
+      "triangles": 138944
+    },
+    {
+      "name": "seraph-anatomical-head",
+      "parent": "seraph-detailed-head",
+      "type": "Mesh",
+      "calls": 4,
+      "triangles": 137536
+    },
+    {
+      "name": "seraph-anatomical-body",
+      "parent": "seraph-detailed-body",
+      "type": "SkinnedMesh",
+      "calls": 4,
+      "triangles": 117760
+    },
+    {
+      "name": "park-near-tree_small_02_trunk",
+      "parent": "sunrise-waterfront-park",
+      "type": "Mesh",
+      "calls": 4,
+      "triangles": 107976
+    },
+    {
+      "name": "park-background-tree_small_02_trunk",
+      "parent": "sunrise-waterfront-park",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 92907
+    },
+    {
+      "name": "seraph-park-jacket",
+      "parent": "seraph-detailed-body",
+      "type": "SkinnedMesh",
+      "calls": 4,
+      "triangles": 69776
+    },
+    {
+      "name": "oracle-hair-strands",
+      "parent": "oracle-revolutions-detailed-head",
+      "type": "Mesh",
+      "calls": 4,
+      "triangles": 64000
+    },
+    {
+      "name": "sati-hair-strands",
+      "parent": "sati-detailed-head",
+      "type": "Mesh",
+      "calls": 4,
+      "triangles": 64000
+    },
+    {
+      "name": "seraph-park-undershirt",
+      "parent": "seraph-detailed-body",
+      "type": "SkinnedMesh",
+      "calls": 4,
+      "triangles": 53424
+    },
+    {
+      "name": "seraph-hair-strands",
+      "parent": "seraph-detailed-head",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 48000
+    },
+    {
+      "name": "seraph-work-trousers",
+      "parent": "seraph-detailed-body",
+      "type": "SkinnedMesh",
+      "calls": 4,
+      "triangles": 41536
+    },
+    {
+      "name": "sati-braids",
+      "parent": "sati-detailed-head",
+      "type": "Mesh",
+      "calls": 4,
+      "triangles": 18432
+    }
+  ],
+  "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+  "recordingActive": false,
+  "engineFpsDisplay": 22.40896358543417,
+  "objects": 8901,
+  "visibleObjects": 429
+}

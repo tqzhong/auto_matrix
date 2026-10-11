@@ -1,0 +1,36 @@
+{
+  "region": [
+    670,
+    235,
+    975,
+    460
+  ],
+  "criterion": "min(RGB)>180 and max(RGB)-min(RGB)<30",
+  "note": "Same logical viewport and ready pose; image observation only, not a performance or full-scene quality metric. Earlier performance reports have different pixel ratios.",
+  "samples": {
+    "before-ready.png": {
+      "bright_neutral_pixels": 4704,
+      "sample_rgb": [
+        192,
+        199,
+        192
+      ]
+    },
+    "diagnostic-matte.png": {
+      "bright_neutral_pixels": 9,
+      "sample_rgb": [
+        108,
+        131,
+        89
+      ]
+    },
+    "final-ready.png": {
+      "bright_neutral_pixels": 8,
+      "sample_rgb": [
+        107,
+        128,
+        89
+      ]
+    }
+  }
+}
