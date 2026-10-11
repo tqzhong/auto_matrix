@@ -87,13 +87,16 @@ export class TempleDefenseSystem {
       const member = this.world.agents.get(role);
       if (!member || member.status !== 'alive' || role !== actor.id && member.controller) continue;
       if (role !== actor.id) {
-        const point = templeCastRoot(role);
+        const point = templeCastRoot(role, Boolean(breach));
         member.position = filmPosition('film_zion_temple', point.x, point.z); member.rotation = point.yaw;
         member.currentLocation = 'film_zion_temple'; member.isInMatrix = false; member.velocity = { x: 0, y: 0, z: 0 }; member.targetPosition = null; member.currentPath = [];
       }
+      const crewMount = breach && (role === 'citizen_15' || role === 'citizen_16') ? role === 'citizen_15' ? 0 : 1 : undefined;
       const gesture: TempleDefenseGesture = { role, phase: breach?.phase === 'ready' ? 'standing' : breach?.phase ?? (role === actor.id ? seal.phase === 'ready' ? 'ready' : seal.mount !== undefined ? 'mounting' : 'standing' : 'standing'),
-        elapsed: breach?.elapsed ?? seal.elapsed ?? 0, mount: role === actor.id ? seal.mount : undefined, turn: seal.mount === undefined ? 0 : seal.turns[seal.mount],
-        grip: Math.min(1, (seal.gripAge ?? 0) / TEMPLE_DEFENSE.reach) };
+        elapsed: breach?.elapsed ?? seal.elapsed ?? 0, mount: crewMount ?? (role === actor.id ? seal.mount : undefined),
+        turn: crewMount !== undefined ? seal.turns[crewMount] : seal.mount === undefined ? 0 : seal.turns[seal.mount],
+        grip: crewMount !== undefined ? breach!.phase === 'orders' ? Math.min(1, breach!.elapsed / TEMPLE_DEFENSE.reach) : breach!.phase === 'ready' ? 0 : 1
+          : Math.min(1, (seal.gripAge ?? 0) / TEMPLE_DEFENSE.reach) };
       member.currentAction = { type: 'idle', parameters: { resolved: true, player: role === actor.id, templeDefense: gesture }, startedAt: tick, duration: 1e9, progress: 0 };
     }
     if (templeDefenseLocked(seal, breach)) journey.checkpoint = { ...actor.position };

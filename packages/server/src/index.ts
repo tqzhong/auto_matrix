@@ -3,7 +3,7 @@ import { createServer } from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { ServerMessage, SimulationState, WorldStateFull, SandboxCommand } from '@auto_matrix/shared';
-import { NEO_CAST, FILM_CAST, cityVehicleBlocked, primaryActive } from '@auto_matrix/shared';
+import { NEO_CAST, FILM_CAST, TEMPLE_DEFENSE, cityVehicleBlocked, primaryActive, templeDefenseActive } from '@auto_matrix/shared';
 import { config } from './config.js';
 import { EventBus } from './simulation/EventBus.js';
 import { SimulationLoop } from './simulation/SimulationLoop.js';
@@ -278,6 +278,10 @@ const playerTimer = setInterval(() => {
   if (current && ['m3_dock_evacuation', 'm3_shaft_seal'].includes(current.scene) && !current.visiting && (world.agents.get(current.actor)?.controller || simLoop.isRunning())) {
     const cast = current.scene === 'm3_shaft_seal' ? ['citizen_15', 'citizen_16', 'lock'] : ['kid', 'colt'];
     const crew = [...world.agents.entries()].filter(([id]) => cast.includes(id));
+    sockets.broadcastDelta({ agents: Object.fromEntries(crew), dirtyChunks: {}, events: [], sandbox: sandbox.state }, simLoop.getTick()); return;
+  }
+  if (templeDefenseActive(current) && (world.agents.get(current!.actor)?.controller || simLoop.isRunning())) {
+    const crew = [...world.agents.entries()].filter(([id]) => TEMPLE_DEFENSE.cast.some(role => role === id));
     sockets.broadcastDelta({ agents: Object.fromEntries(crew), dirtyChunks: {}, events: [], sandbox: sandbox.state }, simLoop.getTick()); return;
   }
   const controlled = [...world.agents.entries()].filter(([, agent]) => agent.controller || agent.currentAction?.parameters.workday && sandbox.life.film.state?.scene === 'm1_boss' || agent.currentAction?.parameters.hotelGuide && sandbox.life.film.state?.hotel || agent.currentAction?.parameters.welcome && sandbox.life.film.state?.scene === 'm1_pills' || agent.currentAction?.parameters.meeting && ['m1_bridge', 'm1_bug'].includes(sandbox.life.film.state?.scene ?? '') || agent.currentAction?.parameters.pills && sandbox.life.film.state?.scene === 'm1_pills' || agent.currentAction?.parameters.interrogation && sandbox.life.film.state?.scene === 'm1_interrogation' || (sandbox.life.film.state?.ride?.phase === 'riding' || sandbox.life.film.state?.hammer?.phase === 'riding' || sandbox.life.film.state?.logos?.phase === 'riding') && agent.currentAction?.parameters.passenger || current?.scene === 'm2_trucks' && !current.visiting && current.trucks?.phase === 'rescue' && agent.currentAction?.parameters.truckRescue || (current?.scene === 'm3_rain' || current?.scene === 'm3_surrender') && !current.visiting && ['neo', 'smith'].includes(agent.id) && agent.currentAction?.parameters.smithFinale);

@@ -323,16 +323,17 @@ test('the saved reunion kiss keeps the actual noses and cheeks outside the other
   }
 });
 
-test('the temple huddle keeps both delivered boot soles grounded and faces outside the other actor', async t => {
+test('the standing temple embrace retains actual sole, back and face contacts through the saved handoff', async t => {
   const h = await fixture(t), center = FILM_SETS.film_zion_temple.center;
-  for (const elapsed of [.1, 1.582, 4.8]) {
+  let waiting: number[][] | undefined;
+  for (const [phase, elapsed] of [['breach', 0], ['breach', .7], ['breach', 1.4], ['breach', 8.2], ['waiting', 0], ['waiting', 4.8], ['done', 0]] as const) {
     for (const role of ['link', 'zee'] as const) {
       const at = templeCastRoot(role), rig = h.rigs[role];
       rig.root.position.set(center.x + at.x, center.y - 1, center.z + at.z); rig.root.rotation.set(0, at.yaw, 0);
       h.models.animate(rig, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true,
-        templeDefense: { role, phase: 'waiting', elapsed, turn: 1, grip: 0 } }, 0);
+        templeDefense: { role, phase, elapsed, turn: 1, grip: 0 } }, 0);
     }
-    for (const role of ['link', 'zee'] as const) poseTempleDefense(h.rigs[role], { role, phase: 'waiting', elapsed, turn: 1, grip: 0 }, h.rigs[role === 'link' ? 'zee' : 'link']);
+    for (const role of ['link', 'zee'] as const) poseTempleDefense(h.rigs[role], { role, phase, elapsed, turn: 1, grip: 0 }, h.rigs[role === 'link' ? 'zee' : 'link']);
     for (const role of ['link', 'zee'] as const) {
       let low = Infinity;
       h.rigs[role].detail.traverseVisible(object => {
@@ -340,6 +341,11 @@ test('the temple huddle keeps both delivered boot soles grounded and faces outsi
         object.skeleton.update(); low = Math.min(low, new THREE.Box3().setFromObject(object, true).min.y);
       });
       assert.ok(Math.abs(low - (center.y - 1)) < .04, `${role}/${elapsed}: actual sole floats or crosses the temple floor by ${low - center.y + 1}`);
+      if (phase !== 'breach' || elapsed >= 1.4) for (const left of [false, true]) {
+        const contact = reunionBackContact(h.rigs[role === 'link' ? 'zee' : 'link'], left);
+        const gap = Math.min(...handPoints(h.rigs[role], left).map(point => point.distanceTo(contact)));
+        assert.ok(gap < .12, `${phase}/${elapsed}/${role}/${left}: delivered palm misses the partner's clothes by ${gap}`);
+      }
     }
     const a = faceSurface(h.rigs.link, 'link'), b = faceSurface(h.rigs.zee, 'zee');
     try {
@@ -349,10 +355,14 @@ test('the temple huddle keeps both delivered boot soles grounded and faces outsi
           if (!other.bounds.containsPoint(point)) continue;
           const direction = point.clone().sub(head).normalize(), hit = new THREE.Raycaster(point, direction, .0001, .35).intersectObject(other.group, true)[0];
           assert.ok(!hit || hit.face!.normal.dot(direction) <= .001 || hit.distance <= .025,
-            `${elapsed}/${role}: huddle face penetrates the other actor by ${hit?.distance}`);
+            `${phase}/${elapsed}/${role}: embracing face penetrates the other actor by ${hit?.distance}`);
         }
       }
     } finally { a.dispose(); b.dispose(); }
+    const transforms: number[][] = [];
+    for (const rig of Object.values(h.rigs)) rig.root.traverse(object => { if (object instanceof THREE.Bone) transforms.push(object.matrixWorld.toArray()); });
+    if (phase === 'waiting') waiting = transforms;
+    if (phase === 'done') assert.deepEqual(transforms, waiting, 'finishing the waiting line cannot abruptly drop the embrace');
   }
 });
 

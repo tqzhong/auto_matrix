@@ -84,15 +84,21 @@ test('Zee’s performed arms remain visible from her eye while her head is hidde
   renderer.setPlayer('zee', false); renderer.update(0, h.camera, 0); assert.equal(head.visible, true, 'V restores the head in third person');
 });
 
-test('Lock’s saved city breach camera sees the drill through the entrance and both crouching companions in wide and portrait views', t => {
+test('Lock’s saved city breach camera sees the exposed drill and both standing companions in wide and portrait views', t => {
   const h = fixture(t, 'lock'), center = FILM_SETS.film_zion_temple.center, root = new THREE.Group();
   root.position.set(center.x, center.y - 1, center.z); const renderer = new ZionHomecomingRenderer(root, 'film_zion_temple'); t.after(() => renderer.dispose());
   renderer.update({ scene: 'm3_temple_breach', step: 1, completed: [], templeBreach: { phase: 'breach', elapsed: 3.8 } } as any, 0); root.updateMatrixWorld(true);
   for (const aspect of [16 / 9, .65]) for (const phase of ['breach', 'waiting'] as const) {
     h.camera.aspect = aspect; h.controls.possess(h.state); h.step({ role: 'lock', phase, elapsed: 3.8, turn: 1, grip: 0 });
+    if (phase === 'breach') for (const role of ['citizen_15', 'citizen_16']) {
+      const at = templeCastRoot(role, true), head = new THREE.Vector3(center.x + at.x, center.y + 2.3, center.z + at.z);
+      assert.ok(head.sub(h.camera.position).dot(h.camera.getWorldDirection(new THREE.Vector3())) < -.6,
+        `${aspect}: ${role}'s near head intrudes into the city cutaway`);
+    }
     const drill = root.getObjectByName('temple-city-digger')!;
-    const targets = phase === 'breach' ? [new THREE.Vector3(center.x, center.y + 23, center.z - 105), drill.localToWorld(new THREE.Vector3(0, 8.5, 0))]
-      : ['link', 'zee'].map(role => { const at = templeCastRoot(role); return new THREE.Vector3(center.x + at.x, center.y + 1.65, center.z + at.z); });
+    // The upper drive remains behind the physical ceiling; the exposed cutting cone is the visible subject.
+    const targets = phase === 'breach' ? [drill.localToWorld(new THREE.Vector3(0, -4, 0)), drill.localToWorld(new THREE.Vector3(0, 0, 0))]
+      : ['link', 'zee'].map(role => { const at = templeCastRoot(role); return new THREE.Vector3(center.x + at.x, center.y + 2.75, center.z + at.z); });
     for (const target of targets) {
       const point = target.clone().project(h.camera); assert.ok(Math.abs(point.x) < .9 && Math.abs(point.y) < .85 && point.z > -1 && point.z < 1, `${aspect}/${phase}: subject outside frame ${point.toArray()}`);
       const ray = target.clone().sub(h.camera.position);
