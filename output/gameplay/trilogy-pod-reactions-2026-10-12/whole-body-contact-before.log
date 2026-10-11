@@ -1,0 +1,28 @@
+TAP version 13
+# Subtest: the falling skin meets the real runoff channel without sinking through its rendered surface
+not ok 1 - the falling skin meets the real runoff channel without sinking through its rendered surface
+  ---
+  duration_ms: 3033.830792
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/pod-connection-contact.test.mts:1:45986'
+  failureType: 'testCodeFailure'
+  error: 'the real skin must rest on the chute rather than hovering or cutting through it: [{"elapsed":5.2,"minimum":-0.48416451429450547,"maximumPenetration":0.48416451429450547,"samples":30},{"elapsed":5.8,"minimum":-0.004362819250530947,"maximumPenetration":0.004362819250530947,"samples":30},{"elapsed":6.4,"minimum":0.11728251636216669,"maximumPenetration":0,"samples":30},{"elapsed":6.6,"minimum":0.08293417728111763,"maximumPenetration":0,"samples":28}]'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/pod-connection-contact.test.mts:758:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3720.765959

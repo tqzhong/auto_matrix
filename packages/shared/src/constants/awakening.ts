@@ -48,6 +48,17 @@ export function mirrorGuideProgress(point: { x: number; z: number }): number {
   return progress;
 }
 export const POD_WATER_DROP = 18;
+export const POD_RUNOFF = { startZ: -6, endZ: 12, halfWidth: 3.2, rows: 32, columns: 16, bank: .17 } as const;
+/** Height of the actual triangulated chute, including its curved side banks. */
+export function podRunoffHeight(x: number, z: number): number | undefined {
+  const { startZ, endZ, halfWidth, rows, columns, bank } = POD_RUNOFF;
+  if (Math.abs(x) > halfWidth || z < startZ || z > endZ) return undefined;
+  const row = (z - startZ) / (endZ - startZ) * rows, column = (x + halfWidth) / (2 * halfWidth) * columns;
+  const a = Math.min(rows - 1, Math.floor(row)), b = Math.min(columns - 1, Math.floor(column));
+  const x0 = (b / columns - .5) * 2 * halfWidth, x1 = ((b + 1) / columns - .5) * 2 * halfWidth;
+  return -1 - POD_WATER_DROP * (a * a + ((a + 1) ** 2 - a * a) * (row - a)) / (rows * rows)
+    + bank * (x0 * x0 + (x1 * x1 - x0 * x0) * (column - b));
+}
 export const POD_RESCUE = { immersion: 1.8, descend: 1, secured: 1.65, hoisted: 5, cleared: 7, closed: 7.8, lowered: 8.6, release: 9.4, fade: 13,
   hatch: { x: 0, y: 0, z: 12, half: 2.8 } } as const;
 export const POD_BREATHER = { mouth: { x: 0, y: -.12, z: .267 }, radius: .085, anchor: { x: -1.5, y: 1.9, z: -14.8 },

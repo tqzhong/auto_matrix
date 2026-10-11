@@ -3086,6 +3086,7 @@ test('the pod reveal frames Neo in the tank and V opens at the immersed eye line
 
 test('the rescue camera stays clear of the cultivation towers throughout the lift', t => {
   const game = setup(t, Math.PI); const center = FILM_SETS.film_power_plant_pods.center;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   game.state.currentLocation = 'film_power_plant_pods'; game.state.isInMatrix = false;
   game.state.currentAction = { type: 'idle', parameters: { filmPose: 'lift', player: true }, startedAt: 0, duration: 1, progress: 0 };
   const root = new THREE.Group(); root.position.set(center.x, center.y - 1, center.z);

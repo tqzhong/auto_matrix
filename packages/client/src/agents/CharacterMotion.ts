@@ -47,6 +47,7 @@ export interface MotionInput {
   podWake?: number;
   podEmergence?: number;
   podBreather?: number;
+  podDisconnect?: number;
   podRescue?: number;
   mirrorBeat?: number;
   mirrorEntry?: import('@auto_matrix/shared').AwakeningBeat;
@@ -1119,7 +1120,7 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     const afloat = input.performance === 'float'; const raised = input.performance === 'lift';
     const held = raised ? podRescuePose(input.podRescue ?? 5).grip : 0;
     const scull = afloat || raised ? 1 - held : 0;
-    const clock = input.podRescue ?? state.time;
+    const clock = input.podRescue ?? (input.podDisconnect === undefined ? state.time : Math.max(0, input.podDisconnect - 9));
     arms[i].shoulder = -.5 + Math.sin(clock * 2 + i) * .2 * scull;
     arms[i].elbow = mix(-.7, -.18, held); arms[i].outward = (i ? 1 : -1) * (afloat || raised ? .72 : .25); arms[i].grip = .1;
     legs[i].hip = mix(-.2, i ? -.08 : .12, held);

@@ -1,0 +1,47 @@
+TAP version 13
+# Subtest: the actual pod body stays continuous when support gives way, floating begins and the winch arrives
+ok 1 - the actual pod body stays continuous when support gives way, floating begins and the winch arrives
+  ---
+  duration_ms: 1030.316542
+  type: 'test'
+  ...
+# Subtest: the floating body restores the saved bones instead of continuing a generic idle animation
+    # Subtest: a cold model restores the same floating body
+    ok 1 - a cold model restores the same floating body
+      ---
+      duration_ms: 419.903292
+      type: 'test'
+      ...
+    1..1
+ok 2 - the floating body restores the saved bones instead of continuing a generic idle animation
+  ---
+  duration_ms: 923.8685
+  type: 'test'
+  ...
+# Subtest: the falling and floating eye camera uses the actual head and preserves free observation
+ok 3 - the falling and floating eye camera uses the actual head and preserves free observation
+  ---
+  duration_ms: 1309.872541
+  type: 'test'
+  ...
+# Subtest: the falling skin meets the real runoff channel without sinking through its rendered surface
+ok 4 - the falling skin meets the real runoff channel without sinking through its rendered surface
+  ---
+  duration_ms: 2501.62775
+  type: 'test'
+  ...
+# Subtest: Neo recoils with the real cervical needle withdrawal and settles before losing support
+ok 5 - Neo recoils with the real cervical needle withdrawal and settles before losing support
+  ---
+  duration_ms: 1376.947209
+  type: 'test'
+  ...
+1..5
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 8156.93525
