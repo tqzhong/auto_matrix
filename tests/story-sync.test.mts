@@ -16,7 +16,7 @@ const waitFor = async (ready: () => boolean, description: string, timeout = 5000
   }
 };
 
-async function server(t: TestContext, elapsed: number, scene = 'm1_mirror') {
+async function server(t: TestContext, elapsed: number, scene = 'm1_mirror', epiloguePhase = 'retreat') {
   const directory = execFileSync(process.execPath, ['--import', 'tsx', 'scripts/film-review-fixture.mts', scene,
     scene === 'm3_deus' ? 'deus-cabling' : scene === 'm3_farewell' ? 'farewell-goodbye' : scene === 'm3_rain' ? 'smith-air'
       : scene === 'm3_surrender' ? 'smith-assimilation' : 'mirror-thread'], { cwd: root, encoding: 'utf8' }).trim();
@@ -55,6 +55,10 @@ async function server(t: TestContext, elapsed: number, scene = 'm1_mirror') {
     Object.assign(checkpoint.sandbox.neoLife, { day: 7, money: 1320, energy: 47, doubt: 63, philosophy: { agency: 6, care: 8, trust: 5 },
       evidence: ['black-cat', 'office-loop'], choices: { neo_eyes: 'burned', architect_door: 'matrix', oracle_first: 'care' },
       journal: [{ day: 6, time: 15000, title: '冷重启前的生活记录', text: '已经作出的选择不能被片段重建覆盖。' }] });
+  } else if (scene === 'm3_ceasefire') {
+    Object.assign(checkpoint.sandbox.neoLife.journey, { step: epiloguePhase === 'retreat' ? 1 : 2,
+      epilogue: { kind: 'ceasefire', phase: epiloguePhase, elapsed, total: elapsed + 8 } });
+    Object.assign(checkpoint.agents.kid, { position: filmPosition('film_zion_temple', 0, epiloguePhase === 'retreat' ? -30 : 14), health: 61 });
   } else if (scene === 'm3_deus') {
     Object.assign(checkpoint.sandbox.neoLife.journey.deus, { elapsed, total: 9.4 + elapsed });
   } else if (scene === 'm3_rain' || scene === 'm3_surrender') {
@@ -436,6 +440,31 @@ for (const [scene, phase, elapsed] of [['m3_rain', 'air_dodge', .2], ['m3_surren
     next.socket.emit('message', { type: 'resume', data: {} });
     await waitFor(() => ((next.state().agents.neo.currentAction?.parameters.smithFinale as SmithFinaleEncounter | undefined)?.total ?? 0) > encounter.total, 'the restored Smith beat did not resume');
     assert.equal((next.state().agents.neo.currentAction!.parameters.smithFinale as SmithFinaleEncounter).phase, phase);
+  });
+}
+
+for (const phase of ['retreat', 'embrace']) {
+  test(`a real ceasefire restart preserves the paused ${phase} before anyone possesses Kid`, { timeout: 30000 }, async t => {
+    const h = await server(t, 1.4, 'm3_ceasefire', phase), client = await h.connect();
+    client.socket.emit('message', { type: 'play_as', data: { agentId: 'kid' } });
+    await waitFor(() => Boolean(client.state().agents.kid.currentAction?.parameters.epilogue), 'Kid did not enter the saved performance');
+    client.socket.emit('message', { type: 'pause' });
+    await waitFor(() => client.state().simulation?.running === false, 'the ceasefire did not pause');
+    client.socket.emit('message', { type: 'leave_character' });
+    await waitFor(() => client.messages.some(message => message.type === 'player_state' && (message.data as { agentId?: string | null }).agentId === null), 'Kid was not released');
+    const before = await (await fetch(`${h.base}/api/world`)).json() as WorldStateFull;
+    assert.equal(before.sandbox!.neoLife!.journey!.epilogue!.phase, phase);
+    assert.ok(before.agents.kid.currentAction?.parameters.epilogue);
+    const restored = await h.restart(), cold = await (await fetch(`${restored.base}/api/world`)).json() as WorldStateFull;
+    assert.deepEqual(cold.sandbox, before.sandbox, 'a restart cannot advance the report or award its outcome');
+    assert.deepEqual(cold.agents, before.agents, 'a cold observer must see Kid and the same four survivor poses');
+    assert.equal(cold.simulation!.running, false); assert.equal(cold.simulation!.tick, before.simulation!.tick);
+    const next = await restored.connect(); next.socket.emit('message', { type: 'play_as', data: { agentId: 'kid' } });
+    await waitFor(() => Boolean(next.state().agents.kid.controller), 'Kid was not reconnected');
+    assert.deepEqual(next.state().agents.kid.currentAction, before.agents.kid.currentAction);
+    next.socket.emit('message', { type: 'resume' });
+    await waitFor(() => (next.state().agents.kid.currentAction?.parameters.epilogue?.elapsed ?? 0) > before.sandbox!.neoLife!.journey!.epilogue!.elapsed,
+      'the restored performance did not continue from the saved beat');
   });
 }
 

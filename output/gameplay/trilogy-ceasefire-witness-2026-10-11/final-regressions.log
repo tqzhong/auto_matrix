@@ -1,0 +1,715 @@
+TAP version 13
+# Unable to load the Zion audience TypeError: Failed to parse URL from /assets/characters/zion-crowd-male.glb
+#     at new Request (node:internal/deps/undici/undici:9929:19)
+#     at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#     ... 6 lines matching cause stack trace ...
+#     at Array.map (<anonymous>)
+#     at new ZionCrowdRenderer (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/engine/ZionCrowdRenderer.ts:39:49) {
+#   [cause]: TypeError: Invalid URL
+#       at new URL (node:internal/url:818:25)
+#       at new Request (node:internal/deps/undici/undici:9927:25)
+#       at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#       at GLTFLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/examples/jsm/loaders/GLTFLoader.js:241:10)
+#       at file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44711:10
+#       at new Promise (<anonymous>)
+#       at GLTFLoader.loadAsync (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44709:10)
+#       at ZionCrowdRenderer.load (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/engine/ZionCrowdRenderer.ts:44:42)
+#       at <anonymous> (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/engine/ZionCrowdRenderer.ts:39:65)
+#       at Array.map (<anonymous>) {
+#     code: 'ERR_INVALID_URL',
+#     input: '/assets/characters/zion-crowd-male.glb'
+#   }
+# }
+# Subtest: the withdrawal shot keeps all eighteen machines in frame instead of cutting off their ascent, without scenery blocking the central machine
+ok 1 - the withdrawal shot keeps all eighteen machines in frame instead of cutting off their ascent, without scenery blocking the central machine
+  ---
+  duration_ms: 926.365334
+  type: 'test'
+  ...
+# Subtest: the real post-breach withdrawal is visible beyond the completed temple roof and drilling machine
+ok 2 - the real post-breach withdrawal is visible beyond the completed temple roof and drilling machine
+  ---
+  duration_ms: 1834.823083
+  type: 'test'
+  ...
+# Subtest: retreating bodies pass through the existing roof bore after the drill has withdrawn
+ok 3 - retreating bodies pass through the existing roof bore after the drill has withdrawn
+  ---
+  duration_ms: 639.755125
+  type: 'test'
+  ...
+# Subtest: V looks toward the remaining withdrawal and exit, while the player can freely follow the ascent and retain that look
+ok 4 - V looks toward the remaining withdrawal and exit, while the player can freely follow the ascent and retain that look
+  ---
+  duration_ms: 238.265417
+  type: 'test'
+  ...
+# Subtest: the report and reunion shot faces the audience and keeps Kid, both pairs and the nearest listeners in wide and narrow frames
+ok 5 - the report and reunion shot faces the audience and keeps Kid, both pairs and the nearest listeners in wide and narrow frames
+  ---
+  duration_ms: 239.786209
+  type: 'test'
+  ...
+# Subtest: Kid sees the last withdrawing wave and then its exit, without aiming through the opaque temple roof
+ok 6 - Kid sees the last withdrawing wave and then its exit, without aiming through the opaque temple roof
+  ---
+  duration_ms: 543.937375
+  type: 'test'
+  ...
+# Subtest: the ceasefire first-person camera uses Kid’s actual head and preserves mouse turning after the report
+ok 7 - the ceasefire first-person camera uses Kid’s actual head and preserves mouse turning after the report
+  ---
+  duration_ms: 132.180917
+  type: 'test'
+  ...
+# Subtest: the retreat formation keeps separate hulls while converging into the roof opening
+ok 8 - the retreat formation keeps separate hulls while converging into the roof opening
+  ---
+  duration_ms: 39.051041
+  type: 'test'
+  ...
+# Subtest: the converged machines ascend nose first with their arms trailing below the hull
+ok 9 - the converged machines ascend nose first with their arms trailing below the hull
+  ---
+  duration_ms: 90.464917
+  type: 'test'
+  ...
+# Subtest: the rendered hulls and trailing arms remain inside the clear bore while crossing the roof slab
+ok 10 - the rendered hulls and trailing arms remain inside the clear bore while crossing the roof slab
+  ---
+  duration_ms: 642.724959
+  type: 'test'
+  ...
+# Subtest: the withdrawing sentinels use the saved clock across pause, reload and reverse seeking
+ok 11 - the withdrawing sentinels use the saved clock across pause, reload and reverse seeking
+  ---
+  duration_ms: 44.24525
+  type: 'test'
+  ...
+# Subtest: a full withdrawal swarm shares geometry and releases its instance buffers after leaving
+ok 12 - a full withdrawal swarm shares geometry and releases its instance buffers after leaving
+  ---
+  duration_ms: 34.523083
+  type: 'test'
+  ...
+# Subtest: survivors approach continuously when the announcement becomes a reunion
+ok 13 - survivors approach continuously when the announcement becomes a reunion
+  ---
+  duration_ms: 500.181666
+  type: 'test'
+  ...
+# Subtest: a saved reunion waits when occupied and preserves a dead survivor’s body
+ok 14 - a saved reunion waits when occupied and preserves a dead survivor’s body
+  ---
+  duration_ms: 152.733583
+  type: 'test'
+  ...
+# Subtest: both delivered face surfaces stay apart throughout the reunion
+ok 15 - both delivered face surfaces stay apart throughout the reunion
+  ---
+  duration_ms: 3891.83925
+  type: 'test'
+  ...
+# Subtest: the actual palms rest on the partner’s clothing rather than hanging behind it
+ok 16 - the actual palms rest on the partner’s clothing rather than hanging behind it
+  ---
+  duration_ms: 2381.185667
+  type: 'test'
+  ...
+# Subtest: paused reunion hands do not drift with render time
+ok 17 - paused reunion hands do not drift with render time
+  ---
+  duration_ms: 2090.308583
+  type: 'test'
+  ...
+# Subtest: the current Kid frame drives the reunion across an older world phase
+ok 18 - the current Kid frame drives the reunion across an older world phase
+  ---
+  duration_ms: 1687.24025
+  type: 'test'
+  ...
+# Subtest: the delivered boots retain a support sole during approach and both soles during the embrace
+ok 19 - the delivered boots retain a support sole during approach and both soles during the embrace
+  ---
+  duration_ms: 1772.5575
+  type: 'test'
+  ...
+# Subtest: Sati wears a pale sleeved jacket in Mobil, and restores her checked dress when she leaves it
+ok 20 - Sati wears a pale sleeved jacket in Mobil, and restores her checked dress when she leaves it
+  ---
+  duration_ms: 2150.751541
+  type: 'test'
+  ...
+# Subtest: Sati waits on her side with closed eyes, then gathers her legs and plants her hands before standing
+ok 21 - Sati waits on her side with closed eyes, then gathers her legs and plants her hands before standing
+  ---
+  duration_ms: 2530.915625
+  type: 'test'
+  ...
+# Subtest: Oracle and Sati have a front hairline while their detailed assets load
+ok 22 - Oracle and Sati have a front hairline while their detailed assets load
+  ---
+  duration_ms: 689.665208
+  type: 'test'
+  ...
+# Subtest: Zee and Charra load their own continuous heads without changing a saved actor pose
+ok 23 - Zee and Charra load their own continuous heads without changing a saved actor pose
+  ---
+  duration_ms: 900.7085
+  type: 'test'
+  ...
+# Subtest: the two dock fighters have exposed articulated arms rather than their old full sleeves
+ok 24 - the two dock fighters have exposed articulated arms rather than their old full sleeves
+  ---
+  duration_ms: 64.647125
+  type: 'test'
+  ...
+# Subtest: the shipped dock heads and clothing retain belt contact, deck clearance and Charra’s closed eyes after the attack
+ok 25 - the shipped dock heads and clothing retain belt contact, deck clearance and Charra’s closed eyes after the attack
+  ---
+  duration_ms: 2565.747625
+  type: 'test'
+  ...
+# Subtest: the shipped Oracle head closes its eyelids and a late load recomputes support without moving the saved root
+ok 26 - the shipped Oracle head closes its eyelids and a late load recomputes support without moving the saved root
+  ---
+  duration_ms: 1086.491625
+  type: 'test'
+  ...
+# Subtest: paused Sati waking reuses the support calculation for its unchanged saved pose
+ok 27 - paused Sati waking reuses the support calculation for its unchanged saved pose
+  ---
+  duration_ms: 30338.442042
+  type: 'test'
+  ...
+# Subtest: Sati’s visible legs stay inside the dress above its hem during walking
+ok 28 - Sati’s visible legs stay inside the dress above its hem during walking
+  ---
+  duration_ms: 2772.546042
+  type: 'test'
+  ...
+# Subtest: Sati’s skirt stays attached to the bodice while the torso sways
+ok 29 - Sati’s skirt stays attached to the bodice while the torso sways
+  ---
+  duration_ms: 37.835125
+  type: 'test'
+  ...
+# Subtest: the folded waking dress covers the actual upper thighs through the waist bend
+ok 30 - the folded waking dress covers the actual upper thighs through the waist bend
+  ---
+  duration_ms: 299.396084
+  type: 'test'
+  ...
+# Subtest: the epilogue scalp does not grow hair across the visible ear surfaces
+ok 31 - the epilogue scalp does not grow hair across the visible ear surfaces
+  ---
+  duration_ms: 311.083125
+  type: 'test'
+  ...
+# Subtest: shutdown during memories loading must preserve the last complete world and memories
+ok 32 - shutdown during memories loading must preserve the last complete world and memories
+  ---
+  duration_ms: 2450.364709
+  type: 'test'
+  ...
+# Subtest: shutdown during checkpoint loading must preserve the last complete world and memories
+ok 33 - shutdown during checkpoint loading must preserve the last complete world and memories
+  ---
+  duration_ms: 2168.395958
+  type: 'test'
+  ...
+# Subtest: shutdown after a rejected checkpoint preserves the original file for recovery
+ok 34 - shutdown after a rejected checkpoint preserves the original file for recovery
+  ---
+  duration_ms: 2164.569542
+  type: 'test'
+  ...
+# Subtest: a fully loaded server saves and resumes the same story, memories and relationships across restarts
+ok 35 - a fully loaded server saves and resumes the same story, memories and relationships across restarts
+  ---
+  duration_ms: 4102.038375
+  type: 'test'
+  ...
+# Subtest: a first startup without a world checkpoint still saves a usable new world
+ok 36 - a first startup without a world checkpoint still saves a usable new world
+  ---
+  duration_ms: 3188.608584
+  type: 'test'
+  ...
+# Subtest: a paused world keeps its clock, selected speed and story across a server restart
+ok 37 - a paused world keeps its clock, selected speed and story across a server restart
+  ---
+  duration_ms: 3616.934541
+  type: 'test'
+  ...
+# Subtest: a running world restarts running at its selected speed instead of being saved as paused by shutdown
+ok 38 - a running world restarts running at its selected speed instead of being saved as paused by shutdown
+  ---
+  duration_ms: 2792.1805
+  type: 'test'
+  ...
+# Subtest: an explicit pause reaches the atomic world checkpoint before the process shuts down
+ok 39 - an explicit pause reaches the atomic world checkpoint before the process shuts down
+  ---
+  duration_ms: 1580.308416
+  type: 'test'
+  ...
+# Subtest: a paused ground retry restores and saves the checkpoint without restarting time or allowing other actions
+ok 40 - a paused ground retry restores and saves the checkpoint without restarting time or allowing other actions
+  ---
+  duration_ms: 3032.519083
+  type: 'test'
+  ...
+# Subtest: a paused pit retry restores and saves the checkpoint without restarting time or allowing other actions
+ok 41 - a paused pit retry restores and saves the checkpoint without restarting time or allowing other actions
+  ---
+  duration_ms: 2862.293042
+  type: 'test'
+  ...
+# Subtest: invalid saved time controls are rejected without overwriting the recoverable checkpoint
+ok 42 - invalid saved time controls are rejected without overwriting the recoverable checkpoint
+  ---
+  duration_ms: 663.189791
+  type: 'test'
+  ...
+# Subtest: a real server restart preserves an unfinished NPC conversation and replays it only to the reconnecting page
+ok 43 - a real server restart preserves an unfinished NPC conversation and replays it only to the reconnecting page
+  ---
+  duration_ms: 3929.42675
+  type: 'test'
+  ...
+# Subtest: legacy talk actions without a saved conversation are released instead of stranding their participants
+ok 44 - legacy talk actions without a saved conversation are released instead of stranding their participants
+  ---
+  duration_ms: 1371.483917
+  type: 'test'
+  ...
+# Subtest: a new conversation checkpoint also preserves NPCs still approaching their conversation partner
+ok 45 - a new conversation checkpoint also preserves NPCs still approaching their conversation partner
+  ---
+  duration_ms: 1281.682125
+  type: 'test'
+  ...
+# Subtest: invalid saved NPC dialogue is rejected without replacing the recoverable world
+ok 46 - invalid saved NPC dialogue is rejected without replacing the recoverable world
+  ---
+  duration_ms: 494.440417
+  type: 'test'
+  ...
+# Subtest: fast Hammer handover packets keep Ghost, Morpheus and the saved clock together between world ticks
+ok 47 - fast Hammer handover packets keep Ghost, Morpheus and the saved clock together between world ticks
+  ---
+  duration_ms: 2792.256833
+  type: 'test'
+  ...
+# Subtest: every fast Mobil lifting packet carries the suitcase clock and all five bodies before the slow world tick
+ok 48 - every fast Mobil lifting packet carries the suitcase clock and all five bodies before the slow world tick
+  ---
+  duration_ms: 2557.90075
+  type: 'test'
+  ...
+# Subtest: a real mid-grasp Mobil restart keeps the suitcase and five paused poses without replaying the lift or healing the family
+ok 49 - a real mid-grasp Mobil restart keeps the suitcase and five paused poses without replaying the lift or healing the family
+  ---
+  duration_ms: 5241.811666
+  type: 'test'
+  ...
+# Subtest: every fast Mobil family packet carries the reply clock and all four bodies before the next world tick
+ok 50 - every fast Mobil family packet carries the reply clock and all four bodies before the next world tick
+  ---
+  duration_ms: 2470.636958
+  type: 'test'
+  ...
+# Subtest: a real Mobil family restart keeps the paused answer and all four poses before possession without awarding the topic twice
+ok 51 - a real Mobil family restart keeps the paused answer and all four poses before possession without awarding the topic twice
+  ---
+  duration_ms: 3626.077167
+  type: 'test'
+  ...
+# Subtest: every fast primary-station packet carries the charge clock and both bodies before the next world tick
+ok 52 - every fast primary-station packet carries the charge clock and both bodies before the next world tick
+  ---
+  duration_ms: 2125.445583
+  type: 'test'
+  ...
+# Subtest: a real primary-station restart restores the paused mounting pose before possession and requires renewed held input
+ok 53 - a real primary-station restart restores the paused mounting pose before possession and requires renewed held input
+  ---
+  duration_ms: 4548.42825
+  type: 'test'
+  ...
+# Subtest: a paused performance publishes its exact story clock together with the stopped world and restores it on reconnect
+ok 54 - a paused performance publishes its exact story clock together with the stopped world and restores it on reconnect
+  ---
+  duration_ms: 2117.381167
+  type: 'test'
+  ...
+# Subtest: a real machine-core restart preserves the paused connection before possession and settles only after renewed consent
+ok 55 - a real machine-core restart preserves the paused connection before possession and settles only after renewed consent
+  ---
+  duration_ms: 13739.808959
+  type: 'test'
+  ...
+# Subtest: every fast Smith finale packet carries both bodies at the same saved clock during air_dodge
+ok 56 - every fast Smith finale packet carries both bodies at the same saved clock during air_dodge
+  ---
+  duration_ms: 1581.664083
+  type: 'test'
+  ...
+# Subtest: a real Smith finale restart restores both paused bodies during air_dodge before possession
+ok 57 - a real Smith finale restart restores both paused bodies during air_dodge before possession
+  ---
+  duration_ms: 2645.313958
+  type: 'test'
+  ...
+# Subtest: every fast Smith finale packet carries both bodies at the same saved clock during assimilating
+ok 58 - every fast Smith finale packet carries both bodies at the same saved clock during assimilating
+  ---
+  duration_ms: 1522.473625
+  type: 'test'
+  ...
+# Subtest: a real Smith finale restart restores both paused bodies during assimilating before possession
+ok 59 - a real Smith finale restart restores both paused bodies during assimilating before possession
+  ---
+  duration_ms: 2639.611292
+  type: 'test'
+  ...
+# Subtest: a real ceasefire restart preserves the paused retreat before anyone possesses Kid
+ok 60 - a real ceasefire restart preserves the paused retreat before anyone possesses Kid
+  ---
+  duration_ms: 2349.593208
+  type: 'test'
+  ...
+# Subtest: a real ceasefire restart preserves the paused embrace before anyone possesses Kid
+ok 61 - a real ceasefire restart preserves the paused embrace before anyone possesses Kid
+  ---
+  duration_ms: 2425.452584
+  type: 'test'
+  ...
+# Subtest: the first packet moving Neo into the real-world pod also switches the story, objective and fade state
+ok 62 - the first packet moving Neo into the real-world pod also switches the story, objective and fade state
+  ---
+  duration_ms: 1272.405792
+  type: 'test'
+  ...
+# Subtest: every fast truck-rescue packet carries all three bodies at the same saved clock before the next world tick
+ok 63 - every fast truck-rescue packet carries all three bodies at the same saved clock before the next world tick
+  ---
+  duration_ms: 1650.18025
+  type: 'test'
+  ...
+# Subtest: a real server restart restores the paused airborne crew before possession and continues the rescue exactly once
+ok 64 - a real server restart restores the paused airborne crew before possession and continues the rescue exactly once
+  ---
+  duration_ms: 3804.43775
+  type: 'test'
+  ...
+# Subtest: a real farewell restart preserves both paused bodies and Neo life, then settles Trinity once before the temple breach
+ok 65 - a real farewell restart preserves both paused bodies and Neo life, then settles Trinity once before the temple breach
+  ---
+  duration_ms: 5967.728458
+  type: 'test'
+  ...
+# Subtest: the city has a physical ceiling before the drill breaks through and retains its breach on returning to Zion
+ok 66 - the city has a physical ceiling before the drill breaks through and retains its breach on returning to Zion
+  ---
+  duration_ms: 356.753083
+  type: 'test'
+  ...
+# Subtest: paused and cold-loaded temple destruction render exactly the same physical frame
+ok 67 - paused and cold-loaded temple destruction render exactly the same physical frame
+  ---
+  duration_ms: 363.712834
+  type: 'test'
+  ...
+# Subtest: a new temple entry waits for an explicit start through loading, movement input and save restoration
+ok 68 - a new temple entry waits for an explicit start through loading, movement input and save restoration
+  ---
+  duration_ms: 2646.278625
+  type: 'test'
+  ...
+# Subtest: starting temple preparation waits for occupied companions without consuming or resetting the deadline
+ok 69 - starting temple preparation waits for occupied companions without consuming or resetting the deadline
+  ---
+  duration_ms: 1994.652084
+  type: 'test'
+  ...
+# Subtest: temple fortification prepares artillery; the city breach follows Trinity’s farewell
+ok 70 - temple fortification prepares artillery; the city breach follows Trinity’s farewell
+  ---
+  duration_ms: 0.505125
+  type: 'test'
+  ...
+# Subtest: standing at a temple mounting wheel cannot finish it without holding G
+ok 71 - standing at a temple mounting wheel cannot finish it without holding G
+  ---
+  duration_ms: 199.408417
+  type: 'test'
+  ...
+# Subtest: occupied temple cast freezes fortification and keeps another player’s position
+ok 72 - occupied temple cast freezes fortification and keeps another player’s position
+  ---
+  duration_ms: 348.066917
+  type: 'test'
+  ...
+# Subtest: temple artillery replaces the fictional closing door and its breach animation uses saved time
+ok 73 - temple artillery replaces the fictional closing door and its breach animation uses saved time
+  ---
+  duration_ms: 605.891333
+  type: 'test'
+  ...
+# Subtest: completed legacy temple saves retain completion without replaying the new fortification
+ok 74 - completed legacy temple saves retain completion without replaying the new fortification
+  ---
+  duration_ms: 18.193042
+  type: 'test'
+  ...
+# Subtest: breach dust dissipates during the saved wait and cannot remain as frozen clouds during the ceasefire
+ok 75 - breach dust dissipates during the saved wait and cannot remain as frozen clouds during the ceasefire
+  ---
+  duration_ms: 468.215625
+  type: 'test'
+  ...
+# Subtest: physical artillery and its approach keep the existing podium route traversable
+ok 76 - physical artillery and its approach keep the existing podium route traversable
+  ---
+  duration_ms: 4.347375
+  type: 'test'
+  ...
+# Subtest: both manually secured guns stop the setup deadline; returning to the crowd hands off to Logos
+ok 77 - both manually secured guns stop the setup deadline; returning to the crowd hands off to Logos
+  ---
+  duration_ms: 775.390292
+  type: 'test'
+  ...
+# Subtest: a timed preparation failure retries only the temple and preserves the spent EMP and past casualties
+ok 78 - a timed preparation failure retries only the temple and preserves the spent EMP and past casualties
+  ---
+  duration_ms: 3406.728166
+  type: 'test'
+  ...
+# Subtest: the final city breach freezes on pause and disconnect and returns control to Neo after Link’s wait
+ok 79 - the final city breach freezes on pause and disconnect and returns control to Neo after Link’s wait
+  ---
+  duration_ms: 600.280666
+  type: 'test'
+  ...
+# Subtest: fast temple snapshots carry both the falling city and all performed bodies between slow world ticks
+ok 80 - fast temple snapshots carry both the falling city and all performed bodies between slow world ticks
+  ---
+  duration_ms: 2710.773625
+  type: 'test'
+  ...
+# Subtest: the epilogue reducer preserves authored phase boundaries
+ok 81 - the epilogue reducer preserves authored phase boundaries
+  ---
+  duration_ms: 59.615792
+  type: 'test'
+  ...
+# Subtest: new street resets restore the pavement and bring the cat before Sati rises, while active legacy saves keep their beat
+ok 82 - new street resets restore the pavement and bring the cat before Sati rises, while active legacy saves keep their beat
+  ---
+  duration_ms: 1192.820292
+  type: 'test'
+  ...
+# Subtest: the reset facade blocks a scene revisit and is removed when returning to the saved park
+ok 83 - the reset facade blocks a scene revisit and is removed when returning to the saved park
+  ---
+  duration_ms: 34.30225
+  type: 'test'
+  ...
+# Subtest: Neo remains unresponsive while the transport is waiting or finished without advancing its clock
+ok 84 - Neo remains unresponsive while the transport is waiting or finished without advancing its clock
+  ---
+  duration_ms: 0.20875
+  type: 'test'
+  ...
+# Subtest: the Oracle stays seated while the player considers the Architect’s promise
+ok 85 - the Oracle stays seated while the player considers the Architect’s promise
+  ---
+  duration_ms: 37.120041
+  type: 'test'
+  ...
+# Subtest: the Architect continues along the waterfront while the player waits to welcome Sati
+ok 86 - the Architect continues along the waterfront while the player waits to welcome Sati
+  ---
+  duration_ms: 6.547416
+  type: 'test'
+  ...
+# Subtest: legacy park departures resume from their saved pose without replaying or jumping
+ok 87 - legacy park departures resume from their saved pose without replaying or jumping
+  ---
+  duration_ms: 1.616292
+  type: 'test'
+  ...
+# Subtest: park departure pauses with the world, another player’s cast ownership and a disconnected Oracle
+ok 88 - park departure pauses with the world, another player’s cast ownership and a disconnected Oracle
+  ---
+  duration_ms: 794.744584
+  type: 'test'
+  ...
+# Subtest: Neo’s resting transport action survives later world ticks and serialized park restoration exactly
+ok 89 - Neo’s resting transport action survives later world ticks and serialized park restoration exactly
+  ---
+  duration_ms: 61.739792
+  type: 'test'
+  ...
+# Subtest: Neo transport keeps a phase’s action start while its saved physical motion advances
+ok 90 - Neo transport keeps a phase’s action start while its saved physical motion advances
+  ---
+  duration_ms: 169.115
+  type: 'test'
+  ...
+# Subtest: the Smith ending leaves a persistent real-world body while Kid witnesses the ceasefire
+ok 91 - the Smith ending leaves a persistent real-world body while Kid witnesses the ceasefire
+  ---
+  duration_ms: 2561.668292
+  type: 'test'
+  ...
+# Subtest: reconnecting after the transport can hand off to the Oracle without reviving Neo
+ok 92 - reconnecting after the transport can hand off to the Oracle without reviving Neo
+  ---
+  duration_ms: 1171.08775
+  type: 'test'
+  ...
+# Subtest: ceasefire, Neo transport and dawn form a saved playable epilogue without auto-starting a new cycle
+ok 93 - ceasefire, Neo transport and dawn form a saved playable epilogue without auto-starting a new cycle
+  ---
+  duration_ms: 4193.088834
+  type: 'test'
+  ...
+# Subtest: Kid watches the city during withdrawal and faces the crowd only when delivering the news, including a restored save
+ok 94 - Kid watches the city during withdrawal and faces the crowd only when delivering the news, including a restored save
+  ---
+  duration_ms: 407.780958
+  type: 'test'
+  ...
+# Subtest: Kid keeps the run performed by the player instead of teleporting back to replay it
+ok 95 - Kid keeps the run performed by the player instead of teleporting back to replay it
+  ---
+  duration_ms: 2.683125
+  type: 'test'
+  ...
+# Subtest: the witness walks around the rostrum to the doorway and keeps the actual standing position through withdrawal and reload
+ok 96 - the witness walks around the rostrum to the doorway and keeps the actual standing position through withdrawal and reload
+  ---
+  duration_ms: 101.4745
+  type: 'test'
+  ...
+# Subtest: each dedicated epilogue layer renders and disposes its physical story objects
+ok 97 - each dedicated epilogue layer renders and disposes its physical story objects
+  ---
+  duration_ms: 471.166125
+  type: 'test'
+  ...
+# Subtest: the resetting sidewalk supports the cat and Sati, restores ahead of the paws, and resumes from the saved clock
+ok 98 - the resetting sidewalk supports the cat and Sati, restores ahead of the paws, and resumes from the saved clock
+  ---
+  duration_ms: 174.772459
+  type: 'test'
+  ...
+# Subtest: saved epilogue actions reach NPC animation and carry Neo flat on the machine tray
+ok 99 - saved epilogue actions reach NPC animation and carry Neo flat on the machine tray
+  ---
+  duration_ms: 128.166375
+  type: 'test'
+  ...
+# Subtest: park performers follow the current Oracle frame without advancing a paused clock or overriding an occupied actor
+ok 100 - park performers follow the current Oracle frame without advancing a paused clock or overriding an occupied actor
+  ---
+  duration_ms: 39.333583
+  type: 'test'
+  ...
+# Subtest: the journal exposes the witness, promise and explicit final confirmation
+ok 101 - the journal exposes the witness, promise and explicit final confirmation
+  ---
+  duration_ms: 219.719292
+  type: 'test'
+  ...
+# Subtest: the temple audience uses complete human surfaces rather than cones with floating sphere heads
+ok 102 - the temple audience uses complete human surfaces rather than cones with floating sphere heads
+  ---
+  duration_ms: 665.168792
+  type: 'test'
+  ...
+# Subtest: a paused or cold-loaded ceasefire audience cannot change pose when the same save has a different renderer clock
+ok 103 - a paused or cold-loaded ceasefire audience cannot change pose when the same save has a different renderer clock
+  ---
+  duration_ms: 329.810958
+  type: 'test'
+  ...
+# Subtest: the shipped crowd assets retain textured faces, anatomical hands, separate legs, soles and matching arm morph topology within budget
+ok 104 - the shipped crowd assets retain textured faces, anatomical hands, separate legs, soles and matching arm morph topology within budget
+  ---
+  duration_ms: 97.304417
+  type: 'test'
+  ...
+# Subtest: cotton tops meet the trousers through the cheering poses instead of leaving an empty waist
+ok 105 - cotton tops meet the trousers through the cheering poses instead of leaving an empty waist
+  ---
+  duration_ms: 267.538917
+  type: 'test'
+  ...
+# Subtest: residents turn and raise hands after the report at different times, with planted soles and clear space for players and reunions
+ok 106 - residents turn and raise hands after the report at different times, with planted soles and clear space for players and reunions
+  ---
+  duration_ms: 2462.715709
+  type: 'test'
+  ...
+# Subtest: leaving before either crowd asset loads cannot reattach figures and releases late resources and morph textures exactly once
+ok 107 - leaving before either crowd asset loads cannot reattach figures and releases late resources and morph textures exactly once
+  ---
+  duration_ms: 28.102667
+  type: 'test'
+  ...
+# Subtest: applause has opposing palm contact and an open stroke, without moving the planted soles
+ok 108 - applause has opposing palm contact and an open stroke, without moving the planted soles
+  ---
+  duration_ms: 77.514666
+  type: 'test'
+  ...
+# Subtest: the ceasefire has distinct quiet, cheering and clapping residents, with continuous saved reactions at the reunion boundary
+ok 109 - the ceasefire has distinct quiet, cheering and clapping residents, with continuous saved reactions at the reunion boundary
+  ---
+  duration_ms: 95.738125
+  type: 'test'
+  ...
+# Subtest: homecoming routes, named cast and visible prop footprints agree with collision
+ok 110 - homecoming routes, named cast and visible prop footprints agree with collision
+  ---
+  duration_ms: 21.726958
+  type: 'test'
+  ...
+# Subtest: the temple walking floor has one stone surface instead of coincident dark and stone faces
+ok 111 - the temple walking floor has one stone surface instead of coincident dark and stone faces
+  ---
+  duration_ms: 577.482375
+  type: 'test'
+  ...
+# Subtest: dock and resident actions save concrete supplies and both requests through reload
+ok 112 - dock and resident actions save concrete supplies and both requests through reload
+  ---
+  duration_ms: 151.318541
+  type: 'test'
+  ...
+# Subtest: Zion supplies reach Mifune at the later dock defense only once
+ok 113 - Zion supplies reach Mifune at the later dock defense only once
+  ---
+  duration_ms: 21.702625
+  type: 'test'
+  ...
+# Subtest: all six authored Zion sets have their own geometry and release it after leaving
+ok 114 - all six authored Zion sets have their own geometry and release it after leaving
+  ---
+  duration_ms: 1483.139542
+  type: 'test'
+  ...
+1..114
+# tests 114
+# suites 0
+# pass 114
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 65794.084375

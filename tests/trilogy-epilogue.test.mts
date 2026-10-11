@@ -351,6 +351,30 @@ test('Kid keeps the run performed by the player instead of teleporting back to r
   assert.equal(h.actor().position.z, target.z, 'starting the announcement must not move Kid back to the temple entrance');
 });
 
+test('the witness walks around the rostrum to the doorway and keeps the actual standing position through withdrawal and reload', () => {
+  const h = game(), scene = FILM_SCENE_BY_ID.m3_ceasefire;
+  Object.assign(h.state(), { scene: scene.id, actor: 'kid', step: 1, epilogue: newTrilogyEpilogue('ceasefire') });
+  h.players.possess('p', 'kid', h.tick());
+  const goal = filmStepPosition(scene, scene.steps[1]), threshold = filmPosition(scene.set, 0, -51);
+  assert.ok(Math.abs(goal.z - threshold.z) < 1, 'the objective belongs at the doorway, beyond the rostrum');
+  const path = [[12, -30], [12, -44.65], [0, -44.65], [0, -51]];
+  for (let i = 1; i < path.length; i++) for (let sample = 0; sample <= 100; sample++) {
+    const p = sample / 100, a = path[i - 1], b = path[i];
+    const position = filmPosition(scene.set, a[0] + (b[0] - a[0]) * p, a[1] + (b[1] - a[1]) * p);
+    assert.equal(playerBlocked(position, false, 1.1, h.sandbox.state.structures), false, `path ${i}/${sample} must clear the rostrum and artillery`);
+  }
+  h.actor().position = { ...goal, x: goal.x + .4, z: goal.z + .7 }; const stand = { ...h.actor().position };
+  h.command('act'); assert.equal(h.state().epilogue?.phase, 'retreat');
+  assert.deepEqual(h.actor().position, stand, 'starting the scene cannot teleport Kid to an authored mark');
+  h.frame(40); assert.deepEqual(h.actor().position, stand);
+  const saved = structuredClone(h.sandbox.state); h.players.release('p', h.tick()); h.sandbox.restore(saved);
+  assert.deepEqual(h.world.agents.get('kid')!.position, stand, 'cold observers must see the same stand');
+  h.players.possess('p', 'kid', h.tick()); h.frame(1, false); assert.deepEqual(h.actor().position, stand);
+  delete h.state().epilogue!.witnessOrigin;
+  h.actor().position = filmPosition(scene.set, 0, -30); h.frame(1, false);
+  assert.deepEqual(h.actor().position, filmPosition(scene.set, 0, -30), 'an active legacy save retains its old witness point');
+});
+
 test('each dedicated epilogue layer renders and disposes its physical story objects', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const expectations = [

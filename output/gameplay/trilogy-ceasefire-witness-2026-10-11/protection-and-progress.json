@@ -1,0 +1,56 @@
+{
+  "protectedCount": 273,
+  "changedFiles": [],
+  "main": {
+    "agents": true,
+    "chunks": true,
+    "locations": true,
+    "events": true,
+    "sandbox": true,
+    "simulation": true,
+    "phase": true,
+    "timeOfDay": true
+  },
+  "history": {
+    "completed": true,
+    "choices": true,
+    "reflections": true,
+    "journal": true,
+    "dead": true
+  },
+  "oldCounts": {
+    "completed": 48,
+    "choices": 45,
+    "reflections": 18,
+    "journal": 69
+  },
+  "dead": [
+    "trinity",
+    "smith",
+    "mifune",
+    "soren",
+    "maggie",
+    "bane",
+    "axel",
+    "charra",
+    "agent_thompson",
+    "keymaker"
+  ],
+  "final": {
+    "tick": 13628,
+    "scene": "m3_neo_carried",
+    "step": 0,
+    "encounter": {
+      "kind": "neo_carried",
+      "phase": "ready",
+      "elapsed": 0,
+      "total": 0
+    }
+  },
+  "journal": {
+    "previousCount": 69,
+    "currentCount": 70,
+    "newest": "机器退去",
+    "retainedChronologicalTail": true
+  }
+}

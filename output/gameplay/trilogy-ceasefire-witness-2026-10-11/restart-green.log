@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: a real ceasefire restart preserves the paused retreat before anyone possesses Kid
+ok 1 - a real ceasefire restart preserves the paused retreat before anyone possesses Kid
+  ---
+  duration_ms: 1892.020959
+  type: 'test'
+  ...
+# Subtest: a real ceasefire restart preserves the paused embrace before anyone possesses Kid
+ok 2 - a real ceasefire restart preserves the paused embrace before anyone possesses Kid
+  ---
+  duration_ms: 1481.29875
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4020.654167

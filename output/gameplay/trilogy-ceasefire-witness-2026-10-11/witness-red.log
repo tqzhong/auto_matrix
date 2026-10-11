@@ -1,0 +1,50 @@
+TAP version 13
+# Subtest: Kid sees the last withdrawing wave and then its exit, without aiming through the opaque temple roof
+not ok 1 - Kid sees the last withdrawing wave and then its exit, without aiming through the opaque temple roof
+  ---
+  duration_ms: 1018.293667
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/ceasefire-camera.test.mts:1:8842'
+  failureType: 'testCodeFailure'
+  error: '-30/0: look at the last wave or its exit, 0.30393085617551646,0.12259753978668345,0.9755466355971245'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/ceasefire-camera.test.mts:142:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: the witness walks around the rostrum to the doorway and keeps the actual standing position through withdrawal and reload
+not ok 2 - the witness walks around the rostrum to the doorway and keeps the actual standing position through withdrawal and reload
+  ---
+  duration_ms: 137.62025
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/trilogy-epilogue.test.mts:1:23254'
+  failureType: 'testCodeFailure'
+  error: 'the objective belongs at the doorway, beyond the rostrum'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/trilogy-epilogue.test.mts:359:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4859.780125

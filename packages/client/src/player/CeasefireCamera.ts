@@ -1,6 +1,12 @@
 import * as THREE from 'three';
 import { ceasefireSentinelPose, trilogyEpilogueProgress, type TrilogyEpilogueEncounter } from '@auto_matrix/shared';
 
+/** Watch the final wave until it leaves sight, then hold on the opening below the opaque roof. */
+export function ceasefireWitnessTarget(encounter: TrilogyEpilogueEncounter) {
+  const pose = ceasefireSentinelPose(encounter, 10);
+  return new THREE.Vector3(pose.x, Math.min(pose.y, 30), pose.z);
+}
+
 /** The exterior shot follows the saved swarm rather than staring down at the empty rostrum. */
 export function ceasefireCamera(encounter: TrilogyEpilogueEncounter, aspect: number) {
   if (encounter.phase === 'announcement' || encounter.phase === 'embrace') {

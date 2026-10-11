@@ -489,7 +489,8 @@ export class FilmStorySystem {
       }
       if (trilogyEpilogueLocked(encounter)) {
         const z = encounter.phase === 'running' ? -30 + progress * 44 : ['announcement', 'embrace'].includes(encounter.phase) ? 14 : -30;
-        agent.position = filmPosition(set, 0, z); agent.rotation = encounter.phase === 'retreat' ? Math.PI : 0; agent.velocity = { x: 0, y: 0, z: 0 };
+        const stand = encounter.phase === 'retreat' ? encounter.witnessOrigin : undefined;
+        agent.position = filmPosition(set, stand?.x ?? 0, stand?.z ?? z); agent.rotation = encounter.phase === 'retreat' ? Math.PI : 0; agent.velocity = { x: 0, y: 0, z: 0 };
       }
     } else if (encounter.kind === 'neo_carried') {
       this.placeNeoBody(agent, encounter, tick); return;
@@ -5403,6 +5404,8 @@ export class FilmStorySystem {
       const actor = this.world.agents.get(this.state.actor);
       if (actor?.currentLocation === this.scene!.set) this.placeSmithFinale(actor, this.world.simulationTick);
     }
+    if (this.epilogueKind() && !this.state.visiting && pickupActor?.currentLocation === this.scene!.set)
+      this.placeEpilogue(pickupActor, this.world.simulationTick);
     if (['m3_ceasefire', 'm3_neo_carried', 'm3_reset'].includes(this.state.scene)) this.placeRestoredOracle(this.world.simulationTick);
     const neo = this.world.agents.get('neo');
     if (neo && !neo.controller && (['m3_ceasefire', 'm3_neo_carried', 'm3_reset', 'm3_dawn'].includes(this.state.scene)
@@ -6303,6 +6306,8 @@ export class FilmStorySystem {
       if (target !== 'act') return '站在神庙入口，按 G 留下来确认哨兵撤离。';
       if (!this.near(agent, step)) return '先走到神庙入口，亲眼确认空中的动静。';
       encounter.phase = 'retreat'; encounter.elapsed = 0; encounter.total = 0; state.checkpoint = { ...agent.position };
+      const center = FILM_SETS[this.scene!.set].center;
+      encounter.witnessOrigin = { x: agent.position.x - center.x, z: agent.position.z - center.z };
       state.lastText = '攻击群在半空停住。不要转身；看着最后一批哨兵收起触须，离开锡安竖井。';
       this.placeEpilogue(agent, tick); return state.lastText;
     }

@@ -96,12 +96,14 @@ test('retreating bodies pass through the existing roof bore after the drill has 
   }
 });
 
-test('V looks outward and up toward the saved withdrawal, while the player can freely follow the ascent and retain that look', t => {
+test('V looks toward the remaining withdrawal and exit, while the player can freely follow the ascent and retain that look', t => {
   const h = fixture(t);
   for (const aspect of [16 / 9, .65]) for (const elapsed of [0, 2.6, 4.9]) {
     h.camera.aspect = aspect; h.camera.updateProjectionMatrix(); h.controls.possess(h.state); h.step(elapsed); h.toggle(); h.step(elapsed);
-    const target = h.root.getObjectByName('ceasefire-retreating-sentinel-3')!.getWorldPosition(new THREE.Vector3()), point = target.project(h.camera);
-    assert.ok(Math.abs(point.x) < .9 && Math.abs(point.y) < .8 && point.z > -1 && point.z < 1, `${aspect}/${elapsed}: V must face the machines, ${point.toArray()}`);
+    const target = h.root.getObjectByName('ceasefire-retreating-sentinel-11')!.getWorldPosition(new THREE.Vector3());
+    target.y = Math.min(target.y, FILM_SETS.film_zion_temple.center.y + 29);
+    const point = target.project(h.camera);
+    assert.ok(Math.abs(point.x) < .9 && Math.abs(point.y) < .8 && point.z > -1 && point.z < 1, `${aspect}/${elapsed}: V must face the visible wave or its exit, ${point.toArray()}`);
     h.document.pointerLockElement = h.canvas;
     h.document.dispatchEvent(Object.assign(new Event('mousemove'), { movementX: 160, movementY: -2500 })); h.step(elapsed);
     const direction = h.camera.getWorldDirection(new THREE.Vector3()); assert.ok(direction.y > .8, 'Kid can look above the lintel to follow the machines');
@@ -123,6 +125,31 @@ test('the report and reunion shot faces the audience and keeps Kid, both pairs a
     }
     const matrix = h.camera.matrixWorld.toArray(); h.step(1.53, phase); assert.deepEqual(h.camera.matrixWorld.toArray(), matrix);
     h.controls.possess(structuredClone(h.state)); h.step(1.53, phase); assert.deepEqual(h.camera.matrixWorld.toArray(), matrix, 'cold reconnect keeps the saved shot');
+  }
+});
+
+test('Kid sees the last withdrawing wave and then its exit, without aiming through the opaque temple roof', t => {
+  const h = fixture(t), center = FILM_SETS.film_zion_temple.center;
+  const head = new THREE.Group(); head.name = 'kid-head'; head.position.set(0, 3.4, .02); h.player.add(head);
+  for (const aspect of [16 / 9, .65]) for (const z of [-30, -51]) for (const elapsed of [0, .8, 2.6, 3.3, 4.9]) {
+    h.camera.aspect = aspect; h.camera.updateProjectionMatrix();
+    h.state.position = filmPosition('film_zion_temple', 0, z);
+    h.player.position.copy(h.state.position); h.player.rotation.y = Math.PI;
+    h.controls.possess(h.state); h.step(elapsed, 'retreat', ['m3_temple_breach']); h.toggle();
+    h.step(elapsed, 'retreat', ['m3_temple_breach']); h.controls.syncNeoCarryCamera(h.player); h.camera.updateMatrixWorld(true);
+    const eye = head.localToWorld(new THREE.Vector3(0, 0, .27));
+    assert.ok(h.camera.position.distanceTo(eye) < 1e-7, 'V must stay at Kid’s real eyes');
+    const target = h.root.getObjectByName('ceasefire-retreating-sentinel-11')!.getWorldPosition(new THREE.Vector3());
+    target.y = Math.min(target.y, center.y + 29);
+    const point = target.clone().project(h.camera);
+    assert.ok(Math.abs(point.x) < .08 && Math.abs(point.y) < .08, `${z}/${elapsed}: look at the last wave or its exit, ${point.toArray()}`);
+    const direction = target.clone().sub(eye);
+    const hits = new THREE.Raycaster(eye, direction.clone().normalize(), .06, direction.length() - 1.4)
+      .intersectObject(h.scenery, true).filter(hit => {
+        for (let parent: THREE.Object3D | null = hit.object; parent; parent = parent.parent) if (!parent.visible) return false;
+        return !(hit.object.material as THREE.Material).transparent;
+      });
+    assert.equal(hits.length, 0, `${z}/${elapsed}: the roof or lintel blocks Kid’s line of sight`);
   }
 });
 
