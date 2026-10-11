@@ -3,6 +3,7 @@ import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import { smithEndingPose, type SmithFinaleEncounter } from '@auto_matrix/shared';
 import { smithCodeSurface, smithCodeUniforms } from '../engine/SmithCodeSurface.js';
 import type { HeroRig } from './HeroModel.js';
+import { SmithFaceImpact } from './SmithFaceImpact.js';
 
 /** One shared-geometry Smith body replaces Neo after the skin coating closes. */
 export class SmithEndingAppearance {
@@ -16,6 +17,7 @@ export class SmithEndingAppearance {
   private skeletons = new Set<THREE.Skeleton>();
   private flares: { sprite: THREE.Sprite; role: 'neo' | 'smith'; local: THREE.Vector3 }[] = [];
   private glow: THREE.DataTexture;
+  private face: SmithFaceImpact;
 
   constructor(private neo: HeroRig, private smith: HeroRig) {
     this.replica = clone(smith.root) as THREE.Group; this.replica.name = 'smith-assimilated-neo';
@@ -25,6 +27,7 @@ export class SmithEndingAppearance {
     });
     const glassesIndex = smith.bones.get('head')!.children.indexOf(smith.glasses);
     this.replacementBones.get('head')!.children[glassesIndex].visible = true;
+    this.face = new SmithFaceImpact(smith);
     this.attach(this.replica, this.replicaCode, true);
     this.attach(neo.root, this.neoCode); this.attach(smith.root, this.smithCode);
     neo.root.parent!.add(this.replica);
@@ -56,6 +59,7 @@ export class SmithEndingAppearance {
   }
 
   update(encounter: SmithFinaleEncounter, firstPerson: boolean): void {
+    this.face.update(encounter);
     const pose = smithEndingPose(encounter);
     const chest = this.neo.bones.get('chest')!.getWorldPosition(new THREE.Vector3());
     this.neoCode.smithOrigin.value.copy(chest); this.replicaCode.smithOrigin.value.copy(chest);
@@ -83,6 +87,7 @@ export class SmithEndingAppearance {
   }
 
   dispose(): void {
+    this.face.dispose();
     this.replica.removeFromParent(); this.flares.forEach(({ sprite }) => sprite.removeFromParent());
     for (const item of this.originals) { item.mesh.material = item.material; item.mesh.customDepthMaterial = item.depth; }
     this.materials.forEach(material => material.dispose()); this.skeletons.forEach(skeleton => skeleton.dispose()); this.glow.dispose();
