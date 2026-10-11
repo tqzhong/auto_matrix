@@ -1,0 +1,488 @@
+TAP version 13
+# Subtest: neo wears real-world crew-neck geometry and restores the original Matrix silhouette
+ok 1 - neo wears real-world crew-neck geometry and restores the original Matrix silhouette
+  ---
+  duration_ms: 6498.081375
+  type: 'test'
+  ...
+# Subtest: trinity wears real-world crew-neck geometry and restores the original Matrix silhouette
+ok 2 - trinity wears real-world crew-neck geometry and restores the original Matrix silhouette
+  ---
+  duration_ms: 1474.492041
+  type: 'test'
+  ...
+# Subtest: real-world crew clothing cannot cover a saved patient recovery pose
+ok 3 - real-world crew clothing cannot cover a saved patient recovery pose
+  ---
+  duration_ms: 5858.901458
+  type: 'test'
+  ...
+# Subtest: both crew-neck costumes cover the delivered wrist edges through saved reaching and goodbye poses
+ok 4 - both crew-neck costumes cover the delivered wrist edges through saved reaching and goodbye poses
+  ---
+  duration_ms: 8891.574833
+  type: 'test'
+  ...
+# Subtest: healthy Hammer Neo retains his hair without changing the first-film recovery scalp
+ok 5 - healthy Hammer Neo retains his hair without changing the first-film recovery scalp
+  ---
+  duration_ms: 2893.786542
+  type: 'test'
+  ...
+# Subtest: Neo enters the wreck in the farewell outfit while retaining normal walking without a performance gesture
+ok 6 - Neo enters the wreck in the farewell outfit while retaining normal walking without a performance gesture
+  ---
+  duration_ms: 3465.736042
+  type: 'test'
+  ...
+# Subtest: Neo keeps his shipped hair and wears matte knit with a fitted eye band, not a bald patient outfit
+ok 7 - Neo keeps his shipped hair and wears matte knit with a fitted eye band, not a bald patient outfit
+  ---
+  duration_ms: 12728.609333
+  type: 'test'
+  ...
+# Subtest: Trinity wears a light knit upper with darker trousers and restores her Matrix materials
+ok 8 - Trinity wears a light knit upper with darker trousers and restores her Matrix materials
+  ---
+  duration_ms: 1555.595209
+  type: 'test'
+  ...
+# Subtest: the eye band is scoped to the real farewell and disposes its owned geometry, material and texture once
+ok 9 - the eye band is scoped to the real farewell and disposes its owned geometry, material and texture once
+  ---
+  duration_ms: 2462.264834
+  type: 'test'
+  ...
+# Subtest: paused farewell clothes keep stable material versions and restore original textures when leaving
+ok 10 - paused farewell clothes keep stable material versions and restore original textures when leaving
+  ---
+  duration_ms: 4236.587916
+  type: 'test'
+  ...
+# Subtest: the actual third-person camera keeps Trinity clear of the cabin and of Neo on the straight entry path
+ok 11 - the actual third-person camera keeps Trinity clear of the cabin and of Neo on the straight entry path
+  ---
+  duration_ms: 71372.136292
+  type: 'test'
+  ...
+# Subtest: the delivered body clears visible furniture when following the wreck waypoints
+ok 12 - the delivered body clears visible furniture when following the wreck waypoints
+  ---
+  duration_ms: 7219.30275
+  type: 'test'
+  ...
+# Subtest: the performed farewell camera frames both actual heads without the cabin hiding Neo during the saved approach
+ok 13 - the performed farewell camera frames both actual heads without the cabin hiding Neo during the saved approach
+  ---
+  duration_ms: 4720.072792
+  type: 'test'
+  ...
+# Subtest: the first paused farewell frame follows the current delivered head after posing, including out-of-order saved beats
+ok 14 - the first paused farewell frame follows the current delivered head after posing, including out-of-order saved beats
+  ---
+  duration_ms: 654.101958
+  type: 'test'
+  ...
+# Subtest: farewell eye synchronization keeps free look, V switching, loading fallback and unrelated cameras intact
+ok 15 - farewell eye synchronization keeps free look, V switching, loading fallback and unrelated cameras intact
+  ---
+  duration_ms: 500.89
+  type: 'test'
+  ...
+# Subtest: the ready farewell entrance preserves normal walking before the performance begins
+ok 16 - the ready farewell entrance preserves normal walking before the performance begins
+  ---
+  duration_ms: 308.264042
+  type: 'test'
+  ...
+# Subtest: the real eyes remain outside Trinity’s face and her near facial surface is visible during the kiss
+ok 17 - the real eyes remain outside Trinity’s face and her near facial surface is visible during the kiss
+  ---
+  duration_ms: 5577.399291
+  type: 'test'
+  ...
+# {"elapsed":1.5,"cameraEyeError":0.022121072638111427,"near":0.06,"otherEyes":[1.0978440789007926,0.3270813562606086,0.07815659273621473],"skinEntry":0.16102945898093143,"visibleFaceSamples":28,"oldNearSamples":0}
+# {"elapsed":1.606,"cameraEyeError":0.022121072645633653,"near":0.06,"otherEyes":[1.1044726386555295,0.3193409100940571,0.05760748774432311],"skinEntry":0.15914583566800491,"visibleFaceSamples":28,"oldNearSamples":0}
+# {"elapsed":2,"cameraEyeError":0.02212107263894723,"near":0.06,"otherEyes":[1.0889284143827467,0.31463069362563684,0.05713386382851176],"skinEntry":0.1591036370147413,"visibleFaceSamples":28,"oldNearSamples":0}
+# {"elapsed":2.15,"cameraEyeError":0.02212107263894723,"near":0.06,"otherEyes":[1.0743792094378057,0.31042690356646835,0.05713386382851176],"skinEntry":0.1591036370147413,"visibleFaceSamples":28,"oldNearSamples":0}
+# Subtest: the saved kiss release joins stillness without a jump in the world root, real head or eye
+ok 18 - the saved kiss release joins stillness without a jump in the world root, real head or eye
+  ---
+  duration_ms: 1662.851584
+  type: 'test'
+  ...
+# Subtest: farewell kiss brings the actual skinned lips into contact from above without moving story roots
+ok 19 - farewell kiss brings the actual skinned lips into contact from above without moving story roots
+  ---
+  duration_ms: 8224.592917
+  type: 'test'
+  ...
+# Subtest: kiss noses and cheeks do not pass through the other actor’s actual facial skin
+ok 20 - kiss noses and cheeks do not pass through the other actor’s actual facial skin
+  ---
+  duration_ms: 91333.78425
+  type: 'test'
+  ...
+# Subtest: the kiss settles over planted shoes rather than leaning outside their support
+ok 21 - the kiss settles over planted shoes rather than leaning outside their support
+  ---
+  duration_ms: 1114.62725
+  type: 'test'
+  ...
+# Subtest: the final release joins stillness continuously in actual world-space roots and joints
+ok 22 - the final release joins stillness continuously in actual world-space roots and joints
+  ---
+  duration_ms: 631.158666
+  type: 'test'
+  ...
+# Subtest: stepping into and out of the kiss always leaves at least one actual shoe on the deck
+ok 23 - stepping into and out of the kiss always leaves at least one actual shoe on the deck
+  ---
+  duration_ms: 1312.201208
+  type: 'test'
+  ...
+# Subtest: Trinity restores her supported recline on the first paused farewell frame
+ok 24 - Trinity restores her supported recline on the first paused farewell frame
+  ---
+  duration_ms: 10783.391
+  type: 'test'
+  ...
+# Subtest: both farewell bodies and clothes reconstruct the saved beat independent of warm-up, pause and actor order
+ok 25 - both farewell bodies and clothes reconstruct the saved beat independent of warm-up, pause and actor order
+  ---
+  duration_ms: 28092.264541
+  type: 'test'
+  ...
+# Subtest: player Neo wears the wreck outfit before any farewell action without losing ordinary walking
+ok 26 - player Neo wears the wreck outfit before any farewell action without losing ordinary walking
+  ---
+  duration_ms: 3338.318125
+  type: 'test'
+  ...
+# Subtest: entering the farewell clears prior combat poses before the first paused frame
+ok 27 - entering the farewell clears prior combat poses before the first paused frame
+  ---
+  duration_ms: 6366.534667
+  type: 'test'
+  ...
+# Subtest: Trinity touches Neo with her actual palm while the complete hand stays outside his facial skin
+ok 28 - Trinity touches Neo with her actual palm while the complete hand stays outside his facial skin
+  ---
+  duration_ms: 35349.884458
+  type: 'test'
+  ...
+# goodbye/1.5: 6673 hand vertices; max penetration 0.000000, palm gap Infinity
+# goodbye/2.6: 6673 hand vertices; max penetration 0.000000, palm gap 0.018712
+# kiss/1.5: 6673 hand vertices; max penetration 0.000000, palm gap 0.018667
+# kiss/2.15: 6673 hand vertices; max penetration 0.000000, palm gap 0.018704
+# kiss/2.4: 6673 hand vertices; max penetration 0.000000, palm gap Infinity
+# kiss/2.6: 6673 hand vertices; max penetration 0.000000, palm gap Infinity
+# Subtest: Trinity has a seat beneath her pelvis and a backrest behind her actual upper back
+ok 29 - Trinity has a seat beneath her pelvis and a backrest behind her actual upper back
+  ---
+  duration_ms: 21197.831416
+  type: 'test'
+  ...
+# Subtest: both farewell actors keep their shipped footwear and trouser knees above the physical deck
+ok 30 - both farewell actors keep their shipped footwear and trouser knees above the physical deck
+  ---
+  duration_ms: 20445.777958
+  type: 'test'
+  ...
+# Subtest: the support furniture leaves both visible bodies and the approach to the kiss clear
+ok 31 - the support furniture leaves both visible bodies and the approach to the kiss clear
+  ---
+  duration_ms: 51476.294375
+  type: 'test'
+  ...
+# Subtest: the shipped seat and back surfaces meet Trinity’s trousers and sweater without a visible support gap
+ok 32 - the shipped seat and back surfaces meet Trinity’s trousers and sweater without a visible support gap
+  ---
+  duration_ms: 2875.680083
+  type: 'test'
+  ...
+# Subtest: the third-person farewell camera keeps both faces and torsos in frame at aspect 1.7777777777777777
+ok 33 - the third-person farewell camera keeps both faces and torsos in frame at aspect 1.7777777777777777
+  ---
+  duration_ms: 6731.446208
+  type: 'test'
+  ...
+# Subtest: the third-person farewell camera keeps both faces and torsos in frame at aspect 0.5625
+ok 34 - the third-person farewell camera keeps both faces and torsos in frame at aspect 0.5625
+  ---
+  duration_ms: 6531.845208
+  type: 'test'
+  ...
+# Subtest: the Logos farewell preserves its quiet sequence and ends in stillness
+ok 35 - the Logos farewell preserves its quiet sequence and ends in stillness
+  ---
+  duration_ms: 5.856708
+  type: 'test'
+  ...
+# Subtest: starting the farewell preserves Neo’s actual approach position and saved turn before he kneels
+ok 36 - starting the farewell preserves Neo’s actual approach position and saved turn before he kneels
+  ---
+  duration_ms: 2840.633458
+  type: 'test'
+  ...
+# Subtest: Neo must approach Trinity and the farewell resumes from an exact saved beat
+ok 37 - Neo must approach Trinity and the farewell resumes from an exact saved beat
+  ---
+  duration_ms: 9583.822083
+  type: 'test'
+  ...
+# Subtest: the wreck renderer exposes the crushed cockpit, rebar, fire, sparks and golden sight
+ok 38 - the wreck renderer exposes the crushed cockpit, rebar, fire, sparks and golden sight
+  ---
+  duration_ms: 570.925708
+  type: 'test'
+  ...
+# Subtest: the approach waypoint leaves the bodies and lighting clear throughout the farewell
+ok 39 - the approach waypoint leaves the bodies and lighting clear throughout the farewell
+  ---
+  duration_ms: 229.155708
+  type: 'test'
+  ...
+# Subtest: the Oracle departure journal requires the hostess, privacy, bite and physical exit in order
+ok 40 - the Oracle departure journal requires the hostess, privacy, bite and physical exit in order
+  ---
+  duration_ms: 1097.532917
+  type: 'test'
+  ...
+# Subtest: Oracle departure navigation follows the returning hostess and only offers local interactions
+ok 41 - Oracle departure navigation follows the returning hostess and only offers local interactions
+  ---
+  duration_ms: 1426.024875
+  type: 'test'
+  ...
+# Subtest: Oracle navigation points to the waiting hostess until she reaches the kitchen
+ok 42 - Oracle navigation points to the waiting hostess until she reaches the kitchen
+  ---
+  duration_ms: 769.906167
+  type: 'test'
+  ...
+# Subtest: the spoon journal waits for the hostess before offering Neo a standing action
+ok 43 - the spoon journal waits for the hostess before offering Neo a standing action
+  ---
+  duration_ms: 528.936042
+  type: 'test'
+  ...
+# Subtest: the Construct journal distinguishes self inspection from approaching the chair
+ok 44 - the Construct journal distinguishes self inspection from approaching the chair
+  ---
+  duration_ms: 982.987417
+  type: 'test'
+  ...
+# Subtest: the morning journal requires a bedside action, accepts the alarm and offers the actual on-foot commute
+ok 45 - the morning journal requires a bedside action, accepts the alarm and offers the actual on-foot commute
+  ---
+  duration_ms: 953.981
+  type: 'test'
+  ...
+# Subtest: the second call offers a visible door action after Neo reaches the apartment exit
+ok 46 - the second call offers a visible door action after Neo reaches the apartment exit
+  ---
+  duration_ms: 540.832
+  type: 'test'
+  ...
+# Subtest: a clean escape presents the second call without naming a nightmare
+ok 47 - a clean escape presents the second call without naming a nightmare
+  ---
+  duration_ms: 471.046125
+  type: 'test'
+  ...
+# Subtest: the hotel journal names Trinity when Neo reaches 1313 before the guide
+ok 48 - the hotel journal names Trinity when Neo reaches 1313 before the guide
+  ---
+  duration_ms: 634.424333
+  type: 'test'
+  ...
+# Subtest: the negative scan journal does not claim Neo was interrogated or needed an extraction
+ok 49 - the negative scan journal does not claim Neo was interrogated or needed an extraction
+  ---
+  duration_ms: 453.211667
+  type: 'test'
+  ...
+# Subtest: the tracking journal keeps new entries locked beyond the legacy eight seconds
+ok 50 - the tracking journal keeps new entries locked beyond the legacy eight seconds
+  ---
+  duration_ms: 386.973541
+  type: 'test'
+  ...
+# Subtest: tracking progress follows the saved chair entry before wiring and mirror coverage
+ok 51 - tracking progress follows the saved chair entry before wiring and mirror coverage
+  ---
+  duration_ms: 665.402625
+  type: 'test'
+  ...
+# Subtest: the completed oral removal offers a new neck inspection in both the journal and the game HUD
+ok 52 - the completed oral removal offers a new neck inspection in both the journal and the game HUD
+  ---
+  duration_ms: 984.886084
+  type: 'test'
+  ...
+# Subtest: the pill choice clears the central subtitle over Morpheus palms and restores it for the taking action
+ok 53 - the pill choice clears the central subtitle over Morpheus palms and restores it for the taking action
+  ---
+  duration_ms: 850.693125
+  type: 'test'
+  ...
+# Subtest: the farewell HUD only offers kneeling within the actual interaction distance
+ok 54 - the farewell HUD only offers kneeling within the actual interaction distance
+  ---
+  duration_ms: 628.532584
+  type: 'test'
+  ...
+# Subtest: the completed farewell guides Neo to the machine city instead of asking for another reflection
+ok 55 - the completed farewell guides Neo to the machine city instead of asking for another reflection
+  ---
+  duration_ms: 2472.934416
+  type: 'test'
+  ...
+# Subtest: confirming the sunrise replaces the final confirmation with saved completion and optional replay controls
+ok 56 - confirming the sunrise replaces the final confirmation with saved completion and optional replay controls
+  ---
+  duration_ms: 1060.791625
+  type: 'test'
+  ...
+# Subtest: film sets admit walking in both worlds and use their own floor
+ok 57 - film sets admit walking in both worlds and use their own floor
+  ---
+  duration_ms: 225.637334
+  type: 'test'
+  ...
+# Subtest: the mountain door, Link lookout and launch point stay walkable while the terrace rail is solid
+ok 58 - the mountain door, Link lookout and launch point stay walkable while the terrace rail is solid
+  ---
+  duration_ms: 0.931959
+  type: 'test'
+  ...
+# Subtest: the interrogation table and chairs are solid while both side aisles admit walking
+ok 59 - the interrogation table and chairs are solid while both side aisles admit walking
+  ---
+  duration_ms: 0.281666
+  type: 'test'
+  ...
+# Subtest: freeway central and edge barriers match the lanes and its long route does not overlap other sets
+ok 60 - freeway central and edge barriers match the lanes and its long route does not overlap other sets
+  ---
+  duration_ms: 1.009458
+  type: 'test'
+  ...
+# Subtest: the chateau staircase supports the player and its upper landing blocks entry from below
+ok 61 - the chateau staircase supports the player and its upper landing blocks entry from below
+  ---
+  duration_ms: 0.491875
+  type: 'test'
+  ...
+# Subtest: Neo can walk from the château floor up either staircase and reach the actual upper door
+ok 62 - Neo can walk from the château floor up either staircase and reach the actual upper door
+  ---
+  duration_ms: 183.760083
+  type: 'test'
+  ...
+# Subtest: the Oracle apartment separates the waiting room from the kitchen while keeping its doorway open
+ok 63 - the Oracle apartment separates the waiting room from the kitchen while keeping its doorway open
+  ---
+  duration_ms: 0.74775
+  type: 'test'
+  ...
+# Subtest: Oracle waiting-room furniture is solid without cutting across the child-to-kitchen route
+ok 64 - Oracle waiting-room furniture is solid without cutting across the child-to-kitchen route
+  ---
+  duration_ms: 109.662083
+  type: 'test'
+  ...
+# Subtest: both visible kitchen chairs stop a walking player while the aisle stays open
+ok 65 - both visible kitchen chairs stop a walking player while the aisle stays open
+  ---
+  duration_ms: 46.7275
+  type: 'test'
+  ...
+# Subtest: Metacortex cubicles block movement but leave the escape aisles open
+ok 66 - Metacortex cubicles block movement but leave the escape aisles open
+  ---
+  duration_ms: 15.361042
+  type: 'test'
+  ...
+# Subtest: the office ledge has a real drop beyond its narrow supporting surface
+ok 67 - the office ledge has a real drop beyond its narrow supporting surface
+  ---
+  duration_ms: 0.51475
+  type: 'test'
+  ...
+# Subtest: the Lafayette chairs and equipment are solid, with room to reach the pills and mirror
+ok 68 - the Lafayette chairs and equipment are solid, with room to reach the pills and mirror
+  ---
+  duration_ms: 22.876875
+  type: 'test'
+  ...
+# Subtest: the broken cockpit retains the flown cabin width and window-bay spacing
+ok 69 - the broken cockpit retains the flown cabin width and window-bay spacing
+  ---
+  duration_ms: 1202.251375
+  type: 'test'
+  ...
+# Subtest: Neo enters beside the cockpit and the visible sill blocks leaving the wreck while the approach remains open
+ok 70 - Neo enters beside the cockpit and the visible sill blocks leaving the wreck while the approach remains open
+  ---
+  duration_ms: 4.506958
+  type: 'test'
+  ...
+# Subtest: the actual player can follow both wreck waypoints through the bulkhead before starting the farewell
+ok 71 - the actual player can follow both wreck waypoints through the bulkhead before starting the farewell
+  ---
+  duration_ms: 11.759833
+  type: 'test'
+  ...
+# Subtest: the farewell cannot start or change the walking objective while Neo is still in the damaged doorway
+ok 72 - the farewell cannot start or change the walking objective while Neo is still in the damaged doorway
+  ---
+  duration_ms: 1.287417
+  type: 'test'
+  ...
+# Subtest: the cockpit key light keeps its local downward direction at the actual distant film set
+ok 73 - the cockpit key light keeps its local downward direction at the actual distant film set
+  ---
+  duration_ms: 653.3545
+  type: 'test'
+  ...
+# Subtest: the damaged cabin leaves the first-person entry sightline clear
+ok 74 - the damaged cabin leaves the first-person entry sightline clear
+  ---
+  duration_ms: 715.654958
+  type: 'test'
+  ...
+# Subtest: the wreck keeps solid side sills and peeled roof panels around its physically open centre
+ok 75 - the wreck keeps solid side sills and peeled roof panels around its physically open centre
+  ---
+  duration_ms: 332.142333
+  type: 'test'
+  ...
+# Subtest: wreck fire and machine sight retain the saved farewell beat across pauses and reloads
+ok 76 - wreck fire and machine sight retain the saved farewell beat across pauses and reloads
+  ---
+  duration_ms: 878.688125
+  type: 'test'
+  ...
+# Subtest: golden machine perception belongs to Neo first person, not the external farewell camera
+ok 77 - golden machine perception belongs to Neo first person, not the external farewell camera
+  ---
+  duration_ms: 711.972291
+  type: 'test'
+  ...
+# Subtest: wreck shafts pin Trinity’s jacket while leaving both faces and the contact hands clear
+ok 78 - wreck shafts pin Trinity’s jacket while leaving both faces and the contact hands clear
+  ---
+  duration_ms: 141433.422875
+  type: 'test'
+  ...
+1..78
+# tests 78
+# suites 0
+# pass 78
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 170546.234458

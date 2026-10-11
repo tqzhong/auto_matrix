@@ -89,6 +89,9 @@ test('Neo must approach Trinity and the farewell resumes from an exact saved bea
 
   h.actor().position = filmStepPosition(scene, scene.steps[0]); h.advance();
   assert.equal(state.step, 1); assert.equal(state.farewell?.phase, 'ready');
+  assert.match(h.command('act'), /走到 Trinity 身边/);
+  assert.equal(state.farewell?.phase, 'ready');
+  h.actor().position = filmStepPosition(scene, scene.steps[1]);
   h.world.agents.get('trinity')!.controller = 'other';
   assert.match(h.command('act'), /另一位玩家/); assert.equal(state.farewell?.phase, 'ready');
   h.world.agents.get('trinity')!.controller = undefined;

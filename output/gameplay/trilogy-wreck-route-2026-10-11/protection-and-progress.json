@@ -1,0 +1,58 @@
+{
+  "protectedCount": 156,
+  "changedFiles": [],
+  "main": {
+    "agents": true,
+    "chunks": true,
+    "locations": true,
+    "events": true,
+    "sandbox": true,
+    "simulation": true,
+    "phase": true,
+    "timeOfDay": true
+  },
+  "history": {
+    "completed": true,
+    "choices": true,
+    "reflections": true,
+    "journal": true,
+    "dead": true
+  },
+  "oldCounts": {
+    "completed": 43,
+    "choices": 38,
+    "reflections": 14,
+    "journal": 60
+  },
+  "dead": [
+    "mifune",
+    "soren",
+    "maggie",
+    "bane",
+    "axel",
+    "charra",
+    "agent_thompson",
+    "keymaker"
+  ],
+  "addedCompleted": [
+    "m3_farewell"
+  ],
+  "addedJournal": [
+    "坠落之后",
+    "坠落之后 · 记住共同的生活，让告别有被认真听见的时间。"
+  ],
+  "farewellReflection": "care",
+  "trinity": {
+    "before": "alive",
+    "after": "dead",
+    "health": 0
+  },
+  "final": {
+    "tick": 12816,
+    "scene": "m3_temple_breach",
+    "actor": "lock",
+    "step": 0,
+    "running": false,
+    "controlled": []
+  }
+}

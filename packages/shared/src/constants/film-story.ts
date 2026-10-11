@@ -553,7 +553,7 @@ export const FILM_SCENES: FilmScene[] = [
     { kind: 'drive', label: '穿出乌云看见阳光，在下坠时操作点火器重启引擎', x: 0, z: 29 },
   ], ['neo']),
   scene('m3_farewell', 3, 'logos_wreck', 'neo', '坠落之后', 'last_sky', 'farewell', 'Logos 撞入机器城。失明的 Neo 在金色余光中寻找 Trinity；最后的路只能由他独自走完。', [
-    walk('沿金色余光穿过变形的驾驶舱', 0, -10.5),
+    walk('沿金色余光穿过变形的驾驶舱', LOGOS_WRECK.cabin.x, -11.8),
     use('跪到 Trinity 身边，听完她最后的话', 'Neo 握住 Trinity 的手。两个人把最后的时间留给彼此。', 0, -13.5),
     think('有限的生命如何留下意义？', '失去无法被一个更大的目标抵消。你认真听完告别，带着共同生活留下的责任继续行动。', 0, -14),
   ], ['trinity']),
@@ -732,6 +732,7 @@ export function filmStepNear(scene: FilmScene, step: FilmStep, position: Vector3
     : scene.id === 'm3_hel_entry' && step === scene.steps[0] ? 1.1
     : scene.id === 'm3_dock_evacuation' ? step === scene.steps[0] || step === scene.steps[1] ? .45 : 1.2
     : scene.id === 'm3_shaft_seal' ? 1.2
+    : scene.id === 'm3_farewell' ? step === scene.steps[0] ? .45 : 1.6
     : scene.id === 'm3_dock_reunion' || scene.id === 'm3_dock_briefing' ? 2
     : scene.id === 'm3_gate' && step !== scene.steps[2] ? 1.2
     : scene.id === 'm2_trucks' && step !== scene.steps[0] ? .7

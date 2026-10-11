@@ -1,0 +1,32 @@
+TAP version 13
+# Subtest: the delivered body clears visible furniture when following the wreck waypoints
+not ok 1 - the delivered body clears visible furniture when following the wreck waypoints
+  ---
+  duration_ms: 2086.987208
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/farewell-camera.test.mts:1:8724'
+  failureType: 'testCodeFailure'
+  error: |-
+    1.3500000000003638/-10.960000000000036/pelvis-ankle_R: the body crosses a physical prop at 1.5619665354661265,0.6794462246513433,-10.93738191029297,1.5771193006094109,0.5614222517911287,-10.937042677833233
+
+    2 !== 0
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 2
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/farewell-camera.test.mts:141:16)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4202.581084

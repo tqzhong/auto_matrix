@@ -786,7 +786,7 @@ export class SandboxUI {
         : phase === 'discovery' ? '看清伤势' : phase === 'promise' ? '听完托付'
           : phase === 'goodbye' ? '最后的话' : phase === 'kiss' ? '最后一吻' : '静默';
       const progress = Math.min(100, farewell.total / FAREWELL.minimumSeconds * 100);
-      const near = Boolean(step && distance(player.position, filmStepPosition(scene, step)) <= 4);
+      const near = Boolean(step && filmStepActionReady(scene, step, player.position, player.isInMatrix, journey));
       const locked = farewellLocked(farewell);
       const hint = !step ? 'J 打开手记，继续下一段 · 前往机器城' : journey.step === 0 ? 'WASD 沿金色余光穿过残骸'
         : phase === 'ready' ? '走到 Trinity 身边按 G · 她会等你主动开始'
