@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { CONSTRUCT } from '@auto_matrix/shared';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
@@ -11,7 +12,7 @@ export function createLoungeChair(leather: THREE.Material): THREE.Group {
   };
   const box = (surface: THREE.Material, x: number, y: number, z: number, w: number, h: number, d: number, bevel: number) =>
     mesh(new RoundedBoxGeometry(w, h, d, 2, Math.min(bevel, w / 3, h / 3, d / 3)), surface, x, y, z);
-  const sphere = (surface: THREE.Material, x: number, y: number, z: number, radius: number) => mesh(new THREE.SphereGeometry(radius, 24, 16), surface, x, y, z);
+  const sphere = (surface: THREE.Material, x: number, y: number, z: number, radius: number) => mesh(new THREE.SphereGeometry(radius, 16, 10), surface, x, y, z);
   const pipe = (points: number[][], radius: number, surface: THREE.Material) =>
     mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points.map(point => new THREE.Vector3(...point))), 20, radius, 8, false), surface, 0, 0, 0);
   const seam = material(0x43221c, .88); const trim = material(0x604c32, .72, .3); const frame = material(0x281c17, .64);
@@ -27,19 +28,24 @@ export function createLoungeChair(leather: THREE.Material): THREE.Group {
   // A continuous padded shell: a domed crown, a reclined centre and forward
   // wings. The rear and perimeter are closed, so side views have no flat card.
   const buttons: [number, number][] = [];
-  for (let row = 0; row < 5; row++) for (let col = 0; col < 5; col++) {
-    const u = (col - 2) * .38 + row % 2 * .19;
-    if (Math.abs(u) < .88) buttons.push([u, .16 + row * .16]);
+  for (let row = 0; row < 7; row++) for (let col = 0; col < 5; col++) {
+    const u = (col - 2) * .46 + row % 2 * .23;
+    if (Math.abs(u) < .98) buttons.push([u, .16 + row * .12]);
   }
   const positions: number[] = []; const uv: number[] = []; const indices: number[] = [];
   const surface = (u: number, v: number, back = false): number[] => {
     const sx = u * (1.56 + .22 * Math.sin(v * Math.PI * .85));
     const sy = 1.45 + v * (3.5 + .4 * (1 - u * u));
-    const radius = Math.min(...buttons.map(([bu, bv]) => ((u - bu) / .38) ** 2 + ((v - bv) / .16) ** 2));
-    const padded = .07 * (1 - Math.exp(-radius * 9)) - .07 * Math.exp(-radius * 45);
-    return [sx, sy, -.94 - .55 * v + .62 * u ** 4 * Math.sin(v * Math.PI * .9) + (back ? -.32 : padded)];
+    const radius = Math.min(...buttons.map(([bu, bv]) => ((u - bu) / .46) ** 2 + ((v - bv) / .12) ** 2));
+    // Intersecting diagonal folds form the diamonds between the recessed
+    // buttons. The creases and pillows belong to one closed padded surface.
+    const a = u / .46 + (v - .16) / .24, b = u / .46 - (v - .16) / .24;
+    const dome = Math.abs(Math.sin(Math.PI * a) * Math.sin(Math.PI * b)) ** 1.5;
+    const edge = Math.max(0, Math.min(1, v / .1, (1 - v) / .06));
+    const padded = edge * (.025 + .175 * dome - .1 * Math.exp(-radius * 60));
+    return [sx, sy, -.94 - .55 * v + .62 * u ** 4 * Math.sin(v * Math.PI * .9) + (back ? -.46 : padded)];
   };
-  const columns = 40, rows = 56, count = (columns + 1) * (rows + 1);
+  const columns = 64, rows = 96, count = (columns + 1) * (rows + 1);
   for (let side = 0; side < 2; side++) for (let row = 0; row <= rows; row++) for (let col = 0; col <= columns; col++) {
     positions.push(...surface(col / columns * 2 - 1, row / rows, !!side)); uv.push(col / columns, row / rows);
     if (row < rows && col < columns) {
@@ -53,7 +59,7 @@ export function createLoungeChair(leather: THREE.Material): THREE.Group {
   for (let row = 0; row < rows; row++) { close(row * (columns + 1), (row + 1) * (columns + 1)); close((row + 1) * (columns + 1) + columns, row * (columns + 1) + columns); }
   const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)); geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geometry.setIndex(indices); geometry.computeVertexNormals();
   mesh(geometry, leather, 0, 0, 0);
-  for (const [u, v] of buttons) { const [bx, by, bz] = surface(u, v); sphere(seam, bx, by, bz + .022, .046).scale.z = .4; }
+  for (const [u, v] of buttons) { const [bx, by, bz] = surface(u, v); sphere(leather, bx, by, bz + .022, .046).scale.z = .4; }
   const crown = Array.from({ length: 17 }, (_, i) => surface(i / 8 - 1, 1)); pipe(crown, .018, seam);
   const armShape = new THREE.Shape(); armShape.moveTo(-1.4, 1.03); armShape.lineTo(1.37, 1.03);
   armShape.bezierCurveTo(1.46, 1.56, 1.46, 2.24, 1.34, 2.55);
@@ -63,9 +69,18 @@ export function createLoungeChair(leather: THREE.Material): THREE.Group {
   arm.translate(0, 0, -.17); arm.rotateY(-Math.PI / 2);
   for (const side of [-1, 1]) {
     mesh(arm, leather, side * 1.57, 0, 0);
-    pipe([[side * 1.58, 3.12, -1.05], [side * 1.59, 2.85, -.5], [side * 1.6, 2.72, .45], [side * 1.6, 2.72, 1.23]], .27, leather);
-    sphere(leather, side * 1.6, 2.72, 1.29, .285).scale.z = .58;
-    mesh(new THREE.TorusGeometry(.244, .012, 6, 28), seam, side * 1.6, 2.72, 1.36);
+    pipe([[side * 1.58, 3.12, -1.05], [side * 1.59, 2.85, -.5], [side * 1.6, 2.72, .45], [side * 1.6, 2.72, 1.23]], .27, frame);
+    sphere(frame, side * 1.6, 2.72, 1.29, .285).scale.z = .65;
+    // Dark carved finials sit below the hand, with brows and a rounded muzzle.
+    // They retain the original arm height and do not intrude into the seat.
+    for (const eye of [-1, 1]) {
+      pipe([[side * 1.6 + eye * .04, 2.84, 1.46], [side * 1.6 + eye * .12, 2.85, 1.45],
+        [side * 1.6 + eye * .18, 2.79, 1.43]], .04, frame);
+      sphere(seam, side * 1.6 + eye * .11, 2.79, 1.456, .038).scale.z = .35;
+      sphere(frame, side * 1.6 + eye * .075, 2.66, 1.46, .108).scale.set(1, .85, .65);
+    }
+    sphere(frame, side * 1.6, 2.745, 1.48, .072).scale.set(.85, .7, .65);
+    pipe([[side * 1.6 - .1, 2.57, 1.37], [side * 1.6, 2.51, 1.44], [side * 1.6 + .1, 2.57, 1.37]], .035, frame);
     pipe(Array.from({ length: 15 }, (_, i) => surface(side, i / 14)), .018, seam);
     for (let i = 0; i < 13; i++) { const [bx, by, bz] = surface(side, .08 + i * .07); sphere(trim, bx, by, bz + .018, .025); }
   }
@@ -85,5 +100,5 @@ export function createLoungeChair(leather: THREE.Material): THREE.Group {
     mesh(mergeGeometries(pieces)!, surface, 0, 0, 0); pieces.forEach(piece => piece.dispose());
   }
   originals.forEach(geometry => geometry.dispose());
-  root.scale.setScalar(.65); return root;
+  root.scale.setScalar(CONSTRUCT.chair.scale); return root;
 }

@@ -1,0 +1,101 @@
+{
+  "red-route": {
+    "file": "output/gameplay/neo-longplay-2026-09-20/neo-2026-10-11T17-31-55-458Z.webm",
+    "metadata": {
+      "file": "neo-2026-10-11T17-31-55-458Z.webm",
+      "duration": 448.0195,
+      "width": 1280,
+      "height": 720,
+      "audio": true,
+      "frames": 6948,
+      "rendering": {
+        "frames": 10318,
+        "fps": 23.03199967852981,
+        "p95FrameMs": 150.7000002861023,
+        "includesRecordingOverhead": true
+      },
+      "markers": [
+        {
+          "seconds": 372.4003000001907,
+          "title": "软垫最终版 · 红药丸、喝水与起身"
+        }
+      ]
+    },
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "opus",
+          "codec_type": "audio"
+        },
+        {
+          "codec_name": "vp9",
+          "codec_type": "video",
+          "width": 1280,
+          "height": 720
+        }
+      ],
+      "format": {
+        "size": "68228849"
+      }
+    },
+    "packetTimelines": {
+      "0": {
+        "packets": 7465,
+        "lastEndSeconds": 447.899
+      },
+      "1": {
+        "packets": 5338,
+        "lastEndSeconds": 447.748
+      }
+    }
+  },
+  "collision": {
+    "file": "output/gameplay/neo-longplay-2026-09-20/neo-2026-10-11T17-46-34-846Z.webm",
+    "metadata": {
+      "file": "neo-2026-10-11T17-46-34-846Z.webm",
+      "duration": 141.8635,
+      "width": 1280,
+      "height": 720,
+      "audio": true,
+      "frames": 2504,
+      "rendering": {
+        "frames": 4506,
+        "fps": 31.75970627380724,
+        "p95FrameMs": 86.19999980926514,
+        "includesRecordingOverhead": true
+      },
+      "markers": []
+    },
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "opus",
+          "codec_type": "audio"
+        },
+        {
+          "codec_name": "vp9",
+          "codec_type": "video",
+          "width": 1280,
+          "height": 720
+        }
+      ],
+      "format": {
+        "size": "30974136"
+      }
+    },
+    "packetTimelines": {
+      "0": {
+        "packets": 2363,
+        "lastEndSeconds": 141.77700000000002
+      },
+      "1": {
+        "packets": 2050,
+        "lastEndSeconds": 141.586
+      }
+    }
+  }
+}

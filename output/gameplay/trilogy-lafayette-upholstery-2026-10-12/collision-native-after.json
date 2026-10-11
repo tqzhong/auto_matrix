@@ -1,0 +1,12 @@
+{
+  "tick": 5621,
+  "running": false,
+  "controlled": false,
+  "position": {
+    "x": -3.4816355282973745,
+    "y": 0,
+    "z": -3.6445852728184036
+  },
+  "rotation": -9.433212176023465,
+  "deltaAfterExtraForward": 0.04414728760275466
+}
