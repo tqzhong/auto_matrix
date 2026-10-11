@@ -1,0 +1,16 @@
+{
+  "protected_file_count": 211,
+  "changed_files": [],
+  "main_groups": {
+    "agents": true,
+    "chunks": true,
+    "locations": true,
+    "events": true,
+    "sandbox": true,
+    "simulation": true
+  },
+  "main_time_equal": true,
+  "main_tick": 10432,
+  "main_paused": true,
+  "snapshot_file_count": 16
+}

@@ -256,15 +256,55 @@ export class TrilogyEpilogueRenderer {
     const oval = (parent: THREE.Group, position: number[], size: number[], surface = material) => {
       const mesh = this.mesh(sphere, surface, parent); mesh.position.fromArray(position); mesh.scale.fromArray(size); return mesh;
     };
-    oval(cat, [0, .48, 0], [.48, .19, .20]); oval(cat, [.35, .54, 0], [.20, .26, .21]);
-    const head = new THREE.Group(); head.name = 'reset-cat-head'; head.position.set(.55, .67, 0); cat.add(head);
-    oval(head, [0, 0, 0], [.19, .18, .18]); oval(head, [.15, -.07, 0], [.11, .075, .12]);
-    const eye = this.material(0x8f9256, .32), nose = this.material(0x24221f, .65);
-    oval(head, [.24, -.055, 0], [.032, .025, .035], nose);
+    // Continuous cross-sections describe the rib cage, tucked abdomen, nape
+    // and muzzle instead of overlapping a spherical head and sausage body.
+    const skin = (parent: THREE.Group, sections: number[][]) => {
+      const profile = new THREE.CatmullRomCurve3(sections.map(([x, y, radius]) => new THREE.Vector3(x, y, radius)));
+      const widths = new THREE.CatmullRomCurve3(sections.map(([, , , width], i) => new THREE.Vector3(i, width, 0)));
+      const points: number[] = [], uv: number[] = [], indices: number[] = [], rings = 40, sides = 24;
+      for (let row = 0; row <= rings; row++) {
+        const p = profile.getPoint(row / rings), width = widths.getPoint(row / rings).y;
+        for (let column = 0; column <= sides; column++) {
+          const angle = column / sides * Math.PI * 2;
+          points.push(p.x, p.y + Math.sin(angle) * Math.max(.001, p.z), Math.cos(angle) * Math.max(.001, width));
+          uv.push(row / rings, column / sides);
+          if (row < rings && column < sides) {
+            const a = row * (sides + 1) + column, b = a + sides + 1;
+            indices.push(a, b, a + 1, b, b + 1, a + 1);
+          }
+        }
+      }
+      for (const row of [0, rings]) {
+        const section = profile.getPoint(row / rings), center = points.length / 3;
+        points.push(section.x, section.y, 0); uv.push(row / rings, .5);
+        for (let column = 0; column < sides; column++) {
+          const a = row * (sides + 1) + column;
+          indices.push(center, row ? a : a + 1, row ? a + 1 : a);
+        }
+      }
+      const geometry = new THREE.BufferGeometry(); geometry.setIndex(indices);
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
+      geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geometry.computeVertexNormals();
+      return this.mesh(geometry, material, parent);
+    };
+    skin(cat, [[-.57,.48,.02,.025],[-.43,.49,.18,.18],[-.27,.49,.19,.18],[-.05,.51,.15,.15],
+      [.16,.51,.17,.16],[.31,.54,.22,.18],[.40,.62,.18,.14],[.49,.69,.09,.08]]);
+    const head = new THREE.Group(); head.name = 'reset-cat-head'; head.position.set(.50, .70, 0); cat.add(head);
+    skin(head, [[-.17,0,.035,.04],[-.10,.01,.13,.13],[.03,.015,.15,.14],[.12,-.02,.10,.12],
+      [.19,-.065,.055,.085],[.23,-.073,.026,.048]]);
+    const eye = this.material(0x676844, .4), nose = this.material(0x1b1a1b, .56), innerEar = this.material(0x302829, .95, 0);
+    oval(head, [.235, -.070, 0], [.016, .020, .029], nose);
     for (const side of [-1, 1]) {
-      const ear = this.mesh(new THREE.ConeGeometry(.095, .20, 8), material, head); ear.position.set(-.02, .20, side * .11); ear.rotation.x = side * .18;
-      oval(head, [.12, .035, side * .13], [.028, .025, .015], eye);
-      oval(head, [.13, .035, side * .143], [.008, .022, .004]);
+      const ear = new THREE.BufferGeometry();
+      ear.setAttribute('position', new THREE.Float32BufferAttribute([
+        -.08,.08,side*.045, .035,.10,side*.13, -.045,.30,side*.14,
+        -.135,.11,side*.10, -.02,.11,side*.175,
+      ], 3));
+      ear.setIndex(side > 0 ? [0,1,2,1,4,2,4,3,2,3,0,2,0,3,4,0,4,1] : [0,2,1,1,2,4,4,2,3,3,2,0,0,4,3,0,1,4]);
+      ear.computeVertexNormals(); this.mesh(ear, material, head);
+      const inset = oval(head, [-.006,.174,side*.112], [.012,.055,.032], innerEar); inset.rotation.x = side * .24;
+      const iris = oval(head, [.109, .038, side * .108], [.040, .024, .020], eye); iris.rotation.y = side * -.65; iris.rotation.z = -.17;
+      oval(head, [.123, .039, side * .121], [.008, .020, .009], nose);
       for (const rear of [false, true]) {
         const hip = new THREE.Group(); hip.position.set(rear ? -.36 : .34, .46, side * .13); cat.add(hip);
         oval(hip, [0, -.12, 0], [rear ? .10 : .063, .16, .066]);
@@ -275,13 +315,23 @@ export class TrilogyEpilogueRenderer {
         this.catLegs.push({ hip, knee, ankle, rear, side });
       }
     }
-    const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(-.42,.52,0), new THREE.Vector3(-.72,.63,.03), new THREE.Vector3(-.87,.98,.08), new THREE.Vector3(-.80,1.15,.10)]);
-    this.mesh(new THREE.TubeGeometry(curve, 28, .043, 8, false), material, cat).name = 'reset-cat-tail';
+    const tail = new THREE.Group(); tail.name = 'reset-cat-tail'; tail.position.set(-.46, .52, 0); cat.add(tail);
+    const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(0,0,0), new THREE.Vector3(-.25,-.08,0),
+      new THREE.Vector3(-.53,-.20,.015), new THREE.Vector3(-.78,-.22,.035), new THREE.Vector3(-.91,-.13,.055)]);
+    const geometry = new THREE.TubeGeometry(curve, 32, .045, 10, false), vertices = geometry.attributes.position;
+    for (let row = 0; row <= 32; row++) {
+      const center = curve.getPointAt(row / 32), taper = .12 + .88 * (1 - row / 32) ** .65;
+      for (let side = 0; side <= 10; side++) {
+        const index = row * 11 + side, point = new THREE.Vector3().fromBufferAttribute(vertices, index).sub(center).multiplyScalar(taper).add(center);
+        vertices.setXYZ(index, point.x, point.y, point.z);
+      }
+    }
+    geometry.computeVertexNormals(); this.mesh(geometry, material, tail);
     return cat;
   }
 
   private buildReset(): void {
-    const black = this.material(0x111817, .82, .05); this.cat = this.catModel(black); this.cat.name = 'matrix-reset-black-cat'; this.group.add(this.cat);
+    const black = this.material(0x141817, .9, 0); this.cat = this.catModel(black); this.cat.name = 'matrix-reset-black-cat'; this.group.add(this.cat);
     const pbr = (folder: string, name: string, color: number, repeatX: number, repeatY: number) => {
       const material = this.material(color, .87, 0);
       for (const [key, suffix] of [['map', 'color'], ['normalMap', 'normal'], ['roughnessMap', 'roughness']] as const) {
@@ -399,12 +449,23 @@ export class TrilogyEpilogueRenderer {
       this.cat.visible = pose.visible; this.cat.position.set(pose.catX, 0, pose.catZ); this.cat.rotation.y = pose.catYaw;
       this.cat.getObjectByName('reset-cat-head')!.rotation.y = phase === 'waking' ? -.4 * (1 - THREE.MathUtils.smoothstep(state.elapsed, 0, 2)) : 0;
       this.cat.updateWorldMatrix(true, true); const rotation = this.cat.getWorldQuaternion(new THREE.Quaternion());
+      const exitLength = Math.hypot(4.6, 1.2), distance = Math.min(10.4, pose.catX + 8) + Math.max(0, pose.catX - 2.4) / 4.6 * exitLength;
+      this.cat.getObjectByName('reset-cat-tail')!.rotation.y = Math.sin(distance * 2.1) * .09 * pose.catWalk;
       this.catLegs.forEach(({ hip, knee, ankle, rear, side }) => {
-        const cycle = pose.catClock * 8 + (rear ? Math.PI : 0) + (side > 0 ? Math.PI : 0);
-        const stride = Math.sin(cycle) * .14 * pose.catWalk, lift = Math.max(0, Math.cos(cycle)) * .07 * pose.catWalk;
-        const target = this.cat!.localToWorld(new THREE.Vector3(hip.position.x + stride, .048 + lift, hip.position.z));
+        // Four separate footfalls. During stance the target is a world-space
+        // footprint, not a point moving with the torso; saved distance also
+        // reconstructs the same planted feet after a pause or cold load.
+        const offset = (side > 0 ? .5 : 0) + (rear ? .75 : 0), cycle = distance / .64 + offset;
+        const step = Math.floor(cycle), fraction = cycle - step, swing = THREE.MathUtils.smoothstep(fraction, .7, 1);
+        const footprint = (step - offset + .35 + swing) * .64 + hip.position.x;
+        const exit = Math.max(0, footprint - 10.4), yaw = footprint > 10.4 ? Math.atan2(1.2, 4.6) : 0;
+        const lift = fraction > .7 ? Math.sin((fraction - .7) / .3 * Math.PI) ** 2 * .09 * pose.catWalk : 0;
+        const target = this.group.localToWorld(new THREE.Vector3(
+          -8 + Math.min(10.4, footprint) + exit * 4.6 / exitLength + Math.sin(yaw) * hip.position.z,
+          .048 + lift, -10.9 - exit * 1.2 / exitLength + Math.cos(yaw) * hip.position.z));
         reach(hip, knee, ankle.position, target, new THREE.Vector3(rear ? 1 : -1, 0, 0).applyQuaternion(rotation));
-        ankle.quaternion.copy(knee.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rotation));
+        const planted = this.group.getWorldQuaternion(new THREE.Quaternion()).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw));
+        ankle.quaternion.copy(knee.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(planted));
       });
       this.resetTiles.forEach((tile, i) => {
         const front = -6 + pose.pavement * 20;

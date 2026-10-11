@@ -1,0 +1,53 @@
+{
+  "source_tick": 13688,
+  "final_tick": 13719,
+  "final_scene": "m3_dawn",
+  "final_actor": "oracle",
+  "final_step": 0,
+  "final_epilogue": {
+    "kind": "dawn",
+    "phase": "ready",
+    "elapsed": 0,
+    "total": 0,
+    "parkArrivalVersion": 2
+  },
+  "paused": true,
+  "all_roles_released": true,
+  "completed_prefix_preserved": true,
+  "old_completed_count": 50,
+  "new_completed": [
+    "m3_reset"
+  ],
+  "reflections_equal": true,
+  "reflection_count": 18,
+  "choices_equal": true,
+  "choice_count": 45,
+  "journal_prefix_preserved": false,
+  "old_journal_count": 71,
+  "new_journal_entries": 1,
+  "inventory_equal": true,
+  "dead_equal": true,
+  "neo_state_equal": {
+    "health": true,
+    "status": true,
+    "position": true,
+    "rotation": true,
+    "isInMatrix": true
+  },
+  "neo_action_equal": false,
+  "neo_action_changes": {
+    "startedAt": [
+      13657,
+      13719
+    ]
+  },
+  "journal_suffix_preserved": true,
+  "journal_order": "newest first; the new entry is prepended, so the original prefix comparison is false",
+  "nonpositive_health_count_before": 11,
+  "nonpositive_health_count_after": 11,
+  "dead_status_count_before": 10,
+  "dead_status_count_after": 10,
+  "dead_statuses_equal": true,
+  "source_memory_count": 15,
+  "source_memories_equal": true
+}
