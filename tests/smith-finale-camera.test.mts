@@ -91,6 +91,24 @@ async function setup(t: TestContext) {
   return { world, actors, controls, renderer, group, head, camera, frame, setBeat, sync, look, key };
 }
 
+test('the free entry camera stays outside the actual Neo body at the machine handoff in wide and narrow views', async t => {
+  const h = await setup(t), actor = h.actors[0], center = FILM_SETS.film_smith_avenue.center;
+  for (const aspect of [16 / 9, 9 / 16]) {
+    actor.currentAction = null; actor.position = { x: center.x, y: center.y, z: center.z - 78 }; actor.rotation = 0;
+    h.camera.aspect = aspect; h.controls.possess(actor); h.renderer.updateAgent('neo', actor);
+    h.controls.update(.02, actor, h.group, false);
+    h.renderer.setPlayer('neo', false); h.renderer.setPlayerMotion(h.controls.motion); h.renderer.update(.02, h.camera, 0);
+    h.group.updateWorldMatrix(true, true); h.camera.updateMatrixWorld();
+    for (const name of ['head', 'wrist_R', 'wrist_L']) {
+      const point = h.renderer.getAgentBody('neo')!.getObjectByName(name)!.getWorldPosition(new THREE.Vector3());
+      assert.ok(point.distanceTo(h.camera.position) > 4, `${aspect}/${name}: the invisible entry boundary pushes the camera into Neo`);
+      const screen = point.project(h.camera);
+      assert.ok(Math.abs(screen.x) < .85 && Math.abs(screen.y) < .8 && screen.z > -1 && screen.z < 1,
+        `${aspect}/${name}: the actual entry body is cropped at ${screen.toArray()}`);
+    }
+  }
+});
+
 test('the first paused finale frame restores both actual bodies and the camera without frame-rate settling', async t => {
   const h = await setup(t);
   for (const beat of [...beats, ...beats.toReversed()]) {
