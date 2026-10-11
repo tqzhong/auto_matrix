@@ -3,7 +3,7 @@ import test, { type TestContext } from 'node:test';
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { DEUS_PACT, FILM_SETS, newDeusPact, neoCarryPose, newTrilogyEpilogue, type DeusPactEncounter } from '@auto_matrix/shared';
+import { DEUS_PACT, FILM_SETS, TRILOGY_EPILOGUE, newDeusPact, neoCarryPose, newTrilogyEpilogue, type DeusPactEncounter } from '@auto_matrix/shared';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { MachineCoreRenderer } from '../packages/client/src/engine/MachineCoreRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
@@ -219,11 +219,12 @@ test('the machine-core shared view has clear actual geometry sightlines to Neo a
   }
   for (const y of [0, 1.8, 3.8]) points.push(new THREE.Vector3(h.center.x, h.center.y + y, h.center.z - 25));
   const tunnel = set.getObjectByName('machine-core-light-tunnel')!;
+  const chassis = set.getObjectByName('machine-core-collective-chassis')!;
   for (const aspect of [16 / 9, 9 / 16]) {
     h.camera.aspect = aspect; h.frame(beat);
     const blocked = points.flatMap((point, index) => {
       const ray = point.clone().sub(h.camera.position);
-      const hit = new THREE.Raycaster(h.camera.position, ray.clone().normalize(), .06, ray.length() - .15).intersectObject(tunnel, true)[0];
+      const hit = new THREE.Raycaster(h.camera.position, ray.clone().normalize(), .06, ray.length() - .15).intersectObjects([tunnel, chassis], true)[0];
       return hit ? [`${index >= points.length - 3 ? 'Neo' : 'face'} by ${hit.object.name || (hit.object as THREE.Mesh).geometry.type} at ${hit.distance.toFixed(3)}`] : [];
     });
     assert.equal(blocked.length, 0, `${aspect}: actual chamber geometry blocks the shared view: ${blocked.join('; ')}`);
@@ -332,8 +333,8 @@ test('the carried body keeps its saved root and actual eye through waiting, tran
   const machine = new MachineCoreRenderer(stage); t.after(() => machine.dispose());
   renderer.updateAgent('neo', h.actor); await new Promise(resolve => setImmediate(resolve));
   const group = renderer.getAgent('neo')!, head = group.getObjectByName('head')!;
-  const frame = (phase: 'ready' | 'transfer' | 'done') => {
-    const beat = { ...newTrilogyEpilogue('neo_carried'), phase, elapsed: phase === 'transfer' ? 1.6 : 0, total: 7.5 }, pose = neoCarryPose(beat);
+  const frame = (phase: 'ready' | 'transfer' | 'departing' | 'done', elapsed = phase === 'transfer' ? 1.6 : 0) => {
+    const beat = { ...newTrilogyEpilogue('neo_carried'), phase, elapsed, total: 7.5 }, pose = neoCarryPose(beat);
     h.actor.position = { x: h.center.x + (pose.x ?? 0), y: h.center.y + pose.y, z: h.center.z + pose.z }; h.actor.rotation = Math.PI;
     h.actor.currentAction = { type: 'idle', parameters: { finaleComa: true, epilogue: { ...beat, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
     renderer.updateAgent('neo', h.actor); h.controls.update(.02, h.actor, group, false);
@@ -344,7 +345,8 @@ test('the carried body keeps its saved root and actual eye through waiting, tran
       const target = group.getObjectByName(name)!.getWorldPosition(new THREE.Vector3()), direction = target.clone().sub(h.camera.position);
       const hits = new THREE.Raycaster(h.camera.position, direction.clone().normalize(), 0, direction.length() - .05).intersectObject(stage, true)
         .filter(hit => { for (let p: THREE.Object3D | null = hit.object; p; p = p.parent) if (!p.visible) return false; return true; });
-      assert.equal(hits.length, 0, `${phase}: machine scenery blocks the camera's view of ${name}`);
+      assert.equal(hits.length, 0, `${phase}/${elapsed}/${h.camera.aspect}: machine scenery blocks ${name}: ${hits.map(hit =>
+        `${hit.object.name || (hit.object as THREE.Mesh).geometry.type} at ${stage.worldToLocal(hit.point.clone()).toArray()}`).join('; ')}`);
     }
     assert.ok(group.position.distanceTo(new THREE.Vector3(h.actor.position.x, h.actor.position.y, h.actor.position.z)) < .00001);
     assert.equal(group.children[0].rotation.y, Math.PI, 'observing cannot turn the unresponsive body');
@@ -361,4 +363,10 @@ test('the carried body keeps its saved root and actual eye through waiting, tran
   const before = h.camera.getWorldDirection(new THREE.Vector3()); h.look(); frame('done');
   assert.ok(h.camera.getWorldDirection(new THREE.Vector3()).distanceTo(before) > .1);
   h.key('KeyV'); h.key('KeyV', false); assert.equal(h.controls.firstPerson, false); frame('done');
+  // The expanded radial body also borders the later transport route. Check
+  // the actual posed body through that route, not only its final endpoint.
+  for (const aspect of [16 / 9, 9 / 16]) {
+    h.camera.aspect = aspect; h.camera.updateProjectionMatrix();
+    for (let i = 0; i <= 20; i++) frame('departing', TRILOGY_EPILOGUE.seconds.departing * i / 20);
+  }
 });

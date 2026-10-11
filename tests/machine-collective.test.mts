@@ -92,3 +92,39 @@ test('the segmented deck stays below the actual shoe-support plane', () => {
     assert.ok(bounds.max.y <= .02501, `grating reaches ${bounds.max.y}, above the .025 shoe-support plane`);
   } finally { renderer.dispose(); }
 });
+
+test('the gathering face has a physical machine body behind it instead of an open hole through the chassis', () => {
+  const root = new THREE.Group(), renderer = new MachineCoreRenderer(root);
+  try {
+    root.updateMatrixWorld(true);
+    const chassis = root.getObjectByName('machine-core-collective-chassis')!;
+    for (const x of [-6, 0, 6]) for (const y of [16, 23, 30]) {
+      const hit = new THREE.Raycaster(new THREE.Vector3(x, y, -30), new THREE.Vector3(0, 0, -1), 0, 40)
+        .intersectObject(chassis, true)[0];
+      assert.ok(hit, `empty machine body behind the forming face at ${x},${y}`);
+      assert.ok(hit.point.z < -48, 'the backing cannot cut through the face-forming machines');
+    }
+  } finally { renderer.dispose(); }
+});
+
+test('the assembled machines turn across the forehead and nose so lighting describes the facial volumes', () => {
+  const root = new THREE.Group(), renderer = new MachineCoreRenderer(root);
+  try {
+    renderer.update({ ...newDeusPact(), phase: 'terms', total: 20 }, 0, false, player);
+    const plates = root.getObjectByName('machine-core-face-plates') as THREE.InstancedMesh;
+    const matrix = new THREE.Matrix4();
+    const samples: { position: THREE.Vector3; normal: THREE.Vector3 }[] = [];
+    for (let i = 0; i < plates.count; i++) {
+      plates.getMatrixAt(i, matrix);
+      samples.push({ position: new THREE.Vector3().setFromMatrixPosition(matrix), normal: new THREE.Vector3().setFromMatrixColumn(matrix, 2).normalize() });
+    }
+    const nearest = (x: number, y: number) => samples.reduce((best, sample) =>
+      Math.hypot(sample.position.x - x, sample.position.y - y) < Math.hypot(best.position.x - x, best.position.y - y) ? sample : best);
+    for (const [name, x, y] of [['forehead', 0, 33], ['nose', 1.7, 23]] as const) {
+      const horizontal = nearest(x + .55, y).position.clone().sub(nearest(x - .55, y).position);
+      const vertical = nearest(x, y + .55).position.clone().sub(nearest(x, y - .55).position);
+      const surface = horizontal.cross(vertical).normalize(), alignment = nearest(x, y).normal.dot(surface);
+      assert.ok(alignment > .985, `${name} parts do not follow the surrounding physical surface: ${alignment}`);
+    }
+  } finally { renderer.dispose(); }
+});
