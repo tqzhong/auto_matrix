@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { SmithCrowdRenderer } from './SmithCrowdRenderer.js';
-import { SMITH_FINALE, newSmithFinale, smithFinaleBeat, smithFinalePose, smithEndingPose, smithCraterAmount, smithCraterFloor, smithCraterRim, type SmithFinaleEncounter } from '@auto_matrix/shared';
+import { SMITH_FINALE, cityNoise, newSmithFinale, smithFinaleBeat, smithFinalePose, smithEndingPose, smithCraterAmount, smithCraterFloor, smithCraterRim, type SmithFinaleEncounter } from '@auto_matrix/shared';
 
 /** Procedural production sample for the Revolutions rain duel.
  * Character rigs remain owned by AgentRenderer; this class owns the avenue,
@@ -69,17 +69,17 @@ export class SmithFinaleRenderer {
 
   private geometry<T extends THREE.BufferGeometry>(geometry: T): T { this.geometries.add(geometry); return geometry; }
 
-  private rockMaps(materials: THREE.MeshStandardMaterial[]): void {
+  private surfaceMaps(materials: THREE.MeshStandardMaterial[], asset: string, repeat: [number, number]): void {
     if (typeof document === 'undefined') return;
     let ready = 0; const maps: THREE.Texture[] = [];
     for (const kind of ['color', 'normal', 'roughness']) {
-      const texture = new THREE.TextureLoader().load(`/assets/surfaces/seaside_rock-${kind}.jpg`, () => {
+      const texture = new THREE.TextureLoader().load(`/assets/surfaces/${asset}-${kind}.jpg`, () => {
         if (++ready !== 3 || this.disposed) return;
         for (const material of materials) {
           [material.map, material.normalMap, material.roughnessMap] = maps; material.needsUpdate = true;
         }
       });
-      texture.wrapS = texture.wrapT = THREE.RepeatWrapping; texture.anisotropy = 8;
+      texture.wrapS = texture.wrapT = THREE.RepeatWrapping; texture.repeat.set(...repeat); texture.anisotropy = 8;
       if (kind === 'color') texture.colorSpace = THREE.SRGBColorSpace;
       maps.push(texture); this.textures.add(texture);
     }
@@ -93,14 +93,8 @@ export class SmithFinaleRenderer {
 
   private buildAvenue(): void {
     this.avenue.name = 'smith-finale-facades'; this.group.add(this.avenue);
-    const grain = new Uint8Array(128 * 128 * 4);
-    for (let y = 0; y < 128; y++) for (let x = 0; x < 128; x++) {
-      const shade = 115 + Math.sin(x * 2.41 + y * 5.17) * 23 + Math.sin(x * .3 - y * .7) * 12;
-      const i = (y * 128 + x) * 4; grain[i] = grain[i + 1] = grain[i + 2] = shade; grain[i + 3] = 255;
-    }
-    const surface = new THREE.DataTexture(grain, 128, 128); surface.wrapS = surface.wrapT = THREE.RepeatWrapping;
-    surface.repeat.set(16, 50); surface.needsUpdate = true; this.textures.add(surface);
-    const wet = this.material({ color: 0x323c3c, metalness: .16, roughness: .21, bumpMap: surface, bumpScale: .035, envMapIntensity: 1.4 });
+    const wet = this.material({ color: 0x88918b, metalness: .03, roughness: .58, normalScale: new THREE.Vector2(.35, .35) });
+    this.surfaceMaps([wet], 'asphalt_02', [42 / 8, 190 / 8]);
     const curb = this.material({ color: 0x686e68, roughness: .65 });
     const stone = this.material({ color: 0x575e59, metalness: .05, roughness: .82 });
     const sandstone = this.material({ color: 0x737568, roughness: .86 });
@@ -126,16 +120,29 @@ export class SmithFinaleRenderer {
       color: 0x8a9a91, textureWidth: 512, textureHeight: 512, multisample: 0, clipBias: .003,
     });
     const waterMaterial = this.water.material as THREE.ShaderMaterial;
-    waterMaterial.vertexShader = waterMaterial.vertexShader.replace('varying vec4 vUv;', 'varying vec4 vUv; varying vec2 streetUv;')
-      .replace('vUv = textureMatrix', 'streetUv = uv; vUv = textureMatrix');
-    waterMaterial.fragmentShader = waterMaterial.fragmentShader.replace('varying vec4 vUv;', 'varying vec4 vUv; varying vec2 streetUv; uniform float weatherTime; uniform float pitWater;')
+    waterMaterial.vertexShader = waterMaterial.vertexShader.replace('varying vec4 vUv;', 'varying vec4 vUv; varying vec2 streetUv; varying vec3 waterEye;')
+      .replace('vUv = textureMatrix', 'streetUv = uv; waterEye = cameraPosition - (modelMatrix * vec4(position, 1.0)).xyz; vUv = textureMatrix');
+    waterMaterial.fragmentShader = waterMaterial.fragmentShader.replace('varying vec4 vUv;', `
+      varying vec4 vUv; varying vec2 streetUv; varying vec3 waterEye; uniform float weatherTime; uniform float pitWater;
+      float waterHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+      float waterNoise(vec2 p) {
+        vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+        return mix(mix(waterHash(i), waterHash(i + vec2(1.0, 0.0)), f.x),
+          mix(waterHash(i + vec2(0.0, 1.0)), waterHash(i + 1.0), f.x), f.y);
+      }`)
       .replace('vec4 base = texture2DProj( tDiffuse, vUv );', `
+        vec2 road = (streetUv - .5) * vec2(42.0, 190.0);
+        float pools = smoothstep(.32, .76, waterNoise(road * vec2(.22, .15)) + .18 * waterNoise(road * .77));
+        float grazing = pow(1.0 - abs(normalize(waterEye).y), 2.0);
         vec4 reflected = vUv;
-        reflected.x += sin(streetUv.y * 1700.0 + weatherTime * 3.0) * .00055 * reflected.w;
-        reflected.y += sin(streetUv.x * 910.0 - weatherTime * 2.0) * .00025 * reflected.w;
-        vec4 base = texture2DProj(tDiffuse, reflected);`)
+        vec2 ripple = vec2(waterNoise(road * 2.7 + weatherTime * vec2(.8, .37)),
+          waterNoise(road * 3.1 + weatherTime * vec2(-.42, .6))) - .5;
+        reflected.xy += ripple * .00045 * reflected.w;
+        vec4 blur = vec4(.0012 * reflected.w, 0.0, 0.0, 0.0);
+        vec4 base = texture2DProj(tDiffuse, reflected) * .5
+          + texture2DProj(tDiffuse, reflected + blur) * .25 + texture2DProj(tDiffuse, reflected - blur) * .25;`)
       .replace('gl_FragColor = vec4( blendOverlay( base.rgb, color ), 1.0 );',
-        'gl_FragColor = vec4(blendOverlay(base.rgb, color), mix(.38 + .18 * sin(streetUv.x * 57.0 + sin(streetUv.y * 71.0)), .28, pitWater));');
+        'gl_FragColor = vec4(blendOverlay(base.rgb, color), mix(mix(.03, .68, pools) * mix(.2, 1.0, grazing), .28, pitWater));');
     this.water.name = 'smith-finale-reflected-water'; this.water.rotation.x = -Math.PI / 2; this.water.position.y = .035;
     waterMaterial.transparent = true; waterMaterial.depthWrite = false; waterMaterial.uniforms.weatherTime = this.weatherTime; waterMaterial.uniforms.pitWater = this.pitWater;
     this.group.add(this.water);
@@ -190,8 +197,8 @@ export class SmithFinaleRenderer {
           if (!centerLine && !edgeLine) discard;`);
     };
     this.paint = this.mesh(this.intactRoad, stripe, this.group, 0, .051, 0, 'smith-finale-road-stripe'); this.paint.rotation.x = -Math.PI / 2;
-    const ripple = this.basic({ color: 0x93a8a0, transparent: true, opacity: .17, side: THREE.DoubleSide, depthWrite: false });
-    const ringGeometry = this.geometry(new THREE.RingGeometry(.18, .195, 16));
+    const ripple = this.basic({ color: 0x93a8a0, transparent: true, opacity: .1, side: THREE.DoubleSide, depthWrite: false });
+    const ringGeometry = this.geometry(new THREE.RingGeometry(.12, .128, 16));
     this.puddles = new THREE.InstancedMesh(ringGeometry, ripple, 216); this.puddles.name = 'smith-finale-puddle-ripples';
     this.puddles.instanceMatrix.setUsage(THREE.DynamicDrawUsage); this.group.add(this.puddles);
     const ambient = new THREE.HemisphereLight(0xbbc8b4, 0x152320, .85); this.group.add(ambient); this.lights.push(ambient);
@@ -267,16 +274,17 @@ export class SmithFinaleRenderer {
   }
 
   private buildWeather(): void {
-    const rainMaterial = this.basic({ color: 0xa8c2ba, transparent: true, opacity: .4, depthWrite: false });
+    const rainMaterial = this.basic({ color: 0xa8c2ba, transparent: true, opacity: .28, depthWrite: false });
     const points: number[] = [], phases: number[] = [];
-    for (let i = 0; i < 3200; i++) {
-      const x = -34 + (i * 17.37) % 68; const y = (i * 11.23) % 60; const z = -74 + (i * 29.11) % 148;
-      points.push(x, 48, z, x - .08, 48 - 1.2 - i % 4 * .28, z + .18); phases.push(y, y);
+    for (let i = 0; i < 4800; i++) {
+      const x = -34 + cityNoise(i, 17) * 68, y = cityNoise(i, 29) * 104, z = -95 + cityNoise(i, 43) * 190;
+      const length = .55 + cityNoise(i, 61) * .9;
+      points.push(x, 88, z, x - length * .045, 88 - length, z + length * .07); phases.push(y, y);
     }
     rainMaterial.onBeforeCompile = shader => {
       shader.uniforms.weatherTime = this.weatherTime;
       shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nuniform float weatherTime; attribute float rainPhase; varying vec3 rainPoint;')
-        .replace('#include <begin_vertex>', '#include <begin_vertex>\ntransformed.y -= mod(weatherTime * 24.0 + rainPhase, 60.0); rainPoint = transformed;');
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\ntransformed.y -= mod(weatherTime * 24.0 + rainPhase, 104.0); rainPoint = transformed;');
       shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 rainPoint;')
         .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
           if (rainPoint.x < -25.75 && rainPoint.x > -39.25 && rainPoint.z > -45.0 && rainPoint.z < -15.0
@@ -363,7 +371,7 @@ export class SmithFinaleRenderer {
     const poolPoints = this.poolWater.getAttribute('position'), poolUV = this.poolWater.getAttribute('uv');
     for (let i = 0; i < poolPoints.count; i++) poolUV.setXY(i, poolPoints.getX(i) / 42 + .5, poolPoints.getY(i) / 190 + .5);
     const concrete = this.material({ color: 0xa9ada7, roughness: .64, metalness: .04, normalScale: new THREE.Vector2(.7, .7) });
-    this.rockMaps([rock, concrete]);
+    this.surfaceMaps([rock, concrete], 'seaside_rock', [1, 1]);
     const slab = this.geometry(new THREE.IcosahedronGeometry(1, 1)), vertices = slab.getAttribute('position');
     for (let i = 0; i < vertices.count; i++) {
       const x = vertices.getX(i), y = vertices.getY(i), z = vertices.getZ(i);
@@ -463,16 +471,17 @@ export class SmithFinaleRenderer {
     this.pitWater.value = crater;
     const ending = smithEndingPose(state);
     this.weatherTime.value = state.total; this.rain.visible = ending.rain > 0;
-    (this.rain.children[0] as THREE.LineSegments<THREE.BufferGeometry, THREE.MeshBasicMaterial>).material.opacity = .4 * ending.rain;
+    (this.rain.children[0] as THREE.LineSegments<THREE.BufferGeometry, THREE.MeshBasicMaterial>).material.opacity = .28 * ending.rain;
     const flash = (Math.sin(state.total * 1.73 + 1.2) > .965 || phase === 'shockwave');
     this.lightning.visible = flash && ending.rain > 0;
     const flashLight = this.lightning.children.find(child => child instanceof THREE.PointLight) as THREE.PointLight | undefined;
     if (flashLight) flashLight.intensity = this.lightning.visible ? phase === 'purging' ? 1800 : 780 : 0;
+    (this.puddles.material as THREE.MeshBasicMaterial).opacity = .1 * ending.rain;
     for (let index = 0; index < this.puddles.count; index++) {
-      const scale = .5 + ((state.total * 2.2 + index * .37) % 1) * 2.4;
+      const scale = .3 + ((state.total * 1.3 + cityNoise(index, 71)) % 1) * 1.7;
       const radius = Math.sqrt((index * .618) % 1) * 8.6, angle = index * 2.399963;
-      const x = index < 120 ? -19 + (index * 7.7) % 38 : Math.cos(angle) * radius;
-      const z = index < 120 ? -88 + (index * 17.3) % 176 : SMITH_FINALE.crater.z + Math.sin(angle) * radius;
+      const x = index < 120 ? -19 + cityNoise(index, 91) * 38 : Math.cos(angle) * radius;
+      const z = index < 120 ? -94 + cityNoise(index, 153) * 188 : SMITH_FINALE.crater.z + Math.sin(angle) * radius;
       const floor = smithCraterFloor(x, z);
       this.rippleMatrix.position.set(x, .064 + floor * crater, z);
       this.rippleMatrix.rotation.x = -Math.PI / 2;

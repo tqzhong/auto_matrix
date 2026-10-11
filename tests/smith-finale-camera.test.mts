@@ -153,6 +153,24 @@ test('the opening keeps Neo and the distant speaking Smith inside the playable v
   }
 });
 
+test('saved off-centre arrivals keep the actual turning body inside wide and narrow opening views', async t => {
+  const h = await setup(t);
+  for (const aspect of [16 / 9, 9 / 16]) for (const arrival of [
+    { x: 2.4, z: -45, yaw: .4, vx: 0, vz: 3.4 },
+    { x: -1.7, z: -38.8, yaw: Math.PI, vx: 0, vz: -8.4 },
+  ]) for (const elapsed of [0, .25, .5, 1.1, 6.79]) {
+    h.camera.aspect = aspect;
+    h.frame({ ...newSmithFinale(), phase: 'entrance', arrival, elapsed, total: 20 + elapsed });
+    for (const name of ['head', 'wrist_R', 'wrist_L']) {
+      const point = h.renderer.getAgentBody('neo')!.getObjectByName(name)!.getWorldPosition(new THREE.Vector3());
+      assert.ok(point.distanceTo(h.camera.position) > 3, `${aspect}/${elapsed}/${name}: opening camera intersects Neo`);
+      const projected = point.project(h.camera);
+      assert.ok(Math.abs(projected.x) < .95 && Math.abs(projected.y) < .95 && projected.z > -1 && projected.z < 1,
+        `${aspect}/${elapsed}/${name}: turning body leaves the frame at ${projected.toArray()}`);
+    }
+  }
+});
+
 test('opening sunglasses follow the film stages, and the main Smith exposes his face after the crater impact', async t => {
   const h = await setup(t);
   for (const phase of ['entrance', 'reply', 'charging', 'building', 'crater', 'pit_punch', 'vision'] as const) {

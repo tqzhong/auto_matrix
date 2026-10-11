@@ -34,6 +34,7 @@ export interface SmithFinaleEncounter {
   lane: number;
   checkpoint: SmithFinaleCheckpoint;
   attempts: number;
+  arrival?: { x: number; z: number; yaw: number; vx: number; vz: number };
   impactAt?: number;
   roomFight?: boolean;
   pitFight?: boolean;
@@ -285,12 +286,22 @@ export function smithFinalePose(encounter: SmithFinaleEncounter): SmithFinalePos
       smith.yaw = Math.atan2(-intro.x, intro.smithZ - intro.z) + (Math.PI - Math.atan2(-intro.x, intro.smithZ - intro.z) - Math.PI * 2) * smooth((p - .82) / .18);
       smith.speed = distance * 6 * p * (1 - p) / intro.seconds; smith.travel = distance * ease;
     }
+    if (encounter.arrival) {
+      const from = encounter.arrival, stop = .5;
+      const age = phase === 'entrance' ? Math.min(t, stop) : stop, travel = age - age * age / (2 * stop);
+      neo.x = from.x + from.vx * travel; neo.z = from.z + from.vz * travel;
+      const facing = Math.atan2(smith.x - neo.x, smith.z - neo.z), turn = phase === 'entrance' ? smooth(t / 1.1) : 1;
+      neo.yaw = from.yaw + Math.atan2(Math.sin(facing - from.yaw), Math.cos(facing - from.yaw)) * turn;
+      neo.speed = Math.hypot(from.vx, from.vz) * (1 - age / stop); neo.travel = Math.hypot(from.vx, from.vz) * travel;
+    }
     if (phase === 'charging') {
       const p = clamp(t / intro.charge), ease = smooth(p);
-      neo.z = intro.neoZ + (SMITH_FINALE.avenue.neoZ - intro.neoZ) * ease;
+      const startX = neo.x, startZ = neo.z, startYaw = neo.yaw, distance = Math.hypot(startX, SMITH_FINALE.avenue.neoZ - startZ);
+      neo.x = startX * (1 - ease); neo.z = startZ + (SMITH_FINALE.avenue.neoZ - startZ) * ease;
+      neo.yaw = startYaw + Math.atan2(Math.sin(-startYaw), Math.cos(-startYaw)) * ease;
       smith.z = intro.smithZ + (SMITH_FINALE.avenue.smithZ - intro.smithZ) * ease;
-      neo.travel = (SMITH_FINALE.avenue.neoZ - intro.neoZ) * ease; smith.travel = (intro.smithZ - SMITH_FINALE.avenue.smithZ) * ease;
-      neo.speed = (SMITH_FINALE.avenue.neoZ - intro.neoZ) * 6 * p * (1 - p) / intro.charge;
+      neo.travel = distance * ease; smith.travel = (intro.smithZ - SMITH_FINALE.avenue.smithZ) * ease;
+      neo.speed = distance * 6 * p * (1 - p) / intro.charge;
       smith.speed = (intro.smithZ - SMITH_FINALE.avenue.smithZ) * 6 * p * (1 - p) / intro.charge;
     }
   }

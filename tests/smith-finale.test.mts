@@ -89,6 +89,50 @@ test('reaching the avenue plays Smith leaving the curb, waits for Neo’s reply,
   h.frame(45); assert.equal(h.state().smithFinale?.phase, 'ground_warning');
 });
 
+test('entering the face-off preserves the actual approach, brakes without teleporting, and resumes the same turn', () => {
+  for (const from of [{ x: 2.4, z: -45, yaw: .4, vx: 0, vz: 3.4 }, { x: -1.7, z: -38.8, yaw: Math.PI, vx: 0, vz: -8.4 }]) {
+    const h = game();
+    Object.assign(h.state(), { scene: 'm3_deus', actor: 'neo', step: FILM_SCENE_BY_ID.m3_deus.steps.length,
+      deus: { phase: 'connected', elapsed: 0, total: 0, resolve: 3, consent: 1.8, attempts: 0 } });
+    h.sandbox.state.neoLife!.choices.machine_pact = 'peace'; h.sandbox.state.neoLife!.choices.machine_connection = 'active';
+    h.actor().currentLocation = 'film_machine_core'; h.command('next');
+    const target = filmStepPosition(FILM_SCENE_BY_ID.m3_rain, FILM_SCENE_BY_ID.m3_rain.steps[0]);
+    h.actor().position = { ...target, x: target.x + from.x, z: target.z + from.z - SMITH_FINALE.entrance.neoZ };
+    h.actor().rotation = from.yaw; h.actor().velocity = { x: from.vx, y: 0, z: from.vz };
+    const before = structuredClone(h.actor().position);
+    h.command('act'); assert.equal(h.state().smithFinale?.phase, 'entrance');
+    assert.deepEqual(h.actor().position, before, 'entering the trigger must not place Neo at an authored mark');
+    assert.equal(h.actor().rotation, from.yaw, 'the player cannot snap around when Smith steps out');
+    let last = { ...h.actor().position };
+    for (let i = 0; i < 5; i++) {
+      h.frame();
+      assert.ok(Math.hypot(h.actor().position.x - last.x, h.actor().position.z - last.z) <= Math.hypot(from.vx, from.vz) * .05 + .001);
+      last = { ...h.actor().position };
+    }
+    const saved = structuredClone(h.sandbox.state), pose = structuredClone(h.actor().position), yaw = h.actor().rotation;
+    h.players.release('p', h.tick()); h.sandbox.restore(saved); h.players.possess('p', 'neo', h.tick());
+    assert.deepEqual(h.actor().position, pose); assert.equal(h.actor().rotation, yaw);
+    h.frame(240); assert.equal(h.state().smithFinale?.phase, 'reply');
+    const stopped = { ...h.actor().position };
+    assert.ok(Math.hypot(stopped.x - before.x, stopped.z - before.z) <= 2.2, 'braking cannot slide Neo to the fixed central mark');
+    h.command('act'); h.frame(120); assert.equal(h.state().smithFinale?.phase, 'charge_ready');
+    assert.deepEqual(h.actor().position, stopped, 'dialogue preserves the actual stopping point');
+    h.command('act'); assert.deepEqual(h.actor().position, stopped, 'the charge starts where the player stopped');
+  }
+});
+
+test('jumping into the face-off marker waits for landing instead of pulling Neo to the road', () => {
+  const h = game();
+  Object.assign(h.state(), { scene: 'm3_rain', actor: 'neo', step: 0, smithFinale: newSmithFinale() });
+  h.actor().currentLocation = 'film_smith_avenue'; h.actor().isInMatrix = true;
+  const floor = filmStepPosition(FILM_SCENE_BY_ID.m3_rain, FILM_SCENE_BY_ID.m3_rain.steps[0]);
+  h.actor().position = { ...floor, y: floor.y + 1 }; h.actor().velocity = { x: 0, y: 3, z: 0 };
+  h.command('act'); h.sandbox.tick(h.tick());
+  assert.equal(h.state().step, 0); assert.equal(h.actor().position.y, floor.y + 1);
+  h.actor().position = floor; h.actor().velocity.y = 0; h.sandbox.tick(h.tick());
+  assert.equal(h.state().smithFinale?.phase, 'entrance');
+});
+
 test('the Smith finale has action windows, an air checkpoint and a deliberate crater rise', () => {
   let duel = { ...newSmithFinale(), phase: 'ground_warning' as const };
   duel = stepSmithFinale(duel, { focus: false, x: 0, z: 0 }, SMITH_FINALE.ground.warning);

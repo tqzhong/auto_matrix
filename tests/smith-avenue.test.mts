@@ -42,6 +42,21 @@ test('rain remains visible when the first-person player crosses the avenue origi
   } finally { renderer.dispose(); }
 });
 
+test('rain reaches both ends of the real road and keeps the same distribution after a cold load', () => {
+  const root = new THREE.Group(), renderer = new SmithFinaleRenderer(root);
+  const coldRoot = new THREE.Group(), cold = new SmithFinaleRenderer(coldRoot);
+  try {
+    const positions = (root.getObjectByName('smith-finale-rain-streaks') as THREE.LineSegments).geometry.getAttribute('position');
+    for (const side of [-1, 1]) {
+      let nearEntrance = 0;
+      for (let i = 0; i < positions.count; i += 2) if (Math.abs(positions.getX(i)) < 21 && positions.getZ(i) * side > 75) nearEntrance++;
+      assert.ok(nearEntrance > 40, `the ${side} road entrance has no rain overhead`);
+    }
+    const restored = (coldRoot.getObjectByName('smith-finale-rain-streaks') as THREE.LineSegments).geometry.getAttribute('position');
+    assert.deepEqual(Array.from(restored.array), Array.from(positions.array));
+  } finally { renderer.dispose(); cold.dispose(); }
+});
+
 test('philosophical choices hold their step but allow saved weather time to flow', () => {
   for (const phase of ['approach', 'ready', 'assault_ready', 'choice', 'vision', 'understanding'] as const) {
     const beat = { ...newSmithFinale(), phase, elapsed: 0, total: 18 };
