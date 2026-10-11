@@ -146,6 +146,34 @@ test('the Hammer interview keeps ambient Neo chat out of the dedicated questions
   assert.equal(cinematicTalkSuppressed('m3_bane_questions', 'film_hammer_deck', 1), false);
 });
 
+test('the completed Neo transport is resumed from landing and roster without a rebuild prompt', t => {
+  const elements = new Map<string, { textContent: string; innerHTML: string; classList: { add(): void } }>();
+  const element = (id: string) => {
+    if (!elements.has(id)) elements.set(id, { textContent: '', innerHTML: '', classList: { add() {} } });
+    return elements.get(id)!;
+  };
+  const document = globalThis.document; t.after(() => { globalThis.document = document; });
+  globalThis.document = { body: { classList: { toggle() {} } } } as unknown as Document;
+  const ui = Object.assign(Object.create(PlayerExperience.prototype), { root: { querySelector: element, querySelectorAll: () => [] },
+    chosen: 'neo', lastPlayed: 'neo', controlled: null, menuOpen: true, lastRender: -Infinity, search: '', entryExplicit: false, tipUntil: Infinity });
+  const agents = { neo: { id: 'neo', name: 'Neo', faction: 'zion', status: 'disconnected', health: 0 } as AgentState,
+    trinity: { id: 'trinity', name: 'Trinity', faction: 'zion', status: 'dead' } as AgentState };
+  const saved = structuredClone(agents);
+  const life = { journey: { scene: 'm3_neo_carried', actor: 'neo', epilogue: { kind: 'neo_carried', phase: 'done' } } } as NeoLifeState;
+  ui.update(agents, { running: false, population: 74 } as SimulationState, life);
+  assert.match(element('#enter-world').innerHTML, /继续 Neo 的剧情存档/);
+  const card = element('#character-grid').innerHTML.match(/data-play="neo".*?<\/button>/)![0];
+  assert.match(card, /继续剧情/); assert.doesNotMatch(card, /重建/);
+  assert.match(element('#character-grid').innerHTML.match(/data-play="trinity".*?<\/button>/)![0], /重建并接入/);
+  life.journey!.visiting = 'film_machine_core';
+  ui.update(agents, { running: false, population: 74 } as SimulationState, life);
+  assert.match(element('#enter-world').innerHTML, /重建并进入角色/);
+  delete life.journey!.visiting; life.journey!.epilogue!.phase = 'departing';
+  ui.update(agents, { running: false, population: 74 } as SimulationState, life);
+  assert.match(element('#enter-world').innerHTML, /重建并进入角色/);
+  assert.deepEqual(agents, saved, 'displaying the continuation cannot revive or move either body');
+});
+
 test('Hammer crew exchange and boarding do not overlay ambient E talk on their G controls', () => {
   for (const step of [0, 1, 2]) assert.equal(cinematicTalkSuppressed('m3_hammer_tunnels', undefined, step), true);
   assert.equal(cinematicTalkSuppressed('m3_hammer_tunnels', 'film_hammer_route', 1), false);

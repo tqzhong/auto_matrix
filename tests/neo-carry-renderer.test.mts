@@ -38,6 +38,7 @@ async function setup(t: test.TestContext) {
   const create = (player: boolean) => { const renderer = new AgentRenderer(new THREE.Scene()); renderer.setWorld(false); renderer.setPlayer(player ? 'neo' : null); renderers.push(renderer); return renderer; };
   const save = (renderer: AgentRenderer, beat: TrilogyEpilogueEncounter, delta = 0) => {
     const actor = structuredClone(world.agents.get('neo')!), center = FILM_SETS.film_machine_core.center, path = neoCarryPose(beat);
+    if (beat.phase === 'done') { actor.status = 'disconnected'; actor.health = 0; }
     actor.position = { x: center.x + path.x, y: center.y + path.y, z: center.z + path.z }; actor.rotation = Math.PI;
     actor.velocity = { x: 0, y: 0, z: 0 }; actor.currentLocation = 'film_machine_core'; actor.isInMatrix = false;
     actor.currentAction = { type: 'idle', parameters: { finaleComa: true, epilogue: { ...beat, role: 'neo' } }, startedAt: 0, duration: 1e9, progress: 0 };
@@ -73,6 +74,28 @@ test('the actual carried body is identical for player, observer, cold load and p
     assert.deepEqual(bodyPose(warm), saved, `${beat.phase}: no startup interpolation or wall-clock motion`);
     warm.update(.2); assert.deepEqual(bodyPose(warm), saved, `${beat.phase}: unchanged save keeps the body supported`);
   }
+});
+
+test('the completed transport keeps the disconnected physical body visible without reviving Neo', async t => {
+  const h = await setup(t), actor = h.create(false);
+  h.save(actor, beats.at(-1)!); await new Promise(resolve => setImmediate(resolve)); actor.update(0, undefined, 0);
+  const state = actor.getAgentState('neo')!, saved = structuredClone(state), pose = bodyPose(actor);
+  assert.equal(state.status, 'disconnected'); assert.equal(state.health, 0);
+  for (const player of [null, 'neo']) {
+    actor.setPlayer(player, false); actor.update(.2, undefined, 0);
+    assert.equal(actor.getAgent('neo')!.visible, true, 'the physical body is not a disconnected Matrix avatar');
+    assert.equal(actor.getAgentBody('neo')!.visible, true, 'the departed tray must not become empty');
+    assert.deepEqual(bodyPose(actor), pose, 'reconnecting cannot move or reanimate the body');
+  }
+  actor.setPlayer('neo', true); actor.update(0, undefined, 0);
+  assert.equal(actor.getAgentBody('neo')!.visible, false, 'the existing first-person view still hides the local body');
+  actor.setPlayer('neo', false); actor.setWorld(true); actor.update(0, undefined, 0);
+  assert.equal(actor.getAgent('neo')!.visible, false, 'the body cannot appear in the Matrix');
+  actor.setWorld(false); actor.update(0, undefined, 0);
+  assert.equal(actor.getAgent('neo')!.visible, true);
+  assert.deepEqual(state, saved, 'rendering cannot alter saved health, status, action or location');
+  actor.updateAgent('neo', { ...state, currentAction: null }); actor.update(0, undefined, 0);
+  assert.equal(actor.getAgent('neo')!.visible, false, 'ordinary disconnected avatars stay hidden');
 });
 
 test('the carrier supports the delivered body and withdraws the existing uplink from its real ports', async t => {
@@ -193,5 +216,50 @@ test('the delivered body rests on an open mechanical lattice with support under 
       }
     });
     assert.ok(gap >= -.002 && gap < .025, `support ${i}: visible body has penetration or floats ${gap} above its saddle`);
+  }
+});
+
+test('the transport machine carries the fitted tray without entering the body or hiding its forward optics', async t => {
+  const h = await setup(t), actor = h.create(true), stage = new THREE.Group(), center = FILM_SETS.film_machine_core.center;
+  stage.position.set(center.x, center.y - 1, center.z);
+  const carrier = new TrilogyEpilogueRenderer(stage, 'neo_carried'); t.after(() => carrier.dispose());
+  const ray = new THREE.Raycaster();
+  for (const beat of beats) {
+    h.save(actor, beat); await new Promise(resolve => setImmediate(resolve)); actor.update(0, undefined, 0);
+    const body = actor.getAgentBody('neo')!; body.parent!.parent!.updateMatrixWorld(true);
+    assert.equal(body.getObjectByName('neo-farewell-eye-band')!.visible, true, 'Neo retains his existing injury during transport');
+    carrier.update(beat, 0, body); stage.updateMatrixWorld(true);
+    const machine = stage.getObjectByName('neo-carrier-engine');
+    assert.ok(machine, 'the flat oval base is missing the film transport machine');
+    const hull = new THREE.Box3().setFromObject(machine), bodyBounds = new THREE.Box3();
+    body.traverseVisible(object => {
+      if (!(object instanceof THREE.SkinnedMesh)) return;
+      object.skeleton.update();
+      for (let i = 0; i < object.geometry.attributes.position.count; i++) {
+        const point = object.localToWorld(object.getVertexPosition(i, new THREE.Vector3()));
+        bodyBounds.expandByPoint(point);
+        assert.equal(hull.containsPoint(point), false, `${beat.phase}: the engine intersects ${object.name}`);
+      }
+    });
+    const optics = stage.getObjectByName('neo-carrier-optics')!;
+    assert.ok(optics, 'the forward eye cluster must be visible outside the engine shell');
+    const opticBounds = new THREE.Box3().setFromObject(optics), eye = opticBounds.getCenter(new THREE.Vector3());
+    ray.set(eye.clone().add(new THREE.Vector3(0, 0, -3)), new THREE.Vector3(0, 0, 1));
+    assert.ok(ray.intersectObject(optics, true)[0], 'the front view must reach the physical light lenses');
+    assert.equal(ray.intersectObject(machine, true)[0].object.parent, optics, 'armor cannot cover the central forward lens');
+    assert.ok(hull.max.z < bodyBounds.min.z, `${beat.phase}: towing body ${hull.max.z} must stay ahead of Neo ${bodyBounds.min.z}`);
+    if (['departing', 'done'].includes(beat.phase)) {
+      const deck = stage.getObjectByName('neo-carry-deck')!, tray = stage.getObjectByName('neo-body-transfer-tray')!;
+      const deckBounds = new THREE.Box3().setFromObject(deck);
+      for (let i = 0; i < 4; i++) {
+        const support = stage.getObjectByName(`neo-carrier-fork-${i}`)!; assert.ok(support);
+        const endpoint = support.localToWorld(new THREE.Vector3(0, .5, 0));
+        assert.ok(Math.abs(endpoint.y - deckBounds.min.y) < .002, `fork ${i}: the tray is unsupported`);
+        assert.ok(endpoint.x > deckBounds.min.x && endpoint.x < deckBounds.max.x);
+        assert.ok(endpoint.z > deckBounds.min.z && endpoint.z < deckBounds.max.z);
+      }
+      const frozen = tray.matrixWorld.elements.slice(); carrier.update(beat, 800, body); stage.updateMatrixWorld(true);
+      assert.deepEqual(tray.matrixWorld.elements, frozen);
+    }
   }
 });

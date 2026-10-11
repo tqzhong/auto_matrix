@@ -19,12 +19,11 @@ export class TrilogyEpilogueRenderer {
   private cradle?: THREE.Group;
   private bodyLight?: THREE.PointLight;
   private deck?: THREE.Mesh;
-  private hull?: THREE.Mesh;
+  private carrierMetal?: THREE.MeshStandardMaterial;
   private rails: THREE.Mesh[] = [];
   private braces: THREE.Mesh[] = [];
   private supports: THREE.Mesh[] = [];
   private liftArms: { lower: THREE.Mesh; upper: THREE.Mesh; end: THREE.Mesh }[] = [];
-  private bargePosts: THREE.Mesh[] = [];
   private fittedBody?: THREE.Object3D;
   private cat?: THREE.Group;
   private catLegs: { hip: THREE.Group; knee: THREE.Group; ankle: THREE.Group; rear: boolean; side: number }[] = [];
@@ -59,15 +58,8 @@ export class TrilogyEpilogueRenderer {
       iron[key] = texture; this.textures.add(texture);
     }
     iron.normalScale.set(.25, .25);
-    const inset = this.material(0x202b32, .64, .25), signal = this.material(0xcba977, .4, .6, 0xffac42, .45);
+    const inset = this.material(0x202b32, .64, .25); this.carrierMetal = dark;
     this.barge = new THREE.Group(); this.barge.name = 'neo-machine-funeral-barge'; this.group.add(this.barge);
-    this.hull = this.mesh(new THREE.SphereGeometry(1, 24, 12), dark, this.barge);
-    this.hull.scale.set(3.4, .42, 3.3); this.hull.position.set(0, .1, 2);
-    for (const side of [-1, 1]) for (let i = 0; i < 5; i++) {
-      const fin = this.mesh(new THREE.BoxGeometry(.65, .14, 1.5), iron, this.barge);
-      fin.position.set(side * (2.5 + Math.sin(i / 4 * Math.PI) * .35), .22, -.2 + i * 1.1); fin.rotation.z = side * .15;
-      const light = this.mesh(new THREE.BoxGeometry(.035, .05, .7), signal, this.barge); light.position.set(side * 2.85, .34, i * 1.1);
-    }
     this.tray = new THREE.Group(); this.tray.name = 'neo-body-transfer-tray'; this.group.add(this.tray);
     this.deck = this.mesh(new THREE.BoxGeometry(1, 1, 1), iron, this.tray); this.deck.name = 'neo-carry-deck';
     this.deck.scale.set(6.2, .1, 5.8); this.deck.position.set(0, .88, 2);
@@ -87,15 +79,83 @@ export class TrilogyEpilogueRenderer {
       const upper = this.mesh(new THREE.CylinderGeometry(.07, .095, 1, 10), iron);
       const end = this.mesh(new THREE.SphereGeometry(.14, 10, 8), iron);
       lower.name = `neo-transfer-manipulator-${i}`; this.liftArms.push({ lower, upper, end });
-      this.bargePosts.push(this.mesh(new THREE.CylinderGeometry(.1, .18, 1, 10), iron, this.barge));
     }
     this.bodyLight = new THREE.PointLight(0xafcfe3, 240, 18, 2); this.bodyLight.name = 'neo-tray-body-light';
     this.bodyLight.position.set(2.8, 4.2, 1.8); this.tray.add(this.bodyLight); this.lights.add(this.bodyLight);
   }
 
+  private fitCarrier(bounds: THREE.Box3, top: number): void {
+    const parent = this.barge!, dark = this.carrierMetal!, iron = this.deck!.material as THREE.MeshStandardMaterial;
+    const size = bounds.getSize(new THREE.Vector3()), center = bounds.getCenter(new THREE.Vector3());
+    const engine = new THREE.Group(); engine.name = 'neo-carrier-engine'; parent.add(engine);
+    engine.position.set(center.x, .65, bounds.min.z - 2.55);
+    const shell = this.material(0x3c4a59, .68, .52), rubber = this.material(0x131a22, .76, .25);
+    shell.normalMap = iron.normalMap; shell.normalScale.set(.18, .18); shell.roughnessMap = iron.roughnessMap;
+    const lens = this.material(0xd6d7aa, .24, .38, 0xe9de93, 1.1);
+    const sphere = new THREE.SphereGeometry(1, 24, 16);
+    const oval = (root: THREE.Group, p: number[], scale: number[], material = shell) => {
+      const mesh = this.mesh(sphere, material, root); mesh.position.fromArray(p); mesh.scale.fromArray(scale); return mesh;
+    };
+    const tube = (root: THREE.Group, points: number[][], radius: number, material = dark) => {
+      const curve = new THREE.CatmullRomCurve3(points.map(point => new THREE.Vector3().fromArray(point)));
+      return this.mesh(new THREE.TubeGeometry(curve, 24, radius, 8, false), material, root);
+    };
+    oval(engine, [0, 0, 0], [1.12, .86, 1.48], dark);
+    // Overlapping armor lobes leave the mechanical spine and joints exposed.
+    for (const side of [-1, 1]) for (let i = 0; i < 4; i++) {
+      const plate = oval(engine, [side * .66, .52 + Math.sin(i) * .08, -.75 + i * .53], [.74, .34, .56]);
+      plate.rotation.z = side * -.24; plate.rotation.x = -.25;
+      for (let rivet = 0; rivet < 3; rivet++) {
+        const p = new THREE.Vector3((rivet - 1) * .30, .22, .3).applyEuler(plate.rotation).add(plate.position);
+        oval(engine, p.toArray(), [.035, .035, .035], iron);
+      }
+      tube(engine, [[side * .32, .55, -.85 + i * .5], [side * 1.05, .23, -.75 + i * .5],
+        [side * 1.1, -.24, -.55 + i * .5]], .055, iron);
+    }
+    for (let i = 0; i < 8; i++) {
+      const vertebra = oval(engine, [0, .88, -.9 + i * .28], [.26, .19, .12], iron); vertebra.rotation.x = -.2;
+    }
+    const optics = new THREE.Group(); optics.name = 'neo-carrier-optics'; engine.add(optics);
+    for (const [x, y, radius] of [[-.57, .3, .16], [0, .43, .19], [.57, .3, .16], [-.62, -.2, .14], [0, -.12, .18], [.62, -.2, .14], [0, -.5, .12]]) {
+      const z = -1.25 + Math.abs(x) * .2;
+      oval(engine, [x, y, z], [radius * 1.65, radius * 1.65, .27], dark);
+      const bezel = this.mesh(new THREE.TorusGeometry(radius * 1.12, .045, 8, 20), iron, engine); bezel.position.set(x, y, z - .23);
+      oval(optics, [x, y, z - .235], [radius, radius, .075], lens);
+    }
+    // Four forks meet the underside of the fitted tray after the transfer.
+    // Their geometry stays with the barge, so pause and cold load need no clock.
+    const loadY = top + .9;
+    for (let i = 0; i < 4; i++) {
+      const side = i % 2 ? 1 : -1, z = i < 2 ? bounds.min.z + .3 : bounds.max.z - .3;
+      const root = [center.x + side * .95, .7, engine.position.z + .5];
+      const joint = new THREE.Vector3(center.x + side * (size.x / 2 + .52), .74, z - .28);
+      const tip = new THREE.Vector3(center.x + side * (size.x / 2 + .04), loadY, z);
+      tube(parent, [root, [center.x + side * (size.x / 2 + .65), .46, engine.position.z + 1.5], joint.toArray()], .15, shell);
+      oval(parent, joint.toArray(), [.23, .23, .23], iron);
+      const fork = this.mesh(new THREE.CylinderGeometry(.10, .14, 1, 12), dark, parent); fork.name = `neo-carrier-fork-${i}`;
+      const direction = tip.clone().sub(joint); fork.position.copy(joint).addScaledVector(direction, .5);
+      fork.scale.y = direction.length(); fork.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
+      tube(parent, [[root[0], root[1] - .14, root[2]], [joint.x + side * .16, .35, joint.z - .15], [tip.x, tip.y - .12, tip.z]], .045, rubber);
+    }
+    for (const side of [-1, 1]) {
+      const x = side * 1.12;
+      tube(engine, [[x, -.05, -.15], [side * 1.7, -.7, -.25], [side * 1.88, -1.5, .5], [side * 1.55, -2.3, 1.4]], .22, shell);
+      oval(engine, [side * 1.8, -1.36, .4], [.35, .5, .37], dark);
+      for (let finger = 0; finger < 3; finger++) {
+        tube(engine, [[side * 1.55, -2.15, 1.35], [side * (1.42 + finger * .13), -2.48, 1.6],
+          [side * (1.15 + finger * .17), -2.7, 1.35]], .065, iron);
+      }
+      for (let i = 0; i < 6; i++) {
+        tube(engine, [[side * (.25 + i * .12), -.62, .38], [side * (.44 + i * .13), -1.3, .9],
+          [side * (.38 + i * .15), -2.3 - i * .12, 1.3], [side * (.3 + i * .15), -3.1 + i * .09, 1.55]], .035 + i % 2 * .012, rubber);
+      }
+    }
+    batchStaticGeometry(parent, new Set()).forEach(geometry => this.geometries.add(geometry));
+  }
+
   private fitCradle(bounds: THREE.Box3, top: number): void {
     if (!this.cradle || !this.deck) return;
-    const iron = this.deck.material as THREE.MeshStandardMaterial, dark = this.hull!.material as THREE.Material;
+    const iron = this.deck.material as THREE.MeshStandardMaterial, dark = this.carrierMetal!;
     const size = bounds.getSize(new THREE.Vector3()), center = bounds.getCenter(new THREE.Vector3());
     this.cradle.position.set(center.x, top - .18, center.z);
     const tube = (points: number[][], radius: number, material = dark) => {
@@ -174,7 +234,7 @@ export class TrilogyEpilogueRenderer {
     this.deck.scale.setScalar(1); this.deck.position.set(center.x, top - .1, center.z);
     this.rails.forEach((rail, i) => { rail.scale.y = size.z + .3; rail.position.set(center.x + (i ? 1 : -1) * (size.x / 2 + .24), top - .08, center.z); });
     this.braces.forEach((rib, i) => { rib.scale.x = size.x + .42; rib.position.set(center.x, top - .14, bounds.min.z - .15 + i / 23 * (size.z + .3)); });
-    if (this.hull) { this.hull.position.z = center.z; this.hull.scale.x = size.x / 2 + .4; this.hull.scale.z = size.z / 2 + .65; }
+    this.fitCarrier(bounds, top);
     this.fitCradle(bounds, top);
     ['head', 'chest', 'pelvis', 'wrist_L', 'wrist_R', 'ankle_L', 'ankle_R'].forEach((name, i) => {
       const bone = subject.getObjectByName(name); if (!bone) return;
@@ -332,8 +392,6 @@ export class TrilogyEpilogueRenderer {
           const elbow = new THREE.Vector3(side * (halfWidth + .75), 1.1, -25 + z);
           const end = new THREE.Vector3(pose.x + side * halfWidth, top, pose.z + z).lerp(elbow, release);
           rod(arm.lower, foot, elbow); rod(arm.upper, elbow, end); arm.end.position.copy(end);
-          const post = this.bargePosts[i], height = 1.05 + this.deck!.position.y - .05 - .35;
-          post.position.set(side * halfWidth, .35 + height / 2, z); post.scale.y = height;
         });
       }
     } else if (this.kind === 'reset' && this.cat) {

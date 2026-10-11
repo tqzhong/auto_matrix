@@ -29,7 +29,7 @@ import { truthRest, truthKneel, truthSeat } from '@auto_matrix/shared';
 import { METACORTEX } from '@auto_matrix/shared';
 import { OFFICE_CUSTODY, officeCustodyStep } from '@auto_matrix/shared';
 import { ARREST_BIKE, arrestCarPoint, arrestBikePoint, arrestMirrorShot } from '@auto_matrix/shared';
-import { CATCH, catchLocked, DEUS_PACT, deusPactLocked, deusPactPose, reloadedPhaseLocked, SMITH_FINALE, smithFinaleBeat, smithFinaleLocked, smithFinalePose, smithCraterAmount, smithCraterFloor, smithOracleRestored, trilogyEpilogueLocked } from '@auto_matrix/shared';
+import { CATCH, catchLocked, DEUS_PACT, deusPactLocked, deusPactPose, reloadedPhaseLocked, SMITH_FINALE, smithFinaleBeat, smithFinaleLocked, smithFinalePose, smithCraterAmount, smithCraterFloor, smithOracleRestored, trilogyEpilogueLocked, neoCarryPose } from '@auto_matrix/shared';
 import { reloadedCamera } from './ReloadedCamera.js';
 import * as THREE from 'three';
 import { dockArrivalPoint, dockReunionLocked, dockReunionRoot } from '@auto_matrix/shared';
@@ -2756,7 +2756,12 @@ export class PlayerControls {
         const shot = ceasefireCamera(gesture, this.camera.aspect), offset = new THREE.Vector3(center.x, center.y - 1, center.z);
         focus.copy(shot.focus).add(offset); ideal.copy(shot.ideal).add(offset);
       }
-      if (carried) ideal.sub(focus).multiplyScalar(Math.max(1, .92 / this.camera.aspect)).add(focus);
+      if (carried) {
+        const reveal = neoCarryPose(gesture).transfer;
+        focus.y -= .6 * reveal; focus.z -= 1.8 * reveal;
+        ideal.x += 2.4 * reveal; ideal.z -= 1.5 * reveal;
+        ideal.sub(focus).multiplyScalar(Math.max(1, .92 / this.camera.aspect)).add(focus);
+      }
       if (gesture.kind === 'reset' && gesture.resetVersion === 2) {
         const approach = gesture.phase === 'ready' ? 0 : gesture.phase === 'cat' ? THREE.MathUtils.smoothstep(gesture.elapsed, 0, 8.8) : 1;
         focus.set(this.position.x + THREE.MathUtils.lerp(-3, .7, approach), this.position.y - .3, this.position.z);

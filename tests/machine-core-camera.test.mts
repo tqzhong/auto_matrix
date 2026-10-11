@@ -6,6 +6,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DEUS_PACT, FILM_SETS, TRILOGY_EPILOGUE, newDeusPact, neoCarryPose, newTrilogyEpilogue, type DeusPactEncounter } from '@auto_matrix/shared';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { MachineCoreRenderer } from '../packages/client/src/engine/MachineCoreRenderer.js';
+import { TrilogyEpilogueRenderer } from '../packages/client/src/engine/TrilogyEpilogueRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
@@ -331,6 +332,7 @@ test('the carried body keeps its saved root and actual eye through waiting, tran
   const renderer = new AgentRenderer(new THREE.Scene()); renderer.setWorld(false); t.after(() => renderer.dispose());
   const stage = new THREE.Group(); stage.position.set(h.center.x, h.center.y - 1, h.center.z);
   const machine = new MachineCoreRenderer(stage); t.after(() => machine.dispose());
+  const carrier = new TrilogyEpilogueRenderer(stage, 'neo_carried'); t.after(() => carrier.dispose());
   renderer.updateAgent('neo', h.actor); await new Promise(resolve => setImmediate(resolve));
   const group = renderer.getAgent('neo')!, head = group.getObjectByName('head')!;
   const frame = (phase: 'ready' | 'transfer' | 'departing' | 'done', elapsed = phase === 'transfer' ? 1.6 : 0) => {
@@ -341,6 +343,18 @@ test('the carried body keeps its saved root and actual eye through waiting, tran
     renderer.setPlayer('neo', h.controls.firstPerson); renderer.setPlayerMotion(h.controls.motion); renderer.update(.02, h.camera, 0);
     h.controls.syncNeoCarryCamera(group); h.camera.updateMatrixWorld();
     machine.update(undefined, 0, false, { x: pose.x ?? 0, z: pose.z }, renderer.getAgentBody('neo'), beat); stage.updateMatrixWorld(true);
+    carrier.update(beat, 0, renderer.getAgentBody('neo')); stage.updateMatrixWorld(true);
+    if (!h.controls.firstPerson && (phase === 'departing' || phase === 'done')) {
+      stage.getObjectByName('neo-machine-funeral-barge')!.traverseVisible(object => {
+        if (!(object instanceof THREE.Mesh)) return;
+        const position = object.geometry.attributes.position;
+        const transform = h.camera.projectionMatrix.clone().multiply(h.camera.matrixWorldInverse).multiply(object.matrixWorld);
+        for (let i = 0; i < position.count; i++) {
+          const p = new THREE.Vector3().fromBufferAttribute(position, i).applyMatrix4(transform);
+          assert.ok(Math.abs(p.x) < .95 && p.y > -.44 && p.y < .62, `${phase}/${h.camera.aspect}: carrier falls behind HUD or outside frame: ${p.toArray()}`);
+        }
+      });
+    }
     if (!h.controls.firstPerson) for (const name of ['head', 'chest', 'pelvis']) {
       const target = group.getObjectByName(name)!.getWorldPosition(new THREE.Vector3()), direction = target.clone().sub(h.camera.position);
       const hits = new THREE.Raycaster(h.camera.position, direction.clone().normalize(), 0, direction.length() - .05).intersectObject(stage, true)
