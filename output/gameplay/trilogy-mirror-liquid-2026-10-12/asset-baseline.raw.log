@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: Neo removes his long sleeves for the tracking electrodes and restores them outside the mirror scene
+ok 1 - Neo removes his long sleeves for the tracking electrodes and restores them outside the mirror scene
+  ---
+  duration_ms: 216.212375
+  type: 'test'
+  ...
+# Subtest: Neo’s new forearms remain skinned, joined to the hands and exposed throughout the mirror performance
+ok 2 - Neo’s new forearms remain skinned, joined to the hands and exposed throughout the mirror performance
+  ---
+  duration_ms: 1061.1755
+  type: 'test'
+  ...
+# Subtest: both complete cotton cuffs retain their shape throughout the mirror reach
+ok 3 - both complete cotton cuffs retain their shape throughout the mirror reach
+  ---
+  duration_ms: 193.286083
+  type: 'test'
+  ...
+# Subtest: the mirror reaches Neo’s hand before his face and coat hem
+ok 4 - the mirror reaches Neo’s hand before his face and coat hem
+  ---
+  duration_ms: 210.811708
+  type: 'test'
+  ...
+# Subtest: the silver front changes Neo’s skinned silhouette rather than only its color
+ok 5 - the silver front changes Neo’s skinned silhouette rather than only its color
+  ---
+  duration_ms: 151.7335
+  type: 'test'
+  ...
+# Subtest: Neo has a connected anatomical body after leaving the mirror for the pod and recovery bed
+ok 6 - Neo has a connected anatomical body after leaving the mirror for the pod and recovery bed
+  ---
+  duration_ms: 492.803459
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2667.704542

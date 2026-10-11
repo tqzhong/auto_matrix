@@ -1,0 +1,136 @@
+TAP version 13
+# Subtest: a new tracking-chair approach walks around the chair before lowering into it
+ok 1 - a new tracking-chair approach walks around the chair before lowering into it
+  ---
+  duration_ms: 2.550041
+  type: 'test'
+  ...
+# Subtest: turning toward the chair cannot cross Neo’s feet when G starts from a different heading
+ok 2 - turning toward the chair cannot cross Neo’s feet when G starts from a different heading
+  ---
+  duration_ms: 25.35175
+  type: 'test'
+  ...
+# Subtest: the new mirror clock reaches the seated boundary exactly
+ok 3 - the new mirror clock reaches the seated boundary exactly
+  ---
+  duration_ms: 0.123459
+  type: 'test'
+  ...
+# Subtest: the tracking-room mirror has straight carved sides and glass across all four corners
+ok 4 - the tracking-room mirror has straight carved sides and glass across all four corners
+  ---
+  duration_ms: 1168.550291
+  type: 'test'
+  ...
+# Subtest: healing and the silver filament resume from story time with their contact fixed to the glass
+ok 5 - healing and the silver filament resume from story time with their contact fixed to the glass
+  ---
+  duration_ms: 2929.502834
+  type: 'test'
+  ...
+# Subtest: reloading a paused mirror beat restores Neo’s seated body and reaching hand immediately
+ok 6 - reloading a paused mirror beat restores Neo’s seated body and reaching hand immediately
+  ---
+  duration_ms: 232.572083
+  type: 'test'
+  ...
+# Subtest: Neo’s shipped shoes rest on the tracking-room floor throughout the seated mirror performance
+ok 7 - Neo’s shipped shoes rest on the tracking-room floor throughout the seated mirror performance
+  ---
+  duration_ms: 164.392542
+  type: 'test'
+  ...
+# Subtest: tracking-chair footsteps keep the shipped support shoe planted and restore the whole body at a paused turn
+ok 8 - tracking-chair footsteps keep the shipped support shoe planted and restore the whole body at a paused turn
+  ---
+  duration_ms: 286.098125
+  type: 'test'
+  ...
+# Subtest: the entry keeps the shipped body outside the actual chair solids while turning and sitting
+ok 9 - the entry keeps the shipped body outside the actual chair solids while turning and sitting
+  ---
+  duration_ms: 17929.419625
+  type: 'test'
+  ...
+# Subtest: the actual tracking-chair cushion supports Neo’s trousers without swallowing his thighs
+ok 10 - the actual tracking-chair cushion supports Neo’s trousers without swallowing his thighs
+  ---
+  duration_ms: 9589.636
+  type: 'test'
+  ...
+# Subtest: Neo reaches the actual mirror smoothly without passing through it
+ok 11 - Neo reaches the actual mirror smoothly without passing through it
+  ---
+  duration_ms: 114.972542
+  type: 'test'
+  ...
+# Subtest: Trinity connects the electrode on Neo’s left forearm instead of reaching for a headset
+ok 12 - Trinity connects the electrode on Neo’s left forearm instead of reaching for a headset
+  ---
+  duration_ms: 148.429292
+  type: 'test'
+  ...
+# Subtest: Trinity keeps her face clear of Neo’s seated eye while connecting and releasing the electrode
+ok 13 - Trinity keeps her face clear of Neo’s seated eye while connecting and releasing the electrode
+  ---
+  duration_ms: 172.442292
+  type: 'test'
+  ...
+# Subtest: the visible electrode and lead stay attached to Neo when paused, restored or hidden from first person
+ok 14 - the visible electrode and lead stay attached to Neo when paused, restored or hidden from first person
+  ---
+  duration_ms: 1886.220709
+  type: 'test'
+  ...
+# Subtest: the fractured glass fills the straight-sided mirror without overlapping pieces, holes or flipped faces
+ok 15 - the fractured glass fills the straight-sided mirror without overlapping pieces, holes or flipped faces
+  ---
+  duration_ms: 9.850417
+  type: 'test'
+  ...
+# Subtest: the first-person body appears only in the mirror render
+ok 16 - the first-person body appears only in the mirror render
+  ---
+  duration_ms: 0.630708
+  type: 'test'
+  ...
+# Subtest: the mirror reuses its color reflection while the room normals are rendered for occlusion
+ok 17 - the mirror reuses its color reflection while the room normals are rendered for occlusion
+  ---
+  duration_ms: 0.292166
+  type: 'test'
+  ...
+# Subtest: transmission and color passes share one mirror reflection per view, then refresh on the next frame
+ok 18 - transmission and color passes share one mirror reflection per view, then refresh on the next frame
+  ---
+  duration_ms: 0.31875
+  type: 'test'
+  ...
+# Subtest: the pill-room reflection draws only sampled pixels and culls the rest of the panorama without moving the image
+ok 19 - the pill-room reflection draws only sampled pixels and culls the rest of the panorama without moving the image
+  ---
+  duration_ms: 3.878916
+  type: 'test'
+  ...
+# Subtest: moving views keep every fractured and rippling sample painted and the first-person subject live
+ok 20 - moving views keep every fractured and rippling sample painted and the first-person subject live
+  ---
+  duration_ms: 5.991584
+  type: 'test'
+  ...
+# Subtest: a reflection render failure restores the borrowed render method, projection and target region
+ok 21 - a reflection render failure restores the borrowed render method, projection and target region
+  ---
+  duration_ms: 0.804125
+  type: 'test'
+  ...
+1..21
+# tests 21
+# suites 0
+# pass 21
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 35043.474042

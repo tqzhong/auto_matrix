@@ -51,7 +51,13 @@ export const HERO_IDS = ['neo', 'trinity', 'smith', 'morpheus'] as const;
 export type HeroId = typeof HERO_IDS[number];
 
 function mirrorBoneArrival(name: string): number {
-  if (name.startsWith('finger') && name.endsWith('_R')) return .035 + (3 - Number(name.match(/-(\d)_R$/)?.[1] ?? 1)) * .055;
+  const finger = /^finger([1-5])-([1-3])_R$/.exec(name);
+  if (finger) {
+    const digit = Number(finger[1]), joint = Number(finger[2]);
+    // Index/middle fingertips touch the glass; other fingers coat from the palm out.
+    if (digit === 2 || digit === 3) return .035 + (digit - 2) * .025 + (3 - joint) * .055;
+    return .36 + digit * .014 + (joint - 1) * .055;
+  }
   if (name === 'wrist_R') return .34;
   if (name === 'elbow_R') return .48;
   if (name === 'shoulder_R') return .61;
@@ -339,10 +345,10 @@ export class HeroModels {
             float liquidRidge = exp(-pow((matrixSilver - vLiquidArrival) * 17.0, 2.0));
             vec3 liquidColor = mix(vec3(0.63, 0.69, 0.71), vec3(0.85, 0.91, 0.90), liquidRidge * 0.6);
             diffuseColor.rgb = mix(diffuseColor.rgb, liquidColor, liquidMask);
-            roughnessFactor = mix(roughnessFactor, 0.16 - liquidRidge * 0.08, liquidMask);
-            metalnessFactor = mix(metalnessFactor, 0.62, liquidMask);`);
+            roughnessFactor = mix(roughnessFactor, 0.08 - liquidRidge * 0.045, liquidMask);
+            metalnessFactor = mix(metalnessFactor, 0.98, liquidMask);`);
       };
-      material.customProgramCacheKey = () => source.customProgramCacheKey() + '-liquid-mirror-v3';
+      material.customProgramCacheKey = () => source.customProgramCacheKey() + '-liquid-mirror-v4';
     });
     if (support === 'niobe') {
       const hair = new THREE.MeshStandardMaterial({ color: 0x171812, roughness: .82 });

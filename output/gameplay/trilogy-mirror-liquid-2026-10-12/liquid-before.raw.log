@@ -1,0 +1,31 @@
+TAP version 13
+# Subtest: silver starts on Neo’s contacting index and middle fingers, then crosses the palm before coating the other fingertips
+not ok 1 - silver starts on Neo’s contacting index and middle fingers, then crosses the palm before coating the other fingertips
+  ---
+  duration_ms: 167.455
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/mirror-liquid.test.mts:1:1444'
+  failureType: 'testCodeFailure'
+  error: 'the shipped skin must represent finger1-1_R, not a synthetic test hand'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    region (/Users/tianqizhong/ai_project/auto_matrix/tests/mirror-liquid.test.mts:36:14)
+    <anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/mirror-liquid.test.mts:39:68)
+    Array.map (<anonymous>)
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/mirror-liquid.test.mts:39:37)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 433.498959

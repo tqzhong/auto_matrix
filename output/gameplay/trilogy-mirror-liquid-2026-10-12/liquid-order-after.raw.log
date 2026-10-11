@@ -1,0 +1,17 @@
+TAP version 13
+# Subtest: silver starts on Neo’s contacting index and middle fingers, then crosses the palm before coating the other fingertips
+ok 1 - silver starts on Neo’s contacting index and middle fingers, then crosses the palm before coating the other fingertips
+  ---
+  duration_ms: 270.538625
+  type: 'test'
+  ...
+# {"fingers":[{"finger":1,"base":{"count":46,"min":0.36022472381591797,"max":0.39465126395225525,"mean":0.37541255614031915},"tip":{"count":439,"min":0.45682626962661743,"max":0.48399999737739563,"mean":0.47717971356420147}},{"finger":2,"base":{"count":376,"min":0.11750830709934235,"max":0.2384050041437149,"mean":0.15259794359828563},"tip":{"count":474,"min":0.03500000014901161,"max":0.06238999962806702,"mean":0.040926765501184806}},{"finger":3,"base":{"count":346,"min":0.14252406358718872,"max":0.2855282425880432,"mean":0.1766166284335831},"tip":{"count":511,"min":0.05999999865889549,"max":0.08743812888860703,"mean":0.0662659867694}},{"finger":4,"base":{"count":399,"min":0.3146815896034241,"max":0.4434759318828583,"mean":0.4140126090450096},"tip":{"count":484,"min":0.49866774678230286,"max":0.5260000228881836,"mean":0.520169012186941}},{"finger":5,"base":{"count":367,"min":0.3858984708786011,"max":0.4588158130645752,"mean":0.43049659504877447},"tip":{"count":472,"min":0.5113070607185364,"max":0.5400000214576721,"mean":0.5343889917357493}}],"palm":{"count":794,"min":0.24420660734176636,"max":0.38430917263031006,"mean":0.3398936164356599}}
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 938.9305

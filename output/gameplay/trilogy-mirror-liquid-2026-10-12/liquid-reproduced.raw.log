@@ -1,0 +1,29 @@
+TAP version 13
+# Subtest: silver starts on Neo’s contacting index and middle fingers, then crosses the palm before coating the other fingertips
+not ok 1 - silver starts on Neo’s contacting index and middle fingers, then crosses the palm before coating the other fingertips
+  ---
+  duration_ms: 165.66775
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/mirror-liquid.test.mts:1:1444'
+  failureType: 'testCodeFailure'
+  error: 'noncontact finger 1 cannot develop a separate silver patch before the palm'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/mirror-liquid.test.mts:46:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# {"fingers":[{"finger":1,"base":{"count":46,"min":0.13561874628067017,"max":0.23566818237304688,"mean":0.17917615628760794},"tip":{"count":439,"min":0.03500000014901161,"max":0.062173739075660706,"mean":0.04182028561694747}},{"finger":2,"base":{"count":376,"min":0.11750830709934235,"max":0.2384050041437149,"mean":0.1518460740038055},"tip":{"count":474,"min":0.03500000014901161,"max":0.06238999962806702,"mean":0.040926765501184806}},{"finger":3,"base":{"count":346,"min":0.11752406507730484,"max":0.21818594634532928,"mean":0.14485959161740508},"tip":{"count":511,"min":0.03500000014901161,"max":0.062438126653432846,"mean":0.04118938437879902}},{"finger":4,"base":{"count":399,"min":0.11752406507730484,"max":0.20945827662944794,"mean":0.14089695179372802},"tip":{"count":484,"min":0.03500000014901161,"max":0.06233225017786026,"mean":0.04083099658793408}},{"finger":5,"base":{"count":367,"min":0.11618418246507645,"max":0.24045653641223907,"mean":0.1503880247879743},"tip":{"count":472,"min":0.03500000014901161,"max":0.06369291990995407,"mean":0.04061101691923657}}],"palm":{"count":794,"min":0.22503863275051117,"max":0.3693317770957947,"mean":0.31538752235603573}}
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 343.683375

@@ -1,0 +1,156 @@
+[
+  {
+    "path": "/Users/tianqizhong/ai_project/auto_matrix/output/gameplay/neo-longplay-2026-09-20/neo-2026-10-11T20-32-22-368Z.webm",
+    "bytes": 8880823,
+    "recorder_metadata": {
+      "file": "neo-2026-10-11T20-32-22-368Z.webm",
+      "duration": 44.51669999980926,
+      "width": 1280,
+      "height": 720,
+      "audio": true,
+      "frames": 821,
+      "rendering": {
+        "frames": 1768,
+        "fps": 39.70474232363747,
+        "p95FrameMs": 57.5,
+        "includesRecordingOverhead": true
+      },
+      "markers": []
+    },
+    "streams": [
+      {
+        "index": 0,
+        "codec_name": "vp9",
+        "codec_type": "video",
+        "width": 1280,
+        "height": 720,
+        "packets": 815,
+        "first_pts_seconds": 0.0,
+        "last_pts_seconds": 44.259,
+        "pts_span_seconds": 44.259
+      },
+      {
+        "index": 1,
+        "codec_name": "opus",
+        "codec_type": "audio",
+        "packets": 740,
+        "first_pts_seconds": 0.016,
+        "last_pts_seconds": 44.416000000000004,
+        "pts_span_seconds": 44.400000000000006
+      }
+    ],
+    "purpose": "旧传播顺序：触镜前至银液初起，含双视角/暂停"
+  },
+  {
+    "path": "/Users/tianqizhong/ai_project/auto_matrix/output/gameplay/neo-longplay-2026-09-20/neo-2026-10-11T20-35-53-408Z.webm",
+    "bytes": 16480893,
+    "recorder_metadata": {
+      "file": "neo-2026-10-11T20-35-53-408Z.webm",
+      "duration": 114.81659999990464,
+      "width": 1280,
+      "height": 720,
+      "audio": true,
+      "frames": 1881,
+      "rendering": {
+        "frames": 3307,
+        "fps": 28.796855864086517,
+        "p95FrameMs": 126.19999980926514,
+        "includesRecordingOverhead": true
+      },
+      "markers": []
+    },
+    "streams": [
+      {
+        "index": 0,
+        "codec_name": "vp9",
+        "codec_type": "video",
+        "width": 1280,
+        "height": 720,
+        "packets": 1639,
+        "first_pts_seconds": 0.0,
+        "last_pts_seconds": 114.474,
+        "pts_span_seconds": 114.474
+      },
+      {
+        "index": 1,
+        "codec_name": "opus",
+        "codec_type": "audio",
+        "packets": 1913,
+        "first_pts_seconds": 0.011,
+        "last_pts_seconds": 114.791,
+        "pts_span_seconds": 114.78
+      }
+    ],
+    "purpose": "传播顺序修正后、材质修正前：冷读初起至整只手覆盖，含双视角/暂停"
+  },
+  {
+    "path": "/Users/tianqizhong/ai_project/auto_matrix/output/gameplay/neo-longplay-2026-09-20/neo-2026-10-11T20-40-44-416Z.webm",
+    "bytes": 9149596,
+    "recorder_metadata": null,
+    "streams": [
+      {
+        "index": 0,
+        "codec_name": "opus",
+        "codec_type": "audio",
+        "packets": 886,
+        "first_pts_seconds": 0.0,
+        "last_pts_seconds": 53.159,
+        "pts_span_seconds": 53.159
+      },
+      {
+        "index": 1,
+        "codec_name": "vp9",
+        "codec_type": "video",
+        "width": 1280,
+        "height": 720,
+        "packets": 791,
+        "first_pts_seconds": 0.013,
+        "last_pts_seconds": 53.085,
+        "pts_span_seconds": 53.072
+      }
+    ],
+    "purpose": "最终材质冷读：构建热更新中断，缺结束元数据，只作部分记录"
+  },
+  {
+    "path": "/Users/tianqizhong/ai_project/auto_matrix/output/gameplay/neo-longplay-2026-09-20/neo-2026-10-11T20-43-58-109Z.webm",
+    "bytes": 5230490,
+    "recorder_metadata": {
+      "file": "neo-2026-10-11T20-43-58-109Z.webm",
+      "duration": 33.8932000002861,
+      "width": 1280,
+      "height": 720,
+      "audio": true,
+      "frames": 586,
+      "rendering": {
+        "frames": 1155,
+        "fps": 34.06652122948706,
+        "p95FrameMs": 99,
+        "includesRecordingOverhead": true
+      },
+      "markers": []
+    },
+    "streams": [
+      {
+        "index": 0,
+        "codec_name": "opus",
+        "codec_type": "audio",
+        "packets": 564,
+        "first_pts_seconds": 0.0,
+        "last_pts_seconds": 33.839000000000006,
+        "pts_span_seconds": 33.839000000000006
+      },
+      {
+        "index": 1,
+        "codec_name": "vp9",
+        "codec_type": "video",
+        "width": 1280,
+        "height": 720,
+        "packets": 536,
+        "first_pts_seconds": 0.006,
+        "last_pts_seconds": 33.707,
+        "pts_span_seconds": 33.701
+      }
+    ],
+    "purpose": "最终版本：整手覆盖后正常续到培养舱入口，含双视角/暂停"
+  }
+]
