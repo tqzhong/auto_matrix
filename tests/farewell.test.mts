@@ -58,6 +58,27 @@ test('the Logos farewell preserves its quiet sequence and ends in stillness', ()
   assert.ok(Math.abs(kiss.neo.z - kiss.trinity.z) < 2.3, 'the final contact stays physically close');
 });
 
+test('starting the farewell preserves Neo’s actual approach position and saved turn before he kneels', () => {
+  const h = game(), sun = FILM_SCENE_BY_ID.m3_sun, scene = FILM_SCENE_BY_ID.m3_farewell;
+  const state = h.state(); state.scene = sun.id; state.actor = sun.actor; state.step = sun.steps.length;
+  h.players.possess('p', 'trinity', h.tick()); h.actor().currentLocation = sun.set; h.actor().isInMatrix = false;
+  h.command('next'); h.actor().position = filmStepPosition(scene, scene.steps[0]); h.advance();
+  h.actor().position = { ...filmStepPosition(scene, scene.steps[1]), x: FILM_SETS[scene.set].center.x + 1.1 };
+  h.actor().rotation = 2.4;
+  const entry = structuredClone(h.actor().position), yaw = h.actor().rotation;
+  h.command('act');
+  assert.deepEqual(h.actor().position, entry, 'G must not teleport the player to the fixed kneeling root');
+  assert.equal(h.actor().rotation, yaw);
+  h.frame(12); const before = structuredClone(h.actor().position), saved = structuredClone(h.sandbox.state);
+  const beat = structuredClone(state.farewell);
+  assert.ok(before.x < entry.x && before.x > FILM_SETS[scene.set].center.x);
+  h.players.release('p', h.tick()); h.sandbox.restore(saved); h.players.possess('p', 'neo', h.tick());
+  assert.deepEqual(h.actor().position, before); assert.deepEqual(h.state().farewell, beat);
+  h.frame(80);
+  assert.equal(h.actor().position.x, FILM_SETS[scene.set].center.x);
+  assert.equal(h.actor().rotation, Math.PI);
+});
+
 test('Neo must approach Trinity and the farewell resumes from an exact saved beat', () => {
   const h = game(); const sun = FILM_SCENE_BY_ID.m3_sun; const scene = FILM_SCENE_BY_ID.m3_farewell;
   const state = h.state(); state.scene = sun.id; state.actor = sun.actor; state.step = sun.steps.length;

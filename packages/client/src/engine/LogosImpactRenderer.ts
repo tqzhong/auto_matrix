@@ -88,8 +88,17 @@ export class LogosImpactRenderer {
       if (nose) { nose.scale.y = .48; nose.position.z = -9.1; }
       return;
     }
-    const target = logosCrashTarget(flight); this.tower.position.set(target.x, target.y, target.z);
-    const hit = Math.max(0, crash.elapsed - crash.approach), split = 1 - Math.exp(-hit * 9);
+    this.placeImpact(logosCrashTarget(flight), Math.max(0, crash.elapsed - crash.approach));
+  }
+
+  showWreck(contact: { x: number; y: number; z: number }): void {
+    this.tower.visible = true; this.pane.visible = false; this.glass.visible = true;
+    this.placeImpact(contact, 2.6);
+  }
+
+  private placeImpact(target: { x: number; y: number; z: number }, hit: number): void {
+    this.tower.position.set(target.x, target.y, target.z);
+    const split = 1 - Math.exp(-hit * 9);
     this.plates.forEach((plate, i) => {
       const side = i < 2 ? -1 : 1;
       plate.position.set(-4.875 + i * 3.25 + side * split * 5.5, .5 - split * (i % 2 ? 2 : -1.6), .2 - split * 6);

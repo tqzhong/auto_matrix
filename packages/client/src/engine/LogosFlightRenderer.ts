@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { batchStaticGeometry } from './StaticGeometry.js';
 import { LogosAtmosphere } from './LogosAtmosphere.js';
 import { LogosImpactRenderer } from './LogosImpactRenderer.js';
+import { LogosCabinFrame } from './LogosCabinFrame.js';
 import { LOGOS_DEFENSE, LOGOS_COCKPIT, logosShipPose, logosControlGrip, logosIgniterGrip, logosPowered, logosCloudTop, newLogosFlight, type LogosFlight, type LogosFlightMode } from '@auto_matrix/shared';
 
 /** A shared physical stage for the Logos defense run and the ascent above the cloud deck. */
@@ -22,6 +23,7 @@ export class LogosFlightRenderer {
   private swarms: THREE.Group[] = [];
   private atmosphere: LogosAtmosphere;
   private impact: LogosImpactRenderer;
+  private cabinFrame!: LogosCabinFrame;
   private engines: THREE.MeshStandardMaterial[] = [];
   private sunlight = new THREE.DirectionalLight(0xffdfb1, 0);
   private skyFill = new THREE.HemisphereLight(0xa4b8c7, 0x252c36, .7);
@@ -88,7 +90,7 @@ export class LogosFlightRenderer {
       const rib = this.mesh(new THREE.TorusGeometry(3.2, .16, 7, 18, Math.PI), edge, this.ship);
       rib.position.set(0, -.15, z); rib.rotation.x = Math.PI / 2; rib.rotation.z = Math.PI / 2;
     }
-    this.buildCockpit(hull, edge, dark);
+    this.buildCockpit(hull, dark);
     const beacon = this.engineLight = new THREE.PointLight(0x8cebf0, 32, 24, 2); beacon.position.set(0, -1, 3);
     this.ship.add(beacon); this.lights.push(beacon);
     const arc = this.material(0xb3d9f8, 0, .4, 0x4a92ec, 2, true, .75);
@@ -107,7 +109,7 @@ export class LogosFlightRenderer {
     }
   }
 
-  private buildCockpit(hull: THREE.Material, edge: THREE.Material, dark: THREE.Material): void {
+  private buildCockpit(hull: THREE.Material, dark: THREE.Material): void {
     const floor = LOGOS_COCKPIT.floor;
     const fabric = this.material(0x242a2c, .08, .96), trim = this.material(0x828b90, .62, .45);
     const screen = this.displays = this.material(0x233b4d, .05, .38, 0x365a79, .85);
@@ -117,31 +119,14 @@ export class LogosFlightRenderer {
       if (!['logos-cabin-floor', 'logos-cabin-roof', 'logos-seat-cushion', 'logos-seat-back'].includes(name)) part.name = '';
       part.position.set(point[0], point[1], point[2]); return part;
     };
-    box('logos-cabin-floor', [6.8, .18, 10.8], [0, floor - .09, -4.55], dark);
-    box('logos-cabin-roof', [6.8, .14, 9.7], [0, 3.25, -3.95], hull);
-    box('logos-cabin-rear-wall', [6.8, 4.35, .16], [0, 1.075, .83], hull);
-    box('logos-aft-hatch', [1.65, 3.25, .12], [0, .56, .69], dark);
+    this.cabinFrame = new LogosCabinFrame(this.cockpit);
     for (const side of [-1, 1]) {
-      box('logos-window-sill', [.18, 1.1, 10.6], [side * 3.3, floor + .55, -4.6], hull);
-      for (const z of [-9.7, -5.8, -2.4, .7]) {
-        const pillar = box('logos-window-frame', [.13, 3.22, .15], [side * 3.28, 1.58, z], trim);
-        pillar.rotation.z = -side * .045;
-      }
-      for (const y of [.04, 3.15]) box('logos-window-frame', [.18, .13, 10.55], [side * 3.28, y, -4.55], trim);
-      // Cables and mechanical joints flank the windows, leaving the pilots' sightline open.
-      for (let i = 0; i < 3; i++) {
-        const path = new THREE.CatmullRomCurve3([new THREE.Vector3(side * (3.04 - i * .12), 3.04, -9.4),
-          new THREE.Vector3(side * (3.07 - i * .12), 2.9, -4), new THREE.Vector3(side * 3.12, 1.9 - i * .2, .55)]);
-        this.mesh(new THREE.TubeGeometry(path, 20, .035, 6, false), dark, this.cockpit);
-      }
       for (const z of [-3.4, -1.65]) {
         box('logos-side-crt-case', [.74, .74, .5], [side * 2.57, 1.73, z], dark);
         box('logos-side-crt', [.61, .52, .025], [side * 2.57, 1.73, z - .263], screen);
         for (let i = 0; i < 4; i++) box('logos-crt-scan', [.42 - i * .035, .012, .012], [side * 2.57, 1.57 + i * .1, z - .28], glyph);
       }
     }
-    box('logos-front-sill', [6.6, .35, .25], [0, .16, -9.77], edge);
-    box('logos-windscreen-top', [6.6, .13, .18], [0, 3.19, -9.77], trim);
     for (const role of ['trinity', 'neo'] as const) {
       const root = LOGOS_COCKPIT.roots[role], seat = new THREE.Group(); seat.name = `${role}-logos-seat`;
       seat.position.set(root.x, floor, root.z); this.cockpit.add(seat);
@@ -271,6 +256,7 @@ export class LogosFlightRenderer {
 
   dispose(): void {
     this.impact.dispose();
+    this.cabinFrame.dispose();
     this.atmosphere.dispose();
     this.group.removeFromParent(); this.group.clear();
     this.geometries.forEach(geometry => geometry.dispose()); this.materials.forEach(material => material.dispose());

@@ -5,9 +5,10 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
+import { LogosWreckRenderer } from '../packages/client/src/engine/LogosWreckRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
-import { FILM_SETS, farewellPose, type FarewellEncounter, type PlayerInput } from '@auto_matrix/shared';
+import { FILM_SETS, FILM_SCENE_BY_ID, filmEntry, farewellPose, type FarewellEncounter, type PlayerInput } from '@auto_matrix/shared';
 
 async function geometry(id: string) {
   const glb = await readFile(new URL(`../packages/client/public/assets/characters/${id}.glb`, import.meta.url));
@@ -38,6 +39,8 @@ async function setup(t: TestContext, heading = .4) {
     const pose = ready[actor.id as 'neo' | 'trinity'];
     actor.currentLocation = 'film_logos_wreck'; actor.isInMatrix = false; actor.rotation = actor.id === 'neo' ? heading : pose.yaw;
     actor.position = { x: center.x + pose.x, y: center.y, z: center.z + pose.z };
+    if (actor.id === 'trinity') actor.currentAction = { type: 'idle', parameters: { floorSeated: true,
+      farewell: { phase: 'ready', elapsed: 0, total: 0, role: 'trinity' } }, startedAt: 0, duration: 1, progress: 0 };
   }
   const camera = new THREE.PerspectiveCamera(57, 16 / 9, .5, 5000), renderer = new AgentRenderer(new THREE.Scene()); renderer.setWorld(false);
   for (const actor of actors) renderer.updateAgent(actor.id, actor);
@@ -77,8 +80,85 @@ async function setup(t: TestContext, heading = .4) {
     window.dispatchEvent(Object.assign(new Event('keyup'), { code: 'KeyW' }));
     assert.ok(group.position.distanceTo(before) > .001, `${location}: W must move the player outside the farewell performance`);
   };
-  return { controls, camera, group, head, frame, sync, look, toggle, walk, trinity: renderer.getAgent('trinity')! };
+  const approach = (x: number, z: number) => {
+    const actor = structuredClone(actors[0]); actor.currentAction = null; actor.rotation = Math.PI;
+    actor.position = { x: center.x + x, y: center.y, z: center.z + z };
+    controls.possess(actor); controls.firstPerson = false;
+    renderer.updateAgent('neo', actor); controls.update(.02, actor, group, false);
+    renderer.setPlayer('neo', false); renderer.setPlayerMotion(controls.motion); renderer.update(.02, camera, 0);
+    group.updateMatrixWorld(true); camera.updateMatrixWorld(true);
+  };
+  return { controls, camera, group, head, frame, sync, look, toggle, walk, approach, trinity: renderer.getAgent('trinity')! };
 }
+
+test('the actual third-person camera keeps Trinity clear of the cabin and of Neo on the straight entry path', async t => {
+  const h = await setup(t, Math.PI), root = new THREE.Group(), wreck = new LogosWreckRenderer(root);
+  const scene = FILM_SCENE_BY_ID.m3_farewell, center = FILM_SETS[scene.set].center, entry = filmEntry(scene);
+  root.position.set(center.x, center.y - 1, center.z); root.updateMatrixWorld(true);
+  const structure: THREE.Mesh[] = [];
+  root.traverseVisible(item => {
+    if (item instanceof THREE.Mesh && !Array.isArray(item.material) && !item.material.transparent) structure.push(item);
+  });
+  try {
+    for (const aspect of [16 / 9, .65]) for (const diagonal of [false, true]) for (let step = 0; step <= 32; step++) {
+      const u = step / 32; h.camera.aspect = aspect; h.camera.updateProjectionMatrix();
+      h.approach((entry.x - center.x) * (diagonal ? 1 - u : 1), THREE.MathUtils.lerp(entry.z - center.z, scene.steps[1].z!, u));
+      const head = h.trinity.getObjectByName('head')!.localToWorld(new THREE.Vector3(0, .15, .12));
+      const direction = head.clone().sub(h.camera.position);
+      const body: THREE.Mesh[] = [];
+      h.group.traverseVisible(item => {
+        if (item instanceof THREE.SkinnedMesh) { item.skeleton.update(); item.computeBoundingBox(); item.computeBoundingSphere(); body.push(item); }
+      });
+      // Crossing laterally in third person can put the player's silhouette in
+      // front of another person. Both paths must clear the physical cabin;
+      // the straight entry must additionally reveal Trinity past Neo himself.
+      const hits = new THREE.Raycaster(h.camera.position, direction.clone().normalize(), 0, direction.length()).intersectObjects([...structure, ...(diagonal ? [] : body)], false);
+      assert.equal(hits.length, 0, `${aspect}/${diagonal}/${step}: real follow camera is occluded at ${hits.map(hit => hit.point.toArray())}`);
+      const screen = head.project(h.camera);
+      assert.ok(Math.abs(screen.x) < 1 && Math.abs(screen.y) < 1 && Math.abs(screen.z) < 1, `${aspect}/${step}: Trinity must remain within the real viewport (${screen.toArray()})`);
+    }
+  } finally { wreck.dispose(); }
+});
+
+test('the performed farewell camera frames both actual heads without the cabin hiding Neo during the saved approach', async t => {
+  const h = await setup(t, Math.PI), root = new THREE.Group(), wreck = new LogosWreckRenderer(root);
+  const center = FILM_SETS.film_logos_wreck.center;
+  root.position.set(center.x, center.y - 1, center.z); root.updateMatrixWorld(true);
+  const structure: THREE.Mesh[] = [];
+  root.traverseVisible(item => {
+    if (item instanceof THREE.Mesh && !Array.isArray(item.material) && !item.material.transparent) structure.push(item);
+  });
+  const beats: FarewellEncounter[] = [
+    ...[0, .748, 1.4, 1.45, 1.5, 1.55, 1.6, 2.4].map(elapsed => ({ phase: 'reaching' as const, elapsed, total: elapsed })),
+    { phase: 'goodbye', elapsed: 2, total: 12.4 }, { phase: 'kiss', elapsed: 1.5, total: 17.1 }, { phase: 'still', elapsed: 0, total: 18.4 },
+  ];
+  try {
+    h.controls.firstPerson = false;
+    let previous: { elapsed: number; eye: THREE.Vector3 } | undefined;
+    for (const aspect of [16 / 9, .65]) for (const beat of beats) {
+      h.camera.aspect = aspect; h.camera.updateProjectionMatrix();
+      const state = { ...beat, approach: { x: 1.35, z: -11.171120530266307, yaw: Math.PI } };
+      h.frame(state); h.camera.updateMatrixWorld(true);
+      const eye = h.camera.position.clone();
+      if (beat.phase === 'reaching') {
+        if (previous && Math.abs(beat.elapsed - previous.elapsed - .05) < .001)
+          assert.ok(eye.distanceTo(previous.eye) < .4, 'crossing the doorway must not switch camera sides in one frame');
+        previous = { elapsed: beat.elapsed, eye };
+      }
+      h.frame(state);
+      assert.ok(h.camera.position.distanceTo(eye) < .00001, 'a paused saved pose must not move the performed camera');
+      for (const [name, actor] of [['Neo', h.group], ['Trinity', h.trinity]] as const) {
+        const head = actor.getObjectByName('head')!.localToWorld(new THREE.Vector3(0, .15, .12));
+        const delta = head.clone().sub(h.camera.position);
+        const hits = new THREE.Raycaster(h.camera.position, delta.clone().normalize(), 0, delta.length()).intersectObjects(structure, false);
+        assert.equal(hits.length, 0, `${aspect}/${beat.phase}/${beat.elapsed}: cabin hides ${name} at ${hits.map(hit => hit.point.toArray())}`);
+        const screen = head.project(h.camera);
+        assert.ok(Math.abs(screen.x) < 1 && Math.abs(screen.y) < 1 && Math.abs(screen.z) < 1,
+          `${aspect}/${beat.phase}/${beat.elapsed}: ${name} leaves the viewport (${screen.toArray()})`);
+      }
+    }
+  } finally { wreck.dispose(); }
+});
 
 test('the first paused farewell frame follows the current delivered head after posing, including out-of-order saved beats', async t => {
   const h = await setup(t);

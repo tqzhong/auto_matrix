@@ -5,7 +5,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { HeroModels } from '../packages/client/src/agents/HeroModel.js';
 import { advanceMotion, newMotion } from '../packages/client/src/agents/CharacterMotion.js';
 import * as THREE from 'three';
-import { farewellPose, newFarewell, FILM_SCENE_BY_ID, FILM_SETS, filmEntry } from '@auto_matrix/shared';
+import { farewellPose, newFarewell, FILM_SCENE_BY_ID, FILM_SETS, filmEntry, LOGOS_WRECK } from '@auto_matrix/shared';
 import { LogosWreckRenderer } from '../packages/client/src/engine/LogosWreckRenderer.js';
 
 function capture(root: THREE.Group) {
@@ -13,7 +13,8 @@ function capture(root: THREE.Group) {
   const state: unknown[] = [];
   for (const name of ['logos-wreck-fire', 'logos-wreck-golden-vision']) root.getObjectByName(name)!.traverse(item => {
     state.push({ matrix: item.matrixWorld.toArray(), visible: item.visible,
-      intensity: item instanceof THREE.Light ? item.intensity : undefined });
+      intensity: item instanceof THREE.Light ? item.intensity : undefined,
+      time: item instanceof THREE.Mesh && item.material instanceof THREE.ShaderMaterial ? item.material.uniforms.time.value : undefined });
   });
   return state;
 }
@@ -36,20 +37,17 @@ test('the cockpit key light keeps its local downward direction at the actual dis
   } finally { renderer.dispose(); }
 });
 
-test('cockpit ribs leave the entry route and both farewell camera sightlines clear', () => {
+test('the damaged cabin leaves the first-person entry sightline clear', () => {
   const root = new THREE.Group(), renderer = new LogosWreckRenderer(root);
   try {
     root.updateMatrixWorld(true);
     const structure: THREE.Mesh[] = [];
-    root.traverse(item => {
-      if (item instanceof THREE.Mesh && item.geometry instanceof THREE.TorusGeometry && item.geometry.parameters.radius === 7.65) structure.push(item);
-    });
-    structure.push(root.getObjectByName('logos-wreck-windshield') as THREE.Mesh);
+    root.getObjectByName('logos-wreck-hull')!.traverse(item => { if (item instanceof THREE.Mesh) structure.push(item); });
     const scene = FILM_SCENE_BY_ID.m3_farewell, set = FILM_SETS[scene.set];
     const entryZ = filmEntry(scene).z - set.center.z, reachZ = scene.steps[0].z!;
-    // Renderer origin is one metre below the shared scene floor. These are the
-    // actual standing and follow-camera offsets used by PlayerControls.
-    const pitch = .24, head = new THREE.Vector3(.2, 3.28, -15.96);
+    // Renderer origin is one metre below the shared scene floor. The moving
+    // third-person camera is exercised through PlayerControls in farewell-camera.
+    const head = new THREE.Vector3(.2, 3.28, -15.96);
     const assertClear = (eye: THREE.Vector3, target: THREE.Vector3, label: string) => {
       const delta = target.clone().sub(eye);
       const hits = new THREE.Raycaster(eye, delta.clone().normalize(), 0, delta.length()).intersectObjects(structure, false);
@@ -59,39 +57,22 @@ test('cockpit ribs leave the entry route and both farewell camera sightlines cle
       const z = THREE.MathUtils.lerp(entryZ, reachZ, step / 24);
       const eyes = new THREE.Vector3(0, 3.99, z);
       assertClear(eyes, head, `first person at ${z.toFixed(2)}`);
-      for (const narrow of [false, true]) {
-        const follow = narrow ? 13 : 11.5;
-        const camera = new THREE.Vector3(narrow ? .3 : .8, 3.05 + (Math.sin(pitch) + .1) * follow, z + Math.cos(pitch) * follow);
-        assertClear(camera, eyes, `follow camera at ${z.toFixed(2)}`);
-        assertClear(camera, head, `Trinity ahead at ${z.toFixed(2)}`);
-      }
-    }
-    for (const phase of ['ready', 'reaching', 'goodbye', 'kiss', 'still'] as const) {
-      const pose = farewellPose({ ...newFarewell(), phase, elapsed: 1.5 });
-      for (const side of [4.8, 5.8]) {
-        assertClear(new THREE.Vector3(pose.neo.x + side, 5.4, pose.neo.z + 3.2), head, `${phase} Trinity face`);
-      }
     }
   } finally { renderer.dispose(); }
 });
 
-test('cockpit ribs remain solid transverse roof and side supports outside the walkable aisle', () => {
+test('the wreck keeps solid side sills and peeled roof panels around its physically open centre', () => {
   const root = new THREE.Group(), renderer = new LogosWreckRenderer(root);
   try {
     root.updateMatrixWorld(true);
-    const ribs: THREE.Mesh[] = [];
-    root.traverse(item => {
-      if (item instanceof THREE.Mesh && item.geometry instanceof THREE.TorusGeometry && item.geometry.parameters.radius === 7.65 && item.visible && item.parent!.visible) ribs.push(item);
-    });
-    // Probe the structural bays even if geometry is removed: the roof and both
-    // side supports must still be hittable, not hidden to clear the view.
-    for (let bay = 0; bay < 12; bay++) {
-      const z = -16 + bay * 2.85, origin = new THREE.Vector3(0, 3.99, z);
-      for (const direction of [new THREE.Vector3(0, 1, 0), new THREE.Vector3(1, 0, 0), new THREE.Vector3(-1, 0, 0)]) {
-        const hits = new THREE.Raycaster(origin, direction, 0, 9).intersectObjects(ribs, false);
-        assert.ok(hits.length, `missing structural support at z=${z}, direction=${direction.toArray()}`);
-        assert.ok(hits[0].distance > (direction.y ? 3 : 5.5), `rib intrudes into the aisle at ${hits[0].point.toArray()}`);
-      }
+    const cabin = root.getObjectByName('logos-wreck-hull')!, c = LOGOS_WRECK.cabin;
+    for (const z of [-8, -6, -4, -2]) for (const side of [-1, 1]) {
+      const sill = new THREE.Raycaster(new THREE.Vector3(c.x, c.y - .55, c.z + z), new THREE.Vector3(side, 0, 0), 0, 4).intersectObject(cabin, true)[0];
+      assert.ok(sill && sill.distance > 3 && sill.distance < 3.4, 'the matching window sill must remain physical');
+      const roof = new THREE.Raycaster(new THREE.Vector3(c.x + side * 3.05, c.y + 1, c.z + z), new THREE.Vector3(0, 1, 0), 0, 4).intersectObject(cabin, true)[0];
+      assert.ok(roof && roof.distance > 1.8, 'the folded roof must remain outside the bodies, not disappear');
+      const centre = new THREE.Raycaster(new THREE.Vector3(c.x, c.y + 1, c.z + z), new THREE.Vector3(0, 1, 0), 0, 4).intersectObject(cabin, true);
+      assert.equal(centre.length, 0, 'the top opening is geometry, not a camera-dependent visibility switch');
     }
   } finally { renderer.dispose(); }
 });

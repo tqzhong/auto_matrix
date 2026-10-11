@@ -30,6 +30,7 @@ export const LOGOS_IGNITION = { ready: 1.1, overload: 2.1, grip: { x: -.58, y: 3
 
 export const LOGOS_COCKPIT = {
   floor: -1.1, seat: 1.16,
+  frame: { halfWidth: 3.3, front: -9.77, rear: .83, length: 10.6 },
   roots: { trinity: { x: -1.35, z: -5.1 }, neo: { x: 1.35, z: -5.1 } },
   grip: { x: .48, y: 2.08, z: .93 },
 } as const;

@@ -6214,7 +6214,10 @@ export class FilmStorySystem {
       if (target !== 'act') return '走近 Trinity，按 G 跪到她身边。';
       if (!this.near(agent, step)) return '先沿金色余光穿过残骸，走到 Trinity 身边。';
       if (this.world.agents.get('trinity')?.controller) return 'Trinity 正由另一位玩家控制，等待她空闲后再开始告别。';
-      state.farewell = { phase: 'reaching', elapsed: 0, total: 0 }; state.checkpoint = { ...agent.position };
+      const center = FILM_SETS[this.scene.set].center;
+      state.farewell = { phase: 'reaching', elapsed: 0, total: 0,
+        approach: { x: agent.position.x - center.x, z: agent.position.z - center.z, yaw: agent.rotation } };
+      state.checkpoint = { ...agent.position };
       state.lastText = 'Neo 跪进变形的驾驶舱，循着 Trinity 的声音伸出手。停留在这一刻，听她把话说完。';
       this.placeFarewell(agent, tick); return state.lastText;
     }
