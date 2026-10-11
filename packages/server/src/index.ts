@@ -174,13 +174,16 @@ sockets.getIO().on('connection', socket => {
       return;
     }
     if (type === 'player_input') { players.receiveInput(socket.id, data); return; }
-    if ((type === 'sandbox_action' || type === 'player_action') && !simLoop.isRunning()) {
+    const pausedRetry = !simLoop.isRunning() && type === 'sandbox_action' && data?.kind === 'life' && data.target === 'film:retry';
+    if ((type === 'sandbox_action' || type === 'player_action') && !simLoop.isRunning() && !pausedRetry) {
       socket.emit('message', { type: 'notification', data: { message: '世界已暂停，请先继续时间。', level: 'info' }, tick: simLoop.getTick(), timestamp: Date.now() });
       return;
     }
-    if (type === 'sandbox_action' && typeof data?.kind === 'string' && simLoop.isRunning()) {
+    if (type === 'sandbox_action' && typeof data?.kind === 'string' && (simLoop.isRunning() || pausedRetry)) {
       const text = players.sandboxAction(socket.id, { kind: data.kind as SandboxCommand['kind'], target: typeof data.target === 'string' ? data.target : undefined }, simLoop.getTick());
-      if (text) socket.emit('message', { type: 'notification', data: { message: text, level: 'info' }, tick: simLoop.getTick(), timestamp: Date.now() });
+      if (text) socket.emit('message', { type: 'notification', data: { message: pausedRetry ? `${text} 世界仍暂停，点击 ▶ 继续时间。` : text, level: 'info' }, tick: simLoop.getTick(), timestamp: Date.now() });
+      // No simulation tick will autosave this recovery until the player resumes.
+      if (pausedRetry) void saveWorld().catch(error => console.error('[Save] Failed:', error));
       sockets.broadcastDelta({ ...sync.calculateDelta(world.agents), sandbox: sandbox.state, timeOfDay: world.timeOfDay, simulation: simulationState() }, simLoop.getTick());
       return;
     }
