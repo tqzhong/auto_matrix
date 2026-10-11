@@ -13,13 +13,14 @@ export class TempleDefenseRenderer {
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private textures = new Set<THREE.Texture>();
-  private lights: THREE.PointLight[] = [];
+  private lights: THREE.Light[] = [];
   private disposed = false;
 
   constructor(root: THREE.Group) {
     this.group.name = 'temple-last-defense'; root.add(this.group);
     const steel = this.surface('metal_plate', 0x687472, .62, .55), dark = this.material(0x2c3436, .73, .3);
     const stone = this.surface('damaged_plaster', 0x615a53, 1, .01), cloth = this.material(0x726759, .95, 0);
+    const cave = this.surface('rock_wall_02', 0xa19d97, 1, .01);
     const black = this.material(0x0d1011, 1, 0), bronze = this.material(0x90816b, .62, .4);
     for (const [index, mount] of TEMPLE_DEFENSE.mounts.entries()) {
       const gun = new THREE.Group(); gun.name = `temple-artillery-${index}`; gun.position.set(mount.x, 0, mount.z); this.group.add(gun);
@@ -54,28 +55,8 @@ export class TempleDefenseRenderer {
       }
       for (let i = 0; i < 3; i++) { const x = mount.x + (index ? 2.8 : -2.8); this.box(dark, x, .55 + i * .52, mount.z + .4, 1.6, .48, 1.1); this.box(steel, x, .78 + i * .52, mount.z + .4, 1.7, .06, 1.2); }
     }
-    // The distant city is visible through the narrow entrance; its roofs and service bridges remain outside the walking floor.
-    const outside = new THREE.Group(); outside.name = 'temple-city-outlook'; this.group.add(outside);
-    for (const side of [-1, 1]) {
-      this.box(stone, side * 14, 7, -54, 10, 14, 5, outside);
-      this.box(dark, side * 11.5, .1, -68, .8, .3, 30, outside);
-      for (let z = -54; z > -80; z -= 2.8) this.pipe(steel, [side * 11.5, .2, z], [side * 11.5, 2.4, z], .06, outside);
-      this.pipe(steel, [side * 11.5, 2.4, -54], [side * 11.5, 2.4, -81], .065, outside);
-    }
-    this.box(stone, 0, 15.3, -54, 37, 2.6, 5, outside);
-    this.box(dark, 0, -.3, -70, 24, .5, 34, outside);
-    for (let i = 0; i < 9; i++) {
-      const x = (i % 3 - 1) * 29, z = -105 - Math.floor(i / 3) * 27, height = 15 + i % 4 * 4;
-      this.cylinder(stone, x, -13 + height / 2, z, 7 + i % 2, height, outside);
-      for (let y = -9; y < height - 13; y += 3.2) {
-        const ring = this.mesh(new THREE.TorusGeometry(7.2 + i % 2, .17, 8, 32), steel, outside); ring.rotation.x = Math.PI / 2; ring.position.set(x, y, z);
-      }
-      for (const side of [-1, 1]) this.pipe(dark, [x + side * 6.3, -12, z], [x + side * 6.3, height - 10, z], .38, outside);
-      this.box(dark, x, -3, z + 12, 28, .55, 3, outside);
-      for (let j = -12; j <= 12; j += 3) this.pipe(steel, [x + j, -2.7, z + 10.8], [x + j, -1.1, z + 10.8], .05, outside);
-      this.pipe(steel, [x - 13, -1.1, z + 10.8], [x + 13, -1.1, z + 10.8], .05, outside);
-    }
-    this.cityCeiling(stone, steel);
+    this.cityOutlook(stone, cave, steel, dark, black);
+    this.cityCeiling(cave, steel);
     this.drill.name = 'temple-city-digger'; this.drill.position.set(0, 38, -105); this.group.add(this.drill);
     const tip = this.mesh(new THREE.ConeGeometry(5.4, 10, 32), steel, this.drill); tip.rotation.z = Math.PI;
     for (let i = 0; i < 7; i++) {
@@ -92,7 +73,7 @@ export class TempleDefenseRenderer {
       const angle = i * Math.PI / 6;
       this.pipe(steel, [Math.cos(angle) * 5.65, 5.2, Math.sin(angle) * 5.65], [Math.cos(angle) * 5.65, 11.5, Math.sin(angle) * 5.65], .18, this.drill);
     }
-    this.rubble = new THREE.InstancedMesh(new THREE.DodecahedronGeometry(.5, 0), stone, 32); this.rubble.name = 'temple-breach-rubble'; this.rubble.frustumCulled = false;
+    this.rubble = new THREE.InstancedMesh(new THREE.DodecahedronGeometry(.5, 0), cave, 32); this.rubble.name = 'temple-breach-rubble'; this.rubble.frustumCulled = false;
     this.geometries.add(this.rubble.geometry); this.group.add(this.rubble);
     const pixels = new Uint8Array(64 * 64 * 4);
     for (let y = 0; y < 64; y++) for (let x = 0; x < 64; x++) {
@@ -123,23 +104,155 @@ export class TempleDefenseRenderer {
     const clouds = new THREE.PlaneGeometry(1, 1); clouds.setAttribute('cloudOpacity', new THREE.InstancedBufferAttribute(new Float32Array(24), 1));
     this.geometries.add(clouds); this.dust = new THREE.InstancedMesh(clouds, smoke, 24); this.dust.name = 'temple-breach-dust'; this.dust.frustumCulled = false;
     this.dust.raycast = () => {}; this.group.add(this.dust);
-    for (const point of [[-8, 6, -43, 210, 24], [8, 6, -43, 210, 24], [0, 27, -100, 1400, 135]]) {
+    for (const point of [[-8, 6, -43, 210, 24], [8, 6, -43, 210, 24]]) {
       const light = new THREE.PointLight(0x8fafd3, point[3], point[4], 2); light.position.set(point[0], point[1], point[2]); this.group.add(light); this.lights.push(light);
     }
+    const flood = new THREE.SpotLight(0xb3c8d5, 18000, 240, 1.1, .7, 2);
+    flood.position.set(-5, 13.3, -57.6); flood.target.position.set(0, -5, -170);
+    this.group.add(flood, flood.target); this.lights.push(flood);
     batchStaticGeometry(this.group, new Set()).forEach(geometry => this.geometries.add(geometry));
     this.update(undefined);
   }
+  private cityOutlook(stone: THREE.MeshStandardMaterial, cave: THREE.MeshStandardMaterial, steel: THREE.MeshStandardMaterial, dark: THREE.Material, black: THREE.Material): void {
+    // The residential shaft is scenery beyond the temple's walking boundary. Keep the central bore and approach open.
+    const outside = new THREE.Group(); outside.name = 'temple-city-outlook'; this.group.add(outside);
+    const rust = steel.clone(); rust.color.setHex(0xc49a82); rust.roughness = .96; rust.metalness = .05; this.materials.add(rust);
+    const rock = cave.clone(); rock.vertexColors = true; this.materials.add(rock);
+    const window = this.material(0x95816c, .85, .05); window.emissive.setHex(0xe7a76f); window.emissiveIntensity = .75;
+    const lamp = this.material(0xc7d4cc, .4, .1); lamp.emissive.setHex(0xa9c9d5); lamp.emissiveIntensity = 1.5;
+    for (const side of [-1, 1]) {
+      this.box(stone, side * 14, 7, -54, 10, 14, 5, outside);
+      this.box(dark, side * 11.5, .1, -68, .8, .3, 30, outside);
+      for (let z = -54; z > -85; z -= 2.8) {
+        this.pipe(steel, [side * 11.5, .2, z], [side * 11.5, 2.4, z], .06, outside, 8);
+        this.box(dark, side * 10.8, -2.2, z, .35, 4.2, .4, outside);
+      }
+      for (const y of [1.2, 2.4]) this.pipe(steel, [side * 11.5, y, -54], [side * 11.5, y, -85], .065, outside, 8);
+      this.pipe(steel, [side * 10.8, -4, -54], [side * 10.8, -4, -99], .42, outside, 8);
+      for (let z = -58; z > -83; z -= 8) {
+        this.box(dark, side * 10.8, 3, z, .65, .2, .65, outside);
+        this.box(lamp, side * 10.8, 2.88, z, .42, .07, .42, outside);
+      }
+    }
+    this.box(stone, 0, 15.3, -54, 37, 2.6, 5, outside);
+    this.box(dark, -5, 13.65, -57, 1.8, .7, 1, outside);
+    this.box(lamp, -5, 13.65, -57.52, 1.45, .42, .06, outside);
+    this.box(dark, 0, -.3, -70, 24, .5, 34, outside);
+    for (let z = -55; z > -87; z -= 1.4) this.box(steel, 0, -.025, z, 22.5, .04, .06, outside);
+    // Broken roof pieces land on a service crown, with the city's occupied levels continuing below it.
+    this.cylinder(dark, 0, -39, -105, 8.5, 90, outside);
+    this.cylinder(steel, 0, 5.7, -105, 11, .65, outside);
+    for (let i = 0; i < 16; i++) this.box(steel, 0, i * .38, -87.4 - i * .63, 16, .5, .7, outside);
+    for (let i = 0; i < 12; i++) {
+      const a = i * Math.PI / 6, x = Math.cos(a) * 8.8, z = -105 + Math.sin(a) * 8.8;
+      this.pipe(steel, [x, -83, z], [x, 5.35, z], .22, outside, 8);
+    }
+    const houseShape = new THREE.Shape(); houseShape.moveTo(-5, 0); houseShape.lineTo(-5, 3);
+    houseShape.quadraticCurveTo(-5, 8, 0, 8); houseShape.quadraticCurveTo(5, 8, 5, 3); houseShape.lineTo(5, 0); houseShape.closePath();
+    const house = new THREE.ExtrudeGeometry(houseShape, { depth: 7, bevelEnabled: true, bevelSize: .16, bevelThickness: .12, bevelSegments: 2, curveSegments: 8 });
+    house.translate(0, 0, -6);
+    const port = new THREE.TorusGeometry(.78, .14, 6, 16), glass = new THREE.CircleGeometry(.68, 16);
+    const levels = [-63, -50, -37, -24, -11, 2, 15];
+    for (let bay = 0; bay < 13; bay++) {
+      const angle = (bay - 6) * .26, radius = 77 + Math.sin(bay * 2.1) * 1.5;
+      const origin = new THREE.Vector3(Math.sin(angle) * radius, 0, -125 - Math.cos(angle) * radius);
+      const rotation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -angle);
+      const point = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z).applyQuaternion(rotation).add(origin);
+      const box = (material: THREE.Material, x: number, y: number, z: number, w: number, h: number, d: number) => {
+        const mesh = this.mesh(new THREE.BoxGeometry(w, h, d), material, outside); mesh.position.copy(point(x, y, z)); mesh.quaternion.copy(rotation);
+      };
+      for (const x of [-7.2, 7.2]) {
+        this.pipe(steel, point(x, -82, 2).toArray(), point(x, 29, 2).toArray(), .42, outside, 8);
+        this.pipe(rust, point(x + .9, -82, 1).toArray(), point(x + .9, 27, 1).toArray(), .2, outside, 8);
+      }
+      for (const [level, floor] of levels.entries()) {
+        const home = this.mesh(house, rust, outside); home.position.copy(point(0, floor + .3, 0)); home.quaternion.copy(rotation);
+        box(black, 0, floor + 2.35, 1.17, 2.4, 4, .12);
+        box(steel, 0, floor + 4.4, 1.3, 2.8, .22, .4);
+        for (const x of [-1.35, 1.35]) box(steel, x, floor + 2.35, 1.3, .18, 4.2, .4);
+        const lit = (bay * 3 + level) % 5 < 2;
+        const rim = this.mesh(port, steel, outside); rim.position.copy(point(3.05, floor + 3.5, 1.22)); rim.quaternion.copy(rotation);
+        const pane = this.mesh(glass, lit ? window : black, outside); pane.position.copy(point(3.05, floor + 3.5, 1.2)); pane.quaternion.copy(rotation);
+        box(lit ? window : black, -3, floor + 3.4, 1.22, 1.25, 1.7, .08);
+        for (let slat = 0; slat < 4; slat++) box(steel, -3, floor + 2.85 + slat * .38, 1.3, 1.5, .07, .12);
+        box(steel, 0, floor + 6.7, 2, 8, .18, 2.5);
+        box(lamp, 0, floor + 4.12, 1.55, .7, .06, .22);
+        for (const x of [-5.5, 5.5]) {
+          this.pipe(dark, point(x, floor + .5, 1.2).toArray(), point(x, floor + 6.3, 1.2).toArray(), .15, outside, 8);
+          this.pipe(steel, point(x, floor + 5.5, 1.2).toArray(), point(x > 0 ? 4 : -4, floor + 5.5, 1.2).toArray(), .14, outside, 8);
+        }
+        box(dark, 0, floor - 1.45, -.7, 16, 2.2, 1.1);
+        this.pipe(steel, point(-7, floor - 2.5, -.7).toArray(), point(0, floor - .5, 3).toArray(), .15, outside, 8);
+        this.pipe(steel, point(7, floor - 2.5, -.7).toArray(), point(0, floor - .5, 3).toArray(), .15, outside, 8);
+      }
+    }
+    // Continuous polygonal balconies connect the modules, rather than isolated rings around solid pillars.
+    const gallery = new THREE.Shape();
+    for (let i = 0; i <= 48; i++) {
+      const angle = -1.72 + i * 3.44 / 48, x = Math.sin(angle) * 80, z = -125 - Math.cos(angle) * 80;
+      if (i === 0) gallery.moveTo(x, z); else gallery.lineTo(x, z);
+    }
+    for (let i = 48; i >= 0; i--) { const angle = -1.72 + i * 3.44 / 48; gallery.lineTo(Math.sin(angle) * 67, -125 - Math.cos(angle) * 67); }
+    gallery.closePath();
+    const balcony = new THREE.ExtrudeGeometry(gallery, { depth: .5, bevelEnabled: false }); balcony.rotateX(Math.PI / 2);
+    for (const floor of levels) this.mesh(balcony, dark, outside).position.y = floor + .25;
+    for (const floor of levels) for (let i = 0; i < 48; i++) {
+      const a = -1.72 + i * 3.44 / 48, b = -1.72 + (i + 1) * 3.44 / 48;
+      const p = (angle: number, r: number, y: number) => new THREE.Vector3(Math.sin(angle) * r, y, -125 - Math.cos(angle) * r);
+      for (const y of [floor + 1.1, floor + 2.1]) this.pipe(steel, p(a, 67, y).toArray(), p(b, 67, y).toArray(), .07, outside, 8);
+      this.pipe(steel, p(a, 67, floor).toArray(), p(a, 67, floor + 2.1).toArray(), .07, outside, 8);
+    }
+    for (const side of [-1, 1]) for (const floor of [-37, -11, 2]) {
+      this.box(dark, side * 36, floor, -137, 54, .65, 5, outside);
+      for (const z of [-139.4, -134.6]) {
+        this.pipe(steel, [side * 9, floor + 2, z], [side * 63, floor + 2, z], .1, outside, 8);
+        for (let x = 9; x < 64; x += 3) this.pipe(steel, [side * x, floor, z], [side * x, floor + 2, z], .07, outside, 8);
+      }
+    }
+    const positions: number[] = [], colors: number[] = [], uvs: number[] = [], indices: number[] = [];
+    for (let y = 0; y <= 12; y++) for (let i = 0; i <= 64; i++) {
+      const angle = -1.94 + i * 3.88 / 64, height = -88 + y * 12;
+      const radius = 101 + Math.sin(i * 1.17 + y * .7) * 2.5 + Math.sin(i * .3 - y * 1.8) * 2;
+      positions.push(Math.sin(angle) * radius, height, -125 - Math.cos(angle) * radius);
+      const shade = .52 + y / 12 * .35 + Math.sin(i * .8 + y * 1.7) * .07; colors.push(shade, shade, shade);
+      uvs.push(i * .32, y * .75);
+      if (y < 12 && i < 64) { const a = y * 65 + i; indices.push(a, a + 1, a + 65, a + 1, a + 66, a + 65); }
+    }
+    const wall = new THREE.BufferGeometry(); wall.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    wall.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3)); wall.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+    wall.setIndex(indices); wall.computeVertexNormals(); rock.side = THREE.DoubleSide; this.mesh(wall, rock, outside);
+    this.box(black, 0, -88.6, -145, 202, 1, 180, outside);
+  }
   private cityCeiling(stone: THREE.MeshStandardMaterial, steel: THREE.Material): void {
     const ceiling = new THREE.Group(); ceiling.name = 'temple-city-ceiling'; this.group.add(ceiling);
-    const material = stone.clone(); material.side = THREE.DoubleSide; this.materials.add(material);
+    const material = stone.clone(); material.side = THREE.DoubleSide; material.color.setHex(0x8f8d89); this.materials.add(material);
     const edge = Array.from({ length: 12 }, (_, i) => {
       const angle = i * Math.PI / 6, radius = 7.5 + Math.sin(i * 1.7) * .45;
       return new THREE.Vector2(Math.cos(angle) * radius, Math.sin(angle) * radius);
     });
-    const outline = new THREE.Shape(); outline.moveTo(-85, -55); outline.lineTo(85, -55); outline.lineTo(85, 46); outline.lineTo(-85, 46); outline.closePath();
-    outline.holes.push(new THREE.Path(edge));
-    const roof = this.mesh(new THREE.ExtrudeGeometry(outline, { depth: 1.1, bevelEnabled: false }), material, ceiling);
-    roof.name = 'temple-city-roof'; roof.rotation.x = Math.PI / 2; roof.position.set(0, 31.55, -105);
+    // A continuous, thick rock vault surrounds the original breakable twelve-sided bore.
+    const positions: number[] = [], uvs: number[] = [], indices: number[] = [], rings = [0, .08, .2, .4, .65, 1];
+    const segments = edge.length * 4, surfaceCount = rings.length * segments;
+    for (let side = 0; side < 2; side++) for (const ring of rings) for (let i = 0; i < segments; i++) {
+      const inner = edge[Math.floor(i / 4)].clone().lerp(edge[(Math.floor(i / 4) + 1) % edge.length], i % 4 / 4);
+      const direction = inner.clone().normalize();
+      const extent = Math.min(110 / Math.max(.0001, Math.abs(direction.x)), (direction.y > 0 ? 46 : 140) / Math.max(.0001, Math.abs(direction.y)));
+      const distance = THREE.MathUtils.lerp(inner.length(), extent, ring), x = direction.x * distance, z = direction.y * distance;
+      const lift = ring === 0 ? 0 : (distance - inner.length()) * .11 + ring * (Math.sin(x * .18) * 1.4 + Math.cos(z * .21) * 1.2);
+      positions.push(x, 31.55 + lift - side * 1.1, z - 105); uvs.push(x / 20, z / 20);
+    }
+    for (let side = 0; side < 2; side++) for (let ring = 0; ring < rings.length - 1; ring++) for (let i = 0; i < segments; i++) {
+      const a = side * surfaceCount + ring * segments + i, b = side * surfaceCount + ring * segments + (i + 1) % segments;
+      const c = a + segments, d = b + segments;
+      indices.push(...(side ? [a, c, b, b, c, d] : [a, b, c, b, d, c]));
+    }
+    for (const ring of [0, rings.length - 1]) for (let i = 0; i < segments; i++) {
+      const a = ring * segments + i, b = ring * segments + (i + 1) % segments, c = a + surfaceCount, d = b + surfaceCount;
+      indices.push(...(ring ? [a, b, c, b, d, c] : [a, c, b, b, c, d]));
+    }
+    const vault = new THREE.BufferGeometry(); vault.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    vault.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2)); vault.setIndex(indices); vault.computeVertexNormals();
+    this.mesh(vault, material, ceiling).name = 'temple-city-roof';
     const pieces = new THREE.Group(); pieces.name = 'temple-ceiling-fragments'; ceiling.add(pieces);
     for (let i = 0; i < edge.length; i++) {
       const a = edge[i], b = edge[(i + 1) % edge.length], center = a.clone().add(b).multiplyScalar(1 / 3);
@@ -178,9 +291,9 @@ export class TempleDefenseRenderer {
   private cylinder(material: THREE.Material, x: number, y: number, z: number, r: number, h: number, parent = this.group): THREE.Mesh {
     const mesh = this.mesh(new THREE.CylinderGeometry(r, r, h, 24), material, parent); mesh.position.set(x, y, z); return mesh;
   }
-  private pipe(material: THREE.Material, a: number[], b: number[], radius: number, parent = this.group): void {
+  private pipe(material: THREE.Material, a: number[], b: number[], radius: number, parent = this.group, sides = 16): void {
     const start = new THREE.Vector3(...a), end = new THREE.Vector3(...b), delta = end.clone().sub(start);
-    const mesh = this.mesh(new THREE.CylinderGeometry(radius, radius, delta.length(), 16), material, parent);
+    const mesh = this.mesh(new THREE.CylinderGeometry(radius, radius, delta.length(), sides), material, parent);
     mesh.position.copy(start).addScaledVector(delta, .5); mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), delta.normalize());
   }
   update(journey?: FilmJourney): void {
