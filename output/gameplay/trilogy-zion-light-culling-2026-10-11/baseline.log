@@ -1,0 +1,145 @@
+TAP version 13
+# Unable to load the Zion audience TypeError: Failed to parse URL from /assets/characters/zion-crowd-male.glb
+#     at new Request (node:internal/deps/undici/undici:9929:19)
+#     at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#     ... 6 lines matching cause stack trace ...
+#     at Array.map (<anonymous>)
+#     at new ZionCrowdRenderer (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/engine/ZionCrowdRenderer.ts:39:49) {
+#   [cause]: TypeError: Invalid URL
+#       at new URL (node:internal/url:818:25)
+#       at new Request (node:internal/deps/undici/undici:9927:25)
+#       at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#       at GLTFLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/examples/jsm/loaders/GLTFLoader.js:241:10)
+#       at file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44711:10
+#       at new Promise (<anonymous>)
+#       at GLTFLoader.loadAsync (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44709:10)
+#       at ZionCrowdRenderer.load (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/engine/ZionCrowdRenderer.ts:44:42)
+#       at <anonymous> (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/engine/ZionCrowdRenderer.ts:39:65)
+#       at Array.map (<anonymous>) {
+#     code: 'ERR_INVALID_URL',
+#     input: '/assets/characters/zion-crowd-male.glb'
+#   }
+# }
+# Subtest: the withdrawal shot keeps all eighteen machines in frame instead of cutting off their ascent, without scenery blocking the central machine
+ok 1 - the withdrawal shot keeps all eighteen machines in frame instead of cutting off their ascent, without scenery blocking the central machine
+  ---
+  duration_ms: 1270.477083
+  type: 'test'
+  ...
+# Subtest: the real post-breach withdrawal is visible beyond the completed temple roof and drilling machine
+ok 2 - the real post-breach withdrawal is visible beyond the completed temple roof and drilling machine
+  ---
+  duration_ms: 1828.72925
+  type: 'test'
+  ...
+# Subtest: retreating bodies pass through the existing roof bore after the drill has withdrawn
+ok 3 - retreating bodies pass through the existing roof bore after the drill has withdrawn
+  ---
+  duration_ms: 264.6645
+  type: 'test'
+  ...
+# Subtest: V looks toward the remaining withdrawal and exit, while the player can freely follow the ascent and retain that look
+ok 4 - V looks toward the remaining withdrawal and exit, while the player can freely follow the ascent and retain that look
+  ---
+  duration_ms: 220.226
+  type: 'test'
+  ...
+# Subtest: the report and reunion shot faces the audience and keeps Kid, both pairs and the nearest listeners in wide and narrow frames
+ok 5 - the report and reunion shot faces the audience and keeps Kid, both pairs and the nearest listeners in wide and narrow frames
+  ---
+  duration_ms: 268.28325
+  type: 'test'
+  ...
+# Subtest: Kid sees the last withdrawing wave and then its exit, without aiming through the opaque temple roof
+ok 6 - Kid sees the last withdrawing wave and then its exit, without aiming through the opaque temple roof
+  ---
+  duration_ms: 416.910041
+  type: 'test'
+  ...
+# Subtest: the ceasefire first-person camera uses Kid’s actual head and preserves mouse turning after the report
+ok 7 - the ceasefire first-person camera uses Kid’s actual head and preserves mouse turning after the report
+  ---
+  duration_ms: 157.856125
+  type: 'test'
+  ...
+# Subtest: the city has a physical ceiling before the drill breaks through and retains its breach on returning to Zion
+ok 8 - the city has a physical ceiling before the drill breaks through and retains its breach on returning to Zion
+  ---
+  duration_ms: 843.532042
+  type: 'test'
+  ...
+# Subtest: paused and cold-loaded temple destruction render exactly the same physical frame
+ok 9 - paused and cold-loaded temple destruction render exactly the same physical frame
+  ---
+  duration_ms: 879.659458
+  type: 'test'
+  ...
+# Subtest: the rock vault stays solid around the bore and the residential balconies meet every doorway
+ok 10 - the rock vault stays solid around the bore and the residential balconies meet every doorway
+  ---
+  duration_ms: 2534.833042
+  type: 'test'
+  ...
+# Subtest: the deep city shares draw batches, rebuilds deterministically and releases its render resources once
+ok 11 - the deep city shares draw batches, rebuilds deterministically and releases its render resources once
+  ---
+  duration_ms: 520.278375
+  type: 'test'
+  ...
+# Subtest: homecoming routes, named cast and visible prop footprints agree with collision
+ok 12 - homecoming routes, named cast and visible prop footprints agree with collision
+  ---
+  duration_ms: 6.358542
+  type: 'test'
+  ...
+# Subtest: the temple walking floor has one stone surface instead of coincident dark and stone faces
+ok 13 - the temple walking floor has one stone surface instead of coincident dark and stone faces
+  ---
+  duration_ms: 1057.558917
+  type: 'test'
+  ...
+# Subtest: dock and resident actions save concrete supplies and both requests through reload
+ok 14 - dock and resident actions save concrete supplies and both requests through reload
+  ---
+  duration_ms: 89.53675
+  type: 'test'
+  ...
+# Subtest: Zion supplies reach Mifune at the later dock defense only once
+ok 15 - Zion supplies reach Mifune at the later dock defense only once
+  ---
+  duration_ms: 17.8285
+  type: 'test'
+  ...
+# Subtest: all six authored Zion sets have their own geometry and release it after leaving
+ok 16 - all six authored Zion sets have their own geometry and release it after leaving
+  ---
+  duration_ms: 1027.268584
+  type: 'test'
+  ...
+# Subtest: identical dock lamp housings share materials and draws without removing glowing fixtures
+ok 17 - identical dock lamp housings share materials and draws without removing glowing fixtures
+  ---
+  duration_ms: 1117.478
+  type: 'test'
+  ...
+# Subtest: dock lamps keep their fixtures but only nearby lights enter the forward lighting pass
+ok 18 - dock lamps keep their fixtures but only nearby lights enter the forward lighting pass
+  ---
+  duration_ms: 503.953958
+  type: 'test'
+  ...
+# Subtest: dock lighting excludes only lights with no influence in the view and restores them when turning
+ok 19 - dock lighting excludes only lights with no influence in the view and restores them when turning
+  ---
+  duration_ms: 373.57475
+  type: 'test'
+  ...
+1..19
+# tests 19
+# suites 0
+# pass 19
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5265.292084

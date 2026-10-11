@@ -479,7 +479,7 @@ export class ZionHomecomingRenderer {
     if (this.lampMaterials && this.set === 'film_zion_hangar') this.lampMaterials[1].emissiveIntensity = dockPowerOffline(journey) ? 0 : 2.5;
     if (this.signals.length) for (const signal of this.signals) signal.emissiveIntensity = journey?.scene === 'm2_hamann' && journey.step >= 3 ? 3 : .55 + Math.sin(elapsed * 2) * .25;
     this.crowd?.update(journey, elapsed);
-    if (camera && this.set === 'film_zion_hangar') {
+    if (camera && (this.set === 'film_zion_hangar' || this.set === 'film_zion_temple')) {
       camera.updateWorldMatrix(true, false);
       const frustum = new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
       const range = new THREE.Sphere();
