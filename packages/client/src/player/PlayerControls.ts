@@ -1,5 +1,6 @@
 import { logosBaneBeat, logosBaneLocked, logosBaneRoot } from '@auto_matrix/shared';
 import { logosShipPose, logosShipPoint, logosFlightSet } from '@auto_matrix/shared';
+import { LOGOS_WRECK, LOGOS_COCKPIT } from '@auto_matrix/shared';
 import { MAGGIE_DISCOVERY, HAMMER_MEDICAL, maggieDiscoveryLocked, maggieDiscoveryRoot } from '@auto_matrix/shared';
 import { sourcePortalLocked } from '@auto_matrix/shared';
 import { ORACLE_LAST, oracleLastLocked } from '@auto_matrix/shared';
@@ -2864,10 +2865,13 @@ export class PlayerControls {
       const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
       this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
     } else if (this.motion.farewell) {
-      const ideal = new THREE.Vector3(this.position.x + (this.camera.aspect < .85 ? 5.8 : 4.8), this.position.y + 4.4, this.position.z + 3.2);
+      const center = FILM_SETS.film_logos_wreck.center;
+      const ideal = new THREE.Vector3(this.position.x - 1.35, this.position.y + 4.5, this.position.z + 3.2);
+      const inside = THREE.MathUtils.smoothstep(center.z + LOGOS_WRECK.cabin.z + LOGOS_COCKPIT.frame.rear - ideal.z, 0, 1.4);
+      ideal.x = THREE.MathUtils.lerp(center.x + LOGOS_WRECK.cabin.x, ideal.x, inside);
+      ideal.y = this.position.y + THREE.MathUtils.lerp(3.9, 4.5, inside);
       const focus = new THREE.Vector3(this.position.x, this.position.y + 1.45, this.position.z - .35);
-      if (resetCamera || this.motion.farewell.elapsed < .12) this.camera.position.copy(ideal);
-      else this.camera.position.lerp(ideal, 1 - Math.exp(-9 * delta));
+      this.camera.position.copy(ideal);
       this.camera.lookAt(focus);
     } else if (state.currentAction?.parameters.metacortexLift && !this.firstPerson) {
       const focus = target.clone(); focus.y = this.position.y + 1.75;
@@ -2908,12 +2912,14 @@ export class PlayerControls {
       this.camera.lookAt(target.x + Math.sin(this.yaw) * Math.cos(pitch), target.y - Math.sin(pitch), target.z + Math.cos(this.yaw) * Math.cos(pitch));
     } else {
       const offset = new THREE.Vector3(-Math.sin(this.yaw) * Math.cos(this.pitch), Math.sin(this.pitch) + 0.1, -Math.cos(this.yaw) * Math.cos(this.pitch));
+      const wreckCabin = state.currentLocation === 'film_logos_wreck';
+      if (wreckCabin) offset.y = Math.sin(this.pitch) * .22 + .1;
       // In the ambush aisle the bathroom partition sits to Neo's right.
       const ambushAisle = state.currentLocation === 'film_ambush_house' && this.position.z < FILM_SETS.film_ambush_house.center.z - 4;
       const sixthBathroom = ambushAisle && state.id === 'morpheus' && Math.abs(this.position.y - FILM_SETS.film_ambush_house.center.y - WETWALL_SHAFT.sixth) < 3;
-      const shoulder = new THREE.Vector3(-Math.cos(this.yaw), 0, Math.sin(this.yaw)).multiplyScalar(sixthBathroom ? 2.6 : ambushAisle ? -1.1 : this.camera.aspect < .8 ? .3 : .8);
+      const shoulder = new THREE.Vector3(-Math.cos(this.yaw), 0, Math.sin(this.yaw)).multiplyScalar(wreckCabin ? -1.35 : sixthBathroom ? 2.6 : ambushAisle ? -1.1 : this.camera.aspect < .8 ? .3 : .8);
       const pivot = this.cameraTarget.clone().add(shoulder);
-      const followDistance = state.currentLocation === 'film_zion_personnel' ? 6 : this.motion.farewell ? 8.5 : this.ride?.mode ? 34 : this.ride ? 22 : this.camera.aspect < .8 ? 13 : 11.5;
+      const followDistance = wreckCabin ? 4.2 : state.currentLocation === 'film_zion_personnel' ? 6 : this.ride?.mode ? 34 : this.ride ? 22 : this.camera.aspect < .8 ? 13 : 11.5;
       let cameraDistance = followDistance;
       for (let distance = 1; !(this.performing && state.currentLocation === 'film_power_plant_pods') && distance <= followDistance; distance += .5) {
         const point = pivot.clone().addScaledVector(offset, distance);
@@ -2924,9 +2930,17 @@ export class PlayerControls {
         if (blocked) { cameraDistance = Math.max(2, distance - 1); break; }
       }
       const ideal = pivot.clone().addScaledVector(offset, cameraDistance);
+      if (wreckCabin) {
+        const center = FILM_SETS.film_logos_wreck.center;
+        const inside = THREE.MathUtils.smoothstep(center.z + LOGOS_WRECK.cabin.z + LOGOS_COCKPIT.frame.rear - ideal.z, 0, 1.4);
+        ideal.y = this.position.y + THREE.MathUtils.lerp(3.9, 4.5, inside) + Math.sin(this.pitch - .24) * 3;
+        // Keep the view through the actual hatch while the camera is aft of it.
+        if (this.position.z < center.z + LOGOS_WRECK.entry.z + 1)
+          ideal.x = THREE.MathUtils.lerp(center.x + LOGOS_WRECK.cabin.x, ideal.x, inside);
+      }
       if (resetCamera) this.camera.position.copy(ideal);
       else this.camera.position.lerp(ideal, 1 - Math.exp(-20 * delta));
-      this.camera.lookAt((sixthBathroom ? pivot.clone().lerp(this.cameraTarget, .6) : pivot.clone()).add(new THREE.Vector3(Math.sin(this.yaw) * 2, -.08, Math.cos(this.yaw) * 2)));
+      this.camera.lookAt((wreckCabin ? this.cameraTarget.clone() : sixthBathroom ? pivot.clone().lerp(this.cameraTarget, .6) : pivot.clone()).add(new THREE.Vector3(Math.sin(this.yaw) * 2, -.08, Math.cos(this.yaw) * 2)));
     }
     this.impactAge += delta;
     if (this.impactAge < .18) {

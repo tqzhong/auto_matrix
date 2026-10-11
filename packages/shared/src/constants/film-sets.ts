@@ -37,6 +37,7 @@ import { DOCK_EVACUATION, SHAFT_SEAL } from './dock-evacuation.js';
 import { SOURCE_BRIEFING } from './source-briefing.js';
 import { MOBIL_STATION } from './mobil-station.js';
 import { trainmanBlocked, trainmanFloor } from './trainman-chase.js';
+import { LOGOS_WRECK_WALLS } from './farewell.js';
 
 export type FilmArchitecture = 'hotel' | 'apartment' | 'club' | 'office' | 'interrogation' | 'bridge' | 'car' | 'lafayette' | 'pods' | 'ship' | 'construct' | 'desert' | 'dojo' | 'rooftop' | 'plaza' | 'restaurant' | 'oracle' | 'tenement' | 'lobby' | 'subway' | 'street' | 'zion' | 'temple' | 'engineering' | 'teahouse' | 'backdoors' | 'courtyard' | 'chateau' | 'mountain' | 'workshop' | 'garage' | 'freeway' | 'power' | 'architect' | 'mobil' | 'hel' | 'machine' | 'rain' | 'garden';
 export interface FilmSet {
@@ -293,6 +294,7 @@ export function filmObstacles(set: FilmSet, movingMeetingCar = false, movingOrac
     x: (i % 2 ? 1 : -1) * (18 + i % 4 * 9), z: 38 - Math.floor(i / 2) * 10.5,
     width: 8 + i % 5 * 2, depth: 7 + i % 3 * 2, height: 17 + (i * 13) % 34,
   }));
+  if (set.id === 'film_logos_wreck') return LOGOS_WRECK_WALLS;
   if (set.architecture === 'lobby') return LOBBY_COLUMNS;
   if (set.architecture === 'oracle') return [...(oracleLastKitchen ? ORACLE_FURNITURE.filter(item => item !== ORACLE_FURNITURE[2] && !ORACLE_KITCHEN_CHAIRS.includes(item)) : ORACLE_FURNITURE), ...Object.values(ORACLE_WAITING_FURNITURE), ...ORACLE_ENTRANCE_WALLS, ...(movingOracleDoor ? [] : [ORACLE_OPEN_DOOR]), ...[-1, 1].flatMap(side => [
     { x: side * (set.width / 4 + 2.5), z: -8, width: set.width / 2 - 5, depth: .4, height: 7.8 },

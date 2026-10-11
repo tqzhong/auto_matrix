@@ -1,4 +1,16 @@
 import type { Vector3 } from '../types/agent.js';
+import { LOGOS_COCKPIT } from './logos-flight.js';
+
+export const LOGOS_WRECK = {
+  cabin: { x: -LOGOS_COCKPIT.roots.trinity.x, y: -LOGOS_COCKPIT.floor, z: -10.88 },
+  entry: { x: 1.35, z: -6.2 },
+} as const;
+export const LOGOS_WRECK_WALLS = [
+  ...[-1, 1].map(side => ({ x: LOGOS_WRECK.cabin.x + side * LOGOS_COCKPIT.frame.halfWidth,
+    z: LOGOS_WRECK.cabin.z - 4.6, width: .18, depth: LOGOS_COCKPIT.frame.length, height: 1.1 })),
+  ...[-1, 1].map(side => ({ x: LOGOS_WRECK.cabin.x + side * 2.475,
+    z: LOGOS_WRECK.cabin.z + LOGOS_COCKPIT.frame.rear, width: 1.85, depth: .16, height: 4.35 })),
+];
 
 export const FAREWELL = {
   seconds: { reaching: 2.4, discovery: 3.4, promise: 4.6, goodbye: 5.2, kiss: 2.8 },
@@ -13,6 +25,7 @@ export interface FarewellEncounter {
   phase: FarewellPhase;
   elapsed: number;
   total: number;
+  approach?: { x: number; z: number; yaw: number };
 }
 
 export interface FarewellGesture extends FarewellEncounter {
@@ -60,11 +73,13 @@ export function farewellPose(encounter: FarewellEncounter): FarewellPose {
   const kiss = phase === 'kiss' ? smooth(encounter.elapsed / (FAREWELL.seconds.kiss * .58)) : 0;
   const release = phase === 'still' ? 1 : phase === 'kiss'
     ? smooth((encounter.elapsed - FAREWELL.seconds.kiss * .78) / (FAREWELL.seconds.kiss * .22)) : 0;
+  const approach = encounter.approach ?? FAREWELL.neo;
+  const turn = Math.atan2(Math.sin(FAREWELL.neo.yaw - approach.yaw), Math.cos(FAREWELL.neo.yaw - approach.yaw));
   return {
     neo: {
-      x: FAREWELL.neo.x,
-      z: FAREWELL.neo.z - reaching * 1.45 - kiss * .18 * (1 - release),
-      yaw: FAREWELL.neo.yaw,
+      x: approach.x + (FAREWELL.neo.x - approach.x) * reaching,
+      z: approach.z + (FAREWELL.neo.z - 1.45 - approach.z) * reaching - kiss * .18 * (1 - release),
+      yaw: reaching === 1 ? FAREWELL.neo.yaw : approach.yaw + turn * reaching,
       kneel: reaching,
       lean: holding * .22 + kiss * .62,
       hold: Math.max(reaching * .7, holding) * (1 - release * .35),

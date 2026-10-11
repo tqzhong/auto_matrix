@@ -14,6 +14,7 @@ import { ZION_DEPLOYMENT, zionDeploymentTarget } from './zion-deployment.js';
 import { MAGGIE_DISCOVERY, maggieDiscoveryTarget } from './maggie-discovery.js';
 import { LOGOS_BANE, logosBaneLocked } from './logos-bane.js';
 import { logosCrewRoot, logosFlightSet, newLogosFlight } from './logos-flight.js';
+import { LOGOS_WRECK } from './farewell.js';
 import { SOURCE_BRIEFING, sourceBriefingTarget, sourceBriefingLocked } from './source-briefing.js';
 import { PRIMARY_DEMOLITION, primaryActive, primaryTarget, primaryFloor, primaryLocked } from './primary-demolition.js';
 import { TRINITY_TERMINAL, trinityTerminalActive, trinityTerminalLocked } from './trinity-terminal.js';
@@ -815,5 +816,6 @@ export function filmEntry(scene: FilmScene): Vector3 {
   if (scene.id === 'm2_trucks') return { ...filmPosition(scene.set, TRUCKS.morpheus.x, TRUCKS.morpheus.z), y: FILM_SETS[scene.set].center.y + TRUCKS.roof.height };
   if (scene.id === 'm2_mountain') return filmPosition(scene.set, MOUNTAIN.door.x, MOUNTAIN.door.z - 7);
   if (scene.id === 'm3_bane') return filmPosition(scene.set, 0, -31);
+  if (scene.id === 'm3_farewell') return filmPosition(scene.set, LOGOS_WRECK.entry.x, LOGOS_WRECK.entry.z);
   return filmPosition(scene.set, 0, scene.id === 'm1_lobby' ? 35 : FILM_SETS[scene.set].depth * .32);
 }

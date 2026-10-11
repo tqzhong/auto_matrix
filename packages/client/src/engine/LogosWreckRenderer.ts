@@ -1,22 +1,30 @@
 import * as THREE from 'three';
-import { farewellPose, newFarewell, type FarewellEncounter } from '@auto_matrix/shared';
+import { farewellPose, newFarewell, LOGOS_WRECK, type FarewellEncounter } from '@auto_matrix/shared';
+import { LogosCabinFrame } from './LogosCabinFrame.js';
+import { LogosImpactRenderer } from './LogosImpactRenderer.js';
+import { batchStaticGeometry } from './StaticGeometry.js';
 
 /** The crushed Logos cockpit after it has bored into the Machine City tower. */
 export class LogosWreckRenderer {
   private group = new THREE.Group();
-  private foreground = new THREE.Group();
+  private cabinFrame!: LogosCabinFrame;
+  private impact!: LogosImpactRenderer;
   private fire = new THREE.Group();
   private golden = new THREE.Group();
   private sparks: THREE.Mesh[] = [];
   private flames: THREE.Mesh[] = [];
   private fireLights: THREE.PointLight[] = [];
+  private fireMaterial!: THREE.ShaderMaterial;
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private lights: THREE.Light[] = [];
 
   constructor(root: THREE.Group) {
-    root.add(this.group); this.group.add(this.foreground, this.fire, this.golden);
+    root.add(this.group); this.group.add(this.fire, this.golden);
     this.buildWreck(); this.buildMachineSight();
+    batchStaticGeometry(this.group, new Set([...this.sparks, ...this.flames])).forEach(geometry => this.geometries.add(geometry));
+    this.impact = new LogosImpactRenderer(this.group, this.cabinFrame.group);
+    this.impact.showWreck({ x: LOGOS_WRECK.cabin.x, y: LOGOS_WRECK.cabin.y, z: LOGOS_WRECK.cabin.z - 9.77 });
     this.update(undefined, 0, false);
   }
 
@@ -38,35 +46,47 @@ export class LogosWreckRenderer {
     const hull = this.material(0x222d30, .9, .38);
     const torn = this.material(0x596164, .82, .46);
     const black = this.material(0x0d1517, .62, .68);
-    const glass = this.material(0x55737a, .7, .18, 0x172f33, .5, true, .34);
     const deadScreen = this.material(0x263438, .28, .3, 0x102b2b, .28);
     const ember = this.material(0xff7a22, .1, .42, 0xff5b16, 5.2, true, .82);
 
-    const shell = this.mesh(new THREE.CylinderGeometry(8.6, 7.2, 35, 14, 1, true, -.82, 1.64), hull,
-      this.group, 'logos-wreck-hull');
-    shell.rotation.x = Math.PI / 2; shell.rotation.z = -.06; shell.position.set(0, 5.2, -1);
-    const deck = this.mesh(new THREE.BoxGeometry(14.5, .7, 37), black); deck.position.set(0, -.35, -1); deck.rotation.z = -.035;
-
-    for (let i = 0; i < 12; i++) {
-      // Torus arcs already lie in XY: upright cross-sections around the Z aisle.
-      // Small offsets and roll retain the buckled hull without rings across faces.
-      const rib = this.mesh(new THREE.TorusGeometry(7.65, .19, 7, 24, Math.PI), i % 3 ? hull : torn);
-      rib.position.set((i % 2 ? -.22 : .18) * (i / 12), .25 + Math.sin(i * 1.8) * .12, -16 + i * 2.85);
-      rib.rotation.z = (i % 4 - 1.5) * .025;
+    this.cabinFrame = new LogosCabinFrame(this.group, true);
+    this.cabinFrame.group.position.set(LOGOS_WRECK.cabin.x, LOGOS_WRECK.cabin.y, LOGOS_WRECK.cabin.z);
+    this.cabinFrame.group.name = 'logos-wreck-hull';
+    this.cabinFrame.group.getObjectByName('logos-cabin-windscreen')!.name = 'logos-wreck-windshield';
+    // Preserve the supported bodies and tilted deck. The broken aft deck also
+    // remains reachable by characters saved at the former distant entry.
+    const deck = this.mesh(new THREE.BoxGeometry(8.9, .7, 46), black, this.group, 'logos-wreck-deck');
+    deck.position.set(0, -.35, 2); deck.rotation.z = -.035;
+    for (const side of [-1, 1]) {
+      for (let i = 0; i < 9; i++) {
+        const x = LOGOS_WRECK.cabin.x + side * (3.05 + Math.sin(i * 1.7) * .2), z = -7.5 + i * 3.4;
+        const rib = this.mesh(new THREE.CylinderGeometry(.09, .09, 3.4, 8), torn);
+        rib.position.set(x, 1.55, z); rib.rotation.z = side * (.12 + i % 3 * .06);
+        const panel = this.mesh(new THREE.BoxGeometry(.18, 1.25, 3.05), hull);
+        panel.position.set(x + side * .2, .55, z); panel.rotation.z = side * .17;
+      }
+      // Cabling ripped out of the roof and stopped instruments keep the old
+      // flight cabin recognisable even though the upper skin is torn open.
+      for (const z of [-14.28, -12.53]) {
+        const frame = this.mesh(new THREE.BoxGeometry(.74, .74, .5), black);
+        frame.position.set(LOGOS_WRECK.cabin.x + side * 2.57, 2.83, z);
+        const screen = this.mesh(new THREE.BoxGeometry(.61, .52, .025), deadScreen);
+        screen.position.copy(frame.position); screen.position.z -= .263;
+      }
+      for (let i = 0; i < 4; i++) {
+        const x = LOGOS_WRECK.cabin.x + side * (2.8 + i * .09);
+        const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(x, 4.18, -19.8),
+          new THREE.Vector3(x + side * .1, 3.7, -18.5), new THREE.Vector3(x, 2.8 - i * .17, -17.7)]);
+        this.mesh(new THREE.TubeGeometry(curve, 18, .028, 6, false), black);
+      }
     }
-    for (let i = 0; i < 16; i++) {
-      const panel = this.mesh(new THREE.BoxGeometry(2.2 + i % 4 * .7, .18 + i % 3 * .08, 3.8 + i % 5 * .65), i % 3 ? hull : torn,
-        i < 5 ? this.foreground : this.group);
-      const side = i % 2 ? -1 : 1;
-      panel.position.set(side * (5.2 + i % 3 * .8), 1.15 + i % 4 * 1.25, -15 + i * 2.05);
-      panel.rotation.set((i % 5 - 2) * .11, side * (.12 + i % 4 * .08), side * (.08 + i % 3 * .06));
-    }
-
-    const console = this.mesh(new THREE.BoxGeometry(10.8, 2.1, 3.8), hull, this.group, 'logos-wreck-console'); console.position.set(0, 1.05, -19.2); console.rotation.x = -.2;
-    for (let i = -3; i <= 3; i++) {
-      const screen = this.mesh(new THREE.BoxGeometry(1.15, .08, .78), deadScreen);
-      screen.position.set(i * 1.45, 2.18 + Math.abs(i) * .05, -18.45); screen.rotation.x = -.88;
-      if (i === -2 || i === 1) screen.rotation.z = i * .08;
+    // Two small consoles replace the unrelated room-wide desk.
+    const console = this.mesh(new THREE.BoxGeometry(1.38, .68, .65), hull, this.group, 'logos-wreck-console');
+    console.position.set(0, 1.8, -18.13); console.rotation.x = -.16;
+    const second = this.mesh(console.geometry.clone(), hull); second.position.set(2.7, 1.55, -18); second.rotation.set(-.24, 0, .17);
+    for (const x of [0, 2.7]) {
+      const screen = this.mesh(new THREE.BoxGeometry(.92, .48, .035), deadScreen);
+      screen.position.set(x, 1.89, -17.78); screen.rotation.x = -.16;
     }
     // The displaced pilot chair supports Trinity's actual pelvis and upper back.
     // Its short front edge leaves her bent thighs and Neo's approach unobstructed.
@@ -76,13 +96,14 @@ export class LogosWreckRenderer {
     const otherSeat = this.mesh(new THREE.BoxGeometry(2.25, .42, 3.2), black); otherSeat.position.set(2.65, .55, -12.8); otherSeat.rotation.x = -.18;
     const otherBack = this.mesh(new THREE.BoxGeometry(2.25, 3.2, .42), black); otherBack.position.set(2.65, 2.05, -11.55); otherBack.rotation.x = -.28;
 
-    const windshield = this.mesh(new THREE.TorusGeometry(6.1, .26, 8, 30, Math.PI * 1.1), torn, this.group, 'logos-wreck-windshield');
-    windshield.position.set(0, 6.2, -21); windshield.rotation.set(Math.PI / 2, 0, -.05);
-    for (let i = 0; i < 13; i++) {
-      const shard = this.mesh(new THREE.ConeGeometry(.4 + i % 3 * .18, 2.2 + i % 4 * .45, 3), glass,
-        i < 4 ? this.foreground : this.group);
-      shard.position.set(-5.3 + i * .86, 3.1 + i % 5 * 1.05, -20.5 + Math.sin(i * 2.3) * .8);
-      shard.rotation.set(i * .41, i * .27, i * .63);
+    for (const x of [0, 2.65]) {
+      const headrest = this.mesh(new THREE.TorusGeometry(.45, .045, 8, 32), torn);
+      headrest.position.set(x + .08, 3.48, x ? -11.83 : -16.7); headrest.rotation.x = -.18;
+      for (let i = -4; i <= 4; i++) {
+        const offset = i * .09, length = Math.sqrt(.44 ** 2 - offset ** 2) * 2;
+        const net = this.mesh(new THREE.BoxGeometry(.014, length, .014), black);
+        net.position.copy(headrest.position); net.position.x += offset; net.rotation.x = -.18;
+      }
     }
 
     const rebar = new THREE.Group(); rebar.name = 'logos-wreck-rebar'; this.group.add(rebar);
@@ -101,18 +122,33 @@ export class LogosWreckRenderer {
     }
 
     this.fire.name = 'logos-wreck-fire';
+    this.fireMaterial = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending, toneMapped: false, uniforms: { time: { value: 0 } },
+      vertexShader: `varying vec2 uvFire; void main() { uvFire = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }`,
+      fragmentShader: `varying vec2 uvFire; uniform float time;
+        float noise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f*f*(3.-2.*f);
+          return mix(mix(fract(sin(dot(i,vec2(127.1,311.7)))*43758.5453),fract(sin(dot(i+vec2(1,0),vec2(127.1,311.7)))*43758.5453),f.x),
+            mix(fract(sin(dot(i+vec2(0,1),vec2(127.1,311.7)))*43758.5453),fract(sin(dot(i+vec2(1,1),vec2(127.1,311.7)))*43758.5453),f.x),f.y); }
+        void main() { float y=uvFire.y, n=noise(vec2(uvFire.x*5.,y*8.-time*3.));
+          float x=abs(uvFire.x-.5+(n-.5)*.2*y), width=.31*(1.-y)+.018;
+          float a=(1.-smoothstep(width-.045,width+.055,x))*smoothstep(0.,.08,y)*(1.-smoothstep(.65,1.,y+n*.18));
+          vec3 color=mix(vec3(1.,.19,.018),vec3(1.,.77,.27),max(0.,1.-x/max(.02,width)-y*.45));
+          gl_FragColor=vec4(color,a*.72); }` });
+    this.materials.add(this.fireMaterial);
     for (let i = 0; i < 7; i++) {
-      const flame = this.mesh(new THREE.ConeGeometry(.28 + i % 3 * .16, 1.2 + i % 4 * .4, 7), ember, this.fire);
-      flame.position.set(-6 + i * 2, .55, -6 + (i * 11 % 17)); flame.rotation.z = (i % 3 - 1) * .18;
-      this.flames.push(flame);
+      for (let cross = 0; cross < 2; cross++) {
+        const flame = this.mesh(new THREE.PlaneGeometry(.85 + i % 3 * .2, 1.6 + i % 4 * .24), this.fireMaterial, this.fire);
+        flame.position.set(i % 2 ? -2.15 : 4.85, .85 + i % 4 * .12, -19 + i * 4.8); flame.rotation.y = cross * Math.PI / 2;
+        flame.castShadow = false; this.flames.push(flame);
+      }
       if (i % 3 === 0) {
-        const light = new THREE.PointLight(0xff6b24, 18, 12, 2); light.position.copy(flame.position); light.position.y += 1;
+        const light = new THREE.PointLight(0xff6b24, 18, 12, 2); light.position.set(i % 2 ? -2.15 : 4.85, 1.5, -19 + i * 4.8);
         this.fire.add(light); this.fireLights.push(light); this.lights.push(light);
       }
     }
     for (let i = 0; i < 22; i++) {
       const spark = this.mesh(new THREE.SphereGeometry(.035 + i % 3 * .018, 5, 4), ember, this.fire);
-      spark.position.set(-7 + i % 8 * 2, .7 + i % 5 * .45, -18 + Math.floor(i / 8) * 14 + i % 3);
+      spark.position.set(i % 2 ? -1.8 : 4.5, .7 + i % 5 * .45, -19 + Math.floor(i / 4) * 7 + i % 3);
       this.sparks.push(spark);
     }
 
@@ -141,7 +177,7 @@ export class LogosWreckRenderer {
   update(encounter: FarewellEncounter | undefined, elapsed: number, firstPerson = false, neoFirstPerson = false): void {
     const state = encounter ?? newFarewell(); const pose = farewellPose(state);
     const time = encounter?.total ?? elapsed;
-    this.foreground.visible = !firstPerson;
+    this.fireMaterial.uniforms.time.value = time;
     this.golden.visible = Boolean(encounter && neoFirstPerson);
     this.golden.rotation.y = Math.sin(time * .13) * .025;
     this.golden.children.forEach((child, index) => {
@@ -160,6 +196,8 @@ export class LogosWreckRenderer {
   }
 
   dispose(): void {
+    this.impact.dispose();
+    this.cabinFrame.dispose();
     this.group.removeFromParent(); this.group.clear();
     this.geometries.forEach(geometry => geometry.dispose()); this.materials.forEach(material => material.dispose());
     this.lights.forEach(light => light.dispose());
