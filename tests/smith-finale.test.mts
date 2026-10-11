@@ -43,6 +43,24 @@ function game() {
   return { world, sandbox, players, command, action, frame, actor: () => players.getAgent('p')!, state: () => sandbox.life.film.state!, tick: () => tick };
 }
 
+test('the real machine handoff can resume and walk from the avenue entrance without being moved to the far end', () => {
+  const h = game(), state = h.state();
+  Object.assign(state, { scene: 'm3_deus', actor: 'neo', step: FILM_SCENE_BY_ID.m3_deus.steps.length,
+    deus: { phase: 'connected', elapsed: 0, total: 0, resolve: 3, consent: 1.8, attempts: 0 } });
+  h.sandbox.state.neoLife!.choices.machine_pact = 'peace'; h.sandbox.state.neoLife!.choices.machine_connection = 'active';
+  h.actor().currentLocation = 'film_machine_core'; h.actor().isInMatrix = false; h.command('next');
+  const entrance = structuredClone(h.actor().position), saved = structuredClone(h.sandbox.state);
+  h.players.release('p', h.tick()); h.sandbox.restore(saved); h.players.possess('p', 'neo', h.tick());
+  assert.deepEqual(h.actor().position, entrance, 'the actual handoff point must survive reconnecting before any movement');
+  h.frame(10, false, 0, 1);
+  assert.ok(h.actor().position.z > entrance.z + .8, 'ordinary forward movement must cross the entry instead of hitting the set boundary');
+  const walked = structuredClone(h.actor().position);
+  h.players.release('p', h.tick()); h.players.possess('p', 'neo', h.tick());
+  assert.deepEqual(h.actor().position, walked, 'reconnecting after walking cannot undo that movement');
+  for (let i = 0; i < 300 && h.state().step === 0; i++) h.frame(1, false, 0, 1);
+  assert.equal(h.state().smithFinale?.phase, 'entrance', 'reach Smith with player movement, without placing Neo on the objective');
+});
+
 test('reaching the avenue plays Smith leaving the curb, waits for Neo’s reply, and saves the opening before either fighter charges', () => {
   const h = game(), rain = FILM_SCENE_BY_ID.m3_rain, state = h.state();
   Object.assign(state, { scene: 'm3_deus', actor: 'neo', step: FILM_SCENE_BY_ID.m3_deus.steps.length,

@@ -105,7 +105,7 @@ const definitions: Omit<FilmSet, 'id' | 'center'>[] = [
   { name: '云层之上 · 最后的阳光', film: [3], architecture: 'machine', world: 'real', width: 66, depth: 90, height: 40, light: 'sunrise', detail: '云海、蓝色天空、金色日光与受损 Logos' },
   { name: '机器城 · 撞毁的 Logos', film: [3], architecture: 'ship', world: 'real', width: 44, depth: 70, height: 20, light: 'warm', detail: '破碎驾驶舱、钢梁、火光与静止的控制台' },
   { name: '机器核心 · Deus Ex Machina', film: [3], architecture: 'machine', world: 'real', width: 90, depth: 110, height: 55, light: 'warm', detail: '机械面孔、连接平台、无数金色光点' },
-  { name: 'Smith 大道 · 暴雨决战', film: [3], architecture: 'rain', world: 'matrix', width: 72, depth: 150, height: 40, light: 'storm', detail: '两侧复制体、闪电、积水、破碎路面与深坑' },
+  { name: 'Smith 大道 · 暴雨决战', film: [3], architecture: 'rain', world: 'matrix', width: 72, depth: 190, height: 40, light: 'storm', detail: '两侧复制体、闪电、积水、破碎路面与深坑' },
   { name: '公园 · 新的日出', film: [3], architecture: 'garden', world: 'matrix', width: 90, depth: 110, height: 30, light: 'sunrise', detail: '湖边长椅、树木、草地与暖色城市天际线' },
   { name: '工业阁楼 · Bane 的出口', film: [2], architecture: 'tenement', world: 'matrix', width: 52, depth: 78, height: 24, light: 'night', detail: '破碎天窗、旧式出口电话、钢梁与掉落的玻璃' },
   { name: '梅罗文加城堡后门 · 雪山', film: [2], architecture: 'mountain', world: 'matrix', width: 280, depth: 760, height: 180, light: 'day', detail: '白日雪山、石砌城堡后门、远处山脊与向南的飞行航线' },
