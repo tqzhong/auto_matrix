@@ -1,0 +1,25 @@
+{
+  "agents": false,
+  "chunks": true,
+  "locations": true,
+  "events": true,
+  "sandbox": true,
+  "simulation": false,
+  "phase_time": true,
+  "changed_agents": [
+    {
+      "id": "neo",
+      "fields": [
+        "currentAction"
+      ]
+    }
+  ],
+  "simulation_changes": {
+    "chapterDescription": [
+      "连接管线和无尽的培养塔取代了熟悉的城市。按 G 撑起身体拔出口部呼吸管，恢复呼吸后再检查后颈接口。",
+      "薄膜、连接管线和培养塔取代了熟悉的城市。按住 G 顶破舱膜，挣脱后再拔出口部呼吸管，恢复呼吸后检查后颈接口。"
+    ]
+  },
+  "memory_count": 7,
+  "memories_equal": true
+}

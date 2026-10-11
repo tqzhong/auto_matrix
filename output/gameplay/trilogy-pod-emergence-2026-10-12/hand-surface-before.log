@@ -1,0 +1,32 @@
+TAP version 13
+# Subtest: the pressing hand skin stays below the intact pod membrane
+not ok 1 - the pressing hand skin stays below the intact pod membrane
+  ---
+  duration_ms: 13206.890125
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/pod-connection-contact.test.mts:1:8315'
+  failureType: 'testCodeFailure'
+  error: |-
+    the actual fingers cut through the sheet at 0.7s: [[5055.472970916859,0.06416155565987935,4401.316876975139],[5055.480558102276,0.05496709536508604,4401.322128879549],[5055.484920189346,0.052950432155640215,4401.322105281806],[5055.47783894672,0.061474223414677454,4401.31741993041]]
+
+    1428 !== 0
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1428
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/pod-connection-contact.test.mts:142:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 15623.4335

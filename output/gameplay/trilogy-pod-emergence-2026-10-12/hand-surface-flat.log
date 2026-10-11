@@ -1,0 +1,38 @@
+TAP version 13
+# Subtest: both real palms remain beneath or against the stretching membrane without cutting through it
+ok 1 - both real palms remain beneath or against the stretching membrane without cutting through it
+  ---
+  duration_ms: 673.920917
+  type: 'test'
+  ...
+# Subtest: the pressing hand skin stays below the intact pod membrane
+not ok 2 - the pressing hand skin stays below the intact pod membrane
+  ---
+  duration_ms: 5598.730583
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/pod-connection-contact.test.mts:1:8315'
+  failureType: 'testCodeFailure'
+  error: |-
+    the actual fingers cut through the sheet at 0.7s: [[5055.5125047130505,0.04204115487161175,4401.254401009174],[5055.515668624275,0.036798349770961636,4401.26307592833],[5055.519117885745,0.03542401420095587,4401.265707761254],[5055.516253009321,0.04023288559854166,4401.2576330943375]]
+
+    1110 !== 0
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1110
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/pod-connection-contact.test.mts:142:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 1
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7430.366625

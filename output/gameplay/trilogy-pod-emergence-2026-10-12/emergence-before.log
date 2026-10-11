@@ -1,0 +1,53 @@
+TAP version 13
+# Subtest: Neo must struggle through the pod membrane with held input, retaining the tear across pauses and saved reconnects
+not ok 1 - Neo must struggle through the pod membrane with held input, retaining the tear across pauses and saved reconnects
+  ---
+  duration_ms: 44.010792
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/film-story.test.mts:1:126302'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+
+    + 'breather'
+    - 'emerge'
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'emerge'
+  actual: 'breather'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/film-story.test.mts:1895:28)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: the pod membrane stretches above the real body, opens around the head and reconstructs a paused tear
+not ok 2 - the pod membrane stretches above the real body, opens around the head and reconstructs a paused tear
+  ---
+  duration_ms: 354.546209
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/pod-connection-contact.test.mts:1:3905'
+  failureType: 'testCodeFailure'
+  error: 'the waking body starts beneath a physical transparent membrane'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/pod-connection-contact.test.mts:61:81)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 731.6045

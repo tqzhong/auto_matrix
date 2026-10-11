@@ -1,0 +1,30 @@
+TAP version 13
+# Subtest: pod entry and the first held input share the same submerged pose, and breathing starts from the emerged body
+not ok 1 - pod entry and the first held input share the same submerged pose, and breathing starts from the emerged body
+  ---
+  duration_ms: 1796.901042
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/pod-connection-contact.test.mts:1:7458'
+  failureType: 'testCodeFailure'
+  error: 'wrist_R jumps when Neo first presses the membrane'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    <anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/pod-connection-contact.test.mts:121:38)
+    Array.forEach (<anonymous>)
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/pod-connection-contact.test.mts:121:9)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4059.839208

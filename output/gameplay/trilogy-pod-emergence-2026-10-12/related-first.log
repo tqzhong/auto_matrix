@@ -1,0 +1,1103 @@
+TAP version 13
+# Subtest: the Oracle departure journal requires the hostess, privacy, bite and physical exit in order
+ok 1 - the Oracle departure journal requires the hostess, privacy, bite and physical exit in order
+  ---
+  duration_ms: 122.822125
+  type: 'test'
+  ...
+# Subtest: Oracle departure navigation follows the returning hostess and only offers local interactions
+ok 2 - Oracle departure navigation follows the returning hostess and only offers local interactions
+  ---
+  duration_ms: 125.252917
+  type: 'test'
+  ...
+# Subtest: Oracle navigation points to the waiting hostess until she reaches the kitchen
+ok 3 - Oracle navigation points to the waiting hostess until she reaches the kitchen
+  ---
+  duration_ms: 61.753292
+  type: 'test'
+  ...
+# Subtest: the spoon journal waits for the hostess before offering Neo a standing action
+ok 4 - the spoon journal waits for the hostess before offering Neo a standing action
+  ---
+  duration_ms: 69.505958
+  type: 'test'
+  ...
+# Subtest: the Construct journal distinguishes self inspection from approaching the chair
+ok 5 - the Construct journal distinguishes self inspection from approaching the chair
+  ---
+  duration_ms: 42.101042
+  type: 'test'
+  ...
+# Subtest: the morning journal requires a bedside action, accepts the alarm and offers the actual on-foot commute
+ok 6 - the morning journal requires a bedside action, accepts the alarm and offers the actual on-foot commute
+  ---
+  duration_ms: 34.430208
+  type: 'test'
+  ...
+# Subtest: the second call offers a visible door action after Neo reaches the apartment exit
+ok 7 - the second call offers a visible door action after Neo reaches the apartment exit
+  ---
+  duration_ms: 72.76725
+  type: 'test'
+  ...
+# Subtest: a clean escape presents the second call without naming a nightmare
+ok 8 - a clean escape presents the second call without naming a nightmare
+  ---
+  duration_ms: 34.450083
+  type: 'test'
+  ...
+# Subtest: the hotel journal names Trinity when Neo reaches 1313 before the guide
+ok 9 - the hotel journal names Trinity when Neo reaches 1313 before the guide
+  ---
+  duration_ms: 47.09575
+  type: 'test'
+  ...
+# Subtest: the negative scan journal does not claim Neo was interrogated or needed an extraction
+ok 10 - the negative scan journal does not claim Neo was interrogated or needed an extraction
+  ---
+  duration_ms: 38.42
+  type: 'test'
+  ...
+# Subtest: the tracking journal keeps new entries locked beyond the legacy eight seconds
+ok 11 - the tracking journal keeps new entries locked beyond the legacy eight seconds
+  ---
+  duration_ms: 64.911208
+  type: 'test'
+  ...
+# Subtest: tracking progress follows the saved chair entry before wiring and mirror coverage
+ok 12 - tracking progress follows the saved chair entry before wiring and mirror coverage
+  ---
+  duration_ms: 51.548333
+  type: 'test'
+  ...
+# Subtest: the completed oral removal offers a new neck inspection in both the journal and the game HUD
+ok 13 - the completed oral removal offers a new neck inspection in both the journal and the game HUD
+  ---
+  duration_ms: 100.59175
+  type: 'test'
+  ...
+# Subtest: the pill choice clears the central subtitle over Morpheus palms and restores it for the taking action
+ok 14 - the pill choice clears the central subtitle over Morpheus palms and restores it for the taking action
+  ---
+  duration_ms: 46.864875
+  type: 'test'
+  ...
+# Subtest: the pill journal offers the saved dialogue response without exposing the later pill decision
+ok 15 - the pill journal offers the saved dialogue response without exposing the later pill decision
+  ---
+  duration_ms: 29.254125
+  type: 'test'
+  ...
+# Subtest: the farewell HUD only offers kneeling within the actual interaction distance
+ok 16 - the farewell HUD only offers kneeling within the actual interaction distance
+  ---
+  duration_ms: 45.037208
+  type: 'test'
+  ...
+# Subtest: the completed farewell guides Neo to the machine city instead of asking for another reflection
+ok 17 - the completed farewell guides Neo to the machine city instead of asking for another reflection
+  ---
+  duration_ms: 139.480292
+  type: 'test'
+  ...
+# Subtest: the park performance uses its dialogue HUD while paused and clears it on free walking, replay and other actors
+ok 18 - the park performance uses its dialogue HUD while paused and clears it on free walking, replay and other actors
+  ---
+  duration_ms: 73.133333
+  type: 'test'
+  ...
+# Subtest: confirming the sunrise replaces the final confirmation with saved completion and optional replay controls
+ok 19 - confirming the sunrise replaces the final confirmation with saved completion and optional replay controls
+  ---
+  duration_ms: 85.022916
+  type: 'test'
+  ...
+# Subtest: all trilogy scenes have distinct stable IDs, existing cast, accessible objectives and authored locations
+ok 20 - all trilogy scenes have distinct stable IDs, existing cast, accessible objectives and authored locations
+  ---
+  duration_ms: 16.869958
+  type: 'test'
+  ...
+# Subtest: distant bridge markers guide movement without offering a premature G action
+ok 21 - distant bridge markers guide movement without offering a premature G action
+  ---
+  duration_ms: 0.311333
+  type: 'test'
+  ...
+# Subtest: Neo must steer through the city and catch the falling Trinity before impact
+ok 22 - Neo must steer through the city and catch the falling Trinity before impact
+  ---
+  duration_ms: 235.097792
+  type: 'test'
+  ...
+# Subtest: Trinity revival needs deliberate code focus and three timed pulses, and survives a saved retry
+ok 23 - Trinity revival needs deliberate code focus and three timed pulses, and survives a saved retry
+  ---
+  duration_ms: 5.716792
+  type: 'test'
+  ...
+# Subtest: the bomb begins only after the evacuation warning, pauses without a player, and retries from the cargo checkpoint
+ok 24 - the bomb begins only after the evacuation warning, pauses without a player, and retries from the cargo checkpoint
+  ---
+  duration_ms: 205.810625
+  type: 'test'
+  ...
+# Subtest: Neo walks through the same hatch as all three crew members before a saved and resumable destruction
+ok 25 - Neo walks through the same hatch as all three crew members before a saved and resumable destruction
+  ---
+  duration_ms: 236.056208
+  type: 'test'
+  ...
+# Subtest: an occupied or dead escape companion freezes the encounter without moving or reviving them
+ok 26 - an occupied or dead escape companion freezes the encounter without moving or reviving them
+  ---
+  duration_ms: 64.777208
+  type: 'test'
+  ...
+# Subtest: a legacy Morpheus save can explicitly resume Neo without moving either body or losing the current step
+ok 27 - a legacy Morpheus save can explicitly resume Neo without moving either body or losing the current step
+  ---
+  duration_ms: 2.39625
+  type: 'test'
+  ...
+# Subtest: the old interior cargo marker cannot complete evacuation before the player and crew leave the hull
+ok 28 - the old interior cargo marker cannot complete evacuation before the player and crew leave the hull
+  ---
+  duration_ms: 1.332959
+  type: 'test'
+  ...
+# Subtest: Neo must face the real Sentinels and hold focus; the signal and pursuit survive a save
+ok 29 - Neo must face the real Sentinels and hold focus; the signal and pursuit survive a save
+  ---
+  duration_ms: 116.043375
+  type: 'test'
+  ...
+# Subtest: a dead tunnel witness pauses the signal and is neither moved nor healed
+ok 30 - a dead tunnel witness pauses the signal and is neither moved nor healed
+  ---
+  duration_ms: 15.675125
+  type: 'test'
+  ...
+# Subtest: paused signal reattachment restores the saved performance without advancing or moving Neo
+ok 31 - paused signal reattachment restores the saved performance without advancing or moving Neo
+  ---
+  duration_ms: 1.732959
+  type: 'test'
+  ...
+# Subtest: a tunnel retry returns Neo to the signal point rather than the locked scene entrance
+ok 32 - a tunnel retry returns Neo to the signal point rather than the locked scene entrance
+  ---
+  duration_ms: 1.509333
+  type: 'test'
+  ...
+# Subtest: Hammer reveals Neo and Bane on adjacent beds and hands the completed scene to Mobil Ave
+ok 33 - Hammer reveals Neo and Bane on adjacent beds and hands the completed scene to Mobil Ave
+  ---
+  duration_ms: 8.36375
+  type: 'test'
+  ...
+# Subtest: story role handoffs never take a character away from another player
+ok 34 - story role handoffs never take a character away from another player
+  ---
+  duration_ms: 2.602584
+  type: 'test'
+  ...
+# Subtest: Hammer patient beds block ordinary walking but leave all three clinical objectives accessible after restore
+ok 35 - Hammer patient beds block ordinary walking but leave all three clinical objectives accessible after restore
+  ---
+  duration_ms: 1.726083
+  type: 'test'
+  ...
+# Subtest: remote interactions, premature next and unvisited scene jumps cannot advance the plot
+ok 36 - remote interactions, premature next and unvisited scene jumps cannot advance the plot
+  ---
+  duration_ms: 1.51925
+  type: 'test'
+  ...
+# Subtest: a fight persists through simulation cleanup and can be retried after death without skipping it
+ok 37 - a fight persists through simulation cleanup and can be retried after death without skipping it
+  ---
+  duration_ms: 1.145375
+  type: 'test'
+  ...
+# Subtest: saved scene, active fight, role and completed history restore without restarting the route
+ok 38 - saved scene, active fight, role and completed history restore without restarting the route
+  ---
+  duration_ms: 1.703334
+  type: 'test'
+  ...
+# Subtest: 303 breach saves its timing, then Trinity disarms, shoots and reaches the fire escape in order
+ok 39 - 303 breach saves its timing, then Trinity disarms, shoots and reaches the fire escape in order
+  ---
+  duration_ms: 44.450083
+  type: 'test'
+  ...
+# Subtest: 303 fire escape requires upward input and preserves climbing progress through a save and disconnect
+ok 40 - 303 fire escape requires upward input and preserves climbing progress through a save and disconnect
+  ---
+  duration_ms: 30.317583
+  type: 'test'
+  ...
+# Subtest: 303 combat can fail and retry, while disconnect freezes the breached-door sequence
+ok 41 - 303 combat can fail and retry, while disconnect freezes the breached-door sequence
+  ---
+  duration_ms: 2.93375
+  type: 'test'
+  ...
+# Subtest: 303 door blocks movement before the breach and the same player controls can cross afterward
+ok 42 - 303 door blocks movement before the breach and the same player controls can cross afterward
+  ---
+  duration_ms: 145.337083
+  type: 'test'
+  ...
+# Subtest: Trinity must answer the Wells phone before the truck arrives; the countdown saves and retries
+ok 43 - Trinity must answer the Wells phone before the truck arrives; the countdown saves and retries
+  ---
+  duration_ms: 6.210875
+  type: 'test'
+  ...
+# Subtest: Brown pursues Trinity across a real rooftop gap and a fall or capture restores the route
+ok 44 - Brown pursues Trinity across a real rooftop gap and a fall or capture restores the route
+  ---
+  duration_ms: 1.33475
+  type: 'test'
+  ...
+# Subtest: Brown leaps across the roof gap instead of running through empty air, and the leap survives a save
+ok 45 - Brown leaps across the roof gap instead of running through empty air, and the leap survives a save
+  ---
+  duration_ms: 1.809375
+  type: 'test'
+  ...
+# Subtest: Trinity can walk from 303 through the roof gap and answer the phone without a player-position shortcut
+ok 46 - Trinity can walk from 303 through the roof gap and answer the phone without a player-position shortcut
+  ---
+  duration_ms: 195.451584
+  type: 'test'
+  ...
+# Subtest: reconnecting a defeated story actor rebuilds at the scene checkpoint instead of their daily home
+ok 47 - reconnecting a defeated story actor rebuilds at the scene checkpoint instead of their daily home
+  ---
+  duration_ms: 1.007334
+  type: 'test'
+  ...
+# Subtest: melee outside a scripted fight cannot kill the film cast
+ok 48 - melee outside a scripted fight cannot kill the film cast
+  ---
+  duration_ms: 7.808292
+  type: 'test'
+  ...
+# Subtest: Neo sits for the demonstration, explicitly takes the spoon, focuses and stands before leaving
+ok 49 - Neo sits for the demonstration, explicitly takes the spoon, focuses and stands before leaving
+  ---
+  duration_ms: 318.012167
+  type: 'test'
+  ...
+# Subtest: walking from the waiting room into the Oracle kitchen preserves Neo position and heading
+ok 50 - walking from the waiting room into the Oracle kitchen preserves Neo position and heading
+  ---
+  duration_ms: 2.356541
+  type: 'test'
+  ...
+# Subtest: Oracle reception waits for Neo, preserves the invitation on pause and reconnect, and respects a controlled hostess
+ok 51 - Oracle reception waits for Neo, preserves the invitation on pause and reconnect, and respects a controlled hostess
+  ---
+  duration_ms: 177.259584
+  type: 'test'
+  ...
+# Subtest: following the Oracle hostess uses ordinary player movement and enters the kitchen without a teleport
+ok 52 - following the Oracle hostess uses ordinary player movement and enters the kitchen without a teleport
+  ---
+  duration_ms: 156.760542
+  type: 'test'
+  ...
+# Subtest: the spoon handoff pauses for disconnects and an occupied child, and survives retry without duplicating the prop
+ok 53 - the spoon handoff pauses for disconnects and an occupied child, and survives retry without duplicating the prop
+  ---
+  duration_ms: 71.820625
+  type: 'test'
+  ...
+# Subtest: old Oracle waiting-room saves move clear of new walls and furniture without losing spoon progress
+ok 54 - old Oracle waiting-room saves move clear of new walls and furniture without losing spoon progress
+  ---
+  duration_ms: 16.173125
+  type: 'test'
+  ...
+# Subtest: the Oracle vase falls once, pauses and restores mid-fall, then leaves a persistent result for the conversation
+ok 55 - the Oracle vase falls once, pauses and restores mid-fall, then leaves a persistent result for the conversation
+  ---
+  duration_ms: 39.763959
+  type: 'test'
+  ...
+# Subtest: the Oracle examines Neo and offers a cookie before waiting for his explicit answer
+ok 56 - the Oracle examines Neo and offers a cookie before waiting for his explicit answer
+  ---
+  duration_ms: 259.57775
+  type: 'test'
+  ...
+# Subtest: the Oracle answer changes later rescue preparation exactly once
+ok 57 - the Oracle answer changes later rescue preparation exactly once
+  ---
+  duration_ms: 6.144084
+  type: 'test'
+  ...
+# Subtest: Neo turns the rescue decision into a saved three-person briefing before entering the Construct
+ok 58 - Neo turns the rescue decision into a saved three-person briefing before entering the Construct
+  ---
+  duration_ms: 62.829167
+  type: 'test'
+  ...
+# Subtest: the Construct waits for Neo to load racks, saves the selected physical loadout and carries its rules into the lobby
+ok 59 - the Construct waits for Neo to load racks, saves the selected physical loadout and carries its rules into the lobby
+  ---
+  duration_ms: 63.752708
+  type: 'test'
+  ...
+# Subtest: legacy rescue checkpoints migrate to a non-replaying rifle loadout
+ok 60 - legacy rescue checkpoints migrate to a non-replaying rifle loadout
+  ---
+  duration_ms: 2.105416
+  type: 'test'
+  ...
+# Subtest: Morpheus must actively hold the bathroom line before choosing the sacrificial tackle
+ok 61 - Morpheus must actively hold the bathroom line before choosing the sacrificial tackle
+  ---
+  duration_ms: 148.154458
+  type: 'test'
+  ...
+# Subtest: legacy betrayal checkpoints migrate without replaying cleared or completed beats
+ok 62 - legacy betrayal checkpoints migrate without replaying cleared or completed beats
+  ---
+  duration_ms: 5.153916
+  type: 'test'
+  ...
+# Subtest: Tank can fail and retry Cypher aim, then explicitly reconnect both surviving signals
+ok 63 - Tank can fail and retry Cypher aim, then explicitly reconnect both surviving signals
+  ---
+  duration_ms: 142.257166
+  type: 'test'
+  ...
+# Subtest: the repeated cat seals the old exit, leaves the service passage open and preserves the changed space after reconnect
+ok 64 - the repeated cat seals the old exit, leaves the service passage open and preserves the changed space after reconnect
+  ---
+  duration_ms: 68.009083
+  type: 'test'
+  ...
+# Subtest: ambush enemies can approach beside the sealed door without trying to dismantle the building
+ok 65 - ambush enemies can approach beside the sealed door without trying to dismantle the building
+  ---
+  duration_ms: 68.528042
+  type: 'test'
+  ...
+# Subtest: canonical losses persist across scene transitions, loading and character selection
+ok 66 - canonical losses persist across scene transitions, loading and character selection
+  ---
+  duration_ms: 90.082958
+  type: 'test'
+  ...
+# Subtest: philosophical choices answer the current question and survive loading without duplicate rewards
+ok 67 - philosophical choices answer the current question and survive loading without duplicate rewards
+  ---
+  duration_ms: 4.352
+  type: 'test'
+  ...
+# Subtest: Mobil Ave plays Sati, her family, Trainman refusal and both tunnel loops in that order
+ok 68 - Mobil Ave plays Sati, her family, Trainman refusal and both tunnel loops in that order
+  ---
+  duration_ms: 438.170292
+  type: 'test'
+  ...
+# Subtest: Mobil Ave supports normal walking through an open train door and blocks a shut door
+ok 69 - Mobil Ave supports normal walking through an open train door and blocks a shut door
+  ---
+  duration_ms: 2.993584
+  type: 'test'
+  ...
+# Subtest: Mobil Ave holds an approaching train when a family member is dead or controlled by another player
+ok 70 - Mobil Ave holds an approaching train when a family member is dead or controlled by another player
+  ---
+  duration_ms: 59.422833
+  type: 'test'
+  ...
+# Subtest: Neo cannot bypass Trainman by normally walking through the open Mobil doorway
+ok 71 - Neo cannot bypass Trainman by normally walking through the open Mobil doorway
+  ---
+  duration_ms: 6.896333
+  type: 'test'
+  ...
+# Subtest: Trainman launches Neo toward the tiled wall before he falls and recovers, and reconnecting preserves the beat
+ok 72 - Trainman launches Neo toward the tiled wall before he falls and recovers, and reconnecting preserves the beat
+  ---
+  duration_ms: 37.480416
+  type: 'test'
+  ...
+# Subtest: Seraph loses the subway chase, Trinity crosses Hel garage and the rescue train returns for Neo
+ok 73 - Seraph loses the subway chase, Trinity crosses Hel garage and the rescue train returns for Neo
+  ---
+  duration_ms: 454.851625
+  type: 'test'
+  ...
+# Subtest: Club Hel elevator preserves a saved descent and waits for the player to pull the gate after arrival
+ok 74 - Club Hel elevator preserves a saved descent and waits for the player to pull the gate after arrival
+  ---
+  duration_ms: 6.395292
+  type: 'test'
+  ...
+# Subtest: Club Hel bargain requires Trinity to disarm, refuse, dodge, counter, catch the gun and confront Merovingian
+ok 75 - Club Hel bargain requires Trinity to disarm, refuse, dodge, counter, catch the gun and confront Merovingian
+  ---
+  duration_ms: 52.686042
+  type: 'test'
+  ...
+# Subtest: Club Hel rush expires, retries from the confrontation and pauses when its player disconnects
+ok 76 - Club Hel rush expires, retries from the confrontation and pauses when its player disconnects
+  ---
+  duration_ms: 25.03825
+  type: 'test'
+  ...
+# Subtest: older Club Hel saves keep the refusal and resume at the new confrontation checkpoint
+ok 77 - older Club Hel saves keep the refusal and resume at the new confrontation checkpoint
+  ---
+  duration_ms: 1.88775
+  type: 'test'
+  ...
+# Subtest: another player holding Merovingian pauses Trinity’s Club Hel action window
+ok 78 - another player holding Merovingian pauses Trinity’s Club Hel action window
+  ---
+  duration_ms: 25.084042
+  type: 'test'
+  ...
+# Subtest: the tracking room has a walkable doorway and Neo sits before touching the mirror
+not ok 79 - the tracking room has a walkable doorway and Neo sits before touching the mirror
+  ---
+  duration_ms: 11.724459
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/film-story.test.mts:1:113200'
+  failureType: 'testCodeFailure'
+  error: |-
+    Neo can walk from the red-pill exit to the tracking chair at -5, -9.8
+
+    true !== false
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/film-story.test.mts:1702:14)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: an old standing-at-mirror save moves to the reachable chair approach
+ok 80 - an old standing-at-mirror save moves to the reachable chair approach
+  ---
+  duration_ms: 1.319375
+  type: 'test'
+  ...
+# Subtest: a saved wiring beat restores Trinity to the reachable side of the chair
+ok 81 - a saved wiring beat restores Trinity to the reachable side of the chair
+  ---
+  duration_ms: 1.5295
+  type: 'test'
+  ...
+# Subtest: touching the mirror is a saved seated performance that freezes on pause and resumes after reconnect
+ok 82 - touching the mirror is a saved seated performance that freezes on pause and resumes after reconnect
+  ---
+  duration_ms: 114.853125
+  type: 'test'
+  ...
+# Subtest: Trinity being player-controlled pauses the electrode beat without advancing the mirror
+ok 83 - Trinity being player-controlled pauses the electrode beat without advancing the mirror
+  ---
+  duration_ms: 22.563042
+  type: 'test'
+  ...
+# Subtest: a tracking-chair turn keeps its saved position, feet clock and heading through pause and reconnect
+ok 84 - a tracking-chair turn keeps its saved position, feet clock and heading through pause and reconnect
+  ---
+  duration_ms: 109.704708
+  type: 'test'
+  ...
+# Subtest: old mirror saves after the touch resume in the pod instead of requiring the removed chair beat
+ok 85 - old mirror saves after the touch resume in the pod instead of requiring the removed chair beat
+  ---
+  duration_ms: 3.828542
+  type: 'test'
+  ...
+# Subtest: a paused pod save keeps its immersed, floating or lifted pose when released and possessed again
+ok 86 - a paused pod save keeps its immersed, floating or lifted pose when released and possessed again
+  ---
+  duration_ms: 2.168917
+  type: 'test'
+  ...
+# Subtest: the rescue holds Neo at the waterline until the claw has descended and closed
+ok 87 - the rescue holds Neo at the waterline until the claw has descended and closed
+  ---
+  duration_ms: 0.289666
+  type: 'test'
+  ...
+# Subtest: an old breathing-tube save preserves its paused grasp and continues directly to maintenance
+ok 88 - an old breathing-tube save preserves its paused grasp and continues directly to maintenance
+  ---
+  duration_ms: 73.209208
+  type: 'test'
+  ...
+# Subtest: Neo must struggle through the pod membrane with held input, retaining the tear across pauses and saved reconnects
+ok 89 - Neo must struggle through the pod membrane with held input, retaining the tear across pauses and saved reconnects
+  ---
+  duration_ms: 115.196458
+  type: 'test'
+  ...
+# Subtest: old pod disconnection saves continue unplugging without inserting the new oral action
+ok 90 - old pod disconnection saves continue unplugging without inserting the new oral action
+  ---
+  duration_ms: 46.885292
+  type: 'test'
+  ...
+# Subtest: pod disconnection moves Neo down the drain; rescue must be started in the water and lifts the body
+ok 91 - pod disconnection moves Neo down the drain; rescue must be started in the water and lifts the body
+  ---
+  duration_ms: 205.844625
+  type: 'test'
+  ...
+# Subtest: pod rescue enters the ship before recovery and retains the boarding checkpoint across reconnect
+ok 92 - pod rescue enters the ship before recovery and retains the boarding checkpoint across reconnect
+  ---
+  duration_ms: 53.332209
+  type: 'test'
+  ...
+# Subtest: an old completed five-second rescue resumes at the ship instead of skipping boarding
+ok 93 - an old completed five-second rescue resumes at the ship instead of skipping boarding
+  ---
+  duration_ms: 1.168417
+  type: 'test'
+  ...
+# Subtest: recovery begins on the medical bed, waits for Neo, and resumes its saved performance after pause and reconnect
+ok 94 - recovery begins on the medical bed, waits for Neo, and resumes its saved performance after pause and reconnect
+  ---
+  duration_ms: 81.74325
+  type: 'test'
+  ...
+# Subtest: a fresh Construct arrival keeps Neo standing and requires inspecting his image and walking to the leather chair
+ok 95 - a fresh Construct arrival keeps Neo standing and requires inspecting his image and walking to the leather chair
+  ---
+  duration_ms: 121.339417
+  type: 'test'
+  ...
+# Subtest: the Construct television and ruined-world lesson wait for Neo and preserve both reveal performances
+ok 96 - the Construct television and ruined-world lesson wait for Neo and preserve both reveal performances
+  ---
+  duration_ms: 145.050625
+  type: 'test'
+  ...
+# Subtest: old saves at authored reveal checkpoints are upgraded into explicit player-started performances
+ok 97 - old saves at authored reveal checkpoints are upgraded into explicit player-started performances
+  ---
+  duration_ms: 3.101459
+  type: 'test'
+  ...
+# Subtest: training download waits for Neo, pauses with the world, survives reconnect and finishes in the core chair
+ok 98 - training download waits for Neo, pauses with the world, survives reconnect and finishes in the core chair
+  ---
+  duration_ms: 62.351041
+  type: 'test'
+  ...
+# Subtest: the dojo requires reading Morpheus attack, dodging it and landing an ordered three-hit counter
+ok 99 - the dojo requires reading Morpheus attack, dodging it and landing an ordered three-hit counter
+  ---
+  duration_ms: 12.686459
+  type: 'test'
+  ...
+# Subtest: the dojo preserves a timed counter opening, then returns Morpheus to guard instead of freezing him forever
+ok 100 - the dojo preserves a timed counter opening, then returns Morpheus to guard instead of freezing him forever
+  ---
+  duration_ms: 2.62175
+  type: 'test'
+  ...
+# Subtest: older dojo saves migrate a frozen counter into a finite counter window
+ok 101 - older dojo saves migrate a frozen counter into a finite counter window
+  ---
+  duration_ms: 1.527666
+  type: 'test'
+  ...
+# Subtest: Morpheus demonstrates the rooftop jump before Neo can attempt the recoverable gap
+ok 102 - Morpheus demonstrates the rooftop jump before Neo can attempt the recoverable gap
+  ---
+  duration_ms: 46.210834
+  type: 'test'
+  ...
+# Subtest: the red-dress attention test is player-started, freezes the crowd and replaces a civilian with Smith
+ok 103 - the red-dress attention test is player-started, freezes the crowd and replaces a civilian with Smith
+  ---
+  duration_ms: 80.027167
+  type: 'test'
+  ...
+# Subtest: the first rooftop jump uses gravity and a recoverable fall rather than a timer
+ok 104 - the first rooftop jump uses gravity and a recoverable fall rather than a timer
+  ---
+  duration_ms: 35.701167
+  type: 'test'
+  ...
+# Subtest: Morpheus and Seraph take part in their own nonlethal duels without cloning an occupied role
+ok 105 - Morpheus and Seraph take part in their own nonlethal duels without cloning an occupied role
+  ---
+  duration_ms: 2.813291
+  type: 'test'
+  ...
+# Subtest: Seraph tests two separately read attacks, blocks reckless blows and resets a failed exchange without killing Neo
+ok 106 - Seraph tests two separately read attacks, blocks reckless blows and resets a failed exchange without killing Neo
+  ---
+  duration_ms: 2.055708
+  type: 'test'
+  ...
+# Subtest: Seraph calls off a losing spar and leaves a repeatable checkpoint
+ok 107 - Seraph calls off a losing spar and leaves a repeatable checkpoint
+  ---
+  duration_ms: 1.824833
+  type: 'test'
+  ...
+# Subtest: the keyed doors must be reached, and the Oracle leaves a saved Keymaker lead with a later consequence
+ok 108 - the keyed doors must be reached, and the Oracle leaves a saved Keymaker lead with a later consequence
+  ---
+  duration_ms: 7.036458
+  type: 'test'
+  ...
+# Subtest: the château fight requires a chosen weapon, timed parry and a climb before the upper guard wave
+ok 109 - the château fight requires a chosen weapon, timed parry and a climb before the upper guard wave
+  ---
+  duration_ms: 3.704
+  type: 'test'
+  ...
+# Subtest: EMP can stagger château guards but cannot bypass their weapon defense
+ok 110 - EMP can stagger château guards but cannot bypass their weapon defense
+  ---
+  duration_ms: 2.741291
+  type: 'test'
+  ...
+# Subtest: an older château save restarts its unfinished fight without erasing a cleared exit
+ok 111 - an older château save restarts its unfinished fight without erasing a cleared exit
+  ---
+  duration_ms: 2.31175
+  type: 'test'
+  ...
+# Subtest: upper château guards remain on their floor when Neo retreats below the landing
+ok 112 - upper château guards remain on their floor when Neo retreats below the landing
+  ---
+  duration_ms: 1.469958
+  type: 'test'
+  ...
+# Subtest: the château guard can wound Neo, and a failed attempt retries without losing the chosen weapon
+ok 113 - the château guard can wound Neo, and a failed attempt retries without losing the chosen weapon
+  ---
+  duration_ms: 1.249291
+  type: 'test'
+  ...
+# Subtest: Neo must inspect the mountain exit, call Link, then steer a saved flight south before the garage cut
+ok 114 - Neo must inspect the mountain exit, call Link, then steer a saved flight south before the garage cut
+  ---
+  duration_ms: 70.735292
+  type: 'test'
+  ...
+# Subtest: Neo can retry a missed mountain flight without replaying Link’s location call
+ok 115 - Neo can retry a missed mountain flight without replaying Link’s location call
+  ---
+  duration_ms: 187.490666
+  type: 'test'
+  ...
+# Subtest: Smith assimilation is reversible at the ending, without reviving Trinity
+ok 116 - Smith assimilation is reversible at the ending, without reviving Trinity
+  ---
+  duration_ms: 858.908917
+  type: 'test'
+  ...
+# Subtest: highway traffic moves, braking reduces speed and a collision injures the vehicle and passenger once
+ok 117 - highway traffic moves, braking reduces speed and a collision injures the vehicle and passenger once
+  ---
+  duration_ms: 2.086584
+  type: 'test'
+  ...
+# Subtest: garage twins phase through a fast car, while hesitation and wall impacts can defeat the escort
+ok 118 - garage twins phase through a fast car, while hesitation and wall impacts can defeat the escort
+  ---
+  duration_ms: 0.599583
+  type: 'test'
+  ...
+# Subtest: Trinity drives the garage escape with companions, saved progress, retry and a clean highway handoff
+ok 119 - Trinity drives the garage escape with companions, saved progress, retry and a clean highway handoff
+  ---
+  duration_ms: 6.668041
+  type: 'test'
+  ...
+# Subtest: the motorcycle escort requires driving, preserves its position on reconnect, and finishes with a living passenger
+ok 120 - the motorcycle escort requires driving, preserves its position on reconnect, and finishes with a living passenger
+  ---
+  duration_ms: 1429.674542
+  type: 'test'
+  ...
+# Subtest: a failed escort retries from the motorcycle and never takes another player as passenger
+ok 121 - a failed escort retries from the motorcycle and never takes another player as passenger
+  ---
+  duration_ms: 1.745833
+  type: 'test'
+  ...
+# Subtest: the truck duel takes place on a standable trailer and Johnson returns through the driver
+ok 122 - the truck duel takes place on a standable trailer and Johnson returns through the driver
+  ---
+  duration_ms: 2.66975
+  type: 'test'
+  ...
+# Subtest: truck collision is timed, preserves the rescue across saves and retries after failure
+ok 123 - truck collision is timed, preserves the rescue across saves and retries after failure
+  ---
+  duration_ms: 23.210167
+  type: 'test'
+  ...
+# Subtest: an older truck checkpoint on the shared freeway moves onto the new trailer without losing progress
+ok 124 - an older truck checkpoint on the shared freeway moves onto the new trailer without losing progress
+  ---
+  duration_ms: 1.387
+  type: 'test'
+  ...
+# Subtest: truck rescue preserves all three actual positions and headings at the catch handoff
+ok 125 - truck rescue preserves all three actual positions and headings at the catch handoff
+  ---
+  duration_ms: 2.240833
+  type: 'test'
+  ...
+# Subtest: truck rescue sends separated passengers clear of the roof before Neo catches them and never collapses the crew roots
+ok 126 - truck rescue sends separated passengers clear of the roof before Neo catches them and never collapses the crew roots
+  ---
+  duration_ms: 4.668833
+  type: 'test'
+  ...
+# Subtest: truck rescue pauses without its player or while a passenger is occupied and cannot carry a dead passenger to success
+ok 127 - truck rescue pauses without its player or while a passenger is occupied and cannot carry a dead passenger to success
+  ---
+  duration_ms: 1.665792
+  type: 'test'
+  ...
+# Subtest: truck rescue cold save reconstructs the same separated flight without replaying the pickup
+ok 128 - truck rescue cold save reconstructs the same separated flight without replaying the pickup
+  ---
+  duration_ms: 2.842917
+  type: 'test'
+  ...
+# Subtest: truck rescue resumes an older in-flight save from its saved roots without snapping or resetting time
+ok 129 - truck rescue resumes an older in-flight save from its saved roots without snapping or resetting time
+  ---
+  duration_ms: 1.272083
+  type: 'test'
+  ...
+# Subtest: older truck saves retain the carrying or landing phase without standing up or replaying the jump
+ok 130 - older truck saves retain the carrying or landing phase without standing up or replaying the jump
+  ---
+  duration_ms: 11.806708
+  type: 'test'
+  ...
+# Subtest: truck rescue retry resumes a living saved flight and a failed passenger returns to a roof checkpoint
+ok 131 - truck rescue retry resumes a living saved flight and a failed passenger returns to a roof checkpoint
+  ---
+  duration_ms: 1.930542
+  type: 'test'
+  ...
+# Subtest: truck pickup marker never asks Morpheus to stand inside the Keymaker
+ok 132 - truck pickup marker never asks Morpheus to stand inside the Keymaker
+  ---
+  duration_ms: 0.099917
+  type: 'test'
+  ...
+# Subtest: truck rescue stays continuous and separated across the full pickup area and early or late Neo arrivals
+ok 133 - truck rescue stays continuous and separated across the full pickup area and early or late Neo arrivals
+  ---
+  duration_ms: 45.705833
+  type: 'test'
+  ...
+# Subtest: truck rescue pauses the approach and held action while a pre-existing player owns a passenger
+ok 134 - truck rescue pauses the approach and held action while a pre-existing player owns a passenger
+  ---
+  duration_ms: 2.242042
+  type: 'test'
+  ...
+# Subtest: Niobe arms the main station, Vigilant loss requires Trinity, and only both cuts open the 314-second door window
+ok 135 - Niobe arms the main station, Vigilant loss requires Trinity, and only both cuts open the 314-second door window
+  ---
+  duration_ms: 297.968167
+  type: 'test'
+  ...
+# Subtest: a missed grid window blocks the key door and reroutes through the surviving crews; pause and save freeze the repair
+ok 136 - a missed grid window blocks the key door and reroutes through the surviving crews; pause and save freeze the repair
+  ---
+  duration_ms: 29.838333
+  type: 'test'
+  ...
+# Subtest: an older key-door checkpoint reconstructs the cut grid without replaying Niobe or Vigilant
+ok 137 - an older key-door checkpoint reconstructs the cut grid without replaying Niobe or Vigilant
+  ---
+  duration_ms: 1.744791
+  type: 'test'
+  ...
+# Subtest: entering the Architect room preserves Neo’s wounds, supplies and the Keymaker’s death
+ok 138 - entering the Architect room preserves Neo’s wounds, supplies and the Keymaker’s death
+  ---
+  duration_ms: 1.98
+  type: 'test'
+  ...
+# Subtest: the Architect control room has a circular reachable floor rather than invisible rectangular corners
+ok 139 - the Architect control room has a circular reachable floor rather than invisible rectangular corners
+  ---
+  duration_ms: 0.109166
+  type: 'test'
+  ...
+# Subtest: the Architect reveals both costs before Neo can take the film-left door
+ok 140 - the Architect reveals both costs before Neo can take the film-left door
+  ---
+  duration_ms: 18.911708
+  type: 'test'
+  ...
+# Subtest: an older Architect save replays the door costs while preserving its philosophical answer
+ok 141 - an older Architect save replays the door costs while preserving its philosophical answer
+  ---
+  duration_ms: 1.420916
+  type: 'test'
+  ...
+# Subtest: another player holding Architect or Trinity pauses the corresponding reveal
+ok 142 - another player holding Architect or Trinity pauses the corresponding reveal
+  ---
+  duration_ms: 1.353458
+  type: 'test'
+  ...
+# Subtest: the Architect door window pauses on disconnect, restores, fails, and retries without replaying the conversation
+ok 143 - the Architect door window pauses on disconnect, restores, fails, and retries without replaying the conversation
+  ---
+  duration_ms: 15.420083
+  type: 'test'
+  ...
+# Subtest: a completed two-step key-door save remains complete after the corridor moves
+ok 144 - a completed two-step key-door save remains complete after the corridor moves
+  ---
+  duration_ms: 1.205166
+  type: 'test'
+  ...
+# Subtest: the backup console cannot open the route before Niobe and Vigilant handoff, and the window freezes without a player
+ok 145 - the backup console cannot open the route before Niobe and Vigilant handoff, and the window freezes without a player
+  ---
+  duration_ms: 51.888667
+  type: 'test'
+  ...
+# Subtest: Neo holds Smith copies, opens the portal, receives the wounded Keymaker’s key, and alone opens the source door
+ok 146 - Neo holds Smith copies, opens the portal, receives the wounded Keymaker’s key, and alone opens the source door
+  ---
+  duration_ms: 131.097792
+  type: 'test'
+  ...
+# Subtest: the entire film route completes through interactions, driving and real combat, then starts a recorded new life
+ok 147 - the entire film route completes through interactions, driving and real combat, then starts a recorded new life
+  ---
+  duration_ms: 37043.952375
+  type: 'test'
+  ...
+# Subtest: the pod membrane stretches above the real body, opens around the head and reconstructs a paused tear
+    # Subtest: a new scene loaded mid-tear has exactly the same surface
+    ok 1 - a new scene loaded mid-tear has exactly the same surface
+      ---
+      duration_ms: 339.326916
+      type: 'test'
+      ...
+    1..1
+ok 148 - the pod membrane stretches above the real body, opens around the head and reconstructs a paused tear
+  ---
+  duration_ms: 1084.97475
+  type: 'test'
+  ...
+# Subtest: the pod neck hose seats against the shipped cervical socket before it is unlocked
+ok 149 - the pod neck hose seats against the shipped cervical socket before it is unlocked
+  ---
+  duration_ms: 228.447417
+  type: 'test'
+  ...
+# Subtest: a paused pod disconnection keeps its maintenance mechanism at the saved action clock
+ok 150 - a paused pod disconnection keeps its maintenance mechanism at the saved action clock
+  ---
+  duration_ms: 243.262083
+  type: 'test'
+  ...
+# Subtest: maintenance clamps hold the neck locking collar without routing their links through Neo
+ok 151 - maintenance clamps hold the neck locking collar without routing their links through Neo
+  ---
+  duration_ms: 863.379375
+  type: 'test'
+  ...
+# Subtest: body feeds seat in the four real chest ports and retract separately before the drain opens
+ok 152 - body feeds seat in the four real chest ports and retract separately before the drain opens
+  ---
+  duration_ms: 209.42275
+  type: 'test'
+  ...
+# Subtest: the clear neck needle withdraws along the real socket axis without drawing inside the head
+ok 153 - the clear neck needle withdraws along the real socket axis without drawing inside the head
+  ---
+  duration_ms: 174.42125
+  type: 'test'
+  ...
+# Subtest: a restored mid-unplug scene reconstructs the same contacts and keeps its hose buffers
+    # Subtest: a newly loaded scene has the same saved connector pose
+    ok 1 - a newly loaded scene has the same saved connector pose
+      ---
+      duration_ms: 165.647417
+      type: 'test'
+      ...
+    1..1
+ok 154 - a restored mid-unplug scene reconstructs the same contacts and keeps its hose buffers
+  ---
+  duration_ms: 373.494084
+  type: 'test'
+  ...
+# Subtest: the pod disconnection camera keeps the real head and chest above the subtitle region in both aspect ratios
+ok 155 - the pod disconnection camera keeps the real head and chest above the subtitle region in both aspect ratios
+  ---
+  duration_ms: 255.787542
+  type: 'test'
+  ...
+# Subtest: Neo sits up inside the pod while his hips and lower body remain supported in the basin
+ok 156 - Neo sits up inside the pod while his hips and lower body remain supported in the basin
+  ---
+  duration_ms: 155.9745
+  type: 'test'
+  ...
+# Subtest: Neo braces both palms on the real pod rim during the sit-up
+ok 157 - Neo braces both palms on the real pod rim during the sit-up
+  ---
+  duration_ms: 271.180917
+  type: 'test'
+  ...
+# Subtest: the connected hose routes remain outside the shipped skin as Neo rises
+ok 158 - the connected hose routes remain outside the shipped skin as Neo rises
+  ---
+  duration_ms: 5538.885666
+  type: 'test'
+  ...
+# Subtest: the saved pod body pose is independent of wall time, earlier frames and a newly loaded model
+    # Subtest: cold loading restores the same supported pose
+    ok 1 - cold loading restores the same supported pose
+      ---
+      duration_ms: 245.971208
+      type: 'test'
+      ...
+    1..1
+ok 159 - the saved pod body pose is independent of wall time, earlier frames and a newly loaded model
+  ---
+  duration_ms: 411.1345
+  type: 'test'
+  ...
+# Subtest: the shipped support-hand surfaces do not sit inside the solid pod rim
+ok 160 - the shipped support-hand surfaces do not sit inside the solid pod rim
+  ---
+  duration_ms: 23297.982958
+  type: 'test'
+  ...
+# Subtest: the pod first-person eye follows the shipped head and keeps the support hands visible
+ok 161 - the pod first-person eye follows the shipped head and keeps the support hands visible
+  ---
+  duration_ms: 354.199792
+  type: 'test'
+  ...
+# Subtest: the rescue ship does not cover the awakening view and reaches the water before hoisting Neo
+ok 162 - the rescue ship does not cover the awakening view and reaches the water before hoisting Neo
+  ---
+  duration_ms: 321.711458
+  type: 'test'
+  ...
+# Subtest: the breathing tube follows the actual lips, both grasping palms and the saved release clock
+    # Subtest: cold loading recreates the saved grasp and the same pipe surface
+    ok 1 - cold loading recreates the saved grasp and the same pipe surface
+      ---
+      duration_ms: 293.310416
+      type: 'test'
+      ...
+    1..1
+ok 163 - the breathing tube follows the actual lips, both grasping palms and the saved release clock
+  ---
+  duration_ms: 617.944
+  type: 'test'
+  ...
+# Subtest: the grasping hand skin stays outside the breathing tube wall
+ok 164 - the grasping hand skin stays outside the breathing tube wall
+  ---
+  duration_ms: 1173.863542
+  type: 'test'
+  ...
+# Subtest: the attached breathing nozzle touches the shipped mouth surface instead of floating below the jaw
+ok 165 - the attached breathing nozzle touches the shipped mouth surface instead of floating below the jaw
+  ---
+  duration_ms: 546.241458
+  type: 'test'
+  ...
+# Subtest: the chest feed surfaces avoid the moving arms during oral removal and release
+ok 166 - the chest feed surfaces avoid the moving arms during oral removal and release
+  ---
+  duration_ms: 49406.568084
+  type: 'test'
+  ...
+# Subtest: the eye camera retains the near mouthpiece during the grasp and restores its ordinary clipping distance
+    # Subtest: first-person patient shoulders retain the same skin surface as third person
+    ok 1 - first-person patient shoulders retain the same skin surface as third person
+      ---
+      duration_ms: 8463.223292
+      type: 'test'
+      ...
+    1..1
+ok 167 - the eye camera retains the near mouthpiece during the grasp and restores its ordinary clipping distance
+  ---
+  duration_ms: 10150.35675
+  type: 'test'
+  ...
+# Subtest: the rescue bay has an open passage for the body and closes below it after boarding
+ok 168 - the rescue bay has an open passage for the body and closes below it after boarding
+  ---
+  duration_ms: 216.592417
+  type: 'test'
+  ...
+# Subtest: nearby pods have an open upper basin instead of a closed ellipsoid over the occupant
+ok 169 - nearby pods have an open upper basin instead of a closed ellipsoid over the occupant
+  ---
+  duration_ms: 151.396875
+  type: 'test'
+  ...
+# Subtest: the default pod shot has a readable near bank behind Neo, not only distant dots
+ok 170 - the default pod shot has a readable near bank behind Neo, not only distant dots
+  ---
+  duration_ms: 114.639792
+  type: 'test'
+  ...
+# Subtest: the maintenance machine leaves room for the immersed first-person view
+ok 171 - the maintenance machine leaves room for the immersed first-person view
+  ---
+  duration_ms: 78.849916
+  type: 'test'
+  ...
+# Subtest: the floating first-person view sees a nearby pod bank beyond the rescue claw
+ok 172 - the floating first-person view sees a nearby pod bank beyond the rescue claw
+  ---
+  duration_ms: 90.929375
+  type: 'test'
+  ...
+# Subtest: the rescue claw approaches from overhead instead of covering the floating camera
+ok 173 - the rescue claw approaches from overhead instead of covering the floating camera
+  ---
+  duration_ms: 79.113458
+  type: 'test'
+  ...
+1..173
+# tests 178
+# suites 0
+# pass 177
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 97020.101083

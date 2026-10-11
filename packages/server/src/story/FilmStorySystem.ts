@@ -4125,7 +4125,7 @@ export class FilmStorySystem {
     }
     return true;
   }
-  awakeningFrame(agent: AgentState, dt: number, tick: number): boolean {
+  awakeningFrame(agent: AgentState, dt: number, tick: number, focus = false): boolean {
     if (this.truthFrame(agent, dt, tick)) return true;
     if (this.controls(agent) && this.state?.scene === 'm1_construct' && this.state.constructArrival) {
       const state = this.state, arrival = state.constructArrival!, guide = this.world.agents.get('morpheus')!;
@@ -4175,7 +4175,7 @@ export class FilmStorySystem {
     const bedside = beat?.kind === 'rescue' ? ['morpheus', 'trinity'] as const : beat?.kind === 'recovery' ? ['morpheus', 'dozer'] as const : [];
     const occupied = bedside.find(id => this.world.agents.get(id)?.controller);
     const wasPlaying = beat && beat.elapsed < awakeningDuration(beat) && beat.started !== false && !morpheus?.controller && !trinity?.controller && !occupied;
-    if (wasPlaying) beat.elapsed = Math.min(awakeningDuration(beat), beat.elapsed + Math.min(.1, dt));
+    if (wasPlaying && (beat.kind !== 'emerge' || focus)) beat.elapsed = Math.min(awakeningDuration(beat), beat.elapsed + Math.min(.1, dt));
     const doorId = 'film:cabin:door';
     if (beat?.kind === 'cabin') {
       const opening = Math.max(0, Math.min(1, (beat.elapsed - 10) / 1.6)); const slide = opening * opening * (3 - 2 * opening);
@@ -4234,7 +4234,7 @@ export class FilmStorySystem {
       : morpheus?.controller ? '揭示暂停在当前画面：Morpheus 正由另一位玩家控制。'
         : trinity?.controller ? '追踪暂停在当前画面：Trinity 正由另一位玩家控制。' : pose.text;
     if (wasPlaying && beat.elapsed >= awakeningDuration(beat)) {
-      if (beat.kind === 'breather') beat.started = false;
+      if (beat.kind === 'emerge' || beat.kind === 'breather') beat.started = false;
       else if (beat.kind === 'mirror') this.finishMirror(agent, tick);
       else if (beat.kind === 'rescue') {
         this.advance(this.step!.text!, agent, tick);
@@ -5970,11 +5970,12 @@ export class FilmStorySystem {
         agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
         this.truthFrame(agent, 0, tick); return '已接回退出与休息过程，保留人物、接口与回答进度。';
       }
-      if (state.awakening && ['breather', 'recovery', 'cabin', 'core', 'construct', 'desert'].includes(state.awakening.kind)) {
+      if (state.awakening && ['emerge', 'breather', 'recovery', 'cabin', 'core', 'construct', 'desert'].includes(state.awakening.kind)) {
         agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
         this.awakeningFrame(agent, 0, tick);
         return state.scene === 'm1_cabin' ? '已接回船舱与核心连接，保留当前动作和路线进度。'
-          : state.awakening.kind === 'breather' ? '已接回口部呼吸管动作，保留双手和管线的当前进度。'
+          : state.awakening.kind === 'emerge' ? '已接回舱膜挣脱动作，保留裂口、双手和身体的当前进度。'
+            : state.awakening.kind === 'breather' ? '已接回口部呼吸管动作，保留双手和管线的当前进度。'
             : state.awakening.kind === 'recovery' ? '已经接回医疗舱恢复，保留针疗和休息进度。' : '已经接回真相揭示，保留电视、讲解与身体动作进度。';
       }
       if (state.training && (trainingLocked(state) || state.downloadSetup)) {
@@ -6461,14 +6462,18 @@ export class FilmStorySystem {
       return '训练演出进行中，可以转动视角观察；进度会自动保存。';
     }
     if (state.awakening?.started === false) {
-      const prompt = state.awakening.kind === 'breather' ? awakeningPose(state.awakening).text
+      const prompt = state.awakening.kind === 'emerge' || state.awakening.kind === 'breather' ? awakeningPose(state.awakening).text
         : state.awakening.kind === 'mirror' ? 'Neo 坐在追踪椅上。按 G 继续接线和触镜。'
         : state.awakening.kind === 'cabin' || state.awakening.kind === 'core' ? awakeningPose(state.awakening).text
         : state.awakening.kind === 'recovery' ? '身体仍躺在医疗床上。按 G 示意船员开始恢复肌肉。'
         : state.awakening.kind === 'construct' ? '电视仍然关闭。按 G 请 Morpheus 开始说明。' : '灰烬中的讲解正在等待。按 G 请 Morpheus 继续。';
       if (target !== 'act') return prompt;
+      if (state.awakening.kind === 'emerge') {
+        state.awakening = { kind: 'breather', elapsed: 0, emerged: true };
+        this.awakeningFrame(agent, 0, tick); return state.lastText;
+      }
       if (state.awakening.kind === 'breather') {
-        state.awakening = { kind: 'disconnect', elapsed: 0, breatherRemoved: true };
+        state.awakening = { kind: 'disconnect', elapsed: 0, breatherRemoved: true, ...(state.awakening.emerged ? { emerged: true } : {}) };
         this.awakeningFrame(agent, 0, tick); return state.lastText;
       }
       if (['cabin', 'core', 'construct', 'desert'].includes(state.awakening.kind) && this.world.agents.get('morpheus')?.controller) return 'Morpheus 正由另一位玩家控制，演出停在当前画面。';
@@ -6479,7 +6484,8 @@ export class FilmStorySystem {
       }
       state.awakening.started = true; this.awakeningFrame(agent, 0, tick); return state.lastText;
     }
-    if (state.awakening && state.awakening.elapsed < awakeningDuration(state.awakening)) return '演出进行中，可以转动视角观察；进度会自动保存。';
+    if (state.awakening && state.awakening.elapsed < awakeningDuration(state.awakening)) return state.awakening.kind === 'emerge'
+      ? '按住 G 继续挣脱舱膜，松开保留当前进度。' : '演出进行中，可以转动视角观察；进度会自动保存。';
     if (state.scene === 'm1_cabin' && state.step === 1 && (state.cabinEscort?.progress ?? 0) < CABIN_ROUTE_LENGTH) return '沿舱门和中央通道跟随 Morpheus，等他到达连接椅后再接入。';
     if (state.scene === 'm2_architect' && state.architect?.phase === 'failed') return 'Trinity 的信号已经消失。按 J 从抉择检查点重试。';
     if (!this.near(agent, step) && !(state.scene === 'm1_construct' && step.kind === 'reflect')) return state.scene === 'm1_mirror' && state.step === 0 ? '穿过会客厅后方的门，走到追踪椅右侧再按 G。'
@@ -6679,7 +6685,7 @@ export class FilmStorySystem {
         return 'Morpheus 正从会客厅带路。沿后门跟上他，等他走到追踪室再坐下。';
       if (state.scene === 'm1_mirror' && this.world.agents.get('trinity')?.controller) return 'Trinity 正由另一位玩家控制；接线会在她空闲后继续。';
       const center = FILM_SETS[this.scene!.set].center;
-      state.awakening = { kind: state.scene === 'm1_mirror' ? 'mirror' : state.step === 0 ? 'breather' : 'rescue', elapsed: 0,
+      state.awakening = { kind: state.scene === 'm1_mirror' ? 'mirror' : state.step === 0 ? 'emerge' : 'rescue', elapsed: 0,
         ...(state.scene === 'm1_mirror' ? { chairMotion: 'stepping' as const } : {}),
         approach: state.scene === 'm1_mirror' ? { x: agent.position.x - center.x, z: agent.position.z - center.z, yaw: agent.rotation } : undefined };
       this.awakeningFrame(agent, 0, tick);

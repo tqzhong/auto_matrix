@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { POD_WATER_DROP, POD_RESCUE, POD_BREATHER, AWAKENING_SECONDS, awakeningPose, podRescuePose, podBreatherPose, type FilmJourney } from '@auto_matrix/shared';
 import { batchStaticGeometry } from './StaticGeometry.js';
+import { PodMembraneRenderer } from './PodMembraneRenderer.js';
 
 /** A single awakening set: the foreground tank, drain and rescue share story coordinates. */
 export class PodSetRenderer {
@@ -29,6 +30,7 @@ export class PodSetRenderer {
   private water: THREE.Mesh;
   private ripple: THREE.Mesh;
   private liquid: THREE.Mesh;
+  private membrane: PodMembraneRenderer;
   private arm: THREE.Mesh[] = [];
   private cable: THREE.Mesh;
   private scan: THREE.SpotLight;
@@ -47,6 +49,7 @@ export class PodSetRenderer {
       transparent: true, opacity: .48, depthWrite: false, side: THREE.DoubleSide }); this.materials.add(fluid);
     const fluidGeometry = this.podFluid(64); fluidGeometry.translate(0, .12, 0);
     this.liquid = this.mesh(fluidGeometry, fluid, 0, 1.9, -12.8); this.liquid.scale.set(1.75, 1, 3.3);
+    this.membrane = new PodMembraneRenderer(this.root);
     for (let i = 0; i < 20; i++) {
       const a = i / 20 * Math.PI * 2;
       const x = Math.sin(a) * 1.85 * (.84 - .16 * Math.cos(a)), z = -12.8 + Math.cos(a) * 3.45;
@@ -346,6 +349,7 @@ export class PodSetRenderer {
     const arrival = THREE.MathUtils.smoothstep(disconnect, 4.5, 7);
     this.bay.position.set(96 * (1 - arrival), 0, 36 * (1 - arrival));
     this.root.updateWorldMatrix(true, false); subject?.updateWorldMatrix(true, true);
+    this.membrane.update(journey, subject);
     this.robot.position.y = 10 - Math.min(1, disconnect / 2) * 1.2 + Math.max(0, disconnect - 4) * 1.5;
     const socket = subject?.getObjectByName('cervical-interface');
     this.neckFrame.position.copy(socket ? this.root.worldToLocal(socket.localToWorld(new THREE.Vector3(0, 0, .025))) : new THREE.Vector3(0, 1.94, -14.78));
@@ -374,7 +378,7 @@ export class PodSetRenderer {
       clamp.hinges.forEach((hinge, i) => { hinge.visible = disconnect < 4; hinge.position.copy(nodes[i + 1]); });
     });
     const thoracic = subject?.getObjectByName('thoracic-interfaces');
-    const oralEntry = !beat || beat.kind === 'breather' || beat.breatherRemoved === true;
+    const oralEntry = !beat || beat.kind === 'emerge' || beat.kind === 'breather' || beat.breatherRemoved === true;
     this.feeds.forEach((feed, i) => {
       const port = thoracic?.children[i * 2 + 1];
       const outward = port ? new THREE.Vector3(0, 1, 0).applyQuaternion(port.getWorldQuaternion(new THREE.Quaternion()))
@@ -394,7 +398,7 @@ export class PodSetRenderer {
         ...(oralEntry && i < 2 ? [end.clone().addScaledVector(outward, .12 * (1 - release))] : []), end]);
     });
     this.connections.visible = disconnect < 4;
-    this.breather.visible = !beat || beat.kind === 'breather' || beat.kind === 'disconnect' && beat.breatherRemoved === true && disconnect < 4;
+    this.breather.visible = !beat || beat.kind === 'emerge' || beat.kind === 'breather' || beat.kind === 'disconnect' && beat.breatherRemoved === true && disconnect < 4;
     if (this.breather.visible) {
       const oralTime = beat?.kind === 'breather' ? beat.elapsed : beat?.breatherRemoved ? AWAKENING_SECONDS.breather : 0;
       const oral = podBreatherPose(oralTime), head = subject?.getObjectByName('head');
@@ -441,6 +445,7 @@ export class PodSetRenderer {
     this.mist.position.x = Math.sin(clock * .13) * 2;
   }
   dispose(): void {
+    this.membrane.dispose();
     this.root.traverse(object => { if (object instanceof THREE.InstancedMesh || object instanceof THREE.PointLight || object instanceof THREE.SpotLight) object.dispose(); });
     this.root.removeFromParent(); this.geometries.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose());
   }
