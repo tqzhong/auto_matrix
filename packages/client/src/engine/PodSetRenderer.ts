@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { POD_WATER_DROP, POD_RESCUE, POD_BREATHER, AWAKENING_SECONDS, awakeningPose, podRescuePose, podBreatherPose, type FilmJourney } from '@auto_matrix/shared';
 import { batchStaticGeometry } from './StaticGeometry.js';
 import { PodMembraneRenderer } from './PodMembraneRenderer.js';
+import { PodMaintenanceRenderer } from './PodMaintenanceRenderer.js';
 
 /** A single awakening set: the foreground tank, drain and rescue share story coordinates. */
 export class PodSetRenderer {
@@ -9,6 +10,7 @@ export class PodSetRenderer {
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private robot = new THREE.Group();
+  private maintenance: PodMaintenanceRenderer;
   private neckFrame = new THREE.Group();
   private rotor = new THREE.Group();
   private neckPlug = new THREE.Group();
@@ -31,7 +33,6 @@ export class PodSetRenderer {
   private ripple: THREE.Mesh;
   private liquid: THREE.Mesh;
   private membrane: PodMembraneRenderer;
-  private arm: THREE.Mesh[] = [];
   private cable: THREE.Mesh;
   private scan: THREE.SpotLight;
   private mist: THREE.Points;
@@ -100,8 +101,7 @@ export class PodSetRenderer {
       for (let z = -20; z < 60; z += 12) this.tube([[x, -7, z], [x * .85, -7, z], [x * .85, -15, z]], .7, this.steel);
     }
     this.root.add(this.robot); this.robot.position.set(0, 10, -14);
-    this.mesh(new THREE.CylinderGeometry(1.12, 1.25, .58, 24), this.dark, 0, 0, 0, this.robot);
-    const collar = this.mesh(new THREE.TorusGeometry(.92, .08, 8, 32), this.steel, 0, -.34, 0, this.robot); collar.rotation.x = Math.PI / 2;
+    this.maintenance = new PodMaintenanceRenderer(this.robot);
     this.root.add(this.neckFrame); this.neckFrame.name = 'pod-neck-connection';
     this.neckFrame.add(this.rotor, this.neckPlug); this.neckPlug.name = 'pod-neck-plug';
     this.mesh(new THREE.TorusGeometry(.15, .034, 8, 28), this.steel, 0, 0, .027, this.rotor);
@@ -113,11 +113,6 @@ export class PodSetRenderer {
     const clear = new THREE.MeshPhysicalMaterial({ color: 0xc1d6d9, metalness: .1, roughness: .12, transparent: true, opacity: .72, clearcoat: 1 }); this.materials.add(clear);
     this.needle = this.mesh(new THREE.CylinderGeometry(.024, .024, 1, 12), clear, 0, 0, 0, this.neckPlug);
     this.needle.name = 'pod-neck-needle'; this.needle.rotation.x = Math.PI / 2;
-    const red = this.mat(0xeb6a51, .2, .3); red.emissive.setHex(0xff4422); red.emissiveIntensity = 2.5;
-    for (let i = 0; i < 3; i++) {
-      const angle = i / 3 * Math.PI * 2;
-      this.mesh(new THREE.SphereGeometry(.095, 10, 6), red, Math.sin(angle) * .98, -.38, Math.cos(angle) * .98, this.robot);
-    }
     for (const side of [-1, 1]) {
       const pad = this.mesh(new THREE.BoxGeometry(.08, .22, .16), rubber, 0, 0, 0); pad.name = `pod-maintenance-pad-${side}`;
       const links = Array.from({ length: 3 }, (_, i) => {
@@ -128,7 +123,6 @@ export class PodSetRenderer {
       });
       this.clamps.push({ side, pad, links, hinges });
     }
-    for (let i = 0; i < 3; i++) this.arm.push(this.mesh(new THREE.CylinderGeometry(.16, .16, 1, 12), this.steel, 0, 0, 0));
     this.root.add(this.claw); this.claw.name = 'pod-rescue-claw';
     this.clawHousing = this.mesh(new THREE.CylinderGeometry(.43, .56, .58, 16), this.steel, 0, .4, 0, this.claw);
     this.clawCollar = this.mesh(new THREE.TorusGeometry(.42, .04, 8, 24), this.steel, 0, .08, 0, this.claw);
@@ -155,7 +149,7 @@ export class PodSetRenderer {
     mistGeometry.setAttribute('position', new THREE.Float32BufferAttribute(particles, 3)); this.geometries.add(mistGeometry);
     const mistMaterial = new THREE.PointsMaterial({ color: 0x91a1a2, size: .09, transparent: true, opacity: .25, depthWrite: false }); this.materials.add(mistMaterial);
     this.mist = new THREE.Points(mistGeometry, mistMaterial); this.root.add(this.mist);
-    const movable = new Set([this.liquid, this.neckTube, this.needle, this.clawHousing, this.clawCollar, this.cable, this.ripple, ...this.arm,
+    const movable = new Set([this.liquid, this.neckTube, this.needle, this.clawHousing, this.clawCollar, this.cable, this.ripple,
       ...this.grippers.flatMap(gripper => [gripper.pad, ...gripper.links, ...gripper.hinges])]);
     batchStaticGeometry(this.root, movable).forEach(geometry => this.geometries.add(geometry));
   }
@@ -350,7 +344,8 @@ export class PodSetRenderer {
     this.bay.position.set(96 * (1 - arrival), 0, 36 * (1 - arrival));
     this.root.updateWorldMatrix(true, false); subject?.updateWorldMatrix(true, true);
     this.membrane.update(journey, subject);
-    this.robot.position.y = 10 - Math.min(1, disconnect / 2) * 1.2 + Math.max(0, disconnect - 4) * 1.5;
+    const head = subject?.getObjectByName('head');
+    this.maintenance.update(beat, head ? this.root.worldToLocal(head.localToWorld(new THREE.Vector3(0, .1, .32))) : new THREE.Vector3(0, 3.65, -13.23));
     const socket = subject?.getObjectByName('cervical-interface');
     this.neckFrame.position.copy(socket ? this.root.worldToLocal(socket.localToWorld(new THREE.Vector3(0, 0, .025))) : new THREE.Vector3(0, 1.94, -14.78));
     this.neckFrame.quaternion.copy(socket ? this.root.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(socket.getWorldQuaternion(new THREE.Quaternion()))
@@ -369,13 +364,13 @@ export class PodSetRenderer {
     const lateral = new THREE.Vector3(1, 0, 0).applyQuaternion(this.neckFrame.quaternion);
     this.clamps.forEach(clamp => {
       const tip = new THREE.Vector3(clamp.side * (.224 + .7 * (1 - grip)), 0, .055).applyQuaternion(this.neckFrame.quaternion).add(end);
-      const nodes = [this.robot.position.clone().addScaledVector(lateral, clamp.side * .9).add(new THREE.Vector3(0, -.1, 0)),
-        this.robot.position.clone().addScaledVector(lateral, clamp.side * 1.55).add(new THREE.Vector3(0, -2.8, -2.2)),
+      const nodes = [this.robot.localToWorld(new THREE.Vector3(clamp.side * .9, -.45, 1)).applyMatrix4(this.root.matrixWorld.clone().invert()),
+        this.neckFrame.position.clone().addScaledVector(lateral, clamp.side * 1.55).addScaledVector(axis, .45).add(new THREE.Vector3(0, .5, 0)),
         tip.clone().add(new THREE.Vector3(clamp.side * .4, 0, .8).applyQuaternion(this.neckFrame.quaternion)), tip];
-      clamp.pad.visible = disconnect < 4;
+      clamp.pad.visible = this.robot.visible && disconnect < 4;
       clamp.pad.position.copy(tip); clamp.pad.quaternion.copy(this.neckFrame.quaternion);
-      clamp.links.forEach((link, i) => { link.visible = disconnect < 4; this.link(link, nodes[i], nodes[i + 1]); });
-      clamp.hinges.forEach((hinge, i) => { hinge.visible = disconnect < 4; hinge.position.copy(nodes[i + 1]); });
+      clamp.links.forEach((link, i) => { link.visible = this.robot.visible && disconnect < 4; this.link(link, nodes[i], nodes[i + 1]); });
+      clamp.hinges.forEach((hinge, i) => { hinge.visible = this.robot.visible && disconnect < 4; hinge.position.copy(nodes[i + 1]); });
     });
     const thoracic = subject?.getObjectByName('thoracic-interfaces');
     const oralEntry = !beat || beat.kind === 'emerge' || beat.kind === 'breather' || beat.breatherRemoved === true;
@@ -414,8 +409,6 @@ export class PodSetRenderer {
     }
     this.neckTube.visible = !firstPerson;
     this.liquid.visible = disconnect < 5; this.liquid.position.y = 1.9 - Math.max(0, disconnect - 4) * 2 + Math.sin(clock * 1.6) * .018;
-    const nodes = [new THREE.Vector3(0, 17, -23), new THREE.Vector3(3, 14, -20), new THREE.Vector3(0, 13, -16), this.robot.position];
-    this.arm.forEach((link, i) => this.link(link, nodes[i], nodes[i + 1]));
     const rescuing = beat?.kind === 'rescue'; const pose = awakeningPose(rescuing ? beat : { kind: 'disconnect', elapsed: 9 });
     const rescue = podRescuePose(rescuing ? beat.elapsed : 0);
     this.claw.visible = disconnect >= 7 || rescuing;
@@ -446,6 +439,7 @@ export class PodSetRenderer {
   }
   dispose(): void {
     this.membrane.dispose();
+    this.maintenance.dispose();
     this.root.traverse(object => { if (object instanceof THREE.InstancedMesh || object instanceof THREE.PointLight || object instanceof THREE.SpotLight) object.dispose(); });
     this.root.removeFromParent(); this.geometries.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose());
   }

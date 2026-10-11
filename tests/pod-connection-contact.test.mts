@@ -162,6 +162,26 @@ test('a paused pod disconnection keeps its maintenance mechanism at the saved ac
   assert.ok(drift < 1e-8, `the paused mechanism changed its saved transform by ${drift}`);
 });
 
+test('the inspecting machine brings its real sensor lenses into Neo’s eye view without swallowing the camera', async t => {
+  const h = await setup(t);
+  for (const aspect of [16 / 9, 650 / 1000]) for (const elapsed of [1.8, 2.4, 3.1]) {
+    const body = h.at(elapsed, 100, true, { kind: 'disconnect', elapsed, emerged: true, breatherRemoved: true });
+    const machine = h.root.getObjectByName('pod-maintenance-machine'); assert.ok(machine, 'a mechanical inspector must face the waking body');
+    const sensors = machine.getObjectByName('pod-maintenance-optics'); assert.ok(sensors);
+    const head = body.getObjectByName('head')!, eye = head.localToWorld(new THREE.Vector3(0, .1, .32));
+    const camera = new THREE.PerspectiveCamera(57, aspect, .035, 300);
+    camera.position.copy(eye); camera.lookAt(eye.clone().add(new THREE.Vector3(0, 0, 1).applyQuaternion(head.getWorldQuaternion(new THREE.Quaternion()))));
+    camera.updateMatrixWorld(true);
+    let seen = 0;
+    sensors.children.filter(object => object.name.startsWith('pod-maintenance-sensor-')).forEach(sensor => {
+      const position = sensor.getWorldPosition(new THREE.Vector3()), screen = position.clone().project(camera), distance = position.distanceTo(eye);
+      assert.ok(distance > .8 && distance < 5, `sensor ${sensor.name} is inside the camera or too far to read at ${elapsed}s: ${distance}`);
+      if (Math.abs(screen.x) < .95 && screen.y > -.5 && screen.y < .9 && screen.z > -1 && screen.z < 1) seen++;
+    });
+    assert.ok(seen >= 3, `Neo cannot see the inspector's sensor cluster at ${elapsed}s / ${aspect}: ${seen}`);
+  }
+});
+
 test('maintenance clamps hold the neck locking collar without routing their links through Neo', async t => {
   const h = await setup(t);
   for (const elapsed of [1.8, 2.2, 2.7, 3.1, 3.5]) {
@@ -187,6 +207,36 @@ test('maintenance clamps hold the neck locking collar without routing their link
         assert.ok(!hit, `maintenance link ${side}/${i} crosses the body at ${elapsed}s, at ${hit ? h.root.worldToLocal(hit.point.clone()).toArray() : 'none'}`);
       }
     }
+  }
+});
+
+test('the maintenance arm surfaces clear the actual skin throughout approach, holding and withdrawal', async t => {
+  const h = await setup(t);
+  for (const elapsed of [.2, .6, 1, 1.5, 1.8, 2.4, 3.1, 3.5, 3.8]) {
+    const body = h.at(elapsed, 100, false, { kind: 'disconnect', elapsed, emerged: true, breatherRemoved: true }), skin: THREE.Mesh[] = [];
+    body.traverse(object => {
+      if (!(object instanceof THREE.SkinnedMesh) || !object.visible || (object.material as THREE.Material).name !== 'Skin') return;
+      const geometry = new THREE.BufferGeometry(), source = object.geometry.getAttribute('position'), posed = new THREE.Float32BufferAttribute(new Float32Array(source.count * 3), 3), point = new THREE.Vector3();
+      for (let i = 0; i < source.count; i++) { object.getVertexPosition(i, point); posed.setXYZ(i, point.x, point.y, point.z); }
+      geometry.setAttribute('position', posed); geometry.setIndex(object.geometry.index); geometry.computeBoundingBox(); geometry.computeBoundingSphere();
+      const mesh = new THREE.Mesh(geometry, object.material); mesh.matrixWorld.copy(object.matrixWorld); skin.push(mesh);
+    });
+    const matrices: THREE.Matrix4[] = [];
+    for (const side of [-1, 1]) for (let i = 0; i < 3; i++) {
+      const link = h.root.getObjectByName(`pod-maintenance-link-${side}-${i}`) as THREE.Mesh;
+      if (link.visible) matrices.push(link.matrixWorld.clone());
+    }
+    const bars = h.root.getObjectByName('pod-maintenance-outboard-bars') as THREE.InstancedMesh;
+    for (let i = 0; i < bars.count; i++) { const matrix = new THREE.Matrix4(); bars.getMatrixAt(i, matrix); matrices.push(bars.matrixWorld.clone().multiply(matrix)); }
+    try {
+      matrices.forEach((matrix, i) => {
+        for (const radial of [[.075, 0], [-.075, 0], [0, .075], [0, -.075]]) {
+          const from = new THREE.Vector3(radial[0], -.5, radial[1]).applyMatrix4(matrix), delta = new THREE.Vector3(radial[0], .5, radial[1]).applyMatrix4(matrix).sub(from);
+          const hit = new THREE.Raycaster(from, delta.clone().normalize(), .002, delta.length() - .002).intersectObjects(skin)[0];
+          assert.ok(!hit, `arm ${i} cuts the shipped skin at ${elapsed}s: ${hit ? h.root.worldToLocal(hit.point.clone()).toArray() : 'none'}`);
+        }
+      });
+    } finally { skin.forEach(mesh => mesh.geometry.dispose()); }
   }
 });
 
@@ -234,6 +284,7 @@ test('a restored mid-unplug scene reconstructs the same contacts and keeps its h
     root.traverse(object => {
       if (object instanceof THREE.Mesh && object.name.startsWith('pod-') && !object.name.startsWith('pod-rescue-')) {
         result.push(object.matrixWorld.toArray());
+        if (object instanceof THREE.InstancedMesh) result.push(Array.from(object.instanceMatrix.array));
         if (object.geometry instanceof THREE.TubeGeometry) result.push(Array.from(object.geometry.getAttribute('position').array));
       }
     });
