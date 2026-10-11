@@ -1,0 +1,110 @@
+TAP version 13
+# Subtest: the final player heavy punch reaches Smith’s actual cheek skin and keeps both boots supported
+not ok 1 - the final player heavy punch reaches Smith’s actual cheek skin and keeps both boots supported
+  ---
+  duration_ms: 633.444875
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/smith-finale-contact.test.mts:1:29384'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'z')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    faceSurface (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/agents/SmithFinaleContact.ts:73:3)
+    posePitPunch (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/agents/SmithFinaleContact.ts:79:27)
+    poseSmithFinaleContact (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/agents/SmithFinaleContact.ts:19:29)
+    AgentRenderer.update (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/agents/AgentRenderer.ts:864:7)
+    Object.frame (/Users/tianqizhong/ai_project/auto_matrix/tests/smith-finale-contact.test.mts:50:32)
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/smith-finale-contact.test.mts:523:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: the last face counter and Smith’s three replies contact the actual posed surfaces without pushing knuckles through them
+not ok 2 - the last face counter and Smith’s three replies contact the actual posed surfaces without pushing knuckles through them
+  ---
+  duration_ms: 448.845709
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/smith-finale-contact.test.mts:1:31191'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'z')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    faceSurface (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/agents/SmithFinaleContact.ts:73:3)
+    posePitPunch (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/agents/SmithFinaleContact.ts:79:27)
+    poseSmithFinaleContact (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/agents/SmithFinaleContact.ts:19:29)
+    AgentRenderer.update (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/agents/AgentRenderer.ts:864:7)
+    Object.frame (/Users/tianqizhong/ai_project/auto_matrix/tests/smith-finale-contact.test.mts:50:32)
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/smith-finale-contact.test.mts:551:7)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: the slow face punch compresses the actual cheek and releases it without deforming the shared actor asset
+not ok 3 - the slow face punch compresses the actual cheek and releases it without deforming the shared actor asset
+  ---
+  duration_ms: 781.89275
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/smith-finale-contact.test.mts:1:32389'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'z')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    faceSurface (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/agents/SmithFinaleContact.ts:73:3)
+    posePitPunch (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/agents/SmithFinaleContact.ts:79:27)
+    poseSmithFinaleContact (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/agents/SmithFinaleContact.ts:19:29)
+    AgentRenderer.update (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/agents/AgentRenderer.ts:864:7)
+    Object.frame (/Users/tianqizhong/ai_project/auto_matrix/tests/smith-finale-contact.test.mts:50:32)
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/smith-finale-contact.test.mts:579:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: the actual thumb stays outside the deformed cheek throughout the face contact interval
+not ok 4 - the actual thumb stays outside the deformed cheek throughout the face contact interval
+  ---
+  duration_ms: 626.791208
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/smith-finale-contact.test.mts:1:35353'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'z')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    faceSurface (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/agents/SmithFinaleContact.ts:73:3)
+    posePitPunch (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/agents/SmithFinaleContact.ts:79:27)
+    poseSmithFinaleContact (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/agents/SmithFinaleContact.ts:19:29)
+    AgentRenderer.update (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/agents/AgentRenderer.ts:864:7)
+    Object.frame (/Users/tianqizhong/ai_project/auto_matrix/tests/smith-finale-contact.test.mts:50:32)
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/smith-finale-contact.test.mts:610:7)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: the delivered pit bodies do not snap at the punch, collapse, recognition or standing boundaries
+not ok 5 - the delivered pit bodies do not snap at the punch, collapse, recognition or standing boundaries
+  ---
+  duration_ms: 725.365125
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/smith-finale-contact.test.mts:1:35924'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'z')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    faceSurface (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/agents/SmithFinaleContact.ts:73:3)
+    posePitPunch (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/agents/SmithFinaleContact.ts:79:27)
+    poseSmithFinaleContact (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/agents/SmithFinaleContact.ts:19:29)
+    AgentRenderer.update (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/agents/AgentRenderer.ts:864:7)
+    Object.frame (/Users/tianqizhong/ai_project/auto_matrix/tests/smith-finale-contact.test.mts:50:32)
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/smith-finale-contact.test.mts:626:7)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 0
+# fail 5
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3687.861916

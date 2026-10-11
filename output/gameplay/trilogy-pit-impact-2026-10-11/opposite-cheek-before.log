@@ -1,0 +1,30 @@
+TAP version 13
+# Subtest: the slow face punch compresses the actual cheek and releases it without deforming the shared actor asset
+not ok 1 - the slow face punch compresses the actual cheek and releases it without deforming the shared actor asset
+  ---
+  duration_ms: 725.277583
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/smith-finale-contact.test.mts:1:32389'
+  failureType: 'testCodeFailure'
+  error: 'the upper eyes, back of the head and opposite cheek keep their shape: 0.11316005885601044,0.09727716445922852,0.24053384363651276 moved 0.000022884632859440447'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    <anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/smith-finale-contact.test.mts:585:14)
+    Array.forEach (<anonymous>)
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/smith-finale-contact.test.mts:583:11)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1244.632667

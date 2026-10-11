@@ -3,6 +3,7 @@ import { smithFinaleBeat, smithFinalePose, smithEndingPose, type SmithFinaleEnco
 import type { HeroRig } from './HeroModel.js';
 import { reach } from './SpoonPerformance.js';
 import { poseSmithCraterBody } from './SmithCraterPerformance.js';
+import { compressSmithCheek, smithFaceImpact } from './SmithFaceImpact.js';
 
 export function poseSmithFinaleContact(neo: HeroRig, smith: HeroRig, encounter: SmithFinaleEncounter): void {
   encounter = smithFinaleBeat(encounter);
@@ -10,11 +11,12 @@ export function poseSmithFinaleContact(neo: HeroRig, smith: HeroRig, encounter: 
   const ending = smithEndingPose(encounter);
   const pose = smithFinalePose(encounter);
   if (encounter.phase.startsWith('pit_')) {
-    smith.bones.get('head')!.rotation.y += pose.stagger * .22;
+    smith.bones.get('head')!.rotation.y += pose.stagger * .42;
     smith.bones.get('head')!.rotation.x -= pose.stagger * .14;
+    smith.bones.get('head')!.rotation.z += pose.stagger * .1;
     smith.bones.get('chest')!.rotation.y -= pose.stagger * .08;
     neo.bones.get('chest')!.rotation.y += pose.facePunch * .12;
-    if (pose.facePunch > 0) posePitPunch(neo, smith, 'R', pose.facePunch, true);
+    if (pose.facePunch > 0) posePitPunch(neo, smith, 'R', pose.facePunch, true, smithFaceImpact(encounter));
     if (pose.smithPunch > 0) posePitPunch(smith, neo,
       encounter.phase === 'pit_retaliation' && encounter.elapsed > 1.25 && encounter.elapsed < 1.9 ? 'L' : 'R', pose.smithPunch, false);
   }
@@ -71,10 +73,11 @@ function faceSurface(rig: HeroRig): THREE.Vector3 {
   surface!.z += .018; faceSurfaces.set(rig, surface!); return surface!;
 }
 
-function posePitPunch(attacker: HeroRig, victim: HeroRig, side: 'R' | 'L', blend: number, face: boolean): void {
+function posePitPunch(attacker: HeroRig, victim: HeroRig, side: 'R' | 'L', blend: number, face: boolean, compression = 0): void {
   attacker.root.updateWorldMatrix(true, true); victim.root.updateWorldMatrix(true, true);
   const targetBone = victim.bones.get(face ? 'head' : 'chest')!;
   const surface = (face ? faceSurface(victim) : chestSurface(victim, true)).clone();
+  if (face) compressSmithCheek(surface, compression);
   // Retract along the face normal while the wrist is still aligning; close the
   // clearance continuously at full extension instead of sweeping into the cheek.
   if (face) surface.z += .24 * 4 * blend * (1 - blend);

@@ -1,0 +1,321 @@
+TAP version 13
+# Subtest: the final approach, consent and assimilation preserve both body roots at phase boundaries
+ok 1 - the final approach, consent and assimilation preserve both body roots at phase boundaries
+  ---
+  duration_ms: 3.149875
+  type: 'test'
+  ...
+# Subtest: the final contact leaves space between the full bodies instead of overlapping both torsos
+ok 2 - the final contact leaves space between the full bodies instead of overlapping both torsos
+  ---
+  duration_ms: 0.263625
+  type: 'test'
+  ...
+# Subtest: the purge light stays in the pit between its bodies rather than orbiting the avenue origin
+ok 3 - the purge light stays in the pit between its bodies rather than orbiting the avenue origin
+  ---
+  duration_ms: 408.744917
+  type: 'test'
+  ...
+# Subtest: the free entry camera stays outside the actual Neo body at the machine handoff in wide and narrow views
+ok 4 - the free entry camera stays outside the actual Neo body at the machine handoff in wide and narrow views
+  ---
+  duration_ms: 592.129625
+  type: 'test'
+  ...
+# Subtest: the first paused finale frame restores both actual bodies and the camera without frame-rate settling
+ok 5 - the first paused finale frame restores both actual bodies and the camera without frame-rate settling
+  ---
+  duration_ms: 1269.578791
+  type: 'test'
+  ...
+# Subtest: saved finale motion replaces prior running, jumping and combat instead of blending them into a cold load
+ok 6 - saved finale motion replaces prior running, jumping and combat instead of blending them into a cold load
+  ---
+  duration_ms: 15.544833
+  type: 'test'
+  ...
+# Subtest: the opening keeps Neo and the distant speaking Smith inside the playable view
+ok 7 - the opening keeps Neo and the distant speaking Smith inside the playable view
+  ---
+  duration_ms: 524.123542
+  type: 'test'
+  ...
+# Subtest: saved off-centre arrivals keep the actual turning body inside wide and narrow opening views
+ok 8 - saved off-centre arrivals keep the actual turning body inside wide and narrow opening views
+  ---
+  duration_ms: 625.454583
+  type: 'test'
+  ...
+# Subtest: opening sunglasses follow the film stages, and the main Smith exposes his face after the crater impact
+ok 9 - opening sunglasses follow the film stages, and the main Smith exposes his face after the crater impact
+  ---
+  duration_ms: 412.489708
+  type: 'test'
+  ...
+# Subtest: the actual boots clear the wet road and retain a supporting foot throughout the saved walk and charge
+ok 10 - the actual boots clear the wet road and retain a supporting foot throughout the saved walk and charge
+  ---
+  duration_ms: 595.670625
+  type: 'test'
+  ...
+# Subtest: the third-person lens opens continuously as the two fighters start flying
+ok 11 - the third-person lens opens continuously as the two fighters start flying
+  ---
+  duration_ms: 286.668666
+  type: 'test'
+  ...
+# Subtest: the crater shot keeps both real bodies above the subtitle area, including Neo lying down
+ok 12 - the crater shot keeps both real bodies above the subtitle area, including Neo lying down
+  ---
+  duration_ms: 385.304417
+  type: 'test'
+  ...
+# Subtest: the lying first-person view lifts toward Smith while keeping mouse look available
+ok 13 - the lying first-person view lifts toward Smith while keeping mouse look available
+  ---
+  duration_ms: 294.682083
+  type: 'test'
+  ...
+# Subtest: the clearing shot rises out of the pit to show both ranks while retaining a continuous saved camera
+ok 14 - the clearing shot rises out of the pit to show both ranks while retaining a continuous saved camera
+  ---
+  duration_ms: 447.727333
+  type: 'test'
+  ...
+# oracle detailed head could not load; retaining its fallback. TypeError: Cannot read properties of undefined (reading 'scene')
+#     at EpilogueHeads.load (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/agents/EpilogueHeads.ts:61:25)
+# Subtest: the ending camera returns to the actual restored Oracle without clipping the pit or reverting to vanished Neo eyes
+ok 15 - the ending camera returns to the actual restored Oracle without clipping the pit or reverting to vanished Neo eyes
+  ---
+  duration_ms: 624.463958
+  type: 'test'
+  ...
+# Subtest: real finale GLB head, hands and feet cold-load identically after running and reverse saved-frame seeking
+ok 16 - real finale GLB head, hands and feet cold-load identically after running and reverse saved-frame seeking
+  ---
+  duration_ms: 8040.523791
+  type: 'test'
+  ...
+# Subtest: finale first person follows the currently posed real eyes while keeping free look and V switching
+ok 17 - finale first person follows the currently posed real eyes while keeping free look and V switching
+  ---
+  duration_ms: 820.588041
+  type: 'test'
+  ...
+# Maximum camera distance from the actual skinned eyeball center: 0.02212107277948943
+# Subtest: both interior fighters fit a camera inside the actual hollow building, including narrow windows
+ok 18 - both interior fighters fit a camera inside the actual hollow building, including narrow windows
+  ---
+  duration_ms: 1001.651042
+  type: 'test'
+  ...
+# Subtest: renewed flight keeps the real bodies in view instead of moving the camera through Neo
+ok 19 - renewed flight keeps the real bodies in view instead of moving the camera through Neo
+  ---
+  duration_ms: 240.88125
+  type: 'test'
+  ...
+# Subtest: the final pit counter, recognition and player rise frame the actual faces and contact hands inside the crater
+ok 20 - the final pit counter, recognition and player rise frame the actual faces and contact hands inside the crater
+  ---
+  duration_ms: 497.281667
+  type: 'test'
+  ...
+# Subtest: the rendered crater fragments and pipes leave the real faces and hands visible in both pit viewpoints
+ok 21 - the rendered crater fragments and pipes leave the real faces and hands visible in both pit viewpoints
+  ---
+  duration_ms: 1280.4265
+  type: 'test'
+  ...
+# Subtest: the first-person pit punch keeps Neo’s actual fist visible while removing his own face
+ok 22 - the first-person pit punch keeps Neo’s actual fist visible while removing his own face
+  ---
+  duration_ms: 338.840875
+  type: 'test'
+  ...
+# Subtest: impact leaves Neo lying in the water while Smith stands, and rising keeps real surfaces above the floor
+ok 23 - impact leaves Neo lying in the water while Smith stands, and rising keeps real surfaces above the floor
+  ---
+  duration_ms: 1905.826583
+  type: 'test'
+  ...
+# Lowest actual skin/clothing/sole distance from the pit floor: -0.02044207090852268
+# Subtest: the delivered bodies keep their support and orientation across impact, failure and standing
+ok 24 - the delivered bodies keep their support and orientation across impact, failure and standing
+  ---
+  duration_ms: 561.738916
+  type: 'test'
+  ...
+# Subtest: getting up plants the delivered boots before releasing the supporting hands
+ok 25 - getting up plants the delivered boots before releasing the supporting hands
+  ---
+  duration_ms: 521.014875
+  type: 'test'
+  ...
+# Subtest: Neo cannot rise behind his planted feet after letting go of the supporting hands
+ok 26 - Neo cannot rise behind his planted feet after letting go of the supporting hands
+  ---
+  duration_ms: 458.321625
+  type: 'test'
+  ...
+# rise 0.3: torso projection 5978.102734595858, planted support [5978.26427387707, 5978.950059721992]
+# rise 0.43: torso projection 5978.282651442629, planted support [5977.7646080822515, 5978.950059721991]
+# rise 0.55: torso projection 5978.291705715529, planted support [5977.764273877069, 5978.950059721991]
+# rise 0.7: torso projection 5978.1694843679015, planted support [5977.780648911471, 5978.802684412371]
+# rise 0.85: torso projection 5977.9629617628225, planted support [5977.818778311806, 5978.5050088889]
+# rise 0.95: torso projection 5977.944923057861, planted support [5977.782928559563, 5978.476898163151]
+# Subtest: the rising coat stays above the water and resumes without a cloth jump when paused, cold loaded or standing
+ok 27 - the rising coat stays above the water and resumes without a cloth jump when paused, cold loaded or standing
+  ---
+  duration_ms: 1367.186375
+  type: 'test'
+  ...
+# Subtest: the shockwave reaches the aerial checkpoint without teleporting either actual body
+ok 28 - the shockwave reaches the aerial checkpoint without teleporting either actual body
+  ---
+  duration_ms: 245.481583
+  type: 'test'
+  ...
+# Subtest: the second punch releases its guard continuously into the shockwave flight
+ok 29 - the second punch releases its guard continuously into the shockwave flight
+  ---
+  duration_ms: 216.862625
+  type: 'test'
+  ...
+# Subtest: waiting in the counter window never throws an unrequested punch
+ok 30 - waiting in the counter window never throws an unrequested punch
+  ---
+  duration_ms: 213.94175
+  type: 'test'
+  ...
+# Subtest: a delayed first counter lands the real right knuckles on Smith’s posed suit without penetrating it
+ok 31 - a delayed first counter lands the real right knuckles on Smith’s posed suit without penetrating it
+  ---
+  duration_ms: 1392.194042
+  type: 'test'
+  ...
+# first strike at 1.2: skin gap 0.010914473022257717, penetration 0
+# first strike at 0: skin gap 0.010914473037240418, penetration 0
+# first strike at 3.7: skin gap 0.010914473037927093, penetration 0
+# Subtest: the second accepted counter lands the left fist before the shockwave lifts the fighters
+ok 32 - the second accepted counter lands the left fist before the shockwave lifts the fighters
+  ---
+  duration_ms: 1096.787583
+  type: 'test'
+  ...
+# second strike after 0.4: skin gap 0.0010229079936489123, penetration 0
+# second strike after 1.1: skin gap 0.001022908051188633, penetration 0
+# Subtest: both real fists stay outside Smith’s suit throughout each accepted punch
+ok 33 - both real fists stay outside Smith’s suit throughout each accepted punch
+  ---
+  duration_ms: 6313.303209
+  type: 'test'
+  ...
+# maximum penetration across both complete punches: 0.008684808739825911
+# Subtest: the actual wrists and contact surfaces match after cold loading and reverse seeking each punch peak
+ok 34 - the actual wrists and contact surfaces match after cold loading and reverse seeking each punch peak
+  ---
+  duration_ms: 999.589
+  type: 'test'
+  ...
+# Subtest: Smith’s single right hand touches Neo’s actual coat throughout the assimilation hold
+ok 35 - Smith’s single right hand touches Neo’s actual coat throughout the assimilation hold
+  ---
+  duration_ms: 1473.765958
+  type: 'test'
+  ...
+# 0.6: gap 0.009442760475899616; penetration 0
+# 1.2: gap 0.009442760491755369; penetration 0
+# 2.7: gap 0.009442760712791959; penetration 0
+# 3.8: gap 0.009442760546846948; penetration 0
+# 5.3: gap 0.009442760560534018; penetration 0
+# Subtest: the actual final-contact bodies resume identically and do not snap at consent, withdrawal or clearing
+ok 36 - the actual final-contact bodies resume identically and do not snap at consent, withdrawal or clearing
+  ---
+  duration_ms: 515.093292
+  type: 'test'
+  ...
+# Subtest: Smith raises an open hand against the white light without passing the delivered skin through his face
+ok 37 - Smith raises an open hand against the white light without passing the delivered skin through his face
+  ---
+  duration_ms: 637.757791
+  type: 'test'
+  ...
+# Subtest: replacing a streamed Smith releases the temporary duplicate and restores Neo’s original materials
+ok 38 - replacing a streamed Smith releases the temporary duplicate and restores Neo’s original materials
+  ---
+  duration_ms: 210.709958
+  type: 'test'
+  ...
+# Subtest: switching to Neo’s eyes keeps Smith’s internal light visible while hiding the duplicate player body
+ok 39 - switching to Neo’s eyes keeps Smith’s internal light visible while hiding the duplicate player body
+  ---
+  duration_ms: 268.721542
+  type: 'test'
+  ...
+# Subtest: the interior high kick contacts Smith’s real suit with the boot while the other foot supports Neo
+ok 40 - the interior high kick contacts Smith’s real suit with the boot while the other foot supports Neo
+  ---
+  duration_ms: 263.34675
+  type: 'test'
+  ...
+# Subtest: Smith grasps the delivered Neo coat before the second powered dive
+ok 41 - Smith grasps the delivered Neo coat before the second powered dive
+  ---
+  duration_ms: 293.386833
+  type: 'test'
+  ...
+# Subtest: the final player heavy punch reaches Smith’s actual cheek skin and keeps both boots supported
+ok 42 - the final player heavy punch reaches Smith’s actual cheek skin and keeps both boots supported
+  ---
+  duration_ms: 1938.061584
+  type: 'test'
+  ...
+# heavy cheek contact: gap 0.012619159060867767, penetration 0
+# Subtest: the last face counter and Smith’s three replies contact the actual posed surfaces without pushing knuckles through them
+ok 43 - the last face counter and Smith’s three replies contact the actual posed surfaces without pushing knuckles through them
+  ---
+  duration_ms: 7702.259875
+  type: 'test'
+  ...
+# last-bout sampled maximum knuckle penetration: 0.031825885500437634
+# Subtest: the delivered pit bodies do not snap at the punch, collapse, recognition or standing boundaries
+ok 44 - the delivered pit bodies do not snap at the punch, collapse, recognition or standing boundaries
+  ---
+  duration_ms: 357.948625
+  type: 'test'
+  ...
+# Subtest: the final pit bout needs a dodge and a player counter instead of ending automatically
+ok 45 - the final pit bout needs a dodge and a player counter instead of ending automatically
+  ---
+  duration_ms: 3.31775
+  type: 'test'
+  ...
+# Subtest: a failed final counter freezes in the existing crater and retries without undoing the first fight
+ok 46 - a failed final counter freezes in the existing crater and retries without undoing the first fight
+  ---
+  duration_ms: 0.233792
+  type: 'test'
+  ...
+# Subtest: the final bout roots remain continuous at every automatic boundary and after rising
+ok 47 - the final bout roots remain continuous at every automatic boundary and after rising
+  ---
+  duration_ms: 1.144167
+  type: 'test'
+  ...
+# Subtest: old in-progress assault and assimilation saves complete their original ending without replaying the new bout
+ok 48 - old in-progress assault and assimilation saves complete their original ending without replaying the new bout
+  ---
+  duration_ms: 0.097959
+  type: 'test'
+  ...
+1..48
+# tests 48
+# suites 0
+# pass 48
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 29794.517834

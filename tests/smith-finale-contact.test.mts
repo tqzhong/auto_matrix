@@ -56,23 +56,24 @@ async function setup(t: TestContext) {
   const neo = renderer.getAgentBody('neo')!, smith = renderer.getAgentBody('smith')!;
   assert.ok(neo.getObjectByName('wrist_R') instanceof THREE.Bone && smith.getObjectByName('chest') instanceof THREE.Bone, 'use the actual shipped bodies');
   t.after(() => { renderer.dispose(); if (previous) Object.defineProperty(globalThis, 'document', previous); else Reflect.deleteProperty(globalThis, 'document'); });
-  return { renderer, neo, smith, save, frame };
+  return { renderer, neo, smith, actors, save, frame };
 }
 
-function fist(body: THREE.Group, side: 'R' | 'L') {
+function fist(body: THREE.Group, side: 'R' | 'L', thumb = false) {
   const wrist = body.getObjectByName(`wrist_${side}`)!, samples: { local: THREE.Vector3; world: THREE.Vector3 }[] = [];
   body.traverseVisible(object => {
     if (!(object instanceof THREE.SkinnedMesh) || (object.material as THREE.Material).name !== 'Skin') return;
     const joints = object.geometry.attributes.skinIndex, weights = object.geometry.attributes.skinWeight;
     for (let i = 0; i < object.geometry.attributes.position.count; i++) {
       let weight = 0;
-      for (let k = 0; k < 4; k++) if (new RegExp(`^finger[2345]-[12]_${side}$`).test(object.skeleton.bones[joints.getComponent(i, k)].name)) weight += weights.getComponent(i, k);
+      for (let k = 0; k < 4; k++) if (new RegExp(thumb ? `^finger1-[123]_${side}$` : `^finger[2345]-[12]_${side}$`).test(object.skeleton.bones[joints.getComponent(i, k)].name)) weight += weights.getComponent(i, k);
       if (weight < .6) continue;
       const world = object.localToWorld(object.getVertexPosition(i, new THREE.Vector3()));
       samples.push({ world, local: wrist.worldToLocal(world.clone()) });
     }
   });
-  assert.ok(samples.length > 1000, 'sample the actual index-to-little-finger skin rather than wrist bones');
+  assert.ok(samples.length > (thumb ? 100 : 1000), 'sample the actual finger skin rather than wrist bones');
+  if (thumb) return samples.map(point => point.world);
   const leading = Math.min(...samples.map(point => point.local.y));
   return samples.filter(point => point.local.y < leading + .025).map(point => point.world);
 }
@@ -112,8 +113,8 @@ function face(body: THREE.Group) {
   return { bone, triangles };
 }
 
-function contact(neo: THREE.Group, smith: THREE.Group, side: 'R' | 'L', faceHit = false) {
-  const target = faceHit ? face(smith) : chest(smith), points = fist(neo, side).map(point => target.bone.worldToLocal(point));
+function contact(neo: THREE.Group, smith: THREE.Group, side: 'R' | 'L', faceHit = false, thumb = false) {
+  const target = faceHit ? face(smith) : chest(smith), points = fist(neo, side, thumb).map(point => target.bone.worldToLocal(point));
   const closest = new THREE.Vector3(), crossing = new THREE.Vector3(), ray = new THREE.Ray();
   let gap = Infinity, penetration = 0;
   for (const point of points) {
@@ -559,6 +560,58 @@ test('the last face counter and Smith’s three replies contact the actual posed
     assert.ok(contact(h.smith, h.neo, side === 'R' ? 'L' : 'R').gap > .15, 'the defending hand cannot copy the attacking fist');
   }
   t.diagnostic(`last-bout sampled maximum knuckle penetration: ${deepest}`);
+});
+
+test('the slow face punch compresses the actual cheek and releases it without deforming the shared actor asset', async t => {
+  const h = await setup(t), skin = h.smith.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
+  const original = skin.geometry, source = Array.from(original.attributes.position.array);
+  const beat: SmithFinaleEncounter = { ...newSmithFinale(), phase: 'pit_punch', elapsed: 0, total: 70, checkpoint: 'pit', impactAt: 51, pitFight: true };
+  const head = h.smith.getObjectByName('head')!, samples: number[] = [];
+  const { skinIndex, skinWeight, position } = original.attributes;
+  for (let i = 0; i < position.count; i++) {
+    let weight = 0;
+    for (let k = 0; k < 4; k++) if (skin.skeleton.bones[skinIndex.getComponent(i, k)].name === 'head') weight += skinWeight.getComponent(i, k);
+    if (weight > .999999) samples.push(i);
+  }
+  assert.ok(samples.length > 1000, 'measure fully head-bound skin independently of neck bending');
+  const points = () => samples.map(i => head.worldToLocal(skin.localToWorld(skin.getVertexPosition(i, new THREE.Vector3()))));
+  h.frame(beat); const resting = points();
+  h.frame({ ...beat, elapsed: .95 }); const struck = points();
+  const compressed = resting.map((p, i) => p.z - struck[i].z);
+  assert.ok(Math.max(...compressed) > .035, 'the delivered cheek must compress visibly instead of only rotating a rigid head');
+  assert.ok(Math.max(...resting.map((p, i) => p.distanceTo(struck[i]))) < .07, 'local soft tissue cannot collapse the whole head');
+  resting.forEach((point, i) => {
+    if (point.y > .12 || point.z < 0 || point.x > .1) {
+      assert.ok(point.distanceTo(struck[i]) < .00001, `the upper eyes, back of the head and opposite cheek keep their shape: ${point.toArray()} moved ${point.distanceTo(struck[i])}`);
+      const normal = new THREE.Vector3().fromBufferAttribute(original.attributes.normal, samples[i]);
+      const target = new THREE.Vector3().fromBufferAttribute(skin.geometry.morphAttributes.normal[0], samples[i]);
+      assert.ok(normal.distanceTo(target) < .01, 'unstruck skin retains its original shading instead of acquiring dark eye sockets');
+    }
+  });
+  assert.deepEqual(Array.from(original.attributes.position.array), source, 'other Smith bodies retain the shared original skin');
+  const cold = new AgentRenderer(new THREE.Scene());
+  try {
+    h.save({ ...beat, elapsed: .95 }, cold); await new Promise(resolve => setImmediate(resolve)); h.frame({ ...beat, elapsed: .95 }, cold);
+    const body = cold.getAgentBody('smith')!, coldHead = body.getObjectByName('head')!;
+    const coldSkin = body.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
+    samples.forEach((id, i) => assert.ok(coldHead.worldToLocal(coldSkin.localToWorld(coldSkin.getVertexPosition(id, new THREE.Vector3()))).distanceTo(struck[i]) < .00001,
+      'a cold load in the impact must restore the same actual face surface'));
+  } finally { cold.dispose(); }
+  h.frame({ ...beat, elapsed: SMITH_FINALE.pit.punch });
+  points().forEach((point, i) => assert.ok(point.distanceTo(resting[i]) < .00001, 'the cheek returns after the fist leaves'));
+  for (const actor of h.actors) { actor.currentAction = undefined; h.renderer.updateAgent(actor.id, actor); }
+  h.renderer.update(0, undefined, 0);
+  assert.equal(skin.geometry, original, 'leaving the sequence releases its private face geometry');
+});
+
+test('the actual thumb stays outside the deformed cheek throughout the face contact interval', async t => {
+  const h = await setup(t); let deepest = 0;
+  for (const elapsed of [.72, .95, 1.02]) {
+    h.frame({ ...newSmithFinale(), phase: 'pit_punch', elapsed, total: 70 + elapsed, checkpoint: 'pit', impactAt: 51, pitFight: true });
+    const measured = contact(h.neo, h.smith, 'R', true, true); deepest = Math.max(deepest, measured.penetration);
+    assert.ok(measured.penetration < .035, `the thumb goes through Smith's actual cheek at ${elapsed}: ${measured.penetration}`);
+  }
+  t.diagnostic(`sampled thumb penetration: ${deepest}`);
 });
 
 test('the delivered pit bodies do not snap at the punch, collapse, recognition or standing boundaries', async t => {

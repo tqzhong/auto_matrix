@@ -1,0 +1,28 @@
+TAP version 13
+# Subtest: the slow face punch compresses the actual cheek and releases it without deforming the shared actor asset
+not ok 1 - the slow face punch compresses the actual cheek and releases it without deforming the shared actor asset
+  ---
+  duration_ms: 610.973917
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/smith-finale-contact.test.mts:1:32283'
+  failureType: 'testCodeFailure'
+  error: 'the delivered cheek must compress visibly instead of only rotating a rigid head'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/smith-finale-contact.test.mts:579:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1045.404083
