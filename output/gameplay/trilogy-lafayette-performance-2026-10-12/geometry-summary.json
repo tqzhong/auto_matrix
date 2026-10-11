@@ -1,0 +1,11 @@
+{
+  "inputVertices": 656177,
+  "indexedVertices": 238095,
+  "indexedBytes": 9167040,
+  "triangleCorners": 774000,
+  "oldBatchVertices": 774000,
+  "oldBatchBytes": 24768000,
+  "vertexReductionPercent": 69.23837209302326,
+  "bufferReductionPercent": 62.98837209302326,
+  "comparison": "Actual final test enumerates every triangle attribute before and after room batching; old nonindexed byte count is derived from 32-byte position/normal/uv records per triangle corner."
+}

@@ -1,0 +1,37 @@
+TAP version 13
+# Subtest: Lafayette batching reuses shared vertices without changing any triangle, surface normal, UV or shadow caster
+not ok 1 - Lafayette batching reuses shared vertices without changing any triangle, surface normal, UV or shadow caster
+  ---
+  duration_ms: 1555.938833
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/film-batching.test.mts:1:483'
+  failureType: 'testCodeFailure'
+  error: |-
+    batching must not expand already shared furniture vertices into three independent triangle corners
+
+    false !== true
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    FilmSetRenderer.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/film-batching.test.mts:41:12)
+    Object.apply (node:internal/test_runner/mock/mock:765:20)
+    FilmSetRenderer.update (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/engine/FilmSetRenderer.ts:343:33)
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/film-batching.test.mts:55:18)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2407.021584

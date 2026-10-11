@@ -1,0 +1,20 @@
+{
+  "agents": false,
+  "chunks": true,
+  "locations": true,
+  "events": true,
+  "sandbox": true,
+  "simulation": true,
+  "phase_time": true,
+  "changed_agents": [
+    {
+      "id": "neo",
+      "fields": [
+        "currentAction"
+      ]
+    }
+  ],
+  "simulation_changes": {},
+  "memory_count": 7,
+  "memories_equal": true
+}

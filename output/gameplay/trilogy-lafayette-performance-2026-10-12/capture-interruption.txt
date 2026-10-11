@@ -1,0 +1,2 @@
+Observed tool error, recorded as a note (not a raw process log):
+The before-restart capture command was still running when the QA backend was stopped. Its second GET /api/world failed with ECONNREFUSED 127.0.0.1:3159, and the dependent comparison could not find before-restart-world.json. No before-restart snapshot was produced. The server was subsequently restarted from its saved world and compared against baseline-loaded instead; restart-one-comparison.json is the actual result.

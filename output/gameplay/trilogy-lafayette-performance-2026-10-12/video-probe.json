@@ -1,0 +1,202 @@
+[
+  {
+    "file": "output/gameplay/neo-longplay-2026-09-20/neo-2026-10-11T19-57-41-769Z.webm",
+    "bytes": 107688421,
+    "sha256": "26ca8b75061ac1b3b3c26cd4bafcfd5a06ba97749d38817ee79fc26f028d0948",
+    "recorderMetadata": {
+      "file": "neo-2026-10-11T19-57-41-769Z.webm",
+      "duration": 543.8441999998092,
+      "width": 1280,
+      "height": 720,
+      "audio": true,
+      "frames": 7446,
+      "rendering": {
+        "frames": 10727,
+        "fps": 19.723227548243653,
+        "p95FrameMs": 187.2999997138977,
+        "includesRecordingOverhead": true
+      },
+      "markers": [
+        {
+          "seconds": 0.1365,
+          "title": "最终索引几何 · 红药到追踪椅"
+        }
+      ]
+    },
+    "streams": [
+      {
+        "index": 0,
+        "codec_name": "opus",
+        "codec_type": "audio",
+        "r_frame_rate": "0/0",
+        "avg_frame_rate": "0/0",
+        "disposition": {
+          "default": 1,
+          "dub": 0,
+          "original": 0,
+          "comment": 0,
+          "lyrics": 0,
+          "karaoke": 0,
+          "forced": 0,
+          "hearing_impaired": 0,
+          "visual_impaired": 0,
+          "clean_effects": 0,
+          "attached_pic": 0,
+          "timed_thumbnails": 0,
+          "non_diegetic": 0,
+          "captions": 0,
+          "descriptions": 0,
+          "metadata": 0,
+          "dependent": 0,
+          "still_image": 0,
+          "multilayer": 0
+        },
+        "tags": {
+          "language": "eng"
+        },
+        "packetCount": 9063,
+        "startSeconds": 0.0,
+        "endSeconds": 543.781,
+        "spanSeconds": 543.781
+      },
+      {
+        "index": 1,
+        "codec_name": "vp9",
+        "codec_type": "video",
+        "width": 1280,
+        "height": 720,
+        "r_frame_rate": "1000/1",
+        "avg_frame_rate": "0/0",
+        "disposition": {
+          "default": 1,
+          "dub": 0,
+          "original": 0,
+          "comment": 0,
+          "lyrics": 0,
+          "karaoke": 0,
+          "forced": 0,
+          "hearing_impaired": 0,
+          "visual_impaired": 0,
+          "clean_effects": 0,
+          "attached_pic": 0,
+          "timed_thumbnails": 0,
+          "non_diegetic": 0,
+          "captions": 0,
+          "descriptions": 0,
+          "metadata": 0,
+          "dependent": 0,
+          "still_image": 0,
+          "multilayer": 0
+        },
+        "tags": {
+          "language": "eng",
+          "alpha_mode": "1"
+        },
+        "packetCount": 6364,
+        "startSeconds": 0.001,
+        "endSeconds": 543.5889999999999,
+        "spanSeconds": 543.588
+      }
+    ]
+  },
+  {
+    "file": "output/gameplay/neo-longplay-2026-09-20/neo-2026-10-11T20-09-00-670Z.webm",
+    "bytes": 6159797,
+    "sha256": "2b6a3945b3dfc018b98a357ec3615516b613b5769246c49af45b5474c8e54beb",
+    "recorderMetadata": {
+      "file": "neo-2026-10-11T20-09-00-670Z.webm",
+      "duration": 40.52540000009537,
+      "width": 1280,
+      "height": 720,
+      "audio": true,
+      "frames": 650,
+      "rendering": {
+        "frames": 1108,
+        "fps": 27.329217080948457,
+        "p95FrameMs": 126.90000009536743,
+        "includesRecordingOverhead": true
+      },
+      "markers": [
+        {
+          "seconds": 10.939400000095368,
+          "title": "真实重启续玩 · 触镜至培养舱"
+        }
+      ]
+    },
+    "streams": [
+      {
+        "index": 0,
+        "codec_name": "opus",
+        "codec_type": "audio",
+        "r_frame_rate": "0/0",
+        "avg_frame_rate": "0/0",
+        "disposition": {
+          "default": 1,
+          "dub": 0,
+          "original": 0,
+          "comment": 0,
+          "lyrics": 0,
+          "karaoke": 0,
+          "forced": 0,
+          "hearing_impaired": 0,
+          "visual_impaired": 0,
+          "clean_effects": 0,
+          "attached_pic": 0,
+          "timed_thumbnails": 0,
+          "non_diegetic": 0,
+          "captions": 0,
+          "descriptions": 0,
+          "metadata": 0,
+          "dependent": 0,
+          "still_image": 0,
+          "multilayer": 0
+        },
+        "tags": {
+          "language": "eng"
+        },
+        "packetCount": 673,
+        "startSeconds": 0.0,
+        "endSeconds": 40.38,
+        "spanSeconds": 40.38
+      },
+      {
+        "index": 1,
+        "codec_name": "vp9",
+        "codec_type": "video",
+        "width": 1280,
+        "height": 720,
+        "r_frame_rate": "1000/1",
+        "avg_frame_rate": "0/0",
+        "disposition": {
+          "default": 1,
+          "dub": 0,
+          "original": 0,
+          "comment": 0,
+          "lyrics": 0,
+          "karaoke": 0,
+          "forced": 0,
+          "hearing_impaired": 0,
+          "visual_impaired": 0,
+          "clean_effects": 0,
+          "attached_pic": 0,
+          "timed_thumbnails": 0,
+          "non_diegetic": 0,
+          "captions": 0,
+          "descriptions": 0,
+          "metadata": 0,
+          "dependent": 0,
+          "still_image": 0,
+          "multilayer": 0
+        },
+        "tags": {
+          "language": "eng",
+          "alpha_mode": "1"
+        },
+        "packetCount": 529,
+        "startSeconds": 0.008,
+        "endSeconds": 40.294999999999995,
+        "spanSeconds": 40.28699999999999
+      }
+    ]
+  }
+]

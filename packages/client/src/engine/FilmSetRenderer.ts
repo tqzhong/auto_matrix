@@ -34,7 +34,7 @@ import { BaneCopyRenderer } from './BaneCopyRenderer.js';
 import * as THREE from 'three';
 import { workdayLocked, type OfficeWorkday } from '@auto_matrix/shared';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { createMirrorSurface } from './MirrorSurface.js';
 import { trackingContact } from '../agents/TrackingContact.js';
@@ -2656,7 +2656,10 @@ export class FilmSetRenderer {
       if (!(object instanceof THREE.Mesh) || Array.isArray(object.material)) return;
       let ancestor: THREE.Object3D | null = object; while (ancestor && ancestor !== this.root) { if (ancestor.userData.dynamic) return; ancestor = ancestor.parent; }
       const geometry = object.geometry.clone().applyMatrix4(inverse.clone().multiply(object.matrixWorld));
-      const normalized = geometry.index ? geometry.toNonIndexed() : geometry;
+      // The padded chairs share many triangle corners. Preserve that reuse,
+      // including normals and UVs so hard edges and texture seams stay separate.
+      const normalized = this.current?.id === 'film_lafayette' ? mergeVertices(geometry, 1e-6)
+        : geometry.index ? geometry.toNonIndexed() : geometry;
       if (normalized !== geometry) geometry.dispose();
       // All generated mesh primitives carry position, normal and uv. Extraneous attributes are not needed.
       for (const name of Object.keys(normalized.attributes)) if (!['position', 'normal', 'uv'].includes(name)) normalized.deleteAttribute(name);

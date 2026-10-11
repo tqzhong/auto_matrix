@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: Lafayette batching reuses shared vertices without changing any triangle, surface normal, UV or shadow caster
+ok 1 - Lafayette batching reuses shared vertices without changing any triangle, surface normal, UV or shadow caster
+  ---
+  duration_ms: 9395.949
+  type: 'test'
+  ...
+# Subtest: the Lafayette meeting has low window sills, recessed wall panels and a solid arched fireplace
+ok 2 - the Lafayette meeting has low window sills, recessed wall panels and a solid arched fireplace
+  ---
+  duration_ms: 17672.252208
+  type: 'test'
+  ...
+# Subtest: worn stair nosings stay flush with the surface used for foot contact
+ok 3 - worn stair nosings stay flush with the surface used for foot contact
+  ---
+  duration_ms: 21615.663167
+  type: 'test'
+  ...
+# Subtest: opening 1313 clears the visible doorway as well as its collision
+ok 4 - opening 1313 clears the visible doorway as well as its collision
+  ---
+  duration_ms: 619.919
+  type: 'test'
+  ...
+# Subtest: each knuckle impact briefly gives the closed 1313 door
+ok 5 - each knuckle impact briefly gives the closed 1313 door
+  ---
+  duration_ms: 353.456792
+  type: 'test'
+  ...
+# Subtest: Trinity can visibly pass through the adjacent room door after Morpheus nods
+ok 6 - Trinity can visibly pass through the adjacent room door after Morpheus nods
+  ---
+  duration_ms: 511.627584
+  type: 'test'
+  ...
+# Subtest: Lafayette windows, fireplace and tracking passage have matching visible geometry and access
+ok 7 - Lafayette windows, fireplace and tracking passage have matching visible geometry and access
+  ---
+  duration_ms: 15204.201083
+  type: 'test'
+  ...
+# Subtest: a film set with its own sun must not redraw a zero-intensity global shadow, and leaving restores daylight shadows
+ok 8 - a film set with its own sun must not redraw a zero-intensity global shadow, and leaving restores daylight shadows
+  ---
+  duration_ms: 9.438542
+  type: 'test'
+  ...
+# Subtest: fixed siblings share draws without changing textured surfaces, animated parents, or moving parts
+ok 9 - fixed siblings share draws without changing textured surfaces, animated parents, or moving parts
+  ---
+  duration_ms: 31.722125
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 24631.031417

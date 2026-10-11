@@ -1,0 +1,39 @@
+{
+  "counts": {
+    "nodes": 125,
+    "steps": 365,
+    "sets": 70
+  },
+  "start": {
+    "tick": 4670,
+    "scene": "m1_pills",
+    "step": 0,
+    "pills": {
+      "phase": "talking",
+      "elapsed": 1.2820000000000003,
+      "conversation": {
+        "beat": 1,
+        "belief": "agency"
+      },
+      "approach": {
+        "x": 0.004816718095753458,
+        "z": -3.3701211099441934,
+        "yaw": 3.0730089765091035
+      }
+    }
+  },
+  "mirror": {
+    "tick": 5682,
+    "scene": "m1_mirror",
+    "elapsed": 12.525,
+    "mirrorTime": 4.755000000000001
+  },
+  "end": {
+    "tick": 5688,
+    "scene": "m1_pod",
+    "step": 0,
+    "running": false,
+    "controllers": [],
+    "completedMirror": true
+  }
+}
