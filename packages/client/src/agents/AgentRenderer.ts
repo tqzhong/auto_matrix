@@ -83,7 +83,10 @@ export class AgentRenderer {
     this.shadowMaterial = new THREE.MeshBasicMaterial({ map: this.shadowTexture, transparent: true, opacity: .55, depthWrite: false, toneMapped: false });
   }
 
-  private carriedBody(state: AgentState): boolean {
+  private bodyPresent(state: AgentState): boolean {
+    // The film set renders the collective as machinery, never as a second human below the platform.
+    if (state.id === 'deus_ex_machina' && state.currentLocation === 'film_machine_core') return false;
+    if (state.status !== 'disconnected') return true;
     const epilogue = state.currentAction?.parameters.epilogue as MotionInput['epilogue'];
     return state.id === 'neo' && !state.isInMatrix && state.currentLocation === 'film_machine_core'
       && state.currentAction?.parameters.finaleComa === true && epilogue?.kind === 'neo_carried' && epilogue.role === 'neo';
@@ -155,7 +158,7 @@ export class AgentRenderer {
     entry.sixthElapsed = (state.currentAction?.parameters.sixth as MotionInput['sixth'])?.elapsed;
     entry.bathroomElapsed = (state.currentAction?.parameters.bathroom as MotionInput['bathroom'])?.elapsed;
     entry.state = state;
-    entry.group.visible = state.isInMatrix === this.matrix && (state.status !== 'disconnected' || this.carriedBody(state));
+    entry.group.visible = state.isInMatrix === this.matrix && this.bodyPresent(state);
   }
 
   setSelected(id: string | null): void { this.selected = id; }
@@ -163,7 +166,7 @@ export class AgentRenderer {
   setPlayerMotion(motion: MotionInput): void { this.playerMotion = motion; }
   setWorld(matrix: boolean): void {
     this.matrix = matrix;
-    for (const entry of this.agents.values()) entry.group.visible = entry.state.isInMatrix === matrix;
+    for (const entry of this.agents.values()) entry.group.visible = entry.state.isInMatrix === matrix && this.bodyPresent(entry.state);
   }
   getAgent(id: string): THREE.Group | null { return this.agents.get(id)?.group ?? null; }
   getAgentBody(id: string): THREE.Group | undefined { return this.agents.get(id)?.body; }
@@ -297,7 +300,7 @@ export class AgentRenderer {
       const phoneExit = journey?.scene === 'm1_phone_escape' && journey.actor === id && ['connected', 'done'].includes(journey.openingPhone?.phase ?? '');
       const rescueBystander = journey?.scene === 'm2_catch' && !journey.visiting && state.currentLocation === 'film_trinity_roof'
         && !['neo', 'trinity', 'agent_thompson'].includes(id) && !state.controller;
-      const bodyPresent = state.status !== 'disconnected' || this.carriedBody(state);
+      const bodyPresent = this.bodyPresent(state);
       entry.group.visible = state.isInMatrix === this.matrix && bodyPresent && !phoneExit && !rescueBystander;
       const doorActor = journey?.scene === 'm3_hel_entry' && !journey.visiting && journey.actor === id && state.status === 'alive' && state.currentLocation === 'film_club_hel';
       const fastDoor = doorActor ? (id === this.playerId ? this.playerMotion?.helDoorPush : undefined)

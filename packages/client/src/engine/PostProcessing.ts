@@ -15,7 +15,7 @@ export class WorldOcclusionPass extends GTAOPass {
     this.scene.traverseVisible(object => {
       // A mirror may have selected another detail level in the color pass.
       if (object instanceof THREE.LOD && object.autoUpdate) object.update(this.camera);
-      if (object instanceof THREE.Points || object instanceof THREE.Line || object instanceof THREE.Sprite || (object instanceof THREE.Mesh && !Array.isArray(object.material) && !object.material.depthWrite)) {
+      if (object.userData.distantBackdrop || object instanceof THREE.Points || object instanceof THREE.Line || object instanceof THREE.Sprite || (object instanceof THREE.Mesh && !Array.isArray(object.material) && !object.material.depthWrite)) {
         object.visible = false; this.suppressed.push(object);
       }
     });

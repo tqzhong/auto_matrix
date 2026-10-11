@@ -98,6 +98,23 @@ test('the completed transport keeps the disconnected physical body visible witho
   assert.equal(actor.getAgent('neo')!.visible, false, 'ordinary disconnected avatars stay hidden');
 });
 
+test('the machine collective cannot leave a generic human avatar floating below the carried body', async t => {
+  const h = await setup(t), renderer = h.create(true);
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const state = structuredClone(world.agents.get('deus_ex_machina')!);
+  state.currentLocation = 'film_machine_core'; state.isInMatrix = false;
+  state.position = { ...FILM_SETS.film_machine_core.center, y: -124 };
+  const saved = structuredClone(state);
+  renderer.updateAgent(state.id, state); await new Promise(resolve => setImmediate(resolve));
+  assert.equal(renderer.getAgent(state.id)!.visible, false, 'the set already supplies the mechanical collective');
+  for (const player of ['neo', 'deus_ex_machina', null]) {
+    renderer.setPlayer(player, false); renderer.setWorld(false); renderer.update(0, undefined, 0);
+    assert.equal(renderer.getAgent(state.id)!.visible, false, 'possession or world toggling cannot reveal a second human representation');
+    assert.equal(renderer.getAgentBody(state.id)!.visible, false);
+  }
+  assert.deepEqual(state, saved, 'visual representation cannot move, kill or rewrite the persistent collective');
+});
+
 test('the carrier supports the delivered body and withdraws the existing uplink from its real ports', async t => {
   const h = await setup(t), actor = h.create(true), stage = new THREE.Group(), center = FILM_SETS.film_machine_core.center;
   stage.position.set(center.x, center.y - 1, center.z);
