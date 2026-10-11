@@ -8,6 +8,7 @@ import { SimplifyModifier } from 'three/addons/modifiers/SimplifyModifier.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { HeroModels } from '../packages/client/src/agents/HeroModel.js';
 import { advanceMotion, newMotion } from '../packages/client/src/agents/CharacterMotion.js';
+import { reach } from '../packages/client/src/agents/SpoonPerformance.js';
 
 function glb(document: object, binary: Buffer): Buffer {
   const json = Buffer.from(JSON.stringify(document)), padded = Buffer.alloc(Math.ceil(json.length / 4) * 4, 32); json.copy(padded);
@@ -97,13 +98,32 @@ for (const sex of ['male', 'female'] as const) {
     }
     return material;
   });
-  const targets = ['right_half', 'right_raised', 'left_half', 'left_raised'];
+  const targets = ['right_half', 'right_raised', 'left_half', 'left_raised', 'clap_open', 'clap_closed', 'look_left', 'look_right'];
   const frames = [grouped.map(surface => mergeGeometries(surface.meshes.map(bake))!)];
   pose();
   const wrists: Record<string, number[][]> = { neutral: ['R', 'L'].map(name => rig.bones.get(`wrist_${name}`)!.getWorldPosition(new THREE.Vector3()).toArray()) };
   for (const [side, raised] of [[0, .5], [0, 1], [1, .5], [1, 1]]) {
     pose(side, raised); frames.push(grouped.map(surface => mergeGeometries(surface.meshes.map(bake))!));
     wrists[targets[frames.length - 2]] = ['R', 'L'].map(name => rig.bones.get(`wrist_${name}`)!.getWorldPosition(new THREE.Vector3()).toArray());
+  }
+  for (const open of [true, false]) {
+    pose();
+    for (const [i, side] of ['R', 'L'].entries()) {
+      const sign = i ? 1 : -1, wrist = rig.bones.get(`wrist_${side}`)!, elbow = rig.bones.get(`elbow_${side}`)!;
+      const rotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -sign * Math.PI / 2, Math.PI));
+      const target = new THREE.Vector3(sign * (open ? .50 : .18), sex === 'female' ? 2.72 : 2.83, .79);
+      reach(rig.bones.get(`shoulder_${side}`)!, elbow, wrist.position, target,
+        new THREE.Vector3(sign, -.6, -.3));
+      wrist.quaternion.copy(elbow.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rotation));
+      for (let finger = 1; finger <= 5; finger++) for (let joint = 1; joint <= 3; joint++)
+        rig.bones.get(`finger${finger}-${joint}_${side}`)!.rotation.set(0, 0, finger === 1 ? -sign * .12 : 0);
+    }
+    rig.root.updateMatrixWorld(true);
+    frames.push(grouped.map(surface => mergeGeometries(surface.meshes.map(bake))!));
+  }
+  for (const turn of [-.42, .42]) {
+    pose(); rig.bones.get('head')!.rotation.set(-.06, turn, 0); rig.root.updateMatrixWorld(true);
+    frames.push(grouped.map(surface => mergeGeometries(surface.meshes.map(bake))!));
   }
   const budgets = [2100, 660, 640, 340, 90, 900], reduced: THREE.BufferGeometry[] = [], statistics: object[] = [];
   const bounds = new THREE.Box3();
@@ -141,7 +161,7 @@ for (const sex of ['male', 'female'] as const) {
     materials, images: original.images, textures: original.textures, samplers: original.samplers,
     extras: { source: `club-${sex}.glb`, sourceSha256: createHash('sha256').update(source).digest('hex'),
       sourceRevision: original.extras.sourceRevision, height: bounds.max.y - bounds.min.y, soleY: 0,
-      pose: 'lowered arms, two samples per cheering arm', targets, wrists, statistics } };
+      pose: 'lowered arms, cheering arcs, opposing applause and head turns', targets, wrists, statistics } };
   function accessor(array: Float32Array | Uint16Array, type: string, size: number): number {
     const bytes = Buffer.from(array.buffer, array.byteOffset, array.byteLength), padded = Buffer.alloc(Math.ceil(bytes.length / 4) * 4); bytes.copy(padded);
     const view = document.bufferViews.length; document.bufferViews.push({ buffer: 0, byteOffset: offset, byteLength: bytes.length }); chunks.push(padded); offset += padded.length;

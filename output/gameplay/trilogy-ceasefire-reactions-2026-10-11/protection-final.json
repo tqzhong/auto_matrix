@@ -1,0 +1,53 @@
+{
+  "unexpectedChanges": [],
+  "protectedCount": 225,
+  "changedFiles": [
+    "/Users/tianqizhong/ai_project/auto_matrix/packages/client/public/assets/characters/ZION-CROWD.md"
+  ],
+  "main": {
+    "agents": true,
+    "chunks": true,
+    "locations": true,
+    "events": true,
+    "sandbox": true,
+    "simulation": true,
+    "phase": true,
+    "timeOfDay": true
+  },
+  "history": {
+    "completed": true,
+    "choices": true,
+    "reflections": true,
+    "journal": true,
+    "dead": true
+  },
+  "oldCounts": {
+    "completed": 48,
+    "choices": 45,
+    "reflections": 18,
+    "journal": 69
+  },
+  "dead": [
+    "trinity",
+    "smith",
+    "mifune",
+    "soren",
+    "maggie",
+    "bane",
+    "axel",
+    "charra",
+    "agent_thompson",
+    "keymaker"
+  ],
+  "final": {
+    "tick": 13563,
+    "scene": "m3_neo_carried",
+    "step": 0,
+    "encounter": {
+      "kind": "neo_carried",
+      "phase": "ready",
+      "elapsed": 0,
+      "total": 0
+    }
+  }
+}

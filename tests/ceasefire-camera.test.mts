@@ -24,10 +24,10 @@ function fixture(t: TestContext) {
   const scenery = new THREE.Group(); root.add(scenery);
   const temple = new ZionHomecomingRenderer(scenery, 'film_zion_temple'), epilogue = new TrilogyEpilogueRenderer(root, 'ceasefire');
   let time = 2000; t.mock.method(performance, 'now', () => time);
-  const step = (elapsed: number, phase: TrilogyEpilogueGesture['phase'] = 'retreat') => {
+  const step = (elapsed: number, phase: TrilogyEpilogueGesture['phase'] = 'retreat', completed: string[] = []) => {
     const gesture: TrilogyEpilogueGesture = { ...newTrilogyEpilogue('ceasefire'), role: 'kid', phase, elapsed, total: elapsed };
     state.currentAction = { type: 'idle', parameters: { epilogue: gesture }, startedAt: 0, duration: 1e9, progress: 0 };
-    temple.update({ scene: 'm3_ceasefire', step: 1, completed: [], epilogue: gesture } as any, 0); epilogue.update(gesture, 10000);
+    temple.update({ scene: 'm3_ceasefire', step: 1, completed, epilogue: gesture } as any, 0); epilogue.update(gesture, 10000);
     time += 100; controls.update(.1, state, player, false); root.updateMatrixWorld(true); camera.updateMatrixWorld(true);
   };
   const toggle = () => window.dispatchEvent(Object.assign(new Event('keydown'), { code: 'KeyV', repeat: false }));
@@ -58,6 +58,41 @@ test('the withdrawal shot keeps all eighteen machines in frame instead of cuttin
     const matrix = h.camera.matrixWorld.toArray(); h.step(elapsed); assert.deepEqual(h.camera.matrixWorld.toArray(), matrix, 'pause cannot move the shot');
     h.controls.possess(structuredClone(h.state)); h.step(elapsed);
     assert.deepEqual(h.camera.matrixWorld.toArray(), matrix, 'a restored shot must not depend on its previous frame');
+  }
+});
+
+test('the real post-breach withdrawal is visible beyond the completed temple roof and drilling machine', t => {
+  const h = fixture(t), completed = ['m3_temple_defense', 'm3_temple_breach'];
+  for (const aspect of [16 / 9, .65]) for (const elapsed of [0, .8, 2.65, 4.9]) {
+    h.camera.aspect = aspect; h.camera.updateProjectionMatrix(); h.controls.possess(h.state); h.step(elapsed, 'retreat', completed);
+    for (let i = 1; i <= 18; i++) {
+      const target = h.root.getObjectByName(`ceasefire-retreating-sentinel-${i}`)!.getWorldPosition(new THREE.Vector3());
+      const projected = target.clone().project(h.camera), direction = target.clone().sub(h.camera.position);
+      assert.ok(Math.abs(projected.x) < .94 && Math.abs(projected.y) < .82 && projected.z > -1 && projected.z < 1);
+      const hits = new THREE.Raycaster(h.camera.position, direction.clone().normalize(), .06, direction.length() - 1.4)
+        .intersectObject(h.scenery, true).filter(hit => {
+          for (let parent: THREE.Object3D | null = hit.object; parent; parent = parent.parent) if (!parent.visible) return false;
+          return !(hit.object.material as THREE.Material).transparent;
+        });
+      assert.equal(hits.length, 0, `${aspect}/${elapsed}/${i}: ${hits.map(hit => hit.object.name || hit.object.parent?.name)}`);
+    }
+  }
+});
+
+test('retreating bodies pass through the existing roof bore after the drill has withdrawn', t => {
+  const h = fixture(t), center = FILM_SETS.film_zion_temple.center;
+  for (let frame = 0; frame < 100; frame++) {
+    h.step(frame * .052, 'retreat', ['m3_temple_breach']);
+    const drill = h.root.getObjectByName('temple-city-digger')!.getWorldPosition(new THREE.Vector3());
+    for (let i = 1; i <= 18; i++) {
+      const body = h.root.getObjectByName(`ceasefire-retreating-sentinel-${i}`)!.getWorldPosition(new THREE.Vector3());
+      const localY = body.y - (center.y - 1);
+      if (localY > 23 && localY < 40) {
+        assert.ok(Math.hypot(body.x - center.x, body.z - (center.z - 105)) < 5.6,
+          `frame ${frame}/${i}: the body and trailing arms must fit the roof opening`);
+        assert.ok(drill.y - body.y > 15, `frame ${frame}/${i}: the withdrawing drill must clear the following bodies`);
+      }
+    }
   }
 });
 

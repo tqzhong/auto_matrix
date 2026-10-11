@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { STREET_RESET, neoCarryPose, newTrilogyEpilogue, streetResetPose, trilogyEpilogueProgress, type TrilogyEpilogueEncounter, type TrilogyEpilogueKind } from '@auto_matrix/shared';
+import { STREET_RESET, ceasefireSentinelPose, neoCarryPose, newTrilogyEpilogue, streetResetPose, trilogyEpilogueProgress, type TrilogyEpilogueEncounter, type TrilogyEpilogueKind } from '@auto_matrix/shared';
 import { MachineUplinkContacts } from './MachineUplinkContacts.js';
 import { SunriseGardenRenderer } from './SunriseGardenRenderer.js';
 import { reach } from '../agents/SpoonPerformance.js';
@@ -48,7 +48,7 @@ export class TrilogyEpilogueRenderer {
   }
   private buildCeasefire(): void {
     this.sentinels = new CeasefireSentinels(this.group);
-    const beacon = new THREE.PointLight(0x87dfaa, 0, 52, 2); beacon.position.set(0, 15, -45); this.group.add(beacon); this.lights.add(beacon);
+    const beacon = new THREE.PointLight(0xa5becd, 0, 75, 2); beacon.position.set(0, 15, -45); this.group.add(beacon); this.lights.add(beacon);
   }
 
   private buildCarried(): void {
@@ -306,7 +306,12 @@ export class TrilogyEpilogueRenderer {
     if (this.kind === 'ceasefire') {
       const retreat = phase === 'retreat' ? progress : ['message_ready', 'running', 'announcement', 'embrace', 'done'].includes(phase) ? 1 : 0;
       this.sentinels?.update(state);
-      const beacon = [...this.lights][0]; if (beacon) beacon.intensity = retreat * 420;
+      const beacon = [...this.lights][0];
+      if (beacon) {
+        const middle = ceasefireSentinelPose(state, 8);
+        beacon.position.set(middle.x + 10, middle.y + 9, middle.z - 12);
+        beacon.intensity = retreat < 1 ? 1700 : 0;
+      }
     } else if (this.kind === 'neo_carried' && this.barge && this.tray) {
       const pose = neoCarryPose(state);
       this.tray.position.set(pose.x, 1.05 + pose.y, pose.z);

@@ -1,0 +1,20 @@
+{
+  "agents": false,
+  "chunks": true,
+  "locations": true,
+  "events": true,
+  "sandbox": true,
+  "simulation": true,
+  "phase_time": true,
+  "changed_agents": [
+    {
+      "id": "kid",
+      "fields": [
+        "currentAction"
+      ]
+    }
+  ],
+  "simulation_changes": {},
+  "memory_count": 15,
+  "memories_equal": true
+}

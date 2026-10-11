@@ -1,0 +1,262 @@
+TAP version 13
+# Subtest: the withdrawal shot keeps all eighteen machines in frame instead of cutting off their ascent, without scenery blocking the central machine
+not ok 1 - the withdrawal shot keeps all eighteen machines in frame instead of cutting off their ascent, without scenery blocking the central machine
+  ---
+  duration_ms: 387.179458
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/ceasefire-camera.test.mts:1:3066'
+  failureType: 'testCodeFailure'
+  error: |-
+    1.7777777777777777/2.6: scenery blocks the withdrawing swarm: temple-roof-piece-10/temple-ceiling-fragments at 6337.915833339095,-70.55000001192093,4948.349999964237,temple-roof-piece-11/temple-ceiling-fragments at 6337.641585110962,-69.98258988475,4950.05223034575,temple-roof-piece-10/temple-ceiling-fragments at 6337.641585106427,-69.9825898753653,4950.052230373904,temple-roof-piece-0/temple-ceiling-fragments at 6337.48888889749,-69.66666668446184,4950.9999999466145,temple-roof-piece-11/temple-ceiling-fragments at 6337.488888887324,-69.66666666342826,4951.000000009715,temple-roof-piece-0/temple-ceiling-fragments at 6337.384166660905,-69.44999998807907,4951.650000035763
+
+    6 !== 0
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 6
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/ceasefire-camera.test.mts:57:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: V looks outward and up toward the saved withdrawal, while the player can freely follow the ascent and retain that look
+ok 2 - V looks outward and up toward the saved withdrawal, while the player can freely follow the ascent and retain that look
+  ---
+  duration_ms: 217.684542
+  type: 'test'
+  ...
+# Subtest: the report and reunion shot faces the audience and keeps Kid, both pairs and the nearest listeners in wide and narrow frames
+ok 3 - the report and reunion shot faces the audience and keeps Kid, both pairs and the nearest listeners in wide and narrow frames
+  ---
+  duration_ms: 110.527791
+  type: 'test'
+  ...
+# Subtest: the ceasefire first-person camera uses Kid’s actual head and preserves mouse turning after the report
+ok 4 - the ceasefire first-person camera uses Kid’s actual head and preserves mouse turning after the report
+  ---
+  duration_ms: 95.705375
+  type: 'test'
+  ...
+# Subtest: the withdrawing sentinels use the saved clock across pause, reload and reverse seeking
+ok 5 - the withdrawing sentinels use the saved clock across pause, reload and reverse seeking
+  ---
+  duration_ms: 90.732458
+  type: 'test'
+  ...
+# Subtest: a full withdrawal swarm shares geometry and releases its instance buffers after leaving
+ok 6 - a full withdrawal swarm shares geometry and releases its instance buffers after leaving
+  ---
+  duration_ms: 13.841667
+  type: 'test'
+  ...
+# Subtest: survivors approach continuously when the announcement becomes a reunion
+ok 7 - survivors approach continuously when the announcement becomes a reunion
+  ---
+  duration_ms: 258.990583
+  type: 'test'
+  ...
+# Subtest: a saved reunion waits when occupied and preserves a dead survivor’s body
+ok 8 - a saved reunion waits when occupied and preserves a dead survivor’s body
+  ---
+  duration_ms: 80.638416
+  type: 'test'
+  ...
+# Subtest: both delivered face surfaces stay apart throughout the reunion
+ok 9 - both delivered face surfaces stay apart throughout the reunion
+  ---
+  duration_ms: 1639.818417
+  type: 'test'
+  ...
+# Subtest: the actual palms rest on the partner’s clothing rather than hanging behind it
+ok 10 - the actual palms rest on the partner’s clothing rather than hanging behind it
+  ---
+  duration_ms: 857.467291
+  type: 'test'
+  ...
+# Subtest: paused reunion hands do not drift with render time
+ok 11 - paused reunion hands do not drift with render time
+  ---
+  duration_ms: 676.800583
+  type: 'test'
+  ...
+# Subtest: the current Kid frame drives the reunion across an older world phase
+ok 12 - the current Kid frame drives the reunion across an older world phase
+  ---
+  duration_ms: 577.004791
+  type: 'test'
+  ...
+# Subtest: the delivered boots retain a support sole during approach and both soles during the embrace
+ok 13 - the delivered boots retain a support sole during approach and both soles during the embrace
+  ---
+  duration_ms: 711.998083
+  type: 'test'
+  ...
+# Subtest: the epilogue reducer preserves authored phase boundaries
+ok 14 - the epilogue reducer preserves authored phase boundaries
+  ---
+  duration_ms: 2.404791
+  type: 'test'
+  ...
+# Subtest: new street resets restore the pavement and bring the cat before Sati rises, while active legacy saves keep their beat
+ok 15 - new street resets restore the pavement and bring the cat before Sati rises, while active legacy saves keep their beat
+  ---
+  duration_ms: 623.913625
+  type: 'test'
+  ...
+# Subtest: the reset facade blocks a scene revisit and is removed when returning to the saved park
+ok 16 - the reset facade blocks a scene revisit and is removed when returning to the saved park
+  ---
+  duration_ms: 9.958041
+  type: 'test'
+  ...
+# Subtest: Neo remains unresponsive while the transport is waiting or finished without advancing its clock
+ok 17 - Neo remains unresponsive while the transport is waiting or finished without advancing its clock
+  ---
+  duration_ms: 0.20775
+  type: 'test'
+  ...
+# Subtest: the Oracle stays seated while the player considers the Architect’s promise
+ok 18 - the Oracle stays seated while the player considers the Architect’s promise
+  ---
+  duration_ms: 13.829416
+  type: 'test'
+  ...
+# Subtest: the Architect continues along the waterfront while the player waits to welcome Sati
+ok 19 - the Architect continues along the waterfront while the player waits to welcome Sati
+  ---
+  duration_ms: 2.491875
+  type: 'test'
+  ...
+# Subtest: legacy park departures resume from their saved pose without replaying or jumping
+ok 20 - legacy park departures resume from their saved pose without replaying or jumping
+  ---
+  duration_ms: 1.133833
+  type: 'test'
+  ...
+# Subtest: park departure pauses with the world, another player’s cast ownership and a disconnected Oracle
+ok 21 - park departure pauses with the world, another player’s cast ownership and a disconnected Oracle
+  ---
+  duration_ms: 384.093334
+  type: 'test'
+  ...
+# Subtest: Neo’s resting transport action survives later world ticks and serialized park restoration exactly
+ok 22 - Neo’s resting transport action survives later world ticks and serialized park restoration exactly
+  ---
+  duration_ms: 20.52225
+  type: 'test'
+  ...
+# Subtest: Neo transport keeps a phase’s action start while its saved physical motion advances
+ok 23 - Neo transport keeps a phase’s action start while its saved physical motion advances
+  ---
+  duration_ms: 80.551542
+  type: 'test'
+  ...
+# Subtest: the Smith ending leaves a persistent real-world body while Kid witnesses the ceasefire
+ok 24 - the Smith ending leaves a persistent real-world body while Kid witnesses the ceasefire
+  ---
+  duration_ms: 919.180125
+  type: 'test'
+  ...
+# Subtest: reconnecting after the transport can hand off to the Oracle without reviving Neo
+ok 25 - reconnecting after the transport can hand off to the Oracle without reviving Neo
+  ---
+  duration_ms: 385.035167
+  type: 'test'
+  ...
+# Subtest: ceasefire, Neo transport and dawn form a saved playable epilogue without auto-starting a new cycle
+ok 26 - ceasefire, Neo transport and dawn form a saved playable epilogue without auto-starting a new cycle
+  ---
+  duration_ms: 1768.791125
+  type: 'test'
+  ...
+# Subtest: Kid watches the city during withdrawal and faces the crowd only when delivering the news, including a restored save
+ok 27 - Kid watches the city during withdrawal and faces the crowd only when delivering the news, including a restored save
+  ---
+  duration_ms: 190.772709
+  type: 'test'
+  ...
+# Subtest: Kid keeps the run performed by the player instead of teleporting back to replay it
+ok 28 - Kid keeps the run performed by the player instead of teleporting back to replay it
+  ---
+  duration_ms: 2.5295
+  type: 'test'
+  ...
+# Subtest: each dedicated epilogue layer renders and disposes its physical story objects
+ok 29 - each dedicated epilogue layer renders and disposes its physical story objects
+  ---
+  duration_ms: 298.037458
+  type: 'test'
+  ...
+# Subtest: the resetting sidewalk supports the cat and Sati, restores ahead of the paws, and resumes from the saved clock
+ok 30 - the resetting sidewalk supports the cat and Sati, restores ahead of the paws, and resumes from the saved clock
+  ---
+  duration_ms: 86.600416
+  type: 'test'
+  ...
+# Subtest: saved epilogue actions reach NPC animation and carry Neo flat on the machine tray
+ok 31 - saved epilogue actions reach NPC animation and carry Neo flat on the machine tray
+  ---
+  duration_ms: 81.365667
+  type: 'test'
+  ...
+# Subtest: park performers follow the current Oracle frame without advancing a paused clock or overriding an occupied actor
+ok 32 - park performers follow the current Oracle frame without advancing a paused clock or overriding an occupied actor
+  ---
+  duration_ms: 25.968417
+  type: 'test'
+  ...
+# Subtest: the journal exposes the witness, promise and explicit final confirmation
+ok 33 - the journal exposes the witness, promise and explicit final confirmation
+  ---
+  duration_ms: 104.700084
+  type: 'test'
+  ...
+# Subtest: the temple audience uses complete human surfaces rather than cones with floating sphere heads
+ok 34 - the temple audience uses complete human surfaces rather than cones with floating sphere heads
+  ---
+  duration_ms: 315.635083
+  type: 'test'
+  ...
+# Subtest: a paused or cold-loaded ceasefire audience cannot change pose when the same save has a different renderer clock
+ok 35 - a paused or cold-loaded ceasefire audience cannot change pose when the same save has a different renderer clock
+  ---
+  duration_ms: 180.537334
+  type: 'test'
+  ...
+# Subtest: the shipped crowd assets retain textured faces, anatomical hands, separate legs, soles and matching arm morph topology within budget
+ok 36 - the shipped crowd assets retain textured faces, anatomical hands, separate legs, soles and matching arm morph topology within budget
+  ---
+  duration_ms: 62.311834
+  type: 'test'
+  ...
+# Subtest: cotton tops meet the trousers through the cheering poses instead of leaving an empty waist
+ok 37 - cotton tops meet the trousers through the cheering poses instead of leaving an empty waist
+  ---
+  duration_ms: 138.790625
+  type: 'test'
+  ...
+# Subtest: residents turn and raise hands after the report at different times, with planted soles and clear space for players and reunions
+ok 38 - residents turn and raise hands after the report at different times, with planted soles and clear space for players and reunions
+  ---
+  duration_ms: 1304.277625
+  type: 'test'
+  ...
+# Subtest: leaving before either crowd asset loads cannot reattach figures and releases late resources and morph textures exactly once
+ok 39 - leaving before either crowd asset loads cannot reattach figures and releases late resources and morph textures exactly once
+  ---
+  duration_ms: 15.480416
+  type: 'test'
+  ...
+1..39
+# tests 39
+# suites 0
+# pass 38
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5932.20125

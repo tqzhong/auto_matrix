@@ -1,0 +1,97 @@
+TAP version 13
+# Unable to load the Zion audience TypeError: Failed to parse URL from /assets/characters/zion-crowd-male.glb
+#     at new Request (node:internal/deps/undici/undici:9929:19)
+#     at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#     ... 6 lines matching cause stack trace ...
+#     at Array.map (<anonymous>)
+#     at new ZionCrowdRenderer (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/engine/ZionCrowdRenderer.ts:39:49) {
+#   [cause]: TypeError: Invalid URL
+#       at new URL (node:internal/url:818:25)
+#       at new Request (node:internal/deps/undici/undici:9927:25)
+#       at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#       at GLTFLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/examples/jsm/loaders/GLTFLoader.js:241:10)
+#       at file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44711:10
+#       at new Promise (<anonymous>)
+#       at GLTFLoader.loadAsync (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44709:10)
+#       at ZionCrowdRenderer.load (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/engine/ZionCrowdRenderer.ts:44:42)
+#       at <anonymous> (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/engine/ZionCrowdRenderer.ts:39:65)
+#       at Array.map (<anonymous>) {
+#     code: 'ERR_INVALID_URL',
+#     input: '/assets/characters/zion-crowd-male.glb'
+#   }
+# }
+# Subtest: the withdrawal shot keeps all eighteen machines in frame instead of cutting off their ascent, without scenery blocking the central machine
+ok 1 - the withdrawal shot keeps all eighteen machines in frame instead of cutting off their ascent, without scenery blocking the central machine
+  ---
+  duration_ms: 437.20525
+  type: 'test'
+  ...
+# Subtest: the real post-breach withdrawal is visible beyond the completed temple roof and drilling machine
+ok 2 - the real post-breach withdrawal is visible beyond the completed temple roof and drilling machine
+  ---
+  duration_ms: 731.526833
+  type: 'test'
+  ...
+# Subtest: retreating bodies pass through the existing roof bore after the drill has withdrawn
+ok 3 - retreating bodies pass through the existing roof bore after the drill has withdrawn
+  ---
+  duration_ms: 200.399667
+  type: 'test'
+  ...
+# Subtest: V looks outward and up toward the saved withdrawal, while the player can freely follow the ascent and retain that look
+ok 4 - V looks outward and up toward the saved withdrawal, while the player can freely follow the ascent and retain that look
+  ---
+  duration_ms: 102.555209
+  type: 'test'
+  ...
+# Subtest: the report and reunion shot faces the audience and keeps Kid, both pairs and the nearest listeners in wide and narrow frames
+ok 5 - the report and reunion shot faces the audience and keeps Kid, both pairs and the nearest listeners in wide and narrow frames
+  ---
+  duration_ms: 85.055416
+  type: 'test'
+  ...
+# Subtest: the ceasefire first-person camera uses Kid’s actual head and preserves mouse turning after the report
+ok 6 - the ceasefire first-person camera uses Kid’s actual head and preserves mouse turning after the report
+  ---
+  duration_ms: 88.728291
+  type: 'test'
+  ...
+# Subtest: the retreat formation keeps separate hulls while converging into the roof opening
+ok 7 - the retreat formation keeps separate hulls while converging into the roof opening
+  ---
+  duration_ms: 27.9845
+  type: 'test'
+  ...
+# Subtest: the converged machines ascend nose first with their arms trailing below the hull
+ok 8 - the converged machines ascend nose first with their arms trailing below the hull
+  ---
+  duration_ms: 49.12
+  type: 'test'
+  ...
+# Subtest: the rendered hulls and trailing arms remain inside the clear bore while crossing the roof slab
+ok 9 - the rendered hulls and trailing arms remain inside the clear bore while crossing the roof slab
+  ---
+  duration_ms: 252.386375
+  type: 'test'
+  ...
+# Subtest: the withdrawing sentinels use the saved clock across pause, reload and reverse seeking
+ok 10 - the withdrawing sentinels use the saved clock across pause, reload and reverse seeking
+  ---
+  duration_ms: 28.528208
+  type: 'test'
+  ...
+# Subtest: a full withdrawal swarm shares geometry and releases its instance buffers after leaving
+ok 11 - a full withdrawal swarm shares geometry and releases its instance buffers after leaving
+  ---
+  duration_ms: 5.951542
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2362.594167
