@@ -302,6 +302,40 @@ test('the pill choice clears the central subtitle over Morpheus palms and restor
   assert.equal(element('#film-sequence-line').textContent, 'Neo 用水吞服。');
 });
 
+test('the farewell HUD only offers kneeling within the actual interaction distance', async t => {
+  const output = await build({ entryPoints: ['packages/client/src/player/SandboxUI.ts'], bundle: true,
+    platform: 'node', format: 'esm', write: false, loader: { '.css': 'empty' }, logLevel: 'silent' });
+  const { SandboxUI } = await import(`data:text/javascript;base64,${Buffer.from(output.outputFiles[0].contents).toString('base64')}`);
+  const elements = new Map();
+  const element = (id: string) => {
+    if (!elements.has(id)) {
+      const classes = new Set<string>();
+      elements.set(id, { textContent: '', innerHTML: '', style: {}, classes, classList: {
+        add: (name: string) => classes.add(name), remove: (name: string) => classes.delete(name),
+        toggle: (name: string, force?: boolean) => (force ?? !classes.has(name)) ? classes.add(name) : classes.delete(name),
+      } });
+    }
+    return elements.get(id);
+  };
+  const document = globalThis.document; t.after(() => { globalThis.document = document; });
+  globalThis.document = { getElementById: element } as unknown as Document;
+  const ui = Object.assign(Object.create(SandboxUI.prototype), { root: { querySelector: element }, tick: 0 });
+  const scene = FILM_SCENE_BY_ID.m3_farewell;
+  const player = { id: 'neo', status: 'alive', isInMatrix: false, rotation: Math.PI,
+    position: filmPosition(scene.set, 1.35, -11.9) } as AgentState;
+  const sandbox = { threats: [], neoLife: { journey: { scene: scene.id, actor: 'neo', step: 1, completed: [], reflections: {},
+    lastText: '走到 Trinity 身边。', farewell: { phase: 'ready', elapsed: 0, total: 0 } } } } as SandboxState;
+  ui.updateFilm(player, sandbox);
+  assert.equal(element('#sandbox-interact').classes.has('hidden'), true, 'crossing the doorway is still too far to kneel');
+  player.position = filmStepPosition(scene, scene.steps[1]); ui.updateFilm(player, sandbox);
+  assert.equal(element('#sandbox-interact').classes.has('hidden'), false, 'approaching Trinity exposes G');
+  player.isInMatrix = true; ui.updateFilm(player, sandbox);
+  assert.equal(element('#sandbox-interact').classes.has('hidden'), true, 'an actor in the other world cannot interact');
+  player.isInMatrix = false; player.position = filmStepPosition(scene, scene.steps[0]);
+  sandbox.neoLife!.journey!.step = 0; ui.updateFilm(player, sandbox);
+  assert.equal(element('#sandbox-interact').classes.has('hidden'), true, 'the walking waypoint needs no G action');
+});
+
 test('the completed farewell guides Neo to the machine city instead of asking for another reflection', async t => {
   const outputs = await Promise.all(['SandboxUI', 'PlayerExperience'].map(name => build({ entryPoints: [`packages/client/src/player/${name}.ts`], bundle: true,
     platform: 'node', format: 'esm', write: false, loader: { '.css': 'empty' }, logLevel: 'silent' })));

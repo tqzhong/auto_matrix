@@ -93,8 +93,8 @@ export class LogosWreckRenderer {
     const chair = this.mesh(new THREE.BoxGeometry(1.65, .3, .85), black, this.group, 'logos-wreck-trinity-seat'); chair.position.set(0, 1.2, -15.98);
     const back = this.mesh(new THREE.BoxGeometry(1.65, 1.45, .25), black, this.group, 'logos-wreck-trinity-back'); back.position.set(.08, 2.55, -16.5); back.rotation.x = -.18;
     const mount = this.mesh(new THREE.BoxGeometry(1.1, 1.05, .62), hull, this.group, 'logos-wreck-chair-mount'); mount.position.set(0, .525, -16.05);
-    const otherSeat = this.mesh(new THREE.BoxGeometry(2.25, .42, 3.2), black); otherSeat.position.set(2.65, .55, -12.8); otherSeat.rotation.x = -.18;
-    const otherBack = this.mesh(new THREE.BoxGeometry(2.25, 3.2, .42), black); otherBack.position.set(2.65, 2.05, -11.55); otherBack.rotation.x = -.28;
+    const otherSeat = this.mesh(new THREE.BoxGeometry(1.35, .42, 3.2), black); otherSeat.position.set(2.65, .55, -12.8); otherSeat.rotation.x = -.18;
+    const otherBack = this.mesh(new THREE.BoxGeometry(1.23, 3.2, .42), black); otherBack.position.set(2.65, 2.05, -11.55); otherBack.rotation.x = -.28;
 
     for (const x of [0, 2.65]) {
       const headrest = this.mesh(new THREE.TorusGeometry(.45, .045, 8, 32), torn);

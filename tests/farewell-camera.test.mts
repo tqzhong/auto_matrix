@@ -8,7 +8,7 @@ import { PlayerControls } from '../packages/client/src/player/PlayerControls.js'
 import { LogosWreckRenderer } from '../packages/client/src/engine/LogosWreckRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
-import { FILM_SETS, FILM_SCENE_BY_ID, filmEntry, farewellPose, type FarewellEncounter, type PlayerInput } from '@auto_matrix/shared';
+import { FILM_SETS, FILM_SCENE_BY_ID, filmEntry, filmStepPosition, farewellPose, type FarewellEncounter, type PlayerInput } from '@auto_matrix/shared';
 
 async function geometry(id: string) {
   const glb = await readFile(new URL(`../packages/client/public/assets/characters/${id}.glb`, import.meta.url));
@@ -116,6 +116,30 @@ test('the actual third-person camera keeps Trinity clear of the cabin and of Neo
       assert.equal(hits.length, 0, `${aspect}/${diagonal}/${step}: real follow camera is occluded at ${hits.map(hit => hit.point.toArray())}`);
       const screen = head.project(h.camera);
       assert.ok(Math.abs(screen.x) < 1 && Math.abs(screen.y) < 1 && Math.abs(screen.z) < 1, `${aspect}/${step}: Trinity must remain within the real viewport (${screen.toArray()})`);
+    }
+  } finally { wreck.dispose(); }
+});
+
+test('the delivered body clears visible furniture when following the wreck waypoints', async t => {
+  const h = await setup(t, Math.PI), root = new THREE.Group(), wreck = new LogosWreckRenderer(root);
+  const scene = FILM_SCENE_BY_ID.m3_farewell, center = FILM_SETS[scene.set].center;
+  root.position.set(center.x, center.y - 1, center.z); root.updateMatrixWorld(true);
+  const structure: THREE.Mesh[] = [];
+  root.traverseVisible(item => {
+    if (item instanceof THREE.Mesh && !Array.isArray(item.material) && !item.material.transparent) structure.push(item);
+  });
+  const route = [filmEntry(scene), ...scene.steps.slice(0, 2).map(step => filmStepPosition(scene, step))];
+  try {
+    for (let leg = 1; leg < route.length; leg++) for (let sample = 0; sample <= 20; sample++) {
+      const x = THREE.MathUtils.lerp(route[leg - 1].x, route[leg].x, sample / 20) - center.x;
+      const z = THREE.MathUtils.lerp(route[leg - 1].z, route[leg].z, sample / 20) - center.z;
+      h.approach(x, z);
+      for (const [from, to] of [['chest', 'wrist_R'], ['chest', 'wrist_L'], ['pelvis', 'ankle_R'], ['pelvis', 'ankle_L'], ['pelvis', 'head']]) {
+        const a = h.group.getObjectByName(from)!.getWorldPosition(new THREE.Vector3());
+        const b = h.group.getObjectByName(to)!.getWorldPosition(new THREE.Vector3()), direction = b.sub(a);
+        const hits = new THREE.Raycaster(a, direction.clone().normalize(), 0, direction.length()).intersectObjects(structure, false);
+        assert.equal(hits.length, 0, `${x}/${z}/${from}-${to}: the body crosses a physical prop at ${hits.map(hit => hit.point.clone().sub(new THREE.Vector3(center.x, center.y - 1, center.z)).toArray())}`);
+      }
     }
   } finally { wreck.dispose(); }
 });
