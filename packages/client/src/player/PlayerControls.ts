@@ -31,6 +31,7 @@ import { OFFICE_CUSTODY, officeCustodyStep } from '@auto_matrix/shared';
 import { ARREST_BIKE, arrestCarPoint, arrestBikePoint, arrestMirrorShot } from '@auto_matrix/shared';
 import { CATCH, catchLocked, DEUS_PACT, deusPactLocked, deusPactPose, reloadedPhaseLocked, SMITH_FINALE, smithFinaleBeat, smithFinaleLocked, smithFinalePose, smithCraterAmount, smithCraterFloor, smithOracleRestored, trilogyEpilogueLocked, neoCarryPose } from '@auto_matrix/shared';
 import { reloadedCamera } from './ReloadedCamera.js';
+import { pillConversationCamera } from './PillConversationCamera.js';
 import * as THREE from 'three';
 import { dockArrivalPoint, dockReunionLocked, dockReunionRoot } from '@auto_matrix/shared';
 import { dockBriefingLocked } from '@auto_matrix/shared';
@@ -1113,7 +1114,7 @@ export class PlayerControls {
     this.motion.officeShirt = officeClothing(state.id, state.currentLocation);
     this.motion.homeClothes = state.id === 'neo' && ['neo_apartment', 'film_anderson_flat'].includes(state.currentLocation);
     if (this.motion.interrogation && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
-    if (this.motion.pills && (!this.firstPerson || this.motion.pills.phase === 'offering' || this.motion.pills.elapsed > 9.6)) this.yaw = this.movementYaw = state.rotation;
+    if (this.motion.pills && (!this.firstPerson || this.motion.pills.phase === 'seating' || this.motion.pills.phase === 'offering' || this.motion.pills.phase === 'taking' && this.motion.pills.elapsed > 9.6)) this.yaw = this.movementYaw = state.rotation;
     this.motion.vase = state.currentAction?.parameters.vase as number | undefined;
     this.motion.realWorld = !state.isInMatrix && state.currentLocation !== 'film_real_desert';
     this.motion.clubClothes = state.currentLocation === 'film_white_rabbit_club' || state.id === 'neo' && state.currentLocation === 'film_white_construct' && !state.currentAction?.parameters.rescue;
@@ -2332,6 +2333,13 @@ export class PlayerControls {
       const pitch = THREE.MathUtils.clamp(this.pitch + (this.motion.pills.role === 'neo' ? pillPose(this.motion.pills).drink * .7 : 0), -.4, 1.1);
       const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(pitch), -Math.sin(pitch), Math.cos(this.yaw) * Math.cos(pitch));
       this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
+    } else if (this.motion.pills?.phase === 'talking' && !this.firstPerson) {
+      const center = FILM_SETS.film_lafayette.center;
+      const shot = pillConversationCamera(this.motion.pills, this.camera.aspect);
+      const origin = new THREE.Vector3(center.x, center.y - 1, center.z);
+      // A reverse shot stays on the same side of the chair axis. Do not sweep
+      // the camera through either seated body when the speaker changes.
+      this.camera.position.copy(shot.ideal.add(origin)); this.camera.lookAt(shot.focus.add(origin));
     } else if (this.motion.pills && !this.firstPerson) {
       const center = FILM_SETS.film_lafayette.center;
       const taking = this.motion.pills.phase === 'taking';

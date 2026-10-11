@@ -104,11 +104,13 @@ export class PillPerformance {
     this.red.visible = this.blue.visible = this.cup.visible = false;
     if (!gesture) return;
     const pose = pillPose(gesture); const time = gesture.elapsed;
+    this.bone('head').rotation.x += pose.nod;
     const root = this.rig.root; root.updateWorldMatrix(true, true);
     if (gesture.role === 'morpheus') {
       for (const [side, color, object] of [['R', 'red', this.red], ['L', 'blue', this.blue]] as const) {
         const palm = new THREE.Vector3(side === 'R' ? .082 : -.082, -.18, .015);
         const rest = new THREE.Vector3(side === 'R' ? -1.04 : 1.04, 1.95, .35);
+        if (side === 'R') { rest.y += pose.talk * .2; rest.z += pose.talk * .15; }
         const rotation = this.orientation(side, new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, 1))
           .slerp(this.orientation(side, new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 1)), pose.offer);
         this.fingers(side, .18 - pose.offer * .155);

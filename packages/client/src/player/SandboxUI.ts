@@ -1,4 +1,5 @@
 import { logosBaneBeat, logosBaneText, logosCloudTop, logosIgnitionText, LOGOS_IGNITION } from '@auto_matrix/shared';
+import { PILL_BELIEFS, pillTalkReady, pillTalkPrompt } from '@auto_matrix/shared';
 import { hammerFlightHint, hammerRadioStatus, hammerHandoverText } from '@auto_matrix/shared';
 import { HEL_BREAKOUT, helDanceDoorDuration, helDanceDoorText } from '@auto_matrix/shared';
 import { catchDistance } from '@auto_matrix/shared';
@@ -106,6 +107,7 @@ export class SandboxUI {
       <div id="film-portal-retry" class="film-terminal hidden"><p>撤离被封锁</p><button data-action="life" data-target="film:retry">重试开门与撤离 · 保留先前行动</button></div>
       <div id="film-training-actions" class="film-training-actions hidden"><button data-combat="dodge"><kbd>X</kbd> 现在闪避</button><button data-combat="attack"><kbd>F</kbd> <span>刺拳</span></button></div>
       <div id="film-pills" class="film-pills hidden" role="group" aria-label="选择药丸"><p>选择仍然属于你 · 等待不会替你决定</p><div class="film-pill-choices"><button data-action="life" data-target="film:pill:red">红色 · 继续追问</button><button data-action="life" data-target="film:blue">蓝色 · 回到日常</button></div></div>
+      <div id="film-pill-dialogue" class="film-pills hidden" role="group" aria-label="回答命运的问题"><p>你如何看待自己的选择？</p><div class="film-dialogue-choices">${PILL_BELIEFS.map(answer => `<button data-action="life" data-target="film:pill:belief:${answer.id}">${answer.label}</button>`).join('')}</div></div>
       <div id="film-meeting" class="film-pills hidden" role="group" aria-label="接头决定"><p>你仍然可以离开</p><div class="film-pill-choices"><button data-action="life" data-target="film:meeting:stay">留在车内 · 接受检查</button><button data-action="life" data-target="film:meeting:leave">推开车门 · 质疑检查</button></div></div>
       <div id="film-meeting-door" class="film-pills hidden" role="group" aria-label="车门前的选择"><p>Trinity 请你想清楚，再决定去留</p><div class="film-pill-choices"><button data-action="life" data-target="film:meeting:stay">信任她 · 关上车门</button><button data-action="life" data-target="film:meeting:depart">离开 · 返回雨中</button></div></div>
       <div id="film-construct-reflection" class="film-pills film-construct-reflection hidden" role="group" aria-label="Neo 对现实的理解"><p>感觉足以证明真实吗？</p><div class="film-pill-choices">${filmReflections('m1_construct').map(choice => `<button data-action="life" data-target="film:reflect:${choice.id}">${escape(choice.label)}</button>`).join('')}</div></div>
@@ -204,6 +206,7 @@ export class SandboxUI {
     this.el('film-terminal').classList.add('hidden'); this.el('film-terminal-retry').classList.add('hidden');
     this.el('film-ride').classList.add('hidden');
     this.el('film-pills').classList.add('hidden');
+    this.el('film-pill-dialogue').classList.add('hidden');
     this.el('film-meeting').classList.add('hidden');
     this.el('film-meeting-door').classList.add('hidden');
     this.el('film-construct-reflection').classList.add('hidden');
@@ -1623,13 +1626,18 @@ export class SandboxUI {
       return;
     }
     if (pillLocked(journey)) {
-      const choosing = journey.pills!.phase === 'choice';
+      const pills = journey.pills!; const choosing = pills.phase === 'choice';
+      const talking = pills.phase === 'talking'; const ready = pillTalkReady(pills);
+      const answering = ready && pills.conversation!.beat === 0;
       this.el('film-sequence').classList.toggle('hidden', choosing); this.el('film-sequence-line').textContent = choosing ? '红色继续追问；蓝色回到日常。你可以慢慢决定。' : journey.lastText;
-      this.el('film-sequence-hint').textContent = choosing ? '两种选择都会保存 · 等待不会自动作出决定' : 'V 切换视角 · 暂停、重连会保留动作进度';
+      this.el('film-sequence-hint').textContent = answering ? '选择自己的回答 · 等待不会替你决定' : ready ? `G ${pillTalkPrompt(pills)} · V 切换视角`
+        : choosing ? '两种选择都会保存 · 等待不会自动作出决定' : 'V 切换视角 · 暂停、重连会保留动作进度';
       this.el('film-pills').classList.toggle('hidden', !choosing);
-      if (choosing && document.pointerLockElement) document.exitPointerLock();
-      this.el('sandbox-interact').classList.add('hidden'); this.el('sandbox-waypoint').textContent = '';
-      document.getElementById('game-objective-copy')!.textContent = choosing ? '看着 Morpheus 的双手，作出自己的选择。' : journey.pills!.phase === 'offering' ? '与 Morpheus 交谈' : '拿取药丸，用水吞服';
+      this.el('film-pill-dialogue').classList.toggle('hidden', !answering);
+      if ((choosing || answering) && document.pointerLockElement) document.exitPointerLock();
+      this.el('sandbox-interact').classList.toggle('hidden', !ready || answering); this.el('sandbox-waypoint').textContent = '';
+      if (ready && !answering) this.el('sandbox-nearby').textContent = pillTalkPrompt(pills);
+      document.getElementById('game-objective-copy')!.textContent = choosing ? '看着 Morpheus 的双手，作出自己的选择。' : talking || pills.phase === 'seating' || pills.phase === 'offering' ? '与 Morpheus 交谈' : '拿取药丸，用水吞服';
       return;
     }
     if (!journey.visiting && scene.id === 'm1_mirror' && journey.mirrorGuide) {
