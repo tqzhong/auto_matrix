@@ -61,5 +61,26 @@
     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/seaside_rock/seaside_rock_rough_2k.jpg",
     "license": "CC0-1.0",
     "md5": "08323a44503ccc4c1b922396455881cc"
+  },
+  {
+    "name": "brown_mud_03-color.jpg",
+    "source": "https://polyhaven.com/a/brown_mud_03",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brown_mud_03/brown_mud_03_diff_1k.jpg",
+    "license": "CC0-1.0",
+    "md5": "b99d14c26debf660457b9497f2facec6"
+  },
+  {
+    "name": "brown_mud_03-normal.jpg",
+    "source": "https://polyhaven.com/a/brown_mud_03",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brown_mud_03/brown_mud_03_nor_gl_1k.jpg",
+    "license": "CC0-1.0",
+    "md5": "97e4449786551a25c69587a864be6eb3"
+  },
+  {
+    "name": "brown_mud_03-roughness.jpg",
+    "source": "https://polyhaven.com/a/brown_mud_03",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brown_mud_03/brown_mud_03_rough_1k.jpg",
+    "license": "CC0-1.0",
+    "md5": "856d543a9dc18df23cf1239a54025411"
   }
 ]
