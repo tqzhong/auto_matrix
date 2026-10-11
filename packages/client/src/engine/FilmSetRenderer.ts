@@ -1,5 +1,5 @@
 import { logosBaneInjured, logosBaneLocked } from '@auto_matrix/shared';
-import { filmSceneForJourney } from '@auto_matrix/shared';
+import { filmSceneForJourney, logosCloudTop, logosFlightSet, newLogosFlight } from '@auto_matrix/shared';
 import { upperDiggerActive, upperDiggerLocked } from '@auto_matrix/shared';
 import { diggersActive, diggersLocked } from '@auto_matrix/shared';
 import { dockGateActive, dockLastStandLocked, dockReloadLocked } from '@auto_matrix/shared';
@@ -219,7 +219,8 @@ export class FilmSetRenderer {
   private hammerMonitors?: { face: THREE.MeshStandardMaterial; glyphs: THREE.MeshBasicMaterial };
   private hammerRoute?: HammerRouteRenderer;
   private logosFlight?: LogosFlightRenderer;
-  private logosStage?: string;
+  private logosAltitude = 22;
+  private logosTop = 62;
   private logosWreck?: LogosWreckRenderer;
   private machineCore?: MachineCoreRenderer;
   private smithFinale?: SmithFinaleRenderer;
@@ -276,8 +277,12 @@ export class FilmSetRenderer {
     if (set?.id === 'film_adams_bridge' && player?.currentLocation === 'film_extraction_car') set = FILM_SETS.film_extraction_car;
     const journey = sandbox?.neoLife?.journey;
     const sceneId = journey?.visiting ?? journey?.scene;
+    if (player && player.id === journey?.actor && !journey.visiting && ['m3_defense', 'm3_sun'].includes(journey.scene))
+      set = FILM_SETS[logosFlightSet(journey.logos ?? journey.logosEntry ?? newLogosFlight(journey.scene === 'm3_defense' ? 'defense' : 'sun'))];
     if (this.office && set && ['film_metacortex_floor', 'film_office_ledge'].includes(set.id)) { this.current = set; this.currentScene = sceneId; }
     if (this.meeting && set && ['film_adams_bridge', 'film_extraction_car'].includes(set.id)) { this.current = set; this.currentScene = sceneId; }
+    if (this.logosFlight && set?.id === this.current?.id && ['m3_defense', 'm3_sun'].includes(sceneId ?? '')
+      && ['m3_defense', 'm3_sun'].includes(this.currentScene ?? '')) this.currentScene = sceneId;
     if (set?.id !== this.current?.id || sceneId !== this.currentScene) {
       this.clear(); this.current = set; this.currentScene = sceneId;
       if (set) this.root.position.set(set.center.x, set.center.y - 1, set.center.z);
@@ -486,8 +491,9 @@ export class FilmSetRenderer {
     this.hammerRoute?.update(journey?.scene === 'm3_hammer_tunnels' && !journey.visiting ? fastHammer?.flight ?? journey.hammer : undefined, elapsed, firstPerson, journey?.scene === 'm3_hammer_tunnels' && !journey.visiting ? journey.hammerHandover : undefined);
     const fastLogos = player?.id === journey?.actor && typeof player?.currentAction?.parameters.logosPilot === 'object'
       ? player.currentAction.parameters.logosPilot as import('@auto_matrix/shared').LogosPilotGesture : undefined;
-    const logos = ['m3_defense', 'm3_sun'].includes(journey?.scene ?? '') && !journey?.visiting ? fastLogos?.flight ?? journey?.logos : undefined;
-    this.logosStage = logos?.stage;
+    const logos = ['m3_defense', 'm3_sun'].includes(journey?.scene ?? '') && !journey?.visiting
+      ? fastLogos?.flight ?? journey?.logos ?? journey?.logosEntry ?? newLogosFlight(journey?.scene === 'm3_defense' ? 'defense' : 'sun') : undefined;
+    this.logosAltitude = logos?.altitude ?? 22; this.logosTop = logos ? logosCloudTop(logos) : 62;
     this.logosFlight?.update(logos, elapsed, firstPerson);
     this.logosWreck?.update(journey?.scene === 'm3_farewell' && !journey.visiting ? journey.farewell : undefined, elapsed, firstPerson, firstPerson && player?.id === 'neo');
     const savedDeus = journey?.scene === 'm3_deus' && !journey.visiting ? journey.deus : undefined;
@@ -821,16 +827,13 @@ export class FilmSetRenderer {
       this.scene.environmentIntensity = blind ? .025 : cut ? .36 : .52;
       return { color: blind ? 0x7d92a0 : 0xc4d5da, ambient: blind ? .065 : cut ? .42 : .68, sun: blind ? .01 : cut ? .04 : .13 };
     }
-    if (this.logosFlight && this.current.id === 'film_machine_defense') {
-      fog.density = .0034; fog.color.setHex(0x172326); (this.scene.background as THREE.Color).copy(fog.color);
-      this.scene.environmentIntensity = .62; return { color: 0x9fb7b8, ambient: .82, sun: .16 };
-    }
     if (this.logosFlight) {
-      const lit = this.logosStage === 'sun' || this.logosStage === 'stall';
-      const color = lit ? 0x8eb9d4 : 0x536875;
-      fog.density = lit ? .0011 : .0031; fog.color.setHex(color); (this.scene.background as THREE.Color).setHex(color);
-      this.scene.environmentIntensity = lit ? 1.35 : .78;
-      return { color: lit ? 0xffe3b2 : 0xb8cad2, ambient: lit ? 1.45 : .86, sun: lit ? 3.1 : .42 };
+      const lit = THREE.MathUtils.smoothstep(this.logosAltitude, this.logosTop - 2, this.logosTop + 3);
+      const inside = THREE.MathUtils.smoothstep(this.logosAltitude, this.logosTop - 30, this.logosTop - 21) * (1 - lit);
+      fog.density = .003 + inside * .048 - lit * .002;
+      fog.color.setHex(0x1d2935).lerp(new THREE.Color(0x4d5965), inside).lerp(new THREE.Color(0xb8b9a7), lit);
+      (this.scene.background as THREE.Color).copy(fog.color); this.scene.environmentIntensity = .4 + lit * .7;
+      return { color: new THREE.Color(0xa2b7c8).lerp(new THREE.Color(0xffe3b2), lit).getHex(), ambient: .55 + lit * .85, sun: .08 + lit * .2 };
     }
     if (this.logosWreck) {
       fog.density = .008; fog.color.setHex(0x0b121b); (this.scene.background as THREE.Color).copy(fog.color);
@@ -2648,7 +2651,7 @@ export class FilmSetRenderer {
     this.empDock?.dispose(); this.empDock = undefined;
     this.hammerMonitors = undefined;
     this.hammerRoute?.dispose(); this.hammerRoute = undefined;
-    this.logosFlight?.dispose(); this.logosFlight = undefined; this.logosStage = undefined;
+    this.logosFlight?.dispose(); this.logosFlight = undefined;
     this.logosWreck?.dispose(); this.logosWreck = undefined;
     this.machineCore?.dispose(); this.machineCore = undefined;
     this.smithFinale?.dispose(); this.smithFinale = undefined;

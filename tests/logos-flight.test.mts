@@ -12,6 +12,7 @@ import {
   type WorldEvent,
 } from '@auto_matrix/shared';
 import { LogosFlightRenderer } from '../packages/client/src/engine/LogosFlightRenderer.js';
+import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { rideForPlayer } from '../packages/client/src/engine/Engine.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -101,6 +102,60 @@ test('Logos climbs through cloud, holds in sunlight, then stalls back below the 
   assert.ok(flight.altitude <= LOGOS_DEFENSE.cloudFloor);
 });
 
+test('the cloud handoff preserves the damaged ship and crew, waits for input, and retries the same entry after restore', () => {
+  const h = game(), state = h.state();
+  state.scene = 'm3_defense'; state.actor = 'trinity'; state.step = 0;
+  h.players.possess('p', 'trinity', h.tick());
+  state.logos = { ...newLogosFlight('defense'), phase: 'arrived', stage: 'clouds', x: 3, altitude: 42, z: -58,
+    speed: 14, lateral: 2, vertical: 5, elapsed: 9, hull: 44, neo: 32, hits: 2, destroyed: 3, resolved: 255 };
+  h.actor().health = 57; h.advance();
+  const incoming = structuredClone(state.logos), position = { ...h.actor().position };
+  h.command('next');
+  assert.equal(state.scene, 'm3_sun'); assert.equal(state.logos, undefined);
+  assert.ok(state.logosEntry, 'the next scene must retain its actual flight checkpoint');
+  for (const key of ['x', 'altitude', 'z', 'speed', 'lateral', 'vertical', 'elapsed', 'hull', 'neo', 'hits', 'destroyed', 'resolved'] as const)
+    assert.equal(state.logosEntry[key], incoming[key], `handoff changed ${key}`);
+  assert.deepEqual(h.actor().position, position, 'changing the chapter must not teleport the seated pilot');
+  assert.equal(h.actor().health, 57, 'continuing the flight must not heal the pilot');
+  const saved = structuredClone(h.sandbox.state), entry = structuredClone(state.logosEntry);
+  h.sandbox.restore(saved); h.players.release('p', h.tick()); h.advance(30);
+  assert.deepEqual(h.state().logosEntry, entry); assert.equal(h.state().logos, undefined);
+  h.players.possess('p', 'trinity', h.tick()); h.command('act');
+  assert.deepEqual(h.state().logos, entry, 'launch must resume the retained checkpoint');
+  for (let frame = 0; frame < 400 && h.state().logos?.phase === 'riding'; frame++)
+    h.sandbox.life.film.driveFrame(h.actor(), { throttle: 0, steer: 0, brake: false }, .05, h.tick());
+  assert.equal(h.state().logos?.phase, 'wrecked');
+  h.command('retry'); assert.equal(h.state().logos, undefined); assert.deepEqual(h.state().logosEntry, entry);
+  h.command('act'); assert.deepEqual(h.state().logos, entry, 'retry must not refill hull or Neo energy');
+});
+
+test('a legacy flight in sunlight keeps its existing altitude after an update', () => {
+  const flight = { ...newLogosFlight('sun'), stage: 'sun' as const, altitude: 30, z: 12, stageElapsed: 0 };
+  delete flight.cloudTop;
+  assert.equal(stepLogosFlight(flight, { throttle: 0, steer: 0, brake: false }, 0).altitude, 30);
+});
+
+test('Logos scene lighting darkens again below the clouds and keeps the same ship through the chapter handoff', () => {
+  const h = game(), journey = h.state(), actor = h.world.agents.get('trinity')!;
+  const scene = new THREE.Scene(); scene.background = new THREE.Color(); scene.fog = new THREE.FogExp2();
+  const renderer = new FilmSetRenderer(scene);
+  try {
+    journey.scene = 'm3_sun'; journey.actor = 'trinity'; journey.logos = { ...newLogosFlight('sun'), stage: 'sun', altitude: 66, z: -78 };
+    actor.isInMatrix = false; actor.position = filmStepPosition(FILM_SCENE_BY_ID.m3_sun, FILM_SCENE_BY_ID.m3_sun.steps[0], journey);
+    renderer.update(actor, h.sandbox.state, 0);
+    const bright = renderer.atmosphere()!;
+    journey.logos = { ...journey.logos, stage: 'stall', altitude: 25 };
+    renderer.update(actor, h.sandbox.state, 0);
+    assert.ok(renderer.atmosphere()!.ambient < bright.ambient * .7, 'falling back into storm clouds must remove the sunlight');
+    journey.scene = 'm3_defense'; journey.logos = { ...newLogosFlight('defense'), phase: 'arrived', z: -58, altitude: 42 };
+    renderer.update(actor, h.sandbox.state, 0);
+    const ship = renderer.root.getObjectByName('logos-flight-ship'); assert.ok(ship);
+    journey.scene = 'm3_sun'; journey.logosEntry = { ...journey.logos, mode: 'sun', phase: 'riding' }; delete journey.logos;
+    renderer.update(actor, h.sandbox.state, 0);
+    assert.equal(renderer.root.getObjectByName('logos-flight-ship'), ship, 'do not unload the cockpit between connected flight segments');
+  } finally { renderer.dispose(); }
+});
+
 test('Trinity pilots both Logos scenes with Neo occupied checks, save restore, failure retry and handoff', () => {
   const h = game(); const defense = FILM_SCENE_BY_ID.m3_defense;
   let state = h.state(); state.scene = defense.id; state.actor = defense.actor; state.step = 0;
@@ -144,7 +199,7 @@ test('Trinity pilots both Logos scenes with Neo occupied checks, save restore, f
   assert.equal(state.logos, undefined); assert.equal(h.actor().status, 'alive'); assert.equal(state.step, 0);
 });
 
-test('Logos renderer exposes the ship, physical defenses, Neo pulse, cloud sea and sun', () => {
+test('Logos renders a persistent cloud atmosphere around both views and freezes it with the saved flight', () => {
   const defenseRoot = new THREE.Group(); const defense = new LogosFlightRenderer(defenseRoot, 'defense');
   const flight = { ...newLogosFlight('defense'), pulse: .4, destroyed: 1, resolved: 1 };
   defense.update(flight, 1, false);
@@ -154,19 +209,20 @@ test('Logos renderer exposes the ship, physical defenses, Neo pulse, cloud sea a
   assert.equal(defenseRoot.getObjectByName('logos-neo-pulse')!.visible, true);
 
   const sunRoot = new THREE.Group(); const sun = new LogosFlightRenderer(sunRoot, 'sun');
-  const ascent = { ...newLogosFlight('sun'), stage: 'sun' as const, altitude: 30 };
+  const ascent = { ...newLogosFlight('sun'), stage: 'sun' as const, altitude: 66, elapsed: 12 };
   sun.update(ascent, 4, false);
-  assert.ok(sunRoot.getObjectByName('logos-cloud-bank'));
-  assert.ok(sunRoot.getObjectByName('logos-sun'));
+  const sky = sunRoot.getObjectByName('logos-atmosphere') as THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>;
+  assert.ok(sky); assert.equal(sky.material.uniforms.time.value, 12);
+  sun.update(ascent, 400, true);
+  assert.equal(sky.material.uniforms.time.value, 12, 'viewing a paused flight must not animate the cloud field');
   const landed = { ...ascent, phase: 'arrived' as const, stage: 'stall' as const, altitude: 5 };
   sun.update(landed, 6, true);
   assert.equal(sunRoot.getObjectByName('logos-flight-cockpit')!.visible, true, 'the crew stays inside the cockpit until leaving this scene');
-  assert.equal(sunRoot.getObjectByName('logos-cloud-bank')!.visible, false, 'the completed first-person shot must not remain inside cloud geometry');
+  assert.equal(sky.visible, true, 'the first-person camera should stay in the same atmosphere after descent');
   sun.update(landed, 7, false);
   assert.equal(sunRoot.getObjectByName('logos-flight-ship')!.visible, true);
-  assert.equal(sunRoot.getObjectByName('logos-cloud-bank')!.visible, true);
+  assert.equal(sky.visible, true);
   const meshes: THREE.Mesh[] = []; sunRoot.traverse(item => { if (item instanceof THREE.Mesh) meshes.push(item); });
-  assert.ok(meshes.length > 70);
   const disposed: string[] = []; meshes.forEach(mesh => mesh.geometry.addEventListener('dispose', () => disposed.push(mesh.uuid)));
   defense.dispose(); sun.dispose(); assert.equal(defenseRoot.children.length, 0); assert.equal(sunRoot.children.length, 0); assert.ok(disposed.length > 0);
 });

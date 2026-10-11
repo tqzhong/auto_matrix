@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { batchStaticGeometry } from './StaticGeometry.js';
-import { LOGOS_DEFENSE, LOGOS_COCKPIT, logosShipPose, logosControlGrip, newLogosFlight, type LogosFlight, type LogosFlightMode } from '@auto_matrix/shared';
+import { LogosAtmosphere } from './LogosAtmosphere.js';
+import { LOGOS_DEFENSE, LOGOS_COCKPIT, logosShipPose, logosControlGrip, logosCloudTop, newLogosFlight, type LogosFlight, type LogosFlightMode } from '@auto_matrix/shared';
 
 /** A shared physical stage for the Logos defense run and the ascent above the cloud deck. */
 export class LogosFlightRenderer {
@@ -14,10 +15,10 @@ export class LogosFlightRenderer {
   private engineLight?: THREE.PointLight;
   private threats: THREE.Group[] = [];
   private swarms: THREE.Group[] = [];
-  private clouds: THREE.Mesh[] = [];
-  private cloudBank?: THREE.Group;
+  private atmosphere: LogosAtmosphere;
   private engines: THREE.MeshStandardMaterial[] = [];
-  private sunMaterial?: THREE.MeshStandardMaterial;
+  private sunlight = new THREE.DirectionalLight(0xffdfb1, 0);
+  private skyFill = new THREE.HemisphereLight(0xa4b8c7, 0x252c36, .7);
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private lights: THREE.Light[] = [];
@@ -28,7 +29,9 @@ export class LogosFlightRenderer {
     this.group.add(this.ship, this.pulse); this.ship.add(this.cockpit);
     batchStaticGeometry(this.ship, new Set(this.grips.map(grip => grip.mesh))).forEach(geometry => this.geometries.add(geometry));
     if (mode === 'defense') this.buildDefense();
-    else this.buildSunrise();
+    this.atmosphere = new LogosAtmosphere(this.group);
+    this.sunlight.position.set(-44, 18, -87); this.group.add(this.sunlight, this.sunlight.target, this.skyFill);
+    this.lights.push(this.sunlight, this.skyFill);
     this.update(undefined, 0, false);
   }
 
@@ -163,7 +166,6 @@ export class LogosFlightRenderer {
     const tower = this.material(0x222b2c, .86, .56);
     const edge = this.material(0x545f5c, .75, .48);
     const amber = this.material(0xd88937, .25, .2, 0xf08a25, 2.5);
-    const storm = this.material(0x273436, .05, .95, 0x10191a, .12, true, .7);
     for (let row = 0; row < 7; row++) for (const side of [-1, 1]) {
       const z = 58 - row * 19;
       const h = 14 + (row * 11 % 24), x = side * (42 + row % 3 * 7);
@@ -174,11 +176,6 @@ export class LogosFlightRenderer {
         eye.position.set(x - side * 2.2, y - 4, z); eye.rotation.y = Math.PI / 2;
       }
       const antenna = this.mesh(new THREE.ConeGeometry(1, 8, 6), edge); antenna.position.set(x, h + 4, z);
-    }
-    for (let i = 0; i < 24; i++) {
-      const cloud = this.mesh(new THREE.IcosahedronGeometry(5 + i % 5 * 1.8, 1), storm);
-      cloud.position.set(-48 + i % 8 * 14, 45 + i % 4 * 4, 55 - Math.floor(i / 8) * 50 - i % 3 * 5);
-      cloud.scale.set(1.8, .45, 1.15); this.clouds.push(cloud);
     }
     for (const threat of LOGOS_DEFENSE.threats) {
       const bomb = new THREE.Group(); bomb.name = `logos-defense-threat-${threat.id}`;
@@ -201,40 +198,12 @@ export class LogosFlightRenderer {
         const eye = this.mesh(new THREE.SphereGeometry(.11, 6, 5), amber, drone); eye.position.z = -.42;
       }
     }
-    const fill = new THREE.HemisphereLight(0x8da1a1, 0x101719, 1.05); this.group.add(fill); this.lights.push(fill);
-  }
-
-  private buildSunrise(): void {
-    const cloud = this.material(0xe6ded2, .02, .96, 0xb8a890, .08, true, .72);
-    const shadow = this.material(0x77848d, .02, 1, 0x5d6570, .06, true, .68);
-    const gold = this.material(0xffe2a1, .03, .45, 0xffc65f, 5.5);
-    this.sunMaterial = gold;
-    const bank = this.cloudBank = new THREE.Group(); bank.name = 'logos-cloud-bank'; this.group.add(bank);
-    for (let i = 0; i < 68; i++) {
-      const radius = 4.5 + (i * 17 % 7) * 1.05;
-      const puff = this.mesh(new THREE.IcosahedronGeometry(radius, 1), i % 4 ? cloud : shadow, bank);
-      const row = Math.floor(i / 17), column = i % 17;
-      puff.position.set(-48 + column * 6 + Math.sin(i * 2.7) * 3, 4 + row * 3 + Math.cos(i) * 1.5, -45 + row * 26 + Math.sin(i * .7) * 8);
-      puff.scale.set(1.65, .52 + i % 3 * .08, 1.22);
-    }
-    const sun = this.mesh(new THREE.SphereGeometry(5.4, 32, 20), gold, this.group, 'logos-sun');
-    sun.position.set(-30, 43, -54);
-    const haloMaterial = this.material(0xffdb8a, .02, .7, 0xffc15b, 2.4, true, .24);
-    const halo = this.mesh(new THREE.SphereGeometry(9.5, 24, 16), haloMaterial); halo.position.copy(sun.position);
-    const light = new THREE.DirectionalLight(0xffd69a, 4.2); light.position.set(-25, 46, -38); light.target.position.set(0, 20, 0);
-    this.group.add(light, light.target); this.lights.push(light);
-    const fill = new THREE.HemisphereLight(0xa9c8dd, 0x6f6867, 2.1); this.group.add(fill); this.lights.push(fill);
-    for (let i = 0; i < 16; i++) {
-      const mote = this.mesh(new THREE.SphereGeometry(.08 + i % 3 * .05, 6, 5), gold);
-      mote.position.set(-24 + i * 3.1, 20 + i % 5 * 3.6, -36 + i % 4 * 12);
-    }
   }
 
   update(flight: LogosFlight | undefined, elapsed: number, firstPerson = false): void {
     const pose = flight ?? newLogosFlight(this.mode);
     const ship = logosShipPose(pose);
     this.ship.position.set(ship.x, ship.y, ship.z); this.ship.rotation.set(ship.pitch, ship.yaw, ship.roll, 'YXZ');
-    const completedFirstPerson = firstPerson && pose.phase !== 'riding';
     this.ship.visible = true; this.cockpit.visible = true;
     for (const { mesh, side } of this.grips) {
       const grip = logosControlGrip(pose, 'trinity', side); mesh.position.set(-grip.x, grip.y, -grip.z);
@@ -243,28 +212,29 @@ export class LogosFlightRenderer {
     if (this.displays) { this.displays.emissiveIntensity = powered ? .85 : 0; this.displays.color.setHex(powered ? 0x233b4d : 0x080d12); }
     if (this.glyphs) { this.glyphs.emissiveIntensity = powered ? .6 : 0; this.glyphs.color.setHex(powered ? 0x89a9bd : 0x080d12); }
     if (this.engineLight) this.engineLight.intensity = powered ? 32 : 0;
-    if (this.cloudBank) this.cloudBank.visible = !completedFirstPerson;
+    this.atmosphere.update(pose);
+    const light = THREE.MathUtils.smoothstep(pose.altitude, logosCloudTop(pose) - 2, logosCloudTop(pose) + 3);
+    this.sunlight.intensity = light * 2.6; this.skyFill.intensity = .45 + light * .8;
     for (const engine of this.engines) { engine.emissiveIntensity = powered ? 1.8 + pose.speed * .1 + Math.sin(pose.elapsed * 15) * .35 : 0; engine.color.setHex(powered ? 0xb6eff1 : 0x162329); }
     this.pulse.position.copy(this.ship.position); this.pulse.visible = Boolean(flight && flight.pulse > 0);
     if (this.pulse.visible) {
       const progress = 1 - pose.pulse / .5; this.pulse.scale.setScalar(.35 + progress * 3.8);
-      this.pulse.rotation.y = elapsed * 2.2;
+      this.pulse.rotation.y = pose.elapsed * 2.2;
     }
     this.threats.forEach((threat, index) => {
       threat.visible = !(pose.resolved & 1 << index);
-      threat.rotation.y = elapsed * (.55 + index * .04); threat.rotation.z = Math.sin(elapsed * 2 + index) * .12;
-      threat.position.y = 1 + LOGOS_DEFENSE.threats[index].altitude + Math.sin(elapsed * 1.7 + index) * .7;
+      threat.rotation.y = pose.elapsed * (.55 + index * .04); threat.rotation.z = Math.sin(pose.elapsed * 2 + index) * .12;
+      threat.position.y = 1 + LOGOS_DEFENSE.threats[index].altitude + Math.sin(pose.elapsed * 1.7 + index) * .7;
     });
     this.swarms.forEach((swarm, index) => {
       const z = pose.z - 18 - index * 19;
-      swarm.position.set(Math.sin(elapsed * .8 + index) * (22 + index), 16 + index * 6 + Math.cos(elapsed + index) * 4, z);
-      swarm.rotation.y = elapsed * .45 + index; swarm.visible = pose.mode === 'defense' && pose.phase === 'riding';
+      swarm.position.set(Math.sin(pose.elapsed * .8 + index) * (22 + index), 16 + index * 6 + Math.cos(pose.elapsed + index) * 4, z);
+      swarm.rotation.y = pose.elapsed * .45 + index; swarm.visible = pose.mode === 'defense' && pose.phase === 'riding';
     });
-    this.clouds.forEach((cloud, index) => { cloud.position.x += Math.sin(elapsed * .12 + index) * .002; });
-    if (this.sunMaterial) this.sunMaterial.emissiveIntensity = pose.stage === 'sun' ? 7.2 : pose.stage === 'stall' ? 4.4 : 2.8;
   }
 
   dispose(): void {
+    this.atmosphere.dispose();
     this.group.removeFromParent(); this.group.clear();
     this.geometries.forEach(geometry => geometry.dispose()); this.materials.forEach(material => material.dispose());
     this.lights.forEach(light => light.dispose());

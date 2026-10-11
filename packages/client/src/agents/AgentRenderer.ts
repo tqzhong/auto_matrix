@@ -9,7 +9,7 @@ import { poseFreewayTransferContact } from './FreewayPickupContact.js';
 import { truckRoadRoot, freewayHandoffRoot, truckWeaponPairRoot, truckHoodRoot } from '@auto_matrix/shared';
 import { freewayPickupRoot, freewayDriverRoot, freewayRideRoot } from '@auto_matrix/shared';
 import * as THREE from 'three';
-import { hammerCrewRoot, hammerShipPose, logosCrewRoot, logosShipPose } from '@auto_matrix/shared';
+import { hammerCrewRoot, hammerShipPose, logosCrewRoot, logosShipPose, logosFlightSet } from '@auto_matrix/shared';
 import { CONNECTED_ROLES, BETRAYAL, crosscutActive, type CrosscutGesture, FILM_SETS, groundHeight, mirrorGuidePose, ambushRouteRoot, ambushRetreatRoot, wetwallPose, sixthPose, bathroomFightRoot, basementDropPose, basementDropRoot, basementDropPlayback, CLUB, clubRoot, oracleCookieOwner, oracleReceptionRoot, officeClothing, type AmbushEscort, type AgentState, type CombatImpact, type FilmJourney, type WetwallPhase, type BasementDropPlayback, type ClubPhase } from '@auto_matrix/shared';
 import { trackingContact } from './TrackingContact.js';
 import { CharacterModels, weaponMuzzle, type CharacterRig } from './CharacterModel.js';
@@ -410,7 +410,7 @@ export class AgentRenderer {
       if (!logosPilot && entry.logosPilot) entry.body.rotation.z = 0;
       entry.logosPilot = Boolean(logosPilot);
       if (logosPilot) {
-        const point = logosCrewRoot(logosPilot.flight, logosPilot.role), center = FILM_SETS[logosPilot.flight.mode === 'defense' ? 'film_machine_defense' : 'film_above_clouds'].center;
+        const point = logosCrewRoot(logosPilot.flight, logosPilot.role), center = FILM_SETS[logosFlightSet(logosPilot.flight)].center;
         entry.group.position.set(center.x + point.x, center.y + point.y, center.z + point.z); guideHeading = point.yaw;
         entry.body.rotation.y = point.yaw;
       }

@@ -107,7 +107,7 @@ import { CHATEAU, type ChateauEncounter } from '@auto_matrix/shared';
 import { MOUNTAIN, type MountainFlight, type PlayerInput } from '@auto_matrix/shared';
 import { GARAGE, newGarageEscape, stepGarageEscape } from '@auto_matrix/shared';
 import { HAMMER_ROUTE, HAMMER_COCKPIT, HAMMER_HANDOVER_SECONDS, HAMMER_HANDOVER_CAST, hammerHandoverDuration, hammerHandoverPose, hammerHandoverText, hammerCrewRoot, hammerHeight, hammerRouteFrame, hammerRoutePoint, newHammerFlight, stepHammerFlight } from '@auto_matrix/shared';
-import { newLogosFlight, stepLogosFlight, logosCrewRoot } from '@auto_matrix/shared';
+import { newLogosFlight, continueLogosFlight, stepLogosFlight, logosCrewRoot, logosFlightSet } from '@auto_matrix/shared';
 import { farewellLocked, farewellPose, newFarewell, stepFarewell } from '@auto_matrix/shared';
 import { DEUS_PACT, deusPactDialogue, deusPactLocked, deusPactPose, newDeusPact, stepDeusPact } from '@auto_matrix/shared';
 import { SMITH_FINALE, newSmithFinale, retrySmithFinale, smithFinaleAction as reduceSmithFinaleAction,
@@ -4940,7 +4940,7 @@ export class FilmStorySystem {
   logosFrame(agent: AgentState): boolean {
     const state = this.state;
     if (!state || !['m3_defense', 'm3_sun'].includes(state.scene) || state.visiting || agent.id !== state.actor) return false;
-    const flight = state.logos ?? newLogosFlight(state.scene === 'm3_defense' ? 'defense' : 'sun');
+    const flight = state.logos ?? state.logosEntry ?? newLogosFlight(state.scene === 'm3_defense' ? 'defense' : 'sun');
     const center = FILM_SETS[this.scene!.set].center;
     for (const role of ['trinity', 'neo'] as const) {
       const crew = this.world.agents.get(role);
@@ -6663,8 +6663,8 @@ export class FilmStorySystem {
         if (this.world.agents.get('neo')?.controller) return 'Neo 正由另一位玩家控制；等待他空闲后再启动 Logos 航行。';
         const neo = this.world.agents.get('neo');
         if (!neo || neo.status !== 'alive' || neo.health <= 0) return 'Neo 当前无法协助航行，Logos 保留在准备状态。';
-        if (!state.logos) state.logos = newLogosFlight(state.scene === 'm3_defense' ? 'defense' : 'sun');
-        state.checkpoint = filmStepPosition(this.scene!, step);
+        if (!state.logos) state.logos = state.logosEntry ? { ...state.logosEntry } : newLogosFlight(state.scene === 'm3_defense' ? 'defense' : 'sun');
+        state.checkpoint = filmStepPosition(this.scene!, step, state);
         this.driveFrame(agent, { throttle: 0, steer: 0, brake: false }, 0, tick);
         return state.scene === 'm3_defense'
           ? '已接管 Logos。A / D 横移，W 爬升、S 俯冲；按住 G 让 Neo 消耗感知击碎迫近目标，余下浮雷必须亲自绕开。'
@@ -6775,6 +6775,9 @@ export class FilmStorySystem {
   }
   private enter(scene: FilmScene, tick: number, position?: AgentState['position'], road?: import('@auto_matrix/shared').TruckRoad): void {
     const state = this.state!; const life = this.sandbox().neoLife!;
+    state.logosEntry = scene.id === 'm3_sun' && state.logos?.mode === 'defense' && state.logos.phase === 'arrived'
+      ? continueLogosFlight(state.logos) : undefined;
+    if (state.logosEntry) scene = { ...scene, set: logosFlightSet(state.logosEntry) };
     const custodyArrival = scene.id === 'm1_interrogation' && state.office?.outcome === 'captured';
     const crosscut = state.tvExit?.crosscut;
     const smithFinale = state.smithFinale;
@@ -6810,7 +6813,7 @@ export class FilmStorySystem {
       state.primaryDemolition ??= { phase: 'done', installed: PRIMARY_DEMOLITION.sites.map(site => site.id), elapsed: 0, remaining: 0, attempts: 0 };
       state.primaryDemolition.blast ??= { phase: 'ready', elapsed: 0 };
     }
-    this.clearThreats(); state.enteredAt = tick; state.checkpoint = position ?? filmEntry(scene); delete state.started; delete state.fighting;
+    this.clearThreats(); state.enteredAt = tick; state.checkpoint = state.logosEntry ? filmStepPosition(scene, scene.steps[0], { ...state, logos: undefined }) : position ?? filmEntry(scene); delete state.started; delete state.fighting;
     delete state.lobby;
     delete state.ride;
     delete state.freewayHandoff;
@@ -6971,7 +6974,7 @@ export class FilmStorySystem {
     const actor = this.world.agents.get(state.actor)!;
     for (const other of this.world.agents.values()) if (!other.controller && (other.currentAction?.parameters.basement || other.currentAction?.parameters.tvExit)) other.currentAction = null;
     const incomingHealth = actor.health;
-    this.place(actor, scene, state.checkpoint); actor.status = 'alive'; actor.health = ['m2_architect', 'm2_catch', 'm2_stop_sentinels', 'm2_medical', 'm3_hel_bargain', 'm3_mobil_release', 'm3_oracle_last', 'm3_oracle_absorbed', 'm3_bane_questions', 'm3_logos_plan', 'm3_zion_prepare', 'm3_maggie_discovery', 'm3_bane'].includes(scene.id) || road || custodyArrival || scene.id === 'm3_dock_reunion' || scene.id === 'm3_dock_briefing' || scene.id === 'm3_dock_evacuation' || scene.id === 'm3_shaft_seal' || scene.id === 'm3_temple_defense' || scene.id === 'm3_temple_breach' || scene.id === 'm3_surrender' || crosscut && ['m1_unplugged', 'm1_rescue_decision'].includes(scene.id) || scene.id === 'm1_basement' || scene.id === 'm1_tv_exit' || scene.id === 'm1_wetwall' || scene.id === 'm1_wall_exposed' || scene.id === 'm1_bathroom' && state.wallExposure?.phase === 'done' ? incomingHealth : actor.maxHealth; if (!custodyArrival && !['m2_architect', 'm2_catch', 'm3_dock_briefing', 'm3_dock_evacuation', 'm3_shaft_seal', 'm3_temple_defense', 'm3_temple_breach', 'm3_hel_bargain', 'm3_mobil_release', 'm3_oracle_last', 'm3_oracle_absorbed', 'm3_bane_questions', 'm3_logos_plan', 'm3_zion_prepare', 'm3_maggie_discovery', 'm3_bane'].includes(scene.id)) actor.activeEffects = [];
+    this.place(actor, scene, state.checkpoint); actor.status = 'alive'; actor.health = ['m2_architect', 'm2_catch', 'm2_stop_sentinels', 'm2_medical', 'm3_hel_bargain', 'm3_mobil_release', 'm3_oracle_last', 'm3_oracle_absorbed', 'm3_bane_questions', 'm3_logos_plan', 'm3_zion_prepare', 'm3_maggie_discovery', 'm3_bane'].includes(scene.id) || state.logosEntry || road || custodyArrival || scene.id === 'm3_dock_reunion' || scene.id === 'm3_dock_briefing' || scene.id === 'm3_dock_evacuation' || scene.id === 'm3_shaft_seal' || scene.id === 'm3_temple_defense' || scene.id === 'm3_temple_breach' || scene.id === 'm3_surrender' || crosscut && ['m1_unplugged', 'm1_rescue_decision'].includes(scene.id) || scene.id === 'm1_basement' || scene.id === 'm1_tv_exit' || scene.id === 'm1_wetwall' || scene.id === 'm1_wall_exposed' || scene.id === 'm1_bathroom' && state.wallExposure?.phase === 'done' ? incomingHealth : actor.maxHealth; if (!state.logosEntry && !custodyArrival && !['m2_architect', 'm2_catch', 'm3_dock_briefing', 'm3_dock_evacuation', 'm3_shaft_seal', 'm3_temple_defense', 'm3_temple_breach', 'm3_hel_bargain', 'm3_mobil_release', 'm3_oracle_last', 'm3_oracle_absorbed', 'm3_bane_questions', 'm3_logos_plan', 'm3_zion_prepare', 'm3_maggie_discovery', 'm3_bane'].includes(scene.id)) actor.activeEffects = [];
     if (scene.id === 'm3_rain') { actor.position = filmPosition(scene.set, 0, -78); actor.rotation = 0; state.checkpoint = { ...actor.position }; }
     if (scene.id === 'm1_basement') this.basement.start();
     if (scene.id === 'm1_tv_exit') this.basement.startTv();
@@ -6990,7 +6993,7 @@ export class FilmStorySystem {
     const neo = this.world.agents.get('neo')!;
     neo.isAwakened = FILM_SCENES.findIndex(item => item.id === scene.id) >= FILM_SCENES.findIndex(s => s.id === 'm1_pod');
     const profile = this.sandbox().profiles[actor.id];
-    if (profile) { profile.trackedMission = ''; profile.trace = 0; if (!['m2_architect', 'm3_hel_bargain', 'm3_mobil_release', 'm3_oracle_last', 'm3_oracle_absorbed', 'm3_bane_questions', 'm3_logos_plan', 'm3_zion_prepare', 'm3_maggie_discovery', 'm3_bane'].includes(scene.id)) profile.inventory.medkit = Math.max(profile.inventory.medkit, 2); delete profile.job; if (!profile.visited.includes(scene.set)) profile.visited.push(scene.set); }
+    if (profile) { profile.trackedMission = ''; profile.trace = 0; if (!state.logosEntry && !['m2_architect', 'm3_hel_bargain', 'm3_mobil_release', 'm3_oracle_last', 'm3_oracle_absorbed', 'm3_bane_questions', 'm3_logos_plan', 'm3_zion_prepare', 'm3_maggie_discovery', 'm3_bane'].includes(scene.id)) profile.inventory.medkit = Math.max(profile.inventory.medkit, 2); delete profile.job; if (!profile.visited.includes(scene.set)) profile.visited.push(scene.set); }
     this.sandbox().weather = FILM_SETS[scene.set].light === 'storm' || ['m1_bridge', 'm1_bug'].includes(scene.id) ? 'rain' : 'clear';
     this.sandbox().weatherUntil = tick + 100000;
     this.stageCast();
