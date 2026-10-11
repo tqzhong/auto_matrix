@@ -517,7 +517,7 @@ export class FilmSetRenderer {
     this.smithFinale?.update(smith ?? (sandbox?.structures.some(s => s.id === 'film:smith:crater')
       ? { phase: 'done', elapsed: 0, total: elapsed, focus: 0, hits: 0, lastStrike: -1, lane: 0, checkpoint: 'air', attempts: 0 } : undefined),
       firstPerson, { x: (playerPosition?.x ?? this.current?.center.x ?? 0) - (this.current?.center.x ?? 0),
-        z: (playerPosition?.z ?? this.current?.center.z ?? 0) - (this.current?.center.z ?? 0) });
+        z: (playerPosition?.z ?? this.current?.center.z ?? 0) - (this.current?.center.z ?? 0) }, camera);
     this.trilogyEpilogue?.update(epilogue, elapsed, this.recoverySubject);
     this.construct?.update(journey);
     this.desert?.update(journey, elapsed);

@@ -880,6 +880,9 @@ export class CharacterModels {
   }
 
   animate(rig: CharacterRig, delta: number, input: MotionInput, distance: number): void {
+    const near = distance < 100 || Boolean(input.oracleRestored);
+    rig.detail.visible = near; rig.distant.visible = !near;
+    if (!near) return;
     for (const side of ['R', 'L']) rig.root.getObjectByName(`oracle-hand-${side}`)?.quaternion.identity();
     if (rig.detail.userData.oracleLastPose && !input.oracleLast && !input.oracleAbsorption) {
       delete rig.detail.userData.oracleLastPose;
@@ -908,9 +911,6 @@ export class CharacterModels {
     if (input.sourcePortal && input.sourcePortal.role !== 'morpheus' && !rig.sourcePortalProps) {
       rig.sourcePortalProps = new SourcePortalProps(rig.detail); this.sourcePortalProps.add(rig.sourcePortalProps);
     }
-    const near = distance < 100 || Boolean(input.oracleRestored);
-    rig.detail.visible = near; rig.distant.visible = !near;
-    if (!near) return;
     if (rig.zionVariant) {
       const variant = rig.zionVariant, realWorld = Boolean(input.realWorld) && (!rig.medicalCrew || Boolean(input.maggieDiscovery));
       if (variant.realWorld !== realWorld) {
