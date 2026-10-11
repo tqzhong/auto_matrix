@@ -1479,8 +1479,8 @@ export class PlayerControls {
       const gesture = this.motion.templeDefense, center = FILM_SETS.film_zion_temple.center;
       const waiting = gesture.phase === 'waiting', breach = gesture.phase === 'breach';
       const lift = breach ? THREE.MathUtils.smoothstep(gesture.elapsed, 0, 2.1) : 0;
-      const ideal = new THREE.Vector3(center.x + (waiting ? 3 : 7), center.y + (waiting ? 4.5 : breach ? 2.8 : 6.5), center.z + (waiting ? -12 : breach ? -44 : -31));
-      const focus = new THREE.Vector3(center.x + (waiting ? -1.9 : 0), center.y + (waiting ? 1.8 : 2.5 + 20 * lift), center.z + (waiting ? -18 : -46 - 59 * lift));
+      const ideal = new THREE.Vector3(center.x + (waiting ? 3 : breach ? 0 : 7), center.y + (waiting ? 4.5 : breach ? 2.8 : 6.5), center.z + (waiting ? -12 : breach ? -48 : -31));
+      const focus = new THREE.Vector3(center.x + (waiting ? -1.9 : 0), center.y + (waiting ? 1.8 : 2.5 + 20 * lift), center.z + (waiting ? -18 : breach ? -60 - 45 * lift : -46));
       if (resetCamera) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
       this.camera.lookAt(focus);
     } else if (this.motion.government) {

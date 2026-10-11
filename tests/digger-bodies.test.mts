@@ -165,19 +165,19 @@ test('Zee’s shipped hands stay on the artillery wheel without crossing her arm
   }
 });
 
-test('Zee shelters below standing height with planted boots while waiting for Neo', async t => {
+test('Zee waits standing in Link’s arms with planted boots, as in the temple scene', async t => {
   const { rigs, models } = await fixture(t), rig = rigs.zee;
   rig.root.position.set(0, 0, 0); rig.root.rotation.set(0, -Math.PI / 2, 0);
   const motion = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true,
     templeDefense: { role: 'zee', phase: 'waiting' as const, elapsed: 2.1, turn: 1, grip: 0 } };
   models.animate(rig, 0, motion, 1); rig.root.updateMatrixWorld(true);
-  assert.ok(rig.torso.getWorldPosition(new THREE.Vector3()).y < 1.35, 'the temple wait is a crouched huddle, not a replay of the standing dock reunion');
+  assert.ok(rig.torso.getWorldPosition(new THREE.Vector3()).y > 1.8, 'the film shows a standing embrace, not a crouched huddle');
   const boots = rig.root.getObjectByName('zee-work-boots') as THREE.SkinnedMesh; boots.skeleton.update();
   const floor = new THREE.Box3().setFromObject(boots, true).min.y;
-  assert.ok(floor >= -.01 && floor < .03, `crouched sole support is ${floor}`);
+  assert.ok(floor >= -.01 && floor < .03, `standing sole support is ${floor}`);
   const skin = rig.root.getObjectByName('zee-anatomical-body') as THREE.SkinnedMesh; skin.skeleton.update();
   const before = skin.getVertexPosition(100, new THREE.Vector3()); models.animate(rig, 0, motion, 1); skin.skeleton.update();
-  assert.ok(before.distanceTo(skin.getVertexPosition(100, new THREE.Vector3())) < 1e-7, 'a paused huddle does not drift');
+  assert.ok(before.distanceTo(skin.getVertexPosition(100, new THREE.Vector3())) < 1e-7, 'a paused embrace does not drift');
 });
 
 test('a contact correction after animation moves the rendered skin and its culling bounds in the same frame', async t => {

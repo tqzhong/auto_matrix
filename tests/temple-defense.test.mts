@@ -182,7 +182,7 @@ test('the final city breach freezes on pause and disconnect and returns control 
   assert.equal(state.scene, 'm3_temple_breach'); assert.equal(h.players.getAgent('p')!.id, 'lock');
   const lock = h.players.getAgent('p')!, scene = FILM_SCENE_BY_ID.m3_temple_breach;
   lock.position = filmStepPosition(scene, scene.steps[0]); h.frame(1, false); assert.equal(state.step, 1);
-  h.command('act'); h.frame(59, false); assert.equal(state.templeBreach!.phase, 'breach');
+  h.command('act'); h.frame(Math.ceil(TEMPLE_DEFENSE.breach.orders * 10) + 14, false); assert.equal(state.templeBreach!.phase, 'breach');
   const saved = structuredClone(state.templeBreach); h.frame(20, false, false); assert.deepEqual(state.templeBreach, saved);
   h.players.release('p', 20); h.sandbox.tick(100); assert.deepEqual(state.templeBreach, saved);
   h.sandbox.restore(structuredClone(h.sandbox.state)); h.players.possess('p', 'lock', 100);

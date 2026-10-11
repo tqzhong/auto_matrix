@@ -7,6 +7,7 @@ export class TempleDefenseRenderer {
   readonly group = new THREE.Group();
   private wheels: THREE.Group[] = [];
   private drill = new THREE.Group();
+  private ceilingFragments: { mesh: THREE.Mesh; origin: THREE.Vector3; angle: number }[] = [];
   private rubble: THREE.InstancedMesh;
   private dust: THREE.InstancedMesh;
   private geometries = new Set<THREE.BufferGeometry>();
@@ -74,10 +75,23 @@ export class TempleDefenseRenderer {
       for (let j = -12; j <= 12; j += 3) this.pipe(steel, [x + j, -2.7, z + 10.8], [x + j, -1.1, z + 10.8], .05, outside);
       this.pipe(steel, [x - 13, -1.1, z + 10.8], [x + 13, -1.1, z + 10.8], .05, outside);
     }
+    this.cityCeiling(stone, steel);
     this.drill.name = 'temple-city-digger'; this.drill.position.set(0, 38, -105); this.group.add(this.drill);
     const tip = this.mesh(new THREE.ConeGeometry(5.4, 10, 32), steel, this.drill); tip.rotation.z = Math.PI;
-    for (let i = 0; i < 7; i++) { const ring = this.mesh(new THREE.TorusGeometry(5.5 - i * .55, .28, 10, 32), dark, this.drill); ring.rotation.x = Math.PI / 2; ring.position.y = 4.1 - i * 1.25; }
+    for (let i = 0; i < 7; i++) {
+      const radius = 5.5 - i * .55, y = 4.1 - i * 1.25;
+      const ring = this.mesh(new THREE.TorusGeometry(radius, .28, 10, 32), dark, this.drill); ring.rotation.x = Math.PI / 2; ring.position.y = y;
+      for (let tooth = 0; tooth < 12; tooth++) {
+        const angle = tooth * Math.PI / 6 + i * .38;
+        const cutter = this.mesh(new THREE.BoxGeometry(.56, .55, .86), steel, this.drill);
+        cutter.position.set(Math.cos(angle) * radius, y, Math.sin(angle) * radius); cutter.rotation.set(.24, -angle, .16);
+      }
+    }
     this.cylinder(dark, 0, 8.5, 0, 5.5, 7, this.drill);
+    for (let i = 0; i < 12; i++) {
+      const angle = i * Math.PI / 6;
+      this.pipe(steel, [Math.cos(angle) * 5.65, 5.2, Math.sin(angle) * 5.65], [Math.cos(angle) * 5.65, 11.5, Math.sin(angle) * 5.65], .18, this.drill);
+    }
     this.rubble = new THREE.InstancedMesh(new THREE.DodecahedronGeometry(.5, 0), stone, 32); this.rubble.name = 'temple-breach-rubble'; this.rubble.frustumCulled = false;
     this.geometries.add(this.rubble.geometry); this.group.add(this.rubble);
     const pixels = new Uint8Array(64 * 64 * 4);
@@ -115,6 +129,33 @@ export class TempleDefenseRenderer {
     batchStaticGeometry(this.group, new Set()).forEach(geometry => this.geometries.add(geometry));
     this.update(undefined);
   }
+  private cityCeiling(stone: THREE.MeshStandardMaterial, steel: THREE.Material): void {
+    const ceiling = new THREE.Group(); ceiling.name = 'temple-city-ceiling'; this.group.add(ceiling);
+    const material = stone.clone(); material.side = THREE.DoubleSide; this.materials.add(material);
+    const edge = Array.from({ length: 12 }, (_, i) => {
+      const angle = i * Math.PI / 6, radius = 7.5 + Math.sin(i * 1.7) * .45;
+      return new THREE.Vector2(Math.cos(angle) * radius, Math.sin(angle) * radius);
+    });
+    const outline = new THREE.Shape(); outline.moveTo(-85, -55); outline.lineTo(85, -55); outline.lineTo(85, 46); outline.lineTo(-85, 46); outline.closePath();
+    outline.holes.push(new THREE.Path(edge));
+    const roof = this.mesh(new THREE.ExtrudeGeometry(outline, { depth: 1.1, bevelEnabled: false }), material, ceiling);
+    roof.name = 'temple-city-roof'; roof.rotation.x = Math.PI / 2; roof.position.set(0, 31.55, -105);
+    const pieces = new THREE.Group(); pieces.name = 'temple-ceiling-fragments'; ceiling.add(pieces);
+    for (let i = 0; i < edge.length; i++) {
+      const a = edge[i], b = edge[(i + 1) % edge.length], center = a.clone().add(b).multiplyScalar(1 / 3);
+      const triangle = new THREE.Shape(); triangle.moveTo(-center.x, -center.y); triangle.lineTo(a.x - center.x, a.y - center.y); triangle.lineTo(b.x - center.x, b.y - center.y); triangle.closePath();
+      const geometry = new THREE.ExtrudeGeometry(triangle, { depth: 1.1, bevelEnabled: false });
+      geometry.translate(0, 0, -.55); geometry.rotateX(Math.PI / 2);
+      const piece = this.mesh(geometry, material, pieces); piece.name = `temple-roof-piece-${i}`;
+      const origin = new THREE.Vector3(center.x, 31, center.y - 105); piece.position.copy(origin);
+      this.ceilingFragments.push({ mesh: piece, origin, angle: Math.atan2(center.y, center.x) });
+    }
+    // Broken service reinforcement stays around the bore rather than crossing its opening.
+    for (const side of [-1, 1]) {
+      this.pipe(steel, [side * 9, 30.25, -157], [side * 9, 30.25, -60], .16, ceiling);
+    }
+    for (let x = -67; x <= 67; x += 22) this.pipe(steel, [x, 30.25, -157], [x, 30.25, -115], .12, ceiling);
+  }
   private material(color: number, roughness: number, metalness: number): THREE.MeshStandardMaterial {
     const material = new THREE.MeshStandardMaterial({ color, roughness, metalness }); this.materials.add(material); return material;
   }
@@ -146,18 +187,30 @@ export class TempleDefenseRenderer {
     this.group.visible = Boolean(journey && !journey.visiting && ['m3_temple_defense', 'm3_temple_breach', 'm3_ceasefire'].includes(journey.scene));
     if (!this.group.visible) return;
     this.wheels.forEach((wheel, index) => wheel.rotation.z = (journey?.templeSeal?.turns?.[index] ?? (journey?.completed.includes('m3_temple_defense') ? 1 : 0)) * TEMPLE_DEFENSE.wheel.angle);
-    const breach = journey?.scene === 'm3_temple_breach' ? journey.templeBreach : undefined;
-    const active = Boolean(breach && ['breach', 'waiting', 'done'].includes(breach.phase));
+    const breach = journey?.templeBreach;
+    const active = Boolean(breach && ['breach', 'waiting', 'done'].includes(breach.phase) || journey?.completed.includes('m3_temple_breach'));
     const age = breach?.phase === 'breach' ? breach.elapsed : TEMPLE_DEFENSE.breach.drilling;
     this.drill.visible = active; this.drill.position.y = 38 - Math.min(1, age / TEMPLE_DEFENSE.breach.drilling) * 19;
     this.drill.rotation.y = age * 2.7;
+    const vertex = new THREE.Vector3();
+    this.ceilingFragments.forEach(({ mesh, origin, angle }, index) => {
+      const falling = active ? Math.max(0, age - .86 - index * .045) : 0;
+      const settle = Math.min(1, falling / 2.1);
+      mesh.rotation.set(settle * (.32 + index % 3 * .19), settle * .4, settle * (index % 2 ? -.42 : .36));
+      let support = Infinity;
+      const positions = mesh.geometry.attributes.position;
+      for (let i = 0; i < positions.count; i++) support = Math.min(support, vertex.fromBufferAttribute(positions, i).applyEuler(mesh.rotation).y);
+      mesh.position.copy(origin);
+      mesh.position.y = Math.max(6.025 - support, origin.y - 4.9 * falling * falling);
+      mesh.position.x += Math.cos(angle) * settle * 1.3; mesh.position.z += Math.sin(angle) * settle * 1.3;
+    });
     const matrix = new THREE.Matrix4(), position = new THREE.Vector3(), scale = new THREE.Vector3(), rotation = new THREE.Quaternion();
     this.rubble.visible = this.dust.visible = active; this.rubble.count = 0; this.dust.count = 0;
     if (!active) return;
     for (let i = 0; i < 32; i++) {
-      const falling = age - .45 - i * .14; if (falling < 0) continue;
+      const falling = age - .86 - i * .14; if (falling < 0) continue;
       const a = i * 2.4, r = 1.5 + i % 6;
-      position.set(Math.cos(a) * (r + falling * .3), 28 - Math.min(30, falling * falling * 4.9), -104 + Math.sin(a) * r);
+      position.set(Math.cos(a) * (r + Math.min(2.1, falling) * .3), Math.max(6.5, 31 - falling * falling * 4.9), -104 + Math.sin(a) * r);
       rotation.setFromEuler(new THREE.Euler(falling * .9, a, falling * 1.3)); scale.setScalar(.3 + i % 4 * .18); matrix.compose(position, rotation, scale);
       this.rubble.setMatrixAt(this.rubble.count++, matrix);
     }

@@ -3873,7 +3873,7 @@ test('the entire film route completes through interactions, driving and real com
       else if (scene.id === 'm3_temple_defense' || scene.id === 'm3_temple_breach') {
         if (scene.id === 'm3_temple_defense' && state.templeSeal?.phase === 'ready') h.command('act');
         if (step.kind === 'interact') h.command('act');
-        const limit = scene.id === 'm3_temple_breach' ? 200 : 45;
+        const limit = scene.id === 'm3_temple_breach' ? 240 : 45;
         for (let frame = 0; frame < limit && state.step === index; frame++) {
           h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false,
             focus: scene.id === 'm3_temple_defense' && step.kind === 'interact', sequence: ++sequence });

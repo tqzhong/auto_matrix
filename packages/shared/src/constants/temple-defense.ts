@@ -8,7 +8,7 @@ export const TEMPLE_DEFENSE = {
   obstacles: [{ x: -8, z: -50, width: 4.4, depth: 7.5, height: 4.3 }, { x: 8, z: -50, width: 4.4, depth: 7.5, height: 4.3 },
     { x: -10.8, z: -48.7, width: 1.8, depth: 1.2, height: 2.3 }, { x: 10.8, z: -48.7, width: 1.8, depth: 1.2, height: 2.3 }],
   cast: ['zee', 'link', 'lock', 'hamann', 'kid', 'zion_parent', 'zion_neighbor', 'citizen_15', 'citizen_16'],
-  breach: { orders: 4.4, drilling: 8.2, waiting: 4.8, actor: { x: 3.8, z: -37.5, yaw: Math.PI } },
+  breach: { orders: 8.2, drilling: 8.2, waiting: 4.8, actor: { x: 3.8, z: -37.5, yaw: Math.PI } },
 } as const;
 
 /** The serialized name templeSeal is retained for old saves; sealed now means the artillery is secured. */
@@ -42,7 +42,10 @@ export function templeWheelHands(index: number, turn: number): { x: number; y: n
   return [-1, 1].map(sign => ({ x: TEMPLE_DEFENSE.mounts[index].x + sign * wheel.radius * Math.cos(angle),
     y: wheel.y + sign * wheel.radius * Math.sin(angle), z: wheel.z + .08 }));
 }
-export function templeCastRoot(role: string): { x: number; z: number; yaw: number } {
+export function templeCastRoot(role: string, breach = false): { x: number; z: number; yaw: number } {
+  if (breach && (role === 'citizen_15' || role === 'citizen_16')) {
+    return { x: TEMPLE_DEFENSE.mounts[role === 'citizen_15' ? 0 : 1].x, z: TEMPLE_DEFENSE.operatorZ, yaw: Math.PI };
+  }
   const positions: Record<string, { x: number; z: number; yaw: number }> = {
     lock: TEMPLE_DEFENSE.breach.actor, link: { x: -2.45, z: -18, yaw: Math.PI / 2 },
     zee: { x: -1.35, z: -18, yaw: -Math.PI / 2 }, hamann: { x: -12, z: 5, yaw: Math.PI },
@@ -56,7 +59,9 @@ export function templeDefenseText(state?: TempleDefense, breach?: TempleBreach):
   const blocked = breach?.paused ?? state?.paused, missing = breach?.unavailable ?? state?.unavailable;
   if (blocked) return `${blocked} 正由另一位玩家控制；入口准备与演出等待，不会接管他。`;
   if (missing) return `${missing} 无法到场；保留当前进度，等待这位同伴恢复。`;
-  if (breach) return ({ ready: '走到入口指挥位置，按 G 让 Lock 确认最后的部署。', orders: 'Lock：把弹药放到炮位旁，固定好炮架。我们只剩这一次机会。',
+  if (breach?.phase === 'orders') return breach.elapsed < 2.8 ? 'Lock：把弹药送到炮位旁。'
+    : breach.elapsed < 5.4 ? 'Lock：只剩这一次机会，检查好支架！' : 'Lock：固定那门炮，快！';
+  if (breach) return ({ ready: '走到入口指挥位置，按 G 让 Lock 确认最后的部署。',
     breach: '城顶被钻穿，岩屑落向城市。封井并没有阻止机器继续推进。', waiting: 'Link 与 Zee 留在人群边缘。Link：Neo，如果你能改变这一切，就请快一点。',
     done: '神庙里的等待仍在继续。按 G 接回机器城中的 Neo。' })[breach.phase];
   if (state?.phase === 'failed') return '炮位还未固定，入口准备时间已耗尽。按 J 重试；封井、EMP 和既有伤亡保留。';

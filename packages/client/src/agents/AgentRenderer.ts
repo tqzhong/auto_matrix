@@ -795,7 +795,7 @@ export class AgentRenderer {
       if (partner) poseDockReunion(partner, { ...reunion, role: 'zee' }, reunionLink.rig);
     }
     const temple = reunionLink?.state.currentAction?.parameters.templeDefense as MotionInput['templeDefense'];
-    if (temple?.phase === 'waiting' && reunionLink && reunionZee && !reunionLink.state.controller && !reunionZee.state.controller
+    if (temple && ['breach', 'waiting', 'done'].includes(temple.phase) && reunionLink && reunionZee && !reunionLink.state.controller && !reunionZee.state.controller
       && reunionLink.state.status === 'alive' && reunionZee.state.status === 'alive' && reunionZee.state.currentAction?.parameters.templeDefense) {
       poseTempleDefense(reunionLink.rig, temple, reunionZee.rig);
       poseTempleDefense(reunionZee.rig, { ...temple, role: 'zee' }, reunionLink.rig);
