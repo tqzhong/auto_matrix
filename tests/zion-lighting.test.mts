@@ -80,3 +80,41 @@ test('dock lighting excludes only lights with no influence in the view and resto
       .every(light => light.intensity < 210), 'EMP dimming must still apply before visibility selection');
   } finally { renderer.dispose(); near.dispose(); far.dispose(); flash.dispose(); }
 });
+
+test('looking out of the temple excludes interior lamps, while turning back restores their illumination and all scenery stays present', () => {
+  const root = new THREE.Group(); root.position.set(5000, -100, 5000);
+  const renderer = new ZionHomecomingRenderer(root, 'film_zion_temple');
+  const journey = { scene: 'm3_ceasefire', step: 1, completed: ['m3_temple_breach'] } as unknown as FilmJourney;
+  const camera = new THREE.PerspectiveCamera(57, 16 / 9, .5, 5000);
+  const lights: THREE.PointLight[] = [], meshes: THREE.Mesh[] = [];
+  renderer.update(journey, 0); root.updateMatrixWorld(true);
+  root.traverseVisible(object => {
+    if (object instanceof THREE.PointLight) lights.push(object);
+    if (object instanceof THREE.Mesh) meshes.push(object);
+  });
+  const intensities = lights.map(light => light.intensity);
+  const interior = lights.find(light => light.position.equals(new THREE.Vector3(31, 6, 20)))!;
+  const entrance = lights.filter(light => Math.abs(light.position.x) === 8 && light.position.z === -43);
+  const fill = lights.find(light => light.position.equals(new THREE.Vector3(0, 34, -30)))!;
+  const flood = root.getObjectsByProperty('type', 'SpotLight')[0];
+  try {
+    assert.equal(lights.length, 22, 'all authored point lights remain available for the temple');
+    assert.equal(entrance.length, 2);
+    for (const aspect of [16 / 9, .65]) for (const outside of [true, false, true]) {
+      camera.aspect = aspect; camera.updateProjectionMatrix();
+      camera.position.set(5000, -95.6, 4949.13);
+      camera.lookAt(5000, outside ? -88 : -92, outside ? 4895 : 5030); camera.updateMatrixWorld(true);
+      renderer.update(journey, 0, camera.position, camera);
+      if (outside) {
+        assert.equal(lights.filter(light => light.visible).length, 3, 'nineteen interior lights cannot reach the exterior view');
+        assert.equal(interior.visible, false, 'the rear column lamp adds no light outside the entrance');
+      } else assert.ok(interior.visible, 'turning into the hall restores the actual column lighting immediately');
+      assert.ok(entrance.every(light => light.visible), 'bulbs behind the viewer can still light the visible bridge');
+      assert.ok(fill.visible && flood.visible, 'the large fill and exterior spotlight still illuminate the city');
+      assert.deepEqual(lights.map(light => light.intensity), intensities, 'selection must not dim the authored lights');
+      assert.ok(meshes.every(mesh => mesh.visible), 'optimization cannot remove residents, fixtures, architecture or shadow casters');
+    }
+    renderer.update(journey, 0, camera.position);
+    assert.ok(lights.every(light => light.visible), 'a caller without a view must restore all local illumination');
+  } finally { renderer.dispose(); }
+});
