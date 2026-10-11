@@ -1,4 +1,4 @@
-import { templeDefenseActive, templeDefenseLocked, templeDefenseText, oracleAbsorptionActive } from '@auto_matrix/shared';
+import { templeDefenseActive, templeDefenseLocked, templeDefenseText, oracleAbsorptionActive, logosIgnitionText } from '@auto_matrix/shared';
 import { helElevatorText, helGarageActive, helGarageText } from '@auto_matrix/shared';
 import { upperDiggerText, empOperatorText, type EmpOperator } from '@auto_matrix/shared';
 import { dockReunionLocked, dockReunionText, type DockReunion } from '@auto_matrix/shared';
@@ -238,6 +238,7 @@ export class PlayerExperience {
       this.el('mouse-hint').textContent = `${neoLife?.journey?.logosEntry ? 'G 继续穿云' : 'G 启航'} · V 切换驾驶舱视角 · 左键拖动观察 · J 手记`;
     if (neoLife?.journey?.logos?.phase === 'riding') this.el('mouse-hint').textContent = neoLife.journey.logos.mode === 'defense'
       ? 'W 爬升 · S 俯冲 · A / D 横移 · G Neo 感知 · V 切换视角'
+      : neoLife.journey.logos.ignition ? `${logosIgnitionText(neoLife.journey.logos)} · V 切换视角`
       : neoLife.journey.logos.stage === 'stall' ? '动力失效 · V 切换视角 · 左键拖动观察 · J 手记'
         : neoLife.journey.logos.stage === 'sun' ? '观察真实的阳光 · V 切换视角 · J 手记' : 'W 爬升穿云 · A / D 修正姿态 · V 切换视角 · J 手记';
     if (neoLife?.journey?.logos?.phase === 'arrived' && !neoLife.journey.visiting)

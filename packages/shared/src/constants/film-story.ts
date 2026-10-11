@@ -548,8 +548,8 @@ export const FILM_SCENES: FilmScene[] = [
   scene('m3_defense', 3, 'machine_defense', 'trinity', '机器城的防线', 'last_sky', 'chase', 'Logos 接近机器城，浮动炸弹和密集机器封锁航路。', [
     { kind: 'drive', label: '驾驶 Logos 穿过浮雷与机器群，爬升进入云层', x: 0, z: 42 },
   ], ['neo']),
-  scene('m3_sun', 3, 'above_clouds', 'trinity', '第一次看见太阳', 'last_sky', 'farewell', 'Logos 短暂穿出乌云。Trinity 看见蓝天与阳光，随后飞船失去动力。', [
-    { kind: 'drive', label: '驾驶受损的 Logos 穿出云层，见证阳光与失速坠落', x: 0, z: 29 },
+  scene('m3_sun', 3, 'above_clouds', 'trinity', '第一次看见太阳', 'last_sky', 'farewell', 'Logos 穿云时失去动力，依惯性冲入阳光。Trinity 必须在下坠时按 Neo 的指引重新点火。', [
+    { kind: 'drive', label: '穿出乌云看见阳光，在下坠时操作点火器重启引擎', x: 0, z: 29 },
   ], ['neo']),
   scene('m3_farewell', 3, 'logos_wreck', 'neo', '坠落之后', 'last_sky', 'farewell', 'Logos 撞入机器城。失明的 Neo 在金色余光中寻找 Trinity；最后的路只能由他独自走完。', [
     walk('沿金色余光穿过变形的驾驶舱', 0, -10.5),

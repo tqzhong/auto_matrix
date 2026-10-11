@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { batchStaticGeometry } from './StaticGeometry.js';
 import { LogosAtmosphere } from './LogosAtmosphere.js';
-import { LOGOS_DEFENSE, LOGOS_COCKPIT, logosShipPose, logosControlGrip, logosCloudTop, newLogosFlight, type LogosFlight, type LogosFlightMode } from '@auto_matrix/shared';
+import { LOGOS_DEFENSE, LOGOS_COCKPIT, logosShipPose, logosControlGrip, logosIgniterGrip, logosPowered, logosCloudTop, newLogosFlight, type LogosFlight, type LogosFlightMode } from '@auto_matrix/shared';
 
 /** A shared physical stage for the Logos defense run and the ascent above the cloud deck. */
 export class LogosFlightRenderer {
@@ -13,6 +13,10 @@ export class LogosFlightRenderer {
   private displays?: THREE.MeshStandardMaterial;
   private glyphs?: THREE.MeshStandardMaterial;
   private engineLight?: THREE.PointLight;
+  private igniter?: THREE.Mesh;
+  private igniterShaft?: THREE.Mesh;
+  private igniterLamp?: THREE.MeshStandardMaterial;
+  private discharge = new THREE.Group();
   private threats: THREE.Group[] = [];
   private swarms: THREE.Group[] = [];
   private atmosphere: LogosAtmosphere;
@@ -84,6 +88,13 @@ export class LogosFlightRenderer {
     this.buildCockpit(hull, edge, dark);
     const beacon = this.engineLight = new THREE.PointLight(0x8cebf0, 32, 24, 2); beacon.position.set(0, -1, 3);
     this.ship.add(beacon); this.lights.push(beacon);
+    const arc = this.material(0xb3d9f8, 0, .4, 0x4a92ec, 2, true, .75);
+    for (const side of [-1, 1]) {
+      const path = new THREE.CatmullRomCurve3([new THREE.Vector3(side * 6.5, -.1, 3), new THREE.Vector3(side * 5.5, 1.3, 1),
+        new THREE.Vector3(side * 4.3, .6, -2), new THREE.Vector3(side * 3.4, 3, -4)]);
+      this.mesh(new THREE.TubeGeometry(path, 14, .035, 5, false), arc, this.discharge);
+    }
+    this.discharge.name = 'logos-cloud-discharge'; this.ship.add(this.discharge);
 
     this.pulse.name = 'logos-neo-pulse';
     const gold = this.material(0xffcf62, .15, .18, 0xffb321, 4, true, .75);
@@ -134,6 +145,15 @@ export class LogosFlightRenderer {
       const mount = this.mesh(new THREE.CylinderGeometry(.25, .39, .86, 12), trim, seat); mount.position.y = .52;
       box('logos-seat-cushion', [1.35, .22, 1.04], [0, LOGOS_COCKPIT.seat - .11, .08], fabric, seat);
       box('logos-seat-back', [1.23, 1.43, .16], [0, 1.98, .64], fabric, seat);
+      if (role === 'trinity') {
+        const grip = logosIgniterGrip(newLogosFlight('sun'));
+        box('logos-igniter-mount', [.28, .16, .38], [-grip.x, 4.23, -grip.z], dark, seat);
+        this.igniter = this.mesh(new THREE.CylinderGeometry(.07, .07, .34, 12), fabric, seat, 'logos-igniter-grip');
+        this.igniterShaft = this.mesh(new THREE.CylinderGeometry(.035, .035, 1, 10), trim, seat, 'logos-igniter-shaft');
+        const lamp = this.igniterLamp = this.material(0x9f471b, .1, .45, 0xe66e20, .3);
+        const indicator = this.mesh(new THREE.SphereGeometry(.055, 8, 8), lamp, seat);
+        indicator.position.set(-grip.x, 4.12, -grip.z - .19);
+      }
       const rest = this.mesh(new THREE.TorusGeometry(.45, .045, 8, 32), trim, seat, 'logos-mesh-headrest'); rest.position.set(0, 2.96, .65);
       for (let i = -4; i <= 4; i++) {
         const offset = i * .09, length = Math.sqrt(.44 ** 2 - offset ** 2) * 2;
@@ -208,7 +228,19 @@ export class LogosFlightRenderer {
     for (const { mesh, side } of this.grips) {
       const grip = logosControlGrip(pose, 'trinity', side); mesh.position.set(-grip.x, grip.y, -grip.z);
     }
-    const powered = pose.stage !== 'stall';
+    const powered = logosPowered(pose);
+    const igniter = logosIgniterGrip(pose);
+    if (this.igniter) this.igniter.position.set(-igniter.x, igniter.y, -igniter.z);
+    if (this.igniterShaft) {
+      const top = 4.15, bottom = igniter.y + .16;
+      this.igniterShaft.position.set(-igniter.x, (top + bottom) / 2, -igniter.z); this.igniterShaft.scale.y = top - bottom;
+    }
+    if (this.igniterLamp) {
+      const ready = pose.ignition?.phase === 'ready' || pose.ignition?.phase === 'running';
+      this.igniterLamp.color.setHex(ready ? 0x5e9564 : 0x9f471b); this.igniterLamp.emissive.setHex(ready ? 0x63b97b : 0xe66e20);
+      this.igniterLamp.emissiveIntensity = pose.ignition?.phase === 'ready' ? 1 : .3;
+    }
+    this.discharge.visible = pose.ignition?.phase === 'offline' && pose.stage === 'clouds' && pose.ignition.elapsed < .32;
     if (this.displays) { this.displays.emissiveIntensity = powered ? .85 : 0; this.displays.color.setHex(powered ? 0x233b4d : 0x080d12); }
     if (this.glyphs) { this.glyphs.emissiveIntensity = powered ? .6 : 0; this.glyphs.color.setHex(powered ? 0x89a9bd : 0x080d12); }
     if (this.engineLight) this.engineLight.intensity = powered ? 32 : 0;

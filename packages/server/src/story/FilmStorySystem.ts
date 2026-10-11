@@ -107,7 +107,7 @@ import { CHATEAU, type ChateauEncounter } from '@auto_matrix/shared';
 import { MOUNTAIN, type MountainFlight, type PlayerInput } from '@auto_matrix/shared';
 import { GARAGE, newGarageEscape, stepGarageEscape } from '@auto_matrix/shared';
 import { HAMMER_ROUTE, HAMMER_COCKPIT, HAMMER_HANDOVER_SECONDS, HAMMER_HANDOVER_CAST, hammerHandoverDuration, hammerHandoverPose, hammerHandoverText, hammerCrewRoot, hammerHeight, hammerRouteFrame, hammerRoutePoint, newHammerFlight, stepHammerFlight } from '@auto_matrix/shared';
-import { newLogosFlight, continueLogosFlight, stepLogosFlight, logosCrewRoot, logosFlightSet } from '@auto_matrix/shared';
+import { newLogosFlight, continueLogosFlight, stepLogosFlight, logosCrewRoot, logosFlightSet, logosIgnitionText } from '@auto_matrix/shared';
 import { farewellLocked, farewellPose, newFarewell, stepFarewell } from '@auto_matrix/shared';
 import { DEUS_PACT, deusPactDialogue, deusPactLocked, deusPactPose, newDeusPact, stepDeusPact } from '@auto_matrix/shared';
 import { SMITH_FINALE, newSmithFinale, retrySmithFinale, smithFinaleAction as reduceSmithFinaleAction,
@@ -5216,6 +5216,7 @@ export class FilmStorySystem {
       this.logosFrame(agent);
       if (flight.destroyed > before.destroyed) state.lastText = `Neo 击碎来袭机器；金色感知剩余 ${Math.ceil(flight.neo)}%。继续手动避开其余浮雷。`;
       else if (flight.hits > before.hits) state.lastText = 'Logos 撞上浮雷，船壳正在解体。A / D 横移，W 爬升、S 俯冲；按住 G 让 Neo 摧毁一次迫近目标。';
+      else if (flight.ignition && (flight.ignition.phase !== before.ignition?.phase || flight.stage !== before.stage)) state.lastText = logosIgnitionText(flight);
       else if (flight.stage !== before.stage) state.lastText = flight.stage === 'clouds'
         ? 'Trinity 把船首拉向乌云。保持爬升，只有穿过云层才能越过机器群。'
         : flight.stage === 'sun' ? 'Logos 冲出云海。Trinity 第一次看见真实的蓝天与太阳。'
@@ -5224,7 +5225,8 @@ export class FilmStorySystem {
         agent.health = 0; agent.status = 'dead'; agent.velocity = { x: 0, y: 0, z: 0 };
         state.lastText = flight.mode === 'defense'
           ? 'Logos 没能穿过机器城防线。按 J 从接近航路的检查点重试。'
-          : '受损的 Logos 未能爬出云层。按 J 从云海下方重试。';
+          : flight.stage === 'clouds' ? '受损的 Logos 未能爬出云层。按 J 从云海下方重试。'
+            : 'Logos 在动力恢复之前撞毁。按 J 重试；下坠时按住 G 蓄压，听到提示后松开点火。';
       }
       return true;
     }
@@ -6660,6 +6662,7 @@ export class FilmStorySystem {
       return '钥匙匠或 Neo 正由另一位玩家控制，等待对方结束后再接应。';
     if (step.kind === 'drive') {
       if (state.scene === 'm3_defense' || state.scene === 'm3_sun') {
+        if (state.logos?.ignition && state.logos.phase === 'riding') return logosIgnitionText(state.logos);
         if (this.world.agents.get('neo')?.controller) return 'Neo 正由另一位玩家控制；等待他空闲后再启动 Logos 航行。';
         const neo = this.world.agents.get('neo');
         if (!neo || neo.status !== 'alive' || neo.health <= 0) return 'Neo 当前无法协助航行，Logos 保留在准备状态。';
@@ -6668,7 +6671,8 @@ export class FilmStorySystem {
         this.driveFrame(agent, { throttle: 0, steer: 0, brake: false }, 0, tick);
         return state.scene === 'm3_defense'
           ? '已接管 Logos。A / D 横移，W 爬升、S 俯冲；按住 G 让 Neo 消耗感知击碎迫近目标，余下浮雷必须亲自绕开。'
-          : 'Logos 已对准云层裂口。按住 W 爬升穿出乌云；抵达阳光后引擎会因损伤失速。';
+          : state.logos.ignition ? 'Logos 已对准云层裂口。W 爬升；穿云失电后依惯性上冲，下坠时根据 Neo 提示按住并松开 G 重新点火。'
+            : 'Logos 已对准云层裂口。按住 W 爬升穿出乌云；抵达阳光后引擎会因损伤失速。';
       }
       if (state.scene === 'm3_gate') {
         if (!state.apu) state.apu = newApuRun();
@@ -7823,7 +7827,8 @@ export class FilmStorySystem {
         if (neo && !neo.controller) { neo.velocity = { x: 0, y: 0, z: 0 }; neo.currentAction = null; }
         this.advance(state.scene === 'm3_defense'
           ? 'Trinity 驾驶 Logos 绕过浮雷，Neo 用有限的金色感知击碎拦截机器。船首钻入乌云，最后一条航线只剩向上。'
-          : 'Logos 冲出云层。Trinity 看见真实的蓝天与太阳；数秒后引擎停转，飞船失速坠回机器城。', actor, tick);
+          : state.logos.ignition ? 'Logos 在穿云时失去动力，惯性把两人送到阳光中。下坠时 Trinity 按 Neo 的指引重启引擎，但仍来不及避开机器城。'
+            : 'Logos 冲出云层。Trinity 看见真实的蓝天与太阳；数秒后引擎停转，飞船失速坠回机器城。', actor, tick);
         return;
       }
       if (state.scene === 'm3_gate' && state.apu?.phase === 'arrived') {

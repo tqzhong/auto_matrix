@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { LOGOS_COCKPIT, logosControlGrip, type LogosPilotGesture } from '@auto_matrix/shared';
+import { LOGOS_COCKPIT, logosControlGrip, logosIgniterGrip, logosIgniterReach, type LogosPilotGesture } from '@auto_matrix/shared';
 import type { CharacterRig } from './CharacterModel.js';
 import { reach } from './SpoonPerformance.js';
 
@@ -32,6 +32,10 @@ export function poseLogosPilot(rig: CharacterRig, gesture?: LogosPilotGesture): 
     reach(upper, lower, ankle.position, rig.root.localToWorld(foot), new THREE.Vector3(sign * .12, .1, 1).applyQuaternion(orientation));
     ankle.quaternion.copy(lower.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation));
     const grip = logosControlGrip(gesture.flight, gesture.role, sign), hand = new THREE.Vector3(grip.x, grip.y, grip.z);
+    if (gesture.role === 'trinity' && i === 0) {
+      const igniter = logosIgniterGrip(gesture.flight);
+      hand.lerp(new THREE.Vector3(igniter.x, igniter.y, igniter.z), logosIgniterReach(gesture.flight));
+    }
     const shoulder = hero?.bones.get(`shoulder_${side}`) ?? rig.shoulders[i], elbow = hero?.bones.get(`elbow_${side}`) ?? rig.elbows[i];
     const wrist = hero?.bones.get(`wrist_${side}`) ?? rig.mobilWrists?.[i];
     const palm = orientation.clone().multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(.15, 0, sign * .1)));

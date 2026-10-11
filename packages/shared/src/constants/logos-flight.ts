@@ -26,6 +26,7 @@ export const LOGOS_DEFENSE = {
 export type LogosFlightMode = 'defense' | 'sun';
 export type LogosFlightStage = 'defense' | 'clouds' | 'sun' | 'stall';
 export const LOGOS_CLOUD_TOP = 62;
+export const LOGOS_IGNITION = { ready: 1.1, overload: 2.1, grip: { x: -.58, y: 3.25, z: .48 }, stroke: .44 } as const;
 
 export const LOGOS_COCKPIT = {
   floor: -1.1, seat: 1.16,
@@ -37,7 +38,8 @@ export interface LogosPilotGesture { role: 'trinity' | 'neo'; flight: LogosFligh
 export function logosShipPose(flight: LogosFlight) {
   return { x: flight.x, y: 1 + flight.altitude, z: flight.z,
     yaw: -Math.atan2(flight.lateral, Math.max(1, flight.speed)) * .72,
-    pitch: flight.stage === 'stall' ? Math.max(-.72, -.18 + flight.vertical * .025) : Math.max(-.32, Math.min(.32, flight.vertical * .024)),
+    pitch: flight.ignition ? Math.max(flight.ignition.phase === 'powered' ? -.32 : -.72, Math.min(.32, flight.vertical * .024))
+      : flight.stage === 'stall' ? Math.max(-.72, -.18 + flight.vertical * .025) : Math.max(-.32, Math.min(.32, flight.vertical * .024)),
     roll: Math.max(-.34, Math.min(.34, -flight.lateral * .022)) };
 }
 
@@ -67,6 +69,34 @@ export function logosControlGrip(flight: LogosFlight, role: LogosPilotGesture['r
     z: LOGOS_COCKPIT.grip.z - Math.max(-1, Math.min(1, flight.vertical / 15)) * .12 };
 }
 
+export function logosIgniterGrip(flight: LogosFlight) {
+  return { ...LOGOS_IGNITION.grip, y: LOGOS_IGNITION.grip.y - (flight.ignition?.stroke ?? 0) * LOGOS_IGNITION.stroke };
+}
+
+export function logosIgniterReach(flight: LogosFlight): number {
+  if (!flight.ignition || flight.ignition.phase === 'powered' || flight.stage !== 'stall') return 0;
+  const t = flight.ignition.phase === 'running' ? 1 - Math.max(0, flight.ignition.elapsed - .3) / .5 : flight.stageElapsed / .45;
+  const u = Math.max(0, Math.min(1, t)); return u * u * (3 - 2 * u);
+}
+
+export function logosPowered(flight: LogosFlight): boolean {
+  return flight.phase !== 'wrecked' && (flight.ignition
+    ? flight.ignition.phase === 'powered' || flight.ignition.phase === 'running' && flight.phase === 'riding'
+    : flight.stage !== 'stall');
+}
+
+export function logosIgnitionText(flight: LogosFlight): string {
+  const ignition = flight.ignition;
+  if (!ignition) return '动力失效 · Logos 坠回机器城';
+  if (ignition.phase === 'powered') return 'W 爬升穿云 · A / D 修正姿态';
+  if (flight.stage !== 'stall') return flight.stage === 'sun' ? '动力已断 · 飞船依惯性掠过阳光' : '云层放电 · 引擎失效，保持姿态';
+  if (ignition.phase === 'running') return '引擎重新点燃 · A / D 修正航向 · 准备撞击';
+  if (ignition.phase === 'ready') return 'Neo：现在！松开 G 点火';
+  if (ignition.phase === 'pumping') return '保持 G 缓慢蓄压 · 等待 Neo 提示再松开';
+  if (ignition.held) return '点火器过载 · 先松开 G，再重新蓄压';
+  return ignition.attempts ? 'Neo：再来，慢一点。按住 G 重新蓄压' : 'Neo：用点火器！按住 G 缓慢蓄压';
+}
+
 export interface LogosFlight {
   mode: LogosFlightMode;
   stage: LogosFlightStage;
@@ -88,6 +118,13 @@ export interface LogosFlight {
   resolved: number;
   /** Absolute route height. Missing on saves from the former, separate sun stage. */
   cloudTop?: number;
+  /** Absent on active saves of the former automatic descent. */
+  ignition?: { phase: 'powered' | 'offline' | 'pumping' | 'ready' | 'running'; elapsed: number;
+    held: boolean; pump: number; stroke: number; attempts: number };
+}
+
+function newIgnition(): NonNullable<LogosFlight['ignition']> {
+  return { phase: 'powered', elapsed: 0, held: false, pump: 0, stroke: 0, attempts: 0 };
 }
 
 export function logosCloudTop(flight: LogosFlight): number {
@@ -100,7 +137,7 @@ export function logosFlightSet(flight: LogosFlight): string {
 
 export function continueLogosFlight(flight: LogosFlight): LogosFlight {
   return { ...flight, mode: 'sun', stage: 'clouds', phase: 'riding', stageElapsed: 0,
-    speed: flight.speed || 10, cooldown: 0, pulse: 0, cloudTop: LOGOS_CLOUD_TOP };
+    speed: flight.speed || 10, cooldown: 0, pulse: 0, cloudTop: LOGOS_CLOUD_TOP, ignition: newIgnition() };
 }
 
 export function newLogosFlight(mode: LogosFlightMode): LogosFlight {
@@ -110,14 +147,15 @@ export function newLogosFlight(mode: LogosFlightMode): LogosFlight {
       hits: 0, destroyed: 0, resolved: 0, cloudTop: LOGOS_CLOUD_TOP }
     : { mode, stage: 'clouds', phase: 'riding', x: 0, altitude: LOGOS_DEFENSE.cloudFloor, z: LOGOS_DEFENSE.finish, speed: 10,
       lateral: 0, vertical: 0, elapsed: 0, stageElapsed: 0, hull: 55, neo: 18, cooldown: 0, pulse: 0,
-      hits: 0, destroyed: 0, resolved: 0, cloudTop: LOGOS_CLOUD_TOP };
+      hits: 0, destroyed: 0, resolved: 0, cloudTop: LOGOS_CLOUD_TOP, ignition: newIgnition() };
 }
 
 function steerFlight(next: LogosFlight, input: DriveInput, dt: number): void {
   const steer = Math.max(-1, Math.min(1, input.steer));
   const climb = input.brake ? -1 : Math.max(0, Math.min(1, input.throttle));
   next.lateral += (steer * 17 - next.lateral) * (1 - Math.exp(-5.5 * dt));
-  next.vertical += (climb * 15 - next.vertical) * (1 - Math.exp(-5 * dt));
+  const climbSpeed = next.mode === 'sun' && next.ignition ? 32 : 15;
+  next.vertical += (climb * climbSpeed - next.vertical) * (1 - Math.exp(-5 * dt));
   next.x += next.lateral * dt;
   next.altitude += next.vertical * dt;
   next.x = Math.max(-LOGOS_DEFENSE.halfWidth, Math.min(LOGOS_DEFENSE.halfWidth, next.x));
@@ -164,7 +202,56 @@ function stepDefense(flight: LogosFlight, input: DriveInput, dt: number, focus: 
   return next;
 }
 
-function stepSun(flight: LogosFlight, input: DriveInput, dt: number): LogosFlight {
+function stepIgnitionFlight(flight: LogosFlight, input: DriveInput, dt: number, focus: boolean): LogosFlight {
+  if (!dt) return flight;
+  const ignition = { ...flight.ignition! }, next = { ...flight, ignition, elapsed: flight.elapsed + dt,
+    stageElapsed: flight.stageElapsed + dt, cooldown: 0, pulse: 0 };
+  ignition.elapsed += dt;
+  if (ignition.phase === 'powered') {
+    steerFlight(next, input, dt);
+    if (next.altitude >= logosCloudTop(next) - 4) { ignition.phase = 'offline'; ignition.elapsed = 0; }
+    else if (next.stageElapsed >= 14) next.phase = 'wrecked';
+  } else {
+    if (flight.stage === 'stall' && ignition.phase !== 'running') {
+      if (focus && !ignition.held && ignition.phase === 'offline') {
+        ignition.phase = 'pumping'; ignition.pump = 0; ignition.elapsed = 0;
+      }
+      if (ignition.phase === 'pumping' || ignition.phase === 'ready') {
+        if (focus) {
+          ignition.pump += dt;
+          if (ignition.pump >= LOGOS_IGNITION.overload) { ignition.phase = 'offline'; ignition.attempts++; }
+          else if (ignition.pump >= LOGOS_IGNITION.ready) ignition.phase = 'ready';
+        } else {
+          ignition.phase = ignition.phase === 'ready' ? 'running' : 'offline'; ignition.elapsed = 0; ignition.attempts++;
+        }
+      }
+      ignition.held = focus;
+    }
+    const pumping = ignition.phase === 'pumping' || ignition.phase === 'ready';
+    const target = pumping ? Math.min(1, ignition.pump / LOGOS_IGNITION.ready) : 0;
+    ignition.stroke += (target - ignition.stroke) * (1 - Math.exp(-9 * dt));
+    // Gravity plus drag makes a continuous arc; restored thrust arrests part of the descent.
+    const acceleration = ignition.phase === 'running' ? Math.max(0, (-7 - flight.vertical) * 2) : 0;
+    next.vertical += (-9.81 - .035 * flight.vertical * Math.abs(flight.vertical) + acceleration) * dt;
+    next.altitude += (flight.vertical + next.vertical) * .5 * dt;
+    next.lateral += (Math.max(-1, Math.min(1, input.steer)) * 5 - next.lateral) * (1 - Math.exp(-1.5 * dt));
+    next.x = Math.max(-LOGOS_DEFENSE.halfWidth, Math.min(LOGOS_DEFENSE.halfWidth, flight.x + next.lateral * dt));
+    next.speed += ((ignition.phase === 'running' ? 18 : 4) - next.speed) * (1 - Math.exp(-.6 * dt));
+    if (flight.stage === 'clouds' && next.altitude >= logosCloudTop(next)) { next.stage = 'sun'; next.stageElapsed = 0; }
+    if (flight.stage === 'clouds' && next.stage !== 'sun' && next.vertical <= 0) next.phase = 'wrecked';
+    else if (flight.stage === 'sun' && next.vertical <= 0) {
+      next.stage = 'stall'; next.stageElapsed = 0;
+    }
+    if (next.altitude <= 5) { next.altitude = 5; next.phase = ignition.phase === 'running' ? 'arrived' : 'wrecked'; }
+  }
+  next.z -= next.speed * dt;
+  ignition.held = focus;
+  if (next.phase !== 'riding') { next.speed = 0; next.vertical = 0; next.lateral = 0; }
+  return next;
+}
+
+function stepSun(flight: LogosFlight, input: DriveInput, dt: number, focus: boolean): LogosFlight {
+  if (flight.ignition) return stepIgnitionFlight(flight, input, dt, focus);
   const next = { ...flight, elapsed: flight.elapsed + dt, stageElapsed: flight.stageElapsed + dt,
     cooldown: 0, pulse: 0 };
   const sunAltitude = flight.cloudTop === undefined ? 30 : logosCloudTop(flight) + 4;
@@ -197,5 +284,5 @@ function stepSun(flight: LogosFlight, input: DriveInput, dt: number): LogosFligh
 export function stepLogosFlight(flight: LogosFlight, input: DriveInput, delta: number, focus = false): LogosFlight {
   if (flight.phase !== 'riding') return flight;
   const dt = Math.max(0, Math.min(.1, delta));
-  return flight.mode === 'defense' ? stepDefense(flight, input, dt, focus) : stepSun(flight, input, dt);
+  return flight.mode === 'defense' ? stepDefense(flight, input, dt, focus) : stepSun(flight, input, dt, focus);
 }

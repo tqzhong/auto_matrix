@@ -106,6 +106,30 @@ test('the live agent renderer and film set agree on banked crew contacts in worl
   }
 });
 
+test('Trinity grips the physical overhead igniter throughout its stroke and keeps her left hand on the flight control', async t => {
+  const h = await setup(t), root = new THREE.Group(), renderer = new LogosFlightRenderer(root, 'sun');
+  root.position.y = -1; t.after(() => renderer.dispose());
+  for (const stroke of [0, .25, .5, .75, 1]) for (const lateral of [-5, 5]) {
+    const flight: LogosFlight = { ...newLogosFlight('sun'), stage: 'stall', stageElapsed: 1, vertical: -16, lateral,
+      ignition: { phase: 'pumping', elapsed: .8, pump: .8, stroke, held: true, attempts: 0 } };
+    renderer.update(flight, 0); root.updateMatrixWorld(true);
+    const rig = h.pose('trinity', flight), hero = rig.hero!;
+    const lever = root.getObjectByName('logos-igniter-grip'); assert.ok(lever, 'requires a physical igniter');
+    for (const [side, local, target] of [
+      ['R', new THREE.Vector3(.13, -.18, .02), lever],
+      ['L', new THREE.Vector3(-.13, -.18, .02), root.getObjectByName('trinity-logos-grip-1')!],
+    ] as const) {
+      const palm = hero.bones.get(`wrist_${side}`)!.localToWorld(local);
+      assert.ok(palm.distanceTo(target.getWorldPosition(new THREE.Vector3())) < .085, `${side}: hand misses ${target.name}`);
+    }
+    const inverse = root.getObjectByName('logos-flight-cockpit')!.matrixWorld.clone().invert();
+    rig.root.traverseVisible(object => { if (object instanceof THREE.Mesh) for (let i = 0; i < object.geometry.attributes.position.count; i++) {
+      const p = object.localToWorld(object.getVertexPosition(i, new THREE.Vector3())).applyMatrix4(inverse);
+      assert.ok(p.y < 3.14 && Math.abs(p.x) < 3.15, `body crosses the cabin at ${p.toArray()}`);
+    } });
+  }
+});
+
 test('looking down in the Logos cockpit keeps visible hands without rendering inside the pilot face', async t => {
   const h = await setup(t), flight = newLogosFlight('defense');
   for (const role of h.roles) {
@@ -180,4 +204,11 @@ test('Logos first-person view follows real eye position, pitch and bank without 
   const view=controls as unknown as {yaw:number}; view.yaw+=.45;
   const turned=camera.getWorldDirection(new THREE.Vector3()); controls.update(.1,state,group,false); controls.syncLogosCamera(group);
   assert.ok(camera.getWorldDirection(new THREE.Vector3()).distanceTo(turned)>.3);
+  const looking = camera.getWorldDirection(new THREE.Vector3());
+  for (let i = 0; i < 8; i++) {
+    // Engine.syncSandbox refreshes the generic performance flag on each world snapshot.
+    if (i % 2 === 0) controls.performing = false;
+    controls.update(.1,state,group,false); controls.syncLogosCamera(group);
+  }
+  assert.ok(camera.getWorldDirection(new THREE.Vector3()).distanceTo(looking)<.001, 'a world snapshot must not reset cockpit free look');
 });
