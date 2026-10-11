@@ -2792,8 +2792,10 @@ export class PlayerControls {
       const ideal = focus.clone().addScaledVector(forward, -distance).addScaledVector(right, side); ideal.y += height;
       if (['entrance', 'greeting', 'reply', 'prediction', 'charge_ready', 'charging'].includes(gesture.phase)) {
         const amount = gesture.phase === 'charging' ? 1 - THREE.MathUtils.smoothstep(gesture.elapsed, SMITH_FINALE.entrance.charge - .45, SMITH_FINALE.entrance.charge) : 1;
-        ideal.lerp(new THREE.Vector3(neo.x + 3.4, center.y + 4.6, neo.z - 9), amount);
-        focus.lerp(neo.clone().lerp(smith, .22), amount);
+        const openingFocus = neo.clone().lerp(smith, .22);
+        const openingCamera = new THREE.Vector3(neo.x + 3.4, center.y + 4.6, neo.z - 9);
+        openingCamera.sub(openingFocus).multiplyScalar(Math.max(1, 1 / this.camera.aspect)).add(openingFocus);
+        ideal.lerp(openingCamera, amount); focus.lerp(openingFocus, amount);
       }
       if (gesture.phase.startsWith('interior_') || gesture.phase === 'building' && gesture.roomFight || gesture.phase === 'relaunch') {
         const room = SMITH_FINALE.interior;

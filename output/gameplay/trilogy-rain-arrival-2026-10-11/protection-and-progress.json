@@ -1,0 +1,62 @@
+{
+  "protectedCount": 156,
+  "changedFiles": [],
+  "main": {
+    "agents": true,
+    "chunks": true,
+    "locations": true,
+    "events": true,
+    "sandbox": true,
+    "simulation": true,
+    "phase": true,
+    "timeOfDay": true
+  },
+  "history": {
+    "completed": true,
+    "choices": true,
+    "reflections": true,
+    "journal": true,
+    "dead": true
+  },
+  "oldCounts": {
+    "completed": 46,
+    "choices": 42,
+    "reflections": 16,
+    "journal": 65
+  },
+  "dead": [
+    "trinity",
+    "mifune",
+    "soren",
+    "maggie",
+    "bane",
+    "axel",
+    "charra",
+    "agent_thompson",
+    "keymaker"
+  ],
+  "final": {
+    "tick": 13417,
+    "scene": "m3_rain",
+    "step": 1,
+    "encounter": {
+      "phase": "ready",
+      "elapsed": 0,
+      "total": 75.5990000000004,
+      "focus": 0,
+      "hits": 0,
+      "lastStrike": -1,
+      "lane": 0,
+      "checkpoint": "ground",
+      "attempts": 1,
+      "roomFight": true,
+      "arrival": {
+        "x": 0,
+        "z": -45.634096028917156,
+        "yaw": 0,
+        "vx": 0,
+        "vz": 3.1264373370504472
+      }
+    }
+  }
+}

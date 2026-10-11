@@ -7431,6 +7431,8 @@ export class FilmStorySystem {
     });
   }
   private near(agent: AgentState, step: FilmStep): boolean {
+    if (this.state?.scene === 'm3_rain' && this.state.step === 0
+      && (Math.abs(agent.position.y - FILM_SETS.film_smith_avenue.center.y) > .08 || Math.abs(agent.velocity.y) > .1)) return false;
     if (this.state?.scene === 'm1_bug' && this.state.step === 1 && step === this.step && this.state.meeting?.phase === 'done') return true;
     if (this.state?.scene === 'm1_bridge' && this.state.step === 1 && step === this.step && this.state.bridgeArrival?.parkedRoadTime !== undefined) {
       const door = meetingBoardPoint(this.state.bridgeArrival);
@@ -7573,6 +7575,9 @@ export class FilmStorySystem {
       if (state.step === 3) life.choices.machine_connection = 'active';
     }
     if (state.scene === 'm3_rain' && state.smithFinale && state.step === 0) {
+      const center = FILM_SETS[this.scene!.set].center;
+      state.smithFinale.arrival = { x: agent.position.x - center.x, z: agent.position.z - center.z,
+        yaw: agent.rotation, vx: agent.velocity.x, vz: agent.velocity.z };
       state.smithFinale.phase = 'entrance'; state.smithFinale.elapsed = 0;
       text = 'Neo 在大道中央停步。一个 Smith 从右侧队列独自走出，其他复制体留在路旁；出列和对话会逐拍保存。';
     }

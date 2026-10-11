@@ -1,0 +1,262 @@
+{
+  "measuredAt": "2026-10-11T05:58:00.364Z",
+  "scenes": [
+    "film_smith_avenue"
+  ],
+  "viewport": {
+    "width": 1280,
+    "height": 720,
+    "pixelRatio": 1.5
+  },
+  "frames": 290,
+  "fps": 19.243702515487577,
+  "frameTime": {
+    "mean": 51.965051901794226,
+    "p95": 64.7999997138977
+  },
+  "cpuMs": {
+    "controls": {
+      "mean": 0.7796551770177381,
+      "p95": 1.8000001907348633
+    },
+    "agents": {
+      "mean": 7.819999992436376,
+      "p95": 12.599999904632568
+    },
+    "city": {
+      "mean": 0.17758622662774448,
+      "p95": 0.40000009536743164
+    },
+    "film": {
+      "mean": 0.43896550638922327,
+      "p95": 1
+    },
+    "effects": {
+      "mean": 0.15517241379310345,
+      "p95": 0.40000009536743164
+    },
+    "render": {
+      "mean": 13.314137953725355,
+      "p95": 16.5
+    },
+    "capture": {
+      "mean": 0.00172413628676842,
+      "p95": 0
+    }
+  },
+  "passCpuMs": {
+    "worldMatrices": {
+      "mean": 1.1831034372592795,
+      "p95": 2.1999998092651367
+    },
+    "scene": {
+      "mean": 11.08137932481437,
+      "p95": 14.100000381469727
+    },
+    "occlusion.overrideVisibility": {
+      "mean": 0.22137928831166234,
+      "p95": 0.3000001907348633
+    },
+    "occlusion.normals": {
+      "mean": 1.540000001315413,
+      "p95": 2.200000286102295
+    },
+    "occlusion.restoreVisibility": {
+      "mean": 0.009999997040321087,
+      "p95": 0.09999990463256836
+    },
+    "occlusion": {
+      "mean": 1.9279310111341805,
+      "p95": 2.6999998092651367
+    },
+    "bloom": {
+      "mean": 0.2165517231513714,
+      "p95": 0.39999961853027344
+    },
+    "output": {
+      "mean": 0.02793104730803391,
+      "p95": 0.10000038146972656
+    },
+    "antialias": {
+      "mean": 0.03482759409937365,
+      "p95": 0.10000038146972656
+    }
+  },
+  "calls": {
+    "mean": 462,
+    "p95": 462
+  },
+  "triangles": {
+    "mean": 4847751,
+    "p95": 4847751
+  },
+  "drawsPerFrame": {
+    "shadows": {
+      "calls": 29,
+      "triangles": 328
+    },
+    "scene": {
+      "calls": 139,
+      "triangles": 1620640
+    },
+    "reflectionOrPreview": {
+      "calls": 145,
+      "triangles": 1620722
+    },
+    "occlusion": {
+      "calls": 130,
+      "triangles": 1606042
+    },
+    "postprocessing": {
+      "calls": 19,
+      "triangles": 19
+    }
+  },
+  "heaviestMeshes": [
+    {
+      "name": "smith-finale-crowd-0-Skin",
+      "parent": "smith-finale-crowd",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 576720
+    },
+    {
+      "name": "smith-finale-crowd-1-Skin",
+      "parent": "smith-finale-crowd",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 576720
+    },
+    {
+      "name": "smith-finale-crowd-0-Hair_cards",
+      "parent": "smith-finale-crowd",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 245916
+    },
+    {
+      "name": "smith-finale-crowd-1-Hair_cards",
+      "parent": "smith-finale-crowd",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 245916
+    },
+    {
+      "name": "smith-finale-crowd-0-Charcoal_suit_and_shirt",
+      "parent": "smith-finale-crowd",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 217728
+    },
+    {
+      "name": "smith-finale-crowd-1-Charcoal_suit_and_shirt",
+      "parent": "smith-finale-crowd",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 217728
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 184896
+    },
+    {
+      "name": "Swept_individual_hair_strands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 170646
+    },
+    {
+      "name": "smith-finale-crowd-2-Skin",
+      "parent": "smith-finale-crowd",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 145152
+    },
+    {
+      "name": "smith-finale-crowd-4-Skin",
+      "parent": "smith-finale-crowd",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 145152
+    },
+    {
+      "name": "smith-finale-crowd-5-Skin",
+      "parent": "smith-finale-crowd",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 145152
+    },
+    {
+      "name": "smith-finale-crowd-3-Skin",
+      "parent": "smith-finale-crowd",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 142464
+    },
+    {
+      "name": "smith-finale-static-facade",
+      "parent": "smith-finale-facades",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 108936
+    },
+    {
+      "name": "smith-finale-crowd-2-Hair_cards",
+      "parent": "smith-finale-crowd",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 104976
+    },
+    {
+      "name": "smith-finale-crowd-4-Hair_cards",
+      "parent": "smith-finale-crowd",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 104976
+    },
+    {
+      "name": "smith-finale-crowd-5-Hair_cards",
+      "parent": "smith-finale-crowd",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 104976
+    },
+    {
+      "name": "smith-finale-crowd-0-Trousers",
+      "parent": "smith-finale-crowd",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 103356
+    },
+    {
+      "name": "smith-finale-crowd-1-Trousers",
+      "parent": "smith-finale-crowd",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 103356
+    },
+    {
+      "name": "smith-finale-crowd-3-Hair_cards",
+      "parent": "smith-finale-crowd",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 103032
+    },
+    {
+      "name": "smith-finale-crowd-0-Boot_leather",
+      "parent": "smith-finale-crowd",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 75816
+    }
+  ],
+  "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+  "recordingActive": false,
+  "engineFpsDisplay": 18.800526428223034,
+  "objects": 8992,
+  "visibleObjects": 401
+}
