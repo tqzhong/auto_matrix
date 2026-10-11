@@ -410,6 +410,35 @@ test('the final pit counter, recognition and player rise frame the actual faces 
   }
 });
 
+test('the rendered crater fragments and pipes leave the real faces and hands visible in both pit viewpoints', async t => {
+  const center = FILM_SETS.film_smith_avenue.center, stage = new THREE.Group();
+  stage.position.set(center.x, center.y - 1, center.z);
+  const environment = new SmithFinaleRenderer(stage); t.after(() => environment.dispose());
+  const h = await setup(t);
+  for (const aspect of [16 / 9, 9 / 16]) for (const firstPerson of [false, true]) {
+    h.camera.aspect = aspect; h.controls.firstPerson = firstPerson;
+    for (const [phase, elapsed, focus] of [
+      ['choice', 0, 1.8], ['pit_evade', .325, 0], ['pit_punch', .8, 0], ['pit_retaliation', 2.425, 0],
+      ['vision', 0, 0], ['pit_recovery', 1, .7], ['understanding', 0, 1.8], ['surrender', .8, 1.8],
+    ] as const) {
+      const beat = { ...newSmithFinale(), phase, elapsed, focus, total: 70, impactAt: 51, checkpoint: 'pit' as const, pitFight: true };
+      h.frame(beat); environment.update(beat, firstPerson, { x: 0, z: -38 }); stage.updateMatrixWorld(true);
+      const surfaces: THREE.Mesh[] = [];
+      stage.getObjectByName('smith-finale-crater')!.traverseVisible(object => { if (object instanceof THREE.Mesh) surfaces.push(object); });
+      for (const actor of h.actors) {
+        if (firstPerson && actor.id === 'neo') continue;
+        for (const name of ['head', 'wrist_R', 'wrist_L']) {
+          const point = h.renderer.getAgentBody(actor.id)!.getObjectByName(name)!.getWorldPosition(new THREE.Vector3());
+          const direction = point.clone().sub(h.camera.position), distance = direction.length();
+          const ray = new THREE.Raycaster(h.camera.position, direction.normalize(), .06, distance - .12);
+          const hits = ray.intersectObjects(surfaces, false);
+          assert.equal(hits.length, 0, `${aspect}/${firstPerson}/${phase}/${actor.id}/${name}: ${hits[0]?.object.name} blocks the saved view`);
+        }
+      }
+    }
+  }
+});
+
 test('the first-person pit punch keeps Neo’s actual fist visible while removing his own face', async t => {
   const h = await setup(t); h.controls.firstPerson = true;
   const beat: SmithFinaleEncounter = { ...newSmithFinale(), phase: 'pit_punch', elapsed: .8,

@@ -1,0 +1,36 @@
+TAP version 13
+# Subtest: the flat crater bed keeps a uniform texture scale instead of pinching every tile into its center
+not ok 1 - the flat crater bed keeps a uniform texture scale instead of pinching every tile into its center
+  ---
+  duration_ms: 291.571584
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/smith-crater.test.mts:1:5353'
+  failureType: 'testCodeFailure'
+  error: 'mud/gravel texels must not stretch radially across the same flat floor'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/smith-crater.test.mts:112:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: the visible fighting floor stays supported and clear after collapse, pause and a cold load
+ok 2 - the visible fighting floor stays supported and clear after collapse, pause and a cold load
+  ---
+  duration_ms: 1233.5065
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 1
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2101.7085

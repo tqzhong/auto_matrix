@@ -142,7 +142,9 @@ export class SmithFinaleRenderer {
         vec4 base = texture2DProj(tDiffuse, reflected) * .5
           + texture2DProj(tDiffuse, reflected + blur) * .25 + texture2DProj(tDiffuse, reflected - blur) * .25;`)
       .replace('gl_FragColor = vec4( blendOverlay( base.rgb, color ), 1.0 );',
-        'gl_FragColor = vec4(blendOverlay(base.rgb, color), mix(mix(.03, .68, pools) * mix(.2, 1.0, grazing), .28, pitWater));');
+        `float bank = 1.0 - smoothstep(8.1, 9.0, length(road - vec2(0.0, ${(-SMITH_FINALE.crater.z).toFixed(1)})));
+        gl_FragColor = vec4(blendOverlay(base.rgb, color), mix(mix(.03, .68, pools) * mix(.2, 1.0, grazing),
+          bank * mix(.34, .64, grazing) * mix(.8, 1.0, pools), pitWater));`);
     this.water.name = 'smith-finale-reflected-water'; this.water.rotation.x = -Math.PI / 2; this.water.position.y = .035;
     waterMaterial.transparent = true; waterMaterial.depthWrite = false; waterMaterial.uniforms.weatherTime = this.weatherTime; waterMaterial.uniforms.pitWater = this.pitWater;
     this.group.add(this.water);
@@ -337,24 +339,21 @@ export class SmithFinaleRenderer {
 
   private buildCrater(): void {
     const { depth, z: centerZ } = SMITH_FINALE.crater;
-    const grain = new Uint8Array(128 * 128 * 4);
-    for (let y = 0; y < 128; y++) for (let x = 0; x < 128; x++) {
-      const seam = Math.pow(Math.abs(Math.sin(x * .16 + Math.sin(y * .13) * 2.2)), 16);
-      const value = 135 - seam * 90 + Math.sin(x * 9.1 + y * 13.7) * 24;
-      const i = (y * 128 + x) * 4; grain[i] = grain[i + 1] = grain[i + 2] = value; grain[i + 3] = 255;
-    }
-    const fracture = new THREE.DataTexture(grain, 128, 128); fracture.wrapS = fracture.wrapT = THREE.RepeatWrapping;
-    fracture.needsUpdate = true; this.textures.add(fracture);
-    const rock = this.material({ color: 0xb5b9b2, vertexColors: true, roughness: .58, metalness: .04,
-      bumpMap: fracture, bumpScale: .12, normalScale: new THREE.Vector2(.8, .8) });
+    const rock = this.material({ color: 0xa8b0a5, vertexColors: true, roughness: .55, metalness: 0,
+      normalScale: new THREE.Vector2(.38, .38) });
+    rock.onBeforeCompile = shader => {
+      shader.fragmentShader = shader.fragmentShader.replace('#include <roughnessmap_fragment>',
+        '#include <roughnessmap_fragment>\nroughnessFactor = mix(.62, .94, roughnessFactor);');
+    };
     const positions: number[] = [], colors: number[] = [], uv: number[] = [], indices: number[] = [];
     const rings = 64, segments = 144;
     for (let ring = 0; ring <= rings; ring++) for (let segment = 0; segment <= segments; segment++) {
       const angle = segment / segments * Math.PI * 2, radius = smithCraterRim(angle) * ring / rings;
       const x = Math.cos(angle) * radius, z = centerZ + Math.sin(angle) * radius, y = smithCraterFloor(x, z);
-      positions.push(x, y, z); uv.push(segment / segments * 22, (y + depth + radius * .25) / 5);
-      const shade = .81 + .08 * Math.sin(ring * 2.7 + segment * 8.3) + .09 * Math.sin(y * 3.8);
-      colors.push(shade * .86, shade, shade * .93);
+      positions.push(x, y, z); uv.push(x / 2.6, (z - centerZ) / 2.6);
+      const shade = .78 + .12 * Math.sin(x * .57 + z * .41) + .06 * Math.sin(x * 1.8 - z * .63);
+      const wet = THREE.MathUtils.smoothstep(y, -depth, -2);
+      colors.push(shade * (.8 + wet * .2), shade * (.83 + wet * .17), shade * (.78 + wet * .18));
       if (ring < rings && segment < segments) {
         const a = ring * (segments + 1) + segment, b = a + segments + 1;
         indices.push(a, a + 1, b, a + 1, b + 1, b);
@@ -364,53 +363,77 @@ export class SmithFinaleRenderer {
     bowl.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3)); bowl.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
     bowl.setIndex(indices); bowl.computeVertexNormals();
     this.mesh(bowl, rock, this.crater, 0, 0, 0, 'smith-finale-crater-floor');
-    const mud = this.material({ color: 0x38433d, metalness: .12, roughness: .3, bumpMap: fracture, bumpScale: .018 });
+    const mud = this.material({ color: 0x697966, metalness: 0, roughness: .28, normalScale: new THREE.Vector2(.06, .06) });
     const pool = this.mesh(new THREE.CircleGeometry(8.9, 96), mud, this.crater, 0, -depth + .025, centerZ, 'smith-finale-crater-water');
     pool.rotation.x = -Math.PI / 2; pool.castShadow = false;
+    const mudPoints = pool.geometry.getAttribute('position'), mudUV = pool.geometry.getAttribute('uv');
+    for (let i = 0; i < mudPoints.count; i++) mudUV.setXY(i, mudPoints.getX(i) / 2.6, -mudPoints.getY(i) / 2.6);
+    this.surfaceMaps([rock, mud], 'brown_mud_03', [1, 1]);
     this.poolWater = this.geometry(new THREE.CircleGeometry(8.9, 96).translate(0, -centerZ, 0));
     const poolPoints = this.poolWater.getAttribute('position'), poolUV = this.poolWater.getAttribute('uv');
     for (let i = 0; i < poolPoints.count; i++) poolUV.setXY(i, poolPoints.getX(i) / 42 + .5, poolPoints.getY(i) / 190 + .5);
-    const concrete = this.material({ color: 0xa9ada7, roughness: .64, metalness: .04, normalScale: new THREE.Vector2(.7, .7) });
-    this.surfaceMaps([rock, concrete], 'seaside_rock', [1, 1]);
-    const slab = this.geometry(new THREE.IcosahedronGeometry(1, 1)), vertices = slab.getAttribute('position');
+    const concrete = this.material({ color: 0xaaa99e, roughness: .58, metalness: .01, normalScale: new THREE.Vector2(.7, .7) });
+    const gravel = this.material({ color: 0xb4b6ac, vertexColors: true, roughness: .55, metalness: .01, normalScale: new THREE.Vector2(.7, .7) });
+    this.surfaceMaps([concrete, gravel], 'seaside_rock', [1, 1]);
+    // Fractured road plates have a thin asphalt face and pale aggregate edges,
+    // unlike repeated round boulders. Keep the debris outside the playing floor.
+    const outline = new THREE.Shape(); outline.moveTo(-.96, -.4); outline.lineTo(-.35, -.8);
+    outline.lineTo(.56, -.68); outline.lineTo(1, .1); outline.lineTo(.55, .7); outline.lineTo(-.5, .6); outline.lineTo(-.98, .2); outline.closePath();
+    const slab = this.geometry(new THREE.ExtrudeGeometry(outline, { depth: .22, steps: 1, bevelEnabled: false })
+      .rotateX(-Math.PI / 2).translate(0, -.11, 0));
+    slab.clearGroups();
+    const vertices = slab.getAttribute('position'), slabColors: number[] = [];
     for (let i = 0; i < vertices.count; i++) {
       const x = vertices.getX(i), y = vertices.getY(i), z = vertices.getZ(i);
-      const irregular = 1 + Math.sin(x * 5.7 + y * 7.3 + z * 4.2) * .15;
-      vertices.setXYZ(i, x * irregular, y * .55 * irregular, z * irregular);
+      vertices.setY(i, y + Math.sin(x * 4.1 + z * 5.3) * .022);
+      const face = slab.getAttribute('normal').getY(i) > .5;
+      slabColors.push(...(face ? [.42, .45, .42] : [.88, .86, .8]));
     }
-    slab.computeVertexNormals();
-    this.rubble = new THREE.InstancedMesh(slab, concrete, 280); this.rubble.name = 'smith-finale-crater-rubble';
+    slab.setAttribute('color', new THREE.Float32BufferAttribute(slabColors, 3)); slab.computeVertexNormals();
+    this.rubble = new THREE.InstancedMesh(slab, gravel, 480); this.rubble.name = 'smith-finale-crater-rubble';
     this.rubble.castShadow = true; this.rubble.receiveShadow = true; this.crater.add(this.rubble);
     const transform = new THREE.Object3D(), normal = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
     for (let i = 0; i < this.rubble.count; i++) {
-      const angle = i * 2.399963, radius = 10.2 + (i * .713) % 6.4;
+      const angle = i * 2.399963 + cityNoise(i, 187) * .3, radius = 9.9 + cityNoise(i, 193) ** 1.7 * (smithCraterRim(angle) - 10.1);
       const x = Math.cos(angle) * radius, z = centerZ + Math.sin(angle) * radius;
-      const size = .35 + (i % 7) * .18;
+      const size = .2 + cityNoise(i, 211) ** 2 * .95;
       normal.set(smithCraterFloor(x - .2, z) - smithCraterFloor(x + .2, z), .4,
         smithCraterFloor(x, z - .2) - smithCraterFloor(x, z + .2)).normalize();
-      transform.position.set(x, smithCraterFloor(x, z), z);
+      transform.position.set(x, smithCraterFloor(x, z) - .04, z);
       // Half-buried fragments conform to the bank rather than perching on a
       // single high corner with their lower faces suspended over empty air.
       transform.quaternion.setFromUnitVectors(up, normal); transform.rotateY(angle);
-      transform.scale.set(size * 1.3, size, size * (.7 + i % 4 * .13)); transform.updateMatrix();
+      transform.scale.set(size * 1.45, size, size * (.7 + cityNoise(i, 223) * .7)); transform.updateMatrix();
       this.rubble.setMatrixAt(i, transform.matrix);
-      this.rubble.setColorAt(i, new THREE.Color().setScalar(.68 + i % 6 * .055));
+      this.rubble.setColorAt(i, new THREE.Color().setScalar(.72 + cityNoise(i, 227) * .28));
     }
     const utilities = new THREE.Group(); this.crater.add(utilities);
-    const asphalt = this.material({ color: 0x252e2a, roughness: .77, bumpMap: fracture, bumpScale: .09 });
-    for (let i = 0; i < 24; i++) {
-      const angle = i * 2.399963 + .2, radius = 11.3 + i % 4 * 1.3;
+    const asphalt = this.material({ color: 0x69716b, roughness: .5, normalScale: new THREE.Vector2(.5, .5) });
+    this.surfaceMaps([asphalt], 'asphalt_02', [1, 1]);
+    for (let i = 0; i < 40; i++) {
+      const angle = i * 2.399963 + .2, radius = 10.7 + cityNoise(i, 229) * 5.4;
       const x = Math.cos(angle) * radius, z = centerZ + Math.sin(angle) * radius;
-      const fragment = new THREE.Group(); fragment.position.set(x, smithCraterFloor(x, z), z);
-      fragment.rotation.set(.2 + i % 3 * .3, angle, .25); utilities.add(fragment);
-      const shape = new THREE.BoxGeometry(2.3 + i % 3 * .3, .55, 1.8, 2, 1, 2), points = shape.getAttribute('position');
-      for (let v = 0; v < points.count; v++) {
-        const px = points.getX(v), py = points.getY(v), pz = points.getZ(v);
-        points.setXYZ(v, px + Math.sin(pz * 7.8 + py * 6.1) * .12, py + Math.sin(px * 4.4 + pz * 5.3) * .07, pz + Math.sin(px * 6.2) * .11);
-      }
-      shape.computeVertexNormals(); this.mesh(shape, concrete, fragment);
-      this.mesh(new THREE.BoxGeometry(2.1 + i % 3 * .3, .1, 1.6), asphalt, fragment, 0, .3, 0);
+      const fragment = new THREE.Group(); fragment.position.set(x, smithCraterFloor(x, z) - .12, z);
+      normal.set(smithCraterFloor(x - .2, z) - smithCraterFloor(x + .2, z), .4,
+        smithCraterFloor(x, z - .2) - smithCraterFloor(x, z + .2)).normalize();
+      fragment.quaternion.setFromUnitVectors(up, normal); fragment.rotateY(angle); utilities.add(fragment);
+      fragment.scale.set(1.1 + cityNoise(i, 233), 1.5, .7 + cityNoise(i, 239));
+      this.mesh(slab, gravel, fragment);
     }
+    const lipPositions: number[] = [], lipUV: number[] = [];
+    for (let i = 0; i < 144; i++) {
+      const edges = [i, i + 1].map(index => {
+        const angle = index / 144 * Math.PI * 2, radius = smithCraterRim(angle);
+        return [new THREE.Vector3(Math.cos(angle) * radius, .025, centerZ + Math.sin(angle) * radius),
+          new THREE.Vector3(Math.cos(angle) * (radius - .55), -.3 - cityNoise(index % 144, 241) * .22, centerZ + Math.sin(angle) * (radius - .55))];
+      });
+      for (const point of [edges[0][0], edges[0][1], edges[1][0], edges[1][0], edges[0][1], edges[1][1]]) {
+        lipPositions.push(...point.toArray()); lipUV.push(point.x / 8, point.z / 8);
+      }
+    }
+    const lip = new THREE.BufferGeometry(); lip.setAttribute('position', new THREE.Float32BufferAttribute(lipPositions, 3));
+    lip.setAttribute('uv', new THREE.Float32BufferAttribute(lipUV, 2)); lip.computeVertexNormals();
+    this.mesh(lip, asphalt, utilities, 0, 0, 0, 'smith-finale-broken-road-lip');
     const iron = this.material({ color: 0x56615b, metalness: .74, roughness: .44 });
     const inside = this.material({ color: 0x101b17, metalness: .35, roughness: .85, side: THREE.BackSide });
     const pipe = (angle: number, radius: number) => {

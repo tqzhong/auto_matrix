@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: the rendered crater fragments and pipes leave the real faces and hands visible in both pit viewpoints
+ok 1 - the rendered crater fragments and pipes leave the real faces and hands visible in both pit viewpoints
+  ---
+  duration_ms: 1450.9835
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1817.02925

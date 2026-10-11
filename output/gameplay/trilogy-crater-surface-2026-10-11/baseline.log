@@ -1,0 +1,190 @@
+TAP version 13
+# Subtest: the restored Oracle lies on the actual crater floor and cold-loads without standing or foot IK
+ok 1 - the restored Oracle lies on the actual crater floor and cold-loads without standing or foot IK
+  ---
+  duration_ms: 962.895416
+  type: 'test'
+  ...
+# Subtest: destroyed avenue geometry stays at the same saved pose during pause and cold loading
+ok 2 - destroyed avenue geometry stays at the same saved pose during pause and cold loading
+  ---
+  duration_ms: 989.06475
+  type: 'test'
+  ...
+# Subtest: the rain shock front starts between the two fighters, without a second local offset
+ok 3 - the rain shock front starts between the two fighters, without a second local offset
+  ---
+  duration_ms: 392.914291
+  type: 'test'
+  ...
+# Subtest: rain remains visible when the first-person player crosses the avenue origin
+ok 4 - rain remains visible when the first-person player crosses the avenue origin
+  ---
+  duration_ms: 300.051458
+  type: 'test'
+  ...
+# Subtest: rain reaches both ends of the real road and keeps the same distribution after a cold load
+ok 5 - rain reaches both ends of the real road and keeps the same distribution after a cold load
+  ---
+  duration_ms: 709.087042
+  type: 'test'
+  ...
+# Subtest: philosophical choices hold their step but allow saved weather time to flow
+ok 6 - philosophical choices hold their step but allow saved weather time to flow
+  ---
+  duration_ms: 1.035209
+  type: 'test'
+  ...
+# Subtest: leaving the avenue releases its reflected render target and ripple instance buffer
+ok 7 - leaving the avenue releases its reflected render target and ripple instance buffer
+  ---
+  duration_ms: 317.989666
+  type: 'test'
+  ...
+# Subtest: aerial rain spray follows both saved bodies without broad cones across the player view
+ok 8 - aerial rain spray follows both saved bodies without broad cones across the player view
+  ---
+  duration_ms: 249.461209
+  type: 'test'
+  ...
+# Subtest: the actual shadow camera uses its configured projection and covers both interior fighters
+ok 9 - the actual shadow camera uses its configured projection and covers both interior fighters
+  ---
+  duration_ms: 340.990417
+  type: 'test'
+  ...
+# Subtest: bracing during the fall cannot skip the remaining descent or choose to stand
+ok 10 - bracing during the fall cannot skip the remaining descent or choose to stand
+  ---
+  duration_ms: 1.301125
+  type: 'test'
+  ...
+# Subtest: building exit, falling and impact meet at the same saved body positions
+ok 11 - building exit, falling and impact meet at the same saved body positions
+  ---
+  duration_ms: 3.595833
+  type: 'test'
+  ...
+# Subtest: missing the brace holds the fallen bodies until an explicit retry
+ok 12 - missing the brace holds the fallen bodies until an explicit retry
+  ---
+  duration_ms: 0.5435
+  type: 'test'
+  ...
+# Subtest: impact cuts through asphalt, paint and reflected water, leaving a deep supported floor
+ok 13 - impact cuts through asphalt, paint and reflected water, leaving a deep supported floor
+  ---
+  duration_ms: 721.860875
+  type: 'test'
+  ...
+# Subtest: normal movement and collision follow the saved crater instead of snapping to street level
+ok 14 - normal movement and collision follow the saved crater instead of snapping to street level
+  ---
+  duration_ms: 11.608
+  type: 'test'
+  ...
+# Subtest: the real machine handoff can resume and walk from the avenue entrance without being moved to the far end
+ok 15 - the real machine handoff can resume and walk from the avenue entrance without being moved to the far end
+  ---
+  duration_ms: 462.258541
+  type: 'test'
+  ...
+# Subtest: reaching the avenue plays Smith leaving the curb, waits for Neo’s reply, and saves the opening before either fighter charges
+ok 16 - reaching the avenue plays Smith leaving the curb, waits for Neo’s reply, and saves the opening before either fighter charges
+  ---
+  duration_ms: 749.661458
+  type: 'test'
+  ...
+# Subtest: entering the face-off preserves the actual approach, brakes without teleporting, and resumes the same turn
+ok 17 - entering the face-off preserves the actual approach, brakes without teleporting, and resumes the same turn
+  ---
+  duration_ms: 745.51325
+  type: 'test'
+  ...
+# Subtest: jumping into the face-off marker waits for landing instead of pulling Neo to the road
+ok 18 - jumping into the face-off marker waits for landing instead of pulling Neo to the road
+  ---
+  duration_ms: 8.973917
+  type: 'test'
+  ...
+# Subtest: the Smith finale has action windows, an air checkpoint and a deliberate crater rise
+ok 19 - the Smith finale has action windows, an air checkpoint and a deliberate crater rise
+  ---
+  duration_ms: 0.794542
+  type: 'test'
+  ...
+# Subtest: Neo must finish the pact, duel, reflection, surrender and purge as one saved encounter
+ok 20 - Neo must finish the pact, duel, reflection, surrender and purge as one saved encounter
+  ---
+  duration_ms: 1399.952333
+  type: 'test'
+  ...
+# Subtest: the cleared Smith host restores the same Oracle in the crater and preserves her until the park handoff
+ok 21 - the cleared Smith host restores the same Oracle in the crater and preserves her until the park handoff
+  ---
+  duration_ms: 419.90275
+  type: 'test'
+  ...
+# Subtest: a missed landing reconnects to the same failed pose and only retry restores the road
+ok 22 - a missed landing reconnects to the same failed pose and only retry restores the road
+  ---
+  duration_ms: 10.8605
+  type: 'test'
+  ...
+# Subtest: the dedicated avenue renders the crowd, aerial collision, crater and purge from saved state
+ok 23 - the dedicated avenue renders the crowd, aerial collision, crater and purge from saved state
+  ---
+  duration_ms: 270.71475
+  type: 'test'
+  ...
+# Subtest: the finale journal exposes combat windows, the philosophical stop and explicit assimilation consent
+ok 24 - the finale journal exposes combat windows, the philosophical stop and explicit assimilation consent
+  ---
+  duration_ms: 107.985792
+  type: 'test'
+  ...
+# Subtest: an interior timeout survives server restoration, occupation and retry at the same real floor
+ok 25 - an interior timeout survives server restoration, occupation and retry at the same real floor
+  ---
+  duration_ms: 31.72075
+  type: 'test'
+  ...
+# Subtest: production upgrades only old pre-collision checkpoints without replaying an existing descent
+ok 26 - production upgrades only old pre-collision checkpoints without replaying an existing descent
+  ---
+  duration_ms: 7.862125
+  type: 'test'
+  ...
+# Subtest: the final pit bout needs a dodge and a player counter instead of ending automatically
+ok 27 - the final pit bout needs a dodge and a player counter instead of ending automatically
+  ---
+  duration_ms: 2.92725
+  type: 'test'
+  ...
+# Subtest: a failed final counter freezes in the existing crater and retries without undoing the first fight
+ok 28 - a failed final counter freezes in the existing crater and retries without undoing the first fight
+  ---
+  duration_ms: 0.264916
+  type: 'test'
+  ...
+# Subtest: the final bout roots remain continuous at every automatic boundary and after rising
+ok 29 - the final bout roots remain continuous at every automatic boundary and after rising
+  ---
+  duration_ms: 1.330666
+  type: 'test'
+  ...
+# Subtest: old in-progress assault and assimilation saves complete their original ending without replaying the new bout
+ok 30 - old in-progress assault and assimilation saves complete their original ending without replaying the new bout
+  ---
+  duration_ms: 0.1585
+  type: 'test'
+  ...
+1..30
+# tests 30
+# suites 0
+# pass 30
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4901.858667

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { FILM_SETS, SMITH_FINALE, newSmithFinale, smithFinalePose, smithFinaleLocked, stepSmithFinale, retrySmithFinale,
-  groundHeight, stepPlayer, playerBlocked, type SmithFinaleEncounter, type WorldStructure } from '@auto_matrix/shared';
+  groundHeight, stepPlayer, playerBlocked, smithCraterFloor, type SmithFinaleEncounter, type WorldStructure } from '@auto_matrix/shared';
 import { SmithFinaleRenderer } from '../packages/client/src/engine/SmithFinaleRenderer.js';
 
 const held = { focus: true, x: 0, z: 0 };
@@ -89,4 +89,43 @@ test('normal movement and collision follow the saved crater instead of snapping 
   for (let i = 0; i < 300; i++) position = stepPlayer(position, 0, input, .05, true, terrain).position;
   assert.ok(position.x < center.x + SMITH_FINALE.crater.floorRadius, 'walking must stop at the collapsed bank instead of climbing through its rubble');
   assert.equal(groundHeight({ ...center, z: center.z - 38 }, true, []), center.y, 'undamaged scenes keep the original street');
+});
+
+test('the flat crater bed keeps a uniform texture scale instead of pinching every tile into its center', () => {
+  const root = new THREE.Group(), renderer = new SmithFinaleRenderer(root);
+  try {
+    const geometry = (root.getObjectByName('smith-finale-crater-floor') as THREE.Mesh).geometry;
+    const positions = geometry.getAttribute('position'), uv = geometry.getAttribute('uv'), indices = geometry.index!;
+    const areas: number[] = [];
+    for (let i = 0; i < indices.count; i += 3) {
+      const ids = [indices.getX(i), indices.getX(i + 1), indices.getX(i + 2)];
+      if (ids.some(id => positions.getY(id) > -SMITH_FINALE.crater.depth + .001)) continue;
+      const [a, b, c] = ids.map(id => new THREE.Vector2(positions.getX(id), positions.getZ(id)));
+      const [u, v, w] = ids.map(id => new THREE.Vector2(uv.getX(id), uv.getY(id)));
+      const surfaceArea = Math.abs(b.sub(a).cross(c.sub(a)));
+      if (surfaceArea < .00001) continue;
+      const textureArea = Math.abs(v.sub(u).cross(w.sub(u)));
+      assert.ok(textureArea > .000001, 'the floor cannot collapse to a line in texture space');
+      areas.push(surfaceArea / textureArea);
+    }
+    assert.ok(areas.length > 100);
+    assert.ok(Math.max(...areas) / Math.min(...areas) < 1.05, 'mud/gravel texels must not stretch radially across the same flat floor');
+  } finally { renderer.dispose(); }
+});
+
+test('the visible fighting floor stays supported and clear after collapse, pause and a cold load', () => {
+  const root = new THREE.Group(), renderer = new SmithFinaleRenderer(root);
+  const coldRoot = new THREE.Group(), cold = new SmithFinaleRenderer(coldRoot);
+  const beat = { ...newSmithFinale(), phase: 'choice' as const, total: 104, impactAt: 101 };
+  try {
+    renderer.update(beat, false, { x: 0, z: -38 }); cold.update(beat, false, { x: 0, z: -38 });
+    for (const radius of [0, 3, 6, 8]) for (let i = 0; i < 12; i++) {
+      const angle = i * Math.PI / 6, x = Math.cos(angle) * radius, z = -38 + Math.sin(angle) * radius;
+      const y = surface(root, x, z), expected = smithCraterFloor(x, z);
+      assert.ok(Math.abs(y - expected) < .08, `a raised fragment or unsupported floor crosses the playing area at ${x}, ${z}: ${y}`);
+      assert.ok(Math.abs(surface(coldRoot, x, z) - y) < .00001, 'cold load must not scatter different fragments into the fighting area');
+    }
+    renderer.update(beat, true, { x: 0, z: -38 });
+    assert.ok(Math.abs(surface(root, 0, -38) + SMITH_FINALE.crater.depth) < .08);
+  } finally { renderer.dispose(); cold.dispose(); }
 });
