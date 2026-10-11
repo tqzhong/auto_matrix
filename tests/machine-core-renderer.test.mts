@@ -18,7 +18,7 @@ function snapshot(root: THREE.Group, name: string) {
   });
   return objects;
 }
-const names = ['machine-core-swarm', 'machine-core-face', 'machine-core-seat', 'machine-core-connection-pulse', 'machine-core-storm'];
+const names = ['machine-core-swarm', 'machine-core-face', 'machine-core-seat', 'machine-core-connection-pulse', 'machine-core-storm', 'machine-core-collective-chassis'];
 const beats: DeusPactEncounter[] = [
   { ...newDeusPact(), phase: 'swarm', elapsed: 1.4, total: 1.4, resolve: 1.1 },
   { ...newDeusPact(), phase: 'challenge', elapsed: .85, total: 6.2, resolve: 3 },

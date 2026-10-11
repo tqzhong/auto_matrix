@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { DEUS_PACT, deusPactPose, deusPactSpeech, newDeusPact, neoCarryPose, type DeusPactEncounter, type TrilogyEpilogueEncounter } from '@auto_matrix/shared';
 import { MachineUplinkContacts } from './MachineUplinkContacts.js';
 import { machineBugGeometry } from './MachineBugGeometry.js';
@@ -13,7 +14,7 @@ export class MachineCoreRenderer {
   private faceParticles = new THREE.Group();
   private collectivePlates!: THREE.InstancedMesh;
   private collectiveSpars!: THREE.InstancedMesh;
-  private faceUnits: { x: number; y: number; z: number; turn: number; size: number }[] = [];
+  private faceUnits: { x: number; y: number; z: number; turn: number; size: number; orientation: THREE.Quaternion }[] = [];
   private instance = new THREE.Object3D();
   private collectiveTime = NaN;
   private collectiveAmount = NaN;
@@ -27,6 +28,7 @@ export class MachineCoreRenderer {
   private storm = new THREE.Group();
   private stormLight!: THREE.PointLight;
   private stormMaterial!: THREE.LineBasicMaterial;
+  private chassisCurrent!: THREE.LineBasicMaterial;
   private seat = new THREE.Group();
   private bodyJacks = new THREE.Group();
   private neckProbe = new THREE.Group();
@@ -132,60 +134,48 @@ export class MachineCoreRenderer {
     const red = this.material(0x290a05, .6, .35, 0x952611, .7);
     this.perceptionMaterials.push(...[shell, bright].map(material => ({ material, color: 0, intensity: 0 })));
     this.face.add(this.faceParticles); this.face.position.set(0, 0, -47);
-    // The collective emerges from a radial mechanical chassis, rather than a floating mask.
-    const chassis = new THREE.Group(); chassis.name = 'machine-core-collective-chassis';
-    chassis.position.set(0, 23, -51); this.group.add(chassis);
-    for (const radius of [12.9, 14.3, 16.2, 17.1]) {
-      this.mesh(new THREE.TorusGeometry(radius, radius === 14.3 ? .54 : .17, 8, 112), shell, chassis);
-    }
-    const ribGeometry = new THREE.BoxGeometry(.14, 1, .24);
-    const ribs = new THREE.InstancedMesh(ribGeometry, bright, 192); ribs.name = 'machine-core-radial-ribs';
-    this.geometries.add(ribGeometry); chassis.add(ribs);
-    const transform = new THREE.Object3D();
-    for (let i = 0; i < ribs.count; i++) {
-      const angle = i * Math.PI * 2 / ribs.count; const length = 4.5 + (i % 4) * .9;
-      transform.position.set(Math.cos(angle) * (15.2 + length * .5), Math.sin(angle) * (15.2 + length * .5), -.4 - i % 3 * .25);
-      transform.rotation.set(0, 0, angle - Math.PI / 2); transform.scale.set(1, length, 1);
-      transform.updateMatrix(); ribs.setMatrixAt(i, transform.matrix);
-    }
-    const couplerGeometry = new THREE.BoxGeometry(.62, 1.35, .78);
-    const couplers = new THREE.InstancedMesh(couplerGeometry, shell, 96);
-    this.geometries.add(couplerGeometry); chassis.add(couplers);
-    for (let i = 0; i < couplers.count; i++) {
-      const angle = i * Math.PI * 2 / couplers.count;
-      transform.position.set(Math.cos(angle) * 14.3, Math.sin(angle) * 14.3, .45);
-      transform.rotation.set(.12 * Math.sin(i), 0, angle - Math.PI / 2); transform.scale.set(1, 1, 1);
-      transform.updateMatrix(); couplers.setMatrixAt(i, transform.matrix);
-    }
+    this.buildCollectiveChassis(shell, bright);
     const gaussian = (value: number, center: number, width: number) => Math.exp(-(((value - center) / width) ** 2));
-    // Rounded brow/cheeks and small nose/mouth follow the production's infant-face reference.
-    // Individual plates keep those volumes readable while retaining gaps between machines.
+    // Face-forming machines follow both the depth and the surface direction.
+    // Forward-facing parts at different depths still lit like a flat cloud.
+    const surface = (x: number, y: number): number => {
+      const ax = Math.abs(x);
+      const dome = Math.sqrt(Math.max(0, 1 - (x / 12) ** 2 - ((y - 24) / 15) ** 2));
+      const sockets = gaussian(ax, 4.2, 2.05) * gaussian(y, 26, 1.05);
+      const brow = gaussian(ax, 4.2, 2.4) * gaussian(y, 27.4, .72);
+      const cheek = gaussian(ax, 5, 2.9) * gaussian(y, 21.7, 2.55);
+      const nose = gaussian(x, 0, 1.24) * gaussian(y, 23, 2.4) * 2.9;
+      const noseTip = gaussian(x, 0, 1.8) * gaussian(y, 21.2, .75) * 1.3;
+      const lipY = 18.6 + .3 * Math.cos(x * .72);
+      const mouth = gaussian(x, 0, 3.2) * gaussian(y, lipY, .19);
+      const lips = gaussian(x, 0, 3.5) * (gaussian(y, lipY + .46, .31) + gaussian(y, lipY - .49, .34)) * .65;
+      const chin = gaussian(x, 0, 3.6) * gaussian(y, 15.1, 1.7);
+      return .5 + dome * 5.4 - sockets * 1.8 + brow * .65 + cheek * 1.35 + nose + noseTip - mouth * .85 + lips + chin;
+    };
+    const forward = new THREE.Vector3(0, 0, 1);
+    // Rounded brow/cheeks and small nose/mouth follow the infant-face silhouette.
     for (let row = -31; row <= 33; row++) {
       const y = 23 + row * .37; const normalizedY = (y - 23.4) / 12.7;
       const width = Math.sqrt(Math.max(0, 1 - normalizedY * normalizedY)) * 10.8;
       for (let column = -Math.floor(width / .34); column <= Math.floor(width / .34); column++) {
         const seed = this.faceUnits.length; const noise = Math.sin(seed * 12.9898 + row * 78.233);
-        const x = column * .34 + (row % 2) * .17 + Math.sin(row * 4.1) * .1 + noise * .125;
-        const py = y + Math.sin(seed * 2.3) * .16;
-        const ax = Math.abs(x);
-        const dome = Math.sqrt(Math.max(0, 1 - (x / 12) ** 2 - ((py - 24) / 15) ** 2));
-        const sockets = gaussian(ax, 4.2, 2.05) * gaussian(py, 26, 1.05);
-        const brow = gaussian(ax, 4.2, 2.4) * gaussian(py, 27.4, .72);
-        const cheek = gaussian(ax, 5, 2.9) * gaussian(py, 21.7, 2.55);
-        const nose = gaussian(x, 0, 1.24) * gaussian(py, 23, 2.4) * 2.9;
-        const noseTip = gaussian(x, 0, 1.8) * gaussian(py, 21.2, .75) * 1.3;
-        const lipY = 18.6 + .3 * Math.cos(x * .72);
-        const mouth = gaussian(x, 0, 3.2) * gaussian(py, lipY, .19);
-        const lips = gaussian(x, 0, 3.5) * (gaussian(py, lipY + .46, .31) + gaussian(py, lipY - .49, .34)) * .65;
-        const chin = gaussian(x, 0, 3.6) * gaussian(py, 15.1, 1.7);
-        const z = .5 + dome * 5.4 - sockets * 1.8 + brow * .65 + cheek * 1.35 + nose + noseTip - mouth * .85 + lips + chin;
-        this.faceUnits.push({ x, y: py, z: z + noise * .07, turn: noise * .6 + Math.atan2(py - 23, x) * .22, size: .87 + (noise + 1) * .12 });
+        const x = column * .34 + (row % 2) * .17 + Math.sin(row * 4.1) * .1 + noise * .08;
+        const py = y + Math.sin(seed * 2.3) * .1;
+        const normal = new THREE.Vector3(-(surface(x + .12, py) - surface(x - .12, py)) / .24,
+          -(surface(x, py + .12) - surface(x, py - .12)) / .24, 1).normalize();
+        const turn = noise * .4 + Math.atan2(py - 23, x) * .22;
+        const orientation = new THREE.Quaternion().setFromUnitVectors(forward, normal)
+          .multiply(new THREE.Quaternion().setFromAxisAngle(forward, turn));
+        this.faceUnits.push({ x, y: py, z: surface(x, py) + noise * .05, turn, size: .94 + (noise + 1) * .06, orientation });
       }
     }
     const { hull: plate, limbs: spar } = machineBugGeometry();
-    this.geometries.add(plate); this.geometries.add(spar);
-    this.collectivePlates = new THREE.InstancedMesh(plate, shell, this.faceUnits.length);
-    this.collectiveSpars = new THREE.InstancedMesh(spar, bright, this.faceUnits.length);
+    const facePlate = plate.clone().scale(1.55, 1, 1.35), faceSpar = spar.clone().scale(.9, 1, 1);
+    for (const geometry of [plate, spar, facePlate, faceSpar]) this.geometries.add(geometry);
+    const faceShell = this.material(0x718397, .62, .56), faceMetal = this.material(0x3c4b5e, .74, .47);
+    this.perceptionMaterials.push(...[faceShell, faceMetal].map(material => ({ material, color: 0, intensity: 0 })));
+    this.collectivePlates = new THREE.InstancedMesh(facePlate, faceShell, this.faceUnits.length);
+    this.collectiveSpars = new THREE.InstancedMesh(faceSpar, faceMetal, this.faceUnits.length);
     this.collectivePlates.name = 'machine-core-face-plates'; this.collectiveSpars.name = 'machine-core-face-spars';
     for (const mesh of [this.collectivePlates, this.collectiveSpars]) {
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); mesh.frustumCulled = false;
@@ -193,11 +183,12 @@ export class MachineCoreRenderer {
     }
     const tint = new THREE.Color();
     this.faceUnits.forEach((unit, i) => {
-      const shade = .5 + (Math.sin(i * 8.17) + 1) * .2;
-      tint.setRGB(shade * .9, shade * .96, shade);
-      // Deep eye folds and lip separation belong to the same machine surface.
-      const fold = gaussian(Math.abs(unit.x), 4.2, 1.65) * gaussian(unit.y, 26, .32);
-      tint.multiplyScalar(1 - fold * .7); this.collectivePlates.setColorAt(i, tint);
+      const shade = .78 + Math.sin(i * 8.17) * .09;
+      const fold = gaussian(Math.abs(unit.x), 4.2, 1.65) * gaussian(unit.y, 26, .42);
+      const nostril = gaussian(Math.abs(unit.x), 1.45, .65) * gaussian(unit.y, 20.6, .35);
+      const mouth = gaussian(unit.x, 0, 3.2) * gaussian(unit.y, 18.6 + .3 * Math.cos(unit.x * .72), .2);
+      tint.setRGB(shade * .9, shade * .96, shade).multiplyScalar(1 - Math.max(fold, nostril, mouth) * .75);
+      this.collectivePlates.setColorAt(i, tint);
     });
 
     const droneEye = new THREE.SphereGeometry(.075, 7, 5);
@@ -225,6 +216,76 @@ export class MachineCoreRenderer {
     this.lights.push(this.stormLight); this.perceptionLights.push({ light: this.stormLight, color: this.stormLight.color.clone() });
     const faceLight = new THREE.PointLight(0xa7cbea, 1600, 85, 2); faceLight.position.set(-10, 34, -24); this.group.add(faceLight);
     this.lights.push(faceLight); this.perceptionLights.push({ light: faceLight, color: faceLight.color.clone() });
+  }
+
+  private buildCollectiveChassis(shell: THREE.MeshStandardMaterial, bright: THREE.MeshStandardMaterial): void {
+    const chassis = new THREE.Group(); chassis.name = 'machine-core-collective-chassis';
+    chassis.position.set(0, 23, -51); this.group.add(chassis);
+    const recess = this.material(0x0a121b, .7, .72), cable = this.material(0x26323e, .72, .48);
+    this.perceptionMaterials.push(...[recess, cable].map(material => ({ material, color: 0, intensity: 0 })));
+    const profile = [new THREE.Vector2(0, -7), new THREE.Vector2(5, -6.7), new THREE.Vector2(11, -5.5),
+      new THREE.Vector2(17, -3.8), new THREE.Vector2(21.5, -2)];
+    const body = new THREE.LatheGeometry(profile, 128).rotateX(Math.PI / 2);
+    const vertices = body.getAttribute('position');
+    for (let i = 0; i < vertices.count; i++) if (vertices.getY(i) < 0) vertices.setY(i, vertices.getY(i) * .8);
+    body.computeVertexNormals();
+    this.mesh(body, recess, chassis, 0, 0, 0, 'machine-core-recessed-body');
+    const batch = (geometry: THREE.BufferGeometry, material: THREE.Material, count: number, name: string) => {
+      const mesh = new THREE.InstancedMesh(geometry, material, count); mesh.name = name;
+      this.geometries.add(geometry); chassis.add(mesh); return mesh;
+    };
+    const ribs = batch(new THREE.BoxGeometry(1, 1, 1), shell, 576, 'machine-core-radial-ribs');
+    const rails = batch(new THREE.CylinderGeometry(.045, .065, 1, 6), bright, ribs.count, 'machine-core-radial-conduits');
+    const transform = new THREE.Object3D(), tint = new THREE.Color(), up = new THREE.Vector3(0, 1, 0);
+    for (let i = 0; i < ribs.count; i++) {
+      const layer = Math.floor(i / 192), angle = (i % 192 + layer * .37) * Math.PI * 2 / 192;
+      const noise = Math.sin(i * 7.83), radius = 7 + layer * 5.4 + (noise + 1) * 1.2;
+      const length = 6.2 + (Math.sin(i * 1.91) + 1) * 2.6;
+      const start = new THREE.Vector3(Math.cos(angle) * radius, Math.sin(angle) * radius, -6 + radius * .18);
+      const end = new THREE.Vector3(Math.cos(angle) * (radius + length), Math.sin(angle) * (radius + length), -3.5 + layer * 1.2);
+      // Curve the lower fan above the later body-transport route without a flat cut edge.
+      if (start.y < 0) { start.y *= .5; end.y *= .5; }
+      const direction = end.clone().sub(start);
+      transform.position.copy(start).addScaledVector(direction, .5);
+      transform.quaternion.setFromUnitVectors(up, direction.clone().normalize());
+      transform.scale.set(.13 + (noise + 1) * .15, Math.max(.1, direction.length()), .12 + i % 4 * .13);
+      transform.updateMatrix(); ribs.setMatrixAt(i, transform.matrix);
+      ribs.setColorAt(i, tint.setScalar(.5 + (Math.sin(i * 3.73) + 1) * .25));
+      transform.position.x += Math.cos(angle + Math.PI / 2) * .19;
+      transform.position.y += Math.sin(angle + Math.PI / 2) * .19; transform.position.z += .28;
+      transform.scale.set(1, Math.max(.1, direction.length()), 1); transform.updateMatrix(); rails.setMatrixAt(i, transform.matrix);
+    }
+    const couplers = batch(new THREE.BoxGeometry(1, 1, 1), shell, 1152, 'machine-core-chassis-couplers');
+    for (let i = 0; i < couplers.count; i++) {
+      const angle = i * 2.39996, radius = 4 + Math.sqrt((i + .5) / couplers.count) * 18;
+      transform.position.set(Math.cos(angle) * radius, Math.sin(angle) * radius * (Math.sin(angle) < 0 ? .5 : 1), -6 + radius * .2);
+      transform.rotation.set(.1 * Math.sin(i), .16 * Math.cos(i), angle - Math.PI / 2);
+      transform.scale.set(.18 + i % 4 * .08, .35 + i % 5 * .16, .2 + i % 3 * .12);
+      transform.updateMatrix(); couplers.setMatrixAt(i, transform.matrix);
+      couplers.setColorAt(i, tint.setScalar(.48 + (Math.sin(i * 2.77) + 1) * .23));
+    }
+    const conduits: THREE.BufferGeometry[] = [];
+    for (let i = 0; i < 48; i++) {
+      const angle = i * Math.PI * 2 / 48, radius = 14.8 + i % 3 * 2.5;
+      const points = Array.from({ length: 6 }, (_, j) => {
+        const a = angle + j * .095, r = radius + Math.sin(j * .8 + i) * .7;
+        return new THREE.Vector3(Math.cos(a) * r, Math.sin(a) * r * (Math.sin(a) < 0 ? .5 : 1), -1.4 + Math.sin(j * .9 + i) * .45);
+      });
+      conduits.push(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 18, .09 + i % 3 * .025, 6, false));
+    }
+    this.mesh(mergeGeometries(conduits)!, cable, chassis, 0, 0, 0, 'machine-core-chassis-cables');
+    conduits.forEach(geometry => geometry.dispose());
+    const bolts: THREE.Vector3[] = [];
+    for (let i = 0; i < 16; i++) {
+      const angle = i * Math.PI * 2 / 16, radius = 13.5 + i % 3 * 2.8;
+      const point = (j: number) => new THREE.Vector3(Math.cos(angle + j * .015) * (radius + j * .28) + Math.sin(i + j * 9.3) * .22,
+        Math.sin(angle + j * .015) * (radius + j * .28) * (Math.sin(angle + j * .015) < 0 ? .5 : 1), -.6 + Math.cos(j * 2.1) * .16);
+      for (let j = 0; j < 9; j++) bolts.push(point(j), point(j + 1));
+    }
+    this.chassisCurrent = new THREE.LineBasicMaterial({ color: 0x9bcfff, transparent: true, opacity: .35, depthWrite: false });
+    this.materials.add(this.chassisCurrent);
+    const arcs = new THREE.BufferGeometry().setFromPoints(bolts); this.geometries.add(arcs);
+    const currents = new THREE.LineSegments(arcs, this.chassisCurrent); currents.name = 'machine-core-chassis-current'; chassis.add(currents);
   }
 
   private setPerception(subjective: boolean): void {
@@ -256,6 +317,7 @@ export class MachineCoreRenderer {
         THREE.MathUtils.lerp(23 + Math.sin(angle) * radius, unit.y, progress) - lowerJaw * speech.mouth * 1.1 - brow * speech.brow * .65,
         THREE.MathUtils.lerp(-3 + Math.sin(i * .91) * 4, unit.z, progress) + Math.sin(time * 2.4 + i * .8) * .025 + burst * 3);
       transform.rotation.set(Math.sin(time * .7 + i) * .055, unit.x * .033 + (1 - progress) * angle, unit.turn);
+      transform.quaternion.slerp(unit.orientation, progress);
       transform.scale.setScalar(.27 * unit.size);
       transform.updateMatrix(); this.collectivePlates.setMatrixAt(i, transform.matrix);
       transform.updateMatrix(); this.collectiveSpars.setMatrixAt(i, transform.matrix);
@@ -394,6 +456,8 @@ export class MachineCoreRenderer {
     this.face.visible = pose.face > .001;
     this.face.scale.setScalar(1);
     this.updateCollective(time, pose.face, speech);
+    this.chassisCurrent.color.setHex(firstPerson ? 0xffbe66 : 0x9bcfff);
+    this.chassisCurrent.opacity = .18 + Math.pow(Math.max(0, Math.sin(time * 3.7)), 10) * .38 + speech.anger * .3;
     const flash = speech.anger * Math.pow(Math.max(0, Math.sin(state.elapsed * 18 + .8)), 12);
     this.storm.visible = flash > .025; this.stormMaterial.opacity = flash * .88; this.stormLight.intensity = flash * 1800;
     this.updateUplink(state, subject, carried);
