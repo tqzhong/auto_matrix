@@ -36,6 +36,13 @@ export const LOGOS_COCKPIT = {
 export interface LogosPilotGesture { role: 'trinity' | 'neo'; flight: LogosFlight; waiting: boolean }
 
 export function logosShipPose(flight: LogosFlight) {
+  if (flight.crash) {
+    const c = flight.crash, u = Math.min(1, c.elapsed / c.approach), hit = Math.max(0, c.elapsed - c.approach);
+    const shake = hit > 0 ? Math.sin(hit * 26) * Math.exp(-hit * 4) : 0;
+    return { x: flight.x, y: 1 + flight.altitude, z: flight.z, yaw: c.yaw * (1 - u),
+      pitch: c.pitch * (1 - u) - .12 * u + shake * .1,
+      roll: c.roll * (1 - u) - .065 * (1 - Math.exp(-hit * 3)) + shake * .045 };
+  }
   return { x: flight.x, y: 1 + flight.altitude, z: flight.z,
     yaw: -Math.atan2(flight.lateral, Math.max(1, flight.speed)) * .72,
     pitch: flight.ignition ? Math.max(flight.ignition.phase === 'powered' ? -.32 : -.72, Math.min(.32, flight.vertical * .024))
@@ -80,12 +87,15 @@ export function logosIgniterReach(flight: LogosFlight): number {
 }
 
 export function logosPowered(flight: LogosFlight): boolean {
+  if (flight.crash && flight.crash.elapsed >= flight.crash.approach) return false;
   return flight.phase !== 'wrecked' && (flight.ignition
     ? flight.ignition.phase === 'powered' || flight.ignition.phase === 'running' && flight.phase === 'riding'
     : flight.stage !== 'stall');
 }
 
 export function logosIgnitionText(flight: LogosFlight): string {
+  if (flight.crash) return flight.crash.elapsed < flight.crash.approach ? 'Neo：抓紧！机器塔就在前方'
+    : flight.phase === 'arrived' ? 'Logos 停在塔体残骸中 · 继续寻找 Trinity' : '船首撞入塔体 · 风挡破裂';
   const ignition = flight.ignition;
   if (!ignition) return '动力失效 · Logos 坠回机器城';
   if (ignition.phase === 'powered') return 'W 爬升穿云 · A / D 修正姿态';
@@ -121,6 +131,37 @@ export interface LogosFlight {
   /** Absent on active saves of the former automatic descent. */
   ignition?: { phase: 'powered' | 'offline' | 'pumping' | 'ready' | 'running'; elapsed: number;
     held: boolean; pump: number; stroke: number; attempts: number };
+  /** Saved origin and clock keep collision geometry and both crew in the same shot. */
+  crash?: { elapsed: number; approach: number; x: number; altitude: number; z: number; speed: number;
+    lateral: number; vertical: number; pitch: number; yaw: number; roll: number };
+}
+
+export function logosCrashTarget(flight: LogosFlight) {
+  const c = flight.crash!;
+  return { x: c.x + c.lateral * c.approach * .5, y: 1 + Math.max(5, c.altitude + c.vertical * c.approach),
+    z: c.z - c.speed * c.approach - 10.6 };
+}
+
+export function logosCrashBrace(flight: LogosFlight): number {
+  if (!flight.crash) return 0;
+  const t = flight.crash.elapsed - flight.crash.approach;
+  return t < 0 ? Math.max(0, 1 + t / .8) * .12 : .1 + Math.sin(Math.min(1, t / .4) * Math.PI) * .22;
+}
+
+function stepCrash(flight: LogosFlight, dt: number): LogosFlight {
+  if (!dt) return flight;
+  const c = { ...flight.crash!, elapsed: Math.min(flight.crash!.approach + 2.6, flight.crash!.elapsed + dt) };
+  const next = { ...flight, crash: c, ignition: { ...flight.ignition!, elapsed: flight.ignition!.elapsed + dt,
+    stroke: flight.ignition!.stroke * Math.exp(-9 * dt) }, elapsed: flight.elapsed + dt, stageElapsed: flight.stageElapsed + dt };
+  const t = Math.min(c.approach, c.elapsed), u = t / c.approach, hit = Math.max(0, c.elapsed - c.approach);
+  next.x = c.x + c.lateral * (t - t * u * .5);
+  next.z = c.z - c.speed * t - c.speed / 8 * (1 - Math.exp(-hit * 8));
+  const contactHeight = Math.max(5, c.altitude + c.vertical * c.approach);
+  next.altitude = hit ? 5 + (contactHeight - 5) * Math.exp(-hit * 4) : Math.max(5, c.altitude + c.vertical * t);
+  next.speed = c.speed * Math.exp(-hit * 8); next.lateral = c.lateral * (1 - u);
+  next.vertical = hit ? -(contactHeight - 5) * 4 * Math.exp(-hit * 4) : c.vertical;
+  if (c.elapsed >= c.approach + 2.6) { next.phase = 'arrived'; next.speed = 0; next.lateral = 0; next.vertical = 0; }
+  return next;
 }
 
 function newIgnition(): NonNullable<LogosFlight['ignition']> {
@@ -204,6 +245,7 @@ function stepDefense(flight: LogosFlight, input: DriveInput, dt: number, focus: 
 
 function stepIgnitionFlight(flight: LogosFlight, input: DriveInput, dt: number, focus: boolean): LogosFlight {
   if (!dt) return flight;
+  if (flight.crash) return stepCrash(flight, dt);
   const ignition = { ...flight.ignition! }, next = { ...flight, ignition, elapsed: flight.elapsed + dt,
     stageElapsed: flight.stageElapsed + dt, cooldown: 0, pulse: 0 };
   ignition.elapsed += dt;
@@ -242,9 +284,15 @@ function stepIgnitionFlight(flight: LogosFlight, input: DriveInput, dt: number, 
     else if (flight.stage === 'sun' && next.vertical <= 0) {
       next.stage = 'stall'; next.stageElapsed = 0;
     }
-    if (next.altitude <= 5) { next.altitude = 5; next.phase = ignition.phase === 'running' ? 'arrived' : 'wrecked'; }
+    if (next.altitude <= 5) { next.altitude = 5; if (ignition.phase !== 'running') next.phase = 'wrecked'; }
   }
   next.z -= next.speed * dt;
+  if (next.phase === 'riding' && next.stage === 'stall' && ignition.phase === 'running' && next.altitude <= 32) {
+    const pose = logosShipPose(next);
+    next.crash = { elapsed: 0, approach: Math.min(2.2, Math.max(.25, (next.altitude - 5) / Math.max(1, -next.vertical))),
+      x: next.x, altitude: next.altitude, z: next.z, speed: next.speed, lateral: next.lateral, vertical: next.vertical,
+      pitch: pose.pitch, yaw: pose.yaw || 0, roll: pose.roll || 0 };
+  }
   ignition.held = focus;
   if (next.phase !== 'riding') { next.speed = 0; next.vertical = 0; next.lateral = 0; }
   return next;

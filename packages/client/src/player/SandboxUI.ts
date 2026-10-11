@@ -2193,6 +2193,12 @@ export class SandboxUI {
         this.el('film-ride-health').textContent = `船体 ${Math.ceil(flight.hull)}% · ${ignition.phase === 'pumping' || ignition.phase === 'ready'
           ? `蓄压 ${Math.min(100, Math.floor(ignition.pump / LOGOS_IGNITION.ready * 100))}%` : ignition.phase === 'running' ? '动力恢复' : ignition.phase === 'powered' ? '爬升中' : '动力失效'}`;
       }
+      if (flight.crash) {
+        const hit = flight.crash.elapsed >= flight.crash.approach;
+        this.el('film-ride-title').textContent = 'TRINITY / 机器城塔体';
+        this.el('sandbox-waypoint').textContent = hit ? '撞击中 · 风挡破裂' : '塔体迫近 · 抓紧';
+        this.el('film-ride-health').textContent = hit ? '动力中断 · 船首受损' : `船体 ${Math.ceil(flight.hull)}% · 即将撞击`;
+      }
       this.el('sandbox-interact').classList.add('hidden'); return;
     }
     if (scene.id === 'm3_gate' && journey.apu && ['riding', 'arrived'].includes(journey.apu.phase) && !journey.dockGate && !journey.visiting) {
