@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { LOGOS_COCKPIT, logosControlGrip, logosIgniterGrip, logosIgniterReach, type LogosPilotGesture } from '@auto_matrix/shared';
+import { LOGOS_COCKPIT, logosControlGrip, logosIgniterGrip, logosIgniterReach, logosCrashBrace, type LogosPilotGesture } from '@auto_matrix/shared';
 import type { CharacterRig } from './CharacterModel.js';
 import { reach } from './SpoonPerformance.js';
 
@@ -14,15 +14,16 @@ export function poseLogosPilot(rig: CharacterRig, gesture?: LogosPilotGesture): 
   }
   rig.detail.userData.logosPilotPose = true; rig.detail.position.set(0, 0, 0); rig.detail.rotation.set(0, 0, 0);
   const hero = rig.hero, hip = LOGOS_COCKPIT.seat + (gesture.role === 'neo' ? .31 : .27);
+  const brace = logosCrashBrace(gesture.flight);
   if (hero) {
     hero.bones.get('pelvis')!.position.y = hip;
-    hero.bones.get('spine')!.rotation.set(0, 0, 0); hero.bones.get('chest')!.rotation.set(0, 0, 0);
+    hero.bones.get('spine')!.rotation.set(brace * .55, 0, 0); hero.bones.get('chest')!.rotation.set(brace * .45, 0, 0);
   } else {
-    rig.torso.position.set(0, hip, 0); rig.torso.rotation.set(0, 0, 0);
+    rig.torso.position.set(0, hip, 0); rig.torso.rotation.set(brace, 0, 0);
     rig.hips.forEach((joint, i) => joint.position.set((i ? 1 : -1) * .225, hip, 0));
   }
   const head = hero?.bones.get('head') ?? rig.head;
-  head.rotation.set(gesture.role === 'neo' ? .07 : -.03, gesture.role === 'neo' ? -.08 : 0, 0);
+  head.rotation.set((gesture.role === 'neo' ? .07 : -.03) + brace * .6, gesture.role === 'neo' ? -.08 : 0, 0);
   rig.root.updateWorldMatrix(true, true); const orientation = rig.root.getWorldQuaternion(new THREE.Quaternion());
   for (let i = 0; i < 2; i++) {
     const side = i ? 'L' : 'R', sign = i ? 1 : -1;

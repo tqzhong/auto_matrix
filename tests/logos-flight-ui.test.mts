@@ -33,4 +33,11 @@ test('the shared Logos stage keeps its chapter number, retained damage and actua
   journey.logos.ignition.phase = 'running'; ui.updateFilm(player, sandbox);
   assert.match(element('film-ride-health').textContent, /动力恢复/);
   assert.doesNotMatch(element('film-ride-controls').textContent, /按住 G|动力失效/);
+  journey.logos.crash = { elapsed: 2.4, approach: 2.2, x: 0, altitude: 32, z: -145, speed: 17, vertical: -10,
+    lateral: 0, pitch: -.24, yaw: 0, roll: 0 };
+  ui.updateFilm(player, sandbox);
+  assert.match(element('film-ride-title').textContent, /机器城塔体/);
+  assert.match(element('film-ride-health').textContent, /动力中断/);
+  assert.match(element('film-ride-controls').textContent, /风挡破裂/);
+  assert.doesNotMatch(element('film-ride-controls').textContent, /点火|A \/ D/);
 });

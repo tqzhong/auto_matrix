@@ -155,6 +155,13 @@ test('a partially pumped Logos igniter survives server restore, release and paus
   h.players.release('p', h.tick()); h.sandbox.restore(saved); state = h.state(); h.advance(30);
   assert.deepEqual(state.logos, flight);
   h.players.possess('p', 'trinity', h.tick()); assert.deepEqual(state.logos, flight);
+  for (let i = 0; i < 500 && (!state.logos!.crash || state.logos!.crash.elapsed < state.logos!.crash.approach + .25); i++) frame();
+  assert.equal(state.logos!.phase, 'riding'); assert.ok(state.logos!.crash);
+  const collision = structuredClone(state.logos), collisionSave = structuredClone(h.sandbox.state);
+  assert.match(h.command('act'), /风挡破裂/);
+  h.players.step(.5, false, h.tick()); h.players.release('p', h.tick()); h.sandbox.restore(collisionSave); state = h.state(); h.advance(30);
+  assert.deepEqual(state.logos, collision, 'an unowned collision cannot finish itself after restoring');
+  assert.equal(state.step, 0); h.players.possess('p', 'trinity', h.tick());
   for (let i = 0; i < 500 && state.logos!.phase === 'riding'; i++) frame();
   assert.equal(state.logos!.phase, 'arrived'); assert.equal(state.logos!.ignition?.attempts, 1);
   assert.equal(state.logos!.hull, 44); assert.equal(state.logos!.neo, 32);

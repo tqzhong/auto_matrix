@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { batchStaticGeometry } from './StaticGeometry.js';
 import { LogosAtmosphere } from './LogosAtmosphere.js';
+import { LogosImpactRenderer } from './LogosImpactRenderer.js';
 import { LOGOS_DEFENSE, LOGOS_COCKPIT, logosShipPose, logosControlGrip, logosIgniterGrip, logosPowered, logosCloudTop, newLogosFlight, type LogosFlight, type LogosFlightMode } from '@auto_matrix/shared';
 
 /** A shared physical stage for the Logos defense run and the ascent above the cloud deck. */
@@ -20,6 +21,7 @@ export class LogosFlightRenderer {
   private threats: THREE.Group[] = [];
   private swarms: THREE.Group[] = [];
   private atmosphere: LogosAtmosphere;
+  private impact: LogosImpactRenderer;
   private engines: THREE.MeshStandardMaterial[] = [];
   private sunlight = new THREE.DirectionalLight(0xffdfb1, 0);
   private skyFill = new THREE.HemisphereLight(0xa4b8c7, 0x252c36, .7);
@@ -32,6 +34,7 @@ export class LogosFlightRenderer {
     this.buildShip();
     this.group.add(this.ship, this.pulse); this.ship.add(this.cockpit);
     batchStaticGeometry(this.ship, new Set(this.grips.map(grip => grip.mesh))).forEach(geometry => this.geometries.add(geometry));
+    this.impact = new LogosImpactRenderer(this.group, this.ship);
     if (mode === 'defense') this.buildDefense();
     this.atmosphere = new LogosAtmosphere(this.group);
     this.sunlight.position.set(-44, 18, -87); this.group.add(this.sunlight, this.sunlight.target, this.skyFill);
@@ -225,6 +228,7 @@ export class LogosFlightRenderer {
     const ship = logosShipPose(pose);
     this.ship.position.set(ship.x, ship.y, ship.z); this.ship.rotation.set(ship.pitch, ship.yaw, ship.roll, 'YXZ');
     this.ship.visible = true; this.cockpit.visible = true;
+    this.impact.update(pose);
     for (const { mesh, side } of this.grips) {
       const grip = logosControlGrip(pose, 'trinity', side); mesh.position.set(-grip.x, grip.y, -grip.z);
     }
@@ -266,6 +270,7 @@ export class LogosFlightRenderer {
   }
 
   dispose(): void {
+    this.impact.dispose();
     this.atmosphere.dispose();
     this.group.removeFromParent(); this.group.clear();
     this.geometries.forEach(geometry => geometry.dispose()); this.materials.forEach(material => material.dispose());

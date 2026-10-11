@@ -5216,6 +5216,7 @@ export class FilmStorySystem {
       this.logosFrame(agent);
       if (flight.destroyed > before.destroyed) state.lastText = `Neo 击碎来袭机器；金色感知剩余 ${Math.ceil(flight.neo)}%。继续手动避开其余浮雷。`;
       else if (flight.hits > before.hits) state.lastText = 'Logos 撞上浮雷，船壳正在解体。A / D 横移，W 爬升、S 俯冲；按住 G 让 Neo 摧毁一次迫近目标。';
+      else if (flight.crash && (!before.crash || before.crash.elapsed < before.crash.approach && flight.crash.elapsed >= flight.crash.approach)) state.lastText = logosIgnitionText(flight);
       else if (flight.ignition && (flight.ignition.phase !== before.ignition?.phase || flight.stage !== before.stage)) state.lastText = logosIgnitionText(flight);
       else if (flight.stage !== before.stage) state.lastText = flight.stage === 'clouds'
         ? 'Trinity 把船首拉向乌云。保持爬升，只有穿过云层才能越过机器群。'
@@ -7827,7 +7828,8 @@ export class FilmStorySystem {
         if (neo && !neo.controller) { neo.velocity = { x: 0, y: 0, z: 0 }; neo.currentAction = null; }
         this.advance(state.scene === 'm3_defense'
           ? 'Trinity 驾驶 Logos 绕过浮雷，Neo 用有限的金色感知击碎拦截机器。船首钻入乌云，最后一条航线只剩向上。'
-          : state.logos.ignition ? 'Logos 在穿云时失去动力，惯性把两人送到阳光中。下坠时 Trinity 按 Neo 的指引重启引擎，但仍来不及避开机器城。'
+          : state.logos.crash ? 'Trinity 重新点燃引擎，但 Logos 已来不及避开塔体。船首撕开金属外墙，风挡崩裂；剧烈撞击后，两人被困在残骸中。'
+            : state.logos.ignition ? 'Logos 在穿云时失去动力，惯性把两人送到阳光中。下坠时 Trinity 按 Neo 的指引重启引擎，但仍来不及避开机器城。'
             : 'Logos 冲出云层。Trinity 看见真实的蓝天与太阳；数秒后引擎停转，飞船失速坠回机器城。', actor, tick);
         return;
       }

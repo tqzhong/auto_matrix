@@ -3,7 +3,7 @@ import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { LOGOS_COCKPIT, FILM_SETS, newLogosFlight, logosShipPose, logosShipPoint, logosCrewRoot, type LogosFlight, type LogosPilotGesture } from '@auto_matrix/shared';
+import { LOGOS_COCKPIT, FILM_SETS, newLogosFlight, stepLogosFlight, logosShipPose, logosShipPoint, logosCrewRoot, type LogosFlight, type LogosPilotGesture } from '@auto_matrix/shared';
 import { CharacterModels } from '../packages/client/src/agents/CharacterModel.js';
 import { LogosFlightRenderer } from '../packages/client/src/engine/LogosFlightRenderer.js';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
@@ -51,6 +51,13 @@ test('the actual Neo and Trinity bodies stay on their banked seats and deck, cle
   t.after(() => renderer.dispose());
   const flights = [-17, 0, 17].flatMap(lateral => [-15, 15].map(vertical => ({ ...newLogosFlight('defense'), lateral, vertical, elapsed: 5.3 })));
   flights.push({ ...newLogosFlight('sun'), stage: 'stall', vertical: -20, elapsed: 8.4 });
+  let crashing = newLogosFlight('sun');
+  for (let frame = 0; frame < 600 && !crashing.crash; frame++) crashing = stepLogosFlight(crashing,
+    { throttle: crashing.stage === 'clouds' ? 1 : 0, steer: .1, brake: false }, .05,
+    crashing.stage === 'stall' && (crashing.ignition?.pump ?? 0) < 1.3);
+  assert.ok(crashing.crash);
+  for (const elapsed of [0, crashing.crash.approach - .1, crashing.crash.approach + .2, crashing.crash.approach + 2.6])
+    flights.push({ ...crashing, crash: { ...crashing.crash, elapsed } });
   for (const flight of flights) {
     renderer.update(flight, 80); root.updateMatrixWorld(true);
     const cockpit = root.getObjectByName('logos-flight-cockpit')!, inverse = cockpit.matrixWorld.clone().invert();
