@@ -364,8 +364,10 @@ export class PlayerControls {
     if (!this.dragging || this.dragPoint) this.movementYaw += turn;
     if (this.dragPoint) this.dragPoint = { x: event.clientX, y: event.clientY };
     const recline = this.firstPerson && this.motion.deusPact ? DEUS_PACT.reclineAngle * .82 * deusPactPose(this.motion.deusPact).seated : 0;
+    const podEye = this.firstPerson && (this.motion.performance === 'float' || this.motion.performance === 'lift');
+    const podElevation = podEye ? 1.42 * (1 - podRescuePose(this.motion.podRescue ?? 0).board) : 0;
     const hammerGunner = this.motion.hammerPilot?.role === 'ghost' && this.motion.hammerPilot.flight.gunnery;
-    this.pitch = THREE.MathUtils.clamp(this.pitch + movementY * 0.002, hammerGunner ? -.65 : this.motion.epilogue?.kind === 'ceasefire' && this.motion.epilogue.phase === 'retreat' ? -1.3 : this.motion.dockGunnery ? -.85 : this.motion.diggers ? -.65 : this.motion.dockGate ? -1.35 : this.motion.mirrorBeat !== undefined ? -.9 : -.4, this.motion.dockGunnery ? .4 : this.motion.diggers ? .5 : this.motion.dockGate ? 1.35 : this.motion.catch ? 1.55 : this.motion.computerCheck || this.motion.primaryDemolition?.phase === 'mounting' ? 1.5 : 1.1 + recline);
+    this.pitch = THREE.MathUtils.clamp(this.pitch + movementY * 0.002, podEye ? podElevation - 1.48 : hammerGunner ? -.65 : this.motion.epilogue?.kind === 'ceasefire' && this.motion.epilogue.phase === 'retreat' ? -1.3 : this.motion.dockGunnery ? -.85 : this.motion.diggers ? -.65 : this.motion.dockGate ? -1.35 : this.motion.mirrorBeat !== undefined ? -.9 : -.4, podEye ? podElevation + 1.1 : this.firstPerson && this.motion.performance === 'fall' ? 2.6 : this.motion.dockGunnery ? .4 : this.motion.diggers ? .5 : this.motion.dockGate ? 1.35 : this.motion.catch ? 1.55 : this.motion.computerCheck || this.motion.primaryDemolition?.phase === 'mounting' ? 1.5 : 1.1 + recline);
     this.ceasefireAim = this.reloadAim = false;
     if (this.motion.dockGunnery) Object.assign(this, dockGunneryAngles(this.yaw, this.pitch));
     if (hammerGunner) Object.assign(this, hammerGunneryAngles(this.yaw, this.pitch));
@@ -1225,7 +1227,7 @@ export class PlayerControls {
       this.yaw += cameraTurn * (1 - Math.exp(-5 * delta));
     }
     const body = group.children[0];
-    if (body && !(state.currentLocation === 'film_power_plant_pods' && this.motion.performance === 'pod')) body.rotation.y = this.motion.dockGunnery || this.motion.apuDriving ? Math.PI : this.firstPerson && !this.performing ? this.yaw : this.facing;
+    if (body && !(state.currentLocation === 'film_power_plant_pods' && this.motion.performance !== undefined && ['pod', 'fall', 'float', 'lift'].includes(this.motion.performance))) body.rotation.y = this.motion.dockGunnery || this.motion.apuDriving ? Math.PI : this.firstPerson && !this.performing ? this.yaw : this.facing;
     const sprint = this.motion.speed > PLAYER_WALK_SPEED * 1.6 || Boolean(this.ride && this.ride.speed > 20);
     const interviewWide = !this.firstPerson && this.motion.interrogation && (this.motion.interrogation.phase === 'file' || this.motion.interrogation.phase === 'coercion' && this.motion.interrogation.elapsed > 5.3 && this.motion.interrogation.elapsed < 14);
     const interviewApproach = !this.firstPerson && state.currentLocation === 'film_agent_interrogation' && !this.motion.interrogation;
@@ -1255,7 +1257,7 @@ export class PlayerControls {
     const basementWide = !this.firstPerson && Boolean(dropRoot);
     const streetShaftWide = !this.firstPerson && tvExit?.phase === 'emerging';
     this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, inOfficeLift && !this.firstPerson ? 80 : basementWide ? this.camera.aspect < .85 ? 82 : 78 : bathroomWide ? this.camera.aspect < .85 ? 78 : 58 : streetShaftWide ? this.camera.aspect < .85 ? 68 : 60 : podWide ? 65 : this.motion.truth && !this.firstPerson && this.camera.aspect < .85 ? 68 : cabinWide ? this.camera.aspect < .85 ? 68 : 58 : smithFinaleWide || epilogueWide ? 64 : ladderWide ? 62 : interviewApproach ? 70 : interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide || sentinelWide || interludeWide || oracleWide || betrayalWide || rescueWide || governmentWide || airRescueWide || escapeWide || oneWide || catchWide || lobbyWide || pillDepartureWide ? 58 : this.motion.inspecting && !this.firstPerson ? 42 : this.firstPerson ? this.motion.mirrorBeat !== undefined ? 78 : sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
-    this.camera.near = basement?.crawling || Boolean(dropRoot) || this.firstPerson && (this.motion.performance === 'pod' && state.currentLocation === 'film_power_plant_pods' || this.motion.morning || this.motion.workday?.role === 'neo' && this.motion.workday.phase === 'signing' || this.motion.computerCheck || this.motion.contact?.propMotion === 'minidisc' && ['retrieving', 'disk', 'handover'].includes(this.motion.contact.phase) || this.motion.pills || this.motion.farewell || this.motion.mobilReunion?.reunion.phase === 'embracing' || this.motion.catch || dockEvacuationLocked(this.motion.dockEvacuation) || shaftSealLocked(this.motion.shaftSeal) || dockBriefingLocked(this.motion.dockBriefing) || dockReunionLocked(this.motion.dockReunion) || this.motion.empOperator || this.motion.dockGate || this.motion.dockLastStand || deusPactLocked(this.motion.deusPact) || smithFinaleLocked(this.motion.smithFinale) || this.motion.bathroom || this.motion.sixth || this.motion.wetwall?.hanging || tvExit?.phase === 'emerging') ? .06 : this.firstPerson && this.motion.club ? .08 : this.defaultNear;
+    this.camera.near = basement?.crawling || Boolean(dropRoot) || this.firstPerson && (this.motion.performance !== undefined && ['pod', 'fall', 'float', 'lift'].includes(this.motion.performance) && state.currentLocation === 'film_power_plant_pods' || this.motion.morning || this.motion.workday?.role === 'neo' && this.motion.workday.phase === 'signing' || this.motion.computerCheck || this.motion.contact?.propMotion === 'minidisc' && ['retrieving', 'disk', 'handover'].includes(this.motion.contact.phase) || this.motion.pills || this.motion.farewell || this.motion.mobilReunion?.reunion.phase === 'embracing' || this.motion.catch || dockEvacuationLocked(this.motion.dockEvacuation) || shaftSealLocked(this.motion.shaftSeal) || dockBriefingLocked(this.motion.dockBriefing) || dockReunionLocked(this.motion.dockReunion) || this.motion.empOperator || this.motion.dockGate || this.motion.dockLastStand || deusPactLocked(this.motion.deusPact) || smithFinaleLocked(this.motion.smithFinale) || this.motion.bathroom || this.motion.sixth || this.motion.wetwall?.hanging || tvExit?.phase === 'emerging') ? .06 : this.firstPerson && this.motion.club ? .08 : this.defaultNear;
     const arrest = this.motion.officeCustody?.street;
     if (this.motion.epilogue?.kind === 'neo_carried') this.camera.fov = this.firstPerson ? 68 : 58;
     if (deusPactLocked(this.motion.deusPact)) this.camera.fov = this.firstPerson ? 68 : 57;
@@ -2372,7 +2374,7 @@ export class PlayerControls {
       if (resetCamera || (this.motion.mirrorEntry?.elapsed ?? this.motion.mirrorBeat) < .12) this.camera.position.copy(ideal);
       else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
       this.camera.lookAt(focus);
-    } else if (this.motion.performance === 'pod' && state.currentLocation === 'film_power_plant_pods') {
+    } else if ((this.motion.performance === 'pod' || this.motion.performance === 'fall') && state.currentLocation === 'film_power_plant_pods') {
       const center = FILM_SETS.film_power_plant_pods.center;
       if (this.firstPerson) {
         const head = group.getObjectByName('head'); group.updateWorldMatrix(true, true);
@@ -2382,20 +2384,26 @@ export class PlayerControls {
           : new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch - 1.47), -Math.sin(this.pitch - 1.47), Math.cos(this.yaw) * Math.cos(this.pitch - 1.47));
         this.camera.position.copy(eye); this.camera.lookAt(eye.add(forward));
       } else {
-        const ideal = new THREE.Vector3(center.x + 5.8, center.y + 8.2, center.z - 6.5);
+        const falling = this.motion.performance === 'fall', head = group.getObjectByName('head'), pelvis = group.getObjectByName('pelvis');
+        group.updateWorldMatrix(true, true);
+        const focus = falling ? head && pelvis ? head.getWorldPosition(new THREE.Vector3()).lerp(pelvis.getWorldPosition(new THREE.Vector3()), .5)
+          : new THREE.Vector3(this.position.x, this.position.y + 1.7, this.position.z) : new THREE.Vector3(center.x, center.y + 3.45, center.z - 12.5);
+        const ideal = falling ? focus.clone().add(new THREE.Vector3(6.2, 4.5, 4.5).multiplyScalar(Math.max(1, .8 / this.camera.aspect)))
+          : new THREE.Vector3(center.x + 5.8, center.y + 8.2, center.z - 6.5);
         if (resetCamera) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
-        this.camera.lookAt(center.x, center.y + 3.45, center.z - 12.5);
+        this.camera.lookAt(focus);
       }
     } else if (this.firstPerson && state.currentLocation === 'film_power_plant_pods' &&
       (this.motion.performance === 'float' || this.motion.performance === 'lift')) {
       const boarding = podRescuePose(this.motion.podRescue ?? 0);
-      const eye = new THREE.Vector3(this.position.x, this.position.y + 3.25 - boarding.settle * 1.1, this.position.z - .25);
+      const head = group.getObjectByName('head'); group.updateWorldMatrix(true, true);
+      const eye = head ? head.localToWorld(new THREE.Vector3(0, .1, .32)) : new THREE.Vector3(this.position.x, this.position.y + 3.25 - boarding.settle * 1.1, this.position.z - .25);
       const crew = recoveryCrewPose({ elapsed: this.motion.podRescue ?? 0, role: 'morpheus', boarding: true });
       const center = FILM_SETS.film_power_plant_pods.center;
       const dx = center.x + crew.x - eye.x, dz = center.z + crew.z - eye.z;
       const crewPitch = -Math.atan2(center.y + 3.2 - boarding.settle * .75 - eye.y, Math.hypot(dx, dz));
       const receiving = THREE.MathUtils.smoothstep(this.motion.podRescue ?? 0, POD_RESCUE.lowered, 10.1);
-      const pitch = this.pitch - 1.42 * (1 - boarding.board) + (crewPitch - .24) * receiving;
+      const pitch = THREE.MathUtils.clamp(this.pitch - 1.42 * (1 - boarding.board) + (crewPitch - .24) * receiving, -1.48, 1.1);
       const yaw = this.yaw - Math.PI / 2 * (1 - boarding.board) + (Math.atan2(dx, dz) - Math.PI) * receiving;
       const forward = new THREE.Vector3(Math.sin(yaw) * Math.cos(pitch), -Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch));
       this.camera.position.copy(eye); this.camera.lookAt(eye.add(forward));

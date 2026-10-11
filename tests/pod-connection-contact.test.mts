@@ -668,3 +668,103 @@ test('the eye camera retains the near mouthpiece during the grasp and restores i
     controls.release(); assert.equal(camera.near, .5, 'leaving the character restores the camera');
   } finally { controls.dispose(); globalThis.window = previous; }
 });
+
+test('the actual pod body stays continuous when support gives way, floating begins and the winch arrives', async t => {
+  const h = await setup(t), names = ['head', 'pelvis', 'wrist_R', 'wrist_L', 'ankle_R', 'ankle_L'];
+  const points = (beat: AwakeningBeat) => {
+    const body = h.at(beat.elapsed, 100, false, beat);
+    return names.map(name => body.getObjectByName(name)!.getWorldPosition(new THREE.Vector3()));
+  };
+  for (const elapsed of [4, 5.2, 7]) {
+    const before = points({ kind: 'disconnect', elapsed: elapsed - .001, emerged: true, breatherRemoved: true });
+    const after = points({ kind: 'disconnect', elapsed: elapsed + .001, emerged: true, breatherRemoved: true });
+    before.forEach((point, i) => assert.ok(point.distanceTo(after[i]) < .08,
+      `${names[i]} jumps at ${elapsed}s: ${point.distanceTo(after[i])}`));
+  }
+  const floating = points({ kind: 'disconnect', elapsed: 9, emerged: true, breatherRemoved: true });
+  const rescue = points({ kind: 'rescue', elapsed: 0 });
+  floating.forEach((point, i) => assert.ok(point.distanceTo(rescue[i]) < .04,
+    `${names[i]} jumps when the player requests rescue: ${point.distanceTo(rescue[i])}`));
+});
+
+test('the floating body restores the saved bones instead of continuing a generic idle animation', async t => {
+  const h = await setup(t), beat: AwakeningBeat = { kind: 'disconnect', elapsed: 9, emerged: true, breatherRemoved: true };
+  const snapshot = (body: THREE.Object3D) => {
+    const result: number[][] = []; body.traverse(object => { if (object instanceof THREE.Bone) result.push(object.matrixWorld.toArray()); }); return result;
+  };
+  const expected = snapshot(h.at(9, 100, false, beat));
+  h.renderer.update(.35, undefined, 1, 0, { scene: 'm1_pod', awakening: beat } as FilmJourney);
+  assert.deepEqual(snapshot(h.at(9, 500, false, beat)), expected, 'a paused water pose cannot drift with render time');
+  await t.test('a cold model restores the same floating body', async t => {
+    const cold = await setup(t); assert.deepEqual(snapshot(cold.at(9, 900, false, beat)), expected);
+  });
+});
+
+test('the falling and floating eye camera uses the actual head and preserves free observation', async t => {
+  const h = await setup(t);
+  class InputTarget extends EventTarget { matches() { return false; } }
+  const window = new InputTarget(), canvas = new InputTarget(), document = new InputTarget(), previous = globalThis.window;
+  globalThis.window = window as unknown as Window & typeof globalThis;
+  Object.assign(globalThis.document, { pointerLockElement: canvas, exitPointerLock() {}, hidden: false,
+    addEventListener: document.addEventListener.bind(document), removeEventListener: document.removeEventListener.bind(document) });
+  const camera = new THREE.PerspectiveCamera(57, 16 / 9, .5, 5000), controls = new PlayerControls(canvas as unknown as HTMLCanvasElement, camera, () => {}, () => {});
+  try {
+    for (const elapsed of [4.3, 4.8, 5.2, 6.4, 7.2, 9]) {
+      const beat: AwakeningBeat = { kind: 'disconnect', elapsed, emerged: true, breatherRemoved: true }, body = h.at(elapsed, 100, true, beat);
+      const rotation = body.quaternion.clone();
+      controls.possess(h.neo); controls.performing = true; controls.firstPerson = true;
+      controls.update(1 / 60, h.neo, h.renderer.getAgent('neo')!, false);
+      assert.ok(body.quaternion.angleTo(rotation) < 1e-7, 'the player camera cannot rotate the saved descending body');
+      const eye = body.getObjectByName('head')!.localToWorld(new THREE.Vector3(0, .1, .32));
+      assert.ok(camera.position.distanceTo(eye) < .045, `the eye floats away from Neo at ${elapsed}s: ${camera.position.distanceTo(eye)}`);
+    }
+    const direction = camera.getWorldDirection(new THREE.Vector3());
+    document.dispatchEvent(Object.assign(new Event('mousemove'), { movementX: 150, movementY: 850 }));
+    controls.update(1 / 60, h.neo, h.renderer.getAgent('neo')!, false);
+    assert.ok(camera.getWorldDirection(new THREE.Vector3()).distanceTo(direction) > .2, 'the saved water pose must retain free looking');
+    assert.ok(camera.getWorldDirection(new THREE.Vector3()).y < -.25, 'Neo must be able to look down at the water rather than being limited to the ceiling');
+  } finally { controls.dispose(); globalThis.window = previous; }
+});
+
+test('the falling skin meets the real runoff channel without sinking through its rendered surface', async t => {
+  const h = await setup(t); let channel: THREE.Mesh | undefined;
+  h.root.traverse(object => {
+    if (object instanceof THREE.Mesh && object.geometry.getAttribute('position')?.count === 561) channel = object;
+  });
+  assert.ok(channel, 'the test must trace the shipped concave runoff mesh');
+  const gaps: { elapsed: number; minimum: number; maximumPenetration: number; samples: number }[] = [];
+  for (const elapsed of [5.2, 5.8, 6.4, 6.6]) {
+    const body = h.at(elapsed, 100, false, { kind: 'disconnect', elapsed, emerged: true, breatherRemoved: true });
+    const envelope = new Map<string, THREE.Vector3>();
+    body.traverse(object => {
+      if (!(object instanceof THREE.SkinnedMesh) || !object.visible || (object.material as THREE.Material).name !== 'Skin' && !object.userData.patientBody) return;
+      object.updateMatrixWorld(true); object.skeleton.update();
+      const positions = object.geometry.getAttribute('position');
+      for (let i = 0; i < positions.count; i++) {
+        const point = h.root.worldToLocal(object.localToWorld(object.getVertexPosition(i, new THREE.Vector3())));
+        if (point.z < -6 || point.z > 12 || Math.abs(point.x) > 3.2) continue;
+        const key = `${Math.floor(point.x / .35)}/${Math.floor(point.z / .6)}`;
+        if (!envelope.has(key) || envelope.get(key)!.y > point.y) envelope.set(key, point);
+      }
+    });
+    let minimum = Infinity, maximumPenetration = 0, samples = 0;
+    for (const local of envelope.values()) {
+      const point = h.root.localToWorld(local.clone()), hit = new THREE.Raycaster(point.clone().add(new THREE.Vector3(0, 25, 0)), new THREE.Vector3(0, -1, 0), 0, 50).intersectObject(channel!)[0];
+      if (!hit) continue;
+      minimum = Math.min(minimum, point.y - hit.point.y); maximumPenetration = Math.max(maximumPenetration, hit.point.y - point.y); samples++;
+    }
+    gaps.push({ elapsed, minimum, maximumPenetration, samples });
+  }
+  assert.ok(gaps.every(gap => gap.samples >= 8 && gap.maximumPenetration < .035 && gap.minimum < .15),
+    `the real skin must rest on the chute rather than hovering or cutting through it: ${JSON.stringify(gaps)}`);
+});
+
+test('Neo recoils with the real cervical needle withdrawal and settles before losing support', async t => {
+  const h = await setup(t), forward = (elapsed: number) => {
+    const body = h.at(elapsed, 100, false, { kind: 'disconnect', elapsed, emerged: true, breatherRemoved: true });
+    return new THREE.Vector3(0, 0, 1).applyQuaternion(body.getObjectByName('head')!.getWorldQuaternion(new THREE.Quaternion()));
+  };
+  const before = forward(2.7), pulling = forward(3.08), released = forward(3.78);
+  assert.ok(pulling.y - before.y > .07, 'the head must react when the neck needle is pulled rather than only scanning sideways');
+  assert.ok(Math.abs(released.y - before.y) < .07, 'the extraction recoil must settle before the drain releases the body');
+});

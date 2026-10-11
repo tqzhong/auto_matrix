@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { POD_WATER_DROP, POD_RESCUE, POD_BREATHER, AWAKENING_SECONDS, awakeningPose, podRescuePose, podBreatherPose, type FilmJourney } from '@auto_matrix/shared';
+import { POD_WATER_DROP, POD_RUNOFF, POD_RESCUE, POD_BREATHER, AWAKENING_SECONDS, awakeningPose, podRunoffHeight, podRescuePose, podBreatherPose, type FilmJourney } from '@auto_matrix/shared';
 import { batchStaticGeometry } from './StaticGeometry.js';
 import { PodMembraneRenderer } from './PodMembraneRenderer.js';
 import { PodMaintenanceRenderer } from './PodMaintenanceRenderer.js';
@@ -83,13 +83,14 @@ export class PodSetRenderer {
     this.nearBank();
     // A concave runoff channel descends to the water rather than an invisible flat floor.
     const positions: number[] = []; const indices: number[] = [];
-    for (let row = 0; row <= 32; row++) for (let col = 0; col <= 16; col++) {
-      const t = row / 32; const x = (col / 16 - .5) * 6.4;
-      positions.push(x, -1 - POD_WATER_DROP * t * t + x * x * .17, -6 + t * 18);
-      if (row < 32 && col < 16) { const a = row * 17 + col; indices.push(a, a + 17, a + 1, a + 1, a + 17, a + 18); }
+    const { rows, columns, halfWidth, startZ, endZ } = POD_RUNOFF;
+    for (let row = 0; row <= rows; row++) for (let col = 0; col <= columns; col++) {
+      const x = (col / columns - .5) * 2 * halfWidth, z = startZ + row / rows * (endZ - startZ);
+      positions.push(x, podRunoffHeight(x, z)!, z);
+      if (row < rows && col < columns) { const a = row * (columns + 1) + col; indices.push(a, a + columns + 1, a + 1, a + 1, a + columns + 1, a + columns + 2); }
     }
     const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)); geometry.setIndex(indices); geometry.computeVertexNormals();
-    const drain = this.mat(0x131b1d, .57, .55); drain.side = THREE.DoubleSide; this.mesh(geometry, drain, 0, 0, 0);
+    const drain = this.mat(0x131b1d, .57, .55); drain.side = THREE.DoubleSide; this.mesh(geometry, drain, 0, 0, 0).name = 'pod-runoff-channel';
     for (const side of [-1, 1]) this.tube([[side * 3.5, 1, -7], [side * 3.5, -4, 1], [side * 3.5, -18, 13]], .3, this.steel);
     this.tube([[-7, 0, -12], [-9, -8, -2], [-9, -17, 12], [-25, -18, 30]], 1.1, this.dark);
     const waterMat = new THREE.MeshPhysicalMaterial({ color: 0x101e24, roughness: .18, metalness: .55, clearcoat: 1, transparent: true, opacity: .91 }); this.materials.add(waterMat);
