@@ -1,0 +1,751 @@
+TAP version 13
+# Subtest: the first paused machine-core frame restores exact saved roots, yaw and camera without frame-rate settling
+ok 1 - the first paused machine-core frame restores exact saved roots, yaw and camera without frame-rate settling
+  ---
+  duration_ms: 107.503333
+  type: 'test'
+  ...
+# Subtest: machine-core first person samples the current real GLB eyes after posing and keeps the nearby neck probe visible
+ok 2 - machine-core first person samples the current real GLB eyes after posing and keeps the nearby neck probe visible
+  ---
+  duration_ms: 1815.832875
+  type: 'test'
+  ...
+# {"eyeGeometryError":0.0221210726415936,"probeSurfaceDistance":0.4781927019826481,"probeNdc":[0,-0.13345171612306977,0.7480615190713065],"near":0.06,"closestProbeDepth":0.47626709886753815}
+# Subtest: the formed collective still allows mouse looking, V switching, and normal movement after leaving
+ok 3 - the formed collective still allows mouse looking, V switching, and normal movement after leaving
+  ---
+  duration_ms: 22.501167
+  type: 'test'
+  ...
+# Subtest: the machine-core establishing view frames the actual collective surface together with Neo in wide and portrait windows
+ok 4 - the machine-core establishing view frames the actual collective surface together with Neo in wide and portrait windows
+  ---
+  duration_ms: 251.452792
+  type: 'test'
+  ...
+# Subtest: the machine-core shared view has clear actual geometry sightlines to Neo and the collective
+ok 5 - the machine-core shared view has clear actual geometry sightlines to Neo and the collective
+  ---
+  duration_ms: 1818.288125
+  type: 'test'
+  ...
+# Subtest: the close connection shot keeps Neo’s actual head, feet and support above the subtitle area without structural occlusion
+ok 6 - the close connection shot keeps Neo’s actual head, feet and support above the subtitle area without structural occlusion
+  ---
+  duration_ms: 7163.681459
+  type: 'test'
+  ...
+# {"phase":"cabling","aspect":1.7777777777777777,"bodyNdc":{"min":[-0.1243101335658455,-0.2892804618965898,0.8800200021499643],"max":[0.2139743389364782,0.27372124553970606,0.9110365100586334]}}
+# {"phase":"cabling","aspect":0.5625,"bodyNdc":{"min":[-0.3928814097883513,-0.2892804618965898,0.8800200021499643],"max":[0.6762645773794866,0.27372124553970606,0.9110365100586334]}}
+# {"phase":"consent","aspect":1.7777777777777777,"bodyNdc":{"min":[-0.1243101335658455,-0.2892804618965898,0.8800200021499643],"max":[0.2139743389364782,0.27372124553970606,0.9110365100586334]}}
+# {"phase":"consent","aspect":0.5625,"bodyNdc":{"min":[-0.3928814097883513,-0.2892804618965898,0.8800200021499643],"max":[0.6762645773794866,0.27372124553970606,0.9110365100586334]}}
+# {"phase":"assurance","aspect":1.7777777777777777,"bodyNdc":{"min":[-0.1243101335658455,-0.2892804618965898,0.8800200021499643],"max":[0.2139743389364782,0.27372124553970606,0.9110365100586334]}}
+# {"phase":"assurance","aspect":0.5625,"bodyNdc":{"min":[-0.3928814097883513,-0.2892804618965898,0.8800200021499643],"max":[0.6762645773794866,0.27372124553970606,0.9110365100586334]}}
+# {"phase":"assurance","aspect":1.7777777777777777,"bodyNdc":{"min":[-0.1243101335658455,-0.2892804618965898,0.8800200021499643],"max":[0.2139743389364782,0.27372124553970606,0.9110365100586334]}}
+# {"phase":"assurance","aspect":0.5625,"bodyNdc":{"min":[-0.3928814097883513,-0.2892804618965898,0.8800200021499643],"max":[0.6762645773794866,0.27372124553970606,0.9110365100586334]}}
+# Subtest: negotiation frames keep the delivered standing body above subtitles throughout formation and dialogue
+ok 7 - negotiation frames keep the delivered standing body above subtitles throughout formation and dialogue
+  ---
+  duration_ms: 10296.77225
+  type: 'test'
+  ...
+# Subtest: the carried body keeps its saved root and actual eye through waiting, transport, pause and V switching
+ok 8 - the carried body keeps its saved root and actual eye through waiting, transport, pause and V switching
+  ---
+  duration_ms: 22791.971667
+  type: 'test'
+  ...
+# Subtest: the actual machine core stays identical while a saved performance is paused for repeated frames
+ok 9 - the actual machine core stays identical while a saved performance is paused for repeated frames
+  ---
+  duration_ms: 1025.101167
+  type: 'test'
+  ...
+# Subtest: cold machine-core rendering and reverse saved-frame seeking reproduce the same live scene without the page clock
+ok 10 - cold machine-core rendering and reverse saved-frame seeking reproduce the same live scene without the page clock
+  ---
+  duration_ms: 7981.688833
+  type: 'test'
+  ...
+# Subtest: saved performance time still animates the visible swarm, face and connection rather than freezing them
+ok 11 - saved performance time still animates the visible swarm, face and connection rather than freezing them
+  ---
+  duration_ms: 565.330667
+  type: 'test'
+  ...
+# Subtest: the real film set follows Neo’s fast connection clock without replaying stale phases, retries or visits
+ok 12 - the real film set follows Neo’s fast connection clock without replaying stale phases, retries or visits
+  ---
+  duration_ms: 646.294375
+  type: 'test'
+  ...
+# Subtest: only Neo’s real-world first-person view receives the machine-core golden perception
+ok 13 - only Neo’s real-world first-person view receives the machine-core golden perception
+  ---
+  duration_ms: 162.134583
+  type: 'test'
+  ...
+# Subtest: the audience and body route overlook a layered machine city without adding structures to their playable volume
+ok 14 - the audience and body route overlook a layered machine city without adding structures to their playable volume
+  ---
+  duration_ms: 770.627375
+  type: 'test'
+  ...
+# Subtest: machine-city cold geometry is reproducible, golden perception is reversible and leaving frees its GPU resources once
+not ok 15 - machine-city cold geometry is reproducible, golden perception is reversible and leaving frees its GPU resources once
+  ---
+  duration_ms: 324.862625
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/machine-core-renderer.test.mts:1:9555'
+  failureType: 'testCodeFailure'
+  error: |-
+    switching away from Neo’s eyes must restore the cold city
+    + actual - expected
+    ... Skipped lines
+
+      [
+        {
+          blendColor: 0,
+          clipping: false,
+          depthWrite: false,
+    ...
+          emissive: 0,
+    +     emissiveIntensity: 0,
+          envMapIntensity: 1,
+          envMapRotation: [
+            0,
+            0,
+            0,
+    ...
+          emissive: 0,
+    +     emissiveIntensity: 0,
+          envMapIntensity: 1,
+          envMapRotation: [
+            0,
+            0,
+            0,
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0:
+      metadata:
+        version: 4.6
+        type: 'Material'
+        generator: 'Material.toJSON'
+      uuid: 'bed1a1f3-00dc-4b1d-83a3-300f0951e196'
+      type: 'ShaderMaterial'
+      side: 1
+      blendColor: 0
+      depthWrite: false
+      forceSinglePass: true
+      fog: false
+      glslVersion: ~
+      uniforms:
+        subjective:
+          value: 0
+      vertexShader: |-
+
+              varying vec3 direction;
+              void main() {
+                direction = position;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                gl_Position.z = gl_Position.w;
+              }
+
+      fragmentShader: |-
+
+              varying vec3 direction;
+              uniform float subjective;
+              float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+              float noise(vec2 p) {
+                vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+                return mix(mix(hash(i), hash(i + vec2(1,0)), f.x),
+                  mix(hash(i + vec2(0,1)), hash(i + vec2(1,1)), f.x), f.y);
+              }
+              void main() {
+                vec3 ray = normalize(direction);
+                vec2 p = ray.xz / (.24 + abs(ray.y)) * 3.5;
+                float cloud = noise(p) * .55 + noise(p * 2.1 + 4.3) * .28 + noise(p * 4.4) * .12 + noise(p * 9.1) * .05;
+                float opening = smoothstep(.35, .73, cloud);
+                float horizon = exp(-abs(ray.y) * 3.0);
+                vec3 night = mix(vec3(.006, .01, .024), vec3(.047, .073, .145), opening);
+                night += vec3(.009, .018, .044) * horizon;
+                night = mix(vec3(.012, .024, .048), night, smoothstep(-.65, .08, ray.y));
+                vec3 gold = vec3(.04, .022, .007) + vec3(.12, .055, .009) * opening * horizon;
+                gl_FragColor = vec4(mix(night, gold, subjective), 1.0);
+                #include <tonemapping_fragment>
+                #include <colorspace_fragment>
+              }
+
+      lights: false
+      clipping: false
+    1:
+      metadata:
+        version: 4.6
+        type: 'Material'
+        generator: 'Material.toJSON'
+      uuid: '8fd23b78-d2e6-4620-babc-1005cb323c43'
+      type: 'MeshStandardMaterial'
+      color: 4411755
+      roughness: 0.56
+      metalness: 0.66
+      emissive: 0
+      envMapRotation:
+        0: 0
+        1: 0
+        2: 0
+        3: 'XYZ'
+      envMapIntensity: 1
+      blendColor: 0
+    2:
+      metadata:
+        version: 4.6
+        type: 'Material'
+        generator: 'Material.toJSON'
+      uuid: 'cba900a0-832c-4aa2-8903-eac772b64a5c'
+      type: 'MeshStandardMaterial'
+      color: 6715539
+      roughness: 0.48
+      metalness: 0.72
+      emissive: 0
+      envMapRotation:
+        0: 0
+        1: 0
+        2: 0
+        3: 'XYZ'
+      envMapIntensity: 1
+      blendColor: 0
+    3:
+      metadata:
+        version: 4.6
+        type: 'Material'
+        generator: 'Material.toJSON'
+      uuid: '5d4d6935-5dd4-4346-a31d-99c2d35ebcee'
+      type: 'MeshBasicMaterial'
+      color: 7576538
+      envMapRotation:
+        0: 0
+        1: 0
+        2: 0
+        3: 'XYZ'
+      reflectivity: 1
+      refractionRatio: 0.98
+      blendColor: 0
+  actual:
+    0:
+      metadata:
+        version: 4.6
+        type: 'Material'
+        generator: 'Material.toJSON'
+      uuid: 'bed1a1f3-00dc-4b1d-83a3-300f0951e196'
+      type: 'ShaderMaterial'
+      side: 1
+      blendColor: 0
+      depthWrite: false
+      forceSinglePass: true
+      fog: false
+      glslVersion: ~
+      uniforms:
+        subjective:
+          value: 0
+      vertexShader: |-
+
+              varying vec3 direction;
+              void main() {
+                direction = position;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                gl_Position.z = gl_Position.w;
+              }
+
+      fragmentShader: |-
+
+              varying vec3 direction;
+              uniform float subjective;
+              float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+              float noise(vec2 p) {
+                vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+                return mix(mix(hash(i), hash(i + vec2(1,0)), f.x),
+                  mix(hash(i + vec2(0,1)), hash(i + vec2(1,1)), f.x), f.y);
+              }
+              void main() {
+                vec3 ray = normalize(direction);
+                vec2 p = ray.xz / (.24 + abs(ray.y)) * 3.5;
+                float cloud = noise(p) * .55 + noise(p * 2.1 + 4.3) * .28 + noise(p * 4.4) * .12 + noise(p * 9.1) * .05;
+                float opening = smoothstep(.35, .73, cloud);
+                float horizon = exp(-abs(ray.y) * 3.0);
+                vec3 night = mix(vec3(.006, .01, .024), vec3(.047, .073, .145), opening);
+                night += vec3(.009, .018, .044) * horizon;
+                night = mix(vec3(.012, .024, .048), night, smoothstep(-.65, .08, ray.y));
+                vec3 gold = vec3(.04, .022, .007) + vec3(.12, .055, .009) * opening * horizon;
+                gl_FragColor = vec4(mix(night, gold, subjective), 1.0);
+                #include <tonemapping_fragment>
+                #include <colorspace_fragment>
+              }
+
+      lights: false
+      clipping: false
+    1:
+      metadata:
+        version: 4.6
+        type: 'Material'
+        generator: 'Material.toJSON'
+      uuid: '8fd23b78-d2e6-4620-babc-1005cb323c43'
+      type: 'MeshStandardMaterial'
+      color: 4411755
+      roughness: 0.56
+      metalness: 0.66
+      emissive: 0
+      emissiveIntensity: 0
+      envMapRotation:
+        0: 0
+        1: 0
+        2: 0
+        3: 'XYZ'
+      envMapIntensity: 1
+      blendColor: 0
+    2:
+      metadata:
+        version: 4.6
+        type: 'Material'
+        generator: 'Material.toJSON'
+      uuid: 'cba900a0-832c-4aa2-8903-eac772b64a5c'
+      type: 'MeshStandardMaterial'
+      color: 6715539
+      roughness: 0.48
+      metalness: 0.72
+      emissive: 0
+      emissiveIntensity: 0
+      envMapRotation:
+        0: 0
+        1: 0
+        2: 0
+        3: 'XYZ'
+      envMapIntensity: 1
+      blendColor: 0
+    3:
+      metadata:
+        version: 4.6
+        type: 'Material'
+        generator: 'Material.toJSON'
+      uuid: '5d4d6935-5dd4-4346-a31d-99c2d35ebcee'
+      type: 'MeshBasicMaterial'
+      color: 7576538
+      envMapRotation:
+        0: 0
+        1: 0
+        2: 0
+        3: 'XYZ'
+      reflectivity: 1
+      refractionRatio: 0.98
+      blendColor: 0
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/machine-core-renderer.test.mts:180:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: the actual carried body is identical for player, observer, cold load and paused frames
+ok 16 - the actual carried body is identical for player, observer, cold load and paused frames
+  ---
+  duration_ms: 2635.476709
+  type: 'test'
+  ...
+# Subtest: the completed transport keeps the disconnected physical body visible without reviving Neo
+ok 17 - the completed transport keeps the disconnected physical body visible without reviving Neo
+  ---
+  duration_ms: 4616.932292
+  type: 'test'
+  ...
+# Subtest: the carrier supports the delivered body and withdraws the existing uplink from its real ports
+ok 18 - the carrier supports the delivered body and withdraws the existing uplink from its real ports
+  ---
+  duration_ms: 33524.857208
+  type: 'test'
+  ...
+# Subtest: the real carrier follows the current body across a phase boundary before the world snapshot arrives
+ok 19 - the real carrier follows the current body across a phase boundary before the world snapshot arrives
+  ---
+  duration_ms: 1786.971333
+  type: 'test'
+  ...
+# Subtest: the delivered body rests on an open mechanical lattice with support under its head, trunk and extremities
+ok 20 - the delivered body rests on an open mechanical lattice with support under its head, trunk and extremities
+  ---
+  duration_ms: 7452.350125
+  type: 'test'
+  ...
+# Subtest: the transport machine carries the fitted tray without entering the body or hiding its forward optics
+ok 21 - the transport machine carries the fitted tray without entering the body or hiding its forward optics
+  ---
+  duration_ms: 2728.266875
+  type: 'test'
+  ...
+# Subtest: landing resumes the saved story actor instead of an unrelated browser-local character
+ok 22 - landing resumes the saved story actor instead of an unrelated browser-local character
+  ---
+  duration_ms: 1.087542
+  type: 'test'
+  ...
+# Subtest: an explicit landing choice still overrides the saved story actor
+ok 23 - an explicit landing choice still overrides the saved story actor
+  ---
+  duration_ms: 0.223583
+  type: 'test'
+  ...
+# Subtest: Construct and desert story beats keep ambient conversation prompts out of the reveal
+ok 24 - Construct and desert story beats keep ambient conversation prompts out of the reveal
+  ---
+  duration_ms: 0.260458
+  type: 'test'
+  ...
+# Subtest: wall escape keeps ambient conversation out of breaking, climbing and rescue controls
+ok 25 - wall escape keeps ambient conversation out of breaking, climbing and rescue controls
+  ---
+  duration_ms: 0.219708
+  type: 'test'
+  ...
+# Subtest: APU loading keeps ambient talk out of the handhold and kick controls
+ok 26 - APU loading keeps ambient talk out of the handhold and kick controls
+  ---
+  duration_ms: 0.085333
+  type: 'test'
+  ...
+# Subtest: Link’s EMP controls and exterior shot suppress nearby ambient conversation
+ok 27 - Link’s EMP controls and exterior shot suppress nearby ambient conversation
+  ---
+  duration_ms: 0.079167
+  type: 'test'
+  ...
+# Subtest: the midnight watch and explosion keep ambient conversation out of the observation view
+ok 28 - the midnight watch and explosion keep ambient conversation out of the observation view
+  ---
+  duration_ms: 0.198625
+  type: 'test'
+  ...
+# Subtest: the real-world signal and collapse suppress ambient E talk while a later visit keeps it
+ok 29 - the real-world signal and collapse suppress ambient E talk while a later visit keeps it
+  ---
+  duration_ms: 0.081875
+  type: 'test'
+  ...
+# Subtest: Mobil conversations and the refusal use their story controls without overlapping ambient E talk
+ok 30 - Mobil conversations and the refusal use their story controls without overlapping ambient E talk
+  ---
+  duration_ms: 0.488416
+  type: 'test'
+  ...
+# Subtest: Link’s descent and reunion use their own controls instead of ambient E conversation
+ok 31 - Link’s descent and reunion use their own controls instead of ambient E conversation
+  ---
+  duration_ms: 0.895375
+  type: 'test'
+  ...
+# Subtest: the captains’ lift and Lock briefing keep ambient E prompts out of the manual G responses
+ok 32 - the captains’ lift and Lock briefing keep ambient E prompts out of the manual G responses
+  ---
+  duration_ms: 0.108458
+  type: 'test'
+  ...
+# Subtest: temple artillery and the final city breach keep ambient talk out of their saved actions
+ok 33 - temple artillery and the final city breach keep ambient talk out of their saved actions
+  ---
+  duration_ms: 0.154167
+  type: 'test'
+  ...
+# Subtest: the last doors keep ambient E prompts out of the key handoff and source continuation
+ok 34 - the last doors keep ambient E prompts out of the key handoff and source continuation
+  ---
+  duration_ms: 0.223916
+  type: 'test'
+  ...
+# Subtest: Hel keeps ambient talk out of the elevator and coat-check actions, but restores it outside the active scene
+ok 35 - Hel keeps ambient talk out of the elevator and coat-check actions, but restores it outside the active scene
+  ---
+  duration_ms: 0.540542
+  type: 'test'
+  ...
+# Subtest: a paused save is presented as paused before entry and its landing status follows resume
+ok 36 - a paused save is presented as paused before entry and its landing status follows resume
+  ---
+  duration_ms: 4.369542
+  type: 'test'
+  ...
+# Subtest: the assimilated Oracle continues her saved scene without a rebuild prompt
+ok 37 - the assimilated Oracle continues her saved scene without a rebuild prompt
+  ---
+  duration_ms: 5.596333
+  type: 'test'
+  ...
+# Subtest: the Hammer interview keeps ambient Neo chat out of the dedicated questions and report controls
+ok 38 - the Hammer interview keeps ambient Neo chat out of the dedicated questions and report controls
+  ---
+  duration_ms: 2.786375
+  type: 'test'
+  ...
+# Subtest: the completed Neo transport is resumed from landing and roster without a rebuild prompt
+ok 39 - the completed Neo transport is resumed from landing and roster without a rebuild prompt
+  ---
+  duration_ms: 1.880709
+  type: 'test'
+  ...
+# Subtest: Hammer crew exchange and boarding do not overlay ambient E talk on their G controls
+ok 40 - Hammer crew exchange and boarding do not overlay ambient E talk on their G controls
+  ---
+  duration_ms: 0.092834
+  type: 'test'
+  ...
+# Subtest: fast Hammer handover packets keep Ghost, Morpheus and the saved clock together between world ticks
+ok 41 - fast Hammer handover packets keep Ghost, Morpheus and the saved clock together between world ticks
+  ---
+  duration_ms: 4523.614292
+  type: 'test'
+  ...
+# Subtest: every fast Mobil lifting packet carries the suitcase clock and all five bodies before the slow world tick
+ok 42 - every fast Mobil lifting packet carries the suitcase clock and all five bodies before the slow world tick
+  ---
+  duration_ms: 9689.631958
+  type: 'test'
+  ...
+# Subtest: a real mid-grasp Mobil restart keeps the suitcase and five paused poses without replaying the lift or healing the family
+ok 43 - a real mid-grasp Mobil restart keeps the suitcase and five paused poses without replaying the lift or healing the family
+  ---
+  duration_ms: 16038.672708
+  type: 'test'
+  ...
+# Subtest: every fast Mobil family packet carries the reply clock and all four bodies before the next world tick
+ok 44 - every fast Mobil family packet carries the reply clock and all four bodies before the next world tick
+  ---
+  duration_ms: 10647.476125
+  type: 'test'
+  ...
+# Subtest: a real Mobil family restart keeps the paused answer and all four poses before possession without awarding the topic twice
+ok 45 - a real Mobil family restart keeps the paused answer and all four poses before possession without awarding the topic twice
+  ---
+  duration_ms: 4623.575584
+  type: 'test'
+  ...
+# Subtest: every fast primary-station packet carries the charge clock and both bodies before the next world tick
+ok 46 - every fast primary-station packet carries the charge clock and both bodies before the next world tick
+  ---
+  duration_ms: 2376.651042
+  type: 'test'
+  ...
+# Subtest: a real primary-station restart restores the paused mounting pose before possession and requires renewed held input
+ok 47 - a real primary-station restart restores the paused mounting pose before possession and requires renewed held input
+  ---
+  duration_ms: 5483.451833
+  type: 'test'
+  ...
+# Subtest: a paused performance publishes its exact story clock together with the stopped world and restores it on reconnect
+ok 48 - a paused performance publishes its exact story clock together with the stopped world and restores it on reconnect
+  ---
+  duration_ms: 1889.791459
+  type: 'test'
+  ...
+# Subtest: a real machine-core restart preserves the paused connection before possession and settles only after renewed consent
+ok 49 - a real machine-core restart preserves the paused connection before possession and settles only after renewed consent
+  ---
+  duration_ms: 14576.251583
+  type: 'test'
+  ...
+# Subtest: every fast Smith finale packet carries both bodies at the same saved clock during air_dodge
+ok 50 - every fast Smith finale packet carries both bodies at the same saved clock during air_dodge
+  ---
+  duration_ms: 3056.877833
+  type: 'test'
+  ...
+# Subtest: a real Smith finale restart restores both paused bodies during air_dodge before possession
+ok 51 - a real Smith finale restart restores both paused bodies during air_dodge before possession
+  ---
+  duration_ms: 4017.715625
+  type: 'test'
+  ...
+# Subtest: every fast Smith finale packet carries both bodies at the same saved clock during assimilating
+ok 52 - every fast Smith finale packet carries both bodies at the same saved clock during assimilating
+  ---
+  duration_ms: 2363.743583
+  type: 'test'
+  ...
+# Subtest: a real Smith finale restart restores both paused bodies during assimilating before possession
+ok 53 - a real Smith finale restart restores both paused bodies during assimilating before possession
+  ---
+  duration_ms: 5051.944417
+  type: 'test'
+  ...
+# Subtest: a real ceasefire restart preserves the paused retreat before anyone possesses Kid
+ok 54 - a real ceasefire restart preserves the paused retreat before anyone possesses Kid
+  ---
+  duration_ms: 3285.048666
+  type: 'test'
+  ...
+# Subtest: a real ceasefire restart preserves the paused embrace before anyone possesses Kid
+ok 55 - a real ceasefire restart preserves the paused embrace before anyone possesses Kid
+  ---
+  duration_ms: 4133.787167
+  type: 'test'
+  ...
+# Subtest: the first packet moving Neo into the real-world pod also switches the story, objective and fade state
+ok 56 - the first packet moving Neo into the real-world pod also switches the story, objective and fade state
+  ---
+  duration_ms: 2351.293625
+  type: 'test'
+  ...
+# Subtest: every fast truck-rescue packet carries all three bodies at the same saved clock before the next world tick
+ok 57 - every fast truck-rescue packet carries all three bodies at the same saved clock before the next world tick
+  ---
+  duration_ms: 2593.308959
+  type: 'test'
+  ...
+# Subtest: a real server restart restores the paused airborne crew before possession and continues the rescue exactly once
+ok 58 - a real server restart restores the paused airborne crew before possession and continues the rescue exactly once
+  ---
+  duration_ms: 5586.650792
+  type: 'test'
+  ...
+# Subtest: a real farewell restart preserves both paused bodies and Neo life, then settles Trinity once before the temple breach
+ok 59 - a real farewell restart preserves both paused bodies and Neo life, then settles Trinity once before the temple breach
+  ---
+  duration_ms: 7324.228958
+  type: 'test'
+  ...
+# Subtest: the epilogue reducer preserves authored phase boundaries
+ok 60 - the epilogue reducer preserves authored phase boundaries
+  ---
+  duration_ms: 2.521042
+  type: 'test'
+  ...
+# Subtest: new street resets restore the pavement and bring the cat before Sati rises, while active legacy saves keep their beat
+ok 61 - new street resets restore the pavement and bring the cat before Sati rises, while active legacy saves keep their beat
+  ---
+  duration_ms: 1532.315083
+  type: 'test'
+  ...
+# Subtest: the reset facade blocks a scene revisit and is removed when returning to the saved park
+ok 62 - the reset facade blocks a scene revisit and is removed when returning to the saved park
+  ---
+  duration_ms: 14.552291
+  type: 'test'
+  ...
+# Subtest: Neo remains unresponsive while the transport is waiting or finished without advancing its clock
+ok 63 - Neo remains unresponsive while the transport is waiting or finished without advancing its clock
+  ---
+  duration_ms: 0.19125
+  type: 'test'
+  ...
+# Subtest: the Oracle stays seated while the player considers the Architect’s promise
+ok 64 - the Oracle stays seated while the player considers the Architect’s promise
+  ---
+  duration_ms: 16.625041
+  type: 'test'
+  ...
+# Subtest: the Architect continues along the waterfront while the player waits to welcome Sati
+ok 65 - the Architect continues along the waterfront while the player waits to welcome Sati
+  ---
+  duration_ms: 2.277666
+  type: 'test'
+  ...
+# Subtest: legacy park departures resume from their saved pose without replaying or jumping
+ok 66 - legacy park departures resume from their saved pose without replaying or jumping
+  ---
+  duration_ms: 4.251375
+  type: 'test'
+  ...
+# Subtest: park departure pauses with the world, another player’s cast ownership and a disconnected Oracle
+ok 67 - park departure pauses with the world, another player’s cast ownership and a disconnected Oracle
+  ---
+  duration_ms: 1184.554667
+  type: 'test'
+  ...
+# Subtest: Neo’s resting transport action survives later world ticks and serialized park restoration exactly
+ok 68 - Neo’s resting transport action survives later world ticks and serialized park restoration exactly
+  ---
+  duration_ms: 58.467667
+  type: 'test'
+  ...
+# Subtest: Neo transport keeps a phase’s action start while its saved physical motion advances
+ok 69 - Neo transport keeps a phase’s action start while its saved physical motion advances
+  ---
+  duration_ms: 517.31825
+  type: 'test'
+  ...
+# Subtest: the Smith ending leaves a persistent real-world body while Kid witnesses the ceasefire
+ok 70 - the Smith ending leaves a persistent real-world body while Kid witnesses the ceasefire
+  ---
+  duration_ms: 7612.6205
+  type: 'test'
+  ...
+# Subtest: reconnecting after the transport can hand off to the Oracle without reviving Neo
+ok 71 - reconnecting after the transport can hand off to the Oracle without reviving Neo
+  ---
+  duration_ms: 2366.239208
+  type: 'test'
+  ...
+# Subtest: ceasefire, Neo transport and dawn form a saved playable epilogue without auto-starting a new cycle
+ok 72 - ceasefire, Neo transport and dawn form a saved playable epilogue without auto-starting a new cycle
+  ---
+  duration_ms: 12520.375375
+  type: 'test'
+  ...
+# Subtest: Kid watches the city during withdrawal and faces the crowd only when delivering the news, including a restored save
+ok 73 - Kid watches the city during withdrawal and faces the crowd only when delivering the news, including a restored save
+  ---
+  duration_ms: 1695.14475
+  type: 'test'
+  ...
+# Subtest: Kid keeps the run performed by the player instead of teleporting back to replay it
+ok 74 - Kid keeps the run performed by the player instead of teleporting back to replay it
+  ---
+  duration_ms: 49.126833
+  type: 'test'
+  ...
+# Subtest: the witness walks around the rostrum to the doorway and keeps the actual standing position through withdrawal and reload
+ok 75 - the witness walks around the rostrum to the doorway and keeps the actual standing position through withdrawal and reload
+  ---
+  duration_ms: 682.434458
+  type: 'test'
+  ...
+# Subtest: each dedicated epilogue layer renders and disposes its physical story objects
+ok 76 - each dedicated epilogue layer renders and disposes its physical story objects
+  ---
+  duration_ms: 2906.632209
+  type: 'test'
+  ...
+# Subtest: the resetting sidewalk supports the cat and Sati, restores ahead of the paws, and resumes from the saved clock
+ok 77 - the resetting sidewalk supports the cat and Sati, restores ahead of the paws, and resumes from the saved clock
+  ---
+  duration_ms: 973.608125
+  type: 'test'
+  ...
+# Subtest: saved epilogue actions reach NPC animation and carry Neo flat on the machine tray
+ok 78 - saved epilogue actions reach NPC animation and carry Neo flat on the machine tray
+  ---
+  duration_ms: 685.773917
+  type: 'test'
+  ...
+# Subtest: park performers follow the current Oracle frame without advancing a paused clock or overriding an occupied actor
+ok 79 - park performers follow the current Oracle frame without advancing a paused clock or overriding an occupied actor
+  ---
+  duration_ms: 284.259875
+  type: 'test'
+  ...
+# Subtest: the journal exposes the witness, promise and explicit final confirmation
+ok 80 - the journal exposes the witness, promise and explicit final confirmation
+  ---
+  duration_ms: 1239.546666
+  type: 'test'
+  ...
+1..80
+# tests 80
+# suites 0
+# pass 79
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 111003.186833

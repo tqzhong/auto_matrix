@@ -1,0 +1,29 @@
+TAP version 13
+# Subtest: the audience and body route overlook a layered machine city without adding structures to their playable volume
+not ok 1 - the audience and body route overlook a layered machine city without adding structures to their playable volume
+  ---
+  duration_ms: 150.624459
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/machine-core-renderer.test.mts:1:7844'
+  failureType: 'testCodeFailure'
+  error: 'the open audience platform needs a real city below and beyond it'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/machine-core-renderer.test.mts:137:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2093.016542

@@ -3,6 +3,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { DEUS_PACT, deusPactPose, deusPactSpeech, newDeusPact, neoCarryPose, type DeusPactEncounter, type TrilogyEpilogueEncounter } from '@auto_matrix/shared';
 import { MachineUplinkContacts } from './MachineUplinkContacts.js';
 import { machineBugGeometry } from './MachineBugGeometry.js';
+import { MachineCityRenderer } from './MachineCityRenderer.js';
 
 /** The Machine City audience chamber: energy tunnel, collective face and physical Matrix uplink. */
 export class MachineCoreRenderer {
@@ -42,9 +43,11 @@ export class MachineCoreRenderer {
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private lights: THREE.Light[] = [];
+  private city: MachineCityRenderer;
 
   constructor(root: THREE.Group) {
     root.add(this.group); this.group.add(this.tunnel, this.ripples, this.swarm, this.face, this.seat, this.connection, this.storm);
+    this.city = new MachineCityRenderer(this.group);
     this.tunnel.name = 'machine-core-light-tunnel';
     this.ripples.name = 'machine-core-footstep-ripples';
     this.swarm.name = 'machine-core-swarm';
@@ -105,15 +108,6 @@ export class MachineCoreRenderer {
           this.tunnel, side * (15.5 + i % 3 * 1.6), 2.8 + i % 4, z + Math.sin(i * 1.7) * 1.2);
         root.rotation.set(.42 + i % 3 * .16, 0, side * (.72 + i % 2 * .12));
       }
-    }
-    for (let i = 0; i < 18; i++) {
-      const side = i % 2 ? -1 : 1; const z = 38 - Math.floor(i / 2) * 9.5;
-      const tower = this.mesh(new THREE.CylinderGeometry(1.2 + i % 3 * .5, 2.5 + i % 4 * .6, 18 + i % 5 * 5, 8), dark,
-        this.tunnel, side * (21 + i % 4 * 4.7), 8 + i % 5 * 2, z);
-      tower.rotation.z = side * (.08 + i % 3 * .04);
-      const crown = this.mesh(new THREE.ConeGeometry(2.2 + i % 3 * .7, 6 + i % 4 * 2, 7), i % 3 ? iron : dim,
-        this.tunnel, tower.position.x, tower.position.y + 11 + i % 5 * 2, z);
-      crown.rotation.z = side * .18;
     }
     for (let i = 0; i < 9; i++) {
       const ripple = this.material(0xc78a28, .42, .24, 0xff9b22, 3.2, true, .5);
@@ -291,6 +285,7 @@ export class MachineCoreRenderer {
   private setPerception(subjective: boolean): void {
     if (this.subjective === subjective) return;
     this.subjective = subjective;
+    this.city.setPerception(subjective);
     for (const { material, color, intensity } of this.perceptionMaterials) {
       material.emissive.setHex(subjective ? 0xff9b24 : color);
       material.emissiveIntensity = subjective ? .085 : intensity;
@@ -468,6 +463,7 @@ export class MachineCoreRenderer {
   }
 
   dispose(): void {
+    this.city.dispose();
     this.group.traverse(object => { if (object instanceof THREE.InstancedMesh) object.dispose(); });
     this.group.removeFromParent(); this.group.clear();
     this.geometries.forEach(geometry => geometry.dispose()); this.materials.forEach(material => material.dispose());

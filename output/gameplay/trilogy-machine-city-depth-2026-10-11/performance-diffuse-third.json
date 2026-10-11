@@ -1,0 +1,258 @@
+{
+  "measuredAt": "2026-10-11T13:32:08.525Z",
+  "scenes": [
+    "film_machine_core"
+  ],
+  "viewport": {
+    "width": 1280,
+    "height": 720,
+    "pixelRatio": 1.5
+  },
+  "frames": 661,
+  "fps": 44.0058674489932,
+  "frameTime": {
+    "mean": 22.724242424242423,
+    "p95": 29.90000009536743
+  },
+  "cpuMs": {
+    "controls": {
+      "mean": 0.38835098523415523,
+      "p95": 0.8000001907348633
+    },
+    "agents": {
+      "mean": 2.649319214467382,
+      "p95": 4.800000190734863
+    },
+    "city": {
+      "mean": 0.14508320957016477,
+      "p95": 0.3000001907348633
+    },
+    "film": {
+      "mean": 1.0933434187734723,
+      "p95": 2.1999998092651367
+    },
+    "effects": {
+      "mean": 0.21906202607724742,
+      "p95": 0.40000009536743164
+    },
+    "render": {
+      "mean": 9.081089259997439,
+      "p95": 12.5
+    },
+    "capture": {
+      "mean": 0.0009077147167857945,
+      "p95": 0
+    }
+  },
+  "passCpuMs": {
+    "worldMatrices": {
+      "mean": 1.789712559617774,
+      "p95": 3.700000286102295
+    },
+    "scene": {
+      "mean": 6.730862335430151,
+      "p95": 9.5
+    },
+    "occlusion.overrideVisibility": {
+      "mean": 0.19939484863165827,
+      "p95": 0.39999961853027344
+    },
+    "occlusion.normals": {
+      "mean": 1.6487140662731454,
+      "p95": 2.6999998092651367
+    },
+    "occlusion.restoreVisibility": {
+      "mean": 0.004992434549259526,
+      "p95": 0
+    },
+    "occlusion": {
+      "mean": 2.014977302926391,
+      "p95": 3.299999713897705
+    },
+    "bloom": {
+      "mean": 0.24447806123165067,
+      "p95": 0.5
+    },
+    "output": {
+      "mean": 0.023751895835287813,
+      "p95": 0.10000038146972656
+    },
+    "antialias": {
+      "mean": 0.03600605172577135,
+      "p95": 0.10000038146972656
+    }
+  },
+  "calls": {
+    "mean": 434,
+    "p95": 434
+  },
+  "triangles": {
+    "mean": 1503923,
+    "p95": 1503923
+  },
+  "drawsPerFrame": {
+    "shadows": {
+      "calls": 117,
+      "triangles": 262364
+    },
+    "scene": {
+      "calls": 153,
+      "triangles": 621384
+    },
+    "occlusion": {
+      "calls": 145,
+      "triangles": 620156
+    },
+    "postprocessing": {
+      "calls": 19,
+      "triangles": 19
+    }
+  },
+  "heaviestMeshes": [
+    {
+      "name": "machine-city-collars",
+      "parent": "machine-city-exterior",
+      "type": "Mesh",
+      "calls": 2,
+      "triangles": 288000
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 184896
+    },
+    {
+      "name": "Swept_individual_hair_strands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 170646
+    },
+    {
+      "name": "machine-city-machinery",
+      "parent": "machine-city-exterior",
+      "type": "Mesh",
+      "calls": 2,
+      "triangles": 115200
+    },
+    {
+      "name": "machine-city-running-lights",
+      "parent": "machine-city-exterior",
+      "type": "Mesh",
+      "calls": 2,
+      "triangles": 115200
+    },
+    {
+      "name": "",
+      "parent": "neo-carrier-engine",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 91968
+    },
+    {
+      "name": "neo-logos-sweater",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 66510
+    },
+    {
+      "name": "machine-city-towers",
+      "parent": "machine-city-exterior",
+      "type": "Mesh",
+      "calls": 2,
+      "triangles": 57600
+    },
+    {
+      "name": "",
+      "parent": "neo-carry-ribbed-cradle",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 35136
+    },
+    {
+      "name": "machine-city-spines",
+      "parent": "machine-city-exterior",
+      "type": "Mesh",
+      "calls": 2,
+      "triangles": 32000
+    },
+    {
+      "name": "machine-core-chassis-cables",
+      "parent": "machine-core-collective-chassis",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 31104
+    },
+    {
+      "name": "machine-core-chassis-couplers",
+      "parent": "machine-core-collective-chassis",
+      "type": "Mesh",
+      "calls": 2,
+      "triangles": 27648
+    },
+    {
+      "name": "machine-core-radial-conduits",
+      "parent": "machine-core-collective-chassis",
+      "type": "Mesh",
+      "calls": 2,
+      "triangles": 27648
+    },
+    {
+      "name": "Close-cut_scalp_undercoat",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 23040
+    },
+    {
+      "name": "",
+      "parent": "neo-carrier-engine",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 21600
+    },
+    {
+      "name": "",
+      "parent": "neo-carrier-engine",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 19584
+    },
+    {
+      "name": "",
+      "parent": "neo-carry-ribbed-cradle",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 19008
+    },
+    {
+      "name": "machine-city-conduits",
+      "parent": "machine-city-exterior",
+      "type": "Mesh",
+      "calls": 2,
+      "triangles": 17280
+    },
+    {
+      "name": "",
+      "parent": "neo-carrier-optics",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 15120
+    },
+    {
+      "name": "",
+      "parent": "neo-carrier-engine",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 13824
+    }
+  ],
+  "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+  "recordingActive": false,
+  "engineFpsDisplay": 39.24646782524104,
+  "objects": 9015,
+  "visibleObjects": 381
+}

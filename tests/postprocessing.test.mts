@@ -3,6 +3,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { WorldOcclusionPass } from '../packages/client/src/engine/PostProcessing.js';
+import { MachineCityRenderer } from '../packages/client/src/engine/MachineCityRenderer.js';
 
 test('the occlusion pass skips hidden worlds and restores only the overlays it suppressed', t => {
   const scene = new THREE.Scene(); const hiddenWorld = new THREE.Group(); hiddenWorld.visible = false;
@@ -69,4 +70,23 @@ test('occlusion selects the current camera detail before hiding glass after a mo
     pass.restoreVisibility();
     assert.equal(clear.visible, true, 'the close-up glass returns for the next color frame');
   } finally { pass.dispose(); clear.geometry.dispose(); clear.material.dispose(); distant.material.dispose(); }
+});
+
+test('distant machine-city structures retain color-pass depth while foreground contact shadows still render', () => {
+  const scene = new THREE.Scene(), root = new THREE.Group(); scene.add(root);
+  const city = new MachineCityRenderer(root), exterior = root.getObjectByName('machine-city-exterior')!;
+  const foreground = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial()); scene.add(foreground);
+  const pass = new WorldOcclusionPass(scene, new THREE.PerspectiveCamera(), 64, 64);
+  try {
+    for (let i = 0; i < 2; i++) {
+      pass.overrideVisibility();
+      assert.equal(exterior.visible, false, 'remote city details do not need the 1.8 metre contact-shadow pass');
+      assert.equal(foreground.visible, true, 'the nearby body, support and chamber keep contact shadows');
+      pass.restoreVisibility(); assert.equal(exterior.visible, true, 'the actual city returns for the color pass');
+      exterior.traverse(object => {
+        if (object instanceof THREE.InstancedMesh) assert.equal((object.material as THREE.Material).depthWrite, true,
+          'far buildings must still correctly occlude one another in the color image');
+      });
+    }
+  } finally { pass.dispose(); city.dispose(); foreground.geometry.dispose(); foreground.material.dispose(); }
 });

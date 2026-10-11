@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: the actual machine core stays identical while a saved performance is paused for repeated frames
+ok 1 - the actual machine core stays identical while a saved performance is paused for repeated frames
+  ---
+  duration_ms: 547.38025
+  type: 'test'
+  ...
+# Subtest: cold machine-core rendering and reverse saved-frame seeking reproduce the same live scene without the page clock
+ok 2 - cold machine-core rendering and reverse saved-frame seeking reproduce the same live scene without the page clock
+  ---
+  duration_ms: 1543.59425
+  type: 'test'
+  ...
+# Subtest: saved performance time still animates the visible swarm, face and connection rather than freezing them
+ok 3 - saved performance time still animates the visible swarm, face and connection rather than freezing them
+  ---
+  duration_ms: 70.892083
+  type: 'test'
+  ...
+# Subtest: the real film set follows Neo’s fast connection clock without replaying stale phases, retries or visits
+ok 4 - the real film set follows Neo’s fast connection clock without replaying stale phases, retries or visits
+  ---
+  duration_ms: 160.646542
+  type: 'test'
+  ...
+# Subtest: only Neo’s real-world first-person view receives the machine-core golden perception
+ok 5 - only Neo’s real-world first-person view receives the machine-core golden perception
+  ---
+  duration_ms: 51.906417
+  type: 'test'
+  ...
+# Subtest: the audience and body route overlook a layered machine city without adding structures to their playable volume
+ok 6 - the audience and body route overlook a layered machine city without adding structures to their playable volume
+  ---
+  duration_ms: 147.443292
+  type: 'test'
+  ...
+# Subtest: machine-city cold geometry is reproducible, golden perception is reversible and leaving frees its GPU resources once
+ok 7 - machine-city cold geometry is reproducible, golden perception is reversible and leaving frees its GPU resources once
+  ---
+  duration_ms: 57.81725
+  type: 'test'
+  ...
+# Subtest: the occlusion pass skips hidden worlds and restores only the overlays it suppressed
+ok 8 - the occlusion pass skips hidden worlds and restores only the overlays it suppressed
+  ---
+  duration_ms: 20.7635
+  type: 'test'
+  ...
+# Subtest: the normals pass reuses this frame's matrices and shadows, then restores renderer settings
+ok 9 - the normals pass reuses this frame's matrices and shadows, then restores renderer settings
+  ---
+  duration_ms: 3.759584
+  type: 'test'
+  ...
+# Subtest: occlusion selects the current camera detail before hiding glass after a more distant mirror view
+ok 10 - occlusion selects the current camera detail before hiding glass after a more distant mirror view
+  ---
+  duration_ms: 4.935584
+  type: 'test'
+  ...
+# Subtest: distant machine-city structures retain color-pass depth while foreground contact shadows still render
+ok 11 - distant machine-city structures retain color-pass depth while foreground contact shadows still render
+  ---
+  duration_ms: 79.239
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3837.831625

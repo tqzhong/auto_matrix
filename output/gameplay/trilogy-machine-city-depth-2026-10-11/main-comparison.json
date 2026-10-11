@@ -1,0 +1,11 @@
+{
+  "agents": true,
+  "chunks": true,
+  "locations": true,
+  "events": true,
+  "sandbox": true,
+  "simulation": true,
+  "tick": 10432,
+  "running": false,
+  "phase_time": true
+}

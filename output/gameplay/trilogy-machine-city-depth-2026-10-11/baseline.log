@@ -1,0 +1,259 @@
+TAP version 13
+# Subtest: the first paused machine-core frame restores exact saved roots, yaw and camera without frame-rate settling
+ok 1 - the first paused machine-core frame restores exact saved roots, yaw and camera without frame-rate settling
+  ---
+  duration_ms: 18.763125
+  type: 'test'
+  ...
+# Subtest: machine-core first person samples the current real GLB eyes after posing and keeps the nearby neck probe visible
+ok 2 - machine-core first person samples the current real GLB eyes after posing and keeps the nearby neck probe visible
+  ---
+  duration_ms: 488.206708
+  type: 'test'
+  ...
+# {"eyeGeometryError":0.0221210726415936,"probeSurfaceDistance":0.4781927019826481,"probeNdc":[0,-0.13345171612306977,0.7480615190713065],"near":0.06,"closestProbeDepth":0.47626709886753815}
+# Subtest: the formed collective still allows mouse looking, V switching, and normal movement after leaving
+ok 3 - the formed collective still allows mouse looking, V switching, and normal movement after leaving
+  ---
+  duration_ms: 2.498875
+  type: 'test'
+  ...
+# Subtest: the machine-core establishing view frames the actual collective surface together with Neo in wide and portrait windows
+ok 4 - the machine-core establishing view frames the actual collective surface together with Neo in wide and portrait windows
+  ---
+  duration_ms: 42.465625
+  type: 'test'
+  ...
+# Subtest: the machine-core shared view has clear actual geometry sightlines to Neo and the collective
+ok 5 - the machine-core shared view has clear actual geometry sightlines to Neo and the collective
+  ---
+  duration_ms: 159.56675
+  type: 'test'
+  ...
+# Subtest: the close connection shot keeps Neo’s actual head, feet and support above the subtitle area without structural occlusion
+ok 6 - the close connection shot keeps Neo’s actual head, feet and support above the subtitle area without structural occlusion
+  ---
+  duration_ms: 680.154917
+  type: 'test'
+  ...
+# {"phase":"cabling","aspect":1.7777777777777777,"bodyNdc":{"min":[-0.1243101335658455,-0.2892804618965898,0.8800200021499643],"max":[0.2139743389364782,0.27372124553970606,0.9110365100586334]}}
+# {"phase":"cabling","aspect":0.5625,"bodyNdc":{"min":[-0.3928814097883513,-0.2892804618965898,0.8800200021499643],"max":[0.6762645773794866,0.27372124553970606,0.9110365100586334]}}
+# {"phase":"consent","aspect":1.7777777777777777,"bodyNdc":{"min":[-0.1243101335658455,-0.2892804618965898,0.8800200021499643],"max":[0.2139743389364782,0.27372124553970606,0.9110365100586334]}}
+# {"phase":"consent","aspect":0.5625,"bodyNdc":{"min":[-0.3928814097883513,-0.2892804618965898,0.8800200021499643],"max":[0.6762645773794866,0.27372124553970606,0.9110365100586334]}}
+# {"phase":"assurance","aspect":1.7777777777777777,"bodyNdc":{"min":[-0.1243101335658455,-0.2892804618965898,0.8800200021499643],"max":[0.2139743389364782,0.27372124553970606,0.9110365100586334]}}
+# {"phase":"assurance","aspect":0.5625,"bodyNdc":{"min":[-0.3928814097883513,-0.2892804618965898,0.8800200021499643],"max":[0.6762645773794866,0.27372124553970606,0.9110365100586334]}}
+# {"phase":"assurance","aspect":1.7777777777777777,"bodyNdc":{"min":[-0.1243101335658455,-0.2892804618965898,0.8800200021499643],"max":[0.2139743389364782,0.27372124553970606,0.9110365100586334]}}
+# {"phase":"assurance","aspect":0.5625,"bodyNdc":{"min":[-0.3928814097883513,-0.2892804618965898,0.8800200021499643],"max":[0.6762645773794866,0.27372124553970606,0.9110365100586334]}}
+# Subtest: negotiation frames keep the delivered standing body above subtitles throughout formation and dialogue
+ok 7 - negotiation frames keep the delivered standing body above subtitles throughout formation and dialogue
+  ---
+  duration_ms: 1260.63925
+  type: 'test'
+  ...
+# Subtest: the carried body keeps its saved root and actual eye through waiting, transport, pause and V switching
+ok 8 - the carried body keeps its saved root and actual eye through waiting, transport, pause and V switching
+  ---
+  duration_ms: 1773.450708
+  type: 'test'
+  ...
+# Subtest: the actual machine core stays identical while a saved performance is paused for repeated frames
+ok 9 - the actual machine core stays identical while a saved performance is paused for repeated frames
+  ---
+  duration_ms: 270.401292
+  type: 'test'
+  ...
+# Subtest: cold machine-core rendering and reverse saved-frame seeking reproduce the same live scene without the page clock
+ok 10 - cold machine-core rendering and reverse saved-frame seeking reproduce the same live scene without the page clock
+  ---
+  duration_ms: 701.446208
+  type: 'test'
+  ...
+# Subtest: saved performance time still animates the visible swarm, face and connection rather than freezing them
+ok 11 - saved performance time still animates the visible swarm, face and connection rather than freezing them
+  ---
+  duration_ms: 31.37175
+  type: 'test'
+  ...
+# Subtest: the real film set follows Neo’s fast connection clock without replaying stale phases, retries or visits
+ok 12 - the real film set follows Neo’s fast connection clock without replaying stale phases, retries or visits
+  ---
+  duration_ms: 75.028291
+  type: 'test'
+  ...
+# Subtest: only Neo’s real-world first-person view receives the machine-core golden perception
+ok 13 - only Neo’s real-world first-person view receives the machine-core golden perception
+  ---
+  duration_ms: 36.595791
+  type: 'test'
+  ...
+# Subtest: the actual carried body is identical for player, observer, cold load and paused frames
+ok 14 - the actual carried body is identical for player, observer, cold load and paused frames
+  ---
+  duration_ms: 669.202667
+  type: 'test'
+  ...
+# Subtest: the completed transport keeps the disconnected physical body visible without reviving Neo
+ok 15 - the completed transport keeps the disconnected physical body visible without reviving Neo
+  ---
+  duration_ms: 255.870042
+  type: 'test'
+  ...
+# Subtest: the carrier supports the delivered body and withdraws the existing uplink from its real ports
+ok 16 - the carrier supports the delivered body and withdraws the existing uplink from its real ports
+  ---
+  duration_ms: 3201.08625
+  type: 'test'
+  ...
+# Subtest: the real carrier follows the current body across a phase boundary before the world snapshot arrives
+ok 17 - the real carrier follows the current body across a phase boundary before the world snapshot arrives
+  ---
+  duration_ms: 455.5445
+  type: 'test'
+  ...
+# Subtest: the delivered body rests on an open mechanical lattice with support under its head, trunk and extremities
+ok 18 - the delivered body rests on an open mechanical lattice with support under its head, trunk and extremities
+  ---
+  duration_ms: 2277.199208
+  type: 'test'
+  ...
+# Subtest: the transport machine carries the fitted tray without entering the body or hiding its forward optics
+ok 19 - the transport machine carries the fitted tray without entering the body or hiding its forward optics
+  ---
+  duration_ms: 940.346167
+  type: 'test'
+  ...
+# Subtest: the epilogue reducer preserves authored phase boundaries
+ok 20 - the epilogue reducer preserves authored phase boundaries
+  ---
+  duration_ms: 0.835625
+  type: 'test'
+  ...
+# Subtest: new street resets restore the pavement and bring the cat before Sati rises, while active legacy saves keep their beat
+ok 21 - new street resets restore the pavement and bring the cat before Sati rises, while active legacy saves keep their beat
+  ---
+  duration_ms: 307.91225
+  type: 'test'
+  ...
+# Subtest: the reset facade blocks a scene revisit and is removed when returning to the saved park
+ok 22 - the reset facade blocks a scene revisit and is removed when returning to the saved park
+  ---
+  duration_ms: 5.739292
+  type: 'test'
+  ...
+# Subtest: Neo remains unresponsive while the transport is waiting or finished without advancing its clock
+ok 23 - Neo remains unresponsive while the transport is waiting or finished without advancing its clock
+  ---
+  duration_ms: 0.088
+  type: 'test'
+  ...
+# Subtest: the Oracle stays seated while the player considers the Architect’s promise
+ok 24 - the Oracle stays seated while the player considers the Architect’s promise
+  ---
+  duration_ms: 13.228208
+  type: 'test'
+  ...
+# Subtest: the Architect continues along the waterfront while the player waits to welcome Sati
+ok 25 - the Architect continues along the waterfront while the player waits to welcome Sati
+  ---
+  duration_ms: 2.267792
+  type: 'test'
+  ...
+# Subtest: legacy park departures resume from their saved pose without replaying or jumping
+ok 26 - legacy park departures resume from their saved pose without replaying or jumping
+  ---
+  duration_ms: 2.002375
+  type: 'test'
+  ...
+# Subtest: park departure pauses with the world, another player’s cast ownership and a disconnected Oracle
+ok 27 - park departure pauses with the world, another player’s cast ownership and a disconnected Oracle
+  ---
+  duration_ms: 316.54625
+  type: 'test'
+  ...
+# Subtest: Neo’s resting transport action survives later world ticks and serialized park restoration exactly
+ok 28 - Neo’s resting transport action survives later world ticks and serialized park restoration exactly
+  ---
+  duration_ms: 10.37675
+  type: 'test'
+  ...
+# Subtest: Neo transport keeps a phase’s action start while its saved physical motion advances
+ok 29 - Neo transport keeps a phase’s action start while its saved physical motion advances
+  ---
+  duration_ms: 35.405833
+  type: 'test'
+  ...
+# Subtest: the Smith ending leaves a persistent real-world body while Kid witnesses the ceasefire
+ok 30 - the Smith ending leaves a persistent real-world body while Kid witnesses the ceasefire
+  ---
+  duration_ms: 528.586958
+  type: 'test'
+  ...
+# Subtest: reconnecting after the transport can hand off to the Oracle without reviving Neo
+ok 31 - reconnecting after the transport can hand off to the Oracle without reviving Neo
+  ---
+  duration_ms: 211.335792
+  type: 'test'
+  ...
+# Subtest: ceasefire, Neo transport and dawn form a saved playable epilogue without auto-starting a new cycle
+ok 32 - ceasefire, Neo transport and dawn form a saved playable epilogue without auto-starting a new cycle
+  ---
+  duration_ms: 1070.639167
+  type: 'test'
+  ...
+# Subtest: Kid watches the city during withdrawal and faces the crowd only when delivering the news, including a restored save
+ok 33 - Kid watches the city during withdrawal and faces the crowd only when delivering the news, including a restored save
+  ---
+  duration_ms: 102.988333
+  type: 'test'
+  ...
+# Subtest: Kid keeps the run performed by the player instead of teleporting back to replay it
+ok 34 - Kid keeps the run performed by the player instead of teleporting back to replay it
+  ---
+  duration_ms: 1.667708
+  type: 'test'
+  ...
+# Subtest: the witness walks around the rostrum to the doorway and keeps the actual standing position through withdrawal and reload
+ok 35 - the witness walks around the rostrum to the doorway and keeps the actual standing position through withdrawal and reload
+  ---
+  duration_ms: 37.066541
+  type: 'test'
+  ...
+# Subtest: each dedicated epilogue layer renders and disposes its physical story objects
+ok 36 - each dedicated epilogue layer renders and disposes its physical story objects
+  ---
+  duration_ms: 172.306791
+  type: 'test'
+  ...
+# Subtest: the resetting sidewalk supports the cat and Sati, restores ahead of the paws, and resumes from the saved clock
+ok 37 - the resetting sidewalk supports the cat and Sati, restores ahead of the paws, and resumes from the saved clock
+  ---
+  duration_ms: 55.21175
+  type: 'test'
+  ...
+# Subtest: saved epilogue actions reach NPC animation and carry Neo flat on the machine tray
+ok 38 - saved epilogue actions reach NPC animation and carry Neo flat on the machine tray
+  ---
+  duration_ms: 59.616041
+  type: 'test'
+  ...
+# Subtest: park performers follow the current Oracle frame without advancing a paused clock or overriding an occupied actor
+ok 39 - park performers follow the current Oracle frame without advancing a paused clock or overriding an occupied actor
+  ---
+  duration_ms: 18.82425
+  type: 'test'
+  ...
+# Subtest: the journal exposes the witness, promise and explicit final confirmation
+ok 40 - the journal exposes the witness, promise and explicit final confirmation
+  ---
+  duration_ms: 97.0255
+  type: 'test'
+  ...
+1..40
+# tests 40
+# suites 0
+# pass 40
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 8348.656208

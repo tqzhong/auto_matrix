@@ -3,6 +3,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import { filmPosition, newDeusPact, type DeusPactEncounter, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { MachineCoreRenderer } from '../packages/client/src/engine/MachineCoreRenderer.js';
+import { MachineCityRenderer } from '../packages/client/src/engine/MachineCityRenderer.js';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -128,4 +129,58 @@ test('only Neo’s real-world first-person view receives the machine-core golden
       `${id}/${firstPerson}: the actual film set must reserve golden perception for Neo`);
     assert.equal(scene.getObjectByName('machine-core-footstep-ripples')!.visible, subjective);
   }
+});
+
+test('the audience and body route overlook a layered machine city without adding structures to their playable volume', () => {
+  const root = new THREE.Group(), renderer = new MachineCoreRenderer(root);
+  try {
+    const city = root.getObjectByName('machine-city-exterior');
+    assert.ok(city, 'the open audience platform needs a real city below and beyond it');
+    root.updateMatrixWorld(true);
+    const rays = [new THREE.Vector3(-1, -.35, .4), new THREE.Vector3(1, -.5, .7), new THREE.Vector3(0, -.45, -1)];
+    for (const direction of rays) {
+      const hits = new THREE.Raycaster(new THREE.Vector3(14, 7, -54), direction.normalize(), 30, 450).intersectObject(city, true);
+      assert.ok(hits.some(hit => hit.object instanceof THREE.InstancedMesh), 'looking out during departure must reveal physical city depth');
+    }
+    const corridor = new THREE.Box3(new THREE.Vector3(-21, -2, -66), new THREE.Vector3(42, 46, 47));
+    let triangles = 0, draws = 0;
+    city.traverse(object => {
+      if (!(object instanceof THREE.Mesh)) return;
+      draws++;
+      const count = object instanceof THREE.InstancedMesh ? object.count : 1;
+      triangles += (object.geometry.index?.count ?? object.geometry.attributes.position.count) / 3 * count;
+      if (!(object instanceof THREE.InstancedMesh)) return;
+      object.geometry.computeBoundingBox();
+      for (let i = 0; i < count; i++) {
+        const matrix = new THREE.Matrix4(); object.getMatrixAt(i, matrix); matrix.premultiply(object.matrixWorld);
+        assert.equal(object.geometry.boundingBox!.clone().applyMatrix4(matrix).intersectsBox(corridor), false,
+          `${object.name}/${i} intrudes into the audience / camera / body route`);
+      }
+    });
+    assert.ok(draws <= 12, `background draw budget: ${draws}`);
+    assert.ok(triangles < 350000, `background triangle budget: ${triangles}`);
+  } finally { renderer.dispose(); }
+});
+
+test('machine-city cold geometry is reproducible, golden perception is reversible and leaving frees its GPU resources once', () => {
+  const root = new THREE.Group(), city = new MachineCityRenderer(root);
+  const coldRoot = new THREE.Group(), cold = new MachineCityRenderer(coldRoot);
+  try { assert.deepEqual(snapshot(root, 'machine-city-exterior'), snapshot(coldRoot, 'machine-city-exterior')); }
+  finally { cold.dispose(); }
+  const materials = new Set<THREE.Material>(), resources = new Set<THREE.EventDispatcher<{ dispose: {} }>>();
+  root.traverse(object => {
+    if (!(object instanceof THREE.Mesh)) return;
+    resources.add(object.geometry); resources.add(object.material as THREE.Material); materials.add(object.material as THREE.Material);
+    if (object instanceof THREE.InstancedMesh) resources.add(object);
+  });
+  const before = [...materials].map(material => material.toJSON());
+  city.setPerception(true);
+  assert.notDeepEqual([...materials].map(material => material.toJSON()), before);
+  city.setPerception(false);
+  assert.deepEqual([...materials].map(material => material.toJSON()), before, 'switching away from Neo’s eyes must restore the cold city');
+  const disposed = new Map([...resources].map(resource => [resource, 0]));
+  resources.forEach(resource => resource.addEventListener('dispose', () => disposed.set(resource, disposed.get(resource)! + 1)));
+  city.dispose();
+  assert.equal(root.children.length, 0);
+  assert.ok([...disposed.values()].every(count => count === 1), 'changing film sets must release every city buffer/material exactly once');
 });
