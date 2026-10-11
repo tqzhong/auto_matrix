@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: the inspecting machine brings its real sensor lenses into Neo’s eye view without swallowing the camera
+not ok 1 - the inspecting machine brings its real sensor lenses into Neo’s eye view without swallowing the camera
+  ---
+  duration_ms: 333.451291
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/pod-connection-contact.test.mts:1:10826'
+  failureType: 'testCodeFailure'
+  error: 'a mechanical inspector must face the waking body'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/pod-connection-contact.test.mts:169:79)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: the maintenance machine waits for neck inspection and withdraws before the water rescue
+not ok 2 - the maintenance machine waits for neck inspection and withdraws before the water rescue
+  ---
+  duration_ms: 131.202542
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/pod-renderer.test.mts:1:3126'
+  failureType: 'testCodeFailure'
+  error: 'the inspector must have its own visible body'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/pod-renderer.test.mts:58:77)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 689.931042

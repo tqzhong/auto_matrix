@@ -1,0 +1,13 @@
+import { readFile, writeFile } from 'node:fs/promises';
+import { isDeepStrictEqual as same } from 'node:util';
+const [left, right, label] = process.argv.slice(2);
+const read = async name => JSON.parse(await readFile(new URL(name, import.meta.url), 'utf8'));
+const a = await read(left + '-world.json'), b = await read(right + '-world.json');
+const am = await read(left + '-memories.json'), bm = await read(right + '-memories.json');
+const result = Object.fromEntries(['agents', 'chunks', 'locations', 'events', 'sandbox', 'simulation'].map(key => [key, same(a[key], b[key])]));
+result.phase_time = same([a.phase, a.timeOfDay, a.simulation.tick, a.simulation.day], [b.phase, b.timeOfDay, b.simulation.tick, b.simulation.day]);
+result.changed_agents = Object.keys(a.agents).filter(id => !same(a.agents[id], b.agents[id])).map(id => ({ id, fields: Object.keys(a.agents[id]).filter(key => !same(a.agents[id][key], b.agents[id][key])) }));
+result.simulation_changes = Object.fromEntries(Object.keys(a.simulation).filter(key => !same(a.simulation[key], b.simulation[key])).map(key => [key, [a.simulation[key], b.simulation[key]]]));
+result.memory_count = Object.keys(am).length; result.memories_equal = same(am, bm);
+await writeFile(new URL(label + '.json', import.meta.url), JSON.stringify(result, null, 2), { flag: 'wx' });
+console.log(JSON.stringify(result));

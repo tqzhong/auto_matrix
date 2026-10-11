@@ -1,0 +1,9 @@
+{
+  "meshObjects": 17,
+  "renderedTriangleBudget": 21548,
+  "uniqueGeometry": 12,
+  "materials": 5,
+  "instancedArmBars": 12,
+  "instancedArmJoints": 4,
+  "scope": "maintenance machine only; geometry budget is not GPU performance or draw-call measurement"
+}

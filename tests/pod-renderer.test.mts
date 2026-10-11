@@ -52,15 +52,22 @@ test('the default pod shot has a readable near bank behind Neo, not only distant
   set.dispose();
 });
 
-test('the maintenance machine leaves room for the immersed first-person view', () => {
+test('the maintenance machine waits for neck inspection and withdraws before the water rescue', () => {
   const root = new THREE.Group(); const set = new PodSetRenderer(root);
-  const robot = root.children[0].children.find(object => object instanceof THREE.Group && object.position.y === 10 && object.position.z === -14);
-  assert.ok(robot);
-  const housing = robot.children.find(object => object instanceof THREE.Mesh && object.position.length() < .01);
-  assert.ok(housing);
-  const bounds = new THREE.Box3().setFromObject(housing);
-  assert.ok(bounds.max.y - bounds.min.y <= .9, 'a tall unbroken orb covers Neo’s upward view');
-  set.dispose();
+  try {
+    const machine = root.getObjectByName('pod-maintenance-machine'); assert.ok(machine, 'the inspector must have its own visible body');
+    for (const kind of ['emerge', 'breather'] as const) {
+      set.update({ scene: 'm1_pod', awakening: { kind, elapsed: 2.4 } } as Parameters<PodSetRenderer['update']>[0], 100);
+      assert.equal(machine.visible, false, 'the machine cannot already surround Neo before he inspects the neck port');
+    }
+    set.update({ scene: 'm1_pod', awakening: { kind: 'disconnect', elapsed: 2.4 } } as Parameters<PodSetRenderer['update']>[0], 100);
+    assert.equal(machine.visible, true);
+    const inspecting = machine.position.clone();
+    set.update({ scene: 'm1_pod', awakening: { kind: 'disconnect', elapsed: 4.7 } } as Parameters<PodSetRenderer['update']>[0], 100);
+    assert.ok(machine.position.distanceTo(inspecting) > 2, 'the inspector must pull away after releasing the cables');
+    set.update({ scene: 'm1_pod', awakening: { kind: 'rescue', elapsed: 1 } } as Parameters<PodSetRenderer['update']>[0], 100);
+    assert.equal(machine.visible, false, 'the arriving rescue claw belongs to the ship, not the maintenance machine');
+  } finally { set.dispose(); }
 });
 
 test('the floating first-person view sees a nearby pod bank beyond the rescue claw', () => {
