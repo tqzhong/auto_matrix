@@ -71,7 +71,7 @@ test('Smith spectators stand in three staggered rows on both curbs facing the op
     'dissolve noise must use avenue-local positions instead of losing fragment precision at distant world coordinates');
   crowd.update(newSmithFinale());
   const batches = crowd.group.children as THREE.InstancedMesh[];
-  assert.equal(batches.length, 48, 'eight shared surfaces in six cullable avenue sections');
+  assert.equal(batches.length, 16, 'eight shared surfaces at two detail levels');
   const bodies = batches.filter(mesh => mesh.name.endsWith('-Skin'));
   const matrix = new THREE.Matrix4(), origin = new THREE.Vector3(), forward = new THREE.Vector3(), size = new THREE.Vector3();
   let spectators = 0; const rows = new Set<string>();
@@ -106,7 +106,7 @@ test('Smith spectators stand in three staggered rows on both curbs facing the op
   let instanceReleases = 0; for (const batch of batches) batch.addEventListener('dispose', () => instanceReleases++);
   crowd.update({ ...newSmithFinale(), phase: 'done' }); assert.equal(crowd.group.visible, false);
   crowd.dispose(); assert.equal(root.children.length, 0); assert.equal(released.size, geometries.size + materials.size);
-  assert.equal(instanceReleases, 48, 'release every instance matrix GPU buffer as well as the shared asset');
+  assert.equal(instanceReleases, 16, 'release every instance batch as well as the shared asset');
 });
 
 test('far Smiths preserve every material/UV surface and silhouette within 2500 triangles', async () => {
@@ -131,23 +131,32 @@ test('far Smiths preserve every material/UV surface and silhouette within 2500 t
   for (const side of [-1, 1]) assert.ok(Array.from({ length: shoes.count }, (_, i) => i).filter(i => shoes.getX(i) * side > .08 && shoes.getY(i) < .015).length >= 3);
 });
 
-test('crossing the 50-unit planar distance swaps section geometry without adding draws and restores the near model', async t => {
+test('crossing the 50-unit planar distance moves spectators between the existing detail batches', async t => {
   const near = await loadCrowd(), far = await loadCrowd(true);
   t.mock.method(GLTFLoader.prototype, 'loadAsync', (url: string) => Promise.resolve(url.endsWith('-far.glb') ? far.asset : near.asset));
   const root = new THREE.Group(), crowd = new SmithCrowdRenderer(root);
   const sectionZ = -70 + 4 * 2.6 + .84;
   crowd.update(newSmithFinale(), { x: 0, z: sectionZ + 50.01 }); await crowd.ready;
-  const batch = crowd.group.getObjectByName('smith-finale-crowd-0-Skin') as THREE.InstancedMesh;
+  const bodies = crowd.group.children.filter(mesh => mesh.name.endsWith('-Skin')) as THREE.InstancedMesh[];
+  const matrix = new THREE.Matrix4(), point = new THREE.Vector3();
+  const firstBody = () => {
+    for (const mesh of bodies) for (let i = 0; i < mesh.count; i++) {
+      mesh.getMatrixAt(i, matrix); point.setFromMatrixPosition(matrix);
+      if (Math.abs(point.x + 19.7) < .001 && point.z === -70) return mesh;
+    }
+    throw new Error('the first spectator disappeared while changing detail levels');
+  };
   const nearGeometry = (near.asset.scene.getObjectByName('Skin') as THREE.Mesh).geometry;
   const farGeometry = (far.asset.scene.getObjectByName('Skin') as THREE.Mesh).geometry;
   const ids = crowd.group.children.map(mesh => mesh.uuid);
-  assert.ok(batch.geometry === farGeometry, 'the saved player position selects far geometry when loading finishes');
-  crowd.update(newSmithFinale(), { x: 0, z: sectionZ + 50 }); assert.ok(batch.geometry === nearGeometry);
-  crowd.update(newSmithFinale(), { x: 50.01, z: sectionZ }); assert.ok(batch.geometry === farGeometry, 'distance includes the player x coordinate');
-  crowd.update(newSmithFinale(), { x: 0, z: sectionZ }); assert.ok(batch.geometry === nearGeometry);
-  assert.deepEqual(crowd.group.children.map(mesh => mesh.uuid), ids, 'reuse the same 48 instance draws');
+  assert.ok(firstBody().geometry === farGeometry, 'the saved player position selects far geometry when loading finishes');
+  crowd.update(newSmithFinale(), { x: 0, z: sectionZ + 50 }); assert.ok(firstBody().geometry === nearGeometry);
+  crowd.update(newSmithFinale(), { x: 50.01, z: sectionZ }); assert.ok(firstBody().geometry === farGeometry, 'distance includes the player x coordinate');
+  crowd.update(newSmithFinale(), { x: 0, z: sectionZ }); assert.ok(firstBody().geometry === nearGeometry);
+  assert.deepEqual(crowd.group.children.map(mesh => mesh.uuid), ids, 'reuse the same instance draws');
+  const batch = firstBody();
   assert.equal(batch.material, (near.asset.scene.getObjectByName('Skin') as THREE.Mesh).material, 'switch only geometry so textures do not change');
-  const matrix = new THREE.Matrix4(), point = new THREE.Vector3(); batch.getMatrixAt(0, matrix);
+  batch.getMatrixAt(0, matrix);
   for (let vertex = 0; vertex < batch.geometry.attributes.position.count; vertex++) {
     point.fromBufferAttribute(batch.geometry.attributes.position, vertex).applyMatrix4(matrix);
     assert.ok(batch.boundingBox!.containsPoint(point), 'bounds refresh when detailed geometry returns');
@@ -162,11 +171,81 @@ test('near spectators are visible while the optional distant geometry is still l
     ? new Promise<typeof far.asset>(resolve => { finish = resolve; }) : Promise.resolve(near.asset));
   const crowd = new SmithCrowdRenderer(new THREE.Group());
   await new Promise(resolve => setImmediate(resolve));
-  assert.equal(crowd.group.children.length, 48, 'a far-model delay must not leave the avenue empty');
+  assert.equal(crowd.group.children.length, 16, 'a far-model delay must not leave the avenue empty');
   assert.ok(crowd.group.children.every(mesh => (mesh as THREE.Mesh).geometry), 'keep actual near surfaces until the distant asset arrives');
   finish(far.asset); await crowd.ready;
-  assert.equal(crowd.group.children.length, 48, 'installing the distant asset cannot duplicate the spectators');
+  assert.equal(crowd.group.children.length, 16, 'installing the distant asset cannot duplicate the spectators');
   crowd.dispose();
+});
+
+test('the full audience shares at most two draws per surface without dropping or duplicating a spectator', async t => {
+  const near = await loadCrowd(), far = await loadCrowd(true);
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', (url: string) => Promise.resolve(url.endsWith('-far.glb') ? far.asset : near.asset));
+  const crowd = new SmithCrowdRenderer(new THREE.Group()); await crowd.ready;
+  try {
+    const batches = crowd.group.children as THREE.InstancedMesh[];
+    assert.ok(batches.length <= 16, 'share each of eight materials across near/far spectators');
+    const places = new Set<string>(), matrix = new THREE.Matrix4();
+    for (const mesh of batches.filter(mesh => mesh.name.endsWith('-Skin'))) for (let i = 0; i < mesh.count; i++) {
+      mesh.getMatrixAt(i, matrix); places.add(new THREE.Vector3().setFromMatrixPosition(matrix).toArray().join(','));
+    }
+    assert.equal(places.size, 323);
+    assert.equal(batches.filter(mesh => mesh.name.endsWith('-Skin')).reduce((count, mesh) => count + mesh.count, 0), 323);
+  } finally { crowd.dispose(); }
+});
+
+test('audience culling preserves bodies visible only in water and restores the full crowd without a camera', async t => {
+  const near = await loadCrowd(), far = await loadCrowd(true);
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', (url: string) => Promise.resolve(url.endsWith('-far.glb') ? far.asset : near.asset));
+  const root = new THREE.Group(); root.position.set(6300, 1, 6000);
+  const crowd = new SmithCrowdRenderer(root); await crowd.ready; root.updateMatrixWorld(true);
+  const camera = new THREE.PerspectiveCamera(24, 1, .1, 180);
+  camera.position.set(6300, 7, 5960); camera.lookAt(6322, -3, 5980); camera.updateMatrixWorld(true);
+  const frustum = new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
+  const matrices: THREE.Matrix4[] = [], matrix = new THREE.Matrix4();
+  for (const mesh of crowd.group.children as THREE.InstancedMesh[]) if (mesh.name.endsWith('-Skin')) for (let i = 0; i < mesh.count; i++) {
+    mesh.getMatrixAt(i, matrix); matrices.push(matrix.clone());
+  }
+  const expected = matrices.filter(matrix => {
+    const head = new THREE.Vector3(0, 3, 0).applyMatrix4(matrix).applyMatrix4(root.matrixWorld);
+    return !frustum.containsPoint(head) && frustum.containsPoint(head.clone().setY(2.07 - head.y));
+  });
+  assert.ok(expected.length > 5, 'the fixture looks down into a real reflection-only part of the crowd');
+  try {
+    crowd.update(newSmithFinale(), { x: 0, z: -40 }, camera, 1.035);
+    const bodies = crowd.group.children.filter(mesh => mesh.name.endsWith('-Skin')) as THREE.InstancedMesh[];
+    const shown = new Set<string>();
+    for (const mesh of bodies) for (let i = 0; i < mesh.count; i++) { mesh.getMatrixAt(i, matrix); shown.add(matrix.elements.join(',')); }
+    assert.ok(shown.size < 160, `submit only visible bodies instead of all ${shown.size} spectators`);
+    for (const matrix of expected) assert.ok(shown.has(matrix.elements.map(Math.fround).join(',')), 'a reflected spectator must not vanish when its real body is outside the main view');
+    const versions = bodies.map(mesh => mesh.instanceMatrix.version);
+    crowd.update(newSmithFinale(), { x: 0, z: -40 }, camera, 1.035);
+    assert.deepEqual(bodies.map(mesh => mesh.instanceMatrix.version), versions, 'a paused camera needs no instance-buffer upload');
+    crowd.update(newSmithFinale(), { x: 0, z: -40 }, undefined);
+    assert.equal(bodies.reduce((count, mesh) => count + mesh.count, 0), 323);
+    for (const [aspect, height, water, facing] of [[16 / 9, 8, 1.035, 1], [9 / 16, 4, 1.035, -1], [16 / 9, 56, -10.965, 1]]) {
+      camera.aspect = aspect; camera.fov = 57; camera.position.set(6300, height, 6000);
+      camera.lookAt(6322, 3, 6000 + facing * 42); camera.updateProjectionMatrix(); camera.updateMatrixWorld(true);
+      const visible = new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
+      crowd.update(newSmithFinale(), { x: 0, z: 0 }, camera, water);
+      const selected = new Set<string>();
+      for (const mesh of bodies) for (let i = 0; i < mesh.count; i++) { mesh.getMatrixAt(i, matrix); selected.add(matrix.elements.join(',')); }
+      let checked = 0;
+      for (const pose of matrices) {
+        let onScreen = false;
+        near.asset.scene.traverse(mesh => {
+          if (!(mesh instanceof THREE.Mesh)) return;
+          const vertices = mesh.geometry.attributes.position;
+          for (let i = 0; i < vertices.count; i += 37) {
+            const point = new THREE.Vector3().fromBufferAttribute(vertices, i).applyMatrix4(pose).applyMatrix4(root.matrixWorld);
+            if (visible.containsPoint(point) || visible.containsPoint(point.setY(2 * water - point.y))) onScreen = true;
+          }
+        });
+        if (onScreen) { checked++; assert.ok(selected.has(pose.elements.join(',')), `${aspect}/${height}/${facing}: sampled body surface disappeared on a turn or aerial view`); }
+      }
+      assert.ok(checked > 20, `${aspect}/${height}/${facing}: check actual textured body vertices, found ${checked} visible spectators`);
+    }
+  } finally { crowd.dispose(); }
 });
 
 test('leaving the avenue before its crowd finishes loading releases the arriving resources and cannot reattach the crowd', async t => {

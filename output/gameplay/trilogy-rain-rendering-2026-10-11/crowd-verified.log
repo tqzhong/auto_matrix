@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: the shipped Smith crowd asset has lowered full arms, hands, separate legs, soles, hair and sunglasses within its geometry budget
+ok 1 - the shipped Smith crowd asset has lowered full arms, hands, separate legs, soles, hair and sunglasses within its geometry budget
+  ---
+  duration_ms: 257.271666
+  type: 'test'
+  ...
+# Subtest: Smith spectators stand in three staggered rows on both curbs facing the open avenue, and retain saved purge state during loading
+ok 2 - Smith spectators stand in three staggered rows on both curbs facing the open avenue, and retain saved purge state during loading
+  ---
+  duration_ms: 198.462334
+  type: 'test'
+  ...
+# Subtest: far Smiths preserve every material/UV surface and silhouette within 2500 triangles
+ok 3 - far Smiths preserve every material/UV surface and silhouette within 2500 triangles
+  ---
+  duration_ms: 40.650083
+  type: 'test'
+  ...
+# Subtest: crossing the 50-unit planar distance moves spectators between the existing detail batches
+ok 4 - crossing the 50-unit planar distance moves spectators between the existing detail batches
+  ---
+  duration_ms: 78.421166
+  type: 'test'
+  ...
+# Subtest: near spectators are visible while the optional distant geometry is still loading
+ok 5 - near spectators are visible while the optional distant geometry is still loading
+  ---
+  duration_ms: 55.199417
+  type: 'test'
+  ...
+# Subtest: the full audience shares at most two draws per surface without dropping or duplicating a spectator
+ok 6 - the full audience shares at most two draws per surface without dropping or duplicating a spectator
+  ---
+  duration_ms: 34.459417
+  type: 'test'
+  ...
+# Subtest: audience culling preserves bodies visible only in water and restores the full crowd without a camera
+ok 7 - audience culling preserves bodies visible only in water and restores the full crowd without a camera
+  ---
+  duration_ms: 131.467167
+  type: 'test'
+  ...
+# Subtest: leaving the avenue before its crowd finishes loading releases the arriving resources and cannot reattach the crowd
+ok 8 - leaving the avenue before its crowd finishes loading releases the arriving resources and cannot reattach the crowd
+  ---
+  duration_ms: 17.524875
+  type: 'test'
+  ...
+# Subtest: the far loader shares existing textures and releases late geometry and temporary materials after leaving during its load
+ok 9 - the far loader shares existing textures and releases late geometry and temporary materials after leaving during its load
+  ---
+  duration_ms: 44.68125
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3620.195417

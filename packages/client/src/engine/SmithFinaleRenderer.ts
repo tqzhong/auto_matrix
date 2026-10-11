@@ -455,7 +455,7 @@ export class SmithFinaleRenderer {
     this.purgeDust = new THREE.Points(dust, material); this.purgeDust.name = 'smith-finale-purge-dust'; this.purgeDust.frustumCulled = false; this.purge.add(this.purgeDust);
   }
 
-  update(encounter: SmithFinaleEncounter | undefined, firstPerson: boolean, player: { x: number; z: number }): void {
+  update(encounter: SmithFinaleEncounter | undefined, firstPerson: boolean, player: { x: number; z: number }, camera?: THREE.Camera): void {
     const state = encounter ?? newSmithFinale(); const pose = smithFinalePose(state); const phase = state.phase;
     const beat = smithFinaleBeat(state), roomLight = beat.roomFight && (beat.phase.startsWith('interior_') || beat.phase === 'building' || beat.phase === 'relaunch');
     if (roomLight) this.backlight.target.position.set((pose.neo.x + pose.smith.x) / 2, (pose.neo.y + pose.smith.y) / 2 + 1.7, (pose.neo.z + pose.smith.z) / 2);
@@ -551,7 +551,7 @@ export class SmithFinaleRenderer {
       }
       points.needsUpdate = true; (this.purgeDust.material as THREE.PointsMaterial).opacity = .5 * Math.max(0, 1 - age / 2);
     }
-    this.audience?.update(state, player);
+    this.audience?.update(state, player, camera, this.water!.getWorldPosition(new THREE.Vector3()).y);
 
   }
 

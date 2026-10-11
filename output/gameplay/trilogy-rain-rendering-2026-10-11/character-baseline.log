@@ -1,0 +1,108 @@
+TAP version 13
+# Actual seated shoe minimum: 0.004999995082616504
+# Subtest: the seated Architect’s actual shoes rest at the room floor and his palms reach the armrests
+ok 1 - the seated Architect’s actual shoes rest at the room floor and his palms reach the armrests
+  ---
+  duration_ms: 426.534958
+  type: 'test'
+  ...
+# Actual hand surface above leather: 2.1031346586050086 13430
+# Subtest: actual Architect hands sit above the armrest surface instead of sinking into the leather
+ok 2 - actual Architect hands sit above the armrest surface instead of sinking into the leather
+  ---
+  duration_ms: 320.1825
+  type: 'test'
+  ...
+# Subtest: the physical CRT ring, chair and left hinge agree with the saved room geometry and preserve the closed Source door
+ok 3 - the physical CRT ring, chair and left hinge agree with the saved room geometry and preserve the closed Source door
+  ---
+  duration_ms: 394.689167
+  type: 'test'
+  ...
+# Subtest: Neo’s real wrist follows the moving door lever without replacing his saved body root
+ok 4 - Neo’s real wrist follows the moving door lever without replacing his saved body root
+  ---
+  duration_ms: 584.30125
+  type: 'test'
+  ...
+# Subtest: losing Trinity’s signal blacks out the feed, and a local retry restores it
+ok 5 - losing Trinity’s signal blacks out the feed, and a local retry restores it
+  ---
+  duration_ms: 17.456875
+  type: 'test'
+  ...
+# Subtest: the first-person player can see Neo’s physical opening arm, then returns to normal visibility outside the room
+ok 6 - the first-person player can see Neo’s physical opening arm, then returns to normal visibility outside the room
+  ---
+  duration_ms: 664.566125
+  type: 'test'
+  ...
+# Subtest: showing Neo’s first-person opening arm removes his own face and glasses from the eye camera, and V restores them
+ok 7 - showing Neo’s first-person opening arm removes his own face and glasses from the eye camera, and V restores them
+  ---
+  duration_ms: 571.991708
+  type: 'test'
+  ...
+# Subtest: the new Oracle appearance is enabled for the Revolutions living-room visit, without replacing her earlier head
+ok 8 - the new Oracle appearance is enabled for the Revolutions living-room visit, without replacing her earlier head
+  ---
+  duration_ms: 234.054375
+  type: 'test'
+  ...
+# Subtest: the actual Oracle head, bent legs and dress retain sofa clearance when a paused conversation loads
+ok 9 - the actual Oracle head, bent legs and dress retain sofa clearance when a paused conversation loads
+  ---
+  duration_ms: 324.344375
+  type: 'test'
+  ...
+# Subtest: the restored Oracle lies on the actual crater floor and cold-loads without standing or foot IK
+ok 10 - the restored Oracle lies on the actual crater floor and cold-loads without standing or foot IK
+  ---
+  duration_ms: 583.847875
+  type: 'test'
+  ...
+# Subtest: the delivered wounded Keymaker stays supported above the floor, including after the key is taken
+ok 11 - the delivered wounded Keymaker stays supported above the floor, including after the key is taken
+  ---
+  duration_ms: 817.972334
+  type: 'test'
+  ...
+# Subtest: accepting the last key brings both real hands to the same visible contact
+ok 12 - accepting the last key brings both real hands to the same visible contact
+  ---
+  duration_ms: 514.135083
+  type: 'test'
+  ...
+# Subtest: the door rotates on its hinge and the narrow white corridor uses the same blocking walls
+ok 13 - the door rotates on its hinge and the narrow white corridor uses the same blocking walls
+  ---
+  duration_ms: 832.213917
+  type: 'test'
+  ...
+# Subtest: both camera modes observe the portal without putting the third-person camera behind its closed leaf
+ok 14 - both camera modes observe the portal without putting the third-person camera behind its closed leaf
+  ---
+  duration_ms: 547.763542
+  type: 'test'
+  ...
+# Subtest: Neo’s lowered key-taking pose keeps the delivered coat and feet above the floor
+ok 15 - Neo’s lowered key-taking pose keeps the delivered coat and feet above the floor
+  ---
+  duration_ms: 609.2125
+  type: 'test'
+  ...
+# Subtest: after the key is taken the Keymaker releases both arms instead of retaining a live offering pose
+ok 16 - after the key is taken the Keymaker releases both arms instead of retaining a live offering pose
+  ---
+  duration_ms: 347.090375
+  type: 'test'
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4119.5215

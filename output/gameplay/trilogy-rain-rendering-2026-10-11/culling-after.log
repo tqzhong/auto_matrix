@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: the full audience shares at most two draws per surface without dropping or duplicating a spectator
+ok 1 - the full audience shares at most two draws per surface without dropping or duplicating a spectator
+  ---
+  duration_ms: 52.710041
+  type: 'test'
+  ...
+# Subtest: audience culling preserves bodies visible only in water and restores the full crowd without a camera
+ok 2 - audience culling preserves bodies visible only in water and restores the full crowd without a camera
+  ---
+  duration_ms: 24.6005
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1262.938208

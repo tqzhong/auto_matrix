@@ -1,0 +1,126 @@
+TAP version 13
+# Actual seated shoe minimum: 0.004999995082616504
+# Subtest: the seated Architect’s actual shoes rest at the room floor and his palms reach the armrests
+ok 1 - the seated Architect’s actual shoes rest at the room floor and his palms reach the armrests
+  ---
+  duration_ms: 702.932583
+  type: 'test'
+  ...
+# Actual hand surface above leather: 2.1031346586050086 13430
+# Subtest: actual Architect hands sit above the armrest surface instead of sinking into the leather
+ok 2 - actual Architect hands sit above the armrest surface instead of sinking into the leather
+  ---
+  duration_ms: 467.556917
+  type: 'test'
+  ...
+# Subtest: the physical CRT ring, chair and left hinge agree with the saved room geometry and preserve the closed Source door
+ok 3 - the physical CRT ring, chair and left hinge agree with the saved room geometry and preserve the closed Source door
+  ---
+  duration_ms: 439.788125
+  type: 'test'
+  ...
+# Subtest: Neo’s real wrist follows the moving door lever without replacing his saved body root
+ok 4 - Neo’s real wrist follows the moving door lever without replacing his saved body root
+  ---
+  duration_ms: 671.990417
+  type: 'test'
+  ...
+# Subtest: losing Trinity’s signal blacks out the feed, and a local retry restores it
+ok 5 - losing Trinity’s signal blacks out the feed, and a local retry restores it
+  ---
+  duration_ms: 21.82375
+  type: 'test'
+  ...
+# Subtest: the first-person player can see Neo’s physical opening arm, then returns to normal visibility outside the room
+ok 6 - the first-person player can see Neo’s physical opening arm, then returns to normal visibility outside the room
+  ---
+  duration_ms: 635.09025
+  type: 'test'
+  ...
+# Subtest: showing Neo’s first-person opening arm removes his own face and glasses from the eye camera, and V restores them
+ok 7 - showing Neo’s first-person opening arm removes his own face and glasses from the eye camera, and V restores them
+  ---
+  duration_ms: 543.494333
+  type: 'test'
+  ...
+# Subtest: distant characters do not traverse the hidden detailed body each frame
+ok 8 - distant characters do not traverse the hidden detailed body each frame
+  ---
+  duration_ms: 133.063167
+  type: 'test'
+  ...
+# Subtest: the first near frame restores current clothes after a distant scene change, including returning to the city
+ok 9 - the first near frame restores current clothes after a distant scene change, including returning to the city
+  ---
+  duration_ms: 168.311166
+  type: 'test'
+  ...
+# Subtest: the restored Oracle retains her full resting body beyond the normal detail distance
+ok 10 - the restored Oracle retains her full resting body beyond the normal detail distance
+  ---
+  duration_ms: 396.175833
+  type: 'test'
+  ...
+# Subtest: the new Oracle appearance is enabled for the Revolutions living-room visit, without replacing her earlier head
+ok 11 - the new Oracle appearance is enabled for the Revolutions living-room visit, without replacing her earlier head
+  ---
+  duration_ms: 460.17675
+  type: 'test'
+  ...
+# Subtest: the actual Oracle head, bent legs and dress retain sofa clearance when a paused conversation loads
+ok 12 - the actual Oracle head, bent legs and dress retain sofa clearance when a paused conversation loads
+  ---
+  duration_ms: 502.430875
+  type: 'test'
+  ...
+# Subtest: the restored Oracle lies on the actual crater floor and cold-loads without standing or foot IK
+ok 13 - the restored Oracle lies on the actual crater floor and cold-loads without standing or foot IK
+  ---
+  duration_ms: 959.453458
+  type: 'test'
+  ...
+# Subtest: the delivered wounded Keymaker stays supported above the floor, including after the key is taken
+ok 14 - the delivered wounded Keymaker stays supported above the floor, including after the key is taken
+  ---
+  duration_ms: 1226.265708
+  type: 'test'
+  ...
+# Subtest: accepting the last key brings both real hands to the same visible contact
+ok 15 - accepting the last key brings both real hands to the same visible contact
+  ---
+  duration_ms: 564.271666
+  type: 'test'
+  ...
+# Subtest: the door rotates on its hinge and the narrow white corridor uses the same blocking walls
+ok 16 - the door rotates on its hinge and the narrow white corridor uses the same blocking walls
+  ---
+  duration_ms: 903.606458
+  type: 'test'
+  ...
+# Subtest: both camera modes observe the portal without putting the third-person camera behind its closed leaf
+ok 17 - both camera modes observe the portal without putting the third-person camera behind its closed leaf
+  ---
+  duration_ms: 498.130458
+  type: 'test'
+  ...
+# Subtest: Neo’s lowered key-taking pose keeps the delivered coat and feet above the floor
+ok 18 - Neo’s lowered key-taking pose keeps the delivered coat and feet above the floor
+  ---
+  duration_ms: 508.415459
+  type: 'test'
+  ...
+# Subtest: after the key is taken the Keymaker releases both arms instead of retaining a live offering pose
+ok 19 - after the key is taken the Keymaker releases both arms instead of retaining a live offering pose
+  ---
+  duration_ms: 369.928334
+  type: 'test'
+  ...
+1..19
+# tests 19
+# suites 0
+# pass 19
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4810.744833
