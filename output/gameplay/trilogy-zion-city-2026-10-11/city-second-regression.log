@@ -1,0 +1,186 @@
+TAP version 13
+# Unable to load the Zion audience TypeError: Failed to parse URL from /assets/characters/zion-crowd-male.glb
+#     at new Request (node:internal/deps/undici/undici:9929:19)
+#     at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#     ... 6 lines matching cause stack trace ...
+#     at Array.map (<anonymous>)
+#     at new ZionCrowdRenderer (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/engine/ZionCrowdRenderer.ts:39:49) {
+#   [cause]: TypeError: Invalid URL
+#       at new URL (node:internal/url:818:25)
+#       at new Request (node:internal/deps/undici/undici:9927:25)
+#       at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#       at GLTFLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/examples/jsm/loaders/GLTFLoader.js:241:10)
+#       at file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44711:10
+#       at new Promise (<anonymous>)
+#       at GLTFLoader.loadAsync (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44709:10)
+#       at ZionCrowdRenderer.load (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/engine/ZionCrowdRenderer.ts:44:42)
+#       at <anonymous> (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/engine/ZionCrowdRenderer.ts:39:65)
+#       at Array.map (<anonymous>) {
+#     code: 'ERR_INVALID_URL',
+#     input: '/assets/characters/zion-crowd-male.glb'
+#   }
+# }
+# Subtest: the withdrawal shot keeps all eighteen machines in frame instead of cutting off their ascent, without scenery blocking the central machine
+ok 1 - the withdrawal shot keeps all eighteen machines in frame instead of cutting off their ascent, without scenery blocking the central machine
+  ---
+  duration_ms: 1770.623417
+  type: 'test'
+  ...
+# Subtest: the real post-breach withdrawal is visible beyond the completed temple roof and drilling machine
+ok 2 - the real post-breach withdrawal is visible beyond the completed temple roof and drilling machine
+  ---
+  duration_ms: 5446.376792
+  type: 'test'
+  ...
+# Subtest: retreating bodies pass through the existing roof bore after the drill has withdrawn
+ok 3 - retreating bodies pass through the existing roof bore after the drill has withdrawn
+  ---
+  duration_ms: 1220.990875
+  type: 'test'
+  ...
+# Subtest: V looks toward the remaining withdrawal and exit, while the player can freely follow the ascent and retain that look
+ok 4 - V looks toward the remaining withdrawal and exit, while the player can freely follow the ascent and retain that look
+  ---
+  duration_ms: 655.399
+  type: 'test'
+  ...
+# Subtest: the report and reunion shot faces the audience and keeps Kid, both pairs and the nearest listeners in wide and narrow frames
+ok 5 - the report and reunion shot faces the audience and keeps Kid, both pairs and the nearest listeners in wide and narrow frames
+  ---
+  duration_ms: 618.385375
+  type: 'test'
+  ...
+# Subtest: Kid sees the last withdrawing wave and then its exit, without aiming through the opaque temple roof
+ok 6 - Kid sees the last withdrawing wave and then its exit, without aiming through the opaque temple roof
+  ---
+  duration_ms: 2623.271083
+  type: 'test'
+  ...
+# Subtest: the ceasefire first-person camera uses Kid’s actual head and preserves mouse turning after the report
+ok 7 - the ceasefire first-person camera uses Kid’s actual head and preserves mouse turning after the report
+  ---
+  duration_ms: 1289.881
+  type: 'test'
+  ...
+# Subtest: the city has a physical ceiling before the drill breaks through and retains its breach on returning to Zion
+ok 8 - the city has a physical ceiling before the drill breaks through and retains its breach on returning to Zion
+  ---
+  duration_ms: 953.573625
+  type: 'test'
+  ...
+# Subtest: paused and cold-loaded temple destruction render exactly the same physical frame
+ok 9 - paused and cold-loaded temple destruction render exactly the same physical frame
+  ---
+  duration_ms: 1510.958166
+  type: 'test'
+  ...
+# Unable to load the Zion audience TypeError: Failed to parse URL from /assets/characters/zion-crowd-male.glb
+#     at new Request (node:internal/deps/undici/undici:9929:19)
+#     at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#     ... 6 lines matching cause stack trace ...
+#     at Array.map (<anonymous>)
+#     at new ZionCrowdRenderer (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/engine/ZionCrowdRenderer.ts:39:49) {
+#   [cause]: TypeError: Invalid URL
+#       at new URL (node:internal/url:818:25)
+#       at new Request (node:internal/deps/undici/undici:9927:25)
+#       at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#       at GLTFLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/examples/jsm/loaders/GLTFLoader.js:241:10)
+#       at file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44711:10
+#       at new Promise (<anonymous>)
+#       at GLTFLoader.loadAsync (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44709:10)
+#       at ZionCrowdRenderer.load (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/engine/ZionCrowdRenderer.ts:44:42)
+#       at <anonymous> (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/engine/ZionCrowdRenderer.ts:39:65)
+#       at Array.map (<anonymous>) {
+#     code: 'ERR_INVALID_URL',
+#     input: '/assets/characters/zion-crowd-male.glb'
+#   }
+# }
+# Subtest: waiting at the temple entrance prevents predicted movement while retaining V and free look
+ok 10 - waiting at the temple entrance prevents predicted movement while retaining V and free look
+  ---
+  duration_ms: 108.744708
+  type: 'test'
+  ...
+# Subtest: the temple wheel camera keeps both handles visible and V follows the posed eye while retaining free look
+ok 11 - the temple wheel camera keeps both handles visible and V follows the posed eye while retaining free look
+  ---
+  duration_ms: 7.470084
+  type: 'test'
+  ...
+# Subtest: Zee’s performed arms remain visible from her eye while her head is hidden, including before detailed assets arrive
+ok 12 - Zee’s performed arms remain visible from her eye while her head is hidden, including before detailed assets arrive
+  ---
+  duration_ms: 181.016
+  type: 'test'
+  ...
+# Subtest: Lock’s saved city breach camera sees the exposed drill and both standing companions in wide and portrait views
+ok 13 - Lock’s saved city breach camera sees the exposed drill and both standing companions in wide and portrait views
+  ---
+  duration_ms: 1719.329541
+  type: 'test'
+  ...
+# Subtest: the rock vault stays solid around the bore and the residential balconies meet every doorway
+not ok 14 - the rock vault stays solid around the bore and the residential balconies meet every doorway
+  ---
+  duration_ms: 3130.404125
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/zion-city-outlook.test.mts:1:186'
+  failureType: 'testCodeFailure'
+  error: '6/-63: the doorway must open onto a supported balcony'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/zion-city-outlook.test.mts:21:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: the deep city shares draw batches, rebuilds deterministically and releases its render resources once
+ok 15 - the deep city shares draw batches, rebuilds deterministically and releases its render resources once
+  ---
+  duration_ms: 2241.719167
+  type: 'test'
+  ...
+# Subtest: homecoming routes, named cast and visible prop footprints agree with collision
+ok 16 - homecoming routes, named cast and visible prop footprints agree with collision
+  ---
+  duration_ms: 18.795916
+  type: 'test'
+  ...
+# Subtest: the temple walking floor has one stone surface instead of coincident dark and stone faces
+ok 17 - the temple walking floor has one stone surface instead of coincident dark and stone faces
+  ---
+  duration_ms: 1695.340125
+  type: 'test'
+  ...
+# Subtest: dock and resident actions save concrete supplies and both requests through reload
+ok 18 - dock and resident actions save concrete supplies and both requests through reload
+  ---
+  duration_ms: 99.221916
+  type: 'test'
+  ...
+# Subtest: Zion supplies reach Mifune at the later dock defense only once
+ok 19 - Zion supplies reach Mifune at the later dock defense only once
+  ---
+  duration_ms: 25.250459
+  type: 'test'
+  ...
+# Subtest: all six authored Zion sets have their own geometry and release it after leaving
+ok 20 - all six authored Zion sets have their own geometry and release it after leaving
+  ---
+  duration_ms: 2619.056708
+  type: 'test'
+  ...
+1..20
+# tests 20
+# suites 0
+# pass 19
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 15201.977166

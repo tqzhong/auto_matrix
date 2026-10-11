@@ -105,7 +105,8 @@ test('all six authored Zion sets have their own geometry and release it after le
     const renderer = new ZionHomecomingRenderer(root, set); renderer.update(undefined, 2.5);
     assert.ok(renderer.group.getObjectByName(name), `${set} missing signature feature`);
     const bounds = new THREE.Box3().setFromObject(root);
-    assert.ok(bounds.min.x > 4900 && bounds.max.x < 5100, `${set} geometry escaped origin`);
+    const extent = set === 'film_zion_temple' ? 120 : 100; // The temple now includes the residential shaft beyond its entrance.
+    assert.ok(bounds.min.x > 5000 - extent && bounds.max.x < 5000 + extent, `${set} geometry escaped origin`);
     const disposed: string[] = []; renderer.group.traverse(object => { if (object instanceof THREE.Mesh) object.geometry.addEventListener('dispose', () => disposed.push(object.uuid)); });
     renderer.dispose(); assert.equal(root.children.length, 0); assert.ok(disposed.length > 0);
   }

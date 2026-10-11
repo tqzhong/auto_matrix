@@ -1,0 +1,272 @@
+TAP version 13
+# Unable to load the Zion audience TypeError: Failed to parse URL from /assets/characters/zion-crowd-male.glb
+#     at new Request (node:internal/deps/undici/undici:9929:19)
+#     at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#     ... 6 lines matching cause stack trace ...
+#     at Array.map (<anonymous>)
+#     at new ZionCrowdRenderer (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/engine/ZionCrowdRenderer.ts:39:49) {
+#   [cause]: TypeError: Invalid URL
+#       at new URL (node:internal/url:818:25)
+#       at new Request (node:internal/deps/undici/undici:9927:25)
+#       at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#       at GLTFLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/examples/jsm/loaders/GLTFLoader.js:241:10)
+#       at file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44711:10
+#       at new Promise (<anonymous>)
+#       at GLTFLoader.loadAsync (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44709:10)
+#       at ZionCrowdRenderer.load (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/engine/ZionCrowdRenderer.ts:44:42)
+#       at <anonymous> (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/engine/ZionCrowdRenderer.ts:39:65)
+#       at Array.map (<anonymous>) {
+#     code: 'ERR_INVALID_URL',
+#     input: '/assets/characters/zion-crowd-male.glb'
+#   }
+# }
+# Subtest: the withdrawal shot keeps all eighteen machines in frame instead of cutting off their ascent, without scenery blocking the central machine
+ok 1 - the withdrawal shot keeps all eighteen machines in frame instead of cutting off their ascent, without scenery blocking the central machine
+  ---
+  duration_ms: 3428.682709
+  type: 'test'
+  ...
+# Subtest: the real post-breach withdrawal is visible beyond the completed temple roof and drilling machine
+ok 2 - the real post-breach withdrawal is visible beyond the completed temple roof and drilling machine
+  ---
+  duration_ms: 9533.858542
+  type: 'test'
+  ...
+# Subtest: retreating bodies pass through the existing roof bore after the drill has withdrawn
+ok 3 - retreating bodies pass through the existing roof bore after the drill has withdrawn
+  ---
+  duration_ms: 708.600291
+  type: 'test'
+  ...
+# Subtest: V looks toward the remaining withdrawal and exit, while the player can freely follow the ascent and retain that look
+ok 4 - V looks toward the remaining withdrawal and exit, while the player can freely follow the ascent and retain that look
+  ---
+  duration_ms: 422.235042
+  type: 'test'
+  ...
+# Subtest: the report and reunion shot faces the audience and keeps Kid, both pairs and the nearest listeners in wide and narrow frames
+ok 5 - the report and reunion shot faces the audience and keeps Kid, both pairs and the nearest listeners in wide and narrow frames
+  ---
+  duration_ms: 336.927458
+  type: 'test'
+  ...
+# Subtest: Kid sees the last withdrawing wave and then its exit, without aiming through the opaque temple roof
+ok 6 - Kid sees the last withdrawing wave and then its exit, without aiming through the opaque temple roof
+  ---
+  duration_ms: 2451.354792
+  type: 'test'
+  ...
+# Subtest: the ceasefire first-person camera uses Kid’s actual head and preserves mouse turning after the report
+ok 7 - the ceasefire first-person camera uses Kid’s actual head and preserves mouse turning after the report
+  ---
+  duration_ms: 1163.557958
+  type: 'test'
+  ...
+# Subtest: fixed siblings share draws without changing textured surfaces, animated parents, or moving parts
+ok 8 - fixed siblings share draws without changing textured surfaces, animated parents, or moving parts
+  ---
+  duration_ms: 28.694916
+  type: 'test'
+  ...
+# Subtest: the city has a physical ceiling before the drill breaks through and retains its breach on returning to Zion
+ok 9 - the city has a physical ceiling before the drill breaks through and retains its breach on returning to Zion
+  ---
+  duration_ms: 1504.299333
+  type: 'test'
+  ...
+# Subtest: paused and cold-loaded temple destruction render exactly the same physical frame
+ok 10 - paused and cold-loaded temple destruction render exactly the same physical frame
+  ---
+  duration_ms: 5710.28825
+  type: 'test'
+  ...
+# Unable to load the Zion audience TypeError: Failed to parse URL from /assets/characters/zion-crowd-male.glb
+#     at new Request (node:internal/deps/undici/undici:9929:19)
+#     at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#     ... 6 lines matching cause stack trace ...
+#     at Array.map (<anonymous>)
+#     at new ZionCrowdRenderer (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/engine/ZionCrowdRenderer.ts:39:49) {
+#   [cause]: TypeError: Invalid URL
+#       at new URL (node:internal/url:818:25)
+#       at new Request (node:internal/deps/undici/undici:9927:25)
+#       at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#       at GLTFLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/examples/jsm/loaders/GLTFLoader.js:241:10)
+#       at file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44711:10
+#       at new Promise (<anonymous>)
+#       at GLTFLoader.loadAsync (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44709:10)
+#       at ZionCrowdRenderer.load (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/engine/ZionCrowdRenderer.ts:44:42)
+#       at <anonymous> (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/engine/ZionCrowdRenderer.ts:39:65)
+#       at Array.map (<anonymous>) {
+#     code: 'ERR_INVALID_URL',
+#     input: '/assets/characters/zion-crowd-male.glb'
+#   }
+# }
+# Subtest: waiting at the temple entrance prevents predicted movement while retaining V and free look
+ok 11 - waiting at the temple entrance prevents predicted movement while retaining V and free look
+  ---
+  duration_ms: 185.13525
+  type: 'test'
+  ...
+# Subtest: the temple wheel camera keeps both handles visible and V follows the posed eye while retaining free look
+ok 12 - the temple wheel camera keeps both handles visible and V follows the posed eye while retaining free look
+  ---
+  duration_ms: 22.485333
+  type: 'test'
+  ...
+# Subtest: Zee’s performed arms remain visible from her eye while her head is hidden, including before detailed assets arrive
+ok 13 - Zee’s performed arms remain visible from her eye while her head is hidden, including before detailed assets arrive
+  ---
+  duration_ms: 219.589041
+  type: 'test'
+  ...
+# Subtest: Lock’s saved city breach camera sees the exposed drill and both standing companions in wide and portrait views
+ok 14 - Lock’s saved city breach camera sees the exposed drill and both standing companions in wide and portrait views
+  ---
+  duration_ms: 5306.314208
+  type: 'test'
+  ...
+# Subtest: a new temple entry waits for an explicit start through loading, movement input and save restoration
+ok 15 - a new temple entry waits for an explicit start through loading, movement input and save restoration
+  ---
+  duration_ms: 7038.406416
+  type: 'test'
+  ...
+# Subtest: starting temple preparation waits for occupied companions without consuming or resetting the deadline
+ok 16 - starting temple preparation waits for occupied companions without consuming or resetting the deadline
+  ---
+  duration_ms: 3900.6115
+  type: 'test'
+  ...
+# Subtest: temple fortification prepares artillery; the city breach follows Trinity’s farewell
+ok 17 - temple fortification prepares artillery; the city breach follows Trinity’s farewell
+  ---
+  duration_ms: 0.947125
+  type: 'test'
+  ...
+# Subtest: standing at a temple mounting wheel cannot finish it without holding G
+ok 18 - standing at a temple mounting wheel cannot finish it without holding G
+  ---
+  duration_ms: 129.402917
+  type: 'test'
+  ...
+# Subtest: occupied temple cast freezes fortification and keeps another player’s position
+ok 19 - occupied temple cast freezes fortification and keeps another player’s position
+  ---
+  duration_ms: 209.476334
+  type: 'test'
+  ...
+# Subtest: temple artillery replaces the fictional closing door and its breach animation uses saved time
+ok 20 - temple artillery replaces the fictional closing door and its breach animation uses saved time
+  ---
+  duration_ms: 1055.665875
+  type: 'test'
+  ...
+# Subtest: completed legacy temple saves retain completion without replaying the new fortification
+ok 21 - completed legacy temple saves retain completion without replaying the new fortification
+  ---
+  duration_ms: 8.518208
+  type: 'test'
+  ...
+# Subtest: breach dust dissipates during the saved wait and cannot remain as frozen clouds during the ceasefire
+ok 22 - breach dust dissipates during the saved wait and cannot remain as frozen clouds during the ceasefire
+  ---
+  duration_ms: 960.172875
+  type: 'test'
+  ...
+# Subtest: physical artillery and its approach keep the existing podium route traversable
+ok 23 - physical artillery and its approach keep the existing podium route traversable
+  ---
+  duration_ms: 7.881125
+  type: 'test'
+  ...
+# Subtest: both manually secured guns stop the setup deadline; returning to the crowd hands off to Logos
+ok 24 - both manually secured guns stop the setup deadline; returning to the crowd hands off to Logos
+  ---
+  duration_ms: 293.755833
+  type: 'test'
+  ...
+# Subtest: a timed preparation failure retries only the temple and preserves the spent EMP and past casualties
+ok 25 - a timed preparation failure retries only the temple and preserves the spent EMP and past casualties
+  ---
+  duration_ms: 3473.834666
+  type: 'test'
+  ...
+# Subtest: the final city breach freezes on pause and disconnect and returns control to Neo after Link’s wait
+ok 26 - the final city breach freezes on pause and disconnect and returns control to Neo after Link’s wait
+  ---
+  duration_ms: 723.662708
+  type: 'test'
+  ...
+# Subtest: homecoming routes, named cast and visible prop footprints agree with collision
+ok 27 - homecoming routes, named cast and visible prop footprints agree with collision
+  ---
+  duration_ms: 48.802
+  type: 'test'
+  ...
+# Subtest: the temple walking floor has one stone surface instead of coincident dark and stone faces
+ok 28 - the temple walking floor has one stone surface instead of coincident dark and stone faces
+  ---
+  duration_ms: 3159.162875
+  type: 'test'
+  ...
+# Subtest: dock and resident actions save concrete supplies and both requests through reload
+ok 29 - dock and resident actions save concrete supplies and both requests through reload
+  ---
+  duration_ms: 618.7755
+  type: 'test'
+  ...
+# Subtest: Zion supplies reach Mifune at the later dock defense only once
+ok 30 - Zion supplies reach Mifune at the later dock defense only once
+  ---
+  duration_ms: 135.818
+  type: 'test'
+  ...
+# Subtest: all six authored Zion sets have their own geometry and release it after leaving
+not ok 31 - all six authored Zion sets have their own geometry and release it after leaving
+  ---
+  duration_ms: 5757.714416
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/zion-homecoming.test.mts:1:5898'
+  failureType: 'testCodeFailure'
+  error: 'film_zion_temple geometry escaped origin'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/zion-homecoming.test.mts:108:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: identical dock lamp housings share materials and draws without removing glowing fixtures
+ok 32 - identical dock lamp housings share materials and draws without removing glowing fixtures
+  ---
+  duration_ms: 1867.869541
+  type: 'test'
+  ...
+# Subtest: dock lamps keep their fixtures but only nearby lights enter the forward lighting pass
+ok 33 - dock lamps keep their fixtures but only nearby lights enter the forward lighting pass
+  ---
+  duration_ms: 3498.694459
+  type: 'test'
+  ...
+# Subtest: dock lighting excludes only lights with no influence in the view and restores them when turning
+ok 34 - dock lighting excludes only lights with no influence in the view and restores them when turning
+  ---
+  duration_ms: 2071.955625
+  type: 'test'
+  ...
+1..34
+# tests 34
+# suites 0
+# pass 33
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 20051.024792

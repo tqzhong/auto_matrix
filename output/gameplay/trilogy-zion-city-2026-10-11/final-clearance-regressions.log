@@ -1,0 +1,556 @@
+TAP version 13
+# Unable to load the Zion audience TypeError: Failed to parse URL from /assets/characters/zion-crowd-male.glb
+#     at new Request (node:internal/deps/undici/undici:9929:19)
+#     at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#     ... 6 lines matching cause stack trace ...
+#     at Array.map (<anonymous>)
+#     at new ZionCrowdRenderer (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/engine/ZionCrowdRenderer.ts:39:49) {
+#   [cause]: TypeError: Invalid URL
+#       at new URL (node:internal/url:818:25)
+#       at new Request (node:internal/deps/undici/undici:9927:25)
+#       at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#       at GLTFLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/examples/jsm/loaders/GLTFLoader.js:241:10)
+#       at file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44711:10
+#       at new Promise (<anonymous>)
+#       at GLTFLoader.loadAsync (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44709:10)
+#       at ZionCrowdRenderer.load (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/engine/ZionCrowdRenderer.ts:44:42)
+#       at <anonymous> (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/engine/ZionCrowdRenderer.ts:39:65)
+#       at Array.map (<anonymous>) {
+#     code: 'ERR_INVALID_URL',
+#     input: '/assets/characters/zion-crowd-male.glb'
+#   }
+# }
+# Subtest: the withdrawal shot keeps all eighteen machines in frame instead of cutting off their ascent, without scenery blocking the central machine
+ok 1 - the withdrawal shot keeps all eighteen machines in frame instead of cutting off their ascent, without scenery blocking the central machine
+  ---
+  duration_ms: 9829.699166
+  type: 'test'
+  ...
+# Subtest: the real post-breach withdrawal is visible beyond the completed temple roof and drilling machine
+ok 2 - the real post-breach withdrawal is visible beyond the completed temple roof and drilling machine
+  ---
+  duration_ms: 18643.378709
+  type: 'test'
+  ...
+# Subtest: retreating bodies pass through the existing roof bore after the drill has withdrawn
+ok 3 - retreating bodies pass through the existing roof bore after the drill has withdrawn
+  ---
+  duration_ms: 2343.720583
+  type: 'test'
+  ...
+# Subtest: V looks toward the remaining withdrawal and exit, while the player can freely follow the ascent and retain that look
+ok 4 - V looks toward the remaining withdrawal and exit, while the player can freely follow the ascent and retain that look
+  ---
+  duration_ms: 1685.153833
+  type: 'test'
+  ...
+# Subtest: the report and reunion shot faces the audience and keeps Kid, both pairs and the nearest listeners in wide and narrow frames
+ok 5 - the report and reunion shot faces the audience and keeps Kid, both pairs and the nearest listeners in wide and narrow frames
+  ---
+  duration_ms: 1381.45
+  type: 'test'
+  ...
+# Subtest: Kid sees the last withdrawing wave and then its exit, without aiming through the opaque temple roof
+ok 6 - Kid sees the last withdrawing wave and then its exit, without aiming through the opaque temple roof
+  ---
+  duration_ms: 4176.295542
+  type: 'test'
+  ...
+# Subtest: the ceasefire first-person camera uses Kid’s actual head and preserves mouse turning after the report
+ok 7 - the ceasefire first-person camera uses Kid’s actual head and preserves mouse turning after the report
+  ---
+  duration_ms: 1223.534333
+  type: 'test'
+  ...
+# Subtest: the retreat formation keeps separate hulls while converging into the roof opening
+ok 8 - the retreat formation keeps separate hulls while converging into the roof opening
+  ---
+  duration_ms: 234.041833
+  type: 'test'
+  ...
+# Subtest: the converged machines ascend nose first with their arms trailing below the hull
+ok 9 - the converged machines ascend nose first with their arms trailing below the hull
+  ---
+  duration_ms: 485.215709
+  type: 'test'
+  ...
+# Subtest: the rendered hulls and trailing arms remain inside the clear bore while crossing the roof slab
+ok 10 - the rendered hulls and trailing arms remain inside the clear bore while crossing the roof slab
+  ---
+  duration_ms: 2747.265042
+  type: 'test'
+  ...
+# Subtest: the withdrawing sentinels use the saved clock across pause, reload and reverse seeking
+ok 11 - the withdrawing sentinels use the saved clock across pause, reload and reverse seeking
+  ---
+  duration_ms: 386.58875
+  type: 'test'
+  ...
+# Subtest: a full withdrawal swarm shares geometry and releases its instance buffers after leaving
+ok 12 - a full withdrawal swarm shares geometry and releases its instance buffers after leaving
+  ---
+  duration_ms: 94.966958
+  type: 'test'
+  ...
+# Subtest: survivors approach continuously when the announcement becomes a reunion
+ok 13 - survivors approach continuously when the announcement becomes a reunion
+  ---
+  duration_ms: 2616.450167
+  type: 'test'
+  ...
+# Subtest: a saved reunion waits when occupied and preserves a dead survivor’s body
+ok 14 - a saved reunion waits when occupied and preserves a dead survivor’s body
+  ---
+  duration_ms: 2046.001834
+  type: 'test'
+  ...
+# Subtest: both delivered face surfaces stay apart throughout the reunion
+ok 15 - both delivered face surfaces stay apart throughout the reunion
+  ---
+  duration_ms: 16847.304541
+  type: 'test'
+  ...
+# Subtest: the actual palms rest on the partner’s clothing rather than hanging behind it
+ok 16 - the actual palms rest on the partner’s clothing rather than hanging behind it
+  ---
+  duration_ms: 7482.162208
+  type: 'test'
+  ...
+# Subtest: paused reunion hands do not drift with render time
+ok 17 - paused reunion hands do not drift with render time
+  ---
+  duration_ms: 3871.521958
+  type: 'test'
+  ...
+# Subtest: the current Kid frame drives the reunion across an older world phase
+ok 18 - the current Kid frame drives the reunion across an older world phase
+  ---
+  duration_ms: 3651.395666
+  type: 'test'
+  ...
+# Subtest: the delivered boots retain a support sole during approach and both soles during the embrace
+ok 19 - the delivered boots retain a support sole during approach and both soles during the embrace
+  ---
+  duration_ms: 2634.861916
+  type: 'test'
+  ...
+# Subtest: Sati wears a pale sleeved jacket in Mobil, and restores her checked dress when she leaves it
+ok 20 - Sati wears a pale sleeved jacket in Mobil, and restores her checked dress when she leaves it
+  ---
+  duration_ms: 12169.249792
+  type: 'test'
+  ...
+# Subtest: Sati waits on her side with closed eyes, then gathers her legs and plants her hands before standing
+ok 21 - Sati waits on her side with closed eyes, then gathers her legs and plants her hands before standing
+  ---
+  duration_ms: 11671.02775
+  type: 'test'
+  ...
+# Subtest: Oracle and Sati have a front hairline while their detailed assets load
+ok 22 - Oracle and Sati have a front hairline while their detailed assets load
+  ---
+  duration_ms: 2819.392833
+  type: 'test'
+  ...
+# Subtest: Zee and Charra load their own continuous heads without changing a saved actor pose
+ok 23 - Zee and Charra load their own continuous heads without changing a saved actor pose
+  ---
+  duration_ms: 2123.7755
+  type: 'test'
+  ...
+# Subtest: the two dock fighters have exposed articulated arms rather than their old full sleeves
+ok 24 - the two dock fighters have exposed articulated arms rather than their old full sleeves
+  ---
+  duration_ms: 104.004166
+  type: 'test'
+  ...
+# Subtest: the shipped dock heads and clothing retain belt contact, deck clearance and Charra’s closed eyes after the attack
+ok 25 - the shipped dock heads and clothing retain belt contact, deck clearance and Charra’s closed eyes after the attack
+  ---
+  duration_ms: 5269.093417
+  type: 'test'
+  ...
+# Subtest: the shipped Oracle head closes its eyelids and a late load recomputes support without moving the saved root
+ok 26 - the shipped Oracle head closes its eyelids and a late load recomputes support without moving the saved root
+  ---
+  duration_ms: 2762.766459
+  type: 'test'
+  ...
+# Subtest: paused Sati waking reuses the support calculation for its unchanged saved pose
+ok 27 - paused Sati waking reuses the support calculation for its unchanged saved pose
+  ---
+  duration_ms: 25724.862417
+  type: 'test'
+  ...
+# Subtest: Sati’s visible legs stay inside the dress above its hem during walking
+ok 28 - Sati’s visible legs stay inside the dress above its hem during walking
+  ---
+  duration_ms: 2144.351416
+  type: 'test'
+  ...
+# Subtest: Sati’s skirt stays attached to the bodice while the torso sways
+ok 29 - Sati’s skirt stays attached to the bodice while the torso sways
+  ---
+  duration_ms: 27.200417
+  type: 'test'
+  ...
+# Subtest: the folded waking dress covers the actual upper thighs through the waist bend
+ok 30 - the folded waking dress covers the actual upper thighs through the waist bend
+  ---
+  duration_ms: 207.1145
+  type: 'test'
+  ...
+# Subtest: the epilogue scalp does not grow hair across the visible ear surfaces
+ok 31 - the epilogue scalp does not grow hair across the visible ear surfaces
+  ---
+  duration_ms: 203.768166
+  type: 'test'
+  ...
+# Subtest: fixed siblings share draws without changing textured surfaces, animated parents, or moving parts
+ok 32 - fixed siblings share draws without changing textured surfaces, animated parents, or moving parts
+  ---
+  duration_ms: 158.916042
+  type: 'test'
+  ...
+# Subtest: the city has a physical ceiling before the drill breaks through and retains its breach on returning to Zion
+ok 33 - the city has a physical ceiling before the drill breaks through and retains its breach on returning to Zion
+  ---
+  duration_ms: 4427.677417
+  type: 'test'
+  ...
+# Subtest: paused and cold-loaded temple destruction render exactly the same physical frame
+ok 34 - paused and cold-loaded temple destruction render exactly the same physical frame
+  ---
+  duration_ms: 8213.020083
+  type: 'test'
+  ...
+# Unable to load the Zion audience TypeError: Failed to parse URL from /assets/characters/zion-crowd-male.glb
+#     at new Request (node:internal/deps/undici/undici:9929:19)
+#     at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#     ... 6 lines matching cause stack trace ...
+#     at Array.map (<anonymous>)
+#     at new ZionCrowdRenderer (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/engine/ZionCrowdRenderer.ts:39:49) {
+#   [cause]: TypeError: Invalid URL
+#       at new URL (node:internal/url:818:25)
+#       at new Request (node:internal/deps/undici/undici:9927:25)
+#       at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#       at GLTFLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/examples/jsm/loaders/GLTFLoader.js:241:10)
+#       at file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44711:10
+#       at new Promise (<anonymous>)
+#       at GLTFLoader.loadAsync (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44709:10)
+#       at ZionCrowdRenderer.load (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/engine/ZionCrowdRenderer.ts:44:42)
+#       at <anonymous> (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/engine/ZionCrowdRenderer.ts:39:65)
+#       at Array.map (<anonymous>) {
+#     code: 'ERR_INVALID_URL',
+#     input: '/assets/characters/zion-crowd-male.glb'
+#   }
+# }
+# Subtest: waiting at the temple entrance prevents predicted movement while retaining V and free look
+ok 35 - waiting at the temple entrance prevents predicted movement while retaining V and free look
+  ---
+  duration_ms: 726.651167
+  type: 'test'
+  ...
+# Subtest: the temple wheel camera keeps both handles visible and V follows the posed eye while retaining free look
+ok 36 - the temple wheel camera keeps both handles visible and V follows the posed eye while retaining free look
+  ---
+  duration_ms: 241.348542
+  type: 'test'
+  ...
+# Subtest: Zee’s performed arms remain visible from her eye while her head is hidden, including before detailed assets arrive
+ok 37 - Zee’s performed arms remain visible from her eye while her head is hidden, including before detailed assets arrive
+  ---
+  duration_ms: 1083.851084
+  type: 'test'
+  ...
+# Subtest: Lock’s saved city breach camera sees the exposed drill and both standing companions in wide and portrait views
+ok 38 - Lock’s saved city breach camera sees the exposed drill and both standing companions in wide and portrait views
+  ---
+  duration_ms: 8270.570667
+  type: 'test'
+  ...
+# Subtest: a new temple entry waits for an explicit start through loading, movement input and save restoration
+ok 39 - a new temple entry waits for an explicit start through loading, movement input and save restoration
+  ---
+  duration_ms: 15893.406459
+  type: 'test'
+  ...
+# Subtest: starting temple preparation waits for occupied companions without consuming or resetting the deadline
+ok 40 - starting temple preparation waits for occupied companions without consuming or resetting the deadline
+  ---
+  duration_ms: 9493.367167
+  type: 'test'
+  ...
+# Subtest: temple fortification prepares artillery; the city breach follows Trinity’s farewell
+ok 41 - temple fortification prepares artillery; the city breach follows Trinity’s farewell
+  ---
+  duration_ms: 0.914917
+  type: 'test'
+  ...
+# Subtest: standing at a temple mounting wheel cannot finish it without holding G
+ok 42 - standing at a temple mounting wheel cannot finish it without holding G
+  ---
+  duration_ms: 646.907542
+  type: 'test'
+  ...
+# Subtest: occupied temple cast freezes fortification and keeps another player’s position
+ok 43 - occupied temple cast freezes fortification and keeps another player’s position
+  ---
+  duration_ms: 595.327209
+  type: 'test'
+  ...
+# Subtest: temple artillery replaces the fictional closing door and its breach animation uses saved time
+ok 44 - temple artillery replaces the fictional closing door and its breach animation uses saved time
+  ---
+  duration_ms: 3801.314875
+  type: 'test'
+  ...
+# Subtest: completed legacy temple saves retain completion without replaying the new fortification
+ok 45 - completed legacy temple saves retain completion without replaying the new fortification
+  ---
+  duration_ms: 42.422709
+  type: 'test'
+  ...
+# Subtest: breach dust dissipates during the saved wait and cannot remain as frozen clouds during the ceasefire
+ok 46 - breach dust dissipates during the saved wait and cannot remain as frozen clouds during the ceasefire
+  ---
+  duration_ms: 3519.608916
+  type: 'test'
+  ...
+# Subtest: physical artillery and its approach keep the existing podium route traversable
+ok 47 - physical artillery and its approach keep the existing podium route traversable
+  ---
+  duration_ms: 6.430083
+  type: 'test'
+  ...
+# Subtest: both manually secured guns stop the setup deadline; returning to the crowd hands off to Logos
+ok 48 - both manually secured guns stop the setup deadline; returning to the crowd hands off to Logos
+  ---
+  duration_ms: 1515.239875
+  type: 'test'
+  ...
+# Subtest: a timed preparation failure retries only the temple and preserves the spent EMP and past casualties
+ok 49 - a timed preparation failure retries only the temple and preserves the spent EMP and past casualties
+  ---
+  duration_ms: 3849.133916
+  type: 'test'
+  ...
+# Subtest: the final city breach freezes on pause and disconnect and returns control to Neo after Link’s wait
+ok 50 - the final city breach freezes on pause and disconnect and returns control to Neo after Link’s wait
+  ---
+  duration_ms: 565.816417
+  type: 'test'
+  ...
+# Subtest: fast temple snapshots carry both the falling city and all performed bodies between slow world ticks
+ok 51 - fast temple snapshots carry both the falling city and all performed bodies between slow world ticks
+  ---
+  duration_ms: 16446.338666
+  type: 'test'
+  ...
+# Subtest: temple HUD separates held mounting from automatic city breach and restores explicit handoff after waiting
+ok 52 - temple HUD separates held mounting from automatic city breach and restores explicit handoff after waiting
+  ---
+  duration_ms: 1255.931
+  type: 'test'
+  ...
+# Subtest: the temple journal blocks repeated start and scene skip during orders, breach and waiting
+ok 53 - the temple journal blocks repeated start and scene skip during orders, breach and waiting
+  ---
+  duration_ms: 866.180166
+  type: 'test'
+  ...
+# Subtest: the epilogue reducer preserves authored phase boundaries
+ok 54 - the epilogue reducer preserves authored phase boundaries
+  ---
+  duration_ms: 55.147292
+  type: 'test'
+  ...
+# Subtest: new street resets restore the pavement and bring the cat before Sati rises, while active legacy saves keep their beat
+ok 55 - new street resets restore the pavement and bring the cat before Sati rises, while active legacy saves keep their beat
+  ---
+  duration_ms: 6522.812833
+  type: 'test'
+  ...
+# Subtest: the reset facade blocks a scene revisit and is removed when returning to the saved park
+ok 56 - the reset facade blocks a scene revisit and is removed when returning to the saved park
+  ---
+  duration_ms: 158.68425
+  type: 'test'
+  ...
+# Subtest: Neo remains unresponsive while the transport is waiting or finished without advancing its clock
+ok 57 - Neo remains unresponsive while the transport is waiting or finished without advancing its clock
+  ---
+  duration_ms: 0.378208
+  type: 'test'
+  ...
+# Subtest: the Oracle stays seated while the player considers the Architect’s promise
+ok 58 - the Oracle stays seated while the player considers the Architect’s promise
+  ---
+  duration_ms: 64.194792
+  type: 'test'
+  ...
+# Subtest: the Architect continues along the waterfront while the player waits to welcome Sati
+ok 59 - the Architect continues along the waterfront while the player waits to welcome Sati
+  ---
+  duration_ms: 3.706792
+  type: 'test'
+  ...
+# Subtest: legacy park departures resume from their saved pose without replaying or jumping
+ok 60 - legacy park departures resume from their saved pose without replaying or jumping
+  ---
+  duration_ms: 9.684375
+  type: 'test'
+  ...
+# Subtest: park departure pauses with the world, another player’s cast ownership and a disconnected Oracle
+ok 61 - park departure pauses with the world, another player’s cast ownership and a disconnected Oracle
+  ---
+  duration_ms: 2007.435
+  type: 'test'
+  ...
+# Subtest: Neo’s resting transport action survives later world ticks and serialized park restoration exactly
+ok 62 - Neo’s resting transport action survives later world ticks and serialized park restoration exactly
+  ---
+  duration_ms: 94.6615
+  type: 'test'
+  ...
+# Subtest: Neo transport keeps a phase’s action start while its saved physical motion advances
+ok 63 - Neo transport keeps a phase’s action start while its saved physical motion advances
+  ---
+  duration_ms: 373.805583
+  type: 'test'
+  ...
+# Subtest: the Smith ending leaves a persistent real-world body while Kid witnesses the ceasefire
+ok 64 - the Smith ending leaves a persistent real-world body while Kid witnesses the ceasefire
+  ---
+  duration_ms: 5556.592875
+  type: 'test'
+  ...
+# Subtest: reconnecting after the transport can hand off to the Oracle without reviving Neo
+ok 65 - reconnecting after the transport can hand off to the Oracle without reviving Neo
+  ---
+  duration_ms: 2984.246083
+  type: 'test'
+  ...
+# Subtest: ceasefire, Neo transport and dawn form a saved playable epilogue without auto-starting a new cycle
+ok 66 - ceasefire, Neo transport and dawn form a saved playable epilogue without auto-starting a new cycle
+  ---
+  duration_ms: 5897.894333
+  type: 'test'
+  ...
+# Subtest: Kid watches the city during withdrawal and faces the crowd only when delivering the news, including a restored save
+ok 67 - Kid watches the city during withdrawal and faces the crowd only when delivering the news, including a restored save
+  ---
+  duration_ms: 430.219417
+  type: 'test'
+  ...
+# Subtest: Kid keeps the run performed by the player instead of teleporting back to replay it
+ok 68 - Kid keeps the run performed by the player instead of teleporting back to replay it
+  ---
+  duration_ms: 3.856542
+  type: 'test'
+  ...
+# Subtest: the witness walks around the rostrum to the doorway and keeps the actual standing position through withdrawal and reload
+ok 69 - the witness walks around the rostrum to the doorway and keeps the actual standing position through withdrawal and reload
+  ---
+  duration_ms: 150.893833
+  type: 'test'
+  ...
+# Subtest: each dedicated epilogue layer renders and disposes its physical story objects
+ok 70 - each dedicated epilogue layer renders and disposes its physical story objects
+  ---
+  duration_ms: 923.863917
+  type: 'test'
+  ...
+# Subtest: the resetting sidewalk supports the cat and Sati, restores ahead of the paws, and resumes from the saved clock
+ok 71 - the resetting sidewalk supports the cat and Sati, restores ahead of the paws, and resumes from the saved clock
+  ---
+  duration_ms: 326.709042
+  type: 'test'
+  ...
+# Subtest: saved epilogue actions reach NPC animation and carry Neo flat on the machine tray
+ok 72 - saved epilogue actions reach NPC animation and carry Neo flat on the machine tray
+  ---
+  duration_ms: 311.347667
+  type: 'test'
+  ...
+# Subtest: park performers follow the current Oracle frame without advancing a paused clock or overriding an occupied actor
+ok 73 - park performers follow the current Oracle frame without advancing a paused clock or overriding an occupied actor
+  ---
+  duration_ms: 284.934625
+  type: 'test'
+  ...
+# Subtest: the journal exposes the witness, promise and explicit final confirmation
+ok 74 - the journal exposes the witness, promise and explicit final confirmation
+  ---
+  duration_ms: 410.1855
+  type: 'test'
+  ...
+# Subtest: the rock vault stays solid around the bore and the residential balconies meet every doorway
+ok 75 - the rock vault stays solid around the bore and the residential balconies meet every doorway
+  ---
+  duration_ms: 11478.440375
+  type: 'test'
+  ...
+# Subtest: the deep city shares draw batches, rebuilds deterministically and releases its render resources once
+ok 76 - the deep city shares draw batches, rebuilds deterministically and releases its render resources once
+  ---
+  duration_ms: 3394.529916
+  type: 'test'
+  ...
+# Subtest: homecoming routes, named cast and visible prop footprints agree with collision
+ok 77 - homecoming routes, named cast and visible prop footprints agree with collision
+  ---
+  duration_ms: 49.875333
+  type: 'test'
+  ...
+# Subtest: the temple walking floor has one stone surface instead of coincident dark and stone faces
+ok 78 - the temple walking floor has one stone surface instead of coincident dark and stone faces
+  ---
+  duration_ms: 2659.489459
+  type: 'test'
+  ...
+# Subtest: dock and resident actions save concrete supplies and both requests through reload
+ok 79 - dock and resident actions save concrete supplies and both requests through reload
+  ---
+  duration_ms: 489.447166
+  type: 'test'
+  ...
+# Subtest: Zion supplies reach Mifune at the later dock defense only once
+ok 80 - Zion supplies reach Mifune at the later dock defense only once
+  ---
+  duration_ms: 49.506125
+  type: 'test'
+  ...
+# Subtest: all six authored Zion sets have their own geometry and release it after leaving
+ok 81 - all six authored Zion sets have their own geometry and release it after leaving
+  ---
+  duration_ms: 4518.948792
+  type: 'test'
+  ...
+# Subtest: identical dock lamp housings share materials and draws without removing glowing fixtures
+ok 82 - identical dock lamp housings share materials and draws without removing glowing fixtures
+  ---
+  duration_ms: 1944.113625
+  type: 'test'
+  ...
+# Subtest: dock lamps keep their fixtures but only nearby lights enter the forward lighting pass
+ok 83 - dock lamps keep their fixtures but only nearby lights enter the forward lighting pass
+  ---
+  duration_ms: 898.426667
+  type: 'test'
+  ...
+# Subtest: dock lighting excludes only lights with no influence in the view and restores them when turning
+ok 84 - dock lighting excludes only lights with no influence in the view and restores them when turning
+  ---
+  duration_ms: 772.6685
+  type: 'test'
+  ...
+1..84
+# tests 84
+# suites 0
+# pass 84
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 73107.599167

@@ -1,0 +1,258 @@
+{
+  "measuredAt": "2026-10-11T11:40:26.002Z",
+  "scenes": [
+    "film_zion_temple"
+  ],
+  "viewport": {
+    "width": 1280,
+    "height": 720,
+    "pixelRatio": 1.5
+  },
+  "frames": 393,
+  "fps": 26.126018047781642,
+  "frameTime": {
+    "mean": 38.27602040889312,
+    "p95": 48.09999990463257
+  },
+  "cpuMs": {
+    "controls": {
+      "mean": 0.4793893289930038,
+      "p95": 1.1999998092651367
+    },
+    "agents": {
+      "mean": 9.119338423847848,
+      "p95": 12.200000286102295
+    },
+    "city": {
+      "mean": 0.11704831814947929,
+      "p95": 0.20000028610229492
+    },
+    "film": {
+      "mean": 1.3407124902759193,
+      "p95": 1.6999998092651367
+    },
+    "effects": {
+      "mean": 0.2025445217394647,
+      "p95": 0.3000001907348633
+    },
+    "render": {
+      "mean": 9.962849875442854,
+      "p95": 15.699999809265137
+    },
+    "capture": {
+      "mean": 0.0022900741518908784,
+      "p95": 0
+    }
+  },
+  "passCpuMs": {
+    "worldMatrices": {
+      "mean": 2.037913495954363,
+      "p95": 2.5999999046325684
+    },
+    "scene": {
+      "mean": 8.1501272495163,
+      "p95": 11.699999809265137
+    },
+    "occlusion.overrideVisibility": {
+      "mean": 0.45089058354307376,
+      "p95": 0.8000001907348633
+    },
+    "occlusion.normals": {
+      "mean": 0.9241730068779477,
+      "p95": 1.5
+    },
+    "occlusion.restoreVisibility": {
+      "mean": 0.005343509994390356,
+      "p95": 0.09999990463256836
+    },
+    "occlusion": {
+      "mean": 1.5183205956417791,
+      "p95": 2.5
+    },
+    "bloom": {
+      "mean": 0.21628498849067979,
+      "p95": 0.40000009536743164
+    },
+    "output": {
+      "mean": 0.02264630703525689,
+      "p95": 0.09999990463256836
+    },
+    "antialias": {
+      "mean": 0.028498722396734108,
+      "p95": 0.10000038146972656
+    }
+  },
+  "calls": {
+    "mean": 338,
+    "p95": 338
+  },
+  "triangles": {
+    "mean": 1317263,
+    "p95": 1317263
+  },
+  "drawsPerFrame": {
+    "shadows": {
+      "calls": 263,
+      "triangles": 934868
+    },
+    "scene": {
+      "calls": 29,
+      "triangles": 191316
+    },
+    "occlusion": {
+      "calls": 27,
+      "triangles": 191060
+    },
+    "postprocessing": {
+      "calls": 19,
+      "triangles": 19
+    }
+  },
+  "heaviestMeshes": [
+    {
+      "name": "ceasefire-sentinel-arms",
+      "parent": "ceasefire-sentinel-swarm",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 250560
+    },
+    {
+      "name": "ceasefire-sentinel-armor",
+      "parent": "ceasefire-sentinel-swarm",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 103248
+    },
+    {
+      "name": "",
+      "parent": "temple-city-outlook",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 98304
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 61552
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 61552
+    },
+    {
+      "name": "zee-anatomical-body",
+      "parent": "zee-detailed-body",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 36834
+    },
+    {
+      "name": "niobe-anatomical-body",
+      "parent": "niobe-detailed-body",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 36830
+    },
+    {
+      "name": "ceasefire-sentinel-hulls",
+      "parent": "ceasefire-sentinel-swarm",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 35208
+    },
+    {
+      "name": "niobe-anatomical-head",
+      "parent": "niobe-detailed-head",
+      "type": "Mesh",
+      "calls": 1,
+      "triangles": 34544
+    },
+    {
+      "name": "zee-anatomical-head",
+      "parent": "zee-detailed-head",
+      "type": "Mesh",
+      "calls": 1,
+      "triangles": 34544
+    },
+    {
+      "name": "hamann-anatomical-head",
+      "parent": "hamann-detailed-head",
+      "type": "Mesh",
+      "calls": 1,
+      "triangles": 34272
+    },
+    {
+      "name": "lock-anatomical-head",
+      "parent": "lock-detailed-head",
+      "type": "Mesh",
+      "calls": 1,
+      "triangles": 33936
+    },
+    {
+      "name": "ceasefire-sentinel-optics",
+      "parent": "ceasefire-sentinel-swarm",
+      "type": "Mesh",
+      "calls": 2,
+      "triangles": 31680
+    },
+    {
+      "name": "hamann-anatomical-body",
+      "parent": "hamann-detailed-body",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 30776
+    },
+    {
+      "name": "lock-anatomical-body",
+      "parent": "lock-detailed-body",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 30424
+    },
+    {
+      "name": "hamann-work-top",
+      "parent": "hamann-detailed-body",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 19156
+    },
+    {
+      "name": "lock-work-top",
+      "parent": "lock-detailed-body",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 18104
+    },
+    {
+      "name": "lock-hair-strands",
+      "parent": "lock-detailed-head",
+      "type": "Mesh",
+      "calls": 1,
+      "triangles": 16000
+    },
+    {
+      "name": "niobe-hair-strands",
+      "parent": "niobe-detailed-head",
+      "type": "Mesh",
+      "calls": 1,
+      "triangles": 16000
+    },
+    {
+      "name": "hamann-hair-strands",
+      "parent": "hamann-detailed-head",
+      "type": "Mesh",
+      "calls": 1,
+      "triangles": 16000
+    }
+  ],
+  "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+  "recordingActive": false,
+  "engineFpsDisplay": 11.48545175900586,
+  "objects": 9132,
+  "visibleObjects": 896
+}
