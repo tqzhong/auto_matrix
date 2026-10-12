@@ -1,0 +1,20 @@
+{
+  "primaryFiles": 8,
+  "primaryMatchesPrevious": true,
+  "primaryScene": "m1_truth_exit",
+  "primaryStep": 0,
+  "primaryTick": 6262,
+  "primaryTruthRecovery": {
+    "phase": "ready",
+    "elapsed": 0
+  },
+  "constructStudyTick": 6099,
+  "constructClock": 3.024,
+  "desertStudyTick": 6240,
+  "desertClock": 3.4900000000000015,
+  "desertPaused": true,
+  "controllers": {
+    "neo": null,
+    "morpheus": null
+  }
+}

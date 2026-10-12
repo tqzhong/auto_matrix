@@ -1,0 +1,59 @@
+[
+  {
+    "path": "agents.morpheus.currentAction",
+    "before": null,
+    "after": {
+      "type": "idle",
+      "parameters": {
+        "resolved": true,
+        "filmPose": "construct",
+        "seated": true,
+        "reveal": {
+          "kind": "construct",
+          "elapsed": 3.024000000000001,
+          "role": "morpheus"
+        }
+      },
+      "startedAt": 6099,
+      "duration": 1,
+      "progress": 0
+    }
+  },
+  {
+    "path": "agents.morpheus.rotation",
+    "before": 0.9296300501787912,
+    "after": 3.141592653589793
+  },
+  {
+    "path": "agents.morpheus.position.x",
+    "before": 5700.8288914238765,
+    "after": 5691.6
+  },
+  {
+    "path": "agents.morpheus.position.z",
+    "before": 4450.324363875069,
+    "after": 4409.8
+  },
+  {
+    "path": "agents.neo.currentAction",
+    "before": null,
+    "after": {
+      "type": "idle",
+      "parameters": {
+        "player": true,
+        "resolved": true,
+        "filmPose": "construct",
+        "mirror": 0,
+        "seated": false,
+        "reveal": {
+          "kind": "construct",
+          "elapsed": 3.024000000000001,
+          "role": "neo"
+        }
+      },
+      "startedAt": 6099,
+      "duration": 1,
+      "progress": 0
+    }
+  }
+]

@@ -1,0 +1,13 @@
+{
+  "groups": {
+    "agents": true,
+    "chunks": true,
+    "locations": true,
+    "events": true,
+    "sandbox": true,
+    "simulation": true
+  },
+  "timeOfDay": true,
+  "memories": true,
+  "memoryCount": 7
+}

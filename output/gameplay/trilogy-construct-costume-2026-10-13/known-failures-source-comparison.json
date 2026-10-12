@@ -1,0 +1,10 @@
+{
+  "packages/client/src/engine/PodSetRenderer.ts": {
+    "sameAsPreviousFurnitureCommit": true,
+    "sha256": "c67a800ce6b4d9a8ea9c5d5a883a10b8bf824fc6f540e78e0a42569c8b1a510c"
+  },
+  "packages/client/src/engine/NebDeckRenderer.ts": {
+    "sameAsPreviousFurnitureCommit": true,
+    "sha256": "11f8315888f7bbe47657c0eb6f2e02b485916e6d69966048184d5b9b77e577bf"
+  }
+}

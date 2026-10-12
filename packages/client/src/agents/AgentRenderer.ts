@@ -162,7 +162,11 @@ export class AgentRenderer {
   }
 
   setSelected(id: string | null): void { this.selected = id; }
-  setPlayer(id: string | null, firstPerson = false): void { this.playerId = id; this.firstPerson = firstPerson; }
+  setPlayer(id: string | null, firstPerson = false): void {
+    const entry = id === 'morpheus' && id !== this.playerId ? this.agents.get(id) : undefined;
+    if (entry && ['film_white_construct', 'film_real_desert'].includes(entry.state.currentLocation)) entry.rig.motion = newMotion();
+    this.playerId = id; this.firstPerson = firstPerson;
+  }
   setPlayerMotion(motion: MotionInput): void { this.playerMotion = motion; }
   setWorld(matrix: boolean): void {
     this.matrix = matrix;
@@ -586,6 +590,8 @@ export class AgentRenderer {
         input.armed = id === 'trinity' && breakoutClock.phase === 'catching';
       }
       input.realWorld = !state.isInMatrix && state.currentLocation !== 'film_real_desert';
+      input.constructSuit = id === 'morpheus' && ['film_white_construct', 'film_real_desert'].includes(state.currentLocation)
+        && !state.currentAction?.parameters.rescue;
       const shipScene = journey?.visiting ?? journey?.scene;
       input.nebCrewEarly = input.realWorld && state.currentLocation === 'film_neb_deck' && shipScene?.startsWith('m1_') === true
         && shipScene !== 'm1_pod' && shipScene !== 'm1_recovery';

@@ -1,0 +1,77 @@
+{
+  "date": "2026-10-13",
+  "baseCommit": "50a41736b98f0f74b228e0257196a582903a26d8",
+  "previousGoalTurn": "progress: desert geometry, shared terrain collision, native evidence and commit 50a4173 were completed and pushed.",
+  "baseline": {
+    "passed": 3,
+    "failed": 0,
+    "log": "baseline.log"
+  },
+  "missingSuitReproduced": {
+    "passed": 0,
+    "failed": 1,
+    "log": "reproduced.log"
+  },
+  "pausedSeatReproduced": {
+    "passed": 0,
+    "failed": 1,
+    "log": "paused-possession-reproduced.log"
+  },
+  "broaderCharacterSuite": {
+    "passed": 81,
+    "failed": 2,
+    "log": "character-checks.log",
+    "scope": "Before final torso fitting, curved collar and opened jacket. Both failures are the previously documented missing rescue-pad/pillow references; renderer source hashes match the prior furniture unit. This is not a complete old-version suite baseline."
+  },
+  "finalCostumeChecks": {
+    "passed": 4,
+    "failed": 0,
+    "log": "contact-final.log",
+    "contactSamples": 40
+  },
+  "finalSeatedChecks": {
+    "passed": 2,
+    "failed": 0,
+    "log": "final-seated.log"
+  },
+  "clientBuild": {
+    "passed": true,
+    "log": "client-build.log",
+    "existingLargeChunkWarning": true
+  },
+  "typecheck": {
+    "passed": true,
+    "log": "final-typecheck.log"
+  },
+  "fullRepositorySuite": "Not run in this unit.",
+  "nativeViews": [
+    "construct-final-third.png",
+    "construct-final-first.png",
+    "desert-final-third.png",
+    "desert-final-first.png"
+  ],
+  "nativeFreePossession": "morpheus-free-final.png and morpheus-walk-final.png precede the final torso-fit/curved-collar change; they verify the paused-seat correction and ordinary movement.",
+  "constructInitialViewComparison": "construct-reviewed-comparison.json: strict 6/6 before free possession and final geometry.",
+  "constructAfterWalkingColdRestart": "construct-cold-comparison.json: strict 5/6; see actor restoration changes in construct-cold-differences.json.",
+  "desertFinalViewComparison": "desert-reviewed-comparison.json: strict 6/6 including time and 7 memories.",
+  "performance": {
+    "fps": 32.885101850619094,
+    "p95Ms": 39.30000019073486,
+    "calls": {
+      "mean": 419,
+      "p95": 419
+    },
+    "viewport": {
+      "width": 1280,
+      "height": 720,
+      "pixelRatio": 1.5
+    },
+    "scope": "Single paused desert shot at 3.49s, no recording, no tests/builds active. Not an alternating old/new benchmark or continuous gameplay."
+  },
+  "primarySave": "state-scope.json: 8 files unchanged, m1_truth_exit ready / tick 6262.",
+  "protectedFiles": 3322,
+  "newVideo": false,
+  "newStoryCompletion": false,
+  "trilogyComplete": false,
+  "group1_07Complete": false
+}

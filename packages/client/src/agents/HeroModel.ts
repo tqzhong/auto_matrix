@@ -27,6 +27,7 @@ import { cabinContact } from './CabinContact.js';
 import { ConstructPerformance } from './ConstructPerformance.js';
 import { clubCloseness } from '@auto_matrix/shared';
 import { FarewellAppearance } from './FarewellAppearance.js';
+import { ConstructSuitAppearance } from './ConstructSuitAppearance.js';
 
 export type HeroSupport = 'cypher' | 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour' | 'niobe' | 'ballard' | 'ghost' | 'soren' | 'link' | 'dozer' | 'tank' | 'oracle_priestess' | 'oracle_attendant' | 'citizen_4' | 'citizen_14';
 type Pose = ReturnType<typeof advanceMotion>;
@@ -115,6 +116,7 @@ export class HeroModels {
   private apartments = new Map<HeroRig, ApartmentPerformance>();
   private wakeCalls = new Map<HeroRig, WakeCallPerformance>();
   private farewellAppearances = new Map<HeroRig, FarewellAppearance>();
+  private constructSuits = new Map<HeroRig, ConstructSuitAppearance>();
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private textures = new Set<THREE.Texture>();
@@ -431,6 +433,7 @@ export class HeroModels {
     if (apartmentRole) this.apartments.set(rig, new ApartmentPerformance(rig));
     if (id === 'neo' && !support) this.recoveries.set(rig, new RecoveryPerformance(rig));
     if ((id === 'neo' || id === 'trinity' || id === 'morpheus') && !support) this.farewellAppearances.set(rig, new FarewellAppearance(rig, id, eye));
+    if (id === 'morpheus' && !support) this.constructSuits.set(rig, new ConstructSuitAppearance(rig, this.fabric));
     enableSkinnedCulling(root);
     return rig;
   }
@@ -822,6 +825,7 @@ export class HeroModels {
       if ((part.hair || material.name === 'Eyes') && interactionView) part.mesh.visible = false;
     }
     farewellAppearance?.update(input);
+    this.constructSuits.get(rig)?.update(input);
     const bone = (name: string) => rig.bones.get(name)!;
     const pelvis = bone('pelvis');
     pelvis.position.copy(rig.rest.get('pelvis')!);
@@ -1241,6 +1245,7 @@ export class HeroModels {
     this.apartments.forEach(p => p.dispose()); this.apartments.clear();
     this.wakeCalls.forEach(p => p.dispose()); this.wakeCalls.clear();
     this.farewellAppearances.forEach(p => p.dispose()); this.farewellAppearances.clear();
+    this.constructSuits.forEach(p => p.dispose()); this.constructSuits.clear();
     this.geometries.forEach(value => value.dispose()); this.materials.forEach(value => value.dispose());
     this.textures.forEach(value => value.dispose()); this.skeletons.forEach(value => value.dispose());
     this.geometries.clear(); this.materials.clear(); this.textures.clear(); this.skeletons.clear();
