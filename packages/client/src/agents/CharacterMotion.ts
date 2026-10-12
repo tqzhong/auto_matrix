@@ -120,6 +120,7 @@ export interface MotionInput {
   farewell?: import('@auto_matrix/shared').FarewellGesture;
   farewellOutfit?: 'neo' | 'trinity';
   nebCrew?: import('@auto_matrix/shared').NebCrewRole;
+  nebCrewEarly?: boolean;
   signal?: import('@auto_matrix/shared').TunnelEncounter;
   deusPact?: import('@auto_matrix/shared').DeusPactGesture;
   smithFinale?: import('@auto_matrix/shared').SmithFinaleGesture;
