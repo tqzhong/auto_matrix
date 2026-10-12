@@ -1,0 +1,130 @@
+# Subtest: paused awakening checkpoints reconstruct their saved performance before any player reconnects
+    not ok 1 - m1_pod entry 0
+      ---
+      duration_ms: 460.363167
+      type: 'test'
+      location: '/Users/tianqizhong/ai_project/auto_matrix/tests/server-startup.test.mts:1:8160'
+      failureType: 'testCodeFailure'
+      error: |-
+        the first snapshot must render the saved performance without requiring play_as
+
+        undefined !== 'pod'
+    not ok 2 - m1_pod emerge 1.63
+      ---
+      duration_ms: 477.616167
+      type: 'test'
+      location: '/Users/tianqizhong/ai_project/auto_matrix/tests/server-startup.test.mts:1:8160'
+      failureType: 'testCodeFailure'
+      error: |-
+        the first snapshot must render the saved performance without requiring play_as
+
+        undefined !== 'pod'
+    not ok 3 - m1_pod emerge 5.2
+      ---
+      duration_ms: 451.027125
+      type: 'test'
+      location: '/Users/tianqizhong/ai_project/auto_matrix/tests/server-startup.test.mts:1:8160'
+      failureType: 'testCodeFailure'
+      error: |-
+        the first snapshot must render the saved performance without requiring play_as
+
+        undefined !== 'pod'
+    not ok 4 - m1_pod breather 2.4
+      ---
+      duration_ms: 453.373708
+      type: 'test'
+      location: '/Users/tianqizhong/ai_project/auto_matrix/tests/server-startup.test.mts:1:8160'
+      failureType: 'testCodeFailure'
+      error: |-
+        the first snapshot must render the saved performance without requiring play_as
+
+        undefined !== 'pod'
+    not ok 5 - m1_pod breather 5.5
+      ---
+      duration_ms: 455.785625
+      type: 'test'
+      location: '/Users/tianqizhong/ai_project/auto_matrix/tests/server-startup.test.mts:1:8160'
+      failureType: 'testCodeFailure'
+      error: |-
+        the first snapshot must render the saved performance without requiring play_as
+
+        undefined !== 'pod'
+    not ok 6 - m1_pod disconnect 5.861
+      ---
+      duration_ms: 452.363875
+      type: 'test'
+      location: '/Users/tianqizhong/ai_project/auto_matrix/tests/server-startup.test.mts:1:8160'
+      failureType: 'testCodeFailure'
+      error: |-
+        the first snapshot must render the saved performance without requiring play_as
+        + actual - expected
+
+    not ok 7 - m1_pod disconnect 9
+      ---
+      duration_ms: 451.05775
+      type: 'test'
+      location: '/Users/tianqizhong/ai_project/auto_matrix/tests/server-startup.test.mts:1:8160'
+      failureType: 'testCodeFailure'
+      error: |-
+        the first snapshot must render the saved performance without requiring play_as
+        + actual - expected
+
+    not ok 8 - m1_pod rescue 3.4
+      ---
+      duration_ms: 455.14
+      type: 'test'
+      location: '/Users/tianqizhong/ai_project/auto_matrix/tests/server-startup.test.mts:1:8160'
+      failureType: 'testCodeFailure'
+      error: |-
+        the first snapshot must render the saved performance without requiring play_as
+        + actual - expected
+
+    not ok 9 - m1_mirror mirror 4.8
+      ---
+      duration_ms: 455.997209
+      type: 'test'
+      location: '/Users/tianqizhong/ai_project/auto_matrix/tests/server-startup.test.mts:1:8160'
+      failureType: 'testCodeFailure'
+      error: |-
+        the first snapshot must render the saved performance without requiring play_as
+        + actual - expected
+
+    not ok 10 - m1_recovery recovery 0
+      ---
+      duration_ms: 450.872958
+      type: 'test'
+      location: '/Users/tianqizhong/ai_project/auto_matrix/tests/server-startup.test.mts:1:8160'
+      failureType: 'testCodeFailure'
+      error: |-
+        the first snapshot must render the saved performance without requiring play_as
+        + actual - expected
+
+    not ok 11 - m1_cabin cabin 3.4
+      ---
+      duration_ms: 473.856583
+      type: 'test'
+      location: '/Users/tianqizhong/ai_project/auto_matrix/tests/server-startup.test.mts:1:8160'
+      failureType: 'testCodeFailure'
+      error: |-
+        the first snapshot must render the saved performance without requiring play_as
+        + actual - expected
+
+not ok 1 - paused awakening checkpoints reconstruct their saved performance before any player reconnects
+  ---
+  duration_ms: 5038.70975
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/server-startup.test.mts:1:7398'
+  failureType: 'subtestsFailed'
+  error: '11 subtests failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+1..1
+1..1
+# tests 12
+# suites 0
+# pass 0
+# fail 12
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5243.051459

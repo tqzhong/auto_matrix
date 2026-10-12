@@ -1,0 +1,17 @@
+{
+  "files": 1287,
+  "roots": [
+    "data",
+    "output/gameplay/trilogy-lafayette-performance-2026-10-12",
+    "output/gameplay/trilogy-lafayette-room-2026-10-12",
+    "output/gameplay/trilogy-mirror-liquid-2026-10-12",
+    "output/gameplay/trilogy-pod-emergence-2026-10-12",
+    "output/gameplay/trilogy-pod-maintenance-2026-10-12",
+    "output/gameplay/trilogy-pod-pipe-2026-10-12",
+    "output/gameplay/trilogy-pod-reactions-2026-10-12"
+  ],
+  "added": [],
+  "removed": [],
+  "changed": [],
+  "preserved": true
+}

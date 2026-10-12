@@ -1,0 +1,44 @@
+# Subtest: shutdown during memories loading must preserve the last complete world and memories
+# Subtest: shutdown during checkpoint loading must preserve the last complete world and memories
+# Subtest: shutdown after a rejected checkpoint preserves the original file for recovery
+# Subtest: a fully loaded server saves and resumes the same story, memories and relationships across restarts
+# Subtest: a first startup without a world checkpoint still saves a usable new world
+# Subtest: a paused world keeps its clock, selected speed and story across a server restart
+# Subtest: a running world restarts running at its selected speed instead of being saved as paused by shutdown
+# Subtest: an explicit pause reaches the atomic world checkpoint before the process shuts down
+# Subtest: a paused ground retry restores and saves the checkpoint without restarting time or allowing other actions
+not ok 9 - a paused ground retry restores and saves the checkpoint without restarting time or allowing other actions
+  ---
+  duration_ms: 529.559916
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/server-startup.test.mts:1:10580'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    ... Skipped lines
+# Subtest: a paused pit retry restores and saves the checkpoint without restarting time or allowing other actions
+not ok 10 - a paused pit retry restores and saves the checkpoint without restarting time or allowing other actions
+  ---
+  duration_ms: 523.076792
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/server-startup.test.mts:1:10580'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    ... Skipped lines
+# Subtest: invalid saved time controls are rejected without overwriting the recoverable checkpoint
+# Subtest: a real server restart preserves an unfinished NPC conversation and replays it only to the reconnecting page
+# Subtest: legacy talk actions without a saved conversation are released instead of stranding their participants
+# Subtest: a new conversation checkpoint also preserves NPCs still approaching their conversation partner
+# Subtest: invalid saved NPC dialogue is rejected without replacing the recoverable world
+1..15
+# tests 15
+# suites 0
+# pass 13
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 9865.018208

@@ -1,0 +1,149 @@
+TAP version 13
+# Subtest: a paused cabin walk does not complete the next objective while restoring the preceding performance
+not ok 1 - a paused cabin walk does not complete the next objective while restoring the preceding performance
+  ---
+  duration_ms: 551.549083
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/server-startup.test.mts:1:10225'
+  failureType: 'testCodeFailure'
+  error: |-
+    a paused load cannot turn reaching the chair into a completed walk
+    + actual - expected
+    ... Skipped lines
+
+      {
+        actor: 'neo',
+        awakening: {
+    +     approach: {
+    +       x: 3.100000000000364,
+    +       z: -5
+    +     },
+    +     elapsed: 0,
+    +     kind: 'core',
+    +     started: false
+    -     elapsed: 12,
+    -     kind: 'cabin'
+        },
+        cabinEscort: {
+          progress: 49.17238672936492
+        },
+        checkpoint: {
+    +     x: 5379.1,
+    -     x: 5388,
+          y: -100,
+    +     z: 4411
+    -     z: 4382
+        },
+        completed: [
+          'm1_room303',
+          'm1_roofs',
+          'm1_phone_escape',
+    ...
+        enteredAt: 0,
+    +   lastText: '这里是飞船的广播核心。按 G 坐入连接椅，允许 Morpheus 接通颈后接口。',
+    -   lastText: 'Morpheus 已在连接椅后等候。走到椅子前，亲自决定是否接入。',
+        reflections: {
+          'm1_construct:1': 'agency'
+        },
+        scene: 'm1_cabin',
+    +   step: 2,
+    -   step: 1,
+        version: 1
+      }
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    version: 1
+    scene: 'm1_cabin'
+    step: 1
+    actor: 'neo'
+    completed:
+      0: 'm1_room303'
+      1: 'm1_roofs'
+      2: 'm1_phone_escape'
+      3: 'm1_wake_up'
+      4: 'm1_club'
+      5: 'm1_morning'
+      6: 'm1_commute'
+      7: 'm1_boss'
+      8: 'm1_office_escape'
+      9: 'm1_ledge'
+      10: 'm1_interrogation'
+      11: 'm1_wake_again'
+      12: 'm1_bridge'
+      13: 'm1_bug'
+      14: 'm1_pills'
+      15: 'm1_mirror'
+      16: 'm1_pod'
+      17: 'm1_recovery'
+    enteredAt: 0
+    reflections:
+      m1_construct:1: 'agency'
+    lastText: 'Morpheus 已在连接椅后等候。走到椅子前，亲自决定是否接入。'
+    checkpoint:
+      x: 5388
+      y: -100
+      z: 4382
+    awakening:
+      kind: 'cabin'
+      elapsed: 12
+    cabinEscort:
+      progress: 49.17238672936492
+  actual:
+    version: 1
+    scene: 'm1_cabin'
+    step: 2
+    actor: 'neo'
+    completed:
+      0: 'm1_room303'
+      1: 'm1_roofs'
+      2: 'm1_phone_escape'
+      3: 'm1_wake_up'
+      4: 'm1_club'
+      5: 'm1_morning'
+      6: 'm1_commute'
+      7: 'm1_boss'
+      8: 'm1_office_escape'
+      9: 'm1_ledge'
+      10: 'm1_interrogation'
+      11: 'm1_wake_again'
+      12: 'm1_bridge'
+      13: 'm1_bug'
+      14: 'm1_pills'
+      15: 'm1_mirror'
+      16: 'm1_pod'
+      17: 'm1_recovery'
+    enteredAt: 0
+    reflections:
+      m1_construct:1: 'agency'
+    lastText: '这里是飞船的广播核心。按 G 坐入连接椅，允许 Morpheus 接通颈后接口。'
+    checkpoint:
+      x: 5379.1
+      y: -100
+      z: 4411
+    awakening:
+      kind: 'core'
+      elapsed: 0
+      started: false
+      approach:
+        x: 3.100000000000364
+        z: -5
+    cabinEscort:
+      progress: 49.17238672936492
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/server-startup.test.mts:175:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 874.563208

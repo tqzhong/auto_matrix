@@ -1,0 +1,8 @@
+{
+  "observer": "45-second read-only medical-scene observer with normal pause",
+  "outcome": "timeout",
+  "error": "AssertionError [ERR_ASSERTION]: normal medical handoff not reached",
+  "scope": "Started before the native reattachment/reload checks; its deadline expired before the later resume reached medical care. This observer attempt is not a passing check.",
+  "followup": { "tick": 5532, "running": true, "scene": "m1_recovery", "awakening": { "kind": "recovery", "elapsed": 0, "started": false } },
+  "final": { "tick": 5629, "running": false, "scene": "m1_recovery", "step": 0 }
+}

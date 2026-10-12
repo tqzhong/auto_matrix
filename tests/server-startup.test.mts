@@ -7,7 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { io } from 'socket.io-client';
 import type { ConversationRecord, ServerMessage, WorldStateFull } from '@auto_matrix/shared';
-import { filmPosition, newSmithFinale, SMITH_FINALE, smithFinalePose, stepSmithFinale } from '@auto_matrix/shared';
+import { filmPosition, filmStepPosition, FILM_SCENE_BY_ID, CABIN_ROUTE_LENGTH, AWAKENING_SECONDS, awakeningPose, type AwakeningBeat, newSmithFinale, SMITH_FINALE, smithFinalePose, stepSmithFinale } from '@auto_matrix/shared';
 import { PersistentMemoryManager } from '../packages/server/src/memory/PersistentMemoryManager.js';
 import { CheckpointStore } from '../packages/server/src/world/CheckpointStore.js';
 
@@ -121,6 +121,62 @@ test('a first startup without a world checkpoint still saves a usable new world'
   assert.ok(Array.isArray(saved.events) && Array.isArray(saved.relationships));
   const restored = start(t, f.directory, 'normal'); await restored.waitFor('Restored world at tick 0');
   await restored.waitFor('STARTUP_LISTENING'); await restored.stop();
+});
+
+test('paused awakening checkpoints reconstruct their saved performance before any player reconnects', { timeout: 60000 }, async t => {
+  const cases: { scene: string; step?: number; beat?: AwakeningBeat }[] = [
+    { scene: 'm1_pod' },
+    ...[1.63, 5.2].map(elapsed => ({ scene: 'm1_pod', beat: { kind: 'emerge' as const, elapsed, ...(elapsed === 5.2 ? { started: false } : {}) } })),
+    ...[2.4, 5.5].map(elapsed => ({ scene: 'm1_pod', beat: { kind: 'breather' as const, elapsed, emerged: true, ...(elapsed === 5.5 ? { started: false } : {}) } })),
+    ...[5.861, 9].map(elapsed => ({ scene: 'm1_pod', step: elapsed === 9 ? 1 : 0, beat: { kind: 'disconnect' as const, elapsed, emerged: true, breatherRemoved: true } })),
+    { scene: 'm1_pod', step: 1, beat: { kind: 'rescue', elapsed: 3.4 } },
+    { scene: 'm1_mirror', beat: { kind: 'mirror', elapsed: 4.8 } },
+    { scene: 'm1_recovery', beat: { kind: 'recovery', elapsed: 0, started: false } },
+    { scene: 'm1_cabin', beat: { kind: 'cabin', elapsed: 3.4 } },
+  ];
+  for (const item of cases) await t.test(`${item.scene} ${item.beat?.kind ?? 'entry'} ${item.beat?.elapsed ?? 0}`, async t => {
+    const f = await fixture(t, item.scene), journey = f.checkpoint.sandbox.neoLife.journey;
+    const pose = awakeningPose(item.beat), neo = f.checkpoint.agents.neo, set = neo.currentLocation;
+    f.checkpoint.simulation = { running: false, speed: 2 };
+    journey.step = item.step ?? 0;
+    if (item.beat) journey.awakening = item.beat; else delete journey.awakening;
+    journey.lastText = pose.text;
+    neo.position = filmPosition(set, pose.x, pose.z); neo.position.y += pose.y; neo.rotation = pose.yaw ?? Math.PI;
+    neo.currentAction = { type: 'idle', parameters: { player: true, resolved: true, filmPose: pose.pose }, startedAt: f.checkpoint.tick, duration: 1, progress: 0 };
+    const stale = f.checkpoint.agents.citizen_5;
+    stale.currentAction = { type: 'attack', target: 'neo', parameters: { player: true }, startedAt: 1340, duration: 1, progress: .2 };
+    await writeFile(f.file, JSON.stringify(f.checkpoint));
+    const server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING');
+    const client = await controls(t, server), cold = await client.world();
+    assert.equal(cold.agents.neo.controller, undefined, 'a saved performance must not reclaim the old browser session');
+    assert.equal(cold.agents.neo.currentAction?.parameters.filmPose, pose.pose, 'the first snapshot must render the saved performance without requiring play_as');
+    assert.deepEqual(cold.agents.neo.position, neo.position);
+    assert.equal(cold.agents.neo.health, 63); assert.equal(cold.agents.mouse.status, 'dead');
+    assert.equal(cold.agents.citizen_5.currentAction, null, 'transient player attacks must still be cleared');
+    assert.deepEqual(cold.sandbox!.neoLife!.journey, journey, 'reading the pose cannot advance or rewrite the saved story');
+    assert.equal(cold.simulation!.running, false); assert.equal(cold.simulation!.tick, f.checkpoint.tick);
+    assert.equal(cold.timeOfDay, f.checkpoint.timeOfDay);
+    if (item.beat?.kind === 'rescue') assert.equal(cold.agents.neo.currentAction!.parameters.podRescue, item.beat.elapsed);
+    client.socket.disconnect(); await server.stop();
+  });
+});
+
+test('a paused cabin walk does not complete the next objective while restoring the preceding performance', { timeout: 15000 }, async t => {
+  const f = await fixture(t, 'm1_cabin'), journey = f.checkpoint.sandbox.neoLife.journey;
+  const scene = FILM_SCENE_BY_ID.m1_cabin, neo = f.checkpoint.agents.neo;
+  f.checkpoint.simulation = { running: false, speed: 1 };
+  journey.step = 1; journey.awakening = { kind: 'cabin', elapsed: AWAKENING_SECONDS.cabin };
+  journey.cabinEscort = { progress: CABIN_ROUTE_LENGTH };
+  journey.lastText = 'Morpheus 已在连接椅后等候。走到椅子前，亲自决定是否接入。';
+  neo.position = filmStepPosition(scene, scene.steps[1], journey); neo.rotation = .62; neo.currentAction = null;
+  await writeFile(f.file, JSON.stringify(f.checkpoint));
+  const server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING');
+  const client = await controls(t, server), cold = await client.world();
+  assert.deepEqual(cold.sandbox!.neoLife!.journey, journey, 'a paused load cannot turn reaching the chair into a completed walk');
+  assert.deepEqual(cold.agents.neo.position, neo.position); assert.equal(cold.agents.neo.rotation, .62);
+  assert.equal(cold.agents.neo.currentAction, null, 'a completed performance cannot replace free movement with a seated pose');
+  assert.equal(cold.simulation!.running, false); assert.equal(cold.simulation!.tick, f.checkpoint.tick);
+  client.socket.disconnect(); await server.stop();
 });
 
 test('a paused world keeps its clock, selected speed and story across a server restart', { timeout: 30000 }, async t => {

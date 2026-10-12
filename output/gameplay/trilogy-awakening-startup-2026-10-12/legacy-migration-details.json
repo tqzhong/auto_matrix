@@ -1,0 +1,26 @@
+{
+  "oldPosition": {
+    "x": 5056,
+    "y": -106.97884799999997,
+    "z": 4418.944
+  },
+  "newPosition": {
+    "x": 5056,
+    "y": -113.34030453241247,
+    "z": 4418.6364243856
+  },
+  "canonicalPosition": {
+    "x": 5056,
+    "y": -113.34030453241247,
+    "z": 4418.6364243856
+  },
+  "beat": {
+    "kind": "disconnect",
+    "elapsed": 5.867999999999996,
+    "breatherRemoved": true,
+    "emerged": true
+  },
+  "elapsedPreserved": true,
+  "lifePreserved": true,
+  "clockPreserved": true
+}
