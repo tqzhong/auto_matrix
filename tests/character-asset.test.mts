@@ -1351,7 +1351,7 @@ test('Trinity resumes in her club costume and restores her jacket after leaving'
   } finally { models.dispose(); }
 });
 
-test('first-person Construct removes Neo head triangles while retaining both actual hands and restoring his full skin', async () => {
+test('first-person Construct and truth aftermath retain both actual hands and restore Neo full skin', async () => {
   const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
   (models as unknown as { load: typeof loadGeometry }).load = loadGeometry;
   try {
@@ -1359,7 +1359,8 @@ test('first-person Construct removes Neo head triangles while retaining both act
     const original = skin.mesh.geometry;
     const base = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, clubClothes: true };
     for (const gesture of [{ construct: { phase: 'image' as const, elapsed: 2, role: 'neo' as const } },
-      { reveal: { kind: 'construct' as const, elapsed: 3, role: 'neo' as const, started: true } }]) {
+      { reveal: { kind: 'construct' as const, elapsed: 3, role: 'neo' as const, started: true } },
+      ...(['ready', 'exit', 'unplug', 'rest', 'question'] as const).map(phase => ({ truth: { phase, elapsed: 8, role: 'neo' as const } }))]) {
       const motion = newMotion(), input = { ...base, ...gesture, firstPerson: true };
       models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0);
       const geometry = skin.mesh.geometry, index = geometry.index!, joints = geometry.attributes.skinIndex, weights = geometry.attributes.skinWeight;

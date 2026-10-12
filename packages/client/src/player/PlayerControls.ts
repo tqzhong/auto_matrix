@@ -363,7 +363,8 @@ export class PlayerControls {
     this.yaw += turn;
     if (!this.dragging || this.dragPoint) this.movementYaw += turn;
     if (this.dragPoint) this.dragPoint = { x: event.clientX, y: event.clientY };
-    const recline = this.firstPerson && this.motion.recovery !== undefined && !this.motion.download ? Math.PI / 2 * (1 - recoveryBodyPose(this.motion.recovery).sit)
+    const recline = this.firstPerson && this.motion.truth && truthRest(this.motion.truth) ? Math.PI / 2
+      : this.firstPerson && this.motion.recovery !== undefined && !this.motion.download ? Math.PI / 2 * (1 - recoveryBodyPose(this.motion.recovery).sit)
       : this.firstPerson && this.motion.deusPact ? DEUS_PACT.reclineAngle * .82 * deusPactPose(this.motion.deusPact).seated : 0;
     const podEye = this.firstPerson && (this.motion.performance === 'float' || this.motion.performance === 'lift');
     const podElevation = podEye ? 1.42 * (1 - podRescuePose(this.motion.podRescue ?? 0).board) : 0;
@@ -2189,12 +2190,13 @@ export class PlayerControls {
         const height = rest ? 1.7 : 3.02 - (truth.phase === 'unplug' ? truthSeat(truth.elapsed) * .684 : 0) - kneel * 1.9;
         const eye = new THREE.Vector3(0, height, rest ? -1.78 : 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), this.facing)
           .add(new THREE.Vector3(this.position.x, this.position.y, this.position.z));
-        const head = truth.phase === 'unplug' ? group.getObjectByName('head') : undefined;
-        if (head) eye.copy(head.localToWorld(new THREE.Vector3(0, .18, .17)));
+        const head = group.getObjectByName('head');
+        const localEye = (head?.userData.patientEye ?? head?.userData.cameraEye) as THREE.Vector3 | undefined;
+        if (head && localEye) eye.copy(head.localToWorld(localEye.clone()));
+        else if (head && truth.phase === 'unplug') eye.copy(head.localToWorld(new THREE.Vector3(0, .18, .17)));
         this.camera.position.copy(eye);
-        const pitch = this.pitch + kneel * .5;
+        const pitch = rest ? THREE.MathUtils.clamp(this.pitch - Math.PI / 2, -1.48, 1.1) : this.pitch + kneel * .5;
         const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(pitch), -Math.sin(pitch), Math.cos(this.yaw) * Math.cos(pitch));
-        if (rest) forward.multiplyScalar(.24).add(new THREE.Vector3(0, .97, 0)).normalize();
         this.camera.lookAt(eye.clone().add(forward));
       } else {
         const center = FILM_SETS[program ? 'film_white_construct' : 'film_neb_deck'].center;

@@ -184,7 +184,7 @@ test('first-person chase keeps the bracing arm visible and restores the head whe
   assert.equal(body.getObjectByName('seraph-head')!.visible, true, 'V restores the visible head');
 });
 
-test('first-person Construct keeps inspection and leather-contact arms visible and restores the ordinary view', t => {
+test('first-person Construct and truth aftermath retain the body and restore the ordinary view', t => {
   const game = setup(t); t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
   t.mock.method(game.document, 'createElement', () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {}, createRadialGradient: () => ({ addColorStop() {} }),
@@ -196,7 +196,8 @@ test('first-person Construct keeps inspection and leather-contact arms visible a
   const entry = (renderer as unknown as { agents: Map<string, { rig: CharacterRig }> }).agents.get(actor.id)!;
   const base = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 };
   for (const gesture of [{ construct: { phase: 'image' as const, elapsed: 2, role: 'neo' as const } },
-    { reveal: { kind: 'construct' as const, elapsed: 3, role: 'neo' as const, started: true } }]) {
+    { reveal: { kind: 'construct' as const, elapsed: 3, role: 'neo' as const, started: true } },
+    ...(['ready', 'exit', 'unplug', 'rest', 'question'] as const).map(phase => ({ truth: { phase, elapsed: 0, role: 'neo' as const } }))]) {
     actor.currentAction = { type: 'idle', parameters: gesture, startedAt: 0, duration: 1e9, progress: 0 };
     renderer.updateAgent(actor.id, actor); renderer.setPlayer(actor.id, true); renderer.setPlayerMotion({ ...base, ...gesture }); renderer.update(0, undefined, 0, 0);
     assert.equal(renderer.getAgentBody(actor.id)!.visible, true, 'V cannot hide the hands carrying out the Construct interaction');
@@ -2686,7 +2687,7 @@ test('first person turns with Neo through unplugging and uses the animated head 
   assert.ok(game.camera.position.distanceTo(head.localToWorld(new THREE.Vector3(0, .18, .17))) < .001, 'kneeling first person follows the rendered head, not a standing-height estimate');
 });
 
-test('the Construct uses the registered body eye during inspection and leather contact while keeping free look', t => {
+test('the Construct and truth aftermath use the registered body eye while keeping free look', t => {
   const game = setup(t, Math.PI);
   Object.assign(game.state, { position: filmPosition('film_white_construct', 6.95, 5), rotation: Math.PI,
     isInMatrix: true, currentLocation: 'film_white_construct' });
@@ -2695,7 +2696,8 @@ test('the Construct uses the registered body eye during inspection and leather c
   head.userData.patientEye = new THREE.Vector3(0, .12, .42); game.group.children[0].add(head);
   const marker = head.userData.patientEye.clone();
   for (const gesture of [{ construct: { phase: 'image', elapsed: 2, role: 'neo' } },
-    { reveal: { kind: 'construct', elapsed: 3, role: 'neo', started: true } }]) {
+    { reveal: { kind: 'construct', elapsed: 3, role: 'neo', started: true } },
+    ...(['ready', 'exit', 'unplug', 'rest', 'question'] as const).map(phase => ({ truth: { phase, elapsed: 8, role: 'neo' } }))]) {
     game.state.currentAction = { type: 'idle', parameters: gesture, startedAt: 0, duration: 1e9, progress: 0 };
     game.controls.possess(game.state); game.key('KeyV'); game.key('KeyV', false); game.step(.1, .1, false);
     assert.equal(game.controls.firstPerson, true, 'possession resets the view; exercise the camera after a real V switch');
@@ -2705,6 +2707,12 @@ test('the Construct uses the registered body eye during inspection and leather c
     game.event(game.document, 'mousemove', { movementX: 100, movementY: 140 }); game.step(.1, .1, false);
     assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(direction) > .2, 'the body eye cannot lock the player gaze');
     assert.deepEqual(head.userData.patientEye.toArray(), marker.toArray(), 'camera transforms cannot mutate the reusable eye marker');
+    game.event(game.document, 'mousemove', { movementX: -100, movementY: -140 }); game.step(.1, .1, false);
+    if ('truth' in gesture && ['rest', 'question'].includes(gesture.truth.phase)) {
+      game.event(game.document, 'mousemove', { movementX: 0, movementY: 1050 }); game.step(.1, .1, false);
+      assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).y < -.5, 'Neo must be able to look down at his body from the bed');
+      game.event(game.document, 'mousemove', { movementX: 0, movementY: -1050 }); game.step(.1, .1, false);
+    }
   }
 });
 

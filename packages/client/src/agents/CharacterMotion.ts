@@ -547,6 +547,11 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     return { legs, arms, hipHeight: 1.98, twist: 0, lean: 0, sway: 0, lunge: 0,
       roll: 0, headTurn: 0, moving: 0, run: 0, airborne: air, coat: .22 * air, impact: 0, landing: 0 };
   }
+  if (input.truth) {
+    Object.assign(state, newMotion(), { time: input.truth.elapsed, skill: undefined });
+    input = { ...input, speed: 0, turn: 0, grounded: true, verticalVelocity: 0, armed: false };
+    dt = 0;
+  }
   if (dt > 0) {
     if (input.hit !== undefined && input.hit !== state.hitId) { state.hitId = input.hit; state.hitAge = 0; state.hitPause = .045; }
     if (input.impact !== undefined && input.impact !== state.impactId) { state.impactId = input.impact; state.hitPause = .035; }
